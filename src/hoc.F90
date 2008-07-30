@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.11 2008-07-30 19:17:34 dschanen Exp $
+! $Id: hoc.F90,v 1.12 2008-07-30 21:06:45 faschinj Exp $
 
 module hoc
 
@@ -165,8 +165,7 @@ module hoc
     use model_flags, only: LH_on, local_kk, & ! Constants
       lpos_def, lhole_fill, lsingle_C2_Skw, lgamma_Skw, lbyteswap_io
 
- 
-    use stats_variables, only: lstats_last ! Variable(s
+    use stats_variables, only: l_stats_last ! Variable(s
 
     use stats_subs, only:  & 
       stats_begin_timestep, stats_end_timestep,  & ! Procedure(s)
@@ -224,20 +223,20 @@ module hoc
        time_restart    ! Time of model restart run     [s]
 
      logical ::  & 
-       cloud_sed,     & ! Flag for cloud water droplet sedimentation. - Brian
-        kk_rain,       & ! Flag for Khairoutdinov and Kogan rain microphysics. - Brian
-        licedfs,       & ! Flag for simplified ice scheme
-        lcoamps_micro, & ! Flag for COAMPS microphysical scheme
-        lbugsrad,      & ! Flag for BUGsrad radiation scheme
-        luv_nudge,     & ! Whether to adjust the winds within the timestep
-        lrestart,      & ! Flag for restarting from GrADS file
-        lKhm_aniso    ! Whether to use anisotropic Khm.  - Michael Falk 2 Feb 2007
+       l_cloud_sed,    & ! Flag for cloud water droplet sedimentation. - Brian
+       l_kk_rain,      & ! Flag for Khairoutdinov and Kogan rain microphysics. - Brian
+       l_licedfs,      & ! Flag for simplified ice scheme
+       l_coamps_micro, & ! Flag for COAMPS microphysical scheme
+       l_bugsrad,      & ! Flag for BUGsrad radiation scheme
+       l_uv_nudge,     & ! Whether to adjust the winds within the timestep
+       l_restart,      & ! Flag for restarting from GrADS file
+       l_Khm_aniso       ! Whether to use anisotropic Khm.  - Michael Falk 2 Feb 2007
 
     character(len=50) ::  & 
       restart_path_case ! GRADS file used in case of restart
 
     logical :: & 
-      lstats ! Whether statistics are computed and output to disk
+      l_stats ! Whether statistics are computed and output to disk
 
     character(len=10) :: & 
       stats_fmt  ! File format for stats; typically GrADS.
@@ -274,14 +273,14 @@ module hoc
       time_initial, time_final, time_spinup, & 
       dtmain, dtclosure, & 
       sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge, & 
-      cloud_sed, kk_rain, licedfs, lcoamps_micro,  & 
-      lbugsrad, lKhm_aniso, luv_nudge, lrestart, restart_path_case, & 
+      l_cloud_sed, l_kk_rain, l_licedfs, l_coamps_micro,  & 
+      l_bugsrad, l_Khm_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, debug_level, & 
       sclr_tol, & 
       sclr_dim, iisclr_thl, iisclr_rt, iiCO2 
 
     namelist /stats_setting/ & 
-      lstats, fname_prefix, stats_tsamp, stats_tout, stats_fmt 
+      l_stats, fname_prefix, stats_tsamp, stats_tout, stats_fmt 
 
 !-----------------------------------------------------------------------
 
@@ -319,14 +318,14 @@ module hoc
     T0       = 300.
     ts_nudge = 86400.
 
-    cloud_sed     = .false.
-    kk_rain       = .false.
-    licedfs       = .false.
-    lcoamps_micro = .false.
-    lbugsrad      = .false.
-    lKhm_aniso    = .false.
-    luv_nudge     = .false.
-    lrestart      = .false.
+    l_cloud_sed     = .false.
+    l_kk_rain       = .false.
+    l_licedfs       = .false.
+    l_coamps_micro = .false.
+    l_bugsrad      = .false.
+    l_Khm_aniso    = .false.
+    l_uv_nudge     = .false.
+    l_restart      = .false.
     restart_path_case = "none"
     time_restart  = 0.
     debug_level   = 2
@@ -339,7 +338,7 @@ module hoc
     sclr_tol(1:sclr_max) = 1.e-2
 
     ! Pick some default values for stats_setting
-    lstats       = .false.
+    l_stats       = .false.
     fname_prefix = ''
     stats_fmt    = ''
     stats_tsamp  = 0.
@@ -428,14 +427,14 @@ module hoc
       print *, "T0 = ", T0
       print *, "ts_nudge = ", ts_nudge
 
-      print *, "cloud_sed = ", cloud_sed
-      print *, "kk_rain = ", kk_rain
-      print *, "licedfs = ", licedfs
-      print *, "lcoamps_micro = ", lcoamps_micro
-      print *, "lbugsrad = ", lbugsrad
-      print *, "lKhm_aniso = ", lKhm_aniso
-      print *, "luv_nudge = ", luv_nudge
-      print *, "lrestart = ", lrestart
+      print *, "l_cloud_sed = ", l_cloud_sed
+      print *, "l_kk_rain = ", l_kk_rain
+      print *, "l_licedfs = ", l_licedfs
+      print *, "l_coamps_micro = ", l_coamps_micro
+      print *, "l_bugsrad = ", l_bugsrad
+      print *, "l_Khm_aniso = ", l_Khm_aniso
+      print *, "l_uv_nudge = ", l_uv_nudge
+      print *, "l_restart = ", l_restart
       print *, "restart_path_case = ", restart_path_case
       print *, "time_restart = ", time_restart
       print *, "debug_level = ", debug_level
@@ -449,7 +448,7 @@ module hoc
 
       ! Pick some default values for stats_setting
       print *, "&stats_setting:"
-      print *, "lstats = ", lstats
+      print *, "l_stats = ", l_stats
       print *, "fname_prefix = ", fname_prefix
       print *, "stats_fmt = ", stats_fmt
       print *, "stats_tsamp = ", stats_tsamp
@@ -488,7 +487,7 @@ module hoc
 
     ! Setup microphysical fields
     call init_microphys & 
-         ( kk_rain, lcoamps_micro, licedfs, hydromet_dim )
+         ( l_kk_rain, l_coamps_micro, l_licedfs, hydromet_dim )
 
     ! Allocate & initialize variables,
     ! setup grid, setup constants, and setup flags
@@ -496,8 +495,8 @@ module hoc
     call parameterization_setup & 
          ( nzmax, T0, ts_nudge, hydromet_dim, sclr_dim,  & 
            sclr_tol(1:sclr_dim), params, & 
-           lbugsrad, kk_rain, licedfs, lcoamps_micro, & 
-           cloud_sed, luv_nudge, lKhm_aniso, & 
+           l_bugsrad, l_kk_rain, l_licedfs, l_coamps_micro, & 
+           l_cloud_sed, l_uv_nudge, l_Khm_aniso, & 
            .false., grid_type, deltaz, zm_init, & 
            momentum_heights, thermodynamic_heights, & 
            dummy_dx, dummy_dy, err_code )
@@ -509,7 +508,7 @@ module hoc
     ! Deallocate stretched grid altitude arrays
     deallocate( momentum_heights, thermodynamic_heights )
 
-    if ( .not. lrestart ) then
+    if ( .not. l_restart ) then
 
       time_current = time_initial
       iinit = 1
@@ -555,7 +554,7 @@ module hoc
                         um_ref, vm_ref, wpthlp, wprtp, & 
                         wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
                         sclrm, edsclrm )
-    end if ! ~lrestart
+    end if ! ~l_restart
 
  
 
@@ -567,7 +566,7 @@ module hoc
     ! Initialize statistics output
     call stats_init & 
          ( iunit, fname_prefix,  & 
-           lstats, stats_fmt, stats_tsamp, stats_tout, & 
+           l_stats, stats_fmt, stats_tsamp, stats_tout, & 
            runfile, gr%nnzp, gr%zt, gr%zm, & 
            day, month, year, rlat, rlon, time_current, & 
            dtmain )
@@ -588,7 +587,7 @@ module hoc
       ! When this time step is over, the time will be time + dtmain
 
       ! We use elapsed time for stats_begin_step
-      if (.not. lrestart) then    
+      if (.not. l_restart) then    
         call stats_begin_timestep & 
              ( time_current-time_initial+dtmain, dtmain )
       else
@@ -664,7 +663,7 @@ module hoc
         ! This was moved from above to be less confusing to the user,
         ! since before it would appear as though the last timestep
         ! was not executed. -dschanen 19 May 08
-        if ( lstats_last .and. stdout ) then
+        if ( l_stats_last .and. stdout ) then
           write(unit=fstdout,fmt='(a,i8,a,f10.1)') 'iteration = ',  & 
             i, '; time = ', time_current
         end if
@@ -731,7 +730,7 @@ module hoc
 
         use sounding, only: read_sounding ! Procedure(s)
 
-        use model_flags, only: luv_nudge ! Variable(s)
+        use model_flags, only: l_uv_nudge ! Variable(s)
 
         use arm_0003, only: arm_0003_init ! Procedure(s)
 
@@ -1200,7 +1199,7 @@ module hoc
 !        Khm = zt2zm( Kht )
 
        ! Moved this to be more general -dschanen July 16 2007
-       if ( luv_nudge ) then
+       if ( l_uv_nudge ) then
          um_ref = um ! Michael Falk addition for nudging code.  27 Sep/1 Nov 2006
          vm_ref = vm ! ditto
        end if
@@ -1251,7 +1250,7 @@ module hoc
 
         use stats_precision, only: time_precision ! Variable(s)
 
-        use model_flags, only: luv_nudge ! Variable(s)
+        use model_flags, only: l_uv_nudge ! Variable(s)
 
         use arm_0003, only: arm_0003_init ! Procedure(s)
 
@@ -1373,7 +1372,7 @@ module hoc
                             runfile, runtype, & 
                             sclrm, edsclrm )
 
-        if ( luv_nudge ) then
+        if ( l_uv_nudge ) then
           um_ref = um
           vm_ref = vm
         end if
@@ -1419,8 +1418,8 @@ module hoc
 !----------------------------------------------------------------------
 
         ! Modules to be included
-        use model_flags, only: kk_rain, licedfs, lcoamps_micro,  & ! Variable(s)
-                         cloud_sed, lbugsrad
+        use model_flags, only: l_kk_rain, l_licedfs, l_coamps_micro,  & ! Variable(s)
+                         l_cloud_sed, l_bugsrad
 
         use constants, only: rc_tol, fstderr ! Variable(s)
 
@@ -1439,11 +1438,12 @@ module hoc
                                   exner, rcm, rhom, um, psfc, vm, & 
                                   upwp_sfc, vpwp_sfc, Tsfc, & 
                                   wpthlp_sfc, SE, LE, wprtp_sfc, cf
+
+        use stats_variables, only: ish, ilh, iustar, l_stats_samp, sfc ! Variable(s)
  
-        use stats_variables, only: ish, ilh, iustar, lstats_samp, sfc ! Variable(s)
         use stats_type, only: stat_update_var_pt ! Procedure(s)
+
         use constants, only: Cp, Lv     ! Variable(s) 
- 
 
         use prognostic_variables, only:  & 
             sclrm_forcing,   & ! Passive scalar variables
@@ -1684,13 +1684,13 @@ module hoc
 
          case ( "rico" ) ! RICO case
            call rico_tndcy( exner, & 
-                            rhot, rcm, kk_rain, wmt, wmm, & 
+                            rhot, rcm, l_kk_rain, wmt, wmm, & 
                             thlm_forcing, rtm_forcing, radht, Ncm, & 
                             sclrm_forcing )
 
          case ( "gabls2" ) ! GABLS 2 case
            call gabls2_tndcy( time_current, time_initial,  & 
-                              rhot, rcm, kk_rain, wmt, wmm, & 
+                              rhot, rcm, l_kk_rain, wmt, wmm, & 
                               thlm_forcing, rtm_forcing, radht, Ncm, & 
                               sclrm_forcing )
 
@@ -1871,7 +1871,7 @@ module hoc
         ! Call Khairoutdinov and Kogan (2000) scheme, or COAMPS
         ! for rain microphysics.
         
-        if ( kk_rain .or. lcoamps_micro .or. licedfs ) then
+        if ( l_kk_rain .or. l_coamps_micro .or. l_licedfs ) then
           call advance_microphys & 
                ( runtype, dt, time_current, & 
                  thlm, p_in_Pa, exner, rhot, rhom, rtm, rcm, Ncm,  & 
@@ -1884,13 +1884,13 @@ module hoc
 
         end if
 
-        if ( cloud_sed ) then
+        if ( l_cloud_sed ) then
           call cloud_drop_sed( rcm, Ncm, rhom, rhot, exner, & 
                                rtm_forcing, thlm_forcing ) 
         end if
 
 
-        if ( lbugsrad ) then
+        if ( l_bugsrad ) then
 #ifdef radoffline /*This directive is needed for BUGSrad to work with HOC.*/
 
           ! Assign pointers to snow and ice
@@ -1998,12 +1998,10 @@ module hoc
           stop "Cannot call BUGSrad with these compile options."
 #endif /*radoffline*/
 
-        end if ! lbugsrad
-
-
+        end if ! l_bugsrad
  
    ! Store values of surface fluxes for statistics
-   if ( lstats_samp ) then
+   if ( l_stats_samp ) then
      call stat_update_var_pt( ish, 1, wpthlp_sfc*rhom(1)*Cp,& ! intent(in)
                               sfc )                           ! intent(inout)
 
@@ -2014,7 +2012,6 @@ module hoc
                               sfc )                ! intent(inout)
     end if
  
-
     return
 
   end subroutine hoc_forcings_timestep
