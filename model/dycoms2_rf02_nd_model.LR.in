@@ -1,4 +1,4 @@
-! $Id: dycoms2_rf02_nd_model.LR.in,v 1.14 2008-05-24 16:40:59 griffinb Exp $
+! $Id: dycoms2_rf02_nd_model.LR.in,v 1.15 2008-07-30 21:27:15 faschinj Exp $
 ! Parameter file for DYCOMS2 RF02 Sc case with no drizzle
 ! and no cloud water sedimentation (low-resolution).
 
@@ -58,14 +58,14 @@ psfc = 1017.8e2    ! Pressure at model base              [Pa]
 fcor = 7.6e-5      ! Coriolis parameter                  [s^-1]
 T0   = 300.        ! Reference temperature (usually 300) [K]
 
-cloud_sed     = .false.  ! Flag for cloud water sedimentation.
-kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
-lcoamps_micro = .false.  ! Flag for COAMPS microphysics.
-licedfs       = .false.  ! Flag for simplified ice scheme.
-lbugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
-lKhm_aniso    = .true.   ! Flag for anisotropic Khm.
+l_cloud_sed     = .false.  ! Flag for cloud water sedimentation.
+l_kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
+l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
+l_licedfs       = .false.  ! Flag for simplified ice scheme.
+l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
+l_Khm_aniso    = .true.   ! Flag for anisotropic Khm.
 
-lrestart      = .false.  ! Flag for whether this is a restart run.
+l_restart      = .false.  ! Flag for whether this is a restart run.
 ! Path (from ../standalone/) and filename of GrADS control files
 ! (without '_zt.ctl' or '_zm.ctl').
 restart_path_case  = "restart/dycoms2_rf02_nd_LR"
@@ -85,7 +85,7 @@ debug_level   = 2
 
 ! Statistics Settings
 
-lstats       = .true.                ! Flag for statistical output.
+l_stats       = .true.                ! Flag for statistical output.
 fname_prefix = "dycoms2_rf02_nd_LR"  ! Prefix of output filename.
 stats_tsamp  = 20.                   ! Frequency of statistical sampling [s]
                                      ! (must multiply evenly into stats_tout).

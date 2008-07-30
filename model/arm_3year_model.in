@@ -1,4 +1,4 @@
-! $Id: arm_3year_model.in,v 1.14 2008-06-10 15:12:30 griffinb Exp $
+! $Id: arm_3year_model.in,v 1.15 2008-07-30 21:27:14 faschinj Exp $
 ! Parameter file for GCSS ARM 3 year deep convective case
 
 &model_setting
@@ -73,15 +73,15 @@ T0   = 300.        ! Reference temperature (usually 300) [K]
 
 ts_nudge = 7200    ! Timescale of u/v nudging            [s]
 
-cloud_sed     = .false.  ! Flag for cloud water sedimentation.
-kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
-lcoamps_micro = .true.   ! Flag for COAMPS microphysics.
-licedfs       = .false.  ! Flag for simplified ice scheme.
-lbugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme. ! Use poor man's radiation instead
-lKhm_aniso    = .true.   ! Flag for anisotropic Khm.
-luv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
+l_cloud_sed     = .false.  ! Flag for cloud water sedimentation.
+l_kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
+l_coamps_micro = .true.   ! Flag for COAMPS microphysics.
+l_licedfs       = .false.  ! Flag for simplified ice scheme.
+l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme. ! Use poor man's radiation instead
+l_Khm_aniso    = .true.   ! Flag for anisotropic Khm.
+l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
 
-lrestart      = .false.  ! Flag for whether this is a restart run.
+l_restart      = .false.  ! Flag for whether this is a restart run.
 ! Path (from ../standalone/) and filename of GrADS control files
 ! (without '_zt.ctl' or '_zm.ctl').
 restart_path_case  = "restart/arm_3year"
@@ -101,7 +101,7 @@ debug_level   = 2
 
 ! Statistics Settings
 
-lstats       = .true.       ! Flag for statistical output.
+l_stats       = .true.       ! Flag for statistical output.
 fname_prefix = "arm_3year"  ! Prefix of output filename.
 stats_tsamp  = 60.          ! Frequency of statistical sampling [s]
                             ! (must multiply evenly into stats_tout).

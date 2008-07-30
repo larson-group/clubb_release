@@ -1,4 +1,4 @@
-! $Id: clex9_nov02_model.in,v 1.14 2008-07-16 23:57:43 ajsmith4 Exp $
+! $Id: clex9_nov02_model.in,v 1.15 2008-07-30 21:27:14 faschinj Exp $
 ! Parameter file for CLEX-9: November 02 altocumulus case
 
 &model_setting
@@ -57,14 +57,14 @@ psfc = 700.00e2    ! Pressure at model base              [Pa]
 fcor = 0.0e-5      ! Coriolis parameter                  [s^-1]
 T0   = 300.        ! Reference temperature (usually 300) [K]
 
-cloud_sed     = .false.  ! Flag for cloud water sedimentation.
-kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
-lcoamps_micro = .false.  ! Flag for COAMPS microphysics.
-licedfs       = .true.   ! Flag for simplified ice scheme.
-lbugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
-lKhm_aniso    = .true.   ! Flag for anisotropic Khm.
+l_cloud_sed     = .false.  ! Flag for cloud water sedimentation.
+l_kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
+l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
+l_licedfs       = .true.   ! Flag for simplified ice scheme.
+l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
+l_Khm_aniso    = .true.   ! Flag for anisotropic Khm.
 
-lrestart      = .false.  ! Flag for whether this is a restart run.
+l_restart      = .false.  ! Flag for whether this is a restart run.
 ! Path (from ../standalone/) and filename of GrADS control files
 ! (without '_zt.ctl' or '_zm.ctl').
 restart_path_case  = "restart/clex9_nov02"
@@ -85,7 +85,7 @@ debug_level = 2
 
 ! Statistics Settings
 
-lstats       = .true.         ! Flag for statistical output.
+l_stats       = .true.         ! Flag for statistical output.
 fname_prefix = "clex9_nov02"  ! Prefix of output filename.
 stats_tsamp  = 60.            ! Frequency of statistical sampling [s]
                               ! (must multiply evenly into stats_tout).

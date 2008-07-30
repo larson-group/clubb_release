@@ -61,14 +61,14 @@ psfc = 977.5e2     ! Pressure at model base              [Pa]
 fcor = 1.0349e-4   ! Coriolis parameter                  [s^-1]
 T0   = 300.        ! Reference temperature (usually 300) [K]
 
-cloud_sed     = .false.  ! Flag for cloud water sedimentation.
-kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
-lcoamps_micro = .false.  ! Flag for COAMPS microphysics.
-licedfs       = .false.  ! Flag for simplified ice scheme.
-lbugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
-lKhm_aniso    = .true.   ! Flag for anisotropic Khm.
+l_cloud_sed     = .false.  ! Flag for cloud water sedimentation.
+l_kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
+l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
+l_licedfs       = .false.  ! Flag for simplified ice scheme.
+l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
+l_Khm_aniso    = .true.   ! Flag for anisotropic Khm.
 
-lrestart      = .false.  ! Flag for whether this is a restart run.
+l_restart      = .false.  ! Flag for whether this is a restart run.
 ! Path (from ../standalone/) and filename of GrADS control files
 ! (without '_zt.ctl' or '_zm.ctl').
 restart_path_case  = "restart/cobra"
@@ -98,7 +98,7 @@ sclr_tol  = 1.e-5, 1.e-2 ! Tolerances below which we consider scalar to be 0.
 
 ! Statistics Settings
 
-lstats       = .true.   ! Flag for statistical output.
+l_stats       = .true.   ! Flag for statistical output.
 fname_prefix = "cobra"  ! Prefix of output filename.
 stats_tsamp  = 60.      ! Frequency of statistical sampling [s]
                         ! (must multiply evenly into stats_tout).

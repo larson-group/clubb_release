@@ -1,4 +1,4 @@
-! $Id: gabls2_model.in,v 1.14 2008-06-10 15:28:57 griffinb Exp $
+! $Id: gabls2_model.in,v 1.15 2008-07-30 21:27:15 faschinj Exp $
 ! Parameter file for GABLS2 case
 ! Edited by Michael Falk, 28 December 2006
 
@@ -67,14 +67,14 @@ LE = 0.              ! Fixed surface latent heat flux      [(kg/kg) m/s]
 fcor = 8.8983571e-5  ! Coriolis parameter                  [s^-1]
 T0   = 283.15        ! Reference temperature (usually 300) [K]
 
-cloud_sed     = .false.  ! Flag for cloud water sedimentation.
-kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
-lcoamps_micro = .false.  ! Flag for COAMPS microphysics.
-licedfs       = .false.  ! Flag for simplified ice scheme.
-lbugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
-lKhm_aniso    = .true.   ! Flag for anisotropic Khm.
+l_cloud_sed     = .false.  ! Flag for cloud water sedimentation.
+l_kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
+l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
+l_licedfs       = .false.  ! Flag for simplified ice scheme.
+l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
+l_Khm_aniso    = .true.   ! Flag for anisotropic Khm.
 
-lrestart      = .false.  ! Flag for whether this is a restart run.
+l_restart      = .false.  ! Flag for whether this is a restart run.
 ! Path (from ../standalone/) and filename of GrADS control files
 ! (without '_zt.ctl' or '_zm.ctl').
 restart_path_case  = "restart/gabls2"
@@ -94,7 +94,7 @@ debug_level   = 2
 
 ! Statistics Settings
 
-lstats       = .true.    ! Flag for statistical output.
+l_stats       = .true.    ! Flag for statistical output.
 fname_prefix = "gabls2"  ! Prefix of output filename.
 stats_tsamp  = 60.       ! Frequency of statistical sampling [s]
                          ! (must multiply evenly into stats_tout).

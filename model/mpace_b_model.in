@@ -1,4 +1,4 @@
-! $Id: mpace_b_model.in,v 1.12 2008-06-10 15:28:57 griffinb Exp $
+! $Id: mpace_b_model.in,v 1.13 2008-07-30 21:27:15 faschinj Exp $
 ! Parameter file for MPACE-B case
 
 &model_setting
@@ -69,15 +69,15 @@ T0   = 300.       ! Reference temperature (usually 300) [K]
 
 ts_nudge = 3600.  ! Timescale of u/v nudging            [s]
 
-cloud_sed     = .false.  ! Flag for cloud water sedimentation.
-kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
-lcoamps_micro = .false.  ! Flag for COAMPS microphysics.
-licedfs       = .true.   ! Flag for simplified ice scheme.
-lbugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
-lKhm_aniso    = .true.   ! Flag for anisotropic Khm.
-luv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
+l_cloud_sed     = .false.  ! Flag for cloud water sedimentation.
+l_kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
+l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
+l_licedfs       = .true.   ! Flag for simplified ice scheme.
+l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
+l_Khm_aniso    = .true.   ! Flag for anisotropic Khm.
+l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
 
-lrestart      = .false.  ! Flag for whether this is a restart run.
+l_restart      = .false.  ! Flag for whether this is a restart run.
 ! Path (from ../standalone/) and filename of GrADS control files
 ! (without '_zt.ctl' or '_zm.ctl').
 restart_path_case  = "restart/mpace_b"
@@ -97,7 +97,7 @@ debug_level   = 2
 
 ! Statistics Settings
 
-lstats       = .true.     ! Flag for statistical output.
+l_stats       = .true.     ! Flag for statistical output.
 fname_prefix = "mpace_b"  ! Prefix of output filename.
 stats_tsamp  = 60.        ! Frequency of statistical sampling [s]
                           ! (must multiply evenly into stats_tout).
