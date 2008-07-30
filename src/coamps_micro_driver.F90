@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: coamps_micro_driver.F90,v 1.6 2008-07-30 19:17:34 dschanen Exp $
+! $Id: coamps_micro_driver.F90,v 1.7 2008-07-30 21:03:42 faschinj Exp $
 module coamps_micro_driver_mod
 
 ! This module wraps the adjtq subroutine so that it may be used by
@@ -51,7 +51,7 @@ use grid_class, only: gr ! Variable(s)
  
 use stats_type, only: stat_update_var_pt ! Procedure(s)
 
-use stats_variables, only: zt, lstats_samp,  & ! Variable(s)
+use stats_variables, only: zt, l_stats_samp,  & ! Variable(s)
     imean_vol_rad_rain, & 
     imean_vol_rad_cloud & 
 ! Addition by Adam Smith, 24 April 2008
@@ -879,8 +879,7 @@ rsnowtend(1) = 0.0
 rttend(1)    = 0.0
 thlmtend(1)  = 0.0
 
- 
-if ( lstats_samp ) then
+if ( l_stats_samp ) then
   do k=2,kk+1
      call stat_update_var_pt( imean_vol_rad_rain, k, & 
           rvr(1,1,k-1) / 100.0, zt )
