@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: clex9_oct14.F90,v 1.6 2008-07-30 19:17:34 dschanen Exp $
+! $Id: clex9_oct14.F90,v 1.7 2008-07-30 21:12:47 faschinj Exp $
   module clex9_oct14
 
 !       Description:
@@ -46,7 +46,7 @@
 
   use parameters, only: sclr_dim
 
-  use model_flags, only: lbugsrad, lcoamps_micro, licedfs ! Variable(s)
+  use model_flags, only: l_bugsrad, l_coamps_micro, l_licedfs ! Variable(s)
 
   use stats_precision, only: time_precision ! Variable(s)
 
@@ -62,7 +62,7 @@
   use stats_type, only: stat_update_var ! Procedure(s)
 
   use stats_variables, only:  & 
-      iradht_LW, iradht_SW, zt, zm, lstats_samp,  & ! Variable(s)
+      iradht_LW, iradht_SW, zt, zm, l_stats_samp,  & ! Variable(s)
       iFrad_SW, iFrad_LW
  
 
@@ -522,7 +522,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   ! We only implement this section if we choose not to use the
   ! BUGSRAD radiation scheme
   !---------------------------------------------------------------
-  if ( .not. lbugsrad ) then
+  if ( .not. l_bugsrad ) then
 
   !---------------------------------------------------------------
   ! This code transforms these profiles from CLUBB grid to COAMPS
@@ -579,18 +579,18 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
     radht_LW(1) = radht_LW(2)
     radht_SW(1) = radht_SW(2)
 
-  end if ! ~ lbugsrad
+  end if ! ~ l_bugsrad
 
   if ( time == time_initial ) then
 
-    if ( lcoamps_micro ) then
+    if ( l_coamps_micro ) then
       ! Turn off microphysics for now, re-enable at
       ! time = 3600.
-      lcoamps_micro        = .false.
+      l_coamps_micro        = .false.
       tdelay_lcoamps_micro = .true.
 
-    else if ( licedfs ) then
-      licedfs        = .false.
+    else if ( l_licedfs ) then
+      l_licedfs        = .false.
       tdelay_licedfs = .true.
 
     else
@@ -606,7 +606,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   ! Compute the loss of total water due to diffusional
   ! growth of ice.  This is defined on thermodynamic levels.
   !---------------------------------------------------------------
-    licedfs = .true.
+    l_licedfs = .true.
     
 
   else if ( time == ( time_initial + 3600.0 )  & 
@@ -616,7 +616,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   ! Start COAMPS micro after predefined time delay
   !---------------------------------------------------------------
 
-    lcoamps_micro = .true.
+    l_coamps_micro = .true.
 
     Ncnm(1:gr%nnzp) = 0.0
 
@@ -681,7 +681,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
 
   do k = 1, gr%nnzp, 1
 
-    if ( .not. lbugsrad ) then
+    if ( .not. l_bugsrad ) then
       thlm_forcing(k) = radht(k)
     else
       thlm_forcing(k) = 0.
@@ -697,7 +697,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
  
   ! Save LW and SW components of radiative heating and
   ! radiative flux based on simplified radiation.
-  if ( .not.lbugsrad .and. lstats_samp ) then
+  if ( .not.l_bugsrad .and. l_stats_samp ) then
     call stat_update_var( iradht_LW, radht_LW, zt )
 
     call stat_update_var( iradht_SW, radht_SW, zt )
