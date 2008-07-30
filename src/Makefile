@@ -1,7 +1,7 @@
 ################################################################################
-# $Id: Makefile,v 1.150 2008-07-28 19:13:16 dschanen Exp $
+# $Id: Makefile,v 1.151 2008-07-30 16:27:04 dschanen Exp $
 #
-# This version should work with GNU make and Sun's dmake.
+# This version should work with GNU make only.
 #
 # For HOC we edit this by hand rather than implementing imake or automake.
 #
@@ -22,7 +22,6 @@ include config/linux_ia32_g95_optimize.in
 #include config/solaris_generic_ss12_debug.in
 #include config/solaris_generic_ss12_optimize.in
 #include config/osf1_alpha_digital.in
-
 
 # == Object files ==
 
@@ -97,7 +96,7 @@ HOC_STANDALONE	= $(MODEL) $(INTERFACING) hoc_standalone.o
 COMPARE_RUNS	= $(INTERFACING) compare_runs.o
 JACOBIAN	= $(MODEL) $(INTERFACING) jacobian.o
 HOC_INPUTFIELDS	= $(MODEL) $(INTERFACING) hoc_inputfields.o
-HOC_BUDGET_TERMS= $(MODEL) $(INTERFACING) $(NUM_REC) error.o budget_terms.o hoc_tuner_budget_terms.o
+#HOC_BUDGET_TERMS= $(MODEL) $(INTERFACING) $(NUM_REC) error.o budget_terms.o hoc_tuner_budget_terms.o
 
 # List of files to check for compiler warnings
 WARNABLE = $(filter std_atmosphere_mod.o calendar.o cos_solar_zen.o bugsrad_hoc.o, $(BUGS_RAD) ) \
@@ -176,9 +175,9 @@ hoc_inputfields: $(HOCLIBS) $(HOC_INPUTFIELDS)
 	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/hoc_inputfields \
 	$(HOC_INPUTFIELDS) $(LDFLAGS)
 
-hoc_tuner_budget_terms:	$(HOCLIBS) $(HOC_BUDGET_TERMS)
-	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/hoc_tuner_budget_terms \
-	$(OBJDIR)/$(HOC_BUDGET_TERMS) $(LDFLAGS) 
+#hoc_tuner_budget_terms:	$(HOCLIBS) $(HOC_BUDGET_TERMS)
+#	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/hoc_tuner_budget_terms \
+#	$(OBJDIR)/$(HOC_BUDGET_TERMS) $(LDFLAGS) 
 
 jacobian: $(HOCLIBS) $(JACOBIAN)
 	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/jacobian \

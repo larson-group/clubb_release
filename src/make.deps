@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.63 2008-07-28 17:43:35 dschanen Exp $
+# $Id: make.deps,v 1.64 2008-07-30 16:27:04 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -131,8 +131,8 @@ arm_0003.o  : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o \
 arm_3year.o : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o arm_3year.F90
 astex.o     : constants.o parameters.o model_flags.o grid.o astex.F90
 atex.o      : constants.o model_flags.o grid.o cloud_rad.o stats_variables.o error_code.o atex.F90
-bomex.o     : constants.o model_flags.o grid.o parameters.o bomex.F90
-cobra.o     : constants.o model_flags.o grid.o cobra.F90
+bomex.o     : constants.o parameters.o model_flags.o grid.o parameters.o bomex.F90
+cobra.o     : constants.o parameters.o model_flags.o grid.o cobra.F90
 fire.o      : constants.o model_flags.o grid.o stats_variables.o cloud_rad.o fire.F90
 gabls2.o    : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o gabls2.F90
 lba.o       : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o \
@@ -206,14 +206,10 @@ inputfields.o	: grid.o inputgrads.o prog_variables.o diag_variables.o \
 	inputfields.F90 
 gradsaverage.o	: grid.o inputgrads.o gradsaverage.F90 
 error.o		: gradsaverage.o hoc.o parameters.o error_code.o error.F90
-budget_terms.o  : amoeba.o inputfields.o gradsaverage.o hoc.o \
-	error.o error_code.o budget_terms.F90
 cloud_sed_mod.o : cloud_sed_mod.F90 stats_variables.o grid.o constants.o
 
 # == Executables ==
 hoc_tuner.o		: $(NUM_REC) hoc.o error.o hoc_tuner.F90
-hoc_tuner_budget_terms.o: $(NUM_REC) hoc.o error.o \
-	budget_terms.o hoc_tuner_budget_terms.F90
 hoc_standalone.o	: hoc.o hoc_standalone.F90
 hoc_inputfields.o	: hoc.o inputfields.o hoc_inputfields.F90
 int2txt.o		: int2txt.F90 recl.F90
