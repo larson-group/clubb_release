@@ -1,4 +1,4 @@
-!$Id: lh_sampler.F90,v 1.3 2008-07-28 19:20:06 faschinj Exp $
+!$Id: lh_sampler.F90,v 1.4 2008-07-30 14:26:14 faschinj Exp $
 module lh_sampler_mod
 
 implicit none
@@ -74,8 +74,10 @@ logical, intent(out) :: sample_flag
 
 real :: a
 real :: w1, w2, sw1, sw2
-real :: thl1, thl2, sthl1, sthl2
-real :: rt1, rt2, srt1, srt2
+!real :: thl1, thl2 
+real :: sthl1, sthl2
+!real :: rt1, rt2
+real :: srt1, srt2
 !        sub-plume correlation coefficient between rt, thl
 !        varies between -1 < rrtthl < 1
 real :: rrtthl
@@ -122,12 +124,12 @@ double precision :: rr1, rr2, srr1, srr2
   w2     = pdf_parms(2)
   sw1    = pdf_parms(3)
   sw2    = pdf_parms(4)
-  rt1    = pdf_parms(5)
-  rt2    = pdf_parms(6)
+!  rt1    = pdf_parms(5)
+!  rt2    = pdf_parms(6)
   srt1   = pdf_parms(7)
   srt2   = pdf_parms(8)
-  thl1   = pdf_parms(9)
-  thl2   = pdf_parms(10)
+!  thl1   = pdf_parms(9)
+!  thl2   = pdf_parms(10)
   sthl1  = pdf_parms(11)
   sthl2  = pdf_parms(12)
   a      = pdf_parms(13) 
@@ -298,8 +300,8 @@ else
 
 ! Use units of [g/kg] to ameliorate numerical roundoff
   call sample_points( n, nt, d, p_matrix, dble(a), & 
-                      dble(1.e3*rt1), dble(thl1),  & 
-                      dble(1.e3*rt2), dble(thl2), & 
+  !                    dble(1.e3*rt1), dble(thl1),  & 
+  !                    dble(1.e3*rt2), dble(thl2), & 
                       dble(crt1), dble(1.e3*cthl1),  & 
                       dble(crt2), dble(1.e3*cthl2), & 
                       dble(mu1), dble(mu2),  & 
@@ -350,7 +352,7 @@ end subroutine lh_sampler
 !----------------------------------------------------------------------
 
 subroutine sample_points( n, nt, d, p_matrix, a, & 
-                          rt1, thl1, rt2, thl2, & 
+                          !rt1, thl1, rt2, thl2, & 
                           crt1, cthl1, crt2, cthl2, & 
                           mu1, mu2,  & 
                           Sigma_rtthlw_1, Sigma_rtthlw_2, & 
@@ -372,7 +374,7 @@ integer, intent(in) :: n, nt, d, p_matrix(1:n,1:(d+1))
 double precision, intent(in) :: a
 
 ! Thermodynamic constants for plumes 1 and 2, units of g/kg
-double precision, intent(in) :: rt1, thl1, rt2, thl2
+!double precision, intent(in) :: rt1, thl1, rt2, thl2
 double precision, intent(in) :: crt1, cthl1, crt2, cthl2
 
 ! Latin hypercube variables, i.e. s, t, w, etc.
@@ -716,10 +718,12 @@ do sample = 1, n
 ! Follow M. E. Johnson (1987), p. 56.
   fraction_1 = ( a*C1 ) / ( a*C1 + (1-a)*C2 )
   if ( X_u(sample, d+1) < fraction_1 ) then
-    call gaus_condt( n, d, std_normal, mu1, Sigma1, s_pts(sample), & 
+    call gaus_condt( n, & !d, 
+                     std_normal, mu1, Sigma1, s_pts(sample), & 
                      X_gm(sample, 1:d) )    
   else
-    call gaus_condt( n, d, std_normal, mu2, Sigma2, s_pts(sample), & 
+    call gaus_condt( n, & !d, 
+                     std_normal, mu2, Sigma2, s_pts(sample), & 
                      X_gm(sample, 1:d) )   
   endif
 
@@ -986,7 +990,8 @@ endif
 !                         from d-variate normal distribution 
 !                         with mean mu and covariance structure Sigma
 !----------------------------------------------------------------------
-subroutine gaus_condt( n, d, std_normal, mu, Sigma, s_pt, & 
+subroutine gaus_condt( & !n, 
+                       d, std_normal, mu, Sigma, s_pt, & 
                        nonstd_normal )
 
 use matrix_operations, only: gaussj, matmult ! Procedure(s)
@@ -995,7 +1000,8 @@ implicit none
 
 ! Input
   
-  integer, intent(in) :: n, d
+!  integer, intent(in) :: n
+  integer, intent(in) :: d
 
   double precision, intent(in) :: std_normal(1:d)
   double precision, intent(in) :: mu(1:d,1)

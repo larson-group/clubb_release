@@ -1,4 +1,4 @@
-!$Id: micro_calcs.F90,v 1.2 2008-07-28 19:20:06 faschinj Exp $
+!$Id: micro_calcs.F90,v 1.3 2008-07-30 14:26:14 faschinj Exp $
 
 module micro_calcs_mod
 
@@ -176,13 +176,15 @@ else
 ! Call microphysics, i.e. Kessler autoconversion.
 ! A_K = (1e-3/s)*(ql-0.5g/kg)*H(ql-0.5g/kg) 
   call autoconv_driver(n,d,dble(a),dble(R1),dble(R2),X_nl(1:n,1), & 
-         X_nl(1:n,3),X_nl(1:n,4),X_nl(1:n,5),X_u,AKm_est_dp)
+         !X_nl(1:n,3),X_nl(1:n,4),X_nl(1:n,5),
+         X_u,AKm_est_dp)
 ! Convert to real number
   AKm_est_k = real(AKm_est_dp)
 
 ! Compute Monte Carlo estimate of liquid for test purposes.
   call ql_estimate(n,d,dble(a),dble(R1),dble(R2),X_nl(1:n,1), & 
-         X_nl(1:n,3),X_nl(1:n,4),X_nl(1:n,5),X_u,rcm_est_dp)
+         !X_nl(1:n,3),X_nl(1:n,4),X_nl(1:n,5),
+         X_u,rcm_est_dp)
 ! Convert to real number
   rcm_est_k = real(rcm_est_dp)
 
@@ -300,8 +302,9 @@ end subroutine micro_calcs
 !                      divide by total cloud fraction to obtain 
 !                      within-cloud autoconversion
 !-----------------------------------------------------------------------
-subroutine autoconv_driver( n, d, a, R1, R2, ql, w,  & 
-                            Nc, rr, X_u, ac_m )
+subroutine autoconv_driver( n, d, a, R1, R2, ql, & !w,  & 
+!                            Nc, rr, 
+                            X_u, ac_m )
 
 implicit none
 
@@ -310,8 +313,9 @@ implicit none
   integer, intent(in) :: n, d
 
   double precision, intent(in) :: a, R1, R2
-  double precision, intent(in) :: ql(1:n), w(1:n)
-  double precision, intent(in) :: Nc(1:n), rr(1:n)
+  double precision, intent(in) :: ql(1:n)
+!  double precision, intent(in) :: w(1:n)
+!  double precision, intent(in) :: Nc(1:n), rr(1:n)
   double precision, intent(in) :: X_u(1:n,1:(d+1))
 
 ! Output
@@ -474,8 +478,9 @@ end subroutine autoconv_driver
 !                      divide by total cloud fraction to obtain 
 !                      within-cloud liquid water
 !----------------------------------------------------------------------
-subroutine ql_estimate( n, d, a, C1, C2, ql, w,   & 
-                         N_pts, rr, X_u, ql_m )
+subroutine ql_estimate( n, d, a, C1, C2, ql, & ! w,   & 
+                         !N_pts, rr, 
+                         X_u, ql_m )
 
 implicit none
 
@@ -484,8 +489,9 @@ implicit none
 integer, intent(in) :: n, d
 
 double precision, intent(in) :: a, C1, C2
-double precision, intent(in) :: ql(1:n), w(1:n)
-double precision, intent(in) :: N_pts(1:n), rr(1:n)
+double precision, intent(in) :: ql(1:n) 
+!double precision, intent(in) :: w(1:n)
+!double precision, intent(in) :: N_pts(1:n), rr(1:n)
 double precision, intent(in) :: X_u(1:n,1:(d+1))
 
 ! Output
