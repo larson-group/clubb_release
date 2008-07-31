@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: model_flags.F90,v 1.7 2008-07-31 14:15:00 faschinj Exp $
+! $Id: model_flags.F90,v 1.8 2008-07-31 14:38:04 faschinj Exp $
 
 module model_flags
 
@@ -22,7 +22,7 @@ module model_flags
     l_hole_fill = .true.     ! Hole filling pos. def. scheme on wp2,up2,rtp2,etc
 
   logical, parameter, public ::  & 
-    lsingle_C2_Skw = .false.,  & ! Use a single Skw dependent value for C2
+    l_single_C2_Skw = .false.,  & ! Use a single Skw dependent value for C2
     lgamma_Skw     = .true.,   & ! Use a Skw dependent gamma parameter
     lbyteswap_io   = .false.     ! Swap byte order in GrADS output
 

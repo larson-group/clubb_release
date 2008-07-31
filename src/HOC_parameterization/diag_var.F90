@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F90,v 1.10 2008-07-31 14:15:00 faschinj Exp $
+! $Id: diag_var.F90,v 1.11 2008-07-31 14:38:03 faschinj Exp $
 !===============================================================================
 module diagnose_variances
 
@@ -60,7 +60,7 @@ module diagnose_variances
 
         use model_flags, only: & 
             l_hole_fill, &    ! logical constants
-            lsingle_C2_Skw
+            l_single_C2_Skw
         
         use parameters,  & 
           only: C2rt, C2thl, C2rtthl, c_K2, nu2, c_K9, nu9,  & ! Variable(s)
@@ -205,7 +205,7 @@ module diagnose_variances
         integer :: k, km1, kp1
 
 !-----------------------------------------------------------------------
-        if ( lsingle_C2_Skw ) then
+        if ( l_single_C2_Skw ) then
           ! Use a single value of C2 for all equations.
           C2rt_1d(1:gr%nnzp)  & 
           = C2b + (C2-C2b) *exp( -0.5 * (Skwm(1:gr%nnzp)/C2c)**2 )
