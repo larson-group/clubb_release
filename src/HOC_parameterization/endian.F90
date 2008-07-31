@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: endian.F90,v 1.2 2008-07-28 17:45:57 dschanen Exp $
+! $Id: endian.F90,v 1.3 2008-07-31 14:52:40 faschinj Exp $
 
 !----------------------------------------------------------------------
 module endian
@@ -211,14 +211,14 @@ logical function internal_endian( i )
 !       for the purpose of determining the byte ordering of the host.
 !       This function is only called indirectly
 !----------------------------------------------------------------------
-  use model_flags, only: lbyteswap_io
+  use model_flags, only: l_byteswap_io
 
   implicit none
 
   character(len=4),intent(in) :: i
 
   ! Try to determine big vs little endian status. Override internal
-  ! determination if lbyteswap_io is true.
+  ! determination if l_byteswap_io is true.
   ! (for example for compilers that perform byte swapping during I/O).
 
   if ( trim(i) == '0123' ) then
@@ -229,7 +229,7 @@ logical function internal_endian( i )
     stop "endian() failed"
   end if
 
-  if ( lbyteswap_io ) internal_endian = .not. internal_endian
+  if ( l_byteswap_io ) internal_endian = .not. internal_endian
  
   return
 end function internal_endian
