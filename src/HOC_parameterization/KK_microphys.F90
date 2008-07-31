@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F90,v 1.7 2008-07-31 13:20:08 faschinj Exp $
+! $Id: KK_microphys.F90,v 1.8 2008-07-31 13:40:44 faschinj Exp $
 
 module rain_equations
 
@@ -644,7 +644,7 @@ CONTAINS
       pi
   
   USE model_flags, only: & 
-      local_kk ! Variable(s)
+      l_local_kk ! Variable(s)
 
   implicit none
 
@@ -673,7 +673,7 @@ CONTAINS
 
 !-------------------------------------------------------------------------------
 
-  IF ( local_kk ) THEN
+  IF ( l_local_kk ) THEN
 
      ! Tolerance values are used instead of 0 in order to prevent
      ! numerical error.
@@ -690,7 +690,7 @@ CONTAINS
 
      ENDIF
 
-  ELSEIF ( .NOT. local_kk ) THEN
+  ELSEIF ( .NOT. l_local_kk ) THEN
 
      ! Tolerance values are used instead of 0 in order to prevent
      ! numerical error.
@@ -815,7 +815,7 @@ CONTAINS
       Rv
   
   USE model_flags, only: & 
-      local_kk ! Variable(s)
+      l_local_kk ! Variable(s)
 
   USE saturation, only:  & 
       sat_mixrat_liq ! Variable(s)
@@ -875,7 +875,7 @@ CONTAINS
 
 !-------------------------------------------------------------------------------
 
-  IF ( local_kk ) THEN
+  IF ( l_local_kk ) THEN
 
      ! Tolerance values are used instead of 0 in order to prevent
      ! numerical error.
@@ -905,7 +905,7 @@ CONTAINS
 
      ENDIF
 
-  ELSEIF ( .NOT. local_kk ) THEN
+  ELSEIF ( .NOT. l_local_kk ) THEN
 
      ! Tolerance values are used instead of 0 in order to prevent
      ! numerical error.
@@ -1093,7 +1093,7 @@ CONTAINS
       Nc_tol,  & ! Variable(s)
       rc_tol
   USE model_flags, only: & 
-      local_kk ! Variable(s)
+      l_local_kk ! Variable(s)
 
   implicit none
 
@@ -1133,7 +1133,7 @@ CONTAINS
 
 !-------------------------------------------------------------------------------
 
-  IF ( local_kk ) THEN
+  IF ( l_local_kk ) THEN
 
      ! Tolerance values are used instead of 0 in order to prevent
      ! numerical error.
@@ -1149,7 +1149,7 @@ CONTAINS
 
      ENDIF
 
-  ELSEIF ( .NOT. local_kk ) THEN
+  ELSEIF ( .NOT. l_local_kk ) THEN
 
      ! Tolerance values are used instead of 0 in order to prevent
      ! numerical error.
@@ -1270,7 +1270,7 @@ CONTAINS
       rc_tol
 
   USE model_flags, only: & 
-      local_kk ! Variable(s)
+      l_local_kk ! Variable(s)
 
   implicit none
 
@@ -1308,7 +1308,7 @@ CONTAINS
 
 !-------------------------------------------------------------------------------
 
-  IF ( local_kk ) THEN
+  IF ( l_local_kk ) THEN
 
      ! Tolerance values are used instead of 0 in order to prevent
      ! numerical error.
@@ -1323,7 +1323,7 @@ CONTAINS
 
      ENDIF
 
-  ELSEIF ( .NOT. local_kk ) THEN
+  ELSEIF ( .NOT. l_local_kk ) THEN
 
      ! Tolerance values are used instead of 0 in order to prevent
      ! numerical error.
