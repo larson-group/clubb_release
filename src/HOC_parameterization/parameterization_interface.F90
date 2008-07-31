@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.11 2008-07-31 13:20:08 faschinj Exp $
+! $Id: parameterization_interface.F90,v 1.12 2008-07-31 14:49:31 faschinj Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
@@ -76,7 +76,7 @@ module hoc_parameterization_interface
            l_LH_on,  & ! Variable(s)
            l_Khm_aniso, & 
            l_uv_nudge, &
-           lgamma_Skw
+           l_gamma_Skw
 
        use grid_class, only: & 
            gr,  & ! Variable(s)
@@ -525,7 +525,7 @@ module hoc_parameterization_interface
        ! Joshua Fasching March 2008
        if ( lapack_error( err_code ) ) return
 
-       if ( lgamma_Skw ) then
+       if ( l_gamma_Skw ) then
        !----------------------------------------------------------------
        ! Compute gamma as a function of Skw  - 14 April 06 dschanen
        !----------------------------------------------------------------

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.17 2008-07-31 14:38:03 faschinj Exp $
+! $Id: hoc.F90,v 1.18 2008-07-31 14:49:31 faschinj Exp $
 
 module hoc
 
@@ -163,7 +163,7 @@ module hoc
     use microphys_driver, only: init_microphys ! Subroutine
 
     use model_flags, only: l_LH_on, l_local_kk, & ! Constants
-      l_pos_def, l_hole_fill, l_single_C2_Skw, lgamma_Skw, lbyteswap_io
+      l_pos_def, l_hole_fill, l_single_C2_Skw, l_gamma_Skw, lbyteswap_io
 
     use stats_variables, only: l_stats_last ! Variable(s
 
@@ -460,7 +460,7 @@ module hoc
       print *, "l_pos_def = ", l_pos_def   
       print *, "l_hole_fill = ", l_hole_fill
       print *, "l_single_C2_Skw = ", l_single_C2_Skw
-      print *, "lgamma_Skw = ", lgamma_Skw
+      print *, "l_gamma_Skw = ", l_gamma_Skw
       print *, "lbyteswap_io = ", lbyteswap_io
 
       print *, "--------------------------------------------------"

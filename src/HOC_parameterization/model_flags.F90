@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: model_flags.F90,v 1.8 2008-07-31 14:38:04 faschinj Exp $
+! $Id: model_flags.F90,v 1.9 2008-07-31 14:49:31 faschinj Exp $
 
 module model_flags
 
@@ -23,7 +23,7 @@ module model_flags
 
   logical, parameter, public ::  & 
     l_single_C2_Skw = .false.,  & ! Use a single Skw dependent value for C2
-    lgamma_Skw     = .true.,   & ! Use a Skw dependent gamma parameter
+    l_gamma_Skw     = .true.,   & ! Use a Skw dependent gamma parameter
     lbyteswap_io   = .false.     ! Swap byte order in GrADS output
 
   logical, public ::  & 
