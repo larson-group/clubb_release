@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.15 2008-07-31 19:34:17 faschinj Exp $
+! $Id: parameterization_interface.F90,v 1.16 2008-07-31 20:13:46 faschinj Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
@@ -88,8 +88,8 @@ module hoc_parameterization_interface
            parameterization_check ! Procedure(s)
 
        use diagnostic_variables, only: & 
-           Skwt,  & ! Varible(s)
-           Skwm, & 
+           Skw_zt,  & ! Varible(s)
+           Skw_zm, & 
            Sct, & 
            wp4, & 
            wpthvp, & 
@@ -343,8 +343,8 @@ module hoc_parameterization_interface
 
        do k = 1, gr%nnzp, 1
 
-         Skwt(k) = Skw_func( zm2zt(wp2,k), wp3(k), wtol )
-         Skwm(k) = Skw_func( wp2(k), zt2zm(wp3,k), wtol )
+         Skw_zt(k) = Skw_func( zm2zt(wp2,k), wp3(k), wtol )
+         Skw_zm(k) = Skw_func( wp2(k), zt2zm(wp3,k), wtol )
 
        enddo
 
@@ -423,7 +423,7 @@ module hoc_parameterization_interface
        ! We found that if we call diag_var first, we can use a longer timestep.
        call diag_var( tau_zm, wm_zm, rtm, wprtp,                     & ! intent(in)
                       thlm, wpthlp, wpthvp, um, vm,              & ! intent(in)
-                      wp2, wp3, upwp, vpwp, Scm, Skwm, Kht,      & ! intent(in)
+                      wp2, wp3, upwp, vpwp, Scm, Skw_zm, Kht,      & ! intent(in)
 ! Vince Larson used prognostic timestepping of variances 
 !    in order to increase numerical stability.  17 Jul 2007
 !     .                .false., dt, isValid
@@ -531,7 +531,7 @@ module hoc_parameterization_interface
        !----------------------------------------------------------------
 
           gamma_Skw_fnc = gamma_coefb + (gamma_coef-gamma_coefb) & 
-            *exp( -(1.0/2.0) * (Skwm/gamma_coefc)**2 )
+            *exp( -(1.0/2.0) * (Skw_zm/gamma_coefc)**2 )
 
        else
           gamma_Skw_fnc = gamma_coef
@@ -725,7 +725,7 @@ module hoc_parameterization_interface
        ! Advance rtm/wprtp and thlm/wpthlp one time step
        !----------------------------------------------------------------
         call timestep_mixing( dt, Scm, wm_zm, wm_zt, wp2, wp3,       & ! intent(in)
-                              Kht, tau_zm, Skwm, rtpthvp,          & ! intent(in)
+                              Kht, tau_zm, Skw_zm, rtpthvp,          & ! intent(in)
                               rtm_forcing, thlpthvp,             & ! intent(in)
                               thlm_forcing, rtp2, thlp2,         & ! intent(in)
                               implemented,                       & ! intent(in)
@@ -762,7 +762,7 @@ module hoc_parameterization_interface
 
        call timestep_wp23( dt, Scm, wm_zm, wm_zt, wpthvp, wp2thvp,        & ! intent(in)
                            um, vm, upwp, vpwp, up2, vp2, Khm, Kht,    & ! intent(in)
-                           tau_zm, tau_zt, Skwm, Skwt, pdf_parms(:, 13),  & ! intent(in)
+                           tau_zm, tau_zt, Skw_zm, Skw_zt, pdf_parms(:, 13),  & ! intent(in)
                            wp2, wp3, err_code )                         ! intent(inout)
 
        !----------------------------------------------------------------

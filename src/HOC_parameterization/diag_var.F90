@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F90,v 1.13 2008-07-31 19:34:17 faschinj Exp $
+! $Id: diag_var.F90,v 1.14 2008-07-31 20:13:46 faschinj Exp $
 !===============================================================================
 module diagnose_variances
 
@@ -30,7 +30,7 @@ module diagnose_variances
 !===============================================================================
         subroutine diag_var( tau_zm, wm_zm, rtm, wprtp,  & 
                              thlm, wpthlp, wpthvp, um, vm, & 
-                             wp2, wp3, upwp, vpwp, Scm, Skwm, Kht, & 
+                             wp2, wp3, upwp, vpwp, Scm, Skw_zm, Kht, & 
                              liter, dt, & 
                              sclrm, wpsclrp, & 
                              rtp2, thlp2, rtpthlp, & 
@@ -115,7 +115,7 @@ module diagnose_variances
         upwp,   & ! u'w'                           [m^2/s^2]
         vpwp,   & ! u'w'                           [m^2/s^2]
         Scm,    & ! Sc on moment. grid             [-]
-        Skwm,   & ! Skw on moment. grid            [-]
+        Skw_zm,   & ! Skw on moment. grid            [-]
         Kht       ! Eddy diffusivity on t-lev.     [m^2/s]
 
         logical, intent(in) :: liter ! Whether variances are prognostic
@@ -208,7 +208,7 @@ module diagnose_variances
         if ( l_single_C2_Skw ) then
           ! Use a single value of C2 for all equations.
           C2rt_1d(1:gr%nnzp)  & 
-          = C2b + (C2-C2b) *exp( -0.5 * (Skwm(1:gr%nnzp)/C2c)**2 )
+          = C2b + (C2-C2b) *exp( -0.5 * (Skw_zm(1:gr%nnzp)/C2c)**2 )
 
           C2thl_1d   = C2rt_1d
           C2rtthl_1d = C2rt_1d
@@ -671,7 +671,7 @@ module diagnose_variances
            write(fstderr,*) "upwp = ", upwp
            write(fstderr,*) "vpwp = ", vpwp
            write(fstderr,*) "Scm = ", Scm
-           write(fstderr,*) "Skwm = ", Skwm
+           write(fstderr,*) "Skw_zm = ", Skw_zm
            write(fstderr,*) "Kht = ", Kht
 
            do i = 1, sclr_dim 

@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.12 2008-07-31 19:34:18 faschinj Exp $
+! $Id: wp23.F90,v 1.13 2008-07-31 20:13:46 faschinj Exp $
 !===============================================================================
 module wp23
 
@@ -32,7 +32,7 @@ contains
 !===============================================================================
 subroutine timestep_wp23( dt, Scm, wm_zm, wm_zt, wpthvp, wp2thvp,  & 
                           um, vm, upwp, vpwp, up2, vp2, Khm, Kht, & 
-                          tau_zm, tau_zt, Skwm, Skwt, a, & 
+                          tau_zm, tau_zt, Skw_zm, Skw_zt, a, & 
                           wp2, wp3, err_code )
 
 !       Description:
@@ -99,8 +99,8 @@ real, intent(in), dimension(gr%nnzp) ::  &
   Kht,         & ! Eddy diffusivity on thermodynamic levels [m^2/s]
   tau_zm,        & ! Time-scale tau on momentum levels        [s]
   tau_zt,        & ! Time-scale tau on thermodynamic levels   [s]
-  Skwm,        & ! Skewness of w on momentum levels         [-]
-  Skwt,        & ! Skewness of w on thermodynamic levels    [-]
+  Skw_zm,        & ! Skewness of w on momentum levels         [-]
+  Skw_zt,        & ! Skewness of w on thermodynamic levels    [-]
   a              ! PDF parameter "a": pdf_parms(:,13)       [-]
 
 ! Input/Output
@@ -172,10 +172,10 @@ tauw3t = tau_zt
 ! Calculate C_1 and C_11 as functions of skewness of w.
 
 C11_Skw_fnc(1:gr%nnzp) =  & 
-C11b + (C11-C11b)*EXP( -(1.0/2.0) * (Skwt(1:gr%nnzp)/C11c)**2 )
+C11b + (C11-C11b)*EXP( -(1.0/2.0) * (Skw_zt(1:gr%nnzp)/C11c)**2 )
 
 C1_Skw_fnc(1:gr%nnzp) =  & 
-C1b + (C1-C1b)*EXP( -(1.0/2.0) * (Skwm(1:gr%nnzp)/C1c)**2 )
+C1b + (C1-C1b)*EXP( -(1.0/2.0) * (Skw_zm(1:gr%nnzp)/C1c)**2 )
 
 !        C11_Skw_fnc = C11
 !        C1_Skw_fnc = C1
@@ -240,7 +240,7 @@ enddo
 !       Solve semi-implicitly
 call wp23_solve( dt, Scm, wm_zm, wm_zt, wpthvp, wp2thvp, & 
                  um, vm, upwp, vpwp, up2, vp2, Kw1, & 
-                 Kw8, Skwt, tau_zm, tauw3t, C1_Skw_fnc, & 
+                 Kw8, Skw_zt, tau_zm, tauw3t, C1_Skw_fnc, & 
                  C11_Skw_fnc, wp3_zm, wp2, wp3, err_code )
 
 !       Error output
@@ -268,8 +268,8 @@ if ( lapack_error( err_code ) .and.  &
    write(fstderr,*) "Kht = ", Kht
    write(fstderr,*) "tau_zm = ", tau_zm
    write(fstderr,*) "tau_zt = ", tau_zt
-   write(fstderr,*) "Skwm = ", Skwm
-   write(fstderr,*) "Skwt = ", Skwt
+   write(fstderr,*) "Skw_zm = ", Skw_zm
+   write(fstderr,*) "Skw_zt = ", Skw_zt
    write(fstderr,*) "a = ", a
    
    write(fstderr,*) "Intent(in/out)"
@@ -286,7 +286,7 @@ end subroutine timestep_wp23
 !===============================================================================
 subroutine wp23_solve( dt, Scm, wm_zm, wm_zt, wpthvp, wp2thvp, & 
                        um, vm, upwp, vpwp, up2, vp2, Kw1, & 
-                       Kw8, Skwt, tau1m, tauw3t, C1_Skw_fnc, & 
+                       Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, & 
                        C11_Skw_fnc, wp3_zm, wp2, wp3, err_code )
 
 !       Description:
@@ -412,7 +412,7 @@ real, intent(in), dimension(gr%nnzp) ::  &
   vp2,          & ! v'^2 (momentum levels)                    [m^2/s^2]
   Kw1,          & ! Coefficient of eddy diffusivity for w'^2  [m^2/s]
   Kw8,          & ! Coefficient of eddy diffusivity for w'^3  [m^2/s]
-  Skwt,         & ! Skewness of w on thermodynamic levels     [-]
+  Skw_zt,         & ! Skewness of w on thermodynamic levels     [-]
   tau1m,        & ! Time-scale tau on momentum levels         [s]
   tauw3t,       & ! Time-scale tau on thermodynamic levels    [s]
   C1_Skw_fnc,   & ! C_1 parameter with Sk_w applied           [-]
@@ -494,7 +494,7 @@ a3_zt  = zm2zt( a3 )
 ! Compute the implicit portion of the w'^2 and w'^3 equations.
 ! Build the left-hand side matrix.
 call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1_zt,  & 
-               a3_zt, Kw1, Kw8, Skwt, tau1m, tauw3t,  & 
+               a3_zt, Kw1, Kw8, Skw_zt, tau1m, tauw3t,  & 
                C1_Skw_fnc, C11_Skw_fnc, lcrank_nich_diff,  & 
                lhs )
 
@@ -503,7 +503,7 @@ call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1_zt,  &
 call wp23_rhs( dt, wp2, wp3, wp3_zm, a1_zt,  & 
                a3_zt, wpthvp, wp2thvp, um, vm,  & 
                upwp, vpwp, up2, vp2, Kw1, Kw8,  & 
-               Skwt, tau1m, tauw3t, C11_Skw_fnc,  & 
+               Skw_zt, tau1m, tauw3t, C11_Skw_fnc,  & 
                lcrank_nich_diff, rhs )
 
 ! Solve the system of equations for w'^2 and w'^3.
@@ -687,7 +687,7 @@ end subroutine wp23_solve
 
 !===============================================================================
 subroutine wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1_zt,  & 
-                     a3_zt, Kw1, Kw8, Skwt, tau1m, tauw3t,  & 
+                     a3_zt, Kw1, Kw8, Skw_zt, tau1m, tauw3t,  & 
                      C1_Skw_fnc, C11_Skw_fnc, lcrank_nich_diff,  & 
                      lhs )
 
@@ -795,7 +795,7 @@ real, dimension(gr%nnzp), intent(in) ::  &
   a3_zt,       & ! a_3 interpolated to thermodynamic levels [-]
   Kw1,         & ! Coefficient of eddy diffusivity for w'^2 [m^2/s]
   Kw8,         & ! Coefficient of eddy diffusivity for w'^3 [m^2/s]
-  Skwt,        & ! Skewness of w on thermodynamic levels    [-]
+  Skw_zt,        & ! Skewness of w on thermodynamic levels    [-]
   tau1m,       & ! Time-scale tau on momentum levels        [s]
   tauw3t,      & ! Time-scale tau on thermodynamic levels   [s]
   C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied          [-]
@@ -1000,7 +1000,7 @@ do k = 2, gr%nnzp-1, 1
   ! LHS pressure term 1 (pr1).
   lhs(3,k_wp3) & 
   = lhs(3,k_wp3) & 
-  + wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skwt(k) )
+  + wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skw_zt(k) )
 
   ! LHS eddy diffusion term: dissipation term 1 (dp1).
   !  Added a new constant, C12.
@@ -1072,7 +1072,7 @@ do k = 2, gr%nnzp-1, 1
 
     if ( iwp3_pr1 > 0 ) then
       ztscr01(k) = & 
-      - wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skwt(k) )
+      - wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skw_zt(k) )
     endif
 
     if ( iwp3_dp1 > 0 ) then
@@ -1150,7 +1150,7 @@ end subroutine wp23_lhs
 subroutine wp23_rhs( dt, wp2, wp3, wp3_zm, a1_zt,  & 
                      a3_zt, wpthvp, wp2thvp, um, vm,  & 
                      upwp, vpwp, up2, vp2, Kw1, Kw8,  & 
-                     Skwt, tau1m, tauw3t, C11_Skw_fnc,  & 
+                     Skw_zt, tau1m, tauw3t, C11_Skw_fnc,  & 
                      lcrank_nich_diff, rhs )
 
 !       Description:
@@ -1218,7 +1218,7 @@ real, dimension(gr%nnzp), intent(in) ::  &
   vp2,         & ! v'^2 (momentum levels)                   [m^2/s^2]
   Kw1,         & ! Coefficient of eddy diffusivity for w'^2 [m^2/s]
   Kw8,         & ! Coefficient of eddy diffusivity for w'^3 [m^2/s]
-  Skwt,        & ! Skewness of w on thermodynamic levels    [-]
+  Skw_zt,        & ! Skewness of w on thermodynamic levels    [-]
   tau1m,       & ! Time-scale tau on momentum levels        [s]
   tauw3t,      & ! Time-scale tau on thermodynamic levels   [s]
   C11_Skw_fnc ! C_11 parameter with Sk_w applied         [-]
@@ -1351,7 +1351,7 @@ do k = 2, gr%nnzp-1, 1
   ! RHS pressure term 1 (pr1).
   rhs(k_wp3) & 
   = rhs(k_wp3) & 
-  + wp3_term_pr1_rhs( C8, C8b, tauw3t(k), Skwt(k), wp3(k) )
+  + wp3_term_pr1_rhs( C8, C8b, tauw3t(k), Skw_zt(k), wp3(k) )
 
   ! RHS eddy diffusion term: dissipation term 1 (dp1).
   if ( lcrank_nich_diff ) then
@@ -1392,7 +1392,7 @@ do k = 2, gr%nnzp-1, 1
       zt )
 
     call stat_begin_update_pt( iwp3_pr1, k, & 
-      -wp3_term_pr1_rhs( C8, C8b, tauw3t(k), Skwt(k), wp3(k) ), & 
+      -wp3_term_pr1_rhs( C8, C8b, tauw3t(k), Skw_zt(k), wp3(k) ), & 
       zt)
    
     if ( lcrank_nich_diff ) then
@@ -2157,7 +2157,7 @@ return
 end function wp3_terms_ac_pr2_lhs
 
 !===============================================================================
-pure function wp3_term_pr1_lhs( C8, C8b, tauw3t, Skwt ) & 
+pure function wp3_term_pr1_lhs( C8, C8b, tauw3t, Skw_zt ) & 
 result( lhs )
 
 !       Description:
@@ -2213,14 +2213,14 @@ real, intent(in) :: &
   C8,      & ! Model parameter C_8                        [-]
   C8b,     & ! Model parameter C_8b                       [-]
   tauw3t,  & ! Time-scale tau at thermodynamic levels (k) [s]
-  Skwt    ! Skewness of w at thermodynamic levels (k)  [-]
+  Skw_zt    ! Skewness of w at thermodynamic levels (k)  [-]
 
 ! Return Variable
 real :: lhs
 
 ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
 lhs & 
-= + ( C8 / tauw3t ) * ( 5.0 * C8b * Skwt**4 + 1.0 )
+= + ( C8 / tauw3t ) * ( 5.0 * C8b * Skw_zt**4 + 1.0 )
 
 return
 end function wp3_term_pr1_lhs
@@ -2415,7 +2415,7 @@ return
 end function wp3_terms_bp_pr2_rhs
 
 !===============================================================================
-pure function wp3_term_pr1_rhs( C8, C8b, tauw3t, Skwt, wp3 ) & 
+pure function wp3_term_pr1_rhs( C8, C8b, tauw3t, Skw_zt, wp3 ) & 
 result( rhs )
 
 !       Description:
@@ -2467,14 +2467,14 @@ real, intent(in) :: &
   C8,      & ! Model parameter C_8                        [-]
   C8b,     & ! Model parameter C_8b                       [-]
   tauw3t,  & ! Time-scale tau at thermodynamic levels (k) [s]
-  Skwt,    & ! Skewness of w at thermodynamic levels (k)  [-]
+  Skw_zt,    & ! Skewness of w at thermodynamic levels (k)  [-]
   wp3     ! w'^3(k)                                    [m^3/s^3]
 
 ! Return Variable
 real :: rhs
 
 rhs & 
-= + ( C8 / tauw3t ) * ( 4.0 * C8b * Skwt**4 ) * wp3
+= + ( C8 / tauw3t ) * ( 4.0 * C8b * Skw_zt**4 ) * wp3
 
 return
 end function wp3_term_pr1_rhs

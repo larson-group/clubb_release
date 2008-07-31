@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F90,v 1.10 2008-07-31 17:01:50 faschinj Exp $
+! $Id: diag_variables.F90,v 1.11 2008-07-31 20:13:46 faschinj Exp $
 module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -22,8 +22,8 @@ public :: setup_diagnostic_variables, &
 
 real, target, allocatable, dimension(:), public :: & 
   Sct,     & ! PDF width parameter: t point          [-]
-  Skwm,    & ! Skw on moment. grid                   [-]
-  Skwt,    & ! Skw on thermo. grid                   [-]
+  Skw_zm,    & ! Skw on moment. grid                   [-]
+  Skw_zt,    & ! Skw on thermo. grid                   [-]
   ug,      & ! u geostrophic wind                    [m/s]
   vg,      & ! v geostrophic wind                    [m/s]
   um_ref,  & ! Initial u wind; Michael Falk,         [m/s]
@@ -31,7 +31,7 @@ real, target, allocatable, dimension(:), public :: &
   thvm,    & ! Virtual potential Temperature         [K]
   shear   ! Wind shear production
 
-!$omp   threadprivate(Sct, Skwm, Skwt, ug, vg)
+!$omp   threadprivate(Sct, Skw_zm, Skw_zt, ug, vg)
 !$omp   threadprivate(thvm, shear)
 !$omp   threadprivate(um_ref, vm_ref)
 
@@ -246,8 +246,8 @@ integer :: i
 ! Diagnostic variables
 
 allocate( Sct(1:nzmax) )       ! PDF width parameter: t point
-allocate( Skwm(1:nzmax) )      ! Skw
-allocate( Skwt(1:nzmax) )      ! Skw
+allocate( Skw_zm(1:nzmax) )      ! Skw
+allocate( Skw_zt(1:nzmax) )      ! Skw
 allocate( ug(1:nzmax) )        ! u geostrophic wind
 allocate( vg(1:nzmax) )        ! v geostrophic wind
 allocate( um_ref(1:nzmax) )    ! Reference u wind for nudging; Michael Falk, 17 Oct 2007
@@ -358,8 +358,8 @@ allocate( wpedsclrp(1:nzmax, 1:sclr_dim) )
 
 Sct = 0.0      ! PDF width parameter: t point
 
-Skwm = 0.0
-Skwt = 0.0
+Skw_zm = 0.0
+Skw_zt = 0.0
 
 ug  = 0.0      ! u geostrophic wind
 vg  = 0.0      ! v geostrophic wind
@@ -476,8 +476,8 @@ implicit none
 ! --- Deallocate --- 
 
 deallocate( Sct )       ! PDF width parameter: t point
-deallocate( Skwm )
-deallocate( Skwt )
+deallocate( Skw_zm )
+deallocate( Skw_zt )
 deallocate( ug )        ! u geostrophic wind
 deallocate( vg )        ! v geostrophic wind
 deallocate( um_ref )    ! u initial

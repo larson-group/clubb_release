@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F90,v 1.9 2008-07-31 19:34:17 faschinj Exp $
+! $Id: mixing.F90,v 1.10 2008-07-31 20:13:46 faschinj Exp $
 !===============================================================================
 module mixing
 
@@ -37,7 +37,7 @@ contains
 
 !===============================================================================
 subroutine timestep_mixing( dt, Scm, wm_zm, wm_zt, wp2, wp3, & 
-                            Kht, tau_zm, Skwm, rtpthvp,  & 
+                            Kht, tau_zm, Skw_zm, rtpthvp,  & 
                             rtm_forcing, thlpthvp,  & 
                             thlm_forcing, rtp2, thlp2, & 
                             implemented, & 
@@ -116,7 +116,7 @@ real, intent(in), dimension(gr%nnzp) :: &
   wp3,           & ! w'^3 (thermodynamic levels)              [m^3/s^3]
   Kht,           & ! Eddy diffusivity on thermodynamic levels [m^2/s]
   tau_zm,          & ! Time-scale tau on momentum levels        [s]
-  Skwm,          & ! Skewness of w on momentum levels         [-]
+  Skw_zm,          & ! Skewness of w on momentum levels         [-]
   rtpthvp,       & ! r_t'th_v' (momentum levels)              [(kg/kg) K]
   rtm_forcing,   & ! r_t forcing (thermodynamic levels)       [(kg/kg)/s]
   thlpthvp,      & ! th_l'th_v' (momentum levels)             [K^2]
@@ -189,13 +189,13 @@ integer :: k, km1, kp1
 
 ! Compute C6 and C7 as a function of Skw
 C6rt_Skw_fnc(:) = C6rtb + (C6rt-C6rtb) & 
-                      *EXP( -0.5 * (Skwm(:)/C6rtc)**2 )
+                      *EXP( -0.5 * (Skw_zm(:)/C6rtc)**2 )
 
 C6thl_Skw_fnc(:) = C6thlb + (C6thl-C6thlb) & 
-                        *EXP( -0.5 * (Skwm(:)/C6thlc)**2 )
+                        *EXP( -0.5 * (Skw_zm(:)/C6thlc)**2 )
 
 C7_Skw_fnc(:) = C7b + (C7-C7b) & 
-                  *EXP( -0.5 * (Skwm(:)/C7c)**2 )
+                  *EXP( -0.5 * (Skw_zm(:)/C7c)**2 )
 
 !        C6rt_Skw_fnc = C6rt
 !        C6thl_Skw_fnc = C6thl
@@ -423,7 +423,7 @@ end do ! passive scalars
 !           write(fstderr,*) "wp2 = ", wp2
 !           write(fstderr,*) "wp3 = ", wp3
 !           write(fstderr,*) "Scm = ", Scm
-!           write(fstderr,*) "Skwm = ", Skwm
+!           write(fstderr,*) "Skw_zm = ", Skw_zm
 
    !write(fstderr,*) "dt = ", dt
    !write(fstderr,*) "Scm = ", Scm
@@ -433,7 +433,7 @@ end do ! passive scalars
    !write(fstderr,*) "wp3 = ", wp3
    !write(fstderr,*) "Kht = ", Kht
    !write(fstderr,*) "tau_zm = ", tau_zm
-   !write(fstderr,*) "Skwm = ", Skwm
+   !write(fstderr,*) "Skw_zm = ", Skw_zm
    !write(fstderr,*) "rtpthvp = ", rtpthvp
    !write(fstderr,*) "rtm_forcing = ", rtm_forcing
    !write(fstderr,*) "thlpthvp = ", thlpthvp
