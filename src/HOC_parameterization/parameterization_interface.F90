@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.13 2008-07-31 16:10:44 faschinj Exp $
+! $Id: parameterization_interface.F90,v 1.14 2008-07-31 17:01:51 faschinj Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
@@ -32,7 +32,7 @@ module hoc_parameterization_interface
                     um, vm, upwp, vpwp, up2, vp2, & 
                     thlm, rtm, wprtp, wpthlp, wp2, wp3, & 
                     rtp2, thlp2, rtpthlp, & 
-                    Scm, taum, rcm, cf, & 
+                    Scm, tau_zm, rcm, cf, & 
                     err_code, implemented, & 
                     wpsclrp_sfc, wpedsclrp_sfc,    & ! Optional
                     sclrm, sclrm_forcing, edsclrm,  & ! Optional
@@ -114,7 +114,7 @@ module hoc_parameterization_interface
            thvm, & 
            em, & 
            Lscale, & 
-           taut, & 
+           tau_zt, & 
            Khm, & 
            umt, & 
            vmt, & 
@@ -263,7 +263,7 @@ module hoc_parameterization_interface
        rtp2,     & ! r_t'^2.                       [(kg/kg)^2]
        thlp2,    & ! th_l'^2.                      [K^2]
        rtpthlp,  & ! r_t' th_l'.                   [(kg K)/kg]
-       taum,     & ! Tau on moment. grid.          [s]
+       tau_zm,     & ! Tau on moment. grid.          [s]
        rcm         ! Liquid water mixing ratio.    [kg/kg]
 
        ! Needed for output for host models
@@ -331,7 +331,7 @@ module hoc_parameterization_interface
               upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,            & ! intent(in)
               up2, vp2, rtm, wprtp, thlm,                        & ! intent(in)
               wpthlp, wp2, wp3, Scm, rtp2, thlp2,                & ! intent(in)
-              rtpthlp, taum, rcm, cf, "beginning of ",           & ! intent(in)
+              rtpthlp, tau_zm, rcm, cf, "beginning of ",           & ! intent(in)
               wpsclrp_sfc, wpedsclrp_sfc,                        & ! intent(in)
               sclrm, sclrm_forcing, edsclrm )                      ! intent(in)
        end if
@@ -418,10 +418,10 @@ module hoc_parameterization_interface
 
        ! We also found that certain cases require a time tendency to run
        ! at shorter timesteps.
-       ! This requires us to store in memory Scm and taum between timesteps.
+       ! This requires us to store in memory Scm and tau_zm between timesteps.
 
        ! We found that if we call diag_var first, we can use a longer timestep.
-       call diag_var( taum, wmm, rtm, wprtp,                     & ! intent(in)
+       call diag_var( tau_zm, wmm, rtm, wprtp,                     & ! intent(in)
                       thlm, wpthlp, wpthvp, um, vm,              & ! intent(in)
                       wp2, wp3, upwp, vpwp, Scm, Skwm, Kht,      & ! intent(in)
 ! Vince Larson used prognostic timestepping of variances 
@@ -683,12 +683,12 @@ module hoc_parameterization_interface
 !     This is to prevent tau from being too large (producing little damping)
 !     in stably stratified layers with little turbulence.
 !       tmp1 = SQRT( MAX( emin, zm2zt( em ) ) )
-!       taut = MIN( Lscale / tmp1, taumax )
-!       taum 
+!       tau_zt = MIN( Lscale / tmp1, taumax )
+!       tau_zm 
 !     . = MIN( ( zt2zm( Lscale ) / SQRT( MAX( emin, em ) ) ), taumax )
        tmp1 = SQRT( MAX( wtol**2, zm2zt( em ) ) )
-       taut = MIN( Lscale / tmp1, taumax )
-       taum  & 
+       tau_zt = MIN( Lscale / tmp1, taumax )
+       tau_zm  & 
        = MIN( ( MAX( zt2zm( Lscale ), 0.0 )  & 
                / SQRT( MAX( wtol**2, em ) ) ), taumax )
 ! End Vince Larson's replacement.
@@ -698,8 +698,8 @@ module hoc_parameterization_interface
 !    initiating in unstable regions.  7 Jul 2007
 !       do k = 1, gr%nnzp
 !         if ( wp2(k) <= 0.005 ) then
-!           taut(k) = taumin
-!           taum(k) = taumin
+!           tau_zt(k) = taumin
+!           tau_zm(k) = taumin
 !         end if
 !       end do
 ! End Vince Larson's commenting.
@@ -725,7 +725,7 @@ module hoc_parameterization_interface
        ! Advance rtm/wprtp and thlm/wpthlp one time step
        !----------------------------------------------------------------
         call timestep_mixing( dt, Scm, wmm, wmt, wp2, wp3,       & ! intent(in)
-                              Kht, taum, Skwm, rtpthvp,          & ! intent(in)
+                              Kht, tau_zm, Skwm, rtpthvp,          & ! intent(in)
                               rtm_forcing, thlpthvp,             & ! intent(in)
                               thlm_forcing, rtp2, thlp2,         & ! intent(in)
                               implemented,                       & ! intent(in)
@@ -762,7 +762,7 @@ module hoc_parameterization_interface
 
        call timestep_wp23( dt, Scm, wmm, wmt, wpthvp, wp2thvp,        & ! intent(in)
                            um, vm, upwp, vpwp, up2, vp2, Khm, Kht,    & ! intent(in)
-                           taum, taut, Skwm, Skwt, pdf_parms(:, 13),  & ! intent(in)
+                           tau_zm, tau_zt, Skwm, Skwt, pdf_parms(:, 13),  & ! intent(in)
                            wp2, wp3, err_code )                         ! intent(inout)
 
        !----------------------------------------------------------------
@@ -955,7 +955,7 @@ module hoc_parameterization_interface
             ( um, vm, upwp, vpwp, up2, vp2, thlm,                   & ! intent(in)
               rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp,   & ! intent(in)
               p_in_Pa, exner, rho, rho_zm,                           & ! intent(in)
-              wmt, Scm, taum, rcm, cf,                              & ! intent(in)
+              wmt, Scm, tau_zm, rcm, cf,                              & ! intent(in)
               sclrm, edsclrm, sclrm_forcing, wpsclrp )                ! intent(in)
 
  
@@ -967,7 +967,7 @@ module hoc_parameterization_interface
                 upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,             & ! intent(in)
                 up2, vp2, rtm, wprtp, thlm,                         & ! intent(in)
                 wpthlp, wp2, wp3, Scm, rtp2, thlp2,                 & ! intent(in)
-                rtpthlp, taum, rcm, cf, "end of ",                  & ! intent(in)
+                rtpthlp, tau_zm, rcm, cf, "end of ",                  & ! intent(in)
                 wpsclrp_sfc, wpedsclrp_sfc,                         & ! intent(in)
                 sclrm, sclrm_forcing, edsclrm )                       ! intent(in)
        end if

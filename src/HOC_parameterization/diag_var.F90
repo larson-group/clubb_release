@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F90,v 1.11 2008-07-31 14:38:03 faschinj Exp $
+! $Id: diag_var.F90,v 1.12 2008-07-31 17:01:50 faschinj Exp $
 !===============================================================================
 module diagnose_variances
 
@@ -28,7 +28,7 @@ module diagnose_variances
         contains
 
 !===============================================================================
-        subroutine diag_var( taum, wmm, rtm, wprtp,  & 
+        subroutine diag_var( tau_zm, wmm, rtm, wprtp,  & 
                              thlm, wpthlp, wpthvp, um, vm, & 
                              wp2, wp3, upwp, vpwp, Scm, Skwm, Kht, & 
                              liter, dt, & 
@@ -101,7 +101,7 @@ module diagnose_variances
 
         ! Input variables
         real, intent(in), dimension(gr%nnzp) ::  & 
-        taum,   & ! Tau on moment. grid            [s]
+        tau_zm,   & ! Tau on moment. grid            [s]
         wmm,    & ! w wind on m                    [m/s]
         rtm,    & ! Total water mixing ratio       [kg/kg]
         wprtp,  & ! w' r_t'                        [(m kg)/(s kg)]
@@ -343,14 +343,14 @@ module diagnose_variances
 
         ! Implicit contributions to term rtp2
         call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
-                           wp3, taum, wmm, Kw2_rtp2, C2rt_1d,  & 
+                           wp3, tau_zm, wmm, Kw2_rtp2, C2rt_1d,  & 
                            nu2, beta, wtol_sqd, lhs )
 
         ! Explicit contributions to rtp2
         call diag_var_rhs( "rtp2", dt, liter, a1,  & 
                            wp2_zt, wp3, wprtp, wprtp_zt, & 
                            wprtp, wprtp_zt, rtm, rtm, rtp2, & 
-                           C2rt_1d, taum, rttol**2, beta, &
+                           C2rt_1d, tau_zm, rttol**2, beta, &
                            wtol_sqd, rhs )
         
         ! Solve the tridiagonal system
@@ -363,14 +363,14 @@ module diagnose_variances
 
         ! Implicit contributions to term thlp2
         call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
-                           wp3, taum, wmm, Kw2_thlp2, C2thl_1d,  & 
+                           wp3, tau_zm, wmm, Kw2_thlp2, C2thl_1d,  & 
                            nu2, beta, wtol_sqd, lhs )
 
         ! Explicit contributions to thlp2
         call diag_var_rhs( "thlp2", dt, liter, a1, & 
                            wp2_zt, wp3, wpthlp, wpthlp_zt, & 
                            wpthlp, wpthlp_zt, thlm, thlm, thlp2, & 
-                           C2thl_1d, taum, thltol**2, beta, &
+                           C2thl_1d, tau_zm, thltol**2, beta, &
                            wtol_sqd, rhs )
 
         ! Solve the tridiagonal system
@@ -382,14 +382,14 @@ module diagnose_variances
         ! Implicit contributions to term rtpthlp
 
         call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
-                           wp3, taum, wmm, Kw2_rtpthlp, C2rtthl_1d,  & 
+                           wp3, tau_zm, wmm, Kw2_rtpthlp, C2rtthl_1d,  & 
                            nu2, beta, wtol_sqd, lhs )
 
         ! Explicit contributions to rtpthlp
         call diag_var_rhs( "rtpthlp", dt, liter, a1,  & 
                            wp2_zt, wp3, wprtp, wprtp_zt, & 
                            wpthlp, wpthlp_zt, rtm, thlm, rtpthlp, & 
-                           C2rtthl_1d, taum, 0.0, beta, &
+                           C2rtthl_1d, tau_zm, 0.0, beta, &
                            wtol_sqd, rhs )
 
         ! Solve the tridiagonal system
@@ -401,12 +401,12 @@ module diagnose_variances
         ! Implicit contributions to term up2
 
         call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
-                           wp3, taum, wmm, Kw9, C4_C14_1d,  & 
+                           wp3, tau_zm, wmm, Kw9, C4_C14_1d,  & 
                            nu9, beta, wtol_sqd, lhs )
 
         ! Explicit contributions to up2
         call diag_var_uv_rhs( "up2", dt, liter, a1, & 
-                              wp2, wp2_zt, wp3, wpthvp, taum,  & 
+                              wp2, wp2_zt, wp3, wpthvp, tau_zm,  & 
                               um, vm, upwp, upwp_zt, vpwp, & 
                               vpwp_zt, up2, vp2, C4, C5, C14, & 
                               T0, beta, wtol_sqd, rhs )
@@ -420,12 +420,12 @@ module diagnose_variances
         ! Implicit contributions to term vp2
 
         call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
-                           wp3, taum, wmm, Kw9, C4_C14_1d,  & 
+                           wp3, tau_zm, wmm, Kw9, C4_C14_1d,  & 
                            nu9, beta, wtol_sqd, lhs )
 
         ! Explicit contributions to vp2
         call diag_var_uv_rhs( "vp2", dt, liter, a1, & 
-                              wp2, wp2_zt, wp3, wpthvp, taum,  & 
+                              wp2, wp2_zt, wp3, wpthvp, tau_zm,  & 
                               vm, um, vpwp, vpwp_zt, upwp, & 
                               upwp_zt, vp2, up2, C4, C5, C14, & 
                               T0, beta, wtol_sqd, rhs )
@@ -516,7 +516,7 @@ module diagnose_variances
           !!!!!***** sclr'^2, sclr'r_t', sclr'th_l' *****!!!!!
 
           call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
-                             wp3, taum, wmm, Kw2, C2sclr_1d,  & 
+                             wp3, tau_zm, wmm, Kw2, C2sclr_1d,  & 
                              nu2, beta, wtol_sqd, lhs )
 
 
@@ -536,7 +536,7 @@ module diagnose_variances
                                wp2_zt, wp3, wpsclrp(:,i),  & 
                                wpsclrp_zt, wpsclrp(:,i), wpsclrp_zt,  & 
                                sclrm(:,i), sclrm(:,i), sclrp2(:,i), & 
-                               C2sclr_1d, taum, 0.0, beta, &
+                               C2sclr_1d, tau_zm, 0.0, beta, &
                                wtol_sqd, sclr_rhs(:,i) )
 
           enddo
@@ -554,7 +554,7 @@ module diagnose_variances
             call diag_var_rhs( "sclrprtp", dt, liter, a1,  & 
                                wp2_zt, wp3, wpsclrp(:,i),  & 
                                wpsclrp_zt, wprtp, wprtp_zt, sclrm(:,i),  & 
-                               rtm, sclrprtp(:,i), C2sclr_1d, taum, &
+                               rtm, sclrprtp(:,i), C2sclr_1d, tau_zm, &
                                0.0, beta, wtol_sqd,  & 
                                sclr_rhs(:,i+sclr_dim) )
 
@@ -574,7 +574,7 @@ module diagnose_variances
                                wp2_zt, wp3, wpsclrp(:,i),  & 
                                wpsclrp_zt, wpthlp, wpthlp_zt,  & 
                                sclrm(:,i), thlm, sclrpthlp(:,i), &
-                               C2sclr_1d, taum, 0.0, beta,  & 
+                               C2sclr_1d, tau_zm, 0.0, beta,  & 
                                wtol_sqd, sclr_rhs(:,i+2*sclr_dim) )
 
           end do
@@ -657,7 +657,7 @@ module diagnose_variances
            
            write(fstderr,*) "Intent(in)"
            
-           write(fstderr,*) "taum = ", taum
+           write(fstderr,*) "tau_zm = ", tau_zm
            write(fstderr,*) "wmm = ", wmm
            write(fstderr,*) "rtm = ", rtm
            write(fstderr,*) "wprtp = ", wprtp
@@ -701,7 +701,7 @@ module diagnose_variances
 
 !===============================================================================
         subroutine diag_var_lhs( dt, liter, a1, wp2_zt,  & 
-                                 wp3, taum, wmm, Kw, Cn,  & 
+                                 wp3, tau_zm, wmm, Kw, Cn,  & 
                                  nu, beta, wtol_sqd, lhs )
         
 !       Description:
@@ -775,7 +775,7 @@ module diagnose_variances
         a1,     & ! Scm-related term a_1 (momentum levels)      [-]
         wp2_zt, & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
         wp3,    & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
-        taum,   & ! Time-scale tau on momentum levels           [s]
+        tau_zm,   & ! Time-scale tau on momentum levels           [s]
         wmm,    & ! w wind component on momentum levels         [m/s]
         Kw,     & ! Coefficient of eddy diffusivity (all vars.) [m^2/s]
         Cn        ! Coefficient C_n                             [-]
@@ -815,7 +815,7 @@ module diagnose_variances
           ! LHS dissipation term 1 (dp1)
           ! (and pressure term 1 (pr1) for u'^2 and v'^2).
           lhs(k_mdiag,k) & 
-          = lhs(k_mdiag,k) + term_dp1_lhs( Cn(k), taum(k) )
+          = lhs(k_mdiag,k) + term_dp1_lhs( Cn(k), tau_zm(k) )
 
           ! LHS time tendency.
           if ( liter ) then
@@ -845,7 +845,7 @@ module diagnose_variances
              !        (as well as to term pr1) for up2 and vp2 is recorded
              !        in diag_var_uv_rhs because up2 and vp2 use a special
              !        dp1/pr1 combined term.
-             tmp(1) = term_dp1_lhs( Cn(k), taum(k) )
+             tmp(1) = term_dp1_lhs( Cn(k), tau_zm(k) )
              zmscr01(k) = -tmp(1)
            endif
          
@@ -1112,7 +1112,7 @@ module diagnose_variances
 
 !===============================================================================
         subroutine diag_var_uv_rhs( solve_type, dt, liter, a1, & 
-                                    wp2, wp2_zt, wp3, wpthvp, taum,  & 
+                                    wp2, wp2_zt, wp3, wpthvp, tau_zm,  & 
                                     xam, xbm, wpxap, wpxap_zt, wpxbp, & 
                                     wpxbp_zt, xap2, xbp2, C4, C5, C14, & 
                                     T0, beta, wtol_sqd, rhs )
@@ -1167,7 +1167,7 @@ module diagnose_variances
         wp2_zt,   & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
         wp3,      & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
         wpthvp,   & ! w'th_v' (momentum levels)                   [K m/s]
-        taum,     & ! Time-scale tau on momentum levels           [s]
+        tau_zm,     & ! Time-scale tau on momentum levels           [s]
         xam,      & ! x_am (thermodynamic levels)                 [m/s]
         xbm,      & ! x_bm (thermodynamic levels)                 [m/s]
         wpxap,    & ! w'x_a' (momentum levels)                    [m^2/s^2]
@@ -1246,7 +1246,7 @@ module diagnose_variances
              * term_tp( xam(kp1), xam(k), xam(kp1), xam(k), & 
                         wpxap(k), wpxap(k), gr%dzm(k) ) & 
           ! RHS pressure term 1 (pr1) (and dissipation term 1 (dp1)).
-          + term_pr1( C4, C14, xbp2(k), wp2(k), taum(k) ) & 
+          + term_pr1( C4, C14, xbp2(k), wp2(k), tau_zm(k) ) & 
           ! RHS pressure term 2 (pr2).
           + term_pr2( C5, grav, T0, wpthvp(k), wpxap(k), wpxbp(k),  & 
                       xam(kp1), xam(k), xbm(kp1), xbm(k), gr%dzm(k) )
@@ -1274,14 +1274,14 @@ module diagnose_variances
               ! component of term dp1 for up2 or vp2.  This will 
               ! overwrite anything set statistically in diag_var_lhs 
               ! for this term.
-              tmp = term_dp1_lhs( (2.0/3.0)*C4, taum(k) )
+              tmp = term_dp1_lhs( (2.0/3.0)*C4, tau_zm(k) )
               zmscr01(k) = -tmp
               ! Statistical contribution of the explicit component
               ! of term dp1 for up2 or vp2.
             endif
 
             call stat_begin_update_pt( ixapxbp_dp1, k,  & 
-                    -term_pr1( C4, 0.0, xbp2(k), wp2(k), taum(k) ), zm )
+                    -term_pr1( C4, 0.0, xbp2(k), wp2(k), tau_zm(k) ), zm )
 
 
             if ( ixapxbp_pr1 > 0 ) then
@@ -1289,14 +1289,14 @@ module diagnose_variances
               !        of a semi-implicit solution to dp1 and pr1.
               ! Statistical contribution of the implicit component
               ! of term pr1 for up2 or vp2.
-              tmp = term_dp1_lhs( (1.0/3.0)*C14, taum(k) )
+              tmp = term_dp1_lhs( (1.0/3.0)*C14, tau_zm(k) )
               zmscr11(k) = -tmp
               ! Statistical contribution of the explicit component
               ! of term pr1 for up2 or vp2.
             endif
 
             call stat_modify_pt( ixapxbp_pr1, k, & 
-                    term_pr1( 0.0, C14, xbp2(k), wp2(k), taum(k) ), zm )
+                    term_pr1( 0.0, C14, xbp2(k), wp2(k), tau_zm(k) ), zm )
 
             call stat_update_var_pt( ixapxbp_pr2, k, & 
                 term_pr2 & 
@@ -1337,7 +1337,7 @@ module diagnose_variances
         subroutine diag_var_rhs( solve_type, dt, liter, a1,  & 
                                  wp2_zt, wp3, wpxap, wpxap_zt, & 
                                  wpxbp, wpxbp_zt, xam, xbm, xapxbp, & 
-                                 Cn, taum, threshold, beta, &
+                                 Cn, tau_zm, threshold, beta, &
                                  wtol_sqd, rhs )
 
 !       Description:
@@ -1394,7 +1394,7 @@ module diagnose_variances
         xbm,      & ! x_bm (thermodynamic levels)                 [{x_bm units}]
         xapxbp,   & ! x_a'x_b' (momentum levels)                  [{x_am units}
                     !                                                *{x_bm units}]
-        taum,     & ! Time-scale tau on momentum levels           [s]
+        tau_zm,     & ! Time-scale tau on momentum levels           [s]
         Cn          ! Coefficient C_n                             [-]
 
         real, intent(in) :: &
@@ -1467,7 +1467,7 @@ module diagnose_variances
 
           ! RHS dissipation term 1 (dp1)
           rhs(k,1) &
-          = rhs(k,1) + term_dp1_rhs( Cn(k), taum(k), threshold )
+          = rhs(k,1) + term_dp1_rhs( Cn(k), tau_zm(k), threshold )
 
           ! RHS time tendency.
           if ( liter ) then 
@@ -1486,7 +1486,7 @@ module diagnose_variances
                            beta, wtol_sqd ), zm )
 
           call stat_begin_update_pt( ixapxbp_dp1, k, &
-              -term_dp1_rhs( Cn(k), taum(k), threshold ), zm )
+              -term_dp1_rhs( Cn(k), tau_zm(k), threshold ), zm )
 
           ! rtp2/thlp2 case (1 turbulent production term)
           call stat_update_var_pt( ixapxbp_tp, k, & 
@@ -1898,7 +1898,7 @@ module diagnose_variances
         end function term_tp
 
 !===============================================================================
-        pure function term_dp1_lhs( Cn, taum )  & 
+        pure function term_dp1_lhs( Cn, tau_zm )  & 
         result( lhs )
 
 !       Description:
@@ -1947,19 +1947,19 @@ module diagnose_variances
 
         real, intent(in) :: & 
         Cn,  & ! Coefficient C_n                       [-]
-        taum   ! Time-scale tau at momentum levels (k) [s]
+        tau_zm   ! Time-scale tau at momentum levels (k) [s]
 
         real :: lhs
 
         ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
         lhs  & 
-        = + Cn / taum
+        = + Cn / tau_zm
 
         return
         end function term_dp1_lhs
 
 !===============================================================================
-        pure function term_dp1_rhs( Cn, taum, threshold ) &
+        pure function term_dp1_rhs( Cn, tau_zm, threshold ) &
         result( rhs )
 
 !       Description:
@@ -2000,19 +2000,19 @@ module diagnose_variances
 
         real, intent(in) :: &
         Cn,     & ! Coefficient C_n                               [-]
-        taum,   & ! Time-scale tau at momentum levels (k)         [s]
+        tau_zm,   & ! Time-scale tau at momentum levels (k)         [s]
         threshold ! Minimum allowable magnitude value of x_a'x_b' [units vary]
 
         real :: rhs
 
         rhs  & 
-        = + ( Cn / taum ) * threshold
+        = + ( Cn / tau_zm ) * threshold
 
         return
         end function term_dp1_rhs
 
 !===============================================================================
-        pure function term_pr1( C4, C14, xbp2, wp2, taum ) & 
+        pure function term_pr1( C4, C14, xbp2, wp2, tau_zm ) & 
         result( rhs )
 
 !       Description:
@@ -2077,11 +2077,11 @@ module diagnose_variances
         C14,  & ! Model parameter C_14                        [-]
         xbp2, & ! v'^2(k) (if solving for u'^2) or vice versa [m^2/s^2]
         wp2,  & ! w'^2(k)                                     [m^2/s^2]
-        taum    ! Time-scale tau at momentum levels (k)       [s]
+        tau_zm    ! Time-scale tau at momentum levels (k)       [s]
 
         real :: rhs
 
-        rhs = + 1.0/3.0 * ( C4 - C14 ) * ( xbp2 + wp2 ) / taum
+        rhs = + 1.0/3.0 * ( C4 - C14 ) * ( xbp2 + wp2 ) / tau_zm
 
         return
         end function term_pr1

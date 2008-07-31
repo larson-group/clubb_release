@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F90,v 1.7 2008-07-31 13:48:57 faschinj Exp $
+! $Id: mixing.F90,v 1.8 2008-07-31 17:01:50 faschinj Exp $
 !===============================================================================
 module mixing
 
@@ -37,7 +37,7 @@ contains
 
 !===============================================================================
 subroutine timestep_mixing( dt, Scm, wmm, wmt, wp2, wp3, & 
-                            Kht, taum, Skwm, rtpthvp,  & 
+                            Kht, tau_zm, Skwm, rtpthvp,  & 
                             rtm_forcing, thlpthvp,  & 
                             thlm_forcing, rtp2, thlp2, & 
                             implemented, & 
@@ -115,7 +115,7 @@ real, intent(in), dimension(gr%nnzp) :: &
   wp2,           & ! w'^2 (momentum levels)                   [m^2/s^2]
   wp3,           & ! w'^3 (thermodynamic levels)              [m^3/s^3]
   Kht,           & ! Eddy diffusivity on thermodynamic levels [m^2/s]
-  taum,          & ! Time-scale tau on momentum levels        [s]
+  tau_zm,          & ! Time-scale tau on momentum levels        [s]
   Skwm,          & ! Skewness of w on momentum levels         [-]
   rtpthvp,       & ! r_t'th_v' (momentum levels)              [(kg/kg) K]
   rtm_forcing,   & ! r_t forcing (thermodynamic levels)       [(kg/kg)/s]
@@ -256,7 +256,7 @@ wpxp_lower_lim = -0.99 * sqrt( wp2 * rtp2 )
 ! Compute the implicit portion of the r_t and w'r_t' equations.
 ! Build the left-hand side matrix.
 call mixing_lhs( .true., dt, wprtp, Scm, wmm, wmt, wp2,  & 
-                 wp3, Kw6_rt, taum, C7_Skw_fnc, C6rt_Skw_fnc, & 
+                 wp3, Kw6_rt, tau_zm, C7_Skw_fnc, C6rt_Skw_fnc, & 
                  wpxp_upper_lim, wpxp_lower_lim,  & 
                  implemented, lhs )
 
@@ -320,7 +320,7 @@ wpxp_lower_lim = -0.99 * sqrt( wp2 * thlp2 )
 ! Compute the implicit portion of the th_l and w'th_l' equations.
 ! Build the left-hand side matrix.
 call mixing_lhs( .true., dt, wpthlp, Scm, wmm, wmt, wp2,  & 
-                 wp3, Kw6_thl, taum, C7_Skw_fnc, C6thl_Skw_fnc, & 
+                 wp3, Kw6_thl, tau_zm, C7_Skw_fnc, C6thl_Skw_fnc, & 
                  wpxp_upper_lim, wpxp_lower_lim,  & 
                  implemented, lhs )
 
@@ -379,7 +379,7 @@ do i = 1, sclr_dim, 1
   ! Compute the implicit portion of the sclr and w'sclr' equations.
   ! Build the left-hand side matrix.
   call mixing_lhs( .true., dt, wpsclrp(:,i), Scm, wmm,  & 
-                   wmt, wp2, wp3, Kw6, taum, C7_Skw_fnc, & 
+                   wmt, wp2, wp3, Kw6, tau_zm, C7_Skw_fnc, & 
                    C6rt_Skw_fnc, wpxp_upper_lim, wpxp_lower_lim, & 
                    implemented, lhs )
 
@@ -417,7 +417,7 @@ end do ! passive scalars
    
 
 !           write(fstderr,*) "dt = ", dt
-!           write(fstderr,*) "taum = ", taum
+!           write(fstderr,*) "tau_zm = ", tau_zm
 !           write(fstderr,*) "wmm = ", wmm
 !           write(fstderr,*) "wmt = ", wmt
 !           write(fstderr,*) "wp2 = ", wp2
@@ -432,7 +432,7 @@ end do ! passive scalars
    !write(fstderr,*) "wp2 = ", wp2
    !write(fstderr,*) "wp3 = ", wp3
    !write(fstderr,*) "Kht = ", Kht
-   !write(fstderr,*) "taum = ", taum
+   !write(fstderr,*) "tau_zm = ", tau_zm
    !write(fstderr,*) "Skwm = ", Skwm
    !write(fstderr,*) "rtpthvp = ", rtpthvp
    !write(fstderr,*) "rtm_forcing = ", rtm_forcing
@@ -476,7 +476,7 @@ end subroutine timestep_mixing
 
 !===============================================================================
 subroutine mixing_lhs( liter, dt, wpxp, Scm, wmm, wmt, wp2,  & 
-                       wp3, Kw6, taum, C7_Skw_fnc, C6x_Skw_fnc, & 
+                       wp3, Kw6, tau_zm, C7_Skw_fnc, C6x_Skw_fnc, & 
                        wpxp_upper_lim, wpxp_lower_lim,  & 
                        implemented, lhs )
 
@@ -575,7 +575,7 @@ real, intent(in), dimension(gr%nnzp) :: &
   wp2,             & ! w'^2 (momentum levels)                   [m^2/s^2]
   wp3,             & ! w'^3 (thermodynamic levels)              [m^3/s^3]
   Kw6,             & ! Coefficient of eddy diffusivity for w'x' [m^2/s]
-  taum,            & ! Time-scale tau on momentum levels        [s]
+  tau_zm,            & ! Time-scale tau on momentum levels        [s]
   C7_Skw_fnc,      & ! C_7 parameter with Sk_w applied          [-]
   C6x_Skw_fnc,     & ! C_6x parameter with Sk_w applied         [-]
   wpxp_upper_lim,  & ! Keeps correlations from becoming > 1.    [units vary]
@@ -748,7 +748,7 @@ do k = 2, gr%nnzp-1, 1
   ! LHS pressure term 1 (pr1).
   lhs(3,k_wpxp) & 
   = lhs(3,k_wpxp) & 
-  + wpxp_term_pr1_lhs( C6x_Skw_fnc(k), taum(k) )
+  + wpxp_term_pr1_lhs( C6x_Skw_fnc(k), tau_zm(k) )
 
   ! LHS eddy diffusion term: dissipation term 1 (dp1).
   lhs((/3-2,3,3+2/),k_wpxp) & 
@@ -804,7 +804,7 @@ do k = 2, gr%nnzp-1, 1
 
     if ( iwprtp_pr1 > 0 .or. iwpthlp_pr1 > 0 ) then
       zmscr10(k) = & 
-      - wpxp_term_pr1_lhs( C6x_Skw_fnc(k), taum(k) )
+      - wpxp_term_pr1_lhs( C6x_Skw_fnc(k), tau_zm(k) )
     endif
 
     if ( iwprtp_pr2 > 0 .or. iwpthlp_pr2 > 0 ) then
@@ -1859,7 +1859,7 @@ return
 end function wpxp_terms_ac_pr2_lhs
 
 !===============================================================================
-pure function wpxp_term_pr1_lhs( C6x_Skw_fnc, taum ) & 
+pure function wpxp_term_pr1_lhs( C6x_Skw_fnc, tau_zm ) & 
 result( lhs )
 
 !       Description
@@ -1893,14 +1893,14 @@ implicit none
 ! Input Variables
 real, intent(in) :: & 
   C6x_Skw_fnc,  & ! C_6x parameter with Sk_w applied (k)   [-]
-  taum         ! Time-scale tau at momentum levels (k)  [s]
+  tau_zm         ! Time-scale tau at momentum levels (k)  [s]
 
 ! Return Variable
 real :: lhs
 
 ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
 lhs & 
-= + C6x_Skw_fnc / taum
+= + C6x_Skw_fnc / tau_zm
 
 return
 end function wpxp_term_pr1_lhs

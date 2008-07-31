@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.20 2008-07-31 16:10:43 faschinj Exp $
+! $Id: hoc.F90,v 1.21 2008-07-31 17:01:50 faschinj Exp $
 
 module hoc
 
@@ -119,13 +119,13 @@ module hoc
     use param_index, only: nparams ! Variable(s)
 
     use diagnostic_variables, only: ug, vg, em,  & ! Variable(s)
-      taut, thvm, Lscale, Kht, Khm, & 
+      tau_zt, thvm, Lscale, Kht, Khm, & 
       um_ref, vm_ref
 
     use prognostic_variables, only:  & 
       Tsfc, psfc, SE, LE, thlm, rtm,     & ! Variable(s)
       um, vm, wp2, rcm, wmt, wmm, exner, & 
-      taum, p_in_Pa, rho_zm, upwp, vpwp, wpthlp, & 
+      tau_zm, p_in_Pa, rho_zm, upwp, vpwp, wpthlp, & 
       rho, wprtp, wpthlp_sfc, wprtp_sfc, & 
       upwp_sfc, vpwp_sfc, thlm_forcing, & 
       rtm_forcing, up2, vp2, wp3, rtp2, & 
@@ -517,7 +517,7 @@ module hoc
                            um, vm, ug, vg, wp2, & 
                            rcm,  & 
                            wmt, wmm, em, exner, & 
-                           taut, taum, thvm, p_in_Pa, & 
+                           tau_zt, tau_zm, thvm, p_in_Pa, & 
                            rho, rho_zm, Lscale, & 
                            Kht, Khm, um_ref, vm_ref, & 
                            sclrm, edsclrm )
@@ -638,7 +638,7 @@ module hoc
                um, vm, upwp, vpwp, up2, vp2, & 
                thlm, rtm, wprtp, wpthlp, wp2, wp3, & 
                rtp2, thlp2, rtpthlp, & 
-               Scm, taum, rcm, cf, & 
+               Scm, tau_zm, rcm, cf, & 
                err_code, .false., & 
                wpsclrp_sfc, wpedsclrp_sfc,  & 
                sclrm, sclrm_forcing, edsclrm, & 
@@ -697,7 +697,7 @@ module hoc
         subroutine hoc_initialize & 
                    ( iunit, runfile, psfc, thlm, rtm, um, vm, & 
                      ug, vg, wp2, rcm, & 
-                     wmt, wmm, em, exner, taut, taum, thvm, & 
+                     wmt, wmm, em, exner, tau_zt, tau_zm, thvm, & 
                      p, rho, rho_zm, Lscale, & 
                      Kht, Khm, um_ref, vm_ref, & 
                      sclrm, edsclrm )
@@ -783,7 +783,7 @@ module hoc
         rho, rho_zm,      & ! Density                       [kg/m^3]
         Lscale,          & ! Mixing length                 [m] 
         Kht, Khm,        & ! Eddy diffusivity              [m^2/s]
-        taum, taut,      & ! Dissipation time              [s]
+        tau_zm, tau_zt,      & ! Dissipation time              [s]
         thvm            ! Virtual potential temperature [K]
 
         ! Output
@@ -1177,16 +1177,16 @@ module hoc
 
         ! Dissipation time
         tmp1 = sqrt( max( wtol**2, zm2zt( em ) ) )
-        taut = min( Lscale / tmp1, taumax )
-        taum = min( ( max( zt2zm( Lscale ), 0.0 ) & 
+        tau_zt = min( Lscale / tmp1, taumax )
+        tau_zm = min( ( max( zt2zm( Lscale ), 0.0 ) & 
                      / sqrt( max( wtol**2, em ) ) ), taumax )
-!        taum = zt2zm( taut )
+!        tau_zm = zt2zm( tau_zt )
 
         ! Modification to damp noise in stable region
         do k=1,gr%nnzp
           if ( wp2(k) <= 0.005 ) then
-            taut(k) = taumin
-            taum(k) = taumin
+            tau_zt(k) = taumin
+            tau_zm(k) = taumin
           end if
         end do
 
@@ -1226,7 +1226,7 @@ module hoc
             input_vg, input_rcm, input_wmt, input_exner, & 
             input_em, input_p, input_rho, input_rho_zm, & 
             input_Lscale, input_Lscale_up, input_Lscale_down, input_Kht, & 
-            input_Khm, input_taum, input_taut, input_thvm,  & 
+            input_Khm, input_tau_zm, input_tau_zt, input_thvm,  & 
             input_rrainm, input_rsnowm, input_ricem,  & 
             input_rgraupelm, input_wprtp, input_wpthlp, & 
             input_wp3, input_rtp2, input_thlp2,  & 
@@ -1325,8 +1325,8 @@ module hoc
         input_Lscale_down = .true.
         input_Kht = .true.
         input_Khm = .true.
-        input_taum = .true.
-        input_taut = .true.
+        input_tau_zm = .true.
+        input_tau_zt = .true.
         input_thvm = .true.
         input_rrainm = .true.
         input_rsnowm = .true.

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F90,v 1.7 2008-07-31 16:10:44 faschinj Exp $
+! $Id: stats_zt.F90,v 1.8 2008-07-31 17:01:51 faschinj Exp $
  
 module stats_zt
 
@@ -40,7 +40,7 @@ use stats_variables, only: &
     iwp2rtp, & 
     iLscale_up, & 
     iLscale_down, & 
-    itaut, & 
+    itau_zt, & 
     iKht, & 
     iwp2thvp, & 
     iwp2rcp, & 
@@ -220,7 +220,7 @@ iwprtp2       = 0
 iwp2rtp       = 0
 iLscale_up          = 0
 iLscale_down        = 0
-itaut         = 0
+itau_zt         = 0
 iKht          = 0
 iwp2thvp      = 0
 iwp2rcp       = 0
@@ -527,9 +527,9 @@ do i=1,zt%nn
          "Downward mixing length","m",zt)
     k = k + 1
 
-  case ('taut')
-    itaut = k
-    call stat_assign(itaut,"taut", & 
+  case ('tau_zt')
+    itau_zt = k
+    call stat_assign(itau_zt,"tau_zt", & 
          "Dissipation time","s",zt)
     k = k + 1
 

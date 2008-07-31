@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F90,v 1.7 2008-07-31 16:10:44 faschinj Exp $
+! $Id: numer_check.F90,v 1.8 2008-07-31 17:01:50 faschinj Exp $
  module numerical_check
 
  implicit none
@@ -182,7 +182,7 @@
               upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp, & 
               up2, vp2, rtm, wprtp, thlm,  & 
               wpthlp, wp2, wp3, Scm, rtp2, thlp2, & 
-              rtpthlp, taum, rcm, cf, prefix, & 
+              rtpthlp, tau_zm, rcm, cf, prefix, & 
               wpsclrp_sfc, wpedsclrp_sfc, & 
               sclrm, sclrm_forcing, edsclrm & 
  )
@@ -190,7 +190,7 @@
 !       Description: This subroutine determines what input variables may have 
 !       NaN values.
 !       In addition it checks to see if rho_zm, rho, exner, up2, vp2, rtm, thlm,
-!       wp2, Scm, rtp2, thlp2, taum, rcm, Ncm, Ncnm, Nim, hydromet, or cf 
+!       wp2, Scm, rtp2, thlp2, tau_zm, rcm, Ncm, Ncnm, Nim, hydromet, or cf 
 !       have negative values.
 !-------------------------------------------------------------------------------
  use grid_class, only: & 
@@ -237,7 +237,7 @@
  rtp2,     & ! r_t'^2.                       [(kg/kg)^2]
  thlp2,    & ! th_l'^2.                      [K^2]
  rtpthlp,  & ! r_t' th_l'.                   [(kg K)/kg]
- taum,     & ! Tau on moment. grid.          [s]
+ tau_zm,     & ! Tau on moment. grid.          [s]
  rcm         ! Liquid water mixing ratio.    [kg/kg]
 !    .  Ncm,     ! Cloud droplet number conc.    [num/kg]
 !    .  Ncnm,    ! Cloud nuclei number conc.     [num/m^3]
@@ -298,7 +298,7 @@
  call check_nan( rtp2,"rtp2", prefix//proc_name )
  call check_nan( thlp2,"thlp2", prefix//proc_name )
  call check_nan( rtpthlp, "rtpthlp", prefix//proc_name )
- call check_nan( taum,"taum", prefix//proc_name )
+ call check_nan( tau_zm,"tau_zm", prefix//proc_name )
  call check_nan( wpthlp_sfc, "wpthlp_sfc", prefix//proc_name )
  call check_nan( wprtp_sfc, "wprtp_sfc", prefix//proc_name )
  call check_nan( upwp_sfc, "upwp_sfc", prefix//proc_name ) 
@@ -347,7 +347,7 @@
  call check_negative( Scm, gr%nnzp ,"Scm", prefix//proc_name )
  call check_negative( rtp2, gr%nnzp ,"rtp2", prefix//proc_name )
  call check_negative(thlp2, gr%nnzp ,"thlp2", prefix//proc_name )
- call check_negative( taum, gr%nnzp ,"taum", prefix//proc_name )
+ call check_negative( tau_zm, gr%nnzp ,"tau_zm", prefix//proc_name )
  call check_negative( rcm, gr%nnzp ,"rcm", prefix//proc_name )
 !        call check_negative( Ncm,"Ncm", prefix//proc_name )
 !        call check_negative( Ncnm,"Ncnm", prefix//proc_name )

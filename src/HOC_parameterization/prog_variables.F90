@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F90,v 1.5 2008-07-31 16:10:44 faschinj Exp $
+! $Id: prog_variables.F90,v 1.6 2008-07-31 17:01:51 faschinj Exp $
         module prognostic_variables
 
 !       This module contains definitions of all prognostic
@@ -60,9 +60,9 @@
         real, target, allocatable, dimension(:), public :: Scm  ! [-]
 
         ! Mixing Lengths
-        real, target, allocatable, dimension(:), public :: taum ! [s]
+        real, target, allocatable, dimension(:), public :: tau_zm ! [s]
 
-!$omp   threadprivate(wmm, wmt, Scm, taum)
+!$omp   threadprivate(wmm, wmt, Scm, tau_zm)
 
         ! Cloud water variables
         real, target, allocatable, dimension(:), public :: & 
@@ -171,7 +171,7 @@
 
         ! Mixing lengths
 
-        allocate( taum(1:nzmax) ) 
+        allocate( tau_zm(1:nzmax) ) 
 
         ! Cloud water variables
 
@@ -230,7 +230,7 @@
 
         ! Mixing lengths
 
-        taum(1:nzmax) = 0.0
+        tau_zm(1:nzmax) = 0.0
 
         ! Cloud water variables
 
@@ -304,7 +304,7 @@
 
         ! Mixing lengths
 
-        deallocate( taum )
+        deallocate( tau_zm )
 
         ! Cloud water variables
 

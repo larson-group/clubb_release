@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F90,v 1.12 2008-07-31 16:10:44 faschinj Exp $
+!  $Id: stats_subs.F90,v 1.13 2008-07-31 17:01:51 faschinj Exp $
 module stats_subs
 
   implicit none
@@ -756,7 +756,7 @@ module stats_subs
                  ( um, vm, upwp, vpwp, up2, vp2, thlm, & 
                    rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp, & 
                    p, exner, rho, rho_zm, & 
-                   wmt, Scm, taum, rcm, cf, & 
+                   wmt, Scm, tau_zm, rcm, cf, & 
                    sclrm, edsclrm, sclrm_forcing, wpsclrp )
 
 !     Description:
@@ -791,7 +791,7 @@ module stats_subs
           iwp2rtp, & 
           iLscale_up, & 
           iLscale_down, & 
-          itaut, & 
+          itau_zt, & 
           iKht, & 
           iwp2thvp, & 
           iwp2rcp, & 
@@ -844,7 +844,7 @@ module stats_subs
           iwpthvp, & 
           irtpthvp, & 
           ithlpthvp, & 
-          itaum, & 
+          itau_zm, & 
           iKhm, & 
           iwprcp, & 
           ithlprcp, & 
@@ -908,7 +908,7 @@ module stats_subs
           wp2rtp, & 
           Lscale_up, & 
           Lscale_down, & 
-          taut, & 
+          tau_zt, & 
           Kht, & 
           wp2thvp, & 
           wp2rcp, & 
@@ -994,7 +994,7 @@ module stats_subs
         rho_zm,         & ! Density                                  [kg/m^3]
         wmt,          & ! w on thermodynamic levels                [m/s]
         Scm,          & ! PDF width paramter                       [-]
-        taum         ! Dissipation time                         [s]
+        tau_zm         ! Dissipation time                         [s]
 
       real, intent(in), dimension(gr%nnzp) :: & 
         rcm,   & ! Cloud water mixing ratio                [kg/kg]
@@ -1051,7 +1051,7 @@ module stats_subs
         call stat_update_var( iwp2rtp, wp2rtp, zt )
         call stat_update_var( iLscale_up, Lscale_up, zt )
         call stat_update_var( iLscale_down, Lscale_down, zt )
-        call stat_update_var( itaut, taut, zt )
+        call stat_update_var( itau_zt, tau_zt, zt )
         call stat_update_var( iKht, Kht, zt )
         call stat_update_var( iwp2thvp, wp2thvp, zt )
         call stat_update_var( iwp2rcp, wp2rcp, zt )
@@ -1134,7 +1134,7 @@ module stats_subs
         call stat_update_var( iwpthvp, wpthvp, zm )
         call stat_update_var( irtpthvp, rtpthvp, zm )
         call stat_update_var( ithlpthvp, thlpthvp, zm )
-        call stat_update_var( itaum, taum, zm )
+        call stat_update_var( itau_zm, tau_zm, zm )
         call stat_update_var( iKhm, Khm, zm )
         call stat_update_var( iwprcp, wprcp, zm )
         call stat_update_var( ithlprcp, thlprcp, zm )

@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.10 2008-07-31 14:15:00 faschinj Exp $
+! $Id: wp23.F90,v 1.11 2008-07-31 17:01:51 faschinj Exp $
 !===============================================================================
 module wp23
 
@@ -32,7 +32,7 @@ contains
 !===============================================================================
 subroutine timestep_wp23( dt, Scm, wmm, wmt, wpthvp, wp2thvp,  & 
                           um, vm, upwp, vpwp, up2, vp2, Khm, Kht, & 
-                          taum, taut, Skwm, Skwt, a, & 
+                          tau_zm, tau_zt, Skwm, Skwt, a, & 
                           wp2, wp3, err_code )
 
 !       Description:
@@ -97,8 +97,8 @@ real, intent(in), dimension(gr%nnzp) ::  &
   vp2,         & ! v'^2 (momentum levels)                   [m^2/s^2]
   Khm,         & ! Eddy diffusivity on momentum levels      [m^2/s]
   Kht,         & ! Eddy diffusivity on thermodynamic levels [m^2/s]
-  taum,        & ! Time-scale tau on momentum levels        [s]
-  taut,        & ! Time-scale tau on thermodynamic levels   [s]
+  tau_zm,        & ! Time-scale tau on momentum levels        [s]
+  tau_zt,        & ! Time-scale tau on thermodynamic levels   [s]
   Skwm,        & ! Skewness of w on momentum levels         [-]
   Skwt,        & ! Skewness of w on thermodynamic levels    [-]
   a              ! PDF parameter "a": pdf_parms(:,13)       [-]
@@ -112,7 +112,7 @@ integer, intent(inout) :: err_code ! Diagnostic
 
 ! Local Variables
 real, dimension(gr%nnzp) ::  & 
-  tauw3t  ! Currently just taut                              [s]
+  tauw3t  ! Currently just tau_zt                              [s]
 
 ! Eddy Diffusion for w'^2 and w'^3.
 real, dimension(gr%nnzp) :: Kw1    ! w'^2 coef. eddy diff. [m^2/s]
@@ -143,7 +143,7 @@ integer :: k, km1, kp1  ! Array indices
 
 !       Define tauw
 
-!        tauw3t = taut 
+!        tauw3t = tau_zt 
 !     .           / ( 1.
 !     .                   + 3.0 * max( 
 !     .                     min(1.-(a-0.01)/(0.05-0.01)
@@ -159,11 +159,11 @@ integer :: k, km1, kp1  ! Array indices
 !
 !          Skw = abs( wp3(k)/max(wp2(k),1.e-8)**1.5 )
 !          Skw = min( 5.0, Skw )
-!          tauw3t(k) = taut(k) / ( 0.005*Skw**4 + 1.0 )
+!          tauw3t(k) = tau_zt(k) / ( 0.005*Skw**4 + 1.0 )
 !
 !        end do
 
-tauw3t = taut 
+tauw3t = tau_zt 
 
 ! Vince Larson added code to make C11 function of Skw. 13 Mar 2005
 ! If this code is used, C11 is no longer relevant, i.e. constants
@@ -240,7 +240,7 @@ enddo
 !       Solve semi-implicitly
 call wp23_solve( dt, Scm, wmm, wmt, wpthvp, wp2thvp, & 
                  um, vm, upwp, vpwp, up2, vp2, Kw1, & 
-                 Kw8, Skwt, taum, tauw3t, C1_Skw_fnc, & 
+                 Kw8, Skwt, tau_zm, tauw3t, C1_Skw_fnc, & 
                  C11_Skw_fnc, wp3_zm, wp2, wp3, err_code )
 
 !       Error output
@@ -266,8 +266,8 @@ if ( lapack_error( err_code ) .and.  &
    write(fstderr,*) "vp2 = ", vp2
    write(fstderr,*) "Khm = ", Khm
    write(fstderr,*) "Kht = ", Kht
-   write(fstderr,*) "taum = ", taum
-   write(fstderr,*) "taut = ", taut
+   write(fstderr,*) "tau_zm = ", tau_zm
+   write(fstderr,*) "tau_zt = ", tau_zt
    write(fstderr,*) "Skwm = ", Skwm
    write(fstderr,*) "Skwt = ", Skwt
    write(fstderr,*) "a = ", a

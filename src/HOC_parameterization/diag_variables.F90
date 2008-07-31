@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F90,v 1.9 2008-07-31 13:20:08 faschinj Exp $
+! $Id: diag_variables.F90,v 1.10 2008-07-31 17:01:50 faschinj Exp $
 module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -102,9 +102,9 @@ real, target, allocatable, dimension(:), public :: &
 
 real, target, allocatable, dimension(:), public :: & 
   em,   & ! em               [m^2/s^2]
-  taut ! Dissipation time [s]
+  tau_zt ! Dissipation time [s]
 
-!$omp   threadprivate(em, taut)
+!$omp   threadprivate(em, tau_zt)
 
 ! hydrometeors variable array
 real, allocatable, dimension(:,:), public :: hydromet
@@ -301,8 +301,8 @@ allocate( em(1:nzmax) )
 allocate( Lscale(1:nzmax) )
 allocate( Lscale_up(1:nzmax) )
 allocate( Lscale_down(1:nzmax) )
-allocate( taut(1:nzmax) )
-!       allocate( taum(1:nzmax) )
+allocate( tau_zt(1:nzmax) )
+!       allocate( tau_zm(1:nzmax) )
 
  
 ! Tuning Variables
@@ -414,7 +414,7 @@ Lscale_up      = 0.0
 Lscale_down    = 0.0
 
 ! Dissipation time
-taut     = 0.0
+tau_zt     = 0.0
 
 ! Hydrometer types
 Ncm(1:nzmax)  = 0.0
@@ -531,7 +531,7 @@ deallocate( em )
 deallocate( Lscale )
 deallocate( Lscale_up )
 deallocate( Lscale_down )
-deallocate( taut )
+deallocate( tau_zt )
 
 ! Cloud water variables
 

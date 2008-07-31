@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zm.F90,v 1.6 2008-07-31 16:10:44 faschinj Exp $
+! $Id: stats_zm.F90,v 1.7 2008-07-31 17:01:51 faschinj Exp $
       module stats_zm
        
       implicit none
@@ -29,7 +29,7 @@
           iwpthvp, & 
           irtpthvp, & 
           ithlpthvp, & 
-          itaum, & 
+          itau_zm, & 
           iKhm, & 
           iwprcp, & 
           ithlprcp, & 
@@ -189,7 +189,7 @@
       iwpthvp   = 0
       irtpthvp  = 0
       ithlpthvp = 0
-      itaum     = 0
+      itau_zm     = 0
       iKhm      = 0
       iwprcp    = 0
       ithlprcp  = 0
@@ -401,10 +401,10 @@
                "thlpthvp","K^2",zm)
           k = k + 1
 
-        case ('taum')
-          itaum = k
+        case ('tau_zm')
+          itau_zm = k
 
-          call stat_assign(itaum,"taum", & 
+          call stat_assign(itau_zm,"tau_zm", & 
                "Dissipation time","s",zm)
           k = k + 1
 

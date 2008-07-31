@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F90,v 1.7 2008-07-31 16:10:43 faschinj Exp $
+! $Id: inputfields.F90,v 1.8 2008-07-31 17:01:50 faschinj Exp $
 
 ! Module inputfields
 
@@ -29,7 +29,7 @@ module inputfields
                      input_wmt, input_exner, input_em, & 
                      input_p, input_rho, input_rho_zm, & 
                      input_Lscale, input_Lscale_up, input_Lscale_down, & 
-                     input_Kht, input_Khm, input_taum, input_taut, & 
+                     input_Kht, input_Khm, input_tau_zm, input_tau_zt, & 
                      input_thvm, input_rrainm,input_Nrm,  & 
                      input_rsnowm, input_ricem, input_rgraupelm,  & 
                      input_thlm_forcing, input_rtm_forcing, & 
@@ -108,14 +108,14 @@ module inputfields
       thlm_forcing, & 
       rtm_forcing, & 
       cf, & 
-      taum, & 
+      tau_zm, & 
       up2, & 
       vp2, & 
       Scm
 
   use diagnostic_variables, only: & 
       hydromet,  & ! Variable(s)
-      taut, & 
+      tau_zt, & 
       ug, & 
       vg, & 
       Lscale, & 
@@ -199,9 +199,9 @@ module inputfields
       call get_var( fread_var, "wp3", timestep, & 
                     wp3(1:gr%nnzp),  lerror )
     endif
-    if ( input_taut ) then 
-      call get_var( fread_var, "taut", timestep, & 
-                    taut(1:gr%nnzp),  lerror )
+    if ( input_tau_zt ) then 
+      call get_var( fread_var, "tau_zt", timestep, & 
+                    tau_zt(1:gr%nnzp),  lerror )
     endif
     if ( input_rrainm ) then 
       call get_var( fread_var, "rrainm", timestep, & 
@@ -374,10 +374,10 @@ module inputfields
                     timestep, & 
                     Khm(1:gr%nnzp), lerror )
    endif
-   if ( input_taum) then
-      call get_var( fread_var, "taum", & 
+   if ( input_tau_zm) then
+      call get_var( fread_var, "tau_zm", & 
                     timestep, & 
-                    taum(1:gr%nnzp), lerror )
+                    tau_zm(1:gr%nnzp), lerror )
    endif
    if ( input_up2) then
       call get_var( fread_var, "up2", & 
