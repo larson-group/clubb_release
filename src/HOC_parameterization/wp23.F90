@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.9 2008-07-30 21:23:12 faschinj Exp $
+! $Id: wp23.F90,v 1.10 2008-07-31 14:15:00 faschinj Exp $
 !===============================================================================
 module wp23
 
@@ -307,7 +307,7 @@ use constants, only: &
 
 use model_flags, only:  & 
     l_Khm_aniso,  & ! Variable(s)
-    lhole_fill
+    l_hole_fill
 
 use stats_precision, only:  & 
     time_precision  ! Variable(s)
@@ -631,7 +631,7 @@ if ( l_stats_samp ) then
 end if 
  
 
-if ( lhole_fill .and. any( wp2 < 2./3*emin ) ) then
+if ( l_hole_fill .and. any( wp2 < 2./3*emin ) ) then
 
   ! Use a simple hole filling algorithm
   call fill_holes_driver( 2, 2./3.*emin, "zm", wp2 )

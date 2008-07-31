@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F90,v 1.9 2008-07-30 21:23:11 faschinj Exp $
+! $Id: diag_var.F90,v 1.10 2008-07-31 14:15:00 faschinj Exp $
 !===============================================================================
 module diagnose_variances
 
@@ -59,7 +59,7 @@ module diagnose_variances
             fstderr
 
         use model_flags, only: & 
-            lhole_fill, &    ! logical constants
+            l_hole_fill, &    ! logical constants
             lsingle_C2_Skw
         
         use parameters,  & 
@@ -435,7 +435,7 @@ module diagnose_variances
                              lhs, vp2, Valid_arr(5) )
 
         ! Apply the positive definite scheme to variances
-        if ( lhole_fill ) then
+        if ( l_hole_fill ) then
           call pos_definite_variances( "rtp2", dt, rttol**2, rtp2 )
           call pos_definite_variances( "thlp2", dt, thltol**2, thlp2 )
           call pos_definite_variances( "up2", dt, 2./3.*emin, up2 )
@@ -594,7 +594,7 @@ module diagnose_variances
           = sclr_solution(:,2*sclr_dim+1:3*sclr_dim)
 
           ! Apply hole filling algorithm to the scalar variance terms
-          if ( lhole_fill ) then
+          if ( l_hole_fill ) then
             do i=1, sclr_dim, 1
               call pos_definite_variances( "sclrp2", dt, sclrtol(i), & 
                                            sclrp2(:,i) )

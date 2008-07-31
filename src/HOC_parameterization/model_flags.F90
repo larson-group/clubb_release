@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: model_flags.F90,v 1.6 2008-07-31 13:48:57 faschinj Exp $
+! $Id: model_flags.F90,v 1.7 2008-07-31 14:15:00 faschinj Exp $
 
 module model_flags
 
@@ -19,7 +19,7 @@ module model_flags
     l_LH_on      = .false., & ! Latin hypercube calculation
     l_local_kk   = .false., & ! Local drizzle for rain microphysics
     l_pos_def   = .true.,  & ! Flux limiting pos. def. scheme on rtm
-    lhole_fill = .true.     ! Hole filling pos. def. scheme on wp2,up2,rtp2,etc
+    l_hole_fill = .true.     ! Hole filling pos. def. scheme on wp2,up2,rtp2,etc
 
   logical, parameter, public ::  & 
     lsingle_C2_Skw = .false.,  & ! Use a single Skw dependent value for C2
