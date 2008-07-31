@@ -1,4 +1,4 @@
-! $Id: scalars_stats.in,v 1.10 2008-07-31 17:02:48 faschinj Exp $
+! $Id: scalars_stats.in,v 1.11 2008-07-31 19:36:01 faschinj Exp $
 ! This file contains a comprehensive listing of all the HOC variables that 
 ! can be output to GrADS, as found in src/HOC_parameterization/statistics.F.
 ! This file, as well as the statistical files for all the other cases, needs
@@ -11,7 +11,7 @@
 &statsnl
 
 vars_zt = 
-'thlm', 'thvm', 'rtm', 'rcm', 'um', 'vm', 'wmt', 'ug', 'vg',
+'thlm', 'thvm', 'rtm', 'rcm', 'um', 'vm', 'wm_zt', 'ug', 'vg',
 'cf', 'p', 'exner', 'Lscale', 'T_in_K',
 'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp',
 'Lscale_up', 'Lscale_down', 'tau_zt', 'kht', 'wp2thvp', 'wp2rcp', 'wprtpthlp',

@@ -1,10 +1,10 @@
-! $Id: nobudgets_stats.in,v 1.5 2008-07-31 17:02:48 faschinj Exp $
+! $Id: nobudgets_stats.in,v 1.6 2008-07-31 19:36:01 faschinj Exp $
 ! Stats for the prognostic and diagnostic variables, but omitting the 
 ! budget terms and some of the microphyics stats.
 &statsnl
 
 vars_zt = 
-'thlm', 'thvm', 'rtm', 'rcm', 'um', 'vm', 'wmt', 'ug', 'vg',
+'thlm', 'thvm', 'rtm', 'rcm', 'um', 'vm', 'wm_zt', 'ug', 'vg',
 'cf', 'p', 'exner', 'Lscale',  
 'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp',
 'tau_zt', 'kht', 'wp2thvp', 'wp2rcp', 'wprtpthlp',

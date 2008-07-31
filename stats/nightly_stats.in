@@ -1,7 +1,7 @@
 &statsnl
 vars_zt =
 'thlm', 'rtm', 'cf', 'rcm', 'wp3',
-'um', 'vm', 'wmt', 'rrainm', 'Nrm',
+'um', 'vm', 'wm_zt', 'rrainm', 'Nrm',
 ''
 
 vars_zm =
