@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F90,v 1.8 2008-07-30 19:17:35 dschanen Exp $
+! $Id: diag_variables.F90,v 1.9 2008-07-31 13:20:08 faschinj Exp $
 module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -220,7 +220,7 @@ contains
 !-----------------------------------------------------------------------
 subroutine setup_diagnostic_variables( nzmax )
 use model_flags, only:  & 
-    LH_on ! Variable(s)
+    l_LH_on ! Variable(s)
 
 use constants, only:  & 
     emin ! Variables
@@ -325,7 +325,7 @@ allocate( hydromet(1:nzmax,1:hydromet_dim) ) ! All hydrometeor fields
 
 
 ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
-!       if ( LH_on ) then
+!       if ( l_LH_on ) then
   allocate( AKm_est(1:nzmax) )    ! Kessler ac estimate
   allocate( AKm(1:nzmax) )        ! Exact Kessler ac
   allocate( AKstd(1:nzmax) )      ! St dev of exact Kessler ac
@@ -333,7 +333,7 @@ allocate( hydromet(1:nzmax,1:hydromet_dim) ) ! All hydrometeor fields
   allocate( rcm_est(1:nzmax) )      ! Monte Carlo rcm estimate
   allocate( AKm_rcm(1:nzmax) )      ! Kessler ac based on rcm
   allocate( AKm_rcc(1:nzmax) )      ! Kessler ac based on rcm/cf
-!       end if ! LH_on
+!       end if ! l_LH_on
 ! End of variables for Latin hypercube.
 
 ! Variables for new mixing scheme
@@ -429,7 +429,7 @@ end do
 pdf_parms(1:nzmax,:) = 0.0
 
 ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
-if ( LH_on ) then
+if ( l_LH_on ) then
   AKm_est   = 0.0  ! Kessler ac estimate
   AKm       = 0.0  ! Exact Kessler ac
   AKstd     = 0.0  ! St dev of exact Kessler ac
@@ -437,7 +437,7 @@ if ( LH_on ) then
   rcm_est   = 0.0  ! Monte Carlo rcm estimate
   AKm_rcm   = 0.0  ! Kessler ac based on rcm
   AKm_rcc   = 0.0  ! Kessler ac based on rcm/cf
-end if ! LH_on
+end if ! l_LH_on
 
 ! Passive scalars
 if ( sclr_dim > 0 ) then
@@ -467,7 +467,7 @@ subroutine cleanup_diagnostic_variables( )
 !       Subroutine to deallocate variables defined in module global
 !------------------------------------------------------------------------
 use model_flags, only: & 
-    LH_on ! Variable(s)
+    l_LH_on ! Variable(s)
 
 implicit none
 
@@ -557,7 +557,7 @@ deallocate( rtpthlp_zt ) ! rt'th_l' on t
 deallocate( pdf_parms )
 
 ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
-!       if ( LH_on ) then
+!       if ( l_LH_on ) then
   deallocate( AKm_est )   ! Kessler ac estimate
   deallocate( AKm )       ! Exact Kessler ac
   deallocate( AKstd )     ! St dev of exact Kessler ac
@@ -565,7 +565,7 @@ deallocate( pdf_parms )
   deallocate( rcm_est )   ! Monte Carlo rcm estimate
   deallocate( AKm_rcm )   ! Kessler ac based on rcm
   deallocate( AKm_rcc )   ! Kessler ac based on rcm/cf
-!       end if ! LH_on
+!       end if ! l_LH_on
 
 ! Passive scalars
 deallocate( sclrprtp )

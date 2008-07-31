@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F90,v 1.6 2008-07-30 21:23:11 faschinj Exp $
+! $Id: KK_microphys.F90,v 1.7 2008-07-31 13:20:08 faschinj Exp $
 
 module rain_equations
 
@@ -113,7 +113,7 @@ CONTAINS
 !----------------------------------------------------------------------
 
   use model_flags, only: & 
-      LH_on ! Variable(s)
+      l_LH_on ! Variable(s)
 
   use grid_class, only: & 
       gr,  & ! Variable(s)
@@ -519,7 +519,7 @@ CONTAINS
   ! 22 May 2005
 !           rrainm_auto(k) = autoconv_rrainm( rcm(k), Ncm(k), rhot(k),
 !     .                        a, s1, s2, ss1, ss2, rc1, rc2 )
-     if ( LH_on ) then
+     if ( l_LH_on ) then
 
 !              rrainm_auto(k) = AKm_est(k)
         rrainm_auto(k) = AKm(k)
@@ -531,7 +531,7 @@ CONTAINS
                         s2(k), ss2(k), a(k), rhot(k), & 
                         Ncp2_Ncm2(k), corr_sNc_NL(k) )
 
-     end if ! LH_on
+     end if ! l_LH_on
   ! End Vince Larson's addition
 
      rrainm_accr(k)  & 

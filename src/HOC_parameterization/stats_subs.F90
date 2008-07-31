@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F90,v 1.10 2008-07-30 21:23:12 faschinj Exp $
+!  $Id: stats_subs.F90,v 1.11 2008-07-31 13:20:08 faschinj Exp $
 module stats_subs
 
   implicit none
@@ -949,7 +949,7 @@ module stats_subs
 
       
       use model_flags, only: & 
-          LH_on ! Variable(s)
+          l_LH_on ! Variable(s)
 
       use T_in_K_mod, only: & 
           thlm2T_in_K ! Procedure
@@ -1071,7 +1071,7 @@ module stats_subs
 !        call stat_update_var( iricem, hydromet(:,4), zt )
 !        call stat_update_var( irgraupelm, hydromet(:,5), zt )
 
-        if ( LH_on ) then
+        if ( l_LH_on ) then
            call stat_update_var( iAKm, AKm, zt )
            call stat_update_var( iAkm_est, AKm_est, zt)
         endif

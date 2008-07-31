@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.10 2008-07-30 21:23:12 faschinj Exp $
+! $Id: parameterization_interface.F90,v 1.11 2008-07-31 13:20:08 faschinj Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
@@ -73,7 +73,7 @@ module hoc_parameterization_interface
            sclr_dim
 
        use model_flags, only: & 
-           LH_on,  & ! Variable(s)
+           l_LH_on,  & ! Variable(s)
            l_Khm_aniso, & 
            l_uv_nudge, &
            lgamma_Skw
@@ -554,7 +554,7 @@ module hoc_parameterization_interface
 
 !    Latin hypercube sample generation
 !    Generate p_height_time, an nnzp x nt_repeat x d_variables array of random integers
-       if ( LH_on ) then
+       if ( l_LH_on ) then
          i_rmd = mod( iter-1, sequence_length )
          if ( i_rmd == 0) then
            call permute_height_time( gr%nnzp, nt_repeat, d_variables+1, & ! intent(in)
@@ -605,7 +605,7 @@ module hoc_parameterization_interface
          !--------------------------------------------------------------
          ! Latin hypercube sampling
          !--------------------------------------------------------------
-         if ( LH_on ) then 
+         if ( l_LH_on ) then 
 !          call latin_hypercube_sampling
 !    .     ( k, n_micro_call, d_variables, nt_repeat, i_rmd, 
 !    .       crt1, crt2, cthl1, cthl2, hydromet(:,1), 
