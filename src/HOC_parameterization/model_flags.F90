@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: model_flags.F90,v 1.5 2008-07-31 13:40:44 faschinj Exp $
+! $Id: model_flags.F90,v 1.6 2008-07-31 13:48:57 faschinj Exp $
 
 module model_flags
 
@@ -18,7 +18,7 @@ module model_flags
   logical, parameter, public ::  & 
     l_LH_on      = .false., & ! Latin hypercube calculation
     l_local_kk   = .false., & ! Local drizzle for rain microphysics
-    lpos_def   = .true.,  & ! Flux limiting pos. def. scheme on rtm
+    l_pos_def   = .true.,  & ! Flux limiting pos. def. scheme on rtm
     lhole_fill = .true.     ! Hole filling pos. def. scheme on wp2,up2,rtp2,etc
 
   logical, parameter, public ::  & 

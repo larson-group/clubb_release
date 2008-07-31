@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F90,v 1.6 2008-07-30 21:23:12 faschinj Exp $
+! $Id: mixing.F90,v 1.7 2008-07-31 13:48:57 faschinj Exp $
 !===============================================================================
 module mixing
 
@@ -1118,7 +1118,7 @@ use error_code, only:  &
     lapack_error ! Procedure(s)
 
 use model_flags, only: & 
-    lpos_def  ! Logical for whether to apply the positive
+    l_pos_def  ! Logical for whether to apply the positive
               !  definite scheme to rtm
 
  
@@ -1422,7 +1422,7 @@ end do ! k=1..gr%nnzp
 
 ! Apply a flux limiting positive definite scheme if the solution 
 ! for the mean field is negative and we're determining total water
-if ( trim( solve_type ) == "rtm" .and. lpos_def .and. & 
+if ( trim( solve_type ) == "rtm" .and. l_pos_def .and. & 
      any( xm < 0.0 ) ) then
 
    call pos_definite_adj( dt, "zt", xm, wpxp, & 
