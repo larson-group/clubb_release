@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.14 2008-07-31 17:01:51 faschinj Exp $
+! $Id: parameterization_interface.F90,v 1.15 2008-07-31 19:34:17 faschinj Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
@@ -26,7 +26,7 @@ module hoc_parameterization_interface
 !-----------------------------------------------------------------------
        subroutine parameterization_timestep & 
                   ( iter, dt, fcor, & 
-                    thlm_forcing, rtm_forcing, wmm, wmt, & 
+                    thlm_forcing, rtm_forcing, wm_zm, wm_zt, & 
                     wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
                     p_in_Pa, rho_zm, rho, exner, & 
                     um, vm, upwp, vpwp, up2, vp2, & 
@@ -231,8 +231,8 @@ module hoc_parameterization_interface
        real, intent(in), dimension(gr%nnzp) ::  & 
        thlm_forcing,   & ! theta_l forcing.        [K/s]
        rtm_forcing,    & ! r_t forcing.            [(kg/kg)/s] 
-       wmm,            & ! wm on moment. grid.     [m/s]
-       wmt,            & ! wm on thermo. grid.     [m/s]
+       wm_zm,            & ! wm on moment. grid.     [m/s]
+       wm_zt,            & ! wm on thermo. grid.     [m/s]
        p_in_Pa,        & ! Pressure.               [Pa] 
        rho_zm,           & ! Density on moment. grid [kg/m^3]
        rho,           & ! Density on thermo. grid [kg/m^3] 
@@ -326,7 +326,7 @@ module hoc_parameterization_interface
 !-------- Test input variables ----------------------------------------
        if ( clubb_at_debug_level( 2 ) ) then
        call parameterization_check & 
-            ( thlm_forcing, rtm_forcing, wmm, wmt, p_in_Pa, rho_zm,& ! intent(in)
+            ( thlm_forcing, rtm_forcing, wm_zm, wm_zt, p_in_Pa, rho_zm,& ! intent(in)
               rho, exner, wpthlp_sfc, wprtp_sfc,                & ! intent(in)
               upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,            & ! intent(in)
               up2, vp2, rtm, wprtp, thlm,                        & ! intent(in)
@@ -421,7 +421,7 @@ module hoc_parameterization_interface
        ! This requires us to store in memory Scm and tau_zm between timesteps.
 
        ! We found that if we call diag_var first, we can use a longer timestep.
-       call diag_var( tau_zm, wmm, rtm, wprtp,                     & ! intent(in)
+       call diag_var( tau_zm, wm_zm, rtm, wprtp,                     & ! intent(in)
                       thlm, wpthlp, wpthvp, um, vm,              & ! intent(in)
                       wp2, wp3, upwp, vpwp, Scm, Skwm, Kht,      & ! intent(in)
 ! Vince Larson used prognostic timestepping of variances 
@@ -579,7 +579,7 @@ module hoc_parameterization_interface
 
        do k = 2, gr%nnzp, 1
          call pdf_closure_new & 
-         ( p_in_Pa(k), exner(k), wmt(k), zm2zt(wp2, k), wp3(k), Sct(k), & ! intent(in)
+         ( p_in_Pa(k), exner(k), wm_zt(k), zm2zt(wp2, k), wp3(k), Sct(k), & ! intent(in)
            rtm(k), zm2zt(rtp2, k), zm2zt( wprtp, k ),                   & ! intent(in)
            thlm(k), zm2zt( thlp2, k ), zm2zt( wpthlp, k ),              & ! intent(in)
            zm2zt(rtpthlp, k), sclrm(k,:), sclr_tmp1(k,:),               & ! intent(in)
@@ -724,7 +724,7 @@ module hoc_parameterization_interface
        !----------------------------------------------------------------
        ! Advance rtm/wprtp and thlm/wpthlp one time step
        !----------------------------------------------------------------
-        call timestep_mixing( dt, Scm, wmm, wmt, wp2, wp3,       & ! intent(in)
+        call timestep_mixing( dt, Scm, wm_zm, wm_zt, wp2, wp3,       & ! intent(in)
                               Kht, tau_zm, Skwm, rtpthvp,          & ! intent(in)
                               rtm_forcing, thlpthvp,             & ! intent(in)
                               thlm_forcing, rtp2, thlp2,         & ! intent(in)
@@ -760,7 +760,7 @@ module hoc_parameterization_interface
        ! Advance wp2/wp3 one timestep
        !----------------------------------------------------------------
 
-       call timestep_wp23( dt, Scm, wmm, wmt, wpthvp, wp2thvp,        & ! intent(in)
+       call timestep_wp23( dt, Scm, wm_zm, wm_zt, wpthvp, wp2thvp,        & ! intent(in)
                            um, vm, upwp, vpwp, up2, vp2, Khm, Kht,    & ! intent(in)
                            tau_zm, tau_zt, Skwm, Skwt, pdf_parms(:, 13),  & ! intent(in)
                            wp2, wp3, err_code )                         ! intent(inout)
@@ -860,7 +860,7 @@ module hoc_parameterization_interface
        if ( sclr_dim > 0 ) then
          do i=1, sclr_dim
 
-           edsclrmt(1:gr%nnzp,i) = - wmt * ddzm( zt2zm( edsclrm(:,i) ) )
+           edsclrmt(1:gr%nnzp,i) = - wm_zt * ddzm( zt2zm( edsclrm(:,i) ) )
 
            call compute_um_edsclrm( "edsclr", wpedsclrp(1,i),     & ! intent(in)
                                     edsclrmt(:,i), Khm, dt,       & ! intent(in)
@@ -884,7 +884,7 @@ module hoc_parameterization_interface
        !----------------------------------------------------------------
 
        call compute_uv_tndcy & 
-          ( "um", um, wmt, fcor, vm, vg, implemented,       & ! intent(in)
+          ( "um", um, wm_zt, fcor, vm, vg, implemented,       & ! intent(in)
              umt )                                            ! intent(out)
 
        ! dtmain to dt -dschanen
@@ -905,7 +905,7 @@ module hoc_parameterization_interface
        if ( lapack_error(err_code) ) return
 
        call compute_uv_tndcy & 
-          ( "vm", vm, wmt, fcor, um, ug, implemented,  & ! intent(in)
+          ( "vm", vm, wm_zt, fcor, um, ug, implemented,  & ! intent(in)
             vmt )                                        ! intent(out)
 
        call compute_um_edsclrm( "vm", vpwp(1), vmt, Khm, dt,  & ! intent(in)
@@ -955,14 +955,14 @@ module hoc_parameterization_interface
             ( um, vm, upwp, vpwp, up2, vp2, thlm,                   & ! intent(in)
               rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp,   & ! intent(in)
               p_in_Pa, exner, rho, rho_zm,                           & ! intent(in)
-              wmt, Scm, tau_zm, rcm, cf,                              & ! intent(in)
+              wm_zt, Scm, tau_zm, rcm, cf,                              & ! intent(in)
               sclrm, edsclrm, sclrm_forcing, wpsclrp )                ! intent(in)
 
  
 
        if ( clubb_at_debug_level( 2 ) ) then
          call parameterization_check & 
-              ( thlm_forcing, rtm_forcing, wmm, wmt, p_in_Pa, rho_zm, & ! intent(in)
+              ( thlm_forcing, rtm_forcing, wm_zm, wm_zt, p_in_Pa, rho_zm, & ! intent(in)
                 rho, exner, wpthlp_sfc, wprtp_sfc,                 & ! intent(in)
                 upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,             & ! intent(in)
                 up2, vp2, rtm, wprtp, thlm,                         & ! intent(in)

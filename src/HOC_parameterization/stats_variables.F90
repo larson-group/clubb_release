@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_variables.F90,v 1.10 2008-07-31 17:01:51 faschinj Exp $
+! $Id: stats_variables.F90,v 1.11 2008-07-31 19:34:18 faschinj Exp $
 !-----------------------------------------------------------------------
 !  module stats_variables
 
@@ -52,7 +52,7 @@ module stats_variables
      ircm, & 
      ium, & 
      ivm, & 
-     iwmt, & 
+     iwm_zt, & 
      iug, & 
      ivg, & 
      icf, & 
@@ -95,7 +95,7 @@ module stats_variables
      iT_in_K      ! Absolute temperature
 
 
-!$omp   threadprivate(ithlm, ithvm, irtm, ircm, ium, ivm, iwmt, iug)
+!$omp   threadprivate(ithlm, ithvm, irtm, ircm, ium, ivm, iwm_zt, iug)
 !$omp   threadprivate(ivg, icf, ip, iexner, iLscale, iwp3, iwpthlp2)
 !$omp   threadprivate(iwp2thlp, iwprtp2, iwp2rtp, iLscale_up, iLscale_down, itau_zt)
 !$omp   threadprivate(iKht, iwp2thvp, iwp2rcp, iwprtpthlp, isct, irho)

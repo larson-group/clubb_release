@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: astex.F90,v 1.4 2008-07-29 16:44:01 nielsenb Exp $
+! $Id: astex.F90,v 1.5 2008-07-31 19:34:16 faschinj Exp $
 module astex
 
 !       Description:
@@ -15,7 +15,7 @@ private ! Default Scope
 contains
 
 !----------------------------------------------------------------------
-subroutine astex_tndcy( wmt, wmm,  & 
+subroutine astex_tndcy( wm_zt, wm_zm,  & 
                         thlm_forcing, rtm_forcing, & 
                         sclrm_forcing )
 
@@ -36,8 +36,8 @@ implicit none
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) ::  & 
-  wmt,           & ! w wind on the thermodynamic grid        [m/s]
-  wmm,           & ! w wind on the momentum grid             [m/s]
+  wm_zt,           & ! w wind on the thermodynamic grid        [m/s]
+  wm_zm,           & ! w wind on the momentum grid             [m/s]
   thlm_forcing,  & ! Liquid potential temperature tendency   [K/s]
   rtm_forcing   ! Total water mixing ratio tendency       [kg/kg/s]
 
@@ -52,19 +52,19 @@ integer :: i
 
 do i=2,gr%nnzp
 
-   wmt(i) = - 5.e-6 * gr%zt(i)
+   wm_zt(i) = - 5.e-6 * gr%zt(i)
 
 end do
 
 ! Boundary condition
-wmt(1) = 0.0        ! Below surface
+wm_zt(1) = 0.0        ! Below surface
 
 ! Interpolation
-wmm = zt2zm( wmt )
+wm_zm = zt2zm( wm_zt )
 
 ! Boundary condition
-wmm(1) = 0.0        ! At surface
-wmm(gr%nnzp) = 0.0  ! Model top
+wm_zm(1) = 0.0        ! At surface
+wm_zm(gr%nnzp) = 0.0  ! Model top
 
 ! Radiative theta-l tendency
 

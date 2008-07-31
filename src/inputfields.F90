@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F90,v 1.8 2008-07-31 17:01:50 faschinj Exp $
+! $Id: inputfields.F90,v 1.9 2008-07-31 19:34:16 faschinj Exp $
 
 ! Module inputfields
 
@@ -26,7 +26,7 @@ module inputfields
                      input_wp3, input_rtp2, input_thlp2,  & 
                      input_rtpthlp, input_upwp, input_vpwp, & 
                      input_ug, input_vg, input_rcm,  & 
-                     input_wmt, input_exner, input_em, & 
+                     input_wm_zt, input_exner, input_em, & 
                      input_p, input_rho, input_rho_zm, & 
                      input_Lscale, input_Lscale_up, input_Lscale_down, & 
                      input_Kht, input_Khm, input_tau_zm, input_tau_zt, & 
@@ -102,7 +102,7 @@ module inputfields
       p_in_Pa, & 
       exner, & 
       rcm, & 
-      wmt, & 
+      wm_zt, & 
       rho, & 
       rho_zm, & 
       thlm_forcing, & 
@@ -242,9 +242,9 @@ module inputfields
       call get_var( fread_var , "rcm", timestep, & 
                     rcm(1:gr%nnzp),  lerror)
     endif
-    if ( input_wmt) then
+    if ( input_wm_zt) then
       call get_var( fread_var , "wm", timestep, & 
-                    wmt(1:gr%nnzp),  lerror)
+                    wm_zt(1:gr%nnzp),  lerror)
     endif
     if ( input_rho) then
       call get_var( fread_var , "rho", timestep, & 

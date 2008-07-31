@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.21 2008-07-31 17:01:50 faschinj Exp $
+! $Id: hoc.F90,v 1.22 2008-07-31 19:34:16 faschinj Exp $
 
 module hoc
 
@@ -124,7 +124,7 @@ module hoc
 
     use prognostic_variables, only:  & 
       Tsfc, psfc, SE, LE, thlm, rtm,     & ! Variable(s)
-      um, vm, wp2, rcm, wmt, wmm, exner, & 
+      um, vm, wp2, rcm, wm_zt, wm_zm, exner, & 
       tau_zm, p_in_Pa, rho_zm, upwp, vpwp, wpthlp, & 
       rho, wprtp, wpthlp_sfc, wprtp_sfc, & 
       upwp_sfc, vpwp_sfc, thlm_forcing, & 
@@ -516,7 +516,7 @@ module hoc
       call hoc_initialize( iunit, runfile, psfc, thlm, rtm,  & 
                            um, vm, ug, vg, wp2, & 
                            rcm,  & 
-                           wmt, wmm, em, exner, & 
+                           wm_zt, wm_zm, em, exner, & 
                            tau_zt, tau_zm, thvm, p_in_Pa, & 
                            rho, rho_zm, Lscale, & 
                            Kht, Khm, um_ref, vm_ref, & 
@@ -550,7 +550,7 @@ module hoc
       call hoc_restart( iunit, runfile, restart_path_case,  & 
                         time_restart,  & 
                         thlm, rtm, um, vm, & 
-                        ug, vg, upwp, vpwp, wmt, wmm,  & 
+                        ug, vg, upwp, vpwp, wm_zt, wm_zm,  & 
                         um_ref, vm_ref, wpthlp, wprtp, & 
                         wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
                         sclrm, edsclrm )
@@ -632,7 +632,7 @@ module hoc
       do i1=1, niterlong
         call parameterization_timestep & 
              ( i, dt, fcor, & 
-               thlm_forcing, rtm_forcing, wmm, wmt, & 
+               thlm_forcing, rtm_forcing, wm_zm, wm_zt, & 
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
                p_in_Pa, rho_zm, rho, exner, & 
                um, vm, upwp, vpwp, up2, vp2, & 
@@ -697,7 +697,7 @@ module hoc
         subroutine hoc_initialize & 
                    ( iunit, runfile, psfc, thlm, rtm, um, vm, & 
                      ug, vg, wp2, rcm, & 
-                     wmt, wmm, em, exner, tau_zt, tau_zm, thvm, & 
+                     wm_zt, wm_zm, em, exner, tau_zt, tau_zm, thvm, & 
                      p, rho, rho_zm, Lscale, & 
                      Kht, Khm, um_ref, vm_ref, & 
                      sclrm, edsclrm )
@@ -776,7 +776,7 @@ module hoc
         vg,              & ! u geostrophic wind            [m/s] 
         wp2,             & ! w'^2                          [m^2/s^2]
         rcm,             & ! Cloud water mixing ratio      [kg/kg]
-        wmt, wmm,        & ! w wind                        [m/s]
+        wm_zt, wm_zm,        & ! w wind                        [m/s]
         exner,           & ! Exner function                [-] 
         em,              & ! Turbulence kinetic energy     [m^2/s^2]
         p,               & ! Pressure                      [Pa]
@@ -861,8 +861,8 @@ module hoc
         ! Initialize imposed w
 
         do k = 1, gr%nnzp
-          wmt(k) = 0.0
-          wmm(k) = 0.0
+          wm_zt(k) = 0.0
+          wm_zm(k) = 0.0
         end do
 
         ! Initialize TKE and other fields as needed
@@ -1211,7 +1211,7 @@ module hoc
                    ( iunit, runfile, restart_path_case,  & 
                      time_restart,  & 
                      thlm, rtm, um, vm, & 
-                     ug, vg, upwp, vpwp, wmt, wmm,  & 
+                     ug, vg, upwp, vpwp, wm_zt, wm_zm,  & 
                      um_ref, vm_ref, wpthlp, wprtp, & 
                      wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
                      sclrm, edsclrm & 
@@ -1223,7 +1223,7 @@ module hoc
         use inputfields,only:  & 
             datafile, input_type, input_um, input_vm,  & ! Variable(s)
             input_rtm, input_thlm, input_wp2, input_ug, & 
-            input_vg, input_rcm, input_wmt, input_exner, & 
+            input_vg, input_rcm, input_wm_zt, input_exner, & 
             input_em, input_p, input_rho, input_rho_zm, & 
             input_Lscale, input_Lscale_up, input_Lscale_down, input_Kht, & 
             input_Khm, input_tau_zm, input_tau_zt, input_thvm,  & 
@@ -1284,7 +1284,7 @@ module hoc
         vm_ref,          & ! Initial profile of v wind    [m/s]
         ug,              & ! u geostrophic wind           [m/s] 
         vg,              & ! v geostrophic wind           [m/s] 
-        wmt, wmm,        & ! w wind                       [m/s]
+        wm_zt, wm_zm,        & ! w wind                       [m/s]
         wprtp,           & ! w' r_t'                      [(kg m)(kg s)]
         wpthlp,          & ! w' th_l'                     [(m K)/s]
         upwp,            & ! u'w'                         [m^2/s^2]
@@ -1314,7 +1314,7 @@ module hoc
         input_ug   = .true.
         input_vg   = .true.
         input_rcm  = .true.
-        input_wmt  = .true.
+        input_wm_zt  = .true.
         input_exner = .true.
         input_em = .true.
         input_p = .true.
@@ -1394,7 +1394,7 @@ module hoc
             call mpace_a_init()
         end select
         
-        wmm = zt2zm( wmt )
+        wm_zm = zt2zm( wm_zt )
         
         wpthlp_sfc = wpthlp(1)
         wprtp_sfc  = wprtp(1)
@@ -1434,7 +1434,7 @@ module hoc
         use diagnostic_variables, only: wpedsclrp ! Passive scalar variables
         
         use prognostic_variables, only: rtm_forcing, thlm_forcing,  & ! Variable(s)
-                                  wmt, wmm, rho, rtm, thlm, p_in_Pa, & 
+                                  wm_zt, wm_zm, rho, rtm, thlm, p_in_Pa, & 
                                   exner, rcm, rho_zm, um, psfc, vm, & 
                                   upwp_sfc, vpwp_sfc, Tsfc, & 
                                   wpthlp_sfc, SE, LE, wprtp_sfc, cf
@@ -1568,50 +1568,50 @@ module hoc
                   sclrm_forcing )
 
          case( "arm_0003" ) ! ARM March 2000 case
-          call arm_0003_tndcy( time_current, wmm, wmt, thlm_forcing,  & 
+          call arm_0003_tndcy( time_current, wm_zm, wm_zt, thlm_forcing,  & 
                                rtm_forcing, um_ref, vm_ref, & 
                                sclrm_forcing )
 
          case( "arm_3year" ) ! ARM 3 year case
-          call arm_3year_tndcy( time_current, wmm, wmt, thlm_forcing,  & 
+          call arm_3year_tndcy( time_current, wm_zm, wm_zt, thlm_forcing,  & 
                                 rtm_forcing, um_ref, vm_ref, & 
                                 sclrm_forcing )
 
          case( "arm_97" ) ! 27 June 1997 ARM case
-           call arm_97_tndcy( time_current, wmm, wmt, thlm_forcing,  & 
+           call arm_97_tndcy( time_current, wm_zm, wm_zt, thlm_forcing,  & 
                               rtm_forcing, um_ref, vm_ref, & 
                               sclrm_forcing )
 
          case( "bomex" ) ! BOMEX Cu case
-           call bomex_tndcy( wmt, wmm, radht, & 
+           call bomex_tndcy( wm_zt, wm_zm, radht, & 
                              thlm_forcing, rtm_forcing, & 
                              sclrm_forcing )
 
          case( "fire" ) ! FIRE Sc case
            call fire_tndcy( rho, rcm, exner,  & 
-                            wmt, wmm, Frad, radht, & 
+                            wm_zt, wm_zm, Frad, radht, & 
                             thlm_forcing, rtm_forcing, & 
                             sclrm_forcing )
 
          case( "wangara" ) ! Wangara dry CBL
-           call wangara_tndcy( wmt, wmm,  & 
+           call wangara_tndcy( wm_zt, wm_zm,  & 
                                thlm_forcing, rtm_forcing, & 
                                sclrm_forcing )
 
          case( "atex" ) ! ATEX case
            call atex_tndcy( time_current, time_initial, rtm,  & 
-                            rho, rcm, exner, wmt, wmm, Frad, radht, & 
+                            rho, rcm, exner, wm_zt, wm_zm, Frad, radht, & 
                             thlm_forcing, rtm_forcing, err_code, & 
                             sclrm_forcing )
 
          case( "dycoms2_rf01" ) ! DYCOMS2 RF01 case
            call dycoms2_rf01_tndcy( rho, rho_zm, rtm, rcm,  & 
-                                    exner, wmt, wmm, Frad, radht,  & 
+                                    exner, wm_zt, wm_zm, Frad, radht,  & 
                                     thlm_forcing, rtm_forcing, err_code, & 
                                     sclrm_forcing )
 
          case( "astex_a209" ) ! ASTEX Sc case for K & K
-           call astex_tndcy( wmt, wmm,  & 
+           call astex_tndcy( wm_zt, wm_zm,  & 
                              thlm_forcing, rtm_forcing, & 
                              sclrm_forcing )
 
@@ -1621,7 +1621,7 @@ module hoc
                "dycoms2_rf02_so" )! DYCOMS2 RF02 case with cloud water sedimentation only.
            call dycoms2_rf02_tndcy & 
                 ( time_current, time_initial, rho, rho_zm, rtm, rcm,  & 
-                  exner, wmt, wmm, thlm_forcing, rtm_forcing, & 
+                  exner, wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
                   Frad, radht, Ncm, Ncnm, err_code, & 
                   sclrm_forcing  )
 
@@ -1629,34 +1629,34 @@ module hoc
            call nov11_altocu_tndcy & 
                 ( time_current, time_initial, dt, &
                   ! rlat, rlon, & 
-                  rcm, exner, rho, rtm, wmt, & 
-                  wmm, thlm_forcing, rtm_forcing, & 
+                  rcm, exner, rho, rtm, wm_zt, & 
+                  wm_zm, thlm_forcing, rtm_forcing, & 
                   Frad, radht, Ncnm, & 
                   sclrm_forcing )
 
          case( "jun25_altocu" ) ! June 25 Altocumulus case.
            call jun25_altocu_tndcy & 
                 ( time_current, time_initial, rlat, rlon,  & 
-                  rcm, exner, rho, wmt, & 
-                  wmm, thlm_forcing, rtm_forcing, & 
+                  rcm, exner, rho, wm_zt, & 
+                  wm_zm, thlm_forcing, rtm_forcing, & 
                   Frad, radht, sclrm_forcing )
 
          case( "clex9_nov02" ) ! CLEX-9: Nov. 02 Altocumulus case.
            call clex9_nov02_tndcy & 
                 ( time_current, time_initial, rlat, rlon, & 
-                  rcm, exner, rho, wmt, & 
-                  wmm, thlm_forcing, rtm_forcing, & 
+                  rcm, exner, rho, wm_zt, & 
+                  wm_zm, thlm_forcing, rtm_forcing, & 
                   Frad, radht, Ncnm, sclrm_forcing )
 
          case( "clex9_oct14" ) ! CLEX-9: Oct. 14 Altocumulus case.
            call clex9_oct14_tndcy & 
                 ( time_current, time_initial, rlat, rlon, & 
-                  rcm, exner, rho, wmt, & 
-                  wmm, thlm_forcing, rtm_forcing, & 
+                  rcm, exner, rho, wm_zt, & 
+                  wm_zm, thlm_forcing, rtm_forcing, & 
                   Frad, radht, Ncnm ,sclrm_forcing )
 
          case ( "lba" )
-           call lba_tndcy( time_current, wmt, wmm, radht,  & 
+           call lba_tndcy( time_current, wm_zt, wm_zm, radht,  & 
                            thlm_forcing, rtm_forcing, & 
                            sclrm_forcing )
 
@@ -1664,7 +1664,7 @@ module hoc
            call mpace_a_tndcy & 
                 ( time_current, time_initial, rlat, & 
                   rho, p_in_Pa, rcm, & 
-                  wmt, wmm, thlm_forcing, rtm_forcing, & 
+                  wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
                   Ncnm, Ncm, Frad, radht, um_ref, vm_ref, & 
                   sclrm_forcing )
 
@@ -1672,25 +1672,25 @@ module hoc
            call mpace_b_tndcy & 
                 ( time_current, time_initial, rlat, & 
                   rho,  p_in_Pa, thvm, rcm, & 
-                  wmt, wmm, thlm_forcing, rtm_forcing, & 
+                  wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
                   Ncnm, Ncm, Frad, radht, & 
                   sclrm_forcing )
 
         ! Brian Griffin for COBRA CO2 case.
         case ( "cobra" )
-           call cobra_tndcy( wmt, wmm,  & 
+           call cobra_tndcy( wm_zt, wm_zm,  & 
                              thlm_forcing, rtm_forcing, & 
                              sclrm_forcing )
 
          case ( "rico" ) ! RICO case
            call rico_tndcy( exner, & 
-                            rho, rcm, l_kk_rain, wmt, wmm, & 
+                            rho, rcm, l_kk_rain, wm_zt, wm_zm, & 
                             thlm_forcing, rtm_forcing, radht, Ncm, & 
                             sclrm_forcing )
 
          case ( "gabls2" ) ! GABLS 2 case
            call gabls2_tndcy( time_current, time_initial,  & 
-                              rho, rcm, l_kk_rain, wmt, wmm, & 
+                              rho, rcm, l_kk_rain, wm_zt, wm_zm, & 
                               thlm_forcing, rtm_forcing, radht, Ncm, & 
                               sclrm_forcing )
 
@@ -1875,7 +1875,7 @@ module hoc
           call advance_microphys & 
                ( runtype, dt, time_current, & 
                  thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, Ncm,  & 
-                 pdf_parms, wmt, wmm, Khm, AKm_est, Akm,  & 
+                 pdf_parms, wm_zt, wm_zm, Khm, AKm_est, Akm,  & 
                  Ncnm, Nim, & 
                  hydromet, & 
                  rtm_forcing, thlm_forcing, err_code )

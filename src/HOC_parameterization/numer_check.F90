@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F90,v 1.8 2008-07-31 17:01:50 faschinj Exp $
+! $Id: numer_check.F90,v 1.9 2008-07-31 19:34:17 faschinj Exp $
  module numerical_check
 
  implicit none
@@ -177,7 +177,7 @@
 
 !-------------------------------------------------------------------------------
  subroutine parameterization_check & 
-            ( thlm_forcing, rtm_forcing, wmm, wmt, p, rho_zm,  & 
+            ( thlm_forcing, rtm_forcing, wm_zm, wm_zt, p, rho_zm,  & 
               rho, exner, wpthlp_sfc, wprtp_sfc,  & 
               upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp, & 
               up2, vp2, rtm, wprtp, thlm,  & 
@@ -206,8 +206,8 @@
  real, intent(in), dimension(gr%nnzp) ::  & 
  thlm_forcing,   & ! theta_l forcing.        [K/s]
  rtm_forcing,    & ! r_t forcing.            [(kg/kg)/s] 
- wmm,            & ! wm on moment. grid.     [m/s]
- wmt,            & ! wm on thermo. grid.     [m/s]
+ wm_zm,            & ! wm on moment. grid.     [m/s]
+ wm_zt,            & ! wm on thermo. grid.     [m/s]
  p,              & ! Pressure.               [Pa] 
  rho_zm,           & ! Density on moment. grid [kg/m^3]
  rho,           & ! Density on thermo. grid [kg/m^3] 
@@ -276,8 +276,8 @@
  call check_nan( rtm_forcing,"rtm_forcing", prefix//proc_name )
 !        call check_nan( rtm_mc, "rtm_mc", prefix//proc_name )
 !        call check_nan( thlm_mc, "thlm_mc", prefix//proc_name )
- call check_nan( wmm,"wmm", prefix//proc_name )
- call check_nan( wmt,"wmt", prefix//proc_name )
+ call check_nan( wm_zm,"wm_zm", prefix//proc_name )
+ call check_nan( wm_zt,"wm_zt", prefix//proc_name )
  call check_nan( p,"p", prefix//proc_name )
  call check_nan( rho_zm,"rho_zm", prefix//proc_name )
  call check_nan( rho,"rho", prefix//proc_name )
@@ -616,9 +616,9 @@
    end do
  end if
 
-!       if ( isnan2d( wmt ) ) then
-!         write(fstderr,*) "NaN in wmt model array" 
-!         write(fstderr,*) "wmt= ", wmt
+!       if ( isnan2d( wm_zt ) ) then
+!         write(fstderr,*) "NaN in wm_zt model array" 
+!         write(fstderr,*) "wm_zt= ", wm_zt
 !         invalid_model_arrays = .true.
 !         return
 !       end if

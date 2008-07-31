@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.11 2008-07-31 17:01:51 faschinj Exp $
+! $Id: wp23.F90,v 1.12 2008-07-31 19:34:18 faschinj Exp $
 !===============================================================================
 module wp23
 
@@ -30,7 +30,7 @@ private :: wp23_solve, &
 contains
 
 !===============================================================================
-subroutine timestep_wp23( dt, Scm, wmm, wmt, wpthvp, wp2thvp,  & 
+subroutine timestep_wp23( dt, Scm, wm_zm, wm_zt, wpthvp, wp2thvp,  & 
                           um, vm, upwp, vpwp, up2, vp2, Khm, Kht, & 
                           tau_zm, tau_zt, Skwm, Skwt, a, & 
                           wp2, wp3, err_code )
@@ -85,8 +85,8 @@ real(kind=time_precision), intent(in) ::  &
 
 real, intent(in), dimension(gr%nnzp) ::  & 
   Scm,         & ! Sc on momentum levels                    [-]
-  wmm,         & ! w wind component on momentum levels      [m/s]
-  wmt,         & ! w wind component on thermodynamic levels [m/s]
+  wm_zm,         & ! w wind component on momentum levels      [m/s]
+  wm_zt,         & ! w wind component on thermodynamic levels [m/s]
   wpthvp,      & ! w'th_v' (momentum levels)                [K m/s]
   wp2thvp,     & ! w'^2th_v' (thermodynamic levels)         [K m^2/s^2]
   um,          & ! u wind component (thermodynamic levels)  [m/s]
@@ -238,7 +238,7 @@ do k = 1, gr%nnzp, 1
 enddo
 
 !       Solve semi-implicitly
-call wp23_solve( dt, Scm, wmm, wmt, wpthvp, wp2thvp, & 
+call wp23_solve( dt, Scm, wm_zm, wm_zt, wpthvp, wp2thvp, & 
                  um, vm, upwp, vpwp, up2, vp2, Kw1, & 
                  Kw8, Skwt, tau_zm, tauw3t, C1_Skw_fnc, & 
                  C11_Skw_fnc, wp3_zm, wp2, wp3, err_code )
@@ -254,8 +254,8 @@ if ( lapack_error( err_code ) .and.  &
 
    write(fstderr,*) "dt = ", dt
    write(fstderr,*) "Scm = ", Scm
-   write(fstderr,*) "wmm = ", wmm
-   write(fstderr,*) "wmt = ", wmt
+   write(fstderr,*) "wm_zm = ", wm_zm
+   write(fstderr,*) "wm_zt = ", wm_zt
    write(fstderr,*) "wpthvp = ", wpthvp
    write(fstderr,*) "wp2thvp = ", wp2thvp
    write(fstderr,*) "um = ", um
@@ -284,7 +284,7 @@ return
 end subroutine timestep_wp23
 
 !===============================================================================
-subroutine wp23_solve( dt, Scm, wmm, wmt, wpthvp, wp2thvp, & 
+subroutine wp23_solve( dt, Scm, wm_zm, wm_zt, wpthvp, wp2thvp, & 
                        um, vm, upwp, vpwp, up2, vp2, Kw1, & 
                        Kw8, Skwt, tau1m, tauw3t, C1_Skw_fnc, & 
                        C11_Skw_fnc, wp3_zm, wp2, wp3, err_code )
@@ -400,8 +400,8 @@ real(kind=time_precision), intent(in) ::  &
 
 real, intent(in), dimension(gr%nnzp) ::  & 
   Scm,          & ! Sc on momentum levels                     [-]
-  wmm,          & ! w wind component on momentum levels       [m/s]
-  wmt,          & ! w wind component on thermodynamic levels  [m/s]
+  wm_zm,          & ! w wind component on momentum levels       [m/s]
+  wm_zt,          & ! w wind component on thermodynamic levels  [m/s]
   wpthvp,       & ! w'th_v' (momentum levels)                 [K m/s]
   wp2thvp,      & ! w'^2th_v' (thermodynamic levels)          [K m^2/s^2]
   um,           & ! u wind component (thermodynamic levels)   [m/s]
@@ -493,7 +493,7 @@ a3_zt  = zm2zt( a3 )
 
 ! Compute the implicit portion of the w'^2 and w'^3 equations.
 ! Build the left-hand side matrix.
-call wp23_lhs( dt, wp2, wp3_zm, wmm, wmt, a1_zt,  & 
+call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1_zt,  & 
                a3_zt, Kw1, Kw8, Skwt, tau1m, tauw3t,  & 
                C1_Skw_fnc, C11_Skw_fnc, lcrank_nich_diff,  & 
                lhs )
@@ -686,7 +686,7 @@ return
 end subroutine wp23_solve
 
 !===============================================================================
-subroutine wp23_lhs( dt, wp2, wp3_zm, wmm, wmt, a1_zt,  & 
+subroutine wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1_zt,  & 
                      a3_zt, Kw1, Kw8, Skwt, tau1m, tauw3t,  & 
                      C1_Skw_fnc, C11_Skw_fnc, lcrank_nich_diff,  & 
                      lhs )
@@ -789,8 +789,8 @@ real(kind=time_precision), intent(in) ::  &
 real, dimension(gr%nnzp), intent(in) ::  & 
   wp2,         & ! w'^2 (momentum levels)                   [m^2/s^2]
   wp3_zm,      & ! w'^3 interpolated to momentum levels     [m^3/s^3]
-  wmm,         & ! w wind component on momentum levels      [m/s]
-  wmt,         & ! w wind component on thermodynamic levels [m/s]
+  wm_zm,         & ! w wind component on momentum levels      [m/s]
+  wm_zt,         & ! w wind component on thermodynamic levels [m/s]
   a1_zt,       & ! a_1 interpolated to thermodynamic levels [-]
   a3_zt,       & ! a_3 interpolated to thermodynamic levels [-]
   Kw1,         & ! Coefficient of eddy diffusivity for w'^2 [m^2/s]
@@ -854,7 +854,7 @@ do k = 2, gr%nnzp-1, 1
   ! LHS mean advection (ma) term.
   lhs((/3-2,3,3+2/),k_wp2) & 
   = lhs((/3-2,3,3+2/),k_wp2) & 
-  + term_ma_zm_lhs( wmm(k), gr%dzm(k), k )
+  + term_ma_zm_lhs( wm_zm(k), gr%dzm(k), k )
 
   ! LHS turbulent advection (ta) term.
   lhs((/3-1,3+1/),k_wp2) & 
@@ -864,7 +864,7 @@ do k = 2, gr%nnzp-1, 1
   ! LHS accumulation (ac) term and pressure term 2 (pr2).
   lhs(3,k_wp2) & 
   = lhs(3,k_wp2) & 
-  + wp2_terms_ac_pr2_lhs( C5, wmt(kp1), wmt(k), gr%dzm(k)  )
+  + wp2_terms_ac_pr2_lhs( C5, wm_zt(kp1), wm_zt(k), gr%dzm(k)  )
 
   ! LHS dissipation term 1 (dp1).
   lhs(3,k_wp2) & 
@@ -933,7 +933,7 @@ do k = 2, gr%nnzp-1, 1
 
     if ( iwp2_ma > 0 ) then
       tmp(1:3) = & 
-      + term_ma_zm_lhs( wmm(k), gr%dzm(k), k )
+      + term_ma_zm_lhs( wm_zm(k), gr%dzm(k), k )
       zmscr07(k) = - tmp(3)
       zmscr08(k) = - tmp(2)
       zmscr09(k) = - tmp(1)
@@ -941,12 +941,12 @@ do k = 2, gr%nnzp-1, 1
 
     if ( iwp2_ac > 0 ) then
       zmscr10(k) =  & 
-      - wp2_terms_ac_pr2_lhs( 0.0, wmt(kp1), wmt(k), gr%dzm(k)  )
+      - wp2_terms_ac_pr2_lhs( 0.0, wm_zt(kp1), wm_zt(k), gr%dzm(k)  )
     endif
 
     if ( iwp2_pr2 > 0 ) then
       zmscr11(k) =  & 
-      - wp2_terms_ac_pr2_lhs( (1.0+C5), wmt(kp1), wmt(k),  & 
+      - wp2_terms_ac_pr2_lhs( (1.0+C5), wm_zt(kp1), wm_zt(k),  & 
                               gr%dzm(k)  )
     endif
 
@@ -980,7 +980,7 @@ do k = 2, gr%nnzp-1, 1
   ! LHS mean advection (ma) term.
   lhs((/3-2,3,3+2/),k_wp3) & 
   = lhs((/3-2,3,3+2/),k_wp3) & 
-  + term_ma_zt_lhs( wmt(k), gr%dzt(k), k )
+  + term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
 
   ! LHS turbulent advection (ta) and turbulent production (tp) terms.
   lhs(3-2:3+2,k_wp3) & 
@@ -995,7 +995,7 @@ do k = 2, gr%nnzp-1, 1
   lhs(3,k_wp3) & 
   = lhs(3,k_wp3) & 
   + wp3_terms_ac_pr2_lhs( C11_Skw_fnc(k), & 
-                          wmm(k), wmm(km1), gr%dzt(k) )
+                          wm_zm(k), wm_zm(km1), gr%dzt(k) )
 
   ! LHS pressure term 1 (pr1).
   lhs(3,k_wp3) & 
@@ -1052,7 +1052,7 @@ do k = 2, gr%nnzp-1, 1
 
     if ( iwp3_ma > 0 ) then
       tmp(1:3) = & 
-      term_ma_zt_lhs( wmt(k), gr%dzt(k), k )
+      term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
       ztscr12(k) = -tmp(3)
       ztscr13(k) = -tmp(2)
       ztscr14(k) = -tmp(1)
@@ -1061,13 +1061,13 @@ do k = 2, gr%nnzp-1, 1
     if ( iwp3_ac > 0 ) then
       ztscr15(k) =  & 
       - wp3_terms_ac_pr2_lhs( 0.0, & 
-                              wmm(k), wmm(km1), gr%dzt(k) )
+                              wm_zm(k), wm_zm(km1), gr%dzt(k) )
     endif
 
     if ( iwp3_pr2 > 0 ) then
       ztscr16(k) = & 
       - wp3_terms_ac_pr2_lhs( (1.0+C11_Skw_fnc(k)), & 
-                              wmm(k), wmm(km1), gr%dzt(k) )
+                              wm_zm(k), wm_zm(km1), gr%dzt(k) )
     endif
 
     if ( iwp3_pr1 > 0 ) then
@@ -1517,7 +1517,7 @@ return
 end function wp2_term_ta_lhs
 
 !===============================================================================
-pure function wp2_terms_ac_pr2_lhs( C5, wmtp1, wmt, dzm ) & 
+pure function wp2_terms_ac_pr2_lhs( C5, wmtp1, wm_zt, dzm ) & 
 result( lhs )
 
 !       Description:
@@ -1550,17 +1550,17 @@ result( lhs )
 !       The terms are discretized as follows:
 !
 !       The values of w'^2 are found on momentum levels, while the values
-!       of wmt (mean vertical velocity on thermodynamic levels) are found
-!       on thermodynamic levels.  The vertical derivative of wmt is 
+!       of wm_zt (mean vertical velocity on thermodynamic levels) are found
+!       on thermodynamic levels.  The vertical derivative of wm_zt is 
 !       taken over the intermediate (central) momentum level.  It is then 
 !       multiplied by w'^2 (implicitly calculated at timestep (t+1)) and 
 !       the coefficients to yield the desired results.
 !
 !       -------wmtp1--------------------------------------------- t(k+1)
 !
-!       ===============d(wmt)/dz============wp2================== m(k)
+!       ===============d(wm_zt)/dz============wp2================== m(k)
 !
-!       -------wmt----------------------------------------------- t(k)
+!       -------wm_zt----------------------------------------------- t(k)
 !
 !       The vertical indices t(k+1), m(k), and t(k) correspond with 
 !       altitudes zt(k+1), zm(k), and zt(k), respectively.  The letter 
@@ -1577,8 +1577,8 @@ implicit none
 ! Input Variables
 real, intent(in) :: & 
   C5,      & ! Model parameter C_5           [-]
-  wmtp1,   & ! wmt(k+1)                      [m/s]
-  wmt,     & ! wmt(k)                        [m/s]
+  wmtp1,   & ! wm_zt(k+1)                      [m/s]
+  wm_zt,     & ! wm_zt(k)                        [m/s]
   dzm     ! Inverse of grid spacing (k)   [1/m]
 
 ! Return Variable
@@ -1586,7 +1586,7 @@ real :: lhs
 
 ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
 lhs & 
-= + ( 1.0 - C5 ) * 2.0 * dzm * ( wmtp1 - wmt )
+= + ( 1.0 - C5 ) * 2.0 * dzm * ( wmtp1 - wm_zt )
 
 return
 
@@ -2081,7 +2081,7 @@ end function wp3_terms_ta_tp_lhs
 
 !===============================================================================
 pure function wp3_terms_ac_pr2_lhs( C11_Skw_fnc,  & 
-                                    wmm, wmmm1, dzt ) & 
+                                    wm_zm, wmmm1, dzt ) & 
 result( lhs )
 
 !       Description:
@@ -2114,15 +2114,15 @@ result( lhs )
 !       The terms are discretized as follows:
 !
 !       The values of w'^3 are found on thermodynamic levels, while the
-!       values of wmm (mean vertical velocity on momentum levels) are 
-!       found on momentum levels.  The vertical derivative of wmm is 
+!       values of wm_zm (mean vertical velocity on momentum levels) are 
+!       found on momentum levels.  The vertical derivative of wm_zm is 
 !       taken over the intermediate (central) thermodynamic level.  It
 !       is then multiplied by w'^3 (implicitly calculated at timestep 
 !       (t+1)) and the coefficients to yield the desired results.
 !
-!       =======wmm=============================================== m(k)
+!       =======wm_zm=============================================== m(k)
 !
-!       ---------------d(wmm)/dz------------wp3------------------ t(k)
+!       ---------------d(wm_zm)/dz------------wp3------------------ t(k)
 !
 !       =======wmmm1============================================= m(k-1)
 !
@@ -2141,8 +2141,8 @@ implicit none
 ! Input Variables
 real, intent(in) :: & 
   C11_Skw_fnc,  & ! C_11 parameter with Sk_w applied (k)   [-]
-  wmm,          & ! wmm(k)                                 [m/s]
-  wmmm1,        & ! wmm(k-1)                               [m/s]
+  wm_zm,          & ! wm_zm(k)                                 [m/s]
+  wmmm1,        & ! wm_zm(k-1)                               [m/s]
   dzt          ! Inverse of grid spacing (k)            [1/m]
 
 ! Return Variable
@@ -2151,7 +2151,7 @@ real :: lhs
 ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
 lhs & 
 = + ( 1.0 - C11_Skw_fnc ) & 
-    * 3.0 * dzt * ( wmm - wmmm1 )
+    * 3.0 * dzt * ( wm_zm - wmmm1 )
 
 return
 end function wp3_terms_ac_pr2_lhs

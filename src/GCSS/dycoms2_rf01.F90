@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F90,v 1.7 2008-07-31 16:10:43 faschinj Exp $
+! $Id: dycoms2_rf01.F90,v 1.8 2008-07-31 19:34:17 faschinj Exp $
 module dycoms2_rf01
 
 !       Description:
@@ -16,7 +16,7 @@ contains
 !----------------------------------------------------------------------
 subroutine dycoms2_rf01_tndcy & 
            ( rho, rho_zm, rtm, rcm, exner, & 
-             wmt, wmm, Frad, radht, thlm_forcing, & 
+             wm_zt, wm_zm, Frad, radht, thlm_forcing, & 
              rtm_forcing, err_code, & 
              sclrm_forcing )
 !       Description:
@@ -72,8 +72,8 @@ integer, intent(inout) :: err_code
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) ::  & 
-  wmt,           & ! w wind on thermodynamic grid                 [m/s]
-  wmm,           & ! w wind on momentum grid                      [m/s]
+  wm_zt,           & ! w wind on thermodynamic grid                 [m/s]
+  wm_zm,           & ! w wind on momentum grid                      [m/s]
   thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
   rtm_forcing,   & ! Total water mixing ratio tendency            [kg/kg/s]
   radht,         & ! Radiative heating rate                       [K/s]
@@ -90,8 +90,8 @@ real, dimension(gr%nnzp) :: lwp
 integer :: i
 real :: zi
 
-wmt          = 0.
-wmm          = 0.
+wm_zt          = 0.
+wm_zm          = 0.
 thlm_forcing = 0.
 rtm_forcing  = 0.
 
@@ -124,15 +124,15 @@ end if
 !       Large scale subsidence
 
 do i=2,gr%nnzp
-   wmt(i) = - lsdiv * gr%zt(i)
+   wm_zt(i) = - lsdiv * gr%zt(i)
 end do
 
-wmm = zt2zm( wmt )
+wm_zm = zt2zm( wm_zt )
 
 ! Boundary conditions.
-wmt(1) = 0.0        ! Below surface
-wmm(1) = 0.0        ! At surface
-wmm(gr%nnzp) = 0.0  ! Model top
+wm_zt(1) = 0.0        ! Below surface
+wm_zm(1) = 0.0        ! At surface
+wm_zm(gr%nnzp) = 0.0  ! Model top
 
 ! Theta-l radiative tendency
 

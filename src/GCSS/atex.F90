@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-!$Id: atex.F90,v 1.7 2008-07-31 16:10:43 faschinj Exp $
+!$Id: atex.F90,v 1.8 2008-07-31 19:34:16 faschinj Exp $
 module atex
 
 !       Description:
@@ -16,7 +16,7 @@ contains
 
 !----------------------------------------------------------------------
 subroutine atex_tndcy( time, time_initial, rtm,  & 
-                       rho, rcm, exner, wmt, wmm, Frad, radht, & 
+                       rho, rcm, exner, wm_zt, wm_zm, Frad, radht, & 
                        thlm_forcing, rtm_forcing, err_code, & 
                        sclrm_forcing )
 !       Description:
@@ -68,8 +68,8 @@ integer, intent(inout) :: err_code ! Diagnostic
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) :: & 
-  wmt,          & ! w wind on thermodynamic grid                [m/s]
-  wmm,          & ! w wind on momentum grid                     [m/s]
+  wm_zt,          & ! w wind on thermodynamic grid                [m/s]
+  wm_zm,          & ! w wind on momentum grid                     [m/s]
   Frad,         & ! Radiative flux                              [W/m^2]
   radht,        & ! Radiative heating rate                      [K/s]
   thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
@@ -86,8 +86,8 @@ integer :: i
 real :: zi
 
 ! Forcings are applied only after t = 5400 s
-wmt = 0.
-wmm = 0.
+wm_zt = 0.
+wm_zm = 0.
 
 thlm_forcing = 0.
 rtm_forcing  = 0.
@@ -115,23 +115,23 @@ if ( time >= time_initial + 5400.0 ) then
    do i = 2, gr%nnzp
 
       if ( gr%zt(i) > 0. .and. gr%zt(i) <= zi ) then
-         wmt(i)  & 
+         wm_zt(i)  & 
            = -0.0065 * gr%zt(i)/zi
       else if ( gr%zt(i) > zi .and. gr%zt(i) <= zi+300. ) then
-         wmt(i) & 
+         wm_zt(i) & 
            = - 0.0065 * ( 1. - (gr%zt(i)-zi)/300. )
       else
-         wmt(i) = 0.
+         wm_zt(i) = 0.
       end if
 
    end do
 
-   wmm = zt2zm( wmt )
+   wm_zm = zt2zm( wm_zt )
 
    ! Boundary conditions.
-   wmt(1) = 0.0        ! Below surface
-   wmm(1) = 0.0        ! At surface
-   wmm(gr%nnzp) = 0.0  ! Model top
+   wm_zt(1) = 0.0        ! Below surface
+   wm_zm(1) = 0.0        ! At surface
+   wm_zm(gr%nnzp) = 0.0  ! Model top
 
    ! Theta-l tendency
 

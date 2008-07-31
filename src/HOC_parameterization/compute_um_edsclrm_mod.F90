@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F90,v 1.6 2008-07-30 21:23:11 faschinj Exp $
+! $Id: compute_um_edsclrm_mod.F90,v 1.7 2008-07-31 19:34:17 faschinj Exp $
 !------------------------------------------------------------------------
 module compute_um_edsclrm_mod
 
@@ -298,7 +298,7 @@ return
 end subroutine compute_um_edsclrm
 
 !-----------------------------------------------------------------------
-subroutine compute_uv_tndcy( solve_type, xm, wmt, fcor, perp_wind_m, perp_wind_g, implemented, & 
+subroutine compute_uv_tndcy( solve_type, xm, wm_zt, fcor, perp_wind_m, perp_wind_g, implemented, & 
                              xmt )
 !
 !       Description: Computes the tendency for the u/v wind components.
@@ -333,7 +333,7 @@ subroutine compute_uv_tndcy( solve_type, xm, wmt, fcor, perp_wind_m, perp_wind_g
 
   real, dimension(gr%nnzp), intent(in) ::  & 
     xm,  & ! u/v wind                                       [m/s]   
-    wmt ! wm on thermodynaming grid                     [m/s]
+    wm_zt ! wm on thermodynaming grid                     [m/s]
 
   real, intent(in) ::  & 
     fcor ! Coriolis forcing                             [s^-1]
@@ -368,7 +368,7 @@ if (.not. implemented) then
     ixm_gf = ium_gf
     ixm_cf = ium_cf
 
-    xm_ma = - wmt * ddzm( zt2zm( xm ) )
+    xm_ma = - wm_zt * ddzm( zt2zm( xm ) )
 
     xm_gf = - fcor * perp_wind_g
 
@@ -380,7 +380,7 @@ if (.not. implemented) then
     ixm_gf = ivm_gf
     ixm_cf = ivm_cf
 
-    xm_ma = - wmt * ddzm( zt2zm( xm ) )
+    xm_ma = - wm_zt * ddzm( zt2zm( xm ) )
 
     xm_gf = fcor * perp_wind_g
 

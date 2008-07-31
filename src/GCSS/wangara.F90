@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: wangara.F90,v 1.4 2008-07-29 16:44:02 nielsenb Exp $
+! $Id: wangara.F90,v 1.5 2008-07-31 19:34:17 faschinj Exp $
 module wangara
 
 implicit none
@@ -10,7 +10,7 @@ private ! Default Scope
 
 contains
 !----------------------------------------------------------------------
-subroutine wangara_tndcy( wmt, wmm,  & 
+subroutine wangara_tndcy( wm_zt, wm_zm,  & 
                           thlm_forcing, rtm_forcing, & 
                           sclrm_forcing )
 !       Description:
@@ -32,8 +32,8 @@ implicit none
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) :: & 
-  wmt,          & ! w wind on thermodynamic grid                [m/s]
-  wmm,          & ! w wind on momentum grid                     [m/s]
+  wm_zt,          & ! w wind on thermodynamic grid                [m/s]
+  wm_zm,          & ! w wind on momentum grid                     [m/s]
   thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
   rtm_forcing     ! Total water mixing ratio tendency           [kg/kg/s]
 
@@ -42,8 +42,8 @@ real, intent(out), dimension(gr%nnzp,sclr_dim) :: &
   sclrm_forcing ! Passive scalar tendency [units vary]
 
 ! No large-scale subsidence for now
-wmt = 0.0
-wmm = 0.0
+wm_zt = 0.0
+wm_zm = 0.0
 
 ! No large-scale water tendency or cooling
 

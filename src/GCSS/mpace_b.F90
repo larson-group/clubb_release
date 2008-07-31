@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: mpace_b.F90,v 1.8 2008-07-31 16:10:44 faschinj Exp $
+! $Id: mpace_b.F90,v 1.9 2008-07-31 19:34:17 faschinj Exp $
 module mpace_b
 
 !       Description:
@@ -18,7 +18,7 @@ contains
 subroutine mpace_b_tndcy & 
 ( time, time_initial, rlat, & 
   rho, p, thvm, rcm, & 
-  wmt, wmm, thlm_forcing, rtm_forcing, & 
+  wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
   Ncnm, Ncm, Frad, radht, & 
   sclrm_forcing )
 
@@ -110,8 +110,8 @@ real, dimension(gr%nnzp), intent(inout) ::  &
 
 ! Output Variables
 real, dimension(gr%nnzp), intent(out) ::  & 
-  wmt,          & ! Large-scale vertical motion on t grid   [m/s]
-  wmm,          & ! Large-scale vertical motion on m grid   [m/s]
+  wm_zt,          & ! Large-scale vertical motion on t grid   [m/s]
+  wm_zm,          & ! Large-scale vertical motion on m grid   [m/s]
   thlm_forcing,  & ! Large-scale thlm tendency               [K/s]
   rtm_forcing,     & ! Large-scale rtm tendency                [kg/kg/s]
   Frad,         & ! Total radiative flux                    [W/m^2]
@@ -185,20 +185,20 @@ center          = .TRUE.
 ! Compute vertical motion
 do i=2,gr%nnzp
   velocity_omega = min( D*(psfc-p(i)), D*(psfc-pinv) )
-  wmt(i) = -velocity_omega * Rd * thvm(i) / p(i) / grav0
+  wm_zt(i) = -velocity_omega * Rd * thvm(i) / p(i) / grav0
 end do
 
 
 
 ! Boundary condition
-wmt(1) = 0.0        ! Below surface
+wm_zt(1) = 0.0        ! Below surface
 
 ! Interpolate
-wmm = zt2zm( wmt )
+wm_zm = zt2zm( wm_zt )
 
 ! Boundary conditions
-wmm(1) = 0.0        ! At surface
-wmm(gr%nnzp) = 0.0  ! Model top
+wm_zm(1) = 0.0        ! At surface
+wm_zm(gr%nnzp) = 0.0  ! Model top
 
 
 ! Compute large-scale tendencies

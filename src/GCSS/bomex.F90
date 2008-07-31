@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: bomex.F90,v 1.5 2008-07-30 21:11:22 faschinj Exp $
+! $Id: bomex.F90,v 1.6 2008-07-31 19:34:16 faschinj Exp $
 module bomex
 
 !       Description:
@@ -15,7 +15,7 @@ private ! Default Scope
 contains
 
 !----------------------------------------------------------------------
-subroutine bomex_tndcy( wmt, wmm, radht, & 
+subroutine bomex_tndcy( wm_zt, wm_zm, radht, & 
                         thlm_forcing, rtm_forcing, & 
                         sclrm_forcing )
 !       Description:
@@ -40,8 +40,8 @@ implicit none
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) :: & 
-  wmt,           & ! w wind on thermodynamic grid                 [m/s]
-  wmm,           & ! w wind on momentum grid                      [m/s]
+  wm_zt,           & ! w wind on thermodynamic grid                 [m/s]
+  wm_zm,           & ! w wind on momentum grid                      [m/s]
   radht,         & ! Radiative heating rate                       [K/s]
   thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
   rtm_forcing   ! Total water mixing ratio tendency            [kg/kg/s]
@@ -57,25 +57,25 @@ integer :: k
 do k = 2, gr%nnzp, 1
 
    if ( gr%zt(k) >= 0. .and. gr%zt(k) < 1500. ) then
-      wmt(k) = - ( 0.0065 / 1500. ) * gr%zt(k)
+      wm_zt(k) = - ( 0.0065 / 1500. ) * gr%zt(k)
    else if ( gr%zt(k) >= 1500. .and. gr%zt(k) < 2100. ) then
-      wmt(k) & 
+      wm_zt(k) & 
         = - 0.0065  & 
           + 0.0065 * ( gr%zt(k) - 1500. ) / ( 2100. - 1500. )
    else
-      wmt(k) = 0.
+      wm_zt(k) = 0.
    end if
 
 end do ! k=2..gr%nnzp
 
 ! Boundary condition on subsidence (thermo grid)
-wmt(1) = 0.0        ! Below surface
+wm_zt(1) = 0.0        ! Below surface
 
-wmm = zt2zm( wmt )
+wm_zm = zt2zm( wm_zt )
 
 ! Boundary conditions on subsidence (mom. grid)
-wmm(1) = 0.0        ! At surface
-wmm(gr%nnzp) = 0.0  ! Model top
+wm_zm(1) = 0.0        ! At surface
+wm_zm(gr%nnzp) = 0.0  ! Model top
 
 if ( .not. l_bugsrad ) then
 

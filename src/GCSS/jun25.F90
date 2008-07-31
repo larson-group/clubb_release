@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F90,v 1.7 2008-07-31 16:10:44 faschinj Exp $
+! $Id: jun25.F90,v 1.8 2008-07-31 19:34:17 faschinj Exp $
   module jun25
 
 !       Description:
@@ -25,8 +25,8 @@
 !-----------------------------------------------------------------------
   subroutine jun25_altocu_tndcy & 
              ( time, time_initial, rlat, rlon, & 
-               rcm, exner, rho, wmt, & 
-               wmm, thlm_forcing, rtm_forcing, & 
+               rcm, exner, rho, wm_zt, & 
+               wm_zm, thlm_forcing, rtm_forcing, & 
                Frad, radht, sclrm_forcing )
 
 !       Description:
@@ -86,8 +86,8 @@
 
   ! Output variables
   real, dimension(gr%nnzp), intent(inout) ::  & 
-  wmt,           & ! Vertical ascent/descent on therm. grid      [m/s]
-  wmm,           & ! Vertical ascent/descent on moment. grid     [m/s]
+  wm_zt,           & ! Vertical ascent/descent on therm. grid      [m/s]
+  wm_zm,           & ! Vertical ascent/descent on moment. grid     [m/s]
   thlm_forcing,  & ! Change in liq. water potential temperature 
                    ! due to radiative heating and ice diffusion  [K/s]
   rtm_forcing,   & ! Change in total water due to ice diffusion  [kg/kg/s]
@@ -120,9 +120,9 @@
 !                 from rad_lwsw                                 Unit: K/s
 !
 ! INTERPOLATION ARRAYS AND CONSTANTS
-! zsubs         : heights at which wmt data is supplied
+! zsubs         : heights at which wm_zt data is supplied
 !                 (used for subsidence interpolation)           Unit: m
-! tsubs         : times after initialization at which wmt data is supplied
+! tsubs         : times after initialization at which wm_zt data is supplied
 !                 (NOT USED IN NOV.11 CASE)                     Unit: s
 ! wtX(Y)        : vertical velocity specified at height Y and time X
 !                 (ONLY wt1 IS USED IN NOV.11 CASE)             Unit: m/s
@@ -685,14 +685,14 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   !---------------------------------------------------------------
   if ( (time - time_initial) < tsubs(1) ) then
   do k=1,gr%nnzp
-    call linear_interpolation(5,zsubs,wt1,gr%zt(k),wmt(k))
+    call linear_interpolation(5,zsubs,wt1,gr%zt(k),wm_zt(k))
   end do
  
   else if ( (time - time_initial) < tsubs(2)) then
   do k=2,gr%nnzp
     call linear_interpolation(5,zsubs,wt1,gr%zt(k),w1(k))
     call linear_interpolation(5,zsubs,wt2,gr%zt(k),w2(k))
-  wmt(k) = & 
+  wm_zt(k) = & 
     real(((time-time_initial)-tsubs(1)) & 
            /(tsubs(2)-tsubs(1))*(w2(k)-w1(k))+w1(k))
   end do
@@ -701,7 +701,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   do k=2,gr%nnzp
     call linear_interpolation(5,zsubs,wt2,gr%zt(k),w1(k))
     call linear_interpolation(5,zsubs,wt3,gr%zt(k),w2(k))
-  wmt(k) =  & 
+  wm_zt(k) =  & 
     real(((time-time_initial)-tsubs(2)) & 
            /(tsubs(3)-tsubs(2))*(w2(k)-w1(k))+w1(k))
   end do
@@ -710,7 +710,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   do k=2,gr%nnzp
     call linear_interpolation(5,zsubs,wt3,gr%zt(k),w1(k))
     call linear_interpolation(5,zsubs,wt4,gr%zt(k),w2(k))
-  wmt(k) =  & 
+  wm_zt(k) =  & 
     real(((time-time_initial)-tsubs(3)) & 
            /(tsubs(4)-tsubs(3))*(w2(k)-w1(k))+w1(k))
   end do
@@ -719,7 +719,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   do k=2,gr%nnzp
     call linear_interpolation(5,zsubs,wt4,gr%zt(k),w1(k))
     call linear_interpolation(5,zsubs,wt5,gr%zt(k),w2(k))
-  wmt(k) =  & 
+  wm_zt(k) =  & 
     real(((time-time_initial)-tsubs(4)) & 
            /(tsubs(5)-tsubs(4))*(w2(k)-w1(k))+w1(k))
   end do
@@ -728,20 +728,20 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   do k=2,gr%nnzp
     call linear_interpolation(5,zsubs,wt5,gr%zt(k),w1(k))
     call linear_interpolation(5,zsubs,wt6,gr%zt(k),w2(k))
-  wmt(k) = & 
+  wm_zt(k) = & 
     real(((time-time_initial)-tsubs(5)) & 
            /(tsubs(6)-tsubs(5))*(w2(k)-w1(k))+w1(k))
   end do
  
   else if ( (time - time_initial) >= tsubs(6)) then
   do k=2,gr%nnzp
-    call linear_interpolation(5,zsubs,wt6,gr%zt(k),wmt(k))
+    call linear_interpolation(5,zsubs,wt6,gr%zt(k),wm_zt(k))
   end do
   end if
 
-  wmt(1) = wmt(2)
+  wm_zt(1) = wm_zt(2)
 
-  wmm = zt2zm(wmt)
+  wm_zm = zt2zm(wm_zt)
 
 
   !---------------------------------------------------------------

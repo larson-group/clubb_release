@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: fire.F90,v 1.7 2008-07-31 16:10:44 faschinj Exp $
+! $Id: fire.F90,v 1.8 2008-07-31 19:34:17 faschinj Exp $
 module fire
 
 !       Description:
@@ -17,7 +17,7 @@ contains
 !----------------------------------------------------------------------
 subroutine fire_tndcy & 
            ( rho, rcm, exner,  & 
-             wmt, wmm, Frad, radht,  & 
+             wm_zt, wm_zm, Frad, radht,  & 
              thlm_forcing, rtm_forcing, & 
              sclrm_forcing )
 !       Description:
@@ -57,8 +57,8 @@ real, intent(in), dimension(gr%nnzp) :: &
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) :: & 
-  wmt,          & ! w wind on thermodynamic grid     [m/s]
-  wmm,          & ! w wind on momentum grid          [m/s]
+  wm_zt,          & ! w wind on thermodynamic grid     [m/s]
+  wm_zm,          & ! w wind on momentum grid          [m/s]
   Frad,         & ! Radiative flux                   [W/m^2]
   radht,        & ! Radiative heating rate           [K/s]
   thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
@@ -77,19 +77,19 @@ integer :: k
 do k = 2, gr%nnzp
 
    if ( gr%zt(k) >= 0. .and. gr%zt(k) < 1500. ) then
-      wmt(k) = - 5.e-6 * gr%zt(k)
+      wm_zt(k) = - 5.e-6 * gr%zt(k)
    end if
 
 end do
 
 ! Boundary condition.
-wmt(1) = 0.0        ! Below surface
+wm_zt(1) = 0.0        ! Below surface
 
-wmm = zt2zm( wmt )
+wm_zm = zt2zm( wm_zt )
 
 ! Boundary condition.
-wmm(1) = 0.0        ! At surface
-wmm(gr%nnzp) = 0.0  ! Model top
+wm_zm(1) = 0.0        ! At surface
+wm_zm(gr%nnzp) = 0.0  ! Model top
 
 ! Radiative theta-l tendency is computed interactively elsewhere
 

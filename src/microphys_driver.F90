@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F90,v 1.9 2008-07-31 16:10:43 faschinj Exp $
+! $Id: microphys_driver.F90,v 1.10 2008-07-31 19:34:16 faschinj Exp $
 module microphys_driver
 
 !       Description:
@@ -112,7 +112,7 @@ end subroutine init_microphys
 subroutine advance_microphys & 
            ( runtype, dt, time_current,  & 
              thlm, p, exner, rho, rho_zm, rtm, rcm, Ncm,  & 
-             pdf_parms, wmt, wmm, Khm, AKm_est, AKm,  & 
+             pdf_parms, wm_zt, wm_zm, Khm, AKm_est, AKm,  & 
              Ncnm, Nim, & 
              hydromet, & 
              rtm_forcing, thlm_forcing, err_code )
@@ -239,8 +239,8 @@ real, dimension(gr%nnzp), intent(in) :: &
   rho_zm,    & ! Density on moment. grid                [kg/m^3]
   rtm,     & ! Total water mixing ratio               [kg/kg]
   rcm,     & ! Liquid water mixing ratio              [kg/kg]
-  wmt,     & ! w wind on moment. grid                 [m/s]
-  wmm,     & ! w wind on thermo. grid                 [m/s]
+  wm_zt,     & ! w wind on moment. grid                 [m/s]
+  wm_zm,     & ! w wind on thermo. grid                 [m/s]
   Khm,     & ! Kh Eddy diffusivity on momentum grid   [m^2/s]
   Akm_est, & ! Analytic Kessler ac                    [kg/kg]
   Akm     ! Analytic Kessler estimate              [kg/kg]
@@ -358,7 +358,7 @@ if ( l_coamps_micro ) then
 
    call coamps_micro_driver & 
         ( runtype, time_current, dt, & 
-          rtm, wmm, p, exner, rho, T_in_K, & 
+          rtm, wm_zm, p, exner, rho, T_in_K, & 
           thlm, hydromet(:,iiricem), hydromet(:,iirrainm),  & 
           hydromet(:,iirgraupelm), hydromet(:,iirsnowm), & 
           rcm, Ncm, hydromet(:,iiNrm), Ncnm, Nim, cond, & 
@@ -477,7 +477,7 @@ if ( hydromet_dim > 0 ) then
  
 
     call microphys_lhs & 
-         ( trim( hydromet_list(i) ), lsed, dt, Kr, nu_r, wmt, & 
+         ( trim( hydromet_list(i) ), lsed, dt, Kr, nu_r, wm_zt, & 
            hydromet_vel(:,i), lhs )
 
     call microphys_solve & 
@@ -491,7 +491,7 @@ if ( hydromet_dim > 0 ) then
         if ( hydromet(k,i) < 0.0 ) then
 
           call adj_microphys_tndcy & 
-             ( hydromet_mc(:,i), wmt, hydromet_vel(:,i),  & 
+             ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i),  & 
                Kr, nu_r, dt, k, .true., & 
                hydromet(:,i), overevap_rate )
 
@@ -529,7 +529,7 @@ if ( hydromet_dim > 0 ) then
         if ( hydromet(k,i) < 0.0 ) then
 
         call adj_microphys_tndcy & 
-             ( hydromet_mc(:,i), wmt, hydromet_vel(:,i),  & 
+             ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i),  & 
                Kr, nu_r, dt, k, .true., & 
                hydromet(:,i), overevap_rate )
 
@@ -678,8 +678,8 @@ if ( lapack_error(err_code) ) then
    write(fstderr,*) "rho_zm = ", rho_zm
    write(fstderr,*) "rtm = ", rtm
    write(fstderr,*) "rcm = ", rcm
-   write(fstderr,*) "wmt = ", wmt
-   write(fstderr,*) "wmm = ", wmm
+   write(fstderr,*) "wm_zt = ", wm_zt
+   write(fstderr,*) "wm_zm = ", wm_zm
    write(fstderr,*) "Khm = ", Khm
    write(fstderr,*) "Akm_est = ", Akm_est
    write(fstderr,*) "Akm = ", Akm
@@ -876,7 +876,7 @@ end subroutine microphys_solve
 
 !===============================================================================
 subroutine microphys_lhs & 
-           ( solve_type, lsed, dt, Kr, nu, wmt, V_hm, lhs )
+           ( solve_type, lsed, dt, Kr, nu, wm_zt, V_hm, lhs )
 
 !       Description:
 !       Setup the matrix of implicit contributions to a term
@@ -949,7 +949,7 @@ real, intent(in) ::  &
   nu    ! Background diffusion coefficient                         [m^2/s]
 
 real, intent(in), dimension(gr%nnzp) ::  & 
-  wmt,   & ! w wind component on thermodynamic levels                 [m/s]
+  wm_zt,   & ! w wind component on thermodynamic levels                 [m/s]
   V_hm,  & ! Sedimentation velocity of hydrometeor (momentum levels)  [m/s]
   Kr    ! Eddy diffusivity for hydrometeor on momentum levels      [m^2/s]
 
@@ -1022,7 +1022,7 @@ do k = 1, gr%nnzp, 1
   ! Mean Advection
   lhs(kp1_tdiag:km1_tdiag,k) & 
   = lhs(kp1_tdiag:km1_tdiag,k) & 
-  + term_ma_zt_lhs( wmt(k), gr%dzt(k), k )
+  + term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
 
   ! Sedimentation
   ! Note: originally pristine ice did not sediment, so it was
@@ -1038,7 +1038,7 @@ do k = 1, gr%nnzp, 1
   if ( l_stats_samp ) then
 
     if ( ixrm_ma > 0 ) then
-      tmp(1:3) = term_ma_zt_lhs( wmt(k), gr%dzt(k), k )
+      tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
       ztscr01(k) = -tmp(3)
       ztscr02(k) = -tmp(2)
       ztscr03(k) = -tmp(1)
@@ -1312,7 +1312,7 @@ return
 end function sedimentation
 
 !===============================================================================
-subroutine adj_microphys_tndcy( xrm_tndcy, wmt, V_hm, Kr, nu, & 
+subroutine adj_microphys_tndcy( xrm_tndcy, wm_zt, V_hm, Kr, nu, & 
                                 dt, level, lsed, & 
                                 xrm, overevap_rate )
 
@@ -1446,7 +1446,7 @@ implicit none
 ! Hydrometeor microphysical tendency.
 real, dimension(gr%nnzp), intent(in) :: xrm_tndcy  ! [hm_units/s]
 ! Vertical velocity (thermo. levels).
-real, dimension(gr%nnzp), intent(in) :: wmt        ! [m/s]
+real, dimension(gr%nnzp), intent(in) :: wm_zt        ! [m/s]
 ! Sedimentation velocity (interpolated to thermo. levels).
 real, dimension(gr%nnzp), intent(in) :: V_hm       ! [m/s]
 ! Eddy diffusivity for hydrometeors (m-lev).
@@ -1523,7 +1523,7 @@ kp1 = min(k+1,gr%nnzp)
 
 ! The implicit (LHS) value of the mean advection component of the
 ! equation used during the timestep that was just solved for.
-tmp(1:3) = term_ma_zt_lhs( wmt(k), gr%dzt(k), k )
+tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
 
 ma_subdiag  = -tmp(3) ! subdiagonal
 ma_maindiag = -tmp(2) ! main diagonal

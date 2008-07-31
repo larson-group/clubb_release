@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F90,v 1.6 2008-07-31 17:01:51 faschinj Exp $
+! $Id: prog_variables.F90,v 1.7 2008-07-31 19:34:18 faschinj Exp $
         module prognostic_variables
 
 !       This module contains definitions of all prognostic
@@ -53,8 +53,8 @@
 
         ! Imposed large scale w
         real, target, allocatable, dimension(:), public :: & 
-        wmm, & ! w on momentum levels              [m/s]
-        wmt ! w on thermodynamic levels         [m/s]
+        wm_zm, & ! w on momentum levels              [m/s]
+        wm_zt ! w on thermodynamic levels         [m/s]
 
         ! PDF width parameter: momentum levels
         real, target, allocatable, dimension(:), public :: Scm  ! [-]
@@ -62,7 +62,7 @@
         ! Mixing Lengths
         real, target, allocatable, dimension(:), public :: tau_zm ! [s]
 
-!$omp   threadprivate(wmm, wmt, Scm, tau_zm)
+!$omp   threadprivate(wm_zm, wm_zt, Scm, tau_zm)
 
         ! Cloud water variables
         real, target, allocatable, dimension(:), public :: & 
@@ -162,8 +162,8 @@
 
         ! Imposed large scale w
 
-        allocate( wmm(1:nzmax) )       ! momentum levels
-        allocate( wmt(1:nzmax) )       ! thermodynamic levels
+        allocate( wm_zm(1:nzmax) )       ! momentum levels
+        allocate( wm_zt(1:nzmax) )       ! thermodynamic levels
 
         ! PDF width parameter: momentum levels
 
@@ -221,8 +221,8 @@
 
         ! Imposed large scale w
 
-        wmm(1:nzmax) = 0.0      ! Momentum levels
-        wmt(1:nzmax) = 0.0      ! Thermodynamic levels
+        wm_zm(1:nzmax) = 0.0      ! Momentum levels
+        wm_zt(1:nzmax) = 0.0      ! Thermodynamic levels
 
         ! PDF width parameter: momentum levels
 
@@ -295,8 +295,8 @@
 
         ! Imposed large scale w
 
-        deallocate( wmm )       ! momentum levels
-        deallocate( wmt )       ! thermodynamic levels
+        deallocate( wm_zm )       ! momentum levels
+        deallocate( wm_zt )       ! thermodynamic levels
 
         ! PDF width parameter
 

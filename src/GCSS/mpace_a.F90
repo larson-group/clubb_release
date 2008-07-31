@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: mpace_a.F90,v 1.8 2008-07-31 16:10:44 faschinj Exp $
+! $Id: mpace_a.F90,v 1.9 2008-07-31 19:34:17 faschinj Exp $
   module mpace_a
 
 !       Description:
@@ -49,7 +49,7 @@
   subroutine mpace_a_tndcy & 
   ( time, time_initial, rlat, & 
     rho, p, rcm, & 
-    wmt, wmm, thlm_forcing, rtm_forcing, & 
+    wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
     Ncnm, Ncm, Frad, radht, & 
     um_hoc_grid, vm_hoc_grid, & 
     sclrm_forcing )
@@ -141,8 +141,8 @@
 
   ! Output Variables
   real, dimension(gr%nnzp), intent(out) ::  & 
-  wmt,          & ! Large-scale vertical motion on t grid   [m/s]
-  wmm,          & ! Large-scale vertical motion on m grid   [m/s]
+  wm_zt,          & ! Large-scale vertical motion on t grid   [m/s]
+  wm_zm,          & ! Large-scale vertical motion on m grid   [m/s]
   thlm_forcing, & ! Large-scale thlm tendency               [K/s]
   rtm_forcing,  & ! Large-scale rtm tendency                [kg/kg/s]
   Frad,         & ! Total radiative flux                    [W/m^2]
@@ -331,20 +331,20 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
   ! Compute vertical motion
   do i=2,gr%nnzp
 !          velocity_omega = omega_hoc_grid(i) * 100 / 3600 ! convering mb/hr to Pa/s
-!          wmt(i) = -velocity_omega * Rd * thvm(i) / p(i) / grav
-     wmt(i) = 0.
+!          wm_zt(i) = -velocity_omega * Rd * thvm(i) / p(i) / grav
+     wm_zt(i) = 0.
 ! End of Michael Falk's obliteration of omega.
   end do
 
   ! Boundary condition
-  wmt(1) = 0.0        ! Below surface
+  wm_zt(1) = 0.0        ! Below surface
 
   ! Interpolation
-  wmm = zt2zm( wmt )
+  wm_zm = zt2zm( wm_zt )
 
   ! Boundary condition
-  wmm(1) = 0.0        ! At surface
-  wmm(gr%nnzp) = 0.0  ! Model top
+  wm_zm(1) = 0.0        ! At surface
+  wm_zm(gr%nnzp) = 0.0  ! Model top
   
 
   ! Compute large-scale tendencies

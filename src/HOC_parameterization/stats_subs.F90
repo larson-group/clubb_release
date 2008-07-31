@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F90,v 1.13 2008-07-31 17:01:51 faschinj Exp $
+!  $Id: stats_subs.F90,v 1.14 2008-07-31 19:34:18 faschinj Exp $
 module stats_subs
 
   implicit none
@@ -756,7 +756,7 @@ module stats_subs
                  ( um, vm, upwp, vpwp, up2, vp2, thlm, & 
                    rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp, & 
                    p, exner, rho, rho_zm, & 
-                   wmt, Scm, tau_zm, rcm, cf, & 
+                   wm_zt, Scm, tau_zm, rcm, cf, & 
                    sclrm, edsclrm, sclrm_forcing, wpsclrp )
 
 !     Description:
@@ -777,7 +777,7 @@ module stats_subs
           ircm, & 
           ium, & 
           ivm, & 
-          iwmt, & 
+          iwm_zt, & 
           iug, & 
           ivg, & 
           icf, & 
@@ -992,7 +992,7 @@ module stats_subs
         exner,        & ! Exner function = ( p / p0 ) ** kappa     [-]
         rho,         & ! Density                                  [kg/m^3]
         rho_zm,         & ! Density                                  [kg/m^3]
-        wmt,          & ! w on thermodynamic levels                [m/s]
+        wm_zt,          & ! w on thermodynamic levels                [m/s]
         Scm,          & ! PDF width paramter                       [-]
         tau_zm         ! Dissipation time                         [s]
 
@@ -1037,7 +1037,7 @@ module stats_subs
         call stat_update_var( ircm, rcm, zt )
         call stat_update_var( ium, um, zt )
         call stat_update_var( ivm, vm, zt )
-        call stat_update_var( iwmt, wmt, zt )
+        call stat_update_var( iwm_zt, wm_zt, zt )
         call stat_update_var( iug, ug, zt )
         call stat_update_var( ivg, vg, zt )
         call stat_update_var( icf, cf, zt )

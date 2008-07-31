@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_3year.F90,v 1.3 2008-07-29 16:44:01 nielsenb Exp $
+! $Id: arm_3year.F90,v 1.4 2008-07-31 19:34:16 faschinj Exp $
 module arm_3year
 
 !       Description:
@@ -38,7 +38,7 @@ real, dimension(ntimes) :: LE          ! Evaporation         [W/m^2]
 contains
 
 !----------------------------------------------------------------------
-subroutine arm_3year_tndcy( time, wmt, wmm,  & 
+subroutine arm_3year_tndcy( time, wm_zt, wm_zm,  & 
                          thlm_forcing, rtm_forcing,  & 
                          um_hoc_grid, vm_hoc_grid, & 
                          sclrm_forcing )
@@ -69,8 +69,8 @@ real(kind=time_precision), intent(in) :: time ! Model time [s]
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) ::  & 
   thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
-  wmm,           & ! Vertical velocity on moment. grid            [m/s]
-  wmt,           & ! Vertical velocity on thermo. grid            [m/s]
+  wm_zm,           & ! Vertical velocity on moment. grid            [m/s]
+  wm_zt,           & ! Vertical velocity on thermo. grid            [m/s]
   rtm_forcing,    & ! Total water mixing ratio tendency            [kg/kg/s]
   um_hoc_grid,   & ! Observed wind, for nudging                   [m/s]
   vm_hoc_grid   ! Observed wind, for nudging                   [m/s]
@@ -159,8 +159,8 @@ um_hoc_grid (1) = um_hoc_grid(2)
 vm_hoc_grid (1) = vm_hoc_grid(2)
 
 ! The specification calls for zero imposed subsidence (always)
-wmm(:) = 0.
-wmt(:) = 0.
+wm_zm(:) = 0.
+wm_zt(:) = 0.
 
 if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
 if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt) = rtm_forcing

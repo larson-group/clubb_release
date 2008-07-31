@@ -1,4 +1,4 @@
-!$Id: rico.F90,v 1.7 2008-07-31 16:10:44 faschinj Exp $
+!$Id: rico.F90,v 1.8 2008-07-31 19:34:17 faschinj Exp $
 !----------------------------------------------------------------------
 module rico
 
@@ -17,7 +17,7 @@ module rico
 !----------------------------------------------------------------------
   subroutine rico_tndcy & 
   ( exner, & 
-    rho, rcm, l_kk_rain, wmt, wmm, & 
+    rho, rcm, l_kk_rain, wm_zt, wm_zm, & 
     thlm_forcing, rtm_forcing, radht, Ncm, & 
     sclrm_forcing )
 
@@ -58,8 +58,8 @@ module rico
 
   ! Output Variables
   real, dimension(gr%nnzp), intent(out) :: & 
-  wmt,          & ! Large-scale vertical motion on t grid   [m s^-1]
-  wmm,          & ! Large-scale vertical motion on m grid   [m s^-1]
+  wm_zt,          & ! Large-scale vertical motion on t grid   [m s^-1]
+  wm_zm,          & ! Large-scale vertical motion on m grid   [m s^-1]
   thlm_forcing, & ! Large-scale thlm tendency               [K s^-1]
   rtm_forcing,  & ! Large-scale rtm tendency                [kg kg^-1 s^-1]
   radht,        & ! dT/dt, then d Theta/dt, due to rad.     [K s^-1]
@@ -76,22 +76,22 @@ module rico
   ! Compute vertical motion
   do k=1,gr%nnzp
     if (gr%zt(k) < 2260) then
-      wmt(k) = -(0.005 / 2260) * gr%zt(k)
+      wm_zt(k) = -(0.005 / 2260) * gr%zt(k)
     else if (gr%zt(k) < 4000) then
-      wmt(k) = -0.005
+      wm_zt(k) = -0.005
     else if (gr%zt(k) < 5000) then
-      wmt(k) = -0.005 + (0.005 / (5000 - 4000)) & 
+      wm_zt(k) = -0.005 + (0.005 / (5000 - 4000)) & 
                * (gr%zt(k) - 4000)
     else
-      wmt(k) = 0.
+      wm_zt(k) = 0.
     end if
   end do
-  wmm = zt2zm( wmt )
+  wm_zm = zt2zm( wm_zt )
 
   ! Boundary conditions on vertical motion.
-  wmt(1) = 0.0        ! Below surface
-  wmm(1) = 0.0        ! At surface
-  wmm(gr%nnzp) = 0.0  ! Model top
+  wm_zt(1) = 0.0        ! Below surface
+  wm_zm(1) = 0.0        ! At surface
+  wm_zm(gr%nnzp) = 0.0  ! Model top
 
 
   ! Compute large-scale horizontal temperature advection

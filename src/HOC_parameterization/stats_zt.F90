@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F90,v 1.8 2008-07-31 17:01:51 faschinj Exp $
+! $Id: stats_zt.F90,v 1.9 2008-07-31 19:34:18 faschinj Exp $
  
 module stats_zt
 
@@ -26,7 +26,7 @@ use stats_variables, only: &
     ircm, & 
     ium, & 
     ivm, & 
-    iwmt, & 
+    iwm_zt, & 
     iug, & 
     ivg, & 
     icf, & 
@@ -206,7 +206,7 @@ irtm          = 0
 ircm          = 0
 ium           = 0
 ivm           = 0
-iwmt          = 0
+iwm_zt          = 0
 iug           = 0
 ivg           = 0
 icf           = 0
@@ -429,9 +429,9 @@ do i=1,zt%nn
     call stat_assign( ivm,  "vm", & 
           "v wind (m/s)","m/s",zt)
     k = k + 1
-  case ('wmt')
-    iwmt = k
-    call stat_assign( iwmt, "wm", & 
+  case ('wm_zt')
+    iwm_zt = k
+    call stat_assign( iwm_zt, "wm", & 
           "w wind (m/s)","m/s",zt)
     k = k + 1
   case ('ug')

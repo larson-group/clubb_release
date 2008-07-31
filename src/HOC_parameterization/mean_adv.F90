@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mean_adv.F90,v 1.3 2008-07-29 16:44:02 nielsenb Exp $
+! $Id: mean_adv.F90,v 1.4 2008-07-31 19:34:17 faschinj Exp $
 !===============================================================================
 module mean_adv
 
@@ -29,7 +29,7 @@ public :: term_ma_zt_lhs, &
 contains
 
 !===============================================================================
-pure function term_ma_zt_lhs( wmt, dzt, level ) & 
+pure function term_ma_zt_lhs( wm_zt, dzt, level ) & 
 result( lhs )
 
 !       Description:
@@ -57,18 +57,18 @@ result( lhs )
 !       This term is discretized as follows:
 !
 !       The values of var_t are found on the thermodynamic levels, as
-!       are the values of wmt (mean vertical velocity on thermodynamic
+!       are the values of wm_zt (mean vertical velocity on thermodynamic
 !       levels).  The variable var_t is interpolated to the intermediate
 !       momentum levels.  The derivative of the interpolated values is
 !       taken over the central thermodynamic level.  The derivative
-!       is multiplied by wmt at the central thermodynamic level to get
+!       is multiplied by wm_zt at the central thermodynamic level to get
 !       the desired result.
 !
 !       -------var_tp1------------------------------------------- t(k+1)
 !
 !       =================var_t(interp)=========================== m(k)
 !
-!       -------var_t---------------------d(var_t)/dz-------wmt--- t(k)
+!       -------var_t---------------------d(var_t)/dz-------wm_zt--- t(k)
 !
 !       =================var_t(interp)=========================== m(k-1)
 !
@@ -102,7 +102,7 @@ integer, parameter :: &
 
 ! Input Variables
 real, intent(in) :: & 
-  wmt,   & ! wmt(k)                        [m/s]
+  wm_zt,   & ! wm_zt(k)                        [m/s]
   dzt   ! Inverse of grid spacing (k)   [1/m]
 
 integer, intent(in) :: & 
@@ -147,16 +147,16 @@ elseif ( level > 1 .and. level < gr%nnzp ) then
 
    ! Thermodynamic superdiagonal: [ x var_t(k+1,<t+1>) ]
    lhs(kp1_tdiag) & 
-   = + wmt * dzt * gr%weights_zt2zm(t_above,mk)
+   = + wm_zt * dzt * gr%weights_zt2zm(t_above,mk)
 
    ! Thermodynamic main diagonal: [ x var_t(k,<t+1>) ]
    lhs(k_tdiag) & 
-   = + wmt * dzt * (   gr%weights_zt2zm(t_below,mk) & 
+   = + wm_zt * dzt * (   gr%weights_zt2zm(t_below,mk) & 
                      - gr%weights_zt2zm(t_above,mkm1)   )
 
    ! Thermodynamic subdiagonal: [ x var_t(k-1,<t+1>) ]
    lhs(km1_tdiag) & 
-   = - wmt * dzt * gr%weights_zt2zm(t_below,mkm1)
+   = - wm_zt * dzt * gr%weights_zt2zm(t_below,mkm1)
 
 
 elseif ( level == gr%nnzp ) then
@@ -182,7 +182,7 @@ return
 end function term_ma_zt_lhs
 
 !===============================================================================
-pure function term_ma_zm_lhs( wmm, dzm, level ) & 
+pure function term_ma_zm_lhs( wm_zm, dzm, level ) & 
 result( lhs )
 
 !       Description:
@@ -210,18 +210,18 @@ result( lhs )
 !       This term is discretized as follows:
 !
 !       The values of var_m are found on the momentum levels, as are the
-!       values of wmm (mean vertical velocity on momentum levels).
+!       values of wm_zm (mean vertical velocity on momentum levels).
 !       The variable var_m is interpolated to the intermediate
 !       thermodynamic levels.  The derivative of the interpolated values
 !       is taken over the central momentum level.  The derivative
-!       is multiplied by wmm at the central momentum level to get
+!       is multiplied by wm_zm at the central momentum level to get
 !       the desired result.
 !
 !       =======var_mp1=========================================== m(k+1)
 !
 !       -----------------var_m(interp)--------------------------- t(k+1)
 !
-!       =======var_m=====================d(var_m)/dz=======wmm=== m(k)
+!       =======var_m=====================d(var_m)/dz=======wm_zm=== m(k)
 !
 !       -----------------var_m(interp)--------------------------- t(k)
 !
@@ -255,7 +255,7 @@ integer, parameter :: &
 
 ! Input Variables
 real, intent(in) :: & 
-  wmm,   & ! wmm(k)                        [m/s]
+  wm_zm,   & ! wm_zm(k)                        [m/s]
   dzm   ! Inverse of grid spacing (k)   [1/m]
 
 integer, intent(in) :: & 
@@ -300,16 +300,16 @@ elseif ( level > 1 .and. level < gr%nnzp ) then
 
    ! Momentum superdiagonal: [ x var_m(k+1,<t+1>) ]
    lhs(kp1_mdiag) & 
-   = + wmm * dzm * gr%weights_zm2zt(m_above,tkp1)
+   = + wm_zm * dzm * gr%weights_zm2zt(m_above,tkp1)
 
    ! Momentum main diagonal: [ x var_m(k,<t+1>) ]
    lhs(k_mdiag) & 
-   = + wmm * dzm * (   gr%weights_zm2zt(m_below,tkp1) & 
+   = + wm_zm * dzm * (   gr%weights_zm2zt(m_below,tkp1) & 
                      - gr%weights_zm2zt(m_above,tk)  )
 
    ! Momentum subdiagonal: [ x var_m(k-1,<t+1>) ]
    lhs(km1_mdiag) & 
-   = - wmm * dzm * gr%weights_zm2zt(m_below,tk)
+   = - wm_zm * dzm * gr%weights_zm2zt(m_below,tk)
 
 
 elseif ( level == gr%nnzp ) then

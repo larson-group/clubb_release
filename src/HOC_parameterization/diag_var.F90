@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F90,v 1.12 2008-07-31 17:01:50 faschinj Exp $
+! $Id: diag_var.F90,v 1.13 2008-07-31 19:34:17 faschinj Exp $
 !===============================================================================
 module diagnose_variances
 
@@ -28,7 +28,7 @@ module diagnose_variances
         contains
 
 !===============================================================================
-        subroutine diag_var( tau_zm, wmm, rtm, wprtp,  & 
+        subroutine diag_var( tau_zm, wm_zm, rtm, wprtp,  & 
                              thlm, wpthlp, wpthvp, um, vm, & 
                              wp2, wp3, upwp, vpwp, Scm, Skwm, Kht, & 
                              liter, dt, & 
@@ -102,7 +102,7 @@ module diagnose_variances
         ! Input variables
         real, intent(in), dimension(gr%nnzp) ::  & 
         tau_zm,   & ! Tau on moment. grid            [s]
-        wmm,    & ! w wind on m                    [m/s]
+        wm_zm,    & ! w wind on m                    [m/s]
         rtm,    & ! Total water mixing ratio       [kg/kg]
         wprtp,  & ! w' r_t'                        [(m kg)/(s kg)]
         thlm,   & ! Liquid potential temp.         [K]
@@ -343,7 +343,7 @@ module diagnose_variances
 
         ! Implicit contributions to term rtp2
         call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
-                           wp3, tau_zm, wmm, Kw2_rtp2, C2rt_1d,  & 
+                           wp3, tau_zm, wm_zm, Kw2_rtp2, C2rt_1d,  & 
                            nu2, beta, wtol_sqd, lhs )
 
         ! Explicit contributions to rtp2
@@ -363,7 +363,7 @@ module diagnose_variances
 
         ! Implicit contributions to term thlp2
         call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
-                           wp3, tau_zm, wmm, Kw2_thlp2, C2thl_1d,  & 
+                           wp3, tau_zm, wm_zm, Kw2_thlp2, C2thl_1d,  & 
                            nu2, beta, wtol_sqd, lhs )
 
         ! Explicit contributions to thlp2
@@ -382,7 +382,7 @@ module diagnose_variances
         ! Implicit contributions to term rtpthlp
 
         call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
-                           wp3, tau_zm, wmm, Kw2_rtpthlp, C2rtthl_1d,  & 
+                           wp3, tau_zm, wm_zm, Kw2_rtpthlp, C2rtthl_1d,  & 
                            nu2, beta, wtol_sqd, lhs )
 
         ! Explicit contributions to rtpthlp
@@ -401,7 +401,7 @@ module diagnose_variances
         ! Implicit contributions to term up2
 
         call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
-                           wp3, tau_zm, wmm, Kw9, C4_C14_1d,  & 
+                           wp3, tau_zm, wm_zm, Kw9, C4_C14_1d,  & 
                            nu9, beta, wtol_sqd, lhs )
 
         ! Explicit contributions to up2
@@ -420,7 +420,7 @@ module diagnose_variances
         ! Implicit contributions to term vp2
 
         call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
-                           wp3, tau_zm, wmm, Kw9, C4_C14_1d,  & 
+                           wp3, tau_zm, wm_zm, Kw9, C4_C14_1d,  & 
                            nu9, beta, wtol_sqd, lhs )
 
         ! Explicit contributions to vp2
@@ -516,7 +516,7 @@ module diagnose_variances
           !!!!!***** sclr'^2, sclr'r_t', sclr'th_l' *****!!!!!
 
           call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
-                             wp3, tau_zm, wmm, Kw2, C2sclr_1d,  & 
+                             wp3, tau_zm, wm_zm, Kw2, C2sclr_1d,  & 
                              nu2, beta, wtol_sqd, lhs )
 
 
@@ -658,7 +658,7 @@ module diagnose_variances
            write(fstderr,*) "Intent(in)"
            
            write(fstderr,*) "tau_zm = ", tau_zm
-           write(fstderr,*) "wmm = ", wmm
+           write(fstderr,*) "wm_zm = ", wm_zm
            write(fstderr,*) "rtm = ", rtm
            write(fstderr,*) "wprtp = ", wprtp
            write(fstderr,*) "thlm = ", thlm
@@ -701,7 +701,7 @@ module diagnose_variances
 
 !===============================================================================
         subroutine diag_var_lhs( dt, liter, a1, wp2_zt,  & 
-                                 wp3, tau_zm, wmm, Kw, Cn,  & 
+                                 wp3, tau_zm, wm_zm, Kw, Cn,  & 
                                  nu, beta, wtol_sqd, lhs )
         
 !       Description:
@@ -776,7 +776,7 @@ module diagnose_variances
         wp2_zt, & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
         wp3,    & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
         tau_zm,   & ! Time-scale tau on momentum levels           [s]
-        wmm,    & ! w wind component on momentum levels         [m/s]
+        wm_zm,    & ! w wind component on momentum levels         [m/s]
         Kw,     & ! Coefficient of eddy diffusivity (all vars.) [m^2/s]
         Cn        ! Coefficient C_n                             [-]
 
@@ -825,7 +825,7 @@ module diagnose_variances
           ! LHS mean advection (ma) term.
           lhs(kp1_mdiag:km1_mdiag,k) & 
           = lhs(kp1_mdiag:km1_mdiag,k) & 
-          + term_ma_zm_lhs( wmm(k), gr%dzm(k), k )
+          + term_ma_zm_lhs( wm_zm(k), gr%dzm(k), k )
 
           ! LHS turbulent advection (ta) term.
           lhs(kp1_mdiag:km1_mdiag,k) & 
@@ -873,7 +873,7 @@ module diagnose_variances
            if ( irtp2_ma + ithlp2_ma + irtpthlp_ma + & 
                 iup2_ma + ivp2_ma > 0 ) then
              tmp(1:3) & 
-             = term_ma_zm_lhs( wmm(k), gr%dzm(k), k )
+             = term_ma_zm_lhs( wm_zm(k), gr%dzm(k), k )
              zmscr08(k) = -tmp(3)
              zmscr09(k) = -tmp(2)
              zmscr10(k) = -tmp(1)

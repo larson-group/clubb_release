@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: lba.F90,v 1.4 2008-07-30 21:18:16 faschinj Exp $
+! $Id: lba.F90,v 1.5 2008-07-31 19:34:17 faschinj Exp $
 module lba
 
 !       Description:
@@ -33,7 +33,7 @@ character(*), parameter ::  &
 contains
 
 !----------------------------------------------------------------------
-subroutine lba_tndcy( time, wmt, wmm, radht, & 
+subroutine lba_tndcy( time, wm_zt, wm_zm, radht, & 
                       thlm_forcing, rtm_forcing, & 
                       sclrm_forcing )
 !       Description:
@@ -62,8 +62,8 @@ real(kind=time_precision), intent(in) :: time ! Model time [s]
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) :: & 
-  wmt,           & ! w wind on thermodynamic grid                 [m/s]
-  wmm,           & ! w wind on momentum grid                      [m/s]
+  wm_zt,           & ! w wind on thermodynamic grid                 [m/s]
+  wm_zm,           & ! w wind on momentum grid                      [m/s]
   radht,         & ! Radiative heating rate                       [K/s]
   thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
   rtm_forcing   ! Total water mixing ratio tendency            [kg/kg/s]
@@ -78,8 +78,8 @@ real :: a
 integer :: i1, i2
 
 ! Large scale subsidence
-wmt(1:gr%nnzp) = 0.0
-wmm(1:gr%nnzp) = 0.0
+wm_zt(1:gr%nnzp) = 0.0
+wm_zm(1:gr%nnzp) = 0.0
 
 if ( .not. l_bugsrad ) then
 

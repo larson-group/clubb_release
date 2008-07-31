@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F90,v 1.6 2008-07-31 16:10:43 faschinj Exp $
+! $Id: dycoms2_rf02.F90,v 1.7 2008-07-31 19:34:17 faschinj Exp $
 module dycoms2_rf02
 
 !       Description:
@@ -17,7 +17,7 @@ contains
 !----------------------------------------------------------------------
 SUBROUTINE dycoms2_rf02_tndcy & 
            ( time, time_initial, rho, rho_zm, rtm, rcm, exner,  & 
-             wmt, wmm, thlm_forcing, rtm_forcing,  & 
+             wm_zt, wm_zm, thlm_forcing, rtm_forcing,  & 
              Frad, radht, Ncm, Ncnm, err_code,  & 
              sclrm_forcing )
 !       Description:
@@ -80,8 +80,8 @@ integer, intent(inout) :: err_code
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) ::  & 
-  wmt,            & ! wm on thermodynamic grid       [m/s]
-  wmm,            & ! wm on momentum grid            [m/s]
+  wm_zt,            & ! wm on thermodynamic grid       [m/s]
+  wm_zm,            & ! wm on momentum grid            [m/s]
   thlm_forcing,   & ! theta_l forcing                [K/s]
   rtm_forcing,    & ! r_t forcing                    [(kg/kg)/s] 
   Frad,           & ! Radiative flux                 [W/m^2]
@@ -105,15 +105,15 @@ integer :: k  ! Loop index
 ! Large-scale subsidence
 
 DO k = 2, gr%nnzp, 1
-  wmt(k) = -ls_div * gr%zt(k)
+  wm_zt(k) = -ls_div * gr%zt(k)
 END DO
 
-wmm = zt2zm( wmt )
+wm_zm = zt2zm( wm_zt )
 
 ! Boundary conditions.
-wmt(1) = 0.0        ! Below surface
-wmm(1) = 0.0        ! At surface
-wmm(gr%nnzp) = 0.0  ! Model top
+wm_zt(1) = 0.0        ! Below surface
+wm_zm(1) = 0.0        ! At surface
+wm_zm(gr%nnzp) = 0.0  ! Model top
 
 IF ( .not. l_bugsrad ) THEN
 

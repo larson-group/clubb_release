@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: cobra.F90,v 1.4 2008-07-29 16:44:01 nielsenb Exp $
+! $Id: cobra.F90,v 1.5 2008-07-31 19:34:17 faschinj Exp $
 module cobra
 !       Description:
 !       Contains subroutines for the COBRA CO2 case.
@@ -16,7 +16,7 @@ public :: &
 contains
 
 !----------------------------------------------------------------------
-subroutine cobra_tndcy( wmt, wmm,  & 
+subroutine cobra_tndcy( wm_zt, wm_zm,  & 
                         thlm_forcing, rtm_forcing, & 
                         sclrm_forcing )
 !       Description:
@@ -43,8 +43,8 @@ implicit none
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) :: & 
-  wmt,          & ! w wind on thermodynamic grid                 [m/s]
-  wmm,          & ! w wind on momentum grid                      [m/s]
+  wm_zt,          & ! w wind on thermodynamic grid                 [m/s]
+  wm_zm,          & ! w wind on momentum grid                      [m/s]
   thlm_forcing, & ! Liquid water potential temperature tendency  [K/s]
   rtm_forcing  ! Total water mixing ratio tendency            [kg/kg/s]
 
@@ -62,12 +62,12 @@ DO k = 2, gr%nnzp, 1
 !  Vince Larson tapered the subsidence to zero to avoid 
 !     constant thlm and instability aloft. 
 !  6 Mar 2007
-!          wmt(k) = -5.0E-6 * gr%zt(k)
+!          wm_zt(k) = -5.0E-6 * gr%zt(k)
 
    if ( gr%zt(k) >= 0. .and. gr%zt(k) < 3000. ) then
-      wmt(k) = -5.0E-6 * gr%zt(k)
+      wm_zt(k) = -5.0E-6 * gr%zt(k)
    else if ( gr%zt(k) >= 3000. ) then
-      wmt(k) & 
+      wm_zt(k) & 
         = - 0.0150 & 
           + 0.0150 * ( gr%zt(k) - 3000. ) / ( 4000. - 3000. )
    else
@@ -81,14 +81,14 @@ DO k = 2, gr%nnzp, 1
 END DO
 
 ! Boundary condition.
-wmt(1) = 0.0        ! Below surface
+wm_zt(1) = 0.0        ! Below surface
 
 ! Interpolation
-wmm = zt2zm( wmt )
+wm_zm = zt2zm( wm_zt )
 
 ! Boundary conditions.
-wmm(1) = 0.0        ! At surface
-wmm(gr%nnzp) = 0.0  ! Model top
+wm_zm(1) = 0.0        ! At surface
+wm_zm(gr%nnzp) = 0.0  ! Model top
 
 ! No large-scale water tendency or cooling
 rtm_forcing  = 0.0

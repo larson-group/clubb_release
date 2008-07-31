@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F90,v 1.8 2008-07-31 17:01:50 faschinj Exp $
+! $Id: mixing.F90,v 1.9 2008-07-31 19:34:17 faschinj Exp $
 !===============================================================================
 module mixing
 
@@ -36,7 +36,7 @@ integer, parameter, private :: &
 contains
 
 !===============================================================================
-subroutine timestep_mixing( dt, Scm, wmm, wmt, wp2, wp3, & 
+subroutine timestep_mixing( dt, Scm, wm_zm, wm_zt, wp2, wp3, & 
                             Kht, tau_zm, Skwm, rtpthvp,  & 
                             rtm_forcing, thlpthvp,  & 
                             thlm_forcing, rtp2, thlp2, & 
@@ -110,8 +110,8 @@ real(kind=time_precision), intent(in) ::  &
 
 real, intent(in), dimension(gr%nnzp) :: & 
   Scm,           & ! Sc on momentum levels                    [-]
-  wmm,           & ! w wind component on momentum levels      [m/s]
-  wmt,           & ! w wind component on thermodynamic levels [m/s]
+  wm_zm,           & ! w wind component on momentum levels      [m/s]
+  wm_zt,           & ! w wind component on thermodynamic levels [m/s]
   wp2,           & ! w'^2 (momentum levels)                   [m^2/s^2]
   wp3,           & ! w'^3 (thermodynamic levels)              [m^3/s^3]
   Kht,           & ! Eddy diffusivity on thermodynamic levels [m^2/s]
@@ -255,7 +255,7 @@ wpxp_lower_lim = -0.99 * sqrt( wp2 * rtp2 )
 
 ! Compute the implicit portion of the r_t and w'r_t' equations.
 ! Build the left-hand side matrix.
-call mixing_lhs( .true., dt, wprtp, Scm, wmm, wmt, wp2,  & 
+call mixing_lhs( .true., dt, wprtp, Scm, wm_zm, wm_zt, wp2,  & 
                  wp3, Kw6_rt, tau_zm, C7_Skw_fnc, C6rt_Skw_fnc, & 
                  wpxp_upper_lim, wpxp_lower_lim,  & 
                  implemented, lhs )
@@ -319,7 +319,7 @@ wpxp_lower_lim = -0.99 * sqrt( wp2 * thlp2 )
 
 ! Compute the implicit portion of the th_l and w'th_l' equations.
 ! Build the left-hand side matrix.
-call mixing_lhs( .true., dt, wpthlp, Scm, wmm, wmt, wp2,  & 
+call mixing_lhs( .true., dt, wpthlp, Scm, wm_zm, wm_zt, wp2,  & 
                  wp3, Kw6_thl, tau_zm, C7_Skw_fnc, C6thl_Skw_fnc, & 
                  wpxp_upper_lim, wpxp_lower_lim,  & 
                  implemented, lhs )
@@ -378,8 +378,8 @@ do i = 1, sclr_dim, 1
 
   ! Compute the implicit portion of the sclr and w'sclr' equations.
   ! Build the left-hand side matrix.
-  call mixing_lhs( .true., dt, wpsclrp(:,i), Scm, wmm,  & 
-                   wmt, wp2, wp3, Kw6, tau_zm, C7_Skw_fnc, & 
+  call mixing_lhs( .true., dt, wpsclrp(:,i), Scm, wm_zm,  & 
+                   wm_zt, wp2, wp3, Kw6, tau_zm, C7_Skw_fnc, & 
                    C6rt_Skw_fnc, wpxp_upper_lim, wpxp_lower_lim, & 
                    implemented, lhs )
 
@@ -418,8 +418,8 @@ end do ! passive scalars
 
 !           write(fstderr,*) "dt = ", dt
 !           write(fstderr,*) "tau_zm = ", tau_zm
-!           write(fstderr,*) "wmm = ", wmm
-!           write(fstderr,*) "wmt = ", wmt
+!           write(fstderr,*) "wm_zm = ", wm_zm
+!           write(fstderr,*) "wm_zt = ", wm_zt
 !           write(fstderr,*) "wp2 = ", wp2
 !           write(fstderr,*) "wp3 = ", wp3
 !           write(fstderr,*) "Scm = ", Scm
@@ -427,8 +427,8 @@ end do ! passive scalars
 
    !write(fstderr,*) "dt = ", dt
    !write(fstderr,*) "Scm = ", Scm
-   !write(fstderr,*) "wmm = ", wmm
-   !write(fstderr,*) "wmt = ", wmt
+   !write(fstderr,*) "wm_zm = ", wm_zm
+   !write(fstderr,*) "wm_zt = ", wm_zt
    !write(fstderr,*) "wp2 = ", wp2
    !write(fstderr,*) "wp3 = ", wp3
    !write(fstderr,*) "Kht = ", Kht
@@ -475,7 +475,7 @@ return
 end subroutine timestep_mixing
 
 !===============================================================================
-subroutine mixing_lhs( liter, dt, wpxp, Scm, wmm, wmt, wp2,  & 
+subroutine mixing_lhs( liter, dt, wpxp, Scm, wm_zm, wm_zt, wp2,  & 
                        wp3, Kw6, tau_zm, C7_Skw_fnc, C6x_Skw_fnc, & 
                        wpxp_upper_lim, wpxp_lower_lim,  & 
                        implemented, lhs )
@@ -570,8 +570,8 @@ real(kind=time_precision), intent(in) ::  &
 real, intent(in), dimension(gr%nnzp) :: & 
   wpxp,            & ! w'x' (momentum levels) at timestep (t)   [{xm units} m/s]
   Scm,             & ! Sc on momentum levels                    [-]
-  wmm,             & ! w wind component on momentum levels      [m/s]
-  wmt,             & ! w wind component on thermodynamic levels [m/s]
+  wm_zm,             & ! w wind component on momentum levels      [m/s]
+  wm_zt,             & ! w wind component on thermodynamic levels [m/s]
   wp2,             & ! w'^2 (momentum levels)                   [m^2/s^2]
   wp3,             & ! w'^3 (thermodynamic levels)              [m^3/s^3]
   Kw6,             & ! Coefficient of eddy diffusivity for w'x' [m^2/s]
@@ -659,7 +659,7 @@ do k = 2, gr%nnzp-1, 1
 
     lhs((/3-2,3,3+2/),k_xm) & 
     = lhs((/3-2,3,3+2/),k_xm) & 
-    + term_ma_zt_lhs( wmt(k), gr%dzt(k), k )
+    + term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
 
   else
 
@@ -684,7 +684,7 @@ do k = 2, gr%nnzp-1, 1
     if ( irtm_ma > 0 .or. ithlm_ma > 0 ) then
       if ( .not. implemented ) then
         tmp(1:3) =  & 
-        + term_ma_zt_lhs( wmt(k), gr%dzt(k), k )
+        + term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
         ztscr01(k) = - tmp(3)
         ztscr02(k) = - tmp(2)
         ztscr03(k) = - tmp(1)
@@ -724,7 +724,7 @@ do k = 2, gr%nnzp-1, 1
   ! LHS mean advection (ma) term.
   lhs((/3-2,3,3+2/),k_wpxp) & 
   = lhs((/3-2,3,3+2/),k_wpxp) & 
-  + term_ma_zm_lhs( wmm(k), gr%dzm(k), k )
+  + term_ma_zm_lhs( wm_zm(k), gr%dzm(k), k )
 
   ! LHS turbulent advection (ta) term.
   lhs((/3-2,3,3+2/),k_wpxp) & 
@@ -743,7 +743,7 @@ do k = 2, gr%nnzp-1, 1
   lhs(3,k_wpxp) & 
   = lhs(3,k_wpxp) & 
   + wpxp_terms_ac_pr2_lhs( C7_Skw_fnc(k),  & 
-                           wmt(kp1), wmt(k), gr%dzm(k) )
+                           wm_zt(kp1), wm_zt(k), gr%dzm(k) )
 
   ! LHS pressure term 1 (pr1).
   lhs(3,k_wpxp) & 
@@ -772,7 +772,7 @@ do k = 2, gr%nnzp-1, 1
 
     if ( iwprtp_ma > 0 .or. iwpthlp_ma > 0 ) then
       tmp(1:3) = & 
-      + term_ma_zm_lhs( wmm(k), gr%dzm(k), k )
+      + term_ma_zm_lhs( wm_zm(k), gr%dzm(k), k )
       zmscr01(k) = - tmp(3)
       zmscr02(k) = - tmp(2)
       zmscr03(k) = - tmp(1)
@@ -799,7 +799,7 @@ do k = 2, gr%nnzp-1, 1
     if ( iwprtp_ac > 0 .or. iwpthlp_ac > 0 ) then
       zmscr09(k) =  & 
       - wpxp_terms_ac_pr2_lhs( 0.0, & 
-                               wmt(kp1), wmt(k), gr%dzm(k) )
+                               wm_zt(kp1), wm_zt(k), gr%dzm(k) )
     endif
 
     if ( iwprtp_pr1 > 0 .or. iwpthlp_pr1 > 0 ) then
@@ -810,7 +810,7 @@ do k = 2, gr%nnzp-1, 1
     if ( iwprtp_pr2 > 0 .or. iwpthlp_pr2 > 0 ) then
       zmscr11(k) = & 
       - wpxp_terms_ac_pr2_lhs( (1.0+C7_Skw_fnc(k)), & 
-                               wmt(kp1), wmt(k), gr%dzm(k) )
+                               wm_zt(kp1), wm_zt(k), gr%dzm(k) )
     endif
 
     if ( iwprtp_dp1 > 0 .or. iwpthlp_dp1 > 0 ) then
@@ -1785,7 +1785,7 @@ end function wpxp_term_tp_lhs
 
 !===============================================================================
 pure function wpxp_terms_ac_pr2_lhs( C7_Skw_fnc,  & 
-                                     wmtp1, wmt, dzm ) & 
+                                     wmtp1, wm_zt, dzm ) & 
 result( lhs )
 
 !       Description:
@@ -1817,17 +1817,17 @@ result( lhs )
 !       The terms are discretized as follows:
 !
 !       The values of w'x' are found on momentum levels, while the values
-!       of wmt (mean vertical velocity on thermodynamic levels) are found
-!       on thermodynamic levels.  The vertical derivative of wmt is
+!       of wm_zt (mean vertical velocity on thermodynamic levels) are found
+!       on thermodynamic levels.  The vertical derivative of wm_zt is
 !       taken over the intermediate (central) momentum level.  It is then
 !       multiplied by w'x' (implicitly calculated at timestep (t+1)) and
 !       the coefficients to yield the desired results.
 !
 !       -------wmtp1--------------------------------------------- t(k+1)
 !
-!       ===============d(wmt)/dz============wpxp================= m(k)
+!       ===============d(wm_zt)/dz============wpxp================= m(k)
 !
-!       -------wmt----------------------------------------------- t(k)
+!       -------wm_zt----------------------------------------------- t(k)
 !
 !       The vertical indices t(k+1), m(k), and t(k) correspond with
 !       altitudes zt(k+1), zm(k), and zt(k), respectively.  The letter
@@ -1844,8 +1844,8 @@ implicit none
 ! Input Variables
 real, intent(in) :: & 
   C7_Skw_fnc,  & ! C_7 parameter with Sk_w applied (k)   [-]
-  wmtp1,       & ! wmt(k+1)                              [m/s]
-  wmt,         & ! wmt(k)                                [m/s]
+  wmtp1,       & ! wm_zt(k+1)                              [m/s]
+  wm_zt,         & ! wm_zt(k)                                [m/s]
   dzm         ! Inverse of grid spacing (k)           [1/m]
 
 ! Return Variable
@@ -1853,7 +1853,7 @@ real :: lhs
 
 ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
 lhs & 
-= + ( 1.0 - C7_Skw_fnc ) * dzm * ( wmtp1 - wmt )
+= + ( 1.0 - C7_Skw_fnc ) * dzm * ( wmtp1 - wm_zt )
 
 return
 end function wpxp_terms_ac_pr2_lhs

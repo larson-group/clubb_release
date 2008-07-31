@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: coamps_micro_driver.F90,v 1.8 2008-07-31 16:10:43 faschinj Exp $
+! $Id: coamps_micro_driver.F90,v 1.9 2008-07-31 19:34:16 faschinj Exp $
 module coamps_micro_driver_mod
 
 ! This module wraps the adjtq subroutine so that it may be used by
@@ -15,7 +15,7 @@ contains
 
 subroutine coamps_micro_driver & 
        ( runtype, timea_in, deltf_in, & 
-         rtm, wmm, p, exner, rho, T_in_K, & 
+         rtm, wm_zm, p, exner, rho, T_in_K, & 
          thlm, ricem, rrainm, rgraupelm, rsnowm, & 
          rcm, Ncm, Nrm, Ncnm, Nim, & 
          cond, Vsnow, Vice, Vrr, VNr, Vgraupel, & 
@@ -165,7 +165,7 @@ real(kind=time_precision), intent(in) :: &
 real, dimension(gr%nnzp), intent(in) :: & 
   rtm,   & ! Total water mixing ratio                        [kg/kg]
   rcm,   & ! Cloud water mixing ratio                        [kg/kg]
-  wmm,   & ! Vertical wind                                   [m/s]
+  wm_zm,   & ! Vertical wind                                   [m/s]
   p,     & ! Pressure                                        [Pa]
   exner, & ! Mean exner function                             [-]
   rho,  & ! Mean density                                    [kg/m^3]
@@ -511,7 +511,7 @@ thm(1:kk+1) = thlm(1:kk+1) &
             + ( Lv /( Cp * exner(1:kk+1) )* rcm(1:kk+1) )
 
 ! Setup COAMPS w grid variables
-w3(1,1,1:kk+1) = wmm(1:kk+1)
+w3(1,1,1:kk+1) = wm_zm(1:kk+1)
 
 !     do k=1, kk+1, 1
 !       pr3d(1,1,k)    = zt2zm( p, k )

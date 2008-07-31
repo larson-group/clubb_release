@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: nov11.F90,v 1.9 2008-07-31 16:10:44 faschinj Exp $
+! $Id: nov11.F90,v 1.10 2008-07-31 19:34:17 faschinj Exp $
   module nov11
 
 !       Description:
@@ -29,8 +29,8 @@
   subroutine nov11_altocu_tndcy & 
              ( time, time_initial, dt, & 
                !rlat, rlon, & 
-               rcm, exner, rho, rtm, wmt, & 
-               wmm, thlm_forcing, rtm_forcing, & 
+               rcm, exner, rho, rtm, wm_zt, & 
+               wm_zm, thlm_forcing, rtm_forcing, & 
                Frad, radht, Ncnm, sclrm_forcing )
 
 !       Description:
@@ -124,8 +124,8 @@
 
   ! Output variables
   real, intent(out), dimension(gr%nnzp) :: & 
-  wmt,             & ! Mean vertical wind on the thermo. grid  [m/s]
-  wmm,             & ! Mean vertical wind on the moment. grid  [m/s]
+  wm_zt,             & ! Mean vertical wind on the thermo. grid  [m/s]
+  wm_zm,             & ! Mean vertical wind on the moment. grid  [m/s]
   thlm_forcing,    & ! Theta_l forcing                         [K/s]
   rtm_forcing,     & ! Total water forcing                     [kg/kg/s]
   Frad,            & ! Radiative flux                          [W/m^2]
@@ -166,7 +166,7 @@
 
   ! Working arrays for subsidence interpolation
   real, dimension(7) ::  & 
-  zsubs, & ! Heights at which wmt data is supplied (used for subsidence interpolation) [m]
+  zsubs, & ! Heights at which wm_zt data is supplied (used for subsidence interpolation) [m]
   wt1   ! ONLY wt1 IS NEEDED FOR NOV.11 CASE
 
   ! Subsidence constant and variables (for Nov.11 case only)
@@ -662,16 +662,16 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
 
   do k=2,gr%nnzp
     if ( (time >= time_initial + 3600.0) .and. subs_on ) then
-      call linear_interpolation( 7, zsubs, wt1, gr%zt(k), wmt(k) )
+      call linear_interpolation( 7, zsubs, wt1, gr%zt(k), wm_zt(k) )
     else
 !           If time is not yet one hour, we have no subsidence
-      wmt(k) = 0.0
+      wm_zt(k) = 0.0
     end if
 
-    wmt(1) = wmt(2)
+    wm_zt(1) = wm_zt(2)
   end do
 
-  wmm = zt2zm(wmt)
+  wm_zm = zt2zm(wm_zt)
 
   ! Enter the final theta-l and rtm tendencies
   do k = 1, gr%nnzp, 1
