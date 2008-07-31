@@ -1,4 +1,4 @@
-! $Id: nobudgets_stats.in,v 1.3 2008-07-24 14:15:50 faschinj Exp $
+! $Id: nobudgets_stats.in,v 1.4 2008-07-31 16:12:26 faschinj Exp $
 ! Stats for the prognostic and diagnostic variables, but omitting the 
 ! budget terms and some of the microphyics stats.
 &statsnl
@@ -8,7 +8,7 @@ vars_zt =
 'cf', 'p', 'exner', 'Lscale',  
 'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp',
 'taut', 'kht', 'wp2thvp', 'wp2rcp', 'wprtpthlp',
-'sc', 'rhot', 'radht', 'rsat',
+'sc', 'rho', 'radht', 'rsat',
 'rrainm', 'Nrm', 'rsnowm', 'ricem', 'rgraupelm',
 'a', 'w1', 'w2', 'sw1', 'sw2', 'thl1', 'thl2', 'sthl1', 'sthl2',
 'rt1', 'rt2', 'srt1', 'srt2', 'rc1', 'rc2', 'rsl1', 'rsl2', 'R1', 'R2',
@@ -18,7 +18,7 @@ vars_zt =
 vars_zm = 
 'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'wp4', 'up2', 'vp2',
 'wpthvp', 'rtpthvp', 'thlpthvp', 'taum', 'khm', 'wprcp',
-'thlprcp', 'rtprcp', 'rcp2', 'upwp', 'vpwp', 'rhom', 'sc', 'em',
+'thlprcp', 'rtprcp', 'rcp2', 'upwp', 'vpwp', 'rho_zm', 'sc', 'em',
 'shear', 'Frad', 
 'Vrr', 'VNr', 'Vsnow', 'Vgraupel', 'Vice',
 ''
