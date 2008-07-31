@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F90,v 1.5 2008-07-30 21:16:54 faschinj Exp $
+! $Id: dycoms2_rf02.F90,v 1.6 2008-07-31 16:10:43 faschinj Exp $
 module dycoms2_rf02
 
 !       Description:
@@ -16,7 +16,7 @@ contains
 
 !----------------------------------------------------------------------
 SUBROUTINE dycoms2_rf02_tndcy & 
-           ( time, time_initial, rhot, rhom, rtm, rcm, exner,  & 
+           ( time, time_initial, rho, rho_zm, rtm, rcm, exner,  & 
              wmt, wmm, thlm_forcing, rtm_forcing,  & 
              Frad, radht, Ncm, Ncnm, err_code,  & 
              sclrm_forcing )
@@ -69,8 +69,8 @@ real(kind=time_precision), intent(in) :: &
   time_initial  ! Initial time    [s]
 
 real, intent(in), dimension(gr%nnzp) :: & 
-  rhot,           & ! Density on thermo. grid        [kg/m^3] 
-  rhom,           & ! Density on moment. grid        [kg/m^3]
+  rho,           & ! Density on thermo. grid        [kg/m^3] 
+  rho_zm,           & ! Density on moment. grid        [kg/m^3]
   rtm,            & ! Total water mixing ratio       [kg/kg]
   rcm,            & ! Cloud water mixing ratio       [kg/kg]
   exner          ! Exner function.                [-]
@@ -124,7 +124,7 @@ IF ( .not. l_bugsrad ) THEN
 
   LWP(gr%nnzp) = 0.0
   DO k = gr%nnzp-1, 1, -1
-    LWP(k) = LWP(k+1) + rhot(k+1)*rcm(k+1)/gr%dzt(k+1)
+    LWP(k) = LWP(k+1) + rho(k+1)*rcm(k+1)/gr%dzt(k+1)
   END DO  ! k = gr%nnzp..1
 
 !         Find the height of the isotherm rtm = 8.0 g/kg.
@@ -167,7 +167,7 @@ IF ( .not. l_bugsrad ) THEN
 
     IF ( Heaviside(k) > 0.0 ) THEN
       Frad(k) = Frad(k) & 
-              + rhom(k) * Cp * ls_div * Heaviside(k) & 
+              + rho_zm(k) * Cp * ls_div * Heaviside(k) & 
                 * ( 0.25 * ((gr%zm(k)-z_i)**(4.0/3.0)) & 
               + z_i * ((gr%zm(k)-z_i)**(1.0/3.0)) )
     END IF
@@ -178,7 +178,7 @@ IF ( .not. l_bugsrad ) THEN
 ! The radiative heating rate is defined on thermodynamic levels.
 
   DO k = 2, gr%nnzp, 1
-    radht(k) = ( 1.0 / exner(k) ) * ( -1.0/(Cp*rhot(k)) ) & 
+    radht(k) = ( 1.0 / exner(k) ) * ( -1.0/(Cp*rho(k)) ) & 
              * ( Frad(k) - Frad(k-1) ) * gr%dzt(k)
   END DO
   radht(1) = radht(2)
@@ -231,7 +231,7 @@ endif
 if ( l_coamps_micro .and. time == time_initial ) then
 
   ! Taken from COAMPS subroutine ncn_init()
-  Ncnm(1:gr%nnzp) = 55000000.0 / rhot(1:gr%nnzp)
+  Ncnm(1:gr%nnzp) = 55000000.0 / rho(1:gr%nnzp)
 
 else
 
@@ -239,9 +239,9 @@ else
   DO k = 1, gr%nnzp, 1
     IF ( rcm(k) > rc_tol ) THEN
       ! The specified cloud droplet concentration is 55 cm^-3, which
-      ! is then converted to m^-3, and then divided by rhot to get the
+      ! is then converted to m^-3, and then divided by rho to get the
       ! concentration in units of kg^-1.
-      Ncm(k) = 55000000.0 / rhot(k)
+      Ncm(k) = 55000000.0 / rho(k)
     ELSE
       Ncm(k) = 0.0
     END IF

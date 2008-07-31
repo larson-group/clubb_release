@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F90,v 1.8 2008-07-30 21:09:37 faschinj Exp $
+! $Id: microphys_driver.F90,v 1.9 2008-07-31 16:10:43 faschinj Exp $
 module microphys_driver
 
 !       Description:
@@ -111,7 +111,7 @@ end subroutine init_microphys
 !-----------------------------------------------------------------------
 subroutine advance_microphys & 
            ( runtype, dt, time_current,  & 
-             thlm, p, exner, rhot, rhom, rtm, rcm, Ncm,  & 
+             thlm, p, exner, rho, rho_zm, rtm, rcm, Ncm,  & 
              pdf_parms, wmt, wmm, Khm, AKm_est, AKm,  & 
              Ncnm, Nim, & 
              hydromet, & 
@@ -235,8 +235,8 @@ real, dimension(gr%nnzp), intent(in) :: &
   thlm,    & ! Liquid potential temp.                 [K]
   p,       & ! Pressure                               [Pa]
   exner,   & ! Exner function                         [-]
-  rhot,    & ! Density on thermo. grid                [kg/m^3]
-  rhom,    & ! Density on moment. grid                [kg/m^3]
+  rho,    & ! Density on thermo. grid                [kg/m^3]
+  rho_zm,    & ! Density on moment. grid                [kg/m^3]
   rtm,     & ! Total water mixing ratio               [kg/kg]
   rcm,     & ! Liquid water mixing ratio              [kg/kg]
   wmt,     & ! w wind on moment. grid                 [m/s]
@@ -358,7 +358,7 @@ if ( l_coamps_micro ) then
 
    call coamps_micro_driver & 
         ( runtype, time_current, dt, & 
-          rtm, wmm, p, exner, rhot, T_in_K, & 
+          rtm, wmm, p, exner, rho, T_in_K, & 
           thlm, hydromet(:,iiricem), hydromet(:,iirrainm),  & 
           hydromet(:,iirgraupelm), hydromet(:,iirsnowm), & 
           rcm, Ncm, hydromet(:,iiNrm), Ncnm, Nim, cond, & 
@@ -413,7 +413,7 @@ else if ( l_kk_rain ) then
   ! Ncm computed beforehand as well.
 
   call kk_microphys & 
-       ( T_in_K, p, exner, rhot,  & 
+       ( T_in_K, p, exner, rho,  & 
          thl1, thl2, a, rc1, rc2, s1,  & 
          s2, ss1, ss2, rcm, Ncm,  & 
          hydromet(:,iirrainm), hydromet(:,iiNrm), & 
@@ -575,7 +575,7 @@ end if ! hydromet_dim > 0
 
 ! Call the ice diffusion scheme
 if ( l_licedfs ) then
-  call ice_dfsn( dt, T_in_K, rcm, p, rhot, rtm_mc )
+  call ice_dfsn( dt, T_in_K, rcm, p, rho, rtm_mc )
   thlm_mc = - ( Lv/(Cp*exner) ) * rtm_mc
 end if
 
@@ -627,7 +627,7 @@ if ( l_stats_samp .and. ( l_coamps_micro .or. l_kk_rain ) ) then
   call stat_update_var( irain_rate,  & 
      ( hydromet(:,iirrainm)  & 
        * zm2zt( abs( hydromet_vel(:,iirrainm) ) ) ) & 
-        * ( rhot / rho_lw ) & 
+        * ( rho / rho_lw ) & 
       * real( sec_per_day * 1000.0 ), zt )
 
   ! Precipitation Flux (W/m^2) should be defined on
@@ -640,19 +640,19 @@ if ( l_stats_samp .and. ( l_coamps_micro .or. l_kk_rain ) ) then
   call stat_update_var( iFprec,  & 
     ( zt2zm( hydromet(:,iirrainm) )  & 
       * abs( hydromet_vel(:,iirrainm) ) ) & 
-    * ( rhom / rho_lw ) * rho_lw * Lv, zm )
+    * ( rho_zm / rho_lw ) * rho_lw * Lv, zm )
 
   ! Store values of surface fluxes for statistics
   ! See notes above.
   call stat_update_var_pt( irain, 1,  & 
       ( hydromet(2,iirrainm) & 
         * abs( zm2zt( hydromet_vel(:,iirrainm), 2 ) ) ) & 
-          * ( rhot(2) / rho_lw ) & 
+          * ( rho(2) / rho_lw ) & 
       * real( sec_per_day * 1000.0 ), sfc )
 
   call stat_update_var_pt( ipflux, 1, & 
      ( zt2zm( hydromet(:,iirrainm), 1 )  & 
-       * abs( hydromet_vel(1,iirrainm) ) ) * ( rhom(1) / rho_lw )  & 
+       * abs( hydromet_vel(1,iirrainm) ) ) * ( rho_zm(1) / rho_lw )  & 
        * rho_lw * Lv, sfc )
 
   ! Also store the value of surface rain water mixing ratio.
@@ -674,8 +674,8 @@ if ( lapack_error(err_code) ) then
    write(fstderr,*) "thlm = ", thlm
    write(fstderr,*) "p = ", p
    write(fstderr,*) "exner = ", exner
-   write(fstderr,*) "rhot = ", rhot
-   write(fstderr,*) "rhom = ", rhom
+   write(fstderr,*) "rho = ", rho
+   write(fstderr,*) "rho_zm = ", rho_zm
    write(fstderr,*) "rtm = ", rtm
    write(fstderr,*) "rcm = ", rcm
    write(fstderr,*) "wmt = ", wmt

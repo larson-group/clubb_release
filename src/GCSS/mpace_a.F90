@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: mpace_a.F90,v 1.7 2008-07-30 21:18:16 faschinj Exp $
+! $Id: mpace_a.F90,v 1.8 2008-07-31 16:10:44 faschinj Exp $
   module mpace_a
 
 !       Description:
@@ -48,7 +48,7 @@
 !----------------------------------------------------------------------
   subroutine mpace_a_tndcy & 
   ( time, time_initial, rlat, & 
-    rhot, p, rcm, & 
+    rho, p, rcm, & 
     wmt, wmm, thlm_forcing, rtm_forcing, & 
     Ncnm, Ncm, Frad, radht, & 
     um_hoc_grid, vm_hoc_grid, & 
@@ -130,7 +130,7 @@
   rlat          ! Latitude                        [Degrees North]
 
   real, dimension(gr%nnzp), intent(in) :: & 
-  rhot,   & ! Density of air                         [kg/m^3]
+  rho,   & ! Density of air                         [kg/m^3]
   p,      & ! Pressure                               [Pa]
   rcm    ! Cloud water mixing ratio               [kg/kg]
 
@@ -384,7 +384,7 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
   if ( .not. l_bugsrad ) then
     do k = 1, gr%nnzp
       rcm_rad(k)  = rcm(gr%nnzp-k+1)
-      rhot_rad(k) = rhot(gr%nnzp-k+1)
+      rhot_rad(k) = rho(gr%nnzp-k+1)
       dsigm(k)    = 1.0 / gr%dzt(gr%nnzp-k+1)
       coamps_zm(k) = gr%zm(gr%nnzp-k+1)
       coamps_zt(k) = gr%zt(gr%nnzp-k+1)
@@ -461,7 +461,7 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
     do k=1, gr%nnzp, 1
       if ( rcm(k) >= rc_tol ) then
         Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6 & 
-                 / rhot(k) 
+                 / rho(k) 
       end if
     end do
   end if

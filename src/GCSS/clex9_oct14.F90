@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: clex9_oct14.F90,v 1.7 2008-07-30 21:12:47 faschinj Exp $
+! $Id: clex9_oct14.F90,v 1.8 2008-07-31 16:10:43 faschinj Exp $
   module clex9_oct14
 
 !       Description:
@@ -28,7 +28,7 @@
 !-----------------------------------------------------------------------
   subroutine clex9_oct14_tndcy & 
              ( time, time_initial, rlat, rlon, & 
-               rcm, exner, rhot, wmt, & 
+               rcm, exner, rho, wmt, & 
                wmm, thlm_forcing, rtm_forcing, & 
                Frad, radht, Ncnm, sclrm_forcing )
 
@@ -110,7 +110,7 @@
   real, intent(in), dimension(gr%nnzp) :: & 
   rcm,     & ! Cloud water mixing ratio      [kg/kg]
   exner,   & ! Exner function                [-]
-  rhot       ! Density                       [kg/m^3]
+  rho       ! Density                       [kg/m^3]
 
   ! Output variables
   real, intent(out), dimension(gr%nnzp) :: & 
@@ -531,7 +531,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   !---------------------------------------------------------------
     do k = 1, gr%nnzp
       rcm_rad(k) = rcm(gr%nnzp-k+1)
-      rhot_rad(k) = rhot(gr%nnzp-k+1)
+      rhot_rad(k) = rho(gr%nnzp-k+1)
       dsigm(k) = 1.0 / gr%dzt(gr%nnzp-k+1)
       coamps_zm(k) = gr%zm(gr%nnzp-k+1)
       coamps_zt(k) = gr%zt(gr%nnzp-k+1)

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: fire.F90,v 1.6 2008-07-30 21:18:16 faschinj Exp $
+! $Id: fire.F90,v 1.7 2008-07-31 16:10:44 faschinj Exp $
 module fire
 
 !       Description:
@@ -16,7 +16,7 @@ contains
 
 !----------------------------------------------------------------------
 subroutine fire_tndcy & 
-           ( rhot, rcm, exner,  & 
+           ( rho, rcm, exner,  & 
              wmt, wmm, Frad, radht,  & 
              thlm_forcing, rtm_forcing, & 
              sclrm_forcing )
@@ -51,7 +51,7 @@ implicit none
 
 ! Input Variables
 real, intent(in), dimension(gr%nnzp) :: & 
-  rhot,  & ! Density                         [kg/m^3]
+  rho,  & ! Density                         [kg/m^3]
   rcm,   & ! Liquid water mixing ratio       [kg/kg]
   exner ! Exner function                  [-]
 
@@ -101,7 +101,7 @@ rtm_forcing = 0.0
 
 ! Use cloud_rad to compute radiation
 if ( .not. l_bugsrad ) then
-  call cloud_rad( rhot, rcm, exner, Frad, radht, thlm_forcing )
+  call cloud_rad( rho, rcm, exner, Frad, radht, thlm_forcing )
 end if
 
 if ( .not. l_bugsrad .and. l_stats_samp ) then

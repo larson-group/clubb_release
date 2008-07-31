@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.12 2008-07-31 14:49:31 faschinj Exp $
+! $Id: parameterization_interface.F90,v 1.13 2008-07-31 16:10:44 faschinj Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
@@ -28,7 +28,7 @@ module hoc_parameterization_interface
                   ( iter, dt, fcor, & 
                     thlm_forcing, rtm_forcing, wmm, wmt, & 
                     wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
-                    p_in_Pa, rhom, rhot, exner, & 
+                    p_in_Pa, rho_zm, rho, exner, & 
                     um, vm, upwp, vpwp, up2, vp2, & 
                     thlm, rtm, wprtp, wpthlp, wp2, wp3, & 
                     rtp2, thlp2, rtpthlp, & 
@@ -234,8 +234,8 @@ module hoc_parameterization_interface
        wmm,            & ! wm on moment. grid.     [m/s]
        wmt,            & ! wm on thermo. grid.     [m/s]
        p_in_Pa,        & ! Pressure.               [Pa] 
-       rhom,           & ! Density on moment. grid [kg/m^3]
-       rhot,           & ! Density on thermo. grid [kg/m^3] 
+       rho_zm,           & ! Density on moment. grid [kg/m^3]
+       rho,           & ! Density on thermo. grid [kg/m^3] 
        exner          ! Exner function.         [-]
 
        real, intent(in) ::  & 
@@ -326,8 +326,8 @@ module hoc_parameterization_interface
 !-------- Test input variables ----------------------------------------
        if ( clubb_at_debug_level( 2 ) ) then
        call parameterization_check & 
-            ( thlm_forcing, rtm_forcing, wmm, wmt, p_in_Pa, rhom,& ! intent(in)
-              rhot, exner, wpthlp_sfc, wprtp_sfc,                & ! intent(in)
+            ( thlm_forcing, rtm_forcing, wmm, wmt, p_in_Pa, rho_zm,& ! intent(in)
+              rho, exner, wpthlp_sfc, wprtp_sfc,                & ! intent(in)
               upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,            & ! intent(in)
               up2, vp2, rtm, wprtp, thlm,                        & ! intent(in)
               wpthlp, wp2, wp3, Scm, rtp2, thlp2,                & ! intent(in)
@@ -954,7 +954,7 @@ module hoc_parameterization_interface
        call stats_accumulate & 
             ( um, vm, upwp, vpwp, up2, vp2, thlm,                   & ! intent(in)
               rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp,   & ! intent(in)
-              p_in_Pa, exner, rhot, rhom,                           & ! intent(in)
+              p_in_Pa, exner, rho, rho_zm,                           & ! intent(in)
               wmt, Scm, taum, rcm, cf,                              & ! intent(in)
               sclrm, edsclrm, sclrm_forcing, wpsclrp )                ! intent(in)
 
@@ -962,8 +962,8 @@ module hoc_parameterization_interface
 
        if ( clubb_at_debug_level( 2 ) ) then
          call parameterization_check & 
-              ( thlm_forcing, rtm_forcing, wmm, wmt, p_in_Pa, rhom, & ! intent(in)
-                rhot, exner, wpthlp_sfc, wprtp_sfc,                 & ! intent(in)
+              ( thlm_forcing, rtm_forcing, wmm, wmt, p_in_Pa, rho_zm, & ! intent(in)
+                rho, exner, wpthlp_sfc, wprtp_sfc,                 & ! intent(in)
                 upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,             & ! intent(in)
                 up2, vp2, rtm, wprtp, thlm,                         & ! intent(in)
                 wpthlp, wp2, wp3, Scm, rtp2, thlp2,                 & ! intent(in)

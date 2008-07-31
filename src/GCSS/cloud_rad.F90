@@ -1,4 +1,4 @@
-! $Id: cloud_rad.F90,v 1.3 2008-07-29 16:44:01 nielsenb Exp $
+! $Id: cloud_rad.F90,v 1.4 2008-07-31 16:10:43 faschinj Exp $
 !----------------------------------------------------------------------
 module atex_cloud_rad
 
@@ -10,7 +10,7 @@ private ! Default Scope
 
 contains
 !----------------------------------------------------------------------
-subroutine cloud_rad( rhot, rcm, exner, Frad, radht,  & 
+subroutine cloud_rad( rho, rcm, exner, Frad, radht,  & 
                       thlm_forcing )
 !       Description:
 !       Subroutine to compute cloud IR radiation using a simple scheme
@@ -38,7 +38,7 @@ real, parameter :: F0 = 74., ktemp = 130.
 
 ! Input Variables
 real, dimension(gr%nnzp), intent(in) ::  & 
-  rhot,  & ! Density (thermo point)          [kg/m^3]
+  rho,  & ! Density (thermo point)          [kg/m^3]
   rcm,   & ! Liquid water mixing ratio       [kg/kg]
   exner ! Exner function                  [-]
 
@@ -62,7 +62,7 @@ LWP(gr%nnzp) = 0.
 
 do k = gr%nnzp-1, 1, -1
 
-  LWP(k) = LWP(k+1) + rhot(k+1) * rcm(k+1) / gr%dzt(k+1)
+  LWP(k) = LWP(k+1) + rho(k+1) * rcm(k+1) / gr%dzt(k+1)
 
 end do ! k=gr%nnzp..1
 
@@ -77,7 +77,7 @@ end do
 ! Compute IR heating rate
 
 radht(1:gr%nnzp) & 
-= ( -1.0/(Cp*rhot(1:gr%nnzp) ) * ddzm( Frad(1:gr%nnzp) )  & 
+= ( -1.0/(Cp*rho(1:gr%nnzp) ) * ddzm( Frad(1:gr%nnzp) )  & 
   * 1.0 / exner(1:gr%nnzp) )
 
 radht(1)       = 0.

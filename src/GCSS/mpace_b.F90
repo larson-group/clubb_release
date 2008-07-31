@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: mpace_b.F90,v 1.7 2008-07-30 21:18:16 faschinj Exp $
+! $Id: mpace_b.F90,v 1.8 2008-07-31 16:10:44 faschinj Exp $
 module mpace_b
 
 !       Description:
@@ -17,7 +17,7 @@ contains
 !----------------------------------------------------------------------
 subroutine mpace_b_tndcy & 
 ( time, time_initial, rlat, & 
-  rhot, p, thvm, rcm, & 
+  rho, p, thvm, rcm, & 
   wmt, wmm, thlm_forcing, rtm_forcing, & 
   Ncnm, Ncm, Frad, radht, & 
   sclrm_forcing )
@@ -98,7 +98,7 @@ real, intent(in) ::  &
   rlat          ! Latitude                        [Degrees North]
 
 real, dimension(gr%nnzp), intent(in) :: & 
-  rhot,   & ! Density of air                         [kg/m^3]
+  rho,   & ! Density of air                         [kg/m^3]
   p,      & ! Pressure                               [Pa]
   thvm,   & ! Virtual potential temperature          [K]
   rcm    ! Cloud water mixing ratio               [kg/kg]
@@ -238,7 +238,7 @@ end if
 if ( .not. l_bugsrad ) then
   do k = 1, gr%nnzp
     rcm_rad(k)  = rcm(gr%nnzp-k+1)
-    rhot_rad(k) = rhot(gr%nnzp-k+1)
+    rhot_rad(k) = rho(gr%nnzp-k+1)
     dsigm(k)    = 1.0 / gr%dzt(gr%nnzp-k+1)
     coamps_zm(k) = gr%zm(gr%nnzp-k+1)
     coamps_zt(k) = gr%zt(gr%nnzp-k+1)
@@ -315,10 +315,10 @@ else if ( l_kk_rain ) then
   do k=1, gr%nnzp, 1
     if ( rcm(k) >= rc_tol ) then
       ! Ncm is in units of kg^-1.  If the coefficient is in m^-3, then
-      ! it needs to be divided by rhot in order to get units of kg^-1.
+      ! it needs to be divided by rho in order to get units of kg^-1.
       ! Brian.  Sept. 8, 2007.
       Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6 & 
-               / rhot(k) 
+               / rho(k) 
     end if
   end do
 end if

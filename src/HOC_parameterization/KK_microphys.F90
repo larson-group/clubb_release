@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F90,v 1.8 2008-07-31 13:40:44 faschinj Exp $
+! $Id: KK_microphys.F90,v 1.9 2008-07-31 16:10:44 faschinj Exp $
 
 module rain_equations
 
@@ -91,7 +91,7 @@ REAL, PARAMETER:: r_0 = 25.0e-6   ! Assumed radius of all new drops; m.
 CONTAINS
 
   subroutine kk_microphys & 
-             ( T_in_K, p, exner, rhot,  & 
+             ( T_in_K, p, exner, rho,  & 
                thl1, thl2, a, rc1, rc2, s1, & 
                s2, ss1, ss2, rcm, Ncm, rrainm, Nrm,  & 
                lsample,  AKm, & 
@@ -154,7 +154,7 @@ CONTAINS
   T_in_K,     & ! Temperature                        [K]
   p,          & ! Pressure                           [Pa]
   exner,      & ! Exner function                     [-]
-  rhot,       & ! Density on thermo. grid            [kg/m^3]
+  rho,       & ! Density on thermo. grid            [kg/m^3]
   thl1, thl2, & ! PDF parameters thl1 &thl2          [K]
   a,          & ! PDF parameter a                    [-]
   s1, s2,     & ! PDF parameters s1 & s2             [kg/kg]
@@ -517,7 +517,7 @@ CONTAINS
 
   ! Vince Larson added option to call LH sampled Kessler autoconversion.
   ! 22 May 2005
-!           rrainm_auto(k) = autoconv_rrainm( rcm(k), Ncm(k), rhot(k),
+!           rrainm_auto(k) = autoconv_rrainm( rcm(k), Ncm(k), rho(k),
 !     .                        a, s1, s2, ss1, ss2, rc1, rc2 )
      if ( l_LH_on ) then
 
@@ -528,7 +528,7 @@ CONTAINS
 
         rrainm_auto(k)  & 
         = autoconv_rrainm( rcm(k), Ncm(k), s1(k), ss1(k),  & 
-                        s2(k), ss2(k), a(k), rhot(k), & 
+                        s2(k), ss2(k), a(k), rho(k), & 
                         Ncp2_Ncm2(k), corr_sNc_NL(k) )
 
      end if ! l_LH_on
@@ -1086,7 +1086,7 @@ CONTAINS
   !-----------------------------------------------------------------------
   
   FUNCTION autoconv_rrainm( rcm, Ncm, s1, ss1,  & 
-                         s2, ss2, a, rhot, & 
+                         s2, ss2, a, rho, & 
                          Ncp2_Ncm2, corr_sNc_NL )
 
   USE constants, only: & 
@@ -1110,7 +1110,7 @@ CONTAINS
                                  !                          [kg kg^-1]
   REAL, INTENT(IN):: a           ! Relative weight of each individual
                                  ! Gaussian "plume."        []
-  REAL, INTENT(IN):: rhot        ! Grid-box average density (t-level)
+  REAL, INTENT(IN):: rho        ! Grid-box average density (t-level)
                                  !                          [kg m^-3]
   REAL, INTENT(IN):: Ncp2_Ncm2   ! Ncp2/Ncm^2               []
   REAL, INTENT(IN):: corr_sNc_NL ! Correlation of s and Nc  []
@@ -1139,7 +1139,7 @@ CONTAINS
      ! numerical error.
      IF ( rcm > rc_tol .AND. Ncm > Nc_tol ) THEN
 
-        autoconv_rrainm = 7.4188E13 * rhot**(-1.79)  & 
+        autoconv_rrainm = 7.4188E13 * rho**(-1.79)  & 
                           * rcm**2.47 * Ncm**(-1.79)
 
      ELSE
@@ -1174,7 +1174,7 @@ CONTAINS
         corr_sNc = corr_sNc_NL
 
 
-        autoconv_rrainm = 7.4188E13 * rhot**(-1.79) * ( & 
+        autoconv_rrainm = 7.4188E13 * rho**(-1.79) * ( & 
              ( a )  & 
            * PDF_BIVAR_2G_LN ( mu_s1, mu_Nc, sigma_s1, sigma_Nc, & 
                                corr_sNc, alpha_exp, beta_exp ) & 

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-!$Id: atex.F90,v 1.6 2008-07-30 21:18:16 faschinj Exp $
+!$Id: atex.F90,v 1.7 2008-07-31 16:10:43 faschinj Exp $
 module atex
 
 !       Description:
@@ -16,7 +16,7 @@ contains
 
 !----------------------------------------------------------------------
 subroutine atex_tndcy( time, time_initial, rtm,  & 
-                       rhot, rcm, exner, wmt, wmm, Frad, radht, & 
+                       rho, rcm, exner, wmt, wmm, Frad, radht, & 
                        thlm_forcing, rtm_forcing, err_code, & 
                        sclrm_forcing )
 !       Description:
@@ -59,7 +59,7 @@ real(kind=time_precision), intent(in) ::  &
 
 real, intent(in), dimension(gr%nnzp) :: & 
   rtm,   & ! Total water mixing ratio        [kg/kg]
-  rhot,  & ! Density                         [kg/m^3]
+  rho,  & ! Density                         [kg/m^3]
   rcm,   & ! Liquid water mixing ratio       [kg/kg]
   exner ! Exner function                  [-]
 
@@ -168,7 +168,7 @@ end if ! time >= time_initial + 5400.0
 
 ! Use cloud_rad() to compute radiation
 if ( .not. l_bugsrad ) then
-  call cloud_rad( rhot, rcm, exner, Frad, radht, thlm_forcing )
+  call cloud_rad( rho, rcm, exner, Frad, radht, thlm_forcing )
 end if
 
 if ( .not. l_bugsrad .and. l_stats_samp ) then

@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F90,v 1.6 2008-07-30 21:23:12 faschinj Exp $
+! $Id: numer_check.F90,v 1.7 2008-07-31 16:10:44 faschinj Exp $
  module numerical_check
 
  implicit none
@@ -177,8 +177,8 @@
 
 !-------------------------------------------------------------------------------
  subroutine parameterization_check & 
-            ( thlm_forcing, rtm_forcing, wmm, wmt, p, rhom,  & 
-              rhot, exner, wpthlp_sfc, wprtp_sfc,  & 
+            ( thlm_forcing, rtm_forcing, wmm, wmt, p, rho_zm,  & 
+              rho, exner, wpthlp_sfc, wprtp_sfc,  & 
               upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp, & 
               up2, vp2, rtm, wprtp, thlm,  & 
               wpthlp, wp2, wp3, Scm, rtp2, thlp2, & 
@@ -189,7 +189,7 @@
 !
 !       Description: This subroutine determines what input variables may have 
 !       NaN values.
-!       In addition it checks to see if rhom, rhot, exner, up2, vp2, rtm, thlm,
+!       In addition it checks to see if rho_zm, rho, exner, up2, vp2, rtm, thlm,
 !       wp2, Scm, rtp2, thlp2, taum, rcm, Ncm, Ncnm, Nim, hydromet, or cf 
 !       have negative values.
 !-------------------------------------------------------------------------------
@@ -209,8 +209,8 @@
  wmm,            & ! wm on moment. grid.     [m/s]
  wmt,            & ! wm on thermo. grid.     [m/s]
  p,              & ! Pressure.               [Pa] 
- rhom,           & ! Density on moment. grid [kg/m^3]
- rhot,           & ! Density on thermo. grid [kg/m^3] 
+ rho_zm,           & ! Density on moment. grid [kg/m^3]
+ rho,           & ! Density on thermo. grid [kg/m^3] 
  exner             ! Exner function.         [-]
 
  real, intent(in) ::  & 
@@ -279,8 +279,8 @@
  call check_nan( wmm,"wmm", prefix//proc_name )
  call check_nan( wmt,"wmt", prefix//proc_name )
  call check_nan( p,"p", prefix//proc_name )
- call check_nan( rhom,"rhom", prefix//proc_name )
- call check_nan( rhot,"rhot", prefix//proc_name )
+ call check_nan( rho_zm,"rho_zm", prefix//proc_name )
+ call check_nan( rho,"rho", prefix//proc_name )
  call check_nan( exner,"exner", prefix//proc_name )
  call check_nan( um,"um", prefix//proc_name )
  call check_nan( upwp,"upwp", prefix//proc_name )
@@ -336,8 +336,8 @@
  rvm = rtm - rcm
  call check_negative( rvm, gr%nnzp ,"rvm", prefix//proc_name )
  call check_negative( p, gr%nnzp ,"p", prefix//proc_name )
- call check_negative( rhot, gr%nnzp ,"rhot", prefix//proc_name )
- call check_negative( rhom, gr%nnzp ,"rhom", prefix//proc_name )
+ call check_negative( rho, gr%nnzp ,"rho", prefix//proc_name )
+ call check_negative( rho_zm, gr%nnzp ,"rho_zm", prefix//proc_name )
  call check_negative(exner, gr%nnzp ,"exner", prefix//proc_name )
  call check_negative( up2, gr%nnzp ,"up2", prefix//proc_name )
  call check_negative( vp2, gr%nnzp ,"vp2", prefix//proc_name )
@@ -430,7 +430,7 @@
 
 !-----------------------------------------------------------------------
  subroutine rad_check( thlm, rcm, rtm, ricem,  & 
-                       cf, p, exner, rhom )
+                       cf, p, exner, rho_zm )
 !       Description:
 !       Checks radiation input variables. If they are < 0 it reports
 !       to the console.
@@ -452,7 +452,7 @@
  cf,             & ! Cloud Fraction                       [%]
  p,              & ! Pressure                             [Pa]
  exner,          & ! Exner Function                       [-]
- rhom           ! Density                              [-]
+ rho_zm           ! Density                              [-]
 
 ! Local variables
  character(len=*), parameter ::  & 
@@ -470,7 +470,7 @@
  call check_negative( cf, gr%nnzp ,"cf", proc_name )
  call check_negative( p, gr%nnzp ,"p", proc_name )
  call check_negative( exner, gr%nnzp ,"exner", proc_name )
- call check_negative( rhom, gr%nnzp ,"rhom", proc_name )
+ call check_negative( rho_zm, gr%nnzp ,"rho_zm", proc_name )
 
  return
 

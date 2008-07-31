@@ -1,4 +1,4 @@
-! $Id: ice_dfsn_mod.F90,v 1.7 2008-07-30 21:23:12 faschinj Exp $        
+! $Id: ice_dfsn_mod.F90,v 1.8 2008-07-31 16:10:44 faschinj Exp $        
 
 module ice_dfsn_mod
 
@@ -11,7 +11,7 @@ private ! Default Scope
 
 contains
 !-----------------------------------------------------------------------
-SUBROUTINE ice_dfsn( dt, T_in_K, rcm, press, rhot, & 
+SUBROUTINE ice_dfsn( dt, T_in_K, rcm, press, rho, & 
                      rcm_icedfsn )
 ! Description:
 ! This subroutine is based on a COAMPS subroutine (nov11_icedfs)
@@ -83,7 +83,7 @@ REAL, DIMENSION(1:gr%nnzp), INTENT(IN)::  &
   T_in_K,  & ! Temperature                           [K]
   rcm,     & ! Cloud water mixing ratio              [kg kg^{-1}]
   press,   & ! Air pressure                          [Pa]
-  rhot       ! Air density on thermodynamic grid     [kg m^{-3}]
+  rho       ! Air density on thermodynamic grid     [kg m^{-3}]
 
 ! Output variables
 REAL, DIMENSION(1:gr%nnzp), INTENT(OUT)::  & 
@@ -217,7 +217,7 @@ DO k = gr%nnzp, 2, -1
   ! for an individual crystal.  Multiplying that by the ice crystal    !
   ! concentration yields the overall change in mixing ratio over time. !
   !--------------------------------------------------------------------!
-     rcm_icedfsn(k) = - (N_i/rhot(k)) & 
+     rcm_icedfsn(k) = - (N_i/rho(k)) & 
         * ( 4 * (S_i(k) - 1) / Denom(k) ) & 
         * (mass_ice_cryst(k)/a_coef)**(1/b_expn)
 
@@ -231,7 +231,7 @@ DO k = gr%nnzp, 2, -1
      ! dm = (dm/dt)*(1/u_T)*dz                                         !
      !-----------------------------------------------------------------!
      dmass_ice_cryst(k) = ( 4 * (S_i(k) - 1) / Denom(k) ) & 
-        * (k_u_coef**(-1.0)) * ( rhot(k)**q_expn ) & 
+        * (k_u_coef**(-1.0)) * ( rho(k)**q_expn ) & 
         * ( (mass_ice_cryst(k)/a_coef)**((1.0-n_expn)/b_expn) ) & 
         * (1.0/gr%dzm(k-1))
      mass_ice_cryst(k-1) = mass_ice_cryst(k)  & 
@@ -243,7 +243,7 @@ DO k = gr%nnzp, 2, -1
      ! Fallspeed of ice crystal in cm/s.
      u_T_cm(k) = 100. * k_u_coef * & 
                  ((mass_ice_cryst(k)/a_coef)**(n_expn/b_expn))  & 
-                       * (rhot(k)**(-q_expn))
+                       * (rho(k)**(-q_expn))
 
   ELSE   ! There's no liquid and/or ice present; assume no ice growth
 

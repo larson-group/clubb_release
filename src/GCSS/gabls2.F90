@@ -1,4 +1,4 @@
-!$Id: gabls2.F90,v 1.5 2008-07-30 21:18:16 faschinj Exp $
+!$Id: gabls2.F90,v 1.6 2008-07-31 16:10:44 faschinj Exp $
 !----------------------------------------------------------------------
 module gabls2
 
@@ -17,7 +17,7 @@ contains
 !----------------------------------------------------------------------
 subroutine gabls2_tndcy & 
 ( time, time_initial, & 
-  rhot, rcm, l_kk_rain, wmt, wmm, & 
+  rho, rcm, l_kk_rain, wmt, wmm, & 
   thlm_forcing, rtm_forcing, radht, Ncm, & 
   sclrm_forcing )
 
@@ -49,7 +49,7 @@ real(kind=time_precision), intent(in) :: &
   time_initial   ! Current length of timestep      [s]
 
 real, dimension(gr%nnzp), intent(in) :: & 
-  rhot,           & ! Air density on t-grid           [kg/m^3]
+  rho,           & ! Air density on t-grid           [kg/m^3]
   rcm            ! Cloud water mixing ratio        [kg/kg]
 
 logical, intent(in) :: & 
@@ -112,12 +112,12 @@ if ( l_kk_rain ) then
   do k=1,gr%nnzp
     if ( rcm(k) >= 1.e-6 ) then
       ! Ncm is in units of kg^-1.  If the coefficient is in m^-3, then
-      ! it needs to be divided by rhot in order to get units of kg^-1.
+      ! it needs to be divided by rho in order to get units of kg^-1.
       ! Brian.  Sept. 8, 2007.
 !              Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6
-!     .                 * rhot(k)
+!     .                 * rho(k)
       Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6 & 
-               / rhot(k)
+               / rho(k)
     else
       Ncm(k) = 0.
     end if

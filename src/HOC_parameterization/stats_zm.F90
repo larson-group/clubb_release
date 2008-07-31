@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zm.F90,v 1.5 2008-07-30 19:17:36 dschanen Exp $
+! $Id: stats_zm.F90,v 1.6 2008-07-31 16:10:44 faschinj Exp $
       module stats_zm
        
       implicit none
@@ -37,7 +37,7 @@
           ircp2, & 
           iupwp, & 
           ivpwp, & 
-          irhom, & 
+          irho_zm, & 
           iscm, & 
           iem, & 
           ishear, & 
@@ -197,7 +197,7 @@
       ircp2     = 0
       iupwp     = 0
       ivpwp     = 0
-      irhom     = 0
+      irho_zm     = 0
       iscm      = 0
       iem       = 0
       ishear    = 0  ! Brian
@@ -449,9 +449,9 @@
           call stat_assign(ivpwp,"vpwp", & 
                "vpwp","m^2/s^2",zm)
           k = k + 1
-        case ('rhom')
-          irhom = k
-          call stat_assign(irhom,"rhom", & 
+        case ('rho_zm')
+          irho_zm = k
+          call stat_assign(irho_zm,"rho_zm", & 
                "density","kg/(m^3)",zm)
           k = k + 1
         case ('sc')

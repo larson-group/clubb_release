@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-!$Id: cloud_sed_mod.F90,v 1.6 2008-07-30 21:13:29 faschinj Exp $
+!$Id: cloud_sed_mod.F90,v 1.7 2008-07-31 16:10:43 faschinj Exp $
 module cloud_sed_mod
 
 implicit none
@@ -10,7 +10,7 @@ private ! Default Scope
 
 contains
 !----------------------------------------------------------------------
-subroutine cloud_drop_sed( rcm, Ncm, rhom, rhot, exner, & 
+subroutine cloud_drop_sed( rcm, Ncm, rho_zm, rho, exner, & 
                            rtm_mc, thlm_mc )
 
 !       Description:
@@ -48,8 +48,8 @@ intrinsic :: exp, log
 ! Input Variables
 real, intent(in), dimension(gr%nnzp) :: & 
   rcm,      & ! Liquid water mixing ratio.   [kg/kg]
-  rhom,     & ! Density on moment. grid      [kg/m^3]
-  rhot,     & ! Density on thermo. grid      [kg/m^3]
+  rho_zm,     & ! Density on moment. grid      [kg/m^3]
+  rho,     & ! Density on thermo. grid      [kg/m^3]
   exner,    & ! Exner function               [-]
   Ncm      ! Cloud droplet number conc.   [num/kg]
 
@@ -148,9 +148,9 @@ DO k = 2, gr%nnzp-1, 1
   IF ( zt2zm(rcm,k) > 0.0 .AND. zt2zm( Ncm, k ) > 0.0 ) THEN
     Fcsed(k) = 1.19E8 & 
                 * (   (  3.0 / ( 4.0*pi*rho_lw & 
-                                 *zt2zm( Ncm, k )*rhom(k) )  ) & 
+                                 *zt2zm( Ncm, k )*rho_zm(k) )  ) & 
                    **(2.0/3.0)   ) & 
-                * ( ( rhom(k)*zt2zm( rcm, k ) )**(5.0/3.0) ) & 
+                * ( ( rho_zm(k)*zt2zm( rcm, k ) )**(5.0/3.0) ) & 
                 * EXP( 5.0*( (LOG( sigma_g ))**(2) ) )
   ELSE
     Fcsed(k) = 0.0
@@ -167,7 +167,7 @@ Fcsed(gr%nnzp) = 0.0
 ! Fcsed units:  kg (liquid) / [ m^2 * s ]
 ! Multiply by Lv for units of W / m^2.
 ! sed_rcm units:  [ kg (liquid) / kg (air) ] / s
-sed_rcm = (1.0/rhot) * ddzm( Fcsed )
+sed_rcm = (1.0/rho) * ddzm( Fcsed )
 
 if ( l_stats_samp ) then
  

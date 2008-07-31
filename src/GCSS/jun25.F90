@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F90,v 1.6 2008-07-30 21:18:16 faschinj Exp $
+! $Id: jun25.F90,v 1.7 2008-07-31 16:10:44 faschinj Exp $
   module jun25
 
 !       Description:
@@ -25,7 +25,7 @@
 !-----------------------------------------------------------------------
   subroutine jun25_altocu_tndcy & 
              ( time, time_initial, rlat, rlon, & 
-               rcm, exner, rhot, wmt, & 
+               rcm, exner, rho, wmt, & 
                wmm, thlm_forcing, rtm_forcing, & 
                Frad, radht, sclrm_forcing )
 
@@ -82,7 +82,7 @@
   real, dimension(gr%nnzp), intent(in) ::  & 
   rcm,    & ! Liquid water mixing ratio              [kg/kg]
   exner,  & ! Exner function                         [-]
-  rhot      ! Density of reference state on t grid   [kg/m^3]
+  rho      ! Density of reference state on t grid   [kg/m^3]
 
   ! Output variables
   real, dimension(gr%nnzp), intent(inout) ::  & 
@@ -601,7 +601,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   !----------------------------------------------------------------
     do k = 1, gr%nnzp
       rcm_rad(k) = rcm(gr%nnzp-k+1)
-      rhot_rad(k) = rhot(gr%nnzp-k+1)
+      rhot_rad(k) = rho(gr%nnzp-k+1)
       dsigm(k) = 1.0 / gr%dzt(gr%nnzp-k+1)
       coamps_zm(k) = gr%zm(gr%nnzp-k+1)
       coamps_zt(k) = gr%zt(gr%nnzp-k+1)

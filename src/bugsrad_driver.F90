@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_driver.F90,v 1.3 2008-07-30 21:03:08 faschinj Exp $
+! $Id: bugsrad_driver.F90,v 1.4 2008-07-31 16:10:43 faschinj Exp $
 module bugsrad_hoc_mod
 
 implicit none
@@ -15,7 +15,7 @@ subroutine bugsrad_hoc &
              lat_in_degrees, lon_in_degrees, &
              day, month, year, time,         &
              thlm, rcm, rtm, rsnwm, rim,     & 
-             cf, p_in_Pa, p_in_Pam, exner, rhom, &
+             cf, p_in_Pa, p_in_Pam, exner, rho_zm, &
              radht, Frad, thlm_forcing )
 ! Description:
 ! Does the necessary operations to interface the HOC model with
@@ -98,7 +98,7 @@ subroutine bugsrad_hoc &
   rsnwm, & ! Snow water mixing ratio    [kg/kg]
   rim,   & ! Ice water mixing ratio     [kg/kg]
   rtm,   & ! Total water mixing ratio   [kg/kg]
-  rhom,  & ! Density                    [kg/m^3]
+  rho_zm,  & ! Density                    [kg/m^3]
   cf,    & ! Cloud fraction             [%]
   p_in_Pa, & ! Pressure on the t grid     [Pa]
   p_in_Pam,& ! Pressure on the m grid     [Pa]
@@ -208,7 +208,7 @@ subroutine bugsrad_hoc &
 
 ! Ozone at < 1 km = 5.4e-5 g/m^3 from U.S. Standard Atmosphere, 1976. 
 !   Convert from g to kg.
-  o3l(1,1:(nz-1)) = dble( ( 5.4e-5 / rhom(1:(nz-1)) ) * 0.001 )
+  o3l(1,1:(nz-1)) = dble( ( 5.4e-5 / rho_zm(1:(nz-1)) ) * 0.001 )
 
 ! Convert and transpose as needed
   rcil(1,buffer+1:(nz-1)+buffer)  = flip( dble( rim(2:nz) ), nz-1 )

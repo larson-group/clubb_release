@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F90,v 1.6 2008-07-30 21:14:27 faschinj Exp $
+! $Id: dycoms2_rf01.F90,v 1.7 2008-07-31 16:10:43 faschinj Exp $
 module dycoms2_rf01
 
 !       Description:
@@ -15,7 +15,7 @@ contains
 
 !----------------------------------------------------------------------
 subroutine dycoms2_rf01_tndcy & 
-           ( rhot, rhom, rtm, rcm, exner, & 
+           ( rho, rho_zm, rtm, rcm, exner, & 
              wmt, wmm, Frad, radht, thlm_forcing, & 
              rtm_forcing, err_code, & 
              sclrm_forcing )
@@ -61,8 +61,8 @@ real, parameter ::  &
 
 ! Input Variables
 real, dimension(gr%nnzp), intent(in) ::  & 
-  rhom,  & ! Density on moment. grid         [kg/m^3]
-  rhot,  & ! Density on thermo. grid         [kg/m^3] 
+  rho_zm,  & ! Density on moment. grid         [kg/m^3]
+  rho,  & ! Density on thermo. grid         [kg/m^3] 
   rtm,   & ! Total water mixing ratio        [kg/kg]
   rcm,   & ! Cloud water mixing ratio        [kg/kg]
   exner ! Exner function                  [-]
@@ -143,7 +143,7 @@ if ( .not. l_bugsrad ) then
 
   lwp(gr%nnzp) = 0.0
   do i = gr%nnzp-1, 1, -1
-    lwp(i) = lwp(i+1) + rhot(i+1) * rcm(i+1) / gr%dzt(i+1)
+    lwp(i) = lwp(i+1) + rho(i+1) * rcm(i+1) / gr%dzt(i+1)
   end do
 !         x_sfc(1,ilwp) = lwp(1)
 
@@ -154,7 +154,7 @@ if ( .not. l_bugsrad ) then
             + F1 * EXP( -kay * (lwp(1)-lwp(i)) )
     if ( zi > 0 .and. gr%zm(i) > zi ) then
       Frad(i) = Frad(i) & 
-              + rhom(i) * cp * lsdiv & 
+              + rho_zm(i) * cp * lsdiv & 
                 * ( 0.25*(gr%zm(i)-zi)**(4.0/3.0) & 
                     + zi*(gr%zm(i)-zi)**(1.0/3.0) )
      end if
@@ -162,7 +162,7 @@ if ( .not. l_bugsrad ) then
 
   ! Compute IR heating rate
 
-  radht          = ( -1.0/(Cp*rhot) ) * ddzm( Frad ) & 
+  radht          = ( -1.0/(Cp*rho) ) * ddzm( Frad ) & 
                  * ( 1.0 / exner )
   radht(1)       = 0.
   radht(gr%nnzp) = 0.

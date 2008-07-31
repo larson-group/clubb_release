@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F90,v 1.4 2008-07-29 18:26:20 faschinj Exp $
+! $Id: prog_variables.F90,v 1.5 2008-07-31 16:10:44 faschinj Exp $
         module prognostic_variables
 
 !       This module contains definitions of all prognostic
@@ -44,12 +44,12 @@
         real, target, allocatable, dimension(:), public :: & 
         p_in_Pa,      & ! Pressure (Pa) on thermodynamic points    [Pa]
         exner,        & ! Exner function = ( p / p0 ) ** kappa     [-]
-        rhot,         & ! Density                                  [kg/m^3]
-        rhom,         & ! Density                                  [kg/m^3]
+        rho,         & ! Density                                  [kg/m^3]
+        rho_zm,         & ! Density                                  [kg/m^3]
         thlm_forcing, & ! thlm large-scale forcing                 [K/s]
         rtm_forcing  ! rtm large-scale forcing                  [kg/kg/s]
 
-!$omp   threadprivate(p, exner, rhot, rhom, thlm_forcing, rtm_forcing)
+!$omp   threadprivate(p, exner, rho, rho_zm, thlm_forcing, rtm_forcing)
 
         ! Imposed large scale w
         real, target, allocatable, dimension(:), public :: & 
@@ -154,8 +154,8 @@
 
         allocate( p_in_Pa(1:nzmax) )         ! pressure (pascals)
         allocate( exner(1:nzmax) )     ! exner function
-        allocate( rhot(1:nzmax) )      ! density: t points
-        allocate( rhom(1:nzmax) )      ! density: m points
+        allocate( rho(1:nzmax) )      ! density: t points
+        allocate( rho_zm(1:nzmax) )      ! density: m points
 
         allocate( thlm_forcing(1:nzmax) ) ! thlm ls forcing
         allocate( rtm_forcing(1:nzmax) )  ! rtm ls forcing
@@ -213,8 +213,8 @@
  
         p_in_Pa(1:nzmax)= 0.0    ! pressure (Pa)
         exner(1:nzmax) = 0.0    ! exner
-        rhot(1:nzmax)  = 0.0    ! density on thermo. levels
-        rhom(1:nzmax)  = 0.0    ! density on moment. levels
+        rho(1:nzmax)  = 0.0    ! density on thermo. levels
+        rho_zm(1:nzmax)  = 0.0    ! density on moment. levels
 
         thlm_forcing(1:nzmax) = 0.0     ! thlm large-scale forcing
         rtm_forcing(1:nzmax)  = 0.0     ! rtm large-scale forcing
@@ -287,8 +287,8 @@
 
         deallocate( p_in_Pa )   ! pressure
         deallocate( exner )     ! exner
-        deallocate( rhot )      ! density: t points
-        deallocate( rhom )      ! density: m points
+        deallocate( rho )      ! density: t points
+        deallocate( rho_zm )      ! density: m points
 
         deallocate( thlm_forcing )
         deallocate( rtm_forcing )

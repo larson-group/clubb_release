@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: nov11.F90,v 1.8 2008-07-30 21:18:17 faschinj Exp $
+! $Id: nov11.F90,v 1.9 2008-07-31 16:10:44 faschinj Exp $
   module nov11
 
 !       Description:
@@ -29,7 +29,7 @@
   subroutine nov11_altocu_tndcy & 
              ( time, time_initial, dt, & 
                !rlat, rlon, & 
-               rcm, exner, rhot, rtm, wmt, & 
+               rcm, exner, rho, rtm, wmt, & 
                wmm, thlm_forcing, rtm_forcing, & 
                Frad, radht, Ncnm, sclrm_forcing )
 
@@ -116,7 +116,7 @@
   real, intent(in), dimension(gr%nnzp) :: & 
   rcm,     & ! Cloud water mixing ratio      [kg/kg]
   exner,   & ! Exner function                [-]
-  rhot    ! Density                       [kg/m^3]
+  rho    ! Density                       [kg/m^3]
 
   ! Input/Output variables
   real, intent(inout), dimension(gr%nnzp) :: & 
@@ -510,7 +510,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   !---------------------------------------------------------------
     do k = 1, gr%nnzp
       rcm_rad(k) = rcm(gr%nnzp-k+1)
-      rhot_rad(k) = rhot(gr%nnzp-k+1)
+      rhot_rad(k) = rho(gr%nnzp-k+1)
       dsigm(k) = 1.0 / gr%dzt(gr%nnzp-k+1)
       coamps_zm(k) = gr%zm(gr%nnzp-k+1)
       coamps_zt(k) = gr%zt(gr%nnzp-k+1)
@@ -610,7 +610,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
     ! anything but zero for Nov11, since it is too cold for rrainm.
     ! -dschanen 1 May 2007
 !         Ncnm(1:gr%nnzp) 
-!    .    = 30.0 * (1.0 + exp(-gr%zt(1:gr%nnzp)/2000.0)) * 1.e6 / rhot
+!    .    = 30.0 * (1.0 + exp(-gr%zt(1:gr%nnzp)/2000.0)) * 1.e6 / rho
 !    .    = 30.0 * (1.0 + exp(-gr%zt(1:gr%nnzp)/2000.0)) * 1.e6
 
     Ncnm(1:gr%nnzp) = 0.0

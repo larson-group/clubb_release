@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_variables.F90,v 1.8 2008-07-30 21:19:35 faschinj Exp $
+! $Id: stats_variables.F90,v 1.9 2008-07-31 16:10:44 faschinj Exp $
 !-----------------------------------------------------------------------
 !  module stats_variables
 
@@ -72,7 +72,7 @@ module stats_variables
      iwp2rcp, & 
      iwprtpthlp, & 
      isct, & 
-     irhot, & 
+     irho, & 
      iNcm,            & ! Brian
      iNcnm, & 
      iNim, & 
@@ -98,7 +98,7 @@ module stats_variables
 !$omp   threadprivate(ithlm, ithvm, irtm, ircm, ium, ivm, iwmt, iug)
 !$omp   threadprivate(ivg, icf, ip, iexner, iLscale, iwp3, iwpthlp2)
 !$omp   threadprivate(iwp2thlp, iwprtp2, iwp2rtp, iLscale_up, iLscale_down, itaut)
-!$omp   threadprivate(iKht, iwp2thvp, iwp2rcp, iwprtpthlp, isct, irhot)
+!$omp   threadprivate(iKht, iwp2thvp, iwp2rcp, iwprtpthlp, isct, irho)
 !$omp   threadprivate(iNcm, iNcnm, iNim, isnowslope, iNsnowm)
 !$omp   threadprivate(ised_rcm, irsat, irrainm, iNrm)
 !$omp   threadprivate(imean_vol_rad_rain, imean_vol_rad_cloud)
@@ -318,7 +318,7 @@ module stats_variables
      ircp2, & 
      iupwp, & 
      ivpwp, & 
-     irhom, & 
+     irho_zm, & 
      iscm, & 
      iem, & 
      ishear,     & ! Brian
@@ -331,7 +331,7 @@ module stats_variables
 !$omp   threadprivate(iwp2, irtp2, ithlp2, irtpthlp, iwprtp, iwpthlp)
 !$omp   threadprivate(iwp4, iwpthvp, irtpthvp, ithlpthvp, itaum, iKhm)
 !$omp   threadprivate(iwprcp, ithlprcp, irtprcp, ircp2, iupwp, ivpwp)
-!$omp   threadprivate(irhom, iscm, iem, ishear, iFrad, iFrad_LW)
+!$omp   threadprivate(irho_zm, iscm, iem, ishear, iFrad, iFrad_LW)
 !$omp   threadprivate(iFrad_SW, iFprec, iFcsed)
 
   ! Sedimentation velocities

@@ -1,4 +1,4 @@
-!$Id: rico.F90,v 1.6 2008-07-30 21:18:17 faschinj Exp $
+!$Id: rico.F90,v 1.7 2008-07-31 16:10:44 faschinj Exp $
 !----------------------------------------------------------------------
 module rico
 
@@ -17,7 +17,7 @@ module rico
 !----------------------------------------------------------------------
   subroutine rico_tndcy & 
   ( exner, & 
-    rhot, rcm, l_kk_rain, wmt, wmm, & 
+    rho, rcm, l_kk_rain, wmt, wmm, & 
     thlm_forcing, rtm_forcing, radht, Ncm, & 
     sclrm_forcing )
 
@@ -50,7 +50,7 @@ module rico
 
   real, dimension(gr%nnzp), intent(in) :: & 
   exner,          & ! Exner function                         [-]
-  rhot,           & ! Air density on t levels                [kg m^-3]
+  rho,           & ! Air density on t levels                [kg m^-3]
   rcm               ! Cloud water mixing ratio               [kg kg^-1]
 
   logical, intent(in) :: & 
@@ -135,12 +135,12 @@ module rico
       if ( rcm(k) >= rc_tol ) then
 ! Brian:  Ncm has now been changed in the model to be the concentration per 
 !         mass off air, in kg^-1.  However, in order to get that quantity, the
-!         concentration per volume of air must be divided by rhot.  9/8/07.
-! Vince Larson removed factor of rhot so that Ncm would be in units of m^{-3}.
+!         concentration per volume of air must be divided by rho.  9/8/07.
+! Vince Larson removed factor of rho so that Ncm would be in units of m^{-3}.
 ! 3 Aug 2007.
-!              Ncm(k) = 70.0 * 1.e6 * rhot(k)
+!              Ncm(k) = 70.0 * 1.e6 * rho(k)
 !              Ncm(k) = 70.0 * 1.e6
-        Ncm(k) = 70.0 * 1.e6 / rhot(k)
+        Ncm(k) = 70.0 * 1.e6 / rho(k)
 ! End Vince Larson's change.
       else
         Ncm(k) = 0.

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F90,v 1.6 2008-07-30 19:17:36 dschanen Exp $
+! $Id: stats_zt.F90,v 1.7 2008-07-31 16:10:44 faschinj Exp $
  
 module stats_zt
 
@@ -46,7 +46,7 @@ use stats_variables, only: &
     iwp2rcp, & 
     iwprtpthlp, & 
     isct, & 
-    irhot, & 
+    irho, & 
     iNcm, & 
     iNcnm, & 
     iNim, & 
@@ -226,7 +226,7 @@ iwp2thvp      = 0
 iwp2rcp       = 0
 iwprtpthlp    = 0
 isct          = 0
-irhot         = 0
+irho         = 0
 iNcm          = 0  ! Brian
 iNcnm         = 0
 iNim          = 0
@@ -563,9 +563,9 @@ do i=1,zt%nn
          "Sc","count",zt)
     k = k + 1
 
-  case ('rhot')
-    irhot = k
-    call stat_assign(irhot,"rhot", & 
+  case ('rho')
+    irho = k
+    call stat_assign(irho,"rho", & 
          "density","kg/m^3",zt)
     k = k + 1
 

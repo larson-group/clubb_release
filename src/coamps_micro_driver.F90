@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: coamps_micro_driver.F90,v 1.7 2008-07-30 21:03:42 faschinj Exp $
+! $Id: coamps_micro_driver.F90,v 1.8 2008-07-31 16:10:43 faschinj Exp $
 module coamps_micro_driver_mod
 
 ! This module wraps the adjtq subroutine so that it may be used by
@@ -15,7 +15,7 @@ contains
 
 subroutine coamps_micro_driver & 
        ( runtype, timea_in, deltf_in, & 
-         rtm, wmm, p, exner, rhot, T_in_K, & 
+         rtm, wmm, p, exner, rho, T_in_K, & 
          thlm, ricem, rrainm, rgraupelm, rsnowm, & 
          rcm, Ncm, Nrm, Ncnm, Nim, & 
          cond, Vsnow, Vice, Vrr, VNr, Vgraupel, & 
@@ -168,7 +168,7 @@ real, dimension(gr%nnzp), intent(in) :: &
   wmm,   & ! Vertical wind                                   [m/s]
   p,     & ! Pressure                                        [Pa]
   exner, & ! Mean exner function                             [-]
-  rhot,  & ! Mean density                                    [kg/m^3]
+  rho,  & ! Mean density                                    [kg/m^3]
   thlm,  & ! Liquid potential temperature                    [K]
   T_in_K! Temperature                                     [K]
 
@@ -551,7 +551,7 @@ qg3(1,1,1:kk)  = rgraupelm(2:kk+1)
 qs3(1,1,1:kk)  = rsnowm(2:kk+1)
 qi3(1,1,1:kk)  = ricem(2:kk+1)
 exbm(1,1,1:kk) = exner(2:kk+1)
-rbm(1,1,1:kk)  = rhot(2:kk+1)
+rbm(1,1,1:kk)  = rho(2:kk+1)
 th3(1,1,1:kk)  = thm(2:kk+1)
 qv3(1,1,1:kk)  = rvm(2:kk+1)
 
@@ -559,13 +559,13 @@ do k=1,kk
   p3(1,1,k)   = 0.0
 
   ! Convert from MKS units as needed
-  ! Nrm and Ncm, which are in kg^-1, need to be multiplied by rhot 
+  ! Nrm and Ncm, which are in kg^-1, need to be multiplied by rho 
   ! to be in units of m^-3, and then converted to cm^-3.
   ! Brian.  Sept. 8, 2007.
 !        nc3(1,1,k)  = Ncm(k+1) * 1.e-6
 !        nr3(1,1,k)  = Nrm(k+1) * 1.e-6
-  nc3(1,1,k)  = ( Ncm(k+1) * rhot(k+1) ) * 1.e-6
-  nr3(1,1,k)  = ( Nrm(k+1) * rhot(k+1) ) * 1.e-6
+  nc3(1,1,k)  = ( Ncm(k+1) * rho(k+1) ) * 1.e-6
+  nr3(1,1,k)  = ( Nrm(k+1) * rho(k+1) ) * 1.e-6
   ncn3(1,1,k) = Ncnm(k+1) * 1.e-6
 
   ni3(1,1,k)  = Nim(k+1)
@@ -811,9 +811,9 @@ end do ! k=1..kk
 do k=1, kk, 1
   ! Convert to MKS as needed
   ! nc3, in cm^-3, needs to be converted to m^-3, and then divided by
-  ! rhot so that Ncm is in kg^-1.  Brian.  Sept. 8, 2007
+  ! rho so that Ncm is in kg^-1.  Brian.  Sept. 8, 2007
 !        Ncm(k+1)  = nc3(1,1,k) * 1.e6
-  Ncm(k+1)  = ( nc3(1,1,k) * 1.e6 ) / rhot(k+1)
+  Ncm(k+1)  = ( nc3(1,1,k) * 1.e6 ) / rho(k+1)
   Ncnm(k+1) = ncn3(1,1,k) * 1.e6
   Nim(k+1)  = ni3(1,1,k)
 end do ! k=1..kk+1
@@ -856,12 +856,12 @@ do k=1, kk, 1
   rrtend(k+1)    = ( qr3(1,1,k) - rrainm(k+1) ) / deltf
   rgtend(k+1)    = ( qg3(1,1,k) - rgraupelm(k+1) ) / deltf
   ritend(k+1)    = ( qi3(1,1,k) - ricem(k+1) ) / deltf
-  ! Nrm is now in kg^-1, so nr3(1,1,k)*1.e6 needs to be divided by rhot
+  ! Nrm is now in kg^-1, so nr3(1,1,k)*1.e6 needs to be divided by rho
   ! in order to be in the same units as Nrm.  This will cause nrmtend to
   ! have units of kg^-1 s^-1, which is what we want.  
   ! Brian.  Sept. 8, 2007.
   !nrmtend(k+1)   = ( nr3(1,1,k)*1.e6 - Nrm(k+1) ) / deltf ! Conversion factor
-  nrmtend(k+1)   = ( (nr3(1,1,k)*1.e6)/rhot(k+1) - Nrm(k+1) )  & 
+  nrmtend(k+1)   = ( (nr3(1,1,k)*1.e6)/rho(k+1) - Nrm(k+1) )  & 
                    / deltf ! Conversion factor
   rsnowtend(k+1) = ( qs3(1,1,k) - rsnowm(k+1) ) / deltf
   rttend(k+1)    = ((qv3(1,1,k) - rvm(k+1)) / deltf) & 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F90,v 1.11 2008-07-31 13:20:08 faschinj Exp $
+!  $Id: stats_subs.F90,v 1.12 2008-07-31 16:10:44 faschinj Exp $
 module stats_subs
 
   implicit none
@@ -755,7 +755,7 @@ module stats_subs
       subroutine stats_accumulate & 
                  ( um, vm, upwp, vpwp, up2, vp2, thlm, & 
                    rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp, & 
-                   p, exner, rhot, rhom, & 
+                   p, exner, rho, rho_zm, & 
                    wmt, Scm, taum, rcm, cf, & 
                    sclrm, edsclrm, sclrm_forcing, wpsclrp )
 
@@ -797,7 +797,7 @@ module stats_subs
           iwp2rcp, & 
           iwprtpthlp, & 
           isct,          & 
-          irhot, & 
+          irho, & 
           irsat, & 
           iAKm, & 
           iAKm_est, & 
@@ -854,7 +854,7 @@ module stats_subs
           ivpwp, & 
           iup2, & 
           ivp2, & 
-          irhom, & 
+          irho_zm, & 
           iscm, & 
           iem, & 
           ishear, & 
@@ -990,8 +990,8 @@ module stats_subs
       real, intent(in), dimension(gr%nnzp) :: & 
         p,            & ! Pressure (Pa) on thermodynamic points    [Pa]
         exner,        & ! Exner function = ( p / p0 ) ** kappa     [-]
-        rhot,         & ! Density                                  [kg/m^3]
-        rhom,         & ! Density                                  [kg/m^3]
+        rho,         & ! Density                                  [kg/m^3]
+        rho_zm,         & ! Density                                  [kg/m^3]
         wmt,          & ! w on thermodynamic levels                [m/s]
         Scm,          & ! PDF width paramter                       [-]
         taum         ! Dissipation time                         [s]
@@ -1057,7 +1057,7 @@ module stats_subs
         call stat_update_var( iwp2rcp, wp2rcp, zt )
         call stat_update_var( iwprtpthlp, wprtpthlp, zt )
         call stat_update_var( isct, sct, zt )
-        call stat_update_var( irhot, rhot, zt )
+        call stat_update_var( irho, rho, zt )
 !        call stat_update_var( iNcm, Ncm, zt )
 !        call stat_update_var( iNcnm, Ncnm, zt )
 !        call stat_update_var( iNim, Nim, zt )
@@ -1144,7 +1144,7 @@ module stats_subs
         call stat_update_var( ivpwp, vpwp, zm )
         call stat_update_var( ivp2, vp2, zm )
         call stat_update_var( iup2, up2, zm )
-        call stat_update_var( irhom, rhom, zm )
+        call stat_update_var( irho_zm, rho_zm, zm )
         call stat_update_var( iscm, scm, zm )
         call stat_update_var( iem, em, zm )
         call stat_update_var( ishear, shear, zm )
@@ -1216,7 +1216,7 @@ module stats_subs
         if ( ilwp > 0 ) then
           xtmp = 0.
           do i = gr%nnzp-1, 1, -1
-           xtmp = xtmp + rhot(i+1) * rcm(i+1) / gr%dzt(i+1)
+           xtmp = xtmp + rho(i+1) * rcm(i+1) / gr%dzt(i+1)
           end do
           
           call stat_update_var_pt( ilwp, 1, xtmp, sfc )

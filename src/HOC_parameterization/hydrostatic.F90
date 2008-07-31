@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: hydrostatic.F90,v 1.3 2008-07-29 16:44:02 nielsenb Exp $
+! $Id: hydrostatic.F90,v 1.4 2008-07-31 16:10:44 faschinj Exp $
 
 module hydrostatic_mod
 
@@ -11,7 +11,7 @@ public :: hydrostatic
 
 contains
 
-subroutine hydrostatic( thvm, psfc, p_in_Pa, exner, rhot, rhom )
+subroutine hydrostatic( thvm, psfc, p_in_Pa, exner, rho, rho_zm )
 
 !       Description:
 !       Subprogram to integrate hydrostatic equation
@@ -44,8 +44,8 @@ real, intent(in), dimension(gr%nnzp) ::  &
 real, intent(out), dimension(gr%nnzp) ::  & 
   p_in_Pa,  & ! Pressure                       [Pa]
   exner,  & ! Exner function                 [-]
-  rhot,   & ! Density on thermo. points      [kg/m^3]
-  rhom   ! Density on moment. points      [kg/m^3]
+  rho,   & ! Density on thermo. points      [kg/m^3]
+  rho_zm   ! Density on moment. points      [kg/m^3]
 
 !  Local Variables
 
@@ -79,13 +79,13 @@ end do
 ! Compute density on thermodynamic grid
 
 do k=1,gr%nnzp
-  rhot(k) = p_in_Pa(k) / ( Rd * thvm(k) * exner(k) )
+  rho(k) = p_in_Pa(k) / ( Rd * thvm(k) * exner(k) )
 end do
 
 ! Interpolate density back to momentum grid
 
-rhom = max( zt2zm( rhot ), 0.0 )   ! Positive definite quantity
-rhom(1) = p_in_Pa(1) / ( Rd * thvm(1) * exner(1) )
+rho_zm = max( zt2zm( rho ), 0.0 )   ! Positive definite quantity
+rho_zm(1) = p_in_Pa(1) / ( Rd * thvm(1) * exner(1) )
 
 return
 end subroutine hydrostatic
