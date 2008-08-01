@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.71 2008-07-11 14:38:00 vlarson Exp $
+$Id: Readme.txt,v 1.72 2008-08-01 19:10:01 vlarson Exp $
 
 ************************************************************************
 *                           Copyright Notice
@@ -98,11 +98,12 @@ Build:
 The executables will appear in $(PREFIX)/bin and libraries in $(PREFIX)/lib.
 The object (.o) and module (.mod) files will appear in $(PREFIX)/obj.
 
-If you're using dmake or GNU make and have a fast parallel machine, 
-parallel builds should work as well.
-
-E.g. for 3 threads:
+If you're using GNU make and have a fast parallel machine, 
+parallel builds should work as well.  E.g. for 3 threads:
 gmake -j 3
+
+At this time, because we separate out non-distributable source code 
+using preprocessor flags, dmake doesn't work.
 
 -----------------------------------------------------------------------
 - (1.2) Building for use in a host model:
