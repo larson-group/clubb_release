@@ -1,4 +1,4 @@
-! $Id: arm_model.in,v 1.24 2008-07-30 21:27:14 faschinj Exp $
+! $Id: arm_model.in,v 1.25 2008-08-01 15:54:25 faschinj Exp $
 ! Parameter file for GCSS ARM Cu over land case
 
 &model_setting
@@ -66,12 +66,12 @@ LE = 0.          ! Fixed surface latent heat flux      [(kg/kg) m/s]
 fcor = 8.5e-5    ! Coriolis parameter                  [s^-1]
 T0   = 300.      ! Reference temperature (usually 300) [K]
 
-l_cloud_sed     = .false.  ! Flag for cloud water sedimentation.
-l_kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
+l_cloud_sed    = .false.  ! Flag for cloud water sedimentation.
+l_kk_rain      = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
 l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
-l_licedfs       = .false.  ! Flag for simplified ice scheme.
+l_licedfs      = .false.  ! Flag for simplified ice scheme.
 l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
-l_Khm_aniso    = .true.   ! Flag for anisotropic Khm.
+l_Kh_zm_aniso  = .true.   ! Flag for anisotropic Kh_zm.
 
 l_restart      = .false.  ! Flag for whether this is a restart run.
 ! Path (from ../standalone/) and filename of GrADS control files
@@ -93,7 +93,7 @@ debug_level = 2
 
 ! Statistics Settings
 
-l_stats       = .true.   ! Flag for statistical output.
+l_stats      = .true.   ! Flag for statistical output.
 fname_prefix = "arm"    ! Prefix of output filename.
 stats_tsamp  = 60.      ! Frequency of statistical sampling [s]
                         ! (must multiply evenly into stats_tout).

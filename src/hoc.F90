@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.23 2008-08-01 13:18:38 faschinj Exp $
+! $Id: hoc.F90,v 1.24 2008-08-01 15:53:16 faschinj Exp $
 
 module hoc
 
@@ -230,7 +230,7 @@ module hoc
        l_bugsrad,      & ! Flag for BUGsrad radiation scheme
        l_uv_nudge,     & ! Whether to adjust the winds within the timestep
        l_restart,      & ! Flag for restarting from GrADS file
-       l_Khm_aniso       ! Whether to use anisotropic Kh_zm.  - Michael Falk 2 Feb 2007
+       l_Kh_zm_aniso       ! Whether to use anisotropic Kh_zm.  - Michael Falk 2 Feb 2007
 
     character(len=50) ::  & 
       restart_path_case ! GRADS file used in case of restart
@@ -274,7 +274,7 @@ module hoc
       dtmain, dtclosure, & 
       sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge, & 
       l_cloud_sed, l_kk_rain, l_licedfs, l_coamps_micro,  & 
-      l_bugsrad, l_Khm_aniso, l_uv_nudge, l_restart, restart_path_case, & 
+      l_bugsrad, l_Kh_zm_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, debug_level, & 
       sclr_tol, & 
       sclr_dim, iisclr_thl, iisclr_rt, iiCO2 
@@ -323,7 +323,7 @@ module hoc
     l_licedfs       = .false.
     l_coamps_micro = .false.
     l_bugsrad      = .false.
-    l_Khm_aniso    = .false.
+    l_Kh_zm_aniso    = .false.
     l_uv_nudge     = .false.
     l_restart      = .false.
     restart_path_case = "none"
@@ -432,7 +432,7 @@ module hoc
       print *, "l_licedfs = ", l_licedfs
       print *, "l_coamps_micro = ", l_coamps_micro
       print *, "l_bugsrad = ", l_bugsrad
-      print *, "l_Khm_aniso = ", l_Khm_aniso
+      print *, "l_Kh_zm_aniso = ", l_Kh_zm_aniso
       print *, "l_uv_nudge = ", l_uv_nudge
       print *, "l_restart = ", l_restart
       print *, "restart_path_case = ", restart_path_case
@@ -496,7 +496,7 @@ module hoc
          ( nzmax, T0, ts_nudge, hydromet_dim, sclr_dim,  & 
            sclr_tol(1:sclr_dim), params, & 
            l_bugsrad, l_kk_rain, l_licedfs, l_coamps_micro, & 
-           l_cloud_sed, l_uv_nudge, l_Khm_aniso, & 
+           l_cloud_sed, l_uv_nudge, l_Kh_zm_aniso, & 
            .false., grid_type, deltaz, zm_init, & 
            momentum_heights, thermodynamic_heights, & 
            dummy_dx, dummy_dy, err_code )

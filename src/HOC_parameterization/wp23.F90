@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.14 2008-08-01 13:18:39 faschinj Exp $
+! $Id: wp23.F90,v 1.15 2008-08-01 15:53:16 faschinj Exp $
 !===============================================================================
 module wp23
 
@@ -306,7 +306,7 @@ use constants, only: &
     eps
 
 use model_flags, only:  & 
-    l_Khm_aniso,  & ! Variable(s)
+    l_Kh_zm_aniso,  & ! Variable(s)
     l_hole_fill
 
 use stats_precision, only:  & 
@@ -573,7 +573,7 @@ if (l_stats_samp) then
     call stat_update_var_pt( iwp2_ac, k,  & 
        zmscr10(k) * wp2(k), zm )
 
-    if ( l_Khm_aniso ) then
+    if ( l_Kh_zm_aniso ) then
       call stat_end_update_pt( iwp2_pr1, k, & 
          zmscr12(k) * wp2(k), zm )
     endif
@@ -716,7 +716,7 @@ use constants, only:  &
     eps
 
 use model_flags, only: & 
-    l_Khm_aniso ! Variables
+    l_Kh_zm_aniso ! Variables
 
 use diffusion, only: & 
     diffusion_zm_lhs,  & ! Procedures
@@ -888,7 +888,7 @@ do k = 2, gr%nnzp-1, 1
   endif
 
   ! LHS pressure term 1 (pr1).
-  if ( l_Khm_aniso ) then
+  if ( l_Kh_zm_aniso ) then
      ! Add in this term if we're not assuming tke = 1.5 * wp2
      lhs(3,k_wp2) & 
      = lhs(3,k_wp2) & 
@@ -950,7 +950,7 @@ do k = 2, gr%nnzp-1, 1
                               gr%dzm(k)  )
     endif
 
-    if ( iwp2_pr1 > 0 .and. l_Khm_aniso ) then
+    if ( iwp2_pr1 > 0 .and. l_Kh_zm_aniso ) then
       zmscr12(k) = - wp2_term_pr1_lhs( C4, tau1m(k) )
     endif
 
@@ -1178,7 +1178,7 @@ use constants, only: &
     eps
 
 use model_flags, only:  & 
-    l_Khm_aniso ! Variable
+    l_Kh_zm_aniso ! Variable
 
 use diffusion, only: & 
     diffusion_zm_lhs,  & ! Procedures
@@ -1287,7 +1287,7 @@ do k = 2, gr%nnzp-1, 1
   endif
 
   ! RHS pressure term 1 (pr1).
-  if ( l_Khm_aniso ) then
+  if ( l_Kh_zm_aniso ) then
      rhs(k_wp2) & 
      = rhs(k_wp2) & 
      + wp2_term_pr1_rhs( C4, up2(k), vp2(k), tau1m(k) )
@@ -1309,7 +1309,7 @@ do k = 2, gr%nnzp-1, 1
       wp2_terms_bp_pr2_rhs( 0.0, wpthvp(k) ), zm )
   
 
-    if ( l_Khm_aniso ) then
+    if ( l_Kh_zm_aniso ) then
       call stat_begin_update_pt( iwp2_pr1, k, & 
         -wp2_term_pr1_rhs( C4, up2(k), vp2(k), tau1m(k) ), zm )
     

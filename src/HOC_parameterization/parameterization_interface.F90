@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.18 2008-08-01 13:18:38 faschinj Exp $
+! $Id: parameterization_interface.F90,v 1.19 2008-08-01 15:53:16 faschinj Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
@@ -74,7 +74,7 @@ module hoc_parameterization_interface
 
        use model_flags, only: & 
            l_LH_on,  & ! Variable(s)
-           l_Khm_aniso, & 
+           l_Kh_zm_aniso, & 
            l_uv_nudge, &
            l_gamma_Skw
 
@@ -683,7 +683,7 @@ module hoc_parameterization_interface
        ! Compute tke
        !----------------------------------------------------------------
 
-       if ( .not. l_Khm_aniso ) then
+       if ( .not. l_Kh_zm_aniso ) then
          ! tke is assumed to be 3/2 of wp2
          em = 1.5 * wp2
        else
@@ -1148,7 +1148,7 @@ module hoc_parameterization_interface
                    ( nzmax, T0_in, ts_nudge_in, hydromet_dim_in,  & 
                      sclr_dim_in, sclrtol_in, params,  & 
                      l_bugsrad, l_kk_rain, l_licedfs, l_coamps_micro, & 
-                     l_cloud_sed, l_uv_nudge, l_Khm_aniso,  & 
+                     l_cloud_sed, l_uv_nudge, l_Kh_zm_aniso,  & 
                      implemented, grid_type, deltaz, zm_init, & 
                      momentum_heights, thermodynamic_heights,  & 
                      host_dx, host_dy, err_code )
@@ -1240,7 +1240,7 @@ module hoc_parameterization_interface
         l_coamps_micro, & ! COAMPS microphysics scheme
         l_cloud_sed,     & ! Cloud Sedimentation
         l_uv_nudge,     & ! Wind nudging for mpace_b case
-        l_Khm_aniso    ! Whether to use anisotropic Kh_zm. - Michael Falk 2 Feb 2007
+        l_Kh_zm_aniso    ! Whether to use anisotropic Kh_zm. - Michael Falk 2 Feb 2007
 
         ! Output variables
         integer, intent(out) :: & 
@@ -1251,7 +1251,7 @@ module hoc_parameterization_interface
         call setup_model_flags & 
              ( l_bugsrad, l_kk_rain, l_cloud_sed,             & ! intent(in)
                l_licedfs, l_coamps_micro, l_uv_nudge,        & ! intent(in)
-               l_Khm_aniso )                             ! intent(in)
+               l_Kh_zm_aniso )                             ! intent(in)
 
         ! Define model constant parameters
 

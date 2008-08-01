@@ -66,7 +66,7 @@ l_kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
 l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
 l_licedfs       = .false.  ! Flag for simplified ice scheme.
 l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
-l_Khm_aniso    = .true.   ! Flag for anisotropic Khm.
+l_Kh_zm_aniso    = .true.   ! Flag for anisotropic Kh_zm.
 
 l_restart      = .false.  ! Flag for whether this is a restart run.
 ! Path (from ../standalone/) and filename of GrADS control files

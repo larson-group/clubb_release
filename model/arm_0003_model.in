@@ -1,4 +1,4 @@
-! $Id: arm_0003_model.in,v 1.14 2008-07-30 21:27:14 faschinj Exp $
+! $Id: arm_0003_model.in,v 1.15 2008-08-01 15:54:25 faschinj Exp $
 ! Parameter file for GCSS ARM 0003 deep convective case
 
 &model_setting
@@ -76,7 +76,7 @@ l_kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
 l_coamps_micro = .true.   ! Flag for COAMPS microphysics.
 l_licedfs       = .false.  ! Flag for simplified ice scheme.
 l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
-l_Khm_aniso    = .true.   ! Flag for anisotropic Khm.
+l_Kh_zm_aniso    = .true.   ! Flag for anisotropic Kh_zm.
 l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
 
 l_restart      = .false.  ! Flag for whether this is a restart run.
