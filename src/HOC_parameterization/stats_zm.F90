@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zm.F90,v 1.7 2008-07-31 17:01:51 faschinj Exp $
+! $Id: stats_zm.F90,v 1.8 2008-08-01 13:18:39 faschinj Exp $
       module stats_zm
        
       implicit none
@@ -30,7 +30,7 @@
           irtpthvp, & 
           ithlpthvp, & 
           itau_zm, & 
-          iKhm, & 
+          iKh_zm, & 
           iwprcp, & 
           ithlprcp, & 
           irtprcp, & 
@@ -190,7 +190,7 @@
       irtpthvp  = 0
       ithlpthvp = 0
       itau_zm     = 0
-      iKhm      = 0
+      iKh_zm      = 0
       iwprcp    = 0
       ithlprcp  = 0
       irtprcp   = 0
@@ -408,10 +408,10 @@
                "Dissipation time","s",zm)
           k = k + 1
 
-        case ('khm')
-          iKhm = k
+        case ('Kh_zm')
+          iKh_zm = k
 
-          call stat_assign(iKhm,"Khm", & 
+          call stat_assign(iKh_zm,"Kh_zm", & 
                "Eddy diffusivity","m^2/s",zm)
           k = k + 1
 

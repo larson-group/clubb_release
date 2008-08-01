@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_variables.F90,v 1.11 2008-07-31 19:34:18 faschinj Exp $
+! $Id: stats_variables.F90,v 1.12 2008-08-01 13:18:39 faschinj Exp $
 !-----------------------------------------------------------------------
 !  module stats_variables
 
@@ -67,7 +67,7 @@ module stats_variables
      iLscale_up, & 
      iLscale_down, & 
      itau_zt, & 
-     iKht, & 
+     iKh_zt, & 
      iwp2thvp, & 
      iwp2rcp, & 
      iwprtpthlp, & 
@@ -98,7 +98,7 @@ module stats_variables
 !$omp   threadprivate(ithlm, ithvm, irtm, ircm, ium, ivm, iwm_zt, iug)
 !$omp   threadprivate(ivg, icf, ip, iexner, iLscale, iwp3, iwpthlp2)
 !$omp   threadprivate(iwp2thlp, iwprtp2, iwp2rtp, iLscale_up, iLscale_down, itau_zt)
-!$omp   threadprivate(iKht, iwp2thvp, iwp2rcp, iwprtpthlp, isct, irho)
+!$omp   threadprivate(iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, isct, irho)
 !$omp   threadprivate(iNcm, iNcnm, iNim, isnowslope, iNsnowm)
 !$omp   threadprivate(ised_rcm, irsat, irrainm, iNrm)
 !$omp   threadprivate(imean_vol_rad_rain, imean_vol_rad_cloud)
@@ -311,7 +311,7 @@ module stats_variables
      irtpthvp, & 
      ithlpthvp, & 
      itau_zm, & 
-     iKhm, & 
+     iKh_zm, & 
      iwprcp, & 
      ithlprcp, & 
      irtprcp, & 
@@ -329,7 +329,7 @@ module stats_variables
      iFcsed      ! Brian
 
 !$omp   threadprivate(iwp2, irtp2, ithlp2, irtpthlp, iwprtp, iwpthlp)
-!$omp   threadprivate(iwp4, iwpthvp, irtpthvp, ithlpthvp, itau_zm, iKhm)
+!$omp   threadprivate(iwp4, iwpthvp, irtpthvp, ithlpthvp, itau_zm, iKh_zm)
 !$omp   threadprivate(iwprcp, ithlprcp, irtprcp, ircp2, iupwp, ivpwp)
 !$omp   threadprivate(irho_zm, iscm, iem, ishear, iFrad, iFrad_LW)
 !$omp   threadprivate(iFrad_SW, iFprec, iFcsed)

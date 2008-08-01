@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F90,v 1.10 2008-07-31 20:13:46 faschinj Exp $
+! $Id: mixing.F90,v 1.11 2008-08-01 13:18:38 faschinj Exp $
 !===============================================================================
 module mixing
 
@@ -37,7 +37,7 @@ contains
 
 !===============================================================================
 subroutine timestep_mixing( dt, Scm, wm_zm, wm_zt, wp2, wp3, & 
-                            Kht, tau_zm, Skw_zm, rtpthvp,  & 
+                            Kh_zt, tau_zm, Skw_zm, rtpthvp,  & 
                             rtm_forcing, thlpthvp,  & 
                             thlm_forcing, rtp2, thlp2, & 
                             implemented, & 
@@ -114,7 +114,7 @@ real, intent(in), dimension(gr%nnzp) :: &
   wm_zt,           & ! w wind component on thermodynamic levels [m/s]
   wp2,           & ! w'^2 (momentum levels)                   [m^2/s^2]
   wp3,           & ! w'^3 (thermodynamic levels)              [m^3/s^3]
-  Kht,           & ! Eddy diffusivity on thermodynamic levels [m^2/s]
+  Kh_zt,           & ! Eddy diffusivity on thermodynamic levels [m^2/s]
   tau_zm,          & ! Time-scale tau on momentum levels        [s]
   Skw_zm,          & ! Skewness of w on momentum levels         [-]
   rtpthvp,       & ! r_t'th_v' (momentum levels)              [(kg/kg) K]
@@ -231,8 +231,8 @@ do k = 1, gr%nnzp, 1
    ! Kw6 is used for wpthlp and wprtp, which are located on 
    ! momentum levels.
    ! Kw6 is located on thermodynamic levels.
-   ! Kw6 = c_K6 * Kht
-   Kw6(k) = c_K6 * Kht(k)
+   ! Kw6 = c_K6 * Kh_zt
+   Kw6(k) = c_K6 * Kh_zt(k)
    ! Kw6_rt must have units of m^2/s.  Since wprtp_zt_sqd_3pt has 
    ! units of m/s (kg/kg), c_Ksqd is given units of m/(kg/kg) 
    ! in this case.
@@ -431,7 +431,7 @@ end do ! passive scalars
    !write(fstderr,*) "wm_zt = ", wm_zt
    !write(fstderr,*) "wp2 = ", wp2
    !write(fstderr,*) "wp3 = ", wp3
-   !write(fstderr,*) "Kht = ", Kht
+   !write(fstderr,*) "Kh_zt = ", Kh_zt
    !write(fstderr,*) "tau_zm = ", tau_zm
    !write(fstderr,*) "Skw_zm = ", Skw_zm
    !write(fstderr,*) "rtpthvp = ", rtpthvp

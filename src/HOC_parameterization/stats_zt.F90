@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F90,v 1.9 2008-07-31 19:34:18 faschinj Exp $
+! $Id: stats_zt.F90,v 1.10 2008-08-01 13:18:39 faschinj Exp $
  
 module stats_zt
 
@@ -41,7 +41,7 @@ use stats_variables, only: &
     iLscale_up, & 
     iLscale_down, & 
     itau_zt, & 
-    iKht, & 
+    iKh_zt, & 
     iwp2thvp, & 
     iwp2rcp, & 
     iwprtpthlp, & 
@@ -221,7 +221,7 @@ iwp2rtp       = 0
 iLscale_up          = 0
 iLscale_down        = 0
 itau_zt         = 0
-iKht          = 0
+iKh_zt          = 0
 iwp2thvp      = 0
 iwp2rcp       = 0
 iwprtpthlp    = 0
@@ -534,8 +534,8 @@ do i=1,zt%nn
     k = k + 1
 
   case ('kht')
-    iKht = k
-    call stat_assign(iKht,"Kht", & 
+    iKh_zt = k
+    call stat_assign(iKh_zt,"Kh_zt", & 
          "Eddy diffusivity","m^2/s",zt)
     k = k + 1
 

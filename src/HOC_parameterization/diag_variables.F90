@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F90,v 1.11 2008-07-31 20:13:46 faschinj Exp $
+! $Id: diag_variables.F90,v 1.12 2008-08-01 13:18:38 faschinj Exp $
 module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -89,10 +89,10 @@ real, target, allocatable, dimension(:), public :: &
 !$omp   threadprivate(wpthvp, rtpthvp, thlpthvp, wp2thvp)
 
 real, target, allocatable, dimension(:), public :: & 
-  Kht,  & ! Eddy diffusivity: zt grid        [m^2/s]
-  Khm  ! Eddy diffusivity: zm grid        [m^2/s]
+  Kh_zt,  & ! Eddy diffusivity: zt grid        [m^2/s]
+  Kh_zm  ! Eddy diffusivity: zm grid        [m^2/s]
 
-!$omp   threadprivate(Kht, Khm)
+!$omp   threadprivate(Kh_zt, Kh_zm)
 
 ! Mixing lengths
 real, target, allocatable, dimension(:), public :: & 
@@ -294,8 +294,8 @@ allocate( rtpthvp(1:nzmax) )
 allocate( thlpthvp(1:nzmax) )
 allocate( wp2thvp(1:nzmax) )
 
-allocate( Kht(1:nzmax) )
-allocate( Khm(1:nzmax) )
+allocate( Kh_zt(1:nzmax) )
+allocate( Kh_zm(1:nzmax) )
 
 allocate( em(1:nzmax) )
 allocate( Lscale(1:nzmax) )
@@ -403,8 +403,8 @@ thlpthvp = 0.0
 wp2thvp  = 0.0
 
 ! Eddy diffusivity
-Kht      = 0.0
-Khm      = 0.0
+Kh_zt      = 0.0
+Kh_zm      = 0.0
 
 em       = emin
 
@@ -524,8 +524,8 @@ deallocate( rtpthvp )
 deallocate( thlpthvp )
 deallocate( wp2thvp )
 
-deallocate( Kht )
-deallocate( Khm )
+deallocate( Kh_zt )
+deallocate( Kh_zm )
 
 deallocate( em )
 deallocate( Lscale )

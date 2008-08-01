@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.17 2008-08-01 12:53:32 griffinb Exp $
+! $Id: parameterization_interface.F90,v 1.18 2008-08-01 13:18:38 faschinj Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
@@ -103,7 +103,7 @@ module hoc_parameterization_interface
            rsat, & 
            shear, & 
            ustar, & 
-           Kht, & 
+           Kh_zt, & 
            wprtp2, & 
            wp2rtp, & 
            wpthlp2, & 
@@ -115,7 +115,7 @@ module hoc_parameterization_interface
            em, & 
            Lscale, & 
            tau_zt, & 
-           Khm, & 
+           Kh_zm, & 
            umt, & 
            vmt, & 
            vg, & 
@@ -423,7 +423,7 @@ module hoc_parameterization_interface
        ! We found that if we call diag_var first, we can use a longer timestep.
        call diag_var( tau_zm, wm_zm, rtm, wprtp,                     & ! intent(in)
                       thlm, wpthlp, wpthvp, um, vm,              & ! intent(in)
-                      wp2, wp3, upwp, vpwp, Scm, Skw_zm, Kht,      & ! intent(in)
+                      wp2, wp3, upwp, vpwp, Scm, Skw_zm, Kh_zt,      & ! intent(in)
 ! Vince Larson used prognostic timestepping of variances 
 !    in order to increase numerical stability.  17 Jul 2007
 !     .                .false., dt, isValid
@@ -736,8 +736,8 @@ module hoc_parameterization_interface
        !----------------------------------------------------------------
        ! c_K is 0.548 usually (Duynkerke and Driedonks 1987)
 
-       Kht = c_K * Lscale * tmp1
-       Khm = c_K * max( zt2zm( Lscale ), 0.0 )  & 
+       Kh_zt = c_K * Lscale * tmp1
+       Kh_zm = c_K * max( zt2zm( Lscale ), 0.0 )  & 
                  * sqrt( max( em, emin ) )
  
 !#######################################################################
@@ -752,7 +752,7 @@ module hoc_parameterization_interface
        ! Advance rtm/wprtp and thlm/wpthlp one time step
        !----------------------------------------------------------------
         call timestep_mixing( dt, Scm, wm_zm, wm_zt, wp2, wp3,       & ! intent(in)
-                              Kht, tau_zm, Skw_zm, rtpthvp,          & ! intent(in)
+                              Kh_zt, tau_zm, Skw_zm, rtpthvp,          & ! intent(in)
                               rtm_forcing, thlpthvp,             & ! intent(in)
                               thlm_forcing, rtp2, thlp2,         & ! intent(in)
                               implemented,                       & ! intent(in)
@@ -788,7 +788,7 @@ module hoc_parameterization_interface
        !----------------------------------------------------------------
 
        call timestep_wp23( dt, Scm, wm_zm, wm_zt, wpthvp, wp2thvp,        & ! intent(in)
-                           um, vm, upwp, vpwp, up2, vp2, Khm, Kht,    & ! intent(in)
+                           um, vm, upwp, vpwp, up2, vp2, Kh_zm, Kh_zt,    & ! intent(in)
                            tau_zm, tau_zt, Skw_zm, Skw_zt, pdf_parms(:, 13),  & ! intent(in)
                            wp2, wp3, err_code )                         ! intent(inout)
 
@@ -917,7 +917,7 @@ module hoc_parameterization_interface
            edsclrmt(1:gr%nnzp,i) = - wm_zt * ddzm( zt2zm( edsclrm(:,i) ) )
 
            call compute_um_edsclrm( "edsclr", wpedsclrp(1,i),     & ! intent(in)
-                                    edsclrmt(:,i), Khm, dt,       & ! intent(in)
+                                    edsclrmt(:,i), Kh_zm, dt,       & ! intent(in)
                                     edsclrm(:,i), wpedsclrp(:,i), & ! intent(inout)
                                     err_code )                      ! intent(out)
 
@@ -942,7 +942,7 @@ module hoc_parameterization_interface
              umt )                                            ! intent(out)
 
        ! dtmain to dt -dschanen
-       call compute_um_edsclrm( "um", upwp(1), umt, Khm, dt,  & ! intent(in)
+       call compute_um_edsclrm( "um", upwp(1), umt, Kh_zm, dt,  & ! intent(in)
                                 um, upwp,                     & ! intent(inout)
                                 err_code )                      ! intent(out)
 
@@ -962,7 +962,7 @@ module hoc_parameterization_interface
           ( "vm", vm, wm_zt, fcor, um, ug, implemented,  & ! intent(in)
             vmt )                                        ! intent(out)
 
-       call compute_um_edsclrm( "vm", vpwp(1), vmt, Khm, dt,  & ! intent(in)
+       call compute_um_edsclrm( "vm", vpwp(1), vmt, Kh_zm, dt,  & ! intent(in)
                                 vm, vpwp,                     & ! intent(inout)
                                 err_code )                      ! intent(out)
 
@@ -1240,7 +1240,7 @@ module hoc_parameterization_interface
         l_coamps_micro, & ! COAMPS microphysics scheme
         l_cloud_sed,     & ! Cloud Sedimentation
         l_uv_nudge,     & ! Wind nudging for mpace_b case
-        l_Khm_aniso    ! Whether to use anisotropic Khm. - Michael Falk 2 Feb 2007
+        l_Khm_aniso    ! Whether to use anisotropic Kh_zm. - Michael Falk 2 Feb 2007
 
         ! Output variables
         integer, intent(out) :: & 

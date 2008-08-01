@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.13 2008-07-31 20:13:46 faschinj Exp $
+! $Id: wp23.F90,v 1.14 2008-08-01 13:18:39 faschinj Exp $
 !===============================================================================
 module wp23
 
@@ -31,7 +31,7 @@ contains
 
 !===============================================================================
 subroutine timestep_wp23( dt, Scm, wm_zm, wm_zt, wpthvp, wp2thvp,  & 
-                          um, vm, upwp, vpwp, up2, vp2, Khm, Kht, & 
+                          um, vm, upwp, vpwp, up2, vp2, Kh_zm, Kh_zt, & 
                           tau_zm, tau_zt, Skw_zm, Skw_zt, a, & 
                           wp2, wp3, err_code )
 
@@ -95,8 +95,8 @@ real, intent(in), dimension(gr%nnzp) ::  &
   vpwp,        & ! v'w' (momentum levels)                   [m^2/s^2]
   up2,         & ! u'^2 (momentum levels)                   [m^2/s^2]
   vp2,         & ! v'^2 (momentum levels)                   [m^2/s^2]
-  Khm,         & ! Eddy diffusivity on momentum levels      [m^2/s]
-  Kht,         & ! Eddy diffusivity on thermodynamic levels [m^2/s]
+  Kh_zm,         & ! Eddy diffusivity on momentum levels      [m^2/s]
+  Kh_zt,         & ! Eddy diffusivity on thermodynamic levels [m^2/s]
   tau_zm,        & ! Time-scale tau on momentum levels        [s]
   tau_zt,        & ! Time-scale tau on thermodynamic levels   [s]
   Skw_zm,        & ! Skewness of w on momentum levels         [-]
@@ -216,8 +216,8 @@ enddo
 do k = 1, gr%nnzp, 1
    ! Kw1 is used for wp2, which is located on momentum levels.
    ! Kw1 is located on thermodynamic levels.
-   ! Kw1 = c_K1 * Kht
-   Kw1(k) = c_K1 * Kht(k)
+   ! Kw1 = c_K1 * Kh_zt
+   Kw1(k) = c_K1 * Kh_zt(k)
    ! Vince Larson added extra diffusion based on wp2.  21 Dec 2007.
    ! Kw1 must have units of m^2/s.  Since wp2_zt_sqd_3pt has units 
    ! of m^4/s^4, c_Ksqd is given units of s^3/m^2 in this case.
@@ -227,9 +227,9 @@ do k = 1, gr%nnzp, 1
    ! End Vince Larson's addition.
    ! Kw8 is used for wp3, which is located on thermodynamic levels.
    ! Kw8 is located on momentum levels.
-   ! Note: Kw8 is defined to be 1/2 of Khm.
-   ! Kw8 = c_K8 * Khm
-   Kw8(k) = c_K8 * Khm(k)
+   ! Note: Kw8 is defined to be 1/2 of Kh_zm.
+   ! Kw8 = c_K8 * Kh_zm
+   Kw8(k) = c_K8 * Kh_zm(k)
    ! Vince Larson added extra diffusion based on wp3.  15 Dec 2007.
    ! Kw8 must have units of m^2/s.  Since wp3_zm_sqd_3pt has units 
    ! of m^6/s^6, c_Ksqd is given units of s^5/m^4 in this case.
@@ -264,8 +264,8 @@ if ( lapack_error( err_code ) .and.  &
    write(fstderr,*) "vpwp = ", vpwp
    write(fstderr,*) "up2 = ", up2
    write(fstderr,*) "vp2 = ", vp2
-   write(fstderr,*) "Khm = ", Khm
-   write(fstderr,*) "Kht = ", Kht
+   write(fstderr,*) "Kh_zm = ", Kh_zm
+   write(fstderr,*) "Kh_zt = ", Kh_zt
    write(fstderr,*) "tau_zm = ", tau_zm
    write(fstderr,*) "tau_zt = ", tau_zt
    write(fstderr,*) "Skw_zm = ", Skw_zm

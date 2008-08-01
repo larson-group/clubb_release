@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: model_flags.F90,v 1.10 2008-07-31 14:52:40 faschinj Exp $
+! $Id: model_flags.F90,v 1.11 2008-08-01 13:18:38 faschinj Exp $
 
 module model_flags
 
@@ -33,7 +33,7 @@ module model_flags
     l_coamps_micro, & ! COAMPS rain microphysics
     l_cloud_sed,     & ! Cloud water droplet sedimentation. - Brian
     l_uv_nudge,     & ! For wind speed nudging. - Michael Falk
-    l_Khm_aniso    ! For anisotropic Khm, as in GABLS2.
+    l_Khm_aniso    ! For anisotropic Kh_zm, as in GABLS2.
 
 !$omp threadprivate(l_bugsrad, l_kk_rain, l_licedfs)
 !$omp threadprivate(l_coamps_micro, l_cloud_sed, l_uv_nudge)

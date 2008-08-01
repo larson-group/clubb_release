@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.22 2008-07-31 19:34:16 faschinj Exp $
+! $Id: hoc.F90,v 1.23 2008-08-01 13:18:38 faschinj Exp $
 
 module hoc
 
@@ -119,7 +119,7 @@ module hoc
     use param_index, only: nparams ! Variable(s)
 
     use diagnostic_variables, only: ug, vg, em,  & ! Variable(s)
-      tau_zt, thvm, Lscale, Kht, Khm, & 
+      tau_zt, thvm, Lscale, Kh_zt, Kh_zm, & 
       um_ref, vm_ref
 
     use prognostic_variables, only:  & 
@@ -230,7 +230,7 @@ module hoc
        l_bugsrad,      & ! Flag for BUGsrad radiation scheme
        l_uv_nudge,     & ! Whether to adjust the winds within the timestep
        l_restart,      & ! Flag for restarting from GrADS file
-       l_Khm_aniso       ! Whether to use anisotropic Khm.  - Michael Falk 2 Feb 2007
+       l_Khm_aniso       ! Whether to use anisotropic Kh_zm.  - Michael Falk 2 Feb 2007
 
     character(len=50) ::  & 
       restart_path_case ! GRADS file used in case of restart
@@ -519,7 +519,7 @@ module hoc
                            wm_zt, wm_zm, em, exner, & 
                            tau_zt, tau_zm, thvm, p_in_Pa, & 
                            rho, rho_zm, Lscale, & 
-                           Kht, Khm, um_ref, vm_ref, & 
+                           Kh_zt, Kh_zm, um_ref, vm_ref, & 
                            sclrm, edsclrm )
 
     else  ! restart
@@ -699,7 +699,7 @@ module hoc
                      ug, vg, wp2, rcm, & 
                      wm_zt, wm_zm, em, exner, tau_zt, tau_zm, thvm, & 
                      p, rho, rho_zm, Lscale, & 
-                     Kht, Khm, um_ref, vm_ref, & 
+                     Kh_zt, Kh_zm, um_ref, vm_ref, & 
                      sclrm, edsclrm )
 
 !       Description:
@@ -782,7 +782,7 @@ module hoc
         p,               & ! Pressure                      [Pa]
         rho, rho_zm,      & ! Density                       [kg/m^3]
         Lscale,          & ! Mixing length                 [m] 
-        Kht, Khm,        & ! Eddy diffusivity              [m^2/s]
+        Kh_zt, Kh_zm,        & ! Eddy diffusivity              [m^2/s]
         tau_zm, tau_zt,      & ! Dissipation time              [s]
         thvm            ! Virtual potential temperature [K]
 
@@ -1193,10 +1193,10 @@ module hoc
         ! Eddy diffusivity coefficient
         ! c_K is 0.548 usually (Duynkerke and Driedonks 1987)
 
-        Kht = c_K * Lscale * tmp1
-        Khm = c_K * max( zt2zm( Lscale ), 0.0 )  & 
+        Kh_zt = c_K * Lscale * tmp1
+        Kh_zm = c_K * max( zt2zm( Lscale ), 0.0 )  & 
                   * sqrt( max( em, emin ) )
-!        Khm = zt2zm( Kht )
+!        Kh_zm = zt2zm( Kh_zt )
 
        ! Moved this to be more general -dschanen July 16 2007
        if ( l_uv_nudge ) then
@@ -1225,8 +1225,8 @@ module hoc
             input_rtm, input_thlm, input_wp2, input_ug, & 
             input_vg, input_rcm, input_wm_zt, input_exner, & 
             input_em, input_p, input_rho, input_rho_zm, & 
-            input_Lscale, input_Lscale_up, input_Lscale_down, input_Kht, & 
-            input_Khm, input_tau_zm, input_tau_zt, input_thvm,  & 
+            input_Lscale, input_Lscale_up, input_Lscale_down, input_Kh_zt, & 
+            input_Kh_zm, input_tau_zm, input_tau_zt, input_thvm,  & 
             input_rrainm, input_rsnowm, input_ricem,  & 
             input_rgraupelm, input_wprtp, input_wpthlp, & 
             input_wp3, input_rtp2, input_thlp2,  & 
@@ -1323,8 +1323,8 @@ module hoc
         input_Lscale = .true.
         input_Lscale_up = .true.
         input_Lscale_down = .true.
-        input_Kht = .true.
-        input_Khm = .true.
+        input_Kh_zt = .true.
+        input_Kh_zm = .true.
         input_tau_zm = .true.
         input_tau_zt = .true.
         input_thvm = .true.
@@ -1429,7 +1429,7 @@ module hoc
 
         use diagnostic_variables, only: hydromet, Ncm, radht, um_ref,  & ! Variable(s)
                                   vm_ref, Frad, Ncnm, thvm, ustar, & 
-                                  pdf_parms, Khm, Akm_est, Akm, Nim
+                                  pdf_parms, Kh_zm, Akm_est, Akm, Nim
 
         use diagnostic_variables, only: wpedsclrp ! Passive scalar variables
         
@@ -1875,7 +1875,7 @@ module hoc
           call advance_microphys & 
                ( runtype, dt, time_current, & 
                  thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, Ncm,  & 
-                 pdf_parms, wm_zt, wm_zm, Khm, AKm_est, Akm,  & 
+                 pdf_parms, wm_zt, wm_zm, Kh_zm, AKm_est, Akm,  & 
                  Ncnm, Nim, & 
                  hydromet, & 
                  rtm_forcing, thlm_forcing, err_code )

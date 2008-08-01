@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F90,v 1.10 2008-07-31 19:34:16 faschinj Exp $
+! $Id: microphys_driver.F90,v 1.11 2008-08-01 13:18:38 faschinj Exp $
 module microphys_driver
 
 !       Description:
@@ -112,7 +112,7 @@ end subroutine init_microphys
 subroutine advance_microphys & 
            ( runtype, dt, time_current,  & 
              thlm, p, exner, rho, rho_zm, rtm, rcm, Ncm,  & 
-             pdf_parms, wm_zt, wm_zm, Khm, AKm_est, AKm,  & 
+             pdf_parms, wm_zt, wm_zm, Kh_zm, AKm_est, AKm,  & 
              Ncnm, Nim, & 
              hydromet, & 
              rtm_forcing, thlm_forcing, err_code )
@@ -241,7 +241,7 @@ real, dimension(gr%nnzp), intent(in) :: &
   rcm,     & ! Liquid water mixing ratio              [kg/kg]
   wm_zt,     & ! w wind on moment. grid                 [m/s]
   wm_zm,     & ! w wind on thermo. grid                 [m/s]
-  Khm,     & ! Kh Eddy diffusivity on momentum grid   [m^2/s]
+  Kh_zm,     & ! Kh Eddy diffusivity on momentum grid   [m^2/s]
   Akm_est, & ! Analytic Kessler ac                    [kg/kg]
   Akm     ! Analytic Kessler estimate              [kg/kg]
 
@@ -314,7 +314,7 @@ real, pointer, dimension(:) :: &
 
 ! Eddy diffusivity for rain and rain drop concentration.
 ! It is also used for the other hydrometeor variables.
-! Kr = Constant * Khm; Constant is named c_Krrainm.
+! Kr = Constant * Kh_zm; Constant is named c_Krrainm.
 real, dimension(gr%nnzp) :: Kr   ! [m^2/s]
 
 ! Variable needed to handle correction to rtm and thlm microphysics
@@ -343,7 +343,7 @@ ss2  => pdf_parms(1:gr%nnzp,23)
 
 ! Solve for the value of Kr, the hydrometeor eddy diffusivity.
 do k = 1, gr%nnzp, 1
-   Kr(k) = c_Krrainm * Khm(k)
+   Kr(k) = c_Krrainm * Kh_zm(k)
 end do
 
 ! Determine temperature in K for the microphysics
@@ -680,7 +680,7 @@ if ( lapack_error(err_code) ) then
    write(fstderr,*) "rcm = ", rcm
    write(fstderr,*) "wm_zt = ", wm_zt
    write(fstderr,*) "wm_zm = ", wm_zm
-   write(fstderr,*) "Khm = ", Khm
+   write(fstderr,*) "Kh_zm = ", Kh_zm
    write(fstderr,*) "Akm_est = ", Akm_est
    write(fstderr,*) "Akm = ", Akm
    write(fstderr,*) "pdf_parms = ", pdf_parms

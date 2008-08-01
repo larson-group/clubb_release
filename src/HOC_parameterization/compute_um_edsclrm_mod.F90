@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F90,v 1.7 2008-07-31 19:34:17 faschinj Exp $
+! $Id: compute_um_edsclrm_mod.F90,v 1.8 2008-08-01 13:18:38 faschinj Exp $
 !------------------------------------------------------------------------
 module compute_um_edsclrm_mod
 
@@ -14,7 +14,7 @@ contains
 !------------------------------------------------------------------------
 subroutine compute_um_edsclrm( solve_type, xpwp_sfc, &
                                xm_tndcy,  & 
-                               Khm, dt,   &
+                               Kh_zm, dt,   &
                                xm, xpwp,  &
                                err_code )
 !       Description:
@@ -72,7 +72,7 @@ real, intent(in) ::  &
 
 real, dimension(gr%nnzp), intent(in) ::  & 
   xm_tndcy,  & ! x tendency                              [units vary]
-  Khm       ! Diffusion coefficient on momentum grid  [m^2/s]
+  Kh_zm       ! Diffusion coefficient on momentum grid  [m^2/s]
 
 ! Input/Output Variables
 real, dimension(gr%nnzp), intent(inout) ::  & 
@@ -127,7 +127,7 @@ rhs(1) = real( 1./dt )
 ! surface momentum flux xpwp_sfc.
 
 atmp = 0.
-ctmp = -0.5 * Khm(2) * gr%dzm(2) * gr%dzt(2)
+ctmp = -0.5 * Kh_zm(2) * gr%dzm(2) * gr%dzt(2)
 
 a(2)   = atmp
 c(2)   = ctmp
@@ -151,8 +151,8 @@ rhs(2) = real( ( ctmp + 1./dt ) * xm(2) &
 
 do k=3, gr%nnzp-1, 1
 
-   atmp = -0.5 * Khm(k-1) * gr%dzt(k) * gr%dzm(k-1)
-   ctmp = -0.5 * Khm(k) * gr%dzt(k) * gr%dzm(k)
+   atmp = -0.5 * Kh_zm(k-1) * gr%dzt(k) * gr%dzm(k-1)
+   ctmp = -0.5 * Kh_zm(k) * gr%dzt(k) * gr%dzm(k)
 
    a(k)   = atmp
    c(k)   = ctmp
@@ -173,7 +173,7 @@ end do
 
 ! Vince Larson simplified the upper BC.  It still imposes
 !    zero flux. 7 Jul 2007 
-!        atmp = -0.5 * Khm(gr%nnzp-1) * gr%dzm(gr%nnzp) 
+!        atmp = -0.5 * Kh_zm(gr%nnzp-1) * gr%dzm(gr%nnzp) 
 !     .              * gr%dzt(gr%nnzp-1)
 !        ctmp = 0.
 
@@ -208,7 +208,7 @@ rhs(gr%nnzp) =  0.
 
 !    Attempted to compensate for the DYCOMS problem using the code below.
 !    Doesn't actually seem to make a difference
-!       atmp = -0.5 * Khm(gr%nnzp-1) * gr%dzt(gr%nnzp) * gr%dzm(gr%nnzp-1)
+!       atmp = -0.5 * Kh_zm(gr%nnzp-1) * gr%dzt(gr%nnzp) * gr%dzm(gr%nnzp-1)
 
 !       a(gr%nnzp)   = atmp
 !       b(gr%nnzp)   = - c(gr%nnzp-1) + 1./dt
@@ -220,7 +220,7 @@ rhs(gr%nnzp) =  0.
 ! Store momentum flux (explicit component)
 xpwp(1) = xpwp_sfc
 do k=2,gr%nnzp-1
-  xpwp(k) = -0.5 * Khm(k) * gr%dzm(k) * ( xm(k+1) - xm(k) ) 
+  xpwp(k) = -0.5 * Kh_zm(k) * gr%dzm(k) * ( xm(k+1) - xm(k) ) 
 end do
 xpwp(gr%nnzp) = 0.
 
@@ -255,7 +255,7 @@ if ( lapack_error( err_code ) .and.  &
     write(fstderr,*) "dt = ", dt
     write(fstderr,*) "xpwp_sfc = ", xpwp_sfc
     write(fstderr,*) "xm_tndcy = ", xm_tndcy
-    write(fstderr,*) "Khm = ", Khm
+    write(fstderr,*) "Kh_zm = ", Kh_zm
    
     write(fstderr,*) "Intent(inout)"
    
@@ -271,7 +271,7 @@ end if
 ! Second part of momentum (implicit component)
 do k=2, gr%nnzp-1, 1
   xpwp(k) = xpwp(k)  & 
-             - 0.5 * Khm(k) * gr%dzm(k) * ( xm(k+1) - xm(k) )
+             - 0.5 * Kh_zm(k) * gr%dzm(k) * ( xm(k+1) - xm(k) )
 end do
 
 if ( l_stats_samp ) then

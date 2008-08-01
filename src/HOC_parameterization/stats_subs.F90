@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F90,v 1.14 2008-07-31 19:34:18 faschinj Exp $
+!  $Id: stats_subs.F90,v 1.15 2008-08-01 13:18:38 faschinj Exp $
 module stats_subs
 
   implicit none
@@ -792,7 +792,7 @@ module stats_subs
           iLscale_up, & 
           iLscale_down, & 
           itau_zt, & 
-          iKht, & 
+          iKh_zt, & 
           iwp2thvp, & 
           iwp2rcp, & 
           iwprtpthlp, & 
@@ -845,7 +845,7 @@ module stats_subs
           irtpthvp, & 
           ithlpthvp, & 
           itau_zm, & 
-          iKhm, & 
+          iKh_zm, & 
           iwprcp, & 
           ithlprcp, & 
           irtprcp, & 
@@ -909,7 +909,7 @@ module stats_subs
           Lscale_up, & 
           Lscale_down, & 
           tau_zt, & 
-          Kht, & 
+          Kh_zt, & 
           wp2thvp, & 
           wp2rcp, & 
           wprtpthlp, & 
@@ -928,7 +928,7 @@ module stats_subs
           wpthvp, & 
           rtpthvp, & 
           thlpthvp, & 
-          khm, & 
+          Kh_zm, & 
           wprcp, & 
           thlprcp, & 
           rtprcp, & 
@@ -1052,7 +1052,7 @@ module stats_subs
         call stat_update_var( iLscale_up, Lscale_up, zt )
         call stat_update_var( iLscale_down, Lscale_down, zt )
         call stat_update_var( itau_zt, tau_zt, zt )
-        call stat_update_var( iKht, Kht, zt )
+        call stat_update_var( iKh_zt, Kh_zt, zt )
         call stat_update_var( iwp2thvp, wp2thvp, zt )
         call stat_update_var( iwp2rcp, wp2rcp, zt )
         call stat_update_var( iwprtpthlp, wprtpthlp, zt )
@@ -1135,7 +1135,7 @@ module stats_subs
         call stat_update_var( irtpthvp, rtpthvp, zm )
         call stat_update_var( ithlpthvp, thlpthvp, zm )
         call stat_update_var( itau_zm, tau_zm, zm )
-        call stat_update_var( iKhm, Khm, zm )
+        call stat_update_var( iKh_zm, Kh_zm, zm )
         call stat_update_var( iwprcp, wprcp, zm )
         call stat_update_var( ithlprcp, thlprcp, zm )
         call stat_update_var( irtprcp, rtprcp, zm )

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F90,v 1.14 2008-07-31 20:13:46 faschinj Exp $
+! $Id: diag_var.F90,v 1.15 2008-08-01 13:18:38 faschinj Exp $
 !===============================================================================
 module diagnose_variances
 
@@ -30,7 +30,7 @@ module diagnose_variances
 !===============================================================================
         subroutine diag_var( tau_zm, wm_zm, rtm, wprtp,  & 
                              thlm, wpthlp, wpthvp, um, vm, & 
-                             wp2, wp3, upwp, vpwp, Scm, Skw_zm, Kht, & 
+                             wp2, wp3, upwp, vpwp, Scm, Skw_zm, Kh_zt, & 
                              liter, dt, & 
                              sclrm, wpsclrp, & 
                              rtp2, thlp2, rtpthlp, & 
@@ -116,7 +116,7 @@ module diagnose_variances
         vpwp,   & ! u'w'                           [m^2/s^2]
         Scm,    & ! Sc on moment. grid             [-]
         Skw_zm,   & ! Skw on moment. grid            [-]
-        Kht       ! Eddy diffusivity on t-lev.     [m^2/s]
+        Kh_zt       ! Eddy diffusivity on t-lev.     [m^2/s]
 
         logical, intent(in) :: liter ! Whether variances are prognostic
 
@@ -309,8 +309,8 @@ module diagnose_variances
            ! Kw2 is used for variances and covariances rtp2, thlp2, rtpthlp,
            ! and passive scalars.  The variances and covariances are located on 
            ! momentum levels.  Kw2 is located on thermodynamic levels.
-           ! Kw2 = c_K2 * Kht
-           Kw2(k) = c_K2 * Kht(k)
+           ! Kw2 = c_K2 * Kh_zt
+           Kw2(k) = c_K2 * Kh_zt(k)
 
            ! Kw2_rtp2 must have units of m^2/s.  Since rtp2_zt_sqd_3pt has 
            ! units of kg^2/kg^2, c_Ksqd is given units of m^2/[ s (kg^2/kg^2) ]
@@ -332,8 +332,8 @@ module diagnose_variances
 
            ! Kw9 is used for variances up2 and vp2.  The variances are located 
            ! on momentum levels.  Kw9 is located on thermodynamic levels.
-           ! Kw9 = c_K9 * Kht
-           Kw9(k) = c_K9 * Kht(k)
+           ! Kw9 = c_K9 * Kh_zt
+           Kw9(k) = c_K9 * Kh_zt(k)
 
         enddo
 
@@ -672,7 +672,7 @@ module diagnose_variances
            write(fstderr,*) "vpwp = ", vpwp
            write(fstderr,*) "Scm = ", Scm
            write(fstderr,*) "Skw_zm = ", Skw_zm
-           write(fstderr,*) "Kht = ", Kht
+           write(fstderr,*) "Kh_zt = ", Kh_zt
 
            do i = 1, sclr_dim 
              write(fstderr,*) "sclrm = ", i, sclrm(:,i)
