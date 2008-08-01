@@ -1,4 +1,4 @@
-%$Id: find_grads_differences.m,v 1.4 2008-06-27 21:47:48 vlarson Exp $
+%$Id: find_grads_differences.m,v 1.5 2008-08-01 17:52:02 faschinj Exp $
 
 function [] = find_grads_differences( ctl_file, t1, t2, tol )
 
@@ -11,8 +11,8 @@ function [] = find_grads_differences( ctl_file, t1, t2, tol )
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Input parameters: 
 %       ctl_file - .ctl file for the data being compared
-%       t1      - Lower time bound of data
-%       t2      - Upper time bound of data
+%       t1      - Lower time bound of data (Can use string 'begin' to set t1 = 1 )
+%       t2      - Upper time bound of data (Can use string 'end' to set t2 = last timestep )
 %       tol     - Digits of Precision ( Higher # means finer tolerance )
 %
 % Input files: Three GrADS .ctl files in separate directories
@@ -39,13 +39,21 @@ function [] = find_grads_differences( ctl_file, t1, t2, tol )
 
 % The three directories containing three different ctlfile file sets.
 path1  = ['/home/faschinj/hoc_v2.2_tuner/standalone/'];
-path2  = ['/home/faschinj/previous/hoc_v2.2_tuner/standalone/'];
-path3  = ['/home/faschinj/previous/hoc_v2.2_tuner/standalone/'];
+path2  = ['/home/faschinj/test/hoc_v2.2_tuner/standalone/'];
+path3  = ['/home/faschinj/test/hoc_v2.2_tuner/standalone/'];
 
 % Read information from .ctl files
 [filename1,nz1,z1,ntimesteps1,numvars1,list_vars1] = header_read([path1,ctl_file]);
 [filename2,nz2,z2,ntimesteps2,numvars2,list_vars2] = header_read([path2,ctl_file]);
 [filename3,nz3,z3,ntimesteps3,numvars3,list_vars3] = header_read([path3,ctl_file]);
+
+if( t1 == 'begin' )
+	t1 = 1;
+end
+
+if( t2 == 'end' )
+	t2 = ntimesteps1;
+end
 
 % Loop over all variables
 for var=1:numvars3
