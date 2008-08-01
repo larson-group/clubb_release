@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.16 2008-07-31 20:13:46 faschinj Exp $
+! $Id: parameterization_interface.F90,v 1.17 2008-08-01 12:53:32 griffinb Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
@@ -434,6 +434,7 @@ module hoc_parameterization_interface
                       err_code,                                  & ! intent(out)
                       sclrp2, sclrprtp, sclrpthlp  )               ! intent(out)
 
+
        !----------------------------------------------------------------
        ! Covariance clipping for wprtp, wpthlp, and wpsclrp after 
        ! subroutine diag_var updated rtp2, thlp2, and sclrp2.
@@ -470,7 +471,6 @@ module hoc_parameterization_interface
        endif
  
 
-
        ! Clipping for w'th_l'
        !
        ! Clipping w'th_l' at each vertical level, based on the 
@@ -502,7 +502,6 @@ module hoc_parameterization_interface
        endif
  
 
-
        ! Clipping for w'sclr'
        !
        ! Clipping w'sclr' at each vertical level, based on the 
@@ -516,7 +515,35 @@ module hoc_parameterization_interface
           call covariance_clip( "wpsclrp", .true.,                  & ! intent(in)
                                 .false., dt, wp2(:), sclrp2(:,i),   & ! intent(in)
                                 wpsclrp(:,i) )                     ! intent(inout)
-       end do
+       enddo
+
+
+       ! Clipping for u'w'
+       !
+       ! Clipping u'w' at each vertical level, based on the
+       ! correlation of u and w at each vertical level, such that:
+       ! corr_(u,w) = u'w' / [ sqrt(u'^2) * sqrt(w'^2) ];
+       ! -1 <= corr_(u,w) <= 1.
+       ! Since u'^2, w'^2, and u'w' are updated in different
+       ! places from each other, clipping for u'w' has to be done
+       ! three times.  This is the first instance of u'w' clipping.
+       call covariance_clip( "upwp", .true.,        & ! intent(in)
+                             .false., dt, wp2, up2, & ! intent(in)
+                             upwp )                   ! intent(inout)
+
+
+       ! Clipping for v'w'
+       !
+       ! Clipping v'w' at each vertical level, based on the
+       ! correlation of v and w at each vertical level, such that:
+       ! corr_(v,w) = v'w' / [ sqrt(v'^2) * sqrt(w'^2) ];
+       ! -1 <= corr_(v,w) <= 1.
+       ! Since v'^2, w'^2, and v'w' are updated in different
+       ! places from each other, clipping for v'w' has to be done
+       ! three times.  This is the first instance of v'w' clipping.
+       call covariance_clip( "vpwp", .true.,        & ! intent(in)
+                             .false., dt, wp2, vp2, & ! intent(in)
+                             vpwp )                   ! intent(inout)
 
 
        ! Check stability
@@ -765,6 +792,7 @@ module hoc_parameterization_interface
                            tau_zm, tau_zt, Skw_zm, Skw_zt, pdf_parms(:, 13),  & ! intent(in)
                            wp2, wp3, err_code )                         ! intent(inout)
 
+
        !----------------------------------------------------------------
        ! Covariance clipping for wprtp, wpthlp, and wpsclrp after
        ! subroutine wp23 updated wp2.
@@ -800,7 +828,6 @@ module hoc_parameterization_interface
        endif
  
 
-
        ! Clipping for w'th_l'
        !
        ! Clipping w'th_l' at each vertical level, based on the
@@ -832,7 +859,6 @@ module hoc_parameterization_interface
        endif
  
 
-
        ! Clipping for w'sclr'
        !
        ! Clipping w'sclr' at each vertical level, based on the
@@ -846,7 +872,35 @@ module hoc_parameterization_interface
           call covariance_clip( "wpsclrp", .false.,                 & ! intent(in)
                                 .true., dt, wp2(:), sclrp2(:,i),    & ! intent(in)
                                 wpsclrp(:,i) )                        ! intent(inout)
-       end do
+       enddo
+
+
+       ! Clipping for u'w'
+       !
+       ! Clipping u'w' at each vertical level, based on the
+       ! correlation of u and w at each vertical level, such that:
+       ! corr_(u,w) = u'w' / [ sqrt(u'^2) * sqrt(w'^2) ];
+       ! -1 <= corr_(u,w) <= 1.
+       ! Since u'^2, w'^2, and u'w' are updated in different
+       ! places from each other, clipping for u'w' has to be done
+       ! three times.  This is the second instance of u'w' clipping.
+       call covariance_clip( "upwp", .false.,       & ! intent(in)
+                             .false., dt, wp2, up2, & ! intent(in)
+                             upwp )                   ! intent(inout)
+
+
+       ! Clipping for v'w'
+       !
+       ! Clipping v'w' at each vertical level, based on the
+       ! correlation of v and w at each vertical level, such that:
+       ! corr_(v,w) = v'w' / [ sqrt(v'^2) * sqrt(w'^2) ];
+       ! -1 <= corr_(v,w) <= 1.
+       ! Since v'^2, w'^2, and v'w' are updated in different
+       ! places from each other, clipping for v'w' has to be done
+       ! three times.  This is the second instance of v'w' clipping.
+       call covariance_clip( "vpwp", .false.,       & ! intent(in)
+                             .false., dt, wp2, vp2, & ! intent(in)
+                             vpwp )                   ! intent(inout)
 
 
        ! Wrapped LAPACK procedures may report errors, and if so, exit
@@ -929,7 +983,36 @@ module hoc_parameterization_interface
             - ((um(1:gr%nnzp) - um_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
          vm(1:gr%nnzp) = real( vm(1:gr%nnzp)  & 
             - ((vm(1:gr%nnzp) - vm_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
-       end if
+       endif
+
+
+       ! Clipping for u'w'
+       !
+       ! Clipping u'w' at each vertical level, based on the
+       ! correlation of u and w at each vertical level, such that:
+       ! corr_(u,w) = u'w' / [ sqrt(u'^2) * sqrt(w'^2) ];
+       ! -1 <= corr_(u,w) <= 1.
+       ! Since u'^2, w'^2, and u'w' are updated in different
+       ! places from each other, clipping for u'w' has to be done
+       ! three times.  This is the third instance of u'w' clipping.
+       call covariance_clip( "upwp", .false.,      & ! intent(in)
+                             .true., dt, wp2, up2, & ! intent(in)
+                             upwp )                  ! intent(inout)
+
+
+       ! Clipping for v'w'
+       !
+       ! Clipping v'w' at each vertical level, based on the
+       ! correlation of v and w at each vertical level, such that:
+       ! corr_(v,w) = v'w' / [ sqrt(v'^2) * sqrt(w'^2) ];
+       ! -1 <= corr_(v,w) <= 1.
+       ! Since v'^2, w'^2, and v'w' are updated in different
+       ! places from each other, clipping for v'w' has to be done
+       ! three times.  This is the third instance of v'w' clipping.
+       call covariance_clip( "vpwp", .false.,      & ! intent(in)
+                             .true., dt, wp2, vp2, & ! intent(in)
+                             vpwp )                  ! intent(inout)
+
 
        ! Compute Shear Production  -Brian
        do k = 1, gr%nnzp-1, 1
