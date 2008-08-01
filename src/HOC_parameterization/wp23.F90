@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.15 2008-08-01 15:53:16 faschinj Exp $
+! $Id: wp23.F90,v 1.16 2008-08-01 19:32:13 griffinb Exp $
 !===============================================================================
 module wp23
 
@@ -400,8 +400,8 @@ real(kind=time_precision), intent(in) ::  &
 
 real, intent(in), dimension(gr%nnzp) ::  & 
   Scm,          & ! Sc on momentum levels                     [-]
-  wm_zm,          & ! w wind component on momentum levels       [m/s]
-  wm_zt,          & ! w wind component on thermodynamic levels  [m/s]
+  wm_zm,        & ! w wind component on momentum levels       [m/s]
+  wm_zt,        & ! w wind component on thermodynamic levels  [m/s]
   wpthvp,       & ! w'th_v' (momentum levels)                 [K m/s]
   wp2thvp,      & ! w'^2th_v' (thermodynamic levels)          [K m^2/s^2]
   um,           & ! u wind component (thermodynamic levels)   [m/s]
@@ -412,17 +412,17 @@ real, intent(in), dimension(gr%nnzp) ::  &
   vp2,          & ! v'^2 (momentum levels)                    [m^2/s^2]
   Kw1,          & ! Coefficient of eddy diffusivity for w'^2  [m^2/s]
   Kw8,          & ! Coefficient of eddy diffusivity for w'^3  [m^2/s]
-  Skw_zt,         & ! Skewness of w on thermodynamic levels     [-]
+  Skw_zt,       & ! Skewness of w on thermodynamic levels     [-]
   tau1m,        & ! Time-scale tau on momentum levels         [s]
   tauw3t,       & ! Time-scale tau on thermodynamic levels    [s]
   C1_Skw_fnc,   & ! C_1 parameter with Sk_w applied           [-]
   C11_Skw_fnc,  & ! C_11 parameter with Sk_w applied          [-]
-  wp3_zm       ! w'^3 interpolated to momentum levels      [m^3/s^3]
+  wp3_zm          ! w'^3 interpolated to momentum levels      [m^3/s^3]
 
 ! Input/Output Variables
 real, dimension(gr%nnzp), intent(inout) ::  & 
   wp2,  & ! w'^2 (momentum levels)                            [m^2/s^2]
-  wp3  ! w'^3 (thermodynamic levels)                       [m^3/s^3]
+  wp3     ! w'^3 (thermodynamic levels)                       [m^3/s^3]
 
 integer, intent(inout) :: err_code ! Have any errors occured?
 
@@ -439,12 +439,12 @@ real, dimension(2*gr%nnzp) ::  &
 
 real, dimension(gr%nnzp) ::  & 
   a1,  & ! a_1 (momentum levels); See eqn. 24 in `Equations for HOC' [-]
-  a3  ! a_3 (momentum levels); See eqn. 26 in `Equations for HOC' [-]
+  a3     ! a_3 (momentum levels); See eqn. 26 in `Equations for HOC' [-]
 
 real, dimension(gr%nnzp) ::  & 
   a1_zt,  & ! a_1 interpolated to thermodynamic levels        [-]
   a3_zt,  & ! a_3 interpolated to thermodynamic levels        [-]
-  wp2_zt ! w'^2 interpolated to thermodyamic levels        [m^2/s^2
+  wp2_zt    ! w'^2 interpolated to thermodyamic levels        [m^2/s^2
 
 !        real, dimension(gr%nnzp) ::
 !     .  wp2_n ! w'^2 at the previous timestep           [m^2/s^2]
@@ -503,8 +503,8 @@ call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1_zt,  &
 call wp23_rhs( dt, wp2, wp3, wp3_zm, a1_zt,  & 
                a3_zt, wpthvp, wp2thvp, um, vm,  & 
                upwp, vpwp, up2, vp2, Kw1, Kw8,  & 
-               Skw_zt, tau1m, tauw3t, C11_Skw_fnc,  & 
-               lcrank_nich_diff, rhs )
+               Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+               C11_Skw_fnc, lcrank_nich_diff, rhs )
 
 ! Solve the system of equations for w'^2 and w'^3.
 if ( l_stats_samp .and. iwp23_cn > 0 ) then
@@ -730,7 +730,7 @@ use stats_precision, only: time_precision
 
  
 use stats_variables, only:       & 
-    zmscr01, & 
+    zmscr01,    & 
     zmscr02,    & 
     zmscr03,    & 
     zmscr04,    & 
@@ -738,8 +738,8 @@ use stats_variables, only:       &
     zmscr06,    & 
     zmscr07,    & 
     zmscr08,    & 
-    zmscr09, & 
-    zmscr11, & 
+    zmscr09,    & 
+    zmscr11,    & 
     zmscr10,    & 
     zmscr12,    & 
     ztscr01,    & 
@@ -755,9 +755,9 @@ use stats_variables, only:       &
     ztscr11,    & 
     ztscr12,    & 
     ztscr13,    & 
-    ztscr14, & 
-    ztscr15, & 
-    ztscr16, & 
+    ztscr14,    & 
+    ztscr15,    & 
+    ztscr16,    & 
     l_stats_samp, & 
     iwp2_dp1, & 
     iwp2_dp2, & 
@@ -780,26 +780,26 @@ implicit none
 ! Parameter Constants
 integer, parameter :: & 
   nsub = 2,   & ! Number of subdiagonals in the LHS matrix.
-  nsup = 2   ! Number of superdiagonals in the LHS matrix.
+  nsup = 2      ! Number of superdiagonals in the LHS matrix.
 
 ! Input Variables
 real(kind=time_precision), intent(in) ::  & 
-  dt          ! Timestep length                          [s]
+  dt             ! Timestep length                          [s]
 
 real, dimension(gr%nnzp), intent(in) ::  & 
   wp2,         & ! w'^2 (momentum levels)                   [m^2/s^2]
   wp3_zm,      & ! w'^3 interpolated to momentum levels     [m^3/s^3]
-  wm_zm,         & ! w wind component on momentum levels      [m/s]
-  wm_zt,         & ! w wind component on thermodynamic levels [m/s]
+  wm_zm,       & ! w wind component on momentum levels      [m/s]
+  wm_zt,       & ! w wind component on thermodynamic levels [m/s]
   a1_zt,       & ! a_1 interpolated to thermodynamic levels [-]
   a3_zt,       & ! a_3 interpolated to thermodynamic levels [-]
   Kw1,         & ! Coefficient of eddy diffusivity for w'^2 [m^2/s]
   Kw8,         & ! Coefficient of eddy diffusivity for w'^3 [m^2/s]
-  Skw_zt,        & ! Skewness of w on thermodynamic levels    [-]
+  Skw_zt,      & ! Skewness of w on thermodynamic levels    [-]
   tau1m,       & ! Time-scale tau on momentum levels        [s]
   tauw3t,      & ! Time-scale tau on thermodynamic levels   [s]
   C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied          [-]
-  C11_Skw_fnc ! C_11 parameter with Sk_w applied         [-]
+  C11_Skw_fnc    ! C_11 parameter with Sk_w applied         [-]
 
 logical, intent(in) :: & 
   lcrank_nich_diff   ! Turns on/off Crank-Nicholson diffusion.
@@ -1150,8 +1150,8 @@ end subroutine wp23_lhs
 subroutine wp23_rhs( dt, wp2, wp3, wp3_zm, a1_zt,  & 
                      a3_zt, wpthvp, wp2thvp, um, vm,  & 
                      upwp, vpwp, up2, vp2, Kw1, Kw8,  & 
-                     Skw_zt, tau1m, tauw3t, C11_Skw_fnc,  & 
-                     lcrank_nich_diff, rhs )
+                     Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                     C11_Skw_fnc, lcrank_nich_diff, rhs )
 
 !       Description:
 !       Compute RHS vector for w'^2 and w'^3.
@@ -1175,6 +1175,7 @@ use parameters, only:  &
 
 use constants, only: & 
     wtol,  & ! Variable(s) 
+    emin,  &
     eps
 
 use model_flags, only:  & 
@@ -1218,10 +1219,11 @@ real, dimension(gr%nnzp), intent(in) ::  &
   vp2,         & ! v'^2 (momentum levels)                   [m^2/s^2]
   Kw1,         & ! Coefficient of eddy diffusivity for w'^2 [m^2/s]
   Kw8,         & ! Coefficient of eddy diffusivity for w'^3 [m^2/s]
-  Skw_zt,        & ! Skewness of w on thermodynamic levels    [-]
+  Skw_zt,      & ! Skewness of w on thermodynamic levels    [-]
   tau1m,       & ! Time-scale tau on momentum levels        [s]
   tauw3t,      & ! Time-scale tau on thermodynamic levels   [s]
-  C11_Skw_fnc ! C_11 parameter with Sk_w applied         [-]
+  C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied          [-]
+  C11_Skw_fnc    ! C_11 parameter with Sk_w applied         [-]
 
 logical, intent(in) :: & 
   lcrank_nich_diff   ! Turns on/off Crank-Nicholson diffusion.
@@ -1243,6 +1245,7 @@ real, dimension(3) :: rhs_diff
 rhs = 0.0
 
 do k = 2, gr%nnzp-1, 1
+
 
   ! Define indices
 
@@ -1271,6 +1274,11 @@ do k = 2, gr%nnzp-1, 1
   = rhs(k_wp2) & 
   + wp2_term_pr3_rhs( C5, wpthvp(k), upwp(k), um(kp1), um(k), & 
                       vpwp(k), vm(kp1), vm(k), gr%dzm(k) )
+
+  ! RHS dissipation term 1 (dp1).
+  rhs(k_wp2) &
+  = rhs(k_wp2) &
+  + ( C1_Skw_fnc(k) / tau1m(k) ) * (2./3.*emin)
 
   ! RHS eddy diffusion term: dissipation term 2 (dp2).
   if ( lcrank_nich_diff ) then
