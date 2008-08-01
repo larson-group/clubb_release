@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-#$Id: CLUBBStandardsCheck.pl,v 1.10 2008-07-29 18:47:33 faschinj Exp $
+#$Id: CLUBBStandardsCheck.pl,v 1.11 2008-08-01 13:31:10 faschinj Exp $
 
 ##################################################################
 #	
@@ -138,6 +138,8 @@ if(@ARGV < 1 )
 }
 #### BEGIN MAIN PROGRAM ####
 else{
+	warn "CLUBBStandardsCheck.pl checking ...\n";
+
 	# Declare Local Variables
 	our $file;
 	our @input;
