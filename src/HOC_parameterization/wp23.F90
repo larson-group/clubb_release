@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.18 2008-08-02 17:59:16 griffinb Exp $
+! $Id: wp23.F90,v 1.19 2008-08-02 20:37:27 griffinb Exp $
 !===============================================================================
 module wp23
 
@@ -322,6 +322,8 @@ use fill_holes, only: &
 use error_code, only:  & 
     lapack_error ! Procedure(s)
 
+use explicit_clip, only: &
+    variance_clip ! Procedure(s)
  
 use stats_type, only: & 
     stat_begin_update,  & ! Procedure(s)
@@ -647,7 +649,7 @@ end if
 if ( l_stats_samp ) then
  
   ! Store previous value of wp2 for the effect of the clipping term
-  call stat_begin_update( iwp2_cl, real( wp2 / dt ), zm )
+!  call stat_begin_update( iwp2_cl, real( wp2 / dt ), zm )
 
   call stat_begin_update( iwp3_cl, real( wp3 / dt ), zt )
 
@@ -657,19 +659,24 @@ end if
 ! Interpolate w'^2 from momentum levels to thermodynamic levels.
 ! This is used for the clipping of w'^3 according to the value
 ! of Sk_w now that w'^2 and w'^3 have been advanced one timestep.
-wp2_zt = max( zm2zt( wp2 ), 0.0 )   ! Positive definite quantity
+wp2_zt = max( zm2zt( wp2 ), 2./3.*emin )   ! Positive definite quantity
+
+! Clip w'^2 at a minimum threshold.
+
+call variance_clip( "wp2", dt, 2./3.*emin, wp2 )
+
 
 ! Clip Skewness.
  
 do k = 1, gr%nnzp, 1
 
-   call wp23_clip( wp2_zt(k), gr%zt(k), emin, eps,  & 
+   call wp23_clip( dt, wp2_zt(k), gr%zt(k), emin,  & 
                    wp2(k), wp3(k) )
 
-end do
+enddo
 
 if (l_stats_samp) then           
-  call stat_end_update( iwp2_cl, real( wp2 / dt ), zm )
+!  call stat_end_update( iwp2_cl, real( wp2 / dt ), zm )
 
   call stat_end_update ( iwp3_cl, real( wp3 / dt ), zt )
 endif
@@ -2443,7 +2450,7 @@ return
 end function wp3_term_pr1_rhs
 
 !===============================================================================
-subroutine wp23_clip( wp2_zt, zt, emin, eps,  & 
+subroutine wp23_clip( dt, wp2_zt, zt, emin,  &
                       wp2, wp3 )
 
 ! Description:
@@ -2457,14 +2464,22 @@ subroutine wp23_clip( wp2_zt, zt, emin, eps,  &
 ! References:
 !-----------------------------------------------------------------------
 
+use stats_precision, only:  & 
+    time_precision ! Variable(s)
+
+!use explicit_clip, only: &
+!    variance_clip ! Procedure(s)
+
 implicit none
 
 ! Input Variables.
+real(kind=time_precision), intent(in) ::  & 
+  dt        ! Model timestep                                [s]
+
 real, intent(in) :: & 
   wp2_zt, & ! w'^2 interpolated to thermodynamic levels (k) [m^2/s^2]
   zt,     & ! Height at thermodynamic level (k)             [m]
-  emin,   & ! Model parameter                               [m^2/s^2]
-  eps       ! Model parameter                               [-]
+  emin      ! Model parameter                               [m^2/s^2]
 
 ! Input/Output Variables
 real, intent(inout) :: & 
@@ -2475,6 +2490,11 @@ real, intent(inout) :: &
 real ::  & 
   atmp,   & ! max(w'^2, eps) at thermodynamic level (k)     [m^2/s^2]
   ctmp      ! atmp^(3/2)                                    [m^3/s^3]
+
+
+! Clip w'^2 at a minimum threshold.
+!call variance_clip( "wp2", dt, 2./3.*emin, wp2 )
+
 
 !  Vince Larson commented out the Andre et al clipping to see if we
 !  could avoid using it.  26 Jul 2007
@@ -2496,8 +2516,8 @@ real ::  &
 
 if ( zt <= 100.0 ) then ! Clip for 100 m. above ground.
 
-   atmp = max( wp2_zt, eps )    ! w'^2 at t-levels
-   ctmp = atmp**(3.0/2.0)       ! (w'^2)^(3/2)
+   atmp = max( wp2_zt, 2./3.*emin )    ! w'^2 at t-levels
+   ctmp = atmp**(3.0/2.0)              ! (w'^2)^(3/2)
    if ( wp3 >= 0.2 * sqrt(2.0) * ctmp ) then
       wp3 = 0.2 * sqrt(2.0) * ctmp
       ! Vince Larson added clipping for negative wp3
@@ -2519,21 +2539,19 @@ else
    !       lift the wp2 value in altitude one-half grid box
    !       every time it is called.  The line is unnecessary,
    !       and can be commented out.  Brian Griffin. 6/30/07.
-   atmp = max( wp2_zt, eps )    ! w'^2 at t-levels
-   ctmp = atmp**1.5             ! (w'^2)^(3/2)
-   if ( wp3/ctmp > 4.5 ) then       ! Sk_w > 4.5
-      wp3 = 4.5 * ctmp              ! w'^3 = 4.5 * Sk_w
+   atmp = max( wp2_zt, 2./3.*emin )    ! w'^2 at t-levels
+   ctmp = atmp**1.5                    ! (w'^2)^(3/2)
+   if ( wp3/ctmp > 4.5 ) then          ! Sk_w > 4.5
+      wp3 = 4.5 * ctmp                 ! w'^3 = 4.5 * Sk_w
       !wp2 = atmp
-   elseif ( wp3/ctmp < -4.5 ) then  ! Sk_w < -4.5
-      wp3 = -4.5 * ctmp             ! w'^3 = -4.5 * Sk_w
+   elseif ( wp3/ctmp < -4.5 ) then     ! Sk_w < -4.5
+      wp3 = -4.5 * ctmp                ! w'^3 = -4.5 * Sk_w
       !wp2 = atmp
    endif
 
 endif
 ! End of Vince Larson's commenting of Andre et al clipping.
 
-! Ensure that w'^2 doesn't value below (2/3)*emin.
-wp2 = max( 2./3. * emin, wp2 )
 
 return
 end subroutine wp23_clip
