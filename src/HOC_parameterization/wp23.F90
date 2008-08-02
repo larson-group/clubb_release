@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.16 2008-08-01 19:32:13 griffinb Exp $
+! $Id: wp23.F90,v 1.17 2008-08-02 15:29:55 griffinb Exp $
 !===============================================================================
 module wp23
 
@@ -35,18 +35,18 @@ subroutine timestep_wp23( dt, Scm, wm_zm, wm_zt, wpthvp, wp2thvp,  &
                           tau_zm, tau_zt, Skw_zm, Skw_zt, a, & 
                           wp2, wp3, err_code )
 
-!       Description:
-!       Advance w'^2 and w'^3 one timestep.
+! Description:
+! Advance w'^2 and w'^3 one timestep.
 
-!       References:
-!       Eqn. 12 & 18 on p. 3545--3546 of
-!       ``A PDF-Based Model for Boundary Layer Clouds. Part I:
-!         Method and Model Description'' Golaz, et al. (2002)
-!       JAS, Vol. 59, pp. 3540--3551.
+! References:
+! Eqn. 12 & 18 on p. 3545--3546 of
+! ``A PDF-Based Model for Boundary Layer Clouds. Part I:
+!   Method and Model Description'' Golaz, et al. (2002)
+! JAS, Vol. 59, pp. 3540--3551.
 
-!       See also 
-!       ``Equations for HOC'', Section 6:
-!       /Implict solution for the vertical velocity moments/
+! See also 
+! ``Equations for HOC'', Section 6:
+! /Implict solution for the vertical velocity moments/
 !------------------------------------------------------------------------
 
 use grid_class, only:  & 
@@ -81,12 +81,12 @@ intrinsic :: exp
 
 ! Input Variables
 real(kind=time_precision), intent(in) ::  & 
-  dt          ! Timestep                                 [s]
+  dt             ! Timestep                                 [s]
 
 real, intent(in), dimension(gr%nnzp) ::  & 
   Scm,         & ! Sc on momentum levels                    [-]
-  wm_zm,         & ! w wind component on momentum levels      [m/s]
-  wm_zt,         & ! w wind component on thermodynamic levels [m/s]
+  wm_zm,       & ! w wind component on momentum levels      [m/s]
+  wm_zt,       & ! w wind component on thermodynamic levels [m/s]
   wpthvp,      & ! w'th_v' (momentum levels)                [K m/s]
   wp2thvp,     & ! w'^2th_v' (thermodynamic levels)         [K m^2/s^2]
   um,          & ! u wind component (thermodynamic levels)  [m/s]
@@ -95,12 +95,12 @@ real, intent(in), dimension(gr%nnzp) ::  &
   vpwp,        & ! v'w' (momentum levels)                   [m^2/s^2]
   up2,         & ! u'^2 (momentum levels)                   [m^2/s^2]
   vp2,         & ! v'^2 (momentum levels)                   [m^2/s^2]
-  Kh_zm,         & ! Eddy diffusivity on momentum levels      [m^2/s]
-  Kh_zt,         & ! Eddy diffusivity on thermodynamic levels [m^2/s]
-  tau_zm,        & ! Time-scale tau on momentum levels        [s]
-  tau_zt,        & ! Time-scale tau on thermodynamic levels   [s]
-  Skw_zm,        & ! Skewness of w on momentum levels         [-]
-  Skw_zt,        & ! Skewness of w on thermodynamic levels    [-]
+  Kh_zm,       & ! Eddy diffusivity on momentum levels      [m^2/s]
+  Kh_zt,       & ! Eddy diffusivity on thermodynamic levels [m^2/s]
+  tau_zm,      & ! Time-scale tau on momentum levels        [s]
+  tau_zt,      & ! Time-scale tau on thermodynamic levels   [s]
+  Skw_zm,      & ! Skewness of w on momentum levels         [-]
+  Skw_zt,      & ! Skewness of w on thermodynamic levels    [-]
   a              ! PDF parameter "a": pdf_parms(:,13)       [-]
 
 ! Input/Output
@@ -112,11 +112,11 @@ integer, intent(inout) :: err_code ! Diagnostic
 
 ! Local Variables
 real, dimension(gr%nnzp) ::  & 
-  tauw3t  ! Currently just tau_zt                              [s]
+  tauw3t  ! Currently just tau_zt                           [s]
 
 ! Eddy Diffusion for w'^2 and w'^3.
-real, dimension(gr%nnzp) :: Kw1    ! w'^2 coef. eddy diff. [m^2/s]
-real, dimension(gr%nnzp) :: Kw8    ! w'^3 coef. eddy diff. [m^2/s]
+real, dimension(gr%nnzp) :: Kw1    ! w'^2 coef. eddy diff.  [m^2/s]
+real, dimension(gr%nnzp) :: Kw8    ! w'^3 coef. eddy diff.  [m^2/s]
 
 ! Note:  wp2_zt and wp2_zt_sqd_3pt, and wp3_zm and wp3_zm_sqd_3pt 
 !        are used to help determine the coefficients of eddy 
@@ -289,11 +289,11 @@ subroutine wp23_solve( dt, Scm, wm_zm, wm_zt, wpthvp, wp2thvp, &
                        Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, & 
                        C11_Skw_fnc, wp3_zm, wp2, wp3, err_code )
 
-!       Description:
-!       Decompose, and back substitute the matrix for wp2/wp3
+! Description:
+! Decompose, and back substitute the matrix for wp2/wp3
 
-!       References:
-!       _Equations for HOC_ section 6.3 
+! References:
+! _Equations for HOC_ section 6.3 
 !------------------------------------------------------------------------
 
 use grid_class, only:  & 
@@ -392,11 +392,11 @@ intrinsic :: max, min, sqrt
 integer, parameter :: & 
   nsub = 2,   & ! Number of subdiagonals in the LHS matrix
   nsup = 2,   & ! Number of superdiagonals in the LHS matrix
-  nrhs = 1   ! Number of RHS vectors
+  nrhs = 1      ! Number of RHS vectors
 
 ! Input Variables
 real(kind=time_precision), intent(in) ::  & 
-  dt           ! Timestep                                  [s]
+  dt              ! Timestep                                  [s]
 
 real, intent(in), dimension(gr%nnzp) ::  & 
   Scm,          & ! Sc on momentum levels                     [-]
@@ -691,12 +691,11 @@ subroutine wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1_zt,  &
                      C1_Skw_fnc, C11_Skw_fnc, lcrank_nich_diff,  & 
                      lhs )
 
-!       Description:
-!       Compute LHS band diagonal matrix for w'^2 and w'^3.
-!       This subroutine computes the implicit portion of 
-!       the w'^2 and w'^3 equations.
+! Description:
+! Compute LHS band diagonal matrix for w'^2 and w'^3.
+! This subroutine computes the implicit portion of the w'^2 and w'^3 equations.
 
-!       References:
+! References:
 !-----------------------------------------------------------------------
 
 use grid_class, only:  & 
@@ -1153,12 +1152,11 @@ subroutine wp23_rhs( dt, wp2, wp3, wp3_zm, a1_zt,  &
                      Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                      C11_Skw_fnc, lcrank_nich_diff, rhs )
 
-!       Description:
-!       Compute RHS vector for w'^2 and w'^3.
-!       This subroutine computes the explicit portion of 
-!       the w'^2 and w'^3 equations.
+! Description:
+! Compute RHS vector for w'^2 and w'^3.
+! This subroutine computes the explicit portion of the w'^2 and w'^3 equations.
 
-!       References:
+! References:
 !-----------------------------------------------------------------------
 
 use grid_class, only:  & 
@@ -1201,7 +1199,7 @@ implicit none
 
 ! Input Variables
 real(kind=time_precision), intent(in) ::  & 
-  dt          ! Timestep length                          [s]
+  dt             ! Timestep length                          [s]
 
 real, dimension(gr%nnzp), intent(in) ::  & 
   wp2,         & ! w'^2 (momentum levels)                   [m^2/s^2]
@@ -1409,7 +1407,7 @@ do k = 2, gr%nnzp-1, 1
       + rhs_diff(2) * wp3(k) & 
       + rhs_diff(1) * wp3(kp1), zt )
 
-    end if
+    endif
 
   endif
  
@@ -1456,46 +1454,43 @@ end subroutine wp23_rhs
 pure function wp2_term_ta_lhs( dzm ) & 
 result( lhs )
 
-!       Description:
-!       Turbulent advection term for w'^2:  implicit portion of the code.
+! Description:
+! Turbulent advection term for w'^2:  implicit portion of the code.
 !
-!       The d(w'^2)/dt equation contains a turbulent advection term:
+! The d(w'^2)/dt equation contains a turbulent advection term:
 !
-!       - d(w'^3)/dz.
+! - d(w'^3)/dz.
 !
-!       The term is solved for completely implicitly, such that:
+! The term is solved for completely implicitly, such that:
 !
-!       - d( w'^3(t+1) )/dz.
+! - d( w'^3(t+1) )/dz.
 !
-!       Note:  When the term is brought over to the left-hand side, the
-!              sign is reversed and the leading "-" in front of the 
-!              term is changed to a "+".
+! Note:  When the term is brought over to the left-hand side, the sign is 
+!        reversed and the leading "-" in front of the term is changed to a "+".
 !
-!       The timestep index (t+1) means that the value of w'^3 being used
-!       is from the next timestep, which is being advanced to in solving
-!       the d(w'^2)/dt and d(w'^3)/dt equations.
+! The timestep index (t+1) means that the value of w'^3 being used is from the 
+! next timestep, which is being advanced to in solving the d(w'^2)/dt and 
+! d(w'^3)/dt equations.
 !
-!       This term is discretized as follows:
+! This term is discretized as follows:
 !
-!       While the values of w'^2 are found on the momentum levels, the 
-!       values of w'^3 are found on the thermodynamic levels.  The 
-!       derivative of w'^3 is taken over the intermediate (central) 
-!       momentum level, yielding the desired results.
+! While the values of w'^2 are found on the momentum levels, the values of w'^3 
+! are found on the thermodynamic levels.  The derivative of w'^3 is taken over 
+! the intermediate (central) momentum level, yielding the desired results.
 !
-!       -------------------wp3p1--------------------------------- t(k+1)
+! -------------------wp3p1--------------------------------- t(k+1)
 !
-!       =============================d(wp3)/dz=================== m(k)
+! =============================d(wp3)/dz=================== m(k)
 !
-!       -------------------wp3----------------------------------- t(k)
+! -------------------wp3----------------------------------- t(k)
 !
-!       The vertical indices t(k+1), m(k), and t(k) correspond with 
-!       altitudes zt(k+1), zm(k), and zt(k), respectively.  The letter 
-!       "t" is used for thermodynamic levels and the letter "m" is used 
-!       for momentum levels.
+! The vertical indices t(k+1), m(k), and t(k) correspond with altitudes zt(k+1),
+! zm(k), and zt(k), respectively.  The letter "t" is used for thermodynamic 
+! levels and the letter "m" is used for momentum levels.
 !
-!       dzm(k) = 1 / ( zt(k+1) - zt(k) )
+! dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
-!       References:
+! References:
 !-----------------------------------------------------------------------
 
 implicit none
@@ -1503,7 +1498,7 @@ implicit none
 ! Constant parameters
 integer, parameter :: & 
   kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
-  k_tdiag   = 2    ! Thermodynamic subdiagonal index.
+  k_tdiag   = 2       ! Thermodynamic subdiagonal index.
 
 ! Input Variables
 real, intent(in) :: & 
@@ -1528,66 +1523,61 @@ end function wp2_term_ta_lhs
 pure function wp2_terms_ac_pr2_lhs( C5, wmtp1, wm_zt, dzm ) & 
 result( lhs )
 
-!       Description:
-!       Accumulation of w'^2 and w'^2 pressure term 2:
-!       implicit portion of the code.
+! Description:
+! Accumulation of w'^2 and w'^2 pressure term 2:  implicit portion of the code.
 !
-!       The d(w'^2)/dt equation contains an accumulation term:
+! The d(w'^2)/dt equation contains an accumulation term:
 !
-!       - 2 w'^2 dw/dz;
+! - 2 w'^2 dw/dz;
 !
-!       and pressure term 2:
+! and pressure term 2:
 !
-!       - C_5 ( -2 w'^2 dw/dz + 2 (g/th_0) w'th_v' ).
+! - C_5 ( -2 w'^2 dw/dz + 2 (g/th_0) w'th_v' ).
 !
-!       The w'^2 accumulation term is completely implicit, while w'^2
-!       pressure term 2 has both implicit and explicit components.  The
-!       accumulation term and the implicit portion of pressure term 2 
-!       are combined and solved together as:
+! The w'^2 accumulation term is completely implicit, while w'^2 pressure term 2 
+! has both implicit and explicit components.  The accumulation term and the 
+! implicit portion of pressure term 2 are combined and solved together as:
 !
-!       + ( 1 - C_5 ) ( -2 w'^2(t+1) dw/dz ).
+! + ( 1 - C_5 ) ( -2 w'^2(t+1) dw/dz ).
 !
-!       Note:  When the term is brought over to the left-hand side, the
-!              sign is reversed and the leading "-" in front of the "2"
-!              is changed to a "+".
+! Note:  When the term is brought over to the left-hand side, the sign is 
+!        reversed and the leading "-" in front of the "2" is changed to a "+".
 !
-!       The timestep index (t+1) means that the value of w'^2 being used
-!       is from the next timestep, which is being advanced to in solving
-!       the d(w'^2)/dt equation.
+! The timestep index (t+1) means that the value of w'^2 being used is from the 
+! next timestep, which is being advanced to in solving the d(w'^2)/dt equation.
 !
-!       The terms are discretized as follows:
+! The terms are discretized as follows:
 !
-!       The values of w'^2 are found on momentum levels, while the values
-!       of wm_zt (mean vertical velocity on thermodynamic levels) are found
-!       on thermodynamic levels.  The vertical derivative of wm_zt is 
-!       taken over the intermediate (central) momentum level.  It is then 
-!       multiplied by w'^2 (implicitly calculated at timestep (t+1)) and 
-!       the coefficients to yield the desired results.
+! The values of w'^2 are found on momentum levels, while the values of wm_zt 
+! (mean vertical velocity on thermodynamic levels) are found on thermodynamic 
+! levels.  The vertical derivative of wm_zt is taken over the intermediate 
+! (central) momentum level.  It is then multiplied by w'^2 (implicitly 
+! calculated at timestep (t+1)) and the coefficients to yield the desired 
+! results.
 !
-!       -------wmtp1--------------------------------------------- t(k+1)
+! -------wm_ztp1------------------------------------------- t(k+1)
 !
-!       ===============d(wm_zt)/dz============wp2================== m(k)
+! ===============d(wm_zt)/dz============wp2================ m(k)
 !
-!       -------wm_zt----------------------------------------------- t(k)
+! -------wm_zt--------------------------------------------- t(k)
 !
-!       The vertical indices t(k+1), m(k), and t(k) correspond with 
-!       altitudes zt(k+1), zm(k), and zt(k), respectively.  The letter 
-!       "t" is used for thermodynamic levels and the letter "m" is used 
-!       for momentum levels.
+! The vertical indices t(k+1), m(k), and t(k) correspond with altitudes zt(k+1),
+! zm(k), and zt(k), respectively.  The letter "t" is used for thermodynamic 
+! levels and the letter "m" is used for momentum levels.
 !
-!       dzm(k) = 1 / ( zt(k+1) - zt(k) )
+! dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
-!       References:
+! References:
 !-----------------------------------------------------------------------
 
 implicit none
 
 ! Input Variables
 real, intent(in) :: & 
-  C5,      & ! Model parameter C_5           [-]
-  wmtp1,   & ! wm_zt(k+1)                      [m/s]
-  wm_zt,     & ! wm_zt(k)                        [m/s]
-  dzm     ! Inverse of grid spacing (k)   [1/m]
+  C5,      & ! Model parameter C_5                            [-]
+  wmtp1,   & ! w wind component at thermodynamic levels (k+1) [m/s]
+  wm_zt,   & ! w wind component at thermodynamic levels (k)   [m/s]
+  dzm        ! Inverse of grid spacing (k)                    [1/m]
 
 ! Return Variable
 real :: lhs
@@ -1604,30 +1594,27 @@ end function wp2_terms_ac_pr2_lhs
 pure function wp2_term_dp1_lhs( C1_Skw_fnc, tau1m ) & 
 result( lhs )
 
-!       Description:
-!       Dissipation term 1 for w'^2:  implicit portion of the code.
+! Description:
+! Dissipation term 1 for w'^2:  implicit portion of the code.
 !
-!       The d(w'^2)/dt equation contains dissipation term 1:
+! The d(w'^2)/dt equation contains dissipation term 1:
 !
-!       - ( C_1 / tau_1m ) w'^2.
+! - ( C_1 / tau_1m ) w'^2.
 !
-!       This term is solved for completely implicitly, such that:
+! This term is solved for completely implicitly, such that:
 !
-!       - ( C_1 / tau_1m ) w'^2(t+1).
+! - ( C_1 / tau_1m ) w'^2(t+1).
 !
-!       Note:  When the term is brought over to the left-hand side, the
-!              sign is reversed and the leading "-" in front of the
-!              term is changed to a "+".
+! Note:  When the term is brought over to the left-hand side, the sign is 
+!        reversed and the leading "-" in front of the term is changed to a "+".
 !
-!       The timestep index (t+1) means that the value of w'^2 being used
-!       is from the next timestep, which is being advanced to in solving
-!       the d(w'^2)/dt equation.
+! The timestep index (t+1) means that the value of w'^2 being used is from the 
+! next timestep, which is being advanced to in solving the d(w'^2)/dt equation.
 !
-!       The values of w'^2 are found on momentum levels.  The values of 
-!       the C_1 skewness function and time-scale tau1m are also found on
-!       momentum levels.
+! The values of w'^2 are found on momentum levels.  The values of the C_1 
+! skewness function and time-scale tau1m are also found on momentum levels.
 
-!       References:
+! References:
 !-----------------------------------------------------------------------
 
 implicit none
@@ -1635,7 +1622,7 @@ implicit none
 ! Input Variables
 real, intent(in) :: & 
   C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied (k)   [-]
-  tau1m       ! Time-scale tau at momentum levels (k) [s]
+  tau1m          ! Time-scale tau at momentum levels (k) [s]
 
 ! Return Variable
 real :: lhs
@@ -1651,46 +1638,44 @@ end function wp2_term_dp1_lhs
 pure function wp2_term_pr1_lhs( C4, tau1m ) & 
 result( lhs )
 
-!       Description
-!       Pressure term 1 for w'^2:  implicit portion of the code.
+! Description
+! Pressure term 1 for w'^2:  implicit portion of the code.
 !
-!       The d(w'^2)/dt equation contains pressure term 1:
+! The d(w'^2)/dt equation contains pressure term 1:
 !
-!       - ( C_4 / tau_1m ) * ( w'^2 - (2/3)*em ),
+! - ( C_4 / tau_1m ) * ( w'^2 - (2/3)*em ),
 !
-!       where em = (1/2) * ( w'^2 + u'^2 + v'^2 ).
+! where em = (1/2) * ( w'^2 + u'^2 + v'^2 ).
 !
-!       This simplifies to:
+! This simplifies to:
 !
-!       - ( C_4 / tau_1m ) * (2/3) * w'^2 
-!          + ( C_4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 ).
+! - ( C_4 / tau_1m ) * (2/3) * w'^2 
+!    + ( C_4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 ).
 !
-!       Pressure term 1 has both implicit and explicit components.  The
-!       implicit portion is:
+! Pressure term 1 has both implicit and explicit components.  The implicit 
+! portion is:
 !
-!       - ( C_4 / tau_1m ) * (2/3) * w'^2(t+1);
+! - ( C_4 / tau_1m ) * (2/3) * w'^2(t+1);
 !
-!       and is computed in this function.
+! and is computed in this function.
 !
-!       Note:  When the implicit term is brought over to the left-hand 
-!              side, the sign is reversed and the leading "-" in front 
-!              of the term is changed to a "+".
+! Note:  When the implicit term is brought over to the left-hand side, the 
+!        sign is reversed and the leading "-" in front of the term is changed 
+!        to a "+".
 !
-!       The timestep index (t+1) means that the value of w'^2 being used
-!       is from the next timestep, which is being advanced to in solving
-!       the d(w'^2)/dt equation.
+! The timestep index (t+1) means that the value of w'^2 being used is from the 
+! next timestep, which is being advanced to in solving the d(w'^2)/dt equation.
 !
-!       The values of w'^2 are found on momentum levels, as are the 
-!       values of tau1m.
+! The values of w'^2 are found on momentum levels, as are the values of tau1m.
 
-!       References:
+! References:
 !-----------------------------------------------------------------------
 
 implicit none
 
 ! Input Variables
 real, intent(in) :: & 
-  C4,      & ! Model parameter C_4                   [-]
+  C4,   & ! Model parameter C_4                   [-]
   tau1m   ! Time-scale tau at momentum levels (k) [s]
 
 ! Return Variable
@@ -1707,26 +1692,26 @@ end function wp2_term_pr1_lhs
 pure function wp2_terms_bp_pr2_rhs( C5, wpthvp ) & 
 result( rhs )
 
-!       Description:
-!       Buoyancy production of w'^2 and w'^2 pressure term 2:
-!       explicit portion of the code.
+! Description:
+! Buoyancy production of w'^2 and w'^2 pressure term 2:  explicit portion of the
+! code.
 !
-!       The d(w'^2)/dt equation contains a buoyancy production term:
+! The d(w'^2)/dt equation contains a buoyancy production term:
 !
-!       + 2 (g/th_0) w'th_v';
+! + 2 (g/th_0) w'th_v';
 !
-!       and pressure term 2:
+! and pressure term 2:
 !
-!       - C_5 ( -2 w'^2 dw/dz + 2 (g/th_0) w'th_v' ).
+! - C_5 ( -2 w'^2 dw/dz + 2 (g/th_0) w'th_v' ).
 !
-!       The w'^2 buoyancy production term is completely explicit, while 
-!       w'^2 pressure term 2 has both implicit and explicit components.  
-!       The buoyancy production term and the explicit portion of pressure
-!       term 2 are combined and solved together as:
+! The w'^2 buoyancy production term is completely explicit, while w'^2 pressure 
+! term 2 has both implicit and explicit components.  The buoyancy production 
+! term and the explicit portion of pressure term 2 are combined and solved 
+! together as:
 !
-!       + ( 1 - C_5 ) ( 2 (g/th_0) w'th_v' ).
+! + ( 1 - C_5 ) ( 2 (g/th_0) w'th_v' ).
 
-!       References:
+! References:
 !-----------------------------------------------------------------------
 
 use constants, only:  & 
@@ -1741,7 +1726,7 @@ implicit none
 
 ! Input Variables
 real, intent(in) :: & 
-  C5,       & ! Model parameter C_5 [-]
+  C5,    & ! Model parameter C_5 [-]
   wpthvp   ! w'th_v'(k)          [K m/s]
 
 ! Return Variable
@@ -1758,37 +1743,34 @@ pure function wp2_term_pr3_rhs( C5, wpthvp, upwp, ump1, um, &
                                 vpwp, vmp1, vm, dzm ) & 
 result( rhs )
 
-!       Description:
-!       Pressure term 3 for w'^2:  explicit portion of the code.
+! Description:
+! Pressure term 3 for w'^2:  explicit portion of the code.
 !
-!       The d(w'^2)/dt equation contains pressure term 3:
+! The d(w'^2)/dt equation contains pressure term 3:
 !
-!       + (2/3) C_5 [ (g/th_0) w'th_v' - u'w' du/dz - v'w' dv/dz ].
+! + (2/3) C_5 [ (g/th_0) w'th_v' - u'w' du/dz - v'w' dv/dz ].
 !
-!       This term is solved for completely explicitly and is 
-!       discretized as follows:
+! This term is solved for completely explicitly and is discretized as follows:
 !
-!       The values of w'th_v', u'w', and v'w' are found on the momentum
-!       levels, whereas the values of um and vm are found on the 
-!       thermodynamic levels.  The derivatives of both um and vm are 
-!       taken over the intermediate (central) momentum level.  All the
-!       remaining mathematical operations take place at the central 
-!       momentum level, yielding the desired result.
+! The values of w'th_v', u'w', and v'w' are found on the momentum levels, 
+! whereas the values of um and vm are found on the thermodynamic levels.  The 
+! derivatives of both um and vm are taken over the intermediate (central) 
+! momentum level.  All the remaining mathematical operations take place at the 
+! central momentum level, yielding the desired result.
 !
-!       ------ump1------------vmp1------------------------------- t(k+1)
+! ------ump1------------vmp1------------------------------- t(k+1)
 !
-!       =upwp======d(um)/dz========d(vm)/dz===vpwp=====wpthvp==== m(k)
+! =upwp======d(um)/dz========d(vm)/dz===vpwp=====wpthvp==== m(k)
 !
-!       ------um--------------vm--------------------------------- t(k)
+! ------um--------------vm--------------------------------- t(k)
 !
-!       The vertical indices t(k+1), m(k), and t(k) correspond with
-!       altitudes zt(k+1), zm(k), and zt(k), respectively.  The letter
-!       "t" is used for thermodynamic levels and the letter "m" is used
-!       for momentum levels.
+! The vertical indices t(k+1), m(k), and t(k) correspond with altitudes zt(k+1),
+! zm(k), and zt(k), respectively.  The letter "t" is used for thermodynamic 
+! levels and the letter "m" is used for momentum levels.
 !
-!       dzm(k) = 1 / ( zt(k+1) - zt(k) )
+! dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
-!       References:
+! References:
 !-----------------------------------------------------------------------
 
 use constants, only: & 
@@ -1811,7 +1793,7 @@ real, intent(in) :: &
   vpwp,    & ! v'w'(k)                       [m^2/s^2]
   vmp1,    & ! vm(k+1)                       [m/s]
   vm,      & ! vm(k)                         [m/s]
-  dzm     ! Inverse of grid spacing (k)   [1/m]
+  dzm        ! Inverse of grid spacing (k)   [1/m]
 
 ! Return Variable
 real :: rhs
@@ -1825,11 +1807,11 @@ rhs &
                   - vpwp * dzm * ( vmp1 - vm ) & 
                 )
 ! Use the following code for alternate mixing, with c_k=0.1 or 0.2
-!     .  = + (2.0/3.0) * C5
-!     .                * ( ( grav / T0 ) * wpthvp
-!     .                    - 0. * upwp * dzm * ( ump1 - um )
-!     .                    - 0. * vpwp * dzm * ( vmp1 - vm )
-!     .                  )
+! = + (2.0/3.0) * C5 &
+!               * ( ( grav / T0 ) * wpthvp &
+!                   - 0. * upwp * dzm * ( ump1 - um ) &
+!                   - 0. * vpwp * dzm * ( vmp1 - vm ) &
+!                 )
 ! eMFc
 
 return
@@ -1839,40 +1821,40 @@ end function wp2_term_pr3_rhs
 pure function wp2_term_pr1_rhs( C4, up2, vp2, tau1m ) & 
 result( rhs )
 
-!       Description:
-!       Pressure term 1 for w'^2:  explicit portion of the code.
+! Description:
+! Pressure term 1 for w'^2:  explicit portion of the code.
 !
-!       The d(w'^2)/dt equation contains pressure term 1:
+! The d(w'^2)/dt equation contains pressure term 1:
 !
-!       - ( C_4 / tau_1m ) * ( w'^2 - (2/3)*em ),
+! - ( C_4 / tau_1m ) * ( w'^2 - (2/3)*em );
 !
-!       where em = (1/2) * ( w'^2 + u'^2 + v'^2 ).
+! where em = (1/2) * ( w'^2 + u'^2 + v'^2 ).
 !
-!       This simplifies to:
+! This simplifies to:
 !
-!       - ( C_4 / tau_1m ) * (2/3) * w'^2 
-!          + ( C_4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 ).
+! - ( C_4 / tau_1m ) * (2/3) * w'^2 
+!    + ( C_4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 ).
 !
-!       Pressure term 1 has both implicit and explicit components.  The
-!       explicit portion is:
+! Pressure term 1 has both implicit and explicit components.  
+! The explicit portion is:
 !
-!       + ( C_4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 );
+! + ( C_4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 );
 !
-!       and is computed in this function.
+! and is computed in this function.
 !
-!       The values of u'^2 and v'^2 are found on momentum levels, as are
-!       the values of tau1m.
+! The values of u'^2 and v'^2 are found on momentum levels, as are the values of
+! tau1m.
 
-!       References:
+! References:
 !-----------------------------------------------------------------------
 
 implicit none
 
 ! Input Variables
 real, intent(in) :: & 
-  C4,      & ! Model parameter C_4                   [-]
-  up2,     & ! u'^2(k)                               [m^2/s^2]
-  vp2,     & ! v'^2(k)                               [m^2/s^2]
+  C4,   & ! Model parameter C_4                   [-]
+  up2,  & ! u'^2(k)                               [m^2/s^2]
+  vp2,  & ! v'^2(k)                               [m^2/s^2]
   tau1m   ! Time-scale tau at momentum levels (k) [s]
 
 ! Return Variable
@@ -1892,90 +1874,86 @@ pure function wp3_terms_ta_tp_lhs( wp3_zm, wp3_zmm1,  &
                                    dzt, wtol, level )  & 
 result( lhs )
 
-!       Description:
-!       Turbulent advection and turbulent production of w'^3:  
-!       implicit portion of the code.
+! Description:
+! Turbulent advection and turbulent production of w'^3:  implicit portion of the
+! code.
 !
-!       The d(w'^3)/dt equation contains a turbulent advection term:
+! The d(w'^3)/dt equation contains a turbulent advection term:
 !
-!       - d(w'^4)/dz;
+! - d(w'^4)/dz;
 !
-!       and a turbulent production term:
+! and a turbulent production term:
 !
-!       + 3 w'^2 d(w'^2)/dz.
+! + 3 w'^2 d(w'^2)/dz.
 !
-!       A substitution is made in order to close the turbulent advection
-!       term, such that:
+! A substitution is made in order to close the turbulent advection term, such 
+! that:
 !
-!       w'^4 = (a_3 + 3/2) * (w'^2)^2  +  a_1 * ( (w'^3)^2 / w'^2 ),
+! w'^4 = (a_3 + 3/2) * (w'^2)^2  +  a_1 * ( (w'^3)^2 / w'^2 );
 !
-!       where a_1 and a_3 are variables that are both functions of Sc.
-!       The turbulent production term is rewritten as:
+! where a_1 and a_3 are variables that are both functions of Sc.  The turbulent 
+! production term is rewritten as:
 !
-!       + 3 w'^2 d(w'^2)/dz = + (3/2) d( (w'^2)^2 )/dz.
+! + 3 w'^2 d(w'^2)/dz = + (3/2) d( (w'^2)^2 )/dz.
 !
-!       The turbulent advection and turbulent production terms are 
-!       combined as:
+! The turbulent advection and turbulent production terms are combined as:
 !
-!       - d [ a_3 * (w'^2)^2 ] / dz  
-!          - d [ a_1 * ( (w'^3)^2 / w'^2 ) ] / dz.
+! - d [ a_3 * (w'^2)^2 ] / dz  
+!    - d [ a_1 * ( (w'^3)^2 / w'^2 ) ] / dz.
 !
-!       The (w'^2)^2 and (w'^3)^2 terms are both linearized, such that:
+! The (w'^2)^2 and (w'^3)^2 terms are both linearized, such that:
 !
-!       ( w'^2(t+1) )^2 = - ( w'^2(t) )^2  +  2 * w'^2(t) * w'^2(t+1);
-!       ( w'^3(t+1) )^2 = - ( w'^3(t) )^2  +  2 * w'^3(t) * w'^3(t+1);
+! ( w'^2(t+1) )^2 = - ( w'^2(t) )^2  +  2 * w'^2(t) * w'^2(t+1);
+! ( w'^3(t+1) )^2 = - ( w'^3(t) )^2  +  2 * w'^3(t) * w'^3(t+1);
 !
-!       which produces implicit and explicit portions of these terms.  
-!       The implicit portion of these terms is:
+! which produces implicit and explicit portions of these terms.  The implicit 
+! portion of these terms is:
 !
-!       - d [ a_3 * 2 * w'^2(t) * w'^2(t+1) ] / dz
-!          - d [ a_1 * ( 2 * w'^3(t) * w'^3(t+1) ) / w'^2(t) ] / dz.
+! - d [ a_3 * 2 * w'^2(t) * w'^2(t+1) ] / dz
+!    - d [ a_1 * ( 2 * w'^3(t) * w'^3(t+1) ) / w'^2(t) ] / dz.
 !
-!       Note:  When the term is brought over to the left-hand side, the
-!              sign is reversed and the leading "-" in front of both 
-!              d[ ] / dz terms is changed to a "+".
+! Note:  When the term is brought over to the left-hand side, the sign is 
+!        reversed and the leading "-" in front of both d[ ] / dz terms is 
+!        changed to a "+".
 !
-!       Timestep index (t) stands for the index of the current timestep, 
-!       while timestep index (t+1) stands for the index of the next 
-!       timestep, which is being advanced to in solving the d(w'^3)/dt
-!       and d(w'^2)/dt equations.
+! Timestep index (t) stands for the index of the current timestep, while 
+! timestep index (t+1) stands for the index of the next timestep, which is being
+! advanced to in solving the d(w'^3)/dt and d(w'^2)/dt equations.
 !
-!       The implicit portion of these terms is discretized as follows:
+! The implicit portion of these terms is discretized as follows:
 !
-!       The values of w'^3 are found on the thermodynamic levels, while
-!       the values of w'^2, a_1, and a_3 are found on the momentum 
-!       levels.  The variable w'^3 is interpolated to the intermediate 
-!       momentum levels.  The values of the mathematical expressions
-!       (called F and G here) within the dF/dz and dG/dz terms are
-!       computed on the momentum levels.  Then, the derivatives (d/dz) 
-!       of the expressions (F and G) are taken over the central 
-!       thermodynamic level, yielding the desired result.
-!       In this function, the values of F and G are as follows:
+! The values of w'^3 are found on the thermodynamic levels, while the values of 
+! w'^2, a_1, and a_3 are found on the momentum levels.  The variable w'^3 is 
+! interpolated to the intermediate momentum levels.  The values of the 
+! mathematical expressions (called F and G here) within the dF/dz and dG/dz 
+! terms are computed on the momentum levels.  Then, the derivatives (d/dz) of 
+! the expressions (F and G) are taken over the central thermodynamic level, 
+! yielding the desired result.  In this function, the values of F and G are as 
+! follows:
 !
-!       F = a_3(t) * 2 * w'^2(t) * w'^2(t+1); and
+! F = a_3(t) * 2 * w'^2(t) * w'^2(t+1); and
 !
-!       G = a_1(t) * ( 2 * w'^3(t) * w'^3(t+1) ) / w'^2(t).
+! G = a_1(t) * ( 2 * w'^3(t) * w'^3(t+1) ) / w'^2(t).
 !
 !
-!       --------------------wp3p1-------------------------------- t(k+1)
+! --------------------wp3p1-------------------------------- t(k+1)
 !
-!       =a3====wp2====a1=========wp3(interp)===================== m(k)
+! =a3====wp2====a1=========wp3(interp)===================== m(k)
 !
-!       --------------------wp3----------------dF/dz---dG/dz----- t(k)
+! --------------------wp3----------------dF/dz---dG/dz----- t(k)
 !
-!       =a3m1==wp2m1==a1m1=======wp3(interp)===================== m(k-1)
+! =a3m1==wp2m1==a1m1=======wp3(interp)===================== m(k-1)
 !
-!       --------------------wp3m1-------------------------------- t(k-1)
+! --------------------wp3m1-------------------------------- t(k-1)
 !
-!       The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1)
-!       correspond with altitudes zt(k+1), zm(k), zt(k), zm(k-1), 
-!       and zt(k-1), respectively.  The letter "t" is used for
-!       thermodynamic levels and the letter "m" is used for momentum
-!       levels.
+! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1) correspond with 
+! altitudes zt(k+1), zm(k), zt(k), zm(k-1), and zt(k-1), respectively.  The 
+! letter "t" is used for thermodynamic levels and the letter "m" is used for 
+! momentum levels.
 !
-!       dzt(k) = 1 / ( zm(k) - zm(k-1) )
+! dzt(k) = 1 / ( zm(k) - zm(k-1) )
 
-!       References:
+! References:
 !-----------------------------------------------------------------------
 
 use grid_class, only:  & 
@@ -1989,11 +1967,11 @@ integer, parameter :: &
   k_mdiag   = 2,    & ! Momentum superdiagonal index.
   k_tdiag   = 3,    & ! Thermodynamic main diagonal index.
   km1_mdiag = 4,    & ! Momentum subdiagonal index. 
-  km1_tdiag = 5    ! Thermodynamic subdiagonal index.
+  km1_tdiag = 5       ! Thermodynamic subdiagonal index.
 
 integer, parameter :: & 
   t_above = 1,    & ! Index for upper thermodynamic level grid weight.
-  t_below = 2    ! Index for lower thermodynamic level grid weight.
+  t_below = 2       ! Index for lower thermodynamic level grid weight.
 
 ! Input Variables
 real, intent(in) ::  & 
@@ -2015,7 +1993,7 @@ real, dimension(5) :: lhs
 ! Local Variables
 integer :: & 
   mk,    & ! Momentum level directly above central thermodynamic level.
-  mkm1  ! Momentum level directly below central thermodynamic level.
+  mkm1     ! Momentum level directly below central thermodynamic level.
 
 ! Momentum level (k) is between thermodynamic level (k+1)
 ! and thermodynamic level (k).
@@ -2025,43 +2003,39 @@ mk = level
 ! and thermodynamic level (k-1).
 mkm1 = level - 1
 
-! Brian tried a new discretization for the turbulent advection 
-! term, which contains the term:
-! - d [ a_1 * (w'^3)^2 / w'^2 ] / dz.
-! In order to help stabilize w'^3, a_1 has been pulled outside of
-! the derivative.  On the left-hand side of the equation, this 
-! effects the thermodynamic superdiagonal (kp1_tdiag), the 
-! thermodynamic main diagonal (k_tdiag), and the thermodynamic 
+! Brian tried a new discretization for the turbulent advection term, which 
+! contains the term:  - d [ a_1 * (w'^3)^2 / w'^2 ] / dz.  In order to help 
+! stabilize w'^3, a_1 has been pulled outside of the derivative.  On the 
+! left-hand side of the equation, this effects the thermodynamic superdiagonal 
+! (kp1_tdiag), the thermodynamic main diagonal (k_tdiag), and the thermodynamic
 ! subdiagonal (km1_tdiag).
 
-! Additionally, the discretization of the turbulent advection 
-! term, which contains the term:
-! - d [ (a_3 + 3/2) * (w'^2)^2 ] / dz,
-! has been altered to pull a_3 outside of the derivative.  This
-! was done in order to help stabilize w'^3.  On the left-hand 
-! side of the equation, this effects the momentum superdiagonal 
-! (k_mdiag) and the momentum subdiagonal (km1_mdiag).
+! Additionally, the discretization of the turbulent advection term, which 
+! contains the term:  - d [ (a_3 + 3/2) * (w'^2)^2 ] / dz, has been altered to 
+! pull a_3 outside of the derivative.  This was done in order to help stabilize 
+! w'^3.  On the left-hand side of the equation, this effects the momentum 
+! superdiagonal (k_mdiag) and the momentum subdiagonal (km1_mdiag).
 
 ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
 lhs(kp1_tdiag) & 
-!     .  = + dzt * a1 * ( 2.0 * wp3_zm / max(wp2, eps) )
-!     .          * gr%weights_zt2zm(t_above,mk)
+! = + dzt * a1 * ( 2.0 * wp3_zm / max(wp2, wtol**2) ) &
+!         * gr%weights_zt2zm(t_above,mk)
 = + a1_zt * dzt * ( 2.0 * wp3_zm / max(wp2, wtol**2) ) & 
           * gr%weights_zt2zm(t_above,mk)
 
 ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
 lhs(k_mdiag) & 
-!     .  = + dzt * a3 * 2.0 * wp2
+! = + dzt * a3 * 2.0 * wp2
 = + a3_zt * dzt * 2.0 * wp2
 
 ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
 lhs(k_tdiag) & 
-!     .  = + dzt 
-!     .      * (   a1 * ( 2.0 * wp3_zm / max(wp2, eps) ) 
-!     .            * gr%weights_zt2zm(t_below,mk)
-!     .          - a1m1 * ( 2.0 * wp3_zmm1 / max(wp2m1, eps) )
-!     .            * gr%weights_zt2zm(t_above,mkm1)
-!     .        )
+! = + dzt &
+!     * (   a1 * ( 2.0 * wp3_zm / max(wp2, wtol**2) ) &
+!           * gr%weights_zt2zm(t_below,mk) &
+!         - a1m1 * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol**2) ) &
+!           * gr%weights_zt2zm(t_above,mkm1) &
+!       )
 = + a1_zt * dzt & 
     * (   ( 2.0 * wp3_zm / max(wp2, wtol**2) ) & 
           * gr%weights_zt2zm(t_below,mk) & 
@@ -2071,13 +2045,13 @@ lhs(k_tdiag) &
 
 ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
 lhs(km1_mdiag) & 
-!     .  = - dzt * a3m1 * 2.0 * wp2m1
+! = - dzt * a3m1 * 2.0 * wp2m1
 = - a3_zt * dzt * 2.0 * wp2m1
 
 ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
 lhs(km1_tdiag) & 
-!     .  = - dzt * a1m1 * ( 2.0 * wp3_zmm1 / max(wp2m1, eps) )
-!     .          * gr%weights_zt2zm(t_below,mkm1)
+! = - dzt * a1m1 * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol**2) ) &
+!         * gr%weights_zt2zm(t_below,mkm1)
 = - a1_zt * dzt * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol**2) ) & 
           * gr%weights_zt2zm(t_below,mkm1)
 
@@ -2092,66 +2066,61 @@ pure function wp3_terms_ac_pr2_lhs( C11_Skw_fnc,  &
                                     wm_zm, wmmm1, dzt ) & 
 result( lhs )
 
-!       Description:
-!       Accumulation of w'^3 and w'^3 pressure term 2:
-!       implicit portion of the code.
+! Description:
+! Accumulation of w'^3 and w'^3 pressure term 2:  implicit portion of the code.
 !
-!       The d(w'^3)/dt equation contains an accumulation term:
+! The d(w'^3)/dt equation contains an accumulation term:
 !
-!       - 3 w'^3 dw/dz;
+! - 3 w'^3 dw/dz;
 !
-!       and pressure term 2:
+! and pressure term 2:
 !
-!       - C_11 ( -3 w'^3 dw/dz + 3 (g/th_0) w'^2th_v' ).
+! - C_11 ( -3 w'^3 dw/dz + 3 (g/th_0) w'^2th_v' ).
 !
-!       The w'^3 accumulation term is completely implicit, while w'^3
-!       pressure term 2 has both implicit and explicit components.  The
-!       accumulation term and the implicit portion of pressure term 2 
-!       are combined and solved together as:
+! The w'^3 accumulation term is completely implicit, while w'^3 pressure term 2 
+! has both implicit and explicit components.  The accumulation term and the 
+! implicit portion of pressure term 2 are combined and solved together as:
 !
-!       + ( 1 - C_11 ) ( -3 w'^3(t+1) dw/dz ).
+! + ( 1 - C_11 ) ( -3 w'^3(t+1) dw/dz ).
 !
-!       Note:  When the term is brought over to the left-hand side, the
-!              sign is reversed and the leading "-" in front of the "3" 
-!              is changed to a "+".
+! Note:  When the term is brought over to the left-hand side, the sign is 
+!        reversed and the leading "-" in front of the "3" is changed to a "+".
 !
-!       The timestep index (t+1) means that the value of w'^3 being used
-!       is from the next timestep, which is being advanced to in solving
-!       the d(w'^3)/dt equation.
+! The timestep index (t+1) means that the value of w'^3 being used is from the 
+! next timestep, which is being advanced to in solving the d(w'^3)/dt equation.
 !
-!       The terms are discretized as follows:
+! The terms are discretized as follows:
 !
-!       The values of w'^3 are found on thermodynamic levels, while the
-!       values of wm_zm (mean vertical velocity on momentum levels) are 
-!       found on momentum levels.  The vertical derivative of wm_zm is 
-!       taken over the intermediate (central) thermodynamic level.  It
-!       is then multiplied by w'^3 (implicitly calculated at timestep 
-!       (t+1)) and the coefficients to yield the desired results.
+! The values of w'^3 are found on thermodynamic levels, while the values of 
+! wm_zm (mean vertical velocity on momentum levels) are found on momentum 
+! levels.  The vertical derivative of wm_zm is taken over the intermediate 
+! (central) thermodynamic level.  It is then multiplied by w'^3 (implicitly 
+! calculated at timestep (t+1)) and the coefficients to yield the desired 
+! results.
 !
-!       =======wm_zm=============================================== m(k)
+! =======wm_zm============================================= m(k)
 !
-!       ---------------d(wm_zm)/dz------------wp3------------------ t(k)
+! ---------------d(wm_zm)/dz------------wp3---------------- t(k)
 !
-!       =======wmmm1============================================= m(k-1)
+! =======wmm_zm1=========================================== m(k-1)
 !
-!       The vertical indices m(k), t(k), and m(k-1) correspond with 
-!       altitudes zm(k), zt(k), and zm(k-1), respectively.  The letter 
-!       "t" is used for thermodynamic levels and the letter "m" is used 
-!       for momentum levels.
+! The vertical indices m(k), t(k), and m(k-1) correspond with altitudes zm(k), 
+! zt(k), and zm(k-1), respectively.  The letter "t" is used for thermodynamic 
+! levels and the letter "m" is used for momentum levels.
 !
-!       dzt(k) = 1 / ( zm(k) - zm(k-1) )
+! dzt(k) = 1 / ( zm(k) - zm(k-1) )
 
-!       References:
+! References:
 !-----------------------------------------------------------------------
 
 implicit none
 
 ! Input Variables
 real, intent(in) :: & 
-  C11_Skw_fnc,  & ! C_11 parameter with Sk_w applied (k)   [-]
-  wm_zm,          & ! wm_zm(k)                                 [m/s]
-  wmmm1,        & ! wm_zm(k-1)                               [m/s]
-  dzt          ! Inverse of grid spacing (k)            [1/m]
+  C11_Skw_fnc,  & ! C_11 parameter with Sk_w applied (k)      [-]
+  wm_zm,        & ! w wind component at momentum levels (k)   [m/s]
+  wmmm1,        & ! w wind component at momentum levels (k-1) [m/s]
+  dzt             ! Inverse of grid spacing (k)               [1/m]
 
 ! Return Variable
 real :: lhs
@@ -2168,50 +2137,46 @@ end function wp3_terms_ac_pr2_lhs
 pure function wp3_term_pr1_lhs( C8, C8b, tauw3t, Skw_zt ) & 
 result( lhs )
 
-!       Description:
-!       Pressure term 1 for w'^3:  implicit portion of the code.
+! Description:
+! Pressure term 1 for w'^3:  implicit portion of the code.
 !
-!       Pressure term 1 is the term: 
+! Pressure term 1 is the term: 
 !
-!       - (C_8/tau_w3t) * ( C_8b * Sk_wt^4 + 1 ) * w'^3;
+! - (C_8/tau_w3t) * ( C_8b * Sk_wt^4 + 1 ) * w'^3;
 !
-!       where Sk_wt = w'^3 / (w'^2)^(3/2). 
+! where Sk_wt = w'^3 / (w'^2)^(3/2). 
 !
-!       This term needs to be linearized, so function L(w'^3) is defined
-!       to be equal to this term (pressure term 1), such that:
+! This term needs to be linearized, so function L(w'^3) is defined to be equal 
+! to this term (pressure term 1), such that:
 !
-!       L(w'^3) = - (C_8/tau_w3t) * ( C_8b * (w'^3)^5 / (w'^2)^6 + w'^3 ).
+! L(w'^3) = - (C_8/tau_w3t) * ( C_8b * (w'^3)^5 / (w'^2)^6 + w'^3 ).
 !
-!       A Taylor Series expansion (truncated after the first derivative
-!       term) of L(w'^3) around w'^3 = w'^3(t) is used to linearize 
-!       pressure term 1.  Evaluating L(w'^3) at w'^3(t+1):
+! A Taylor Series expansion (truncated after the first derivative term) of 
+! L(w'^3) around w'^3 = w'^3(t) is used to linearize pressure term 1.  
+! Evaluating L(w'^3) at w'^3(t+1):
 !
-!       L( w'^3(t+1) ) = L( w'^3(t) ) 
-!                        + ( d L(w'^3) / d w'^3 )|_(w'^3=w'^3(t))
-!                          * ( w'^3(t+1) - w'^3(t) ).
+! L( w'^3(t+1) ) = L( w'^3(t) ) 
+!                  + ( d L(w'^3) / d w'^3 )|_(w'^3=w'^3(t))
+!                    * ( w'^3(t+1) - w'^3(t) ).
 !
-!       After evaluating the expression above, the term has become 
-!       linearized.  It is broken down into implicit (LHS) and 
-!       explicit (RHS) components.
-!       The implicit portion is:
+! After evaluating the expression above, the term has become linearized.  It is 
+! broken down into implicit (LHS) and explicit (RHS) components.  
+! The implicit portion is:
 !
-!       - (C_8/tau_w3t) * ( 5 * C_8b * Sk_wt^4 + 1 ) * w'^3(t+1).
+! - (C_8/tau_w3t) * ( 5 * C_8b * Sk_wt^4 + 1 ) * w'^3(t+1).
 !       
-!       Note:  When the term is brought over to the left-hand side, the
-!              sign is reversed and the leading "-" in front of the 
-!              term is changed to a "+".
+! Note:  When the term is brought over to the left-hand side, the sign is 
+!        reversed and the leading "-" in front of the term is changed to a "+".
 !
-!       Timestep index (t) stands for the index of the current timestep,
-!       while timestep index (t+1) stands for the index of the next 
-!       timestep, which is being advanced to in solving the d(w'^3)/dt 
-!       equation.
+! Timestep index (t) stands for the index of the current timestep, while 
+! timestep index (t+1) stands for the index of the next timestep, which is being
+! advanced to in solving the d(w'^3)/dt equation.
 !
-!       The values of w'^3 are found on the thermodynamic levels, as are
-!       the values of tau_w3t and Sk_wt (in Sk_wt, w'^3 is found on 
-!       thermodynamic levels and w'^2 is interpolated to thermodynamic 
-!       levels).
+! The values of w'^3 are found on the thermodynamic levels, as are the values of
+! tau_w3t and Sk_wt (in Sk_wt, w'^3 is found on thermodynamic levels and w'^2 is
+! interpolated to thermodynamic levels).
 
-!       References:
+! References:
 !-----------------------------------------------------------------------
 
 implicit none
@@ -2221,7 +2186,7 @@ real, intent(in) :: &
   C8,      & ! Model parameter C_8                        [-]
   C8b,     & ! Model parameter C_8b                       [-]
   tauw3t,  & ! Time-scale tau at thermodynamic levels (k) [s]
-  Skw_zt    ! Skewness of w at thermodynamic levels (k)  [-]
+  Skw_zt     ! Skewness of w at thermodynamic levels (k)  [-]
 
 ! Return Variable
 real :: lhs
@@ -2241,86 +2206,82 @@ pure function wp3_terms_ta_tp_rhs( wp3_zm, wp3_zmm1, &
                                    dzt, wtol ) & 
 result( rhs )
 
-!       Description:
-!       Turbulent advection and turbulent production of wp3:
-!       explicit portion of the code.
+! Description:
+! Turbulent advection and turbulent production of wp3:  explicit portion of the 
+! code.
 !
-!       The d(w'^3)/dt equation contains a turbulent advection term:
+! The d(w'^3)/dt equation contains a turbulent advection term:
 !
-!       - d(w'^4)/dz;
+! - d(w'^4)/dz;
 !
-!       and a turbulent production term:
+! and a turbulent production term:
 !
-!       + 3 w'^2 d(w'^2)/dz.
+! + 3 w'^2 d(w'^2)/dz.
 !
-!       A substitution is made in order to close the turbulent advection
-!       term, such that:
+! A substitution is made in order to close the turbulent advection term, such 
+! that:
 !
-!       w'^4 = (a_3 + 3/2) * (w'^2)^2  +  a_1 * ( (w'^3)^2 / w'^2 ),
+! w'^4 = (a_3 + 3/2) * (w'^2)^2  +  a_1 * ( (w'^3)^2 / w'^2 );
 !
-!       where a_1 and a_3 are variables that are both functions of Sc.
-!       The turbulent production term is rewritten as:
+! where a_1 and a_3 are variables that are both functions of Sc.  The turbulent 
+! production term is rewritten as:
 !
-!       + 3 w'^2 d(w'^2)/dz = + (3/2) d( (w'^2)^2 )/dz.
+! + 3 w'^2 d(w'^2)/dz = + (3/2) d( (w'^2)^2 )/dz.
 !
-!       The turbulent advection and turbulent production terms are 
-!       combined as:
+! The turbulent advection and turbulent production terms are combined as:
 !
-!       - d [ a_3 * (w'^2)^2 ] / dz  
-!          - d [ a_1 * ( (w'^3)^2 / w'^2 ) ] / dz.
+! - d [ a_3 * (w'^2)^2 ] / dz  
+!    - d [ a_1 * ( (w'^3)^2 / w'^2 ) ] / dz.
 !
-!       The (w'^2)^2 and (w'^3)^2 terms are both linearized, such that:
+! The (w'^2)^2 and (w'^3)^2 terms are both linearized, such that:
 !
-!       ( w'^2(t+1) )^2 = - ( w'^2(t) )^2  +  2 * w'^2(t) * w'^2(t+1);
-!       ( w'^3(t+1) )^2 = - ( w'^3(t) )^2  +  2 * w'^3(t) * w'^3(t+1);
+! ( w'^2(t+1) )^2 = - ( w'^2(t) )^2  +  2 * w'^2(t) * w'^2(t+1);
+! ( w'^3(t+1) )^2 = - ( w'^3(t) )^2  +  2 * w'^3(t) * w'^3(t+1);
 !
-!       which produces implicit and explicit portions of these terms.  
-!       The explicit portion of these terms is:
+! which produces implicit and explicit portions of these terms.  The explicit 
+! portion of these terms is:
 !
-!       + d [ a_3 * ( w'^2(t) )^2 ] / dz
-!          + d [ a_1 * ( w'^3(t) )^2 / w'^2(t) ] / dz.
+! + d [ a_3 * ( w'^2(t) )^2 ] / dz 
+!    + d [ a_1 * ( w'^3(t) )^2 / w'^2(t) ] / dz.
 !
-!       Timestep index (t) stands for the index of the current timestep,
-!       while timestep index (t+1) stands for the index of the next 
-!       timestep, which is being advanced to in solving the d(w'^3)/dt
-!       and d(w'^2)/dt equations.
+! Timestep index (t) stands for the index of the current timestep, while 
+! timestep index (t+1) stands for the index of the next timestep, which is being
+! advanced to in solving the d(w'^3)/dt and d(w'^2)/dt equations.
 !
-!       The explicit portion of these terms is discretized as follows:
+! The explicit portion of these terms is discretized as follows:
 !
-!       The values of w'^3 are found on the thermodynamic levels, while
-!       the values of w'^2, a_1, and a_3 are found on the momentum 
-!       levels.  The variable w'^3 is interpolated to the intermediate 
-!       momentum levels.  The values of the mathematical expressions
-!       (called F and G here) within the dF/dz and dG/dz terms are 
-!       computed on the momentum levels.  Then, the derivatives (d/dz) 
-!       of the expressions (F and G) are taken over the central 
-!       thermodynamic level, yielding the desired result.
-!       In this function, the values of F and G are as follows:
+! The values of w'^3 are found on the thermodynamic levels, while the values of
+! w'^2, a_1, and a_3 are found on the momentum levels.  The variable w'^3 is 
+! interpolated to the intermediate momentum levels.  The values of the 
+! mathematical expressions (called F and G here) within the dF/dz and dG/dz 
+! terms are computed on the momentum levels.  Then, the derivatives (d/dz) of 
+! the expressions (F and G) are taken over the central thermodynamic level, 
+! yielding the desired result.  In this function, the values of F and G are as 
+! follows:
 !
-!       F = a_3(t) * ( w'^2(t) )^2; and
+! F = a_3(t) * ( w'^2(t) )^2; and
 !
-!       G = a_1(t) * ( w'^3(t) )^2 / w'^2(t).
+! G = a_1(t) * ( w'^3(t) )^2 / w'^2(t).
 !
 !
-!       --------------------wp3p1-------------------------------- t(k+1)
+! --------------------wp3p1-------------------------------- t(k+1)
 !
-!       =a3====wp2====a1=========wp3(interp)===================== m(k)
+! =a3====wp2====a1=========wp3(interp)===================== m(k)
 !
-!       --------------------wp3----------------dF/dz---dG/dz----- t(k)
+! --------------------wp3----------------dF/dz---dG/dz----- t(k)
 !
-!       =a3m1==wp2m1==a1m1=======wp3(interp)===================== m(k-1)
+! =a3m1==wp2m1==a1m1=======wp3(interp)===================== m(k-1)
 !
-!       --------------------wp3m1-------------------------------- t(k-1)
+! --------------------wp3m1-------------------------------- t(k-1)
 !
-!       The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1)
-!       correspond with altitudes zt(k+1), zm(k), zt(k), zm(k-1), 
-!       and zt(k-1), respectively.  The letter "t" is used for
-!       thermodynamic levels and the letter "m" is used for momentum
-!       levels.
+! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1) correspond with 
+! altitudes zt(k+1), zm(k), zt(k), zm(k-1), and zt(k-1), respectively.  The 
+! letter "t" is used for thermodynamic levels and the letter "m" is used for 
+! momentum levels.
 !
-!       dzt(k) = 1 / ( zm(k) - zm(k-1) )
+! dzt(k) = 1 / ( zm(k) - zm(k-1) )
 
-!       References:
+! References:
 !-----------------------------------------------------------------------
 
 implicit none
@@ -2339,27 +2300,24 @@ real, intent(in) ::  &
 ! Return Variable
 real :: rhs
 
-! Brian tried a new discretization for the turbulent advection 
-! term, which contains the term:
-! - d [ a_1 * (w'^3)^2 / w'^2 ] / dz.
-! In order to help stabilize w'^3, a_1 has been pulled outside of
-! the derivative.  This effects the right-hand side of the 
-! equation, as well as the left-hand side.
+! Brian tried a new discretization for the turbulent advection term, which 
+! contains the term:  - d [ a_1 * (w'^3)^2 / w'^2 ] / dz.  In order to help 
+! stabilize w'^3, a_1 has been pulled outside of the derivative.  This effects 
+! the right-hand side of the equation, as well as the left-hand side.
 
-! Additionally, the discretization of the turbulent advection 
-! term, which contains the term:
-! - d [ (a_3 + 3/2) * (w'^2)^2 ] / dz, 
-! has been altered to pull a_3 outside of the derivative.  This 
-! was done in order to help stabilize w'^3.  This effects the 
-! right-hand side of the equation, as well as the left-hand side.
+! Additionally, the discretization of the turbulent advection term, which 
+! contains the term:  - d [ (a_3 + 3/2) * (w'^2)^2 ] / dz, has been altered to 
+! pull a_3 outside of the derivative.  This was done in order to help stabilize 
+! w'^3.  This effects the right-hand side of the equation, as well as the 
+! left-hand side.
 
 rhs & 
-!     .  = + dzt
-!     .      * ( a3 * wp2**2 - a3m1 * wp2m1**2 )
-!     .    + dzt
-!     .      * (   a1 * ( wp3_zm**2 / max(wp2, eps) )
-!     .          - a1m1 * ( wp3_zmm1**2 / max(wp2m1, eps) )
-!     .        )
+! = + dzt &
+!     * ( a3 * wp2**2 - a3m1 * wp2m1**2 ) &
+!   + dzt &
+!     * (   a1 * ( wp3_zm**2 / max(wp2, wtol**2) ) &
+!         - a1m1 * ( wp3_zmm1**2 / max(wp2m1, wtol**2) ) &
+!       )
 = + a3_zt * dzt & 
     * ( wp2**2 - wp2m1**2 ) & 
   + a1_zt * dzt & 
@@ -2377,26 +2335,26 @@ end function wp3_terms_ta_tp_rhs
 pure function wp3_terms_bp_pr2_rhs( C11_Skw_fnc, wp2thvp ) & 
 result( rhs )
 
-!       Description:
-!       Buoyancy production of w'^3 and w'^3 pressure term 2:
-!       explicit portion of the code.
+! Description:
+! Buoyancy production of w'^3 and w'^3 pressure term 2:  explicit portion of the
+! code.
 !
-!       The d(w'^3)/dt equation contains a buoyancy production term:
+! The d(w'^3)/dt equation contains a buoyancy production term:
 !
-!       + 3 (g/th_0) w'^2th_v';
+! + 3 (g/th_0) w'^2th_v';
 !
-!       and pressure term 2:
+! and pressure term 2:
 !
-!       - C_11 ( -3 w'^3 dw/dz + 3 (g/th_0) w'^2th_v' ).
+! - C_11 ( -3 w'^3 dw/dz + 3 (g/th_0) w'^2th_v' ).
 !
-!       The w'^3 buoyancy production term is completely explicit, while
-!       w'^3 pressure term 2 has both implicit and explicit components. 
-!       The buoyancy production term and the explicit portion of pressure
-!       term 2 are combined and solved together as:
+! The w'^3 buoyancy production term is completely explicit, while w'^3 pressure 
+! term 2 has both implicit and explicit components.  The buoyancy production 
+! term and the explicit portion of pressure term 2 are combined and solved 
+! together as:
 !
-!       + ( 1 - C_ll ) ( 3 (g/th_0) w'^2th_v' ).
+! + ( 1 - C_ll ) ( 3 (g/th_0) w'^2th_v' ).
 
-!       References:
+! References:
 !-----------------------------------------------------------------------
 
 use constants, only: & 
@@ -2411,7 +2369,7 @@ implicit none
 ! Input Variables
 real, intent(in) :: & 
   C11_Skw_fnc,  & ! C_11 parameter with Sk_w applied (k)   [-]
-  wp2thvp      ! w'^2th_v'(k)                           [K m^2/s^2]
+  wp2thvp         ! w'^2th_v'(k)                           [K m^2/s^2]
 
 ! Return Variable
 real :: rhs
@@ -2426,46 +2384,43 @@ end function wp3_terms_bp_pr2_rhs
 pure function wp3_term_pr1_rhs( C8, C8b, tauw3t, Skw_zt, wp3 ) & 
 result( rhs )
 
-!       Description:
-!       Pressure term 1 for w'^3:  explicit portion of the code.
+! Description:
+! Pressure term 1 for w'^3:  explicit portion of the code.
 !
-!       Pressure term 1 is the term: 
+! Pressure term 1 is the term: 
 !
-!       - (C_8/tau_w3t) * ( C_8b * Sk_wt^4 + 1 ) * w'^3;
+! - (C_8/tau_w3t) * ( C_8b * Sk_wt^4 + 1 ) * w'^3;
 !
-!       where Sk_wt = w'^3 / (w'^2)^(3/2). 
+! where Sk_wt = w'^3 / (w'^2)^(3/2). 
 !
-!       This term needs to be linearized, so function L(w'^3) is defined
-!       to be equal to this term (pressure term 1), such that:
+! This term needs to be linearized, so function L(w'^3) is defined to be equal 
+! to this term (pressure term 1), such that:
 !
-!       L(w'^3) = - (C_8/tau_w3t) * ( C_8b * (w'^3)^5 / (w'^2)^6 + w'^3 ).
+! L(w'^3) = - (C_8/tau_w3t) * ( C_8b * (w'^3)^5 / (w'^2)^6 + w'^3 ).
 !
-!       A Taylor Series expansion (truncated after the first derivative
-!       term) of L(w'^3) around w'^3 = w'^3(t) is used to linearize 
-!       pressure term 1.  Evaluating L(w'^3) at w'^3(t+1):
+! A Taylor Series expansion (truncated after the first derivative term) of 
+! L(w'^3) around w'^3 = w'^3(t) is used to linearize pressure term 1.  
+! Evaluating L(w'^3) at w'^3(t+1):
 !
-!       L( w'^3(t+1) ) = L( w'^3(t) ) 
-!                        + ( d L(w'^3) / d w'^3 )|_(w'^3=w'^3(t))
-!                          * ( w'^3(t+1) - w'^3(t) ).
+! L( w'^3(t+1) ) = L( w'^3(t) ) 
+!                  + ( d L(w'^3) / d w'^3 )|_(w'^3=w'^3(t))
+!                    * ( w'^3(t+1) - w'^3(t) ).
 !
-!       After evaluating the expression above, the term has become 
-!       linearized.  It is broken down into implicit (LHS) and 
-!       explicit (RHS) components.
-!       The explicit portion is:
+! After evaluating the expression above, the term has become linearized.  It is 
+! broken down into implicit (LHS) and explicit (RHS) components.
+! The explicit portion is:
 !
-!       + (C_8/tau_w3t) * ( 4 * C_8b * Sk_wt^4 + 1 ) * w'^3(t).
+! + (C_8/tau_w3t) * ( 4 * C_8b * Sk_wt^4 + 1 ) * w'^3(t).
 !
-!       Timestep index (t) stands for the index of the current timestep, 
-!       while timestep index (t+1) stands for the index of the next 
-!       timestep, which is being advanced to in solving the d(w'^3)/dt
-!       equation.
+! Timestep index (t) stands for the index of the current timestep, while 
+! timestep index (t+1) stands for the index of the next timestep, which is being
+! advanced to in solving the d(w'^3)/dt equation.
 !
-!       The values of w'^3 are found on the thermodynamic levels, as are
-!       the values of tau_w3t and Sk_wt (in Sk_wt, w'^3 is found on 
-!       thermodynamic levels and w'^2 is interpolated to thermodynamic 
-!       levels).
+! The values of w'^3 are found on the thermodynamic levels, as are the values of
+! tau_w3t and Sk_wt (in Sk_wt, w'^3 is found on thermodynamic levels and w'^2 is
+! interpolated to thermodynamic levels).
 
-!       References:
+! References:
 !-----------------------------------------------------------------------
 
 implicit none
@@ -2475,8 +2430,8 @@ real, intent(in) :: &
   C8,      & ! Model parameter C_8                        [-]
   C8b,     & ! Model parameter C_8b                       [-]
   tauw3t,  & ! Time-scale tau at thermodynamic levels (k) [s]
-  Skw_zt,    & ! Skewness of w at thermodynamic levels (k)  [-]
-  wp3     ! w'^3(k)                                    [m^3/s^3]
+  Skw_zt,  & ! Skewness of w at thermodynamic levels (k)  [-]
+  wp3        ! w'^3(k)                                    [m^3/s^3]
 
 ! Return Variable
 real :: rhs
@@ -2491,39 +2446,38 @@ end function wp3_term_pr1_rhs
 subroutine wp23_clip( wp2_zt, zt, emin, eps,  & 
                       wp2, wp3 )
 
-!       Description:
-!       After w'^2 and w'^3 have been advanced one timestep, this 
-!       subroutine clips the value of w'^3 if the skewness of w is 
-!       greater than 4.5 or less than -4.5.  It also employs a special 
-!       surface clipping of w'^3, where w'^3 cannot be greater than 
-!       0.2 * sqrt(2) * Sk_w or less than -0.2 * sqrt(2) * Sk_w 
-!       (Andre et al., 1976b, 1978).  This subroutine also ensures that
-!       w'^2 doesn't fall below of value of (2/3) * emin.
+! Description:
+! After w'^2 and w'^3 have been advanced one timestep, this subroutine clips the
+! value of w'^3 if the skewness of w is greater than 4.5 or less than -4.5.  It 
+! also employs a special surface clipping of w'^3, where w'^3 cannot be greater 
+! than 0.2 * sqrt(2) * Sk_w or less than -0.2 * sqrt(2) * Sk_w 
+! (Andre et al., 1976b, 1978).  This subroutine also ensures that w'^2 doesn't 
+! fall below it's minimum threshold value.
 
-!       References:
+! References:
 !-----------------------------------------------------------------------
 
 implicit none
 
 ! Input Variables.
 real, intent(in) :: & 
-  wp2_zt,    & ! w'^2 interpolated to thermodynamic levels (k) [m^2/s^2]
-  zt,        & ! Height at thermodynamic level (k)             [m]
-  emin,      & ! Model parameter                               [m^2/s^2]
+  wp2_zt, & ! w'^2 interpolated to thermodynamic levels (k) [m^2/s^2]
+  zt,     & ! Height at thermodynamic level (k)             [m]
+  emin,   & ! Model parameter                               [m^2/s^2]
   eps       ! Model parameter                               [-]
 
 ! Input/Output Variables
 real, intent(inout) :: & 
-  wp2,       & ! w'^2 (k)                                      [m^2/s^2]
+  wp2,    & ! w'^2 (k)                                      [m^2/s^2]
   wp3       ! w'^3 (k)                                      [m^3/s^3]
 
 ! Local Variables
 real ::  & 
-  atmp,      & ! max(w'^2, eps) at thermodynamic level (k)     [m^2/s^2]
+  atmp,   & ! max(w'^2, eps) at thermodynamic level (k)     [m^2/s^2]
   ctmp      ! atmp^(3/2)                                    [m^3/s^3]
 
 !  Vince Larson commented out the Andre et al clipping to see if we
-!     could avoid using it.  26 Jul 2007
+!  could avoid using it.  26 Jul 2007
 !  Brian and Vince undid the change because Wangara case still needs
 !  the Andre et al clipping.  27 Jul 2007.
 ! Clipping wp3 at the first layer above ground according to
