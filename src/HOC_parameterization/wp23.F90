@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.17 2008-08-02 15:29:55 griffinb Exp $
+! $Id: wp23.F90,v 1.18 2008-08-02 17:59:16 griffinb Exp $
 !===============================================================================
 module wp23
 
@@ -1520,7 +1520,7 @@ return
 end function wp2_term_ta_lhs
 
 !===============================================================================
-pure function wp2_terms_ac_pr2_lhs( C5, wmtp1, wm_zt, dzm ) & 
+pure function wp2_terms_ac_pr2_lhs( C5, wm_ztp1, wm_zt, dzm ) & 
 result( lhs )
 
 ! Description:
@@ -1575,7 +1575,7 @@ implicit none
 ! Input Variables
 real, intent(in) :: & 
   C5,      & ! Model parameter C_5                            [-]
-  wmtp1,   & ! w wind component at thermodynamic levels (k+1) [m/s]
+  wm_ztp1, & ! w wind component at thermodynamic levels (k+1) [m/s]
   wm_zt,   & ! w wind component at thermodynamic levels (k)   [m/s]
   dzm        ! Inverse of grid spacing (k)                    [1/m]
 
@@ -1584,7 +1584,7 @@ real :: lhs
 
 ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
 lhs & 
-= + ( 1.0 - C5 ) * 2.0 * dzm * ( wmtp1 - wm_zt )
+= + ( 1.0 - C5 ) * 2.0 * dzm * ( wm_ztp1 - wm_zt )
 
 return
 
@@ -1936,15 +1936,15 @@ result( lhs )
 ! G = a_1(t) * ( 2 * w'^3(t) * w'^3(t+1) ) / w'^2(t).
 !
 !
-! --------------------wp3p1-------------------------------- t(k+1)
+! ----------------------wp3p1------------------------------ t(k+1)
 !
-! =a3====wp2====a1=========wp3(interp)===================== m(k)
+! ===a3====wp2====a1=========wp3(interp)=================== m(k)
 !
-! --------------------wp3----------------dF/dz---dG/dz----- t(k)
+! ----------------------wp3----------------dF/dz---dG/dz--- t(k)
 !
-! =a3m1==wp2m1==a1m1=======wp3(interp)===================== m(k-1)
+! ===a3m1==wp2m1==a1m1=======wp3(interp)=================== m(k-1)
 !
-! --------------------wp3m1-------------------------------- t(k-1)
+! ----------------------wp3m1------------------------------ t(k-1)
 !
 ! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1) correspond with 
 ! altitudes zt(k+1), zm(k), zt(k), zm(k-1), and zt(k-1), respectively.  The 
@@ -2018,24 +2018,24 @@ mkm1 = level - 1
 
 ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
 lhs(kp1_tdiag) & 
-! = + dzt * a1 * ( 2.0 * wp3_zm / max(wp2, wtol**2) ) &
-!         * gr%weights_zt2zm(t_above,mk)
+!= + dzt * a1 * ( 2.0 * wp3_zm / max(wp2, wtol**2) ) &
+!        * gr%weights_zt2zm(t_above,mk)
 = + a1_zt * dzt * ( 2.0 * wp3_zm / max(wp2, wtol**2) ) & 
           * gr%weights_zt2zm(t_above,mk)
 
 ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
 lhs(k_mdiag) & 
-! = + dzt * a3 * 2.0 * wp2
+!= + dzt * a3 * 2.0 * wp2
 = + a3_zt * dzt * 2.0 * wp2
 
 ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
 lhs(k_tdiag) & 
-! = + dzt &
-!     * (   a1 * ( 2.0 * wp3_zm / max(wp2, wtol**2) ) &
-!           * gr%weights_zt2zm(t_below,mk) &
-!         - a1m1 * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol**2) ) &
-!           * gr%weights_zt2zm(t_above,mkm1) &
-!       )
+!= + dzt &
+!    * (   a1 * ( 2.0 * wp3_zm / max(wp2, wtol**2) ) &
+!          * gr%weights_zt2zm(t_below,mk) &
+!        - a1m1 * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol**2) ) &
+!          * gr%weights_zt2zm(t_above,mkm1) &
+!      )
 = + a1_zt * dzt & 
     * (   ( 2.0 * wp3_zm / max(wp2, wtol**2) ) & 
           * gr%weights_zt2zm(t_below,mk) & 
@@ -2045,13 +2045,13 @@ lhs(k_tdiag) &
 
 ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
 lhs(km1_mdiag) & 
-! = - dzt * a3m1 * 2.0 * wp2m1
+!= - dzt * a3m1 * 2.0 * wp2m1
 = - a3_zt * dzt * 2.0 * wp2m1
 
 ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
 lhs(km1_tdiag) & 
-! = - dzt * a1m1 * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol**2) ) &
-!         * gr%weights_zt2zm(t_below,mkm1)
+!= - dzt * a1m1 * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol**2) ) &
+!        * gr%weights_zt2zm(t_below,mkm1)
 = - a1_zt * dzt * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol**2) ) & 
           * gr%weights_zt2zm(t_below,mkm1)
 
@@ -2063,7 +2063,7 @@ end function wp3_terms_ta_tp_lhs
 
 !===============================================================================
 pure function wp3_terms_ac_pr2_lhs( C11_Skw_fnc,  & 
-                                    wm_zm, wmmm1, dzt ) & 
+                                    wm_zm, wm_zmm1, dzt ) & 
 result( lhs )
 
 ! Description:
@@ -2119,7 +2119,7 @@ implicit none
 real, intent(in) :: & 
   C11_Skw_fnc,  & ! C_11 parameter with Sk_w applied (k)      [-]
   wm_zm,        & ! w wind component at momentum levels (k)   [m/s]
-  wmmm1,        & ! w wind component at momentum levels (k-1) [m/s]
+  wm_zmm1,      & ! w wind component at momentum levels (k-1) [m/s]
   dzt             ! Inverse of grid spacing (k)               [1/m]
 
 ! Return Variable
@@ -2128,7 +2128,7 @@ real :: lhs
 ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
 lhs & 
 = + ( 1.0 - C11_Skw_fnc ) & 
-    * 3.0 * dzt * ( wm_zm - wmmm1 )
+    * 3.0 * dzt * ( wm_zm - wm_zmm1 )
 
 return
 end function wp3_terms_ac_pr2_lhs
@@ -2264,15 +2264,15 @@ result( rhs )
 ! G = a_1(t) * ( w'^3(t) )^2 / w'^2(t).
 !
 !
-! --------------------wp3p1-------------------------------- t(k+1)
+! ----------------------wp3p1------------------------------ t(k+1)
 !
-! =a3====wp2====a1=========wp3(interp)===================== m(k)
+! ===a3====wp2====a1=========wp3(interp)=================== m(k)
 !
-! --------------------wp3----------------dF/dz---dG/dz----- t(k)
+! ----------------------wp3----------------dF/dz---dG/dz--- t(k)
 !
-! =a3m1==wp2m1==a1m1=======wp3(interp)===================== m(k-1)
+! ===a3m1==wp2m1==a1m1=======wp3(interp)=================== m(k-1)
 !
-! --------------------wp3m1-------------------------------- t(k-1)
+! ----------------------wp3m1------------------------------ t(k-1)
 !
 ! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1) correspond with 
 ! altitudes zt(k+1), zm(k), zt(k), zm(k-1), and zt(k-1), respectively.  The 
@@ -2312,12 +2312,12 @@ real :: rhs
 ! left-hand side.
 
 rhs & 
-! = + dzt &
-!     * ( a3 * wp2**2 - a3m1 * wp2m1**2 ) &
-!   + dzt &
-!     * (   a1 * ( wp3_zm**2 / max(wp2, wtol**2) ) &
-!         - a1m1 * ( wp3_zmm1**2 / max(wp2m1, wtol**2) ) &
-!       )
+!= + dzt &
+!    * ( a3 * wp2**2 - a3m1 * wp2m1**2 ) &
+!  + dzt &
+!    * (   a1 * ( wp3_zm**2 / max(wp2, wtol**2) ) &
+!        - a1m1 * ( wp3_zmm1**2 / max(wp2m1, wtol**2) ) &
+!      )
 = + a3_zt * dzt & 
     * ( wp2**2 - wp2m1**2 ) & 
   + a1_zt * dzt & 
