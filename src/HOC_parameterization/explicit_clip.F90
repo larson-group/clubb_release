@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: explicit_clip.F90,v 1.5 2008-07-30 21:23:12 faschinj Exp $
+! $Id: explicit_clip.F90,v 1.6 2008-08-02 19:56:23 griffinb Exp $
 !===============================================================================
 module explicit_clip
 
@@ -18,43 +18,42 @@ subroutine covariance_clip( solve_type, l_first_clip_ts,  &
                             l_last_clip_ts, dt, xp2, yp2,  & 
                             xpyp )
 
-!       Description:
-!       Clipping the value of covariance x'y' based on the correlation 
-!       between x and y.
+! Description:
+! Clipping the value of covariance x'y' based on the correlation between x 
+! and y.
 !
-!       The correlation between variables x and y is:
+! The correlation between variables x and y is:
 !
-!       corr_(x,y) = x'y' / [ sqrt(x'^2) * sqrt(y'^2) ];
+! corr_(x,y) = x'y' / [ sqrt(x'^2) * sqrt(y'^2) ];
 !
-!       where x'^2 is the variance of x, y'^2 is the variance of y, and
-!       x'y' is the covariance of x and y.
+! where x'^2 is the variance of x, y'^2 is the variance of y, and x'y' is the 
+! covariance of x and y.
 !
-!       The correlation of two variables must always have a value 
-!       between -1 and 1, such that:
+! The correlation of two variables must always have a value between -1 and 1, 
+! such that:
 !
-!       -1 <= corr_(x,y) <= 1.
+! -1 <= corr_(x,y) <= 1.
 !
-!       Therefore, there is an upper limit on x'y', such that:
+! Therefore, there is an upper limit on x'y', such that:
 !
-!       x'y' <=  [ sqrt(x'^2) * sqrt(y'^2) ];
+! x'y' <=  [ sqrt(x'^2) * sqrt(y'^2) ];
 !
-!       and a lower limit on x'y', such that:
+! and a lower limit on x'y', such that:
 !
-!       x'y' >= -[ sqrt(x'^2) * sqrt(y'^2) ].
+! x'y' >= -[ sqrt(x'^2) * sqrt(y'^2) ].
 !
-!       The values of x'y', x'^2, and y'^2 are all found on momentum 
-!       levels.
+! The values of x'y', x'^2, and y'^2 are all found on momentum levels.
 !
-!       The value of x'y' may need to be clipped whenever x'y', x'^2, 
-!       or y'^2 is updated.
+! The value of x'y' may need to be clipped whenever x'y', x'^2, or y'^2 is 
+! updated.
 !
-!       The following covariances are found in the code:  
+! The following covariances are found in the code:  
 !
-!       w'r_t', w'th_l', w'sclr', (computed in mixing.F);
-!       r_t'th_l', sclr'r_t', sclr'th_l', (computed in diag_var.F);
-!       u'w', v'w', w'edsclr' (computed in compute_um_edsclrm_mod.F).
+! w'r_t', w'th_l', w'sclr', (computed in mixing.F);
+! r_t'th_l', sclr'r_t', sclr'th_l', (computed in diag_var.F);
+! u'w', v'w', w'edsclr' (computed in compute_um_edsclrm_mod.F).
 
-!       References:
+! References:
 !-----------------------------------------------------------------------
 
 use grid_class, only: & 
@@ -83,14 +82,14 @@ character(len=*), intent(in) :: &
   solve_type       ! Variable being solved; used for STATS.
 
 logical, intent(in) :: & 
-  l_first_clip_ts,    & ! First instance of clipping in a timestep.
+  l_first_clip_ts, & ! First instance of clipping in a timestep.
   l_last_clip_ts     ! Last instance of clipping in a timestep.
 
 real(kind=time_precision), intent(in) ::  & 
   dt     ! Model timestep; used here for STATS           [s]
 
 real, dimension(gr%nnzp), intent(in) :: & 
-  xp2,    & ! Variance of x, x'^2 (momentum levels)         [{x units}^2]
+  xp2, & ! Variance of x, x'^2 (momentum levels)         [{x units}^2]
   yp2    ! Variance of y, y'^2 (momentum levels)         [{y units}^2]
 
 ! Output Variable
@@ -151,18 +150,18 @@ end subroutine covariance_clip
 !===============================================================================
 subroutine variance_clip( solve_type, dt, threshold, xp2 )
 
-!       Description:
-!       Clipping the value of variance x'^2 based on a minimum threshold
-!       value.  The threshold value must be greater than or equal to 0.
+! Description:
+! Clipping the value of variance x'^2 based on a minimum threshold value.  The 
+! threshold value must be greater than or equal to 0.
 !
-!       The values of x'^2 are found on the momentum levels.
+! The values of x'^2 are found on the momentum levels.
 !
-!       The following variances are found in the code:  
+! The following variances are found in the code:  
 !
-!       r_t'^2, th_l'^2, u'^2, v'^2, sclr'^2, (computed in diag_var.F);
-!       w'^2 (computed in wp23.F).
+! r_t'^2, th_l'^2, u'^2, v'^2, sclr'^2, (computed in diag_var.F);
+! w'^2 (computed in wp23.F).
 
-!       References:
+! References:
 !-----------------------------------------------------------------------
 
 use grid_class, only: & 
@@ -195,7 +194,7 @@ character(len=*), intent(in) :: &
 real(kind=time_precision), intent(in) :: & 
   dt          ! Model timestep; used here for STATS     [s]
 
-real, dimension(gr%nnzp), intent(in) :: & 
+real, intent(in) :: & 
   threshold   ! Minimum value of x'^2                   [{x units}^2]
 
 ! Output Variable
@@ -235,8 +234,8 @@ endif
 
 ! Limit the value of x'^2 at threshold.
 do k = 2, gr%nnzp, 1
-   if ( xp2(k) < threshold(k) ) then
-      xp2(k) = threshold(k)
+   if ( xp2(k) < threshold ) then
+      xp2(k) = threshold
    endif
 enddo
 
