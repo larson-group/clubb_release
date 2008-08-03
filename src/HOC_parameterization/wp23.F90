@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.19 2008-08-02 20:37:27 griffinb Exp $
+! $Id: wp23.F90,v 1.20 2008-08-03 12:35:00 griffinb Exp $
 !===============================================================================
 module wp23
 
@@ -338,7 +338,6 @@ use stats_variables, only:  &
     iwp2_bt, & 
     iwp2_ta, & 
     iwp2_ma, & 
-    iwp2_cl, & 
     iwp2_pd, & 
     iwp2_ac, & 
     iwp2_dp1, & 
@@ -528,7 +527,7 @@ end if
 if ( lapack_error( err_code ) ) return
 
  
-!       Copy result into output arrays and clip
+! Copy result into output arrays and clip
 
 do k = 1, gr%nnzp
 
@@ -538,7 +537,7 @@ do k = 1, gr%nnzp
   k_wp3 = 2*k - 1
   k_wp2 = 2*k
 
-!          wp2_n(k) = wp2(k) ! For the positive definite scheme
+! wp2_n(k) = wp2(k) ! For the positive definite scheme
 
   wp2(k) = solut(k_wp2)
   wp3(k) = solut(k_wp3)
@@ -547,7 +546,7 @@ end do
 
 if (l_stats_samp) then
 
-!         Finalize implicit contributions for wp2
+! Finalize implicit contributions for wp2
 
   do k = 2, gr%nnzp-1
 
@@ -627,12 +626,10 @@ end if ! l_stats_samp
  
 
 if ( l_stats_samp ) then
- 
    ! Store previous value for effect of the positive definite scheme
    call stat_begin_update( iwp2_pd, real( wp2 / dt ), zm )
 end if 
  
-
 if ( l_hole_fill .and. any( wp2 < 2./3*emin ) ) then
 
   ! Use a simple hole filling algorithm
@@ -641,43 +638,33 @@ if ( l_hole_fill .and. any( wp2 < 2./3*emin ) ) then
 endif ! wp2
 
 if ( l_stats_samp ) then
-  ! Store previous value for effect of the positive definite scheme
+  ! Store updated value for effect of the positive definite scheme
   call stat_end_update( iwp2_pd, real( wp2 / dt ), zm )
 end if
  
 
-if ( l_stats_samp ) then
- 
-  ! Store previous value of wp2 for the effect of the clipping term
-!  call stat_begin_update( iwp2_cl, real( wp2 / dt ), zm )
-
-  call stat_begin_update( iwp3_cl, real( wp3 / dt ), zt )
-
-end if
- 
+! Clip w'^2 at a minimum threshold.
+call variance_clip( "wp2", dt, 2./3.*emin, wp2 )
 
 ! Interpolate w'^2 from momentum levels to thermodynamic levels.
 ! This is used for the clipping of w'^3 according to the value
 ! of Sk_w now that w'^2 and w'^3 have been advanced one timestep.
 wp2_zt = max( zm2zt( wp2 ), 2./3.*emin )   ! Positive definite quantity
 
-! Clip w'^2 at a minimum threshold.
 
-call variance_clip( "wp2", dt, 2./3.*emin, wp2 )
+if ( l_stats_samp ) then
+  ! Store previous value of wp3 for the effect of the clipping term
+  call stat_begin_update( iwp3_cl, real( wp3 / dt ), zt )
+end if
 
-
-! Clip Skewness.
- 
+! Clip w'^3 by limiting skewness.
 do k = 1, gr%nnzp, 1
 
-   call wp23_clip( dt, wp2_zt(k), gr%zt(k), emin,  & 
-                   wp2(k), wp3(k) )
+   call wp23_clip( wp2_zt(k), gr%zt(k), emin, wp2(k), wp3(k) )
 
 enddo
 
 if (l_stats_samp) then           
-!  call stat_end_update( iwp2_cl, real( wp2 / dt ), zm )
-
   call stat_end_update ( iwp3_cl, real( wp3 / dt ), zt )
 endif
  
@@ -2109,7 +2096,7 @@ result( lhs )
 !
 ! ---------------d(wm_zm)/dz------------wp3---------------- t(k)
 !
-! =======wmm_zm1=========================================== m(k-1)
+! =======wm_zmm1=========================================== m(k-1)
 !
 ! The vertical indices m(k), t(k), and m(k-1) correspond with altitudes zm(k), 
 ! zt(k), and zm(k-1), respectively.  The letter "t" is used for thermodynamic 
@@ -2450,8 +2437,7 @@ return
 end function wp3_term_pr1_rhs
 
 !===============================================================================
-subroutine wp23_clip( dt, wp2_zt, zt, emin,  &
-                      wp2, wp3 )
+subroutine wp23_clip( wp2_zt, zt, emin, wp2, wp3 )
 
 ! Description:
 ! After w'^2 and w'^3 have been advanced one timestep, this subroutine clips the
@@ -2464,18 +2450,9 @@ subroutine wp23_clip( dt, wp2_zt, zt, emin,  &
 ! References:
 !-----------------------------------------------------------------------
 
-use stats_precision, only:  & 
-    time_precision ! Variable(s)
-
-!use explicit_clip, only: &
-!    variance_clip ! Procedure(s)
-
 implicit none
 
 ! Input Variables.
-real(kind=time_precision), intent(in) ::  & 
-  dt        ! Model timestep                                [s]
-
 real, intent(in) :: & 
   wp2_zt, & ! w'^2 interpolated to thermodynamic levels (k) [m^2/s^2]
   zt,     & ! Height at thermodynamic level (k)             [m]
@@ -2490,10 +2467,6 @@ real, intent(inout) :: &
 real ::  & 
   atmp,   & ! max(w'^2, eps) at thermodynamic level (k)     [m^2/s^2]
   ctmp      ! atmp^(3/2)                                    [m^3/s^3]
-
-
-! Clip w'^2 at a minimum threshold.
-!call variance_clip( "wp2", dt, 2./3.*emin, wp2 )
 
 
 !  Vince Larson commented out the Andre et al clipping to see if we
