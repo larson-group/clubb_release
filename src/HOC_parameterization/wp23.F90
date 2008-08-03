@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.21 2008-08-03 15:29:04 griffinb Exp $
+! $Id: wp23.F90,v 1.22 2008-08-03 16:38:49 griffinb Exp $
 !===============================================================================
 module wp23
 
@@ -454,6 +454,16 @@ real, dimension(gr%nnzp) ::  &
 real ::  & 
   rcond  ! Est. of the reciprocal of the condition #
 
+! Variables used for clipping of w'^3 due to the 
+! skewness of w, Sk_w, such that:
+! Sk_w = w'^3 / (w'^2)^(3/2);
+! -4.5 <= Sk_w <= 4.5; 
+! or, if the level altitude is within 100 meters of the surface,
+! -0.2*sqrt(2) <= Sk_w <= 0.2*sqrt(2).
+real, dimension(gr%nnzp) :: &
+  wp3_upper_lim, & ! Keeps Sk_w from becoming greater than the upper limit.
+  wp3_lower_lim    ! Keeps Sk_w from becoming less than the lower limit.
+
 ! Array indices
 integer :: k, km1, kp1, k_wp2, k_wp3
 
@@ -651,6 +661,21 @@ call variance_clip( "wp2", dt, 2./3.*emin, wp2 )
 ! of Sk_w now that w'^2 and w'^3 have been advanced one timestep.
 wp2_zt = max( zm2zt( wp2 ), 2./3.*emin )   ! Positive definite quantity
 
+! Compute the upper and lower limits of w'^3 at every level,
+! based on the skewness of w, Sk_w, such that:
+! Sk_w = w'^3 / (w'^2)^(3/2);
+! -4.5 <= Sk_w <= 4.5; 
+! or, if the level altitude is within 100 meters of the surface,
+! -0.2*sqrt(2) <= Sk_w <= 0.2*sqrt(2).
+do k = 1, gr%nnzp, 1
+   if ( gr%zt(k) <= 100.0 ) then ! Clip for 100 m. above ground.
+      wp3_upper_lim(k) =  0.2 * sqrt(2.0) * wp2_zt(k)**(3.0/2.0)
+      wp3_lower_lim(k) = -0.2 * sqrt(2.0) * wp2_zt(k)**(3.0/2.0)
+   else                          ! Clip skewness consistently with a.
+      wp3_upper_lim(k) =  4.5 * wp2_zt(k)**(3.0/2.0)
+      wp3_lower_lim(k) = -4.5 * wp2_zt(k)**(3.0/2.0)
+   endif
+enddo
 
 if ( l_stats_samp ) then
   ! Store previous value of wp3 for the effect of the clipping term
