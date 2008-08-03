@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: explicit_clip.F90,v 1.6 2008-08-02 19:56:23 griffinb Exp $
+! $Id: explicit_clip.F90,v 1.7 2008-08-03 16:40:06 griffinb Exp $
 !===============================================================================
 module explicit_clip
 
@@ -61,7 +61,6 @@ use grid_class, only: &
 
 use stats_precision, only: & 
     time_precision ! Variable(s)
-
  
 use stats_type, only: & 
     stat_begin_update,  & ! Procedure(s)
@@ -115,14 +114,12 @@ end select
  
 
 if ( l_stats_samp ) then
- 
    if ( l_first_clip_ts ) then
       call stat_begin_update( ixpyp_cl, real( xpyp / dt ), zm )
    else
       call stat_modify( ixpyp_cl, real( -xpyp / dt ), zm )
    endif
 endif 
- 
 
 ! Clipping for xpyp at an upper limit corresponding with 
 ! a correlation between x and y of 0.99.
@@ -135,14 +132,12 @@ where ( xpyp < -0.99 * sqrt( xp2 * yp2 ) ) &
    xpyp = -0.99 * sqrt( xp2 * yp2 )
 
 if ( l_stats_samp ) then
- 
    if ( l_last_clip_ts ) then
       call stat_end_update( ixpyp_cl, real( xpyp / dt ), zm )
    else
       call stat_modify( ixpyp_cl, real( xpyp / dt ), zm )
    endif
 endif
- 
 
 
 end subroutine covariance_clip
@@ -169,7 +164,6 @@ use grid_class, only: &
 
 use stats_precision, only: & 
     time_precision ! Variable(s)
-
  
 use stats_type, only: & 
     stat_begin_update,  & ! Procedure(s)
@@ -223,15 +217,12 @@ case ( "vp2" )   ! vp2 clipping budget term
 case default   ! scalars are involved
    ixp2_cl = 0
 end select
- 
 
 
-if ( l_stats_samp ) then
- 
+if ( l_stats_samp ) then 
    call stat_begin_update( ixp2_cl, real( xp2 / dt ), zm )
 endif
  
-
 ! Limit the value of x'^2 at threshold.
 do k = 2, gr%nnzp, 1
    if ( xp2(k) < threshold ) then
@@ -240,23 +231,97 @@ do k = 2, gr%nnzp, 1
 enddo
 
 if ( l_stats_samp ) then
- 
    call stat_end_update( ixp2_cl, real( xp2 / dt ), zm )
 endif
- 
 
 
 end subroutine variance_clip
 
 !===============================================================================
-subroutine skewness_clip
+subroutine skewness_clip( dt, wp3_upper_lim, wp3_lower_lim, wp3 )
 
-!       Description:
+! Description:
+! Clipping the value of w'^3 based on the skewness of w, Sk_w.
+!
+! The skewness of w is:
+!
+! Sk_w = w'^3 / (w'^2)^(3/2).
+!
+! The value of Sk_w is limited to a range between an upper limit and a lower 
+! limit.  The values of the limits depend on whether the level altitude is 
+! within 100 meters of the surface.
+!
+! For altitudes within 100 meters of the surface:
+!
+! -0.2*sqrt(2) <= Sk_w <= 0.2*sqrt(2);
+!
+! while for all other altitudes:
+!
+! -4.5 <= Sk_w <= 4.5.
+!
+! Therefore, there is an upper limit on w'^3, such that:
+!
+! w'^3  <=  threshold_magnitude * (w'^2)^(3/2);
+!
+! and a lower limit on w'^3, such that:
+!
+! w'^3  >= -threshold_magnitude * (w'^2)^(3/2).
+!
+! The values of w'^3 are found on the thermodynamic levels, while the values of
+! w'^2 are found on the momentum levels.  Therefore, the values of w'^2 are
+! interpolated to the thermodynamic levels before being used to calculate the
+! upper and lower limits for w'^3.
 
-!       References:
+! References:
 !-----------------------------------------------------------------------
 
+use grid_class, only: & 
+    gr ! Variable(s)
+
+use stats_precision, only: & 
+    time_precision ! Variable(s)
+
+use stats_type, only: &
+    stat_begin_update,  & ! Procedure(s)
+    stat_end_update
+
+use stats_variables, only: & 
+    zt,  & ! Variable(s)
+    iwp3_cl, & 
+    l_stats_samp
+
 implicit none
+
+! Input Variables
+real(kind=time_precision), intent(in) :: & 
+  dt               ! Model timestep; used here for STATS     [s]
+
+real, dimension(gr%nnzp), intent(in) :: &
+  wp3_upper_lim, & ! Keeps Sk_w from becoming > upper_limit  [m^3/s^3]
+  wp3_lower_lim    ! Keeps Sk_w from becoming < lower_limit  [m^3/s^3]
+
+! Input/Output Variables
+real, dimension(gr%nnzp), intent(inout) :: &
+  wp3              ! w'^3 (thermodynamic levels)             [m^3/s^3]
+
+
+if ( l_stats_samp ) then 
+   call stat_begin_update( iwp3_cl, real( wp3 / dt ), zt )
+endif
+
+! Clipping for w'^3 at an upper limit corresponding with 
+! the appropriate value of Sk_w.
+where ( wp3 > wp3_upper_lim ) &
+   wp3 = wp3_upper_lim
+
+! Clipping for w'^3 at a lower limit corresponding with 
+! the appropriate value of Sk_w.
+where ( wp3 < wp3_lower_lim ) &
+   wp3 = wp3_lower_lim
+
+if ( l_stats_samp ) then
+   call stat_end_update( iwp3_cl, real( wp3 / dt ), zt )
+endif
 
 
 end subroutine skewness_clip
