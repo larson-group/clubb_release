@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.20 2008-08-03 12:35:00 griffinb Exp $
+! $Id: wp23.F90,v 1.21 2008-08-03 15:29:04 griffinb Exp $
 !===============================================================================
 module wp23
 
@@ -17,6 +17,7 @@ private :: wp23_solve, &
            wp2_term_dp1_lhs, & 
            wp2_term_pr1_lhs, & 
            wp2_terms_bp_pr2_rhs, & 
+           wp2_term_dp1_rhs, &
            wp2_term_pr3_rhs, & 
            wp2_term_pr1_rhs, & 
            wp3_terms_ta_tp_lhs, & 
@@ -553,10 +554,9 @@ if (l_stats_samp) then
     km1 = max( k-1, 1 )
     kp1 = min( k+1, gr%nnzp )
     
-    call stat_update_var_pt( iwp2_dp1, k, & 
-     zmscr01(k) * wp2(k), zm )            
+    call stat_end_update_pt( iwp2_dp1, k, & 
+       zmscr01(k) * wp2(k), zm )
 
-    
     call stat_update_var_pt( iwp2_dp2, k, & 
        zmscr02(k) * wp2(km1) & 
      + zmscr03(k) * wp2(k) & 
@@ -1179,10 +1179,9 @@ use diffusion, only: &
 
 use stats_precision, only:  & 
     time_precision ! Variable
-
  
 use stats_variables, only:  & 
-    l_stats_samp, iwp2_dp2, zm, iwp2_bp,   & ! Variable(s)
+    l_stats_samp, iwp2_dp1, iwp2_dp2, zm, iwp2_bp,   & ! Variable(s)
     iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp3_ta, zt, & 
     iwp3_tp, iwp3_bp, iwp3_pr2, iwp3_pr1, iwp3_dp1
 
@@ -1270,7 +1269,7 @@ do k = 2, gr%nnzp-1, 1
   ! RHS dissipation term 1 (dp1).
   rhs(k_wp2) &
   = rhs(k_wp2) &
-  + ( C1_Skw_fnc(k) / tau1m(k) ) * (2./3.*emin)
+  + wp2_term_dp1_rhs( C1_Skw_fnc(k), tau1m(k), 2./3.*emin )
 
   ! RHS eddy diffusion term: dissipation term 2 (dp2).
   if ( lcrank_nich_diff ) then
@@ -1302,7 +1301,6 @@ do k = 2, gr%nnzp-1, 1
         rhs_diff(3) * wp2(km1) & 
       + rhs_diff(2) * wp2(k) & 
       + rhs_diff(1) * wp2(kp1), zm )
-    
     endif 
 
     call stat_update_var_pt( iwp2_bp, k, & 
@@ -1317,6 +1315,9 @@ do k = 2, gr%nnzp-1, 1
   
     call stat_begin_update_pt( iwp2_pr2, k, & 
       -wp2_terms_bp_pr2_rhs( (1.0+C5), wpthvp(k) ), zm )
+
+    call stat_begin_update_pt( iwp2_dp1, k, &
+      -wp2_term_dp1_rhs( C1_Skw_fnc(k), tau1m(k), 2./3.*emin ), zm )
 
     call stat_update_var_pt( iwp2_pr3, k, & 
       wp2_term_pr3_rhs( C5, wpthvp(k), upwp(k), um(kp1), um(k), & 
@@ -1595,18 +1596,25 @@ result( lhs )
 !
 ! - ( C_1 / tau_1m ) w'^2.
 !
-! This term is solved for completely implicitly, such that:
+! Since w'^2 has a minimum threshold, the term should be damped only to that
+! threshold.  The term becomes:
+!
+! - ( C_1 / tau_1m ) * ( w'^2 - threshold ).
+!
+! This term is broken into implicit and explicit portions.  The implicit portion
+! of this term is:
 !
 ! - ( C_1 / tau_1m ) w'^2(t+1).
 !
-! Note:  When the term is brought over to the left-hand side, the sign is 
-!        reversed and the leading "-" in front of the term is changed to a "+".
+! Note:  When the implicit term is brought over to the left-hand side, the 
+!        sign is reversed and the leading "-" in front of the term is changed 
+!        to a "+".
 !
 ! The timestep index (t+1) means that the value of w'^2 being used is from the 
 ! next timestep, which is being advanced to in solving the d(w'^2)/dt equation.
 !
-! The values of w'^2 are found on momentum levels.  The values of the C_1 
-! skewness function and time-scale tau1m are also found on momentum levels.
+! The values of w'^2 are found on the momentum levels.  The values of the C_1 
+! skewness function and time-scale tau1m are also found on the momentum levels.
 
 ! References:
 !-----------------------------------------------------------------------
@@ -1731,6 +1739,50 @@ rhs &
 
 return
 end function wp2_terms_bp_pr2_rhs
+
+!===============================================================================
+pure function wp2_term_dp1_rhs( C1_Skw_fnc, tau1m, threshold ) & 
+result( rhs )
+
+! Description:
+! Dissipation term 1 for w'^2:  explicit portion of the code.
+!
+! The d(w'^2)/dt equation contains dissipation term 1:
+!
+! - ( C_1 / tau_1m ) w'^2.
+!
+! Since w'^2 has a minimum threshold, the term should be damped only to that
+! threshold.  The term becomes:
+!
+! - ( C_1 / tau_1m ) * ( w'^2 - threshold ).
+!
+! This term is broken into implicit and explicit portions.  The explicit portion
+! of this term is:
+!
+! + ( C_1 / tau_1m ) * threshold.
+!
+! The values of the C_1 skewness function, time-scale tau1m, and the threshold 
+! are found on the momentum levels.
+
+! References:
+!-----------------------------------------------------------------------
+
+implicit none
+
+! Input Variables
+real, intent(in) :: & 
+  C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied (k)   [-]
+  tau1m,       & ! Time-scale tau at momentum levels (k) [s]
+  threshold      ! Minimum allowable value of w'^2       [m^2/s^2]
+
+! Return Variable
+real :: rhs
+
+rhs & 
+= + ( C1_Skw_fnc / tau1m ) * threshold
+
+return
+end function wp2_term_dp1_rhs
 
 !===============================================================================
 pure function wp2_term_pr3_rhs( C5, wpthvp, upwp, ump1, um, & 
