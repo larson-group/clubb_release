@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------------
-! $Id: std_atmosphere_mod.F90,v 1.2 2008-07-28 19:45:10 faschinj Exp $
+! $Id: std_atmosphere_mod.F90,v 1.3 2008-08-04 16:57:52 faschinj Exp $
 module std_atmosphere_mod
   
   implicit none
@@ -129,7 +129,7 @@ module std_atmosphere_mod
   ! Local Variables
   real ::  & 
   exner,               & ! Exner function                [-]
-  press,               & ! Pressure                      [hPa]
+  p_in_hPa,               & ! Pressure                      [hPa]
   sp_humidity,         & ! Specific humidity             [kg/kg]
   tabs0               ! Temperature                   [K]
   
@@ -158,11 +158,11 @@ module std_atmosphere_mod
   tabs0 = linint( alt, height(varindex), height(varindex-1),  & 
                   T_in_K(varindex), T_in_K(varindex-1) )
   
-  press = 100. *  & 
+  p_in_hPa = 100. *  & 
           linint( alt, height(varindex), height(varindex-1), & 
                   pinmb(varindex), pinmb(varindex-1) )
 
-  exner = (press/p0)**kappa
+  exner = (p_in_hPa/p0)**kappa
 
   theta = tabs0/exner
 
