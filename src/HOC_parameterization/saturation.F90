@@ -1,4 +1,4 @@
-!$Id: saturation.F90,v 1.5 2008-07-30 14:25:25 faschinj Exp $
+!$Id: saturation.F90,v 1.6 2008-08-04 15:49:24 faschinj Exp $
 
 !-----------------------------------------------------------------------
 module saturation
@@ -128,7 +128,9 @@ contains
 
     ! Input Variables
 
-    real, intent(in) :: p_in_Pa, T_in_K
+    real, intent(in) :: &
+    p_in_Pa, &          ! Pressure [Pa]
+    T_in_K              ! Temperature [K]
 
     ! Local Variables
 
