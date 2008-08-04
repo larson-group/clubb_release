@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F90,v 1.10 2008-08-01 13:18:38 faschinj Exp $
+! $Id: inputfields.F90,v 1.11 2008-08-04 20:24:12 faschinj Exp $
 
 ! Module inputfields
 
@@ -149,7 +149,8 @@ module inputfields
   integer, intent(in) :: timestep
 
   ! Local Variables
-  logical :: lerror
+  logical :: l_error
+
   type (inputgrads) :: fread_var
 
   real, dimension(gr%nnzp+1) :: tmp1
@@ -176,131 +177,131 @@ module inputfields
 
     if ( input_um ) then
       call get_var( fread_var, "um", timestep, & 
-                    um(1:gr%nnzp),  lerror )
+                    um(1:gr%nnzp),  l_error )
     endif
 
     if ( input_vm ) then 
       call get_var( fread_var, "vm", timestep, & 
-                    vm(1:gr%nnzp),  lerror )
+                    vm(1:gr%nnzp),  l_error )
     endif
 
     if ( input_rtm ) then 
       call get_var( fread_var, "rtm", timestep, & 
-                    rtm(1:gr%nnzp),  lerror )
+                    rtm(1:gr%nnzp),  l_error )
     endif
 
     if ( input_thlm ) then 
       call get_var( fread_var, "thlm",  & 
                     timestep, & 
-                    thlm(1:gr%nnzp),  lerror )
+                    thlm(1:gr%nnzp),  l_error )
     endif
 
     if ( input_wp3 ) then 
       call get_var( fread_var, "wp3", timestep, & 
-                    wp3(1:gr%nnzp),  lerror )
+                    wp3(1:gr%nnzp),  l_error )
     endif
     if ( input_tau_zt ) then 
       call get_var( fread_var, "tau_zt", timestep, & 
-                    tau_zt(1:gr%nnzp),  lerror )
+                    tau_zt(1:gr%nnzp),  l_error )
     endif
     if ( input_rrainm ) then 
       call get_var( fread_var, "rrainm", timestep, & 
-                    hydromet(1:gr%nnzp,iirrainm),  lerror )
+                    hydromet(1:gr%nnzp,iirrainm),  l_error )
     endif
     if ( input_rsnowm ) then 
       call get_var( fread_var, "rsnowm", timestep, & 
-                    hydromet(1:gr%nnzp,iirsnowm),  lerror )
+                    hydromet(1:gr%nnzp,iirsnowm),  l_error )
     endif
     if ( input_ricem ) then 
       call get_var( fread_var, "ricem", timestep, & 
-                    hydromet(1:gr%nnzp,iiricem),  lerror )
+                    hydromet(1:gr%nnzp,iiricem),  l_error )
     endif
     if ( input_rgraupelm ) then 
       call get_var( fread_var, "rgraupelm", timestep, & 
-                    hydromet(1:gr%nnzp,iirgraupelm),  lerror )
+                    hydromet(1:gr%nnzp,iirgraupelm),  l_error )
     endif
 
 !--------------------------------------------------------
 ! Added variables for hoc_restart
     if ( input_p ) then
       call get_var( fread_var, "p", timestep, & 
-                    p_in_Pa(1:gr%nnzp),  lerror )
+                    p_in_Pa(1:gr%nnzp),  l_error )
     endif
     if ( input_exner) then
       call get_var( fread_var , "exner", timestep, & 
-                    exner(1:gr%nnzp),  lerror)
+                    exner(1:gr%nnzp),  l_error)
     endif
     if ( input_ug) then
       call get_var( fread_var , "ug", timestep, & 
-                    ug(1:gr%nnzp),  lerror)
+                    ug(1:gr%nnzp),  l_error)
     endif
     if ( input_vg) then
       call get_var( fread_var , "vg", timestep, & 
-                    vg(1:gr%nnzp),  lerror)
+                    vg(1:gr%nnzp),  l_error)
     endif
     if ( input_rcm) then
       call get_var( fread_var , "rcm", timestep, & 
-                    rcm(1:gr%nnzp),  lerror)
+                    rcm(1:gr%nnzp),  l_error)
     endif
     if ( input_wm_zt) then
       call get_var( fread_var , "wm", timestep, & 
-                    wm_zt(1:gr%nnzp),  lerror)
+                    wm_zt(1:gr%nnzp),  l_error)
     endif
     if ( input_rho) then
       call get_var( fread_var , "rho", timestep, & 
-                    rho(1:gr%nnzp), lerror)
+                    rho(1:gr%nnzp), l_error)
     endif
     if ( input_Lscale) then
       call get_var( fread_var , "lscale", timestep, & 
-                    Lscale(1:gr%nnzp), lerror)
+                    Lscale(1:gr%nnzp), l_error)
     endif
     if ( input_Lscale_up) then
       call get_var( fread_var , "Lscale_up", timestep, & 
-                    Lscale_up(1:gr%nnzp), lerror)
+                    Lscale_up(1:gr%nnzp), l_error)
     endif
     if ( input_Lscale_down) then
       call get_var( fread_var , "Lscale_down", timestep, & 
-                    Lscale_down(1:gr%nnzp), lerror)
+                    Lscale_down(1:gr%nnzp), l_error)
     endif
     if ( input_Kh_zt) then
       call get_var( fread_var , "kht", timestep, & 
-                    Kh_zt(1:gr%nnzp), lerror)
+                    Kh_zt(1:gr%nnzp), l_error)
     endif
     if ( input_thvm) then
       call get_var( fread_var , "thvm", timestep, & 
-                    thvm(1:gr%nnzp), lerror)
+                    thvm(1:gr%nnzp), l_error)
     endif
     if ( input_thlm_forcing ) then
       call get_var( fread_var , "thlm_f", timestep, & 
-                    thlm_forcing(1:gr%nnzp), lerror)
+                    thlm_forcing(1:gr%nnzp), l_error)
     endif
     if ( input_rtm_forcing ) then
       call get_var( fread_var , "rtm_f", timestep, & 
-                    rtm_forcing(1:gr%nnzp), lerror)
+                    rtm_forcing(1:gr%nnzp), l_error)
     endif
     if ( input_Ncm) then
       call get_var( fread_var , "Ncm", timestep, & 
-                    Ncm(1:gr%nnzp), lerror)
+                    Ncm(1:gr%nnzp), l_error)
     endif
     if ( input_Ncnm) then
       call get_var( fread_var , "Ncnm", timestep, & 
-                    Ncnm(1:gr%nnzp), lerror)
+                    Ncnm(1:gr%nnzp), l_error)
     endif
     if ( input_Nim) then
       call get_var( fread_var , "Nim", timestep, & 
-                    Nim(1:gr%nnzp), lerror)
+                    Nim(1:gr%nnzp), l_error)
     endif
     if ( input_cf) then
       call get_var( fread_var , "cf", timestep, & 
-                    cf(1:gr%nnzp), lerror)
+                    cf(1:gr%nnzp), l_error)
     endif
     if ( input_Nrm ) then
       call get_var( fread_var , "Nrm", timestep, & 
-                    hydromet(1:gr%nnzp,iiNrm), lerror)
+                    hydromet(1:gr%nnzp,iiNrm), l_error)
     endif
     if ( input_Sct ) then
       call get_var( fread_var , "sc", timestep, & 
-                    Sct(1:gr%nnzp), lerror)
+                    Sct(1:gr%nnzp), l_error)
     endif
 
 !--------------------------------------------------------
@@ -312,92 +313,92 @@ module inputfields
 
     if ( input_wp2) then 
       call get_var( fread_var, "wp2", timestep, & 
-                    wp2(1:gr%nnzp),  lerror )
+                    wp2(1:gr%nnzp),  l_error )
     endif
 
     if ( input_wprtp) then 
       call get_var( fread_var, "wprtp",  & 
                     timestep, wprtp(1:gr%nnzp), & 
-                    lerror )
+                    l_error )
     endif
 
     if ( input_wpthlp) then 
       call get_var( fread_var, "wpthlp",  & 
                     timestep,  & 
                     wpthlp(1:gr%nnzp),  & 
-                    lerror )
+                    l_error )
     endif
 
     if ( input_rtp2) then 
        call get_var( fread_var, "rtp2",  & 
                      timestep, & 
-                     rtp2(1:gr%nnzp), lerror )
+                     rtp2(1:gr%nnzp), l_error )
     endif
 
     if ( input_thlp2) then 
        call get_var( fread_var, "thlp2",  & 
                      timestep, & 
-                     thlp2(1:gr%nnzp), lerror )
+                     thlp2(1:gr%nnzp), l_error )
     endif
 
     if ( input_rtpthlp) then 
        call get_var( fread_var, "rtpthlp",  & 
                      timestep,  & 
                      rtpthlp(1:gr%nnzp), & 
-                     lerror )
+                     l_error )
     endif
 
     if ( input_upwp) then 
        call get_var( fread_var, "upwp",  & 
                      timestep, & 
-                     upwp(1:gr%nnzp), lerror )
+                     upwp(1:gr%nnzp), l_error )
     endif
 
     if ( input_vpwp) then 
        call get_var( fread_var, "vpwp",  & 
                      timestep, & 
-                     vpwp(1:gr%nnzp), lerror )
+                     vpwp(1:gr%nnzp), l_error )
     endif
 !-----------------------------------------------------------
    if ( input_em) then
       call get_var( fread_var, "em", & 
                     timestep, & 
-                    em(1:gr%nnzp), lerror )
+                    em(1:gr%nnzp), l_error )
    endif
    if ( input_rho_zm) then
       call get_var( fread_var, "rho_zm", & 
                     timestep, & 
-                    rho_zm(1:gr%nnzp), lerror )
+                    rho_zm(1:gr%nnzp), l_error )
    endif
    if ( input_Kh_zm) then
       call get_var( fread_var, "Kh_zm", & 
                     timestep, & 
-                    Kh_zm(1:gr%nnzp), lerror )
+                    Kh_zm(1:gr%nnzp), l_error )
    endif
    if ( input_tau_zm) then
       call get_var( fread_var, "tau_zm", & 
                     timestep, & 
-                    tau_zm(1:gr%nnzp), lerror )
+                    tau_zm(1:gr%nnzp), l_error )
    endif
    if ( input_up2) then
       call get_var( fread_var, "up2", & 
                     timestep, & 
-                    up2(1:gr%nnzp), lerror )
+                    up2(1:gr%nnzp), l_error )
    endif
    if ( input_vp2) then
       call get_var( fread_var, "vp2", & 
                     timestep, & 
-                    vp2(1:gr%nnzp), lerror )
+                    vp2(1:gr%nnzp), l_error )
    endif
    if ( input_Scm ) then
       call get_var( fread_var, "scm", & 
                     timestep, & 
-                    Scm(1:gr%nnzp), lerror )
+                    Scm(1:gr%nnzp), l_error )
    endif
 
 !-----------------------------------------------------------
 
-    if ( lerror ) stop "oops, get_var failed in field_reader"
+    if ( l_error ) stop "oops, get_var failed in field_reader"
 
     call close_grads_read( fread_var )
 
@@ -419,7 +420,7 @@ module inputfields
 
     if ( input_um) then
       call get_var( fread_var, "um", timestep, & 
-                    tmp1(1:gr%nnzp-2), lerror )
+                    tmp1(1:gr%nnzp-2), l_error )
       ! tmp1 is the value of um from the LES GrADS file.  
       ! It has been output onto thermodynamic levels starting at 
       ! thermodynamic level 3 on the CLUBB grid for this 
@@ -440,7 +441,7 @@ module inputfields
 
     if ( input_vm ) then 
       call get_var( fread_var, "vm", timestep, & 
-                    tmp1(1:gr%nnzp-2), lerror )
+                    tmp1(1:gr%nnzp-2), l_error )
       ! tmp1 is the value of vm from the LES GrADS file.  
       ! It has been output onto thermodynamic levels starting at 
       ! thermodynamic level 3 on the CLUBB grid for this 
@@ -461,7 +462,7 @@ module inputfields
 
     if ( input_rtm) then 
       call get_var( fread_var, "qtm", timestep, & 
-                    tmp1(1:gr%nnzp-2), lerror )
+                    tmp1(1:gr%nnzp-2), l_error )
       ! tmp1 is the value of rtm from the LES GrADS file.  
       ! It has been output onto thermodynamic levels starting at 
       ! thermodynamic level 3 on the CLUBB grid for this 
@@ -475,7 +476,7 @@ module inputfields
     if ( input_thlm) then
       call get_var( fread_var, "thlm",  & 
                     timestep, & 
-                    tmp1(1:gr%nnzp-2), lerror )
+                    tmp1(1:gr%nnzp-2), l_error )
       ! tmp1 is the value of thlm from the LES GrADS file.  
       ! It has been output onto thermodynamic levels starting at 
       ! thermodynamic level 3 on the CLUBB grid for this 
@@ -488,7 +489,7 @@ module inputfields
 
     if ( input_wp3) then 
       call get_var( fread_var, "wp3", timestep, & 
-                    tmp1(1:gr%nnzp-2), lerror )
+                    tmp1(1:gr%nnzp-2), l_error )
       ! tmp1 is the value of wp3 from the LES GrADS file.  
       ! It has been output onto thermodynamic levels starting at 
       ! thermodynamic level 3 on the CLUBB grid for this 
@@ -501,7 +502,7 @@ module inputfields
     if ( input_wprtp) then
       call get_var( fread_var, "wpqtp",  & 
                     timestep, tmp1(1:gr%nnzp-1), & 
-                    lerror )
+                    l_error )
       ! tmp1 is the value of wprtp from the LES GrADS file.  
       ! It has been output onto thermodynamic levels starting at 
       ! thermodynamic level 3 on the CLUBB grid for this 
@@ -526,7 +527,7 @@ module inputfields
     if ( input_wpthlp) then 
       call get_var( fread_var, "wpthlp",  & 
                     timestep, tmp1(1:gr%nnzp-1),  & 
-                    lerror )
+                    l_error )
       ! tmp1 is the value of wpthlp from the LES GrADS file.  
       ! It has been output onto thermodynamic levels starting at 
       ! thermodynamic level 3 on the CLUBB grid for this 
@@ -551,7 +552,7 @@ module inputfields
     if ( input_rtp2) then 
       call get_var( fread_var, "qtp2",  & 
                     timestep, & 
-                    tmp1(1:gr%nnzp-1), lerror )
+                    tmp1(1:gr%nnzp-1), l_error )
       ! tmp1 is the value of rtp2 from the LES GrADS file.  
       ! It has been output onto thermodynamic levels starting at 
       ! thermodynamic level 3 on the CLUBB grid for this 
@@ -572,7 +573,7 @@ module inputfields
 
     if ( input_thlp2 ) then 
       call get_var( fread_var, "thlp2",  & 
-                    timestep, tmp1(1:gr%nnzp), lerror )
+                    timestep, tmp1(1:gr%nnzp), l_error )
       ! tmp1 is the value of thlp2 from the LES GrADS file.  
       ! It has been output onto thermodynamic levels starting at 
       ! thermodynamic level 3 on the CLUBB grid for this 
@@ -586,7 +587,7 @@ module inputfields
     if ( input_rtpthlp) then 
       call get_var( fread_var, "qtpthlp",  & 
                     timestep, tmp1(1:gr%nnzp-1), & 
-                    lerror )
+                    l_error )
       ! tmp1 is the value of rtpthlp from the LES GrADS file.  
       ! It has been output onto thermodynamic levels starting at 
       ! thermodynamic level 3 on the CLUBB grid for this 
@@ -608,7 +609,7 @@ module inputfields
                            gr%zm(3), gr%zm(2), gr%zm(1) )
     endif
 
-    if ( lerror ) stop "oops, get_var failed in field_reader"
+    if ( l_error ) stop "oops, get_var failed in field_reader"
 
     call close_grads_read( fread_var )
 
@@ -630,7 +631,7 @@ module inputfields
 
     if ( input_um) then
       call get_var( fread_var, "um", timestep, & 
-                    tmp1(1:gr%nnzp), lerror )
+                    tmp1(1:gr%nnzp), l_error )
       ! tmp1 is the value of um from the LES GrADS file.  
       ! It has been output onto thermodynamic levels starting at 
       ! the first level above ground (thermodynamic level 2 on 
@@ -646,7 +647,7 @@ module inputfields
 
     if ( input_vm) then 
       call get_var( fread_var, "vm", timestep, & 
-                    tmp1(1:gr%nnzp), lerror )
+                    tmp1(1:gr%nnzp), l_error )
       ! tmp1 is the value of vm from the LES GrADS file.  
       ! It has been output onto thermodynamic levels starting at 
       ! the first level above ground (thermodynamic level 2 on 
@@ -662,7 +663,7 @@ module inputfields
 
     if ( input_rtm) then 
       call get_var( fread_var, "qtm", timestep, & 
-                    tmp1(1:gr%nnzp), lerror )
+                    tmp1(1:gr%nnzp), l_error )
       ! tmp1 is the value of rtm from the LES GrADS file.  
       ! It has been output onto thermodynamic levels starting at 
       ! the first level above ground (thermodynamic level 2 on 
@@ -676,7 +677,7 @@ module inputfields
     if ( input_thlm) then
       call get_var( fread_var, "thlm",  & 
                     timestep, & 
-                    tmp1(1:gr%nnzp), lerror )
+                    tmp1(1:gr%nnzp), l_error )
       ! tmp1 is the value of thlm from the LES GrADS file.  
       ! It has been output onto thermodynamic levels starting at 
       ! the first level above ground (thermodynamic level 2 on 
@@ -689,7 +690,7 @@ module inputfields
 
     if ( input_wp3) then 
       call get_var( fread_var, "wp3", timestep, & 
-                    tmp1(1:gr%nnzp), lerror )
+                    tmp1(1:gr%nnzp), l_error )
       ! tmp1 is the value of wp3 from the LES GrADS file.  
       ! It has been output onto thermodynamic levels starting at 
       ! the first level above ground (thermodynamic level 2 on 
@@ -702,7 +703,7 @@ module inputfields
 
 !          if ( ( wp2 )) then 
 !            call get_var( fread_var, "wp2", timestep,
-!     .                    tmp1(1:gr%nnzp), lerror )
+!     .                    tmp1(1:gr%nnzp), l_error )
 !            ! tmp1 is the value of wp2 from the LES GrADS file.  
 !            ! It has been output onto thermodynamic levels starting at 
 !            ! the first level above ground (thermodynamic level 2 on 
@@ -722,7 +723,7 @@ module inputfields
     if ( input_wprtp) then
       call get_var( fread_var, "wpqtp",  & 
                     timestep, tmp1(1:gr%nnzp), & 
-                    lerror )
+                    l_error )
       ! tmp1 is the value of wprtp from the LES GrADS file.  
       ! It has been output onto thermodynamic levels starting at 
       ! the first level above ground (thermodynamic level 2 on 
@@ -742,7 +743,7 @@ module inputfields
     if ( input_wpthlp) then 
       call get_var( fread_var, "wpthlp",  & 
                     timestep, tmp1(1:gr%nnzp),  & 
-                    lerror )
+                    l_error )
       ! tmp1 is the value of wpthlp from the LES GrADS file.  
       ! It has been output onto thermodynamic levels starting at 
       ! the first level above ground (thermodynamic level 2 on 
@@ -762,7 +763,7 @@ module inputfields
     if ( input_rtp2) then 
       call get_var( fread_var, "qtp2",  & 
                     timestep, & 
-                    tmp1(1:gr%nnzp), lerror )
+                    tmp1(1:gr%nnzp), l_error )
       ! tmp1 is the value of rtp2 from the LES GrADS file.  
       ! It has been output onto thermodynamic levels starting at 
       ! the first level above ground (thermodynamic level 2 on 
@@ -783,7 +784,7 @@ module inputfields
 
     if ( input_thlp2) then 
       call get_var( fread_var, "thlp2",  & 
-                    timestep, tmp1(1:gr%nnzp), lerror )
+                    timestep, tmp1(1:gr%nnzp), l_error )
       ! tmp1 is the value of thlp2 from the LES GrADS file.  
       ! It has been output onto thermodynamic levels starting at 
       ! the first level above ground (thermodynamic level 2 on 
@@ -798,7 +799,7 @@ module inputfields
       call get_var( fread_var, "qtpthlp",  & 
                     timestep,  & 
                     tmp1(1:gr%nnzp), & 
-                    lerror )
+                    l_error )
       ! tmp1 is the value of rtpthlp from the LES GrADS file.  
       ! It has been output onto thermodynamic levels starting at 
       ! the first level above ground (thermodynamic level 2 on 
@@ -815,7 +816,7 @@ module inputfields
                            gr%zm(3), gr%zm(2), gr%zm(1) )
     endif
 
-    if ( lerror ) stop "oops, get_var failed in field_reader"
+    if ( l_error ) stop "oops, get_var failed in field_reader"
 
     call close_grads_read( fread_var )
 
@@ -843,32 +844,32 @@ module inputfields
 
     if ( input_upwp) then 
       call get_var( fread_var, "wpup",  & 
-                    timestep, tmp1(1:gr%nnzp+1), lerror )
+                    timestep, tmp1(1:gr%nnzp+1), l_error )
       upwp(1:gr%nnzp) = tmp1(1:gr%nnzp) 
 
       call get_var( fread_var, "wpup_sgs",  & 
-                    timestep, tmp1(1:gr%nnzp+1), lerror )
+                    timestep, tmp1(1:gr%nnzp+1), l_error )
       upwp(1:gr%nnzp) = tmp1(1:gr%nnzp) + upwp(1:gr%nnzp)
     endif
 
-    if ( lerror ) stop "get_var failed for upwp in field_reader"
+    if ( l_error ) stop "get_var failed for upwp in field_reader"
 
     if ( input_vpwp) then
       call get_var( fread_var, "wpvp",  & 
                     timestep, & 
-                    tmp1(1:gr%nnzp+1), lerror )
+                    tmp1(1:gr%nnzp+1), l_error )
       vpwp(1:gr%nnzp) = tmp1(1:gr%nnzp) 
       call get_var( fread_var, "wpvp_sgs",  & 
                     timestep, & 
-                    tmp1(1:gr%nnzp+1), lerror )
+                    tmp1(1:gr%nnzp+1), l_error )
       vpwp(1:gr%nnzp) = tmp1(1:gr%nnzp) + vpwp(1:gr%nnzp)
     endif
-    if ( lerror ) stop "get_var failed for vpwp in field_reader"
+    if ( l_error ) stop "get_var failed for vpwp in field_reader"
 
     if ( input_wp2 ) then 
       call get_var( fread_var, "wp2",  & 
                     timestep, & 
-                    tmp1(1:gr%nnzp+1), lerror )
+                    tmp1(1:gr%nnzp+1), l_error )
       wp2(1:gr%nnzp) = tmp1(1:gr%nnzp)
       if ( any (wp2(1:gr%nnzp) < 0.0 ) ) then
 ! %% debug
@@ -879,7 +880,7 @@ module inputfields
         end do
       end if
     end if
-    if ( lerror ) stop "get_var failed for wp2 in field_reader"
+    if ( l_error ) stop "get_var failed for wp2 in field_reader"
 
     call close_grads_read( fread_var )
 
