@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputgrads.F90,v 1.2 2008-07-28 19:45:10 faschinj Exp $
+! $Id: inputgrads.F90,v 1.3 2008-08-04 20:40:26 faschinj Exp $
 
 module inputfile_class
 
@@ -57,7 +57,7 @@ type inputgrads
   ! File information
   character(len=128) :: fname ! Binary data file name
   integer :: iounit           ! Fortran unit #
-  logical :: lbyteswapped     ! Need to swap bytes? (T/F)
+  logical :: l_byteswapped     ! Need to swap bytes? (T/F)
 
   ! Grid information
   integer ia, iz              ! Vertical extent
@@ -100,7 +100,7 @@ contains
   f ! The GrADS file
 
   ! Local Variables
-  logical :: done, error
+  logical :: l_done, l_error
   integer :: ierr
 
   character(len=256) ::  & 
@@ -112,18 +112,18 @@ contains
 
 !-----------------------------------------------------------------------
   !  Initialize status booleans
-  f%lbyteswapped = .false.
-  error          = .false.
-  done           = .false.
+  f%l_byteswapped = .false.
+  l_error          = .false.
+  l_done           = .false.
 
   ! Open control file
   open( unit=unit, file=trim( fname ), status = 'old' )
 
   ! Read and process it
   read(unit,iostat=ierr,fmt='(a256)') line
-  if ( ierr < 0 ) done = .true.
+  if ( ierr < 0 ) l_done = .true.
 
-  do while ( .not. done )
+  do while ( .not. l_done )
 
      if ( index(line,'DSET') > 0 ) then
 
@@ -141,28 +141,28 @@ contains
 
      else if ( index(line,'BYTESWAPPED') > 0 ) then
 
-       f%lbyteswapped = .true.
+       f%l_byteswapped = .true.
 
      else if ( index(line,'BIG_ENDIAN') > 0 ) then
 
        ! Swap bytes if local machine is little_endian and file
        ! big_endian
 
-       if ( little_endian( ) ) f%lbyteswapped = .true.
+       if ( little_endian( ) ) f%l_byteswapped = .true.
 
      else if ( index(line,'LITTLE_ENDIAN') > 0 ) then
 
        ! Swap bytes if local machine is big_endian and file
        ! little_endian
 
-       if ( big_endian( ) ) f%lbyteswapped = .true.
+       if ( big_endian( ) ) f%l_byteswapped = .true.
 
      else if ( index(line,'XDEF') > 0 ) then
 
        read(unit=line,fmt=*) tmp, nx
        if ( nx /= 1 ) then
          write(unit=fstderr,fmt=*) 'Error: XDEF can only be 1'
-         error = .true.
+         l_error = .true.
        end if
 
      else if ( index(line,'YDEF') > 0 ) then
@@ -170,7 +170,7 @@ contains
        read(unit=line,fmt=*) tmp, ny
        if ( ny /= 1 ) then
          write(unit=fstderr,fmt=*) 'Error: YDEF can only be 1'
-         error = .true.
+         l_error = .true.
        end if
 
      else if ( index(line,'ZDEF') > 0 ) then
@@ -220,7 +220,7 @@ contains
          f%month = 12
        case default
          write(unit=fstderr,fmt=*) "Unknown month: "//date(9:11)
-         error = .true.
+         l_error = .true.
        end select
        ! Assumes minutes
        read(dt(1:len_trim(dt)-2),*) f%dtwrite
@@ -228,7 +228,7 @@ contains
 
      else if ( index(line,'ENDVARS') > 0 ) then
 
-       done = .true.
+       l_done = .true.
 
      else if ( index(line,'VARS') > 0 ) then
 
@@ -243,7 +243,7 @@ contains
           if ( nz /= f%iz ) then
              write(unit=fstderr,fmt=*) "Error reading ",  & 
                trim( f%var(i)%name )
-             error = .true.
+             l_error = .true.
           end if
 
           f%var(i)%index = i
@@ -253,7 +253,7 @@ contains
      end if
 
      read(unit=unit,iostat=ierr,fmt='(a256)') line
-     if ( ierr < 0 ) done = .true.
+     if ( ierr < 0 ) l_done = .true.
 
   end do
   
@@ -261,7 +261,7 @@ contains
 
 !--------- Debug -------------------------------------------------------
 !         write(*,*) 'f%fname = ',trim(f%fname)
-!         write(*,*) 'f%lbyteswapped = ',f%lbyteswapped
+!         write(*,*) 'f%l_byteswapped = ',f%l_byteswapped
 !         write(*,*) 'f%ia = ',f%ia
 !         write(*,*) 'f%iz = ',f%iz
 !         write(*,'(8f8.1)') (f%z(i),i=f%ia,f%iz)
@@ -276,7 +276,7 @@ contains
 !            write(*,*) trim(f%var(i)%name)
 !         end do
 !--------- Debug -------------------------------------------------------
-  if ( error ) then
+  if ( l_error ) then
      write(unit=fstderr,fmt=*)  & 
        'Fatal error encountered while reading control file'
      write(unit=fstderr,fmt=*) 'Cannot do miracles...'
@@ -302,7 +302,7 @@ contains
   end subroutine open_grads_read
 
 !----------------------------------------------------------------------
-  subroutine get_4byte_var( f, varname, itime, x, error )
+  subroutine get_4byte_var( f, varname, itime, x, l_error )
 
 !         Description:
 !         Read binary data from file units and return the result as 
@@ -325,19 +325,19 @@ contains
   real(kind=4), dimension(:), intent(out) ::  & 
   x ! Result variable
 
-  logical, intent(out) :: error
+  logical, intent(out) :: l_error
 
   ! Internal
-  logical :: flag, done
+  logical :: l_done
   integer :: i, k, nrec, ivar
 
-  ! Initialize error to false
-  error = .false.
+  ! Initialize l_error to false
+  l_error = .false.
 
   ! Check time index
   ! Now assumes itime is in minutes
   if ( itime < 1 .or. (itime/(f%dtwrite/60.)) > f%ntimes ) then
-    error = .true.
+    l_error = .true.
     write(unit=fstderr,fmt=*)  & 
       "get_var: itime < 1 .or. itime > f%ntimes"
     write(unit=fstderr,fmt=*) "itime = ", itime
@@ -347,20 +347,20 @@ contains
   end if
             
   ! Look up variable in list
-  done = .false.
+  l_done = .false.
   i    = 1
-  do while ( .not. done )
+  do while ( .not. l_done )
      if ( trim( varname ) == trim( f%var(i)%name ) ) then
        ivar = i
-       done = .true.
+       l_done = .true.
      else
        i = i + 1
-       if ( i > f%nvar ) done = .true.
+       if ( i > f%nvar ) l_done = .true.
      end if
-  end do ! .not. done
+  end do ! .not. l_done
 
   if ( i > f%nvar ) then
-    error = .true.
+    l_error = .true.
 !            write(*,*) 'get_var: i > f%nvar'
 !            write(*,*) 'i = ',i
 !            write(*,*) 'f%nvar = ',f%nvar
@@ -394,7 +394,7 @@ contains
   
   do k=f%ia,f%iz
     read(unit=f%iounit,rec=nrec) x(k)
-    if ( f%lbyteswapped ) call byte_order_swap( x(k) )
+    if ( f%l_byteswapped ) call byte_order_swap( x(k) )
     nrec = nrec + 1
   end do
 
@@ -402,7 +402,7 @@ contains
   end subroutine get_4byte_var
 
 !----------------------------------------------------------------------
-  subroutine get_8byte_var( f, varname, itime, x, error )
+  subroutine get_8byte_var( f, varname, itime, x, l_error )
 
 !         Description:
 !         Takes the result from get_4byte_var and returns it as a double
@@ -427,12 +427,12 @@ contains
   ! Output Variables
   real(kind=8), intent(out) :: x(:)
 
-  logical, intent(out) :: error
+  logical, intent(out) :: l_error
 
   ! Internal
   real(kind=4), dimension(size( x )) :: tmp
 
-  call get_4byte_var( f, varname, itime, tmp, error )
+  call get_4byte_var( f, varname, itime, tmp, l_error )
 
   x = dble( tmp )
 
