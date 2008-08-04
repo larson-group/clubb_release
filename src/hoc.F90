@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.26 2008-08-04 17:40:29 faschinj Exp $
+! $Id: hoc.F90,v 1.27 2008-08-04 20:20:40 faschinj Exp $
 
 module hoc
 
@@ -94,7 +94,7 @@ module hoc
 
 !-----------------------------------------------------------------------
   subroutine hoc_model & 
-             ( params, runfile, err_code, stdout, linput_fields )
+             ( params, runfile, err_code, l_stdout, l_input_fields )
 !       Description:
 !       Subprogram to integrate the pde equations for pdf closure.
 !       This is the standard call.
@@ -189,8 +189,8 @@ module hoc
 
     ! Input Variables
     logical, intent(in) ::  & 
-      stdout,        & ! Whether to print output per timestep
-      linput_fields    ! Whether to set model variables from a file
+      l_stdout,        & ! Whether to print output per timestep
+      l_input_fields    ! Whether to set model variables from a file
 
     real, intent(in), dimension(nparams) ::  & 
       params  ! Model parameters, C1, nu2, etc.
@@ -602,7 +602,7 @@ module hoc
 
           ! If we're doing an inputfields run, get the values for our
           ! model arrays from a GrADS file
-      if ( linput_fields ) then
+      if ( l_input_fields ) then
         call compute_timestep( iunit, datafilet, .false., & 
                                time_current, itime_nearest )
         call grads_fields_reader( max( itime_nearest, 1 ) )
@@ -664,7 +664,7 @@ module hoc
         ! This was moved from above to be less confusing to the user,
         ! since before it would appear as though the last timestep
         ! was not executed. -dschanen 19 May 08
-        if ( l_stats_last .and. stdout ) then
+        if ( l_stats_last .and. l_stdout ) then
           write(unit=fstdout,fmt='(a,i8,a,f10.1)') 'iteration = ',  & 
             i, '; time = ', time_current
         end if
