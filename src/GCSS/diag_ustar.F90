@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!$Id: diag_ustar.F90,v 1.2 2008-07-28 19:37:55 faschinj Exp $
+!$Id: diag_ustar.F90,v 1.3 2008-08-04 15:39:09 faschinj Exp $
 
 module diag_ustar_mod
 
@@ -33,8 +33,8 @@ contains
 !
 real function diag_ustar( z, bflx, wnd, z0 ) 
 
-use constants, only: eps, grav, vonk, pi ! Variable(s)
-
+use constants, only: grav, vonk, pi ! Variable(s)
+!, eps
 implicit none
 
 real, parameter      :: am   =  4.8   !   "          "         "
