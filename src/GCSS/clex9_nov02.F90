@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: clex9_nov02.F90,v 1.9 2008-07-31 19:34:16 faschinj Exp $
+! $Id: clex9_nov02.F90,v 1.10 2008-08-04 16:58:43 faschinj Exp $
   module clex9_nov02
 
 !       Description:
@@ -140,7 +140,7 @@
   real, dimension(gr%nnzp) ::  & 
 !     .  LWP,       ! Liquid water path                              [kg/m^2]
   rcm_rad,    & ! Flipped array of liq. water mixing ratio       [kg/kg]
-  rhot_rad,   & ! Flipped array of air density                   [kg/m^3]
+  rho_rad,   & ! Flipped array of air density                   [kg/m^3]
   dsigm,      & ! Flipped array of grid spacing                  [m]
   coamps_zm,  & ! Flipped array of momentum level altitudes      [m]
   coamps_zt     ! Flipped array of thermodynamic level altitudes [m]
@@ -532,7 +532,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   !---------------------------------------------------------------
     do k = 1, gr%nnzp
       rcm_rad(k) = rcm(gr%nnzp-k+1)
-      rhot_rad(k) = rho(gr%nnzp-k+1)
+      rho_rad(k) = rho(gr%nnzp-k+1)
       dsigm(k) = 1.0 / gr%dzt(gr%nnzp-k+1)
       coamps_zm(k) = gr%zm(gr%nnzp-k+1)
       coamps_zt(k) = gr%zt(gr%nnzp-k+1)
@@ -543,7 +543,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   ! grid method.  All input and output profiles use the COAMPS
   ! grid setup.
   !---------------------------------------------------------------
-    call rad_lwsw( rcm_rad, rhot_rad, dsigm, & 
+    call rad_lwsw( rcm_rad, rho_rad, dsigm, & 
                    coamps_zm, coamps_zt, & 
                    Frad_out, Frad_LW_out, Frad_SW_out, & 
                    radhtk, radht_LW_out, radht_SW_out, & 
