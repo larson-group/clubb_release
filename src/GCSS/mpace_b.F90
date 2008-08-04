@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: mpace_b.F90,v 1.9 2008-07-31 19:34:17 faschinj Exp $
+! $Id: mpace_b.F90,v 1.10 2008-08-04 17:01:30 faschinj Exp $
 module mpace_b
 
 !       Description:
@@ -156,7 +156,7 @@ real, dimension(gr%nnzp) :: &
   radht_SW_theta, & 
   !     .  LWP,            ! Liquid water path                              [kg/m^2]
   rcm_rad,         & ! Flipped array of liq. water mixing ratio       [kg/kg]
-  rhot_rad,        & ! Flipped array of air density                   [kg/m^3]
+  rho_rad,        & ! Flipped array of air density                   [kg/m^3]
   dsigm,           & ! Flipped array of grid spacing                  [m]
   coamps_zm,       & ! Flipped array of momentum level altitudes      [m]
   coamps_zt,       & ! Flipped array of thermodynamic level altitudes [m]
@@ -238,13 +238,13 @@ end if
 if ( .not. l_bugsrad ) then
   do k = 1, gr%nnzp
     rcm_rad(k)  = rcm(gr%nnzp-k+1)
-    rhot_rad(k) = rho(gr%nnzp-k+1)
+    rho_rad(k) = rho(gr%nnzp-k+1)
     dsigm(k)    = 1.0 / gr%dzt(gr%nnzp-k+1)
     coamps_zm(k) = gr%zm(gr%nnzp-k+1)
     coamps_zt(k) = gr%zt(gr%nnzp-k+1)
   enddo
 
-  call rad_lwsw(rcm_rad, rhot_rad, dsigm, & 
+  call rad_lwsw(rcm_rad, rho_rad, dsigm, & 
                 coamps_zm, coamps_zt, & 
                 Frad_out, Frad_LW_out, Frad_SW_out, & 
                 radhtk, radht_LW_out, radht_SW_out, & 
