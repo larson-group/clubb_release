@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.25 2008-08-04 17:11:34 dschanen Exp $
+! $Id: hoc.F90,v 1.26 2008-08-04 17:40:29 faschinj Exp $
 
 module hoc
 
@@ -1805,35 +1805,42 @@ module hoc
           ! There are no surface momentum or heat fluxes
           ! for the Nov. 11 Altocumulus case.
 
+          ! Ensure ustar is set
+          ustar = 0
         case( "jun25_altocu" )
           ! There are no surface momentum or heat fluxes
           ! for the Jun. 25 Altocumulus case.
 
+          ! Ensure ustar is set
+          ustar = 0
         case( "clex9_nov02" )
           ! There are no surface momentum or heat fluxes
           ! for the CLEX-9: Nov. 02 Altocumulus case.
-       
+        
+          ! Ensure ustar is set
+          ustar = 0
         case( "clex9_oct14" )
           ! There are no surface momentum or heat fluxes
           ! for the CLEX-9: Oct. 14 Altocumulus case.
 
-         case ( "lba" )
-           call lba_sfclyr( time_current, gr%zt(2), rho_zm(1), & 
+          ! Ensure ustar is set.
+          ustar = 0
+        case ( "lba" )
+          call lba_sfclyr( time_current, gr%zt(2), rho_zm(1), & 
                             thlm(2), um(2), vm(2), & 
                             upwp_sfc, vpwp_sfc,  & 
                             wpthlp_sfc, wprtp_sfc, ustar, & 
                             wpsclrp_sfc, wpedsclrp_sfc )
 
-         case ( "mpace_a" )
-           call mpace_a_sfclyr & 
-                ( time_current, rho_zm(1), um(2), vm(2), upwp_sfc, & 
-                  vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar, & 
-                  wpsclrp_sfc, wpedsclrp_sfc )
+        case ( "mpace_a" )
+          call mpace_a_sfclyr( time_current, rho_zm(1), um(2), vm(2), upwp_sfc, & 
+                               vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar, & 
+                               wpsclrp_sfc, wpedsclrp_sfc )
 
-         case ( "mpace_b" )
-           call mpace_b_sfclyr( rho_zm(1), um(2), vm(2), upwp_sfc, & 
-                                vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar, & 
-                                wpsclrp_sfc, wpedsclrp_sfc )
+        case ( "mpace_b" )
+          call mpace_b_sfclyr( rho_zm(1), um(2), vm(2), upwp_sfc, & 
+                               vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar, & 
+                               wpsclrp_sfc, wpedsclrp_sfc )
 
         ! Brian Griffin for COBRA CO2 case.
         case ( "cobra" )
@@ -1843,16 +1850,16 @@ module hoc
                              wpthlp_sfc, wprtp_sfc, ustar, & 
                              wpsclrp_sfc, wpedsclrp_sfc )
 
-         case ( "rico" )
-           call rico_sfclyr( um(2), vm(2), thlm(2), rtm(2), &
-                              ! 299.8 K is the RICO SST; 101540 Pa is the sfc pressure.
-                              gr%zt(2), 299.8, 101540.,  &
-!     .                        gr%zt(2), Tsfc, psfc,
-                              upwp_sfc, vpwp_sfc, wpthlp_sfc, & 
-                              wprtp_sfc, ustar, & 
-                              wpsclrp_sfc, wpedsclrp_sfc )
+        case ( "rico" )
+          call rico_sfclyr( um(2), vm(2), thlm(2), rtm(2), &
+                            ! 299.8 K is the RICO SST; 101540 Pa is the sfc pressure.
+                            gr%zt(2), 299.8, 101540.,  &
+!                            gr%zt(2), Tsfc, psfc,
+                            upwp_sfc, vpwp_sfc, wpthlp_sfc, & 
+                            wprtp_sfc, ustar, & 
+                            wpsclrp_sfc, wpedsclrp_sfc )
 
-         case ( "gabls2" )
+        case ( "gabls2" )
           call gabls2_sfclyr & 
                ( time_current, time_initial, gr%zt(2), 97200., & 
                  um(2), vm(2), thlm(2), rtm(2), & 
