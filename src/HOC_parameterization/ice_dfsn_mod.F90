@@ -1,4 +1,4 @@
-! $Id: ice_dfsn_mod.F90,v 1.8 2008-07-31 16:10:44 faschinj Exp $        
+! $Id: ice_dfsn_mod.F90,v 1.9 2008-08-04 17:03:02 faschinj Exp $        
 
 module ice_dfsn_mod
 
@@ -11,7 +11,7 @@ private ! Default Scope
 
 contains
 !-----------------------------------------------------------------------
-SUBROUTINE ice_dfsn( dt, T_in_K, rcm, press, rho, & 
+SUBROUTINE ice_dfsn( dt, T_in_K, rcm, p_in_Pa, rho, & 
                      rcm_icedfsn )
 ! Description:
 ! This subroutine is based on a COAMPS subroutine (nov11_icedfs)
@@ -82,7 +82,7 @@ REAL(KIND=time_precision), INTENT(IN)::  &
 REAL, DIMENSION(1:gr%nnzp), INTENT(IN)::  & 
   T_in_K,  & ! Temperature                           [K]
   rcm,     & ! Cloud water mixing ratio              [kg kg^{-1}]
-  press,   & ! Air pressure                          [Pa]
+  p_in_Pa,   & ! Air pressure                          [Pa]
   rho       ! Air density on thermodynamic grid     [kg m^{-3}]
 
 ! Output variables
@@ -181,10 +181,10 @@ DO k = gr%nnzp, 2, -1
   IF ( rcm(k) >= 1.0E-5 .AND. T_in_K(k) < T_freeze_K ) THEN
 
   ! Find saturation mixing ratio over vapor [kg kg^{-1}]
-     r_s(k) = sat_mixrat_liq( press(k), T_in_K(k) )
+     r_s(k) = sat_mixrat_liq( p_in_Pa(k), T_in_K(k) )
 
   ! Saturation vapor pressure over liquid in Pa
-     e_s(k) = ( r_s(k)*press(k) ) / ( ep + r_s(k) )
+     e_s(k) = ( r_s(k)*p_in_Pa(k) ) / ( ep + r_s(k) )
 
   ! Saturation vapor pressure over ice in Pa, Eq. 2.15 Rogers and Yau
      e_i(k) = e_s(k) / EXP( ( Lf/(Rv*273.16) ) & 
@@ -200,7 +200,7 @@ DO k = gr%nnzp, 2, -1
      S_i(k) = e_s(k)/e_i(k)
 
   ! Denominator of diffusional growth equation, 9.4 of Rogers and Yau
-     Denom(k) = Diff_denom( T_in_K(k), press(k), e_i(k) )
+     Denom(k) = Diff_denom( T_in_K(k), p_in_Pa(k), e_i(k) )
 
   ! Change in mass of a single ice crystal, m,
   ! as it falls a distance gr%dzt in meters
@@ -288,7 +288,7 @@ END SUBROUTINE ice_dfsn
 
 !-----------------------------------------------------------------------
 
-FUNCTION Diff_denom( T_in_K, press, e_i )
+FUNCTION Diff_denom( T_in_K, p_in_Pa, e_i )
 
 USE constants, only: & 
     Ls,  & ! Variables
@@ -302,7 +302,7 @@ IMPLICIT NONE
 
 REAL, INTENT(IN) ::  & 
  T_in_K,       & ! Temperature                               [K]
- press,        & ! Air pressure                              [Pa]
+ p_in_Pa,        & ! Air pressure                              [Pa]
  e_i          ! Vapor pressure over ice                   [Pa]
 
 REAL ::  & 
@@ -319,7 +319,7 @@ Celsius = T_in_K - 273.16
 Ka = (5.69 + 0.017*Celsius)*0.00001  ! Ka in cal./(cm.*sec.*C)
 Ka = 4.1868*100.0*Ka  ! Ka in J./(m.*sec.*K)
 
-Dv = 0.221 * ( (T_in_K/273.16)**1.94 ) * (101325.0/press)
+Dv = 0.221 * ( (T_in_K/273.16)**1.94 ) * (101325.0/p_in_Pa)
                         ! Dv in (cm.^2)/sec.  ! .221 is correct.
 Dv = Dv/10000.0  ! Dv in (m.^2)/sec.
 

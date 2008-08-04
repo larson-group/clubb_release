@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F90,v 1.9 2008-07-31 16:10:44 faschinj Exp $
+! $Id: KK_microphys.F90,v 1.10 2008-08-04 17:03:02 faschinj Exp $
 
 module rain_equations
 
@@ -798,7 +798,7 @@ CONTAINS
   FUNCTION cond_evap_rrainm( rrainm, Nrm, & 
                           s1, ss1, s2, ss2, & 
                           thl1, thl2, rc1, rc2, a, & 
-                          press, exner, T_in_K, Supsat,  & 
+                          p_in_Pa, exner, T_in_K, Supsat,  & 
                           rrp2_rrainm2, Nrp2_Nrm2, corr_srr_NL, & 
                           corr_sNr_NL, corr_rrNr_LL  )
 
@@ -839,7 +839,7 @@ CONTAINS
   REAL, INTENT(IN):: rc2          ! Plume 2 average rc       [kg kg^-1]
   REAL, INTENT(IN):: a            ! Relative weight of each individual
                                   ! Gaussian "plume."        []
-  REAL, INTENT(IN):: press        ! Grid-box average pressure [Pa]
+  REAL, INTENT(IN):: p_in_Pa        ! Grid-box average pressure [Pa]
   REAL, INTENT(IN):: exner        ! Grid-box average exner function [-]
   REAL, INTENT(IN):: T_in_K         ! Grid-box average Temperature [K]
   REAL, INTENT(IN):: Supsat       ! Grid-box average Supersaturation []
@@ -885,7 +885,7 @@ CONTAINS
         ! The air is not saturated, therefore evaporation can take place.
 
            cond_evap_rrainm = & 
-            3.0 * C_evap * G_T_p( T_in_K, press ) & 
+            3.0 * C_evap * G_T_p( T_in_K, p_in_Pa ) & 
                 * ( ( (4.0/3.0)*pi*rho_lw )**(2.0/3.0) ) & 
                 * (rrainm**(1.0/3.0)) * (Nrm**(2.0/3.0)) * Supsat
 
@@ -914,32 +914,32 @@ CONTAINS
         !!! Define plume constants for each plume
 
         ! Gaussian "plume" 1
-        Tl_1 = thl1 * exner !((press/p0)**kappa)
+        Tl_1 = thl1 * exner !((p_in_Pa/p0)**kappa)
 
         T_1 = Tl_1 + (Lv/Cp)*rc1
 
-        rsl_1 = sat_mixrat_liq(press, Tl_1)
+        rsl_1 = sat_mixrat_liq(p_in_Pa, Tl_1)
 
         Beta_T1 = (Rd/Rv) * ( Lv/(Rd*Tl_1) )  & 
                           * ( Lv/(Cp*Tl_1) )
 
         plume_1_constants =  & 
-           3.0 * C_evap * G_T_p( T_1, press ) & 
+           3.0 * C_evap * G_T_p( T_1, p_in_Pa ) & 
                * ( ( (4.0/3.0)*pi*rho_lw )**(2.0/3.0) ) & 
                * ( (1.0 + Beta_T1*rsl_1) / rsl_1 )
 
         ! Gaussian "plume" 2
-        Tl_2 = thl2 * exner !((press/p0)**kappa)
+        Tl_2 = thl2 * exner !((p_in_Pa/p0)**kappa)
 
         T_2 = Tl_2 + (Lv/Cp)*rc2
 
-        rsl_2 = sat_mixrat_liq(press, Tl_2)
+        rsl_2 = sat_mixrat_liq(p_in_Pa, Tl_2)
 
         Beta_T2 = (Rd/Rv) * ( Lv/(Rd*Tl_2) )  & 
                           * ( Lv/(Cp*Tl_2) )
 
         plume_2_constants =  & 
-           3.0 * C_evap * G_T_p( T_2, press ) & 
+           3.0 * C_evap * G_T_p( T_2, p_in_Pa ) & 
                * ( ( (4.0/3.0)*pi*rho_lw )**(2.0/3.0) ) & 
                * ( (1.0 + Beta_T2*rsl_2) / rsl_2 )
 
@@ -1372,7 +1372,7 @@ CONTAINS
 
 !===============================================================================
 
-  FUNCTION G_T_p( T_in_K, press )
+  FUNCTION G_T_p( T_in_K, p_in_Pa )
 
   USE constants, only: & 
       ep,  & ! Variable(s)
@@ -1393,7 +1393,7 @@ CONTAINS
 
   ! Input      
   REAL, INTENT(IN):: T_in_K   ! [K]
-  REAL, INTENT(IN):: press  ! [Pa]
+  REAL, INTENT(IN):: p_in_Pa  ! [Pa]
 
   ! Ouput
   REAL:: G_T_p  ! [m^2 s^-1]
@@ -1408,12 +1408,12 @@ CONTAINS
   Ka = (5.69 + 0.017*Celsius)*0.00001  ! Ka in cal./(cm.*sec.*C)
   Ka = 4.1868*100.0*Ka  ! Ka in J./(m.*sec.*K)
 
-  Dv = 0.221*((T_in_K/273.16)**1.94)*(101325.0/press)  
+  Dv = 0.221*((T_in_K/273.16)**1.94)*(101325.0/p_in_Pa)  
                           ! Dv in (cm.^2)/sec.  ! .221 is correct.
   Dv = Dv/10000.0  ! Dv in (m.^2)/sec.
 
-  rs = sat_mixrat_liq(press, T_in_K)
-  esat = (press*rs)/(ep + rs)
+  rs = sat_mixrat_liq(p_in_Pa, T_in_K)
+  esat = (p_in_Pa*rs)/(ep + rs)
 
   Fk = (Lv/(Rv*T_in_K) - 1.0)*(Lv*rho_lw)/(Ka*T_in_K)
   Fd = (rho_lw*Rv*T_in_K)/(Dv*esat)
