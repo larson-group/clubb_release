@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.19 2008-08-01 15:53:16 faschinj Exp $
+! $Id: parameterization_interface.F90,v 1.20 2008-08-04 17:09:05 dschanen Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
@@ -74,7 +74,7 @@ module hoc_parameterization_interface
 
        use model_flags, only: & 
            l_LH_on,  & ! Variable(s)
-           l_Kh_zm_aniso, & 
+           l_tke_aniso, & 
            l_uv_nudge, &
            l_gamma_Skw
 
@@ -683,7 +683,7 @@ module hoc_parameterization_interface
        ! Compute tke
        !----------------------------------------------------------------
 
-       if ( .not. l_Kh_zm_aniso ) then
+       if ( .not. l_tke_aniso ) then
          ! tke is assumed to be 3/2 of wp2
          em = 1.5 * wp2
        else
@@ -1148,7 +1148,7 @@ module hoc_parameterization_interface
                    ( nzmax, T0_in, ts_nudge_in, hydromet_dim_in,  & 
                      sclr_dim_in, sclrtol_in, params,  & 
                      l_bugsrad, l_kk_rain, l_licedfs, l_coamps_micro, & 
-                     l_cloud_sed, l_uv_nudge, l_Kh_zm_aniso,  & 
+                     l_cloud_sed, l_uv_nudge, l_tke_aniso,  & 
                      implemented, grid_type, deltaz, zm_init, & 
                      momentum_heights, thermodynamic_heights,  & 
                      host_dx, host_dy, err_code )
@@ -1235,13 +1235,13 @@ module hoc_parameterization_interface
         ! Flags
         logical, intent(in) ::  & 
         l_bugsrad,      & ! BUGSrad interactive radiation scheme
-        l_kk_rain,       & ! K & K rain microphysics
-        l_licedfs,       & ! Simplified ice scheme
+        l_kk_rain,      & ! K & K rain microphysics
+        l_licedfs,      & ! Simplified ice scheme
         l_coamps_micro, & ! COAMPS microphysics scheme
-        l_cloud_sed,     & ! Cloud Sedimentation
-        l_uv_nudge,     & ! Wind nudging for mpace_b case
-        l_Kh_zm_aniso    ! Whether to use anisotropic Kh_zm. - Michael Falk 2 Feb 2007
-
+        l_cloud_sed,    & ! Cloud water droplet sedimentation
+        l_uv_nudge,     & ! Wind nudging
+        l_tke_aniso       ! For anisotropic turbulent kinetic energy, 
+                          !   i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
         ! Output variables
         integer, intent(out) :: & 
         err_code   ! Diagnostic for a problem with the setup
@@ -1251,7 +1251,7 @@ module hoc_parameterization_interface
         call setup_model_flags & 
              ( l_bugsrad, l_kk_rain, l_cloud_sed,             & ! intent(in)
                l_licedfs, l_coamps_micro, l_uv_nudge,        & ! intent(in)
-               l_Kh_zm_aniso )                             ! intent(in)
+               l_tke_aniso )                             ! intent(in)
 
         ! Define model constant parameters
 
