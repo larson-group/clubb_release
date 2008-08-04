@@ -1,4 +1,4 @@
-! $Id: rico_model.in,v 1.18 2008-08-01 15:54:26 faschinj Exp $
+! $Id: rico_model.in,v 1.19 2008-08-04 17:11:36 dschanen Exp $
 ! Parameter file for GCSS RICO case
 ! Edited by Michael Falk, 12 December 2006
 
@@ -74,7 +74,7 @@ l_kk_rain       = .true.   ! Flag for Khairoutdinov-Kogan rain microphysics.
 l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
 l_licedfs       = .false.  ! Flag for simplified ice scheme.
 l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
-l_Kh_zm_aniso    = .true.   ! Flag for anisotropic Kh_zm.
+l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 
 l_restart      = .false.  ! Flag for whether this is a restart run.
 ! Path (from ../standalone/) and filename of GrADS control files
