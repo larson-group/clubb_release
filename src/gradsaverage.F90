@@ -1,4 +1,4 @@
-! $Id: gradsaverage.F90,v 1.3 2008-07-29 16:44:00 nielsenb Exp $
+! $Id: gradsaverage.F90,v 1.4 2008-08-04 20:07:22 faschinj Exp $
 module grads_common
 
 implicit none
@@ -11,7 +11,7 @@ contains
 
 !----------------------------------------------------------------------
 function grads_average( filename, nz, t1, t2, variable_name,  & 
-                        npower, error )
+                        npower, l_error )
 !       Description:
 !       Average a GrADS file variable over the interval t1 to t2
 
@@ -35,7 +35,7 @@ character(len=*), intent(in) ::  &
 integer, intent(in) ::  & 
   nz,  & ! Number of vertial levels in the GrADS file.
   t1,  & ! Beginning timestep to look at
-  t2  ! Ending timestep to look at
+  t2     ! Ending timestep to look at
 
 character(len=*), intent(in) ::  & 
   variable_name ! Name of the variable to read in
@@ -45,7 +45,7 @@ integer, intent(in) ::  &
 
 ! Output Variable
 logical, intent(out) ::  & 
-  error ! error status for this function
+  l_error ! error status for this function
 
 ! Return Variable for function
 real, dimension(nz) :: grads_average
@@ -74,8 +74,8 @@ call open_grads_read( 10, filename, faverage )
 ! Read in variables from GrADS file
 do t = t1, t2
   call get_var( faverage, variable_name, t,  & 
-                grads_temp(1:nz), error ) 
-  if ( error ) then
+                grads_temp(1:nz), l_error ) 
+  if ( l_error ) then
      write(fstderr,*) "grads_average: get_var failed for "  & 
        //trim( variable_name )//" in "//trim( filename ) & 
        //" at time=", t
@@ -92,7 +92,7 @@ do t = t1, t2
 
   else
     write(fstderr,*) "gradsaverage: invalid npower = ", npower
-    error = .true.
+    l_error = .true.
     return
 
   end if ! npower
@@ -112,7 +112,7 @@ end function grads_average
 !-------------------------------------------------------------------------
 function grads_average_interval & 
          ( filename, nz, t, variable_name, & 
-           npower, error )
+           npower, l_error )
 
 !       Description:
 !       Reads in GrADS data from a file and then takes several averages 
@@ -151,7 +151,7 @@ integer, intent(in) ::  &
 
 ! Output Variables
 logical, intent(out) ::  & 
-  error ! status of this function
+  l_error ! status of this function
 
 ! Return Variables
 real, dimension(nz) ::  & 
@@ -171,7 +171,7 @@ integer ::  &
 if ( size( t ) > tmax .or. size( t ) < 2 ) then
   write(unit=fstderr,fmt=*)  & 
     "grads_average_interval: Invalid time interval"
-  error = .true.
+  l_error = .true.
   return
 end if
 
@@ -182,17 +182,17 @@ end do
 
 grads_average_interval & 
 = grads_average & 
-  ( filename, nz, t(1), t(2), variable_name, npower, error )  & 
+  ( filename, nz, t(1), t(2), variable_name, npower, l_error )  & 
   * ( t(2) - t(1) )
 
 divisor = t(2) - t(1)
 
-if ( error ) return
+if ( l_error ) return
 
 do i=3, tdim, 2 
   grads_temp = grads_average & 
                ( filename, nz, t(i), t(i+1),  & 
-                 variable_name, npower, error )
+                 variable_name, npower, l_error )
   grads_average_interval  & 
   = grads_average_interval + grads_temp * ( t(i+1) - t(i) )
   divisor = divisor + ( t(i+1) - t(i) )
