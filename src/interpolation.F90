@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!$Id: interpolation.F90,v 1.3 2008-07-29 16:44:00 nielsenb Exp $
+!$Id: interpolation.F90,v 1.4 2008-08-04 20:47:34 faschinj Exp $
 module interpolation
 
 implicit none
@@ -56,7 +56,7 @@ real, intent(in) :: var
 ! Local Variables
 
 ! Has an index been found?
-logical :: found
+logical :: l_found
 
 ! Bounds of the search
 integer :: high
@@ -64,7 +64,7 @@ integer :: low
 
 ! Initialize local variables
 
-found = .false.
+l_found = .false.
 
 low = 1
 
@@ -72,12 +72,12 @@ high = n
 
 i = (low + high) / 2
 
-do while( .not. found .and. low <= high )
+do while( .not. l_found .and. low <= high )
         
         i = (low + high) / 2
 
         if ( var > array( i - 1 ) .and. var <= array( i ) )then
-           found = .true.
+           l_found = .true.
         else if (var < array( i ) )then
            high = i - 1
         else if (var > array( i ) )then
@@ -85,7 +85,7 @@ do while( .not. found .and. low <= high )
         endif              
 end do
         
-if ( .not. found ) i = -1 
+if ( .not. l_found ) i = -1 
 
 end function
 
