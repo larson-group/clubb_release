@@ -1,4 +1,4 @@
-! $Id: sounding.F90,v 1.3 2008-07-28 19:20:22 dschanen Exp $
+! $Id: sounding.F90,v 1.4 2008-08-04 20:42:49 faschinj Exp $
 module sounding
 
   implicit none
@@ -97,11 +97,11 @@ module sounding
         integer :: i, j, k  ! Loop indices
 
         ! Is this model being extended by 1976 Standard Atmosphere?
-        logical :: lstd_atmo
+        logical :: l_std_atmo
         
         ! Read sounding namelist
 
-        lstd_atmo = .false.
+        l_std_atmo = .false.
         
         open(unit = iunit, file = runfile, status = 'old')
         read(unit = iunit, nml = sounding)
@@ -180,7 +180,7 @@ module sounding
 ! Modified 27 May 2005 -dschanen: eliminated the goto in favor of a do while( )
         do i=2, gr%nnzp
           k=1
-          do while ( z(k) < gr%zt(i) .and. .not. lstd_atmo )
+          do while ( z(k) < gr%zt(i) .and. .not. l_std_atmo )
             k=k+1
             if ( k > nlevels ) then
 !              write(fstderr,*) 'STOP Not enough sounding data to ',
@@ -191,7 +191,7 @@ module sounding
 !     .          gr%zt(gr%nnzp)
 !              stop 'STOP in sounding'
 
-               lstd_atmo = .true.
+               l_std_atmo = .true.
                exit
             end if  ! k > nlevels
 
@@ -265,7 +265,7 @@ module sounding
           ! If the grid extends beyond the sounding data, use
           ! Standard Atmosphere
           ! Joshua Fasching April 2009
-          if ( lstd_atmo ) then
+          if ( l_std_atmo ) then
             call std_atmosphere( gr%zt(i), thlm(i), rtm(i) )
                   
             um(i) = um(i-1)
@@ -277,7 +277,7 @@ module sounding
 
         end do   ! i=2, gr%nnzp
         
-        if ( lstd_atmo ) then
+        if ( l_std_atmo ) then
           write(fstderr,*) "Warning: 1976 Standard Atmosphere "// & 
             "was used to complete the grid."
         end if
