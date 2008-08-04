@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F90,v 1.11 2008-08-01 13:18:38 faschinj Exp $
+! $Id: microphys_driver.F90,v 1.12 2008-08-04 20:46:14 faschinj Exp $
 module microphys_driver
 
 !       Description:
@@ -219,7 +219,7 @@ use stats_type, only:  &
 implicit none
 
 ! Constant Parameters
-logical, parameter :: lsed = .true.
+logical, parameter :: l_sed = .true.
 
 character(len=*), intent(in) :: & 
   runtype ! Name of the run, for case specific effects.
@@ -477,7 +477,7 @@ if ( hydromet_dim > 0 ) then
  
 
     call microphys_lhs & 
-         ( trim( hydromet_list(i) ), lsed, dt, Kr, nu_r, wm_zt, & 
+         ( trim( hydromet_list(i) ), l_sed, dt, Kr, nu_r, wm_zt, & 
            hydromet_vel(:,i), lhs )
 
     call microphys_solve & 
@@ -876,7 +876,7 @@ end subroutine microphys_solve
 
 !===============================================================================
 subroutine microphys_lhs & 
-           ( solve_type, lsed, dt, Kr, nu, wm_zt, V_hm, lhs )
+           ( solve_type, l_sed, dt, Kr, nu, wm_zt, V_hm, lhs )
 
 !       Description:
 !       Setup the matrix of implicit contributions to a term
@@ -940,7 +940,7 @@ integer, parameter :: &
 character(len=*), intent(in) :: solve_type
 
 logical, intent(in) ::  & 
-  lsed ! Whether to add a sedimentation term
+  l_sed ! Whether to add a sedimentation term
 
 real(kind=time_precision), intent(in) ::  & 
   dt    ! Timestep                                                 [s]
@@ -1028,7 +1028,7 @@ do k = 1, gr%nnzp, 1
   ! Note: originally pristine ice did not sediment, so it was
   ! setup to be disabled as needed, but now pristine ice does
   ! sediment in the COAMPS case. -dschanen 12 Feb 2007
-  if ( lsed ) then
+  if ( l_sed ) then
      lhs(kp1_tdiag:km1_tdiag,k) & 
      = lhs(kp1_tdiag:km1_tdiag,k) & 
      + sedimentation( V_hm(k), V_hm(km1), gr%dzt(k), k )
@@ -1313,7 +1313,7 @@ end function sedimentation
 
 !===============================================================================
 subroutine adj_microphys_tndcy( xrm_tndcy, wm_zt, V_hm, Kr, nu, & 
-                                dt, level, lsed, & 
+                                dt, level, l_sed, & 
                                 xrm, overevap_rate )
 
 ! DESCRIPTION:  Correction for the over-evaporation of a hydrometeor.
@@ -1458,7 +1458,7 @@ real(kind=time_precision), intent(in) :: dt  ! Timestep   [s]
 
 integer, intent(in) :: level  ! Vertical grid index
 
-logical, intent(in) :: lsed   ! Whether to add a sedimentation term
+logical, intent(in) :: l_sed   ! Whether to add a sedimentation term
 
 
 ! Input/output variable.
@@ -1537,7 +1537,7 @@ ma_tndcy = &
 
 ! Sedimentation tendency component
 
-if ( lsed ) then
+if ( l_sed ) then
 
    ! The implicit (LHS) value of the sedimentation component of the
    ! equation used during the timestep that was just solved for.
