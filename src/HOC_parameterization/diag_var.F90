@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F90,v 1.17 2008-08-03 14:34:26 griffinb Exp $
+! $Id: diag_var.F90,v 1.18 2008-08-05 15:27:24 dschanen Exp $
 !===============================================================================
 module diagnose_variances
 
@@ -28,9 +28,9 @@ private    ! Set default scope
 contains
 
 !===============================================================================
-subroutine diag_var( tau_zm, wm_zm, rtm, wprtp,  & 
+subroutine diag_var( tau_zm, wm_zm, rtm, wprtp, & 
                      thlm, wpthlp, wpthvp, um, vm, & 
-                     wp2, wp3, upwp, vpwp, Scm, Skw_zm, Kh_zt, & 
+                     wp2, wp2_zt, wp3, upwp, vpwp, Scm, Skw_zm, Kh_zt, & 
                      liter, dt, & 
                      sclrm, wpsclrp, & 
                      rtp2, thlp2, rtpthlp, & 
@@ -131,7 +131,8 @@ real, intent(in), dimension(gr%nnzp) ::  &
   vpwp,   & ! u'w'                           [m^2/s^2]
   Scm,    & ! Sc on moment. grid             [-]
   Skw_zm, & ! Skw on moment. grid            [-]
-  Kh_zt     ! Eddy diffusivity on t-lev.     [m^2/s]
+  Kh_zt,  & ! Eddy diffusivity on t-lev.     [m^2/s]
+  wp2_zt    ! w'^2 interpolated to thermodynamic levels     [m^2/s^2]
 
 logical, intent(in) :: liter ! Whether variances are prognostic
 
@@ -167,9 +168,6 @@ real, dimension(gr%nnzp) :: &
   a1 ! a_1 (momentum levels); See eqn. 24 in `Equations for HOC' [-]
 
 real, dimension(gr%nnzp) :: & 
-  wp2_zt,     & ! w'^2 interpolated to thermodynamic levels     [m^2/s^2]
-  wprtp_zt,   & ! w'r_t' interpolated to thermodynamic levels   [(kg/kg) m/s]
-  wpthlp_zt,  & ! w'th_l' interpolated to thermodyamnic levels  [K m/s]
   upwp_zt,    & ! u'w' interpolated to thermodynamic levels     [m^2/s^2]
   vpwp_zt,    & ! v'w' interpolated to thermodynamic levels     [m^2/s^2]
   wpsclrp_zt    ! w'sclr' interpolated to thermodynamic levels  [m/s {sclrm units}]
@@ -197,6 +195,8 @@ real, dimension(gr%nnzp) ::  &
 
 ! Variables used for adding (xapxbp)^2: 3-point average diffusion coefficient.
 real, dimension(gr%nnzp) :: & 
+  wprtp_zt,   & ! w'r_t' interpolated to thermodynamic levels   [(kg/kg) m/s]
+  wpthlp_zt,  & ! w'th_l' interpolated to thermodyamnic levels  [K m/s]
   rtp2_zt,    & ! r_t'^2 interpolated to thermodynamic levels    [kg^2/kg^2]
   thlp2_zt,   & ! th_l'^2 interpolated to thermodynamic levels   [K^2]
   rtpthlp_zt, & ! r_t'th_l' interpolated to thermodynamic levels [K kg/kg]
@@ -257,7 +257,7 @@ wtol_sqd = wtol * wtol
 ! Interpolate a_1, w'^2, w'r_t', w'th_l', u'w', and v'w' from the momentum 
 ! levels to the thermodynamic levels.  These will be used for the turbulent 
 ! advection (ta) terms in each equation.
-wp2_zt    = max( zm2zt( wp2 ), 0.0 )   ! Positive definite quantity
+!wp2_zt    = max( zm2zt( wp2 ), 0.0 )   ! Positive definite quantity
 wprtp_zt  = zm2zt( wprtp )
 wpthlp_zt = zm2zt( wpthlp )
 upwp_zt   = zm2zt( upwp )
@@ -545,17 +545,8 @@ if ( scalar_calc ) then
                        C2sclr_1d, tau_zm, 0.0, beta, &
                        wtol_sqd, sclr_rhs(:,i) )
 
-  enddo
-
 
   !!!!!***** sclr'r_t' *****!!!!!
-
-  do i = 1, sclr_dim, 1
-
-    ! Interpolate w'sclr' from momentum levels to thermodynamic 
-    ! levels.  These will be used for the turbulent advection (ta) 
-    ! terms in each equation.
-    wpsclrp_zt = zm2zt( wpsclrp(:,i) )
 
     call diag_var_rhs( "sclrprtp", dt, liter, a1,  & 
                        wp2_zt, wp3, wpsclrp(:,i),  & 
@@ -564,17 +555,8 @@ if ( scalar_calc ) then
                        0.0, beta, wtol_sqd,  & 
                        sclr_rhs(:,i+sclr_dim) )
 
-  enddo
-
 
   !!!!!***** sclr'th_l' *****!!!!!
-
-  do i = 1, sclr_dim, 1
-
-    ! Interpolate w'sclr' from momentum levels to thermodynamic 
-    ! levels.  These will be used for the turbulent advection (ta) 
-    ! terms in each equation.
-    wpsclrp_zt = zm2zt( wpsclrp(:,i) )
 
     call diag_var_rhs( "sclrpthlp", dt, liter, a1,  & 
                        wp2_zt, wp3, wpsclrp(:,i),  & 
@@ -582,8 +564,7 @@ if ( scalar_calc ) then
                        sclrm(:,i), thlm, sclrpthlp(:,i), &
                        C2sclr_1d, tau_zm, 0.0, beta,  & 
                        wtol_sqd, sclr_rhs(:,i+2*sclr_dim) )
-
-    enddo
+  end do ! 1..sclr_dim
 
 
   ! Solve the tridiagonal system

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F90,v 1.12 2008-08-02 14:08:05 griffinb Exp $
+! $Id: mixing.F90,v 1.13 2008-08-05 15:27:24 dschanen Exp $
 !===============================================================================
 module mixing
 
@@ -39,7 +39,7 @@ contains
 subroutine timestep_mixing( dt, Scm, wm_zm, wm_zt, wp2, wp3, & 
                             Kh_zt, tau_zm, Skw_zm, rtpthvp,  & 
                             rtm_forcing, thlpthvp,  & 
-                            thlm_forcing, rtp2, thlp2, & 
+                            thlm_forcing, rtp2, thlp2, wp2_zt, & 
                             implemented, & 
                             sclrpthvp, sclrm_forcing, sclrp2,  & 
                             rtm, wprtp, thlm, wpthlp, & 
@@ -113,6 +113,7 @@ real, intent(in), dimension(gr%nnzp) :: &
   wm_zm,         & ! w wind component on momentum levels      [m/s]
   wm_zt,         & ! w wind component on thermodynamic levels [m/s]
   wp2,           & ! w'^2 (momentum levels)                   [m^2/s^2]
+  wp2_zt,        & ! w'^2 (interpolated to thermo. levels)    [m^2/s^2]
   wp3,           & ! w'^3 (thermodynamic levels)              [m^3/s^3]
   Kh_zt,         & ! Eddy diffusivity on thermodynamic levels [m^2/s]
   tau_zm,        & ! Time-scale tau on momentum levels        [s]
@@ -255,7 +256,7 @@ wpxp_lower_lim = -0.99 * sqrt( wp2 * rtp2 )
 
 ! Compute the implicit portion of the r_t and w'r_t' equations.
 ! Build the left-hand side matrix.
-call mixing_lhs( .true., dt, wprtp, Scm, wm_zm, wm_zt, wp2,  & 
+call mixing_lhs( .true., dt, wprtp, Scm, wm_zm, wm_zt, wp2, wp2_zt, & 
                  wp3, Kw6_rt, tau_zm, C7_Skw_fnc, C6rt_Skw_fnc, & 
                  wpxp_upper_lim, wpxp_lower_lim,  & 
                  implemented, lhs )
@@ -319,7 +320,7 @@ wpxp_lower_lim = -0.99 * sqrt( wp2 * thlp2 )
 
 ! Compute the implicit portion of the th_l and w'th_l' equations.
 ! Build the left-hand side matrix.
-call mixing_lhs( .true., dt, wpthlp, Scm, wm_zm, wm_zt, wp2,  & 
+call mixing_lhs( .true., dt, wpthlp, Scm, wm_zm, wm_zt, wp2, wp2_zt,  & 
                  wp3, Kw6_thl, tau_zm, C7_Skw_fnc, C6thl_Skw_fnc, & 
                  wpxp_upper_lim, wpxp_lower_lim,  & 
                  implemented, lhs )
@@ -379,7 +380,7 @@ do i = 1, sclr_dim, 1
   ! Compute the implicit portion of the sclr and w'sclr' equations.
   ! Build the left-hand side matrix.
   call mixing_lhs( .true., dt, wpsclrp(:,i), Scm, wm_zm,  & 
-                   wm_zt, wp2, wp3, Kw6, tau_zm, C7_Skw_fnc, & 
+                   wm_zt, wp2, wp2_zt, wp3, Kw6, tau_zm, C7_Skw_fnc, & 
                    C6rt_Skw_fnc, wpxp_upper_lim, wpxp_lower_lim, & 
                    implemented, lhs )
 
@@ -475,7 +476,7 @@ return
 end subroutine timestep_mixing
 
 !===============================================================================
-subroutine mixing_lhs( liter, dt, wpxp, Scm, wm_zm, wm_zt, wp2,  & 
+subroutine mixing_lhs( liter, dt, wpxp, Scm, wm_zm, wm_zt, wp2, wp2_zt, & 
                        wp3, Kw6, tau_zm, C7_Skw_fnc, C6x_Skw_fnc, & 
                        wpxp_upper_lim, wpxp_lower_lim,  & 
                        implemented, lhs )
@@ -572,6 +573,7 @@ real, intent(in), dimension(gr%nnzp) :: &
   wm_zm,           & ! w wind component on momentum levels      [m/s]
   wm_zt,           & ! w wind component on thermodynamic levels [m/s]
   wp2,             & ! w'^2 (momentum levels)                   [m^2/s^2]
+  wp2_zt,          & ! w'^2 interpolated to thermodynamic levels[m^2/s^2]
   wp3,             & ! w'^3 (thermodynamic levels)              [m^3/s^3]
   Kw6,             & ! Coefficient of eddy diffusivity for w'x' [m^2/s]
   tau_zm,          & ! Time-scale tau on momentum levels        [s]
@@ -592,8 +594,7 @@ real, dimension(gr%nnzp) ::  &
   a1 ! a_1 (momentum levels); See eqn. 24 in `Equations for HOC' [-]
 
 real, dimension(gr%nnzp) :: & 
-  a1_zt,  & ! a_1 interpolated to thermodynamic levels              [-]
-  wp2_zt    ! w'^2 interpolated to thermodynamic levels             [m^2/s^2]
+  a1_zt     ! a_1 interpolated to thermodynamic levels              [-]
 
 ! wtol_sqd = the square of the minimum threshold on w,
 !     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
@@ -622,7 +623,7 @@ a1(1:gr%nnzp) = 1.0 / ( 1.0 - Scm(1:gr%nnzp) )
 ! levels.  This will be used for the w'x' turbulent advection
 ! (ta) term.
 a1_zt  = max( zm2zt( a1 ), 0.0 )   ! Positive definite quantity
-wp2_zt = max( zm2zt( wp2 ), 0.0 )   ! Positive definite quantity
+!wp2_zt = max( zm2zt( wp2 ), 0.0 )   ! Positive definite quantity
 
 ! Initialize the left-hand side matrix to 0.
 lhs = 0.0

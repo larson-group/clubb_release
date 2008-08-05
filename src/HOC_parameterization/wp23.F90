@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.23 2008-08-04 17:09:05 dschanen Exp $
+! $Id: wp23.F90,v 1.24 2008-08-05 15:27:25 dschanen Exp $
 !===============================================================================
 module wp23
 
@@ -34,7 +34,7 @@ contains
 subroutine timestep_wp23( dt, Scm, wm_zm, wm_zt, wpthvp, wp2thvp,  & 
                           um, vm, upwp, vpwp, up2, vp2, Kh_zm, Kh_zt, & 
                           tau_zm, tau_zt, Skw_zm, Skw_zt, a, & 
-                          wp2, wp3, err_code )
+                          wp2_zt, wp2, wp3, err_code )
 
 ! Description:
 ! Advance w'^2 and w'^3 one timestep.
@@ -102,6 +102,7 @@ real, intent(in), dimension(gr%nnzp) ::  &
   tau_zt,      & ! Time-scale tau on thermodynamic levels   [s]
   Skw_zm,      & ! Skewness of w on momentum levels         [-]
   Skw_zt,      & ! Skewness of w on thermodynamic levels    [-]
+  wp2_zt,      & ! w'^2 interpolated to thermodyamic levels [m^2/s^2]
   a              ! PDF parameter "a": pdf_parms(:,13)       [-]
 
 ! Input/Output
@@ -123,7 +124,6 @@ real, dimension(gr%nnzp) :: Kw8    ! w'^3 coef. eddy diff.  [m^2/s]
 !        are used to help determine the coefficients of eddy 
 !        diffusivity for wp2 and wp3, respectively.
 real, dimension(gr%nnzp) :: & 
-  wp2_zt,          & ! w'^2 interpolated to thermodyamic levels [m^2/s^2]
   wp3_zm,          & ! w'^3 interpolated to momentum levels     [m^3/s^3]
   wp2_zt_sqd_3pt,  & ! (w'^2)^2; averaged over 3 points         [m^4/s^4]
   wp3_zm_sqd_3pt     ! (w'^3)^2; averaged over 3 points         [m^6/s^6]
@@ -194,7 +194,7 @@ wp3_zm = zt2zm( wp3 )
 ! Interpolate w'^2 from momentum levels to thermodynamic levels.
 ! This is used for extra diffusion based on a three-point 
 ! average of (w'^2)^2.
-wp2_zt = max( zm2zt( wp2 ), 0.0 )   ! Positive definite quantity
+!wp2_zt = max( zm2zt( wp2 ), 0.0 )   ! Positive definite quantity
 
 do k = 1, gr%nnzp, 1
 
@@ -272,6 +272,7 @@ if ( lapack_error( err_code ) .and.  &
    write(fstderr,*) "Skw_zm = ", Skw_zm
    write(fstderr,*) "Skw_zt = ", Skw_zt
    write(fstderr,*) "a = ", a
+   write(fstderr,*) "wp2zt = ", wp2_zt
    
    write(fstderr,*) "Intent(in/out)"
    

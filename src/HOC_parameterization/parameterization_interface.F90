@@ -1,299 +1,298 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.20 2008-08-04 17:09:05 dschanen Exp $
+! $Id: parameterization_interface.F90,v 1.21 2008-08-05 15:27:24 dschanen Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
-!       Description:
-!       The module containing the `core' of the HOC model.
+! Description:
+!   The module containing the `core' of the HOC model.
 
-!       References:
-!       None
+! References:
+!   None
 !-----------------------------------------------------------------------
 
-        implicit none
+  implicit none
 
-        public ::  & 
-        parameterization_setup, & 
-        parameterization_timestep, & 
-        parameterization_cleanup
+  public ::  & 
+    parameterization_setup, & 
+    parameterization_timestep, & 
+    parameterization_cleanup
 
-        private :: latin_hypercube_sampling
+  private :: latin_hypercube_sampling
 
-        private ! Default Scope
+  private ! Default Scope
 
-        contains
+  contains
 
 !-----------------------------------------------------------------------
-       subroutine parameterization_timestep & 
-                  ( iter, dt, fcor, & 
-                    thlm_forcing, rtm_forcing, wm_zm, wm_zt, & 
-                    wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
-                    p_in_Pa, rho_zm, rho, exner, & 
-                    um, vm, upwp, vpwp, up2, vp2, & 
-                    thlm, rtm, wprtp, wpthlp, wp2, wp3, & 
-                    rtp2, thlp2, rtpthlp, & 
-                    Scm, tau_zm, rcm, cf, & 
-                    err_code, implemented, & 
-                    wpsclrp_sfc, wpedsclrp_sfc,    & ! Optional
-                    sclrm, sclrm_forcing, edsclrm,  & ! Optional
-                    wpsclrp & 
-                  )
+    subroutine parameterization_timestep & 
+               ( iter, dt, fcor, & 
+                 thlm_forcing, rtm_forcing, wm_zm, wm_zt, & 
+                 wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
+                 p_in_Pa, rho_zm, rho, exner, & 
+                 um, vm, upwp, vpwp, up2, vp2, & 
+                 thlm, rtm, wprtp, wpthlp, wp2, wp3, & 
+                 rtp2, thlp2, rtpthlp, & 
+                 Scm, tau_zm, rcm, cf, & 
+                 err_code, implemented, & 
+                 wpsclrp_sfc, wpedsclrp_sfc,    & ! Optional
+                 sclrm, sclrm_forcing, edsclrm,  & ! Optional
+                 wpsclrp )
 
-!      Description:
-!      Subroutine to advance the model one timestep
+! Description:
+!   Subroutine to advance the model one timestep
 
-!      References:
-!       ``A PDF-Based Model for Boundary Layer Clouds. Part I:
-!         Method and Model Description'' Golaz, et al. (2002)
-!       JAS, Vol. 59, pp. 3540--3551.
+! References:
+!   ``A PDF-Based Model for Boundary Layer Clouds. Part I:
+!     Method and Model Description'' Golaz, et al. (2002)
+!   JAS, Vol. 59, pp. 3540--3551.
 !-----------------------------------------------------------------------
 
-       ! Modules to be included
+  ! Modules to be included
 
-       use constants, only: & 
-           wtol,  & ! Variable(s)
-           emin, & 
-           thltol, & 
-           rttol, & 
-           ep2, & 
-           Cp, & 
-           Lv, & 
-           ep1, & 
-           eps, &
-           fstderr
+  use constants, only: & 
+    wtol,  & ! Variable(s)
+    emin, & 
+    thltol, & 
+    rttol, & 
+    ep2, & 
+    Cp, & 
+    Lv, & 
+    ep1, & 
+    eps, &
+    fstderr
 
-       use parameters, only: & 
-           gamma_coefc,  & ! Variable(s)
-           gamma_coefb, & 
-           gamma_coef, & 
-           T0, & 
-           taumax, & 
-           c_K, & 
-           ts_nudge, & 
-           sclr_dim
+  use parameters, only: & 
+    gamma_coefc,  & ! Variable(s)
+    gamma_coefb, & 
+    gamma_coef, & 
+    T0, & 
+    taumax, & 
+    c_K, & 
+    ts_nudge, & 
+    sclr_dim
 
-       use model_flags, only: & 
-           l_LH_on,  & ! Variable(s)
-           l_tke_aniso, & 
-           l_uv_nudge, &
-           l_gamma_Skw
+  use model_flags, only: & 
+    l_LH_on,  & ! Variable(s)
+    l_tke_aniso, & 
+    l_uv_nudge, &
+    l_gamma_Skw
 
-       use grid_class, only: & 
-           gr,  & ! Variable(s)
-           zm2zt,  & ! Procedure(s)
-           zt2zm, & 
-           ddzm
+  use grid_class, only: & 
+    gr,  & ! Variable(s)
+    zm2zt,  & ! Procedure(s)
+    zt2zm, & 
+    ddzm
 
-       use numerical_check, only: & 
-           parameterization_check ! Procedure(s)
+  use numerical_check, only: & 
+    parameterization_check ! Procedure(s)
 
-       use diagnostic_variables, only: & 
-           Skw_zt,  & ! Varible(s)
-           Skw_zm, & 
-           Sct, & 
-           wp4, & 
-           wpthvp, & 
-           thlpthvp, & 
-           rtpthvp, & 
-           wprcp, & 
-           rtprcp, & 
-           thlprcp, & 
-           pdf_parms, & 
-           rcp2, & 
-           rsat, & 
-           shear, & 
-           ustar, & 
-           Kh_zt, & 
-           wprtp2, & 
-           wp2rtp, & 
-           wpthlp2, & 
-           wp2thlp, & 
-           wprtpthlp, & 
-           wp2thvp, & 
-           wp2rcp, & 
-           thvm, & 
-           em, & 
-           Lscale, & 
-           tau_zt, & 
-           Kh_zm, & 
-           umt, & 
-           vmt, & 
-           vg, & 
-           ug, & 
-           um_ref, & 
-           vm_ref, & 
-           wp2_zt, & 
-           thlp2_zt, & 
-           wpthlp_zt, & 
-           wprtp_zt, & 
-           rtp2_zt, & 
-           rtpthlp_zt, & 
-           edsclrmt, & 
-           wpedsclrp, & 
-           sclrpthvp,   & ! sclr'th_v'
-           sclrprtp,    & ! sclr'rt'
-           sclrp2,      & ! sclr'^2
-           sclrpthlp,   & ! sclr'th_l'
-           sclrprcp,    & ! sclr'rc'
-           wp2sclrp,    & ! w'^2 sclr'
-           wpsclrp2,    & ! w'sclr'^2
-           wpsclrprtp,  & ! w'sclr'rt'
-           wpsclrpthlp ! w'sclr'thl'
+  use diagnostic_variables, only: & 
+    Skw_zt,  & ! Varible(s)
+    Skw_zm, & 
+    Sct, & 
+    wp4, & 
+    wpthvp, & 
+    thlpthvp, & 
+    rtpthvp, & 
+    wprcp, & 
+    rtprcp, & 
+    thlprcp, & 
+    pdf_parms, & 
+    rcp2, & 
+    rsat, & 
+    shear, & 
+    ustar, & 
+    Kh_zt, & 
+    wprtp2, & 
+    wp2rtp, & 
+    wpthlp2, & 
+    wp2thlp, & 
+    wprtpthlp, & 
+    wp2thvp, & 
+    wp2rcp, & 
+    thvm, & 
+    em, & 
+    Lscale, & 
+    tau_zt, & 
+    Kh_zm, & 
+    umt, & 
+    vmt, & 
+    vg, & 
+    ug, & 
+    um_ref, & 
+    vm_ref, & 
+    wp2_zt, & 
+    thlp2_zt, & 
+    wpthlp_zt, & 
+    wprtp_zt, & 
+    rtp2_zt, & 
+    rtpthlp_zt, & 
+    edsclrmt, & 
+    wpedsclrp, & 
+    sclrpthvp,   & ! sclr'th_v'
+    sclrprtp,    & ! sclr'rt'
+    sclrp2,      & ! sclr'^2
+    sclrpthlp,   & ! sclr'th_l'
+    sclrprcp,    & ! sclr'rc'
+    wp2sclrp,    & ! w'^2 sclr'
+    wpsclrp2,    & ! w'sclr'^2
+    wpsclrprtp,  & ! w'sclr'rt'
+    wpsclrpthlp ! w'sclr'thl'
 
-       use mixing, only: & 
-           ! Variable(s) 
-           timestep_mixing          ! Compute mean/flux terms
+    use mixing, only: & 
+      ! Variable(s) 
+      timestep_mixing          ! Compute mean/flux terms
 
-       use diagnose_variances, only: & 
-           ! Variable(s) 
-           diag_var     ! Computes variance terms
+    use diagnose_variances, only: & 
+      ! Variable(s) 
+      diag_var     ! Computes variance terms
 
-       use surface_var, only:  & 
-           sfc_var ! Procedure
+    use surface_var, only:  & 
+      sfc_var ! Procedure
 
-       use pdf_closure, only:  & 
-           ! Procedure 
-           pdf_closure_new     ! Prob. density function
+    use pdf_closure, only:  & 
+      ! Procedure 
+      pdf_closure_new     ! Prob. density function
 
-       use mixing_length, only: & 
-           compute_length ! Procedure
+    use mixing_length, only: & 
+      compute_length ! Procedure
 
-       use compute_um_edsclrm_mod, only:  & 
-           compute_um_edsclrm,  & ! Procedure(s)
-           compute_uv_tndcy
+    use compute_um_edsclrm_mod, only:  & 
+      compute_um_edsclrm,  & ! Procedure(s)
+      compute_uv_tndcy
 
-       use saturation, only:  & 
-           ! Procedure
-           sat_mixrat_liq ! Saturation mixing ratio
+    use saturation, only:  & 
+      ! Procedure
+      sat_mixrat_liq ! Saturation mixing ratio
 
-       use wp23, only:  & 
-           timestep_wp23 ! Procedure
+    use wp23, only:  & 
+      timestep_wp23 ! Procedure
 
-       use stats_precision, only:  & 
-           time_precision ! Variable(s)
+    use stats_precision, only:  & 
+      time_precision ! Variable(s)
 
-       use error_code, only :  & 
-           clubb_var_equals_NaN, & ! Variable(s)
-           lapack_error,  & ! Procedure(s)
-           clubb_at_debug_level
+    use error_code, only :  & 
+      clubb_var_equals_NaN, & ! Variable(s)
+      lapack_error,  & ! Procedure(s)
+      clubb_at_debug_level
 
-       use Skw, only:  & 
-           Skw_func ! Procedure
+    use Skw, only:  & 
+      Skw_func ! Procedure
 
-       use explicit_clip, only: & 
-           covariance_clip ! Procedure(s)
+    use explicit_clip, only: & 
+      covariance_clip ! Procedure(s)
 
-       use permute_height_time_mod, only:  & 
-           permute_height_time ! Procedure
+    use permute_height_time_mod, only:  & 
+      permute_height_time ! Procedure
 
-       use T_in_K_mod, only: &
-          ! Read values from namelist
-           thlm2T_in_K ! Procedure
+    use T_in_K_mod, only: &
+      ! Read values from namelist
+      thlm2T_in_K ! Procedure
 
  
-       use stats_variables, only: & 
-           zm,  & ! Variable(s)
-           l_stats_samp, & 
-           iwprtp_bt, & 
-           iwpthlp_bt
+    use stats_variables, only: & 
+      zm,  & ! Variable(s)
+      l_stats_samp, & 
+      iwprtp_bt, & 
+      iwpthlp_bt
 
-       use stats_subs, only: & 
-           stats_accumulate ! Procedure
+    use stats_subs, only: & 
+      stats_accumulate ! Procedure
 
-       use stats_type, only: & 
-           stat_update_var_pt, & ! Procedure(s)
-           stat_begin_update, & 
-           stat_modify, & 
-           stat_end_update
+    use stats_type, only: & 
+      stat_update_var_pt, & ! Procedure(s)
+      stat_begin_update, & 
+      stat_modify, & 
+      stat_end_update
  
 
-       implicit none
+    implicit none
 
-       intrinsic :: sqrt, min, max, exp, mod
+    intrinsic :: sqrt, min, max, exp, mod
 
-       ! Input
-       integer, intent(in) ::  & 
-       iter      ! Closure iteration number
+    ! Input
+    integer, intent(in) ::  & 
+      iter      ! Closure iteration number
 
-       logical, intent(in) ::  & 
-       implemented ! Is this part of a larger host model (T/F) ?
+    logical, intent(in) ::  & 
+      implemented ! Is this part of a larger host model (T/F) ?
 
-       ! Note on dt, dmain, and dtclosure: since being moved out of
-       ! hoc.F, all subroutines within parameterization_timestep now use
-       ! dt for time dependent calculations.  The old dt is noted in
-       ! each section of the code -dschanen 20 April 2006 
-       real(kind=time_precision), intent(in) ::  & 
-       dt            ! Current timestep size    [s]
+    ! Note on dt, dmain, and dtclosure: since being moved out of
+    ! hoc.F, all subroutines within parameterization_timestep now use
+    ! dt for time dependent calculations.  The old dt is noted in
+    ! each section of the code -dschanen 20 April 2006 
+    real(kind=time_precision), intent(in) ::  & 
+      dt            ! Current timestep size    [s]
 
-       real, intent(in) ::  & 
-       fcor          ! Coriolis forcing         [s^-1]
+    real, intent(in) ::  & 
+      fcor          ! Coriolis forcing         [s^-1]
 
-       real, intent(in), dimension(gr%nnzp) ::  & 
-       thlm_forcing,   & ! theta_l forcing.        [K/s]
-       rtm_forcing,    & ! r_t forcing.            [(kg/kg)/s] 
-       wm_zm,            & ! wm on moment. grid.     [m/s]
-       wm_zt,            & ! wm on thermo. grid.     [m/s]
-       p_in_Pa,        & ! Pressure.               [Pa] 
-       rho_zm,           & ! Density on moment. grid [kg/m^3]
-       rho,           & ! Density on thermo. grid [kg/m^3] 
-       exner          ! Exner function.         [-]
+    real, intent(in), dimension(gr%nnzp) ::  & 
+      thlm_forcing,   & ! theta_l forcing.        [K/s]
+      rtm_forcing,    & ! r_t forcing.            [(kg/kg)/s] 
+      wm_zm,            & ! wm on moment. grid.     [m/s]
+      wm_zt,            & ! wm on thermo. grid.     [m/s]
+      p_in_Pa,        & ! Pressure.               [Pa] 
+      rho_zm,           & ! Density on moment. grid [kg/m^3]
+      rho,           & ! Density on thermo. grid [kg/m^3] 
+      exner          ! Exner function.         [-]
 
-       real, intent(in) ::  & 
-       wpthlp_sfc,   & ! w' theta_l' at surface.   [(m K)/s]
-       wprtp_sfc,    & ! w' r_t' at surface.       [(kg m)/( kg s)]
-       upwp_sfc,     & ! u'w' at surface.          [m^2/s^2]
-       vpwp_sfc     ! v'w' at surface.          [m^2/s^2]
+    real, intent(in) ::  & 
+      wpthlp_sfc,   & ! w' theta_l' at surface.   [(m K)/s]
+      wprtp_sfc,    & ! w' r_t' at surface.       [(kg m)/( kg s)]
+      upwp_sfc,     & ! u'w' at surface.          [m^2/s^2]
+      vpwp_sfc     ! v'w' at surface.          [m^2/s^2]
 
        ! Input/Output
        ! These are prognostic or are planned to be in the future
-       real, intent(inout), dimension(gr%nnzp) ::  & 
-       um,       & ! u wind.                       [m/s]
-       upwp,     & ! u'w'.                         [m^2/s^2]
-       vm,       & ! v wind.                       [m/s]
-       vpwp,     & ! u'w'.                         [m^2/s^2]
-       up2,      & ! u'^2                          [m^2/s^2]
-       vp2,      & ! v'^2                          [m^2/s^2]
-       rtm,      & ! r_t Total water mixing ratio. [kg/kg]
-       wprtp,    & ! w' r_t'.                      [(m kg)/(s kg)]
-       thlm,     & ! th_l Liquid potential temp.   [K]
-       wpthlp,   & ! w' th_l'.                     [(m K)/s]
-       wp2,      & ! w'^2.                         [m^2/s^2]
-       wp3,      & ! w'^3.                         [m^3/s^3]
-       Scm,      & ! Sc on moment. grid.           [-]
-       rtp2,     & ! r_t'^2.                       [(kg/kg)^2]
-       thlp2,    & ! th_l'^2.                      [K^2]
-       rtpthlp,  & ! r_t' th_l'.                   [(kg K)/kg]
-       tau_zm,     & ! Tau on moment. grid.          [s]
-       rcm         ! Liquid water mixing ratio.    [kg/kg]
+    real, intent(inout), dimension(gr%nnzp) ::  & 
+      um,       & ! u wind.                       [m/s]
+      upwp,     & ! u'w'.                         [m^2/s^2]
+      vm,       & ! v wind.                       [m/s]
+      vpwp,     & ! u'w'.                         [m^2/s^2]
+      up2,      & ! u'^2                          [m^2/s^2]
+      vp2,      & ! v'^2                          [m^2/s^2]
+      rtm,      & ! r_t Total water mixing ratio. [kg/kg]
+      wprtp,    & ! w' r_t'.                      [(m kg)/(s kg)]
+      thlm,     & ! th_l Liquid potential temp.   [K]
+      wpthlp,   & ! w' th_l'.                     [(m K)/s]
+      wp2,      & ! w'^2.                         [m^2/s^2]
+      wp3,      & ! w'^3.                         [m^3/s^3]
+      Scm,      & ! Sc on moment. grid.           [-]
+      rtp2,     & ! r_t'^2.                       [(kg/kg)^2]
+      thlp2,    & ! th_l'^2.                      [K^2]
+      rtpthlp,  & ! r_t' th_l'.                   [(kg K)/kg]
+      tau_zm,     & ! Tau on moment. grid.          [s]
+      rcm         ! Liquid water mixing ratio.    [kg/kg]
 
-       ! Needed for output for host models
-       real, intent(inout), dimension(gr%nnzp) ::  & 
-       cf ! Cloud fraction.     [%]
+    ! Needed for output for host models
+    real, intent(inout), dimension(gr%nnzp) ::  & 
+      cf ! Cloud fraction.     [%]
 
-       ! Diagnostic, for if some calculation goes amiss.
-       integer, intent(inout) :: err_code
+    ! Diagnostic, for if some calculation goes amiss.
+    integer, intent(inout) :: err_code
      
-       ! Optional Input Variables
-       real, intent(in),  dimension(sclr_dim) ::  & 
-       wpsclrp_sfc,   & ! Scalar flux at surface           [units m/s]
-       wpedsclrp_sfc    ! Eddy-Scalar flux at surface      [units m/s]
+    ! Optional Input Variables
+    real, intent(in),  dimension(sclr_dim) ::  & 
+      wpsclrp_sfc,   & ! Scalar flux at surface           [units m/s]
+      wpedsclrp_sfc    ! Eddy-Scalar flux at surface      [units m/s]
 
-       ! Optional Input/Output Variables
-       real, intent(inout), dimension(gr%nnzp,sclr_dim) :: & 
-       sclrm,         & ! Passive scalar mean.           [units vary]
-       sclrm_forcing, & ! Passive scalar forcing.        [units vary/s]
-       edsclrm,       & ! Eddy passive scalar mean.      [units vary]
-       wpsclrp          ! w'sclr'                        [units vary m/s]
+    ! Optional Input/Output Variables
+    real, intent(inout), dimension(gr%nnzp,sclr_dim) :: & 
+      sclrm,         & ! Passive scalar mean.           [units vary]
+      sclrm_forcing, & ! Passive scalar forcing.        [units vary/s]
+      edsclrm,       & ! Eddy passive scalar mean.      [units vary]
+      wpsclrp          ! w'sclr'                        [units vary m/s]
 
 
-       ! Local Variables
-       integer :: i, k
+    ! Local Variables
+    integer :: i, k
 
-       real, dimension(gr%nnzp) :: & 
-       tmp1, gamma_Skw_fnc
+    real, dimension(gr%nnzp) :: & 
+      tmp1, gamma_Skw_fnc
  
-       real, dimension(gr%nnzp,sclr_dim) :: & 
-       sclr_tmp1, sclr_tmp2, sclr_tmp3, sclr_tmp4 ! for PDF closure
+    real, dimension(gr%nnzp,sclr_dim) :: & 
+      sclr_tmp1, sclr_tmp2, sclr_tmp3, sclr_tmp4 ! for PDF closure
 
 !------- Local variables for Latin Hypercube sampling ------------------
 
@@ -324,45 +323,45 @@ module hoc_parameterization_interface
 !-------- End Latin hypercube section ----------------------------------
 
 !-------- Test input variables ----------------------------------------
-       if ( clubb_at_debug_level( 2 ) ) then
-       call parameterization_check & 
-            ( thlm_forcing, rtm_forcing, wm_zm, wm_zt, p_in_Pa, rho_zm,& ! intent(in)
-              rho, exner, wpthlp_sfc, wprtp_sfc,                & ! intent(in)
-              upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,            & ! intent(in)
-              up2, vp2, rtm, wprtp, thlm,                        & ! intent(in)
-              wpthlp, wp2, wp3, Scm, rtp2, thlp2,                & ! intent(in)
-              rtpthlp, tau_zm, rcm, cf, "beginning of ",           & ! intent(in)
-              wpsclrp_sfc, wpedsclrp_sfc,                        & ! intent(in)
-              sclrm, sclrm_forcing, edsclrm )                      ! intent(in)
-       end if
+    if ( clubb_at_debug_level( 2 ) ) then
+      call parameterization_check & 
+           ( thlm_forcing, rtm_forcing, wm_zm, wm_zt, p_in_Pa, rho_zm, & ! intent(in)
+           rho, exner, wpthlp_sfc, wprtp_sfc,                & ! intent(in)
+           upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,           & ! intent(in)
+           up2, vp2, rtm, wprtp, thlm,                       & ! intent(in)
+           wpthlp, wp2, wp3, Scm, rtp2, thlp2,               & ! intent(in)
+           rtpthlp, tau_zm, rcm, cf, "beginning of ",        & ! intent(in)
+           wpsclrp_sfc, wpedsclrp_sfc,                       & ! intent(in)
+           sclrm, sclrm_forcing, edsclrm )                     ! intent(in)
+    end if
 !-----------------------------------------------------------------------
 
-       !----------------------------------------------------------------
-       ! Interpolate wp2 & wp3, and then compute Skw for m & t grid
-       !----------------------------------------------------------------
+    !----------------------------------------------------------------
+    ! Interpolate wp2 & wp3, and then compute Skw for m & t grid
+    !----------------------------------------------------------------
 
-       do k = 1, gr%nnzp, 1
+    do k = 1, gr%nnzp, 1
 
-         Skw_zt(k) = Skw_func( zm2zt(wp2,k), wp3(k), wtol )
-         Skw_zm(k) = Skw_func( wp2(k), zt2zm(wp3,k), wtol )
+      Skw_zt(k) = Skw_func( zm2zt(wp2,k), wp3(k), wtol )
+      Skw_zm(k) = Skw_func( wp2(k), zt2zm(wp3,k), wtol )
 
-       enddo
+    end do
 
-       ! SET SURFACE VALUES OF FLUXES (BROUGHT IN)
-       wpthlp(1) = wpthlp_sfc
-       wprtp(1)  = wprtp_sfc
-       upwp(1)   = upwp_sfc
-       vpwp(1)   = vpwp_sfc
+    ! SET SURFACE VALUES OF FLUXES (BROUGHT IN)
+    wpthlp(1) = wpthlp_sfc
+    wprtp(1)  = wprtp_sfc
+    upwp(1)   = upwp_sfc
+    vpwp(1)   = vpwp_sfc
 
-       ! Set fluxes for passive scalars (if enabled)
-       if ( sclr_dim > 0 ) then
-         wpsclrp(1,1:sclr_dim)   = wpsclrp_sfc(1:sclr_dim)
-         wpedsclrp(1,1:sclr_dim) = wpedsclrp_sfc(1:sclr_dim)
-       end if
+    ! Set fluxes for passive scalars (if enabled)
+    if ( sclr_dim > 0 ) then
+      wpsclrp(1,1:sclr_dim)   = wpsclrp_sfc(1:sclr_dim)
+      wpedsclrp(1,1:sclr_dim) = wpedsclrp_sfc(1:sclr_dim)
+    end if
 
-       !----------------------------------------------------------------
-       ! Set Surface variances
-       !----------------------------------------------------------------
+    !----------------------------------------------------------------
+    ! Set Surface variances
+    !----------------------------------------------------------------
 
 !      Surface variances should be set here, before the call to diag_var.
 !      The reasons that surface variances can be set here are because the
@@ -383,92 +382,96 @@ module hoc_parameterization_interface
 
 !      Surface effects should not be included with any case where the lowest
 !      level is not the ground level.  Brian Griffin.  December 22, 2005.
-       IF ( gr%zm(1) == 0.0 ) THEN
-          call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),   & ! intent(in)
-                        ustar, wpsclrp(1,1:sclr_dim),            & ! intent(in)
-                        wp2(1), up2(1), vp2(1),                  & ! intent(out)
-                        thlp2(1), rtp2(1), rtpthlp(1), err_code, & ! intent(out)
-                        sclrp2(1,1:sclr_dim),                    & ! intent(out)
-                        sclrprtp(1,1:sclr_dim),                  & ! intent(out) 
-                        sclrpthlp(1,1:sclr_dim) )                  ! intent(out)
+    IF ( gr%zm(1) == 0.0 ) THEN
+      call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),   & ! intent(in)
+                    ustar, wpsclrp(1,1:sclr_dim),            & ! intent(in)
+                    wp2(1), up2(1), vp2(1),                  & ! intent(out)
+                    thlp2(1), rtp2(1), rtpthlp(1), err_code, & ! intent(out)
+                    sclrp2(1,1:sclr_dim),                    & ! intent(out)
+                    sclrprtp(1,1:sclr_dim),                  & ! intent(out) 
+                    sclrpthlp(1,1:sclr_dim) )                  ! intent(out)
           ! Subroutine may produce NaN values, and if so, exit
           ! gracefully.
           ! Joshua Fasching March 2008
-          if( err_code == clubb_var_equals_NaN ) return
+      if( err_code == clubb_var_equals_NaN ) return
     
-       ELSE
+    ELSE
           ! Variances for cases where the lowest level is not at the surface.
           ! Eliminate surface effects on lowest level variances.
-          wp2(1)     = (2.0/3.0) * emin
-          up2(1)     = (2.0/3.0) * emin
-          vp2(1)     = (2.0/3.0) * emin
-          thlp2(1)   = 0.0
-          rtp2(1)    = 0.0
-          rtpthlp(1) = 0.0
-          DO i = 1, sclr_dim, 1
-            sclrp2(1,i)    = 0.0
-            sclrprtp(1,i)  = 0.0
-            sclrpthlp(1,i) = 0.0
-          END DO
-       END IF
+      wp2(1)     = (2.0/3.0) * emin
+      up2(1)     = (2.0/3.0) * emin
+      vp2(1)     = (2.0/3.0) * emin
+      thlp2(1)   = 0.0
+      rtp2(1)    = 0.0
+      rtpthlp(1) = 0.0
 
-       !----------------------------------------------------------------
-       ! Diagnose variances
-       !----------------------------------------------------------------
+      DO i = 1, sclr_dim, 1
+        sclrp2(1,i)    = 0.0
+        sclrprtp(1,i)  = 0.0
+        sclrpthlp(1,i) = 0.0
+      END DO
+    END IF
 
-       ! We also found that certain cases require a time tendency to run
-       ! at shorter timesteps.
-       ! This requires us to store in memory Scm and tau_zm between timesteps.
+    ! Interpolate wp2 to the thermo. grid 
+    wp2_zt = max( zm2zt( wp2 ), 0.0 ) ! Positive definite quantity
 
-       ! We found that if we call diag_var first, we can use a longer timestep.
-       call diag_var( tau_zm, wm_zm, rtm, wprtp,                     & ! intent(in)
-                      thlm, wpthlp, wpthvp, um, vm,              & ! intent(in)
-                      wp2, wp3, upwp, vpwp, Scm, Skw_zm, Kh_zt,      & ! intent(in)
+    !----------------------------------------------------------------
+    ! Diagnose variances
+    !----------------------------------------------------------------
+
+    ! We also found that certain cases require a time tendency to run
+    ! at shorter timesteps.
+    ! This requires us to store in memory Scm and tau_zm between timesteps.
+
+    ! We found that if we call diag_var first, we can use a longer timestep.
+    call diag_var( tau_zm, wm_zm, rtm, wprtp,                 & ! intent(in)
+                   thlm, wpthlp, wpthvp, um, vm,              & ! intent(in)
+                   wp2, wp2_zt, wp3, upwp, vpwp, Scm, Skw_zm, Kh_zt,  & ! intent(in)
 ! Vince Larson used prognostic timestepping of variances 
 !    in order to increase numerical stability.  17 Jul 2007
-!     .                .false., dt, isValid
-                      .true., dt,                                & ! intent(in)
-                      sclrm, wpsclrp,                            & ! intent(in) 
-                      rtp2, thlp2, rtpthlp,                      & ! intent(inout)
-                      up2, vp2,                                  & ! intent(inout)
-                      err_code,                                  & ! intent(out)
-                      sclrp2, sclrprtp, sclrpthlp  )               ! intent(out)
+!                  .false., dt, isValid &
+                   .true., dt,                         & ! intent(in)
+                   sclrm, wpsclrp,                     & ! intent(in) 
+                   rtp2, thlp2, rtpthlp,               & ! intent(inout)
+                   up2, vp2,                           & ! intent(inout)
+                   err_code,                           & ! intent(out)
+                   sclrp2, sclrprtp, sclrpthlp  )        ! intent(out)
 
 
-       !----------------------------------------------------------------
-       ! Covariance clipping for wprtp, wpthlp, and wpsclrp after 
-       ! subroutine diag_var updated rtp2, thlp2, and sclrp2.
-       !----------------------------------------------------------------
+    !----------------------------------------------------------------
+    ! Covariance clipping for wprtp, wpthlp, and wpsclrp after 
+    ! subroutine diag_var updated rtp2, thlp2, and sclrp2.
+    !----------------------------------------------------------------
 
-       ! Clipping for w'r_t'
-       !
-       ! Clipping w'r_t' at each vertical level, based on the 
-       ! correlation of w and r_t at each vertical level, such that:
-       ! corr_(w,r_t) = w'r_t' / [ sqrt(w'^2) * sqrt(r_t'^2) ];
-       ! -1 <= corr_(w,r_t) <= 1.
-       ! Since w'^2, r_t'^2, and w'r_t' are updated in different 
-       ! places from each other, clipping for w'r_t' has to be done 
-       ! three times.  This is the first instance of w'r_t' clipping.
+    ! Clipping for w'r_t'
+    !
+    ! Clipping w'r_t' at each vertical level, based on the 
+    ! correlation of w and r_t at each vertical level, such that:
+    ! corr_(w,r_t) = w'r_t' / [ sqrt(w'^2) * sqrt(r_t'^2) ];
+    ! -1 <= corr_(w,r_t) <= 1.
+    ! Since w'^2, r_t'^2, and w'r_t' are updated in different 
+    ! places from each other, clipping for w'r_t' has to be done 
+    ! three times.  This is the first instance of w'r_t' clipping.
 
  
-       ! Include effect of clipping in wprtp time tendency budget term.
-       if ( l_stats_samp ) then
-          ! wprtp total time tendency (effect of clipping)
-          call stat_begin_update( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
-                   zm )                                             ! intent(inout)
-       endif
+    ! Include effect of clipping in wprtp time tendency budget term.
+    if ( l_stats_samp ) then
+      ! wprtp total time tendency (effect of clipping)
+      call stat_begin_update( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
+                   zm ) ! intent(inout)
+    end if
  
 
-       call covariance_clip( "wprtp", .true.,            & ! intent(in) 
-                             .false., dt, wp2, rtp2,     & ! intent(in)
-                             wprtp )                    ! intent(inout)
+    call covariance_clip( "wprtp", .true.,            & ! intent(in) 
+                          .false., dt, wp2, rtp2,     & ! intent(in)
+                          wprtp )                       ! intent(inout)
 
-       if ( l_stats_samp ) then
+    if ( l_stats_samp ) then
  
-          ! wprtp total time tendency (effect of clipping)
-          call stat_modify( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
-                            zm )                           ! intent(inout)
-       endif
+      ! wprtp total time tendency (effect of clipping)
+      call stat_modify( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
+                        zm )                           ! intent(inout)
+    end if
  
 
        ! Clipping for w'th_l'
@@ -483,101 +486,103 @@ module hoc_parameterization_interface
 
  
        ! Include effect of clipping in wpthlp time tendency budget term.
-       if ( l_stats_samp ) then
-          ! wpthlp total time tendency (effect of clipping)
-          call stat_begin_update( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
-                                  zm )                             ! intent(inout)
-       endif
+    if ( l_stats_samp ) then
+      ! wpthlp total time tendency (effect of clipping)
+      call stat_begin_update( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
+                              zm )                             ! intent(inout)
+    end if
  
 
-       call covariance_clip( "wpthlp", .true.,                      & ! intent(in)
-                             .false., dt, wp2, thlp2,               & ! intent(in)
-                             wpthlp )                              ! intent(inout)
+    call covariance_clip( "wpthlp", .true.,        & ! intent(in)
+                          .false., dt, wp2, thlp2, & ! intent(in)
+                          wpthlp )                 ! intent(inout)
 
-       if ( l_stats_samp ) then
+    if ( l_stats_samp ) then
  
-          ! wpthlp total time tendency (effect of clipping)
-          call stat_modify( iwpthlp_bt, real( wpthlp / dt ),        & ! intent(in)
-                            zm )                                   ! intent(inout)
-       endif
+      ! wpthlp total time tendency (effect of clipping)
+      call stat_modify( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
+                        zm )                                ! intent(inout)
+    end if
  
 
-       ! Clipping for w'sclr'
-       !
-       ! Clipping w'sclr' at each vertical level, based on the 
-       ! correlation of w and sclr at each vertical level, such that:
-       ! corr_(w,sclr) = w'sclr' / [ sqrt(w'^2) * sqrt(sclr'^2) ];
-       ! -1 <= corr_(w,sclr) <= 1.
-       ! Since w'^2, sclr'^2, and w'sclr' are updated in different 
-       ! places from each other, clipping for w'sclr' has to be done 
-       ! three times.  This is the first instance of w'sclr' clipping.
-       do i = 1, sclr_dim, 1
-          call covariance_clip( "wpsclrp", .true.,                  & ! intent(in)
-                                .false., dt, wp2(:), sclrp2(:,i),   & ! intent(in)
-                                wpsclrp(:,i) )                     ! intent(inout)
-       enddo
+    ! Clipping for w'sclr'
+    !
+    ! Clipping w'sclr' at each vertical level, based on the 
+    ! correlation of w and sclr at each vertical level, such that:
+    ! corr_(w,sclr) = w'sclr' / [ sqrt(w'^2) * sqrt(sclr'^2) ];
+    ! -1 <= corr_(w,sclr) <= 1.
+    ! Since w'^2, sclr'^2, and w'sclr' are updated in different 
+    ! places from each other, clipping for w'sclr' has to be done 
+    ! three times.  This is the first instance of w'sclr' clipping.
+    do i = 1, sclr_dim, 1
+      call covariance_clip( "wpsclrp", .true.,                & ! intent(in)
+                            .false., dt, wp2(:), sclrp2(:,i), & ! intent(in)
+                            wpsclrp(:,i) )                      ! intent(inout)
+    end do
 
 
-       ! Clipping for u'w'
-       !
-       ! Clipping u'w' at each vertical level, based on the
-       ! correlation of u and w at each vertical level, such that:
-       ! corr_(u,w) = u'w' / [ sqrt(u'^2) * sqrt(w'^2) ];
-       ! -1 <= corr_(u,w) <= 1.
-       ! Since u'^2, w'^2, and u'w' are updated in different
-       ! places from each other, clipping for u'w' has to be done
-       ! three times.  This is the first instance of u'w' clipping.
-       call covariance_clip( "upwp", .true.,        & ! intent(in)
-                             .false., dt, wp2, up2, & ! intent(in)
-                             upwp )                   ! intent(inout)
+    ! Clipping for u'w'
+    !
+    ! Clipping u'w' at each vertical level, based on the
+    ! correlation of u and w at each vertical level, such that:
+    ! corr_(u,w) = u'w' / [ sqrt(u'^2) * sqrt(w'^2) ];
+    ! -1 <= corr_(u,w) <= 1.
+    ! Since u'^2, w'^2, and u'w' are updated in different
+    ! places from each other, clipping for u'w' has to be done
+    ! three times.  This is the first instance of u'w' clipping.
+    call covariance_clip( "upwp", .true.,        & ! intent(in)
+                          .false., dt, wp2, up2, & ! intent(in)
+                          upwp )                   ! intent(inout)
 
 
-       ! Clipping for v'w'
-       !
-       ! Clipping v'w' at each vertical level, based on the
-       ! correlation of v and w at each vertical level, such that:
-       ! corr_(v,w) = v'w' / [ sqrt(v'^2) * sqrt(w'^2) ];
-       ! -1 <= corr_(v,w) <= 1.
-       ! Since v'^2, w'^2, and v'w' are updated in different
-       ! places from each other, clipping for v'w' has to be done
-       ! three times.  This is the first instance of v'w' clipping.
-       call covariance_clip( "vpwp", .true.,        & ! intent(in)
-                             .false., dt, wp2, vp2, & ! intent(in)
-                             vpwp )                   ! intent(inout)
+    ! Clipping for v'w'
+    !
+    ! Clipping v'w' at each vertical level, based on the
+    ! correlation of v and w at each vertical level, such that:
+    ! corr_(v,w) = v'w' / [ sqrt(v'^2) * sqrt(w'^2) ];
+    ! -1 <= corr_(v,w) <= 1.
+    ! Since v'^2, w'^2, and v'w' are updated in different
+    ! places from each other, clipping for v'w' has to be done
+    ! three times.  This is the first instance of v'w' clipping.
+    call covariance_clip( "vpwp", .true.,        & ! intent(in)
+                          .false., dt, wp2, vp2, & ! intent(in)
+                          vpwp )                   ! intent(inout)
 
 
-       ! Check stability
-       ! Changed from a logical flag to an integer indicating nature of
-       ! error.
-       ! Joshua Fasching March 2008
-       if ( lapack_error( err_code ) ) return
+    ! Check stability
+    ! Changed from a logical flag to an integer indicating nature of
+    ! error.
+    ! Joshua Fasching March 2008
+    if ( lapack_error( err_code ) ) return
 
-       if ( l_gamma_Skw ) then
-       !----------------------------------------------------------------
-       ! Compute gamma as a function of Skw  - 14 April 06 dschanen
-       !----------------------------------------------------------------
+    if ( l_gamma_Skw ) then
+      !----------------------------------------------------------------
+      ! Compute gamma as a function of Skw  - 14 April 06 dschanen
+      !----------------------------------------------------------------
 
-          gamma_Skw_fnc = gamma_coefb + (gamma_coef-gamma_coefb) & 
+      gamma_Skw_fnc = gamma_coefb + (gamma_coef-gamma_coefb) & 
             *exp( -(1.0/2.0) * (Skw_zm/gamma_coefc)**2 )
 
-       else
-          gamma_Skw_fnc = gamma_coef
+    else
+      gamma_Skw_fnc = gamma_coef
 
-       end if
+    end if
 
        !----------------------------------------------------------------
        ! Compute Sc with new formula from Vince
        !----------------------------------------------------------------
 
-       Scm = gamma_Skw_fnc * ( 1.0 -  & 
-             min( & 
-             max( ( wpthlp / ( sqrt( wp2 ) * sqrt( thlp2 )  & 
-                    + 0.01 * wtol * thltol ) )**2, & 
-                  ( wprtp / ( sqrt( wp2 )*sqrt( rtp2 )  & 
-                    + 0.01 * wtol * rttol ) )**2 ), & 
-             1.0      ) )
+    Scm = gamma_Skw_fnc * &
+      ( 1.0 - min( & 
+                  max( ( wpthlp / ( sqrt( wp2 ) * sqrt( thlp2 )  & 
+                      + 0.01 * wtol * thltol ) )**2, & 
+                       ( wprtp / ( sqrt( wp2 )*sqrt( rtp2 )  & 
+                      + 0.01 * wtol * rttol ) )**2 &
+                     ), & ! max  
+             1.0 ) & ! min 
+       )
 
-       Sct = max( zm2zt( Scm ), 0.0 )   ! Positive definite quantity
+     Sct = max( zm2zt( Scm ), 0.0 )   ! Positive definite quantity
 
 !    Latin hypercube sample generation
 !    Generate p_height_time, an nnzp x nt_repeat x d_variables array of random integers
@@ -592,20 +597,20 @@ module hoc_parameterization_interface
 
 !       print*, 'hoc.F: i_rmd=', i_rmd
 
-       !----------------------------------------------------------------
-       ! Call closure scheme
-       !----------------------------------------------------------------
+    !----------------------------------------------------------------
+    ! Call closure scheme
+    !----------------------------------------------------------------
 
-       ! Put passive scalar input on the t grid for the PDF
-       do i = 1, sclr_dim, 1
-         sclr_tmp1(:,i) = zm2zt( wpsclrp(:,i) )
-         sclr_tmp2(:,i) = zm2zt( sclrprtp(:,i) )
-         sclr_tmp3(:,i) = max( zm2zt( sclrp2(:,i) ), 0.0 ) ! Pos. def. quantity
-         sclr_tmp4(:,i) = zm2zt( sclrpthlp(:,i) )
-       end do ! i = 1, sclr_dim
+    ! Put passive scalar input on the t grid for the PDF
+    do i = 1, sclr_dim, 1
+      sclr_tmp1(:,i) = zm2zt( wpsclrp(:,i) )
+      sclr_tmp2(:,i) = zm2zt( sclrprtp(:,i) )
+      sclr_tmp3(:,i) = max( zm2zt( sclrp2(:,i) ), 0.0 ) ! Pos. def. quantity
+      sclr_tmp4(:,i) = zm2zt( sclrpthlp(:,i) )
+    end do ! i = 1, sclr_dim
 
-       do k = 2, gr%nnzp, 1
-         call pdf_closure_new & 
+    do k = 2, gr%nnzp, 1
+      call pdf_closure_new & 
          ( p_in_Pa(k), exner(k), wm_zt(k), zm2zt(wp2, k), wp3(k), Sct(k), & ! intent(in)
            rtm(k), zm2zt(rtp2, k), zm2zt( wprtp, k ),                   & ! intent(in)
            thlm(k), zm2zt( thlp2, k ), zm2zt( wpthlp, k ),              & ! intent(in)
@@ -624,22 +629,22 @@ module hoc_parameterization_interface
         ! gracefully.
         ! Joshua Fasching March 2008
          
-        if ( err_code == clubb_var_equals_NaN ) then
-          write(0,*) "At grid level = ",k
-          return
-        end if
+      if ( err_code == clubb_var_equals_NaN ) then
+        write(0,*) "At grid level = ",k
+        return
+      end if
          
          !--------------------------------------------------------------
          ! Latin hypercube sampling
          !--------------------------------------------------------------
-         if ( l_LH_on ) then 
-!          call latin_hypercube_sampling
-!    .     ( k, n_micro_call, d_variables, nt_repeat, i_rmd, 
-!    .       crt1, crt2, cthl1, cthl2, hydromet(:,1), 
-!    .       cf, gr%nnzp, sample_flag, p_height_time )
-         end if
+     if ( l_LH_on ) then 
+!      call latin_hypercube_sampling
+!           ( k, n_micro_call, d_variables, nt_repeat, i_rmd, &
+!             crt1, crt2, cthl1, cthl2, hydromet(:,1), &
+!             cf, gr%nnzp, sample_flag, p_height_time ) &
+      end if
 
-       end do ! k = 2, nz-1
+    end do ! k = 2, nz-1
 
 !            print*, 'hoc.F: AKm=', AKm
 !            print*, 'hoc.F: AKm_est=', AKm_est
@@ -648,76 +653,75 @@ module hoc_parameterization_interface
 !      Since top momentum level is higher than top thermo level,
 !      set variables at top momentum level to 0.
 
-       wp4               = max( zt2zm( wp4 ), 0.0 )   ! Pos. def. quantity
-       wp4(gr%nnzp)      = 0.0
-       wpthvp            = zt2zm( wpthvp )
-       wpthvp(gr%nnzp)   = 0.0
-       thlpthvp          = zt2zm( thlpthvp )
-       thlpthvp(gr%nnzp) = 0.0
-       rtpthvp           = zt2zm( rtpthvp )
-       rtpthvp(gr%nnzp)  = 0.0
-       wprcp             = zt2zm( wprcp )
-       wprcp(gr%nnzp)    = 0.0
-       rtprcp            = zt2zm( rtprcp )
-       rtprcp(gr%nnzp)   = 0.0
-       thlprcp           = zt2zm( thlprcp )
-       thlprcp(gr%nnzp)  = 0.0
-       rcp2              = max( zt2zm( rcp2 ), 0.0 )   ! Pos. def. quantity
-       rcp2(gr%nnzp)     = 0.0
+    wp4               = max( zt2zm( wp4 ), 0.0 )   ! Pos. def. quantity
+    wp4(gr%nnzp)      = 0.0
+    wpthvp            = zt2zm( wpthvp )
+    wpthvp(gr%nnzp)   = 0.0
+    thlpthvp          = zt2zm( thlpthvp )
+    thlpthvp(gr%nnzp) = 0.0
+    rtpthvp           = zt2zm( rtpthvp )
+    rtpthvp(gr%nnzp)  = 0.0
+    wprcp             = zt2zm( wprcp )
+    wprcp(gr%nnzp)    = 0.0
+    rtprcp            = zt2zm( rtprcp )
+    rtprcp(gr%nnzp)   = 0.0
+    thlprcp           = zt2zm( thlprcp )
+    thlprcp(gr%nnzp)  = 0.0
+    rcp2              = max( zt2zm( rcp2 ), 0.0 )   ! Pos. def. quantity
+    rcp2(gr%nnzp)     = 0.0
 
-       ! Interpolate passive scalars back onto the m grid
-       do i = 1, sclr_dim
-         sclrpthvp(:,i)       = zt2zm( sclrpthvp(:,i) )
-         sclrpthvp(gr%nnzp,i) = 0.0
-         sclrprcp(:,i)        = zt2zm( sclrprcp(:,i) )
-         sclrprcp(gr%nnzp,i)  = 0.0
-       end do ! i=1, sclr_dim
+    ! Interpolate passive scalars back onto the m grid
+    do i = 1, sclr_dim
+      sclrpthvp(:,i)       = zt2zm( sclrpthvp(:,i) )
+      sclrpthvp(gr%nnzp,i) = 0.0
+      sclrprcp(:,i)        = zt2zm( sclrprcp(:,i) )
+      sclrprcp(gr%nnzp,i)  = 0.0
+    end do ! i=1, sclr_dim
 
-       !----------------------------------------------------------------
-       ! Compute thvm
-       !----------------------------------------------------------------
+    !----------------------------------------------------------------
+    ! Compute thvm
+    !----------------------------------------------------------------
 
-       thvm = thlm + ep1 * T0 * rtm + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
+    thvm = thlm + ep1 * T0 * rtm + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
 
-       !----------------------------------------------------------------
-       ! Compute tke
-       !----------------------------------------------------------------
+    !----------------------------------------------------------------
+    ! Compute tke (turbulent kinetic energy)
+    !----------------------------------------------------------------
 
-       if ( .not. l_tke_aniso ) then
-         ! tke is assumed to be 3/2 of wp2
-         em = 1.5 * wp2
-       else
-         em = 0.5 * ( wp2 + vp2 + up2 )
-       end if
+    if ( .not. l_tke_aniso ) then
+      ! tke is assumed to be 3/2 of wp2
+      em = 1.5 * wp2
+    else
+      em = 0.5 * ( wp2 + vp2 + up2 )
+    end if
 
-       !----------------------------------------------------------------
-       ! Compute mixing length
-       !----------------------------------------------------------------
+    !----------------------------------------------------------------
+    ! Compute mixing length
+    !----------------------------------------------------------------
 
-       call compute_length( thvm, thlm, rtm, rcm, em, p_in_Pa, exner,  & ! intent(in)
-                            Lscale, err_code )                           ! intent(out)
+    call compute_length( thvm, thlm, rtm, rcm, em, p_in_Pa, exner, & ! intent(in)
+                         Lscale, err_code )                           ! intent(out)
        
-       ! Subroutine may produce NaN values, and if so, exit
-       ! gracefully.
-       ! Joshua Fasching March 2008       
-       if( err_code == clubb_var_equals_NaN ) return
+    ! Subroutine may produce NaN values, and if so, exit
+    ! gracefully.
+    ! Joshua Fasching March 2008       
+    if( err_code == clubb_var_equals_NaN ) return
 
 
-       !----------------------------------------------------------------
-       ! Dissipation time
-       !----------------------------------------------------------------
+    !----------------------------------------------------------------
+    ! Dissipation time
+    !----------------------------------------------------------------
 ! Vince Larson replaced the cutoff of emin by wtol**2.  7 Jul 2007
 !     This is to prevent tau from being too large (producing little damping)
 !     in stably stratified layers with little turbulence.
 !       tmp1 = SQRT( MAX( emin, zm2zt( em ) ) )
 !       tau_zt = MIN( Lscale / tmp1, taumax )
-!       tau_zm 
-!     . = MIN( ( zt2zm( Lscale ) / SQRT( MAX( emin, em ) ) ), taumax )
-       tmp1 = SQRT( MAX( wtol**2, zm2zt( em ) ) )
-       tau_zt = MIN( Lscale / tmp1, taumax )
-       tau_zm  & 
-       = MIN( ( MAX( zt2zm( Lscale ), 0.0 )  & 
-               / SQRT( MAX( wtol**2, em ) ) ), taumax )
+!       tau_zm &
+!       = MIN( ( zt2zm( Lscale ) / SQRT( MAX( emin, em ) ) ), taumax )
+    tmp1   = SQRT( MAX( wtol**2, zm2zt( em ) ) )
+    tau_zt = MIN( Lscale / tmp1, taumax )
+    tau_zm = MIN( ( MAX( zt2zm( Lscale ), 0.0 )  & 
+                 / SQRT( MAX( wtol**2, em ) ) ), taumax )
 ! End Vince Larson's replacement.
 
        ! Modification to damp noise in stable region
@@ -731,334 +735,333 @@ module hoc_parameterization_interface
 !       end do
 ! End Vince Larson's commenting.
 
-       !----------------------------------------------------------------
-       ! Eddy diffusivity coefficient
-       !----------------------------------------------------------------
-       ! c_K is 0.548 usually (Duynkerke and Driedonks 1987)
+    !----------------------------------------------------------------
+    ! Eddy diffusivity coefficient
+    !----------------------------------------------------------------
+    ! c_K is 0.548 usually (Duynkerke and Driedonks 1987)
 
-       Kh_zt = c_K * Lscale * tmp1
-       Kh_zm = c_K * max( zt2zm( Lscale ), 0.0 )  & 
-                 * sqrt( max( em, emin ) )
+    Kh_zt = c_K * Lscale * tmp1
+    Kh_zm = c_K * max( zt2zm( Lscale ), 0.0 )  & 
+                * sqrt( max( em, emin ) )
  
 !#######################################################################
 !############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
 !#######################################################################
 
 
-       ! Store the saturation mixing ratio for output purposes.  Brian
-       rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) ) 
+    ! Store the saturation mixing ratio for output purposes.  Brian
+    rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) ) 
 
-       !----------------------------------------------------------------
-       ! Advance rtm/wprtp and thlm/wpthlp one time step
-       !----------------------------------------------------------------
-        call timestep_mixing( dt, Scm, wm_zm, wm_zt, wp2, wp3,       & ! intent(in)
-                              Kh_zt, tau_zm, Skw_zm, rtpthvp,          & ! intent(in)
-                              rtm_forcing, thlpthvp,             & ! intent(in)
-                              thlm_forcing, rtp2, thlp2,         & ! intent(in)
-                              implemented,                       & ! intent(in)
-                              sclrpthvp, sclrm_forcing, sclrp2,  & ! intent(in)
-                              rtm, wprtp, thlm, wpthlp,          & ! intent(inout)
-                              err_code,                          & ! intent(inout)
-                              sclrm, wpsclrp )                     ! intent(inout)
+    !----------------------------------------------------------------
+    ! Advance rtm/wprtp and thlm/wpthlp one time step
+    !----------------------------------------------------------------
+    call timestep_mixing( dt, Scm, wm_zm, wm_zt, wp2, wp3,   & ! intent(in)
+                          Kh_zt, tau_zm, Skw_zm, rtpthvp,    & ! intent(in)
+                          rtm_forcing, thlpthvp,             & ! intent(in)
+                          thlm_forcing, rtp2, thlp2, wp2_zt, & ! intent(in)
+                          implemented,                       & ! intent(in)
+                          sclrpthvp, sclrm_forcing, sclrp2,  & ! intent(in)
+                          rtm, wprtp, thlm, wpthlp,          & ! intent(inout)
+                          err_code,                          & ! intent(inout)
+                          sclrm, wpsclrp )                     ! intent(inout)
 
-       ! Wrapped LAPACK procedures may report errors, and if so, exit
-       ! gracefully.
-       ! Joshua Fasching March 2008
+    ! Wrapped LAPACK procedures may report errors, and if so, exit
+    ! gracefully.
+    ! Joshua Fasching March 2008
 
-       if ( lapack_error( err_code ) ) return
+    if ( lapack_error( err_code ) ) return
 
-        ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
-        ! This code won't work unless rtm >= 0 !!!
-        do k = 1, gr%nnzp
-          if ( rtm(k) < rcm(k) ) then
+    ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
+    ! This code won't work unless rtm >= 0 !!!
+    do k = 1, gr%nnzp
+      if ( rtm(k) < rcm(k) ) then
 
-            if ( clubb_at_debug_level(1) ) then
-              write(fstderr,*) 'rtm < rcm in timestep_mixing at k=', k, '.', & 
-                      '  Clipping rcm.'
-            end if ! clubb_at_debug_level(1)
+        if ( clubb_at_debug_level(1) ) then
+          write(fstderr,*) 'rtm < rcm in timestep_mixing at k=', k, '.', & 
+            '  Clipping rcm.'
 
-            rcm(k) = max( 0.0, rtm(k) - eps )
+        end if ! clubb_at_debug_level(1)
 
-          end if ! rtm(k) < rcm(k)
+          rcm(k) = max( 0.0, rtm(k) - eps )
 
-        end do ! k=1..gr%nnzp
+      end if ! rtm(k) < rcm(k)
 
-       !----------------------------------------------------------------
-       ! Advance wp2/wp3 one timestep
-       !----------------------------------------------------------------
+    end do ! k=1..gr%nnzp
 
-       call timestep_wp23( dt, Scm, wm_zm, wm_zt, wpthvp, wp2thvp,        & ! intent(in)
-                           um, vm, upwp, vpwp, up2, vp2, Kh_zm, Kh_zt,    & ! intent(in)
-                           tau_zm, tau_zt, Skw_zm, Skw_zt, pdf_parms(:, 13),  & ! intent(in)
-                           wp2, wp3, err_code )                         ! intent(inout)
+    !----------------------------------------------------------------
+    ! Advance wp2/wp3 one timestep
+    !----------------------------------------------------------------
+
+    call timestep_wp23( dt, Scm, wm_zm, wm_zt, wpthvp, wp2thvp,       & ! intent(in)
+                        um, vm, upwp, vpwp, up2, vp2, Kh_zm, Kh_zt,   & ! intent(in)
+                        tau_zm, tau_zt, Skw_zm, Skw_zt, pdf_parms(:,13),  & ! intent(in)
+                        wp2_zt, wp2, wp3, err_code )                  ! intent(inout)
+
+    ! Interpolate wp2 to the thermo. grid 
+    wp2_zt = max( zm2zt( wp2 ), 0.0 ) ! Positive definite quantity
 
 
-       !----------------------------------------------------------------
-       ! Covariance clipping for wprtp, wpthlp, and wpsclrp after
-       ! subroutine wp23 updated wp2.
-       !----------------------------------------------------------------
+    !----------------------------------------------------------------
+    ! Covariance clipping for wprtp, wpthlp, and wpsclrp after
+    ! subroutine wp23 updated wp2.
+    !----------------------------------------------------------------
 
-       ! Clipping for w'r_t'
-       !
-       ! Clipping w'r_t' at each vertical level, based on the
-       ! correlation of w and r_t at each vertical level, such that:
-       ! corr_(w,r_t) = w'r_t' / [ sqrt(w'^2) * sqrt(r_t'^2) ];
-       ! -1 <= corr_(w,r_t) <= 1.
-       ! Since w'^2, r_t'^2, and w'r_t' are updated in different
-       ! places from each other, clipping for w'r_t' has to be done
-       ! three times.  This is the third instance of w'r_t' clipping.
-
- 
-       ! Include effect of clipping in wprtp time tendency budget term.
-       if ( l_stats_samp ) then
-          ! wprtp total time tendency (effect of clipping)
-          call stat_modify( iwprtp_bt, real( -wprtp / dt ),  & ! intent(in)
-                            zm )                               ! intent(inout)
-       endif
- 
-
-       call covariance_clip( "wprtp", .false.,              & ! intent(in)
-                             .true., dt, wp2, rtp2,         & ! intent(in)
-                             wprtp )                          ! intent(inout)
-
-       if ( l_stats_samp ) then
-          ! wprtp total time tendency (effect of clipping)
-          call stat_end_update( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
-                                zm )                              ! intent(inout)
-       endif
- 
-
-       ! Clipping for w'th_l'
-       !
-       ! Clipping w'th_l' at each vertical level, based on the
-       ! correlation of w and th_l at each vertical level, such that:
-       ! corr_(w,th_l) = w'th_l' / [ sqrt(w'^2) * sqrt(th_l'^2) ];
-       ! -1 <= corr_(w,th_l) <= 1.
-       ! Since w'^2, th_l'^2, and w'th_l' are updated in different
-       ! places from each other, clipping for w'th_l' has to be done
-       ! three times.  This is the third instance of w'th_l' clipping.
+    ! Clipping for w'r_t'
+    !
+    ! Clipping w'r_t' at each vertical level, based on the
+    ! correlation of w and r_t at each vertical level, such that:
+    ! corr_(w,r_t) = w'r_t' / [ sqrt(w'^2) * sqrt(r_t'^2) ];
+    ! -1 <= corr_(w,r_t) <= 1.
+    ! Since w'^2, r_t'^2, and w'r_t' are updated in different
+    ! places from each other, clipping for w'r_t' has to be done
+    ! three times.  This is the third instance of w'r_t' clipping.
 
  
-       ! Include effect of clipping in wpthlp time tendency budget term.
-       if ( l_stats_samp ) then
-          ! wpthlp total time tendency (effect of clipping)
-          call stat_modify( iwpthlp_bt, real( -wpthlp / dt ),  & ! intent(in)
-                            zm )                                 ! intent(inout)
-       endif
+    ! Include effect of clipping in wprtp time tendency budget term.
+    if ( l_stats_samp ) then
+      ! wprtp total time tendency (effect of clipping)
+      call stat_modify( iwprtp_bt, real( -wprtp / dt ),  & ! intent(in)
+                        zm )                               ! intent(inout)
+    end if
  
 
-       call covariance_clip( "wpthlp", .false.,                & ! intent(in)
-                             .true., dt, wp2, thlp2,           & ! intent(in) 
-                             wpthlp )                            ! intent(inout)
+    call covariance_clip( "wprtp", .false.,              & ! intent(in)
+                          .true., dt, wp2, rtp2,         & ! intent(in)
+                          wprtp )                          ! intent(inout)
 
-       if ( l_stats_samp ) then
+    if ( l_stats_samp ) then
+      ! wprtp total time tendency (effect of clipping)
+      call stat_end_update( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
+                            zm )                              ! intent(inout)
+    end if
  
-          ! wpthlp total time tendency (effect of clipping)
-          call stat_end_update( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
-                                zm )                                ! intent(inout)
-       endif
+
+    ! Clipping for w'th_l'
+    !
+    ! Clipping w'th_l' at each vertical level, based on the
+    ! correlation of w and th_l at each vertical level, such that:
+    ! corr_(w,th_l) = w'th_l' / [ sqrt(w'^2) * sqrt(th_l'^2) ];
+    ! -1 <= corr_(w,th_l) <= 1.
+    ! Since w'^2, th_l'^2, and w'th_l' are updated in different
+    ! places from each other, clipping for w'th_l' has to be done
+    ! three times.  This is the third instance of w'th_l' clipping.
+ 
+    ! Include effect of clipping in wpthlp time tendency budget term.
+    if ( l_stats_samp ) then
+      ! wpthlp total time tendency (effect of clipping)
+      call stat_modify( iwpthlp_bt, real( -wpthlp / dt ),  & ! intent(in)
+                        zm )                                 ! intent(inout)
+    end if
  
 
-       ! Clipping for w'sclr'
-       !
-       ! Clipping w'sclr' at each vertical level, based on the
-       ! correlation of w and sclr at each vertical level, such that:
-       ! corr_(w,sclr) = w'sclr' / [ sqrt(w'^2) * sqrt(sclr'^2) ];
-       ! -1 <= corr_(w,sclr) <= 1.
-       ! Since w'^2, sclr'^2, and w'sclr' are updated in different
-       ! places from each other, clipping for w'sclr' has to be done
-       ! three times.  This is the third instance of w'sclr' clipping.
-       do i = 1, sclr_dim, 1
-          call covariance_clip( "wpsclrp", .false.,                 & ! intent(in)
-                                .true., dt, wp2(:), sclrp2(:,i),    & ! intent(in)
-                                wpsclrp(:,i) )                        ! intent(inout)
-       enddo
+    call covariance_clip( "wpthlp", .false.,                & ! intent(in)
+                          .true., dt, wp2, thlp2,           & ! intent(in) 
+                          wpthlp )                            ! intent(inout)
+
+    if ( l_stats_samp ) then
+ 
+      ! wpthlp total time tendency (effect of clipping)
+      call stat_end_update( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
+                            zm )                                ! intent(inout)
+    end if
+ 
+
+    ! Clipping for w'sclr'
+    !
+    ! Clipping w'sclr' at each vertical level, based on the
+    ! correlation of w and sclr at each vertical level, such that:
+    ! corr_(w,sclr) = w'sclr' / [ sqrt(w'^2) * sqrt(sclr'^2) ];
+    ! -1 <= corr_(w,sclr) <= 1.
+    ! Since w'^2, sclr'^2, and w'sclr' are updated in different
+    ! places from each other, clipping for w'sclr' has to be done
+    ! three times.  This is the third instance of w'sclr' clipping.
+    do i = 1, sclr_dim, 1
+      call covariance_clip( "wpsclrp", .false.,                 & ! intent(in)
+                            .true., dt, wp2(:), sclrp2(:,i),    & ! intent(in)
+                            wpsclrp(:,i) )                        ! intent(inout)
+    end do
 
 
-       ! Clipping for u'w'
-       !
-       ! Clipping u'w' at each vertical level, based on the
-       ! correlation of u and w at each vertical level, such that:
-       ! corr_(u,w) = u'w' / [ sqrt(u'^2) * sqrt(w'^2) ];
-       ! -1 <= corr_(u,w) <= 1.
-       ! Since u'^2, w'^2, and u'w' are updated in different
-       ! places from each other, clipping for u'w' has to be done
-       ! three times.  This is the second instance of u'w' clipping.
-       call covariance_clip( "upwp", .false.,       & ! intent(in)
-                             .false., dt, wp2, up2, & ! intent(in)
-                             upwp )                   ! intent(inout)
+    ! Clipping for u'w'
+    !
+    ! Clipping u'w' at each vertical level, based on the
+    ! correlation of u and w at each vertical level, such that:
+    ! corr_(u,w) = u'w' / [ sqrt(u'^2) * sqrt(w'^2) ];
+    ! -1 <= corr_(u,w) <= 1.
+    ! Since u'^2, w'^2, and u'w' are updated in different
+    ! places from each other, clipping for u'w' has to be done
+    ! three times.  This is the second instance of u'w' clipping.
+    call covariance_clip( "upwp", .false.,       & ! intent(in)
+                          .false., dt, wp2, up2, & ! intent(in)
+                          upwp )                   ! intent(inout)
 
 
-       ! Clipping for v'w'
-       !
-       ! Clipping v'w' at each vertical level, based on the
-       ! correlation of v and w at each vertical level, such that:
-       ! corr_(v,w) = v'w' / [ sqrt(v'^2) * sqrt(w'^2) ];
-       ! -1 <= corr_(v,w) <= 1.
-       ! Since v'^2, w'^2, and v'w' are updated in different
-       ! places from each other, clipping for v'w' has to be done
-       ! three times.  This is the second instance of v'w' clipping.
-       call covariance_clip( "vpwp", .false.,       & ! intent(in)
-                             .false., dt, wp2, vp2, & ! intent(in)
-                             vpwp )                   ! intent(inout)
+    ! Clipping for v'w'
+    !
+    ! Clipping v'w' at each vertical level, based on the
+    ! correlation of v and w at each vertical level, such that:
+    ! corr_(v,w) = v'w' / [ sqrt(v'^2) * sqrt(w'^2) ];
+    ! -1 <= corr_(v,w) <= 1.
+    ! Since v'^2, w'^2, and v'w' are updated in different
+    ! places from each other, clipping for v'w' has to be done
+    ! three times.  This is the second instance of v'w' clipping.
+    call covariance_clip( "vpwp", .false.,       & ! intent(in)
+                          .false., dt, wp2, vp2, & ! intent(in)
+                          vpwp )                   ! intent(inout)
 
 
-       ! Wrapped LAPACK procedures may report errors, and if so, exit
-       ! gracefully.
-       ! Joshua Fasching March 2008
-       if ( lapack_error( err_code ) ) return
+    ! Wrapped LAPACK procedures may report errors, and if so, exit
+    ! gracefully.
+    ! Joshua Fasching March 2008
+    if ( lapack_error( err_code ) ) return
 
-       !----------------------------------------------------------------
-       ! Compute Eddy-diff. Passive Scalars
-       !----------------------------------------------------------------
-       if ( sclr_dim > 0 ) then
-         do i=1, sclr_dim
+    !----------------------------------------------------------------
+    ! Compute Eddy-diff. Passive Scalars
+    !----------------------------------------------------------------
+    if ( sclr_dim > 0 ) then
+      do i=1, sclr_dim
 
-           edsclrmt(1:gr%nnzp,i) = - wm_zt * ddzm( zt2zm( edsclrm(:,i) ) )
+        edsclrmt(1:gr%nnzp,i) = - wm_zt * ddzm( zt2zm( edsclrm(:,i) ) )
 
-           call compute_um_edsclrm( "edsclr", wpedsclrp(1,i),     & ! intent(in)
-                                    edsclrmt(:,i), Kh_zm, dt,       & ! intent(in)
-                                    edsclrm(:,i), wpedsclrp(:,i), & ! intent(inout)
-                                    err_code )                      ! intent(out)
-
-
-         end do
-
-         ! Set boundary condition as in rt
-
-         edsclrm(1,1:sclr_dim) = edsclrm(2,1:sclr_dim)
-
-         if ( lapack_error( err_code ) ) return
-
-        end if ! sclr_dim > 0
+        call compute_um_edsclrm( "edsclr", wpedsclrp(1,i),     & ! intent(in)
+                                 edsclrmt(:,i), Kh_zm, dt,       & ! intent(in)
+                                 edsclrm(:,i), wpedsclrp(:,i), & ! intent(inout)
+                                 err_code )                      ! intent(out)
 
 
-       !----------------------------------------------------------------
-       ! Update winds
-       !----------------------------------------------------------------
+      end do
 
-       call compute_uv_tndcy & 
-          ( "um", um, wm_zt, fcor, vm, vg, implemented,       & ! intent(in)
-             umt )                                            ! intent(out)
+      ! Set boundary condition as in rt
 
-       ! dtmain to dt -dschanen
-       call compute_um_edsclrm( "um", upwp(1), umt, Kh_zm, dt,  & ! intent(in)
-                                um, upwp,                     & ! intent(inout)
-                                err_code )                      ! intent(out)
+      edsclrm(1,1:sclr_dim) = edsclrm(2,1:sclr_dim)
 
-       um(1)       = ( ( um(3)-um(2) )/( gr%zt(3)-gr%zt(2) ) ) & 
+      if ( lapack_error( err_code ) ) return
+
+    end if ! sclr_dim > 0
+
+
+    !----------------------------------------------------------------
+    ! Update winds
+    !----------------------------------------------------------------
+
+    call compute_uv_tndcy & 
+         ( "um", um, wm_zt, fcor, vm, vg, implemented, & ! intent(in)
+           umt )                                       ! intent(out)
+
+    call compute_um_edsclrm( "um", upwp(1), umt, Kh_zm, dt,& ! intent(in)
+                             um, upwp,                     & ! intent(inout)
+                             err_code )                      ! intent(out)
+
+    um(1)       = ( ( um(3)-um(2) )/( gr%zt(3)-gr%zt(2) ) ) & 
                     * ( gr%zt(1)-gr%zt(2) ) + um(2)
-       um(gr%nnzp) = ( ( um(gr%nnzp-1)-um(gr%nnzp-2) ) & 
+    um(gr%nnzp) = ( ( um(gr%nnzp-1)-um(gr%nnzp-2) ) & 
                       /( gr%zt(gr%nnzp-1)-gr%zt(gr%nnzp-2) ) ) & 
                     * ( gr%zt(gr%nnzp)-gr%zt(gr%nnzp-1) ) & 
-                     + um(gr%nnzp-1)
+                    + um(gr%nnzp-1)
        
-       ! Wrapped LAPACK procedures may report errors, and if so, exit
-       ! gracefully.
-       ! Joshua Fasching March 2008
-       if ( lapack_error(err_code) ) return
+    ! Wrapped LAPACK procedures may report errors, and if so, exit
+    ! gracefully.
+    ! Joshua Fasching March 2008
+    if ( lapack_error(err_code) ) return
 
-       call compute_uv_tndcy & 
+    call compute_uv_tndcy & 
           ( "vm", vm, wm_zt, fcor, um, ug, implemented,  & ! intent(in)
             vmt )                                        ! intent(out)
 
-       call compute_um_edsclrm( "vm", vpwp(1), vmt, Kh_zm, dt,  & ! intent(in)
-                                vm, vpwp,                     & ! intent(inout)
-                                err_code )                      ! intent(out)
+    call compute_um_edsclrm( "vm", vpwp(1), vmt, Kh_zm, dt,  & ! intent(in)
+                             vm, vpwp,                     & ! intent(inout)
+                             err_code )                      ! intent(out)
 
-       vm(1)       = ( ( vm(3)-vm(2) )/( gr%zt(3)-gr%zt(2) ) ) & 
+    vm(1)       = ( ( vm(3)-vm(2) )/( gr%zt(3)-gr%zt(2) ) ) & 
                     * ( gr%zt(1)-gr%zt(2) ) + vm(2)
-       vm(gr%nnzp) = ( ( vm(gr%nnzp-1)-vm(gr%nnzp-2) ) & 
+    vm(gr%nnzp) = ( ( vm(gr%nnzp-1)-vm(gr%nnzp-2) ) & 
                       /( gr%zt(gr%nnzp-1)-gr%zt(gr%nnzp-2) ) ) & 
                     * ( gr%zt(gr%nnzp)-gr%zt(gr%nnzp-1) ) & 
                      + vm(gr%nnzp-1)
        
-       ! Wrapped LAPACK procedures may report errors, and if so, exit
-       ! gracefully.
-       ! Joshua Fasching March 2008    
-       if ( lapack_error( err_code ) ) return
+    ! Wrapped LAPACK procedures may report errors, and if so, exit
+    ! gracefully.
+    ! Joshua Fasching March 2008    
+    if ( lapack_error( err_code ) ) return
 
-       if ( l_uv_nudge ) then
-         um(1:gr%nnzp) = real( um(1:gr%nnzp)  & 
+    if ( l_uv_nudge ) then
+      um(1:gr%nnzp) = real( um(1:gr%nnzp)  & 
             - ((um(1:gr%nnzp) - um_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
-         vm(1:gr%nnzp) = real( vm(1:gr%nnzp)  & 
+      vm(1:gr%nnzp) = real( vm(1:gr%nnzp)  & 
             - ((vm(1:gr%nnzp) - vm_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
-       endif
+    end if
 
 
-       ! Clipping for u'w'
-       !
-       ! Clipping u'w' at each vertical level, based on the
-       ! correlation of u and w at each vertical level, such that:
-       ! corr_(u,w) = u'w' / [ sqrt(u'^2) * sqrt(w'^2) ];
-       ! -1 <= corr_(u,w) <= 1.
-       ! Since u'^2, w'^2, and u'w' are updated in different
-       ! places from each other, clipping for u'w' has to be done
-       ! three times.  This is the third instance of u'w' clipping.
-       call covariance_clip( "upwp", .false.,      & ! intent(in)
-                             .true., dt, wp2, up2, & ! intent(in)
-                             upwp )                  ! intent(inout)
+    ! Clipping for u'w'
+    !
+    ! Clipping u'w' at each vertical level, based on the
+    ! correlation of u and w at each vertical level, such that:
+    ! corr_(u,w) = u'w' / [ sqrt(u'^2) * sqrt(w'^2) ];
+    ! -1 <= corr_(u,w) <= 1.
+    ! Since u'^2, w'^2, and u'w' are updated in different
+    ! places from each other, clipping for u'w' has to be done
+    ! three times.  This is the third instance of u'w' clipping.
+    call covariance_clip( "upwp", .false.,      & ! intent(in)
+                          .true., dt, wp2, up2, & ! intent(in)
+                          upwp )                  ! intent(inout)
 
 
-       ! Clipping for v'w'
-       !
-       ! Clipping v'w' at each vertical level, based on the
-       ! correlation of v and w at each vertical level, such that:
-       ! corr_(v,w) = v'w' / [ sqrt(v'^2) * sqrt(w'^2) ];
-       ! -1 <= corr_(v,w) <= 1.
-       ! Since v'^2, w'^2, and v'w' are updated in different
-       ! places from each other, clipping for v'w' has to be done
-       ! three times.  This is the third instance of v'w' clipping.
-       call covariance_clip( "vpwp", .false.,      & ! intent(in)
-                             .true., dt, wp2, vp2, & ! intent(in)
-                             vpwp )                  ! intent(inout)
+    ! Clipping for v'w'
+    !
+    ! Clipping v'w' at each vertical level, based on the
+    ! correlation of v and w at each vertical level, such that:
+    ! corr_(v,w) = v'w' / [ sqrt(v'^2) * sqrt(w'^2) ];
+    ! -1 <= corr_(v,w) <= 1.
+    ! Since v'^2, w'^2, and v'w' are updated in different
+    ! places from each other, clipping for v'w' has to be done
+    ! three times.  This is the third instance of v'w' clipping.
+    call covariance_clip( "vpwp", .false.,      & ! intent(in)
+                          .true., dt, wp2, vp2, & ! intent(in)
+                          vpwp )                  ! intent(inout)
 
 
-       ! Compute Shear Production  -Brian
-       do k = 1, gr%nnzp-1, 1
-         shear(k) = -upwp(k) * ( um(k+1) - um(k) ) * gr%dzm(k) & 
-                    -vpwp(k) * ( vm(k+1) - vm(k) ) * gr%dzm(k)
-       end do
-       shear(gr%nnzp) = 0.0
+    ! Compute Shear Production  -Brian
+    do k = 1, gr%nnzp-1, 1
+      shear(k) = -upwp(k) * ( um(k+1) - um(k) ) * gr%dzm(k) & 
+                 -vpwp(k) * ( vm(k+1) - vm(k) ) * gr%dzm(k)
+    end do
+    shear(gr%nnzp) = 0.0
 
 !#######################################################################
 !#############            ACCUMULATE STATISTICS            #############
 !#######################################################################
 
  
-       ! Added to allow tuning without using the zm stats file
-       wp2_zt     = max( zm2zt( wp2 ), 0.0 )   ! Positive definite quantity
-       thlp2_zt   = max( zm2zt( thlp2 ), 0.0 )   ! Positive definite quantity
-       wpthlp_zt  = zm2zt( wpthlp )
-       wprtp_zt   = zm2zt( wprtp )
-       rtp2_zt    = max( zm2zt( rtp2 ), 0.0 )   ! Positive definite quantity
-       rtpthlp_zt = zm2zt( rtpthlp )
+    thlp2_zt   = max( zm2zt( thlp2 ), 0.0 )   ! Positive definite quantity
+    wpthlp_zt  = zm2zt( wpthlp )
+    wprtp_zt   = zm2zt( wprtp )
+    rtp2_zt    = max( zm2zt( rtp2 ), 0.0 )   ! Positive definite quantity
+    rtpthlp_zt = zm2zt( rtpthlp )
 
-       call stats_accumulate & 
-            ( um, vm, upwp, vpwp, up2, vp2, thlm,                   & ! intent(in)
-              rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp,   & ! intent(in)
-              p_in_Pa, exner, rho, rho_zm,                           & ! intent(in)
-              wm_zt, Scm, tau_zm, rcm, cf,                              & ! intent(in)
-              sclrm, edsclrm, sclrm_forcing, wpsclrp )                ! intent(in)
-
+    call stats_accumulate & 
+         ( um, vm, upwp, vpwp, up2, vp2, thlm,                 & ! intent(in)
+           rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp, & ! intent(in)
+           p_in_Pa, exner, rho, rho_zm,                        & ! intent(in)
+           wm_zt, Scm, tau_zm, rcm, cf,                        & ! intent(in)
+           sclrm, edsclrm, sclrm_forcing, wpsclrp )              ! intent(in)
  
 
-       if ( clubb_at_debug_level( 2 ) ) then
-         call parameterization_check & 
-              ( thlm_forcing, rtm_forcing, wm_zm, wm_zt, p_in_Pa, rho_zm, & ! intent(in)
-                rho, exner, wpthlp_sfc, wprtp_sfc,                 & ! intent(in)
-                upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,             & ! intent(in)
-                up2, vp2, rtm, wprtp, thlm,                         & ! intent(in)
-                wpthlp, wp2, wp3, Scm, rtp2, thlp2,                 & ! intent(in)
-                rtpthlp, tau_zm, rcm, cf, "end of ",                  & ! intent(in)
-                wpsclrp_sfc, wpedsclrp_sfc,                         & ! intent(in)
-                sclrm, sclrm_forcing, edsclrm )                       ! intent(in)
-       end if
+    if ( clubb_at_debug_level( 2 ) ) then
+      call parameterization_check & 
+           ( thlm_forcing, rtm_forcing, wm_zm, wm_zt, p_in_Pa, rho_zm, & ! intent(in)
+             rho, exner, wpthlp_sfc, wprtp_sfc,                  & ! intent(in)
+             upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,             & ! intent(in)
+             up2, vp2, rtm, wprtp, thlm,                         & ! intent(in)
+             wpthlp, wp2, wp3, Scm, rtp2, thlp2,                 & ! intent(in)
+             rtpthlp, tau_zm, rcm, cf, "end of ",                & ! intent(in)
+             wpsclrp_sfc, wpedsclrp_sfc,                         & ! intent(in)
+             sclrm, sclrm_forcing, edsclrm )                       ! intent(in)
+    end if
 
 !-----------------------------------------------------------------------
 
-       return
-       end subroutine parameterization_timestep
+    return
+  end subroutine parameterization_timestep
 
 
 !-----------------------------------------------------------------------
