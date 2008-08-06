@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.29 2008-08-06 15:14:07 faschinj Exp $
+! $Id: hoc.F90,v 1.30 2008-08-06 21:38:58 faschinj Exp $
 
 module hoc
 
@@ -129,7 +129,7 @@ module hoc
       rho, wprtp, wpthlp_sfc, wprtp_sfc, & 
       upwp_sfc, vpwp_sfc, thlm_forcing, & 
       rtm_forcing, up2, vp2, wp3, rtp2, & 
-      thlp2, rtpthlp, Scm, cf
+      thlp2, rtpthlp, sigma_sqd_w, cf
 
     use prognostic_variables, only:  & 
       sclrm, edsclrm, wpsclrp_sfc,  & ! Variables
@@ -636,7 +636,7 @@ module hoc
                um, vm, upwp, vpwp, up2, vp2, &                  ! Intent(inout)
                thlm, rtm, wprtp, wpthlp, wp2, wp3, &            ! Intent(inout)
                rtp2, thlp2, rtpthlp, &                          ! Intent(inout)
-               Scm, tau_zm, rcm, cf, err_code, &                ! Intent(inout)
+               sigma_sqd_w, tau_zm, rcm, cf, err_code, &                ! Intent(inout)
                sclrm, sclrm_forcing, edsclrm, &                 ! Intent(inout)
                wpsclrp )                                        ! Intent(inout)
            
@@ -1227,9 +1227,9 @@ module hoc
             input_wp3, input_rtp2, input_thlp2,  & 
             input_rtpthlp, input_upwp, input_vpwp,  & 
             input_thlm_forcing, input_rtm_forcing,   & 
-            input_up2, input_vp2, input_Scm, input_Ncm, & 
+            input_up2, input_vp2, input_sigma_sqd_w, input_Ncm, & 
             input_Ncnm, input_Nim, input_cf, input_Nrm, & 
-            input_Sct
+            input_sigma_sqd_w_zt
 
         use inputfields, only: compute_timestep, grads_fields_reader ! Procedure(s)
 
@@ -1341,13 +1341,13 @@ module hoc
         input_rtm_forcing = .true. 
         input_up2 = .true.
         input_vp2 = .true.
-        input_Scm = .true.
+        input_sigma_sqd_w = .true.
         input_Ncm = .true.
         input_Ncnm = .true.
         input_Nim = .true.
         input_cf  = .true.
         input_Nrm = .true.
-        input_Sct = .true.
+        input_sigma_sqd_w_zt = .true.
         
         ! Determine the nearest timestep in the GRADS file to the
         ! restart time.

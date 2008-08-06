@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F90,v 1.7 2008-07-31 19:34:18 faschinj Exp $
+! $Id: prog_variables.F90,v 1.8 2008-08-06 21:38:59 faschinj Exp $
         module prognostic_variables
 
 !       This module contains definitions of all prognostic
@@ -57,12 +57,12 @@
         wm_zt ! w on thermodynamic levels         [m/s]
 
         ! PDF width parameter: momentum levels
-        real, target, allocatable, dimension(:), public :: Scm  ! [-]
+        real, target, allocatable, dimension(:), public :: sigma_sqd_w  ! [-]
 
         ! Mixing Lengths
         real, target, allocatable, dimension(:), public :: tau_zm ! [s]
 
-!$omp   threadprivate(wm_zm, wm_zt, Scm, tau_zm)
+!$omp   threadprivate(wm_zm, wm_zt, sigma_sqd_w, tau_zm)
 
         ! Cloud water variables
         real, target, allocatable, dimension(:), public :: & 
@@ -167,7 +167,7 @@
 
         ! PDF width parameter: momentum levels
 
-        allocate( Scm(1:nzmax) ) 
+        allocate( sigma_sqd_w(1:nzmax) ) 
 
         ! Mixing lengths
 
@@ -226,7 +226,7 @@
 
         ! PDF width parameter: momentum levels
 
-        Scm(1:nzmax)  = 0.0 
+        sigma_sqd_w(1:nzmax)  = 0.0 
 
         ! Mixing lengths
 
@@ -300,7 +300,7 @@
 
         ! PDF width parameter
 
-        deallocate( Scm )
+        deallocate( sigma_sqd_w )
 
         ! Mixing lengths
 

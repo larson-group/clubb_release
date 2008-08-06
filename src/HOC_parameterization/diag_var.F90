@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F90,v 1.18 2008-08-05 15:27:24 dschanen Exp $
+! $Id: diag_var.F90,v 1.19 2008-08-06 21:38:58 faschinj Exp $
 !===============================================================================
 module diagnose_variances
 
@@ -30,7 +30,7 @@ contains
 !===============================================================================
 subroutine diag_var( tau_zm, wm_zm, rtm, wprtp, & 
                      thlm, wpthlp, wpthvp, um, vm, & 
-                     wp2, wp2_zt, wp3, upwp, vpwp, Scm, Skw_zm, Kh_zt, & 
+                     wp2, wp2_zt, wp3, upwp, vpwp, sigma_sqd_w, Skw_zm, Kh_zt, & 
                      liter, dt, & 
                      sclrm, wpsclrp, & 
                      rtp2, thlp2, rtpthlp, & 
@@ -129,7 +129,7 @@ real, intent(in), dimension(gr%nnzp) ::  &
   wp3,    & ! w'^3                           [m^3/s^3]
   upwp,   & ! u'w'                           [m^2/s^2]
   vpwp,   & ! u'w'                           [m^2/s^2]
-  Scm,    & ! Sc on moment. grid             [-]
+  sigma_sqd_w,    & ! sigma_sqd_w on moment. grid             [-]
   Skw_zm, & ! Skw on moment. grid            [-]
   Kh_zt,  & ! Eddy diffusivity on t-lev.     [m^2/s]
   wp2_zt    ! w'^2 interpolated to thermodynamic levels     [m^2/s^2]
@@ -246,9 +246,9 @@ else
 endif
 
 ! Define a_1 (located on momentum levels).
-! It is a variable that is a function of Sc (where Scm is located on the 
+! It is a variable that is a function of sigma_sqd_w (where sigma_sqd_w is located on the 
 ! momentum levels).
-a1(1:gr%nnzp) = 1.0 / ( 1.0 - Scm(1:gr%nnzp) )
+a1(1:gr%nnzp) = 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nnzp) )
 
 ! wtol_sqd = the square of the minimum threshold on w,
 !     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
@@ -660,7 +660,7 @@ if ( lapack_error( err_code ) .and.  &
    write(fstderr,*) "wp3 = ", wp3
    write(fstderr,*) "upwp = ", upwp
    write(fstderr,*) "vpwp = ", vpwp
-   write(fstderr,*) "Scm = ", Scm
+   write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
    write(fstderr,*) "Skw_zm = ", Skw_zm
    write(fstderr,*) "Kh_zt = ", Kh_zt
 
@@ -760,7 +760,7 @@ logical, intent(in) :: &
 
 ! Input Variables
 real, dimension(gr%nnzp), intent(in) :: & 
-  a1,     & ! Scm-related term a_1 (momentum levels)      [-]
+  a1,     & ! sigma_sqd_w-related term a_1 (momentum levels)      [-]
   wp2_zt, & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
   wp3,    & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
   tau_zm, & ! Time-scale tau on momentum levels           [s]
@@ -1144,7 +1144,7 @@ logical, intent(in) :: &
   liter  ! Whether x is prognostic (T/F)
 
 real, dimension(gr%nnzp), intent(in) :: & 
-  a1,       & ! Scm-related term a_1 (momentum levels)      [-]
+  a1,       & ! sigma_sqd_w-related term a_1 (momentum levels)      [-]
   wp2,      & ! w'^2 (momentum levels)                      [m^2/s^2]
   wp2_zt,   & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
   wp3,      & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
@@ -1356,7 +1356,7 @@ logical, intent(in) :: &
   liter   ! Whether x is prognostic (T/F)
 
 real, dimension(gr%nnzp), intent(in) :: & 
-  a1,       & ! Scm-related term a_1 (momentum levels)      [-]
+  a1,       & ! sigma_sqd_w-related term a_1 (momentum levels)      [-]
   wp2_zt,   & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
   wp3,      & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
   wpxap,    & ! w'x_a' (momentum levels)                    [m/s {x_am units}]
@@ -1517,7 +1517,7 @@ result( lhs )
 !                 + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 ) 
 !                   * w'x_a' * w'x_b';
 !
-! where a_1 is a variable that is a function of Sc.  The turbulent advection 
+! where a_1 is a variable that is a function of sigma_sqd_w.  The turbulent advection 
 ! term is rewritten as:
 !
 ! - d [ (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
@@ -1691,7 +1691,7 @@ result( rhs )
 !                 + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
 !                   * w'x_a' * w'x_b';
 !
-! where a_1 is a variable that is a function of Sc.  The turbulent advection 
+! where a_1 is a variable that is a function of sigma_sqd_w.  The turbulent advection 
 ! term is rewritten as:
 !
 ! - d [ (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'

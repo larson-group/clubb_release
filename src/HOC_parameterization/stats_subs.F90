@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F90,v 1.16 2008-08-06 13:59:46 faschinj Exp $
+!  $Id: stats_subs.F90,v 1.17 2008-08-06 21:38:59 faschinj Exp $
 module stats_subs
 
   implicit none
@@ -757,7 +757,7 @@ module stats_subs
                  ( um, vm, upwp, vpwp, up2, vp2, thlm, & 
                    rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp, & 
                    p, exner, rho, rho_zm, & 
-                   wm_zt, Scm, tau_zm, rcm, cf, & 
+                   wm_zt, sigma_sqd_w, tau_zm, rcm, cf, & 
                    sclrm, edsclrm, sclrm_forcing, wpsclrp )
 
 !     Description:
@@ -797,7 +797,7 @@ module stats_subs
           iwp2thvp, & 
           iwp2rcp, & 
           iwprtpthlp, & 
-          isct,          & 
+          isigma_sqd_w_zt,          & 
           irho, & 
           irsat, & 
           iAKm, & 
@@ -856,7 +856,7 @@ module stats_subs
           iup2, & 
           ivp2, & 
           irho_zm, & 
-          iscm, & 
+          isigma_sqd_w, & 
           iem, & 
           ishear, & 
           iFrad, & 
@@ -914,7 +914,7 @@ module stats_subs
           wp2thvp, & 
           wp2rcp, & 
           wprtpthlp, & 
-          sct, & 
+          sigma_sqd_w_zt, & 
           rsat, & 
           Akm, & 
           Akm_est, & 
@@ -994,7 +994,7 @@ module stats_subs
         rho,         & ! Density                                  [kg/m^3]
         rho_zm,         & ! Density                                  [kg/m^3]
         wm_zt,          & ! w on thermodynamic levels                [m/s]
-        Scm,          & ! PDF width paramter                       [-]
+        sigma_sqd_w,          & ! PDF width paramter                       [-]
         tau_zm         ! Dissipation time                         [s]
 
       real, intent(in), dimension(gr%nnzp) :: & 
@@ -1057,7 +1057,7 @@ module stats_subs
         call stat_update_var( iwp2thvp, wp2thvp, zt )
         call stat_update_var( iwp2rcp, wp2rcp, zt )
         call stat_update_var( iwprtpthlp, wprtpthlp, zt )
-        call stat_update_var( isct, sct, zt )
+        call stat_update_var( isigma_sqd_w_zt, sigma_sqd_w_zt, zt )
         call stat_update_var( irho, rho, zt )
 !        call stat_update_var( iNcm, Ncm, zt )
 !        call stat_update_var( iNcnm, Ncnm, zt )
@@ -1146,7 +1146,7 @@ module stats_subs
         call stat_update_var( ivp2, vp2, zm )
         call stat_update_var( iup2, up2, zm )
         call stat_update_var( irho_zm, rho_zm, zm )
-        call stat_update_var( iscm, scm, zm )
+        call stat_update_var( isigma_sqd_w, sigma_sqd_w, zm )
         call stat_update_var( iem, em, zm )
         call stat_update_var( ishear, shear, zm )
         call stat_update_var( iFrad, Frad, zm )

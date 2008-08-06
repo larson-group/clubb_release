@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F90,v 1.13 2008-08-06 14:55:55 faschinj Exp $
+! $Id: inputfields.F90,v 1.14 2008-08-06 21:38:58 faschinj Exp $
 
 ! Module inputfields
 
@@ -33,8 +33,8 @@ module inputfields
                      input_thvm, input_rrainm,input_Nrm,  & 
                      input_rsnowm, input_ricem, input_rgraupelm,  & 
                      input_thlm_forcing, input_rtm_forcing, & 
-                     input_up2, input_vp2, input_Scm, input_Ncm,  & 
-                     input_Ncnm, input_Nim, input_cf, input_Sct 
+                     input_up2, input_vp2, input_sigma_sqd_w, input_Ncm,  & 
+                     input_Ncnm, input_Nim, input_cf, input_sigma_sqd_w_zt 
 
 
   public  :: grads_fields_reader, compute_timestep, set_filenames
@@ -111,7 +111,7 @@ module inputfields
       tau_zm, & 
       up2, & 
       vp2, & 
-      Scm
+      sigma_sqd_w
 
   use diagnostic_variables, only: & 
       hydromet,  & ! Variable(s)
@@ -127,7 +127,7 @@ module inputfields
       Ncm, & 
       Ncnm, & 
       Nim, & 
-      Sct, & 
+      sigma_sqd_w_zt, & 
       em
 
   use grid_class, only: & 
@@ -299,9 +299,9 @@ module inputfields
       call get_var( fread_var , "Nrm", timestep, & 
                     hydromet(1:gr%nnzp,iiNrm), l_error)
     endif
-    if ( input_Sct ) then
-      call get_var( fread_var , "sc", timestep, & 
-                    Sct(1:gr%nnzp), l_error)
+    if ( input_sigma_sqd_w_zt ) then
+      call get_var( fread_var , "sigma_sqd_w", timestep, & 
+                    sigma_sqd_w_zt(1:gr%nnzp), l_error)
     endif
 
 !--------------------------------------------------------
@@ -390,10 +390,10 @@ module inputfields
                     timestep, & 
                     vp2(1:gr%nnzp), l_error )
    endif
-   if ( input_Scm ) then
+   if ( input_sigma_sqd_w ) then
       call get_var( fread_var, "scm", & 
                     timestep, & 
-                    Scm(1:gr%nnzp), l_error )
+                    sigma_sqd_w(1:gr%nnzp), l_error )
    endif
 
 !-----------------------------------------------------------

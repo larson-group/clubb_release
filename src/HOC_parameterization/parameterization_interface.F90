@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.23 2008-08-06 15:25:00 faschinj Exp $
+! $Id: parameterization_interface.F90,v 1.24 2008-08-06 21:38:59 faschinj Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
@@ -33,7 +33,7 @@ module hoc_parameterization_interface
                  um, vm, upwp, vpwp, up2, vp2, & 
                  thlm, rtm, wprtp, wpthlp, wp2, wp3, & 
                  rtp2, thlp2, rtpthlp, & 
-                 Scm, tau_zm, rcm, cf, & 
+                 sigma_sqd_w, tau_zm, rcm, cf, & 
                  err_code,  & 
                  sclrm, sclrm_forcing, edsclrm,  & ! Optional
                  wpsclrp )
@@ -89,7 +89,7 @@ module hoc_parameterization_interface
   use diagnostic_variables, only: & 
     Skw_zt,  & ! Varible(s)
     Skw_zm, & 
-    Sct, & 
+    sigma_sqd_w_zt, & 
     wp4, & 
     wpthvp, & 
     thlpthvp, & 
@@ -263,7 +263,7 @@ module hoc_parameterization_interface
       wpthlp,   & ! w' th_l'.                     [(m K)/s]
       wp2,      & ! w'^2.                         [m^2/s^2]
       wp3,      & ! w'^3.                         [m^3/s^3]
-      Scm,      & ! Sc on moment. grid.           [-]
+      sigma_sqd_w,      & ! sigma_sqd_w on moment. grid.           [-]
       rtp2,     & ! r_t'^2.                       [(kg/kg)^2]
       thlp2,    & ! th_l'^2.                      [K^2]
       rtpthlp,  & ! r_t' th_l'.                   [(kg K)/kg]
@@ -329,7 +329,7 @@ module hoc_parameterization_interface
            rho, exner, wpthlp_sfc, wprtp_sfc,                & ! intent(in)
            upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,           & ! intent(in)
            up2, vp2, rtm, wprtp, thlm,                       & ! intent(in)
-           wpthlp, wp2, wp3, Scm, rtp2, thlp2,               & ! intent(in)
+           wpthlp, wp2, wp3, sigma_sqd_w, rtp2, thlp2,               & ! intent(in)
            rtpthlp, tau_zm, rcm, cf, "beginning of ",        & ! intent(in)
            wpsclrp_sfc, wpedsclrp_sfc,                       & ! intent(in)
            sclrm, sclrm_forcing, edsclrm )                     ! intent(in)
@@ -378,7 +378,7 @@ module hoc_parameterization_interface
 !      predictive equation for those respective terms.  The other reason is
 !      that if the correct surface variances are not set here and diag_var
 !      outputs it's own value for them, it will results in a faulty value for
-!      Scm at the surface.  Brian Griffin.  December 18, 2005.
+!      sigma_sqd_w at the surface.  Brian Griffin.  December 18, 2005.
 
 !      Surface effects should not be included with any case where the lowest
 !      level is not the ground level.  Brian Griffin.  December 22, 2005.
@@ -421,12 +421,12 @@ module hoc_parameterization_interface
 
     ! We also found that certain cases require a time tendency to run
     ! at shorter timesteps.
-    ! This requires us to store in memory Scm and tau_zm between timesteps.
+    ! This requires us to store in memory sigma_sqd_w and tau_zm between timesteps.
 
     ! We found that if we call diag_var first, we can use a longer timestep.
     call diag_var( tau_zm, wm_zm, rtm, wprtp,                 & ! intent(in)
                    thlm, wpthlp, wpthvp, um, vm,              & ! intent(in)
-                   wp2, wp2_zt, wp3, upwp, vpwp, Scm, Skw_zm, Kh_zt,  & ! intent(in)
+                   wp2, wp2_zt, wp3, upwp, vpwp, sigma_sqd_w, Skw_zm, Kh_zt,  & ! intent(in)
 ! Vince Larson used prognostic timestepping of variances 
 !    in order to increase numerical stability.  17 Jul 2007
 !                  .false., dt, isValid &
@@ -569,10 +569,10 @@ module hoc_parameterization_interface
     end if
 
        !----------------------------------------------------------------
-       ! Compute Sc with new formula from Vince
+       ! Compute sigma_sqd_w with new formula from Vince
        !----------------------------------------------------------------
 
-    Scm = gamma_Skw_fnc * &
+    sigma_sqd_w = gamma_Skw_fnc * &
       ( 1.0 - min( & 
                   max( ( wpthlp / ( sqrt( wp2 ) * sqrt( thlp2 )  & 
                       + 0.01 * wtol * thltol ) )**2, & 
@@ -582,7 +582,7 @@ module hoc_parameterization_interface
              1.0 ) & ! min 
        )
 
-     Sct = max( zm2zt( Scm ), 0.0 )   ! Positive definite quantity
+     sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), 0.0 )   ! Positive definite quantity
 
 !    Latin hypercube sample generation
 !    Generate p_height_time, an nnzp x nt_repeat x d_variables array of random integers
@@ -611,7 +611,7 @@ module hoc_parameterization_interface
 
     do k = 2, gr%nnzp, 1
       call pdf_closure_new & 
-         ( p_in_Pa(k), exner(k), wm_zt(k), zm2zt(wp2, k), wp3(k), Sct(k), & ! intent(in)
+         ( p_in_Pa(k), exner(k), wm_zt(k), zm2zt(wp2, k), wp3(k), sigma_sqd_w_zt(k), & ! intent(in)
            rtm(k), zm2zt(rtp2, k), zm2zt( wprtp, k ),                   & ! intent(in)
            thlm(k), zm2zt( thlp2, k ), zm2zt( wpthlp, k ),              & ! intent(in)
            zm2zt(rtpthlp, k), sclrm(k,:), sclr_tmp1(k,:),               & ! intent(in)
@@ -756,7 +756,7 @@ module hoc_parameterization_interface
     !----------------------------------------------------------------
     ! Advance rtm/wprtp and thlm/wpthlp one time step
     !----------------------------------------------------------------
-    call timestep_mixing( dt, Scm, wm_zm, wm_zt, wp2, wp3,   & ! intent(in)
+    call timestep_mixing( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3,   & ! intent(in)
                           Kh_zt, tau_zm, Skw_zm, rtpthvp,    & ! intent(in)
                           rtm_forcing, thlpthvp,             & ! intent(in)
                           thlm_forcing, rtp2, thlp2, wp2_zt, & ! intent(in)
@@ -793,7 +793,7 @@ module hoc_parameterization_interface
     ! Advance wp2/wp3 one timestep
     !----------------------------------------------------------------
 
-    call timestep_wp23( dt, Scm, wm_zm, wm_zt, wpthvp, wp2thvp,       & ! intent(in)
+    call timestep_wp23( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp,       & ! intent(in)
                         um, vm, upwp, vpwp, up2, vp2, Kh_zm, Kh_zt,   & ! intent(in)
                         tau_zm, tau_zt, Skw_zm, Skw_zt, pdf_parms(:,13),  & ! intent(in)
                         wp2_zt, wp2, wp3, err_code )                  ! intent(inout)
@@ -1043,7 +1043,7 @@ module hoc_parameterization_interface
          ( um, vm, upwp, vpwp, up2, vp2, thlm,                 & ! intent(in)
            rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp, & ! intent(in)
            p_in_Pa, exner, rho, rho_zm,                        & ! intent(in)
-           wm_zt, Scm, tau_zm, rcm, cf,                        & ! intent(in)
+           wm_zt, sigma_sqd_w, tau_zm, rcm, cf,                        & ! intent(in)
            sclrm, edsclrm, sclrm_forcing, wpsclrp )              ! intent(in)
  
 
@@ -1053,7 +1053,7 @@ module hoc_parameterization_interface
              rho, exner, wpthlp_sfc, wprtp_sfc,                  & ! intent(in)
              upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,             & ! intent(in)
              up2, vp2, rtm, wprtp, thlm,                         & ! intent(in)
-             wpthlp, wp2, wp3, Scm, rtp2, thlp2,                 & ! intent(in)
+             wpthlp, wp2, wp3, sigma_sqd_w, rtp2, thlp2,                 & ! intent(in)
              rtpthlp, tau_zm, rcm, cf, "end of ",                & ! intent(in)
              wpsclrp_sfc, wpedsclrp_sfc,                         & ! intent(in)
              sclrm, sclrm_forcing, edsclrm )                       ! intent(in)

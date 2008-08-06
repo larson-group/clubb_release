@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F90,v 1.9 2008-07-31 19:34:17 faschinj Exp $
+! $Id: numer_check.F90,v 1.10 2008-08-06 21:38:59 faschinj Exp $
  module numerical_check
 
  implicit none
@@ -181,7 +181,7 @@
               rho, exner, wpthlp_sfc, wprtp_sfc,  & 
               upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp, & 
               up2, vp2, rtm, wprtp, thlm,  & 
-              wpthlp, wp2, wp3, Scm, rtp2, thlp2, & 
+              wpthlp, wp2, wp3, sigma_sqd_w, rtp2, thlp2, & 
               rtpthlp, tau_zm, rcm, cf, prefix, & 
               wpsclrp_sfc, wpedsclrp_sfc, & 
               sclrm, sclrm_forcing, edsclrm & 
@@ -190,7 +190,7 @@
 !       Description: This subroutine determines what input variables may have 
 !       NaN values.
 !       In addition it checks to see if rho_zm, rho, exner, up2, vp2, rtm, thlm,
-!       wp2, Scm, rtp2, thlp2, tau_zm, rcm, Ncm, Ncnm, Nim, hydromet, or cf 
+!       wp2, sigma_sqd_w, rtp2, thlp2, tau_zm, rcm, Ncm, Ncnm, Nim, hydromet, or cf 
 !       have negative values.
 !-------------------------------------------------------------------------------
  use grid_class, only: & 
@@ -233,7 +233,7 @@
  wpthlp,   & ! w' th_l'.                     [(m K)/s]
  wp2,      & ! w'^2.                         [m^2/s^2]
  wp3,      & ! w'^3.                         [m^3/s^3]
- Scm,      & ! Sc on moment. grid.           [-]
+ sigma_sqd_w,      & ! sigma_sqd_w on moment. grid.           [-]
  rtp2,     & ! r_t'^2.                       [(kg/kg)^2]
  thlp2,    & ! th_l'^2.                      [K^2]
  rtpthlp,  & ! r_t' th_l'.                   [(kg K)/kg]
@@ -294,7 +294,7 @@
  call check_nan( wpthlp,"wpthlp", prefix//proc_name )
  call check_nan( wp2,"wp2", prefix//proc_name )
  call check_nan( wp3,"wp3", prefix//proc_name )
- call check_nan( Scm,"Scm", prefix//proc_name )
+ call check_nan( sigma_sqd_w,"sigma_sqd_w", prefix//proc_name )
  call check_nan( rtp2,"rtp2", prefix//proc_name )
  call check_nan( thlp2,"thlp2", prefix//proc_name )
  call check_nan( rtpthlp, "rtpthlp", prefix//proc_name )
@@ -344,7 +344,7 @@
  call check_negative( wp2, gr%nnzp ,"wp2", prefix//proc_name )
  call check_negative( rtm, gr%nnzp ,"rtm", prefix//proc_name )
  call check_negative( thlm, gr%nnzp ,"thlm", prefix//proc_name )
- call check_negative( Scm, gr%nnzp ,"Scm", prefix//proc_name )
+ call check_negative( sigma_sqd_w, gr%nnzp ,"sigma_sqd_w", prefix//proc_name )
  call check_negative( rtp2, gr%nnzp ,"rtp2", prefix//proc_name )
  call check_negative(thlp2, gr%nnzp ,"thlp2", prefix//proc_name )
  call check_negative( tau_zm, gr%nnzp ,"tau_zm", prefix//proc_name )

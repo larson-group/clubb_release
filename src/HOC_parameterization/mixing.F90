@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F90,v 1.13 2008-08-05 15:27:24 dschanen Exp $
+! $Id: mixing.F90,v 1.14 2008-08-06 21:38:59 faschinj Exp $
 !===============================================================================
 module mixing
 
@@ -36,7 +36,7 @@ integer, parameter, private :: &
 contains
 
 !===============================================================================
-subroutine timestep_mixing( dt, Scm, wm_zm, wm_zt, wp2, wp3, & 
+subroutine timestep_mixing( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3, & 
                             Kh_zt, tau_zm, Skw_zm, rtpthvp,  & 
                             rtm_forcing, thlpthvp,  & 
                             thlm_forcing, rtp2, thlp2, wp2_zt, & 
@@ -109,7 +109,7 @@ real(kind=time_precision), intent(in) ::  &
   dt               ! Timestep                                 [s]
 
 real, intent(in), dimension(gr%nnzp) :: & 
-  Scm,           & ! Sc on momentum levels                    [-]
+  sigma_sqd_w,           & ! sigma_sqd_w on momentum levels                    [-]
   wm_zm,         & ! w wind component on momentum levels      [m/s]
   wm_zt,         & ! w wind component on thermodynamic levels [m/s]
   wp2,           & ! w'^2 (momentum levels)                   [m^2/s^2]
@@ -256,7 +256,7 @@ wpxp_lower_lim = -0.99 * sqrt( wp2 * rtp2 )
 
 ! Compute the implicit portion of the r_t and w'r_t' equations.
 ! Build the left-hand side matrix.
-call mixing_lhs( .true., dt, wprtp, Scm, wm_zm, wm_zt, wp2, wp2_zt, & 
+call mixing_lhs( .true., dt, wprtp, sigma_sqd_w, wm_zm, wm_zt, wp2, wp2_zt, & 
                  wp3, Kw6_rt, tau_zm, C7_Skw_fnc, C6rt_Skw_fnc, & 
                  wpxp_upper_lim, wpxp_lower_lim,  & 
                  implemented, lhs )
@@ -320,7 +320,7 @@ wpxp_lower_lim = -0.99 * sqrt( wp2 * thlp2 )
 
 ! Compute the implicit portion of the th_l and w'th_l' equations.
 ! Build the left-hand side matrix.
-call mixing_lhs( .true., dt, wpthlp, Scm, wm_zm, wm_zt, wp2, wp2_zt,  & 
+call mixing_lhs( .true., dt, wpthlp, sigma_sqd_w, wm_zm, wm_zt, wp2, wp2_zt,  & 
                  wp3, Kw6_thl, tau_zm, C7_Skw_fnc, C6thl_Skw_fnc, & 
                  wpxp_upper_lim, wpxp_lower_lim,  & 
                  implemented, lhs )
@@ -379,7 +379,7 @@ do i = 1, sclr_dim, 1
 
   ! Compute the implicit portion of the sclr and w'sclr' equations.
   ! Build the left-hand side matrix.
-  call mixing_lhs( .true., dt, wpsclrp(:,i), Scm, wm_zm,  & 
+  call mixing_lhs( .true., dt, wpsclrp(:,i), sigma_sqd_w, wm_zm,  & 
                    wm_zt, wp2, wp2_zt, wp3, Kw6, tau_zm, C7_Skw_fnc, & 
                    C6rt_Skw_fnc, wpxp_upper_lim, wpxp_lower_lim, & 
                    implemented, lhs )
@@ -423,11 +423,11 @@ end do ! passive scalars
 !           write(fstderr,*) "wm_zt = ", wm_zt
 !           write(fstderr,*) "wp2 = ", wp2
 !           write(fstderr,*) "wp3 = ", wp3
-!           write(fstderr,*) "Scm = ", Scm
+!           write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
 !           write(fstderr,*) "Skw_zm = ", Skw_zm
 
    !write(fstderr,*) "dt = ", dt
-   !write(fstderr,*) "Scm = ", Scm
+   !write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
    !write(fstderr,*) "wm_zm = ", wm_zm
    !write(fstderr,*) "wm_zt = ", wm_zt
    !write(fstderr,*) "wp2 = ", wp2
@@ -476,7 +476,7 @@ return
 end subroutine timestep_mixing
 
 !===============================================================================
-subroutine mixing_lhs( liter, dt, wpxp, Scm, wm_zm, wm_zt, wp2, wp2_zt, & 
+subroutine mixing_lhs( liter, dt, wpxp, sigma_sqd_w, wm_zm, wm_zt, wp2, wp2_zt, & 
                        wp3, Kw6, tau_zm, C7_Skw_fnc, C6x_Skw_fnc, & 
                        wpxp_upper_lim, wpxp_lower_lim,  & 
                        implemented, lhs )
@@ -569,7 +569,7 @@ real(kind=time_precision), intent(in) ::  &
 
 real, intent(in), dimension(gr%nnzp) :: & 
   wpxp,            & ! w'x' (momentum levels) at timestep (t)   [{xm units} m/s]
-  Scm,             & ! Sc on momentum levels                    [-]
+  sigma_sqd_w,             & ! sigma_sqd_w on momentum levels                    [-]
   wm_zm,           & ! w wind component on momentum levels      [m/s]
   wm_zt,           & ! w wind component on thermodynamic levels [m/s]
   wp2,             & ! w'^2 (momentum levels)                   [m^2/s^2]
@@ -615,9 +615,9 @@ real, dimension(3) :: tmp
 wtol_sqd = wtol * wtol
 
 ! Define a_1 (located on momentum levels).
-! It is a variable that is a function of Sc (where Scm is
+! It is a variable that is a function of sigma_sqd_w (where sigma_sqd_w is
 ! located on momentum levels).
-a1(1:gr%nnzp) = 1.0 / ( 1.0 - Scm(1:gr%nnzp) )
+a1(1:gr%nnzp) = 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nnzp) )
 
 ! Interpolate a_1 and w'^2 from momentum levels to thermodynamic
 ! levels.  This will be used for the w'x' turbulent advection
@@ -1575,7 +1575,7 @@ result( lhs )
 !
 ! w'^2x' = a_1 * ( w'^3 / w'^2 ) * w'x',
 !
-! where a_1 is a variable that is a function of Sc.  The turbulent advection 
+! where a_1 is a variable that is a function of sigma_sqd_w.  The turbulent advection 
 ! term becomes:
 !
 ! - d [ a_1 * ( w'^3 / w'^2 ) * w'x' ] / dz.

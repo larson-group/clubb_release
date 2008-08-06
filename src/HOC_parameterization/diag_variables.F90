@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F90,v 1.12 2008-08-01 13:18:38 faschinj Exp $
+! $Id: diag_variables.F90,v 1.13 2008-08-06 21:38:59 faschinj Exp $
 module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -21,7 +21,7 @@ public :: setup_diagnostic_variables, &
 ! Diagnostic variables
 
 real, target, allocatable, dimension(:), public :: & 
-  Sct,     & ! PDF width parameter: t point          [-]
+  sigma_sqd_w_zt,     & ! PDF width parameter: t point          [-]
   Skw_zm,    & ! Skw on moment. grid                   [-]
   Skw_zt,    & ! Skw on thermo. grid                   [-]
   ug,      & ! u geostrophic wind                    [m/s]
@@ -31,7 +31,7 @@ real, target, allocatable, dimension(:), public :: &
   thvm,    & ! Virtual potential Temperature         [K]
   shear   ! Wind shear production
 
-!$omp   threadprivate(Sct, Skw_zm, Skw_zt, ug, vg)
+!$omp   threadprivate(sigma_sqd_w_zt, Skw_zm, Skw_zt, ug, vg)
 !$omp   threadprivate(thvm, shear)
 !$omp   threadprivate(um_ref, vm_ref)
 
@@ -245,7 +245,7 @@ integer :: i
 
 ! Diagnostic variables
 
-allocate( Sct(1:nzmax) )       ! PDF width parameter: t point
+allocate( sigma_sqd_w_zt(1:nzmax) )       ! PDF width parameter: t point
 allocate( Skw_zm(1:nzmax) )      ! Skw
 allocate( Skw_zt(1:nzmax) )      ! Skw
 allocate( ug(1:nzmax) )        ! u geostrophic wind
@@ -356,7 +356,7 @@ allocate( wpedsclrp(1:nzmax, 1:sclr_dim) )
 
 ! Diagnostic variables
 
-Sct = 0.0      ! PDF width parameter: t point
+sigma_sqd_w_zt = 0.0      ! PDF width parameter: t point
 
 Skw_zm = 0.0
 Skw_zt = 0.0
@@ -475,7 +475,7 @@ implicit none
 
 ! --- Deallocate --- 
 
-deallocate( Sct )       ! PDF width parameter: t point
+deallocate( sigma_sqd_w_zt )       ! PDF width parameter: t point
 deallocate( Skw_zm )
 deallocate( Skw_zt )
 deallocate( ug )        ! u geostrophic wind

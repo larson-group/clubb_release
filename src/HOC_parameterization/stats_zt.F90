@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F90,v 1.11 2008-08-06 14:55:56 faschinj Exp $
+! $Id: stats_zt.F90,v 1.12 2008-08-06 21:38:59 faschinj Exp $
  
 module stats_zt
 
@@ -45,7 +45,7 @@ use stats_variables, only: &
     iwp2thvp, & 
     iwp2rcp, & 
     iwprtpthlp, & 
-    isct, & 
+    isigma_sqd_w_zt, & 
     irho, & 
     iNcm, & 
     iNcnm, & 
@@ -225,7 +225,7 @@ iKh_zt          = 0
 iwp2thvp      = 0
 iwp2rcp       = 0
 iwprtpthlp    = 0
-isct          = 0
+isigma_sqd_w_zt          = 0
 irho         = 0
 iNcm          = 0  ! Brian
 iNcnm         = 0
@@ -557,10 +557,10 @@ do i=1,zt%nn
          "wprtpthlp","(m kg K)/(s kg)",zt)
     k = k + 1
 
-  case ('sc')
-    isct = k
-    call stat_assign(isct,"Sc", & 
-         "Sc","count",zt)
+  case ('sigma_sqd_w_zt')
+    isigma_sqd_w_zt = k
+    call stat_assign(isigma_sqd_w_zt,"sigma_sqd_w_zt", & 
+         "sigma_sqd_w_zt","count",zt)
     k = k + 1
 
   case ('rho')

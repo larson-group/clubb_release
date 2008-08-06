@@ -1,4 +1,4 @@
-! $Id: closure_new.F90,v 1.4 2008-08-04 20:41:45 faschinj Exp $
+! $Id: closure_new.F90,v 1.5 2008-08-06 21:38:58 faschinj Exp $
 module pdf_closure
 
 implicit none
@@ -10,7 +10,7 @@ private ! Set Default Scope
 contains 
 !------------------------------------------------------------------------
 subroutine pdf_closure_new & 
-           ( p, exner, wm, wp2, wp3, Sc, & 
+           ( p, exner, wm, wp2, wp3, sigma_sqd_w, & 
              rtm, rtp2, wprtp, & 
              thlm, thlp2, wpthlp, & 
              rtpthlp, sclrm, wpsclrp, & 
@@ -90,7 +90,7 @@ real, intent(in) ::  &
   wm,      & ! mean w                        [m/s] 
   wp2,     & ! w'^2                          [m^2/s^2] 
   wp3,     & ! w'^3                          [m^3/s^3]
-  Sc,      & ! Width of individual w plumes  [-]
+  sigma_sqd_w,      & ! Width of individual w plumes  [-]
   rtm,     & ! Mean total water              [kg/kg]
   rtp2,    & ! Total water mixing ratio      [kg/kg]
   wprtp,   & ! w' r_t'                       [(kg m)(kg s)]
@@ -258,7 +258,7 @@ else ! Width parameters are non-zero
   else
     a = 0.5 & 
         * (  & 
-            1.0 - Skw/sqrt( 4.0*( 1.0 - Sc )**3 + Skw**2 ) & 
+            1.0 - Skw/sqrt( 4.0*( 1.0 - sigma_sqd_w )**3 + Skw**2 ) & 
           )
   end if
 
@@ -266,13 +266,13 @@ else ! Width parameters are non-zero
   if (a > 0.99) a = 0.99
   if (a < 0.01) a = 0.01
 
-  w1_n = sqrt( ( (1-a)/a )*(1-Sc) )
-  w2_n = -sqrt( ( a/(1-a) )*(1-Sc) )
+  w1_n = sqrt( ( (1-a)/a )*(1-sigma_sqd_w) )
+  w2_n = -sqrt( ( a/(1-a) )*(1-sigma_sqd_w) )
   w1   = wm + sqrt( wp2 )*w1_n
   w2   = wm + sqrt( wp2 )*w2_n
 
-  sw1  = Sc*wp2
-  sw2  = Sc*wp2
+  sw1  = sigma_sqd_w*wp2
+  sw2  = sigma_sqd_w*wp2
 
   ! Vince Larson added a dimensionless factor so that the
   ! width of plumes in theta_l, rt can vary.  
@@ -300,7 +300,7 @@ else ! Width parameters are non-zero
 
     alpha_thl & 
     = 0.5 & 
-      * ( 1.0 - wpthlp*wpthlp /((1.0-Sc)*wp2*thlp2) )
+      * ( 1.0 - wpthlp*wpthlp /((1.0-sigma_sqd_w)*wp2*thlp2) )
     alpha_thl = max( min( alpha_thl, 1.0 ), 0.0 )
 
 ! Vince Larson multiplied original expressions by width_factor_1,2
@@ -325,7 +325,7 @@ else ! Width parameters are non-zero
 
     alpha_rt & 
     = 0.5 & 
-      * ( 1.0 - wprtp*wprtp /((1.0-Sc)*wp2*rtp2) )
+      * ( 1.0 - wprtp*wprtp /((1.0-sigma_sqd_w)*wp2*rtp2) )
     alpha_rt = max( min( alpha_rt, 1.0 ), 0.0 )
 
 ! Vince Larson multiplied original expressions by width_factor_1,2
@@ -358,7 +358,7 @@ else ! Width parameters are non-zero
         alpha_sclr(i)  & 
         = 0.5 & 
           * ( 1.0 - wpsclrp(i)*wpsclrp(i)  & 
-                    / ((1.0-Sc)*wp2*sclrp2(i)) )
+                    / ((1.0-sigma_sqd_w)*wp2*sclrp2(i)) )
         alpha_sclr(i) = max( min( alpha_sclr(i), 1.0 ), 0.0 )
 
 ! Vince Larson multiplied original expressions by width_factor_1,2
@@ -690,7 +690,7 @@ if ( clubb_at_debug_level( 2 ) ) then
     write(fstderr,*) "wm = ", wm 
     write(fstderr,*) "wp2 = ", wp2 
     write(fstderr,*) "wp3 = ", wp3
-    write(fstderr,*) "Sc = ", Sc
+    write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
     write(fstderr,*) "rtm = ", rtm
     write(fstderr,*) "rtp2 = ", rtp2
     write(fstderr,*) "wprtp = ", wprtp

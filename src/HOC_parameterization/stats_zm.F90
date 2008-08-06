@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zm.F90,v 1.8 2008-08-01 13:18:39 faschinj Exp $
+! $Id: stats_zm.F90,v 1.9 2008-08-06 21:38:59 faschinj Exp $
       module stats_zm
        
       implicit none
@@ -38,7 +38,7 @@
           iupwp, & 
           ivpwp, & 
           irho_zm, & 
-          iscm, & 
+          isigma_sqd_w, & 
           iem, & 
           ishear, & 
           iFrad, & 
@@ -198,7 +198,7 @@
       iupwp     = 0
       ivpwp     = 0
       irho_zm     = 0
-      iscm      = 0
+      isigma_sqd_w      = 0
       iem       = 0
       ishear    = 0  ! Brian
       iFrad     = 0
@@ -454,10 +454,10 @@
           call stat_assign(irho_zm,"rho_zm", & 
                "density","kg/(m^3)",zm)
           k = k + 1
-        case ('sc')
-          iscm = k
-          call stat_assign(iscm,"scm", & 
-               "scm","count",zm)
+        case ('sigma_sqd_w')
+          isigma_sqd_w = k
+          call stat_assign(isigma_sqd_w,"sigma_sqd_w", & 
+               "sigma_sqd_w","count",zm)
           k = k + 1
         case ('em')
           iem = k

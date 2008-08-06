@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.24 2008-08-05 15:27:25 dschanen Exp $
+! $Id: wp23.F90,v 1.25 2008-08-06 21:38:59 faschinj Exp $
 !===============================================================================
 module wp23
 
@@ -31,7 +31,7 @@ private :: wp23_solve, &
 contains
 
 !===============================================================================
-subroutine timestep_wp23( dt, Scm, wm_zm, wm_zt, wpthvp, wp2thvp,  & 
+subroutine timestep_wp23( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp,  & 
                           um, vm, upwp, vpwp, up2, vp2, Kh_zm, Kh_zt, & 
                           tau_zm, tau_zt, Skw_zm, Skw_zt, a, & 
                           wp2_zt, wp2, wp3, err_code )
@@ -85,7 +85,7 @@ real(kind=time_precision), intent(in) ::  &
   dt             ! Timestep                                 [s]
 
 real, intent(in), dimension(gr%nnzp) ::  & 
-  Scm,         & ! Sc on momentum levels                    [-]
+  sigma_sqd_w,         & ! sigma_sqd_w on momentum levels                    [-]
   wm_zm,       & ! w wind component on momentum levels      [m/s]
   wm_zt,       & ! w wind component on thermodynamic levels [m/s]
   wpthvp,      & ! w'th_v' (momentum levels)                [K m/s]
@@ -239,7 +239,7 @@ do k = 1, gr%nnzp, 1
 enddo
 
 !       Solve semi-implicitly
-call wp23_solve( dt, Scm, wm_zm, wm_zt, wpthvp, wp2thvp, & 
+call wp23_solve( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp, & 
                  um, vm, upwp, vpwp, up2, vp2, Kw1, & 
                  Kw8, Skw_zt, tau_zm, tauw3t, C1_Skw_fnc, & 
                  C11_Skw_fnc, wp3_zm, wp2, wp3, err_code )
@@ -254,7 +254,7 @@ if ( lapack_error( err_code ) .and.  &
    write(fstderr,*) "Intent(in)"
 
    write(fstderr,*) "dt = ", dt
-   write(fstderr,*) "Scm = ", Scm
+   write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
    write(fstderr,*) "wm_zm = ", wm_zm
    write(fstderr,*) "wm_zt = ", wm_zt
    write(fstderr,*) "wpthvp = ", wpthvp
@@ -286,7 +286,7 @@ return
 end subroutine timestep_wp23
 
 !===============================================================================
-subroutine wp23_solve( dt, Scm, wm_zm, wm_zt, wpthvp, wp2thvp, & 
+subroutine wp23_solve( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp, & 
                        um, vm, upwp, vpwp, up2, vp2, Kw1, & 
                        Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, & 
                        C11_Skw_fnc, wp3_zm, wp2, wp3, err_code )
@@ -402,7 +402,7 @@ real(kind=time_precision), intent(in) ::  &
   dt              ! Timestep                                  [s]
 
 real, intent(in), dimension(gr%nnzp) ::  & 
-  Scm,          & ! Sc on momentum levels                     [-]
+  sigma_sqd_w,          & ! sigma_sqd_w on momentum levels                     [-]
   wm_zm,        & ! w wind component on momentum levels       [m/s]
   wm_zt,        & ! w wind component on thermodynamic levels  [m/s]
   wpthvp,       & ! w'th_v' (momentum levels)                 [K m/s]
@@ -486,16 +486,16 @@ endif
  
 
 ! Define a_1 and a_3 (both are located on momentum levels).
-! They are variables that are both functions of Sc (where Scm is
+! They are variables that are both functions of sigma_sqd_w (where sigma_sqd_w is
 ! located on momentum levels).
 ! Note: some compilers appear to interpret the pow function with
 ! a positive integer exponent differently than a repeated
 ! multiply. -dschanen 19 March 2007
 
-a1 = 1.0 / ( 1.0 - Scm )
-a3 = 3.0 * Scm*Scm & 
-     + 6.0*(1.0-Scm)*Scm  & 
-     + (1.0-Scm)*(1.0-Scm) & 
+a1 = 1.0 / ( 1.0 - sigma_sqd_w )
+a3 = 3.0 * sigma_sqd_w*sigma_sqd_w & 
+     + 6.0*(1.0-sigma_sqd_w)*sigma_sqd_w  & 
+     + (1.0-sigma_sqd_w)*(1.0-sigma_sqd_w) & 
      - (3.0/2.0)
 
 ! Interpolate a_1 and a_3 from momentum levels to thermodynamic 
@@ -1963,7 +1963,7 @@ result( lhs )
 !
 ! w'^4 = (a_3 + 3/2) * (w'^2)^2  +  a_1 * ( (w'^3)^2 / w'^2 );
 !
-! where a_1 and a_3 are variables that are both functions of Sc.  The turbulent 
+! where a_1 and a_3 are variables that are both functions of sigma_sqd_w.  The turbulent 
 ! production term is rewritten as:
 !
 ! + 3 w'^2 d(w'^2)/dz = + (3/2) d( (w'^2)^2 )/dz.
@@ -2295,7 +2295,7 @@ result( rhs )
 !
 ! w'^4 = (a_3 + 3/2) * (w'^2)^2  +  a_1 * ( (w'^3)^2 / w'^2 );
 !
-! where a_1 and a_3 are variables that are both functions of Sc.  The turbulent 
+! where a_1 and a_3 are variables that are both functions of sigma_sqd_w.  The turbulent 
 ! production term is rewritten as:
 !
 ! + 3 w'^2 d(w'^2)/dz = + (3/2) d( (w'^2)^2 )/dz.
