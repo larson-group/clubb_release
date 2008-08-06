@@ -1,4 +1,4 @@
-! $Id: sounding.F90,v 1.4 2008-08-04 20:42:49 faschinj Exp $
+! $Id: sounding.F90,v 1.5 2008-08-06 13:49:05 faschinj Exp $
 module sounding
 
   implicit none
@@ -11,9 +11,8 @@ module sounding
        
   contains
 !------------------------------------------------------------------------
-  subroutine read_sounding( iunit,  & 
-                            thlm, rtm, um, vm, ugm, vgm, runfile,  & 
-                            runtype,  & 
+  subroutine read_sounding( iunit, runfile, runtype,  & 
+                            thlm, rtm, um, vm, ugm, vgm, &
                             sclrm, edsclrm )
 
 !       Description:
@@ -57,7 +56,7 @@ module sounding
 
         character(len=*), intent(in) ::  & 
         runfile,   & ! Contains namelists
-        runtype   ! String for DYCOMS II RF02
+        runtype      ! String for DYCOMS II RF02
 
         ! Output variables
         real, intent(out), dimension(gr%nnzp) ::  & 
@@ -66,7 +65,7 @@ module sounding
         um,    & ! u wind                          [m/s]
         vm,    & ! v wind                          [m/s]
         ugm,   & ! u geostrophic wind              [m/s]
-        vgm   ! v geostrophic wind              [m/s]
+        vgm      ! v geostrophic wind              [m/s]
 
         ! Optional output variables
         real, intent(out), dimension(gr%nnzp, sclr_dim) ::  & 
