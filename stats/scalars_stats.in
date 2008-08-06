@@ -1,9 +1,9 @@
-! $Id: scalars_stats.in,v 1.13 2008-08-06 14:56:43 faschinj Exp $
+! $Id: scalars_stats.in,v 1.14 2008-08-06 21:43:03 faschinj Exp $
 ! This file contains a comprehensive listing of all the HOC variables that 
 ! can be output to GrADS, as found in src/HOC_parameterization/statistics.F.
 ! This file, as well as the statistical files for all the other cases, needs
 ! to be updated every time a new statistical parameter is added.
-! Note that the passive scalars are commented out because the model is not 
+! Note that the passive sigma_sqd_walars are commented out because the model is not 
 ! compiled with support for them by default, and the condition numbers are 
 ! commented out because they are computationally expensive.
 ! This file was created on January 21, 2007.
@@ -15,7 +15,7 @@ vars_zt =
 'cf', 'p', 'exner', 'Lscale', 'T_in_K',
 'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp',
 'Lscale_up', 'Lscale_down', 'tau_zt', 'Kh_zt', 'wp2thvp', 'wp2rcp', 'wprtpthlp',
-'sc', 'rho', 'radht', 'radht_LW', 'radht_SW',
+'sigma_sqd_w', 'rho', 'radht', 'radht_LW', 'radht_SW',
 'Ncm', 'Ncnm', 'Nim', 'snowslope', 'Nsnowm', 'sed_rcm', 'rsat',
 'rrainm', 'Nrm', 'mean_vol_rad_rain', 'mean_vol_rad_cloud',
 'rain_rate', 'AKm', 'AKm_est', 'rsnowm', 'ricem', 'rgraupelm',
@@ -38,14 +38,14 @@ vars_zt =
 'rt1', 'rt2', 'srt1', 'srt2', 'rc1', 'rc2', 'rsl1', 'rsl2', 'R1', 'R2',
 's1', 's2', 'ss1', 'ss2', 'rrtthl',
 'wp2_zt', 'thlp2_zt', 'wpthlp_zt', 'wprtp_zt', 'rtp2_zt', 'rtpthlp_zt',
-'sclram', 'sclram_f', 'sclrbm', 'sclrbm_f',
-'edsclram', 'edsclrbm',
+'sigma_sqd_wlram', 'sigma_sqd_wlram_f', 'sigma_sqd_wlrbm', 'sigma_sqd_wlrbm_f',
+'edsigma_sqd_wlram', 'edsigma_sqd_wlrbm',
 ''
 
 vars_zm = 
 'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'wp4', 'up2', 'vp2',
 'wpthvp', 'rtpthvp', 'thlpthvp', 'tau_zm', 'Kh_zm', 'wprcp',
-'thlprcp', 'rtprcp', 'rcp2', 'upwp', 'vpwp', 'rho_zm', 'sc', 'em',
+'thlprcp', 'rtprcp', 'rcp2', 'upwp', 'vpwp', 'rho_zm', 'sigma_sqd_w', 'em',
 'shear', 'Frad', 'Frad_LW', 'Frad_SW', 'Fprec', 'Fcsed',
 'Vrr', 'VNr', 'Vsnow', 'Vgraupel', 'Vice',
 'wp2_bt', 'wp2_ma', 'wp2_ta', 'wp2_ac', 'wp2_bp', 'wp2_pr1', 
@@ -66,12 +66,12 @@ vars_zm =
 'thlp2_dp1', 'thlp2_dp2', 'thlp2_cl', 'thlp2_pd',
 'rtpthlp_bt', 'rtpthlp_ma', 'rtpthlp_ta', 'rtpthlp_tp1', 'rtpthlp_tp2',
 'rtpthlp_dp1', 'rtpthlp_dp2', 'rtpthlp_cl',
-'sclraprtp', 'sclrbprtp', 'sclrap2', 'sclrbp2',
-'sclrapthvp', 'sclrbpthvp', 'sclrapthlp', 'sclrbpthlp', 
-'sclraprcp', 'sclrbprcp', 'wpsclrap', 'wpsclrbp', 
-'wpsclrap2', 'wpsclrbp2', 'wp2sclrap', 'wp2sclrbp',
-'wpsclraprtp', 'wpsclrbprtp', 'wpsclrapthlp', 'wpsclrbpthlp',
-'wpedsclrap', 'wpedsclrbp',
+'sigma_sqd_wlraprtp', 'sigma_sqd_wlrbprtp', 'sigma_sqd_wlrap2', 'sigma_sqd_wlrbp2',
+'sigma_sqd_wlrapthvp', 'sigma_sqd_wlrbpthvp', 'sigma_sqd_wlrapthlp', 'sigma_sqd_wlrbpthlp', 
+'sigma_sqd_wlraprcp', 'sigma_sqd_wlrbprcp', 'wpsigma_sqd_wlrap', 'wpsigma_sqd_wlrbp', 
+'wpsigma_sqd_wlrap2', 'wpsigma_sqd_wlrbp2', 'wp2sigma_sqd_wlrap', 'wp2sigma_sqd_wlrbp',
+'wpsigma_sqd_wlraprtp', 'wpsigma_sqd_wlrbprtp', 'wpsigma_sqd_wlrapthlp', 'wpsigma_sqd_wlrbpthlp',
+'wpedsigma_sqd_wlrap', 'wpedsigma_sqd_wlrbp',
 ''
 
 vars_sfc = 
