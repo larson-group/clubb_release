@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F90,v 1.12 2008-08-04 20:46:14 faschinj Exp $
+! $Id: microphys_driver.F90,v 1.13 2008-08-06 13:46:55 faschinj Exp $
 module microphys_driver
 
 !       Description:
@@ -28,8 +28,8 @@ hydromet_list
 contains
 
 !-----------------------------------------------------------------------
-subroutine init_microphys & 
-           ( l_kk_rain, l_coamps_micro, l_licedfs, hydromet_dim )
+subroutine init_microphys( l_kk_rain, l_coamps_micro, l_licedfs, &
+                           hydromet_dim )
 
 !       Description:
 !       Set indices to the various hydrometeor species and define
@@ -111,11 +111,11 @@ end subroutine init_microphys
 !-----------------------------------------------------------------------
 subroutine advance_microphys & 
            ( runtype, dt, time_current,  & 
-             thlm, p, exner, rho, rho_zm, rtm, rcm, Ncm,  & 
-             pdf_parms, wm_zt, wm_zm, Kh_zm, AKm_est, AKm,  & 
-             Ncnm, Nim, & 
-             hydromet, & 
-             rtm_forcing, thlm_forcing, err_code )
+             thlm, p, exner, rho, rho_zm, rtm, rcm,  & 
+             wm_zt, wm_zm, Kh_zm, AKm_est, AKm, pdf_parms, & 
+             Ncm, Ncnm, Nim, hydromet, & 
+             rtm_forcing, thlm_forcing, &
+             err_code )
 
 !       Description:
 !       Compute pristine ice, snow, graupel, & rain hydrometeor fields.
@@ -235,15 +235,18 @@ real, dimension(gr%nnzp), intent(in) :: &
   thlm,    & ! Liquid potential temp.                 [K]
   p,       & ! Pressure                               [Pa]
   exner,   & ! Exner function                         [-]
-  rho,    & ! Density on thermo. grid                [kg/m^3]
-  rho_zm,    & ! Density on moment. grid                [kg/m^3]
+  rho,     & ! Density on thermo. grid                [kg/m^3]
+  rho_zm,  & ! Density on moment. grid                [kg/m^3]
   rtm,     & ! Total water mixing ratio               [kg/kg]
   rcm,     & ! Liquid water mixing ratio              [kg/kg]
-  wm_zt,     & ! w wind on moment. grid                 [m/s]
-  wm_zm,     & ! w wind on thermo. grid                 [m/s]
-  Kh_zm,     & ! Kh Eddy diffusivity on momentum grid   [m^2/s]
+  wm_zt,   & ! w wind on moment. grid                 [m/s]
+  wm_zm,   & ! w wind on thermo. grid                 [m/s]
+  Kh_zm,   & ! Kh Eddy diffusivity on momentum grid   [m^2/s]
   Akm_est, & ! Analytic Kessler ac                    [kg/kg]
-  Akm     ! Analytic Kessler estimate              [kg/kg]
+  Akm        ! Analytic Kessler estimate              [kg/kg]
+
+  real, target,dimension(gr%nnzp,26), intent(in) :: & 
+  pdf_parms     ! PDF parameters
 
 ! Note:
 ! K & K only uses Ncm, while for COAMPS Ncnm is initialized
@@ -251,17 +254,14 @@ real, dimension(gr%nnzp), intent(in) :: &
 real, dimension(gr%nnzp), intent(inout) :: & 
   Ncm,     & ! Cloud drop number concentration       [count/kg]
   Ncnm,    & ! Cloud nuclei number concentration     [count/m^3]
-  Nim     ! Ice crystal number concentration      [count/m^3]
-
-real, target,dimension(gr%nnzp,26),intent(in) :: & 
-  pdf_parms     ! PDF parameters
+  Nim        ! Ice crystal number concentration      [count/m^3]
 
 real, dimension(gr%nnzp,hydromet_dim), intent(inout) :: & 
   hydromet      ! Array of rain, prist. ice, graupel, etc. [units vary]
 
 real, dimension(gr%nnzp), intent(inout) :: & 
   rtm_forcing,  & ! Imposed contributions to total water        [kg/kg/s]
-  thlm_forcing ! Imposed contributions to liquid potential temp. [K/s]
+  thlm_forcing    ! Imposed contributions to liquid potential temp. [K/s]
 
 integer, intent(out) :: err_code ! Exit code returned from subroutine
 
@@ -280,8 +280,8 @@ real, dimension(gr%nnzp,hydromet_dim) :: &
 
 real, dimension(gr%nnzp) :: & 
   rtm_mc,   & ! Change in total water due to microphysics    [(kg/kg)/s]
-  thlm_mc  ! Change in liquid potential temperature 
-         ! due to microphysics                          [K/s]
+  thlm_mc     ! Change in liquid potential temperature 
+              ! due to microphysics                          [K/s]
 
 real, dimension(gr%nnzp,hydromet_dim) :: & 
   hydromet_mc
