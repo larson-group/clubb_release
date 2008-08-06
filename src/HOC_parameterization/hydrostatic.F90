@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: hydrostatic.F90,v 1.4 2008-07-31 16:10:44 faschinj Exp $
+! $Id: hydrostatic.F90,v 1.5 2008-08-06 13:54:43 faschinj Exp $
 
 module hydrostatic_mod
 
@@ -11,8 +11,8 @@ public :: hydrostatic
 
 contains
 
-subroutine hydrostatic( thvm, psfc, p_in_Pa, exner, rho, rho_zm )
-
+subroutine hydrostatic( thvm, psfc, &
+                        p_in_Pa, exner, rho, rho_zm )
 !       Description:
 !       Subprogram to integrate hydrostatic equation
 
@@ -26,6 +26,7 @@ use constants, only: &
     Cp, & 
     grav, & 
     Rd
+
 use grid_class, only: & 
     gr,  & ! Variable(s)
     zm2zt,  & ! Procedure(s)
@@ -43,9 +44,9 @@ real, intent(in), dimension(gr%nnzp) ::  &
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) ::  & 
   p_in_Pa,  & ! Pressure                       [Pa]
-  exner,  & ! Exner function                 [-]
-  rho,   & ! Density on thermo. points      [kg/m^3]
-  rho_zm   ! Density on moment. points      [kg/m^3]
+  exner,    & ! Exner function                 [-]
+  rho,      & ! Density on thermo. points      [kg/m^3]
+  rho_zm      ! Density on moment. points      [kg/m^3]
 
 !  Local Variables
 
