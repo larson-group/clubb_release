@@ -1,5 +1,5 @@
 %
-%  Last modified 27 July 2006
+% $Id: hoc_standards.tex,v 1.2 2008-08-06 16:48:45 dschanen Exp $
 %
 
 \documentclass[letterpaper,12pt]{article}
@@ -14,7 +14,7 @@
 \begin{document}
 
 \title{\textbf{Standards and Coding Practices for HOC}}
-\author{}
+\author{Larson Group UW--Milwaukee}
 
 \maketitle
 
@@ -26,87 +26,80 @@
 When initially checking in a new source file, enter the Id tag as 
 the string \texttt{\$Id\$} on a commented line at the top of the source file
  (CVS will expand this after checking it in).
-E.g. \newline
-
-Before checking in the file, enter:
-\begin{verbatim}
-!-----------------------------------------------------------------------
-! $Id: hoc_standards.tex,v 1.1 2008-07-22 14:28:28 senkbeir Exp $
-
-\end{verbatim}
 
 \bigskip
 
 After checking in the file, something like the following will appear:
 \begin{verbatim}
 !-----------------------------------------------------------------------
-! $Id: hoc_standards.tex,v 1.1 2008-07-22 14:28:28 senkbeir Exp $
+! $Id: hoc_standards.tex,v 1.2 2008-08-06 16:48:45 dschanen Exp $
 
 \end{verbatim}
 
 \item When adding functions and subroutines create a header with a short 
-description of their purpose.  Include in the header a description of 
+description of their purpose and reference if there is one.  Include 
+in the header a description of 
 each variable and its respective units.  Use the following standardized
 layout: 
 
 \begin{verbatim}
 !-----------------------------------------------------------------------
-        function xyzzy( etherx, ethery, etherz )
+function xyzzy( etherx, ethery, etherz )
 
-!       Description:
-!         Evaluates the xyzzy function. 
+! Description:
+!   Evaluates the xyzzy function. 
 
-!       References:
-!         Eqn. 33 on p. 4551 of  
-!         Tweedle-dee and Tweedle-dum (1842), J. Imaginary Atmospheric 
-!         Sci., Vol. 23, pp. 4550--4556
+! References:
+!   Eqn. 33 on p. 4551 of  
+!   Tweedle-dee and Tweedle-dum (1842), J. Imaginary Atmospheric 
+!   Sci., Vol. 23, pp. 4550--4556
 !-----------------------------------------------------------------------
 
-        ! Included Modules
-        use grid_dimensions, only: ndim
+  ! Included Modules
+  use grid_dimensions, only: ndim
  
-        implicit none
+  implicit none
 
-        ! External Calls
-        complex, external ::
-     .    xyxy_fnc ! (Description of function goes here)
+  ! External Calls
+  complex, external :: &
+    xyxy_fnc ! (Description of function goes here)
 
-        external ::
-     .    zyzy_sub ! (Description of subroutine goes here)
+  external :: &
+    zyzy_sub ! (Description of subroutine goes here)
 
-        ! It is a good idea to declare intrinsics, in case another 
-        ! function or variable is accidentally given the same name.
-        intrinsic :: 
-     .    matmul, exp, log, dble
+  ! It is a good idea to declare intrinsics, in case another 
+  ! function or variable is accidentally given the same name.
+  intrinsic :: &
+    matmul, exp, log, dble
 
-        ! If we had any derived types to declare, then 
-        ! we would put them here before the constants.
+  ! If we had any derived types to declare, then 
+  ! we would put them here before the constants.
 
-        ! Local Constants
-        real, parameter :: 
-     .    local_tol = 1.0e-6 ! Local tolerance [no units]
+  ! Local Constants
+  real, parameter :: &
+    local_tol = 1.0e-6 ! Local tolerance [no units]
 
-        ! Input Variables
-        complex, dimension(ndim), intent(in) :: 
-     .    etherx,  ! Ether in the x dimension  [kg/kg]
-     .    ethery,  ! Ether in the y dimension  [kg/kg]
-     .    etherz   ! Ether in the z dimension  [kg/kg]
+  ! Input Variables
+  complex, dimension(ndim), intent(in) :: &
+    etherx,  ! Ether in the x dimension  [kg/kg]
+    ethery,  ! Ether in the y dimension  [kg/kg]
+    etherz   ! Ether in the z dimension  [kg/kg]
 
-        ! Output Variables
-        complex, dimension(ndim,ndim,ndim) ::
-     .    xyzzy    ! Ether in the xyyzy dimension  [kg/kg]
+  ! Output Variables
+  complex, dimension(ndim,ndim,ndim) :: &
+    xyzzy    ! Ether in the xyyzy dimension  [kg/kg]
 
-        ! Local Variables
-        integer :: i, j, k
+  ! Local Variables
+  integer :: i, j, k
 
 !-----------------------------------------------------------------------
 
-        ! Begin xyzzy code
+  ! Begin xyzzy code
 
-        ...
+    ...
 
-        return
-        end function xyzzy
+  return
+end function xyzzy
 !-----------------------------------------------------------------------
 \end{verbatim}
 
@@ -134,6 +127,8 @@ outputs of each subroutine.  Furthermore,
 this makes it easier for the compiler to optimize, because modern computers can 
 vectorize floating point instructions, thereby providing some 
 parallelization when your calculation does not rely on previous results.
+Note however, than an \texttt{intent(out)} variable that is not set in the scope of the subroutine
+is \emph{not defined}!  It often preserves the previous value, but it may not.
 When using modules with public variables, limit 
 the number of variables with an \texttt{only:} statement.  This makes code 
 easier to read, because it is then obvious which variables from the module are being 
@@ -141,38 +136,40 @@ used.\newline
 E.g.
 \begin{verbatim}
 !-----------------------------------------------------------------------
-         subroutine mulmul( x, y, z )
+subroutine mulmul( x, y, z )
 
-!        Description:
-!          Bogus example
+! Description:
+!   Bogus example
 
-!        References:
-!          None
+! References:
+!   None
 !-----------------------------------------------------------------------
 
-         ! Here we limit our use statement to just the needed variables
-         use constants, only: pi, euler_const 
+  ! Here we limit our use statement to just the needed variables
+  use constants, only: &
+    pi,         & ! Ratio of radii to their circumferance [no units]
+    euler_const   ! Made up constant [no units]
 
-         implicit none
+  implicit none
 
-         ! Input
-         real, dimension(5), intent(in)  ::
-     .     x, ! First factor   [no units]
-     .     y  ! Second factor  [no units]
+  ! Input
+  real, dimension(5), intent(in) :: &
+    x, &! First factor   [no units]
+    y   ! Second factor  [no units]
 
-         ! Output 
-         real, dimension(5), intent(out) :: 
-     .     z  ! output         [no units]
+  ! Output 
+  real, dimension(5), intent(out) :: &
+    z  ! output         [no units]
 !-----------------------------------------------------------------------
 
-         ! Note that every element of z could be calculated 
-         ! independently of other elements of the subroutine
-         ! allowing for parallelism if possible.
+  ! Note that every element of z could be calculated 
+  ! independently of other elements of the subroutine
+  ! allowing for parallelism if possible.
 
-         z(1:5) = ( x(1:5) / pi ) * ( y(1:5) / euler_const )
+  z(1:5) = ( x(1:5) / pi ) * ( y(1:5) / euler_const )
 
-         return
-         end subroutine mulmul
+  return
+end subroutine mulmul
 !-----------------------------------------------------------------------
 \end{verbatim}
 
@@ -185,13 +182,13 @@ be listed with input first, then input/output, and then output variables.
 E.g.
 \begin{verbatim}
 
-         ! The wrong way
-         subroutine sub( input_variable_1, output_variable_1, 
-     .                   input_variable_2, input_output_variable_1 )
+  ! The wrong way
+  subroutine sub( input_variable_1, output_variable_1, &
+                  input_variable_2, input_output_variable_1 )
 
-         ! The right way
-         subroutine sub( input_variable_1, input_variable_2, 
-     .                   input_output_variable_1, output_variable_1 )
+  ! The right way
+  subroutine sub( input_variable_1, input_variable_2, &
+                  input_output_variable_1, output_variable_1 )
 
 \end{verbatim}
 
@@ -202,20 +199,20 @@ consistency of arguments of subroutines and functions with long argument lists.
 E.g.
 \begin{verbatim}
 
-         ! The wrong way
-         call sub( roast_beef, ham, tomato, cheese,
-     .             lettuce, onion, mayo )
+  ! The wrong way
+  call sub( roast_beef, ham, tomato, cheese, &
+            lettuce, onion, mayo )
 
-         subroutine sub( roast_beef, ham, 
-     .                   tomato, cheese,
-     .                   lettuce, onion, mayo )
+  subroutine sub( roast_beef, ham, &
+                  tomato, cheese,  &
+                  lettuce, onion, mayo )
 
-         ! The right way
-         call sub( roast_beef, ham, tomato, cheese,
-     .             lettuce, onion, mayo )
+   ! The right way
+   call sub( roast_beef, ham, tomato, cheese, &
+             lettuce, onion, mayo )
 
-         subroutine sub( roast_beef, ham, tomato, cheese,
-     .                   lettuce, onion, mayo )
+   subroutine sub( roast_beef, ham, tomato, cheese, &
+                   lettuce, onion, mayo )
 
 \end{verbatim}
 
@@ -223,14 +220,14 @@ E.g.
 operator precedence.  This makes things more readable at a glance. \newline
 E.g. Do this: 
 \begin{verbatim}
-        x = t + y*x 
-     .    + g*v + t*h
+  x = t + y*x  &
+    + g*v + t*h
 \end{verbatim}
 
 Not this:
 \begin{verbatim}
-        x = t + y*x + g
-     .    *v + t*h
+  x = t + y*x + g &
+    *v + t*h
 \end{verbatim}
 
 \item Do not use assumed size or assumed shape arrays in HOC.  
@@ -246,50 +243,50 @@ small comment after the end statement with the name of the loop or logical
 variable.
 E.g. \newline
 \begin{verbatim}
-        if ( lcode_enabled ) then
+  if ( lcode_enabled ) then
 
-          ...many lines of code...
+    ...many lines of code...
 
-        end if ! lcode_enabled
+  end if ! lcode_enabled
 \end{verbatim}
 
 or 
 
 \begin{verbatim}
-        if ( .not. lcode_enabled ) then
+  if ( .not. lcode_enabled ) then
 
-          ...many lines of code...
+    ...many lines of code...
 
-        end if ! ~lcode_enabled
+  end if ! ~lcode_enabled
 \end{verbatim}
 
 A long do statement
 
 \begin{verbatim}
-        do i = 1, 100, 1
+  do i = 1, 100, 1
 
-        ...many lines of code...
+  ...many lines of code...
 
-        end do ! i = 1..100
+  end do ! i = 1..100
 \end{verbatim}
 
 \item When making a logical expression, leave spaces between the 
 logical operators and use the Fortran 90 style logical operators. \newline
  E.g.
 \begin{verbatim}
-        ! Like this
-        if ( x == y ) .and. ( y >= z ) .or. ( z /= 0.0 ) then
+  ! Like this
+  if ( x == y ) .and. ( y >= z ) .or. ( z /= 0.0 ) then
 
-          ...
+    ...
 
-        end if
+  end if
 
-        ! Not like this
-        if ( x.eq.y.and.y.ge.z.or.z.ne.0.0 ) then
+  ! Not like this
+  if ( x.eq.y.and.y.ge.z.or.z.ne.0.0 ) then
 
-          ...
+    ...
 
-        end if
+  end if
 
 \end{verbatim}
 
@@ -313,44 +310,42 @@ than three cases, then rewrite the logic as a \texttt{select...case} expression
 instead. E.g.
 
 \begin{verbatim}
-        ! Rewrite this:
-        if ( trim( run ) == "BOMEX" ) then
-          execute_stuff( )
+  ! Rewrite this:
+  if ( trim( run ) == "BOMEX" ) then
+    execute_stuff( )
 
-        else if ( trim( run ) == "FIRE" ) then
-          execute_other_stuff( )
+  else if ( trim( run ) == "FIRE" ) then
+    execute_other_stuff( )
 
-        else if ( trim( run ) == "ARM" ) then
-          execute_other_other_stuff( ) 
+  else if ( trim( run ) == "ARM" ) then
+    execute_other_other_stuff( ) 
 
-        else if ( trim( run ) == "DAVE'S_CAMPING_TRIP" ) then
-          execute_other_other_other_stuff( ) 
+  else if ( trim( run ) == "DAVE'S_CAMPING_TRIP" ) then
+    execute_other_other_other_stuff( ) 
 
-        else
-          write(unit=*,fmt=*) "Cannot determine what to do for "
-            //trim( run )
+  else
+    write(unit=0,fmt=*) "Cannot determine what to do for "//trim( run )
 
-        end if ! run
+  end if ! run
 
-        ! Like this:
-        select case( trim( run ) )
-        case( "BOMEX" )
-          execute_stuff( )
+  ! Like this:
+  select case( trim( run ) )
+  case( "BOMEX" )
+    execute_stuff( )
 
-        case( "FIRE" )
-          execute_other_stuff( )
+  case( "FIRE" )
+    execute_other_stuff( )
 
-        case( "ARM" )
-          execute_other_other_stuff( )
+  case( "ARM" )
+    execute_other_other_stuff( )
  
-        case ( "DAVE'S_CAMPING_TRIP" ) 
-          execute_other_other_other_stuff( ) 
+  case ( "DAVE'S_CAMPING_TRIP" ) 
+    execute_other_other_other_stuff( ) 
 
-        case default
-          write(unit=*,fmt=*) "Cannot determine what to do for "
-            //trim( run )
+  case default
+    write(unit=0,fmt=*) "Cannot determine what to do for "//trim( run )
 
-        end select ! run
+  end select ! run
 
 \end{verbatim}
 
@@ -360,14 +355,14 @@ though Fortran 90 allows you to omit them. \newline
 E.g. Do this:
 
 \begin{verbatim}
-       xyzzy(1:gr%nnzp) = variable_arr1(1:gr%nnzp) * variable_scl1
-     .                    * variable_arr2(1:gr%nnzp)**2
+ xyzzy(1:gr%nnzp) = variable_arr1(1:gr%nnzp) * variable_scl1 &
+                    * variable_arr2(1:gr%nnzp)**2
 \end{verbatim}
 
 Not this:
 \begin{verbatim}
-       xyzzy = variable_arr1 * variable_scl1 
-     .         * variable_arr2**2
+ xyzzy = variable_arr1 * variable_scl1  &
+         * variable_arr2**2
 \end{verbatim}
 
 \item Use a consistent character case for variables names. 
@@ -409,36 +404,39 @@ the code more difficult.  The proper way to use these variables in a new
 section of code is to pass them as an argument.
 \newline
 
+\item Put all functions and subroutines within a module.  This allows for 
+compile time checking of input arguments. \newline
+
 \item When putting several subroutines or functions in a module, limit the
- number of public interfaces. 
+ number of public interfaces. \newline
 E.g. 
 \begin{verbatim}
-        ! module gcss
+  ! module gcss
 
-             ...
+    ...
 
-        ! Note that all these are subroutines called from 
-        ! hoc_forcings_timestep
+  ! Note that all these are subroutines called from 
+  ! hoc_forcings_timestep
 
-        public ::
-     .    cloud_rad, atex_tndcy, atex_sfclyr, fire_tndcy,
-     .    wangara_tndcy, wangara_sfclyr,
-     .    astex_tndcy, astex_sfclyr,
-     .    arm_tndcy, arm_sfclyr,
-     .    bomex_tndcy, bomex_sfclyr,
-     .    dycoms2_rf01_tndcy, dycoms2_rf01_sfclyr,
-     .    dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr,
-     .    nov11_altocu_tndcy 
+  public ::
+    cloud_rad, atex_tndcy, atex_sfclyr, fire_tndcy, &
+    wangara_tndcy, wangara_sfclyr, &
+    astex_tndcy, astex_sfclyr, &
+    arm_tndcy, arm_sfclyr, &
+    bomex_tndcy, bomex_sfclyr, &
+    dycoms2_rf01_tndcy, dycoms2_rf01_sfclyr, &
+    dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr, &
+    nov11_altocu_tndcy 
 
-        ! Note that all these are called from 
-        ! subroutines within gcss;  This declaration
-        ! makes them unavailable to outside routines
+  ! Note that all these are called from 
+  ! subroutines within gcss;  This declaration
+  ! makes them unavailable to outside routines
 
-        private ::
-     .    diag_ustar, arm_sfcflx, Diff_denom,
-     .    altocu_icedf
+  private ::
+    diag_ustar, arm_sfcflx, Diff_denom, &
+    altocu_icedf
 
-           ...
+      ...
 
 \end{verbatim}
 
@@ -448,18 +446,18 @@ parenthesis for functions and subroutines to differentiate them from
 array variables. \newline
 E.g.
 \begin{verbatim}
-         ! Choosing less obscure names for arrays and functions 
-         ! will also help with this problem.
+  ! Choosing less obscure names for arrays and functions 
+  ! will also help with this problem.
 
-         f( x ) ! This is the function f evaluated with argument x.
-         f(x)   ! This is the one dimensional array f indexed at x.
+  f( x ) ! This is the function f evaluated with argument x.
+  f(x)   ! This is the one dimensional array f indexed at x.
 \end{verbatim}
 
 This applies to intrinsic functions as well. \newline
 E.g.
 \begin{verbatim}
-         mycalc = exp( x ) * log( y ) 
-     .          + dble( g ) * mod( f, 5 )
+  mycalc = exp( x ) * log( y )  &
+         + dble( g ) * mod( f, 5 )
 \end{verbatim}
 
 \item Code should not make use of explicit precision variables unless there is 
@@ -468,87 +466,124 @@ compile time promotion of reals and doubles on different computer architectures.
 Also, do not use the asterisks notation to specify precision, because
 is an extension of the Fortran standard.  E.g.
 \begin{verbatim}
-        ! This does not allow for compile time promotion.
-        real(kind=8) :: x
+  ! This does not allow for compile time promotion.
+  real(kind=8) :: x  
 
-        ! This is not standard Fortran and may break.
-        real*8 :: x
+  ! This is not standard Fortran and may break.
+  real*8 :: x
 
-        ! Everyone will be happy if you keep it like this.
-        real :: x
+  ! Everyone will be happy if you keep it like this.
+  real :: x ! Marks the spot [deg_E]
 \end{verbatim}
 
 \item For clarity, functions, subroutines, and programs should end with 
 their proper Fortran 90 style end statement. \newline
 E.g.
 \begin{verbatim}
-        ! Like this
-        subroutine foo
+  ! Like this
+  subroutine foo
 
-            ...
+     ...
 
-        end subroutine foo
+  end subroutine foo
 
-        ! Not like this
-        subroutine foo
+  ! Not like this
+  subroutine foo
 
-         ...
+    ...
 
-        end
+   end
 \end{verbatim}
 
 \item Separate end statements with a single space. \newline 
 E.g.
 \begin{verbatim}
-        subroutine sub( )
+  subroutine sub( )
+
+    ...
+
+  do k = 1, gr%nnzp, 1
 
            ...
 
-        do k = 1, gr%nnzp, 1
-           ...
-        end do ! not 'enddo'
+  end do ! not 'enddo'
 
            ...
 
-        where ( rtm < rttol )
-           ...
-        end where ! not 'endwhere'
+  where ( rtm < rttol )
+    ...
+  end where ! not 'endwhere'
+
+  subroutine sub
 
            ...
 
-        return
-        end subroutine sub ! not 'endsubroutine'
+    return
+  end subroutine sub ! not 'endsubroutine'
 \end{verbatim}
 
-\item A convention of HOC is to use the exclamation point character \texttt{!} for a comment, rather than a \texttt{C} or a \texttt{*}.  Consistent coding style makes comments easier to spot at a glance.
+% These two items are no longer true since we moved to Free format code -dschanen 6 Aug 08
+%\item A convention of HOC is to use the exclamation point character \texttt{!} for a comment, rather than a \texttt{C} or a \texttt{*}.  Consistent coding style makes comments easier to spot at a glance.
 
-\item A convention of HOC is to use the period ( \texttt{.} ) as the 
-continuation character.  This gives the code a clean and consistent look.
-e.g.
-\begin{verbatim}
-        function calc_stuff( stuff1, stuff2,
-     .                       stuff3, stuff4 )
-\end{verbatim}
+%\item A convention of HOC is to use the period ( \texttt{.} ) as the 
+%continuation character.  This gives the code a clean and consistent look.
+%e.g.
+%\begin{verbatim}
+%  function calc_stuff( stuff1, stuff2, &
+%                       stuff3, stuff4 )
+%\end{verbatim}
 
 \item Use lowercase letters for Fortran keywords. \newline
 E.g.
 \begin{verbatim}
-        program HAL ! lowercase program
+program HAL ! lowercase program
 
-           ... 
+    ... 
 
-        if ( lTurnOff ) then ! lowercase if, lowercase then
-          write(unit=*,fmt=*) "I know that you and Frank were "
-     .      //"trying to turn me off Dave." ! lowercase write
-          stop "Daisy, Daisy..." ! lowercase stop
-        end if ! lowercase end, lowercase if
+  if ( lTurnOff ) then ! lowercase if, lowercase then
 
-           ...
+    write(unit=*,fmt=*) "I know that you and Frank were " &
+      //"trying to turn me off Dave." ! lowercase write
 
-        end program HAL ! lowercase end, lowercase program 
+    stop "Daisy, Daisy..." ! lowercase stop
+
+  end if ! lowercase end, lowercase if
+
+    ...
+
+end program HAL ! lowercase end, lowercase program 
 \end{verbatim}
 
+\item For the sake of consistency and code readability, always use a 2 column 
+indent after all directives. Also, indent continuation lines by 2 columns. \newline
+E.g.
+\begin{verbatim}
+module dynamics
 
+  ! 2 column indent within the scope of module
+  implicit none 
+
+  subroutine advect_2D( ... )
+    use grid, only: & ! 2+2 columns within the scope of dynamics/advect_2D
+      nz, & ! 2+2+2 columns since we're continuing the 'use' statement
+      nx
+
+    if ( l_do_something ) then
+      ! 2+2+2 columns within the scope of dynamics/advect_2D/if..then
+
+      call something( ... )
+
+    end if
+
+    return
+  end subroutine advect_2D
+
+end module dynamics
+\end{verbatim}
+
+\item Wrap all code lines at 100 columns.  Fortran free format source code
+allows for 134, but the number 100 was chosen to keep the line length 
+within reason.  \newline
 
 \end{enumerate}
 
