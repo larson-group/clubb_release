@@ -1,4 +1,4 @@
-! $Id: mixing_length.F90,v 1.6 2008-07-30 15:40:45 faschinj Exp $
+! $Id: mixing_length.F90,v 1.7 2008-08-06 13:56:22 faschinj Exp $
 !-----------------------------------------------------------------------------
 module mixing_length
 
@@ -12,7 +12,8 @@ contains
 
 !---------------------------------------------------------------------------        
 subroutine compute_length( thvm, thlm, rtm, rcm, em, p, exner, & 
-                           Lscale, err_code ) 
+                           err_code, &
+                           Lscale ) 
 !       Description:
 !       Larson's 5th moist, nonlocal length scale
 
@@ -82,14 +83,15 @@ real, dimension(gr%nnzp), intent(in) ::  &
   rcm,     & ! Cloud water mixing ration on themodynamic level [kg/kg]
   em,      & ! em = 3/2 * w'^2; on momentum level              [m^2/s^2]
   exner,   & ! Exner function on thermodynamic level           [-]
-  p       ! Pressure on thermodynamic level                 [Pa]
+  p          ! Pressure on thermodynamic level                 [Pa]
 
 ! Output Variables
+integer, intent(inout) :: & 
+  err_code
+
 real, dimension(gr%nnzp), intent(out) ::  & 
   Lscale  ! Mixing length                 [m]
 
-integer, intent(inout) :: & 
-  err_code
 
 ! Local Variables
 integer :: i, j
