@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.22 2008-08-06 13:58:44 faschinj Exp $
+! $Id: parameterization_interface.F90,v 1.23 2008-08-06 15:25:00 faschinj Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
@@ -25,7 +25,7 @@ module hoc_parameterization_interface
 
 !-----------------------------------------------------------------------
     subroutine parameterization_timestep & 
-               ( iter, implemented, dt, fcor, & 
+               ( iter, l_implemented, dt, fcor, & 
                  thlm_forcing, rtm_forcing, wm_zm, wm_zt, & 
                  wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
                  p_in_Pa, rho_zm, rho, exner, & 
@@ -215,7 +215,7 @@ module hoc_parameterization_interface
       iter      ! Closure iteration number
 
     logical, intent(in) ::  & 
-      implemented ! Is this part of a larger host model (T/F) ?
+      l_implemented ! Is this part of a larger host model (T/F) ?
 
     ! Note on dt, dmain, and dtclosure: since being moved out of
     ! hoc.F, all subroutines within parameterization_timestep now use
@@ -760,7 +760,7 @@ module hoc_parameterization_interface
                           Kh_zt, tau_zm, Skw_zm, rtpthvp,    & ! intent(in)
                           rtm_forcing, thlpthvp,             & ! intent(in)
                           thlm_forcing, rtp2, thlp2, wp2_zt, & ! intent(in)
-                          implemented,                       & ! intent(in)
+                          l_implemented,                     & ! intent(in)
                           sclrpthvp, sclrm_forcing, sclrp2,  & ! intent(in)
                           rtm, wprtp, thlm, wpthlp,          & ! intent(inout)
                           err_code,                          & ! intent(inout)
@@ -946,8 +946,8 @@ module hoc_parameterization_interface
     !----------------------------------------------------------------
 
     call compute_uv_tndcy & 
-         ( "um", um, wm_zt, fcor, vm, vg, implemented, & ! intent(in)
-           umt )                                       ! intent(out)
+         ( "um", um, wm_zt, fcor, vm, vg, l_implemented, & ! intent(in)
+           umt )                                           ! intent(out)
 
     call compute_um_edsclrm( "um", upwp(1), umt, Kh_zm, dt,& ! intent(in)
                              um, upwp,                     & ! intent(inout)
@@ -966,7 +966,7 @@ module hoc_parameterization_interface
     if ( lapack_error(err_code) ) return
 
     call compute_uv_tndcy & 
-          ( "vm", vm, wm_zt, fcor, um, ug, implemented,  & ! intent(in)
+          ( "vm", vm, wm_zt, fcor, um, ug, l_implemented,  & ! intent(in)
             vmt )                                        ! intent(out)
 
     call compute_um_edsclrm( "vm", vpwp(1), vmt, Kh_zm, dt,  & ! intent(in)
@@ -1153,7 +1153,7 @@ module hoc_parameterization_interface
                      sclr_dim_in, sclrtol_in, params,  & 
                      l_bugsrad, l_kk_rain, l_licedfs, l_coamps_micro, & 
                      l_cloud_sed, l_uv_nudge, l_tke_aniso,  & 
-                     implemented, grid_type, deltaz, zm_init, & 
+                     l_implemented, grid_type, deltaz, zm_init, & 
                      momentum_heights, thermodynamic_heights,  & 
                      host_dx, host_dy, err_code )
 
@@ -1184,7 +1184,7 @@ module hoc_parameterization_interface
 
         ! Flag to see if CLUBB is running on it's own,
         ! or if it's implemented as part of a host model.
-        logical, intent(in) :: implemented   ! (T/F)
+        logical, intent(in) :: l_implemented   ! (T/F)
 
         ! If CLUBB is running on it's own, this option determines
         ! if it is using:
@@ -1286,7 +1286,7 @@ module hoc_parameterization_interface
 
         end if
 
-!        if ( .not. implemented ) then
+!        if ( .not. l_implemented ) then
 !          call setup_diagnostic_variables( nzmax )
 !        end if
 
@@ -1297,12 +1297,12 @@ module hoc_parameterization_interface
         call setup_diagnostic_variables( nzmax )        ! intent(in)
 
         ! Setup grid
-        call gridsetup( nzmax, implemented, grid_type,           & ! intent(in)
+        call gridsetup( nzmax, l_implemented, grid_type,           & ! intent(in)
                         deltaz, zm_init, momentum_heights,       & ! intent(in)
                         thermodynamic_heights )                 ! intent(in)
 
         ! Determine the maximum allowable value for Lscale.
-        if ( implemented ) then
+        if ( l_implemented ) then
           Lscale_max = 0.25 * min( host_dx, host_dy )
         else
           Lscale_max = 1.0e5
@@ -1323,7 +1323,7 @@ module hoc_parameterization_interface
 
         implicit none
 
-!        if ( .not. implemented ) then
+!        if ( .not. l_implemented ) then
 !          call cleanup_diagnostic_variables( )
 !        end if
 
