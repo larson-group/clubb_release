@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: wangara.F90,v 1.5 2008-07-31 19:34:17 faschinj Exp $
+! $Id: wangara.F90,v 1.6 2008-08-06 13:51:09 faschinj Exp $
 module wangara
 
 implicit none
@@ -25,15 +25,14 @@ use parameters, only: sclr_dim ! Variable(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 
-use array_index, only:  & 
-    iisclr_thl, iisclr_rt ! Variable(s)
+use array_index, only: iisclr_thl, iisclr_rt ! Variable(s)
 
 implicit none
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) :: & 
-  wm_zt,          & ! w wind on thermodynamic grid                [m/s]
-  wm_zm,          & ! w wind on momentum grid                     [m/s]
+  wm_zt,        & ! w wind on thermodynamic grid                [m/s]
+  wm_zm,        & ! w wind on momentum grid                     [m/s]
   thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
   rtm_forcing     ! Total water mixing ratio tendency           [kg/kg/s]
 
@@ -91,7 +90,7 @@ real(kind=time_precision), intent(in) ::  &
 
 real, intent(in) ::  & 
   um_sfc,  & ! um(2)         [m/s]
-  vm_sfc  ! vm(2)         [m/s]
+  vm_sfc     ! vm(2)         [m/s]
 
 ! Output variables
 real, intent(out) ::  & 
@@ -99,12 +98,12 @@ real, intent(out) ::  &
   vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
   wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
   wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
-  ustar        ! surface friction velocity [m/s]
+  ustar           ! surface friction velocity [m/s]
 
 ! Output variables
 real, intent(out), dimension(sclr_dim) ::  & 
   wpsclrp_sfc,   & ! Passive scalar surface flux      [units m/s]
-  wpedsclrp_sfc ! Passive eddy-scalar surface flux [units m/s]
+  wpedsclrp_sfc    ! Passive eddy-scalar surface flux [units m/s]
 
 ! Local variables
 
