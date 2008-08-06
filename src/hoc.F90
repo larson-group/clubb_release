@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.27 2008-08-04 20:20:40 faschinj Exp $
+! $Id: hoc.F90,v 1.28 2008-08-06 13:41:22 faschinj Exp $
 
 module hoc
 
@@ -371,7 +371,7 @@ module hoc
     end if
 
     ! Set debug level 
-    call set_clubb_debug_level( debug_level )
+    call set_clubb_debug_level( debug_level ) ! Intent(in)
 
     ! Printing Model Inputs
     if ( clubb_at_debug_level( 1 ) ) then
@@ -477,30 +477,31 @@ module hoc
     ! Handle the reading of grid altitudes for 
     ! stretched (unevenly-spaced) grid options.
     ! Do some simple error checking for all grid options.
-    call read_grid_heights( nzmax, grid_type, & 
-                            zm_grid_fname, zt_grid_fname, & 
-                            momentum_heights, & 
-                            thermodynamic_heights )
+    call read_grid_heights( nzmax, grid_type, &                 ! Intent(in)
+                            zm_grid_fname, zt_grid_fname, &     ! Intent(in)
+                            momentum_heights, &                 ! Intent(out)
+                            thermodynamic_heights )             ! Intent(out)
 
         ! Dummy horizontal grid spacing variables.
     dummy_dx = 0.0
     dummy_dy = 0.0
 
     ! Setup microphysical fields
-    call init_microphys & 
-         ( l_kk_rain, l_coamps_micro, l_licedfs, hydromet_dim )
+    call init_microphys( l_kk_rain, l_coamps_micro, l_licedfs, &  ! Intent(in)
+                         hydromet_dim )                           ! Intent(out)
 
     ! Allocate & initialize variables,
     ! setup grid, setup constants, and setup flags
 
-    call parameterization_setup & 
-         ( nzmax, T0, ts_nudge, hydromet_dim, sclr_dim,  & 
-           sclr_tol(1:sclr_dim), params, & 
-           l_bugsrad, l_kk_rain, l_licedfs, l_coamps_micro, & 
-           l_cloud_sed, l_uv_nudge, l_tke_aniso, & 
-           .false., grid_type, deltaz, zm_init, & 
-           momentum_heights, thermodynamic_heights, & 
-           dummy_dx, dummy_dy, err_code )
+    call parameterization_setup &                               ! Intent(in)
+         ( nzmax, T0, ts_nudge, hydromet_dim, sclr_dim,  &      ! Intent(in)
+           sclr_tol(1:sclr_dim), params, &                      ! Intent(in)
+           l_bugsrad, l_kk_rain, l_licedfs, l_coamps_micro, &   ! Intent(in)
+           l_cloud_sed, l_uv_nudge, l_tke_aniso, &              ! Intent(in)
+           .false., grid_type, deltaz, zm_init, &               ! Intent(in)
+           momentum_heights, thermodynamic_heights, &           ! Intent(in)
+           dummy_dx, dummy_dy, &                                ! Intent(in)
+           err_code )                                           ! Intent(out)
       
 
     if ( err_code == clubb_var_out_of_bounds ) return
@@ -514,14 +515,14 @@ module hoc
       time_current = time_initial
       iinit = 1
 
-      call hoc_initialize( iunit, runfile, psfc, thlm, rtm,  & 
-                           um, vm, ug, vg, wp2, & 
-                           rcm,  & 
-                           wm_zt, wm_zm, em, exner, & 
-                           tau_zt, tau_zm, thvm, p_in_Pa, & 
-                           rho, rho_zm, Lscale, & 
-                           Kh_zt, Kh_zm, um_ref, vm_ref, & 
-                           sclrm, edsclrm )
+      call hoc_initialize( iunit, runfile, psfc, &              ! Intent(in)
+                           thlm, rtm, um, vm, &                 ! Intent(inout)
+                           ug, vg, wp2, rcm,  &                 ! Intent(inout)
+                           wm_zt, wm_zm, em, exner, &           ! Intent(inout)
+                           tau_zt, tau_zm, thvm, p_in_Pa, &     ! Intent(inout)
+                           rho, rho_zm, Lscale, &               ! Intent(inout) 
+                           Kh_zt, Kh_zm, um_ref, vm_ref, &      ! Intent(inout)
+                           sclrm, edsclrm )                     ! Intent(out)
 
     else  ! restart
                
@@ -548,13 +549,11 @@ module hoc
  
       iinit = floor( ( time_current - time_initial ) / dtmain ) + 1
 
-      call hoc_restart( iunit, runfile, restart_path_case,  & 
-                        time_restart,  & 
-                        thlm, rtm, um, vm, & 
-                        ug, vg, upwp, vpwp, wm_zt, wm_zm,  & 
-                        um_ref, vm_ref, wpthlp, wprtp, & 
-                        wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
-                        sclrm, edsclrm )
+      call hoc_restart( iunit, runfile, restart_path_case, time_restart,  &     ! Intent(in)
+                        thlm, rtm, um, vm, ug, vg, upwp, vpwp, wm_zt, wm_zm,  & ! Intent(inout)
+                        um_ref, vm_ref, wpthlp, wprtp, sclrm, edsclrm, &        ! Intent(inout)
+                        wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )             ! Intent(out)
+
     end if ! ~l_restart
 
  
@@ -565,12 +564,9 @@ module hoc
     iunit = 50
 #endif
     ! Initialize statistics output
-    call stats_init & 
-         ( iunit, fname_prefix,  & 
-           l_stats, stats_fmt, stats_tsamp, stats_tout, & 
-           runfile, gr%nnzp, gr%zt, gr%zm, & 
-           day, month, year, rlat, rlon, time_current, & 
-           dtmain )
+    call stats_init( iunit, fname_prefix, l_stats, stats_fmt, stats_tsamp, &    ! Intent(in)
+                     stats_tout, runfile, gr%nnzp, gr%zt, gr%zm, &              ! Intent(in)
+                     day, month, year, rlat, rlon, time_current, dtmain )       ! Intent(in)
  
 
     ! Time integration
@@ -589,13 +585,11 @@ module hoc
 
       ! We use elapsed time for stats_begin_step
       if (.not. l_restart) then    
-        call stats_begin_timestep & 
-             ( time_current-time_initial+dtmain, dtmain )
+        call stats_begin_timestep( time_current-time_initial+dtmain, dtmain )   ! Intent(in)
       else
         ! Different elapsed time for restart
         ! Joshua Fasching March 2008     
-        call stats_begin_timestep & 
-             ( time_current-time_restart, dtmain )
+        call stats_begin_timestep( time_current-time_restart, dtmain )          ! Intent(in)
       end if
 
  
@@ -603,9 +597,10 @@ module hoc
           ! If we're doing an inputfields run, get the values for our
           ! model arrays from a GrADS file
       if ( l_input_fields ) then
-        call compute_timestep( iunit, datafilet, .false., & 
-                               time_current, itime_nearest )
-        call grads_fields_reader( max( itime_nearest, 1 ) )
+        call compute_timestep( iunit, datafilet, .false., time_current, &       ! Intent(in)
+                               itime_nearest )                                  ! Intent(out)
+
+        call grads_fields_reader( max( itime_nearest, 1 ) )                     ! Intent(in)
       end if
 
       if ( invalid_model_arrays( ) ) then
@@ -613,7 +608,8 @@ module hoc
         exit ! Leave the main loop
       end if
 
-      call hoc_forcings_timestep( dtmain, err_code )
+      call hoc_forcings_timestep( dtmain, &     ! Intent(in)
+                                  err_code )    ! Intent(out)
 
       if ( err_code == clubb_rtm_level_not_found ) exit
          
@@ -632,18 +628,17 @@ module hoc
 
       do i1=1, niterlong
         call parameterization_timestep & 
-             ( i, dt, fcor, & 
-               thlm_forcing, rtm_forcing, wm_zm, wm_zt, & 
-               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
-               p_in_Pa, rho_zm, rho, exner, & 
-               um, vm, upwp, vpwp, up2, vp2, & 
-               thlm, rtm, wprtp, wpthlp, wp2, wp3, & 
-               rtp2, thlp2, rtpthlp, & 
-               Scm, tau_zm, rcm, cf, & 
-               err_code, .false., & 
-               wpsclrp_sfc, wpedsclrp_sfc,  & 
-               sclrm, sclrm_forcing, edsclrm, & 
-               wpsclrp )
+             ( i, .false., dt, fcor, &                          ! Intent(in)
+               thlm_forcing, rtm_forcing, wm_zm, wm_zt, &       ! Intent(in)
+               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &     ! Intent(in)
+               p_in_Pa, rho_zm, rho, exner, &                   ! Intent(in)
+               wpsclrp_sfc, wpedsclrp_sfc,  &                   ! Intent(in)
+               um, vm, upwp, vpwp, up2, vp2, &                  ! Intent(inout)
+               thlm, rtm, wprtp, wpthlp, wp2, wp3, &            ! Intent(inout)
+               rtp2, thlp2, rtpthlp, &                          ! Intent(inout)
+               Scm, tau_zm, rcm, cf, err_code, &                ! Intent(inout)
+               sclrm, sclrm_forcing, edsclrm, &                 ! Intent(inout)
+               wpsclrp )                                        ! Intent(inout)
            
  
         call stats_end_timestep( )
@@ -695,13 +690,14 @@ module hoc
   end subroutine hoc_model
 
 !-----------------------------------------------------------------------
-        subroutine hoc_initialize & 
-                   ( iunit, runfile, psfc, thlm, rtm, um, vm, & 
-                     ug, vg, wp2, rcm, & 
-                     wm_zt, wm_zm, em, exner, tau_zt, tau_zm, thvm, & 
-                     p, rho, rho_zm, Lscale, & 
-                     Kh_zt, Kh_zm, um_ref, vm_ref, & 
-                     sclrm, edsclrm )
+        subroutine hoc_initialize( iunit, runfile, psfc, &
+                                   thlm, rtm, um, vm, & 
+                                   ug, vg, wp2, rcm, & 
+                                   wm_zt, wm_zm, em, exner, &
+                                   tau_zt, tau_zm, thvm, p_in_Pa, & 
+                                   rho, rho_zm, Lscale, & 
+                                   Kh_zt, Kh_zm, um_ref, vm_ref, & 
+                                   sclrm, edsclrm )
 
 !       Description:
 !       Execute the necessary steps for the initialization of the 
@@ -771,26 +767,26 @@ module hoc
         rtm,             & ! Total water mixing ratio      [kg/kg]
         um,              & ! u wind                        [m/s]
         vm,              & ! v wind                        [m/s]
-        um_ref,          & ! Initial profile of u wind     [m/s]
-        vm_ref,          & ! Initial profile of v wind     [m/s]
         ug,              & ! u geostrophic wind            [m/s] 
         vg,              & ! u geostrophic wind            [m/s] 
         wp2,             & ! w'^2                          [m^2/s^2]
         rcm,             & ! Cloud water mixing ratio      [kg/kg]
-        wm_zt, wm_zm,        & ! w wind                        [m/s]
-        exner,           & ! Exner function                [-] 
+        wm_zt, wm_zm,    & ! w wind                        [m/s]
         em,              & ! Turbulence kinetic energy     [m^2/s^2]
-        p,               & ! Pressure                      [Pa]
-        rho, rho_zm,      & ! Density                       [kg/m^3]
+        exner,           & ! Exner function                [-] 
+        tau_zm, tau_zt,  & ! Dissipation time              [s]
+        thvm,            & ! Virtual potential temperature [K]
+        p_in_Pa,         & ! Pressure                      [Pa]
+        rho, rho_zm,     & ! Density                       [kg/m^3]
         Lscale,          & ! Mixing length                 [m] 
-        Kh_zt, Kh_zm,        & ! Eddy diffusivity              [m^2/s]
-        tau_zm, tau_zt,      & ! Dissipation time              [s]
-        thvm            ! Virtual potential temperature [K]
+        Kh_zt, Kh_zm,    & ! Eddy diffusivity              [m^2/s]
+        um_ref,          & ! Initial profile of u wind     [m/s]
+        vm_ref             ! Initial profile of v wind     [m/s]
 
         ! Output
         real, dimension(gr%nnzp,sclr_dim), intent(out) ::  & 
         sclrm,   & ! Standard passive scalar [units vary]
-        edsclrm ! Eddy diffusivity passive scalar [units vary]
+        edsclrm    ! Eddy diffusivity passive scalar [units vary]
 
         ! Local Variables
         real, dimension(gr%nnzp) :: tmp1
@@ -805,23 +801,23 @@ module hoc
         
         ! Read sounding information
 
-        call read_sounding( iunit, thlm, rtm, um, vm, ug, vg,  & 
-                            runfile, runtype, & 
-                            sclrm, edsclrm )
+        call read_sounding( iunit, runfile, runtype, &          ! Intent(in) 
+                            thlm, rtm, um, vm, ug, vg,  &       ! Intent(out)
+                            sclrm, edsclrm )                    ! Intent(out)
 
 
         ! At this point, thlm actually contains theta (except for DYCOMS). 
         ! We need to compute liquid water content, and initilialize thlm properly
 
         ! First, compute approximate pressure using theta
-        call hydrostatic( thlm, psfc, p, exner, rho, rho_zm )
+        call hydrostatic( thlm, psfc, &                         ! Intent(in)
+                          p_in_Pa, exner, rho, rho_zm )         ! Intent(out)
 
         ! Second, use this pressure to compute liquid water
         ! from excess saturation
 
         do k = 1,gr%nnzp
-           rcm(k) = max( rtm(k) - sat_mixrat_liq(p(k), & 
-                         thlm(k) * exner(k)), 0.0 )
+           rcm(k) = max( rtm(k) - sat_mixrat_liq( p_in_Pa(k), thlm(k) * exner(k)), 0.0 )
         end do
 
         ! Compute initial theta-l
@@ -835,7 +831,7 @@ module hoc
           ! thlm profile remains the same as in the input sounding.
           ! use iterative method to find initial rcm.
           do k = 1, gr%nnzp, 1
-             rcm(k) = sat_rcm( thlm(k), rtm(k), p(k), exner(k) )
+             rcm(k) = sat_rcm( thlm(k), rtm(k), p_in_Pa(k), exner(k) )
           end do
 
         case default
@@ -857,7 +853,8 @@ module hoc
 
         ! Recompute more accurate initial exner function and pressure using thvm
 
-        call hydrostatic( thvm, psfc, p, exner, rho, rho_zm )
+        call hydrostatic( thvm, psfc, &                    ! Intent(in)
+                          p_in_Pa, exner, rho, rho_zm )    ! Intent(out)
 
         ! Initialize imposed w
 
@@ -1173,8 +1170,10 @@ module hoc
 
         ! Compute mixing length
 
-        call compute_length( thvm, thlm, rtm, rcm,  & 
-                     em, p, exner, Lscale, err_code )
+        call compute_length( thvm, thlm, rtm, rcm,  & ! Intent(in)
+                              em, p_in_Pa, exner,   & ! Intent(in)    
+                              err_code,             & ! Intent(inout)
+                              Lscale )                ! Intent(out)
 
         ! Dissipation time
         tmp1 = sqrt( max( wtol**2, zm2zt( em ) ) )
@@ -1208,15 +1207,10 @@ module hoc
        return
        end subroutine hoc_initialize
 !-----------------------------------------------------------------------
-       subroutine hoc_restart & 
-                   ( iunit, runfile, restart_path_case,  & 
-                     time_restart,  & 
-                     thlm, rtm, um, vm, & 
-                     ug, vg, upwp, vpwp, wm_zt, wm_zm,  & 
-                     um_ref, vm_ref, wpthlp, wprtp, & 
-                     wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
-                     sclrm, edsclrm & 
-                   )
+       subroutine hoc_restart( iunit, runfile, restart_path_case, time_restart,  & 
+                               thlm, rtm, um, vm, ug, vg, upwp, vpwp, wm_zt, wm_zm,  & 
+                               um_ref, vm_ref, wpthlp, wprtp, sclrm, edsclrm, & 
+                               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )
 !       Description:
 !       Execute the necessary steps for the initialization of the 
 !       HOC model to a designated point in the submitted GrADS file. 
@@ -1267,41 +1261,43 @@ module hoc
         implicit none
 
         ! Input Variables
+
         integer, intent(in) :: iunit
+
         character(len=*), intent(in) ::  & 
         runfile,           & ! Filename for the namelist
-        restart_path_case ! Path to GrADS data for restart
+        restart_path_case    ! Path to GrADS data for restart
 
         real(kind=time_precision), intent(in) :: & 
         time_restart
 
-        ! Output Variables
+        ! Input/Output Variables
         real, dimension(gr%nnzp), intent(inout) ::  & 
         thlm,            & ! Theta l mean                 [K] 
         rtm,             & ! Total water mixing ratio     [kg/kg]
         um,              & ! u wind                       [m/s]
         vm,              & ! v wind                       [m/s]
-        um_ref,          & ! Initial profile of u wind    [m/s]
-        vm_ref,          & ! Initial profile of v wind    [m/s]
         ug,              & ! u geostrophic wind           [m/s] 
         vg,              & ! v geostrophic wind           [m/s] 
-        wm_zt, wm_zm,        & ! w wind                       [m/s]
-        wprtp,           & ! w' r_t'                      [(kg m)(kg s)]
-        wpthlp,          & ! w' th_l'                     [(m K)/s]
         upwp,            & ! u'w'                         [m^2/s^2]
-        vpwp            ! v'w'                         [m^2/s^2]
+        vpwp,            & ! v'w'                         [m^2/s^2]
+        wm_zt, wm_zm,    & ! w wind                       [m/s]
+        um_ref,          & ! Initial profile of u wind    [m/s]
+        vm_ref,          & ! Initial profile of v wind    [m/s]
+        wpthlp,          & ! w' th_l'                     [(m K)/s]
+        wprtp              ! w' r_t'                      [(kg m)(kg s)]
 
+        real, dimension(gr%nnzp,sclr_dim), intent(inout) ::  & 
+        sclrm,   & ! Standard passive scalar [units vary]
+        edsclrm    ! Eddy diffusivity passive scalar [units vary]
+
+        ! Output
         real, intent(out) :: & 
         wpthlp_sfc,      & ! w'theta_l' surface flux   [(m K)/s]
         wprtp_sfc,       & ! w'rt' surface flux        [(m kg)/(kg s)]
         upwp_sfc,        & ! u'w' at surface           [m^2/s^2] 
-        vpwp_sfc        ! v'w' at surface           [m^2/s^2]
+        vpwp_sfc           ! v'w' at surface           [m^2/s^2]
         
-        ! Input/Output
-        real, dimension(gr%nnzp,sclr_dim), intent(inout) ::  & 
-        sclrm,   & ! Standard passive scalar [units vary]
-        edsclrm ! Eddy diffusivity passive scalar [units vary]
-       
         integer :: timestep
 
         ! Inform inputfields module
@@ -1355,9 +1351,9 @@ module hoc
         
         ! Determine the nearest timestep in the GRADS file to the
         ! restart time.
-        call compute_timestep & 
-             ( iunit, "../"//trim( restart_path_case )//"_zt.ctl",  & 
-               .true., time_restart, timestep )
+        call compute_timestep &
+                ( iunit, "../"//trim( restart_path_case )//"_zt.ctl", .true., time_restart, & ! Intent(in)
+                  timestep )                                                                  ! Intent(out)
         
         ! Sanity check for input time_restart
         if ( timestep < 0 ) then
@@ -1369,9 +1365,9 @@ module hoc
         ! Read in sounding to get appropriate nudging information for um
         ! and vm
       
-        call read_sounding( iunit, thlm, rtm, um, vm, ug, vg,  & 
-                            runfile, runtype, & 
-                            sclrm, edsclrm )
+        call read_sounding( iunit, runfile, runtype, &          ! Intent(in)
+                            thlm, rtm, um, vm, ug, vg,  &       ! Intent(out)
+                            sclrm, edsclrm )                    ! Intent(out)
 
         if ( l_uv_nudge ) then
           um_ref = um
@@ -1379,7 +1375,7 @@ module hoc
         end if
         
         ! Read data from GrADS files
-        call grads_fields_reader( timestep )
+        call grads_fields_reader( timestep )                    ! Intent(in)
         
         ! Initialize forcing files for specific cases
         select case( trim( runtype ) )
@@ -1564,136 +1560,133 @@ module hoc
            end do
 
          case( "arm" ) ! ARM Cu case
-           call arm_tndcy & 
-                ( time_current, thlm_forcing, radht, rtm_forcing, & 
-                  sclrm_forcing )
+           call arm_tndcy( time_current, &                                      ! Intent(in)   
+                           thlm_forcing, radht, rtm_forcing, sclrm_forcing )    ! Intent(out)
 
          case( "arm_0003" ) ! ARM March 2000 case
-          call arm_0003_tndcy( time_current, wm_zm, wm_zt, thlm_forcing,  & 
-                               rtm_forcing, um_ref, vm_ref, & 
-                               sclrm_forcing )
+           call arm_0003_tndcy( time_current, &                                 ! Intent(in)
+                                wm_zm, wm_zt, thlm_forcing, &                   ! Intent(out)
+                                rtm_forcing, um_ref, vm_ref, sclrm_forcing )    ! Intent(out)
 
          case( "arm_3year" ) ! ARM 3 year case
-          call arm_3year_tndcy( time_current, wm_zm, wm_zt, thlm_forcing,  & 
-                                rtm_forcing, um_ref, vm_ref, & 
-                                sclrm_forcing )
+           call arm_3year_tndcy( time_current, &                                ! Intent(in)
+                                 wm_zm, wm_zt, thlm_forcing,  &                 ! Intent(out)
+                                 rtm_forcing, um_ref, vm_ref, sclrm_forcing )   ! Intent(out)
 
          case( "arm_97" ) ! 27 June 1997 ARM case
-           call arm_97_tndcy( time_current, wm_zm, wm_zt, thlm_forcing,  & 
-                              rtm_forcing, um_ref, vm_ref, & 
-                              sclrm_forcing )
+           call arm_97_tndcy( time_current, &                                   ! Intent(in)
+                              wm_zm, wm_zt, thlm_forcing,  &                    ! Intent(out)
+                              rtm_forcing, um_ref, vm_ref, sclrm_forcing )      ! Intent(out)
 
          case( "bomex" ) ! BOMEX Cu case
-           call bomex_tndcy( wm_zt, wm_zm, radht, & 
-                             thlm_forcing, rtm_forcing, & 
-                             sclrm_forcing )
+           call bomex_tndcy( wm_zt, wm_zm, radht, &                             ! Intent(out)
+                             thlm_forcing, rtm_forcing, &                       ! Intent(out)
+                             sclrm_forcing )                                    ! Intent(out)
 
          case( "fire" ) ! FIRE Sc case
-           call fire_tndcy( rho, rcm, exner,  & 
-                            wm_zt, wm_zm, Frad, radht, & 
-                            thlm_forcing, rtm_forcing, & 
-                            sclrm_forcing )
+           call fire_tndcy( rho, rcm, exner,  &                                 ! Intent(in)
+                            wm_zt, wm_zm, Frad, radht, &                        ! Intent(out)
+                            thlm_forcing, rtm_forcing, &                        ! Intent(out) 
+                            sclrm_forcing )                                     ! Intent(out)
 
          case( "wangara" ) ! Wangara dry CBL
-           call wangara_tndcy( wm_zt, wm_zm,  & 
-                               thlm_forcing, rtm_forcing, & 
-                               sclrm_forcing )
+           call wangara_tndcy( wm_zt, wm_zm,  &                                 ! Intent(out) 
+                               thlm_forcing, rtm_forcing, &                     ! Intent(out)
+                               sclrm_forcing )                                  ! Intent(out)
 
          case( "atex" ) ! ATEX case
-           call atex_tndcy( time_current, time_initial, rtm,  & 
-                            rho, rcm, exner, wm_zt, wm_zm, Frad, radht, & 
-                            thlm_forcing, rtm_forcing, err_code, & 
-                            sclrm_forcing )
+           call atex_tndcy( time_current, time_initial, &                       ! Intent(in)
+                            rtm, rho, rcm, exner, &                             ! Intent(in)
+                            err_code, &                                         ! Intent(inout)
+                            wm_zt, wm_zm, Frad, radht, &                        ! Intent(out)
+                            thlm_forcing, rtm_forcing, sclrm_forcing )          ! Intent(out)
 
          case( "dycoms2_rf01" ) ! DYCOMS2 RF01 case
-           call dycoms2_rf01_tndcy( rho, rho_zm, rtm, rcm,  & 
-                                    exner, wm_zt, wm_zm, Frad, radht,  & 
-                                    thlm_forcing, rtm_forcing, err_code, & 
-                                    sclrm_forcing )
+           call dycoms2_rf01_tndcy( rho, rho_zm, rtm, rcm, exner, &             ! Intent(in)
+                                    err_code, &                                 ! Intent(inout)
+                                    wm_zt, wm_zm, Frad, radht,  &               ! Intent(out)
+                                    thlm_forcing, rtm_forcing, sclrm_forcing )  ! Intent(out)
 
          case( "astex_a209" ) ! ASTEX Sc case for K & K
-           call astex_tndcy( wm_zt, wm_zm,  & 
-                             thlm_forcing, rtm_forcing, & 
-                             sclrm_forcing )
+           call astex_tndcy( wm_zt, wm_zm,  &                                   ! Intent(out) 
+                             thlm_forcing, rtm_forcing, sclrm_forcing )         ! Intent(out)
 
          case( "dycoms2_rf02_do",  & ! DYCOMS2 RF02 case with drizzle only.
                "dycoms2_rf02_ds",  & ! DYCOMS2 RF02 case with drizzle and cloud sedimentation.
                "dycoms2_rf02_nd",  & ! DYCOMS2 RF02 case with no drizzle and no cloud sedimentation.
                "dycoms2_rf02_so" )! DYCOMS2 RF02 case with cloud water sedimentation only.
-           call dycoms2_rf02_tndcy & 
-                ( time_current, time_initial, rho, rho_zm, rtm, rcm,  & 
-                  exner, wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
-                  Frad, radht, Ncm, Ncnm, err_code, & 
-                  sclrm_forcing  )
+           call dycoms2_rf02_tndcy( time_current, time_initial, rho, &          ! Intent(in)
+                                    rho_zm, rtm, rcm, exner, &                  ! Intent(in)
+                                    err_code, &                                 ! Intent(inout)
+                                    wm_zt, wm_zm, thlm_forcing, rtm_forcing, &  ! Intent(out) 
+                                    Frad, radht, Ncm, Ncnm, sclrm_forcing  )    ! Intent(out)
 
          case( "nov11_altocu" ) ! Nov. 11 Altocumulus case.
-           call nov11_altocu_tndcy & 
-                ( time_current, time_initial, dt, &
-                  ! rlat, rlon, & 
-                  rcm, exner, rho, rtm, wm_zt, & 
-                  wm_zm, thlm_forcing, rtm_forcing, & 
-                  Frad, radht, Ncnm, & 
-                  sclrm_forcing )
+           call nov11_altocu_tndcy( time_current, time_initial, dt, &           ! Intent(in)
+                                    ! rlat, rlon, & 
+                                    rcm, exner, rho, &                          ! Intent(in)
+                                    rtm, &                                      ! Intent(inout)
+                                    wm_zt, wm_zm, thlm_forcing, rtm_forcing, &  ! Intent(out)
+                                    Frad, radht, Ncnm, sclrm_forcing )          ! Intent(out)
 
          case( "jun25_altocu" ) ! June 25 Altocumulus case.
-           call jun25_altocu_tndcy & 
-                ( time_current, time_initial, rlat, rlon,  & 
-                  rcm, exner, rho, wm_zt, & 
-                  wm_zm, thlm_forcing, rtm_forcing, & 
-                  Frad, radht, sclrm_forcing )
+           call jun25_altocu_tndcy( time_current, time_initial, rlat, rlon,  &  ! Intent(in) 
+                                    rcm, exner, rho, &                          ! Intent(in)
+                                    wm_zt, wm_zm, thlm_forcing, rtm_forcing, &  ! Intent(inout)
+                                    Frad, radht, &                              ! Intent(inout)
+                                    sclrm_forcing )                             ! Intent(out)
 
          case( "clex9_nov02" ) ! CLEX-9: Nov. 02 Altocumulus case.
-           call clex9_nov02_tndcy & 
-                ( time_current, time_initial, rlat, rlon, & 
-                  rcm, exner, rho, wm_zt, & 
-                  wm_zm, thlm_forcing, rtm_forcing, & 
-                  Frad, radht, Ncnm, sclrm_forcing )
+           call clex9_nov02_tndcy( time_current, time_initial, rlat, rlon, &    ! Intent(in)
+                                   rcm, exner, rho, &                           ! Intent(in)
+                                   wm_zt, wm_zm, thlm_forcing, rtm_forcing, &   ! Intent(out)
+                                   Frad, radht, Ncnm, sclrm_forcing )           ! Intent(out)
 
          case( "clex9_oct14" ) ! CLEX-9: Oct. 14 Altocumulus case.
-           call clex9_oct14_tndcy & 
-                ( time_current, time_initial, rlat, rlon, & 
-                  rcm, exner, rho, wm_zt, & 
-                  wm_zm, thlm_forcing, rtm_forcing, & 
-                  Frad, radht, Ncnm ,sclrm_forcing )
+           call clex9_oct14_tndcy( time_current, time_initial, rlat, rlon, &    ! Intent(in) 
+                                   rcm, exner, rho, &                           ! Intent(in)
+                                   wm_zt, wm_zm, thlm_forcing, rtm_forcing, &   ! Intent(out)
+                                   Frad, radht, Ncnm, sclrm_forcing )           ! Intent(out)
 
          case ( "lba" )
-           call lba_tndcy( time_current, wm_zt, wm_zm, radht,  & 
-                           thlm_forcing, rtm_forcing, & 
-                           sclrm_forcing )
+           call lba_tndcy( time_current, &                                      ! Intent(in) 
+                           wm_zt, wm_zm, radht,  &                              ! Intent(out)
+                           thlm_forcing, rtm_forcing, &                         ! Intent(out)
+                           sclrm_forcing )                                      ! Intent(out)
 
          case ( "mpace_a" ) ! mpace_a arctic stratus case
-           call mpace_a_tndcy & 
-                ( time_current, time_initial, rlat, & 
-                  rho, p_in_Pa, rcm, & 
-                  wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
-                  Ncnm, Ncm, Frad, radht, um_ref, vm_ref, & 
-                  sclrm_forcing )
+           call mpace_a_tndcy( time_current, time_initial, rlat, &              ! Intent(in) 
+                               rho, p_in_Pa, rcm, &                             ! Intent(in)
+                               Ncnm, Ncm, &                                     ! Intent(inout)
+                               wm_zt, wm_zm, thlm_forcing, rtm_forcing, &       ! Intent(out)
+                               Frad, radht, um_ref, vm_ref, &                   ! Intent(out)
+                               sclrm_forcing )                                  ! Intent(out)
 
          case ( "mpace_b" ) ! mpace_b arctic stratus case
-           call mpace_b_tndcy & 
-                ( time_current, time_initial, rlat, & 
-                  rho,  p_in_Pa, thvm, rcm, & 
-                  wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
-                  Ncnm, Ncm, Frad, radht, & 
-                  sclrm_forcing )
+           call mpace_b_tndcy( time_current, time_initial, rlat, &              ! Intent(in)
+                               rho,  p_in_Pa, thvm, rcm, &                      ! Intent(in)
+                               Ncnm, Ncm, &                                     ! Intent(inout)
+                               wm_zt, wm_zm, thlm_forcing, rtm_forcing, &       ! Intent(out)
+                               Frad, radht, sclrm_forcing )                     ! Intent(out)
 
-        ! Brian Griffin for COBRA CO2 case.
-        case ( "cobra" )
-           call cobra_tndcy( wm_zt, wm_zm,  & 
-                             thlm_forcing, rtm_forcing, & 
-                             sclrm_forcing )
+         ! Brian Griffin for COBRA CO2 case.
+         case ( "cobra" )
+           call cobra_tndcy( wm_zt, wm_zm,  &                                   ! Intent(out) 
+                             thlm_forcing, rtm_forcing, &                       ! Intent(out)
+                             sclrm_forcing )                                    ! Intent(out)
 
          case ( "rico" ) ! RICO case
-           call rico_tndcy( exner, & 
-                            rho, rcm, l_kk_rain, wm_zt, wm_zm, & 
-                            thlm_forcing, rtm_forcing, radht, Ncm, & 
-                            sclrm_forcing )
+           call rico_tndcy( exner, rho, rcm, l_kk_rain, &                       ! Intent(in)
+                            wm_zt, wm_zm, &                                     ! Intent(out)
+                            thlm_forcing, rtm_forcing, radht, Ncm, &            ! Intent(out)   
+                            sclrm_forcing )                                     ! Intent(out)
 
          case ( "gabls2" ) ! GABLS 2 case
-           call gabls2_tndcy( time_current, time_initial,  & 
-                              rho, rcm, l_kk_rain, wm_zt, wm_zm, & 
-                              thlm_forcing, rtm_forcing, radht, Ncm, & 
-                              sclrm_forcing )
+           call gabls2_tndcy( time_current, time_initial,  &                    ! Intent(in) 
+                              rho, rcm, l_kk_rain, &                            ! Intent(in)
+                              wm_zt, wm_zm, thlm_forcing, &                     ! Intent(out)
+                              rtm_forcing, radht, Ncm, &                        ! Intent(out)
+                              sclrm_forcing )                                   ! Intent(out)
 
          case default
            write(unit=fstderr,fmt=*)  & 
@@ -1708,8 +1701,8 @@ module hoc
         select case ( trim( runtype ) )
 
         case( "generic", "fire" )  ! Normal and FIRE
-          call sfc_momentum_fluxes( um(2), vm(2), & 
-                                    upwp_sfc, vpwp_sfc, ustar )
+          call sfc_momentum_fluxes( um(2), vm(2), &                     ! Intent(in)
+                                    upwp_sfc, vpwp_sfc, ustar )         ! Intent(out)
           ! sfctype = 0  fixed sfc sensible and latent heat fluxes 
           !                   as given in hoc.in
           ! sfctype = 1  bulk formula: uses given surface temperature 
@@ -1722,12 +1715,12 @@ module hoc
             if ( iisclr_thl > 0 ) wpedsclrp(:,iisclr_thl) = SE
             if ( iisclr_rt > 0 ) wpedsclrp(:,iisclr_rt)   = LE
           else if ( sfctype == 1 ) then
-            call sfc_thermo_fluxes( um(2), vm(2), & 
-                                    Tsfc, psfc,  & 
-                                    thlm(2), rtm(2), & 
-                                    wpthlp_sfc, wprtp_sfc, & 
-                                    wpsclrp(1,:) & 
-                                  )
+            call sfc_thermo_fluxes( um(2), vm(2), &                     ! Intent(in)
+                                    Tsfc, psfc,  &                      ! Intent(in)
+                                    thlm(2), rtm(2), &                  ! Intent(in)
+                                    wpthlp_sfc, wprtp_sfc, &            ! Intent(out)
+                                    wpsclrp(1,:) )                      ! Intent(out)
+                                  
 
           else
             write(unit=fstderr,fmt=*)  & 
@@ -1737,69 +1730,69 @@ module hoc
           end if
 
         case( "arm" )
-          call arm_sfclyr( time_current, gr%zt(2), 1.1,  & 
-                           thlm(2), um(2), vm(2), & 
-                           upwp_sfc, vpwp_sfc,  & 
-                           wpthlp_sfc, wprtp_sfc, ustar, & 
-                           wpsclrp_sfc, wpedsclrp_sfc )
+          call arm_sfclyr( time_current, gr%zt(2), 1.1,  &              ! Intent(in)
+                           thlm(2), um(2), vm(2), &                     ! Intent(in)
+                           upwp_sfc, vpwp_sfc,  &                       ! Intent(out)
+                           wpthlp_sfc, wprtp_sfc, ustar, &              ! Intent(out)
+                           wpsclrp_sfc, wpedsclrp_sfc )                 ! Intent(in)
 
         case( "arm_0003" )
-           call arm_0003_sfclyr( time_current, gr%zt(2), rho_zm(1), & 
-                               thlm(2), um(2), vm(2), & 
-                               upwp_sfc, vpwp_sfc,  & 
-                               wpthlp_sfc, wprtp_sfc, ustar, & 
-                               wpsclrp_sfc, wpedsclrp_sfc )
+           call arm_0003_sfclyr( time_current, gr%zt(2), rho_zm(1), &   ! Intent(in)
+                                 thlm(2), um(2), vm(2), &               ! Intent(in)
+                                 upwp_sfc, vpwp_sfc,  &                 ! Intent(out)
+                                 wpthlp_sfc, wprtp_sfc, ustar, &        ! Intent(out)
+                                 wpsclrp_sfc, wpedsclrp_sfc )           ! Intent(out)
 
         case( "arm_3year" )
-           call arm_3year_sfclyr( time_current, gr%zt(2), rho_zm(1), & 
-                                  thlm(2), um(2), vm(2), & 
-                                  upwp_sfc, vpwp_sfc,  & 
-                                  wpthlp_sfc, wprtp_sfc, ustar, & 
-                                  wpsclrp_sfc, wpedsclrp_sfc )
+           call arm_3year_sfclyr( time_current, gr%zt(2), rho_zm(1), &  ! Intent(in)
+                                  thlm(2), um(2), vm(2), &              ! Intent(in)
+                                  upwp_sfc, vpwp_sfc,  &                ! Intent(out)
+                                  wpthlp_sfc, wprtp_sfc, ustar, &       ! Intent(out)
+                                  wpsclrp_sfc, wpedsclrp_sfc )          ! Intent(out)
 
 
          case ( "arm_97" )
-           call arm_97_sfclyr( time_current, gr%zt(2), rho_zm(1), & 
-                               thlm(2), um(2), vm(2), & 
-                               upwp_sfc, vpwp_sfc,  & 
-                               wpthlp_sfc, wprtp_sfc, ustar, & 
-                               wpsclrp_sfc, wpedsclrp_sfc ) 
+           call arm_97_sfclyr( time_current, gr%zt(2), rho_zm(1), &     ! Intent(in)
+                               thlm(2), um(2), vm(2), &                 ! Intent(in)
+                               upwp_sfc, vpwp_sfc,  &                   ! Intent(out)
+                               wpthlp_sfc, wprtp_sfc, ustar, &          ! Intent(out)
+                               wpsclrp_sfc, wpedsclrp_sfc )             ! Intent(out)
         case( "bomex" ) 
-          call bomex_sfclyr( um(2), vm(2), & 
-                             upwp_sfc, vpwp_sfc, & 
-                             wpthlp_sfc, wprtp_sfc, ustar, & 
-                             wpsclrp_sfc, wpedsclrp_sfc )
+          call bomex_sfclyr( um(2), vm(2), &                            ! Intent(in) 
+                             upwp_sfc, vpwp_sfc, &                      ! Intent(out)
+                             wpthlp_sfc, wprtp_sfc, ustar, &            ! Intent(out)
+                             wpsclrp_sfc, wpedsclrp_sfc )               ! Intent(out)
 
         case( "wangara" )
-          call wangara_sfclyr( time_current, um(2), vm(2), & 
-                               upwp_sfc, vpwp_sfc, & 
-                               wpthlp_sfc, wprtp_sfc, ustar, & 
-                               wpsclrp_sfc, wpedsclrp_sfc )
+          call wangara_sfclyr( time_current, um(2), vm(2), &            ! Intent(in)
+                               upwp_sfc, vpwp_sfc, &                    ! Intent(out)
+                               wpthlp_sfc, wprtp_sfc, ustar, &          ! Intent(out)
+                               wpsclrp_sfc, wpedsclrp_sfc )             ! Intent(out)
 
         case( "atex" )
-          call atex_sfclyr( um(2), vm(2), thlm(2), rtm(2), & 
-                            upwp_sfc, vpwp_sfc, & 
-                            wpthlp_sfc, wprtp_sfc, ustar, & 
-                            wpsclrp_sfc, wpedsclrp_sfc )
+          call atex_sfclyr( um(2), vm(2), thlm(2), rtm(2), &            ! Intent(in) 
+                            upwp_sfc, vpwp_sfc, &                       ! Intent(out)
+                            wpthlp_sfc, wprtp_sfc, ustar, &             ! Intent(out)
+                            wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
 
         case( "dycoms2_rf01" ) 
-          call dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc,  & 
-                                    exner(1), um(2), vm(2),  & 
-                                    thlm(2), rtm(2),  & 
-                                    rho_zm(1), upwp_sfc, vpwp_sfc,  & 
-                                    wpthlp_sfc, wprtp_sfc, ustar, & 
-                                    wpsclrp_sfc, wpedsclrp_sfc )
+          call dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc,  &             ! Intent(in)
+                                    exner(1), um(2), vm(2),  &          ! Intent(in)
+                                    thlm(2), rtm(2), rho_zm(1), &       ! Intent(in) 
+                                    upwp_sfc, vpwp_sfc,  &              ! Intent(out)
+                                    wpthlp_sfc, wprtp_sfc, ustar, &     ! Intent(out)
+                                    wpsclrp_sfc, wpedsclrp_sfc )        ! Intent(out)
         case( "astex_a209" )
-          call astex_sfclyr( rho_zm(1), & 
-                             upwp_sfc, vpwp_sfc, wpthlp_sfc,  & 
-                             wprtp_sfc ,wpsclrp_sfc, wpedsclrp_sfc )
+          call astex_sfclyr( rho_zm(1), &                               ! Intent(in)                              
+                             upwp_sfc, vpwp_sfc, wpthlp_sfc,  &         ! Intent(out)
+                             wprtp_sfc ,wpsclrp_sfc, wpedsclrp_sfc )    ! Intent(out)
 
         case( "dycoms2_rf02_do", "dycoms2_rf02_ds", & 
               "dycoms2_rf02_nd", "dycoms2_rf02_so" )
-          call dycoms2_rf02_sfclyr( um(2), vm(2), & 
-                                    upwp_sfc, vpwp_sfc, & 
-                                    wpthlp_sfc, wprtp_sfc, ustar, & 
-                                    wpsclrp_sfc, wpedsclrp_sfc )
+          call dycoms2_rf02_sfclyr( um(2), vm(2), &                     ! Intent(in)
+                                    upwp_sfc, vpwp_sfc, &               ! Intent(out)
+                                    wpthlp_sfc, wprtp_sfc, ustar, &     ! Intent(out)
+                                    wpsclrp_sfc, wpedsclrp_sfc )        ! Intent(out)
 
         case( "nov11_altocu" )
           ! There are no surface momentum or heat fluxes
@@ -1826,45 +1819,48 @@ module hoc
           ! Ensure ustar is set.
           ustar = 0
         case ( "lba" )
-          call lba_sfclyr( time_current, gr%zt(2), rho_zm(1), & 
-                            thlm(2), um(2), vm(2), & 
-                            upwp_sfc, vpwp_sfc,  & 
-                            wpthlp_sfc, wprtp_sfc, ustar, & 
-                            wpsclrp_sfc, wpedsclrp_sfc )
+          call lba_sfclyr( time_current, gr%zt(2), rho_zm(1), &         ! Intent(in)
+                            thlm(2), um(2), vm(2), &                    ! Intent(in)
+                            upwp_sfc, vpwp_sfc,  &                      ! Intent(out)
+                            wpthlp_sfc, wprtp_sfc, ustar, &             ! Intent(out)
+                            wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
 
         case ( "mpace_a" )
-          call mpace_a_sfclyr( time_current, rho_zm(1), um(2), vm(2), upwp_sfc, & 
-                               vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar, & 
-                               wpsclrp_sfc, wpedsclrp_sfc )
+          call mpace_a_sfclyr( time_current, rho_zm(1), um(2), vm(2), & ! Intent(in)
+                               upwp_sfc, vpwp_sfc, &                    ! Intent(out)
+                               wpthlp_sfc, wprtp_sfc, ustar, &          ! Intent(out)
+                               wpsclrp_sfc, wpedsclrp_sfc )             ! Intent(out)
 
         case ( "mpace_b" )
-          call mpace_b_sfclyr( rho_zm(1), um(2), vm(2), upwp_sfc, & 
-                               vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar, & 
-                               wpsclrp_sfc, wpedsclrp_sfc )
+          call mpace_b_sfclyr( rho_zm(1), um(2), vm(2), &               ! Intent(in)
+                               upwp_sfc, vpwp_sfc, &                    ! Intent(out)
+                               wpthlp_sfc, wprtp_sfc, ustar, &          ! Intent(out)
+                               wpsclrp_sfc, wpedsclrp_sfc )             ! Intent(out)
 
         ! Brian Griffin for COBRA CO2 case.
         case ( "cobra" )
-          call cobra_sfclyr( time_current, gr%zt(2), rho_zm(1), & 
-                             thlm(2), um(2), vm(2), & 
-                             upwp_sfc, vpwp_sfc, & 
-                             wpthlp_sfc, wprtp_sfc, ustar, & 
-                             wpsclrp_sfc, wpedsclrp_sfc )
+          call cobra_sfclyr( time_current, gr%zt(2), rho_zm(1), &       ! Intent(in)
+                             thlm(2), um(2), vm(2), &                   ! Intent(in)
+                             upwp_sfc, vpwp_sfc, &                      ! Intent(out)
+                             wpthlp_sfc, wprtp_sfc, ustar, &            ! Intent(out)
+                             wpsclrp_sfc, wpedsclrp_sfc )               ! Intent(out)
 
         case ( "rico" )
-          call rico_sfclyr( um(2), vm(2), thlm(2), rtm(2), &
+          call rico_sfclyr( um(2), vm(2), thlm(2), rtm(2), &            ! Intent(in)
                             ! 299.8 K is the RICO SST; 101540 Pa is the sfc pressure.
-                            gr%zt(2), 299.8, 101540.,  &
+                            gr%zt(2), 299.8, 101540.,  &                ! Intent(in)
 !                            gr%zt(2), Tsfc, psfc,
-                            upwp_sfc, vpwp_sfc, wpthlp_sfc, & 
-                            wprtp_sfc, ustar, & 
-                            wpsclrp_sfc, wpedsclrp_sfc )
+                            upwp_sfc, vpwp_sfc, wpthlp_sfc, &           ! Intent(out) 
+                            wprtp_sfc, ustar, &                         ! Intent(out)
+                            wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
 
         case ( "gabls2" )
-          call gabls2_sfclyr & 
-               ( time_current, time_initial, gr%zt(2), 97200., & 
-                 um(2), vm(2), thlm(2), rtm(2), & 
-                 upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar, & 
-                 wpsclrp_sfc, wpedsclrp_sfc )
+          call gabls2_sfclyr( time_current, time_initial, &             ! Intent(in)
+                              gr%zt(2), 97200., &                       ! Intent(in)
+                              um(2), vm(2), thlm(2), rtm(2), &          ! Intent(in)     
+                              upwp_sfc, vpwp_sfc, &                     ! Intent(out)   
+                              wpthlp_sfc, wprtp_sfc, ustar, &           ! Intent(out)
+                              wpsclrp_sfc, wpedsclrp_sfc )              ! Intent(out)
 
         case default
           write(unit=fstderr,fmt=*)  & 
@@ -1881,24 +1877,24 @@ module hoc
         
         if ( l_kk_rain .or. l_coamps_micro .or. l_licedfs ) then
           call advance_microphys & 
-               ( runtype, dt, time_current, & 
-                 thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, Ncm,  & 
-                 pdf_parms, wm_zt, wm_zm, Kh_zm, AKm_est, Akm,  & 
-                 Ncnm, Nim, & 
-                 hydromet, & 
-                 rtm_forcing, thlm_forcing, err_code )
+               ( runtype, dt, time_current, &                           ! Intent(in)
+                 thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, &         ! Intent(in) 
+                 wm_zt, wm_zm, Kh_zm, AKm_est, Akm, pdf_parms, &        ! Intent(in)
+                 Ncm, Ncnm, Nim, hydromet, &                            ! Intent(inout)
+                 rtm_forcing, thlm_forcing, &                           ! Intent(inout)
+                 err_code )                                             ! Intent(out)
 
           if ( lapack_error(err_code) ) return
 
         end if
 
         if ( l_cloud_sed ) then
-          call cloud_drop_sed( rcm, Ncm, rho_zm, rho, exner, & 
-                               rtm_forcing, thlm_forcing ) 
+          call cloud_drop_sed( rcm, Ncm, rho_zm, rho, exner, &          ! Intent(in)
+                               rtm_forcing, thlm_forcing )              ! Intent(out)
         end if
 
-
         if ( l_bugsrad ) then
+        
 #ifdef radoffline /*This directive is needed for BUGSrad to work with HOC.*/
 
           ! Assign pointers to snow and ice
@@ -1960,8 +1956,8 @@ module hoc
 
           ! Check for impossible negative values
           if ( clubb_at_debug_level( 2 ) ) then
-            call rad_check( thlm, rcm, rtm, ricem, & 
-                            cf, p_in_Pa, exner, rho_zm )
+            call rad_check( thlm, rcm, rtm, ricem, &            ! Intent(in)
+                            cf, p_in_Pa, exner, rho_zm )        ! Intent(in)
           end if
 
           ! Initially we will set this to a constant for testing purposes
@@ -2009,15 +2005,15 @@ module hoc
         end if ! l_bugsrad
  
    ! Store values of surface fluxes for statistics
-   if ( l_stats_samp ) then
-     call stat_update_var_pt( ish, 1, wpthlp_sfc*rho_zm(1)*Cp,& ! intent(in)
-                              sfc )                           ! intent(inout)
+    if ( l_stats_samp ) then
+      call stat_update_var_pt( ish, 1, wpthlp_sfc*rho_zm(1)*Cp,& ! intent(in)
+                               sfc )                             ! intent(inout)
 
-     call stat_update_var_pt( ilh, 1, wprtp_sfc*rho_zm(1)*Lv, & ! intent(in)
-                              sfc )                           ! intent(inout)
+      call stat_update_var_pt( ilh, 1, wprtp_sfc*rho_zm(1)*Lv, & ! intent(in)
+                               sfc )                             ! intent(inout)
 
-     call stat_update_var_pt( iustar, 1, ustar,  & ! intent(in)
-                              sfc )                ! intent(inout)
+      call stat_update_var_pt( iustar, 1, ustar,  & ! intent(in)
+                               sfc )                ! intent(inout)
     end if
  
     return
