@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.28 2008-08-06 13:41:22 faschinj Exp $
+! $Id: hoc.F90,v 1.29 2008-08-06 15:14:07 faschinj Exp $
 
 module hoc
 
@@ -1352,8 +1352,8 @@ module hoc
         ! Determine the nearest timestep in the GRADS file to the
         ! restart time.
         call compute_timestep &
-                ( iunit, "../"//trim( restart_path_case )//"_zt.ctl", .true., time_restart, & ! Intent(in)
-                  timestep )                                                                  ! Intent(out)
+          ( iunit, "../"//trim( restart_path_case )//"_zt.ctl", .true., time_restart, &! Intent(in)
+            timestep )                                                                 ! Intent(out)
         
         ! Sanity check for input time_restart
         if ( timestep < 0 ) then
@@ -1783,7 +1783,7 @@ module hoc
                                     wpthlp_sfc, wprtp_sfc, ustar, &     ! Intent(out)
                                     wpsclrp_sfc, wpedsclrp_sfc )        ! Intent(out)
         case( "astex_a209" )
-          call astex_sfclyr( rho_zm(1), &                               ! Intent(in)                              
+          call astex_sfclyr( rho_zm(1), &                               ! Intent(in) 
                              upwp_sfc, vpwp_sfc, wpthlp_sfc,  &         ! Intent(out)
                              wprtp_sfc ,wpsclrp_sfc, wpedsclrp_sfc )    ! Intent(out)
 
