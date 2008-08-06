@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F90,v 1.11 2008-08-04 20:24:12 faschinj Exp $
+! $Id: inputfields.F90,v 1.12 2008-08-06 13:43:51 faschinj Exp $
 
 ! Module inputfields
 
@@ -980,13 +980,14 @@ module inputfields
     ! Input Variable(s)
     integer, intent(in) :: iunit ! File I/O unit
 
-    character(len=*), intent(in) ::filename
+    character(len=*), intent(in) ::filename ! Path to the file and its name
+    
+    logical, intent(in) :: l_restart ! Whether this is a restart run
 
     real(kind=time_precision), intent(in) ::  & 
       time ! Time near which we want to find GrADS output,
            ! e.g. time_restart     [s]
 
-    logical, intent(in) :: l_restart ! Whether this is a restart run
 
     ! Output Variable(s)
     integer, intent(out) ::  & 
@@ -1000,40 +1001,39 @@ module inputfields
     call open_grads_read( iunit, trim( filename ), fread_var )
 
     ! (restart time) - (initial time) 
-    delta_time =  & 
-      time - (fread_var%time - fread_var%dtwrite)
+    delta_time = time - (fread_var%time - fread_var%dtwrite)
     
     !    Joshua Fasching March 2008
 !     .        time - fread_var%time
     
     ! Reporting
     if ( l_restart ) then
-    print *, "Initial time of GrADS reference file ", & 
-             "[seconds since midnight]: ",  & 
-             fread_var%time
-    print *, "Model restart time [s]: ", time
-    print *, "Elapsed time between ", & 
-             "initial time of ref file and restart time [s]: ",  & 
-             delta_time
-    print *, "GrADS file output time interval [s]: ",  & 
-             fread_var%dtwrite
+      print *, "Initial time of GrADS reference file ", & 
+               "[seconds since midnight]: ",  & 
+               fread_var%time
+      print *, "Model restart time [s]: ", time
+      print *, "Elapsed time between ", & 
+               "initial time of ref file and restart time [s]: ",  & 
+               delta_time
+      print *, "GrADS file output time interval [s]: ",  & 
+               fread_var%dtwrite
 
-    if ( ( mod( delta_time , fread_var%dtwrite )  > 1e-8 ) .or.  & 
-         ( mod( delta_time, fread_var%dtwrite ) < -1e-8 ) ) then
-       print*, "Error: Elapsed time is not a multiple ", & 
-               "of the reference GrADS output time interval."
-       print*, "Elapsed time [s] = ", delta_time
-       print*, "GrADS output time interval = ", fread_var%dtwrite
-       stop
-    end if 
+      if ( ( mod( delta_time , fread_var%dtwrite )  > 1e-8 ) .or.  & 
+           ( mod( delta_time, fread_var%dtwrite ) < -1e-8 ) ) then
+        print*, "Error: Elapsed time is not a multiple ", & 
+                "of the reference GrADS output time interval."
+        print*, "Elapsed time [s] = ", delta_time
+        print*, "GrADS output time interval = ", fread_var%dtwrite
+        stop
+      end if 
 
-    if ( mod( delta_time , sec_per_min ) > 1e-8 & 
-          .or. mod( delta_time, sec_per_min ) < -1e-8 ) then
-       print*, "Error: Elapsed time is not a multiple ", & 
-               "of one minute."
-       print*, "Elapsed time [s] = ", delta_time
-       stop
-    end if
+      if ( mod( delta_time , sec_per_min ) > 1e-8 & 
+            .or. mod( delta_time, sec_per_min ) < -1e-8 ) then
+        print*, "Error: Elapsed time is not a multiple ", & 
+                "of one minute."
+        print*, "Elapsed time [s] = ", delta_time
+        stop
+      end if
 
     end if ! l_restart
 
@@ -1042,16 +1042,16 @@ module inputfields
     nearest_timestep = nint( delta_time / sec_per_min ) 
 
     if ( l_restart ) then 
-    print *, "Elapsed time between ", & 
-             "initial time of ref file and restart time ", & 
-             "rounded to nearest minute: ",  & 
-             nearest_timestep
+      print *, "Elapsed time between ", & 
+               "initial time of ref file and restart time ", & 
+               "rounded to nearest minute: ",  & 
+               nearest_timestep
 
-    ! Print the actual record being recalled.
-    ! Joshua Fasching March 2008
-    print *, "Nearest GrADS output time iteration [ ]: ", & 
-             nint( nearest_timestep /  & 
-                   (fread_var%dtwrite/sec_per_min) ) - 1
+      ! Print the actual record being recalled.
+      ! Joshua Fasching March 2008
+      print *, "Nearest GrADS output time iteration [ ]: ", & 
+               nint( nearest_timestep /  & 
+                     (fread_var%dtwrite/sec_per_min) ) - 1
     end if ! l_restart
     
     call close_grads_read( fread_var )
