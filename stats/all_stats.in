@@ -1,4 +1,4 @@
-! $Id: all_stats.in,v 1.32 2008-08-01 13:28:17 faschinj Exp $
+! $Id: all_stats.in,v 1.33 2008-08-06 14:56:43 faschinj Exp $
 ! This file contains a comprehensive listing of all the HOC variables that 
 ! can be output to GrADS, as found in src/HOC_parameterization/statistics.F.
 ! This file, as well as the statistical files for all the other cases, needs
@@ -14,7 +14,7 @@ vars_zt =
 'thlm', 'thvm', 'rtm', 'rcm', 'um', 'vm', 'wm_zt', 'ug', 'vg',
 'cf', 'p', 'exner', 'Lscale', 'T_in_K',
 'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp',
-'Lscale_up', 'Lscale_down', 'tau_zt', 'kht', 'wp2thvp', 'wp2rcp', 'wprtpthlp',
+'Lscale_up', 'Lscale_down', 'tau_zt', 'Kh_zt', 'wp2thvp', 'wp2rcp', 'wprtpthlp',
 'sc', 'rho', 'radht', 'radht_LW', 'radht_SW',
 'Ncm', 'Ncnm', 'Nim', 'snowslope', 'Nsnowm', 'sed_rcm', 'rsat',
 'rrainm', 'Nrm', 'mean_vol_rad_rain', 'mean_vol_rad_cloud',

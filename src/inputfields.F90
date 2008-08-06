@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F90,v 1.12 2008-08-06 13:43:51 faschinj Exp $
+! $Id: inputfields.F90,v 1.13 2008-08-06 14:55:55 faschinj Exp $
 
 ! Module inputfields
 
@@ -264,7 +264,7 @@ module inputfields
                     Lscale_down(1:gr%nnzp), l_error)
     endif
     if ( input_Kh_zt) then
-      call get_var( fread_var , "kht", timestep, & 
+      call get_var( fread_var , "Kh_zt", timestep, & 
                     Kh_zt(1:gr%nnzp), l_error)
     endif
     if ( input_thvm) then

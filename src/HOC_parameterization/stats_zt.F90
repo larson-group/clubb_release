@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F90,v 1.10 2008-08-01 13:18:39 faschinj Exp $
+! $Id: stats_zt.F90,v 1.11 2008-08-06 14:55:56 faschinj Exp $
  
 module stats_zt
 
@@ -533,7 +533,7 @@ do i=1,zt%nn
          "Dissipation time","s",zt)
     k = k + 1
 
-  case ('kht')
+  case ('Kh_zt')
     iKh_zt = k
     call stat_assign(iKh_zt,"Kh_zt", & 
          "Eddy diffusivity","m^2/s",zt)
