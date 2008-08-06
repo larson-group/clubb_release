@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: clex9_oct14.F90,v 1.10 2008-08-04 17:01:30 faschinj Exp $
+! $Id: clex9_oct14.F90,v 1.11 2008-08-06 13:53:02 faschinj Exp $
   module clex9_oct14
 
 !       Description:
@@ -28,8 +28,8 @@
 !-----------------------------------------------------------------------
   subroutine clex9_oct14_tndcy & 
              ( time, time_initial, rlat, rlon, & 
-               rcm, exner, rho, wm_zt, & 
-               wm_zm, thlm_forcing, rtm_forcing, & 
+               rcm, exner, rho, &
+               wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
                Frad, radht, Ncnm, sclrm_forcing )
 
 !       Description:
@@ -110,12 +110,12 @@
   real, intent(in), dimension(gr%nnzp) :: & 
   rcm,     & ! Cloud water mixing ratio      [kg/kg]
   exner,   & ! Exner function                [-]
-  rho       ! Density                       [kg/m^3]
+  rho        ! Density                       [kg/m^3]
 
   ! Output variables
   real, intent(out), dimension(gr%nnzp) :: & 
-  wm_zt,             & ! Mean vertical wind on the thermo. grid  [m/s]
-  wm_zm,             & ! Mean vertical wind on the moment. grid  [m/s]
+  wm_zt,           & ! Mean vertical wind on the thermo. grid  [m/s]
+  wm_zm,           & ! Mean vertical wind on the moment. grid  [m/s]
   thlm_forcing,    & ! Theta_l forcing                         [K/s]
   rtm_forcing,     & ! Total water forcing                     [kg/kg/s]
   Frad,            & ! Radiative flux                          [W/m^2]
@@ -139,7 +139,7 @@
   real, dimension(gr%nnzp) ::  & 
 !     .  LWP,       ! Liquid water path                              [kg/m^2]
   rcm_rad,    & ! Flipped array of liq. water mixing ratio       [kg/kg]
-  rho_rad,   & ! Flipped array of air density                   [kg/m^3]
+  rho_rad,    & ! Flipped array of air density                   [kg/m^3]
   dsigm,      & ! Flipped array of grid spacing                  [m]
   coamps_zm,  & ! Flipped array of momentum level altitudes      [m]
   coamps_zt     ! Flipped array of thermodynamic level altitudes [m]

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: mpace_b.F90,v 1.10 2008-08-04 17:01:30 faschinj Exp $
+! $Id: mpace_b.F90,v 1.11 2008-08-06 13:53:03 faschinj Exp $
 module mpace_b
 
 !       Description:
@@ -15,12 +15,11 @@ private ! Default Scope
 contains
 
 !----------------------------------------------------------------------
-subroutine mpace_b_tndcy & 
-( time, time_initial, rlat, & 
-  rho, p, thvm, rcm, & 
-  wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
-  Ncnm, Ncm, Frad, radht, & 
-  sclrm_forcing )
+subroutine mpace_b_tndcy( time, time_initial, rlat, & 
+                          rho, p_in_Pa, thvm, rcm, & 
+                          Ncnm, Ncm, &
+                          wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
+                          Frad, radht, sclrm_forcing )
 
 !        Description:
 !          Subroutine to large-scale subsidence for mpace_b case (Michael
@@ -99,7 +98,7 @@ real, intent(in) ::  &
 
 real, dimension(gr%nnzp), intent(in) :: & 
   rho,   & ! Density of air                         [kg/m^3]
-  p,      & ! Pressure                               [Pa]
+  p_in_Pa,      & ! Pressure                               [Pa]
   thvm,   & ! Virtual potential temperature          [K]
   rcm    ! Cloud water mixing ratio               [kg/kg]
 
@@ -184,8 +183,8 @@ center          = .TRUE.
 
 ! Compute vertical motion
 do i=2,gr%nnzp
-  velocity_omega = min( D*(psfc-p(i)), D*(psfc-pinv) )
-  wm_zt(i) = -velocity_omega * Rd * thvm(i) / p(i) / grav0
+  velocity_omega = min( D*(psfc-p_in_Pa(i)), D*(psfc-pinv) )
+  wm_zt(i) = -velocity_omega * Rd * thvm(i) / p_in_Pa(i) / grav0
 end do
 
 
@@ -203,10 +202,10 @@ wm_zm(gr%nnzp) = 0.0  ! Model top
 
 ! Compute large-scale tendencies
 do i=1,gr%nnzp
- t_tendency = min( -4.,-15.*(1.-((psfc-p(i))/21818.)) ) ! K/day
- thlm_forcing(i) = (t_tendency * ((psfc/p(i)) ** (Rd/Cp)))  & 
+ t_tendency = min( -4.,-15.*(1.-((psfc-p_in_Pa(i))/21818.)) ) ! K/day
+ thlm_forcing(i) = (t_tendency * ((psfc/p_in_Pa(i)) ** (Rd/Cp)))  & 
                   / 86400. ! K/s
- rtm_forcing(i)  = min( 0.164,-3*(1-((psfc-p(i))/15171.)) ) /  & 
+ rtm_forcing(i)  = min( 0.164,-3*(1-((psfc-p_in_Pa(i))/15171.)) ) /  & 
                1000. / 86400. ! g/kg/day -> kg/kg/s
 end do
 
@@ -261,9 +260,9 @@ if ( .not. l_bugsrad ) then
     radht_LW(k) = radht_LW_out(gr%nnzp-k+1)
     radht_SW(k) = radht_SW_out(gr%nnzp-k+1)
 
-    radht_theta(k)    = radht(k) * ((p0/p(k))**(Rd/Cp))
-    radht_LW_theta(k) = radht_LW(k) * ((p0/p(k))**(Rd/Cp))
-    radht_SW_theta(k) = radht_SW(k) * ((p0/p(k))**(Rd/Cp))
+    radht_theta(k)    = radht(k) * ((p0/p_in_Pa(k))**(Rd/Cp))
+    radht_LW_theta(k) = radht_LW(k) * ((p0/p_in_Pa(k))**(Rd/Cp))
+    radht_SW_theta(k) = radht_SW(k) * ((p0/p_in_Pa(k))**(Rd/Cp))
   end do ! k
 
   Frad(1)    = Frad(2)

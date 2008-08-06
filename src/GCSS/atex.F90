@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-!$Id: atex.F90,v 1.8 2008-07-31 19:34:16 faschinj Exp $
+!$Id: atex.F90,v 1.9 2008-08-06 13:53:02 faschinj Exp $
 module atex
 
 !       Description:
@@ -15,9 +15,11 @@ private ! Default Scope
 contains
 
 !----------------------------------------------------------------------
-subroutine atex_tndcy( time, time_initial, rtm,  & 
-                       rho, rcm, exner, wm_zt, wm_zm, Frad, radht, & 
-                       thlm_forcing, rtm_forcing, err_code, & 
+subroutine atex_tndcy( time, time_initial, &
+                       rtm, rho, rcm, exner, &
+                       err_code, &
+                       wm_zt, wm_zm, Frad, radht, & 
+                       thlm_forcing, rtm_forcing, & 
                        sclrm_forcing )
 !       Description:
 !       Subroutine to set theta-l and water tendencies for ATEX case
@@ -44,7 +46,6 @@ use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
 use array_index, only:  & 
     iisclr_thl, iisclr_rt ! Variable(s)
-
  
 use stats_type, only: stat_update_var ! Procedure(s)
 
@@ -59,27 +60,26 @@ real(kind=time_precision), intent(in) ::  &
 
 real, intent(in), dimension(gr%nnzp) :: & 
   rtm,   & ! Total water mixing ratio        [kg/kg]
-  rho,  & ! Density                         [kg/m^3]
+  rho,   & ! Density                         [kg/m^3]
   rcm,   & ! Liquid water mixing ratio       [kg/kg]
-  exner ! Exner function                  [-]
+  exner    ! Exner function                  [-]
 
 ! Input/output
 integer, intent(inout) :: err_code ! Diagnostic 
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) :: & 
-  wm_zt,          & ! w wind on thermodynamic grid                [m/s]
-  wm_zm,          & ! w wind on momentum grid                     [m/s]
+  wm_zt,        & ! w wind on thermodynamic grid                [m/s]
+  wm_zm,        & ! w wind on momentum grid                     [m/s]
   Frad,         & ! Radiative flux                              [W/m^2]
   radht,        & ! Radiative heating rate                      [K/s]
   thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
-  rtm_forcing  ! Total water mixing ratio tendency           [kg/kg/s]
+  rtm_forcing     ! Total water mixing ratio tendency           [kg/kg/s]
 
 
 ! Output (optional)
 real, intent(out), dimension(gr%nnzp, sclr_dim) :: & 
   sclrm_forcing ! Passive scalar tendency         [units/s]
-
 
 ! Internal variables
 integer :: i
@@ -214,10 +214,10 @@ real, parameter ::  &
 
 ! Input variables
 real, intent(in) ::  & 
-  um_sfc,          & ! um at zt(2)           [m/s]
-  vm_sfc,          & ! vm at zt(2)           [m/s]
-  thlm_sfc,        & ! Theta_l at zt(2)      [K]
-  rtm_sfc            ! rt at zt(2)           [kg/kg]
+  um_sfc,     & ! um at zt(2)           [m/s]
+  vm_sfc,     & ! vm at zt(2)           [m/s]
+  thlm_sfc,   & ! Theta_l at zt(2)      [K]
+  rtm_sfc       ! rt at zt(2)           [kg/kg]
 
 ! Output variables
 real, intent(out) ::  & 

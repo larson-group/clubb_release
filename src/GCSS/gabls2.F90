@@ -1,4 +1,4 @@
-!$Id: gabls2.F90,v 1.7 2008-07-31 19:34:17 faschinj Exp $
+!$Id: gabls2.F90,v 1.8 2008-08-06 13:53:03 faschinj Exp $
 !----------------------------------------------------------------------
 module gabls2
 
@@ -15,11 +15,11 @@ private ! Default Scope
 contains
 
 !----------------------------------------------------------------------
-subroutine gabls2_tndcy & 
-( time, time_initial, & 
-  rho, rcm, l_kk_rain, wm_zt, wm_zm, & 
-  thlm_forcing, rtm_forcing, radht, Ncm, & 
-  sclrm_forcing )
+subroutine gabls2_tndcy( time, time_initial, &
+                         rho, rcm, l_kk_rain, &
+                         wm_zt, wm_zm, thlm_forcing, & 
+                         rtm_forcing, radht, Ncm, & 
+                         sclrm_forcing )
 
 !        Description:
 !          Subroutine to apply case-specific forcings to GABLS2 case
@@ -136,12 +136,12 @@ end subroutine gabls2_tndcy
 
 
 !----------------------------------------------------------------------
-subroutine gabls2_sfclyr & 
-           ( time, time_initial, lowest_level, psfc, & 
-             um, vm, thlm, rtm, & 
-             upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc,  & 
-             ustar, & 
-             wpsclrp_sfc, wpedsclrp_sfc )
+subroutine gabls2_sfclyr( time, time_initial, &
+                          lowest_level, psfc, & 
+                          um, vm, thlm, rtm, & 
+                          upwp_sfc, vpwp_sfc, &
+                          wpthlp_sfc, wprtp_sfc, ustar, & 
+                          wpsclrp_sfc, wpedsclrp_sfc )
 
 !----------------------------------------------------------------------
 !        Description:

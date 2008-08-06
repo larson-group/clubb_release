@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: arm.F90,v 1.5 2008-07-30 21:10:43 faschinj Exp $
+! $Id: arm.F90,v 1.6 2008-08-06 13:53:02 faschinj Exp $
 module arm
 
 !       Description:
@@ -15,8 +15,8 @@ private ! Default Scope
 contains
 
 !----------------------------------------------------------------------
-subroutine arm_tndcy( time, thlm_forcing, radht, rtm_forcing, & 
-                      sclrm_forcing )
+subroutine arm_tndcy( time, &
+                      thlm_forcing, radht, rtm_forcing, sclrm_forcing )
 !       Description:
 !       Subroutine to set theta and water tendencies for ARM case
 
@@ -191,7 +191,7 @@ real, intent(in) ::  &
   dn0,             & ! ???
   thlm_sfc,        & ! Theta_l at zt(2)      [K]
   um_sfc,          & ! um at zt(2)           [m/s]
-  vm_sfc          ! vm at zt(2)           [m/s]
+  vm_sfc             ! vm at zt(2)           [m/s]
 
 ! Output variables
 real, intent(out) ::  & 
@@ -199,12 +199,12 @@ real, intent(out) ::  &
   vpwp_sfc,    & ! v'w' at surface           [m^2/s^2]
   wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
   wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
-  ustar       ! surface friction velocity [m/s]
+  ustar          ! surface friction velocity [m/s]
 
 ! Output variables (optional)
 real,  dimension(sclr_dim), optional, intent(out) ::  & 
   wpsclrp_sfc,     & ! Passive scalar surface flux      [units m/s] 
-  wpedsclrp_sfc   ! Passive eddy-scalar surface flux [units m/s]
+  wpedsclrp_sfc      ! Passive eddy-scalar surface flux [units m/s]
 
 ! Internal variables
 real ::  & 

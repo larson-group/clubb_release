@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: astex.F90,v 1.5 2008-07-31 19:34:16 faschinj Exp $
+! $Id: astex.F90,v 1.6 2008-08-06 13:53:02 faschinj Exp $
 module astex
 
 !       Description:
@@ -16,8 +16,7 @@ contains
 
 !----------------------------------------------------------------------
 subroutine astex_tndcy( wm_zt, wm_zm,  & 
-                        thlm_forcing, rtm_forcing, & 
-                        sclrm_forcing )
+                        thlm_forcing, rtm_forcing, sclrm_forcing )
 
 !       Description:
 !       Subroutine to set theta and water tendencies for ASTEX KK case
@@ -85,9 +84,8 @@ end subroutine astex_tndcy
 
 !----------------------------------------------------------------------
 subroutine astex_sfclyr( rho0, & 
-                         upwp_sfc, vpwp_sfc,  & 
-                         wpthlp_sfc, wprtp_sfc,  & 
-                         wpsclrp_sfc, wpedsclrp_sfc )
+                         upwp_sfc, vpwp_sfc, wpthlp_sfc, & 
+                         wprtp_sfc, wpsclrp_sfc, wpedsclrp_sfc )
 
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,

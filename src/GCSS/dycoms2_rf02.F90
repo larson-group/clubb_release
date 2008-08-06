@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F90,v 1.7 2008-07-31 19:34:17 faschinj Exp $
+! $Id: dycoms2_rf02.F90,v 1.8 2008-08-06 13:53:02 faschinj Exp $
 module dycoms2_rf02
 
 !       Description:
@@ -15,11 +15,11 @@ private ! Default Scope
 contains
 
 !----------------------------------------------------------------------
-SUBROUTINE dycoms2_rf02_tndcy & 
-           ( time, time_initial, rho, rho_zm, rtm, rcm, exner,  & 
-             wm_zt, wm_zm, thlm_forcing, rtm_forcing,  & 
-             Frad, radht, Ncm, Ncnm, err_code,  & 
-             sclrm_forcing )
+SUBROUTINE dycoms2_rf02_tndcy( time, time_initial, rho, & 
+                               rho_zm, rtm, rcm, exner,  & 
+                               err_code, &
+                               wm_zt, wm_zm, thlm_forcing, rtm_forcing,  & 
+                               Frad, radht, Ncm, Ncnm, sclrm_forcing )
 !       Description:
 !       Compute wm, thlm_ls, rtm_ls, radiative heating rate, and cloud
 !       droplet number concentration as needed.
@@ -46,14 +46,12 @@ use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
 use array_index, only:  & 
     iisclr_thl, iisclr_rt ! Variable(s)
-
  
 use stats_type, only: stat_update_var, stat_update_var_pt ! Procedure(s)
 
 USE stats_variables, only:  & 
     iradht_LW, izi, sfc, zt, l_stats_samp ! Variable(s)
  
-
 implicit none
 
 ! Constant parameters

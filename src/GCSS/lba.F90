@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: lba.F90,v 1.5 2008-07-31 19:34:17 faschinj Exp $
+! $Id: lba.F90,v 1.6 2008-08-06 13:53:03 faschinj Exp $
 module lba
 
 !       Description:
@@ -33,7 +33,8 @@ character(*), parameter ::  &
 contains
 
 !----------------------------------------------------------------------
-subroutine lba_tndcy( time, wm_zt, wm_zm, radht, & 
+subroutine lba_tndcy( time, & 
+                      wm_zt, wm_zm, radht, & 
                       thlm_forcing, rtm_forcing, & 
                       sclrm_forcing )
 !       Description:
@@ -170,9 +171,9 @@ real(kind=time_precision), intent(in) ::  &
 real, intent(in) ::  & 
   z,         & ! Height at zt=2      [m] 
   rho0,      & ! Density at zm=1     [kg/m^3] 
+  thlm_sfc,  & ! thlm at (2)         [m/s]
   um_sfc,    & ! um at (2)           [m/s]
-  vm_sfc,    & ! vm at (2)           [m/s]
-  thlm_sfc  ! thlm at (2)         [m/s]
+  vm_sfc       ! vm at (2)           [m/s]
 
 ! Output variables
 real, intent(out) ::  & 
@@ -180,12 +181,12 @@ real, intent(out) ::  &
   vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
   wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
   wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
-  ustar        ! surface friction velocity [m/s]
+  ustar           ! surface friction velocity [m/s]
 
 ! Output variables (optional)
 real, intent(out), optional, dimension(sclr_dim) ::  & 
   wpsclrp_sfc,   & ! Passive scalar surface flux      [units m/s] 
-  wpedsclrp_sfc ! Passive eddy-scalar surface flux [units m/s]
+  wpedsclrp_sfc    ! Passive eddy-scalar surface flux [units m/s]
 
 ! Local variables
 !        real :: ft, ubar, ustar, bflx

@@ -1,4 +1,4 @@
-!$Id: rico.F90,v 1.8 2008-07-31 19:34:17 faschinj Exp $
+!$Id: rico.F90,v 1.9 2008-08-06 13:53:03 faschinj Exp $
 !----------------------------------------------------------------------
 module rico
 
@@ -15,11 +15,10 @@ module rico
   contains
 
 !----------------------------------------------------------------------
-  subroutine rico_tndcy & 
-  ( exner, & 
-    rho, rcm, l_kk_rain, wm_zt, wm_zm, & 
-    thlm_forcing, rtm_forcing, radht, Ncm, & 
-    sclrm_forcing )
+  subroutine rico_tndcy( exner, rho, rcm, l_kk_rain, &
+                         wm_zt, wm_zm, & 
+                         thlm_forcing, rtm_forcing, radht, Ncm, & 
+                         sclrm_forcing )
 
 !        Description:
 !          Subroutine to apply case-specific forcings to RICO case
@@ -49,17 +48,17 @@ module rico
   ! Input Variables
 
   real, dimension(gr%nnzp), intent(in) :: & 
-  exner,          & ! Exner function                         [-]
-  rho,           & ! Air density on t levels                [kg m^-3]
-  rcm               ! Cloud water mixing ratio               [kg kg^-1]
+  exner, & ! Exner function                         [-]
+  rho,   & ! Air density on t levels                [kg m^-3]
+  rcm      ! Cloud water mixing ratio               [kg kg^-1]
 
   logical, intent(in) :: & 
-  l_kk_rain       !  Flag-- is KK rain being used?
+  l_kk_rain  !  Flag-- is KK rain being used?
 
   ! Output Variables
   real, dimension(gr%nnzp), intent(out) :: & 
-  wm_zt,          & ! Large-scale vertical motion on t grid   [m s^-1]
-  wm_zm,          & ! Large-scale vertical motion on m grid   [m s^-1]
+  wm_zt,        & ! Large-scale vertical motion on t grid   [m s^-1]
+  wm_zm,        & ! Large-scale vertical motion on m grid   [m s^-1]
   thlm_forcing, & ! Large-scale thlm tendency               [K s^-1]
   rtm_forcing,  & ! Large-scale rtm tendency                [kg kg^-1 s^-1]
   radht,        & ! dT/dt, then d Theta/dt, due to rad.     [K s^-1]
@@ -204,19 +203,19 @@ module rico
 
 !       Internal variables
   real :: & 
-    ubar,   & ! This is root (u^2 + v^2), per ATEX and RICO spec.
-    Cz,     & ! This is C_10 scaled to the height of the lowest model level.
-    Cm,     & ! This is C_m_20 scaled to the height of the lowest model level.
-    Ch,     & ! This is C_h_20 scaled to the height of the lowest model level.
-    Cq     ! This is C_q_20 scaled to the height of the lowest model level.
+    ubar, & ! This is root (u^2 + v^2), per ATEX and RICO spec.
+    Cz,   & ! This is C_10 scaled to the height of the lowest model level.
+    Cm,   & ! This is C_m_20 scaled to the height of the lowest model level.
+    Ch,   & ! This is C_h_20 scaled to the height of the lowest model level.
+    Cq      ! This is C_q_20 scaled to the height of the lowest model level.
 
   logical :: & 
     use_old_atex  ! if true, use ATEX version; if not, use RICO-specific
 
 !       Input variables
   real, intent(in) :: & 
-    um_sfc,            & ! This is u at the lowest above-ground model level.  [m/s]
-    vm_sfc,            & ! This is v at the lowest above-ground model level.  [m/s]
+    um_sfc,        & ! This is u at the lowest above-ground model level.  [m/s]
+    vm_sfc,        & ! This is v at the lowest above-ground model level.  [m/s]
     thlm,          & ! This is theta-l at the lowest above-ground model level.  
                      ! (DOES THIS NEED A CORRECTION FOR THETA-L TO THETA?)  [K]
     rtm,           & ! This is rt at the lowest above-ground model level.  [kg/kg]

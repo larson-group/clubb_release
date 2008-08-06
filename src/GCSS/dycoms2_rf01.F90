@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F90,v 1.8 2008-07-31 19:34:17 faschinj Exp $
+! $Id: dycoms2_rf01.F90,v 1.9 2008-08-06 13:53:02 faschinj Exp $
 module dycoms2_rf01
 
 !       Description:
@@ -14,11 +14,10 @@ private ! Default Scope
 contains
 
 !----------------------------------------------------------------------
-subroutine dycoms2_rf01_tndcy & 
-           ( rho, rho_zm, rtm, rcm, exner, & 
-             wm_zt, wm_zm, Frad, radht, thlm_forcing, & 
-             rtm_forcing, err_code, & 
-             sclrm_forcing )
+subroutine dycoms2_rf01_tndcy( rho, rho_zm, rtm, rcm, exner, & 
+                               err_code, & 
+                               wm_zt, wm_zm, Frad, radht, & 
+                               thlm_forcing, rtm_forcing, sclrm_forcing )
 !       Description:
 !       Subroutine to set theta and water tendencies for DYCOMS RF01 case.
 
@@ -62,23 +61,22 @@ real, parameter ::  &
 ! Input Variables
 real, dimension(gr%nnzp), intent(in) ::  & 
   rho_zm,  & ! Density on moment. grid         [kg/m^3]
-  rho,  & ! Density on thermo. grid         [kg/m^3] 
-  rtm,   & ! Total water mixing ratio        [kg/kg]
-  rcm,   & ! Cloud water mixing ratio        [kg/kg]
-  exner ! Exner function                  [-]
+  rho,     & ! Density on thermo. grid         [kg/m^3] 
+  rtm,     & ! Total water mixing ratio        [kg/kg]
+  rcm,     & ! Cloud water mixing ratio        [kg/kg]
+  exner      ! Exner function                  [-]
 
 ! Input/Output Variables
 integer, intent(inout) :: err_code
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) ::  & 
-  wm_zt,           & ! w wind on thermodynamic grid                 [m/s]
-  wm_zm,           & ! w wind on momentum grid                      [m/s]
-  thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
-  rtm_forcing,   & ! Total water mixing ratio tendency            [kg/kg/s]
+  wm_zt,         & ! w wind on thermodynamic grid                 [m/s]
+  wm_zm,         & ! w wind on momentum grid                      [m/s]
   radht,         & ! Radiative heating rate                       [K/s]
-  Frad          ! Radiative flux                               [W/m^2]
-
+  Frad,          & ! Radiative flux                               [W/m^2]
+  thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
+  rtm_forcing      ! Total water mixing ratio tendency            [kg/kg/s]
 
 ! Output (optional)
 real, intent(out), dimension(gr%nnzp, sclr_dim) ::  & 
@@ -184,13 +182,12 @@ return
 end subroutine dycoms2_rf01_tndcy
 
 !----------------------------------------------------------------------
-subroutine dycoms2_rf01_sfclyr & 
-           ( sfctype, Tsfc, psfc,  & 
-             exner_sfc, um_sfc, vm_sfc,  & 
-             thlm_sfc, rtm_sfc,  & 
-             rhom_sfc, upwp_sfc, vpwp_sfc, & 
-             wpthlp_sfc, wprtp_sfc, ustar, & 
-             wpsclrp_sfc, wpedsclrp_sfc )
+subroutine dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc,  & 
+                                exner_sfc, um_sfc, vm_sfc,  & 
+                                thlm_sfc, rtm_sfc, rho_zm_sfc, &
+                                upwp_sfc, vpwp_sfc, & 
+                                wpthlp_sfc, wprtp_sfc, ustar, & 
+                                wpsclrp_sfc, wpedsclrp_sfc )
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,
 !       heat and moisture according to GCSS DYCOMS II RF 01 specifications
@@ -204,7 +201,7 @@ use parameters, only: sclr_dim ! Variable(s)
 
 use saturation, only: sat_mixrat_liq ! Variable(s)
 
-use array_index, only: iisclr_rt, iisclr_thl
+use array_index, only: iisclr_rt, iisclr_thl ! Variables(s)
 
 implicit none
 
@@ -228,7 +225,7 @@ real, intent(in) ::  &
   vm_sfc,     & ! v wind at the surface              [m/s]
   thlm_sfc,   & ! theta_l at the surface             [K]
   rtm_sfc,    & ! r_t at the surface                 [kg/kg]
-  rhom_sfc   ! Density at the surface             [kg/m^3]
+  rho_zm_sfc    ! Density at the surface             [kg/m^3]
 
 ! Output variables
 real, intent(out) ::  & 
@@ -236,11 +233,11 @@ real, intent(out) ::  &
   vpwp_sfc,    & ! v' w' at the surface              [m^2/s^2]
   wpthlp_sfc,  & ! w' thl' at the surface            [m K/s]
   wprtp_sfc,   & ! w' rt'  at the surface            [m kg/kg]
-  ustar       ! surface friction velocity         [m/s]
+  ustar          ! surface friction velocity         [m/s]
 
 real, intent(out), dimension(sclr_dim) ::  & 
   wpsclrp_sfc,   & ! w' sclr' at the surface         [m units/s]
-  wpedsclrp_sfc ! w' edsclr' at the surface       [m units/s]
+  wpedsclrp_sfc    ! w' edsclr' at the surface       [m units/s]
 
 ! Local variables
 
@@ -260,8 +257,8 @@ vpwp_sfc = -vm_sfc * ustar**2 / ubar
 
 if ( sfctype == 0 ) then
 
-  wpthlp_sfc =  15.0 / ( rhom_sfc * Cp )
-  wprtp_sfc  = 115.0 / ( rhom_sfc * Lv )
+  wpthlp_sfc =  15.0 / ( rho_zm_sfc * Cp )
+  wprtp_sfc  = 115.0 / ( rho_zm_sfc * Lv )
 
 else if ( sfctype == 1 ) then
 

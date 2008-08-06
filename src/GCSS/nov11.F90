@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: nov11.F90,v 1.11 2008-08-04 17:01:30 faschinj Exp $
+! $Id: nov11.F90,v 1.12 2008-08-06 13:53:03 faschinj Exp $
   module nov11
 
 !       Description:
@@ -26,12 +26,12 @@
   contains
 
 !-----------------------------------------------------------------------
-  subroutine nov11_altocu_tndcy & 
-             ( time, time_initial, dt, & 
-               !rlat, rlon, & 
-               rcm, exner, rho, rtm, wm_zt, & 
-               wm_zm, thlm_forcing, rtm_forcing, & 
-               Frad, radht, Ncnm, sclrm_forcing )
+  subroutine nov11_altocu_tndcy( time, time_initial, dt, & 
+                                 !rlat, rlon, & 
+                                 rcm, exner, rho, &
+                                 rtm, &
+                                 wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
+                                 Frad, radht, Ncnm, sclrm_forcing )
 
 !       Description:
 !       Compute subsidence, radiation, and large-scale tendencies.

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: mpace_a.F90,v 1.10 2008-08-04 17:01:30 faschinj Exp $
+! $Id: mpace_a.F90,v 1.11 2008-08-06 13:53:03 faschinj Exp $
   module mpace_a
 
 !       Description:
@@ -46,13 +46,13 @@
   contains
 
 !----------------------------------------------------------------------
-  subroutine mpace_a_tndcy & 
-  ( time, time_initial, rlat, & 
-    rho, p, rcm, & 
-    wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
-    Ncnm, Ncm, Frad, radht, & 
-    um_hoc_grid, vm_hoc_grid, & 
-    sclrm_forcing )
+  subroutine mpace_a_tndcy( time, time_initial, rlat, & 
+                            rho, p_in_Pa, rcm, & 
+                            Ncnm, Ncm, &
+                            wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
+                            Frad, radht, & 
+                            um_hoc_grid, vm_hoc_grid, & 
+                            sclrm_forcing )
 
 !        Description:
 !
@@ -79,14 +79,12 @@
   use array_index, only: iisclr_rt, iisclr_thl
 
   use error_code, only: clubb_debug ! Procedure(s)
-
  
   use stats_type, only: stat_update_var ! Procedure(s)
 
   use stats_variables, only: iradht_LW, iradht_SW, iFrad_LW,  & ! Variable(s)
                  iFrad_SW, zt, zm, l_stats_samp
  
-
   implicit none
 
   ! Local constants, subsidence
@@ -123,30 +121,30 @@
 
   ! Input Variables
   real(kind=time_precision), intent(in) ::  & 
-  time,          & ! Current time of simulation      [s]
-  time_initial  ! Initial time of simulation      [s]
+  time,         & ! Current time of simulation      [s]
+  time_initial    ! Initial time of simulation      [s]
 
   real, intent(in) ::  & 
   rlat          ! Latitude                        [Degrees North]
 
   real, dimension(gr%nnzp), intent(in) :: & 
-  rho,   & ! Density of air                         [kg/m^3]
-  p,      & ! Pressure                               [Pa]
-  rcm    ! Cloud water mixing ratio               [kg/kg]
+  rho,     & ! Density of air                         [kg/m^3]
+  p_in_Pa, & ! Pressure                               [Pa]
+  rcm        ! Cloud water mixing ratio               [kg/kg]
 
   ! Input/Output Variables
   real, dimension(gr%nnzp), intent(inout) ::  & 
-  Ncm,          & ! Cloud droplet number concentration      [count/m^3]
-  Ncnm         ! Cloud nuclei number concentration       [count/m^3]
+  Ncm,     & ! Cloud droplet number concentration      [count/m^3]
+  Ncnm       ! Cloud nuclei number concentration       [count/m^3]
 
   ! Output Variables
   real, dimension(gr%nnzp), intent(out) ::  & 
-  wm_zt,          & ! Large-scale vertical motion on t grid   [m/s]
-  wm_zm,          & ! Large-scale vertical motion on m grid   [m/s]
+  wm_zt,        & ! Large-scale vertical motion on t grid   [m/s]
+  wm_zm,        & ! Large-scale vertical motion on m grid   [m/s]
   thlm_forcing, & ! Large-scale thlm tendency               [K/s]
   rtm_forcing,  & ! Large-scale rtm tendency                [kg/kg/s]
   Frad,         & ! Total radiative flux                    [W/m^2]
-  radht        ! dT/dt, then d Theta/dt, due to rad.     [K/s]
+  radht           ! dT/dt, then d Theta/dt, due to rad.     [K/s]
 
 
   ! Output Variables 
@@ -159,7 +157,7 @@
   radht_LW, & ! dT/dt, then d Theta/dt, due to LW rad.  [K/s]
   radht_SW, & ! dT/dt, then d Theta/dt, due to SW rad.  [K/s]
   Frad_LW,  & ! Longwave radiative flux                 [W/m^2]
-  Frad_SW  ! Shortwave radiative flux                [W/m^2]
+  Frad_SW     ! Shortwave radiative flux                [W/m^2]
 
 
   ! Local Variables, general
@@ -331,7 +329,7 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
   ! Compute vertical motion
   do i=2,gr%nnzp
 !          velocity_omega = omega_hoc_grid(i) * 100 / 3600 ! convering mb/hr to Pa/s
-!          wm_zt(i) = -velocity_omega * Rd * thvm(i) / p(i) / grav
+!          wm_zt(i) = -velocity_omega * Rd * thvm(i) / p_in_Pa(i) / grav
      wm_zt(i) = 0.
 ! End of Michael Falk's obliteration of omega.
   end do
@@ -350,7 +348,7 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
   ! Compute large-scale tendencies
   do i=1,gr%nnzp
    thlm_forcing(i) = ((dTdt_hoc_grid(i) + vertT_hoc_grid(i)) & 
-                    * ((psfc/p(i)) ** (Rd/Cp))) & 
+                    * ((psfc/p_in_Pa(i)) ** (Rd/Cp))) & 
                     / 3600. ! K/s
    rtm_forcing(i)  = (dqdt_hoc_grid(i)+vertq_hoc_grid(i)) & 
     / 1000. / 3600. ! g/kg/hr -> kg/kg/s
@@ -407,9 +405,9 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
       radht_LW(k) = radht_LW_out(gr%nnzp-k+1)
       radht_SW(k) = radht_SW_out(gr%nnzp-k+1)
 
-      radht_theta(k)    = radht(k) * ((p0/p(k))**(Rd/Cp))
-      radht_LW_theta(k) = radht_LW(k) * ((p0/p(k))**(Rd/Cp))
-      radht_SW_theta(k) = radht_SW(k) * ((p0/p(k))**(Rd/Cp))
+      radht_theta(k)    = radht(k) * ((p0/p_in_Pa(k))**(Rd/Cp))
+      radht_LW_theta(k) = radht_LW(k) * ((p0/p_in_Pa(k))**(Rd/Cp))
+      radht_SW_theta(k) = radht_SW(k) * ((p0/p_in_Pa(k))**(Rd/Cp))
     end do ! k
 
     Frad(1)    = Frad(2)
@@ -479,7 +477,6 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
                              upwp_sfc, vpwp_sfc, & 
                              wpthlp_sfc, wprtp_sfc, ustar, & 
                              wpsclrp_sfc, wpedsclrp_sfc )
-
 !        Description:
 !          Surface forcing subroutine for mpace_a case.  Written 
 !          October 2007 by Michael Falk.

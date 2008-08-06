@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: fire.F90,v 1.8 2008-07-31 19:34:17 faschinj Exp $
+! $Id: fire.F90,v 1.9 2008-08-06 13:53:03 faschinj Exp $
 module fire
 
 !       Description:
@@ -40,8 +40,7 @@ use atex_cloud_rad, only: cloud_rad ! Procedure(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 
-use array_index, only: iisclr_rt, iisclr_thl
-
+use array_index, only: iisclr_rt, iisclr_thl ! Variable(s)
  
 use stats_type, only: stat_update_var ! Procedure(s)
 
@@ -51,18 +50,18 @@ implicit none
 
 ! Input Variables
 real, intent(in), dimension(gr%nnzp) :: & 
-  rho,  & ! Density                         [kg/m^3]
+  rho,   & ! Density                         [kg/m^3]
   rcm,   & ! Liquid water mixing ratio       [kg/kg]
-  exner ! Exner function                  [-]
+  exner    ! Exner function                  [-]
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) :: & 
-  wm_zt,          & ! w wind on thermodynamic grid     [m/s]
-  wm_zm,          & ! w wind on momentum grid          [m/s]
+  wm_zt,        & ! w wind on thermodynamic grid     [m/s]
+  wm_zm,        & ! w wind on momentum grid          [m/s]
   Frad,         & ! Radiative flux                   [W/m^2]
   radht,        & ! Radiative heating rate           [K/s]
   thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
-  rtm_forcing  ! Total water mixing ratio tendency [kg/kg/s]
+  rtm_forcing     ! Total water mixing ratio tendency [kg/kg/s]
 
 ! Output Variables (optional)
 real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
@@ -116,8 +115,8 @@ return
 end subroutine fire_tndcy
 
 !------------------------------------------------------------------------
-subroutine sfc_momentum_fluxes( u, v, upwp_sfc, vpwp_sfc,  & 
-                                ustar )
+subroutine sfc_momentum_fluxes( u, v, &
+                                upwp_sfc, vpwp_sfc, ustar )
 
 !       Description:
 !       This subroutine computes surface momentum fluxes using aerodynamic
@@ -139,13 +138,13 @@ intrinsic :: sqrt
 ! Input variables
 real, intent(in) ::  & 
   u,  & ! u wind first level above ground    [m/s]
-  v  ! v wind first level above ground    [m/s]
+  v     ! v wind first level above ground    [m/s]
 
 ! Output Variables
 real, intent(out) ::  & 
   upwp_sfc, & ! sfc u momentum flux (m^2/s^2)
   vpwp_sfc, & ! sfc v momentum flux (m^2/s^2)
-  ustar    ! surface friction velocity [m/s]
+  ustar       ! surface friction velocity [m/s]
 
 ! Local Variables
 real :: M ! total wind speed above ground
@@ -163,7 +162,9 @@ return
 end subroutine sfc_momentum_fluxes
 
 !------------------------------------------------------------------------
-subroutine sfc_thermo_fluxes( u, v, Tsfc, psfc, thlair, rtair, & 
+subroutine sfc_thermo_fluxes( u, v, &
+                              Tsfc, psfc, & 
+                              thlair, rtair, & 
                               wpthlp_sfc, wprtp_sfc, & 
                               wpsclrp_sfc, & 
                               wpedsclrp_sfc )
@@ -198,18 +199,18 @@ real, intent(in) ::  &
   Tsfc,    & ! Surface temperature           [K]
   psfc,    & ! Surface pressure              [Pa]
   thlair,  & ! theta_l at first model layer  [K]
-  rtair   ! rt at first model layer       [kg/kg]
+  rtair      ! rt at first model layer       [kg/kg]
 
 
 ! Output Variables
 real, intent(out) ::  & 
   wpthlp_sfc, & ! surface thetal flux        [K m/s]
-  wprtp_sfc  ! surface moisture flux      [kg/kg m/s]
+  wprtp_sfc     ! surface moisture flux      [kg/kg m/s]
 
 ! Output Variables (optional) 
 real, optional, intent(out), dimension(sclr_dim) ::  & 
   wpsclrp_sfc,    & ! scalar surface flux            [units m/s]
-  wpedsclrp_sfc  ! eddy-scalar surface flux       [units m/s]
+  wpedsclrp_sfc     ! eddy-scalar surface flux       [units m/s]
 
 ! Local Variables
 real :: M  ! Total wind speed above ground

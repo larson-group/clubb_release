@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: cobra.F90,v 1.5 2008-07-31 19:34:17 faschinj Exp $
+! $Id: cobra.F90,v 1.6 2008-08-06 13:53:02 faschinj Exp $
 module cobra
 !       Description:
 !       Contains subroutines for the COBRA CO2 case.
@@ -45,8 +45,8 @@ implicit none
 real, intent(out), dimension(gr%nnzp) :: & 
   wm_zt,          & ! w wind on thermodynamic grid                 [m/s]
   wm_zm,          & ! w wind on momentum grid                      [m/s]
-  thlm_forcing, & ! Liquid water potential temperature tendency  [K/s]
-  rtm_forcing  ! Total water mixing ratio tendency            [kg/kg/s]
+  thlm_forcing,   & ! Liquid water potential temperature tendency  [K/s]
+  rtm_forcing       ! Total water mixing ratio tendency            [kg/kg/s]
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 

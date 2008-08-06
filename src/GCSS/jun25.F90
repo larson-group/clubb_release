@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F90,v 1.9 2008-08-04 17:01:30 faschinj Exp $
+! $Id: jun25.F90,v 1.10 2008-08-06 13:53:03 faschinj Exp $
   module jun25
 
 !       Description:
@@ -23,11 +23,11 @@
   contains
 
 !-----------------------------------------------------------------------
-  subroutine jun25_altocu_tndcy & 
-             ( time, time_initial, rlat, rlon, & 
-               rcm, exner, rho, wm_zt, & 
-               wm_zm, thlm_forcing, rtm_forcing, & 
-               Frad, radht, sclrm_forcing )
+  subroutine jun25_altocu_tndcy( time, time_initial, rlat, rlon, & 
+                                 rcm, exner, rho, & 
+                                 wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
+                                 Frad, radht, &
+                                 sclrm_forcing )
 
 !       Description:
 !       Computes subsidence, radiation, and LS tendencies for the June
@@ -88,11 +88,11 @@
   real, dimension(gr%nnzp), intent(inout) ::  & 
   wm_zt,           & ! Vertical ascent/descent on therm. grid      [m/s]
   wm_zm,           & ! Vertical ascent/descent on moment. grid     [m/s]
-  thlm_forcing,  & ! Change in liq. water potential temperature 
-                   ! due to radiative heating and ice diffusion  [K/s]
-  rtm_forcing,   & ! Change in total water due to ice diffusion  [kg/kg/s]
-  Frad,          & ! Total radiative flux (LW + SW)              [W/m^2]
-  radht            ! Total radiative heating (LW +SW)            [K/s]
+  thlm_forcing,    & ! Change in liq. water potential temperature 
+                     ! due to radiative heating and ice diffusion  [K/s]
+  rtm_forcing,     & ! Change in total water due to ice diffusion  [kg/kg/s]
+  Frad,            & ! Total radiative flux (LW + SW)              [W/m^2]
+  radht              ! Total radiative heating (LW +SW)            [K/s]
 
   ! Output variables
   real, dimension(gr%nnzp,sclr_dim),intent(out) ::  & 

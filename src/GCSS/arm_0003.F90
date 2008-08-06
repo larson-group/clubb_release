@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: arm_0003.F90,v 1.4 2008-07-31 19:34:16 faschinj Exp $
+! $Id: arm_0003.F90,v 1.5 2008-08-06 13:53:02 faschinj Exp $
 module arm_0003
 
 !       Description:
@@ -35,11 +35,9 @@ real, dimension(ntimes) :: LE          ! Evaporation         [W/m^2]
 contains
 
 !----------------------------------------------------------------------
-subroutine arm_0003_tndcy( time, wm_zt, wm_zm,  & 
-                         thlm_forcing, rtm_forcing, & 
-!              Joshua Fasching Oct 27 2007 
-                         um_hoc_grid, vm_hoc_grid, & 
-                         sclrm_forcing )
+subroutine arm_0003_tndcy( time, &
+                           wm_zt, wm_zm, thlm_forcing, &
+                           rtm_forcing, um_hoc_grid, vm_hoc_grid, sclrm_forcing )
 !       Description:
 !       Subroutine to set thetal and total water tendencies for ARM 0003 case
 
@@ -70,11 +68,11 @@ real(kind=time_precision), intent(in) :: time ! Model time [s]
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) ::  & 
   thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
-  wm_zm,           & ! Vertical velocity on moment. grid            [m/s]
-  wm_zt,           & ! Vertical velocity on thermo. grid            [m/s]
-  rtm_forcing,    & ! Total water mixing ratio tendency            [kg/kg/s]
+  wm_zm,         & ! Vertical velocity on moment. grid            [m/s]
+  wm_zt,         & ! Vertical velocity on thermo. grid            [m/s]
+  rtm_forcing,   & ! Total water mixing ratio tendency            [kg/kg/s]
   um_hoc_grid,   & ! Observed wind, for nudging                   [m/s]
-  vm_hoc_grid   ! Observed wind, for nudging                   [m/s]
+  vm_hoc_grid      ! Observed wind, for nudging                   [m/s]
 
 ! Output (optional) Variables
 real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::  & 
@@ -84,7 +82,7 @@ real :: time_frac
 integer :: i1, i2
 
 real, dimension(nz) :: thlm_t_interp, & 
- rtm_t_interp, um_obs_t_interp, vm_obs_t_interp
+  rtm_t_interp, um_obs_t_interp, vm_obs_t_interp
 
 !-----------------------------------------------------------------------
 
@@ -166,12 +164,11 @@ if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 return
 end subroutine arm_0003_tndcy
 !----------------------------------------------------------------------
-subroutine arm_0003_sfclyr & 
-           ( time, z, rho0, & 
-             thlm_sfc, um_sfc, vm_sfc,  & 
-             upwp_sfc, vpwp_sfc, & 
-             wpthlp_sfc, wprtp_sfc, ustar, & 
-             wpsclrp_sfc, wpedsclrp_sfc )
+subroutine arm_0003_sfclyr( time, z, rho0, & 
+                            thlm_sfc, um_sfc, vm_sfc,  & 
+                            upwp_sfc, vpwp_sfc, & 
+                            wpthlp_sfc, wprtp_sfc, ustar, & 
+                            wpsclrp_sfc, wpedsclrp_sfc )
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,
 !       heat and moisture according to GCSS ARM specifications
@@ -204,7 +201,7 @@ real, intent(in) ::  &
   rho0,      & ! Density at zm=1     [kg/m^3] 
   um_sfc,    & ! um at (2)           [m/s]
   vm_sfc,    & ! vm at (2)           [m/s]
-  thlm_sfc  ! thlm at (2)         [m/s]
+  thlm_sfc     ! thlm at (2)         [m/s]
 
 ! Output variables
 real, intent(out) ::  & 
@@ -212,12 +209,12 @@ real, intent(out) ::  &
   vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
   wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
   wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
-  ustar        ! surface friction velocity [m/s]
+  ustar           ! surface friction velocity [m/s]
 
 ! Output variables (optional)
 real, intent(out), optional, dimension(sclr_dim) ::  & 
   wpsclrp_sfc,   & ! Passive scalar surface flux      [units m/s] 
-  wpedsclrp_sfc ! Passive eddy-scalar surface flux [units m/s]
+  wpedsclrp_sfc    ! Passive eddy-scalar surface flux [units m/s]
 
 ! Local variables
 !        real :: ubar, ustar, bflx, heat_flx, moisture_flx, time_frac

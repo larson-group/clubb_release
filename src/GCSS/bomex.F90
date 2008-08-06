@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: bomex.F90,v 1.6 2008-07-31 19:34:16 faschinj Exp $
+! $Id: bomex.F90,v 1.7 2008-08-06 13:53:02 faschinj Exp $
 module bomex
 
 !       Description:
@@ -40,11 +40,11 @@ implicit none
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) :: & 
-  wm_zt,           & ! w wind on thermodynamic grid                 [m/s]
-  wm_zm,           & ! w wind on momentum grid                      [m/s]
+  wm_zt,         & ! w wind on thermodynamic grid                 [m/s]
+  wm_zm,         & ! w wind on momentum grid                      [m/s]
   radht,         & ! Radiative heating rate                       [K/s]
   thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
-  rtm_forcing   ! Total water mixing ratio tendency            [kg/kg/s]
+  rtm_forcing      ! Total water mixing ratio tendency            [kg/kg/s]
 
 ! Output Variables (optional)
 real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
