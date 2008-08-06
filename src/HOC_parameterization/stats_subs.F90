@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F90,v 1.15 2008-08-01 13:18:38 faschinj Exp $
+!  $Id: stats_subs.F90,v 1.16 2008-08-06 13:59:46 faschinj Exp $
 module stats_subs
 
   implicit none
@@ -14,13 +14,9 @@ module stats_subs
   contains
       
 !-----------------------------------------------------------------------
-  subroutine stats_init & 
-             ( iunit, fname_prefix, & 
-               l_stats_in, stats_fmt_in,  & 
-               stats_tsamp_in, stats_tout_in, & 
-               fnamelist, nnzp, gzt, gzm, & 
-               day, month, year, rlat, rlon,  & 
-               time_current, delt )
+  subroutine stats_init( iunit, fname_prefix, l_stats_in, stats_fmt_in, stats_tsamp_in, &
+                         stats_tout_in, fnamelist, nnzp, gzt, gzm, & 
+                         day, month, year, rlat, rlon, time_current, delt )
 
 
 !     Description: Initializes the statistics saving functionality of
@@ -104,15 +100,19 @@ module stats_subs
     integer, intent(in) :: iunit  ! File unit for fnamelist
 
     character(len=*), intent(in) ::  & 
-      fnamelist,    & ! Filename holding the &statsnl
-      fname_prefix, & ! Start of the stats filenames
-      stats_fmt_in ! Format of the stats file output
+      fname_prefix    ! Start of the stats filenames
 
     logical, intent(in) :: l_stats_in ! Stats on? T/F
 
+    character(len=*), intent(in) :: &
+      stats_fmt_in    ! Format of the stats file output
+
     real(kind=time_precision), intent(in) ::  & 
       stats_tsamp_in,  & ! Sampling interval   [s]
-      stats_tout_in   ! Output interval     [s]
+      stats_tout_in      ! Output interval     [s]
+
+    character(len=*), intent(in) :: &
+      fnamelist          ! Filename holding the &statsnl
 
     integer, intent(in) :: nnzp ! Grid points in the vertical [count]
 
@@ -125,10 +125,11 @@ module stats_subs
       rlat, rlon   ! Latitude and Longitude             [Degrees N/E]
 
     real(kind=time_precision), intent(in) ::  & 
-      delt         ! Timestep (dtmain in HOC)           [s]
+      time_current ! Model time                         [s]
 
     real(kind=time_precision), intent(in) ::  & 
-      time_current ! Model time                         [s]
+      delt         ! Timestep (dtmain in HOC)           [s]
+
 
     ! Local Variables
 
