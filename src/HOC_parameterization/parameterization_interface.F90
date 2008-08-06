@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.21 2008-08-05 15:27:24 dschanen Exp $
+! $Id: parameterization_interface.F90,v 1.22 2008-08-06 13:58:44 faschinj Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
@@ -25,16 +25,16 @@ module hoc_parameterization_interface
 
 !-----------------------------------------------------------------------
     subroutine parameterization_timestep & 
-               ( iter, dt, fcor, & 
+               ( iter, implemented, dt, fcor, & 
                  thlm_forcing, rtm_forcing, wm_zm, wm_zt, & 
                  wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
                  p_in_Pa, rho_zm, rho, exner, & 
+                 wpsclrp_sfc, wpedsclrp_sfc,    & ! Optional
                  um, vm, upwp, vpwp, up2, vp2, & 
                  thlm, rtm, wprtp, wpthlp, wp2, wp3, & 
                  rtp2, thlp2, rtpthlp, & 
                  Scm, tau_zm, rcm, cf, & 
-                 err_code, implemented, & 
-                 wpsclrp_sfc, wpedsclrp_sfc,    & ! Optional
+                 err_code,  & 
                  sclrm, sclrm_forcing, edsclrm,  & ! Optional
                  wpsclrp )
 
@@ -230,18 +230,23 @@ module hoc_parameterization_interface
     real, intent(in), dimension(gr%nnzp) ::  & 
       thlm_forcing,   & ! theta_l forcing.        [K/s]
       rtm_forcing,    & ! r_t forcing.            [(kg/kg)/s] 
-      wm_zm,            & ! wm on moment. grid.     [m/s]
-      wm_zt,            & ! wm on thermo. grid.     [m/s]
+      wm_zm,          & ! wm on moment. grid.     [m/s]
+      wm_zt,          & ! wm on thermo. grid.     [m/s]
       p_in_Pa,        & ! Pressure.               [Pa] 
-      rho_zm,           & ! Density on moment. grid [kg/m^3]
-      rho,           & ! Density on thermo. grid [kg/m^3] 
-      exner          ! Exner function.         [-]
+      rho_zm,         & ! Density on moment. grid [kg/m^3]
+      rho,            & ! Density on thermo. grid [kg/m^3] 
+      exner             ! Exner function.         [-]
 
     real, intent(in) ::  & 
       wpthlp_sfc,   & ! w' theta_l' at surface.   [(m K)/s]
       wprtp_sfc,    & ! w' r_t' at surface.       [(kg m)/( kg s)]
       upwp_sfc,     & ! u'w' at surface.          [m^2/s^2]
-      vpwp_sfc     ! v'w' at surface.          [m^2/s^2]
+      vpwp_sfc        ! v'w' at surface.          [m^2/s^2]
+
+    ! Optional Input Variables
+    real, intent(in),  dimension(sclr_dim) ::  & 
+      wpsclrp_sfc,   & ! Scalar flux at surface           [units m/s]
+      wpedsclrp_sfc    ! Eddy-Scalar flux at surface      [units m/s]
 
        ! Input/Output
        ! These are prognostic or are planned to be in the future
@@ -262,7 +267,7 @@ module hoc_parameterization_interface
       rtp2,     & ! r_t'^2.                       [(kg/kg)^2]
       thlp2,    & ! th_l'^2.                      [K^2]
       rtpthlp,  & ! r_t' th_l'.                   [(kg K)/kg]
-      tau_zm,     & ! Tau on moment. grid.          [s]
+      tau_zm,   & ! Tau on moment. grid.          [s]
       rcm         ! Liquid water mixing ratio.    [kg/kg]
 
     ! Needed for output for host models
@@ -272,11 +277,6 @@ module hoc_parameterization_interface
     ! Diagnostic, for if some calculation goes amiss.
     integer, intent(inout) :: err_code
      
-    ! Optional Input Variables
-    real, intent(in),  dimension(sclr_dim) ::  & 
-      wpsclrp_sfc,   & ! Scalar flux at surface           [units m/s]
-      wpedsclrp_sfc    ! Eddy-Scalar flux at surface      [units m/s]
-
     ! Optional Input/Output Variables
     real, intent(inout), dimension(gr%nnzp,sclr_dim) :: & 
       sclrm,         & ! Passive scalar mean.           [units vary]
@@ -699,8 +699,9 @@ module hoc_parameterization_interface
     ! Compute mixing length
     !----------------------------------------------------------------
 
-    call compute_length( thvm, thlm, rtm, rcm, em, p_in_Pa, exner, & ! intent(in)
-                         Lscale, err_code )                           ! intent(out)
+    call compute_length( thvm, thlm, rtm, rcm, em, p_in_Pa, exner, &    ! intent(in)
+                         err_code, &                                    ! intent(inout)
+                         Lscale )                                       ! intent(out)
        
     ! Subroutine may produce NaN values, and if so, exit
     ! gracefully.
