@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.27 2008-08-07 16:10:13 griffinb Exp $
+! $Id: wp23.F90,v 1.28 2008-08-07 16:24:32 griffinb Exp $
 !===============================================================================
 module wp23
 
@@ -25,8 +25,7 @@ private :: wp23_solve, &
            wp3_term_pr1_lhs, & 
            wp3_terms_ta_tp_rhs, & 
            wp3_terms_bp_pr2_rhs, & 
-           wp3_term_pr1_rhs, & 
-           wp23_clip
+           wp3_term_pr1_rhs 
 
 contains
 
