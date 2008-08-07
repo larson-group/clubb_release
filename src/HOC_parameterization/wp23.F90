@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.25 2008-08-06 21:38:59 faschinj Exp $
+! $Id: wp23.F90,v 1.26 2008-08-07 13:53:20 griffinb Exp $
 !===============================================================================
 module wp23
 
@@ -85,7 +85,7 @@ real(kind=time_precision), intent(in) ::  &
   dt             ! Timestep                                 [s]
 
 real, intent(in), dimension(gr%nnzp) ::  & 
-  sigma_sqd_w,         & ! sigma_sqd_w on momentum levels                    [-]
+  sigma_sqd_w, & ! sigma_sqd_w on momentum levels           [-]
   wm_zm,       & ! w wind component on momentum levels      [m/s]
   wm_zt,       & ! w wind component on thermodynamic levels [m/s]
   wpthvp,      & ! w'th_v' (momentum levels)                [K m/s]
@@ -402,7 +402,7 @@ real(kind=time_precision), intent(in) ::  &
   dt              ! Timestep                                  [s]
 
 real, intent(in), dimension(gr%nnzp) ::  & 
-  sigma_sqd_w,          & ! sigma_sqd_w on momentum levels                     [-]
+  sigma_sqd_w,  & ! sigma_sqd_w on momentum levels            [-]
   wm_zm,        & ! w wind component on momentum levels       [m/s]
   wm_zt,        & ! w wind component on thermodynamic levels  [m/s]
   wpthvp,       & ! w'th_v' (momentum levels)                 [K m/s]
@@ -486,8 +486,8 @@ endif
  
 
 ! Define a_1 and a_3 (both are located on momentum levels).
-! They are variables that are both functions of sigma_sqd_w (where sigma_sqd_w is
-! located on momentum levels).
+! They are variables that are both functions of sigma_sqd_w (where 
+! sigma_sqd_w is located on momentum levels).
 ! Note: some compilers appear to interpret the pow function with
 ! a positive integer exponent differently than a repeated
 ! multiply. -dschanen 19 March 2007
@@ -1963,8 +1963,8 @@ result( lhs )
 !
 ! w'^4 = (a_3 + 3/2) * (w'^2)^2  +  a_1 * ( (w'^3)^2 / w'^2 );
 !
-! where a_1 and a_3 are variables that are both functions of sigma_sqd_w.  The turbulent 
-! production term is rewritten as:
+! where a_1 and a_3 are variables that are both functions of sigma_sqd_w.  The 
+! turbulent production term is rewritten as:
 !
 ! + 3 w'^2 d(w'^2)/dz = + (3/2) d( (w'^2)^2 )/dz.
 !
@@ -2295,8 +2295,8 @@ result( rhs )
 !
 ! w'^4 = (a_3 + 3/2) * (w'^2)^2  +  a_1 * ( (w'^3)^2 / w'^2 );
 !
-! where a_1 and a_3 are variables that are both functions of sigma_sqd_w.  The turbulent 
-! production term is rewritten as:
+! where a_1 and a_3 are variables that are both functions of sigma_sqd_w.  The 
+! turbulent production term is rewritten as:
 !
 ! + 3 w'^2 d(w'^2)/dz = + (3/2) d( (w'^2)^2 )/dz.
 !

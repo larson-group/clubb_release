@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F90,v 1.19 2008-08-06 21:38:58 faschinj Exp $
+! $Id: diag_var.F90,v 1.20 2008-08-07 13:53:20 griffinb Exp $
 !===============================================================================
 module diagnose_variances
 
@@ -116,28 +116,28 @@ implicit none
 
 ! Input variables
 real, intent(in), dimension(gr%nnzp) ::  & 
-  tau_zm, & ! Tau on moment. grid            [s]
-  wm_zm,  & ! w wind on m                    [m/s]
-  rtm,    & ! Total water mixing ratio       [kg/kg]
-  wprtp,  & ! w' r_t'                        [(m kg)/(s kg)]
-  thlm,   & ! Liquid potential temp.         [K]
-  wpthlp, & ! w' th_l'                       [(m K)/s]
-  wpthvp, & ! w' th_v'                       [(m K)/s]
-  um,     & ! u wind                         [m/s]
-  vm,     & ! v wind                         [m/s]
-  wp2,    & ! w'^2                           [m^2/s^2]
-  wp3,    & ! w'^3                           [m^3/s^3]
-  upwp,   & ! u'w'                           [m^2/s^2]
-  vpwp,   & ! u'w'                           [m^2/s^2]
-  sigma_sqd_w,    & ! sigma_sqd_w on moment. grid             [-]
-  Skw_zm, & ! Skw on moment. grid            [-]
-  Kh_zt,  & ! Eddy diffusivity on t-lev.     [m^2/s]
-  wp2_zt    ! w'^2 interpolated to thermodynamic levels     [m^2/s^2]
+  tau_zm,      & ! Tau on momentum grid                          [s]
+  wm_zm,       & ! w wind on m                                   [m/s]
+  rtm,         & ! Total water mixing ratio                      [kg/kg]
+  wprtp,       & ! w' r_t'                                       [(m kg)/(s kg)]
+  thlm,        & ! Liquid potential temp.                        [K]
+  wpthlp,      & ! w' th_l'                                      [(m K)/s]
+  wpthvp,      & ! w' th_v'                                      [(m K)/s]
+  um,          & ! u wind                                        [m/s]
+  vm,          & ! v wind                                        [m/s]
+  wp2,         & ! w'^2                                          [m^2/s^2]
+  wp3,         & ! w'^3                                          [m^3/s^3]
+  upwp,        & ! u'w'                                          [m^2/s^2]
+  vpwp,        & ! v'w'                                          [m^2/s^2]
+  sigma_sqd_w, & ! sigma_sqd_w on momentum grid                  [-]
+  Skw_zm,      & ! Skw on moment. grid                           [-]
+  Kh_zt,       & ! Eddy diffusivity on t-lev.                    [m^2/s]
+  wp2_zt         ! w'^2 interpolated to thermodynamic levels     [m^2/s^2]
 
 logical, intent(in) :: liter ! Whether variances are prognostic
 
 real(kind=time_precision), intent(in) :: &
-  dt        ! Model timestep                 [s]
+  dt             ! Model timestep                                [s]
         
 ! Passive scalar input 
 real, intent(in), dimension(gr%nnzp, sclr_dim) ::  & 
@@ -246,8 +246,8 @@ else
 endif
 
 ! Define a_1 (located on momentum levels).
-! It is a variable that is a function of sigma_sqd_w (where sigma_sqd_w is located on the 
-! momentum levels).
+! It is a variable that is a function of sigma_sqd_w (where sigma_sqd_w is 
+! located on the momentum levels).
 a1(1:gr%nnzp) = 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nnzp) )
 
 ! wtol_sqd = the square of the minimum threshold on w,
@@ -753,25 +753,25 @@ integer, parameter :: &
   km1_mdiag = 3    ! Momentum subdiagonal index.
 
 real(kind=time_precision), intent(in) :: & 
-  dt        ! Timestep length                             [s]
+  dt        ! Timestep length                                [s]
 
 logical, intent(in) :: & 
   liter  ! Whether the variances are prognostic
 
 ! Input Variables
 real, dimension(gr%nnzp), intent(in) :: & 
-  a1,     & ! sigma_sqd_w-related term a_1 (momentum levels)      [-]
-  wp2_zt, & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
-  wp3,    & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
-  tau_zm, & ! Time-scale tau on momentum levels           [s]
-  wm_zm,  & ! w wind component on momentum levels         [m/s]
-  Kw,     & ! Coefficient of eddy diffusivity (all vars.) [m^2/s]
-  Cn        ! Coefficient C_n                             [-]
+  a1,     & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
+  wp2_zt, & ! w'^2 interpolated to thermodynamic levels      [m^2/s^2]
+  wp3,    & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+  tau_zm, & ! Time-scale tau on momentum levels              [s]
+  wm_zm,  & ! w wind component on momentum levels            [m/s]
+  Kw,     & ! Coefficient of eddy diffusivity (all vars.)    [m^2/s]
+  Cn        ! Coefficient C_n                                [-]
 
 real, intent(in) :: & 
-  nu,    &  ! Background constant coef. of eddy diff.     [-]
-  beta,  &  ! Constant model parameter beta               [-]
-  wtol_sqd  ! w wind component tolerance squared          [m^2/s^2]
+  nu,    &  ! Background constant coef. of eddy diff.        [-]
+  beta,  &  ! Constant model parameter beta                  [-]
+  wtol_sqd  ! w wind component tolerance squared             [m^2/s^2]
 
 ! Output Variables
 real, dimension(3,gr%nnzp), intent(out) :: & 
@@ -1138,34 +1138,34 @@ implicit none
 character(len=*), intent(in) :: solve_type
 
 real(kind=time_precision), intent(in) :: & 
-  dt          ! Timestep                                    [s]
+  dt          ! Model timestep                                 [s]
 
 logical, intent(in) :: & 
   liter  ! Whether x is prognostic (T/F)
 
 real, dimension(gr%nnzp), intent(in) :: & 
-  a1,       & ! sigma_sqd_w-related term a_1 (momentum levels)      [-]
-  wp2,      & ! w'^2 (momentum levels)                      [m^2/s^2]
-  wp2_zt,   & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
-  wp3,      & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
-  wpthvp,   & ! w'th_v' (momentum levels)                   [K m/s]
-  tau_zm,   & ! Time-scale tau on momentum levels           [s]
-  xam,      & ! x_am (thermodynamic levels)                 [m/s]
-  xbm,      & ! x_bm (thermodynamic levels)                 [m/s]
-  wpxap,    & ! w'x_a' (momentum levels)                    [m^2/s^2]
-  wpxap_zt, & ! w'x_a' interpolated to thermodynamic levels [m^2/s^2]
-  wpxbp,    & ! w'x_b' (momentum levels)                    [m^2/s^2]
-  wpxbp_zt, & ! w'x_b' interpolated to thermodynamic levels [m^2/s^2]
-  xap2,     & ! x_a'^2 (momentum levels)                    [m^2/s^2]
-  xbp2        ! x_b'^2 (momentum levels)                    [m^2/s^2]
+  a1,       & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
+  wp2,      & ! w'^2 (momentum levels)                         [m^2/s^2]
+  wp2_zt,   & ! w'^2 interpolated to thermodynamic levels      [m^2/s^2]
+  wp3,      & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+  wpthvp,   & ! w'th_v' (momentum levels)                      [K m/s]
+  tau_zm,   & ! Time-scale tau on momentum levels              [s]
+  xam,      & ! x_am (thermodynamic levels)                    [m/s]
+  xbm,      & ! x_bm (thermodynamic levels)                    [m/s]
+  wpxap,    & ! w'x_a' (momentum levels)                       [m^2/s^2]
+  wpxap_zt, & ! w'x_a' interpolated to thermodynamic levels    [m^2/s^2]
+  wpxbp,    & ! w'x_b' (momentum levels)                       [m^2/s^2]
+  wpxbp_zt, & ! w'x_b' interpolated to thermodynamic levels    [m^2/s^2]
+  xap2,     & ! x_a'^2 (momentum levels)                       [m^2/s^2]
+  xbp2        ! x_b'^2 (momentum levels)                       [m^2/s^2]
 
 real, intent(in) :: & 
-  C4,       & ! Model parameter C_4                         [-]
-  C5,       & ! Model parameter C_5                         [-]
-  C14,      & ! Model parameter C_14                        [-]
-  T0,       & ! Reference temperature                       [K]
-  beta,     & ! Model parameter beta                        [-]
-  wtol_sqd    ! w wind component tolerance squared          [m^2/s^2]
+  C4,       & ! Model parameter C_4                            [-]
+  C5,       & ! Model parameter C_5                            [-]
+  C14,      & ! Model parameter C_14                           [-]
+  T0,       & ! Reference temperature                          [K]
+  beta,     & ! Model parameter beta                           [-]
+  wtol_sqd    ! w wind component tolerance squared             [m^2/s^2]
 
 real, dimension(gr%nnzp,1), intent(out) :: & 
   rhs    ! Explicit contributions to x variance/covariance terms
@@ -1350,24 +1350,24 @@ implicit none
 character(len=*), intent(in) :: solve_type
 
 real(kind=time_precision), intent(in) :: & 
-  dt          ! Timestep                                    [s]
+  dt          ! Model timestep                                  [s]
 
 logical, intent(in) :: & 
   liter   ! Whether x is prognostic (T/F)
 
 real, dimension(gr%nnzp), intent(in) :: & 
-  a1,       & ! sigma_sqd_w-related term a_1 (momentum levels)      [-]
-  wp2_zt,   & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
-  wp3,      & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
-  wpxap,    & ! w'x_a' (momentum levels)                    [m/s {x_am units}]
-  wpxap_zt, & ! w'x_a' interpolated to thermodynamic levels [m/s {x_am units}]
-  wpxbp,    & ! w'x_b' (momentum levels)                    [m/s {x_bm units}]
-  wpxbp_zt, & ! w'x_b' interpolated to thermodynamic levels [m/s {x_bm units}]
-  xam,      & ! x_am (thermodynamic levels)                 [{x_am units}]
-  xbm,      & ! x_bm (thermodynamic levels)                 [{x_bm units}]
-  xapxbp,   & ! x_a'x_b' (momentum levels)                  [{x_am units}*{x_bm units}]
-  tau_zm,   & ! Time-scale tau on momentum levels           [s]
-  Cn          ! Coefficient C_n                             [-]
+  a1,       & ! sigma_sqd_w-related term a_1 (momentum levels)  [-]
+  wp2_zt,   & ! w'^2 interpolated to thermodynamic levels       [m^2/s^2]
+  wp3,      & ! w'^3 (thermodynamic levels)                     [m^3/s^3]
+  wpxap,    & ! w'x_a' (momentum levels)                        [m/s {x_am units}]
+  wpxap_zt, & ! w'x_a' interpolated to thermodynamic levels     [m/s {x_am units}]
+  wpxbp,    & ! w'x_b' (momentum levels)                        [m/s {x_bm units}]
+  wpxbp_zt, & ! w'x_b' interpolated to thermodynamic levels     [m/s {x_bm units}]
+  xam,      & ! x_am (thermodynamic levels)                     [{x_am units}]
+  xbm,      & ! x_bm (thermodynamic levels)                     [{x_bm units}]
+  xapxbp,   & ! x_a'x_b' (momentum levels)                      [{x_am units}*{x_bm units}]
+  tau_zm,   & ! Time-scale tau on momentum levels               [s]
+  Cn          ! Coefficient C_n                                 [-]
 
 real, intent(in) :: &
   threshold, & ! Smallest allowable magnitude value for x_a'x_b' [{x_am units}
@@ -1517,8 +1517,8 @@ result( lhs )
 !                 + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 ) 
 !                   * w'x_a' * w'x_b';
 !
-! where a_1 is a variable that is a function of sigma_sqd_w.  The turbulent advection 
-! term is rewritten as:
+! where a_1 is a variable that is a function of sigma_sqd_w.  The turbulent 
+! advection term is rewritten as:
 !
 ! - d [ (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
 !          + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 ) 
@@ -1691,8 +1691,8 @@ result( rhs )
 !                 + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
 !                   * w'x_a' * w'x_b';
 !
-! where a_1 is a variable that is a function of sigma_sqd_w.  The turbulent advection 
-! term is rewritten as:
+! where a_1 is a variable that is a function of sigma_sqd_w.  The turbulent 
+! advection term is rewritten as:
 !
 ! - d [ (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
 !          + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
