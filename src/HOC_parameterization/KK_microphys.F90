@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F90,v 1.10 2008-08-04 17:03:02 faschinj Exp $
+! $Id: KK_microphys.F90,v 1.11 2008-08-07 14:00:59 faschinj Exp $
 
 module rain_equations
 
@@ -91,7 +91,7 @@ REAL, PARAMETER:: r_0 = 25.0e-6   ! Assumed radius of all new drops; m.
 CONTAINS
 
   subroutine kk_microphys & 
-             ( T_in_K, p, exner, rho,  & 
+             ( T_in_K, p_in_Pa, exner, rho,  & 
                thl1, thl2, a, rc1, rc2, s1, & 
                s2, ss1, ss2, rcm, Ncm, rrainm, Nrm,  & 
                lsample,  AKm, & 
@@ -152,7 +152,7 @@ CONTAINS
   ! Input
   real, intent(in), dimension(gr%nnzp) :: & 
   T_in_K,     & ! Temperature                        [K]
-  p,          & ! Pressure                           [Pa]
+  p_in_Pa,          & ! Pressure                           [Pa]
   exner,      & ! Exner function                     [-]
   rho,       & ! Density on thermo. grid            [kg/m^3]
   thl1, thl2, & ! PDF parameters thl1 &thl2          [K]
@@ -477,7 +477,7 @@ CONTAINS
 !           e = (p(k)*rvm(k))/(ep + rvm(k))
 
      ! Saturation mixing ratio
-     rsat(k) = sat_mixrat_liq( p(k), T_in_K(k) )
+     rsat(k) = sat_mixrat_liq( p_in_Pa(k), T_in_K(k) )
 
      ! Find saturation vapor pressure.
 !           esat(k) = (p(k)*rsat(k))/(ep + rsat(k))
@@ -510,7 +510,7 @@ CONTAINS
        ( rrainm(k), Nrm(k), & 
          s1(k), ss1(k), s2(k), ss2(k), & 
          thl1(k), thl2(k), rc1(k), rc2(k), a(k), & 
-         p(k), exner(k), T_in_K(k), Supsat(k),  & 
+         p_in_Pa(k), exner(k), T_in_K(k), Supsat(k),  & 
          rrp2_rrainm2(k), Nrp2_Nrm2(k), corr_srr_NL(k), & 
          corr_sNr_NL(k), corr_rrNr_LL(k) )
 
