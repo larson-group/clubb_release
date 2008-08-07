@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.26 2008-08-07 13:53:20 griffinb Exp $
+! $Id: wp23.F90,v 1.27 2008-08-07 16:10:13 griffinb Exp $
 !===============================================================================
 module wp23
 
@@ -325,12 +325,14 @@ use error_code, only:  &
     lapack_error ! Procedure(s)
 
 use explicit_clip, only: &
-    variance_clip ! Procedure(s)
+    variance_clip, & ! Procedure(s)
+    skewness_clip
  
 use stats_type, only: & 
     stat_begin_update,  & ! Procedure(s)
-    stat_update_var_pt, stat_end_update,  & ! Procedure(s)
-    stat_end_update_pt  ! Procedure(s)
+    stat_update_var_pt, &
+    stat_end_update,  &
+    stat_end_update_pt
 
 use stats_variables, only:  & 
     zm,         & ! Variable(s)
@@ -349,7 +351,6 @@ use stats_variables, only:  &
     iwp3_bt, & 
     iwp3_ta, & 
     iwp3_ma, & 
-    iwp3_cl, & 
     iwp3_tp, & 
     iwp3_ac, & 
     iwp3_dp1, & 
@@ -447,23 +448,13 @@ real, dimension(gr%nnzp) ::  &
 real, dimension(gr%nnzp) ::  & 
   a1_zt,  & ! a_1 interpolated to thermodynamic levels        [-]
   a3_zt,  & ! a_3 interpolated to thermodynamic levels        [-]
-  wp2_zt    ! w'^2 interpolated to thermodyamic levels        [m^2/s^2
+  wp2_zt    ! w'^2 interpolated to thermodyamic levels        [m^2/s^2]
 
 !        real, dimension(gr%nnzp) ::
 !     .  wp2_n ! w'^2 at the previous timestep           [m^2/s^2]
 
 real ::  & 
   rcond  ! Est. of the reciprocal of the condition #
-
-! Variables used for clipping of w'^3 due to the 
-! skewness of w, Sk_w, such that:
-! Sk_w = w'^3 / (w'^2)^(3/2);
-! -4.5 <= Sk_w <= 4.5; 
-! or, if the level altitude is within 100 meters of the surface,
-! -0.2*sqrt(2) <= Sk_w <= 0.2*sqrt(2).
-real, dimension(gr%nnzp) :: &
-  wp3_upper_lim, & ! Keeps Sk_w from becoming greater than the upper limit.
-  wp3_lower_lim    ! Keeps Sk_w from becoming less than the lower limit.
 
 ! Array indices
 integer :: k, km1, kp1, k_wp2, k_wp3
@@ -633,13 +624,13 @@ if (l_stats_samp) then
        ztscr16(k) * wp3(k), zt )
 
   enddo
-end if ! l_stats_samp
+endif ! l_stats_samp
  
 
 if ( l_stats_samp ) then
    ! Store previous value for effect of the positive definite scheme
    call stat_begin_update( iwp2_pd, real( wp2 / dt ), zm )
-end if 
+endif 
  
 if ( l_hole_fill .and. any( wp2 < 2./3*emin ) ) then
 
@@ -651,7 +642,7 @@ endif ! wp2
 if ( l_stats_samp ) then
   ! Store updated value for effect of the positive definite scheme
   call stat_end_update( iwp2_pd, real( wp2 / dt ), zm )
-end if
+endif
  
 
 ! Clip w'^2 at a minimum threshold.
@@ -662,37 +653,8 @@ call variance_clip( "wp2", dt, 2./3.*emin, wp2 )
 ! of Sk_w now that w'^2 and w'^3 have been advanced one timestep.
 wp2_zt = max( zm2zt( wp2 ), 2./3.*emin )   ! Positive definite quantity
 
-! Compute the upper and lower limits of w'^3 at every level,
-! based on the skewness of w, Sk_w, such that:
-! Sk_w = w'^3 / (w'^2)^(3/2);
-! -4.5 <= Sk_w <= 4.5; 
-! or, if the level altitude is within 100 meters of the surface,
-! -0.2*sqrt(2) <= Sk_w <= 0.2*sqrt(2).
-do k = 1, gr%nnzp, 1
-   if ( gr%zt(k) <= 100.0 ) then ! Clip for 100 m. above ground.
-      wp3_upper_lim(k) =  0.2 * sqrt(2.0) * wp2_zt(k)**(3.0/2.0)
-      wp3_lower_lim(k) = -0.2 * sqrt(2.0) * wp2_zt(k)**(3.0/2.0)
-   else                          ! Clip skewness consistently with a.
-      wp3_upper_lim(k) =  4.5 * wp2_zt(k)**(3.0/2.0)
-      wp3_lower_lim(k) = -4.5 * wp2_zt(k)**(3.0/2.0)
-   endif
-enddo
-
-if ( l_stats_samp ) then
-  ! Store previous value of wp3 for the effect of the clipping term
-  call stat_begin_update( iwp3_cl, real( wp3 / dt ), zt )
-end if
-
 ! Clip w'^3 by limiting skewness.
-do k = 1, gr%nnzp, 1
-
-   call wp23_clip( wp2_zt(k), gr%zt(k), emin, wp2(k), wp3(k) )
-
-enddo
-
-if (l_stats_samp) then           
-  call stat_end_update ( iwp3_cl, real( wp3 / dt ), zt )
-endif
+call skewness_clip( dt, wp2_zt, wp3 )
  
 
 if (l_stats_samp) then
@@ -2513,99 +2475,6 @@ rhs &
 
 return
 end function wp3_term_pr1_rhs
-
-!===============================================================================
-subroutine wp23_clip( wp2_zt, zt, emin, wp2, wp3 )
-
-! Description:
-! After w'^2 and w'^3 have been advanced one timestep, this subroutine clips the
-! value of w'^3 if the skewness of w is greater than 4.5 or less than -4.5.  It 
-! also employs a special surface clipping of w'^3, where w'^3 cannot be greater 
-! than 0.2 * sqrt(2) * Sk_w or less than -0.2 * sqrt(2) * Sk_w 
-! (Andre et al., 1976b, 1978).  This subroutine also ensures that w'^2 doesn't 
-! fall below it's minimum threshold value.
-
-! References:
-!-----------------------------------------------------------------------
-
-implicit none
-
-! Input Variables.
-real, intent(in) :: & 
-  wp2_zt, & ! w'^2 interpolated to thermodynamic levels (k) [m^2/s^2]
-  zt,     & ! Height at thermodynamic level (k)             [m]
-  emin      ! Model parameter                               [m^2/s^2]
-
-! Input/Output Variables
-real, intent(inout) :: & 
-  wp2,    & ! w'^2 (k)                                      [m^2/s^2]
-  wp3       ! w'^3 (k)                                      [m^3/s^3]
-
-! Local Variables
-real ::  & 
-  atmp,   & ! max(w'^2, eps) at thermodynamic level (k)     [m^2/s^2]
-  ctmp      ! atmp^(3/2)                                    [m^3/s^3]
-
-
-!  Vince Larson commented out the Andre et al clipping to see if we
-!  could avoid using it.  26 Jul 2007
-!  Brian and Vince undid the change because Wangara case still needs
-!  the Andre et al clipping.  27 Jul 2007.
-! Clipping wp3 at the first layer above ground according to
-! Andre et al. (1976b & 1978).
-! According to Andre et al. (1976b & 1978), wp3 should not
-! exceed [2*(wp2^3)]^(1/2) at any level.  However, this term
-! should be multiplied by 0.2 close to the surface to include
-! surface effects.  There already is a wp3 clipping term in
-! place for all other altitudes, but this term will be
-! included for the surface layer only.
-! Therefore, the lowest level wp3 should not exceed
-! 0.2 * sqrt(2) * wp2^(3/2).  Brian Griffin.  12/18/05.
-
-! NOTE: Clipping not good; must try to get rid of.  Affects only
-!       Wangara case.
-
-if ( zt <= 100.0 ) then ! Clip for 100 m. above ground.
-
-   atmp = max( wp2_zt, 2./3.*emin )    ! w'^2 at t-levels
-   ctmp = atmp**(3.0/2.0)              ! (w'^2)^(3/2)
-   if ( wp3 >= 0.2 * sqrt(2.0) * ctmp ) then
-      wp3 = 0.2 * sqrt(2.0) * ctmp
-      ! Vince Larson added clipping for negative wp3
-      !     in order to stabilize arm_3year    12 Dec 2007
-   elseif ( wp3 <= -0.2 * sqrt(2.0) * ctmp ) then
-      wp3 = -0.2 * sqrt(2.0) * ctmp
-      ! End Vince Larson's addition
-   endif
-
-else
-
-   ! Clip skewness consistently with a
-   ! NOTE: atmp is wp2 interpolated to thermodynamic levels
-   !       (with the added insurance that it cannot be negative
-   !       or zero).  wp2 should not be set equal to atmp
-   !       because atmp is the value at a thermodynamic level,
-   !       whereas wp2 is located at a momentum level.  The
-   !       only effect of that piece of code is to mistakenly
-   !       lift the wp2 value in altitude one-half grid box
-   !       every time it is called.  The line is unnecessary,
-   !       and can be commented out.  Brian Griffin. 6/30/07.
-   atmp = max( wp2_zt, 2./3.*emin )    ! w'^2 at t-levels
-   ctmp = atmp**1.5                    ! (w'^2)^(3/2)
-   if ( wp3/ctmp > 4.5 ) then          ! Sk_w > 4.5
-      wp3 = 4.5 * ctmp                 ! w'^3 = 4.5 * Sk_w
-      !wp2 = atmp
-   elseif ( wp3/ctmp < -4.5 ) then     ! Sk_w < -4.5
-      wp3 = -4.5 * ctmp                ! w'^3 = -4.5 * Sk_w
-      !wp2 = atmp
-   endif
-
-endif
-! End of Vince Larson's commenting of Andre et al clipping.
-
-
-return
-end subroutine wp23_clip
 
 !===============================================================================
 

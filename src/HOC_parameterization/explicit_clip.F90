@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: explicit_clip.F90,v 1.7 2008-08-03 16:40:06 griffinb Exp $
+! $Id: explicit_clip.F90,v 1.8 2008-08-07 16:10:13 griffinb Exp $
 !===============================================================================
 module explicit_clip
 
@@ -238,7 +238,7 @@ endif
 end subroutine variance_clip
 
 !===============================================================================
-subroutine skewness_clip( dt, wp3_upper_lim, wp3_lower_lim, wp3 )
+subroutine skewness_clip( dt, wp2_zt, wp3 )
 
 ! Description:
 ! Clipping the value of w'^3 based on the skewness of w, Sk_w.
@@ -294,20 +294,51 @@ implicit none
 
 ! Input Variables
 real(kind=time_precision), intent(in) :: & 
-  dt               ! Model timestep; used here for STATS     [s]
+  dt               ! Model timestep; used here for STATS        [s]
 
 real, dimension(gr%nnzp), intent(in) :: &
-  wp3_upper_lim, & ! Keeps Sk_w from becoming > upper_limit  [m^3/s^3]
-  wp3_lower_lim    ! Keeps Sk_w from becoming < lower_limit  [m^3/s^3]
+  wp2_zt           ! w'^2 interpolated to thermodyamic levels   [m^2/s^2]
 
 ! Input/Output Variables
 real, dimension(gr%nnzp), intent(inout) :: &
-  wp3              ! w'^3 (thermodynamic levels)             [m^3/s^3]
+  wp3              ! w'^3 (thermodynamic levels)                [m^3/s^3]
+
+! Local Variables
+real, dimension(gr%nnzp) :: &
+  wp3_upper_lim, & ! Keeps Sk_w from becoming > upper_limit     [m^3/s^3]
+  wp3_lower_lim    ! Keeps Sk_w from becoming < lower_limit     [m^3/s^3]
+
+integer :: k       ! Vertical array index.
 
 
 if ( l_stats_samp ) then 
    call stat_begin_update( iwp3_cl, real( wp3 / dt ), zt )
 endif
+
+! Compute the upper and lower limits of w'^3 at every level,
+! based on the skewness of w, Sk_w, such that:
+! Sk_w = w'^3 / (w'^2)^(3/2);
+! -4.5 <= Sk_w <= 4.5; 
+! or, if the level altitude is within 100 meters of the surface,
+! -0.2*sqrt(2) <= Sk_w <= 0.2*sqrt(2).
+
+! The normal magnitude limit of skewness of w in the CLUBB code is 4.5.
+! However, according to Andre et al. (1976b & 1978), wp3 should not exceed 
+! [2*(wp2^3)]^(1/2) at any level.  However, this term should be multiplied 
+! by 0.2 close to the surface to include surface effects.  There already is 
+! a wp3 clipping term in place for all other altitudes, but this term will be
+! included for the surface layer only.  Therefore, the lowest level wp3 should 
+! not exceed 0.2 * sqrt(2) * wp2^(3/2).  Brian Griffin.  12/18/05.
+
+do k = 1, gr%nnzp, 1
+   if ( gr%zt(k) <= 100.0 ) then ! Clip for 100 m. above ground.
+      wp3_upper_lim(k) =  0.2 * sqrt(2.0) * wp2_zt(k)**(3.0/2.0)
+      wp3_lower_lim(k) = -0.2 * sqrt(2.0) * wp2_zt(k)**(3.0/2.0)
+   else                          ! Clip skewness consistently with a.
+      wp3_upper_lim(k) =  4.5 * wp2_zt(k)**(3.0/2.0)
+      wp3_lower_lim(k) = -4.5 * wp2_zt(k)**(3.0/2.0)
+   endif
+enddo
 
 ! Clipping for w'^3 at an upper limit corresponding with 
 ! the appropriate value of Sk_w.
