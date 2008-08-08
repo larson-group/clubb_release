@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F90,v 1.18 2008-08-08 14:47:20 faschinj Exp $
+!  $Id: stats_subs.F90,v 1.19 2008-08-08 15:04:15 faschinj Exp $
 module stats_subs
 
   implicit none
@@ -782,7 +782,7 @@ module stats_subs
           iug, & 
           ivg, & 
           icf, & 
-          ip, & 
+          ip_in_Pa, & 
           iexner, & 
           iLscale, & 
           iwp3, & 
@@ -1042,7 +1042,7 @@ module stats_subs
         call stat_update_var( iug, ug, zt )
         call stat_update_var( ivg, vg, zt )
         call stat_update_var( icf, cf, zt )
-        call stat_update_var( ip, p_in_Pa, zt )
+        call stat_update_var( ip_in_Pa, p_in_Pa, zt )
         call stat_update_var( iexner, exner, zt )
         call stat_update_var( iLscale, Lscale, zt )
         call stat_update_var( iwp3, wp3, zt )

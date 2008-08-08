@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F90,v 1.13 2008-08-08 14:47:20 faschinj Exp $
+! $Id: stats_zt.F90,v 1.14 2008-08-08 15:04:16 faschinj Exp $
  
 module stats_zt
 
@@ -30,7 +30,7 @@ use stats_variables, only: &
     iug, & 
     ivg, & 
     icf, & 
-    ip, & 
+    ip_in_Pa, & 
     iexner, & 
     iLscale, & 
     iwp3, & 
@@ -210,7 +210,7 @@ iwm_zt          = 0
 iug           = 0
 ivg           = 0
 icf           = 0
-ip            = 0
+ip_in_Pa            = 0
 iexner        = 0
 iLscale       = 0
 iwp3          = 0
@@ -450,8 +450,8 @@ do i=1,zt%nn
          "cloud fraction", "count",zt)
     k = k + 1
   case ('p_in_Pa')
-    ip = k
-    call stat_assign(ip,"p_in_Pa", & 
+    ip_in_Pa = k
+    call stat_assign(ip_in_Pa,"p_in_Pa", & 
          "pressure (Pa)","Pa",zt)
     k = k + 1
   case ('exner')
