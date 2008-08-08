@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F90,v 1.13 2008-08-06 21:38:59 faschinj Exp $
+! $Id: diag_variables.F90,v 1.14 2008-08-08 14:48:38 faschinj Exp $
 module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -24,12 +24,12 @@ real, target, allocatable, dimension(:), public :: &
   sigma_sqd_w_zt,     & ! PDF width parameter: t point          [-]
   Skw_zm,    & ! Skw on moment. grid                   [-]
   Skw_zt,    & ! Skw on thermo. grid                   [-]
-  ug,      & ! u geostrophic wind                    [m/s]
-  vg,      & ! v geostrophic wind                    [m/s]
-  um_ref,  & ! Initial u wind; Michael Falk,         [m/s]
-  vm_ref,  & ! Initial v wind; Michael Falk,         [m/s]
-  thvm,    & ! Virtual potential Temperature         [K]
-  shear   ! Wind shear production
+  ug,        & ! u geostrophic wind                    [m/s]
+  vg,        & ! v geostrophic wind                    [m/s]
+  um_ref,    & ! Initial u wind; Michael Falk,         [m/s]
+  vm_ref,    & ! Initial v wind; Michael Falk,         [m/s]
+  thvm,      & ! Virtual potential Temperature         [K]
+  shear        ! Wind shear production
 
 !$omp   threadprivate(sigma_sqd_w_zt, Skw_zm, Skw_zt, ug, vg)
 !$omp   threadprivate(thvm, shear)
@@ -37,18 +37,18 @@ real, target, allocatable, dimension(:), public :: &
 
 real, target, allocatable, dimension(:), public :: & 
   rsat ! Saturation mixing ratio  ! Brian
-  !$omp   threadprivate(rsat)
+       !$omp   threadprivate(rsat)
 
 real, target, allocatable, dimension(:), public :: & 
   Frad,  & ! Radiative flux (momentum point)
-  radht ! SW + LW heating rate
+  radht    ! SW + LW heating rate
 
 !$omp   threadprivate(Frad, radht)
 
 ! Tendency arrays for u and v wind
 real, target, allocatable, dimension(:), public :: & 
   umt,     & ! u wind [m/s^2]
-  vmt     ! v wind [m/s^2]
+  vmt        ! v wind [m/s^2]
 
 !$omp   threadprivate(umt, vmt)
 
@@ -57,7 +57,7 @@ real, target, allocatable, dimension(:), public :: &
   wprcp,    & ! w'rc'                [m kg/s kg]
   thlprcp,  & ! thl'rc'              [K kg/kg]
   rtprcp,   & ! rt'rc'               [kg^2/kg^2]
-  rcp2     ! rc'^2                [kg^2/kg^2]
+  rcp2        ! rc'^2                [kg^2/kg^2]
 
 !$omp   threadprivate(wprcp, thlprcp, rtprcp, rcp2)
 
@@ -68,7 +68,7 @@ real, target, allocatable, dimension(:), public :: &
   wprtp2,    & ! w'rt'^2     [m kg^2/kg^2]
   wp2rtp,    & ! w'^2rt'     [m^2 kg/kg]
   wprtpthlp, & ! w'rt'thl'   [m kg K/kg s]
-  wp2rcp    ! w'^2 rc'    [m^2 kg/kg s^2]
+  wp2rcp       ! w'^2 rc'    [m^2 kg/kg s^2]
 
 !$omp   threadprivate(wpthlp2, wp2thlp, wprtp2, wp2rtp )
 !$omp   threadprivate(wprtpthlp, wp2rcp)
@@ -84,13 +84,13 @@ real, target, allocatable, dimension(:), public :: &
   wpthvp,   & ! w'thv'       [m K/s]
   rtpthvp,  & ! rt' thv'     [kg K/kg]
   thlpthvp, & ! thl'thv'     [K^2] 
-  wp2thvp  ! w'^2 thv'    [m^2 K/s^2]
+  wp2thvp     ! w'^2 thv'    [m^2 K/s^2]
 
 !$omp   threadprivate(wpthvp, rtpthvp, thlpthvp, wp2thvp)
 
 real, target, allocatable, dimension(:), public :: & 
   Kh_zt,  & ! Eddy diffusivity: zt grid        [m^2/s]
-  Kh_zm  ! Eddy diffusivity: zm grid        [m^2/s]
+  Kh_zm     ! Eddy diffusivity: zm grid        [m^2/s]
 
 !$omp   threadprivate(Kh_zt, Kh_zm)
 
@@ -102,7 +102,7 @@ real, target, allocatable, dimension(:), public :: &
 
 real, target, allocatable, dimension(:), public :: & 
   em,   & ! em               [m^2/s^2]
-  tau_zt ! Dissipation time [s]
+  tau_zt  ! Dissipation time [s]
 
 !$omp   threadprivate(em, tau_zt)
 
@@ -119,7 +119,7 @@ real, allocatable, dimension(:,:), public :: hydromet
 real, target, allocatable, dimension(:), public :: & 
   Ncm,   & ! Cloud droplet number concentration      [num/kg]
   Ncnm,  & ! Cloud nuclei number concentration       [num/m^3]
-  Nim   ! Ice nuclei number concentration         [num/m^3]
+  Nim      ! Ice nuclei number concentration         [num/m^3]
 !$omp   threadprivate(Ncm, Ncnm, Nim)
 
 
@@ -143,7 +143,7 @@ real, target, allocatable, dimension(:,:), public :: &
   wp2sclrp,    & ! w'^2 sclr'
   wpsclrp2,    & ! w'sclr'^2
   wpsclrprtp,  & ! w'sclr'rt'
-  wpsclrpthlp ! w'sclr'thl'
+  wpsclrpthlp    ! w'sclr'thl'
 
 !$omp   threadprivate(edsclrmt)
 !$omp   threadprivate(wpedsclrp)
@@ -158,7 +158,7 @@ real, target, allocatable, dimension(:), public :: &
   wpthlp_zt,  & ! w'thl' on thermo. grid
   wprtp_zt,   & ! w'rt' on thermo. grid
   rtp2_zt,    & ! rt'^2 on therm. grid
-  rtpthlp_zt ! rt'thl' on thermo. grid
+  rtpthlp_zt    ! rt'thl' on thermo. grid
 
 !$omp   threadprivate(wp2_zt, thlp2_zt, wpthlp_zt, wprtp_zt) 
 !$omp   threadprivate(rtp2_zt, rtpthlp_zt)
@@ -207,7 +207,7 @@ real, target, allocatable, dimension(:), public :: &
   AKstd_cld, & ! Stdev of exact w/in cloud ac        [???]
   rcm_est,   & ! Monte Carlo rcm estimate            [kg/kg]
   AKm_rcm,   & ! Kessler ac based on rcm             [???]
-  AKm_rcc   ! Kessler ac based on rcm/cf          [???]
+  AKm_rcc      ! Kessler ac based on rcm/cf          [???]
 
 !$omp   threadprivate(AKm_est, AKm, AKstd, AKstd_cld, rcm_est, AKm_rcm)
 !$omp   threadprivate(AKm_rcc)
@@ -245,14 +245,14 @@ integer :: i
 
 ! Diagnostic variables
 
-allocate( sigma_sqd_w_zt(1:nzmax) )       ! PDF width parameter: t point
-allocate( Skw_zm(1:nzmax) )      ! Skw
-allocate( Skw_zt(1:nzmax) )      ! Skw
-allocate( ug(1:nzmax) )        ! u geostrophic wind
-allocate( vg(1:nzmax) )        ! v geostrophic wind
-allocate( um_ref(1:nzmax) )    ! Reference u wind for nudging; Michael Falk, 17 Oct 2007
-allocate( vm_ref(1:nzmax) )    ! Reference v wind for nudging; Michael Falk, 17 Oct 2007
-allocate( thvm(1:nzmax) )      ! Virtual potential temperature
+allocate( sigma_sqd_w_zt(1:nzmax) )  ! PDF width parameter: t point
+allocate( Skw_zm(1:nzmax) )          ! Skw
+allocate( Skw_zt(1:nzmax) )          ! Skw
+allocate( ug(1:nzmax) )              ! u geostrophic wind
+allocate( vg(1:nzmax) )              ! v geostrophic wind
+allocate( um_ref(1:nzmax) )          ! Reference u wind for nudging; Michael Falk, 17 Oct 2007
+allocate( vm_ref(1:nzmax) )          ! Reference v wind for nudging; Michael Falk, 17 Oct 2007
+allocate( thvm(1:nzmax) )            ! Virtual potential temperature
 
 allocate( rsat(1:nzmax) )       ! Saturation mixing ratio  ! Brian
 
@@ -489,7 +489,7 @@ deallocate( umt )       ! u wind
 deallocate( vmt )       ! v wind
  
 deallocate( thvm )      ! virtual potential temperature
-deallocate( rsat )       ! saturation mixing ratio  ! Brian
+deallocate( rsat )      ! saturation mixing ratio  ! Brian
 
 deallocate( Frad )      ! radiative flux (momentum point)
 
