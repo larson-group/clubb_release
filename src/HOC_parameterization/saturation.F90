@@ -1,4 +1,4 @@
-!$Id: saturation.F90,v 1.6 2008-08-04 15:49:24 faschinj Exp $
+!$Id: saturation.F90,v 1.7 2008-08-08 15:13:18 faschinj Exp $
 
 !-----------------------------------------------------------------------
 module saturation
@@ -218,7 +218,8 @@ contains
         Lv
 
     implicit none
-
+    
+    ! Input Variable(s)
     REAL, INTENT(IN):: thlm         ! Liquid Water Potential Temperature [K]
     REAL, INTENT(IN):: rtm          ! Total Water Mixing Ratio       [kg/kg]
     REAL, INTENT(IN):: p_in_Pa      ! Pressure                          [Pa]
