@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F90,v 1.13 2008-08-06 13:46:55 faschinj Exp $
+! $Id: microphys_driver.F90,v 1.14 2008-08-08 14:47:18 faschinj Exp $
 module microphys_driver
 
 !       Description:
@@ -111,7 +111,7 @@ end subroutine init_microphys
 !-----------------------------------------------------------------------
 subroutine advance_microphys & 
            ( runtype, dt, time_current,  & 
-             thlm, p, exner, rho, rho_zm, rtm, rcm,  & 
+             thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm,  & 
              wm_zt, wm_zm, Kh_zm, AKm_est, AKm, pdf_parms, & 
              Ncm, Ncnm, Nim, hydromet, & 
              rtm_forcing, thlm_forcing, &
@@ -233,7 +233,7 @@ real(kind=time_precision), intent(in) ::  &
 
 real, dimension(gr%nnzp), intent(in) :: & 
   thlm,    & ! Liquid potential temp.                 [K]
-  p,       & ! Pressure                               [Pa]
+  p_in_Pa,       & ! Pressure                               [Pa]
   exner,   & ! Exner function                         [-]
   rho,     & ! Density on thermo. grid                [kg/m^3]
   rho_zm,  & ! Density on moment. grid                [kg/m^3]
@@ -358,7 +358,7 @@ if ( l_coamps_micro ) then
 
    call coamps_micro_driver & 
         ( runtype, time_current, dt, & 
-          rtm, wm_zm, p, exner, rho, T_in_K, & 
+          rtm, wm_zm, p_in_Pa, exner, rho, T_in_K, & 
           thlm, hydromet(:,iiricem), hydromet(:,iirrainm),  & 
           hydromet(:,iirgraupelm), hydromet(:,iirsnowm), & 
           rcm, Ncm, hydromet(:,iiNrm), Ncnm, Nim, cond, & 
@@ -413,7 +413,7 @@ else if ( l_kk_rain ) then
   ! Ncm computed beforehand as well.
 
   call kk_microphys & 
-       ( T_in_K, p, exner, rho,  & 
+       ( T_in_K, p_in_Pa, exner, rho,  & 
          thl1, thl2, a, rc1, rc2, s1,  & 
          s2, ss1, ss2, rcm, Ncm,  & 
          hydromet(:,iirrainm), hydromet(:,iiNrm), & 
@@ -575,7 +575,7 @@ end if ! hydromet_dim > 0
 
 ! Call the ice diffusion scheme
 if ( l_licedfs ) then
-  call ice_dfsn( dt, T_in_K, rcm, p, rho, rtm_mc )
+  call ice_dfsn( dt, T_in_K, rcm, p_in_Pa, rho, rtm_mc )
   thlm_mc = - ( Lv/(Cp*exner) ) * rtm_mc
 end if
 
@@ -672,7 +672,7 @@ if ( lapack_error(err_code) ) then
    write(fstderr,*) "Intent(in)"
    
    write(fstderr,*) "thlm = ", thlm
-   write(fstderr,*) "p = ", p
+   write(fstderr,*) "p_in_Pa = ", p_in_Pa
    write(fstderr,*) "exner = ", exner
    write(fstderr,*) "rho = ", rho
    write(fstderr,*) "rho_zm = ", rho_zm

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F90,v 1.14 2008-08-06 21:38:58 faschinj Exp $
+! $Id: inputfields.F90,v 1.15 2008-08-08 14:47:18 faschinj Exp $
 
 ! Module inputfields
 
@@ -224,7 +224,7 @@ module inputfields
 !--------------------------------------------------------
 ! Added variables for hoc_restart
     if ( input_p ) then
-      call get_var( fread_var, "p", timestep, & 
+      call get_var( fread_var, "p_in_Pa", timestep, & 
                     p_in_Pa(1:gr%nnzp),  l_error )
     endif
     if ( input_exner) then

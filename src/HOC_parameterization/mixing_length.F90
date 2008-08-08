@@ -1,4 +1,4 @@
-! $Id: mixing_length.F90,v 1.7 2008-08-06 13:56:22 faschinj Exp $
+! $Id: mixing_length.F90,v 1.8 2008-08-08 14:47:18 faschinj Exp $
 !-----------------------------------------------------------------------------
 module mixing_length
 
@@ -11,7 +11,7 @@ public :: compute_length
 contains
 
 !---------------------------------------------------------------------------        
-subroutine compute_length( thvm, thlm, rtm, rcm, em, p, exner, & 
+subroutine compute_length( thvm, thlm, rtm, rcm, em, p_in_Pa, exner, & 
                            err_code, &
                            Lscale ) 
 !       Description:
@@ -83,7 +83,7 @@ real, dimension(gr%nnzp), intent(in) ::  &
   rcm,     & ! Cloud water mixing ration on themodynamic level [kg/kg]
   em,      & ! em = 3/2 * w'^2; on momentum level              [m^2/s^2]
   exner,   & ! Exner function on thermodynamic level           [-]
-  p          ! Pressure on thermodynamic level                 [Pa]
+  p_in_Pa    ! Pressure on thermodynamic level                 [Pa]
 
 ! Output Variables
 integer, intent(inout) :: & 
@@ -155,7 +155,7 @@ do i=2,gr%nnzp
 !           Probably should use properties of bump 1 in Gaussian, not mean!!!
 
     tl_par_j = thl_par_j*exner(j)
-    rsl_par_j = sat_mixrat_liq(p(j),tl_par_j)
+    rsl_par_j = sat_mixrat_liq( p_in_Pa(j), tl_par_j )
     ! SD's beta (eqn. 8)
     beta_par_j = ep*(Lv/(Rd*tl_par_j))*(Lv/(cp*tl_par_j))
     ! s from Lewellen and Yoh 1993 (LY) eqn. 1
@@ -227,7 +227,7 @@ do i=gr%nnzp,2,-1
    ! Probably should use properties of bump 1 in Gaussian, not mean!!!
 
     tl_par_j = thl_par_j*exner(j)
-    rsl_par_j = sat_mixrat_liq(p(j),tl_par_j)
+    rsl_par_j = sat_mixrat_liq(p_in_Pa(j),tl_par_j)
     ! SD's beta (eqn. 8)
     beta_par_j = ep*(Lv/(Rd*tl_par_j))*(Lv/(cp*tl_par_j))
     ! s from Lewellen and Yoh 1993 (LY) eqn. 1
@@ -319,7 +319,7 @@ if( clubb_at_debug_level( 2 ) ) then
            write(fstderr,*) "rcm = ", rcm
            write(fstderr,*) "em = ", em
            write(fstderr,*) "exner = ", exner
-           write(fstderr,*) "p = ", p
+           write(fstderr,*) "p_in_Pa = ", p_in_Pa
            
            write(fstderr,*) "Intent(out)"
 

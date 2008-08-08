@@ -1,4 +1,4 @@
-! $Id: closure_new.F90,v 1.5 2008-08-06 21:38:58 faschinj Exp $
+! $Id: closure_new.F90,v 1.6 2008-08-08 14:47:18 faschinj Exp $
 module pdf_closure
 
 implicit none
@@ -10,7 +10,7 @@ private ! Set Default Scope
 contains 
 !------------------------------------------------------------------------
 subroutine pdf_closure_new & 
-           ( p, exner, wm, wp2, wp3, sigma_sqd_w, & 
+           ( p_in_Pa, exner, wm, wp2, wp3, sigma_sqd_w, & 
              rtm, rtp2, wprtp, & 
              thlm, thlp2, wpthlp, & 
              rtpthlp, sclrm, wpsclrp, & 
@@ -85,7 +85,7 @@ intrinsic :: sqrt, exp, min, max, abs
 
 ! Input Variables
 real, intent(in) ::  & 
-  p,       & ! Pressure.                     [Pa] 
+  p_in_Pa, & ! Pressure.                     [Pa] 
   exner,   & ! Exner function.               [-]
   wm,      & ! mean w                        [m/s] 
   wp2,     & ! w'^2                          [m^2/s^2] 
@@ -493,8 +493,8 @@ end if ! l_scalar_calc
 tl1  = thl1*exner
 tl2  = thl2*exner
 
-rsl1 = sat_mixrat_liq(p,tl1)
-rsl2 = sat_mixrat_liq(p,tl2)
+rsl1 = sat_mixrat_liq( p_in_Pa, tl1 )
+rsl2 = sat_mixrat_liq( p_in_Pa, tl2 )
 
 ! SD's beta (eqn. 8)
 beta1 = ep * ( Lv/(Rd*tl1) ) * ( Lv/(Cp*tl1) )
@@ -685,7 +685,7 @@ if ( clubb_at_debug_level( 2 ) ) then
           
     write(fstderr,*) "Intent(in)"
             
-    write(fstderr,*) "p = ", p 
+    write(fstderr,*) "p_in_Pa = ", p_in_Pa 
     write(fstderr,*) "exner = ", exner
     write(fstderr,*) "wm = ", wm 
     write(fstderr,*) "wp2 = ", wp2 

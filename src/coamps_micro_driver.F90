@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: coamps_micro_driver.F90,v 1.9 2008-07-31 19:34:16 faschinj Exp $
+! $Id: coamps_micro_driver.F90,v 1.10 2008-08-08 14:47:17 faschinj Exp $
 module coamps_micro_driver_mod
 
 ! This module wraps the adjtq subroutine so that it may be used by
@@ -15,7 +15,7 @@ contains
 
 subroutine coamps_micro_driver & 
        ( runtype, timea_in, deltf_in, & 
-         rtm, wm_zm, p, exner, rho, T_in_K, & 
+         rtm, wm_zm, p_in_Pa, exner, rho, T_in_K, & 
          thlm, ricem, rrainm, rgraupelm, rsnowm, & 
          rcm, Ncm, Nrm, Ncnm, Nim, & 
          cond, Vsnow, Vice, Vrr, VNr, Vgraupel, & 
@@ -163,18 +163,18 @@ real(kind=time_precision), intent(in) :: &
   deltf_in         ! Timestep (i.e. dtmain in CLUBB)      [s]
 
 real, dimension(gr%nnzp), intent(in) :: & 
-  rtm,   & ! Total water mixing ratio                        [kg/kg]
-  rcm,   & ! Cloud water mixing ratio                        [kg/kg]
+  rtm,     & ! Total water mixing ratio                        [kg/kg]
+  rcm,     & ! Cloud water mixing ratio                        [kg/kg]
   wm_zm,   & ! Vertical wind                                   [m/s]
-  p,     & ! Pressure                                        [Pa]
-  exner, & ! Mean exner function                             [-]
-  rho,  & ! Mean density                                    [kg/m^3]
-  thlm,  & ! Liquid potential temperature                    [K]
-  T_in_K! Temperature                                     [K]
+  p_in_Pa, & ! Pressure                                        [Pa]
+  exner,   & ! Mean exner function                             [-]
+  rho,     & ! Mean density                                    [kg/m^3]
+  thlm,    & ! Liquid potential temperature                    [K]
+  T_in_K     ! Temperature                                     [K]
 
 real, dimension(gr%nnzp), intent(in) :: & 
   ricem,      & ! Ice water mixing ratio     [kg/kg]
-  rrainm,        & ! Rain water mixing ratio    [kg/kg]
+  rrainm,     & ! Rain water mixing ratio    [kg/kg]
   rgraupelm,  & ! Graupel water mixing ratio [kg/kg]
   rsnowm,     & ! Snow water mixing ratio    [kg/kg]
 ! Nrm is now in kg^-1.  Brian.  Sept. 8, 2007.
@@ -186,7 +186,7 @@ real, dimension(gr%nnzp), intent(inout) :: &
 !     .  Ncm,       ! Number of cloud droplets   [count/m^3]
   Ncm,        & ! Number of cloud droplets   [count/kg]
   Ncnm,       & ! Number of cloud nuclei     [count/m^3]
-  Nim        ! Number of ice crystals     [count/m^3]
+  Nim           ! Number of ice crystals     [count/m^3]
 
 
 real, dimension(1,1,gr%nnzp-1), intent(inout) :: &
@@ -534,7 +534,7 @@ w3(1,1,1:kk+1) = wm_zm(1:kk+1)
 ! Comments by Michael Falk, David Schanen, and Vince Larson
 
 ! The top point is undefined and unreferenced in these '3d' arrays
-pr3d(1,1,1:kk)   = p(2:kk+1) 
+pr3d(1,1,1:kk)   = p_in_Pa(2:kk+1) 
 th2t3d(1,1,1:kk) = exner(2:kk+1)
 temp3d(1,1,1:kk) = T_in_K(2:kk+1)
 

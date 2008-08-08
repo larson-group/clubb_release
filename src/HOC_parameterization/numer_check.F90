@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F90,v 1.10 2008-08-06 21:38:59 faschinj Exp $
+! $Id: numer_check.F90,v 1.11 2008-08-08 14:47:19 faschinj Exp $
  module numerical_check
 
  implicit none
@@ -177,7 +177,7 @@
 
 !-------------------------------------------------------------------------------
  subroutine parameterization_check & 
-            ( thlm_forcing, rtm_forcing, wm_zm, wm_zt, p, rho_zm,  & 
+            ( thlm_forcing, rtm_forcing, wm_zm, wm_zt, p_in_Pa, rho_zm,  & 
               rho, exner, wpthlp_sfc, wprtp_sfc,  & 
               upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp, & 
               up2, vp2, rtm, wprtp, thlm,  & 
@@ -206,11 +206,11 @@
  real, intent(in), dimension(gr%nnzp) ::  & 
  thlm_forcing,   & ! theta_l forcing.        [K/s]
  rtm_forcing,    & ! r_t forcing.            [(kg/kg)/s] 
- wm_zm,            & ! wm on moment. grid.     [m/s]
- wm_zt,            & ! wm on thermo. grid.     [m/s]
- p,              & ! Pressure.               [Pa] 
- rho_zm,           & ! Density on moment. grid [kg/m^3]
- rho,           & ! Density on thermo. grid [kg/m^3] 
+ wm_zm,          & ! wm on moment. grid.     [m/s]
+ wm_zt,          & ! wm on thermo. grid.     [m/s]
+ p_in_Pa,        & ! Pressure.               [Pa] 
+ rho_zm,         & ! Density on moment. grid [kg/m^3]
+ rho,            & ! Density on thermo. grid [kg/m^3] 
  exner             ! Exner function.         [-]
 
  real, intent(in) ::  & 
@@ -278,7 +278,7 @@
 !        call check_nan( thlm_mc, "thlm_mc", prefix//proc_name )
  call check_nan( wm_zm,"wm_zm", prefix//proc_name )
  call check_nan( wm_zt,"wm_zt", prefix//proc_name )
- call check_nan( p,"p", prefix//proc_name )
+ call check_nan( p_in_Pa,"p_in_Pa", prefix//proc_name )
  call check_nan( rho_zm,"rho_zm", prefix//proc_name )
  call check_nan( rho,"rho", prefix//proc_name )
  call check_nan( exner,"exner", prefix//proc_name )
@@ -335,7 +335,7 @@
 
  rvm = rtm - rcm
  call check_negative( rvm, gr%nnzp ,"rvm", prefix//proc_name )
- call check_negative( p, gr%nnzp ,"p", prefix//proc_name )
+ call check_negative( p_in_Pa, gr%nnzp ,"p_in_Pa", prefix//proc_name )
  call check_negative( rho, gr%nnzp ,"rho", prefix//proc_name )
  call check_negative( rho_zm, gr%nnzp ,"rho_zm", prefix//proc_name )
  call check_negative(exner, gr%nnzp ,"exner", prefix//proc_name )
@@ -430,7 +430,7 @@
 
 !-----------------------------------------------------------------------
  subroutine rad_check( thlm, rcm, rtm, ricem,  & 
-                       cf, p, exner, rho_zm )
+                       cf, p_in_Pa, exner, rho_zm )
 !       Description:
 !       Checks radiation input variables. If they are < 0 it reports
 !       to the console.
@@ -450,7 +450,7 @@
  rtm,            & ! Total Water Mixing Ratio             [Kg/Kg]
  ricem,          & ! Ice Water Mixing Ratio               [Kg/Kg]
  cf,             & ! Cloud Fraction                       [%]
- p,              & ! Pressure                             [Pa]
+ p_in_Pa,        & ! Pressure                             [Pa]
  exner,          & ! Exner Function                       [-]
  rho_zm           ! Density                              [-]
 
@@ -468,7 +468,7 @@
  call check_negative( rvm, gr%nnzp ,"rvm", proc_name )
  call check_negative( ricem, gr%nnzp ,"ricem", proc_name )
  call check_negative( cf, gr%nnzp ,"cf", proc_name )
- call check_negative( p, gr%nnzp ,"p", proc_name )
+ call check_negative( p_in_Pa, gr%nnzp ,"p_in_Pa", proc_name )
  call check_negative( exner, gr%nnzp ,"exner", proc_name )
  call check_negative( rho_zm, gr%nnzp ,"rho_zm", proc_name )
 

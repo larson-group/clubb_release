@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F90,v 1.12 2008-08-06 21:38:59 faschinj Exp $
+! $Id: stats_zt.F90,v 1.13 2008-08-08 14:47:20 faschinj Exp $
  
 module stats_zt
 
@@ -449,9 +449,9 @@ do i=1,zt%nn
     call stat_assign(icf,"cf", & 
          "cloud fraction", "count",zt)
     k = k + 1
-  case ('p')
+  case ('p_in_Pa')
     ip = k
-    call stat_assign(ip,"p", & 
+    call stat_assign(ip,"p_in_Pa", & 
          "pressure (Pa)","Pa",zt)
     k = k + 1
   case ('exner')

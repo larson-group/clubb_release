@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F90,v 1.17 2008-08-06 21:38:59 faschinj Exp $
+!  $Id: stats_subs.F90,v 1.18 2008-08-08 14:47:20 faschinj Exp $
 module stats_subs
 
   implicit none
@@ -756,7 +756,7 @@ module stats_subs
       subroutine stats_accumulate & 
                  ( um, vm, upwp, vpwp, up2, vp2, thlm, & 
                    rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp, & 
-                   p, exner, rho, rho_zm, & 
+                   p_in_Pa, exner, rho, rho_zm, & 
                    wm_zt, sigma_sqd_w, tau_zm, rcm, cf, & 
                    sclrm, edsclrm, sclrm_forcing, wpsclrp )
 
@@ -989,13 +989,13 @@ module stats_subs
         rtpthlp ! rt'thl'                       [kg/kg K]
 
       real, intent(in), dimension(gr%nnzp) :: & 
-        p,            & ! Pressure (Pa) on thermodynamic points    [Pa]
+        p_in_Pa,      & ! Pressure (Pa) on thermodynamic points    [Pa]
         exner,        & ! Exner function = ( p / p0 ) ** kappa     [-]
-        rho,         & ! Density                                  [kg/m^3]
-        rho_zm,         & ! Density                                  [kg/m^3]
-        wm_zt,          & ! w on thermodynamic levels                [m/s]
-        sigma_sqd_w,          & ! PDF width paramter                       [-]
-        tau_zm         ! Dissipation time                         [s]
+        rho,          & ! Density                                  [kg/m^3]
+        rho_zm,       & ! Density                                  [kg/m^3]
+        wm_zt,        & ! w on thermodynamic levels                [m/s]
+        sigma_sqd_w,  & ! PDF width paramter                       [-]
+        tau_zm          ! Dissipation time                         [s]
 
       real, intent(in), dimension(gr%nnzp) :: & 
         rcm,   & ! Cloud water mixing ratio                [kg/kg]
@@ -1042,7 +1042,7 @@ module stats_subs
         call stat_update_var( iug, ug, zt )
         call stat_update_var( ivg, vg, zt )
         call stat_update_var( icf, cf, zt )
-        call stat_update_var( ip, p, zt )
+        call stat_update_var( ip, p_in_Pa, zt )
         call stat_update_var( iexner, exner, zt )
         call stat_update_var( iLscale, Lscale, zt )
         call stat_update_var( iwp3, wp3, zt )
