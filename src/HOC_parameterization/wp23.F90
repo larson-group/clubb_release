@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.28 2008-08-07 16:24:32 griffinb Exp $
+! $Id: wp23.F90,v 1.29 2008-08-09 15:08:32 griffinb Exp $
 !===============================================================================
 module wp23
 
@@ -81,7 +81,7 @@ intrinsic :: exp
 
 ! Input Variables
 real(kind=time_precision), intent(in) ::  & 
-  dt             ! Timestep                                 [s]
+  dt             ! Model timestep                           [s]
 
 real, intent(in), dimension(gr%nnzp) ::  & 
   sigma_sqd_w, & ! sigma_sqd_w on momentum levels           [-]
@@ -177,8 +177,8 @@ C11b + (C11-C11b)*EXP( -(1.0/2.0) * (Skw_zt(1:gr%nnzp)/C11c)**2 )
 C1_Skw_fnc(1:gr%nnzp) =  & 
 C1b + (C1-C1b)*EXP( -(1.0/2.0) * (Skw_zm(1:gr%nnzp)/C1c)**2 )
 
-!        C11_Skw_fnc = C11
-!        C1_Skw_fnc = C1
+!C11_Skw_fnc = C11
+!C1_Skw_fnc = C1
 
 ! Vince Larson added extra diffusion based on wp2.  21 Dec 2007.
 ! Vince Larson added extra diffusion based on wp3.  15 Dec 2007.
@@ -214,6 +214,7 @@ enddo
 
 ! Define the Coefficent of Eddy Diffusivity for the wp2 and wp3.
 do k = 1, gr%nnzp, 1
+
    ! Kw1 is used for wp2, which is located on momentum levels.
    ! Kw1 is located on thermodynamic levels.
    ! Kw1 = c_K1 * Kh_zt
@@ -222,9 +223,8 @@ do k = 1, gr%nnzp, 1
    ! Kw1 must have units of m^2/s.  Since wp2_zt_sqd_3pt has units 
    ! of m^4/s^4, c_Ksqd is given units of s^3/m^2 in this case.
    Kw1(k) = Kw1(k) + c_Ksqd * wp2_zt_sqd_3pt(k) 
-   ! Vince Larson increased by c_Ksqd. 29Jan2008
-
    ! End Vince Larson's addition.
+
    ! Kw8 is used for wp3, which is located on thermodynamic levels.
    ! Kw8 is located on momentum levels.
    ! Note: Kw8 is defined to be 1/2 of Kh_zm.
@@ -235,9 +235,10 @@ do k = 1, gr%nnzp, 1
    ! of m^6/s^6, c_Ksqd is given units of s^5/m^4 in this case.
    Kw8(k) = Kw8(k) + c_Ksqd * wp3_zm_sqd_3pt(k)  
    ! End Vince Larson's addition.
+
 enddo
 
-!       Solve semi-implicitly
+! Solve semi-implicitly
 call wp23_solve( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp, & 
                  um, vm, upwp, vpwp, up2, vp2, Kw1, & 
                  Kw8, Skw_zt, tau_zm, tauw3t, C1_Skw_fnc, & 
@@ -460,12 +461,11 @@ integer :: k, km1, kp1, k_wp2, k_wp3
 
 ! Set logical to true for Crank-Nicholson diffusion scheme
 ! or to false for completely implicit diffusion scheme.
-! Note:  Although Crank-Nicholson diffusion has usually been
-!        used for wp2 and wp3 in the past, we found that using
-!        completely implicit diffusion stabilized the deep
-!        convective cases more while having almost no effect on
-!        the boundary layer cases.  Brian; 1/4/2008.
-!        logical, parameter :: lcrank_nich_diff = .true.
+! Note:  Although Crank-Nicholson diffusion has usually been used for wp2 and 
+!        wp3 in the past, we found that using completely implicit diffusion 
+!        stabilized the deep convective cases more while having almost no effect
+!        on the boundary layer cases.  Brian; 1/4/2008.
+!logical, parameter :: lcrank_nich_diff = .true.
 logical, parameter :: lcrank_nich_diff = .false.
 
 if (l_stats_samp) then
@@ -966,9 +966,9 @@ do k = 2, gr%nnzp-1, 1
   lhs(3-2:3+2,k_wp3) & 
   = lhs(3-2:3+2,k_wp3) & 
   + wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  & 
-                         wp2(k), wp2(km1),  & 
-                         a1_zt(k), & 
-                         a3_zt(k), & 
+                         wp2(k), wp2(km1),  &
+                         !a1(k), a1(km1), a3(k), a3(km1),  &
+                         a1_zt(k), a3_zt(k),  & 
                          gr%dzt(k), wtol, k ) 
 
   ! LHS accumulation (ac) term and pressure term 2 (pr2).
@@ -1008,9 +1008,10 @@ do k = 2, gr%nnzp-1, 1
     if ( iwp3_ta > 0 ) then
       tmp(1:5) =  & 
       wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  & 
-                           wp2(k), wp2(km1),  & 
-                           a1_zt(k),  & 
-                           a3_zt(k)+(3.0/2.0), & 
+                           wp2(k), wp2(km1),  &
+                           !a1(k), a1(km1),  &
+                           !a3(k)+(3.0/2.0), a3(km1)+(3.0/2.0),  &
+                           a1_zt(k), a3_zt(k)+(3.0/2.0),  &
                            gr%dzt(k), wtol, k ) 
       ztscr05(k) = -tmp(5)
       ztscr06(k) = -tmp(4)
@@ -1023,8 +1024,9 @@ do k = 2, gr%nnzp-1, 1
       tmp(1:5) =  & 
       wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  & 
                            wp2(k), wp2(km1),  & 
-                           0.0, & 
-                           0.0-(3.0/2.0), & 
+                           !0.0, 0.0,  &
+                           !0.0-(3.0/2.0), 0.0-(3.0/2.0),  &
+                           0.0, 0.0-(3.0/2.0),  & 
                            gr%dzt(k), wtol, k ) 
       ztscr10(k) = -tmp(4)
       ztscr11(k) = -tmp(2)
@@ -1325,10 +1327,10 @@ do k = 2, gr%nnzp-1, 1
   ! RHS turbulent advection (ta) and turbulent production (tp) terms.
   rhs(k_wp3) & 
   = rhs(k_wp3) & 
-  + wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1), & 
-                         wp2(k), wp2(km1), & 
-                         a1_zt(k), & 
-                         a3_zt(k), & 
+  + wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
+                         wp2(k), wp2(km1),  &
+                         !a1(k), a1(km1), a3(k), a3(km1),  &
+                         a1_zt(k), a3_zt(k),  &
                          gr%dzt(k), wtol )
 
   ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
@@ -1359,18 +1361,20 @@ do k = 2, gr%nnzp-1, 1
  
     ! Statistics: explicit contributions for wp3.
     call stat_begin_update_pt( iwp3_ta, k, & 
-      -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1), & 
-                         wp2(k), wp2(km1), & 
-                         a1_zt(k),  & 
-                         a3_zt(k)+(3.0/2.0),  &  
-                         gr%dzt(k), wtol ), zt )
+      -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
+                            wp2(k), wp2(km1),  &
+                            !a1(k), a1(km1),  &
+                            !a3(k)+(3.0/2.0), a3(km1)+(3.0/2.0),  &
+                            a1_zt(k), a3_zt(k)+(3.0/2.0),  &  
+                            gr%dzt(k), wtol ), zt )
 
-    call stat_begin_update_pt( iwp3_tp, k, & 
-      -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1), & 
-                           wp2(k), wp2(km1), & 
-                           0.0, & 
-                           0.0-(3.0/2.0),  & 
-                           gr%dzt(k), wtol ),zt )
+    call stat_begin_update_pt( iwp3_tp, k,  &
+      -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
+                            wp2(k), wp2(km1),  &
+                            !0.0, 0.0, 
+                            !0.0-(3.0/2.0), 0.0-(3.0/2.0),  &
+                            0.0, 0.0-(3.0/2.0),  & 
+                            gr%dzt(k), wtol ),zt )
   
     call stat_update_var_pt( iwp3_bp, k, & 
       wp3_terms_bp_pr2_rhs( 0.0, wp2thvp(k) ), zt )
@@ -1900,11 +1904,11 @@ return
 end function wp2_term_pr1_rhs
 
 !===============================================================================
-pure function wp3_terms_ta_tp_lhs( wp3_zm, wp3_zmm1,  & 
-                                   wp2, wp2m1,  & 
-                                   a1_zt, & 
-                                   a3_zt, & 
-                                   dzt, wtol, level )  & 
+pure function wp3_terms_ta_tp_lhs( wp3_zm, wp3_zmm1,  &
+                                   wp2, wp2m1,  &
+                                   !a1, a1m1, a3, a3m1,  &
+                                   a1_zt, a3_zt,  &
+                                   dzt, wtol, level )  &
 result( lhs )
 
 ! Description:
@@ -2012,6 +2016,10 @@ real, intent(in) ::  &
   wp3_zmm1,    & ! w'^3 interpolated to momentum level (k-1)   [m^3/s^3]
   wp2,         & ! w'^2(k)                                     [m^2/s^2]
   wp2m1,       & ! w'^2(k-1)                                   [m^2/s^2]
+!  a1,          & ! a_1(k)                                      [-]
+!  a1m1,        & ! a_1(k-1)                                    [-]
+!  a3,          & ! a_3(k)                                      [-]
+!  a3m1,        & ! a_3(k-1)                                    [-]
   a1_zt,       & ! a_1 interpolated to thermodynamic level (k) [-]
   a3_zt,       & ! a_3 interpolated to thermodynamic level (k) [-]
   dzt,         & ! Inverse of grid spacing (k)                 [1/m]
@@ -2232,11 +2240,11 @@ return
 end function wp3_term_pr1_lhs
 
 !===============================================================================
-pure function wp3_terms_ta_tp_rhs( wp3_zm, wp3_zmm1, & 
-                                   wp2, wp2m1, & 
-                                   a1_zt, & 
-                                   a3_zt, & 
-                                   dzt, wtol ) & 
+pure function wp3_terms_ta_tp_rhs( wp3_zm, wp3_zmm1,  & 
+                                   wp2, wp2m1,  & 
+                                   !a1, a1m1, a3, a3m1,  &
+                                   a1_zt, a3_zt,  & 
+                                   dzt, wtol )  & 
 result( rhs )
 
 ! Description:
@@ -2325,6 +2333,10 @@ real, intent(in) ::  &
   wp3_zmm1,    & ! w'^3 interpolated to momentum level (k-1)   [m^3/s^3]
   wp2,         & ! w'^2(k)                                     [m^2/s^2]
   wp2m1,       & ! w'^2(k-1)                                   [m^2/s^2]
+!  a1,          & ! a_1(k)                                      [-]
+!  a1m1,        & ! a_1(k-1)                                    [-]
+!  a3,          & ! a_3(k)                                      [-]
+!  a3m1,        & ! a_3(k-1)                                    [-]
   a1_zt,       & ! a_1 interpolated to thermodynamic level (k) [-]
   a3_zt,       & ! a_3 interpolated to thermodynamic level (k) [-]
   dzt,         & ! Inverse of grid spacing (k)                 [1/m]
