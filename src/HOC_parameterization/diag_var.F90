@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F90,v 1.20 2008-08-07 13:53:20 griffinb Exp $
+! $Id: diag_var.F90,v 1.21 2008-08-09 18:53:56 griffinb Exp $
 !===============================================================================
 module diagnose_variances
 
@@ -30,7 +30,8 @@ contains
 !===============================================================================
 subroutine diag_var( tau_zm, wm_zm, rtm, wprtp, & 
                      thlm, wpthlp, wpthvp, um, vm, & 
-                     wp2, wp2_zt, wp3, upwp, vpwp, sigma_sqd_w, Skw_zm, Kh_zt, & 
+                     wp2, wp2_zt, wp3, upwp, vpwp, &
+                     sigma_sqd_w, Skw_zm, Kh_zt, & 
                      liter, dt, & 
                      sclrm, wpsclrp, & 
                      rtp2, thlp2, rtpthlp, & 
@@ -193,10 +194,10 @@ real, dimension(gr%nnzp) ::  &
   Kw2,      & ! For rtp2, thlp2, rtpthlp, and passive scalars  [m^2/s]
   Kw9         ! For up2 and vp2                                [m^2/s]
 
-! Variables used for adding (xapxbp)^2: 3-point average diffusion coefficient.
 real, dimension(gr%nnzp) :: & 
-  wprtp_zt,   & ! w'r_t' interpolated to thermodynamic levels   [(kg/kg) m/s]
-  wpthlp_zt,  & ! w'th_l' interpolated to thermodyamnic levels  [K m/s]
+!  a1_zt,      & ! a_1 interpolated to thermodynamic levels       [-]
+  wprtp_zt,   & ! w'r_t' interpolated to thermodynamic levels    [(kg/kg) m/s]
+  wpthlp_zt,  & ! w'th_l' interpolated to thermodyamnic levels   [K m/s]
   rtp2_zt,    & ! r_t'^2 interpolated to thermodynamic levels    [kg^2/kg^2]
   thlp2_zt,   & ! th_l'^2 interpolated to thermodynamic levels   [K^2]
   rtpthlp_zt, & ! r_t'th_l' interpolated to thermodynamic levels [K kg/kg]
@@ -254,10 +255,10 @@ a1(1:gr%nnzp) = 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nnzp) )
 !     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
 wtol_sqd = wtol * wtol
 
-! Interpolate a_1, w'^2, w'r_t', w'th_l', u'w', and v'w' from the momentum 
-! levels to the thermodynamic levels.  These will be used for the turbulent 
-! advection (ta) terms in each equation.
-!wp2_zt    = max( zm2zt( wp2 ), 0.0 )   ! Positive definite quantity
+! Interpolate a_1, w'r_t', w'th_l', u'w', and v'w' from the momentum levels to 
+! the thermodynamic levels.  These will be used for the turbulent advection (ta)
+! terms in each equation.
+!a1_zt     = max( zm2zt( a1 ), 0.0 )   ! Positive definite quantity
 wprtp_zt  = zm2zt( wprtp )
 wpthlp_zt = zm2zt( wpthlp )
 upwp_zt   = zm2zt( upwp )
@@ -347,11 +348,13 @@ enddo
 !!!!!***** r_t'^2 *****!!!!!
 
 ! Implicit contributions to term rtp2
-call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
-                   wp3, tau_zm, wm_zm, Kw2_rtp2, C2rt_1d,  & 
-                   nu2, beta, wtol_sqd, lhs )
+call diag_var_lhs( dt, liter, wp2_zt, wp3,  & 
+                   !a1, a1_zt, tau_zm, wm_zm, Kw2_rtp2,  &
+                   a1, tau_zm, wm_zm, Kw2_rtp2,  &
+                   C2rt_1d, nu2, beta, wtol_sqd, lhs )
 
 ! Explicit contributions to rtp2
+!call diag_var_rhs( "rtp2", dt, liter, a1, a1_zt, &
 call diag_var_rhs( "rtp2", dt, liter, a1,  & 
                    wp2_zt, wp3, wprtp, wprtp_zt, & 
                    wprtp, wprtp_zt, rtm, rtm, rtp2, & 
@@ -366,11 +369,13 @@ call diag_var_solve( "rtp2", 1, rhs,  &
 !!!!!***** th_l'^2 *****!!!!!
 
 ! Implicit contributions to term thlp2
-call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
-                   wp3, tau_zm, wm_zm, Kw2_thlp2, C2thl_1d,  & 
-                   nu2, beta, wtol_sqd, lhs )
+call diag_var_lhs( dt, liter, wp2_zt, wp3,  & 
+                   !a1, a1_zt, tau_zm, wm_zm, Kw2_thlp2,  &
+                   a1, tau_zm, wm_zm, Kw2_thlp2,  &
+                   C2thl_1d, nu2, beta, wtol_sqd, lhs )
 
 ! Explicit contributions to thlp2
+!call diag_var_rhs( "thlp2", dt, liter, a1, a1_zt, &
 call diag_var_rhs( "thlp2", dt, liter, a1, & 
                    wp2_zt, wp3, wpthlp, wpthlp_zt, & 
                    wpthlp, wpthlp_zt, thlm, thlm, thlp2, & 
@@ -385,11 +390,13 @@ call diag_var_solve( "thlp2", 1, rhs,  &
 !!!!!***** r_t'th_l' *****!!!!!
 
 ! Implicit contributions to term rtpthlp
-call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
-                   wp3, tau_zm, wm_zm, Kw2_rtpthlp, C2rtthl_1d,  & 
-                   nu2, beta, wtol_sqd, lhs )
+call diag_var_lhs( dt, liter, wp2_zt, wp3,  & 
+                   !a1, a1_zt, tau_zm, wm_zm, Kw2_rtpthlp,  &
+                   a1, tau_zm, wm_zm, Kw2_rtpthlp,  &
+                   C2rtthl_1d, nu2, beta, wtol_sqd, lhs )
 
 ! Explicit contributions to rtpthlp
+!call diag_var_rhs( "rtpthlp", dt, liter, a1, a1_zt, & 
 call diag_var_rhs( "rtpthlp", dt, liter, a1,  & 
                    wp2_zt, wp3, wprtp, wprtp_zt, & 
                    wpthlp, wpthlp_zt, rtm, thlm, rtpthlp, & 
@@ -404,11 +411,13 @@ call diag_var_solve( "rtpthlp", 1, rhs,  &
 !!!!!***** u'^2 *****!!!!!
 
 ! Implicit contributions to term up2
-call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
-                   wp3, tau_zm, wm_zm, Kw9, C4_C14_1d,  & 
-                   nu9, beta, wtol_sqd, lhs )
+call diag_var_lhs( dt, liter, wp2_zt, wp3,  &
+                   !a1, a1_zt, tau_zm, wm_zm, Kw9,  &
+                   a1, tau_zm, wm_zm, Kw9,  &
+                   C4_C14_1d, nu9, beta, wtol_sqd, lhs )
 
 ! Explicit contributions to up2
+!call diag_var_uv_rhs( "up2", dt, liter, a1, a1_zt, & 
 call diag_var_uv_rhs( "up2", dt, liter, a1, & 
                       wp2, wp2_zt, wp3, wpthvp, tau_zm,  & 
                       um, vm, upwp, upwp_zt, vpwp, & 
@@ -423,11 +432,13 @@ call diag_var_solve( "up2", 1, rhs, &
 !!!!!***** v'^2 *****!!!!!
 
 ! Implicit contributions to term vp2
-call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
-                   wp3, tau_zm, wm_zm, Kw9, C4_C14_1d,  & 
-                   nu9, beta, wtol_sqd, lhs )
+call diag_var_lhs( dt, liter, wp2_zt, wp3,  & 
+                   !a1, a1_zt, tau_zm, wm_zm, Kw9,  &
+                   a1, tau_zm, wm_zm, Kw9,  &
+                   C4_C14_1d, nu9, beta, wtol_sqd, lhs )
 
 ! Explicit contributions to vp2
+!call diag_var_uv_rhs( "vp2", dt, liter, a1, a1_zt, & 
 call diag_var_uv_rhs( "vp2", dt, liter, a1, & 
                       wp2, wp2_zt, wp3, wpthvp, tau_zm,  & 
                       vm, um, vpwp, vpwp_zt, upwp, & 
@@ -521,9 +532,10 @@ if ( scalar_calc ) then
 
   !!!!!***** sclr'^2, sclr'r_t', sclr'th_l' *****!!!!!
 
-  call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
-                     wp3, tau_zm, wm_zm, Kw2, C2sclr_1d,  & 
-                     nu2, beta, wtol_sqd, lhs )
+  call diag_var_lhs( dt, liter, wp2_zt, wp3,  & 
+                     !a1, a1_zt, tau_zm, wm_zm, Kw2,  &
+                     a1, tau_zm, wm_zm, Kw2,  &
+                     C2sclr_1d, nu2, beta, wtol_sqd, lhs )
 
 
   ! Explicit contributions to passive scalars
@@ -538,6 +550,7 @@ if ( scalar_calc ) then
     ! terms in each equation.
     wpsclrp_zt = zm2zt( wpsclrp(:,i) )
 
+    !call diag_var_rhs( "sclrp2", dt, liter, a1, a1_zt, &
     call diag_var_rhs( "sclrp2", dt, liter, a1,  & 
                        wp2_zt, wp3, wpsclrp(:,i),  & 
                        wpsclrp_zt, wpsclrp(:,i), wpsclrp_zt,  & 
@@ -548,6 +561,7 @@ if ( scalar_calc ) then
 
   !!!!!***** sclr'r_t' *****!!!!!
 
+    !call diag_var_rhs( "sclrprtp", dt, liter, a1, a1_zt, &
     call diag_var_rhs( "sclrprtp", dt, liter, a1,  & 
                        wp2_zt, wp3, wpsclrp(:,i),  & 
                        wpsclrp_zt, wprtp, wprtp_zt, sclrm(:,i),  & 
@@ -558,6 +572,7 @@ if ( scalar_calc ) then
 
   !!!!!***** sclr'th_l' *****!!!!!
 
+    !call diag_var_rhs( "sclrpthlp", dt, liter, a1, a1_zt, &
     call diag_var_rhs( "sclrpthlp", dt, liter, a1,  & 
                        wp2_zt, wp3, wpsclrp(:,i),  & 
                        wpsclrp_zt, wpthlp, wpthlp_zt,  & 
@@ -689,9 +704,10 @@ return
 end subroutine diag_var
 
 !===============================================================================
-subroutine diag_var_lhs( dt, liter, a1, wp2_zt,  & 
-                         wp3, tau_zm, wm_zm, Kw, Cn,  & 
-                         nu, beta, wtol_sqd, lhs )
+subroutine diag_var_lhs( dt, liter, wp2_zt, wp3,  & 
+                         !a1, a1_zt, tau_zm, wm_zm, Kw,  &
+                         a1, tau_zm, wm_zm, Kw,  &
+                         Cn, nu, beta, wtol_sqd, lhs )
         
 ! Description:  
 ! Compute LHS tridiagonal matrix for a variance or coveriance term
@@ -760,18 +776,19 @@ logical, intent(in) :: &
 
 ! Input Variables
 real, dimension(gr%nnzp), intent(in) :: & 
-  a1,     & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
-  wp2_zt, & ! w'^2 interpolated to thermodynamic levels      [m^2/s^2]
-  wp3,    & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
-  tau_zm, & ! Time-scale tau on momentum levels              [s]
-  wm_zm,  & ! w wind component on momentum levels            [m/s]
-  Kw,     & ! Coefficient of eddy diffusivity (all vars.)    [m^2/s]
-  Cn        ! Coefficient C_n                                [-]
+  wp2_zt,  & ! w'^2 interpolated to thermodynamic levels      [m^2/s^2]
+  wp3,     & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+  a1,      & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
+!  a1_zt,   & ! a_1 interpolated to thermodynamic levels       [-]
+  tau_zm,  & ! Time-scale tau on momentum levels              [s]
+  wm_zm,   & ! w wind component on momentum levels            [m/s]
+  Kw,      & ! Coefficient of eddy diffusivity (all vars.)    [m^2/s]
+  Cn         ! Coefficient C_n                                [-]
 
 real, intent(in) :: & 
-  nu,    &  ! Background constant coef. of eddy diff.        [-]
-  beta,  &  ! Constant model parameter beta                  [-]
-  wtol_sqd  ! w wind component tolerance squared             [m^2/s^2]
+  nu,      & ! Background constant coef. of eddy diff.        [-]
+  beta,    & ! Constant model parameter beta                  [-]
+  wtol_sqd   ! w wind component tolerance squared             [m^2/s^2]
 
 ! Output Variables
 real, dimension(3,gr%nnzp), intent(out) :: & 
@@ -816,9 +833,10 @@ do k = 2, gr%nnzp-1, 1
   ! LHS turbulent advection (ta) term.
   lhs(kp1_mdiag:km1_mdiag,k) & 
   = lhs(kp1_mdiag:km1_mdiag,k) & 
-  + term_ta_lhs( a1(k),  & 
-                 wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  & 
-                 gr%dzm(k), beta, wtol_sqd, k )
+  + term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+                 !a1(k), a1_zt(kp1), a1_zt(k), gr%dzm(k), beta,  &
+                 a1(k), gr%dzm(k), beta,  &
+                 wtol_sqd, k )
 
   if ( l_stats_samp ) then
  
@@ -847,9 +865,10 @@ do k = 2, gr%nnzp-1, 1
    if ( irtp2_ta + ithlp2_ta + irtpthlp_ta + & 
         iup2_ta + ivp2_ta > 0 ) then
      tmp(1:3) & 
-     = term_ta_lhs( a1(k),  & 
-                    wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  & 
-                    gr%dzm(k), beta, wtol_sqd, k )
+     = term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+                    !a1(k), a1_zt(kp1), a1_zt(k), gr%dzm(k), beta,  &
+                    a1(k), gr%dzm(k), beta,  &
+                    wtol_sqd, k )
      zmscr05(k) = -tmp(3)
      zmscr06(k) = -tmp(2)
      zmscr07(k) = -tmp(1)
@@ -1094,7 +1113,8 @@ return
 end subroutine diag_var_solve
 
 !===============================================================================
-subroutine diag_var_uv_rhs( solve_type, dt, liter, a1, & 
+!subroutine diag_var_uv_rhs( solve_type, dt, liter, a1, a1_zt, & 
+subroutine diag_var_uv_rhs( solve_type, dt, liter, a1, &
                             wp2, wp2_zt, wp3, wpthvp, tau_zm,  & 
                             xam, xbm, wpxap, wpxap_zt, wpxbp, & 
                             wpxbp_zt, xap2, xbp2, C4, C5, C14, & 
@@ -1145,6 +1165,7 @@ logical, intent(in) :: &
 
 real, dimension(gr%nnzp), intent(in) :: & 
   a1,       & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
+!  a1_zt,    & ! a_1 interpolated to thermodynamic levels       [-]
   wp2,      & ! w'^2 (momentum levels)                         [m^2/s^2]
   wp2_zt,   & ! w'^2 interpolated to thermodynamic levels      [m^2/s^2]
   wp3,      & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
@@ -1215,9 +1236,9 @@ do k = 2, gr%nnzp-1, 1
 
   rhs(k,1) & 
   ! RHS turbulent advection (ta) term.
-  = term_ta_rhs( a1(k),  & 
-                 wp3(kp1), wp3(k), wp2_zt(kp1),  & 
-                 wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k),  & 
+  = term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+                 !a1(k), a1_zt(kp1), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k),  &
+                 a1(k), wpxbp_zt(kp1), wpxbp_zt(k),  &
                  wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k),  & 
                  beta, wtol_sqd ) & 
   ! RHS turbulent production (tp) term.
@@ -1240,11 +1261,11 @@ do k = 2, gr%nnzp-1, 1
   ! Statistics: explicit contributions for up2 or vp2.
                
     call stat_modify_pt( ixapxbp_ta, k, & 
-          term_ta_rhs( a1(k),  & 
-                       wp3(kp1), wp3(k), wp2_zt(kp1),  & 
-                       wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k),  & 
-                       wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k),  & 
-                       beta, wtol_sqd ), zm )
+         term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+                      !a1(k), a1_zt(kp1), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
+                      a1(k), wpxbp_zt(kp1), wpxbp_zt(k),  &
+                      wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k),  & 
+                      beta, wtol_sqd ), zm )
             
     if ( ixapxbp_dp1 > 0 ) then
       ! Note:  The function term_pr1 is the explicit component 
@@ -1308,7 +1329,8 @@ return
 end subroutine diag_var_uv_rhs
 
 !===============================================================================
-subroutine diag_var_rhs( solve_type, dt, liter, a1,  & 
+!subroutine diag_var_rhs( solve_type, dt, liter, a1, a1_zt, & 
+subroutine diag_var_rhs( solve_type, dt, liter, a1, & 
                          wp2_zt, wp3, wpxap, wpxap_zt, & 
                          wpxbp, wpxbp_zt, xam, xbm, xapxbp, & 
                          Cn, tau_zm, threshold, beta, &
@@ -1357,6 +1379,7 @@ logical, intent(in) :: &
 
 real, dimension(gr%nnzp), intent(in) :: & 
   a1,       & ! sigma_sqd_w-related term a_1 (momentum levels)  [-]
+!  a1_zt,    & ! a_1 interpolated to thermodynamic levels        [-]
   wp2_zt,   & ! w'^2 interpolated to thermodynamic levels       [m^2/s^2]
   wp3,      & ! w'^3 (thermodynamic levels)                     [m^3/s^3]
   wpxap,    & ! w'x_a' (momentum levels)                        [m/s {x_am units}]
@@ -1427,9 +1450,9 @@ do k = 2, gr%nnzp-1, 1
 
   rhs(k,1) & 
   ! RHS turbulent advection (ta) term.
-  = term_ta_rhs( a1(k), & 
-                 wp3(kp1), wp3(k), wp2_zt(kp1),  & 
-                 wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k),  & 
+  = term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+                 !a1(k), a1_zt(kp1), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
+                 a1(k), wpxbp_zt(kp1), wpxbp_zt(k),  &
                  wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k),  & 
                  beta, wtol_sqd ) & 
   ! RHS turbulent production (tp) term.
@@ -1450,9 +1473,9 @@ do k = 2, gr%nnzp-1, 1
   ! Statistics: explicit contributions for rtp2, thlp2, or rtpthlp.
 
   call stat_modify_pt( ixapxbp_ta, k, & 
-      term_ta_rhs( a1(k),  & 
-                   wp3(kp1), wp3(k), wp2_zt(kp1), & 
-                   wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), & 
+      term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+                   !a1(k), a1_zt(kp1), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
+                   a1(k), wpxbp_zt(kp1), wpxbp_zt(k), &
                    wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), & 
                    beta, wtol_sqd ), zm )
 
@@ -1498,9 +1521,10 @@ return
 end subroutine diag_var_rhs
 
 !===============================================================================
-pure function term_ta_lhs( a1,  & 
-                           wp3p1, wp3, wp2_ztp1, wp2_zt,  & 
-                           dzm, beta, wtol_sqd, level ) & 
+pure function term_ta_lhs( wp3p1, wp3, wp2_ztp1, wp2_zt,  &
+                           !a1, a1_ztp1, a1_zt, dzm, beta,  &
+                           a1, dzm, beta,  &
+                           wtol_sqd, level ) & 
 result( lhs )
 
 ! Description:
@@ -1598,14 +1622,16 @@ integer, parameter :: &
 
 ! Input Variables
 real, intent(in) :: & 
-  a1,       & ! a_1(k)                                   [-]
-  wp3p1,    & ! w'^3(k+1)                                [m^3/s^3]
-  wp3,      & ! w'^3(k)                                  [m^3/s^3]
-  wp2_ztp1, & ! w'^2 interpolated to thermo. level (k+1) [m^2/s^2]
-  wp2_zt,   & ! w'^2 interpolated to thermo. level (k)   [m^2/s^2]
-  dzm,      & ! Inverse of grid spacing                  [1/m]
-  beta,     & ! Model parameter                          [-]
-  wtol_sqd    ! w wind component tolerance squared       [m^2/s^2]
+  wp3p1,    & ! w'^3(k+1)                                      [m^3/s^3]
+  wp3,      & ! w'^3(k)                                        [m^3/s^3]
+  wp2_ztp1, & ! w'^2 interpolated to thermodynamic level (k+1) [m^2/s^2]
+  wp2_zt,   & ! w'^2 interpolated to thermodynamic level (k)   [m^2/s^2]
+  a1,       & ! a_1(k)                                         [-]
+!  a1_ztp1,  & ! a_1 interpolated to thermodynamic level (k+1)  [-]
+!  a1_zt,    & ! a_1 interpolated to thermodynamic level (k)    [-]
+  dzm,      & ! Inverse of grid spacing                        [1/m]
+  beta,     & ! Model parameter                                [-]
+  wtol_sqd    ! w wind component tolerance squared             [m^2/s^2]
 
 integer, intent(in) :: & 
   level ! Central momentum level (on which calculation occurs).
@@ -1670,9 +1696,9 @@ return
 end function term_ta_lhs
 
 !===============================================================================
-pure function term_ta_rhs( a1,  & 
-                           wp3p1, wp3, wp2_ztp1,  & 
-                           wp2_zt, wpxbp_ztp1, wpxbp_zt,  & 
+pure function term_ta_rhs( wp3p1, wp3, wp2_ztp1, wp2_zt,  &
+                           !a1, a1_ztp1, a1_zt, wpxbp_ztp1, wpxbp_zt,  &
+                           a1, wpxbp_ztp1, wpxbp_zt,  &
                            wpxap_ztp1, wpxap_zt, dzm,  & 
                            beta, wtol_sqd ) & 
 result( rhs )
@@ -1755,11 +1781,13 @@ intrinsic :: max
 
 ! Input variables
 real, intent(in) :: & 
-  a1,         & ! a_1(k)                                     [-]
   wp3p1,      & ! w'^3(k+1)                                  [m^3/s^3]
   wp3,        & ! w'^3(k)                                    [m^3/s^3]
   wp2_ztp1,   & ! w'^2 interpolated to thermo. level (k+1)   [m^2/s^2]
   wp2_zt,     & ! w'^2 interpolated to thermo. level (k)     [m^2/s^2]
+  a1,         & ! a_1(k)                                     [-]
+!  a1_ztp1,    & ! a_1 interpolated to thermo. level (k+1)    [-]
+!  a1_zt,      & ! a_1 interpolated to thermo. level (k)      [-]
   wpxbp_ztp1, & ! w'x_b' interpolated to thermo. level (k+1) [m/s {x_bm units}]
   wpxbp_zt,   & ! w'x_b' interpolated to thermo. level (k)   [m/s {x_bm units}]
   wpxap_ztp1, & ! w'x_a' interpolated to thermo. level (k+1) [m/s {x_am units}]
