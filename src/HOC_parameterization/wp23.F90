@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.29 2008-08-09 15:08:32 griffinb Exp $
+! $Id: wp23.F90,v 1.30 2008-08-10 21:15:32 griffinb Exp $
 !===============================================================================
 module wp23
 
@@ -483,6 +483,7 @@ endif
 ! multiply. -dschanen 19 March 2007
 
 a1 = 1.0 / ( 1.0 - sigma_sqd_w )
+
 a3 = 3.0 * sigma_sqd_w*sigma_sqd_w & 
      + 6.0*(1.0-sigma_sqd_w)*sigma_sqd_w  & 
      + (1.0-sigma_sqd_w)*(1.0-sigma_sqd_w) & 
@@ -496,14 +497,16 @@ a3_zt  = zm2zt( a3 )
 
 ! Compute the implicit portion of the w'^2 and w'^3 equations.
 ! Build the left-hand side matrix.
-call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1_zt,  & 
+!call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a3, a1_zt,  &
+call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1_zt,  &
                a3_zt, Kw1, Kw8, Skw_zt, tau1m, tauw3t,  & 
                C1_Skw_fnc, C11_Skw_fnc, lcrank_nich_diff,  & 
                lhs )
 
 ! Compute the explicit portion of the w'^2 and w'^3 equations.
 ! Build the right-hand side vector.
-call wp23_rhs( dt, wp2, wp3, wp3_zm, a1_zt,  & 
+!call wp23_rhs( dt, wp2, wp3, wp3_zm, a1_zt, a1, a3, &
+call wp23_rhs( dt, wp2, wp3, wp3_zm, a1_zt, &
                a3_zt, wpthvp, wp2thvp, um, vm,  & 
                upwp, vpwp, up2, vp2, Kw1, Kw8,  & 
                Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
@@ -667,6 +670,7 @@ return
 end subroutine wp23_solve
 
 !===============================================================================
+!subroutine wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a3, a1_zt,  & 
 subroutine wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1_zt,  & 
                      a3_zt, Kw1, Kw8, Skw_zt, tau1m, tauw3t,  & 
                      C1_Skw_fnc, C11_Skw_fnc, lcrank_nich_diff,  & 
@@ -764,22 +768,24 @@ integer, parameter :: &
 
 ! Input Variables
 real(kind=time_precision), intent(in) ::  & 
-  dt             ! Timestep length                          [s]
+  dt             ! Timestep length                                [s]
 
 real, dimension(gr%nnzp), intent(in) ::  & 
-  wp2,         & ! w'^2 (momentum levels)                   [m^2/s^2]
-  wp3_zm,      & ! w'^3 interpolated to momentum levels     [m^3/s^3]
-  wm_zm,       & ! w wind component on momentum levels      [m/s]
-  wm_zt,       & ! w wind component on thermodynamic levels [m/s]
-  a1_zt,       & ! a_1 interpolated to thermodynamic levels [-]
-  a3_zt,       & ! a_3 interpolated to thermodynamic levels [-]
-  Kw1,         & ! Coefficient of eddy diffusivity for w'^2 [m^2/s]
-  Kw8,         & ! Coefficient of eddy diffusivity for w'^3 [m^2/s]
-  Skw_zt,      & ! Skewness of w on thermodynamic levels    [-]
-  tau1m,       & ! Time-scale tau on momentum levels        [s]
-  tauw3t,      & ! Time-scale tau on thermodynamic levels   [s]
-  C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied          [-]
-  C11_Skw_fnc    ! C_11 parameter with Sk_w applied         [-]
+  wp2,         & ! w'^2 (momentum levels)                         [m^2/s^2]
+  wp3_zm,      & ! w'^3 interpolated to momentum levels           [m^3/s^3]
+  wm_zm,       & ! w wind component on momentum levels            [m/s]
+  wm_zt,       & ! w wind component on thermodynamic levels       [m/s]
+!  a1,          & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
+!  a3,          & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
+  a1_zt,       & ! a_1 interpolated to thermodynamic levels       [-]
+  a3_zt,       & ! a_3 interpolated to thermodynamic levels       [-]
+  Kw1,         & ! Coefficient of eddy diffusivity for w'^2       [m^2/s]
+  Kw8,         & ! Coefficient of eddy diffusivity for w'^3       [m^2/s]
+  Skw_zt,      & ! Skewness of w on thermodynamic levels          [-]
+  tau1m,       & ! Time-scale tau on momentum levels              [s]
+  tauw3t,      & ! Time-scale tau on thermodynamic levels         [s]
+  C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied                [-]
+  C11_Skw_fnc    ! C_11 parameter with Sk_w applied               [-]
 
 logical, intent(in) :: & 
   lcrank_nich_diff   ! Turns on/off Crank-Nicholson diffusion.
@@ -1129,7 +1135,8 @@ return
 end subroutine wp23_lhs
 
 !===============================================================================
-subroutine wp23_rhs( dt, wp2, wp3, wp3_zm, a1_zt,  & 
+!subroutine wp23_rhs( dt, wp2, wp3, wp3_zm, a1_zt, a1, a3, &
+subroutine wp23_rhs( dt, wp2, wp3, wp3_zm, a1_zt, &
                      a3_zt, wpthvp, wp2thvp, um, vm,  & 
                      upwp, vpwp, up2, vp2, Kw1, Kw8,  & 
                      Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
@@ -1181,29 +1188,31 @@ implicit none
 
 ! Input Variables
 real(kind=time_precision), intent(in) ::  & 
-  dt             ! Timestep length                          [s]
+  dt             ! Timestep length                                [s]
 
 real, dimension(gr%nnzp), intent(in) ::  & 
-  wp2,         & ! w'^2 (momentum levels)                   [m^2/s^2]
-  wp3,         & ! w'^3 (thermodynamic levels)              [m^3/s^3]
-  wp3_zm,      & ! w'^3 interpolated to momentum levels     [m^3/s^3]
-  a1_zt,       & ! a_1 interpolated to thermodynamic levels [-]
-  a3_zt,       & ! a_3 interpolated to thermodynamic levels [-]
-  wpthvp,      & ! w'th_v' (momentum levels)                [K m/s]
-  wp2thvp,     & ! w'^2th_v' (thermodynamic levels)         [K m^2/s^2]
-  um,          & ! u wind component (thermodynamic levels)  [m/s]
-  vm,          & ! v wind component (thermodynamic levels)  [m/s]
-  upwp,        & ! u'w' (momentum levels)                   [m^2/s^2]
-  vpwp,        & ! v'w' (momentum levels)                   [m^2/s^2]
-  up2,         & ! u'^2 (momentum levels)                   [m^2/s^2]
-  vp2,         & ! v'^2 (momentum levels)                   [m^2/s^2]
-  Kw1,         & ! Coefficient of eddy diffusivity for w'^2 [m^2/s]
-  Kw8,         & ! Coefficient of eddy diffusivity for w'^3 [m^2/s]
-  Skw_zt,      & ! Skewness of w on thermodynamic levels    [-]
-  tau1m,       & ! Time-scale tau on momentum levels        [s]
-  tauw3t,      & ! Time-scale tau on thermodynamic levels   [s]
-  C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied          [-]
-  C11_Skw_fnc    ! C_11 parameter with Sk_w applied         [-]
+  wp2,         & ! w'^2 (momentum levels)                         [m^2/s^2]
+  wp3,         & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+  wp3_zm,      & ! w'^3 interpolated to momentum levels           [m^3/s^3]
+!  a1,          & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
+!  a3,          & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
+  a1_zt,       & ! a_1 interpolated to thermodynamic levels       [-]
+  a3_zt,       & ! a_3 interpolated to thermodynamic levels       [-]
+  wpthvp,      & ! w'th_v' (momentum levels)                      [K m/s]
+  wp2thvp,     & ! w'^2th_v' (thermodynamic levels)               [K m^2/s^2]
+  um,          & ! u wind component (thermodynamic levels)        [m/s]
+  vm,          & ! v wind component (thermodynamic levels)        [m/s]
+  upwp,        & ! u'w' (momentum levels)                         [m^2/s^2]
+  vpwp,        & ! v'w' (momentum levels)                         [m^2/s^2]
+  up2,         & ! u'^2 (momentum levels)                         [m^2/s^2]
+  vp2,         & ! v'^2 (momentum levels)                         [m^2/s^2]
+  Kw1,         & ! Coefficient of eddy diffusivity for w'^2       [m^2/s]
+  Kw8,         & ! Coefficient of eddy diffusivity for w'^3       [m^2/s]
+  Skw_zt,      & ! Skewness of w on thermodynamic levels          [-]
+  tau1m,       & ! Time-scale tau on momentum levels              [s]
+  tauw3t,      & ! Time-scale tau on thermodynamic levels         [s]
+  C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied                [-]
+  C11_Skw_fnc    ! C_11 parameter with Sk_w applied               [-]
 
 logical, intent(in) :: & 
   lcrank_nich_diff   ! Turns on/off Crank-Nicholson diffusion.
@@ -1371,7 +1380,7 @@ do k = 2, gr%nnzp-1, 1
     call stat_begin_update_pt( iwp3_tp, k,  &
       -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
                             wp2(k), wp2(km1),  &
-                            !0.0, 0.0, 
+                            !0.0, 0.0,  & 
                             !0.0-(3.0/2.0), 0.0-(3.0/2.0),  &
                             0.0, 0.0-(3.0/2.0),  & 
                             gr%dzt(k), wtol ),zt )
