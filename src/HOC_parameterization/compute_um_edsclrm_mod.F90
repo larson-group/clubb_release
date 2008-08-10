@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F90,v 1.8 2008-08-01 13:18:38 faschinj Exp $
+! $Id: compute_um_edsclrm_mod.F90,v 1.9 2008-08-10 23:49:24 griffinb Exp $
 !------------------------------------------------------------------------
 module compute_um_edsclrm_mod
 
@@ -410,5 +410,217 @@ endif
 
 end subroutine compute_uv_tndcy
 
+!===============================================================================
+subroutine compute_um_edsclrm_lhs( dt, wm_zt, Kh_zm, lhs )
+
+! Description:
+! Calculate the implicit portion of the eddy-scalar time-tendency equation.
+!
+! The rate of change of an eddy-scalar quantity, xm, is:
+!
+! d(xm)/dt  =  - w * d(xm)/dz  -  d(x'w')/dz  +  xm_forcings;
+!
+! where the momentum flux, x'w', is calculated as:
+!
+! x'w'  =  - K * d(xm)/dz.
+!
+! The first equation becomes:
+!
+! d(xm)/dt  =  - w * d(xm)/dz  +  d [ K * d(xm)/dz ] / dz  +  xm_forcings.
+!
+! A Crank-Nicholson (semi-implicit) diffusion scheme is used to solve the 
+! d [ K * d(xm)/dz ] / dz diffusion term.
+!
+! However, at the lower boundary level (usually at the surface), the first 
+! equation becomes:
+!
+! ( d(xm)/dt )|_sfc  =  - d( x'w'|_sfc ) / dz.
+!
+! At the lower boundary level, this term is treated completely explicitly.
+
+! References:
+!-----------------------------------------------------------------------
+
+use grid_class, only:  & 
+    gr  ! Variable(s)
+
+use stats_precision, only:  & 
+    time_precision ! Variable(s)
+
+use diffusion, only:  & 
+    diffusion_zt_lhs ! Procedure(s)
+
+use mean_adv, only: & 
+    term_ma_zt_lhs  ! Procedures
+
+implicit none
+
+! Constant parameters
+integer, parameter :: & 
+  kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
+  k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
+  km1_tdiag = 3       ! Thermodynamic subdiagonal index.
+
+! Input Variables
+real(kind=time_precision), intent(in) :: & 
+  dt         ! Model timestep                           [s]
+
+real, dimension(gr%nnzp), intent(in) :: &
+  wm_zt,   & ! w wind component on thermodynamic levels [m/s]
+  Kh_zm      ! Eddy diffusivity on momentum levels      [m^2/s]
+
+! Output Variable
+real, dimension(3,gr%nnzp), intent(out) :: &
+  lhs        ! Implicit contributions to the term
+
+! Local Variables
+integer :: k, km1  ! Array indices
+
+
+! Initialize the LHS array.
+lhs = 0.0
+
+do k = 2, gr%nnzp-1, 1
+
+   ! Define index
+   km1 = max( k-1, 1 )
+
+   ! LHS mean advection term.
+   lhs(kp1_tdiag:km1_tdiag,k)  &
+   = lhs(kp1_tdiag:km1_tdiag,k)  &
+   + term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
+
+   ! LHS eddy diffusion of xm term (or the turbulent advection of x'w' term).
+   lhs(kp1_tdiag:km1_tdiag,k)  &
+   = lhs(kp1_tdiag:km1_tdiag,k)  &
+   + (1.0/2.0) * diffusion_zt_lhs( Kh_zm(k), Kh_zm(km1), 0.0, & 
+                                   gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+
+   ! LHS time tendency.
+   lhs(k_tdiag,k)  &
+   = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
+
+enddo
+
+
+! Boundary Conditions
+! Lower Boundary
+lhs(:,1) = 0.0
+lhs(k_tdiag,1) = 1.0
+
+! Upper Boundary
+lhs(:,gr%nnzp) = 0.0
+lhs(k_tdiag,gr%nnzp) = 1.0
+
+
+return
+end subroutine compute_um_edsclrm_lhs
+
+!===============================================================================
+subroutine compute_um_edsclrm_rhs( dt, Kh_zm, xm, xm_forcing, &
+                                   xpwp_sfc, rhs )
+
+! Description:
+! Calculate the implicit portion of the eddy-scalar time-tendency equation.
+!
+! The rate of change of an eddy-scalar quantity, xm, is:
+!
+! d(xm)/dt  =  - w * d(xm)/dz  -  d(x'w')/dz  +  xm_forcings;
+!
+! where the momentum flux, x'w', is calculated as:
+!
+! x'w'  =  - K * d(xm)/dz.
+!
+! The first equation becomes:
+!
+! d(xm)/dt  =  - w * d(xm)/dz  +  d [ K * d(xm)/dz ] / dz  +  xm_forcings.
+!
+! A Crank-Nicholson (semi-implicit) diffusion scheme is used to solve the 
+! d [ K * d(xm)/dz ] / dz diffusion term.
+!
+! However, at the lower boundary level (usually at the surface), the first 
+! equation becomes:
+!
+! ( d(xm)/dt )|_sfc  =  - d( x'w'|_sfc ) / dz.
+!
+! At the lower boundary level, this term is treated completely explicitly.
+
+! References:
+!-----------------------------------------------------------------------
+
+use grid_class, only:  & 
+    gr  ! Variable(s)
+
+use stats_precision, only:  & 
+    time_precision ! Variable(s)
+
+use diffusion, only:  & 
+    diffusion_zt_lhs ! Procedure(s)
+
+! Input Variables
+real(kind=time_precision), intent(in) :: & 
+  dt           ! Model timestep                                   [s]
+
+real, dimension(gr%nnzp), intent(in) :: &
+  Kh_zm,     & ! Eddy diffusivity on momentum levels              [m^2/s]
+  xm,        & ! Eddy-scalar variable, xm (thermodynamic levels)  [units vary]
+  xm_forcing   ! The explicit time-tendency acting on xm          [units vary]
+
+real, intent(in) :: &
+  xpwp_sfc     ! x'w' at the surface                              [units vary]
+
+! Output Variable
+real, dimension(gr%nnzp), intent(out) :: &
+  rhs
+
+! Local Variables
+integer :: k, kp1, km1  ! Array indices
+
+! For use in Crank-Nicholson eddy diffusion.
+real, dimension(3) :: rhs_diff
+
+
+! Initialize the RHS vector.
+rhs = 0.0
+
+do k = 2, gr%nnzp-1, 1
+
+   ! Define indices
+   km1 = max( k-1, 1 )
+   kp1 = min( k+1, gr%nnzp )
+
+   ! RHS eddy diffusion of xm term (or the turbulent advection of x'w' term).
+   rhs_diff(1:3) & 
+   = (1.0/2.0) * diffusion_zt_lhs( Kh_zm(k), Kh_zm(km1), 0.0, &
+                                   gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+   rhs(k)   =   rhs(k) & 
+              - rhs_diff(3) * xm(km1) &
+              - rhs_diff(2) * xm(k)   &
+              - rhs_diff(1) * xm(kp1)
+
+   ! RHS forcings.
+   rhs(k) = rhs(k) + xm_forcing(k)
+
+   ! RHS time tendency
+   rhs(k) = real( rhs(k) + ( 1.0 / dt ) )
+
+enddo
+
+
+! Boundary Condition
+! Lower Boundary
+! The surface value of x'w' is computed elsewhere in the code.  If the value of 
+! xm at the surface is positive, x'w' at the surface will be negative, and 
+! vice-versa.
+rhs(1) = + gr%dzt(1) * xpwp_sfc
+
+! Upper Boundary
+rhs(gr%nnzp) = 0.0
+
+
+return
+end subroutine compute_um_edsclrm_rhs
+
+!===============================================================================
 
 end module compute_um_edsclrm_mod
