@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F90,v 1.9 2008-08-10 23:49:24 griffinb Exp $
+! $Id: compute_um_edsclrm_mod.F90,v 1.10 2008-08-11 19:29:03 griffinb Exp $
 !------------------------------------------------------------------------
 module compute_um_edsclrm_mod
 
@@ -411,7 +411,7 @@ endif
 end subroutine compute_uv_tndcy
 
 !===============================================================================
-subroutine compute_um_edsclrm_lhs( dt, wm_zt, Kh_zm, lhs )
+subroutine compute_um_edsclrm_lhs( solve_type, dt, wm_zt, Kh_zm, lhs )
 
 ! Description:
 ! Calculate the implicit portion of the eddy-scalar time-tendency equation.
@@ -453,6 +453,19 @@ use diffusion, only:  &
 use mean_adv, only: & 
     term_ma_zt_lhs  ! Procedures
 
+use stats_variables, only: &
+    ium_ma,  & ! Variable(s)
+    ium_ta,  &
+    ivm_ma,  &
+    ivm_ta,  &
+    ztscr01, &
+    ztscr02, &
+    ztscr03, &
+    ztscr04, &
+    ztscr05, &
+    ztscr06, &
+    l_stats_samp
+
 implicit none
 
 ! Constant parameters
@@ -462,6 +475,9 @@ integer, parameter :: &
   km1_tdiag = 3       ! Thermodynamic subdiagonal index.
 
 ! Input Variables
+character(len=*), intent(in) :: &
+  solve_type ! Desc. of what is being solved for
+
 real(kind=time_precision), intent(in) :: & 
   dt         ! Model timestep                           [s]
 
@@ -476,6 +492,20 @@ real, dimension(3,gr%nnzp), intent(out) :: &
 ! Local Variables
 integer :: k, km1  ! Array indices
 
+real, dimension(3) :: tmp
+integer :: ixm_ma, ixm_ta
+
+select case ( trim( solve_type ) )
+   case ( "um" )
+      ixm_ma = ium_ma
+      ixm_ta = ium_ta
+   case ( "vm" )
+      ixm_ma = ivm_ma
+      ixm_ta = ivm_ta
+   case default  ! Eddy scalars
+      ixm_ma = 0
+      ixm_ta = 0
+end select
 
 ! Initialize the LHS array.
 lhs = 0.0
@@ -500,17 +530,40 @@ do k = 2, gr%nnzp-1, 1
    lhs(k_tdiag,k)  &
    = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
 
+   if ( l_stats_samp ) then
+
+      ! Statistics:  implicit contributions for um or vm.
+
+      if ( ixm_ma > 0 ) then
+         tmp(1:3) &
+         = term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
+         ztscr01(k) = -tmp(3)
+         ztscr02(k) = -tmp(2)
+         ztscr03(k) = -tmp(1)
+      endif
+
+      if ( ixm_ta > 0 ) then
+         tmp(1:3) &
+         = (1.0/2.0) * diffusion_zt_lhs( Kh_zm(k), Kh_zm(km1), 0.0, &
+                                         gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+         ztscr04(k) = -tmp(3)
+         ztscr05(k) = -tmp(2)
+         ztscr06(k) = -tmp(1)
+      endif
+
+   endif  ! lstats_samp
+
 enddo
 
 
 ! Boundary Conditions
 ! Lower Boundary
 lhs(:,1) = 0.0
-lhs(k_tdiag,1) = 1.0
+lhs(k_tdiag,1) = real( 1.0 / dt )
 
 ! Upper Boundary
 lhs(:,gr%nnzp) = 0.0
-lhs(k_tdiag,gr%nnzp) = 1.0
+lhs(k_tdiag,gr%nnzp) = real( 1.0 / dt )
 
 
 return
@@ -557,6 +610,8 @@ use stats_precision, only:  &
 use diffusion, only:  & 
     diffusion_zt_lhs ! Procedure(s)
 
+implicit none
+
 ! Input Variables
 real(kind=time_precision), intent(in) :: & 
   dt           ! Model timestep                                   [s]
@@ -602,7 +657,7 @@ do k = 2, gr%nnzp-1, 1
    rhs(k) = rhs(k) + xm_forcing(k)
 
    ! RHS time tendency
-   rhs(k) = real( rhs(k) + ( 1.0 / dt ) )
+   rhs(k) = real( rhs(k) + ( 1.0 / dt ) * xm(k) )
 
 enddo
 
@@ -612,10 +667,10 @@ enddo
 ! The surface value of x'w' is computed elsewhere in the code.  If the value of 
 ! xm at the surface is positive, x'w' at the surface will be negative, and 
 ! vice-versa.
-rhs(1) = + gr%dzt(1) * xpwp_sfc
+rhs(1) = + gr%dzt(1) * xpwp_sfc  +  real( ( 1.0 / dt ) * xm(1) )
 
 ! Upper Boundary
-rhs(gr%nnzp) = 0.0
+rhs(gr%nnzp) = real( ( 1.0 / dt ) * xm(gr%nnzp) )
 
 
 return
