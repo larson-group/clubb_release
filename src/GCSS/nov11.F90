@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: nov11.F90,v 1.12 2008-08-06 13:53:03 faschinj Exp $
+! $Id: nov11.F90,v 1.13 2008-08-11 16:21:05 faschinj Exp $
   module nov11
 
 !       Description:
@@ -79,32 +79,32 @@
   real, parameter ::  & 
   F0   = 104.0,  & ! Coefficient for cloud top heating (see Stevens) [W/m^2]
   F1   = 62.0,   & ! Coefficient for cloud base heating (see Stevens)[W/m^2]
-  kap  = 94.2   ! A "constant" according to Duynkerke eqn. 5, 
-                ! where his value is 130 m^2/kg [m^2/kg]
+  kap  = 94.2      ! A "constant" according to Duynkerke eqn. 5, 
+                   ! where his value is 130 m^2/kg [m^2/kg]
 
   ! SW Radiative constants
   real, parameter ::  & 
   radius = 1.0e-5, & ! Effective droplet radius                      [m]
   A      = 0.1,    & ! Albedo -- sea surface, according to Lenderink [-]
   gc     = 0.86,   & ! Asymmetry parameter, "g" in Duynkerke.        [-]
-  omega  = 0.9965 ! Single-scattering albedo                      [-]
+  omega  = 0.9965    ! Single-scattering albedo                      [-]
 
 
   ! Toggles for activating/deactivating forcings
   logical, parameter ::  & 
-  subs_on   = .true., & 
-  lw_on     = .true.
+  l_subs_on   = .true., & 
+  l_lw_on     = .true.   ! ( To set 1_sw_on = .false., set xi_abs < 0.0 )
 
   ! Toggle for centered/forward differencing (in interpolations)
   ! To use centered differencing, set the toggle to .true.
   ! To use forward differencing, set the toggle to  .false.
   logical, parameter :: & 
-  center = .false.
+  l_center = .false.
 
   ! Input variables
   real(kind=time_precision), intent(in) :: & 
   time,            & ! Current time          [s]
-  time_initial    ! Initial time          [s]
+  time_initial       ! Initial time          [s]
 
   real(kind=time_precision), intent(in) :: & 
   dt              ! Timestep              [s]
@@ -116,7 +116,7 @@
   real, intent(in), dimension(gr%nnzp) :: & 
   rcm,     & ! Cloud water mixing ratio      [kg/kg]
   exner,   & ! Exner function                [-]
-  rho    ! Density                       [kg/m^3]
+  rho        ! Density                       [kg/m^3]
 
   ! Input/Output variables
   real, intent(inout), dimension(gr%nnzp) :: & 
@@ -124,13 +124,13 @@
 
   ! Output variables
   real, intent(out), dimension(gr%nnzp) :: & 
-  wm_zt,             & ! Mean vertical wind on the thermo. grid  [m/s]
-  wm_zm,             & ! Mean vertical wind on the moment. grid  [m/s]
+  wm_zt,           & ! Mean vertical wind on the thermo. grid  [m/s]
+  wm_zm,           & ! Mean vertical wind on the moment. grid  [m/s]
   thlm_forcing,    & ! Theta_l forcing                         [K/s]
   rtm_forcing,     & ! Total water forcing                     [kg/kg/s]
   Frad,            & ! Radiative flux                          [W/m^2]
   radht,           & ! Radiative heating                       [K/s]
-  Ncnm            ! Cloud nuclei number concentration       [num/m^3]
+  Ncnm               ! Cloud nuclei number concentration       [num/m^3]
 
   ! Output variables
   real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
@@ -144,30 +144,30 @@
   Frad_LW,  & ! Long wave radiative flux     [W/m^2]
   Frad_SW,  & ! Short wave radiative flux    [W/m^2]
   radht_LW, & ! Long wave radiative heating  [K/s]
-  radht_SW ! Short wave radiative heating [K/s]
+  radht_SW    ! Short wave radiative heating [K/s]
 
   real, dimension(gr%nnzp) ::  & 
 !     .  LWP,       ! Liquid water path                              [kg/m^2]
-  rcm_rad,    & ! Flipped array of liq. water mixing ratio       [kg/kg]
+  rcm_rad,   & ! Flipped array of liq. water mixing ratio       [kg/kg]
   rho_rad,   & ! Flipped array of air density                   [kg/m^3]
-  dsigm,      & ! Flipped array of grid spacing                  [m]
-  coamps_zm,  & ! Flipped array of momentum level altitudes      [m]
-  coamps_zt  ! Flipped array of thermodynamic level altitudes [m]
+  dsigm,     & ! Flipped array of grid spacing                  [m]
+  coamps_zm, & ! Flipped array of momentum level altitudes      [m]
+  coamps_zt    ! Flipped array of thermodynamic level altitudes [m]
 
   real, dimension(gr%nnzp) ::  & 
   frad_out,    & ! Flipped array of radiaive flux            [W/m^2]
   frad_lw_out, & ! Flipped array of LW radiative flux        [W/m^2]
-  frad_sw_out ! Flipped array of SW radiative flux        [W/m^2] 
+  frad_sw_out    ! Flipped array of SW radiative flux        [W/m^2] 
 
   real, dimension(gr%nnzp) ::  & 
   radhtk,       & ! Flipped array of radiative heating       [K/s]
   radht_lw_out, & ! Flipped array of LW radiative heating    [K/s]
-  radht_sw_out ! Flipped array of SW radiative heating    [K/s]
+  radht_sw_out    ! Flipped array of SW radiative heating    [K/s]
 
   ! Working arrays for subsidence interpolation
   real, dimension(7) ::  & 
   zsubs, & ! Heights at which wm_zt data is supplied (used for subsidence interpolation) [m]
-  wt1   ! ONLY wt1 IS NEEDED FOR NOV.11 CASE
+  wt1      ! ONLY wt1 IS NEEDED FOR NOV.11 CASE
 
   ! Subsidence constant and variables (for Nov.11 case only)
   real :: & 
@@ -179,13 +179,13 @@
   dbzi,  & ! Defines height above inversion (below this height, 
            ! subsidence linearly tapers off to zero)    [m]
   dbc,   & ! Defines height below cloud (at / below this height, we have NO subsidence) [m]
-  dac   ! Defines height above cloud (at / above this height, we have NO subsidence) [m]
+  dac      ! Defines height above cloud (at / above this height, we have NO subsidence) [m]
 
   ! Working arrays for SW radiation interpolation
 
   real, dimension(nparam) ::  & 
   xilist, & ! Values of cosine of solar zenith angle corresponding 
-         !   to the values in Fslist
+            !   to the values in Fslist
   Fslist ! Values of Fs0 corresponding to the values in xilist.
 
 
@@ -193,17 +193,17 @@
 
   real :: & 
   xi_abs, & ! Cosine of the solar zenith angle  [-]
-  Fs0    ! The incident incoming SW insolation at cloud top in the
-         !   direction of the incoming beam (not the vertical) [W/m^2]
+  Fs0       ! The incident incoming SW insolation at cloud top in the
+            !   direction of the incoming beam (not the vertical) [W/m^2]
 
-  logical :: sw_on
+  logical :: l_sw_on
  
   ! Variable used for working within vertical arrays
 
   integer :: k
 
-  sw_on = .true. ! This is necessay to use the xi_abs value below
-                 ! Joshua Fasching June 2008
+!  l_sw_on = .true. ! This is necessay to use the xi_abs value below
+!                   ! Joshua Fasching June 2008
 
 !-----------------------------------------------------------------------
 ! FOR NOV.11 CASE
@@ -225,7 +225,8 @@
 !       -dschanen 5 Jan 2007
 !      xi_abs = cos_solar_zen( 11, 11, 1999, time, rlat, rlon )
 
- xi_abs = 0.4329
+! Setting xi_abs <= 0.0 will de-activate solar radiation.
+ xi_abs = 0.4329 
 
 !-----------------------------------------------------------------------
 ! Modification by Adam Smith 26 June 2006
@@ -235,21 +236,19 @@
 !-----------------------------------------------------------------------
 
 
-if (.not. sw_on) then
-  xi_abs = 0.0
-end if
+!if (.not. sw_on) then
+!  xi_abs = 0.0
+!end if
 
 !-----------------------------------
 ! End of ajsmith4's Modification 
 !-----------------------------------
 
-if (xi_abs == 0.0 ) then
-  sw_on = .false.
+if (xi_abs <= 0.0 ) then
+  l_sw_on = .false.
 else
-  sw_on = .true.
+  l_sw_on = .true.
 end if
-
-
 
 !-----------------------------------------------------------------------
 ! Fs0 Interpolation Parameters-- these also from Kurt Kotenberg's
@@ -525,9 +524,9 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
                    coamps_zm, coamps_zt, & 
                    Frad_out, Frad_LW_out, Frad_SW_out, & 
                    radhtk, radht_LW_out, radht_SW_out, & 
-                   gr%nnzp-1, center, & 
+                   gr%nnzp-1, l_center, & 
                    xi_abs, F0, F1, kap, radius, A, gc, Fs0, omega, & 
-                   sw_on, lw_on )
+                   l_sw_on, l_lw_on )
 
   !---------------------------------------------------------------
   ! This code transforms the radiation results back into CLUBB
@@ -661,7 +660,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
 !-----------------------------------------------------------------------
 
   do k=2,gr%nnzp
-    if ( (time >= time_initial + 3600.0) .and. subs_on ) then
+    if ( (time >= time_initial + 3600.0) .and. l_subs_on ) then
       call linear_interpolation( 7, zsubs, wt1, gr%zt(k), wm_zt(k) )
     else
 !           If time is not yet one hour, we have no subsidence
