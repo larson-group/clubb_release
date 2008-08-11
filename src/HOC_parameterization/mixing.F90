@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F90,v 1.15 2008-08-07 13:53:20 griffinb Exp $
+! $Id: mixing.F90,v 1.16 2008-08-11 17:56:42 faschinj Exp $
 !===============================================================================
 module mixing
 
@@ -1772,7 +1772,7 @@ end function wpxp_term_tp_lhs
 
 !===============================================================================
 pure function wpxp_terms_ac_pr2_lhs( C7_Skw_fnc,  & 
-                                     wmtp1, wm_zt, dzm ) & 
+                                     wm_zt_p1, wm_zt, dzm ) & 
 result( lhs )
 
 ! Description:
@@ -1826,7 +1826,7 @@ implicit none
 ! Input Variables
 real, intent(in) :: & 
   C7_Skw_fnc,  & ! C_7 parameter with Sk_w applied (k)             [-]
-  wmtp1,       & ! w wind component on thermodynamic level (k+1)   [m/s]
+  wm_zt_p1,       & ! w wind component on thermodynamic level (k+1)   [m/s]
   wm_zt,       & ! w wind component on thermodynamic level (k)     [m/s]
   dzm            ! Inverse of grid spacing (k)                     [1/m]
 
@@ -1835,7 +1835,7 @@ real :: lhs
 
 ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
 lhs & 
-= + ( 1.0 - C7_Skw_fnc ) * dzm * ( wmtp1 - wm_zt )
+= + ( 1.0 - C7_Skw_fnc ) * dzm * ( wm_zt_p1 - wm_zt )
 
 return
 end function wpxp_terms_ac_pr2_lhs
