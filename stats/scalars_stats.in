@@ -1,4 +1,4 @@
-! $Id: scalars_stats.in,v 1.16 2008-08-09 15:10:08 griffinb Exp $
+! $Id: scalars_stats.in,v 1.17 2008-08-11 17:28:23 faschinj Exp $
 ! This file contains a comprehensive listing of all the HOC variables that 
 ! can be output to GrADS, as found in src/HOC_parameterization/statistics.F.
 ! This file, as well as the statistical files for all the other cases, needs
@@ -7,7 +7,7 @@
 ! compiled with support for them by default, and the condition numbers are 
 ! commented out because they are computationally expensive.
 ! This file was created on January 21, 2007.
-! This file was last updated on July 5, 2008.
+! This file was last updated on August 11, 2008.
 &statsnl
 
 vars_zt = 
@@ -38,8 +38,8 @@ vars_zt =
 'rt1', 'rt2', 'srt1', 'srt2', 'rc1', 'rc2', 'rsl1', 'rsl2', 'R1', 'R2',
 's1', 's2', 'ss1', 'ss2', 'rrtthl',
 'wp2_zt', 'thlp2_zt', 'wpthlp_zt', 'wprtp_zt', 'rtp2_zt', 'rtpthlp_zt',
-'sigma_sqd_wlram', 'sigma_sqd_wlram_f', 'sigma_sqd_wlrbm', 'sigma_sqd_wlrbm_f',
-'edsigma_sqd_wlram', 'edsigma_sqd_wlrbm',
+'sclram', 'sclram_f', 'sclrbm', 'sclrbm_f',
+'edsclram', 'edsclrbm',
 ''
 
 vars_zm = 
@@ -66,12 +66,12 @@ vars_zm =
 'thlp2_dp1', 'thlp2_dp2', 'thlp2_cl', 'thlp2_pd',
 'rtpthlp_bt', 'rtpthlp_ma', 'rtpthlp_ta', 'rtpthlp_tp1', 'rtpthlp_tp2',
 'rtpthlp_dp1', 'rtpthlp_dp2', 'rtpthlp_cl',
-'sigma_sqd_wlraprtp', 'sigma_sqd_wlrbprtp', 'sigma_sqd_wlrap2', 'sigma_sqd_wlrbp2',
-'sigma_sqd_wlrapthvp', 'sigma_sqd_wlrbpthvp', 'sigma_sqd_wlrapthlp', 'sigma_sqd_wlrbpthlp', 
-'sigma_sqd_wlraprcp', 'sigma_sqd_wlrbprcp', 'wpsigma_sqd_wlrap', 'wpsigma_sqd_wlrbp', 
-'wpsigma_sqd_wlrap2', 'wpsigma_sqd_wlrbp2', 'wp2sigma_sqd_wlrap', 'wp2sigma_sqd_wlrbp',
-'wpsigma_sqd_wlraprtp', 'wpsigma_sqd_wlrbprtp', 'wpsigma_sqd_wlrapthlp', 'wpsigma_sqd_wlrbpthlp',
-'wpedsigma_sqd_wlrap', 'wpedsigma_sqd_wlrbp',
+'sclraprtp', 'sclrbprtp', 'sclrap2', 'sclrbp2',
+'sclrapthvp', 'sclrbpthvp', 'sclrapthlp', 'sclrbpthlp', 
+'sclraprcp', 'sclrbprcp', 'wpsclrap', 'wpsclrbp', 
+'wpsclrap2', 'wpsclrbp2', 'wp2sclrap', 'wp2sclrbp',
+'wpsclraprtp', 'wpsclrbprtp', 'wpsclrapthlp', 'wpsclrbpthlp',
+'wpedsclrap', 'wpedsclrbp',
 ''
 
 vars_sfc = 
