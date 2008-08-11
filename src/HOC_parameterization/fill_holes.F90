@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: fill_holes.F90,v 1.4 2008-07-29 16:44:02 nielsenb Exp $
+! $Id: fill_holes.F90,v 1.5 2008-08-11 15:46:14 faschinj Exp $
 
 module fill_holes
 
@@ -14,8 +14,8 @@ private ! Set Default Scope
 contains
 
 !--------------------------------------------------------------------------
-subroutine fill_holes_driver & 
-          ( num_pts, threshold, field_grid, field )
+subroutine fill_holes_driver( num_pts, threshold, field_grid, &
+                              field )
 
 !       Description:
 !       This subroutine clips values of 'field' that are below 'threshold' as 
