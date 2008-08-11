@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.30 2008-08-10 21:15:32 griffinb Exp $
+! $Id: wp23.F90,v 1.31 2008-08-11 17:55:43 faschinj Exp $
 !===============================================================================
 module wp23
 
@@ -2113,7 +2113,7 @@ end function wp3_terms_ta_tp_lhs
 
 !===============================================================================
 pure function wp3_terms_ac_pr2_lhs( C11_Skw_fnc,  & 
-                                    wm_zm, wm_zmm1, dzt ) & 
+                                    wm_zm, wm_zm_m1, dzt ) & 
 result( lhs )
 
 ! Description:
@@ -2152,7 +2152,7 @@ result( lhs )
 !
 ! ---------------d(wm_zm)/dz------------wp3---------------- t(k)
 !
-! =======wm_zmm1=========================================== m(k-1)
+! =======wm_zm_m1=========================================== m(k-1)
 !
 ! The vertical indices m(k), t(k), and m(k-1) correspond with altitudes zm(k), 
 ! zt(k), and zm(k-1), respectively.  The letter "t" is used for thermodynamic 
@@ -2169,7 +2169,7 @@ implicit none
 real, intent(in) :: & 
   C11_Skw_fnc,  & ! C_11 parameter with Sk_w applied (k)      [-]
   wm_zm,        & ! w wind component at momentum levels (k)   [m/s]
-  wm_zmm1,      & ! w wind component at momentum levels (k-1) [m/s]
+  wm_zm_m1,      & ! w wind component at momentum levels (k-1) [m/s]
   dzt             ! Inverse of grid spacing (k)               [1/m]
 
 ! Return Variable
@@ -2178,7 +2178,7 @@ real :: lhs
 ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
 lhs & 
 = + ( 1.0 - C11_Skw_fnc ) & 
-    * 3.0 * dzt * ( wm_zm - wm_zmm1 )
+    * 3.0 * dzt * ( wm_zm - wm_zm_m1 )
 
 return
 end function wp3_terms_ac_pr2_lhs
