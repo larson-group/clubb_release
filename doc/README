@@ -1,9 +1,6 @@
 Documentation that the group uses is found here. Everything in this directory is automatically uploaded to the website every night. When this happens, make_latex_docs.bash is called which converts any .tex files to html and pdf.
 
+Scripts:
 make_latex_docs.bash:
 Author: Ryan Senkbeil - Jul 2008
 Converts latex documents to pdf and html. 
-
-makedoc.bash
-Author: Unknown
-Converts hoceqns to pdf
