@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_type.F90,v 1.5 2008-07-30 19:17:36 dschanen Exp $
+! $Id: stats_type.F90,v 1.6 2008-08-11 15:49:00 faschinj Exp $
 module stats_type
   
 !     Description:
@@ -383,8 +383,8 @@ module stats_type
    end subroutine stat_modify
 
 !---------------------------------------------------------------------
-   subroutine stat_modify_pt & 
-             ( var_index, grid_level, value, grid_kind )
+   subroutine stat_modify_pt( var_index, grid_level, value, & 
+                              grid_kind )
 !
 !        Description: This modifies the value of a statistics variable 
 !        located at var_index in the grid at a specific point. It does
