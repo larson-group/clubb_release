@@ -1,4 +1,4 @@
-! $Id: diffusion.F90,v 1.5 2008-08-02 16:36:10 griffinb Exp $
+! $Id: diffusion.F90,v 1.6 2008-08-11 16:23:46 faschinj Exp $
 !===============================================================================
 module diffusion
 
@@ -448,16 +448,16 @@ result( lhs )
 ! vertical levels:
 !
 !     -------------------------------------------------------------------------------------------->
-!k=1 | +dzm(k)                    -dzm(k)*(K_zt(k+1)+nu)*dzt(k+1)                    0
+!k=1 | +dzm(k)                   -dzm(k)*(K_zt(k+1)+nu)*dzt(k+1)                    0
 !    |   (K_zt(k+1)+nu)*dzt(k+1) 
 !    |          
-!k=2 | -dzm(k)*                   +dzm(k)*[ (K_zt(k+1)+nu)*dzt(k+1)  -dzm(k)*(K_zt(k+1)+nu)*dzt(k+1)
+!k=2 | -dzm(k)*                  +dzm(k)*[ (K_zt(k+1)+nu)*dzt(k+1) -dzm(k)*(K_zt(k+1)+nu)*dzt(k+1)
 !    |   (K_zt(k)+nu)*dzt(k)               +(K_zt(k)+nu)*dzt(k) ]
 !    |
-!k=3 |              0             -dzm(k)*(K_zt(k)+nu)*dzt(k)        +dzm(k)*[ (K_zt(k+1)+nu)*dzt(k+1)
+!k=3 |              0            -dzm(k)*(K_zt(k)+nu)*dzt(k)       +dzm(k)*[ (K_zt(k+1)+nu)*dzt(k+1)
 !    |                                                                        +(K_zt(k)+nu)*dzt(k) ]
 !    |
-!k=4 |              0                           0                    -dzm(k)*(K_zt(k)+nu)*dzt(k)
+!k=4 |              0                           0                   -dzm(k)*(K_zt(k)+nu)*dzt(k)
 !    |
 !   \ /
 !
