@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: explicit_clip.F90,v 1.8 2008-08-07 16:10:13 griffinb Exp $
+! $Id: explicit_clip.F90,v 1.9 2008-08-11 15:44:58 faschinj Exp $
 !===============================================================================
 module explicit_clip
 
@@ -143,7 +143,8 @@ endif
 end subroutine covariance_clip
 
 !===============================================================================
-subroutine variance_clip( solve_type, dt, threshold, xp2 )
+subroutine variance_clip( solve_type, dt, threshold, &
+                          xp2 )
 
 ! Description:
 ! Clipping the value of variance x'^2 based on a minimum threshold value.  The 
