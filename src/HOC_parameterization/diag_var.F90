@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F90,v 1.21 2008-08-09 18:53:56 griffinb Exp $
+! $Id: diag_var.F90,v 1.22 2008-08-11 15:51:06 faschinj Exp $
 !===============================================================================
 module diagnose_variances
 
@@ -273,15 +273,20 @@ rtpthlp_zt = zm2zt( rtpthlp )
 
 if ( l_stats_samp ) then
 
-  call stat_begin_update( irtp2_bt, real(rtp2 / dt), zm )
+  call stat_begin_update( irtp2_bt, real(rtp2 / dt), &          ! Intent(in)
+                          zm )                                  ! Intent(inout)
 
-  call stat_begin_update( ithlp2_bt, real(thlp2 / dt), zm )
+  call stat_begin_update( ithlp2_bt, real(thlp2 / dt), &        ! Intent(in)
+                          zm )                                  ! Intent(inout)
 
-  call stat_begin_update( irtpthlp_bt, real(rtpthlp / dt), zm )
+  call stat_begin_update( irtpthlp_bt, real(rtpthlp / dt), &    ! Intent(in)
+                          zm )                                  ! Intent(in/out)
 
-  call stat_begin_update( ivp2_bt, real(vp2 / dt), zm )
+  call stat_begin_update( ivp2_bt, real(vp2 / dt), &            ! Intent(in)
+                          zm )                                  ! Intent(inout)
 
-  call stat_begin_update( iup2_bt, real(up2 / dt), zm )
+  call stat_begin_update( iup2_bt, real(up2 / dt),  &           ! Intent(in)
+                          zm )                                  ! Intent(inout)
 
 endif
 
@@ -348,114 +353,133 @@ enddo
 !!!!!***** r_t'^2 *****!!!!!
 
 ! Implicit contributions to term rtp2
-call diag_var_lhs( dt, liter, wp2_zt, wp3,  & 
-                   !a1, a1_zt, tau_zm, wm_zm, Kw2_rtp2,  &
+call diag_var_lhs( dt, liter, wp2_zt, wp3,  &              ! Intent(in)
+                   !a1, a1_zt, tau_zm, wm_zm, Kw2_rtp2, &  ! Intent(in)
                    a1, tau_zm, wm_zm, Kw2_rtp2,  &
-                   C2rt_1d, nu2, beta, wtol_sqd, lhs )
+                   C2rt_1d, nu2, beta, wtol_sqd, &
+                   lhs )                                   ! Intent(out)
 
-! Explicit contributions to rtp2
-!call diag_var_rhs( "rtp2", dt, liter, a1, a1_zt, &
-call diag_var_rhs( "rtp2", dt, liter, a1,  & 
-                   wp2_zt, wp3, wprtp, wprtp_zt, & 
-                   wprtp, wprtp_zt, rtm, rtm, rtp2, & 
-                   C2rt_1d, tau_zm, rttol**2, beta, &
-                   wtol_sqd, rhs )
+
+!call diag_var_rhs( "rtp2", dt, liter, a1, a1_zt, &     ! Intent(in)
+call diag_var_rhs( "rtp2", dt, liter, a1,  &            ! Intent(in)
+                   wp2_zt, wp3, wprtp, wprtp_zt, &      ! Intent(in)
+                   wprtp, wprtp_zt, rtm, rtm, rtp2, &   ! Intent(in)
+                   C2rt_1d, tau_zm, rttol**2, beta, &   ! Intent(in)
+                   wtol_sqd, &                          ! Intent(in)
+                   rhs )                                ! Intent(out)
         
 ! Solve the tridiagonal system
-call diag_var_solve( "rtp2", 1, rhs,  & 
-                     lhs, rtp2, Valid_arr(1) )
+call diag_var_solve( "rtp2", 1, &                               ! Intent(in)
+                     rhs, lhs, rtp2, &                          ! Intent(inout)
+                     Valid_arr(1) )                             ! Intent(out)
 
 
 !!!!!***** th_l'^2 *****!!!!!
 
 ! Implicit contributions to term thlp2
-call diag_var_lhs( dt, liter, wp2_zt, wp3,  & 
-                   !a1, a1_zt, tau_zm, wm_zm, Kw2_thlp2,  &
-                   a1, tau_zm, wm_zm, Kw2_thlp2,  &
-                   C2thl_1d, nu2, beta, wtol_sqd, lhs )
+call diag_var_lhs( dt, liter, wp2_zt, wp3,  &                   ! Intent(in)
+                   !a1, a1_zt, tau_zm, wm_zm, Kw2_thlp2,  &     ! Intent(in)
+                   a1, tau_zm, wm_zm, Kw2_thlp2,  &             ! Intent(in)
+                   C2thl_1d, nu2, beta, wtol_sqd, &             ! Intent(in)
+                   lhs )                                        ! Intent(out)
 
 ! Explicit contributions to thlp2
-!call diag_var_rhs( "thlp2", dt, liter, a1, a1_zt, &
-call diag_var_rhs( "thlp2", dt, liter, a1, & 
-                   wp2_zt, wp3, wpthlp, wpthlp_zt, & 
-                   wpthlp, wpthlp_zt, thlm, thlm, thlp2, & 
-                   C2thl_1d, tau_zm, thltol**2, beta, &
-                   wtol_sqd, rhs )
+!call diag_var_rhs( "thlp2", dt, liter, a1, a1_zt, &            ! Intent(in)
+call diag_var_rhs( "thlp2", dt, liter, a1, &                    ! Intent(in)
+                   wp2_zt, wp3, wpthlp, wpthlp_zt, &            ! Intent(in)
+                   wpthlp, wpthlp_zt, thlm, thlm, thlp2, &      ! Intent(in)
+                   C2thl_1d, tau_zm, thltol**2, beta, &         ! Intent(in)
+                   wtol_sqd, &                                  ! Intent(in)
+                   rhs )                                        ! Intent(out)
 
 ! Solve the tridiagonal system
-call diag_var_solve( "thlp2", 1, rhs,  & 
-                     lhs, thlp2, Valid_arr(2) )
+call diag_var_solve( "thlp2", 1, &          ! Intent(in)
+                     rhs, lhs, thlp2, &     ! Intent(inout)
+                     Valid_arr(2) )         ! Intent(out)
 
 
 !!!!!***** r_t'th_l' *****!!!!!
 
 ! Implicit contributions to term rtpthlp
-call diag_var_lhs( dt, liter, wp2_zt, wp3,  & 
-                   !a1, a1_zt, tau_zm, wm_zm, Kw2_rtpthlp,  &
-                   a1, tau_zm, wm_zm, Kw2_rtpthlp,  &
-                   C2rtthl_1d, nu2, beta, wtol_sqd, lhs )
+call diag_var_lhs( dt, liter, wp2_zt, wp3,  &                   ! Intent(in)
+                   !a1, a1_zt, tau_zm, wm_zm, Kw2_rtpthlp,  &   ! Intent(in)
+                   a1, tau_zm, wm_zm, Kw2_rtpthlp,  &           ! Intent(in)
+                   C2rtthl_1d, nu2, beta, wtol_sqd, &           ! Intent(in)
+                   lhs )                                        ! Intent(out)
 
 ! Explicit contributions to rtpthlp
 !call diag_var_rhs( "rtpthlp", dt, liter, a1, a1_zt, & 
-call diag_var_rhs( "rtpthlp", dt, liter, a1,  & 
-                   wp2_zt, wp3, wprtp, wprtp_zt, & 
-                   wpthlp, wpthlp_zt, rtm, thlm, rtpthlp, & 
-                   C2rtthl_1d, tau_zm, 0.0, beta, &
-                   wtol_sqd, rhs )
+call diag_var_rhs( "rtpthlp", dt, liter, a1,  &                 ! Intent(in)
+                   wp2_zt, wp3, wprtp, wprtp_zt, &              ! Intent(in)
+                   wpthlp, wpthlp_zt, rtm, thlm, rtpthlp, &     ! Intent(in)
+                   C2rtthl_1d, tau_zm, 0.0, beta, &             ! Intent(in)
+                   wtol_sqd, &                                  ! Intent(in)
+                   rhs )                                        ! Intent(out)
 
 ! Solve the tridiagonal system
-call diag_var_solve( "rtpthlp", 1, rhs,  & 
-                     lhs, rtpthlp, Valid_arr(3) )
+call diag_var_solve( "rtpthlp", 1, &            ! Intent(in)
+                     rhs, lhs, rtpthlp, &       ! Intent(inout)
+                     Valid_arr(3) )             ! Intent(out)
 
 
 !!!!!***** u'^2 *****!!!!!
 
 ! Implicit contributions to term up2
-call diag_var_lhs( dt, liter, wp2_zt, wp3,  &
-                   !a1, a1_zt, tau_zm, wm_zm, Kw9,  &
-                   a1, tau_zm, wm_zm, Kw9,  &
-                   C4_C14_1d, nu9, beta, wtol_sqd, lhs )
+call diag_var_lhs( dt, liter, wp2_zt, wp3,  &              ! Intent(in)
+                   !a1, a1_zt, tau_zm, wm_zm, Kw9,  &      ! Intent(in)
+                   a1, tau_zm, wm_zm, Kw9,  &              ! Intent(in)
+                   C4_C14_1d, nu9, beta, wtol_sqd, &       ! Intent(in)
+                   lhs )                                   ! Intent(out)
 
 ! Explicit contributions to up2
-!call diag_var_uv_rhs( "up2", dt, liter, a1, a1_zt, & 
-call diag_var_uv_rhs( "up2", dt, liter, a1, & 
-                      wp2, wp2_zt, wp3, wpthvp, tau_zm,  & 
-                      um, vm, upwp, upwp_zt, vpwp, & 
-                      vpwp_zt, up2, vp2, C4, C5, C14, & 
-                      T0, beta, wtol_sqd, rhs )
+!call diag_var_uv_rhs( "up2", dt, liter, a1, a1_zt, &       ! Intent(in)
+call diag_var_uv_rhs( "up2", dt, liter, a1, &               ! Intent(in)
+                      wp2, wp2_zt, wp3, wpthvp, tau_zm,  &  ! Intent(in)
+                      um, vm, upwp, upwp_zt, vpwp, &        ! Intent(in)
+                      vpwp_zt, up2, vp2, C4, C5, C14, &     ! Intent(in)
+                      T0, beta, wtol_sqd, &                 ! Intent(in)
+                      rhs )                                 ! Intent(out)
 
 ! Solve the tridiagonal system
-call diag_var_solve( "up2", 1, rhs, & 
-                     lhs, up2, Valid_arr(4) )
+call diag_var_solve( "up2", 1, &       ! Intent(in)
+                     rhs, lhs, up2, &  ! Intent(inout)
+                     Valid_arr(4) )    ! Intent(out)
 
 
 !!!!!***** v'^2 *****!!!!!
 
 ! Implicit contributions to term vp2
-call diag_var_lhs( dt, liter, wp2_zt, wp3,  & 
-                   !a1, a1_zt, tau_zm, wm_zm, Kw9,  &
-                   a1, tau_zm, wm_zm, Kw9,  &
-                   C4_C14_1d, nu9, beta, wtol_sqd, lhs )
+call diag_var_lhs( dt, liter, wp2_zt, wp3,  &           ! Intent(in)
+                   !a1, a1_zt, tau_zm, wm_zm, Kw9,  &   ! Intent(in)
+                   a1, tau_zm, wm_zm, Kw9,  &           ! Intent(in)
+                   C4_C14_1d, nu9, beta, wtol_sqd, &    ! Intent(in)
+                   lhs )                                ! Intent(out)
 
 ! Explicit contributions to vp2
 !call diag_var_uv_rhs( "vp2", dt, liter, a1, a1_zt, & 
-call diag_var_uv_rhs( "vp2", dt, liter, a1, & 
-                      wp2, wp2_zt, wp3, wpthvp, tau_zm,  & 
-                      vm, um, vpwp, vpwp_zt, upwp, & 
-                      upwp_zt, vp2, up2, C4, C5, C14, & 
-                      T0, beta, wtol_sqd, rhs )
+call diag_var_uv_rhs( "vp2", dt, liter, a1, &               ! Intent(in)
+                      wp2, wp2_zt, wp3, wpthvp, tau_zm,  &  ! Intent(in)
+                      vm, um, vpwp, vpwp_zt, upwp, &        ! Intent(in)
+                      upwp_zt, vp2, up2, C4, C5, C14, &     ! Intent(in)
+                      T0, beta, wtol_sqd, &                 ! Intent(in)
+                      rhs )                                 ! Intent(out)
 
 ! Solve the tridiagonal system
-call diag_var_solve( "vp2", 1, rhs,  & 
-                     lhs, vp2, Valid_arr(5) )
+call diag_var_solve( "vp2", 1, &        ! Intent(in)
+                     rhs, lhs, vp2, &   ! Intent(inout)
+                     Valid_arr(5) )     ! Intent(out)
 
 
 ! Apply the positive definite scheme to variances
 if ( l_hole_fill ) then
-   call pos_definite_variances( "rtp2", dt, rttol**2, rtp2 )
-   call pos_definite_variances( "thlp2", dt, thltol**2, thlp2 )
-   call pos_definite_variances( "up2", dt, 2./3.*emin, up2 )
-   call pos_definite_variances( "vp2", dt, 2./3.*emin, vp2 )
+   call pos_definite_variances( "rtp2", dt, rttol**2, &   ! Intent(in)
+                                rtp2 )                    ! Intent(inout)
+   call pos_definite_variances( "thlp2", dt, thltol**2, & ! Intent(in)
+                                thlp2 )                   ! Intent(inout)
+   call pos_definite_variances( "up2", dt, 2./3.*emin, &  ! Intent(in)
+                                up2 )                     ! Intent(inout)
+   call pos_definite_variances( "vp2", dt, 2./3.*emin, &  ! Intent(in)
+                                vp2 )                     ! Intent(inout)
 endif
 
 
@@ -468,7 +492,8 @@ endif
 
 threshold = rttol**2
 
-call variance_clip( "rtp2", dt, threshold, rtp2 )
+call variance_clip( "rtp2", dt, threshold, & ! Intent(in)
+                    rtp2 )                   ! Intent(inout)
 
 
 ! Clipping for th_l'^2
@@ -480,7 +505,8 @@ call variance_clip( "rtp2", dt, threshold, rtp2 )
 
 threshold = thltol**2
 
-call variance_clip( "thlp2", dt, threshold, thlp2 )
+call variance_clip( "thlp2", dt, threshold, & ! Intent(in)
+                    thlp2 )                   ! Intent(inout)
 
 
 ! Clipping for u'^2
@@ -488,7 +514,8 @@ call variance_clip( "thlp2", dt, threshold, thlp2 )
 !threshold = 0.0
 threshold = 2./3.*emin
 
-call variance_clip( "up2", dt, threshold, up2 )
+call variance_clip( "up2", dt, threshold, & ! Intent(in)
+                    up2 )                   ! Intent(inout)
 
 
 ! Clipping for v'^2
@@ -496,7 +523,8 @@ call variance_clip( "up2", dt, threshold, up2 )
 !threshold = 0.0
 threshold = 2./3.*emin
 
-call variance_clip( "vp2", dt, threshold, vp2 )
+call variance_clip( "vp2", dt, threshold, & ! Intent(in)
+                    vp2 )                   ! Intent(inout)
 
 
 ! Clipping for r_t'th_l'
@@ -506,22 +534,27 @@ call variance_clip( "vp2", dt, threshold, vp2 )
 ! -1 <= corr_(r_t,th_l) <= 1.
 ! Since r_t'^2, th_l'^2, and r_t'th_l' are all computed in the
 ! same place, clipping for r_t'th_l' only has to be done once.
-call covariance_clip( "rtpthlp", .true.,  & 
-                      .true., dt, rtp2, thlp2,  & 
-                      rtpthlp )
+call covariance_clip( "rtpthlp", .true.,  &        ! Intent(in)
+                      .true., dt, rtp2, thlp2,  &  ! Intent(in)
+                      rtpthlp )                    ! Intent(inout)
 
 
 if ( l_stats_samp ) then
  
-  call stat_end_update( irtp2_bt, real( rtp2 / dt), zm )
+  call stat_end_update( irtp2_bt, real( rtp2 / dt), & ! Intent(in)
+                        zm )                          ! Intent(inout)
 
-  call stat_end_update( ithlp2_bt, real( thlp2 / dt), zm )
+  call stat_end_update( ithlp2_bt, real( thlp2 / dt), & ! Intent(in) 
+                        zm )                            ! Intent(inout)
 
-  call stat_end_update( irtpthlp_bt, real( rtpthlp / dt), zm )
+  call stat_end_update( irtpthlp_bt, real( rtpthlp / dt), & ! Intent(in)
+                        zm )                                ! Intent(inout)
           
-  call stat_end_update( iup2_bt, real( up2 / dt), zm )
+  call stat_end_update( iup2_bt, real( up2 / dt), & ! Intent(in)
+                        zm )                        ! Intent(inout)
 
-  call stat_end_update( ivp2_bt, real( vp2 / dt), zm )
+  call stat_end_update( ivp2_bt, real( vp2 / dt),& ! Intent(in)
+                        zm )                       ! Intent(inout)
 
 endif
  
@@ -532,10 +565,11 @@ if ( scalar_calc ) then
 
   !!!!!***** sclr'^2, sclr'r_t', sclr'th_l' *****!!!!!
 
-  call diag_var_lhs( dt, liter, wp2_zt, wp3,  & 
-                     !a1, a1_zt, tau_zm, wm_zm, Kw2,  &
-                     a1, tau_zm, wm_zm, Kw2,  &
-                     C2sclr_1d, nu2, beta, wtol_sqd, lhs )
+  call diag_var_lhs( dt, liter, wp2_zt, wp3,  &         ! Intent(in) 
+                     !a1, a1_zt, tau_zm, wm_zm, Kw2,  & ! Intent(in)
+                     a1, tau_zm, wm_zm, Kw2,  &         ! Intent(in)
+                     C2sclr_1d, nu2, beta, wtol_sqd, &  ! Intent(in)
+                     lhs )                              ! Intent(out)
 
 
   ! Explicit contributions to passive scalars
@@ -551,42 +585,44 @@ if ( scalar_calc ) then
     wpsclrp_zt = zm2zt( wpsclrp(:,i) )
 
     !call diag_var_rhs( "sclrp2", dt, liter, a1, a1_zt, &
-    call diag_var_rhs( "sclrp2", dt, liter, a1,  & 
-                       wp2_zt, wp3, wpsclrp(:,i),  & 
-                       wpsclrp_zt, wpsclrp(:,i), wpsclrp_zt,  & 
-                       sclrm(:,i), sclrm(:,i), sclrp2(:,i), & 
-                       C2sclr_1d, tau_zm, 0.0, beta, &
-                       wtol_sqd, sclr_rhs(:,i) )
+    call diag_var_rhs( "sclrp2", dt, liter, a1,  &              ! Intent(in)
+                       wp2_zt, wp3, wpsclrp(:,i),  &            ! Intent(in)
+                       wpsclrp_zt, wpsclrp(:,i), wpsclrp_zt,  & ! Intent(in)
+                       sclrm(:,i), sclrm(:,i), sclrp2(:,i), &   ! Intent(in)
+                       C2sclr_1d, tau_zm, 0.0, beta, &          ! Intent(in)
+                       wtol_sqd, &                              ! Intent(in)
+                       sclr_rhs(:,i) )                          ! Intent(out)
 
 
   !!!!!***** sclr'r_t' *****!!!!!
 
     !call diag_var_rhs( "sclrprtp", dt, liter, a1, a1_zt, &
-    call diag_var_rhs( "sclrprtp", dt, liter, a1,  & 
-                       wp2_zt, wp3, wpsclrp(:,i),  & 
-                       wpsclrp_zt, wprtp, wprtp_zt, sclrm(:,i),  & 
-                       rtm, sclrprtp(:,i), C2sclr_1d, tau_zm, &
-                       0.0, beta, wtol_sqd,  & 
-                       sclr_rhs(:,i+sclr_dim) )
+    call diag_var_rhs( "sclrprtp", dt, liter, a1,  &               ! Intent(in)
+                       wp2_zt, wp3, wpsclrp(:,i),  &               ! Intent(in)
+                       wpsclrp_zt, wprtp, wprtp_zt, sclrm(:,i),  & ! Intent(in)
+                       rtm, sclrprtp(:,i), C2sclr_1d, tau_zm, &    ! Intent(in)     
+                       0.0, beta, wtol_sqd,  &                     ! Intent(in)
+                       sclr_rhs(:,i+sclr_dim) )                    ! Intent(out)
 
 
   !!!!!***** sclr'th_l' *****!!!!!
 
     !call diag_var_rhs( "sclrpthlp", dt, liter, a1, a1_zt, &
-    call diag_var_rhs( "sclrpthlp", dt, liter, a1,  & 
-                       wp2_zt, wp3, wpsclrp(:,i),  & 
-                       wpsclrp_zt, wpthlp, wpthlp_zt,  & 
-                       sclrm(:,i), thlm, sclrpthlp(:,i), &
-                       C2sclr_1d, tau_zm, 0.0, beta,  & 
-                       wtol_sqd, sclr_rhs(:,i+2*sclr_dim) )
+    call diag_var_rhs( "sclrpthlp", dt, liter, a1,  &       ! Intent(in) 
+                       wp2_zt, wp3, wpsclrp(:,i),  &        ! Intent(in)
+                       wpsclrp_zt, wpthlp, wpthlp_zt,  &    ! Intent(in)
+                       sclrm(:,i), thlm, sclrpthlp(:,i), &  ! Intent(in)
+                       C2sclr_1d, tau_zm, 0.0, beta,  &     ! Intent(in)
+                       wtol_sqd, &                          ! Intent(in)
+                       sclr_rhs(:,i+2*sclr_dim) )           ! Intent(out)
   end do ! 1..sclr_dim
 
 
   ! Solve the tridiagonal system
 
-  call diag_var_solve & 
-       ( "scalars", 3*sclr_dim, sclr_rhs,  & 
-         lhs, sclr_solution, Valid_arr(6) )
+  call diag_var_solve( "scalars", 3*sclr_dim, &         ! Intent(in)
+                       sclr_rhs, lhs, sclr_solution, &  ! Intent(inout)
+                       Valid_arr(6) )                   ! Intent(out)
 
   sclrp2(:,1:sclr_dim) = sclr_solution(:,1:sclr_dim)
 
@@ -599,8 +635,8 @@ if ( scalar_calc ) then
   ! Apply hole filling algorithm to the scalar variance terms
   if ( l_hole_fill ) then
     do i = 1, sclr_dim, 1
-      call pos_definite_variances( "sclrp2", dt, sclrtol(i), & 
-                                   sclrp2(:,i) )
+      call pos_definite_variances( "sclrp2", dt, sclrtol(i), & ! Intent(in)
+                                   sclrp2(:,i) )               ! Intent(inout)
     enddo
   endif
 
@@ -615,7 +651,8 @@ if ( scalar_calc ) then
 
      threshold = sclrtol(i)**2
 
-     call variance_clip( "sclrp2", dt, threshold, sclrp2(:,i) )
+     call variance_clip( "sclrp2", dt, threshold, & ! Intent(in)
+                        sclrp2(:,i) )               ! Intent(inout)
 
   enddo
 
@@ -628,9 +665,9 @@ if ( scalar_calc ) then
   ! Since sclr'^2, r_t'^2, and sclr'r_t' are all computed in the
   ! same place, clipping for sclr'r_t' only has to be done once.
   do i = 1, sclr_dim, 1
-     call covariance_clip( "sclrprtp", .true.,  & 
-                           .true., dt, sclrp2(:,i), rtp2(:), & 
-                           sclrprtp(:,i) )
+     call covariance_clip( "sclrprtp", .true.,  &               ! Intent(in) 
+                           .true., dt, sclrp2(:,i), rtp2(:), &  ! Intent(in)
+                           sclrprtp(:,i) )                      ! Intent(inout)
   enddo
 
 
@@ -642,9 +679,9 @@ if ( scalar_calc ) then
   ! Since sclr'^2, th_l'^2, and sclr'th_l' are all computed in the
   ! same place, clipping for sclr'th_l' only has to be done once.
   do i = 1, sclr_dim, 1
-     call covariance_clip( "sclrpthlp", .true.,  & 
-                           .true., dt, sclrp2(:,i), thlp2(:), & 
-                           sclrpthlp(:,i) )
+     call covariance_clip( "sclrpthlp", .true.,  &              ! Intent(in) 
+                           .true., dt, sclrp2(:,i), thlp2(:), & ! Intent(in) 
+                           sclrpthlp(:,i) )                     ! Intent(inout)
   enddo
 
 endif ! scalar_calc
@@ -911,8 +948,9 @@ return
 end subroutine diag_var_lhs
 
 !===============================================================================
-subroutine diag_var_solve( solve_type, nrhs, rhs,  & 
-                           lhs, xapxbp, err_code )
+subroutine diag_var_solve( solve_type, nrhs, & 
+                           rhs, lhs, xapxbp, &
+                           err_code )
 
 !-----------------------------------------------------------------------
 
@@ -1062,18 +1100,19 @@ end select
 
 if ( l_stats_samp .and. ixapxbp_cn > 0 ) then
   call tridag_solvex & 
-       ( solve_type, gr%nnzp, nrhs, lhs(kp1_mdiag,:),  & 
-         lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  & 
-         xapxbp(:,1:nrhs), rcond, err_code )
+       ( solve_type, gr%nnzp, nrhs, &                                          ! Intent(in) 
+         lhs(kp1_mdiag,:), lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  & ! Intent(inout)
+         xapxbp(:,1:nrhs), rcond, err_code )                                   ! Intent(out)
 
   ! Est. of the condition number of the variance LHS matrix 
-  call stat_update_var_pt( ixapxbp_cn, 1, 1.0 / rcond, sfc )
+  call stat_update_var_pt( ixapxbp_cn, 1, 1.0 / rcond, &  ! Intent(in)
+                           sfc )                          ! Intent(inout)
 
 else 
   call tridag_solve & 
-       ( solve_type, gr%nnzp, nrhs, lhs(kp1_mdiag,:),  & 
-         lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  & 
-         xapxbp(:,1:nrhs), err_code )
+       ( solve_type, gr%nnzp, nrhs, lhs(kp1_mdiag,:),  &        ! Intent(in)
+         lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  &    ! Intent(inout)
+         xapxbp(:,1:nrhs), err_code )                           ! Intent(out)
 endif
  
 ! Compute implicit budget terms
@@ -1084,26 +1123,29 @@ if ( l_stats_samp ) then
     km1 = max( k-1, 1 )
     kp1 = min( k+1, gr%nnzp )
 
-    call stat_end_update_pt( ixapxbp_dp1, k, & 
-        zmscr01(k) * xapxbp(k,1), zm )
+    call stat_end_update_pt( ixapxbp_dp1, k, zmscr01(k) * xapxbp(k,1), & ! Intent(in)
+                             zm )                                        ! Intent(inout)
 
-    call stat_update_var_pt( ixapxbp_dp2, k, & 
-        zmscr02(k) * xapxbp(km1,1) & 
-      + zmscr03(k) * xapxbp(k,1) & 
-      + zmscr04(k) * xapxbp(kp1,1), zm )
+    call stat_update_var_pt( ixapxbp_dp2, k, &            ! Intent(in)
+                             zmscr02(k) * xapxbp(km1,1) & ! Intent(in)
+                             + zmscr03(k) * xapxbp(k,1) & 
+                             + zmscr04(k) * xapxbp(kp1,1), &
+                             zm )                         ! Intent(inout)
            
-    call stat_update_var_pt( ixapxbp_ta, k, & 
-        zmscr05(k) * xapxbp(km1,1) & 
-      + zmscr06(k) * xapxbp(k,1) & 
-      + zmscr07(k) * xapxbp(kp1,1), zm )
+    call stat_update_var_pt( ixapxbp_ta, k, &              ! Intent(in)
+                             zmscr05(k) * xapxbp(km1,1) &  ! Intent(in)
+                             + zmscr06(k) * xapxbp(k,1) &  
+                             + zmscr07(k) * xapxbp(kp1,1), &
+                             zm )                          ! Intent(inout)
 
-    call stat_update_var_pt( ixapxbp_ma, k, & 
-        zmscr08(k) * xapxbp(km1,1) & 
-      + zmscr09(k) * xapxbp(k,1) & 
-      + zmscr10(k) * xapxbp(kp1,1), zm )
+    call stat_update_var_pt( ixapxbp_ma, k, &              ! Intent(in)
+                             zmscr08(k) * xapxbp(km1,1) &  ! Intent(in)
+                             + zmscr09(k) * xapxbp(k,1) & 
+                             + zmscr10(k) * xapxbp(kp1,1), &
+                             zm )                          ! Intent(inout)
 
-    call stat_update_var_pt( ixapxbp_pr1, k, & 
-        zmscr11(k) * xapxbp(k,1), zm )
+    call stat_update_var_pt( ixapxbp_pr1, k, zmscr11(k) * xapxbp(k,1), & ! Intent(in)
+                             zm )                                        ! Intent(inout)
 
   enddo
 endif
@@ -1118,7 +1160,8 @@ subroutine diag_var_uv_rhs( solve_type, dt, liter, a1, &
                             wp2, wp2_zt, wp3, wpthvp, tau_zm,  & 
                             xam, xbm, wpxap, wpxap_zt, wpxbp, & 
                             wpxbp_zt, xap2, xbp2, C4, C5, C14, & 
-                            T0, beta, wtol_sqd, rhs )
+                            T0, beta, wtol_sqd, &
+                            rhs )
 
 ! Description:
 ! Explicit contributions to u'^2 or v'^2
@@ -1260,12 +1303,14 @@ do k = 2, gr%nnzp-1, 1
  
   ! Statistics: explicit contributions for up2 or vp2.
                
-    call stat_modify_pt( ixapxbp_ta, k, & 
-         term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
-                      !a1(k), a1_zt(kp1), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
+    call stat_modify_pt( ixapxbp_ta, k, &                           ! Intent(in) 
+         term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &  ! Intent(in)
+                      !a1(k), a1_zt(kp1), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), & ! Intent(in)
                       a1(k), wpxbp_zt(kp1), wpxbp_zt(k),  &
-                      wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k),  & 
-                      beta, wtol_sqd ), zm )
+                      wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k),  &
+                      beta, wtol_sqd ), & 
+                      zm )                                          ! Intent(inout)
+
             
     if ( ixapxbp_dp1 > 0 ) then
       ! Note:  The function term_pr1 is the explicit component 
@@ -1278,8 +1323,9 @@ do k = 2, gr%nnzp-1, 1
       zmscr01(k) = -tmp
       ! Statistical contribution of the explicit component
       ! of term dp1 for up2 or vp2.
-      call stat_begin_update_pt( ixapxbp_dp1, k,  & 
-            -term_pr1( C4, 0.0, xbp2(k), wp2(k), tau_zm(k) ), zm )
+      call stat_begin_update_pt( ixapxbp_dp1, k, &                                   ! Intent(in)
+                                 -term_pr1( C4, 0.0, xbp2(k), wp2(k), tau_zm(k) ), & ! Intent(in)
+                                 zm )                                                ! Intent(inout)
     endif
 
     if ( ixapxbp_pr1 > 0 ) then
@@ -1291,18 +1337,20 @@ do k = 2, gr%nnzp-1, 1
       zmscr11(k) = -tmp
       ! Statistical contribution of the explicit component
       ! of term pr1 for up2 or vp2.
-      call stat_modify_pt( ixapxbp_pr1, k, & 
-            term_pr1( 0.0, C14, xbp2(k), wp2(k), tau_zm(k) ), zm )
+      call stat_modify_pt( ixapxbp_pr1, k, &                       ! Intent(in)  
+            term_pr1( 0.0, C14, xbp2(k), wp2(k), tau_zm(k) ), &    ! Intent(in)
+            zm )                                                   ! Intent(inout)
     endif
 
-    call stat_update_var_pt( ixapxbp_pr2, k, & 
-          term_pr2( C5, grav, T0, wpthvp(k), wpxap(k), wpxbp(k),  & 
-                    xam(kp1), xam(k), xbm(kp1), xbm(k), gr%dzm(k) ), zm )
+    call stat_update_var_pt( ixapxbp_pr2, k, &                          ! Intent(in)
+          term_pr2( C5, grav, T0, wpthvp(k), wpxap(k), wpxbp(k),  &     ! Intent(in)
+                    xam(kp1), xam(k), xbm(kp1), xbm(k), gr%dzm(k) ), &  
+                    zm )                                                ! Intent(inout)
 
-    call stat_update_var_pt( ixapxbp_tp, k, & 
-          (1.0 - C5)  & 
-           * term_tp( xam(kp1), xam(k), xam(kp1), xam(k), & 
-                      wpxap(k), wpxap(k), gr%dzm(k) ), zm )
+    call stat_update_var_pt( ixapxbp_tp, k, &                             ! Intent(in) 
+          (1.0 - C5)  * term_tp( xam(kp1), xam(k), xam(kp1), xam(k), &    ! Intent(in)
+                      wpxap(k), wpxap(k), gr%dzm(k) ), & 
+                      zm )                                                ! Intent(inout)
 
   endif ! l_stats_samp
  
@@ -1333,8 +1381,8 @@ end subroutine diag_var_uv_rhs
 subroutine diag_var_rhs( solve_type, dt, liter, a1, & 
                          wp2_zt, wp3, wpxap, wpxap_zt, & 
                          wpxbp, wpxbp_zt, xam, xbm, xapxbp, & 
-                         Cn, tau_zm, threshold, beta, &
-                         wtol_sqd, rhs )
+                         Cn, tau_zm, threshold, beta, wtol_sqd, & 
+                         rhs )
 
 ! Description:
 ! Explicit contributions to r_t'^2, th_l'^2, r_t'th_l', sclr'r_t', sclr'th_l', 
@@ -1472,29 +1520,34 @@ do k = 2, gr%nnzp-1, 1
 
   ! Statistics: explicit contributions for rtp2, thlp2, or rtpthlp.
 
-  call stat_modify_pt( ixapxbp_ta, k, & 
-      term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
-                   !a1(k), a1_zt(kp1), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
-                   a1(k), wpxbp_zt(kp1), wpxbp_zt(k), &
+  call stat_modify_pt( ixapxbp_ta, k, &                         ! Intent(in) 
+      term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  & ! Intent(in)
+                   !a1(k), a1_zt(kp1), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), & ! Intent(in)
+                   a1(k), wpxbp_zt(kp1), wpxbp_zt(k), &  
                    wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), & 
-                   beta, wtol_sqd ), zm )
+                   beta, wtol_sqd ), &
+                   zm )                                         ! Intent(inout)
 
-  call stat_begin_update_pt( ixapxbp_dp1, k, &
-      -term_dp1_rhs( Cn(k), tau_zm(k), threshold ), zm )
+  call stat_begin_update_pt( ixapxbp_dp1, k, &              ! Intent(in)
+      -term_dp1_rhs( Cn(k), tau_zm(k), threshold ), &       ! Intent(in)
+      zm )                                                  ! Intent(inout)
 
   ! rtp2/thlp2 case (1 turbulent production term)
-  call stat_update_var_pt( ixapxbp_tp, k, & 
-      term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), & 
-               wpxbp(k), wpxap(k), gr%dzm(k) ), zm )
+  call stat_update_var_pt( ixapxbp_tp, k, &             ! Intent(in)
+      term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), &    ! Intent(in)
+               wpxbp(k), wpxap(k), gr%dzm(k) ), & 
+               zm )                                     ! Intent(inout)
           
   ! rtpthlp case (2 turbulent production terms)
-  call stat_update_var_pt( ixapxbp_tp1, k, & 
-      term_tp( 0.0, 0.0, xbm(kp1), xbm(k), & 
-               0.0, wpxap(k), gr%dzm(k) ), zm )
+  call stat_update_var_pt( ixapxbp_tp1, k, &    ! Intent(in)
+      term_tp( 0.0, 0.0, xbm(kp1), xbm(k), &    ! Intent(in)
+               0.0, wpxap(k), gr%dzm(k) ), &
+               zm )                             ! Intent(inout)
           
-  call stat_update_var_pt( ixapxbp_tp2, k, & 
-      term_tp( xam(kp1), xam(k), 0.0, 0.0, & 
-               wpxbp(k), 0.0, gr%dzm(k) ), zm )
+  call stat_update_var_pt( ixapxbp_tp2, k, &    ! Intent(in)
+      term_tp( xam(kp1), xam(k), 0.0, 0.0, &    ! Intent(in)
+               wpxbp(k), 0.0, gr%dzm(k) ), &
+               zm )                             ! Intent(inout)
           
   endif ! l_stats_samp
  
@@ -2193,7 +2246,8 @@ end select
 
 if ( l_stats_samp ) then
     ! Store previous value for effect of the positive definite scheme
-    call stat_begin_update( ixp2_pd, real( xp2_np1 / dt ), zm )
+    call stat_begin_update( ixp2_pd, real( xp2_np1 / dt ), &    ! Intent(in)
+                            zm )                                ! Intent(inout)
 endif 
  
      
@@ -2202,13 +2256,15 @@ if ( any( xp2_np1 < tolerance ) ) then
    ! Call the hole-filling scheme.
    ! The first pass-through should draw from only two levels on either side 
    ! of the hole.
-   call fill_holes_driver( 2, tolerance, "zm", xp2_np1 )
+   call fill_holes_driver( 2, tolerance, "zm", & ! Intent(in) 
+                           xp2_np1 )             ! Intent(inout)
 
 endif
 
 if ( l_stats_samp ) then
    ! Store previous value for effect of the positive definite scheme
-   call stat_end_update( ixp2_pd, real( xp2_np1 / dt ), zm )
+   call stat_end_update( ixp2_pd, real( xp2_np1 / dt ), & ! Intent(in)
+                         zm )                             ! Intent(inout)
 endif 
  
 
