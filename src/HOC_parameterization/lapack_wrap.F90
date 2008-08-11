@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: lapack_wrap.F90,v 1.3 2008-07-29 16:44:02 nielsenb Exp $
+! $Id: lapack_wrap.F90,v 1.4 2008-08-11 15:47:56 faschinj Exp $
 module lapack_wrap
 
 !       Description:
@@ -30,9 +30,9 @@ private ! Set Default Scope
 contains
 
 !-----------------------------------------------------------------------
-subroutine tridag_solvex & 
-           ( solve_type, ndim, nrhs, supd, diag, subd,  & 
-             rhs, solution, rcond, err_code )
+subroutine tridag_solvex( solve_type, ndim, nrhs, &
+                          supd, diag, subd, rhs, &
+                          solution, rcond, err_code )
 
 !       Description:
 !       Solves a tridiagonal system of equations (expert routine).
@@ -51,7 +51,7 @@ implicit none
 ! External
 external ::  & 
   sgtsvx,  & ! Single-prec. General Tridiagonal Solver eXpert
-  dgtsvx  ! Double-prec. General Tridiagonal Solver eXpert
+  dgtsvx     ! Double-prec. General Tridiagonal Solver eXpert
 
 intrinsic :: kind
 
@@ -61,12 +61,12 @@ character(len=*), intent(in) ::  &
 
 integer, intent(in) ::  & 
   ndim,  & ! N-dimension of matrix
-  nrhs  ! # of right hand sides to back subst. after LU-decomp.
+  nrhs     ! # of right hand sides to back subst. after LU-decomp.
 
 ! Input/Output variables
 real, intent(inout), dimension(ndim) ::  & 
   diag,       & ! Main diagonal
-  subd, supd ! Sub and super diagonal
+  subd, supd    ! Sub and super diagonal
 
 real, intent(inout), dimension(ndim,nrhs) ::  & 
   rhs ! RHS input
@@ -100,7 +100,7 @@ integer, dimension(ndim) ::  &
 
 real, dimension(nrhs) ::  & 
   ferr,  & ! Forward error estimate
-  berr  ! Backward error estimate
+  berr     ! Backward error estimate
 
 real, dimension(3*ndim) ::  & 
   work  ! `Scrap' array
@@ -167,8 +167,9 @@ end subroutine tridag_solvex
 
 !-----------------------------------------------------------------------
 subroutine tridag_solve & 
-           ( solve_type, ndim, nrhs, supd, diag, subd,  & 
-             rhs, solution, err_code )
+           ( solve_type, ndim, nrhs, &
+             supd, diag, subd, rhs, &
+             solution, err_code )
 
 !       Description:
 !       Solves a tridiagonal system of equations (simple routine)
@@ -182,7 +183,7 @@ implicit none
 ! External
 external ::  & 
   sgtsv,  & ! Single-prec. General Tridiagonal Solver eXpert
-  dgtsv  ! Double-prec. General Tridiagonal Solver eXpert
+  dgtsv     ! Double-prec. General Tridiagonal Solver eXpert
 
 intrinsic :: kind
 
@@ -192,7 +193,7 @@ character(len=*), intent(in) ::  &
 
 integer, intent(in) ::  & 
   ndim,  & ! N-dimension of matrix
-  nrhs  ! # of right hand sides to back subst. after LU-decomp.
+  nrhs     ! # of right hand sides to back subst. after LU-decomp.
 
 ! Input/Output variables
 real, intent(inout), dimension(ndim) ::  & 
@@ -202,12 +203,13 @@ real, intent(inout), dimension(ndim) ::  &
 real, intent(inout), dimension(ndim,nrhs) ::  & 
   rhs ! RHS input
 
-integer, intent(out) ::  & 
-  err_code ! Used to determine when a decomp. failed
-
 ! Output variables
 real, intent(out), dimension(ndim,nrhs) ::  & 
   solution ! Solution
+
+
+integer, intent(out) ::  & 
+  err_code ! Used to determine when a decomp. failed
 
 ! Local Variables
  
