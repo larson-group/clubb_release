@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F90,v 1.14 2008-08-08 15:04:16 faschinj Exp $
+! $Id: stats_zt.F90,v 1.15 2008-08-12 15:36:06 faschinj Exp $
  
 module stats_zt
 
@@ -200,17 +200,17 @@ integer :: i, k
 ! Default initialization for array indices for zt
 
 ithlm         = 0
-iT_in_K    = 0
+iT_in_K       = 0
 ithvm         = 0
 irtm          = 0
 ircm          = 0
 ium           = 0
 ivm           = 0
-iwm_zt          = 0
+iwm_zt        = 0
 iug           = 0
 ivg           = 0
 icf           = 0
-ip_in_Pa            = 0
+ip_in_Pa      = 0
 iexner        = 0
 iLscale       = 0
 iwp3          = 0
@@ -218,23 +218,23 @@ iwpthlp2      = 0
 iwp2thlp      = 0
 iwprtp2       = 0
 iwp2rtp       = 0
-iLscale_up          = 0
-iLscale_down        = 0
-itau_zt         = 0
-iKh_zt          = 0
+iLscale_up    = 0
+iLscale_down  = 0
+itau_zt       = 0
+iKh_zt        = 0
 iwp2thvp      = 0
 iwp2rcp       = 0
 iwprtpthlp    = 0
-isigma_sqd_w_zt          = 0
-irho         = 0
+isigma_sqd_w_zt = 0
+irho          = 0
 iNcm          = 0  ! Brian
 iNcnm         = 0
 iNim          = 0
 isnowslope    = 0  ! Adam Smith, 22 April 2008
 iNsnowm       = 0  ! Adam Smith, 22 April 2008
 ised_rcm      = 0  ! Brian
-irsat          = 0  ! Brian
-irrainm          = 0  ! Brian
+irsat         = 0  ! Brian
+irrainm       = 0  ! Brian
 iNrm          = 0  ! Brian
 irain_rate    = 0  ! Brian
 iAKm          = 0  ! analytic Kessler.  Vince Larson 22 May 2005
