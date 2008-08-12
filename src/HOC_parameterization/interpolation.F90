@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!$Id: interpolation.F90,v 1.4 2008-08-04 20:47:34 faschinj Exp $
+!$Id: interpolation.F90,v 1.1 2008-08-12 15:41:30 faschinj Exp $
 module interpolation
 
 implicit none
@@ -7,7 +7,7 @@ implicit none
 private ! Default Scope
 
 public :: linint, binary_search, zlinterp_fnc, & 
-          linear_interpolation
+          linear_interpolation, factor_interp
 
 contains
 
@@ -32,6 +32,18 @@ linint = ( (zmid-zbot)/(ztop-zbot) ) * (vtop-vbot) + vbot
 
 return
 end function linint
+
+!-------------------------------------------------------------------------------------------------
+pure real function factor_interp( factor, vtop, vbot )
+!-------------------------------------------------------------------------------------------------
+implicit none
+
+real, intent(in) :: factor, vtop, vbot
+
+factor_interp = factor * (vtop-vbot) + vbot
+!factor_interp = (1-factor) * vbot + factor * vtop
+
+end function factor_interp
 
 !-----------------------------------------------------------------------------------------------
 pure integer function binary_search( n, array, var ) & 

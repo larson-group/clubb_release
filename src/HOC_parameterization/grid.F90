@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F90,v 1.3 2008-08-08 15:42:17 griffinb Exp $
+! $Id: grid.F90,v 1.4 2008-08-12 15:41:30 faschinj Exp $
 !===============================================================================
 module grid_class
 
@@ -758,7 +758,7 @@ module grid_class
    end subroutine read_grid_heights
 
 !===============================================================================
-   pure function interpolated_azm( azt )
+   function interpolated_azm( azt )
 
 !  Description:
 !  Function to interpolate a variable located on the thermodynamic grid levels 
@@ -766,6 +766,8 @@ module grid_class
 !  array and outputs the results as an azm array.  The formulation used is 
 !  compatible with a stretched (unevenly-spaced) grid.
 !-----------------------------------------------------------------------
+   use interpolation, only: linint
+!   use interpolation, only: factor_interp   
 
    implicit none
 
@@ -781,10 +783,15 @@ module grid_class
    ! Do the actual interpolation.
    ! Use linear interpolation.
    do k = 1, gr%nnzp-1, 1
-      interpolated_azm(k) =  & 
-           ( ( azt(k+1)-azt(k) ) / ( gr%zt(k+1)-gr%zt(k) ) ) & 
-            * ( gr%zm(k)-gr%zt(k) ) + azt(k)
+!      interpolated_azm(k) =  & 
+!           ( ( azt(k+1)-azt(k) ) / ( gr%zt(k+1)-gr%zt(k) ) ) & 
+!            * ( gr%zm(k)-gr%zt(k) ) + azt(k)
+ 
+      interpolated_azm(k) = linint( gr%zm(k), gr%zt(k+1), gr%zt(k), azt(k+1), azt(k) )
+!      interpolated_azm(k) = factor_interp( gr%weights_zt2zm( 1, k ), azt(k+1),azt(k) )
    enddo
+
+
 !   ! Set the value of azm at level gr%nnzp (the uppermost level
 !   ! in the model) to the value of azt at level gr%nnzp.
 !   interpolated_azm(gr%nnzp) = azt(gr%nnzp)
@@ -810,6 +817,8 @@ module grid_class
 !  grid levels.  The formulation used is compatible with a stretched 
 !  (unevenly-spaced) grid.
 !-----------------------------------------------------------------------
+!   use interpolation, only: factor_interp
+   use interpolation, only: linint
 
    implicit none
 
@@ -824,9 +833,12 @@ module grid_class
    ! Do the actual interpolation.
    ! Use linear interpolation.
    if ( k /= gr%nnzp ) then
-      interpolated_azmk =  & 
-           ( ( azt(k+1)-azt(k) ) / ( gr%zt(k+1)-gr%zt(k) ) ) & 
-            * ( gr%zm(k)-gr%zt(k) ) + azt(k)
+!      interpolated_azmk =  & 
+!           ( ( azt(k+1)-azt(k) ) / ( gr%zt(k+1)-gr%zt(k) ) ) & 
+ !           * ( gr%zm(k)-gr%zt(k) ) + azt(k)
+      interpolated_azmk = linint( gr%zm(k), gr%zt(k+1), gr%zt(k), azt(k+1), azt(k) )
+!      interpolated_azmk = factor_interp( gr%weights_zt2zm( 1, k ), azt(k+1),azt(k) )
+
    else
 !      ! Set the value of azm at level gr%nnzp (the uppermost 
 !      ! level in the model) to the value of azt at level gr%nnzp.
@@ -918,6 +930,8 @@ module grid_class
 !  array and outputs the results as an azt array.  The formulation used is
 !  compatible with a stretched (unevenly-spaced) grid.
 !-----------------------------------------------------------------------
+!   use interpolation, only: factor_interp
+   use interpolation, only: linint
 
    implicit none
 
@@ -933,9 +947,12 @@ module grid_class
    ! Do actual interpolation.
    ! Use linear interpolation.
    do k = gr%nnzp, 2, -1
-      interpolated_azt(k) = & 
-           ( ( azm(k)-azm(k-1) ) / ( gr%zm(k)-gr%zm(k-1) ) ) & 
-            * ( gr%zt(k)-gr%zm(k-1) ) + azm(k-1)
+!      interpolated_azt(k) = & 
+!           ( ( azm(k)-azm(k-1) ) / ( gr%zm(k)-gr%zm(k-1) ) ) & 
+!            * ( gr%zt(k)-gr%zm(k-1) ) + azm(k-1)
+       interpolated_azt(k) = linint( gr%zt(k), gr%zm(k), gr%zm(k-1), azm(k), azm(k-1) )
+!      interpolated_azt(k) = factor_interp( gr%weights_zm2zt( 1, k ), azm(k),azm(k-1) )
+       
    enddo
 !   ! Set the value of azt at level 1 (the lowermost level in the 
 !   ! model) to the value of azm at level 1.
@@ -961,6 +978,8 @@ module grid_class
 !  grid levels.  The formulation used is compatible with a stretched 
 !  (unevenly-spaced) grid.
 !-----------------------------------------------------------------------
+!   use interpolation, only: factor_interp
+   use interpolation, only: linint
 
    implicit none
 
@@ -975,9 +994,12 @@ module grid_class
    ! Do actual interpolation.
    ! Use linear interpolation.
    if ( k /= 1 ) then
-      interpolated_aztk = & 
-           ( ( azm(k)-azm(k-1) ) / ( gr%zm(k)-gr%zm(k-1) ) ) & 
-            * ( gr%zt(k)-gr%zm(k-1) ) + azm(k-1)
+!      interpolated_aztk = & 
+!           ( ( azm(k)-azm(k-1) ) / ( gr%zm(k)-gr%zm(k-1) ) ) & 
+!            * ( gr%zt(k)-gr%zm(k-1) ) + azm(k-1)
+      interpolated_aztk = linint( gr%zt(k), gr%zm(k), gr%zm(k-1), azm(k), azm(k-1) )
+!      interpolated_aztk = factor_interp( gr%weights_zm2zt( 1, k ), azm(k), azm(k-1) )
+
    else
 !      ! Set the value of azt at level 1 (the lowermost level in 
 !      ! the model) to the value of azm at level 1.

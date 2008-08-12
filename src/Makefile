@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.151 2008-07-30 16:27:04 dschanen Exp $
+# $Id: Makefile,v 1.152 2008-08-12 15:41:30 faschinj Exp $
 #
 # This version should work with GNU make only.
 #
@@ -83,7 +83,7 @@ PARAMETERIZATION = \
 	parameterization_interface.o lapack_wrap.o  \
 	parameters.o pos_definite_mod.o calendar.o \
 	fill_holes.o semiimplicit_clip.o explicit_clip.o \
-	array_index.o
+	array_index.o interpolation.o
 
 
 INTERFACING = gradsaverage.o inputfields.o inputgrads.o 

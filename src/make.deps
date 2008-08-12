@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.65 2008-07-30 19:17:34 dschanen Exp $
+# $Id: make.deps,v 1.66 2008-08-12 15:41:30 faschinj Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -54,7 +54,7 @@ prog_variables.o: constants.o parameters.o grid.o model_flags.o prog_variables.F
 numer_check.o	: prog_variables.o diag_variables.o constants.o model_flags.o\
 	error_code.o numer_check.F90
 inputgrads.o	: constants.o endian.o recl.F90 inputgrads.F90
-grid.o		: constants.o file_functions.o grid.F90
+grid.o		: constants.o file_functions.o interpolation.o grid.F90
 stats_type.o    : outputfile.o stats_precision.o error_code.o stats_type.F90
 stats_variables.o     : stats_type.o stats_variables.F90
 stats_subs.o    : output_grads.o output_netcdf.o prog_variables.o diag_variables.o \
