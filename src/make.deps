@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.66 2008-08-12 15:41:30 faschinj Exp $
+# $Id: make.deps,v 1.67 2008-08-12 16:10:40 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -48,14 +48,15 @@ microphys_driver.o : constants.o model_flags.o lapack_wrap.o \
         ice_dfsn_mod.o diffusion.o array_index.o microphys_driver.F90 
 output_grads.o	: constants.o recl.F90 endian.o outputfile.o calendar.o \
 	output_grads.F90
-output_netcdf.o	: constants.o outputfile.o output_netcdf.F90
+output_netcdf.o	: constants.o calendar.o outputfile.o output_netcdf.F90
 diag_variables.o: constants.o parameters.o grid.o model_flags.o diag_variables.F90
 prog_variables.o: constants.o parameters.o grid.o model_flags.o prog_variables.F90 
 numer_check.o	: prog_variables.o diag_variables.o constants.o model_flags.o\
 	error_code.o numer_check.F90
 inputgrads.o	: constants.o endian.o recl.F90 inputgrads.F90
 grid.o		: constants.o file_functions.o interpolation.o grid.F90
-stats_type.o    : outputfile.o stats_precision.o error_code.o stats_type.F90
+stats_type.o    : grid.o outputfile.o stats_precision.o error_code.o \
+	stats_type.F90
 stats_variables.o     : stats_type.o stats_variables.F90
 stats_subs.o    : output_grads.o output_netcdf.o prog_variables.o diag_variables.o \
 	stats_variables.o stats_type.o grid.o stats_zt.o stats_zm.o stats_sfc.o T_in_K_mod.o \
@@ -148,8 +149,8 @@ cloud_rad.o : constants.o grid.o cloud_rad.F90
 dycoms2_rf01.o : constants.o model_flags.o grid.o stats_variables.o error_code.o dycoms2_rf01.F90
 dycoms2_rf02.o : constants.o model_flags.o grid.o stats_variables.o error_code.o dycoms2_rf02.F90
 
-rad_lwsw.o      : rad_lwsw.F90 stats_variables.o
-file_functions.o	: file_functions.F90
+rad_lwsw.o : rad_lwsw.F90 interpolation.o stats_variables.o
+file_functions.o : file_functions.F90
 
 # == COAMPS Microphysics dependencies ==
 coamps_micro_driver.o : constants.o grid.o stats_variables.o saturation.o coamps_micro_driver.F90
