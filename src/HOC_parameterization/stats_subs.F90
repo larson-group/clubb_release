@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F90,v 1.19 2008-08-08 15:04:15 faschinj Exp $
+!  $Id: stats_subs.F90,v 1.20 2008-08-12 16:12:28 dschanen Exp $
 module stats_subs
 
   implicit none
@@ -966,7 +966,7 @@ module stats_subs
           stat_update_var_pt
 
       use interpolation, only: & 
-          linint ! Procedure
+          lin_int ! Procedure
 
       implicit none
 
@@ -1198,11 +1198,11 @@ module stats_subs
 !          if ( k < gr%nnzp) then
 !            sfc%x(1,izb) = sfc%x(1,izb) + gr%zt(k)
 
-!        pure real function linint( zmid, ztop, zbot, vtop, vbot )
-!        linint = ( (zmid-zbot)/(ztop-zbot) ) * (vtop-vbot) + vbot
+!        pure real function lin_int( zmid, ztop, zbot, vtop, vbot )
+!        lin_int = ( (zmid-zbot)/(ztop-zbot) ) * (vtop-vbot) + vbot
 
           if ( k > 1 .AND. k < gr%nnzp) then
-            call stat_update_var_pt( izb, 1, linint( rc_tol,rcm(k),  & ! Use linear interpolation
+            call stat_update_var_pt( izb, 1, lin_int( rc_tol,rcm(k),  & ! Use linear interpolation
                      rcm(k-1), gr%zt(k) , gr%zt(k-1) ), sfc )      ! to find the exact height
                                                                    ! of the rc_tol kg/kg level.
                                                                    ! Brian.

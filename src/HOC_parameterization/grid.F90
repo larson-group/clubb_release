@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F90,v 1.4 2008-08-12 15:41:30 faschinj Exp $
+! $Id: grid.F90,v 1.5 2008-08-12 16:12:28 dschanen Exp $
 !===============================================================================
 module grid_class
 
@@ -766,7 +766,7 @@ module grid_class
 !  array and outputs the results as an azm array.  The formulation used is 
 !  compatible with a stretched (unevenly-spaced) grid.
 !-----------------------------------------------------------------------
-   use interpolation, only: linint
+   use interpolation, only: lin_int
 !   use interpolation, only: factor_interp   
 
    implicit none
@@ -787,7 +787,7 @@ module grid_class
 !           ( ( azt(k+1)-azt(k) ) / ( gr%zt(k+1)-gr%zt(k) ) ) & 
 !            * ( gr%zm(k)-gr%zt(k) ) + azt(k)
  
-      interpolated_azm(k) = linint( gr%zm(k), gr%zt(k+1), gr%zt(k), azt(k+1), azt(k) )
+      interpolated_azm(k) = lin_int( gr%zm(k), gr%zt(k+1), gr%zt(k), azt(k+1), azt(k) )
 !      interpolated_azm(k) = factor_interp( gr%weights_zt2zm( 1, k ), azt(k+1),azt(k) )
    enddo
 
@@ -818,7 +818,7 @@ module grid_class
 !  (unevenly-spaced) grid.
 !-----------------------------------------------------------------------
 !   use interpolation, only: factor_interp
-   use interpolation, only: linint
+   use interpolation, only: lin_int
 
    implicit none
 
@@ -836,7 +836,7 @@ module grid_class
 !      interpolated_azmk =  & 
 !           ( ( azt(k+1)-azt(k) ) / ( gr%zt(k+1)-gr%zt(k) ) ) & 
  !           * ( gr%zm(k)-gr%zt(k) ) + azt(k)
-      interpolated_azmk = linint( gr%zm(k), gr%zt(k+1), gr%zt(k), azt(k+1), azt(k) )
+      interpolated_azmk = lin_int( gr%zm(k), gr%zt(k+1), gr%zt(k), azt(k+1), azt(k) )
 !      interpolated_azmk = factor_interp( gr%weights_zt2zm( 1, k ), azt(k+1),azt(k) )
 
    else
@@ -931,7 +931,7 @@ module grid_class
 !  compatible with a stretched (unevenly-spaced) grid.
 !-----------------------------------------------------------------------
 !   use interpolation, only: factor_interp
-   use interpolation, only: linint
+   use interpolation, only: lin_int
 
    implicit none
 
@@ -950,7 +950,7 @@ module grid_class
 !      interpolated_azt(k) = & 
 !           ( ( azm(k)-azm(k-1) ) / ( gr%zm(k)-gr%zm(k-1) ) ) & 
 !            * ( gr%zt(k)-gr%zm(k-1) ) + azm(k-1)
-       interpolated_azt(k) = linint( gr%zt(k), gr%zm(k), gr%zm(k-1), azm(k), azm(k-1) )
+       interpolated_azt(k) = lin_int( gr%zt(k), gr%zm(k), gr%zm(k-1), azm(k), azm(k-1) )
 !      interpolated_azt(k) = factor_interp( gr%weights_zm2zt( 1, k ), azm(k),azm(k-1) )
        
    enddo
@@ -979,7 +979,7 @@ module grid_class
 !  (unevenly-spaced) grid.
 !-----------------------------------------------------------------------
 !   use interpolation, only: factor_interp
-   use interpolation, only: linint
+   use interpolation, only: lin_int
 
    implicit none
 
@@ -997,7 +997,7 @@ module grid_class
 !      interpolated_aztk = & 
 !           ( ( azm(k)-azm(k-1) ) / ( gr%zm(k)-gr%zm(k-1) ) ) & 
 !            * ( gr%zt(k)-gr%zm(k-1) ) + azm(k-1)
-      interpolated_aztk = linint( gr%zt(k), gr%zm(k), gr%zm(k-1), azm(k), azm(k-1) )
+      interpolated_aztk = lin_int( gr%zt(k), gr%zm(k), gr%zm(k-1), azm(k), azm(k-1) )
 !      interpolated_aztk = factor_interp( gr%weights_zm2zt( 1, k ), azm(k), azm(k-1) )
 
    else

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------------
-! $Id: std_atmosphere_mod.F90,v 1.3 2008-08-04 16:57:52 faschinj Exp $
+! $Id: std_atmosphere_mod.F90,v 1.4 2008-08-12 16:12:27 dschanen Exp $
 module std_atmosphere_mod
   
   implicit none
@@ -111,7 +111,7 @@ module std_atmosphere_mod
       kappa
 
   use interpolation, only:  & 
-      linint,  & ! Procedure(s) 
+      lin_int,  & ! Procedure(s) 
       binary_search
   
   implicit none
@@ -133,7 +133,7 @@ module std_atmosphere_mod
   sp_humidity,         & ! Specific humidity             [kg/kg]
   tabs0               ! Temperature                   [K]
   
-  ! These variables are used to make the calls to linint cleaner    
+  ! These variables are used to make the calls to lin_int cleaner    
   real, dimension(std_atmos_dim) :: & 
   T_in_K, & 
   pinmb, & 
@@ -155,11 +155,11 @@ module std_atmosphere_mod
 
   ! Compute thlm from Standard Atmosphere
 
-  tabs0 = linint( alt, height(varindex), height(varindex-1),  & 
+  tabs0 = lin_int( alt, height(varindex), height(varindex-1),  & 
                   T_in_K(varindex), T_in_K(varindex-1) )
   
   p_in_hPa = 100. *  & 
-          linint( alt, height(varindex), height(varindex-1), & 
+          lin_int( alt, height(varindex), height(varindex-1), & 
                   pinmb(varindex), pinmb(varindex-1) )
 
   exner = (p_in_hPa/p0)**kappa
@@ -168,7 +168,7 @@ module std_atmosphere_mod
 
   ! Compute rtm
 
-  sp_humidity = linint( alt, height(varindex), height(varindex-1), & 
+  sp_humidity = lin_int( alt, height(varindex), height(varindex-1), & 
                 sp_hmdty(varindex), sp_hmdty(varindex-1))
 
   rtm = sp_humidity/( 1. - sp_humidity)

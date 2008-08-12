@@ -1,4 +1,4 @@
-! $Id: sounding.F90,v 1.5 2008-08-06 13:49:05 faschinj Exp $
+! $Id: sounding.F90,v 1.6 2008-08-12 16:12:27 dschanen Exp $
 module sounding
 
   implicit none
@@ -34,7 +34,7 @@ module sounding
             std_atmosphere ! Procedure(s)
 
         use interpolation, only:  & 
-            linint ! Procedure(s)       
+            lin_int ! Procedure(s)       
 
         use array_index, only: & 
             iisclr_rt, &  ! Variable
@@ -200,19 +200,19 @@ module sounding
                 .AND. trim( runtype ) /= "dycoms2_rf02_nd"  & 
                 .AND. trim( runtype ) /= "dycoms2_rf02_so" ) THEN  
 
-              um(i)   = linint( gr%zt(i), z(k), z(k-1), u(k), u(k-1) )
-              vm(i)   = linint( gr%zt(i), z(k), z(k-1), v(k), v(k-1) )
-              ugm(i)  = linint( gr%zt(i), z(k), z(k-1), ug(k), ug(k-1) )
-              vgm(i)  = linint( gr%zt(i), z(k), z(k-1), vg(k), vg(k-1) )
-              thlm(i) = linint( gr%zt(i), z(k), z(k-1),  & 
+              um(i)   = lin_int( gr%zt(i), z(k), z(k-1), u(k), u(k-1) )
+              vm(i)   = lin_int( gr%zt(i), z(k), z(k-1), v(k), v(k-1) )
+              ugm(i)  = lin_int( gr%zt(i), z(k), z(k-1), ug(k), ug(k-1) )
+              vgm(i)  = lin_int( gr%zt(i), z(k), z(k-1), vg(k), vg(k-1) )
+              thlm(i) = lin_int( gr%zt(i), z(k), z(k-1),  & 
                             theta(k), theta(k-1) )
-              rtm(i)  = linint( gr%zt(i), z(k), z(k-1), rt(k), rt(k-1) )
+              rtm(i)  = lin_int( gr%zt(i), z(k), z(k-1), rt(k), rt(k-1) )
               
               if ( sclr_dim > 0 ) then
                 do j = 1, sclr_dim 
-                  sclrm(i,j) = linint( gr%zt(i), z(k), z(k-1),  & 
+                  sclrm(i,j) = lin_int( gr%zt(i), z(k), z(k-1),  & 
                                        sclr(k,j), sclr(k-1,j) )
-                  edsclrm(i,j) = linint( gr%zt(i), z(k), z(k-1),  & 
+                  edsclrm(i,j) = lin_int( gr%zt(i), z(k), z(k-1),  & 
                                          edsclr(k,j), edsclr(k-1,j) )
                 end do
 
@@ -294,7 +294,7 @@ module sounding
         use grid_class, only:  & 
             gr ! Variable(s)
         use interpolation, only:  & 
-            linint ! Procedure
+            lin_int ! Procedure
         
         implicit none
 
@@ -367,7 +367,7 @@ module sounding
                 write(*,*) ' filename: ',fname
                 stop 'STOP in read_profile'
               end if
-            x(i) = linint( gr%zt(i), z(k), z(k-1), var(k), var(k-1) )
+            x(i) = lin_int( gr%zt(i), z(k), z(k-1), var(k), var(k-1) )
           enddo ! while
         end do ! i=2, gr%nzzp
 

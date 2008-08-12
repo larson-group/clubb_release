@@ -1,4 +1,4 @@
-! $Id: rad_lwsw.F90,v 1.3 2008-07-28 19:37:55 faschinj Exp $
+! $Id: rad_lwsw.F90,v 1.4 2008-08-12 16:12:28 dschanen Exp $
 !-----------------------------------------------------------------------
 module rad_lwsw_mod
 
@@ -60,7 +60,7 @@ subroutine rad_lwsw( qc3, rbm, dsigm, &
 
 use constants, only: Cp ! Variable(s)
 
-use interpolation, only: linint ! Procedure(s)
+use interpolation, only: lin_int ! Procedure(s)
 
 implicit none
 
@@ -251,8 +251,8 @@ if ( lw_on ) then
   ! Interpolate liquid water path (lwp) from COAMPS thermodynamic
   ! (or mass) levels to COAMPS momentum (or w) levels.
   do k = 2, kk+1, 1
-     lwp_coamps_zm(k) = linint( coamps_zm(k), coamps_zt(k-1),  & 
-                                coamps_zt(k), lwp(k-1), lwp(k) )
+     lwp_coamps_zm(k) = lin_int( coamps_zm(k), coamps_zt(k-1),  & 
+                                 coamps_zt(k), lwp(k-1), lwp(k) )
   enddo
   ! The value of liquid water path (lwp) at momentum (or w) 
   ! level 1 (the uppermost level) is defined to be 1/2 of the
@@ -380,7 +380,7 @@ subroutine sunray_sw( qc3, rbm, xi_abs, dsigm, kk, &
 !-----------------------------------------------------------------------
 
 use constants, only: Cp, rho_lw, pi ! Variable(s)
-use interpolation, only: linint ! Procedure(s)
+use interpolation, only: lin_int ! Procedure(s)
 
 implicit none
 
@@ -653,8 +653,8 @@ endif
 
     if ( center ) then
       taupath = taupath  & 
-              + linint( coamps_zm(k), coamps_zt(k-1),  & 
-                        coamps_zt(k), taude(k-1), taude(k) )
+              + lin_int( coamps_zm(k), coamps_zt(k-1),  & 
+                         coamps_zt(k), taude(k-1), taude(k) )
     else
       taupath = taupath + taude(k)
     endif
