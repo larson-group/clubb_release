@@ -1,5 +1,5 @@
 %
-% $Id: hoc_standards.tex,v 1.2 2008-08-06 16:48:45 dschanen Exp $
+% $Id: hoc_standards.tex,v 1.3 2008-08-13 21:16:06 vlarson Exp $
 %
 
 \documentclass[letterpaper,12pt]{article}
@@ -32,7 +32,7 @@ the string \texttt{\$Id\$} on a commented line at the top of the source file
 After checking in the file, something like the following will appear:
 \begin{verbatim}
 !-----------------------------------------------------------------------
-! $Id: hoc_standards.tex,v 1.2 2008-08-06 16:48:45 dschanen Exp $
+! $Id: hoc_standards.tex,v 1.3 2008-08-13 21:16:06 vlarson Exp $
 
 \end{verbatim}
 
@@ -152,12 +152,12 @@ subroutine mulmul( x, y, z )
 
   implicit none
 
-  ! Input
+  ! First list input variables
   real, dimension(5), intent(in) :: &
     x, &! First factor   [no units]
     y   ! Second factor  [no units]
 
-  ! Output 
+  ! Then list inout variables, and then outputs 
   real, dimension(5), intent(out) :: &
     z  ! output         [no units]
 !-----------------------------------------------------------------------
