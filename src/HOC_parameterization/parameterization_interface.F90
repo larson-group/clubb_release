@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.24 2008-08-06 21:38:59 faschinj Exp $
+! $Id: parameterization_interface.F90,v 1.25 2008-08-14 17:29:51 dschanen Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
@@ -793,13 +793,11 @@ module hoc_parameterization_interface
     ! Advance wp2/wp3 one timestep
     !----------------------------------------------------------------
 
-    call timestep_wp23( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp,       & ! intent(in)
-                        um, vm, upwp, vpwp, up2, vp2, Kh_zm, Kh_zt,   & ! intent(in)
-                        tau_zm, tau_zt, Skw_zm, Skw_zt, pdf_parms(:,13),  & ! intent(in)
-                        wp2_zt, wp2, wp3, err_code )                  ! intent(inout)
-
-    ! Interpolate wp2 to the thermo. grid 
-    wp2_zt = max( zm2zt( wp2 ), 0.0 ) ! Positive definite quantity
+    call timestep_wp23 &
+         ( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp,  & ! intent(in)
+           um, vm, upwp, vpwp, up2, vp2, Kh_zm, Kh_zt,      & ! intent(in)
+           tau_zm, tau_zt, Skw_zm, Skw_zt, pdf_parms(:,13), & ! intent(in)
+           wp2_zt, wp2, wp3, err_code )                  ! intent(inout)
 
 
     !----------------------------------------------------------------
