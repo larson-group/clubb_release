@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.25 2008-08-14 17:29:51 dschanen Exp $
+! $Id: parameterization_interface.F90,v 1.26 2008-08-15 16:07:19 griffinb Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
@@ -918,17 +918,15 @@ module hoc_parameterization_interface
     ! Compute Eddy-diff. Passive Scalars
     !----------------------------------------------------------------
     if ( sclr_dim > 0 ) then
-      do i=1, sclr_dim
+      do i = 1, sclr_dim
 
-        edsclrmt(1:gr%nnzp,i) = - wm_zt * ddzm( zt2zm( edsclrm(:,i) ) )
+        edsclrmt(1:gr%nnzp,i) = 0.0
 
-        call compute_um_edsclrm( "edsclr", wpedsclrp(1,i),     & ! intent(in)
-                                 edsclrmt(:,i), Kh_zm, dt,       & ! intent(in)
-                                 edsclrm(:,i), wpedsclrp(:,i), & ! intent(inout)
-                                 err_code )                      ! intent(out)
+        call compute_um_edsclrm( "edsclr", dt, wpedsclrp(1,i), edsclrmt(:,i),  &
+                                 wm_zt, Kh_zm, l_implemented,  &
+                                 edsclrm(:,i), wpedsclrp(:,i), err_code )
 
-
-      end do
+      enddo
 
       ! Set boundary condition as in rt
 
@@ -943,13 +941,13 @@ module hoc_parameterization_interface
     ! Update winds
     !----------------------------------------------------------------
 
-    call compute_uv_tndcy & 
-         ( "um", um, wm_zt, fcor, vm, vg, l_implemented, & ! intent(in)
-           umt )                                           ! intent(out)
+    call compute_uv_tndcy( "um", um, fcor, vm, vg, &
+                           l_implemented, umt )
 
-    call compute_um_edsclrm( "um", upwp(1), umt, Kh_zm, dt,& ! intent(in)
-                             um, upwp,                     & ! intent(inout)
-                             err_code )                      ! intent(out)
+    call compute_um_edsclrm( "um", dt, upwp_sfc, umt,  &
+                             wm_zt, Kh_zm, l_implemented,  &
+                             um, upwp, err_code )
+
 
     um(1)       = ( ( um(3)-um(2) )/( gr%zt(3)-gr%zt(2) ) ) & 
                     * ( gr%zt(1)-gr%zt(2) ) + um(2)
@@ -963,13 +961,13 @@ module hoc_parameterization_interface
     ! Joshua Fasching March 2008
     if ( lapack_error(err_code) ) return
 
-    call compute_uv_tndcy & 
-          ( "vm", vm, wm_zt, fcor, um, ug, l_implemented,  & ! intent(in)
-            vmt )                                        ! intent(out)
+    call compute_uv_tndcy( "vm", vm, fcor, um, ug, &
+                           l_implemented, vmt )
 
-    call compute_um_edsclrm( "vm", vpwp(1), vmt, Kh_zm, dt,  & ! intent(in)
-                             vm, vpwp,                     & ! intent(inout)
-                             err_code )                      ! intent(out)
+    call compute_um_edsclrm( "vm", dt, vpwp_sfc, vmt,  &
+                             wm_zt, Kh_zm, l_implemented,  &
+                             vm, vpwp, err_code )
+
 
     vm(1)       = ( ( vm(3)-vm(2) )/( gr%zt(3)-gr%zt(2) ) ) & 
                     * ( gr%zt(1)-gr%zt(2) ) + vm(2)
