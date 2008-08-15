@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F90,v 1.12 2008-08-15 16:07:19 griffinb Exp $
+! $Id: compute_um_edsclrm_mod.F90,v 1.13 2008-08-15 20:12:34 vlarson Exp $
 !------------------------------------------------------------------------
 module compute_um_edsclrm_mod
 
@@ -112,7 +112,7 @@ subroutine compute_um_edsclrm( solve_type, dt, xpwp_sfc, xm_tndcy,  &
 ! zero-flux nor a fixed-point boundary condition.  Rather, it is a fixed-flux 
 ! boundary condition.  This term is a turbulent advection term, but with the
 ! eddy-scalars, the only value of x'w' relevant in solving the d(xm)/dt equation
-! is the value of x'w' at the surface (written as x'w'|_sfc).
+! is the value of x'w' at the surface (i.e. the zm(1) level, written as x'w'|_sfc).
 !
 ! Since x'w' = - K_zm * d(xm)/dz,
 !
@@ -121,27 +121,28 @@ subroutine compute_um_edsclrm( solve_type, dt, xpwp_sfc, xm_tndcy,  &
 ! The lower boundary condition, which in this case is applied to the d(xm)/dt 
 ! equation at level 2, is discretized as follows:
 !
-! ---xm(3)------------------------------------------------- t(3)
+! ---xm(3)------------------------------------------------- zt(3)
 !
-! =============d(xm)/dz===K_zm(2)========================== m(2)
+! =============d(xm)/dz===K_zm(2)========================== zm(2)
 !
-! ---xm(2)---------------------------d[K_zm*d(xm)/dz]/dz--- t(2)
+! ---xm(2)---------------------------d[K_zm*d(xm)/dz]/dz--- zt(2)
 !
-! =============[ x'w'|_sfc = - K_zm(1) * d(xm)/dz ]======== m(1) (surface)
+! =============[ x'w'|_sfc = - K_zm(1) * d(xm)/dz ]======== zm(1) (surface)
 !
-! ---xm(1)------------------------------------------------- t(1)
+! ---xm(1)------------------------------------------------- zt(1)
 ! 
-! The vertically discretized form of the term is written out as:
+! The vertically discretized form of the turbulent advection 
+! (i.e. eddy diffusivity) term is written out as:
 !
 ! + dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3) - xm(2) ) + x'w'|_sfc ];
 !
 ! which can be re-written as:
 !
-! + dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3) - xm(2) ) ]  +  dzt(2) * x'w'|_sfc ].
+! + dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3) - xm(2) ) ]  +  dzt(2) * x'w'|_sfc .
 !
 ! For this equation, a Crank-Nicholson (semi-implicit) diffusion scheme is used
 ! to solve the d [ K_zm * d(xm)/dz ] / dz eddy-diffusion term.  The discretized
-! implicit form of the term is written out as:
+! implicit portion of the term is written out as:
 !
 ! + (1/2)*dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3,<t+1>) - xm(2,<t+1>) ) ].
 !
@@ -149,7 +150,7 @@ subroutine compute_um_edsclrm( solve_type, dt, xpwp_sfc, xm_tndcy,  &
 !        sign is reversed and the leading "+" in front of the term is changed
 !        to a "-".
 !
-! The discretized explicit form of the term is written out as:
+! The discretized explicit portion of the term is written out as:
 !
 ! + (1/2)*dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3,<t>) - xm(2,<t>) ) ]
 !    + dzt(2) * x'w'|_sfc.
