@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F90,v 1.14 2008-08-17 16:10:39 griffinb Exp $
+! $Id: compute_um_edsclrm_mod.F90,v 1.15 2008-08-17 19:00:11 griffinb Exp $
 !===============================================================================
 module compute_um_edsclrm_mod
 
@@ -124,14 +124,6 @@ call compute_um_edsclrm_solve( "um", dt, upwp_sfc, um_tndcy,  &
                                wm_zt, Kh_zm, l_implemented,  &
                                um, upwp, err_code )
 
-! Linearly extend um to the uppermost and lowermost levels.
-um(1)       = ( ( um(3)-um(2) )/( gr%zt(3)-gr%zt(2) ) ) & 
-                * ( gr%zt(1)-gr%zt(2) ) + um(2)
-um(gr%nnzp) = ( ( um(gr%nnzp-1)-um(gr%nnzp-2) ) & 
-                  /( gr%zt(gr%nnzp-1)-gr%zt(gr%nnzp-2) ) ) & 
-                * ( gr%zt(gr%nnzp)-gr%zt(gr%nnzp-1) ) & 
-                + um(gr%nnzp-1)
-
 
 !----------------------------------------------------------------
 ! Update meridional (south-to-north) component of mean wind, vm
@@ -143,14 +135,6 @@ call compute_uv_tndcy( "vm", vm, fcor, um, ug, &
 call compute_um_edsclrm_solve( "vm", dt, vpwp_sfc, vm_tndcy,  &
                                wm_zt, Kh_zm, l_implemented,  &
                                vm, vpwp, err_code )
-
-! Linearly extend vm to the uppermost and lowermost levels.
-vm(1)       = ( ( vm(3)-vm(2) )/( gr%zt(3)-gr%zt(2) ) ) & 
-                * ( gr%zt(1)-gr%zt(2) ) + vm(2)
-vm(gr%nnzp) = ( ( vm(gr%nnzp-1)-vm(gr%nnzp-2) ) & 
-                  /( gr%zt(gr%nnzp-1)-gr%zt(gr%nnzp-2) ) ) & 
-                * ( gr%zt(gr%nnzp)-gr%zt(gr%nnzp-1) ) & 
-                + vm(gr%nnzp-1)
        
 
 ! Adjust um and vm if nudging is turned on.
@@ -160,27 +144,6 @@ if ( l_uv_nudge ) then
   vm(1:gr%nnzp) = real( vm(1:gr%nnzp)  & 
         - ((vm(1:gr%nnzp) - vm_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
 endif
-
-
-!----------------------------------------------------------------
-! Compute Eddy-diff. Passive Scalars
-!----------------------------------------------------------------
-if ( sclr_dim > 0 ) then
-  do i = 1, sclr_dim
-
-    edsclrm_tndcy(1:gr%nnzp,i) = 0.0
-
-    call compute_um_edsclrm_solve( "edsclr", dt, wpedsclrp(1,i),  &
-                                   edsclrm_tndcy(:,i), wm_zt, Kh_zm,  &
-                                   l_implemented, edsclrm(:,i),  &
-                                   wpedsclrp(:,i), err_code )
-
-  enddo
-
-  ! Set boundary condition as in r_t/th_l
-  edsclrm(1,1:sclr_dim) = edsclrm(2,1:sclr_dim)
-
-endif ! sclr_dim > 0
 
 
 ! Clipping for u'w'
@@ -208,6 +171,26 @@ call covariance_clip( "upwp", .false.,      & ! intent(in)
 call covariance_clip( "vpwp", .false.,      & ! intent(in)
                       .true., dt, wp2, vp2, & ! intent(in)
                       vpwp )                  ! intent(inout)
+
+
+!----------------------------------------------------------------
+! Compute Eddy-diff. Passive Scalars
+!----------------------------------------------------------------
+
+if ( sclr_dim > 0 ) then
+
+   do i = 1, sclr_dim
+
+      edsclrm_tndcy(1:gr%nnzp,i) = 0.0
+
+      call compute_um_edsclrm_solve( "edsclr", dt, wpedsclrp(1,i),  &
+                                     edsclrm_tndcy(:,i), wm_zt, Kh_zm,  &
+                                     l_implemented, edsclrm(:,i),  &
+                                     wpedsclrp(:,i), err_code )
+
+   enddo
+
+endif ! sclr_dim > 0
 
 
 ! Error report
@@ -547,22 +530,39 @@ call compute_um_edsclrm_lhs( solve_type, dt, wm_zt, Kh_zm,  &
 call compute_um_edsclrm_rhs( solve_type, dt, Kh_zm, xm,  &
                              xm_tndcy, xpwp_sfc, rhs )
 
+
 ! Store momentum flux (explicit component)
+! The surface flux, x'w'(1) = x'w'|_sfc, is set elsewhere in the model.
 xpwp(1) = xpwp_sfc
+! Solve for x'w' at all intermediate model levels.
+! A Crank-Nicholson timestep is used.
 do k = 2, gr%nnzp-1, 1
    xpwp(k) = -0.5 * Kh_zm(k) * gr%dzm(k) * ( xm(k+1) - xm(k) ) 
 enddo
+! A zero-flux boundary condition at the top of the model, d(xm)/dz = 0, means 
+! that u'w' at the top model level is 0, since x'w' = - K_zm * d(xm)/dz.
 xpwp(gr%nnzp) = 0.
+
 
 ! Solve tridiagonal system
 call tridag_solve( solve_type, gr%nnzp, 1, lhs(kp1_tdiag,:),  &
                    lhs(k_tdiag,:), lhs(km1_tdiag,:), rhs, xm, err_code )
 
+! After xm has been advanced to the next timestep, solve for xm(1) (xm at the 
+! first thermodynamic level, which is below the surface), based on the 
+! relationship:  x'w'|_sfc = - K_zm(1) * dzm(1) * ( xm(2) - xm(1) ); where 
+! x'w'|_sfc is a given value, and K_zm(1), dzm(1), and xm(2) are known values.
+xm(1) = xm(2) + xpwp_sfc / ( Kh_zm(1) * gr%dzm(1) )
+
+
 ! Second part of momentum (implicit component)
+! Solve for x'w' at all intermediate model levels.
+! A Crank-Nicholson timestep is used.
 do k = 2, gr%nnzp-1, 1
    xpwp(k) = xpwp(k)  &
               - 0.5 * Kh_zm(k) * gr%dzm(k) * ( xm(k+1) - xm(k) )
 enddo
+
 
 if ( l_stats_samp ) then
 
@@ -575,17 +575,25 @@ if ( l_stats_samp ) then
 
       ! xm mean advection
       call stat_update_var_pt( ixm_ma, k, &
-          ztscr01(k) * xm(km1) &
-        + ztscr02(k) * xm(k) &
-        + ztscr03(k) * xm(kp1), zt )
+             ztscr01(k) * xm(km1) &
+           + ztscr02(k) * xm(k) &
+           + ztscr03(k) * xm(kp1), zt )
 
       ! xm turbulent transport (implicit component)
       call stat_end_update_pt( ixm_ta, k, &
-          ztscr04(k) * xm(km1) &
-        + ztscr05(k) * xm(k) &
-        + ztscr06(k) * xm(kp1), zt )
+             ztscr04(k) * xm(km1) &
+           + ztscr05(k) * xm(k) &
+           + ztscr06(k) * xm(kp1), zt )
 
     enddo
+
+    ! Upper boundary condition:
+    ! xm turbulent transport (implicit component)
+    k   = gr%nnzp
+    km1 = max( k-1, 1 )
+    call stat_end_update_pt( ixm_ta, k, &
+           ztscr04(k) * xm(km1) &
+         + ztscr05(k) * xm(k), zt )
 
 endif
 
@@ -890,13 +898,45 @@ enddo
 
 
 ! Boundary Conditions
+
 ! Lower Boundary
+
+! The lower boundary condition is a fixed-flux, which gets applied at level 2.
 lhs(:,1) = 0.0
 lhs(k_tdiag,1) = real( 1.0 / dt )
 
 ! Upper Boundary
-lhs(:,gr%nnzp) = 0.0
-lhs(k_tdiag,gr%nnzp) = real( 1.0 / dt )
+
+! A zero-flux boundary condition is used at the upper boundary, meaning that xm 
+! is not allowed to exit the model through the upper boundary.  This boundary
+! condition is invoked by calling diffusion_zt_lhs at the uppermost level.
+k   = gr%nnzp
+km1 = max( k-1, 1 )
+
+lhs(kp1_tdiag:km1_tdiag,k)  &
+= lhs(kp1_tdiag:km1_tdiag,k)  &
++ (1.0/2.0)  &
+* diffusion_zt_lhs( Kh_zm(k), Kh_zm(km1), 0.0,  & 
+                    gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+
+! Time tendency at the upper boundary.
+lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
+
+if ( l_stats_samp ) then
+
+   ! Statistics:  implicit contributions for um or vm.
+
+   if ( ixm_ta > 0 ) then
+      tmp(1:3)  &
+      = (1.0/2.0)  &
+      * diffusion_zt_lhs( Kh_zm(k), Kh_zm(km1), 0.0,  &
+                          gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+      ztscr04(k) = -tmp(3)
+      ztscr05(k) = -tmp(2)
+      ztscr06(k) = -tmp(1)
+   endif
+
+endif  ! lstats_samp
 
 
 return
@@ -1021,7 +1061,10 @@ enddo
 
 
 ! Boundary Condition
+
 ! Lower Boundary
+
+! The lower boundary condition is a fixed-flux, which gets applied at level 2.
 rhs(2) = rhs(2) + gr%dzt(2) * xpwp_sfc
 rhs(1) = real( ( 1.0 / dt ) * xm(1) )
 
@@ -1038,7 +1081,35 @@ endif  ! lstats_samp
 
 
 ! Upper Boundary
-rhs(gr%nnzp) = real( ( 1.0 / dt ) * xm(gr%nnzp) )
+
+! A zero-flux boundary condition is used at the upper boundary, meaning that xm 
+! is not allowed to exit the model through the upper boundary.  This boundary
+! condition is invoked by calling diffusion_zt_lhs at the uppermost level.
+k   = gr%nnzp
+km1 = max( k-1, 1 )
+
+rhs_diff(1:3)  &
+= (1.0/2.0)  &
+* diffusion_zt_lhs( Kh_zm(k), Kh_zm(km1), 0.0,  &
+                    gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+rhs(k)   =   rhs(k) &
+           - rhs_diff(3) * xm(km1) &
+           - rhs_diff(2) * xm(k)
+
+! Time tendency at the upper boundary.
+rhs(k) = real( rhs(k) + ( 1.0 / dt ) * xm(k) )
+
+if ( l_stats_samp ) then
+
+   ! Statistics:  explicit contributions for um or vm.
+
+   if ( ixm_ta > 0 ) then
+      call stat_begin_update_pt( ixm_ta, k, &
+             rhs_diff(3) * xm(km1) &
+           + rhs_diff(2) * xm(k), zt )
+   endif
+
+endif  ! lstats_samp
 
 
 return
