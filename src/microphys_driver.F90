@@ -1,13 +1,13 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F90,v 1.14 2008-08-08 14:47:18 faschinj Exp $
+! $Id: microphys_driver.F90,v 1.15 2008-08-17 21:50:38 griffinb Exp $
 module microphys_driver
 
-!       Description:
-!       Call a microphysical scheme to compute hydrometeor species,
-!       and advect, sediment, & diffuse using a tridiagonal system.
+! Description:
+! Call a microphysical scheme to compute hydrometeor species, and advect, 
+! sediment, & diffuse using a tridiagonal system.
 
-!       References:
-!       None
+! References:
+! None
 !-----------------------------------------------------------------------
 implicit none
 
@@ -31,12 +31,12 @@ contains
 subroutine init_microphys( l_kk_rain, l_coamps_micro, l_licedfs, &
                            hydromet_dim )
 
-!       Description:
-!       Set indices to the various hydrometeor species and define
-!       hydromet_dim for the purposes of allocating memory.
+! Description:
+! Set indices to the various hydrometeor species and define hydromet_dim for the
+! purposes of allocating memory.
 
-!       References:
-!       None
+! References:
+! None
 !-----------------------------------------------------------------------
 use array_index, only:  & 
     iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm
@@ -55,7 +55,7 @@ integer, intent(out) :: &
 ! and don't need to be set consistently among schemes so long as
 ! the 'i' indices point to the correct parts of the array.
 if ( l_coamps_micro ) then
-  iirrainm       = 1
+  iirrainm    = 1
   iiNrm       = 2
   iirsnowm    = 3
   iiricem     = 4
@@ -65,14 +65,14 @@ if ( l_coamps_micro ) then
 
   allocate( hydromet_list(hydromet_dim) )
 
-  hydromet_list(iirrainm)       = "rrainm"
+  hydromet_list(iirrainm)    = "rrainm"
   hydromet_list(iiNrm)       = "Nrm"
   hydromet_list(iirsnowm)    = "rsnowm"
   hydromet_list(iiricem)     = "ricem"
   hydromet_list(iirgraupelm) = "rgraupelm"
 
 else if ( l_kk_rain ) then
-  iirrainm       = 1
+  iirrainm    = 1
   iiNrm       = 2
   iirsnowm    = -1
   iiricem     = -1
@@ -86,7 +86,7 @@ else if ( l_kk_rain ) then
   hydromet_list(iiNrm) = "Nrm"
 
 else if ( l_licedfs ) then
-  iirrainm       = -1
+  iirrainm    = -1
   iiNrm       = -1
   iirsnowm    = -1
   iiricem     = -1
@@ -95,7 +95,7 @@ else if ( l_licedfs ) then
   hydromet_dim = 0
 
 else
-  iirrainm       = -1
+  iirrainm    = -1
   iiNrm       = -1
   iirsnowm    = -1
   iiricem     = -1
@@ -297,12 +297,12 @@ real, dimension(gr%nnzp) :: &
 real, dimension(1,1,gr%nnzp) :: & 
   cond ! COAMPS stat for condesation/evap of rcm
 
-!       real, pointer, dimension(:) ::
-!    .  rrainm,      ! Pointer for rain water mixing ratio   [kg/kg]
-!    .  Nrm,      ! Pointer for rain droplet number conc. [count/kg]
-!    .  rsnowm,   ! Pointer for snow mixing ratio         [kg/kg]
-!    .  ricem,    ! Pointer for ice mixing ratio          [kg/kg]
-!    .  rgraupelm ! Pointer for graupel mixing ratio      [kg/kg]
+!real, pointer, dimension(:) ::  &
+!  rrainm,   & ! Pointer for rain water mixing ratio   [kg/kg]
+!  Nrm,      & ! Pointer for rain droplet number conc. [count/kg]
+!  rsnowm,   & ! Pointer for snow mixing ratio         [kg/kg]
+!  ricem,    & ! Pointer for ice mixing ratio          [kg/kg]
+!  rgraupelm   ! Pointer for graupel mixing ratio      [kg/kg]
 
 ! Various PDF parameters needed for Brian's K&K microphysics
 real, pointer, dimension(:) :: & 
@@ -934,7 +934,7 @@ implicit none
 integer, parameter :: & 
   kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
   k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
-  km1_tdiag = 3    ! Thermodynamic subdiagonal index.
+  km1_tdiag = 3       ! Thermodynamic subdiagonal index.
 
 ! Input Variables
 character(len=*), intent(in) :: solve_type
@@ -943,18 +943,18 @@ logical, intent(in) ::  &
   l_sed ! Whether to add a sedimentation term
 
 real(kind=time_precision), intent(in) ::  & 
-  dt    ! Timestep                                                 [s]
+  dt       ! Model timestep                                           [s]
 
 real, intent(in) ::  & 
-  nu    ! Background diffusion coefficient                         [m^2/s]
+  nu       ! Background diffusion coefficient                         [m^2/s]
 
 real, intent(in), dimension(gr%nnzp) ::  & 
-  wm_zt,   & ! w wind component on thermodynamic levels                 [m/s]
+  wm_zt, & ! w wind component on thermodynamic levels                 [m/s]
   V_hm,  & ! Sedimentation velocity of hydrometeor (momentum levels)  [m/s]
-  Kr    ! Eddy diffusivity for hydrometeor on momentum levels      [m^2/s]
+  Kr       ! Eddy diffusivity for hydrometeor on momentum levels      [m^2/s]
 
 real, intent(out), dimension(3,gr%nnzp) :: & 
-  lhs ! Left hand side of tridiagonal matrix
+  lhs      ! Left hand side of tridiagonal matrix
 
 ! Local Variables
 real, dimension(3) :: tmp
@@ -962,13 +962,13 @@ real, dimension(3) :: tmp
 ! Array indices
 integer :: k, km1
 
-!       integer kp1
+!integer kp1
 
  
 integer :: & 
   ixrm_ma,  & ! Mean advection budget stats toggle
   ixrm_sd,  & ! Sedimentation budget stats toggle
-  ixrm_dff ! Diffusion budget stats toggle
+  ixrm_dff    ! Diffusion budget stats toggle
 
 select case( solve_type )
 case( "rrainm" )
@@ -1005,7 +1005,7 @@ lhs = 0.0
 do k = 1, gr%nnzp, 1
 
   km1 = max( k-1, 1 )
-!          kp1 = min( k+1, gr%nnzp )
+!  kp1 = min( k+1, gr%nnzp )
 
   ! Main diagonal
   ! Time Tendency
@@ -1064,6 +1064,7 @@ do k = 1, gr%nnzp, 1
 
 end do ! 1..gr%nnzp
 
+
 return
 end subroutine microphys_lhs
 
@@ -1071,129 +1072,118 @@ end subroutine microphys_lhs
 pure function sedimentation( V_hm, V_hmm1, dzt, level ) & 
 result( lhs ) 
 
-!       Description:
-!       Sedimentation of a hydrometeor:  implicit portion of the code.
+! Description:
+! Sedimentation of a hydrometeor:  implicit portion of the code.
 !
-!       The variable "hm" stands for one of the five hydrometeor 
-!       variables currently in the code:  mean rain mixing ratio (rrainm),
-!       mean rain drop concentration (Nrm), mean ice mixing ratio 
-!       (ricem), mean snow mixing ratio (rsnowm), or mean graupel mixing
-!       ratio (rgraupelm).  The variable "V_hm" stands for the 
-!       sedimentation velocity of the appropriate hydrometeor.
+! The variable "hm" stands for one of the five hydrometeor variables currently 
+! in the code:  mean rain mixing ratio (rrainm), mean rain drop 
+! concentration (Nrm), mean ice mixing ratio (ricem), mean snow mixing 
+! ratio (rsnowm), or mean graupel mixing ratio (rgraupelm).  The variable 
+! "V_hm" stands for the sedimentation velocity of the appropriate hydrometeor.
 !
-!       The d(hm)/dt equation contains a sedimentation term:
+! The d(hm)/dt equation contains a sedimentation term:
 !
-!       - d(V_hm*hm)/dz.
+! - d(V_hm*hm)/dz.
 !
-!       This term is solved for completely implicitly, such that:
+! This term is solved for completely implicitly, such that:
 !
-!       - d( V_hm(t) * hm(t+1) )/dz.
+! - d( V_hm(t) * hm(t+1) )/dz.
 !
-!       Note:  When the term is brought over to the left-hand side, the
-!              sign is reversed and the leading "-" in front of the
-!              term is changed to a "+".
+! Note:  When the term is brought over to the left-hand side, the sign is 
+! reversed and the leading "-" in front of the term is changed to a "+".
 !
-!       Timestep index (t) stands for the index of the current timestep,
-!       while timestep index (t+1) stands for the index of the next
-!       timestep, which is being advanced to in solving the d(hm)/dt
-!       equation.
+! Timestep index (t) stands for the index of the current timestep, while 
+! timestep index (t+1) stands for the index of the next timestep, which is being
+! advanced to in solving the d(hm)/dt equation.
 !
-!       This term is discretized as follows:
+! This term is discretized as follows:
 !
-!       The values of hm are found on the thermodynamic levels, while 
-!       the values of V_hm are found on the momentum levels.  The 
-!       variable hm is interpolated to the intermediate momentum 
-!       levels.  At the intermediate momentum levels, the interpolated 
-!       values of hm are multiplied by the values of V_hm.  Then, the
-!       derivative of (hm*V_hm) is taken over the central thermodynamic
-!       level.
+! The values of hm are found on the thermodynamic levels, while the values of 
+! V_hm are found on the momentum levels.  The variable hm is interpolated to the
+! intermediate momentum levels.  At the intermediate momentum levels, the 
+! interpolated values of hm are multiplied by the values of V_hm.  Then, the
+! derivative of (hm*V_hm) is taken over the central thermodynamic level.
 !
-!       -----hmp1------------------------------------------------ t(k+1)
+! -----hmp1------------------------------------------------ t(k+1)
 !
-!       =============hm(interp)=====V_hm========================= m(k)
+! =============hm(interp)=====V_hm========================= m(k)
 !
-!       -----hm--------------------------------d(V_hm*hm)/dz----- t(k)
+! -----hm--------------------------------d(V_hm*hm)/dz----- t(k)
 !
-!       =============hm(interp)=====V_hmm1======================= m(k-1)
+! =============hm(interp)=====V_hmm1======================= m(k-1)
 !
-!       -----hmm1------------------------------------------------ t(k-1)
+! -----hmm1------------------------------------------------ t(k-1)
 !
-!       The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1)
-!       correspond with altitudes zt(k+1), zm(k), zt(k), zm(k-1),
-!       and zt(k-1), respectively.  The letter "t" is used for
-!       thermodynamic levels and the letter "m" is used for momentum
-!       levels.
+! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1) correspond with 
+! altitudes zt(k+1), zm(k), zt(k), zm(k-1), and zt(k-1), respectively.  The 
+! letter "t" is used for thermodynamic levels and the letter "m" is used for 
+! momentum levels.
 !
-!       dzt(k) = 1 / ( zm(k) - zm(k-1) )
+! dzt(k) = 1 / ( zm(k) - zm(k-1) )
 !
 !
-!       Conservation Properties:
+! Conservation Properties:
 !
-!       When a hydrometeor is sedimented to the ground (or out the lower
-!       boundary of the model), it is removed from the atmosphere (or
-!       from the model domain).  Thus, the quantity of the hydrometeor 
-!       over the entire vertical domain should not be conserved due to 
-!       the process of sedimentation.  Thus, not all of the column 
-!       totals in the left-hand side matrix should be equal to 0. 
-!       Instead, the sum of all the column totals should equal the flux 
-!       of hm out the bottom (zm(1) level) of the domain,
-!       -V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) ), where the factor in 
-!       parentheses is the interpolated value of hm at the zm(1) level.
-!       Furthermore, most of the individual column totals should sum 
-!       to 0, but the 1st and 2nd (from the left) columns should combine
-!       to sum to the flux out the bottom of the domain.
+! When a hydrometeor is sedimented to the ground (or out the lower boundary of 
+! the model), it is removed from the atmosphere (or from the model domain).  
+! Thus, the quantity of the hydrometeor over the entire vertical domain should 
+! not be conserved due to the process of sedimentation.  Thus, not all of the 
+! column totals in the left-hand side matrix should be equal to 0.  Instead, the
+! sum of all the column totals should equal the flux of hm out the bottom 
+! (zm(1) level) of the domain, -V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) ), where the
+! factor in parentheses is the interpolated value of hm at the zm(1) level.  
+! Furthermore, most of the individual column totals should sum to 0, but the 1st
+! and 2nd (from the left) columns should combine to sum to the flux out the 
+! bottom of the domain.
 !
-!       To see that this modified conservation law is satisfied, 
-!       compute the sedimentation of hm and integrate vertically.  In 
-!       discretized matrix notation (where "i" stands for the matrix 
-!       column and "j" stands for the matrix row):
+! To see that this modified conservation law is satisfied, compute the 
+! sedimentation of hm and integrate vertically.  In discretized matrix notation 
+! (where "i" stands for the matrix column and "j" stands for the matrix row):
 !
-!        -V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) )
-!           =
-!        Sum_j Sum_i ( 1/dzt )_i ( d (V_hm * weights_hm) / dz )_ij hm_j.
+!  -V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) )
+!     =
+!  Sum_j Sum_i ( 1/dzt )_i ( d (V_hm * weights_hm) / dz )_ij hm_j.
 !
-!       The left-hand side matrix, ( d (V_hm * weights_hm) / dz )_ij, is
-!       partially written below.  The sum over i in the above equation 
-!       removes dzt everywhere from the matrix below.  The sum over j
-!       leaves the column totals and the flux at zm(1) that are desired.
+! The left-hand side matrix, ( d (V_hm * weights_hm) / dz )_ij, is partially 
+! written below.  The sum over i in the above equation removes dzt everywhere 
+! from the matrix below.  The sum over j leaves the column totals and the flux 
+! at zm(1) that are desired.
 !
-!       Left-hand side matrix contributions from the sedimentation term
-!       (only); first four vertical levels:
+! Left-hand side matrix contributions from the sedimentation term (only); first 
+! four vertical levels:
 !
-!        ------------------------------------------------------------------------------------------>
-!   k=1 |            0                            0                                0
-!       |
-!   k=2 | -dzt(k)*V_hm(k-1)*D(k)       +dzt(k)*[ V_hm(k)*B(k)           +dzt(k)*V_hm(k)*A(k)
-!       |                                       -V_hm(k-1)*C(k) ]       
-!       |
-!   k=3 |            0                 -dzt(k)*V_hm(k-1)*D(k)           +dzt(k)*[ V_hm(k)*B(k)
-!       |                                                                        -V_hm(k-1)*C(k) ]
-!       |
-!   k=4 |            0                            0                     -dzt(k)*V_hm(k-1)*D(k)
-!       |
-!      \ /
+!      ------------------------------------------------------------------------------------------>
+! k=1 |            0                            0                                0
+!     |
+! k=2 | -dzt(k)*V_hm(k-1)*D(k)       +dzt(k)*[ V_hm(k)*B(k)           +dzt(k)*V_hm(k)*A(k)
+!     |                                       -V_hm(k-1)*C(k) ]       
+!     |
+! k=3 |            0                 -dzt(k)*V_hm(k-1)*D(k)           +dzt(k)*[ V_hm(k)*B(k)
+!     |                                                                        -V_hm(k-1)*C(k) ]
+!     |
+! k=4 |            0                            0                     -dzt(k)*V_hm(k-1)*D(k)
+!     |
+!    \ /
 !
-!       The variables A(k), B(k), C(k), and D(k) are weights of interpolation 
-!       around the central thermodynamic level (k), such that:
-!       A(k) = ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ),
-!       B(k) = 1 - [ ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ) ]
-!            = 1 - A(k);
-!       C(k) = ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ), and
-!       D(k) = 1 - [ ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ) ]
-!            = 1 - C(k).
+! The variables A(k), B(k), C(k), and D(k) are weights of interpolation around 
+! the central thermodynamic level (k), such that:
+! A(k) = ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ),
+! B(k) = 1 - [ ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ) ]
+!      = 1 - A(k);
+! C(k) = ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ), and
+! D(k) = 1 - [ ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ) ]
+!      = 1 - C(k).
 !
-!       Note:  The superdiagonal term from level 3 and both the main
-!              diagonal and superdiagonal terms from level 4 are not
-!              shown on this diagram.
+! Note:  The superdiagonal term from level 3 and both the main diagonal and 
+!        superdiagonal terms from level 4 are not shown on this diagram.
 
-!       References:
-!       None
+! References:
+! None
 
-!       Notes:
-!       Both COAMPS Microphysics and Brian Griffin's implementation use
-!       Khairoutdinov and Kogan (2000) for the calculation of rain mixing
-!       ratio and rain droplet number concentration sedimentation
-!       velocities.
+! Notes:
+! Both COAMPS Microphysics and Brian Griffin's implementation use Khairoutdinov
+! and Kogan (2000) for the calculation of rain mixing ratio and rain droplet 
+! number concentration sedimentation velocities.
 !-----------------------------------------------------------------------
 
 use grid_class, only:  & 
@@ -1205,17 +1195,17 @@ implicit none
 integer, parameter :: & 
   kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
   k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
-  km1_tdiag = 3    ! Thermodynamic subdiagonal index.
+  km1_tdiag = 3       ! Thermodynamic subdiagonal index.
 
 integer, parameter :: & 
   t_above = 1,    & ! Index for upper thermodynamic level grid weight.
-  t_below = 2    ! Index for lower thermodynamic level grid weight.
+  t_below = 2       ! Index for lower thermodynamic level grid weight.
 
 ! Input Variables
 real, intent(in) :: & 
   V_hm,    & ! Sedimentation velocity of hydrometeor (k)                [m/s]
   V_hmm1,  & ! Sedimentation velocity of hydrometeor (k-1)              [m/s]
-  dzt     ! Inverse of grid spacing (k)                              [m] 
+  dzt        ! Inverse of grid spacing (k)                              [m] 
 
 integer, intent(in) ::  & 
   level ! Central thermodynamic level (on which calculation occurs).
@@ -1226,7 +1216,7 @@ real, dimension(3) :: lhs
 ! Local Variables
 integer :: & 
   mk,    & ! Momentum level directly above central thermodynamic level.
-  mkm1  ! Momentum level directly below central thermodynamic level.
+  mkm1     ! Momentum level directly below central thermodynamic level.
 
 ! Momentum level (k) is between thermodynamic level (k+1)
 ! and thermodynamic level (k).
@@ -1235,12 +1225,11 @@ mk   = level
 ! and thermodynamic level (k-1).
 mkm1 = level - 1
 
-! Note:  The code is now written so that V_hm has been pulled 
-!        inside of the derivative.  The sedimentation term is 
-!        now of the form -d(V_hm*hm)/dz, rather than of the form
-!        -V_hm d(hm)/dz.  The term has been re-discretized in a 
-!        conservative manner and the results are listed below, 
-!        with the old code commented out.
+! Note:  The code is now written so that V_hm has been pulled inside of the 
+!        derivative.  The sedimentation term is now of the form -d(V_hm*hm)/dz,
+!        rather than of the form -V_hm d(hm)/dz.  The term has been 
+!        re-discretized in a conservative manner and the results are listed 
+!        below, with the old code commented out.
 
 if ( level == 1 ) then
 
@@ -1263,18 +1252,18 @@ elseif ( level > 1 .and. level < gr%nnzp ) then
 ! Vince Larson pulled V_hm inside derivative to make conservative. 
 ! 13 Dec 2007
 !
-!           ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-!           lhs(kp1_tdiag) 
-!     .     = + V_hmzt * dzt * gr%weights_zt2zm(t_above,mk)
+!   ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+!   lhs(kp1_tdiag)  &
+!   = + V_hmzt * dzt * gr%weights_zt2zm(t_above,mk)
 !
-!           ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-!           lhs(k_tdiag) 
-!     .     = + V_hmzt * dzt * (   gr%weights_zt2zm(t_below,mk)
-!     .                          - gr%weights_zt2zm(t_above,mkm1)  )
+!   ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+!   lhs(k_tdiag)  &
+!   = + V_hmzt * dzt * (   gr%weights_zt2zm(t_below,mk)  &
+!                        - gr%weights_zt2zm(t_above,mkm1)  )
 !
-!           ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-!           lhs(km1_tdiag) 
-!     .     = - V_hmzt * dzt * gr%weights_zt2zm(t_below,mkm1)
+!   ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+!   lhs(km1_tdiag)  &
+!   = - V_hmzt * dzt * gr%weights_zt2zm(t_below,mkm1)
 
    ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
    lhs(kp1_tdiag)  & 
@@ -1308,6 +1297,7 @@ elseif ( level == gr%nnzp ) then
 
 endif
 
+
 return
 end function sedimentation
 
@@ -1318,95 +1308,86 @@ subroutine adj_microphys_tndcy( xrm_tndcy, wm_zt, V_hm, Kr, nu, &
 
 ! DESCRIPTION:  Correction for the over-evaporation of a hydrometeor.
 !
-! If a small amount of a hydrometeor (such as rain water) gets 
-! diffused into an area that is very dry (such as right above the 
-! cloud top), the hydrometeor (rain water) will have a very high rate
-! of evaporation and will evaporate entirely in a short amount of time.
-! However, the evaporation rate is computed instantaneously at a given
-! moment in time.  This rate is then projected over the entire length 
-! of the given timestep.  Therefore, a high-enough rate of evaporation
-! combined with a small-enough amount of the hydrometeor (rain water)
-! and a long-enough timestep will cause the hydrometeor value (rain 
-! water mixing ratio) to be negative by the end of the timestep.  
-! Therefore, a correction factor needs to be imposed on the 
-! evaporation rate so that the amount of the hydrometeor (rain water 
-! mixing ratio) does not fall below 0.
+! If a small amount of a hydrometeor (such as rain water) gets diffused into an 
+! area that is very dry (such as right above the cloud top), the hydrometeor 
+! (rain water) will have a very high rate of evaporation and will evaporate 
+! entirely in a short amount of time.  However, the evaporation rate is computed
+! instantaneously at a given moment in time.  This rate is then projected over 
+! the entire length of the given timestep.  Therefore, a high-enough rate of 
+! evaporation combined with a small-enough amount of the hydrometeor (rain 
+! water) and a long-enough timestep will cause the hydrometeor value (rain water
+! mixing ratio) to be negative by the end of the timestep.  Therefore, a 
+! correction factor needs to be imposed on the evaporation rate so that the 
+! amount of the hydrometeor (rain water mixing ratio) does not fall below 0.
 !
-! Besides over-evaporation of a hydrometeor, other factors may come
-! into play that cause the value of a hydrometeor to fall below 0.
-! These factors are due to the nature of implicit discretization
-! and numerical errors.  In a nutshell, the eddy diffusion parameter
-! used currently in this model smooths out the entire hydrometeor
-! profile as a whole at every timestep.  This smoothing may cause
-! negative values at certain levels.  Also, mean advection and 
-! hydrometeor sedimentation can cause negative values to occur in
-! the hydrometeor.  This can happen in places where the profile
-! abruptly goes from a large positive value to 0 (such as at cloud 
-! top).  The nature of the discretization of taking a derivative at
-! these levels may cause negative values of a hydrometeor.
+! Besides over-evaporation of a hydrometeor, other factors may come into play 
+! that cause the value of a hydrometeor to fall below 0.  These factors are due 
+! to the nature of implicit discretization and numerical errors.  In a nutshell,
+! the eddy diffusion parameter used currently in this model smooths out the 
+! entire hydrometeor profile as a whole at every timestep.  This smoothing may 
+! cause negative values at certain levels.  Also, mean advection and hydrometeor
+! sedimentation can cause negative values to occur in the hydrometeor.  This can
+! happen in places where the profile abruptly goes from a large positive value 
+! to 0 (such as at cloud top).  The nature of the discretization of taking a 
+! derivative at these levels may cause negative values of a hydrometeor.
 !
-! This subroutine is called only if a hydrometeor at a certain level 
-! contains a negative value.  First, this subroutine uses the same
-! methods that the model statistical code uses in computing budget terms
-! in order to determine what factors effected the value of the given
-! hydrometeor during the timestep that was just solved for.  The
-! mean advection, sedimentation, and diffusion budget terms are all 
-! computed.  These three terms are then added together to make up the
-! total transport and sedimentation tendency.  This tendency is then
-! added to the total microphysical tendency to find the overall
-! hydrometeor tendency.  The overall hydrometeor tendency is then
-! multiplied by the timestep length to find the net change in the
-! hydrometeor over the last timestep.  This net change is then added
-! to the current value of the hydrometeor in order to find the value
-! of the hydrometeor at the previous timestep.  This method has been
+! This subroutine is called only if a hydrometeor at a certain level contains 
+! a negative value.  First, this subroutine uses the same methods that the model
+! statistical code uses in computing budget terms in order to determine what 
+! factors effected the value of the given hydrometeor during the timestep that 
+! was just solved for.  The mean advection, sedimentation, and diffusion budget 
+! terms are all computed.  These three terms are then added together to make up 
+! the total transport and sedimentation tendency.  This tendency is then added 
+! to the total microphysical tendency to find the overall hydrometeor tendency. 
+! The overall hydrometeor tendency is then multiplied by the timestep length to
+! find the net change in the hydrometeor over the last timestep.  This net 
+! change is then added to the current value of the hydrometeor in order to find
+! the value of the hydrometeor at the previous timestep.  This method has been
 ! well tested and produces accurate results.
 !
-! Once the value of the hydrometeor at the previous timestep has been
-! found, the net change in the hydrometeor due to ONLY mean advection,
-! diffusion, and sedimentation is calculated.  This net change is
-! added to the value of the hydrometeor at the previous timestep.  If
-! the new value is below zero, then the negative value of the
-! hydrometeor was caused by the mean advection, diffusion, and 
-! sedimentation terms.  The microphysical terms (evaporation) did not
-! cause the negative value.  There was no over-evaporation and the
-! evaporation rate can be set to 0.  However, if the new value of
-! the hydrometeor is greater than or equal to 0, then the microphysical
-! tendencies (evaporation) did cause the hydrometeor array to have
-! negative values.  The amount of hydrometeor evaporated is set equal
-! to the amount that was left-over after the transport and 
-! sedimentation effects were added in.  The evaporation rate is that
-! amount divided by the timestep.  This can be viewed as the
-! timestep-average evaporation rate, whereas the rate previously
-! calculated can be viewed as the instantaneous evaporation rate.
-! The amount of the hydrometeor that was over-evaporated is the amount
-! of the hydrometeor that is negative.  The over-evaporation rate is
-! that amount divided by the timestep.
+! Once the value of the hydrometeor at the previous timestep has been found, the
+! net change in the hydrometeor due to ONLY mean advection, diffusion, and 
+! sedimentation is calculated.  This net change is added to the value of the 
+! hydrometeor at the previous timestep.  If the new value is below zero, then 
+! the negative value of the hydrometeor was caused by the mean advection, 
+! diffusion, and sedimentation terms.  The microphysical terms (evaporation) 
+! did not cause the negative value.  There was no over-evaporation and the 
+! evaporation rate can be set to 0.  However, if the new value of the 
+! hydrometeor is greater than or equal to 0, then the microphysical tendencies 
+! (evaporation) did cause the hydrometeor array to have negative values.  The 
+! amount of hydrometeor evaporated is set equal to the amount that was left-over
+! after the transport and sedimentation effects were added in.  The evaporation
+! rate is that amount divided by the timestep.  This can be viewed as the
+! timestep-average evaporation rate, whereas the rate previously calculated can 
+! be viewed as the instantaneous evaporation rate.  The amount of the 
+! hydrometeor that was over-evaporated is the amount of the hydrometeor that is 
+! negative.  The over-evaporation rate is that amount divided by the timestep.
 !
-! It should be noted that this is important because the rain water 
-! mixing ratio time tendency (drr/dt) due to microphysics at every 
-! level is incorporated into the total water mixing ratio (rtm) and 
-! liquid water potential temperature (thlm) equations.  Any artificial
-! excess in evaporation will artificially increase water vapor, and 
-! thus rtm, and artificially decrease thlm (due to evaporative 
-! cooling).  This may result in an artificial increase in cloud water.
+! It should be noted that this is important because the rain water mixing ratio 
+! time tendency (drr/dt) due to microphysics at every level is incorporated into
+! the total water mixing ratio (rtm) and liquid water potential temperature 
+! (thlm) equations.  Any artificial excess in evaporation will artificially 
+! increase water vapor, and thus rtm, and artificially decrease thlm (due to 
+! evaporative cooling).  This may result in an artificial increase in cloud 
+! water.
 !
 ! rrainm_mc_tndcy = rrainm_cond + rrainm_auto + rrainm_accr
 ! rtm_mc  = - rrainm_mc_tndcy
 ! thlm_mc = ( Lv / (Cp*exner) ) * rrainm_mc_tndcy
 !
-! anyplace where rrainm drops below zero due to microphysics, there is 
-! too much evaporation rate for the timestep, so rrainm_cond is too 
-! negative.  We must add in the over-evaporated amount of rrainm/dt to 
-! make the rate accurate.  The over-evaporated amount is being defined
-! as a positive scalar, so that:  overevap_rrainm = -rrainm (where rrainm < 0)
-! -- this makes overevap_rrainm positive.
+! Anyplace where rrainm drops below zero due to microphysics, there is too much 
+! evaporation rate for the timestep, so rrainm_cond is too negative.  We must 
+! add in the over-evaporated amount of rrainm/dt to make the rate accurate.  The
+! over-evaporated amount is being defined as a positive scalar, so that:  
+! overevap_rrainm = -rrainm (where rrainm < 0) -- this makes overevap_rrainm 
+! positive.
 !
 ! New cond/evap rate = rrainm_cond + overevap_rrainm/dt
 ! (overevap_rate = overevap_rrainm/dt)
-! -- since rrainm_cond can only be negative (we don't allow rain droplets
-!    to grow by condensation) and overevap_rrainm/dt can only be positive
-!    (we define it that way), the new cond/evap rate will be less
-!    negative, which is what we want.
+! -- since rrainm_cond can only be negative (we don't allow rain droplets to 
+!    grow by condensation) and overevap_rrainm/dt can only be positive (we 
+!    define it that way), the new cond/evap rate will be less negative, which 
+!    is what we want.
 !
 ! To update the effects of microphysics on rtm and thl:
 !
@@ -1415,10 +1396,9 @@ subroutine adj_microphys_tndcy( xrm_tndcy, wm_zt, V_hm, Kr, nu, &
 !
 ! This is done in the subroutine which calls this one.
 ! 
-! If the hydrometeor is negative due to reasons besides 
-! over-evaporation, the value is clipped.  This is statistically
-! stored in the clipping array.  This is also done in the subroutine
-! which calls this one.
+! If the hydrometeor is negative due to reasons besides over-evaporation, the 
+! value is clipped.  This is statistically stored in the clipping array.  This 
+! is also done in the subroutine which calls this one.
 !
 ! Brian Griffin.
 
@@ -1437,7 +1417,7 @@ use mean_adv, only:  &
 
 implicit none
 ! 
-!        use stats_variables
+!use stats_variables
 ! 
 ! Joshua Fasching 2007
 
@@ -1502,15 +1482,15 @@ real, dimension(1:3) :: tmp
 integer :: k, km1, kp1
 
 ! 
-!       integer ::
-!    .  ixrm_cond_adj  ! Adjustment to xrm evaporation rate due to over-evap.
+!integer ::  &
+!ixrm_cond_adj  ! Adjustment to xrm evaporation rate due to over-evap.
 
-!       select case( solve_type )
-!       case( "rrainm" )
-!         ixrm_cond_adj  = irrainm_cond_adj 
-!       case( "Nrm" )
-!         ixrm_cond_adj  = iNrm_cond_adj 
-!       end select
+!select case( solve_type )
+!case( "rrainm" )
+!  ixrm_cond_adj  = irrainm_cond_adj 
+!case( "Nrm" )
+!  ixrm_cond_adj  = iNrm_cond_adj 
+!end select
 ! 
 ! Joshua Fasching 2007
 
@@ -1521,8 +1501,8 @@ kp1 = min(k+1,gr%nnzp)
 
 ! Mean advection tendency component
 
-! The implicit (LHS) value of the mean advection component of the
-! equation used during the timestep that was just solved for.
+! The implicit (LHS) value of the mean advection component of the equation used
+! during the timestep that was just solved for.
 tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
 
 ma_subdiag  = -tmp(3) ! subdiagonal
@@ -1539,8 +1519,8 @@ ma_tndcy = &
 
 if ( l_sed ) then
 
-   ! The implicit (LHS) value of the sedimentation component of the
-   ! equation used during the timestep that was just solved for.
+   ! The implicit (LHS) value of the sedimentation component of the equation 
+   ! used during the timestep that was just solved for.
    tmp(1:3) = sedimentation( V_hm(k), V_hm(km1),  & 
                              gr%dzt(k), k )
 
@@ -1562,8 +1542,8 @@ endif
 
 ! Diffusion tendency component
 
-! The implicit (LHS) value of the diffusion component of the
-! equation used during the timestep that was just solved for.
+! The implicit (LHS) value of the diffusion component of the equation used 
+! during the timestep that was just solved for.
 tmp(1:3) & 
    = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
                        gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
@@ -1590,8 +1570,8 @@ xrm_chge = real( tot_tndcy * dt )
 ! The value of xrm at the previous timestep.
 xrm_old = xrm(k) - xrm_chge
 
-! The net amount of change in the hydrometeor due to only the
-! transport (mean advection and diffusion) and sedimentation terms.
+! The net amount of change in the hydrometeor due to only the transport (mean 
+! advection and diffusion) and sedimentation terms.
 xrm_chge_trsed = real( trnsprt_sed_tndcy * dt )
 
 ! The new value of the hydrometeor at this timestep due to only
@@ -1599,49 +1579,46 @@ xrm_chge_trsed = real( trnsprt_sed_tndcy * dt )
 xrm_trsed_only = xrm_old + xrm_chge_trsed
 
 if ( xrm_trsed_only >= 0.0 ) then
-   ! The negative value of hydrometeor (xrm) is due ONLY to 
-   ! microphysical tendencies, namely the over-evaporation of xrm.
-   ! Find the actual amount of the hydrometeor that evaporated during
-   ! the timestep to make the value of xrm go to 0.
-!           evap_amt = -xrm_trsed_only
+   ! The negative value of hydrometeor (xrm) is due ONLY to microphysical 
+   ! tendencies, namely the over-evaporation of xrm.
+   ! Find the actual amount of the hydrometeor that evaporated during the 
+   ! timestep to make the value of xrm go to 0.
+!    evap_amt = -xrm_trsed_only
    ! Divide by the timestep to find the actual evaporation rate.
-!           evap_rate = evap_amt / dt
-   ! The amount of the hydrometeor that was artificially excessively
-   ! evaporated.  Define as positive.
+!    evap_rate = evap_amt / dt
+   ! The amount of the hydrometeor that was artificially excessively evaporated.
+   ! Define as positive.
    overevap_amt = -xrm(k)
-   ! Divide by the timestep to find the over-evaporation rate.
-   ! Define as positive.  This rate should also be the difference
-   ! between the computed evaporation rate (xrm_tndcy) and the
-   ! actual evaporation rate (evap_rate).
+   ! Divide by the timestep to find the over-evaporation rate.  Define as 
+   ! positive.  This rate should also be the difference between the computed 
+   ! evaporation rate (xrm_tndcy) and the actual evaporation rate (evap_rate).
    overevap_rate = real( overevap_amt / dt )
    ! Reset the value of the hydrometeor (xrm) to 0.
    xrm(k) = 0.0
 else
-   ! The negative value of hydrometeor (xrm) is due to transport 
-   ! (mean advection and diffusion) and sedimentation.
-   ! Find the actual amount of the hydrometeor that evaporated during
-   ! the timestep to make the value of xrm go to 0.  Even though the
-   ! microphysical tendency portion of the code may have computed an 
-   ! evaporation rate, we figure that the transport and sedimentation 
-   ! terms made the value of the hydrometeor negative, so we say that 
-   ! the evaporation amount and rate is 0.
-!           evap_amt = 0.0
-!           evap_rate = 0.0
-   ! The amount of the hydrometeor that was artificially excessively
-   ! evaporated.  Define as positive.  In this case, any evaporation
-   ! that was computed is considered to be over-evaporation.
-   ! Define as positive.
+   ! The negative value of hydrometeor (xrm) is due to transport (mean advection
+   ! and diffusion) and sedimentation.  Find the actual amount of the 
+   ! hydrometeor that evaporated during the timestep to make the value of xrm go
+   ! to 0.  Even though the microphysical tendency portion of the code may have 
+   ! computed an evaporation rate, we figure that the transport and 
+   ! sedimentation terms made the value of the hydrometeor negative, so we say 
+   ! that the evaporation amount and rate is 0.
+!    evap_amt = 0.0
+!    evap_rate = 0.0
+   ! The amount of the hydrometeor that was artificially excessively evaporated.
+   ! Define as positive.  In this case, any evaporation that was computed is 
+   ! considered to be over-evaporation.  Define as positive.
    overevap_amt = real( -xrm_tndcy(k) * dt )
    overevap_rate = -xrm_tndcy(k)
-   ! Currently reset xrm to xrm_trsed_only.
-   ! This is done to make the statistical budget for xrm balance
-   ! correctly.  The value of xrm(k) will still be negative at this
-   ! this point.  However, it will be less negative because it has been
-   ! adjusted for over-evaporation.  The remaining negative value of
-   ! hydrometeor xrm, which is due to transport and sedimentation, will
+   ! Currently reset xrm to xrm_trsed_only.  This is done to make the 
+   ! statistical budget for xrm balance correctly.  The value of xrm(k) will 
+   ! still be negative at this this point.  However, it will be less negative 
+   ! because it has been adjusted for over-evaporation.  The remaining negative 
+   ! value of hydrometeor xrm, which is due to transport and sedimentation, will
    ! be zeroed out in clipping in the subroutine that calls this one.
    xrm(k) = xrm_trsed_only
 endif
+
 
 end subroutine adj_microphys_tndcy
 
