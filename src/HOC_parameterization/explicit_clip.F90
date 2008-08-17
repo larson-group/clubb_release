@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: explicit_clip.F90,v 1.9 2008-08-11 15:44:58 faschinj Exp $
+! $Id: explicit_clip.F90,v 1.10 2008-08-17 16:45:28 griffinb Exp $
 !===============================================================================
 module explicit_clip
 
@@ -97,6 +97,8 @@ real, dimension(gr%nnzp), intent(inout) :: &
 
  
 ! Local Variable
+integer :: k  ! Array index
+
 integer :: & 
   ixpyp_cl
 
@@ -121,15 +123,21 @@ if ( l_stats_samp ) then
    endif
 endif 
 
-! Clipping for xpyp at an upper limit corresponding with 
-! a correlation between x and y of 0.99.
-where ( xpyp >  0.99 * sqrt( xp2 * yp2 ) ) & 
-   xpyp =  0.99 * sqrt( xp2 * yp2 )
+do k = 2, gr%nnzp, 1
 
-! Clipping for xpyp at a lower limit corresponding with 
-! a correlation between x and y of -0.99.
-where ( xpyp < -0.99 * sqrt( xp2 * yp2 ) ) & 
-   xpyp = -0.99 * sqrt( xp2 * yp2 )
+   ! Clipping for xpyp at an upper limit corresponding with a correlation 
+   ! between x and y of 0.99.
+   if ( xpyp(k) >  0.99 * sqrt( xp2(k) * yp2(k) ) ) then
+      xpyp(k) =  0.99 * sqrt( xp2(k) * yp2(k) )
+
+   ! Clipping for xpyp at a lower limit corresponding with a correlation 
+   ! between x and y of -0.99.
+   elseif ( xpyp(k) < -0.99 * sqrt( xp2(k) * yp2(k) ) ) then
+      xpyp(k) = -0.99 * sqrt( xp2(k) * yp2(k) )
+
+   endif
+
+enddo
 
 if ( l_stats_samp ) then
    if ( l_last_clip_ts ) then
