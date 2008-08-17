@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.26 2008-08-15 16:07:19 griffinb Exp $
+! $Id: parameterization_interface.F90,v 1.27 2008-08-17 16:10:40 griffinb Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
@@ -68,13 +68,11 @@ module hoc_parameterization_interface
     T0, & 
     taumax, & 
     c_K, & 
-    ts_nudge, & 
     sclr_dim
 
   use model_flags, only: & 
     l_LH_on,  & ! Variable(s)
     l_tke_aniso, & 
-    l_uv_nudge, &
     l_gamma_Skw
 
   use grid_class, only: & 
@@ -115,8 +113,6 @@ module hoc_parameterization_interface
     Lscale, & 
     tau_zt, & 
     Kh_zm, & 
-    umt, & 
-    vmt, & 
     vg, & 
     ug, & 
     um_ref, & 
@@ -127,7 +123,6 @@ module hoc_parameterization_interface
     wprtp_zt, & 
     rtp2_zt, & 
     rtpthlp_zt, & 
-    edsclrmt, & 
     wpedsclrp, & 
     sclrpthvp,   & ! sclr'th_v'
     sclrprtp,    & ! sclr'rt'
@@ -158,8 +153,7 @@ module hoc_parameterization_interface
       compute_length ! Procedure
 
     use compute_um_edsclrm_mod, only:  & 
-      compute_um_edsclrm,  & ! Procedure(s)
-      compute_uv_tndcy
+      compute_um_edsclrm  ! Procedure(s)
 
     use saturation, only:  & 
       ! Procedure
@@ -914,108 +908,20 @@ module hoc_parameterization_interface
     ! Joshua Fasching March 2008
     if ( lapack_error( err_code ) ) return
 
-    !----------------------------------------------------------------
-    ! Compute Eddy-diff. Passive Scalars
-    !----------------------------------------------------------------
-    if ( sclr_dim > 0 ) then
-      do i = 1, sclr_dim
-
-        edsclrmt(1:gr%nnzp,i) = 0.0
-
-        call compute_um_edsclrm( "edsclr", dt, wpedsclrp(1,i), edsclrmt(:,i),  &
-                                 wm_zt, Kh_zm, l_implemented,  &
-                                 edsclrm(:,i), wpedsclrp(:,i), err_code )
-
-      enddo
-
-      ! Set boundary condition as in rt
-
-      edsclrm(1,1:sclr_dim) = edsclrm(2,1:sclr_dim)
-
-      if ( lapack_error( err_code ) ) return
-
-    end if ! sclr_dim > 0
-
 
     !----------------------------------------------------------------
-    ! Update winds
+    ! Advance um, vm, and edsclrm one time step
     !----------------------------------------------------------------
 
-    call compute_uv_tndcy( "um", um, fcor, vm, vg, &
-                           l_implemented, umt )
+    call compute_um_edsclrm( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref,  &
+                             wp2, up2, vp2, upwp_sfc, vpwp_sfc, fcor,  &
+                             l_implemented, um, vm, edsclrm,  &
+                             upwp, vpwp, wpedsclrp, err_code )
 
-    call compute_um_edsclrm( "um", dt, upwp_sfc, umt,  &
-                             wm_zt, Kh_zm, l_implemented,  &
-                             um, upwp, err_code )
-
-
-    um(1)       = ( ( um(3)-um(2) )/( gr%zt(3)-gr%zt(2) ) ) & 
-                    * ( gr%zt(1)-gr%zt(2) ) + um(2)
-    um(gr%nnzp) = ( ( um(gr%nnzp-1)-um(gr%nnzp-2) ) & 
-                      /( gr%zt(gr%nnzp-1)-gr%zt(gr%nnzp-2) ) ) & 
-                    * ( gr%zt(gr%nnzp)-gr%zt(gr%nnzp-1) ) & 
-                    + um(gr%nnzp-1)
-       
     ! Wrapped LAPACK procedures may report errors, and if so, exit
     ! gracefully.
     ! Joshua Fasching March 2008
-    if ( lapack_error(err_code) ) return
-
-    call compute_uv_tndcy( "vm", vm, fcor, um, ug, &
-                           l_implemented, vmt )
-
-    call compute_um_edsclrm( "vm", dt, vpwp_sfc, vmt,  &
-                             wm_zt, Kh_zm, l_implemented,  &
-                             vm, vpwp, err_code )
-
-
-    vm(1)       = ( ( vm(3)-vm(2) )/( gr%zt(3)-gr%zt(2) ) ) & 
-                    * ( gr%zt(1)-gr%zt(2) ) + vm(2)
-    vm(gr%nnzp) = ( ( vm(gr%nnzp-1)-vm(gr%nnzp-2) ) & 
-                      /( gr%zt(gr%nnzp-1)-gr%zt(gr%nnzp-2) ) ) & 
-                    * ( gr%zt(gr%nnzp)-gr%zt(gr%nnzp-1) ) & 
-                     + vm(gr%nnzp-1)
-       
-    ! Wrapped LAPACK procedures may report errors, and if so, exit
-    ! gracefully.
-    ! Joshua Fasching March 2008    
     if ( lapack_error( err_code ) ) return
-
-    if ( l_uv_nudge ) then
-      um(1:gr%nnzp) = real( um(1:gr%nnzp)  & 
-            - ((um(1:gr%nnzp) - um_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
-      vm(1:gr%nnzp) = real( vm(1:gr%nnzp)  & 
-            - ((vm(1:gr%nnzp) - vm_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
-    end if
-
-
-    ! Clipping for u'w'
-    !
-    ! Clipping u'w' at each vertical level, based on the
-    ! correlation of u and w at each vertical level, such that:
-    ! corr_(u,w) = u'w' / [ sqrt(u'^2) * sqrt(w'^2) ];
-    ! -1 <= corr_(u,w) <= 1.
-    ! Since u'^2, w'^2, and u'w' are updated in different
-    ! places from each other, clipping for u'w' has to be done
-    ! three times.  This is the third instance of u'w' clipping.
-    call covariance_clip( "upwp", .false.,      & ! intent(in)
-                          .true., dt, wp2, up2, & ! intent(in)
-                          upwp )                  ! intent(inout)
-
-
-    ! Clipping for v'w'
-    !
-    ! Clipping v'w' at each vertical level, based on the
-    ! correlation of v and w at each vertical level, such that:
-    ! corr_(v,w) = v'w' / [ sqrt(v'^2) * sqrt(w'^2) ];
-    ! -1 <= corr_(v,w) <= 1.
-    ! Since v'^2, w'^2, and v'w' are updated in different
-    ! places from each other, clipping for v'w' has to be done
-    ! three times.  This is the third instance of v'w' clipping.
-    call covariance_clip( "vpwp", .false.,      & ! intent(in)
-                          .true., dt, wp2, vp2, & ! intent(in)
-                          vpwp )                  ! intent(inout)
-
 
     ! Compute Shear Production  -Brian
     do k = 1, gr%nnzp-1, 1

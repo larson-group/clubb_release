@@ -1,24 +1,263 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F90,v 1.13 2008-08-15 20:12:34 vlarson Exp $
-!------------------------------------------------------------------------
+! $Id: compute_um_edsclrm_mod.F90,v 1.14 2008-08-17 16:10:39 griffinb Exp $
+!===============================================================================
 module compute_um_edsclrm_mod
 
 implicit none
 
 private ! Set Default Scope
 
-public :: compute_um_edsclrm,  &
-          compute_uv_tndcy
+public :: compute_um_edsclrm
 
-private :: compute_um_edsclrm_lhs,  &
+private :: compute_um_edsclrm_solve, &
+           compute_uv_tndcy,         &
+           compute_um_edsclrm_lhs,   &
            compute_um_edsclrm_rhs
 
 contains
 
-!------------------------------------------------------------------------
-subroutine compute_um_edsclrm( solve_type, dt, xpwp_sfc, xm_tndcy,  &
-                               wm_zt, Kh_zm, implemented,  &
-                               xm, xpwp, err_code )
+!===============================================================================
+subroutine compute_um_edsclrm( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref,  &
+                               wp2, up2, vp2, upwp_sfc, vpwp_sfc, fcor,  &
+                               l_implemented, um, vm, edsclrm,  &
+                               upwp, vpwp, wpedsclrp, err_code )
+
+! Description:
+! Solves for both mean horizontal wind components, um and vm, and for mean 
+! eddy-scalars.
+
+! References:
+! Eqn. 8 & 9 on p. 3545 of 
+! ``A PDF-Based Model for Boundary Layer Clouds. Part I:
+!   Method and Model Description'' Golaz, et al. (2002)
+! JAS, Vol. 59, pp. 3540--3551.
+!-----------------------------------------------------------------------
+
+use grid_class, only:  &
+    gr  ! Variables(s)
+
+use parameters, only:  &
+    ts_nudge,  & ! Variable(s)
+    sclr_dim
+
+use model_flags, only:  &
+    l_uv_nudge  ! Variable(s)
+
+use stats_precision, only:  &
+    time_precision  ! Variable(s)
+
+use explicit_clip, only:  &
+    covariance_clip  ! Procedure(s)
+
+use error_code, only:  & 
+    lapack_error,  & ! Procedure(s)
+    clubb_at_debug_level
+
+use constants, only:  & 
+    fstderr  ! Constant
+
+implicit none
+
+! Input Variables
+real(kind=time_precision), intent(in) ::  &
+  dt             ! Model timestep                                [s]
+
+real, dimension(gr%nnzp), intent(in) ::  &
+  wm_zt,       & ! w wind component on thermodynamic levels      [m/s]
+  Kh_zm,       & ! Eddy diffusivity on momentum levels           [m^2/s]
+  ug,          & ! u (west-to-east) geostrophic wind component   [m/s]
+  vg,          & ! v (south-to-north) geostrophic wind component [m/s]
+  um_ref,      & ! Reference u wind component for nudging        [m/s]
+  vm_ref,      & ! Reference v wind component for nudging        [m/s]
+  wp2,         & ! w'^2 (momentum levels)                        [m^2/s^2]
+  up2,         & ! u'^2 (momentum levels)                        [m^2/s^2]
+  vp2            ! v'^2 (momentum levels)                        [m^2/s^2]
+
+real, intent(in) ::  &
+  upwp_sfc,    & ! u'w' at the surface (momentum level 1)        [m^2/s^2]
+  vpwp_sfc,    & ! v'w' at the surface (momentum level 1)        [m^2/s^2]
+  fcor           ! Coriolis parameter                            [s^-1]
+
+logical, intent(in) ::  &
+  l_implemented  ! Flag for CLUBB being implemented in a larger model.
+
+! Input/Output Variables
+real, dimension(gr%nnzp), intent(inout) ::  &
+  um,          & ! mean u (west-to-east) wind component          [m/s]
+  vm             ! mean v (south-to-north) wind component        [m/s]
+
+! Input/Output Variable for eddy-scalars
+real, dimension(gr%nnzp,sclr_dim), intent(inout) ::  &
+  edsclrm        ! mean eddy scalar quantity                     [units vary]
+
+! Output Variables
+real, dimension(gr%nnzp), intent(out) ::  &
+  upwp,        & ! u'w' (momentum levels)                        [m^2/s^2]
+  vpwp           ! v'w' (momentum levels)                        [m^2/s^2]
+
+! Output Variable for eddy-scalars
+real, dimension(gr%nnzp,sclr_dim), intent(out) ::  &
+  wpedsclrp      ! w'edsclr' (momentum levels)                   [units vary]
+
+integer, intent(out) :: &
+  err_code       ! clubb_singular_matrix when matrix is singular
+
+! Local Variables
+real, dimension(gr%nnzp) ::  &
+  um_tndcy,    & ! u wind component tendency                     [m/s^2]
+  vm_tndcy       ! v wind component tendency                     [m/s^2]
+
+real, dimension(gr%nnzp,sclr_dim) ::  &
+  edsclrm_tndcy  ! eddy-scalar tendency                          [units vary]
+
+integer :: i     ! Array index
+
+
+!----------------------------------------------------------------
+! Update zonal (west-to-east) component of mean wind, um
+!----------------------------------------------------------------
+
+call compute_uv_tndcy( "um", um, fcor, vm, vg, &
+                       l_implemented, um_tndcy )
+
+call compute_um_edsclrm_solve( "um", dt, upwp_sfc, um_tndcy,  &
+                               wm_zt, Kh_zm, l_implemented,  &
+                               um, upwp, err_code )
+
+! Linearly extend um to the uppermost and lowermost levels.
+um(1)       = ( ( um(3)-um(2) )/( gr%zt(3)-gr%zt(2) ) ) & 
+                * ( gr%zt(1)-gr%zt(2) ) + um(2)
+um(gr%nnzp) = ( ( um(gr%nnzp-1)-um(gr%nnzp-2) ) & 
+                  /( gr%zt(gr%nnzp-1)-gr%zt(gr%nnzp-2) ) ) & 
+                * ( gr%zt(gr%nnzp)-gr%zt(gr%nnzp-1) ) & 
+                + um(gr%nnzp-1)
+
+
+!----------------------------------------------------------------
+! Update meridional (south-to-north) component of mean wind, vm
+!----------------------------------------------------------------
+
+call compute_uv_tndcy( "vm", vm, fcor, um, ug, &
+                       l_implemented, vm_tndcy )
+
+call compute_um_edsclrm_solve( "vm", dt, vpwp_sfc, vm_tndcy,  &
+                               wm_zt, Kh_zm, l_implemented,  &
+                               vm, vpwp, err_code )
+
+! Linearly extend vm to the uppermost and lowermost levels.
+vm(1)       = ( ( vm(3)-vm(2) )/( gr%zt(3)-gr%zt(2) ) ) & 
+                * ( gr%zt(1)-gr%zt(2) ) + vm(2)
+vm(gr%nnzp) = ( ( vm(gr%nnzp-1)-vm(gr%nnzp-2) ) & 
+                  /( gr%zt(gr%nnzp-1)-gr%zt(gr%nnzp-2) ) ) & 
+                * ( gr%zt(gr%nnzp)-gr%zt(gr%nnzp-1) ) & 
+                + vm(gr%nnzp-1)
+       
+
+! Adjust um and vm if nudging is turned on.
+if ( l_uv_nudge ) then
+  um(1:gr%nnzp) = real( um(1:gr%nnzp)  & 
+        - ((um(1:gr%nnzp) - um_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
+  vm(1:gr%nnzp) = real( vm(1:gr%nnzp)  & 
+        - ((vm(1:gr%nnzp) - vm_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
+endif
+
+
+!----------------------------------------------------------------
+! Compute Eddy-diff. Passive Scalars
+!----------------------------------------------------------------
+if ( sclr_dim > 0 ) then
+  do i = 1, sclr_dim
+
+    edsclrm_tndcy(1:gr%nnzp,i) = 0.0
+
+    call compute_um_edsclrm_solve( "edsclr", dt, wpedsclrp(1,i),  &
+                                   edsclrm_tndcy(:,i), wm_zt, Kh_zm,  &
+                                   l_implemented, edsclrm(:,i),  &
+                                   wpedsclrp(:,i), err_code )
+
+  enddo
+
+  ! Set boundary condition as in r_t/th_l
+  edsclrm(1,1:sclr_dim) = edsclrm(2,1:sclr_dim)
+
+endif ! sclr_dim > 0
+
+
+! Clipping for u'w'
+!
+! Clipping u'w' at each vertical level, based on the
+! correlation of u and w at each vertical level, such that:
+! corr_(u,w) = u'w' / [ sqrt(u'^2) * sqrt(w'^2) ];
+! -1 <= corr_(u,w) <= 1.
+! Since u'^2, w'^2, and u'w' are updated in different
+! places from each other, clipping for u'w' has to be done
+! three times.  This is the third instance of u'w' clipping.
+call covariance_clip( "upwp", .false.,      & ! intent(in)
+                      .true., dt, wp2, up2, & ! intent(in)
+                      upwp )                  ! intent(inout)
+
+! Clipping for v'w'
+!
+! Clipping v'w' at each vertical level, based on the
+! correlation of v and w at each vertical level, such that:
+! corr_(v,w) = v'w' / [ sqrt(v'^2) * sqrt(w'^2) ];
+! -1 <= corr_(v,w) <= 1.
+! Since v'^2, w'^2, and v'w' are updated in different
+! places from each other, clipping for v'w' has to be done
+! three times.  This is the third instance of v'w' clipping.
+call covariance_clip( "vpwp", .false.,      & ! intent(in)
+                      .true., dt, wp2, vp2, & ! intent(in)
+                      vpwp )                  ! intent(inout)
+
+
+! Error report
+! Joshua Fasching February 2008
+if ( lapack_error( err_code ) .and.  &
+     clubb_at_debug_level( 1 ) ) then
+
+    write(fstderr,*) "Error in compute_um_edsclrm"
+
+    write(fstderr,*) "Intent(in)"
+
+    write(fstderr,*) "dt = ", dt
+    write(fstderr,*) "wm_zt = ", wm_zt
+    write(fstderr,*) "Kh_zm = ", Kh_zm
+    write(fstderr,*) "ug = ", ug
+    write(fstderr,*) "vg = ", vg
+    write(fstderr,*) "um_ref = ", um_ref
+    write(fstderr,*) "vm_ref = ", vm_ref
+    write(fstderr,*) "wp2 = ", wp2
+    write(fstderr,*) "up2 = ", up2
+    write(fstderr,*) "vp2 = ", vp2
+    write(fstderr,*) "upwp_sfc = ", upwp_sfc
+    write(fstderr,*) "vpwp_sfc = ", vpwp_sfc
+    write(fstderr,*) "fcor = ", fcor
+    write(fstderr,*) "l_implemented = ", l_implemented
+
+    write(fstderr,*) "Intent(inout)"
+
+    write(fstderr,*) "um = ", um
+    write(fstderr,*) "vm = ", vm
+    write(fstderr,*) "edsclrm = ", edsclrm
+
+    write(fstderr,*) "Intent(out)"
+
+    write(fstderr,*) "upwp = ", upwp
+    write(fstderr,*) "vpwp = ", vpwp
+    write(fstderr,*) "wpedsclrp = ", wpedsclrp
+
+    return
+
+endif
+
+
+return
+end subroutine compute_um_edsclrm
+
+!===============================================================================
+subroutine compute_um_edsclrm_solve( solve_type, dt, xpwp_sfc, xm_tndcy,  &
+                                     wm_zt, Kh_zm, implemented,  &
+                                     xm, xpwp, err_code )
 
 ! Description:
 ! Solves the horizontal wind or eddy-scalar time-tendency equation, and 
@@ -76,14 +315,15 @@ subroutine compute_um_edsclrm( solve_type, dt, xpwp_sfc, xm_tndcy,  &
 ! dzm(k)   = 1 / ( zt(k+1) - zt(k) )
 ! dzm(k-1) = 1 / ( zt(k) - zt(k-1) )
 !
-! The vertically discretized form of the term is written out as:
+! The vertically discretized form of the turbulent advection term (treated as an
+! eddy diffusion term) is written out as:
 !
 ! + dzt(k) * [   K_zm(k) * dzm(k) * ( xm(k+1) - xm(k) ) 
 !              - K_zm(k-1) * dzm(k-1) * ( xm(k) - xm(k-1) ) ].
 !
 ! For this equation, a Crank-Nicholson (semi-implicit) diffusion scheme is used
 ! to solve the d [ K_zm * d(xm)/dz ] / dz eddy-diffusion term.  The discretized 
-! implicit form of the term is written out as:
+! implicit portion of the term is written out as:
 !
 ! + (1/2)*dzt(k) * [   K_zm(k) * dzm(k) * ( xm(k+1,<t+1>) - xm(k,<t+1>) )
 !                    - K_zm(k-1) * dzm(k-1) * ( xm(k,<t+1>) - xm(k-1,<t+1>) ) ].
@@ -92,7 +332,7 @@ subroutine compute_um_edsclrm( solve_type, dt, xpwp_sfc, xm_tndcy,  &
 !        sign is reversed and the leading "+" in front of the term is changed 
 !        to a "-".
 !
-! The discretized explicit form of the term is written out as:
+! The discretized explicit portion of the term is written out as:
 !
 ! + (1/2)*dzt(k) * [   K_zm(k) * dzm(k) * ( xm(k+1,<t>) - xm(k,<t>) )
 !                    - K_zm(k-1) * dzm(k-1) * ( xm(k,<t>) - xm(k-1,<t>) ) ].
@@ -112,7 +352,8 @@ subroutine compute_um_edsclrm( solve_type, dt, xpwp_sfc, xm_tndcy,  &
 ! zero-flux nor a fixed-point boundary condition.  Rather, it is a fixed-flux 
 ! boundary condition.  This term is a turbulent advection term, but with the
 ! eddy-scalars, the only value of x'w' relevant in solving the d(xm)/dt equation
-! is the value of x'w' at the surface (i.e. the zm(1) level, written as x'w'|_sfc).
+! is the value of x'w' at the surface (the first momentum level), which is 
+! written as x'w'|_sfc.
 !
 ! Since x'w' = - K_zm * d(xm)/dz,
 !
@@ -121,24 +362,24 @@ subroutine compute_um_edsclrm( solve_type, dt, xpwp_sfc, xm_tndcy,  &
 ! The lower boundary condition, which in this case is applied to the d(xm)/dt 
 ! equation at level 2, is discretized as follows:
 !
-! ---xm(3)------------------------------------------------- zt(3)
+! ---xm(3)------------------------------------------------- t(3)
 !
-! =============d(xm)/dz===K_zm(2)========================== zm(2)
+! =============d(xm)/dz===K_zm(2)========================== m(2)
 !
-! ---xm(2)---------------------------d[K_zm*d(xm)/dz]/dz--- zt(2)
+! ---xm(2)---------------------------d[K_zm*d(xm)/dz]/dz--- t(2)
 !
-! =============[ x'w'|_sfc = - K_zm(1) * d(xm)/dz ]======== zm(1) (surface)
+! =============[ x'w'|_sfc = - K_zm(1) * d(xm)/dz ]======== m(1) (surface)
 !
-! ---xm(1)------------------------------------------------- zt(1)
+! ---xm(1)------------------------------------------------- t(1)
 ! 
-! The vertically discretized form of the turbulent advection 
-! (i.e. eddy diffusivity) term is written out as:
+! The vertically discretized form of the turbulent advection term (treated as an
+! eddy diffusion term) is written out as:
 !
 ! + dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3) - xm(2) ) + x'w'|_sfc ];
 !
 ! which can be re-written as:
 !
-! + dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3) - xm(2) ) ]  +  dzt(2) * x'w'|_sfc .
+! + dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3) - xm(2) ) ]  +  dzt(2) * x'w'|_sfc.
 !
 ! For this equation, a Crank-Nicholson (semi-implicit) diffusion scheme is used
 ! to solve the d [ K_zm * d(xm)/dz ] / dz eddy-diffusion term.  The discretized
@@ -223,10 +464,6 @@ use constants, only:  &
 
 use stats_precision, only:  & 
     time_precision ! Variable(s)
-
-use error_code, only:  & 
-    lapack_error,  & ! Procedure(s)
-    clubb_at_debug_level
 
 implicit none
 
@@ -358,57 +595,51 @@ if ( l_stats_samp ) then
    call stat_end_update( ixm_bt, real( xm / dt ), zt )
 
 endif
- 
-
-! Error report
-! Joshua Fasching February 2008
-if ( lapack_error( err_code ) .and.  & 
-     clubb_at_debug_level( 1 ) ) then
-               
-    write(fstderr,*) "Error in compute_um_edsclrm"
-   
-    write(fstderr,*) "Intent(in)"
-   
-    write(fstderr,*) "dt = ", dt
-    write(fstderr,*) "xpwp_sfc = ", xpwp_sfc
-    write(fstderr,*) "xm_tndcy = ", xm_tndcy
-    write(fstderr,*) "Kh_zm = ", Kh_zm
-   
-    write(fstderr,*) "Intent(inout)"
-   
-    write(fstderr,*) "xm = ", xm
-   
-    write(fstderr,*) "Intent(out)"
-   
-    write(fstderr,*) "xpwp = ", xpwp
-             
-    return
-
-endif
 
 
 return
-end subroutine compute_um_edsclrm
+end subroutine compute_um_edsclrm_solve
 
-!-----------------------------------------------------------------------
+!===============================================================================
 subroutine compute_uv_tndcy( solve_type, xm, fcor, perp_wind_m, perp_wind_g,  &
-                             implemented, xmt )
+                             implemented, xm_tndcy )
 !
-! Description: Computes the tendency for the u/v wind components.
+! Description:
+! Computes the explicit tendency for the um and vm wind components.
 !
+! The only explicit tendency that is involved in the d(um)/dt or d(vm)/dt 
+! equations is the Coriolis tendency.
 !
+! The d(um)/dt equation contains the term:
+!
+! - f * ( v_g - vm );
+!
+! where f is the Coriolis parameter and v_g is the v component of the 
+! geostrophic wind.
+!
+! Likewise, the d(vm)/dt equation contains the term:
+!
+! + f * ( u_g - um );
+!
+! where u_g is the u component of the geostrophic wind.
+!
+! This term is treated completely explicitly.  The values of um, vm, u_g, and 
+! v_g are all found on the thermodynamic levels.
+!
+! References:
 !-----------------------------------------------------------------------
-  use grid_class, only: & 
+
+use grid_class, only: & 
     gr
 
-  use grid_class, only: & 
+use grid_class, only: & 
     zt2zm, & 
     ddzm         
 
-  use stats_type, only: & 
+use stats_type, only: & 
     stat_update_var
 
-  use stats_variables, only:      &
+use stats_variables, only:      &
     ium_gf, & 
     ium_cf, & 
     ivm_gf, & 
@@ -416,38 +647,41 @@ subroutine compute_uv_tndcy( solve_type, xm, fcor, perp_wind_m, perp_wind_g,  &
     zt, & 
     l_stats_samp
 
-  implicit none
+implicit none
 
-  ! Input Variables
-  character(len=*), intent(in) :: solve_type
+! Input Variables
+character(len=*), intent(in) ::  &
+  solve_type  ! Description of what is being solved for
 
-  real, dimension(gr%nnzp), intent(in) ::  & 
-    xm   ! u/v wind                                       [m/s]   
+real, dimension(gr%nnzp), intent(in) ::  & 
+  xm   ! u/v wind                                       [m/s]   
 
-  real, intent(in) ::  & 
-    fcor ! Coriolis forcing                             [s^-1]
+real, intent(in) ::  & 
+  fcor ! Coriolis parameter                             [s^-1]
 
-  real, dimension(gr%nnzp), intent(in) :: & 
-    perp_wind_m,  & ! Perpendicular component of the mean wind (e.g. v, for the u-eqn) [m/s]
-    perp_wind_g     ! Perpendicular component of the geostropic wind (e.g. vg)         [m/s]
+real, dimension(gr%nnzp), intent(in) :: & 
+  perp_wind_m,  & ! Perpendicular component of the mean wind (e.g. v, for the u-eqn) [m/s]
+  perp_wind_g     ! Perpendicular component of the geostropic wind (e.g. vg)         [m/s]
 
-  logical, intent(in) :: & 
-    implemented
+logical, intent(in) :: & 
+  implemented
 
-  ! Output Variables
-  real, dimension(gr%nnzp), intent(out) :: xmt ! xm tendency  [m/s^2]
+! Output Variables
+real, dimension(gr%nnzp), intent(out) :: xm_tndcy ! xm tendency  [m/s^2]
 
-  ! Local Variables
-  integer :: & 
-    ixm_gf, & 
-    ixm_cf
+! Local Variables
+integer :: & 
+  ixm_gf, & 
+  ixm_cf
 
-  real, dimension(gr%nnzp) :: & 
-    xm_gf, & 
-    xm_cf
+real, dimension(gr%nnzp) :: & 
+  xm_gf, & 
+  xm_cf
 
 
 if (.not. implemented) then
+  ! Only compute the Coriolis term if the model is running on it's own, 
+  ! and is not part of a larger, host model.
 
   select case (trim(solve_type))
 
@@ -480,7 +714,7 @@ if (.not. implemented) then
 
   end select
 
-  xmt = xm_gf + xm_cf 
+  xm_tndcy = xm_gf + xm_cf 
 
   if ( l_stats_samp ) then
  
@@ -490,9 +724,9 @@ if (.not. implemented) then
 
   endif
 
-else   ! implemented
+else   ! implemented in a host model.
 
-  xmt = 0.0
+  xm_tndcy = 0.0
 
 endif
 
@@ -547,7 +781,7 @@ integer, parameter :: &
 
 ! Input Variables
 character(len=*), intent(in) :: &
-  solve_type ! Desc. of what is being solved for
+  solve_type ! Description of what is being solved for
 
 real(kind=time_precision), intent(in) :: & 
   dt         ! Model timestep                           [s]
@@ -670,7 +904,7 @@ end subroutine compute_um_edsclrm_lhs
 
 !===============================================================================
 subroutine compute_um_edsclrm_rhs( solve_type, dt, Kh_zm, xm,  &
-                                   xm_forcing, xpwp_sfc, rhs )
+                                   xm_tndcy, xpwp_sfc, rhs )
 
 ! Description:
 ! Calculate the explicit portion of the horizontal wind or eddy-scalar 
@@ -703,7 +937,7 @@ implicit none
 
 ! Input Variables
 character(len=*), intent(in) :: &
-  solve_type ! Desc. of what is being solved for
+  solve_type ! Description of what is being solved for
 
 real(kind=time_precision), intent(in) :: & 
   dt           ! Model timestep                                   [s]
@@ -711,7 +945,7 @@ real(kind=time_precision), intent(in) :: &
 real, dimension(gr%nnzp), intent(in) :: &
   Kh_zm,     & ! Eddy diffusivity on momentum levels              [m^2/s]
   xm,        & ! Eddy-scalar variable, xm (thermodynamic levels)  [units vary]
-  xm_forcing   ! The explicit time-tendency acting on xm          [units vary]
+  xm_tndcy     ! The explicit time-tendency acting on xm          [units vary]
 
 real, intent(in) :: &
   xpwp_sfc     ! x'w' at the surface                              [units vary]
@@ -765,7 +999,7 @@ do k = 2, gr%nnzp-1, 1
               - rhs_diff(1) * xm(kp1)
 
    ! RHS forcings.
-   rhs(k) = rhs(k) + xm_forcing(k)
+   rhs(k) = rhs(k) + xm_tndcy(k)
 
    ! RHS time tendency
    rhs(k) = real( rhs(k) + ( 1.0 / dt ) * xm(k) )

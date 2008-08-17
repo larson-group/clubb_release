@@ -1,5 +1,4 @@
-!-----------------------------------------------------------------------
-! $Id: diag_variables.F90,v 1.14 2008-08-08 14:48:38 faschinj Exp $
+! $Id: diag_variables.F90,v 1.15 2008-08-17 16:10:40 griffinb Exp $
 module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -44,13 +43,6 @@ real, target, allocatable, dimension(:), public :: &
   radht    ! SW + LW heating rate
 
 !$omp   threadprivate(Frad, radht)
-
-! Tendency arrays for u and v wind
-real, target, allocatable, dimension(:), public :: & 
-  umt,     & ! u wind [m/s^2]
-  vmt        ! v wind [m/s^2]
-
-!$omp   threadprivate(umt, vmt)
 
 ! Second order moments
 real, target, allocatable, dimension(:), public :: & 
@@ -131,7 +123,6 @@ real, public  :: ustar ! Average value of friction velocity [m/s]
 ! Passive scalar variables
 
 real, target, allocatable, dimension(:,:), public :: & 
-  edsclrmt,    & ! Explicit contributions to edsclrm
   wpedsclrp   ! w'edsclr'
 
 real, target, allocatable, dimension(:,:), public :: & 
@@ -145,7 +136,6 @@ real, target, allocatable, dimension(:,:), public :: &
   wpsclrprtp,  & ! w'sclr'rt'
   wpsclrpthlp    ! w'sclr'thl'
 
-!$omp   threadprivate(edsclrmt)
 !$omp   threadprivate(wpedsclrp)
 !$omp   threadprivate(sclrpthvp, sclrprtp, sclrp2, sclrpthlp)
 !$omp   threadprivate(wp2sclrp, wpsclrprtp, wpsclrpthlp)
@@ -256,11 +246,6 @@ allocate( thvm(1:nzmax) )            ! Virtual potential temperature
 
 allocate( rsat(1:nzmax) )       ! Saturation mixing ratio  ! Brian
 
-! Tendency arrays for prognostic variables
-
-allocate( umt(1:nzmax) )       ! u wind
-allocate( vmt(1:nzmax) )       ! v wind
-
 allocate( Frad(1:nzmax) )      ! radiative flux (momentum point)
 
 allocate( radht(1:nzmax) )     ! SW + LW heating rate
@@ -349,7 +334,6 @@ allocate( wpsclrprtp(1:nzmax, 1:sclr_dim) )
 allocate( wpsclrpthlp(1:nzmax, 1:sclr_dim) )
 
 ! Eddy Diff. Scalars
-allocate( edsclrmt(1:nzmax, 1:sclr_dim) )
 allocate( wpedsclrp(1:nzmax, 1:sclr_dim) )
 
 !   --- Initializaton ---
@@ -365,11 +349,6 @@ ug  = 0.0      ! u geostrophic wind
 vg  = 0.0      ! v geostrophic wind
 um_ref   = 0.0 !
 vm_ref   = 0.0 !
-
-! Tendency arrays for prognostic variables
-
-umt = 0.0  ! u wind
-vmt = 0.0  ! v wind
  
 thvm = 0.0  ! Virtual potential temperature
 rsat  = 0.0  ! Saturation mixing ratio  ! Brian
@@ -452,7 +431,6 @@ if ( sclr_dim > 0 ) then
   wpsclrprtp(:,:)    = 0.0
   wpsclrpthlp(:,:)   = 0.0
 
-  edsclrmt(:,:)      = 0.0
   wpedsclrp(:,:)     = 0.0
 end if
 !$omp   end parallel
@@ -482,11 +460,6 @@ deallocate( ug )        ! u geostrophic wind
 deallocate( vg )        ! v geostrophic wind
 deallocate( um_ref )    ! u initial
 deallocate( vm_ref )    ! v initial
-
-! Tendency arrays for prognostic variables
-
-deallocate( umt )       ! u wind
-deallocate( vmt )       ! v wind
  
 deallocate( thvm )      ! virtual potential temperature
 deallocate( rsat )      ! saturation mixing ratio  ! Brian
@@ -579,7 +552,6 @@ deallocate( wpsclrp2 )
 deallocate( wpsclrprtp )
 deallocate( wpsclrpthlp )
 
-deallocate( edsclrmt )
 deallocate( wpedsclrp )
 !$omp   end parallel
 
