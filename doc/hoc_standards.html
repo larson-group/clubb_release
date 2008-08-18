@@ -1,814 +1,740 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+           "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<meta name="GENERATOR" content="TtH 3.82">
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+ <style type="text/css"> div.p { margin-top: 7pt;}</style>
+ <style type="text/css"><!--
+ td div.comp { margin-top: -0.6ex; margin-bottom: -1ex;}
+ td div.comb { margin-top: -0.6ex; margin-bottom: -.6ex;}
+ td div.hrcomp { line-height: 0.9; margin-top: -0.8ex; margin-bottom: -1ex;}
+ td div.norm {line-height:normal;}
+ span.roman {font-family: serif; font-style: normal; font-weight: normal;} 
+ span.overacc2 {position: relative;  left: .8em; top: -1.2ex;}
+ span.overacc1 {position: relative;  left: .6em; top: -1.2ex;} --></style>
 
-<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
-original version by:  Nikos Drakos, CBLU, University of Leeds
-* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
-* with significant contributions from:
-  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
-<HTML>
-<HEAD>
-<TITLE>Coding Standards and Practices for HOC</TITLE>
-<META NAME="description" CONTENT="Coding Standards and Practices for HOC">
-<META NAME="keywords" CONTENT="hoc_standards">
-<META NAME="resource-type" CONTENT="document">
-<META NAME="distribution" CONTENT="global">
+ 
+<title> {Standards and Coding Practices for HOC}</title>
+ 
+<h1 align="center"><b>Standards and Coding Practices for HOC</b> </h1>
 
-<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
-<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<h3 align="center">Larson Group UW-Milwaukee </h3>
 
-<LINK REL="STYLESHEET" HREF="hoc_standards.css">
+<div class="p"><!----></div>
 
-<LINK REL="next" HREF="node1.html">
-</HEAD>
+<ol type="1">
+<li> All files in the repository should have a standard header with a CVS 
+<tt>$Id: hoc_standards.html,v 1.2 2008-08-18 18:22:44 dschanen Exp $</tt> tag at the top.
 
-<BODY >
-<!--Navigation Panel-->
-<A NAME="tex2html2"
-  HREF="node1.html">
-<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
- SRC="file:/usr/share/latex2html/icons/next.png"></A> 
-<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
- SRC="file:/usr/share/latex2html/icons/up_g.png"> 
-<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
- SRC="file:/usr/share/latex2html/icons/prev_g.png">   
-<BR>
-<B> Next:</B> <A NAME="tex2html3"
-  HREF="node1.html">About this document ...</A>
-<BR>
-<BR>
-<!--End of Navigation Panel-->
-
-<P>
-
-<P>
-<H1 ALIGN="CENTER"><B>Coding Standards and Practices for HOC</B></H1>
-<DIV>
-
-</DIV>
-
-<P>
-<DIV ALIGN="LEFT">
-
-<P>
-<B> <FONT SIZE="+1">Coding Standards </FONT></B>
-
-<P>
-
-<OL>
-<LI>All files in the repository should have a standard header with a CVS 
-<TT>$Id: hoc_standards.html,v 1.1 2008-07-09 20:15:09 senkbeir Exp $</TT> tag at the top.
-<BR>
+<div class="p"><!----></div>
 When initially checking in a new source file, enter the Id tag as 
-the string <TT>$Id: hoc_standards.html,v 1.1 2008-07-09 20:15:09 senkbeir Exp $</TT> on a commented line at the top of the source file
+the string <tt>$Id: hoc_standards.html,v 1.2 2008-08-18 18:22:44 dschanen Exp $</tt> on a commented line at the top of the source file
  (CVS will expand this after checking it in).
-E.g. <BR>
 
-<P>
-Before checking in the file, enter:
-<PRE>
+<div class="p"><!----></div>
+<br /><br />After checking in the file, something like the following will appear:
+
+<pre>
 !-----------------------------------------------------------------------
-! $Id: hoc_standards.html,v 1.1 2008-07-09 20:15:09 senkbeir Exp $
-</PRE>
+!&nbsp;$Id: hoc_standards.html,v 1.2 2008-08-18 18:22:44 dschanen Exp $
 
-<P>
 
-<P><P>
-<BR>
+</pre>
+<div class="p"><!----></div>
+</li>
 
-<P>
-After checking in the file, something like the following will appear:
-<PRE>
-!-----------------------------------------------------------------------
-! $Id: hoc_standards.html,v 1.1 2008-07-09 20:15:09 senkbeir Exp $
-</PRE>
-
-<P>
-</LI>
-<LI>When adding functions and subroutines create a header with a short 
-description of their purpose.  In the header, list the units and a description of 
-each parameter and each intent(in), intent(out), and intent(inout) variable.  Use the following standardized
+<li> When adding functions and subroutines create a header with a short 
+description of their purpose and reference if there is one.  Include 
+in the header a description of 
+each variable and its respective units.  Use the following standardized
 layout: 
 
-<P>
-<PRE>
+<div class="p"><!----></div>
+
+<pre>
 !-----------------------------------------------------------------------
-        function xyzzy( etherx, ethery, etherz )
+function&nbsp;xyzzy(&nbsp;etherx,&nbsp;ethery,&nbsp;etherz&nbsp;)
 
-!       Description:
-!         Evaluates the xyzzy function. 
+!&nbsp;Description:
+!&nbsp;&nbsp;&nbsp;Evaluates&nbsp;the&nbsp;xyzzy&nbsp;function.&nbsp;
 
-!       References:
-!         Eqn. 33 on p. 4551 of  
-!         Tweedle-dee and Tweedle-dum (1842), J. Imaginary Atmospheric 
-!         Sci., Vol. 23, pp. 4550--4556
-!-----------------------------------------------------------------------
-
-        ! Included Modules
-        use grid_dimensions, only: ndim
- 
-        implicit none
-
-        ! External Calls
-        complex, external ::
-     .    xyxy_fnc ! (Description of function goes here)
-
-        external ::
-     .    zyzy_sub ! (Description of subroutine goes here)
-
-        ! It is a good idea to declare intrinsics, in case another 
-        ! function or variable is accidentally given the same name.
-        intrinsic :: 
-     .    matmul, exp, log, dble
-
-        ! If we had any derived types to declare, then 
-        ! we would put them here before the constants.
-
-        ! Local Constants
-        real, parameter :: 
-     .    local_tol = 1.0e-6 ! Local tolerance [no units]
-
-        ! Input Variables
-        complex, dimension(ndim), intent(in) :: 
-     .    etherx,  ! Ether in the x dimension  [kg/kg]
-     .    ethery,  ! Ether in the y dimension  [kg/kg]
-     .    etherz   ! Ether in the z dimension  [kg/kg]
-
-        ! Output Variables
-        complex, dimension(ndim,ndim,ndim) ::
-     .    xyzzy    ! Ether in the xyyzy dimension  [kg/kg]
-
-        ! Local Variables
-        integer :: i, j, k
-
+!&nbsp;References:
+!&nbsp;&nbsp;&nbsp;Eqn.&nbsp;33&nbsp;on&nbsp;p.&nbsp;4551&nbsp;of&nbsp;&nbsp;
+!&nbsp;&nbsp;&nbsp;Tweedle-dee&nbsp;and&nbsp;Tweedle-dum&nbsp;(1842),&nbsp;J.&nbsp;Imaginary&nbsp;Atmospheric&nbsp;
+!&nbsp;&nbsp;&nbsp;Sci.,&nbsp;Vol.&nbsp;23,&nbsp;pp.&nbsp;4550--4556
 !-----------------------------------------------------------------------
 
-        ! Begin xyzzy code
+&nbsp;&nbsp;!&nbsp;Included&nbsp;Modules
+&nbsp;&nbsp;use&nbsp;grid_dimensions,&nbsp;only:&nbsp;ndim
+&nbsp;
+&nbsp;&nbsp;implicit&nbsp;none
 
-        ...
+&nbsp;&nbsp;!&nbsp;External&nbsp;Calls
+&nbsp;&nbsp;complex,&nbsp;external&nbsp;::&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;xyxy_fnc&nbsp;!&nbsp;(Description&nbsp;of&nbsp;function&nbsp;goes&nbsp;here)
 
-        return
-        end function xyzzy
+&nbsp;&nbsp;external&nbsp;::&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;zyzy_sub&nbsp;!&nbsp;(Description&nbsp;of&nbsp;subroutine&nbsp;goes&nbsp;here)
+
+&nbsp;&nbsp;!&nbsp;It&nbsp;is&nbsp;a&nbsp;good&nbsp;idea&nbsp;to&nbsp;declare&nbsp;intrinsics,&nbsp;in&nbsp;case&nbsp;another&nbsp;
+&nbsp;&nbsp;!&nbsp;function&nbsp;or&nbsp;variable&nbsp;is&nbsp;accidentally&nbsp;given&nbsp;the&nbsp;same&nbsp;name.
+&nbsp;&nbsp;intrinsic&nbsp;::&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;matmul,&nbsp;exp,&nbsp;log,&nbsp;dble
+
+&nbsp;&nbsp;!&nbsp;If&nbsp;we&nbsp;had&nbsp;any&nbsp;derived&nbsp;types&nbsp;to&nbsp;declare,&nbsp;then&nbsp;
+&nbsp;&nbsp;!&nbsp;we&nbsp;would&nbsp;put&nbsp;them&nbsp;here&nbsp;before&nbsp;the&nbsp;constants.
+
+&nbsp;&nbsp;!&nbsp;Local&nbsp;Constants
+&nbsp;&nbsp;real,&nbsp;parameter&nbsp;::&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;local_tol&nbsp;=&nbsp;1.0e-6&nbsp;!&nbsp;Local&nbsp;tolerance&nbsp;[no&nbsp;units]
+
+&nbsp;&nbsp;!&nbsp;Input&nbsp;Variables
+&nbsp;&nbsp;complex,&nbsp;dimension(ndim),&nbsp;intent(in)&nbsp;::&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;etherx,&nbsp;&nbsp;!&nbsp;Ether&nbsp;in&nbsp;the&nbsp;x&nbsp;dimension&nbsp;&nbsp;[kg/kg]
+&nbsp;&nbsp;&nbsp;&nbsp;ethery,&nbsp;&nbsp;!&nbsp;Ether&nbsp;in&nbsp;the&nbsp;y&nbsp;dimension&nbsp;&nbsp;[kg/kg]
+&nbsp;&nbsp;&nbsp;&nbsp;etherz&nbsp;&nbsp;&nbsp;!&nbsp;Ether&nbsp;in&nbsp;the&nbsp;z&nbsp;dimension&nbsp;&nbsp;[kg/kg]
+
+&nbsp;&nbsp;!&nbsp;Output&nbsp;Variables
+&nbsp;&nbsp;complex,&nbsp;dimension(ndim,ndim,ndim)&nbsp;::&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;xyzzy&nbsp;&nbsp;&nbsp;&nbsp;!&nbsp;Ether&nbsp;in&nbsp;the&nbsp;xyyzy&nbsp;dimension&nbsp;&nbsp;[kg/kg]
+
+&nbsp;&nbsp;!&nbsp;Local&nbsp;Variables
+&nbsp;&nbsp;integer&nbsp;::&nbsp;i,&nbsp;j,&nbsp;k
+
 !-----------------------------------------------------------------------
-</PRE>
 
-<P>
-</LI>
-<LI>Write lots of code comments.  Make sure your code is understandable to an outsider 
+&nbsp;&nbsp;!-----&nbsp;Begin&nbsp;Code&nbsp;-----
+
+&nbsp;&nbsp;&nbsp;&nbsp;...
+
+&nbsp;&nbsp;return
+end&nbsp;function&nbsp;xyzzy
+!-----------------------------------------------------------------------
+
+</pre>
+<div class="p"><!----></div>
+</li>
+
+<li> In functions and subroutines put a line with 
+<tt>!-----&nbsp;Begin&nbsp;Code&nbsp;-----</tt> after the declarative portion of the code.
+This is to make it clear where the algorithmic portion of the procedure starts.
+<div class="p"><!----></div>
+</li>
+
+<li> Write lots of code comments.  Make sure your code is understandable to an outsider 
 looking at it for the first time.  When writing a code comment, leave your name 
 at the end of the comment.
 This will allow other users to contact you with any questions about the section of code.
 Use the same name identifier, e.g. dschanen or Vince Larson, everywhere.
-Then everyone can use <TT>grep</TT> to search for all code comments you've made.
+Then everyone can use <tt>grep</tt> to search for all code comments you've made.
+<div class="p"><!----></div>
+</li>
 
-<P>
-</LI>
-<LI>When writing new source code, use fixed format rather than free format.  However, 
+<li> When writing new source code, use fixed format rather than free format.  However, 
 this convention is not always followed in code from external contributors such as BUGSRad, 
 Numerical Recipes, and so forth.  We do not usually modify such external code because it is
 less familiar, and we might introduce bugs.
-<BR>
 
-<P>
-</LI>
-<LI>Minimize the number of variables or amount of data made available to any 
+<div class="p"><!----></div>
+
+<div class="p"><!----></div>
+</li>
+
+<li> Minimize the number of variables or amount of data made available to any 
 subroutine in either 
-passed arguments or <TT>use</TT> statements.  Always specify <TT>intent</TT> 
-attributes on your arguments, and use <TT>intent(in)</TT> 
-and <TT>intent(out)</TT> rather than <TT>intent(inout)</TT> whenever possible.
+passed arguments or <tt>use</tt> statements.  Always specify <tt>intent</tt> 
+attributes on your arguments, and use <tt>intent(in)</tt> 
+and <tt>intent(out)</tt> rather than <tt>intent(inout)</tt> whenever possible.
 This makes the code more clear to new users by allowing them to trace where a 
 given variable is changed in the code and spot at a glance what are the inputs and
 outputs of each subroutine.  Furthermore,
 this makes it easier for the compiler to optimize, because modern computers can 
 vectorize floating point instructions, thereby providing some 
 parallelization when your calculation does not rely on previous results.
+Note however, than an <tt>intent(out)</tt> variable that is not set in the scope of the subroutine
+is <em>not defined</em>!  It often preserves the previous value, but it may not.
 When using modules with public variables, limit 
-the number of variables with an <TT>only:</TT> statement.  This makes code 
+the number of variables with an <tt>only:</tt> statement.  This makes code 
 easier to read, because it is then obvious which variables from the module are being 
 used.
-<BR>
+<div class="p"><!----></div>
 E.g.
-<PRE>
+
+<pre>
 !-----------------------------------------------------------------------
-         subroutine mulmul( x, y, z )
+subroutine&nbsp;mulmul(&nbsp;x,&nbsp;y,&nbsp;z&nbsp;)
 
-!        Description:
-!          Bogus example
+!&nbsp;Description:
+!&nbsp;&nbsp;&nbsp;Bogus&nbsp;example
 
-!        References:
-!          None
-!-----------------------------------------------------------------------
-
-         ! Here we limit our use statement to just the needed variables
-         use constants, only: pi, euler_const 
-
-         implicit none
-
-         ! Input
-         real, dimension(5), intent(in)  ::
-     .     x, ! First factor   [no units]
-     .     y  ! Second factor  [no units]
-
-         ! Output 
-         real, dimension(5), intent(out) :: 
-     .     z  ! output         [no units]
+!&nbsp;References:
+!&nbsp;&nbsp;&nbsp;None
 !-----------------------------------------------------------------------
 
-         ! Note that every element of z could be calculated 
-         ! independently of other elements of the subroutine
-         ! allowing for parallelism if possible.
+&nbsp;&nbsp;!&nbsp;Here&nbsp;we&nbsp;limit&nbsp;our&nbsp;use&nbsp;statement&nbsp;to&nbsp;just&nbsp;the&nbsp;needed&nbsp;variables
+&nbsp;&nbsp;use&nbsp;constants,&nbsp;only:&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;pi,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&amp;&nbsp;!&nbsp;Ratio&nbsp;of&nbsp;radii&nbsp;to&nbsp;their&nbsp;circumferance&nbsp;[no&nbsp;units]
+&nbsp;&nbsp;&nbsp;&nbsp;euler_const&nbsp;&nbsp;&nbsp;!&nbsp;Made&nbsp;up&nbsp;constant&nbsp;[no&nbsp;units]
 
-         z(1:5) = ( x(1:5) / pi ) * ( y(1:5) / euler_const )
+&nbsp;&nbsp;implicit&nbsp;none
 
-         return
-         end subroutine mulmul
+&nbsp;&nbsp;!&nbsp;First&nbsp;list&nbsp;input&nbsp;variables
+&nbsp;&nbsp;real,&nbsp;dimension(5),&nbsp;intent(in)&nbsp;::&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;x,&nbsp;&amp;!&nbsp;First&nbsp;factor&nbsp;&nbsp;&nbsp;[no&nbsp;units]
+&nbsp;&nbsp;&nbsp;&nbsp;y&nbsp;&nbsp;&nbsp;!&nbsp;Second&nbsp;factor&nbsp;&nbsp;[no&nbsp;units]
+
+&nbsp;&nbsp;!&nbsp;Then&nbsp;list&nbsp;inout&nbsp;variables,&nbsp;and&nbsp;then&nbsp;outputs&nbsp;
+&nbsp;&nbsp;real,&nbsp;dimension(5),&nbsp;intent(out)&nbsp;::&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;z&nbsp;&nbsp;!&nbsp;output&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[no&nbsp;units]
 !-----------------------------------------------------------------------
-</PRE>
 
-<P>
-</LI>
-<LI>The general convention in HOC is to have the dummy arguments of a subroutine 
+&nbsp;&nbsp;!-----&nbsp;Begin&nbsp;Code&nbsp;-----
+
+&nbsp;&nbsp;!&nbsp;Note&nbsp;that&nbsp;every&nbsp;element&nbsp;of&nbsp;z&nbsp;could&nbsp;be&nbsp;calculated&nbsp;
+&nbsp;&nbsp;!&nbsp;independently&nbsp;of&nbsp;other&nbsp;elements&nbsp;of&nbsp;the&nbsp;subroutine
+&nbsp;&nbsp;!&nbsp;allowing&nbsp;for&nbsp;parallelism&nbsp;if&nbsp;possible.
+
+&nbsp;&nbsp;z(1:5)&nbsp;=&nbsp;(&nbsp;x(1:5)&nbsp;/&nbsp;pi&nbsp;)&nbsp;*&nbsp;(&nbsp;y(1:5)&nbsp;/&nbsp;euler_const&nbsp;)
+
+&nbsp;&nbsp;return
+end&nbsp;subroutine&nbsp;mulmul
+!-----------------------------------------------------------------------
+
+</pre>
+<div class="p"><!----></div>
+</li>
+
+<li> The general convention in HOC is to have the dummy arguments of a subroutine 
 ordered with input first, input/output second, and output arguments third. 
 The exception to this is optional variables, which must occur last.  In that case,
 standard variables should be ordered as above; below this, the optional variables should
 be listed with input first, then input/output, and then output variables.
-<BR>
+
+<div class="p"><!----></div>
 E.g.
-<PRE>
 
-         ! The wrong way
-         subroutine sub( input_variable_1, output_variable_1, 
-     .                   input_variable_2, input_output_variable_1 )
+<pre>
 
-         ! The right way
-         subroutine sub( input_variable_1, input_variable_2, 
-     .                   input_output_variable_1, output_variable_1 )
-</PRE>
+&nbsp;&nbsp;!&nbsp;The&nbsp;wrong&nbsp;way
+&nbsp;&nbsp;subroutine&nbsp;sub(&nbsp;input_variable_1,&nbsp;output_variable_1,&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;input_variable_2,&nbsp;input_output_variable_1&nbsp;)
 
-<P>
-</LI>
-<LI>Keep on the same lines the arguments of both the originating call and its 
+&nbsp;&nbsp;!&nbsp;The&nbsp;right&nbsp;way
+&nbsp;&nbsp;subroutine&nbsp;sub(&nbsp;input_variable_1,&nbsp;input_variable_2,&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;input_output_variable_1,&nbsp;output_variable_1&nbsp;)
+
+
+</pre>
+<div class="p"><!----></div>
+</li>
+
+<li> Keep on the same lines the arguments of both the originating call and its 
 corresponding subroutine declaration.  This makes it easier to check the 
 consistency of arguments of subroutines and functions with long argument lists.
-<BR>
-E.g.
-<PRE>
 
-         ! The wrong way
-         call sub( roast_beef, ham, tomato, cheese,
-     .             lettuce, onion, mayo )
+<div class="p"><!----></div>
+ E.g.
 
-         subroutine sub( roast_beef, ham, 
-     .                   tomato, cheese,
-     .                   lettuce, onion, mayo )
+<pre>
 
-         ! The right way
-         call sub( roast_beef, ham, tomato, cheese,
-     .             lettuce, onion, mayo )
+&nbsp;&nbsp;!&nbsp;The&nbsp;wrong&nbsp;way
+&nbsp;&nbsp;call&nbsp;sub(&nbsp;roast_beef,&nbsp;ham,&nbsp;tomato,&nbsp;cheese,&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lettuce,&nbsp;onion,&nbsp;mayo&nbsp;)
 
-         subroutine sub( roast_beef, ham, tomato, cheese,
-     .                   lettuce, onion, mayo )
-</PRE>
+&nbsp;&nbsp;subroutine&nbsp;sub(&nbsp;roast_beef,&nbsp;ham,&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tomato,&nbsp;cheese,&nbsp;&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lettuce,&nbsp;onion,&nbsp;mayo&nbsp;)
 
-<P>
-</LI>
-<LI>When breaking up an arithmetic expression over multiple lines, do so according to 
-operator precedence.  This makes things more readable at a glance. <BR>
+&nbsp;&nbsp;&nbsp;!&nbsp;The&nbsp;right&nbsp;way
+&nbsp;&nbsp;&nbsp;call&nbsp;sub(&nbsp;roast_beef,&nbsp;ham,&nbsp;tomato,&nbsp;cheese,&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lettuce,&nbsp;onion,&nbsp;mayo&nbsp;)
+
+&nbsp;&nbsp;&nbsp;subroutine&nbsp;sub(&nbsp;roast_beef,&nbsp;ham,&nbsp;tomato,&nbsp;cheese,&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lettuce,&nbsp;onion,&nbsp;mayo&nbsp;)
+
+
+</pre>
+<div class="p"><!----></div>
+</li>
+
+<li> When breaking up an arithmetic expression over multiple lines, do so according to 
+operator precedence.  This makes things more readable at a glance. 
+<div class="p"><!----></div>
 E.g. Do this: 
-<PRE>
-        x = t + y*x 
-     .    + g*v + t*h
-</PRE>
 
-<P>
+<pre>
+&nbsp;&nbsp;x&nbsp;=&nbsp;t&nbsp;+&nbsp;y*x&nbsp;&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;g*v&nbsp;+&nbsp;t*h
+
+</pre>
+
+<div class="p"><!----></div>
 Not this:
-<PRE>
-        x = t + y*x + g
-     .    *v + t*h
-</PRE>
 
-<P>
-</LI>
-<LI>Do not use assumed size or assumed shape arrays in HOC.  
+<pre>
+&nbsp;&nbsp;x&nbsp;=&nbsp;t&nbsp;+&nbsp;y*x&nbsp;+&nbsp;g&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;*v&nbsp;+&nbsp;t*h
+
+</pre>
+<div class="p"><!----></div>
+</li>
+
+<li> Do not use assumed size or assumed shape arrays in HOC.  
 Generally speaking, the grid class defines the length of model arrays, 
 and the use of assumed size arrays introduces 
 another level of complexity that can cause bugs.  An exception may occur
 if you need to interface with code developed by external contributors that
 contains assumed shape arrays.
-<BR>
 
-<P>
-</LI>
-<LI>When a logical expression or a do loop extends more than ten lines, put a
+<div class="p"><!----></div>
+
+<div class="p"><!----></div>
+</li>
+
+<li> When a logical expression or a do loop extends more than ten lines, put a
 small comment after the end statement with the name of the loop or logical
 variable.
-E.g. <BR>
-<PRE>
-        if ( lcode_enabled ) then
+E.g. 
+<div class="p"><!----></div>
 
-          ...many lines of code...
+<pre>
+&nbsp;&nbsp;if&nbsp;(&nbsp;lcode_enabled&nbsp;)&nbsp;then
 
-        end if ! lcode_enabled
-</PRE>
+&nbsp;&nbsp;&nbsp;&nbsp;...many&nbsp;lines&nbsp;of&nbsp;code...
 
-<P>
+&nbsp;&nbsp;end&nbsp;if&nbsp;!&nbsp;lcode_enabled
+
+</pre>
+
+<div class="p"><!----></div>
 or 
 
-<P>
-<PRE>
-        if ( .not. lcode_enabled ) then
+<div class="p"><!----></div>
 
-          ...many lines of code...
+<pre>
+&nbsp;&nbsp;if&nbsp;(&nbsp;.not.&nbsp;lcode_enabled&nbsp;)&nbsp;then
 
-        end if ! ~lcode_enabled
-</PRE>
+&nbsp;&nbsp;&nbsp;&nbsp;...many&nbsp;lines&nbsp;of&nbsp;code...
 
-<P>
+&nbsp;&nbsp;end&nbsp;if&nbsp;!&nbsp;~lcode_enabled
+
+</pre>
+
+<div class="p"><!----></div>
 A long do statement
 
-<P>
-<PRE>
-        do i = 1, 100, 1
+<div class="p"><!----></div>
 
-        ...many lines of code...
+<pre>
+&nbsp;&nbsp;do&nbsp;i&nbsp;=&nbsp;1,&nbsp;100,&nbsp;1
 
-        end do ! i = 1..100
-</PRE>
+&nbsp;&nbsp;...many&nbsp;lines&nbsp;of&nbsp;code...
 
-<P>
-</LI>
-<LI>When making a logical expression, leave spaces between the 
-logical operators and use the Fortran 90 style logical operators. <BR>
-E.g.
-<PRE>
-        ! Like this
-        if ( x == y ) .and. ( y &gt;= z ) .or. ( z /= 0.0 ) then
+&nbsp;&nbsp;end&nbsp;do&nbsp;!&nbsp;i&nbsp;=&nbsp;1..100
 
-          ...
+</pre>
+<div class="p"><!----></div>
+</li>
 
-        end if
+<li> When making a logical expression, leave spaces between the 
+logical operators and use the Fortran 90 style logical operators. 
+<div class="p"><!----></div>
+ E.g.
 
-        ! Not like this
-        if ( x.eq.y.and.y.ge.z.or.z.ne.0.0 ) then
+<pre>
+&nbsp;&nbsp;!&nbsp;Like&nbsp;this
+&nbsp;&nbsp;if&nbsp;(&nbsp;x&nbsp;==&nbsp;y&nbsp;)&nbsp;.and.&nbsp;(&nbsp;y&nbsp;&#62;=&nbsp;z&nbsp;)&nbsp;.or.&nbsp;(&nbsp;z&nbsp;/=&nbsp;0.0&nbsp;)&nbsp;then
 
-          ...
+&nbsp;&nbsp;&nbsp;&nbsp;...
 
-        end if
-</PRE>
+&nbsp;&nbsp;end&nbsp;if
 
-<P>
+&nbsp;&nbsp;!&nbsp;Not&nbsp;like&nbsp;this
+&nbsp;&nbsp;if&nbsp;(&nbsp;x.eq.y.and.y.ge.z.or.z.ne.0.0&nbsp;)&nbsp;then
+
+&nbsp;&nbsp;&nbsp;&nbsp;...
+
+&nbsp;&nbsp;end&nbsp;if
+
+
+</pre>
+
+<div class="p"><!----></div>
 The F90 style operators are:
-<BR>
 
-<P>
-<PRE>
-== instead of .eq.
-/= instead of .ne.
-&gt;  instead of .gt.
-&gt;= instead of .ge.
-&lt;  instead of .lt.
-&lt;= instead of .le.
-</PRE>
+<div class="p"><!----></div>
 
-<P>
-</LI>
-<LI>When writing flow control statements 
-( <TT> if, elseif, select case </TT> ), keep the logic as straightforward and
-clear as possible.  If a set of <TT>if...then</TT> expressions grows to more
-than three cases, then rewrite the logic as a <TT>select...case</TT> expression
+<pre>
+==&nbsp;instead&nbsp;of&nbsp;.eq.
+/=&nbsp;instead&nbsp;of&nbsp;.ne.
+&#62;&nbsp;&nbsp;instead&nbsp;of&nbsp;.gt.
+&#62;=&nbsp;instead&nbsp;of&nbsp;.ge.
+&lt;&nbsp;&nbsp;instead&nbsp;of&nbsp;.lt.
+&lt;=&nbsp;instead&nbsp;of&nbsp;.le.
+
+</pre>
+<div class="p"><!----></div>
+</li>
+
+<li> When writing flow control statements 
+(<tt> if, else if, select case </tt>), keep the logic as straightforward and
+clear as possible.  If a set of <tt>if...then</tt> expressions grows to more
+than three cases, then rewrite the logic as a <tt>select...case</tt> expression
 instead. E.g.
 
-<P>
-<PRE>
-        ! Rewrite this:
-        if ( trim( run ) == "BOMEX" ) then
-          execute_stuff( )
+<div class="p"><!----></div>
 
-        else if ( trim( run ) == "FIRE" ) then
-          execute_other_stuff( )
+<pre>
+&nbsp;&nbsp;!&nbsp;Rewrite&nbsp;this:
+&nbsp;&nbsp;if&nbsp;(&nbsp;trim(&nbsp;run&nbsp;)&nbsp;==&nbsp;"BOMEX"&nbsp;)&nbsp;then
+&nbsp;&nbsp;&nbsp;&nbsp;execute_stuff(&nbsp;)
 
-        else if ( trim( run ) == "ARM" ) then
-          execute_other_other_stuff( ) 
+&nbsp;&nbsp;else&nbsp;if&nbsp;(&nbsp;trim(&nbsp;run&nbsp;)&nbsp;==&nbsp;"FIRE"&nbsp;)&nbsp;then
+&nbsp;&nbsp;&nbsp;&nbsp;execute_other_stuff(&nbsp;)
 
-        else if ( trim( run ) == "DAVE'S_CAMPING_TRIP" ) then
-          execute_other_other_other_stuff( ) 
+&nbsp;&nbsp;else&nbsp;if&nbsp;(&nbsp;trim(&nbsp;run&nbsp;)&nbsp;==&nbsp;"ARM"&nbsp;)&nbsp;then
+&nbsp;&nbsp;&nbsp;&nbsp;execute_other_other_stuff(&nbsp;)&nbsp;
 
-        else
-          write(unit=*,fmt=*) "Cannot determine what to do for "
-            //trim( run )
+&nbsp;&nbsp;else&nbsp;if&nbsp;(&nbsp;trim(&nbsp;run&nbsp;)&nbsp;==&nbsp;"DAVE'S_CAMPING_TRIP"&nbsp;)&nbsp;then
+&nbsp;&nbsp;&nbsp;&nbsp;execute_other_other_other_stuff(&nbsp;)&nbsp;
 
-        end if ! run
+&nbsp;&nbsp;else
+&nbsp;&nbsp;&nbsp;&nbsp;write(unit=0,fmt=*)&nbsp;"Cannot&nbsp;determine&nbsp;what&nbsp;to&nbsp;do&nbsp;for&nbsp;"//trim(&nbsp;run&nbsp;)
 
-        ! Like this:
-        select case( trim( run ) )
-        case( "BOMEX" )
-          execute_stuff( )
+&nbsp;&nbsp;end&nbsp;if&nbsp;!&nbsp;run
 
-        case( "FIRE" )
-          execute_other_stuff( )
+&nbsp;&nbsp;!&nbsp;Like&nbsp;this:
+&nbsp;&nbsp;select&nbsp;case(&nbsp;trim(&nbsp;run&nbsp;)&nbsp;)
+&nbsp;&nbsp;case(&nbsp;"BOMEX"&nbsp;)
+&nbsp;&nbsp;&nbsp;&nbsp;execute_stuff(&nbsp;)
 
-        case( "ARM" )
-          execute_other_other_stuff( )
- 
-        case ( "DAVE'S_CAMPING_TRIP" ) 
-          execute_other_other_other_stuff( ) 
+&nbsp;&nbsp;case(&nbsp;"FIRE"&nbsp;)
+&nbsp;&nbsp;&nbsp;&nbsp;execute_other_stuff(&nbsp;)
 
-        case default
-          write(unit=*,fmt=*) "Cannot determine what to do for "
-            //trim( run )
+&nbsp;&nbsp;case(&nbsp;"ARM"&nbsp;)
+&nbsp;&nbsp;&nbsp;&nbsp;execute_other_other_stuff(&nbsp;)
+&nbsp;
+&nbsp;&nbsp;case&nbsp;(&nbsp;"DAVE'S_CAMPING_TRIP"&nbsp;)&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;execute_other_other_other_stuff(&nbsp;)&nbsp;
 
-        end select ! run
-</PRE>
+&nbsp;&nbsp;case&nbsp;default
+&nbsp;&nbsp;&nbsp;&nbsp;write(unit=0,fmt=*)&nbsp;"Cannot&nbsp;determine&nbsp;what&nbsp;to&nbsp;do&nbsp;for&nbsp;"//trim(&nbsp;run&nbsp;)
 
-<P>
-</LI>
-<LI>When mixing scalar variables with array variables in a single
-mathematical statement, it is often clearer to use indices, even
-though Fortran 90 allows you to omit them. <BR>
+&nbsp;&nbsp;end&nbsp;select&nbsp;!&nbsp;run
+
+
+</pre>
+<div class="p"><!----></div>
+</li>
+
+<li> When mixing scalar variables with array variables in a single
+mathematical statement, it is often more clear to use indices, even
+though Fortran 90 allows you to omit them. 
+<div class="p"><!----></div>
 E.g. Do this:
 
-<P>
-<PRE>
-       xyzzy(1:gr%nnzp) = variable_arr1(1:gr%nnzp) * variable_scl1
-     .                    * variable_arr2(1:gr%nnzp)**2
-</PRE>
+<div class="p"><!----></div>
 
-<P>
+<pre>
+&nbsp;xyzzy(1:gr%nnzp)&nbsp;=&nbsp;variable_arr1(1:gr%nnzp)&nbsp;*&nbsp;variable_scl1&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;variable_arr2(1:gr%nnzp)**2
+
+</pre>
+
+<div class="p"><!----></div>
 Not this:
-<PRE>
-       xyzzy = variable_arr1 * variable_scl1 
-     .         * variable_arr2**2
-</PRE>
 
-<P>
-</LI>
-<LI>Use a consistent character case for variables names. 
-E.g. if you use <TT>thlm</TT> in function a, then do not use <TT>Thlm</TT> in function b. 
+<pre>
+&nbsp;xyzzy&nbsp;=&nbsp;variable_arr1&nbsp;*&nbsp;variable_scl1&nbsp;&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;variable_arr2**2
+
+</pre>
+<div class="p"><!----></div>
+</li>
+
+<li> Use a consistent character case for variables names. 
+E.g. if you use <tt>thlm</tt> in function a, then do not use <tt>Thlm</tt> in function b. 
 This makes the code easier to read and search using your text editor and the 
-<TT>grep</TT> command.
-<BR>
+<tt>grep</tt> command.
 
-<P>
-</LI>
-<LI>Always use <TT>implicit none</TT> in your code.  It will make 
+<div class="p"><!----></div>
+
+<div class="p"><!----></div>
+</li>
+
+<li> Always use <tt>implicit none</tt> in your code.  It will make 
 debugging much easier, because it prevents the accidental use of 
 variables of the wrong type.
-<BR>
 
-<P>
-</LI>
-<LI>When adding a variable that isn't a loop iterator and occurs in more 
+<div class="p"><!----></div>
+
+<div class="p"><!----></div>
+</li>
+
+<li> When adding a variable that isn't a loop iterator and occurs in more 
 than one context, use a variable name that is in some way unique. 
 This will make searching for the variable in the code much easier. 
 There several ways to do this:
-
-<OL>
-<LI>Use mixed case.  E.g. <TT>Rd</TT> for the Dry air gas constant 
-	rather than <TT>R</TT> or <TT>rd</TT>
-</LI>
-<LI>Use of a number in the name when the mathematical equations 
-	contain them. 
-	 E.g. <TT>p0</TT> for <IMG
- WIDTH="24" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
- SRC="img1.png"
- ALT="$P_0$">.
-</LI>
-<LI>Use 3 or more characters in the variable name.
-	E.g. HOC uses <TT>grav</TT> 
-	rather than <TT>g</TT> or <TT>gr</TT> for the gravitational constant.
 	
-</LI>
-</OL>
-Avoid using a variable name that overlaps with the text of a reserved word or
+<ol type="a">
+<li> Use mixed case.  E.g. <tt>Rd</tt> for the Dry air gas constant 
+	rather than <tt>R</tt> or <tt>rd</tt>
+<div class="p"><!----></div>
+</li>
+
+<li> Use of a number in the name when the mathematical equations 
+	contain them. 
+	 E.g. <tt>p0</tt> for P<sub>0</sub>.
+<div class="p"><!----></div>
+</li>
+
+<li> Use 3 or more characters in the variable name.
+	E.g. HOC uses <tt>grav</tt> 
+	rather than <tt>g</tt> or <tt>gr</tt> for the gravitational constant.
+<div class="p"><!----></div>
+</li>
+</ol>
+Avoid using a variable name that overlaps with the text a reserved word or
 Fortran directive as well.
 Try using a command
-like <TT>grep</TT> if you're uncertain if your variable is a semi-unique string.
-<BR>
+like <tt>grep</tt> if you're uncertain if your variable is a semi-unique string.
 
-<P>
-</LI>
-<LI>Make variable, function, and subroutine names easier to read by using underscores or capital letters.  For instance, write
+<div class="p"><!----></div>
 
-<P>
-<TT>a_several_word_variable_name</TT>
+<div class="p"><!----></div>
+</li>
 
-<P>
-or
-
-<P>
-<TT>ASeveralWordVariableName</TT>
-
-<P>
-but not
-
-<P>
-<TT>aseveralwordvariablename</TT>.
-<BR>
-
-<P>
-</LI>
-<LI>Do not use the prognostic or diagnostic variable modules anywhere they
-are not used already.  Currently prognostic_variables is used in statistics.F
-and hoc.F, while diagnostic_variables is used in hoc.F, statistics.F, and 
-parameterization_interface.F.  Global variables like these make debugging 
+<li> Do not use the prognostic or diagnostic variable modules anywhere they
+are not used already.  Currently prognostic_variables is used in <tt>statistics.F</tt>
+and <tt>hoc.F</tt>, while diagnostic_variables is used in <tt>hoc.F</tt>, <tt>statistics.F</tt>, and 
+<tt>parameterization_interface.F</tt>.  Global variables like these make debugging 
 the code more difficult.  The proper way to use these variables in a new 
 section of code is to pass them as an argument.
-<BR>
 
-<P>
-</LI>
-<LI>Put all subroutines and functions inside modules.  This allows Fortran to check the argument lists.
+<div class="p"><!----></div>
 
-<P>
-</LI>
-<LI>The standard header style for modules requires only a description and private/public statements.  When putting several subroutines or functions in a module, limit the
- number of public interfaces. Then declare private subroutines and functions, and finally list ``private" on its own line in order to cause new subroutines and functions to be treated as private by default.  This prevents subroutines or functions from being made public inadvertently, possibly causing name conflicts.
+<div class="p"><!----></div>
+</li>
+
+<li> Put all functions and subroutines within a module.  This allows for 
+compile time checking of input arguments. 
+<div class="p"><!----></div>
+
+<div class="p"><!----></div>
+</li>
+
+<li> When putting several subroutines or functions in a module, limit the
+ number of public interfaces. 
+<div class="p"><!----></div>
 E.g. 
-<PRE>
-        module gcss
 
-             ..
-!       Description:
-!           This module contains set-up for test (GCSS) cases.
-!           Note that all these are subroutines called from 
-!         hoc_forcings_timestep.
+<pre>
+&nbsp;&nbsp;!&nbsp;module&nbsp;gcss
 
-        implicit none
+&nbsp;&nbsp;&nbsp;&nbsp;...
 
-        public ::
-     .    cloud_rad, atex_tndcy, atex_sfclyr, fire_tndcy,
-     .    wangara_tndcy, wangara_sfclyr,
-     .    astex_tndcy, astex_sfclyr,
-     .    arm_tndcy, arm_sfclyr,
-     .    bomex_tndcy, bomex_sfclyr,
-     .    dycoms2_rf01_tndcy, dycoms2_rf01_sfclyr,
-     .    dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr,
-     .    nov11_altocu_tndcy 
+&nbsp;&nbsp;!&nbsp;Note&nbsp;that&nbsp;all&nbsp;these&nbsp;are&nbsp;subroutines&nbsp;called&nbsp;from&nbsp;
+&nbsp;&nbsp;!&nbsp;hoc_forcings_timestep
 
-        ! Note that all these are called from 
-        ! subroutines within gcss;  This declaration
-        ! makes them unavailable to outside routines
+&nbsp;&nbsp;public&nbsp;::
+&nbsp;&nbsp;&nbsp;&nbsp;cloud_rad,&nbsp;atex_tndcy,&nbsp;atex_sfclyr,&nbsp;fire_tndcy,&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;wangara_tndcy,&nbsp;wangara_sfclyr,&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;astex_tndcy,&nbsp;astex_sfclyr,&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;arm_tndcy,&nbsp;arm_sfclyr,&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;bomex_tndcy,&nbsp;bomex_sfclyr,&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;dycoms2_rf01_tndcy,&nbsp;dycoms2_rf01_sfclyr,&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;dycoms2_rf02_tndcy,&nbsp;dycoms2_rf02_sfclyr,&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;nov11_altocu_tndcy&nbsp;
 
-        private ::   ! Declaring these provides useful documentation
-     .    diag_ustar, arm_sfcflx, Diff_denom,
-     .    altocu_icedf
+&nbsp;&nbsp;!&nbsp;Note&nbsp;that&nbsp;all&nbsp;these&nbsp;are&nbsp;called&nbsp;from&nbsp;
+&nbsp;&nbsp;!&nbsp;subroutines&nbsp;within&nbsp;gcss;&nbsp;&nbsp;This&nbsp;declaration
+&nbsp;&nbsp;!&nbsp;makes&nbsp;them&nbsp;unavailable&nbsp;to&nbsp;outside&nbsp;routines
 
-        private   !  Change default so that all undeclared items are private
+&nbsp;&nbsp;private&nbsp;::
+&nbsp;&nbsp;&nbsp;&nbsp;diag_ustar,&nbsp;arm_sfcflx,&nbsp;Diff_denom,&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;altocu_icedf
 
-           ...
-</PRE>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...
 
-<P>
-</LI>
-<LI>HOC has the facility to turn off warning or error messages.  When you want to print a warning or error message, don't use the print statement; instead use the subroutine ``clubb_debug" located in error_code.F.
 
-<P>
-</LI>
-<LI>Re-use code whenever possible.  Specifically, if a job needs to be done twice, write a subroutine and call it twice, rather than re-writing the same
-block of code twice.  Therefore, if you are about to write a new block of code to do a common task, and you have a hunch similar code might already be 
-included in CLUBB, search for it and re-use it.  For instance, CLUBB includes subroutines to print warning messages, diffuse and advect fields, compute 
-clipping, interpolate fields, and compute skewness, solar zenith angle, simplified radiation (rad_lw_sw), julian day, and output statistics.   
+</pre>
+<div class="p"><!----></div>
+</li>
 
-<P>
-</LI>
-<LI>When using a C preprocessor directive, it should be setup to behave in a way that makes it obvious to the user when code is removed by the directive.
-E.g.
-
-<P>
-<PRE>
-
-       if ( lget_thread ) then
-#ifdef _OPENMP
-         nthread = omp_get_thread_num()
-
-#else /* Clause for when then this is undefined */
-         stop "This program does not use OpenMP"
-
-#endif
-       end if
-</PRE>
-
-<P>
-</LI>
-<LI>CLUBB is now entirely compatible with the use of a stretched (unevenly spaced) grid.  Therefore, when writing new code, please use interpolation functions -- such as zm2zt, zt2zm, or even linint -- rather than hard-wired numbers.  For example:
-
-<P>
-<PRE>
-
-    ! The right way
-    wp2_zt(k) = zm2zt( wp2, k )
-    var_zt(k) = linint( gr%zt(k), gr%zm(k), gr%zm(k-1), var_zm(k), var_zm(k-1) )
-
-    ! NO-NO-NOs:
-    wp2_zt(k) = 0.5 * ( wp2(k) + wp2(k-1) )
-    wp3_zm(k) = ( wp3(k+1) + wp3(k) ) / 2
-</PRE>
-
-<P>
-</LI>
-<LI>Good use of whitespace can make code easier to read and debug.  
+<li> Good use of whitespace can make code easier to read and debug.  
 One simple convention used in HOC is to put an extra space between 
 parenthesis for functions and subroutines to differentiate them from 
-array variables. <BR>
+array variables. 
+<div class="p"><!----></div>
 E.g.
-<PRE>
-         ! Choosing less obscure names for arrays and functions 
-         ! will also help with this problem.
 
-         f( x ) ! This is the function f evaluated with argument x.
-         f(x)   ! This is the one dimensional array f indexed at x.
-</PRE>
+<pre>
+&nbsp;&nbsp;!&nbsp;Choosing&nbsp;less&nbsp;obscure&nbsp;names&nbsp;for&nbsp;arrays&nbsp;and&nbsp;functions&nbsp;
+&nbsp;&nbsp;!&nbsp;will&nbsp;also&nbsp;help&nbsp;with&nbsp;this&nbsp;problem.
 
-<P>
-This applies to intrinsic functions as well. <BR>
+&nbsp;&nbsp;f(&nbsp;x&nbsp;)&nbsp;!&nbsp;This&nbsp;is&nbsp;the&nbsp;function&nbsp;f&nbsp;evaluated&nbsp;with&nbsp;argument&nbsp;x.
+&nbsp;&nbsp;f(x)&nbsp;&nbsp;&nbsp;!&nbsp;This&nbsp;is&nbsp;the&nbsp;one&nbsp;dimensional&nbsp;array&nbsp;f&nbsp;indexed&nbsp;at&nbsp;x.
+
+</pre>
+
+<div class="p"><!----></div>
+This applies to intrinsic functions as well. 
+<div class="p"><!----></div>
 E.g.
-<PRE>
-         mycalc = exp( x ) * log( y ) 
-     .          + dble( g ) * mod( f, 5 )
-</PRE>
 
-<P>
-</LI>
-<LI>Code should not make use of explicit precision variables unless there is 
+<pre>
+&nbsp;&nbsp;mycalc&nbsp;=&nbsp;exp(&nbsp;x&nbsp;)&nbsp;*&nbsp;log(&nbsp;y&nbsp;)&nbsp;&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;dble(&nbsp;g&nbsp;)&nbsp;*&nbsp;mod(&nbsp;f,&nbsp;5&nbsp;)
+
+</pre>
+<div class="p"><!----></div>
+</li>
+
+<li> Code should not make use of explicit precision variables unless there is 
 an unique reason for it (e.g. writing 4 byte records to disk).  This allows for 
-compile time promotion of real and double datatypes on different computer 
-architectures.
-Furthermore, do not use the asterisk notation to specify precision, because
-it is an extension of the Fortran standard.  E.g.
-<PRE>
-        ! This does not allow for compile time promotion.
-        real(kind=8) :: x
+compile time promotion of reals and doubles on different computer architectures.
+Also, do not use the asterisks notation to specify precision, because
+is an extension of the Fortran standard.  E.g.
 
-        ! This is not standard Fortran and may break.
-        real*8 :: x
+<pre>
+&nbsp;&nbsp;!&nbsp;This&nbsp;does&nbsp;not&nbsp;allow&nbsp;for&nbsp;compile&nbsp;time&nbsp;promotion.
+&nbsp;&nbsp;real(kind=8)&nbsp;::&nbsp;x&nbsp;&nbsp;
 
-        ! Everyone will be happy if you keep it like this.
-        real :: x
-</PRE>
+&nbsp;&nbsp;!&nbsp;This&nbsp;is&nbsp;not&nbsp;standard&nbsp;Fortran&nbsp;and&nbsp;may&nbsp;break.
+&nbsp;&nbsp;real*8&nbsp;::&nbsp;x
 
-<P>
-</LI>
-<LI>For clarity, functions, subroutines, and programs should end with 
-their proper Fortran 90 style end statement. <BR>
+&nbsp;&nbsp;!&nbsp;Everyone&nbsp;will&nbsp;be&nbsp;happy&nbsp;if&nbsp;you&nbsp;keep&nbsp;it&nbsp;like&nbsp;this.
+&nbsp;&nbsp;real&nbsp;::&nbsp;x&nbsp;!&nbsp;Marks&nbsp;the&nbsp;spot&nbsp;[deg_E]
+
+</pre>
+<div class="p"><!----></div>
+</li>
+
+<li> For clarity, functions, subroutines, and programs should end with 
+their proper Fortran 90 style end statement. 
+<div class="p"><!----></div>
 E.g.
-<PRE>
-        ! Like this
-        subroutine foo
 
-            ...
+<pre>
+&nbsp;&nbsp;!&nbsp;Like&nbsp;this
+&nbsp;&nbsp;subroutine&nbsp;foo
 
-        end subroutine foo
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...
 
-        ! Not like this
-        subroutine foo
+&nbsp;&nbsp;end&nbsp;subroutine&nbsp;foo
 
-         ...
+&nbsp;&nbsp;!&nbsp;Not&nbsp;like&nbsp;this
+&nbsp;&nbsp;subroutine&nbsp;foo
 
-        end
-</PRE>
+&nbsp;&nbsp;&nbsp;&nbsp;...
 
-<P>
-</LI>
-<LI>Separate all end statements with a single space. <BR>
+&nbsp;&nbsp;&nbsp;end
+
+</pre>
+<div class="p"><!----></div>
+</li>
+
+<li> Separate end statements with a single space. 
+<div class="p"><!----></div>
+ E.g.
+
+<pre>
+&nbsp;&nbsp;subroutine&nbsp;sub(&nbsp;)
+
+&nbsp;&nbsp;&nbsp;&nbsp;...
+
+&nbsp;&nbsp;do&nbsp;k&nbsp;=&nbsp;1,&nbsp;gr%nnzp,&nbsp;1
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...
+
+&nbsp;&nbsp;end&nbsp;do&nbsp;!&nbsp;not&nbsp;'enddo'
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...
+
+&nbsp;&nbsp;where&nbsp;(&nbsp;rtm&nbsp;&lt;&nbsp;rttol&nbsp;)
+&nbsp;&nbsp;&nbsp;&nbsp;...
+&nbsp;&nbsp;end&nbsp;where&nbsp;!&nbsp;not&nbsp;'endwhere'
+
+&nbsp;&nbsp;subroutine&nbsp;sub
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...
+
+&nbsp;&nbsp;&nbsp;&nbsp;return
+&nbsp;&nbsp;end&nbsp;subroutine&nbsp;sub&nbsp;!&nbsp;not&nbsp;'endsubroutine'
+
+</pre>
+<div class="p"><!----></div>
+</li>
+
+<li> Use lowercase letters for Fortran keywords. 
+<div class="p"><!----></div>
 E.g.
-<PRE>
-        subroutine sub( )
 
-           ...
+<pre>
+program&nbsp;HAL&nbsp;!&nbsp;lowercase&nbsp;program
 
-        do k = 1, gr%nnzp, 1
-           ...
-        end do ! not 'enddo'
+&nbsp;&nbsp;&nbsp;&nbsp;...&nbsp;
 
-           ...
+&nbsp;&nbsp;if&nbsp;(&nbsp;lTurnOff&nbsp;)&nbsp;then&nbsp;!&nbsp;lowercase&nbsp;if,&nbsp;lowercase&nbsp;then
 
-        where ( rtm &lt; rttol )
-           ...
-        end where ! not 'endwhere'
+&nbsp;&nbsp;&nbsp;&nbsp;write(unit=*,fmt=*)&nbsp;"I&nbsp;know&nbsp;that&nbsp;you&nbsp;and&nbsp;Frank&nbsp;were&nbsp;"&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//"trying&nbsp;to&nbsp;turn&nbsp;me&nbsp;off&nbsp;Dave."&nbsp;!&nbsp;lowercase&nbsp;write
 
-           ...
+&nbsp;&nbsp;&nbsp;&nbsp;stop&nbsp;"Daisy,&nbsp;Daisy..."&nbsp;!&nbsp;lowercase&nbsp;stop
 
-        return
-        end subroutine sub ! not 'endsubroutine'
-</PRE>
+&nbsp;&nbsp;end&nbsp;if&nbsp;!&nbsp;lowercase&nbsp;end,&nbsp;lowercase&nbsp;if
 
-<P>
-</LI>
-<LI>A convention of HOC is to use the exclamation point character <TT>!</TT> for a comment, rather than a <TT>C</TT> or a <TT>*</TT>.  Consistent coding style makes comments easier to spot at a glance.
+&nbsp;&nbsp;&nbsp;&nbsp;...
 
-<P>
-</LI>
-<LI>A convention of HOC is to use the period ( <TT>.</TT> ) as the 
-continuation character.  This gives the code a clean and consistent look.
-e.g.
-<PRE>
-        function calc_stuff( stuff1, stuff2,
-     .                       stuff3, stuff4 )
-</PRE>
+end&nbsp;program&nbsp;HAL&nbsp;!&nbsp;lowercase&nbsp;end,&nbsp;lowercase&nbsp;program&nbsp;
 
-<P>
-</LI>
-<LI>Use lowercase letters for Fortran keywords. <BR>
-E.g.
-<PRE>
-        program HAL ! lowercase program
+</pre>
+<div class="p"><!----></div>
+</li>
 
-           ... 
+<li> For the sake of consistency and code readability, always use a 2 column 
+indent after all directives. Also, indent continuation lines by 2 columns. 
+<div class="p"><!----></div>
+E.g. <br />
+<tt>module&nbsp;dynamics</tt> <br />
+<tt>&nbsp;&nbsp;</tt> <font size="-1">2 column indent within the scope of <tt>module</tt></font> <br />
+<tt></tt> <br />
+<tt>&nbsp;&nbsp;implicit</tt><tt>&nbsp;none</tt> <br />
+<tt></tt> <br />
+<tt>&nbsp;&nbsp;subroutine</tt><tt>&nbsp;advect_2D(&nbsp;...&nbsp;)</tt> <br />
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;use</tt><tt>&nbsp;grid,&nbsp;only:&nbsp;&amp;&nbsp;</tt> <font size="-1">2+2 columns within the scope of <tt>dynamics/advect_2D</tt></font> <br />
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nz,</tt><tt>&nbsp;&amp;&nbsp;</tt> <font size="-1">2+2+2 columns since we're continuing the <tt>use</tt> statement</font>  <br />
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nx</tt> <br />
+<tt></tt> <br />
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;if</tt><tt>&nbsp;(&nbsp;l_do_something&nbsp;)&nbsp;then</tt> <br />
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt> <font size="-1">2+2+2 columns within the scope of <tt>dynamics/advect_2D/if..then</tt></font> <br />
+<tt></tt> <br />
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt><tt>call&nbsp;something(&nbsp;...&nbsp;)</tt> <br />
+<tt></tt> <br />
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;end</tt><tt>&nbsp;if</tt> <br />
+<tt></tt> <br />
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;return</tt> <br />
+<tt>&nbsp;&nbsp;end</tt><tt>&nbsp;subroutine&nbsp;advect_2D</tt> <br />
 
-        if ( lTurnOff ) then ! lowercase if, lowercase then
-          write(unit=*,fmt=*) "I know that you and Frank were "
-     .      //"trying to turn me off Dave." ! lowercase write
-          stop "Daisy, Daisy..." ! lowercase stop
-        end if ! lowercase end, lowercase if
+<div class="p"><!----></div>
+<tt>end&nbsp;module&nbsp;dynamics</tt>
+<div class="p"><!----></div>
+</li>
 
-           ...
+<li> Wrap all code lines at 100 columns.  Fortran free format source code
+allows for 132, but the number 100 was chosen to keep the line length 
+within reason.  
+<div class="p"><!----></div>
 
-        end program HAL ! lowercase end, lowercase program
-</PRE>
+<div class="p"><!----></div>
+</li>
+</ol>
 
-<P>
-</LI>
-</OL>
+<div class="p"><!----></div>
 
-<P>
-<B> Coding Practices </B>
-
-<P>
-
-<OL>
-<LI>Wiscombe's Law:  ``One should spend about as much time writing code comments as writing lines of code themselves.''  Abiding by this is more bearable if you write the comments before and as you write the lines of code.
-
-<P>
-</LI>
-<LI>Tips to avoid the introduction of bugs in code:  It is usually easiest to write only small chunks of code before checking the results for bugs.  Otherwise, any new bugs may be located anywhere in the large region of new code.  Often, the code changes should not produce any change whatsoever in output.  In these cases, diff the binary output files produced by HOC before and after the code changes were made.  In other cases, e.g. when the order of mathematical operations is changed, the results will change, at least due to differences in floating point roundoff.  Then, use plotgen to compare output visually.
-
-<P>
-</LI>
-<LI>Rules for commiting changes to HOC/HOC_tuner:
-
-<P>
-
-<OL>
-<LI>Update your HOC files using cvs update; this will incorporate any other user's changes since you checked it out.
-
-<P>
-</LI>
-<LI>Re-compile the source code using g95 (other compilers are more permissive).  Make sure there are no new warnings or errors.
-
-<P>
-</LI>
-<LI>Run standalone/standalone-all.bash.  Make sure there are no new warnings or errors.
-
-<P>
-</LI>
-<LI>Run plotgen.  See if any of the cases produce significantly worse results than the most recent nightly plots that are posted on our website.
-
-<P>
-</LI>
-<LI>If your changes affect the call from SAM to HOC, then modify SAM (e.g. scm.F90) to make it consistent.  If you're not sure whether your change to HOC will affect SAM, re-compile libhoc_param.a and then SAM.
-
-<P>
-</LI>
-<LI>Commit your changes and when prompted, be sure to add a several-sentence comment describing what changes you made.  That way we can use the cvs log command to see the history of changes.
-
-<P>
-</LI>
-<LI>The next day, check that the new nightly plots posted on the web look as you expect.  If no new plots have been generated, email messneradmin@uwm.edu.
-
-<P>
-</LI>
-</OL>
-
-<P>
-</LI>
-</OL>
-
-<P>
-<BR><HR>
-<!--Table of Child-Links-->
-<A NAME="CHILD_LINKS"></A>
-
-<UL>
-<LI><A NAME="tex2html4"
-  HREF="node1.html">About this document ...</A>
-</UL>
-<!--End of Table of Child-Links-->
-<HR>
-<!--Navigation Panel-->
-<A NAME="tex2html2"
-  HREF="node1.html">
-<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
- SRC="file:/usr/share/latex2html/icons/next.png"></A> 
-<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
- SRC="file:/usr/share/latex2html/icons/up_g.png"> 
-<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
- SRC="file:/usr/share/latex2html/icons/prev_g.png">   
-<BR>
-<B> Next:</B> <A NAME="tex2html3"
-  HREF="node1.html">About this document ...</A>
-<!--End of Navigation Panel-->
-<ADDRESS>
-
-2008-07-03
-</ADDRESS>
-</BODY>
-</HTML>
+<br /><br /><hr /><small>File translated from
+T<sub><font size="-1">E</font></sub>X
+by <a href="http://hutchinson.belmont.ma.us/tth/">
+T<sub><font size="-1">T</font></sub>H</a>,
+version 3.82.<br />On 18 Aug 2008, 12:43.</small>
+</html>
