@@ -1,23 +1,23 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zm.F90,v 1.9 2008-08-06 21:38:59 faschinj Exp $
-      module stats_zm
+! $Id: stats_zm.F90,v 1.10 2008-08-18 20:39:48 dschanen Exp $
+module stats_zm
        
-      implicit none
+  implicit none
       
-      private ! Default Scope
+  private ! Default Scope
       
-      public :: stats_init_zm
-      
-      contains
+  public :: stats_init_zm
+
+  contains
 
 !-----------------------------------------------------------------------
-      subroutine stats_init_zm( vars_zm, lerror )
+  subroutine stats_init_zm( vars_zm, lerror )
 
-!     Description: 
-!     Initializes array indices for zm
+! Description: 
+!   Initializes array indices for zm
 !-----------------------------------------------------------------------
 
-      use stats_variables, only: & 
+    use stats_variables, only: & 
           zm, & 
           iwp2, & 
           irtp2, & 
@@ -159,10 +159,13 @@
           iwpedsclrap, & 
           iwpedsclrbp
 
-      use stats_type, only: & 
-          stat_assign ! Procedure
+    use stats_type, only: & 
+      stat_assign ! Procedure
 
-      implicit none
+    use error_code, only: &
+      clubb_at_debug_level ! Function
+
+    implicit none
 
       integer, parameter :: nvarmax = 250  ! Max variables
 
@@ -1186,8 +1189,18 @@
 
       end do
 
-      return
-      
-      end subroutine stats_init_zm
+!   Non-interative diagnostics (zm)
+!   iwp4, ircp2 
 
-      end module stats_zm
+    if ( clubb_at_debug_level( 0 ) ) then 
+      if ( iwp4 + ircp2 > 0 ) then
+        write(0,'(a)') &
+          "Warning: at debug level 0.  Non-interactive diagnostics will not be computed, "
+        write(0,'(a)') "but some appear in the stats_zm namelist variable."
+      end if
+    end if
+
+    return
+  end subroutine stats_init_zm
+
+end module stats_zm

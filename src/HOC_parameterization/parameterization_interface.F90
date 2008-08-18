@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.27 2008-08-17 16:10:40 griffinb Exp $
+! $Id: parameterization_interface.F90,v 1.28 2008-08-18 20:39:48 dschanen Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
@@ -313,10 +313,13 @@ module hoc_parameterization_interface
 
 ! coeffs of s from pdf_closure_new
        real :: crt1, crt2, cthl1, cthl2   
-
 !-------- End Latin hypercube section ----------------------------------
 
-!-------- Test input variables ----------------------------------------
+    !----- Begin Code -----
+
+    !----------------------------------------------------------------
+    ! Test input variables
+    !----------------------------------------------------------------
     if ( clubb_at_debug_level( 2 ) ) then
       call parameterization_check & 
            ( thlm_forcing, rtm_forcing, wm_zm, wm_zt, p_in_Pa, rho_zm, & ! intent(in)
@@ -406,7 +409,7 @@ module hoc_parameterization_interface
       END DO
     END IF
 
-    ! Interpolate wp2 to the thermo. grid 
+    ! Interpolate wp2 to the thermo. grid for diag_var
     wp2_zt = max( zm2zt( wp2 ), 0.0 ) ! Positive definite quantity
 
     !----------------------------------------------------------------
@@ -431,6 +434,10 @@ module hoc_parameterization_interface
                    err_code,                           & ! intent(out)
                    sclrp2, sclrprtp, sclrpthlp  )        ! intent(out)
 
+    ! Iterpolate variances to the zt grid (statistics and closure_new)
+    thlp2_zt   = max( zm2zt( thlp2 ), 0.0 )  ! Positive definite quantity
+    rtp2_zt    = max( zm2zt( rtp2 ), 0.0 )   ! Positive definite quantity
+    rtpthlp_zt = zm2zt( rtpthlp )
 
     !----------------------------------------------------------------
     ! Covariance clipping for wprtp, wpthlp, and wpsclrp after 
@@ -605,19 +612,19 @@ module hoc_parameterization_interface
 
     do k = 2, gr%nnzp, 1
       call pdf_closure_new & 
-         ( p_in_Pa(k), exner(k), wm_zt(k), zm2zt(wp2, k), wp3(k), sigma_sqd_w_zt(k), & ! intent(in)
-           rtm(k), zm2zt(rtp2, k), zm2zt( wprtp, k ),                   & ! intent(in)
-           thlm(k), zm2zt( thlp2, k ), zm2zt( wpthlp, k ),              & ! intent(in)
-           zm2zt(rtpthlp, k), sclrm(k,:), sclr_tmp1(k,:),               & ! intent(in)
-           sclr_tmp3(k,:),sclr_tmp2(k,:), sclr_tmp4(k,:),               & ! intent(in)
-           wp4(k), wprtp2(k), wp2rtp(k),                                & ! intent(out)
-           wpthlp2(k), wp2thlp(k), wprtpthlp(k),                        & ! intent(out)
-           cf(k), rcm(k), wpthvp(k), wp2thvp(k), rtpthvp(k),            & ! intent(out)
-           thlpthvp(k), wprcp(k), wp2rcp(k), rtprcp(k), thlprcp(k),     & ! intent(out)
-           rcp2(k), pdf_parms(k, :), crt1,                              & ! intent(out)
-           crt2, cthl1, cthl2, err_code,                                & ! intent(out)
-           wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp(k,:),              & ! intent(out)
-           wpsclrpthlp(k,:), sclrprcp(k,:), wp2sclrp(k,:) )               ! intent(out)
+         ( p_in_Pa(k), exner(k), wm_zt(k), wp2_zt(k), wp3(k), sigma_sqd_w_zt(k), & ! intent(in)
+           rtm(k), rtp2_zt(k), zm2zt( wprtp, k ),                  & ! intent(in)
+           thlm(k), thlp2_zt(k), zm2zt( wpthlp, k ),               & ! intent(in)
+           rtpthlp_zt(k), sclrm(k,:), sclr_tmp1(k,:),              & ! intent(in)
+           sclr_tmp3(k,:),sclr_tmp2(k,:), sclr_tmp4(k,:),          & ! intent(in)
+           wp4(k), wprtp2(k), wp2rtp(k),                           & ! intent(out)
+           wpthlp2(k), wp2thlp(k), wprtpthlp(k),                   & ! intent(out)
+           cf(k), rcm(k), wpthvp(k), wp2thvp(k), rtpthvp(k),       & ! intent(out)
+           thlpthvp(k), wprcp(k), wp2rcp(k), rtprcp(k), thlprcp(k),& ! intent(out)
+           rcp2(k), pdf_parms(k, :), crt1,                         & ! intent(out)
+           crt2, cthl1, cthl2, err_code,                           & ! intent(out)
+           wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp(k,:),         & ! intent(out)
+           wpsclrpthlp(k,:), sclrprcp(k,:), wp2sclrp(k,:) )          ! intent(out)
 
         ! Subroutine may produce NaN values, and if so, exit
         ! gracefully.
@@ -646,9 +653,13 @@ module hoc_parameterization_interface
 !      Interpolate momentum variables back to momentum grid.
 !      Since top momentum level is higher than top thermo level,
 !      set variables at top momentum level to 0.
+    if ( clubb_at_debug_level( 1 ) ) then
+      wp4               = max( zt2zm( wp4 ), 0.0 )   ! Pos. def. quantity
+      wp4(gr%nnzp)      = 0.0
+      rcp2              = max( zt2zm( rcp2 ), 0.0 )   ! Pos. def. quantity
+      rcp2(gr%nnzp)     = 0.0
+    end if
 
-    wp4               = max( zt2zm( wp4 ), 0.0 )   ! Pos. def. quantity
-    wp4(gr%nnzp)      = 0.0
     wpthvp            = zt2zm( wpthvp )
     wpthvp(gr%nnzp)   = 0.0
     thlpthvp          = zt2zm( thlpthvp )
@@ -661,8 +672,6 @@ module hoc_parameterization_interface
     rtprcp(gr%nnzp)   = 0.0
     thlprcp           = zt2zm( thlprcp )
     thlprcp(gr%nnzp)  = 0.0
-    rcp2              = max( zt2zm( rcp2 ), 0.0 )   ! Pos. def. quantity
-    rcp2(gr%nnzp)     = 0.0
 
     ! Interpolate passive scalars back onto the m grid
     do i = 1, sclr_dim
@@ -935,11 +944,8 @@ module hoc_parameterization_interface
 !#######################################################################
 
  
-    thlp2_zt   = max( zm2zt( thlp2 ), 0.0 )   ! Positive definite quantity
     wpthlp_zt  = zm2zt( wpthlp )
     wprtp_zt   = zm2zt( wprtp )
-    rtp2_zt    = max( zm2zt( rtp2 ), 0.0 )   ! Positive definite quantity
-    rtpthlp_zt = zm2zt( rtpthlp )
 
     call stats_accumulate & 
          ( um, vm, upwp, vpwp, up2, vp2, thlm,                 & ! intent(in)
@@ -1050,195 +1056,199 @@ module hoc_parameterization_interface
         end subroutine latin_hypercube_sampling
 
 !-----------------------------------------------------------------------
-        subroutine parameterization_setup & 
-                   ( nzmax, T0_in, ts_nudge_in, hydromet_dim_in,  & 
-                     sclr_dim_in, sclrtol_in, params,  & 
-                     l_bugsrad, l_kk_rain, l_licedfs, l_coamps_micro, & 
-                     l_cloud_sed, l_uv_nudge, l_tke_aniso,  & 
-                     l_implemented, grid_type, deltaz, zm_init, & 
-                     momentum_heights, thermodynamic_heights,  & 
-                     host_dx, host_dy, err_code )
+  subroutine parameterization_setup & 
+             ( nzmax, T0_in, ts_nudge_in, hydromet_dim_in,  & 
+               sclr_dim_in, sclrtol_in, params,  & 
+               l_bugsrad, l_kk_rain, l_licedfs, l_coamps_micro, & 
+               l_cloud_sed, l_uv_nudge, l_tke_aniso,  & 
+               l_implemented, grid_type, deltaz, zm_init, & 
+               momentum_heights, thermodynamic_heights,  & 
+               host_dx, host_dy, err_code )
 
-        use grid_class, only: & 
-            gridsetup ! Procedure
-        use param_index, only:  & 
-            nparams ! Variable(s)
-        use parameters, only: & 
-            setup_parameters ! Procedure
-        use diagnostic_variables, only: & 
-            setup_diagnostic_variables ! Procedure
-        use prognostic_variables, only: & 
-            setup_prognostic_variables ! Procedure
-        use constants, only:  & 
-            fstderr,  & ! Variable(s)
-            Lscale_max
-        use error_code, only:  & 
-            clubb_var_out_of_bounds ! Variable(s)
-        use model_flags, only: & 
-            setup_model_flags ! Subroutine
+    use grid_class, only: & 
+      gridsetup ! Procedure
+    use param_index, only:  & 
+      nparams ! Variable(s)
+    use parameters, only: & 
+      setup_parameters ! Procedure
+    use diagnostic_variables, only: & 
+      setup_diagnostic_variables ! Procedure
+    use prognostic_variables, only: & 
+      setup_prognostic_variables ! Procedure
+    use constants, only:  & 
+      fstderr,  & ! Variable(s)
+      Lscale_max
+    use error_code, only:  & 
+      clubb_var_out_of_bounds ! Variable(s)
+    use model_flags, only: & 
+      setup_model_flags ! Subroutine
 
-        implicit none
+    implicit none
 
-        ! Input
+    ! Input
 
-        ! Grid definition
-        integer, intent(in) :: nzmax  ! Vertical grid levels            [#]
+    ! Grid definition
+    integer, intent(in) :: nzmax  ! Vertical grid levels            [#]
 
-        ! Flag to see if CLUBB is running on it's own,
-        ! or if it's implemented as part of a host model.
-        logical, intent(in) :: l_implemented   ! (T/F)
+    ! Flag to see if CLUBB is running on it's own,
+    ! or if it's implemented as part of a host model.
+    logical, intent(in) :: l_implemented   ! (T/F)
 
-        ! If CLUBB is running on it's own, this option determines
-        ! if it is using:
-        ! 1) an evenly-spaced grid,
-        ! 2) a stretched (unevenly-spaced) grid entered on the
-        !    thermodynamic grid levels (with momentum levels set
-        !    halfway between thermodynamic levels), or
-        ! 3) a stretched (unevenly-spaced) grid entered on the
-        !    momentum grid levels (with thermodynamic levels set
-        !    halfway between momentum levels).
-        integer, intent(in) :: grid_type
+    ! If CLUBB is running on it's own, this option determines
+    ! if it is using:
+    ! 1) an evenly-spaced grid,
+    ! 2) a stretched (unevenly-spaced) grid entered on the
+    !    thermodynamic grid levels (with momentum levels set
+    !    halfway between thermodynamic levels), or
+    ! 3) a stretched (unevenly-spaced) grid entered on the
+    !    momentum grid levels (with thermodynamic levels set
+    !    halfway between momentum levels).
+    integer, intent(in) :: grid_type
 
-        ! If the CLUBB model is running by itself, and is using an
-        ! evenly-spaced grid (grid_type = 1), it needs the vertical
-        ! grid spacing and momentum-level starting altitude as input.
-        real, intent(in) :: & 
-        deltaz,   & ! Change in altitude per level           [m]
-        zm_init  ! Initial grid altitude (momentum level) [m]
+    ! If the CLUBB model is running by itself, and is using an
+    ! evenly-spaced grid (grid_type = 1), it needs the vertical
+    ! grid spacing and momentum-level starting altitude as input.
+    real, intent(in) :: & 
+      deltaz,   & ! Change in altitude per level           [m]
+      zm_init  ! Initial grid altitude (momentum level) [m]
 
-        ! If the CLUBB parameterization is implemented in a host model,
-        ! it needs to use the host model's momentum level altitudes
-        ! and thermodynamic level altitudes.
-        ! If the CLUBB model is running by itself, but is using a
-        ! stretched grid entered on thermodynamic levels (grid_type = 2),
-        ! it needs to use the thermodynamic level altitudes as input.
-        ! If the CLUBB model is running by itself, but is using a
-        ! stretched grid entered on momentum levels (grid_type = 3),
-        ! it needs to use the momentum level altitudes as input.
-        real, intent(in), dimension(nzmax) :: & 
-        momentum_heights,      & ! Momentum level altitudes (input)      [m]
-        thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
+    ! If the CLUBB parameterization is implemented in a host model,
+    ! it needs to use the host model's momentum level altitudes
+    ! and thermodynamic level altitudes.
+    ! If the CLUBB model is running by itself, but is using a
+    ! stretched grid entered on thermodynamic levels (grid_type = 2),
+    ! it needs to use the thermodynamic level altitudes as input.
+    ! If the CLUBB model is running by itself, but is using a
+    ! stretched grid entered on momentum levels (grid_type = 3),
+    ! it needs to use the momentum level altitudes as input.
+    real, intent(in), dimension(nzmax) :: & 
+      momentum_heights,      & ! Momentum level altitudes (input)      [m]
+      thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
-        ! Host model horizontal grid spacing, if part of host model.
-        real, intent(in) :: & 
-        host_dx,  & ! East-West horizontal grid spacing     [m]
-        host_dy  ! North-South horizontal grid spacing   [m]
+    ! Host model horizontal grid spacing, if part of host model.
+    real, intent(in) :: & 
+      host_dx,  & ! East-West horizontal grid spacing     [m]
+      host_dy  ! North-South horizontal grid spacing   [m]
 
         ! Model parameters
-        real, intent(in) ::  & 
-        T0_in, ts_nudge_in
+    real, intent(in) ::  & 
+      T0_in, ts_nudge_in
 
-        integer, intent(in) :: & 
-        hydromet_dim_in,  & ! Number of hydrometeor species
-        sclr_dim_in      ! Number of passive scalars
+    integer, intent(in) :: & 
+      hydromet_dim_in,  & ! Number of hydrometeor species
+      sclr_dim_in      ! Number of passive scalars
 
-        real, intent(in), dimension(sclr_dim_in) :: & 
-        sclrtol_in    ! Thresholds for passive scalars
+    real, intent(in), dimension(sclr_dim_in) :: & 
+      sclrtol_in    ! Thresholds for passive scalars
 
-        real, intent(in), dimension(nparams) :: & 
-        params  ! Including C1, nu1, nu2, etc.
+    real, intent(in), dimension(nparams) :: & 
+      params  ! Including C1, nu1, nu2, etc.
 
-        ! Flags
-        logical, intent(in) ::  & 
-        l_bugsrad,      & ! BUGSrad interactive radiation scheme
-        l_kk_rain,      & ! K & K rain microphysics
-        l_licedfs,      & ! Simplified ice scheme
-        l_coamps_micro, & ! COAMPS microphysics scheme
-        l_cloud_sed,    & ! Cloud water droplet sedimentation
-        l_uv_nudge,     & ! Wind nudging
-        l_tke_aniso       ! For anisotropic turbulent kinetic energy, 
+    ! Flags
+    logical, intent(in) ::  & 
+      l_bugsrad,      & ! BUGSrad interactive radiation scheme
+      l_kk_rain,      & ! K & K rain microphysics
+      l_licedfs,      & ! Simplified ice scheme
+      l_coamps_micro, & ! COAMPS microphysics scheme
+      l_cloud_sed,    & ! Cloud water droplet sedimentation
+      l_uv_nudge,     & ! Wind nudging
+      l_tke_aniso       ! For anisotropic turbulent kinetic energy, 
                           !   i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
-        ! Output variables
-        integer, intent(out) :: & 
-        err_code   ! Diagnostic for a problem with the setup
+    ! Output variables
+    integer, intent(out) :: & 
+      err_code   ! Diagnostic for a problem with the setup
 
-        ! Setup flags
+    !----- Begin Code -----
 
-        call setup_model_flags & 
-             ( l_bugsrad, l_kk_rain, l_cloud_sed,             & ! intent(in)
-               l_licedfs, l_coamps_micro, l_uv_nudge,        & ! intent(in)
-               l_tke_aniso )                             ! intent(in)
+    ! Setup flags
 
-        ! Define model constant parameters
+    call setup_model_flags & 
+         ( l_bugsrad, l_kk_rain, l_cloud_sed,      & ! intent(in)
+           l_licedfs, l_coamps_micro, l_uv_nudge,  & ! intent(in)
+           l_tke_aniso )                             ! intent(in)
 
-        call setup_parameters & 
-             ( deltaz, T0_in, ts_nudge_in,   & ! intent(in)
-               hydromet_dim_in, sclr_dim_in, & ! intent(in)
-               sclrtol_in, params,           & ! intent(in)
-               err_code )                   ! intent(out)
+    ! Define model constant parameters
 
-!       Error Report
-!       Joshua Fasching February 2008
-        if ( err_code == clubb_var_out_of_bounds ) then
+    call setup_parameters & 
+         ( deltaz, T0_in, ts_nudge_in,   & ! intent(in)
+           hydromet_dim_in, sclr_dim_in, & ! intent(in)
+           sclrtol_in, params,           & ! intent(in)
+           err_code )                   ! intent(out)
+
+    ! Error Report
+    ! Joshua Fasching February 2008
+    if ( err_code == clubb_var_out_of_bounds ) then
                 
-           write(fstderr,*) "Error in parameterization_setup"
+      write(fstderr,*) "Error in parameterization_setup"
            
-           write(fstderr,*) "Intent(in)"
+      write(fstderr,*) "Intent(in)"
            
-           write(fstderr,*) "deltaz = ", deltaz
-           write(fstderr,*) "zm_init = ", zm_init
-           write(fstderr,*) "momentum_heights = ", momentum_heights
-           write(fstderr,*) "thermodynamic_heights = ",  & 
-                             thermodynamic_heights
-           write(fstderr,*) "T0_in = ", T0_in
-           write(fstderr,*) "ts_nudge_in = ", ts_nudge_in
-           write(fstderr,*) "params = ", params 
+      write(fstderr,*) "deltaz = ", deltaz
+      write(fstderr,*) "zm_init = ", zm_init
+      write(fstderr,*) "momentum_heights = ", momentum_heights
+      write(fstderr,*) "thermodynamic_heights = ",  & 
+        thermodynamic_heights
+      write(fstderr,*) "T0_in = ", T0_in
+      write(fstderr,*) "ts_nudge_in = ", ts_nudge_in
+      write(fstderr,*) "params = ", params 
 
-           return
+      return
 
-        end if
+    end if
 
-!        if ( .not. l_implemented ) then
-!          call setup_diagnostic_variables( nzmax )
-!        end if
+!   if ( .not. l_implemented ) then
+!     call setup_diagnostic_variables( nzmax )
+!   end if
 
-        ! Both prognostic variables and diagnostic variables need to be
-        ! declared, allocated, initialized, and deallocated whether HOC
-        ! is part of a larger model or not.
-        call setup_prognostic_variables( nzmax )        ! intent(in)
-        call setup_diagnostic_variables( nzmax )        ! intent(in)
+    ! Both prognostic variables and diagnostic variables need to be
+    ! declared, allocated, initialized, and deallocated whether HOC
+    ! is part of a larger model or not.
+    call setup_prognostic_variables( nzmax )        ! intent(in)
+    call setup_diagnostic_variables( nzmax )        ! intent(in)
 
-        ! Setup grid
-        call gridsetup( nzmax, l_implemented, grid_type,           & ! intent(in)
-                        deltaz, zm_init, momentum_heights,       & ! intent(in)
-                        thermodynamic_heights )                 ! intent(in)
+    ! Setup grid
+    call gridsetup( nzmax, l_implemented, grid_type,           & ! intent(in)
+                    deltaz, zm_init, momentum_heights,       & ! intent(in)
+                    thermodynamic_heights )                 ! intent(in)
 
-        ! Determine the maximum allowable value for Lscale.
-        if ( l_implemented ) then
-          Lscale_max = 0.25 * min( host_dx, host_dy )
-        else
-          Lscale_max = 1.0e5
-        end if
+    ! Determine the maximum allowable value for Lscale (in meters).
+    if ( l_implemented ) then
+      Lscale_max = 0.25 * min( host_dx, host_dy )
+    else
+      Lscale_max = 1.0e5
+    end if
 
-        return
-        end subroutine parameterization_setup
+    return
+  end subroutine parameterization_setup
 
 !-----------------------------------------------------------------------
-        subroutine parameterization_cleanup( )
+  subroutine parameterization_cleanup( )
 
-        use parameters, only: sclrtol
+    use parameters, only: sclrtol
 
-        use diagnostic_variables, only: & 
-            cleanup_diagnostic_variables ! Procedure
-        use prognostic_variables, only: & 
-            cleanup_prognostic_variables ! Procedure
+    use diagnostic_variables, only: & 
+      cleanup_diagnostic_variables ! Procedure
+    use prognostic_variables, only: & 
+      cleanup_prognostic_variables ! Procedure
 
-        implicit none
+    implicit none
 
-!        if ( .not. l_implemented ) then
-!          call cleanup_diagnostic_variables( )
-!        end if
+    !----- Begin Code -----
 
-        ! Both prognostic variables and diagnostic variables need to be
-        ! declared, allocated, initialized, and deallocated whether HOC
-        ! is part of a larger model or not.
-        call cleanup_prognostic_variables( )
-        call cleanup_diagnostic_variables( )
+!   if ( .not. l_implemented ) then
+!     call cleanup_diagnostic_variables( )
+!   end if
 
-        ! De-allocate the array for the passive scalar tolerances
-        deallocate( sclrtol )
+    ! Both prognostic variables and diagnostic variables need to be
+    ! declared, allocated, initialized, and deallocated whether HOC
+    ! is part of a larger model or not.
+    call cleanup_prognostic_variables( )
+    call cleanup_diagnostic_variables( )
 
-        return
-        end subroutine parameterization_cleanup
+    ! De-allocate the array for the passive scalar tolerances
+    deallocate( sclrtol )
+
+    return
+  end subroutine parameterization_cleanup
 
 end module hoc_parameterization_interface

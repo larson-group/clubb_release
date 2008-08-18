@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F90,v 1.15 2008-08-12 15:36:06 faschinj Exp $
+! $Id: stats_zt.F90,v 1.16 2008-08-18 20:39:48 dschanen Exp $
  
 module stats_zt
 
@@ -182,7 +182,11 @@ use stats_variables, only: &
     iedsclrbm
 
 use stats_type, only: & 
-    stat_assign ! Procedure
+  stat_assign ! Procedure
+
+use error_code, only: &
+  clubb_at_debug_level ! Function
+
 
 implicit none
 
@@ -1442,8 +1446,17 @@ do i=1,zt%nn
 
 end do
 
-return
+!   Non-interative diagnostics (zt) 
+!   iwprtp2, iwprtpthlp, iwpthlp2 
+    if ( clubb_at_debug_level( 0 ) ) then 
+      if ( iwprtp2 + iwprtpthlp + iwpthlp2 > 0 ) then
+        write(0,'(a)') &
+          "Warning: at debug level 0.  Non-interactive diagnostics will not be computed, "
+        write(0,'(a)') "but some appear in the stats_zt namelist variable."
+      end if
+    end if
 
+return
 end subroutine stats_init_zt
 
 end module stats_zt
