@@ -1,15 +1,17 @@
 %
-% $Id: hoc_standards.tex,v 1.3 2008-08-13 21:16:06 vlarson Exp $
+% $Id: hoc_standards.tex,v 1.4 2008-08-18 17:53:48 dschanen Exp $
 %
 
 \documentclass[letterpaper,12pt]{article}
-%\usepackage{amsmath,amssymb,amsfonts}
-\usepackage{amsfonts}
-\addtolength{\textheight}{2in}\addtolength{\topmargin}{-1in}
-\addtolength{\textwidth}{1.25in} \addtolength{\oddsidemargin}{-.75in}
-\addtolength{\evensidemargin}{-.75in}
+\usepackage{amsmath,amssymb,amsfonts}
+%\usepackage{amsfonts}
 
-\pagestyle{empty}
+%% These cannot be interpreted by TTH
+%\addtolength{\textheight}{2in}\addtolength{\topmargin}{-1in}
+%\addtolength{\textwidth}{1.25in} \addtolength{\oddsidemargin}{-.75in}
+%\addtolength{\evensidemargin}{-.75in}
+
+%\pagestyle{empty}
 
 \begin{document}
 
@@ -18,7 +20,7 @@
 
 \maketitle
 
-\flushleft
+%\flushleft
 \begin{enumerate}
 \item All files in the repository should have a standard header with a CVS 
 \texttt{\$Id\$} tag at the top.
@@ -32,7 +34,7 @@ the string \texttt{\$Id\$} on a commented line at the top of the source file
 After checking in the file, something like the following will appear:
 \begin{verbatim}
 !-----------------------------------------------------------------------
-! $Id: hoc_standards.tex,v 1.3 2008-08-13 21:16:06 vlarson Exp $
+! $Id: hoc_standards.tex,v 1.4 2008-08-18 17:53:48 dschanen Exp $
 
 \end{verbatim}
 
@@ -94,7 +96,7 @@ function xyzzy( etherx, ethery, etherz )
 
 !-----------------------------------------------------------------------
 
-  ! Begin xyzzy code
+  !----- Begin Code -----
 
     ...
 
@@ -102,6 +104,10 @@ function xyzzy( etherx, ethery, etherz )
 end function xyzzy
 !-----------------------------------------------------------------------
 \end{verbatim}
+
+\item In functions and subroutines put a line with 
+\verb|!----- Begin Code -----| after the declarative portion of the code.
+This is to make it clear where the algorithmic portion of the procedure starts.
 
 \item Write lots of code comments.  Make sure your code is understandable to an outsider 
 looking at it for the first time.  When writing a code comment, leave your name 
@@ -161,6 +167,8 @@ subroutine mulmul( x, y, z )
   real, dimension(5), intent(out) :: &
     z  ! output         [no units]
 !-----------------------------------------------------------------------
+
+  !----- Begin Code -----
 
   ! Note that every element of z could be calculated 
   ! independently of other elements of the subroutine
@@ -304,7 +312,7 @@ The F90 style operators are:
 
 
 \item When writing flow control statements 
-( \texttt{ if, elseif, select case } ), keep the logic as straightforward and
+(\texttt{ if, else if, select case }), keep the logic as straightforward and
 clear as possible.  If a set of \texttt{if...then} expressions grows to more
 than three cases, then rewrite the logic as a \texttt{select...case} expression
 instead. E.g.
@@ -397,9 +405,9 @@ like \texttt{grep} if you're uncertain if your variable is a semi-unique string.
 \newline
 
 \item Do not use the prognostic or diagnostic variable modules anywhere they
-are not used already.  Currently prognostic\_variables is used in statistics.F
-and hoc.F, while diagnostic\_variables is used in hoc.F, statistics.F, and 
-parameterization\_interface.F.  Global variables like these make debugging 
+are not used already.  Currently prognostic\_variables is used in \texttt{statistics.F}
+and \texttt{hoc.F}, while diagnostic\_variables is used in \texttt{hoc.F}, \texttt{statistics.F}, and 
+\texttt{parameterization\_interface.F}.  Global variables like these make debugging 
 the code more difficult.  The proper way to use these variables in a new 
 section of code is to pass them as an argument.
 \newline
@@ -492,7 +500,7 @@ E.g.
 
     ...
 
-   end
+  end
 \end{verbatim}
 
 \item Separate end statements with a single space. \newline 
@@ -556,33 +564,31 @@ end program HAL ! lowercase end, lowercase program
 
 \item For the sake of consistency and code readability, always use a 2 column 
 indent after all directives. Also, indent continuation lines by 2 columns. \newline
-E.g.
-\begin{verbatim}
-module dynamics
+E.g. \\
+\verb|module dynamics| \\
+\verb*|  | {\small 2 column indent within the scope of \texttt{module}} \\
+\verb|| \\
+\verb*|  implicit|\verb| none| \\
+\verb|| \\
+\verb*|  subroutine|\verb| advect_2D( ... )| \\
+\verb*|    use|\verb| grid, only: & | {\small 2+2 columns within the scope of \texttt{dynamics/advect\_2D}} \\
+\verb*|      nz,|\verb| & | {\small 2+2+2 columns since we're continuing the \texttt{use} statement}  \\
+\verb*|      nx| \\
+\verb|| \\
+\verb*|    if|\verb| ( l_do_something ) then| \\
+\verb*|      | {\small 2+2+2 columns within the scope of \texttt{dynamics/advect\_2D/if..then}} \\
+\verb|| \\
+\verb*|      |\verb|call something( ... )| \\
+\verb|| \\
+\verb*|    end|\verb| if| \\
+\verb|| \\
+\verb*|    return| \\
+\verb*|  end|\verb| subroutine advect_2D| \\
 
-  ! 2 column indent within the scope of module
-  implicit none 
-
-  subroutine advect_2D( ... )
-    use grid, only: & ! 2+2 columns within the scope of dynamics/advect_2D
-      nz, & ! 2+2+2 columns since we're continuing the 'use' statement
-      nx
-
-    if ( l_do_something ) then
-      ! 2+2+2 columns within the scope of dynamics/advect_2D/if..then
-
-      call something( ... )
-
-    end if
-
-    return
-  end subroutine advect_2D
-
-end module dynamics
-\end{verbatim}
+\verb|end module dynamics|
 
 \item Wrap all code lines at 100 columns.  Fortran free format source code
-allows for 134, but the number 100 was chosen to keep the line length 
+allows for 132, but the number 100 was chosen to keep the line length 
 within reason.  \newline
 
 \end{enumerate}
