@@ -1,9 +1,9 @@
 #!/bin/bash
 ###############################################################################
 # make_latex_docs.bash
-# Author: Ryan Senkbeil
+# Author: Ryan Senkbeil Aug 2008
 #
-# Converts latex documents to html and pdf.
+# Converts latex documents to pdf.
 ###############################################################################
 
 # Get the current location so it can be restored later
@@ -17,20 +17,14 @@ ScriptLoc=`dirname $ScriptLoc`
 # Go to the script's location
 cd $ScriptLoc
 
-# For every file that ends with .tex
+# Clean up anything left from last time
+make clean
+
+# Make the documentation
+make
+
+# For every file that ends with .tex, create html page
 for file in *.tex ; do
-	# Get the filename without the extension
-	BaseFileName=`basename $file .tex`
-
-	# Compile the file
-	latex $file
-
-	# Create a PostScript file
-	dvips -Pcmz -o $BaseFileName.ps $BaseFileName
-
-	# Create PDF file
-	ps2pdf $BaseFileName.ps
-
 	# Create HTML file
 	# -dschanen changed this to use TtH rather than latex2html
 	# 18 Aug 2008
@@ -47,9 +41,9 @@ for file in *.tex ; do
 
 	# Move the index file to ../
 #	mv $BaseFileName/index.html $BaseFileName.html
-	
-	# Clean up
-	rm -rf $BaseFileName.aux $BaseFileName.dvi $BaseFileName.log $BaseFileName
 done
+
+# Clean up
+rm *.aux *.auxbbl.make *.auxdvi.make *.aux.make *.dvi *.d *.fls *.log *.ps
 
 cd $RestoreLoc
