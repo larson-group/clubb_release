@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F90,v 1.16 2008-08-19 15:07:22 faschinj Exp $
+! $Id: compute_um_edsclrm_mod.F90,v 1.17 2008-08-19 15:49:49 griffinb Exp $
 !===============================================================================
 module compute_um_edsclrm_mod
 
@@ -239,7 +239,7 @@ end subroutine compute_um_edsclrm
 
 !===============================================================================
 subroutine compute_um_edsclrm_solve( solve_type, dt, xpwp_sfc, xm_tndcy,  &
-                                     wm_zt, Kh_zm, implemented,  &
+                                     wm_zt, Kh_zm, l_implemented,  &
                                      xm, xpwp, err_code )
 
 ! Description:
@@ -338,25 +338,30 @@ subroutine compute_um_edsclrm_solve( solve_type, dt, xpwp_sfc, xm_tndcy,  &
 ! is the value of x'w' at the surface (the first momentum level), which is 
 ! written as x'w'|_sfc.
 !
-! Since x'w' = - K_zm * d(xm)/dz,
+! Since x'w' = - K_zm * d(xm)/dz, a substitution can be made in the xm eddy 
+! diffusion equation for - K_zm * d(xm/dz) at the surface, such that:
 !
-! x'w'|_sfc = - K_zm(1) * dzm(1) * ( xm(2) - xm(1) )
+! - K_zm(1) * dzm(1) * ( xm(2) - xm(1) ) = x'w'|_sfc;
 !
-! The lower boundary condition, which in this case is applied to the d(xm)/dt 
-! equation at level 2, is discretized as follows:
+! where x'w'|_sfc is the surface momentum flux that is computed elsewhere in the
+! model code.
+!
+! The lower boundary condition, which in this case needs to be applied to the 
+! d(xm)/dt equation at level 2, is discretized as follows:
 !
 ! ---xm(3)------------------------------------------------- t(3)
 !
-! =============d(xm)/dz===K_zm(2)========================== m(2)
+! =============[ + K_zm(2) * d(xm)/dz ]==================== m(2)
 !
 ! ---xm(2)---------------------------d[K_zm*d(xm)/dz]/dz--- t(2)
 !
-! =============[ x'w'|_sfc = - K_zm(1) * d(xm)/dz ]======== m(1) (surface)
+! =============[ - K_zm(1) * d(xm)/dz = x'w'|_sfc ]======== m(1) (surface)
 !
 ! ---xm(1)------------------------------------------------- t(1)
 ! 
 ! The vertically discretized form of the turbulent advection term (treated as an
-! eddy diffusion term) is written out as:
+! eddy diffusion term), with the x'w'|_sfc substitution in place, is written 
+! out as:
 !
 ! + dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3) - xm(2) ) + x'w'|_sfc ];
 !
@@ -401,11 +406,21 @@ subroutine compute_um_edsclrm_solve( solve_type, dt, xpwp_sfc, xm_tndcy,  &
 ! variables passed in (K_zm, gr%dzt, and gr%dzm variables) will have to be 
 ! passed in as solving for level 2.
 !
-! The value of xm(1) will just be set equal to itself and not effect the rest
-! of the xm array during solving.  However, the value of xm(1) can be found
-! after solving, since x'w'|_sfc = - K_zm(1) * dzm(1) * ( xm(2) - xm(1) ):
+! The value of xm(1) is located below the model surface and is not treated as a
+! time-tendency equation, but rather is solved for based on the result of xm(2) 
+! after xm(2) has been advanced to the next timestep.  Since, 
+! x'w'|_sfc = - K_zm(1) * dzm(1) * ( xm(2) - xm(1) ):
 !
 ! xm(1)  =  xm(2)  +  x'w'|_sfc / ( K_zm(1) * dzm(1) ).
+!
+! This equation can be broken down into implicit and explicit components.  The
+! implicit portion of this equation is:
+!
+! [+1] * xm(1,<t+1>) + [-1] * xm(2,<t+1>);
+!
+! while the explicit portion of this equation is:
+!
+! + x'w'|_sfc / ( K_zm(1) * dzm(1) ).
 
 ! References:
 ! Eqn. 8 & 9 on p. 3545 of 
@@ -458,21 +473,21 @@ integer, parameter :: &
 
 ! Input Variables
 character(len=*), intent(in) :: & 
-  solve_type   ! Desc. of what is being solved for
+  solve_type     ! Desc. of what is being solved for
 
 real(kind=time_precision), intent(in) ::  & 
-  dt           ! Model timestep                            [s]
+  dt             ! Model timestep                            [s]
 
 real, intent(in) ::  & 
-  xpwp_sfc     ! x'w' at the surface                       [units vary]
+  xpwp_sfc       ! x'w' at the surface                       [units vary]
 
 real, dimension(gr%nnzp), intent(in) ::  & 
-  xm_tndcy,  & ! ! The explicit time-tendency acting on xm [units vary]
-  wm_zt,     & ! w wind component on thermodynamic levels  [m/s]
-  Kh_zm        ! Eddy diffusivity on momentum levels       [m^2/s]
+  xm_tndcy,    & ! The explicit time-tendency acting on xm [units vary]
+  wm_zt,       & ! w wind component on thermodynamic levels  [m/s]
+  Kh_zm          ! Eddy diffusivity on momentum levels       [m^2/s]
 
 logical, intent(in) ::  &
-  implemented  ! Flag for CLUBB being implemented in a larger model.
+  l_implemented  ! Flag for CLUBB being implemented in a larger model.
 
 ! Input/Output Variables
 real, dimension(gr%nnzp), intent(inout) ::  & 
@@ -522,11 +537,13 @@ endif
 
 ! Prepare tridiagonal system
 
-! Compute LHS matrix.
+! Compute the implicit portion of the xm equation.
+! Build the left-hand side matrix.
 call compute_um_edsclrm_lhs( solve_type, dt, wm_zt, Kh_zm,  &
-                             implemented, lhs )
+                             l_implemented, lhs )
 
-! Compute RHS vector.
+! Compute the explicit portion of the xm equation.
+! Build the right-hand side vector.
 call compute_um_edsclrm_rhs( solve_type, dt, Kh_zm, xm,  &
                              xm_tndcy, xpwp_sfc, rhs )
 
@@ -544,15 +561,9 @@ enddo
 xpwp(gr%nnzp) = 0.
 
 
-! Solve tridiagonal system
+! Solve tridiagonal system for xm.
 call tridag_solve( solve_type, gr%nnzp, 1, lhs(kp1_tdiag,:),  &
                    lhs(k_tdiag,:), lhs(km1_tdiag,:), rhs, xm, err_code )
-
-! After xm has been advanced to the next timestep, solve for xm(1) (xm at the 
-! first thermodynamic level, which is below the surface), based on the 
-! relationship:  x'w'|_sfc = - K_zm(1) * dzm(1) * ( xm(2) - xm(1) ); where 
-! x'w'|_sfc is a given value, and K_zm(1), dzm(1), and xm(2) are known values.
-xm(1) = xm(2) + xpwp_sfc / ( Kh_zm(1) * gr%dzm(1) )
 
 
 ! Second part of momentum (implicit component)
@@ -659,20 +670,21 @@ implicit none
 
 ! Input Variables
 character(len=*), intent(in) ::  &
-  solve_type  ! Description of what is being solved for
+  solve_type      ! Description of what is being solved for
 
 real, intent(in) ::  & 
-  fcor ! Coriolis parameter                             [s^-1]
+  fcor            ! Coriolis parameter     [s^-1]
 
 real, dimension(gr%nnzp), intent(in) :: & 
   perp_wind_m,  & ! Perpendicular component of the mean wind (e.g. v, for the u-eqn) [m/s]
   perp_wind_g     ! Perpendicular component of the geostropic wind (e.g. vg)         [m/s]
 
 logical, intent(in) :: & 
-  l_implemented
+  l_implemented   ! Flag for CLUBB being implemented in a larger model.
 
 ! Output Variables
-real, dimension(gr%nnzp), intent(out) :: xm_tndcy ! xm tendency  [m/s^2]
+real, dimension(gr%nnzp), intent(out) ::  &
+  xm_tndcy        ! xm tendency            [m/s^2]
 
 ! Local Variables
 integer :: & 
@@ -684,7 +696,7 @@ real, dimension(gr%nnzp) :: &
   xm_cf
 
 
-if (.not. l_implemented) then
+if ( .not. l_implemented ) then
   ! Only compute the Coriolis term if the model is running on it's own, 
   ! and is not part of a larger, host model.
 
@@ -741,7 +753,7 @@ end subroutine compute_uv_tndcy
 
 !===============================================================================
 subroutine compute_um_edsclrm_lhs( solve_type, dt, wm_zt, Kh_zm,  &
-                                   implemented, lhs )
+                                   l_implemented, lhs )
 
 ! Description:
 ! Calculate the implicit portion of the horizontal wind or eddy-scalar 
@@ -786,21 +798,21 @@ integer, parameter :: &
 
 ! Input Variables
 character(len=*), intent(in) :: &
-  solve_type ! Description of what is being solved for
+  solve_type    ! Description of what is being solved for
 
 real(kind=time_precision), intent(in) :: & 
-  dt         ! Model timestep                           [s]
+  dt            ! Model timestep                           [s]
 
 real, dimension(gr%nnzp), intent(in) :: &
-  wm_zt,   & ! w wind component on thermodynamic levels [m/s]
-  Kh_zm      ! Eddy diffusivity on momentum levels      [m^2/s]
+  wm_zt,      & ! w wind component on thermodynamic levels [m/s]
+  Kh_zm         ! Eddy diffusivity on momentum levels      [m^2/s]
 
 logical, intent(in) ::  & 
-  implemented ! Flag for CLUBB being implemented in a larger model.
+  l_implemented ! Flag for CLUBB being implemented in a larger model.
 
 ! Output Variable
 real, dimension(3,gr%nnzp), intent(out) :: &
-  lhs         ! Implicit contributions to xm (tridiagonal matrix)
+  lhs           ! Implicit contributions to xm (tridiagonal matrix)
 
 ! Local Variables
 integer :: k, km1  ! Array indices
@@ -831,7 +843,7 @@ do k = 2, gr%nnzp-1, 1
    km1 = max( k-1, 1 )
 
    ! LHS mean advection term.
-   if ( .not. implemented ) then
+   if ( .not. l_implemented ) then
 
       lhs(kp1_tdiag:km1_tdiag,k)  &
       = lhs(kp1_tdiag:km1_tdiag,k)  &
@@ -847,6 +859,14 @@ do k = 2, gr%nnzp-1, 1
    ! LHS turbulent advection term (solved as an eddy-diffusion term).
    if ( k == 2 ) then
       ! The lower boundary condition needs to be applied here at level 2.
+      ! The lower boundary condition is a "fixed flux" boundary condition.  
+      ! The coding is the same as for a zero-flux boundary condition, but with 
+      ! an extra term added on the right-hand side at the boundary level.  For
+      ! the rest of the model code, a zero-flux boundary condition is applied
+      ! at level 1, and thus subroutine diffusion_zt_lhs is set-up to do that.
+      ! In order to apply the same boundary condition code here at level 2, and
+      ! adjuster needs to be used to tell diffusion_zt_lhs to use the code at 
+      ! level 2 that it normally uses at level 1.
       diff_k_in = 1
    else
       diff_k_in = k
@@ -866,7 +886,7 @@ do k = 2, gr%nnzp-1, 1
       ! Statistics:  implicit contributions for um or vm.
 
       if ( ixm_ma > 0 ) then
-         if ( .not. implemented ) then
+         if ( .not. l_implemented ) then
             tmp(1:3) &
             = term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
             ztscr01(k) = -tmp(3)
@@ -898,9 +918,17 @@ enddo
 
 ! Lower Boundary
 
-! The lower boundary condition is a fixed-flux, which gets applied at level 2.
-lhs(:,1) = 0.0
-lhs(k_tdiag,1) = real( 1.0 / dt )
+! The lower boundary condition is a fixed-flux boundary condition, which gets 
+! added into the time-tendency equation at level 2.
+! The value of xm(1) is solved for based on the result of xm(2) after xm(2) has
+! been advanced to the next timestep.  The new result for xm(1) is based on the
+! relationship:  x'w'|_sfc = - K_zm(1) * dzm(1) * ( xm(2) - xm(1) ); where 
+! x'w'|_sfc is the given value of the surface flux, and K_zm(1), dzm(1), and 
+! xm(2) are known values.  The implicit portion of the equation is:
+! [+1] * xm(1,<t+1>)  +  [-1] * xm(2,<t+1>); while the explicit portion of the 
+! equation is:  + x'w'|_sfc / ( K_zm(1) * dzm(1) ).
+lhs(k_tdiag,1)   = 1.0
+lhs(kp1_tdiag,1) = -1.0
 
 ! Upper Boundary
 
@@ -1022,6 +1050,14 @@ do k = 2, gr%nnzp-1, 1
    ! RHS turbulent advection term (solved as an eddy-diffusion term).
    if ( k == 2 ) then
       ! The lower boundary condition needs to be applied here at level 2.
+      ! The lower boundary condition is a "fixed flux" boundary condition.  
+      ! The coding is the same as for a zero-flux boundary condition, but with 
+      ! an extra term added on the right-hand side at the boundary level.  For
+      ! the rest of the model code, a zero-flux boundary condition is applied
+      ! at level 1, and thus subroutine diffusion_zt_lhs is set-up to do that.
+      ! In order to apply the same boundary condition code here at level 2, and
+      ! adjuster needs to be used to tell diffusion_zt_lhs to use the code at 
+      ! level 2 that it normally uses at level 1.
       diff_k_in = 1
    else
       diff_k_in = k
@@ -1057,13 +1093,21 @@ do k = 2, gr%nnzp-1, 1
 enddo
 
 
-! Boundary Condition
+! Boundary Conditions
 
 ! Lower Boundary
 
-! The lower boundary condition is a fixed-flux, which gets applied at level 2.
+! The lower boundary condition is a fixed-flux boundary condition, which gets 
+! added into the time-tendency equation at level 2.
 rhs(2) = rhs(2) + gr%dzt(2) * xpwp_sfc
-rhs(1) = real( ( 1.0 / dt ) * xm(1) )
+! The value of xm(1) is solved for based on the result of xm(2) after xm(2) has
+! been advanced to the next timestep.  The new result for xm(1) is based on the
+! relationship:  x'w'|_sfc = - K_zm(1) * dzm(1) * ( xm(2) - xm(1) ); where 
+! x'w'|_sfc is the given value of the surface flux, and K_zm(1), dzm(1), and 
+! xm(2) are known values.  The implicit portion of the equation is:
+! [+1] * xm(1,<t+1>)  +  [-1] * xm(2,<t+1>); while the explicit portion of the 
+! equation is:  + x'w'|_sfc / ( K_zm(1) * dzm(1) ).
+rhs(1) = + xpwp_sfc / ( Kh_zm(1) * gr%dzm(1) ) 
 
 if ( l_stats_samp ) then
 
