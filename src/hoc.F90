@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.31 2008-08-19 18:17:30 griffinb Exp $
+! $Id: hoc.F90,v 1.32 2008-08-19 18:44:29 griffinb Exp $
 
 module hoc
 
@@ -1724,7 +1724,8 @@ vm_sfc = zt2zm( vm, 1 )
 select case ( trim( runtype ) )
 
    case( "generic", "fire" )  ! Normal and FIRE
-      call sfc_momentum_fluxes( um(2), vm(2), &                     ! Intent(in)
+      !call sfc_momentum_fluxes( um(2), vm(2), &                     ! Intent(in)
+      call sfc_momentum_fluxes( um_sfc, vm_sfc, &                   ! Intent(in)
                                 upwp_sfc, vpwp_sfc, ustar )         ! Intent(out)
       ! sfctype = 0  fixed sfc sensible and latent heat fluxes 
       !                   as given in hoc.in
