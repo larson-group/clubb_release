@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F90,v 1.15 2008-08-17 19:00:11 griffinb Exp $
+! $Id: compute_um_edsclrm_mod.F90,v 1.16 2008-08-19 15:07:22 faschinj Exp $
 !===============================================================================
 module compute_um_edsclrm_mod
 
@@ -117,7 +117,7 @@ integer :: i     ! Array index
 ! Update zonal (west-to-east) component of mean wind, um
 !----------------------------------------------------------------
 
-call compute_uv_tndcy( "um", um, fcor, vm, vg, &
+call compute_uv_tndcy( "um", fcor, vm, vg, &
                        l_implemented, um_tndcy )
 
 call compute_um_edsclrm_solve( "um", dt, upwp_sfc, um_tndcy,  &
@@ -129,7 +129,7 @@ call compute_um_edsclrm_solve( "um", dt, upwp_sfc, um_tndcy,  &
 ! Update meridional (south-to-north) component of mean wind, vm
 !----------------------------------------------------------------
 
-call compute_uv_tndcy( "vm", vm, fcor, um, ug, &
+call compute_uv_tndcy( "vm", fcor, um, ug, &
                        l_implemented, vm_tndcy )
 
 call compute_um_edsclrm_solve( "vm", dt, vpwp_sfc, vm_tndcy,  &
@@ -609,8 +609,8 @@ return
 end subroutine compute_um_edsclrm_solve
 
 !===============================================================================
-subroutine compute_uv_tndcy( solve_type, xm, fcor, perp_wind_m, perp_wind_g,  &
-                             implemented, xm_tndcy )
+subroutine compute_uv_tndcy( solve_type, fcor, perp_wind_m, perp_wind_g,  &
+                             l_implemented, xm_tndcy )
 !
 ! Description:
 ! Computes the explicit tendency for the um and vm wind components.
@@ -661,9 +661,6 @@ implicit none
 character(len=*), intent(in) ::  &
   solve_type  ! Description of what is being solved for
 
-real, dimension(gr%nnzp), intent(in) ::  & 
-  xm   ! u/v wind                                       [m/s]   
-
 real, intent(in) ::  & 
   fcor ! Coriolis parameter                             [s^-1]
 
@@ -672,7 +669,7 @@ real, dimension(gr%nnzp), intent(in) :: &
   perp_wind_g     ! Perpendicular component of the geostropic wind (e.g. vg)         [m/s]
 
 logical, intent(in) :: & 
-  implemented
+  l_implemented
 
 ! Output Variables
 real, dimension(gr%nnzp), intent(out) :: xm_tndcy ! xm tendency  [m/s^2]
@@ -687,7 +684,7 @@ real, dimension(gr%nnzp) :: &
   xm_cf
 
 
-if (.not. implemented) then
+if (.not. l_implemented) then
   ! Only compute the Coriolis term if the model is running on it's own, 
   ! and is not part of a larger, host model.
 
