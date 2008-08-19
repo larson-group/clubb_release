@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F90,v 1.16 2008-08-18 20:39:48 dschanen Exp $
+! $Id: stats_zt.F90,v 1.17 2008-08-19 19:54:07 dschanen Exp $
  
 module stats_zt
 
@@ -1448,7 +1448,7 @@ end do
 
 !   Non-interative diagnostics (zt) 
 !   iwprtp2, iwprtpthlp, iwpthlp2 
-    if ( clubb_at_debug_level( 0 ) ) then 
+    if ( .not. clubb_at_debug_level( 1 ) ) then 
       if ( iwprtp2 + iwprtpthlp + iwpthlp2 > 0 ) then
         write(0,'(a)') &
           "Warning: at debug level 0.  Non-interactive diagnostics will not be computed, "

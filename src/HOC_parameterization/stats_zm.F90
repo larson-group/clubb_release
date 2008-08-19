@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zm.F90,v 1.10 2008-08-18 20:39:48 dschanen Exp $
+! $Id: stats_zm.F90,v 1.11 2008-08-19 19:54:07 dschanen Exp $
 module stats_zm
        
   implicit none
@@ -1192,7 +1192,7 @@ module stats_zm
 !   Non-interative diagnostics (zm)
 !   iwp4, ircp2 
 
-    if ( clubb_at_debug_level( 0 ) ) then 
+    if ( .not. clubb_at_debug_level( 1 ) ) then 
       if ( iwp4 + ircp2 > 0 ) then
         write(0,'(a)') &
           "Warning: at debug level 0.  Non-interactive diagnostics will not be computed, "
