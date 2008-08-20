@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F90,v 1.10 2008-08-06 13:53:03 faschinj Exp $
+! $Id: jun25.F90,v 1.11 2008-08-20 15:24:05 faschinj Exp $
   module jun25
 
 !       Description:
@@ -46,7 +46,7 @@
 
   use model_flags, only: l_bugsrad ! Variable(s)
 
-!        use model_flags, only: l_coamps_micro, l_licedfs ! Variables(s)
+!  use model_flags, only: l_coamps_micro, l_licedfs ! Variables(s)
 
   use stats_precision, only: time_precision ! Variable(s)
 
@@ -56,15 +56,15 @@
 
   use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
 
-  use array_index, only: iisclr_rt, iisclr_thl
-
+  use array_index, only: iisclr_rt, iisclr_thl ! Variable(s)
  
   use stats_type, only: stat_update_var ! Procedure(s)
 
   use stats_variables, only:  & 
-      iradht_LW, iradht_SW, iFrad_LW, iFrad_SW,  & ! Procedure(s)
+      iradht_LW, iradht_SW, iFrad_LW, iFrad_SW,  & ! Variable(s)
       zt, zm, l_stats_samp
- 
+  
+  use interpolation, only: lin_int ! Procedure(s) 
 
   implicit none
 
@@ -72,17 +72,17 @@
 
   ! Input variables
   real(kind=time_precision), intent(in) :: & 
-  time,          & ! Time of simulation since start        [s]
-  time_initial     ! Initial time of simulation            [s]
+  time,          & ! Time of simulation since start  [s]
+  time_initial     ! Initial time of simulation      [s]
 
   real, intent(in) :: & 
-  rlat,          & ! Reference latitude should be 37.6     [Degrees North]
-  rlon             ! Longitude             [degrees_E]
+  rlat,          & ! Reference latitude should be 37.6 [Degrees North]
+  rlon             ! Longitude                         [Degrees_E]
 
   real, dimension(gr%nnzp), intent(in) ::  & 
   rcm,    & ! Liquid water mixing ratio              [kg/kg]
   exner,  & ! Exner function                         [-]
-  rho      ! Density of reference state on t grid   [kg/m^3]
+  rho       ! Density of reference state on t grid   [kg/m^3]
 
   ! Output variables
   real, dimension(gr%nnzp), intent(inout) ::  & 
@@ -210,15 +210,15 @@
   Frad_LW,  & ! Long wave radiative flux     [W/m^2]
   Frad_SW,  & ! Short wave radiative flux    [W/m^2]
   radht_LW, & ! Long wave radiative heating  [K/s]
-  radht_SW ! Short wave radiative heating [K/s]
+  radht_SW    ! Short wave radiative heating [K/s]
 
   real, dimension(gr%nnzp) ::  & 
-!     .  LWP,       ! Liquid water path from domain top                [kg/m^2]
-  rcm_rad,    & ! "flipped" array of liquid water mixing ratio     [kg/kg]
+!  LWP,       & ! Liquid water path from domain top                [kg/m^2]
+  rcm_rad,   & ! "flipped" array of liquid water mixing ratio     [kg/kg]
   rho_rad,   & ! "flipped" array of air density                   [kg/m^3]
-  dsigm,      & ! "flipped" array of grid spacing                  [m]
-  coamps_zm,  & ! "flipped" array of momentum level altitudes      [m]
-  coamps_zt  ! "flipped" array of thermodynamic level altitudes [m]
+  dsigm,     & ! "flipped" array of grid spacing                  [m]
+  coamps_zm, & ! "flipped" array of momentum level altitudes      [m]
+  coamps_zt    ! "flipped" array of thermodynamic level altitudes [m]
 
   real, dimension(gr%nnzp) ::  & 
   frad_out, & 
@@ -692,45 +692,50 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   do k=2,gr%nnzp
     call linear_interpolation(5,zsubs,wt1,gr%zt(k),w1(k))
     call linear_interpolation(5,zsubs,wt2,gr%zt(k),w2(k))
-  wm_zt(k) = & 
-    real(((time-time_initial)-tsubs(1)) & 
-           /(tsubs(2)-tsubs(1))*(w2(k)-w1(k))+w1(k))
+  !wm_zt(k) = & 
+  !  real(((time-time_initial)-tsubs(1)) & 
+  !         /(tsubs(2)-tsubs(1))*(w2(k)-w1(k))+w1(k))
+    wm_zt(k) = lin_int( real(time-time_initial), tsubs(2), tsubs(1), w2(k) ,w1(k) )
   end do
  
   else if ( (time - time_initial) < tsubs(3)) then
   do k=2,gr%nnzp
     call linear_interpolation(5,zsubs,wt2,gr%zt(k),w1(k))
     call linear_interpolation(5,zsubs,wt3,gr%zt(k),w2(k))
-  wm_zt(k) =  & 
-    real(((time-time_initial)-tsubs(2)) & 
-           /(tsubs(3)-tsubs(2))*(w2(k)-w1(k))+w1(k))
+  !wm_zt(k) =  & 
+  !  real(((time-time_initial)-tsubs(2)) & 
+  !         /(tsubs(3)-tsubs(2))*(w2(k)-w1(k))+w1(k))
+    wm_zt(k) = lin_int(real(time-time_initial), tsubs(3), tsubs(2), w2(k), w1(k) )
   end do
  
   else if ( (time - time_initial) < tsubs(4)) then
   do k=2,gr%nnzp
     call linear_interpolation(5,zsubs,wt3,gr%zt(k),w1(k))
     call linear_interpolation(5,zsubs,wt4,gr%zt(k),w2(k))
-  wm_zt(k) =  & 
-    real(((time-time_initial)-tsubs(3)) & 
-           /(tsubs(4)-tsubs(3))*(w2(k)-w1(k))+w1(k))
+  !wm_zt(k) =  & 
+  !  real(((time-time_initial)-tsubs(3)) & 
+  !         /(tsubs(4)-tsubs(3))*(w2(k)-w1(k))+w1(k))
+    wm_zt(k) = lin_int( real(time-time_initial), tsubs(4), tsubs(3), w2(k), w1(k) )
   end do
  
   else if ( (time - time_initial) < tsubs(5)) then
   do k=2,gr%nnzp
     call linear_interpolation(5,zsubs,wt4,gr%zt(k),w1(k))
     call linear_interpolation(5,zsubs,wt5,gr%zt(k),w2(k))
-  wm_zt(k) =  & 
-    real(((time-time_initial)-tsubs(4)) & 
-           /(tsubs(5)-tsubs(4))*(w2(k)-w1(k))+w1(k))
+  !wm_zt(k) =  & 
+  !  real(((time-time_initial)-tsubs(4)) & 
+  !         /(tsubs(5)-tsubs(4))*(w2(k)-w1(k))+w1(k))
+    wm_zt = lin_int( real(time-time_initial), tsubs(5), tsubs(4), w2(k), w1(k) )
   end do
  
   else if ( (time - time_initial) < tsubs(6)) then
   do k=2,gr%nnzp
     call linear_interpolation(5,zsubs,wt5,gr%zt(k),w1(k))
     call linear_interpolation(5,zsubs,wt6,gr%zt(k),w2(k))
-  wm_zt(k) = & 
-    real(((time-time_initial)-tsubs(5)) & 
-           /(tsubs(6)-tsubs(5))*(w2(k)-w1(k))+w1(k))
+  !wm_zt(k) = & 
+  !  real(((time-time_initial)-tsubs(5)) & 
+  !         /(tsubs(6)-tsubs(5))*(w2(k)-w1(k))+w1(k))
+    wm_zt = lin_int( real(time-time_initial), tsubs(6), tsubs(5), w2(k), w1(k) ) 
   end do
  
   else if ( (time - time_initial) >= tsubs(6)) then
