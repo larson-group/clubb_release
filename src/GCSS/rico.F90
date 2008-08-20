@@ -1,7 +1,7 @@
-!$Id: rico.F90,v 1.9 2008-08-06 13:53:03 faschinj Exp $
+!$Id: rico.F90,v 1.10 2008-08-20 16:32:53 faschinj Exp $
 !----------------------------------------------------------------------
 module rico
-
+!
 !       Description:
 !       Contains subroutines for the RICO case.
 !----------------------------------------------------------------------
@@ -19,7 +19,7 @@ module rico
                          wm_zt, wm_zm, & 
                          thlm_forcing, rtm_forcing, radht, Ncm, & 
                          sclrm_forcing )
-
+!
 !        Description:
 !          Subroutine to apply case-specific forcings to RICO case
 !          (Michael Falk, 13 Dec 2006).
@@ -37,11 +37,11 @@ module rico
 
   use stats_precision, only: time_precision ! Variable(s)
 
-  use array_index, only: iisclr_rt, iisclr_thl
+  use array_index, only: iisclr_rt, iisclr_thl ! Variable(s)
 
-! 
-!        use stats_variables
-! 
+ 
+!  use stats_variables
+
 
   implicit none
 
@@ -69,7 +69,7 @@ module rico
   sclrm_forcing ! Passive scalar LS tendency            [units/s]
 
   ! Local Variables, general
-  integer :: k ! Loop index
+  integer :: k          ! Loop index
   real    :: t_tendency ! Temperature (not potential temperature) tendency [K s^-1]
 
   ! Compute vertical motion
@@ -164,7 +164,6 @@ module rico
                           upwp_sfc, vpwp_sfc, wpthlp_sfc, & 
                           wprtp_sfc, ustar,  & 
                           wpsclrp_sfc, wpedsclrp_sfc )
-
 !----------------------------------------------------------------------
 !        Description:
 !          Surface forcing subroutine for RICO case.  Written
@@ -185,23 +184,23 @@ module rico
   
   use saturation, only: sat_mixrat_liq ! Procedure(s)
 
-  use array_index, only: iisclr_rt, iisclr_thl
+  use array_index, only: iisclr_rt, iisclr_thl ! Variable(s)
 
   implicit none
 
   intrinsic :: max, log, sqrt
 
-!       Constants
+  ! Constants
   real, parameter :: & 
     ubmin   = 0.25,      & ! Minimum value for ubar.
-!     .    ustar   = 0.3,      ! Defined by ATEX specification
+!    ustar   = 0.3,       & ! Defined by ATEX specification
     C_10    = 0.0013,    & ! Drag coefficient, defined by ATEX specification
     C_m_20  = 0.001229,  & ! Drag coefficient, defined by RICO 3D specification
     C_h_20  = 0.001094,  & ! Drag coefficient, defined by RICO 3D specification
     C_q_20  = 0.001133,  & ! Drag coefficient, defined by RICO 3D specification
-    z0      = 0.00015   ! Roughness length, defined by ATEX specification
+    z0      = 0.00015      ! Roughness length, defined by ATEX specification
 
-!       Internal variables
+  ! Internal variables
   real :: & 
     ubar, & ! This is root (u^2 + v^2), per ATEX and RICO spec.
     Cz,   & ! This is C_10 scaled to the height of the lowest model level.
@@ -212,7 +211,7 @@ module rico
   logical :: & 
     use_old_atex  ! if true, use ATEX version; if not, use RICO-specific
 
-!       Input variables
+  ! Input variables
   real, intent(in) :: & 
     um_sfc,        & ! This is u at the lowest above-ground model level.  [m/s]
     vm_sfc,        & ! This is v at the lowest above-ground model level.  [m/s]
@@ -224,27 +223,27 @@ module rico
     psfc             ! This is the surface pressure [Pa].
 
 
-!       Output variables
+  ! Output variables
   real, intent(out) ::  & 
-    upwp_sfc,           & ! The upward flux of u-momentum         [(m^2 s^-2]
-    vpwp_sfc,           & ! The Upward flux of v-momentum         [(m^2 s^-2]
-    wpthlp_sfc,         & ! The upward flux of theta-l            [K m s^-1]
-    wprtp_sfc,          & ! The upward flux of rtm (total water)  [kg kg^-1 m s^-1]
-    ustar                 ! surface friction velocity             [m/s]
+    upwp_sfc,   & ! The upward flux of u-momentum         [(m^2 s^-2]
+    vpwp_sfc,   & ! The Upward flux of v-momentum         [(m^2 s^-2]
+    wpthlp_sfc, & ! The upward flux of theta-l            [K m s^-1]
+    wprtp_sfc,  & ! The upward flux of rtm (total water)  [kg kg^-1 m s^-1]
+    ustar         ! surface friction velocity             [m/s]
 
-!       Output variables
+  ! Output variables
   real, dimension(sclr_dim), intent(out) :: & 
-    wpsclrp_sfc,    & ! Passive scalar surface flux      [units m s^-1]
-    wpedsclrp_sfc     ! Passive eddy-scalar surface flux [units m s^-1]
+    wpsclrp_sfc,  & ! Passive scalar surface flux      [units m s^-1]
+    wpedsclrp_sfc   ! Passive eddy-scalar surface flux [units m s^-1]
 
 
-!       Declare the value of ustar.
+  ! Declare the value of ustar.
   ustar = 0.3
 
-!       Choose which scheme to use
+  ! Choose which scheme to use
   use_old_atex = .FALSE.
 
-!       Define variable values
+  ! Define variable values
   ubar = max(ubmin, sqrt(um_sfc*um_sfc + vm_sfc*vm_sfc))
   ! Modification in case lowest model level isn't at 10 m, from ATEX specification
   Cz   = C_10 * ((log(10/z0))/(log(lowestlevel/z0))) * & 
@@ -259,17 +258,17 @@ module rico
   Cq   = C_q_20 * ((log(20/z0))/(log(lowestlevel/z0))) * & 
          ((log(20/z0))/(log(lowestlevel/z0)))            
 
-!       Compute heat and moisture fluxes
+! Compute heat and moisture fluxes
   if (use_old_atex) then ! Use ATEX version
-    wpthlp_sfc  = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa ) ! [K m s^-1
+    wpthlp_sfc = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa ) ! [K m s^-1
     wprtp_sfc  = -Cz * ubar * ( rtm - sat_mixrat_liq(psfc,sst) ) ! [kg kg^-1  m s^-1]
     upwp_sfc   = -um_sfc * ustar*ustar / ubar                    ! [m^2 s^-2]
     vpwp_sfc   = -vm_sfc * ustar*ustar / ubar                    ! [m^2 s^-2]
 
   else ! Use RICO version
     wpthlp_sfc  = -Ch * ubar * ( thlm - sst * (p0/psfc)**kappa ) ! K m s^-1
-!          wprtp_sfc  = -Cz * ubar * ( .01726 - sat_mixrat_liq(psfc,sst) ) ! kg kg^-1  m s^-1
-!          wprtp_sfc  = -Cz * ubar * ( .01626 - sat_mixrat_liq(psfc,sst) ) ! kg kg^-1  m s^-1
+!    wprtp_sfc  = -Cz * ubar * ( .01726 - sat_mixrat_liq(psfc,sst) ) ! kg kg^-1  m s^-1
+!    wprtp_sfc  = -Cz * ubar * ( .01626 - sat_mixrat_liq(psfc,sst) ) ! kg kg^-1  m s^-1
     wprtp_sfc  = -Cq * ubar * ( rtm - sat_mixrat_liq(psfc,sst) ) ! kg kg^-1 m s^-1
     upwp_sfc   = -um_sfc * Cm * ubar  ! m^2 s^-2
     vpwp_sfc   = -vm_sfc * Cm * ubar  ! m^2 s^-2
