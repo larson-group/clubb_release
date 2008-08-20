@@ -1,4 +1,4 @@
-!$Id: gabls2.F90,v 1.8 2008-08-06 13:53:03 faschinj Exp $
+!$Id: gabls2.F90,v 1.9 2008-08-20 15:19:31 faschinj Exp $
 !----------------------------------------------------------------------
 module gabls2
 
@@ -45,24 +45,24 @@ implicit none
 
 ! Input Variables
 real(kind=time_precision), intent(in) :: & 
-  time,           & ! Current length of timestep      [s]
+  time,        & ! Current length of timestep      [s]
   time_initial   ! Current length of timestep      [s]
 
 real, dimension(gr%nnzp), intent(in) :: & 
-  rho,           & ! Air density on t-grid           [kg/m^3]
-  rcm            ! Cloud water mixing ratio        [kg/kg]
+  rho,  & ! Air density on t-grid           [kg/m^3]
+  rcm     ! Cloud water mixing ratio        [kg/kg]
 
 logical, intent(in) :: & 
-  l_kk_rain       !  Logical variable-- are we using KK scheme?
+  l_kk_rain  !  Logical variable-- are we using KK scheme?
 
 ! Output Variables
 real, dimension(gr%nnzp), intent(out) :: & 
-  wm_zt,          & ! Large-scale vertical motion on t grid   [m/s]
-  wm_zm,          & ! Large-scale vertical motion on m grid   [m/s]
+  wm_zt,        & ! Large-scale vertical motion on t grid   [m/s]
+  wm_zm,        & ! Large-scale vertical motion on m grid   [m/s]
   thlm_forcing, & ! Large-scale thlm tendency               [K/s]
   rtm_forcing,  & ! Large-scale rtm tendency                [kg/kg/s]
   radht,        & ! dT/dt, then d Theta/dt, due to rad.     [K/s]
-  Ncm          ! Number of cloud droplets                [#/kg]
+  Ncm             ! Number of cloud droplets                [#/kg]
 
 ! Output Variables (optional)
 real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
@@ -133,8 +133,6 @@ end subroutine gabls2_tndcy
 !----------------------------------------------------------------------
 
 
-
-
 !----------------------------------------------------------------------
 subroutine gabls2_sfclyr( time, time_initial, &
                           lowest_level, psfc, & 
@@ -162,7 +160,7 @@ subroutine gabls2_sfclyr( time, time_initial, &
 
   use diag_ustar_mod, only: diag_ustar ! Variable(s)
   
-  use array_index, only: iisclr_rt, iisclr_thl
+  use array_index, only: iisclr_rt, iisclr_thl ! Variable(s)
 
   implicit none
 
@@ -187,11 +185,11 @@ subroutine gabls2_sfclyr( time, time_initial, &
     rtm                    ! rt at the lowest above-ground model level.  [kg/kg]
   ! Output variables
   real, intent(out) :: & 
-    upwp_sfc,     & ! The turbulent upward flux of u-momentum         [(m/s)^2]
-    vpwp_sfc,     & ! The turbulent upward flux of v-momentum         [(m/s)^2]
-    wpthlp_sfc,   & ! The turbulent upward flux of theta-l            [K m/s]
-    wprtp_sfc,    & ! The turbulent upward flux of rtm (total water)  [kg/kg m/s]
-    ustar           ! surface friction velocity                       [m/s]
+    upwp_sfc,   & ! The turbulent upward flux of u-momentum         [(m/s)^2]
+    vpwp_sfc,   & ! The turbulent upward flux of v-momentum         [(m/s)^2]
+    wpthlp_sfc, & ! The turbulent upward flux of theta-l            [K m/s]
+    wprtp_sfc,  & ! The turbulent upward flux of rtm (total water)  [kg/kg m/s]
+    ustar         ! surface friction velocity                       [m/s]
 
   ! Output variables (optional)
   real, optional, intent(out), dimension(sclr_dim) :: & 
@@ -201,7 +199,7 @@ subroutine gabls2_sfclyr( time, time_initial, &
   ! Local variables
   real :: & 
     ubar,                & ! Root (u^2 + v^2), per ATEX and RICO spec.
-!     .      ustar,              ! Friction velocity, computed from diag_ustar.
+!    ustar,               & ! Friction velocity, computed from diag_ustar.
     Cz,                  & ! C_10 scaled to the height of the lowest 
                            ! model level. (Per ATEX spec)
     time_in_hours,       & ! time in hours from 00 local on first day of experiment 
