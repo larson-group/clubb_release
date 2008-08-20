@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: astex.F90,v 1.6 2008-08-06 13:53:02 faschinj Exp $
+! $Id: astex.F90,v 1.7 2008-08-20 14:55:52 faschinj Exp $
 module astex
 
 !       Description:
@@ -35,10 +35,10 @@ implicit none
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) ::  & 
-  wm_zt,           & ! w wind on the thermodynamic grid        [m/s]
-  wm_zm,           & ! w wind on the momentum grid             [m/s]
+  wm_zt,         & ! w wind on the thermodynamic grid        [m/s]
+  wm_zm,         & ! w wind on the momentum grid             [m/s]
   thlm_forcing,  & ! Liquid potential temperature tendency   [K/s]
-  rtm_forcing   ! Total water mixing ratio tendency       [kg/kg/s]
+  rtm_forcing      ! Total water mixing ratio tendency       [kg/kg/s]
 
 real, intent(out), dimension(gr%nnzp,sclr_dim) ::  & 
   sclrm_forcing ! Passive scalar forcing  [units/s]
@@ -113,24 +113,24 @@ real, intent(out) ::  &
   upwp_sfc,     & ! u'w' at (1)      [m^2/s^2]
   vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
   wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
-  wprtp_sfc    ! w'r_t'(1) at (1) [(m kg)/(s kg)]
+  wprtp_sfc       ! w'r_t'(1) at (1) [(m kg)/(s kg)]
 
 real, intent(out), dimension(sclr_dim) ::  & 
   wpsclrp_sfc,   & ! w' scalar at surface [units m/s]
-  wpedsclrp_sfc ! w' scalar at surface [units m/s]
+  wpedsclrp_sfc    ! w' scalar at surface [units m/s]
 
 ! Local variables
 
 real :: sensible_heat_flx,  & ! W/m^2
-        latent_heat_flx    ! W/m^2
+        latent_heat_flx       ! W/m^2
 
 ! Compute heat and moisture fluxes
 
 sensible_heat_flx = 10.0
 latent_heat_flx = 25.0
 
-wpthlp_sfc = sensible_heat_flx/( rho0*Cp )
-wprtp_sfc  = latent_heat_flx/( rho0*Lv )
+wpthlp_sfc = sensible_heat_flx / ( rho0 * Cp )
+wprtp_sfc  = latent_heat_flx / ( rho0 * Lv )
 
 ! Compute momentum fluxes
 
