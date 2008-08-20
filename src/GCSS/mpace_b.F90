@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: mpace_b.F90,v 1.11 2008-08-06 13:53:03 faschinj Exp $
+! $Id: mpace_b.F90,v 1.12 2008-08-20 15:29:08 faschinj Exp $
 module mpace_b
 
 !       Description:
@@ -45,10 +45,9 @@ use stats_precision, only: time_precision ! Variable(s)
 
 use rad_lwsw_mod, only: rad_lwsw ! Variable(s)
 
-use array_index, only: iisclr_rt, iisclr_thl
+use array_index, only: iisclr_rt, iisclr_thl ! Variable(s)
 
- 
-use stats_type, only: stat_update_var
+use stats_type, only: stat_update_var ! Procedure(s)
 
 use stats_variables, only: iFrad_LW, iFrad_SW, iradht_SW,  & ! Variable(s)
                iradht_LW, zt, zm, l_stats_samp
@@ -58,10 +57,10 @@ implicit none
 
 ! Local constants, subsidence
 real, parameter :: & 
-  grav0 = 9.8,      & ! m/s
-  D     = 5.8e-6,   & ! 1/s
-  psfc  = 101000.,  & ! Pa
-  pinv  = 85000.   ! Pa; ditto
+  grav0 = 9.8,     & ! m/s
+  D     = 5.8e-6,  & ! 1/s
+  psfc  = 101000., & ! Pa
+  pinv  = 85000.     ! Pa; ditto
 
 ! Local constants, LW radiation (from DYCOMS II-RF01)
 real, parameter :: & 
@@ -90,31 +89,31 @@ real, parameter :: &
 
 ! Input Variables
 real(kind=time_precision), intent(in) ::  & 
-  time,          & ! Current time of simulation      [s]
-  time_initial  ! Initial time of simulation      [s]
+  time,        & ! Current time of simulation      [s]
+  time_initial   ! Initial time of simulation      [s]
 
 real, intent(in) ::  & 
-  rlat          ! Latitude                        [Degrees North]
+  rlat   ! Latitude                        [Degrees North]
 
 real, dimension(gr%nnzp), intent(in) :: & 
-  rho,   & ! Density of air                         [kg/m^3]
-  p_in_Pa,      & ! Pressure                               [Pa]
-  thvm,   & ! Virtual potential temperature          [K]
-  rcm    ! Cloud water mixing ratio               [kg/kg]
+  rho,     & ! Density of air                         [kg/m^3]
+  p_in_Pa, & ! Pressure                               [Pa]
+  thvm,    & ! Virtual potential temperature          [K]
+  rcm        ! Cloud water mixing ratio               [kg/kg]
 
 ! Input/Output Variables
 real, dimension(gr%nnzp), intent(inout) ::  & 
-  Ncm,          & ! Cloud droplet number concentration      [count/m^3]
-  Ncnm         ! Cloud nuclei number concentration       [count/m^3]
+  Ncm,  & ! Cloud droplet number concentration      [count/m^3]
+  Ncnm    ! Cloud nuclei number concentration       [count/m^3]
 
 ! Output Variables
 real, dimension(gr%nnzp), intent(out) ::  & 
-  wm_zt,          & ! Large-scale vertical motion on t grid   [m/s]
-  wm_zm,          & ! Large-scale vertical motion on m grid   [m/s]
-  thlm_forcing,  & ! Large-scale thlm tendency               [K/s]
-  rtm_forcing,     & ! Large-scale rtm tendency                [kg/kg/s]
+  wm_zt,        & ! Large-scale vertical motion on t grid   [m/s]
+  wm_zm,        & ! Large-scale vertical motion on m grid   [m/s]
+  thlm_forcing, & ! Large-scale thlm tendency               [K/s]
+  rtm_forcing,  & ! Large-scale rtm tendency                [kg/kg/s]
   Frad,         & ! Total radiative flux                    [W/m^2]
-  radht        ! dT/dt, then d Theta/dt, due to rad.     [K/s]
+  radht           ! dT/dt, then d Theta/dt, due to rad.     [K/s]
 
 ! Output Variables (optional)
 real, optional, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
@@ -126,7 +125,7 @@ real, dimension(gr%nnzp) ::  &
   radht_LW, & ! dT/dt, then d Theta/dt, due to LW rad.  [K/s]
   radht_SW, & ! dT/dt, then d Theta/dt, due to SW rad.  [K/s]
   Frad_LW,  & ! Longwave radiative flux                 [W/m^2]
-  Frad_SW  ! Shortwave radiative flux                [W/m^2]
+  Frad_SW     ! Shortwave radiative flux                [W/m^2]
 
 
 ! Local Variables, general
@@ -153,24 +152,24 @@ real, dimension(gr%nnzp) :: &
   radht_theta, & 
   radht_LW_theta, & 
   radht_SW_theta, & 
-  !     .  LWP,            ! Liquid water path                              [kg/m^2]
-  rcm_rad,         & ! Flipped array of liq. water mixing ratio       [kg/kg]
+!  LWP,            & ! Liquid water path                              [kg/m^2]
+  rcm_rad,        & ! Flipped array of liq. water mixing ratio       [kg/kg]
   rho_rad,        & ! Flipped array of air density                   [kg/m^3]
-  dsigm,           & ! Flipped array of grid spacing                  [m]
-  coamps_zm,       & ! Flipped array of momentum level altitudes      [m]
-  coamps_zt,       & ! Flipped array of thermodynamic level altitudes [m]
-  frad_out,        & ! Flipped array of radiaive flux                 [W/m^2]
-  frad_lw_out,     & ! Flipped array of LW radiative flux             [W/m^2]
-  frad_sw_out,     & ! Flipped array of SW radiative flux             [W/m^2]
-  radhtk,          & ! Flipped array of radiative heating             [K/s]
-  radht_lw_out,    & ! Flipped array of LW radiative heating          [K/s]
-  radht_sw_out    ! Flipped array of SW radiative heating          [K/s]
+  dsigm,          & ! Flipped array of grid spacing                  [m]
+  coamps_zm,      & ! Flipped array of momentum level altitudes      [m]
+  coamps_zt,      & ! Flipped array of thermodynamic level altitudes [m]
+  frad_out,       & ! Flipped array of radiaive flux                 [W/m^2]
+  frad_lw_out,    & ! Flipped array of LW radiative flux             [W/m^2]
+  frad_sw_out,    & ! Flipped array of SW radiative flux             [W/m^2]
+  radhtk,         & ! Flipped array of radiative heating             [K/s]
+  radht_lw_out,   & ! Flipped array of LW radiative heating          [K/s]
+  radht_sw_out      ! Flipped array of SW radiative heating          [K/s]
 
 ! Local variables, on/off switches for individual schemes
 logical ::  & 
   lw_on, & 
   sw_on, & 
-  !     .  subs_on,
+!  subs_on, &
   center
 
 !-----------------------------------------------------------------------
@@ -178,7 +177,7 @@ logical ::  &
 ! Set which schemes to use
 lw_on           = .TRUE.
 sw_on           = .TRUE.
-!        subs_on         = .TRUE.
+!subs_on         = .TRUE.
 center          = .TRUE.
 
 ! Compute vertical motion
@@ -368,7 +367,7 @@ real, parameter :: &
 real, intent(in)  :: & 
   rho0,     & ! Air density at surface       [kg/m^3
   um_sfc,   & ! um at zt(2)                  [m/s]
-  vm_sfc   ! vm at zt(2)                  [m/s]
+  vm_sfc      ! vm at zt(2)                  [m/s]
 
 ! Output Variables
 real, intent(out) ::  & 
@@ -376,7 +375,7 @@ real, intent(out) ::  &
   vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
   wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
   wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
-  ustar        ! surface friction velocity [m/s]
+  ustar           ! surface friction velocity [m/s]
 
 ! Output Variables (optional) 
 real, dimension(sclr_dim), intent(out) :: & 
