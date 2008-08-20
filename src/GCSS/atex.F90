@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-!$Id: atex.F90,v 1.9 2008-08-06 13:53:02 faschinj Exp $
+!$Id: atex.F90,v 1.10 2008-08-20 14:58:20 faschinj Exp $
 module atex
 
 !       Description:
@@ -138,11 +138,9 @@ if ( time >= time_initial + 5400.0 ) then
    do i = 2, gr%nnzp
 
       if ( gr%zt(i) > 0. .and. gr%zt(i) < zi ) then
-         thlm_forcing(i)  & 
-           = -1.1575e-5 * ( 3. - gr%zt(i)/zi )
+         thlm_forcing(i) = -1.1575e-5 * ( 3. - gr%zt(i)/zi )
       else if ( gr%zt(i) > zi .and. gr%zt(i) <= zi+300. ) then
-         thlm_forcing(i) & 
-           = -2.315e-5 * ( 1. - (gr%zt(i)-zi)/300. )
+         thlm_forcing(i) = -2.315e-5 * ( 1. - (gr%zt(i)-zi)/300. )
       else
          thlm_forcing(i) = 0.0
       end if
