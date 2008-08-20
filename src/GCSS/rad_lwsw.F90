@@ -1,4 +1,4 @@
-! $Id: rad_lwsw.F90,v 1.4 2008-08-12 16:12:28 dschanen Exp $
+! $Id: rad_lwsw.F90,v 1.5 2008-08-20 16:09:22 faschinj Exp $
 !-----------------------------------------------------------------------
 module rad_lwsw_mod
 
@@ -70,7 +70,7 @@ integer, intent(in) :: kk ! Number of vertical levels   [-]
 real, dimension(kk), intent(in) ::  & 
   qc3,   & ! Cloud water mixing ratio at time t + dt       [kg/kg]
   rbm,   & ! Density of reference state at mass levels     [kg/m^3]
-  dsigm ! Thickness of sigma (mass) levels              [m]
+  dsigm    ! Thickness of sigma (mass) levels              [m]
 
 real, dimension(kk+1), intent(in) :: & 
   coamps_zm,  & ! Altitude of momentum levels w/ COAMPS grid indices      [m]
@@ -81,31 +81,31 @@ real, intent(in) ::  &
   F0,      & ! Coefficient for cloud top heating, see Stevens [W/m^2]
   F1,      & !     "                      "                   [W/m^2]
   kay,     & ! A "constant" according to Duynkerke eqn.5,
-          ! where his value is 130 m^2/kg.                 [m^2/kg]
-  radius  ! Effective droplet radius.                      [m]
+             ! where his value is 130 m^2/kg.                 [m^2/kg]
+  radius     ! Effective droplet radius.                      [m]
 
 real, intent(in) ::  & 
   A,     & ! Albedo- sea surface, according to Lenderink             [-]
   gc,    & ! Asymmetry parameter, "g" in Duynkerke.                  [-] 
   Fs0,   & ! Incident incoming SW insolation at cloud top in 
-        ! direction of the incoming beam (not the vertical)       [W/m^2]
+           ! direction of the incoming beam (not the vertical)       [W/m^2]
   omega ! Single-scattering albedo                                [-]
 
 logical, intent(in) ::  & 
   center,  & ! Use centered differences?     [-]
   sw_on,   & ! Is shortwave radiation on?    [-]
-  lw_on   ! Is longwave radiation on?     [-]
+  lw_on      ! Is longwave radiation on?     [-]
 
 ! Output Variables
 real, dimension(kk), intent(out) ::  & 
   radhtk,    & ! Total radiational heating (dT/dt)           [K/s]
   radht_SW,  & ! Shortwave component of radiational heating  [K/s]
-  radht_LW  ! Longwave component of radiational heating   [K/s]
+  radht_LW     ! Longwave component of radiational heating   [K/s]
 
 real, dimension(kk+1), intent(out) ::  & 
   Frad,     & ! Total radiative flux         [W/m^2]
   Frad_SW,  & ! Shortwave radiative flux     [W/m^2]
-  Frad_LW  ! Longwave radiative flux      [W/m^2]
+  Frad_LW     ! Longwave radiative flux      [W/m^2]
 
 ! Local Variables
 real, dimension(kk+1) :: lwp ! Liquid water path from domain top [kg/m^2]
@@ -418,7 +418,7 @@ real, dimension(kk+1) :: &
   tau,     & ! Optical depth of an incremental layer.        [-]
   taude,   & ! Delta-Eddington transformation of tau.        [-]
   F_diff,  & ! Diffuse component of SW radiation             [W/m^2]
-  F_dir   ! Diffuse component of LW radiation             [W/m^2]
+  F_dir      ! Diffuse component of LW radiation             [W/m^2]
 
 real :: taupath, tauc, t1, t2, t3, c1, c2, omegade, & 
      x1, x2, x3, rk, rk2, xi_abs2, rp, alpha, beta, rtt, & 
