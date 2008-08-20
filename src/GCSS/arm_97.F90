@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_97.F90,v 1.5 2008-08-06 13:53:02 faschinj Exp $
+! $Id: arm_97.F90,v 1.6 2008-08-20 14:53:08 faschinj Exp $
 module arm_97
 
 !       Description:
@@ -57,6 +57,8 @@ use error_code, only: clubb_debug ! Procedure(s)
 
 use array_index, only:  & 
     iisclr_thl, iisclr_rt ! Variable(s)
+
+use interpolation, only:factor_interp ! Procedure(s)
 
 implicit none
 
@@ -126,16 +128,18 @@ endif
 
 ! Interpolate LS thetal tendency to the HOC grid
 ! Time
-thlm_t_interp = (1.-time_frac) * thl_ls(:,i1) + time_frac *  & 
-   thl_ls(:,i2)
+!thlm_t_interp = (1.-time_frac) * thl_ls(:,i1) + time_frac *  & 
+!   thl_ls(:,i2)
+thlm_t_interp = factor_interp( time_frac, thl_ls(:, i2), thl_ls(:, i1) )
 ! Vertical
 thlm_forcing(1:gr%nnzp) = zlinterp_fnc & 
          ( gr%nnzp, nz, gr%zt(:), z(:,i1), thlm_t_interp )
 
 ! Interpolate LS rt tendency to the HOC grid
 ! Time
-rtm_t_interp = (1.-time_frac) * rt_ls(:,i1) + time_frac *  & 
-   rt_ls(:,i2)
+!rtm_t_interp = (1.-time_frac) * rt_ls(:,i1) + time_frac *  & 
+!   rt_ls(:,i2)
+rtm_t_interp = factor_interp( time_frac, rt_ls(:,i2), rt_ls(:,i1) )
 ! Vertical
 rtm_forcing(1:gr%nnzp) = zlinterp_fnc & 
          ( gr%nnzp, nz, gr%zt(:), z(:,i1), rtm_t_interp )
@@ -143,8 +147,9 @@ rtm_forcing(1:gr%nnzp) = zlinterp_fnc &
 
 ! Interpolate um observed to the HOC grid
 ! Time
-um_obs_t_interp = (1.-time_frac) * um_obs(:,i1) + time_frac *  & 
-   um_obs(:,i2)
+!um_obs_t_interp = (1.-time_frac) * um_obs(:,i1) + time_frac *  & 
+!   um_obs(:,i2)
+um_obs_t_interp = factor_interp( time_frac, um_obs(:,i2), um_obs(:,i1) )
 ! Vertical
 um_hoc_grid(1:gr%nnzp) = zlinterp_fnc & 
          ( gr%nnzp, nz, gr%zt(:), z(:,i1), um_obs_t_interp )
@@ -152,8 +157,9 @@ um_hoc_grid(1:gr%nnzp) = zlinterp_fnc &
 
 ! Interpolate vm observed to the HOC grid
 ! Time
-vm_obs_t_interp = (1.-time_frac) * vm_obs(:,i1) + time_frac *  & 
-   vm_obs(:,i2)
+!vm_obs_t_interp = (1.-time_frac) * vm_obs(:,i1) + time_frac *  & 
+!   vm_obs(:,i2)
+vm_obs_t_interp = factor_interp( time_frac, vm_obs(:,i2), vm_obs(:,i1) )
 ! Vertical
 vm_hoc_grid(1:gr%nnzp) = zlinterp_fnc & 
          ( gr%nnzp, nz, gr%zt(:), z(:,i1), vm_obs_t_interp )
@@ -192,11 +198,12 @@ use stats_precision, only: time_precision ! Variable(s)
 use diag_ustar_mod, only: diag_ustar ! Variable(s)
 
 use array_index, only: iisclr_rt, iisclr_thl
-   
+
+use interpolation, only: factor_interp
+
 implicit none
 
 intrinsic :: max, sqrt, present
-
 
 real, parameter ::  & 
   ubmin = 0.25, & ! Minimum value for ubar 
@@ -250,10 +257,12 @@ else
     if ( time >= times(i1) .and. time < times(i2) ) then
       time_frac            = real((time-times(i1))/(times(i2) & 
          - times(i1)))
-      heat_flx     = ( 1. - time_frac ) * SE(i1) +  & 
-         time_frac * SE(i2)
-      moisture_flx = ( 1. - time_frac ) * LE(i1) +  & 
-         time_frac * LE(i2)
+!      heat_flx     = ( 1. - time_frac ) * SE(i1) +  & 
+!         time_frac * SE(i2)
+      heat_flx = factor_interp( time_frac, SE(i2), SE(i1) )
+!      moisture_flx = ( 1. - time_frac ) * LE(i1) +  & 
+!         time_frac * LE(i2)
+      heat_flx = factor_interp( time_frac, LE(i2), LE(i1) )
       i1           = ntimes
     end if
       i1 = i2

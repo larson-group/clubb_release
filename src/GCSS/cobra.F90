@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: cobra.F90,v 1.6 2008-08-06 13:53:02 faschinj Exp $
+! $Id: cobra.F90,v 1.7 2008-08-20 14:53:08 faschinj Exp $
 module cobra
 !       Description:
 !       Contains subroutines for the COBRA CO2 case.
@@ -126,7 +126,9 @@ use stats_precision, only: time_precision ! Variable(s)
 
 use diag_ustar_mod, only: diag_ustar ! Variable(s)
 
-use array_index, only: iisclr_rt, iisclr_thl, iiCO2
+use array_index, only: iisclr_rt, iisclr_thl, iiCO2 ! Variable(s)
+
+use interpolation, only: factor_interp
 
 implicit none
 
@@ -146,7 +148,7 @@ real, intent(in) :: &
   dn0,       & ! Air density at surface      [kg/m^3]
   thlm_sfc,  & ! Theta_l at zt(2)            [K]
   um_sfc,    & ! u wind at zt(2)             [m/s]
-  vm_sfc    ! v wind at zt(2)             [m/s]
+  vm_sfc       ! v wind at zt(2)             [m/s]
 
 ! Output variables
 real, intent(out) ::  & 
@@ -154,12 +156,12 @@ real, intent(out) ::  &
   vpwp_sfc,    & ! v'w' at surface           [m^2/s^2]
   wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
   wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
-  ustar       ! surface friction velocity [m/s]
+  ustar          ! surface friction velocity [m/s]
 
 ! Output variables
 real, intent(out), dimension(sclr_dim) ::  & 
-  wpsclrp_sfc,   & ! w'sclr' surface flux          [units m/s]
-  wpedsclrp_sfc ! w' edsclr' surface flux       [units m/s]
+  wpsclrp_sfc, & ! w'sclr' surface flux          [units m/s]
+  wpedsclrp_sfc  ! w' edsclr' surface flux       [units m/s]
 
 ! Local variables
 real ::  & 
@@ -241,6 +243,8 @@ subroutine cobra_sfcflx( time, heat_flx, moisture_flx, &
 !       Notes:
 !       The data has been altered so it can be used for the COBRA CO2 case.
 !-----------------------------------------------------------------------
+
+use interpolation, only: factor_interp
 
 implicit none
 
@@ -368,7 +372,7 @@ real, intent(in) :: time ! Current time [s]
 real, intent(out) :: & 
   heat_flx,        & ! Heat flux             [W/m^2]
   moisture_flx,    & ! Moisture flux         [W/m^2]
-  CO2_flx         ! Carbon dioxide flux   [umol/(m^2 s)]
+  CO2_flx            ! Carbon dioxide flux   [umol/(m^2 s)]
 
 ! Local variables
 integer :: i1, i2
@@ -394,11 +398,12 @@ else  ! time > times(1) and time < times(ntimes)
     if ( time >= times(i1) .and. time < times(i2) ) then
       a = (time-times(i1))/(times(i2)-times(i1))
 
-      heat_flx     = ( 1. - a ) * H(i1) + a * H(i2)
-      moisture_flx = ( 1. - a ) * LE(i1) + a * LE(i2)
-
-      CO2_flx = ( 1. - a ) * CO2(i1) + a * CO2(i2)
-
+      !heat_flx     = ( 1. - a ) * H(i1) + a * H(i2)
+      !moisture_flx = ( 1. - a ) * LE(i1) + a * LE(i2)
+      heat_flx = factor_interp( a, H(i2), H(i1) )
+      moisture_flx = factor_interp( a, LE(i2), LE(i1) )
+      !CO2_flx = ( 1. - a ) * CO2(i1) + a * CO2(i2)
+      CO2_flx = factor_interp( a, CO2(i2), CO2(i1) )
       i1           = ntimes
     end if ! time >= times(i1) & time < times(i2)
 

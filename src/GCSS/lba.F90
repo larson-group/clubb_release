@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: lba.F90,v 1.6 2008-08-06 13:53:03 faschinj Exp $
+! $Id: lba.F90,v 1.7 2008-08-20 14:53:08 faschinj Exp $
 module lba
 
 !       Description:
@@ -56,6 +56,8 @@ use stats_precision, only: time_precision ! Variable(s)
 use array_index, only:  & 
     iisclr_thl, iisclr_rt ! Variable(s)
 
+use interpolation, only: factor_interp ! Procedure(s)
+
 implicit none
 
 ! Input
@@ -63,11 +65,11 @@ real(kind=time_precision), intent(in) :: time ! Model time [s]
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) :: & 
-  wm_zt,           & ! w wind on thermodynamic grid                 [m/s]
-  wm_zm,           & ! w wind on momentum grid                      [m/s]
-  radht,         & ! Radiative heating rate                       [K/s]
-  thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
-  rtm_forcing   ! Total water mixing ratio tendency            [kg/kg/s]
+  wm_zt,        & ! w wind on thermodynamic grid                 [m/s]
+  wm_zm,        & ! w wind on momentum grid                      [m/s]
+  radht,        & ! Radiative heating rate                       [K/s]
+  thlm_forcing, & ! Liquid water potential temperature tendency  [K/s]
+  rtm_forcing     ! Total water mixing ratio tendency            [kg/kg/s]
 
 ! Output Variables (optional)
 real, optional, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
@@ -97,7 +99,8 @@ if ( .not. l_bugsrad ) then
       i2 = i1 + 1
       if ( time >= 600. * i1 .and. time < 600. * i2  ) then
         a  = real(( time - 600. * i1 )/( 600. * i2 - 600. * i1))
-        radhtz(:) = ( 1. - a ) * krad(:,i1) + a * krad(:,i2)
+        !radhtz(:) = ( 1. - a ) * krad(:,i1) + a * krad(:,i2)
+        radhtz(:) = factor_interp( a, krad(:,i2), krad(:,i1) )
         i1     = ntimes
       end if
       i1 = i2

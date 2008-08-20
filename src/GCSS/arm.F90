@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: arm.F90,v 1.6 2008-08-06 13:53:02 faschinj Exp $
+! $Id: arm.F90,v 1.7 2008-08-20 14:53:08 faschinj Exp $
 module arm
 
 !       Description:
@@ -35,6 +35,7 @@ use stats_precision, only: time_precision ! Variable(s)
 use array_index, only:  & 
     iisclr_thl, iisclr_rt ! Variable(s)
 
+use interpolation, only: factor_interp ! Procedure(s) 
  
 use stats_type, only: stat_update_var ! Procedure(s)
 
@@ -59,7 +60,7 @@ real(kind=time_precision), intent(in) :: time ! Model time [s]
 real, intent(out), dimension(gr%nnzp) ::  & 
   thlm_forcing,  & ! Liquid water potential temperature tendency [K/s]
   radht,         & ! Radiative heating rate                      [K/s]
-  rtm_forcing   ! Total water mixing ratio tendency           [kg/kg/s]
+  rtm_forcing      ! Total water mixing ratio tendency           [kg/kg/s]
 
 ! Output (optional) Variables
 real, intent(out), dimension(gr%nnzp,sclr_dim) ::  & 
@@ -72,7 +73,7 @@ real ::  &
   true_time,  & ! [s]
   theta_tmp,  & ! [K/s]
   rad_tmp,    & ! [K/s]
-  rt_tmp     ! [kg/kg/s]
+  rt_tmp        ! [kg/kg/s]
 
 !-----------------------------------------------------------------------
 
@@ -91,20 +92,22 @@ else
 end if
 
 if ( .not. l_bugsrad ) then
-  theta_tmp = ( 1. - a ) * ( atheta(i1) ) & 
-            + a * ( atheta(i2) )
-
-  rad_tmp = ( 1. - a ) * ( rtheta(i1) ) & 
-          + a * ( rtheta(i2) )
-
+!  theta_tmp = ( 1. - a ) * ( atheta(i1) ) & 
+!            + a * ( atheta(i2) )
+  theta_tmp = factor_interp( a, atheta(i2), atheta(i1) )
+!  rad_tmp = ( 1. - a ) * ( rtheta(i1) ) & 
+!          + a * ( rtheta(i2) )
+  rad_tmp = factor_interp( a, rtheta(i2), rtheta(i1) )
 else ! Factor in radiation later
-  theta_tmp = ( 1. - a ) * ( atheta(i1) + 0.0 ) & 
-            + a * ( atheta(i2) + 0.0 )
+!  theta_tmp = ( 1. - a ) * ( atheta(i1) + 0.0 ) & 
+!            + a * ( atheta(i2) + 0.0 )
+  theta_tmp = factor_interp( a, atheta(i2) + 0.0, atheta(i1) + 0.0 )
   rad_tmp   = 0.0
 
 end if ! ~ l_bugsrad
 
-rt_tmp = ( 1. - a ) * art(i1) + a * art(i2)
+!rt_tmp = ( 1. - a ) * art(i1) + a * art(i2)
+rt_tmp = factor_interp(a, art(i2), art(i1) )
 
 ! Convert to the right units
 
@@ -261,6 +264,8 @@ subroutine arm_sfcflx( time, heat_flx, moisture_flx )
 !       This subroutine computes surface heat and moisture for a specific time
 !       according to GCSS ARM specifications. Flux returned are in (W/m2)
 !------------------------------------------------------------------------
+use interpolation, only: factor_interp
+
 implicit none
 
 ! Parameter constants
@@ -295,8 +300,10 @@ else
       i2 = i1 + 1
       if ( time >= times(i1) .and. time < times(i2) ) then
          a            = (time-times(i1))/(times(i2)-times(i1))
-         heat_flx     = ( 1. - a ) * H(i1) + a * H(i2)
-         moisture_flx = ( 1. - a ) * LE(i1) + a * LE(i2)
+!         heat_flx     = ( 1. - a ) * H(i1) + a * H(i2)
+         heat_flx = factor_interp( a, H(i2), H(i1) )
+!         moisture_flx = ( 1. - a ) * LE(i1) + a * LE(i2)
+         moisture_flx = factor_interp( a, LE(i2), LE(i1) )
          i1           = ntimes
       end if
       i1 = i2

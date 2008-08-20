@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: mpace_a.F90,v 1.11 2008-08-06 13:53:03 faschinj Exp $
+! $Id: mpace_a.F90,v 1.12 2008-08-20 14:53:08 faschinj Exp $
   module mpace_a
 
 !       Description:
@@ -70,13 +70,13 @@
 
   use grid_class, only: zt2zm ! Procedure(s)
 
-  use interpolation, only: zlinterp_fnc ! Procedure(s)
+  use interpolation, only: zlinterp_fnc, factor_interp ! Procedure(s)
 
   use stats_precision, only: time_precision ! Variable(s)
 
   use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
 
-  use array_index, only: iisclr_rt, iisclr_thl
+  use array_index, only: iisclr_rt, iisclr_thl ! Variable(s)
 
   use error_code, only: clubb_debug ! Procedure(s)
  
@@ -185,7 +185,7 @@
   radht_SW_theta,  & 
 !     .  LWP,            ! Liquid water path                              [kg/m^2]
   rcm_rad,         & ! Flipped array of liq. water mixing ratio       [kg/kg]
-  rho_rad,        & ! Flipped array of air density                   [kg/m^3]
+  rho_rad,         & ! Flipped array of air density                   [kg/m^3]
   dsigm,           & ! Flipped array of grid spacing                  [m]
   coamps_zm,       & ! Flipped array of momentum level altitudes      [m]
   coamps_zt,       & ! Flipped array of thermodynamic level altitudes [m]
@@ -194,7 +194,7 @@
   frad_sw_out,     & ! Flipped array of SW radiative flux             [W/m^2]
   radhtk,          & ! Flipped array of radiative heating             [K/s]
   radht_lw_out,    & ! Flipped array of LW radiative heating          [K/s]
-  radht_sw_out    ! Flipped array of SW radiative heating          [K/s]
+  radht_sw_out       ! Flipped array of SW radiative heating          [K/s]
 
   ! Local variables, on/off switches for individual schemes
   logical ::  & 
@@ -266,36 +266,12 @@ do k=1,file_nlevels
 !     .                      -omega_forcing(k,left_time))
 !     .                     + omega_forcing(k,left_time)
 
-  dTdt_column(k) = ratio *                        & ! Do linear interpolation in time
-                      (dTdt_forcing(k,right_time) & 
-                      -dTdt_forcing(k,left_time)) & 
-                     + dTdt_forcing(k,left_time)        
-
-  dqdt_column(k) = ratio *                        & ! Do linear interpolation in time
-                      (dqdt_forcing(k,right_time) & 
-                      -dqdt_forcing(k,left_time)) & 
-                     + dqdt_forcing(k,left_time)        
-
-  vertT_column(k) = ratio *                        & ! Do linear interpolation in time
-                      (vertT_forcing(k,right_time) & 
-                      -vertT_forcing(k,left_time)) & 
-                     + vertT_forcing(k,left_time)        
-
-  vertq_column(k) = ratio *                        & ! Do linear interpolation in time
-                      (vertq_forcing(k,right_time) & 
-                      -vertq_forcing(k,left_time)) & 
-                     + vertq_forcing(k,left_time)        
-
-  um_column(k) = ratio *                    & ! Do linear interpolation in time
-                      (um_obs(k,right_time) & 
-                      -um_obs(k,left_time)) & 
-                     + um_obs(k,left_time)        
-
-  vm_column(k) = ratio *                    & ! Do linear interpolation in time
-                      (vm_obs(k,right_time) & 
-                      -vm_obs(k,left_time)) & 
-                     + vm_obs(k,left_time)        
-
+  dTdt_column(k)  = factor_interp( ratio, dTdt_forcing(k, right_time), dTdt_forcing(k, left_time) )
+  dqdt_column(k)  = factor_interp( ratio, dqdt_forcing(k, right_time), dqdt_forcing(k, left_time) )
+  vertT_column(k) = factor_interp( ratio, vertT_forcing(k,right_time),vertT_forcing(k,left_time) )
+  vertq_column(k) = factor_interp( ratio, vertq_forcing(k,right_time),vertq_forcing(k,left_time) )
+  um_column(k)    = factor_interp( ratio, um_obs(k, right_time), um_obs(k, left_time) )
+  vm_column(k)    = factor_interp( ratio, vm_obs(k, right_time), vm_obs(k, left_time) )
 end do
 
 !     Do linear interpolation in space
@@ -449,8 +425,7 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
 
   ! Initialize Ncnm on first timestep
   if ( l_coamps_micro .and. time == time_initial ) then
-    Ncnm(1:gr%nnzp) & 
-    = 30.0 * (1.0 + exp(-gr%zt(1:gr%nnzp)/2000.0)) * 1.e6
+    Ncnm(1:gr%nnzp) = 30.0 * (1.0 + exp(-gr%zt(1:gr%nnzp)/2000.0)) * 1.e6
 
   else if ( l_kk_rain ) then
     ! Note: Khairoutdinov and Kogan microphysics has only been
@@ -487,13 +462,15 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
 
   use constants, only: Cp, Lv ! Variable(s)
 
-  use parameters, only: sclr_dim
+  use parameters, only: sclr_dim ! Variable(s)
 
   use stats_precision, only: time_precision ! Variable(s)
 
-  use array_index, only: iisclr_rt, iisclr_thl
+  use array_index, only: iisclr_rt, iisclr_thl ! Variable(s)
 
   use error_code, only: clubb_debug ! Procedure(s)
+
+  use interpolation, only: factor_interp ! Procedure(s)
 
   implicit none
 
@@ -512,7 +489,7 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
   real, intent(in)  :: & 
   rho0,     & ! Air density at surface       [kg/m^3
   um_sfc,   & ! um at zt(2)                  [m/s]
-  vm_sfc   ! vm at zt(2)                  [m/s]
+  vm_sfc      ! vm at zt(2)                  [m/s]
 
   ! Output Variables
   real, intent(out) ::  & 
@@ -520,11 +497,11 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
   vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
   wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
   wprtp_sfc,    & ! w'r_t' at (1)    [(m kg)/(s kg)]
-  ustar        ! surface friction velocity [m/s]
+  ustar           ! surface friction velocity [m/s]
 
   ! Output Variables 
   real, dimension(sclr_dim), intent(out) :: & 
-  wpsclrp_sfc,    & ! Passive scalar surface flux      [units m/s]
+  wpsclrp_sfc, & ! Passive scalar surface flux      [units m/s]
   wpedsclrp_sfc  ! Passive eddy-scalar surface flux [units m/s]
 
   ! Local Variables
@@ -536,8 +513,9 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
    integer :: k
 
    integer :: & 
-   left_time,right_time
+   left_time, right_time
 
+   real :: ratio
 !-----------------------------------------------------------------------
 
 left_time = -1
@@ -568,18 +546,12 @@ if ( left_time == -1 .or. right_time == -1 ) then
         call clubb_debug(1, "file_times not sorted in MPACE_A")
 endif
 
+ratio = real(((time-file_times(left_time)) /  & 
+     (file_times(right_time)-file_times(left_time))))
 
-latent_heat_flx = real(((time-file_times(left_time)) /  & 
-     (file_times(right_time)-file_times(left_time))) * & 
-     (file_LH(right_time) & 
-     -file_LH(left_time)) & 
-     + file_LH(left_time))        
+latent_heat_flx = factor_interp( ratio, file_LH(right_time), file_LH(left_time) )
 
-sensible_heat_flx = real(((time-file_times(left_time)) /  & 
-     (file_times(right_time)-file_times(left_time))) * & 
-     (file_SH(right_time) & 
-     -file_SH(left_time)) & 
-     + file_SH(left_time))
+sensible_heat_flx = factor_interp( ratio, file_SH(right_time), file_SH(left_time) )
 
  ! Compute heat and moisture fluxes
   wpthlp_sfc = sensible_heat_flx/(rho0*Cp)
