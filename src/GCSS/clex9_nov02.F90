@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: clex9_nov02.F90,v 1.10 2008-08-04 16:58:43 faschinj Exp $
+! $Id: clex9_nov02.F90,v 1.11 2008-08-20 15:08:08 faschinj Exp $
   module clex9_nov02
 
 !       Description:
@@ -17,9 +17,9 @@
 
   ! Used to start the microphysics after predetermined amount of time
   logical, private ::  & 
-  tdelay_lcoamps_micro, tdelay_licedfs 
+  l_tdelay_coamps_micro, l_tdelay_icedfs 
 
-!$omp   threadprivate(tdelay_lcoamps_micro, tdelay_licedfs)
+!$omp   threadprivate(l_tdelay_coamps_micro, l_tdelay_icedfs)
 
   private ! Default Scope
 
@@ -56,8 +56,7 @@
 
   use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
 
-  use array_index, only: iisclr_thl, iisclr_rt
-
+  use array_index, only: iisclr_thl, iisclr_rt ! Variable(s)
  
   use stats_type, only: stat_update_var ! Procedure(s)
 
@@ -109,19 +108,19 @@
   rlon               ! Longitude             [degrees_E]
 
   real, intent(in), dimension(gr%nnzp) :: & 
-  rcm,     & ! Cloud water mixing ratio      [kg/kg]
-  exner,   & ! Exner function                [-]
-  rho       ! Density                       [kg/m^3]
+  rcm,   & ! Cloud water mixing ratio      [kg/kg]
+  exner, & ! Exner function                [-]
+  rho      ! Density                       [kg/m^3]
 
   ! Output variables
   real, intent(out), dimension(gr%nnzp) :: & 
-  wm_zt,             & ! Mean vertical wind on the thermo. grid  [m/s]
-  wm_zm,             & ! Mean vertical wind on the moment. grid  [m/s]
-  thlm_forcing,    & ! Theta_l forcing                         [K/s]
-  rtm_forcing,     & ! Total water forcing                     [kg/kg/s]
-  Frad,            & ! Radiative flux                          [W/m^2]
-  radht,           & ! Radiative heating                       [K/s]
-  Ncnm               ! Cloud nuclei number concentration       [num/m^3]
+  wm_zt,        & ! Mean vertical wind on the thermo. grid  [m/s]
+  wm_zm,        & ! Mean vertical wind on the moment. grid  [m/s]
+  thlm_forcing, & ! Theta_l forcing                         [K/s]
+  rtm_forcing,  & ! Total water forcing                     [kg/kg/s]
+  Frad,         & ! Radiative flux                          [W/m^2]
+  radht,        & ! Radiative heating                       [K/s]
+  Ncnm            ! Cloud nuclei number concentration       [num/m^3]
 
   ! Output variables (optional)
   real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
@@ -138,12 +137,12 @@
   radht_SW    ! Short wave radiative heating [K/s]
 
   real, dimension(gr%nnzp) ::  & 
-!     .  LWP,       ! Liquid water path                              [kg/m^2]
-  rcm_rad,    & ! Flipped array of liq. water mixing ratio       [kg/kg]
+!  LWP,     & ! Liquid water path                              [kg/m^2]
+  rcm_rad,   & ! Flipped array of liq. water mixing ratio       [kg/kg]
   rho_rad,   & ! Flipped array of air density                   [kg/m^3]
-  dsigm,      & ! Flipped array of grid spacing                  [m]
-  coamps_zm,  & ! Flipped array of momentum level altitudes      [m]
-  coamps_zt     ! Flipped array of thermodynamic level altitudes [m]
+  dsigm,     & ! Flipped array of grid spacing                  [m]
+  coamps_zm, & ! Flipped array of momentum level altitudes      [m]
+  coamps_zt    ! Flipped array of thermodynamic level altitudes [m]
 
   real, dimension(gr%nnzp) ::  & 
   frad_out,    & ! Flipped array of radiaive flux            [W/m^2]
@@ -588,21 +587,21 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
       ! Turn off microphysics for now, re-enable at
       ! time = 3600.
       l_coamps_micro        = .false.
-      tdelay_lcoamps_micro = .true.
+      l_tdelay_coamps_micro = .true.
 
     else if ( l_licedfs ) then
       l_licedfs        = .false.
-      tdelay_licedfs = .true.
+      l_tdelay_icedfs = .true.
 
     else
-      tdelay_lcoamps_micro = .false.
-      tdelay_licedfs       = .false.
+      l_tdelay_coamps_micro = .false.
+      l_tdelay_icedfs       = .false.
     end if
 
   end if
 
   if ( time >= ( time_initial + 3600.0 )  & 
-            .and. tdelay_licedfs ) then
+            .and. l_tdelay_icedfs ) then
   !---------------------------------------------------------------
   ! Compute the loss of total water due to diffusional
   ! growth of ice.  This is defined on thermodynamic levels.
@@ -611,7 +610,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
     
 
   else if ( time == ( time_initial + 3600.0 )  & 
-            .and. tdelay_lcoamps_micro ) then
+            .and. l_tdelay_coamps_micro ) then
 
   !---------------------------------------------------------------
   ! Start COAMPS micro after predefined time delay
