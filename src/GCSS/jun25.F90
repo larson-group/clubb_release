@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F90,v 1.11 2008-08-20 15:24:05 faschinj Exp $
+! $Id: jun25.F90,v 1.12 2008-08-20 20:29:04 faschinj Exp $
   module jun25
 
 !       Description:
@@ -14,9 +14,9 @@
 
   ! Used to start the microphysics after predetermined amount of time
 !        logical, private :: 
-!     .  tdelay_lcoamps_micro, tdelay_licedfs 
+!     .  l_tdelay_coamps_micro, l_tdelay_icedfs 
 
-!$omp   threadprivate(tdelay_lcoamps_micro, tdelay_licedfs)
+!$omp   threadprivate(l_tdelay_coamps_micro, l_tdelay_icedfs)
 
   private ! Default Scope
 
@@ -46,7 +46,7 @@
 
   use model_flags, only: l_bugsrad ! Variable(s)
 
-!  use model_flags, only: l_coamps_micro, l_licedfs ! Variables(s)
+!  use model_flags, only: l_coamps_micro, l_icedfs ! Variables(s)
 
   use stats_precision, only: time_precision ! Variable(s)
 
@@ -664,15 +664,15 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
       ! Turn off microphysics for now, re-enable at
       ! time = 3600.
 !            l_coamps_micro        = .false.
-!            tdelay_lcoamps_micro = .true.
+!            l_tdelay_coamps_micro = .true.
 
-!          else if ( l_licedfs ) then
-!            l_licedfs        = .false.
-!            tdelay_licedfs = .true.
+!          else if ( l_icedfs ) then
+!            l_icedfs        = .false.
+!            l_tdelay_icedfs = .true.
 
 !          else
-!            tdelay_lcoamps_micro = .false.
-!            tdelay_licedfs       = .false.
+!            l_tdelay_coamps_micro = .false.
+!            l_tdelay_icedfs       = .false.
 !          end if
 
 !        end if

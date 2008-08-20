@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: nov11.F90,v 1.13 2008-08-11 16:21:05 faschinj Exp $
+! $Id: nov11.F90,v 1.14 2008-08-20 20:29:04 faschinj Exp $
   module nov11
 
 !       Description:
@@ -17,9 +17,9 @@
 
   ! Used to start the microphysics after predetermined amount of time
   logical, private ::  & 
-  tdelay_lcoamps_micro, tdelay_licedfs 
+  l_tdelay_coamps_micro, l_tdelay_icedfs 
 
-!$omp   threadprivate(tdelay_lcoamps_micro, tdelay_licedfs)
+!$omp   threadprivate(l_tdelay_coamps_micro, l_tdelay_icedfs)
 
   private ! Default Scope
 
@@ -50,7 +50,7 @@
 
   use parameters, only: sclr_dim ! Variable(s)
 
-  use model_flags, only: l_bugsrad, l_coamps_micro, l_licedfs ! Variable(s)
+  use model_flags, only: l_bugsrad, l_coamps_micro, l_icedfs ! Variable(s)
 
   use stats_precision, only: time_precision ! Variable(s)
 
@@ -573,30 +573,30 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
       ! Turn off microphysics for now, re-enable at
       ! time = 3600.
       l_coamps_micro        = .false.
-      tdelay_lcoamps_micro = .true.
+      l_tdelay_coamps_micro = .true.
 
-    else if ( l_licedfs ) then
-      l_licedfs        = .false.
-      tdelay_licedfs = .true.
+    else if ( l_icedfs ) then
+      l_icedfs        = .false.
+      l_tdelay_icedfs = .true.
 
     else
-      tdelay_lcoamps_micro = .false.
-      tdelay_licedfs       = .false.
+      l_tdelay_coamps_micro = .false.
+      l_tdelay_icedfs       = .false.
     end if
 
   end if
 
   if ( time >= ( time_initial + 3600.0 )  & 
-            .and. tdelay_licedfs ) then
+            .and. l_tdelay_icedfs ) then
   !---------------------------------------------------------------
   ! Compute the loss of total water due to diffusional
   ! growth of ice.  This is defined on thermodynamic levels.
   !---------------------------------------------------------------
-    l_licedfs = .true.
+    l_icedfs = .true.
     
 
   else if ( time == ( time_initial + 3600.0 )  & 
-            .and. tdelay_lcoamps_micro ) then
+            .and. l_tdelay_coamps_micro ) then
 
   !---------------------------------------------------------------
   ! Start COAMPS micro after predefined time delay
