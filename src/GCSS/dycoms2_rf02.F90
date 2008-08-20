@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F90,v 1.8 2008-08-06 13:53:02 faschinj Exp $
+! $Id: dycoms2_rf02.F90,v 1.9 2008-08-20 15:16:23 faschinj Exp $
 module dycoms2_rf02
 
 !       Description:
@@ -51,41 +51,43 @@ use stats_type, only: stat_update_var, stat_update_var_pt ! Procedure(s)
 
 USE stats_variables, only:  & 
     iradht_LW, izi, sfc, zt, l_stats_samp ! Variable(s)
+
+use interpolation, only: lin_int 
  
 implicit none
 
 ! Constant parameters
 real, parameter ::  & 
   ls_div = 3.75e-6, & 
-  kap    = 85.0,     & ! [m^2/kg]
-  F0     = 70.0,     & ! [W/m^2]
-  F1     = 22.0     ! [W/m^2]
+  kap    = 85.0,    & ! [m^2/kg]
+  F0     = 70.0,    & ! [W/m^2]
+  F1     = 22.0       ! [W/m^2]
 
 ! Input Variables
 real(kind=time_precision), intent(in) :: & 
-  time,          & ! Current time    [s]
-  time_initial  ! Initial time    [s]
+  time,        & ! Current time    [s]
+  time_initial   ! Initial time    [s]
 
 real, intent(in), dimension(gr%nnzp) :: & 
-  rho,           & ! Density on thermo. grid        [kg/m^3] 
-  rho_zm,           & ! Density on moment. grid        [kg/m^3]
-  rtm,            & ! Total water mixing ratio       [kg/kg]
-  rcm,            & ! Cloud water mixing ratio       [kg/kg]
-  exner          ! Exner function.                [-]
+  rho,    & ! Density on thermo. grid        [kg/m^3] 
+  rho_zm, & ! Density on moment. grid        [kg/m^3]
+  rtm,    & ! Total water mixing ratio       [kg/kg]
+  rcm,    & ! Cloud water mixing ratio       [kg/kg]
+  exner     ! Exner function.                [-]
 
 ! Input/Output Variables
 integer, intent(inout) :: err_code
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) ::  & 
-  wm_zt,            & ! wm on thermodynamic grid       [m/s]
-  wm_zm,            & ! wm on momentum grid            [m/s]
-  thlm_forcing,   & ! theta_l forcing                [K/s]
-  rtm_forcing,    & ! r_t forcing                    [(kg/kg)/s] 
-  Frad,           & ! Radiative flux                 [W/m^2]
-  radht,          & ! Radiative heating rate         [K/s] 
-  Ncm,            & ! Cloud droplet number conc.     [#/kg]
-  Ncnm           ! Cloud nuclei number conc.      [#/m^3]
+  wm_zt,        & ! wm on thermodynamic grid       [m/s]
+  wm_zm,        & ! wm on momentum grid            [m/s]
+  thlm_forcing, & ! theta_l forcing                [K/s]
+  rtm_forcing,  & ! r_t forcing                    [(kg/kg)/s] 
+  Frad,         & ! Radiative flux                 [W/m^2]
+  radht,        & ! Radiative heating rate         [K/s] 
+  Ncm,          & ! Cloud droplet number conc.     [#/kg]
+  Ncnm            ! Cloud nuclei number conc.      [#/m^3]
 
 ! Optional Output Variables
 real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
@@ -93,7 +95,7 @@ real, intent(out), dimension(gr%nnzp,sclr_dim) :: &
 
 ! Local Variables
 real, dimension(gr%nnzp) ::  & 
-  LWP,        & ! Liquid water path
+  LWP,      & ! Liquid water path
   Heaviside
 
 real :: z_i
@@ -140,9 +142,10 @@ IF ( .not. l_bugsrad ) THEN
     err_code = clubb_rtm_level_not_found
     return
   END IF
-  z_i = ( (gr%zt(k)-gr%zt(k-1))/(rtm(k)-rtm(k-1)) ) & 
-      * (8.0e-3-rtm(k-1)) + gr%zt(k-1)
+!  z_i = ( (gr%zt(k)-gr%zt(k-1))/(rtm(k)-rtm(k-1)) ) & 
+!      * (8.0e-3-rtm(k-1)) + gr%zt(k-1)
 
+  z_i = lin_int( 8.0e-3, rtm(k), rtm(k-1), gr%zt(k), gr%zt(k-1) )
 !         Compute the Heaviside step function for z - z_i.
 
   DO k = 1, gr%nnzp, 1
@@ -290,12 +293,12 @@ real, intent(out) ::  &
   vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
   wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
   wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
-  ustar        ! surface friction velocity [m/s]
+  ustar           ! surface friction velocity [m/s]
 
 ! Output Variables (optional)
 real, intent(out), dimension(sclr_dim) ::  & 
   wpsclrp_sfc,    & ! w' scalar at surface [units m/s]
-  wpedsclrp_sfc  ! w' scalar at surface [units m/s]
+  wpedsclrp_sfc     ! w' scalar at surface [units m/s]
 
 ! Local Variables
 real :: wind_sfc  ! ? [m^2/s^2]?
