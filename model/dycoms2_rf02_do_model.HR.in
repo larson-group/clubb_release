@@ -1,4 +1,4 @@
-! $Id: dycoms2_rf02_do_model.HR.in,v 1.18 2008-08-04 17:11:35 dschanen Exp $
+! $Id: dycoms2_rf02_do_model.HR.in,v 1.19 2008-08-20 20:29:59 faschinj Exp $
 ! Parameter file for DYCOMS2 RF02 Sc case with drizzle
 ! and no cloud water sedimentation (high-resolution).
 
@@ -61,7 +61,7 @@ T0   = 300.        ! Reference temperature (usually 300) [K]
 l_cloud_sed     = .false.  ! Flag for cloud water sedimentation.
 l_kk_rain       = .true.   ! Flag for Khairoutdinov-Kogan rain microphysics.
 l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
-l_licedfs       = .false.  ! Flag for simplified ice scheme.
+l_icedfs       = .false.  ! Flag for simplified ice scheme.
 l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 

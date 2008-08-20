@@ -1,4 +1,4 @@
-! $Id: gabls2_model.in,v 1.17 2008-08-04 17:11:35 dschanen Exp $
+! $Id: gabls2_model.in,v 1.18 2008-08-20 20:29:59 faschinj Exp $
 ! Parameter file for GABLS2 case
 ! Edited by Michael Falk, 28 December 2006
 
@@ -70,7 +70,7 @@ T0   = 283.15        ! Reference temperature (usually 300) [K]
 l_cloud_sed     = .false.  ! Flag for cloud water sedimentation.
 l_kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
 l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
-l_licedfs       = .false.  ! Flag for simplified ice scheme.
+l_icedfs       = .false.  ! Flag for simplified ice scheme.
 l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 
