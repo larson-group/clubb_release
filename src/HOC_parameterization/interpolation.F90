@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-!$Id: interpolation.F90,v 1.2 2008-08-12 16:12:28 dschanen Exp $
+!$Id: interpolation.F90,v 1.3 2008-08-20 14:45:29 faschinj Exp $
 module interpolation
 
   implicit none
@@ -7,7 +7,7 @@ module interpolation
   private ! Default Scope
 
   public :: lin_int, binary_search, zlinterp_fnc, & 
-    linear_interpolation
+    linear_interpolation, factor_interp
 
   contains
 
@@ -72,14 +72,16 @@ module interpolation
   end function lin_int
 
 !-------------------------------------------------------------------------------------------------
- pure real function factor_interp( factor, vtop, vbot )
+ elemental real function factor_interp( factor, var_high, var_low )
 !-------------------------------------------------------------------------------------------------
     implicit none
 
-    real, intent(in) :: factor, vtop, vbot
+    real, intent(in) :: &
+    factor,   & ! Factor                           [units vary]  
+    var_high, & ! Variable above the interpolation [units vary]
+    var_low     ! Variable below the interpolation [units vary]
 
-    factor_interp = factor * (vtop-vbot) + vbot
-    !factor_interp = (1-factor) * vbot + factor * vtop
+    factor_interp = factor * ( var_high - var_low ) + var_low
 
     return
   end function factor_interp
