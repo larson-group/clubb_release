@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: cobra.F90,v 1.7 2008-08-20 14:53:08 faschinj Exp $
+! $Id: cobra.F90,v 1.8 2008-08-20 16:34:01 faschinj Exp $
 module cobra
 !       Description:
 !       Contains subroutines for the COBRA CO2 case.
@@ -127,8 +127,6 @@ use stats_precision, only: time_precision ! Variable(s)
 use diag_ustar_mod, only: diag_ustar ! Variable(s)
 
 use array_index, only: iisclr_rt, iisclr_thl, iiCO2 ! Variable(s)
-
-use interpolation, only: factor_interp
 
 implicit none
 
