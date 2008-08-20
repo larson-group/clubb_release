@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F90,v 1.9 2008-08-06 13:53:02 faschinj Exp $
+! $Id: dycoms2_rf01.F90,v 1.10 2008-08-20 15:12:53 faschinj Exp $
 module dycoms2_rf01
 
 !       Description:
@@ -38,8 +38,9 @@ use stats_precision, only: time_precision ! Variable(s)
 
 use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
-use array_index, only: iisclr_rt, iisclr_thl
+use array_index, only: iisclr_rt, iisclr_thl ! Variables(s)
 
+use interpolation, only: lin_int ! Procedure(s)
  
 use stats_type, only: stat_update_var, stat_update_var_pt ! Procedure(s)
 
@@ -88,8 +89,8 @@ real, dimension(gr%nnzp) :: lwp
 integer :: i
 real :: zi
 
-wm_zt          = 0.
-wm_zm          = 0.
+wm_zt        = 0.
+wm_zm        = 0.
 thlm_forcing = 0.
 rtm_forcing  = 0.
 
@@ -108,10 +109,10 @@ if ( i == gr%nnzp+1 .or. i == 2 ) then
   err_code = clubb_rtm_level_not_found
   return
 end if
-zi = (gr%zt(i)-gr%zt(i-1))/(rtm(i)-rtm(i-1))*(8.0e-3-rtm(i-1)) & 
-   + gr%zt(i-1) 
+!zi = (gr%zt(i)-gr%zt(i-1))/(rtm(i)-rtm(i-1))*(8.0e-3-rtm(i-1)) & 
+!   + gr%zt(i-1) 
 !        x_sfc(1,izi) = zi
- 
+zi = lin_int( 8.0e-3, rtm(i), rtm(i-1), gr%zt(i), gr%zt(i-1) ) 
 
 if ( l_stats_samp ) then
   call stat_update_var_pt( izi, 1, zi, sfc )
@@ -191,7 +192,7 @@ subroutine dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc,  &
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,
 !       heat and moisture according to GCSS DYCOMS II RF 01 specifications
-
+!
 !       References:
 !----------------------------------------------------------------------
 
@@ -263,8 +264,7 @@ if ( sfctype == 0 ) then
 else if ( sfctype == 1 ) then
 
   wpthlp_sfc = -Cd * ubar * ( thlm_sfc - Tsfc/exner_sfc )
-  wprtp_sfc  = -Cd * ubar *  & 
-                ( rtm_sfc  - sat_mixrat_liq( psfc, Tsfc ) )
+  wprtp_sfc  = -Cd * ubar * ( rtm_sfc - sat_mixrat_liq( psfc, Tsfc ) )
 
 else  ! Undefined value for sfctype
 
