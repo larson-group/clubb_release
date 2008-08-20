@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: clex9_nov02.F90,v 1.11 2008-08-20 15:08:08 faschinj Exp $
+! $Id: clex9_nov02.F90,v 1.12 2008-08-20 20:25:54 faschinj Exp $
   module clex9_nov02
 
 !       Description:
@@ -46,7 +46,7 @@
 
   use parameters, only: sclr_dim ! Variable(s)
 
-  use model_flags, only: l_bugsrad, l_coamps_micro, l_licedfs ! Variable(s)
+  use model_flags, only: l_bugsrad, l_coamps_micro, l_icedfs ! Variable(s)
 
   use stats_precision, only: time_precision ! Variable(s)
 
@@ -589,8 +589,8 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
       l_coamps_micro        = .false.
       l_tdelay_coamps_micro = .true.
 
-    else if ( l_licedfs ) then
-      l_licedfs        = .false.
+    else if ( l_icedfs ) then
+      l_icedfs        = .false.
       l_tdelay_icedfs = .true.
 
     else
@@ -606,7 +606,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   ! Compute the loss of total water due to diffusional
   ! growth of ice.  This is defined on thermodynamic levels.
   !---------------------------------------------------------------
-    l_licedfs = .true.
+    l_icedfs = .true.
     
 
   else if ( time == ( time_initial + 3600.0 )  & 

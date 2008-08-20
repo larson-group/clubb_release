@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.28 2008-08-18 20:39:48 dschanen Exp $
+! $Id: parameterization_interface.F90,v 1.29 2008-08-20 20:25:54 faschinj Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
@@ -1059,7 +1059,7 @@ module hoc_parameterization_interface
   subroutine parameterization_setup & 
              ( nzmax, T0_in, ts_nudge_in, hydromet_dim_in,  & 
                sclr_dim_in, sclrtol_in, params,  & 
-               l_bugsrad, l_kk_rain, l_licedfs, l_coamps_micro, & 
+               l_bugsrad, l_kk_rain, l_icedfs, l_coamps_micro, & 
                l_cloud_sed, l_uv_nudge, l_tke_aniso,  & 
                l_implemented, grid_type, deltaz, zm_init, & 
                momentum_heights, thermodynamic_heights,  & 
@@ -1148,7 +1148,7 @@ module hoc_parameterization_interface
     logical, intent(in) ::  & 
       l_bugsrad,      & ! BUGSrad interactive radiation scheme
       l_kk_rain,      & ! K & K rain microphysics
-      l_licedfs,      & ! Simplified ice scheme
+      l_icedfs,      & ! Simplified ice scheme
       l_coamps_micro, & ! COAMPS microphysics scheme
       l_cloud_sed,    & ! Cloud water droplet sedimentation
       l_uv_nudge,     & ! Wind nudging
@@ -1164,7 +1164,7 @@ module hoc_parameterization_interface
 
     call setup_model_flags & 
          ( l_bugsrad, l_kk_rain, l_cloud_sed,      & ! intent(in)
-           l_licedfs, l_coamps_micro, l_uv_nudge,  & ! intent(in)
+           l_icedfs, l_coamps_micro, l_uv_nudge,  & ! intent(in)
            l_tke_aniso )                             ! intent(in)
 
     ! Define model constant parameters

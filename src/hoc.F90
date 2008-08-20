@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.32 2008-08-19 18:44:29 griffinb Exp $
+! $Id: hoc.F90,v 1.33 2008-08-20 20:25:54 faschinj Exp $
 
 module hoc
 
@@ -225,7 +225,7 @@ module hoc
      logical ::  & 
        l_cloud_sed,    & ! Flag for cloud water droplet sedimentation. - Brian
        l_kk_rain,      & ! Flag for Khairoutdinov and Kogan rain microphysics. - Brian
-       l_licedfs,      & ! Flag for simplified ice scheme
+       l_icedfs,      & ! Flag for simplified ice scheme
        l_coamps_micro, & ! Flag for COAMPS microphysical scheme
        l_bugsrad,      & ! Flag for BUGsrad radiation scheme
        l_uv_nudge,     & ! Whether to adjust the winds within the timestep
@@ -274,7 +274,7 @@ module hoc
       time_initial, time_final, time_spinup, & 
       dtmain, dtclosure, & 
       sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge, & 
-      l_cloud_sed, l_kk_rain, l_licedfs, l_coamps_micro,  & 
+      l_cloud_sed, l_kk_rain, l_icedfs, l_coamps_micro,  & 
       l_bugsrad, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, debug_level, & 
       sclr_tol, & 
@@ -321,7 +321,7 @@ module hoc
 
     l_cloud_sed    = .false.
     l_kk_rain      = .false.
-    l_licedfs      = .false.
+    l_icedfs      = .false.
     l_coamps_micro = .false.
     l_bugsrad      = .false.
     l_tke_aniso    = .false.
@@ -430,7 +430,7 @@ module hoc
 
       print *, "l_cloud_sed = ", l_cloud_sed
       print *, "l_kk_rain = ", l_kk_rain
-      print *, "l_licedfs = ", l_licedfs
+      print *, "l_icedfs = ", l_icedfs
       print *, "l_coamps_micro = ", l_coamps_micro
       print *, "l_bugsrad = ", l_bugsrad
       print *, "l_tke_aniso = ", l_tke_aniso
@@ -487,7 +487,7 @@ module hoc
     dummy_dy = 0.0
 
     ! Setup microphysical fields
-    call init_microphys( l_kk_rain, l_coamps_micro, l_licedfs, &  ! Intent(in)
+    call init_microphys( l_kk_rain, l_coamps_micro, l_icedfs, &  ! Intent(in)
                          hydromet_dim )                           ! Intent(out)
 
     ! Allocate & initialize variables,
@@ -496,7 +496,7 @@ module hoc
     call parameterization_setup &                               ! Intent(in)
          ( nzmax, T0, ts_nudge, hydromet_dim, sclr_dim,  &      ! Intent(in)
            sclr_tol(1:sclr_dim), params, &                      ! Intent(in)
-           l_bugsrad, l_kk_rain, l_licedfs, l_coamps_micro, &   ! Intent(in)
+           l_bugsrad, l_kk_rain, l_icedfs, l_coamps_micro, &   ! Intent(in)
            l_cloud_sed, l_uv_nudge, l_tke_aniso, &              ! Intent(in)
            .false., grid_type, deltaz, zm_init, &               ! Intent(in)
            momentum_heights, thermodynamic_heights, &           ! Intent(in)
@@ -1417,7 +1417,7 @@ subroutine hoc_forcings_timestep( dt, err_code )
 ! Modules to be included
 use model_flags, only:  &
     l_kk_rain,  & ! Variable(s)
-    l_licedfs,  &
+    l_icedfs,  &
     l_coamps_micro,  & 
     l_cloud_sed,  &
     l_bugsrad
@@ -1909,7 +1909,7 @@ end select ! runtype
 
 ! Call Khairoutdinov and Kogan (2000) scheme, or COAMPS for rain microphysics.
         
-if ( l_kk_rain .or. l_coamps_micro .or. l_licedfs ) then
+if ( l_kk_rain .or. l_coamps_micro .or. l_icedfs ) then
 
    call advance_microphys( runtype, dt, time_current, &                     ! Intent(in)
                            thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, &   ! Intent(in) 

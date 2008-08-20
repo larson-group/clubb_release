@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F90,v 1.15 2008-08-17 21:50:38 griffinb Exp $
+! $Id: microphys_driver.F90,v 1.16 2008-08-20 20:25:54 faschinj Exp $
 module microphys_driver
 
 ! Description:
@@ -28,7 +28,7 @@ hydromet_list
 contains
 
 !-----------------------------------------------------------------------
-subroutine init_microphys( l_kk_rain, l_coamps_micro, l_licedfs, &
+subroutine init_microphys( l_kk_rain, l_coamps_micro, l_icedfs, &
                            hydromet_dim )
 
 ! Description:
@@ -46,7 +46,7 @@ implicit none
 logical, intent(in) :: & 
   l_kk_rain,         & ! K&K microphysics
   l_coamps_micro,   & ! COAMPS microphysics
-  l_licedfs         ! Simplified ice
+  l_icedfs         ! Simplified ice
 
 integer, intent(out) :: & 
   hydromet_dim ! Number of hydrometeor fields.
@@ -85,7 +85,7 @@ else if ( l_kk_rain ) then
   hydromet_list(iirrainm) = "rrainm"
   hydromet_list(iiNrm) = "Nrm"
 
-else if ( l_licedfs ) then
+else if ( l_icedfs ) then
   iirrainm    = -1
   iiNrm       = -1
   iirsnowm    = -1
@@ -139,7 +139,7 @@ use ice_dfsn_mod, only: &
 use model_flags, only: & 
     l_coamps_micro,  & ! Procedure(s)
     l_kk_rain, & 
-    l_licedfs
+    l_icedfs
 
 use parameters, only: & 
     c_Krrainm,  & ! Variable(s) 
@@ -574,7 +574,7 @@ end if ! hydromet_dim > 0
 
 
 ! Call the ice diffusion scheme
-if ( l_licedfs ) then
+if ( l_icedfs ) then
   call ice_dfsn( dt, T_in_K, rcm, p_in_Pa, rho, rtm_mc )
   thlm_mc = - ( Lv/(Cp*exner) ) * rtm_mc
 end if
