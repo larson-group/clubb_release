@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: bomex.F90,v 1.7 2008-08-06 13:53:02 faschinj Exp $
+! $Id: bomex.F90,v 1.8 2008-08-20 15:00:02 faschinj Exp $
 module bomex
 
 !       Description:
@@ -159,7 +159,7 @@ real, parameter ::  &
 ! Input Variables
 real, intent(in) ::  & 
   um_sfc,  & ! um(2) [m/s]
-  vm_sfc  ! vm(2) [m/s]
+  vm_sfc     ! vm(2) [m/s]
 
 ! Output variables
 real, intent(out) ::  & 
@@ -167,12 +167,12 @@ real, intent(out) ::  &
   vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
   wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
   wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
-  ustar        ! surface friction velocity [m/s]
+  ustar           ! surface friction velocity [m/s]
 
 ! Output variables (optional)
 real, intent(out), dimension(sclr_dim) ::  & 
   wpsclrp_sfc,   & ! Passive scalar surface flux      [units m/s] 
-  wpedsclrp_sfc ! Passive eddy-scalar surface flux [units m/s]
+  wpedsclrp_sfc    ! Passive eddy-scalar surface flux [units m/s]
 
 ! Local variables
 real :: ubar
