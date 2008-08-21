@@ -94,10 +94,12 @@ mixing_length.o	: constants.o parameters.o numer_check.o error_code.o \
 saturation.o    : constants.o saturation.F90  
 sfc.o		: constants.o parameters.o numer_check.o error_code.o sfc.F90 
 wp23.o		: constants.o parameters.o stats_variables.o lapack_wrap.o \
-                  error_code.o diffusion.o mean_adv.o fill_holes.o wp23.F90
+                  error_code.o diffusion.o mean_adv.o fill_holes.o \
+                  explicit_clip.o wp23.F90
 
 error_code.o    : constants.o error_code.F90
-compute_um_edsclrm_mod.o : grid.o stats_variables.o lapack_wrap.o error_code.o compute_um_edsclrm_mod.F90 
+compute_um_edsclrm_mod.o : grid.o stats_variables.o lapack_wrap.o error_code.o \
+                           explicit_clip.o compute_um_edsclrm_mod.F90 
 diffusion.o	: grid.o diffusion.F90
 mean_adv.o      : grid.o mean_adv.F90
 pos_definite_mod.o : grid.o stats_precision.o pos_definite_mod.F90
