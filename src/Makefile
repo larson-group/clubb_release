@@ -129,13 +129,13 @@ VPATH=.:LH:GCSS:BUGSrad:HOC_parameterization:$(OBJDIR):$(NR_DIR):$(COAMPS_MICRO_
 .SUFFIXES: .a .o .f .F .f90 .F90 .h
 
 .f.o:
-	cd $(OBJDIR); $(FC) $(FCFLAGS) $(if $(findstring $@, $(WARNABLE) ), $(WARNINGS) ) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<  
+	cd $(OBJDIR); $(FC) $(FCFLAGS) $(if $(filter $@, $(WARNABLE) ), $(WARNINGS) ) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<  
 .f90.o:
-	cd $(OBJDIR); $(FC) $(FCFLAGS) $(if $(findstring $@, $(WARNABLE) ), $(WARNINGS) ) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<  
+	cd $(OBJDIR); $(FC) $(FCFLAGS) $(if $(filter $@, $(WARNABLE) ), $(WARNINGS) ) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<  
 .F.o:
-	cd $(OBJDIR); $(FC) $(FCFLAGS) $(if $(findstring $@, $(WARNABLE) ), $(WARNINGS) ) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<  
+	cd $(OBJDIR); $(FC) $(FCFLAGS) $(if $(filter $@, $(WARNABLE) ), $(WARNINGS) ) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<  
 .F90.o:
-	cd $(OBJDIR); $(FC) $(FCFLAGS) $(if $(findstring $@, $(WARNABLE) ), $(WARNINGS) ) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<  
+	cd $(OBJDIR); $(FC) $(FCFLAGS) $(if $(filter $@, $(WARNABLE) ), $(WARNINGS) ) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<  
 	
 
 # == Static libraries (default) ==
