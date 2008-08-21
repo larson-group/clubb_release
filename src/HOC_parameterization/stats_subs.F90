@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F90,v 1.20 2008-08-12 16:12:28 dschanen Exp $
+!  $Id$
 module stats_subs
 
   implicit none

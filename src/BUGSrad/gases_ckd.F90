@@ -1,4 +1,4 @@
-! CVS:  $Id: gases_ckd.F90,v 1.1 2005-10-27 20:06:50 dschanen Exp $
+! CVS:  $Id$
 ! CVS:  $Name: not supported by cvs2svn $
 
 module gases_ckd

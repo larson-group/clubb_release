@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameters.F90,v 1.6 2008-08-01 15:53:16 faschinj Exp $
+! $Id$
  module parameters 
 
 !       Description:

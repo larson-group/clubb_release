@@ -1,4 +1,4 @@
-! $Id: output_netcdf.F90,v 1.4 2008-07-29 16:44:03 nielsenb Exp $
+! $Id$
 !-----------------------------------------------------------------------
 module output_netcdf
 #ifdef NETCDF

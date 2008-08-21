@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F90,v 1.11 2008-08-08 14:47:19 faschinj Exp $
+! $Id$
  module numerical_check
 
  implicit none

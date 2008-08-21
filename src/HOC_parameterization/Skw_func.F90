@@ -1,4 +1,4 @@
-!$Id: Skw_func.F90,v 1.3 2008-07-29 16:44:02 nielsenb Exp $
+!$Id$
 module Skw
 
 implicit none

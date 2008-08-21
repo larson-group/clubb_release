@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc_inputfields.F90,v 1.2 2008-07-28 19:45:09 faschinj Exp $
+! $Id$
 
   program hoc_inputfields
 

@@ -1,4 +1,4 @@
-! $Id: closure_new.F90,v 1.7 2008-08-18 20:39:48 dschanen Exp $
+! $Id$
 module pdf_closure
 
   implicit none

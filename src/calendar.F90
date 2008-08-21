@@ -1,4 +1,4 @@
-!$Id: calendar.F90,v 1.3 2008-07-28 19:39:13 faschinj Exp $
+!$Id$
 module calendar
 
   implicit none

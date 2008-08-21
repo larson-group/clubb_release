@@ -1,4 +1,4 @@
-!$Id: micro_calcs.F90,v 1.3 2008-07-30 14:26:14 faschinj Exp $
+!$Id$
 
 module micro_calcs_mod
 

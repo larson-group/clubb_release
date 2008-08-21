@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_97.F90,v 1.6 2008-08-20 14:53:08 faschinj Exp $
+! $Id$
 module arm_97
 
 !       Description:

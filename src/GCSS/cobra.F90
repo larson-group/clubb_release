@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: cobra.F90,v 1.8 2008-08-20 16:34:01 faschinj Exp $
+! $Id$
 module cobra
 !       Description:
 !       Contains subroutines for the COBRA CO2 case.

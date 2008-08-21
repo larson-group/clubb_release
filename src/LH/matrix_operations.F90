@@ -1,4 +1,4 @@
-! $Id: matrix_operations.F90,v 1.1 2008-07-22 16:04:30 faschinj Exp $
+! $Id$
       module matrix_operations
 
       implicit none

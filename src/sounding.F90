@@ -1,4 +1,4 @@
-! $Id: sounding.F90,v 1.6 2008-08-12 16:12:27 dschanen Exp $
+! $Id$
 module sounding
 
   implicit none

@@ -1,4 +1,4 @@
-! $Id: sfc.F90,v 1.1 2008-07-22 16:04:28 faschinj Exp $
+! $Id$
 #define SCLR_RT 2
 #define SCLR_THETA 1
 

@@ -1,4 +1,4 @@
-!$Id: math_utilities.F90,v 1.2 2008-07-28 19:20:06 faschinj Exp $
+!$Id$
 module math_utilities         
 !-----------------------------------------------------------------------
 ! Various mathematical utilities

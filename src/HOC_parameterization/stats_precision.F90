@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_precision.F90,v 1.2 2008-07-28 19:34:43 faschinj Exp $
+! $Id$
 module stats_precision
 
 implicit none

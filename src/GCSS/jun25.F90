@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F90,v 1.12 2008-08-20 20:29:04 faschinj Exp $
+! $Id$
   module jun25
 
 !       Description:

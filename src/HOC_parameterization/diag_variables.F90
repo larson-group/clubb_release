@@ -1,4 +1,4 @@
-! $Id: diag_variables.F90,v 1.15 2008-08-17 16:10:40 griffinb Exp $
+! $Id$
 module diagnostic_variables
 
 ! This module contains definitions of all diagnostic

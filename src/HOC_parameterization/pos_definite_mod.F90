@@ -1,4 +1,4 @@
-!$Id: pos_definite_mod.F90,v 1.2 2008-07-28 19:34:43 faschinj Exp $
+!$Id$
 module pos_definite_mod
 
   implicit none

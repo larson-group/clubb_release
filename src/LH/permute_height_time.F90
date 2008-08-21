@@ -1,4 +1,4 @@
-!$Id: permute_height_time.F90,v 1.2 2008-07-28 19:20:06 faschinj Exp $
+!$Id$
 module permute_height_time_mod
 
 implicit none

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------------
-! $Id: std_atmosphere_mod.F90,v 1.4 2008-08-12 16:12:27 dschanen Exp $
+! $Id$
 module std_atmosphere_mod
   
   implicit none

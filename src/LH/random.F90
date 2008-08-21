@@ -1,4 +1,4 @@
-! $Id: random.F90,v 1.1 2008-07-22 16:04:31 faschinj Exp $
+! $Id$
       module random
 
       implicit none

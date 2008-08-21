@@ -1,4 +1,4 @@
-! $Id: erf.F90,v 1.2 2008-07-28 19:34:42 faschinj Exp $
+! $Id$
 module anl_erf
 
 implicit none

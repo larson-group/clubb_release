@@ -1,4 +1,4 @@
-! $Id: ice_dfsn_mod.F90,v 1.9 2008-08-04 17:03:02 faschinj Exp $        
+! $Id$        
 
 module ice_dfsn_mod
 

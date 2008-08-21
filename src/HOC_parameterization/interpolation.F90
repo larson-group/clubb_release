@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-!$Id: interpolation.F90,v 1.3 2008-08-20 14:45:29 faschinj Exp $
+!$Id$
 module interpolation
 
   implicit none

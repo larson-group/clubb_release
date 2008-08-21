@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: coamps_micro_driver.F90,v 1.10 2008-08-08 14:47:17 faschinj Exp $
+! $Id$
 module coamps_micro_driver_mod
 
 ! This module wraps the adjtq subroutine so that it may be used by

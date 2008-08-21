@@ -1,4 +1,4 @@
-! $Id: T_in_K_mod.F90,v 1.3 2008-07-29 16:44:02 nielsenb Exp $ 
+! $Id$ 
 
 module T_in_K_mod
 

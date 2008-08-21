@@ -1,4 +1,4 @@
-!$Id: lh_sampler.F90,v 1.4 2008-07-30 14:26:14 faschinj Exp $
+!$Id$
 module lh_sampler_mod
 
 implicit none

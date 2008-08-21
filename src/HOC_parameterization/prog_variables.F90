@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F90,v 1.9 2008-08-08 14:48:39 faschinj Exp $
+! $Id$
         module prognostic_variables
 
 !       This module contains definitions of all prognostic

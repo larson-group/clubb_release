@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-!$Id: cloud_sed_mod.F90,v 1.8 2008-08-06 13:53:02 faschinj Exp $
+!$Id$
 module cloud_sed_mod
 
 implicit none
