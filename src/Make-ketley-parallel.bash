@@ -17,9 +17,7 @@ if [ $# -lt 1 ] ; then
        gmake -j8
 else
        case "$1" in
-          -t)date
-             gmake -j8 -s
-             date
+          -t)time gmake -j8 -s
              ;;
            -h)echo "$USEAGE" ;;
             *)echo "$USEAGE" ;;
