@@ -1,4 +1,4 @@
-# $Id: solaris_ia32_g95.in,v 1.6 2008-07-30 19:17:37 dschanen Exp $
+# $Id$
 # Configuration file for Solaris machine using g95
 
 # == Paths ==

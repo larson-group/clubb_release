@@ -1,4 +1,4 @@
-# $Id: linux_ia32_absoft.in,v 1.3 2008-07-30 19:17:36 dschanen Exp $
+# $Id$
 # Configuration file for Linux machine using Absoft Fortran
 
 # == Paths ==

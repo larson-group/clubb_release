@@ -1,4 +1,4 @@
-# $Id: linux_ia64_intel.in,v 1.6 2008-07-30 19:17:37 dschanen Exp $
+# $Id$
 # Makefile definitions customized for Linux IA64 using the Intel Fortran 
 # compiler
 

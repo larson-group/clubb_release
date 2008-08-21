@@ -1,4 +1,4 @@
-# $Id: linux_ia32_g95_debug.in,v 1.9 2008-07-30 19:17:36 dschanen Exp $
+# $Id$
 # Configuration file for Linux machine using g95
 # An MS Windows machine with MSYS should be similar
 

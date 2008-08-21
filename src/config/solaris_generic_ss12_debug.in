@@ -1,4 +1,4 @@
-# $Id: solaris_generic_ss12_debug.in,v 1.6 2008-07-30 19:17:37 dschanen Exp $
+# $Id$
 # Makefile definitions for Sun Studio's Fortran compiler
 
 # == Paths ==
