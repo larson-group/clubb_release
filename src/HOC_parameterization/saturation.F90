@@ -77,33 +77,53 @@ contains
     logical, parameter :: lFlatau = .false.
 
     ! Relative error norm expansion (-50 to 50 deg_C) from
-    ! Table 3 of pp. 1511 of Flatau et al. 1992 (Water Vapor)
+    ! Table 3 of pp. 1510 of Flatau et al. 1992 (Water Vapor)
+    ! (The 100 coefficient converts from mb to Pa)
     real, dimension(7), parameter :: a = & 
-    (/ 6.11176750,      0.443986062,     0.143053301E-01, & 
-       0.265027242E-03, 0.302246994E-05, 0.203886313E-07, & 
-       0.638780966E-10 /)
+    100.* (/ 6.11176750,      0.443986062,     0.143053301E-01, & 
+             0.265027242E-03, 0.302246994E-05, 0.203886313E-07, & 
+             0.638780966E-10 /)
 
     ! Input Variables
     real, intent(in) :: T_in_K   ! Temperature   [K]
 
     ! Output Variables
-    real :: esat
+    real :: esat  ! Saturation vapor pressure over water [Pa]
 
     ! Local Variables
+    real :: T_in_C
     integer :: i
 
     if ( lFlatau ) then
+      ! Determine deg K - 273.15
+      T_in_C = T_in_K - T_freeze_K 
+
       ! Polynomial approx. (Flatau, et al. 1992)
-      esat = a(1)
 
-      do i = 2, 7, 1
-        esat = esat + a(i) * ( T_in_K-T_freeze_K )**(i-1)
-      end do
+     ! Formulation 1 
+     ! This is the most generalized and the least efficient.
+     ! Based on Wexler's expressions(2.1)-(2.4) (See Flatau et al. p 1508)
+     ! e_{sat} = a_1 + a_2 ( T - T_0 ) + ... + a_{n+1} ( T - T_0 )^n
 
-      esat = 100.0 * esat ! Convert units
+!     esat = a(1)
+
+!     do i = 2, size( a ) , 1
+!       esat = esat + a(i) * ( T_in_C )**(i-1)
+!     end do
+
+     ! Formulation 2 (no loop)
+     ! This would be efficient if GNU's libm pow function wasn't slow
+!    esat = 100.*( a(1) + a(2) * T_in_C + a(3) * T_in_C**2 + a(4) * T_in_C**3 &
+!       + a(5) * T_in_C**4 + a(6) * T_in_C**5 + a(7) * T_in_C**6 )
+
+     ! Formulation 3 (no pow, no loop)
+     esat = ( a(1) + T_in_C *( a(2) + T_in_C *( a(3) + T_in_C *( a(4) + T_in_C &
+        *( a(5) + T_in_C*( a(6) + T_in_C*( a(7) ) ) ) ) ) ) )
+
 
     else
       ! (Bolton 1980) approx.
+      ! Generally more expensive, but not on Sun Fortran with -xlibmopt
       esat = 611.2 * exp( (17.67*(T_in_K-T_freeze_K)) / (T_in_K-29.65) )
     end if
 
@@ -174,11 +194,11 @@ contains
     logical, parameter :: lFlatau = .false.
 
     ! Relative error norm expansion (-50 to 0 deg_C) from
-    ! Table 3 of pp. 1511 of Flatau et al. 1992 (Ice)
+    ! Table 3 of pp. 1510 of Flatau et al. 1992 (Ice)
     real, dimension(7), parameter :: a = & 
-    (/ 6.10952665,      0.501948366,     0.18628899E-01, & 
-       0.403488906E-03, 0.539797852E-05, 0.420713632E-07, & 
-       0.147271071E-09 /)
+    100. * (/ 6.10952665,      0.501948366,     0.18628899E-01, & 
+              0.403488906E-03, 0.539797852E-05, 0.420713632E-07, & 
+              0.147271071E-09 /)
 
     ! Input Variables
     real, intent(in) :: T_in_K   ! Temperature   [K]
@@ -190,11 +210,9 @@ contains
       ! Polynomial approx. (Flatau, et al. 1992)
       esati = a(1)
 
-      do i = 2, 7, 1
+      do i = 2, size( a ), 1
         esati = esati + a(i) * ( T_in_K-T_freeze_K )**(i-1)
       end do
-
-      esati = 100.0 * esati ! Convert units
 
     else
       ! Exponential approx. (Bolton?)
