@@ -256,20 +256,22 @@ wpxp_lower_lim = -0.99 * sqrt( wp2 * rtp2 )
 
 ! Compute the implicit portion of the r_t and w'r_t' equations.
 ! Build the left-hand side matrix.
-call mixing_lhs( .true., dt, wprtp, sigma_sqd_w, wm_zm, wm_zt, wp2, &
-                 wp2_zt, wp3, Kw6_rt, tau_zm, C7_Skw_fnc, C6rt_Skw_fnc, & 
-                 wpxp_upper_lim, wpxp_lower_lim,  & 
-                 implemented, lhs )
+call mixing_lhs( .true., dt, wprtp, sigma_sqd_w, wm_zm, wm_zt, wp2, &     ! Intent(in)
+                 wp2_zt, wp3, Kw6_rt, tau_zm, C7_Skw_fnc, C6rt_Skw_fnc, & ! Intent(in)
+                 wpxp_upper_lim, wpxp_lower_lim, implemented, &           ! Intent(in)
+                 lhs )                                                    ! Intent(out)	
 
 ! Compute the explicit portion of the r_t and w'r_t' equations.
 ! Build the right-hand side vector.
-call mixing_rhs( "rtm", .true., dt, rtm, wprtp, & 
-                 rtm_forcing, C7_Skw_fnc, rtpthvp,  & 
-                 wpxp_upper_lim, wpxp_lower_lim, rhs )
+call mixing_rhs( "rtm", .true., dt, rtm, wprtp, &      ! Intent(in)
+                 rtm_forcing, C7_Skw_fnc, rtpthvp, &   ! Intent(in)
+                 wpxp_upper_lim, wpxp_lower_lim, &     ! Intent(in)
+                 rhs )                                 ! Intent(out)
 
 ! Solve r_t / w'r_t'
-call mixing_solve( "rtm", dt, wp2, rtp2, & 
-                   lhs, rhs, rtm, wprtp, err_code )
+call mixing_solve( "rtm", dt, wp2, rtp2, &  ! Intent(in)
+                   lhs, rhs, rtm, wprtp, &  ! Intent(inout)
+                   err_code )               ! Intent(out)
 
 if ( lapack_error( err_code ) )  then
      
@@ -283,7 +285,8 @@ endif
  
 ! Computed value before clipping
 if ( l_stats_samp ) then
-   call stat_begin_update( irtm_cl, real( rtm / dt ), zt )
+   call stat_begin_update( irtm_cl, real( rtm / dt ), & ! Intent(in)
+                           zt )                         ! Intent(inout)
 end if 
 
 ! The arm_0003 case produces negative rtm near the tropopause.
@@ -300,14 +303,15 @@ do k = 1, gr%nnzp, 1
   if ( rtm(k) < 0.0 ) then
 !           rtm(k) = 0.0
     if ( clubb_at_debug_level( 1 ) ) then
-    write(fstderr,*) "rtm < 0 in mixing at k= ", k
+      write(fstderr,*) "rtm < 0 in mixing at k= ", k
     endif 
   endif
 
 enddo
         
  if ( l_stats_samp ) then
-    call stat_end_update( irtm_cl, real( rtm / dt ) , zt )      
+    call stat_end_update( irtm_cl, real( rtm / dt ), & ! Intent(in) 
+                          zt )                         ! Intent(inout)
  endif
 
 
@@ -320,20 +324,22 @@ wpxp_lower_lim = -0.99 * sqrt( wp2 * thlp2 )
 
 ! Compute the implicit portion of the th_l and w'th_l' equations.
 ! Build the left-hand side matrix.
-call mixing_lhs( .true., dt, wpthlp, sigma_sqd_w, wm_zm, wm_zt, wp2, &
-                 wp2_zt, wp3, Kw6_thl, tau_zm, C7_Skw_fnc, C6thl_Skw_fnc, & 
-                 wpxp_upper_lim, wpxp_lower_lim,  & 
-                 implemented, lhs )
+call mixing_lhs( .true., dt, wpthlp, sigma_sqd_w, wm_zm, wm_zt, wp2, &      ! Intent(in)
+                 wp2_zt, wp3, Kw6_thl, tau_zm, C7_Skw_fnc, C6thl_Skw_fnc, & ! Intent(in)
+                 wpxp_upper_lim, wpxp_lower_lim, implemented, &             ! Intent(in)
+                 lhs )                                                      ! Intent(inout)
 
 ! Compute the explicit portion of the th_l and w'th_l' equations.
 ! Build the right-hand side vector.
-call mixing_rhs( "thlm", .true., dt, thlm, wpthlp, & 
-                 thlm_forcing, C7_Skw_fnc, thlpthvp,  & 
-                 wpxp_upper_lim, wpxp_lower_lim, rhs )
+call mixing_rhs( "thlm", .true., dt, thlm, wpthlp, &    ! Intent(in)
+                 thlm_forcing, C7_Skw_fnc, thlpthvp,  & ! Intent(in)
+                 wpxp_upper_lim, wpxp_lower_lim, &      ! Intent(in)
+                 rhs )                                  ! Intent(out)
 
 ! Solve for th_l / w'th_l'
-call mixing_solve( "thlm", dt, wp2, thlp2, & 
-                   lhs, rhs, thlm, wpthlp, err_code )
+call mixing_solve( "thlm", dt, wp2, thlp2, & ! Intent(in) 
+                   lhs, rhs, thlm, wpthlp, & ! Intent(inout)
+                   err_code )                ! Intent(out)
 
 if ( lapack_error( err_code ) ) then       
   write(fstderr,'(a)') "thetal mixing failed"
@@ -346,7 +352,8 @@ endif
  
 ! Computed value before clipping
 if ( l_stats_samp ) then
-   call stat_begin_update( ithlm_cl, real(thlm / dt ), zt)
+   call stat_begin_update( ithlm_cl, real(thlm / dt ), & ! Intent(in)
+                           zt )                          ! Intent(inout)
  endif 
 
 ! The value of potential temperature cannot fall below 0,
@@ -360,7 +367,8 @@ enddo
 
         
  if ( l_stats_samp ) then
-    call stat_end_update( ithlm_cl, real( thlm/dt ), zt )
+    call stat_end_update( ithlm_cl, real( thlm/dt ), & ! Intent(in)
+                          zt )                         ! Intent(inout)
  end if
 ! End change Joshua Fasching March 2008
 
@@ -379,24 +387,22 @@ do i = 1, sclr_dim, 1
 
   ! Compute the implicit portion of the sclr and w'sclr' equations.
   ! Build the left-hand side matrix.
-  call mixing_lhs( .true., dt, wpsclrp(:,i), sigma_sqd_w, wm_zm,  & 
-                   wm_zt, wp2, wp2_zt, wp3, Kw6, tau_zm, C7_Skw_fnc, & 
-                   C6rt_Skw_fnc, wpxp_upper_lim, wpxp_lower_lim, & 
-                   implemented, lhs )
+  call mixing_lhs( .true., dt, wpsclrp(:,i), sigma_sqd_w, wm_zm, wm_zt, wp2, &  ! Intent(in)
+                   wp2_zt, wp3, Kw6, tau_zm, C7_Skw_fnc, C6rt_Skw_fnc,&         ! Intent(in)
+                   wpxp_upper_lim, wpxp_lower_lim, implemented, &               ! Intent(in)
+                   lhs )                                                        ! Intent(out)
 
   ! Compute the explicit portion of the sclrm and w'sclr' equations.
   ! Build the right-hand side vector.
-  call mixing_rhs( "scalars", .true., dt,  & 
-                   sclrm(:,i), wpsclrp(:,i),  & 
-                   sclrm_forcing(:,i), C7_Skw_fnc,  & 
-                   sclrpthvp(:,i), wpxp_upper_lim, & 
-                   wpxp_lower_lim, rhs )
+  call mixing_rhs( "scalars", .true., dt, sclrm(:,i), wpsclrp(:,i),  & ! Intent(in)
+                   sclrm_forcing(:,i), C7_Skw_fnc, sclrpthvp(:,i), &   ! Intent(in)
+                   wpxp_upper_lim, wpxp_lower_lim, &                   ! Intent(in)
+                   rhs )                                               ! Intent(out)
 
   ! Solve for sclrm / w'sclr'
-  call mixing_solve( "scalars", dt, wp2, & 
-                     sclrp2(:,i), lhs, rhs,  & 
-                     sclrm(:,i), wpsclrp(:,i),  & 
-                     err_code )
+  call mixing_solve( "scalars", dt, wp2, sclrp2(:,i), &     ! Intent(in) 
+                     lhs, rhs, sclrm(:,i), wpsclrp(:,i), &  ! Intent(inout)
+                     err_code )                             ! Intent(out)
 
   if ( lapack_error( err_code ) ) then    
     write(fstderr,'(a)') "Passive scalar ", i, " mixing failed."
@@ -478,8 +484,8 @@ end subroutine timestep_mixing
 !===============================================================================
 subroutine mixing_lhs( liter, dt, wpxp, sigma_sqd_w, wm_zm, wm_zt, wp2, &
                        wp2_zt, wp3, Kw6, tau_zm, C7_Skw_fnc, C6x_Skw_fnc, & 
-                       wpxp_upper_lim, wpxp_lower_lim,  & 
-                       implemented, lhs )
+                       wpxp_upper_lim, wpxp_lower_lim, implemented, &
+                       lhs )
 
 ! Description:
 ! Compute LHS band diagonal matrix for xm and w'x'.
@@ -883,7 +889,8 @@ end subroutine mixing_lhs
 !===============================================================================
 subroutine mixing_rhs( solve_type, liter, dt, xm, wpxp, & 
                        xm_forcing, C7_Skw_fnc, xpthvp,  & 
-                       wpxp_upper_lim, wpxp_lower_lim, rhs )
+                       wpxp_upper_lim, wpxp_lower_lim, &
+                       rhs )
 
 ! Description:
 ! Compute RHS vector for xm and w'x'.
@@ -1089,7 +1096,8 @@ end subroutine mixing_rhs
 
 !===============================================================================
 subroutine mixing_solve( solve_type, dt, wp2, xp2, & 
-                         lhs, rhs, xm, wpxp, err_code )
+                         lhs, rhs, xm, wpxp, & 
+                         err_code )
 
 ! Description:
 ! Solve for xm / w'x' using the band diagonal solver.
@@ -1118,8 +1126,7 @@ use error_code, only:  &
 
 use model_flags, only: & 
     l_pos_def  ! Logical for whether to apply the positive
-              !  definite scheme to rtm
-
+               !  definite scheme to rtm
  
 use stats_type, only: & 
     stat_begin_update,  & ! Procedure(s)
@@ -1195,7 +1202,7 @@ real(kind=time_precision), intent(in) ::  &
 
 real, intent(in), dimension(gr%nnzp) ::  & 
   wp2,         & ! w'^2 (momentum levels)        [m^2/s^2]
-  xp2         ! x'^2 (momentum levels)        [{xm units}^2]
+  xp2            ! x'^2 (momentum levels)        [{xm units}^2]
 
 ! Input/Output Variables
 real, intent(inout), dimension(nsup+nsub+1,2*gr%nnzp) :: & 
@@ -1206,7 +1213,7 @@ real, intent(inout), dimension(2*gr%nnzp,nrhs) ::  &
 
 real, intent(inout), dimension(gr%nnzp) ::  & 
   xm,   & ! Mean term: xm (thermodynamic levels) [units vary] 
-  wpxp ! Flux term: w'x' (momentum levels)    [{xm units} m/s]
+  wpxp    ! Flux term: w'x' (momentum levels)    [{xm units} m/s]
 
 ! Output Variable
 integer, intent(out) :: err_code
@@ -1826,7 +1833,7 @@ implicit none
 ! Input Variables
 real, intent(in) :: & 
   C7_Skw_fnc,  & ! C_7 parameter with Sk_w applied (k)             [-]
-  wm_zt_p1,       & ! w wind component on thermodynamic level (k+1)   [m/s]
+  wm_zt_p1,    & ! w wind component on thermodynamic level (k+1)   [m/s]
   wm_zt,       & ! w wind component on thermodynamic level (k)     [m/s]
   dzm            ! Inverse of grid spacing (k)                     [1/m]
 
