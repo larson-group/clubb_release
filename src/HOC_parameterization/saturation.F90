@@ -74,7 +74,7 @@ contains
     intrinsic :: exp
 
     ! Parameter Constants
-    logical, parameter :: lFlatau = .false.
+    logical, parameter :: lFlatau = .true.
 
     ! Relative error norm expansion (-50 to 50 deg_C) from
     ! Table 3 of pp. 1510 of Flatau et al. 1992 (Water Vapor)
@@ -92,7 +92,7 @@ contains
 
     ! Local Variables
     real :: T_in_C
-    integer :: i
+!   integer :: i ! Loop index
 
     if ( lFlatau ) then
       ! Determine deg K - 273.15
