@@ -239,10 +239,11 @@ do k = 1, gr%nnzp, 1
 enddo
 
 ! Solve semi-implicitly
-call wp23_solve( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp, & 
-                 um, vm, upwp, vpwp, up2, vp2, Kw1, & 
-                 Kw8, Skw_zt, tau_zm, tauw3t, C1_Skw_fnc, & 
-                 C11_Skw_fnc, wp3_zm, wp2, wp3, err_code )
+call wp23_solve( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp, & ! Intent(in)
+                 um, vm, upwp, vpwp, up2, vp2, Kw1, &              ! Intent(in)
+                 Kw8, Skw_zt, tau_zm, tauw3t, C1_Skw_fnc, &        ! Intent(in)
+                 C11_Skw_fnc, wp3_zm, &                            ! Intent(in)
+                 wp2, wp3, err_code )                              ! Intent(inout)
 
 !       Error output
 !       Joshua Fasching Feb 2008
@@ -289,7 +290,8 @@ end subroutine timestep_wp23
 subroutine wp23_solve( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp, & 
                        um, vm, upwp, vpwp, up2, vp2, Kw1, & 
                        Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, & 
-                       C11_Skw_fnc, wp3_zm, wp2, wp3, err_code )
+                       C11_Skw_fnc, wp3_zm, &
+                       wp2, wp3, err_code )
 
 ! Description:
 ! Decompose, and back substitute the matrix for wp2/wp3
