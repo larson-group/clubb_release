@@ -355,8 +355,8 @@ enddo
 ! Implicit contributions to term rtp2
 call diag_var_lhs( dt, liter, wp2_zt, wp3,  &              ! Intent(in)
                    !a1, a1_zt, tau_zm, wm_zm, Kw2_rtp2, &  ! Intent(in)
-                   a1, tau_zm, wm_zm, Kw2_rtp2,  &
-                   C2rt_1d, nu2, beta, wtol_sqd, &
+                   a1, tau_zm, wm_zm, Kw2_rtp2,  &         ! Intent(in)
+                   C2rt_1d, nu2, beta, wtol_sqd, &         ! Intent(in)
                    lhs )                                   ! Intent(out)
 
 
