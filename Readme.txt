@@ -218,9 +218,9 @@ The new simulation is then called a "restart" simulation.
 
 Do steps 1, 2, & 3 as outlined in the standalone run.
 
-4.  Edit error_<runtype>.in or select an existing one. Note that there are two
-  tuning subroutines, specified by tune_type in the /stats/ namelist.  If 
-  runtype = 0, then the amoeba subroutine, a downhill simplex algorithm, will
+4.  Edit tune/error_<case>.in or select an existing one. Note that there are two
+  tuning subroutines, specified by tune_type in the error_<case>.in /stats/ namelist.  
+  If tune_type = 0, then the amoeba subroutine, a downhill simplex algorithm, will
   be used.  If runtype is any other value, then amebsa, a variant which uses
   simulated annealing, is used.  A complete explanation of these minimization
   algorithms can be found in _Numerical Recipes in Fortran 90_.
