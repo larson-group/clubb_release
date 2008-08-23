@@ -1092,14 +1092,14 @@ km1 = max( k-1, 1 )
 ! Note:  In function diffusion_zt_lhs, at the k=1 (lower boundary) level, 
 !        variables referenced at the km1 level don't factor into the equation.
 
+! LHS time tendency at the lower boundary.
+lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
+
 ! LHS eddy-diffusion term at the lower boundary.
 lhs(kp1_tdiag:km1_tdiag,k) &
 = lhs(kp1_tdiag:km1_tdiag,k) &
 + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  &
                     gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
-
-! LHS time tendency at the lower boundary.
-lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
 
 if ( l_stats_samp ) then
 
@@ -1121,14 +1121,14 @@ endif  ! l_stats_samp
 k   = gr%nnzp 
 km1 = max( k-1, 1 )
 
+! LHS time tendency at the upper boundary.
+lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
+
 ! LHS eddy-diffusion term at the upper boundary.
 lhs(kp1_tdiag:km1_tdiag,k) &
 = lhs(kp1_tdiag:km1_tdiag,k) &
 + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  &
                     gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
-
-! LHS time tendency at the upper boundary.
-lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
 
 if ( l_stats_samp ) then
 

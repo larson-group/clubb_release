@@ -938,13 +938,15 @@ lhs(kp1_tdiag,1) = -1.0
 k   = gr%nnzp
 km1 = max( k-1, 1 )
 
+! LHS turbulent advection term (solved as an eddy-diffusion term) 
+! at the upper boundary.
 lhs(kp1_tdiag:km1_tdiag,k)  &
 = lhs(kp1_tdiag:km1_tdiag,k)  &
 + (1.0/2.0)  &
 * diffusion_zt_lhs( Kh_zm(k), Kh_zm(km1), 0.0,  & 
                     gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
 
-! Time tendency at the upper boundary.
+! LHS time tendency term at the upper boundary.
 lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
 
 if ( l_stats_samp ) then
@@ -1129,6 +1131,8 @@ endif  ! lstats_samp
 k   = gr%nnzp
 km1 = max( k-1, 1 )
 
+! RHS turbulent advection term (solved as an eddy-diffusion term) 
+! at the upper boundary.
 rhs_diff(1:3)  &
 = (1.0/2.0)  &
 * diffusion_zt_lhs( Kh_zm(k), Kh_zm(km1), 0.0,  &
@@ -1137,7 +1141,7 @@ rhs(k)   =   rhs(k) &
            - rhs_diff(3) * xm(km1) &
            - rhs_diff(2) * xm(k)
 
-! Time tendency at the upper boundary.
+! RHS time tendency term at the upper boundary.
 rhs(k) = real( rhs(k) + ( 1.0 / dt ) * xm(k) )
 
 if ( l_stats_samp ) then
