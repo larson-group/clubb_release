@@ -38,15 +38,16 @@ subroutine init_microphys( l_kk_rain, l_coamps_micro, l_icedfs, &
 ! References:
 ! None
 !-----------------------------------------------------------------------
+
 use array_index, only:  & 
     iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm
 
 implicit none
 
 logical, intent(in) :: & 
-  l_kk_rain,         & ! K&K microphysics
+  l_kk_rain,        & ! K&K microphysics
   l_coamps_micro,   & ! COAMPS microphysics
-  l_icedfs         ! Simplified ice
+  l_icedfs            ! Simplified ice
 
 integer, intent(out) :: & 
   hydromet_dim ! Number of hydrometeor fields.
@@ -696,17 +697,19 @@ if ( lapack_error(err_code) ) then
    write(fstderr,*) "thlm_mc = ", thlm_mc
    
 endif
-return
 
+return
 end subroutine advance_microphys
-!-----------------------------------------------------------------------
+
+!===============================================================================
 subroutine microphys_solve( solve_type, dt, lhs, & 
                             xrm_tndcy, xrm, err_code )
 
-!       Description:
+! Description:
 
-!       References:
+! References:
 !-----------------------------------------------------------------------
+
 use grid_class, only: & 
     gr ! Variable(s)
 
@@ -780,7 +783,8 @@ integer :: k, kp1, km1 ! Array indices
 integer :: & 
   ixrm_ma,  & ! Mean advection budget stats toggle
   ixrm_sd,  & ! Sedimentation budget stats toggle
-  ixrm_dff ! Diffusion budget stats toggle
+  ixrm_dff    ! Diffusion budget stats toggle
+
 
 select case( solve_type )
 case( "rrainm" )
@@ -809,19 +813,18 @@ case default
   ixrm_dff = 0
 end select
 
- 
 
-
-! RHS of equation, following Brian's method from 
-! the rain subroutine
+! RHS of equation, following Brian's method from the rain subroutine
 rhs(2:gr%nnzp-1)  & 
 = real((xrm(2:gr%nnzp-1) / dt )  & ! Time tendency
 + xrm_tndcy(2:gr%nnzp-1))
+
 
 ! Boundary condition on the RHS
 rhs(1) = real( xrm(1) / dt )
 rhs(gr%nnzp) =  & 
    real( ( xrm(gr%nnzp) / dt ) + xrm_tndcy(gr%nnzp-1) )
+
 
 ! Solve system using tridag_solve. This uses LAPACK sgtsv,
 ! which relies on Gaussian elimination to decompose the matrix.
@@ -835,7 +838,7 @@ call tridag_solve &
 !    .       ( solve_type, 1, 1, gr%nnzp, 1, 
 !    .         lhs, rhs, xrm, isValid )
 
- if ( l_stats_samp ) then
+if ( l_stats_samp ) then
  
    do k = 1, gr%nnzp, 1
 
@@ -858,11 +861,11 @@ call tridag_solve &
          + ztscr08(k) * xrm(k) & 
          + ztscr09(k) * xrm(kp1), zt )
 
-   end do ! 1..gr%nnzp
-end if ! l_stats_samp
+   enddo ! 1..gr%nnzp
+
+endif ! l_stats_samp
 
  
-
 ! Boundary conditions on results
 !xrm(1) = xrm(2)
 ! Michael Falk, 7 Sep 2007, made this change to eliminate problems
@@ -878,14 +881,15 @@ end subroutine microphys_solve
 subroutine microphys_lhs & 
            ( solve_type, l_sed, dt, Kr, nu, wm_zt, V_hm, lhs )
 
-!       Description:
-!       Setup the matrix of implicit contributions to a term
-!       Includes the effects of sedimentation, diffusion, and advection.
+! Description:
+! Setup the matrix of implicit contributions to a term.
+! Includes the effects of sedimentation, diffusion, and advection.
 !
-!       Notes:
-!       Setup for tridiagonal system and boundary conditions should be
-!       the same as the original rain subroutine code.
+! Notes:
+! Setup for tridiagonal system and boundary conditions should be the same as 
+! the original rain subroutine code.
 !-----------------------------------------------------------------------
+
 use grid_class, only:  & 
     gr,  & ! Variable(s)
     zm2zt ! Procedure(s)
@@ -937,10 +941,11 @@ integer, parameter :: &
   km1_tdiag = 3       ! Thermodynamic subdiagonal index.
 
 ! Input Variables
-character(len=*), intent(in) :: solve_type
+character(len=*), intent(in) :: &
+  solve_type  ! Description of which hydrometeor is being solved for.
 
 logical, intent(in) ::  & 
-  l_sed ! Whether to add a sedimentation term
+  l_sed    ! Whether to add a hydrometeor sedimentation term.
 
 real(kind=time_precision), intent(in) ::  & 
   dt       ! Model timestep                                           [s]
@@ -954,7 +959,7 @@ real, intent(in), dimension(gr%nnzp) ::  &
   Kr       ! Eddy diffusivity for hydrometeor on momentum levels      [m^2/s]
 
 real, intent(out), dimension(3,gr%nnzp) :: & 
-  lhs      ! Left hand side of tridiagonal matrix
+  lhs      ! Left hand side of tridiagonal matrix.
 
 ! Local Variables
 real, dimension(3) :: tmp
@@ -969,6 +974,7 @@ integer :: &
   ixrm_ma,  & ! Mean advection budget stats toggle
   ixrm_sd,  & ! Sedimentation budget stats toggle
   ixrm_dff    ! Diffusion budget stats toggle
+
 
 select case( solve_type )
 case( "rrainm" )
@@ -1002,67 +1008,142 @@ end select
 lhs = 0.0
 
 ! Setup LHS Matrix
-do k = 1, gr%nnzp, 1
+do k = 2, gr%nnzp-1, 1
 
-  km1 = max( k-1, 1 )
-!  kp1 = min( k+1, gr%nnzp )
+   km1 = max( k-1, 1 )
+!   kp1 = min( k+1, gr%nnzp )
 
-  ! Main diagonal
-  ! Time Tendency
-  lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
+   ! Main diagonal
 
-  ! All diagonals
+   ! LHS time tendency.
+   lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
 
-  ! Diffusion
-  lhs(kp1_tdiag:km1_tdiag,k) & 
-  = lhs(kp1_tdiag:km1_tdiag,k) & 
-  + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
-                      gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
 
-  ! Mean Advection
-  lhs(kp1_tdiag:km1_tdiag,k) & 
-  = lhs(kp1_tdiag:km1_tdiag,k) & 
-  + term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
+   ! All diagonals
 
-  ! Sedimentation
-  ! Note: originally pristine ice did not sediment, so it was
-  ! setup to be disabled as needed, but now pristine ice does
-  ! sediment in the COAMPS case. -dschanen 12 Feb 2007
-  if ( l_sed ) then
-     lhs(kp1_tdiag:km1_tdiag,k) & 
-     = lhs(kp1_tdiag:km1_tdiag,k) & 
-     + sedimentation( V_hm(k), V_hm(km1), gr%dzt(k), k )
-  endif
+   ! LHS eddy-diffusion term.
+   lhs(kp1_tdiag:km1_tdiag,k) & 
+   = lhs(kp1_tdiag:km1_tdiag,k) & 
+   + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
+                       gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
 
- ! Implicit contributions to xrm
-  if ( l_stats_samp ) then
+   ! LHS mean advection term.
+   lhs(kp1_tdiag:km1_tdiag,k) & 
+   = lhs(kp1_tdiag:km1_tdiag,k) & 
+   + term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
 
-    if ( ixrm_ma > 0 ) then
-      tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
-      ztscr01(k) = -tmp(3)
-      ztscr02(k) = -tmp(2)
-      ztscr03(k) = -tmp(1)
-    end if
+   ! LHS hydrometeor sedimentation term.
+   ! Note: originally pristine ice did not sediment, so it was
+   ! setup to be disabled as needed, but now pristine ice does
+   ! sediment in the COAMPS case. -dschanen 12 Feb 2007
+   if ( l_sed ) then
+      lhs(kp1_tdiag:km1_tdiag,k) & 
+      = lhs(kp1_tdiag:km1_tdiag,k) & 
+      + sedimentation( V_hm(k), V_hm(km1), gr%dzt(k), k )
+   endif
 
-    if ( ixrm_sd > 0 ) then
-      tmp(1:3) = sedimentation( V_hm(k), V_hm(km1), gr%dzt(k), k )
-      ztscr04(k) = -tmp(3)
-      ztscr05(k) = -tmp(2)
-      ztscr06(k) = -tmp(1)
-    end if
+   if ( l_stats_samp ) then
 
-    if ( ixrm_dff > 0 ) then
+      ! Statistics:  implicit contributions to hydrometeor xrm.
+
+      if ( ixrm_ma > 0 ) then
+         tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
+         ztscr01(k) = -tmp(3)
+         ztscr02(k) = -tmp(2)
+         ztscr03(k) = -tmp(1)
+      endif
+
+      if ( ixrm_sd > 0 ) then
+         tmp(1:3) = sedimentation( V_hm(k), V_hm(km1), gr%dzt(k), k )
+         ztscr04(k) = -tmp(3)
+         ztscr05(k) = -tmp(2)
+         ztscr06(k) = -tmp(1)
+      endif
+
+      if ( ixrm_dff > 0 ) then
+         tmp(1:3) & 
+         = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
+                             gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+         ztscr07(k) = -tmp(3)
+         ztscr08(k) = -tmp(2)
+         ztscr09(k) = -tmp(1)
+      endif
+
+   endif ! l_stats_samp
+
+enddo ! 2..gr%nnzp-1
+
+
+! Boundary Conditions
+
+! The hydrometeor eddy-diffusion term has zero-flux boundary conditions, meaning
+! that amounts of a hydrometeor are not allowed to escape the model boundaries 
+! through the process of eddy-diffusion.  It should be noted that amounts of a 
+! hydrometeor are allowed to leave the model at the lower boundary through the 
+! process of hydrometeor sedimentation.  However, only the eddy-diffusion term
+! contributes to the LHS matrix at the k=1 and k=gr%nnzp levels.  Thus, function
+! diffusion_zt_lhs needs to be called at both the upper boundary level and the
+! lower boundary level.
+
+
+! Lower Boundary
+k   = 1 
+km1 = max( k-1, 1 )
+! Note:  In function diffusion_zt_lhs, at the k=1 (lower boundary) level, 
+!        variables referenced at the km1 level don't factor into the equation.
+
+! LHS eddy-diffusion term at the lower boundary.
+lhs(kp1_tdiag:km1_tdiag,k) &
+= lhs(kp1_tdiag:km1_tdiag,k) &
++ diffusion_zt_lhs( Kr(k), Kr(km1), nu,  &
+                    gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+
+! LHS time tendency at the lower boundary.
+lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
+
+if ( l_stats_samp ) then
+
+   ! Statistics:  implicit contributions to hydrometeor xrm.
+
+   if ( ixrm_dff > 0 ) then
       tmp(1:3) & 
       = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
                           gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
       ztscr07(k) = -tmp(3)
       ztscr08(k) = -tmp(2)
       ztscr09(k) = -tmp(1)
-    end if
+   endif
 
-  end if ! l_stats_samp
+endif  ! l_stats_samp
 
-end do ! 1..gr%nnzp
+
+! Upper Boundary
+k   = gr%nnzp 
+km1 = max( k-1, 1 )
+
+! LHS eddy-diffusion term at the upper boundary.
+lhs(kp1_tdiag:km1_tdiag,k) &
+= lhs(kp1_tdiag:km1_tdiag,k) &
++ diffusion_zt_lhs( Kr(k), Kr(km1), nu,  &
+                    gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+
+! LHS time tendency at the upper boundary.
+lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
+
+if ( l_stats_samp ) then
+
+   ! Statistics:  implicit contributions to hydrometeor xrm.
+
+   if ( ixrm_dff > 0 ) then
+      tmp(1:3) & 
+      = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
+                          gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+      ztscr07(k) = -tmp(3)
+      ztscr08(k) = -tmp(2)
+      ztscr09(k) = -tmp(1)
+   endif
+
+endif  ! l_stats_samp
 
 
 return
