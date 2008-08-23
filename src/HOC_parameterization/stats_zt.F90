@@ -1123,8 +1123,7 @@ do i=1,zt%nn
     ivm_bt = k
 
     call stat_assign(ivm_bt,"vm_bt", & 
-         "vm time tendency(note: does not balance at zt=2)", & 
-         "m/s",zt)
+         "vm time tendency","m/s",zt)
     k = k + 1
 
   case ('vm_ma')
@@ -1158,8 +1157,7 @@ do i=1,zt%nn
     ium_bt = k
 
     call stat_assign(ium_bt,"um_bt", & 
-         "um time tendency (note: does not balance at zt=2)", & 
-         "m/s",zt)
+         "um time tendency","m/s",zt)
     k = k + 1
 
   case ('um_ma')
