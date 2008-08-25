@@ -1193,7 +1193,7 @@ module stats_zm
 !   iwp4, ircp2 
 
     if ( .not. clubb_at_debug_level( 1 ) ) then 
-      if ( iwp4 + ircp2 > 0 ) then
+      if ( iwp4 + ircp2 + ishear > 0 ) then
         write(0,'(a)') &
           "Warning: at debug level 0.  Non-interactive diagnostics will not be computed, "
         write(0,'(a)') "but some appear in the stats_zm namelist variable."

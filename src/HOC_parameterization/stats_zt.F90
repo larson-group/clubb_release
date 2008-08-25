@@ -1447,7 +1447,7 @@ end do
 !   Non-interative diagnostics (zt) 
 !   iwprtp2, iwprtpthlp, iwpthlp2 
     if ( .not. clubb_at_debug_level( 1 ) ) then 
-      if ( iwprtp2 + iwprtpthlp + iwpthlp2 > 0 ) then
+      if ( iwprtp2 + iwprtpthlp + iwpthlp2 + irsat > 0 ) then
         write(0,'(a)') &
           "Warning: at debug level 0.  Non-interactive diagnostics will not be computed, "
         write(0,'(a)') "but some appear in the stats_zt namelist variable."

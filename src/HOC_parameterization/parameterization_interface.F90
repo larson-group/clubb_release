@@ -754,7 +754,9 @@ module hoc_parameterization_interface
 
 
     ! Store the saturation mixing ratio for output purposes.  Brian
-    rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) ) 
+    if ( clubb_at_debug_level( 1 ) ) then
+      rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) ) 
+    end if
 
     !----------------------------------------------------------------
     ! Advance rtm/wprtp and thlm/wpthlp one time step
@@ -780,7 +782,7 @@ module hoc_parameterization_interface
     do k = 1, gr%nnzp
       if ( rtm(k) < rcm(k) ) then
 
-        if ( clubb_at_debug_level(1) ) then
+        if ( clubb_at_debug_level( 1 ) ) then
           write(fstderr,*) 'rtm < rcm in timestep_mixing at k=', k, '.', & 
             '  Clipping rcm.'
 
@@ -933,11 +935,13 @@ module hoc_parameterization_interface
     if ( lapack_error( err_code ) ) return
 
     ! Compute Shear Production  -Brian
-    do k = 1, gr%nnzp-1, 1
-      shear(k) = -upwp(k) * ( um(k+1) - um(k) ) * gr%dzm(k) & 
-                 -vpwp(k) * ( vm(k+1) - vm(k) ) * gr%dzm(k)
-    end do
+    if ( clubb_at_debug_level( 1 ) ) then
+      do k = 1, gr%nnzp-1, 1
+        shear(k) = -upwp(k) * ( um(k+1) - um(k) ) * gr%dzm(k) & 
+                   -vpwp(k) * ( vm(k+1) - vm(k) ) * gr%dzm(k)
+      end do
     shear(gr%nnzp) = 0.0
+    end if
 
 !#######################################################################
 !#############            ACCUMULATE STATISTICS            #############
