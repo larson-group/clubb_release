@@ -31,6 +31,10 @@ use stats_variables, only: &
     irain, & 
     ipflux, & 
     irrainm_sfc, &
+    iwpthlp_sfc, &
+    iwprtp_sfc, &
+    iupwp_sfc, &
+    ivpwp_sfc, &
     ithlm_vert_avg, & 
     irtm_vert_avg, & 
     ium_vert_avg, & 
@@ -71,6 +75,10 @@ izi            = 0
 irain          = 0   ! Brian
 ipflux         = 0   ! Brian
 irrainm_sfc    = 0   ! Brian
+iwpthlp_sfc    = 0
+iwprtp_sfc     = 0
+iupwp_sfc      = 0
+ivpwp_sfc      = 0
 ithlm_vert_avg = 0
 irtm_vert_avg  = 0
 ium_vert_avg   = 0
@@ -155,6 +163,34 @@ do i=1,sfc%nn
 
     call stat_assign(irrainm_sfc,"rrainm_sfc", & 
          "Surface rain water mixing ratio","kg/kg",sfc)
+    k = k + 1
+
+  case ('wpthlp_sfc')
+    iwpthlp_sfc = k
+
+    call stat_assign(iwpthlp_sfc,"wpthlp_sfc", &
+         "wpthlp surface flux","K m/s",sfc)
+    k = k + 1
+
+  case ('wprtp_sfc')
+    iwprtp_sfc = k
+
+    call stat_assign(iwprtp_sfc,"wprtp_sfc", &
+         "wprtp surface flux","(kg/kg) m/s",sfc)
+    k = k + 1
+
+  case ('upwp_sfc')
+    iupwp_sfc = k
+
+    call stat_assign(iupwp_sfc,"upwp_sfc", &
+         "upwp surface flux","m^2/s^2",sfc)
+    k = k + 1
+
+  case ('vpwp_sfc')
+    ivpwp_sfc = k
+
+    call stat_assign(ivpwp_sfc,"vpwp_sfc", &
+         "vpwp surface flux","m^2/s^2",sfc)
     k = k + 1
 
   case ('thlm_vert_avg')

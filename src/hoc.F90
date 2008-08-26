@@ -1440,7 +1440,16 @@ use prognostic_variables, only: rtm_forcing, thlm_forcing,  & ! Variable(s)
                                 upwp_sfc, vpwp_sfc, Tsfc, & 
                                 wpthlp_sfc, SE, LE, wprtp_sfc, cf
 
-use stats_variables, only: ish, ilh, iustar, l_stats_samp, sfc ! Variable(s)
+use stats_variables, only: &
+    ish, & ! Variable(s)
+    ilh, &
+    iwpthlp_sfc, &
+    iwprtp_sfc, &
+    iupwp_sfc, &
+    ivpwp_sfc, &
+    iustar, &
+    l_stats_samp, &
+    sfc
  
 use stats_type, only: stat_update_var_pt ! Procedure(s)
 
@@ -2054,6 +2063,18 @@ if ( l_stats_samp ) then
 
    call stat_update_var_pt( ilh, 1, wprtp_sfc*rho_zm(1)*Lv, & ! intent(in)
                             sfc )                             ! intent(inout)
+
+   call stat_update_var_pt( iwpthlp_sfc, 1, wpthlp_sfc, & ! intent(in)
+                            sfc )                         ! intent(inout)
+
+   call stat_update_var_pt( iwprtp_sfc, 1, wprtp_sfc, & ! intent(in)
+                            sfc )                       ! intent(inout)
+
+   call stat_update_var_pt( iupwp_sfc, 1, upwp_sfc, & ! intent(in)
+                            sfc )                     ! intent(inout)
+
+   call stat_update_var_pt( ivpwp_sfc, 1, vpwp_sfc, & ! intent(in)
+                            sfc )                     ! intent(inout)
 
    call stat_update_var_pt( iustar, 1, ustar,  & ! intent(in)
                             sfc )                ! intent(inout)
