@@ -66,8 +66,8 @@ module stats_subs
       fname_zt, & 
       fname_zm, & 
       fname_sfc, & 
-      lnetcdf, & 
-      lgrads
+      l_netcdf, & 
+      l_grads
     use stats_precision, only: & 
       time_precision   ! Variable(s)
     use output_grads, only: & 
@@ -149,14 +149,14 @@ module stats_subs
 
     ! Local Variables
 
-    logical :: lerror
+    logical :: l_error
 
     character(len=200) :: fdir, fname
 
     integer :: i, ntot
 
     ! Initialize
-    lerror = .false.
+    l_error = .false.
 
     ! Set stats_variables variables with inputs from calling subroutine
     l_stats = l_stats_in
@@ -225,12 +225,12 @@ module stats_subs
 
     select case( trim( stats_fmt ) ) 
     case( "GrADS", "grads", "gr" )
-      lnetcdf = .false.
-      lgrads  = .true.
+      l_netcdf = .false.
+      l_grads  = .true.
 
     case ( "NetCDF", "netcdf", "nc" )
-      lnetcdf = .true.
-      lgrads  = .false.
+      l_netcdf = .true.
+      l_grads  = .false.
 
     case default
       write(fstderr,*) "Invalid data format "//trim( stats_fmt )
@@ -242,7 +242,7 @@ module stats_subs
 
     if ( abs( stats_tsamp/delt - floor(stats_tsamp/delt) )  & 
            > 1.e-8 ) then
-      lerror = .true.
+      l_error = .true.
       write(fstderr,*) 'Error: stats_tsamp should be a multiple of delt'
       write(fstderr,*) 'stats_tsamp = ',stats_tsamp
       write(fstderr,*) 'delt = ',delt
@@ -250,7 +250,7 @@ module stats_subs
 
     if ( abs( stats_tout/stats_tsamp - floor(stats_tout/stats_tsamp) ) & 
            > 1.e-8 ) then
-      lerror = .true.
+      l_error = .true.
       write(0,*)  'Error: stats_tout should be a multiple of stats_tsamp'
       write(0,*) 'stats_tout = ',stats_tout
       write(0,*) 'stats_tsamp = ',stats_tsamp
@@ -279,8 +279,8 @@ module stats_subs
 
     allocate( zt%x( zt%kk, zt%nn ) )
     allocate( zt%n( zt%kk, zt%nn ) )
-    allocate( zt%in_update( zt%kk, zt%nn ) )
-    call stats_zero( zt%kk, zt%nn, zt%x, zt%n, zt%in_update )
+    allocate( zt%l_in_update( zt%kk, zt%nn ) )
+    call stats_zero( zt%kk, zt%nn, zt%x, zt%n, zt%l_in_update )
 
     allocate( zt%f%var( zt%nn ) )
     allocate( zt%f%z( zt%kk ) )
@@ -324,7 +324,7 @@ module stats_subs
     fdir = "./"
     fname = trim( fname_zt )
 
-    if ( lgrads ) then
+    if ( l_grads ) then
 
         ! Open GrADS file
       call open_grads( iunit, fdir, fname,  & 
@@ -348,7 +348,7 @@ module stats_subs
 
     ! Default initialization for array indices for zt
 
-    call stats_init_zt( vars_zt, lerror )
+    call stats_init_zt( vars_zt, l_error )
 
     ! Initialize zm (momentum points)
 
@@ -370,9 +370,9 @@ module stats_subs
 
     allocate( zm%x( zm%kk, zm%nn ) )
     allocate( zm%n( zm%kk, zm%nn ) )
-    allocate( zm%in_update( zm%kk, zm%nn ) )
+    allocate( zm%l_in_update( zm%kk, zm%nn ) )
       
-    call stats_zero( zm%kk, zm%nn, zm%x, zm%n, zm%in_update )
+    call stats_zero( zm%kk, zm%nn, zm%x, zm%n, zm%l_in_update )
 
     allocate( zm%f%var( zm%nn ) )
     allocate( zm%f%z( zm%kk ) )
@@ -414,7 +414,7 @@ module stats_subs
 
     fdir = "./"
     fname = trim( fname_zm )
-    if ( lgrads ) then
+    if ( l_grads ) then
 
       ! Open GrADS files
       call open_grads( iunit, fdir, fname,  & 
@@ -436,7 +436,7 @@ module stats_subs
 #endif
     end if
 
-      call stats_init_zm( vars_zm, lerror )
+      call stats_init_zm( vars_zm, l_error )
 
       ! Initialize sfc (surface point)
 
@@ -460,9 +460,9 @@ module stats_subs
 
     allocate( sfc%x( sfc%kk, sfc%nn ) )
     allocate( sfc%n( sfc%kk, sfc%nn ) )
-    allocate( sfc%in_update( sfc%kk, sfc%nn ) )
+    allocate( sfc%l_in_update( sfc%kk, sfc%nn ) )
       
-    call stats_zero( sfc%kk, sfc%nn, sfc%x, sfc%n, sfc%in_update )
+    call stats_zero( sfc%kk, sfc%nn, sfc%x, sfc%n, sfc%l_in_update )
 
     allocate( sfc%f%var( sfc%nn ) )
     allocate( sfc%f%z( sfc%kk ) )
@@ -470,7 +470,7 @@ module stats_subs
     fdir = "./"
     fname = trim( fname_sfc )
 
-    if ( lgrads ) then
+    if ( l_grads ) then
 
         ! Open GrADS files
       call open_grads( iunit, fdir, fname,  & 
@@ -492,11 +492,11 @@ module stats_subs
 #endif
     end if
 
-    call stats_init_sfc( vars_sfc, lerror )
+    call stats_init_sfc( vars_sfc, l_error )
 
     ! Check for errors
 
-    if ( lerror ) then
+    if ( l_error ) then
       write(fstderr,*) 'stats_init: errors found'
       stop
     end if
@@ -515,7 +515,7 @@ module stats_subs
     return
   end subroutine stats_init
 !-----------------------------------------------------------------------
-      subroutine stats_zero( kk, nn, x, n, in_update )
+      subroutine stats_zero( kk, nn, x, n, l_in_update )
 
 !     Description:
 !     Initialize stats to zero
@@ -532,14 +532,14 @@ module stats_subs
       ! Output
       real(kind=stat_rknd), dimension(kk,nn), intent(out)    :: x
       integer(kind=stat_nknd), dimension(kk,nn), intent(out) :: n
-      logical, dimension(kk,nn), intent(out)              :: in_update
+      logical, dimension(kk,nn), intent(out) :: l_in_update
 
       ! Zero out arrays
 
       if ( nn > 0 ) then
         x(:,:) = 0.0
         n(:,:) = 0
-        in_update(:,:) = .false.
+        l_in_update(:,:) = .false.
       end if
       
       return
@@ -652,7 +652,7 @@ module stats_subs
           l_stats_last, & 
           stats_tsamp, & 
           stats_tout, & 
-          lgrads
+          l_grads
 
       use stats_precision, only: & 
           time_precision ! Variable(s)
@@ -729,11 +729,11 @@ module stats_subs
       call stats_avg( sfc%kk, sfc%nn, sfc%x, sfc%n )
 
       ! Write to file
-      if ( lgrads ) then
+      if ( l_grads ) then
         call write_grads( zt%f  )
         call write_grads( zm%f  )
         call write_grads( sfc%f  )
-      else ! lnetcdf
+      else ! l_netcdf
 #ifdef NETCDF
         call write_netcdf( zt%f  )
         call write_netcdf( zm%f  )
@@ -744,9 +744,9 @@ module stats_subs
       end if
 
       ! Reset sample fields
-      call stats_zero( zt%kk, zt%nn, zt%x, zt%n, zt%in_update )
-      call stats_zero( zm%kk, zm%nn, zm%x, zm%n, zm%in_update )
-      call stats_zero( sfc%kk, sfc%nn, sfc%x, sfc%n, sfc%in_update )
+      call stats_zero( zt%kk, zt%nn, zt%x, zt%n, zt%l_in_update )
+      call stats_zero( zm%kk, zm%nn, zm%x, zm%n, zm%l_in_update )
+      call stats_zero( sfc%kk, sfc%nn, sfc%x, sfc%n, sfc%l_in_update )
 
 
       return
@@ -1272,7 +1272,7 @@ end subroutine stats_accumulate
           zmscr13, & 
           zmscr14, & 
           zmscr15, & 
-          lnetcdf, & 
+          l_netcdf, & 
           l_stats
 #ifdef NETCDF
       use output_netcdf, only:  & 
@@ -1281,7 +1281,7 @@ end subroutine stats_accumulate
 
       implicit none
 
-      if ( l_stats .and. lnetcdf ) then
+      if ( l_stats .and. l_netcdf ) then
 #ifdef NETCDF
         call close_netcdf( zt%f )
         call close_netcdf( zm%f )
@@ -1298,7 +1298,7 @@ end subroutine stats_accumulate
         deallocate( zt%x )
 
         deallocate( zt%n )
-        deallocate( zt%in_update )
+        deallocate( zt%l_in_update )
 
         
         deallocate( zt%f%var )
@@ -1329,7 +1329,7 @@ end subroutine stats_accumulate
 
         deallocate( zm%f%var )
         deallocate( zm%f%z )
-        deallocate( zm%in_update )
+        deallocate( zm%l_in_update )
         
         deallocate ( zmscr01 )
         deallocate ( zmscr02 )
@@ -1352,7 +1352,7 @@ end subroutine stats_accumulate
 
         deallocate( sfc%x )
         deallocate( sfc%n )
-        deallocate( sfc%in_update )
+        deallocate( sfc%l_in_update )
 
         deallocate( sfc%f%var )
         deallocate( sfc%f%z )

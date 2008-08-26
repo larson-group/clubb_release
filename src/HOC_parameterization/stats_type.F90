@@ -43,7 +43,7 @@ module stats_type
     integer(kind=stat_nknd), pointer, dimension(:,:) :: n
     
     ! Tracks if a field is in the process of an update
-    logical, pointer, dimension(:,:) :: in_update
+    logical, pointer, dimension(:,:) :: l_in_update
 
 !   Data for GrADS output
 
@@ -241,13 +241,13 @@ module stats_type
   
    if ( var_index > 0 ) then  ! Are we storing this variable?
 
-       if ( .not. grid_kind%in_update( grid_level, var_index ) ) & 
+       if ( .not. grid_kind%l_in_update( grid_level, var_index ) ) & 
          then ! Can we begin an update?  
 
          grid_kind%x(grid_level, var_index) =  & 
                  grid_kind%x(grid_level, var_index) - value
 
-         grid_kind%in_update(grid_level, var_index) = .true.  ! Start Record
+         grid_kind%l_in_update(grid_level, var_index) = .true.  ! Start Record
 
        else
         write(char_index(1:3),'(i3.3)') var_index
@@ -327,12 +327,12 @@ module stats_type
 
    if ( var_index > 0 ) then ! Are we storing this variable?
            
-       if ( grid_kind%in_update(grid_level, var_index) ) then ! Can we end an update? 
+       if ( grid_kind%l_in_update(grid_level, var_index) ) then ! Can we end an update? 
                
           call stat_update_var_pt & 
                    ( var_index, grid_level, value, grid_kind ) 
         
-          grid_kind%in_update( grid_level, var_index ) = .false. ! End Record
+          grid_kind%l_in_update( grid_level, var_index ) = .false. ! End Record
 
         else
 

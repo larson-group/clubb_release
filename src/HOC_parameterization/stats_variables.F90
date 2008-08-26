@@ -22,24 +22,24 @@ module stats_variables
   real(kind=time_precision), public :: stats_tout     ! Output interval     [s]
 
   logical, public ::  & 
-  l_stats,   & ! Main flag to turn statistics on/off
-  lnetcdf,  & ! Output to NetCDF format
-  lgrads   ! Output to GrADS format
+  l_stats,  & ! Main flag to turn statistics on/off
+  l_netcdf, & ! Output to NetCDF format
+  l_grads     ! Output to GrADS format
 
-!$omp   threadprivate(l_stats, lnetcdf, lgrads)
+!$omp   threadprivate(l_stats, l_netcdf, l_grads)
 !$omp   threadprivate(stats_tsamp, stats_tout)
 
   logical, public :: & 
-  l_stats_samp,    & ! Sample flag for current time step
-  l_stats_first,   & ! First time step of output period
-  l_stats_last    ! Last time step of output period
+  l_stats_samp,   & ! Sample flag for current time step
+  l_stats_first,  & ! First time step of output period
+  l_stats_last      ! Last time step of output period
 
 !$omp   threadprivate(l_stats_samp, l_stats_first, l_stats_last)
 
   character(len=200), public ::  & 
   fname_zt,  & ! Name of the stats file for thermodynamic grid fields
   fname_zm,  & ! Name of the stats file for momentum grid fields
-  fname_sfc ! Name of the stats file for surface only fields
+  fname_sfc    ! Name of the stats file for surface only fields
 
 !$omp   threadprivate(fname_zt, fname_zm, fname_sfc)
 
@@ -79,8 +79,8 @@ module stats_variables
      isnowslope,      & ! Adam Smith, 22 April 2008
      iNsnowm,         & ! Adam Smith, 22 April 2008
      ised_rcm,        & ! Brian
-     irsat,            & ! Brian
-     irrainm,            & ! Brian
+     irsat,           & ! Brian
+     irrainm,         & ! Brian
      iNrm,            & ! Brian
      imean_vol_rad_rain,   & ! Brian
      imean_vol_rad_cloud,  & ! COAMPS only. dschanen 6 Dec 2006
@@ -89,7 +89,7 @@ module stats_variables
      iAKm_est,        & ! LH Kessler.  Vince Larson  22 May 2005
      iradht,          & ! Radiative heating. dschanen 7 Oct 2005
      iradht_LW,       & !   "           "   Long-wave
-     iradht_SW       !   "           "   Short-wave
+     iradht_SW          !   "           "   Short-wave
 
   integer, public :: & 
      iT_in_K      ! Absolute temperature
