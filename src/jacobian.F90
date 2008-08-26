@@ -86,7 +86,7 @@ implicit none
   run_file ! namelist for case being run
 
   logical :: & 
-  use_standard_vars ! use standard constant parameters
+  l_use_standard_vars ! use standard constant parameters
 
 
 !     ! Types to hold GrADS variables and parameter constants
@@ -96,7 +96,7 @@ implicit none
   var1zt,  & ! thermo grid GRaDS results [units vary]
   var2zt,  & ! thermo grid GRaDS results [units vary]
   var1zm,  & ! momentum grid GRaDS results [units vary]
-  var2zm  ! momentum grid GRaDS results [units vary]
+  var2zm     ! momentum grid GRaDS results [units vary]
 
 
   real, dimension(nparams, nvarzt+nvarzm) :: jmatrix
@@ -116,7 +116,7 @@ implicit none
 
   ! Namelists
   namelist /jcbn_nml/  & 
-    run_file, times, delta_factor, use_standard_vars
+    run_file, times, delta_factor, l_use_standard_vars
 
 !-----------------------------------------------------------------------
 
@@ -140,7 +140,7 @@ implicit none
 
   close( unit=10 )
 
-  if ( .not. use_standard_vars ) then
+  if ( .not. l_use_standard_vars ) then
     call read_parameters( 10, 'jacobian.in', hoc_params%value )
 
   else
@@ -366,7 +366,7 @@ implicit none
   character(len=*), intent(in) :: fname_zx
 
   ! Local Variable
-  logical :: error
+  logical :: l_error
 
 
     
@@ -374,9 +374,9 @@ implicit none
 
     varray%value(1:varray%nz, k) =  & 
     grads_average_interval & 
-    ( fname_zx, varray%nz, times(:), varray%name(k), 1, error )
+    ( fname_zx, varray%nz, times(:), varray%name(k), 1, l_error )
 
-    if ( error ) then
+    if ( l_error ) then
       write(unit=fstderr,fmt=*) "Error in reading"//varray%name(i)
       stop
     end if

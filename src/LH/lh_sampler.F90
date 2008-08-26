@@ -29,14 +29,14 @@ contains
 
 ! Output: X_u = nxd Latin hypercube sample from uniform dist 
 !         X_nl = Sample from normal-lognormal distribution 
-!         sample_flag = logical that tells whether PDF has non-zero micro
+!         l_sample_flag = logical that tells whether PDF has non-zero micro
 !------------------------------------------------------------------------
 subroutine lh_sampler( n, nt, d, p_matrix, & 
                        cf, & 
                        pdf_parms, & 
                        crt1, crt2, cthl1, cthl2, & 
                        rrainm, & 
-                       X_u, X_nl, sample_flag)
+                       X_u, X_nl, l_sample_flag)
 
 !      use constants
 
@@ -68,7 +68,7 @@ double precision, intent(out) :: X_nl(1:n,1:d)
 
 ! A true/false flag that determines whether
 !     the PDF allows us to construct a sample
-logical, intent(out) :: sample_flag
+logical, intent(out) :: l_sample_flag
 
 ! Internal 
 
@@ -152,14 +152,14 @@ double precision :: rr1, rr2, srr1, srr2
 ! We prognose rt-thl-w,
 !    but we set means, covariance of N, qr to constants.
 
-sample_flag = .true.
+l_sample_flag = .true.
 if ( cf < 0.001 ) then  
 ! In this case there are essentially no cloudy points to sample;
 ! Set sample points to zero.
 
   X_u(:,:)    = 0.0
   X_nl(:,:)   = 0.0
-  sample_flag = .false.
+  l_sample_flag = .false.
 
 elseif ( srt1  == 0. .or. srt2  == 0. .or. & 
          sthl1 == 0. .or. sthl2 == 0. .or. & 
@@ -179,7 +179,7 @@ elseif ( srt1  == 0. .or. srt2  == 0. .or. &
 
   X_u(:,:)    = 0.0
   X_nl(:,:)   = 0.0
-  sample_flag = .false.
+  l_sample_flag = .false.
 
 else
 

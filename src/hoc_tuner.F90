@@ -42,8 +42,8 @@ use error, only:  &
   output_results_stdout,                         & ! Subroutine
   output_nml_standalone, output_nml_tuner,       & ! Subroutines
   param_vals_matrix,            & ! Variables
-  results_stdout,                                 & ! Variables
-  results_file, tune_type, ftol, ndim  ! Variables
+  l_results_stdout,                                 & ! Variables
+  l_results_file, tune_type, ftol, ndim  ! Variables
 
 use constants, only: & 
  fstdout ! Variables
@@ -58,7 +58,7 @@ character(len=50) :: results_f     ! Results file
 character(len=1)  :: user_response ! Simple Y/N query
 
 ! Read in namelists and define parameters
-call tuner_init( read_files=.true. )
+call tuner_init( l_read_files=.true. )
 
 ! Attempt to find the optimal parameter set
 do
@@ -69,7 +69,7 @@ do
   end if
 
   ! Print to stdout if specified
-  if ( results_stdout ) call output_results_stdout( )
+  if ( l_results_stdout ) call output_results_stdout( )
 
   ! Query to see if we should exit the loop
   write(fstdout,*) "Run Complete."
@@ -86,13 +86,13 @@ do
   write(fstdout,fmt='(A)', advance='no') "Enter new ftol=   "
   read(*,*) ftol
 
-  call tuner_init( read_files=.false. ) 
+  call tuner_init( l_read_files=.false. ) 
 
 end do ! user_response /= 'y', 'Y' or 'yes'
 
 ! Final namelist file output 
 
-if ( results_file ) then 
+if ( l_results_file ) then 
 
   ! Tuner namelist
   print *, "Generating new error.in file..."
