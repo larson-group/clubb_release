@@ -60,7 +60,7 @@ stats_type.o    : grid.o outputfile.o stats_precision.o error_code.o \
 stats_variables.o     : stats_type.o stats_variables.F90
 stats_subs.o    : output_grads.o output_netcdf.o prog_variables.o diag_variables.o \
 	stats_variables.o stats_type.o grid.o stats_zt.o stats_zm.o stats_sfc.o T_in_K_mod.o \
-	interpolation.o stats_subs.F90 
+	fill_holes.o interpolation.o stats_subs.F90 
 stats_zt.o : stats_variables.o stats_zt.F90
 stats_zm.o : stats_variables.o stats_zm.F90
 stats_sfc.o: stats_variables.o stats_sfc.F90
