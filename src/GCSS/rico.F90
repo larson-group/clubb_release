@@ -209,7 +209,7 @@ module rico
     Cq      ! This is C_q_20 scaled to the height of the lowest model level.
 
   logical :: & 
-    use_old_atex  ! if true, use ATEX version; if not, use RICO-specific
+    l_use_old_atex  ! if true, use ATEX version; if not, use RICO-specific
 
   ! Input variables
   real, intent(in) :: & 
@@ -241,7 +241,7 @@ module rico
   ustar = 0.3
 
   ! Choose which scheme to use
-  use_old_atex = .FALSE.
+  l_use_old_atex = .FALSE.
 
   ! Define variable values
   ubar = max(ubmin, sqrt(um_sfc*um_sfc + vm_sfc*vm_sfc))
@@ -259,7 +259,7 @@ module rico
          ((log(20/z0))/(log(lowestlevel/z0)))            
 
 ! Compute heat and moisture fluxes
-  if (use_old_atex) then ! Use ATEX version
+  if (l_use_old_atex) then ! Use ATEX version
     wpthlp_sfc = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa ) ! [K m s^-1
     wprtp_sfc  = -Cz * ubar * ( rtm - sat_mixrat_liq(psfc,sst) ) ! [kg kg^-1  m s^-1]
     upwp_sfc   = -um_sfc * ustar*ustar / ubar                    ! [m^2 s^-2]

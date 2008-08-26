@@ -167,18 +167,18 @@ real, dimension(gr%nnzp) :: &
 
 ! Local variables, on/off switches for individual schemes
 logical ::  & 
-  lw_on, & 
-  sw_on, & 
-!  subs_on, &
-  center
+  l_lw_on, & 
+  l_sw_on, & 
+  !l_subs_on, &
+  l_center
 
 !-----------------------------------------------------------------------
 
 ! Set which schemes to use
-lw_on           = .TRUE.
-sw_on           = .TRUE.
-!subs_on         = .TRUE.
-center          = .TRUE.
+l_lw_on           = .TRUE.
+l_sw_on           = .TRUE.
+!l_subs_on         = .TRUE.
+l_center          = .TRUE.
 
 ! Compute vertical motion
 do i=2,gr%nnzp
@@ -226,10 +226,10 @@ xi_abs = sin(rlat*3.14/180) * sin(sda_delta) + &
 xi_abs = max(xi_abs,0.)
 
 if (xi_abs == 0.) then
-  sw_on = .FALSE.
+  l_sw_on = .FALSE.
 end if
 
-if (.not. sw_on) then
+if (.not. l_sw_on) then
   xi_abs = 0.
 end if
 
@@ -246,9 +246,9 @@ if ( .not. l_bugsrad ) then
                 coamps_zm, coamps_zt, & 
                 Frad_out, Frad_LW_out, Frad_SW_out, & 
                 radhtk, radht_LW_out, radht_SW_out, & 
-                gr%nnzp-1, center, & 
+                gr%nnzp-1, l_center, & 
                 xi_abs, F0, F1, kap, radius, A, gc, Fs0, omega, & 
-                sw_on, lw_on)
+                l_sw_on, l_lw_on)
 
   do k = 2, gr%nnzp-1
     Frad(k)     = Frad_out(gr%nnzp-k+1)

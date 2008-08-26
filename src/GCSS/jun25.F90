@@ -131,7 +131,7 @@
 !                 (NOT USED IN NOV.11 CASE)                     Unit: m/s
 !
 ! ADDITIONAL PARAMETERS FOR NOV.11 SUBSIDENCE (NOT FOR JUN.25 CASE)
-! subs_on       : logical variable tells us whether to turn subsidence on
+! l_subs_on       : logical variable tells us whether to turn subsidence on
 !                                                               Unit: NONE
 ! wmax          : defines value of maximum subsidence in profile
 !                                                               Unit: cm/s
@@ -151,11 +151,11 @@
 !                                                               Unit: m
 !
 ! RADIATION PARAMETERS
-! sw_on         : logical variable passed to radiation scheme
+! l_sw_on         : logical variable passed to radiation scheme
 !                 - is SW radiation on?                         Unit: NONE
-! lw_on         : logical variable passed to radiation scheme
+! l_lw_on         : logical variable passed to radiation scheme
 !                 - is LW radiation on?                         Unit: NONE
-! center        : use centered differencing (as opposed to a one-sided
+! l_center        : use centered differencing (as opposed to a one-sided
 !                 forward difference) in radiation code         Unit: NONE
 ! 
 ! xi_abs        : cosine of the solar zenith angle              Unit: NONE
@@ -276,14 +276,14 @@
   !---------------------------------------------------------------
   ! Toggle for implementing differencing method in interpolations
   !---------------------------------------------------------------
-  logical :: center
+  logical :: l_center
 
   !---------------------------------------------------------------
   ! Toggles for activating/deactivating forcings
   !---------------------------------------------------------------
-  logical :: lw_on, sw_on
+  logical :: l_lw_on, l_sw_on
+  !logical :: l_subs_on
 
-!        logical :: subs_on
   !---------------------------------------------------------------
   ! Variable used for working within vertical arrays
   !---------------------------------------------------------------
@@ -298,16 +298,16 @@
 ! Toggles for activating/deactivating forcings
 ! To turn off a specific forcing, set the corresponding toggle to .FALSE.
 !-----------------------------------------------------------------------
-!         subs_on   = .TRUE.
-   lw_on     = .TRUE.
-   sw_on     = .TRUE.
+   !l_subs_on   = .TRUE.
+   l_lw_on     = .TRUE.
+   l_sw_on     = .TRUE.
 
 !-----------------------------------------------------------------------
 ! Toggle for centered/forward differencing (in interpolations)
 ! To use centered differencing, set the toggle to .TRUE.
 ! To use forward differencing, set the toggle to .FALSE.
 !-----------------------------------------------------------------------
-   center    = .TRUE.
+   l_center    = .TRUE.
 
 !      Replaced the calculation based on time since solar noon 
 !       etc., with a generalized function based on time and lat/lon.
@@ -323,10 +323,10 @@
 !-----------------------------------------------------------------------
 ! Modification by Adam Smith 26 June 2006
 ! It is difficult to remember to set xi_abs = 0 when we want to shut off
-! solar radiation.  If sw_on = .FALSE. above, we will automatically set
+! solar radiation.  If l_sw_on = .FALSE. above, we will automatically set
 ! xi_abs to 0 to avoid confusion or errors.
 !-----------------------------------------------------------------------
-if ( .not. sw_on ) then
+if ( .not. l_sw_on ) then
   xi_abs = 0.
 end if
 
@@ -335,9 +335,9 @@ end if
 !-----------------------------------
 
 if (xi_abs == 0.) then
-  sw_on = .FALSE.
+  l_sw_on = .FALSE.
 else
-  sw_on = .TRUE.
+  l_sw_on = .TRUE.
 end if
 
 
@@ -616,9 +616,9 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
                   coamps_zm, coamps_zt, & 
                   Frad_out, Frad_LW_out, Frad_SW_out, & 
                   radhtk, radht_LW_out, radht_SW_out, & 
-                  gr%nnzp-1, center, & 
+                  gr%nnzp-1, l_center, & 
                   xi_abs, F0, F1, kap, radius, AA, gc, Fs0, omega, & 
-                  sw_on, lw_on)
+                  l_sw_on, l_lw_on)
 
 
   !-------------------------------------------------------------

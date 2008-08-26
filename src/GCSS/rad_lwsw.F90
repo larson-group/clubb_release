@@ -16,9 +16,9 @@ subroutine rad_lwsw( qc3, rbm, dsigm, &
                      coamps_zm, coamps_zt,  & 
                      Frad, Frad_LW, Frad_SW, & 
                      radhtk, radht_LW, radht_SW, & 
-                     kk, center, xi_abs, F0, F1, kay,  & 
+                     kk, l_center, xi_abs, F0, F1, kay,  & 
                      radius, A, gc, Fs0, omega, & 
-                     sw_on, lw_on)
+                     l_sw_on, l_lw_on)
 
 ! Description:
 ! For the Larson group altocumulus cases
@@ -92,9 +92,9 @@ real, intent(in) ::  &
   omega ! Single-scattering albedo                                [-]
 
 logical, intent(in) ::  & 
-  center,  & ! Use centered differences?     [-]
-  sw_on,   & ! Is shortwave radiation on?    [-]
-  lw_on      ! Is longwave radiation on?     [-]
+  l_center,  & ! Use centered differences?     [-]
+  l_sw_on,   & ! Is shortwave radiation on?    [-]
+  l_lw_on      ! Is longwave radiation on?     [-]
 
 ! Output Variables
 real, dimension(kk), intent(out) ::  & 
@@ -154,7 +154,7 @@ integer :: k
 ! 
 !-----------------------------------------------------------------------
 
-if ( lw_on ) then
+if ( l_lw_on ) then
   lwp(1) = 0.0
   do k=2,kk+1
     lwp(k) = lwp(k-1) & 
@@ -259,7 +259,7 @@ if ( lw_on ) then
   ! value of liquid water path at thermodynamic level 1.
   lwp_coamps_zm(1) = lwp(1)/2
 
-  if ( center ) then
+  if ( l_center ) then
     Frad_LW(1) = F0 * exp( -kay * lwp_coamps_zm(1) ) & 
                + F1 * exp( -kay * & 
                     ( lwp(kk+1) - lwp_coamps_zm(1) ) )
@@ -276,16 +276,16 @@ if ( lw_on ) then
     enddo
   endif
 
-else ! this 'else' means lw_on is .FALSE.
+else ! this 'else' means l_lw_on is .FALSE.
   do k=1,kk+1
     Frad_LW(k) = 0.
   enddo
 endif
 
-if ( sw_on ) then
+if ( l_sw_on ) then
   call sunray_sw( qc3, rbm, xi_abs, dsigm, kk, & 
                   coamps_zm, coamps_zt, & 
-                  radius, A, gc, Fs0, omega, center, & 
+                  radius, A, gc, Fs0, omega, l_center, & 
                   Frad_SW )
 else
   do k=1,kk+1
@@ -336,7 +336,7 @@ end subroutine rad_lwsw
 !-----------------------------------------------------------------------
 subroutine sunray_sw( qc3, rbm, xi_abs, dsigm, kk, & 
                       coamps_zm, coamps_zt, & 
-                      radius, A, gc, Fs0, omega, center, & 
+                      radius, A, gc, Fs0, omega, l_center, & 
                       Frad_SW )
 
 ! Description:
@@ -406,7 +406,7 @@ real, intent(in) ::  &
   omega
 
 logical, intent(in) ::  & 
-  center
+  l_center
 
 ! Output variables
 real, dimension(kk+1), intent(out) ::  & 
@@ -631,7 +631,7 @@ c1 = (ap23b-c2*xm23p)/xp23p
 !
 !-----------------------------------------------------------------------
 
-if ( center ) then
+if ( l_center ) then
   taupath = 0.5*taude(1)
 else
   taupath = 0.
@@ -651,7 +651,7 @@ endif
 
   do k = 2, kk+1
 
-    if ( center ) then
+    if ( l_center ) then
       taupath = taupath  & 
               + lin_int( coamps_zm(k), coamps_zt(k-1),  & 
                          coamps_zt(k), taude(k-1), taude(k) )

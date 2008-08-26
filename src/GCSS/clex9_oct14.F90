@@ -89,8 +89,8 @@
 
   ! Toggles for activating/deactivating forcings
   logical, parameter ::  & 
-  subs_on   = .true., & 
-  lw_on     = .true.
+  l_subs_on   = .true., & 
+  l_lw_on     = .true.
 
   ! Toggle for centered/forward differencing (in interpolations)
   ! To use centered differencing, set the toggle to .true.
@@ -186,13 +186,13 @@
   Fs0       ! The incident incoming SW insolation at cloud top in the
             !   direction of the incoming beam (not the vertical) [W/m^2]
 
-  logical :: sw_on
+  logical :: l_sw_on
  
   ! Variable used for working within vertical arrays
 
   integer :: k
 
-  sw_on = .true. ! This is necessay to use the xi_abs value below
+  l_sw_on = .true. ! This is necessay to use the xi_abs value below
                  ! Joshua Fasching June 2008
 
 !-----------------------------------------------------------------------
@@ -233,11 +233,11 @@
 !-----------------------------------------------------------------------
 ! Modification by Adam Smith 26 June 2006
 ! It is difficult to remember to set xi_abs = 0 when we want to shut off
-! solar radiation.  If sw_on = .FALSE. above, we will automatically set
+! solar radiation.  If l_sw_on = .FALSE. above, we will automatically set
 ! xi_abs to 0 to avoid confusion or errors.
 !-----------------------------------------------------------------------
 
-if (.not. sw_on) then
+if (.not. l_sw_on) then
   xi_abs = 0.0
 end if
 
@@ -246,9 +246,9 @@ end if
 !-----------------------------------
 
 if (xi_abs == 0.0 ) then
-  sw_on = .false.
+  l_sw_on = .false.
 else
-  sw_on = .true.
+  l_sw_on = .true.
 end if
 
 
@@ -548,7 +548,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
                    radhtk, radht_LW_out, radht_SW_out, & 
                    gr%nnzp-1, center, & 
                    xi_abs, F0, F1, kap, radius, A, gc, Fs0, omega, & 
-                   sw_on, lw_on )
+                   l_sw_on, l_lw_on )
 
   !---------------------------------------------------------------
   ! This code transforms the radiation results back into CLUBB
@@ -665,7 +665,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
 !-----------------------------------------------------------------------
 
   do k=2,gr%nnzp
-    if ( (time >= time_initial + 3600.0) .and. subs_on ) then
+    if ( (time >= time_initial + 3600.0) .and. l_subs_on ) then
       call linear_interpolation( 7, zsubs, wt1, gr%zt(k), wm_zt(k) )
     else
 !           If time is not yet one hour, we have no subsidence

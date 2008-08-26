@@ -231,12 +231,12 @@
 !-----------------------------------------------------------------------
 ! Modification by Adam Smith 26 June 2006
 ! It is difficult to remember to set xi_abs = 0 when we want to shut off
-! solar radiation.  If sw_on = .FALSE. above, we will automatically set
+! solar radiation.  If l_sw_on = .FALSE. above, we will automatically set
 ! xi_abs to 0 to avoid confusion or errors.
 !-----------------------------------------------------------------------
 
 
-!if (.not. sw_on) then
+!if (.not. l_sw_on) then
 !  xi_abs = 0.0
 !end if
 
