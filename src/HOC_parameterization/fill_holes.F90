@@ -13,29 +13,28 @@ private ! Set Default Scope
 
 contains
 
-!--------------------------------------------------------------------------
+!===============================================================================
 subroutine fill_holes_driver( num_pts, threshold, field_grid, &
                               field )
 
-!       Description:
-!       This subroutine clips values of 'field' that are below 'threshold' as 
-!       much as possible (i.e. "fills holes"), but conserves the total 
-!       integrated mass of 'field'.  This prevents clipping from acting as a 
-!       spurious source.
+! Description:
+! This subroutine clips values of 'field' that are below 'threshold' as much as
+! possible (i.e. "fills holes"), but conserves the total integrated mass of 
+! 'field'.  This prevents clipping from acting as a spurious source.
 !
-!       Mass is conserved by reducing the clipped field everywhere by a constant
-!       multiplicative coefficient.
+! Mass is conserved by reducing the clipped field everywhere by a constant
+! multiplicative coefficient.
 !
-!       This subroutine does not guarantee that the clipped field will exceed 
-!       threshold everywhere; blunt clipping is needed for that.
+! This subroutine does not guarantee that the clipped field will exceed 
+! threshold everywhere; blunt clipping is needed for that.
 !
-!       This subroutine doesn't account for variation in air density with 
-!       altitude, and therefore won't properly conserve the vertical integral of
-!       field if we upgrade to theanelastic equation!!!
+! This subroutine doesn't account for variation in air density with altitude, 
+! and therefore won't properly conserve the vertical integral of field if we 
+! upgrade to the anelastic equation!!!
 
-!       References:
-!       ``Numerical Methods for Wave Equations in Geophysical Fluid
-!       Dynamics", Durran (1999), p. 292.
+! References:
+! ``Numerical Methods for Wave Equations in Geophysical Fluid
+! Dynamics", Durran (1999), p. 292.
 !-----------------------------------------------------------------------
 
 use grid_class, only: & 
@@ -46,11 +45,11 @@ implicit none
 ! Input variables
 integer, intent(in) :: & 
   num_pts  ! The number of points on either side of the hole;
-         ! Mass is drawn from these points to fill the hole.  []  
+           ! Mass is drawn from these points to fill the hole.  []  
 
 real, intent(in) :: & 
   threshold  ! A threshold (e.g. wtol*wtol) below which field must not
-           ! fall                           [Units vary; same as field]
+             ! fall                           [Units vary; same as field]
 
 character(len=2), intent(in) :: & 
   field_grid ! The grid of the field, either zt or zm
@@ -58,26 +57,29 @@ character(len=2), intent(in) :: &
 ! Input/Output variable
 real, dimension(gr%nnzp), intent(inout) :: & 
   field  ! The field (e.g. wp2) that contains holes
-       !                                    [Units same as threshold]
+         !                                    [Units same as threshold]
 
 ! Local Variables
 integer :: & 
   k,          & ! Loop index for absolute grid level              []
   begin_idx,  & ! Lower grid level of hole-filling range          []
-  end_idx    ! Upper grid level of hole-filling rang           []
+  end_idx       ! Upper grid level of hole-filling rang           []
 
 !-----------------------------------------------------------------------
 
 ! Check whether any holes exist in the entire profile.
-! The lowest level (k=1) should not be included, as the hole-filling 
-! scheme should not alter the set value of 'field' at the surface.
+! The lowest level (k=1) should not be included, as the hole-filling scheme 
+! should not alter the set value of 'field' at the surface (for momentum level
+! variables), or consider the value of 'field' at a level below the surface (for
+! thermodynamic level variables).
 if ( any( field( 2:gr%nnzp ) < threshold ) ) then
 
    ! Make one pass up the profile, filling holes as much as we can 
    ! using nearby mass.
-   ! The lowest level (k=1) should not be included in the loop, as
-   ! the hole-filling scheme should not alter the set value of 'field' 
-   ! at the surface.
+   ! The lowest level (k=1) should not be included in the loop, as the 
+   ! hole-filling scheme should not alter the set value of 'field' at the 
+   ! surface (for momentum level variables), or consider the value of 'field'
+   ! at a level below the surface (for thermodynamic level variables).
    do k = 2+num_pts, gr%nnzp-num_pts, 1
    
       begin_idx = k - num_pts
@@ -93,9 +95,11 @@ if ( any( field( 2:gr%nnzp ) < threshold ) ) then
     
    enddo 
 
-   ! Fill holes globally, to maximize the chance that all holes are filled
-   ! The lowest level (k=1) should not be included, as the hole-filling 
-   ! scheme should not alter the set value of 'field' at the surface.
+   ! Fill holes globally, to maximize the chance that all holes are filled.
+   ! The lowest level (k=1) should not be included, as the hole-filling scheme 
+   ! should not alter the set value of 'field' at the surface (for momentum 
+   ! level variables), or consider the value of 'field' at a level below the 
+   ! surface (for thermodynamic level variables).
    if ( any( field( 2:gr%nnzp ) < threshold ) ) then
 
       call fill_holes_multiplicative( 2, gr%nnzp,  & 
@@ -110,29 +114,28 @@ return
 
 end subroutine fill_holes_driver
 
-!-----------------------------------------------------------------------
+!===============================================================================
 subroutine fill_holes_multiplicative & 
           ( begin_idx, end_idx, threshold, field_grid, field )
 
-!       Description: 
-!       This subroutine clips values of 'field' that are below 'threshold' as 
-!       much as possible (i.e. "fills holes"), but conserves the total 
-!       integrated mass of 'field'.  This prevents clipping from acting as a 
-!       spurious source.
+! Description: 
+! This subroutine clips values of 'field' that are below 'threshold' as much as
+! possible (i.e. "fills holes"), but conserves the total integrated mass of 
+! 'field'.  This prevents clipping from acting as a spurious source.
 !
-!       Mass is conserved by reducing the clipped field everywhere by a constant
-!       multiplicative coefficient.
+! Mass is conserved by reducing the clipped field everywhere by a constant
+! multiplicative coefficient.
 !
-!       This subroutine does not guarantee that the clipped field will exceed 
-!       threshold everywhere; blunt clipping is needed for that.
+! This subroutine does not guarantee that the clipped field will exceed 
+! threshold everywhere; blunt clipping is needed for that.
 !
-!       This subroutine doesn't account for variation in air density with 
-!       altitude, and therefore won't properly conserve the vertical integral 
-!       of field if we upgrade to the anelastic equation!!!
+! This subroutine doesn't account for variation in air density with altitude, 
+! and therefore won't properly conserve the vertical integral of field if we 
+! upgrade to the anelastic equation!!!
 
-!       References:
-!       ``Numerical Methods for Wave Equations in Geophysical Fluid
-!       Dynamics", Durran (1999), p. 292.  
+! References:
+! ``Numerical Methods for Wave Equations in Geophysical Fluid
+! Dynamics", Durran (1999), p. 292.  
 !-----------------------------------------------------------------------
 
 implicit none
@@ -140,11 +143,11 @@ implicit none
 ! Input variables
 integer, intent(in) :: & 
   begin_idx,  & ! The beginning index (e.g. k=2) of the range of hole-filling 
-  end_idx    ! The end index (e.g. k=gr%nnzp) of the range of hole-filling
+  end_idx       ! The end index (e.g. k=gr%nnzp) of the range of hole-filling
 
 real, intent(in) :: & 
   threshold  ! A threshold (e.g. wtol*wtol) below which field must not 
-           ! fall                           [Units vary; same as field]
+             ! fall                           [Units vary; same as field]
 
 character(len=2), intent(in) :: & 
   field_grid ! The grid of the field, either zt or zm
@@ -152,18 +155,18 @@ character(len=2), intent(in) :: &
 ! Input/Output variable
 real, dimension(end_idx-begin_idx+1), intent(inout) ::  & 
   field  ! The field (e.g. wp2) that contains holes 
-       !                                    [Units same as threshold]
+         !                                    [Units same as threshold]
 
 ! Local Variables
 real, dimension(end_idx-begin_idx+1)  ::  & 
   field_clipped  ! The raw field (e.g. wp2) that contains no holes 
-               !                          [Units same as threshold]
+                 !                          [Units same as threshold]
 
 real ::  & 
   field_avg,  & ! Vertical average of field [Units of field]
   field_clipped_avg,   & ! Vertical average of clipped field [Units of field]
   mass_fraction  ! Coefficient that multiplies clipped field 
-               ! in order to conserve mass.                      []
+                 ! in order to conserve mass.                      []
 
 !-----------------------------------------------------------------------
 
@@ -179,26 +182,24 @@ else
    ! We can only fill in holes partly;
    ! to do so, we remove all mass above threshold.
    field_clipped = min( threshold, field )
-end if
+endif
 
 ! Compute the clipped field's vertical integral.
 ! clipped_total_mass >= original_total_mass
 field_clipped_avg = vertical_avg( begin_idx, end_idx,  & 
                                   field_grid, field_clipped )
 
-! If the difference between the field_clipped_avg and the 
-! threshold is so small that it falls within numerical 
-! round-off, return to the parent subroutine without altering
-! the field in order to avoid divide-by-zero error.
-!        if ( abs(field_clipped_avg - threshold)  &
-!              < threshold*epsilon(threshold) ) then
+! If the difference between the field_clipped_avg and the threshold is so small
+! that it falls within numerical round-off, return to the parent subroutine \
+! without altering the field in order to avoid divide-by-zero error.
+!if ( abs(field_clipped_avg - threshold)  &
+!      < threshold*epsilon(threshold) ) then
 if ( abs(field_clipped_avg - threshold) == 0.0 ) then
    return
 endif
 
-! Compute coefficient that makes the clipped field have the same
-! mass as the original field.
-! We should always have mass_fraction > 0.
+! Compute coefficient that makes the clipped field have the same mass as the 
+! original field.  We should always have mass_fraction > 0.
 mass_fraction = ( field_avg - threshold ) / & 
                       ( field_clipped_avg - threshold )
 
@@ -210,14 +211,14 @@ field = mass_fraction * ( field_clipped - threshold )  &
 return
 end subroutine fill_holes_multiplicative
 
-!-----------------------------------------------------------------------
+!===============================================================================
 function vertical_avg( begin_idx, end_idx, field_grid, field )
 
-!       Description:
-!       Compute the vertical average of a field.  
-!       Does not account for air density that varies with altitude!!!
+! Description:
+! Compute the vertical average of a field.  
+! Does not account for air density that varies with altitude!!!
 
-!       References:
+! References:
 !-----------------------------------------------------------------------
 
 use grid_class, only: & 
@@ -231,15 +232,14 @@ implicit none
 ! Input variables
 integer, intent(in) :: & 
   begin_idx,  & ! The beginning index (e.g. 2) of the range of integration of field 
-  end_idx    ! The end index (e.g. gr%nnzp) of the range of integration of field
-
+  end_idx       ! The end index (e.g. gr%nnzp) of the range of integration of field
 
 character(len=2), intent(in) :: & 
   field_grid ! The grid of the field, either zt or zm
 
 real, dimension(end_idx-begin_idx+1), intent(in) ::  & 
   field  ! The field (e.g. wp2) that we want to average  [Units vary]
-       ! The field points need to be arranged from lowest to highest in altitude
+         ! The field points need to be arranged from lowest to highest in altitude
 
 ! Output variable
 real :: & 
@@ -248,11 +248,11 @@ real :: &
 ! Local variables
 real :: & 
   vertical_integral,  & ! Vertical integral of height [(length) * (units of field)]
-  height             ! Altitude range over which we integrate  [m]
+  height                ! Altitude range over which we integrate  [m]
 
 integer ::  & 
   k,      & ! Loop index for absolute grid level
-  k_rel  ! Loop index for grid level relative to starting idx of field
+  k_rel     ! Loop index for grid level relative to starting idx of field
 
 !-------------------------------------------------------------------------------
 
@@ -267,7 +267,12 @@ height = 0.0
 ! If field is on the zt grid
 if ( field_grid == "zt" ) then
 
-   k_rel = 1
+   k_rel = 1   ! k_rel = 1 is equivalent to k = begin_idx.
+
+   ! The first (k=1) thermodynamic level is below ground (or below the official 
+   ! lower boundary at the first momentum level), so it should not count in a 
+   ! vertical average.  Begin no lower than level k=2, which is the first 
+   ! thermodynamic level above ground (or above the model lower boundary).
    do k = max(2,begin_idx), end_idx, 1
 
       vertical_integral = vertical_integral  & 
@@ -279,7 +284,17 @@ if ( field_grid == "zt" ) then
 
 elseif ( field_grid == "zm" )  then
 
-   k_rel = 1
+   k_rel = 1   ! k_rel = 1 is equivalent to k = begin_idx.
+
+   ! The first (k=1) momentum level is right at ground level (or right at the
+   ! official lower boundary).  The momentum level variables that call the 
+   ! hole-filling scheme have set values at the surface (or lower boundary), and
+   ! those set values should not be changed.  Therefore, the vertical average 
+   ! (for purposes of hole-filling) should not include the surface level (or 
+   ! lower boundary level).  Begin no lower than level k=2, which is the second 
+   ! momentum level above ground (or above the model lower boundary).  Likewise,
+   ! the value at the model upper boundary (k=gr%nnzp) is also set for momentum 
+   ! level variables.
    do k = max(2,begin_idx), min(gr%nnzp-1,end_idx), 1
 
       vertical_integral = vertical_integral  & 
@@ -304,6 +319,6 @@ vertical_avg = vertical_integral / height
 return
 end function vertical_avg
 
-!-----------------------------------------------------------------------
+!===============================================================================
 
 end module fill_holes
