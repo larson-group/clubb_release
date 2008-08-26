@@ -47,7 +47,7 @@ module outputfile_class
                                    
      integer :: nrecord  ! Number of records written
      integer :: ntimes   ! Number of times written
-     logical :: ldefined ! Whether nf90_enddef() has been called
+     logical :: l_defined ! Whether nf90_enddef() has been called
 
   ! NetCDF datafile dimensions indices
      integer ::  & 

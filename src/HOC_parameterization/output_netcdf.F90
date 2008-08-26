@@ -76,7 +76,7 @@ integer :: stat  ! Error status
 integer :: k     ! Array index
 
 ! Initialization for NetCDF
-ncf%ldefined = .false.
+ncf%l_defined = .false.
 
 ! Define file (compatability with GrADS writing)
 ncf%fdir   = fdir
@@ -159,10 +159,10 @@ integer :: i ! Array index
 
 ncf%ntimes = ncf%ntimes + 1
 
-if ( .not. ncf%ldefined ) then
+if ( .not. ncf%l_defined ) then
   call first_write( ncf ) ! finalize the variable definitions
   call write_grid( ncf )  ! define lat., long., and grid
-  ncf%ldefined = .true.
+  ncf%l_defined = .true.
 endif
 
 allocate( stat( ncf%nvar ) )
@@ -449,7 +449,7 @@ type (outputfile), intent(inout) :: ncf
 integer, dimension(:), allocatable :: stat
 
 integer :: i     ! Array index
-logical :: error ! Error stat
+logical :: l_error ! Error stat
 
 ! Range for NetCDF variables
 real(kind=4), dimension(2) :: var_range
@@ -483,7 +483,7 @@ var_dim(4) = ncf%TimeDimId ! The NF90_UNLIMITED dimension
 
 allocate( stat( ncf%nvar ) )
 
-error = .false.
+l_error = .false.
 
 do i = 1, ncf%nvar, 1
 !        stat(i) = nf90_def_var( ncf%iounit, trim( ncf%var(i)%name ),
@@ -494,7 +494,7 @@ do i = 1, ncf%nvar, 1
   if ( stat(i) /= NF90_NOERR ) then
     write(fstderr,*) "Error defining variable ",  & 
       ncf%var(i)%name //": ", trim( nf90_strerror( stat(i) ) )
-    error = .true.
+    l_error = .true.
   endif
 
   stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%Id, & 
@@ -502,7 +502,7 @@ do i = 1, ncf%nvar, 1
   if ( stat(i) /= NF90_NOERR ) then
     write(fstderr,*) "Error defining valid range", & 
       trim( nf90_strerror( stat(i) ) )
-    error = .true.
+    l_error = .true.
   endif
 
   stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%Id, "title",  & 
@@ -510,7 +510,7 @@ do i = 1, ncf%nvar, 1
   if ( stat(i) /= NF90_NOERR ) then
     write(fstderr,*) "Error in description", & 
       trim( nf90_strerror( stat(i) ) )
-    error = .true.
+    l_error = .true.
   endif
 
   stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%Id, "units",  & 
@@ -518,11 +518,11 @@ do i = 1, ncf%nvar, 1
   if ( stat(i) /= NF90_NOERR ) then
     write(fstderr,*) "Error in units", & 
       trim( nf90_strerror( stat(i) ) )
-    error = .true.
+    l_error = .true.
   endif
 end do
 
-if ( error ) stop "Error in definition"
+if ( l_error ) stop "Error in definition"
 
 stat(1) = nf90_enddef( ncf%iounit ) ! end definitions
 if ( stat(1) /= NF90_NOERR ) then

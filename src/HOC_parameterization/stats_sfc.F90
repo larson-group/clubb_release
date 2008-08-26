@@ -13,7 +13,7 @@ public :: stats_init_sfc
 contains 
 
 !-----------------------------------------------------------------------
-subroutine stats_init_sfc( vars_sfc, lerror )
+subroutine stats_init_sfc( vars_sfc, l_error )
 
 !     Description:
 !     Initializes array indices for sfc
@@ -39,6 +39,7 @@ use stats_variables, only: &
     irtpthlp_cn, & 
     iup2_cn, & 
     ivp2_cn
+
 use stats_type, only: & 
     stat_assign ! Procedure
 
@@ -49,7 +50,7 @@ integer, parameter :: nvarmax = 250  ! Max variables
 character(len= * ), dimension(nvarmax), intent(in) :: vars_sfc
 
 !Output Variable	
-logical, intent(inout) :: lerror
+logical, intent(inout) :: l_error
 
 !Local Varables
 integer :: i, k
@@ -207,7 +208,7 @@ do i=1,sfc%nn
   case default
     write(0,*) 'Error: unrecognized variable in vars_sfc: ', & 
           trim(vars_sfc(i))
-    lerror = .true.
+    l_error = .true.
 
   end select
 

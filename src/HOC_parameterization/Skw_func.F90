@@ -25,12 +25,12 @@ intrinsic :: min, max
 
 ! Parameter Constants
 logical, parameter ::  & 
-  clipping_kluge = .false.
+  l_clipping_kluge = .false.
 
 ! Input 
 real, intent(in) :: & 
   wp2,  & ! w'^2    [m^2/s^2]
-  wp3  ! w'^3    [m^3/s^3]
+  wp3     ! w'^3    [m^3/s^3]
 
 real, intent(in) :: & 
   wtol ! w tol.  [m/s]
@@ -40,7 +40,7 @@ real :: &
 
 Skw = wp3 / ( max( wp2, wtol**2 ) )**1.5
 
-if ( clipping_kluge ) then
+if ( l_clipping_kluge ) then
   Skw = min( max( Skw, -4.5 ), 4.5)
 end if
 

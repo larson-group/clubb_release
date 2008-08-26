@@ -74,7 +74,7 @@ contains
     intrinsic :: exp
 
     ! Parameter Constants
-    logical, parameter :: lFlatau = .true.
+    logical, parameter :: l_Flatau = .true.
 
     ! Relative error norm expansion (-50 to 50 deg_C) from
     ! Table 3 of pp. 1510 of Flatau et al. 1992 (Water Vapor)
@@ -94,7 +94,7 @@ contains
     real :: T_in_C
 !   integer :: i ! Loop index
 
-    if ( lFlatau ) then
+    if ( l_Flatau ) then
       ! Determine deg K - 273.15
       T_in_C = T_in_K - T_freeze_K 
 
@@ -191,7 +191,7 @@ contains
     intrinsic :: exp, log
 
     ! Parameter Constants
-    logical, parameter :: lFlatau = .false.
+    logical, parameter :: l_Flatau = .false.
 
     ! Relative error norm expansion (-50 to 0 deg_C) from
     ! Table 3 of pp. 1510 of Flatau et al. 1992 (Ice)
@@ -206,7 +206,7 @@ contains
     ! Local Variables
     integer :: i
 
-    if ( lFlatau ) then
+    if ( l_Flatau ) then
       ! Polynomial approx. (Flatau, et al. 1992)
       esati = a(1)
 

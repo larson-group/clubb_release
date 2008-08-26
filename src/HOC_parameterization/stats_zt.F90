@@ -12,7 +12,7 @@ public :: stats_init_zt
 contains
 
 !-----------------------------------------------------------------------
-subroutine stats_init_zt( vars_zt, lerror )
+subroutine stats_init_zt( vars_zt, l_error )
 
 !     Description:
 !     Initializes array indices for zt 
@@ -196,7 +196,7 @@ integer, parameter :: nvarmax = 250
 character(len= * ), dimension(nvarmax), intent(in) :: vars_zt
 
 !Output Variable	
-logical, intent(inout) :: lerror
+logical, intent(inout) :: l_error
 
 !Local Varables
 integer :: i, k
@@ -378,7 +378,7 @@ isclrbm_f   = 0
 iedsclram   = 0
 iedsclrbm   = 0
 
-lerror = .false.
+l_error = .false.
 
 !     Assign pointers for statistics variables zt
 
@@ -1438,7 +1438,7 @@ do i=1,zt%nn
   case default
     write(0,*) 'Error: unrecognized variable in vars_zt: ', & 
        trim(vars_zt(i))
-    lerror = .true.
+    l_error = .true.
 
   end select
 

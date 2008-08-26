@@ -981,7 +981,7 @@ module hoc_parameterization_interface
         subroutine latin_hypercube_sampling & 
                    ( k, n, dvar, nt, i_rmd, & 
                      crt1, crt2, cthl1, cthl2, & 
-                     rrainm, cf, grid, sflag, p_height_time )
+                     rrainm, cf, grid, l_sflag, p_height_time )
 !       Description:
 !       Estimate using Latin Hypercubes.  This is usually disabled by default.
 !       The actual generation of a random matrix is done in a call from the
@@ -1011,7 +1011,7 @@ module hoc_parameterization_interface
         ! Input Variables 
         integer, intent(in) :: k  ! index
         integer, intent(in) :: n, dvar, i_rmd, nt, grid
-        logical, intent(out) :: sflag
+        logical, intent(out) :: l_sflag
 
         ! coeffs of s from pdf_closure_new
         real, intent(in) :: crt1, crt2, cthl1, cthl2
@@ -1043,12 +1043,12 @@ module hoc_parameterization_interface
                          cf(k), pdf_parms(k, :),      & ! intent(in)
                          crt1, crt2, cthl1, cthl2,    & ! intent(in)
                          rrainm(k),                   & ! intent(in)
-                         X_u, X_nl, sflag )             ! intent(out)
+                         X_u, X_nl, l_sflag )           ! intent(out)
 
 !       print *, 'hoc.F: got past lh_sampler'
 
         ! Perform LH and analytic microphysical calculations
-        call micro_calcs( n, dvar, X_u, X_nl, sflag,                  & ! intent(in)
+        call micro_calcs( n, dvar, X_u, X_nl, l_sflag,                & ! intent(in)
                           pdf_parms(k,:),                             & ! intent(in)
                           AKm_est(k), AKm(k), AKstd(k), AKstd_cld(k), & ! intent(out)
                           AKm_rcm(k), AKm_rcc(k), rcm_est(k) )          ! intent(out)

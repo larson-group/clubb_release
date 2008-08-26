@@ -91,7 +91,7 @@ module output_grads
   ! Local Variables
 
   integer :: k
-  logical :: lctl, ldat, lerror
+  logical :: l_ctl, l_dat, l_error
 
   ! Define parameters
   
@@ -127,15 +127,15 @@ module output_grads
 !         We don't need this feature for the single-column model
 !         since there is no history restart feature
 !
-!          inquire( file=trim(fdir)//trim(fname)//'.ctl', exist=lctl )
-!          inquire( file=trim(fdir)//trim(fname)//'.dat', exist=ldat )
-  lctl = .false.
-  ldat = .false.
+!          inquire( file=trim(fdir)//trim(fname)//'.ctl', exist=l_ctl )
+!          inquire( file=trim(fdir)//trim(fname)//'.dat', exist=l_dat )
+  l_ctl = .false.
+  l_dat = .false.
 
   ! If none of the files exist, set ntimes and nrecord and
   ! to initial values and return
 
-  if ( .not.lctl .and. .not.ldat ) then
+  if ( .not.l_ctl .and. .not.l_dat ) then
 
     f%time = time
     f%ntimes = 0
@@ -144,7 +144,7 @@ module output_grads
 
   ! If both files exists, attempt to append to existing files
 
-  else if ( lctl .and. ldat ) then
+  else if ( l_ctl .and. l_dat ) then
 
     !  Check existing ctl file
 
@@ -152,9 +152,9 @@ module output_grads
                       ia, iz, & 
                       day, month, year, time, dtwrite, & 
                       nvar,  & 
-                      lerror, f%ntimes, f%nrecord, f%time )
+                      l_error, f%ntimes, f%nrecord, f%time )
 
-    if ( lerror ) then
+    if ( l_error ) then
       write(unit=fstderr,fmt=*) "Error in open_grads:"
       write(unit=fstderr,fmt=*)  & 
       "Attempt to append to existing files failed"
@@ -183,7 +183,7 @@ module output_grads
                           ia, iz, & 
                           day, month, year, time, dtwrite, & 
                           nvar,  & 
-                          error, ntimes, nrecord, time_in )
+                          l_error, ntimes, nrecord, time_in )
 !         Description:
 !         For existing GrADS file, this subroutine will attempt
 !         to determine whether data can be safely appended to
@@ -218,7 +218,7 @@ module output_grads
 
   ! Output Variables
   logical, intent(out) ::  & 
-  error
+  l_error
 
   integer, intent(out) ::  & 
   ntimes, nrecord
@@ -226,7 +226,7 @@ module output_grads
   real(kind=time_precision), intent(out) :: time_in
 
   ! Local Variables
-  logical :: done
+  logical :: l_done
   integer :: ierr
   character(len = 256) :: line, tmp, date, dt
 
@@ -245,28 +245,28 @@ module output_grads
 !-----------------------------------------------------------------------
 
   ! Initialize logicals
-  error = .false.
-  done  = .false.
+  l_error = .false.
+  l_done  = .false.
 
   ! Open control file
   open( unit, & 
         file = trim( fdir )//trim( fname )//'.ctl', & 
         status = 'old', iostat = ierr )
-  if ( ierr < 0 ) done = .true.
+  if ( ierr < 0 ) l_done = .true.
 
   ! Read and process it
 
   read(unit=unit,iostat=ierr,fmt='(a256)') line
-  if ( ierr < 0 ) done = .true.
+  if ( ierr < 0 ) l_done = .true.
 
-  do while ( .not. done )
+  do while ( .not. l_done )
 
      if ( index(line,'XDEF') > 0 ) then
 
        read(unit=line,fmt=*) tmp, nx
        if ( nx /= 1 ) then
          write(unit=fstderr,fmt=*) 'Error: XDEF can only be 1'
-         error = .true.
+         l_error = .true.
        end if
 
      else if ( index(line,'YDEF') > 0 ) then
@@ -274,7 +274,7 @@ module output_grads
        read(unit=line,fmt=*) tmp, ny
        if ( ny /= 1 ) then
          write(unit=fstderr,fmt=*) "Error: YDEF can only be 1"
-         error = .true.
+         l_error = .true.
        end if
 
      else if ( index(line,'ZDEF') > 0 ) then
@@ -323,7 +323,7 @@ module output_grads
          month_in = 12
        case default
          write(unit=fstderr,fmt=*) "Unknown month: "//date(9:11)
-         error = .true.
+         l_error = .true.
        end select
 
        read(unit=dt(1:len_trim(dt)-2),fmt=*) dtwrite_in
@@ -331,7 +331,7 @@ module output_grads
 
      else if ( index(line,'ENDVARS') > 0 ) then
 
-       done = .true.
+       l_done = .true.
 
      else if ( index(line,'VARS') > 0 ) then
 
@@ -343,15 +343,15 @@ module output_grads
           if ( nz /= iz_in ) then
             write(unit=fstderr,fmt=*)  & 
               "Error reading ", trim( var_in(i)%name )
-             error = .true.
+            l_error = .true.
           end if ! nz /= iz_in
        end do ! 1..nvar_in
      end if
 
      read(unit,iostat=ierr,fmt='(a256)') line
-     if ( ierr < 0 ) done = .true.
+     if ( ierr < 0 ) l_done = .true.
 
-  end do ! while ( .not. done )
+  end do ! while ( .not. l_done )
   
   close( unit=unit )
 
@@ -359,41 +359,41 @@ module output_grads
 
   if ( abs(ia_in - iz_in) /= abs(ia - iz) ) then
     write(unit=fstderr,fmt=*) "check_grads: size mismatch"
-    error = .true.
+    l_error = .true.
   end if
 
   if ( day_in /= day ) then
     write(unit=fstderr,fmt=*) "check_grads: day mismatch"
-    error = .true.
+    l_error = .true.
   end if
 
   if ( month_in /= month ) then
     write(unit=fstderr,fmt=*) "check_grads: month mismatch"
-    error = .true.
+    l_error = .true.
   end if
 
   if ( year_in /= year ) then
     write(unit=fstderr,fmt=*) "check_grads: year mismatch"
-    error = .true.
+    l_error = .true.
   end if
 
   if ( int( time_in + ntimes_in*dtwrite_in )  & 
        /= int( time ) ) then
     write(unit=fstderr,fmt=*) "check_grads: time mismatch"
-    error = .true.
+    l_error = .true.
   end if
 
   if ( int( dtwrite_in ) /= int( dtwrite) ) then
     write(unit=fstderr,fmt=*) 'check_grads: dtwrite mismatch'
-    error = .true.
+    l_error = .true.
   end if
 
   if ( nvar_in /= nvar ) then
     write(unit=fstderr,fmt=*) 'check_grads: nvar mismatch'
-    error = .true.
+    l_error = .true.
   end if
 
-  if ( error ) then
+  if ( l_error ) then
     write(unit=fstderr,fmt=*) "check_grads diagnostic"
     write(unit=fstderr,fmt=*) "ia      = ", ia_in, ia
     write(unit=fstderr,fmt=*) "iz      = ", iz_in, iz

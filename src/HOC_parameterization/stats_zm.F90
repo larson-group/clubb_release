@@ -11,7 +11,7 @@ module stats_zm
   contains
 
 !-----------------------------------------------------------------------
-  subroutine stats_init_zm( vars_zm, lerror )
+  subroutine stats_init_zm( vars_zm, l_error )
 
 ! Description: 
 !   Initializes array indices for zm
@@ -175,7 +175,7 @@ module stats_zm
       character(len= * ), dimension(nvarmax), intent(in) :: vars_zm
 
       ! Output Variable	
-      logical, intent(inout) :: lerror
+      logical, intent(inout) :: l_error
       
       ! Local Varables
       integer :: i, k
@@ -1183,7 +1183,7 @@ module stats_zm
         case default
           write(0,*) 'Error: unrecognized variable in vars_zm: ', & 
              trim(vars_zm(i))
-          lerror = .true.
+          l_error = .true.
 
         end select
 

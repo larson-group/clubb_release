@@ -32,7 +32,7 @@ subroutine diag_var( tau_zm, wm_zm, rtm, wprtp, &
                      thlm, wpthlp, wpthvp, um, vm, & 
                      wp2, wp2_zt, wp3, upwp, vpwp, &
                      sigma_sqd_w, Skw_zm, Kh_zt, & 
-                     liter, dt, & 
+                     l_iter, dt, & 
                      sclrm, wpsclrp, & 
                      rtp2, thlp2, rtpthlp, & 
                      up2, vp2,  & 
@@ -135,7 +135,7 @@ real, intent(in), dimension(gr%nnzp) ::  &
   Kh_zt,       & ! Eddy diffusivity on t-lev.                    [m^2/s]
   wp2_zt         ! w'^2 interpolated to thermodynamic levels     [m^2/s^2]
 
-logical, intent(in) :: liter ! Whether variances are prognostic
+logical, intent(in) :: l_iter ! Whether variances are prognostic
 
 real(kind=time_precision), intent(in) :: &
   dt             ! Model timestep                                [s]
@@ -212,7 +212,7 @@ real, dimension(gr%nnzp) :: &
 !     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
 real :: wtol_sqd
 
-logical :: scalar_calc
+logical :: l_scalar_calc
 
 ! Loop indices
 integer :: i
@@ -241,9 +241,9 @@ C4_C14_1d(1:gr%nnzp) = 2.0/3.0 * C4 + ( 1.0/3.0 * C14 )
 
 ! Are we solving for passive scalars as well?
 if ( sclr_dim > 0 ) then
-  scalar_calc = .true.
+  l_scalar_calc = .true.
 else
-  scalar_calc = .false.
+  l_scalar_calc = .false.
 endif
 
 ! Define a_1 (located on momentum levels).
@@ -353,15 +353,15 @@ enddo
 !!!!!***** r_t'^2 *****!!!!!
 
 ! Implicit contributions to term rtp2
-call diag_var_lhs( dt, liter, wp2_zt, wp3,  &              ! Intent(in)
+call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &              ! Intent(in)
                    !a1, a1_zt, tau_zm, wm_zm, Kw2_rtp2, &  ! Intent(in)
                    a1, tau_zm, wm_zm, Kw2_rtp2,  &         ! Intent(in)
                    C2rt_1d, nu2, beta, wtol_sqd, &         ! Intent(in)
                    lhs )                                   ! Intent(out)
 
 
-!call diag_var_rhs( "rtp2", dt, liter, a1, a1_zt, &     ! Intent(in)
-call diag_var_rhs( "rtp2", dt, liter, a1,  &            ! Intent(in)
+!call diag_var_rhs( "rtp2", dt, l_iter, a1, a1_zt, &     ! Intent(in)
+call diag_var_rhs( "rtp2", dt, l_iter, a1,  &            ! Intent(in)
                    wp2_zt, wp3, wprtp, wprtp_zt, &      ! Intent(in)
                    wprtp, wprtp_zt, rtm, rtm, rtp2, &   ! Intent(in)
                    C2rt_1d, tau_zm, rttol**2, beta, &   ! Intent(in)
@@ -377,15 +377,15 @@ call diag_var_solve( "rtp2", 1, &                               ! Intent(in)
 !!!!!***** th_l'^2 *****!!!!!
 
 ! Implicit contributions to term thlp2
-call diag_var_lhs( dt, liter, wp2_zt, wp3,  &                   ! Intent(in)
+call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &                   ! Intent(in)
                    !a1, a1_zt, tau_zm, wm_zm, Kw2_thlp2,  &     ! Intent(in)
                    a1, tau_zm, wm_zm, Kw2_thlp2,  &             ! Intent(in)
                    C2thl_1d, nu2, beta, wtol_sqd, &             ! Intent(in)
                    lhs )                                        ! Intent(out)
 
 ! Explicit contributions to thlp2
-!call diag_var_rhs( "thlp2", dt, liter, a1, a1_zt, &            ! Intent(in)
-call diag_var_rhs( "thlp2", dt, liter, a1, &                    ! Intent(in)
+!call diag_var_rhs( "thlp2", dt, l_iter, a1, a1_zt, &            ! Intent(in)
+call diag_var_rhs( "thlp2", dt, l_iter, a1, &                    ! Intent(in)
                    wp2_zt, wp3, wpthlp, wpthlp_zt, &            ! Intent(in)
                    wpthlp, wpthlp_zt, thlm, thlm, thlp2, &      ! Intent(in)
                    C2thl_1d, tau_zm, thltol**2, beta, &         ! Intent(in)
@@ -401,15 +401,15 @@ call diag_var_solve( "thlp2", 1, &          ! Intent(in)
 !!!!!***** r_t'th_l' *****!!!!!
 
 ! Implicit contributions to term rtpthlp
-call diag_var_lhs( dt, liter, wp2_zt, wp3,  &                   ! Intent(in)
+call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &                   ! Intent(in)
                    !a1, a1_zt, tau_zm, wm_zm, Kw2_rtpthlp,  &   ! Intent(in)
                    a1, tau_zm, wm_zm, Kw2_rtpthlp,  &           ! Intent(in)
                    C2rtthl_1d, nu2, beta, wtol_sqd, &           ! Intent(in)
                    lhs )                                        ! Intent(out)
 
 ! Explicit contributions to rtpthlp
-!call diag_var_rhs( "rtpthlp", dt, liter, a1, a1_zt, & 
-call diag_var_rhs( "rtpthlp", dt, liter, a1,  &                 ! Intent(in)
+!call diag_var_rhs( "rtpthlp", dt, l_iter, a1, a1_zt, & 
+call diag_var_rhs( "rtpthlp", dt, l_iter, a1,  &                 ! Intent(in)
                    wp2_zt, wp3, wprtp, wprtp_zt, &              ! Intent(in)
                    wpthlp, wpthlp_zt, rtm, thlm, rtpthlp, &     ! Intent(in)
                    C2rtthl_1d, tau_zm, 0.0, beta, &             ! Intent(in)
@@ -425,15 +425,15 @@ call diag_var_solve( "rtpthlp", 1, &            ! Intent(in)
 !!!!!***** u'^2 *****!!!!!
 
 ! Implicit contributions to term up2
-call diag_var_lhs( dt, liter, wp2_zt, wp3,  &              ! Intent(in)
+call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &              ! Intent(in)
                    !a1, a1_zt, tau_zm, wm_zm, Kw9,  &      ! Intent(in)
                    a1, tau_zm, wm_zm, Kw9,  &              ! Intent(in)
                    C4_C14_1d, nu9, beta, wtol_sqd, &       ! Intent(in)
                    lhs )                                   ! Intent(out)
 
 ! Explicit contributions to up2
-!call diag_var_uv_rhs( "up2", dt, liter, a1, a1_zt, &       ! Intent(in)
-call diag_var_uv_rhs( "up2", dt, liter, a1, &               ! Intent(in)
+!call diag_var_uv_rhs( "up2", dt, l_iter, a1, a1_zt, &       ! Intent(in)
+call diag_var_uv_rhs( "up2", dt, l_iter, a1, &               ! Intent(in)
                       wp2, wp2_zt, wp3, wpthvp, tau_zm,  &  ! Intent(in)
                       um, vm, upwp, upwp_zt, vpwp, &        ! Intent(in)
                       vpwp_zt, up2, vp2, C4, C5, C14, &     ! Intent(in)
@@ -449,15 +449,15 @@ call diag_var_solve( "up2", 1, &       ! Intent(in)
 !!!!!***** v'^2 *****!!!!!
 
 ! Implicit contributions to term vp2
-call diag_var_lhs( dt, liter, wp2_zt, wp3,  &           ! Intent(in)
+call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &           ! Intent(in)
                    !a1, a1_zt, tau_zm, wm_zm, Kw9,  &   ! Intent(in)
                    a1, tau_zm, wm_zm, Kw9,  &           ! Intent(in)
                    C4_C14_1d, nu9, beta, wtol_sqd, &    ! Intent(in)
                    lhs )                                ! Intent(out)
 
 ! Explicit contributions to vp2
-!call diag_var_uv_rhs( "vp2", dt, liter, a1, a1_zt, & 
-call diag_var_uv_rhs( "vp2", dt, liter, a1, &               ! Intent(in)
+!call diag_var_uv_rhs( "vp2", dt, l_iter, a1, a1_zt, & 
+call diag_var_uv_rhs( "vp2", dt, l_iter, a1, &               ! Intent(in)
                       wp2, wp2_zt, wp3, wpthvp, tau_zm,  &  ! Intent(in)
                       vm, um, vpwp, vpwp_zt, upwp, &        ! Intent(in)
                       upwp_zt, vp2, up2, C4, C5, C14, &     ! Intent(in)
@@ -559,13 +559,13 @@ if ( l_stats_samp ) then
 endif
  
 
-if ( scalar_calc ) then
+if ( l_scalar_calc ) then
 
   ! Implicit contributions to passive scalars
 
   !!!!!***** sclr'^2, sclr'r_t', sclr'th_l' *****!!!!!
 
-  call diag_var_lhs( dt, liter, wp2_zt, wp3,  &         ! Intent(in) 
+  call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &         ! Intent(in) 
                      !a1, a1_zt, tau_zm, wm_zm, Kw2,  & ! Intent(in)
                      a1, tau_zm, wm_zm, Kw2,  &         ! Intent(in)
                      C2sclr_1d, nu2, beta, wtol_sqd, &  ! Intent(in)
@@ -584,8 +584,8 @@ if ( scalar_calc ) then
     ! terms in each equation.
     wpsclrp_zt = zm2zt( wpsclrp(:,i) )
 
-    !call diag_var_rhs( "sclrp2", dt, liter, a1, a1_zt, &
-    call diag_var_rhs( "sclrp2", dt, liter, a1,  &              ! Intent(in)
+    !call diag_var_rhs( "sclrp2", dt, l_iter, a1, a1_zt, &
+    call diag_var_rhs( "sclrp2", dt, l_iter, a1,  &              ! Intent(in)
                        wp2_zt, wp3, wpsclrp(:,i),  &            ! Intent(in)
                        wpsclrp_zt, wpsclrp(:,i), wpsclrp_zt,  & ! Intent(in)
                        sclrm(:,i), sclrm(:,i), sclrp2(:,i), &   ! Intent(in)
@@ -596,8 +596,8 @@ if ( scalar_calc ) then
 
   !!!!!***** sclr'r_t' *****!!!!!
 
-    !call diag_var_rhs( "sclrprtp", dt, liter, a1, a1_zt, &
-    call diag_var_rhs( "sclrprtp", dt, liter, a1,  &               ! Intent(in)
+    !call diag_var_rhs( "sclrprtp", dt, l_iter, a1, a1_zt, &
+    call diag_var_rhs( "sclrprtp", dt, l_iter, a1,  &               ! Intent(in)
                        wp2_zt, wp3, wpsclrp(:,i),  &               ! Intent(in)
                        wpsclrp_zt, wprtp, wprtp_zt, sclrm(:,i),  & ! Intent(in)
                        rtm, sclrprtp(:,i), C2sclr_1d, tau_zm, &    ! Intent(in)     
@@ -607,8 +607,8 @@ if ( scalar_calc ) then
 
   !!!!!***** sclr'th_l' *****!!!!!
 
-    !call diag_var_rhs( "sclrpthlp", dt, liter, a1, a1_zt, &
-    call diag_var_rhs( "sclrpthlp", dt, liter, a1,  &       ! Intent(in) 
+    !call diag_var_rhs( "sclrpthlp", dt, l_iter, a1, a1_zt, &
+    call diag_var_rhs( "sclrpthlp", dt, l_iter, a1,  &       ! Intent(in) 
                        wp2_zt, wp3, wpsclrp(:,i),  &        ! Intent(in)
                        wpsclrp_zt, wpthlp, wpthlp_zt,  &    ! Intent(in)
                        sclrm(:,i), thlm, sclrpthlp(:,i), &  ! Intent(in)
@@ -684,7 +684,7 @@ if ( scalar_calc ) then
                            sclrpthlp(:,i) )                     ! Intent(inout)
   enddo
 
-endif ! scalar_calc
+endif ! l_scalar_calc
 
 
 ! Check for singular matrices
@@ -741,7 +741,7 @@ return
 end subroutine diag_var
 
 !===============================================================================
-subroutine diag_var_lhs( dt, liter, wp2_zt, wp3,  & 
+subroutine diag_var_lhs( dt, l_iter, wp2_zt, wp3,  & 
                          !a1, a1_zt, tau_zm, wm_zm, Kw,  &
                          a1, tau_zm, wm_zm, Kw,  &
                          Cn, nu, beta, wtol_sqd, lhs )
@@ -809,7 +809,7 @@ real(kind=time_precision), intent(in) :: &
   dt        ! Timestep length                                [s]
 
 logical, intent(in) :: & 
-  liter  ! Whether the variances are prognostic
+  l_iter  ! Whether the variances are prognostic
 
 ! Input Variables
 real, dimension(gr%nnzp), intent(in) :: & 
@@ -858,7 +858,7 @@ do k = 2, gr%nnzp-1, 1
   = lhs(k_mdiag,k) + term_dp1_lhs( Cn(k), tau_zm(k) )
 
   ! LHS time tendency.
-  if ( liter ) then
+  if ( l_iter ) then
     lhs(k_mdiag,k) = real( lhs(k_mdiag,k) + ( 1.0 / dt ) )
   endif
 
@@ -938,7 +938,7 @@ lhs(k_mdiag,gr%nnzp) = 1.0
 
 ! This boundary condition was changed by dschanen on 24 April 2007
 ! When we run prognostically we want to preserve the surface value.
-!if ( liter ) then
+!if ( l_iter ) then
 !  lhs(k_mdiag,1) = 1.0/dt
 !  lhs(k_mdiag,1) = 1.0/dt
 !endif
@@ -1155,8 +1155,8 @@ return
 end subroutine diag_var_solve
 
 !===============================================================================
-!subroutine diag_var_uv_rhs( solve_type, dt, liter, a1, a1_zt, & 
-subroutine diag_var_uv_rhs( solve_type, dt, liter, a1, &
+!subroutine diag_var_uv_rhs( solve_type, dt, l_iter, a1, a1_zt, & 
+subroutine diag_var_uv_rhs( solve_type, dt, l_iter, a1, &
                             wp2, wp2_zt, wp3, wpthvp, tau_zm,  & 
                             xam, xbm, wpxap, wpxap_zt, wpxbp, & 
                             wpxbp_zt, xap2, xbp2, C4, C5, C14, & 
@@ -1204,7 +1204,7 @@ real(kind=time_precision), intent(in) :: &
   dt          ! Model timestep                                 [s]
 
 logical, intent(in) :: & 
-  liter  ! Whether x is prognostic (T/F)
+  l_iter  ! Whether x is prognostic (T/F)
 
 real, dimension(gr%nnzp), intent(in) :: & 
   a1,       & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
@@ -1295,7 +1295,7 @@ do k = 2, gr%nnzp-1, 1
               xam(kp1), xam(k), xbm(kp1), xbm(k), gr%dzm(k) )
 
   ! RHS time tendency.
-  if ( liter ) then 
+  if ( l_iter ) then 
     rhs(k,1) = real( rhs(k,1) + 1.0/dt * xap2(k) )
   endif
 
@@ -1364,7 +1364,7 @@ enddo ! k=2..gr%nnzp-1
 
 ! This boundary condition was changed by dschanen on 24 April 2007
 ! When we run prognostically we want to preserve the surface value.
-!if ( liter ) then 
+!if ( l_iter ) then 
 !  rhs(1,1) = xap2(1) + 1.0/dt*xap2(1)
 !  rhs(gr%nnzp,1) = 1.0/dt*xap2(gr%nnzp)
 !else
@@ -1377,8 +1377,8 @@ return
 end subroutine diag_var_uv_rhs
 
 !===============================================================================
-!subroutine diag_var_rhs( solve_type, dt, liter, a1, a1_zt, & 
-subroutine diag_var_rhs( solve_type, dt, liter, a1, & 
+!subroutine diag_var_rhs( solve_type, dt, l_iter, a1, a1_zt, & 
+subroutine diag_var_rhs( solve_type, dt, l_iter, a1, & 
                          wp2_zt, wp3, wpxap, wpxap_zt, & 
                          wpxbp, wpxbp_zt, xam, xbm, xapxbp, & 
                          Cn, tau_zm, threshold, beta, wtol_sqd, & 
@@ -1423,7 +1423,7 @@ real(kind=time_precision), intent(in) :: &
   dt          ! Model timestep                                  [s]
 
 logical, intent(in) :: & 
-  liter   ! Whether x is prognostic (T/F)
+  l_iter   ! Whether x is prognostic (T/F)
 
 real, dimension(gr%nnzp), intent(in) :: & 
   a1,       & ! sigma_sqd_w-related term a_1 (momentum levels)  [-]
@@ -1512,7 +1512,7 @@ do k = 2, gr%nnzp-1, 1
   = rhs(k,1) + term_dp1_rhs( Cn(k), tau_zm(k), threshold )
 
   ! RHS time tendency.
-  if ( liter ) then 
+  if ( l_iter ) then 
     rhs(k,1) = real( rhs(k,1) + 1.0/dt * xapxbp(k) )
   endif
 

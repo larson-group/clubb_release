@@ -217,7 +217,7 @@ module grid_class
    contains
 
 !===============================================================================
-   subroutine gridsetup( nnzp, implemented, grid_type,  & 
+   subroutine gridsetup( nnzp, l_implemented, grid_type,  & 
                          deltaz, zm_init, momentum_heights,  & 
                          thermodynamic_heights )
 
@@ -250,7 +250,7 @@ module grid_class
 
    ! Flag to see if CLUBB is running on it's own, 
    ! or if it's implemented as part of a host model.
-   logical, intent(in) :: implemented
+   logical, intent(in) :: l_implemented
 
    ! If CLUBB is running on it's own, this option determines
    ! if it is using:
@@ -305,7 +305,7 @@ module grid_class
    if ( ierr /= 0 ) stop "Grid allocation failed."
 
 
-   if ( .not. implemented ) then
+   if ( .not. l_implemented ) then
 
 
       if ( grid_type == 1 ) then
