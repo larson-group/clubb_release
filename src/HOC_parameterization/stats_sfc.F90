@@ -30,7 +30,11 @@ use stats_variables, only: &
     izi, & 
     irain, & 
     ipflux, & 
-    irrainm_sfc, & 
+    irrainm_sfc, &
+    ithlm_vert_avg, & 
+    irtm_vert_avg, & 
+    ium_vert_avg, & 
+    ivm_vert_avg, & 
     iwp23_cn, & 
     irtm_cn, & 
     ithlm_cn, & 
@@ -57,16 +61,20 @@ integer :: i, k
 
 ! Default initialization for array indices for sfc
 
-iustar   = 0
-ilh      = 0
-ish      = 0
-icc      = 0
-ilwp     = 0
-izb      = 0
-izi      = 0
-irain    = 0   ! Brian
-ipflux   = 0   ! Brian
-irrainm_sfc = 0   ! Brian
+iustar         = 0
+ilh            = 0
+ish            = 0
+icc            = 0
+ilwp           = 0
+izb            = 0
+izi            = 0
+irain          = 0   ! Brian
+ipflux         = 0   ! Brian
+irrainm_sfc    = 0   ! Brian
+ithlm_vert_avg = 0
+irtm_vert_avg  = 0
+ium_vert_avg   = 0
+ivm_vert_avg   = 0
 
 ! These are estimates of the condition number on each implicit
 ! matrices, and not located at the surface of the domain.
@@ -120,13 +128,13 @@ do i=1,sfc%nn
   case ('zb')
     izb = k
     call stat_assign(izb,"zb", & 
-         "zb","m",sfc)
+         "Cloud base altitude","m",sfc)
     k = k + 1
 
   case ('zi')
     izi = k
     call stat_assign(izi,"zi", & 
-         "zi","m",sfc)
+         "Inversion altitude","m",sfc)
     k = k + 1
 
   case ('rain')          ! Brian
@@ -147,6 +155,34 @@ do i=1,sfc%nn
 
     call stat_assign(irrainm_sfc,"rrainm_sfc", & 
          "Surface rain water mixing ratio","kg/kg",sfc)
+    k = k + 1
+
+  case ('thlm_vert_avg')
+    ithlm_vert_avg = k
+
+    call stat_assign(ithlm_vert_avg,"thlm_vert_avg", &
+         "Vertical average of thlm","K",sfc)
+    k = k + 1
+
+  case ('rtm_vert_avg')
+    irtm_vert_avg = k
+
+    call stat_assign(irtm_vert_avg,"rtm_vert_avg", &
+         "Vertical average of rtm","kg/kg",sfc)
+    k = k + 1
+
+  case ('um_vert_avg')
+    ium_vert_avg = k
+
+    call stat_assign(ium_vert_avg,"um_vert_avg", &
+         "Vertical average of um","m/s",sfc)
+    k = k + 1
+
+  case ('vm_vert_avg')
+    ivm_vert_avg = k
+
+    call stat_assign(ivm_vert_avg,"vm_vert_avg", &
+         "Vertical average of vm","m/s",sfc)
     k = k + 1
 
   case ('wp23_cn')

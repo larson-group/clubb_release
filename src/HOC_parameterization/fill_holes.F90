@@ -5,9 +5,10 @@ module fill_holes
 
 implicit none
 
-public :: fill_holes_driver
+public :: fill_holes_driver, &
+          vertical_avg
 
-private :: fill_holes_multiplicative, vertical_avg
+private :: fill_holes_multiplicative
 
 private ! Set Default Scope
 

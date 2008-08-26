@@ -862,7 +862,11 @@ use stats_variables, only: &
     iFrad, & 
     icc, & 
     izb, & 
-    ilwp
+    ilwp, &
+    ithlm_vert_avg, &
+    irtm_vert_avg, &
+    ium_vert_avg, &
+    ivm_vert_avg
 
 use stats_variables, only: & 
     isclram, & 
@@ -963,6 +967,9 @@ use parameters, only: &
 use stats_type, only: & 
     stat_update_var,  & ! Procedure(s)
     stat_update_var_pt
+
+use fill_holes, only: &
+    vertical_avg
 
 use interpolation, only: & 
     lin_int ! Procedure
@@ -1222,6 +1229,50 @@ if ( l_stats_samp ) then
       call stat_update_var_pt( ilwp, 1, xtmp, sfc )
 
    endif
+
+   ! Vertical average of thermodynamic level variables.
+
+   ! Find the vertical average of thermodynamic level variables, averaged from 
+   ! level 2 (the first thermodynamic level above model surface) through 
+   ! level gr%nnzp (the top of the model).  Use the vertical averaging function
+   ! found in fill_holes.F90.
+
+   ! Vertical average of thlm.
+   call stat_update_var_pt( ithlm_vert_avg, 1,  &
+                            vertical_avg( 2, gr%nnzp, "zt", thlm ), sfc )
+
+   ! Vertical average of rtm.
+   call stat_update_var_pt( irtm_vert_avg, 1,  &
+                            vertical_avg( 2, gr%nnzp, "zt", rtm ), sfc )
+
+   ! Vertical average of um.
+   call stat_update_var_pt( ium_vert_avg, 1,  &
+                            vertical_avg( 2, gr%nnzp, "zt", um ), sfc )
+
+   ! Vertical average of vm.
+   call stat_update_var_pt( ivm_vert_avg, 1,  &
+                            vertical_avg( 2, gr%nnzp, "zt", vm ), sfc )
+
+   ! Note:  currently, a vertical average cannot be taken properly for 
+   !        hydrometeor (microphysical) variables due to the fact that function
+   !        vertical_avg does not include the k=1 level, which is below the 
+   !        model surface for thermodynamic level variables.  In general, this 
+   !        is desired, as hole-filling should not consider the k=1 level.  
+   !        However, hydrometeor variables do include level 1 in eddy-diffusion
+   !        effects.  This should be included in a vertical average for 
+   !        statistical output purposes.
+
+   ! Note:  currently, a vertical average cannot be taken properly for momentum 
+   !        level variables due to the fact that function vertical_avg does not 
+   !        include the k=1 level, which is at the model surface for momentum 
+   !        level variables.  In general, this is desired, as hole-filling 
+   !        should not consider the k=1 level.  Momentum level variables have 
+   !        set surface values that should not be changed due to hole-filling.
+   !        Likewise, function vertical_avg does not include the k=gr%nnzp level
+   !        for momentum level variables, as momentum level variables have set 
+   !        values at the upper boundary.  However, values at the k=1 and 
+   !        k=gr%nnzp levels need to be included in a vertical average for 
+   !        statistical output purposes.
 
 endif  ! l_stats_samp
 

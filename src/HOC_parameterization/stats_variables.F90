@@ -514,9 +514,13 @@ module stats_variables
     ilwp, & 
     izb, & 
     izi, & 
-    irain,    & ! Brian
-    ipflux,   & ! Brian
-    irrainm_sfc ! Brian
+    irain,    &    ! Brian
+    ipflux,   &    ! Brian
+    irrainm_sfc, & ! Brian
+    ithlm_vert_avg, &
+    irtm_vert_avg, &
+    ium_vert_avg, &
+    ivm_vert_avg
 
   integer, public :: & 
     iwp23_cn, & 
@@ -530,6 +534,7 @@ module stats_variables
 
 !$omp   threadprivate(iustar, ilh, ish, icc, ilwp, izb, izi)
 !$omp   threadprivate(irain, ipflux, irrainm_sfc)
+!$omp   threadprivate(ithlm_vert_avg, irtm_vert_avg, ium_vert_avg, ivm_vert_avg)
 !$omp   threadprivate(iwp23_cn, irtm_cn, ithlm_cn)
 !$omp   threadprivate(irtp2_cn, ithlp2_cn, irtpthlp_cn)
 !$omp   threadprivate(iup2_cn, ivp2_cn)
