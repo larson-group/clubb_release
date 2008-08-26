@@ -56,7 +56,12 @@ cat $MODEL_IN $STATS_IN > $RUN_CASE'_hoc.in'
 echo "Running" $RUN_CASE
 
 # Run the HOC model
-../bin/hoc_standalone
+RESULT=`../bin/hoc_standalone 2>&1`
+
+RESULT=`echo "$RESULT" | grep 'normal'`
+if [ -z "$RESULT" ]; then
+	echo 'Fail'
+fi
 
 # Remove the namelists
 rm -f 'standalone.in'
