@@ -27,8 +27,12 @@ else
 		STATS_FILE=$2
 	fi
 fi
-
-
+#######################################################################
+# Enable G95 Runtime option that sets uninitialized 
+# memory to a NaN value
+#######################################################################
+G95_MEM_INIT="NAN"
+export G95_MEM_INIT
 #######################################################################
 # Check for necessary namelists.  If files exist, then
 # copy them over to the general input files.
@@ -56,7 +60,7 @@ cat $MODEL_IN $STATS_IN > $RUN_CASE'_hoc.in'
 echo "Running" $RUN_CASE
 
 # Run the HOC model
-../bin/hoc_standalone
+../bin/hoc_standalone 
 
 # Remove the namelists
 rm -f 'standalone.in'

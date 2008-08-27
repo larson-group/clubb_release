@@ -105,6 +105,13 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 		cat $MODEL_IN $STATS_IN > "${RUN_CASE[$x]}"'_hoc.in'
 	fi
 
+        #######################################################################
+        # Enable G95 Runtime option that sets uninitialized 
+        # memory to a NaN value
+        #######################################################################
+        G95_MEM_INIT="NAN"
+        export G95_MEM_INIT
+
 	#######################################################################
 	#
 	# State which case is being run
