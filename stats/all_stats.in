@@ -1,13 +1,11 @@
-! $Id: all_stats.in,v 1.36 2008-08-11 17:28:23 faschinj Exp $
+! $Id$
 ! This file contains a comprehensive listing of all the HOC variables that 
 ! can be output to GrADS, as found in src/HOC_parameterization/statistics.F.
 ! This file, as well as the statistical files for all the other cases, needs
 ! to be updated every time a new statistical parameter is added.
-! Note that the passive sigma_sqd_walars are commented out because the model is not 
+! Note that the passive scalars are commented out because the model is not 
 ! compiled with support for them by default, and the condition numbers are 
 ! commented out because they are computationally expensive.
-! This file was created on January 21, 2007.
-! This file was last updated on August 11, 2008.
 &statsnl
 
 vars_zt = 
@@ -79,6 +77,6 @@ vars_sfc =
 'wpthlp_sfc', 'wprtp_sfc', 'upwp_sfc', 'vpwp_sfc',
 'thlm_vert_avg', 'rtm_vert_avg', 'um_vert_avg', 'vm_vert_avg',
 !'wp23_cn', 'rtm_cn', 'thlm_cn', 'rtp2_cn', 'thlp2_cn', 'rtpthlp_cn',
-!'up2_cn', 'vp2_cn',
+!'up2_cn', 'vp2_cn', 'um_cn', 'vm_cn',
 ''
 /
