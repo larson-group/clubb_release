@@ -15,7 +15,8 @@ include config/linux_ia32_g95_optimize.in
 #include config/linux_ia32_gfortran.in
 #include config/linux_ia32_absoft.in
 #include config/linux_ia32_pg.in
-#include config/linux_ia32_ss12.in
+#include config/linux_ia32_ss12_optimize.in
+#include config/linux_ia32_ss12_debug.in
 #include config/linux_ia32_intel.in
 #include config/linux_ia64_intel.in
 #include config/solaris_ia32_g95.in
