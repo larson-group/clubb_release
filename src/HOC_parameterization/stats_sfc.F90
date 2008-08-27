@@ -46,7 +46,9 @@ use stats_variables, only: &
     ithlp2_cn, & 
     irtpthlp_cn, & 
     iup2_cn, & 
-    ivp2_cn
+    ivp2_cn, &
+    ium_cn, &
+    ivm_cn
 
 use stats_type, only: & 
     stat_assign ! Procedure
@@ -94,6 +96,8 @@ ithlp2_cn   = 0
 irtpthlp_cn = 0
 iup2_cn     = 0
 ivp2_cn     = 0
+ivm_cn      = 0
+ium_cn      = 0
 
 ! Assign pointers for statistics variables sfc
 
@@ -277,9 +281,23 @@ do i=1,sfc%nn
 
     k = k + 1
 
+  case ('vm_cn')
+    ivm_cn = k  
+    call stat_assign(ivm_cn,"vm_cn", & 
+         "Estimate of the condition number for vm","count",sfc)
+
+    k = k + 1
+
+  case ('um_cn')
+    ium_cn = k  
+    call stat_assign(ium_cn,"um_cn", & 
+         "Estimate of the condition number for um","count",sfc)
+
+    k = k + 1
+
   case default
     write(0,*) 'Error: unrecognized variable in vars_sfc: ', & 
-          trim(vars_sfc(i))
+          trim( vars_sfc(i) )
     l_error = .true.
 
   end select

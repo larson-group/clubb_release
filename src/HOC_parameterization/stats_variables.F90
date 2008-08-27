@@ -534,15 +534,17 @@ module stats_variables
     ithlp2_cn, & 
     irtpthlp_cn, & 
     iup2_cn, & 
-    ivp2_cn
+    ivp2_cn, &
+    ium_cn, &
+    ivm_cn 
 
-!$omp   threadprivate(iustar, ilh, ish, icc, ilwp, izb, izi)
-!$omp   threadprivate(irain, ipflux, irrainm_sfc)
-!$omp   threadprivate(iwpthlp_sfc, iwprtp_sfc, iupwp_sfc, ivpwp_sfc)
-!$omp   threadprivate(ithlm_vert_avg, irtm_vert_avg, ium_vert_avg, ivm_vert_avg)
-!$omp   threadprivate(iwp23_cn, irtm_cn, ithlm_cn)
-!$omp   threadprivate(irtp2_cn, ithlp2_cn, irtpthlp_cn)
-!$omp   threadprivate(iup2_cn, ivp2_cn)
+!$omp threadprivate(iustar, ilh, ish, icc, ilwp, izb, izi, &
+!$omp   irain, ipflux, irrainm_sfc, &
+!$omp   iwpthlp_sfc, iwprtp_sfc, iupwp_sfc, ivpwp_sfc, &
+!$omp   ithlm_vert_avg, irtm_vert_avg, ium_vert_avg, ivm_vert_avg, &
+!$omp   iwp23_cn, irtm_cn, ithlm_cn, &
+!$omp   irtp2_cn, ithlp2_cn, irtpthlp_cn, &
+!$omp   iup2_cn, ivp2_cn, ium_cn, ivm_cn )
 
   ! Variables that contains all the statistics
 

@@ -433,16 +433,20 @@ use grid_class, only: &
     gr ! Variable(s)
 
 use lapack_wrap, only:  & 
-    tridag_solve ! Procedure(s)
- 
+  tridag_solve, & ! Procedure(s)
+  tridag_solvex 
+
 use stats_variables, only: & 
     ium_bt,  & ! Variable(s)
     ium_ma,  &
     ium_ta,  & 
+    ium_cn,  & 
     ivm_bt,  & 
     ivm_ma,  &
     ivm_ta,  & 
+    ivm_cn,  & 
     zt,      & 
+    sfc,     & 
     ztscr01, & 
     ztscr02, & 
     ztscr03, & 
@@ -509,7 +513,9 @@ real, dimension(gr%nnzp) :: &
 
 integer :: k, kp1, km1 ! Indices
 
-integer :: ixm_bt, ixm_ma, ixm_ta
+integer :: ixm_bt, ixm_ma, ixm_ta, ixm_cn
+
+real :: rcond ! Estimate of the reciprocal of the condition number on the LHS matrix
 
 
 select case ( trim( solve_type ) )
@@ -517,14 +523,17 @@ case ( "um" )
   ixm_bt = ium_bt
   ixm_ma = ium_ma
   ixm_ta = ium_ta
+  ixm_cn = ium_cn
 case ( "vm" )
   ixm_bt = ivm_bt
   ixm_ma = ivm_ma
   ixm_ta = ivm_ta
+  ixm_cn = ivm_cn
 case default  ! Eddy scalars
   ixm_bt = 0
   ixm_ma = 0
   ixm_ta = 0
+  ixm_cn = 0
 end select
 
 if ( l_stats_samp ) then
@@ -562,8 +571,21 @@ xpwp(gr%nnzp) = 0.
 
 
 ! Solve tridiagonal system for xm.
-call tridag_solve( solve_type, gr%nnzp, 1, lhs(kp1_tdiag,:),  &
-                   lhs(k_tdiag,:), lhs(km1_tdiag,:), rhs, xm, err_code )
+if ( l_stats_samp .and. ixm_cn > 0 ) then
+  call tridag_solvex & 
+       ( solve_type, gr%nnzp, 1, &                                  ! Intent(in) 
+         lhs(kp1_tdiag,:), lhs(k_tdiag,:), lhs(km1_tdiag,:), rhs, & ! Intent(inout)
+         xm, rcond, err_code )                                      ! Intent(out)
+
+  ! Est. of the condition number of the variance LHS matrix 
+  call stat_update_var_pt( ixm_cn, 1, 1.0 / rcond, &  ! Intent(in)
+                           sfc )                      ! Intent(inout)
+else
+ 
+  call tridag_solve( solve_type, gr%nnzp, 1, & ! In
+                     lhs(kp1_tdiag,:),  lhs(k_tdiag,:), lhs(km1_tdiag,:), rhs, & ! Inout
+                     xm, err_code ) ! Out
+end if
 
 
 ! Second part of momentum (implicit component)
