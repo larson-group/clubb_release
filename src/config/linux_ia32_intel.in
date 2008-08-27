@@ -12,7 +12,7 @@ LIBDIR = $(PREFIX)/lib
 FC = ifort
 
 # == Debugging ==
-DEBUG = -g -check bounds
+DEBUG = -g -check bounds -check uninit
 
 # == Warnings ++
 WARNINGS = -warn -warn notruncated_source
