@@ -51,7 +51,7 @@ use explicit_clip, only:  &
 
 use error_code, only:  & 
     lapack_error,  & ! Procedure(s)
-    clubb_at_debug_level
+    clubb_at_least_debug_level
 
 use constants, only:  & 
     fstderr  ! Constant
@@ -196,7 +196,7 @@ endif ! sclr_dim > 0
 ! Error report
 ! Joshua Fasching February 2008
 if ( lapack_error( err_code ) .and.  &
-     clubb_at_debug_level( 1 ) ) then
+     clubb_at_least_debug_level( 1 ) ) then
 
     write(fstderr,*) "Error in compute_um_edsclrm"
 

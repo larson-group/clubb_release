@@ -84,7 +84,7 @@ module stats_subs
       stats_init_sfc ! Procedure
 
     use error_code, only: &
-      clubb_at_debug_level ! Function
+      clubb_at_least_debug_level ! Function
 
     use constants, only: &
       fstdout, fstderr ! Constants
@@ -185,7 +185,7 @@ module stats_subs
     read(unit=iunit, nml=statsnl, end=100)
     close(unit=iunit)
 
-    if ( clubb_at_debug_level( 1 ) ) then
+    if ( clubb_at_least_debug_level( 1 ) ) then
       write(fstdout,*) "--------------------------------------------------"
 
       write(fstdout,*) "Statistics"

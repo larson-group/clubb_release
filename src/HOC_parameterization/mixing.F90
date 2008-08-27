@@ -87,7 +87,7 @@ contains
         time_precision ! Variable(s)
     use error_code, only:  & 
         lapack_error,  & ! Procedure(s)
-        clubb_at_debug_level
+        clubb_at_least_debug_level
 
     use stats_type, only: & 
         stat_begin_update, stat_end_update ! Procedure(s)
@@ -302,7 +302,7 @@ contains
     do k = 1, gr%nnzp, 1
       if ( rtm(k) < 0.0 ) then
         !    rtm(k) = 0.0
-        if ( clubb_at_debug_level( 1 ) ) then
+        if ( clubb_at_least_debug_level( 1 ) ) then
           write(fstderr,*) "rtm < 0 in mixing at k= ", k
         endif
       endif

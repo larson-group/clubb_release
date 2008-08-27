@@ -168,7 +168,7 @@ module hoc_parameterization_interface
     use error_code, only :  & 
       clubb_var_equals_NaN, & ! Variable(s)
       lapack_error,  & ! Procedure(s)
-      clubb_at_debug_level
+      clubb_at_least_debug_level
 
     use Skw, only:  & 
       Skw_func ! Procedure
@@ -320,7 +320,7 @@ module hoc_parameterization_interface
     !----------------------------------------------------------------
     ! Test input variables
     !----------------------------------------------------------------
-    if ( clubb_at_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level( 2 ) ) then
       call parameterization_check & 
            ( thlm_forcing, rtm_forcing, wm_zm, wm_zt, p_in_Pa, rho_zm, & ! intent(in)
            rho, exner, wpthlp_sfc, wprtp_sfc,                & ! intent(in)
@@ -653,7 +653,7 @@ module hoc_parameterization_interface
 !      Interpolate momentum variables back to momentum grid.
 !      Since top momentum level is higher than top thermo level,
 !      set variables at top momentum level to 0.
-    if ( clubb_at_debug_level( 1 ) ) then
+    if ( clubb_at_least_debug_level( 1 ) ) then
       wp4               = max( zt2zm( wp4 ), 0.0 )   ! Pos. def. quantity
       wp4(gr%nnzp)      = 0.0
       rcp2              = max( zt2zm( rcp2 ), 0.0 )   ! Pos. def. quantity
@@ -754,7 +754,7 @@ module hoc_parameterization_interface
 
 
     ! Store the saturation mixing ratio for output purposes.  Brian
-    if ( clubb_at_debug_level( 1 ) ) then
+    if ( clubb_at_least_debug_level( 1 ) ) then
       rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) ) 
     end if
 
@@ -782,11 +782,11 @@ module hoc_parameterization_interface
     do k = 1, gr%nnzp
       if ( rtm(k) < rcm(k) ) then
 
-        if ( clubb_at_debug_level( 1 ) ) then
+        if ( clubb_at_least_debug_level( 1 ) ) then
           write(fstderr,*) 'rtm < rcm in timestep_mixing at k=', k, '.', & 
             '  Clipping rcm.'
 
-        end if ! clubb_at_debug_level(1)
+        end if ! clubb_at_least_debug_level(1)
 
           rcm(k) = max( 0.0, rtm(k) - eps )
 
@@ -935,7 +935,7 @@ module hoc_parameterization_interface
     if ( lapack_error( err_code ) ) return
 
     ! Compute Shear Production  -Brian
-    if ( clubb_at_debug_level( 1 ) ) then
+    if ( clubb_at_least_debug_level( 1 ) ) then
       do k = 1, gr%nnzp-1, 1
         shear(k) = -upwp(k) * ( um(k+1) - um(k) ) * gr%dzm(k) & 
                    -vpwp(k) * ( vm(k+1) - vm(k) ) * gr%dzm(k)
@@ -959,7 +959,7 @@ module hoc_parameterization_interface
            sclrm, edsclrm, sclrm_forcing, wpsclrp )              ! intent(in)
  
 
-    if ( clubb_at_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level( 2 ) ) then
       call parameterization_check & 
            ( thlm_forcing, rtm_forcing, wm_zm, wm_zt, p_in_Pa, rho_zm, & ! intent(in)
              rho, exner, wpthlp_sfc, wprtp_sfc,                  & ! intent(in)

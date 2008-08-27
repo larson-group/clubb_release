@@ -33,7 +33,7 @@ clubb_var_out_of_bounds, &
 reportError,  & 
 fatal_error, & 
 lapack_error,     & 
-clubb_at_debug_level,  & 
+clubb_at_least_debug_level,  & 
 set_clubb_debug_level, & 
 clubb_debug
 
@@ -136,7 +136,7 @@ fatal_error = ( err_code == clubb_singular_matrix     .or. &
 end function fatal_error
 
 !------------------------------------------------------------------	
-logical function clubb_at_debug_level( level )
+logical function clubb_at_least_debug_level( level )
 !       
 !       Description:
 !       Checks to see if clubb has been set to a specified debug level
@@ -146,9 +146,9 @@ implicit none
 ! Input variable
 integer, intent(in) :: level   ! The debug level being checked against the current setting
 
-clubb_at_debug_level = ( level <= clubb_debug_level )
+clubb_at_least_debug_level = ( level <= clubb_debug_level )
 
-end function clubb_at_debug_level
+end function clubb_at_least_debug_level
 
 !----------------------------------------------------------------------
 subroutine set_clubb_debug_level( level )

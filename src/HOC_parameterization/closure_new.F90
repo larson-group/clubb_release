@@ -77,7 +77,7 @@ module pdf_closure
 
     use error_code, only:  & 
       clubb_var_equals_NaN,  & ! Variable(s)
-      clubb_at_debug_level ! Procedure(s)
+      clubb_at_least_debug_level ! Procedure(s)
 
     implicit none
 
@@ -426,7 +426,7 @@ module pdf_closure
             + (1.-a) * ( (w2-wm)**2+sw2 ) * ( thl2-thlm )
 
     ! Compute higher order moments (these are non-interactive diagnostics)
-    if ( clubb_at_debug_level( 1 ) ) then
+    if ( clubb_at_least_debug_level( 1 ) ) then
       wp4     = a * ( 3.*sw1**2 + 6.*((w1-wm)**2)*sw1 + (w1-wm)**4 ) & 
               + (1.-a) * ( 3.*sw2**2 + 6.*((w2-wm)**2)*sw2 + (w2-wm)**4 )
 
@@ -606,7 +606,7 @@ module pdf_closure
 
     ! Compute variance of liquid water mixing ratio.
     ! This is not needed for closure.  Statistical Analysis only.
-    if ( clubb_at_debug_level( 1 ) ) then
+    if ( clubb_at_least_debug_level( 1 ) ) then
 
       rcp2 = a * ( s1*rc1 + R1*ss1**2 ) + ( 1.-a ) * ( s2*rc2 + R2*ss2**2 ) - rcm**2
       rcp2 = max( 0.0, rcp2 )
@@ -643,7 +643,7 @@ module pdf_closure
     pdf_parms(25) = alpha_thl
     pdf_parms(26) = alpha_rt
 
-    if ( clubb_at_debug_level( 2 ) ) then 
+    if ( clubb_at_least_debug_level( 2 ) ) then 
       call pdf_closure_new_check & 
            ( wp4, wprtp2, wp2rtp, wpthlp2, & 
              wp2thlp, cf, rcm, wpthvp, wp2thvp, & 
@@ -720,7 +720,7 @@ module pdf_closure
                 
       end if ! err_code == clubb_var_equals_NaN
   
-    end if ! clubb_at_debug_level
+    end if ! clubb_at_least_debug_level
 
     return
   end subroutine pdf_closure_new

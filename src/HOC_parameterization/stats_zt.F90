@@ -185,7 +185,7 @@ use stats_type, only: &
   stat_assign ! Procedure
 
 use error_code, only: &
-  clubb_at_debug_level ! Function
+  clubb_at_least_debug_level ! Function
 
 
 implicit none
@@ -1446,7 +1446,7 @@ end do
 
 !   Non-interative diagnostics (zt) 
 !   iwprtp2, iwprtpthlp, iwpthlp2 
-    if ( .not. clubb_at_debug_level( 1 ) ) then 
+    if ( .not. clubb_at_least_debug_level( 1 ) ) then 
       if ( iwprtp2 + iwprtpthlp + iwpthlp2 + irsat > 0 ) then
         write(0,'(a)') &
           "Warning: at debug level 0.  Non-interactive diagnostics will not be computed, "

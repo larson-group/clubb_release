@@ -73,7 +73,7 @@ contains
 
     use error_code, only:  & 
         lapack_error,  & ! Procedure(s)
-        clubb_at_debug_level
+        clubb_at_least_debug_level
 
     implicit none
 
@@ -248,7 +248,7 @@ contains
 !       Error output
 !       Joshua Fasching Feb 2008
     if ( lapack_error( err_code ) .and.  & 
-         clubb_at_debug_level( 1 ) ) then
+         clubb_at_least_debug_level( 1 ) ) then
 
       write(fstderr,*) "Errors in timestep_wp32"
 

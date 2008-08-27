@@ -163,7 +163,7 @@ module stats_zm
       stat_assign ! Procedure
 
     use error_code, only: &
-      clubb_at_debug_level ! Function
+      clubb_at_least_debug_level ! Function
 
     implicit none
 
@@ -1192,7 +1192,7 @@ module stats_zm
 !   Non-interative diagnostics (zm)
 !   iwp4, ircp2 
 
-    if ( .not. clubb_at_debug_level( 1 ) ) then 
+    if ( .not. clubb_at_least_debug_level( 1 ) ) then 
       if ( iwp4 + ircp2 + ishear > 0 ) then
         write(0,'(a)') &
           "Warning: at debug level 0.  Non-interactive diagnostics will not be computed, "

@@ -63,7 +63,7 @@ use diagnostic_variables, only:  &
 
 use error_code, only:  & 
     clubb_var_equals_NaN,  & ! Variable(s)
-    clubb_at_debug_level ! Procedure(s)
+    clubb_at_least_debug_level ! Procedure(s)
 
 implicit none
 
@@ -296,7 +296,7 @@ Lscale(gr%nnzp) = Lscale(gr%nnzp-1)
 !Lscale = min( Lscale, 1e5 )
 Lscale = min( Lscale, Lscale_max )
 
-if( clubb_at_debug_level( 2 ) ) then
+if( clubb_at_least_debug_level( 2 ) ) then
         
         ! Ensure that the output from this subroutine is valid.
         call length_check( Lscale, Lscale_up, Lscale_down, err_code )

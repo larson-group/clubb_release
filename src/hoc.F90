@@ -151,7 +151,7 @@ module hoc
     use error_code, only: clubb_var_out_of_bounds,  & ! Variable(s)
       clubb_var_equals_NaN, & 
       clubb_rtm_level_not_found, &
-      clubb_at_debug_level ! Function
+      clubb_at_least_debug_level ! Function
 
     use error_code, only: fatal_error,  & ! Procedure(s)
                               set_clubb_debug_level
@@ -374,7 +374,7 @@ module hoc
     call set_clubb_debug_level( debug_level ) ! Intent(in)
 
     ! Printing Model Inputs
-    if ( clubb_at_debug_level( 1 ) ) then
+    if ( clubb_at_least_debug_level( 1 ) ) then
       print *, "--------------------------------------------------"
       print *, "Model Settings"
       print *, "--------------------------------------------------"
@@ -466,7 +466,7 @@ module hoc
 
       print *, "--------------------------------------------------"
 
-    end if ! clubb_at_debug_level(1)
+    end if ! clubb_at_least_debug_level(1)
 
 !----------------------------------------------------------------------
 
@@ -1468,7 +1468,7 @@ use numerical_check, only: isnan2d, rad_check ! Procedure(s)
 use microphys_driver, only: advance_microphys ! Procedure(s)
 
 use error_code, only: lapack_error,  & ! Procedure(s)
-                      clubb_at_debug_level
+                      clubb_at_least_debug_level
 
 use array_index, only: & 
     iirsnowm, iiricem, & 
@@ -2003,7 +2003,7 @@ if ( l_bugsrad ) then
    endif
 
    ! Check for impossible negative values
-   if ( clubb_at_debug_level( 2 ) ) then
+   if ( clubb_at_least_debug_level( 2 ) ) then
       call rad_check( thlm, rcm, rtm, ricem, &            ! Intent(in)
                       cf, p_in_Pa, exner, rho_zm )        ! Intent(in)
    endif

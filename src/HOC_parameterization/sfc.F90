@@ -41,7 +41,7 @@ contains
         sfc_var_check ! Procedure
     use error_code, only:  & 
         clubb_var_equals_NaN,  & ! Variable(s)
-        clubb_at_debug_level
+        clubb_at_least_debug_level
     implicit none
 
     ! External
@@ -297,7 +297,7 @@ contains
 
     END IF
 
-    if ( clubb_at_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level( 2 ) ) then
 
       call sfc_var_check( wp2_sfc, up2_sfc, vp2_sfc,  & 
                           thlp2_sfc, rtp2_sfc, rtpthlp_sfc, & 
@@ -338,7 +338,7 @@ contains
 
       end if ! err_code == clubb_var_equals_NaN
 
-    end if ! clubb_at_debug_level ( 2 )
+    end if ! clubb_at_least_debug_level ( 2 )
 
     return
 

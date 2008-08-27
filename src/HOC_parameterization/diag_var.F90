@@ -98,7 +98,7 @@ use explicit_clip, only: &
 use error_code, only:  & 
     clubb_no_error,  & ! Variable(s)
     lapack_error,    & ! Procedure(s)
-    clubb_at_debug_level
+    clubb_at_least_debug_level
 
 use stats_type, only: & 
     stat_begin_update, & ! Procedure(s)
@@ -693,7 +693,7 @@ do i = 1, 5+1
 enddo        
                 
 if ( lapack_error( err_code ) .and.  & 
-     clubb_at_debug_level( 1 ) ) then
+     clubb_at_least_debug_level( 1 ) ) then
                 
    write(fstderr,*) "Error in diag_var"
            

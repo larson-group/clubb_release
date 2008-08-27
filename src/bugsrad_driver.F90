@@ -55,7 +55,7 @@ subroutine bugsrad_hoc &
 
   use T_in_K_mod, only: thlm2T_in_K ! Procedure(s)
 
-  use error_code, only: clubb_at_debug_level ! Procedure(s)
+  use error_code, only: clubb_at_least_debug_level ! Procedure(s)
 
  
   use stats_type, only: stat_update_var ! Procedure(s)
@@ -187,7 +187,7 @@ subroutine bugsrad_hoc &
   do z = 2, nz
     if ( rtm(z) < rcm(z) ) then
       sp_humidity(1,z-1) = 0.0d0
-      if ( clubb_at_debug_level(1) ) then
+      if ( clubb_at_least_debug_level(1) ) then
       write(fstderr,*) "rvm < 0 at ", z, " before BUGSrad, specific humidity set to 0."
       endif
     else
