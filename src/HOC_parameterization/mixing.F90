@@ -189,14 +189,33 @@ contains
     !-----------------------------------------------------------------------
 
     ! Compute C6 and C7 as a function of Skw
-    C6rt_Skw_fnc(:) = C6rtb + (C6rt-C6rtb) & 
-                          *EXP( -0.5 * (Skw_zm(:)/C6rtc)**2 )
+    ! The if...then is just here to save compute time
+    if ( C6rt /= C6rtb ) then
+      C6rt_Skw_fnc(1:gr%nnzp) = C6rtb + (C6rt-C6rtb) & 
+        *EXP( -0.5 * (Skw_zm(1:gr%nnzp)/C6rtc)**2 )
 
-    C6thl_Skw_fnc(:) = C6thlb + (C6thl-C6thlb) & 
-                            *EXP( -0.5 * (Skw_zm(:)/C6thlc)**2 )
+    else 
+      C6rt_Skw_fnc(1:gr%nnzp) = C6rtb 
 
-    C7_Skw_fnc(:) = C7b + (C7-C7b) & 
-                      *EXP( -0.5 * (Skw_zm(:)/C7c)**2 )
+    end if
+
+    if ( C6thl /= C6thlb ) then
+      C6thl_Skw_fnc(1:gr%nnzp) = C6thlb + (C6thl-C6thlb) & 
+        *EXP( -0.5 * (Skw_zm(1:gr%nnzp)/C6thlc)**2 )
+
+    else 
+      C6thl_Skw_fnc(1:gr%nnzp) = C6thlb
+
+    end if
+
+    if ( C7 /= C7b ) then
+      C7_Skw_fnc(1:gr%nnzp) = C7b + (C7-C7b) & 
+        *EXP( -0.5 * (Skw_zm(1:gr%nnzp)/C7c)**2 )
+
+    else 
+      C6thl_Skw_fnc(1:gr%nnzp) = C6thlb
+
+    end if
 
     !        C6rt_Skw_fnc = C6rt
     !        C6thl_Skw_fnc = C6thl
