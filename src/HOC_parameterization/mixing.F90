@@ -213,7 +213,7 @@ contains
         *EXP( -0.5 * (Skw_zm(1:gr%nnzp)/C7c)**2 )
 
     else 
-      C6thl_Skw_fnc(1:gr%nnzp) = C6thlb
+      C7_Skw_fnc(1:gr%nnzp) = C7b
 
     end if
 
