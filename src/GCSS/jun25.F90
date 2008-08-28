@@ -1,5 +1,3 @@
-#define SCLR_THETA 1
-#define SCLR_RT 2
 !----------------------------------------------------------------------
 ! $Id$
   module jun25
@@ -16,7 +14,7 @@
 !        logical, private :: 
 !     .  l_tdelay_coamps_micro, l_tdelay_icedfs 
 
-!$omp   threadprivate(l_tdelay_coamps_micro, l_tdelay_icedfs)
+!!omp threadprivate(l_tdelay_coamps_micro, l_tdelay_icedfs)
 
   private ! Default Scope
 

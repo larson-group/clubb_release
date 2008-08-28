@@ -493,8 +493,8 @@ module error
 
   ! OpenMP directives should work as expected now, assuming new
   ! model variables are declared threadprivate -dschanen 31 Jan 2007
-  !$omp   parallel do default(none), private(c_run),
-  !$omp.    shared(params_local, run_file, run_stat, c_total)
+  !$omp parallel do default(none), private(c_run), &
+  !$omp   shared(params_local, run_file, run_stat, c_total)
   do c_run=1, c_total, 1
 
     !write(unit=*,fmt=*) "Calling HOC with case "//
@@ -507,7 +507,6 @@ module error
            .false., .false. )
 
   end do ! 1..c_run
-
   !$omp   end parallel do
 
   do c_run = 1, c_total, 1
