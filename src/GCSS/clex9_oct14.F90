@@ -96,7 +96,7 @@
   ! To use centered differencing, set the toggle to .true.
   ! To use forward differencing, set the toggle to  .false.
   logical, parameter :: & 
-  center = .false.
+  l_center = .false.
 
   ! Input variables
   real(kind=time_precision), intent(in) :: & 
@@ -546,7 +546,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
                    coamps_zm, coamps_zt, & 
                    Frad_out, Frad_LW_out, Frad_SW_out, & 
                    radhtk, radht_LW_out, radht_SW_out, & 
-                   gr%nnzp-1, center, & 
+                   gr%nnzp-1, l_center, & 
                    xi_abs, F0, F1, kap, radius, A, gc, Fs0, omega, & 
                    l_sw_on, l_lw_on )
 
