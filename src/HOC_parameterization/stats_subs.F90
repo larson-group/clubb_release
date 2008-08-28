@@ -1239,19 +1239,19 @@ if ( l_stats_samp ) then
 
    ! Vertical average of thlm.
    call stat_update_var_pt( ithlm_vert_avg, 1,  &
-                            vertical_avg( 2, gr%nnzp, "zt", thlm ), sfc )
+        vertical_avg( 2, gr%nnzp, "zt", thlm(2:gr%nnzp) ), sfc )
 
    ! Vertical average of rtm.
    call stat_update_var_pt( irtm_vert_avg, 1,  &
-                            vertical_avg( 2, gr%nnzp, "zt", rtm ), sfc )
+        vertical_avg( 2, gr%nnzp, "zt", rtm(2:gr%nnzp) ), sfc )
 
    ! Vertical average of um.
    call stat_update_var_pt( ium_vert_avg, 1,  &
-                            vertical_avg( 2, gr%nnzp, "zt", um ), sfc )
+        vertical_avg( 2, gr%nnzp, "zt", um(2:gr%nnzp) ), sfc )
 
    ! Vertical average of vm.
    call stat_update_var_pt( ivm_vert_avg, 1,  &
-                            vertical_avg( 2, gr%nnzp, "zt", vm ), sfc )
+        vertical_avg( 2, gr%nnzp, "zt", vm(2:gr%nnzp) ), sfc )
 
    ! Note:  currently, a vertical average cannot be taken properly for 
    !        hydrometeor (microphysical) variables due to the fact that function
