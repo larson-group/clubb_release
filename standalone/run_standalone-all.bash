@@ -59,6 +59,10 @@ if [ "${#RUN_CASE[@]}" -ne "${#EXIT_CODE[@]}" ] ; then
 fi
 
 if [ $NIGHTLY == true ] ; then
+	# Make the CLUBB_previous and CLUBB_current directories if they don't exist
+	mkdir CLUBB_current
+	mkdir CLUBB_previous
+	
 	# Eliminate the previous CLUBB results.
 	# This prevents spurious profile generation resulting from
 	# previous profiles not getting overwritten
