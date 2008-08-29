@@ -123,7 +123,14 @@ if ( l_stats_samp ) then
    endif
 endif 
 
-do k = 2, gr%nnzp, 1
+! The value of x'y' at the surface (or lower boundary) is a set value that is 
+! either specified or determined elsewhere in a surface subroutine.  It is 
+! ensured elsewhere that the correlation between x and y at the surface (or 
+! lower boundary) is between -1 and 1.  Thus, the covariance clipping code does 
+! not need to be invoked at the lower boundary.  Likewise, the value of x'y'
+! is set at the upper boundary, so the covariance clipping code does not need to
+! be invoked at the upper boundary.
+do k = 2, gr%nnzp-1, 1
 
    ! Clipping for xpyp at an upper limit corresponding with a correlation 
    ! between x and y of 0.99.
@@ -233,7 +240,12 @@ if ( l_stats_samp ) then
 endif
  
 ! Limit the value of x'^2 at threshold.
-do k = 2, gr%nnzp, 1
+! The value of x'^2 at the surface (or lower boundary) is a set value that is 
+! determined elsewhere in a surface subroutine.  Thus, the covariance clipping 
+! code does not need to be invoked at the lower boundary.  Likewise, the value 
+! of x'^2 is set at the upper boundary, so the covariance clipping code does not
+! need to be invoked at the upper boundary.
+do k = 2, gr%nnzp-1, 1
    if ( xp2(k) < threshold ) then
       xp2(k) = threshold
    endif
