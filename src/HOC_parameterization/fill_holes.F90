@@ -62,9 +62,10 @@ real, dimension(gr%nnzp), intent(inout) :: &
 
 ! Local Variables
 integer :: & 
-  k,          & ! Loop index for absolute grid level              []
-  begin_idx,  & ! Lower grid level of hole-filling range          []
-  end_idx       ! Upper grid level of hole-filling rang           []
+  k,             & ! Loop index for absolute grid level              []
+  begin_idx,     & ! Lower grid level of local hole-filling range    []
+  end_idx,       & ! Upper grid level of local hole-filling range    []
+  upper_hf_level   ! Upper grid level of global hole-filling range   []
 
 !-----------------------------------------------------------------------
 
@@ -72,16 +73,29 @@ integer :: &
 ! The lowest level (k=1) should not be included, as the hole-filling scheme 
 ! should not alter the set value of 'field' at the surface (for momentum level
 ! variables), or consider the value of 'field' at a level below the surface (for
-! thermodynamic level variables).
-if ( any( field( 2:gr%nnzp ) < threshold ) ) then
+! thermodynamic level variables).  For momentum level variables only, the 
+! hole-filling scheme should not alter the set value of 'field' at the upper 
+! boundary level (k=gr%nnzp).
+
+if ( field_grid == "zt" ) then
+   ! 'field' is on the zt (thermodynamic level) grid
+   upper_hf_level = gr%nnzp
+elseif ( field_grid == "zm" )  then
+   ! 'field' is on the zm (momentum level) grid
+   upper_hf_level = gr%nnzp-1
+endif
+
+if ( any( field( 2:upper_hf_level ) < threshold ) ) then
 
    ! Make one pass up the profile, filling holes as much as we can 
    ! using nearby mass.
    ! The lowest level (k=1) should not be included in the loop, as the 
    ! hole-filling scheme should not alter the set value of 'field' at the 
    ! surface (for momentum level variables), or consider the value of 'field'
-   ! at a level below the surface (for thermodynamic level variables).
-   do k = 2+num_pts, gr%nnzp-num_pts, 1
+   ! at a level below the surface (for thermodynamic level variables).  For 
+   ! momentum level variables only, the hole-filling scheme should not alter the
+   ! set value of 'field' at the upper boundary level (k=gr%nnzp).
+   do k = 2+num_pts, upper_hf_level-num_pts, 1
    
       begin_idx = k - num_pts
       end_idx   = k + num_pts 
@@ -89,8 +103,8 @@ if ( any( field( 2:gr%nnzp ) < threshold ) ) then
       if ( any( field( begin_idx:end_idx ) < threshold ) ) then
 
          call fill_holes_multiplicative( begin_idx, end_idx,  & 
-                                threshold, field_grid,  & 
-                                field( begin_idx:end_idx ) )
+                                         threshold, field_grid,  & 
+                                         field( begin_idx:end_idx ) )
 
       endif
     
@@ -100,12 +114,14 @@ if ( any( field( 2:gr%nnzp ) < threshold ) ) then
    ! The lowest level (k=1) should not be included, as the hole-filling scheme 
    ! should not alter the set value of 'field' at the surface (for momentum 
    ! level variables), or consider the value of 'field' at a level below the 
-   ! surface (for thermodynamic level variables).
-   if ( any( field( 2:gr%nnzp ) < threshold ) ) then
+   ! surface (for thermodynamic level variables).  For momentum level variables 
+   ! only, the hole-filling scheme should not alter the set value of 'field' at 
+   ! the upper boundary level (k=gr%nnzp).
+   if ( any( field( 2:upper_hf_level ) < threshold ) ) then
 
-      call fill_holes_multiplicative( 2, gr%nnzp,  & 
-                                threshold, field_grid,  & 
-                                field( 2:gr%nnzp ) )
+      call fill_holes_multiplicative( 2, upper_hf_level,  & 
+                                      threshold, field_grid,  & 
+                                      field( 2:upper_hf_level ) )
 
    endif  
 
@@ -116,8 +132,9 @@ return
 end subroutine fill_holes_driver
 
 !===============================================================================
-subroutine fill_holes_multiplicative & 
-          ( begin_idx, end_idx, threshold, field_grid, field )
+subroutine fill_holes_multiplicative( begin_idx, end_idx,  &
+                                      threshold, field_grid,  &
+                                      field )
 
 ! Description: 
 ! This subroutine clips values of 'field' that are below 'threshold' as much as
@@ -265,7 +282,7 @@ integer ::  &
 vertical_integral = 0.0
 height = 0.0
 
-! If field is on the zt grid
+! If field is on the zt (thermodynamic level) grid
 if ( field_grid == "zt" ) then
 
    k_rel = 1   ! k_rel = 1 is equivalent to k = begin_idx.
@@ -283,6 +300,7 @@ if ( field_grid == "zt" ) then
 
    enddo
 
+! If field is on the zm (momentum level) grid
 elseif ( field_grid == "zm" )  then
 
    k_rel = 1   ! k_rel = 1 is equivalent to k = begin_idx.
@@ -295,7 +313,7 @@ elseif ( field_grid == "zm" )  then
    ! lower boundary level).  Begin no lower than level k=2, which is the second 
    ! momentum level above ground (or above the model lower boundary).  Likewise,
    ! the value at the model upper boundary (k=gr%nnzp) is also set for momentum 
-   ! level variables.
+   ! level variables.  That value should also not be changed.
    do k = max(2,begin_idx), min(gr%nnzp-1,end_idx), 1
 
       vertical_integral = vertical_integral  & 
