@@ -46,8 +46,8 @@ use model_flags, only:  &
 use stats_precision, only:  &
     time_precision  ! Variable(s)
 
-use explicit_clip, only:  &
-    covariance_clip  ! Procedure(s)
+use clip_explicit, only:  &
+    clip_covariance  ! Procedure(s)
 
 use error_code, only:  & 
     lapack_error,  & ! Procedure(s)
@@ -155,7 +155,7 @@ endif
 ! Since u'^2, w'^2, and u'w' are updated in different
 ! places from each other, clipping for u'w' has to be done
 ! three times.  This is the third instance of u'w' clipping.
-call covariance_clip( "upwp", .false.,      & ! intent(in)
+call clip_covariance( "upwp", .false.,      & ! intent(in)
                       .true., dt, wp2, up2, & ! intent(in)
                       upwp )                  ! intent(inout)
 
@@ -168,7 +168,7 @@ call covariance_clip( "upwp", .false.,      & ! intent(in)
 ! Since v'^2, w'^2, and v'w' are updated in different
 ! places from each other, clipping for v'w' has to be done
 ! three times.  This is the third instance of v'w' clipping.
-call covariance_clip( "vpwp", .false.,      & ! intent(in)
+call clip_covariance( "vpwp", .false.,      & ! intent(in)
                       .true., dt, wp2, vp2, & ! intent(in)
                       vpwp )                  ! intent(inout)
 

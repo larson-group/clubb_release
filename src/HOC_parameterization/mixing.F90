@@ -533,9 +533,8 @@ contains
         term_ma_zt_lhs,  & ! Procedure(s)
         term_ma_zm_lhs
 
-    use semiimplicit_clip, only: & 
-        semiimp_clip_lhs ! Procedure(s)
-
+    use clip_semi_implicit, only: & 
+        clip_semi_imp_lhs ! Procedure(s)
 
     use stats_variables, only: & 
         ztscr01,  & ! Variable(s)
@@ -787,9 +786,9 @@ contains
       ! LHS portion of semi-implicit clipping term.
       lhs(3,k_wpxp) & 
       = lhs(3,k_wpxp) & 
-      + semiimp_clip_lhs( dt, wpxp(k),  & 
-                          .true., wpxp_upper_lim(k),  & 
-                          .true., wpxp_lower_lim(k) )
+      + clip_semi_imp_lhs( dt, wpxp(k),  & 
+                           .true., wpxp_upper_lim(k),  & 
+                           .true., wpxp_lower_lim(k) )
 
       if (l_stats_samp) then
 
@@ -849,9 +848,9 @@ contains
 
         if ( iwprtp_sicl > 0 .or. iwpthlp_sicl > 0 ) then
           zmscr15(k) = & 
-          - semiimp_clip_lhs( dt, wpxp(k),  & 
-                              .true., wpxp_upper_lim(k),  & 
-                              .true., wpxp_lower_lim(k) )
+          - clip_semi_imp_lhs( dt, wpxp(k),  & 
+                               .true., wpxp_upper_lim(k),  & 
+                               .true., wpxp_lower_lim(k) )
         endif
 
       endif
@@ -924,8 +923,8 @@ contains
     use stats_precision, only:  & 
         time_precision ! Variable(s)
 
-    use semiimplicit_clip, only: & 
-        semiimp_clip_rhs ! Procedure(s)
+    use clip_semi_implicit, only: & 
+        clip_semi_imp_rhs ! Procedure(s)
 
 
     use stats_type, only: & 
@@ -1053,9 +1052,9 @@ contains
       ! RHS portion of semi-implicit clipping term.
       rhs(k_wpxp,1) & 
       = rhs(k_wpxp,1) & 
-      + semiimp_clip_rhs( dt, wpxp(k), & 
-                          .true., wpxp_upper_lim(k), & 
-                          .true., wpxp_lower_lim(k) )
+      + clip_semi_imp_rhs( dt, wpxp(k), & 
+                           .true., wpxp_upper_lim(k), & 
+                           .true., wpxp_lower_lim(k) )
 
       if ( l_stats_samp ) then
 
@@ -1068,9 +1067,9 @@ contains
             wpxp_terms_bp_pr3_rhs( (1.0+C7_Skw_fnc(k)),xpthvp(k)), zm)
 
         call stat_begin_update_pt( iwpxp_sicl, k, & 
-           -semiimp_clip_rhs( dt, wpxp(k), & 
-                              .true., wpxp_upper_lim(k), & 
-                              .true., wpxp_lower_lim(k) ), zm )
+           -clip_semi_imp_rhs( dt, wpxp(k), & 
+                               .true., wpxp_upper_lim(k), & 
+                               .true., wpxp_lower_lim(k) ), zm )
 
       endif ! l_stats_samp
 
@@ -1137,8 +1136,8 @@ contains
     use pos_definite_mod, only:  & 
         pos_definite_adj ! Procedure(s)
 
-    use explicit_clip, only: & 
-        covariance_clip ! Procedure(s)
+    use clip_explicit, only: & 
+        clip_covariance ! Procedure(s)
 
     use error_code, only:  & 
         lapack_error ! Procedure(s)
@@ -1467,7 +1466,7 @@ contains
     end if
 
     ! Use solve_type to find solve_type_cl, which is used
-    ! in subroutine covariance_clip.
+    ! in subroutine clip_covariance.
     select case ( trim( solve_type ) )
     case ( "rtm" )
       solve_type_cl = "wprtp"
@@ -1486,7 +1485,7 @@ contains
     ! from each other, clipping for w'x' has to be done three times
     ! (three times each for w'r_t', w'th_l', and w'sclr').  This is
     ! the second instance of w'x' clipping.
-    call covariance_clip( solve_type_cl, .false.,  & 
+    call clip_covariance( solve_type_cl, .false.,  & 
                           .false., dt, wp2, xp2,  & 
                           wpxp )
 

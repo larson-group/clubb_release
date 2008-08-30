@@ -91,9 +91,9 @@ use grid_class, only: &
 use stats_precision, only:  & 
     time_precision ! Variable(s)
 
-use explicit_clip, only: & 
-    covariance_clip,  & ! Procedure(s)
-    variance_clip
+use clip_explicit, only: & 
+    clip_covariance,  & ! Procedure(s)
+    clip_variance
 
 use error_code, only:  & 
     clubb_no_error,  & ! Variable(s)
@@ -492,7 +492,7 @@ endif
 
 threshold = rttol**2
 
-call variance_clip( "rtp2", dt, threshold, & ! Intent(in)
+call clip_variance( "rtp2", dt, threshold, & ! Intent(in)
                     rtp2 )                   ! Intent(inout)
 
 
@@ -505,7 +505,7 @@ call variance_clip( "rtp2", dt, threshold, & ! Intent(in)
 
 threshold = thltol**2
 
-call variance_clip( "thlp2", dt, threshold, & ! Intent(in)
+call clip_variance( "thlp2", dt, threshold, & ! Intent(in)
                     thlp2 )                   ! Intent(inout)
 
 
@@ -514,7 +514,7 @@ call variance_clip( "thlp2", dt, threshold, & ! Intent(in)
 !threshold = 0.0
 threshold = 2./3.*emin
 
-call variance_clip( "up2", dt, threshold, & ! Intent(in)
+call clip_variance( "up2", dt, threshold, & ! Intent(in)
                     up2 )                   ! Intent(inout)
 
 
@@ -523,7 +523,7 @@ call variance_clip( "up2", dt, threshold, & ! Intent(in)
 !threshold = 0.0
 threshold = 2./3.*emin
 
-call variance_clip( "vp2", dt, threshold, & ! Intent(in)
+call clip_variance( "vp2", dt, threshold, & ! Intent(in)
                     vp2 )                   ! Intent(inout)
 
 
@@ -534,7 +534,7 @@ call variance_clip( "vp2", dt, threshold, & ! Intent(in)
 ! -1 <= corr_(r_t,th_l) <= 1.
 ! Since r_t'^2, th_l'^2, and r_t'th_l' are all computed in the
 ! same place, clipping for r_t'th_l' only has to be done once.
-call covariance_clip( "rtpthlp", .true.,  &        ! Intent(in)
+call clip_covariance( "rtpthlp", .true.,  &        ! Intent(in)
                       .true., dt, rtp2, thlp2,  &  ! Intent(in)
                       rtpthlp )                    ! Intent(inout)
 
@@ -651,8 +651,8 @@ if ( l_scalar_calc ) then
 
      threshold = sclrtol(i)**2
 
-     call variance_clip( "sclrp2", dt, threshold, & ! Intent(in)
-                        sclrp2(:,i) )               ! Intent(inout)
+     call clip_variance( "sclrp2", dt, threshold, & ! Intent(in)
+                         sclrp2(:,i) )              ! Intent(inout)
 
   enddo
 
@@ -665,7 +665,7 @@ if ( l_scalar_calc ) then
   ! Since sclr'^2, r_t'^2, and sclr'r_t' are all computed in the
   ! same place, clipping for sclr'r_t' only has to be done once.
   do i = 1, sclr_dim, 1
-     call covariance_clip( "sclrprtp", .true.,  &               ! Intent(in) 
+     call clip_covariance( "sclrprtp", .true.,  &               ! Intent(in) 
                            .true., dt, sclrp2(:,i), rtp2(:), &  ! Intent(in)
                            sclrprtp(:,i) )                      ! Intent(inout)
   enddo
@@ -679,7 +679,7 @@ if ( l_scalar_calc ) then
   ! Since sclr'^2, th_l'^2, and sclr'th_l' are all computed in the
   ! same place, clipping for sclr'th_l' only has to be done once.
   do i = 1, sclr_dim, 1
-     call covariance_clip( "sclrpthlp", .true.,  &              ! Intent(in) 
+     call clip_covariance( "sclrpthlp", .true.,  &              ! Intent(in) 
                            .true., dt, sclrp2(:,i), thlp2(:), & ! Intent(in) 
                            sclrpthlp(:,i) )                     ! Intent(inout)
   enddo

@@ -72,11 +72,11 @@ T_in_K_mod.o	: constants.o T_in_K_mod.F90
 closure_new.o	: constants.o parameters.o grid.o saturation.o erf.o \
                  error_code.o numer_check.o closure_new.F90 
 diag_var.o : constants.o parameters.o grid.o stats_type.o stats_variables.o \
-	lapack_wrap.o fill_holes.o explicit_clip.o \
+	lapack_wrap.o fill_holes.o clip_explicit.o \
 	error_code.o diffusion.o diag_var.F90
 mixing.o : constants.o parameters.o stats_variables.o lapack_wrap.o \
 	pos_definite_mod.o error_code.o diffusion.o mean_adv.o \
-	semiimplicit_clip.o explicit_clip.o \
+	clip_semi_implicit.o clip_explicit.o \
 	mixing.F90 
 
 parameterization_interface.o : constants.o hydrostatic.o mixing.o \
@@ -86,27 +86,27 @@ parameterization_interface.o : constants.o hydrostatic.o mixing.o \
 	stats_sfc.o stats_type.o sounding.o diag_var.o saturation.o wp23.o \
 	grid.o saturation.o compute_um_edsclrm_mod.o prog_variables.o \
 	diag_variables.o \
-	sfc.o closure_new.o lh_sampler.o \
+	sfc.o closure_new.o lh_sampler.o clip_explicit.o \
 	parameters.o error_code.o  parameterization_interface.F90 
 hydrostatic.o	: constants.o grid.o hydrostatic.F90 
 mixing_length.o	: constants.o parameters.o numer_check.o error_code.o \
-	semiimplicit_clip.o mixing_length.F90
+	mixing_length.F90
 saturation.o    : constants.o saturation.F90  
 sfc.o		: constants.o parameters.o numer_check.o error_code.o sfc.F90 
 wp23.o		: constants.o parameters.o stats_variables.o lapack_wrap.o \
                   error_code.o diffusion.o mean_adv.o fill_holes.o \
-                  explicit_clip.o wp23.F90
+                  clip_explicit.o wp23.F90
 
 error_code.o    : constants.o error_code.F90
 compute_um_edsclrm_mod.o : grid.o stats_variables.o lapack_wrap.o error_code.o \
-                           explicit_clip.o compute_um_edsclrm_mod.F90 
+                           clip_explicit.o compute_um_edsclrm_mod.F90 
 diffusion.o	: grid.o diffusion.F90
 mean_adv.o      : grid.o mean_adv.F90
 pos_definite_mod.o : grid.o stats_precision.o pos_definite_mod.F90
 fill_holes.o    : fill_holes.F90 grid.o
-semiimplicit_clip.o : constants.o stats_precision.o semiimplicit_clip.F90
-explicit_clip.o : grid.o stats_precision.o stats_type.o stats_variables.o \
-	explicit_clip.F90
+clip_semi_implicit.o : constants.o stats_precision.o clip_semi_implicit.F90
+clip_explicit.o : grid.o stats_precision.o stats_type.o stats_variables.o \
+	clip_explicit.F90
 
 # == Latin Hypercube dependencies  ==
 math_utilities.o	: math_utilities.F90

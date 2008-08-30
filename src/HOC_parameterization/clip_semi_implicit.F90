@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
-! $Id$
+! $Id: clip_semi_implicit.F90 2801 2008-08-26 13:30:30Z faschinj $
 !===============================================================================
-module semiimplicit_clip
+module clip_semi_implicit
 
 ! Description of the semi-implicit clipping code:
 ! The semi-implicit clipping code is based on an upper threshold and/or a lower
@@ -200,8 +200,8 @@ module semiimplicit_clip
 
   private
 
-  public :: semiimp_clip_lhs, & 
-            semiimp_clip_rhs
+  public :: clip_semi_imp_lhs, & 
+            clip_semi_imp_rhs
 
   private :: compute_clip_lhs, & 
              compute_fncts_A_B
@@ -227,9 +227,9 @@ module semiimplicit_clip
 contains
 
 !===============================================================================
-  function semiimp_clip_lhs( dt, f_unclipped,  & 
-                             l_upper_thresh, upper_threshold,  & 
-                             l_lower_thresh, lower_threshold ) & 
+  function clip_semi_imp_lhs( dt, f_unclipped,  & 
+                              l_upper_thresh, upper_threshold,  & 
+                              l_lower_thresh, lower_threshold ) & 
   result( lhs )
 
 ! Description:
@@ -355,7 +355,7 @@ contains
     lhs = lhs_upper + lhs_lower
 
 
-  end function semiimp_clip_lhs
+  end function clip_semi_imp_lhs
 
 !===============================================================================
   pure function compute_clip_lhs( dt_clip, B_fnc ) & 
@@ -401,7 +401,7 @@ contains
   end function compute_clip_lhs
 
 !===============================================================================
-  function semiimp_clip_rhs( dt, f_unclipped,  & 
+  function clip_semi_imp_rhs( dt, f_unclipped,  & 
                              l_upper_thresh, upper_threshold,  & 
                              l_lower_thresh, lower_threshold ) & 
   result( rhs )
@@ -527,7 +527,7 @@ contains
     rhs = rhs_upper + rhs_lower
 
 
-  end function semiimp_clip_rhs
+  end function clip_semi_imp_rhs
 
 !===============================================================================
   subroutine compute_fncts_A_B( l_upper_thresh, upper_threshold,  & 
@@ -644,4 +644,4 @@ contains
 
 !===============================================================================
 
-end module semiimplicit_clip
+end module clip_semi_implicit

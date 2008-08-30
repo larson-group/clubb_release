@@ -1,20 +1,20 @@
 !-----------------------------------------------------------------------
-! $Id$
+! $Id: clip_explicit.F90 2833 2008-08-29 14:45:41Z griffinb $
 !===============================================================================
-module explicit_clip
+module clip_explicit
 
 implicit none
 
 private
 
-public :: covariance_clip, & 
-          variance_clip, & 
-          skewness_clip
+public :: clip_covariance, & 
+          clip_variance, & 
+          clip_skewness
 
 contains
 
 !===============================================================================
-subroutine covariance_clip( solve_type, l_first_clip_ts,  & 
+subroutine clip_covariance( solve_type, l_first_clip_ts,  & 
                             l_last_clip_ts, dt, xp2, yp2,  & 
                             xpyp )
 
@@ -155,10 +155,10 @@ if ( l_stats_samp ) then
 endif
 
 
-end subroutine covariance_clip
+end subroutine clip_covariance
 
 !===============================================================================
-subroutine variance_clip( solve_type, dt, threshold, &
+subroutine clip_variance( solve_type, dt, threshold, &
                           xp2 )
 
 ! Description:
@@ -256,10 +256,10 @@ if ( l_stats_samp ) then
 endif
 
 
-end subroutine variance_clip
+end subroutine clip_variance
 
 !===============================================================================
-subroutine skewness_clip( dt, wp2_zt, wp3 )
+subroutine clip_skewness( dt, wp2_zt, wp3 )
 
 ! Description:
 ! Clipping the value of w'^3 based on the skewness of w, Sk_w.
@@ -376,8 +376,8 @@ if ( l_stats_samp ) then
 endif
 
 
-end subroutine skewness_clip
+end subroutine clip_skewness
 
 !===============================================================================
 
-end module explicit_clip
+end module clip_explicit

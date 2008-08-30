@@ -326,9 +326,9 @@ contains
     use error_code, only:  & 
         lapack_error ! Procedure(s)
 
-    use explicit_clip, only: &
-        variance_clip, & ! Procedure(s)
-        skewness_clip
+    use clip_explicit, only: &
+        clip_variance, & ! Procedure(s)
+        clip_skewness
 
     use stats_type, only: & 
         stat_begin_update,  & ! Procedure(s)
@@ -650,7 +650,7 @@ contains
 
 
 ! Clip w'^2 at a minimum threshold.
-    call variance_clip( "wp2", dt, 2./3.*emin, wp2 )
+    call clip_variance( "wp2", dt, 2./3.*emin, wp2 )
 
 ! Interpolate w'^2 from momentum levels to thermodynamic levels.
 ! This is used for the clipping of w'^3 according to the value
@@ -658,7 +658,7 @@ contains
     wp2_zt = max( zm2zt( wp2 ), 2./3.*emin )   ! Positive definite quantity
 
 ! Clip w'^3 by limiting skewness.
-    call skewness_clip( dt, wp2_zt, wp3 )
+    call clip_skewness( dt, wp2_zt, wp3 )
 
 
     if (l_stats_samp) then

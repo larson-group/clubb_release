@@ -173,8 +173,8 @@ module hoc_parameterization_interface
     use Skw, only:  & 
       Skw_func ! Procedure
 
-    use explicit_clip, only: & 
-      covariance_clip ! Procedure(s)
+    use clip_explicit, only: & 
+      clip_covariance ! Procedure(s)
 
     use permute_height_time_mod, only:  & 
       permute_height_time ! Procedure
@@ -463,7 +463,7 @@ module hoc_parameterization_interface
     end if
  
 
-    call covariance_clip( "wprtp", .true.,            & ! intent(in) 
+    call clip_covariance( "wprtp", .true.,            & ! intent(in) 
                           .false., dt, wp2, rtp2,     & ! intent(in)
                           wprtp )                       ! intent(inout)
 
@@ -494,7 +494,7 @@ module hoc_parameterization_interface
     end if
  
 
-    call covariance_clip( "wpthlp", .true.,        & ! intent(in)
+    call clip_covariance( "wpthlp", .true.,        & ! intent(in)
                           .false., dt, wp2, thlp2, & ! intent(in)
                           wpthlp )                 ! intent(inout)
 
@@ -516,7 +516,7 @@ module hoc_parameterization_interface
     ! places from each other, clipping for w'sclr' has to be done 
     ! three times.  This is the first instance of w'sclr' clipping.
     do i = 1, sclr_dim, 1
-      call covariance_clip( "wpsclrp", .true.,                & ! intent(in)
+      call clip_covariance( "wpsclrp", .true.,                & ! intent(in)
                             .false., dt, wp2(:), sclrp2(:,i), & ! intent(in)
                             wpsclrp(:,i) )                      ! intent(inout)
     end do
@@ -531,7 +531,7 @@ module hoc_parameterization_interface
     ! Since u'^2, w'^2, and u'w' are updated in different
     ! places from each other, clipping for u'w' has to be done
     ! three times.  This is the first instance of u'w' clipping.
-    call covariance_clip( "upwp", .true.,        & ! intent(in)
+    call clip_covariance( "upwp", .true.,        & ! intent(in)
                           .false., dt, wp2, up2, & ! intent(in)
                           upwp )                   ! intent(inout)
 
@@ -545,7 +545,7 @@ module hoc_parameterization_interface
     ! Since v'^2, w'^2, and v'w' are updated in different
     ! places from each other, clipping for v'w' has to be done
     ! three times.  This is the first instance of v'w' clipping.
-    call covariance_clip( "vpwp", .true.,        & ! intent(in)
+    call clip_covariance( "vpwp", .true.,        & ! intent(in)
                           .false., dt, wp2, vp2, & ! intent(in)
                           vpwp )                   ! intent(inout)
 
@@ -829,7 +829,7 @@ module hoc_parameterization_interface
     end if
  
 
-    call covariance_clip( "wprtp", .false.,              & ! intent(in)
+    call clip_covariance( "wprtp", .false.,              & ! intent(in)
                           .true., dt, wp2, rtp2,         & ! intent(in)
                           wprtp )                          ! intent(inout)
 
@@ -858,7 +858,7 @@ module hoc_parameterization_interface
     end if
  
 
-    call covariance_clip( "wpthlp", .false.,                & ! intent(in)
+    call clip_covariance( "wpthlp", .false.,                & ! intent(in)
                           .true., dt, wp2, thlp2,           & ! intent(in) 
                           wpthlp )                            ! intent(inout)
 
@@ -880,7 +880,7 @@ module hoc_parameterization_interface
     ! places from each other, clipping for w'sclr' has to be done
     ! three times.  This is the third instance of w'sclr' clipping.
     do i = 1, sclr_dim, 1
-      call covariance_clip( "wpsclrp", .false.,                 & ! intent(in)
+      call clip_covariance( "wpsclrp", .false.,                 & ! intent(in)
                             .true., dt, wp2(:), sclrp2(:,i),    & ! intent(in)
                             wpsclrp(:,i) )                        ! intent(inout)
     end do
@@ -895,7 +895,7 @@ module hoc_parameterization_interface
     ! Since u'^2, w'^2, and u'w' are updated in different
     ! places from each other, clipping for u'w' has to be done
     ! three times.  This is the second instance of u'w' clipping.
-    call covariance_clip( "upwp", .false.,       & ! intent(in)
+    call clip_covariance( "upwp", .false.,       & ! intent(in)
                           .false., dt, wp2, up2, & ! intent(in)
                           upwp )                   ! intent(inout)
 
@@ -909,7 +909,7 @@ module hoc_parameterization_interface
     ! Since v'^2, w'^2, and v'w' are updated in different
     ! places from each other, clipping for v'w' has to be done
     ! three times.  This is the second instance of v'w' clipping.
-    call covariance_clip( "vpwp", .false.,       & ! intent(in)
+    call clip_covariance( "vpwp", .false.,       & ! intent(in)
                           .false., dt, wp2, vp2, & ! intent(in)
                           vpwp )                   ! intent(inout)
 

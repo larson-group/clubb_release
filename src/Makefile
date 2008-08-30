@@ -83,7 +83,7 @@ PARAMETERIZATION = \
 	numer_check.o diag_variables.o prog_variables.o \
 	parameterization_interface.o lapack_wrap.o  \
 	parameters.o pos_definite_mod.o calendar.o \
-	fill_holes.o semiimplicit_clip.o explicit_clip.o \
+	fill_holes.o clip_semi_implicit.o clip_explicit.o \
 	array_index.o interpolation.o
 
 
