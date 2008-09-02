@@ -169,13 +169,22 @@ contains
     ! If this code is used, C11 is no longer relevant, i.e. constants
     !    are hardwired.
 
-    ! Calculate C_1 and C_11 as functions of skewness of w.
+    ! Calculate C_{1} and C_{11} as functions of skewness of w.
+    ! The if..then here is only for computational efficiency -dschanen 2 Sept 08
+    if ( C11 /= C11b ) then
+      C11_Skw_fnc(1:gr%nnzp) =  & 
+        C11b + (C11-C11b)*EXP( -(1.0/2.0) * (Skw_zt(1:gr%nnzp)/C11c)**2 )
+    else
+      C11_Skw_fnc(1:gr%nnzp) = C11b
+    end if
 
-    C11_Skw_fnc(1:gr%nnzp) =  & 
-    C11b + (C11-C11b)*EXP( -(1.0/2.0) * (Skw_zt(1:gr%nnzp)/C11c)**2 )
-
-    C1_Skw_fnc(1:gr%nnzp) =  & 
-    C1b + (C1-C1b)*EXP( -(1.0/2.0) * (Skw_zm(1:gr%nnzp)/C1c)**2 )
+    ! The if..then here is only for computational efficiency -dschanen 2 Sept 08
+    if ( C1 /= C1b ) then
+      C1_Skw_fnc(1:gr%nnzp) =  & 
+        C1b + (C1-C1b)*EXP( -(1.0/2.0) * (Skw_zm(1:gr%nnzp)/C1c)**2 )
+    else
+      C1_Skw_fnc(1:gr%nnzp) = C1b 
+    end if
 
     !C11_Skw_fnc = C11
     !C1_Skw_fnc = C1
