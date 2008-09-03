@@ -556,7 +556,9 @@ module hoc_parameterization_interface
     ! Joshua Fasching March 2008
     if ( lapack_error( err_code ) ) return
 
-    if ( l_gamma_Skw ) then
+    ! The right hand side of this conjunction is only for reducing cpu time,
+    ! since the more complicated formula is mathematically equivalent
+    if ( l_gamma_Skw .and. ( gamma_coef /= gamma_coefb ) ) then
       !----------------------------------------------------------------
       ! Compute gamma as a function of Skw  - 14 April 06 dschanen
       !----------------------------------------------------------------
