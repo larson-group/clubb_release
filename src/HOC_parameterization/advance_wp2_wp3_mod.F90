@@ -68,6 +68,9 @@ contains
     use constants, only:  & 
         fstderr    ! Variable(s)
 
+    use model_flags, only: &
+        l_3pt_sqd_dfsn ! Variable(s)
+
     use stats_precision, only:  & 
         time_precision ! Variable(s)
 
@@ -189,8 +192,6 @@ contains
     !C11_Skw_fnc = C11
     !C1_Skw_fnc = C1
 
-    ! Vince Larson added extra diffusion based on wp2.  21 Dec 2007.
-    ! Vince Larson added extra diffusion based on wp3.  15 Dec 2007.
 
     ! Interpolate w'^3 from thermodynamic levels to momentum levels.
     ! This will be used for the w'^3 turbulent advection (ta) and
@@ -199,27 +200,6 @@ contains
     ! average of (w'^3)^2.
     wp3_zm = zt2zm( wp3 )
 
-    ! Interpolate w'^2 from momentum levels to thermodynamic levels.
-    ! This is used for extra diffusion based on a three-point
-    ! average of (w'^2)^2.
-    !wp2_zt = max( zm2zt( wp2 ), 0.0 )   ! Positive definite quantity
-
-    do k = 1, gr%nnzp, 1
-
-      km1 = max( k-1, 1 )
-      kp1 = min( k+1, gr%nnzp )
-
-      ! Compute the square of wp2_zt, averaged over 3 points.  15 Dec 2007
-      wp2_zt_sqd_3pt(k)  & 
-         = ( wp2_zt(km1)**2 + wp2_zt(k)**2 + wp2_zt(kp1)**2 ) / 3.0
-
-      ! Compute the square of wp3_zm, averaged over 3 points.  15 Dec 2007
-      wp3_zm_sqd_3pt(k)  & 
-         = ( wp3_zm(km1)**2 + wp3_zm(k)**2 + wp3_zm(kp1)**2 ) / 3.0
-
-    enddo
-
-    ! End Vince Larson's addition.
 
     ! Define the Coefficent of Eddy Diffusivity for the wp2 and wp3.
     do k = 1, gr%nnzp, 1
@@ -228,24 +208,57 @@ contains
       ! Kw1 is located on thermodynamic levels.
       ! Kw1 = c_K1 * Kh_zt
       Kw1(k) = c_K1 * Kh_zt(k)
-      ! Vince Larson added extra diffusion based on wp2.  21 Dec 2007.
-      ! Kw1 must have units of m^2/s.  Since wp2_zt_sqd_3pt has units
-      ! of m^4/s^4, c_Ksqd is given units of s^3/m^2 in this case.
-      Kw1(k) = Kw1(k) + c_Ksqd * wp2_zt_sqd_3pt(k)
-      ! End Vince Larson's addition.
 
       ! Kw8 is used for wp3, which is located on thermodynamic levels.
       ! Kw8 is located on momentum levels.
-      ! Note: Kw8 is defined to be 1/2 of Kh_zm.
+      ! Note: Kw8 is usually defined to be 1/2 of Kh_zm.
       ! Kw8 = c_K8 * Kh_zm
       Kw8(k) = c_K8 * Kh_zm(k)
-      ! Vince Larson added extra diffusion based on wp3.  15 Dec 2007.
-      ! Kw8 must have units of m^2/s.  Since wp3_zm_sqd_3pt has units
-      ! of m^6/s^6, c_Ksqd is given units of s^5/m^4 in this case.
-      Kw8(k) = Kw8(k) + c_Ksqd * wp3_zm_sqd_3pt(k)
-      ! End Vince Larson's addition.
 
     enddo
+
+    ! (wp2)^2 and (wp3)^2:  3-point average diffusion coefficient.
+    if ( l_3pt_sqd_dfsn ) then
+
+       do k = 1, gr%nnzp, 1
+
+          km1 = max( k-1, 1 )
+          kp1 = min( k+1, gr%nnzp )
+
+          ! Vince Larson added extra diffusion based on wp2.  21 Dec 2007.
+          ! Vince Larson added extra diffusion based on wp3.  15 Dec 2007.
+
+          ! Compute the square of wp2_zt, averaged over 3 points.  15 Dec 2007
+          wp2_zt_sqd_3pt(k)  & 
+             = ( wp2_zt(km1)**2 + wp2_zt(k)**2 + wp2_zt(kp1)**2 ) / 3.0
+
+          ! Compute the square of wp3_zm, averaged over 3 points.  15 Dec 2007
+          wp3_zm_sqd_3pt(k)  & 
+             = ( wp3_zm(km1)**2 + wp3_zm(k)**2 + wp3_zm(kp1)**2 ) / 3.0
+
+          ! End Vince Larson's addition.
+
+       enddo
+
+       ! Define the Coefficent of Eddy Diffusivity for the wp2 and wp3.
+       do k = 1, gr%nnzp, 1
+
+          ! Vince Larson added extra diffusion based on wp2.  21 Dec 2007.
+          ! Kw1 must have units of m^2/s.  Since wp2_zt_sqd_3pt has units
+          ! of m^4/s^4, c_Ksqd is given units of s^3/m^2 in this case.
+          Kw1(k) = Kw1(k) + c_Ksqd * wp2_zt_sqd_3pt(k)
+          ! End Vince Larson's addition.
+
+          ! Vince Larson added extra diffusion based on wp3.  15 Dec 2007.
+          ! Kw8 must have units of m^2/s.  Since wp3_zm_sqd_3pt has units
+          ! of m^6/s^6, c_Ksqd is given units of s^5/m^4 in this case.
+          Kw8(k) = Kw8(k) + c_Ksqd * wp3_zm_sqd_3pt(k)
+          ! End Vince Larson's addition.
+
+       enddo
+
+    endif  ! l_3pt_sqd_dfsn
+
 
     ! Solve semi-implicitly
     call wp23_solve( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp, & ! Intent(in)
@@ -400,10 +413,10 @@ contains
 
     implicit none
 
-! External
+    ! External
     intrinsic :: max, min, sqrt
 
-! Parameter Constants
+    ! Parameter Constants
     integer, parameter :: & 
       nsub = 2,   & ! Number of subdiagonals in the LHS matrix
       nsup = 2,   & ! Number of superdiagonals in the LHS matrix
@@ -562,7 +575,7 @@ contains
 
     if (l_stats_samp) then
 
-    ! Finalize implicit contributions for wp2
+      ! Finalize implicit contributions for wp2
 
       do k = 2, gr%nnzp-1
 
@@ -983,7 +996,7 @@ contains
       = lhs(3-2:3+2,k_wp3) & 
       + wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  & 
                              wp2(k), wp2(km1),  &
-                         !a1(k), a1(km1), a3(k), a3(km1),  &
+                             !a1(k), a1(km1), a3(k), a3(km1),  &
                              a1_zt(k), a3_zt(k),  & 
                              gr%dzt(k), wtol, k )
 
@@ -1025,8 +1038,8 @@ contains
           tmp(1:5) =  & 
           wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  & 
                                wp2(k), wp2(km1),  &
-                           !a1(k), a1(km1),  &
-                           !a3(k)+(3.0/2.0), a3(km1)+(3.0/2.0),  &
+                               !a1(k), a1(km1),  &
+                               !a3(k)+(3.0/2.0), a3(km1)+(3.0/2.0),  &
                                a1_zt(k), a3_zt(k)+(3.0/2.0),  &
                                gr%dzt(k), wtol, k )
           ztscr05(k) = -tmp(5)
@@ -1040,8 +1053,8 @@ contains
           tmp(1:5) =  & 
           wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  & 
                                wp2(k), wp2(km1),  & 
-                           !0.0, 0.0,  &
-                           !0.0-(3.0/2.0), 0.0-(3.0/2.0),  &
+                               !0.0, 0.0,  &
+                               !0.0-(3.0/2.0), 0.0-(3.0/2.0),  &
                                0.0, 0.0-(3.0/2.0),  & 
                                gr%dzt(k), wtol, k )
           ztscr10(k) = -tmp(4)
@@ -1197,7 +1210,7 @@ contains
 
     implicit none
 
-! Input Variables
+    ! Input Variables
     real(kind=time_precision), intent(in) ::  & 
       dt             ! Timestep length                                [s]
 
@@ -1410,8 +1423,8 @@ contains
         if ( l_crank_nich_diff ) then
           call stat_begin_update_pt( iwp3_dp1, k, & 
             rhs_diff(3) * wp3(km1) & 
-      + rhs_diff(2) * wp3(k) & 
-      + rhs_diff(1) * wp3(kp1), zt )
+          + rhs_diff(2) * wp3(k) & 
+          + rhs_diff(1) * wp3(kp1), zt )
 
         endif
 
@@ -1447,9 +1460,9 @@ contains
     k_wp3 = 2*k - 1
     k_wp2 = 2*k
 
-! The value of w'^2 at the upper boundary will be 0.
+    ! The value of w'^2 at the upper boundary will be 0.
     rhs(k_wp2)   = 0.0
-! The value of w'^3 at the upper boundary will be 0.
+    ! The value of w'^3 at the upper boundary will be 0.
     rhs(k_wp3)   = 0.0
 
     return
