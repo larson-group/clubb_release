@@ -83,8 +83,12 @@ contains
         gr,  & ! Variable(s)
         zm2zt ! Procedure(s)
 
+    use model_flags, only: &
+        l_3pt_sqd_dfsn ! Variable(s)
+
     use stats_precision, only:  & 
         time_precision ! Variable(s)
+
     use error_code, only:  & 
         lapack_error,  & ! Procedure(s)
         clubb_at_least_debug_level
@@ -221,50 +225,73 @@ contains
     !        C6thl_Skw_fnc = C6thl
     !        C7_Skw_fnc = C7
 
-    ! (wpxp)^2: 3-point average diffusion coefficient.
-
-    ! Interpolate w'x' (w'r_t' and w'th_l') from momentum levels
-    ! to thermodynamic levels.  This is used for extra diffusion
-    ! based on a three-point average of (w'x')^2.
-    wprtp_zt  = zm2zt( wprtp )
-    wpthlp_zt = zm2zt( wpthlp )
-
-    do k = 1, gr%nnzp, 1
-
-      km1 = max( k-1, 1 )
-      kp1 = min( k+1, gr%nnzp )
-
-      ! Compute the square of wprtp_zt, averaged over 3 points.  26 Jan 2008
-      wprtp_zt_sqd_3pt(k) = ( wprtp_zt(km1)**2 + wprtp_zt(k)**2 & 
-                             + wprtp_zt(kp1)**2 ) / 3.0
-      ! Account for units of mix ratio (kg/kg)**2   Vince Larson 29 Jan 2008
-      wprtp_zt_sqd_3pt(k) = 1e6 * wprtp_zt_sqd_3pt(k)
-
-      ! Compute the square of wpthlp_zt, averaged over 3 points.  26 Jan 2008
-      wpthlp_zt_sqd_3pt(k) = ( wpthlp_zt(km1)**2 + wpthlp_zt(k)**2 & 
-                              + wpthlp_zt(kp1)**2 ) / 3.0
-
-    enddo
 
     ! Define the Coefficent of Eddy Diffusivity for the wpthlp and wprtp.
     do k = 1, gr%nnzp, 1
-      ! Kw6 is used for wpthlp and wprtp, which are located on
-      ! momentum levels.
-      ! Kw6 is located on thermodynamic levels.
-      ! Kw6 = c_K6 * Kh_zt
-      Kw6(k) = c_K6 * Kh_zt(k)
-      ! Kw6_rt must have units of m^2/s.  Since wprtp_zt_sqd_3pt has
-      ! units of m/s (kg/kg), c_Ksqd is given units of m/(kg/kg)
-      ! in this case.
-      ! Vince Larson increased by c_Ksqd, 29Jan2008
-      Kw6_rt(k)  = Kw6(k) + c_Ksqd * wprtp_zt_sqd_3pt(k)
-      ! Kw6_thl must have units of m^2/s.  Since wpthlp_zt_sqd_3pt has
-      ! units of m/s K, c_Ksqd is given units of m/K in this case.
-      Kw6_thl(k) = Kw6(k) + c_Ksqd * wpthlp_zt_sqd_3pt(k)
-      ! End Vince Larson's change
+
+       ! Kw6 is used for wpthlp and wprtp, which are located on momentum levels.
+       ! Kw6 is located on thermodynamic levels.
+       ! Kw6 = c_K6 * Kh_zt
+       Kw6(k) = c_K6 * Kh_zt(k)
+
     enddo
 
-    ! Setup and decompose matrix
+    ! (wpxp)^2: 3-point average diffusion coefficient.
+    if ( l_3pt_sqd_dfsn ) then
+
+       ! Interpolate w'x' (w'r_t' and w'th_l') from the momentum levels to the 
+       ! thermodynamic levels.  This is used for extra diffusion based on a 
+       ! three-point average of (w'x')^2.
+       wprtp_zt  = zm2zt( wprtp )
+       wpthlp_zt = zm2zt( wpthlp )
+
+       do k = 1, gr%nnzp, 1
+
+          km1 = max( k-1, 1 )
+          kp1 = min( k+1, gr%nnzp )
+
+          ! Compute the square of wprtp_zt, averaged over 3 points.  26 Jan 2008
+          wprtp_zt_sqd_3pt(k) = ( wprtp_zt(km1)**2 + wprtp_zt(k)**2 & 
+                                  + wprtp_zt(kp1)**2 ) / 3.0
+          ! Account for units of mix ratio (kg/kg)**2   Vince Larson 29 Jan 2008
+          wprtp_zt_sqd_3pt(k) = 1e6 * wprtp_zt_sqd_3pt(k)
+
+          ! Compute the square of wpthlp_zt, averaged over 3 points.  
+          ! 26 Jan 2008
+          wpthlp_zt_sqd_3pt(k) = ( wpthlp_zt(km1)**2 + wpthlp_zt(k)**2 & 
+                                   + wpthlp_zt(kp1)**2 ) / 3.0
+
+       enddo
+
+       ! Define Kw6_rt and Kw6_thl
+       do k = 1, gr%nnzp, 1
+
+          ! Kw6_rt must have units of m^2/s.  Since wprtp_zt_sqd_3pt has units 
+          ! of m/s (kg/kg), c_Ksqd is given units of m/(kg/kg) in this case.
+          ! Vince Larson increased by c_Ksqd, 29Jan2008
+          Kw6_rt(k)  = Kw6(k) + c_Ksqd * wprtp_zt_sqd_3pt(k)
+
+          ! Kw6_thl must have units of m^2/s.  Since wpthlp_zt_sqd_3pt has units
+          ! of m/s K, c_Ksqd is given units of m/K in this case.
+          Kw6_thl(k) = Kw6(k) + c_Ksqd * wpthlp_zt_sqd_3pt(k)
+          ! End Vince Larson's change
+
+       enddo
+
+    else  ! Three-point squared diffusion turned off.
+
+       ! Define Kw6_rt and Kw6_thl
+       do k = 1, gr%nnzp, 1
+
+          Kw6_rt(k)  = Kw6(k)
+          Kw6_thl(k) = Kw6(k)
+
+       enddo
+
+    endif  ! l_3pt_sqd_dfsn
+
+
+    ! Setup and decompose matrix for each variable.
 
     ! Compute the upper and lower limits of w'r_t' at every level,
     ! based on the correlation of w and r_t, such that:
@@ -523,6 +550,9 @@ contains
     use grid_class, only:  & 
         gr,  & ! Variable(s)
         zm2zt ! Procedure(s)
+
+    use model_flags, only: &
+        l_clip_semi_implicit ! Variable(s)
 
     use stats_precision, only:  & 
         time_precision ! Variable(s)
@@ -785,11 +815,15 @@ contains
       if (l_iter) lhs(3,k_wpxp) = real( lhs(3,k_wpxp) + 1.0 / dt )
 
       ! LHS portion of semi-implicit clipping term.
-      lhs(3,k_wpxp) & 
-      = lhs(3,k_wpxp) & 
-      + clip_semi_imp_lhs( dt, wpxp(k),  & 
-                           .true., wpxp_upper_lim(k),  & 
-                           .true., wpxp_lower_lim(k) )
+      if ( l_clip_semi_implicit ) then
+
+         lhs(3,k_wpxp) & 
+         = lhs(3,k_wpxp) & 
+         + clip_semi_imp_lhs( dt, wpxp(k),  & 
+                              .true., wpxp_upper_lim(k),  & 
+                              .true., wpxp_lower_lim(k) )
+
+      endif
 
       if (l_stats_samp) then
 
@@ -847,11 +881,13 @@ contains
           zmscr14(k) = - tmp(1)
         endif
 
-        if ( iwprtp_sicl > 0 .or. iwpthlp_sicl > 0 ) then
-          zmscr15(k) = & 
-          - clip_semi_imp_lhs( dt, wpxp(k),  & 
-                               .true., wpxp_upper_lim(k),  & 
-                               .true., wpxp_lower_lim(k) )
+        if ( l_clip_semi_implicit ) then
+          if ( iwprtp_sicl > 0 .or. iwpthlp_sicl > 0 ) then
+            zmscr15(k) = & 
+            - clip_semi_imp_lhs( dt, wpxp(k),  & 
+                                 .true., wpxp_upper_lim(k),  & 
+                                 .true., wpxp_lower_lim(k) )
+          endif
         endif
 
       endif
@@ -921,12 +957,14 @@ contains
     use grid_class, only: & 
         gr ! Variable(s)
 
+    use model_flags, only: &
+        l_clip_semi_implicit ! Variable(s)
+
     use stats_precision, only:  & 
         time_precision ! Variable(s)
 
     use clip_semi_implicit, only: & 
         clip_semi_imp_rhs ! Procedure(s)
-
 
     use stats_type, only: & 
         stat_update_var_pt, & 
@@ -1051,11 +1089,15 @@ contains
            real( rhs(k_wpxp,1) + wpxp(k) / dt )
 
       ! RHS portion of semi-implicit clipping term.
-      rhs(k_wpxp,1) & 
-      = rhs(k_wpxp,1) & 
-      + clip_semi_imp_rhs( dt, wpxp(k), & 
-                           .true., wpxp_upper_lim(k), & 
-                           .true., wpxp_lower_lim(k) )
+      if ( l_clip_semi_implicit ) then
+
+         rhs(k_wpxp,1) & 
+         = rhs(k_wpxp,1) & 
+         + clip_semi_imp_rhs( dt, wpxp(k), & 
+                              .true., wpxp_upper_lim(k), & 
+                              .true., wpxp_lower_lim(k) )
+
+      endif
 
       if ( l_stats_samp ) then
 
@@ -1067,10 +1109,12 @@ contains
         call stat_update_var_pt( iwpxp_pr3, k, & 
             wpxp_terms_bp_pr3_rhs( (1.0+C7_Skw_fnc(k)),xpthvp(k)), zm)
 
-        call stat_begin_update_pt( iwpxp_sicl, k, & 
-           -clip_semi_imp_rhs( dt, wpxp(k), & 
-                               .true., wpxp_upper_lim(k), & 
-                               .true., wpxp_lower_lim(k) ), zm )
+        if ( l_clip_semi_implicit ) then
+          call stat_begin_update_pt( iwpxp_sicl, k, & 
+             -clip_semi_imp_rhs( dt, wpxp(k), & 
+                                 .true., wpxp_upper_lim(k), & 
+                                 .true., wpxp_lower_lim(k) ), zm )
+        endif
 
       endif ! l_stats_samp
 
@@ -1126,6 +1170,9 @@ contains
 
     use grid_class, only: & 
         gr ! Variable(s)
+
+    use model_flags, only: &
+        l_clip_semi_implicit ! Variable(s)
 
     use stats_precision, only:  & 
         time_precision ! Variable(s)
@@ -1332,11 +1379,12 @@ contains
       ! xm total time tendency ( 1st calculation)
       call stat_begin_update( ixm_bt, real( xm /dt ), zt )
 
-      ! wpxp is clipped after subroutine advance_xp2_xpyp and after
-      ! subroutine advance_wp2_wp3_module.  The overall time tendency must include
-      ! the effects of those clippings, as well.  Therefore, the
-      ! wpxp total time tendency term is only being modified in
-      ! advance_xm_wpxp_module.F90, rather than being entirely contained in advance_xm_wpxp_module.F90.
+      ! wpxp is clipped after xp2 is updated in subroutine advance_xp2_xpyp and
+      ! after wp2 is updated in subroutine advance_wp2_wp3.  The overall time 
+      ! tendency must include the effects of those two clippings, as well.
+      ! Therefore, the wpxp total time tendency term is just being modified in
+      ! advance_xm_wpxp_module.F90, rather than being entirely contained in 
+      ! advance_xm_wpxp_module.F90.
       !!  wpxp total time tendency (1st calculation)
       !call stat_begin_update( iwpxp_bt, real( wpxp / dt ), zm )
 
@@ -1435,8 +1483,10 @@ contains
           + zmscr13(k) * wpxp(k) & 
           + zmscr14(k) * wpxp(kp1), zm )
 
-        call stat_end_update_pt( iwpxp_sicl, k, & 
-            zmscr15(k) * wpxp(k), zm )
+        if ( l_clip_semi_implicit ) then
+          call stat_end_update_pt( iwpxp_sicl, k, & 
+              zmscr15(k) * wpxp(k), zm )
+        endif
 
       enddo ! 1..gr%nnzp
 
@@ -1495,12 +1545,12 @@ contains
       ! xm time tendency (2nd calculation)
       call stat_end_update( ixm_bt, real( xm / dt ), zt )
 
-      ! wpxp is clipped after subroutine advance_xp2_xpyp and after
-      ! subroutine advance_wp2_wp3_module.  The overall time tendency must include
-      ! the effects of those clippings, as well.  Therefore, the
-      ! wpxp total time tendency term is only being modified in
-      ! advance_xm_wpxp_module.F90, rather than being entirely contained in advance_xm_wpxp_module.F90.
-
+      ! wpxp is clipped after xp2 is updated in subroutine advance_xp2_xpyp and
+      ! after wp2 is updated in subroutine advance_wp2_wp3.  The overall time 
+      ! tendency must include the effects of those two clippings, as well.
+      ! Therefore, the wpxp total time tendency term is just being modified in
+      ! advance_xm_wpxp_module.F90, rather than being entirely contained in 
+      ! advance_xm_wpxp_module.F90.
       !! wpxp time tendency (2nd calculation)
       !call stat_end_update( iwpxp_bt, real( wpxp / dt ), zm )
 
@@ -1703,9 +1753,10 @@ contains
 
     ! Note:  The w'x' turbulent advection term, which is
     !        - d [ a_1 * ( w'^3 / w'^2 ) * w'x' ] / dz, still keeps the a_1 term
-    !        inside the derivative, unlike the w'^3 equation (in advance_wp2_wp3_module.F90) and 
-    !        the equations (in advance_xp2_xpyp.F90) for r_t'^2, th_l'^2, r_t'th_l', 
-    !        u'^2, v'^2, sclr'r_t', sclr'th_l', and sclr'^2.  Brian.
+    !        inside the derivative, unlike the w'^3 equation (found in 
+    !        advance_wp2_wp3_module.F90) and the equations for r_t'^2, th_l'^2, 
+    !        r_t'th_l', u'^2, v'^2, sclr'r_t', sclr'th_l', and sclr'^2 (found in
+    !        advance_xp2_xpyp_module.F90).  Brian.
 
     ! Momentum superdiagonal: [ x wpxp(k+1,<t+1>) ]
     lhs(kp1_mdiag) & 

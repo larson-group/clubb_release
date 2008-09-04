@@ -16,10 +16,12 @@ module model_flags
   private ! Default Scope
 
   logical, parameter, public ::  & 
-    l_LH_on     = .false., & ! Latin hypercube calculation
-    l_local_kk  = .false., & ! Local drizzle for rain microphysics
-    l_pos_def   = .true.,  & ! Flux limiting pos. def. scheme on rtm
-    l_hole_fill = .true.     ! Hole filling pos. def. scheme on wp2,up2,rtp2,etc
+    l_LH_on              = .false., & ! Latin hypercube calculation
+    l_local_kk           = .false., & ! Local drizzle for rain microphysics
+    l_pos_def            = .true.,  & ! Flux limiting pos. def. scheme on rtm
+    l_hole_fill          = .true.,  & ! Hole filling pos. def. scheme on wp2,up2,rtp2,etc
+    l_clip_semi_implicit = .true.,  & ! Semi-implicit clipping scheme on wpthlp and wprtp
+    l_3pt_sqd_dfsn       = .true.     ! Three-point squared diffusion coefficient
 
   logical, parameter, public :: & 
     l_single_C2_Skw = .false.,  & ! Use a single Skw dependent value for C2
