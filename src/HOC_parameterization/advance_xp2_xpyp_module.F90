@@ -1,15 +1,15 @@
 !-----------------------------------------------------------------------
 ! $Id$
 !===============================================================================
-module diagnose_variances
+module advance_xp2_xpyp_module
 
 ! Description:
-! Contains the subroutine diag_var and ancillary functions.
+! Contains the subroutine advance_xp2_xpyp and ancillary functions.
 !-----------------------------------------------------------------------
 
 implicit none
 
-public :: diag_var
+public :: advance_xp2_xpyp
 
 private :: diag_var_lhs,  & 
            diag_var_solve,  & 
@@ -28,16 +28,16 @@ private    ! Set default scope
 contains
 
 !===============================================================================
-subroutine diag_var( tau_zm, wm_zm, rtm, wprtp, & 
-                     thlm, wpthlp, wpthvp, um, vm, & 
-                     wp2, wp2_zt, wp3, upwp, vpwp, &
-                     sigma_sqd_w, Skw_zm, Kh_zt, & 
-                     l_iter, dt, & 
-                     sclrm, wpsclrp, & 
-                     rtp2, thlp2, rtpthlp, & 
-                     up2, vp2,  & 
-                     err_code, & 
-                     sclrp2, sclrprtp, sclrpthlp )
+subroutine advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp, & 
+                             thlm, wpthlp, wpthvp, um, vm, & 
+                             wp2, wp2_zt, wp3, upwp, vpwp, &
+                             sigma_sqd_w, Skw_zm, Kh_zt, & 
+                             l_iter, dt, & 
+                             sclrm, wpsclrp, & 
+                             rtp2, thlp2, rtpthlp, & 
+                             up2, vp2,  & 
+                             err_code, & 
+                             sclrp2, sclrprtp, sclrpthlp )
 
 ! Description:
 ! Subprogram to diagnose variances by solving steady-state equations
@@ -64,7 +64,7 @@ use model_flags, only: &
     l_hole_fill, &    ! logical constants
     l_single_C2_Skw
         
-use parameters, only: &
+use parameters_tunable, only: &
     C2rt,     & ! Variable(s)
     C2thl,    &
     C2rtthl,  &
@@ -695,7 +695,7 @@ enddo
 if ( lapack_error( err_code ) .and.  & 
      clubb_at_least_debug_level( 1 ) ) then
                 
-   write(fstderr,*) "Error in diag_var"
+   write(fstderr,*) "Error in advance_xp2_xpyp"
            
    write(fstderr,*) "Intent(in)"
            
@@ -738,7 +738,7 @@ if ( lapack_error( err_code ) .and.  &
 endif 
         
 return        
-end subroutine diag_var
+end subroutine advance_xp2_xpyp
 
 !===============================================================================
 subroutine diag_var_lhs( dt, l_iter, wp2_zt, wp3,  & 
@@ -2273,4 +2273,4 @@ end subroutine pos_definite_variances
 
 !===============================================================================
 
-end module diagnose_variances
+end module advance_xp2_xpyp_module

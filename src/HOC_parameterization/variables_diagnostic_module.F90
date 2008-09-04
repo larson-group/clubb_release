@@ -1,5 +1,5 @@
 ! $Id$
-module diagnostic_variables
+module variables_diagnostic_module
 
 ! This module contains definitions of all diagnostic
 ! arrays used in the single column model, as well as subroutines
@@ -215,7 +215,7 @@ use model_flags, only:  &
 use constants, only:  & 
     emin ! Variables
 
-use parameters, only: & 
+use parameters_tunable, only: & 
     hydromet_dim, & 
     sclr_dim
 
@@ -558,4 +558,4 @@ deallocate( wpedsclrp )
 return
 end subroutine cleanup_diagnostic_variables
 
-end module diagnostic_variables
+end module variables_diagnostic_module

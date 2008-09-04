@@ -522,7 +522,7 @@ do i=1,zt%nn
   case ('Lscale_up')
     iLscale_up = k
     call stat_assign(iLscale_up,"Lscale_up", & 
-         "Upward mixing length","m",zt)
+         "Upward micing length","m",zt)
     k = k + 1
 
   case ('Lscale_down')

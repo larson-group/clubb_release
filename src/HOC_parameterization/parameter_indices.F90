@@ -1,13 +1,13 @@
 !-----------------------------------------------------------------------
 ! $Id$
-module param_index
+module parameter_indices
 
 !       Description:
 !       Since f90/95 lacks enumeration, we're stuck numbering each
 !       parameter by hand like this.
 
 !       Adding new parameters is relatively simple.  First, the
-!       parameter should be added in the common block of the parameters
+!       parameter should be added in the common block of the parametersle
 !       module so it can be used in other parts of the code. Each
 !       variable needs a unique number in this module, and nparams must
 !       be incremented for the new variable.  Next, the params_list
@@ -29,7 +29,7 @@ nparams = 51 ! Total tunable parameters
 
 !***************************************************************
 !                    ***** IMPORTANT *****
-! If you change the order of these parameters , you will need to
+! If you change the order of these parameters, you will need to
 ! change the order of params_list as well or the tuner will
 ! break!
 !                    ***** IMPORTANT *****
@@ -92,5 +92,5 @@ ilmin_coef      = 49, &
 itaumin         = 50, & 
 itaumax         = 51
 
-end module param_index
+end module parameter_indices
 !-----------------------------------------------------------------------

@@ -62,7 +62,7 @@
 
   use constants, only: Cp, Rd, Lv, p0, rc_tol ! Variable(s)
 
-  use parameters, only: sclr_dim ! Variable(s)
+  use parameters_tunable, only: sclr_dim ! Variable(s)
 
   use model_flags, only: l_bugsrad, l_coamps_micro, l_kk_rain ! Variable(s)
 
@@ -462,7 +462,7 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
 
   use constants, only: Cp, Lv ! Variable(s)
 
-  use parameters, only: sclr_dim ! Variable(s)
+  use parameters_tunable, only: sclr_dim ! Variable(s)
 
   use stats_precision, only: time_precision ! Variable(s)
 

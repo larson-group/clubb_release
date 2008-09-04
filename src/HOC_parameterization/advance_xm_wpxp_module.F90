@@ -1,10 +1,10 @@
 !-----------------------------------------------------------------------
 ! $Id$
 !===============================================================================
-module mixing
+module advance_xm_wpxp_module
 
 ! Description:
-! Contains the HOC mixing scheme.
+! Contains the HOC advance_xm_wpxp_module scheme.
 
 ! References:
 ! None
@@ -14,7 +14,7 @@ module mixing
 
   private ! Default scope
 
-  public  :: timestep_mixing
+  public  :: advance_xm_wpxp
 
   private :: mixing_lhs, & 
              mixing_rhs, & 
@@ -36,7 +36,7 @@ module mixing
 contains
 
   !=============================================================================
-  subroutine timestep_mixing( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3, & 
+  subroutine advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3, & 
                               Kh_zt, tau_zm, Skw_zm, rtpthvp,  & 
                               rtm_forcing, thlpthvp,  & 
                               thlm_forcing, rtp2, thlp2, wp2_zt, & 
@@ -60,7 +60,7 @@ contains
     !   /Implicit solutions for the means and fluxes/
     !-----------------------------------------------------------------------
 
-    use parameters, only:  & 
+    use parameters_tunable, only:  & 
         C6rt,  & ! Variable(s)
         C6rtb,  & 
         C6rtc,  & 
@@ -76,7 +76,7 @@ contains
     use constants, only:  & 
         fstderr  ! Constant
 
-    use parameters, only: & 
+    use parameters_tunable, only: & 
         sclr_dim  ! Variable(s)
 
     use grid_class, only: & 
@@ -322,7 +322,7 @@ contains
       if ( rtm(k) < 0.0 ) then
         !    rtm(k) = 0.0
         if ( clubb_at_least_debug_level( 1 ) ) then
-          write(fstderr,*) "rtm < 0 in mixing at k= ", k
+          write(fstderr,*) "rtm < 0 in advance_xm_wpxp_module at k= ", k
         endif
       endif
 
@@ -380,7 +380,7 @@ contains
     do k = 1, gr%nnzp, 1
       if ( thlm(k) < 0.0 ) then
         thlm(k) = 0.0
-        write(fstderr,*) "thlm < 0 in mixing at k= ", k
+        write(fstderr,*) "thlm < 0 in advance_xm_wpxp at k= ", k
       endif
     enddo
 
@@ -437,7 +437,7 @@ contains
 
 !        if ( lapack_error( err_code ) ) then
 
-!           write(fstderr,*) "Error in timestep_mixing"
+!           write(fstderr,*) "Error in advance_xm_wpxp"
 
 !           write(fstderr,*) "Intent(in)"
 
@@ -498,7 +498,7 @@ contains
 
     return
 
-  end subroutine timestep_mixing
+  end subroutine advance_xm_wpxp
 
   !=============================================================================
   subroutine mixing_lhs( l_iter, dt, wpxp, sigma_sqd_w, wm_zm, wm_zt, wp2, &
@@ -514,7 +514,7 @@ contains
     ! References:
     !------------------------------------------------------------------------
 
-    use parameters, only:  & 
+    use parameters_tunable, only:  & 
         nu6 ! Variable(s)
 
     use constants, only:  & 
@@ -1332,15 +1332,15 @@ contains
       ! xm total time tendency ( 1st calculation)
       call stat_begin_update( ixm_bt, real( xm /dt ), zt )
 
-      ! wpxp is clipped after subroutine diag_var and after
-      ! subroutine wp23.  The overall time tendency must include
+      ! wpxp is clipped after subroutine advance_xp2_xpyp and after
+      ! subroutine advance_wp2_wp3_module.  The overall time tendency must include
       ! the effects of those clippings, as well.  Therefore, the
       ! wpxp total time tendency term is only being modified in
-      ! mixing.F, rather than being entirely contained in mixing.F.
+      ! advance_xm_wpxp_module.F90, rather than being entirely contained in advance_xm_wpxp_module.F90.
       !!  wpxp total time tendency (1st calculation)
       !call stat_begin_update( iwpxp_bt, real( wpxp / dt ), zm )
 
-      ! wpxp total time tendency (1st calculation in mixing.F)
+      ! wpxp total time tendency (1st calculation in advance_xm_wpxp_module.F90)
       call stat_modify( iwpxp_bt, real( -wpxp / dt ), zm )
       ! Brian Griffin; July 5, 2008.
 
@@ -1495,16 +1495,16 @@ contains
       ! xm time tendency (2nd calculation)
       call stat_end_update( ixm_bt, real( xm / dt ), zt )
 
-      ! wpxp is clipped after subroutine diag_var and after
-      ! subroutine wp23.  The overall time tendency must include
+      ! wpxp is clipped after subroutine advance_xp2_xpyp and after
+      ! subroutine advance_wp2_wp3_module.  The overall time tendency must include
       ! the effects of those clippings, as well.  Therefore, the
       ! wpxp total time tendency term is only being modified in
-      ! mixing.F, rather than being entirely contained in mixing.F.
+      ! advance_xm_wpxp_module.F90, rather than being entirely contained in advance_xm_wpxp_module.F90.
 
       !! wpxp time tendency (2nd calculation)
       !call stat_end_update( iwpxp_bt, real( wpxp / dt ), zm )
 
-      ! wpxp time tendency (2nd calculation in mixing.F)
+      ! wpxp time tendency (2nd calculation in advance_xm_wpxp_module.F90)
       call stat_modify( iwpxp_bt, real( wpxp / dt ), zm )
       ! Brian Griffin; July 5, 2008.
 
@@ -1703,8 +1703,8 @@ contains
 
     ! Note:  The w'x' turbulent advection term, which is
     !        - d [ a_1 * ( w'^3 / w'^2 ) * w'x' ] / dz, still keeps the a_1 term
-    !        inside the derivative, unlike the w'^3 equation (in wp23.F90) and 
-    !        the equations (in diag_var.F90) for r_t'^2, th_l'^2, r_t'th_l', 
+    !        inside the derivative, unlike the w'^3 equation (in advance_wp2_wp3_module.F90) and 
+    !        the equations (in advance_xp2_xpyp.F90) for r_t'^2, th_l'^2, r_t'th_l', 
     !        u'^2, v'^2, sclr'r_t', sclr'th_l', and sclr'^2.  Brian.
 
     ! Momentum superdiagonal: [ x wpxp(k+1,<t+1>) ]
@@ -1952,7 +1952,7 @@ contains
     use constants, only: & 
     ! Variable(s) 
         grav ! Gravitational acceleration [m/s^2]
-    use parameters, only: & 
+    use parameters_tunable, only: & 
     ! Variable(s) 
         T0  ! Reference temperature      [K]
 
@@ -1974,4 +1974,4 @@ contains
 
 !===============================================================================
 
-end module mixing
+end module advance_xm_wpxp_module

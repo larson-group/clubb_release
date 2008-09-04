@@ -85,7 +85,7 @@ module inputfields
 !       subroutine close_grads_read
 !-----------------------------------------------------------------------
 
-  use prognostic_variables, only: & 
+  use variables_prognostic_module, only: & 
       um,  & ! Variable(s)
       vm, & 
       rtm, & 
@@ -113,7 +113,7 @@ module inputfields
       vp2, & 
       sigma_sqd_w
 
-  use diagnostic_variables, only: & 
+  use variables_diagnostic_module, only: & 
       hydromet,  & ! Variable(s)
       tau_zt, & 
       ug, & 

@@ -1,15 +1,15 @@
 !-----------------------------------------------------------------------
 ! $Id$
- module parameters 
+ module parameters_tunable 
 
 !       Description:
-!       Contains tuneable model parameters.
+!       Contains tuneable model parameters_tunable.
 
 !       References:
 !       None
 !-----------------------------------------------------------------------
 
- use param_index, only: nparams ! Variable(s)
+ use parameter_indices, only: nparams ! Variable(s)
 
  implicit none
 
@@ -127,7 +127,7 @@
  ! while the actual lmin model constant is computed from this.
  !***************************************************************
  !                    ***** IMPORTANT *****
- ! If you change the order of the parameters in the param_index,
+ ! If you change the order of the parameters in the parameter_indices,
  ! you will need to change the order of this list as well or the
  ! tuner will break!
  !                    ***** IMPORTANT *****
@@ -454,7 +454,7 @@ subroutine pack_parameters &
 !       None
 !-----------------------------------------------------------------------
 
- use param_index, only: & 
+ use parameter_indices, only: & 
      iC1,  & ! Variable(s)
      iC1b, & 
      iC1c, & 
@@ -606,7 +606,7 @@ subroutine pack_parameters &
 !-----------------------------------------------------------------------
 
 
- use param_index, only: & 
+ use parameter_indices, only: & 
      iC1,  & ! Variable(s)
      iC1b, & 
      iC1c, & 
@@ -738,4 +738,4 @@ subroutine pack_parameters &
  return
  end subroutine unpack_parameters
 
- end module parameters
+ end module parameters_tunable

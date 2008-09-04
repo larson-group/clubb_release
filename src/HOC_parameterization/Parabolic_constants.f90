@@ -1,4 +1,4 @@
-  MODULE Someconstants
+  MODULE Parabolic_constants
   IMPLICIT NONE
   public ! Default
   INTEGER, PARAMETER  :: r8 = KIND(0.0d0)
@@ -30,4 +30,4 @@
     REAL(r8), PARAMETER :: giant=HUGE(0.0_r8)/1000.0_r8             ! safe overflow limit
     REAL(r8), PARAMETER :: mactol=EPSILON(0.0_r8)                   ! machine-epsilon    
   ! End File constants
-  END MODULE Someconstants
+  END MODULE Parabolic_constants

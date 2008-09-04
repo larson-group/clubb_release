@@ -1,13 +1,13 @@
 !------------------------------------------------------------------------
 ! $Id$
 !===============================================================================
-module compute_um_edsclrm_mod
+module advance_windm_edsclrm_module
 
 implicit none
 
 private ! Set Default Scope
 
-public :: compute_um_edsclrm
+public :: advance_windm_edsclrm
 
 private :: compute_um_edsclrm_solve, &
            compute_uv_tndcy,         &
@@ -17,10 +17,10 @@ private :: compute_um_edsclrm_solve, &
 contains
 
 !===============================================================================
-subroutine compute_um_edsclrm( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref,  &
-                               wp2, up2, vp2, upwp_sfc, vpwp_sfc, fcor,  &
-                               l_implemented, um, vm, edsclrm,  &
-                               upwp, vpwp, wpedsclrp, err_code )
+subroutine advance_windm_edsclrm( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref,  &
+                                  wp2, up2, vp2, upwp_sfc, vpwp_sfc, fcor,  &
+                                  l_implemented, um, vm, edsclrm,  &
+                                  upwp, vpwp, wpedsclrp, err_code )
 
 ! Description:
 ! Solves for both mean horizontal wind components, um and vm, and for mean 
@@ -36,7 +36,7 @@ subroutine compute_um_edsclrm( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref,  &
 use grid_class, only:  &
     gr  ! Variables(s)
 
-use parameters, only:  &
+use parameters_tunable, only:  &
     ts_nudge,  & ! Variable(s)
     sclr_dim
 
@@ -235,7 +235,7 @@ endif
 
 
 return
-end subroutine compute_um_edsclrm
+end subroutine advance_windm_edsclrm
 
 !===============================================================================
 subroutine compute_um_edsclrm_solve( solve_type, dt, xpwp_sfc, xm_tndcy,  &
@@ -1184,4 +1184,4 @@ end subroutine compute_um_edsclrm_rhs
 
 !===============================================================================
 
-end module compute_um_edsclrm_mod
+end module advance_windm_edsclrm_module

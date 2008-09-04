@@ -14,11 +14,11 @@
 
   use error_code, only: fatal_error ! Procedure(s)
 
-  use param_index, only: nparams ! Variable(s)
+  use parameter_indices, only: nparams ! Variable(s)
 
-  use parameters, only: read_parameters ! Procedure(s)
+  use parameters_tunable, only: read_parameters ! Procedure(s)
 
-  use parameters, only: params_list ! Variable(s)
+  use parameters_tunable, only: params_list ! Variable(s)
 
   implicit none
 

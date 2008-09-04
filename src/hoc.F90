@@ -116,13 +116,13 @@ module hoc
 
     use grid_class, only: read_grid_heights ! Procedure(s)
 
-    use param_index, only: nparams ! Variable(s)
+    use parameter_indices, only: nparams ! Variable(s)
 
-    use diagnostic_variables, only: ug, vg, em,  & ! Variable(s)
+    use variables_diagnostic_module, only: ug, vg, em,  & ! Variable(s)
       tau_zt, thvm, Lscale, Kh_zt, Kh_zm, & 
       um_ref, vm_ref
 
-    use prognostic_variables, only:  & 
+    use variables_prognostic_module, only:  & 
       Tsfc, psfc, SE, LE, thlm, rtm,     & ! Variable(s)
       um, vm, wp2, rcm, wm_zt, wm_zm, exner, & 
       tau_zm, p_in_Pa, rho_zm, upwp, vpwp, wpthlp, & 
@@ -131,7 +131,7 @@ module hoc
       rtm_forcing, up2, vp2, wp3, rtp2, & 
       thlp2, rtpthlp, sigma_sqd_w, cf
 
-    use prognostic_variables, only:  & 
+    use variables_prognostic_module, only:  & 
       sclrm, edsclrm, wpsclrp_sfc,  & ! Variables
       wpedsclrp_sfc, sclrm_forcing, wpsclrp
 
@@ -718,7 +718,7 @@ module hoc
         use constants, only:  & 
             Cp, Lv, ep2, ep1, emin, wtol ! Variable(s)
 
-        use parameters, only:  & 
+        use parameters_tunable, only:  & 
             T0, taumax, taumin, c_K, sclr_dim ! Variable(s)
 
         use grid_class, only: gr ! Variable(s)
@@ -1239,7 +1239,7 @@ module hoc
 
         use constants, only: fstderr ! Variables(s)
 
-        use parameters, only: sclr_dim ! Variables(s)
+        use parameters_tunable, only: sclr_dim ! Variables(s)
 
         use sounding, only: read_sounding ! Procedure(s)
 
@@ -1428,13 +1428,13 @@ use grid_class, only: gr ! Variable(s)
 
 use grid_class, only: zt2zm ! Procedure(s)
 
-use diagnostic_variables, only: hydromet, Ncm, radht, um_ref,  & ! Variable(s)
+use variables_diagnostic_module, only: hydromet, Ncm, radht, um_ref,  & ! Variable(s)
                                 vm_ref, Frad, Ncnm, thvm, ustar, & 
                                 pdf_parms, Kh_zm, Akm_est, Akm, Nim
 
-use diagnostic_variables, only: wpedsclrp ! Passive scalar variables
+use variables_diagnostic_module, only: wpedsclrp ! Passive scalar variables
         
-use prognostic_variables, only: rtm_forcing, thlm_forcing,  & ! Variable(s)
+use variables_prognostic_module, only: rtm_forcing, thlm_forcing,  & ! Variable(s)
                                 wm_zt, wm_zm, rho, rtm, thlm, p_in_Pa, & 
                                 exner, rcm, rho_zm, um, psfc, vm, & 
                                 upwp_sfc, vpwp_sfc, Tsfc, & 
@@ -1455,7 +1455,7 @@ use stats_type, only: stat_update_var_pt ! Procedure(s)
 
 use constants, only: Cp, Lv     ! Variable(s) 
 
-use prognostic_variables, only:  & 
+use variables_prognostic_module, only:  & 
     sclrm_forcing,   & ! Passive scalar variables
     wpsclrp,  & 
     wpsclrp_sfc,  &

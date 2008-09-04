@@ -49,8 +49,8 @@ subroutine clip_covariance( solve_type, l_first_clip_ts,  &
 !
 ! The following covariances are found in the code:  
 !
-! w'r_t', w'th_l', w'sclr', (computed in mixing.F);
-! r_t'th_l', sclr'r_t', sclr'th_l', (computed in diag_var.F);
+! w'r_t', w'th_l', w'sclr', (computed in advance_xm_wpxp_module.F);
+! r_t'th_l', sclr'r_t', sclr'th_l', (computed in advance_xp2_xpyp.F);
 ! u'w', v'w', w'edsclr' (computed in compute_um_edsclrm_mod.F).
 
 ! References:
@@ -169,8 +169,8 @@ subroutine clip_variance( solve_type, dt, threshold, &
 !
 ! The following variances are found in the code:  
 !
-! r_t'^2, th_l'^2, u'^2, v'^2, sclr'^2, (computed in diag_var.F);
-! w'^2 (computed in wp23.F).
+! r_t'^2, th_l'^2, u'^2, v'^2, sclr'^2, (computed in advance_xp2_xpyp.F);
+! w'^2 (computed in advance_wp2_wp3_module.F).
 
 ! References:
 !-----------------------------------------------------------------------

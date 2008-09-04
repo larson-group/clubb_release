@@ -17,9 +17,9 @@
 
   use inputfields, only: set_filenames ! Procedure(s)
 
-  use param_index, only: nparams ! Variable(s)
+  use parameter_indices, only: nparams ! Variable(s)
 
-  use parameters, only: read_parameters ! Procedure(s)
+  use parameters_tunable, only: read_parameters ! Procedure(s)
 
   use error_code, only: clubb_no_error ! Variable(s)
   use error_code, only: fatal_error ! Procedure(s)

@@ -35,7 +35,7 @@ use netcdf, only: &
     NF90_NOERR,   & 
     nf90_create,  & ! Procedure
     nf90_strerror
-use outputfile_class, only: & 
+use output_file_module, only: & 
     outputfile ! Type
 use stats_precision, only:  & 
     time_precision ! Variable(s)
@@ -141,7 +141,7 @@ use netcdf, only: &
     nf90_put_var,  & ! Procedure
     nf90_strerror
 
-use outputfile_class, only: & 
+use output_file_module, only: & 
     outputfile ! Variable
 use constants, only:  & 
     fstderr ! Variable
@@ -392,7 +392,7 @@ subroutine close_netcdf( ncf )
 !      details. -dschanen
 !-----------------------------------------------------------------------
 
-use outputfile_class, only: & 
+use output_file_module, only: & 
     outputfile ! Type
 use netcdf, only: & 
     NF90_NOERR,  & ! Variable
@@ -435,7 +435,7 @@ use netcdf, only: &
     nf90_strerror, & 
     nf90_put_att, & 
     nf90_enddef
-use outputfile_class, only: & 
+use output_file_module, only: & 
     outputfile ! Type
 use constants, only:  & 
     fstderr ! Variable
@@ -547,7 +547,7 @@ use netcdf, only: &
     NF90_NOERR,   & ! Variable(s)
     nf90_put_var,  & ! Procedure(s)
     nf90_strerror
-use outputfile_class, only: & 
+use output_file_module, only: & 
     outputfile ! Type
 use constants, only:  & 
     fstderr ! Variable

@@ -1,6 +1,6 @@
 !-----------------------------------------------------------------------
 ! $Id$
-        module prognostic_variables
+        module variables_prognostic_module
 
 !       This module contains definitions of all prognostic
 !       arrays used in the single column model, as well as subroutines
@@ -120,7 +120,7 @@
             rttol, &
             thltol
 
-        use parameters, only: & 
+        use parameters_tunable, only: & 
             sclr_dim ! Variable(s) 
 
         implicit none
@@ -325,4 +325,4 @@
         return
         end subroutine cleanup_prognostic_variables
 
-        end module prognostic_variables
+        end module variables_prognostic_module

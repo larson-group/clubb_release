@@ -41,7 +41,7 @@ use constants, only:  &
     Lscale_max,  & ! Maximum value for Lscale                   [m]
     fstderr
 
-use parameters, only: & 
+use parameters_tunable, only: & 
 ! Variable(s)
     mu,   & ! Fractional entrainment rate per unit altitude    [1/m]
     T0,   & ! Reference temperature                            [K]
@@ -57,7 +57,7 @@ use numerical_check, only:  &
 use saturation, only:  & 
     sat_mixrat_liq ! Procedure(s)
 
-use diagnostic_variables, only:  & 
+use variables_diagnostic_module, only:  & 
     Lscale_up,  & ! Variable(s)
     Lscale_down
 
@@ -80,7 +80,7 @@ real, dimension(gr%nnzp), intent(in) ::  &
   thvm,    & ! Virtual potential temp. on themodynamic level   [K]
   thlm,    & ! Liquid potential temp. on themodynamic level    [K]
   rtm,     & ! Total water mixing ratio on themodynamic level  [kg/kg]
-  rcm,     & ! Cloud water mixing ration on themodynamic level [kg/kg]
+  rcm,     & ! Cloud water mixing ratio  on themodynamic level [kg/kg]
   em,      & ! em = 3/2 * w'^2; on momentum level              [m^2/s^2]
   exner,   & ! Exner function on thermodynamic level           [-]
   p_in_Pa    ! Pressure on thermodynamic level                 [Pa]

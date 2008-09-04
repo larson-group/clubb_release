@@ -29,7 +29,7 @@ module rico
 
   use constants, only: rc_tol ! Variable(s)
 
-  use parameters, only: sclr_dim ! Variable(s)
+  use parameters_tunable, only: sclr_dim ! Variable(s)
 
   use grid_class, only: gr ! Variable(s)
 
@@ -180,7 +180,7 @@ module rico
 
   use constants, only: kappa, p0 ! Variable(s)
 
-  use parameters, only: sclr_dim ! Variable(s)
+  use parameters_tunable, only: sclr_dim ! Variable(s)
   
   use saturation, only: sat_mixrat_liq ! Procedure(s)
 

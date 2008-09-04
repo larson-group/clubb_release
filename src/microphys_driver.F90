@@ -131,7 +131,7 @@ use grid_class, only: &
     zm2zt,  & ! Procedure(s)
     zt2zm
 
-use rain_equations, only: & 
+use KK_microphys_module, only: & 
     kk_microphys ! Procedure(s)
 
 use ice_dfsn_mod, only: & 
@@ -142,7 +142,7 @@ use model_flags, only: &
     l_kk_rain, & 
     l_icedfs
 
-use parameters, only: & 
+use parameters_tunable, only: & 
     c_Krrainm,  & ! Variable(s) 
     hydromet_dim,  & 
     nu_r

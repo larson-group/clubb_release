@@ -1,7 +1,7 @@
 !----------------------------------------------------------------------
 ! $Id$
 
-module rain_equations
+module KK_microphys_module
 
 !     Description:
 !     Functions and subroutines for the Khairoutdinov & Kogan
@@ -22,7 +22,7 @@ module rain_equations
 
   PRIVATE ! Set default scope
 
-! Statistical rain parameters.
+! Statistical rain parameters	.
 ! Old parameterization.
 !      REAL, PARAMETER:: rrp2_rrainm2 = 1.2
 !      REAL, PARAMETER:: Nrp2_Nrm2 = 1.0
@@ -90,7 +90,7 @@ module rain_equations
 
   CONTAINS
 
-  subroutine kk_microphys & 
+  subroutine KK_microphys & 
              ( T_in_K, p_in_Pa, exner, rho,  & 
                thl1, thl2, a, rc1, rc2, s1, & 
                s2, ss1, ss2, rcm, Ncm, rrainm, Nrm,  & 
@@ -152,9 +152,9 @@ module rain_equations
     ! Input
     real, intent(in), dimension(gr%nnzp) :: & 
     T_in_K,     & ! Temperature                        [K]
-    p_in_Pa,          & ! Pressure                           [Pa]
+    p_in_Pa,    & ! Pressure                           [Pa]
     exner,      & ! Exner function                     [-]
-    rho,       & ! Density on thermo. grid            [kg/m^3]
+    rho,        & ! Density on thermo. grid            [kg/m^3]
     thl1, thl2, & ! PDF parameters thl1 &thl2          [K]
     a,          & ! PDF parameter a                    [-]
     s1, s2,     & ! PDF parameters s1 & s2             [kg/kg]
@@ -162,8 +162,8 @@ module rain_equations
     rc1, rc2,   & ! PDF parameters rc1 & rc2           [kg/kg]
     rcm,        & ! Cloud water mixing ratio           [kg/kg]
     Ncm,        & ! Cloud droplet number conc.         [number/kg]
-    rrainm,        & ! Rain water mixing ratio            [kg/kg]
-    Nrm        ! Rain drop number conc.             [number/kg]
+    rrainm,     & ! Rain water mixing ratio            [kg/kg]
+    Nrm           ! Rain drop number conc.             [number/kg]
 
     ! Latin hypercube variables - Vince Larson 22 May 2005
     real, intent(in), dimension(gr%nnzp) ::  & 
@@ -386,7 +386,7 @@ module rain_equations
     ENDDO
 
     ! Find the drop mean volume radius.  It is calculated using
-    ! the rain water mixing ratio, the rain droplet concentration,
+    ! the rain water ratio, the rain droplet concentration,
     ! and the air density.  These values are taken from the previous
     ! timestep.  It is located on thermodynamic levels.
     do k = 1, gr%nnzp, 1
@@ -3314,4 +3314,4 @@ module rain_equations
                         return
                       end function Dv_fnc
 
-                      END MODULE rain_equations
+                      END MODULE KK_microphys_module

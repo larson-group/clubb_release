@@ -33,7 +33,7 @@ subroutine mpace_b_tndcy( time, time_initial, rlat, &
 
 use constants, only: Rd, Cp, Lv, p0, rc_tol ! Variable(s)
 
-use parameters, only: sclr_dim ! Variable(s)
+use parameters_tunable, only: sclr_dim ! Variable(s)
 
 use model_flags, only: l_bugsrad, l_coamps_micro, l_kk_rain ! Variable(s)
 
@@ -345,7 +345,7 @@ subroutine mpace_b_sfclyr( rho0, um_sfc, vm_sfc, &
 
 use constants, only: Cp, Lv ! Variable(s)
 
-use parameters, only: sclr_dim ! Variable(s)
+use parameters_tunable, only: sclr_dim ! Variable(s)
 
 use array_index, only: iisclr_rt, iisclr_thl
 

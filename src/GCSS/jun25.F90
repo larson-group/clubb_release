@@ -40,7 +40,7 @@
 
   use constants, only: pi, Cp, Lv ! Variable(s)
 
-  use parameters, only: sclr_dim ! Variable(s)
+  use parameters_tunable, only: sclr_dim ! Variable(s)
 
   use model_flags, only: l_bugsrad ! Variable(s)
 

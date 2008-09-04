@@ -61,7 +61,7 @@ module hoc_parameterization_interface
     eps, &
     fstderr
 
-  use parameters, only: & 
+  use parameters_tunable, only: & 
     gamma_coefc,  & ! Variable(s)
     gamma_coefb, & 
     gamma_coef, & 
@@ -84,7 +84,7 @@ module hoc_parameterization_interface
   use numerical_check, only: & 
     parameterization_check ! Procedure(s)
 
-  use diagnostic_variables, only: & 
+  use variables_diagnostic_module, only: & 
     Skw_zt,  & ! Varible(s)
     Skw_zm, & 
     sigma_sqd_w_zt, & 
@@ -134,33 +134,33 @@ module hoc_parameterization_interface
     wpsclrprtp,  & ! w'sclr'rt'
     wpsclrpthlp ! w'sclr'thl'
 
-    use mixing, only: & 
+    use advance_xm_wpxp_module, only: & 
       ! Variable(s) 
-      timestep_mixing          ! Compute mean/flux terms
+      advance_xm_wpxp          ! Compute mean/flux terms
 
-    use diagnose_variances, only: & 
+    use advance_xp2_xpyp_module, only: & 
       ! Variable(s) 
-      diag_var     ! Computes variance terms
+      advance_xp2_xpyp     ! Computes variance terms
 
     use surface_var, only:  & 
       sfc_var ! Procedure
 
-    use pdf_closure, only:  & 
+    use pdf_closure_module, only:  & 
       ! Procedure 
-      pdf_closure_new     ! Prob. density function
+      pdf_closure     ! Prob. density function
 
     use mixing_length, only: & 
       compute_length ! Procedure
 
-    use compute_um_edsclrm_mod, only:  & 
-      compute_um_edsclrm  ! Procedure(s)
+    use advance_windm_edsclrm_module, only:  & 
+      advance_windm_edsclrm  ! Procedure(s)
 
     use saturation, only:  & 
       ! Procedure
       sat_mixrat_liq ! Saturation mixing ratio
 
-    use wp23, only:  & 
-      timestep_wp23 ! Procedure
+    use advance_wp2_wp3_module, only:  & 
+      advance_wp2_wp3 ! Procedure
 
     use stats_precision, only:  & 
       time_precision ! Variable(s)
@@ -311,7 +311,7 @@ module hoc_parameterization_interface
        integer, dimension(gr%nnzp, nt_repeat, d_variables+1)  & 
        :: p_height_time ! matrix of rand ints
 
-! coeffs of s from pdf_closure_new
+! coeffs of s from pdf_closure
        real :: crt1, crt2, cthl1, cthl2   
 !-------- End Latin hypercube section ----------------------------------
 
@@ -360,7 +360,7 @@ module hoc_parameterization_interface
     ! Set Surface variances
     !----------------------------------------------------------------
 
-!      Surface variances should be set here, before the call to diag_var.
+!      Surface variances should be set here, before the call to advance_xp2_xpyp.
 !      The reasons that surface variances can be set here are because the
 !      only variables that are the input into surface variances are the
 !      surface values of wpthlp, wprtp, upwp, and vpwp.  The surface values
@@ -373,7 +373,7 @@ module hoc_parameterization_interface
 !      that the values of rtp2, thlp2, and rtpthlp at the surface will be
 !      used to find the diffusional term and the mean advection term in each
 !      predictive equation for those respective terms.  The other reason is
-!      that if the correct surface variances are not set here and diag_var
+!      that if the correct surface variances are not set here and advance_xp2_xpyp
 !      outputs it's own value for them, it will results in a faulty value for
 !      sigma_sqd_w at the surface.  Brian Griffin.  December 18, 2005.
 
@@ -409,7 +409,7 @@ module hoc_parameterization_interface
       END DO
     END IF
 
-    ! Interpolate wp2 to the thermo. grid for diag_var
+    ! Interpolate wp2 to the thermo. grid for advance_xp2_xpyp
     wp2_zt = max( zm2zt( wp2 ), 0.0 ) ! Positive definite quantity
 
     !----------------------------------------------------------------
@@ -420,8 +420,8 @@ module hoc_parameterization_interface
     ! at shorter timesteps.
     ! This requires us to store in memory sigma_sqd_w and tau_zm between timesteps.
 
-    ! We found that if we call diag_var first, we can use a longer timestep.
-    call diag_var( tau_zm, wm_zm, rtm, wprtp,                 & ! intent(in)
+    ! We found that if we call advance_xp2_xpyp first, we can use a longer timestep.
+    call advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp,                 & ! intent(in)
                    thlm, wpthlp, wpthvp, um, vm,              & ! intent(in)
                    wp2, wp2_zt, wp3, upwp, vpwp, sigma_sqd_w, Skw_zm, Kh_zt,  & ! intent(in)
 ! Vince Larson used prognostic timestepping of variances 
@@ -434,14 +434,14 @@ module hoc_parameterization_interface
                    err_code,                           & ! intent(out)
                    sclrp2, sclrprtp, sclrpthlp  )        ! intent(out)
 
-    ! Iterpolate variances to the zt grid (statistics and closure_new)
+    ! Iterpolate variances to the zt grid (statistics and closure)
     thlp2_zt   = max( zm2zt( thlp2 ), 0.0 )  ! Positive definite quantity
     rtp2_zt    = max( zm2zt( rtp2 ), 0.0 )   ! Positive definite quantity
     rtpthlp_zt = zm2zt( rtpthlp )
 
     !----------------------------------------------------------------
     ! Covariance clipping for wprtp, wpthlp, and wpsclrp after 
-    ! subroutine diag_var updated rtp2, thlp2, and sclrp2.
+    ! subroutine advance_xp2_xpyp updated rtp2, thlp2, and sclrp2.
     !----------------------------------------------------------------
 
     ! Clipping for w'r_t'
@@ -613,7 +613,7 @@ module hoc_parameterization_interface
     end do ! i = 1, sclr_dim
 
     do k = 2, gr%nnzp, 1
-      call pdf_closure_new & 
+      call pdf_closure & 
          ( p_in_Pa(k), exner(k), wm_zt(k), wp2_zt(k), wp3(k), sigma_sqd_w_zt(k), & ! intent(in)
            rtm(k), rtp2_zt(k), zm2zt( wprtp, k ),                  & ! intent(in)
            thlm(k), thlp2_zt(k), zm2zt( wpthlp, k ),               & ! intent(in)
@@ -763,7 +763,7 @@ module hoc_parameterization_interface
     !----------------------------------------------------------------
     ! Advance rtm/wprtp and thlm/wpthlp one time step
     !----------------------------------------------------------------
-    call timestep_mixing( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3,   & ! intent(in)
+    call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3,   & ! intent(in)
                           Kh_zt, tau_zm, Skw_zm, rtpthvp,    & ! intent(in)
                           rtm_forcing, thlpthvp,             & ! intent(in)
                           thlm_forcing, rtp2, thlp2, wp2_zt, & ! intent(in)
@@ -785,7 +785,7 @@ module hoc_parameterization_interface
       if ( rtm(k) < rcm(k) ) then
 
         if ( clubb_at_least_debug_level( 1 ) ) then
-          write(fstderr,*) 'rtm < rcm in timestep_mixing at k=', k, '.', & 
+          write(fstderr,*) 'rtm < rcm in advance_xm_wpxp at k=', k, '.', & 
             '  Clipping rcm.'
 
         end if ! clubb_at_least_debug_level(1)
@@ -800,7 +800,7 @@ module hoc_parameterization_interface
     ! Advance wp2/wp3 one timestep
     !----------------------------------------------------------------
 
-    call timestep_wp23 &
+    call advance_wp2_wp3 &
          ( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp,  & ! intent(in)
            um, vm, upwp, vpwp, up2, vp2, Kh_zm, Kh_zt,      & ! intent(in)
            tau_zm, tau_zt, Skw_zm, Skw_zt, pdf_parms(:,13), & ! intent(in)
@@ -809,7 +809,7 @@ module hoc_parameterization_interface
 
     !----------------------------------------------------------------
     ! Covariance clipping for wprtp, wpthlp, and wpsclrp after
-    ! subroutine wp23 updated wp2.
+    ! subroutine advance_wp2_wp3_module updated wp2.
     !----------------------------------------------------------------
 
     ! Clipping for w'r_t'
@@ -926,7 +926,7 @@ module hoc_parameterization_interface
     ! Advance um, vm, and edsclrm one time step
     !----------------------------------------------------------------
 
-    call compute_um_edsclrm( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref,  &
+    call advance_windm_edsclrm( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref,  &
                              wp2, up2, vp2, upwp_sfc, vpwp_sfc, fcor,  &
                              l_implemented, um, vm, edsclrm,  &
                              upwp, vpwp, wpedsclrp, err_code )
@@ -991,7 +991,7 @@ module hoc_parameterization_interface
 !       References:
 !-----------------------------------------------------------------------
 
-        use diagnostic_variables, only:  & 
+        use variables_diagnostic_module, only:  & 
             pdf_parms,  & ! Variable(s) 
             AKm_est,  & 
             AKm, & 
@@ -1015,7 +1015,7 @@ module hoc_parameterization_interface
         integer, intent(in) :: n, dvar, i_rmd, nt, grid
         logical, intent(out) :: l_sflag
 
-        ! coeffs of s from pdf_closure_new
+        ! coeffs of s from pdf_closure
         real, intent(in) :: crt1, crt2, cthl1, cthl2
 
         real, dimension(grid), intent(in) ::  & 
@@ -1073,13 +1073,13 @@ module hoc_parameterization_interface
 
     use grid_class, only: & 
       gridsetup ! Procedure
-    use param_index, only:  & 
+    use parameter_indices, only:  & 
       nparams ! Variable(s)
-    use parameters, only: & 
+    use parameters_tunable, only: & 
       setup_parameters ! Procedure
-    use diagnostic_variables, only: & 
+    use variables_diagnostic_module, only: & 
       setup_diagnostic_variables ! Procedure
-    use prognostic_variables, only: & 
+    use variables_prognostic_module, only: & 
       setup_prognostic_variables ! Procedure
     use constants, only:  & 
       fstderr,  & ! Variable(s)
@@ -1230,11 +1230,11 @@ module hoc_parameterization_interface
 !-----------------------------------------------------------------------
   subroutine parameterization_cleanup( )
 
-    use parameters, only: sclrtol
+    use parameters_tunable, only: sclrtol
 
-    use diagnostic_variables, only: & 
+    use variables_diagnostic_module, only: & 
       cleanup_diagnostic_variables ! Procedure
-    use prognostic_variables, only: & 
+    use variables_prognostic_module, only: & 
       cleanup_prognostic_variables ! Procedure
 
     implicit none

@@ -14,9 +14,9 @@ program jacobian
 
 use hoc, only:  & 
     hoc_model ! Procedure(s)
-use param_index, only:  & 
+use parameter_indices, only:  & 
     nparams ! Variable(s)
-use parameters, only:  & 
+use parameters_tunable, only:  & 
     params_list,  & ! Variable(s)
     read_parameters ! Procedure(s) 
 use constants, only:  & 

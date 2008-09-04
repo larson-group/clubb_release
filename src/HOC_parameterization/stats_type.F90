@@ -7,7 +7,7 @@ module stats_type
 !     Used for storing output statistics to disk.
 !-----------------------------------------------------------------------
 
-  use outputfile_class, only: & 
+  use output_file_module, only: & 
       outputfile ! Type
 
   use stats_precision, only: & 

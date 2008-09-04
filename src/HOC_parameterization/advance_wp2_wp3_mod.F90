@@ -1,13 +1,13 @@
 !------------------------------------------------------------------------
 ! $Id$
 !===============================================================================
-module wp23
+module advance_wp2_wp3_module
 
   implicit none
 
   private ! Default Scope
 
-  public :: timestep_wp23
+  public :: advance_wp2_wp3
 
   private :: wp23_solve, & 
              wp23_lhs, & 
@@ -30,10 +30,10 @@ module wp23
 contains
 
   !=============================================================================
-  subroutine timestep_wp23( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp,  & 
-                            um, vm, upwp, vpwp, up2, vp2, Kh_zm, Kh_zt, & 
-                            tau_zm, tau_zt, Skw_zm, Skw_zt, a, & 
-                            wp2_zt, wp2, wp3, err_code )
+  subroutine advance_wp2_wp3( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp,  & 
+                              um, vm, upwp, vpwp, up2, vp2, Kh_zm, Kh_zt, & 
+                              tau_zm, tau_zt, Skw_zm, Skw_zt, a, & 
+                              wp2_zt, wp2, wp3, err_code )
 
     ! Description:
     ! Advance w'^2 and w'^3 one timestep.
@@ -54,7 +54,7 @@ contains
         zt2zm,  & ! Procedure(s)
         zm2zt
 
-    use parameters, only:  & 
+    use parameters_tunable, only:  & 
         C11c,  & ! Variable(s)
         C11b,  & 
         C11,  & 
@@ -293,7 +293,7 @@ contains
 
     return
 
-  end subroutine timestep_wp23
+  end subroutine advance_wp2_wp3
 
   !=============================================================================
   subroutine wp23_solve( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp, & 
@@ -527,7 +527,7 @@ contains
     if ( l_stats_samp .and. iwp23_cn > 0 ) then
 
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
-      call band_solvex( "wp23", nsup, nsub, 2*gr%nnzp, nrhs, & 
+      call band_solvex( "advance_wp2_wp3_module", nsup, nsub, 2*gr%nnzp, nrhs, & 
                         lhs, rhs, solut, rcond, err_code )
 
       ! Est. of the condition number of the w'^2/w^3 LHS matrix
@@ -535,7 +535,7 @@ contains
 
     else
       ! Perform LU decomp and solve system (LAPACK)
-      call band_solve( "wp23", nsup, nsub, 2*gr%nnzp, nrhs, & 
+      call band_solve( "advance_wp2_wp3_module", nsup, nsub, 2*gr%nnzp, nrhs, & 
                        lhs, rhs, solut, err_code )
     end if
 
@@ -698,7 +698,7 @@ contains
     use grid_class, only:  & 
         gr ! Variable
 
-    use parameters, only:  & 
+    use parameters_tunable, only:  & 
         C4,  & ! Variables
         C5,  & 
         C8,  & 
@@ -1163,12 +1163,12 @@ contains
     use grid_class, only:  & 
         gr ! Variable
 
-    use parameters, only:  & 
+    use parameters_tunable, only:  & 
         C4,  & ! Variables
         C5,  & 
         C8,  & 
-        C8b,  & 
-        C12,  & 
+        C8b, & 
+        C12, & 
         nu1, & 
         nu8
 
@@ -1740,7 +1740,7 @@ contains
     ! Variable(s)        
         grav ! Gravitational acceleration [m/s^2]
 
-    use parameters, only: & 
+    use parameters_tunable, only: & 
     ! Variable(s) 
         T0  ! Reference temperature      [K]
 
@@ -1844,7 +1844,7 @@ contains
     ! Variables 
         grav ! Gravitational acceleration [m/s^2]
 
-    use parameters, only: & 
+    use parameters_tunable, only: & 
     ! Variables 
         T0  ! Reference temperature      [K]
 
@@ -2441,7 +2441,7 @@ contains
     use constants, only: & 
     ! Variable(s) 
         grav ! Gravitational acceleration [m/s^2]
-    use parameters, only:  & 
+    use parameters_tunable, only:  & 
     ! Variable(s)
         T0  ! Reference temperature      [K]
 
@@ -2525,4 +2525,4 @@ contains
 
 !===============================================================================
 
-end module wp23
+end module advance_wp2_wp3_module

@@ -87,7 +87,7 @@
 !        Joshua Fasching February 2008
 !---------------------------------------------------------------------------
 
-  use parameters, only: & 
+  use parameters_tunable, only: & 
       sclr_dim ! Variable
 
   implicit none
@@ -196,7 +196,7 @@
  use grid_class, only: & 
      gr ! Variable
 
- use parameters, only: & 
+ use parameters_tunable, only: & 
      sclr_dim ! Variable
  
  implicit none
@@ -376,7 +376,7 @@
 !
 !
 !-----------------------------------------------------------------------
- use parameters, only: & 
+ use parameters_tunable, only: & 
      sclr_dim ! Variable
 
  implicit none
@@ -486,12 +486,12 @@
 !       None
 !------------------------------------------------------------------------
 
- use diagnostic_variables, only: & 
+ use variables_diagnostic_module, only: & 
      hydromet,  & ! Variable(s)
      wp2thvp, & 
      rtpthvp, & 
      thlpthvp
- use prognostic_variables, only: & 
+ use variables_prognostic_module, only: & 
      um,  & ! Variable(s)
      vm, & 
      wp2, & 
@@ -514,7 +514,7 @@
  use constants, only: & 
      fstderr   ! Constant(s)
 
- use parameters, only: & 
+ use parameters_tunable, only: & 
      sclr_dim,  & ! Variable(s)
      hydromet_dim 
 

@@ -49,7 +49,7 @@ module output_grads
       fstderr,  & ! Variable 
       fstdout
 
-  use outputfile_class, only: & 
+  use output_file_module, only: & 
       outputfile ! Type
 
   use stats_precision, only:  & 
@@ -189,7 +189,7 @@ module output_grads
 !         to determine whether data can be safely appended to
 !         existing file.
 !-----------------------------------------------------------------------
-  use outputfile_class, only: & 
+  use output_file_module, only: & 
       variable ! Type
   use stats_precision, only: & 
       time_precision ! Variable
@@ -433,7 +433,7 @@ module output_grads
       fstderr ! Variable(s)
   use endian, only: & 
       big_endian ! Procedure
-  use outputfile_class, only: & 
+  use output_file_module, only: & 
       outputfile ! Type
 
   implicit none

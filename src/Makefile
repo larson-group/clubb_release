@@ -67,22 +67,22 @@ MODEL = $(COAMPS_MICRO) \
 	dycoms2_rf02.o cloud_sed_mod.o mpace_a.o mpace_b.o \
 	nov11.o jun25.o clex9_nov02.o clex9_oct14.o wangara.o \
 	diag_ustar.o cobra.o rico.o gabls2.o \
-	KK_microphys.o microphys_driver.o cons.o air.o parab.o \
+	KK_microphys_module.o microphys_driver.o Parabolic_constants.o AiryFunction.o Parabolic.o \
 	lba.o interpolation.o ice_dfsn_mod.o coamps_micro_driver.o
 
 PARAMETERIZATION = \
 	$(LATIN_HYP) \
-	constants.o endian.o outputfile.o output_grads.o \
+	constants.o endian.o output_file_module.o output_grads.o \
 	output_netcdf.o grid.o model_flags.o file_functions.o \
         stats_type.o stats_variables.o stats_subs.o \
         stats_zt.o stats_zm.o stats_sfc.o stats_precision.o sfc.o \
 	erf.o diffusion.o mean_adv.o T_in_K_mod.o \
-	closure_new.o diag_var.o interpolation.o \
-        hydrostatic.o mixing_length.o mixing.o saturation.o \
-	compute_um_edsclrm_mod.o wp23.o Skw_func.o error_code.o \
-	numer_check.o diag_variables.o prog_variables.o \
+	pdf_closure_module.o advance_xp2_xpyp_module.o interpolation.o \
+        hydrostatic.o mixing_length.o advance_xm_wpxp_module.o saturation.o \
+	advance_windm_edsclrm_module.o advance_wp2_wp3_mod.o Skw_func.o error_code.o \
+	numer_check.o variables_diagnostic_module.o variables_prognostic_module.o \
 	parameterization_interface.o lapack_wrap.o  \
-	parameters.o pos_definite_mod.o calendar.o \
+	parameters_tunable.o pos_definite_mod.o calendar.o \
 	fill_holes.o clip_semi_implicit.o clip_explicit.o \
 	array_index.o interpolation.o
 
@@ -102,7 +102,7 @@ HOC_INPUTFIELDS	= $(MODEL) $(INTERFACING) hoc_inputfields.o
 # List of files to check for compiler warnings
 WARNABLE = $(filter std_atmosphere_mod.o calendar.o cos_solar_zen.o bugsrad_hoc.o, $(BUGS_RAD) ) \
 	$(filter coamps_micro_driver.o saturation.o, $(COAMPS_MICRO) ) \
-	$(filter-out air.o parab.o cons.o $(COAMPS_MICRO), $(MODEL) ) \
+	$(filter-out AiryFunction.o Parabolic.o Parabolic_Constants.o $(COAMPS_MICRO), $(MODEL) ) \
 	$(PARAMETERIZATION) 
 
 # == Targets == ( hoc_tuner and jacobian assume statistics )

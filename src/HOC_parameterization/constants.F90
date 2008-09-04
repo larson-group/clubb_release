@@ -90,7 +90,7 @@ difftol = 0.4    ! [?]
 ! they insure that those values squared won't be less then 
 ! 10^-38, which is the lowest number that can be numerically
 ! represented.  However, the tolerance value for rc doubles as
-! the lowest mixing ratio there can be to still officially have 
+! the lowest advance_xm_wpxp_module ratio there can be to still officially have 
 ! a cloud at that level.  This is figured to be about 
 ! 1.0 x 10^-7 kg/kg.  Brian; February 10, 2007.
 real, parameter ::  & 
@@ -118,7 +118,7 @@ g_per_kg = 1000.0     ! Grams in a kilogram.
 !    .  sclr_dim     = 2, ! Number of passive scalars. 
 !    .  hydromet_dim = 5  ! Number of hydrometeor fields.
 
-! Tolerance for new mixing scheme
+! Tolerance for new advance_xm_wpxp_module scheme
 ! Currently it's elements are equal to rttol and thltol
 !       real, dimension(sclr_dim), parameter :: 
 !    .  sclrtol = (/thltol, rttol/)

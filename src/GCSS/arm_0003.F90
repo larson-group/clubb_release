@@ -49,7 +49,7 @@ use interpolation, only: factor_interp ! Procedure(s)
 
 use grid_class, only: gr ! Variable(s)
 
-use parameters, only: sclr_dim ! Variable(s)
+use parameters_tunable, only: sclr_dim ! Variable(s)
 
 use interpolation, only: zlinterp_fnc ! Procedure(s)
 
@@ -181,7 +181,7 @@ subroutine arm_0003_sfclyr( time, z, rho0, &
 
 use constants, only: Cp, Lv, grav ! Variable(s)
 
-use parameters, only: sclr_dim ! Variable(s)
+use parameters_tunable, only: sclr_dim ! Variable(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 

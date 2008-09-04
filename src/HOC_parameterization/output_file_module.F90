@@ -1,6 +1,6 @@
 !-----------------------------------------------------------------------
 ! $Id$
-module outputfile_class
+module output_file_module
  
 
 !     Description:
@@ -85,4 +85,4 @@ module outputfile_class
 
    end type outputfile
 
- end module outputfile_class
+ end module output_file_module

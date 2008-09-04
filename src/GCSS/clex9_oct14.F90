@@ -44,7 +44,7 @@
 
   use constants, only: Cp, Lv ! Variable(s)
 
-  use parameters, only: sclr_dim
+  use parameters_tunable, only: sclr_dim
 
   use model_flags, only: l_bugsrad, l_coamps_micro, l_icedfs ! Variable(s)
 

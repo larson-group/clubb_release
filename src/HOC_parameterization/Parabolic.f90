@@ -365,7 +365,7 @@
     !          ierr=0, computation succesful
     !          ierr=1, overflow or/and underflow problems 
     !----------------------------------------------------
-    USE Someconstants
+    USE Parabolic_constants
     IMPLICIT NONE
     INTEGER,  INTENT(IN) :: mode
     REAL(r8), INTENT(IN) :: a
@@ -425,7 +425,7 @@
     !          ierr=0, computation succesful
     !          ierr=1, overflow or/and underflow problems 
     !----------------------------------------------------
-    USE Someconstants
+    USE Parabolic_constants
     IMPLICIT NONE
     INTEGER,  INTENT(IN) :: mode
     REAL(r8), INTENT(IN) :: a
@@ -486,7 +486,7 @@
     !          ierr=0, computation succesful
     !          ierr=1, overflow or/and underflow problems 
     ! ---------------------------------------------------------
-    USE Someconstants
+    USE Parabolic_constants
     IMPLICIT NONE
     INTEGER,  INTENT(IN) :: mode
     REAL(r8), INTENT(IN) :: a
@@ -738,7 +738,7 @@
     ! Computation of the functions I,J,Id,Jd of relations 
     ! of GST(2004) on PCF
     ! ----------------------------------------------------
-    USE Someconstants
+    USE Parabolic_constants
     IMPLICIT NONE
     REAL(r8), INTENT(IN) :: a
     REAL(r8), INTENT(IN) :: x
@@ -875,7 +875,7 @@
     END SUBROUTINE ij
                                               
     RECURSIVE FUNCTION aux1(x) RESULT(res1)
-    USE Someconstants
+    USE Parabolic_constants
     ! x - sin x = (x^3/6) aux1(x)
     INTEGER k
     REAL(r8) :: x,  ax, y, e, t, res1
@@ -898,7 +898,7 @@
     END FUNCTION aux1
                                             
     RECURSIVE FUNCTION aux2(x) RESULT(res2)
-    USE Someconstants
+    USE Parabolic_constants
     ! sinh(x) - x = (x^3/6) aux2(x)
     IMPLICIT NONE
     REAL(r8) :: x, ax, y, e, t, res2
@@ -923,7 +923,7 @@
     END FUNCTION aux2
                                     
     FUNCTION aux3(x)
-    USE Someconstants
+    USE Parabolic_constants
     ! 1 - x cot x = (x^2/3) aux3(x)
     IMPLICIT NONE
     REAL(r8) :: aux3, x, absx, xh, y
@@ -940,7 +940,7 @@
     END FUNCTION aux3
                                     
     FUNCTION aux4(x)
-    USE Someconstants
+    USE Parabolic_constants
     ! e^x - 1 = x aux4(x)
     IMPLICIT NONE
     REAL(r8) :: aux4, x, xh, y
@@ -955,7 +955,7 @@
     END FUNCTION aux4
                                 
     FUNCTION aux5(x)
-    USE Someconstants
+    USE Parabolic_constants
     ! ln(1+x) = x aux5(x)
     IMPLICIT NONE
     REAL(r8) :: aux5, x, r,  x1, y, y0
@@ -974,7 +974,7 @@
     END FUNCTION aux5
                                       
     FUNCTION aux6(x)
-    USE Someconstants
+    USE Parabolic_constants
     ! ln(1+x)-x +1/2 x^2 = 1/3 x^3 aux6(x); expansion 4.1.29 of A&S, a=1
     IMPLICIT NONE
     REAL(r8) :: aux6, x, x1, y, r, r2, rk, tk
@@ -998,7 +998,7 @@
     END FUNCTION aux6
                                            
     FUNCTION aux7(x) 
-    USE Someconstants
+    USE Parabolic_constants
     ! ln(1+x)-x = -1/2 x^2  aux7(x)
     IMPLICIT NONE
     REAL(r8) :: aux7, x, x1, y 
@@ -1033,7 +1033,7 @@
     END FUNCTION aux8
                                  
     FUNCTION aux9(a) 
-    USE Someconstants
+    USE Parabolic_constants
     ! Gamma(a+1/2)*exp(a-a*ln(a))/(sqrt(2*pi) = aux9(a) 
     IMPLICIT NONE
     REAL(r8) :: aux9, a, z, z2, z2k, y, t,ck(0:10)
@@ -1066,7 +1066,7 @@
     END FUNCTION aux9
                                             
     SUBROUTINE aux10(x, y, u, v, w) 
-    USE Someconstants
+    USE Parabolic_constants
     ! z=x+iy;  ln(1+z)-z =aux10(x, y) = u+ iv; 
     ! w = arctan(eta)-eta; eta = y/(1+x) 
     IMPLICIT NONE
@@ -1128,7 +1128,7 @@
     END FUNCTION hypergeom
                                         
     FUNCTION uaxhyp(a, z, eps)
-    USE Someconstants
+    USE Parabolic_constants
     USE AiryFunction, ONLY: xpowy
     ! U(a,x) by  1F1
     IMPLICIT NONE
@@ -1151,7 +1151,7 @@
     END FUNCTION uaxhyp
 
     FUNCTION vaxhyp(a, z, eps)
-    USE Someconstants
+    USE Parabolic_constants
     USE AiryFunction, ONLY: xpowy
     ! V(a,x) by  1F1
     IMPLICIT NONE
@@ -1206,7 +1206,7 @@
     END FUNCTION vaxd
                                                 
     RECURSIVE FUNCTION phase(x, y) RESULT(phas)
-    USE Someconstants
+    USE Parabolic_constants
     ! The phase of the complex number z =  x + iy
     IMPLICIT NONE
     REAL(r8) :: x, y, phas
@@ -1528,7 +1528,7 @@
     END FUNCTION gamma
                                          
     SUBROUTINE gh12(aneg, x, eps, gh)
-    USE Someconstants
+    USE Parabolic_constants
     ! --------------------------------------------------------------
     ! For 0 <= x <= 2*sqrt(-a), a < 0; computes I_j, J_j; 
     ! see GST(2004) on PCF;
@@ -1657,7 +1657,7 @@
       END SUBROUTINE gh12  
                                               
       SUBROUTINE gh123(aneg, x, eps, ghuv)
-      USE Someconstants
+      USE Parabolic_constants
       ! ----------------------------------------------------
       ! For x >= 0, aneg < 0; computes integrals I, J 
       ! and derivatives for t > 1. See GST(2004) on PCFs.
@@ -1841,7 +1841,7 @@
     !          ierr=0, computation succesful
     !          ierr=1, overflow or/and underflow problems 
     ! -----------------------------------------------------
-    USE Someconstants
+    USE Parabolic_constants
     USE AiryFunction, ONLY: xpowy
     IMPLICIT NONE
     REAL(r8), INTENT(IN) :: a
@@ -2084,7 +2084,7 @@
     !  The Airy-type asymptotic expansions are used for a<<0 and 
     !  around the turning point x*x/4+a=0
     ! --------------------------------------------------------------
-    USE Someconstants
+    USE Parabolic_constants
     USE AiryFunction
     REAL(r8), INTENT(IN) :: a
     REAL(r8), INTENT(IN) :: x
@@ -2576,7 +2576,7 @@
     !          ierr=0, computation succesful
     !          ierr=1, overflow or/and underflow problems 
     ! ---------------------------------------------------------
-    USE Someconstants
+    USE Parabolic_constants
     USE AiryFunction
     REAL(r8), INTENT(IN) :: a
     REAL(r8), INTENT(IN) :: x
@@ -3259,7 +3259,7 @@
    !          ierr=0, computation succesful
    !          ierr=1, overflow or/and underflow problems 
    ! ----------------------------------------------------
-   USE Someconstants
+   USE Parabolic_constants
    USE AiryFunction, ONLY: xpowy
    IMPLICIT NONE
    REAL(r8), INTENT(IN) :: a

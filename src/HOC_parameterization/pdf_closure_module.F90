@@ -1,15 +1,15 @@
 ! $Id$
-module pdf_closure
+module pdf_closure_module
 
   implicit none
 
-  public :: pdf_closure_new
+  public :: pdf_closure
 
   private ! Set Default Scope
 
   contains 
 !------------------------------------------------------------------------
-  subroutine pdf_closure_new & 
+  subroutine pdf_closure & 
              ( p_in_Pa, exner, wm, wp2, wp3, sigma_sqd_w, & 
                rtm, rtp2, wprtp, & 
                thlm, thlp2, wpthlp, & 
@@ -56,11 +56,11 @@ module pdf_closure
       sstol,    & ! Tolerance for pdf parameter         [kg/kg]
       fstderr
 
-    use parameters, only: & 
+    use parameters_tunable, only: & 
       sclrtol,  & ! Array of passive scalar tolerances  [units vary]
       sclr_dim ! Number of passive scalar variables
 
-    use parameters, only: & 
+    use parameters_tunable, only: & 
       ! Variable(s)
       beta,     & ! Plume widths for th_l and r_t       [-]
       T0       ! Reference temperature               [K]
@@ -723,6 +723,6 @@ module pdf_closure
     end if ! clubb_at_least_debug_level
 
     return
-  end subroutine pdf_closure_new
+  end subroutine pdf_closure
 
-end module pdf_closure
+end module pdf_closure_module

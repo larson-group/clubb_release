@@ -901,7 +901,7 @@ use stats_variables, only: &
 use grid_class, only: & 
     gr ! Variable
 
-use diagnostic_variables, only: & 
+use variables_diagnostic_module, only: & 
     pdf_parms,  & ! Variable(s)
     thvm, & 
     ug, & 
@@ -961,7 +961,7 @@ use T_in_K_mod, only: &
 use constants, only: & 
     rc_tol
 
-use parameters, only: & 
+use parameters_tunable, only: & 
     sclr_dim  ! Variable(s)
 
 use stats_type, only: & 

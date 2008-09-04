@@ -9,7 +9,7 @@
     FUNCTION chepolsum(n,t,a)
     !{a[0]/2+a[1]T1(x)+...a[n]Tn(x)}
     !{This code is a Fortran 90 version of Alan Macleod's code}
-    USE Someconstants
+    USE Parabolic_constants
     IMPLICIT NONE
     REAL(r8) :: d1,d2,half,test,tt,two,u0,u1,u2,zero,t,a(0:60)
     REAL(r8) :: chepolsum
@@ -59,7 +59,7 @@
     END FUNCTION xpowy
 
     SUBROUTINE aibi(x, ai, bi)
-    USE Someconstants
+    USE Parabolic_constants
     IMPLICIT NONE
     REAL(r8), INTENT(IN) :: x
     REAL(r8), INTENT(OUT) :: ai
@@ -315,7 +315,7 @@
     END SUBROUTINE aibi
                               
     SUBROUTINE aibip(x,aip,bip)
-    USE Someconstants
+    USE Parabolic_constants
     IMPLICIT NONE
     REAL(r8), INTENT(IN) :: x
     REAL(r8), INTENT(OUT):: aip
@@ -568,7 +568,7 @@
     END SUBROUTINE aibip
 
     SUBROUTINE airsca(x,daie,dbie,daide,dbide)
-    USE Someconstants
+    USE Parabolic_constants
     implicit none
     REAL(r8), INTENT(IN) :: x
     REAL(r8), INTENT(OUT) :: daie, dbie, daide, dbide

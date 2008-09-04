@@ -28,8 +28,8 @@ module error
 !       the first model is used to make the namelist.
 
 !-----------------------------------------------------------------------
-  use param_index, only: nparams ! Variable(s)
-  use parameters, only: read_parameters, read_param_spread ! Procedure(s)
+  use parameter_indices, only: nparams ! Variable(s)
+  use parameters_tunable, only: read_parameters, read_param_spread ! Procedure(s)
 
   implicit none
 
@@ -380,7 +380,7 @@ module error
 
   use grads_common, only: grads_zlvl, grads_average_interval ! Procedure(s)
 
-  use parameters, only: params_list ! Variable(s)
+  use parameters_tunable, only: params_list ! Variable(s)
 
   use error_code, only: clubb_no_error ! Variable(s)
 
@@ -668,7 +668,7 @@ module error
   !       None
   !----------------------------------------------------------------------
 
-  use parameters, only: params_list ! Variable(s)
+  use parameters_tunable, only: params_list ! Variable(s)
 
   use constants, only: fstdout ! Variable(s)
 
@@ -716,7 +716,7 @@ module error
   !       in all caps on pgf90. -dschanen 28 July 2006
   !-----------------------------------------------------------------------
 
-  use parameters, only: params_list ! Variable(s)
+  use parameters_tunable, only: params_list ! Variable(s)
 
   implicit none
 
@@ -861,7 +861,7 @@ module error
 !       See note for output_nml_tuner, above. dschanen 28 July 2006
 !-----------------------------------------------------------------------
 
-  use parameters, only: params_list ! Variable(s)
+  use parameters_tunable, only: params_list ! Variable(s)
 
   implicit none
 

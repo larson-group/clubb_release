@@ -30,12 +30,12 @@ contains
 !       None
 !------------------------------------------------------------------------S
 
-    use parameters, only:  & 
+    use parameters_tunable, only:  & 
         T0 ! Variable(s)
     use constants, only: & 
         grav,  & ! Variable(s)
         fstderr
-    use parameters, only: & 
+    use parameters_tunable, only: & 
         sclr_dim  ! Variable(s)
     use numerical_check, only: & 
         sfc_var_check ! Procedure
