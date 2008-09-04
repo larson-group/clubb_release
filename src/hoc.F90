@@ -141,10 +141,10 @@ module hoc
      
     use inputfields, only: datafilet ! Variable(s)
 
-    use hoc_parameterization_interface, only: & 
-      parameterization_setup,  & ! Procedure(s) 
-      parameterization_cleanup, & 
-      parameterization_timestep
+    use clubb_core, only: & 
+      setup_clubb_core,  & ! Procedure(s) 
+      cleanup_clubb_core, & 
+      advance_clubb_core
 
     use constants, only: fstdout, fstderr ! Variable(s)
 
@@ -493,7 +493,7 @@ module hoc
     ! Allocate & initialize variables,
     ! setup grid, setup constants, and setup flags
 
-    call parameterization_setup &                               ! Intent(in)
+    call setup_clubb_core &                               ! Intent(in)
          ( nzmax, T0, ts_nudge, hydromet_dim, sclr_dim,  &      ! Intent(in)
            sclr_tol(1:sclr_dim), params, &                      ! Intent(in)
            l_bugsrad, l_kk_rain, l_icedfs, l_coamps_micro, &   ! Intent(in)
@@ -627,7 +627,7 @@ module hoc
 !###############################################################################
 
       do i1=1, niterlong
-        call parameterization_timestep & 
+        call advance_clubb_core & 
              ( i, .false., dt, fcor, &                          ! Intent(in)
                thlm_forcing, rtm_forcing, wm_zm, wm_zt, &       ! Intent(in)
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &     ! Intent(in)
@@ -645,7 +645,7 @@ module hoc
  
 
         ! Set Time
-        ! Advance time here, not in parameterization_timestep,
+        ! Advance time here, not in advance_clubb_core,
         ! in order to facilitate use of stats.
         ! A host model, e.g. WRF, would advance time outside
         ! of hoc_closure_timestep.  Vince Larson 7 Feb 2006
@@ -682,7 +682,7 @@ module hoc
 
     ! Free memory
 
-    call parameterization_cleanup( )
+    call cleanup_clubb_core( )
 
     call stats_finalize( )
 

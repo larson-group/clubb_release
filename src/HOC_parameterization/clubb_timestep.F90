@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
 ! $Id$
 !-----------------------------------------------------------------------
-module hoc_parameterization_interface
+module clubb_core
 
 ! Description:
 !   The module containing the `core' of the HOC model.
@@ -13,9 +13,9 @@ module hoc_parameterization_interface
   implicit none
 
   public ::  & 
-    parameterization_setup, & 
-    parameterization_timestep, & 
-    parameterization_cleanup
+    setup_clubb_core, & 
+    advance_clubb_core, & 
+    cleanup_clubb_core
 
   private :: latin_hypercube_sampling
 
@@ -23,116 +23,116 @@ module hoc_parameterization_interface
 
   contains
 
-!-----------------------------------------------------------------------
-    subroutine parameterization_timestep & 
-               ( iter, l_implemented, dt, fcor, & 
-                 thlm_forcing, rtm_forcing, wm_zm, wm_zt, & 
-                 wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
-                 p_in_Pa, rho_zm, rho, exner, & 
-                 wpsclrp_sfc, wpedsclrp_sfc,    & ! Optional
-                 um, vm, upwp, vpwp, up2, vp2, & 
-                 thlm, rtm, wprtp, wpthlp, wp2, wp3, & 
-                 rtp2, thlp2, rtpthlp, & 
-                 sigma_sqd_w, tau_zm, rcm, cf, & 
-                 err_code,  & 
-                 sclrm, sclrm_forcing, edsclrm,  & ! Optional
-                 wpsclrp )
+  !-----------------------------------------------------------------------
+  subroutine advance_clubb_core & 
+             ( iter, l_implemented, dt, fcor, & 
+               thlm_forcing, rtm_forcing, wm_zm, wm_zt, & 
+               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
+               p_in_Pa, rho_zm, rho, exner, & 
+               wpsclrp_sfc, wpedsclrp_sfc,    & ! Optional
+               um, vm, upwp, vpwp, up2, vp2, & 
+               thlm, rtm, wprtp, wpthlp, wp2, wp3, & 
+               rtp2, thlp2, rtpthlp, & 
+               sigma_sqd_w, tau_zm, rcm, cf, & 
+               err_code,  & 
+               sclrm, sclrm_forcing, edsclrm,  & ! Optional
+               wpsclrp )
 
-! Description:
-!   Subroutine to advance the model one timestep
+    ! Description:
+    !   Subroutine to advance the model one timestep
 
-! References:
-!   ``A PDF-Based Model for Boundary Layer Clouds. Part I:
-!     Method and Model Description'' Golaz, et al. (2002)
-!   JAS, Vol. 59, pp. 3540--3551.
-!-----------------------------------------------------------------------
+    ! References:
+    !   ``A PDF-Based Model for Boundary Layer Clouds. Part I:
+    !     Method and Model Description'' Golaz, et al. (2002)
+    !   JAS, Vol. 59, pp. 3540--3551.
+    !-----------------------------------------------------------------------
 
-  ! Modules to be included
+    ! Modules to be included
 
-  use constants, only: & 
-    wtol,  & ! Variable(s)
-    emin, & 
-    thltol, & 
-    rttol, & 
-    ep2, & 
-    Cp, & 
-    Lv, & 
-    ep1, & 
-    eps, &
-    fstderr
+    use constants, only: & 
+      wtol,  & ! Variable(s)
+      emin, & 
+      thltol, & 
+      rttol, & 
+      ep2, & 
+      Cp, & 
+      Lv, & 
+      ep1, & 
+      eps, &
+      fstderr
 
-  use parameters_tunable, only: & 
-    gamma_coefc,  & ! Variable(s)
-    gamma_coefb, & 
-    gamma_coef, & 
-    T0, & 
-    taumax, & 
-    c_K, & 
-    sclr_dim
+    use parameters_tunable, only: & 
+      gamma_coefc,  & ! Variable(s)
+      gamma_coefb, & 
+      gamma_coef, & 
+      T0, & 
+      taumax, & 
+      c_K, & 
+      sclr_dim
 
-  use model_flags, only: & 
-    l_LH_on,  & ! Variable(s)
-    l_tke_aniso, & 
-    l_gamma_Skw
+    use model_flags, only: & 
+      l_LH_on,  & ! Variable(s)
+      l_tke_aniso, & 
+      l_gamma_Skw
 
-  use grid_class, only: & 
-    gr,  & ! Variable(s)
-    zm2zt,  & ! Procedure(s)
-    zt2zm, & 
-    ddzm
+    use grid_class, only: & 
+      gr,  & ! Variable(s)
+      zm2zt,  & ! Procedure(s)
+      zt2zm, & 
+      ddzm
 
-  use numerical_check, only: & 
-    parameterization_check ! Procedure(s)
+    use numerical_check, only: & 
+      parameterization_check ! Procedure(s)
 
-  use variables_diagnostic_module, only: & 
-    Skw_zt,  & ! Varible(s)
-    Skw_zm, & 
-    sigma_sqd_w_zt, & 
-    wp4, & 
-    wpthvp, & 
-    thlpthvp, & 
-    rtpthvp, & 
-    wprcp, & 
-    rtprcp, & 
-    thlprcp, & 
-    pdf_parms, & 
-    rcp2, & 
-    rsat, & 
-    shear, & 
-    ustar, & 
-    Kh_zt, & 
-    wprtp2, & 
-    wp2rtp, & 
-    wpthlp2, & 
-    wp2thlp, & 
-    wprtpthlp, & 
-    wp2thvp, & 
-    wp2rcp, & 
-    thvm, & 
-    em, & 
-    Lscale, & 
-    tau_zt, & 
-    Kh_zm, & 
-    vg, & 
-    ug, & 
-    um_ref, & 
-    vm_ref, & 
-    wp2_zt, & 
-    thlp2_zt, & 
-    wpthlp_zt, & 
-    wprtp_zt, & 
-    rtp2_zt, & 
-    rtpthlp_zt, & 
-    wpedsclrp, & 
-    sclrpthvp,   & ! sclr'th_v'
-    sclrprtp,    & ! sclr'rt'
-    sclrp2,      & ! sclr'^2
-    sclrpthlp,   & ! sclr'th_l'
-    sclrprcp,    & ! sclr'rc'
-    wp2sclrp,    & ! w'^2 sclr'
-    wpsclrp2,    & ! w'sclr'^2
-    wpsclrprtp,  & ! w'sclr'rt'
-    wpsclrpthlp ! w'sclr'thl'
+    use variables_diagnostic_module, only: & 
+      Skw_zt,  & ! Varible(s)
+      Skw_zm, & 
+      sigma_sqd_w_zt, & 
+      wp4, & 
+      wpthvp, & 
+      thlpthvp, & 
+      rtpthvp, & 
+      wprcp, & 
+      rtprcp, & 
+      thlprcp, & 
+      pdf_parms, & 
+      rcp2, & 
+      rsat, & 
+      shear, & 
+      ustar, & 
+      Kh_zt, & 
+      wprtp2, & 
+      wp2rtp, & 
+      wpthlp2, & 
+      wp2thlp, & 
+      wprtpthlp, & 
+      wp2thvp, & 
+      wp2rcp, & 
+      thvm, & 
+      em, & 
+      Lscale, & 
+      tau_zt, & 
+      Kh_zm, & 
+      vg, & 
+      ug, & 
+      um_ref, & 
+      vm_ref, & 
+      wp2_zt, & 
+      thlp2_zt, & 
+      wpthlp_zt, & 
+      wprtp_zt, & 
+      rtp2_zt, & 
+      rtpthlp_zt, & 
+      wpedsclrp, & 
+      sclrpthvp,   & ! sclr'th_v'
+      sclrprtp,    & ! sclr'rt'
+      sclrp2,      & ! sclr'^2
+      sclrpthlp,   & ! sclr'th_l'
+      sclrprcp,    & ! sclr'rc'
+      wp2sclrp,    & ! w'^2 sclr'
+      wpsclrp2,    & ! w'sclr'^2
+      wpsclrprtp,  & ! w'sclr'rt'
+      wpsclrpthlp    ! w'sclr'thl'
 
     use advance_xm_wpxp_module, only: & 
       ! Variable(s) 
@@ -183,7 +183,6 @@ module hoc_parameterization_interface
       ! Read values from namelist
       thlm2T_in_K ! Procedure
 
- 
     use stats_variables, only: & 
       zm,  & ! Variable(s)
       l_stats_samp, & 
@@ -198,7 +197,6 @@ module hoc_parameterization_interface
       stat_begin_update, & 
       stat_modify, & 
       stat_end_update
- 
 
     implicit none
 
@@ -212,9 +210,9 @@ module hoc_parameterization_interface
       l_implemented ! Is this part of a larger host model (T/F) ?
 
     ! Note on dt, dmain, and dtclosure: since being moved out of
-    ! hoc.F, all subroutines within parameterization_timestep now use
+    ! hoc.F, all subroutines within advance_clubb_core now use
     ! dt for time dependent calculations.  The old dt is noted in
-    ! each section of the code -dschanen 20 April 2006 
+    ! each section of the code -dschanen 20 April 2006
     real(kind=time_precision), intent(in) ::  & 
       dt            ! Current timestep size    [s]
 
@@ -242,27 +240,27 @@ module hoc_parameterization_interface
       wpsclrp_sfc,   & ! Scalar flux at surface           [units m/s]
       wpedsclrp_sfc    ! Eddy-Scalar flux at surface      [units m/s]
 
-       ! Input/Output
-       ! These are prognostic or are planned to be in the future
+    ! Input/Output
+    ! These are prognostic or are planned to be in the future
     real, intent(inout), dimension(gr%nnzp) ::  & 
-      um,       & ! u wind.                       [m/s]
-      upwp,     & ! u'w'.                         [m^2/s^2]
-      vm,       & ! v wind.                       [m/s]
-      vpwp,     & ! u'w'.                         [m^2/s^2]
-      up2,      & ! u'^2                          [m^2/s^2]
-      vp2,      & ! v'^2                          [m^2/s^2]
-      rtm,      & ! r_t Total water mixing ratio. [kg/kg]
-      wprtp,    & ! w' r_t'.                      [(m kg)/(s kg)]
-      thlm,     & ! th_l Liquid potential temp.   [K]
-      wpthlp,   & ! w' th_l'.                     [(m K)/s]
-      wp2,      & ! w'^2.                         [m^2/s^2]
-      wp3,      & ! w'^3.                         [m^3/s^3]
-      sigma_sqd_w,      & ! sigma_sqd_w on moment. grid.           [-]
-      rtp2,     & ! r_t'^2.                       [(kg/kg)^2]
-      thlp2,    & ! th_l'^2.                      [K^2]
-      rtpthlp,  & ! r_t' th_l'.                   [(kg K)/kg]
-      tau_zm,   & ! Tau on moment. grid.          [s]
-      rcm         ! Liquid water mixing ratio.    [kg/kg]
+      um,         & ! u wind.                       [m/s]
+      upwp,       & ! u'w'.                         [m^2/s^2]
+      vm,         & ! v wind.                       [m/s]
+      vpwp,       & ! u'w'.                         [m^2/s^2]
+      up2,        & ! u'^2                          [m^2/s^2]
+      vp2,        & ! v'^2                          [m^2/s^2]
+      rtm,        & ! r_t Total water mixing ratio. [kg/kg]
+      wprtp,      & ! w' r_t'.                      [(m kg)/(s kg)]
+      thlm,       & ! th_l Liquid potential temp.   [K]
+      wpthlp,     & ! w' th_l'.                     [(m K)/s]
+      wp2,        & ! w'^2.                         [m^2/s^2]
+      wp3,        & ! w'^3.                         [m^3/s^3]
+      sigma_sqd_w,& ! sigma_sqd_w on moment. grid.           [-]
+      rtp2,       & ! r_t'^2.                       [(kg/kg)^2]
+      thlp2,      & ! th_l'^2.                      [K^2]
+      rtpthlp,    & ! r_t' th_l'.                   [(kg K)/kg]
+      tau_zm,     & ! Tau on moment. grid.          [s]
+      rcm           ! Liquid water mixing ratio.    [kg/kg]
 
     ! Needed for output for host models
     real, intent(inout), dimension(gr%nnzp) ::  & 
@@ -270,7 +268,7 @@ module hoc_parameterization_interface
 
     ! Diagnostic, for if some calculation goes amiss.
     integer, intent(inout) :: err_code
-     
+
     ! Optional Input/Output Variables
     real, intent(inout), dimension(gr%nnzp,sclr_dim) :: & 
       sclrm,         & ! Passive scalar mean.           [units vary]
@@ -284,36 +282,36 @@ module hoc_parameterization_interface
 
     real, dimension(gr%nnzp) :: & 
       tmp1, gamma_Skw_fnc
- 
+
     real, dimension(gr%nnzp,sclr_dim) :: & 
       sclr_tmp1, sclr_tmp2, sclr_tmp3, sclr_tmp4 ! for PDF closure
 
-!------- Local variables for Latin Hypercube sampling ------------------
+    !------- Local variables for Latin Hypercube sampling ------------------
 
-       integer i_rmd 
+    integer i_rmd
 
-! Number of variables to sample
-       integer, parameter :: d_variables = 5
+    ! Number of variables to sample
+    integer, parameter :: d_variables = 5
 
-! n = number of calls to microphysics per timestep (normally=2)
-       integer, parameter :: n_micro_call = 12
+    ! n = number of calls to microphysics per timestep (normally=2)
+    integer, parameter :: n_micro_call = 12
 
-! sequence_length = nt/n = number of timesteps before sequence repeats.
-       integer, parameter :: sequence_length = 1
+    ! sequence_length = nt/n = number of timesteps before sequence repeats.
+    integer, parameter :: sequence_length = 1
 
-! nt = number of random samples before sequence of repeats (normally=10)
-       integer, parameter :: nt_repeat = n_micro_call * sequence_length
+    ! nt = number of random samples before sequence of repeats (normally=10)
+    integer, parameter :: nt_repeat = n_micro_call * sequence_length
 
-! A true/false flag that determines whether
-!     the PDF allows us to construct a sample
-!       logical sample_flag
+    ! A true/false flag that determines whether
+    !     the PDF allows us to construct a sample
+    !       logical sample_flag
 
-       integer, dimension(gr%nnzp, nt_repeat, d_variables+1)  & 
-       :: p_height_time ! matrix of rand ints
+    integer, dimension(gr%nnzp, nt_repeat, d_variables+1)  & 
+    :: p_height_time ! matrix of rand ints
 
-! coeffs of s from pdf_closure
-       real :: crt1, crt2, cthl1, cthl2   
-!-------- End Latin hypercube section ----------------------------------
+    ! coeffs of s from pdf_closure
+    real :: crt1, crt2, cthl1, cthl2
+    !-------- End Latin hypercube section ----------------------------------
 
     !----- Begin Code -----
 
@@ -331,7 +329,7 @@ module hoc_parameterization_interface
            wpsclrp_sfc, wpedsclrp_sfc,                       & ! intent(in)
            sclrm, sclrm_forcing, edsclrm )                     ! intent(in)
     end if
-!-----------------------------------------------------------------------
+    !-----------------------------------------------------------------------
 
     !----------------------------------------------------------------
     ! Interpolate wp2 & wp3, and then compute Skw for m & t grid
@@ -387,14 +385,14 @@ module hoc_parameterization_interface
                     sclrp2(1,1:sclr_dim),                    & ! intent(out)
                     sclrprtp(1,1:sclr_dim),                  & ! intent(out) 
                     sclrpthlp(1,1:sclr_dim) )                  ! intent(out)
-          ! Subroutine may produce NaN values, and if so, exit
-          ! gracefully.
-          ! Joshua Fasching March 2008
+      ! Subroutine may produce NaN values, and if so, exit
+      ! gracefully.
+      ! Joshua Fasching March 2008
       if( err_code == clubb_var_equals_NaN ) return
-    
+
     ELSE
-          ! Variances for cases where the lowest level is not at the surface.
-          ! Eliminate surface effects on lowest level variances.
+      ! Variances for cases where the lowest level is not at the surface.
+      ! Eliminate surface effects on lowest level variances.
       wp2(1)     = (2.0/3.0) * emin
       up2(1)     = (2.0/3.0) * emin
       vp2(1)     = (2.0/3.0) * emin
@@ -424,9 +422,9 @@ module hoc_parameterization_interface
     call advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp,                 & ! intent(in)
                    thlm, wpthlp, wpthvp, um, vm,              & ! intent(in)
                    wp2, wp2_zt, wp3, upwp, vpwp, sigma_sqd_w, Skw_zm, Kh_zt,  & ! intent(in)
-! Vince Larson used prognostic timestepping of variances 
-!    in order to increase numerical stability.  17 Jul 2007
-!                  .false., dt, isValid &
+ ! Vince Larson used prognostic timestepping of variances 
+ !    in order to increase numerical stability.  17 Jul 2007
+ !                  .false., dt, isValid &
                    .true., dt,                         & ! intent(in)
                    sclrm, wpsclrp,                     & ! intent(in) 
                    rtp2, thlp2, rtpthlp,               & ! intent(inout)
@@ -440,80 +438,80 @@ module hoc_parameterization_interface
     rtpthlp_zt = zm2zt( rtpthlp )
 
     !----------------------------------------------------------------
-    ! Covariance clipping for wprtp, wpthlp, and wpsclrp after 
+    ! Covariance clipping for wprtp, wpthlp, and wpsclrp after
     ! subroutine advance_xp2_xpyp updated rtp2, thlp2, and sclrp2.
     !----------------------------------------------------------------
 
     ! Clipping for w'r_t'
     !
-    ! Clipping w'r_t' at each vertical level, based on the 
+    ! Clipping w'r_t' at each vertical level, based on the
     ! correlation of w and r_t at each vertical level, such that:
     ! corr_(w,r_t) = w'r_t' / [ sqrt(w'^2) * sqrt(r_t'^2) ];
     ! -1 <= corr_(w,r_t) <= 1.
-    ! Since w'^2, r_t'^2, and w'r_t' are updated in different 
-    ! places from each other, clipping for w'r_t' has to be done 
+    ! Since w'^2, r_t'^2, and w'r_t' are updated in different
+    ! places from each other, clipping for w'r_t' has to be done
     ! three times.  This is the first instance of w'r_t' clipping.
 
- 
+
     ! Include effect of clipping in wprtp time tendency budget term.
     if ( l_stats_samp ) then
       ! wprtp total time tendency (effect of clipping)
       call stat_begin_update( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
                    zm ) ! intent(inout)
     end if
- 
+
 
     call clip_covariance( "wprtp", .true.,            & ! intent(in) 
                           .false., dt, wp2, rtp2,     & ! intent(in)
                           wprtp )                       ! intent(inout)
 
     if ( l_stats_samp ) then
- 
+
       ! wprtp total time tendency (effect of clipping)
       call stat_modify( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
                         zm )                           ! intent(inout)
     end if
- 
 
-       ! Clipping for w'th_l'
-       !
-       ! Clipping w'th_l' at each vertical level, based on the 
-       ! correlation of w and th_l at each vertical level, such that:
-       ! corr_(w,th_l) = w'th_l' / [ sqrt(w'^2) * sqrt(th_l'^2) ];
-       ! -1 <= corr_(w,th_l) <= 1.
-       ! Since w'^2, th_l'^2, and w'th_l' are updated in different 
-       ! places from each other, clipping for w'th_l' has to be done 
-       ! three times.  This is the first instance of w'th_l' clipping.
 
- 
-       ! Include effect of clipping in wpthlp time tendency budget term.
+    ! Clipping for w'th_l'
+    !
+    ! Clipping w'th_l' at each vertical level, based on the
+    ! correlation of w and th_l at each vertical level, such that:
+    ! corr_(w,th_l) = w'th_l' / [ sqrt(w'^2) * sqrt(th_l'^2) ];
+    ! -1 <= corr_(w,th_l) <= 1.
+    ! Since w'^2, th_l'^2, and w'th_l' are updated in different
+    ! places from each other, clipping for w'th_l' has to be done
+    ! three times.  This is the first instance of w'th_l' clipping.
+
+
+    ! Include effect of clipping in wpthlp time tendency budget term.
     if ( l_stats_samp ) then
       ! wpthlp total time tendency (effect of clipping)
       call stat_begin_update( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
                               zm )                             ! intent(inout)
     end if
- 
+
 
     call clip_covariance( "wpthlp", .true.,        & ! intent(in)
                           .false., dt, wp2, thlp2, & ! intent(in)
-                          wpthlp )                 ! intent(inout)
+                          wpthlp )                   ! intent(inout)
 
     if ( l_stats_samp ) then
- 
+
       ! wpthlp total time tendency (effect of clipping)
       call stat_modify( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
                         zm )                                ! intent(inout)
     end if
- 
+
 
     ! Clipping for w'sclr'
     !
-    ! Clipping w'sclr' at each vertical level, based on the 
+    ! Clipping w'sclr' at each vertical level, based on the
     ! correlation of w and sclr at each vertical level, such that:
     ! corr_(w,sclr) = w'sclr' / [ sqrt(w'^2) * sqrt(sclr'^2) ];
     ! -1 <= corr_(w,sclr) <= 1.
-    ! Since w'^2, sclr'^2, and w'sclr' are updated in different 
-    ! places from each other, clipping for w'sclr' has to be done 
+    ! Since w'^2, sclr'^2, and w'sclr' are updated in different
+    ! places from each other, clipping for w'sclr' has to be done
     ! three times.  This is the first instance of w'sclr' clipping.
     do i = 1, sclr_dim, 1
       call clip_covariance( "wpsclrp", .true.,                & ! intent(in)
@@ -571,9 +569,9 @@ module hoc_parameterization_interface
 
     end if
 
-       !----------------------------------------------------------------
-       ! Compute sigma_sqd_w with new formula from Vince
-       !----------------------------------------------------------------
+    !----------------------------------------------------------------
+    ! Compute sigma_sqd_w with new formula from Vince
+    !----------------------------------------------------------------
 
     sigma_sqd_w = gamma_Skw_fnc * &
       ( 1.0 - min( & 
@@ -585,20 +583,20 @@ module hoc_parameterization_interface
              1.0 ) & ! min 
        )
 
-     sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), 0.0 )   ! Positive definite quantity
+    sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), 0.0 )   ! Positive definite quantity
 
-!    Latin hypercube sample generation
-!    Generate p_height_time, an nnzp x nt_repeat x d_variables array of random integers
-       if ( l_LH_on ) then
-         i_rmd = mod( iter-1, sequence_length )
-         if ( i_rmd == 0) then
-           call permute_height_time( gr%nnzp, nt_repeat, d_variables+1, & ! intent(in)
-                                     p_height_time )                   ! intent(out)
-         end if
-       end if
-!    End Latin hypercube sample generation
+    ! Latin hypercube sample generation
+    ! Generate p_height_time, an nnzp x nt_repeat x d_variables array of random integers
+    if ( l_LH_on ) then
+      i_rmd = mod( iter-1, sequence_length )
+      if ( i_rmd == 0) then
+        call permute_height_time( gr%nnzp, nt_repeat, d_variables+1, & ! intent(in)
+                                  p_height_time )                   ! intent(out)
+      end if
+    end if
+    ! End Latin hypercube sample generation
 
-!       print*, 'hoc.F: i_rmd=', i_rmd
+    ! print*, 'hoc.F: i_rmd=', i_rmd
 
     !----------------------------------------------------------------
     ! Call closure scheme
@@ -628,33 +626,33 @@ module hoc_parameterization_interface
            wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp(k,:),         & ! intent(out)
            wpsclrpthlp(k,:), sclrprcp(k,:), wp2sclrp(k,:) )          ! intent(out)
 
-        ! Subroutine may produce NaN values, and if so, exit
-        ! gracefully.
-        ! Joshua Fasching March 2008
-         
+      ! Subroutine may produce NaN values, and if so, exit
+      ! gracefully.
+      ! Joshua Fasching March 2008
+
       if ( err_code == clubb_var_equals_NaN ) then
         write(0,*) "At grid level = ",k
         return
       end if
-         
-         !--------------------------------------------------------------
-         ! Latin hypercube sampling
-         !--------------------------------------------------------------
-     if ( l_LH_on ) then 
-!      call latin_hypercube_sampling
-!           ( k, n_micro_call, d_variables, nt_repeat, i_rmd, &
-!             crt1, crt2, cthl1, cthl2, hydromet(:,1), &
-!             cf, gr%nnzp, sample_flag, p_height_time ) &
+
+      !--------------------------------------------------------------
+      ! Latin hypercube sampling
+      !--------------------------------------------------------------
+      if ( l_LH_on ) then
+        ! call latin_hypercube_sampling
+        !           ( k, n_micro_call, d_variables, nt_repeat, i_rmd, &
+        !             crt1, crt2, cthl1, cthl2, hydromet(:,1), &
+        !             cf, gr%nnzp, sample_flag, p_height_time ) &
       end if
 
     end do ! k = 2, nz-1
 
-!            print*, 'hoc.F: AKm=', AKm
-!            print*, 'hoc.F: AKm_est=', AKm_est
+    !            print*, 'hoc.F: AKm=', AKm
+    !            print*, 'hoc.F: AKm_est=', AKm_est
 
-!      Interpolate momentum variables back to momentum grid.
-!      Since top momentum level is higher than top thermo level,
-!      set variables at top momentum level to 0.
+    ! Interpolate momentum variables back to momentum grid.
+    ! Since top momentum level is higher than top thermo level,
+    ! set variables at top momentum level to 0.
     if ( clubb_at_least_debug_level( 1 ) ) then
       wp4               = max( zt2zm( wp4 ), 0.0 )   ! Pos. def. quantity
       wp4(gr%nnzp)      = 0.0
@@ -707,10 +705,10 @@ module hoc_parameterization_interface
     call compute_length( thvm, thlm, rtm, rcm, em, p_in_Pa, exner, &    ! intent(in)
                          err_code, &                                    ! intent(inout)
                          Lscale )                                       ! intent(out)
-       
+
     ! Subroutine may produce NaN values, and if so, exit
     ! gracefully.
-    ! Joshua Fasching March 2008       
+    ! Joshua Fasching March 2008
     if( err_code == clubb_var_equals_NaN ) return
 
 
@@ -728,10 +726,10 @@ module hoc_parameterization_interface
     tau_zt = MIN( Lscale / tmp1, taumax )
     tau_zm = MIN( ( MAX( zt2zm( Lscale ), 0.0 )  & 
                  / SQRT( MAX( wtol**2, em ) ) ), taumax )
-! End Vince Larson's replacement.
+    ! End Vince Larson's replacement.
 
-       ! Modification to damp noise in stable region
-! Vince Larson commented out because it may prevent turbulence from 
+    ! Modification to damp noise in stable region
+! Vince Larson commented out because it may prevent turbulence from
 !    initiating in unstable regions.  7 Jul 2007
 !       do k = 1, gr%nnzp
 !         if ( wp2(k) <= 0.005 ) then
@@ -749,15 +747,15 @@ module hoc_parameterization_interface
     Kh_zt = c_K * Lscale * tmp1
     Kh_zm = c_K * max( zt2zm( Lscale ), 0.0 )  & 
                 * sqrt( max( em, emin ) )
- 
-!#######################################################################
-!############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
-!#######################################################################
+
+    !#######################################################################
+    !############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
+    !#######################################################################
 
 
     ! Store the saturation mixing ratio for output purposes.  Brian
     if ( clubb_at_least_debug_level( 1 ) ) then
-      rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) ) 
+      rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) )
     end if
 
     !----------------------------------------------------------------
@@ -790,7 +788,7 @@ module hoc_parameterization_interface
 
         end if ! clubb_at_least_debug_level(1)
 
-          rcm(k) = max( 0.0, rtm(k) - eps )
+        rcm(k) = max( 0.0, rtm(k) - eps )
 
       end if ! rtm(k) < rcm(k)
 
@@ -804,7 +802,7 @@ module hoc_parameterization_interface
          ( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp,  & ! intent(in)
            um, vm, upwp, vpwp, up2, vp2, Kh_zm, Kh_zt,      & ! intent(in)
            tau_zm, tau_zt, Skw_zm, Skw_zt, pdf_parms(:,13), & ! intent(in)
-           wp2_zt, wp2, wp3, err_code )                  ! intent(inout)
+           wp2_zt, wp2, wp3, err_code )                       ! intent(inout)
 
 
     !----------------------------------------------------------------
@@ -822,14 +820,14 @@ module hoc_parameterization_interface
     ! places from each other, clipping for w'r_t' has to be done
     ! three times.  This is the third instance of w'r_t' clipping.
 
- 
+
     ! Include effect of clipping in wprtp time tendency budget term.
     if ( l_stats_samp ) then
       ! wprtp total time tendency (effect of clipping)
       call stat_modify( iwprtp_bt, real( -wprtp / dt ),  & ! intent(in)
                         zm )                               ! intent(inout)
     end if
- 
+
 
     call clip_covariance( "wprtp", .false.,              & ! intent(in)
                           .true., dt, wp2, rtp2,         & ! intent(in)
@@ -840,7 +838,7 @@ module hoc_parameterization_interface
       call stat_end_update( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
                             zm )                              ! intent(inout)
     end if
- 
+
 
     ! Clipping for w'th_l'
     !
@@ -851,26 +849,26 @@ module hoc_parameterization_interface
     ! Since w'^2, th_l'^2, and w'th_l' are updated in different
     ! places from each other, clipping for w'th_l' has to be done
     ! three times.  This is the third instance of w'th_l' clipping.
- 
+
     ! Include effect of clipping in wpthlp time tendency budget term.
     if ( l_stats_samp ) then
       ! wpthlp total time tendency (effect of clipping)
       call stat_modify( iwpthlp_bt, real( -wpthlp / dt ),  & ! intent(in)
                         zm )                                 ! intent(inout)
     end if
- 
+
 
     call clip_covariance( "wpthlp", .false.,                & ! intent(in)
                           .true., dt, wp2, thlp2,           & ! intent(in) 
                           wpthlp )                            ! intent(inout)
 
     if ( l_stats_samp ) then
- 
+
       ! wpthlp total time tendency (effect of clipping)
       call stat_end_update( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
                             zm )                                ! intent(inout)
     end if
- 
+
 
     ! Clipping for w'sclr'
     !
@@ -942,14 +940,14 @@ module hoc_parameterization_interface
         shear(k) = -upwp(k) * ( um(k+1) - um(k) ) * gr%dzm(k) & 
                    -vpwp(k) * ( vm(k+1) - vm(k) ) * gr%dzm(k)
       end do
-    shear(gr%nnzp) = 0.0
+      shear(gr%nnzp) = 0.0
     end if
 
-!#######################################################################
-!#############            ACCUMULATE STATISTICS            #############
-!#######################################################################
+    !#######################################################################
+    !#############            ACCUMULATE STATISTICS            #############
+    !#######################################################################
 
- 
+
     wpthlp_zt  = zm2zt( wpthlp )
     wprtp_zt   = zm2zt( wprtp )
 
@@ -959,7 +957,7 @@ module hoc_parameterization_interface
            p_in_Pa, exner, rho, rho_zm,                        & ! intent(in)
            wm_zt, sigma_sqd_w, tau_zm, rcm, cf,                        & ! intent(in)
            sclrm, edsclrm, sclrm_forcing, wpsclrp )              ! intent(in)
- 
+
 
     if ( clubb_at_least_debug_level( 2 ) ) then
       call parameterization_check & 
@@ -967,7 +965,7 @@ module hoc_parameterization_interface
              rho, exner, wpthlp_sfc, wprtp_sfc,                  & ! intent(in)
              upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,             & ! intent(in)
              up2, vp2, rtm, wprtp, thlm,                         & ! intent(in)
-             wpthlp, wp2, wp3, sigma_sqd_w, rtp2, thlp2,                 & ! intent(in)
+             wpthlp, wp2, wp3, sigma_sqd_w, rtp2, thlp2,         & ! intent(in)
              rtpthlp, tau_zm, rcm, cf, "end of ",                & ! intent(in)
              wpsclrp_sfc, wpedsclrp_sfc,                         & ! intent(in)
              sclrm, sclrm_forcing, edsclrm )                       ! intent(in)
@@ -976,93 +974,93 @@ module hoc_parameterization_interface
 !-----------------------------------------------------------------------
 
     return
-  end subroutine parameterization_timestep
+  end subroutine advance_clubb_core
 
 
-!-----------------------------------------------------------------------
-        subroutine latin_hypercube_sampling & 
-                   ( k, n, dvar, nt, i_rmd, & 
-                     crt1, crt2, cthl1, cthl2, & 
-                     rrainm, cf, grid, l_sflag, p_height_time )
-!       Description:
-!       Estimate using Latin Hypercubes.  This is usually disabled by default.
-!       The actual generation of a random matrix is done in a call from the
-!       subroutine hoc_initialize to permute_height_time()
-!       References:
-!-----------------------------------------------------------------------
+  !-----------------------------------------------------------------------
+  subroutine latin_hypercube_sampling & 
+             ( k, n, dvar, nt, i_rmd, & 
+               crt1, crt2, cthl1, cthl2, & 
+               rrainm, cf, grid, l_sflag, p_height_time )
+    !       Description:
+    !       Estimate using Latin Hypercubes.  This is usually disabled by default.
+    !       The actual generation of a random matrix is done in a call from the
+    !       subroutine hoc_initialize to permute_height_time()
+    !       References:
+    !-----------------------------------------------------------------------
 
-        use variables_diagnostic_module, only:  & 
-            pdf_parms,  & ! Variable(s) 
-            AKm_est,  & 
-            AKm, & 
-            AKstd, & 
-            AKstd_cld, & 
-            AKm_rcm, & 
-            AKm_rcc, & 
-            rcm_est
+    use variables_diagnostic_module, only:  & 
+        pdf_parms,  & ! Variable(s) 
+        AKm_est,  & 
+        AKm, & 
+        AKstd, & 
+        AKstd_cld, & 
+        AKm_rcm, & 
+        AKm_rcc, & 
+        rcm_est
 
-        use lh_sampler_mod, only: & 
-            lh_sampler ! Procedure
+    use lh_sampler_mod, only: & 
+        lh_sampler ! Procedure
 
-        use micro_calcs_mod, only: & 
-            micro_calcs ! Procedure
-        
-        implicit none  
+    use micro_calcs_mod, only: & 
+        micro_calcs ! Procedure
+
+    implicit none
 
 
-        ! Input Variables 
-        integer, intent(in) :: k  ! index
-        integer, intent(in) :: n, dvar, i_rmd, nt, grid
-        logical, intent(out) :: l_sflag
+    ! Input Variables
+    integer, intent(in) :: k  ! index
+    integer, intent(in) :: n, dvar, i_rmd, nt, grid
+    logical, intent(out) :: l_sflag
 
-        ! coeffs of s from pdf_closure
-        real, intent(in) :: crt1, crt2, cthl1, cthl2
+    ! coeffs of s from pdf_closure
+    real, intent(in) :: crt1, crt2, cthl1, cthl2
 
-        real, dimension(grid), intent(in) ::  & 
-        rrainm,  & ! Rain water mixing ratio  [kg/kg]
-        cf   ! Cloud fraction           [%]
+    real, dimension(grid), intent(in) ::  & 
+    rrainm,  & ! Rain water mixing ratio  [kg/kg]
+    cf   ! Cloud fraction           [%]
 
-        integer, dimension(1:grid, 1:nt, 1:(dvar+1) ), intent(in) :: & 
-        p_height_time ! matrix of rand ints
+    integer, dimension(1:grid, 1:nt, 1:(dvar+1) ), intent(in) :: & 
+    p_height_time ! matrix of rand ints
 
-        ! Local Variables
+    ! Local Variables
 
-        integer :: p_matrix(n, dvar+1)
-        ! Sample drawn from uniform distribution
-        double precision, dimension(1:n,1:(dvar+1)) :: X_u
+    integer :: p_matrix(n, dvar+1)
+    ! Sample drawn from uniform distribution
+    double precision, dimension(1:n,1:(dvar+1)) :: X_u
 
-        ! Sample that is transformed ultimately to normal-lognormal
-        double precision, dimension(1:n,1:dvar) :: X_nl
+    ! Sample that is transformed ultimately to normal-lognormal
+    double precision, dimension(1:n,1:dvar) :: X_nl
 
-        ! Choose which rows of LH sample to feed into closure.
-        p_matrix(1:n,1:(dvar+1)) = & 
-        p_height_time( k,n*i_rmd+1:n*i_rmd+n, 1:(dvar+1) )
+    ! Choose which rows of LH sample to feed into closure.
+    p_matrix(1:n,1:(dvar+1)) = & 
+    p_height_time( k,n*i_rmd+1:n*i_rmd+n, 1:(dvar+1) )
 
-!       print*, 'hoc.F: got past p_matrix'
+    ! print*, 'hoc.F: got past p_matrix'
 
-        ! Generate LH sample, represented by X_u and X_nl, for level k
-        call lh_sampler( n, nt, dvar, p_matrix,       & ! intent(in)
-                         cf(k), pdf_parms(k, :),      & ! intent(in)
-                         crt1, crt2, cthl1, cthl2,    & ! intent(in)
-                         rrainm(k),                   & ! intent(in)
-                         X_u, X_nl, l_sflag )           ! intent(out)
+    ! Generate LH sample, represented by X_u and X_nl, for level k
+    call lh_sampler( n, nt, dvar, p_matrix,       & ! intent(in)
+                     cf(k), pdf_parms(k, :),      & ! intent(in)
+                     crt1, crt2, cthl1, cthl2,    & ! intent(in)
+                     rrainm(k),                   & ! intent(in)
+                     X_u, X_nl, l_sflag )           ! intent(out)
 
-!       print *, 'hoc.F: got past lh_sampler'
+    !print *, 'hoc.F: got past lh_sampler'
 
-        ! Perform LH and analytic microphysical calculations
-        call micro_calcs( n, dvar, X_u, X_nl, l_sflag,                & ! intent(in)
-                          pdf_parms(k,:),                             & ! intent(in)
-                          AKm_est(k), AKm(k), AKstd(k), AKstd_cld(k), & ! intent(out)
-                          AKm_rcm(k), AKm_rcc(k), rcm_est(k) )          ! intent(out)
+    ! Perform LH and analytic microphysical calculations
+    call micro_calcs( n, dvar, X_u, X_nl, l_sflag,                & ! intent(in)
+                      pdf_parms(k,:),                             & ! intent(in)
+                      AKm_est(k), AKm(k), AKstd(k), AKstd_cld(k), & ! intent(out)
+                      AKm_rcm(k), AKm_rcc(k), rcm_est(k) )          ! intent(out)
 
-!       print*, 'k, AKm_est=', k, AKm_est(k)
-!       print*, 'k, AKm=', k, AKm(k)
+    !print*, 'k, AKm_est=', k, AKm_est(k)
+    !print*, 'k, AKm=', k, AKm(k)
 
-        return
-        end subroutine latin_hypercube_sampling
+    return
+  end subroutine latin_hypercube_sampling
 
-!-----------------------------------------------------------------------
-  subroutine parameterization_setup & 
+  !-----------------------------------------------------------------------
+  subroutine setup_clubb_core & 
              ( nzmax, T0_in, ts_nudge_in, hydromet_dim_in,  & 
                sclr_dim_in, sclrtol_in, params,  & 
                l_bugsrad, l_kk_rain, l_icedfs, l_coamps_micro, & 
@@ -1073,19 +1071,26 @@ module hoc_parameterization_interface
 
     use grid_class, only: & 
       gridsetup ! Procedure
+
     use parameter_indices, only:  & 
       nparams ! Variable(s)
+
     use parameters_tunable, only: & 
       setup_parameters ! Procedure
+
     use variables_diagnostic_module, only: & 
       setup_diagnostic_variables ! Procedure
+
     use variables_prognostic_module, only: & 
       setup_prognostic_variables ! Procedure
+
     use constants, only:  & 
       fstderr,  & ! Variable(s)
       Lscale_max
+
     use error_code, only:  & 
       clubb_var_out_of_bounds ! Variable(s)
+
     use model_flags, only: & 
       setup_model_flags ! Subroutine
 
@@ -1136,7 +1141,7 @@ module hoc_parameterization_interface
       host_dx,  & ! East-West horizontal grid spacing     [m]
       host_dy  ! North-South horizontal grid spacing   [m]
 
-        ! Model parameters
+    ! Model parameters
     real, intent(in) ::  & 
       T0_in, ts_nudge_in
 
@@ -1154,12 +1159,12 @@ module hoc_parameterization_interface
     logical, intent(in) ::  & 
       l_bugsrad,      & ! BUGSrad interactive radiation scheme
       l_kk_rain,      & ! K & K rain microphysics
-      l_icedfs,      & ! Simplified ice scheme
+      l_icedfs,       & ! Simplified ice scheme
       l_coamps_micro, & ! COAMPS microphysics scheme
       l_cloud_sed,    & ! Cloud water droplet sedimentation
       l_uv_nudge,     & ! Wind nudging
-      l_tke_aniso       ! For anisotropic turbulent kinetic energy, 
-                          !   i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+      l_tke_aniso       ! For anisotropic turbulent kinetic energy,
+    !   i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
     ! Output variables
     integer, intent(out) :: & 
       err_code   ! Diagnostic for a problem with the setup
@@ -1184,11 +1189,11 @@ module hoc_parameterization_interface
     ! Error Report
     ! Joshua Fasching February 2008
     if ( err_code == clubb_var_out_of_bounds ) then
-                
-      write(fstderr,*) "Error in parameterization_setup"
-           
+
+      write(fstderr,*) "Error in setup_clubb_core"
+
       write(fstderr,*) "Intent(in)"
-           
+
       write(fstderr,*) "deltaz = ", deltaz
       write(fstderr,*) "zm_init = ", zm_init
       write(fstderr,*) "momentum_heights = ", momentum_heights
@@ -1196,15 +1201,15 @@ module hoc_parameterization_interface
         thermodynamic_heights
       write(fstderr,*) "T0_in = ", T0_in
       write(fstderr,*) "ts_nudge_in = ", ts_nudge_in
-      write(fstderr,*) "params = ", params 
+      write(fstderr,*) "params = ", params
 
       return
 
     end if
 
-!   if ( .not. l_implemented ) then
-!     call setup_diagnostic_variables( nzmax )
-!   end if
+    ! if ( .not. l_implemented ) then
+    !   call setup_diagnostic_variables( nzmax )
+    ! end if
 
     ! Both prognostic variables and diagnostic variables need to be
     ! declared, allocated, initialized, and deallocated whether HOC
@@ -1225,10 +1230,10 @@ module hoc_parameterization_interface
     end if
 
     return
-  end subroutine parameterization_setup
+  end subroutine setup_clubb_core
 
-!-----------------------------------------------------------------------
-  subroutine parameterization_cleanup( )
+  !-----------------------------------------------------------------------
+  subroutine cleanup_clubb_core( )
 
     use parameters_tunable, only: sclrtol
 
@@ -1241,9 +1246,9 @@ module hoc_parameterization_interface
 
     !----- Begin Code -----
 
-!   if ( .not. l_implemented ) then
-!     call cleanup_diagnostic_variables( )
-!   end if
+    !if ( .not. l_implemented ) then
+    !  call cleanup_diagnostic_variables( )
+    !end if
 
     ! Both prognostic variables and diagnostic variables need to be
     ! declared, allocated, initialized, and deallocated whether HOC
@@ -1255,6 +1260,7 @@ module hoc_parameterization_interface
     deallocate( sclrtol )
 
     return
-  end subroutine parameterization_cleanup
+  end subroutine cleanup_clubb_core
 
-end module hoc_parameterization_interface
+
+end module clubb_core

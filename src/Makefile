@@ -81,7 +81,7 @@ PARAMETERIZATION = \
         hydrostatic.o mixing_length.o advance_xm_wpxp_module.o saturation.o \
 	advance_windm_edsclrm_module.o advance_wp2_wp3_mod.o Skw_func.o error_code.o \
 	numer_check.o variables_diagnostic_module.o variables_prognostic_module.o \
-	parameterization_interface.o lapack_wrap.o  \
+	clubb_timestep.o lapack_wrap.o  \
 	parameters_tunable.o pos_definite_mod.o calendar.o \
 	fill_holes.o clip_semi_implicit.o clip_explicit.o \
 	array_index.o interpolation.o
