@@ -62,7 +62,8 @@ use constants, only: &
 
 use model_flags, only: & 
     l_hole_fill, &    ! logical constants
-    l_single_C2_Skw
+    l_single_C2_Skw, &
+    l_3pt_sqd_dfsn
         
 use parameters_tunable, only: &
     C2rt,     & ! Variable(s)
@@ -246,14 +247,17 @@ else
   l_scalar_calc = .false.
 endif
 
+
 ! Define a_1 (located on momentum levels).
 ! It is a variable that is a function of sigma_sqd_w (where sigma_sqd_w is 
 ! located on the momentum levels).
 a1(1:gr%nnzp) = 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nnzp) )
 
+
 ! wtol_sqd = the square of the minimum threshold on w,
 !     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
 wtol_sqd = wtol * wtol
+
 
 ! Interpolate a_1, w'r_t', w'th_l', u'w', and v'w' from the momentum levels to 
 ! the thermodynamic levels.  These will be used for the turbulent advection (ta)
@@ -264,12 +268,6 @@ wpthlp_zt = zm2zt( wpthlp )
 upwp_zt   = zm2zt( upwp )
 vpwp_zt   = zm2zt( vpwp )
 
-! Interpolate r_t'^2, th_l'^2, and r_t'th_l' from the momentum levels to the 
-! thermodynamic levels.  These will be used for extra diffusion based on a 
-! three-point average of (var)^2.
-rtp2_zt    = max( zm2zt( rtp2 ), 0.0 )   ! Positive definite quantity
-thlp2_zt   = max( zm2zt( thlp2 ), 0.0 )   ! Positive definite quantity
-rtpthlp_zt = zm2zt( rtpthlp )
 
 if ( l_stats_samp ) then
 
@@ -294,29 +292,6 @@ endif
 
 Valid_arr(:) = clubb_no_error
 
-! (xapxbp)^2: 3-point average diffusion coefficient.
-do k = 1, gr%nnzp, 1
-
-   km1 = max( k-1, 1 )
-   kp1 = min( k+1, gr%nnzp )
-
-   ! Compute the square of rtp2_zt, averaged over 3 points.  26 Jan 2008
-   rtp2_zt_sqd_3pt(k) = ( rtp2_zt(km1)**2 + rtp2_zt(k)**2  & 
-                         + rtp2_zt(kp1)**2 ) / 3.0
-   ! Account for units (kg/kg)**4  Vince Larson 29 Jan 2008
-   rtp2_zt_sqd_3pt(k) = 1e12 * rtp2_zt_sqd_3pt(k)  
-
-   ! Compute the square of thlp2_zt, averaged over 3 points.  26 Jan 2008
-   thlp2_zt_sqd_3pt(k) = ( thlp2_zt(km1)**2 + thlp2_zt(k)**2  & 
-                          + thlp2_zt(kp1)**2 ) / 3.0
-
-   ! Compute the square of rtpthlp_zt, averaged over 3 points.  26 Jan 2008
-   rtpthlp_zt_sqd_3pt(k) = ( rtpthlp_zt(km1)**2 + rtpthlp_zt(k)**2  & 
-                            + rtpthlp_zt(kp1)**2 ) / 3.0
-   ! Account for units (kg/kg)**2 Vince Larson 29 Jan 2008
-   rtpthlp_zt_sqd_3pt(k) = 1e6 * rtpthlp_zt_sqd_3pt(k)
-
-enddo
 
 ! Define the Coefficent of Eddy Diffusivity for the variances and covariances.
 do k = 1, gr%nnzp, 1
@@ -327,27 +302,68 @@ do k = 1, gr%nnzp, 1
    ! Kw2 = c_K2 * Kh_zt
    Kw2(k) = c_K2 * Kh_zt(k)
 
-   ! Kw2_rtp2 must have units of m^2/s.  Since rtp2_zt_sqd_3pt has units of 
-   ! kg^2/kg^2, c_Ksqd is given units of m^2/[ s (kg^2/kg^2) ] in this case.
-   Kw2_rtp2(k) = Kw2(k) + c_Ksqd * rtp2_zt_sqd_3pt(k) 
-   ! Vince Larson increased by c_Ksqd, 29Jan2008
-
-   ! Kw2_thlp2 must have units of m^2/s.  Since thlp2_zt_sqd_3pt has units of 
-   ! K^2, c_Ksqd is given units of m^2/[ s K^2 ] in this case.
-   Kw2_thlp2(k) = Kw2(k) + c_Ksqd * thlp2_zt_sqd_3pt(k) 
-   ! Vince Larson increased by c_Ksqd, 29Jan2008
-
-   ! Kw2_rtpthlp must have units of m^2/s.  Since rtpthlp_zt_sqd_3pt has units 
-   ! of K (kg/kg), c_Ksqd is given units of m^2/[ s K (kg/kg) ] in this case.
-   Kw2_rtpthlp(k) = Kw2(k) + c_Ksqd * rtpthlp_zt_sqd_3pt(k) 
-   ! Vince Larson increased by c_Ksqd, 29Jan2008
-
    ! Kw9 is used for variances up2 and vp2.  The variances are located on the 
    ! momentum levels.  Kw9 is located on the thermodynamic levels.
    ! Kw9 = c_K9 * Kh_zt
    Kw9(k) = c_K9 * Kh_zt(k)
 
 enddo
+
+! (xapxbp)^2: 3-point average diffusion coefficient.
+if ( l_3pt_sqd_dfsn ) then
+
+   ! Interpolate r_t'^2, th_l'^2, and r_t'th_l' from the momentum levels to the 
+   ! thermodynamic levels.  These will be used for extra diffusion based on a 
+   ! three-point average of (var)^2.
+   rtp2_zt    = max( zm2zt( rtp2 ), 0.0 )   ! Positive definite quantity
+   thlp2_zt   = max( zm2zt( thlp2 ), 0.0 )   ! Positive definite quantity
+   rtpthlp_zt = zm2zt( rtpthlp )
+
+   do k = 1, gr%nnzp, 1
+
+      km1 = max( k-1, 1 )
+      kp1 = min( k+1, gr%nnzp )
+
+      ! Compute the square of rtp2_zt, averaged over 3 points.  26 Jan 2008
+      rtp2_zt_sqd_3pt(k) = ( rtp2_zt(km1)**2 + rtp2_zt(k)**2  & 
+                             + rtp2_zt(kp1)**2 ) / 3.0
+      ! Account for units (kg/kg)**4  Vince Larson 29 Jan 2008
+      rtp2_zt_sqd_3pt(k) = 1e12 * rtp2_zt_sqd_3pt(k)  
+
+      ! Compute the square of thlp2_zt, averaged over 3 points.  26 Jan 2008
+      thlp2_zt_sqd_3pt(k) = ( thlp2_zt(km1)**2 + thlp2_zt(k)**2  & 
+                              + thlp2_zt(kp1)**2 ) / 3.0
+
+      ! Compute the square of rtpthlp_zt, averaged over 3 points.  26 Jan 2008
+      rtpthlp_zt_sqd_3pt(k) = ( rtpthlp_zt(km1)**2 + rtpthlp_zt(k)**2  & 
+                                + rtpthlp_zt(kp1)**2 ) / 3.0
+      ! Account for units (kg/kg)**2 Vince Larson 29 Jan 2008
+      rtpthlp_zt_sqd_3pt(k) = 1e6 * rtpthlp_zt_sqd_3pt(k)
+
+   enddo
+
+   ! Define Kw2_rtp2, Kw2_thlp2, and Kw3_rtpthlp
+   do k = 1, gr%nnzp, 1
+
+      ! Kw2_rtp2 must have units of m^2/s.  Since rtp2_zt_sqd_3pt has units of 
+      ! kg^2/kg^2, c_Ksqd is given units of m^2/[ s (kg^2/kg^2) ] in this case.
+      Kw2_rtp2(k) = Kw2(k) + c_Ksqd * rtp2_zt_sqd_3pt(k) 
+      ! Vince Larson increased by c_Ksqd, 29Jan2008
+
+      ! Kw2_thlp2 must have units of m^2/s.  Since thlp2_zt_sqd_3pt has units of
+      ! K^2, c_Ksqd is given units of m^2/[ s K^2 ] in this case.
+      Kw2_thlp2(k) = Kw2(k) + c_Ksqd * thlp2_zt_sqd_3pt(k) 
+      ! Vince Larson increased by c_Ksqd, 29Jan2008
+
+      ! Kw2_rtpthlp must have units of m^2/s.  Since rtpthlp_zt_sqd_3pt has 
+      ! units of K (kg/kg), c_Ksqd is given units of m^2/[ s K (kg/kg) ] in this
+      ! case.
+      Kw2_rtpthlp(k) = Kw2(k) + c_Ksqd * rtpthlp_zt_sqd_3pt(k) 
+      ! Vince Larson increased by c_Ksqd, 29Jan2008
+
+   enddo
+
+endif  ! l_3pt_sqd_dfsn
 
 
 !!!!!***** r_t'^2 *****!!!!!
