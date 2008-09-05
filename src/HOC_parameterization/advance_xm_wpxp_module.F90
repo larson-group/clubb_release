@@ -544,9 +544,6 @@ contains
     use parameters_tunable, only:  & 
         nu6 ! Variable(s)
 
-    use constants, only:  & 
-        wtol ! Variable(s)
-
     use grid_class, only:  & 
         gr,  & ! Variable(s)
         zm2zt ! Procedure(s)
