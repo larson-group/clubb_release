@@ -421,6 +421,109 @@ subroutine compute_um_edsclrm_solve( solve_type, dt, xpwp_sfc, xm_tndcy,  &
 ! while the explicit portion of this equation is:
 !
 ! + x'w'|_sfc / ( K_zm(1) * dzm(1) ).
+!
+!
+! Conservation Properties:
+!
+! When a fixed-flux lower boundary condition is used (combined with a zero-flux 
+! upper boundary condition), this technique of discretizing the turbulent
+! advection term (treated as an eddy-diffusion term) leads to conservative 
+! differencing.  The column totals for each column in the left-hand side matrix 
+! (for the turbulent advection term) should be equal to 0, while the column 
+! total for the right-hand side vector (for the turbulent advection term) should
+! be equal to the surface flux.  This ensures that the total amount of quantity 
+! xm over the entire vertical domain is only changed by the surface flux 
+! (neglecting any forcing terms).  The total amount of change is equal to the 
+! surface flux.
+!
+! To see that this conservation law is satisfied by the left-hand side matrix,
+! compute the turbulent advection (treated as eddy diffusion) of xm and 
+! integrate vertically.  In discretized matrix notation (where "i" stands for 
+! the matrix column and "j" stands for the matrix row):
+!
+!  0 = Sum_j Sum_i ( 1/dzt )_i ( 0.5 * dzt * (K_zm*dzm) )_ij (xm<t+1>)_j.
+!
+! The left-hand side matrix, ( 0.5 * dzt * (K_zm*dzm) )_ij, is partially written
+! below.  The sum over i in the above equation removes dzt everywhere from the 
+! matrix below.  The sum over j leaves the column totals that are desired, which
+! are 0.
+!
+! Left-hand side matrix contributions from the turbulent advection term
+! (treated as an eddy-diffusion term using a Crank-Nicholson timestep); 
+! first five vertical levels:
+!
+!     ------------------------------------------------------------------------------->
+!k=1 |  0             0                        0                          0
+!    |
+!k=2 |  0   +0.5*dzt(k)*           -0.5*dzt(k)*                           0
+!    |        K_zm(k)*dzm(k)         K_zm(k)*dzm(k)
+!    | 
+!k=3 |  0   -0.5*dzt(k)*           +0.5*dzt(k)*               -0.5*dzt(k)*
+!    |        K_zm(k-1)*dzm(k-1)     [ K_zm(k)*dzm(k)           K_zm(k)*dzm(k)
+!    |                                +K_zm(k-1)*dzm(k-1) ]
+!    |
+!k=4 |  0             0            -0.5*dzt(k)*               +0.5*dzt(k)*
+!    |                               K_zm(k-1)*dzm(k-1)         [ K_zm(k)*dzm(k)
+!    |                                                           +K_zm(k-1)*dzm(k-1) ]
+!    |
+!k=5 |  0             0                        0              -0.5*dzt(k)*
+!    |                                                          K_zm(k-1)*dzm(k-1)
+!   \ /
+!
+! Note:  The superdiagonal term from level 4 and both the main diagonal and 
+!        superdiagonal terms from level 5 are not shown on this diagram.
+!
+! To see that the above conservation law is satisfied by the right-hand side 
+! vector, compute the turbulent advection (treated as eddy diffusion) of xm and
+! integrate vertically.  In discretized matrix notation (where "i" stands for 
+! the matrix column and "j" stands for the matrix row):
+!
+!  x'w'|_sfc = Sum_j Sum_i ( 1/dzt )_i ( rhs_vector )_j.
+!
+! The right-hand side vector, ( rhs_vector )_j, is partially written below.
+! The sum over i in the above equation removes dzt everywhere from the 
+! vector below.  The sum over j leaves the column total that is desired, 
+! which is x'w'|_sfc.
+!
+! Right-hand side vector contributions from the turbulent advection term
+! (treated as an eddy-diffusion term using a Crank-Nicholson timestep);
+! first five vertical levels:
+!
+!     --------------------------------------------
+!k=1 |                      0                     |
+!    |                                            |
+!    |                                            |
+!k=2 | +0.5*dzt(k)*                               |
+!    |       [ K_zm(k)*dzm(k)*                    |
+!    |                  (xm(k+1,<t>)-xm(k,<t>)) ] |
+!    | +dzt(k) * x'w'|_sfc                        |
+!    |                                            |
+!k=3 | +0.5*dzt(k)*                               |
+!    |       [ K_zm(k)*dzm(k)*                    |
+!    |                  (xm(k+1,<t>)-xm(k,<t>))   |
+!    |        -K_zm(k-1)*dzm(k-1)*                |
+!    |                  (xm(k,<t>)-xm(k-1,<t>)) ] |
+!    |                                            |
+!k=4 | +0.5*dzt(k)*                               |
+!    |       [ K_zm(k)*dzm(k)*                    |
+!    |                  (xm(k+1,<t>)-xm(k,<t>))   |
+!    |        -K_zm(k-1)*dzm(k-1)*                |
+!    |                  (xm(k,<t>)-xm(k-1,<t>)) ] |
+!    |                                            |
+!k=5 | +0.5*dzt(k)*                               |
+!    |       [ K_zm(k)*dzm(k)*                    |
+!    |                  (xm(k+1,<t>)-xm(k,<t>))   |
+!    |        -K_zm(k-1)*dzm(k-1)*                |
+!    |                  (xm(k,<t>)-xm(k-1,<t>)) ] |
+!   \ /                                          \ /
+!
+! Note:  Only the contributions by the turbulent advection term are shown for
+!        both the left-hand side matrix and the right-hand side vector.  There
+!        are more terms in the equation, and thus more factors to be added to
+!        both the left-hand side matrix (such as time tendency and mean 
+!        advection) and the right-hand side vector (such as xm forcings).  The
+!        left-hand side matrix is set-up so that a singular matrix is not 
+!        encountered.
 
 ! References:
 ! Eqn. 8 & 9 on p. 3545 of 
