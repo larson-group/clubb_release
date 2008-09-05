@@ -182,18 +182,20 @@ result( lhs )
 ! Left-hand side matrix contributions from eddy diffusion term; first four 
 ! vertical levels:
 !
-!     -------------------------------------------------------------------------------------------->
-!k=1 | +dzt(k)*                    -dzt(k)*(K_zm(k)+nu)*dzm(k)                     0
-!    |   (K_zm(k)+nu)*dzm(k)
+!     ----------------------------------------------------------------------------------------->
+!k=1 | +dzt(k)*                    -dzt(k)*                                  0
+!    |   (K_zm(k)+nu)*dzm(k)         (K_zm(k)+nu)*dzm(k)
 !    | 
-!k=2 | -dzt(k)*                    +dzt(k)*[ (K_zm(k)+nu)*dzm(k)     -dzt(k)*(K_zm(k)+nu)*dzm(k)
-!    |   (K_zm(k-1)+nu)*dzm(k-1)     +(K_zm(k-1)+nu)*dzm(k-1) ]
+!k=2 | -dzt(k)*                    +dzt(k)*                        -dzt(k)*
+!    |   (K_zm(k-1)+nu)*dzm(k-1)     [ (K_zm(k)+nu)*dzm(k)           (K_zm(k)+nu)*dzm(k)
+!    |                                +(K_zm(k-1)+nu)*dzm(k-1) ]
 !    |
-!k=3 |              0              -dzt(k)*(K_zm(k-1)+nu)*dzm(k-1)   +dzt(k)*[ (K_zm(k)+nu)*dzm(k)
-!    |                                                                 +(K_zm(k-1)+nu)*dzm(k-1) ]
+!k=3 |             0               -dzt(k)*                        +dzt(k)*
+!    |                               (K_zm(k-1)+nu)*dzm(k-1)         [ (K_zm(k)+nu)*dzm(k)
+!    |                                                                +(K_zm(k-1)+nu)*dzm(k-1) ]
 !    |
-!k=4 |              0                            0                   -dzt(k)*(K_zm(k-1)+nu)*dzm(k-1)
-!    |
+!k=4 |             0                             0                 -dzt(k)*
+!    |                                                               (K_zm(k-1)+nu)*dzm(k-1)
 !   \ /
 !
 ! Note:  The superdiagonal term from level 3 and both the main diagonal and 
@@ -447,18 +449,20 @@ result( lhs )
 ! Left-hand side matrix contributions from eddy diffusion term; first four 
 ! vertical levels:
 !
-!     -------------------------------------------------------------------------------------------->
-!k=1 | +dzm(k)                   -dzm(k)*(K_zt(k+1)+nu)*dzt(k+1)                    0
-!    |   (K_zt(k+1)+nu)*dzt(k+1) 
+!     ------------------------------------------------------------------------------------->
+!k=1 | +dzm(k)*                    -dzm(k)*                                  0
+!    |   (K_zt(k+1)+nu)*dzt(k+1)     (K_zt(k+1)+nu)*dzt(k+1)
 !    |          
-!k=2 | -dzm(k)*                  +dzm(k)*[ (K_zt(k+1)+nu)*dzt(k+1) -dzm(k)*(K_zt(k+1)+nu)*dzt(k+1)
-!    |   (K_zt(k)+nu)*dzt(k)               +(K_zt(k)+nu)*dzt(k) ]
+!k=2 | -dzm(k)*                    +dzm(k)*                      -dzm(k)*
+!    |   (K_zt(k)+nu)*dzt(k)         [ (K_zt(k+1)+nu)*dzt(k+1)     (K_zt(k+1)+nu)*dzt(k+1)
+!    |                                +(K_zt(k)+nu)*dzt(k) ]
 !    |
-!k=3 |              0            -dzm(k)*(K_zt(k)+nu)*dzt(k)       +dzm(k)*[ (K_zt(k+1)+nu)*dzt(k+1)
-!    |                                                                        +(K_zt(k)+nu)*dzt(k) ]
+!k=3 |             0               -dzm(k)*                      +dzm(k)*
+!    |                               (K_zt(k)+nu)*dzt(k)           [ (K_zt(k+1)+nu)*dzt(k+1)
+!    |                                                              +(K_zt(k)+nu)*dzt(k) ]
 !    |
-!k=4 |              0                           0                   -dzm(k)*(K_zt(k)+nu)*dzt(k)
-!    |
+!k=4 |             0                             0               -dzm(k)*
+!    |                                                             (K_zt(k)+nu)*dzt(k)
 !   \ /
 !
 ! Note:  The superdiagonal term from level 3 and both the main diagonal and 
