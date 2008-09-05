@@ -118,8 +118,8 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 	# State which case is being run
 	echo "Running ""${RUN_CASE[$x]}"
 	# Run HOC 
-	#RESULT=`../bin/hoc_standalone 2>&1 |grep 'normal'`
-	RESULT=`../bin/hoc_standalone 2>&1`
+	#RESULT=`../bin/clubb_standalone 2>&1 |grep 'normal'`
+	RESULT=`../bin/clubb_standalone 2>&1`
 
 	if [ $NIGHTLY == true ]; then  
 		echo -e "$RESULT";

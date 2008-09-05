@@ -68,7 +68,7 @@ cat $PARAMS_FILE $MODEL_FILE $STATS_FILE > 'clubb.in'
 echo "Running" $RUN_CASE
 
 # Run the HOC model
-../bin/hoc_standalone 
+../bin/clubb_standalone 
 
 # Remove the namelists
 rm -f 'clubb.in'
