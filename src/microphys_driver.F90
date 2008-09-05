@@ -1233,18 +1233,18 @@ result( lhs )
 ! Left-hand side matrix contributions from the sedimentation term (only); first 
 ! four vertical levels:
 !
-!      ------------------------------------------------------------------------------------------>
-! k=1 |            0                            0                                0
-!     |
-! k=2 | -dzt(k)*V_hm(k-1)*D(k)       +dzt(k)*[ V_hm(k)*B(k)           +dzt(k)*V_hm(k)*A(k)
-!     |                                       -V_hm(k-1)*C(k) ]       
-!     |
-! k=3 |            0                 -dzt(k)*V_hm(k-1)*D(k)           +dzt(k)*[ V_hm(k)*B(k)
-!     |                                                                        -V_hm(k-1)*C(k) ]
-!     |
-! k=4 |            0                            0                     -dzt(k)*V_hm(k-1)*D(k)
-!     |
-!    \ /
+!     -------------------------------------------------------------------------------->
+!k=1 |            0                          0                            0
+!    |
+!k=2 | -dzt(k)*V_hm(k-1)*D(k)   +dzt(k)*[ V_hm(k)*B(k)       +dzt(k)*V_hm(k)*A(k)
+!    |                                   -V_hm(k-1)*C(k) ]       
+!    |
+!k=3 |            0             -dzt(k)*V_hm(k-1)*D(k)       +dzt(k)*[ V_hm(k)*B(k)
+!    |                                                                -V_hm(k-1)*C(k) ]
+!    |
+!k=4 |            0                          0               -dzt(k)*V_hm(k-1)*D(k)
+!    |
+!   \ /
 !
 ! The variables A(k), B(k), C(k), and D(k) are weights of interpolation around 
 ! the central thermodynamic level (k), such that:
