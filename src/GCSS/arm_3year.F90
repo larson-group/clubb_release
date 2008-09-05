@@ -50,7 +50,7 @@ subroutine arm_3year_tndcy( time, &
 
 use grid_class, only: gr ! Variable(s)
 
-use parameters, only: sclr_dim ! Variable(s)
+use parameters_tunable, only: sclr_dim ! Variable(s)
 
 use interpolation, only: zlinterp_fnc ! Procedure(s)
 
@@ -187,7 +187,7 @@ subroutine arm_3year_sfclyr( time, z, rho0, &
 
 use constants, only: Cp, Lv, grav ! Variable(s)
 
-use parameters, only: sclr_dim
+use parameters_tunable, only: sclr_dim
 
 use array_index, only: iisclr_rt, iisclr_thl
 

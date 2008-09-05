@@ -4,7 +4,7 @@
 run_file          = "fire_hoc.in"
 times             = 90, 180
 delta_factor      = 1.04
-use_standard_vars = .false.
+l_use_standard_vars = .false.
 /
 
 &initvars 

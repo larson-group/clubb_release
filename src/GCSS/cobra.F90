@@ -32,7 +32,7 @@ use grid_class, only: zt2zm ! Procedure(s)
 
 use constants, only: fstderr ! Variable(s)
 
-use parameters, only: sclr_dim ! Variable(s)
+use parameters_tunable, only: sclr_dim ! Variable(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 
@@ -120,7 +120,7 @@ subroutine cobra_sfclyr( time, z, dn0, thlm_sfc, um_sfc, vm_sfc, &
 
 use constants, only: Cp, Lv, grav ! Variable(s)
 
-use parameters, only: sclr_dim ! Variable(s)
+use parameters_tunable, only: sclr_dim ! Variable(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 

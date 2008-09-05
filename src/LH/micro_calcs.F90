@@ -21,7 +21,7 @@ contains
 !        d = number of variates (normally=5) 
 !        X_u = nxd Latin hypercube sample from uniform dist 
 !        X_nl = Sample from normal-lognormal distribution 
-!        sample_flag = logical that tells whether PDF has non-zero micro
+!        l_sample_flag = logical that tells whether PDF has non-zero micro
 !        pdf_parms = pdf parameters output by closure_new
 
 ! Output: AKm_est = LH estimate of grid box avg Kessler autoconv [kg/kg]
@@ -33,7 +33,7 @@ contains
 !         rcm_est = LH estimate of grid box avg liquid water [kg/kg]
 !------------------------------------------------------------------------
 
-subroutine micro_calcs( n, d, X_u, X_nl, sample_flag, & 
+subroutine micro_calcs( n, d, X_u, X_nl, l_sample_flag, & 
                         pdf_parms, & 
                         AKm_est_k, AKm_k, AKstd_k, AKstd_cld_k, & 
                         AKm_rcm_k, AKm_rcc_k, rcm_est_k )
@@ -55,7 +55,7 @@ double precision, intent(in) :: X_u(1:n,1:(d+1))
 double precision, intent(in) :: X_nl(1:n,1:d)
 
 ! Flag that determines whether we have a special case (false)
-logical, intent(in) :: sample_flag
+logical, intent(in) :: l_sample_flag
 
 ! PDF parameter array
 real, intent(in)    :: pdf_parms(26)
@@ -159,7 +159,7 @@ rcm   = a * rc1 + (1-a) * rc2
 ! We prognose rt-thl-w,
 !    but we set means, covariance of N, qr to constants.
 
-if ( .not. sample_flag ) then  
+if ( .not. l_sample_flag ) then  
 
 ! In this case, sample points could not be constructed.
 ! Set autoconversion to zero.

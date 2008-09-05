@@ -29,7 +29,7 @@ subroutine gabls2_tndcy( time, time_initial, &
 !          http://people.su.se/~gsven/gabls/
 !-----------------------------------------------------------------------
 
-use parameters, only: sclr_dim ! Variable(s)
+use parameters_tunable, only: sclr_dim ! Variable(s)
 
 use grid_class, only: gr ! Variable(s)
 
@@ -152,7 +152,7 @@ subroutine gabls2_sfclyr( time, time_initial, &
 
   use constants, only: Cp, Rd, p0, kappa, grav ! Variable(s)
 
-  use parameters, only: sclr_dim ! Variable(s)
+  use parameters_tunable, only: sclr_dim ! Variable(s)
 
   use saturation, only: sat_mixrat_liq ! Procedure(s)
 

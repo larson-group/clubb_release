@@ -27,7 +27,7 @@ module sounding
         use constants, only:  & 
             fstderr ! Constant
 
-        use parameters, only: & 
+        use parameters_tunable, only: & 
             sclr_dim ! Variable(s)
 
         use std_atmosphere_mod, only:  & 
@@ -42,7 +42,7 @@ module sounding
 !           ,iisclr_CO2
 
         use error_code, only: &
-          clubb_at_debug_level ! Function
+          clubb_at_least_debug_level ! Function
 
         implicit none
 
@@ -158,7 +158,7 @@ module sounding
           end if
         end if
 
-        if ( clubb_at_debug_level( 1 ) ) then
+        if ( clubb_at_least_debug_level( 1 ) ) then
           print *, "Reading in sounding information"
 !------------------Printing Model Inputs-------------------------------
           print *, "u = ", u(1:nlevels)
@@ -171,7 +171,7 @@ module sounding
             print *, "sclr = ", sclr(1:nlevels,1:sclr_dim)
             print *, "edsclr = ", edsclr(1:nlevels,1:sclr_dim)
           end if
-        end if ! clubb_at_debug_level( 1 )
+        end if ! clubb_at_least_debug_level( 1 )
 !----------------------------------------------------------------------
 
 ! Use linear interpolation from two nearest prescribed grid points

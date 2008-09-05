@@ -1,16 +1,16 @@
 !-----------------------------------------------------------------------
 ! $Id$
-module bugsrad_hoc_mod
+module bugsrad_clubb_mod
 
 implicit none
 
-public :: bugsrad_hoc
+public :: bugsrad_clubb
 
 private ! Default Scope
 
 contains
 
-subroutine bugsrad_hoc &
+subroutine bugsrad_clubb &
            ( alt, nz, lin_int_buffer,        &
              lat_in_degrees, lon_in_degrees, &
              day, month, year, time,         &
@@ -55,7 +55,7 @@ subroutine bugsrad_hoc &
 
   use T_in_K_mod, only: thlm2T_in_K ! Procedure(s)
 
-  use error_code, only: clubb_at_debug_level ! Procedure(s)
+  use error_code, only: clubb_at_least_debug_level ! Procedure(s)
 
  
   use stats_type, only: stat_update_var ! Procedure(s)
@@ -187,7 +187,7 @@ subroutine bugsrad_hoc &
   do z = 2, nz
     if ( rtm(z) < rcm(z) ) then
       sp_humidity(1,z-1) = 0.0d0
-      if ( clubb_at_debug_level(1) ) then
+      if ( clubb_at_least_debug_level(1) ) then
       write(fstderr,*) "rvm < 0 at ", z, " before BUGSrad, specific humidity set to 0."
       endif
     else
@@ -248,7 +248,7 @@ subroutine bugsrad_hoc &
     j = j + 1
     if ( (j + std_atmos_buffer ) > std_atmos_dim ) then
       write(fstderr,*) "j = ", j, "alt = ", alt(nz), " m"
-      stop "bugsrad_hoc: cannot handle this altitude" ! exceeds a 50 km altitude
+      stop "bugsrad_clubb: cannot handle this altitude" ! exceeds a 50 km altitude
     end if
   end do
 
@@ -361,7 +361,7 @@ subroutine bugsrad_hoc &
  
 
   return
-end subroutine bugsrad_hoc
+end subroutine bugsrad_clubb
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
@@ -396,4 +396,4 @@ function flip( x, xdim )
 end function flip
 !-----------------------------------------------------------------------
 
-end module bugsrad_hoc_mod
+end module bugsrad_clubb_mod

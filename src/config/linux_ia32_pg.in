@@ -29,7 +29,7 @@ NC_LOC = $(HOME)/netcdf-3.6.0-p1
 LAPACK = -llapack -lblas
 
 # == Linking Flags ==
-LDFLAGS = -L$(LIBDIR) -Wl,-rpath $(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf $(LAPACK)
+LDFLAGS = -L$(LIBDIR) -Wl,-rpath $(LIBDIR) -lclubb_param -lclubb_bugsrad -L$(NC_LOC)/lib -lnetcdf $(LAPACK)
 
 # == Compiler flags (all) ==
 # Preprocessing Directives:
