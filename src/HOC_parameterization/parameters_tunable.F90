@@ -169,6 +169,9 @@
 
  implicit none
 
+ ! External
+ intrinsic :: allocated
+
  ! Input Variables
  real, intent(in) ::  & 
  deltaz,      & ! Change per height level      [m]
@@ -211,7 +214,14 @@
  hydromet_dim = hydromet_dim_in
  sclr_dim     = sclr_dim_in
 
- allocate( sclrtol(1:sclr_dim) )
+ ! In a tuning run, this array has the potential to be allocated already
+ if ( .not. allocated( sclrtol ) ) then
+   allocate( sclrtol(1:sclr_dim) )
+ else
+   deallocate( sclrtol ) 
+   allocate( sclrtol(1:sclr_dim) )
+ end if
+
 
  sclrtol(1:sclr_dim) = sclrtol_in(1:sclr_dim)
 
