@@ -79,7 +79,7 @@ advance_xm_wpxp_module.o : constants.o parameters_tunable.o stats_variables.o la
 	clip_semi_implicit.o clip_explicit.o \
 	advance_xm_wpxp_module.F90 
 
-clubb_timestep.o : constants.o hydrostatic.o advance_xm_wpxp_module.o \
+clubb_core.o : constants.o hydrostatic.o advance_xm_wpxp_module.o \
 	model_flags.o numer_check.o Skw_func.o \
 	mixing_length.o stats_type.o stats_variables.o stats_subs.o \
 	stats_zt.o stats_zm.o \
@@ -87,7 +87,7 @@ clubb_timestep.o : constants.o hydrostatic.o advance_xm_wpxp_module.o \
 	grid.o saturation.o advance_windm_edsclrm_module.o variables_prognostic_module.o \
 	variables_diagnostic_module.o \
 	sfc.o pdf_closure_module.o lh_sampler.o clip_explicit.o \
-	parameters_tunable.o error_code.o  clubb_timestep.F90 
+	parameters_tunable.o error_code.o  clubb_core.F90 
 hydrostatic.o	: constants.o grid.o hydrostatic.F90 
 
 mixing_length.o	: constants.o parameters_tunable.o numer_check.o error_code.o \
@@ -187,7 +187,7 @@ bugsrad_driver.o 	: kinds.o constants.o bugs_rad.o T_in_K_mod.o \
 	stats_variables.o cos_solar_zen.o std_atmosphere_mod.o bugsrad_driver.F90
 
 # == Misc. program related source files  ==
-clubb_driver.o		: clubb_timestep.o arm.o astex.o atex.o \
+clubb_driver.o		: clubb_core.o arm.o astex.o atex.o \
 	bomex.o clex9_nov02.o clex9_oct14.o dycoms2_rf01.o dycoms2_rf02.o \
 	fire.o jun25.o mpace_a.o mpace_b.o nov11.o \
 	wangara.o cobra.o rico.o gabls2.o lba.o arm_97.o arm_0003.o \
