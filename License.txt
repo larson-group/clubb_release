@@ -1,0 +1,24 @@
+
+Cloud Layers Unified By Binormals (CLUBB) user license
+
+Thank you for your interest in CLUBB.  Our goal is to create a code that is free of major bugs, is easy to use, implements the best software engineering practices, is supported to the extent allowed by our limited resources, and is available without cost to external users.  In return, we impose the conditions enumerated below.
+
+You may use CLUBB as long as you abide by these conditions:
+
+1.  You may not use CLUBB for commercial purposes.
+ 
+2.  You must acknowledge CLUBB in all presentations and publications that contain results obtained using CLUBB. 
+
+3.  You may not give all or part of CLUBB to anyone directly.  Instead, please request that any new users register as a CLUBB user at http://clubb.larson-group.com and download CLUBB from there.
+
+4.  You may not use any part of CLUBB to create or modify another single-column model that is not called CLUBB.  However, you may modify or improve CLUBB if you include "CLUBB" in the name of the resulting single-column model.  For example, a user at MIT might modify CLUBB and call the modified version "CLUBB-MIT."  To cite another example, a user of the CLM land-surface model might interface CLM to CLUBB and call it CLM-CLUBB.  
+
+5.  You may implement CLUBB as a parameterization in a 2D or 3D large-scale host model without including "CLUBB" in the combined model name only if you acknowledge in presentations and publications that CLUBB has been included as a parameterization. 
+
+6.  If you do modify CLUBB, you must make your source code available to all members of the CLUBB Development Group.
+
+
+Thanks again and best wishes for your research,
+
+The CLUBB Development Group 
+(Present and past contributors to the source code include Vincent Larson, Chris Golaz, David Schanen, Brian Griffin, Joshua Fasching, Adam Smith, and Michael Falk).
