@@ -12,7 +12,7 @@ module error
 !       for each of the model runs and each of the variables
 
 !       function min_les_hoc_diff:  A driver for the hoc program/module.
-!       Calls hoc_model, reads in les & hoc results from GRADS files, and 
+!       Calls run_clubb, reads in les & hoc results from GRADS files, and 
 !       calculates the average difference between the two over all z-levels.
 
 !       subroutine output_results_stdout : 
@@ -36,7 +36,7 @@ module error
   integer, public :: ndim ! Size of the simplex
 
   ! 'err_code' is an important integer used by the min_diff to 
-  ! determine whether HOC has become numerically unstable
+  ! determine whether CLUBB has become numerically unstable
   integer, public ::  & 
   err_code 
 
@@ -67,7 +67,7 @@ module error
   l_stdout_on_invalid
 
   character(len=10), dimension(:), allocatable, private ::  & 
-  hoc_v,  & ! Variables in HOC GrADS files
+  hoc_v,  & ! Variables in CLUBB GrADS files
   les_v  ! Variables in LES GrADS files
 
   integer, dimension(:,:), allocatable, private ::  & 
@@ -105,17 +105,17 @@ module error
   min_err      ! the lowest the minimization algorithm could go
 
   real, dimension(nparams), private :: & 
-  params  ! Vector of all possible HOC parameters
+  params  ! Vector of all possible CLUBB parameters
 
   integer, dimension(nparams), private :: & 
   params_index  ! Index of the params elements that are used in the simplex
 
   real, allocatable, dimension(:,:), public ::  & 
-  param_vals_matrix ! Holds 2D simplex the HOC constant parameters
+  param_vals_matrix ! Holds 2D simplex the CLUBB constant parameters
 
   real, allocatable, dimension(:), public :: & 
   param_vals_spread,  & ! Amount to vary each respec. constant by
-  cost_fnc_vector    ! cache of differences between the LES and HOC
+  cost_fnc_vector    ! cache of differences between the LES and CLUBB
 
   real, allocatable, dimension(:), private ::  & 
   rand_vect ! A vector of random reals for initializing the x array
@@ -294,7 +294,7 @@ module error
    allocate( rand_vect(ndim), param_vals_matrix(ndim+1,ndim), & 
              param_vals_spread(ndim), cost_fnc_vector(ndim+1) )
 
-    ! Initialize the HOC parameter spread 
+    ! Initialize the CLUBB parameter spread 
     param_vals_spread(1:ndim)  = rtmp(params_index(1:ndim))
 
     ! Copy varying parameters into the first row of the simplex
@@ -376,7 +376,7 @@ module error
   !       _Numerical Recipes in Fortran 90_ source code (Routine)
   !-----------------------------------------------------------------------
 
-  use hoc, only: hoc_model ! Procedure(s)
+  use clubb_driver, only: run_clubb ! Procedure(s)
 
   use grads_common, only: grads_zlvl, grads_average_interval ! Procedure(s)
 
@@ -402,12 +402,12 @@ module error
   ! Local Variables
 
   real, dimension(nparams) :: & 
-  params_local ! Local copy of the HOC parameters fed into hoc_model
+  params_local ! Local copy of the CLUBB parameters fed into run_clubb
 
   ! These are read after each run from the GrADS control files
   integer ::  & 
   les_nz,  & ! Extent of the LES domain in the z dimension
-  hoc_nz  ! Extent of the HOC domain in the z dimension
+  hoc_nz  ! Extent of the CLUBB domain in the z dimension
 
   character(50) ::  & 
   errorfile ! nml filename for invalid runs
@@ -421,7 +421,7 @@ module error
   integer ::  & 
   c_terms ! num of terms in err_sum (for normalization)
 
-  ! LES and HOC values over nz z-levels
+  ! LES and CLUBB values over nz z-levels
   REAL, DIMENSIon(:), allocatable ::  & 
   hoc_zl, & 
   hoc2_zl, & 
@@ -471,7 +471,7 @@ module error
   err_code     = clubb_no_error
   run_stat(1:c_total) = clubb_no_error
 
-  ! Copy simplex into a vector of all possible HOC parameters
+  ! Copy simplex into a vector of all possible CLUBB parameters
   do i=1, nparams, 1
     ! If the variable isn't in the simplex, leave it as is
     params_local(i) = params(i)
@@ -489,7 +489,7 @@ module error
 
 !-----------------------------------------------------------------------
 
-  ! Cycle through all the model cases specified for HOC
+  ! Cycle through all the model cases specified for CLUBB
 
   ! OpenMP directives should work as expected now, assuming new
   ! model variables are declared threadprivate -dschanen 31 Jan 2007
@@ -499,11 +499,11 @@ module error
   do c_run=1, c_total, 1
 
     ! We comment this out because OpenMP doesn't like it
-    !write(6,'(a)') "Calling HOC with case "//trim( run_file(c_run) )
+    !write(6,'(a)') "Calling CLUBB with case "//trim( run_file(c_run) )
 
-    ! Run the HOC model with parameters as input
+    ! Run the CLUBB model with parameters as input
 
-    call hoc_model & 
+    call run_clubb & 
          ( params_local, run_file(c_run), run_stat(c_run),  & 
            .false., .false. )
 
@@ -550,7 +550,7 @@ module error
       stop "Allocation of arrays in minimization function failed"
     end if
 
-    ! Start with first HOC & LES variables, then loop through and 
+    ! Start with first CLUBB & LES variables, then loop through and 
     ! calculate the mean squared difference for all the variables
     do i=1, v_total, 1 
 
@@ -563,14 +563,14 @@ module error
 
       if ( l_error ) stop "The specified LES variable was invalid"
 
-      ! Read in HOC grads data for one variable, averaged
+      ! Read in CLUBB grads data for one variable, averaged
       ! over specified time intervals
       hoc_zl =  & 
       grads_average_interval & 
       ( hoc_stats_file(c_run), hoc_nz,  & 
         time(c_run,:), hoc_v(i), 1, l_error )
 
-      if ( l_error ) stop "The specified HOC variable was invalid"
+      if ( l_error ) stop "The specified CLUBB variable was invalid"
 
       ! The same variable, with npower = 2
       hoc2_zl =  & 
@@ -578,11 +578,11 @@ module error
       ( hoc_stats_file(c_run), hoc_nz, & 
         time(c_run,:), hoc_v(i), 2, l_error )
 
-      if ( l_error ) stop "The specified HOC variable was invalid"
+      if ( l_error ) stop "The specified CLUBB variable was invalid"
 
       !-----------------------------------------------------------------------
 
-      ! Calculate the mean squared difference between the HOC 
+      ! Calculate the mean squared difference between the CLUBB 
       ! and the LES variables
 
       ! In order to deal with differences in order of magnitude 
@@ -747,7 +747,7 @@ module error
 
   ! Write variables to results file 
   ! All this is based on the previous namelists in error.in, 
-  ! except for the constants parameters for HOC
+  ! except for the constants parameters for CLUBB
 
   write(unit=20,fmt=*) "! Parameter file " // results_f
   write(unit=20,fmt=*) "&stats"
@@ -797,7 +797,7 @@ module error
 
   write(unit=20,fmt=*) "&initvars"
 
-  ! Copy simplex into a vector of all possible HOC parameters
+  ! Copy simplex into a vector of all possible CLUBB parameters
   do i=1, nparams, 1
     ! If the variable isn't in the simplex, leave it as is
     params_local(i) = params(i)
@@ -812,7 +812,7 @@ module error
     end do
   end do
 
-  ! Output optimal values and all possible HOC parameters
+  ! Output optimal values and all possible CLUBB parameters
   do i=1, nparams, 1
     write(unit=20,fmt='(A18,F27.20)') & 
       trim( params_list(i) )//" = ", params_local(i)
@@ -820,7 +820,7 @@ module error
   write(unit=20,fmt=*) "/"
 
   write(unit=20,fmt=*) "&initspread"
-  ! Copy the spread into a vector of all possible HOC parameters
+  ! Copy the spread into a vector of all possible CLUBB parameters
   do i=1, nparams, 1
     ! If the variable isn't being changed, set it to zero
     params_local(i) = 0.0
@@ -899,7 +899,7 @@ module error
   write(unit=20,fmt=*) "/"
 
   write(unit=20,fmt=*) "&initvars"
-  ! Copy simplex into a vector of all possible HOC parameters
+  ! Copy simplex into a vector of all possible CLUBB parameters
   do i=1, nparams, 1
     ! If the variable isn't in the simplex, leave it as is
     params_local(i) = params(i)
@@ -914,7 +914,7 @@ module error
     end do
   end do
 
-  ! Output optimal values and all possible HOC parameters
+  ! Output optimal values and all possible CLUBB parameters
   do i=1, nparams, 1
     write(unit=20,fmt='(A18,F27.20)') & 
       trim( params_list(i) )//" = ", params_local(i)
@@ -938,7 +938,7 @@ module error
 !       None
 
 !       Notes:
-!       Configured to do interpolation on LES / HOC comparisons on the 
+!       Configured to do interpolation on LES / CLUBB comparisons on the 
 !       momentum grid.
 !-----------------------------------------------------------------------
   implicit none
@@ -948,11 +948,11 @@ module error
 
   ! Input Variables
   integer, intent(in) ::  & 
-  hoc_nz,  & ! Vertical extent for HOC
+  hoc_nz,  & ! Vertical extent for CLUBB
   les_nz  ! Vertical extent for the LES
 
   real, intent(in), dimension(hoc_nz) ::  & 
-  hoc_zl  ! HOC GrADS variable [units vary]
+  hoc_zl  ! CLUBB GrADS variable [units vary]
 
   real, intent(in), dimension(les_nz) ::  & 
   les_zl  ! The LES GrADS variable [units vary]
@@ -991,7 +991,7 @@ module error
     mean_sqr_diff_zm = sum( tmp_zl(1:(les_nz)), 1 )
 
   case default !
-    stop "Not able to handle specified number of HOC z-levels"
+    stop "Not able to handle specified number of CLUBB z-levels"
   end select
 
   return
@@ -1008,7 +1008,7 @@ module error
 !       None
 
 !       Notes:
-!       Configured to do interpolation on LES / HOC comparisons on the 
+!       Configured to do interpolation on LES / CLUBB comparisons on the 
 !       thermodynamic grid.  We use a modified version for tuning runs
 !       now, see below.
 !-----------------------------------------------------------------------
@@ -1019,11 +1019,11 @@ module error
 
   ! Input Variables
   integer, intent(in) ::  & 
-  hoc_nz,  & ! Vertical extent for HOC
+  hoc_nz,  & ! Vertical extent for CLUBB
   les_nz  ! Vertical extent for the LES
 
   real, intent(in), dimension(hoc_nz) ::  & 
-  hoc_zl  ! HOC GrADS variable [units vary]
+  hoc_zl  ! CLUBB GrADS variable [units vary]
 
   real, intent(in), dimension(les_nz) ::  & 
   les_zl  ! The LES GrADS variable [units vary]
@@ -1062,8 +1062,8 @@ module error
     mean_sqr_diff_zt = sum( tmp_zl(1:(les_nz)), 1 )
 
   case default !
-    write(0,*) "HOC:", hoc_nz, "LES:", les_nz
-    stop "Not able to handle specified number of HOC z-levels"
+    write(0,*) "CLUBB:", hoc_nz, "LES:", les_nz
+    stop "Not able to handle specified number of CLUBB z-levels"
   end select
 
   return
@@ -1085,7 +1085,7 @@ module error
 !       It allows the tuner to avoid very noisy simulations, although some
 !       noise might still be present.
 !  
-!       Configured to do interpolation on LES / HOC comparisons on the 
+!       Configured to do interpolation on LES / CLUBB comparisons on the 
 !       thermodynamic grid
 
 !       References:
@@ -1099,12 +1099,12 @@ module error
 
   ! Input Variables
   integer, intent(in) ::  & 
-  hoc_nz,  & ! Vertical extent for HOC
+  hoc_nz,  & ! Vertical extent for CLUBB
   les_nz  ! Vertical extent for the LES
 
   real, intent(in), dimension(hoc_nz) ::  & 
-  hoc_zl,  & ! HOC GrADS variable [units vary]
-  hoc2_zl ! HOC GrADS variable [units vary]
+  hoc_zl,  & ! CLUBB GrADS variable [units vary]
+  hoc2_zl ! CLUBB GrADS variable [units vary]
 
   real, intent(in), dimension(les_nz) ::  & 
   les_zl  ! The LES GrADS variable [units vary]
@@ -1145,7 +1145,7 @@ module error
     mean_sqr_diff_2_zt = sum( tmp_zl(1:(les_nz)), 1 )
 
   case default !
-    stop "Not able to handle specified number of HOC z-levels"
+    stop "Not able to handle specified number of CLUBB z-levels"
   end select
 
   return

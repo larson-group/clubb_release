@@ -62,7 +62,7 @@ LAPACK = -xlic_lib=sunperf
 # Use -s to strip (no debugging); 
 # -Bstatic; for static linking of libraries
 # -xlibmopt; link the optimized version of libm (this can affect results)
-LDFLAGS = -L$(LIBDIR) -R$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf -xlibmopt $(LAPACK)
+LDFLAGS = -L$(LIBDIR) -R$(LIBDIR) -lclubb_param -lclubb_bugsrad -L$(NC_LOC)/lib -lnetcdf -xlibmopt $(LAPACK)
 
 # == Static library processing ==
 AR = ar

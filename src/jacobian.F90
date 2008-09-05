@@ -12,8 +12,8 @@ program jacobian
 !     None
 !-----------------------------------------------------------------------
 
-use hoc, only:  & 
-    hoc_model ! Procedure(s)
+use clubb_driver, only:  & 
+    run_clubb ! Procedure(s)
 use parameter_indices, only:  & 
     nparams ! Variable(s)
 use parameters_tunable, only:  & 
@@ -160,7 +160,7 @@ implicit none
       hoc_params%value(i), hoc_params%value(i) * delta_factor
   end do
 
-  call hoc_model  & 
+  call run_clubb  & 
        ( hoc_params%value(:), run_file, err_code,  & 
         .false., .false. )
 
@@ -243,7 +243,7 @@ implicit none
     tmp_param = hoc_params%value(i)
     hoc_params%value(i) = hoc_params%value(i) * delta_factor
 
-    call hoc_model & 
+    call run_clubb & 
       ( hoc_params%value(:), trim( run_file ), err_code, & 
          .false., .false. )
 

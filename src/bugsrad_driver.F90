@@ -1,16 +1,16 @@
 !-----------------------------------------------------------------------
 ! $Id$
-module bugsrad_hoc_mod
+module bugsrad_clubb_mod
 
 implicit none
 
-public :: bugsrad_hoc
+public :: bugsrad_clubb
 
 private ! Default Scope
 
 contains
 
-subroutine bugsrad_hoc &
+subroutine bugsrad_clubb &
            ( alt, nz, lin_int_buffer,        &
              lat_in_degrees, lon_in_degrees, &
              day, month, year, time,         &
@@ -248,7 +248,7 @@ subroutine bugsrad_hoc &
     j = j + 1
     if ( (j + std_atmos_buffer ) > std_atmos_dim ) then
       write(fstderr,*) "j = ", j, "alt = ", alt(nz), " m"
-      stop "bugsrad_hoc: cannot handle this altitude" ! exceeds a 50 km altitude
+      stop "bugsrad_clubb: cannot handle this altitude" ! exceeds a 50 km altitude
     end if
   end do
 
@@ -361,7 +361,7 @@ subroutine bugsrad_hoc &
  
 
   return
-end subroutine bugsrad_hoc
+end subroutine bugsrad_clubb
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
@@ -396,4 +396,4 @@ function flip( x, xdim )
 end function flip
 !-----------------------------------------------------------------------
 
-end module bugsrad_hoc_mod
+end module bugsrad_clubb_mod

@@ -1,7 +1,7 @@
 !----------------------------------------------------------------------
 ! $Id$
 
-program hoc_tuner 
+program clubb_tuner 
 
 !     Description:
 !     ``Tunes'' constants in hoc so that the output matches LES output.
@@ -124,7 +124,7 @@ end if
 
 stop "Program exited normally"
 
-end program hoc_tuner
+end program clubb_tuner
 
 !------------------------------------------------------------------------
 subroutine amoeba_driver

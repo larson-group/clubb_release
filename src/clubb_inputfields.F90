@@ -1,14 +1,14 @@
 !-----------------------------------------------------------------------
 ! $Id$
 
-  program hoc_inputfields
+  program clubb_inputfields
 
 !       Description: 
 !       This is essentially a minimalist frontend for the hoc subroutine
 !       This version is modified to allow the input of LES, HOC or 
 !       some other pre-calculated input data.
 !-----------------------------------------------------------------------
-  use hoc, only: hoc_model
+  use clubb_driver, only: run_clubb
 
   use inputfields, only: datafile, input_rtm, input_vm,  & ! Variable(s)
       input_um, input_thlm, input_rtpthlp, input_upwp,  & 
@@ -73,15 +73,14 @@
   call set_filenames( )
 
   ! Run the model
-  call hoc_model & 
-       ( params, trim( run_file ), err_code, stdout, .true. )
+  call run_clubb( params, trim( run_file ), err_code, stdout, .true. )
 
-if ( fatal_error(err_code)) then
+if ( fatal_error(err_code) ) then
  
   stop "Model wasn't valid, check your constants and field input"
 else
   stop "Program exited normally"
 endif 
 
-end program hoc_inputfields
+end program clubb_inputfields
 !-----------------------------------------------------------------------

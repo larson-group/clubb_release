@@ -1,14 +1,14 @@
 !----------------------------------------------------------------------
 ! $Id$
 
-program hoc_standalone
+program clubb_standalone
 
 ! Description:
-! This is essentially a minimalist frontend for HOC.
+! This is essentially a minimalist frontend for CLUBB.
 !
 !----------------------------------------------------------------------
 
-  use hoc, only: hoc_model ! Procedure(s)
+  use clubb_driver, only: run_clubb ! Procedure(s)
   
   use error_code, only: clubb_no_error ! Variable(s)
 
@@ -65,7 +65,7 @@ program hoc_standalone
   err_code = clubb_no_error
 
   ! Run the model
-  call hoc_model( params, namelist_filename, err_code, l_stdout, l_input_fields )
+  call run_clubb( params, namelist_filename, err_code, l_stdout, l_input_fields )
 
   if ( fatal_error( err_code ) ) then
     stop "Model wasn't valid, check your parameters and timestep"
@@ -75,4 +75,4 @@ program hoc_standalone
 
   end if 
 
-end program hoc_standalone
+end program clubb_standalone

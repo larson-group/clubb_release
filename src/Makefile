@@ -3,7 +3,7 @@
 #
 # This version should work with GNU make only.
 #
-# For HOC we edit this by hand rather than implementing imake or automake.
+# For CLUBB we edit this by hand rather than implementing imake or automake.
 #
 # Include your machine specific file here. Select the one appropriate for your
 # platform or create a customized one.
@@ -38,7 +38,7 @@ NR_DIR = NR
 # should *not* be used, and a checkout of clubb_dist will omit
 # the COAMPS and NR directories, and so COAMPS_MICRO = null.
 #   For those w/ access to COAMPS and NR, the -DCOAMPS flag can be used,
-# and a checkout of hoc_minimal, e.g. will contain the COAMPS and NR
+# and a checkout of clubb_minimal, e.g. will contain the COAMPS and NR
 # directories, and COAMPS_MICRO = list of COAMPS .o files.
 # In either case, CLUBB should compile.  
 COAMPS_MICRO = $(patsubst %.F,%.o, $(notdir $(wildcard $(COAMPS_MICRO_DIR)/*.F)))
@@ -62,7 +62,7 @@ BUGS_RAD = kinds.o std_atmosphere_mod.o bugsrad_planck.o bugsrad_physconst.o \
 	two_rt_sw_bs.o bugsrad_driver.o
 
 MODEL = $(COAMPS_MICRO) \
-	hoc.o sounding.o rad_lwsw.o cloud_rad.o astex.o atex.o fire.o bomex.o \
+	clubb_driver.o sounding.o rad_lwsw.o cloud_rad.o astex.o atex.o fire.o bomex.o \
 	arm.o arm_97.o arm_0003.o arm_3year.o dycoms2_rf01.o \
 	dycoms2_rf02.o cloud_sed_mod.o mpace_a.o mpace_b.o \
 	nov11.o jun25.o clex9_nov02.o clex9_oct14.o wangara.o \
@@ -91,24 +91,24 @@ INTERFACING = gradsaverage.o inputfields.o inputgrads.o
 
 TUNING = $(MODEL) $(INTERFACING) $(NUM_REC) error.o
 
-INT2TXT		= int2txt.o
-HOC_TUNER	= $(MODEL) $(INTERFACING) $(NUM_REC) error.o hoc_tuner.o
-HOC_STANDALONE	= $(MODEL) $(INTERFACING) hoc_standalone.o
-COMPARE_RUNS	= $(INTERFACING) compare_runs.o
-JACOBIAN	= $(MODEL) $(INTERFACING) jacobian.o
-HOC_INPUTFIELDS	= $(MODEL) $(INTERFACING) hoc_inputfields.o
-#HOC_BUDGET_TERMS= $(MODEL) $(INTERFACING) $(NUM_REC) error.o budget_terms.o hoc_tuner_budget_terms.o
+INT2TXT		  = int2txt.o
+CLUBB_TUNER	  = $(MODEL) $(INTERFACING) $(NUM_REC) error.o clubb_tuner.o
+CLUBB_STANDALONE  = $(MODEL) $(INTERFACING) clubb_standalone.o
+COMPARE_RUNS	  = $(INTERFACING) compare_runs.o
+JACOBIAN	  = $(MODEL) $(INTERFACING) jacobian.o
+CLUBB_INPUTFIELDS = $(MODEL) $(INTERFACING) clubb_inputfields.o
+#CLUBB_BUDGET_TERMS= $(MODEL) $(INTERFACING) $(NUM_REC) error.o budget_terms.o clubb_tuner_budget_terms.o
 
 # List of files to check for compiler warnings
-WARNABLE = $(filter std_atmosphere_mod.o calendar.o cos_solar_zen.o bugsrad_hoc.o, $(BUGS_RAD) ) \
+WARNABLE = $(filter std_atmosphere_mod.o calendar.o cos_solar_zen.o bugsrad_driver.o, $(BUGS_RAD) ) \
 	$(filter coamps_micro_driver.o saturation.o, $(COAMPS_MICRO) ) \
 	$(filter-out AiryFunction.o Parabolic.o Parabolic_Constants.o $(COAMPS_MICRO), $(MODEL) ) \
 	$(PARAMETERIZATION) 
 
-# == Targets == ( hoc_tuner and jacobian assume statistics )
-all:	hoc_standalone hoc_tuner int2txt hoc_inputfields  \
+# == Targets == ( clubb_tuner and jacobian assume statistics )
+all:	clubb_standalone clubb_tuner int2txt clubb_inputfields  \
 	compare_runs jacobian
-# hoc_tuner_budget_terms
+# clubb_tuner_budget_terms
 # Note:
 # The budget terms tuner is currently non-working
 # -dschanen 15 March 2007
@@ -126,7 +126,7 @@ VPATH=.:LH:GCSS:BUGSrad:HOC_parameterization:$(OBJDIR):$(NR_DIR):$(COAMPS_MICRO_
 
 # Cancel implicit rules (e.g for modula-2 `m2c -c $@.mod')
 .SUFFIXES:
-# Define valid Fortran suffixes for HOC
+# Define valid Fortran suffixes for CLUBB
 .SUFFIXES: .a .o .f .F .f90 .F90 .h
 
 .f.o:
@@ -141,50 +141,50 @@ VPATH=.:LH:GCSS:BUGSrad:HOC_parameterization:$(OBJDIR):$(NR_DIR):$(COAMPS_MICRO_
 
 # == Static libraries (default) ==
 
-libhoc_param.a:	$(PARAMETERIZATION)
+libclubb_param.a:	$(PARAMETERIZATION)
 	cd $(OBJDIR); $(AR) $(ARFLAGS) $(LIBDIR)/$@ $(PARAMETERIZATION)
 	$(RANLIB) $(LIBDIR)/$@
 
-libhoc_bugsrad.a:	$(BUGS_RAD)
+libclubb_bugsrad.a:	$(BUGS_RAD)
 	cd $(OBJDIR); $(AR) $(ARFLAGS) $(LIBDIR)/$@ $(OBJDIR)/$(BUGS_RAD)
 	$(RANLIB) $(LIBDIR)/$@
 
 # == Shared libraries ==
 
-libhoc_param.so:	$(PARAMETERIZATION)
+libclubb_param.so:	$(PARAMETERIZATION)
 	cd $(OBJDIR); $(SHARED) $(SHAREDFLAGS) -o $(LIBDIR)/$@ $(OBJDIR)/$(PARAMETERIZATION)
 
-libhoc_bugsrad.so:	$(BUGS_RAD)
+libclubb_bugsrad.so:	$(BUGS_RAD)
 	cd $(OBJDIR); $(SHARED) $(SHAREDFLAGS) -o $(LIBDIR)/$@ $(OBJDIR)/$(BUGS_RAD)
 
 # Remove comment to use shared libs (make sure you know what you're doing)
-HOCLIBS = libhoc_param.a libhoc_bugsrad.a
-#HOCLIBS = libhoc_param.so libhoc_bugsrad.so
+CLUBBLIBS = libclubb_param.a libclubb_bugsrad.a
+#CLUBBLIBS = libclubb_param.so libclubb_bugsrad.so
 
 int2txt: $(INT2TXT)
 		$(FC) $(FCFLAGS) $(OBJDIR)/$@.o -o $(BINDIR)/int2txt
 
-hoc_tuner: $(HOCLIBS) $(HOC_TUNER)
-	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/hoc_tuner \
-	$(HOC_TUNER) $(LDFLAGS)
+clubb_tuner: $(CLUBBLIBS) $(CLUBB_TUNER)
+	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/clubb_tuner \
+	$(CLUBB_TUNER) $(LDFLAGS)
 
-hoc_standalone:	$(HOCLIBS) $(HOC_STANDALONE)
-	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/hoc_standalone \
-	$(HOC_STANDALONE) $(LDFLAGS)  
+clubb_standalone: $(CLUBBLIBS) $(CLUBB_STANDALONE)
+	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/clubb_standalone \
+	$(CLUBB_STANDALONE) $(LDFLAGS)  
 
-hoc_inputfields: $(HOCLIBS) $(HOC_INPUTFIELDS)
-	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/hoc_inputfields \
-	$(HOC_INPUTFIELDS) $(LDFLAGS)
+clubb_inputfields: $(CLUBBLIBS) $(CLUBB_INPUTFIELDS)
+	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/clubb_inputfields \
+	$(CLUBB_INPUTFIELDS) $(LDFLAGS)
 
-#hoc_tuner_budget_terms:	$(HOCLIBS) $(HOC_BUDGET_TERMS)
-#	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/hoc_tuner_budget_terms \
-#	$(OBJDIR)/$(HOC_BUDGET_TERMS) $(LDFLAGS) 
+#clubb_tuner_budget_terms:	$(CLUBBLIBS) $(CLUBB_BUDGET_TERMS)
+#	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/clubb_tuner_budget_terms \
+#	$(OBJDIR)/$(CLUBB_BUDGET_TERMS) $(LDFLAGS) 
 
-jacobian: $(HOCLIBS) $(JACOBIAN)
+jacobian: $(CLUBBLIBS) $(JACOBIAN)
 	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/jacobian \
 	$(JACOBIAN) $(LDFLAGS)
 
-compare_runs:	$(HOCLIBS) $(COMPARE_RUNS)
+compare_runs:	$(CLUBBLIBS) $(COMPARE_RUNS)
 	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/compare_runs \
 	$(COMPARE_RUNS) $(LDFLAGS)
 
@@ -193,11 +193,11 @@ clean:
 
 distclean: 
 	-rm -f $(OBJDIR)/*.o $(OBJDIR)/*.mod $(OBJDIR)/core* \
-	$(BINDIR)/hoc_tuner \
+	$(BINDIR)/clubb_tuner \
 	$(BINDIR)/int2txt \
-	$(BINDIR)/hoc_tuner_budget_terms \
-	$(BINDIR)/hoc_standalone \
-	$(BINDIR)/hoc_inputfields \
+	$(BINDIR)/clubb_tuner_budget_terms \
+	$(BINDIR)/clubb_standalone \
+	$(BINDIR)/clubb_inputfields \
 	$(BINDIR)/compare_runs \
 	$(BINDIR)/jacobian \
 	$(LIBDIR)/lib*

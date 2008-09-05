@@ -49,7 +49,7 @@ LAPACK = -L/usr/local/lib -llapack -lblas
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
 # Use -Wl,-rpath <library path> to set a search path for shared libs
-LDFLAGS = -L$(LIBDIR) -R$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf $(LAPACK)
+LDFLAGS = -L$(LIBDIR) -R$(LIBDIR) -lclubb_param -lclubb_bugsrad -L$(NC_LOC)/lib -lnetcdf $(LAPACK)
 
 # == Compiler flags (all) ==
 # Preprocessing Directives:

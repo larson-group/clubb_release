@@ -1,10 +1,10 @@
 !-----------------------------------------------------------------------
 ! $Id$
 
-module hoc
+module clubb_driver
 
 ! Description:
-! Contains the necessary subroutines to execute individual HOC 
+! Contains the necessary subroutines to execute individual CLUBB 
 ! model runs, using one of the driver programs (the simplest case
 ! being the hoc_standalone program).
 !-----------------------------------------------------------------------
@@ -13,14 +13,14 @@ module hoc
 
   implicit none
 
-  ! Setup hoc_model() as the sole external interface
+  ! Setup run_clubb() as the sole external interface
   private ::  & 
-    hoc_initialize, & 
-    hoc_forcings_timestep, & 
-    hoc_restart
+    initialize_clubb, & 
+    advance_clubb_forcings, & 
+    restart_clubb
 
   public :: &
-    hoc_model
+    run_clubb
 
   private ! Default to private
 
@@ -93,14 +93,14 @@ module hoc
   contains
 
 !-----------------------------------------------------------------------
-  subroutine hoc_model & 
+  subroutine run_clubb & 
              ( params, runfile, err_code, l_stdout, l_input_fields )
 !       Description:
 !       Subprogram to integrate the pde equations for pdf closure.
 !       This is the standard call.
 
-!       Calls:  subroutine hoc_initialize (once)
-!          subroutine hoc_forcings_timestep (ifinal times)
+!       Calls:  subroutine initialize_clubb (once)
+!          subroutine advance_clubb_forcings (ifinal times)
 !          subroutine hoc_closure_timestep (ifinal*niterlong times)
 !          subroutine deallocate_model_arrays (once)
 !          function invalid_model_arrays
@@ -515,7 +515,7 @@ module hoc
       time_current = time_initial
       iinit = 1
 
-      call hoc_initialize( iunit, runfile, psfc, &              ! Intent(in)
+      call initialize_clubb( iunit, runfile, psfc, &              ! Intent(in)
                            thlm, rtm, um, vm, &                 ! Intent(inout)
                            ug, vg, wp2, rcm,  &                 ! Intent(inout)
                            wm_zt, wm_zm, em, exner, &           ! Intent(inout)
@@ -549,7 +549,7 @@ module hoc
  
       iinit = floor( ( time_current - time_initial ) / dtmain ) + 1
 
-      call hoc_restart( iunit, runfile, restart_path_case, time_restart,  &     ! Intent(in)
+      call restart_clubb( iunit, runfile, restart_path_case, time_restart,  &     ! Intent(in)
                         thlm, rtm, um, vm, ug, vg, upwp, vpwp, wm_zt, wm_zm,  & ! Intent(inout)
                         um_ref, vm_ref, wpthlp, wprtp, sclrm, edsclrm, &        ! Intent(inout)
                         wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )             ! Intent(out)
@@ -608,7 +608,7 @@ module hoc
         exit ! Leave the main loop
       end if
 
-      call hoc_forcings_timestep( dtmain, &     ! Intent(in)
+      call advance_clubb_forcings( dtmain, &     ! Intent(in)
                                   err_code )    ! Intent(out)
 
       if ( err_code == clubb_rtm_level_not_found ) exit
@@ -687,10 +687,10 @@ module hoc
     call stats_finalize( )
 
     return
-  end subroutine hoc_model
+  end subroutine run_clubb
 
 !-----------------------------------------------------------------------
-        subroutine hoc_initialize( iunit, runfile, psfc, &
+        subroutine initialize_clubb( iunit, runfile, psfc, &
                                    thlm, rtm, um, vm, & 
                                    ug, vg, wp2, rcm, & 
                                    wm_zt, wm_zm, em, exner, &
@@ -701,7 +701,7 @@ module hoc
 
 !       Description:
 !       Execute the necessary steps for the initialization of the 
-!       HOC model run. 
+!       CLUBB model run. 
 
 !       Calls: ( all these are external except compute_length, sat_mixrat_liq,
 !       stat_rcm )
@@ -1205,15 +1205,15 @@ module hoc
        end if
 
        return
-       end subroutine hoc_initialize
+       end subroutine initialize_clubb
 !-----------------------------------------------------------------------
-       subroutine hoc_restart( iunit, runfile, restart_path_case, time_restart,  & 
+       subroutine restart_clubb( iunit, runfile, restart_path_case, time_restart,  & 
                                thlm, rtm, um, vm, ug, vg, upwp, vpwp, wm_zt, wm_zm,  & 
                                um_ref, vm_ref, wpthlp, wprtp, sclrm, edsclrm, & 
                                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )
 !       Description:
 !       Execute the necessary steps for the initialization of the 
-!       HOC model to a designated point in the submitted GrADS file. 
+!       CLUBB model to a designated point in the submitted GrADS file. 
 !-----------------------------------------------------------------------
         use inputfields,only:  & 
             datafile, input_type, input_um, input_vm,  & ! Variable(s)
@@ -1399,10 +1399,10 @@ module hoc
         vpwp_sfc   = vpwp(1)
 
         return
-        end subroutine hoc_restart
+        end subroutine restart_clubb
 
 !----------------------------------------------------------------------
-subroutine hoc_forcings_timestep( dt, err_code )
+subroutine advance_clubb_forcings( dt, err_code )
 
 ! Description:
 ! Calculate tendency and surface variables
@@ -1523,7 +1523,7 @@ use clex9_oct14, only: clex9_oct14_tndcy ! Procedure(s)
 use wangara, only: wangara_tndcy, wangara_sfclyr ! Procedure(s)
 
 #ifdef radoffline
-   use bugsrad_hoc_mod, only: bugsrad_hoc ! Procedure(s)
+   use bugsrad_clubb_mod, only: bugsrad_clubb ! Procedure(s)
 #endif
 
 
@@ -1708,7 +1708,7 @@ select case ( runtype )
    case default
 
       write(unit=fstderr,fmt=*)  & 
-         "hoc_forcings_timestep: Don't know how to handle " & 
+         "advance_clubb_forcings: Don't know how to handle " & 
          //"LS forcing for runtype: "//trim( runtype )
       stop
 
@@ -1944,7 +1944,7 @@ endif
 
 if ( l_bugsrad ) then
         
-#ifdef radoffline /*This directive is needed for BUGSrad to work with HOC.*/
+#ifdef radoffline /*This directive is needed for BUGSrad to work with CLUBB.*/
 
    ! Assign pointers to snow and ice
    if ( iirsnowm > 0 ) then
@@ -2013,7 +2013,7 @@ if ( l_bugsrad ) then
 
    ! Use a a new formula that creates and evenly spaced grid
    ! between the model domain top and the standard atmosphere
-   ! table.  e.g. if the HOC model top is 3200m, and the spacing
+   ! table.  e.g. if the CLUBB model top is 3200m, and the spacing
    ! between gr%nnzp-1 and gr%nnzp is 40m, then lin_int_buffer is
    ! 19 and each layer of the buffer is 40m deep. -dschanen 14 May 08
    lin_int_buffer =  & 
@@ -2022,7 +2022,7 @@ if ( l_bugsrad ) then
 
     ! print *, "buffer = ", lin_int_buffer !%% debug
 
-   call bugsrad_hoc( gr%zm, gr%nnzp, lin_int_buffer,  & ! In
+   call bugsrad_clubb( gr%zm, gr%nnzp, lin_int_buffer,  & ! In
                      rlat, rlon,                      & ! In
                      day, month, year, time_current,  & ! In
                      thlm, rcm, rtm, rsnowm, ricem,   & ! In
@@ -2083,6 +2083,6 @@ endif
 
  
 return
-end subroutine hoc_forcings_timestep
+end subroutine advance_clubb_forcings
 
-end module hoc
+end module clubb_driver

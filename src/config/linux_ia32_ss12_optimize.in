@@ -70,7 +70,7 @@ LAPACK = -L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas
 # Use -s to strip (no debugging); 
 # -Bstatic; for static linking of libraries
 # -xlibmopt; link the optimized version of libm (this seems not to work on GNU/Linux)
-LDFLAGS = -L$(LIBDIR) -R$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf $(LAPACK)
+LDFLAGS = -L$(LIBDIR) -R$(LIBDIR) -lclubb_param -lclubb_bugsrad -L$(NC_LOC)/lib -lnetcdf $(LAPACK)
 
 # == Static library processing ==
 AR = ar
