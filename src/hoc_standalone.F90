@@ -1,10 +1,10 @@
 !----------------------------------------------------------------------
 ! $Id$
 
-  program hoc_standalone
+program hoc_standalone
 
-!       Description:
-!       This is essentially a minimalist frontend for HOC.
+! Description:
+! This is essentially a minimalist frontend for HOC.
 !
 !----------------------------------------------------------------------
 
@@ -28,59 +28,51 @@
   ! Constant parameters
   integer, parameter :: iunit = 10
 
-  character(len=13), parameter :: fstandalone = "standalone.in"
+  character(len=13), parameter :: &
+    namelist_filename = "clubb.in"  ! Text file with the namelists
+
+  logical, parameter :: &
+    l_stdout       = .true., &
+    l_input_fields = .false.
 
   ! Run information
   real, dimension(nparams) :: & 
-  params  ! Array of the model constants
-
-  character(len=50) :: run_file ! Text file with the namelists
-
-  logical :: stdout
+    params  ! Array of the model constants
 
   ! Internal variables
   integer :: err_code 
 
   integer :: i ! Loop iterator
 
-  ! Namelist
-  namelist /model/ run_file, stdout
-
 !-----------------------------------------------------------------------
 
-  ! Read in model constant values
-  call read_parameters( iunit, fstandalone, params )
+  ! --- Begin Code ---
 
-  ! Read in model namelist
-  open(unit=iunit, file=fstandalone, status='old', action='read')
-
-  read(unit=iunit, nml=model)
-
-  close(unit=iunit)
+  ! Read in model parameter values
+  call read_parameters( iunit, namelist_filename, params )
 
   ! If standard output (stdout) is selected, print the list of
   ! parameters that are being used to the screen before the run.
-  if ( stdout ) then
-     write(unit=*,fmt='(4x,A9,5x,11x,A5)') "Parameter", "Value"
-     write(unit=*,fmt='(4x,A9,5x,11x,A5)') "---------", "-----"
-     do i = 1, nparams, 1
-        write(unit=*,fmt='(A18,F27.20)') & 
-           params_list(i) // " = ", params(i)
-     enddo
-  endif
+  if ( l_stdout ) then
+    write(unit=*,fmt='(4x,A9,5x,11x,A5)') "Parameter", "Value"
+    write(unit=*,fmt='(4x,A9,5x,11x,A5)') "---------", "-----"
+    do i = 1, nparams, 1
+       write(unit=*,fmt='(A18,F27.20)') params_list(i) // " = ", params(i)
+    end do
+  end if
 
   ! Initialize status of run 
   err_code = clubb_no_error
 
   ! Run the model
-  call hoc_model & 
-       ( params, trim( run_file ), err_code, stdout, .false. )
+  call hoc_model( params, namelist_filename, err_code, l_stdout, l_input_fields )
 
-if ( fatal_error(err_code) ) then
+  if ( fatal_error( err_code ) ) then
+    stop "Model wasn't valid, check your parameters and timestep"
 
-  stop "Model wasn't valid, check your constants"
-else
-  stop "Program exited normally"
-end if 
+  else
+    stop "Program exited normally"
+
+  end if 
 
 end program hoc_standalone
