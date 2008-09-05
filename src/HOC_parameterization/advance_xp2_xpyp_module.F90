@@ -342,7 +342,7 @@ if ( l_3pt_sqd_dfsn ) then
 
    enddo
 
-   ! Define Kw2_rtp2, Kw2_thlp2, and Kw3_rtpthlp
+   ! Define Kw2_rtp2, Kw2_thlp2, and Kw2_rtpthlp
    do k = 1, gr%nnzp, 1
 
       ! Kw2_rtp2 must have units of m^2/s.  Since rtp2_zt_sqd_3pt has units of 
@@ -360,6 +360,17 @@ if ( l_3pt_sqd_dfsn ) then
       ! case.
       Kw2_rtpthlp(k) = Kw2(k) + c_Ksqd * rtpthlp_zt_sqd_3pt(k) 
       ! Vince Larson increased by c_Ksqd, 29Jan2008
+
+   enddo
+
+else  ! Three-point squared diffusion turned off.
+
+   ! Define Kw2_rtp2, Kw2_thlp2, and Kw2_rtpthlp
+   do k = 1, gr%nnzp, 1
+
+      Kw2_rtp2(k)    = Kw2(k)
+      Kw2_thlp2(k)   = Kw2(k)
+      Kw2_rtpthlp(k) = Kw2(k)
 
    enddo
 
