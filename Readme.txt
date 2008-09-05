@@ -438,8 +438,8 @@ Go to the main directory (hoc_v2.2_tuner/) and follow these instructions:
          amount of disk space you will need.  You need to take into account
          the size of all the LES data files for each case you are tuning for.
          You also need to take into account the size of the binary
-         (executable) files that you will need.  These files include hoc_tuner,
-         hoc_standalone, and int2txt.  Finally, you need to know the size of
+         (executable) files that you will need.  These files include clubb_tuner,
+         clubb_standalone, and int2txt.  Finally, you need to know the size of
          the HOC output files for each of the cases you are tuning for.  These
          files will be generated when the individual tuning iterations are
          done.  One set of the HOC output files will be generated for each
