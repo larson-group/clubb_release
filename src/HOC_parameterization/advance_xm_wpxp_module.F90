@@ -651,23 +651,13 @@ contains
     real, dimension(gr%nnzp) :: & 
       a1_zt     ! a_1 interpolated to thermodynamic levels              [-]
 
-    ! wtol_sqd = the square of the minimum threshold on w,
-    !     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
-    real :: wtol_sqd
-
     ! Indices
     !integer :: km1
     integer :: k, kp1
     integer :: k_xm, k_wpxp
 
-
     real, dimension(3) :: tmp
 
-
-
-    ! wtol_sqd = the square of the minimum threshold on w,
-    !     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
-    wtol_sqd = wtol * wtol
 
     ! Define a_1 (located on momentum levels).
     ! It is a variable that is a function of sigma_sqd_w (where sigma_sqd_w is
@@ -786,8 +776,7 @@ contains
       = lhs((/3-2,3,3+2/),k_wpxp) & 
       + wpxp_term_ta_lhs( wp2_zt(kp1), wp2_zt(k),  & 
                           a1_zt(kp1), a1_zt(k), & 
-                          wp3(kp1), wp3(k), gr%dzm(k),  & 
-                          wtol_sqd, k )
+                          wp3(kp1), wp3(k), gr%dzm(k), k )
 
       ! LHS turbulent production (tp) term.
       lhs((/3-1,3+1/),k_wpxp) & 
@@ -841,8 +830,7 @@ contains
           tmp(1:3) = & 
           + wpxp_term_ta_lhs( wp2_zt(kp1), wp2_zt(k),  & 
                               a1_zt(kp1), a1_zt(k), & 
-                              wp3(kp1), wp3(k), gr%dzm(k),  & 
-                              wtol_sqd, k )
+                              wp3(kp1), wp3(k), gr%dzm(k), k )
           zmscr04(k) = - tmp(3)
           zmscr05(k) = - tmp(2)
           zmscr06(k) = - tmp(1)
@@ -1637,8 +1625,7 @@ contains
   !=============================================================================
   pure function wpxp_term_ta_lhs( wp2_ztp1, wp2_zt,  & 
                                   a1_ztp1, a1_zt, & 
-                                  wp3p1, wp3, dzm,  & 
-                                  wtol_sqd, level ) & 
+                                  wp3p1, wp3, dzm, level ) & 
   result( lhs )
 
     ! Description:
@@ -1709,6 +1696,9 @@ contains
     use grid_class, only: & 
         gr ! Variable
 
+    use constants, only: &
+        wtol_sqd
+
     implicit none
 
     ! Constant parameters
@@ -1729,8 +1719,7 @@ contains
       a1_zt,       & ! a_1 interpolated to thermodynamic level (k)    [-]
       wp3p1,       & ! w'^3(k+1)                                      [m^3/s^3]
       wp3,         & ! w'^3(k)                                        [m^3/s^3]
-      dzm,         & ! Inverse of grid spacing (k)                    [1/m]
-      wtol_sqd       ! w wind component tolerance squared             [m^2/s^2]
+      dzm            ! Inverse of grid spacing (k)                    [1/m]
 
     integer, intent(in) :: & 
       level ! Central momentum level (on which calculation occurs).

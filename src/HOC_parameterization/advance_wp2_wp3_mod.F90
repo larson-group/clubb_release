@@ -721,8 +721,7 @@ contains
         nu8
 
     use constants, only:  & 
-        wtol,  & ! Variables
-        eps
+        eps ! Variable(s)
 
     use model_flags, only: & 
         l_tke_aniso ! Variables
@@ -998,7 +997,7 @@ contains
                              wp2(k), wp2(km1),  &
                              !a1(k), a1(km1), a3(k), a3(km1),  &
                              a1_zt(k), a3_zt(k),  & 
-                             gr%dzt(k), wtol, k )
+                             gr%dzt(k), k )
 
       ! LHS accumulation (ac) term and pressure term 2 (pr2).
       lhs(3,k_wp3) & 
@@ -1041,7 +1040,7 @@ contains
                                !a1(k), a1(km1),  &
                                !a3(k)+(3.0/2.0), a3(km1)+(3.0/2.0),  &
                                a1_zt(k), a3_zt(k)+(3.0/2.0),  &
-                               gr%dzt(k), wtol, k )
+                               gr%dzt(k), k )
           ztscr05(k) = -tmp(5)
           ztscr06(k) = -tmp(4)
           ztscr07(k) = -tmp(3)
@@ -1056,7 +1055,7 @@ contains
                                !0.0, 0.0,  &
                                !0.0-(3.0/2.0), 0.0-(3.0/2.0),  &
                                0.0, 0.0-(3.0/2.0),  & 
-                               gr%dzt(k), wtol, k )
+                               gr%dzt(k), k )
           ztscr10(k) = -tmp(4)
           ztscr11(k) = -tmp(2)
         endif
@@ -1186,8 +1185,7 @@ contains
         nu8
 
     use constants, only: & 
-        wtol,  & ! Variable(s) 
-        emin,  &
+        emin,  & ! Variable(s)
         eps
 
     use model_flags, only:  & 
@@ -1363,8 +1361,7 @@ contains
       + wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
                              wp2(k), wp2(km1),  &
                              !a1(k), a1(km1), a3(k), a3(km1),  &
-                             a1_zt(k), a3_zt(k),  &
-                             gr%dzt(k), wtol )
+                             a1_zt(k), a3_zt(k), gr%dzt(k) )
 
       ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
       rhs(k_wp3) & 
@@ -1398,16 +1395,16 @@ contains
                                 wp2(k), wp2(km1),  &
                                 !a1(k), a1(km1),  &
                                 !a3(k)+(3.0/2.0), a3(km1)+(3.0/2.0),  &
-                                a1_zt(k), a3_zt(k)+(3.0/2.0),  &  
-                                gr%dzt(k), wtol ), zt )
+                                a1_zt(k), a3_zt(k)+(3.0/2.0), gr%dzt(k) ),  &
+                                zt )
 
         call stat_begin_update_pt( iwp3_tp, k,  &
           -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
                                 wp2(k), wp2(km1),  &
                                 !0.0, 0.0,  & 
                                 !0.0-(3.0/2.0), 0.0-(3.0/2.0),  &
-                                0.0, 0.0-(3.0/2.0),  & 
-                                gr%dzt(k), wtol ),zt )
+                                0.0, 0.0-(3.0/2.0), gr%dzt(k) ),  &
+                                zt )
 
         call stat_update_var_pt( iwp3_bp, k, & 
           wp3_terms_bp_pr2_rhs( 0.0, wp2thvp(k) ), zt )
@@ -1951,7 +1948,7 @@ contains
                                      wp2, wp2m1,  &
                                      !a1, a1m1, a3, a3m1,  &
                                      a1_zt, a3_zt,  &
-                                     dzt, wtol, level )  &
+                                     dzt, level )  &
   result( lhs )
 
     ! Description:
@@ -2039,6 +2036,9 @@ contains
     use grid_class, only:  & 
         gr ! Variable
 
+    use constants, only:  &
+        wtol_sqd
+
     implicit none
 
     ! Constant parameters
@@ -2065,8 +2065,7 @@ contains
 !      a3m1,        & ! a_3(k-1)                                    [-]
       a1_zt,       & ! a_1 interpolated to thermodynamic level (k) [-]
       a3_zt,       & ! a_3 interpolated to thermodynamic level (k) [-]
-      dzt,         & ! Inverse of grid spacing (k)                 [1/m]
-      wtol           ! w wind component tolerance                  [m/s]
+      dzt            ! Inverse of grid spacing (k)                 [1/m]
 
     integer, intent(in) :: & 
       level ! Central thermodynamic level (on which calculation occurs).
@@ -2102,9 +2101,9 @@ contains
 
     ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
     lhs(kp1_tdiag) & 
-!    = + dzt * a1 * ( 2.0 * wp3_zm / max(wp2, wtol**2) ) &
+!    = + dzt * a1 * ( 2.0 * wp3_zm / max(wp2, wtol_sqd) ) &
 !            * gr%weights_zt2zm(t_above,mk)
-    = + a1_zt * dzt * ( 2.0 * wp3_zm / max(wp2, wtol**2) ) & 
+    = + a1_zt * dzt * ( 2.0 * wp3_zm / max(wp2, wtol_sqd) ) & 
               * gr%weights_zt2zm(t_above,mk)
 
     ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
@@ -2115,15 +2114,15 @@ contains
     ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
     lhs(k_tdiag) & 
 !    = + dzt &
-!        * (   a1 * ( 2.0 * wp3_zm / max(wp2, wtol**2) ) &
+!        * (   a1 * ( 2.0 * wp3_zm / max(wp2, wtol_sqd) ) &
 !              * gr%weights_zt2zm(t_below,mk) &
-!            - a1m1 * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol**2) ) &
+!            - a1m1 * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol_sqd) ) &
 !              * gr%weights_zt2zm(t_above,mkm1) &
 !          )
     = + a1_zt * dzt & 
-        * (   ( 2.0 * wp3_zm / max(wp2, wtol**2) ) & 
+        * (   ( 2.0 * wp3_zm / max(wp2, wtol_sqd) ) & 
               * gr%weights_zt2zm(t_below,mk) & 
-            - ( 2.0 * wp3_zmm1 / max(wp2m1, wtol**2) ) & 
+            - ( 2.0 * wp3_zmm1 / max(wp2m1, wtol_sqd) ) & 
               * gr%weights_zt2zm(t_above,mkm1) & 
           )
 
@@ -2134,9 +2133,9 @@ contains
 
     ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
     lhs(km1_tdiag) & 
-!    = - dzt * a1m1 * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol**2) ) &
+!    = - dzt * a1m1 * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol_sqd) ) &
 !            * gr%weights_zt2zm(t_below,mkm1)
-    = - a1_zt * dzt * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol**2) ) & 
+    = - a1_zt * dzt * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol_sqd) ) & 
               * gr%weights_zt2zm(t_below,mkm1)
 
     ! End of code that pulls out a3.
@@ -2291,8 +2290,7 @@ contains
   pure function wp3_terms_ta_tp_rhs( wp3_zm, wp3_zmm1,  & 
                                      wp2, wp2m1,  & 
                                      !a1, a1m1, a3, a3m1,  &
-                                     a1_zt, a3_zt,  & 
-                                     dzt, wtol )  & 
+                                     a1_zt, a3_zt, dzt )  & 
   result( rhs )
 
     ! Description:
@@ -2373,6 +2371,9 @@ contains
     ! References:
     !-----------------------------------------------------------------------
 
+    use constants, only:  &
+        wtol_sqd
+
     implicit none
 
     ! Input Variables
@@ -2387,8 +2388,7 @@ contains
 !      a3m1,        & ! a_3(k-1)                                    [-]
       a1_zt,       & ! a_1 interpolated to thermodynamic level (k) [-]
       a3_zt,       & ! a_3 interpolated to thermodynamic level (k) [-]
-      dzt,         & ! Inverse of grid spacing (k)                 [1/m]
-      wtol           ! w wind component tolerance                  [m/s]
+      dzt            ! Inverse of grid spacing (k)                 [1/m]
 
     ! Return Variable
     real :: rhs
@@ -2409,14 +2409,14 @@ contains
 !    = + dzt &
 !        * ( a3 * wp2**2 - a3m1 * wp2m1**2 ) &
 !      + dzt &
-!        * (   a1 * ( wp3_zm**2 / max(wp2, wtol**2) ) &
-!            - a1m1 * ( wp3_zmm1**2 / max(wp2m1, wtol**2) ) &
+!        * (   a1 * ( wp3_zm**2 / max(wp2, wtol_sqd) ) &
+!            - a1m1 * ( wp3_zmm1**2 / max(wp2m1, wtol_sqd) ) &
 !          )
     = + a3_zt * dzt & 
         * ( wp2**2 - wp2m1**2 ) & 
       + a1_zt * dzt & 
-        * (   ( wp3_zm**2 / max(wp2, wtol**2) ) & 
-            - ( wp3_zmm1**2 / max(wp2m1, wtol**2) ) & 
+        * (   ( wp3_zm**2 / max(wp2, wtol_sqd) ) & 
+            - ( wp3_zmm1**2 / max(wp2m1, wtol_sqd) ) & 
           )
 
     ! End of code that pulls out a3.
