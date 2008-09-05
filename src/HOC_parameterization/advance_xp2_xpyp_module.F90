@@ -209,10 +209,6 @@ real, dimension(gr%nnzp) :: &
   Kw2_thlp2, & 
   Kw2_rtpthlp
 
-! wtol_sqd = the square of the minimum threshold on w,
-!     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
-real :: wtol_sqd
-
 logical :: l_scalar_calc
 
 ! Loop indices
@@ -252,11 +248,6 @@ endif
 ! It is a variable that is a function of sigma_sqd_w (where sigma_sqd_w is 
 ! located on the momentum levels).
 a1(1:gr%nnzp) = 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nnzp) )
-
-
-! wtol_sqd = the square of the minimum threshold on w,
-!     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
-wtol_sqd = wtol * wtol
 
 
 ! Interpolate a_1, w'r_t', w'th_l', u'w', and v'w' from the momentum levels to 
@@ -380,19 +371,18 @@ endif  ! l_3pt_sqd_dfsn
 !!!!!***** r_t'^2 *****!!!!!
 
 ! Implicit contributions to term rtp2
-call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &              ! Intent(in)
-                   !a1, a1_zt, tau_zm, wm_zm, Kw2_rtp2, &  ! Intent(in)
+call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &             ! Intent(in)
+                   !a1, a1_zt, tau_zm, wm_zm, Kw2_rtp2, &   ! Intent(in)
                    a1, tau_zm, wm_zm, Kw2_rtp2,  &         ! Intent(in)
-                   C2rt_1d, nu2, beta, wtol_sqd, &         ! Intent(in)
+                   C2rt_1d, nu2, beta,           &         ! Intent(in)
                    lhs )                                   ! Intent(out)
 
 
 !call diag_var_rhs( "rtp2", dt, l_iter, a1, a1_zt, &     ! Intent(in)
-call diag_var_rhs( "rtp2", dt, l_iter, a1,  &            ! Intent(in)
+call diag_var_rhs( "rtp2", dt, l_iter, a1,  &           ! Intent(in)
                    wp2_zt, wp3, wprtp, wprtp_zt, &      ! Intent(in)
                    wprtp, wprtp_zt, rtm, rtm, rtp2, &   ! Intent(in)
                    C2rt_1d, tau_zm, rttol**2, beta, &   ! Intent(in)
-                   wtol_sqd, &                          ! Intent(in)
                    rhs )                                ! Intent(out)
         
 ! Solve the tridiagonal system
@@ -404,19 +394,18 @@ call diag_var_solve( "rtp2", 1, &                               ! Intent(in)
 !!!!!***** th_l'^2 *****!!!!!
 
 ! Implicit contributions to term thlp2
-call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &                   ! Intent(in)
-                   !a1, a1_zt, tau_zm, wm_zm, Kw2_thlp2,  &     ! Intent(in)
+call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &                  ! Intent(in)
+                   !a1, a1_zt, tau_zm, wm_zm, Kw2_thlp2,  &      ! Intent(in)
                    a1, tau_zm, wm_zm, Kw2_thlp2,  &             ! Intent(in)
-                   C2thl_1d, nu2, beta, wtol_sqd, &             ! Intent(in)
+                   C2thl_1d, nu2, beta,           &             ! Intent(in)
                    lhs )                                        ! Intent(out)
 
 ! Explicit contributions to thlp2
 !call diag_var_rhs( "thlp2", dt, l_iter, a1, a1_zt, &            ! Intent(in)
-call diag_var_rhs( "thlp2", dt, l_iter, a1, &                    ! Intent(in)
+call diag_var_rhs( "thlp2", dt, l_iter, a1, &                   ! Intent(in)
                    wp2_zt, wp3, wpthlp, wpthlp_zt, &            ! Intent(in)
                    wpthlp, wpthlp_zt, thlm, thlm, thlp2, &      ! Intent(in)
                    C2thl_1d, tau_zm, thltol**2, beta, &         ! Intent(in)
-                   wtol_sqd, &                                  ! Intent(in)
                    rhs )                                        ! Intent(out)
 
 ! Solve the tridiagonal system
@@ -428,19 +417,18 @@ call diag_var_solve( "thlp2", 1, &          ! Intent(in)
 !!!!!***** r_t'th_l' *****!!!!!
 
 ! Implicit contributions to term rtpthlp
-call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &                   ! Intent(in)
-                   !a1, a1_zt, tau_zm, wm_zm, Kw2_rtpthlp,  &   ! Intent(in)
+call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &                  ! Intent(in)
+                   !a1, a1_zt, tau_zm, wm_zm, Kw2_rtpthlp,  &    ! Intent(in)
                    a1, tau_zm, wm_zm, Kw2_rtpthlp,  &           ! Intent(in)
-                   C2rtthl_1d, nu2, beta, wtol_sqd, &           ! Intent(in)
+                   C2rtthl_1d, nu2, beta,           &           ! Intent(in)
                    lhs )                                        ! Intent(out)
 
 ! Explicit contributions to rtpthlp
-!call diag_var_rhs( "rtpthlp", dt, l_iter, a1, a1_zt, & 
-call diag_var_rhs( "rtpthlp", dt, l_iter, a1,  &                 ! Intent(in)
+!call diag_var_rhs( "rtpthlp", dt, l_iter, a1, a1_zt, &          ! Intent(in)
+call diag_var_rhs( "rtpthlp", dt, l_iter, a1,  &                ! Intent(in)
                    wp2_zt, wp3, wprtp, wprtp_zt, &              ! Intent(in)
                    wpthlp, wpthlp_zt, rtm, thlm, rtpthlp, &     ! Intent(in)
                    C2rtthl_1d, tau_zm, 0.0, beta, &             ! Intent(in)
-                   wtol_sqd, &                                  ! Intent(in)
                    rhs )                                        ! Intent(out)
 
 ! Solve the tridiagonal system
@@ -452,19 +440,19 @@ call diag_var_solve( "rtpthlp", 1, &            ! Intent(in)
 !!!!!***** u'^2 *****!!!!!
 
 ! Implicit contributions to term up2
-call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &              ! Intent(in)
-                   !a1, a1_zt, tau_zm, wm_zm, Kw9,  &      ! Intent(in)
+call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &             ! Intent(in)
+                   !a1, a1_zt, tau_zm, wm_zm, Kw9,  &       ! Intent(in)
                    a1, tau_zm, wm_zm, Kw9,  &              ! Intent(in)
-                   C4_C14_1d, nu9, beta, wtol_sqd, &       ! Intent(in)
+                   C4_C14_1d, nu9, beta,           &       ! Intent(in)
                    lhs )                                   ! Intent(out)
 
 ! Explicit contributions to up2
 !call diag_var_uv_rhs( "up2", dt, l_iter, a1, a1_zt, &       ! Intent(in)
-call diag_var_uv_rhs( "up2", dt, l_iter, a1, &               ! Intent(in)
+call diag_var_uv_rhs( "up2", dt, l_iter, a1, &              ! Intent(in)
                       wp2, wp2_zt, wp3, wpthvp, tau_zm,  &  ! Intent(in)
                       um, vm, upwp, upwp_zt, vpwp, &        ! Intent(in)
                       vpwp_zt, up2, vp2, C4, C5, C14, &     ! Intent(in)
-                      T0, beta, wtol_sqd, &                 ! Intent(in)
+                      T0, beta,           &                 ! Intent(in)
                       rhs )                                 ! Intent(out)
 
 ! Solve the tridiagonal system
@@ -476,19 +464,19 @@ call diag_var_solve( "up2", 1, &       ! Intent(in)
 !!!!!***** v'^2 *****!!!!!
 
 ! Implicit contributions to term vp2
-call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &           ! Intent(in)
-                   !a1, a1_zt, tau_zm, wm_zm, Kw9,  &   ! Intent(in)
+call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &          ! Intent(in)
+                   !a1, a1_zt, tau_zm, wm_zm, Kw9,  &    ! Intent(in)
                    a1, tau_zm, wm_zm, Kw9,  &           ! Intent(in)
-                   C4_C14_1d, nu9, beta, wtol_sqd, &    ! Intent(in)
+                   C4_C14_1d, nu9, beta,           &    ! Intent(in)
                    lhs )                                ! Intent(out)
 
 ! Explicit contributions to vp2
-!call diag_var_uv_rhs( "vp2", dt, l_iter, a1, a1_zt, & 
-call diag_var_uv_rhs( "vp2", dt, l_iter, a1, &               ! Intent(in)
+!call diag_var_uv_rhs( "vp2", dt, l_iter, a1, a1_zt, &       ! Intent(in)
+call diag_var_uv_rhs( "vp2", dt, l_iter, a1, &              ! Intent(in)
                       wp2, wp2_zt, wp3, wpthvp, tau_zm,  &  ! Intent(in)
                       vm, um, vpwp, vpwp_zt, upwp, &        ! Intent(in)
                       upwp_zt, vp2, up2, C4, C5, C14, &     ! Intent(in)
-                      T0, beta, wtol_sqd, &                 ! Intent(in)
+                      T0, beta,           &                 ! Intent(in)
                       rhs )                                 ! Intent(out)
 
 ! Solve the tridiagonal system
@@ -592,10 +580,10 @@ if ( l_scalar_calc ) then
 
   !!!!!***** sclr'^2, sclr'r_t', sclr'th_l' *****!!!!!
 
-  call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &         ! Intent(in) 
-                     !a1, a1_zt, tau_zm, wm_zm, Kw2,  & ! Intent(in)
+  call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &        ! Intent(in) 
+                     !a1, a1_zt, tau_zm, wm_zm, Kw2,  &  ! Intent(in)
                      a1, tau_zm, wm_zm, Kw2,  &         ! Intent(in)
-                     C2sclr_1d, nu2, beta, wtol_sqd, &  ! Intent(in)
+                     C2sclr_1d, nu2, beta,           &  ! Intent(in)
                      lhs )                              ! Intent(out)
 
 
@@ -611,36 +599,34 @@ if ( l_scalar_calc ) then
     ! terms in each equation.
     wpsclrp_zt = zm2zt( wpsclrp(:,i) )
 
-    !call diag_var_rhs( "sclrp2", dt, l_iter, a1, a1_zt, &
-    call diag_var_rhs( "sclrp2", dt, l_iter, a1,  &              ! Intent(in)
+    !call diag_var_rhs( "sclrp2", dt, l_iter, a1, a1_zt, &       ! Intent(in)
+    call diag_var_rhs( "sclrp2", dt, l_iter, a1,  &             ! Intent(in)
                        wp2_zt, wp3, wpsclrp(:,i),  &            ! Intent(in)
                        wpsclrp_zt, wpsclrp(:,i), wpsclrp_zt,  & ! Intent(in)
                        sclrm(:,i), sclrm(:,i), sclrp2(:,i), &   ! Intent(in)
                        C2sclr_1d, tau_zm, 0.0, beta, &          ! Intent(in)
-                       wtol_sqd, &                              ! Intent(in)
                        sclr_rhs(:,i) )                          ! Intent(out)
 
 
   !!!!!***** sclr'r_t' *****!!!!!
 
-    !call diag_var_rhs( "sclrprtp", dt, l_iter, a1, a1_zt, &
-    call diag_var_rhs( "sclrprtp", dt, l_iter, a1,  &               ! Intent(in)
+    !call diag_var_rhs( "sclrprtp", dt, l_iter, a1, a1_zt, &        ! Intent(in)
+    call diag_var_rhs( "sclrprtp", dt, l_iter, a1,  &              ! Intent(in)
                        wp2_zt, wp3, wpsclrp(:,i),  &               ! Intent(in)
                        wpsclrp_zt, wprtp, wprtp_zt, sclrm(:,i),  & ! Intent(in)
                        rtm, sclrprtp(:,i), C2sclr_1d, tau_zm, &    ! Intent(in)     
-                       0.0, beta, wtol_sqd,  &                     ! Intent(in)
+                       0.0, beta,            &                     ! Intent(in)
                        sclr_rhs(:,i+sclr_dim) )                    ! Intent(out)
 
 
   !!!!!***** sclr'th_l' *****!!!!!
 
-    !call diag_var_rhs( "sclrpthlp", dt, l_iter, a1, a1_zt, &
-    call diag_var_rhs( "sclrpthlp", dt, l_iter, a1,  &       ! Intent(in) 
+    !call diag_var_rhs( "sclrpthlp", dt, l_iter, a1, a1_zt, &! Intent(in)
+    call diag_var_rhs( "sclrpthlp", dt, l_iter, a1,  &      ! Intent(in) 
                        wp2_zt, wp3, wpsclrp(:,i),  &        ! Intent(in)
                        wpsclrp_zt, wpthlp, wpthlp_zt,  &    ! Intent(in)
                        sclrm(:,i), thlm, sclrpthlp(:,i), &  ! Intent(in)
                        C2sclr_1d, tau_zm, 0.0, beta,  &     ! Intent(in)
-                       wtol_sqd, &                          ! Intent(in)
                        sclr_rhs(:,i+2*sclr_dim) )           ! Intent(out)
   end do ! 1..sclr_dim
 
@@ -771,7 +757,7 @@ end subroutine advance_xp2_xpyp
 subroutine diag_var_lhs( dt, l_iter, wp2_zt, wp3,  & 
                          !a1, a1_zt, tau_zm, wm_zm, Kw,  &
                          a1, tau_zm, wm_zm, Kw,  &
-                         Cn, nu, beta, wtol_sqd, lhs )
+                         Cn, nu, beta, lhs )
         
 ! Description:  
 ! Compute LHS tridiagonal matrix for a variance or coveriance term
@@ -851,8 +837,7 @@ real, dimension(gr%nnzp), intent(in) :: &
 
 real, intent(in) :: & 
   nu,      & ! Background constant coef. of eddy diff.        [-]
-  beta,    & ! Constant model parameter beta                  [-]
-  wtol_sqd   ! w wind component tolerance squared             [m^2/s^2]
+  beta       ! Constant model parameter beta                  [-]
 
 ! Output Variables
 real, dimension(3,gr%nnzp), intent(out) :: & 
@@ -899,8 +884,7 @@ do k = 2, gr%nnzp-1, 1
   = lhs(kp1_mdiag:km1_mdiag,k) & 
   + term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
                  !a1(k), a1_zt(kp1), a1_zt(k), gr%dzm(k), beta,  &
-                 a1(k), gr%dzm(k), beta,  &
-                 wtol_sqd, k )
+                 a1(k), gr%dzm(k), beta, k )
 
   if ( l_stats_samp ) then
  
@@ -931,8 +915,7 @@ do k = 2, gr%nnzp-1, 1
      tmp(1:3) & 
      = term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
                     !a1(k), a1_zt(kp1), a1_zt(k), gr%dzm(k), beta,  &
-                    a1(k), gr%dzm(k), beta,  &
-                    wtol_sqd, k )
+                    a1(k), gr%dzm(k), beta, k )
      zmscr05(k) = -tmp(3)
      zmscr06(k) = -tmp(2)
      zmscr07(k) = -tmp(1)
@@ -1187,7 +1170,7 @@ subroutine diag_var_uv_rhs( solve_type, dt, l_iter, a1, &
                             wp2, wp2_zt, wp3, wpthvp, tau_zm,  & 
                             xam, xbm, wpxap, wpxap_zt, wpxbp, & 
                             wpxbp_zt, xap2, xbp2, C4, C5, C14, & 
-                            T0, beta, wtol_sqd, &
+                            T0, beta, &
                             rhs )
 
 ! Description:
@@ -1255,8 +1238,7 @@ real, intent(in) :: &
   C5,       & ! Model parameter C_5                            [-]
   C14,      & ! Model parameter C_14                           [-]
   T0,       & ! Reference temperature                          [K]
-  beta,     & ! Model parameter beta                           [-]
-  wtol_sqd    ! w wind component tolerance squared             [m^2/s^2]
+  beta        ! Model parameter beta                           [-]
 
 real, dimension(gr%nnzp,1), intent(out) :: & 
   rhs    ! Explicit contributions to x variance/covariance terms
@@ -1309,8 +1291,7 @@ do k = 2, gr%nnzp-1, 1
   = term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
                  !a1(k), a1_zt(kp1), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k),  &
                  a1(k), wpxbp_zt(kp1), wpxbp_zt(k),  &
-                 wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k),  & 
-                 beta, wtol_sqd ) & 
+                 wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ) & 
   ! RHS turbulent production (tp) term.
   + (1.0 - C5)  & 
      * term_tp( xam(kp1), xam(k), xam(kp1), xam(k), & 
@@ -1334,8 +1315,7 @@ do k = 2, gr%nnzp-1, 1
          term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &  ! Intent(in)
                       !a1(k), a1_zt(kp1), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), & ! Intent(in)
                       a1(k), wpxbp_zt(kp1), wpxbp_zt(k),  &
-                      wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k),  &
-                      beta, wtol_sqd ), & 
+                      wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ), & 
                       zm )                                          ! Intent(inout)
 
             
@@ -1408,7 +1388,7 @@ end subroutine diag_var_uv_rhs
 subroutine diag_var_rhs( solve_type, dt, l_iter, a1, & 
                          wp2_zt, wp3, wpxap, wpxap_zt, & 
                          wpxbp, wpxbp_zt, xam, xbm, xapxbp, & 
-                         Cn, tau_zm, threshold, beta, wtol_sqd, & 
+                         Cn, tau_zm, threshold, beta, & 
                          rhs )
 
 ! Description:
@@ -1470,8 +1450,7 @@ real, dimension(gr%nnzp), intent(in) :: &
 real, intent(in) :: &
   threshold, & ! Smallest allowable magnitude value for x_a'x_b' [{x_am units}
                !                                                    *{x_bm units}] 
-  beta,      & ! Model parameter beta                            [-]
-  wtol_sqd     ! w wind component tolerance squared              [m^2/s^2]
+  beta         ! Model parameter beta                            [-]
 
 real, dimension(gr%nnzp,1), intent(out) :: & 
   rhs     ! Explicit contributions to x variance/covariance terms
@@ -1528,8 +1507,7 @@ do k = 2, gr%nnzp-1, 1
   = term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
                  !a1(k), a1_zt(kp1), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
                  a1(k), wpxbp_zt(kp1), wpxbp_zt(k),  &
-                 wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k),  & 
-                 beta, wtol_sqd ) & 
+                 wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ) & 
   ! RHS turbulent production (tp) term.
   + term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k),  & 
              wpxbp(k), wpxap(k), gr%dzm(k) )
@@ -1551,8 +1529,7 @@ do k = 2, gr%nnzp-1, 1
       term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  & ! Intent(in)
                    !a1(k), a1_zt(kp1), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), & ! Intent(in)
                    a1(k), wpxbp_zt(kp1), wpxbp_zt(k), &  
-                   wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), & 
-                   beta, wtol_sqd ), &
+                   wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ), &
                    zm )                                         ! Intent(inout)
 
   call stat_begin_update_pt( ixapxbp_dp1, k, &              ! Intent(in)
@@ -1603,8 +1580,7 @@ end subroutine diag_var_rhs
 !===============================================================================
 pure function term_ta_lhs( wp3p1, wp3, wp2_ztp1, wp2_zt,  &
                            !a1, a1_ztp1, a1_zt, dzm, beta,  &
-                           a1, dzm, beta,  &
-                           wtol_sqd, level ) & 
+                           a1, dzm, beta, level ) & 
 result( lhs )
 
 ! Description:
@@ -1685,6 +1661,9 @@ result( lhs )
 use grid_class, only:  & ! gr%weights_zm2zt
     gr ! Variable(s)
 
+use constants, only:  &
+    wtol_sqd
+
 implicit none
 
 ! External
@@ -1710,8 +1689,7 @@ real, intent(in) :: &
 !  a1_ztp1,  & ! a_1 interpolated to thermodynamic level (k+1)  [-]
 !  a1_zt,    & ! a_1 interpolated to thermodynamic level (k)    [-]
   dzm,      & ! Inverse of grid spacing                        [1/m]
-  beta,     & ! Model parameter                                [-]
-  wtol_sqd    ! w wind component tolerance squared             [m^2/s^2]
+  beta        ! Model parameter                                [-]
 
 integer, intent(in) :: & 
   level ! Central momentum level (on which calculation occurs).
@@ -1779,8 +1757,7 @@ end function term_ta_lhs
 pure function term_ta_rhs( wp3p1, wp3, wp2_ztp1, wp2_zt,  &
                            !a1, a1_ztp1, a1_zt, wpxbp_ztp1, wpxbp_zt,  &
                            a1, wpxbp_ztp1, wpxbp_zt,  &
-                           wpxap_ztp1, wpxap_zt, dzm,  & 
-                           beta, wtol_sqd ) & 
+                           wpxap_ztp1, wpxap_zt, dzm, beta ) &
 result( rhs )
 
 ! Description:
@@ -1854,6 +1831,9 @@ result( rhs )
 ! References:
 !-----------------------------------------------------------------------
 
+use constants, only:  &
+    wtol_sqd
+
 implicit none
 
 ! External
@@ -1873,8 +1853,7 @@ real, intent(in) :: &
   wpxap_ztp1, & ! w'x_a' interpolated to thermo. level (k+1) [m/s {x_am units}]
   wpxap_zt,   & ! w'x_a' interpolated to thermo. level (k)   [m/s {x_am units}]
   dzm,        & ! Inverse of grid spacing                    [1/m]
-  beta,       & ! Model parameter                            [-]
-  wtol_sqd      ! w wind component tolerance squared         [m^2/s^2]
+  beta          ! Model parameter                            [-]
 
 ! Return Variable
 real :: rhs

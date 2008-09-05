@@ -18,7 +18,7 @@ implicit none
 public :: fstderr, fstdin, fstdout, pi_dp, pi, Cp, Lv, Ls, Lf, & 
           Rd, Rv, ep, ep1, ep2, kappa, grav, p0, vonk, rho_lw, & 
           sol_const, wtol, thltol, rttol, qttol, sstol, difftol, & 
-          rc_tol, Nc_tol, rr_tol, Nr_tol, emin, eps,  & 
+          wtol_sqd, rc_tol, Nc_tol, rr_tol, Nr_tol, emin, eps,  & 
           sec_per_day, sec_per_hr, sec_per_min, g_per_kg,  & 
           Lscale_max, T_freeze_K
 !    .            sclr_dim, hydromet_dim, sclrtol, 
@@ -82,6 +82,9 @@ qttol   = 1.e-4,  & ! [?]
 sstol   = 1.e-8,  & ! [kg/kg]
 difftol = 0.4    ! [?]
 
+! The tolerance for w'^2 is the square of the tolerance for w.
+real, parameter :: &
+wtol_sqd = wtol**2  ! [m^2/s^2]
 
 ! Set tolerances for Khairoutdinov and Kogan rain microphysics
 ! to insure against numerical errors.
