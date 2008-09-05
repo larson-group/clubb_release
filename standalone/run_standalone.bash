@@ -16,13 +16,19 @@
 #######################################################################
 
 if [ -z $1 ]; then
-	echo "Usage: run_standalone.bash <MODEL CASE> [STATS FILE]"
+	echo "Usage: run_standalone.bash <MODEL CASE> [PARAMETER FILE] [STATS FILE]"
 	exit
 else
-	RUN_CASE=$1
+	MODEL_FILE='../model/'$1'_model.in'
 
 	if [ -z $2 ]; then
-		STATS_FILE="all_stats.in"
+		PARAMS_FILE="default_parameters.in"
+	else
+		PARAMS_FILE=$2
+	fi
+
+	if [ -z $3 ]; then
+		STATS_FILE="../stats/all_stats.in"
 	else
 		STATS_FILE=$2
 	fi
@@ -33,26 +39,28 @@ fi
 #######################################################################
 G95_MEM_INIT="NAN"
 export G95_MEM_INIT
+
 #######################################################################
 # Check for necessary namelists.  If files exist, then
 # copy them over to the general input files.
 #######################################################################
 
-STANDALONE_IN='standalone_'$RUN_CASE'.in'
-MODEL_IN='../model/'$RUN_CASE'_model.in'
-STATS_IN='../stats/'$STATS_FILE
-
-if [ ! -e "$STANDALONE_IN" ] ; then
-	echo $STANDALONE_IN " does not exist"
+if [ ! -e "$MODEL_FILE" ]; then
+	echo "$MODEL_FILE does not exist"
 	exit 1
 fi
 
-if [ -e 'standalone.in' ] ; then
-	rm -f 'standalone.in'
+if [ ! -e "$PARAMS_FILE" ]; then
+	echo "$PARAMS_FILE does not exist"
+	exit 1
 fi
 
-ln -s $STANDALONE_IN 'standalone.in'
-cat $MODEL_IN $STATS_IN > $RUN_CASE'_hoc.in'
+if [ ! -e "$STATS_FILE" ]; then
+	echo "$STATS_FILE does not exist"
+	exit 1
+fi
+
+cat $PARAMS_FILE $MODEL_FILE $STATS_FILE > 'clubb.in'
 
 #######################################################################
 # State which case is being run
@@ -63,5 +71,4 @@ echo "Running" $RUN_CASE
 ../bin/hoc_standalone 
 
 # Remove the namelists
-rm -f 'standalone.in'
-rm -f $RUN_CASE'_hoc.in'
+rm -f 'clubb.in'

@@ -77,7 +77,8 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 # Check for necessary namelists.  If files exist, then
 # copy them over to the general input files.
 
-	STANDALONE_IN='standalone_'"${RUN_CASE[$x]}"'.in'
+	#STANDALONE_IN='standalone_'"${RUN_CASE[$x]}"'.in'
+	PARAMS_IN='default_parameters.in'
 	MODEL_IN='../model/'"${RUN_CASE[$x]}"'_model.in'
 	if [ $NIGHTLY == true ] ; then
 		STATS_IN='../stats/nightly_stats.in'
@@ -86,27 +87,23 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 		STATS_IN='../stats/nobudgets_stats.in'
 	fi
 
-	if [ ! -e "$STANDALONE_IN" ] ; then
-		echo $STANDALONE_IN " does not exist"
+	if [ ! -e $PARAMS_IN ] ; then
+		echo $PARAMS_IN " does not exist"
 		exit 1
 	fi
 
-	if [ -e 'standalone.in' ] ; then
-		rm -f 'standalone.in'
-	fi
-
-	ln -s $STANDALONE_IN 'standalone.in'
 
 	if [ $NIGHTLY == true ] ; then
+		cat $PARAMS_IN > 'clubb.in'
 		# This is needed because the model file now contains stats_tout
 		# Here we replace the repository version of stats_tout with an hour output
 		# The regular expression use here matches:
 		# 'stats_tout' (0 or > whitespaces) '=' (0 or > whitespaces) (0 or > characters)
 		# and replaces it with 'stats_tout = 3600.'
-		cat $MODEL_IN | sed 's/stats_tout\s*=\s*.*/stats_tout = 3600\./g' > "${RUN_CASE[$x]}"'_hoc.in'
-		cat $STATS_IN >> "${RUN_CASE[$x]}"'_hoc.in'
+		cat $MODEL_IN | sed 's/stats_tout\s*=\s*.*/stats_tout = 3600\./g' >> 'clubb.in'
+		cat $STATS_IN >> 'clubb.in'
 	else
-		cat $MODEL_IN $STATS_IN > "${RUN_CASE[$x]}"'_hoc.in'
+		cat $PARAMS_IN $MODEL_IN $STATS_IN > 'clubb.in'
 	fi
 
         #######################################################################
@@ -134,11 +131,10 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 	fi
 
 	# remove the namelists
-	rm -f 'standalone.in'
-	rm -f "${RUN_CASE[$x]}"'_hoc.in'
+	rm -f 'clubb.in'
 done
 
-# Print the results
+# Print the results and copy files for a nightly run
 for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 	if [ "${EXIT_CODE[$x]}" != 0 ]; then
 		echo "${RUN_CASE[$x]}"' failure'
