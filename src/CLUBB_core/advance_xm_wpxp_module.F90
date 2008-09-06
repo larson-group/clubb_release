@@ -1691,10 +1691,13 @@ contains
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        gr ! Variable
+        gr ! Variable gr%weights_zm2zt
 
     use constants, only: &
         wtol_sqd
+
+!    use model_flags, only:  &
+!        l_standard_term_ta
 
     implicit none
 
@@ -1744,26 +1747,37 @@ contains
     !        r_t'th_l', u'^2, v'^2, sclr'r_t', sclr'th_l', and sclr'^2 (found in
     !        advance_xp2_xpyp_module.F90).  Brian.
 
-    ! Momentum superdiagonal: [ x wpxp(k+1,<t+1>) ]
-    lhs(kp1_mdiag) & 
-    = + dzm & 
-        * a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) ) & 
-        * gr%weights_zm2zt(m_above,tkp1)
+    ! Always use the standard discretization for the w'x' turbulent advection 
+    ! term.  Brian.
+    !if ( l_standard_term_ta ) then
 
-    ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
-    lhs(k_mdiag) & 
-    = + dzm & 
-        * (   a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) ) & 
-              * gr%weights_zm2zt(m_below,tkp1) & 
-            - a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) ) & 
-              * gr%weights_zm2zt(m_above,tk) & 
-          )
+       ! The turbulent advection term is discretized normally, in accordance
+       ! with the model equations found in the documentation and the description
+       ! listed above.
 
-    ! Momentum subdiagonal: [ x wpxp(k-1,<t+1>) ]
-    lhs(km1_mdiag) & 
-    = - dzm & 
-        * a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) ) & 
-        * gr%weights_zm2zt(m_below,tk)
+       ! Momentum superdiagonal: [ x wpxp(k+1,<t+1>) ]
+       lhs(kp1_mdiag) & 
+       = + dzm & 
+           * a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) ) & 
+           * gr%weights_zm2zt(m_above,tkp1)
+
+       ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
+       lhs(k_mdiag) & 
+       = + dzm & 
+           * (   a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) ) & 
+                 * gr%weights_zm2zt(m_below,tkp1) & 
+               - a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) ) & 
+                 * gr%weights_zm2zt(m_above,tk) & 
+             )
+
+       ! Momentum subdiagonal: [ x wpxp(k-1,<t+1>) ]
+       lhs(km1_mdiag) & 
+       = - dzm & 
+           * a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) ) & 
+           * gr%weights_zm2zt(m_below,tk)
+
+    !endif
+
 
     return
   end function wpxp_term_ta_lhs
