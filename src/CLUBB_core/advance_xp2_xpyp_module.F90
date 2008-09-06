@@ -196,7 +196,7 @@ real, dimension(gr%nnzp) ::  &
   Kw9         ! For up2 and vp2                                [m^2/s]
 
 real, dimension(gr%nnzp) :: & 
-!  a1_zt,      & ! a_1 interpolated to thermodynamic levels       [-]
+  a1_zt,      & ! a_1 interpolated to thermodynamic levels       [-]
   wprtp_zt,   & ! w'r_t' interpolated to thermodynamic levels    [(kg/kg) m/s]
   wpthlp_zt,  & ! w'th_l' interpolated to thermodyamnic levels   [K m/s]
   rtp2_zt,    & ! r_t'^2 interpolated to thermodynamic levels    [kg^2/kg^2]
@@ -253,7 +253,7 @@ a1(1:gr%nnzp) = 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nnzp) )
 ! Interpolate a_1, w'r_t', w'th_l', u'w', and v'w' from the momentum levels to 
 ! the thermodynamic levels.  These will be used for the turbulent advection (ta)
 ! terms in each equation.
-!a1_zt     = max( zm2zt( a1 ), 0.0 )   ! Positive definite quantity
+a1_zt     = max( zm2zt( a1 ), 0.0 )   ! Positive definite quantity
 wprtp_zt  = zm2zt( wprtp )
 wpthlp_zt = zm2zt( wpthlp )
 upwp_zt   = zm2zt( upwp )
@@ -372,14 +372,12 @@ endif  ! l_3pt_sqd_dfsn
 
 ! Implicit contributions to term rtp2
 call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &             ! Intent(in)
-                   !a1, a1_zt, tau_zm, wm_zm, Kw2_rtp2, &   ! Intent(in)
-                   a1, tau_zm, wm_zm, Kw2_rtp2,  &         ! Intent(in)
+                   a1, a1_zt, tau_zm, wm_zm, Kw2_rtp2, &   ! Intent(in)
                    C2rt_1d, nu2, beta,           &         ! Intent(in)
                    lhs )                                   ! Intent(out)
 
 
-!call diag_var_rhs( "rtp2", dt, l_iter, a1, a1_zt, &     ! Intent(in)
-call diag_var_rhs( "rtp2", dt, l_iter, a1,  &           ! Intent(in)
+call diag_var_rhs( "rtp2", dt, l_iter, a1, a1_zt, &     ! Intent(in)
                    wp2_zt, wp3, wprtp, wprtp_zt, &      ! Intent(in)
                    wprtp, wprtp_zt, rtm, rtm, rtp2, &   ! Intent(in)
                    C2rt_1d, tau_zm, rttol**2, beta, &   ! Intent(in)
@@ -395,14 +393,12 @@ call diag_var_solve( "rtp2", 1, &                               ! Intent(in)
 
 ! Implicit contributions to term thlp2
 call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &                  ! Intent(in)
-                   !a1, a1_zt, tau_zm, wm_zm, Kw2_thlp2,  &      ! Intent(in)
-                   a1, tau_zm, wm_zm, Kw2_thlp2,  &             ! Intent(in)
+                   a1, a1_zt, tau_zm, wm_zm, Kw2_thlp2,  &      ! Intent(in)
                    C2thl_1d, nu2, beta,           &             ! Intent(in)
                    lhs )                                        ! Intent(out)
 
 ! Explicit contributions to thlp2
-!call diag_var_rhs( "thlp2", dt, l_iter, a1, a1_zt, &            ! Intent(in)
-call diag_var_rhs( "thlp2", dt, l_iter, a1, &                   ! Intent(in)
+call diag_var_rhs( "thlp2", dt, l_iter, a1, a1_zt, &            ! Intent(in)
                    wp2_zt, wp3, wpthlp, wpthlp_zt, &            ! Intent(in)
                    wpthlp, wpthlp_zt, thlm, thlm, thlp2, &      ! Intent(in)
                    C2thl_1d, tau_zm, thltol**2, beta, &         ! Intent(in)
@@ -418,14 +414,12 @@ call diag_var_solve( "thlp2", 1, &          ! Intent(in)
 
 ! Implicit contributions to term rtpthlp
 call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &                  ! Intent(in)
-                   !a1, a1_zt, tau_zm, wm_zm, Kw2_rtpthlp,  &    ! Intent(in)
-                   a1, tau_zm, wm_zm, Kw2_rtpthlp,  &           ! Intent(in)
+                   a1, a1_zt, tau_zm, wm_zm, Kw2_rtpthlp,  &    ! Intent(in)
                    C2rtthl_1d, nu2, beta,           &           ! Intent(in)
                    lhs )                                        ! Intent(out)
 
 ! Explicit contributions to rtpthlp
-!call diag_var_rhs( "rtpthlp", dt, l_iter, a1, a1_zt, &          ! Intent(in)
-call diag_var_rhs( "rtpthlp", dt, l_iter, a1,  &                ! Intent(in)
+call diag_var_rhs( "rtpthlp", dt, l_iter, a1, a1_zt, &          ! Intent(in)
                    wp2_zt, wp3, wprtp, wprtp_zt, &              ! Intent(in)
                    wpthlp, wpthlp_zt, rtm, thlm, rtpthlp, &     ! Intent(in)
                    C2rtthl_1d, tau_zm, 0.0, beta, &             ! Intent(in)
@@ -441,14 +435,12 @@ call diag_var_solve( "rtpthlp", 1, &            ! Intent(in)
 
 ! Implicit contributions to term up2
 call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &             ! Intent(in)
-                   !a1, a1_zt, tau_zm, wm_zm, Kw9,  &       ! Intent(in)
-                   a1, tau_zm, wm_zm, Kw9,  &              ! Intent(in)
+                   a1, a1_zt, tau_zm, wm_zm, Kw9,  &       ! Intent(in)
                    C4_C14_1d, nu9, beta,           &       ! Intent(in)
                    lhs )                                   ! Intent(out)
 
 ! Explicit contributions to up2
-!call diag_var_uv_rhs( "up2", dt, l_iter, a1, a1_zt, &       ! Intent(in)
-call diag_var_uv_rhs( "up2", dt, l_iter, a1, &              ! Intent(in)
+call diag_var_uv_rhs( "up2", dt, l_iter, a1, a1_zt, &       ! Intent(in)
                       wp2, wp2_zt, wp3, wpthvp, tau_zm,  &  ! Intent(in)
                       um, vm, upwp, upwp_zt, vpwp, &        ! Intent(in)
                       vpwp_zt, up2, vp2, C4, C5, C14, &     ! Intent(in)
@@ -465,14 +457,12 @@ call diag_var_solve( "up2", 1, &       ! Intent(in)
 
 ! Implicit contributions to term vp2
 call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &          ! Intent(in)
-                   !a1, a1_zt, tau_zm, wm_zm, Kw9,  &    ! Intent(in)
-                   a1, tau_zm, wm_zm, Kw9,  &           ! Intent(in)
+                   a1, a1_zt, tau_zm, wm_zm, Kw9,  &    ! Intent(in)
                    C4_C14_1d, nu9, beta,           &    ! Intent(in)
                    lhs )                                ! Intent(out)
 
 ! Explicit contributions to vp2
-!call diag_var_uv_rhs( "vp2", dt, l_iter, a1, a1_zt, &       ! Intent(in)
-call diag_var_uv_rhs( "vp2", dt, l_iter, a1, &              ! Intent(in)
+call diag_var_uv_rhs( "vp2", dt, l_iter, a1, a1_zt, &       ! Intent(in)
                       wp2, wp2_zt, wp3, wpthvp, tau_zm,  &  ! Intent(in)
                       vm, um, vpwp, vpwp_zt, upwp, &        ! Intent(in)
                       upwp_zt, vp2, up2, C4, C5, C14, &     ! Intent(in)
@@ -581,8 +571,7 @@ if ( l_scalar_calc ) then
   !!!!!***** sclr'^2, sclr'r_t', sclr'th_l' *****!!!!!
 
   call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &        ! Intent(in) 
-                     !a1, a1_zt, tau_zm, wm_zm, Kw2,  &  ! Intent(in)
-                     a1, tau_zm, wm_zm, Kw2,  &         ! Intent(in)
+                     a1, a1_zt, tau_zm, wm_zm, Kw2,  &  ! Intent(in)
                      C2sclr_1d, nu2, beta,           &  ! Intent(in)
                      lhs )                              ! Intent(out)
 
@@ -599,8 +588,7 @@ if ( l_scalar_calc ) then
     ! terms in each equation.
     wpsclrp_zt = zm2zt( wpsclrp(:,i) )
 
-    !call diag_var_rhs( "sclrp2", dt, l_iter, a1, a1_zt, &       ! Intent(in)
-    call diag_var_rhs( "sclrp2", dt, l_iter, a1,  &             ! Intent(in)
+    call diag_var_rhs( "sclrp2", dt, l_iter, a1, a1_zt, &       ! Intent(in)
                        wp2_zt, wp3, wpsclrp(:,i),  &            ! Intent(in)
                        wpsclrp_zt, wpsclrp(:,i), wpsclrp_zt,  & ! Intent(in)
                        sclrm(:,i), sclrm(:,i), sclrp2(:,i), &   ! Intent(in)
@@ -610,8 +598,7 @@ if ( l_scalar_calc ) then
 
   !!!!!***** sclr'r_t' *****!!!!!
 
-    !call diag_var_rhs( "sclrprtp", dt, l_iter, a1, a1_zt, &        ! Intent(in)
-    call diag_var_rhs( "sclrprtp", dt, l_iter, a1,  &              ! Intent(in)
+    call diag_var_rhs( "sclrprtp", dt, l_iter, a1, a1_zt, &        ! Intent(in)
                        wp2_zt, wp3, wpsclrp(:,i),  &               ! Intent(in)
                        wpsclrp_zt, wprtp, wprtp_zt, sclrm(:,i),  & ! Intent(in)
                        rtm, sclrprtp(:,i), C2sclr_1d, tau_zm, &    ! Intent(in)     
@@ -621,13 +608,12 @@ if ( l_scalar_calc ) then
 
   !!!!!***** sclr'th_l' *****!!!!!
 
-    !call diag_var_rhs( "sclrpthlp", dt, l_iter, a1, a1_zt, &! Intent(in)
-    call diag_var_rhs( "sclrpthlp", dt, l_iter, a1,  &      ! Intent(in) 
-                       wp2_zt, wp3, wpsclrp(:,i),  &        ! Intent(in)
-                       wpsclrp_zt, wpthlp, wpthlp_zt,  &    ! Intent(in)
-                       sclrm(:,i), thlm, sclrpthlp(:,i), &  ! Intent(in)
-                       C2sclr_1d, tau_zm, 0.0, beta,  &     ! Intent(in)
-                       sclr_rhs(:,i+2*sclr_dim) )           ! Intent(out)
+    call diag_var_rhs( "sclrpthlp", dt, l_iter, a1, a1_zt, & ! Intent(in)
+                       wp2_zt, wp3, wpsclrp(:,i),  &         ! Intent(in)
+                       wpsclrp_zt, wpthlp, wpthlp_zt,  &     ! Intent(in)
+                       sclrm(:,i), thlm, sclrpthlp(:,i), &   ! Intent(in)
+                       C2sclr_1d, tau_zm, 0.0, beta,  &      ! Intent(in)
+                       sclr_rhs(:,i+2*sclr_dim) )            ! Intent(out)
   end do ! 1..sclr_dim
 
 
@@ -755,8 +741,7 @@ end subroutine advance_xp2_xpyp
 
 !===============================================================================
 subroutine diag_var_lhs( dt, l_iter, wp2_zt, wp3,  & 
-                         !a1, a1_zt, tau_zm, wm_zm, Kw,  &
-                         a1, tau_zm, wm_zm, Kw,  &
+                         a1, a1_zt, tau_zm, wm_zm, Kw,  &
                          Cn, nu, beta, lhs )
         
 ! Description:  
@@ -829,7 +814,7 @@ real, dimension(gr%nnzp), intent(in) :: &
   wp2_zt,  & ! w'^2 interpolated to thermodynamic levels      [m^2/s^2]
   wp3,     & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
   a1,      & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
-!  a1_zt,   & ! a_1 interpolated to thermodynamic levels       [-]
+  a1_zt,   & ! a_1 interpolated to thermodynamic levels       [-]
   tau_zm,  & ! Time-scale tau on momentum levels              [s]
   wm_zm,   & ! w wind component on momentum levels            [m/s]
   Kw,      & ! Coefficient of eddy diffusivity (all vars.)    [m^2/s]
@@ -883,8 +868,7 @@ do k = 2, gr%nnzp-1, 1
   lhs(kp1_mdiag:km1_mdiag,k) & 
   = lhs(kp1_mdiag:km1_mdiag,k) & 
   + term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
-                 !a1(k), a1_zt(kp1), a1_zt(k), gr%dzm(k), beta,  &
-                 a1(k), gr%dzm(k), beta, k )
+                 a1_zt(kp1), a1(k), a1_zt(k), gr%dzm(k), beta, k )
 
   if ( l_stats_samp ) then
  
@@ -914,8 +898,7 @@ do k = 2, gr%nnzp-1, 1
         iup2_ta + ivp2_ta > 0 ) then
      tmp(1:3) & 
      = term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
-                    !a1(k), a1_zt(kp1), a1_zt(k), gr%dzm(k), beta,  &
-                    a1(k), gr%dzm(k), beta, k )
+                    a1_zt(kp1), a1(k), a1_zt(k), gr%dzm(k), beta, k )
      zmscr05(k) = -tmp(3)
      zmscr06(k) = -tmp(2)
      zmscr07(k) = -tmp(1)
@@ -1165,8 +1148,7 @@ return
 end subroutine diag_var_solve
 
 !===============================================================================
-!subroutine diag_var_uv_rhs( solve_type, dt, l_iter, a1, a1_zt, & 
-subroutine diag_var_uv_rhs( solve_type, dt, l_iter, a1, &
+subroutine diag_var_uv_rhs( solve_type, dt, l_iter, a1, a1_zt, & 
                             wp2, wp2_zt, wp3, wpthvp, tau_zm,  & 
                             xam, xbm, wpxap, wpxap_zt, wpxbp, & 
                             wpxbp_zt, xap2, xbp2, C4, C5, C14, & 
@@ -1218,7 +1200,7 @@ logical, intent(in) :: &
 
 real, dimension(gr%nnzp), intent(in) :: & 
   a1,       & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
-!  a1_zt,    & ! a_1 interpolated to thermodynamic levels       [-]
+  a1_zt,    & ! a_1 interpolated to thermodynamic levels       [-]
   wp2,      & ! w'^2 (momentum levels)                         [m^2/s^2]
   wp2_zt,   & ! w'^2 interpolated to thermodynamic levels      [m^2/s^2]
   wp3,      & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
@@ -1288,10 +1270,9 @@ do k = 2, gr%nnzp-1, 1
 
   rhs(k,1) & 
   ! RHS turbulent advection (ta) term.
-  = term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
-                 !a1(k), a1_zt(kp1), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k),  &
-                 a1(k), wpxbp_zt(kp1), wpxbp_zt(k),  &
-                 wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ) & 
+  = term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &
+                 a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
+                 wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ) &
   ! RHS turbulent production (tp) term.
   + (1.0 - C5)  & 
      * term_tp( xam(kp1), xam(k), xam(kp1), xam(k), & 
@@ -1299,7 +1280,7 @@ do k = 2, gr%nnzp-1, 1
   ! RHS pressure term 1 (pr1) (and dissipation term 1 (dp1)).
   + term_pr1( C4, C14, xbp2(k), wp2(k), tau_zm(k) ) & 
   ! RHS pressure term 2 (pr2).
-  + term_pr2( C5, grav, T0, wpthvp(k), wpxap(k), wpxbp(k),  & 
+  + term_pr2( C5, grav, T0, wpthvp(k), wpxap(k), wpxbp(k), & 
               xam(kp1), xam(k), xbm(kp1), xbm(k), gr%dzm(k) )
 
   ! RHS time tendency.
@@ -1309,16 +1290,14 @@ do k = 2, gr%nnzp-1, 1
 
   if ( l_stats_samp ) then
  
-  ! Statistics: explicit contributions for up2 or vp2.
-               
-    call stat_modify_pt( ixapxbp_ta, k, &                           ! Intent(in) 
-         term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &  ! Intent(in)
-                      !a1(k), a1_zt(kp1), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), & ! Intent(in)
-                      a1(k), wpxbp_zt(kp1), wpxbp_zt(k),  &
-                      wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ), & 
-                      zm )                                          ! Intent(inout)
+    ! Statistics: explicit contributions for up2 or vp2.
 
-            
+    call stat_modify_pt( ixapxbp_ta, k, &                           ! Intent(in) 
+         term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &   ! Intent(in)
+                      a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
+                      wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ), &
+                         zm )                                       ! Intent(inout)
+
     if ( ixapxbp_dp1 > 0 ) then
       ! Note:  The function term_pr1 is the explicit component 
       !        of a semi-implicit solution to dp1 and pr1.
@@ -1384,8 +1363,7 @@ return
 end subroutine diag_var_uv_rhs
 
 !===============================================================================
-!subroutine diag_var_rhs( solve_type, dt, l_iter, a1, a1_zt, & 
-subroutine diag_var_rhs( solve_type, dt, l_iter, a1, & 
+subroutine diag_var_rhs( solve_type, dt, l_iter, a1, a1_zt, &
                          wp2_zt, wp3, wpxap, wpxap_zt, & 
                          wpxbp, wpxbp_zt, xam, xbm, xapxbp, & 
                          Cn, tau_zm, threshold, beta, & 
@@ -1434,7 +1412,7 @@ logical, intent(in) :: &
 
 real, dimension(gr%nnzp), intent(in) :: & 
   a1,       & ! sigma_sqd_w-related term a_1 (momentum levels)  [-]
-!  a1_zt,    & ! a_1 interpolated to thermodynamic levels        [-]
+  a1_zt,    & ! a_1 interpolated to thermodynamic levels        [-]
   wp2_zt,   & ! w'^2 interpolated to thermodynamic levels       [m^2/s^2]
   wp3,      & ! w'^3 (thermodynamic levels)                     [m^3/s^3]
   wpxap,    & ! w'x_a' (momentum levels)                        [m/s {x_am units}]
@@ -1504,12 +1482,11 @@ do k = 2, gr%nnzp-1, 1
 
   rhs(k,1) & 
   ! RHS turbulent advection (ta) term.
-  = term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
-                 !a1(k), a1_zt(kp1), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
-                 a1(k), wpxbp_zt(kp1), wpxbp_zt(k),  &
-                 wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ) & 
+  = term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &
+                 a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
+                 wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ) &
   ! RHS turbulent production (tp) term.
-  + term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k),  & 
+  + term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), & 
              wpxbp(k), wpxap(k), gr%dzm(k) )
 
   ! RHS dissipation term 1 (dp1)
@@ -1526,11 +1503,10 @@ do k = 2, gr%nnzp-1, 1
   ! Statistics: explicit contributions for rtp2, thlp2, or rtpthlp.
 
   call stat_modify_pt( ixapxbp_ta, k, &                         ! Intent(in) 
-      term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  & ! Intent(in)
-                   !a1(k), a1_zt(kp1), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), & ! Intent(in)
-                   a1(k), wpxbp_zt(kp1), wpxbp_zt(k), &  
+      term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &  ! Intent(in)
+                   a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
                    wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ), &
-                   zm )                                         ! Intent(inout)
+                       zm )                                     ! Intent(inout)
 
   call stat_begin_update_pt( ixapxbp_dp1, k, &              ! Intent(in)
       -term_dp1_rhs( Cn(k), tau_zm(k), threshold ), &       ! Intent(in)
@@ -1578,9 +1554,8 @@ return
 end subroutine diag_var_rhs
 
 !===============================================================================
-pure function term_ta_lhs( wp3p1, wp3, wp2_ztp1, wp2_zt,  &
-                           !a1, a1_ztp1, a1_zt, dzm, beta,  &
-                           a1, dzm, beta, level ) & 
+pure function term_ta_lhs( wp3p1, wp3, wp2_ztp1, wp2_zt, &
+                           a1_ztp1, a1, a1_zt, dzm, beta, level ) & 
 result( lhs )
 
 ! Description:
@@ -1664,6 +1639,9 @@ use grid_class, only:  & ! gr%weights_zm2zt
 use constants, only:  &
     wtol_sqd
 
+use model_flags, only:  &
+    l_standard_term_ta
+
 implicit none
 
 ! External
@@ -1685,9 +1663,9 @@ real, intent(in) :: &
   wp3,      & ! w'^3(k)                                        [m^3/s^3]
   wp2_ztp1, & ! w'^2 interpolated to thermodynamic level (k+1) [m^2/s^2]
   wp2_zt,   & ! w'^2 interpolated to thermodynamic level (k)   [m^2/s^2]
+  a1_ztp1,  & ! a_1 interpolated to thermodynamic level (k+1)  [-]
   a1,       & ! a_1(k)                                         [-]
-!  a1_ztp1,  & ! a_1 interpolated to thermodynamic level (k+1)  [-]
-!  a1_zt,    & ! a_1 interpolated to thermodynamic level (k)    [-]
+  a1_zt,    & ! a_1 interpolated to thermodynamic level (k)    [-]
   dzm,      & ! Inverse of grid spacing                        [1/m]
   beta        ! Model parameter                                [-]
 
@@ -1702,6 +1680,7 @@ integer :: &
   tkp1, & ! Thermodynamic level directly above central momentum level.
   tk      ! Thermodynamic level directly below central momentum level.
 
+
 ! Thermodynamic level (k+1) is between momentum level (k+1)
 ! and momentum level (k).
 tkp1 = level + 1
@@ -1710,53 +1689,72 @@ tkp1 = level + 1
 ! and momentum level (k-1).
 tk = level
 
-! Brian tried a new discretization for the turbulent advection term, for which 
-! the implicit portion of the term is:
-! - d [ a_1 * (1/3)*beta * ( w'^3 / w'^2 ) * x_a'x_b' ] / dz.  In order to help 
-! stabilize x_a'x_b', a_1 has been pulled outside the derivative.
+if ( l_standard_term_ta ) then
 
-! Momentum superdiagonal: [ x xapxbp(k+1,<t+1>) ]
-lhs(kp1_mdiag)  & 
-!= + (1.0/3.0) * beta * dzm  &
-!    * a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  &
-!    * gr%weights_zm2zt(m_above,tkp1)
-= + (1.0/3.0) * beta * a1 * dzm & 
-    * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  & 
-    * gr%weights_zm2zt(m_above,tkp1)
+   ! The turbulent advection term is discretized normally, in accordance
+   ! with the model equations found in the documentation and the description
+   ! listed above.
 
-! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
-lhs(k_mdiag)  & 
-!= + (1.0/3.0) * beta * dzm  &
-!    * (   a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  &
-!          * gr%weights_zm2zt(m_below,tkp1)  &
-!        - a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) )  &
-!          * gr%weights_zm2zt(m_above,tk)  &
-!      )
-= + (1.0/3.0) * beta * a1 * dzm & 
-    * (   ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  & 
-          * gr%weights_zm2zt(m_below,tkp1) & 
-        - ( wp3 / max( wp2_zt, wtol_sqd ) ) & 
-          * gr%weights_zm2zt(m_above,tk) & 
-      )
+   ! Momentum superdiagonal: [ x xapxbp(k+1,<t+1>) ]
+   lhs(kp1_mdiag)  &
+   = + (1.0/3.0) * beta * dzm  &
+       * a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  &
+       * gr%weights_zm2zt(m_above,tkp1)
 
-! Momentum subdiagonal: [ x xapxbp(k-1,<t+1>) ]
-lhs(km1_mdiag)  & 
-!= - (1.0/3.0) * beta * dzm  &
-!    * a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) )  &
-!    * gr%weights_zm2zt(m_below,tk)
-= - (1.0/3.0) * beta * a1 * dzm & 
-    * ( wp3 / max( wp2_zt, wtol_sqd ) ) & 
-    * gr%weights_zm2zt(m_below,tk)
+   ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
+   lhs(k_mdiag)  &
+   = + (1.0/3.0) * beta * dzm  &
+       * (   a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  &
+             * gr%weights_zm2zt(m_below,tkp1)  &
+           - a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) )  &
+             * gr%weights_zm2zt(m_above,tk)  &
+         )
 
-! End of Brian's a1 change.  14 Feb 2008.
+   ! Momentum subdiagonal: [ x xapxbp(k-1,<t+1>) ]
+   lhs(km1_mdiag)  &
+   = - (1.0/3.0) * beta * dzm  &
+       * a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) )  &
+       * gr%weights_zm2zt(m_below,tk)
+
+else
+
+   ! Brian tried a new discretization for the turbulent advection term, for
+   ! which the implicit portion of the term is:
+   ! - d [ a_1 * (1/3)*beta * ( w'^3 / w'^2 ) * x_a'x_b' ] / dz.  In order 
+   ! to help stabilize x_a'x_b', a_1 has been pulled outside the derivative.
+
+   ! Momentum superdiagonal: [ x xapxbp(k+1,<t+1>) ]
+   lhs(kp1_mdiag)  & 
+   = + (1.0/3.0) * beta * a1 * dzm & 
+       * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  & 
+       * gr%weights_zm2zt(m_above,tkp1)
+
+   ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
+   lhs(k_mdiag)  & 
+   = + (1.0/3.0) * beta * a1 * dzm & 
+       * (   ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  & 
+             * gr%weights_zm2zt(m_below,tkp1) & 
+           - ( wp3 / max( wp2_zt, wtol_sqd ) ) & 
+             * gr%weights_zm2zt(m_above,tk) & 
+         )
+
+   ! Momentum subdiagonal: [ x xapxbp(k-1,<t+1>) ]
+   lhs(km1_mdiag)  & 
+   = - (1.0/3.0) * beta * a1 * dzm & 
+       * ( wp3 / max( wp2_zt, wtol_sqd ) ) & 
+       * gr%weights_zm2zt(m_below,tk)
+
+   ! End of Brian's a1 change.  14 Feb 2008.
+
+endif
+
 
 return
 end function term_ta_lhs
 
 !===============================================================================
-pure function term_ta_rhs( wp3p1, wp3, wp2_ztp1, wp2_zt,  &
-                           !a1, a1_ztp1, a1_zt, wpxbp_ztp1, wpxbp_zt,  &
-                           a1, wpxbp_ztp1, wpxbp_zt,  &
+pure function term_ta_rhs( wp3p1, wp3, wp2_ztp1, wp2_zt, &
+                           a1_ztp1, a1, a1_zt, wpxbp_ztp1, wpxbp_zt, &
                            wpxap_ztp1, wpxap_zt, dzm, beta ) &
 result( rhs )
 
@@ -1834,6 +1832,9 @@ result( rhs )
 use constants, only:  &
     wtol_sqd
 
+use model_flags, only:  &
+    l_standard_term_ta
+
 implicit none
 
 ! External
@@ -1845,9 +1846,9 @@ real, intent(in) :: &
   wp3,        & ! w'^3(k)                                    [m^3/s^3]
   wp2_ztp1,   & ! w'^2 interpolated to thermo. level (k+1)   [m^2/s^2]
   wp2_zt,     & ! w'^2 interpolated to thermo. level (k)     [m^2/s^2]
+  a1_ztp1,    & ! a_1 interpolated to thermo. level (k+1)    [-]
   a1,         & ! a_1(k)                                     [-]
-!  a1_ztp1,    & ! a_1 interpolated to thermo. level (k+1)    [-]
-!  a1_zt,      & ! a_1 interpolated to thermo. level (k)      [-]
+  a1_zt,      & ! a_1 interpolated to thermo. level (k)      [-]
   wpxbp_ztp1, & ! w'x_b' interpolated to thermo. level (k+1) [m/s {x_bm units}]
   wpxbp_zt,   & ! w'x_b' interpolated to thermo. level (k)   [m/s {x_bm units}]
   wpxap_ztp1, & ! w'x_a' interpolated to thermo. level (k+1) [m/s {x_am units}]
@@ -1858,27 +1859,42 @@ real, intent(in) :: &
 ! Return Variable
 real :: rhs
 
-! Brian tried a new discretization for the turbulent advection term, for which 
-! the explicit portion of the term is:
-! - d [ (a_1)^2 * (1-(1/3)*beta) * ( w'^3 / (w'^2)^2 ) * w'x_a' * w'x_b' ] / dz.
-! In order to help stabilize x_a'x_b', (a_1)^2 has been pulled outside the 
-! derivative.
 
-rhs & 
-!= - ( 1.0 - (1.0/3.0) * beta ) * dzm &
-!    * (   a1_ztp1**2 * wpxap_ztp1 * wpxbp_ztp1 &
-!          * ( wp3p1 / max( wp2_ztp1, wtol_sqd )**2 ) &
-!        - a1_zt**2 * wpxap_zt * wpxbp_zt &
-!          * ( wp3 / max( wp2_zt, wtol_sqd )**2 ) &
-!      )
-= - ( 1.0 - (1.0/3.0) * beta ) * a1**2 * dzm & 
-    * (   wpxap_ztp1 * wpxbp_ztp1 & 
-          * ( wp3p1 / max( wp2_ztp1, wtol_sqd )**2 ) & 
-        - wpxap_zt * wpxbp_zt & 
-          * ( wp3 / max( wp2_zt, wtol_sqd )**2 ) & 
-      )
+if ( l_standard_term_ta ) then
 
-! End of Brian's a1 change.  14 Feb 2008.
+   ! The turbulent advection term is discretized normally, in accordance
+   ! with the model equations found in the documentation and the description
+   ! listed above.
+
+   rhs & 
+   = - ( 1.0 - (1.0/3.0) * beta ) * dzm &
+       * (   a1_ztp1**2 * wpxap_ztp1 * wpxbp_ztp1 &
+             * ( wp3p1 / max( wp2_ztp1, wtol_sqd )**2 ) &
+           - a1_zt**2 * wpxap_zt * wpxbp_zt &
+             * ( wp3 / max( wp2_zt, wtol_sqd )**2 ) &
+         )
+
+else
+
+   ! Brian tried a new discretization for the turbulent advection term, for
+   ! which the explicit portion of the term is:
+   ! - d [ (a_1)^2 * (1-(1/3)*beta) * ( w'^3 / (w'^2)^2 ) 
+   !       * w'x_a' * w'x_b' ] / dz.
+   ! In order to help stabilize x_a'x_b', (a_1)^2 has been pulled outside 
+   ! the derivative.
+
+   rhs & 
+   = - ( 1.0 - (1.0/3.0) * beta ) * a1**2 * dzm & 
+       * (   wpxap_ztp1 * wpxbp_ztp1 & 
+             * ( wp3p1 / max( wp2_ztp1, wtol_sqd )**2 ) & 
+           - wpxap_zt * wpxbp_zt & 
+             * ( wp3 / max( wp2_zt, wtol_sqd )**2 ) & 
+         )
+
+   ! End of Brian's a1 change.  14 Feb 2008.
+
+endif
+
 
 return
 end function term_ta_rhs
