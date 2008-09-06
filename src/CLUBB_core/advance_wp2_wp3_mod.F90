@@ -521,17 +521,15 @@ contains
 
     ! Compute the implicit portion of the w'^2 and w'^3 equations.
     ! Build the left-hand side matrix.
-    !call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a3, a1_zt,  &
-    call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1_zt,  &
-                   a3_zt, Kw1, Kw8, Skw_zt, tau1m, tauw3t,  & 
+    call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt,  &
+                   a3, a3_zt, Kw1, Kw8, Skw_zt, tau1m, tauw3t,  & 
                    C1_Skw_fnc, C11_Skw_fnc, l_crank_nich_diff,  & 
                    lhs )
 
     ! Compute the explicit portion of the w'^2 and w'^3 equations.
     ! Build the right-hand side vector.
-    !call wp23_rhs( dt, wp2, wp3, wp3_zm, a1_zt, a1, a3, &
-    call wp23_rhs( dt, wp2, wp3, wp3_zm, a1_zt, &
-                   a3_zt, wpthvp, wp2thvp, um, vm,  & 
+    call wp23_rhs( dt, wp2, wp3, wp3_zm, a1, a1_zt, &
+                   a3, a3_zt, wpthvp, wp2thvp, um, vm,  & 
                    upwp, vpwp, up2, vp2, Kw1, Kw8,  & 
                    Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                    C11_Skw_fnc, l_crank_nich_diff, rhs )
@@ -694,9 +692,8 @@ contains
   end subroutine wp23_solve
 
   !=============================================================================
-  !subroutine wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a3, a1_zt,  &
-  subroutine wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1_zt,  & 
-                       a3_zt, Kw1, Kw8, Skw_zt, tau1m, tauw3t,  & 
+  subroutine wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt,  & 
+                       a3, a3_zt, Kw1, Kw8, Skw_zt, tau1m, tauw3t,  & 
                        C1_Skw_fnc, C11_Skw_fnc, l_crank_nich_diff,  & 
                        lhs )
 
@@ -799,9 +796,9 @@ contains
       wp3_zm,      & ! w'^3 interpolated to momentum levels           [m^3/s^3]
       wm_zm,       & ! w wind component on momentum levels            [m/s]
       wm_zt,       & ! w wind component on thermodynamic levels       [m/s]
-!      a1,          & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
-!      a3,          & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
+      a1,          & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
       a1_zt,       & ! a_1 interpolated to thermodynamic levels       [-]
+      a3,          & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
       a3_zt,       & ! a_3 interpolated to thermodynamic levels       [-]
       Kw1,         & ! Coefficient of eddy diffusivity for w'^2       [m^2/s]
       Kw8,         & ! Coefficient of eddy diffusivity for w'^3       [m^2/s]
@@ -993,10 +990,10 @@ contains
       ! LHS turbulent advection (ta) and turbulent production (tp) terms.
       lhs(3-2:3+2,k_wp3) & 
       = lhs(3-2:3+2,k_wp3) & 
-      + wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  & 
+      + wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
                              wp2(k), wp2(km1),  &
-                             !a1(k), a1(km1), a3(k), a3(km1),  &
-                             a1_zt(k), a3_zt(k),  & 
+                             a1(k), a1_zt(k), a1(km1),  &
+                             a3(k), a3_zt(k), a3(km1),  &
                              gr%dzt(k), k )
 
       ! LHS accumulation (ac) term and pressure term 2 (pr2).
@@ -1035,12 +1032,11 @@ contains
 
         if ( iwp3_ta > 0 ) then
           tmp(1:5) =  & 
-          wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  & 
+          wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
                                wp2(k), wp2(km1),  &
-                               !a1(k), a1(km1),  &
-                               !a3(k)+(3.0/2.0), a3(km1)+(3.0/2.0),  &
-                               a1_zt(k), a3_zt(k)+(3.0/2.0),  &
-                               gr%dzt(k), k )
+                               a1(k), a1_zt(k), a1(km1),  &
+                               a3(k)+(3.0/2.0), a3_zt(k)+(3.0/2.0),  &
+                               a3(km1)+(3.0/2.0), gr%dzt(k), k )
           ztscr05(k) = -tmp(5)
           ztscr06(k) = -tmp(4)
           ztscr07(k) = -tmp(3)
@@ -1050,12 +1046,11 @@ contains
 
         if ( iwp3_tp > 0 ) then
           tmp(1:5) =  & 
-          wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  & 
-                               wp2(k), wp2(km1),  & 
-                               !0.0, 0.0,  &
-                               !0.0-(3.0/2.0), 0.0-(3.0/2.0),  &
-                               0.0, 0.0-(3.0/2.0),  & 
-                               gr%dzt(k), k )
+          wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
+                               wp2(k), wp2(km1),  &
+                               0.0, 0.0, 0.0,  &
+                               0.0-(3.0/2.0), 0.0-(3.0/2.0),  &
+                               0.0-(3.0/2.0), gr%dzt(k), k )
           ztscr10(k) = -tmp(4)
           ztscr11(k) = -tmp(2)
         endif
@@ -1157,9 +1152,8 @@ contains
   end subroutine wp23_lhs
 
   !=============================================================================
-  !subroutine wp23_rhs( dt, wp2, wp3, wp3_zm, a1_zt, a1, a3, &
-  subroutine wp23_rhs( dt, wp2, wp3, wp3_zm, a1_zt, &
-                       a3_zt, wpthvp, wp2thvp, um, vm,  & 
+  subroutine wp23_rhs( dt, wp2, wp3, wp3_zm, a1, a1_zt, &
+                       a3, a3_zt, wpthvp, wp2thvp, um, vm,  & 
                        upwp, vpwp, up2, vp2, Kw1, Kw8,  & 
                        Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                        C11_Skw_fnc, l_crank_nich_diff, rhs )
@@ -1216,9 +1210,9 @@ contains
       wp2,         & ! w'^2 (momentum levels)                         [m^2/s^2]
       wp3,         & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
       wp3_zm,      & ! w'^3 interpolated to momentum levels           [m^3/s^3]
-!      a1,          & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
-!      a3,          & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
+      a1,          & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
       a1_zt,       & ! a_1 interpolated to thermodynamic levels       [-]
+      a3,          & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
       a3_zt,       & ! a_3 interpolated to thermodynamic levels       [-]
       wpthvp,      & ! w'th_v' (momentum levels)                      [K m/s]
       wp2thvp,     & ! w'^2th_v' (thermodynamic levels)               [K m^2/s^2]
@@ -1360,8 +1354,8 @@ contains
       = rhs(k_wp3) & 
       + wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
                              wp2(k), wp2(km1),  &
-                             !a1(k), a1(km1), a3(k), a3(km1),  &
-                             a1_zt(k), a3_zt(k), gr%dzt(k) )
+                             a1(k), a1_zt(k), a1(km1),  &
+                             a3(k), a3_zt(k), a3(km1), gr%dzt(k) )
 
       ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
       rhs(k_wp3) & 
@@ -1390,21 +1384,21 @@ contains
       if (l_stats_samp) then
 
         ! Statistics: explicit contributions for wp3.
-        call stat_begin_update_pt( iwp3_ta, k, & 
+        call stat_begin_update_pt( iwp3_ta, k, &
           -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
-                                wp2(k), wp2(km1),  &
-                                !a1(k), a1(km1),  &
-                                !a3(k)+(3.0/2.0), a3(km1)+(3.0/2.0),  &
-                                a1_zt(k), a3_zt(k)+(3.0/2.0), gr%dzt(k) ),  &
-                                zt )
+                                wp2(k), wp2(km1),  &  
+                                a1(k), a1_zt(k), a1(km1),  &
+                                a3(k)+(3.0/2.0), a3_zt(k)+(3.0/2.0),  &
+                                a3(km1)+(3.0/2.0), gr%dzt(k) ),  &
+                                   zt )
 
         call stat_begin_update_pt( iwp3_tp, k,  &
           -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
                                 wp2(k), wp2(km1),  &
-                                !0.0, 0.0,  & 
-                                !0.0-(3.0/2.0), 0.0-(3.0/2.0),  &
-                                0.0, 0.0-(3.0/2.0), gr%dzt(k) ),  &
-                                zt )
+                                0.0, 0.0, 0.0,  &
+                                0.0-(3.0/2.0), 0.0-(3.0/2.0),  &
+                                0.0-(3.0/2.0), gr%dzt(k) ),  &
+                                   zt )
 
         call stat_update_var_pt( iwp3_bp, k, & 
           wp3_terms_bp_pr2_rhs( 0.0, wp2thvp(k) ), zt )
@@ -1946,8 +1940,8 @@ contains
   !=============================================================================
   pure function wp3_terms_ta_tp_lhs( wp3_zm, wp3_zmm1,  &
                                      wp2, wp2m1,  &
-                                     !a1, a1m1, a3, a3m1,  &
-                                     a1_zt, a3_zt,  &
+                                     a1, a1_zt, a1m1,  &
+                                     a3, a3_zt, a3m1,  &
                                      dzt, level )  &
   result( lhs )
 
@@ -2033,11 +2027,14 @@ contains
     ! References:
     !-----------------------------------------------------------------------
 
-    use grid_class, only:  & 
-        gr ! Variable
+    use grid_class, only:  &
+        gr ! Variable gr%weights_zt2zm
 
     use constants, only:  &
         wtol_sqd
+
+    use model_flags, only:  &
+        l_standard_term_ta
 
     implicit none
 
@@ -2059,12 +2056,12 @@ contains
       wp3_zmm1,    & ! w'^3 interpolated to momentum level (k-1)   [m^3/s^3]
       wp2,         & ! w'^2(k)                                     [m^2/s^2]
       wp2m1,       & ! w'^2(k-1)                                   [m^2/s^2]
-!      a1,          & ! a_1(k)                                      [-]
-!      a1m1,        & ! a_1(k-1)                                    [-]
-!      a3,          & ! a_3(k)                                      [-]
-!      a3m1,        & ! a_3(k-1)                                    [-]
+      a1,          & ! a_1(k)                                      [-]
       a1_zt,       & ! a_1 interpolated to thermodynamic level (k) [-]
+      a1m1,        & ! a_1(k-1)                                    [-]
+      a3,          & ! a_3(k)                                      [-]
       a3_zt,       & ! a_3 interpolated to thermodynamic level (k) [-]
+      a3m1,        & ! a_3(k-1)                                    [-]
       dzt            ! Inverse of grid spacing (k)                 [1/m]
 
     integer, intent(in) :: & 
@@ -2078,6 +2075,7 @@ contains
       mk,    & ! Momentum level directly above central thermodynamic level.
       mkm1     ! Momentum level directly below central thermodynamic level.
 
+
     ! Momentum level (k) is between thermodynamic level (k+1)
     ! and thermodynamic level (k).
     mk = level
@@ -2086,60 +2084,87 @@ contains
     ! and thermodynamic level (k-1).
     mkm1 = level - 1
 
-    ! Brian tried a new discretization for the turbulent advection term, which
-    ! contains the term:  - d [ a_1 * (w'^3)^2 / w'^2 ] / dz.  In order to help
-    ! stabilize w'^3, a_1 has been pulled outside of the derivative.  On the
-    ! left-hand side of the equation, this effects the thermodynamic 
-    ! superdiagonal (kp1_tdiag), the thermodynamic main diagonal (k_tdiag), and 
-    ! the thermodynamic subdiagonal (km1_tdiag).
+    if ( l_standard_term_ta ) then
 
-    ! Additionally, the discretization of the turbulent advection term, which
-    ! contains the term:  - d [ (a_3 + 3/2) * (w'^2)^2 ] / dz, has been altered 
-    ! to pull a_3 outside of the derivative.  This was done in order to help 
-    ! stabilize w'^3.  On the left-hand side of the equation, this effects the 
-    ! momentum superdiagonal (k_mdiag) and the momentum subdiagonal (km1_mdiag).
+       ! The turbulent advection term is discretized normally, in accordance
+       ! with the model equations found in the documentation and the description
+       ! listed above.
 
-    ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
-    lhs(kp1_tdiag) & 
-!    = + dzt * a1 * ( 2.0 * wp3_zm / max(wp2, wtol_sqd) ) &
-!            * gr%weights_zt2zm(t_above,mk)
-    = + a1_zt * dzt * ( 2.0 * wp3_zm / max(wp2, wtol_sqd) ) & 
-              * gr%weights_zt2zm(t_above,mk)
+       ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
+       lhs(kp1_tdiag) &
+       = + dzt * a1 * ( 2.0 * wp3_zm / max(wp2, wtol_sqd) ) &
+               * gr%weights_zt2zm(t_above,mk)
 
-    ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
-    lhs(k_mdiag) & 
-!    = + dzt * a3 * 2.0 * wp2
-    = + a3_zt * dzt * 2.0 * wp2
+       ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
+       lhs(k_mdiag) &
+       = + dzt * a3 * 2.0 * wp2
 
-    ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
-    lhs(k_tdiag) & 
-!    = + dzt &
-!        * (   a1 * ( 2.0 * wp3_zm / max(wp2, wtol_sqd) ) &
-!              * gr%weights_zt2zm(t_below,mk) &
-!            - a1m1 * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol_sqd) ) &
-!              * gr%weights_zt2zm(t_above,mkm1) &
-!          )
-    = + a1_zt * dzt & 
-        * (   ( 2.0 * wp3_zm / max(wp2, wtol_sqd) ) & 
-              * gr%weights_zt2zm(t_below,mk) & 
-            - ( 2.0 * wp3_zmm1 / max(wp2m1, wtol_sqd) ) & 
-              * gr%weights_zt2zm(t_above,mkm1) & 
-          )
+       ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
+       lhs(k_tdiag) &
+       = + dzt &
+           * (   a1 * ( 2.0 * wp3_zm / max(wp2, wtol_sqd) ) &
+                 * gr%weights_zt2zm(t_below,mk) &
+               - a1m1 * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol_sqd) ) &
+                 * gr%weights_zt2zm(t_above,mkm1) &
+             )
 
-    ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
-    lhs(km1_mdiag) & 
-!    = - dzt * a3m1 * 2.0 * wp2m1
-    = - a3_zt * dzt * 2.0 * wp2m1
+       ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
+       lhs(km1_mdiag) &
+       = - dzt * a3m1 * 2.0 * wp2m1
 
-    ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
-    lhs(km1_tdiag) & 
-!    = - dzt * a1m1 * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol_sqd) ) &
-!            * gr%weights_zt2zm(t_below,mkm1)
-    = - a1_zt * dzt * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol_sqd) ) & 
-              * gr%weights_zt2zm(t_below,mkm1)
+       ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
+       lhs(km1_tdiag) &
+       = - dzt * a1m1 * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol_sqd) ) &
+               * gr%weights_zt2zm(t_below,mkm1)
 
-    ! End of code that pulls out a3.
-    ! End of Brian's a1 change.  Feb. 14, 2008.
+    else
+
+       ! Brian tried a new discretization for the turbulent advection term, 
+       ! which contains the term:  - d [ a_1 * (w'^3)^2 / w'^2 ] / dz.  In order
+       ! to help stabilize w'^3, a_1 has been pulled outside of the derivative. 
+       ! On the left-hand side of the equation, this effects the thermodynamic 
+       ! superdiagonal (kp1_tdiag), the thermodynamic main diagonal (k_tdiag), 
+       ! and the thermodynamic subdiagonal (km1_tdiag).
+
+       ! Additionally, the discretization of the turbulent advection term, which
+       ! contains the term:  - d [ (a_3 + 3/2) * (w'^2)^2 ] / dz, has been 
+       ! altered to pull a_3 outside of the derivative.  This was done in order 
+       ! to help stabilize w'^3.  On the left-hand side of the equation, this 
+       ! effects the momentum superdiagonal (k_mdiag) and the momentum 
+       ! subdiagonal (km1_mdiag).
+
+       ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
+       lhs(kp1_tdiag) & 
+       = + a1_zt * dzt * ( 2.0 * wp3_zm / max(wp2, wtol_sqd) ) & 
+                 * gr%weights_zt2zm(t_above,mk)
+
+       ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
+       lhs(k_mdiag) & 
+       = + a3_zt * dzt * 2.0 * wp2
+
+       ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
+       lhs(k_tdiag) & 
+       = + a1_zt * dzt & 
+           * (   ( 2.0 * wp3_zm / max(wp2, wtol_sqd) ) & 
+                 * gr%weights_zt2zm(t_below,mk) & 
+               - ( 2.0 * wp3_zmm1 / max(wp2m1, wtol_sqd) ) & 
+                 * gr%weights_zt2zm(t_above,mkm1) & 
+             )
+
+       ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
+       lhs(km1_mdiag) & 
+       = - a3_zt * dzt * 2.0 * wp2m1
+
+       ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
+       lhs(km1_tdiag) & 
+       = - a1_zt * dzt * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol_sqd) ) & 
+                 * gr%weights_zt2zm(t_below,mkm1)
+
+       ! End of code that pulls out a3.
+       ! End of Brian's a1 change.  Feb. 14, 2008.
+
+    endif
+
 
     return
   end function wp3_terms_ta_tp_lhs
@@ -2289,8 +2314,8 @@ contains
   !=============================================================================
   pure function wp3_terms_ta_tp_rhs( wp3_zm, wp3_zmm1,  & 
                                      wp2, wp2m1,  & 
-                                     !a1, a1m1, a3, a3m1,  &
-                                     a1_zt, a3_zt, dzt )  & 
+                                     a1, a1_zt, a1m1,  &
+                                     a3, a3_zt, a3m1, dzt )  & 
   result( rhs )
 
     ! Description:
@@ -2374,6 +2399,9 @@ contains
     use constants, only:  &
         wtol_sqd
 
+    use model_flags, only:  &
+        l_standard_term_ta
+
     implicit none
 
     ! Input Variables
@@ -2382,45 +2410,59 @@ contains
       wp3_zmm1,    & ! w'^3 interpolated to momentum level (k-1)   [m^3/s^3]
       wp2,         & ! w'^2(k)                                     [m^2/s^2]
       wp2m1,       & ! w'^2(k-1)                                   [m^2/s^2]
-!      a1,          & ! a_1(k)                                      [-]
-!      a1m1,        & ! a_1(k-1)                                    [-]
-!      a3,          & ! a_3(k)                                      [-]
-!      a3m1,        & ! a_3(k-1)                                    [-]
+      a1,          & ! a_1(k)                                      [-]
       a1_zt,       & ! a_1 interpolated to thermodynamic level (k) [-]
+      a1m1,        & ! a_1(k-1)                                    [-]
+      a3,          & ! a_3(k)                                      [-]
       a3_zt,       & ! a_3 interpolated to thermodynamic level (k) [-]
+      a3m1,        & ! a_3(k-1)                                    [-]
       dzt            ! Inverse of grid spacing (k)                 [1/m]
 
     ! Return Variable
     real :: rhs
 
-    ! Brian tried a new discretization for the turbulent advection term, which
-    ! contains the term:  - d [ a_1 * (w'^3)^2 / w'^2 ] / dz.  In order to help
-    ! stabilize w'^3, a_1 has been pulled outside of the derivative.  This 
-    ! effects the right-hand side of the equation, as well as the left-hand 
-    ! side.
 
-    ! Additionally, the discretization of the turbulent advection term, which
-    ! contains the term:  - d [ (a_3 + 3/2) * (w'^2)^2 ] / dz, has been altered 
-    ! to pull a_3 outside of the derivative.  This was done in order to help 
-    ! stabilize w'^3.  This effects the right-hand side of the equation, as well
-    ! as the left-hand side.
+    if ( l_standard_term_ta ) then
 
-    rhs & 
-!    = + dzt &
-!        * ( a3 * wp2**2 - a3m1 * wp2m1**2 ) &
-!      + dzt &
-!        * (   a1 * ( wp3_zm**2 / max(wp2, wtol_sqd) ) &
-!            - a1m1 * ( wp3_zmm1**2 / max(wp2m1, wtol_sqd) ) &
-!          )
-    = + a3_zt * dzt & 
-        * ( wp2**2 - wp2m1**2 ) & 
-      + a1_zt * dzt & 
-        * (   ( wp3_zm**2 / max(wp2, wtol_sqd) ) & 
-            - ( wp3_zmm1**2 / max(wp2m1, wtol_sqd) ) & 
-          )
+       ! The turbulent advection term is discretized normally, in accordance
+       ! with the model equations found in the documentation and the description
+       ! listed above.
 
-    ! End of code that pulls out a3.
-    ! End of Brian's a1 change.  Feb. 14, 2008.
+       rhs & 
+       = + dzt &
+           * ( a3 * wp2**2 - a3m1 * wp2m1**2 ) &
+         + dzt &
+           * (   a1 * ( wp3_zm**2 / max(wp2, wtol_sqd) ) &
+               - a1m1 * ( wp3_zmm1**2 / max(wp2m1, wtol_sqd) ) &
+             )
+
+    else
+
+       ! Brian tried a new discretization for the turbulent advection term, 
+       ! which contains the term:  - d [ a_1 * (w'^3)^2 / w'^2 ] / dz.  In order
+       ! to help stabilize w'^3, a_1 has been pulled outside of the derivative. 
+       ! This effects the right-hand side of the equation, as well as the 
+       ! left-hand side.
+
+       ! Additionally, the discretization of the turbulent advection term, which
+       ! contains the term:  - d [ (a_3 + 3/2) * (w'^2)^2 ] / dz, has been 
+       ! altered to pull a_3 outside of the derivative.  This was done in order 
+       ! to help stabilize w'^3.  This effects the right-hand side of the 
+       ! equation, as well as the left-hand side.
+
+       rhs & 
+       = + a3_zt * dzt & 
+           * ( wp2**2 - wp2m1**2 ) & 
+         + a1_zt * dzt & 
+           * (   ( wp3_zm**2 / max(wp2, wtol_sqd) ) & 
+               - ( wp3_zmm1**2 / max(wp2m1, wtol_sqd) ) & 
+             )
+
+       ! End of code that pulls out a3.
+       ! End of Brian's a1 change.  Feb. 14, 2008.
+
+    endif
+
 
     return
   end function wp3_terms_ta_tp_rhs

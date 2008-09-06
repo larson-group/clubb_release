@@ -23,6 +23,13 @@ module model_flags
     l_clip_semi_implicit = .true.,  & ! Semi-implicit clipping scheme on wpthlp and wprtp
     l_3pt_sqd_dfsn       = .true.     ! Three-point squared diffusion coefficient
 
+  logical, parameter, public :: &
+    l_standard_term_ta = .false.    ! Use the standard discretization for the 
+                                    ! turbulent advection terms.  Setting to 
+                                    ! .false. means that a_1 and a_3 are pulled
+                                    ! outside of the derivative in advance_wp2_wp3_mod.F90
+                                    ! and in advance_xp2_xpyp_module.F90.
+
   logical, parameter, public :: & 
     l_single_C2_Skw = .false.,  & ! Use a single Skw dependent value for C2
     l_gamma_Skw     = .true.,   & ! Use a Skw dependent gamma parameter
