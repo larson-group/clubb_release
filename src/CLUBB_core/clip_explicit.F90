@@ -3,380 +3,519 @@
 !===============================================================================
 module clip_explicit
 
-implicit none
+  implicit none
 
-private
+  private
 
-public :: clip_covariance, & 
-          clip_variance, & 
-          clip_skewness
+  public :: clip_covariances_denom, &
+            clip_covariance, & 
+            clip_variance, & 
+            clip_skewness
 
 contains
 
-!===============================================================================
-subroutine clip_covariance( solve_type, l_first_clip_ts,  & 
-                            l_last_clip_ts, dt, xp2, yp2,  & 
-                            xpyp )
+  !=============================================================================
+  subroutine clip_covariances_denom( dt, rtp2, thlp2, up2, vp2, wp2, &
+                                     sclrp2, wprtp_cl_num, wpthlp_cl_num, &
+                                     wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, &
+                                     wprtp, wpthlp, upwp, vpwp, wpsclrp )
 
-! Description:
-! Clipping the value of covariance x'y' based on the correlation between x 
-! and y.
-!
-! The correlation between variables x and y is:
-!
-! corr_(x,y) = x'y' / [ sqrt(x'^2) * sqrt(y'^2) ];
-!
-! where x'^2 is the variance of x, y'^2 is the variance of y, and x'y' is the 
-! covariance of x and y.
-!
-! The correlation of two variables must always have a value between -1 and 1, 
-! such that:
-!
-! -1 <= corr_(x,y) <= 1.
-!
-! Therefore, there is an upper limit on x'y', such that:
-!
-! x'y' <=  [ sqrt(x'^2) * sqrt(y'^2) ];
-!
-! and a lower limit on x'y', such that:
-!
-! x'y' >= -[ sqrt(x'^2) * sqrt(y'^2) ].
-!
-! The values of x'y', x'^2, and y'^2 are all found on momentum levels.
-!
-! The value of x'y' may need to be clipped whenever x'y', x'^2, or y'^2 is 
-! updated.
-!
-! The following covariances are found in the code:  
-!
-! w'r_t', w'th_l', w'sclr', (computed in advance_xm_wpxp_module.F);
-! r_t'th_l', sclr'r_t', sclr'th_l', (computed in advance_xp2_xpyp.F);
-! u'w', v'w', w'edsclr' (computed in compute_um_edsclrm_mod.F).
+    ! Description:
+    ! 
 
-! References:
-!-----------------------------------------------------------------------
+    ! References:
+    !-----------------------------------------------------------------------
 
-use grid_class, only: & 
-    gr ! Variable(s)
+    use grid_class, only: &
+        gr ! Variable(s)
 
-use stats_precision, only: & 
-    time_precision ! Variable(s)
+    use parameters_tunable, only: &
+        sclr_dim ! Variable(s)
+
+    use stats_precision, only: & 
+        time_precision ! Variable(s)
  
-use stats_type, only: & 
-    stat_begin_update,  & ! Procedure(s)
-    stat_modify, & 
-    stat_end_update
+    use stats_type, only: &
+        stat_begin_update, & ! Procedure(s)
+        stat_modify, &
+        stat_end_update
 
-use stats_variables, only: & 
-    zm,  & ! Variable(s)
-    iwprtp_cl, & 
-    iwpthlp_cl, & 
-    irtpthlp_cl, & 
-    l_stats_samp
+    use stats_variables, only: & 
+        iwprtp_bt, &  ! Variable(s)
+!        iwpthlp_bt, &
+        zm, &
+        l_stats_samp
 
-implicit none
+    implicit none
 
-! Input Variables
-character(len=*), intent(in) :: & 
-  solve_type       ! Variable being solved; used for STATS.
+    ! Input Variables
+    real(kind=time_precision), intent(in) :: &
+      dt
 
-logical, intent(in) :: & 
-  l_first_clip_ts, & ! First instance of clipping in a timestep.
-  l_last_clip_ts     ! Last instance of clipping in a timestep.
+    real, dimension(gr%nnzp), intent(in) :: &
+      rtp2,  &
+      thlp2, &
+      up2,   &
+      vp2,   &
+      wp2
 
-real(kind=time_precision), intent(in) ::  & 
-  dt     ! Model timestep; used here for STATS           [s]
+    real, dimension(gr%nnzp,sclr_dim), intent(in) :: &
+      sclrp2
 
-real, dimension(gr%nnzp), intent(in) :: & 
-  xp2, & ! Variance of x, x'^2 (momentum levels)         [{x units}^2]
-  yp2    ! Variance of y, y'^2 (momentum levels)         [{y units}^2]
+    integer, intent(in) :: &
+      wprtp_cl_num,   &
+      wpthlp_cl_num,  &
+      wpsclrp_cl_num, &
+      upwp_cl_num,    &
+      vpwp_cl_num
 
-! Output Variable
-real, dimension(gr%nnzp), intent(inout) :: & 
-  xpyp   ! Covariance of x and y, x'y' (momentum levels) [{x units}*{y units}]
+    ! Input/Output Variables
+    real, dimension(gr%nnzp), intent(inout) :: &
+      wprtp,  &
+      wpthlp, &
+      upwp,   &
+      vpwp
+
+    real, dimension(gr%nnzp,sclr_dim), intent(inout) :: &
+      wpsclrp
+
+    ! Local Variables
+    logical :: & 
+      l_first_clip_ts, & ! First instance of clipping in a timestep.
+      l_last_clip_ts     ! Last instance of clipping in a timestep.
+
+
+    ! Clipping for w'r_t'
+    !
+    ! Clipping w'r_t' at each vertical level, based on the
+    ! correlation of w and r_t at each vertical level, such that:
+    ! corr_(w,r_t) = w'r_t' / [ sqrt(w'^2) * sqrt(r_t'^2) ];
+    ! -1 <= corr_(w,r_t) <= 1.
+    !
+    ! Since w'^2, r_t'^2, and w'r_t' are each advanced in different
+    ! subroutines from each other in advance_clubb_core, clipping for w'r_t' 
+    ! is done three times during each timestep (once after each variable has 
+    ! been updated).
+    !
+    ! This subroutine handles the first and third instances of 
+    ! w'r_t' clipping.
+    ! The first instance of w'r_t' clipping takes place after 
+    ! r_t'^2 is updated in advance_xp2_xpyp.
+    ! The third instance of w'r_t' clipping takes place after
+    ! w'^2 is updated in advance_wp2_wp3.
+
+
+    ! Include effect of clipping in wprtp time tendency budget term.
+    if ( l_stats_samp ) then
+       if ( wprtp_cl_num == 1 ) then
+          ! wprtp total time tendency (effect of clipping)
+          call stat_begin_update( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
+                                  zm )                              ! intent(inout)
+       elseif ( wprtp_cl_num == 3 ) then
+          ! wprtp total time tendency (effect of clipping)
+          call stat_modify( iwprtp_bt, real( -wprtp / dt ),  & ! intent(in)
+                            zm )                               ! intent(inout)
+       endif
+    endif
+
+
+    ! Used within subroutine clip_covariance.
+    if ( wprtp_cl_num == 1 ) then
+       l_first_clip_ts = .true.
+       l_last_clip_ts  = .false.
+    elseif ( wprtp_cl_num == 3 ) then
+       l_first_clip_ts = .false.
+       l_last_clip_ts  = .true.
+    endif
+
+
+    ! Clip w'r_t'
+    call clip_covariance( "wprtp", l_first_clip_ts,      & ! intent(in) 
+                          l_last_clip_ts, dt, wp2, rtp2, & ! intent(in)
+                          wprtp )                          ! intent(inout)
+
+
+    if ( l_stats_samp ) then
+       if ( wprtp_cl_num == 1 ) then
+          ! wprtp total time tendency (effect of clipping)
+          call stat_modify( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
+                            zm )                              ! intent(inout)
+       elseif ( wprtp_cl_num == 3 ) then
+          ! wprtp total time tendency (effect of clipping)
+          call stat_end_update( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
+                                zm )                              ! intent(inout)
+       endif
+    endif
+
+    return
+  end subroutine clip_covariances_denom
+
+  !=============================================================================
+  subroutine clip_covariance( solve_type, l_first_clip_ts,  & 
+                              l_last_clip_ts, dt, xp2, yp2,  & 
+                              xpyp )
+
+    ! Description:
+    ! Clipping the value of covariance x'y' based on the correlation between x 
+    ! and y.
+    !
+    ! The correlation between variables x and y is:
+    !
+    ! corr_(x,y) = x'y' / [ sqrt(x'^2) * sqrt(y'^2) ];
+    !
+    ! where x'^2 is the variance of x, y'^2 is the variance of y, and x'y' is 
+    ! the covariance of x and y.
+    !
+    ! The correlation of two variables must always have a value 
+    ! between -1 and 1, such that:
+    !
+    ! -1 <= corr_(x,y) <= 1.
+    !
+    ! Therefore, there is an upper limit on x'y', such that:
+    !
+    ! x'y' <=  [ sqrt(x'^2) * sqrt(y'^2) ];
+    !
+    ! and a lower limit on x'y', such that:
+    !
+    ! x'y' >= -[ sqrt(x'^2) * sqrt(y'^2) ].
+    !
+    ! The values of x'y', x'^2, and y'^2 are all found on momentum levels.
+    !
+    ! The value of x'y' may need to be clipped whenever x'y', x'^2, or y'^2 is
+    ! updated.
+    !
+    ! The following covariances are found in the code:  
+    !
+    ! w'r_t', w'th_l', w'sclr', (computed in advance_xm_wpxp_module.F90);
+    ! r_t'th_l', sclr'r_t', sclr'th_l', (computed in advance_xp2_xpyp.F90);
+    ! u'w', v'w', w'edsclr' (computed in compute_um_edsclrm_mod.F90).
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use grid_class, only: & 
+        gr ! Variable(s)
+
+    use stats_precision, only: & 
+        time_precision ! Variable(s)
+ 
+    use stats_type, only: & 
+        stat_begin_update,  & ! Procedure(s)
+        stat_modify, & 
+        stat_end_update
+
+    use stats_variables, only: & 
+        zm,  & ! Variable(s)
+        iwprtp_cl, & 
+        iwpthlp_cl, & 
+        irtpthlp_cl, & 
+        l_stats_samp
+
+    implicit none
+
+    ! Input Variables
+    character(len=*), intent(in) :: & 
+      solve_type       ! Variable being solved; used for STATS.
+
+    logical, intent(in) :: & 
+      l_first_clip_ts, & ! First instance of clipping in a timestep.
+      l_last_clip_ts     ! Last instance of clipping in a timestep.
+
+    real(kind=time_precision), intent(in) ::  & 
+      dt     ! Model timestep; used here for STATS           [s]
+
+    real, dimension(gr%nnzp), intent(in) :: & 
+      xp2, & ! Variance of x, x'^2 (momentum levels)         [{x units}^2]
+      yp2    ! Variance of y, y'^2 (momentum levels)         [{y units}^2]
+
+    ! Output Variable
+    real, dimension(gr%nnzp), intent(inout) :: & 
+      xpyp   ! Covariance of x and y, x'y' (momentum levels) [{x units}*{y units}]
 
  
-! Local Variable
-integer :: k  ! Array index
+    ! Local Variable
+    integer :: k  ! Array index
 
-integer :: & 
-  ixpyp_cl
+    integer :: & 
+      ixpyp_cl
 
 
-select case ( trim( solve_type ) )
-case ( "wprtp" )   ! wprtp clipping budget term
-   ixpyp_cl = iwprtp_cl
-case ( "wpthlp" )   ! wpthlp clipping budget term
-   ixpyp_cl = iwpthlp_cl
-case ( "rtpthlp" )   ! rtpthlp clipping budget term
-   ixpyp_cl = irtpthlp_cl
-case default   ! scalars (or upwp/vpwp) are involved
-   ixpyp_cl = 0
-end select
+    select case ( trim( solve_type ) )
+    case ( "wprtp" )   ! wprtp clipping budget term
+       ixpyp_cl = iwprtp_cl
+    case ( "wpthlp" )   ! wpthlp clipping budget term
+       ixpyp_cl = iwpthlp_cl
+    case ( "rtpthlp" )   ! rtpthlp clipping budget term
+       ixpyp_cl = irtpthlp_cl
+    case default   ! scalars (or upwp/vpwp) are involved
+       ixpyp_cl = 0
+    end select
  
 
-if ( l_stats_samp ) then
-   if ( l_first_clip_ts ) then
-      call stat_begin_update( ixpyp_cl, real( xpyp / dt ), zm )
-   else
-      call stat_modify( ixpyp_cl, real( -xpyp / dt ), zm )
-   endif
-endif 
+    if ( l_stats_samp ) then
+       if ( l_first_clip_ts ) then
+          call stat_begin_update( ixpyp_cl, real( xpyp / dt ), zm )
+       else
+          call stat_modify( ixpyp_cl, real( -xpyp / dt ), zm )
+       endif
+    endif 
 
-! The value of x'y' at the surface (or lower boundary) is a set value that is 
-! either specified or determined elsewhere in a surface subroutine.  It is 
-! ensured elsewhere that the correlation between x and y at the surface (or 
-! lower boundary) is between -1 and 1.  Thus, the covariance clipping code does 
-! not need to be invoked at the lower boundary.  Likewise, the value of x'y'
-! is set at the upper boundary, so the covariance clipping code does not need to
-! be invoked at the upper boundary.
-do k = 2, gr%nnzp-1, 1
+    ! The value of x'y' at the surface (or lower boundary) is a set value that 
+    ! is either specified or determined elsewhere in a surface subroutine.  It
+    ! is ensured elsewhere that the correlation between x and y at the surface 
+    ! (or lower boundary) is between -1 and 1.  Thus, the covariance clipping 
+    ! code does not need to be invoked at the lower boundary.  Likewise, the 
+    ! value of x'y' is set at the upper boundary, so the covariance clipping 
+    ! code does not need to be invoked at the upper boundary.
+    do k = 2, gr%nnzp-1, 1
 
-   ! Clipping for xpyp at an upper limit corresponding with a correlation 
-   ! between x and y of 0.99.
-   if ( xpyp(k) >  0.99 * sqrt( xp2(k) * yp2(k) ) ) then
-      xpyp(k) =  0.99 * sqrt( xp2(k) * yp2(k) )
+       ! Clipping for xpyp at an upper limit corresponding with a correlation 
+       ! between x and y of 0.99.
+       if ( xpyp(k) >  0.99 * sqrt( xp2(k) * yp2(k) ) ) then
+          xpyp(k) =  0.99 * sqrt( xp2(k) * yp2(k) )
 
-   ! Clipping for xpyp at a lower limit corresponding with a correlation 
-   ! between x and y of -0.99.
-   elseif ( xpyp(k) < -0.99 * sqrt( xp2(k) * yp2(k) ) ) then
-      xpyp(k) = -0.99 * sqrt( xp2(k) * yp2(k) )
+       ! Clipping for xpyp at a lower limit corresponding with a correlation 
+       ! between x and y of -0.99.
+       elseif ( xpyp(k) < -0.99 * sqrt( xp2(k) * yp2(k) ) ) then
+          xpyp(k) = -0.99 * sqrt( xp2(k) * yp2(k) )
 
-   endif
+       endif
 
-enddo
+    enddo
 
-if ( l_stats_samp ) then
-   if ( l_last_clip_ts ) then
-      call stat_end_update( ixpyp_cl, real( xpyp / dt ), zm )
-   else
-      call stat_modify( ixpyp_cl, real( xpyp / dt ), zm )
-   endif
-endif
+    if ( l_stats_samp ) then
+       if ( l_last_clip_ts ) then
+          call stat_end_update( ixpyp_cl, real( xpyp / dt ), zm )
+       else
+          call stat_modify( ixpyp_cl, real( xpyp / dt ), zm )
+       endif
+    endif
 
 
-end subroutine clip_covariance
+    return
+  end subroutine clip_covariance
 
-!===============================================================================
-subroutine clip_variance( solve_type, dt, threshold, &
-                          xp2 )
+  !=============================================================================
+  subroutine clip_variance( solve_type, dt, threshold, &
+                            xp2 )
 
-! Description:
-! Clipping the value of variance x'^2 based on a minimum threshold value.  The 
-! threshold value must be greater than or equal to 0.
-!
-! The values of x'^2 are found on the momentum levels.
-!
-! The following variances are found in the code:  
-!
-! r_t'^2, th_l'^2, u'^2, v'^2, sclr'^2, (computed in advance_xp2_xpyp.F);
-! w'^2 (computed in advance_wp2_wp3_module.F).
+    ! Description:
+    ! Clipping the value of variance x'^2 based on a minimum threshold value. 
+    ! The threshold value must be greater than or equal to 0.
+    !
+    ! The values of x'^2 are found on the momentum levels.
+    !
+    ! The following variances are found in the code:  
+    !
+    ! r_t'^2, th_l'^2, u'^2, v'^2, sclr'^2, (computed in advance_xp2_xpyp);
+    ! w'^2 (computed in advance_wp2_wp3_module).
 
-! References:
-!-----------------------------------------------------------------------
+    ! References:
+    !-----------------------------------------------------------------------
 
-use grid_class, only: & 
-    gr ! Variable(s)
+    use grid_class, only: & 
+        gr ! Variable(s)
 
-use stats_precision, only: & 
-    time_precision ! Variable(s)
+    use stats_precision, only: & 
+        time_precision ! Variable(s)
  
-use stats_type, only: & 
-    stat_begin_update,  & ! Procedure(s)
-    stat_end_update
+    use stats_type, only: & 
+        stat_begin_update,  & ! Procedure(s)
+        stat_end_update
 
-use stats_variables, only: & 
-    zm,  & ! Variable(s)
-    iwp2_cl, & 
-    irtp2_cl, & 
-    ithlp2_cl, & 
-    iup2_cl, & 
-    ivp2_cl, & 
-    l_stats_samp
+    use stats_variables, only: & 
+        zm,  & ! Variable(s)
+        iwp2_cl, & 
+        irtp2_cl, & 
+        ithlp2_cl, & 
+        iup2_cl, & 
+        ivp2_cl, & 
+        l_stats_samp
+
+    implicit none
+
+    ! Input Variables
+    character(len=*), intent(in) :: & 
+      solve_type  ! Variable being solved; used for STATS.
+
+    real(kind=time_precision), intent(in) :: & 
+      dt          ! Model timestep; used here for STATS     [s]
+
+    real, intent(in) :: & 
+      threshold   ! Minimum value of x'^2                   [{x units}^2]
+
+    ! Output Variable
+    real, dimension(gr%nnzp), intent(inout) :: & 
+      xp2         ! Variance of x, x'^2 (momentum levels)   [{x units}^2]
+
+    ! Local Variables
+    integer :: k   ! Array index
+
+
+    integer :: & 
+      ixp2_cl
+
+
+    select case ( trim( solve_type ) )
+    case ( "wp2" )   ! wp2 clipping budget term
+       ixp2_cl = iwp2_cl
+    case ( "rtp2" )   ! rtp2 clipping budget term
+       ixp2_cl = irtp2_cl
+    case ( "thlp2" )   ! thlp2 clipping budget term
+       ixp2_cl = ithlp2_cl
+    case ( "up2" )   ! up2 clipping budget term
+       ixp2_cl = iup2_cl
+    case ( "vp2" )   ! vp2 clipping budget term
+       ixp2_cl = ivp2_cl
+    case default   ! scalars are involved
+       ixp2_cl = 0
+    end select
+
+
+    if ( l_stats_samp ) then 
+       call stat_begin_update( ixp2_cl, real( xp2 / dt ), zm )
+    endif
  
+    ! Limit the value of x'^2 at threshold.
+    ! The value of x'^2 at the surface (or lower boundary) is a set value that 
+    ! is determined elsewhere in a surface subroutine.  Thus, the variance 
+    ! clipping code does not need to be invoked at the lower boundary.
+    ! Likewise, the value of x'^2 is set at the upper boundary, so the variance 
+    ! clipping code does not need to be invoked at the upper boundary.
+    do k = 2, gr%nnzp-1, 1
+       if ( xp2(k) < threshold ) then
+          xp2(k) = threshold
+       endif
+    enddo
 
-implicit none
-
-! Input Variables
-character(len=*), intent(in) :: & 
-  solve_type  ! Variable being solved; used for STATS.
-
-real(kind=time_precision), intent(in) :: & 
-  dt          ! Model timestep; used here for STATS     [s]
-
-real, intent(in) :: & 
-  threshold   ! Minimum value of x'^2                   [{x units}^2]
-
-! Output Variable
-real, dimension(gr%nnzp), intent(inout) :: & 
-  xp2         ! Variance of x, x'^2 (momentum levels)   [{x units}^2]
-
-! Local Variables
-integer :: k   ! Array index
-
- 
-integer :: & 
-  ixp2_cl
+    if ( l_stats_samp ) then
+       call stat_end_update( ixp2_cl, real( xp2 / dt ), zm )
+    endif
 
 
-select case ( trim( solve_type ) )
-case ( "wp2" )   ! wp2 clipping budget term
-   ixp2_cl = iwp2_cl
-case ( "rtp2" )   ! rtp2 clipping budget term
-   ixp2_cl = irtp2_cl
-case ( "thlp2" )   ! thlp2 clipping budget term
-   ixp2_cl = ithlp2_cl
-case ( "up2" )   ! up2 clipping budget term
-   ixp2_cl = iup2_cl
-case ( "vp2" )   ! vp2 clipping budget term
-   ixp2_cl = ivp2_cl
-case default   ! scalars are involved
-   ixp2_cl = 0
-end select
+    return
+  end subroutine clip_variance
+
+  !=============================================================================
+  subroutine clip_skewness( dt, wp2_zt, wp3 )
+
+    ! Description:
+    ! Clipping the value of w'^3 based on the skewness of w, Sk_w.
+    !
+    ! The skewness of w is:
+    !
+    ! Sk_w = w'^3 / (w'^2)^(3/2).
+    !
+    ! The value of Sk_w is limited to a range between an upper limit and a lower
+    ! limit.  The values of the limits depend on whether the level altitude is 
+    ! within 100 meters of the surface.
+    !
+    ! For altitudes within 100 meters of the surface:
+    !
+    ! -0.2*sqrt(2) <= Sk_w <= 0.2*sqrt(2);
+    !
+    ! while for all other altitudes:
+    !
+    ! -4.5 <= Sk_w <= 4.5.
+    !
+    ! Therefore, there is an upper limit on w'^3, such that:
+    !
+    ! w'^3  <=  threshold_magnitude * (w'^2)^(3/2);
+    !
+    ! and a lower limit on w'^3, such that:
+    !
+    ! w'^3  >= -threshold_magnitude * (w'^2)^(3/2).
+    !
+    ! The values of w'^3 are found on the thermodynamic levels, while the values
+    ! of w'^2 are found on the momentum levels.  Therefore, the values of w'^2 
+    ! are interpolated to the thermodynamic levels before being used to 
+    ! calculate the upper and lower limits for w'^3.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use grid_class, only: & 
+        gr ! Variable(s)
+
+    use stats_precision, only: & 
+        time_precision ! Variable(s)
+
+    use stats_type, only: &
+        stat_begin_update,  & ! Procedure(s)
+        stat_end_update
+
+    use stats_variables, only: & 
+        zt,  & ! Variable(s)
+        iwp3_cl, & 
+        l_stats_samp
+
+    implicit none
+
+    ! Input Variables
+    real(kind=time_precision), intent(in) :: & 
+      dt               ! Model timestep; used here for STATS        [s]
+
+    real, dimension(gr%nnzp), intent(in) :: &
+      wp2_zt           ! w'^2 interpolated to thermodyamic levels   [m^2/s^2]
+
+    ! Input/Output Variables
+    real, dimension(gr%nnzp), intent(inout) :: &
+      wp3              ! w'^3 (thermodynamic levels)                [m^3/s^3]
+
+    ! Local Variables
+    real, dimension(gr%nnzp) :: &
+      wp3_upper_lim, & ! Keeps Sk_w from becoming > upper_limit     [m^3/s^3]
+      wp3_lower_lim    ! Keeps Sk_w from becoming < lower_limit     [m^3/s^3]
+
+    integer :: k       ! Vertical array index.
 
 
-if ( l_stats_samp ) then 
-   call stat_begin_update( ixp2_cl, real( xp2 / dt ), zm )
-endif
- 
-! Limit the value of x'^2 at threshold.
-! The value of x'^2 at the surface (or lower boundary) is a set value that is 
-! determined elsewhere in a surface subroutine.  Thus, the covariance clipping 
-! code does not need to be invoked at the lower boundary.  Likewise, the value 
-! of x'^2 is set at the upper boundary, so the covariance clipping code does not
-! need to be invoked at the upper boundary.
-do k = 2, gr%nnzp-1, 1
-   if ( xp2(k) < threshold ) then
-      xp2(k) = threshold
-   endif
-enddo
+    if ( l_stats_samp ) then 
+       call stat_begin_update( iwp3_cl, real( wp3 / dt ), zt )
+    endif
 
-if ( l_stats_samp ) then
-   call stat_end_update( ixp2_cl, real( xp2 / dt ), zm )
-endif
+    ! Compute the upper and lower limits of w'^3 at every level,
+    ! based on the skewness of w, Sk_w, such that:
+    ! Sk_w = w'^3 / (w'^2)^(3/2);
+    ! -4.5 <= Sk_w <= 4.5; 
+    ! or, if the level altitude is within 100 meters of the surface,
+    ! -0.2*sqrt(2) <= Sk_w <= 0.2*sqrt(2).
 
+    ! The normal magnitude limit of skewness of w in the CLUBB code is 4.5.
+    ! However, according to Andre et al. (1976b & 1978), wp3 should not exceed
+    ! [2*(wp2^3)]^(1/2) at any level.  However, this term should be multiplied 
+    ! by 0.2 close to the surface to include surface effects.  There already is 
+    ! a wp3 clipping term in place for all other altitudes, but this term will 
+    ! be included for the surface layer only.  Therefore, the lowest level wp3 
+    ! should not exceed 0.2 * sqrt(2) * wp2^(3/2).  Brian Griffin.  12/18/05.
 
-end subroutine clip_variance
+    do k = 1, gr%nnzp, 1
+       if ( gr%zt(k) <= 100.0 ) then ! Clip for 100 m. above ground.
+          wp3_upper_lim(k) =  0.2 * sqrt(2.0) * wp2_zt(k)**(3.0/2.0)
+          wp3_lower_lim(k) = -0.2 * sqrt(2.0) * wp2_zt(k)**(3.0/2.0)
+       else                          ! Clip skewness consistently with a.
+          wp3_upper_lim(k) =  4.5 * wp2_zt(k)**(3.0/2.0)
+          wp3_lower_lim(k) = -4.5 * wp2_zt(k)**(3.0/2.0)
+       endif
+    enddo
 
-!===============================================================================
-subroutine clip_skewness( dt, wp2_zt, wp3 )
+    ! Clipping for w'^3 at an upper limit corresponding with 
+    ! the appropriate value of Sk_w.
+    where ( wp3 > wp3_upper_lim ) &
+       wp3 = wp3_upper_lim
 
-! Description:
-! Clipping the value of w'^3 based on the skewness of w, Sk_w.
-!
-! The skewness of w is:
-!
-! Sk_w = w'^3 / (w'^2)^(3/2).
-!
-! The value of Sk_w is limited to a range between an upper limit and a lower 
-! limit.  The values of the limits depend on whether the level altitude is 
-! within 100 meters of the surface.
-!
-! For altitudes within 100 meters of the surface:
-!
-! -0.2*sqrt(2) <= Sk_w <= 0.2*sqrt(2);
-!
-! while for all other altitudes:
-!
-! -4.5 <= Sk_w <= 4.5.
-!
-! Therefore, there is an upper limit on w'^3, such that:
-!
-! w'^3  <=  threshold_magnitude * (w'^2)^(3/2);
-!
-! and a lower limit on w'^3, such that:
-!
-! w'^3  >= -threshold_magnitude * (w'^2)^(3/2).
-!
-! The values of w'^3 are found on the thermodynamic levels, while the values of
-! w'^2 are found on the momentum levels.  Therefore, the values of w'^2 are
-! interpolated to the thermodynamic levels before being used to calculate the
-! upper and lower limits for w'^3.
+    ! Clipping for w'^3 at a lower limit corresponding with 
+    ! the appropriate value of Sk_w.
+    where ( wp3 < wp3_lower_lim ) &
+       wp3 = wp3_lower_lim
 
-! References:
-!-----------------------------------------------------------------------
-
-use grid_class, only: & 
-    gr ! Variable(s)
-
-use stats_precision, only: & 
-    time_precision ! Variable(s)
-
-use stats_type, only: &
-    stat_begin_update,  & ! Procedure(s)
-    stat_end_update
-
-use stats_variables, only: & 
-    zt,  & ! Variable(s)
-    iwp3_cl, & 
-    l_stats_samp
-
-implicit none
-
-! Input Variables
-real(kind=time_precision), intent(in) :: & 
-  dt               ! Model timestep; used here for STATS        [s]
-
-real, dimension(gr%nnzp), intent(in) :: &
-  wp2_zt           ! w'^2 interpolated to thermodyamic levels   [m^2/s^2]
-
-! Input/Output Variables
-real, dimension(gr%nnzp), intent(inout) :: &
-  wp3              ! w'^3 (thermodynamic levels)                [m^3/s^3]
-
-! Local Variables
-real, dimension(gr%nnzp) :: &
-  wp3_upper_lim, & ! Keeps Sk_w from becoming > upper_limit     [m^3/s^3]
-  wp3_lower_lim    ! Keeps Sk_w from becoming < lower_limit     [m^3/s^3]
-
-integer :: k       ! Vertical array index.
+    if ( l_stats_samp ) then
+       call stat_end_update( iwp3_cl, real( wp3 / dt ), zt )
+    endif
 
 
-if ( l_stats_samp ) then 
-   call stat_begin_update( iwp3_cl, real( wp3 / dt ), zt )
-endif
-
-! Compute the upper and lower limits of w'^3 at every level,
-! based on the skewness of w, Sk_w, such that:
-! Sk_w = w'^3 / (w'^2)^(3/2);
-! -4.5 <= Sk_w <= 4.5; 
-! or, if the level altitude is within 100 meters of the surface,
-! -0.2*sqrt(2) <= Sk_w <= 0.2*sqrt(2).
-
-! The normal magnitude limit of skewness of w in the CLUBB code is 4.5.
-! However, according to Andre et al. (1976b & 1978), wp3 should not exceed 
-! [2*(wp2^3)]^(1/2) at any level.  However, this term should be multiplied 
-! by 0.2 close to the surface to include surface effects.  There already is 
-! a wp3 clipping term in place for all other altitudes, but this term will be
-! included for the surface layer only.  Therefore, the lowest level wp3 should 
-! not exceed 0.2 * sqrt(2) * wp2^(3/2).  Brian Griffin.  12/18/05.
-
-do k = 1, gr%nnzp, 1
-   if ( gr%zt(k) <= 100.0 ) then ! Clip for 100 m. above ground.
-      wp3_upper_lim(k) =  0.2 * sqrt(2.0) * wp2_zt(k)**(3.0/2.0)
-      wp3_lower_lim(k) = -0.2 * sqrt(2.0) * wp2_zt(k)**(3.0/2.0)
-   else                          ! Clip skewness consistently with a.
-      wp3_upper_lim(k) =  4.5 * wp2_zt(k)**(3.0/2.0)
-      wp3_lower_lim(k) = -4.5 * wp2_zt(k)**(3.0/2.0)
-   endif
-enddo
-
-! Clipping for w'^3 at an upper limit corresponding with 
-! the appropriate value of Sk_w.
-where ( wp3 > wp3_upper_lim ) &
-   wp3 = wp3_upper_lim
-
-! Clipping for w'^3 at a lower limit corresponding with 
-! the appropriate value of Sk_w.
-where ( wp3 < wp3_lower_lim ) &
-   wp3 = wp3_lower_lim
-
-if ( l_stats_samp ) then
-   call stat_end_update( iwp3_cl, real( wp3 / dt ), zt )
-endif
-
-
-end subroutine clip_skewness
+    return
+  end subroutine clip_skewness
 
 !===============================================================================
 

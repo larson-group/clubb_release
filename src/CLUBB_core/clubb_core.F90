@@ -420,18 +420,19 @@ module clubb_core
     ! This requires us to store in memory sigma_sqd_w and tau_zm between timesteps.
 
     ! We found that if we call advance_xp2_xpyp first, we can use a longer timestep.
-    call advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp,                 & ! intent(in)
-                   thlm, wpthlp, wpthvp, um, vm,              & ! intent(in)
-                   wp2, wp2_zt, wp3, upwp, vpwp, sigma_sqd_w, Skw_zm, Kh_zt,  & ! intent(in)
+    call advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp,     & ! intent(in)
+                           thlm, wpthlp, wpthvp, um, vm,  & ! intent(in)
+                           wp2, wp2_zt, wp3, upwp, vpwp,  & ! intent(in)
+                           sigma_sqd_w, Skw_zm, Kh_zt,    & ! intent(in)
  ! Vince Larson used prognostic timestepping of variances 
  !    in order to increase numerical stability.  17 Jul 2007
- !                  .false., dt, isValid &
-                   .true., dt,                         & ! intent(in)
-                   sclrm, wpsclrp,                     & ! intent(in) 
-                   rtp2, thlp2, rtpthlp,               & ! intent(inout)
-                   up2, vp2,                           & ! intent(inout)
-                   err_code,                           & ! intent(out)
-                   sclrp2, sclrprtp, sclrpthlp  )        ! intent(out)
+ !                          .false., dt,                   & ! intent(in)
+                           .true., dt,                    & ! intent(in)
+                           sclrm, wpsclrp,                & ! intent(in) 
+                           rtp2, thlp2, rtpthlp,          & ! intent(inout)
+                           up2, vp2,                      & ! intent(inout)
+                           err_code,                      & ! intent(out)
+                           sclrp2, sclrprtp, sclrpthlp  )   ! intent(out)
 
     ! Iterpolate variances to the zt grid (statistics and closure)
     thlp2_zt   = max( zm2zt( thlp2 ), 0.0 )  ! Positive definite quantity
@@ -926,9 +927,9 @@ module clubb_core
     !----------------------------------------------------------------
 
     call advance_windm_edsclrm( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref,  &
-                             wp2, up2, vp2, upwp_sfc, vpwp_sfc, fcor,  &
-                             l_implemented, um, vm, edsclrm,  &
-                             upwp, vpwp, wpedsclrp, err_code )
+                                wp2, up2, vp2, upwp_sfc, vpwp_sfc, fcor,  &
+                                l_implemented, um, vm, edsclrm,  &
+                                upwp, vpwp, wpedsclrp, err_code )
 
     ! Wrapped LAPACK procedures may report errors, and if so, exit
     ! gracefully.
