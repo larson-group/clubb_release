@@ -50,7 +50,7 @@ module pdf_closure_module
       ep,       & ! Rd / Rv;     ep  = 0.622            [-]
       ep1,      & ! (1.0-ep)/ep; ep1 = 0.61             [-]
       ep2,      & ! 1.0/ep;      ep2 = 1.61             [-]
-      wtol,     & ! Tolerance for w                     [m/s]
+      wtol_sqd, & ! Tolerance for w'^2                  [m^2/s^2]
       rttol,    & ! Tolerance for r_t                   [kg/kg]
       thltol,   & ! Tolerance for th_l                  [K]
       sstol,    & ! Tolerance for pdf parameter         [kg/kg]
@@ -218,7 +218,7 @@ module pdf_closure_module
 
     ! If there is no velocity, then use single delta fnc. as pdf
     ! Otherwise width parameters (e.g. sw1, sw2, etc.) are non-zero.
-    if ( wp2 <= wtol**2 )  then
+    if ( wp2 <= wtol_sqd )  then
 
       a         = 0.5
       w1        = wm

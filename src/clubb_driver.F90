@@ -716,7 +716,7 @@ module clubb_driver
 !-----------------------------------------------------------------------
 
         use constants, only:  & 
-            Cp, Lv, ep2, ep1, emin, wtol ! Variable(s)
+            Cp, Lv, ep2, ep1, emin, wtol_sqd ! Variable(s)
 
         use parameters_tunable, only:  & 
             T0, taumax, taumin, c_K, sclr_dim ! Variable(s)
@@ -1176,10 +1176,10 @@ module clubb_driver
                               Lscale )                ! Intent(out)
 
         ! Dissipation time
-        tmp1 = sqrt( max( wtol**2, zm2zt( em ) ) )
+        tmp1 = sqrt( max( wtol_sqd, zm2zt( em ) ) )
         tau_zt = min( Lscale / tmp1, taumax )
         tau_zm = min( ( max( zt2zm( Lscale ), 0.0 ) & 
-                     / sqrt( max( wtol**2, em ) ) ), taumax )
+                     / sqrt( max( wtol_sqd, em ) ) ), taumax )
 !        tau_zm = zt2zm( tau_zt )
 
         ! Modification to damp noise in stable region

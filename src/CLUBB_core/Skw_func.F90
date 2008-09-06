@@ -10,14 +10,18 @@ public :: Skw_func
 contains
 
 !-----------------------------------------------------------------------
-function Skw_func( wp2, wp3, wtol )  & 
+function Skw_func( wp2, wp3 )  &
 result( Skw )
 
-!        Description:
-!        Calculate Skw
+! Description:
+! Calculate the skewness of w, Skw.
 
-!        References:
+! References:
 !-----------------------------------------------------------------------
+
+use constants, only:  &
+    wtol_sqd ! Variable(s)
+
 implicit none
 
 ! External
@@ -27,22 +31,20 @@ intrinsic :: min, max
 logical, parameter ::  & 
   l_clipping_kluge = .false.
 
-! Input 
+! Input Variables
 real, intent(in) :: & 
   wp2,  & ! w'^2    [m^2/s^2]
   wp3     ! w'^3    [m^3/s^3]
 
-real, intent(in) :: & 
-  wtol ! w tol.  [m/s]
-
+! Output Variable
 real :: & 
-  Skw ! Result Skw [-]
+  Skw     ! Result Skw [-]
 
-Skw = wp3 / ( max( wp2, wtol**2 ) )**1.5
+Skw = wp3 / ( max( wp2, wtol_sqd ) )**1.5
 
 if ( l_clipping_kluge ) then
   Skw = min( max( Skw, -4.5 ), 4.5)
-end if
+endif
 
 return
 end function Skw_func

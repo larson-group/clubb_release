@@ -54,7 +54,7 @@ subroutine advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp, &
 !-----------------------------------------------------------------------
 
 use constants, only: & 
-    wtol,  & ! Variable(s)
+    wtol_sqd,  & ! Variable(s)
     rttol, & 
     thltol, & 
     emin, & 
@@ -502,7 +502,7 @@ endif
 
 !threshold = 0.0
 !
-!where ( wp2 >= wtol*wtol ) & 
+!where ( wp2 >= wtol_sqd ) & 
 !   threshold = rttol*rttol
 
 threshold = rttol**2
@@ -515,7 +515,7 @@ call clip_variance( "rtp2", dt, threshold, & ! Intent(in)
 
 !threshold = 0.0
 !
-!where ( wp2 >= wtol*wtol ) & 
+!where ( wp2 >= wtol_sqd ) & 
 !   threshold = thltol*thltol
 
 threshold = thltol**2
@@ -659,7 +659,7 @@ if ( l_scalar_calc ) then
 
 !     threshold = 0.0
 !
-!     where ( wp2 >= wtol*wtol ) & 
+!     where ( wp2 >= wtol_sqd ) & 
 !        threshold = sclrtol(i)*sclrtol(i)
 
      threshold = sclrtol(i)**2

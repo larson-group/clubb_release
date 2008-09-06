@@ -53,7 +53,8 @@ module clubb_core
       wtol,  & ! Variable(s)
       emin, & 
       thltol, & 
-      rttol, & 
+      rttol, &
+      wtol_sqd, &
       ep2, & 
       Cp, & 
       Lv, & 
@@ -337,10 +338,10 @@ module clubb_core
 
     do k = 1, gr%nnzp, 1
 
-      Skw_zt(k) = Skw_func( zm2zt(wp2,k), wp3(k), wtol )
-      Skw_zm(k) = Skw_func( wp2(k), zt2zm(wp3,k), wtol )
+      Skw_zt(k) = Skw_func( zm2zt(wp2,k), wp3(k) )
+      Skw_zm(k) = Skw_func( wp2(k), zt2zm(wp3,k) )
 
-    end do
+    enddo
 
     ! SET SURFACE VALUES OF FLUXES (BROUGHT IN)
     wpthlp(1) = wpthlp_sfc
@@ -722,10 +723,10 @@ module clubb_core
 !       tau_zt = MIN( Lscale / tmp1, taumax )
 !       tau_zm &
 !       = MIN( ( zt2zm( Lscale ) / SQRT( MAX( emin, em ) ) ), taumax )
-    tmp1   = SQRT( MAX( wtol**2, zm2zt( em ) ) )
+    tmp1   = SQRT( MAX( wtol_sqd, zm2zt( em ) ) )
     tau_zt = MIN( Lscale / tmp1, taumax )
     tau_zm = MIN( ( MAX( zt2zm( Lscale ), 0.0 )  & 
-                 / SQRT( MAX( wtol**2, em ) ) ), taumax )
+                 / SQRT( MAX( wtol_sqd, em ) ) ), taumax )
     ! End Vince Larson's replacement.
 
     ! Modification to damp noise in stable region
