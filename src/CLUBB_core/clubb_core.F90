@@ -175,7 +175,7 @@ module clubb_core
       Skw_func ! Procedure
 
     use clip_explicit, only: & 
-      clip_covariance ! Procedure(s)
+      clip_covariances_denom ! Procedure(s)
 
     use permute_height_time_mod, only:  & 
       permute_height_time ! Procedure
@@ -184,20 +184,11 @@ module clubb_core
       ! Read values from namelist
       thlm2T_in_K ! Procedure
 
-    use stats_variables, only: & 
-      zm,  & ! Variable(s)
-      l_stats_samp, & 
-      iwprtp_bt, & 
-      iwpthlp_bt
-
     use stats_subs, only: & 
       stats_accumulate ! Procedure
 
     use stats_type, only: & 
-      stat_update_var_pt, & ! Procedure(s)
-      stat_begin_update, & 
-      stat_modify, & 
-      stat_end_update
+      stat_update_var_pt ! Procedure(s)
 
     implicit none
 
@@ -439,122 +430,23 @@ module clubb_core
     rtp2_zt    = max( zm2zt( rtp2 ), 0.0 )   ! Positive definite quantity
     rtpthlp_zt = zm2zt( rtpthlp )
 
-    !----------------------------------------------------------------
-    ! Covariance clipping for wprtp, wpthlp, and wpsclrp after
-    ! subroutine advance_xp2_xpyp updated rtp2, thlp2, and sclrp2.
-    !----------------------------------------------------------------
-
-    ! Clipping for w'r_t'
-    !
-    ! Clipping w'r_t' at each vertical level, based on the
-    ! correlation of w and r_t at each vertical level, such that:
-    ! corr_(w,r_t) = w'r_t' / [ sqrt(w'^2) * sqrt(r_t'^2) ];
-    ! -1 <= corr_(w,r_t) <= 1.
-    ! Since w'^2, r_t'^2, and w'r_t' are updated in different
-    ! places from each other, clipping for w'r_t' has to be done
-    ! three times.  This is the first instance of w'r_t' clipping.
-
-
-    ! Include effect of clipping in wprtp time tendency budget term.
-    if ( l_stats_samp ) then
-      ! wprtp total time tendency (effect of clipping)
-      call stat_begin_update( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
-                   zm ) ! intent(inout)
-    end if
-
-
-    call clip_covariance( "wprtp", .true.,            & ! intent(in) 
-                          .false., dt, wp2, rtp2,     & ! intent(in)
-                          wprtp )                       ! intent(inout)
-
-    if ( l_stats_samp ) then
-
-      ! wprtp total time tendency (effect of clipping)
-      call stat_modify( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
-                        zm )                           ! intent(inout)
-    end if
-
-
-    ! Clipping for w'th_l'
-    !
-    ! Clipping w'th_l' at each vertical level, based on the
-    ! correlation of w and th_l at each vertical level, such that:
-    ! corr_(w,th_l) = w'th_l' / [ sqrt(w'^2) * sqrt(th_l'^2) ];
-    ! -1 <= corr_(w,th_l) <= 1.
-    ! Since w'^2, th_l'^2, and w'th_l' are updated in different
-    ! places from each other, clipping for w'th_l' has to be done
-    ! three times.  This is the first instance of w'th_l' clipping.
-
-
-    ! Include effect of clipping in wpthlp time tendency budget term.
-    if ( l_stats_samp ) then
-      ! wpthlp total time tendency (effect of clipping)
-      call stat_begin_update( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
-                              zm )                             ! intent(inout)
-    end if
-
-
-    call clip_covariance( "wpthlp", .true.,        & ! intent(in)
-                          .false., dt, wp2, thlp2, & ! intent(in)
-                          wpthlp )                   ! intent(inout)
-
-    if ( l_stats_samp ) then
-
-      ! wpthlp total time tendency (effect of clipping)
-      call stat_modify( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
-                        zm )                                ! intent(inout)
-    end if
-
-
-    ! Clipping for w'sclr'
-    !
-    ! Clipping w'sclr' at each vertical level, based on the
-    ! correlation of w and sclr at each vertical level, such that:
-    ! corr_(w,sclr) = w'sclr' / [ sqrt(w'^2) * sqrt(sclr'^2) ];
-    ! -1 <= corr_(w,sclr) <= 1.
-    ! Since w'^2, sclr'^2, and w'sclr' are updated in different
-    ! places from each other, clipping for w'sclr' has to be done
-    ! three times.  This is the first instance of w'sclr' clipping.
-    do i = 1, sclr_dim, 1
-      call clip_covariance( "wpsclrp", .true.,                & ! intent(in)
-                            .false., dt, wp2(:), sclrp2(:,i), & ! intent(in)
-                            wpsclrp(:,i) )                      ! intent(inout)
-    end do
-
-
-    ! Clipping for u'w'
-    !
-    ! Clipping u'w' at each vertical level, based on the
-    ! correlation of u and w at each vertical level, such that:
-    ! corr_(u,w) = u'w' / [ sqrt(u'^2) * sqrt(w'^2) ];
-    ! -1 <= corr_(u,w) <= 1.
-    ! Since u'^2, w'^2, and u'w' are updated in different
-    ! places from each other, clipping for u'w' has to be done
-    ! three times.  This is the first instance of u'w' clipping.
-    call clip_covariance( "upwp", .true.,        & ! intent(in)
-                          .false., dt, wp2, up2, & ! intent(in)
-                          upwp )                   ! intent(inout)
-
-
-    ! Clipping for v'w'
-    !
-    ! Clipping v'w' at each vertical level, based on the
-    ! correlation of v and w at each vertical level, such that:
-    ! corr_(v,w) = v'w' / [ sqrt(v'^2) * sqrt(w'^2) ];
-    ! -1 <= corr_(v,w) <= 1.
-    ! Since v'^2, w'^2, and v'w' are updated in different
-    ! places from each other, clipping for v'w' has to be done
-    ! three times.  This is the first instance of v'w' clipping.
-    call clip_covariance( "vpwp", .true.,        & ! intent(in)
-                          .false., dt, wp2, vp2, & ! intent(in)
-                          vpwp )                   ! intent(inout)
-
-
     ! Check stability
     ! Changed from a logical flag to an integer indicating nature of
     ! error.
     ! Joshua Fasching March 2008
     if ( lapack_error( err_code ) ) return
+
+
+    !----------------------------------------------------------------
+    ! Covariance clipping for wprtp, wpthlp, wpsclrp, upwp, and vpwp
+    ! after subroutine advance_xp2_xpyp updated xp2.
+    !----------------------------------------------------------------
+
+    call clip_covariances_denom( dt, rtp2, thlp2, up2, vp2, wp2, &
+                                 sclrp2, 1, 1, &
+                                 1, 1, 1, &
+                                 wprtp, wpthlp, upwp, vpwp, wpsclrp )
+
 
     ! The right hand side of this conjunction is only for reducing cpu time,
     ! since the more complicated formula is mathematically equivalent
@@ -779,6 +671,7 @@ module clubb_core
 
     if ( lapack_error( err_code ) ) return
 
+
     ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
     ! This code won't work unless rtm >= 0 !!!
     do k = 1, gr%nnzp
@@ -796,6 +689,7 @@ module clubb_core
 
     end do ! k=1..gr%nnzp
 
+
     !----------------------------------------------------------------
     ! Advance wp2/wp3 one timestep
     !----------------------------------------------------------------
@@ -806,120 +700,21 @@ module clubb_core
            tau_zm, tau_zt, Skw_zm, Skw_zt, pdf_parms(:,13), & ! intent(in)
            wp2_zt, wp2, wp3, err_code )                       ! intent(inout)
 
-
-    !----------------------------------------------------------------
-    ! Covariance clipping for wprtp, wpthlp, and wpsclrp after
-    ! subroutine advance_wp2_wp3_module updated wp2.
-    !----------------------------------------------------------------
-
-    ! Clipping for w'r_t'
-    !
-    ! Clipping w'r_t' at each vertical level, based on the
-    ! correlation of w and r_t at each vertical level, such that:
-    ! corr_(w,r_t) = w'r_t' / [ sqrt(w'^2) * sqrt(r_t'^2) ];
-    ! -1 <= corr_(w,r_t) <= 1.
-    ! Since w'^2, r_t'^2, and w'r_t' are updated in different
-    ! places from each other, clipping for w'r_t' has to be done
-    ! three times.  This is the third instance of w'r_t' clipping.
-
-
-    ! Include effect of clipping in wprtp time tendency budget term.
-    if ( l_stats_samp ) then
-      ! wprtp total time tendency (effect of clipping)
-      call stat_modify( iwprtp_bt, real( -wprtp / dt ),  & ! intent(in)
-                        zm )                               ! intent(inout)
-    end if
-
-
-    call clip_covariance( "wprtp", .false.,              & ! intent(in)
-                          .true., dt, wp2, rtp2,         & ! intent(in)
-                          wprtp )                          ! intent(inout)
-
-    if ( l_stats_samp ) then
-      ! wprtp total time tendency (effect of clipping)
-      call stat_end_update( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
-                            zm )                              ! intent(inout)
-    end if
-
-
-    ! Clipping for w'th_l'
-    !
-    ! Clipping w'th_l' at each vertical level, based on the
-    ! correlation of w and th_l at each vertical level, such that:
-    ! corr_(w,th_l) = w'th_l' / [ sqrt(w'^2) * sqrt(th_l'^2) ];
-    ! -1 <= corr_(w,th_l) <= 1.
-    ! Since w'^2, th_l'^2, and w'th_l' are updated in different
-    ! places from each other, clipping for w'th_l' has to be done
-    ! three times.  This is the third instance of w'th_l' clipping.
-
-    ! Include effect of clipping in wpthlp time tendency budget term.
-    if ( l_stats_samp ) then
-      ! wpthlp total time tendency (effect of clipping)
-      call stat_modify( iwpthlp_bt, real( -wpthlp / dt ),  & ! intent(in)
-                        zm )                                 ! intent(inout)
-    end if
-
-
-    call clip_covariance( "wpthlp", .false.,                & ! intent(in)
-                          .true., dt, wp2, thlp2,           & ! intent(in) 
-                          wpthlp )                            ! intent(inout)
-
-    if ( l_stats_samp ) then
-
-      ! wpthlp total time tendency (effect of clipping)
-      call stat_end_update( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
-                            zm )                                ! intent(inout)
-    end if
-
-
-    ! Clipping for w'sclr'
-    !
-    ! Clipping w'sclr' at each vertical level, based on the
-    ! correlation of w and sclr at each vertical level, such that:
-    ! corr_(w,sclr) = w'sclr' / [ sqrt(w'^2) * sqrt(sclr'^2) ];
-    ! -1 <= corr_(w,sclr) <= 1.
-    ! Since w'^2, sclr'^2, and w'sclr' are updated in different
-    ! places from each other, clipping for w'sclr' has to be done
-    ! three times.  This is the third instance of w'sclr' clipping.
-    do i = 1, sclr_dim, 1
-      call clip_covariance( "wpsclrp", .false.,                 & ! intent(in)
-                            .true., dt, wp2(:), sclrp2(:,i),    & ! intent(in)
-                            wpsclrp(:,i) )                        ! intent(inout)
-    end do
-
-
-    ! Clipping for u'w'
-    !
-    ! Clipping u'w' at each vertical level, based on the
-    ! correlation of u and w at each vertical level, such that:
-    ! corr_(u,w) = u'w' / [ sqrt(u'^2) * sqrt(w'^2) ];
-    ! -1 <= corr_(u,w) <= 1.
-    ! Since u'^2, w'^2, and u'w' are updated in different
-    ! places from each other, clipping for u'w' has to be done
-    ! three times.  This is the second instance of u'w' clipping.
-    call clip_covariance( "upwp", .false.,       & ! intent(in)
-                          .false., dt, wp2, up2, & ! intent(in)
-                          upwp )                   ! intent(inout)
-
-
-    ! Clipping for v'w'
-    !
-    ! Clipping v'w' at each vertical level, based on the
-    ! correlation of v and w at each vertical level, such that:
-    ! corr_(v,w) = v'w' / [ sqrt(v'^2) * sqrt(w'^2) ];
-    ! -1 <= corr_(v,w) <= 1.
-    ! Since v'^2, w'^2, and v'w' are updated in different
-    ! places from each other, clipping for v'w' has to be done
-    ! three times.  This is the second instance of v'w' clipping.
-    call clip_covariance( "vpwp", .false.,       & ! intent(in)
-                          .false., dt, wp2, vp2, & ! intent(in)
-                          vpwp )                   ! intent(inout)
-
-
     ! Wrapped LAPACK procedures may report errors, and if so, exit
     ! gracefully.
     ! Joshua Fasching March 2008
     if ( lapack_error( err_code ) ) return
+
+
+    !----------------------------------------------------------------
+    ! Covariance clipping for wprtp, wpthlp, wpsclrp, upwp, and vpwp
+    ! after subroutine advance_wp2_wp3 updated wp2.
+    !----------------------------------------------------------------
+
+    call clip_covariances_denom( dt, rtp2, thlp2, up2, vp2, wp2, &
+                                 sclrp2, 3, 3, &
+                                 3, 2, 2, &
+                                 wprtp, wpthlp, upwp, vpwp, wpsclrp )
 
 
     !----------------------------------------------------------------
@@ -935,6 +730,7 @@ module clubb_core
     ! gracefully.
     ! Joshua Fasching March 2008
     if ( lapack_error( err_code ) ) return
+
 
     ! Compute Shear Production  -Brian
     if ( clubb_at_least_debug_level( 1 ) ) then

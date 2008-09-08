@@ -21,7 +21,19 @@ contains
                                      wprtp, wpthlp, upwp, vpwp, wpsclrp )
 
     ! Description:
-    ! 
+    ! Some of the covariances found in the CLUBB model code need to be clipped
+    ! multiple times during each timestep to ensure that the correlation between
+    ! the two relevant variables stays between -1 and 1 at all times during the
+    ! model run.  The covariances that need to be clipped multiple times are
+    ! w'r_t', w'th_l', w'sclr', u'w', and v'w'.  One of the times that each one
+    ! of these covariances is clipped is immediately after each one is set.
+    ! However, each covariance still needs to be clipped two more times during
+    ! each timestep (once after advance_xp2_xpyp is called and once after 
+    ! advance_wp2_wp3 is called).  This subroutine handles the times that the 
+    ! covariances are clipped away from the time that they are set.  In other
+    ! words, this subroutine clips the covariances after the denominator terms
+    ! in the relevant correlation equation have been altered, ensuring that
+    ! all correlations will remain between -1 and 1 at all times.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -42,7 +54,7 @@ contains
 
     use stats_variables, only: & 
         iwprtp_bt, &  ! Variable(s)
-!        iwpthlp_bt, &
+        iwpthlp_bt, &
         zm, &
         l_stats_samp
 
@@ -84,8 +96,10 @@ contains
       l_first_clip_ts, & ! First instance of clipping in a timestep.
       l_last_clip_ts     ! Last instance of clipping in a timestep.
 
+    integer :: i  ! scalar array index.
 
-    ! Clipping for w'r_t'
+
+    !!! Clipping for w'r_t'
     !
     ! Clipping w'r_t' at each vertical level, based on the
     ! correlation of w and r_t at each vertical level, such that:
@@ -104,7 +118,6 @@ contains
     ! The third instance of w'r_t' clipping takes place after
     ! w'^2 is updated in advance_wp2_wp3.
 
-
     ! Include effect of clipping in wprtp time tendency budget term.
     if ( l_stats_samp ) then
        if ( wprtp_cl_num == 1 ) then
@@ -118,7 +131,6 @@ contains
        endif
     endif
 
-
     ! Used within subroutine clip_covariance.
     if ( wprtp_cl_num == 1 ) then
        l_first_clip_ts = .true.
@@ -128,12 +140,10 @@ contains
        l_last_clip_ts  = .true.
     endif
 
-
     ! Clip w'r_t'
     call clip_covariance( "wprtp", l_first_clip_ts,      & ! intent(in) 
                           l_last_clip_ts, dt, wp2, rtp2, & ! intent(in)
                           wprtp )                          ! intent(inout)
-
 
     if ( l_stats_samp ) then
        if ( wprtp_cl_num == 1 ) then
@@ -146,6 +156,170 @@ contains
                                 zm )                              ! intent(inout)
        endif
     endif
+
+
+    !!! Clipping for w'th_l'
+    !
+    ! Clipping w'th_l' at each vertical level, based on the
+    ! correlation of w and th_l at each vertical level, such that:
+    ! corr_(w,th_l) = w'th_l' / [ sqrt(w'^2) * sqrt(th_l'^2) ];
+    ! -1 <= corr_(w,th_l) <= 1.
+    !
+    ! Since w'^2, th_l'^2, and w'th_l' are each advanced in different
+    ! subroutines from each other in advance_clubb_core, clipping for w'th_l'
+    ! is done three times during each timestep (once after each variable has 
+    ! been updated).
+    !
+    ! This subroutine handles the first and third instances of 
+    ! w'th_l' clipping.
+    ! The first instance of w'th_l' clipping takes place after 
+    ! th_l'^2 is updated in advance_xp2_xpyp.
+    ! The third instance of w'th_l' clipping takes place after
+    ! w'^2 is updated in advance_wp2_wp3.
+
+    ! Include effect of clipping in wpthlp time tendency budget term.
+    if ( l_stats_samp ) then
+       if ( wpthlp_cl_num == 1 ) then
+          ! wpthlp total time tendency (effect of clipping)
+          call stat_begin_update( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
+                                  zm )                                ! intent(inout)
+       elseif ( wpthlp_cl_num == 3 ) then
+          ! wpthlp total time tendency (effect of clipping)
+          call stat_modify( iwpthlp_bt, real( -wpthlp / dt ),  & ! intent(in)
+                            zm )                                 ! intent(inout)
+       endif
+    endif
+
+    ! Used within subroutine clip_covariance.
+    if ( wpthlp_cl_num == 1 ) then
+       l_first_clip_ts = .true.
+       l_last_clip_ts  = .false.
+    elseif ( wpthlp_cl_num == 3 ) then
+       l_first_clip_ts = .false.
+       l_last_clip_ts  = .true.
+    endif
+
+    ! Clip w'th_l'
+    call clip_covariance( "wpthlp", l_first_clip_ts,      & ! intent(in)
+                          l_last_clip_ts, dt, wp2, thlp2, & ! intent(in)
+                          wpthlp )                          ! intent(inout)
+
+
+    if ( l_stats_samp ) then
+       if ( wpthlp_cl_num == 1 ) then
+          ! wpthlp total time tendency (effect of clipping)
+          call stat_modify( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
+                            zm )                                ! intent(inout)
+       elseif ( wpthlp_cl_num == 3 ) then
+          ! wpthlp total time tendency (effect of clipping)
+          call stat_end_update( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
+                                zm )                                ! intent(inout)
+       endif
+    endif
+
+
+    !!! Clipping for w'sclr'
+    !
+    ! Clipping w'sclr' at each vertical level, based on the
+    ! correlation of w and sclr at each vertical level, such that:
+    ! corr_(w,sclr) = w'sclr' / [ sqrt(w'^2) * sqrt(sclr'^2) ];
+    ! -1 <= corr_(w,sclr) <= 1.
+    !
+    ! Since w'^2, sclr'^2, and w'sclr' are each advanced in different
+    ! subroutines from each other in advance_clubb_core, clipping for w'sclr'
+    ! is done three times during each timestep (once after each variable has 
+    ! been updated).
+    !
+    ! This subroutine handles the first and third instances of 
+    ! w'sclr' clipping.
+    ! The first instance of w'sclr' clipping takes place after 
+    ! sclr'^2 is updated in advance_xp2_xpyp.
+    ! The third instance of w'sclr' clipping takes place after
+    ! w'^2 is updated in advance_wp2_wp3.
+
+    ! Used within subroutine clip_covariance.
+    if ( wpsclrp_cl_num == 1 ) then
+       l_first_clip_ts = .true.
+       l_last_clip_ts  = .false.
+    elseif ( wpsclrp_cl_num == 3 ) then
+       l_first_clip_ts = .false.
+       l_last_clip_ts  = .true.
+    endif
+
+    ! Clip w'sclr'
+    do i = 1, sclr_dim, 1
+      call clip_covariance( "wpsclrp", l_first_clip_ts,              & ! intent(in)
+                            l_last_clip_ts, dt, wp2(:), sclrp2(:,i), & ! intent(in)
+                            wpsclrp(:,i) )                             ! intent(inout)
+    enddo
+
+
+    !!! Clipping for u'w'
+    !
+    ! Clipping u'w' at each vertical level, based on the
+    ! correlation of u and w at each vertical level, such that:
+    ! corr_(u,w) = u'w' / [ sqrt(u'^2) * sqrt(w'^2) ];
+    ! -1 <= corr_(u,w) <= 1.
+    !
+    ! Since w'^2, u'^2, and u'w' are each advanced in different
+    ! subroutines from each other in advance_clubb_core, clipping for u'w'
+    ! is done three times during each timestep (once after each variable has 
+    ! been updated).
+    !
+    ! This subroutine handles the first and second instances of 
+    ! u'w' clipping.
+    ! The first instance of u'w' clipping takes place after 
+    ! u'^2 is updated in advance_xp2_xpyp.
+    ! The second instance of u'w' clipping takes place after
+    ! w'^2 is updated in advance_wp2_wp3.
+
+    ! Used within subroutine clip_covariance.
+    if ( upwp_cl_num == 1 ) then
+       l_first_clip_ts = .true.
+       l_last_clip_ts  = .false.
+    elseif ( upwp_cl_num == 2 ) then
+       l_first_clip_ts = .false.
+       l_last_clip_ts  = .false.
+    endif
+
+    ! Clip u'w'
+    call clip_covariance( "upwp", l_first_clip_ts,      & ! intent(in)
+                          l_last_clip_ts, dt, wp2, up2, & ! intent(in)
+                          upwp )                          ! intent(inout)
+
+
+    !!! Clipping for v'w'
+    !
+    ! Clipping v'w' at each vertical level, based on the
+    ! correlation of v and w at each vertical level, such that:
+    ! corr_(v,w) = v'w' / [ sqrt(v'^2) * sqrt(w'^2) ];
+    ! -1 <= corr_(v,w) <= 1.
+    !
+    ! Since w'^2, v'^2, and v'w' are each advanced in different
+    ! subroutines from each other in advance_clubb_core, clipping for v'w'
+    ! is done three times during each timestep (once after each variable has 
+    ! been updated).
+    !
+    ! This subroutine handles the first and second instances of 
+    ! v'w' clipping.
+    ! The first instance of v'w' clipping takes place after 
+    ! v'^2 is updated in advance_xp2_xpyp.
+    ! The second instance of v'w' clipping takes place after
+    ! w'^2 is updated in advance_wp2_wp3.
+
+    ! Used within subroutine clip_covariance.
+    if ( vpwp_cl_num == 1 ) then
+       l_first_clip_ts = .true.
+       l_last_clip_ts  = .false.
+    elseif ( vpwp_cl_num == 2 ) then
+       l_first_clip_ts = .false.
+       l_last_clip_ts  = .false.
+    endif
+
+    call clip_covariance( "vpwp", l_first_clip_ts,      & ! intent(in)
+                          l_last_clip_ts, dt, wp2, vp2, & ! intent(in)
+                          vpwp )                          ! intent(inout)
+
 
     return
   end subroutine clip_covariances_denom
@@ -186,9 +360,9 @@ contains
     !
     ! The following covariances are found in the code:  
     !
-    ! w'r_t', w'th_l', w'sclr', (computed in advance_xm_wpxp_module.F90);
-    ! r_t'th_l', sclr'r_t', sclr'th_l', (computed in advance_xp2_xpyp.F90);
-    ! u'w', v'w', w'edsclr' (computed in compute_um_edsclrm_mod.F90).
+    ! w'r_t', w'th_l', w'sclr', (computed in advance_xm_wpxp);
+    ! r_t'th_l', sclr'r_t', sclr'th_l', (computed in advance_xp2_xpyp);
+    ! u'w', v'w', w'edsclr' (computed in advance_windm_edsclrm).
 
     ! References:
     !-----------------------------------------------------------------------
@@ -308,7 +482,7 @@ contains
     ! The following variances are found in the code:  
     !
     ! r_t'^2, th_l'^2, u'^2, v'^2, sclr'^2, (computed in advance_xp2_xpyp);
-    ! w'^2 (computed in advance_wp2_wp3_module).
+    ! w'^2 (computed in advance_wp2_wp3).
 
     ! References:
     !-----------------------------------------------------------------------
