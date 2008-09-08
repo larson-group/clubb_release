@@ -22,7 +22,7 @@ module output_file_module
      ! Pointer to the array
      real(kind=stat_rknd), dimension(:), pointer :: ptr 
 
-     character(len = 15) :: name        ! Variable name
+     character(len = 30) :: name        ! Variable name
      character(len = 50) :: description ! Variable description
      character(len = 20) :: units       ! Variable units
 

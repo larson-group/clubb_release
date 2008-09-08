@@ -543,11 +543,11 @@ use stats_variables, only: &
     ium_bt,  & ! Variable(s)
     ium_ma,  &
     ium_ta,  & 
-    ium_cn,  & 
+    ium_matrix_condt_num,  & 
     ivm_bt,  & 
     ivm_ma,  &
     ivm_ta,  & 
-    ivm_cn,  & 
+    ivm_matrix_condt_num,  & 
     zt,      & 
     sfc,     & 
     ztscr01, & 
@@ -616,7 +616,7 @@ real, dimension(gr%nnzp) :: &
 
 integer :: k, kp1, km1 ! Indices
 
-integer :: ixm_bt, ixm_ma, ixm_ta, ixm_cn
+integer :: ixm_bt, ixm_ma, ixm_ta, ixm_matrix_condt_num
 
 real :: rcond ! Estimate of the reciprocal of the condition number on the LHS matrix
 
@@ -626,17 +626,24 @@ case ( "um" )
   ixm_bt = ium_bt
   ixm_ma = ium_ma
   ixm_ta = ium_ta
-  ixm_cn = ium_cn
+
+  ! This is a diagnostic from inverting the matrix, not a budget
+  ixm_matrix_condt_num = ium_matrix_condt_num
 case ( "vm" )
   ixm_bt = ivm_bt
   ixm_ma = ivm_ma
   ixm_ta = ivm_ta
-  ixm_cn = ivm_cn
+
+  ! This is a diagnostic from inverting the matrix, not a budget
+  ixm_matrix_condt_num = ivm_matrix_condt_num
 case default  ! Eddy scalars
   ixm_bt = 0
   ixm_ma = 0
   ixm_ta = 0
-  ixm_cn = 0
+
+  ! This is a diagnostic from inverting the matrix, not a budget
+  ixm_matrix_condt_num = 0
+
 end select
 
 if ( l_stats_samp ) then
@@ -674,14 +681,14 @@ xpwp(gr%nnzp) = 0.
 
 
 ! Solve tridiagonal system for xm.
-if ( l_stats_samp .and. ixm_cn > 0 ) then
+if ( l_stats_samp .and. ixm_matrix_condt_num > 0 ) then
   call tridag_solvex & 
        ( solve_type, gr%nnzp, 1, &                                  ! Intent(in) 
          lhs(kp1_tdiag,:), lhs(k_tdiag,:), lhs(km1_tdiag,:), rhs, & ! Intent(inout)
          xm, rcond, err_code )                                      ! Intent(out)
 
   ! Est. of the condition number of the variance LHS matrix 
-  call stat_update_var_pt( ixm_cn, 1, 1.0 / rcond, &  ! Intent(in)
+  call stat_update_var_pt( ixm_matrix_condt_num, 1, 1.0 / rcond, &  ! Intent(in)
                            sfc )                      ! Intent(inout)
 else
  

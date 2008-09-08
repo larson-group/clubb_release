@@ -527,24 +527,24 @@ module stats_variables
     ivm_vert_avg
 
   integer, public :: & 
-    iwp23_cn, & 
-    irtm_cn, & 
-    ithlm_cn, & 
-    irtp2_cn, & 
-    ithlp2_cn, & 
-    irtpthlp_cn, & 
-    iup2_cn, & 
-    ivp2_cn, &
-    ium_cn, &
-    ivm_cn 
+    iwp23_matrix_condt_num, & 
+    irtm_matrix_condt_num, & 
+    ithlm_matrix_condt_num, & 
+    irtp2_matrix_condt_num, & 
+    ithlp2_matrix_condt_num, & 
+    irtpthlp_matrix_condt_num, & 
+    iup2_matrix_condt_num, & 
+    ivp2_matrix_condt_num, &
+    ium_matrix_condt_num, &
+    ivm_matrix_condt_num 
 
 !$omp threadprivate(iustar, ilh, ish, icc, ilwp, izb, izi, &
 !$omp   irain, ipflux, irrainm_sfc, &
 !$omp   iwpthlp_sfc, iwprtp_sfc, iupwp_sfc, ivpwp_sfc, &
 !$omp   ithlm_vert_avg, irtm_vert_avg, ium_vert_avg, ivm_vert_avg, &
-!$omp   iwp23_cn, irtm_cn, ithlm_cn, &
-!$omp   irtp2_cn, ithlp2_cn, irtpthlp_cn, &
-!$omp   iup2_cn, ivp2_cn, ium_cn, ivm_cn )
+!$omp   iwp23_matrix_condt_num, irtm_matrix_condt_num, ithlm_matrix_condt_num, &
+!$omp   irtp2_matrix_condt_num, ithlp2_matrix_condt_num, irtpthlp_matrix_condt_num, &
+!$omp   iup2_matrix_condt_num, ivp2_matrix_condt_num, ium_matrix_condt_num, ivm_matrix_condt_num )
 
   ! Variables that contains all the statistics
 

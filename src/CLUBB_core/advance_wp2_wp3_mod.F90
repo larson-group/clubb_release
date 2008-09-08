@@ -380,7 +380,7 @@ contains
         iwp3_dp1, & 
         iwp3_pr1, & 
         iwp3_pr2, & 
-        iwp23_cn, & 
+        iwp23_matrix_condt_num, & 
         zmscr01, & 
         zmscr02, & 
         zmscr03, & 
@@ -535,14 +535,14 @@ contains
                    C11_Skw_fnc, l_crank_nich_diff, rhs )
 
     ! Solve the system of equations for w'^2 and w'^3.
-    if ( l_stats_samp .and. iwp23_cn > 0 ) then
+    if ( l_stats_samp .and. iwp23_matrix_condt_num > 0 ) then
 
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
       call band_solvex( "advance_wp2_wp3_module", nsup, nsub, 2*gr%nnzp, nrhs, & 
                         lhs, rhs, solut, rcond, err_code )
 
       ! Est. of the condition number of the w'^2/w^3 LHS matrix
-      call stat_update_var_pt( iwp23_cn, 1, 1.0 / rcond, sfc )
+      call stat_update_var_pt( iwp23_matrix_condt_num, 1, 1.0 / rcond, sfc )
 
     else
       ! Perform LU decomp and solve system (LAPACK)

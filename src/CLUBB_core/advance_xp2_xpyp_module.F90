@@ -962,28 +962,28 @@ use stats_type, only: &
 use stats_variables, only: & 
     zm,  & ! Variable(s) 
     sfc, & 
-    irtp2_cn, & 
+    irtp2_matrix_condt_num, & 
     irtp2_dp1, & 
     irtp2_dp2, & 
     irtp2_ta, & 
     irtp2_ma, & 
-    ithlp2_cn, & 
+    ithlp2_matrix_condt_num, & 
     ithlp2_dp1, & 
     ithlp2_dp2, & 
     ithlp2_ta, & 
     ithlp2_ma, & 
-    irtpthlp_cn, & 
+    irtpthlp_matrix_condt_num, & 
     irtpthlp_dp1, & 
     irtpthlp_dp2, & 
     irtpthlp_ta, & 
     irtpthlp_ma, & 
-    iup2_cn, & 
+    iup2_matrix_condt_num, & 
     iup2_dp1, & 
     iup2_dp2, & 
     iup2_ta, & 
     iup2_ma, & 
     iup2_pr1, & 
-    ivp2_cn, & 
+    ivp2_matrix_condt_num, & 
     ivp2_dp1, & 
     ivp2_dp2, & 
     ivp2_ta, & 
@@ -1043,62 +1043,75 @@ integer :: &
   ixapxbp_ta, & 
   ixapxbp_ma, & 
   ixapxbp_pr1, & 
-  ixapxbp_cn
+  ixapxbp_matrix_condt_num
 
 
 select case ( trim( solve_type ) )
   case ( "rtp2" )
-    ixapxbp_cn  = irtp2_cn
     ixapxbp_dp1 = irtp2_dp1
     ixapxbp_dp2 = irtp2_dp2
     ixapxbp_ta  = irtp2_ta
     ixapxbp_ma  = irtp2_ma
     ixapxbp_pr1 = 0
+
+    ! This is a diagnostic from inverting the matrix, not a budget
+    ixapxbp_matrix_condt_num  = irtp2_matrix_condt_num
   case ( "thlp2" )
-    ixapxbp_cn  = ithlp2_cn
     ixapxbp_dp1 = ithlp2_dp1
     ixapxbp_dp2 = ithlp2_dp2
     ixapxbp_ta  = ithlp2_ta
     ixapxbp_ma  = ithlp2_ma
     ixapxbp_pr1 = 0
+
+    ! This is a diagnostic from inverting the matrix, not a budget
+    ixapxbp_matrix_condt_num  = ithlp2_matrix_condt_num
   case ( "rtpthlp" )
-    ixapxbp_cn  = irtpthlp_cn
     ixapxbp_dp1 = irtpthlp_dp1
     ixapxbp_dp2 = irtpthlp_dp2
     ixapxbp_ta  = irtpthlp_ta
     ixapxbp_ma  = irtpthlp_ma
     ixapxbp_pr1 = 0
+
+    ! This is a diagnostic from inverting the matrix, not a budget
+    ixapxbp_matrix_condt_num  = irtpthlp_matrix_condt_num
   case ( "up2" )
-    ixapxbp_cn  = iup2_cn
     ixapxbp_dp1 = iup2_dp1
     ixapxbp_dp2 = iup2_dp2
     ixapxbp_ta  = iup2_ta
     ixapxbp_ma  = iup2_ma
     ixapxbp_pr1 = iup2_pr1
+
+    ! This is a diagnostic from inverting the matrix, not a budget
+    ixapxbp_matrix_condt_num  = iup2_matrix_condt_num
   case ( "vp2" )
-    ixapxbp_cn  = ivp2_cn
     ixapxbp_dp1 = ivp2_dp1
     ixapxbp_dp2 = ivp2_dp2
     ixapxbp_ta  = ivp2_ta
     ixapxbp_ma  = ivp2_ma
     ixapxbp_pr1 = ivp2_pr1
+
+    ! This is a diagnostic from inverting the matrix, not a budget
+    ixapxbp_matrix_condt_num  = ivp2_matrix_condt_num
   case default ! No budgets for passive scalars
-    ixapxbp_cn  = 0
     ixapxbp_dp1 = 0
     ixapxbp_dp2 = 0
     ixapxbp_ta  = 0
     ixapxbp_ma  = 0
     ixapxbp_pr1 = 0
-end select
 
-if ( l_stats_samp .and. ixapxbp_cn > 0 ) then
+    ! This is a diagnostic from inverting the matrix, not a budget
+    ixapxbp_matrix_condt_num  = ivp2_matrix_condt_num
+
+  end select
+
+if ( l_stats_samp .and. ixapxbp_matrix_condt_num > 0 ) then
   call tridag_solvex & 
        ( solve_type, gr%nnzp, nrhs, &                                          ! Intent(in) 
          lhs(kp1_mdiag,:), lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  & ! Intent(inout)
          xapxbp(:,1:nrhs), rcond, err_code )                                   ! Intent(out)
 
   ! Est. of the condition number of the variance LHS matrix 
-  call stat_update_var_pt( ixapxbp_cn, 1, 1.0 / rcond, &  ! Intent(in)
+  call stat_update_var_pt( ixapxbp_matrix_condt_num, 1, 1.0 / rcond, &  ! Intent(in)
                            sfc )                          ! Intent(inout)
 
 else 

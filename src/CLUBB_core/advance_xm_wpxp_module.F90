@@ -1194,7 +1194,7 @@ contains
         irtm_bt, & 
         irtm_ta, & 
         irtm_ma, & 
-        irtm_cn, & 
+        irtm_matrix_condt_num, & 
         irtm_pd, & 
         iwprtp_bt, & 
         iwprtp_ma, & 
@@ -1209,7 +1209,7 @@ contains
         ithlm_bt, & 
         ithlm_ta, & 
         ithlm_ma, & 
-        ithlm_cn, & 
+        ithlm_matrix_condt_num, & 
         iwpthlp_bt, & 
         iwpthlp_ma, & 
         iwpthlp_ta, & 
@@ -1293,7 +1293,7 @@ contains
       ixm_bt, & 
       ixm_ta, & 
       ixm_ma, & 
-      ixm_cn, & 
+      ixm_matrix_condt_num, & 
       ixm_pd, & 
       iwpxp_bt, & 
       iwpxp_ma, & 
@@ -1311,7 +1311,6 @@ contains
       ixm_bt     = irtm_bt
       ixm_ta     = irtm_ta
       ixm_ma     = irtm_ma
-      ixm_cn     = irtm_cn ! Applies to both the mean and flux terms
       ixm_pd     = irtm_pd
       iwpxp_bt   = iwprtp_bt
       iwpxp_ma   = iwprtp_ma
@@ -1323,11 +1322,12 @@ contains
       iwpxp_dp1  = iwprtp_dp1
       iwpxp_pd   = iwprtp_pd
       iwpxp_sicl = iwprtp_sicl
+      ! This is a diagnostic from inverting the matrix, not a budget
+      ixm_matrix_condt_num = irtm_matrix_condt_num 
     case ( "thlm" ) ! thlm/wpthlp budget terms
       ixm_bt     = ithlm_bt
       ixm_ta     = ithlm_ta
       ixm_ma     = ithlm_ma
-      ixm_cn     = ithlm_cn ! Applies to both the mean and flux terms
       ixm_pd     = 0
       iwpxp_bt   = iwpthlp_bt
       iwpxp_ma   = iwpthlp_ma
@@ -1339,11 +1339,12 @@ contains
       iwpxp_dp1  = iwpthlp_dp1
       iwpxp_pd   = 0
       iwpxp_sicl = iwpthlp_sicl
+      ! This is a diagnostic from inverting the matrix, not a budget
+      ixm_matrix_condt_num = ithlm_matrix_condt_num 
     case default  ! this includes the sclrm case
       ixm_bt     = 0
       ixm_ta     = 0
       ixm_ma     = 0
-      ixm_cn     = 0
       ixm_pd     = 0
       iwpxp_bt   = 0
       iwpxp_ma   = 0
@@ -1355,6 +1356,8 @@ contains
       iwpxp_dp1  = 0
       iwpxp_pd   = 0
       iwpxp_sicl = 0
+
+      ixm_matrix_condt_num = 0
     end select
 
 
@@ -1379,13 +1382,13 @@ contains
 
     end if ! l_stats_samp
 
-    if ( l_stats_samp .and. ixm_cn > 0 ) then
+    if ( l_stats_samp .and. ixm_matrix_condt_num > 0 ) then
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
       call band_solvex( solve_type, nsup, nsub, 2*gr%nnzp, nrhs, & 
                         lhs, rhs, solution, rcond, err_code )
 
       ! Est. of the condition number of the mean/flux LHS matrix
-      call stat_update_var_pt( ixm_cn, 1, 1.0 / rcond, sfc )
+      call stat_update_var_pt( ixm_matrix_condt_num, 1, 1.0 / rcond, sfc )
 
     else
       ! Perform LU decomp and solve system (LAPACK)

@@ -137,7 +137,7 @@ module stats_subs
 
     character(len=10) :: stats_fmt  ! File storage convention
 
-    character(len=20), dimension(nvarmax) ::  & 
+    character(len=30), dimension(nvarmax) ::  & 
       vars_zt,   & ! Variables on the thermodynamic levels
       vars_zm,   & ! Variables on the momentum levels
       vars_sfc  ! Variables at the model surface
@@ -213,7 +213,7 @@ module stats_subs
       end do
 
       write(fstdout,*) "--------------------------------------------------"
-    end if ! clubb_debug_level 1
+    end if ! clubb_at_least_debug_level 1
 
     ! Determine file names for GrADS or NetCDF files
     fname_zt  = trim( fname_prefix )//"_zt"
