@@ -30,7 +30,7 @@ else
 	if [ -z $3 ]; then
 		STATS_FILE="../stats/all_stats.in"
 	else
-		STATS_FILE=$2
+		STATS_FILE=$3
 	fi
 fi
 #######################################################################
