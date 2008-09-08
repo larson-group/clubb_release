@@ -66,7 +66,7 @@ stats_zm.o : stats_variables.o stats_zm.F90
 stats_sfc.o: stats_variables.o stats_sfc.F90
 erf.o		: erf.F90
 lapack_wrap.o	: error_code.o lapack_wrap.F90
-Skw_func.o	: Skw_func.F90
+Skw_func.o	: constants.o Skw_func.F90
 T_in_K_mod.o	: constants.o T_in_K_mod.F90
 
 pdf_closure_module.o	: constants.o parameters_tunable.o grid.o saturation.o erf.o \
@@ -134,7 +134,8 @@ fire.o      : constants.o model_flags.o grid.o stats_variables.o cloud_rad.o fir
 gabls2.o    : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o gabls2.F90
 lba.o       : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o \
 	interpolation.o lba.F90
-mpace_a.o     : constants.o model_flags.o grid.o stats_variables.o mpace_a.F90 interpolation.o file_functions.o
+mpace_a.o     : constants.o model_flags.o grid.o stats_variables.o mpace_a.F90 \
+	interpolation.o file_functions.o rad_lwsw.o
 mpace_b.o     : constants.o model_flags.o grid.o stats_variables.o rad_lwsw.o \
 	mpace_b.F90
 nov11.o     : constants.o model_flags.o grid.o stats_variables.o rad_lwsw.o \
