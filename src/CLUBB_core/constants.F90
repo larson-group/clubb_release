@@ -93,7 +93,7 @@ wtol_sqd = wtol**2  ! [m^2/s^2]
 ! they insure that those values squared won't be less then 
 ! 10^-38, which is the lowest number that can be numerically
 ! represented.  However, the tolerance value for rc doubles as
-! the lowest advance_xm_wpxp_module ratio there can be to still officially have 
+! the lowest mixing ratio there can be to still officially have 
 ! a cloud at that level.  This is figured to be about 
 ! 1.0 x 10^-7 kg/kg.  Brian; February 10, 2007.
 real, parameter ::  & 
