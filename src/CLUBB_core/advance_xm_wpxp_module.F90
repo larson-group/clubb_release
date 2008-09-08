@@ -3,12 +3,12 @@
 !===============================================================================
 module advance_xm_wpxp_module
 
-! Description:
-! Contains the HOC advance_xm_wpxp_module scheme.
+  ! Description:
+  ! Contains the HOC advance_xm_wpxp_module scheme.
 
-! References:
-! None
-!-----------------------------------------------------------------------
+  ! References:
+  ! None
+  !-----------------------------------------------------------------------
 
   implicit none
 
@@ -74,7 +74,8 @@ contains
         c_Ksqd
 
     use constants, only:  & 
-        fstderr  ! Constant
+        fstderr, &  ! Constant
+        max_mag_correlation
 
     use parameters_tunable, only: & 
         sclr_dim  ! Variable(s)
@@ -129,7 +130,7 @@ contains
       ! Added for clipping by Vince Larson 29 Sep 2007
       rtp2,          & ! r_t'^2 (momentum levels)                 [(kg/kg)^2]
       thlp2            ! th_l'^2 (momentum levels)                [K^2]
-    ! End of Vince Larson's addition.
+      ! End of Vince Larson's addition.
 
     logical, intent(in) ::  & 
       l_implemented      ! Flag for CLUBB being implemented in a larger model.
@@ -297,8 +298,8 @@ contains
     ! based on the correlation of w and r_t, such that:
     ! corr_(w,r_t) = w'r_t' / [ sqrt(w'^2) * sqrt(r_t'^2) ];
     ! -1 <= corr_(w,r_t) <= 1.
-    wpxp_upper_lim =  0.99 * sqrt( wp2 * rtp2 )
-    wpxp_lower_lim = -0.99 * sqrt( wp2 * rtp2 )
+    wpxp_upper_lim =  max_mag_correlation * sqrt( wp2 * rtp2 )
+    wpxp_lower_lim = -max_mag_correlation * sqrt( wp2 * rtp2 )
 
     ! Compute the implicit portion of the r_t and w'r_t' equations.
     ! Build the left-hand side matrix.
@@ -365,8 +366,8 @@ contains
     ! based on the correlation of w and th_l, such that:
     ! corr_(w,th_l) = w'th_l' / [ sqrt(w'^2) * sqrt(th_l'^2) ];
     ! -1 <= corr_(w,th_l) <= 1.
-    wpxp_upper_lim =  0.99 * sqrt( wp2 * thlp2 )
-    wpxp_lower_lim = -0.99 * sqrt( wp2 * thlp2 )
+    wpxp_upper_lim =  max_mag_correlation * sqrt( wp2 * thlp2 )
+    wpxp_lower_lim = -max_mag_correlation * sqrt( wp2 * thlp2 )
 
     ! Compute the implicit portion of the th_l and w'th_l' equations.
     ! Build the left-hand side matrix.
@@ -426,10 +427,8 @@ contains
       ! based on the correlation of w and sclr, such that:
       ! corr_(w,sclr) = w'sclr' / [ sqrt(w'^2) * sqrt(sclr'^2) ];
       ! -1 <= corr_(w,sclr) <= 1.
-      wpxp_upper_lim(:) =  0.99 * sqrt( wp2(:)  & 
-                                       * sclrp2(:,i) )
-      wpxp_lower_lim(:) = -0.99 * sqrt( wp2(:)  & 
-                                       * sclrp2(:,i) )
+      wpxp_upper_lim(:) =  max_mag_correlation * sqrt( wp2(:) * sclrp2(:,i) )
+      wpxp_lower_lim(:) = -max_mag_correlation * sqrt( wp2(:) * sclrp2(:,i) )
 
       ! Compute the implicit portion of the sclr and w'sclr' equations.
       ! Build the left-hand side matrix.
@@ -934,7 +933,8 @@ contains
 
     ! Description:
     ! Compute RHS vector for xm and w'x'.
-    ! This subroutine computes the explicit portion of the xm and w'x' equations.
+    ! This subroutine computes the explicit portion of 
+    ! the xm and w'x' equations.
 
     ! References:
     !------------------------------------------------------------------------
@@ -1694,10 +1694,10 @@ contains
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        gr ! Variable gr%weights_zm2zt
+        gr ! Variable; gr%weights_zm2zt
 
     use constants, only: &
-        wtol_sqd
+        wtol_sqd ! Constant; minimum threshold for w'^2 [m^2/s^2]
 
 !    use model_flags, only:  &
 !        l_standard_term_ta

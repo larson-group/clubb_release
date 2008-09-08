@@ -370,6 +370,9 @@ contains
     use grid_class, only: & 
         gr ! Variable(s)
 
+    use constants, only: &
+        max_mag_correlation ! Constant(s)
+
     use stats_precision, only: & 
         time_precision ! Variable(s)
  
@@ -444,14 +447,14 @@ contains
     do k = 2, gr%nnzp-1, 1
 
        ! Clipping for xpyp at an upper limit corresponding with a correlation 
-       ! between x and y of 0.99.
-       if ( xpyp(k) >  0.99 * sqrt( xp2(k) * yp2(k) ) ) then
-          xpyp(k) =  0.99 * sqrt( xp2(k) * yp2(k) )
+       ! between x and y of max_mag_correlation.
+       if ( xpyp(k) >  max_mag_correlation * sqrt( xp2(k) * yp2(k) ) ) then
+          xpyp(k) =  max_mag_correlation * sqrt( xp2(k) * yp2(k) )
 
        ! Clipping for xpyp at a lower limit corresponding with a correlation 
-       ! between x and y of -0.99.
-       elseif ( xpyp(k) < -0.99 * sqrt( xp2(k) * yp2(k) ) ) then
-          xpyp(k) = -0.99 * sqrt( xp2(k) * yp2(k) )
+       ! between x and y of -max_mag_correlation.
+       elseif ( xpyp(k) < -max_mag_correlation * sqrt( xp2(k) * yp2(k) ) ) then
+          xpyp(k) = -max_mag_correlation * sqrt( xp2(k) * yp2(k) )
 
        endif
 

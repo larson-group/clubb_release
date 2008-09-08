@@ -19,8 +19,8 @@ public :: fstderr, fstdin, fstdout, pi_dp, pi, Cp, Lv, Ls, Lf, &
           Rd, Rv, ep, ep1, ep2, kappa, grav, p0, vonk, rho_lw, & 
           sol_const, wtol, thltol, rttol, qttol, sstol, difftol, & 
           wtol_sqd, rc_tol, Nc_tol, rr_tol, Nr_tol, emin, eps,  & 
-          sec_per_day, sec_per_hr, sec_per_min, g_per_kg,  & 
-          Lscale_max, T_freeze_K
+          max_mag_correlation, sec_per_day, sec_per_hr, sec_per_min, &
+          g_per_kg, Lscale_max, T_freeze_K
 !    .            sclr_dim, hydromet_dim, sclrtol, 
 
 private ! Default scope
@@ -108,6 +108,12 @@ real, parameter :: emin = 1.0e-6  ! [m^2/s^2]
 real, parameter ::  & 
 eps = 1.0e-10 ! Small value to prevent a divide by zero
 
+! The maximum absolute value (or magnitude) that a correlation is allowed to 
+! have.  Statistically, a correlation is not allowed to be less than -1 or 
+! greater than 1, so the maximum magnitude would be 1.
+real, parameter :: &
+max_mag_correlation = 0.99
+
 ! Useful conversion factors.
 real(kind=time_precision), parameter ::  & 
 sec_per_day = 86400.0, & ! Seconds in a day.
@@ -121,7 +127,7 @@ g_per_kg = 1000.0     ! Grams in a kilogram.
 !    .  sclr_dim     = 2, ! Number of passive scalars. 
 !    .  hydromet_dim = 5  ! Number of hydrometeor fields.
 
-! Tolerance for new advance_xm_wpxp_module scheme
+! Tolerance for new mixing scheme
 ! Currently it's elements are equal to rttol and thltol
 !       real, dimension(sclr_dim), parameter :: 
 !    .  sclrtol = (/thltol, rttol/)
