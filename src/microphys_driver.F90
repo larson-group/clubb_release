@@ -406,8 +406,9 @@ if ( l_coamps_micro ) then
    call stat_update_var( irsnowm_mc,  & 
                          hydromet_mc(:,iirsnowm), zt )
 
- end if ! l_stats_samp
-else if ( l_kk_rain ) then
+ endif ! l_stats_samp
+
+elseif ( l_kk_rain ) then
 
   ! Note that Ncm for DYCOMS II RF02 is specified in the
   ! dycoms_rf02_tndcy subroutine, so new cases will need 
@@ -846,16 +847,20 @@ if ( l_stats_samp ) then
      kp1 = min( k+1, gr%nnzp )
 
      ! Finalize implicit contributions
+
+     ! xrm term ma is completely implicit; call stat_update_var_pt.
      call stat_update_var_pt( ixrm_ma, k, & 
            ztscr01(k) * xrm(km1) & 
          + ztscr02(k) * xrm(k) & 
          + ztscr03(k) * xrm(kp1), zt)
      
+     ! xrm term sd is completely implicit; call stat_update_var_pt.
      call stat_update_var_pt( ixrm_sd, k, & 
            ztscr04(k) * xrm(km1) & 
          + ztscr05(k) * xrm(k) & 
          + ztscr06(k) * xrm(kp1), zt )
      
+     ! xrm term dff is completely implicit; call stat_update_var_pt.
      call stat_update_var_pt( ixrm_dff, k, & 
            ztscr07(k) * xrm(km1) & 
          + ztscr08(k) * xrm(k) & 
