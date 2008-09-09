@@ -1030,6 +1030,8 @@ contains
 
         ! Statistics: implicit contributions for wp3.
 
+        ! Note:  To find the contribution of term ta, add 3/2 to all of the a_3 
+        !        inputs to the function.
         if ( iwp3_ta > 0 ) then
           tmp(1:5) =  & 
           wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
@@ -1044,6 +1046,9 @@ contains
           ztscr09(k) = -tmp(1)
         endif
 
+        ! Note:  To find the contribution of term tp, substitute 0 for all of
+        !        the a_1 and a_3 inputs and subtract 3/2 from all of the a_3 
+        !        inputs to the function.
         if ( iwp3_tp > 0 ) then
           tmp(1:5) =  & 
           wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
@@ -1384,6 +1389,12 @@ contains
       if (l_stats_samp) then
 
         ! Statistics: explicit contributions for wp3.
+
+        ! w'^3 term ta has both implicit and explicit components; call 
+        ! stat_begin_update_pt.  Since stat_begin_update_pt automatically 
+        ! subtracts the value sent in, reverse the sign on wp3_terms_ta_tp_rhs.
+        ! Note:  To find the contribution of term ta, add 3/2 to all of the a_3 
+        !        inputs to the function.
         call stat_begin_update_pt( iwp3_ta, k, &
           -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
                                 wp2(k), wp2(km1),  &  
@@ -1392,6 +1403,12 @@ contains
                                 a3(km1)+(3.0/2.0), gr%dzt(k) ),  &
                                    zt )
 
+        ! w'^3 term tp has both implicit and explicit components; call 
+        ! stat_begin_update_pt.  Since stat_begin_update_pt automatically 
+        ! subtracts the value sent in, reverse the sign on wp3_terms_ta_tp_rhs.
+        ! Note:  To find the contribution of term tp, substitute 0 for all of
+        !        the a_1 and a_3 inputs and subtract 3/2 from all of the a_3 
+        !        inputs to the function.
         call stat_begin_update_pt( iwp3_tp, k,  &
           -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
                                 wp2(k), wp2(km1),  &
@@ -1400,23 +1417,37 @@ contains
                                 0.0-(3.0/2.0), gr%dzt(k) ),  &
                                    zt )
 
+        ! w'^3 term bp is completely explicit; call stat_update_var_pt.
+        ! Note:  To find the contribution of term bp, substitute 0 for the 
+        !        C_11 Skw fnct input to the function.
         call stat_update_var_pt( iwp3_bp, k, & 
           wp3_terms_bp_pr2_rhs( 0.0, wp2thvp(k) ), zt )
 
+        ! w'^3 term pr2 is completely explicit; call stat_update_var_pt.
+        ! Note:  To find the contribution of term pr2, add 1 to the
+        !        C_11 Skw fnct input to the function.
         call stat_begin_update_pt( iwp3_pr2, k, & 
           -wp3_terms_bp_pr2_rhs( (1.0+C11_Skw_fnc(k)), wp2thvp(k) ), & 
-          zt )
+                                   zt )
 
+        ! w'^3 term pr1 has both implicit and explicit components; call 
+        ! stat_begin_update_pt.  Since stat_begin_update_pt automatically 
+        ! subtracts the value sent in, reverse the sign on wp3_term_pr1_rhs.
         call stat_begin_update_pt( iwp3_pr1, k, & 
           -wp3_term_pr1_rhs( C8, C8b, tauw3t(k), Skw_zt(k), wp3(k) ), & 
-          zt)
+                                   zt)
 
+        ! w'^3 term dp1 has both implicit and explicit components (if the
+        ! Crank-Nicholson scheme is selected); call stat_begin_update_pt.  
+        ! Since stat_begin_update_pt automatically subtracts the value sent in, 
+        ! reverse the sign on right-hand side diffusion component.  If 
+        ! Crank-Nicholson diffusion is not selected, the stat_begin_update_pt 
+        ! will not be called.
         if ( l_crank_nich_diff ) then
           call stat_begin_update_pt( iwp3_dp1, k, & 
-            rhs_diff(3) * wp3(km1) & 
-          + rhs_diff(2) * wp3(k) & 
-          + rhs_diff(1) * wp3(kp1), zt )
-
+              rhs_diff(3) * wp3(km1) & 
+            + rhs_diff(2) * wp3(k) & 
+            + rhs_diff(1) * wp3(kp1), zt )
         endif
 
       endif

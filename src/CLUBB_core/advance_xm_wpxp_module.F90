@@ -1051,7 +1051,7 @@ contains
         ! Statistics: explicit contributions for xm
         !             (including microphysics/radiation).
 
-        ! xm forcing is completely explicit; call stat_update_var_pt.
+        ! xm forcings term is completely explicit; call stat_update_var_pt.
         call stat_update_var_pt( ixm_f, k, xm_forcing(k), zt )
 
       endif ! l_stats_samp
@@ -1085,15 +1085,15 @@ contains
 
         ! Statistics: explicit contributions for wpxp.
 
-        ! w'x' bp is completely explicit; call stat_update_var_pt.
+        ! w'x' term bp is completely explicit; call stat_update_var_pt.
         call stat_update_var_pt( iwpxp_bp, k, & 
             wpxp_terms_bp_pr3_rhs( 0.0, xpthvp(k) ), zm )
 
-        ! w'x' pr3 is completely explicit; call stat_update_var_pt.
+        ! w'x' term pr3 is completely explicit; call stat_update_var_pt.
         call stat_update_var_pt( iwpxp_pr3, k, & 
             wpxp_terms_bp_pr3_rhs( (1.0+C7_Skw_fnc(k)),xpthvp(k)), zm)
 
-        ! w'x' sicl has both implicit and explicit components; call 
+        ! w'x' term sicl has both implicit and explicit components; call 
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically 
         ! subtracts the value sent in, reverse the sign on clip_semi_imp_rhs.
         if ( l_clip_semi_implicit ) then
@@ -1435,55 +1435,55 @@ contains
 
         ! Finalize implicit contributions for xm
 
-        ! xm ma is completely implicit; call stat_update_var_pt.
+        ! xm term ma is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( ixm_ma, k, & 
             ztscr01(k) * xm(km1) & 
           + ztscr02(k) * xm(k) & 
           + ztscr03(k) * xm(kp1), zt )
 
-        ! xm ta is completely implicit; call stat_update_var_pt.
+        ! xm term ta is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( ixm_ta, k, & 
             ztscr04(k) * wpxp(km1) & 
           + ztscr05(k) * wpxp(k), zt )
 
         ! Finalize implicit contributions for wpxp
 
-        ! w'x' ma is completely implicit; call stat_update_var_pt.
+        ! w'x' term ma is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwpxp_ma, k, & 
             zmscr01(k) * wpxp(km1) & 
           + zmscr02(k) * wpxp(k) & 
           + zmscr03(k) * wpxp(kp1), zm )
 
-        ! w'x' ta is completely implicit; call stat_update_var_pt.
+        ! w'x' term ta is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwpxp_ta, k, & 
             zmscr04(k) * wpxp(km1) & 
           + zmscr05(k) * wpxp(k) & 
           + zmscr06(k) * wpxp(kp1), zm )
 
-        ! w'x' tp is completely implicit; call stat_update_var_pt.
+        ! w'x' term tp is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwpxp_tp, k, & 
             zmscr07(k) * xm(k) & 
           + zmscr08(k) * xm(kp1), zm )
 
-        ! w'x' ac is completely implicit; call stat_update_var_pt.
+        ! w'x' term ac is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwpxp_ac, k, & 
             zmscr09(k) * wpxp(k), zm )
 
-        ! w'x' pr1 is completely implicit; call stat_update_var_pt.
+        ! w'x' term pr1 is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwpxp_pr1, k, & 
             zmscr10(k) * wpxp(k), zm )
 
-        ! w'x' pr2 is completely implicit; call stat_update_var_pt.
+        ! w'x' term pr2 is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwpxp_pr2, k, & 
             zmscr11(k) * wpxp(k), zm )
 
-        ! w'x' dp1 is completely implicit; call stat_update_var_pt.
+        ! w'x' term dp1 is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwpxp_dp1, k, & 
             zmscr12(k) * wpxp(km1) & 
           + zmscr13(k) * wpxp(k) & 
           + zmscr14(k) * wpxp(kp1), zm )
 
-        ! w'x' sicl has both implicit and explicit components; 
+        ! w'x' term sicl has both implicit and explicit components; 
         ! call stat_end_update_pt.
         if ( l_clip_semi_implicit ) then
           call stat_end_update_pt( iwpxp_sicl, k, & 
