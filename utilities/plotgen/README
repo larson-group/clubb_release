@@ -4,6 +4,8 @@ To test your changes, run ./plotgen.sh from the checked out version of plotgen. 
 
 For more information on modifying plotgen, visit this page: http://larson-group.com/twiki/bin/view.pl/Documentation/CarsonDoc/AddingCasesToPlotgen
 
+For more information on running plotgen from the repository, visit this page: http://larson-group.com/twiki/bin/view.pl/Documentation/CarsonDoc/Plotgen#RunningPlotgen
+
 Usage: 'plotgen Output_Arg HOC_dir1 [HOC_dir2] Output_Directory Plot_LES Plot_Best Plot_HOCDec17'
 
 This generates plots comparing the specified simulations, e.g.
