@@ -580,31 +580,51 @@ contains
         km1 = max( k-1, 1 )
         kp1 = min( k+1, gr%nnzp )
 
+        ! w'^2 term dp1 has both implicit and explicit components;
+        ! call stat_end_update_pt.
         call stat_end_update_pt( iwp2_dp1, k, & 
            zmscr01(k) * wp2(k), zm )
 
-        call stat_update_var_pt( iwp2_dp2, k, & 
-           zmscr02(k) * wp2(km1) & 
-         + zmscr03(k) * wp2(k) & 
-         + zmscr04(k) * wp2(kp1), zm )
+        ! w'^2 term dp2 has both implicit and explicit components (if the
+        ! Crank-Nicholson scheme is selected); call stat_end_update_pt.  
+        ! If Crank-Nicholson diffusion is not selected, then w'^3 term dp1 is 
+        ! completely implicit; call stat_update_var_pt.
+        if ( l_crank_nich_diff ) then
+           call stat_end_update_pt( iwp2_dp2, k, &
+              zmscr02(k) * wp2(km1) & 
+            + zmscr03(k) * wp2(k) & 
+            + zmscr04(k) * wp2(kp1), zm )
+        else
+           call stat_update_var_pt( iwp2_dp2, k, &
+              zmscr02(k) * wp2(km1) & 
+            + zmscr03(k) * wp2(k) & 
+            + zmscr04(k) * wp2(kp1), zm )
+        endif
 
+        ! w'^2 term ta is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwp2_ta, k, & 
            zmscr05(k) * wp3(k) & 
          + zmscr06(k) * wp3(kp1), zm )
 
+        ! w'^2 term ma is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwp2_ma, k, & 
            zmscr07(k) * wp2(km1) & 
          + zmscr08(k) * wp2(k) & 
          + zmscr09(k) * wp2(kp1), zm )
 
+        ! w'^2 term ac is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwp2_ac, k,  & 
            zmscr10(k) * wp2(k), zm )
 
+        ! w'^2 term pr1 has both implicit and explicit components;
+        ! call stat_end_update_pt.
         if ( l_tke_aniso ) then
           call stat_end_update_pt( iwp2_pr1, k, & 
              zmscr12(k) * wp2(k), zm )
         endif
 
+        ! w'^2 term pr2 has both implicit and explicit components;
+        ! call stat_end_update_pt.
         call stat_end_update_pt( iwp2_pr2, k, & 
            zmscr11(k) * wp2(k), zm )
 
@@ -617,14 +637,29 @@ contains
         km1 = max( k-1, 1 )
         kp1 = min( k+1, gr%nnzp )
 
+        ! w'^3 term pr1 has both implicit and explicit components; 
+        ! call stat_end_update_pt.
         call stat_end_update_pt( iwp3_pr1, k, & 
            ztscr01(k) * wp3(k), zt )
 
-        call stat_update_var_pt( iwp3_dp1, k, & 
-           ztscr02(k) * wp3(km1) & 
-         + ztscr03(k) * wp3(k) & 
-         + ztscr04(k) * wp3(kp1), zt )
+        ! w'^3 term dp1 has both implicit and explicit components (if the
+        ! Crank-Nicholson scheme is selected); call stat_end_update_pt.  
+        ! If Crank-Nicholson diffusion is not selected, then w'^3 term dp1 is 
+        ! completely implicit; call stat_update_var_pt.
+        if ( l_crank_nich_diff ) then
+           call stat_end_update_pt( iwp3_dp1, k, & 
+              ztscr02(k) * wp3(km1) & 
+            + ztscr03(k) * wp3(k) & 
+            + ztscr04(k) * wp3(kp1), zt )
+        else
+           call stat_update_var_pt( iwp3_dp1, k, & 
+              ztscr02(k) * wp3(km1) & 
+            + ztscr03(k) * wp3(k) & 
+            + ztscr04(k) * wp3(kp1), zt )
+        endif
 
+        ! w'^3 term ta has both implicit and explicit components; 
+        ! call stat_end_update_pt.
         call stat_end_update_pt( iwp3_ta, k, & 
            ztscr05(k) * wp3(km1) & 
          + ztscr06(k) * wp2(km1) & 
@@ -632,22 +667,29 @@ contains
          + ztscr08(k) * wp2(k) & 
          + ztscr09(k) * wp3(kp1), zt )
 
+        ! w'^3 term tp has both implicit and explicit components; 
+        ! call stat_end_update_pt.
         call stat_end_update_pt( iwp3_tp, k,  & 
            ztscr10(k) * wp2(km1) & 
          + ztscr11(k) * wp2(k), zt )
 
+        ! w'^3 term ma is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwp3_ma, k, & 
            ztscr12(k) * wp3(km1) & 
          + ztscr13(k) * wp3(k) & 
          + ztscr14(k) * wp3(kp1), zt )
 
+        ! w'^3 term ac is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwp3_ac, k, & 
            ztscr15(k) * wp3(k), zt )
 
+        ! w'^3 term pr2 has both implicit and explicit components; 
+        ! call stat_end_update_pt.
         call stat_end_update_pt( iwp3_pr2, k, & 
            ztscr16(k) * wp3(k), zt )
 
       enddo
+
     endif ! l_stats_samp
 
 
@@ -944,11 +986,15 @@ contains
           zmscr09(k) = - tmp(1)
         endif
 
+        ! Note:  To find the contribution of w'^2 term ac, substitute 0 for the
+        !        C_5 input to function wp2_terms_ac_pr2_lhs.
         if ( iwp2_ac > 0 ) then
           zmscr10(k) =  & 
           - wp2_terms_ac_pr2_lhs( 0.0, wm_zt(kp1), wm_zt(k), gr%dzm(k)  )
         endif
 
+        ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
+        !        C_5 input to function wp2_terms_ac_pr2_lhs.
         if ( iwp2_pr2 > 0 ) then
           zmscr11(k) =  & 
           - wp2_terms_ac_pr2_lhs( (1.0+C5), wm_zt(kp1), wm_zt(k),  & 
@@ -1030,8 +1076,8 @@ contains
 
         ! Statistics: implicit contributions for wp3.
 
-        ! Note:  To find the contribution of term ta, add 3/2 to all of the a_3 
-        !        inputs to the function.
+        ! Note:  To find the contribution of w'^3 term ta, add 3/2 to all of 
+        !        the a_3 inputs to function wp3_terms_ta_tp_lhs.
         if ( iwp3_ta > 0 ) then
           tmp(1:5) =  & 
           wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
@@ -1046,9 +1092,9 @@ contains
           ztscr09(k) = -tmp(1)
         endif
 
-        ! Note:  To find the contribution of term tp, substitute 0 for all of
-        !        the a_1 and a_3 inputs and subtract 3/2 from all of the a_3 
-        !        inputs to the function.
+        ! Note:  To find the contribution of w'^3 term tp, substitute 0 for all
+        !        of the a_1 and a_3 inputs and subtract 3/2 from all of the a_3
+        !        inputs to function wp3_terms_ta_tp_lhs.
         if ( iwp3_tp > 0 ) then
           tmp(1:5) =  & 
           wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
@@ -1068,12 +1114,16 @@ contains
           ztscr14(k) = -tmp(1)
         endif
 
+        ! Note:  To find the contribution of w'^3 term ac, substitute 0 for the
+        !        C_ll skewness function input to function wp3_terms_ac_pr2_lhs.
         if ( iwp3_ac > 0 ) then
           ztscr15(k) =  & 
           - wp3_terms_ac_pr2_lhs( 0.0, & 
                                   wm_zm(k), wm_zm(km1), gr%dzt(k) )
         endif
 
+        ! Note:  To find the contribution of w'^3 term pr2, add 1 to the
+        !        C_ll skewness function input to function wp3_terms_ac_pr2_lhs.
         if ( iwp3_pr2 > 0 ) then
           ztscr16(k) = & 
           - wp3_terms_ac_pr2_lhs( (1.0+C11_Skw_fnc(k)), & 
@@ -1315,6 +1365,12 @@ contains
 
         ! Statistics: explicit contributions for wp2.
 
+        ! w'^2 term dp2 has both implicit and explicit components (if the
+        ! Crank-Nicholson scheme is selected); call stat_begin_update_pt.  
+        ! Since stat_begin_update_pt automatically subtracts the value sent in, 
+        ! reverse the sign on right-hand side diffusion component.  If 
+        ! Crank-Nicholson diffusion is not selected, the stat_begin_update_pt 
+        ! will not be called.
         if ( l_crank_nich_diff ) then
           call stat_begin_update_pt( iwp2_dp2, k, & 
             rhs_diff(3) * wp2(km1) & 
@@ -1322,25 +1378,39 @@ contains
           + rhs_diff(1) * wp2(kp1), zm )
         endif
 
+        ! w'^2 term bp is completely explicit; call stat_update_var_pt.
+        ! Note:  To find the contribution of w'^2 term bp, substitute 0 for the
+        !        C_5 input to function wp2_terms_bp_pr2_rhs.
         call stat_update_var_pt( iwp2_bp, k, & 
           wp2_terms_bp_pr2_rhs( 0.0, wpthvp(k) ), zm )
 
-
+        ! w'^2 term pr1 has both implicit and explicit components; call
+        ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+        ! subtracts the value sent in, reverse the sign on wp2_term_pr1_rhs.
         if ( l_tke_aniso ) then
           call stat_begin_update_pt( iwp2_pr1, k, & 
             -wp2_term_pr1_rhs( C4, up2(k), vp2(k), tau1m(k) ), zm )
-
         endif
 
+        ! w'^2 term pr2 has both implicit and explicit components; call
+        ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+        ! subtracts the value sent in, reverse the sign on wp2_terms_bp_pr2_rhs.
+        ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
+        !        C_5 input to function wp2_terms_bp_pr2_rhs.
         call stat_begin_update_pt( iwp2_pr2, k, & 
           -wp2_terms_bp_pr2_rhs( (1.0+C5), wpthvp(k) ), zm )
 
+        ! w'^2 term dp1 has both implicit and explicit components; call
+        ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+        ! subtracts the value sent in, reverse the sign on wp2_term_dp1_rhs.
         call stat_begin_update_pt( iwp2_dp1, k, &
           -wp2_term_dp1_rhs( C1_Skw_fnc(k), tau1m(k), 2./3.*emin ), zm )
 
+        ! w'^2 term pr3 is completely explicit; call stat_update_var_pt.
         call stat_update_var_pt( iwp2_pr3, k, & 
           wp2_term_pr3_rhs( C5, wpthvp(k), upwp(k), um(kp1), um(k), & 
-                        vpwp(k), vm(kp1), vm(k), gr%dzm(k) ), zm )
+                            vpwp(k), vm(kp1), vm(k), gr%dzm(k) ), &
+                                 zm )
 
       endif
 
@@ -1393,8 +1463,8 @@ contains
         ! w'^3 term ta has both implicit and explicit components; call 
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically 
         ! subtracts the value sent in, reverse the sign on wp3_terms_ta_tp_rhs.
-        ! Note:  To find the contribution of term ta, add 3/2 to all of the a_3 
-        !        inputs to the function.
+        ! Note:  To find the contribution of w'^3 term ta, add 3/2 to all of the
+        !        a_3 inputs to function wp3_terms_ta_tp_rhs.
         call stat_begin_update_pt( iwp3_ta, k, &
           -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
                                 wp2(k), wp2(km1),  &  
@@ -1406,9 +1476,9 @@ contains
         ! w'^3 term tp has both implicit and explicit components; call 
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically 
         ! subtracts the value sent in, reverse the sign on wp3_terms_ta_tp_rhs.
-        ! Note:  To find the contribution of term tp, substitute 0 for all of
-        !        the a_1 and a_3 inputs and subtract 3/2 from all of the a_3 
-        !        inputs to the function.
+        ! Note:  To find the contribution of w'^3 term tp, substitute 0 for all
+        !        of the a_1 and a_3 inputs and subtract 3/2 from all of the a_3
+        !        inputs to function wp3_terms_ta_tp_rhs.
         call stat_begin_update_pt( iwp3_tp, k,  &
           -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
                                 wp2(k), wp2(km1),  &
@@ -1418,14 +1488,16 @@ contains
                                    zt )
 
         ! w'^3 term bp is completely explicit; call stat_update_var_pt.
-        ! Note:  To find the contribution of term bp, substitute 0 for the 
-        !        C_11 Skw fnct input to the function.
+        ! Note:  To find the contribution of w'^3 term bp, substitute 0 for the
+        !        C_11 skewness function input to function wp3_terms_bp_pr2_rhs.
         call stat_update_var_pt( iwp3_bp, k, & 
           wp3_terms_bp_pr2_rhs( 0.0, wp2thvp(k) ), zt )
 
-        ! w'^3 term pr2 is completely explicit; call stat_update_var_pt.
-        ! Note:  To find the contribution of term pr2, add 1 to the
-        !        C_11 Skw fnct input to the function.
+        ! w'^3 term pr2 has both implicit and explicit components; call
+        ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+        ! subtracts the value sent in, reverse the sign on wp3_terms_bp_pr2_rhs.
+        ! Note:  To find the contribution of w'^3 term pr2, add 1 to the
+        !        C_11 skewness function input to function wp3_terms_bp_pr2_rhs.
         call stat_begin_update_pt( iwp3_pr2, k, & 
           -wp3_terms_bp_pr2_rhs( (1.0+C11_Skw_fnc(k)), wp2thvp(k) ), & 
                                    zt )
