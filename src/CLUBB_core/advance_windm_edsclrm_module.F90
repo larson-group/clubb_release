@@ -717,12 +717,15 @@ if ( l_stats_samp ) then
       kp1 = min( k+1, gr%nnzp )
 
       ! xm mean advection
+      ! xm term ma is completely implicit; call stat_update_var_pt.
       call stat_update_var_pt( ixm_ma, k, &
              ztscr01(k) * xm(km1) &
            + ztscr02(k) * xm(k) &
            + ztscr03(k) * xm(kp1), zt )
 
       ! xm turbulent transport (implicit component)
+      ! xm term ta has both implicit and explicit components;
+      ! call stat_end_update_pt.
       call stat_end_update_pt( ixm_ta, k, &
              ztscr04(k) * xm(km1) &
            + ztscr05(k) * xm(k) &
@@ -732,6 +735,8 @@ if ( l_stats_samp ) then
 
     ! Upper boundary condition:
     ! xm turbulent transport (implicit component)
+    ! xm term ta has both implicit and explicit components;
+    ! call stat_end_update_pt.
     k   = gr%nnzp
     km1 = max( k-1, 1 )
     call stat_end_update_pt( ixm_ta, k, &
@@ -866,9 +871,11 @@ if ( .not. l_implemented ) then
   xm_tndcy = xm_gf + xm_cf 
 
   if ( l_stats_samp ) then
- 
+
+    ! xm term gf is completely explicit; call stat_update_var. 
     call stat_update_var( ixm_gf, xm_gf, zt )
   
+    ! xm term cf is completely explicit; call stat_update_var. 
     call stat_update_var( ixm_cf, xm_cf, zt )
 
   endif
@@ -1041,7 +1048,7 @@ do k = 2, gr%nnzp-1, 1
          ztscr06(k) = -tmp(1)
       endif
 
-   endif  ! lstats_samp
+   endif  ! l_stats_samp
 
 enddo
 
@@ -1095,7 +1102,7 @@ if ( l_stats_samp ) then
       ztscr06(k) = -tmp(1)
    endif
 
-endif  ! lstats_samp
+endif  ! l_stats_samp
 
 
 return
@@ -1215,6 +1222,10 @@ do k = 2, gr%nnzp-1, 1
 
       ! Statistics:  explicit contributions for um or vm.
 
+      ! xm term ta has both implicit and explicit components; call 
+      ! stat_begin_update_pt.  Since stat_begin_update_pt automatically 
+      ! subtracts the value sent in, reverse the sign on right-hand side 
+      ! turbulent advection component.
       if ( ixm_ta > 0 ) then
          call stat_begin_update_pt( ixm_ta, k, & 
                 rhs_diff(3) * xm(km1) &
@@ -1222,7 +1233,7 @@ do k = 2, gr%nnzp-1, 1
               + rhs_diff(1) * xm(kp1), zt )
       endif
 
-   endif  ! lstats_samp
+   endif  ! l_stats_samp
 
 enddo
 
@@ -1247,12 +1258,16 @@ if ( l_stats_samp ) then
 
    ! Statistics:  explicit contributions for um or vm.
 
+   ! xm term ta is modified at level 2 to include the effects of the surface 
+   ! flux.  This effects the explicit portion of the term (after 
+   ! stat_begin_update_pt has already been called at level 2); 
+   ! call stat_modify_pt.
    if ( ixm_ta > 0 ) then
       call stat_modify_pt( ixm_ta, 2, &
            + gr%dzt(2) * xpwp_sfc, zt )
    endif
 
-endif  ! lstats_samp
+endif  ! l_stats_samp
 
 
 ! Upper Boundary
@@ -1280,13 +1295,17 @@ if ( l_stats_samp ) then
 
    ! Statistics:  explicit contributions for um or vm.
 
+   ! xm term ta has both implicit and explicit components; call 
+   ! stat_begin_update_pt.  Since stat_begin_update_pt automatically 
+   ! subtracts the value sent in, reverse the sign on right-hand side 
+   ! turbulent advection component.
    if ( ixm_ta > 0 ) then
       call stat_begin_update_pt( ixm_ta, k, &
              rhs_diff(3) * xm(km1) &
            + rhs_diff(2) * xm(k), zt )
    endif
 
-endif  ! lstats_samp
+endif  ! l_stats_samp
 
 
 return
