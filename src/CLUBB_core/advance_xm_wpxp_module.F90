@@ -836,6 +836,8 @@ contains
           zmscr08(k) = - tmp(1)
         endif
 
+        ! Note:  To find the contribution of w'x' term ac, substitute 0 for the
+        !        C_7 skewness function input to function wpxp_terms_ac_pr2_lhs.
         if ( iwprtp_ac > 0 .or. iwpthlp_ac > 0 ) then
           zmscr09(k) =  & 
           - wpxp_terms_ac_pr2_lhs( 0.0, & 
@@ -847,6 +849,8 @@ contains
           - wpxp_term_pr1_lhs( C6x_Skw_fnc(k), tau_zm(k) )
         endif
 
+        ! Note:  To find the contribution of w'x' term pr2, add 1 to the
+        !        C_7 skewness function input to function wpxp_terms_ac_pr2_lhs.
         if ( iwprtp_pr2 > 0 .or. iwpthlp_pr2 > 0 ) then
           zmscr11(k) = & 
           - wpxp_terms_ac_pr2_lhs( (1.0+C7_Skw_fnc(k)), & 
