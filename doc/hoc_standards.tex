@@ -15,19 +15,28 @@
 
 \begin{document}
 
-\title{\textbf{Standards and Coding Practices for HOC}}
+\title{\textbf{Standards and Coding Practices for CLUBB}}
 \author{Larson Group UW--Milwaukee}
 
 \maketitle
 
+
+The following rules apply only to the parts of CLUBB that we have written.  We try not to modify
+code from external contributors such as BUGSRad, 
+Numerical Recipes, and so forth, because such external code is
+less familiar to us, and we might introduce bugs.  Furthermore, our changes would be lost if
+we were to update to a new version of the external code.
+\newline
+
+
 %\flushleft
 \begin{enumerate}
-\item All files in the repository should have a standard header with a CVS 
+\item All files in the repository should have a standard header with a SVN 
 \texttt{\$Id\$} tag at the top.
 \newline
 When initially checking in a new source file, enter the Id tag as 
 the string \texttt{\$Id\$} on a commented line at the top of the source file
- (CVS will expand this after checking it in).
+ (SVN will expand this after checking it in).
 
 \bigskip
 
@@ -116,12 +125,6 @@ This will allow other users to contact you with any questions about the section 
 Use the same name identifier, e.g. dschanen or Vince Larson, everywhere.
 Then everyone can use \texttt{grep} to search for all code comments you've made.
 
-\item When writing new source code, use fixed format rather than free format.  However, 
-this convention is not always followed in code from external contributors such as BUGSRad, 
-Numerical Recipes, and so forth.  We do not usually modify such external code because it is
-less familiar, and we might introduce bugs.
-\newline
-
 \item Minimize the number of variables or amount of data made available to any 
 subroutine in either 
 passed arguments or \texttt{use} statements.  Always specify \texttt{intent} 
@@ -181,7 +184,7 @@ end subroutine mulmul
 !-----------------------------------------------------------------------
 \end{verbatim}
 
-\item The general convention in HOC is to have the dummy arguments of a subroutine 
+\item The general convention in CLUBB is to have the dummy arguments of a subroutine 
 ordered with input first, input/output second, and output arguments third. 
 The exception to this is optional variables, which must occur last.  In that case,
 standard variables should be ordered as above; below this, the optional variables should
@@ -238,7 +241,7 @@ Not this:
     *v + t*h
 \end{verbatim}
 
-\item Do not use assumed size or assumed shape arrays in HOC.  
+\item Do not use assumed size or assumed shape arrays in CLUBB.  
 Generally speaking, the grid class defines the length of model arrays, 
 and the use of assumed size arrays introduces 
 another level of complexity that can cause bugs.  An exception may occur
@@ -395,7 +398,7 @@ There several ways to do this:
 	contain them. 
 	 E.g. \texttt{p0} for $P_0$.
 	\item Use 3 or more characters in the variable name.
-	E.g. HOC uses \texttt{grav} 
+	E.g. CLUBB uses \texttt{grav} 
 	rather than \texttt{g} or \texttt{gr} for the gravitational constant.
 	\end{enumerate}
 Avoid using a variable name that overlaps with the text a reserved word or
@@ -449,7 +452,7 @@ E.g.
 \end{verbatim}
 
 \item Good use of whitespace can make code easier to read and debug.  
-One simple convention used in HOC is to put an extra space between 
+One simple convention used in CLUBB is to put an extra space between 
 parenthesis for functions and subroutines to differentiate them from 
 array variables. \newline
 E.g.
@@ -531,9 +534,9 @@ E.g.
 \end{verbatim}
 
 % These two items are no longer true since we moved to Free format code -dschanen 6 Aug 08
-%\item A convention of HOC is to use the exclamation point character \texttt{!} for a comment, rather than a \texttt{C} or a \texttt{*}.  Consistent coding style makes comments easier to spot at a glance.
+%\item A convention of CLUBB is to use the exclamation point character \texttt{!} for a comment, rather than a \texttt{C} or a \texttt{*}.  Consistent coding style makes comments easier to spot at a glance.
 
-%\item A convention of HOC is to use the period ( \texttt{.} ) as the 
+%\item A convention of CLUBB is to use the period ( \texttt{.} ) as the 
 %continuation character.  This gives the code a clean and consistent look.
 %e.g.
 %\begin{verbatim}
@@ -588,8 +591,8 @@ E.g. \\
 \verb|end module dynamics|
 
 \item Wrap all code lines at 100 columns.  Fortran free format source code
-allows for 132, but the number 100 was chosen to keep the line length 
-within reason.  \newline
+allows for 132, but the number 100 was chosen to so that we can view the code browser
+without word-wrap on one monitor.  \newline
 
 \end{enumerate}
 
