@@ -1120,38 +1120,50 @@ else
          lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  &    ! Intent(inout)
          xapxbp(:,1:nrhs), err_code )                           ! Intent(out)
 endif
- 
-! Compute implicit budget terms
+
 if ( l_stats_samp ) then
 
-  do k=2, gr%nnzp-1
+  ! Finalize implicit contributions for r_t'^2, th_l'^2, r_t'th_l', 
+  ! u'^2, and v'^2.
+
+  do k = 2, gr%nnzp-1
 
     km1 = max( k-1, 1 )
     kp1 = min( k+1, gr%nnzp )
 
-    call stat_end_update_pt( ixapxbp_dp1, k, zmscr01(k) * xapxbp(k,1), & ! Intent(in)
-                             zm )                                        ! Intent(inout)
+    ! x'y' term dp1 has both implicit and explicit components;
+    ! call stat_end_update_pt.
+    call stat_end_update_pt( ixapxbp_dp1, k, &             ! Intent(in)
+                               zmscr01(k) * xapxbp(k,1), & ! Intent(in)
+                             zm )                          ! Intent(inout)
 
-    call stat_update_var_pt( ixapxbp_dp2, k, &            ! Intent(in)
-                             zmscr02(k) * xapxbp(km1,1) & ! Intent(in)
+    ! x'y' term dp2 is completely implicit; call stat_update_var_pt.
+    call stat_update_var_pt( ixapxbp_dp2, k, &              ! Intent(in)
+                               zmscr02(k) * xapxbp(km1,1) & ! Intent(in)
                              + zmscr03(k) * xapxbp(k,1) & 
                              + zmscr04(k) * xapxbp(kp1,1), &
-                             zm )                         ! Intent(inout)
-           
-    call stat_update_var_pt( ixapxbp_ta, k, &              ! Intent(in)
-                             zmscr05(k) * xapxbp(km1,1) &  ! Intent(in)
+                             zm )                           ! Intent(inout)
+
+    ! x'y' term ta has both implicit and explicit components;
+    ! call stat_end_update_pt.
+    call stat_end_update_pt( ixapxbp_ta, k, &                ! Intent(in)
+                               zmscr05(k) * xapxbp(km1,1) &  ! Intent(in)
                              + zmscr06(k) * xapxbp(k,1) &  
                              + zmscr07(k) * xapxbp(kp1,1), &
-                             zm )                          ! Intent(inout)
+                             zm )                            ! Intent(inout)
 
-    call stat_update_var_pt( ixapxbp_ma, k, &              ! Intent(in)
-                             zmscr08(k) * xapxbp(km1,1) &  ! Intent(in)
+    ! x'y' term ma is completely implicit; call stat_update_var_pt.
+    call stat_update_var_pt( ixapxbp_ma, k, &                ! Intent(in)
+                               zmscr08(k) * xapxbp(km1,1) &  ! Intent(in)
                              + zmscr09(k) * xapxbp(k,1) & 
                              + zmscr10(k) * xapxbp(kp1,1), &
-                             zm )                          ! Intent(inout)
+                             zm )                            ! Intent(inout)
 
-    call stat_update_var_pt( ixapxbp_pr1, k, zmscr11(k) * xapxbp(k,1), & ! Intent(in)
-                             zm )                                        ! Intent(inout)
+    ! x'y' term pr1 has both implicit and explicit components;
+    ! call stat_end_update_pt.
+    call stat_end_update_pt( ixapxbp_pr1, k, &             ! Intent(in)
+                               zmscr11(k) * xapxbp(k,1), & ! Intent(in)
+                             zm )                          ! Intent(inout)
 
   enddo
 endif
@@ -1182,7 +1194,8 @@ use stats_precision, only:  &
     time_precision ! Variable(s)
         
 use stats_type, only: & 
-    stat_modify_pt, stat_begin_update_pt, stat_update_var_pt ! Procedure(s)
+    stat_begin_update_pt, & ! Procedure(s)
+    stat_update_var_pt
 
 use stats_variables, only: & 
     ivp2_ta,  & ! Variable(s)
@@ -1305,51 +1318,70 @@ do k = 2, gr%nnzp-1, 1
  
     ! Statistics: explicit contributions for up2 or vp2.
 
-    call stat_modify_pt( ixapxbp_ta, k, &                           ! Intent(in) 
-         term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &   ! Intent(in)
-                      a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
-                      wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ), &
-                         zm )                                       ! Intent(inout)
+    ! x'y' term ta has both implicit and explicit components; call
+    ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+    ! subtracts the value sent in, reverse the sign on term_ta_rhs.
+    call stat_begin_update_pt( ixapxbp_ta, k, &                 ! Intent(in) 
+    -term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &   ! Intent(in)
+                  a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
+                  wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ), &
+                               zm )                             ! Intent(inout)
 
     if ( ixapxbp_dp1 > 0 ) then
-      ! Note:  The function term_pr1 is the explicit component 
-      !        of a semi-implicit solution to dp1 and pr1.
-      ! Record the statistical contribution of the implicit
-      ! component of term dp1 for up2 or vp2.  This will 
-      ! overwrite anything set statistically in diag_var_lhs 
-      ! for this term.
+      ! Note:  The function term_pr1 is the explicit component of a 
+      !        semi-implicit solution to dp1 and pr1.
+      ! Record the statistical contribution of the implicit component of 
+      ! term dp1 for up2 or vp2.  This will overwrite anything set 
+      ! statistically in diag_var_lhs for this term.
+      ! Note:  To find the contribution of x'y' term dp1, substitute 
+      !        (2/3)*C_4 for the C_n input to function term_dp1_lhs.
       tmp = term_dp1_lhs( (2.0/3.0)*C4, tau_zm(k) )
       zmscr01(k) = -tmp
-      ! Statistical contribution of the explicit component
-      ! of term dp1 for up2 or vp2.
-      call stat_begin_update_pt( ixapxbp_dp1, k, &                                   ! Intent(in)
-                                 -term_pr1( C4, 0.0, xbp2(k), wp2(k), tau_zm(k) ), & ! Intent(in)
-                                 zm )                                                ! Intent(inout)
+      ! Statistical contribution of the explicit component of term dp1 for 
+      ! up2 or vp2.
+      ! x'y' term dp1 has both implicit and explicit components; call
+      ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+      ! subtracts the value sent in, reverse the sign on term_pr1.
+      ! Note:  To find the contribution of x'y' term dp1, substitute 0 for 
+      !        the C_14 input to function term_pr1.
+      call stat_begin_update_pt( ixapxbp_dp1, k, &              ! Intent(in)
+           -term_pr1( C4, 0.0, xbp2(k), wp2(k), tau_zm(k) ), &  ! Intent(in)
+                                 zm )                           ! Intent(inout)
     endif
 
     if ( ixapxbp_pr1 > 0 ) then
-      ! Note:  The function term_pr1 is the explicit component 
-      !        of a semi-implicit solution to dp1 and pr1.
-      ! Statistical contribution of the implicit component
-      ! of term pr1 for up2 or vp2.
+      ! Note:  The function term_pr1 is the explicit component of a 
+      !        semi-implicit solution to dp1 and pr1.
+      ! Statistical contribution of the implicit component of term pr1 for 
+      ! up2 or vp2.
+      ! Note:  To find the contribution of x'y' term pr1, substitute 
+      !        (1/3)*C_14 for the C_n input to function term_dp1_lhs.
       tmp = term_dp1_lhs( (1.0/3.0)*C14, tau_zm(k) )
       zmscr11(k) = -tmp
-      ! Statistical contribution of the explicit component
-      ! of term pr1 for up2 or vp2.
-      call stat_modify_pt( ixapxbp_pr1, k, &                       ! Intent(in)  
-            term_pr1( 0.0, C14, xbp2(k), wp2(k), tau_zm(k) ), &    ! Intent(in)
-            zm )                                                   ! Intent(inout)
+      ! Statistical contribution of the explicit component of term pr1 for 
+      ! up2 or vp2.
+      ! x'y' term pr1 has both implicit and explicit components; call
+      ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+      ! subtracts the value sent in, reverse the sign on term_pr1.
+      ! Note:  To find the contribution of x'y' term pr1, substitute 0 for 
+      !        the C_4 input to function term_pr1.
+      call stat_begin_update_pt( ixapxbp_pr1, k, &                 ! Intent(in)  
+           -term_pr1( 0.0, C14, xbp2(k), wp2(k), tau_zm(k) ), &    ! Intent(in)
+                                 zm )                              ! Intent(inout)
     endif
 
+    ! x'y' term pr2 is completely explicit; call stat_update_var_pt.
     call stat_update_var_pt( ixapxbp_pr2, k, &                          ! Intent(in)
           term_pr2( C5, grav, T0, wpthvp(k), wpxap(k), wpxbp(k),  &     ! Intent(in)
                     xam(kp1), xam(k), xbm(kp1), xbm(k), gr%dzm(k) ), &  
-                    zm )                                                ! Intent(inout)
+                             zm )                                       ! Intent(inout)
 
-    call stat_update_var_pt( ixapxbp_tp, k, &                             ! Intent(in) 
-          (1.0 - C5)  * term_tp( xam(kp1), xam(k), xam(kp1), xam(k), &    ! Intent(in)
+    ! x'y' term tp is completely explicit; call stat_update_var_pt.
+    call stat_update_var_pt( ixapxbp_tp, k, &                  ! Intent(in) 
+          (1.0 - C5) &                                         ! Intent(in)
+           * term_tp( xam(kp1), xam(k), xam(kp1), xam(k), &
                       wpxap(k), wpxap(k), gr%dzm(k) ), & 
-                      zm )                                                ! Intent(inout)
+                             zm )                              ! Intent(inout)
 
   endif ! l_stats_samp
  
@@ -1394,8 +1426,7 @@ use stats_precision, only:  &
     time_precision ! Variable(s)
         
 use stats_type, only: & 
-    stat_modify_pt, & ! Procedure(s)
-    stat_begin_update_pt, &
+    stat_begin_update_pt, & ! Procedure(s)
     stat_update_var_pt
         
 use stats_variables, only: & 
@@ -1513,34 +1544,47 @@ do k = 2, gr%nnzp-1, 1
 
   if ( l_stats_samp ) then
 
-  ! Statistics: explicit contributions for rtp2, thlp2, or rtpthlp.
+    ! Statistics: explicit contributions for rtp2, thlp2, or rtpthlp.
 
-  call stat_modify_pt( ixapxbp_ta, k, &                         ! Intent(in) 
-      term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &  ! Intent(in)
-                   a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
-                   wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ), &
-                       zm )                                     ! Intent(inout)
+    ! x'y' term ta has both implicit and explicit components; call
+    ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+    ! subtracts the value sent in, reverse the sign on term_ta_rhs.
+    call stat_begin_update_pt( ixapxbp_ta, k, &                ! Intent(in) 
+    -term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &  ! Intent(in)
+                  a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
+                  wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ), &
+                               zm )                            ! Intent(inout)
 
-  call stat_begin_update_pt( ixapxbp_dp1, k, &              ! Intent(in)
-      -term_dp1_rhs( Cn(k), tau_zm(k), threshold ), &       ! Intent(in)
-      zm )                                                  ! Intent(inout)
+    ! x'y' term dp1 has both implicit and explicit components; call
+    ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+    ! subtracts the value sent in, reverse the sign on term_dp1_rhs.
+    call stat_begin_update_pt( ixapxbp_dp1, k, &           ! Intent(in)
+         -term_dp1_rhs( Cn(k), tau_zm(k), threshold ), &   ! Intent(in)
+                               zm )                        ! Intent(inout)
 
-  ! rtp2/thlp2 case (1 turbulent production term)
-  call stat_update_var_pt( ixapxbp_tp, k, &             ! Intent(in)
-      term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), &    ! Intent(in)
-               wpxbp(k), wpxap(k), gr%dzm(k) ), & 
-               zm )                                     ! Intent(inout)
+    ! rtp2/thlp2 case (1 turbulent production term)
+    ! x'y' term tp is completely explicit; call stat_update_var_pt.
+    call stat_update_var_pt( ixapxbp_tp, k, &             ! Intent(in)
+          term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), &  ! Intent(in)
+                   wpxbp(k), wpxap(k), gr%dzm(k) ), & 
+                             zm )                         ! Intent(inout)
           
-  ! rtpthlp case (2 turbulent production terms)
-  call stat_update_var_pt( ixapxbp_tp1, k, &    ! Intent(in)
-      term_tp( 0.0, 0.0, xbm(kp1), xbm(k), &    ! Intent(in)
-               0.0, wpxap(k), gr%dzm(k) ), &
-               zm )                             ! Intent(inout)
+    ! rtpthlp case (2 turbulent production terms)
+    ! x'y' term tp1 is completely explicit; call stat_update_var_pt.
+    ! Note:  To find the contribution of x'y' term tp1, substitute 0 for all
+    !        the xam inputs and the wpxbp input to function term_tp.
+    call stat_update_var_pt( ixapxbp_tp1, k, &    ! Intent(in)
+          term_tp( 0.0, 0.0, xbm(kp1), xbm(k), &  ! Intent(in)
+                   0.0, wpxap(k), gr%dzm(k) ), &
+                             zm )                 ! Intent(inout)
           
-  call stat_update_var_pt( ixapxbp_tp2, k, &    ! Intent(in)
-      term_tp( xam(kp1), xam(k), 0.0, 0.0, &    ! Intent(in)
-               wpxbp(k), 0.0, gr%dzm(k) ), &
-               zm )                             ! Intent(inout)
+    ! x'y' term tp2 is completely explicit; call stat_update_var_pt.
+    ! Note:  To find the contribution of x'y' term tp2, substitute 0 for all
+    !        the xbm inputs and the wpxap input to function term_tp.
+    call stat_update_var_pt( ixapxbp_tp2, k, &    ! Intent(in)
+          term_tp( xam(kp1), xam(k), 0.0, 0.0, &  ! Intent(in)
+                   wpxbp(k), 0.0, gr%dzm(k) ), &
+                             zm )                 ! Intent(inout)
           
   endif ! l_stats_samp
  
