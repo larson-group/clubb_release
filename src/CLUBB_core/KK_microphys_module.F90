@@ -13,7 +13,7 @@ module KK_microphys_module
 
   implicit none
 
-  public :: kk_microphys
+  public :: KK_microphys
   private :: mean_volume_radius, cond_evap_rrainm, cond_evap_Nrm
   private :: autoconv_rrainm, autoconv_Nrm, accretion_rrainm
   PRIVATE :: G_T_p
@@ -345,7 +345,7 @@ module KK_microphys_module
 !
 ! Description and notes written by Brian Griffin.
 !
-! Changes for kk_microphys -dschanen 14 Feb 2007
+! Changes for KK_microphys -dschanen 14 Feb 2007
 
     ! Set up the values of the statistical correlations and variances.
     ! Since we currently do not have enough variables to compute the
@@ -593,7 +593,7 @@ module KK_microphys_module
     hm_thl_tndcy(gr%nnzp) = 0.0
 
     return
-  end subroutine kk_microphys
+  end subroutine KK_microphys
 
 !===============================================================================
   !
