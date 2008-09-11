@@ -41,7 +41,9 @@ module pdf_closure_module
 !------------------------------------------------------------------------
 
     use constants, only: & 
-      ! Variable(s) 
+      ! Constants
+      sqrt_2pi, & ! sqrt(2*pi)
+      sqrt_2,   & ! sqrt(2)
       pi,       & ! The ratio of radii to their circumference
       Cp,       & ! Dry air specific heat at constant p [J/kg/K]
       Lv,       & ! Latent heat of vaporization         [J/kg]
@@ -520,8 +522,8 @@ module pdf_closure_module
 
     if ( ss1 > sstol ) then
       zeta1 = s1/ss1
-      R1  = 0.5*( 1. + erf( zeta1/sqrt( 2.0 ) ) )
-      rc1 = s1*R1+ss1*exp( -0.5*zeta1**2 )/( sqrt( 2*pi ) )
+      R1  = 0.5*( 1. + erf( zeta1/sqrt_2 )  )
+      rc1 = s1*R1+ss1*exp( -0.5*zeta1**2 )/( sqrt_2pi )
     else
       if ( s1 < 0.0 ) then
         R1  = 0.0
@@ -534,8 +536,8 @@ module pdf_closure_module
 
     if ( ss2 > sstol ) then
       zeta2 = s2/ss2
-      R2    = 0.5*( 1. + erf( zeta2/sqrt( 2.0 ) ) )
-      rc2   = s2*R2+ss2*exp( -0.5*zeta2**2 )/( sqrt( 2*pi ) )
+      R2    = 0.5*( 1. + erf( zeta2/sqrt_2 ) )
+      rc2   = s2*R2+ss2*exp( -0.5*zeta2**2 )/( sqrt_2pi )
     else
       if ( s2 < 0.0 ) then
         R2  = 0.0

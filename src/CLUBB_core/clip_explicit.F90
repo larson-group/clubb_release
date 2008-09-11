@@ -626,6 +626,9 @@ contains
         iwp3_cl, & 
         l_stats_samp
 
+    use constants, only: &
+      sqrt_2 ! Constant
+
     implicit none
 
     ! Input Variables
@@ -668,8 +671,8 @@ contains
 
     do k = 1, gr%nnzp, 1
        if ( gr%zt(k) <= 100.0 ) then ! Clip for 100 m. above ground.
-          wp3_upper_lim(k) =  0.2 * sqrt(2.0) * wp2_zt(k)**(3.0/2.0)
-          wp3_lower_lim(k) = -0.2 * sqrt(2.0) * wp2_zt(k)**(3.0/2.0)
+          wp3_upper_lim(k) =  0.2 * sqrt_2 * wp2_zt(k)**(3.0/2.0)
+          wp3_lower_lim(k) = -0.2 * sqrt_2 * wp2_zt(k)**(3.0/2.0)
        else                          ! Clip skewness consistently with a.
           wp3_upper_lim(k) =  4.5 * wp2_zt(k)**(3.0/2.0)
           wp3_lower_lim(k) = -4.5 * wp2_zt(k)**(3.0/2.0)
