@@ -278,6 +278,13 @@ module clubb_core
     real, dimension(gr%nnzp,sclr_dim) :: & 
       sclr_tmp1, sclr_tmp2, sclr_tmp3, sclr_tmp4 ! for PDF closure
 
+    integer :: &
+      wprtp_cl_num,   & ! Instance of w'r_t' clipping (1st or 3rd).
+      wpthlp_cl_num,  & ! Instance of w'th_l' clipping (1st or 3rd).
+      wpsclrp_cl_num, & ! Instance of w'sclr' clipping (1st or 3rd).
+      upwp_cl_num,    & ! Instance of u'w' clipping (1st or 2nd).
+      vpwp_cl_num       ! Instance of v'w' clipping (1st or 2nd).
+
     !------- Local variables for Latin Hypercube sampling ------------------
 
     integer i_rmd
@@ -442,9 +449,15 @@ module clubb_core
     ! after subroutine advance_xp2_xpyp updated xp2.
     !----------------------------------------------------------------
 
+    wprtp_cl_num   = 1 ! First instance of w'r_t' clipping.
+    wpthlp_cl_num  = 1 ! First instance of w'th_l' clipping.
+    wpsclrp_cl_num = 1 ! First instance of w'sclr' clipping.
+    upwp_cl_num    = 1 ! First instance of u'w' clipping.
+    vpwp_cl_num    = 1 ! First instance of v'w' clipping.
+
     call clip_covariances_denom( dt, rtp2, thlp2, up2, vp2, wp2, &
-                                 sclrp2, 1, 1, &
-                                 1, 1, 1, &
+                                 sclrp2, wprtp_cl_num, wpthlp_cl_num, &
+                                 wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, &
                                  wprtp, wpthlp, upwp, vpwp, wpsclrp )
 
 
@@ -711,9 +724,15 @@ module clubb_core
     ! after subroutine advance_wp2_wp3 updated wp2.
     !----------------------------------------------------------------
 
+    wprtp_cl_num   = 3 ! Third instance of w'r_t' clipping.
+    wpthlp_cl_num  = 3 ! Third instance of w'th_l' clipping.
+    wpsclrp_cl_num = 3 ! Third instance of w'sclr' clipping.
+    upwp_cl_num    = 2 ! Second instance of u'w' clipping.
+    vpwp_cl_num    = 2 ! Second instance of v'w' clipping.
+
     call clip_covariances_denom( dt, rtp2, thlp2, up2, vp2, wp2, &
-                                 sclrp2, 3, 3, &
-                                 3, 2, 2, &
+                                 sclrp2, wprtp_cl_num, wpthlp_cl_num, &
+                                 wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, &
                                  wprtp, wpthlp, upwp, vpwp, wpsclrp )
 
 

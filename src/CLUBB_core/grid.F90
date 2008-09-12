@@ -853,20 +853,21 @@ contains
     !
     ! factor = ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ).
     !
-    ! This function is used in situations where the variable to be interpolated
-    ! is being treated implicitly in an equation.  Usually, the variable to be
-    ! interpolated is involved in a derivative.  For the term of the equation
+    ! One of the important uses of this function is in situations where the
+    ! variable to be interpolated is being treated IMPLICITLY in an equation.
+    ! Usually, the variable to be interpolated is involved in a derivative (such
+    ! as d(var_zt)/dz in the diagram below).  For the term of the equation
     ! containing the derivative, grid weights are needed for two interpolations,
     ! rather than just one interpolation.  Thus, four grid weights (labeled
     ! A(k), B(k), C(k), and D(k) in the diagram below) are needed.
     !
     ! ---var_zt(k+1)------------------------------------------- t(k+1)
     !                                       A(k)
-    ! ===================var_zt(interp)======================== m(k)
+    ! ===========var_zt(interp)================================ m(k)
     !                                       B(k) = 1 - A(k)
-    ! ---var_zt(k)--------------------------------------------- t(k)
+    ! ---var_zt(k)-----------d(var_zt)/dz---------------------- t(k)
     !                                       C(k)
-    ! ===================var_zt(interp)======================== m(k-1)
+    ! ===========var_zt(interp)================================ m(k-1)
     !                                       D(k) = 1 - C(k)
     ! ---var_zt(k-1)------------------------------------------- t(k-1)
     !
@@ -1076,20 +1077,21 @@ contains
     !
     ! factor = ( zt(k) - zm(k-1) ) / ( zm(k) - zm(k-1) ).
     !
-    ! This function is used in situations where the variable to be interpolated
-    ! is being treated implicitly in an equation.  Usually, the variable to be
-    ! interpolated is involved in a derivative.  For the term of the equation
+    ! One of the important uses of this function is in situations where the
+    ! variable to be interpolated is being treated IMPLICITLY in an equation.
+    ! Usually, the variable to be interpolated is involved in a derivative (such
+    ! as d(var_zm)/dz in the diagram below).  For the term of the equation
     ! containing the derivative, grid weights are needed for two interpolations,
     ! rather than just one interpolation.  Thus, four grid weights (labeled
     ! A(k), B(k), C(k), and D(k) in the diagram below) are needed.
     !
     ! ===var_zm(k+1)=========================================== m(k+1)
     !                                       A(k)
-    ! -------------------var_zm(interp)------------------------ t(k+1)
+    ! -----------var_zm(interp)-------------------------------- t(k+1)
     !                                       B(k) = 1 - A(k)
-    ! ===var_zm(k)============================================= m(k)
+    ! ===var_zm(k)===========d(var_zm)/dz====================== m(k)
     !                                       C(k)
-    ! -------------------var_zm(interp)------------------------ t(k)
+    ! -----------var_zm(interp)-------------------------------- t(k)
     !                                       D(k) = 1 - C(k)
     ! ===var_zm(k-1)=========================================== m(k-1)
     !
