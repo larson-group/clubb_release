@@ -171,7 +171,7 @@ module clubb_core
       lapack_error,  & ! Procedure(s)
       clubb_at_least_debug_level
 
-    use Skw, only:  & 
+    use Skw_module, only:  & 
       Skw_func ! Procedure
 
     use clip_explicit, only: & 
@@ -507,7 +507,7 @@ module clubb_core
     do k = 2, gr%nnzp, 1
       call pdf_closure & 
          ( p_in_Pa(k), exner(k), wm_zt(k), wp2_zt(k), wp3(k), sigma_sqd_w_zt(k), & ! intent(in)
-           rtm(k), rtp2_zt(k), zm2zt( wprtp, k ),                  & ! intent(in)
+           Skw_zt(k), rtm(k), rtp2_zt(k), zm2zt( wprtp, k ),       & ! intent(in)
            thlm(k), thlp2_zt(k), zm2zt( wpthlp, k ),               & ! intent(in)
            rtpthlp_zt(k), sclrm(k,:), sclr_tmp1(k,:),              & ! intent(in)
            sclr_tmp3(k,:),sclr_tmp2(k,:), sclr_tmp4(k,:),          & ! intent(in)

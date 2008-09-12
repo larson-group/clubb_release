@@ -11,7 +11,7 @@ module pdf_closure_module
 !------------------------------------------------------------------------
   subroutine pdf_closure & 
              ( p_in_Pa, exner, wm, wp2, wp3, sigma_sqd_w, & 
-               rtm, rtp2, wprtp, & 
+               Skw, rtm, rtp2, wprtp, & 
                thlm, thlp2, wpthlp, & 
                rtpthlp, sclrm, wpsclrp, & 
                sclrp2, sclrprtp, sclrpthlp, & 
@@ -93,6 +93,7 @@ module pdf_closure_module
       wp2,        & ! w'^2                          [m^2/s^2] 
       wp3,        & ! w'^3                          [m^3/s^3]
       sigma_sqd_w,& ! Width of individual w plumes  [-]
+      Skw,        & ! Skewness of w                 [-]
       rtm,        & ! Mean total water              [kg/kg]
       rtp2,       & ! Total water mixing ratio      [kg/kg]
       wprtp,      & ! w' r_t'                       [(kg m)(kg s)]
@@ -192,7 +193,7 @@ module pdf_closure_module
 
     ! Skewness of w
 
-    real :: Skw 
+    !real :: Skw 
 
     ! alpha coefficients = 0.5 * ( 1 - correlations^2 ).
     !    These are used to calculate the scalar widths 
@@ -253,7 +254,7 @@ module pdf_closure_module
 
     else ! Width parameters are non-zero
 
-      Skw = wp3/wp2**1.5
+      !Skw = wp3/wp2**1.5
 
       if ( abs( Skw ) <= 1e-5 ) then
         a = 0.5

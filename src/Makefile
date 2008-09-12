@@ -79,7 +79,7 @@ PARAMETERIZATION = \
 	erf.o diffusion.o mean_adv.o T_in_K_mod.o \
 	pdf_closure_module.o advance_xp2_xpyp_module.o interpolation.o \
         hydrostatic.o mixing_length.o advance_xm_wpxp_module.o saturation.o \
-	advance_windm_edsclrm_module.o advance_wp2_wp3_mod.o Skw_func.o error_code.o \
+	advance_windm_edsclrm_module.o advance_wp2_wp3_mod.o Skw_module.o error_code.o \
 	numer_check.o variables_diagnostic_module.o variables_prognostic_module.o \
 	clubb_core.o lapack_wrap.o  \
 	parameters_tunable.o pos_definite_mod.o calendar.o \
