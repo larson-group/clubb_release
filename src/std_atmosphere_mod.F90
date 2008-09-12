@@ -119,19 +119,19 @@ module std_atmosphere_mod
   intrinsic :: real
 
   ! Input Variable
-  real,intent(in) :: alt      ! Altitude                      [m]
+  real,intent(in) :: alt ! Altitude         [m]
 
   ! Output Variables
   real,intent(out) ::  & 
-  theta,                       & ! Potential Temperature         [K]        
-  rtm                         ! Total Water Mixing Ratio      [kg/kg]
+  theta,  & ! Potential Temperature         [K]        
+  rtm       ! Total Water Mixing Ratio      [kg/kg]
   
   ! Local Variables
   real ::  & 
-  exner,               & ! Exner function                [-]
-  p_in_hPa,               & ! Pressure                      [hPa]
-  sp_humidity,         & ! Specific humidity             [kg/kg]
-  tabs0               ! Temperature                   [K]
+  exner,       & ! Exner function                [-]
+  p_in_Pa,     & ! Pressure                      [Pa]
+  sp_humidity, & ! Specific humidity             [kg/kg]
+  tabs0          ! Temperature                   [K]
   
   ! These variables are used to make the calls to lin_int cleaner    
   real, dimension(std_atmos_dim) :: & 
@@ -158,11 +158,11 @@ module std_atmosphere_mod
   tabs0 = lin_int( alt, height(varindex), height(varindex-1),  & 
                   T_in_K(varindex), T_in_K(varindex-1) )
   
-  p_in_hPa = 100. *  & 
+  p_in_Pa = 100. *  & 
           lin_int( alt, height(varindex), height(varindex-1), & 
                   pinmb(varindex), pinmb(varindex-1) )
 
-  exner = (p_in_hPa/p0)**kappa
+  exner = (p_in_Pa/p0)**kappa
 
   theta = tabs0/exner
 
