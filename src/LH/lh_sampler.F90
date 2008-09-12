@@ -38,7 +38,8 @@ subroutine lh_sampler( n, nt, d, p_matrix, &
                        rrainm, & 
                        X_u, X_nl, l_sample_flag)
 
-!      use constants
+
+use constants, only: max_mag_correlation
 
 implicit none
 
@@ -214,7 +215,8 @@ else
 ! An old subroutine, gaus_rotate, couldn't handle large correlations;
 !   I assume the replacement, gaus_condt, has equal trouble.
 !   Therefore we input smaller correlations
-  rrtthl_reduced = min( 0.99, max( rrtthl, -0.99 ) )
+! max_mag_correlation = 0.99 in constants.F90
+  rrtthl_reduced = min( max_mag_correlation, max( rrtthl, -max_mag_correlation ) )
 
 ! Within-plume rt-thl correlation terms with rt in g/kg
   rrtthl_reduced1 = dble(rrtthl_reduced*1.d3*sqrt(srt1*sthl1))
