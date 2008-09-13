@@ -42,12 +42,16 @@ module pos_definite_mod
 !       Nonlinear Renormalization of the Advective Fluxes'' Smolarkiewicz (1989)
 !       Monthly Weather Review, Vol. 117, pp. 2626--2632
 !-----------------------------------------------------------------------
+
   use grid_class, only: & 
       gr, & ! Variable(s)
       ddzt,  & ! Function
       ddzm  ! Function
+
   use constants, only :  & 
-      eps ! Variable(s)
+      eps, & ! Variable(s)
+      zero_threshold
+
   use stats_precision, only:  & 
       time_precision ! Variable(s)
 
@@ -129,8 +133,8 @@ module pos_definite_mod
   do k = 1, gr%nnzp, 1
 
     ! Def. of F+ and F- from eqn 2 Smolarkowicz
-    flux_plus(k)  =  max( 0., flux_np1(k) ) ! defined on flux levels
-    flux_minus(k) = -min( 0., flux_np1(k) ) ! defined on flux levels
+    flux_plus(k)  =  max( zero_threshold, flux_np1(k) ) ! defined on flux levels
+    flux_minus(k) = -min( zero_threshold, flux_np1(k) ) ! defined on flux levels
 
     if ( field_grid == "zm" ) then
       dz_over_dt(k) = real( ( 1./gr%dzm(k) ) / dt )

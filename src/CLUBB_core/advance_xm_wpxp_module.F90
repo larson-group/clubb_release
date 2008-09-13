@@ -547,6 +547,9 @@ contains
         gr,  & ! Variable(s)
         zm2zt ! Procedure(s)
 
+    use constants, only: &
+        zero_threshold ! Variable(s)
+
     use model_flags, only: &
         l_clip_semi_implicit ! Variable(s)
 
@@ -662,7 +665,7 @@ contains
 
     ! Interpolate a_1 from momentum levels to thermodynamic levels.  This will 
     ! be used for the w'x' turbulent advection (ta) term.
-    a1_zt  = max( zm2zt( a1 ), 0.0 )   ! Positive definite quantity
+    a1_zt  = max( zm2zt( a1 ), zero_threshold )   ! Positive definite quantity
 
     ! Initialize the left-hand side matrix to 0.
     lhs = 0.0

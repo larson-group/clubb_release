@@ -60,7 +60,8 @@ module clubb_core
       Lv, & 
       ep1, & 
       eps, &
-      fstderr
+      fstderr, &
+      zero_threshold
 
     use parameters_tunable, only: & 
       gamma_coefc,  & ! Variable(s)
@@ -406,7 +407,8 @@ module clubb_core
     END IF
 
     ! Interpolate wp2 to the thermo. grid for advance_xp2_xpyp
-    wp2_zt = max( zm2zt( wp2 ), 0.0 ) ! Positive definite quantity
+    !wp2_zt = max( zm2zt( wp2 ), 2./3.*emin ) ! Positive definite quantity
+    wp2_zt = max( zm2zt( wp2 ), zero_threshold ) ! Positive definite quantity
 
     !----------------------------------------------------------------
     ! Diagnose variances
@@ -432,8 +434,8 @@ module clubb_core
                            sclrp2, sclrprtp, sclrpthlp  )   ! intent(out)
 
     ! Iterpolate variances to the zt grid (statistics and closure)
-    thlp2_zt   = max( zm2zt( thlp2 ), 0.0 )  ! Positive definite quantity
-    rtp2_zt    = max( zm2zt( rtp2 ), 0.0 )   ! Positive definite quantity
+    thlp2_zt   = max( zm2zt( thlp2 ), zero_threshold )  ! Positive def. quantity
+    rtp2_zt    = max( zm2zt( rtp2 ), zero_threshold )   ! Positive def. quantity
     rtpthlp_zt = zm2zt( rtpthlp )
 
     ! Check stability
@@ -489,7 +491,7 @@ module clubb_core
              1.0 ) & ! min 
        )
 
-    sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), 0.0 )   ! Positive definite quantity
+    sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )  ! Pos. def. quantity
 
     ! Latin hypercube sample generation
     ! Generate p_height_time, an nnzp x nt_repeat x d_variables array of random integers
@@ -512,7 +514,7 @@ module clubb_core
     do i = 1, sclr_dim, 1
       sclr_tmp1(:,i) = zm2zt( wpsclrp(:,i) )
       sclr_tmp2(:,i) = zm2zt( sclrprtp(:,i) )
-      sclr_tmp3(:,i) = max( zm2zt( sclrp2(:,i) ), 0.0 ) ! Pos. def. quantity
+      sclr_tmp3(:,i) = max( zm2zt( sclrp2(:,i) ), zero_threshold ) ! Pos. def. quantity
       sclr_tmp4(:,i) = zm2zt( sclrpthlp(:,i) )
     end do ! i = 1, sclr_dim
 
@@ -560,11 +562,11 @@ module clubb_core
     ! Since top momentum level is higher than top thermo level,
     ! set variables at top momentum level to 0.
     if ( clubb_at_least_debug_level( 1 ) ) then
-      wp4               = max( zt2zm( wp4 ), 0.0 )   ! Pos. def. quantity
-      wp4(gr%nnzp)      = 0.0
-      rcp2              = max( zt2zm( rcp2 ), 0.0 )   ! Pos. def. quantity
-      rcp2(gr%nnzp)     = 0.0
-    end if
+      wp4           = max( zt2zm( wp4 ), zero_threshold )  ! Pos. def. quantity
+      wp4(gr%nnzp)  = 0.0
+      rcp2          = max( zt2zm( rcp2 ), zero_threshold )  ! Pos. def. quantity
+      rcp2(gr%nnzp) = 0.0
+    endif
 
     wpthvp            = zt2zm( wpthvp )
     wpthvp(gr%nnzp)   = 0.0
@@ -585,7 +587,7 @@ module clubb_core
       sclrpthvp(gr%nnzp,i) = 0.0
       sclrprcp(:,i)        = zt2zm( sclrprcp(:,i) )
       sclrprcp(gr%nnzp,i)  = 0.0
-    end do ! i=1, sclr_dim
+    enddo ! i=1, sclr_dim
 
     !----------------------------------------------------------------
     ! Compute thvm
@@ -630,8 +632,8 @@ module clubb_core
 !       = MIN( ( zt2zm( Lscale ) / SQRT( MAX( emin, em ) ) ), taumax )
     tmp1   = SQRT( MAX( wtol_sqd, zm2zt( em ) ) )
     tau_zt = MIN( Lscale / tmp1, taumax )
-    tau_zm = MIN( ( MAX( zt2zm( Lscale ), 0.0 )  & 
-                 / SQRT( MAX( wtol_sqd, em ) ) ), taumax )
+    tau_zm = MIN( ( MAX( zt2zm( Lscale ), zero_threshold )  & 
+                   / SQRT( MAX( wtol_sqd, em ) ) ), taumax )
     ! End Vince Larson's replacement.
 
     ! Modification to damp noise in stable region
@@ -651,7 +653,7 @@ module clubb_core
     ! c_K is 0.548 usually (Duynkerke and Driedonks 1987)
 
     Kh_zt = c_K * Lscale * tmp1
-    Kh_zm = c_K * max( zt2zm( Lscale ), 0.0 )  & 
+    Kh_zm = c_K * max( zt2zm( Lscale ), zero_threshold )  & 
                 * sqrt( max( em, emin ) )
 
     !#######################################################################
@@ -695,7 +697,7 @@ module clubb_core
 
         end if ! clubb_at_least_debug_level(1)
 
-        rcm(k) = max( 0.0, rtm(k) - eps )
+        rcm(k) = max( zero_threshold, rtm(k) - eps )
 
       end if ! rtm(k) < rcm(k)
 

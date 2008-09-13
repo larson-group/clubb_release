@@ -42,21 +42,22 @@ module pdf_closure_module
 
     use constants, only: & 
       ! Constants
-      sqrt_2pi, & ! sqrt(2*pi)
-      sqrt_2,   & ! sqrt(2)
-      pi,       & ! The ratio of radii to their circumference
-      Cp,       & ! Dry air specific heat at constant p [J/kg/K]
-      Lv,       & ! Latent heat of vaporization         [J/kg]
-      Rd,       & ! Dry air gas constant                [J/kg/K]
-      Rv,       & ! Water vapor gas constant            [J/kg/K]
-      ep,       & ! Rd / Rv;     ep  = 0.622            [-]
-      ep1,      & ! (1.0-ep)/ep; ep1 = 0.61             [-]
-      ep2,      & ! 1.0/ep;      ep2 = 1.61             [-]
-      wtol_sqd, & ! Tolerance for w'^2                  [m^2/s^2]
-      rttol,    & ! Tolerance for r_t                   [kg/kg]
-      thltol,   & ! Tolerance for th_l                  [K]
-      sstol,    & ! Tolerance for pdf parameter         [kg/kg]
-      fstderr
+      sqrt_2pi,      & ! sqrt(2*pi)
+      sqrt_2,        & ! sqrt(2)
+      pi,            & ! The ratio of radii to their circumference
+      Cp,            & ! Dry air specific heat at constant p [J/kg/K]
+      Lv,            & ! Latent heat of vaporization         [J/kg]
+      Rd,            & ! Dry air gas constant                [J/kg/K]
+      Rv,            & ! Water vapor gas constant            [J/kg/K]
+      ep,            & ! Rd / Rv;     ep  = 0.622            [-]
+      ep1,           & ! (1.0-ep)/ep; ep1 = 0.61             [-]
+      ep2,           & ! 1.0/ep;      ep2 = 1.61             [-]
+      wtol_sqd,      & ! Tolerance for w'^2                  [m^2/s^2]
+      rttol,         & ! Tolerance for r_t                   [kg/kg]
+      thltol,        & ! Tolerance for th_l                  [K]
+      sstol,         & ! Tolerance for pdf parameter         [kg/kg]
+      fstderr,       &
+      zero_threshold
 
     use parameters_tunable, only: & 
       sclrtol,  & ! Array of passive scalar tolerances  [units vary]
@@ -299,7 +300,7 @@ module pdf_closure_module
 
         alpha_thl = 0.5 * ( 1.0 - wpthlp*wpthlp /((1.0-sigma_sqd_w)*wp2*thlp2) )
 
-        alpha_thl = max( min( alpha_thl, 1.0 ), 0.0 )
+        alpha_thl = max( min( alpha_thl, 1.0 ), zero_threshold )
 
         ! Vince Larson multiplied original expressions by width_factor_1,2
         !   to generalize scalar skewnesses.  05 Nov 03
@@ -323,7 +324,7 @@ module pdf_closure_module
 
         alpha_rt = 0.5 * ( 1.0 - wprtp*wprtp /((1.0-sigma_sqd_w)*wp2*rtp2) )
 
-        alpha_rt = max( min( alpha_rt, 1.0 ), 0.0 )
+        alpha_rt = max( min( alpha_rt, 1.0 ), zero_threshold )
 
       ! Vince Larson multiplied original expressions by width_factor_1,2
       !   to generalize scalar skewnesses.  05 Nov 03
@@ -355,7 +356,7 @@ module pdf_closure_module
             alpha_sclr(i) = 0.5 * ( 1.0 - wpsclrp(i)*wpsclrp(i) & 
                     / ((1.0-sigma_sqd_w)*wp2*sclrp2(i)) )
 
-            alpha_sclr(i) = max( min( alpha_sclr(i), 1.0 ), 0.0 )
+            alpha_sclr(i) = max( min( alpha_sclr(i), 1.0 ), zero_threshold )
 
             ! Vince Larson multiplied original expressions by width_factor_1,2
             !  to generalize scalar skewnesses.  05 Nov 03
@@ -504,11 +505,11 @@ module pdf_closure_module
     ! One could also write this as a squared term
     ! plus a postive correction; this might be a neater format
 
-    ss1 = sqrt( max( 0.0, ( srt1*crt1**2 + sthl1*cthl1**2  & 
+    ss1 = sqrt( max( zero_threshold, ( srt1*crt1**2 + sthl1*cthl1**2  &
         - 2.0*rrtthl*crt1*sqrt( srt1 )*cthl1*sqrt( sthl1 ) )  & 
                ) &  ! max
           ) ! sqrt
-    ss2 = sqrt( max( 0.0, ( srt2*crt2**2 + sthl2*cthl2**2 & 
+    ss2 = sqrt( max( zero_threshold, ( srt2*crt2**2 + sthl2*cthl2**2 & 
         - 2.0*rrtthl*crt2*sqrt( srt2 )*cthl2*sqrt( sthl2 ) )  & 
                )  &  ! max
           ) ! sqrt
@@ -604,15 +605,15 @@ module pdf_closure_module
     ! corrected because Brian found a small negative value of
     ! rcm in the first timestep of the FIRE case.
 
-    cf  = max( 0.0, cf )
-    rcm = max( 0.0, rcm )
+    cf  = max( zero_threshold, cf )
+    rcm = max( zero_threshold, rcm )
 
     ! Compute variance of liquid water mixing ratio.
     ! This is not needed for closure.  Statistical Analysis only.
     if ( clubb_at_least_debug_level( 1 ) ) then
 
       rcp2 = a * ( s1*rc1 + R1*ss1**2 ) + ( 1.-a ) * ( s2*rc2 + R2*ss2**2 ) - rcm**2
-      rcp2 = max( 0.0, rcp2 )
+      rcp2 = max( zero_threshold, rcp2 )
 
     end if
 

@@ -31,15 +31,16 @@ subroutine compute_length( thvm, thlm, rtm, rcm, em, p_in_Pa, exner, &
 
 use constants, only:  & 
     ! Variable(s)
-    Cp,    & ! Dry air specific heat at constant p              [J/kg/K]
-    Rd,    & ! Dry air gas constant                             [J/kg/K]
-    ep,    & ! Rd / Rv                                          [-]
-    ep1,   & ! (1-ep)/ep                                        [-]
-    ep2,   & ! 1/ep                                             [-]
-    Lv,    & ! Latent heat of vaporiztion                       [J/kg/K]
-    grav,  & ! Gravitational acceleration                       [m/s^2]
-    Lscale_max,  & ! Maximum value for Lscale                   [m]
-    fstderr
+    Cp,            & ! Dry air specific heat at constant p        [J/kg/K]
+    Rd,            & ! Dry air gas constant                       [J/kg/K]
+    ep,            & ! Rd / Rv                                    [-]
+    ep1,           & ! (1-ep)/ep                                  [-]
+    ep2,           & ! 1/ep                                       [-]
+    Lv,            & ! Latent heat of vaporiztion                 [J/kg/K]
+    grav,          & ! Gravitational acceleration                 [m/s^2]
+    Lscale_max,    & ! Maximum value for Lscale                   [m]
+    fstderr,       &
+    zero_threshold
 
 use parameters_tunable, only: & 
 ! Variable(s)
@@ -160,7 +161,7 @@ do i=2,gr%nnzp
     beta_par_j = ep*(Lv/(Rd*tl_par_j))*(Lv/(cp*tl_par_j))
     ! s from Lewellen and Yoh 1993 (LY) eqn. 1
     s_par_j = (rt_par_j-rsl_par_j)/(1+beta_par_j*rsl_par_j)
-    rc_par_j = max( s_par_j, 0. )
+    rc_par_j = max( s_par_j, zero_threshold )
 
     ! theta_v of entraining parcel
     thv_par_j = thl_par_j + ep1 * T0 * rt_par_j & 
@@ -232,7 +233,7 @@ do i=gr%nnzp,2,-1
     beta_par_j = ep*(Lv/(Rd*tl_par_j))*(Lv/(cp*tl_par_j))
     ! s from Lewellen and Yoh 1993 (LY) eqn. 1
     s_par_j = (rt_par_j-rsl_par_j)/(1+beta_par_j*rsl_par_j)
-    rc_par_j = max( s_par_j, 0. )
+    rc_par_j = max( s_par_j, zero_threshold )
 
     ! theta_v of entraining parcel
     thv_par_j = thl_par_j + ep1 * T0 * rt_par_j & 
@@ -278,7 +279,7 @@ do i=2,gr%nnzp
   ! Make lminh a linear function starting at value lmin at the
   ! bottom and going to zero at 500 meters in altitude.
   ! -dschanen 27 April 2007
-  lminh = max( 0., 500. - gr%zt(i) ) * ( lmin / 500. )
+  lminh = max( zero_threshold, 500. - gr%zt(i) ) * ( lmin / 500. )
 
   Lscale_up(i)    = max( lminh, Lscale_up(i) )
   Lscale_down(i)  = max( lminh, Lscale_down(i) )

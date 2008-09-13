@@ -226,14 +226,16 @@ contains
 !-------------------------------------------------------------------------
   FUNCTION sat_rcm( thlm, rtm, p_in_Pa, exner )
 
-! Description:
-!
-! This function uses an iterative method to find the value of rcm 
-! from an initial profile that has saturation at some point.
-!-------------------------------------------------------------------------
+    ! Description:
+    !
+    ! This function uses an iterative method to find the value of rcm 
+    ! from an initial profile that has saturation at some point.
+    !-------------------------------------------------------------------------
+
     USE constants, only: & 
-        Cp,  & ! Variable(s)
-        Lv
+        Cp,            & ! Variable(s)
+        Lv,            &
+        zero_threshold
 
     implicit none
     
@@ -262,7 +264,9 @@ contains
 
       iteration = iteration + 1
 
-      answer = theta - (Lv/(Cp*exner))*(MAX( rtm - sat_mixrat_liq(p_in_Pa,theta*exner), 0.0 ))
+      answer = &
+      theta - (Lv/(Cp*exner)) &
+             *(MAX( rtm - sat_mixrat_liq(p_in_Pa,theta*exner), zero_threshold ))
 
       IF ( ABS(answer - thlm) <= tolerance ) THEN
         EXIT
@@ -282,7 +286,7 @@ contains
 
     ENDDO
 
-    sat_rcm = MAX( rtm - sat_mixrat_liq( p_in_Pa, theta*exner), 0.0 )
+    sat_rcm = MAX( rtm - sat_mixrat_liq( p_in_Pa, theta*exner), zero_threshold )
 
   END FUNCTION sat_rcm
   

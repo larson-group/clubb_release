@@ -58,7 +58,8 @@ use constants, only: &
     rttol, & 
     thltol, & 
     emin, & 
-    fstderr
+    fstderr, &
+    zero_threshold
 
 use model_flags, only: & 
     l_hole_fill, &    ! logical constants
@@ -216,6 +217,7 @@ integer :: i
 integer :: k, km1, kp1
 
 !-----------------------------------------------------------------------
+
 if ( l_single_C2_Skw ) then
   ! Use a single value of C2 for all equations.
   C2rt_1d(1:gr%nnzp)  & 
@@ -253,7 +255,7 @@ a1(1:gr%nnzp) = 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nnzp) )
 ! Interpolate a_1, w'r_t', w'th_l', u'w', and v'w' from the momentum levels to 
 ! the thermodynamic levels.  These will be used for the turbulent advection (ta)
 ! terms in each equation.
-a1_zt     = max( zm2zt( a1 ), 0.0 )   ! Positive definite quantity
+a1_zt     = max( zm2zt( a1 ), zero_threshold )   ! Positive definite quantity
 wprtp_zt  = zm2zt( wprtp )
 wpthlp_zt = zm2zt( wpthlp )
 upwp_zt   = zm2zt( upwp )
@@ -306,8 +308,8 @@ if ( l_3pt_sqd_dfsn ) then
    ! Interpolate r_t'^2, th_l'^2, and r_t'th_l' from the momentum levels to the 
    ! thermodynamic levels.  These will be used for extra diffusion based on a 
    ! three-point average of (var)^2.
-   rtp2_zt    = max( zm2zt( rtp2 ), 0.0 )   ! Positive definite quantity
-   thlp2_zt   = max( zm2zt( thlp2 ), 0.0 )   ! Positive definite quantity
+   rtp2_zt    = max( zm2zt( rtp2 ), zero_threshold )  ! Positive def. quantity
+   thlp2_zt   = max( zm2zt( thlp2 ), zero_threshold )  ! Positive def. quantity
    rtpthlp_zt = zm2zt( rtpthlp )
 
    do k = 1, gr%nnzp, 1

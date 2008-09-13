@@ -127,11 +127,11 @@ module KK_microphys_module
         kappa, & 
         p0, & 
         Rd, & 
-        Rv
+        Rv, &
+        zero_threshold
 
     use saturation, only:  & 
         sat_mixrat_liq ! Procedure(s)
-
 
     use stats_type, only: & 
         stat_update_var, stat_update_var_pt ! Procedure(s)
@@ -445,19 +445,16 @@ module KK_microphys_module
     do k = 1, gr%nnzp-1, 1
 
       ! rrainm sedimentation velocity.
-      Vrr(k) = 0.012  & 
-              * ( 1.0e6 * zt2zm(mean_vol_rad,k)  ) & 
-              - 0.2
+      Vrr(k) = 0.012 * ( 1.0e6 * zt2zm(mean_vol_rad,k) )  -  0.2
+
       ! Negative meaning a downward velocity now -dschanen 5 Dec 2006
-      Vrr(k) = -max( Vrr(k), 0.0 )
+      Vrr(k) = -max( Vrr(k), zero_threshold )
 
       ! Nrm sedimentation velocity.
-      VNr(k) = 0.007  & 
-              * ( 1.0e6 * zt2zm(mean_vol_rad,k)  ) & 
-              - 0.1
+      VNr(k) = 0.007 * ( 1.0e6 * zt2zm(mean_vol_rad,k) )  -  0.1
 
       ! Negative meaning a downward velocity now -dschanen 5 Dec 2006
-      VNr(k) = -max( VNr(k), 0.0 )
+      VNr(k) = -max( VNr(k), zero_threshold )
 
     end do ! 1..gr%nnzp
 

@@ -25,7 +25,8 @@ use constants, only: &
     p0, & 
     Cp, & 
     grav, & 
-    Rd
+    Rd, &
+    zero_threshold
 
 use grid_class, only: & 
     gr,  & ! Variable(s)
@@ -85,7 +86,7 @@ end do
 
 ! Interpolate density back to momentum grid
 
-rho_zm = max( zt2zm( rho ), 0.0 )   ! Positive definite quantity
+rho_zm = max( zt2zm( rho ), zero_threshold )   ! Positive definite quantity
 rho_zm(1) = p_in_Pa(1) / ( Rd * thvm(1) * exner(1) )
 
 return

@@ -1,27 +1,27 @@
 !-----------------------------------------------------------------------
 ! $Id$
-
+!===============================================================================
 module constants
 
-!       Description:
-!       Contains frequently occuring model constants
+  ! Description:
+  ! Contains frequently occuring model constants
 
-!       References:
-!       None
-!-----------------------------------------------------------------------
+  ! References:
+  ! None
+  !-----------------------------------------------------------------------
 
   use stats_precision, only:  & 
-    time_precision ! Variable(s)
+      time_precision ! Variable(s)
 
   implicit none
  
   public :: fstderr, fstdin, fstdout, pi_dp, pi, sqrt_2pi, sqrt_2, &
-    Cp, Lv, Ls, Lf, & 
-    Rd, Rv, ep, ep1, ep2, kappa, grav, p0, vonk, rho_lw, & 
-    sol_const, wtol, thltol, rttol, qttol, sstol, difftol, & 
-    wtol_sqd, rc_tol, Nc_tol, rr_tol, Nr_tol, emin, eps,  & 
-    max_mag_correlation, sec_per_day, sec_per_hr, sec_per_min, &
-    g_per_kg, Lscale_max, T_freeze_K
+            Cp, Lv, Ls, Lf, Rd, Rv, ep, ep1, ep2, &
+            kappa, grav, p0, vonk, rho_lw, sol_const, &
+            wtol, thltol, rttol, qttol, sstol, difftol, & 
+            wtol_sqd, rc_tol, Nc_tol, rr_tol, Nr_tol, emin, &
+            eps, zero_threshold, max_mag_correlation, sec_per_day, &
+            sec_per_hr, sec_per_min, g_per_kg, Lscale_max, T_freeze_K
 
   private ! Default scope
 
@@ -59,7 +59,7 @@ module constants
     ep2 = 1.0/ep        ! ep2 = 1.61   [-]
 
   real, parameter :: & 
-    kappa = Rd / Cp   ! kappa        [-]
+    kappa = Rd / Cp     ! kappa        [-]
 
   ! Changed g to grav to make it easier to find in the code 5/25/05
   ! real, parameter :: grav  = 9.80665 ! Gravitational acceleration [m/s^2]
@@ -86,39 +86,40 @@ module constants
     sstol   = 1.e-8,  & ! [kg/kg]
     difftol = 0.4       ! [?]
 
-   ! The tolerance for w'^2 is the square of the tolerance for w.
-   real, parameter :: &
-     wtol_sqd = wtol**2  ! [m^2/s^2]
+  ! The tolerance for w'^2 is the square of the tolerance for w.
+  real, parameter :: &
+    wtol_sqd = wtol**2  ! [m^2/s^2]
 
-! Set tolerances for Khairoutdinov and Kogan rain microphysics
-! to insure against numerical errors.
-! The tolerance values for Nc, rr, and Nr insure against
-! underflow errors in computing the PDF for l_kk_rain.  Basically,
-! they insure that those values squared won't be less then 
-! 10^-38, which is the lowest number that can be numerically
-! represented.  However, the tolerance value for rc doubles as
-! the lowest mixing ratio there can be to still officially have 
-! a cloud at that level.  This is figured to be about 
-! 1.0 x 10^-7 kg/kg.  Brian; February 10, 2007.
+  ! Set tolerances for Khairoutdinov and Kogan rain microphysics to insure
+  ! against numerical errors.  The tolerance values for Nc, rr, and Nr insure
+  ! against underflow errors in computing the PDF for l_kk_rain.  Basically,
+  ! they insure that those values squared won't be less then 10^-38, which is
+  ! the lowest number that can be numerically represented.  However, the
+  ! tolerance value for rc doubles as the lowest mixing ratio there can be to
+  ! still officially have a cloud at that level.  This is figured to be about 
+  ! 1.0 x 10^-7 kg/kg.  Brian; February 10, 2007.
   real, parameter :: & 
     rc_tol = 1.0E-7,  & ! [kg/kg]
     Nc_tol = 1.0E-18, & ! [#/m^3]
     rr_tol = 1.0E-18, & ! [kg/kg]
     Nr_tol = 1.0E-18    ! [#/m^3]
 
-! Minimum value for em (turbulence kinetic energy)
+  ! Minimum value for em (turbulence kinetic energy)
   real, parameter :: emin = 1.0e-6  ! [m^2/s^2]
 
   real, parameter ::  & 
     eps = 1.0e-10 ! Small value to prevent a divide by zero
 
-! The maximum absolute value (or magnitude) that a correlation is allowed to 
-! have.  Statistically, a correlation is not allowed to be less than -1 or 
-! greater than 1, so the maximum magnitude would be 1.
+  real, parameter ::  &
+    zero_threshold = 0.0 ! Defining a threshold to be 0.
+
+  ! The maximum absolute value (or magnitude) that a correlation is allowed to
+  ! have.  Statistically, a correlation is not allowed to be less than -1 or 
+  ! greater than 1, so the maximum magnitude would be 1.
   real, parameter :: &
     max_mag_correlation = 0.99
 
-! Useful conversion factors.
+  ! Useful conversion factors.
   real(kind=time_precision), parameter ::  & 
     sec_per_day = 86400.0, & ! Seconds in a day.
     sec_per_hr  = 3600.0,  & ! Seconds in an hour.
@@ -127,9 +128,11 @@ module constants
   real, parameter :: & 
     g_per_kg = 1000.0     ! Grams in a kilogram.
 
-! Maximum allowable value for Lscale [m].
-! Value depends on whether the model is run by itself or as part
-! of a host model.
+  ! Maximum allowable value for Lscale [m].
+  ! Value depends on whether the model is run by itself or as part of a
+  ! host model.
   real :: Lscale_max
+
+!===============================================================================
 
 end module constants

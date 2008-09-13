@@ -328,8 +328,9 @@ contains
         ddzt       ! Function
 
     use constants, only: & 
-        emin,       & ! Variables(s)
-        eps
+        emin,          & ! Variables(s)
+        eps,           &
+        zero_threshold
 
     use model_flags, only:  & 
         l_tke_aniso,  & ! Variable(s)
@@ -516,7 +517,7 @@ contains
     ! Interpolate a_1 and a_3 from momentum levels to thermodynamic
     ! levels.  This will be used for the w'^3 turbulent advection
     ! (ta) and turbulent production (tp) combined term.
-    a1_zt  = max( zm2zt( a1 ), 0.0 )   ! Positive definite quantity
+    a1_zt  = max( zm2zt( a1 ), zero_threshold )   ! Positive definite quantity
     a3_zt  = zm2zt( a3 )
 
     ! Compute the implicit portion of the w'^2 and w'^3 equations.
