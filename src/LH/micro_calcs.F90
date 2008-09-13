@@ -38,7 +38,7 @@ subroutine micro_calcs( n, d, X_u, X_nl, l_sample_flag, &
                         AKm_est_k, AKm_k, AKstd_k, AKstd_cld_k, & 
                         AKm_rcm_k, AKm_rcc_k, rcm_est_k )
 
-use constants, only: pi ! Variable(s)
+use constants, only: pi, zero_threshold ! Variable(s)
 
 use anl_erf, only: erf ! Procedure(s)
 
@@ -215,10 +215,10 @@ else
 
 ! Exact Kessler standard deviation in units of (kg/kg)/s
 ! For some reason, sometimes AK1var, AK2var are negative
-  AK1var   = max( 0.0, K_one * (s1-q_crit) * AK1  & 
+  AK1var   = max( zero_threshold, K_one * (s1-q_crit) * AK1  & 
            + K_one * K_one * (ss1**2) * R1_crit  & 
            - AK1**2  )
-  AK2var   = max( 0.0, K_one * (s2-q_crit) * AK2  & 
+  AK2var   = max( zero_threshold, K_one * (s2-q_crit) * AK2  & 
            + K_one * K_one * (ss2**2) * R2_crit  & 
            - AK2**2  )  
 ! This formula is for a grid box average:
@@ -226,7 +226,7 @@ else
               + (1-a) * ( (AK2-AKm_k)**2 + AK2var ) & 
               )
 ! This formula is for a within-cloud average:
-  AKstd_cld_k = sqrt( max( 0.0,   & 
+  AKstd_cld_k = sqrt( max( zero_threshold,   & 
             (1./cf) * ( a  * ( AK1**2 + AK1var ) & 
                       + (1-a) * ( AK2**2 + AK2var )  & 
                       ) & 
@@ -234,10 +234,10 @@ else
                   )
 
 ! Kessler autoconversion, using grid box avg liquid, rcm, as input
-  AKm_rcm_k = K_one * max( 0.0, rcm-q_crit )
+  AKm_rcm_k = K_one * max( zero_threshold, rcm-q_crit )
 
 ! Kessler ac, using within cloud liquid, rcm/cf, as input
-  AKm_rcc_k = cf * K_one * max( 0.0, rcm/cf-q_crit ) 
+  AKm_rcc_k = cf * K_one * max( zero_threshold, rcm/cf-q_crit ) 
 
 !       print*, 'a=', a
 !       print*, 's1=', s1

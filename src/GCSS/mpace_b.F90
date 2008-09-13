@@ -31,7 +31,7 @@ subroutine mpace_b_tndcy( time, time_initial, rlat, &
 !          Liou, Wallace and Hobbs, Shettle and Weinman
 !-----------------------------------------------------------------------
 
-use constants, only: Rd, Cp, Lv, p0, rc_tol ! Variable(s)
+use constants, only: Rd, Cp, Lv, p0, rc_tol, zero_threshold ! Variable(s)
 
 use parameters_tunable, only: sclr_dim ! Variable(s)
 
@@ -223,7 +223,7 @@ sda_h = 2*3.14*t_since_noon/86400
 xi_abs = sin(rlat*3.14/180) * sin(sda_delta) + & 
          cos(rlat*3.14/180) * cos(sda_delta) * cos(sda_h)
 
-xi_abs = max(xi_abs,0.)
+xi_abs = max(xi_abs,zero_threshold)
 
 if (xi_abs == 0.) then
   l_sw_on = .FALSE.

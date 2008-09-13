@@ -42,7 +42,7 @@
 
   use grid_class, only: zt2zm ! Procedure(s)
 
-  use constants, only: Lv, Cp ! Variable(s)
+  use constants, only: Lv, Cp, zero_threshold ! Variable(s)
 
   use parameters_tunable, only: sclr_dim ! Variable(s)
 
@@ -225,7 +225,7 @@
 ! "xi_abs" must be non-zero to allow linear interpolation to calculate
 ! the correct amount of solar radiative flux.
 !**********************************************************************
- xi_abs = max( xi_abs, 0. )
+ xi_abs = max( xi_abs, zero_threshold )
 !****************************
 ! End of ajsmith4's addition
 !****************************

@@ -38,7 +38,7 @@
 
   use grid_class, only: zt2zm ! Procedure(s)
 
-  use constants, only: pi, Cp, Lv ! Variable(s)
+  use constants, only: pi, Cp, Lv, zero_threshold ! Variable(s)
 
   use parameters_tunable, only: sclr_dim ! Variable(s)
 
@@ -316,7 +316,7 @@
 !            use the "cos_solar_zen" function for this case.
  xi_abs = real( cos_solar_zen(25, 06, 1996, time, rlat, rlon ) )
 
- xi_abs = max(xi_abs,0.)
+ xi_abs = max(xi_abs,zero_threshold)
 
 !-----------------------------------------------------------------------
 ! Modification by Adam Smith 26 June 2006

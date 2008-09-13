@@ -716,7 +716,7 @@ module clubb_driver
 !-----------------------------------------------------------------------
 
         use constants, only:  & 
-            Cp, Lv, ep2, ep1, emin, wtol_sqd ! Variable(s)
+            Cp, Lv, ep2, ep1, emin, wtol_sqd, zero_threshold ! Variable(s)
 
         use parameters_tunable, only:  & 
             T0, taumax, taumin, c_K, sclr_dim ! Variable(s)
@@ -817,8 +817,10 @@ module clubb_driver
         ! from excess saturation
 
         do k = 1,gr%nnzp
-           rcm(k) = max( rtm(k) - sat_mixrat_liq( p_in_Pa(k), thlm(k) * exner(k)), 0.0 )
-        end do
+           rcm(k) = &
+              max( rtm(k) - sat_mixrat_liq( p_in_Pa(k), thlm(k) * exner(k) ), &
+                   zero_threshold )
+        enddo
 
         ! Compute initial theta-l
 
@@ -1178,8 +1180,8 @@ module clubb_driver
         ! Dissipation time
         tmp1 = sqrt( max( wtol_sqd, zm2zt( em ) ) )
         tau_zt = min( Lscale / tmp1, taumax )
-        tau_zm = min( ( max( zt2zm( Lscale ), 0.0 ) & 
-                     / sqrt( max( wtol_sqd, em ) ) ), taumax )
+        tau_zm = min( ( max( zt2zm( Lscale ), zero_threshold ) & 
+                       / sqrt( max( wtol_sqd, em ) ) ), taumax )
 !        tau_zm = zt2zm( tau_zt )
 
         ! Modification to damp noise in stable region
@@ -1194,7 +1196,7 @@ module clubb_driver
         ! c_K is 0.548 usually (Duynkerke and Driedonks 1987)
 
         Kh_zt = c_K * Lscale * tmp1
-        Kh_zm = c_K * max( zt2zm( Lscale ), 0.0 )  & 
+        Kh_zm = c_K * max( zt2zm( Lscale ), zero_threshold )  & 
                   * sqrt( max( em, emin ) )
 !        Kh_zm = zt2zm( Kh_zt )
 
@@ -1453,7 +1455,7 @@ use stats_variables, only: &
  
 use stats_type, only: stat_update_var_pt ! Procedure(s)
 
-use constants, only: Cp, Lv     ! Variable(s) 
+use constants, only: Cp, Lv ! Variable(s) 
 
 use variables_prognostic_module, only:  & 
     sclrm_forcing,   & ! Passive scalar variables
