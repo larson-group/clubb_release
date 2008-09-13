@@ -308,8 +308,8 @@ if ( l_3pt_sqd_dfsn ) then
    ! Interpolate r_t'^2, th_l'^2, and r_t'th_l' from the momentum levels to the 
    ! thermodynamic levels.  These will be used for extra diffusion based on a 
    ! three-point average of (var)^2.
-   rtp2_zt    = max( zm2zt( rtp2 ), zero_threshold )  ! Positive def. quantity
-   thlp2_zt   = max( zm2zt( thlp2 ), zero_threshold )  ! Positive def. quantity
+   rtp2_zt    = max( zm2zt( rtp2 ), rttol**2 )  ! Positive def. quantity
+   thlp2_zt   = max( zm2zt( thlp2 ), thltol**2 )  ! Positive def. quantity
    rtpthlp_zt = zm2zt( rtpthlp )
 
    do k = 1, gr%nnzp, 1

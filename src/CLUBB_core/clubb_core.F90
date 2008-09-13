@@ -407,8 +407,7 @@ module clubb_core
     END IF
 
     ! Interpolate wp2 to the thermo. grid for advance_xp2_xpyp
-    !wp2_zt = max( zm2zt( wp2 ), 2./3.*emin ) ! Positive definite quantity
-    wp2_zt = max( zm2zt( wp2 ), zero_threshold ) ! Positive definite quantity
+    wp2_zt = max( zm2zt( wp2 ), 2./3.*emin ) ! Positive definite quantity
 
     !----------------------------------------------------------------
     ! Diagnose variances
@@ -434,8 +433,8 @@ module clubb_core
                            sclrp2, sclrprtp, sclrpthlp  )   ! intent(out)
 
     ! Iterpolate variances to the zt grid (statistics and closure)
-    thlp2_zt   = max( zm2zt( thlp2 ), zero_threshold )  ! Positive def. quantity
-    rtp2_zt    = max( zm2zt( rtp2 ), zero_threshold )   ! Positive def. quantity
+    thlp2_zt   = max( zm2zt( thlp2 ), thltol**2 )  ! Positive def. quantity
+    rtp2_zt    = max( zm2zt( rtp2 ), rttol**2 )   ! Positive def. quantity
     rtpthlp_zt = zm2zt( rtpthlp )
 
     ! Check stability
