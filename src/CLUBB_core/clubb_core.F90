@@ -100,7 +100,6 @@ module clubb_core
       rcp2, & 
       rsat, & 
       shear, & 
-      ustar, & 
       Kh_zt, & 
       wprtp2, & 
       wp2rtp, & 
@@ -378,7 +377,7 @@ module clubb_core
 !      level is not the ground level.  Brian Griffin.  December 22, 2005.
     IF ( gr%zm(1) == 0.0 ) THEN
       call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),   & ! intent(in)
-                    ustar, wpsclrp(1,1:sclr_dim),            & ! intent(in)
+                    wpsclrp(1,1:sclr_dim),                   & ! intent(in)
                     wp2(1), up2(1), vp2(1),                  & ! intent(out)
                     thlp2(1), rtp2(1), rtpthlp(1), err_code, & ! intent(out)
                     sclrp2(1,1:sclr_dim),                    & ! intent(out)
