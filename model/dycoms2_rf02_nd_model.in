@@ -8,11 +8,11 @@
 
 runtype = "dycoms2_rf02_nd" ! Case name.
 
-!nzmax = 147       ! Number of vertical levels.  ! For grid_type = 1.
-nzmax = 148       ! Number of vertical levels.  ! For grid_type = 2.
+nzmax = 37       ! Number of vertical levels.  ! For grid_type = 1.
+!nzmax = 148       ! Number of vertical levels.  ! For grid_type = 2.
 !nzmax = 97        ! Number of vertical levels.  ! For grid_type = 3.
 
-grid_type = 2     ! Select grid type:
+grid_type = 1     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
                   ! 2 ==> stretched (unevenly-spaced) grid
                   !       entered on thermodynamic grid levels;
@@ -25,15 +25,15 @@ grid_type = 2     ! Select grid type:
 
 ! Evenly-spaced grid (grid_type = 1).
 ! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
-deltaz  = 10.0    ! Distance between grid levels on evenly-spaced grid.      [m]
+deltaz  = 40.0    ! Distance between grid levels on evenly-spaced grid.      [m]
 zm_init = 0.0     ! Altitude of lowest momentum level on evenly-spaced grid. [m]
 
 ! Stretched grid on thermodynamic levels (grid_type = 2).
 ! Path (from ../standalone/) and filename of data file that contains
 ! thermodynamic level altitudes (in meters).
 ! Note:  For this option, zm_grid_fname must be ''.
-zt_grid_fname = '../model/grid/dycoms2_rf02_sam_zt_grid.grd'
-!zt_grid_fname = ''
+!zt_grid_fname = '../model/grid/dycoms2_rf02_sam_zt_grid.grd'
+zt_grid_fname = ''
 
 ! Stretched grid on momentum levels (grid_type = 3).
 ! Path (from ../standalone/) and filename to data file that contains
