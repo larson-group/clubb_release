@@ -3,11 +3,11 @@
 module output_netcdf
 #ifdef NETCDF
 
-!      Description:
-!      Functions and subroutines for writing NetCDF files
+! Description:
+!   Functions and subroutines for writing NetCDF files
 
-!      References:
-!      <http://www.unidata.ucar.edu/software/netcdf/docs/>
+! References:
+!   <http://www.unidata.ucar.edu/software/netcdf/docs/>
 !-----------------------------------------------------------------------
 
 implicit none
@@ -24,11 +24,11 @@ subroutine open_netcdf( unit, fdir, fname, ia, iz, zgrid,  &
                     day, month, year, rlat, rlon, & 
                     time, dtwrite, nvar, ncf )
 
-!      Description:
-!      Defines the structure used to reference the file `ncf'
+! Description:
+!   Defines the structure used to reference the file `ncf'
 
-!      References:
-!      None
+! References:
+!   None
 !-----------------------------------------------------------------------
 use netcdf, only: & 
     NF90_CLOBBER, & ! Variable(s)
@@ -212,172 +212,187 @@ subroutine define_netcdf( ncid, ia, iz, zgrid, day, month,  &
                       LatDimId, LongDimId, AltDimId, TimeDimId, & 
                       LatVarId, LongVarId, AltVarId, TimeVarId )
 
-!      Description:
-!      Used internally to create a definition for the NetCDF dataset
+! Description:
+!   Used internally to create a definition for the NetCDF dataset
+!
+! References:
+!   None
 !-----------------------------------------------------------------------
-use netcdf, only: & 
-    NF90_NOERR,   & ! Variable
+  use netcdf, only: & 
+    NF90_NOERR,   & ! Constants
     NF90_FLOAT, & 
     NF90_DOUBLE, & 
     NF90_UNLIMITED, & 
-    nf90_def_dim,  & ! Procedure(s)
+    NF90_GLOBAL
+
+  use netcdf, only: & 
+    nf90_def_dim,  & ! Functions
     nf90_strerror, & 
     nf90_def_var, & 
     nf90_put_att
-use stats_precision, only:  & 
+
+  use stats_precision, only:  & 
     time_precision ! Variable(s)
-use constants, only:  & 
+
+  use constants, only:  & 
     fstderr ! Variable(s)
 
-implicit none
+  implicit none
 
-! Constant parameters
-integer, parameter ::  & 
- nlat  = 1,   & ! Number of points in the N/S direction
- nlong = 1      ! Number of points in the E/W direction
+  ! Constant parameters
+  integer, parameter ::  & 
+    nlat  = 1,   & ! Number of points in the N/S direction
+    nlong = 1      ! Number of points in the E/W direction
 
-! Input Variables
-integer, intent(in) ::  & 
- day, month, year,  & ! Time of year
- ncid,              & ! Number used by NetCDF for ref. the file
- ia, iz,            & ! First and last grid point in the z?
- nvar                 ! Number of variables
+  ! Input Variables
+  integer, intent(in) ::  & 
+    day, month, year,  & ! Time of year
+    ncid,              & ! Number used by NetCDF for ref. the file
+    ia, iz,            & ! First and last grid point in the zgrid
+    nvar                 ! Number of variables
 
-real(kind=time_precision), intent(in) ::  & 
- time    ! Current time   [s]
+  real(kind=time_precision), intent(in) ::  & 
+    time    ! Current model time [s]
 
-real(kind=time_precision), intent(in) ::  & 
- dtwrite ! Write interval [s]
+  real(kind=time_precision), intent(in) ::  & 
+    dtwrite ! Write interval [s]
 
-real, intent(in), dimension(:) ::  & 
- zgrid   ! HOC grid      [m]
+  real, intent(in), dimension(:) ::  & 
+    zgrid   ! CLUBB grid     [m]
 
-! Output Variables
-integer, intent(out) ::  & 
- LatDimId, LongDimId, AltDimId, TimeDimId  ! NetCDF id's for dimensions
+  ! Output Variables
+  integer, intent(out) ::  & 
+    LatDimId, LongDimId, AltDimId, TimeDimId  ! NetCDF id's for dimensions
 
-! NetCDF id's for data (e.g. longitude) associated with each dimension
-integer, intent(out) ::  & 
- LatVarId, LongVarId, AltVarId, TimeVarId  
+  ! NetCDF id's for data (e.g. longitude) associated with each dimension
+  integer, intent(out) ::  & 
+    LatVarId, LongVarId, AltVarId, TimeVarId  
 
-! Local variables
-integer :: stat
-character(len=35) :: TimeUnits
+  ! Local variables
+  integer :: stat
+  character(len=35) :: TimeUnits
 
-! Define the dimensions for the variables
-stat =  & 
-nf90_def_dim( ncid, "longitude", nlong, LongDimId )
-if ( stat /= NF90_NOERR ) then
-  write(fstderr,*) "Error defining longitude: ", & 
+  character(len=10) :: current_time
+  character(len=8)  :: current_date
+
+  ! ---- Begin Code ----
+
+  ! Define the dimensions for the variables
+  stat = nf90_def_dim( ncid, "longitude", nlong, LongDimId )
+
+  if ( stat /= NF90_NOERR ) then
+    write(fstderr,*) "Error defining longitude: ", & 
+      trim( nf90_strerror( stat ) )
+    stop
+  endif
+
+  stat =  nf90_def_dim( ncid, "latitude", nlat, LatDimId )
+  if ( stat /= NF90_NOERR ) then
+    write(fstderr,*) "Error defining latitude: ", & 
+      trim( nf90_strerror( stat ) )
+    stop
+  endif
+
+  stat = nf90_def_dim( ncid, "altitude", iz, AltDimId )
+  if ( stat /= NF90_NOERR ) then
+    write(fstderr,*) "Error defining altitude: ", & 
     trim( nf90_strerror( stat ) )
-  stop
-endif
+    stop
+  endif
 
-stat =  & 
-nf90_def_dim( ncid, "latitude", nlat, LatDimId )
-if ( stat /= NF90_NOERR ) then
-  write(fstderr,*) "Error defining latitude: ", & 
-    trim( nf90_strerror( stat ) )
-  stop
-endif
+  stat =  nf90_def_dim( ncid, "time", NF90_UNLIMITED, TimeDimId ) 
+  if ( stat /= NF90_NOERR ) then
+    write(fstderr,*) "Error defining time", & 
+      trim( nf90_strerror( stat ) )
+    stop
+  endif
 
-stat =  & 
-nf90_def_dim( ncid, "altitude", iz, AltDimId )
-if ( stat /= NF90_NOERR ) then
-  write(fstderr,*) "Error defining altitude: ", & 
-    trim( nf90_strerror( stat ) )
-  stop
-endif
+  ! Define the initial variables for the dimensions
+  stat = nf90_def_var( ncid, "longitude", NF90_FLOAT, & 
+                       (/LongDimId/), LongVarId )
 
-stat =  & 
-nf90_def_dim( ncid, "time", NF90_UNLIMITED, TimeDimId ) 
-if ( stat /= NF90_NOERR ) then
-  write(fstderr,*) "Error defining time", & 
-    trim( nf90_strerror( stat ) )
-  stop
-endif
+  stat = nf90_def_var( ncid, "latitude", NF90_FLOAT, & 
+                       (/LatDimId/), LatVarId )
 
-! Define the initial variables for the dimensions
-stat = nf90_def_var( ncid, "longitude", NF90_FLOAT, & 
-                     (/LongDimId/), LongVarId )
+  stat = nf90_def_var( ncid, "altitude", NF90_FLOAT, & 
+                      (/AltDimId/), AltVarId )
 
-stat = nf90_def_var( ncid, "latitude", NF90_FLOAT, & 
-                     (/LatDimId/), LatVarId )
+  ! grads2nc stores time as a double prec. value, so we follow that
+  stat = nf90_def_var( ncid, "time", NF90_DOUBLE, & 
+                       (/TimeDimId/), TimeVarId )
 
-stat = nf90_def_var( ncid, "altitude", NF90_FLOAT, & 
-(/AltDimId/), AltVarId )
+  ! Assign attribute values
 
-! grads2nc stores time as a double prec. value, so we follow that
-stat = nf90_def_var( ncid, "time", NF90_DOUBLE, & 
-                     (/TimeDimId/), TimeVarId )
+  ! Time attribute
+  stat = nf90_put_att( ncid, TimeVarId, "cartesian_axis", "T" )
+  if ( stat /= NF90_NOERR ) then
+    write(fstderr,*) "Error defining time: ", trim( nf90_strerror( stat ) )
+    stop
+  endif
 
-! Assign attribute values
+  call format_date( day, month, year, time, TimeUnits )
 
-! Time attribute
-stat = nf90_put_att( ncid, TimeVarId, "cartesian_axis", "T" )
-if ( stat /= NF90_NOERR ) then
-  write(fstderr,*) "Error defining time: ", & 
-    trim( nf90_strerror( stat ) )
-  stop
-endif
+  stat = nf90_put_att( ncid, TimeVarId, "units", TimeUnits )
+  if ( stat /= NF90_NOERR ) then
+    write(fstderr,*) "Error defining time: ", trim( nf90_strerror( stat ) )
+    stop
+  endif
 
-call format_date( day, month, year, time, TimeUnits )
+  stat = nf90_put_att( ncid, TimeVarId, "ipositive", 1 )
+  if ( stat /= NF90_NOERR ) then
+    write(fstderr,*) "Error defining time: ", trim( nf90_strerror( stat ) )
+    stop
+  endif
 
-stat = nf90_put_att( ncid, TimeVarId, "units", TimeUnits )
-if ( stat /= NF90_NOERR ) then
-  write(fstderr,*) "Error defining time: ", & 
-    trim( nf90_strerror( stat ) )
-  stop
-endif
+  stat = nf90_put_att( ncid, TimeVarId, "calendar_type", "Gregorian" )
+  if ( stat /= NF90_NOERR ) then
+    write(fstderr,*) "Error defining time", trim( nf90_strerror( stat ) )
+    stop
+  endif
 
-stat = nf90_put_att( ncid, TimeVarId, "ipositive", 1 )
-if ( stat /= NF90_NOERR ) then
-  write(fstderr,*) "Error defining time: ", & 
-    trim( nf90_strerror( stat ) )
-  stop
-endif
+  ! Define Location
+  ! X & Y coordinates
+  stat = nf90_put_att( ncid, LongVarId, "cartesian_axis", "X" )
 
-stat = nf90_put_att( ncid, TimeVarId, "calendar_type",  & 
-       "Gregorian" )
-if ( stat /= NF90_NOERR ) then
-  write(fstderr,*) "Error defining time", & 
-    trim( nf90_strerror( stat ) )
-  stop
-endif
+  stat = nf90_put_att( ncid, LongVarId, "units",  "degrees_E" )
 
-! Location
+  stat = nf90_put_att( ncid, LongVarId, "ipositive",  1 )
 
-stat = nf90_put_att( ncid, LongVarId, "cartesian_axis", "X" )
+  stat = nf90_put_att( ncid, LatVarId, "cartesian_axis",  "Y" )
 
-stat = nf90_put_att( ncid, LongVarId, "units",  & 
-        "degrees_E" )
+  stat = nf90_put_att( ncid, LatVarId, "units", "degrees_N" )
 
-stat = nf90_put_att( ncid, LongVarId, "ipositive",  & 
-        1 )
+  stat = nf90_put_att( ncid, LatVarId, "ipositive", 1 )
 
-stat = nf90_put_att( ncid, LatVarId, "cartesian_axis",  & 
-        "Y" )
+  ! Altitude, Z coordinate
+  stat = nf90_put_att( ncid, AltVarId, "cartesian_axis",  "Z" )
 
-stat = nf90_put_att( ncid, LatVarId, "units",  & 
-        "degrees_N" )
+  stat = nf90_put_att( ncid, AltVarId, "units", "meters" )
 
-stat = nf90_put_att( ncid, LatVarId, "ipositive",  & 
-        1 )
+  stat = nf90_put_att( ncid, AltVarId, "positive",  "up" )
 
-! Altitude
-stat = nf90_put_att( ncid, AltVarId, "cartesian_axis",  & 
-        "Z" )
+  stat = nf90_put_att( ncid, AltVarId, "ipositive", 1 )
 
-stat = nf90_put_att( ncid, AltVarId, "units",  & 
-        "meters" )
+  ! Define global attributes of the file, for reproducing the results and
+  ! determining how a run was configured
+  stat = nf90_put_att( ncid, NF90_GLOBAL, "Conventions", "COARDS" )
+  stat = nf90_put_att( ncid, NF90_GLOBAL, "model", "CLUBB" )
 
-stat = nf90_put_att( ncid, AltVarId, "positive",  & 
-        "up" )
+  ! Figure out when the model is producing this file
+  call date_and_time( current_date, current_time )
 
-stat = nf90_put_att( ncid, AltVarId, "ipositive",  & 
-        1 )
+  stat = nf90_put_att( &
+                       ncid, NF90_GLOBAL, "created_on", &
+                       current_date(1:4)//'-'//current_date(5:6)//'-'// &
+                       current_date(7:8)//' '// &
+                       current_time(1:2)//':'//current_time(3:4) )
 
-return
+  stat = nf90_put_att( ncid, NF90_GLOBAL, "", "" )
+
+  ! TODO: Add more to this list of attributes (e.g. Nudging time scale, C1,
+  ! et al., preprocessing directives, model flags, grid_type? )
+
+  return
 end subroutine define_netcdf
 
 !-----------------------------------------------------------------------
