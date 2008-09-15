@@ -330,17 +330,6 @@ module clubb_core
     end if
     !-----------------------------------------------------------------------
 
-    !----------------------------------------------------------------
-    ! Interpolate wp2 & wp3, and then compute Skw for m & t grid
-    !----------------------------------------------------------------
-
-    do k = 1, gr%nnzp, 1
-
-      Skw_zt(k) = Skw_func( zm2zt(wp2,k), wp3(k) )
-      Skw_zm(k) = Skw_func( wp2(k), zt2zm(wp3,k) )
-
-    enddo
-
     ! SET SURFACE VALUES OF FLUXES (BROUGHT IN)
     wpthlp(1) = wpthlp_sfc
     wprtp(1)  = wprtp_sfc
@@ -406,8 +395,15 @@ module clubb_core
       END DO
     END IF
 
-    ! Interpolate wp2 to the thermo. grid for advance_xp2_xpyp
+
+    !----------------------------------------------------------------
+    ! Interpolate wp2 & wp3, and then compute Skw for m & t grid
+    !----------------------------------------------------------------
+
     wp2_zt = max( zm2zt( wp2 ), 2./3.*emin ) ! Positive definite quantity
+
+    Skw_zt(1:gr%nnzp) = Skw_func( wp2_zt(1:gr%nnzp), wp3(1:gr%nnzp) )
+    Skw_zm(1:gr%nnzp) = zt2zm( Skw_zt(1:gr%nnzp) ) 
 
     !----------------------------------------------------------------
     ! Diagnose variances
