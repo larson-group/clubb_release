@@ -44,16 +44,19 @@ module pos_definite_mod
 !-----------------------------------------------------------------------
 
   use grid_class, only: & 
-      gr, & ! Variable(s)
-      ddzt,  & ! Function
-      ddzm  ! Function
+    gr,   & ! Variable(s)
+    ddzt, & ! Function
+    ddzm    ! Function
 
   use constants, only :  & 
-      eps, & ! Variable(s)
-      zero_threshold
+    eps, & ! Variable(s)
+    zero_threshold
 
   use stats_precision, only:  & 
-      time_precision ! Variable(s)
+    time_precision ! Variable(s)
+
+  use error_code, only: &
+    clubb_at_least_debug_level
 
   implicit none
 
@@ -128,7 +131,9 @@ module pos_definite_mod
     stop "Error in pos_def_adj"
   end if
 
-  print *, "Correcting flux"
+  if ( clubb_at_least_debug_level( 1 ) ) then
+    print *, "Correcting flux"
+  end if
 
   do k = 1, gr%nnzp, 1
 
