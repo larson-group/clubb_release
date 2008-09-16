@@ -1,4 +1,4 @@
-!-----------------------------------------------------------------------
+!===============================================================================
 ! $Id$
 
 module model_flags
@@ -8,7 +8,7 @@ module model_flags
 
 ! References:
 !   None
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 
   implicit none
 
@@ -45,24 +45,30 @@ module model_flags
     l_tke_aniso        ! For anisotropic turbulent kinetic energy,
                        !   i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 
-    !$omp threadprivate(l_bugsrad, l_kk_rain, l_icedfs)
-    !$omp threadprivate(l_coamps_micro, l_cloud_sed, l_uv_nudge)
-    !$omp threadprivate(l_tke_aniso)
+  !$omp threadprivate(l_bugsrad, l_kk_rain, l_icedfs, &
+  !$omp   l_coamps_micro, l_cloud_sed, l_uv_nudge, l_tke_aniso)
 
-contains
-  !-----------------------------------------------------------------------
+  contains
+
+!===============================================================================
   subroutine setup_model_flags & 
              ( l_bugsrad_in, l_kk_rain_in, l_cloud_sed_in,  & 
                l_icedfs_in, l_coamps_micro_in, & 
                l_uv_nudge_in, l_tke_aniso_in )
 
-  ! Description:
-  !   Setup model flags
-  !-----------------------------------------------------------------------
+! Description:
+!   Setup model flags
+
+! References:
+!   None
+!-------------------------------------------------------------------------------
     use constants, only:  & 
       fstderr ! Variable(s)
 
     implicit none
+
+    ! External
+    intrinsic :: count ! Determines the number of .true. logicals in an array
 
     ! Input Variables
     logical, intent(in) ::  & 
@@ -70,12 +76,13 @@ contains
       l_icedfs_in, l_coamps_micro_in, l_uv_nudge_in, & 
       l_tke_aniso_in
 
-    !-----------------------------------------------------------------------
+    !---- Begin Code ----
+
     l_bugsrad      = l_bugsrad_in
     l_kk_rain      = l_kk_rain_in
     l_cloud_sed    = l_cloud_sed_in
     l_coamps_micro = l_coamps_micro_in
-    l_icedfs      = l_icedfs_in
+    l_icedfs       = l_icedfs_in
     l_uv_nudge     = l_uv_nudge_in
     l_tke_aniso    = l_tke_aniso_in
 
