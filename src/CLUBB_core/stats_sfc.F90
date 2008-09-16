@@ -45,8 +45,7 @@ use stats_variables, only: &
     irtp2_matrix_condt_num, & 
     ithlp2_matrix_condt_num, & 
     irtpthlp_matrix_condt_num, & 
-    iup2_matrix_condt_num, & 
-    ivp2_matrix_condt_num, &
+    iup2_vp2_matrix_condt_num, & 
     ium_matrix_condt_num, &
     ivm_matrix_condt_num
 
@@ -94,8 +93,7 @@ ithlm_matrix_condt_num    = 0
 irtp2_matrix_condt_num    = 0
 ithlp2_matrix_condt_num   = 0
 irtpthlp_matrix_condt_num = 0
-iup2_matrix_condt_num     = 0
-ivp2_matrix_condt_num     = 0
+iup2_vp2_matrix_condt_num = 0
 ivm_matrix_condt_num      = 0
 ium_matrix_condt_num      = 0
 
@@ -268,17 +266,10 @@ do i=1,sfc%nn
          "count",sfc)
     k = k + 1
 
-  case ('up2_matrix_condt_num')
-    iup2_matrix_condt_num = k
-    call stat_assign(iup2_matrix_condt_num,"up2_matrix_condt_num", & 
-         "Estimate of the condition number for up2","count",sfc)
-    k = k + 1
-
-  case ('vp2_matrix_condt_num')
-    ivp2_matrix_condt_num = k  
-    call stat_assign(ivp2_matrix_condt_num,"vp2_matrix_condt_num", & 
-         "Estimate of the condition number for vp2","count",sfc)
-
+  case ('up2_vp2_matrix_condt_num')
+    iup2_vp2_matrix_condt_num = k
+    call stat_assign(iup2_vp2_matrix_condt_num,"up2_vp2_matrix_condt_num", & 
+         "Estimate of the condition number for up2/vp2","count",sfc)
     k = k + 1
 
   case ('vm_matrix_condt_num')

@@ -192,10 +192,6 @@ module pdf_closure_module
 
     real :: BD
 
-    ! Skewness of w
-
-    !real :: Skw 
-
     ! alpha coefficients = 0.5 * ( 1 - correlations^2 ).
     !    These are used to calculate the scalar widths 
     ! sthl1, sthl2, srt1, and srt2 as in Eq. (34) of Larson and Golaz (2005)
@@ -254,8 +250,6 @@ module pdf_closure_module
       end if
 
     else ! Width parameters are non-zero
-
-      !Skw = wp3/wp2**1.5
 
       if ( abs( Skw ) <= 1e-5 ) then
         a = 0.5
@@ -506,11 +500,11 @@ module pdf_closure_module
     ! plus a postive correction; this might be a neater format
 
     ss1 = sqrt( max( zero_threshold, ( srt1*crt1**2 + sthl1*cthl1**2  &
-        - 2.0*rrtthl*crt1*sqrt( srt1 )*cthl1*sqrt( sthl1 ) )  & 
+        - 2.0*rrtthl*crt1*sqrt( srt1*sthl1 )*cthl1 )  & 
                ) &  ! max
           ) ! sqrt
     ss2 = sqrt( max( zero_threshold, ( srt2*crt2**2 + sthl2*cthl2**2 & 
-        - 2.0*rrtthl*crt2*sqrt( srt2 )*cthl2*sqrt( sthl2 ) )  & 
+        - 2.0*rrtthl*crt2*sqrt( srt2*sthl2 )*cthl2 )  & 
                )  &  ! max
           ) ! sqrt
 
@@ -563,15 +557,15 @@ module pdf_closure_module
     ! Account for subplume correlation in qt-thl
     thlprcp  = a * ( (thl1-thlm)*rc1 - (cthl1*sthl1)*R1 ) & 
              + (1.-a) * ( (thl2-thlm)*rc2 - (cthl2*sthl2)*R2 ) & 
-             + a*rrtthl*crt1*sqrt( srt1 )*sqrt( sthl1 )*R1 & 
-             + (1.-a)*rrtthl*crt2*sqrt( srt2 )*sqrt( sthl2 )*R2
+             + a*rrtthl*crt1*sqrt( srt1*sthl1 )*R1 & 
+             + (1.-a)*rrtthl*crt2*sqrt( srt2*sthl2 )*R2
     thlpthvp = thlp2 + ep1*T0*rtpthlp + BD*thlprcp
 
     ! Account for subplume correlation in qt-thl
     rtprcp = a * ( (rt1-rtm)*rc1 + (crt1*srt1)*R1 ) & 
            + (1.-a) * ( (rt2-rtm)*rc2 + (crt2*srt2)*R2 ) & 
-           - a*rrtthl*cthl1*sqrt( srt1 )*sqrt( sthl1 )*R1 & 
-           - (1.-a)*rrtthl*cthl2*sqrt( srt2 )*sqrt( sthl2 )*R2
+           - a*rrtthl*cthl1*sqrt( srt1*sthl1 )*R1 & 
+           - (1.-a)*rrtthl*cthl2*sqrt( srt2*sthl2 )*R2
 
     rtpthvp  = rtpthlp + ep1*T0*rtp2 + BD*rtprcp
 

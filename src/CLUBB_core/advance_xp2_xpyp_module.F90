@@ -11,10 +11,11 @@ implicit none
 
 public :: advance_xp2_xpyp
 
-private :: diag_var_lhs,  & 
-           diag_var_solve,  & 
-           diag_var_uv_rhs, & 
-           diag_var_rhs, & 
+private :: xp2_xpyp_lhs,  & 
+           xp2_xpyp_solve,  & 
+           xp2_xpyp_uv_rhs, & 
+           xp2_xpyp_rhs, & 
+           xp2_xpyp_implicit_stats, & 
            term_ta_lhs, & 
            term_ta_rhs, & 
            term_tp, & 
@@ -182,11 +183,15 @@ real, dimension(3,gr%nnzp) ::  &
   lhs ! Tridiagonal matrix
 
 real, dimension(gr%nnzp,1) :: & 
-  rhs ! RHS vector of Tridiagonal matrix
+  rhs ! RHS vector of tridiagonal matrix
+
+real, dimension(gr%nnzp,2) :: & 
+  uv_rhs,    &! RHS vectors of tridiagonal system for up2/vp2
+  uv_solution ! Solution to the tridiagonal system for up2/vp2
 
 real, dimension(gr%nnzp,sclr_dim*3) ::  & 
-  sclr_rhs,   & ! RHS of scalar tridiagonal system
-  sclr_solution ! Solution to tridiagonal system
+  sclr_rhs,   & ! RHS vectors of tridiagonal system for the passive scalars
+  sclr_solution ! Solution to tridiagonal system for the passive scalars
 
 integer, dimension(5+1) :: & 
   Valid_arr
@@ -373,108 +378,113 @@ endif  ! l_3pt_sqd_dfsn
 !!!!!***** r_t'^2 *****!!!!!
 
 ! Implicit contributions to term rtp2
-call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &             ! Intent(in)
+call xp2_xpyp_lhs( dt, l_iter, wp2_zt, wp3,  &             ! Intent(in)
                    a1, a1_zt, tau_zm, wm_zm, Kw2_rtp2, &   ! Intent(in)
                    C2rt_1d, nu2, beta,           &         ! Intent(in)
                    lhs )                                   ! Intent(out)
 
 
-call diag_var_rhs( "rtp2", dt, l_iter, a1, a1_zt, &     ! Intent(in)
+call xp2_xpyp_rhs( "rtp2", dt, l_iter, a1, a1_zt, &     ! Intent(in)
                    wp2_zt, wp3, wprtp, wprtp_zt, &      ! Intent(in)
                    wprtp, wprtp_zt, rtm, rtm, rtp2, &   ! Intent(in)
                    C2rt_1d, tau_zm, rttol**2, beta, &   ! Intent(in)
                    rhs )                                ! Intent(out)
         
 ! Solve the tridiagonal system
-call diag_var_solve( "rtp2", 1, &                               ! Intent(in)
+call xp2_xpyp_solve( "rtp2", 1, &                               ! Intent(in)
                      rhs, lhs, rtp2, &                          ! Intent(inout)
                      Valid_arr(1) )                             ! Intent(out)
 
+if ( l_stats_samp ) then
+  call xp2_xpyp_implicit_stats( "rtp2", rtp2 ) ! Intent(in)
+end if
 
 !!!!!***** th_l'^2 *****!!!!!
 
 ! Implicit contributions to term thlp2
-call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &                  ! Intent(in)
+call xp2_xpyp_lhs( dt, l_iter, wp2_zt, wp3,  &                  ! Intent(in)
                    a1, a1_zt, tau_zm, wm_zm, Kw2_thlp2,  &      ! Intent(in)
                    C2thl_1d, nu2, beta,           &             ! Intent(in)
                    lhs )                                        ! Intent(out)
 
 ! Explicit contributions to thlp2
-call diag_var_rhs( "thlp2", dt, l_iter, a1, a1_zt, &            ! Intent(in)
+call xp2_xpyp_rhs( "thlp2", dt, l_iter, a1, a1_zt, &            ! Intent(in)
                    wp2_zt, wp3, wpthlp, wpthlp_zt, &            ! Intent(in)
                    wpthlp, wpthlp_zt, thlm, thlm, thlp2, &      ! Intent(in)
                    C2thl_1d, tau_zm, thltol**2, beta, &         ! Intent(in)
                    rhs )                                        ! Intent(out)
 
 ! Solve the tridiagonal system
-call diag_var_solve( "thlp2", 1, &          ! Intent(in)
+call xp2_xpyp_solve( "thlp2", 1, &          ! Intent(in)
                      rhs, lhs, thlp2, &     ! Intent(inout)
                      Valid_arr(2) )         ! Intent(out)
+
+if ( l_stats_samp ) then
+  call xp2_xpyp_implicit_stats( "thlp2", thlp2 ) ! Intent(in)
+end if
 
 
 !!!!!***** r_t'th_l' *****!!!!!
 
 ! Implicit contributions to term rtpthlp
-call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &                  ! Intent(in)
+call xp2_xpyp_lhs( dt, l_iter, wp2_zt, wp3,  &                  ! Intent(in)
                    a1, a1_zt, tau_zm, wm_zm, Kw2_rtpthlp,  &    ! Intent(in)
                    C2rtthl_1d, nu2, beta,           &           ! Intent(in)
                    lhs )                                        ! Intent(out)
 
 ! Explicit contributions to rtpthlp
-call diag_var_rhs( "rtpthlp", dt, l_iter, a1, a1_zt, &          ! Intent(in)
+call xp2_xpyp_rhs( "rtpthlp", dt, l_iter, a1, a1_zt, &          ! Intent(in)
                    wp2_zt, wp3, wprtp, wprtp_zt, &              ! Intent(in)
                    wpthlp, wpthlp_zt, rtm, thlm, rtpthlp, &     ! Intent(in)
                    C2rtthl_1d, tau_zm, 0.0, beta, &             ! Intent(in)
                    rhs )                                        ! Intent(out)
 
 ! Solve the tridiagonal system
-call diag_var_solve( "rtpthlp", 1, &            ! Intent(in)
+call xp2_xpyp_solve( "rtpthlp", 1, &            ! Intent(in)
                      rhs, lhs, rtpthlp, &       ! Intent(inout)
                      Valid_arr(3) )             ! Intent(out)
 
+if ( l_stats_samp ) then
+  call xp2_xpyp_implicit_stats( "rtpthlp", rtpthlp ) ! Intent(in)
+end if
 
-!!!!!***** u'^2 *****!!!!!
 
-! Implicit contributions to term up2
-call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &             ! Intent(in)
+!!!!!***** u'^2 / v'^2 *****!!!!!
+
+! Implicit contributions to term up2/vp2
+call xp2_xpyp_lhs( dt, l_iter, wp2_zt, wp3,  &             ! Intent(in)
                    a1, a1_zt, tau_zm, wm_zm, Kw9,  &       ! Intent(in)
                    C4_C14_1d, nu9, beta,           &       ! Intent(in)
                    lhs )                                   ! Intent(out)
 
 ! Explicit contributions to up2
-call diag_var_uv_rhs( "up2", dt, l_iter, a1, a1_zt, &       ! Intent(in)
+call xp2_xpyp_uv_rhs( "up2", dt, l_iter, a1, a1_zt, &       ! Intent(in)
                       wp2, wp2_zt, wp3, wpthvp, tau_zm,  &  ! Intent(in)
                       um, vm, upwp, upwp_zt, vpwp, &        ! Intent(in)
                       vpwp_zt, up2, vp2, C4, C5, C14, &     ! Intent(in)
                       T0, beta,           &                 ! Intent(in)
-                      rhs )                                 ! Intent(out)
-
-! Solve the tridiagonal system
-call diag_var_solve( "up2", 1, &       ! Intent(in)
-                     rhs, lhs, up2, &  ! Intent(inout)
-                     Valid_arr(4) )    ! Intent(out)
-
-
-!!!!!***** v'^2 *****!!!!!
-
-! Implicit contributions to term vp2
-call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &          ! Intent(in)
-                   a1, a1_zt, tau_zm, wm_zm, Kw9,  &    ! Intent(in)
-                   C4_C14_1d, nu9, beta,           &    ! Intent(in)
-                   lhs )                                ! Intent(out)
+                      uv_rhs(:,1) )                         ! Intent(out)
 
 ! Explicit contributions to vp2
-call diag_var_uv_rhs( "vp2", dt, l_iter, a1, a1_zt, &       ! Intent(in)
+call xp2_xpyp_uv_rhs( "vp2", dt, l_iter, a1, a1_zt, &       ! Intent(in)
                       wp2, wp2_zt, wp3, wpthvp, tau_zm,  &  ! Intent(in)
                       vm, um, vpwp, vpwp_zt, upwp, &        ! Intent(in)
                       upwp_zt, vp2, up2, C4, C5, C14, &     ! Intent(in)
                       T0, beta,           &                 ! Intent(in)
-                      rhs )                                 ! Intent(out)
+                      uv_rhs(:,2) )                         ! Intent(out)
 
 ! Solve the tridiagonal system
-call diag_var_solve( "vp2", 1, &        ! Intent(in)
-                     rhs, lhs, vp2, &   ! Intent(inout)
-                     Valid_arr(5) )     ! Intent(out)
+call xp2_xpyp_solve( "up2_vp2", 2,              & ! Intent(in)
+                     uv_rhs, lhs,               & ! Intent(inout)
+                     uv_solution, Valid_arr(4) )  ! Intent(out)
+
+up2(1:gr%nnzp) = uv_solution(1:gr%nnzp,1)
+vp2(1:gr%nnzp) = uv_solution(1:gr%nnzp,2)
+
+if ( l_stats_samp ) then
+  call xp2_xpyp_implicit_stats( "up2", up2 ) ! Intent(in)
+  call xp2_xpyp_implicit_stats( "vp2", vp2 ) ! Intent(in)
+end if
 
 
 ! Apply the positive definite scheme to variances
@@ -572,7 +582,7 @@ if ( l_scalar_calc ) then
 
   !!!!!***** sclr'^2, sclr'r_t', sclr'th_l' *****!!!!!
 
-  call diag_var_lhs( dt, l_iter, wp2_zt, wp3,  &        ! Intent(in) 
+  call xp2_xpyp_lhs( dt, l_iter, wp2_zt, wp3,  &        ! Intent(in) 
                      a1, a1_zt, tau_zm, wm_zm, Kw2,  &  ! Intent(in)
                      C2sclr_1d, nu2, beta,           &  ! Intent(in)
                      lhs )                              ! Intent(out)
@@ -590,7 +600,7 @@ if ( l_scalar_calc ) then
     ! terms in each equation.
     wpsclrp_zt = zm2zt( wpsclrp(:,i) )
 
-    call diag_var_rhs( "sclrp2", dt, l_iter, a1, a1_zt, &       ! Intent(in)
+    call xp2_xpyp_rhs( "sclrp2", dt, l_iter, a1, a1_zt, &       ! Intent(in)
                        wp2_zt, wp3, wpsclrp(:,i),  &            ! Intent(in)
                        wpsclrp_zt, wpsclrp(:,i), wpsclrp_zt,  & ! Intent(in)
                        sclrm(:,i), sclrm(:,i), sclrp2(:,i), &   ! Intent(in)
@@ -600,7 +610,7 @@ if ( l_scalar_calc ) then
 
   !!!!!***** sclr'r_t' *****!!!!!
 
-    call diag_var_rhs( "sclrprtp", dt, l_iter, a1, a1_zt, &        ! Intent(in)
+    call xp2_xpyp_rhs( "sclrprtp", dt, l_iter, a1, a1_zt, &        ! Intent(in)
                        wp2_zt, wp3, wpsclrp(:,i),  &               ! Intent(in)
                        wpsclrp_zt, wprtp, wprtp_zt, sclrm(:,i),  & ! Intent(in)
                        rtm, sclrprtp(:,i), C2sclr_1d, tau_zm, &    ! Intent(in)     
@@ -610,7 +620,7 @@ if ( l_scalar_calc ) then
 
   !!!!!***** sclr'th_l' *****!!!!!
 
-    call diag_var_rhs( "sclrpthlp", dt, l_iter, a1, a1_zt, & ! Intent(in)
+    call xp2_xpyp_rhs( "sclrpthlp", dt, l_iter, a1, a1_zt, & ! Intent(in)
                        wp2_zt, wp3, wpsclrp(:,i),  &         ! Intent(in)
                        wpsclrp_zt, wpthlp, wpthlp_zt,  &     ! Intent(in)
                        sclrm(:,i), thlm, sclrpthlp(:,i), &   ! Intent(in)
@@ -621,7 +631,7 @@ if ( l_scalar_calc ) then
 
   ! Solve the tridiagonal system
 
-  call diag_var_solve( "scalars", 3*sclr_dim, &         ! Intent(in)
+  call xp2_xpyp_solve( "scalars", 3*sclr_dim, &         ! Intent(in)
                        sclr_rhs, lhs, sclr_solution, &  ! Intent(inout)
                        Valid_arr(6) )                   ! Intent(out)
 
@@ -742,7 +752,7 @@ return
 end subroutine advance_xp2_xpyp
 
 !===============================================================================
-subroutine diag_var_lhs( dt, l_iter, wp2_zt, wp3,  & 
+subroutine xp2_xpyp_lhs( dt, l_iter, wp2_zt, wp3,  & 
                          a1, a1_zt, tau_zm, wm_zm, Kw,  &
                          Cn, nu, beta, lhs )
         
@@ -880,7 +890,7 @@ do k = 2, gr%nnzp-1, 1
    if ( irtp2_dp1 + ithlp2_dp1 + irtpthlp_dp1  > 0 ) then
      ! Note:  The statistical implicit contribution to term dp1
      !        (as well as to term pr1) for up2 and vp2 is recorded
-     !        in diag_var_uv_rhs because up2 and vp2 use a special
+     !        in xp2_xpyp_uv_rhs because up2 and vp2 use a special
      !        dp1/pr1 combined term.
      tmp(1) = term_dp1_lhs( Cn(k), tau_zm(k) )
      zmscr01(k) = -tmp(1)
@@ -940,58 +950,158 @@ lhs(k_mdiag,gr%nnzp) = 1.0
 
 
 return
-end subroutine diag_var_lhs
+end subroutine xp2_xpyp_lhs
 
 !===============================================================================
-subroutine diag_var_solve( solve_type, nrhs, & 
-                           rhs, lhs, xapxbp, &
-                           err_code )
+subroutine xp2_xpyp_solve( solve_type, nrhs, rhs, lhs, xapxbp, err_code )
 
-!-----------------------------------------------------------------------
+! Description:
+!   Solve a tridiagonal system
+!
+! References:
+!   None
+!-------------------------------------------------------------------------------
 
-use lapack_wrap, only:  & 
+  use lapack_wrap, only:  & 
     tridag_solve,  & ! Variable(s)
     tridag_solvex !, &
 !    band_solve
         
-use grid_class, only: & 
+  use grid_class, only: & 
     gr ! Variable(s)
         
-use stats_type, only: & 
-    stat_update_var_pt, & ! Procedure(s)
-    stat_end_update_pt
+  use stats_type, only: & 
+    stat_update_var_pt  ! Procedure(s)
 
-use stats_variables, only: & 
+  use stats_variables, only: & 
+    sfc, &  ! Derived type
+    irtp2_matrix_condt_num, & ! Stat index Variables
+    ithlp2_matrix_condt_num, & 
+    irtpthlp_matrix_condt_num, & 
+    iup2_vp2_matrix_condt_num, & 
+    l_stats_samp  ! Logical
+
+  implicit none
+
+  ! External 
+  intrinsic :: trim
+
+  ! Constant parameters
+  integer, parameter :: & 
+    kp1_mdiag = 1, & ! Momentum superdiagonal index.
+    k_mdiag   = 2, & ! Momentum main diagonal index.
+    km1_mdiag = 3    ! Momentum subdiagonal index.
+
+  ! Input variables
+  integer, intent(in) :: &
+    nrhs  ! Number of right hand side vectors
+
+  character(len=*), intent(in) ::  & 
+    solve_type ! Variable(s) description
+
+  ! Input/Ouput variables
+  real, dimension(gr%nnzp,nrhs), intent(inout) :: & 
+    rhs  ! Explicit contributions to x variance/covariance term [units vary]
+
+  real, dimension(3,gr%nnzp), intent(inout) :: & 
+    lhs  ! Implicit contributions to x variance/covariance term [units vary]
+
+  real, dimension(gr%nnzp,nrhs), intent(out) ::  & 
+    xapxbp ! Computed value of the variable(s) at <t+1> [units vary]
+
+  integer, intent(out) :: & 
+    err_code ! Returns an error code in the event of a singular matrix
+
+  ! Local variables
+  real :: rcond  ! Est. of the reciprocal of the condition # on the matrix
+
+  integer ::  ixapxbp_matrix_condt_num ! Stat index
+
+  ! --- Begin Code ---
+
+  select case ( trim( solve_type ) )
+  !-----------------------------------------------------------------------------
+  ! Note that these are diagnostics from inverting the matrix, not a budget
+  !-----------------------------------------------------------------------------
+  case ( "rtp2" )
+    ixapxbp_matrix_condt_num  = irtp2_matrix_condt_num
+
+  case ( "thlp2" )
+    ixapxbp_matrix_condt_num  = ithlp2_matrix_condt_num
+
+  case ( "rtpthlp" )
+    ixapxbp_matrix_condt_num  = irtpthlp_matrix_condt_num
+
+  case ( "up2_vp2" )
+    ixapxbp_matrix_condt_num  = iup2_vp2_matrix_condt_num
+
+  case default 
+    ! No condition number is setup for the passive scalars
+    ixapxbp_matrix_condt_num  = 0
+
+  end select
+
+  if ( l_stats_samp .and. ixapxbp_matrix_condt_num > 0 ) then
+    call tridag_solvex & 
+         ( solve_type, gr%nnzp, nrhs, &                                          ! Intent(in) 
+           lhs(kp1_mdiag,:), lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  & ! Intent(inout)
+           xapxbp(:,1:nrhs), rcond, err_code )                                   ! Intent(out)
+
+    ! Est. of the condition number of the variance LHS matrix 
+    call stat_update_var_pt( ixapxbp_matrix_condt_num, 1, 1.0 / rcond, &  ! Intent(in)
+                             sfc )                          ! Intent(inout)
+
+  else 
+    call tridag_solve & 
+         ( solve_type, gr%nnzp, nrhs, lhs(kp1_mdiag,:),  &        ! Intent(in)
+           lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  &    ! Intent(inout)
+           xapxbp(:,1:nrhs), err_code )                           ! Intent(out)
+  end if
+
+  return
+end subroutine xp2_xpyp_solve
+
+!===============================================================================
+subroutine xp2_xpyp_implicit_stats( solve_type, xapxbp )
+
+! Description:
+!   Finalize implicit contributions for r_t'^2, th_l'^2, r_t'th_l', 
+!   u'^2, and v'^2.
+!
+! References:
+!   None
+!-------------------------------------------------------------------------------
+  use grid_class, only: &
+    gr ! Derived type variable
+
+  use stats_type, only: & 
+    stat_end_update_pt, & ! Procedure(s)
+    stat_update_var_pt 
+
+  use stats_variables, only: & 
     zm,  & ! Variable(s) 
-    sfc, & 
-    irtp2_matrix_condt_num, & 
     irtp2_dp1, & 
     irtp2_dp2, & 
     irtp2_ta, & 
     irtp2_ma, & 
-    ithlp2_matrix_condt_num, & 
     ithlp2_dp1, & 
     ithlp2_dp2, & 
     ithlp2_ta, & 
     ithlp2_ma, & 
-    irtpthlp_matrix_condt_num, & 
     irtpthlp_dp1, & 
     irtpthlp_dp2, & 
     irtpthlp_ta, & 
     irtpthlp_ma, & 
-    iup2_matrix_condt_num, & 
     iup2_dp1, & 
     iup2_dp2, & 
     iup2_ta, & 
     iup2_ma, & 
     iup2_pr1, & 
-    ivp2_matrix_condt_num, & 
     ivp2_dp1, & 
     ivp2_dp2, & 
     ivp2_ta, & 
     ivp2_ma, & 
     ivp2_pr1, & 
-    l_stats_samp, & 
     zmscr01, & 
     zmscr02, & 
     zmscr03, & 
@@ -1004,51 +1114,32 @@ use stats_variables, only: &
     zmscr10, & 
     zmscr11
 
+  implicit none
 
-implicit none
+  ! External
+  intrinsic :: max, min, trim
 
-! Constant parameters
-integer, parameter :: & 
-  kp1_mdiag = 1, & ! Momentum superdiagonal index.
-  k_mdiag   = 2, & ! Momentum main diagonal index.
-  km1_mdiag = 3    ! Momentum subdiagonal index.
+  ! Input variables
+  character(len=*), intent(in) ::  & 
+    solve_type ! Variable(s) description
 
-! Input variables
-integer, intent(in) :: nrhs  ! Number of right hand side vectors
+  real, dimension(gr%nnzp), intent(in) ::  & 
+    xapxbp ! Computed value of the variable at <t+1> [units vary]
 
-character(len=*), intent(in) ::  & 
-  solve_type ! Variable(s) description
+  ! Local variables
+  integer :: k, kp1, km1 ! Array indices
 
-! Input/Ouput variables
-real, dimension(3,gr%nnzp), intent(inout) :: & 
-  lhs  ! Implicit contributions to x variance/covariance term
+  ! Budget indices
+  integer :: & 
+    ixapxbp_dp1, & 
+    ixapxbp_dp2, & 
+    ixapxbp_ta, & 
+    ixapxbp_ma, & 
+    ixapxbp_pr1
 
-real, dimension(gr%nnzp,nrhs), intent(inout) :: & 
-  rhs  ! Explicit contributions to x variance/covariance term
+  ! --- Begin Code ---
 
-! Output variables
-real, dimension(gr%nnzp,nrhs), intent(inout) ::  & 
-  xapxbp ! Computed value of the variable at <t+1> [units vary]
-
-integer, intent(out) :: & 
-  err_code ! Returns an error code in the event of a singular matrix
-
-! Local variables
-real :: rcond  ! Est. of the reciprocal of the condition #
-
-! Array indices
-integer :: k, kp1, km1
-
-integer :: & 
-  ixapxbp_dp1, & 
-  ixapxbp_dp2, & 
-  ixapxbp_ta, & 
-  ixapxbp_ma, & 
-  ixapxbp_pr1, & 
-  ixapxbp_matrix_condt_num
-
-
-select case ( trim( solve_type ) )
+  select case ( trim( solve_type ) )
   case ( "rtp2" )
     ixapxbp_dp1 = irtp2_dp1
     ixapxbp_dp2 = irtp2_dp2
@@ -1056,8 +1147,6 @@ select case ( trim( solve_type ) )
     ixapxbp_ma  = irtp2_ma
     ixapxbp_pr1 = 0
 
-    ! This is a diagnostic from inverting the matrix, not a budget
-    ixapxbp_matrix_condt_num  = irtp2_matrix_condt_num
   case ( "thlp2" )
     ixapxbp_dp1 = ithlp2_dp1
     ixapxbp_dp2 = ithlp2_dp2
@@ -1065,8 +1154,6 @@ select case ( trim( solve_type ) )
     ixapxbp_ma  = ithlp2_ma
     ixapxbp_pr1 = 0
 
-    ! This is a diagnostic from inverting the matrix, not a budget
-    ixapxbp_matrix_condt_num  = ithlp2_matrix_condt_num
   case ( "rtpthlp" )
     ixapxbp_dp1 = irtpthlp_dp1
     ixapxbp_dp2 = irtpthlp_dp2
@@ -1074,8 +1161,6 @@ select case ( trim( solve_type ) )
     ixapxbp_ma  = irtpthlp_ma
     ixapxbp_pr1 = 0
 
-    ! This is a diagnostic from inverting the matrix, not a budget
-    ixapxbp_matrix_condt_num  = irtpthlp_matrix_condt_num
   case ( "up2" )
     ixapxbp_dp1 = iup2_dp1
     ixapxbp_dp2 = iup2_dp2
@@ -1083,8 +1168,6 @@ select case ( trim( solve_type ) )
     ixapxbp_ma  = iup2_ma
     ixapxbp_pr1 = iup2_pr1
 
-    ! This is a diagnostic from inverting the matrix, not a budget
-    ixapxbp_matrix_condt_num  = iup2_matrix_condt_num
   case ( "vp2" )
     ixapxbp_dp1 = ivp2_dp1
     ixapxbp_dp2 = ivp2_dp2
@@ -1092,41 +1175,14 @@ select case ( trim( solve_type ) )
     ixapxbp_ma  = ivp2_ma
     ixapxbp_pr1 = ivp2_pr1
 
-    ! This is a diagnostic from inverting the matrix, not a budget
-    ixapxbp_matrix_condt_num  = ivp2_matrix_condt_num
-  case default ! No budgets for passive scalars
+  case default ! No budgets are setup for the passive scalars
     ixapxbp_dp1 = 0
     ixapxbp_dp2 = 0
     ixapxbp_ta  = 0
     ixapxbp_ma  = 0
     ixapxbp_pr1 = 0
 
-    ! This is a diagnostic from inverting the matrix, not a budget
-    ixapxbp_matrix_condt_num  = ivp2_matrix_condt_num
-
   end select
-
-if ( l_stats_samp .and. ixapxbp_matrix_condt_num > 0 ) then
-  call tridag_solvex & 
-       ( solve_type, gr%nnzp, nrhs, &                                          ! Intent(in) 
-         lhs(kp1_mdiag,:), lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  & ! Intent(inout)
-         xapxbp(:,1:nrhs), rcond, err_code )                                   ! Intent(out)
-
-  ! Est. of the condition number of the variance LHS matrix 
-  call stat_update_var_pt( ixapxbp_matrix_condt_num, 1, 1.0 / rcond, &  ! Intent(in)
-                           sfc )                          ! Intent(inout)
-
-else 
-  call tridag_solve & 
-       ( solve_type, gr%nnzp, nrhs, lhs(kp1_mdiag,:),  &        ! Intent(in)
-         lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  &    ! Intent(inout)
-         xapxbp(:,1:nrhs), err_code )                           ! Intent(out)
-endif
-
-if ( l_stats_samp ) then
-
-  ! Finalize implicit contributions for r_t'^2, th_l'^2, r_t'th_l', 
-  ! u'^2, and v'^2.
 
   do k = 2, gr%nnzp-1
 
@@ -1135,47 +1191,45 @@ if ( l_stats_samp ) then
 
     ! x'y' term dp1 has both implicit and explicit components;
     ! call stat_end_update_pt.
-    call stat_end_update_pt( ixapxbp_dp1, k, &             ! Intent(in)
-                               zmscr01(k) * xapxbp(k,1), & ! Intent(in)
-                             zm )                          ! Intent(inout)
+    call stat_end_update_pt( ixapxbp_dp1, k, &            ! Intent(in)
+                               zmscr01(k) * xapxbp(k), &  ! Intent(in)
+                             zm )                         ! Intent(inout)
 
     ! x'y' term dp2 is completely implicit; call stat_update_var_pt.
-    call stat_update_var_pt( ixapxbp_dp2, k, &              ! Intent(in)
-                               zmscr02(k) * xapxbp(km1,1) & ! Intent(in)
-                             + zmscr03(k) * xapxbp(k,1) & 
-                             + zmscr04(k) * xapxbp(kp1,1), &
-                             zm )                           ! Intent(inout)
+    call stat_update_var_pt( ixapxbp_dp2, k, &            ! Intent(in)
+                               zmscr02(k) * xapxbp(km1) & ! Intent(in)
+                             + zmscr03(k) * xapxbp(k) & 
+                             + zmscr04(k) * xapxbp(kp1), &
+                             zm )                         ! Intent(inout)
 
     ! x'y' term ta has both implicit and explicit components;
     ! call stat_end_update_pt.
-    call stat_end_update_pt( ixapxbp_ta, k, &                ! Intent(in)
-                               zmscr05(k) * xapxbp(km1,1) &  ! Intent(in)
-                             + zmscr06(k) * xapxbp(k,1) &  
-                             + zmscr07(k) * xapxbp(kp1,1), &
-                             zm )                            ! Intent(inout)
+    call stat_end_update_pt( ixapxbp_ta, k, &              ! Intent(in)
+                               zmscr05(k) * xapxbp(km1) &  ! Intent(in)
+                             + zmscr06(k) * xapxbp(k) &  
+                             + zmscr07(k) * xapxbp(kp1), &
+                             zm )                          ! Intent(inout)
 
     ! x'y' term ma is completely implicit; call stat_update_var_pt.
-    call stat_update_var_pt( ixapxbp_ma, k, &                ! Intent(in)
-                               zmscr08(k) * xapxbp(km1,1) &  ! Intent(in)
-                             + zmscr09(k) * xapxbp(k,1) & 
-                             + zmscr10(k) * xapxbp(kp1,1), &
-                             zm )                            ! Intent(inout)
+    call stat_update_var_pt( ixapxbp_ma, k, &              ! Intent(in)
+                               zmscr08(k) * xapxbp(km1) &  ! Intent(in)
+                             + zmscr09(k) * xapxbp(k) & 
+                             + zmscr10(k) * xapxbp(kp1), &
+                             zm )                          ! Intent(inout)
 
     ! x'y' term pr1 has both implicit and explicit components;
     ! call stat_end_update_pt.
-    call stat_end_update_pt( ixapxbp_pr1, k, &             ! Intent(in)
-                               zmscr11(k) * xapxbp(k,1), & ! Intent(in)
-                             zm )                          ! Intent(inout)
+    call stat_end_update_pt( ixapxbp_pr1, k, &            ! Intent(in)
+                               zmscr11(k) * xapxbp(k), &  ! Intent(in)
+                             zm )                         ! Intent(inout)
 
-  enddo
-endif
- 
+  end do ! k=2..gr%nnzp-1
 
-return
-end subroutine diag_var_solve
+  return
+end subroutine xp2_xpyp_implicit_stats
 
 !===============================================================================
-subroutine diag_var_uv_rhs( solve_type, dt, l_iter, a1, a1_zt, & 
+subroutine xp2_xpyp_uv_rhs( solve_type, dt, l_iter, a1, a1_zt, & 
                             wp2, wp2_zt, wp3, wpthvp, tau_zm,  & 
                             xam, xbm, wpxap, wpxap_zt, wpxbp, & 
                             wpxbp_zt, xap2, xbp2, C4, C5, C14, & 
@@ -1334,7 +1388,7 @@ do k = 2, gr%nnzp-1, 1
       !        semi-implicit solution to dp1 and pr1.
       ! Record the statistical contribution of the implicit component of 
       ! term dp1 for up2 or vp2.  This will overwrite anything set 
-      ! statistically in diag_var_lhs for this term.
+      ! statistically in xp2_xpyp_lhs for this term.
       ! Note:  To find the contribution of x'y' term dp1, substitute 
       !        (2/3)*C_4 for the C_n input to function term_dp1_lhs.
       tmp = term_dp1_lhs( (2.0/3.0)*C4, tau_zm(k) )
@@ -1407,10 +1461,10 @@ rhs(gr%nnzp,1) = 0.0
 
 
 return
-end subroutine diag_var_uv_rhs
+end subroutine xp2_xpyp_uv_rhs
 
 !===============================================================================
-subroutine diag_var_rhs( solve_type, dt, l_iter, a1, a1_zt, &
+subroutine xp2_xpyp_rhs( solve_type, dt, l_iter, a1, a1_zt, &
                          wp2_zt, wp3, wpxap, wpxap_zt, & 
                          wpxbp, wpxbp_zt, xam, xbm, xapxbp, & 
                          Cn, tau_zm, threshold, beta, & 
@@ -1610,7 +1664,7 @@ rhs(gr%nnzp,1) = 0.0
 !endif
 
 return
-end subroutine diag_var_rhs
+end subroutine xp2_xpyp_rhs
 
 !===============================================================================
 pure function term_ta_lhs( wp3p1, wp3, wp2_ztp1, wp2_zt, &
