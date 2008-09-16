@@ -16,7 +16,8 @@
  ! Default to private
  private
 
- public :: setup_parameters, read_parameters, read_param_spread
+ public :: setup_parameters, read_parameters, read_param_spread, &
+   get_parameters
 
  ! Model parameters and constraints setup in the namelists
  real, public ::  & 
@@ -747,5 +748,32 @@ subroutine pack_parameters &
 
  return
  end subroutine unpack_parameters
+
+!===============================================================================
+ subroutine get_parameters( params )
+
+! Description:
+!   Return an array of all tunable parameters
+
+! References:
+!   None
+!--------------------------------------------------------------------------------
+
+   implicit none
+
+   ! Input Variables
+   real, intent(out), dimension(nparams) :: params
+
+   call pack_parameters & 
+        ( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, & 
+          C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
+          C7, C7b, C7c, C8, C8b, C10, & 
+          C11, C11b, C11c, C12, C13, C14, & 
+          c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
+          c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
+          gamma_coef, gamma_coefb, gamma_coefc, & 
+          mu, beta, lmin_coef, taumin, taumax, params )
+   return
+ end subroutine get_parameters
 
  end module parameters_tunable
