@@ -48,7 +48,8 @@ microphys_driver.o : constants.o model_flags.o lapack_wrap.o \
         ice_dfsn_mod.o diffusion.o array_index.o microphys_driver.F90 
 output_grads.o	: constants.o recl.F90 endian.o output_file_module.o calendar.o \
 	output_grads.F90
-output_netcdf.o	: constants.o calendar.o output_file_module.o output_netcdf.F90
+output_netcdf.o	: constants.o calendar.o parameters_tunable.o \
+	output_file_module.o output_netcdf.F90
 variables_diagnostic_module.o: constants.o parameters_tunable.o grid.o model_flags.o variables_diagnostic_module.F90
 variables_prognostic_module.o: constants.o parameters_tunable.o grid.o model_flags.o variables_prognostic_module.F90 
 numer_check.o	: variables_prognostic_module.o variables_diagnostic_module.o constants.o model_flags.o\

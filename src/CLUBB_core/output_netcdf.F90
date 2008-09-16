@@ -222,8 +222,7 @@ subroutine define_netcdf( ncid, ia, iz, zgrid, day, month,  &
     NF90_NOERR,   & ! Constants
     NF90_FLOAT, & 
     NF90_DOUBLE, & 
-    NF90_UNLIMITED, & 
-    NF90_GLOBAL
+    NF90_UNLIMITED
 
   use netcdf, only: & 
     nf90_def_dim,  & ! Functions
@@ -271,9 +270,6 @@ subroutine define_netcdf( ncid, ia, iz, zgrid, day, month,  &
   ! Local variables
   integer :: stat
   character(len=35) :: TimeUnits
-
-  character(len=10) :: current_time
-  character(len=8)  :: current_date
 
   ! ---- Begin Code ----
 
@@ -373,25 +369,6 @@ subroutine define_netcdf( ncid, ia, iz, zgrid, day, month,  &
 
   stat = nf90_put_att( ncid, AltVarId, "ipositive", 1 )
 
-  ! Define global attributes of the file, for reproducing the results and
-  ! determining how a run was configured
-  stat = nf90_put_att( ncid, NF90_GLOBAL, "Conventions", "COARDS" )
-  stat = nf90_put_att( ncid, NF90_GLOBAL, "model", "CLUBB" )
-
-  ! Figure out when the model is producing this file
-  call date_and_time( current_date, current_time )
-
-  stat = nf90_put_att( &
-                       ncid, NF90_GLOBAL, "created_on", &
-                       current_date(1:4)//'-'//current_date(5:6)//'-'// &
-                       current_date(7:8)//' '// &
-                       current_time(1:2)//':'//current_time(3:4) )
-
-  stat = nf90_put_att( ncid, NF90_GLOBAL, "", "" )
-
-  ! TODO: Add more to this list of attributes (e.g. Nudging time scale, C1,
-  ! et al., preprocessing directives, model flags, grid_type? )
-
   return
 end subroutine define_netcdf
 
@@ -438,39 +415,79 @@ end subroutine close_netcdf
 !-----------------------------------------------------------------------
 subroutine first_write( ncf )
 
-!      Description:
-!      Used on the first call to write_nc to finalize definitions
-!      for the dataset, including the attributes for variable records
+! Description:
+!   Used on the first call to write_nc to finalize definitions
+!   for the dataset, including the attributes for variable records.
+! References:
+!   None
 !-----------------------------------------------------------------------
 
-use netcdf, only: & 
-    NF90_NOERR,  & ! Variable(s)
+  use netcdf, only: & 
+    NF90_NOERR,  & ! Constants
     NF90_FLOAT,  & 
+    NF90_GLOBAL, &
     nf90_def_var,  & ! Procedure(s)
     nf90_strerror, & 
     nf90_put_att, & 
     nf90_enddef
-use output_file_module, only: & 
-    outputfile ! Type
-use constants, only:  & 
+
+  use output_file_module, only: &
+    outputfile ! Derived type
+
+  use constants, only:  &
     fstderr ! Variable
 
-implicit none
+  use parameters_tunable, only: &
+    T0, &       ! Real variables
+    ts_nudge, &
+    sclrtol    ! Real array variable
+  
+  use parameters_tunable, only: &
+    params_list ! Variable names (characters)
 
-! Input/Output Variables
-type (outputfile), intent(inout) :: ncf
+  use parameters_tunable, only: &
+    get_parameters ! Subroutine
 
-! Local Variables
-integer, dimension(:), allocatable :: stat
+  use parameter_indices, only: &
+    nparams ! Integer
 
-integer :: i     ! Array index
-logical :: l_error ! Error stat
+  use model_flags, only: &
+    l_local_kk, & ! Logicals
+    l_pos_def, &
+    l_hole_fill, &
+    l_clip_semi_implicit, &
+    l_3pt_sqd_dfsn, &
+    l_standard_term_ta, &
+    l_single_C2_Skw, &
+    l_gamma_Skw, &
+    l_bugsrad, &
+    l_kk_rain, &
+    l_icedfs, &
+    l_coamps_micro, &
+    l_cloud_sed, &
+    l_uv_nudge, &
+    l_tke_aniso
 
-! Range for NetCDF variables
-real(kind=4), dimension(2) :: var_range
+  implicit none
 
-! Dimensions for variables
-integer, dimension(4) :: var_dim
+  ! Input/Output Variables
+  type (outputfile), intent(inout) :: ncf
+
+  ! Local Variables
+  integer, dimension(:), allocatable :: stat
+
+  real, dimension(nparams) :: params ! Tunable parameters
+
+  integer :: i     ! Array index
+  logical :: l_error ! Error stat
+
+  character(len=10) :: current_time
+  character(len=8)  :: current_date
+  ! Range for NetCDF variables
+  real(kind=4), dimension(2) :: var_range
+
+  ! Dimensions for variables
+  integer, dimension(4) :: var_dim
 
 !-----------------------------------------------------------------------
 !      Typical valid ranges (IEEE 754)
@@ -481,74 +498,156 @@ integer, dimension(4) :: var_dim
 
 !      We use a 4 byte data model for NetCDF and GrADS to save disk space
 !-----------------------------------------------------------------------
-var_range(1) = -huge( var_range(1) ) 
-var_range(2) =  huge( var_range(2) )
-!      var_range = (/ -1.e31, 1.e31 /)
+  var_range(1) = -huge( var_range(1) ) 
+  var_range(2) =  huge( var_range(2) )
 
-!      Explanation:  The NetCDF documentation claims the NF90_UNLIMITED
-!      variable should be the first dimension, but def_var is somehow
-!      inverted and requires the opposite.  After writing, these 
-!      dimensions are all in the opposite order of this in the file.
-!      -dschanen
+! var_range = (/ -1.e31, 1.e31 /)
 
-var_dim(1) = ncf%LongDimId
-var_dim(2) = ncf%LatDimId
-var_dim(3) = ncf%AltDimId
-var_dim(4) = ncf%TimeDimId ! The NF90_UNLIMITED dimension
+! Explanation:  The NetCDF documentation claims the NF90_UNLIMITED
+!   variable should be the first dimension, but def_var is somehow
+!   inverted and requires the opposite.  After writing, these 
+!   dimensions are all in the opposite order of this in the file.
+!   -dschanen
 
-allocate( stat( ncf%nvar ) )
+  var_dim(1) = ncf%LongDimId
+  var_dim(2) = ncf%LatDimId
+  var_dim(3) = ncf%AltDimId
+  var_dim(4) = ncf%TimeDimId ! The NF90_UNLIMITED dimension
 
-l_error = .false.
+  allocate( stat( ncf%nvar ) )
 
-do i = 1, ncf%nvar, 1
+  l_error = .false.
+
+  do i = 1, ncf%nvar, 1
 !        stat(i) = nf90_def_var( ncf%iounit, trim( ncf%var(i)%name ),
 !    .             NF90_FLOAT, (/ncf%TimeDimId, ncf%AltDimId, 
 !    .             ncf%LatDimId, ncf%LongDimId/), ncf%var(i)%Id )
-  stat(i) = nf90_def_var( ncf%iounit, trim( ncf%var(i)%name ), & 
-            NF90_FLOAT, var_dim(:), ncf%var(i)%Id )
-  if ( stat(i) /= NF90_NOERR ) then
-    write(fstderr,*) "Error defining variable ",  & 
-      ncf%var(i)%name //": ", trim( nf90_strerror( stat(i) ) )
-    l_error = .true.
+    stat(i) = nf90_def_var( ncf%iounit, trim( ncf%var(i)%name ), & 
+              NF90_FLOAT, var_dim(:), ncf%var(i)%Id )
+    if ( stat(i) /= NF90_NOERR ) then
+      write(fstderr,*) "Error defining variable ",  & 
+        ncf%var(i)%name //": ", trim( nf90_strerror( stat(i) ) )
+      l_error = .true.
+    endif
+
+    stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%Id, & 
+              "valid_range", var_range(1:2) )
+    if ( stat(i) /= NF90_NOERR ) then
+      write(fstderr,*) "Error defining valid range", & 
+        trim( nf90_strerror( stat(i) ) )
+      l_error = .true.
+    endif
+
+    stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%Id, "title",  & 
+              trim( ncf%var(i)%description ) )
+    if ( stat(i) /= NF90_NOERR ) then
+      write(fstderr,*) "Error in description", & 
+        trim( nf90_strerror( stat(i) ) )
+      l_error = .true.
+    endif
+
+    stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%Id, "units",  & 
+              trim( ncf%var(i)%units ) )
+    if ( stat(i) /= NF90_NOERR ) then
+      write(fstderr,*) "Error in units", & 
+        trim( nf90_strerror( stat(i) ) )
+      l_error = .true.
+    endif
+  end do
+
+  if ( l_error ) stop "Error in definition"
+
+  deallocate( stat )
+
+  allocate( stat(3) )
+
+  ! Define global attributes of the file, for reproducing the results and
+  ! determining how a run was configured
+  stat(1) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "Conventions", "COARDS" )
+  stat(2) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "model", "CLUBB" )
+
+  ! Figure out when the model is producing this file
+  call date_and_time( current_date, current_time )
+
+  stat(3) = nf90_put_att( &
+                       ncf%iounit, NF90_GLOBAL, "created_on", &
+                       current_date(1:4)//'-'//current_date(5:6)//'-'// &
+                       current_date(7:8)//' '// &
+                       current_time(1:2)//':'//current_time(3:4) )
+
+  if ( any( stat /= NF90_NOERR ) ) then
+    write(fstderr,*) "Error writing model information"
+    do i = 1, size( stat ), 1
+      write(fstderr,*) , trim( nf90_strerror( stat(i) ) ) 
+    end do
+    stop
+  end if
+
+  ! Write the model flags to the file
+  deallocate( stat )
+  allocate( stat(15) ) ! # of model flags
+
+  stat(1) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_local_kk", lchar( l_local_kk ) )
+  stat(2) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_pos_def", lchar( l_pos_def ) )
+  stat(3) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_hole_fill", lchar( l_hole_fill ) )
+  stat(4) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_clip_semi_implicit", &
+    lchar( l_clip_semi_implicit ) )
+  stat(5) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_3pt_sqd_dfsn", &
+    lchar( l_3pt_sqd_dfsn ) )
+  stat(6) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_standard_term_ta", &
+    lchar( l_standard_term_ta ) )
+  stat(7) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_single_C2_Skw", &
+    lchar( l_single_C2_Skw ) )
+  stat(8) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_gamma_Skw", lchar( l_gamma_Skw ) )
+  stat(9) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_bugsrad", lchar( l_bugsrad ) )
+  stat(10) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_kk_rain", lchar( l_kk_rain ) )
+  stat(11) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_icedfs", lchar( l_icedfs ) )
+  stat(12) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_coamps_micro", &
+    lchar( l_coamps_micro ) )
+  stat(13) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_cloud_sed", lchar( l_cloud_sed ) )
+  stat(14) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_uv_nudge", lchar( l_uv_nudge ) )
+  stat(15) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_tke_aniso", lchar( l_tke_aniso ) )
+
+  if ( any( stat /= NF90_NOERR ) ) then
+    write(fstderr,*) "Error writing model flags"
+    do i = 1, size( stat ), 1
+      write(fstderr,*) i, trim( nf90_strerror( stat(i) ) ) 
+    end do
+    stop
+  end if
+
+  ! Write model parameter values to the file
+  deallocate( stat )
+  allocate( stat(nparams) )
+    
+  stat(1) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "T0", T0 )
+  stat(2) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "ts_nudge", ts_nudge )
+  stat(3) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "sclrtol", sclrtol )
+
+  call get_parameters( params )
+
+  do i = 1, nparams, 1
+    stat(i) = nf90_put_att( ncf%iounit, NF90_GLOBAL, params_list(i), params(i) )
+  end do
+
+  if ( any( stat /= NF90_NOERR ) ) then
+    write(fstderr,*) "Error writing parameters"
+    do i = 1, nparams, 1
+      write(fstderr,*) i, trim( nf90_strerror( stat(i) ) )
+    end do
+    stop
+  end if
+
+  stat(1) = nf90_enddef( ncf%iounit ) ! end definitions
+  if ( stat(1) /= NF90_NOERR ) then
+    write(fstderr,*) "Error finalizing definitions", & 
+      trim( nf90_strerror( stat(1) ) )
+    stop
   endif
 
-  stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%Id, & 
-            "valid_range", var_range(1:2) )
-  if ( stat(i) /= NF90_NOERR ) then
-    write(fstderr,*) "Error defining valid range", & 
-      trim( nf90_strerror( stat(i) ) )
-    l_error = .true.
-  endif
+  deallocate( stat )
 
-  stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%Id, "title",  & 
-            trim( ncf%var(i)%description ) )
-  if ( stat(i) /= NF90_NOERR ) then
-    write(fstderr,*) "Error in description", & 
-      trim( nf90_strerror( stat(i) ) )
-    l_error = .true.
-  endif
-
-  stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%Id, "units",  & 
-            trim( ncf%var(i)%units ) )
-  if ( stat(i) /= NF90_NOERR ) then
-    write(fstderr,*) "Error in units", & 
-      trim( nf90_strerror( stat(i) ) )
-    l_error = .true.
-  endif
-end do
-
-if ( l_error ) stop "Error in definition"
-
-stat(1) = nf90_enddef( ncf%iounit ) ! end definitions
-if ( stat(1) /= NF90_NOERR ) then
-  write(fstderr,*) "Error finalizing definitions", & 
-             trim( nf90_strerror( stat(1) ) )
-  stop
-endif
-
-deallocate( stat )
-
-return
+  return
 end subroutine first_write
 
 !-----------------------------------------------------------------------
@@ -665,6 +764,27 @@ write(date(29:30),'(i2.2)') int( mod(nint(st_time),3600) / 60 )
 
 return
 end subroutine format_date
+
+!===============================================================================
+character function lchar( l_input )
+! Description:
+!   Cast a logical to a character data type
+! References:
+!   None
+!-------------------------------------------------------------------------------
+
+  implicit none
+
+  logical, intent(in) :: l_input
+
+  if ( l_input ) then
+    lchar = 'T'
+  else
+    lchar = 'F'
+  end if
+
+  return
+end function lchar
 
 #endif /*NETCDF*/
 end module output_netcdf
