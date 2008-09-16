@@ -78,7 +78,7 @@ vars_sfc =
 'thlm_vert_avg', 'rtm_vert_avg', 'um_vert_avg', 'vm_vert_avg',
 !'wp23_matrix_condt_num', 'rtm_matrix_condt_num', 'thlm_matrix_condt_num', 
 !'rtp2_matrix_condt_num', 'thlp2_matrix_condt_num', 'rtpthlp_matrix_condt_num',
-!'up2_matrix_condt_num', 'vp2_matrix_condt_num', 
+!'up2_vp2_matrix_condt_num',
 !'um_matrix_condt_num', 'vm_matrix_condt_num',
 ''
 /
