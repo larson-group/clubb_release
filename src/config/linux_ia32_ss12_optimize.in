@@ -39,7 +39,7 @@ ARCH = -m64 -xarch=sse3 -xcache=native -xchip=native -dalign
 # These options are good on a SPARC and AMD64 machine
 #OPTIMIZE = -g -xO3 -xvector=lib -ftrap=%none
 # This works on x86/x64 only
-OPTIMIZE = -g -xO3 -xvector=simd -ftrap=%none
+OPTIMIZE = -g -xO4 -libmil -xvector=simd -ftrap=%none
 # These options are good for parallel tuning on ketley or OpenMP WRF-HOC.
 #OPTIMIZE = -g -xopenmp -xparallel -stackvar -xipo=2 -xvector=simd -xO4 -ftrap=%none
 
