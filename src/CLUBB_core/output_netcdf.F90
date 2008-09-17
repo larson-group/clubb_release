@@ -578,7 +578,7 @@ subroutine first_write( ncf )
   if ( any( stat /= NF90_NOERR ) ) then
     write(fstderr,*) "Error writing model information"
     do i = 1, size( stat ), 1
-      write(fstderr,*) , trim( nf90_strerror( stat(i) ) ) 
+      write(fstderr,*) trim( nf90_strerror( stat(i) ) ) 
     end do
     stop
   end if
