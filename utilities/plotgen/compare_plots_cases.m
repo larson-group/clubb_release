@@ -2331,7 +2331,7 @@ percentage = percentage/100;
 % 'equiv_space' must be a positive number.
 equiv_space = 0.01;
 
-% thlm
+% thlm - this plot has a legend
 subplot(3,2,1)
 i = 0;
 if ( cmp_les == 1 )
@@ -2456,7 +2456,6 @@ i = 0;
 if ( cmp_les == 1 )
    i = i + 1;
    h(i) = plot( avg_rtm_les, z_les, '-', 'Color', [ 1, 0, 0 ], 'LineWidth', 5 );
-   legend_text(i,1:15) = '\fontsize{6}LES';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_les
@@ -2473,7 +2472,6 @@ end
 if ( cmp_cgbe == 1 )
    i = i + 1;
    h(i) = plot( avg_rtm_cgbe, z_cgbe_zt, '-', 'Color', [ 0, 0.50, 0 ], 'LineWidth', 3.5 );
-   legend_text(i,1:27) = '\fontsize{6}HOC "best-ever"';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_cgbe_zt
@@ -2490,7 +2488,6 @@ end
 if ( cmp_1217 == 1 )
    i = i + 1;
    h(i) = plot( avg_rtm_1217, z_1217_zt, '-.', 'Color', [ 0.63, 0, 0.79 ], 'LineWidth', 3.5 );
-   legend_text(i,1:26) = '\fontsize{6}HOC 12/17/2005';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_1217_zt
@@ -2507,9 +2504,6 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_rtm_prev, z_prev_zt, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   sim1_title = strcat('\fontsize{6}', dir_prev);
-   sim1_title = regexprep(sim1_title, '_', ' ');
-   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zt
@@ -2526,9 +2520,6 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_rtm_curr, z_curr_zt, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   sim2_title = strcat('\fontsize{6}', dir_curr);
-   sim2_title = regexprep(sim2_title, '_', ' ');
-   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zt
@@ -2573,7 +2564,6 @@ i = 0;
 if ( cmp_les == 1 )
    i = i + 1;
    h(i) = plot( 100.*avg_cf_les, z_les, '-', 'Color', [ 1, 0, 0 ], 'LineWidth', 5 );
-   legend_text(i,1:15) = '\fontsize{6}LES';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_les
@@ -2590,7 +2580,6 @@ end
 if ( cmp_cgbe == 1 )
    i = i + 1;
    h(i) = plot( 100.*avg_cf_cgbe, z_cgbe_zt, '-', 'Color', [ 0, 0.50, 0 ], 'LineWidth', 3.5 );
-   legend_text(i,1:27) = '\fontsize{6}HOC "best-ever"';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_cgbe_zt
@@ -2607,7 +2596,6 @@ end
 if ( cmp_1217 == 1 )
    i = i + 1;
    h(i) = plot( 100.*avg_cf_1217, z_1217_zt, '-.', 'Color', [ 0.63, 0, 0.79 ], 'LineWidth', 3.5 );
-   legend_text(i,1:26) = '\fontsize{6}HOC 12/17/2005';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_1217_zt
@@ -2624,9 +2612,6 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( 100.*avg_cf_prev, z_prev_zt, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   sim1_title = strcat('\fontsize{6}', dir_prev);
-   sim1_title = regexprep(sim1_title, '_', ' ');
-   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zt
@@ -2643,9 +2628,6 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( 100.*avg_cf_curr, z_curr_zt, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   sim2_title = strcat('\fontsize{6}', dir_curr);
-   sim2_title = regexprep(sim2_title, '_', ' ');
-   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zt
@@ -2690,7 +2672,6 @@ i = 0;
 if ( cmp_les == 1 )
    i = i + 1;
    h(i) = plot( avg_rcm_les, z_les, '-', 'Color', [ 1, 0, 0 ], 'LineWidth', 5 );
-   legend_text(i,1:15) = '\fontsize{6}LES';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_les
@@ -2707,7 +2688,6 @@ end
 if ( cmp_cgbe == 1 )
    i = i + 1;
    h(i) = plot( avg_rcm_cgbe, z_cgbe_zt, '-', 'Color', [ 0, 0.50, 0 ], 'LineWidth', 3.5 );
-   legend_text(i,1:27) = '\fontsize{6}HOC "best-ever"';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_cgbe_zt
@@ -2724,7 +2704,6 @@ end
 if ( cmp_1217 == 1 )
    i = i + 1;
    h(i) = plot( avg_rcm_1217, z_1217_zt, '-.', 'Color', [ 0.63, 0, 0.79 ], 'LineWidth', 3.5 );
-   legend_text(i,1:26) = '\fontsize{6}HOC 12/17/2005';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_1217_zt
@@ -2741,9 +2720,6 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_rcm_prev, z_prev_zt, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   sim1_title = strcat('\fontsize{6}', dir_prev);
-   sim1_title = regexprep(sim1_title, '_', ' ');
-   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zt
@@ -2760,9 +2736,6 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_rcm_curr, z_curr_zt, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   sim2_title = strcat('\fontsize{6}', dir_curr);
-   sim2_title = regexprep(sim2_title, '_', ' ');
-   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zt
@@ -2807,7 +2780,6 @@ i = 0;
 if ( cmp_les == 1 )
    i = i + 1;
    h(i) = plot( avg_wp2_les, z_les, '-', 'Color', [ 1, 0, 0 ], 'LineWidth', 5 );
-   legend_text(i,1:15) = '\fontsize{6}LES';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_les
@@ -2824,7 +2796,6 @@ end
 if ( cmp_cgbe == 1 )
    i = i + 1;
    h(i) = plot( avg_wp2_cgbe, z_cgbe_zm, '-', 'Color', [ 0, 0.50, 0 ], 'LineWidth', 3.5 );
-   legend_text(i,1:27) = '\fontsize{6}HOC "best-ever"';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_cgbe_zm
@@ -2841,7 +2812,6 @@ end
 if ( cmp_1217 == 1 )
    i = i + 1;
    h(i) = plot( avg_wp2_1217, z_1217_zm, '-.', 'Color', [ 0.63, 0, 0.79 ], 'LineWidth', 3.5 );
-   legend_text(i,1:26) = '\fontsize{6}HOC 12/17/2005';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_1217_zm
@@ -2858,9 +2828,6 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_wp2_prev, z_prev_zm, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   sim1_title = strcat('\fontsize{6}', dir_prev);
-   sim1_title = regexprep(sim1_title, '_', ' ');
-   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zm
@@ -2877,9 +2844,6 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_wp2_curr, z_curr_zm, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   sim2_title = strcat('\fontsize{6}', dir_curr);
-   sim2_title = regexprep(sim2_title, '_', ' ');
-   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zm
@@ -2924,7 +2888,6 @@ i = 0;
 if ( cmp_les == 1 )
    i = i + 1;
    h(i) = plot( avg_wp3_les, z_les, '-', 'Color', [ 1, 0, 0 ], 'LineWidth', 5 );
-   legend_text(i,1:15) = '\fontsize{6}LES';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_les
@@ -2941,7 +2904,6 @@ end
 if ( cmp_cgbe == 1 )
    i = i + 1;
    h(i) = plot( avg_wp3_cgbe, z_cgbe_zt, '-', 'Color', [ 0, 0.50, 0 ], 'LineWidth', 3.5 );
-   legend_text(i,1:27) = '\fontsize{6}HOC "best-ever"';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_cgbe_zt
@@ -2958,7 +2920,6 @@ end
 if ( cmp_1217 == 1 )
    i = i + 1;
    h(i) = plot( avg_wp3_1217, z_1217_zt, '-.', 'Color', [ 0.63, 0, 0.79 ], 'LineWidth', 3.5 );
-   legend_text(i,1:26) = '\fontsize{6}HOC 12/17/2005';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_1217_zt
@@ -2975,9 +2936,6 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_wp3_prev, z_prev_zt, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   sim1_title = strcat('\fontsize{6}', dir_prev);
-   sim1_title = regexprep(sim1_title, '_', ' ');
-   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zt
@@ -2994,9 +2952,6 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_wp3_curr, z_curr_zt, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   sim2_title = strcat('\fontsize{6}', dir_curr);
-   sim2_title = regexprep(sim2_title, '_', ' ');
-   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zt
@@ -3060,7 +3015,6 @@ i = 0;
 if ( cmp_les == 1 )
    i = i + 1;
    h(i) = plot( avg_wpthlp_les, z_les, '-', 'Color', [ 1, 0, 0 ], 'LineWidth', 5 );
-   legend_text(i,1:15) = '\fontsize{6}LES';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_les
@@ -3077,7 +3031,6 @@ end
 if ( cmp_cgbe == 1 )
    i = i + 1;
    h(i) = plot( avg_wpthlp_cgbe, z_cgbe_zm, '-', 'Color', [ 0, 0.50, 0 ], 'LineWidth', 3.5 );
-   legend_text(i,1:27) = '\fontsize{6}HOC "best-ever"';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_cgbe_zm
@@ -3094,7 +3047,6 @@ end
 if ( cmp_1217 == 1 )
    i = i + 1;
    h(i) = plot( avg_wpthlp_1217, z_1217_zm, '-.', 'Color', [ 0.63, 0, 0.79 ], 'LineWidth', 3.5 );
-   legend_text(i,1:26) = '\fontsize{6}HOC 12/17/2005';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_1217_zm
@@ -3111,9 +3063,6 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_wpthlp_prev, z_prev_zm, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   sim1_title = strcat('\fontsize{6}', dir_prev);
-   sim1_title = regexprep(sim1_title, '_', ' ');
-   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zm
@@ -3130,9 +3079,6 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_wpthlp_curr, z_curr_zm, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   sim2_title = strcat('\fontsize{6}', dir_curr);
-   sim2_title = regexprep(sim2_title, '_', ' ');
-   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zm
@@ -3177,7 +3123,6 @@ i = 0;
 if ( cmp_les == 1 )
    i = i + 1;
    h(i) = plot( avg_wprtp_les, z_les, '-', 'Color', [ 1, 0, 0 ], 'LineWidth', 5 );
-   legend_text(i,1:15) = '\fontsize{6}LES';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_les
@@ -3194,7 +3139,6 @@ end
 if ( cmp_cgbe == 1 )
    i = i + 1;
    h(i) = plot( avg_wprtp_cgbe, z_cgbe_zm, '-', 'Color', [ 0, 0.50, 0 ], 'LineWidth', 3.5 );
-   legend_text(i,1:27) = '\fontsize{6}HOC "best-ever"';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_cgbe_zm
@@ -3211,7 +3155,6 @@ end
 if ( cmp_1217 == 1 )
    i = i + 1;
    h(i) = plot( avg_wprtp_1217, z_1217_zm, '-.', 'Color', [ 0.63, 0, 0.79 ], 'LineWidth', 3.5 );
-   legend_text(i,1:26) = '\fontsize{6}HOC 12/17/2005';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_1217_zm
@@ -3228,9 +3171,6 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_wprtp_prev, z_prev_zm, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   sim1_title = strcat('\fontsize{6}', dir_prev);
-   sim1_title = regexprep(sim1_title, '_', ' ');
-   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zm
@@ -3247,9 +3187,6 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_wprtp_curr, z_curr_zm, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   sim2_title = strcat('\fontsize{6}', dir_curr);
-   sim2_title = regexprep(sim2_title, '_', ' ');
-   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zm
@@ -3294,7 +3231,6 @@ i = 0;
 if ( cmp_les == 1 )
    i = i + 1;
    h(i) = plot( avg_thlp2_les, z_les, '-', 'Color', [ 1, 0, 0 ], 'LineWidth', 5 );
-   legend_text(i,1:15) = '\fontsize{6}LES';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_les
@@ -3328,7 +3264,6 @@ end
 if ( cmp_1217 == 1 )
    i = i + 1;
    h(i) = plot( avg_thlp2_1217, z_1217_zm, '-.', 'Color', [ 0.63, 0, 0.79 ], 'LineWidth', 3.5 );
-   legend_text(i,1:26) = '\fontsize{6}HOC 12/17/2005';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_1217_zm
@@ -3345,9 +3280,6 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_thlp2_prev, z_prev_zm, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   sim1_title = strcat('\fontsize{6}', dir_prev);
-   sim1_title = regexprep(sim1_title, '_', ' ');
-   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zm
@@ -3364,9 +3296,6 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_thlp2_curr, z_curr_zm, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   sim2_title = strcat('\fontsize{6}', dir_curr);
-   sim2_title = regexprep(sim2_title, '_', ' ');
-   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zm
@@ -3411,7 +3340,6 @@ i = 0;
 if ( cmp_les == 1 )
    i = i + 1;
    h(i) = plot( avg_rtp2_les, z_les, '-', 'Color', [ 1, 0, 0 ], 'LineWidth', 5 );
-   legend_text(i,1:15) = '\fontsize{6}LES';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_les
@@ -3428,7 +3356,6 @@ end
 if ( cmp_cgbe == 1 )
    i = i + 1;
    h(i) = plot( avg_rtp2_cgbe, z_cgbe_zm, '-', 'Color', [ 0, 0.50, 0 ], 'LineWidth', 3.5 );
-   legend_text(i,1:27) = '\fontsize{6}HOC "best-ever"';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_cgbe_zm
@@ -3445,7 +3372,6 @@ end
 if ( cmp_1217 == 1 )
    i = i + 1;
    h(i) = plot( avg_rtp2_1217, z_1217_zm, '-.', 'Color', [ 0.63, 0, 0.79 ], 'LineWidth', 3.5 );
-   legend_text(i,1:26) = '\fontsize{6}HOC 12/17/2005';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_1217_zm
@@ -3462,9 +3388,6 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_rtp2_prev, z_prev_zm, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   sim1_title = strcat('\fontsize{6}', dir_prev);
-   sim1_title = regexprep(sim1_title, '_', ' ');
-   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zm
@@ -3481,9 +3404,6 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_rtp2_curr, z_curr_zm, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   sim2_title = strcat('\fontsize{6}', dir_curr);
-   sim2_title = regexprep(sim2_title, '_', ' ');
-   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zm
@@ -3522,7 +3442,7 @@ axis([ xmin xmax zmin zmax ])
 
 %--------------------------------------------------------------------------
 
-% rtpthlp
+% rtpthlp - this plot has a legend
 subplot(3,2,5)
 i = 0;
 if ( cmp_les == 1 )
@@ -3647,7 +3567,6 @@ i = 0;
 if ( cmp_les == 1 )
    i = i + 1;
    h(i) = plot( avg_wm_les, z_les, '-', 'Color', [ 1, 0, 0 ], 'LineWidth', 5 );
-   legend_text(i,1:15) = '\fontsize{6}LES';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_les
@@ -3664,7 +3583,6 @@ end
 if ( cmp_cgbe == 1 )
    i = i + 1;
    h(i) = plot( avg_wm_cgbe, z_cgbe_zt, '-', 'Color', [ 0, 0.50, 0 ], 'LineWidth', 3.5 );
-   legend_text(i,1:27) = '\fontsize{6}HOC "best-ever"';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_cgbe_zt
@@ -3681,7 +3599,6 @@ end
 if ( cmp_1217 == 1 )
    i = i + 1;
    h(i) = plot( avg_wm_1217, z_1217_zt, '-.', 'Color', [ 0.63, 0, 0.79 ], 'LineWidth', 3.5 );
-   legend_text(i,1:26) = '\fontsize{6}HOC 12/17/2005';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_1217_zt
@@ -3698,9 +3615,6 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_wm_prev, z_prev_zt, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   sim1_title = strcat('\fontsize{6}', dir_prev);
-   sim1_title = regexprep(sim1_title, '_', ' ');
-   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zt
@@ -3717,9 +3631,6 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_wm_curr, z_curr_zt, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   sim2_title = strcat('\fontsize{6}', dir_curr);
-   sim2_title = regexprep(sim2_title, '_', ' ');
-   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zt
@@ -3783,7 +3694,6 @@ i = 0;
 if ( cmp_les == 1 )
    i = i + 1;
    h(i) = plot( avg_um_les, z_les, '-', 'Color', [ 1, 0, 0 ], 'LineWidth', 5 );
-   legend_text(i,1:15) = '\fontsize{6}LES';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_les
@@ -3800,7 +3710,6 @@ end
 if ( cmp_cgbe == 1 )
    i = i + 1;
    h(i) = plot( avg_um_cgbe, z_cgbe_zt, '-', 'Color', [ 0, 0.50, 0 ], 'LineWidth', 3.5 );
-   legend_text(i,1:27) = '\fontsize{6}HOC "best-ever"';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_cgbe_zt
@@ -3817,7 +3726,6 @@ end
 if ( cmp_1217 == 1 )
    i = i + 1;
    h(i) = plot( avg_um_1217, z_1217_zt, '-.', 'Color', [ 0.63, 0, 0.79 ], 'LineWidth', 3.5 );
-   legend_text(i,1:26) = '\fontsize{6}HOC 12/17/2005';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_1217_zt
@@ -3834,9 +3742,6 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_um_prev, z_prev_zt, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   sim1_title = strcat('\fontsize{6}', dir_prev);
-   sim1_title = regexprep(sim1_title, '_', ' ');
-   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zt
@@ -3853,9 +3758,6 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_um_curr, z_curr_zt, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   sim2_title = strcat('\fontsize{6}', dir_curr);
-   sim2_title = regexprep(sim2_title, '_', ' ');
-   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zt
@@ -3900,7 +3802,6 @@ i = 0;
 if ( cmp_les == 1 )
    i = i + 1;
    h(i) = plot( avg_vm_les, z_les, '-', 'Color', [ 1, 0, 0 ], 'LineWidth', 5 );
-   legend_text(i,1:15) = '\fontsize{6}LES';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_les
@@ -3917,7 +3818,6 @@ end
 if ( cmp_cgbe == 1 )
    i = i + 1;
    h(i) = plot( avg_vm_cgbe, z_cgbe_zt, '-', 'Color', [ 0, 0.50, 0 ], 'LineWidth', 3.5 );
-   legend_text(i,1:27) = '\fontsize{6}HOC "best-ever"';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_cgbe_zt
@@ -3934,7 +3834,6 @@ end
 if ( cmp_1217 == 1 )
    i = i + 1;
    h(i) = plot( avg_vm_1217, z_1217_zt, '-.', 'Color', [ 0.63, 0, 0.79 ], 'LineWidth', 3.5 );
-   legend_text(i,1:26) = '\fontsize{6}HOC 12/17/2005';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_1217_zt
@@ -3951,9 +3850,6 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_vm_prev, z_prev_zt, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   sim1_title = strcat('\fontsize{6}', dir_prev);
-   sim1_title = regexprep(sim1_title, '_', ' ');
-   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zt
@@ -3970,9 +3866,6 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_vm_curr, z_curr_zt, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   sim2_title = strcat('\fontsize{6}', dir_curr);
-   sim2_title = regexprep(sim2_title, '_', ' ');
-   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zt
@@ -4025,7 +3918,6 @@ if ( cmp_les == 1 )
       nz_upwp = nz_les2;
       z_upwp = z_les2;
    end
-   legend_text(i,1:15) = '\fontsize{6}LES';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_upwp
@@ -4042,7 +3934,6 @@ end
 if ( cmp_cgbe == 1 )
    i = i + 1;
    h(i) = plot( avg_upwp_cgbe, z_cgbe_zm, '-', 'Color', [ 0, 0.50, 0 ], 'LineWidth', 3.5 );
-   legend_text(i,1:27) = '\fontsize{6}HOC "best-ever"';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_cgbe_zm
@@ -4059,7 +3950,6 @@ end
 if ( cmp_1217 == 1 )
    i = i + 1;
    h(i) = plot( avg_upwp_1217, z_1217_zm, '-.', 'Color', [ 0.63, 0, 0.79 ], 'LineWidth', 3.5 );
-   legend_text(i,1:26) = '\fontsize{6}HOC 12/17/2005';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_1217_zm
@@ -4076,9 +3966,6 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_upwp_prev, z_prev_zm, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   sim1_title = strcat('\fontsize{6}', dir_prev);
-   sim1_title = regexprep(sim1_title, '_', ' ');
-   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zm
@@ -4095,9 +3982,6 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_upwp_curr, z_curr_zm, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   sim2_title = strcat('\fontsize{6}', dir_curr);
-   sim2_title = regexprep(sim2_title, '_', ' ');
-   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zm
@@ -4150,7 +4034,6 @@ if ( cmp_les == 1 )
       nz_vpwp = nz_les2;
       z_vpwp = z_les2;
    end
-   legend_text(i,1:15) = '\fontsize{6}LES';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_vpwp
@@ -4167,7 +4050,6 @@ end
 if ( cmp_cgbe == 1 )
    i = i + 1;
    h(i) = plot( avg_vpwp_cgbe, z_cgbe_zm, '-', 'Color', [ 0, 0.50, 0 ], 'LineWidth', 3.5 );
-   legend_text(i,1:27) = '\fontsize{6}HOC "best-ever"';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_cgbe_zm
@@ -4184,7 +4066,6 @@ end
 if ( cmp_1217 == 1 )
    i = i + 1;
    h(i) = plot( avg_vpwp_1217, z_1217_zm, '-.', 'Color', [ 0.63, 0, 0.79 ], 'LineWidth', 3.5 );
-   legend_text(i,1:26) = '\fontsize{6}HOC 12/17/2005';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_1217_zm
@@ -4201,9 +4082,6 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_vpwp_prev, z_prev_zm, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   sim1_title = strcat('\fontsize{6}', dir_prev);
-   sim1_title = regexprep(sim1_title, '_', ' ');
-   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zm
@@ -4220,9 +4098,6 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_vpwp_curr, z_curr_zm, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   sim2_title = strcat('\fontsize{6}', dir_curr);
-   sim2_title = regexprep(sim2_title, '_', ' ');
-   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zm
@@ -4267,7 +4142,6 @@ i = 0;
 if ( cmp_les == 1 )
    i = i + 1;
    h(i) = plot( avg_rrainm_les, z_les, '-', 'Color', [ 1, 0, 0 ], 'LineWidth', 5 );
-   legend_text(i,1:15) = '\fontsize{6}LES';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_les
@@ -4284,7 +4158,6 @@ end
 if ( cmp_cgbe == 1 )
    i = i + 1;
    h(i) = plot( avg_rrainm_cgbe, z_cgbe_zt, '-', 'Color', [ 0, 0.50, 0 ], 'LineWidth', 3.5 );
-   legend_text(i,1:27) = '\fontsize{6}HOC "best-ever"';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_cgbe_zt
@@ -4301,7 +4174,6 @@ end
 if ( cmp_1217 == 1 )
    i = i + 1;
    h(i) = plot( avg_rrainm_1217, z_1217_zt, '-.', 'Color', [ 0.63, 0, 0.79 ], 'LineWidth', 3.5 );
-   legend_text(i,1:26) = '\fontsize{6}HOC 12/17/2005';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_1217_zt
@@ -4318,9 +4190,6 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_rrainm_prev, z_prev_zt, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   sim1_title = strcat('\fontsize{6}', dir_prev);
-   sim1_title = regexprep(sim1_title, '_', ' ');
-   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zt
@@ -4337,9 +4206,6 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_rrainm_curr, z_curr_zt, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   sim2_title = strcat('\fontsize{6}', dir_curr);
-   sim2_title = regexprep(sim2_title, '_', ' ');
-   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zt
@@ -4378,7 +4244,7 @@ axis([ xmin xmax zmin zmax ])
 
 %--------------------------------------------------------------------------
 
-% Nrm
+% Nrm - this plot has a legend
 subplot(3,2,6)
 i = 0;
 if ( cmp_les == 1 )
