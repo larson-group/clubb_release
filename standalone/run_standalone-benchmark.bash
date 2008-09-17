@@ -46,7 +46,7 @@ cat $PARAMS_FILE > 'clubb.in'
 #######################################################################
 cat $MODEL_FILE | sed 's/l_stats\s*=\s*.*/l_stats = \.false\./g' | sed 's/debug_level\s*=\s*.*/debug_level = 0/g' | sed 's/dtmain\s*=\s*.*/dtmain = 1\.0/g' | sed 's/dtclosure\s*=\s*.*/dtclosure = 1\.0/g'  >> 'clubb.in'
 
-echo "Running benchmark ARM"
+echo "Running benchmark"
 
 #######################################################################
 # Run collect on the CLUBB model
