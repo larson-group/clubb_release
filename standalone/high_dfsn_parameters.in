@@ -1,4 +1,4 @@
-! $Id: standalone_bomex.in,v 1.33 2008-07-24 14:17:41 faschinj Exp $
+! $Id$
 ! Description:
 ! This file contains tunable model parameters.
 ! C4, C14, and nu9 are only relevant when ltke_aniso is enabled.

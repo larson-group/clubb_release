@@ -1,6 +1,6 @@
 #!/bin/bash
 #######################################################################
-# $Id: run_standalone-all.bash,v 1.36 2008-07-28 17:30:33 faschinj Exp $
+# $Id$
 #
 # Script to run the standalone hoc program for all models.
 # Tested with bash v2.  Might work with Ksh.
