@@ -183,6 +183,8 @@ module pdf_closure_module
       rc1, rc2,  & 
       R1, R2
 
+    real :: sqrt_wp2
+
     ! Sub-plume correlation coefficient between rt, thl
     ! varies between -1 < rrtthl < 1
 
@@ -257,14 +259,17 @@ module pdf_closure_module
         a = 0.5 * ( 1.0 - Skw/sqrt( 4.0*( 1.0 - sigma_sqd_w )**3 + Skw**2 ) )
       end if
 
+      ! Determine sqrt( wp2 ) here to avoid re-computing it
+      sqrt_wp2 = sqrt( wp2 )
+
       ! Clip a, 1-a, to avoid dividing by zero
       if ( a > 0.99 ) a = 0.99
       if ( a < 0.01 ) a = 0.01
 
       w1_n = sqrt( ( (1.-a)/a )*(1.-sigma_sqd_w) )
       w2_n = -sqrt( ( a/(1.-a) )*(1.-sigma_sqd_w) )
-      w1   = wm + sqrt( wp2 )*w1_n
-      w2   = wm + sqrt( wp2 )*w2_n
+      w1   = wm + sqrt_wp2*w1_n
+      w2   = wm + sqrt_wp2*w2_n
 
       sw1  = sigma_sqd_w*wp2
       sw2  = sigma_sqd_w*wp2
@@ -289,8 +294,8 @@ module pdf_closure_module
 !       thl1_n = - (wpthlp/(sqrt( wp2 )*sqrt( thlp2 )))/w2_n
 !       thl2_n = - (wpthlp/(sqrt( wp2 )*sqrt( thlp2 )))/w1_n
 
-        thl1 = thlm - ( wpthlp/sqrt( wp2 ) )/w2_n
-        thl2 = thlm - ( wpthlp/sqrt( wp2 ) )/w1_n
+        thl1 = thlm - ( wpthlp/sqrt_wp2 )/w2_n
+        thl2 = thlm - ( wpthlp/sqrt_wp2 )/w1_n
 
         alpha_thl = 0.5 * ( 1.0 - wpthlp*wpthlp /((1.0-sigma_sqd_w)*wp2*thlp2) )
 
@@ -313,8 +318,8 @@ module pdf_closure_module
 !       rt1_n = -( wprtp / ( sqrt( wp2 )*sqrt( rtp2 ) ) ) / w2_n
 !       rt2_n = -( wprtp / ( sqrt( wp2 )*sqrt( rtp2 ) ) ) / w1_n
 
-        rt1 = rtm - ( wprtp / sqrt( wp2 ) ) / w2_n
-        rt2 = rtm - ( wprtp / sqrt( wp2 ) ) / w1_n
+        rt1 = rtm - ( wprtp / sqrt_wp2 ) / w2_n
+        rt2 = rtm - ( wprtp / sqrt_wp2 ) / w1_n
 
         alpha_rt = 0.5 * ( 1.0 - wprtp*wprtp /((1.0-sigma_sqd_w)*wp2*rtp2) )
 
@@ -343,9 +348,9 @@ module pdf_closure_module
 !                        * sqrt( sclrp2(i) )) )/w1_n
  
             sclr1(i) = sclrm(i)  & 
-                     - ( wpsclrp(i) / sqrt( wp2 ) ) / w2_n
+                     - ( wpsclrp(i) / sqrt_wp2 ) / w2_n
             sclr2(i) = sclrm(i)  & 
-                     - ( wpsclrp(i) / sqrt( wp2 ) ) / w1_n
+                     - ( wpsclrp(i) / sqrt_wp2 ) / w1_n
 
             alpha_sclr(i) = 0.5 * ( 1.0 - wpsclrp(i)*wpsclrp(i) & 
                     / ((1.0-sigma_sqd_w)*wp2*sclrp2(i)) )
@@ -576,10 +581,10 @@ module pdf_closure_module
       do i=1, sclr_dim
         sclrprcp(i) &
         = a * ( ( sclr1(i)-sclrm(i) ) * rc1 ) + (1.-a) * ( ( sclr2(i)-sclrm(i) ) * rc2 ) & 
-        + a*rsclrrt(i) * crt1  * sqrt( ssclr1(i) ) * sqrt( srt1 ) * R1 & 
-        + (1.-a) * rsclrrt(i) * crt2  * sqrt( ssclr2(i) ) * sqrt( srt2 ) * R2 & 
-        - a * rsclrthl(i) * cthl1  * sqrt( ssclr1(i) )* sqrt( sthl1 ) * R1 & 
-        - (1.-a) * rsclrthl(i) * cthl2  * sqrt( ssclr2(i) ) * sqrt( sthl2 ) * R2
+        + a*rsclrrt(i) * crt1  * sqrt( ssclr1(i) * srt1 ) * R1 & 
+        + (1.-a) * rsclrrt(i) * crt2  * sqrt( ssclr2(i) * srt2 ) * R2 & 
+        - a * rsclrthl(i) * cthl1  * sqrt( ssclr1(i) * sthl1 ) * R1 & 
+        - (1.-a) * rsclrthl(i) * cthl2  * sqrt( ssclr2(i) * sthl2 ) * R2
 
         sclrpthvp(i) = sclrpthlp(i) + ep1*T0*sclrprtp(i) + BD*sclrprcp(i)
       end do ! i=1, sclr_dim
