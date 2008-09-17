@@ -3,7 +3,7 @@
 # $Id: run_standalone.bash,v 1.29 2008-04-17 00:02:03 dschanen Exp $
 #
 # Description:
-# Script to run the standalone hoc program.  
+# Script to run the standalone CLUBB program.  
 # Tested with GNU Bash v2 & 3.  Might work with Ksh.
 #
 #######################################################################
@@ -16,7 +16,7 @@
 #######################################################################
 
 if [ -z $1 ]; then
-	echo "Usage: run_standalone.bash <MODEL CASE> [PARAMETER FILE] [STATS FILE]"
+	echo "Usage: "$0" <MODEL CASE> [PARAMETER FILE] [STATS FILE]"
 	exit
 else
 	MODEL_FILE='../model/'$1'_model.in'
@@ -67,7 +67,7 @@ cat $PARAMS_FILE $MODEL_FILE $STATS_FILE > 'clubb.in'
 #######################################################################
 echo "Running" $RUN_CASE
 
-# Run the HOC model
+# Run the CLUBB model
 ../bin/clubb_standalone 
 
 # Remove the namelists
