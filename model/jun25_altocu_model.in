@@ -1,4 +1,4 @@
-! $Id: jun25_altocu_model.in,v 1.25 2008-08-20 20:29:59 faschinj Exp $
+! $Id$
 ! Parameter file for June 25 altocumulus case
 
 &model_setting

@@ -1,4 +1,4 @@
-! $Id: clex9_nov02_model.in,v 1.18 2008-08-20 20:29:59 faschinj Exp $
+! $Id$
 ! Parameter file for CLEX-9: November 02 altocumulus case
 
 &model_setting

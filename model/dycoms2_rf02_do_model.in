@@ -1,4 +1,4 @@
-! $Id: dycoms2_rf02_do_model.in,v 1.25 2008-08-20 20:29:59 faschinj Exp $
+! $Id$
 ! Parameter file for DYCOMS2 RF02 Sc case with drizzle
 ! and no cloud water sedimentation.
 

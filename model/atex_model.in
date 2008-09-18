@@ -1,4 +1,4 @@
-! $Id: atex_model.in,v 1.25 2008-08-20 20:29:59 faschinj Exp $
+! $Id$
 ! Parameter file for ATEX intermediate regime
 
 &model_setting

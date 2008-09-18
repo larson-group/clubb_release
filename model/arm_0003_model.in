@@ -1,4 +1,4 @@
-! $Id: arm_0003_model.in,v 1.17 2008-08-20 20:29:59 faschinj Exp $
+! $Id$
 ! Parameter file for GCSS ARM 0003 deep convective case
 
 &model_setting

@@ -1,4 +1,4 @@
-! $Id: nov11_altocu_model.in,v 1.29 2008-08-20 20:29:59 faschinj Exp $
+! $Id$
 ! Parameter file for November 11 altocumulus case
 
 &model_setting

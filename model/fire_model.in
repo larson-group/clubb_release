@@ -1,4 +1,4 @@
-! $Id: fire_model.in,v 1.21 2008-08-20 20:29:59 faschinj Exp $
+! $Id$
 ! Parameter file for GCSS FIRE Sc case
 
 &model_setting
