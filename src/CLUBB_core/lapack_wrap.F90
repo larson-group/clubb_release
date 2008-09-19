@@ -151,8 +151,7 @@ case( 1: )
     write(fstderr,*) trim( solve_type) // & 
       " Warning: matrix is singular to working precision."
     write(fstderr,'(a,e12.5)')  & 
-      "Estimate of the reciprocal of the"// & 
-      " condition number: ", rcond
+      "Estimate of the reciprocal of the condition number: ", rcond
     err_code = clubb_no_error
   else
     write(fstderr,*) solve_type// & 
@@ -245,6 +244,7 @@ case( 1: )
   if ( info == ndim+1 ) then
     write(fstderr,*) trim( solve_type )// & 
       " matrix is singular to working precision."
+    solution = rhs
     err_code = clubb_no_error
   else
     write(fstderr,*) trim( solve_type )// & 
@@ -569,14 +569,15 @@ case( :-1 )
   err_code = clubb_bad_lapack_arg
 
 case( 0 )
-! Success!
-solution = rhs
-err_code = clubb_no_error
+  ! Success!
+  solution = rhs
+  err_code = clubb_no_error
 
 case( 1: )
   if ( info == ndim+1 ) then
     write(fstderr,*) trim( solve_type )// & 
       " Warning: matrix singular to working precision"
+    solution = rhs
     err_code = clubb_no_error
   else
     write(fstderr,*) trim( solve_type )// & 
