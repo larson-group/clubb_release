@@ -62,7 +62,7 @@ module gabls3
       q_adv_t = (/0.0E+0, 0.0E+0, 8.0E-8, 8.0E-8, 0.0E+0, 0.0E+0, &
                  -8.0E-8, -8.0E-8, 0.0E+0, 0.0E+0/), &
       q_adv_time = (/43200, 75600, 75600, 86400, 86400, & 
-                     93600, 93600, 97200, 97200, 129600/);
+                     93600, 93600, 104400, 104400, 129600/);
 
     ! Prescribed winds
     real, parameter, dimension(8) :: & 
@@ -91,7 +91,7 @@ module gabls3
       thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
       rtm_forcing    ! Total water mixing ratio tendency            [kg/kg/s]
 
-    real, dimension(gr%nnzp) :: velocity_omega
+    real, dimension(gr%nnzp) :: velocity_omega, T_in_K_forcing, sp_humidity_forcing
     real :: time_frac, T_t_interp, q_t_interp, omega_t_interp
     integer :: i1, i2,i
 
@@ -119,20 +119,20 @@ module gabls3
     do i = 1, gr%nnzp,1
       select case (int (gr%zt(i)))
       case (1:199)
-        thlm_forcing(i) = lin_int(gr%zt(i), 200., 0., T_t_interp, 0. )
-        rtm_forcing(i)  =  lin_int(gr%zt(i), 200., 0., q_t_interp, 0.)
+        T_in_K_forcing(i) = lin_int(gr%zt(i), 200., 0., T_t_interp, 0. )
+        sp_humidity_forcing(i)  =  lin_int(gr%zt(i), 200., 0., q_t_interp, 0.)
         velocity_omega(i)  =  lin_int(gr%zt(i), 200., 0., omega_t_interp, 0.)
       case (200:999)
-        thlm_forcing(i) = T_t_interp ! Convert!
-        rtm_forcing(i) = q_t_interp
+        T_in_K_forcing(i) = T_t_interp ! Convert!
+        sp_humidity_forcing(i) = q_t_interp
         velocity_omega(i) = omega_t_interp
       case (1000:1499)
-        thlm_forcing(i) = lin_int( gr%zt(i), 1500., 1000., 0., T_t_interp )
-        rtm_forcing(i) = lin_int( gr%zt(i), 1500., 1000., 0. ,q_t_interp )
+        T_in_K_forcing(i) = lin_int( gr%zt(i), 1500., 1000., 0., T_t_interp )
+        sp_humidity_forcing(i) = lin_int( gr%zt(i), 1500., 1000., 0. ,q_t_interp )
         velocity_omega(i) = lin_int( gr%zt(i), 1500., 1000., 0. ,omega_t_interp )
       case default
-        thlm_forcing(i) = 0
-        rtm_forcing(i) = 0
+        T_in_K_forcing(i) = 0
+        sp_humidity_forcing(i) = 0
         velocity_omega(i) = 0
       end select
       !print *, "zt (",i,") =", gr%zt(i)
@@ -142,9 +142,9 @@ module gabls3
       !print *, "rtm_forcing (",i,") =", rtm_forcing(i)
     end do
 !    rtm_forcing = rtm_forcing/(1. - rtm_forcing)
-    rtm_forcing = rtm_forcing * ( 1. + rtm )**2
+    rtm_forcing = sp_humidity_forcing * ( 1. + rtm )**2
 !    thlm_forcing = ( thlm_forcing - Lv * rcm/Cp ) / exner
-    thlm_forcing = thlm_forcing / exner
+    thlm_forcing = T_in_K_forcing / exner
    ! Compute vertical motion
     do i=2,gr%nnzp
       wm_zt(i) = -velocity_omega(i) * Rd * thvm(i) / p_in_Pa(i) / grav
