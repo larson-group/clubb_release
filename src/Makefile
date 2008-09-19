@@ -66,7 +66,7 @@ MODEL = $(COAMPS_MICRO) \
 	arm.o arm_97.o arm_0003.o arm_3year.o dycoms2_rf01.o \
 	dycoms2_rf02.o cloud_sed_mod.o mpace_a.o mpace_b.o \
 	nov11.o jun25.o clex9_nov02.o clex9_oct14.o wangara.o \
-	diag_ustar.o cobra.o rico.o gabls2.o \
+	diag_ustar.o cobra.o rico.o gabls2.o gabls3.o \
 	KK_microphys_module.o microphys_driver.o Parabolic_constants.o AiryFunction.o Parabolic.o \
 	lba.o interpolation.o ice_dfsn_mod.o coamps_micro_driver.o
 

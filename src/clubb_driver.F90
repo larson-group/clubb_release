@@ -1166,6 +1166,10 @@ module clubb_driver
 
           wp2(1:gr%nnzp) = 2.0 / 3.0 * em(1:gr%nnzp)
 
+        case ( "gabls3" )
+          em = 1.0
+          wp2 = 2.0 / 3.0 * em
+
         end select
 
         ! End Initialize TKE and other fields as needed
@@ -1252,7 +1256,7 @@ module clubb_driver
         use arm_0003, only: arm_0003_init ! Procedure(s)
 
         use arm_97, only: arm_97_init ! Procedure(s)
-
+        
         use arm_3year, only: arm_3year_init ! Procedure(s)
 
         use mpace_a, only: mpace_a_init ! Procedure(s)
@@ -1481,6 +1485,8 @@ use arm, only: arm_tndcy, arm_sfclyr ! Procedure(s)
 
 use arm_97, only: arm_97_tndcy, arm_97_sfclyr ! Procedure(s)
 
+use gabls3, only: gabls3_tndcy, gabls3_sfclyr ! Procedures(s)
+
 use arm_0003, only: arm_0003_tndcy, arm_0003_sfclyr ! Procedure(s)
 
 use arm_3year, only: arm_3year_tndcy, arm_3year_sfclyr ! Procedure(s)
@@ -1706,6 +1712,10 @@ select case ( runtype )
                          wm_zt, wm_zm, thlm_forcing, &                     ! Intent(out)
                          rtm_forcing, radht, Ncm, &                        ! Intent(out)
                          sclrm_forcing )                                   ! Intent(out)
+    case( "gabls3" ) ! GABLS 3 case
+      call gabls3_tndcy( time_current, rtm, exner, p_in_Pa, thvm, &         ! Intent(in)
+                         wm_zt, wm_zm, thlm_forcing, rtm_forcing )          ! Intent(out)
+    
 
    case default
 
@@ -1904,6 +1914,12 @@ select case ( trim( runtype ) )
                           upwp_sfc, vpwp_sfc, &                     ! Intent(out)   
                           wpthlp_sfc, wprtp_sfc, ustar, &           ! Intent(out)
                           wpsclrp_sfc, wpedsclrp_sfc )              ! Intent(out)
+   case ( "gabls3" )
+      call gabls3_sfclyr( time_current, gr%zt(2), rho_zm(1), &     ! Intent(in)
+                          thlm(2), um(2), vm(2), &                 ! Intent(in)
+                          upwp_sfc, vpwp_sfc,  &                   ! Intent(out)
+                          wpthlp_sfc, wprtp_sfc, ustar, &          ! Intent(out)
+                          wpsclrp_sfc, wpedsclrp_sfc )             ! Intent(out)
 
    case default
 
