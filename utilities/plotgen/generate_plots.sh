@@ -79,6 +79,7 @@ fi
 #Theses variables are essentially boolean, 0 = false, 1 = true
 #They are zeroed so there is a known value they start at
 plot_arm_sim1=0
+plot_arm_97_sim1=0
 plot_atex_sim1=0
 plot_bomex_sim1=0
 plot_clex9_nov02_sim1=0
@@ -92,6 +93,7 @@ plot_dycoms2_rf02_so_sim1=0
 plot_fire_sim1=0
 plot_gabls2_sim1=0
 plot_jun25_altocu_sim1=0
+plot_lba_sim1=0
 plot_mpace_a_sim1=0
 plot_mpace_b_sim1=0
 plot_nov11_altocu_sim1=0
@@ -99,6 +101,7 @@ plot_rico_sim1=0
 plot_wangara_sim1=0
 
 plot_arm_sim2=0
+plot_arm_97_sim2=0
 plot_atex_sim2=0
 plot_bomex_sim2=0
 plot_clex9_nov02_sim2=0
@@ -112,6 +115,7 @@ plot_dycoms2_rf02_so_sim2=0
 plot_fire_sim2=0
 plot_gabls2_sim2=0
 plot_jun25_altocu_sim2=0
+plot_lba_sim2=0
 plot_mpace_a_sim2=0
 plot_mpace_b_sim2=0
 plot_nov11_altocu_sim2=0
@@ -125,6 +129,18 @@ if [ -r "$HOC_sim1/arm_zm.ctl" ]; then
 			if [ -r "$HOC_sim1/arm_zt.dat" ]; then
 				echo "Plotting Arm for HOC_sim1"
 				plot_arm_sim1=1
+			fi
+		fi
+	fi
+fi
+
+#If the Arm_97 files exist, plot Arm_97
+if [ -r "$HOC_sim1/arm_97_zm.ctl" ]; then
+	if [ -r "$HOC_sim1/arm_97_zm.dat" ]; then
+		if [ -r "$HOC_sim1/arm_97_zt.ctl" ]; then
+			if [ -r "$HOC_sim1/arm_97_zt.dat" ]; then
+				echo "Plotting Arm_97 for HOC_sim1"
+				plot_arm_97_sim1=1
 			fi
 		fi
 	fi
@@ -286,6 +302,18 @@ if [ -r "$HOC_sim1/jun25_altocu_zm.ctl" ]; then
 	fi
 fi
 
+#If the LBA files exist, plot LBA
+if [ -r "$HOC_sim1/lba_zm.ctl" ]; then
+	if [ -r "$HOC_sim1/lba_zm.dat" ]; then
+		if [ -r "$HOC_sim1/lba_zt.ctl" ]; then
+			if [ -r "$HOC_sim1/lba_zt.dat" ]; then
+				echo "Plotting LBA for HOC_sim1"
+				plot_lba_sim1=1
+			fi
+		fi
+	fi
+fi
+
 #If the Mpace_A files exist, plot Mpace_A
 if [ -r "$HOC_sim1/mpace_a_zm.ctl" ]; then
 	if [ -r "$HOC_sim1/mpace_a_zm.dat" ]; then
@@ -362,6 +390,18 @@ if [ "$HOC_sim2" != 0 ]; then
 		fi
 	fi
 
+	#If the Arm files exist, plot Arm
+	if [ -r "$HOC_sim2/arm_97_zm.ctl" ]; then
+		if [ -r "$HOC_sim2/arm_97_zm.dat" ]; then
+			if [ -r "$HOC_sim2/arm_97_zt.ctl" ]; then
+				if [ -r "$HOC_sim2/arm_97_zt.dat" ]; then
+					echo "Plotting Arm_97 for HOC_sim2"
+					plot_arm_97_sim2=1
+				fi
+			fi
+		fi
+	fi
+
 	#If the Atex files exist, plot Atex
 	if [ -r "$HOC_sim2/atex_zm.ctl" ]; then
 		if [ -r "$HOC_sim2/atex_zm.dat" ]; then
@@ -386,29 +426,29 @@ if [ "$HOC_sim2" != 0 ]; then
 		fi
 	fi
 
-#If the CLEX-9: Nov.02 files exist, plot CLEX-9: Nov.02
-if [ -r "$HOC_sim2/clex9_nov02_zm.ctl" ]; then
-	if [ -r "$HOC_sim2/clex9_nov02_zm.dat" ]; then
-		if [ -r "$HOC_sim2/clex9_nov02_zt.ctl" ]; then
-			if [ -r "$HOC_sim2/clex9_nov02_zt.dat" ]; then
-				echo "Plotting CLEX-9: Nov.02 for HOC_sim2"
-				plot_clex9_nov02_sim2=1
+	#If the CLEX-9: Nov.02 files exist, plot CLEX-9: Nov.02
+	if [ -r "$HOC_sim2/clex9_nov02_zm.ctl" ]; then
+		if [ -r "$HOC_sim2/clex9_nov02_zm.dat" ]; then
+			if [ -r "$HOC_sim2/clex9_nov02_zt.ctl" ]; then
+				if [ -r "$HOC_sim2/clex9_nov02_zt.dat" ]; then
+					echo "Plotting CLEX-9: Nov.02 for HOC_sim2"
+					plot_clex9_nov02_sim2=1
+				fi
 			fi
 		fi
 	fi
-fi
 
-#If the CLEX-9: Oct.14 files exist, plot CLEX-9: Oct.14
-if [ -r "$HOC_sim2/clex9_oct14_zm.ctl" ]; then
-	if [ -r "$HOC_sim2/clex9_oct14_zm.dat" ]; then
-		if [ -r "$HOC_sim2/clex9_oct14_zt.ctl" ]; then
-			if [ -r "$HOC_sim2/clex9_oct14_zt.dat" ]; then
-				echo "Plotting CLEX-9: Oct.14 for HOC_sim2"
-				plot_clex9_oct14_sim2=1
+	#If the CLEX-9: Oct.14 files exist, plot CLEX-9: Oct.14
+	if [ -r "$HOC_sim2/clex9_oct14_zm.ctl" ]; then
+		if [ -r "$HOC_sim2/clex9_oct14_zm.dat" ]; then
+			if [ -r "$HOC_sim2/clex9_oct14_zt.ctl" ]; then
+				if [ -r "$HOC_sim2/clex9_oct14_zt.dat" ]; then
+					echo "Plotting CLEX-9: Oct.14 for HOC_sim2"
+					plot_clex9_oct14_sim2=1
+				fi
 			fi
 		fi
 	fi
-fi
 
 	#If the Cobra files exist, plot Cobra
 	if [ -r "$HOC_sim2/cobra_zm.ctl" ]; then
@@ -518,6 +558,18 @@ fi
 		fi
 	fi
 
+	#If the LBA files exist, plot LBA
+	if [ -r "$HOC_sim2/lba_zm.ctl" ]; then
+		if [ -r "$HOC_sim2/lba_zm.dat" ]; then
+			if [ -r "$HOC_sim2/lba_zt.ctl" ]; then
+				if [ -r "$HOC_sim2/lba_zt.dat" ]; then
+					echo "Plotting LBA for HOC_sim2"
+					plot_lba_sim2=1
+				fi
+			fi
+		fi
+	fi
+
 	#If the Mpace_A files exist, plot Mpace_A
 	if [ -r "$HOC_sim2/mpace_a_zm.ctl" ]; then
 		if [ -r "$HOC_sim2/mpace_a_zm.dat" ]; then
@@ -589,10 +641,10 @@ cd $PLOTGEN_DIR
 
 #Actually run the script with the arguments we've parsed out
 if [ "$HOC_sim2" == 0 ]; then
-	echo "quit" | (matlab -nojvm -nodisplay -r compare_plots_cases_driver"( '$HOC_sim1', 0, $compare_LES, $compare_best, $compare_HOC, $plot_arm_sim1, $plot_atex_sim1, $plot_bomex_sim1, $plot_clex9_nov02_sim1, $plot_clex9_oct14_sim1, $plot_cobra_sim1, $plot_dycoms2_rf01_sim1, $plot_dycoms2_rf02_do_sim1, $plot_dycoms2_rf02_ds_sim1, $plot_dycoms2_rf02_nd_sim1, $plot_dycoms2_rf02_so_sim1, $plot_fire_sim1, $plot_gabls2_sim1, $plot_jun25_altocu_sim1, $plot_mpace_a_sim1, $plot_mpace_b_sim1, $plot_nov11_altocu_sim1, $plot_rico_sim1, $plot_wangara_sim1, $plot_arm_sim2, $plot_atex_sim2, $plot_bomex_sim2, $plot_clex9_nov02_sim2, $plot_clex9_oct14_sim2, $plot_cobra_sim2, $plot_dycoms2_rf01_sim2, $plot_dycoms2_rf02_do_sim2, $plot_dycoms2_rf02_ds_sim2, $plot_dycoms2_rf02_nd_sim2, $plot_dycoms2_rf02_so_sim2, $plot_fire_sim2, $plot_gabls2_sim2, $plot_jun25_altocu_sim2, $plot_mpace_a_sim2, $plot_mpace_b_sim2, $plot_nov11_altocu_sim2, $plot_rico_sim2, $plot_wangara_sim2 )") && \
+	echo "quit" | (matlab -nojvm -nodisplay -r compare_plots_cases_driver"( '$HOC_sim1', 0, $compare_LES, $compare_best, $compare_HOC, $plot_arm_sim1, $plot_arm_97_sim1, $plot_atex_sim1, $plot_bomex_sim1, $plot_clex9_nov02_sim1, $plot_clex9_oct14_sim1, $plot_cobra_sim1, $plot_dycoms2_rf01_sim1, $plot_dycoms2_rf02_do_sim1, $plot_dycoms2_rf02_ds_sim1, $plot_dycoms2_rf02_nd_sim1, $plot_dycoms2_rf02_so_sim1, $plot_fire_sim1, $plot_gabls2_sim1, $plot_jun25_altocu_sim1, $plot_lba_sim1, $plot_mpace_a_sim1, $plot_mpace_b_sim1, $plot_nov11_altocu_sim1, $plot_rico_sim1, $plot_wangara_sim1, $plot_arm_sim2, $plot_arm_97_sim2, $plot_atex_sim2, $plot_bomex_sim2, $plot_clex9_nov02_sim2, $plot_clex9_oct14_sim2, $plot_cobra_sim2, $plot_dycoms2_rf01_sim2, $plot_dycoms2_rf02_do_sim2, $plot_dycoms2_rf02_ds_sim2, $plot_dycoms2_rf02_nd_sim2, $plot_dycoms2_rf02_so_sim2, $plot_fire_sim2, $plot_gabls2_sim2, $plot_jun25_altocu_sim2, $plot_lba_sim2, $plot_mpace_a_sim2, $plot_mpace_b_sim2, $plot_nov11_altocu_sim2, $plot_rico_sim2, $plot_wangara_sim2 )") && \
 	run_success=1
 else
-	echo "quit" | (matlab -nojvm -nodisplay -r compare_plots_cases_driver"( '$HOC_sim1', '$HOC_sim2', $compare_LES, $compare_best, $compare_HOC, $plot_arm_sim1, $plot_atex_sim1, $plot_bomex_sim1, $plot_clex9_nov02_sim1, $plot_clex9_oct14_sim1, $plot_cobra_sim1, $plot_dycoms2_rf01_sim1, $plot_dycoms2_rf02_do_sim1, $plot_dycoms2_rf02_ds_sim1, $plot_dycoms2_rf02_nd_sim1, $plot_dycoms2_rf02_so_sim1, $plot_fire_sim1, $plot_gabls2_sim1, $plot_jun25_altocu_sim1, $plot_mpace_a_sim1, $plot_mpace_b_sim1, $plot_nov11_altocu_sim1, $plot_rico_sim1, $plot_wangara_sim1, $plot_arm_sim2, $plot_atex_sim2, $plot_bomex_sim2, $plot_clex9_nov02_sim2, $plot_clex9_oct14_sim2, $plot_cobra_sim2, $plot_dycoms2_rf01_sim2, $plot_dycoms2_rf02_do_sim2, $plot_dycoms2_rf02_ds_sim2, $plot_dycoms2_rf02_nd_sim2, $plot_dycoms2_rf02_so_sim2, $plot_fire_sim2, $plot_gabls2_sim2, $plot_jun25_altocu_sim2, $plot_mpace_a_sim2, $plot_mpace_b_sim2, $plot_nov11_altocu_sim2, $plot_rico_sim2, $plot_wangara_sim2 )") && \
+	echo "quit" | (matlab -nojvm -nodisplay -r compare_plots_cases_driver"( '$HOC_sim1', '$HOC_sim2', $compare_LES, $compare_best, $compare_HOC, $plot_arm_sim1, $plot_arm_97_sim1, $plot_atex_sim1, $plot_bomex_sim1, $plot_clex9_nov02_sim1, $plot_clex9_oct14_sim1, $plot_cobra_sim1, $plot_dycoms2_rf01_sim1, $plot_dycoms2_rf02_do_sim1, $plot_dycoms2_rf02_ds_sim1, $plot_dycoms2_rf02_nd_sim1, $plot_dycoms2_rf02_so_sim1, $plot_fire_sim1, $plot_gabls2_sim1, $plot_jun25_altocu_sim1, $plot_lba_sim1, $plot_mpace_a_sim1, $plot_mpace_b_sim1, $plot_nov11_altocu_sim1, $plot_rico_sim1, $plot_wangara_sim1, $plot_arm_sim2, $plot_arm_97_sim2, $plot_atex_sim2, $plot_bomex_sim2, $plot_clex9_nov02_sim2, $plot_clex9_oct14_sim2, $plot_cobra_sim2, $plot_dycoms2_rf01_sim2, $plot_dycoms2_rf02_do_sim2, $plot_dycoms2_rf02_ds_sim2, $plot_dycoms2_rf02_nd_sim2, $plot_dycoms2_rf02_so_sim2, $plot_fire_sim2, $plot_gabls2_sim2, $plot_jun25_altocu_sim2, $plot_lba_sim2, $plot_mpace_a_sim2, $plot_mpace_b_sim2, $plot_nov11_altocu_sim2, $plot_rico_sim2, $plot_wangara_sim2 )") && \
 	run_success=1
 fi
 
