@@ -36,9 +36,9 @@
 # Note:  The cases listed in RUN_CASE must always match the cases found in 
 #        RUN_CASE in run_standalone-all.bash.
 RUN_CASE=( \
-	arm atex bomex clex9_nov02 clex9_oct14 cobra dycoms2_rf01
+	arm arm_97 atex bomex clex9_nov02 clex9_oct14 cobra dycoms2_rf01
         dycoms2_rf02_do dycoms2_rf02_ds	dycoms2_rf02_nd dycoms2_rf02_so \
-        fire gabls2 jun25_altocu mpace_a mpace_b nov11_altocu rico wangara )
+        fire gabls2 jun25_altocu lba mpace_a mpace_b nov11_altocu rico wangara )
 
 
 # The user needs to enter the paths/names for two directories on the command line.
