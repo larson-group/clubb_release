@@ -478,9 +478,9 @@ module clubb_core
 
     sigma_sqd_w = gamma_Skw_fnc * &
       ( 1.0 - min( & 
-                  max( ( wpthlp / ( sqrt( wp2 ) * sqrt( thlp2 )  & 
+                  max( ( wpthlp / ( sqrt( wp2 * thlp2 )  & 
                       + 0.01 * wtol * thltol ) )**2, & 
-                       ( wprtp / ( sqrt( wp2 )*sqrt( rtp2 )  & 
+                       ( wprtp / ( sqrt( wp2 * rtp2 )  & 
                       + 0.01 * wtol * rttol ) )**2 &
                      ), & ! max  
              1.0 ) & ! min 
