@@ -3247,7 +3247,6 @@ end
 if ( cmp_cgbe == 1 )
    i = i + 1;
    h(i) = plot( avg_thlp2_cgbe, z_cgbe_zm, '-', 'Color', [ 0, 0.50, 0 ], 'LineWidth', 3.5 );
-   legend_text(i,1:27) = '\fontsize{6}HOC "best-ever"';
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_cgbe_zm
