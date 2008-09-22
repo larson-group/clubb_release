@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.152 2008-08-12 15:41:30 faschinj Exp $
+# $Id$
 #
 # This version should work with GNU make only.
 #
@@ -58,30 +58,32 @@ BUGS_RAD = kinds.o std_atmosphere_mod.o bugsrad_planck.o bugsrad_physconst.o \
 	cloudg.o comscp1.o comscp2.o gascon.o \
 	newexp.o rayle.o two_rt_lw.o two_rt_sw.o \
 	two_rt_sw_ocastrndm.o two_rt_lw_ocastrndm.o \
-	two_rt_lw_sel.o two_rt_lw_iter.o calendar.o cos_solar_zen.o \
+	two_rt_lw_sel.o two_rt_lw_iter.o cos_solar_zen.o \
 	two_rt_sw_bs.o bugsrad_driver.o
 
 MODEL = $(COAMPS_MICRO) \
-	clubb_driver.o sounding.o rad_lwsw.o cloud_rad.o astex.o atex.o fire.o bomex.o \
+	clubb_driver.o sounding.o rad_lwsw.o cloud_rad.o astex.o 
+	atex.o fire.o bomex.o \
 	arm.o arm_97.o arm_0003.o arm_3year.o dycoms2_rf01.o \
 	dycoms2_rf02.o cloud_sed_mod.o mpace_a.o mpace_b.o \
 	nov11.o jun25.o clex9_nov02.o clex9_oct14.o wangara.o \
 	diag_ustar.o cobra.o rico.o gabls2.o gabls3.o \
-	KK_microphys_module.o microphys_driver.o Parabolic_constants.o AiryFunction.o Parabolic.o \
-	lba.o interpolation.o ice_dfsn_mod.o coamps_micro_driver.o
+	KK_microphys_module.o microphys_driver.o \
+	Parabolic_constants.o AiryFunction.o Parabolic.o \
+	lba.o ice_dfsn_mod.o coamps_micro_driver.o
 
 PARAMETERIZATION = \
 	$(LATIN_HYP) \
 	constants.o endian.o output_file_module.o output_grads.o \
 	output_netcdf.o grid.o model_flags.o file_functions.o \
-        stats_type.o stats_variables.o stats_subs.o \
-        stats_zt.o stats_zm.o stats_sfc.o stats_precision.o sfc.o \
+	stats_type.o stats_variables.o stats_subs.o \
+	stats_zt.o stats_zm.o stats_sfc.o stats_precision.o sfc.o \
 	erf.o diffusion.o mean_adv.o T_in_K_mod.o \
-	pdf_closure_module.o advance_xp2_xpyp_module.o interpolation.o \
-        hydrostatic.o mixing_length.o advance_xm_wpxp_module.o saturation.o \
-	advance_windm_edsclrm_module.o advance_wp2_wp3_mod.o Skw_module.o error_code.o \
-	numer_check.o variables_diagnostic_module.o variables_prognostic_module.o \
-	clubb_core.o lapack_wrap.o  \
+	pdf_closure_module.o advance_xp2_xpyp_module.o \
+	hydrostatic.o mixing_length.o advance_xm_wpxp_module.o saturation.o \
+	advance_windm_edsclrm_module.o advance_wp2_wp3_mod.o Skw_module.o \
+	error_code.o numer_check.o variables_diagnostic_module.o \
+	variables_prognostic_module.o clubb_core.o lapack_wrap.o \
 	parameters_tunable.o pos_definite_mod.o calendar.o \
 	fill_holes.o clip_semi_implicit.o clip_explicit.o \
 	array_index.o interpolation.o
