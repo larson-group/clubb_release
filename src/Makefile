@@ -62,7 +62,7 @@ BUGS_RAD = kinds.o std_atmosphere_mod.o bugsrad_planck.o bugsrad_physconst.o \
 	two_rt_sw_bs.o bugsrad_driver.o
 
 MODEL = $(COAMPS_MICRO) \
-	clubb_driver.o sounding.o rad_lwsw.o cloud_rad.o astex.o 
+	clubb_driver.o sounding.o rad_lwsw.o cloud_rad.o astex.o \
 	atex.o fire.o bomex.o \
 	arm.o arm_97.o arm_0003.o arm_3year.o dycoms2_rf01.o \
 	dycoms2_rf02.o cloud_sed_mod.o mpace_a.o mpace_b.o \
