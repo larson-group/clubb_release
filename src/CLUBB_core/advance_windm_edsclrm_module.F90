@@ -41,7 +41,8 @@ module advance_windm_edsclrm_module
         sclr_dim
 
     use model_flags, only:  &
-        l_uv_nudge  ! Variable(s)
+        l_uv_nudge,  & ! Variable(s)
+        l_tke_aniso
 
     use stats_precision, only:  &
         time_precision  ! Variable(s)
@@ -146,35 +147,50 @@ module advance_windm_edsclrm_module
     endif
 
 
-    ! Clipping for u'w'
-    !
-    ! Clipping u'w' at each vertical level, based on the
-    ! correlation of u and w at each vertical level, such that:
-    ! corr_(u,w) = u'w' / [ sqrt(u'^2) * sqrt(w'^2) ];
-    ! -1 <= corr_(u,w) <= 1.
-    !
-    ! Since u'^2, w'^2, and u'w' are each advanced in different subroutines from
-    ! each other in advance_clubb_core, clipping for u'w' has to be done three
-    ! times during each timestep (once after each variable has been updated).
-    ! This is the third instance of u'w' clipping.
-    call clip_covariance( "upwp", .false.,      & ! intent(in)
-                          .true., dt, wp2, up2, & ! intent(in)
-                          upwp )                  ! intent(inout)
+    if ( l_tke_aniso ) then
+      ! Clipping for u'w'
+      !
+      ! Clipping u'w' at each vertical level, based on the
+      ! correlation of u and w at each vertical level, such that:
+      ! corr_(u,w) = u'w' / [ sqrt(u'^2) * sqrt(w'^2) ];
+      ! -1 <= corr_(u,w) <= 1.
+      !
+      ! Since u'^2, w'^2, and u'w' are each advanced in different subroutines from
+      ! each other in advance_clubb_core, clipping for u'w' has to be done three
+      ! times during each timestep (once after each variable has been updated).
+      ! This is the third instance of u'w' clipping.
+      call clip_covariance( "upwp", .false.,      & ! intent(in)
+                            .true., dt, wp2, up2, & ! intent(in)
+                            upwp )                  ! intent(inout)
 
-    ! Clipping for v'w'
-    !
-    ! Clipping v'w' at each vertical level, based on the
-    ! correlation of v and w at each vertical level, such that:
-    ! corr_(v,w) = v'w' / [ sqrt(v'^2) * sqrt(w'^2) ];
-    ! -1 <= corr_(v,w) <= 1.
-    !
-    ! Since v'^2, w'^2, and v'w' are each advanced in different subroutines from
-    ! each other in advance_clubb_core, clipping for v'w' has to be done three
-    ! times during each timestep (once after each variable has been updated).
-    ! This is the third instance of v'w' clipping.
-    call clip_covariance( "vpwp", .false.,      & ! intent(in)
-                          .true., dt, wp2, vp2, & ! intent(in)
-                          vpwp )                  ! intent(inout)
+      ! Clipping for v'w'
+      !
+      ! Clipping v'w' at each vertical level, based on the
+      ! correlation of v and w at each vertical level, such that:
+      ! corr_(v,w) = v'w' / [ sqrt(v'^2) * sqrt(w'^2) ];
+      ! -1 <= corr_(v,w) <= 1.
+      !
+      ! Since v'^2, w'^2, and v'w' are each advanced in different subroutines from
+      ! each other in advance_clubb_core, clipping for v'w' has to be done three
+      ! times during each timestep (once after each variable has been updated).
+      ! This is the third instance of v'w' clipping.
+      call clip_covariance( "vpwp", .false.,      & ! intent(in)
+                            .true., dt, wp2, vp2, & ! intent(in)
+                            vpwp )                  ! intent(inout)
+    else
+      ! In this case, it is assumed that
+      !   u'^2 == v'^2 == w'^2, and the variables `up2' and `vp2' do not interact with
+      !   any other variables.
+
+      call clip_covariance( "upwp", .false.,      & ! intent(in)
+                            .true., dt, wp2, wp2, & ! intent(in)
+                            upwp )                  ! intent(inout)
+      call clip_covariance( "vpwp", .false.,      & ! intent(in)
+                            .true., dt, wp2, wp2, & ! intent(in)
+                            vpwp )                  ! intent(inout)
+
+    end if ! l_tke_aniso
+
 
 
     !----------------------------------------------------------------

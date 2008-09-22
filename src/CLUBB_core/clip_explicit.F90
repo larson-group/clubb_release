@@ -44,6 +44,9 @@ contains
     use parameters_tunable, only: &
         sclr_dim ! Variable(s)
 
+    use model_flags, only: &
+        l_tke_aniso ! Logical
+
     use stats_precision, only: & 
         time_precision ! Variable(s)
  
@@ -62,17 +65,17 @@ contains
 
     ! Input Variables
     real(kind=time_precision), intent(in) :: &
-      dt
+      dt ! Timestep [s]
 
     real, dimension(gr%nnzp), intent(in) :: &
-      rtp2,  &
-      thlp2, &
-      up2,   &
-      vp2,   &
-      wp2
+      rtp2,  & ! r_t'^2         [kg/kg]
+      thlp2, & ! theta_l'^2     [K^2]
+      up2,   & ! u'^2           [m^2/s^2]
+      vp2,   & ! v'^2           [m^2/s^2]
+      wp2      ! w'^2           [m^2/s^2]
 
     real, dimension(gr%nnzp,sclr_dim), intent(in) :: &
-      sclrp2
+      sclrp2 ! sclr'^2  [{units vary}^2]
 
     integer, intent(in) :: &
       wprtp_cl_num,   &
@@ -83,13 +86,13 @@ contains
 
     ! Input/Output Variables
     real, dimension(gr%nnzp), intent(inout) :: &
-      wprtp,  &
-      wpthlp, &
-      upwp,   &
-      vpwp
+      wprtp,  & ! w'r_t'        [kg/kg/s]
+      wpthlp, & ! w'theta_l'    [K/s]
+      upwp,   & ! u'w'          [m^2/s^2]
+      vpwp      ! v'w'          [m^2/s^2]
 
     real, dimension(gr%nnzp,sclr_dim), intent(inout) :: &
-      wpsclrp
+      wpsclrp ! w'sclr'         [units m/s]
 
     ! Local Variables
     logical :: & 
@@ -283,9 +286,17 @@ contains
     endif
 
     ! Clip u'w'
-    call clip_covariance( "upwp", l_first_clip_ts,      & ! intent(in)
-                          l_last_clip_ts, dt, wp2, up2, & ! intent(in)
-                          upwp )                          ! intent(inout)
+    if ( l_tke_aniso ) then
+      call clip_covariance( "upwp", l_first_clip_ts,      & ! intent(in)
+                            l_last_clip_ts, dt, wp2, up2, & ! intent(in)
+                            upwp )                          ! intent(inout)
+    else
+      ! In this case, up2 = wp2, and the variable `up2' does not interact
+      call clip_covariance( "upwp", l_first_clip_ts,      & ! intent(in)
+                            l_last_clip_ts, dt, wp2, wp2, & ! intent(in)
+                            upwp )                          ! intent(inout)
+    end if 
+
 
 
     !!! Clipping for v'w'
@@ -316,9 +327,16 @@ contains
        l_last_clip_ts  = .false.
     endif
 
-    call clip_covariance( "vpwp", l_first_clip_ts,      & ! intent(in)
-                          l_last_clip_ts, dt, wp2, vp2, & ! intent(in)
-                          vpwp )                          ! intent(inout)
+    if ( l_tke_aniso ) then
+      call clip_covariance( "vpwp", l_first_clip_ts,      & ! intent(in)
+                            l_last_clip_ts, dt, wp2, vp2, & ! intent(in)
+                            vpwp )                          ! intent(inout)
+    else
+      ! In this case, vp2 = wp2, and the variable `vp2' does not interact
+      call clip_covariance( "vpwp", l_first_clip_ts,      & ! intent(in)
+                            l_last_clip_ts, dt, wp2, wp2, & ! intent(in)
+                            vpwp )                          ! intent(inout)
+    end if
 
 
     return
