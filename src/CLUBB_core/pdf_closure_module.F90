@@ -65,8 +65,8 @@ module pdf_closure_module
 
     use parameters_tunable, only: & 
       ! Variable(s)
-      beta,     & ! Plume widths for th_l and r_t       [-]
-      T0       ! Reference temperature               [K]
+      beta, & ! Plume widths for th_l and r_t [-]
+      T0      ! Reference temperature         [K]
 
     use anl_erf, only:  & 
       ! Procedure(s)
@@ -81,6 +81,13 @@ module pdf_closure_module
     use error_code, only:  & 
       clubb_var_equals_NaN,  & ! Variable(s)
       clubb_at_least_debug_level ! Procedure(s)
+
+    use stats_variables, only: &
+      iwp4,       & ! Variables
+      ircp2,      &
+      iwprtp2,    &
+      iwprtpthlp, &
+      iwpthlp2
 
     implicit none
 
@@ -113,24 +120,24 @@ module pdf_closure_module
     ! Output Variables
 
     real, intent(out) ::  & 
-      wp4,             & ! w'^4                  [m^4/s^4]
-      wprtp2,          & ! w' r_t'               [(m kg)/(s kg)]
-      wp2rtp,          & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
-      wpthlp2,         & ! w' th_l'^2            [(m K^2)/s]
-      wp2thlp,         & ! w'^2 th_l'            [(m^2 K)/s^2]
-      cf,              & ! Cloud fraction        [%]
-      rcm,             & ! Mean liquid water     [kg/kg]
-      wpthvp,          & ! Buoyancy flux         [(K m)/s] 
-      wp2thvp,         & ! w'^2 th_v'            [(m^2 K)/s^2]
-      rtpthvp,         & ! r_t' th_v'            [(kg K)/kg]
-      thlpthvp,        & ! th_l' th_v'           [K^2]
-      wprcp,           & ! w' r_c'               [(m kg)/(s kg)]
-      wp2rcp,          & ! w'^2 r_c'             [(m^2 kg)/(s^2 kg)]
-      rtprcp,          & ! r_t' r_c'             [(kg^2)/(kg^2)]
-      thlprcp,         & ! th_l' r_c'            [(K kg)/kg]
-      rcp2,            & ! r_c'^2                [(kg^2)/(kg^2)]
-      wprtpthlp,       & ! w' r_t' th_l'         [(m kg K)/(s kg)]
-      crt1, crt2,  & 
+      wp4,        & ! w'^4                  [m^4/s^4]
+      wprtp2,     & ! w' r_t'               [(m kg)/(s kg)]
+      wp2rtp,     & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
+      wpthlp2,    & ! w' th_l'^2            [(m K^2)/s]
+      wp2thlp,    & ! w'^2 th_l'            [(m^2 K)/s^2]
+      cf,         & ! Cloud fraction        [%]
+      rcm,        & ! Mean liquid water     [kg/kg]
+      wpthvp,     & ! Buoyancy flux         [(K m)/s] 
+      wp2thvp,    & ! w'^2 th_v'            [(m^2 K)/s^2]
+      rtpthvp,    & ! r_t' th_v'            [(kg K)/kg]
+      thlpthvp,   & ! th_l' th_v'           [K^2]
+      wprcp,      & ! w' r_c'               [(m kg)/(s kg)]
+      wp2rcp,     & ! w'^2 r_c'             [(m^2 kg)/(s^2 kg)]
+      rtprcp,     & ! r_t' r_c'             [(kg^2)/(kg^2)]
+      thlprcp,    & ! th_l' r_c'            [(K kg)/kg]
+      rcp2,       & ! r_c'^2                [(kg^2)/(kg^2)]
+      wprtpthlp,  & ! w' r_t' th_l'         [(m kg K)/(s kg)]
+      crt1, crt2, & 
       cthl1, cthl2
 
     real, intent(out), dimension(26) :: & 
@@ -429,16 +436,22 @@ module pdf_closure_module
             + (1.-a) * ( (w2-wm)**2+sw2 ) * ( thl2-thlm )
 
     ! Compute higher order moments (these are non-interactive diagnostics)
-    if ( clubb_at_least_debug_level( 1 ) ) then
-      wp4     = a * ( 3.*sw1**2 + 6.*((w1-wm)**2)*sw1 + (w1-wm)**4 ) & 
-              + (1.-a) * ( 3.*sw2**2 + 6.*((w2-wm)**2)*sw2 + (w2-wm)**4 )
+    if ( iwp4 > 0 ) then
+      wp4 = a * ( 3.*sw1**2 + 6.*((w1-wm)**2)*sw1 + (w1-wm)**4 ) & 
+          + (1.-a) * ( 3.*sw2**2 + 6.*((w2-wm)**2)*sw2 + (w2-wm)**4 )
+    end if
 
+    if ( iwprtp2 > 0 ) then
       wprtp2  = a * ( w1-wm )*( (rt1-rtm)**2 + srt1 )  & 
               + (1.-a) * ( w2-wm )*( (rt2-rtm)**2 + srt2)
+    end if
 
+    if ( iwpthlp2 > 0 ) then
       wpthlp2 = a * ( w1-wm )*( (thl1-thlm)**2 + sthl1 )  & 
               + (1.-a) * ( w2-wm )*( (thl2-thlm)**2+sthl2 )
+    end if
 
+    if ( iwprtpthlp > 0 ) then
       wprtpthlp = a * ( w1-wm )*( (rt1-rtm)*(thl1-thlm)  & 
                 + rrtthl*sqrt( srt1*sthl1 ) ) & 
                 + ( 1.-a ) * ( w2-wm )*( (rt2-rtm)*(thl2-thlm) & 
@@ -609,7 +622,7 @@ module pdf_closure_module
 
     ! Compute variance of liquid water mixing ratio.
     ! This is not needed for closure.  Statistical Analysis only.
-    if ( clubb_at_least_debug_level( 1 ) ) then
+    if ( ircp2 > 0 ) then
 
       rcp2 = a * ( s1*rc1 + R1*ss1**2 ) + ( 1.-a ) * ( s2*rc2 + R2*ss2**2 ) - rcm**2
       rcp2 = max( zero_threshold, rcp2 )

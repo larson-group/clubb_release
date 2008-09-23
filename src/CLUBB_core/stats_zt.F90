@@ -184,8 +184,8 @@ use stats_variables, only: &
 use stats_type, only: & 
   stat_assign ! Procedure
 
-use error_code, only: &
-  clubb_at_least_debug_level ! Function
+!use error_code, only: &
+!  clubb_at_least_debug_level ! Function
 
 
 implicit none
@@ -1446,13 +1446,13 @@ end do
 
 !   Non-interative diagnostics (zt) 
 !   iwprtp2, iwprtpthlp, iwpthlp2 
-    if ( .not. clubb_at_least_debug_level( 1 ) ) then 
-      if ( iwprtp2 + iwprtpthlp + iwpthlp2 + irsat > 0 ) then
-        write(0,'(a)') &
-          "Warning: at debug level 0.  Non-interactive diagnostics will not be computed, "
-        write(0,'(a)') "but some appear in the stats_zt namelist variable."
-      end if
-    end if
+!   if ( .not. clubb_at_least_debug_level( 1 ) ) then 
+!     if ( iwprtp2 + iwprtpthlp + iwpthlp2 + irsat > 0 ) then
+!       write(0,'(a)') &
+!         "Warning: at debug level 0.  Non-interactive diagnostics will not be computed, "
+!       write(0,'(a)') "but some appear in the stats_zt namelist variable."
+!     end if
+!   end if
 
 return
 end subroutine stats_init_zt

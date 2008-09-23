@@ -190,6 +190,14 @@ module clubb_core
     use stats_type, only: & 
       stat_update_var_pt ! Procedure(s)
 
+    use stats_variables, only: &
+      ishear,     & ! Variables
+      ircp2,      &
+      iwp4,       &
+      irsat,      &
+      iwprtp_zt,  &
+      iwpthlp_zt
+
     implicit none
 
     intrinsic :: sqrt, min, max, exp, mod
@@ -555,13 +563,19 @@ module clubb_core
 
     ! Interpolate momentum variables back to momentum grid.
     ! Since top momentum level is higher than top thermo level,
-    ! set variables at top momentum level to 0.
-    if ( clubb_at_least_debug_level( 1 ) ) then
-      wp4           = max( zt2zm( wp4 ), zero_threshold )  ! Pos. def. quantity
+    ! Set variables at top momentum level to 0.
+
+    ! Only do this for wp4 and rcp2 if we're saving stats, since they are not
+    ! used elsewhere in the parameterization 
+    if ( iwp4 > 0 ) then
+      wp4 = max( zt2zm( wp4 ), zero_threshold )  ! Pos. def. quantity
       wp4(gr%nnzp)  = 0.0
-      rcp2          = max( zt2zm( rcp2 ), zero_threshold )  ! Pos. def. quantity
+    end if
+
+    if ( ircp2 > 0 ) then
+      rcp2 = max( zt2zm( rcp2 ), zero_threshold )  ! Pos. def. quantity
       rcp2(gr%nnzp) = 0.0
-    endif
+    end if
 
     wpthvp            = zt2zm( wpthvp )
     wpthvp(gr%nnzp)   = 0.0
@@ -657,7 +671,7 @@ module clubb_core
 
 
     ! Store the saturation mixing ratio for output purposes.  Brian
-    if ( clubb_at_least_debug_level( 1 ) ) then
+    if ( irsat > 0 ) then
       rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) )
     end if
 
@@ -748,7 +762,8 @@ module clubb_core
 
 
     ! Compute Shear Production  -Brian
-    if ( clubb_at_least_debug_level( 1 ) ) then
+    ! This is a non-interative diagnostic, for statistical purposes
+    if ( ishear > 1  ) then
       do k = 1, gr%nnzp-1, 1
         shear(k) = -upwp(k) * ( um(k+1) - um(k) ) * gr%dzm(k) & 
                    -vpwp(k) * ( vm(k+1) - vm(k) ) * gr%dzm(k)
@@ -760,9 +775,13 @@ module clubb_core
     !#############            ACCUMULATE STATISTICS            #############
     !#######################################################################
 
+    if ( iwprtp_zt > 0 ) then
+      wpthlp_zt  = zm2zt( wpthlp )
+    end if
 
-    wpthlp_zt  = zm2zt( wpthlp )
-    wprtp_zt   = zm2zt( wprtp )
+    if ( iwpthlp_zt > 0 ) then
+      wprtp_zt   = zm2zt( wprtp )
+    end if
 
     call stats_accumulate & 
          ( um, vm, upwp, vpwp, up2, vp2, thlm,                 & ! intent(in)
