@@ -128,7 +128,7 @@ module clubb_driver
       tau_zm, p_in_Pa, rho_zm, upwp, vpwp, wpthlp, & 
       rho, wprtp, wpthlp_sfc, wprtp_sfc, & 
       upwp_sfc, vpwp_sfc, thlm_forcing, & 
-      rtm_forcing, up2, vp2, wp3, rtp2, & 
+      rtm_forcing, um_forcing, vm_forcing, up2, vp2, wp3, rtp2, & 
       thlp2, rtpthlp, sigma_sqd_w, cf
 
     use variables_prognostic_module, only:  & 
@@ -629,7 +629,7 @@ module clubb_driver
       do i1=1, niterlong
         call advance_clubb_core & 
              ( i, .false., dt, fcor, &                          ! Intent(in)
-               thlm_forcing, rtm_forcing, wm_zm, wm_zt, &       ! Intent(in)
+               thlm_forcing, rtm_forcing, um_forcing, vm_forcing,wm_zm, wm_zt, &       ! Intent(in)
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &     ! Intent(in)
                p_in_Pa, rho_zm, rho, exner, &                   ! Intent(in)
                wpsclrp_sfc, wpedsclrp_sfc,  &                   ! Intent(in)
@@ -1436,7 +1436,7 @@ use grid_class, only: zt2zm ! Procedure(s)
 
 use variables_diagnostic_module, only: hydromet, Ncm, radht, um_ref,  & ! Variable(s)
                                 vm_ref, Frad, Ncnm, thvm, ustar, & 
-                                pdf_parms, Kh_zm, Akm_est, Akm, Nim
+                                pdf_parms, Kh_zm, Akm_est, Akm, Nim, ug, vg
 
 use variables_diagnostic_module, only: wpedsclrp ! Passive scalar variables
         
@@ -1444,7 +1444,8 @@ use variables_prognostic_module, only: rtm_forcing, thlm_forcing,  & ! Variable(
                                 wm_zt, wm_zm, rho, rtm, thlm, p_in_Pa, & 
                                 exner, rcm, rho_zm, um, psfc, vm, & 
                                 upwp_sfc, vpwp_sfc, Tsfc, & 
-                                wpthlp_sfc, SE, LE, wprtp_sfc, cf
+                                wpthlp_sfc, SE, LE, wprtp_sfc, cf, &
+                                um_forcing, vm_forcing
 
 use stats_variables, only: &
     ish, & ! Variable(s)
@@ -1570,6 +1571,7 @@ integer :: k ! Vertical loop index variable
 !----------------------------------------------------------------
 ! Set vertical velocity, w, and compute large-scale forcings
 !----------------------------------------------------------------
+
 
 select case ( runtype )
 
@@ -1714,8 +1716,8 @@ select case ( runtype )
                          sclrm_forcing )                                   ! Intent(out)
     case( "gabls3" ) ! GABLS 3 case
       call gabls3_tndcy( time_current, rtm, exner, p_in_Pa, thvm, &         ! Intent(in)
-                         wm_zt, wm_zm, thlm_forcing, rtm_forcing )          ! Intent(out)
-    
+                         wm_zt, wm_zm, thlm_forcing, rtm_forcing,&          ! Intent(out)
+                         um_forcing, vm_forcing, ug, vg )                   ! Intent(out)
 
    case default
 
@@ -1914,12 +1916,11 @@ select case ( trim( runtype ) )
                           upwp_sfc, vpwp_sfc, &                     ! Intent(out)   
                           wpthlp_sfc, wprtp_sfc, ustar, &           ! Intent(out)
                           wpsclrp_sfc, wpedsclrp_sfc )              ! Intent(out)
-   case ( "gabls3" )
-      call gabls3_sfclyr( time_current, gr%zt(2), rho_zm(1), &     ! Intent(in)
-                          thlm(2), um(2), vm(2), &                 ! Intent(in)
-                          upwp_sfc, vpwp_sfc,  &                   ! Intent(out)
-                          wpthlp_sfc, wprtp_sfc, ustar, &          ! Intent(out)
-                          wpsclrp_sfc, wpedsclrp_sfc )             ! Intent(out)
+   case( "gabls3" )
+      call gabls3_sfclyr( um(2), vm(2), thlm(2), rtm(2), &            ! Intent(in) 
+                        upwp_sfc, vpwp_sfc, &                       ! Intent(out)
+                        wpthlp_sfc, wprtp_sfc, ustar, &             ! Intent(out)
+                        wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
 
    case default
 

@@ -228,7 +228,8 @@ module stats_variables
      ivm_ma, & 
      ivm_ta, & 
      ivm_gf, & 
-     ivm_cf
+     ivm_cf, &
+     ivm_f
 
 !$omp   threadprivate(ivm_bt, ivm_ma, ivm_ta, ivm_gf, ivm_cf)
 
@@ -237,7 +238,8 @@ module stats_variables
      ium_ma, & 
      ium_ta, & 
      ium_gf, & 
-     ium_cf
+     ium_cf, & 
+     ium_f
 
 !$omp   threadprivate(ium_bt, ium_ma, ium_ta, ium_gf, ium_cf)
 

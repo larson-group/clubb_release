@@ -26,7 +26,7 @@ module clubb_core
   !-----------------------------------------------------------------------
   subroutine advance_clubb_core & 
              ( iter, l_implemented, dt, fcor, & 
-               thlm_forcing, rtm_forcing, wm_zm, wm_zt, & 
+               thlm_forcing, rtm_forcing, um_forcing, vm_forcing, wm_zm, wm_zt, & 
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
                p_in_Pa, rho_zm, rho, exner, & 
                wpsclrp_sfc, wpedsclrp_sfc,    & ! Optional
@@ -221,7 +221,9 @@ module clubb_core
 
     real, intent(in), dimension(gr%nnzp) ::  & 
       thlm_forcing,   & ! theta_l forcing.        [K/s]
-      rtm_forcing,    & ! r_t forcing.            [(kg/kg)/s] 
+      rtm_forcing,    & ! r_t forcing.            [(kg/kg)/s]
+      um_forcing,     & ! u wind forcing          [m/s/s]
+      vm_forcing,     & ! v wind forcing          [m/s/s]
       wm_zm,          & ! wm on moment. grid.     [m/s]
       wm_zt,          & ! wm on thermo. grid.     [m/s]
       p_in_Pa,        & ! Pressure.               [Pa] 
@@ -751,7 +753,8 @@ module clubb_core
     !----------------------------------------------------------------
 
     call advance_windm_edsclrm( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref,  &
-                                wp2, up2, vp2, upwp_sfc, vpwp_sfc, fcor,  &
+                                wp2, up2, vp2, um_forcing, vm_forcing, &
+                                upwp_sfc, vpwp_sfc, fcor,  &
                                 l_implemented, um, vm, edsclrm,  &
                                 upwp, vpwp, wpedsclrp, err_code )
 

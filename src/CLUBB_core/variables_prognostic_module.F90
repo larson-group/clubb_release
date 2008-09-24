@@ -47,9 +47,11 @@
         rho,          & ! Density                                  [kg/m^3]
         rho_zm,       & ! Density                                  [kg/m^3]
         thlm_forcing, & ! thlm large-scale forcing                 [K/s]
-        rtm_forcing     ! rtm large-scale forcing                  [kg/kg/s]
+        rtm_forcing,  & ! rtm large-scale forcing                  [kg/kg/s]
+        um_forcing,   & ! u wind forcing                           [m/s/s] 
+        vm_forcing      ! v wind forcing                           [m/s/s]
 
-!$omp   threadprivate(p_in_Pa, exner, rho, rho_zm, thlm_forcing, rtm_forcing)
+!$omp   threadprivate(p_in_Pa, exner, rho, rho_zm, thlm_forcing, rtm_forcing,um_forcing,vm_forcing)
 
         ! Imposed large scale w
         real, target, allocatable, dimension(:), public :: & 
@@ -159,6 +161,9 @@
 
         allocate( thlm_forcing(1:nzmax) ) ! thlm ls forcing
         allocate( rtm_forcing(1:nzmax) )  ! rtm ls forcing
+        allocate( um_forcing(1:nzmax) )   ! u forcing
+        allocate( vm_forcing(1:nzmax) )   ! v forcing
+
 
         ! Imposed large scale w
 
@@ -218,6 +223,8 @@
 
         thlm_forcing(1:nzmax) = 0.0     ! thlm large-scale forcing
         rtm_forcing(1:nzmax)  = 0.0     ! rtm large-scale forcing
+        um_forcing(1:nzmax) = 0.0       ! u forcing
+        vm_forcing(1:nzmax) = 0.0       ! v forcing
 
         ! Imposed large scale w
 
@@ -292,6 +299,8 @@
 
         deallocate( thlm_forcing )
         deallocate( rtm_forcing )
+        deallocate( um_forcing )
+        deallocate( vm_forcing )
 
         ! Imposed large scale w
 

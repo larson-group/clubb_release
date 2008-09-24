@@ -137,12 +137,14 @@ use stats_variables, only: &
     ivm_ma, & 
     ivm_gf, & 
     ivm_cf, & 
-    ivm_ta, & 
+    ivm_ta, &
+    ivm_f, & 
     ium_bt, & 
     ium_ma, & 
     ium_gf, & 
     ium_cf, & 
-    ium_ta, & 
+    ium_ta, &
+    ium_f, & 
     ia, & 
     iw1, & 
     iw2, & 
@@ -331,12 +333,14 @@ ivm_ma = 0
 ivm_gf = 0
 ivm_cf = 0
 ivm_ta = 0
+ivm_f  = 0
 
 ium_bt = 0
 ium_ma = 0
 ium_gf = 0
 ium_cf = 0
 ium_ta = 0
+ium_f = 0
 
 ia            = 0
 iw1           = 0
@@ -1153,6 +1157,12 @@ do i=1,zt%nn
          "vm turbulent transport","m/s",zt)
     k = k + 1
 
+  case ('vm_f')
+    ivm_f = k
+    call stat_assign(ivm_f,"vm_f", & 
+         "vm forcing","m/s",zt)
+    k = k + 1
+
   case ('um_bt')
     ium_bt = k
 
@@ -1185,6 +1195,12 @@ do i=1,zt%nn
          "um turbulent transport","m/s",zt)
     k = k + 1
  
+  case ('um_f')
+    ium_f = k
+    call stat_assign(ium_f,"um_f", & 
+         "um forcing","m/s",zt)
+    k = k + 1
+
   case ('a')
     ia = k
     call stat_assign(ia,"a", & 

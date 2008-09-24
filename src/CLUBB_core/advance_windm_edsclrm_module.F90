@@ -18,7 +18,8 @@ module advance_windm_edsclrm_module
 
   !=============================================================================
   subroutine advance_windm_edsclrm( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref,  &
-                                    wp2, up2, vp2, upwp_sfc, vpwp_sfc, fcor,  &
+                                    wp2, up2, vp2, um_forcing, vm_forcing, &
+                                    upwp_sfc, vpwp_sfc, fcor,  &
                                     l_implemented, um, vm, edsclrm,  &
                                     upwp, vpwp, wpedsclrp, err_code )
 
@@ -72,7 +73,9 @@ module advance_windm_edsclrm_module
       vm_ref,      & ! Reference v wind component for nudging        [m/s]
       wp2,         & ! w'^2 (momentum levels)                        [m^2/s^2]
       up2,         & ! u'^2 (momentum levels)                        [m^2/s^2]
-      vp2            ! v'^2 (momentum levels)                        [m^2/s^2]
+      vp2,         & ! v'^2 (momentum levels)                        [m^2/s^2]
+      um_forcing,  & ! u forcing                                     [m/s/s]
+      vm_forcing     ! v forcing                                     [m/s/s]
 
     real, intent(in) ::  &
       upwp_sfc,    & ! u'w' at the surface (momentum level 1)        [m^2/s^2]
@@ -118,10 +121,11 @@ module advance_windm_edsclrm_module
     ! Update zonal (west-to-east) component of mean wind, um
     !----------------------------------------------------------------
 
-    call compute_uv_tndcy( "um", fcor, vm, vg, &
+    call compute_uv_tndcy( "um", fcor, vm, vg, um_forcing, &
                            l_implemented, um_tndcy )
+  
 
-    call compute_um_edsclrm_solve( "um", dt, upwp_sfc, um_tndcy,  &
+    call compute_um_edsclrm_solve( "um", dt, upwp_sfc, um_tndcy, &
                                    wm_zt, Kh_zm, l_implemented,  &
                                    um, upwp, err_code )
 
@@ -130,10 +134,10 @@ module advance_windm_edsclrm_module
     ! Update meridional (south-to-north) component of mean wind, vm
     !----------------------------------------------------------------
 
-    call compute_uv_tndcy( "vm", fcor, um, ug, &
+    call compute_uv_tndcy( "vm", fcor, um, ug, vm_forcing, &
                            l_implemented, vm_tndcy )
-
-    call compute_um_edsclrm_solve( "vm", dt, vpwp_sfc, vm_tndcy,  &
+    
+    call compute_um_edsclrm_solve( "vm", dt, vpwp_sfc, vm_tndcy, &
                                    wm_zt, Kh_zm, l_implemented,  &
                                    vm, vpwp, err_code )
 
@@ -778,7 +782,7 @@ module advance_windm_edsclrm_module
   end subroutine compute_um_edsclrm_solve
 
   !=============================================================================
-  subroutine compute_uv_tndcy( solve_type, fcor, perp_wind_m, perp_wind_g,  &
+  subroutine compute_uv_tndcy( solve_type, fcor, perp_wind_m, perp_wind_g, xm_forcing, &
                                l_implemented, xm_tndcy )
 
     ! Description:
@@ -821,6 +825,8 @@ module advance_windm_edsclrm_module
         ium_cf, & 
         ivm_gf, & 
         ivm_cf, & 
+        ium_f,  &
+        ivm_f,  &
         zt, & 
         l_stats_samp
 
@@ -835,7 +841,8 @@ module advance_windm_edsclrm_module
 
     real, dimension(gr%nnzp), intent(in) :: & 
       perp_wind_m,  & ! Perpendicular component of the mean wind (e.g. v, for the u-eqn) [m/s]
-      perp_wind_g     ! Perpendicular component of the geostropic wind (e.g. vg)         [m/s]
+      perp_wind_g,  & ! Perpendicular component of the geostropic wind (e.g. vg)         [m/s]
+      xm_forcing      ! Prescribed wind forcing                                          [m/s/s]
 
     logical, intent(in) :: & 
       l_implemented   ! Flag for CLUBB being implemented in a larger model.
@@ -847,11 +854,13 @@ module advance_windm_edsclrm_module
     ! Local Variables
     integer :: & 
       ixm_gf, & 
-      ixm_cf
+      ixm_cf, &
+      ixm_f
 
     real, dimension(gr%nnzp) :: & 
       xm_gf, & 
       xm_cf
+   
 
 
     if ( .not. l_implemented ) then
@@ -864,6 +873,7 @@ module advance_windm_edsclrm_module
 
         ixm_gf = ium_gf
         ixm_cf = ium_cf
+        ixm_f  = ium_f
 
         xm_gf = - fcor * perp_wind_g
 
@@ -873,6 +883,7 @@ module advance_windm_edsclrm_module
 
         ixm_gf = ivm_gf
         ixm_cf = ivm_cf
+        ixm_f  = ivm_f
 
         xm_gf = fcor * perp_wind_g
 
@@ -882,6 +893,7 @@ module advance_windm_edsclrm_module
 
         ixm_gf = 0
         ixm_cf = 0
+        ixm_f = 0
 
         xm_gf = 0.
 
@@ -889,7 +901,7 @@ module advance_windm_edsclrm_module
 
       end select
 
-      xm_tndcy = xm_gf + xm_cf
+      xm_tndcy = xm_gf + xm_cf + xm_forcing
 
       if ( l_stats_samp ) then
 
@@ -899,6 +911,8 @@ module advance_windm_edsclrm_module
         ! xm term cf is completely explicit; call stat_update_var.
         call stat_update_var( ixm_cf, xm_cf, zt )
 
+        ! xm term F
+        call stat_update_var( ixm_f, xm_forcing, zt )
       endif
 
     else   ! implemented in a host model.

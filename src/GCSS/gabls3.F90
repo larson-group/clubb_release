@@ -18,17 +18,18 @@ module gabls3
 
   contains
 
-!----------------------------------------------------------------------
+  !----------------------------------------------------------------------
   subroutine gabls3_tndcy( time, rtm, exner, p_in_Pa, thvm, &
-                           wm_zt, wm_zm, thlm_forcing, rtm_forcing )
-!       Description:
-!       Subroutine to set thetal and total water tendencies for GABLS3 case
+                           wm_zt, wm_zm, thlm_forcing, rtm_forcing,&
+                           um_forcing, vm_forcing, ug, vg )
+ !       Description:
+ !       Subroutine to set thetal and total water tendencies for GABLS3 case
 
-!       References:
-!       None
-!----------------------------------------------------------------------
+ !       References:
+ !       None
+ !----------------------------------------------------------------------
 
-    use grid_class, only: gr,zt2zm ! Variable(s)
+    use grid_class, only: gr, zt2zm ! Variable(s)
 
     use stats_precision, only: time_precision ! Variable(s)
 
@@ -43,12 +44,13 @@ module gabls3
     ! Prescribed Geostrophic wind
     real, parameter, dimension(6) :: &
         ug_sfc = (/-7.8,-7.8, -6.5, -5.0, -5.0, -6.5/), &
-        vg_sfc = (/0.0, 0.0, 4.5, 4.5, 4.5, 2.5/)
-    !t_geo = [43200.0 64800.0 82800.0 97200.0 108000.0];
+        vg_sfc = (/0.0, 0.0, 4.5, 4.5, 4.5, 2.5/), &
+        geo_time = (/43200.0, 64800.0, 82800.0, 97200.0, 108000.0, 129600.0/)
 
 
     ! Prescribed Vertical Dynamic tendency at specified time %
     real, parameter, dimension(4) :: omega_t = (/0.12, 0.12, 0.00, 0.00/),&
+
     ! Times specified for omega
     omega_time = (/43200.0, 61200.0, 68400.0, 129600.0/);
 
@@ -69,8 +71,8 @@ module gabls3
       u_adv_t = (/0.0E+0, 0.0E+0, -1.5E-4, -1.5E-4, 5.0E-4, &
                   5.0E-4, 0.0E+0, 0.0E+0/),&
       v_adv_t = (/0.0E+0, 0.0E+0, 1.0E-4, 1.0E-4, 0.0E+0, & 
-                  0.0E+0, 0.0E+0, 0.0E+0/);
-    !t_adv_wind = [43200 64800 64800 82800 82800 97200 97200 129600];
+                  0.0E+0, 0.0E+0, 0.0E+0/),&
+      uv_adv_time = (/43200, 64800, 64800, 82800, 82800, 97200, 97200, 129600/);
 
     ! Input Variables
 
@@ -80,19 +82,24 @@ module gabls3
       rtm,  &     ! Total water mixing ratio                        [kg/kg]
       exner,&     ! Exner Function function = (p/p0 ** kappa)       [-]
       p_in_Pa, &  ! Pressure (Pa) on thermodynamic points           [Pa]
-      thvm
+      thvm        ! Virtual Potential Temperature
 
 
     ! Output Variables
 
     real, intent(out), dimension(gr%nnzp) ::  & 
-      wm_zt,         &
-      wm_zm,         &
-      thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
-      rtm_forcing    ! Total water mixing ratio tendency            [kg/kg/s]
+      wm_zt,        &
+      wm_zm,        &
+      thlm_forcing, &  ! Liquid water potential temperature tendency  [K/s]
+      rtm_forcing,  &  ! Total water mixing ratio tendency            [kg/kg/s]
+      um_forcing,   &
+      vm_forcing,   &
+      ug,           &
+      vg
 
     real, dimension(gr%nnzp) :: velocity_omega, T_in_K_forcing, sp_humidity_forcing
-    real :: time_frac, T_t_interp, q_t_interp, omega_t_interp
+    real :: time_frac, T_t_interp, q_t_interp, omega_t_interp,&
+            u_t_interp, v_t_interp, ug_interp,vg_interp
     integer :: i1, i2,i
 
     call time_select( time, T_adv_time, 6, i1, i2 )
@@ -114,7 +121,19 @@ module gabls3
 
     omega_t_interp = factor_interp( time_frac, omega_t(i2), omega_t(i1))
 
+    call time_select( time, uv_adv_time, 8, i1, i2)
+    time_frac = real((time - uv_adv_time(i1)) /  &          ! at the first time a=0;
+            (uv_adv_time(i2) - uv_adv_time(i1)))             ! at the second time a=1.
 
+    u_t_interp = factor_interp( time_frac, u_adv_t(i2), u_adv_t(i1) )
+    v_t_interp = factor_interp( time_frac, v_adv_t(i2), v_adv_t(i1) )
+
+    call time_select( time, geo_time, 6, i1, i2)
+    time_frac = real((time - geo_time(i1)) /  &          ! at the first time a=0;
+            (geo_time(i2) - geo_time(i1)))             ! at the second time a=1.
+
+    ug_interp = factor_interp( time_frac, ug_sfc(i2), ug_sfc(i1) )
+    vg_interp = factor_interp( time_frac, vg_sfc(i2), vg_sfc(i1) )
 
     do i = 1, gr%nnzp,1
       select case (int (gr%zt(i)))
@@ -122,19 +141,36 @@ module gabls3
         T_in_K_forcing(i) = lin_int(gr%zt(i), 200., 0., T_t_interp, 0. )
         sp_humidity_forcing(i)  =  lin_int(gr%zt(i), 200., 0., q_t_interp, 0.)
         velocity_omega(i)  =  lin_int(gr%zt(i), 200., 0., omega_t_interp, 0.)
+        um_forcing(i)  =  lin_int(gr%zt(i), 200., 0., u_t_interp, 0.)
+        vm_forcing(i)  =  lin_int(gr%zt(i), 200., 0., v_t_interp, 0.)
       case (200:999)
         T_in_K_forcing(i) = T_t_interp ! Convert!
         sp_humidity_forcing(i) = q_t_interp
         velocity_omega(i) = omega_t_interp
+        um_forcing(i) = u_t_interp
+        vm_forcing(i) = v_t_interp
       case (1000:1499)
         T_in_K_forcing(i) = lin_int( gr%zt(i), 1500., 1000., 0., T_t_interp )
         sp_humidity_forcing(i) = lin_int( gr%zt(i), 1500., 1000., 0. ,q_t_interp )
         velocity_omega(i) = lin_int( gr%zt(i), 1500., 1000., 0. ,omega_t_interp )
+        um_forcing(i) = lin_int( gr%zt(i), 1500., 1000., 0. , u_t_interp )
+        vm_forcing(i) = lin_int( gr%zt(i), 1500., 1000., 0. , v_t_interp )
       case default
         T_in_K_forcing(i) = 0
         sp_humidity_forcing(i) = 0
         velocity_omega(i) = 0
+        um_forcing(i) = 0
+        vm_forcing(i) = 0
       end select
+
+      if( gr%zt(i) < 2000 ) then
+        ! Winterpolate
+        ug(i) = lin_int( gr%zt(i), 2000., 0., -2., ug_interp )
+        vg(i) = lin_int( gr%zt(i), 2000., 0., 2., vg_interp )
+      else
+        ug(i) = -2.0
+        vg(i) = 2.0
+      endif
       !print *, "zt (",i,") =", gr%zt(i)
       !print *, "T_t_interp (",i,") =", T_t_interp
       !print *, "q_t_interp (",i,") =", q_t_interp
@@ -145,21 +181,22 @@ module gabls3
     rtm_forcing = sp_humidity_forcing * ( 1. + rtm )**2
 !    thlm_forcing = ( thlm_forcing - Lv * rcm/Cp ) / exner
     thlm_forcing = T_in_K_forcing / exner
-   ! Compute vertical motion
+    ! Compute vertical motion
     do i=2,gr%nnzp
       wm_zt(i) = -velocity_omega(i) * Rd * thvm(i) / p_in_Pa(i) / grav
 
     end do
- 
-   ! Boundary condition
-   wm_zt(1) = 0.0        ! Below surface
- 
-   ! Interpolation
-   wm_zm = zt2zm( wm_zt )
- 
-   ! Boundary condition
-   wm_zm(1) = 0.0        ! At surface
-   wm_zm(gr%nnzp) = 0.0  ! Model top
+
+    ! Boundary condition
+    wm_zt(1) = 0.0        ! Below surface
+
+    ! Interpolation
+    wm_zm = zt2zm( wm_zt )
+
+    ! Boundary condition
+    wm_zm(1) = 0.0        ! At surface
+    wm_zm(gr%nnzp) = 0.0  ! Model top
+    i = 1
 
 
 
@@ -167,65 +204,84 @@ module gabls3
 
 
   end subroutine gabls3_tndcy
-!----------------------------------------------------------------------
-  subroutine gabls3_sfclyr( time, z, rho0, & 
-                            thlm_sfc, um_sfc, vm_sfc,  & 
-                            upwp_sfc, vpwp_sfc, & 
-                            wpthlp_sfc, wprtp_sfc, ustar, & 
-                            wpsclrp_sfc, wpedsclrp_sfc )
+  subroutine gabls3_sfclyr( um_sfc, vm_sfc, thlm_sfc, rtm_sfc,  & 
+                          upwp_sfc, vpwp_sfc,  & 
+                          wpthlp_sfc, wprtp_sfc, ustar, & 
+                          wpsclrp_sfc, wpedsclrp_sfc )
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,
-!       heat and moisture according to GCSS ARM specifications
+!       heat and moisture according to GCSS ATEX specifications
+
+!       References:
+
 !----------------------------------------------------------------------
 
-    use constants, only: Cp, Lv, grav ! Variable(s)
+    use constants, only: kappa ! Variable(s)
 
     use parameters_tunable, only: sclr_dim ! Variable(s)
 
-    use stats_precision, only: time_precision ! Variable(s)
-
-    use diag_ustar_mod, only: diag_ustar ! Variable(s)
-
     use array_index, only: iisclr_rt, iisclr_thl
-
-    use interpolation, only: factor_interp
 
     implicit none
 
-    intrinsic :: max, sqrt, present
+! Constants
 
     real, parameter ::  & 
-      ubmin = 0.25, & ! Minimum value for ubar 
-      z0    = 0.035   ! ARM Cu mom. roughness height
+      ubmin = 0.25, & 
+  !     .  ustar = 0.3,
+      C_10  = 0.0013, & 
+      SST   = 298.09
 
-
-! Input Variables
-    real(time_precision), intent(in) ::  & 
-      time      ! Current time        [s]
-
+! Input variables
     real, intent(in) ::  & 
-      z,         & ! Height at zt=2      [s] 
-      rho0,      & ! Density at zm=1     [kg/m^3] 
-      um_sfc,    & ! um at (2)           [m/s]
-      vm_sfc,    & ! vm at (2)           [m/s]
-      thlm_sfc     ! thlm at (2)         [m/s]
+      um_sfc,     & ! um at zt(2)           [m/s]
+      vm_sfc,     & ! vm at zt(2)           [m/s]
+      thlm_sfc,   & ! Theta_l at zt(2)      [K]
+      rtm_sfc       ! rt at zt(2)           [kg/kg]
 
 ! Output variables
     real, intent(out) ::  & 
-      upwp_sfc,     & ! u'w' at (1)      [m^2/s^2]
-      vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
-      wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
-      wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
-      ustar           ! surface friction velocity [m/s]
+      upwp_sfc,    & ! u'w' at surface           [m^2/s^2]
+      vpwp_sfc,    & ! v'w' at surface           [m^2/s^2]
+      wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
+      wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
+      ustar          ! surface friction velocity [m/s]
 
 ! Output variables (optional)
-    real, intent(out), optional, dimension(sclr_dim) ::  & 
-      wpsclrp_sfc,   & ! Passive scalar surface flux      [units m/s] 
-      wpedsclrp_sfc    ! Passive eddy-scalar surface flux [units m/s]
 
+    real, dimension(sclr_dim), intent(out) ::  & 
+      wpsclrp_sfc,    & ! Passive scalar surface flux      [units m/s]
+      wpedsclrp_sfc     ! Passive eddy-scalar surface flux [units m/s]
+
+! Local Variables
+    real :: ubar
+
+! Declare the value of ustar.
+    ustar = 0.3
+
+! Compute heat and moisture fluxes
+
+    ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
+
+    wpthlp_sfc & 
+    = -C_10 * ubar * ( thlm_sfc - SST * (1000./1015.)**kappa )
+    wprtp_sfc  = -C_10 * ubar * ( rtm_sfc - 0.009387301907742 )
+
+! Let passive scalars be equal to rt and theta_l for now
+    if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+    if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
+
+    if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
+    if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
+
+! Compute momentum fluxes
+
+    upwp_sfc = -um_sfc * ustar**2 / ubar
+    vpwp_sfc = -vm_sfc * ustar**2 / ubar
 
     return
   end subroutine gabls3_sfclyr
+
 !----------------------------------------------------------------------
   subroutine time_select( time, time_array, nvar, left_time, right_time )
     use stats_precision, only: time_precision ! Variable(s)
