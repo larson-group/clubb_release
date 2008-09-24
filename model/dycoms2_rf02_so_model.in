@@ -8,11 +8,11 @@
 
 runtype = "dycoms2_rf02_so" ! Case name.
 
-nzmax = 147       ! Number of vertical levels.  ! For grid_type = 1.
+!nzmax = 147       ! Number of vertical levels.  ! For grid_type = 1.
 !nzmax = 148       ! Number of vertical levels.  ! For grid_type = 2.
-!nzmax = 97        ! Number of vertical levels.  ! For grid_type = 3.
+nzmax = 97        ! Number of vertical levels.  ! For grid_type = 3.
 
-grid_type = 1     ! Select grid type:
+grid_type = 3     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
                   ! 2 ==> stretched (unevenly-spaced) grid
                   !       entered on thermodynamic grid levels;
@@ -39,8 +39,8 @@ zt_grid_fname = ''
 ! Path (from ../standalone/) and filename to data file that contains
 ! momentum level altitudes (in meters).
 ! Note:  For this option, zt_grid_fname must be ''.
-!zm_grid_fname = '../model/grid/dycoms2_rf02_gcss_zm_grid.grd'
-zm_grid_fname = ''
+zm_grid_fname = '../model/grid/dycoms2_rf02_gcss_zm_grid.grd'
+!zm_grid_fname = ''
 
 day   = 11    ! Day of model start (1 to 31).
 month = 7     ! Month of model start (1 to 12).
