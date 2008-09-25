@@ -272,7 +272,7 @@ contains
     if ( lapack_error( err_code ) .and.  & 
          clubb_at_least_debug_level( 1 ) ) then
 
-      write(fstderr,*) "Errors in timestep_wp32"
+      write(fstderr,*) "Errors in advance_wp2_wp3"
 
       write(fstderr,*) "Intent(in)"
 
@@ -539,7 +539,8 @@ contains
     if ( l_stats_samp .and. iwp23_matrix_condt_num > 0 ) then
 
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
-      call band_solvex( "advance_wp2_wp3_module", nsup, nsub, 2*gr%nnzp, nrhs, & 
+      ! Note that this can change the answer slightly
+      call band_solvex( "wp2_wp3", nsup, nsub, 2*gr%nnzp, nrhs, & 
                         lhs, rhs, solut, rcond, err_code )
 
       ! Est. of the condition number of the w'^2/w^3 LHS matrix
@@ -547,7 +548,7 @@ contains
 
     else
       ! Perform LU decomp and solve system (LAPACK)
-      call band_solve( "advance_wp2_wp3_module", nsup, nsub, 2*gr%nnzp, nrhs, & 
+      call band_solve( "wp2_wp3", nsup, nsub, 2*gr%nnzp, nrhs, & 
                        lhs, rhs, solut, err_code )
     end if
 
