@@ -94,7 +94,7 @@ hydrostatic.o	: constants.o grid.o hydrostatic.F90
 mixing_length.o	: constants.o parameters_tunable.o numer_check.o error_code.o \
 	mixing_length.F90
 saturation.o    : constants.o saturation.F90  
-sfc.o		: constants.o parameters_tunable.o numer_check.o error_code.o sfc.F90 
+sfc.o		: constants.o parameters_tunable.o numer_check.o error_code.o array_index.o sfc.F90 
 advance_wp2_wp3_mod.o		: constants.o parameters_tunable.o stats_variables.o lapack_wrap.o \
                   error_code.o diffusion.o mean_adv.o fill_holes.o \
                   clip_explicit.o advance_wp2_wp3_mod.F90
