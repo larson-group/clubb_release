@@ -676,6 +676,9 @@ if ( l_scalar_calc ) then
   ! Since sclr'^2, r_t'^2, and sclr'r_t' are all computed in the
   ! same place, clipping for sclr'r_t' only has to be done once.
   do i = 1, sclr_dim, 1
+
+     threshold = sclrtol(i) * rttol
+
      call clip_covariance( "sclrprtp", .true.,  &               ! Intent(in) 
                            .true., dt, sclrp2(:,i), rtp2(:), &  ! Intent(in)
                            sclrprtp(:,i) )                      ! Intent(inout)
@@ -690,6 +693,9 @@ if ( l_scalar_calc ) then
   ! Since sclr'^2, th_l'^2, and sclr'th_l' are all computed in the
   ! same place, clipping for sclr'th_l' only has to be done once.
   do i = 1, sclr_dim, 1
+
+     threshold = sclrtol(i) * thltol
+
      call clip_covariance( "sclrpthlp", .true.,  &              ! Intent(in) 
                            .true., dt, sclrp2(:,i), thlp2(:), & ! Intent(in) 
                            sclrpthlp(:,i) )                     ! Intent(inout)
