@@ -1075,24 +1075,24 @@ module stats_zm
         case ('sclrapthvp')
           isclrapthvp = k
 
-          call stat_assign(isclrapthvp,"sclrathvp", & 
+          call stat_assign(isclrapthvp,"sclrapthvp", & 
                "scalar(1)'th_v'","unknown",zm)
           k = k + 1
         case ('sclrbpthvp')
           isclrbpthvp = k
-          call stat_assign(isclrbpthvp,"sclrbthvp", & 
+          call stat_assign(isclrbpthvp,"sclrbpthvp", & 
                "scalar(2)'th_v'","unknown",zm)
           k = k + 1
         case ('sclrapthlp')
           isclrapthlp = k
 
-          call stat_assign(isclrapthlp,"sclrathlp", & 
+          call stat_assign(isclrapthlp,"sclrapthlp", & 
                "scalar(1)'th_l'","unknown",zm)
           k = k + 1
         case ('sclrbpthlp')
           isclrbpthlp = k
 
-          call stat_assign(isclrbpthlp,"sclrbthlp", & 
+          call stat_assign(isclrbpthlp,"sclrbpthlp", & 
                "scalar(2)'th_l'","unknown",zm)
           k = k + 1
         case ('sclraprcp')
