@@ -42,9 +42,9 @@ fi
 
 #Clean up the output directories, if we don't do this, we can't
 #pick and choose what cases will be shown in the final product
-rm -rf $PLOTGEN_DIR/output/eps/*
-rm -rf $PLOTGEN_DIR/output/jpg/*
-rm -rf $PLOTGEN_DIR/output/ps/*
+rm -f $PLOTGEN_DIR/output/eps/*
+rm -f $PLOTGEN_DIR/output/jpg/*
+rm -f $PLOTGEN_DIR/output/ps/*
 
 #Set the flag that determines if the plots are compared to the LES data
 if [ "$3" == "1" ]; then
@@ -650,7 +650,7 @@ fi
 
 #Generate the plots
 if [ "$run_success" == 1 ]; then
-	rm -rf $PLOTGEN_DIR/profiles
+	rm -f $PLOTGEN_DIR/profiles/*
 	# senkbeir remove the $PLOTGEN_DIR in the following line because latex2html doesn't like '.' in the path
 #	latex2html $PLOTGEN_DIR/profiles.tex
 	latex2html profiles.tex

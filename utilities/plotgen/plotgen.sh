@@ -140,7 +140,7 @@ then
 	then
 		# The directory doesn't exist, warn and exit
 		echo "No HOC Dec 17 data available to plot! Create the HOC_20051217 directory first,"
-		echo "of don't plot the HOC Dec 17 data"
+		echo "or don't plot the HOC Dec 17 data"
 		exit 1
 	fi
 fi
