@@ -146,7 +146,8 @@ module clubb_driver
       cleanup_clubb_core, & 
       advance_clubb_core
 
-    use constants, only: fstdout, fstderr ! Variable(s)
+    use constants, only: fstdout, fstderr, & ! Variable(s)
+      rttol, thltol, wtol
 
     use error_code, only: clubb_var_out_of_bounds,  & ! Variable(s)
       clubb_var_equals_NaN, & 
@@ -154,7 +155,7 @@ module clubb_driver
       clubb_at_least_debug_level ! Function
 
     use error_code, only: fatal_error,  & ! Procedure(s)
-                              set_clubb_debug_level
+                          set_clubb_debug_level
         
     use stats_precision, only: time_precision ! Variable(s)
 
@@ -455,7 +456,7 @@ module clubb_driver
       print *, "stats_tsamp = ", stats_tsamp
       print *, "stats_tout = ", stats_tout
 
-      print *, "Code constants:"
+      print *, "Constant flags:"
       print *, "l_LH_on = ", l_LH_on      
       print *, "l_local_kk = ", l_local_kk   
       print *, "l_pos_def = ", l_pos_def   
@@ -463,6 +464,11 @@ module clubb_driver
       print *, "l_single_C2_Skw = ", l_single_C2_Skw
       print *, "l_gamma_Skw = ", l_gamma_Skw
       print *, "l_byteswap_io = ", l_byteswap_io
+
+      print *, "Constant tolerances", "[units]"
+      print *, "rttol = ", rttol, "[kg/kg]"
+      print *, "thltol = ", thltol,"[K]"
+      print *, "wtol = ", wtol, "[m/s]" 
 
       print *, "--------------------------------------------------"
 
@@ -1837,7 +1843,7 @@ select case ( trim( runtype ) )
    case( "astex_a209" )
       call astex_sfclyr( rho_zm(1), &                               ! Intent(in) 
                          upwp_sfc, vpwp_sfc, wpthlp_sfc,  &         ! Intent(out)
-                         wprtp_sfc ,wpsclrp_sfc, wpedsclrp_sfc )    ! Intent(out)
+                         wprtp_sfc, wpsclrp_sfc, wpedsclrp_sfc )    ! Intent(out)
 
    case( "dycoms2_rf02_do", "dycoms2_rf02_ds", & 
          "dycoms2_rf02_nd", "dycoms2_rf02_so" )
