@@ -3,9 +3,9 @@
 !===============================================================================
 module advance_xp2_xpyp_module
 
-! Description:
-!   Contains the subroutine advance_xp2_xpyp and ancillary functions.
-!-----------------------------------------------------------------------
+  ! Description:
+  ! Contains the subroutine advance_xp2_xpyp and ancillary functions.
+  !-----------------------------------------------------------------------
 
   implicit none
 
@@ -26,9 +26,9 @@ module advance_xp2_xpyp_module
 
   private    ! Set default scope
 
-  contains
+contains
 
-!===============================================================================
+  !=============================================================================
   subroutine advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp, & 
                                thlm, wpthlp, wpthvp, um, vm, & 
                                wp2, wp2_zt, wp3, upwp, vpwp, &
@@ -40,19 +40,19 @@ module advance_xp2_xpyp_module
                                err_code, & 
                                sclrp2, sclrprtp, sclrpthlp )
 
-! Description:
-!   Subprogram to diagnose variances by solving steady-state equations
+    ! Description:
+    ! Subprogram to diagnose variances by solving steady-state equations
 
-! References:
-!   Eqn. 13, 14, 15  on p. 3545 of
-!   ``A PDF-Based Model for Boundary Layer Clouds. Part I:
-!     Method and Model Description'' Golaz, et al. (2002)
-!   JAS, Vol. 59, pp. 3540--3551.
+    ! References:
+    !   Eqn. 13, 14, 15  on p. 3545 of
+    !   ``A PDF-Based Model for Boundary Layer Clouds. Part I:
+    !     Method and Model Description'' Golaz, et al. (2002)
+    !   JAS, Vol. 59, pp. 3540--3551.
 
-! See also:
-!   ``Equations for HOC'', Section 4:
-!   /Steady-state solution for the variances/
-!-----------------------------------------------------------------------
+    ! See also:
+    !   ``Equations for HOC'', Section 4:
+    !   /Steady-state solution for the variances/
+    !-----------------------------------------------------------------------
 
     use constants, only: & 
       wtol_sqd,  & ! Variable(s)
@@ -225,7 +225,7 @@ module advance_xp2_xpyp_module
     integer :: i
     integer :: k, km1, kp1
 
-!---------------------------- Begin Code --------------------------------------
+    !---------------------------- Begin Code ----------------------------------
 
 
     if ( l_single_C2_Skw ) then
@@ -262,9 +262,9 @@ module advance_xp2_xpyp_module
     a1(1:gr%nnzp) = 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nnzp) )
 
 
-    ! Interpolate a_1, w'r_t', w'th_l', u'w', and v'w' from the momentum levels to
-    ! the thermodynamic levels.  These will be used for the turbulent advection (ta)
-    ! terms in each equation.
+    ! Interpolate a_1, w'r_t', w'th_l', u'w', and v'w' from the momentum levels
+    ! to the thermodynamic levels.  These will be used for the turbulent
+    ! advection (ta) terms in each equation.
     a1_zt     = max( zm2zt( a1 ), zero_threshold )   ! Positive definite quantity
     wprtp_zt  = zm2zt( wprtp )
     wpthlp_zt = zm2zt( wpthlp )
@@ -296,86 +296,88 @@ module advance_xp2_xpyp_module
     Valid_arr(:) = clubb_no_error
 
 
-    ! Define the Coefficent of Eddy Diffusivity for the variances and covariances.
+    ! Define the Coefficent of Eddy Diffusivity for the variances
+    ! and covariances.
     do k = 1, gr%nnzp, 1
 
-      ! Kw2 is used for variances and covariances rtp2, thlp2, rtpthlp, and passive
-      ! scalars.  The variances and covariances are located on the momentum levels.
-      ! Kw2 is located on the thermodynamic levels.
-      ! Kw2 = c_K2 * Kh_zt
-      Kw2(k) = c_K2 * Kh_zt(k)
+       ! Kw2 is used for variances and covariances rtp2, thlp2, rtpthlp, and
+       ! passive scalars.  The variances and covariances are located on the
+       ! momentum levels.  Kw2 is located on the thermodynamic levels.
+       ! Kw2 = c_K2 * Kh_zt
+       Kw2(k) = c_K2 * Kh_zt(k)
 
-      ! Kw9 is used for variances up2 and vp2.  The variances are located on the
-      ! momentum levels.  Kw9 is located on the thermodynamic levels.
-      ! Kw9 = c_K9 * Kh_zt
-      Kw9(k) = c_K9 * Kh_zt(k)
+       ! Kw9 is used for variances up2 and vp2.  The variances are located on
+       ! the momentum levels.  Kw9 is located on the thermodynamic levels.
+       ! Kw9 = c_K9 * Kh_zt
+       Kw9(k) = c_K9 * Kh_zt(k)
 
     enddo
 
     ! (xapxbp)^2: 3-point average diffusion coefficient.
     if ( l_3pt_sqd_dfsn ) then
 
-      ! Interpolate r_t'^2, th_l'^2, and r_t'th_l' from the momentum levels to the
-      ! thermodynamic levels.  These will be used for extra diffusion based on a
-      ! three-point average of (var)^2.
-      rtp2_zt    = max( zm2zt( rtp2 ), rttol**2 )  ! Positive def. quantity
-      thlp2_zt   = max( zm2zt( thlp2 ), thltol**2 )  ! Positive def. quantity
-      rtpthlp_zt = zm2zt( rtpthlp )
+       ! Interpolate r_t'^2, th_l'^2, and r_t'th_l' from the momentum levels to
+       ! the thermodynamic levels.  These will be used for extra diffusion based
+       ! on a three-point average of (var)^2.
+       rtp2_zt    = max( zm2zt( rtp2 ), rttol**2 )  ! Positive def. quantity
+       thlp2_zt   = max( zm2zt( thlp2 ), thltol**2 )  ! Positive def. quantity
+       rtpthlp_zt = zm2zt( rtpthlp )
 
-      do k = 1, gr%nnzp, 1
+       do k = 1, gr%nnzp, 1
 
-        km1 = max( k-1, 1 )
-        kp1 = min( k+1, gr%nnzp )
+          km1 = max( k-1, 1 )
+          kp1 = min( k+1, gr%nnzp )
 
-        ! Compute the square of rtp2_zt, averaged over 3 points.  26 Jan 2008
-        rtp2_zt_sqd_3pt(k) = ( rtp2_zt(km1)**2 + rtp2_zt(k)**2  & 
-                               + rtp2_zt(kp1)**2 ) / 3.0
-        ! Account for units (kg/kg)**4  Vince Larson 29 Jan 2008
-        rtp2_zt_sqd_3pt(k) = 1e12 * rtp2_zt_sqd_3pt(k)
+          ! Compute the square of rtp2_zt, averaged over 3 points.  26 Jan 2008
+          rtp2_zt_sqd_3pt(k) = ( rtp2_zt(km1)**2 + rtp2_zt(k)**2  & 
+                                 + rtp2_zt(kp1)**2 ) / 3.0
+          ! Account for units (kg/kg)**4  Vince Larson 29 Jan 2008
+          rtp2_zt_sqd_3pt(k) = 1e12 * rtp2_zt_sqd_3pt(k)
 
-        ! Compute the square of thlp2_zt, averaged over 3 points.  26 Jan 2008
-        thlp2_zt_sqd_3pt(k) = ( thlp2_zt(km1)**2 + thlp2_zt(k)**2  & 
-                                + thlp2_zt(kp1)**2 ) / 3.0
+          ! Compute the square of thlp2_zt, averaged over 3 points.  26 Jan 2008
+          thlp2_zt_sqd_3pt(k) = ( thlp2_zt(km1)**2 + thlp2_zt(k)**2  & 
+                                  + thlp2_zt(kp1)**2 ) / 3.0
 
-        ! Compute the square of rtpthlp_zt, averaged over 3 points.  26 Jan 2008
-        rtpthlp_zt_sqd_3pt(k) = ( rtpthlp_zt(km1)**2 + rtpthlp_zt(k)**2  & 
-                                  + rtpthlp_zt(kp1)**2 ) / 3.0
-        ! Account for units (kg/kg)**2 Vince Larson 29 Jan 2008
-        rtpthlp_zt_sqd_3pt(k) = 1e6 * rtpthlp_zt_sqd_3pt(k)
+          ! Compute the square of rtpthlp_zt, averaged over 3 points.  26 Jan 2008
+          rtpthlp_zt_sqd_3pt(k) = ( rtpthlp_zt(km1)**2 + rtpthlp_zt(k)**2  & 
+                                    + rtpthlp_zt(kp1)**2 ) / 3.0
+          ! Account for units (kg/kg)**2 Vince Larson 29 Jan 2008
+          rtpthlp_zt_sqd_3pt(k) = 1e6 * rtpthlp_zt_sqd_3pt(k)
 
-      enddo
+       enddo
 
-      ! Define Kw2_rtp2, Kw2_thlp2, and Kw2_rtpthlp
-      do k = 1, gr%nnzp, 1
+       ! Define Kw2_rtp2, Kw2_thlp2, and Kw2_rtpthlp
+       do k = 1, gr%nnzp, 1
 
-        ! Kw2_rtp2 must have units of m^2/s.  Since rtp2_zt_sqd_3pt has units of
-        ! kg^2/kg^2, c_Ksqd is given units of m^2/[ s (kg^2/kg^2) ] in this case.
-        Kw2_rtp2(k) = Kw2(k) + c_Ksqd * rtp2_zt_sqd_3pt(k)
-        ! Vince Larson increased by c_Ksqd, 29Jan2008
+          ! Kw2_rtp2 must have units of m^2/s.  Since rtp2_zt_sqd_3pt has units
+          ! of kg^2/kg^2, c_Ksqd is given units of m^2/[ s (kg^2/kg^2) ] in this
+          ! case.
+          Kw2_rtp2(k) = Kw2(k) + c_Ksqd * rtp2_zt_sqd_3pt(k)
+          ! Vince Larson increased by c_Ksqd, 29Jan2008
 
-        ! Kw2_thlp2 must have units of m^2/s.  Since thlp2_zt_sqd_3pt has units of
-        ! K^2, c_Ksqd is given units of m^2/[ s K^2 ] in this case.
-        Kw2_thlp2(k) = Kw2(k) + c_Ksqd * thlp2_zt_sqd_3pt(k)
-        ! Vince Larson increased by c_Ksqd, 29Jan2008
+          ! Kw2_thlp2 must have units of m^2/s.  Since thlp2_zt_sqd_3pt has
+          ! units of K^2, c_Ksqd is given units of m^2/[ s K^2 ] in this case.
+          Kw2_thlp2(k) = Kw2(k) + c_Ksqd * thlp2_zt_sqd_3pt(k)
+          ! Vince Larson increased by c_Ksqd, 29Jan2008
 
-        ! Kw2_rtpthlp must have units of m^2/s.  Since rtpthlp_zt_sqd_3pt has
-        ! units of K (kg/kg), c_Ksqd is given units of m^2/[ s K (kg/kg) ] in this
-        ! case.
-        Kw2_rtpthlp(k) = Kw2(k) + c_Ksqd * rtpthlp_zt_sqd_3pt(k)
-        ! Vince Larson increased by c_Ksqd, 29Jan2008
+          ! Kw2_rtpthlp must have units of m^2/s.  Since rtpthlp_zt_sqd_3pt has
+          ! units of K (kg/kg), c_Ksqd is given units of m^2/[ s K (kg/kg) ] in
+          ! this case.
+          Kw2_rtpthlp(k) = Kw2(k) + c_Ksqd * rtpthlp_zt_sqd_3pt(k)
+          ! Vince Larson increased by c_Ksqd, 29Jan2008
 
-      enddo
+       enddo
 
     else  ! Three-point squared diffusion turned off.
 
-      ! Define Kw2_rtp2, Kw2_thlp2, and Kw2_rtpthlp
-      do k = 1, gr%nnzp, 1
+       ! Define Kw2_rtp2, Kw2_thlp2, and Kw2_rtpthlp
+       do k = 1, gr%nnzp, 1
 
-        Kw2_rtp2(k)    = Kw2(k)
-        Kw2_thlp2(k)   = Kw2(k)
-        Kw2_rtpthlp(k) = Kw2(k)
+          Kw2_rtp2(k)    = Kw2(k)
+          Kw2_thlp2(k)   = Kw2(k)
+          Kw2_rtpthlp(k) = Kw2(k)
 
-      enddo
+       enddo
 
     endif  ! l_3pt_sqd_dfsn
 
@@ -684,15 +686,15 @@ module advance_xp2_xpyp_module
       ! Clipping for sclr'^2
       do i = 1, sclr_dim, 1
 
-!     threshold = 0.0
+!      threshold = 0.0
 !
-!     where ( wp2 >= wtol_sqd ) &
-!        threshold = sclrtol(i)*sclrtol(i)
+!      where ( wp2 >= wtol_sqd ) &
+!         threshold = sclrtol(i)*sclrtol(i)
 
-        threshold = sclrtol(i)**2
+         threshold = sclrtol(i)**2
 
-        call clip_variance( "sclrp2", dt, threshold, & ! Intent(in)
-                            sclrp2(:,i) )              ! Intent(inout)
+         call clip_variance( "sclrp2", dt, threshold, & ! Intent(in)
+                             sclrp2(:,i) )              ! Intent(inout)
 
       enddo
 
@@ -797,17 +799,17 @@ module advance_xp2_xpyp_module
     return
   end subroutine advance_xp2_xpyp
 
-!===============================================================================
+  !=============================================================================
   subroutine xp2_xpyp_lhs( dt, l_iter, wp2_zt, wp3,  & 
                            a1, a1_zt, tau_zm, wm_zm, Kw,  &
                            Cn, nu, beta, lhs )
 
-! Description:
-! Compute LHS tridiagonal matrix for a variance or coveriance term
+    ! Description:
+    ! Compute LHS tridiagonal matrix for a variance or coveriance term
 
-! References:
-! None
-!-----------------------------------------------------------------------
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
 
     use grid_class, only: & 
         gr ! Variable(s)
@@ -977,10 +979,10 @@ module advance_xp2_xpyp_module
 
 
     ! Boundary Conditions
-    ! These are set so that the sfc_var value of the variances and covariances can
-    ! be used at the lowest boundary and the values of those variables can be set
-    ! to 0 at the top boundary.  Fixed-point boundary conditions are used for both
-    ! the variances and the covariances.
+    ! These are set so that the sfc_var value of the variances and covariances
+    ! can be used at the lowest boundary and the values of those variables can
+    ! be set to 0 at the top boundary.  Fixed-point boundary conditions are used
+    ! for both the variances and the covariances.
     lhs(:,1) = 0.0
     lhs(:,gr%nnzp) = 0.0
 
@@ -997,15 +999,15 @@ module advance_xp2_xpyp_module
     return
   end subroutine xp2_xpyp_lhs
 
-!===============================================================================
+  !=============================================================================
   subroutine xp2_xpyp_solve( solve_type, nrhs, rhs, lhs, xapxbp, err_code )
 
-! Description:
-!   Solve a tridiagonal system
-!
-! References:
-!   None
-!-------------------------------------------------------------------------------
+    ! Description:
+    ! Solve a tridiagonal system
+    !
+    ! References:
+    !   None
+    !-----------------------------------------------------------------------
 
     use lapack_wrap, only:  & 
       tridag_solve,  & ! Variable(s)
@@ -1051,6 +1053,7 @@ module advance_xp2_xpyp_module
     real, dimension(3,gr%nnzp), intent(inout) :: & 
       lhs  ! Implicit contributions to x variance/covariance term [units vary]
 
+    ! Output Variables
     real, dimension(gr%nnzp,nrhs), intent(out) ::  & 
       xapxbp ! Computed value of the variable(s) at <t+1> [units vary]
 
@@ -1065,9 +1068,9 @@ module advance_xp2_xpyp_module
     ! --- Begin Code ---
 
     select case ( trim( solve_type ) )
-    !-----------------------------------------------------------------------------
+    !------------------------------------------------------------------------
     ! Note that these are diagnostics from inverting the matrix, not a budget
-    !-----------------------------------------------------------------------------
+    !------------------------------------------------------------------------
     case ( "rtp2" )
       ixapxbp_matrix_condt_num  = irtp2_matrix_condt_num
 
@@ -1106,16 +1109,17 @@ module advance_xp2_xpyp_module
     return
   end subroutine xp2_xpyp_solve
 
-!===============================================================================
+  !=============================================================================
   subroutine xp2_xpyp_implicit_stats( solve_type, xapxbp )
 
-! Description:
-!   Finalize implicit contributions for r_t'^2, th_l'^2, r_t'th_l',
-!   u'^2, and v'^2.
-!
-! References:
-!   None
-!-------------------------------------------------------------------------------
+    ! Description:
+    ! Finalize implicit contributions for r_t'^2, th_l'^2, r_t'th_l',
+    ! u'^2, and v'^2.
+    !
+    ! References:
+    !   None
+    !-----------------------------------------------------------------------
+
     use grid_class, only: &
       gr ! Derived type variable
 
@@ -1273,7 +1277,7 @@ module advance_xp2_xpyp_module
     return
   end subroutine xp2_xpyp_implicit_stats
 
-!===============================================================================
+  !=============================================================================
   subroutine xp2_xpyp_uv_rhs( solve_type, dt, l_iter, a1, a1_zt, & 
                               wp2, wp2_zt, wp3, wpthvp, tau_zm,  & 
                               xam, xbm, wpxap, wpxap_zt, wpxbp, & 
@@ -1281,9 +1285,9 @@ module advance_xp2_xpyp_module
                               T0, beta, &
                               rhs )
 
-! Description:
-! Explicit contributions to u'^2 or v'^2
-!-----------------------------------------------------------------------
+    ! Description:
+    ! Explicit contributions to u'^2 or v'^2
+    !-----------------------------------------------------------------------
 
     use grid_class, only: & 
         gr ! Variable(s)
@@ -1316,7 +1320,7 @@ module advance_xp2_xpyp_module
 
     implicit none
 
-! Input Variables
+    ! Input Variables
     character(len=*), intent(in) :: solve_type
 
     real(kind=time_precision), intent(in) :: & 
@@ -1349,6 +1353,7 @@ module advance_xp2_xpyp_module
       T0,       & ! Reference temperature                          [K]
       beta        ! Model parameter beta                           [-]
 
+    ! Output Variable
     real, dimension(gr%nnzp,1), intent(out) :: & 
       rhs    ! Explicit contributions to x variance/covariance terms
 
@@ -1492,8 +1497,8 @@ module advance_xp2_xpyp_module
 
     ! Boundary Conditions
     ! These are set so that the sfc_var value of up2 or vp2 can be used at the
-    ! lowest boundary and the values of those variables can be set to 0 at the top
-    ! boundary.  Fixed-point boundary conditions are used for the variances.
+    ! lowest boundary and the values of those variables can be set to 0 at the
+    ! top boundary.  Fixed-point boundary conditions are used for the variances.
 
     ! This boundary condition was changed by dschanen on 24 April 2007
     ! When we run prognostically we want to preserve the surface value.
@@ -1508,17 +1513,17 @@ module advance_xp2_xpyp_module
     return
   end subroutine xp2_xpyp_uv_rhs
 
-!===============================================================================
+  !=============================================================================
   subroutine xp2_xpyp_rhs( solve_type, dt, l_iter, a1, a1_zt, &
                            wp2_zt, wp3, wpxap, wpxap_zt, & 
                            wpxbp, wpxbp_zt, xam, xbm, xapxbp, & 
                            Cn, tau_zm, threshold, beta, & 
                            rhs )
 
-! Description:
-!   Explicit contributions to r_t'^2, th_l'^2, r_t'th_l', sclr'r_t', sclr'th_l',
-!   or sclr'^2.
-!-------------------------------------------------------------------------------
+    ! Description:
+    ! Explicit contributions to r_t'^2, th_l'^2, r_t'th_l', sclr'r_t',
+    ! sclr'th_l', or sclr'^2.
+    !-----------------------------------------------------------------------
 
     use grid_class, only: & 
         gr ! Variable(s)
@@ -1546,7 +1551,7 @@ module advance_xp2_xpyp_module
 
     implicit none
 
-! Input Variables
+    ! Input Variables
     character(len=*), intent(in) :: solve_type
 
     real(kind=time_precision), intent(in) :: & 
@@ -1575,6 +1580,7 @@ module advance_xp2_xpyp_module
                !                                                    *{x_bm units}] 
       beta         ! Model parameter beta                            [-]
 
+    ! Output Variable
     real, dimension(gr%nnzp,1), intent(out) :: & 
       rhs     ! Explicit contributions to x variance/covariance terms
 
@@ -1694,10 +1700,11 @@ module advance_xp2_xpyp_module
 
 
     ! Boundary Conditions
-    ! These are set so that the sfc_var value of rtp2, thlp2, or rtpthlp (or sclrp2,
-    ! sclrprtp, or sclrpthlp) can be used at the lowest boundary and the values of
-    ! those variables can be set to 0 at the top boundary.  Fixed-point boundary
-    ! conditions are used for both the variances and the covariances.
+    ! These are set so that the sfc_var value of rtp2, thlp2, or rtpthlp (or
+    ! sclrp2, sclrprtp, or sclrpthlp) can be used at the lowest boundary and the
+    ! values of those variables can be set to 0 at the top boundary.
+    ! Fixed-point boundary conditions are used for both the variances and the
+    ! covariances.
 
     ! This boundary condition was changed by dschanen on 24 April 2007
     ! When we run prognostically we want to preserve the surface value.
@@ -1712,85 +1719,86 @@ module advance_xp2_xpyp_module
     return
   end subroutine xp2_xpyp_rhs
 
-!===============================================================================
+  !=============================================================================
   pure function term_ta_lhs( wp3p1, wp3, wp2_ztp1, wp2_zt, &
                              a1_ztp1, a1, a1_zt, dzm, beta, level ) & 
   result( lhs )
 
-! Description:
-! Turbulent advection of x_a'x_b':  implicit portion of the code.
-!
-! The d(x_a'x_b')/dt equation contains a turbulent advection term:
-!
-! - d(w'x_a'x_b')/dz.
-!
-! A substitution is made in order to close the turbulent advection term,
-! such that:
-!
-! w'x_a'x_b' = (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
-!                 + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
-!                   * w'x_a' * w'x_b';
-!
-! where a_1 is a variable that is a function of sigma_sqd_w.  The turbulent
-! advection term is rewritten as:
-!
-! - d [ (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
-!          + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
-!            * w'x_a' * w'x_b' ]
-!   / dz;
-!
-! which produces an implicit and an explicit portion of this term.  The implicit
-! portion of this term is:
-!
-! - d [ (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'(t+1) ] / dz.
-!
-! Since (1/3)*beta is a constant, it can be pulled outside of the derivative.
-! The implicit portion of this term becomes:
-!
-! - (1/3)*beta * d [ a_1 * ( w'^3 / w'^2 ) * x_a'x_b'(t+1) ] / dz.
-!
-! Note:  When the term is brought over to the left-hand side, the sign is
-!        reversed and the leading "-" in front of the term is changed to a "+".
-!
-! The timestep index (t+1) means that the value of x_a'x_b' being used is from
-! the next timestep, which is being advanced to in solving the d(x_a'x_b')/dt
-! equation.
-!
-! The implicit portion of this term is discretized as follows:
-!
-! The values of x_a'x_b' are found on the momentum levels, as are the values of
-! w'^2 and a_1.  The values of w'^3 are found on the thermodynamic levels.  The
-! variables x_a'x_b', w'^2, and a_1 are each interpolated to the intermediate
-! thermodynamic levels.  The values of the mathematical expression (called F
-! here) within the dF/dz term are computed on the thermodynamic levels.  Then
-! the derivative (d/dz) of the expression (F) is taken over the central momentum
-! level, yielding the desired result.  In this function, the values of F are as
-! follows:
-!
-! F = a_1(t) * ( w'^3(t) / w'^2(t) ) * x_a'x_b'(t+1);
-!
-! where the timestep index (t) stands for the index of the current timestep.
-!
-!
-! ==a1p1========wp2p1========xapxbpp1====================== m(k+1)
-!
-! ----a1(interp)---wp2(interp)---xapxbp(interp)---wp3p1---- t(k+1)
-!
-! ==a1==========wp2==========xapxbp=================dF/dz== m(k)
-!
-! ----a1(interp)---wp2(interp)---xapxbp(interp)---wp3------ t(k)
-!
-! ==a1m1========wp2m1========xapxbpm1====================== m(k-1)
-!
-! The vertical indices m(k+1), t(k+1), m(k), t(k), and m(k-1) correspond with
-! altitudes zm(k+1), zt(k+1), zm(k), zt(k), and zm(k-1), respectively.  The
-! letter "t" is used for thermodynamic levels and the letter "m" is used for
-! momentum levels.
-!
-! dzm(k) = 1 / ( zt(k+1) - zt(k) )
+    ! Description:
+    ! Turbulent advection of x_a'x_b':  implicit portion of the code.
+    !
+    ! The d(x_a'x_b')/dt equation contains a turbulent advection term:
+    !
+    ! - d(w'x_a'x_b')/dz.
+    !
+    ! A substitution is made in order to close the turbulent advection term,
+    ! such that:
+    !
+    ! w'x_a'x_b' = (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
+    !                 + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
+    !                   * w'x_a' * w'x_b';
+    !
+    ! where a_1 is a variable that is a function of sigma_sqd_w.  The turbulent
+    ! advection term is rewritten as:
+    !
+    ! - d [ (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
+    !          + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
+    !            * w'x_a' * w'x_b' ]
+    !   / dz;
+    !
+    ! which produces an implicit and an explicit portion of this term.  The
+    ! implicit portion of this term is:
+    !
+    ! - d [ (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'(t+1) ] / dz.
+    !
+    ! Since (1/3)*beta is a constant, it can be pulled outside of the
+    ! derivative.  The implicit portion of this term becomes:
+    !
+    ! - (1/3)*beta * d [ a_1 * ( w'^3 / w'^2 ) * x_a'x_b'(t+1) ] / dz.
+    !
+    ! Note:  When the term is brought over to the left-hand side, the sign
+    !        is reversed and the leading "-" in front of the term is changed
+    !        to a "+".
+    !
+    ! The timestep index (t+1) means that the value of x_a'x_b' being used is
+    ! from the next timestep, which is being advanced to in solving the
+    ! d(x_a'x_b')/dt equation.
+    !
+    ! The implicit portion of this term is discretized as follows:
+    !
+    ! The values of x_a'x_b' are found on the momentum levels, as are the values
+    ! of w'^2 and a_1.  The values of w'^3 are found on the thermodynamic
+    ! levels.  The variables x_a'x_b', w'^2, and a_1 are each interpolated to
+    ! the intermediate thermodynamic levels.  The values of the mathematical
+    ! expression (called F here) within the dF/dz term are computed on the
+    ! thermodynamic levels.  Then the derivative (d/dz) of the expression (F) is
+    ! taken over the central momentum level, yielding the desired result.  In
+    ! this function, the values of F are as follows:
+    !
+    ! F = a_1(t) * ( w'^3(t) / w'^2(t) ) * x_a'x_b'(t+1);
+    !
+    ! where the timestep index (t) stands for the index of the current timestep.
+    !
+    !
+    ! ==a1p1========wp2p1========xapxbpp1====================== m(k+1)
+    !
+    ! ----a1(interp)---wp2(interp)---xapxbp(interp)---wp3p1---- t(k+1)
+    !
+    ! ==a1==========wp2==========xapxbp=================dF/dz== m(k)
+    !
+    ! ----a1(interp)---wp2(interp)---xapxbp(interp)---wp3------ t(k)
+    !
+    ! ==a1m1========wp2m1========xapxbpm1====================== m(k-1)
+    !
+    ! The vertical indices m(k+1), t(k+1), m(k), t(k), and m(k-1) correspond
+    ! with altitudes zm(k+1), zt(k+1), zm(k), zt(k), and zm(k-1), respectively.
+    ! The letter "t" is used for thermodynamic levels and the letter "m" is used
+    ! for momentum levels.
+    !
+    ! dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
-! References:
-!-----------------------------------------------------------------------
+    ! References:
+    !-----------------------------------------------------------------------
 
     use grid_class, only:  & ! gr%weights_zm2zt
         gr ! Variable(s)
@@ -1850,60 +1858,60 @@ module advance_xp2_xpyp_module
 
     if ( l_standard_term_ta ) then
 
-      ! The turbulent advection term is discretized normally, in accordance
-      ! with the model equations found in the documentation and the description
-      ! listed above.
+       ! The turbulent advection term is discretized normally, in accordance
+       ! with the model equations found in the documentation and the description
+       ! listed above.
 
-      ! Momentum superdiagonal: [ x xapxbp(k+1,<t+1>) ]
-      lhs(kp1_mdiag)  &
-      = + (1.0/3.0) * beta * dzm  &
-          * a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  &
-          * gr%weights_zm2zt(m_above,tkp1)
+       ! Momentum superdiagonal: [ x xapxbp(k+1,<t+1>) ]
+       lhs(kp1_mdiag)  &
+       = + (1.0/3.0) * beta * dzm  &
+           * a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  &
+           * gr%weights_zm2zt(m_above,tkp1)
 
-      ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
-      lhs(k_mdiag)  &
-      = + (1.0/3.0) * beta * dzm  &
-          * (   a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  &
-                * gr%weights_zm2zt(m_below,tkp1)  &
-              - a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) )  &
-                * gr%weights_zm2zt(m_above,tk)  &
-            )
+       ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
+       lhs(k_mdiag)  &
+       = + (1.0/3.0) * beta * dzm  &
+           * (   a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  &
+                 * gr%weights_zm2zt(m_below,tkp1)  &
+               - a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) )  &
+                 * gr%weights_zm2zt(m_above,tk)  &
+             )
 
-      ! Momentum subdiagonal: [ x xapxbp(k-1,<t+1>) ]
-      lhs(km1_mdiag)  &
-      = - (1.0/3.0) * beta * dzm  &
-          * a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) )  &
-          * gr%weights_zm2zt(m_below,tk)
+       ! Momentum subdiagonal: [ x xapxbp(k-1,<t+1>) ]
+       lhs(km1_mdiag)  &
+       = - (1.0/3.0) * beta * dzm  &
+           * a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) )  &
+           * gr%weights_zm2zt(m_below,tk)
 
     else
 
-      ! Brian tried a new discretization for the turbulent advection term, for
-      ! which the implicit portion of the term is:
-      ! - d [ a_1 * (1/3)*beta * ( w'^3 / w'^2 ) * x_a'x_b' ] / dz.  In order
-      ! to help stabilize x_a'x_b', a_1 has been pulled outside the derivative.
+       ! Brian tried a new discretization for the turbulent advection term, for
+       ! which the implicit portion of the term is:
+       ! - d [ a_1 * (1/3)*beta * ( w'^3 / w'^2 ) * x_a'x_b' ] / dz.  In order
+       ! to help stabilize x_a'x_b', a_1 has been pulled outside the derivative.
 
-      ! Momentum superdiagonal: [ x xapxbp(k+1,<t+1>) ]
-      lhs(kp1_mdiag)  & 
-      = + (1.0/3.0) * beta * a1 * dzm & 
-          * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  & 
-          * gr%weights_zm2zt(m_above,tkp1)
+       ! Momentum superdiagonal: [ x xapxbp(k+1,<t+1>) ]
+       lhs(kp1_mdiag)  & 
+       = + (1.0/3.0) * beta * a1 * dzm & 
+           * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  & 
+           * gr%weights_zm2zt(m_above,tkp1)
 
-      ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
-      lhs(k_mdiag)  & 
-      = + (1.0/3.0) * beta * a1 * dzm & 
-          * (   ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  & 
-                * gr%weights_zm2zt(m_below,tkp1) & 
-              - ( wp3 / max( wp2_zt, wtol_sqd ) ) & 
-                * gr%weights_zm2zt(m_above,tk) & 
-            )
+       ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
+       lhs(k_mdiag)  & 
+       = + (1.0/3.0) * beta * a1 * dzm & 
+           * (   ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  & 
+                 * gr%weights_zm2zt(m_below,tkp1) & 
+               - ( wp3 / max( wp2_zt, wtol_sqd ) ) & 
+                 * gr%weights_zm2zt(m_above,tk) & 
+             )
 
-      ! Momentum subdiagonal: [ x xapxbp(k-1,<t+1>) ]
-      lhs(km1_mdiag)  & 
-      = - (1.0/3.0) * beta * a1 * dzm & 
-          * ( wp3 / max( wp2_zt, wtol_sqd ) ) & 
-          * gr%weights_zm2zt(m_below,tk)
+       ! Momentum subdiagonal: [ x xapxbp(k-1,<t+1>) ]
+       lhs(km1_mdiag)  & 
+       = - (1.0/3.0) * beta * a1 * dzm & 
+           * ( wp3 / max( wp2_zt, wtol_sqd ) ) & 
+           * gr%weights_zm2zt(m_below,tk)
 
-      ! End of Brian's a1 change.  14 Feb 2008.
+       ! End of Brian's a1 change.  14 Feb 2008.
 
     endif
 
@@ -1911,82 +1919,82 @@ module advance_xp2_xpyp_module
     return
   end function term_ta_lhs
 
-!===============================================================================
+  !=============================================================================
   pure function term_ta_rhs( wp3p1, wp3, wp2_ztp1, wp2_zt, &
                              a1_ztp1, a1, a1_zt, wpxbp_ztp1, wpxbp_zt, &
                              wpxap_ztp1, wpxap_zt, dzm, beta ) &
   result( rhs )
 
-! Description:
-! Turbulent advection of x_a'x_b':  explicit portion of the code.
-!
-! The d(x_a'x_b')/dt equation contains a turbulent advection term:
-!
-! - d(w'x_a'x_b')/dz.
-!
-! A substitution is made in order to close the turbulent advection term,
-! such that:
-!
-! w'x_a'x_b' = (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
-!                 + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
-!                   * w'x_a' * w'x_b';
-!
-! where a_1 is a variable that is a function of sigma_sqd_w.  The turbulent
-! advection term is rewritten as:
-!
-! - d [ (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
-!          + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
-!            * w'x_a' * w'x_b' ]
-!   / dz;
-!
-! which produces an implicit and an explicit portion of this term.  The explicit
-! portion of this term is:
-!
-! - d [ (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
-!       * w'x_a' * w'x_b' ] / dz.
-!
-! Since (1-(1/3)*beta) is a constant, it can be pulled outside of the
-! derivative.  The explicit portion of this term becomes:
-!
-! - (1-(1/3)*beta) * d [ (a_1)^2 * ( w'^3 / (w'^2)^2 )
-!                        * w'x_a' * w'x_b' ] / dz.
-!
-! The explicit portion of this term is discretized as follows:
-!
-! The values of w'x_a', w'x_b', w'^2, and a_1 are found on the momentum levels.
-! The values of w'^3 are found on the thermodynamic levels.  The variables
-! w'x_a', w'x_b', w'^2, and a_1 are each interpolated to the intermediate
-! thermodynamic levels.  The values of the mathematical expression (called F
-! here) within the dF/dz term are computed on the thermodynamic levels.  Then
-! the derivative (d/dz) of the expression (F) is taken over the central momentum
-! level, yielding the desired result.  In this function, the values of F are as
-! follows:
-!
-! F = ( a_1(t) )^2 * ( w'^3(t) / ( w'^2(t) )^2 )
-!     * w'x_a'(t) * w'x_b'(t);
-!
-! where the timestep index (t) stands for the index of the current timestep.
-!
-!
-! =a1p1=======wp2p1=======wpxapp1=======wpxbpp1============ m(k+1)
-!
-! -a1(interp)-wp2(interp)-wpxap(interp)-wpxbp(interp)-wp3p1 t(k+1)
-!
-! =a1=========wp2=========wpxap=========wpxbp====dF/dz===== m(k)
-!
-! -a1(interp)-wp2(interp)-wpxap(interp)-wpxbp(interp)-wp3-- t(k)
-!
-! =a1m1=======wp2m1=======wpxapm1=======wpxbpm1============ m(k-1)
-!
-! The vertical indices m(k+1), t(k+1), m(k), t(k), and m(k-1) correspond with
-! altitudes zm(k+1), zt(k+1), zm(k), zt(k), and zm(k-1), respectively.  The
-! letter "t" is used for thermodynamic levels and the letter "m" is used for
-! momentum levels.
-!
-! dzm(k) = 1 / ( zt(k+1) - zt(k) )
+    ! Description:
+    ! Turbulent advection of x_a'x_b':  explicit portion of the code.
+    !
+    ! The d(x_a'x_b')/dt equation contains a turbulent advection term:
+    !
+    ! - d(w'x_a'x_b')/dz.
+    !
+    ! A substitution is made in order to close the turbulent advection term,
+    ! such that:
+    !
+    ! w'x_a'x_b' = (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
+    !                 + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
+    !                   * w'x_a' * w'x_b';
+    !
+    ! where a_1 is a variable that is a function of sigma_sqd_w.  The turbulent
+    ! advection term is rewritten as:
+    !
+    ! - d [ (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
+    !          + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
+    !            * w'x_a' * w'x_b' ]
+    !   / dz;
+    !
+    ! which produces an implicit and an explicit portion of this term.  The
+    ! explicit portion of this term is:
+    !
+    ! - d [ (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
+    !       * w'x_a' * w'x_b' ] / dz.
+    !
+    ! Since (1-(1/3)*beta) is a constant, it can be pulled outside of the
+    ! derivative.  The explicit portion of this term becomes:
+    !
+    ! - (1-(1/3)*beta) * d [ (a_1)^2 * ( w'^3 / (w'^2)^2 )
+    !                        * w'x_a' * w'x_b' ] / dz.
+    !
+    ! The explicit portion of this term is discretized as follows:
+    !
+    ! The values of w'x_a', w'x_b', w'^2, and a_1 are found on the momentum
+    ! levels.  The values of w'^3 are found on the thermodynamic levels.  The
+    ! variables w'x_a', w'x_b', w'^2, and a_1 are each interpolated to the
+    ! intermediate thermodynamic levels.  The values of the mathematical
+    ! expression (called F here) within the dF/dz term are computed on the
+    ! thermodynamic levels.  Then the derivative (d/dz) of the expression (F) is
+    ! taken over the central momentum level, yielding the desired result.  In
+    ! this function, the values of F are as follows:
+    !
+    ! F = ( a_1(t) )^2 * ( w'^3(t) / ( w'^2(t) )^2 )
+    !     * w'x_a'(t) * w'x_b'(t);
+    !
+    ! where the timestep index (t) stands for the index of the current timestep.
+    !
+    !
+    ! =a1p1=======wp2p1=======wpxapp1=======wpxbpp1============ m(k+1)
+    !
+    ! -a1(interp)-wp2(interp)-wpxap(interp)-wpxbp(interp)-wp3p1 t(k+1)
+    !
+    ! =a1=========wp2=========wpxap=========wpxbp====dF/dz===== m(k)
+    !
+    ! -a1(interp)-wp2(interp)-wpxap(interp)-wpxbp(interp)-wp3-- t(k)
+    !
+    ! =a1m1=======wp2m1=======wpxapm1=======wpxbpm1============ m(k-1)
+    !
+    ! The vertical indices m(k+1), t(k+1), m(k), t(k), and m(k-1) correspond
+    ! with altitudes zm(k+1), zt(k+1), zm(k), zt(k), and zm(k-1), respectively.
+    ! The letter "t" is used for thermodynamic levels and the letter "m" is used
+    ! for momentum levels.
+    !
+    ! dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
-! References:
-!-----------------------------------------------------------------------
+    ! References:
+    !-----------------------------------------------------------------------
 
     use constants, only:  &
         wtol_sqd
@@ -1996,10 +2004,10 @@ module advance_xp2_xpyp_module
 
     implicit none
 
-! External
+    ! External
     intrinsic :: max
 
-! Input variables
+    ! Input variables
     real, intent(in) :: & 
       wp3p1,      & ! w'^3(k+1)                                  [m^3/s^3]
       wp3,        & ! w'^3(k)                                    [m^3/s^3]
@@ -2015,42 +2023,42 @@ module advance_xp2_xpyp_module
       dzm,        & ! Inverse of grid spacing                    [1/m]
       beta          ! Model parameter                            [-]
 
-! Return Variable
+    ! Return Variable
     real :: rhs
 
 
     if ( l_standard_term_ta ) then
 
-      ! The turbulent advection term is discretized normally, in accordance
-      ! with the model equations found in the documentation and the description
-      ! listed above.
+       ! The turbulent advection term is discretized normally, in accordance
+       ! with the model equations found in the documentation and the description
+       ! listed above.
 
-      rhs & 
-      = - ( 1.0 - (1.0/3.0) * beta ) * dzm &
-          * (   a1_ztp1**2 * wpxap_ztp1 * wpxbp_ztp1 &
-                * ( wp3p1 / max( wp2_ztp1, wtol_sqd )**2 ) &
-              - a1_zt**2 * wpxap_zt * wpxbp_zt &
-                * ( wp3 / max( wp2_zt, wtol_sqd )**2 ) &
-            )
+       rhs & 
+       = - ( 1.0 - (1.0/3.0) * beta ) * dzm &
+           * (   a1_ztp1**2 * wpxap_ztp1 * wpxbp_ztp1 &
+                 * ( wp3p1 / max( wp2_ztp1, wtol_sqd )**2 ) &
+               - a1_zt**2 * wpxap_zt * wpxbp_zt &
+                 * ( wp3 / max( wp2_zt, wtol_sqd )**2 ) &
+             )
 
     else
 
-      ! Brian tried a new discretization for the turbulent advection term, for
-      ! which the explicit portion of the term is:
-      ! - d [ (a_1)^2 * (1-(1/3)*beta) * ( w'^3 / (w'^2)^2 )
-      !       * w'x_a' * w'x_b' ] / dz.
-      ! In order to help stabilize x_a'x_b', (a_1)^2 has been pulled outside
-      ! the derivative.
+       ! Brian tried a new discretization for the turbulent advection term, for
+       ! which the explicit portion of the term is:
+       ! - d [ (a_1)^2 * (1-(1/3)*beta) * ( w'^3 / (w'^2)^2 )
+       !       * w'x_a' * w'x_b' ] / dz.
+       ! In order to help stabilize x_a'x_b', (a_1)^2 has been pulled outside
+       ! the derivative.
 
-      rhs & 
-      = - ( 1.0 - (1.0/3.0) * beta ) * a1**2 * dzm & 
-          * (   wpxap_ztp1 * wpxbp_ztp1 & 
-                * ( wp3p1 / max( wp2_ztp1, wtol_sqd )**2 ) & 
-              - wpxap_zt * wpxbp_zt & 
-                * ( wp3 / max( wp2_zt, wtol_sqd )**2 ) & 
-            )
+       rhs & 
+       = - ( 1.0 - (1.0/3.0) * beta ) * a1**2 * dzm & 
+           * (   wpxap_ztp1 * wpxbp_ztp1 & 
+                 * ( wp3p1 / max( wp2_ztp1, wtol_sqd )**2 ) & 
+               - wpxap_zt * wpxbp_zt & 
+                 * ( wp3 / max( wp2_zt, wtol_sqd )**2 ) & 
+             )
 
-      ! End of Brian's a1 change.  14 Feb 2008.
+       ! End of Brian's a1 change.  14 Feb 2008.
 
     endif
 
@@ -2058,44 +2066,45 @@ module advance_xp2_xpyp_module
     return
   end function term_ta_rhs
 
-!===============================================================================
+  !=============================================================================
   pure function term_tp( xamp1, xam, xbmp1, xbm,  & 
                          wpxbp, wpxap, dzm ) & 
   result( rhs )
 
-! Description:
-! Turbulent production of x_a'x_b':  explicit portion of the code.
-!
-! The d(x_a'x_b')/dt equation contains a turbulent production term:
-!
-! - w'x_b' d(x_am)/dz - w'x_a' d(x_bm)/dz.
-!
-! This term is solved for completely explicitly and is discretized as follows:
-!
-! The values of w'x_a' and w'x_b' are found on the momentum levels, whereas the
-! values of x_am and x_bm are found on the thermodynamic levels.  The
-! derivatives of both x_am and x_bm are taken over the intermediate (central)
-! momentum level.  All of the remaining mathematical operations take place at
-! the central momentum level, yielding the desired result.
-!
-! ---------xamp1------------xbmp1-------------------------- t(k+1)
-!
-! ===wpxap======d(xam)/dz=========d(xbm)/dz===wpxbp======== m(k)
-!
-! ---------xam--------------xbm---------------------------- t(k)
-!
-! The vertical indices t(k+1), m(k), and t(k) correspond with altitudes zt(k+1),
-! zm(k), and zt(k), respectively.  The letter "t" is used for thermodynamic
-! levels and the letter "m" is used for momentum levels.
-!
-! dzm(k) = 1 / ( zt(k+1) - zt(k) )
+    ! Description:
+    ! Turbulent production of x_a'x_b':  explicit portion of the code.
+    !
+    ! The d(x_a'x_b')/dt equation contains a turbulent production term:
+    !
+    ! - w'x_b' d(x_am)/dz - w'x_a' d(x_bm)/dz.
+    !
+    ! This term is solved for completely explicitly and is discretized as
+    ! follows:
+    !
+    ! The values of w'x_a' and w'x_b' are found on the momentum levels, whereas
+    ! the values of x_am and x_bm are found on the thermodynamic levels.  The
+    ! derivatives of both x_am and x_bm are taken over the intermediate
+    ! (central) momentum level.  All of the remaining mathematical operations
+    ! take place at the central momentum level, yielding the desired result.
+    !
+    ! ---------xamp1------------xbmp1-------------------------- t(k+1)
+    !
+    ! ===wpxap======d(xam)/dz=========d(xbm)/dz===wpxbp======== m(k)
+    !
+    ! ---------xam--------------xbm---------------------------- t(k)
+    !
+    ! The vertical indices t(k+1), m(k), and t(k) correspond with altitudes
+    ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for
+    ! thermodynamic levels and the letter "m" is used for momentum levels.
+    !
+    ! dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
-! References:
-!-----------------------------------------------------------------------
+    ! References:
+    !-----------------------------------------------------------------------
 
     implicit none
 
-! Input variables
+    ! Input variables
     real, intent(in) :: & 
       xam,   & ! x_am(k)                     [{x_am units}]
       xamp1, & ! x_am(k+1)                   [{x_am units}]
@@ -2105,7 +2114,7 @@ module advance_xp2_xpyp_module
       wpxap, & ! w'x_a'(k)                   [m/s {x_am units}]
       dzm      ! Inverse of grid spacing (k) [1/m]
 
-! Return Variable
+    ! Return Variable
     real :: rhs
 
     rhs & 
@@ -2115,121 +2124,125 @@ module advance_xp2_xpyp_module
     return
   end function term_tp
 
-!===============================================================================
+  !=============================================================================
   pure function term_dp1_lhs( Cn, tau_zm )  & 
   result( lhs )
 
-! Description:
-! Dissipation term 1 for x_a'x_b':  implicit portion of the code.
-!
-! The d(x_a'x_b')/dt equation contains dissipation term 1:
-!
-! - ( C_n / tau_zm ) x_a'x_b'.
-!
-! For cases where x_a'x_b' is a variance (in other words, where x_a and x_b are
-! the same variable), the term is damped to a certain positive threshold,
-! such that:
-!
-! - ( C_n / tau_zm ) * ( x_a'x_b' - threshold ).
-!
-! However, if x_a'x_b' is u'^2 or v'^2, the term is simply damped to 0.  The
-! expression reverts to the form found in the first equation.  For u'^2 and
-! v'^2, function 'term_dp1_lhs' is called, but function 'term_dp1_rhs' is not
-! called.
-!
-! For cases where x_a'x_b' is a covariance (in other words, where x_a and x_b
-! are different variables), threshold is set to 0, and the expression reverts to
-! the form found in the first equation.
-!
-! This term is broken into implicit and explicit portions.  The equations for
-! u'^2, v'^2, and any covariances only include the implicit portion.  The
-! implicit portion of this term is:
-!
-! - ( C_n / tau_zm ) x_a'x_b'(t+1).
-!
-! Note:  When the implicit term is brought over to the left-hand side, the
-!        sign is reversed and the leading "-" in front of the term is changed
-!        to a "+".
-!
-! The timestep index (t+1) means that the value of x_a'x_b' being used is from
-! the next timestep, which is being advanced to in solving the d(x_a'x_b')/dt
-! equation.
-!
-! The values of x_a'x_b' are found on momentum levels.  The values of time-scale
-! tau_zm are also found on momentum levels.
-!
-! Note:  For equations that use pressure term 1 (such as the equations for u'^2
-!        and v'^2), C_n = ( 2*C_4 + C_14 ) / 3; which combines the implicit
-!        contributions for dissipation term 1 and pressure term 1 into one
-!        expression.  Otherwise, C_n = C_2.
+    ! Description:
+    ! Dissipation term 1 for x_a'x_b':  implicit portion of the code.
+    !
+    ! The d(x_a'x_b')/dt equation contains dissipation term 1:
+    !
+    ! - ( C_n / tau_zm ) x_a'x_b'.
+    !
+    ! For cases where x_a'x_b' is a variance (in other words, where x_a and x_b
+    ! are the same variable), the term is damped to a certain positive
+    ! threshold, such that:
+    !
+    ! - ( C_n / tau_zm ) * ( x_a'x_b' - threshold ).
+    !
+    ! However, if x_a'x_b' is u'^2 or v'^2, the term is simply damped to 0.  The
+    ! expression reverts to the form found in the first equation.  For u'^2 and
+    ! v'^2, function 'term_dp1_lhs' is called, but function 'term_dp1_rhs' is
+    ! not called.
+    !
+    ! For cases where x_a'x_b' is a covariance (in other words, where x_a and
+    ! x_b are different variables), threshold is set to 0, and the expression
+    ! reverts to the form found in the first equation.
+    !
+    ! This term is broken into implicit and explicit portions.  The equations
+    ! for u'^2, v'^2, and any covariances only include the implicit portion.
+    ! The implicit portion of this term is:
+    !
+    ! - ( C_n / tau_zm ) x_a'x_b'(t+1).
+    !
+    ! Note:  When the implicit term is brought over to the left-hand side,
+    !        the sign is reversed and the leading "-" in front of the term
+    !        is changed to a "+".
+    !
+    ! The timestep index (t+1) means that the value of x_a'x_b' being used is
+    ! from the next timestep, which is being advanced to in solving the
+    ! d(x_a'x_b')/dt equation.
+    !
+    ! The values of x_a'x_b' are found on momentum levels.  The values of
+    ! time-scale tau_zm are also found on momentum levels.
+    !
+    ! Note:  For equations that use pressure term 1 (such as the equations for
+    !        u'^2 and v'^2), C_n = ( 2*C_4 + C_14 ) / 3; which combines the
+    !        implicit contributions for dissipation term 1 and pressure term 1
+    !        into one expression.  Otherwise, C_n = C_2.
 
-! References:
-!-----------------------------------------------------------------------
+    ! References:
+    !-----------------------------------------------------------------------
 
     implicit none
 
+    ! Input Variables
     real, intent(in) :: & 
       Cn,    & ! Coefficient C_n                       [-]
       tau_zm   ! Time-scale tau at momentum levels (k) [s]
 
+    ! Return Variable
     real :: lhs
 
-! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
+    ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
     lhs  & 
     = + Cn / tau_zm
 
     return
   end function term_dp1_lhs
 
-!===============================================================================
+  !=============================================================================
   pure function term_dp1_rhs( Cn, tau_zm, threshold ) &
   result( rhs )
 
-! Description:
-! Dissipation term 1 for x_a'x_b':  explicit portion of the code.
-!
-! The d(x_a'x_b')/dt equation contains dissipation term 1:
-!
-! - ( C_n / tau_zm ) x_a'x_b'.
-!
-! For cases where x_a'x_b' is a variance (in other words, where x_a and x_b are
-! the same variable), the term is damped to a certain positive threshold,
-! such that:
-!
-! - ( C_n / tau_zm ) * ( x_a'x_b' - threshold ).
-!
-! However, if x_a'x_b' is u'^2 or v'^2, the term is simply damped to 0.  The
-! expression reverts to the form found in the first equation.  For u'^2 and
-! v'^2, function 'term_dp1_lhs' is called, but function 'term_dp1_rhs' is not
-! called.
-!
-! For cases where x_a'x_b' is a covariance (in other words, where x_a and x_b
-! are different variables), threshold is set to 0, and the expression reverts to
-! the form found in the first equation.
-!
-! This term is broken into implicit and explicit portions.  The equations for
-! u'^2, v'^2, and any covariances only include the implicit portion.  The
-! explicit portion of this term is:
-!
-! + ( C_n / tau_zm ) * threshold.
-!
-! The values of time-scale tau_zm and the threshold are found on the momentum
-! levels.
-!
-! Note:  The equations that use pressure term 1 (such as the equations for u'^2
-!        and v'^2) do not call this function.  Thus, within this function,
-!        C_n = C_2.
+    ! Description:
+    ! Dissipation term 1 for x_a'x_b':  explicit portion of the code.
+    !
+    ! The d(x_a'x_b')/dt equation contains dissipation term 1:
+    !
+    ! - ( C_n / tau_zm ) x_a'x_b'.
+    !
+    ! For cases where x_a'x_b' is a variance (in other words, where x_a and x_b
+    ! are the same variable), the term is damped to a certain positive
+    ! threshold, such that:
+    !
+    ! - ( C_n / tau_zm ) * ( x_a'x_b' - threshold ).
+    !
+    ! However, if x_a'x_b' is u'^2 or v'^2, the term is simply damped to 0.  The
+    ! expression reverts to the form found in the first equation.  For u'^2 and
+    ! v'^2, function 'term_dp1_lhs' is called, but function 'term_dp1_rhs' is
+    ! not called.
+    !
+    ! For cases where x_a'x_b' is a covariance (in other words, where x_a and
+    ! x_b are different variables), threshold is set to 0, and the expression
+    ! reverts to the form found in the first equation.
+    !
+    ! This term is broken into implicit and explicit portions.  The equations
+    ! for u'^2, v'^2, and any covariances only include the implicit portion.
+    ! The explicit portion of this term is:
+    !
+    ! + ( C_n / tau_zm ) * threshold.
+    !
+    ! The values of time-scale tau_zm and the threshold are found on the
+    ! momentum levels.
+    !
+    ! Note:  The equations that use pressure term 1 (such as the equations for
+    !        u'^2 and v'^2) do not call this function.  Thus, within this
+    !        function, C_n = C_2.
 
-! References:
-!-----------------------------------------------------------------------
+    ! References:
+    !-----------------------------------------------------------------------
 
     implicit none
 
+    ! Input Variables
     real, intent(in) :: &
       Cn,       & ! Coefficient C_n                               [-]
       tau_zm,   & ! Time-scale tau at momentum levels (k)         [s]
       threshold   ! Minimum allowable magnitude value of x_a'x_b' [units vary]
 
+    ! Return Variable
     real :: rhs
 
     rhs  & 
@@ -2238,64 +2251,67 @@ module advance_xp2_xpyp_module
     return
   end function term_dp1_rhs
 
-!===============================================================================
+  !=============================================================================
   pure function term_pr1( C4, C14, xbp2, wp2, tau_zm ) & 
   result( rhs )
 
-! Description:
-! Pressure term 1 for x_a'x_b':  explicit portion of the code.
-!
-! Note:  Pressure term 1 is only used when x_a'x_b' is either u'^2 or v'^2.
-!        For the following description, the equation for u'^2 is used as the
-!        example.  The equation for v'^2 is the same as the equation for u'^2,
-!        except that the v'^2 and u'^2 variables are switched.
-!
-! The d(u'^2)/dt equation contains dissipation term 1:
-!
-! - ( C_4 / tau_zm ) * ( u'^2 - (2/3)*em );
-!
-! and pressure term 1:
-!
-! - (2/3) * ( C_14 / tau_zm ) * em;
-!
-! where em = (1/2) * ( u'^2 + v'^2 + w'^2 ).
-!
-! This simplifies to:
-!
-! - [ ( 2*C_4 + C_14 ) / ( 3 * tau_zm ) ] * u'^2
-!    + [ ( C_4 - C_14 ) / ( 3 * tau_zm ) ] * ( v'^2 + w'^2 ).
-!
-! The combined term has both implicit and explicit components.
-! The implicit component is:
-!
-! - [ ( 2*C_4 + C_14 ) / ( 3 * tau_zm ) ] * u'^2(t+1).
-!
-! Note:  When the implicit term is brought over to the left-hand side, the
-!        sign is reversed and the leading "-" in front of the term is changed
-!        to a "+".
-!
-! Timestep index (t) stands for the index of the current timestep, while
-! timestep index (t+1) stands for the index of the next timestep, which is being
-! advanced to in solving the d(x_a'x_b')/dt equation.
-!
-! The implicit component of the combined dp1 and pr1 term is solved in function
-! "term_dp1_lhs" above, where "( 2*C_4 + C_14 ) / 3" is sent in as "C_n".
-!
-! The explicit component of the combined dp1 and pr1 term is:
-!
-! + [ ( C_4 - C_14 ) / ( 3 * tau_zm ) ] * ( v'^2(t) + w'^2(t) );
-!
-! and is discretized as follows:
-!
-! The values for v'^2 and w'^2, as well as for tau_zm, are found on the momentum
-! levels.  The mathematical operations all take place on the momentum levels,
-! yielding the desired result.
+    ! Description:
+    ! Pressure term 1 for x_a'x_b':  explicit portion of the code.
+    !
+    ! Note:  Pressure term 1 is only used when x_a'x_b' is either u'^2 or v'^2.
+    !        For the following description, pressure term 2 for u'^2 is used as
+    !        the example.  Pressure term 2 for v'^2 is the same as pressure
+    !        term 2 for u'^2, except that the v'^2 and u'^2 variables are
+    !        switched.
+    !
+    ! The d(u'^2)/dt equation contains dissipation term 1:
+    !
+    ! - ( C_4 / tau_zm ) * ( u'^2 - (2/3)*em );
+    !
+    ! and pressure term 1:
+    !
+    ! - (2/3) * ( C_14 / tau_zm ) * em;
+    !
+    ! where em = (1/2) * ( u'^2 + v'^2 + w'^2 ).
+    !
+    ! This simplifies to:
+    !
+    ! - [ ( 2*C_4 + C_14 ) / ( 3 * tau_zm ) ] * u'^2
+    !    + [ ( C_4 - C_14 ) / ( 3 * tau_zm ) ] * ( v'^2 + w'^2 ).
+    !
+    ! The combined term has both implicit and explicit components.
+    ! The implicit component is:
+    !
+    ! - [ ( 2*C_4 + C_14 ) / ( 3 * tau_zm ) ] * u'^2(t+1).
+    !
+    ! Note:  When the implicit term is brought over to the left-hand side,
+    !        the sign is reversed and the leading "-" in front of the term
+    !        is changed to a "+".
+    !
+    ! Timestep index (t) stands for the index of the current timestep, while
+    ! timestep index (t+1) stands for the index of the next timestep, which is
+    ! being advanced to in solving the d(x_a'x_b')/dt equation.
+    !
+    ! The implicit component of the combined dp1 and pr1 term is solved in
+    ! function "term_dp1_lhs" above, where "( 2*C_4 + C_14 ) / 3" is sent in
+    ! as "C_n".
+    !
+    ! The explicit component of the combined dp1 and pr1 term is:
+    !
+    ! + [ ( C_4 - C_14 ) / ( 3 * tau_zm ) ] * ( v'^2(t) + w'^2(t) );
+    !
+    ! and is discretized as follows:
+    !
+    ! The values for v'^2 and w'^2, as well as for tau_zm, are found on the
+    ! momentum levels.  The mathematical operations all take place on the
+    ! momentum levels, yielding the desired result.
 
-! References:
-!-----------------------------------------------------------------------
+    ! References:
+    !-----------------------------------------------------------------------
 
     implicit none
 
+    ! Input Variables
     real, intent(in) :: & 
       C4,    & ! Model parameter C_4                         [-]
       C14,   & ! Model parameter C_14                        [-]
@@ -2303,6 +2319,7 @@ module advance_xp2_xpyp_module
       wp2,   & ! w'^2(k)                                     [m^2/s^2]
       tau_zm   ! Time-scale tau at momentum levels (k)       [s]
 
+    ! Return Variable
     real :: rhs
 
     rhs = + 1.0/3.0 * ( C4 - C14 ) * ( xbp2 + wp2 ) / tau_zm
@@ -2310,47 +2327,50 @@ module advance_xp2_xpyp_module
     return
   end function term_pr1
 
-!===============================================================================
+  !=============================================================================
   pure function term_pr2( C5, grav, T0, wpthvp, upwp, vpwp,  & 
                           ump1, um, vmp1, vm, dzm )  & 
   result( rhs )
 
-! Description:
-! Pressure term 2 for x_a'x_b':  explicit portion of the code.
-!
-! Note:  Pressure term 2 is only used when x_a'x_b' is either u'^2 or v'^2.
-!        For the following description, the equation for u'^2 is used as the
-!        example.  The equation for v'^2 is the same as the equation for u'^2.
-!
-! The d(u'^2)/dt equation contains pressure term 2:
-!
-! + (2/3) C_5 [ (g/th_0) w'th_v' - u'w' du/dz - v'w' dv/dz ].
-!
-! This term is solved for completely explicitly and is discretized as follows:
-!
-! The values of w'th_v', u'w', and v'w' are found on the momentum levels,
-! whereas the values of um and vm are found on the thermodynamic levels.  The
-! derivatives of both um and vm are taken over the intermediate (central)
-! momentum level.  All the remaining mathematical operations take place at the
-! central momentum level, yielding the desired result.
-!
-! -------ump1------------vmp1------------------------------ t(k+1)
-!
-! ==upwp======d(um)/dz========d(vm)/dz===vpwp=====wpthvp=== m(k)
-!
-! -------um--------------vm-------------------------------- t(k)
-!
-! The vertical indices t(k+1), m(k), and t(k) correspond with altitudes zt(k+1),
-! zm(k), and zt(k), respectively.  The letter "t" is used for thermodynamic
-! levels and the letter "m" is used for momentum levels.
-!
-! dzm(k) = 1 / ( zt(k+1) - zt(k) )
+    ! Description:
+    ! Pressure term 2 for x_a'x_b':  explicit portion of the code.
+    !
+    ! Note:  Pressure term 2 is only used when x_a'x_b' is either u'^2 or v'^2.
+    !        For the following description, pressure term 2 for u'^2 is used as
+    !        the example.  Pressure term 2 for v'^2 is the exact same as
+    !        pressure term 2 for u'^2.
+    !
+    ! The d(u'^2)/dt equation contains pressure term 2:
+    !
+    ! + (2/3) C_5 [ (g/th_0) w'th_v' - u'w' du/dz - v'w' dv/dz ].
+    !
+    ! This term is solved for completely explicitly and is discretized as
+    ! follows:
+    !
+    ! The values of w'th_v', u'w', and v'w' are found on the momentum levels,
+    ! whereas the values of um and vm are found on the thermodynamic levels.
+    ! The derivatives of both um and vm are taken over the intermediate
+    ! (central) momentum level.  All the remaining mathematical operations take
+    ! place at the central momentum level, yielding the desired result.
+    !
+    ! -------ump1------------vmp1------------------------------ t(k+1)
+    !
+    ! ==upwp======d(um)/dz========d(vm)/dz===vpwp=====wpthvp=== m(k)
+    !
+    ! -------um--------------vm-------------------------------- t(k)
+    !
+    ! The vertical indices t(k+1), m(k), and t(k) correspond with altitudes
+    ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for
+    ! thermodynamic levels and the letter "m" is used for momentum levels.
+    !
+    ! dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
-! References:
-!-----------------------------------------------------------------------
+    ! References:
+    !-----------------------------------------------------------------------
 
     implicit none
 
+    ! Input Variables
     real, intent(in) :: & 
       C5,     & ! Model parameter C_5             [-]
       grav,   & ! Gravitational acceleration      [m/s^2]
@@ -2364,9 +2384,10 @@ module advance_xp2_xpyp_module
       vm,     & ! vm(k)                           [m/s]
       dzm       ! Inverse of the grid spacing (k) [1/m]
 
+    ! Return Variable
     real :: rhs
 
-! As applied to w'2
+    ! As applied to w'2
     rhs = + (2.0/3.0) * C5 & 
             * ( ( grav / T0 ) * wpthvp & 
                 -upwp * dzm * ( ump1 - um ) & 
@@ -2375,12 +2396,14 @@ module advance_xp2_xpyp_module
     return
   end function term_pr2
 
-!===============================================================================
+  !=============================================================================
   subroutine pos_definite_variances( solve_type, dt, tolerance, & 
                                      xp2_np1 )
-! Description:
-!   Use the hole filling code to make a variance term positive definite
-!--------------------------------------------------------------------------------
+
+    ! Description:
+    ! Use the hole filling code to make a variance term positive definite
+    !-----------------------------------------------------------------------
+
     use fill_holes, only: fill_holes_driver
     use grid_class, only: gr
     use stats_precision, only: time_precision
