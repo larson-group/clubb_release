@@ -3,6 +3,12 @@
 !===============================================================================
 module hyper_diffusion_4th_ord
 
+  implicit none
+
+  private ! Default Scope
+
+  public :: hyper_dfsn_4th_ord_zm_lhs
+
 contains
 
   !=============================================================================
