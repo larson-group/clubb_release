@@ -12,7 +12,10 @@ module hyper_diffusion_4th_ord
 contains
 
   !=============================================================================
-  pure function hyper_dfsn_4th_ord_zm_lhs
+  pure function hyper_dfsn_4th_ord_zm_lhs( boundary_cond, nu, dzm,  &
+                                           dztp1, dzt, dzmp1,  &
+                                           dzmm1, dztp2, dztm1, level )  &
+  result( lhs )
 
     ! Description:
     ! Vertical 4th-order numerical diffusion of var_zm:  implicit portion of the
@@ -467,14 +470,246 @@ contains
     ! None
     !-----------------------------------------------------------------------
 
+    use grid_class, only:  &
+        gr  ! Variable(s)   gr%nnzp
+
     implicit none
 
     ! Constant parameters
+    integer, parameter ::  &
+      kp2_mdiag = 1,  & ! Momentum super-super diagonal index.
+      kp1_mdiag = 2,  & ! Momentum super diagonal index.
+      k_mdiag   = 3,  & ! Momentum main diagonal index.
+      km1_mdiag = 4,  & ! Momentum sub diagonal index.
+      km2_mdiag = 5     ! Momentum sub-sub diagonal index.
 
     ! Input Variables
+    character (len=*), intent(in) :: &
+      boundary_cond   ! Type of boundary conditions being used
+                      ! ('zero-flux' or 'fixed-point').
+
+    real, intent(in) ::  &
+      nu,     & ! Constant coefficient of 4th-order numerical diffusion  [m^4/s]
+      dzm,    & ! Inverse of grid spacing over momentum level (k)        [1/m]
+      dztp1,  & ! Inverse of grid spacing over thermodynamic level (k+1) [1/m]
+      dzt,    & ! Inverse of grid spacing over thermodynamic level (k)   [1/m]
+      dzmp1,  & ! Inverse of grid spacing over momentum level (k+1)      [1/m]
+      dzmm1,  & ! Inverse of grid spacing over momentum level (k-1)      [1/m]
+      dztp2,  & ! Inverse of grid spacing over thermodynamic level (k+2) [1/m]
+      dztm1     ! Inverse of grid spacing over thermodynamic level (k-1) [1/m]
+
+    integer, intent(in) ::  & 
+      level     ! Momentum level where calculation occurs.               [-]
 
     ! Return Variable
+    real, dimension(5) :: lhs
 
+
+    if ( level == 1 ) then
+
+       ! Lowest level
+       ! k = 1; lower boundery level at surface.
+       ! Only relevant if zero-flux boundary conditions are used.
+
+       if ( trim( boundary_cond ) == 'zero-flux' ) then
+
+          ! Zero-flux boundary conditions
+
+          ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+          lhs(k_mdiag)   = +nu*dzm*dztp1*(dzmp1*dztp1 + dzm*dztp1)
+
+          ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
+          lhs(kp1_mdiag) = -nu*dzm*dztp1*( dzmp1*(dztp2 + dztp1)  &
+                                          +dzm*dztp1 )
+
+          ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
+          lhs(kp2_mdiag) = +nu*dzm*dztp1*dzmp1*dztp2
+
+       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
+
+          ! Fixed-point boundary conditions
+          ! At level 1, these are over-written or set in the parent subroutine.
+
+          ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+          lhs(k_mdiag)   = 0.0
+
+          ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
+          lhs(kp1_mdiag) = 0.0
+
+          ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
+          lhs(kp2_mdiag) = 0.0
+
+       endif
+
+
+    elseif ( level == 2 ) then
+
+       ! Second-lowest level
+
+       if ( trim( boundary_cond ) == 'zero-flux' ) then
+
+          ! Zero-flux boundary conditions
+
+          ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
+          lhs(km1_mdiag) = -nu*dzm*( dztp1*dzm*dzt  &
+                                    +dzt*( dzm*dzt  &
+                                          +dzmm1*dzt ) )
+
+          ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+          lhs(k_mdiag)   = +nu*dzm*( dztp1*( dzmp1*dztp1  &
+                                            +dzm*(dztp1 + dzt) )  &
+                                    +dzt*( dzm*(dztp1 + dzt)  &
+                                          +dzmm1*dzt ) )
+
+          ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
+          lhs(kp1_mdiag) = -nu*dzm*( dztp1*( dzmp1*(dztp2 + dztp1)  &
+                                            +dzm*dztp1 )  &
+                                    +dzt*dzm*dztp1 )
+
+          ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
+          lhs(kp2_mdiag) = +nu*dzm*dztp1*dzmp1*dztp2
+
+       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
+
+          ! Fixed-point boundary conditions
+
+          ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
+          lhs(km1_mdiag) = -nu*dzm*( dztp1*dzm*dzt  &
+                                    +dzt*dzm*dzt )
+
+          ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+          lhs(k_mdiag)   = +nu*dzm*( dztp1*( dzmp1*dztp1  &
+                                            +dzm*(dztp1 + dzt) )  &
+                                    +dzt*dzm*(dztp1 + dzt) )
+
+          ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
+          lhs(kp1_mdiag) = -nu*dzm*( dztp1*( dzmp1*(dztp2 + dztp1)  &
+                                            +dzm*dztp1 )  &
+                                    +dzt*dzm*dztp1 )
+
+          ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
+          lhs(kp2_mdiag) = +nu*dzm*dztp1*dzmp1*dztp2
+   
+       endif
+
+
+    elseif ( level > 2 .and. level < gr%nnzp-1 ) then
+
+       ! k > 2 and k < num_levels-1
+       ! These interior level are not effected by boundary conditions.
+
+       ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
+       lhs(km2_mdiag) = +nu*dzm*dzt*dzmm1*dztm1
+
+       ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
+       lhs(km1_mdiag) = -nu*dzm*( dztp1*dzm*dzt  &
+                                 +dzt*( dzm*dzt  &
+                                       +dzmm1*(dzt + dztm1) ) )
+
+       ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+       lhs(k_mdiag)   = +nu*dzm*( dztp1*( dzmp1*dztp1  &
+                                         +dzm*(dztp1 + dzt) )  &
+                                 +dzt*( dzm*(dztp1 + dzt)  &
+                                       +dzmm1*dzt ) )
+
+       ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
+       lhs(kp1_mdiag) = -nu*dzm*( dztp1*( dzmp1*(dztp2 + dztp1)  &
+                                         +dzm*dztp1 )  &
+                                 +dzt*dzm*dztp1 )
+
+       ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
+       lhs(kp2_mdiag) = +nu*dzm*dztp1*dzmp1*dztp2
+   
+
+    elseif ( level == gr%nnzp-1 ) then
+
+       ! Second-highest level
+
+       if ( trim( boundary_cond ) == 'zero-flux' ) then
+
+          ! Zero-flux boundary conditions
+
+          ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
+          lhs(km2_mdiag) = +nu*dzm*dzt*dzmm1*dztm1
+
+          ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
+          lhs(km1_mdiag) = -nu*dzm*( dztp1*dzm*dzt  &
+                                    +dzt*( dzm*dzt  &
+                                          +dzmm1*(dzt + dztm1) ) )
+
+          ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+          lhs(k_mdiag)   = +nu*dzm*( dztp1*( dzmp1*dztp1  &
+                                            +dzm*(dztp1 + dzt) )  &
+                                    +dzt*( dzm*(dztp1 + dzt)  &
+                                          +dzmm1*dzt ) )
+
+          ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
+          lhs(kp1_mdiag) = -nu*dzm*( dztp1*( dzmp1*dztp1  &
+                                            +dzm*dztp1 )  &
+                                    +dzt*dzm*dztp1 )
+
+       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
+
+          ! Fixed-point boundary conditions
+
+          ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
+          lhs(km2_mdiag) = +nu*dzm*dzt*dzmm1*dztm1
+
+          ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
+          lhs(km1_mdiag) = -nu*dzm*( dztp1*dzm*dzt  &
+                                    +dzt*( dzm*dzt  &
+                                          +dzmm1*(dzt + dztm1) ) )
+
+          ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+          lhs(k_mdiag)   = +nu*dzm*( dztp1*( dzm*(dztp1 + dzt) )  &
+                                    +dzt*( dzm*(dztp1 + dzt)  &
+                                          +dzmm1*dzt ) )
+
+          ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
+          lhs(kp1_mdiag) = -nu*dzm*( dztp1*dzm*dztp1  &
+                                    +dzt*dzm*dztp1 )
+
+       endif
+
+
+    elseif ( level == gr%nnzp ) then
+
+       ! Highest level
+       ! k = gr%nnzp; upper boundery level at model top.
+       ! Only relevant if zero-flux boundary conditions are used.
+
+       if ( trim( boundary_cond ) == 'zero-flux' ) then
+
+          ! Zero-flux boundary conditions
+
+          ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
+          lhs(km2_mdiag) = +nu*dzm*dzt*dzmm1*dztm1
+
+          ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
+          lhs(km1_mdiag) = -nu*dzm*dzt*( dzm*dzt  &
+                                        +dzmm1*(dzt + dztm1) )
+
+          ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
+          lhs(kp1_mdiag) = +nu*dzm*dzt*(dzm*dzt + dzmm1*dzt)
+
+       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
+
+          ! Fixed-point boundary conditions
+          ! At level gr%nnzp, these are over-written or set in the parent
+          ! subroutine.
+
+          ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
+          lhs(km2_mdiag) = 0.0
+
+          ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
+          lhs(km1_mdiag) = 0.0
+
+          ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
+          lhs(kp1_mdiag) = 0.0
+
+       endif
+
+    endif
 
 
     return
