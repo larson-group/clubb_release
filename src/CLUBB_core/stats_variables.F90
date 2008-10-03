@@ -327,14 +327,19 @@ module stats_variables
      iFrad, & 
      iFrad_LW,   & ! Brian
      iFrad_SW,   & ! Brian
-     iFprec,     & ! Brian
-     iFcsed      ! Brian
+     iFrad_LW_up,   & 
+     iFrad_SW_up,   & 
+     iFrad_LW_down,   & 
+     iFrad_SW_down,   & 
+     iFprec,          & ! Brian
+     iFcsed             ! Brian
 
 !$omp   threadprivate(iwp2, irtp2, ithlp2, irtpthlp, iwprtp, iwpthlp)
 !$omp   threadprivate(iwp4, iwpthvp, irtpthvp, ithlpthvp, itau_zm, iKh_zm)
 !$omp   threadprivate(iwprcp, ithlprcp, irtprcp, ircp2, iupwp, ivpwp)
 !$omp   threadprivate(irho_zm, isigma_sqd_w, iem, ishear, iFrad, iFrad_LW)
-!$omp   threadprivate(iFrad_SW, iFprec, iFcsed)
+!$omp   threadprivate(iFrad_SW, iFrad_SW_up, iFrad_SW_down) 
+!$omp   threadprivae(iFrad_LW_up,iFrad_LW_down,iFprec, iFcsed)
 
   ! Sedimentation velocities
   integer, public :: & 

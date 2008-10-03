@@ -57,11 +57,12 @@ subroutine bugsrad_clubb &
 
   use error_code, only: clubb_at_least_debug_level ! Procedure(s)
 
- 
   use stats_type, only: stat_update_var ! Procedure(s)
 
   use stats_variables, only: zt, zm, l_stats_samp, & ! Variable(s)
-    iFrad_SW, iFrad_LW, iradht_SW, iradht_LW
+    iFrad_SW, iFrad_LW, iradht_SW, iradht_LW, &
+    iFrad_SW_up, iFrad_LW_up, &
+    iFrad_SW_down, iFrad_LW_down
 
   implicit none
 
@@ -98,7 +99,7 @@ subroutine bugsrad_clubb &
   rsnwm, & ! Snow water mixing ratio    [kg/kg]
   rim,   & ! Ice water mixing ratio     [kg/kg]
   rtm,   & ! Total water mixing ratio   [kg/kg]
-  rho_zm,  & ! Density                    [kg/m^3]
+  rho_zm,& ! Density                    [kg/m^3]
   cf,    & ! Cloud fraction             [%]
   p_in_Pa, & ! Pressure on the t grid     [Pa]
   p_in_Pam,& ! Pressure on the m grid     [Pa]
@@ -117,6 +118,10 @@ subroutine bugsrad_clubb &
   real, dimension(nz) :: &
   Frad_SW, & ! SW radiative flux       [W/m^2]
   Frad_LW, & ! LW radiative flux       [W/m^2]
+  Frad_SW_up, & ! SW radiative upwelling flux       [W/m^2]
+  Frad_LW_up, & ! LW radiative upwelling flux       [W/m^2]
+  Frad_SW_down, & ! SW radiative downwelling flux       [W/m^2]
+  Frad_LW_down, & ! LW radiative downwelling flux       [W/m^2]
   radht_SW,& ! SW heating rate         [K/s]
   radht_LW   ! LW heating rate         [K/s]
 
@@ -203,6 +208,10 @@ subroutine bugsrad_clubb &
   alvdf = 0.1d0
   alndr = 0.1d0
   alndf = 0.1d0
+  !alvdr = 0.23d0
+  !alvdf = 0.23d0
+  !alndr = 0.23d0
+  !alndf = 0.23d0
 
   slr  = 1.0d0 ! Fraction of daylight
 
@@ -338,10 +347,17 @@ subroutine bugsrad_clubb &
   radht = radht_SW + radht_LW 
 
 ! These are on the m grid, and require no adjusting
-  Frad_SW(1:nz) = real( flip(  Frad_uSW(1,buffer+1:nz+buffer) &
-                             - Frad_dSW(1,buffer+1:nz+buffer), nz ) )
-  Frad_LW(1:nz) = real( flip(  Frad_uLW(1,buffer+1:nz+buffer) &
-                             - Frad_dLW(1,buffer+1:nz+buffer), nz ) )
+  Frad_SW_up = real( flip( Frad_uSW(1,buffer+1:nz+buffer), nz ) )
+
+  Frad_LW_up = real( flip( Frad_uLW(1,buffer+1:nz+buffer), nz ) )
+
+  Frad_SW_down = real( flip( Frad_dSW(1,buffer+1:nz+buffer), nz ) )
+
+  Frad_LW_down = real( flip( Frad_dLW(1,buffer+1:nz+buffer), nz ) )
+
+  Frad_SW(1:nz) = Frad_SW_up - Frad_SW_down
+
+  Frad_LW(1:nz) = Frad_LW_up - Frad_LW_down
 
   Frad(1:nz) = Frad_SW(1:nz) + Frad_LW(1:nz)
 
@@ -356,6 +372,14 @@ subroutine bugsrad_clubb &
     call stat_update_var( iFrad_SW, Frad_SW, zm )
 
     call stat_update_var( iFrad_LW, Frad_LW, zm )
+
+    call stat_update_var( iFrad_SW_up, Frad_SW_up, zm )
+
+    call stat_update_var( iFrad_LW_up, Frad_LW_up, zm )
+
+    call stat_update_var( iFrad_SW_down, Frad_SW_down, zm )
+
+    call stat_update_var( iFrad_LW_down, Frad_LW_down, zm )
 
   end if ! lstats_samp
  

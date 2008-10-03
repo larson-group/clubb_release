@@ -204,7 +204,8 @@ module gabls3
 
 
   end subroutine gabls3_tndcy
-  subroutine gabls3_sfclyr( um_sfc, vm_sfc, thlm_sfc, rtm_sfc,  & 
+  subroutine gabls3_sfclyr( time, um_sfc, vm_sfc, thlm_sfc, rtm_sfc,  & 
+                          lowest_level, psfc, &
                           upwp_sfc, vpwp_sfc,  & 
                           wpthlp_sfc, wprtp_sfc, ustar, & 
                           wpsclrp_sfc, wpedsclrp_sfc )
@@ -216,11 +217,15 @@ module gabls3
 
 !----------------------------------------------------------------------
 
-    use constants, only: kappa ! Variable(s)
+    use constants, only: kappa, grav, Rd, Cp, p0 ! Variable(s)
 
     use parameters_tunable, only: sclr_dim ! Variable(s)
 
     use array_index, only: iisclr_rt, iisclr_thl
+
+    use diag_ustar_mod, only: diag_ustar
+    use stats_precision, only: time_precision ! Variable(s)
+    use interpolation, only:factor_interp, lin_int ! Procedure(s)
 
     implicit none
 
@@ -229,15 +234,27 @@ module gabls3
     real, parameter ::  & 
       ubmin = 0.25, & 
   !     .  ustar = 0.3,
-      C_10  = 0.0013, & 
-      SST   = 298.09
+     ! C_10  = 0.0013, & ATEX value
+      C_10  = 0.013, & ! Fudged value
+      z0 = 0.15
+    real, parameter, dimension(25) :: sst_given = (/300., 300.8, 300.9, 301.,300.9, 300.5, 300., 298.5, 297., 296., 295.,&
+                                        294., 293.5, 292.5, 291.5, 291., 290.5, 292.5, 294.5, 296.5, 298.,&
+                                        298.5, 300.5, 301.5, 301./)
+    real, parameter, dimension(25) :: sst_time = (/43200., 46800., 50400., 54000., 57600., 61200., 64800., 68400., 72000., 75600.,&
+                                        79200., 82800., 86400., 90000., 93600., 97200., 100800., 104400., 108000., 111600.,&
+                                        115200., 118800., 122400., 126000., 129600./)
+
 
 ! Input variables
+
+    real(kind=time_precision), intent(in) :: time
     real, intent(in) ::  & 
       um_sfc,     & ! um at zt(2)           [m/s]
       vm_sfc,     & ! vm at zt(2)           [m/s]
       thlm_sfc,   & ! Theta_l at zt(2)      [K]
-      rtm_sfc       ! rt at zt(2)           [kg/kg]
+      rtm_sfc,    & ! rt at zt(2)           [kg/kg]
+      lowest_level, &
+      psfc
 
 ! Output variables
     real, intent(out) ::  & 
@@ -253,19 +270,23 @@ module gabls3
       wpsclrp_sfc,    & ! Passive scalar surface flux      [units m/s]
       wpedsclrp_sfc     ! Passive eddy-scalar surface flux [units m/s]
 
-! Local Variables
-    real :: ubar
+    ! Local Variables
+    real :: ubar, sstheta, bflx, sst
 
-! Declare the value of ustar.
-    ustar = 0.3
-
-! Compute heat and moisture fluxes
-
+    integer :: i1, i2
+    ! Compute heat and moisture fluxes
     ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
 
-    wpthlp_sfc & 
-    = -C_10 * ubar * ( thlm_sfc - SST * (1000./1015.)**kappa )
-    wprtp_sfc  = -C_10 * ubar * ( rtm_sfc - 0.009387301907742 )
+    ! Set SST by time in lieu of a surface scheme
+     
+    call time_select( time, sst_time, 25, i1, i2)
+    sst = lin_int( real(time), sst_time(i2), sst_time(i1), sst_given(i2), sst_given(i1) )
+    print *, "SST = ", sst 
+    sstheta = sst * (( p0 / psfc )**(Rd/Cp))
+
+    wpthlp_sfc = -C_10 * ubar * ( thlm_sfc - SST * (p0/psfc)**kappa )
+    wprtp_sfc  = -C_10 * ubar * ( rtm_sfc - 7.5e-3 )
+
 
 ! Let passive scalars be equal to rt and theta_l for now
     if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
@@ -275,6 +296,8 @@ module gabls3
     if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
 ! Compute momentum fluxes
+    bflx = wpthlp_sfc * grav / sstheta
+    ustar = diag_ustar( lowest_level, bflx, ubar, z0)
 
     upwp_sfc = -um_sfc * ustar**2 / ubar
     vpwp_sfc = -vm_sfc * ustar**2 / ubar

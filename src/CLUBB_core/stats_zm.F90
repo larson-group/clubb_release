@@ -44,6 +44,10 @@ module stats_zm
           iFrad, & 
           iFrad_LW, & 
           iFrad_SW, & 
+          iFrad_LW_up, & 
+          iFrad_SW_up, & 
+          iFrad_LW_down, & 
+          iFrad_SW_down, & 
           iFprec, & 
           iFcsed, & 
           iup2, & 
@@ -207,6 +211,10 @@ module stats_zm
       iFrad     = 0
       iFrad_LW  = 0  ! Brian
       iFrad_SW  = 0  ! Brian
+      iFrad_LW_up  = 0  ! Brian
+      iFrad_SW_up  = 0  ! Brian
+      iFrad_LW_down  = 0  ! Brian
+      iFrad_SW_down  = 0  ! Brian
       iFprec    = 0  ! Brian
       iFcsed    = 0  ! Brian
 
@@ -488,6 +496,31 @@ module stats_zm
           call stat_assign(iFrad_SW,"Frad_SW", & 
                "Short-wave radiative flux","W/m^2",zm)
           k = k + 1
+
+        case ('Frad_LW_up')    ! Brian
+          iFrad_LW_up = k
+          call stat_assign(iFrad_LW_up,"Frad_LW_up", & 
+               "Long-wave upwelling radiative flux","W/m^2",zm)
+          k = k + 1
+        case ('Frad_SW_up')    ! Brian
+          iFrad_SW_up = k
+
+          call stat_assign(iFrad_SW_up,"Frad_SW_up", & 
+               "Short-wave upwelling radiative flux","W/m^2",zm)
+          k = k + 1
+
+        case ('Frad_LW_down')    ! Brian
+          iFrad_LW_down = k
+          call stat_assign(iFrad_LW_down,"Frad_LW_down", & 
+                "Long-wave downwelling radiative flux","W/m^2",zm)
+          k = k + 1
+        case ('Frad_SW_down')    ! Brian
+          iFrad_SW_down = k
+
+          call stat_assign(iFrad_SW_down,"Frad_SW_down", & 
+          "Short-wave downwelling radiative flux","W/m^2",zm)
+          k = k + 1
+
 
         case ('Fprec')      ! Brian
           iFprec = k
