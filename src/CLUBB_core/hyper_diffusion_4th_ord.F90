@@ -515,6 +515,12 @@ contains
 
           ! Zero-flux boundary conditions
 
+          ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
+          lhs(km2_mdiag) = 0.0
+
+          ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
+          lhs(km1_mdiag) = 0.0
+
           ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
           lhs(k_mdiag)   = +nu*dzm*dztp1*(dzmp1*dztp1 + dzm*dztp1)
 
@@ -528,7 +534,14 @@ contains
        elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
           ! Fixed-point boundary conditions
-          ! At level 1, these are over-written or set in the parent subroutine.
+          ! The left-hand side matrix contributions from level 1 are
+          ! over-written or set in the parent subroutine.
+
+          ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
+          lhs(km2_mdiag) = 0.0
+
+          ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
+          lhs(km1_mdiag) = 0.0
 
           ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
           lhs(k_mdiag)   = 0.0
@@ -549,6 +562,9 @@ contains
        if ( trim( boundary_cond ) == 'zero-flux' ) then
 
           ! Zero-flux boundary conditions
+
+          ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
+          lhs(km2_mdiag) = 0.0
 
           ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
           lhs(km1_mdiag) = -nu*dzm*( dztp1*dzm*dzt  &
@@ -572,6 +588,9 @@ contains
        elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
           ! Fixed-point boundary conditions
+
+          ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
+          lhs(km2_mdiag) = 0.0
 
           ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
           lhs(km1_mdiag) = -nu*dzm*( dztp1*dzm*dzt  &
@@ -648,6 +667,9 @@ contains
                                             +dzm*dztp1 )  &
                                     +dzt*dzm*dztp1 )
 
+          ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
+          lhs(kp2_mdiag) = 0.0
+
        elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
           ! Fixed-point boundary conditions
@@ -669,6 +691,9 @@ contains
           lhs(kp1_mdiag) = -nu*dzm*( dztp1*dzm*dztp1  &
                                     +dzt*dzm*dztp1 )
 
+          ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
+          lhs(kp2_mdiag) = 0.0
+
        endif
 
 
@@ -689,14 +714,20 @@ contains
           lhs(km1_mdiag) = -nu*dzm*dzt*( dzm*dzt  &
                                         +dzmm1*(dzt + dztm1) )
 
+          ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+          lhs(k_mdiag)   = +nu*dzm*dzt*(dzm*dzt + dzmm1*dzt)
+
           ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
-          lhs(kp1_mdiag) = +nu*dzm*dzt*(dzm*dzt + dzmm1*dzt)
+          lhs(kp1_mdiag) = 0.0
+
+          ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
+          lhs(kp2_mdiag) = 0.0
 
        elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
           ! Fixed-point boundary conditions
-          ! At level gr%nnzp, these are over-written or set in the parent
-          ! subroutine.
+          ! The left-hand side matrix contributions from level gr%nnzp are
+          ! over-written or set in the parent subroutine.
 
           ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
           lhs(km2_mdiag) = 0.0
@@ -704,10 +735,17 @@ contains
           ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
           lhs(km1_mdiag) = 0.0
 
+          ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+          lhs(k_mdiag)   = 0.0
+
           ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
           lhs(kp1_mdiag) = 0.0
 
+          ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
+          lhs(kp2_mdiag) = 0.0
+
        endif
+
 
     endif
 
