@@ -615,6 +615,25 @@ contains
     ! External
     intrinsic :: min, max
 
+    ! Constant parameters
+    ! Left-hand side matrix diagonal identifiers for
+    ! momentum-level variable, w'x'.
+    integer, parameter ::  &
+      m_kp1_mdiag = 1, & ! Momentum superdiagonal index for w'x'.
+      m_kp1_tdiag = 2, & ! Thermodynamic superdiagonal index for w'x'.
+      m_k_mdiag   = 3, & ! Momentum main diagonal index for w'x'.
+      m_k_tdiag   = 4, & ! Thermodynamic subdiagonal index for w'x'.
+      m_km1_mdiag = 5    ! Momentum subdiagonal index for w'x'.
+
+    ! Left-hand side matrix diagonal identifiers for
+    ! thermodynamic-level variable, xm.
+    integer, parameter ::  &
+      t_kp1_tdiag = 1, & ! Thermodynamic superdiagonal index for xm.
+      t_k_mdiag   = 2, & ! Momentum superdiagonal index for xm.
+      t_k_tdiag   = 3, & ! Thermodynamic main diagonal index for xm.
+      t_km1_mdiag = 4, & ! Momentum subdiagonal index for xm.
+      t_km1_tdiag = 5    ! Thermodynamic subdiagonal index for xm.
+
     ! Input variables
     logical, intent(in) :: l_iter
 
@@ -685,39 +704,39 @@ contains
 
       ! xm: Left-hand side (implicit xm portion of the code).
       !
-      ! Thermodynamic subdiagonal (lhs index: 3+2)
+      ! Thermodynamic subdiagonal (lhs index: t_km1_tdiag)
       !         [ x xm(k-1,<t+1>) ]
-      ! Momentum subdiagonal (lhs index: 3+1)
+      ! Momentum subdiagonal (lhs index: t_km1_mdiag)
       !         [ x wpxp(k-1,<t+1>) ]
-      ! Thermodynamic main diagonal (lhs index: 3)
+      ! Thermodynamic main diagonal (lhs index: t_k_tdiag)
       !         [ x xm(k,<t+1>) ]
-      ! Momentum superdiagonal (lhs index: 3-1)
+      ! Momentum superdiagonal (lhs index: t_k_mdiag)
       !         [ x wpxp(k,<t+1>) ]
-      ! Thermodynamic superdiagonal (lhs index: 3-2)
+      ! Thermodynamic superdiagonal (lhs index: t_kp1_tdiag)
       !         [ x xm(k+1,<t+1>) ]
 
       ! LHS mean advection (ma) term.
       if ( .not. l_implemented ) then
 
-        lhs((/3-2,3,3+2/),k_xm) & 
-        = lhs((/3-2,3,3+2/),k_xm) & 
+        lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_xm) & 
+        = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_xm) & 
         + term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
 
       else
 
-        lhs((/3-2,3,3+2/),k_xm) & 
-        = lhs((/3-2,3,3+2/),k_xm) + 0.0
+        lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_xm) & 
+        = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_xm) + 0.0
 
       endif
 
       ! LHS turbulent advection (ta) term.
-      lhs((/3-1,3+1/),k_xm) & 
-      = lhs((/3-1,3+1/),k_xm) & 
+      lhs((/t_k_mdiag,t_km1_mdiag/),k_xm) & 
+      = lhs((/t_k_mdiag,t_km1_mdiag/),k_xm) & 
       + xm_term_ta_lhs( gr%dzt(k) )
 
       ! LHS time tendency.
-      lhs(3,k_xm) & 
-      = real( lhs(3,k_xm) + 1.0 / dt )
+      lhs(t_k_tdiag,k_xm) & 
+      = real( lhs(t_k_tdiag,k_xm) + 1.0 / dt )
 
       if (l_stats_samp) then
 
@@ -751,59 +770,60 @@ contains
 
       ! w'x': Left-hand side (implicit w'x' portion of the code).
       !
-      ! Momentum subdiagonal (lhs index: 3+2)
+      ! Momentum subdiagonal (lhs index: m_km1_mdiag)
       !         [ x wpxp(k-1,<t+1>) ]
-      ! Thermodynamic subdiagonal (lhs index: 3+1)
+      ! Thermodynamic subdiagonal (lhs index: m_k_tdiag)
       !         [ x xm(k,<t+1>) ]
-      ! Momentum main diagonal (lhs index: 3)
+      ! Momentum main diagonal (lhs index: m_k_mdiag)
       !         [ x wpxp(k,<t+1>) ]
-      ! Thermodynamic superdiagonal (lhs index: 3-1)
+      ! Thermodynamic superdiagonal (lhs index: m_kp1_tdiag)
       !         [ x xm(k+1,<t+1>) ]
-      ! Momentum superdiagonal (lhs index: 3-2)
+      ! Momentum superdiagonal (lhs index: m_kp1_mdiag)
       !         [ x wpxp(k+1,<t+1>) ]
 
       ! LHS mean advection (ma) term.
-      lhs((/3-2,3,3+2/),k_wpxp) & 
-      = lhs((/3-2,3,3+2/),k_wpxp) & 
+      lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wpxp) & 
+      = lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wpxp) & 
       + term_ma_zm_lhs( wm_zm(k), gr%dzm(k), k )
 
       ! LHS turbulent advection (ta) term.
-      lhs((/3-2,3,3+2/),k_wpxp) & 
-      = lhs((/3-2,3,3+2/),k_wpxp) & 
+      lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wpxp) & 
+      = lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wpxp) & 
       + wpxp_term_ta_lhs( wp2_zt(kp1), wp2_zt(k),  & 
                           a1_zt(kp1), a1_zt(k), & 
                           wp3(kp1), wp3(k), gr%dzm(k), k )
 
       ! LHS turbulent production (tp) term.
-      lhs((/3-1,3+1/),k_wpxp) & 
-      = lhs((/3-1,3+1/),k_wpxp) & 
+      lhs((/m_kp1_tdiag,m_k_tdiag/),k_wpxp) & 
+      = lhs((/m_kp1_tdiag,m_k_tdiag/),k_wpxp) & 
       + wpxp_term_tp_lhs( wp2(k), gr%dzm(k) )
 
       ! LHS accumulation (ac) term and pressure term 2 (pr2).
-      lhs(3,k_wpxp) & 
-      = lhs(3,k_wpxp) & 
+      lhs(m_k_mdiag,k_wpxp) & 
+      = lhs(m_k_mdiag,k_wpxp) & 
       + wpxp_terms_ac_pr2_lhs( C7_Skw_fnc(k),  & 
                                wm_zt(kp1), wm_zt(k), gr%dzm(k) )
 
       ! LHS pressure term 1 (pr1).
-      lhs(3,k_wpxp) & 
-      = lhs(3,k_wpxp) & 
+      lhs(m_k_mdiag,k_wpxp) & 
+      = lhs(m_k_mdiag,k_wpxp) & 
       + wpxp_term_pr1_lhs( C6x_Skw_fnc(k), tau_zm(k) )
 
       ! LHS eddy diffusion term: dissipation term 1 (dp1).
-      lhs((/3-2,3,3+2/),k_wpxp) & 
-      = lhs((/3-2,3,3+2/),k_wpxp) & 
+      lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wpxp) & 
+      = lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wpxp) & 
       + diffusion_zm_lhs( Kw6(k), Kw6(kp1), nu6, & 
                           gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
 
       ! LHS time tendency.
-      if (l_iter) lhs(3,k_wpxp) = real( lhs(3,k_wpxp) + 1.0 / dt )
+      if (l_iter) lhs(m_k_mdiag,k_wpxp)  &
+                  = real( lhs(m_k_mdiag,k_wpxp) + 1.0 / dt )
 
       ! LHS portion of semi-implicit clipping term.
       if ( l_clip_semi_implicit ) then
 
-         lhs(3,k_wpxp) & 
-         = lhs(3,k_wpxp) & 
+         lhs(m_k_mdiag,k_wpxp) & 
+         = lhs(m_k_mdiag,k_wpxp) & 
          + clip_semi_imp_lhs( dt, wpxp(k),  & 
                               .true., wpxp_upper_lim(k),  & 
                               .true., wpxp_lower_lim(k) )
