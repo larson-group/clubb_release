@@ -807,15 +807,13 @@ module advance_windm_edsclrm_module
     ! This term is treated completely explicitly.  The values of um, vm, u_g,
     ! and v_g are all found on the thermodynamic levels.
     !
+    ! Wind forcing from the GCSS cases is also added here.
+    !
     ! References:
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
         gr
-
-    use grid_class, only: & 
-        zt2zm, & 
-        ddzm
 
     use stats_type, only: & 
         stat_update_var
