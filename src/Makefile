@@ -78,8 +78,8 @@ PARAMETERIZATION = \
 	output_netcdf.o grid.o model_flags.o file_functions.o \
 	stats_type.o stats_variables.o stats_subs.o \
 	stats_zt.o stats_zm.o stats_sfc.o stats_precision.o sfc.o \
-	erf.o diffusion.o mean_adv.o T_in_K_mod.o \
-	pdf_closure_module.o advance_xp2_xpyp_module.o \
+	erf.o diffusion.o mean_adv.o hyper_diffusion_4th_ord.o \
+        T_in_K_mod.o pdf_closure_module.o advance_xp2_xpyp_module.o \
 	hydrostatic.o mixing_length.o advance_xm_wpxp_module.o saturation.o \
 	advance_windm_edsclrm_module.o advance_wp2_wp3_mod.o Skw_module.o \
 	error_code.o numer_check.o variables_diagnostic_module.o \

@@ -104,6 +104,7 @@ advance_windm_edsclrm_module.o : grid.o stats_variables.o lapack_wrap.o error_co
                            clip_explicit.o advance_windm_edsclrm_module.F90 
 diffusion.o	: grid.o diffusion.F90
 mean_adv.o      : grid.o mean_adv.F90
+hyper_diffusion_4th_ord.o : grid.o hyper_diffusion_4th_ord.F90
 pos_definite_mod.o : grid.o stats_precision.o pos_definite_mod.F90
 fill_holes.o    : fill_holes.F90 grid.o
 clip_semi_implicit.o : constants.o stats_precision.o clip_semi_implicit.F90
