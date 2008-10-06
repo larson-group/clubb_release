@@ -927,11 +927,11 @@ contains
     k_wpxp = 2*k
 
     ! xm
-    lhs(:,k_xm)     = 0.0
-    lhs(3,k_xm)     = 1.0
+    lhs(:,k_xm)           = 0.0
+    lhs(t_k_tdiag,k_xm)   = 1.0
     ! w'x'
-    lhs(:,k_wpxp)   = 0.0
-    lhs(3,k_wpxp)   = 1.0
+    lhs(:,k_wpxp)         = 0.0
+    lhs(m_k_mdiag,k_wpxp) = 1.0
 
     ! Upper boundary
     k      = gr%nnzp
@@ -939,11 +939,11 @@ contains
     k_wpxp = 2*k
 
     ! xm
-    lhs(:,k_xm)     = 0.0
-    lhs(3,k_xm)     = 1.0
+    lhs(:,k_xm)           = 0.0
+    lhs(t_k_tdiag,k_xm)   = 1.0
     ! w'x'
-    lhs(:,k_wpxp)   = 0.0
-    lhs(3,k_wpxp)   = 1.0
+    lhs(:,k_wpxp)         = 0.0
+    lhs(m_k_mdiag,k_wpxp) = 1.0
 
 
     return
