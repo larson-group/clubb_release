@@ -2,7 +2,7 @@ $Id: Readme.txt,v 1.72 2008-08-01 19:10:01 vlarson Exp $
 
 ************************************************************************
 *                           Copyright Notice
-*                         This code is (C) 2006 
+*                         This code is (C) 2006-2008 
 *         Jean-Christophe Golaz, Vincent E. Larson, Brian M. Griffin, 
 *            David P. Schanen, Adam J. Smith, and Michael J. Falk.
 *
@@ -16,7 +16,7 @@ $Id: Readme.txt,v 1.72 2008-08-01 19:10:01 vlarson Exp $
 
 
 ************************************************************************
-*                     Overview of the HOC code
+*                     Overview of the CLUBB code
 ************************************************************************
 
 For a detailed description of the model code see:
@@ -25,14 +25,17 @@ For a detailed description of the model code see:
   Method and Model Description'' Golaz, et al. (2002)
   JAS, Vol. 59, pp. 3540--3551.
 
-See also the hoc_v2.2_tuner/doc/hoc_eqns.pdf file in the CVS repository for
+See also the ./doc/hoc_eqns.pdf file in the svn repository for
 finer details on how the discretization was done.
 
+The standalone code runs a particular case (e.g. BOMEX) and outputs
+statisistical data in either GrADS or netCDF format.
+
 The tuner code tunes certain parameters in a one-dimensional boundary layer 
-cloud parameterization (``hoc''), to best fit large-eddy simulation output.  
+cloud parameterization (``CLUBB''), to best fit large-eddy simulation output.  
 The optimization technique is the downhill-simplex method of Needler and Mead, 
 as implemented in _Numerical Recipes In Fortran 90_ (amoeba.f90).  
-The parameterization is called as a subroutine ( hoc_model() ) with 
+The parameterization is called as a subroutine ( run_clubb() ) with 
 parameter values as input.
 
 The code is highly flexible.  One can vary the cases (bomex, fire, arm, or
@@ -40,18 +43,17 @@ atex) to match; the variables to match (cloud fraction, liquid water, third
 moment of vertical velocity, etc.); the altitude and times over which to match
 these variables; and the parameters to tune (C1, beta, etc.). 
 
-The code is written in Fortran 90/95 and executed by a bash runscript. 
+The code is written in Fortran 95 and executed by a bash runscript. 
 On the Microsoft Windows platform this could work using MSYS or Cygwin 
 with G95, but we have not tested this sort of configuration.
 
-
-We use the G95 compiler on Intel processors running Redhat Enterprise 3.
+We use the G95 compiler on Intel x64 processors running Redhat Enterprise 5.
 
 G95 <http://www.g95.org/> has been tested on SPARC & x86 Solaris,
 x64 & x86 GNU/Linux.
 
 Sun Fortran 8.x on Solaris SPARC/x86 work, but has not been as rigorously 
-tested as pgf90.
+tested as G95.
 
 Using Intel Fortran 9 we have been able to compile on Linux x86/x64 and
 Itanium.
@@ -59,13 +61,13 @@ Itanium.
 HP/Compaq/DEC Fortran on Alpha also appears to work but because future 
 Alpha processor development has ceased it is not extensively tested.
 
-The GNU Fortran compiler (GCC 4.0.x) does not implement the entire 
-Fortran 90 standard yet, and so does not work at all.
+The GNU Fortran compiler (GCC 4.1.x) may or may not work.  The version that
+ships with RHEL 5 does not.
 
 It is important to note that all these compilers use *incompatible* module
 formats for the .mod files!  If you want to use different compilers on the
 same system, you will need to build a different set of netCDF mod files for
-each compiler and use -M or -I to specify their location.
+each compiler and use -M or -I flags to specify their location.
 
 In order to get similar results on differing architectures, platforms, and
 compilers, initially try a conservative optimization and enable 
@@ -73,27 +75,32 @@ IEEE-754 standard style floating point math.  On x86 compatible machines
 using SSE or SSE2 is usually the best way to do this.
 
 ***********************************************************************
-*                         Using the HOC Model                         *
+*                        Using the CLUBB Model                        *
 ***********************************************************************
 -----------------------------------------------------------------------
 - (1.1) Building Everything:
 -----------------------------------------------------------------------
 
 Requirements:
-A. A Fortran 90/95 compiler with a complete implementation of the standard.
-B. A POSIX compliant version of the make utility.  BSD or GNU make work fine.
-C. NetCDF >= v3.5.1;  We have not tested our code with anything older.
-D. LAPACK & BLAS.  These provide the tri and band diagonal solver
+A. A Fortran 95 compiler with a complete implementation of the standard.
+B. GNU make (we use v3.81).
+C. LAPACK & BLAS.  These provide the tri and band diagonal solver
    subroutines needed by HOC.  Many vendors provide optimized versions of
    these routines, which may be much faster than the reference BLAS.
-E. GNU bash, or an equivalent POSIX compliant shell to use the run scripts.
+D. GNU bash, or an equivalent POSIX compliant shell to use the run scripts.
+
+Optionally:
+E. GrADS for viewing the GrADS output data.
+F. NetCDF >= v3.5.1;  We have not tested our code with anything older.
+   If you do not use netCDF, remove -DNETCDF from the compiler flags.
+G. MATLAB or Ncarg for viewing the netCDF output data.
 
 Build:
-1. $ cd ~/hoc_v2.2_tuner/src
-2. Edit a config.<PLATFORM>.in file and choose it in the Makefile for your 
+1. $ cd <BASE DIRECTORY>/src
+2. Edit a ./config/<PLATFORM>.in file and choose it in the Makefile for your 
    compiler and optimization options. Note that PREFIX determines where
    your executables and libraries will end up, so make sure you set it
-   to the correct location.
+   to the correct location (default is one directory up).
 3. $ make
 
 The executables will appear in $(PREFIX)/bin and libraries in $(PREFIX)/lib.
@@ -110,7 +117,7 @@ using preprocessor flags, dmake doesn't work.
 - (1.2) Building for use in a host model:
 -----------------------------------------------------------------------
 Requirements:
-A. and D. as above.
+A., B., C. as above.
 
 Build:
 1. and 2. as above.
@@ -119,14 +126,14 @@ $ make libhoc_param.a
 
 This will build just the static library and the f90 modules.
 The static library will be in $(PREFIX)/lib, while the modules will be 
-in the src directory.  You will need at least the parameterization_interface 
-mod to interface with HOC.
+in the obj directory.  You will need at least the clubb_core.mod file 
+to interface with CLUBB.
 
 Addition by Brian:  
-In addition to the above, you will have to make a reference to the HOC library 
-from the configuration file of the host program.  Since HOC now uses the
+In addition to the above, you will have to make a reference to the CLUBB library 
+from the configuration file of the host program.  Since CLUBB now uses the
 LAPACK libraries, you will also have to make reference to those.  Currently, 
-we do not include the LAPACK libraries with the HOC download.  You will have 
+we do not include the LAPACK libraries with the CLUBB download.  You will have 
 to find them and then download them onto your own computer if they are not
 included with your operating system or compiler.  Once you have done this, you 
 can reference them in a line such as the following:
@@ -137,10 +144,10 @@ If the LAPACK and BLAS libraries were compiled with GNU Fortran 77, you may
 need to link to the runtime libs for that with -lg2c as well.
 
 Don't forget that you will also have to make reference
-to the HOC src code.  You can reference that with a line
+to the CLUBB modules.  You can reference that with a line
 such as the following:
 
--I/home/griffinb/hoc_v2.2_tuner/src
+-I/home/griffinb/hoc_v2.2_tuner/obj
 
 -----------------------------------------------------------------------
 - (1.3) Making clean (or starting over)  
@@ -150,7 +157,7 @@ Occasionally, one needs to erase old executables or libraries and re-compile
 the code starting with nothing.  For instance, this may be required when 
 a library or compiler is updated.  
 
-To delete old object files (*.o), libraries (*.a), and mod files,
+To delete old object files (*.o), and mod (*.mod) files,
 go to hoc_v2.2_tuner/src and type
 
 make clean
@@ -169,20 +176,24 @@ make distclean
 
 2. Edit <CASE>_model.in for each case you wish to run, or just leave 
    them as is.  Usually you will want to keep these the same.
-   See the rain code for description of kk_rain and cloud_sed.
+   See the rain code for description of l_kk_rain and l_cloud_sed.
    See BUGSrad description below for a description of the interactive
    radiation scheme.
    Enabling any of these flags may increase runtime considerably.
 
 3. cd ../stats
    Edit a stats file you would like to use.  A complete list of all computable
-   statistics is found in all_stats.in.  Note that HOC now supports GrADS or
-   NetCDF, but you can only use the hoc_tuner using GrADS.
+   statistics is found in all_stats.in.  Note that CLUBB now supports GrADS or
+   netCDF, but you can only use the hoc_tuner using GrADS.
 
-4. $ cd ../standalone.  Edit standalone_<CASE>.in or select a premade one.
+4. $ cd ../standalone.  Copy and edit parameters_default.in or just use 
+     a premade one.
 
-5. $ ./run_standalone.bash <CASE> or
-   $ ./run_standalone.bash <CASE> <STATS_FILE>
+5. $ ./run_standalone.bash <MODEL CASE> or
+   $ ./run_standalone.bash <MODEL CASE> [PARAMETER FILE] [STATS FILE]
+
+   Where the parameter file and stats file are optional arguments. The default
+   is all_stats.in and default_parameters.in.
 
 -----------------------------------------------------------------------
 - (2.2) Executing a restart run:
@@ -202,7 +213,7 @@ The new simulation is then called a "restart" simulation.
 3.  Edit the following three variables at the end of the flag section of 
     the model file:
 
-    lrestart = .true.
+    l_restart = .true.
     restart_path = restart/<CASE>
     time_restart = initial time of restart run in seconds
 
@@ -219,19 +230,20 @@ The new simulation is then called a "restart" simulation.
 
 Do steps 1, 2, & 3 as outlined in the standalone run.
 
-4.  Edit tune/error_<case>.in or select an existing one. Note that there are two
-  tuning subroutines, specified by tune_type in the error_<case>.in /stats/ namelist.  
-  If tune_type = 0, then the amoeba subroutine, a downhill simplex algorithm, will
-  be used.  If runtype is any other value, then amebsa, a variant which uses
-  simulated annealing, is used.  A complete explanation of these minimization
-  algorithms can be found in _Numerical Recipes in Fortran 90_.
-  Sometimes the variable names in HOC's zt and the LES grads files will 
-  differ.
-  Currently, it is only possible to tune for variables that occur in zt.
+4. Edit tune/error_<case>.in or select an existing one. Note that there are two
+   tuning subroutines, specified by tune_type in the error_<case>.in 
+   /stats/ namelist.  
+   If tune_type = 0, then the amoeba subroutine, a downhill simplex algorithm,
+   will be used.  If runtype is any other value, then amebsa, a variant of 
+   amoeba which uses simulated annealing instead, is used.  A complete 
+   explanation of these minimization algorithms can be found 
+   in _Numerical Recipes in Fortran 90_.
+   Sometimes the variable names in HOC's zt and the LES grads files will differ.
+   Currently, it is only possible to tune for variables that occur in zt.
 
-5.  Edit run_tuner.bash to use your namelists
+5. Edit run_tuner.bash to use your namelists
 
-6.  ./run_tuner.bash
+6. ./run_tuner.bash
 
 -----------------------------------------------------------------------
 - (3.1.1) Creating a RAM disk (optional)
@@ -246,7 +258,7 @@ powered off.
 
 Generally:
 
-1. mkdir <HOC PATH>/rd_tune/
+1. mkdir <CLUBB PATH>/rd_tune/
 
 2. Create and mount RAM disk on rd_tune
 
@@ -304,7 +316,7 @@ One run at a time:
   e.g. If the situation is a 1 mn timestep in LES GRaDS statistics paired 
   with a 5 second dtmain, the sample_ratio is 60.0 / 5.0 = 12.0
   You might also want to verify that your LES file has sufficient data
-  for the whole duration of the HOC run.
+  for the whole duration of the CLUBB run.
 3. Edit <CASE>_budget.in;  You will want to set one case_tune variable to true 
   and the rest to false, or the resultant parameters from one tuning run 
   will be used in subsequent runs.  
@@ -342,7 +354,7 @@ Batch mode:
 - (3.3) Executing an ensemble tuning run:
 -----------------------------------------------------------------------
 
-NOTES AND INSTRUCTIONS FOR THE HOC ENSEMBLE TUNER
+NOTES AND INSTRUCTIONS FOR THE CLUBB ENSEMBLE TUNER
 -------------------------------------------------
 
 Go to the main directory (hoc_v2.2_tuner/) and follow these instructions:
@@ -368,11 +380,10 @@ Go to the main directory (hoc_v2.2_tuner/) and follow these instructions:
          This file is used in the tuning process itself.  In order for this
          process to work, stats_fmt in this file must be set to 'grads'.  The
          tuner code reads the LES GrADS files and compares the results with the
-         HOC GrADS files (which are written according the specifications stated
-         in this file).  This file MUST also contain the names of the HOC
-         variables that are being tuned for.  During the process of tuning,
-         small GrADS files will be written that contain the results for ONLY the
-         variables that are listed here.  This makes the tuning process go
+         CLUBB GrADS files (which are written according the specifications 
+         stated in this file).  This file MUST also contain the names of the 
+	 CLUBB variables that are being tuned for.  During the process of 
+	 tuning, small GrADS files will be written that contain the results for 	 ONLY the variables that are listed here.  This makes the tuning go
          faster because it is not being slowed down by the writing of
          unnecessary variables.
 
