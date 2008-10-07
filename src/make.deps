@@ -100,8 +100,9 @@ advance_wp2_wp3_mod.o		: constants.o parameters_tunable.o stats_variables.o lapa
                   clip_explicit.o advance_wp2_wp3_mod.F90
 
 error_code.o    : constants.o error_code.F90
-advance_windm_edsclrm_module.o : grid.o stats_variables.o lapack_wrap.o error_code.o \
-                           clip_explicit.o advance_windm_edsclrm_module.F90 
+advance_windm_edsclrm_module.o : grid.o stats_variables.o lapack_wrap.o \
+	error_code.o clip_explicit.o parameters_tunable.o \
+	diffusion.o mean_adv.o advance_windm_edsclrm_module.F90 
 diffusion.o	: grid.o diffusion.F90
 mean_adv.o      : grid.o mean_adv.F90
 hyper_diffusion_4th_ord.o : grid.o hyper_diffusion_4th_ord.F90
@@ -109,7 +110,7 @@ pos_definite_mod.o : grid.o stats_precision.o pos_definite_mod.F90
 fill_holes.o    : fill_holes.F90 grid.o
 clip_semi_implicit.o : constants.o stats_precision.o clip_semi_implicit.F90
 clip_explicit.o : grid.o stats_precision.o stats_type.o stats_variables.o \
-	clip_explicit.F90
+	model_flags.o parameters_tunable.o clip_explicit.F90
 
 # == Latin Hypercube dependencies  ==
 math_utilities.o	: math_utilities.F90

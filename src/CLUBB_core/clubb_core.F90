@@ -754,7 +754,7 @@ module clubb_core
 
     call advance_windm_edsclrm( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref,  &
                                 wp2, up2, vp2, um_forcing, vm_forcing, &
-                                upwp_sfc, vpwp_sfc, fcor,  &
+                                upwp_sfc, vpwp_sfc, wpedsclrp_sfc, fcor,  &
                                 l_implemented, um, vm, edsclrm,  &
                                 upwp, vpwp, wpedsclrp, err_code )
 
