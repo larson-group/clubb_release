@@ -1,4 +1,3 @@
-
 Cloud Layers Unified By Binormals (CLUBB) user license agreement.
 
 Thank you for your interest in CLUBB.  We work hard to create a code that is free of major bugs, implements the best software engineering practices, is supported to the extent allowed by our limited resources, and is available without cost to external users.  You may use CLUBB if, in return, you abide by these conditions:
@@ -13,10 +12,7 @@ Thank you for your interest in CLUBB.  We work hard to create a code that is fre
 
 5.  You may not use CLUBB for commercial purposes unless you receive permission from Vincent Larson.
 
-We encourage users to contribute their CLUBB modifications or extensions to the
-CLUBB development group.  We will then consider them for inclusion in the main
-branch of CLUBB.  In this way, CLUBB can be improved for the benefit of all
-users. 
+We encourage users to contribute their CLUBB modifications or extensions to the CLUBB development group.  We will then consider them for inclusion in the mainbranch of CLUBB.  In this way, CLUBB can be improved for the benefit of all users. 
 
 Thanks so much and best wishes for your research!
 
