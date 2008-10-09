@@ -83,7 +83,7 @@ using SSE or SSE2 is usually the best way to do this.
 Requirements:
 A. A Fortran 95 compiler with a complete implementation of the standard.
 B. GNU make (we use v3.81).
-C. LAPACK & BLAS.  These provide the tri and band diagonal solver
+C. LAPACK & BLAS.  These provide the tri and band diagonal matrix solver
    subroutines needed by HOC.  Many vendors provide optimized versions of
    these routines, which may be much faster than the reference BLAS.
 D. GNU bash, or an equivalent POSIX compliant shell to use the run scripts.
@@ -229,8 +229,8 @@ The new simulation is then called a "restart" simulation.
 
 Do steps 1, 2, & 3 as outlined in the standalone run.
 
-4. Edit tune/error_<case>.in or select an existing one. Note that there are two
-   tuning subroutines, specified by tune_type in the error_<case>.in 
+4. Edit tune/error_<CASE>.in or select an existing one. Note that there are two
+   tuning subroutines, specified by tune_type in the error_<CASE>.in 
    /stats/ namelist.  
    If tune_type = 0, then the amoeba subroutine, a downhill simplex algorithm,
    will be used.  If runtype is any other value, then amebsa, a variant of 
@@ -238,7 +238,7 @@ Do steps 1, 2, & 3 as outlined in the standalone run.
    explanation of these minimization algorithms can be found 
    in _Numerical Recipes in Fortran 90_.
    Sometimes the variable names in HOC's zt and the LES grads files will differ.
-   Currently, it is only possible to tune for variables that occur in zt.
+   Currently, it is only possible to tune for variables that occur in zt grid.
 
 5. Edit run_tuner.bash to use your namelists
 
@@ -274,7 +274,7 @@ about when you are allowed to change the ramdisk size.
    Append to 'kernel' line:
    kernel /vmlinuz-2.4.21-40.EL ro root=LABEL=/ ramdisk_size=262144
 
-Sets ram disks to be 256 megabytes in size.  Note that your own system may
+This sets ram disks to be 256 megabytes in size.  Note that your own system may
 have other options besides the ramdisk_size.
 
 2. $ mkfs.ext2 /dev/ram0
@@ -288,7 +288,7 @@ have other options besides the ramdisk_size.
 (Run your job)
 
 Solaris Example
-Note that these instructions are for Solaris 9 & 10
+Note that these instructions only apply to Solaris 9 & 10
 
 1. $ ramdiskadm -a hoc 256m 
 Creates a virtual disk hoc that is 256 megabytes in size.
@@ -574,7 +574,7 @@ Generated HOC GrADS files:
   files to another directory or rename them.
   The tuner currently only uses variables in the zt file.
 
-The Namelist files:
+The namelist files:
 
   model/bomex_model.in, fire_model.in, arm_model.in & atex_model.in.
   These files specify the standard HOC model parameters.  Usually these 
@@ -588,7 +588,7 @@ The Namelist files:
   These specify tuning parameters, case information initial constant values, 
     and constant variance.
 
-The Randomization files:
+The randomization files:
 
   generate_seed.bash, rand_seed.dat, bin/int2txt
   The script uses intrinsic functionality in the Linux kernel to generate
@@ -624,7 +624,8 @@ The compare_runs files:
   Thermodynamic grid:
   radht, radht_SW, radht_LW:  Radiative Heat; Short-wave/Long-wave component;
 
-  The thlm forcing will also be influenced by this calculation.
+  The thlm_forcing variable will also have radht added to it.  This is an
+  explicit contribution to the thlm calculation.
 
   Note that for most cases SW and LW components are not calculated 
   without using BUGSrad.
@@ -642,62 +643,33 @@ The compare_runs files:
   Naval Research Laboratory.
 
 ------------------------------------------------------------------------
-- (3.1) The new scalar code ( HOC with -DSCALARS enabled )
+- (3.1) The passive scalar code
 ------------------------------------------------------------------------
 
 The scalars in the code provide a generalized way of simulating a 
-passive scalar in the atmosphere.
+passive scalar in the atmosphere (e.g. carbon dioxide) 
 
-By default HOC should be setup to compile without this option.  To use 
-this option, you must modify the Makefile in the src directory so that 
-FCFLAGS includes "-DSCALARS", and then do a make clean, and then make.  
+By default CLUBB should be setup to run without any passive scalars.  To use 
+this option, you must modify the <CASE>_model.in file in the model directory 
+so that sclr_dim is > 0 and set ii<SCALAR NAME> to point the index in the
+array containing the passive scalar.
 To output the scalar fields from a HOC simulation, be sure to include 
-them in the appropriate stats/*_stats.in file.
+them in the appropriate stats/all_stats.in file.
 
-Currently the code contains eddy-diffusivity scalar code and the more complex
-code used in diag_var(), closure_new(), and timestep_mixing().  Both use two
+Currently the code contains eddy-diffusivity scalar code (edsclram, edsclrbm)
+and the more sophisticated high-order scalars (sclram, sclrbm).  Both use two
 dimensional arrays, but the code and results for each is separated.
 
-Initially, the sclr arrays are configured to contain two vertical columns
-containing copies of thl and rt (the first and second elements, respectively).
+Initially, the scalar arrays were configured to contain two vertical columns
+containing copies of thl and rt.
 The code is sufficiently general that an arbitrary number of scalars can be
-added with a small number of modifications.  The following files must be
-adjusted to customize the scalars:
+added with a small number of modifications.
+The following files must be adjusted to customize the scalars:
 
-constants.F:  sclrm_dimension is the number of scalars per array and sclrtol 
-is used used in the code to diagnose variances. (see diag_var.F for the
-algorithm used).
-
-hoc.F & parameterization_interface.F:  
-The boundary conditions, while fairly general, are setup for thl
-in some places as is noted in the code.  Search for SCLR_THETA and SCLR_RT to
-find places where the code is not general for both cases.
-
-mixing.F:  When timestep_mixing calls mixing_solve, it needs an argument that
-indicates the correct equation to use.  This relies on a case statement within
-mixing_solve, and should be easy to add to as needed. Calling the "rtm" and 
-"thlm" cases more than once each will cause sampling errors in some of the
-budget terms.  Currently budget terms are not setup for rtm/thlm or the
-sclr.
-
-statistics.F:  Currently it is only configured to generate data for 2 elements 
-for each of the sclr arrays.  Adding more will probably take some time.
-
-sfc.F:  sfc_var has a peculiar constant factor used for calculations on rt
-and thl.  Commenting out the case statement in that subroutine will disable 
-this for a new sclr element.
-The other subroutine, sfc_thermo_fluxes, only affects the fire case and just
-requires a small modification to change its influence on sclrm, found on the
-lines that begin with the "if ( present ( sclrm )" statements.
-
-gcss.F: All the cases that you wish to run will require a modification to the
-tndcy and sfclyr subroutines, since they will be configured for thl and rt by
-default.  Searching for SCLR_RT and SCLR_THETA should locate the code for all 
-of them.
-
-All the other source files should work as is.
-
-The edsclrs are only computed in subroutine update().
+stats_variables.F:  Currently it is only configured to generate data for 
+2 elements for each of the sclr arrays.  Using the sclra and sclrb variables
+as a template, it should be possible to add additional variables (sclrc, etc.)
+without any issues.
 
 The Namelists:
 
