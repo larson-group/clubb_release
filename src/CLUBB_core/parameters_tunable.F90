@@ -79,9 +79,10 @@
  nu8,         & ! Background Coefficient of Eddy Diffusion for wp3.
  c_K9,        & ! Coefficient of Eddy Diffusion for up2 and vp2.
  nu9,         & ! Background Coefficient of Eddy Diffusion for up2 and vp2.
- c_Krrainm,      & ! Coefficient of Eddy Diffusion for hydrometeors.
+ c_Krrainm,   & ! Coefficient of Eddy Diffusion for hydrometeors.
  nu_r,        & ! Background Coefficient of Eddy Diffusion for hydrometeors.
  c_Ksqd,      & ! Constant for scaling effect of value-squared diffusion.
+ nu_hd,       & ! Constant coefficient for 4th-order hyper-diffusion.
  gamma_coef,  & ! Low Skewness in gamma coefficient Skewness Function.
  gamma_coefb, & ! High Skewness in gamma coefficient Skewness Function.
  gamma_coefc, & ! Degree of Slope of gamma coefficient Skewness Function.
@@ -96,7 +97,7 @@
 !$omp   threadprivate(C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12)
 !$omp   threadprivate(C13, C14)
 !$omp   threadprivate(c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6)
-!$omp   threadprivate(c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd)
+!$omp   threadprivate(c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, nu_hd)
 !$omp   threadprivate(gamma_coef, gamma_coefb, gamma_coefc)
 !$omp   threadprivate(taumin, taumax, mu, lmin)
 
@@ -120,7 +121,7 @@
    C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
    C12, C13, C14, c_K, c_K1, nu1, c_K2, nu2,  & 
    c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd,  & 
-   beta, gamma_coef, gamma_coefb, gamma_coefc, & 
+   nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
    lmin_coef, taumin, taumax, mu
 
  ! These are referenced together often enough that it made sense to 
@@ -135,19 +136,19 @@
  !***************************************************************
  character(len=11), dimension(nparams), parameter, public ::  & 
  params_list = & 
- (/"C1         ", "C1b        ", "C1c        ", "C2         ",  & 
+ (/"C1         ", "C1b        ", "C1c        ", "C2         ", & 
    "C2b        ", "C2c        ", "C2rt       ", "C2thl      ", & 
    "C2rtthl    ", "C4         ", "C5         ", "C6rt       ", & 
-   "C6rtb      ", "C6rtc      ", "C6thl      ", "C6thlb     ",  & 
-   "C6thlc     ", "C7         ", "C7b        ", "C7c        ",  & 
-   "C8         ", "C8b        ", "C10        ", "C11        ",  & 
+   "C6rtb      ", "C6rtc      ", "C6thl      ", "C6thlb     ", & 
+   "C6thlc     ", "C7         ", "C7b        ", "C7c        ", & 
+   "C8         ", "C8b        ", "C10        ", "C11        ", & 
    "C11b       ", "C11c       ", "C12        ", "C13        ", & 
-   "C14        ", "c_K        ", "c_K1       ", "nu1        ",  & 
-   "c_K2       ", "nu2        ", "c_K6       ", "nu6        ",  & 
-   "c_K8       ", "nu8        ", "c_K9       ", "nu9        ",  & 
-   "c_Krrainm  ", "nu_r       ", "c_Ksqd     ", "gamma_coef ",  & 
-   "gamma_coefb", "gamma_coefc", "mu         ", "beta       ",  & 
-   "lmin_coef  ", "taumin     ", "taumax     " /)
+   "C14        ", "c_K        ", "c_K1       ", "nu1        ", & 
+   "c_K2       ", "nu2        ", "c_K6       ", "nu6        ", & 
+   "c_K8       ", "nu8        ", "c_K9       ", "nu9        ", & 
+   "c_Krrainm  ", "nu_r       ", "c_Ksqd     ", "nu_hd      ", &
+   "gamma_coef ", "gamma_coefb", "gamma_coefc", "mu         ", &
+   "beta       ", "lmin_coef  ", "taumin     ", "taumax     " /)
 
  contains
 
@@ -200,7 +201,7 @@
         C11, C11b, C11c, C12, C13, C14, & 
         c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
         c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
-        gamma_coef, gamma_coefb, gamma_coefc, & 
+        nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
         mu, beta, lmin_coef, taumin, taumax )
 
  ! It was decided after some experimentation, that the best
@@ -330,9 +331,10 @@ if ( filename == "" ) then
   nu8         = 20.0
   c_K9        = 0.0
   nu9         = 20.0
-  c_Krrainm      = 0.075
+  c_Krrainm   = 0.075
   nu_r        = 3.0
   c_Ksqd      = 10.0
+  nu_hd       = 1000.0
   beta        = 1.75
   gamma_coef  = 0.32
   gamma_coefb = 0.32
@@ -360,7 +362,7 @@ call pack_parameters &
        C11, C11b, C11c, C12, C13, C14, & 
        c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
        c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
-       gamma_coef, gamma_coefb, gamma_coefc, & 
+       nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
        mu, beta, lmin_coef, taumin, taumax, params )
 
 return
@@ -408,7 +410,7 @@ integer :: i
    C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
    C12, C13, C14, c_K, c_K1, nu1, c_K2, nu2,  & 
    c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd,  & 
-   beta, gamma_coef, gamma_coefb, gamma_coefc, & 
+   nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
    lmin_coef, taumin, taumax, mu
 
 ! Read the namelist
@@ -426,7 +428,7 @@ call pack_parameters &
        C11, C11b, C11c, C12, C13, C14, & 
        c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
        c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
-       gamma_coef, gamma_coefb, gamma_coefc, & 
+       nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
        mu, beta, lmin_coef, taumin, taumax, param_spread )
 
 ! Initialize to zero
@@ -454,7 +456,7 @@ subroutine pack_parameters &
              C11, C11b, C11c, C12, C13, C14, & 
              c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
              c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
-             gamma_coef, gamma_coefb, gamma_coefc, & 
+             nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
              mu, beta, lmin_coef, taumin, taumax, params )
 !       Description:
 !       Takes the list of scalar variables and puts them into a 1D
@@ -508,7 +510,8 @@ subroutine pack_parameters &
      inu9, & 
      ic_Krrainm, & 
      inu_r, & 
-     ic_Ksqd, & 
+     ic_Ksqd, &
+     inu_hd, & 
      igamma_coef, & 
      igamma_coefb, & 
      igamma_coefc, & 
@@ -528,8 +531,8 @@ subroutine pack_parameters &
  C7, C7b, C7c, C8, C8b, C10, & 
  C11, C11b, C11c, C12, C13, C14, & 
  c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
- c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, gamma_coef, gamma_coefb,  & 
- gamma_coefc, mu, beta, lmin_coef, taumin, taumax
+ c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, nu_hd, gamma_coef, &
+ gamma_coefb, gamma_coefc, mu, beta, lmin_coef, taumin, taumax
 
  ! Output variables
  real, intent(out), dimension(nparams) :: params
@@ -564,20 +567,21 @@ subroutine pack_parameters &
  params(iC13)     = C13
  params(iC14)     = C14
 
- params(ic_K)    = c_K 
- params(ic_K1)   = c_K1
- params(inu1)    = nu1
- params(ic_K2)   = c_K2
- params(inu2)    = nu2
- params(ic_K6)   = c_K6
- params(inu6)    = nu6
- params(ic_K8)   = c_K8
- params(inu8)    = nu8
- params(ic_K9)   = c_K9
- params(inu9)    = nu9
+ params(ic_K)       = c_K 
+ params(ic_K1)      = c_K1
+ params(inu1)       = nu1
+ params(ic_K2)      = c_K2
+ params(inu2)       = nu2
+ params(ic_K6)      = c_K6
+ params(inu6)       = nu6
+ params(ic_K8)      = c_K8
+ params(inu8)       = nu8
+ params(ic_K9)      = c_K9
+ params(inu9)       = nu9
  params(ic_Krrainm) = c_Krrainm
- params(inu_r)   = nu_r
- params(ic_Ksqd) = c_Ksqd
+ params(inu_r)      = nu_r
+ params(ic_Ksqd)    = c_Ksqd
+ params(inu_hd)     = nu_hd
 
  params(igamma_coef)  = gamma_coef
  params(igamma_coefb) = gamma_coefb
@@ -604,7 +608,7 @@ subroutine pack_parameters &
               C11, C11b, C11c, C12, C13, C14, & 
               c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
               c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
-              gamma_coef, gamma_coefb, gamma_coefc, & 
+              nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
               mu, beta, lmin_coef, taumin, taumax )
 
 !       Description:
@@ -661,6 +665,7 @@ subroutine pack_parameters &
      ic_Krrainm, & 
      inu_r, & 
      ic_Ksqd, & 
+     inu_hd, & 
      igamma_coef, & 
      igamma_coefb, & 
      igamma_coefc, & 
@@ -685,7 +690,7 @@ subroutine pack_parameters &
  C11, C11b, C11c, C12, C13, C14, & 
  c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
  c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
- gamma_coef, gamma_coefb, gamma_coefc, & 
+ nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
  mu, beta, lmin_coef, taumin, taumax
 
  C1      = params(iC1)
@@ -718,20 +723,21 @@ subroutine pack_parameters &
  C13     = params(iC13)
  C14     = params(iC14)
 
- c_K    = params(ic_K)
- c_K1   = params(ic_K1)
- nu1    = params(inu1)
- c_K2   = params(ic_K2)
- nu2    = params(inu2)
- c_K6   = params(ic_K6)
- nu6    = params(inu6)
- c_K8   = params(ic_K8)
- nu8    = params(inu8)
- c_K9   = params(ic_K9)
- nu9    = params(inu9)
+ c_K       = params(ic_K)
+ c_K1      = params(ic_K1)
+ nu1       = params(inu1)
+ c_K2      = params(ic_K2)
+ nu2       = params(inu2)
+ c_K6      = params(ic_K6)
+ nu6       = params(inu6)
+ c_K8      = params(ic_K8)
+ nu8       = params(inu8)
+ c_K9      = params(ic_K9)
+ nu9       = params(inu9)
  c_Krrainm = params(ic_Krrainm)
- nu_r   = params(inu_r)
- c_Ksqd = params(ic_Ksqd)
+ nu_r      = params(inu_r)
+ c_Ksqd    = params(ic_Ksqd)
+ nu_hd     = params(inu_hd)
 
  gamma_coef  = params(igamma_coef)
  gamma_coefb = params(igamma_coefb)
@@ -771,7 +777,7 @@ subroutine pack_parameters &
           C11, C11b, C11c, C12, C13, C14, & 
           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
           c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
-          gamma_coef, gamma_coefb, gamma_coefc, & 
+          nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
           mu, beta, lmin_coef, taumin, taumax, params )
    return
  end subroutine get_parameters

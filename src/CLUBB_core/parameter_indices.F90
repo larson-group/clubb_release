@@ -25,7 +25,7 @@ implicit none
 private ! Default Scope
 
 integer, parameter, public ::  & 
-nparams = 51 ! Total tunable parameters
+nparams = 52 ! Total tunable parameters
 
 !***************************************************************
 !                    ***** IMPORTANT *****
@@ -36,21 +36,21 @@ nparams = 51 ! Total tunable parameters
 !***************************************************************
 
 integer, parameter, public :: & 
-iC1             =  1,  & 
+iC1             =  1, & 
 iC1b            =  2, & 
-iC1c            =  3,  & 
-iC2             =  4,  & 
+iC1c            =  3, & 
+iC2             =  4, & 
 iC2b            =  5, & 
 iC2c            =  6, & 
 iC2rt           =  7, & 
 iC2thl          =  8, & 
 iC2rtthl        =  9, & 
-iC4             = 10,  & 
-iC5             = 11,  & 
+iC4             = 10, & 
+iC5             = 11, & 
 iC6rt           = 12, & 
 iC6rtb          = 13, & 
-iC6rtc          = 14,   & 
-iC6thl          = 15,  & 
+iC6rtc          = 14, & 
+iC6thl          = 15, & 
 iC6thlb         = 16, & 
 iC6thlc         = 17, & 
 iC7             = 18, & 
@@ -78,19 +78,20 @@ ic_K8           = 37, &
 inu8            = 38, & 
 ic_K9           = 39, & 
 inu9            = 40, & 
-ic_Krrainm         = 41, & 
+ic_Krrainm      = 41, & 
 inu_r           = 42, & 
-ic_Ksqd         = 43
+ic_Ksqd         = 43, &
+inu_hd          = 44
 
 integer, parameter, public :: & 
-igamma_coef     = 44,  & 
-igamma_coefb    = 45, & 
-igamma_coefc    = 46, & 
-imu             = 47, & 
-ibeta           = 48, & 
-ilmin_coef      = 49, & 
-itaumin         = 50, & 
-itaumax         = 51
+igamma_coef     = 45, & 
+igamma_coefb    = 46, & 
+igamma_coefc    = 47, & 
+imu             = 48, & 
+ibeta           = 49, & 
+ilmin_coef      = 50, & 
+itaumin         = 51, & 
+itaumax         = 52
 
 end module parameter_indices
 !-----------------------------------------------------------------------

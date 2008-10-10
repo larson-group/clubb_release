@@ -778,13 +778,15 @@ contains
         C8b, & 
         C12, & 
         nu1, & 
-        nu8
+        nu8, &
+        nu_hd
 
     use constants, only:  & 
         eps ! Variable(s)
 
     use model_flags, only: & 
-        l_tke_aniso ! Variables
+        l_tke_aniso, & ! Variable(s)
+        l_hyper_dfsn
 
     use diffusion, only: & 
         diffusion_zm_lhs,  & ! Procedures
@@ -794,8 +796,11 @@ contains
         term_ma_zm_lhs,  & ! Procedures
         term_ma_zt_lhs
 
-    use stats_precision, only: time_precision
+    use hyper_diffusion_4th_ord, only:  &
+        hyper_dfsn_4th_ord_zm_lhs,  &
+        hyper_dfsn_4th_ord_zt_lhs
 
+    use stats_precision, only: time_precision
 
     use stats_variables, only:       & 
         zmscr01,    & 
@@ -907,7 +912,7 @@ contains
     ! Local Variables
 
     ! Array indices
-    integer :: k, km1, kp1, k_wp2, k_wp3
+    integer :: k, km1, km2, kp1, kp2, k_wp2, k_wp3
 
     real, dimension(5) :: tmp
 
@@ -920,7 +925,9 @@ contains
       ! Define indices
 
       km1 = max( k-1, 1 )
+      km2 = max( k-2, 1 )
       kp1 = min( k+1, gr%nnzp )
+      kp2 = min( k+2, gr%nnzp )
 
       k_wp3 = 2*k - 1
       k_wp2 = 2*k
@@ -987,6 +994,16 @@ contains
         lhs(m_k_mdiag,k_wp2) & 
         = lhs(m_k_mdiag,k_wp2) & 
         + wp2_term_pr1_lhs( C4, tau1m(k) )
+      endif
+
+      ! LHS 4th-order hyper-diffusion (4hd).
+      if ( l_hyper_dfsn ) then
+         ! Note:  w'^2 uses fixed-point boundary conditions.
+         lhs((/m_kp2_mdiag,m_kp1_mdiag,m_k_mdiag,m_km1_mdiag,m_km2_mdiag/),k_wp2) &
+         = lhs((/m_kp2_mdiag,m_kp1_mdiag,m_k_mdiag,m_km1_mdiag,m_km2_mdiag/),k_wp2) &
+         + hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd, gr%dzm(k),  &
+                                      gr%dzt(kp1), gr%dzt(k), gr%dzm(kp1),  &
+                                      gr%dzm(km1), gr%dzt(kp2), gr%dzt(km1), k )
       endif
 
       if ( l_stats_samp ) then
@@ -1117,6 +1134,16 @@ contains
         + C12  & 
         * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
                             gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+      endif
+
+      ! LHS 4th-order hyper-diffusion (4hd).
+      if ( l_hyper_dfsn ) then
+         ! Note:  w'^3 uses fixed-point boundary conditions.
+         lhs((/t_kp2_tdiag,t_kp1_tdiag,t_k_tdiag,t_km1_tdiag,t_km2_tdiag/),k_wp3) &
+         = lhs((/t_kp2_tdiag,t_kp1_tdiag,t_k_tdiag,t_km1_tdiag,t_km2_tdiag/),k_wp3) &
+         + hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd, gr%dzt(k),  &
+                                      gr%dzm(k), gr%dzm(km1), gr%dzt(kp1),  &
+                                      gr%dzt(km1), gr%dzm(kp1), gr%dzm(km2), k )
       endif
 
       if (l_stats_samp) then
