@@ -3,6 +3,16 @@
 !===============================================================================
 module hyper_diffusion_4th_ord
 
+  ! Description:
+  ! Module hyper_diffusion_4th_ord computes the 4th-order numerical diffusion
+  ! for any equation to which it is applied.  Hyper-diffusion will only be
+  ! called if the model flag l_hyper_dfsn is set to true.  Function
+  ! hyper_dfsn_4th_ord_zt_lhs handles 4th-order hyper-diffusion for variables
+  ! that reside on thermodynamic levels.  Function hyper_dfsn_4th_ord_zm_lhs
+  ! handles 4th-order hyper-diffusion for variables that reside on momentum
+  ! levels.  A special constant coefficient of 4th-order numerical diffusion,
+  ! nu_hd (which is sent in this module as nu), is used and has units of m^4/s.
+
   implicit none
 
   private ! Default Scope
