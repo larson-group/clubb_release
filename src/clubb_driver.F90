@@ -30,14 +30,14 @@ module clubb_driver
   integer, private ::  & 
     nzmax,     & ! Vertical extent in levels              [#]
     grid_type    ! 1 ==> evenly-spaced grid levels
-  ! 2 ==> stretched (unevenly-spaced) grid entered on
-  !       thermodynamic grid levels; momentum levels
-  !       halfway between thermodynamic levels (style
-  !       of SAM stretched grid).
-  ! 3 ==> stretched (unevenly-spaced) grid entered on
-  !       momentum grid levels; thermodynamic levels
-  !       halfway between momentum levels (style
-  !       of WRF stretched grid).
+                 ! 2 ==> stretched (unevenly-spaced) grid entered on
+                 !       thermodynamic grid levels; momentum levels
+                 !       halfway between thermodynamic levels (style
+                 !       of SAM stretched grid).
+                 ! 3 ==> stretched (unevenly-spaced) grid entered on
+                 !       momentum grid levels; thermodynamic levels
+                 !       halfway between momentum levels (style
+                 !       of WRF stretched grid).
 
   real, private ::  & 
     deltaz,  & ! Change per grid level                 [m]
@@ -70,9 +70,9 @@ module clubb_driver
 
   integer, private :: &
     sfctype ! 0: fixed sfc sensible and latent heat fluxes as
-  !    given in namelist
-  ! 1: bulk formula: uses given surface temperature
-  !    and assumes over ocean
+            !    given in namelist
+            ! 1: bulk formula: uses given surface temperature
+            !    and assumes over ocean
 
 !$omp threadprivate(sfctype)
 
