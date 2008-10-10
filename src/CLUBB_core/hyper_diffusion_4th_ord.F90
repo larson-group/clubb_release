@@ -7,14 +7,16 @@ module hyper_diffusion_4th_ord
 
   private ! Default Scope
 
-!  public :: hyper_dfsn_4th_ord_zt_lhs,  &
-!            hyper_dfsn_4th_ord_zm_lhs
-  public :: hyper_dfsn_4th_ord_zm_lhs
+  public :: hyper_dfsn_4th_ord_zt_lhs,  &
+            hyper_dfsn_4th_ord_zm_lhs
 
 contains
 
   !=============================================================================
-!  pure function hyper_dfsn_4th_ord_zt_lhs( )
+  pure function hyper_dfsn_4th_ord_zt_lhs( boundary_cond, nu, dzt,  &
+                                           dzm, dzmm1, dztp1,  &
+                                           dztm1, dzmp1, dzmm2, level )  &
+  result( lhs )
 
     ! Description:
     ! Vertical 4th-order numerical diffusion of var_zt:  implicit portion of the
@@ -479,18 +481,287 @@ contains
     ! None
     !-----------------------------------------------------------------------
 
-!    implicit none
+    use grid_class, only:  &
+        gr  ! Variable(s)   gr%nnzp
+
+    implicit none
 
     ! Constant parameters
+    integer, parameter ::  &
+      kp2_tdiag = 1,  & ! Thermodynamic super-super diagonal index.
+      kp1_tdiag = 2,  & ! Thermodynamic super diagonal index.
+      k_tdiag   = 3,  & ! Thermodynamic main diagonal index.
+      km1_tdiag = 4,  & ! Thermodynamic sub diagonal index.
+      km2_tdiag = 5     ! Thermodynamic sub-sub diagonal index.
 
     ! Input Variables
+    character (len=*), intent(in) :: &
+      boundary_cond   ! Type of boundary conditions being used
+                      ! ('zero-flux' or 'fixed-point').
+
+    real, intent(in) ::  &
+      nu,     & ! Constant coefficient of 4th-order numerical diffusion  [m^4/s]
+      dzt,    & ! Inverse of grid spacing over thermodynamic level (k)   [1/m]
+      dzm,    & ! Inverse of grid spacing over momentum level (k)        [1/m]
+      dzmm1,  & ! Inverse of grid spacing over momentum level (k-1)      [1/m]
+      dztp1,  & ! Inverse of grid spacing over thermodynamic level (k+1) [1/m]
+      dztm1,  & ! Inverse of grid spacing over thermodynamic level (k-1) [1/m]
+      dzmp1,  & ! Inverse of grid spacing over momentum level (k+1)      [1/m]
+      dzmm2     ! Inverse of grid spacing over momentum level (k-2)      [1/m]
+
+    integer, intent(in) ::  & 
+      level     ! Thermodynamic level where calculation occurs.          [-]
 
     ! Return Variable
+    real, dimension(5) :: lhs
 
 
-!    return
+    if ( level == 1 ) then
 
-!  end function hyper_dfsn_4th_ord_zt_lhs
+       ! Lowest level
+       ! k = 1; lower boundery level at surface.
+       ! Only relevant if zero-flux boundary conditions are used.
+
+       if ( trim( boundary_cond ) == 'zero-flux' ) then
+
+          ! Zero-flux boundary conditions
+
+          ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
+          lhs(km2_tdiag) = 0.0
+
+          ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
+          lhs(km1_tdiag) = 0.0
+
+          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+          lhs(k_tdiag)   = +nu*dzt*dzm*(dztp1*dzm + dzt*dzm)
+
+          ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
+          lhs(kp1_tdiag) = -nu*dzt*dzm*( dztp1*(dzmp1 + dzm)  &
+                                        +dzt*dzm )
+
+          ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
+          lhs(kp2_tdiag) = +nu*dzt*dzm*dztp1*dzmp1
+
+       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
+
+          ! Fixed-point boundary conditions
+          ! The left-hand side matrix contributions from level 1 are
+          ! over-written or set in the parent subroutine.
+
+          ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
+          lhs(km2_tdiag) = 0.0
+
+          ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
+          lhs(km1_tdiag) = 0.0
+
+          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+          lhs(k_tdiag)   = 0.0
+
+          ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
+          lhs(kp1_tdiag) = 0.0
+
+          ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
+          lhs(kp2_tdiag) = 0.0
+
+       endif
+
+
+    elseif ( level == 2 ) then
+
+       ! Second-lowest level
+
+       if ( trim( boundary_cond ) == 'zero-flux' ) then
+
+          ! Zero-flux boundary conditions
+
+          ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
+          lhs(km2_tdiag) = 0.0
+
+          ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
+          lhs(km1_tdiag) = -nu*dzt*( dzm*dzt*dzmm1  &
+                                    +dzmm1*( dzt*dzmm1  &
+                                            +dztm1*dzmm1 ) )
+
+          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+          lhs(k_tdiag)   = +nu*dzt*( dzm*( dztp1*dzm  &
+                                          +dzt*(dzm + dzmm1) )  &
+                                    +dzmm1*( dzt*(dzm + dzmm1)  &
+                                            +dztm1*dzmm1 ) )
+
+          ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
+          lhs(kp1_tdiag) = -nu*dzt*( dzm*( dztp1*(dzmp1 + dzm)  &
+                                          +dzt*dzm )  &
+                                    +dzmm1*dzt*dzm )
+
+          ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
+          lhs(kp2_tdiag) = +nu*dzt*dzm*dztp1*dzmp1
+
+       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
+
+          ! Fixed-point boundary conditions
+
+          ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
+          lhs(km2_tdiag) = 0.0
+
+          ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
+          lhs(km1_tdiag) = -nu*dzt*( dzm*dzt*dzmm1  &
+                                    +dzmm1*dzt*dzmm1 )
+
+          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+          lhs(k_tdiag)   = +nu*dzt*( dzm*( dztp1*dzm  &
+                                          +dzt*(dzm + dzmm1) )  &
+                                    +dzmm1*( dzt*(dzm + dzmm1) ) )
+
+          ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
+          lhs(kp1_tdiag) = -nu*dzt*( dzm*( dztp1*(dzmp1 + dzm)  &
+                                          +dzt*dzm )  &
+                                    +dzmm1*dzt*dzm )
+
+          ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
+          lhs(kp2_tdiag) = +nu*dzt*dzm*dztp1*dzmp1
+
+       endif
+
+
+    elseif ( level > 2 .and. level < gr%nnzp-1 ) then
+
+       ! k > 2 and k < num_levels-1
+       ! These interior level are not effected by boundary conditions.
+
+       ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
+       lhs(km2_tdiag) = +nu*dzt*dzmm1*dztm1*dzmm2
+
+       ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
+       lhs(km1_tdiag) = -nu*dzt*( dzm*dzt*dzmm1  &
+                                 +dzmm1*( dzt*dzmm1  &
+                                         +dztm1*(dzmm1 + dzmm2) ) )
+
+       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+       lhs(k_tdiag)   = +nu*dzt*( dzm*( dztp1*dzm  &
+                                       +dzt*(dzm + dzmm1) )  &
+                                 +dzmm1*( dzt*(dzm + dzmm1)  &
+                                         +dztm1*dzmm1 ) )
+
+       ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
+       lhs(kp1_tdiag) = -nu*dzt*( dzm*( dztp1*(dzmp1 + dzm)  &
+                                       +dzt*dzm )  &
+                                 +dzmm1*dzt*dzm )
+
+       ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
+       lhs(kp2_tdiag) = +nu*dzt*dzm*dztp1*dzmp1
+
+
+    elseif ( level == gr%nnzp-1 ) then
+
+       ! Second-highest level
+
+       if ( trim( boundary_cond ) == 'zero-flux' ) then
+
+          ! Zero-flux boundary conditions
+
+          ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
+          lhs(km2_tdiag) = +nu*dzt*dzmm1*dztm1*dzmm2
+
+          ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
+          lhs(km1_tdiag) = -nu*dzt*( dzm*dzt*dzmm1  &
+                                    +dzmm1*( dzt*dzmm1  &
+                                            +dztm1*(dzmm1 + dzmm2) ) )
+
+          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+          lhs(k_tdiag)   = +nu*dzt*( dzm*( dztp1*dzm  &
+                                          +dzt*(dzm + dzmm1) )  &
+                                    +dzmm1*( dzt*(dzm + dzmm1)  &
+                                            +dztm1*dzmm1 ) )
+
+          ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
+          lhs(kp1_tdiag) = -nu*dzt*( dzm*( dztp1*dzm  &
+                                          +dzt*dzm )  &
+                                    +dzmm1*dzt*dzm )
+
+          ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
+          lhs(kp2_tdiag) = 0.0
+
+       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
+
+          ! Fixed-point boundary conditions
+
+          ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
+          lhs(km2_tdiag) = +nu*dzt*dzmm1*dztm1*dzmm2
+
+          ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
+          lhs(km1_tdiag) = -nu*dzt*( dzm*dzt*dzmm1  &
+                                    +dzmm1*( dzt*dzmm1  &
+                                            +dztm1*(dzmm1 + dzmm2) ) )
+
+          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+          lhs(k_tdiag)   = +nu*dzt*( dzm*( dzt*(dzm + dzmm1) )  &
+                                    +dzmm1*( dzt*(dzm + dzmm1)  &
+                                            +dztm1*dzmm1 ) )
+
+          ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
+          lhs(kp1_tdiag) = -nu*dzt*( dzm*dzt*dzm  &
+                                    +dzmm1*dzt*dzm )
+
+          ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
+          lhs(kp2_tdiag) = 0.0
+
+       endif
+
+
+    elseif ( level == gr%nnzp ) then
+
+       ! Highest level
+       ! k = gr%nnzp; upper boundery level at model top.
+       ! Only relevant if zero-flux boundary conditions are used.
+
+       if ( trim( boundary_cond ) == 'zero-flux' ) then
+
+          ! Zero-flux boundary conditions
+
+          ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
+          lhs(km2_tdiag) = +nu*dzt*dzmm1*dztm1*dzmm2
+
+          ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
+          lhs(km1_tdiag) = -nu*dzt*dzmm1*( dzt*dzmm1  &
+                                          +dztm1*(dzmm1 + dzmm2) )
+
+          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+          lhs(k_tdiag)   = +nu*dzt*dzmm1*(dzt*dzmm1 + dztm1*dzmm1)
+
+          ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
+          lhs(kp1_tdiag) = 0.0
+
+          ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
+          lhs(kp2_tdiag) = 0.0
+
+       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
+
+          ! Fixed-point boundary conditions
+          ! The left-hand side matrix contributions from level gr%nnzp are
+          ! over-written or set in the parent subroutine.
+
+          ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
+          lhs(km2_tdiag) = 0.0
+
+          ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
+          lhs(km1_tdiag) = 0.0
+
+          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+          lhs(k_tdiag)   = 0.0
+
+          ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
+          lhs(kp1_tdiag) = 0.0
+
+          ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
+          lhs(kp2_tdiag) = 0.0
+
+       endif
+
+    endif
+
+    return
+
+  end function hyper_dfsn_4th_ord_zt_lhs
 
   !=============================================================================
   pure function hyper_dfsn_4th_ord_zm_lhs( boundary_cond, nu, dzm,  &
