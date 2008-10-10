@@ -831,6 +831,24 @@ contains
       nsub = 2,   & ! Number of subdiagonals in the LHS matrix.
       nsup = 2      ! Number of superdiagonals in the LHS matrix.
 
+    ! Left-hand side matrix diagonal identifiers for
+    ! momentum-level variable, w'^2.
+    integer, parameter ::  &
+      m_kp1_mdiag = 1, & ! Momentum superdiagonal index for w'^2.
+      m_kp1_tdiag = 2, & ! Thermodynamic superdiagonal index for w'^2.
+      m_k_mdiag   = 3, & ! Momentum main diagonal index for w'^2.
+      m_k_tdiag   = 4, & ! Thermodynamic subdiagonal index for w'^2.
+      m_km1_mdiag = 5    ! Momentum subdiagonal index for w'^2.
+
+    ! Left-hand side matrix diagonal identifiers for
+    ! thermodynamic-level variable, w'^3.
+    integer, parameter ::  &
+      t_kp1_tdiag = 1, & ! Thermodynamic superdiagonal index for w'^3.
+     !t_k_mdiag   = 2, & ! Momentum superdiagonal index for w'^3.
+      t_k_tdiag   = 3, & ! Thermodynamic main diagonal index for w'^3.
+     !t_km1_mdiag = 4, & ! Momentum subdiagonal index for w'^3.
+      t_km1_tdiag = 5    ! Thermodynamic subdiagonal index for w'^3.
+
     ! Input Variables
     real(kind=time_precision), intent(in) ::  & 
       dt             ! Timestep length                                [s]
@@ -885,53 +903,53 @@ contains
 
       ! w'^2: Left-hand side (implicit w'^2 portion of the code).
       !
-      ! Momentum subdiagonal (lhs index: 3+2)
+      ! Momentum subdiagonal (lhs index: m_km1_mdiag)
       !         [ x wp2(k-1,<t+1>) ]
-      ! Thermodynamic subdiagonal (lhs index: 3+1)
+      ! Thermodynamic subdiagonal (lhs index: m_k_tdiag)
       !         [ x wp3(k,<t+1>) ]
-      ! Momentum main diagonal (lhs index: 3)
+      ! Momentum main diagonal (lhs index: m_k_mdiag)
       !         [ x wp2(k,<t+1>) ]
-      ! Thermodynamic superdiagonal (lhs index: 3-1)
+      ! Thermodynamic superdiagonal (lhs index: m_kp1_tdiag)
       !         [ x wp3(k+1,<t+1>) ]
-      ! Momentum superdiagonal (lhs index: 3-2)
+      ! Momentum superdiagonal (lhs index: m_kp1_mdiag)
       !         [ x wp2(k+1,<t+1>) ]
 
       ! LHS time tendency.
-      lhs(3,k_wp2) & 
+      lhs(m_k_mdiag,k_wp2) & 
       = real( + 1.0 / dt )
 
       ! LHS mean advection (ma) term.
-      lhs((/3-2,3,3+2/),k_wp2) & 
-      = lhs((/3-2,3,3+2/),k_wp2) & 
+      lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
+      = lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
       + term_ma_zm_lhs( wm_zm(k), gr%dzm(k), k )
 
       ! LHS turbulent advection (ta) term.
-      lhs((/3-1,3+1/),k_wp2) & 
-      = lhs((/3-1,3+1/),k_wp2) & 
+      lhs((/m_kp1_tdiag,m_k_tdiag/),k_wp2) & 
+      = lhs((/m_kp1_tdiag,m_k_tdiag/),k_wp2) & 
       + wp2_term_ta_lhs( gr%dzm(k) )
 
       ! LHS accumulation (ac) term and pressure term 2 (pr2).
-      lhs(3,k_wp2) & 
-      = lhs(3,k_wp2) & 
+      lhs(m_k_mdiag,k_wp2) & 
+      = lhs(m_k_mdiag,k_wp2) & 
       + wp2_terms_ac_pr2_lhs( C5, wm_zt(kp1), wm_zt(k), gr%dzm(k)  )
 
       ! LHS dissipation term 1 (dp1).
-      lhs(3,k_wp2) & 
-      = lhs(3,k_wp2) & 
+      lhs(m_k_mdiag,k_wp2) & 
+      = lhs(m_k_mdiag,k_wp2) & 
       + wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
 
       ! LHS eddy diffusion term: dissipation term 2 (dp2).
       if ( l_crank_nich_diff ) then
         ! Eddy diffusion for wp2 using a Crank-Nicholson time step.
-        lhs((/3-2,3,3+2/),k_wp2) & 
-        = lhs((/3-2,3,3+2/),k_wp2) & 
+        lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
+        = lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
         + (1.0/2.0) & 
         * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
                             gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
       else
         ! Eddy diffusion for wp2 using a completely implicit time step.
-        lhs((/3-2,3,3+2/),k_wp2) & 
-        = lhs((/3-2,3,3+2/),k_wp2) & 
+        lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
+        = lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
         + diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
                             gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
       endif
@@ -939,8 +957,8 @@ contains
       ! LHS pressure term 1 (pr1).
       if ( l_tke_aniso ) then
         ! Add in this term if we're not assuming tke = 1.5 * wp2
-        lhs(3,k_wp2) & 
-        = lhs(3,k_wp2) & 
+        lhs(m_k_mdiag,k_wp2) & 
+        = lhs(m_k_mdiag,k_wp2) & 
         + wp2_term_pr1_lhs( C4, tau1m(k) )
       endif
 
@@ -1015,29 +1033,29 @@ contains
 
       ! w'^3: Left-hand side (implicit w'^3 portion of the code).
       !
-      ! Thermodynamic subdiagonal (lhs index: 3+2)
+      ! Thermodynamic subdiagonal (lhs index: t_km1_tdiag)
       !         [ x wp3(k-1,<t+1>) ]
-      ! Momentum subdiagonal (lhs index: 3+1)
+      ! Momentum subdiagonal (lhs index: t_km1_mdiag)
       !         [ x wp2(k-1,<t+1>) ]
-      ! Thermodynamic main diagonal (lhs index: 3)
+      ! Thermodynamic main diagonal (lhs index: t_k_tdiag)
       !         [ x wp3(k,<t+1>) ]
-      ! Momentum superdiagonal (lhs index: 3-1)
+      ! Momentum superdiagonal (lhs index: t_k_mdiag)
       !         [ x wp2(k,<t+1>) ]
-      ! Thermodynamic superdiagonal (lhs index: 3-2)
+      ! Thermodynamic superdiagonal (lhs index: t_kp1_tdiag)
       !         [ x wp3(k+1,<t+1>) ]
 
       ! LHS time tendency.
-      lhs(3,k_wp3) & 
+      lhs(t_k_tdiag,k_wp3) & 
       = real( + 1.0 / dt )
 
       ! LHS mean advection (ma) term.
-      lhs((/3-2,3,3+2/),k_wp3) & 
-      = lhs((/3-2,3,3+2/),k_wp3) & 
+      lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
+      = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
       + term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
 
       ! LHS turbulent advection (ta) and turbulent production (tp) terms.
-      lhs(3-2:3+2,k_wp3) & 
-      = lhs(3-2:3+2,k_wp3) & 
+      lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3) & 
+      = lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3) & 
       + wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
                              wp2(k), wp2(km1),  &
                              a1(k), a1_zt(k), a1(km1),  &
@@ -1045,14 +1063,14 @@ contains
                              gr%dzt(k), k )
 
       ! LHS accumulation (ac) term and pressure term 2 (pr2).
-      lhs(3,k_wp3) & 
-      = lhs(3,k_wp3) & 
+      lhs(t_k_tdiag,k_wp3) & 
+      = lhs(t_k_tdiag,k_wp3) & 
       + wp3_terms_ac_pr2_lhs( C11_Skw_fnc(k), & 
                               wm_zm(k), wm_zm(km1), gr%dzt(k) )
 
       ! LHS pressure term 1 (pr1).
-      lhs(3,k_wp3) & 
-      = lhs(3,k_wp3) & 
+      lhs(t_k_tdiag,k_wp3) & 
+      = lhs(t_k_tdiag,k_wp3) & 
       + wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skw_zt(k) )
 
       ! LHS eddy diffusion term: dissipation term 1 (dp1).
@@ -1060,15 +1078,15 @@ contains
       !  Initially, this new constant will be set to 1.0 -dschanen 9/19/05
       if ( l_crank_nich_diff ) then
         ! Eddy diffusion for wp3 using a Crank-Nicholson time step.
-        lhs((/3-2,3,3+2/),k_wp3) & 
-        = lhs((/3-2,3,3+2/),k_wp3) & 
+        lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
+        = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
         + C12 * (1.0/2.0) & 
         * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
                             gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
       else
         ! Eddy diffusion for wp3 using a completely implicit time step.
-        lhs((/3-2,3,3+2/),k_wp3) & 
-        = lhs((/3-2,3,3+2/),k_wp3) & 
+        lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
+        = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
         + C12  & 
         * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
                             gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
@@ -1186,11 +1204,11 @@ contains
     k_wp2 = 2*k
 
     ! w'^2
-    lhs(:,k_wp2) = 0.0
-    lhs(3,k_wp2) = 1.0
+    lhs(:,k_wp2)         = 0.0
+    lhs(m_k_mdiag,k_wp2) = 1.0
     ! w'^3
-    lhs(:,k_wp3) = 0.0
-    lhs(3,k_wp3) = 1.0
+    lhs(:,k_wp3)         = 0.0
+    lhs(t_k_tdiag,k_wp3) = 1.0
 
     ! Upper boundary
     k = gr%nnzp
@@ -1198,11 +1216,11 @@ contains
     k_wp2 = 2*k
 
     ! w'^2
-    lhs(:,k_wp2) = 0.0
-    lhs(3,k_wp2) = 1.0
+    lhs(:,k_wp2)         = 0.0
+    lhs(m_k_mdiag,k_wp2) = 1.0
     ! w'^3
-    lhs(:,k_wp3) = 0.0
-    lhs(3,k_wp3) = 1.0
+    lhs(:,k_wp3)         = 0.0
+    lhs(t_k_tdiag,k_wp3) = 1.0
 
 
     return
