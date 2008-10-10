@@ -69,7 +69,8 @@ contains
         fstderr    ! Variable(s)
 
     use model_flags, only: &
-        l_3pt_sqd_dfsn ! Variable(s)
+        l_hyper_dfsn,  & ! Variable(s)
+        l_3pt_sqd_dfsn
 
     use stats_precision, only:  & 
         time_precision ! Variable(s)
@@ -136,6 +137,10 @@ contains
       C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied              [-]
       C11_Skw_fnc    ! C_11 parameter with Sk_w applied             [-]
     ! End Vince Larson's addition.
+
+    integer :: &
+      nsub,   & ! Number of subdiagonals in the LHS matrix.
+      nsup      ! Number of superdiagonals in the LHS matrix.
 
     integer :: k, km1, kp1  ! Array indices
 
@@ -259,12 +264,24 @@ contains
 
     endif  ! l_3pt_sqd_dfsn
 
+    ! Declare the number of subdiagonals and superdiagonals in the LHS matrix.
+    if ( l_hyper_dfsn ) then
+       ! There are nine overall diagonals (including four subdiagonals
+       ! and four superdiagonals).
+       nsub = 4
+       nsup = 4
+    else
+       ! There are five overall diagonals (including two subdiagonals
+       ! and two superdiagonals).
+       nsub = 2
+       nsup = 2
+    endif
 
     ! Solve semi-implicitly
     call wp23_solve( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp, & ! Intent(in)
                      um, vm, upwp, vpwp, up2, vp2, Kw1, &              ! Intent(in)
                      Kw8, Skw_zt, tau_zm, tauw3t, C1_Skw_fnc, &        ! Intent(in)
-                     C11_Skw_fnc, wp3_zm, &                            ! Intent(in)
+                     C11_Skw_fnc, wp3_zm, nsub, nsup, &                ! Intent(in)
                      wp2, wp3, err_code )                              ! Intent(inout)
 
 !       Error output
@@ -312,7 +329,7 @@ contains
   subroutine wp23_solve( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp, & 
                          um, vm, upwp, vpwp, up2, vp2, Kw1, & 
                          Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, & 
-                         C11_Skw_fnc, wp3_zm, &
+                         C11_Skw_fnc, wp3_zm, nsub, nsup, &
                          wp2, wp3, err_code )
 
     ! Description:
@@ -419,8 +436,6 @@ contains
 
     ! Parameter Constants
     integer, parameter :: & 
-      nsub = 2,   & ! Number of subdiagonals in the LHS matrix
-      nsup = 2,   & ! Number of superdiagonals in the LHS matrix
       nrhs = 1      ! Number of RHS vectors
 
     ! Input Variables
@@ -447,6 +462,10 @@ contains
       C1_Skw_fnc,   & ! C_1 parameter with Sk_w applied           [-]
       C11_Skw_fnc,  & ! C_11 parameter with Sk_w applied          [-]
       wp3_zm          ! w'^3 interpolated to momentum levels      [m^3/s^3]
+
+    integer, intent(in) :: &
+      nsub,   & ! Number of subdiagonals in the LHS matrix.
+      nsup      ! Number of superdiagonals in the LHS matrix.
 
     ! Input/Output Variables
     real, dimension(gr%nnzp), intent(inout) ::  & 
@@ -522,9 +541,9 @@ contains
 
     ! Compute the implicit portion of the w'^2 and w'^3 equations.
     ! Build the left-hand side matrix.
-    call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt,  &
-                   a3, a3_zt, Kw1, Kw8, Skw_zt, tau1m, tauw3t,  & 
-                   C1_Skw_fnc, C11_Skw_fnc, l_crank_nich_diff,  & 
+    call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+                   Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                   C11_Skw_fnc, l_crank_nich_diff, nsub, nsup,  & 
                    lhs )
 
     ! Compute the explicit portion of the w'^2 and w'^3 equations.
@@ -736,9 +755,9 @@ contains
   end subroutine wp23_solve
 
   !=============================================================================
-  subroutine wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt,  & 
-                       a3, a3_zt, Kw1, Kw8, Skw_zt, tau1m, tauw3t,  & 
-                       C1_Skw_fnc, C11_Skw_fnc, l_crank_nich_diff,  & 
+  subroutine wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+                       Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                       C11_Skw_fnc, l_crank_nich_diff, nsub, nsup,  & 
                        lhs )
 
     ! Description:
@@ -827,27 +846,31 @@ contains
     implicit none
 
     ! Parameter Constants
-    integer, parameter :: & 
-      nsub = 2,   & ! Number of subdiagonals in the LHS matrix.
-      nsup = 2      ! Number of superdiagonals in the LHS matrix.
-
     ! Left-hand side matrix diagonal identifiers for
     ! momentum-level variable, w'^2.
     integer, parameter ::  &
-      m_kp1_mdiag = 1, & ! Momentum superdiagonal index for w'^2.
-      m_kp1_tdiag = 2, & ! Thermodynamic superdiagonal index for w'^2.
-      m_k_mdiag   = 3, & ! Momentum main diagonal index for w'^2.
-      m_k_tdiag   = 4, & ! Thermodynamic subdiagonal index for w'^2.
-      m_km1_mdiag = 5    ! Momentum subdiagonal index for w'^2.
+      m_kp2_mdiag = 1, & ! Momentum super-super diagonal index for w'^2.
+     !m_kp2_tdiag = 2, & ! Thermodynamic super-super diagonal index for w'^2.
+      m_kp1_mdiag = 3, & ! Momentum super diagonal index for w'^2.
+      m_kp1_tdiag = 4, & ! Thermodynamic super diagonal index for w'^2.
+      m_k_mdiag   = 5, & ! Momentum main diagonal index for w'^2.
+      m_k_tdiag   = 6, & ! Thermodynamic sub diagonal index for w'^2.
+      m_km1_mdiag = 7, & ! Momentum sub diagonal index for w'^2.
+     !m_km1_tdiag = 8, & ! Thermodynamic sub-sub diagonal index for w'^2.
+      m_km2_mdiag = 9    ! Momentum sub-sub diagonal index for w'^2.
 
     ! Left-hand side matrix diagonal identifiers for
     ! thermodynamic-level variable, w'^3.
     integer, parameter ::  &
-      t_kp1_tdiag = 1, & ! Thermodynamic superdiagonal index for w'^3.
-     !t_k_mdiag   = 2, & ! Momentum superdiagonal index for w'^3.
-      t_k_tdiag   = 3, & ! Thermodynamic main diagonal index for w'^3.
-     !t_km1_mdiag = 4, & ! Momentum subdiagonal index for w'^3.
-      t_km1_tdiag = 5    ! Thermodynamic subdiagonal index for w'^3.
+      t_kp2_tdiag = 1, & ! Thermodynamic super-super diagonal index for w'^3.
+     !t_kp1_mdiag = 2, & ! Momentum super-super diagonal index for w'^3.
+      t_kp1_tdiag = 3, & ! Thermodynamic super diagonal index for w'^3.
+     !t_k_mdiag   = 4, & ! Momentum super diagonal index for w'^3.
+      t_k_tdiag   = 5, & ! Thermodynamic main diagonal index for w'^3.
+     !t_km1_mdiag = 6, & ! Momentum sub diagonal index for w'^3.
+      t_km1_tdiag = 7, & ! Thermodynamic sub diagonal index for w'^3.
+     !t_km2_mdiag = 8, & ! Momentum sub-sub diagonal index for w'^3.
+      t_km2_tdiag = 9    ! Thermodynamic sub-sub diagonal index for w'^3.
 
     ! Input Variables
     real(kind=time_precision), intent(in) ::  & 
@@ -873,8 +896,12 @@ contains
     logical, intent(in) :: & 
       l_crank_nich_diff   ! Turns on/off Crank-Nicholson diffusion.
 
+    integer, intent(in) :: &
+      nsub,   & ! Number of subdiagonals in the LHS matrix.
+      nsup      ! Number of superdiagonals in the LHS matrix.
+
     ! Output Variable
-    real, dimension(nsup+nsub+1,2*gr%nnzp), intent(out) ::  & 
+    real, dimension(5-nsup:5+nsub,2*gr%nnzp), intent(out) ::  & 
       lhs ! Implicit contributions to wp2/wp3 (band diag. matrix)
 
     ! Local Variables
