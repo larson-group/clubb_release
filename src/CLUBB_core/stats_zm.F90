@@ -86,7 +86,8 @@ module stats_zm
           iwp2_pr2, & 
           iwp2_pr3, & 
           iwp2_dp1, & 
-          iwp2_dp2, & 
+          iwp2_dp2, &
+          iwp2_4hd, & 
           iwp2_cl, & 
           iwp2_pd, & 
           iwprtp_bt, & 
@@ -260,6 +261,7 @@ module stats_zm
       iwp2_pr3  = 0
       iwp2_dp1  = 0
       iwp2_dp2  = 0
+      iwp2_4hd  = 0
       iwp2_cl   = 0
       iwp2_pd   = 0
 
@@ -637,6 +639,13 @@ module stats_zm
           iwp2_dp2 = k
           call stat_assign(iwp2_dp2,"wp2_dp2", & 
                "wp2 dissipation term 2","m2/s3",zm)
+
+          k = k + 1
+
+        case ('wp2_4hd')
+          iwp2_4hd = k
+          call stat_assign(iwp2_4hd,"wp2_4hd", & 
+               "wp2 4th-order hyper-diffusion","m2/s3",zm)
 
           k = k + 1
 

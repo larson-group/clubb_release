@@ -92,7 +92,8 @@ use stats_variables, only: &
     iwp3_bp, & 
     iwp3_pr1, & 
     iwp3_pr2, & 
-    iwp3_dp1, & 
+    iwp3_dp1, &
+    iwp3_4hd, & 
     iwp3_cl, & 
     irrainm_bt, & 
     irrainm_ma, & 
@@ -284,6 +285,7 @@ iwp3_bp       = 0
 iwp3_pr1      = 0
 iwp3_pr2      = 0
 iwp3_dp1      = 0
+iwp3_4hd      = 0
 iwp3_cl       = 0
 
 irrainm_bt       = 0
@@ -854,6 +856,12 @@ do i=1,zt%nn
     iwp3_dp1 = k
     call stat_assign(iwp3_dp1,"wp3_dp1", & 
          "wp3 dissipation term 1","(m^3)/(s^4)",zt)
+    k = k + 1
+ 
+  case ('wp3_4hd')
+    iwp3_4hd = k
+    call stat_assign(iwp3_4hd,"wp3_4hd", & 
+         "wp3 4th-order hyper-diffusion","(m^3)/(s^4)",zt)
     k = k + 1
  
   case ('wp3_cl')

@@ -150,11 +150,12 @@ module stats_variables
      iwp3_bp, & 
      iwp3_pr1, & 
      iwp3_pr2, & 
-     iwp3_dp1, & 
+     iwp3_dp1, &
+     iwp3_4hd, & 
      iwp3_cl
 
 !$omp   threadprivate(iwp3_bt, iwp3_ma, iwp3_ta, iwp3_tp, iwp3_ac)
-!$omp   threadprivate(iwp3_bp, iwp3_pr1, iwp3_pr2, iwp3_dp1, iwp3_cl)
+!$omp   threadprivate(iwp3_bp, iwp3_pr1, iwp3_pr2, iwp3_dp1, iwp3_4hd, iwp3_cl)
 
   ! Rain mixing ratio budgets
   integer, public :: & 
@@ -361,12 +362,14 @@ module stats_variables
      iwp2_pr2, & 
      iwp2_pr3, & 
      iwp2_dp1, & 
-     iwp2_dp2, & 
+     iwp2_dp2, &
+     iwp2_4hd, &
      iwp2_pd, & 
      iwp2_cl
 
 !$omp   threadprivate(iwp2_bt, iwp2_ma, iwp2_ta, iwp2_ac, iwp2_bp)
-!$omp   threadprivate(iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp2_dp1, iwp2_dp2)
+!$omp   threadprivate(iwp2_pr1, iwp2_pr2, iwp2_pr3)
+!$omp   threadprivate(iwp2_dp1, iwp2_dp2, iwp2_4hd)
 !$omp   threadprivate(iwp2_pd, iwp2_cl)
 
   integer, public :: & 
@@ -555,34 +558,38 @@ module stats_variables
   ! Variables that contains all the statistics
 
   type (stats), target, public :: zt,   & ! zt grid
-                          zm,   & ! zm grid
-                          sfc  ! sfc
+                                  zm,   & ! zm grid
+                                  sfc     ! sfc
 
 !$omp   threadprivate(zt, zm, sfc)
 
   ! Scratch space
 
   real, allocatable, public :: ztscr01(:), ztscr02(:), ztscr03(:), & 
-                       ztscr04(:), ztscr05(:), ztscr06(:),  & 
-                       ztscr07(:), ztscr08(:), ztscr09(:), & 
-                       ztscr10(:), ztscr11(:), ztscr12(:), & 
-                       ztscr13(:), ztscr14(:), ztscr15(:), & 
-                       ztscr16(:)
+                               ztscr04(:), ztscr05(:), ztscr06(:), & 
+                               ztscr07(:), ztscr08(:), ztscr09(:), & 
+                               ztscr10(:), ztscr11(:), ztscr12(:), & 
+                               ztscr13(:), ztscr14(:), ztscr15(:), & 
+                               ztscr16(:), ztscr17(:), ztscr18(:), &
+                               ztscr19(:), ztscr20(:), ztscr21(:)
 
 !$omp   threadprivate(ztscr01, ztscr02, ztscr03, ztscr04, ztscr05)
 !$omp   threadprivate(ztscr06, ztscr07, ztscr08, ztscr09, ztscr10)
 !$omp   threadprivate(ztscr11, ztscr12, ztscr13, ztscr14, ztscr15)
-!$omp   threadprivate(ztscr16)
+!$omp   threadprivate(ztscr16, ztscr17, ztscr18, ztscr19, ztscr20)
+!$omp   threadprivate(ztscr21)
 
-  real, allocatable, public :: zmscr01(:), zmscr02(:), zmscr03(:), & 
-                       zmscr04(:), zmscr05(:), zmscr06(:), & 
-                       zmscr07(:), zmscr08(:), zmscr09(:), & 
-                       zmscr10(:), zmscr11(:), zmscr12(:), & 
-                       zmscr13(:), zmscr14(:), zmscr15(:)
+  real, allocatable, public :: zmscr01(:), zmscr02(:), zmscr03(:), &
+                               zmscr04(:), zmscr05(:), zmscr06(:), & 
+                               zmscr07(:), zmscr08(:), zmscr09(:), & 
+                               zmscr10(:), zmscr11(:), zmscr12(:), & 
+                               zmscr13(:), zmscr14(:), zmscr15(:), &
+                               zmscr16(:), zmscr17(:)
 
 !$omp   threadprivate(zmscr01, zmscr02, zmscr03, zmscr04, zmscr05) 
 !$omp   threadprivate(zmscr06, zmscr07, zmscr08, zmscr09, zmscr10)
 !$omp   threadprivate(zmscr11, zmscr12, zmscr13, zmscr14, zmscr15)
+!$omp   threadprivate(zmscr16, zmscr17)
 
  
 end module stats_variables

@@ -389,44 +389,56 @@ contains
         iwp2_dp1, & 
         iwp2_dp2, & 
         iwp2_pr1, & 
-        iwp2_pr2, & 
+        iwp2_pr2, &
+        iwp2_4hd, &
         iwp3_bt, & 
         iwp3_ta, & 
         iwp3_ma, & 
         iwp3_tp, & 
         iwp3_ac, & 
         iwp3_dp1, & 
-        iwp3_pr1, & 
-        iwp3_pr2, & 
-        iwp23_matrix_condt_num, & 
-        zmscr01, & 
-        zmscr02, & 
-        zmscr03, & 
-        zmscr04, & 
-        zmscr05, & 
-        zmscr06, & 
-        zmscr07, & 
-        zmscr08, & 
-        zmscr09, & 
-        zmscr10, & 
-        zmscr11, & 
-        zmscr12, & 
-        ztscr01, & 
-        ztscr02, & 
-        ztscr03, & 
-        ztscr04, & 
-        ztscr05, & 
-        ztscr06, & 
-        ztscr07, & 
-        ztscr08, & 
-        ztscr09, & 
-        ztscr10, & 
-        ztscr11, & 
-        ztscr12, & 
-        ztscr13, & 
-        ztscr14, & 
-        ztscr15, & 
-        ztscr16
+        iwp3_pr1, &
+        iwp3_pr2, &
+        iwp3_4hd, &
+        iwp23_matrix_condt_num, &
+        zmscr01, &
+        zmscr02, &
+        zmscr03, &
+        zmscr04, &
+        zmscr05, &
+        zmscr06, &
+        zmscr07, &
+        zmscr08, &
+        zmscr09, &
+        zmscr10, &
+        zmscr11, &
+        zmscr12, &
+        zmscr13, &
+        zmscr14, &
+        zmscr15, &
+        zmscr16, &
+        zmscr17, &
+        ztscr01, &
+        ztscr02, &
+        ztscr03, &
+        ztscr04, &
+        ztscr05, &
+        ztscr06, &
+        ztscr07, &
+        ztscr08, &
+        ztscr09, &
+        ztscr10, &
+        ztscr11, &
+        ztscr12, &
+        ztscr13, &
+        ztscr14, &
+        ztscr15, &
+        ztscr16, &
+        ztscr17, &
+        ztscr18, &
+        ztscr19, &
+        ztscr20, &
+        ztscr21
 
 
     implicit none
@@ -501,7 +513,7 @@ contains
       rcond  ! Est. of the reciprocal of the condition #
 
     ! Array indices
-    integer :: k, km1, kp1, k_wp2, k_wp3
+    integer :: k, km1, km2, kp1, kp2, k_wp2, k_wp3
 
     ! Set logical to true for Crank-Nicholson diffusion scheme
     ! or to false for completely implicit diffusion scheme.
@@ -579,7 +591,7 @@ contains
 
     do k = 1, gr%nnzp
 
-      km1 = max( k-1, 1)
+      km1 = max( k-1, 1 )
       kp1 = min( k+1, gr%nnzp )
 
       k_wp3 = 2*k - 1
@@ -599,7 +611,9 @@ contains
       do k = 2, gr%nnzp-1
 
         km1 = max( k-1, 1 )
+        km2 = max( k-2, 1 )
         kp1 = min( k+1, gr%nnzp )
+        kp2 = min( k+2, gr%nnzp )
 
         ! w'^2 term dp1 has both implicit and explicit components;
         ! call stat_end_update_pt.
@@ -649,6 +663,13 @@ contains
         call stat_end_update_pt( iwp2_pr2, k, & 
            zmscr11(k) * wp2(k), zm )
 
+        ! w'^2 term 4hd is completely implicit; call stat_update_var_pt.
+        call stat_update_var_pt( iwp2_4hd, k, &
+           zmscr13(k) * wp2(km2) &
+         + zmscr14(k) * wp2(km1) &
+         + zmscr15(k) * wp2(k) &
+         + zmscr16(k) * wp2(kp1) &
+         + zmscr17(k) * wp2(kp2), zm )
       enddo
 
       ! Finalize implicit contributions for wp3
@@ -656,7 +677,9 @@ contains
       do k = 2, gr%nnzp-1, 1
 
         km1 = max( k-1, 1 )
+        km2 = max( k-2, 1 )
         kp1 = min( k+1, gr%nnzp )
+        kp2 = min( k+2, gr%nnzp )
 
         ! w'^3 term pr1 has both implicit and explicit components; 
         ! call stat_end_update_pt.
@@ -709,6 +732,13 @@ contains
         call stat_end_update_pt( iwp3_pr2, k, & 
            ztscr16(k) * wp3(k), zt )
 
+        ! w'^3 term 4hd is completely implicit; call stat_update_var_pt.
+        call stat_update_var_pt( iwp3_4hd, k, &
+           ztscr17(k) * wp3(km2) &
+         + ztscr18(k) * wp3(km1) &
+         + ztscr19(k) * wp3(k) &
+         + ztscr20(k) * wp3(kp1) &
+         + ztscr21(k) * wp3(kp2), zt )
       enddo
 
     endif ! l_stats_samp
@@ -803,34 +833,44 @@ contains
     use stats_precision, only: time_precision
 
     use stats_variables, only:       & 
-        zmscr01,    & 
-        zmscr02,    & 
-        zmscr03,    & 
-        zmscr04,    & 
-        zmscr05,    & 
-        zmscr06,    & 
-        zmscr07,    & 
-        zmscr08,    & 
-        zmscr09,    & 
+        zmscr01,    &
+        zmscr02,    &
+        zmscr03,    &
+        zmscr04,    &
+        zmscr05,    &
+        zmscr06,    &
+        zmscr07,    &
+        zmscr08,    &
+        zmscr09,    &
         zmscr11,    & 
         zmscr10,    & 
-        zmscr12,    & 
-        ztscr01,    & 
-        ztscr02,    & 
-        ztscr03,    & 
-        ztscr04,    & 
-        ztscr05,    & 
-        ztscr06,    & 
-        ztscr07,    & 
-        ztscr08,    & 
-        ztscr09,    & 
-        ztscr10,    & 
-        ztscr11,    & 
-        ztscr12,    & 
-        ztscr13,    & 
-        ztscr14,    & 
-        ztscr15,    & 
-        ztscr16,    & 
+        zmscr12,    &
+        zmscr13,    &
+        zmscr14,    &
+        zmscr15,    &
+        zmscr16,    &
+        zmscr17,    &
+        ztscr01,    &
+        ztscr02,    &
+        ztscr03,    &
+        ztscr04,    &
+        ztscr05,    &
+        ztscr06,    &
+        ztscr07,    &
+        ztscr08,    &
+        ztscr09,    &
+        ztscr10,    &
+        ztscr11,    &
+        ztscr12,    &
+        ztscr13,    &
+        ztscr14,    &
+        ztscr15,    &
+        ztscr16,    &
+        ztscr17,    &
+        ztscr18,    &
+        ztscr19,    &
+        ztscr20,    &
+        ztscr21,    &
         l_stats_samp, & 
         iwp2_dp1, & 
         iwp2_dp2, & 
@@ -838,14 +878,16 @@ contains
         iwp2_ma, & 
         iwp2_ac, & 
         iwp2_pr2, & 
-        iwp2_pr1, & 
+        iwp2_pr1, &
+        iwp2_4hd, &
         iwp3_ta, & 
         iwp3_tp, & 
         iwp3_ma, & 
         iwp3_ac, & 
         iwp3_pr2, & 
         iwp3_pr1, & 
-        iwp3_dp1
+        iwp3_dp1, &
+        iwp3_4hd
 
 
     implicit none
@@ -937,16 +979,24 @@ contains
 
       ! w'^2: Left-hand side (implicit w'^2 portion of the code).
       !
-      ! Momentum subdiagonal (lhs index: m_km1_mdiag)
+      ! Momentum sub-sub diagonal (lhs index: m_km2_mdiag)
+      !         [ x wp2(k-2,<t+1>) ]
+      ! Thermodynamic sub-sub diagonal (lhs index: m_km1_tdiag)
+      !         [ x wp3(k-1,<t+1>) ]
+      ! Momentum sub diagonal (lhs index: m_km1_mdiag)
       !         [ x wp2(k-1,<t+1>) ]
-      ! Thermodynamic subdiagonal (lhs index: m_k_tdiag)
+      ! Thermodynamic sub diagonal (lhs index: m_k_tdiag)
       !         [ x wp3(k,<t+1>) ]
       ! Momentum main diagonal (lhs index: m_k_mdiag)
       !         [ x wp2(k,<t+1>) ]
-      ! Thermodynamic superdiagonal (lhs index: m_kp1_tdiag)
+      ! Thermodynamic super diagonal (lhs index: m_kp1_tdiag)
       !         [ x wp3(k+1,<t+1>) ]
-      ! Momentum superdiagonal (lhs index: m_kp1_mdiag)
+      ! Momentum super diagonal (lhs index: m_kp1_mdiag)
       !         [ x wp2(k+1,<t+1>) ]
+      ! Thermodynamic super-super diagonal (lhs index: m_kp2_tdiag)
+      !         [ x wp3(k+2,<t+1>) ]
+      ! Momentum super-super diagonal (lhs index: m_kp2_mdiag)
+      !         [ x wp2(k+2,<t+1>) ]
 
       ! LHS time tendency.
       lhs(m_k_mdiag,k_wp2) & 
@@ -1029,25 +1079,25 @@ contains
                                 gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
           endif
 
-          zmscr02(k) = - tmp(3)
-          zmscr03(k) = - tmp(2)
-          zmscr04(k) = - tmp(1)
+          zmscr02(k) = -tmp(3)
+          zmscr03(k) = -tmp(2)
+          zmscr04(k) = -tmp(1)
 
         endif
 
         if ( iwp2_ta > 0 ) then
           tmp(1:2) =  & 
           + wp2_term_ta_lhs( gr%dzm(k) )
-          zmscr05(k) = - tmp(2)
-          zmscr06(k) = - tmp(1)
+          zmscr05(k) = -tmp(2)
+          zmscr06(k) = -tmp(1)
         endif
 
         if ( iwp2_ma > 0 ) then
           tmp(1:3) = & 
           + term_ma_zm_lhs( wm_zm(k), gr%dzm(k), k )
-          zmscr07(k) = - tmp(3)
-          zmscr08(k) = - tmp(2)
-          zmscr09(k) = - tmp(1)
+          zmscr07(k) = -tmp(3)
+          zmscr08(k) = -tmp(2)
+          zmscr09(k) = -tmp(1)
         endif
 
         ! Note:  To find the contribution of w'^2 term ac, substitute 0 for the
@@ -1069,6 +1119,18 @@ contains
           zmscr12(k) = - wp2_term_pr1_lhs( C4, tau1m(k) )
         endif
 
+        if ( iwp2_4hd > 0 .and. l_hyper_dfsn ) then
+          tmp(1:5) = &
+          hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd, gr%dzm(k),  &
+                                     gr%dzt(kp1), gr%dzt(k), gr%dzm(kp1),  &
+                                     gr%dzm(km1), gr%dzt(kp2), gr%dzt(km1), k )
+          zmscr13(k) = -tmp(5)
+          zmscr14(k) = -tmp(4)
+          zmscr15(k) = -tmp(3)
+          zmscr16(k) = -tmp(2)
+          zmscr17(k) = -tmp(1)
+        endif
+
       endif
 
 
@@ -1077,16 +1139,24 @@ contains
 
       ! w'^3: Left-hand side (implicit w'^3 portion of the code).
       !
-      ! Thermodynamic subdiagonal (lhs index: t_km1_tdiag)
+      ! Thermodynamic sub-sub diagonal (lhs index: t_km2_tdiag)
+      !         [ x wp3(k-2,<t+1>) ]
+      ! Momentum sub-sub diagonal (lhs index: t_km2_mdiag)
+      !         [ x wp2(k-2,<t+1>) ]
+      ! Thermodynamic sub diagonal (lhs index: t_km1_tdiag)
       !         [ x wp3(k-1,<t+1>) ]
-      ! Momentum subdiagonal (lhs index: t_km1_mdiag)
+      ! Momentum sub diagonal (lhs index: t_km1_mdiag)
       !         [ x wp2(k-1,<t+1>) ]
       ! Thermodynamic main diagonal (lhs index: t_k_tdiag)
       !         [ x wp3(k,<t+1>) ]
-      ! Momentum superdiagonal (lhs index: t_k_mdiag)
+      ! Momentum super diagonal (lhs index: t_k_mdiag)
       !         [ x wp2(k,<t+1>) ]
-      ! Thermodynamic superdiagonal (lhs index: t_kp1_tdiag)
+      ! Thermodynamic super diagonal (lhs index: t_kp1_tdiag)
       !         [ x wp3(k+1,<t+1>) ]
+      ! Momentum super-super diagonal (lhs index: t_kp1_mdiag)
+      !         [ x wp2(k+1,<t+1>) ]
+      ! Thermodynamic super-super diagonal (lhs index: t_kp2_tdiag)
+      !         [ x wp3(k+2,<t+1>) ]
 
       ! LHS time tendency.
       lhs(t_k_tdiag,k_wp3) & 
@@ -1224,10 +1294,22 @@ contains
                                 gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
           endif
 
-          ztscr02(k) = - tmp(3)
-          ztscr03(k) = - tmp(2)
-          ztscr04(k) = - tmp(1)
+          ztscr02(k) = -tmp(3)
+          ztscr03(k) = -tmp(2)
+          ztscr04(k) = -tmp(1)
 
+        endif
+
+        if ( iwp3_4hd > 0 .and. l_hyper_dfsn ) then
+          tmp(1:5) = &
+          hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd, gr%dzt(k),  &
+                                     gr%dzm(k), gr%dzm(km1), gr%dzt(kp1),  &
+                                     gr%dzt(km1), gr%dzm(kp1), gr%dzm(km2), k )
+          ztscr17(k) = -tmp(5)
+          ztscr18(k) = -tmp(4)
+          ztscr19(k) = -tmp(3)
+          ztscr20(k) = -tmp(2)
+          ztscr21(k) = -tmp(1)
         endif
 
       endif

@@ -40,6 +40,11 @@ module stats_subs
       ztscr14, & 
       ztscr15, & 
       ztscr16, & 
+      ztscr17, & 
+      ztscr18, & 
+      ztscr19, & 
+      ztscr20, & 
+      ztscr21, & 
       zm, & 
       zmscr01, & 
       zmscr02, & 
@@ -55,7 +60,9 @@ module stats_subs
       zmscr12, & 
       zmscr13, & 
       zmscr14, & 
-      zmscr15, & 
+      zmscr15, &
+      zmscr16, &
+      zmscr17, &
       sfc, & 
       l_stats, & 
       stats_tsamp, & 
@@ -303,6 +310,11 @@ module stats_subs
     allocate( ztscr14(zt%kk) )
     allocate( ztscr15(zt%kk) )
     allocate( ztscr16(zt%kk) )
+    allocate( ztscr17(zt%kk) )
+    allocate( ztscr18(zt%kk) )
+    allocate( ztscr19(zt%kk) )
+    allocate( ztscr20(zt%kk) )
+    allocate( ztscr21(zt%kk) )
 
     ztscr01 = 0.0
     ztscr02 = 0.0
@@ -320,6 +332,11 @@ module stats_subs
     ztscr14 = 0.0
     ztscr15 = 0.0
     ztscr16 = 0.0
+    ztscr17 = 0.0
+    ztscr18 = 0.0
+    ztscr19 = 0.0
+    ztscr20 = 0.0
+    ztscr21 = 0.0
 
     fdir = "./"
     fname = trim( fname_zt )
@@ -394,6 +411,8 @@ module stats_subs
     allocate( zmscr13(zm%kk) )
     allocate( zmscr14(zm%kk) )
     allocate( zmscr15(zm%kk) )
+    allocate( zmscr16(zm%kk) )
+    allocate( zmscr17(zm%kk) )
 
     zmscr01 = 0.0
     zmscr02 = 0.0
@@ -410,6 +429,8 @@ module stats_subs
     zmscr13 = 0.0
     zmscr14 = 0.0
     zmscr15 = 0.0
+    zmscr16 = 0.0
+    zmscr17 = 0.0
 
 
     fdir = "./"
@@ -1308,6 +1329,11 @@ end subroutine stats_accumulate
           ztscr14, & 
           ztscr15, & 
           ztscr16, & 
+          ztscr17, & 
+          ztscr18, & 
+          ztscr19, & 
+          ztscr20, & 
+          ztscr21, & 
           zmscr01, & 
           zmscr02, & 
           zmscr03, & 
@@ -1323,6 +1349,8 @@ end subroutine stats_accumulate
           zmscr13, & 
           zmscr14, & 
           zmscr15, & 
+          zmscr16, & 
+          zmscr17, & 
           l_netcdf, & 
           l_stats
 #ifdef NETCDF
@@ -1371,6 +1399,11 @@ end subroutine stats_accumulate
         deallocate ( ztscr14 )
         deallocate ( ztscr15 )
         deallocate ( ztscr16 )
+        deallocate ( ztscr17 )
+        deallocate ( ztscr18 )
+        deallocate ( ztscr19 )
+        deallocate ( ztscr20 )
+        deallocate ( ztscr21 )
 
         ! De-allocate all zm variables
         deallocate( zm%z )
@@ -1397,6 +1430,8 @@ end subroutine stats_accumulate
         deallocate ( zmscr13 )
         deallocate ( zmscr14 )
         deallocate ( zmscr15 )
+        deallocate ( zmscr16 )
+        deallocate ( zmscr17 )
 
         ! De-allocate all sfc variables
         deallocate( sfc%z )
