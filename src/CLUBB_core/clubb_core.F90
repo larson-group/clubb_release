@@ -931,7 +931,7 @@ module clubb_core
 
     implicit none
 
-    ! Input
+    ! Input Variables
 
     ! Grid definition
     integer, intent(in) :: nzmax  ! Vertical grid levels            [#]
@@ -956,7 +956,7 @@ module clubb_core
     ! grid spacing and momentum-level starting altitude as input.
     real, intent(in) :: & 
       deltaz,   & ! Change in altitude per level           [m]
-      zm_init  ! Initial grid altitude (momentum level) [m]
+      zm_init     ! Initial grid altitude (momentum level) [m]
 
     ! If the CLUBB parameterization is implemented in a host model,
     ! it needs to use the host model's momentum level altitudes
@@ -969,12 +969,12 @@ module clubb_core
     ! it needs to use the momentum level altitudes as input.
     real, intent(in), dimension(nzmax) :: & 
       momentum_heights,      & ! Momentum level altitudes (input)      [m]
-      thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
+      thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
     ! Host model horizontal grid spacing, if part of host model.
     real, intent(in) :: & 
       host_dx,  & ! East-West horizontal grid spacing     [m]
-      host_dy  ! North-South horizontal grid spacing   [m]
+      host_dy     ! North-South horizontal grid spacing   [m]
 
     ! Model parameters
     real, intent(in) ::  & 
@@ -982,7 +982,7 @@ module clubb_core
 
     integer, intent(in) :: & 
       hydromet_dim_in,  & ! Number of hydrometeor species
-      sclr_dim_in      ! Number of passive scalars
+      sclr_dim_in         ! Number of passive scalars
 
     real, intent(in), dimension(sclr_dim_in) :: & 
       sclrtol_in    ! Thresholds for passive scalars
@@ -990,7 +990,7 @@ module clubb_core
     real, intent(in), dimension(nparams) :: & 
       params  ! Including C1, nu1, nu2, etc.
 
-    ! Flags
+    ! Flags 
     logical, intent(in) ::  & 
       l_bugsrad,      & ! BUGSrad interactive radiation scheme
       l_kk_rain,      & ! K & K rain microphysics
@@ -999,7 +999,8 @@ module clubb_core
       l_cloud_sed,    & ! Cloud water droplet sedimentation
       l_uv_nudge,     & ! Wind nudging
       l_tke_aniso       ! For anisotropic turbulent kinetic energy,
-    !   i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+                        !   i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+
     ! Output variables
     integer, intent(out) :: & 
       err_code   ! Diagnostic for a problem with the setup
@@ -1009,17 +1010,17 @@ module clubb_core
     ! Setup flags
 
     call setup_model_flags & 
-         ( l_bugsrad, l_kk_rain, l_cloud_sed,      & ! intent(in)
+         ( l_bugsrad, l_kk_rain, l_cloud_sed,     & ! intent(in)
            l_icedfs, l_coamps_micro, l_uv_nudge,  & ! intent(in)
-           l_tke_aniso )                             ! intent(in)
+           l_tke_aniso )                            ! intent(in)
 
     ! Define model constant parameters
 
     call setup_parameters & 
-         ( deltaz, T0_in, ts_nudge_in,   & ! intent(in)
-           hydromet_dim_in, sclr_dim_in, & ! intent(in)
-           sclrtol_in, params,           & ! intent(in)
-           err_code )                   ! intent(out)
+         ( deltaz, T0_in, ts_nudge_in, hydromet_dim_in, &           ! intent(in)
+           sclr_dim_in, sclrtol_in, params, nzmax, l_implemented, & ! intent(in)
+           grid_type, momentum_heights, thermodynamic_heights, &    ! intent(in)
+           err_code )                                               ! intent(out)
 
     ! Error Report
     ! Joshua Fasching February 2008
@@ -1053,9 +1054,9 @@ module clubb_core
     call setup_diagnostic_variables( nzmax )        ! intent(in)
 
     ! Setup grid
-    call gridsetup( nzmax, l_implemented, grid_type,           & ! intent(in)
-                    deltaz, zm_init, momentum_heights,       & ! intent(in)
-                    thermodynamic_heights )                 ! intent(in)
+    call gridsetup( nzmax, l_implemented, grid_type,    & ! intent(in)
+                    deltaz, zm_init, momentum_heights,  & ! intent(in)
+                    thermodynamic_heights )               ! intent(in)
 
     ! Determine the maximum allowable value for Lscale (in meters).
     if ( l_implemented ) then
