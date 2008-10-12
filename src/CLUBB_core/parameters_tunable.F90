@@ -282,6 +282,11 @@ contains
        ! CLUBB is implemented in a host model.
 
        ! Find the average deltaz over the grid based on momentum level inputs.
+       ! Note:  The use of momentum level inputs will avoid any 
+       !        descrepancy between the CLUBB thermodynamic level profile, which
+       !        places the first thermodynamic level below the model surface,
+       !        and many host models, which place the first thermodynamic level
+       !        above the model surface.
 
        avg_deltaz  &
           = ( momentum_heights(nzmax) - momentum_heights(1) )  &
@@ -309,11 +314,14 @@ contains
        endif
 
        ! The value of nu_hd is based on an average grid box spacing of 40 m.
-       ! The value of nu_hd should be adjusted directly proportional to the
-       ! average grid box size, whether the average grid box size is less than
-       ! 40 m. or greater than 40 m.
+       ! The value of nu_hd should be adjusted proportionally to the average
+       ! grid box size, whether the average grid box size is less than 40 m. or
+       ! greater than 40 m.
+       ! Since nu_hd should be very large for large grid boxes, but
+       ! substantially smaller for small grid boxes, the grid spacing adjuster
+       ! is squared.
        
-       nu_hd = nu_hd * ( avg_deltaz / 40.0 )
+       nu_hd = nu_hd * ( avg_deltaz / 40.0 )**2
 
     else
 
@@ -345,11 +353,14 @@ contains
           endif
 
           ! The value of nu_hd is based on a grid box spacing of 40 m.  The
-          ! value of nu_hd should be adjusted directly proportional to the grid
-          ! box size, whether the grid box size is less than 40 m. or greater
-          ! than 40 m.
+          ! value of nu_hd should be adjusted proportionally to the grid box
+          ! size, whether the grid box size is less than 40 m. or greater than
+          ! 40 m.
+          ! Since nu_hd should be very large for large grid boxes, but
+          ! substantially smaller for small grid boxes, the grid spacing
+          ! adjuster is squared.
        
-          nu_hd = nu_hd * ( deltaz / 40.0 )
+          nu_hd = nu_hd * ( deltaz / 40.0 )**2
 
        elseif ( grid_type == 2 ) then
 
@@ -385,11 +396,14 @@ contains
           endif
 
           ! The value of nu_hd is based on an average grid box spacing of 40 m.
-          ! The value of nu_hd should be adjusted directly proportional to the
-          ! average grid box size, whether the average grid box size is less
-          ! than 40 m. or greater than 40 m.
+          ! The value of nu_hd should be adjusted proportionally to the average
+          ! grid box size, whether the average grid box size is less than 40 m.
+          ! or greater than 40 m.
+          ! Since nu_hd should be very large for large grid boxes, but
+          ! substantially smaller for small grid boxes, the grid spacing
+          ! adjuster is squared.
        
-          nu_hd = nu_hd * ( avg_deltaz / 40.0 )
+          nu_hd = nu_hd * ( avg_deltaz / 40.0 )**2
 
        elseif ( grid_type == 3 ) then
 
@@ -424,11 +438,14 @@ contains
           endif
 
           ! The value of nu_hd is based on an average grid box spacing of 40 m.
-          ! The value of nu_hd should be adjusted directly proportional to the
-          ! average grid box size, whether the average grid box size is less
-          ! than 40 m. or greater than 40 m.
+          ! The value of nu_hd should be adjusted proportionally to the average
+          ! grid box size, whether the average grid box size is less than 40 m.
+          ! or greater than 40 m.
+          ! Since nu_hd should be very large for large grid boxes, but
+          ! substantially smaller for small grid boxes, the grid spacing
+          ! adjuster is squared.
        
-          nu_hd = nu_hd * ( avg_deltaz / 40.0 )
+          nu_hd = nu_hd * ( avg_deltaz / 40.0 )**2
 
        endif
 
