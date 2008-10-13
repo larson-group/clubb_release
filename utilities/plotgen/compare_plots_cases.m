@@ -5,9 +5,9 @@
 % per case (with six graphs per page).  The program outputs in single-page
 % eps files, single-page jpeg files, or three-page ps files.
 % This program was made by Brian Griffin.
-function compare_plots_cases( case_name, t1_min, t2_min, graphbase, graphtop, ...
-                              dir_LES, dir_cgbe, dir_1217, dir_prev, dir_curr, ...
-                              cmp_les, les_type, cmp_cgbe, cmp_1217, cmp_prev, cmp_curr )
+function compare_plots_cases( case_name, t1_min, t2_min, graphbase_in, graphtop_in, ...
+                              dir_LES_in, dir_cgbe_in, dir_1217_in, dir_prev_in, dir_curr_in, ...
+                              cmp_les_in, les_type, cmp_cgbe_in, cmp_1217_in, cmp_prev_in, cmp_curr_in )
 
 % Function call variable description:
 %
@@ -117,9 +117,237 @@ function compare_plots_cases( case_name, t1_min, t2_min, graphbase, graphtop, ..
 %
 % DYCOMS2 RF02 DS
 
-% Print the case name
-[ 'Case:  ', case_name ]
-[ '-------------------------------' ]
+%Setup global variables
+global dir_prev
+global dir_curr
+global dir_LES
+global dir_cgbe
+global dir_1217
+global filename_les
+global filename_les2
+global numvars_les2
+global listofparams_les2
+global filename_cgbe_zt
+global filename_1217_zt
+global filename_prev_zt
+global filename_curr_zt
+global cmp_les
+global cmp_cgbe
+global cmp_1217
+global cmp_prev
+global cmp_curr
+global les_upwp
+global les_vpwp
+global les_grph_upwp
+global les_grph_vpwp
+global z_les
+global t1_les2
+global t2_les2
+global nz_les
+global z_les2
+global nz_les2
+global z_cgbe_zt
+global nz_cgbe_zt
+global z_1217_zt
+global nz_1217_zt
+global z_prev_zt
+global nz_prev_zt
+global z_curr_zt
+global nz_curr_zt
+global les_color
+global les_width
+global cgbe_color
+global cgbe_width
+global dec12_color
+global dec12_width
+global prev_color
+global prev_width
+global curr_color
+global curr_width
+global graphtop
+global graphbase
+global equiv_space
+global percentage
+
+dir_LES = dir_LES_in;
+dir_cgbe = dir_cgbe_in;
+dir_1217 = dir_1217_in;
+dir_prev = dir_prev_in;
+dir_curr = dir_curr_in;
+cmp_les = cmp_les_in;
+cmp_cgbe = cmp_cgbe_in;
+cmp_1217 = cmp_1217_in;
+cmp_prev = cmp_prev_in;
+cmp_curr = cmp_curr_in;
+graphtop = graphtop_in;
+graphbase = graphbase_in;
+%End global setup
+
+%Initialize variables to 0
+%This prevents errors and allows the create_plot fuction
+%to handle missing data
+filename_les = 0;
+filename_cgbe_zt = 0;
+filename_1217_zt = 0;
+filename_prev_zt = 0;
+filename_curr_zt = 0;
+filename_cgbe_zm = 0;
+filename_1217_zm = 0;
+filename_prev_zm = 0;
+filename_curr_zm = 0;
+avg_vm_les = 0;
+avg_vm_cgbe = 0;
+avg_vm_1217 = 0;
+avg_vm_prev = 0;
+avg_vm_curr = 0;
+avg_upwp_les = 0;
+avg_upwp_cgbe = 0;
+avg_upwp_1217 = 0;
+avg_upwp_prev = 0;
+avg_upwp_curr = 0;
+avg_vpwp_les = 0;
+avg_vpwp_cgbe = 0;
+avg_vpwp_1217 = 0;
+avg_vpwp_prev = 0;
+avg_vpwp_curr = 0;
+avg_rrainm_les = 0;
+avg_rrainm_cgbe = 0;
+avg_rrainm_1217 = 0;
+avg_rrainm_prev = 0;
+avg_rrainm_curr = 0;
+avg_Nrm_les = 0;
+avg_Nrm_cgbe = 0;
+avg_Nrm_1217 = 0;
+avg_Nrm_prev = 0;
+avg_Nrm_curr = 0;
+avg_thlm_les = 0;
+avg_thlm_cgbe = 0;
+avg_thlm_1217 = 0;
+avg_thlm_prev = 0;
+avg_thlm_curr = 0;
+avg_rtm_les = 0;
+avg_rtm_cgbe = 0;
+avg_rtm_1217 = 0;
+avg_rtm_prev = 0;
+avg_rtm_curr = 0;
+avg_cf_les = 0;
+avg_cf_cgbe = 0;
+avg_cf_1217 = 0;
+avg_cf_prev = 0;
+avg_cf_curr = 0;
+avg_rcm_les = 0;
+avg_rcm_cgbe = 0;
+avg_rcm_1217 = 0;
+avg_rcm_prev = 0;
+avg_rcm_curr = 0;
+avg_wp2_les = 0;
+avg_wp2_cgbe = 0;
+avg_wp2_1217 = 0;
+avg_wp2_prev = 0;
+avg_wp2_curr = 0;
+avg_wp3_les = 0;
+avg_wp3_cgbe = 0;
+avg_wp3_1217 = 0;
+avg_wp3_prev = 0;
+avg_wp3_curr = 0;
+avg_wpthlp_les = 0;
+avg_wpthlp_cgbe = 0;
+avg_wpthlp_1217 = 0;
+avg_wpthlp_prev = 0;
+avg_wpthlp_curr = 0;
+avg_wprtp_les = 0;
+avg_wprtp_cgbe = 0;
+avg_wprtp_1217 = 0;
+avg_wprtp_prev = 0;
+avg_wprtp_curr = 0;
+avg_thlp2_les = 0;
+avg_thlp2_cgbe = 0;
+avg_thlp2_1217 = 0;
+avg_thlp2_prev = 0;
+avg_thlp2_curr = 0;
+avg_rtp2_les = 0;
+avg_rtp2_cgbe = 0;
+avg_rtp2_1217 = 0;
+avg_rtp2_prev = 0;
+avg_rtp2_curr = 0;
+avg_rtpthlp_les = 0;
+avg_rtpthlp_cgbe = 0;
+avg_rtpthlp_1217 = 0;
+avg_rtpthlp_prev = 0;
+avg_rtpthlp_curr = 0;
+avg_wm_les = 0;
+avg_wm_cgbe = 0;
+avg_wm_1217 = 0;
+avg_wm_prev = 0;
+avg_wm_curr = 0;
+avg_um_les = 0;
+avg_um_cgbe = 0;
+avg_um_1217 = 0;
+avg_um_prev = 0;
+avg_um_curr = 0;
+listofparams_les = 0;
+listofparams_cgbe_zt = 0;
+listofparams_1217_zt = 0;
+listofparams_prev_zt = 0;
+listofparams_curr_zt = 0;
+listofparams_cgbe_zm = 0;
+listofparams_1217_zm = 0;
+listofparams_prev_zm = 0;
+listofparams_curr_zm = 0;
+numvars_les = 0;
+numvars_cgbe_zt = 0;
+numvars_1217_zt = 0;
+numvars_prev_zt = 0;
+numvars_curr_zt = 0;
+numvars_cgbe_zm = 0;
+numvars_1217_zm = 0;
+numvars_prev_zm = 0;
+numvars_curr_zm = 0;
+nz_les = 0;
+t1_les = 0;
+t2_les = 0;
+nz_cgbe_zt = 0;
+t1_cgbe_zt = 0;
+t2_cgbe_zt = 0;
+nz_1217_zt = 0;
+t1_1217_zt = 0;
+t2_1217_zt = 0;		
+nz_prev_zt = 0;
+t1_prev_zt = 0;
+t2_prev_zt = 0;
+nz_curr_zt = 0;
+t1_curr_zt = 0;
+t2_curr_zt = 0;
+nz_cgbe_zm = 0;
+t1_cgbe_zm = 0;
+t2_cgbe_zm = 0;
+nz_1217_zm = 0;
+t1_1217_zm = 0;
+t2_1217_zm = 0;		
+nz_prev_zm = 0;
+t1_prev_zm = 0;
+t2_prev_zm = 0;
+nz_curr_zm = 0;
+t1_curr_zm = 0;
+t2_curr_zm = 0;
+t1_les2 = 0;
+t2_les2 = 0;
+les_var_len = 0;
+les_var = 0;
+cgbe_var_len = 0;
+cgbe_var = 0;
+dec17_var_len = 0;
+dec17_var = 0;
+prev_var_len = 0;
+prev_var = 0;
+curr_var_len = 0;
+curr_var = 0;
+
+%Special cases
+les_grph_upwp = 1;
+les_grph_vpwp = 1;
+%End 0 initialization
+
 
 %Define the colors used in the plots
 les_color = [ 1.00, 0.00, 0.00 ]; %Red
@@ -246,90 +474,83 @@ end
 % rrainm
 % Nrm
 
-if ( cmp_les == 1 )
+% COAMPS LES variable names (and string lengths for comparison):
+les_thlm        = 'thlm ';
+les_thlm_len    = 5;
+les_rtm         = 'qtm ';
+les_rtm_len     = 4;
+les_cf          = 'cf ';
+les_cf_len      = 3;
+les_rcm         = 'qcm ';
+les_rcm_len     = 4;
+les_wp2         = 'wp2 ';
+les_wp2_len     = 4;
+les_wp3         = 'wp3 ';
+les_wp3_len     = 4;
+les_wpthlp      = 'wpthlp ';
+les_wpthlp_len  = 7;
+les_wprtp       = 'wpqtp ';
+les_wprtp_len   = 6;
+les_thlp2       = 'thlp2 ';
+les_thlp2_len   = 6;
+les_rtp2        = 'qtp2 ';
+les_rtp2_len    = 5;
+les_rtpthlp     = 'qtpthlp ';
+les_rtpthlp_len = 8;
+les_wm          = 'wlsm ';
+les_wm_len      = 5;
+les_um          = 'um ';
+les_um_len      = 3;
+les_vm          = 'vm ';
+les_vm_len      = 3;
+les_upwp        = 'wpup ';
+les_upwp_len    = 5;
+les_vpwp        = 'wpvp ';
+les_vpwp_len    = 5;
+les_rrainm         = 'qrm ';
+les_rrainm_len     = 4;
+les_Nrm         = 'nrm ';
+les_Nrm_len     = 4;
 
-    if ( strcmp( les_type, 'coamps' ) )
+if ( strcmp(les_type, 'rams' ) )
 
-      % COAMPS LES variable names (and string lengths for comparison):
-      les_thlm        = 'thlm ';
-      les_thlm_len    = 5;
-      les_rtm         = 'qtm ';
-      les_rtm_len     = 4;
-      les_cf          = 'cf ';
-      les_cf_len      = 3;
-      les_rcm         = 'qcm ';
-      les_rcm_len     = 4;
-      les_wp2         = 'wp2 ';
-      les_wp2_len     = 4;
-      les_wp3         = 'wp3 ';
-      les_wp3_len     = 4;
-      les_wpthlp      = 'wpthlp ';
-      les_wpthlp_len  = 7;
-      les_wprtp       = 'wpqtp ';
-      les_wprtp_len   = 6;
-      les_thlp2       = 'thlp2 ';
-      les_thlp2_len   = 6;
-      les_rtp2        = 'qtp2 ';
-      les_rtp2_len    = 5;
-      les_rtpthlp     = 'qtpthlp ';
-      les_rtpthlp_len = 8;
-      les_wm          = 'wlsm ';
-      les_wm_len      = 5;
-      les_um          = 'um ';
-      les_um_len      = 3;
-      les_vm          = 'vm ';
-      les_vm_len      = 3;
-      les_upwp        = 'wpup ';
-      les_upwp_len    = 5;
-      les_vpwp        = 'wpvp ';
-      les_vpwp_len    = 5;
-      les_rrainm         = 'qrm ';
-      les_rrainm_len     = 4;
-      les_Nrm         = 'nrm ';
-      les_Nrm_len     = 4;
-
-   elseif ( strcmp(les_type, 'rams' ) )
-
-      % RAMS LES variable names (and string lengths for comparison):
-      les_thlm        = 'thlm ';
-      les_thlm_len    = 5;
-      les_rtm         = 'qtm ';
-      les_rtm_len     = 4;
-      les_cf          = 'cf ';
-      les_cf_len      = 3;
-      les_rcm         = 'qcm ';
-      les_rcm_len     = 4;
-      les_wp2         = 'wp2 ';
-      les_wp2_len     = 4;
-      les_wp3         = 'wp3 ';
-      les_wp3_len     = 4;
-      les_wpthlp      = 'wpthlp ';
-      les_wpthlp_len  = 7;
-      les_wprtp       = 'wprtp ';
-      les_wprtp_len   = 6;
-      les_thlp2       = 'thlp2 ';
-      les_thlp2_len   = 6;
-      les_rtp2        = 'qtp2 ';
-      les_rtp2_len    = 5;
-      les_rtpthlp     = 'rtpthlp ';
-      les_rtpthlp_len = 8;
-      les_wm          = 'wm ';
-      les_wm_len      = 3;
-      les_um          = 'um ';
-      les_um_len      = 3;
-      les_vm          = 'vm ';
-      les_vm_len      = 3;
-      les_upwp        = 'wpup ';
-      les_upwp_len    = 5;
-      les_vpwp        = 'wpvp ';
-      les_vpwp_len    = 5;
-      les_rrainm         = 'qrm ';
-      les_rrainm_len     = 4;
-      les_Nrm         = 'nrm ';
-      les_Nrm_len     = 4;
-   
-    end
-
+	% RAMS LES variable names (and string lengths for comparison):
+	les_thlm        = 'thlm ';
+	les_thlm_len    = 5;
+	les_rtm         = 'qtm ';
+	les_rtm_len     = 4;
+	les_cf          = 'cf ';
+	les_cf_len      = 3;
+	les_rcm         = 'qcm ';
+	les_rcm_len     = 4;
+	les_wp2         = 'wp2 ';
+	les_wp2_len     = 4;
+	les_wp3         = 'wp3 ';
+	les_wp3_len     = 4;
+	les_wpthlp      = 'wpthlp ';
+	les_wpthlp_len  = 7;
+	les_wprtp       = 'wprtp ';
+	les_wprtp_len   = 6;
+	les_thlp2       = 'thlp2 ';
+	les_thlp2_len   = 6;
+	les_rtp2        = 'qtp2 ';
+	les_rtp2_len    = 5;
+	les_rtpthlp     = 'rtpthlp ';
+	les_rtpthlp_len = 8;
+	les_wm          = 'wm ';
+	les_wm_len      = 3;
+	les_um          = 'um ';
+	les_um_len      = 3;
+	les_vm          = 'vm ';
+	les_vm_len      = 3;
+	les_upwp        = 'wpup ';
+	les_upwp_len    = 5;
+	les_vpwp        = 'wpvp ';
+	les_vpwp_len    = 5;
+	les_rrainm         = 'qrm ';
+	les_rrainm_len     = 4;
+	les_Nrm         = 'nrm ';
+	les_Nrm_len     = 4;   
 end
 
 % Find the appropriate output timesteps in each file for the beginning and
@@ -565,1731 +786,163 @@ end
 %--------------------------------------------------------------------------
 
 % Liquid Water Potential Temperature (var "thlm")
-% LES
-if ( cmp_les == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_les
-      if ( strcmp( listofparams_les(i,1:les_thlm_len), les_thlm ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_les) & (varfnd == 0) )
-         'variable thlm not found in LES; value being set to 300.'
-         avg_thlm_les(1:nz_les) = 300.0;
-      elseif ( varfnd == 1 )
-         avg_thlm_les = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-                        'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
-         break
-      end
-   end
-end
-% HOC -- Golaz "best ever"
-if ( cmp_cgbe == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_cgbe_zt
-      if ( strcmp( listofparams_cgbe_zt(i,1:5), 'thlm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_cgbe_zt) & (varfnd == 0) )
-         'variable thlm not found in HOC (Golaz best-ever); value being set to 300.'
-         avg_thlm_cgbe(1:nz_cgbe_zt) = 300.0;
-      elseif ( varfnd == 1 )
-         avg_thlm_cgbe = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe_zt], ...
-                         'ieee-le', nz_cgbe_zt, t1_cgbe_zt, t2_cgbe_zt, varnum, numvars_cgbe_zt);
-         break
-      end
-   end
-end
-% HOC -- December 17, 2005
-if ( cmp_1217 == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_1217_zt
-      if ( strcmp( listofparams_1217_zt(i,1:5), 'thlm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_1217_zt) & (varfnd == 0) )
-         'variable thlm not found in HOC (12/17/2005); value being set to 300.'
-         avg_thlm_1217(1:nz_1217_zt) = 300.0;
-      elseif ( varfnd == 1 )
-         avg_thlm_1217 = read_grads_hoc_endian([dir_1217, '/', filename_1217_zt], ...
-                         'ieee-le', nz_1217_zt, t1_1217_zt, t2_1217_zt, varnum, numvars_1217_zt);
-         break
-      end
-   end
-end
-% HOC -- previous
-if ( cmp_prev == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_prev_zt
-      if ( strcmp( listofparams_prev_zt(i,1:5), 'thlm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_prev_zt) & (varfnd == 0) )
-         'variable thlm not found in HOC (previous); value being set to 300.'
-         avg_thlm_prev(1:nz_prev_zt) = 300.0;
-      elseif ( varfnd == 1 )
-         avg_thlm_prev = read_grads_hoc_endian([dir_prev, '/', filename_prev_zt], ...
-                         'ieee-le', nz_prev_zt, t1_prev_zt, t2_prev_zt, varnum, numvars_prev_zt);
-         break
-      end
-   end
-end
-% HOC -- current
-if ( cmp_curr == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_curr_zt
-      if ( strcmp( listofparams_curr_zt(i,1:5), 'thlm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_curr_zt) & (varfnd == 0) )
-         'variable thlm not found in HOC (current); value being set to 300.'
-         avg_thlm_curr(1:nz_curr_zt) = 300.0;
-      elseif ( varfnd == 1 )
-         avg_thlm_curr = read_grads_hoc_endian([dir_curr, '/', filename_curr_zt], ...
-                         'ieee-le', nz_curr_zt, t1_curr_zt, t2_curr_zt, varnum, numvars_curr_zt);
-         break
-      end
-   end
-end
+[avg_thlm_les, avg_thlm_cgbe, avg_thlm_1217, avg_thlm_prev, avg_thlm_curr] = var_load( filename_les, listofparams_les, les_thlm_len, ...
+		numvars_les, les_thlm, nz_les, t1_les, t2_les, filename_cgbe_zt, listofparams_cgbe_zt, 5, numvars_cgbe_zt, 'thlm ', nz_cgbe_zt, t1_cgbe_zt, ...
+		t2_cgbe_zt, filename_1217_zt, listofparams_1217_zt, 5, numvars_1217_zt, 'thlm ', nz_1217_zt, t1_1217_zt, t2_1217_zt, filename_prev_zt, listofparams_prev_zt, ...
+		5, numvars_prev_zt, 'thlm ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, 5, numvars_curr_zt, ...
+		'thlm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 
 %--------------------------------------------------------------------------
     
 % Total Water Mixing Ratio (var "rtm")
-% LES
-if ( cmp_les == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_les
-      if ( strcmp( listofparams_les(i,1:les_rtm_len), les_rtm ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_les) & (varfnd == 0) )
-         'variable qtm not found in LES; value being set to 0.'
-         avg_rtm_les(1:nz_les) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rtm_les = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-                       'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
-         break
-      end
-   end
-end
-% HOC -- Golaz "best ever"
-if ( cmp_cgbe == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_cgbe_zt
-      if ( strcmp( listofparams_cgbe_zt(i,1:4), 'rtm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_cgbe_zt) & (varfnd == 0) )
-         'variable rtm not found in HOC (Golaz best-ever); value being set to 0.'
-         avg_rtm_cgbe(1:nz_cgbe_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rtm_cgbe = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe_zt], ...
-                        'ieee-le', nz_cgbe_zt, t1_cgbe_zt, t2_cgbe_zt, varnum, numvars_cgbe_zt);
-         break
-      end
-   end
-end
-% HOC -- December 17, 2005
-if ( cmp_1217 == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_1217_zt
-      if ( strcmp( listofparams_1217_zt(i,1:4), 'rtm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_1217_zt) & (varfnd == 0) )
-         'variable rtm not found in HOC (12/17/2005); value being set to 0.'
-         avg_rtm_1217(1:nz_1217_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rtm_1217 = read_grads_hoc_endian([dir_1217, '/', filename_1217_zt], ...
-                        'ieee-le', nz_1217_zt, t1_1217_zt, t2_1217_zt, varnum, numvars_1217_zt);
-         break
-      end
-   end
-end
-% HOC -- previous
-if ( cmp_prev == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_prev_zt
-      if ( strcmp( listofparams_prev_zt(i,1:4), 'rtm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_prev_zt) & (varfnd == 0) )
-         'variable rtm not found in HOC (previous); value being set to 0.'
-         avg_rtm_prev(1:nz_prev_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rtm_prev = read_grads_hoc_endian([dir_prev, '/', filename_prev_zt], ...
-                        'ieee-le', nz_prev_zt, t1_prev_zt, t2_prev_zt, varnum, numvars_prev_zt);
-         break
-      end
-   end
-end
-% HOC -- current
-if ( cmp_curr == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_curr_zt
-      if ( strcmp( listofparams_curr_zt(i,1:4), 'rtm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_curr_zt) & (varfnd == 0) )
-         'variable rtm not found in HOC (current); value being set to 0.'
-         avg_rtm_curr(1:nz_curr_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rtm_curr = read_grads_hoc_endian([dir_curr, '/', filename_curr_zt], ...
-                        'ieee-le', nz_curr_zt, t1_curr_zt, t2_curr_zt, varnum, numvars_curr_zt);
-         break
-      end
-   end
-end
+[avg_rtm_les, avg_rtm_cgbe, avg_rtm_1217, avg_rtm_prev, avg_rtm_curr] = var_load( filename_les, listofparams_les, les_rtm_len, ...
+		numvars_les, les_rtm, nz_les, t1_les, t2_les, filename_cgbe_zt, listofparams_cgbe_zt, 4, numvars_cgbe_zt, 'rtm ', nz_cgbe_zt, t1_cgbe_zt, ...
+		t2_cgbe_zt, filename_1217_zt, listofparams_1217_zt, 4, numvars_1217_zt, 'rtm ', nz_1217_zt, t1_1217_zt, t2_1217_zt, filename_prev_zt, listofparams_prev_zt, ...
+		4, numvars_prev_zt, 'rtm ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, 4, numvars_curr_zt, ...
+		'rtm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 
 %--------------------------------------------------------------------------
 
 % Cloud Fraction (var "cf")
-% LES
-if ( cmp_les == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_les
-      if ( strcmp( listofparams_les(i,1:les_cf_len), les_cf ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_les) & (varfnd == 0) )
-         'variable cf not found in LES; value being set to 0.'
-         avg_cf_les(1:nz_les) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_cf_les = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-                      'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
-         break
-      end
-   end
-end
-% HOC -- Golaz "best ever"
-if ( cmp_cgbe == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_cgbe_zt
-      if ( strcmp( listofparams_cgbe_zt(i,1:3), 'cf ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_cgbe_zt) & (varfnd == 0) )
-         'variable cf not found in HOC (Golaz best-ever); value being set to 0.'
-         avg_cf_cgbe(1:nz_cgbe_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_cf_cgbe = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe_zt], ...
-                       'ieee-le', nz_cgbe_zt, t1_cgbe_zt, t2_cgbe_zt, varnum, numvars_cgbe_zt);
-         break
-      end
-   end
-end
-% HOC -- December 17, 2005
-if ( cmp_1217 == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_1217_zt
-      if ( strcmp( listofparams_1217_zt(i,1:3), 'cf ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_1217_zt) & (varfnd == 0) )
-         'variable cf not found in HOC (12/17/2005); value being set to 0.'
-         avg_cf_1217(1:nz_1217_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_cf_1217 = read_grads_hoc_endian([dir_1217, '/', filename_1217_zt], ...
-                       'ieee-le', nz_1217_zt, t1_1217_zt, t2_1217_zt, varnum, numvars_1217_zt);
-         break
-      end
-   end
-end
-% HOC -- previous
-if ( cmp_prev == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_prev_zt
-      if ( strcmp( listofparams_prev_zt(i,1:3), 'cf ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_prev_zt) & (varfnd == 0) )
-         'variable cf not found in HOC (previous); value being set to 0.'
-         avg_cf_prev(1:nz_prev_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_cf_prev = read_grads_hoc_endian([dir_prev, '/', filename_prev_zt], ...
-                       'ieee-le', nz_prev_zt, t1_prev_zt, t2_prev_zt, varnum, numvars_prev_zt);
-         break
-      end
-   end
-end
-% HOC -- current
-if ( cmp_curr == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_curr_zt
-      if ( strcmp( listofparams_curr_zt(i,1:3), 'cf ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_curr_zt) & (varfnd == 0) )
-         'variable cf not found in HOC (current); value being set to 0.'
-         avg_cf_curr(1:nz_curr_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_cf_curr = read_grads_hoc_endian([dir_curr, '/', filename_curr_zt], ...
-                       'ieee-le', nz_curr_zt, t1_curr_zt, t2_curr_zt, varnum, numvars_curr_zt);
-         break
-      end
-   end
-end
+[avg_cf_les, avg_cf_cgbe, avg_cf_1217, avg_cf_prev, avg_cf_curr] = var_load( filename_les, listofparams_les, les_cf_len, ...
+		numvars_les, les_cf, nz_les, t1_les, t2_les, filename_cgbe_zt, listofparams_cgbe_zt, 3, numvars_cgbe_zt, 'cf ', nz_cgbe_zt, t1_cgbe_zt, ...
+		t2_cgbe_zt, filename_1217_zt, listofparams_1217_zt, 3, numvars_1217_zt, 'cf ', nz_1217_zt, t1_1217_zt, t2_1217_zt, filename_prev_zt, listofparams_prev_zt, ...
+		3, numvars_prev_zt, 'cf ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, 3, numvars_curr_zt, ...
+		'cf ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 
 %--------------------------------------------------------------------------
 
 % Cloud Water Mixing Ratio (var "rcm")
-% LES
-if ( cmp_les == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_les
-      if ( strcmp( listofparams_les(i,1:les_rcm_len), les_rcm ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_les) & (varfnd == 0) )
-         'variable qcm not found in LES; value being set to 0.'
-         avg_rcm_les(1:nz_les) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rcm_les = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-                       'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
-         break
-      end
-   end
-end
-% HOC -- Golaz "best ever"
-if ( cmp_cgbe == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_cgbe_zt
-      if ( strcmp( listofparams_cgbe_zt(i,1:4), 'rcm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_cgbe_zt) & (varfnd == 0) )
-         'variable rcm not found in HOC (Golaz best-ever); value being set to 0.'
-         avg_rcm_cgbe(1:nz_cgbe_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rcm_cgbe = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe_zt], ...
-                        'ieee-le', nz_cgbe_zt, t1_cgbe_zt, t2_cgbe_zt, varnum, numvars_cgbe_zt);
-         break
-      end
-   end
-end
-% HOC -- December 17, 2005
-if ( cmp_1217 == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_1217_zt
-      if ( strcmp( listofparams_1217_zt(i,1:4), 'rcm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_1217_zt) & (varfnd == 0) )
-         'variable rcm not found in HOC (12.17/2005); value being set to 0.'
-         avg_rcm_1217(1:nz_1217_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rcm_1217 = read_grads_hoc_endian([dir_1217, '/', filename_1217_zt], ...
-                        'ieee-le', nz_1217_zt, t1_1217_zt, t2_1217_zt, varnum, numvars_1217_zt);
-         break
-      end
-   end
-end
-% HOC -- previous
-if ( cmp_prev == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_prev_zt
-      if ( strcmp( listofparams_prev_zt(i,1:4), 'rcm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_prev_zt) & (varfnd == 0) )
-         'variable rcm not found in HOC (previous); value being set to 0.'
-         avg_rcm_prev(1:nz_prev_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rcm_prev = read_grads_hoc_endian([dir_prev, '/', filename_prev_zt], ...
-                        'ieee-le', nz_prev_zt, t1_prev_zt, t2_prev_zt, varnum, numvars_prev_zt);
-         break
-      end
-   end
-end
-% HOC -- current
-if ( cmp_curr == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_curr_zt
-      if ( strcmp( listofparams_curr_zt(i,1:4), 'rcm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_curr_zt) & (varfnd == 0) )
-         'variable rcm not found in HOC (current); value being set to 0.'
-         avg_rcm_curr(1:nz_curr_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rcm_curr = read_grads_hoc_endian([dir_curr, '/', filename_curr_zt], ...
-                        'ieee-le', nz_curr_zt, t1_curr_zt, t2_curr_zt, varnum, numvars_curr_zt);
-         break
-      end
-   end
-end
+[avg_rcm_les, avg_rcm_cgbe, avg_rcm_1217, avg_rcm_prev, avg_rcm_curr] = var_load( filename_les, listofparams_les, les_rcm_len, ...
+		numvars_les, les_rcm, nz_les, t1_les, t2_les, filename_cgbe_zt, listofparams_cgbe_zt, 4, numvars_cgbe_zt, 'rcm ', nz_cgbe_zt, t1_cgbe_zt, ...
+		t2_cgbe_zt, filename_1217_zt, listofparams_1217_zt, 4, numvars_1217_zt, 'rcm ', nz_1217_zt, t1_1217_zt, t2_1217_zt, filename_prev_zt, listofparams_prev_zt, ...
+		4, numvars_prev_zt, 'rcm ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, 4, numvars_curr_zt, ...
+		'rcm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 
 %--------------------------------------------------------------------------
 
 % w'^2 (var "wp2")
-% LES
-if ( cmp_les == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_les
-      if ( strcmp( listofparams_les(i,1:les_wp2_len), les_wp2 ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_les) & (varfnd == 0) )
-         'variable wp2 not found in LES; value being set to 0.'
-         avg_wp2_les(1:nz_les) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wp2_les = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-                       'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
-         break
-      end
-   end
-end
-% HOC -- Golaz "best ever"
-if ( cmp_cgbe == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_cgbe_zm
-      if ( strcmp( listofparams_cgbe_zm(i,1:4), 'wp2 ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_cgbe_zm) & (varfnd == 0) )
-         'variable wp2 not found in HOC (Golaz best-ever); value being set to 0.'
-         avg_wp2_cgbe(1:nz_cgbe_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wp2_cgbe = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe_zm], ...
-                        'ieee-le', nz_cgbe_zm, t1_cgbe_zm, t2_cgbe_zm, varnum, numvars_cgbe_zm);
-         break
-      end
-   end
-end
-% HOC -- December 17, 2005
-if ( cmp_1217 == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_1217_zm
-      if ( strcmp( listofparams_1217_zm(i,1:4), 'wp2 ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_1217_zm) & (varfnd == 0) )
-         'variable wp2 not found in HOC (12/17/2005); value being set to 0.'
-         avg_wp2_1217(1:nz_1217_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wp2_1217 = read_grads_hoc_endian([dir_1217, '/', filename_1217_zm], ...
-                        'ieee-le', nz_1217_zm, t1_1217_zm, t2_1217_zm, varnum, numvars_1217_zm);
-         break
-      end
-   end
-end
-% HOC -- previous
-if ( cmp_prev == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_prev_zm
-      if ( strcmp( listofparams_prev_zm(i,1:4), 'wp2 ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_prev_zm) & (varfnd == 0) )
-         'variable wp2 not found in HOC (previous); value being set to 0.'
-         avg_wp2_prev(1:nz_prev_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wp2_prev = read_grads_hoc_endian([dir_prev, '/', filename_prev_zm], ...
-                        'ieee-le', nz_prev_zm, t1_prev_zm, t2_prev_zm, varnum, numvars_prev_zm);
-         break
-      end
-   end
-end
-% HOC -- current
-if ( cmp_curr == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_curr_zm
-      if ( strcmp( listofparams_curr_zm(i,1:4), 'wp2 ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_curr_zm) & (varfnd == 0) )
-         'variable wp2 not found in HOC (current); value being set to 0.'
-         avg_wp2_curr(1:nz_curr_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wp2_curr = read_grads_hoc_endian([dir_curr, '/', filename_curr_zm], ...
-                        'ieee-le', nz_curr_zm, t1_curr_zm, t2_curr_zm, varnum, numvars_curr_zm);
-         break
-      end
-   end
-end
+[avg_wp2_les, avg_wp2_cgbe, avg_wp2_1217, avg_wp2_prev, avg_wp2_curr] = var_load( filename_les, listofparams_les, les_wp2_len, ...
+		numvars_les, les_wp2, nz_les, t1_les, t2_les, filename_cgbe_zm, listofparams_cgbe_zm, 4, numvars_cgbe_zm, 'wp2 ', nz_cgbe_zm, t1_cgbe_zm, ...
+		t2_cgbe_zm, filename_1217_zm, listofparams_1217_zm, 4, numvars_1217_zm, 'wp2 ', nz_1217_zm, t1_1217_zm, t2_1217_zm, filename_prev_zm, listofparams_prev_zm, ...
+		4, numvars_prev_zm, 'wp2 ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, 4, numvars_curr_zm, ...
+		'wp2 ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
 %--------------------------------------------------------------------------
 
 % w'^3 (var "wp3")
-% LES
-if ( cmp_les == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_les
-      if ( strcmp( listofparams_les(i,1:les_wp3_len), les_wp3 ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_les) & (varfnd == 0) )
-         'variable wp3 not found in LES; value being set to 0.'
-         avg_wp3_les(1:nz_les) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wp3_les = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-                       'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
-         break
-      end
-   end
-end
-% HOC -- Golaz "best ever"
-if ( cmp_cgbe == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_cgbe_zt
-      if ( strcmp( listofparams_cgbe_zt(i,1:4), 'wp3 ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_cgbe_zt) & (varfnd == 0) )
-         'variable wp3 not found in HOC (Golaz best-ever); value being set to 0.'
-         avg_wp3_cgbe(1:nz_cgbe_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wp3_cgbe = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe_zt], ...
-                        'ieee-le', nz_cgbe_zt, t1_cgbe_zt, t2_cgbe_zt, varnum, numvars_cgbe_zt);
-         break
-      end
-   end
-end
-% HOC -- December 17, 2005
-if ( cmp_1217 == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_1217_zt
-      if ( strcmp( listofparams_1217_zt(i,1:4), 'wp3 ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_1217_zt) & (varfnd == 0) )
-         'variable wp3 not found in HOC (12/17/2005); value being set to 0.'
-         avg_wp3_1217(1:nz_1217_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wp3_1217 = read_grads_hoc_endian([dir_1217, '/', filename_1217_zt], ...
-                        'ieee-le', nz_1217_zt, t1_1217_zt, t2_1217_zt, varnum, numvars_1217_zt);
-         break
-      end
-   end
-end
-% HOC -- previous
-if ( cmp_prev == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_prev_zt
-      if ( strcmp( listofparams_prev_zt(i,1:4), 'wp3 ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_prev_zt) & (varfnd == 0) )
-         'variable wp3 not found in HOC (previous); value being set to 0.'
-         avg_wp3_prev(1:nz_prev_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wp3_prev = read_grads_hoc_endian([dir_prev, '/', filename_prev_zt], ...
-                        'ieee-le', nz_prev_zt, t1_prev_zt, t2_prev_zt, varnum, numvars_prev_zt);
-         break
-      end
-   end
-end
-% HOC -- current
-if ( cmp_curr == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_curr_zt
-      if ( strcmp( listofparams_curr_zt(i,1:4), 'wp3 ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_curr_zt) & (varfnd == 0) )
-         'variable wp3 not found in HOC (current); value being set to 0.'
-         avg_wp3_curr(1:nz_curr_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wp3_curr = read_grads_hoc_endian([dir_curr, '/', filename_curr_zt], ...
-                        'ieee-le', nz_curr_zt, t1_curr_zt, t2_curr_zt, varnum, numvars_curr_zt);
-         break
-      end
-   end
-end
+[avg_wp3_les, avg_wp3_cgbe, avg_wp3_1217, avg_wp3_prev, avg_wp3_curr] = var_load( filename_les, listofparams_les, les_wp3_len, ...
+		numvars_les, les_wp3, nz_les, t1_les, t2_les, filename_cgbe_zt, listofparams_cgbe_zt, 4, numvars_cgbe_zt, 'wp3 ', nz_cgbe_zt, t1_cgbe_zt, ...
+		t2_cgbe_zt, filename_1217_zt, listofparams_1217_zt, 4, numvars_1217_zt, 'wp3 ', nz_1217_zt, t1_1217_zt, t2_1217_zt, filename_prev_zt, listofparams_prev_zt, ...
+		4, numvars_prev_zt, 'wp3 ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, 4, numvars_curr_zt, ...
+		'wp3 ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 
 %--------------------------------------------------------------------------
 
 % w'thl' (var "wpthlp")
-% LES
-if ( cmp_les == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_les
-      if ( strcmp( listofparams_les(i,1:les_wpthlp_len), les_wpthlp ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_les) & (varfnd == 0) )
-         'variable wpthlp not found in LES; value being set to 0.'
-         avg_wpthlp_les(1:nz_les) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wpthlp_les = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-                          'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
-         break
-      end
-   end
-end
-% HOC -- Golaz "best ever"
-if ( cmp_cgbe == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_cgbe_zm
-      if ( strcmp( listofparams_cgbe_zm(i,1:7), 'wpthlp ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_cgbe_zm) & (varfnd == 0) )
-         'variable wpthlp not found in HOC (Golaz best-ever); value being set to 0.'
-         avg_wpthlp_cgbe(1:nz_cgbe_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wpthlp_cgbe = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe_zm], ...
-                           'ieee-le', nz_cgbe_zm, t1_cgbe_zm, t2_cgbe_zm, varnum, numvars_cgbe_zm);
-         break
-      end
-   end
-end
-% HOC -- December 17, 2005
-if ( cmp_1217 == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_1217_zm
-      if ( strcmp( listofparams_1217_zm(i,1:7), 'wpthlp ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_1217_zm) & (varfnd == 0) )
-         'variable wpthlp not found in HOC (12/17/2005); value being set to 0.'
-         avg_wpthlp_1217(1:nz_1217_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wpthlp_1217 = read_grads_hoc_endian([dir_1217, '/', filename_1217_zm], ...
-                           'ieee-le', nz_1217_zm, t1_1217_zm, t2_1217_zm, varnum, numvars_1217_zm);
-         break
-      end
-   end
-end
-% HOC -- previous
-if ( cmp_prev == 1 )
-  varfnd = 0;
-   for i = 1:1:numvars_prev_zm
-      if ( strcmp( listofparams_prev_zm(i,1:7), 'wpthlp ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_prev_zm) & (varfnd == 0) )
-         'variable wpthlp not found in HOC (previous); value being set to 0.'
-         avg_wpthlp_prev(1:nz_prev_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wpthlp_prev = read_grads_hoc_endian([dir_prev, '/', filename_prev_zm], ...
-                           'ieee-le', nz_prev_zm, t1_prev_zm, t2_prev_zm, varnum, numvars_prev_zm);
-         break
-      end
-   end
-end
-% HOC -- current
-if ( cmp_curr == 1 )
-  varfnd = 0;
-   for i = 1:1:numvars_curr_zm
-      if ( strcmp( listofparams_curr_zm(i,1:7), 'wpthlp ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_curr_zm) & (varfnd == 0) )
-         'variable wpthlp not found in HOC (current); value being set to 0.'
-         avg_wpthlp_curr(1:nz_curr_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wpthlp_curr = read_grads_hoc_endian([dir_curr, '/', filename_curr_zm], ...
-                           'ieee-le', nz_curr_zm, t1_curr_zm, t2_curr_zm, varnum, numvars_curr_zm);
-         break
-      end
-   end
-end
+[avg_wpthlp_les, avg_wpthlp_cgbe, avg_wpthlp_1217, avg_wpthlp_prev, avg_wpthlp_curr] = var_load( filename_les, listofparams_les, les_wpthlp_len, ...
+		numvars_les, les_wpthlp, nz_les, t1_les, t2_les, filename_cgbe_zm, listofparams_cgbe_zm, 7, numvars_cgbe_zm, 'wpthlp ', nz_cgbe_zm, t1_cgbe_zm, ...
+		t2_cgbe_zm, filename_1217_zm, listofparams_1217_zm, 7, numvars_1217_zm, 'wpthlp ', nz_1217_zm, t1_1217_zm, t2_1217_zm, filename_prev_zm, listofparams_prev_zm, ...
+		7, numvars_prev_zm, 'wpthlp ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, 7, numvars_curr_zm, ...
+		'wpthlp ', nz_curr_zt, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
 %--------------------------------------------------------------------------
 
 % w'rt' (var "wprtp")
-% LES
-if ( cmp_les == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_les
-      if ( strcmp( listofparams_les(i,1:les_wprtp_len), les_wprtp ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_les) & (varfnd == 0) )
-         'variable wpqtp not found in LES; value being set to 0.'
-         avg_wprtp_les(1:nz_les) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wprtp_les = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-                         'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
-         break
-      end
-   end
-end
-% HOC -- Golaz "best ever"
-if ( cmp_cgbe == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_cgbe_zm
-      if ( strcmp( listofparams_cgbe_zm(i,1:6), 'wprtp ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_cgbe_zm) & (varfnd == 0) )
-         'variable wprtp not found in HOC (Golaz best-ever); value being set to 0.'
-         avg_wprtp_cgbe(1:nz_cgbe_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wprtp_cgbe = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe_zm], ...
-                          'ieee-le', nz_cgbe_zm, t1_cgbe_zm, t2_cgbe_zm, varnum, numvars_cgbe_zm);
-         break
-      end
-   end
-end
-% HOC -- December 17, 2005
-if ( cmp_1217 == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_1217_zm
-      if ( strcmp( listofparams_1217_zm(i,1:6), 'wprtp ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_1217_zm) & (varfnd == 0) )
-         'variable wprtp not found in HOC (12/17/2005); value being set to 0.'
-         avg_wprtp_1217(1:nz_1217_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wprtp_1217 = read_grads_hoc_endian([dir_1217, '/', filename_1217_zm], ...
-                          'ieee-le', nz_1217_zm, t1_1217_zm, t2_1217_zm, varnum, numvars_1217_zm);
-         break
-      end
-   end
-end
-% HOC -- previous
-if ( cmp_prev == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_prev_zm
-      if ( strcmp( listofparams_prev_zm(i,1:6), 'wprtp ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_prev_zm) & (varfnd == 0) )
-         'variable wprtp not found in HOC (previous); value being set to 0.'
-         avg_wprtp_prev(1:nz_prev_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wprtp_prev = read_grads_hoc_endian([dir_prev, '/', filename_prev_zm], ...
-                          'ieee-le', nz_prev_zm, t1_prev_zm, t2_prev_zm, varnum, numvars_prev_zm);
-         break
-      end
-   end
-end
-% HOC -- current
-if ( cmp_curr == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_curr_zm
-      if ( strcmp( listofparams_curr_zm(i,1:6), 'wprtp ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_curr_zm) & (varfnd == 0) )
-         'variable wprtp not found in HOC (current); value being set to 0.'
-         avg_wprtp_curr(1:nz_curr_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wprtp_curr = read_grads_hoc_endian([dir_curr, '/', filename_curr_zm], ...
-                          'ieee-le', nz_curr_zm, t1_curr_zm, t2_curr_zm, varnum, numvars_curr_zm);
-         break
-      end
-   end
-end
+[avg_wprtp_les, avg_wprtp_cgbe, avg_wprtp_1217, avg_wprtp_prev, avg_wprtp_curr] = var_load( filename_les, listofparams_les, les_wprtp_len, ...
+		numvars_les, les_wprtp, nz_les, t1_les, t2_les, filename_cgbe_zm, listofparams_cgbe_zm, 6, numvars_cgbe_zm, 'wprtp ', nz_cgbe_zm, t1_cgbe_zm, ...
+		t2_cgbe_zm, filename_1217_zm, listofparams_1217_zm, 6, numvars_1217_zm, 'wprtp ', nz_1217_zm, t1_1217_zm, t2_1217_zm, filename_prev_zm, listofparams_prev_zm, ...
+		6, numvars_prev_zm, 'wprtp ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, 6, numvars_curr_zm, ...
+		'wprtp ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
 %--------------------------------------------------------------------------
 
 % thl'^2 (var "thlp2")
-% LES
-if ( cmp_les == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_les
-      if ( strcmp( listofparams_les(i,1:les_thlp2_len), les_thlp2 ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_les) & (varfnd == 0) )
-         'variable thlp2 not found in LES; value being set to 0.'
-         avg_thlp2_les(1:nz_les) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_thlp2_les = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-                         'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
-         break
-      end
-   end
-end
-% HOC -- Golaz "best ever"
-if ( cmp_cgbe == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_cgbe_zm
-      if ( strcmp( listofparams_cgbe_zm(i,1:6), 'thlp2 ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_cgbe_zm) & (varfnd == 0) )
-         'variable thlp2 not found in HOC (Golaz best-ever); value being set to 0.'
-         avg_thlp2_cgbe(1:nz_cgbe_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_thlp2_cgbe = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe_zm], ...
-                          'ieee-le', nz_cgbe_zm, t1_cgbe_zm, t2_cgbe_zm, varnum, numvars_cgbe_zm);
-         break
-      end
-   end
-end
-% HOC -- December 17, 2005
-if ( cmp_1217 == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_1217_zm
-      if ( strcmp( listofparams_1217_zm(i,1:6), 'thlp2 ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_1217_zm) & (varfnd == 0) )
-         'variable thlp2 not found in HOC (12/17/2005); value being set to 0.'
-         avg_thlp2_1217(1:nz_1217_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_thlp2_1217 = read_grads_hoc_endian([dir_1217, '/', filename_1217_zm], ...
-                          'ieee-le', nz_1217_zm, t1_1217_zm, t2_1217_zm, varnum, numvars_1217_zm);
-         break
-      end
-   end
-end
-% HOC -- previous
-if ( cmp_prev == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_prev_zm
-      if ( strcmp( listofparams_prev_zm(i,1:6), 'thlp2 ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_prev_zm) & (varfnd == 0) )
-         'variable thlp2 not found in HOC (previous); value being set to 0.'
-         avg_thlp2_prev(1:nz_prev_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_thlp2_prev = read_grads_hoc_endian([dir_prev, '/', filename_prev_zm], ...
-                          'ieee-le', nz_prev_zm, t1_prev_zm, t2_prev_zm, varnum, numvars_prev_zm);
-         break
-      end
-   end
-end
-% HOC -- current
-if ( cmp_curr == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_curr_zm
-      if ( strcmp( listofparams_curr_zm(i,1:6), 'thlp2 ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_curr_zm) & (varfnd == 0) )
-         'variable thlp2 not found in HOC (current); value being set to 0.'
-         avg_thlp2_curr(1:nz_curr_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_thlp2_curr = read_grads_hoc_endian([dir_curr, '/', filename_curr_zm], ...
-                          'ieee-le', nz_curr_zm, t1_curr_zm, t2_curr_zm, varnum, numvars_curr_zm);
-         break
-      end
-   end
-end
+[avg_thlp2_les, avg_thlp2_cgbe, avg_thlp2_1217, avg_thlp2_prev, avg_thlp2_curr] = var_load( filename_les, listofparams_les, les_thlp2_len, ...
+		numvars_les, les_thlp2, nz_les, t1_les, t2_les, filename_cgbe_zm, listofparams_cgbe_zm, 6, numvars_cgbe_zm, 'thlp2 ', nz_cgbe_zm, t1_cgbe_zm, ...
+		t2_cgbe_zm, filename_1217_zm, listofparams_1217_zm, 6, numvars_1217_zm, 'thlp2 ', nz_1217_zm, t1_1217_zm, t2_1217_zm, filename_prev_zm, listofparams_prev_zm, ...
+		6, numvars_prev_zm, 'thlp2 ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, 6, numvars_curr_zm, ...
+		'thlp2 ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
 %--------------------------------------------------------------------------
 
 % rt'^2 (var "rtp2")
-% LES
-if ( cmp_les == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_les
-      if ( strcmp( listofparams_les(i,1:les_rtp2_len), les_rtp2 ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_les) & (varfnd == 0) )
-         'variable qtp2 not found in LES; value being set to 0.'
-         avg_rtp2_les(1:nz_les) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rtp2_les = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-                        'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
-         break
-      end
-   end
-end
-% HOC -- Golaz "best ever"
-if ( cmp_cgbe == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_cgbe_zm
-      if ( strcmp( listofparams_cgbe_zm(i,1:5), 'rtp2 ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_cgbe_zm) & (varfnd == 0) )
-         'variable rtp2 not found in HOC (Golaz best-ever); value being set to 0.'
-         avg_rtp2_cgbe(1:nz_cgbe_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rtp2_cgbe = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe_zm], ...
-                         'ieee-le', nz_cgbe_zm, t1_cgbe_zm, t2_cgbe_zm, varnum, numvars_cgbe_zm);
-         break
-      end
-   end
-end
-% HOC -- December 17, 2005
-if ( cmp_1217 == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_1217_zm
-      if ( strcmp( listofparams_1217_zm(i,1:5), 'rtp2 ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_1217_zm) & (varfnd == 0) )
-         'variable rtp2 not found in HOC (12/17/2005); value being set to 0.'
-         avg_rtp2_1217(1:nz_1217_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rtp2_1217 = read_grads_hoc_endian([dir_1217, '/', filename_1217_zm], ...
-                         'ieee-le', nz_1217_zm, t1_1217_zm, t2_1217_zm, varnum, numvars_1217_zm);
-         break
-      end
-   end
-end
-% HOC -- previous
-if ( cmp_prev == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_prev_zm
-      if ( strcmp( listofparams_prev_zm(i,1:5), 'rtp2 ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_prev_zm) & (varfnd == 0) )
-         'variable rtp2 not found in HOC (previous); value being set to 0.'
-         avg_rtp2_prev(1:nz_prev_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rtp2_prev = read_grads_hoc_endian([dir_prev, '/', filename_prev_zm], ...
-                         'ieee-le', nz_prev_zm, t1_prev_zm, t2_prev_zm, varnum, numvars_prev_zm);
-         break
-      end
-   end
-end
-% HOC -- current
-if ( cmp_curr == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_curr_zm
-      if ( strcmp( listofparams_curr_zm(i,1:5), 'rtp2 ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_curr_zm) & (varfnd == 0) )
-         'variable rtp2 not found in HOC (current); value being set to 0.'
-         avg_rtp2_curr(1:nz_curr_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rtp2_curr = read_grads_hoc_endian([dir_curr, '/', filename_curr_zm], ...
-                         'ieee-le', nz_curr_zm, t1_curr_zm, t2_curr_zm, varnum, numvars_curr_zm);
-         break
-      end
-   end
-end
+[avg_rtp2_les, avg_rtp2_cgbe, avg_rtp2_1217, avg_rtp2_prev, avg_rtp2_curr] = var_load( filename_les, listofparams_les, les_rtp2_len, ...
+		numvars_les, les_rtp2, nz_les, t1_les, t2_les, filename_cgbe_zm, listofparams_cgbe_zm, 5, numvars_cgbe_zm, 'rtp2 ', nz_cgbe_zm, t1_cgbe_zm, ...
+		t2_cgbe_zm, filename_1217_zm, listofparams_1217_zm, 5, numvars_1217_zm, 'rtp2 ', nz_1217_zm, t1_1217_zm, t2_1217_zm, filename_prev_zm, listofparams_prev_zm, ...
+		5, numvars_prev_zm, 'rtp2 ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, 5, numvars_curr_zm, ...
+		'rtp2 ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
 %--------------------------------------------------------------------------
 
 % rt'thl' (var "rtpthlp")
-% LES
-if ( cmp_les == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_les
-      if ( strcmp( listofparams_les(i,1:les_rtpthlp_len), les_rtpthlp ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_les) & (varfnd == 0) )
-         'variable qtpthlp not found in LES; value being set to 0.'
-         avg_rtpthlp_les(1:nz_les) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rtpthlp_les = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-                           'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
-         break
-      end
-   end
-end
-% HOC -- Golaz "best ever"
-if ( cmp_cgbe == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_cgbe_zm
-      if ( strcmp( listofparams_cgbe_zm(i,1:8), 'rtpthlp ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_cgbe_zm) & (varfnd == 0) )
-         'variable rtpthlp not found in HOC (Golaz best-ever); value being set to 0.'
-         avg_rtpthlp_cgbe(1:nz_cgbe_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rtpthlp_cgbe = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe_zm], ...
-                            'ieee-le', nz_cgbe_zm, t1_cgbe_zm, t2_cgbe_zm, varnum, numvars_cgbe_zm);
-         break
-      end
-   end
-end
-% HOC -- December 17, 2005
-if ( cmp_1217 == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_1217_zm
-      if ( strcmp( listofparams_1217_zm(i,1:8), 'rtpthlp ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_1217_zm) & (varfnd == 0) )
-         'variable rtpthlp not found in HOC (12/17/2005); value being set to 0.'
-         avg_rtpthlp_1217(1:nz_1217_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rtpthlp_1217 = read_grads_hoc_endian([dir_1217, '/', filename_1217_zm], ...
-                            'ieee-le', nz_1217_zm, t1_1217_zm, t2_1217_zm, varnum, numvars_1217_zm);
-         break
-      end
-   end
-end
-% HOC -- previous
-if ( cmp_prev == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_prev_zm
-      if ( strcmp( listofparams_prev_zm(i,1:8), 'rtpthlp ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_prev_zm) & (varfnd == 0) )
-         'variable rtpthlp not found in HOC (previous); value being set to 0.'
-         avg_rtpthlp_prev(1:nz_prev_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rtpthlp_prev = read_grads_hoc_endian([dir_prev, '/', filename_prev_zm], ...
-                            'ieee-le', nz_prev_zm, t1_prev_zm, t2_prev_zm, varnum, numvars_prev_zm);
-         break
-      end
-   end
-end
-% HOC -- current
-if ( cmp_curr == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_curr_zm
-      if ( strcmp( listofparams_curr_zm(i,1:8), 'rtpthlp ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_curr_zm) & (varfnd == 0) )
-         'variable rtpthlp not found in HOC (current); value being set to 0.'
-         avg_rtpthlp_curr(1:nz_curr_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rtpthlp_curr = read_grads_hoc_endian([dir_curr, '/', filename_curr_zm], ...
-                            'ieee-le', nz_curr_zm, t1_curr_zm, t2_curr_zm, varnum, numvars_curr_zm);
-         break
-      end
-   end
-end
+[avg_rtpthlp_les, avg_rtpthlp_cgbe, avg_rtpthlp_1217, avg_rtpthlp_prev, avg_rtpthlp_curr] = var_load( filename_les, listofparams_les, les_rtpthlp_len, ...
+		numvars_les, les_rtpthlp, nz_les, t1_les, t2_les, filename_cgbe_zm, listofparams_cgbe_zm, 8, numvars_cgbe_zm, 'rtpthlp ', nz_cgbe_zm, t1_cgbe_zm, ...
+		t2_cgbe_zm, filename_1217_zm, listofparams_1217_zm, 8, numvars_1217_zm, 'rtpthlp ', nz_1217_zm, t1_1217_zm, t2_1217_zm, filename_prev_zm, listofparams_prev_zm, ...
+		8, numvars_prev_zm, 'rtpthlp ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, 8, numvars_curr_zm, ...
+		'rtpthlp ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
 %--------------------------------------------------------------------------
 
 % Vertical Wind Component (var "wm") (due to large-scale subsidence)
-% LES
-if ( cmp_les == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_les
-      if ( strcmp( listofparams_les(i,1:les_wm_len), les_wm ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_les) & (varfnd == 0) )
-         'variable wm not found in LES; value being set to 0.'
-         avg_wm_les(1:nz_les) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wm_les = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-                      'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
-         break
-      end
-   end
-end
-% HOC -- Golaz "best ever"
-if ( cmp_cgbe == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_cgbe_zt
-      if ( strcmp( listofparams_cgbe_zt(i,1:3), 'wm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_cgbe_zt) & (varfnd == 0) )
-         'variable wm not found in HOC (Golaz best-ever); value being set to 0.'
-         avg_wm_cgbe(1:nz_cgbe_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wm_cgbe = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe_zt], ...
-                       'ieee-le', nz_cgbe_zt, t1_cgbe_zt, t2_cgbe_zt, varnum, numvars_cgbe_zt);
-         break
-      end
-   end
-end
-% HOC -- December 17, 2005
-if ( cmp_1217 == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_1217_zt
-      if ( strcmp( listofparams_1217_zt(i,1:3), 'wm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_1217_zt) & (varfnd == 0) )
-         'variable wm not found in HOC (12/17/2005); value being set to 0.'
-         avg_wm_1217(1:nz_1217_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wm_1217 = read_grads_hoc_endian([dir_1217, '/', filename_1217_zt], ...
-                       'ieee-le', nz_1217_zt, t1_1217_zt, t2_1217_zt, varnum, numvars_1217_zt);
-         break
-      end
-   end
-end
-% HOC -- previous
-if ( cmp_prev == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_prev_zt
-      if ( strcmp( listofparams_prev_zt(i,1:3), 'wm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_prev_zt) & (varfnd == 0) )
-         'variable wm not found in HOC (previous); value being set to 0.'
-         avg_wm_prev(1:nz_prev_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wm_prev = read_grads_hoc_endian([dir_prev, '/', filename_prev_zt], ...
-                       'ieee-le', nz_prev_zt, t1_prev_zt, t2_prev_zt, varnum, numvars_prev_zt);
-         break
-      end
-   end
-end
-% HOC -- current
-if ( cmp_curr == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_curr_zt
-      if ( strcmp( listofparams_curr_zt(i,1:3), 'wm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_curr_zt) & (varfnd == 0) )
-         'variable wm not found in HOC (current); value being set to 0.'
-         avg_wm_curr(1:nz_curr_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_wm_curr = read_grads_hoc_endian([dir_curr, '/', filename_curr_zt], ...
-                       'ieee-le', nz_curr_zt, t1_curr_zt, t2_curr_zt, varnum, numvars_curr_zt);
-         break
-      end
-   end
-end
+[avg_wm_les, avg_wm_cgbe, avg_wm_1217, avg_wm_prev, avg_wm_curr] = var_load( filename_les, listofparams_les, les_wm_len, ...
+		numvars_les, les_wm, nz_les, t1_les, t2_les, filename_cgbe_zt, listofparams_cgbe_zt, 3, numvars_cgbe_zt, 'wm ', nz_cgbe_zt, t1_cgbe_zt, ...
+		t2_cgbe_zt, filename_1217_zt, listofparams_1217_zt, 3, numvars_1217_zt, 'wm ', nz_1217_zt, t1_1217_zt, t2_1217_zt, filename_prev_zt, listofparams_prev_zt, ...
+		3, numvars_prev_zt, 'wm ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, 3, numvars_curr_zt, ...
+		'wm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 
 %--------------------------------------------------------------------------
 
 % Zonal Wind Component (var "um")
-% LES
-if ( cmp_les == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_les
-      if ( strcmp( listofparams_les(i,1:les_um_len), les_um ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_les) & (varfnd == 0) )
-         'variable um not found in LES; value being set to 0.'
-         avg_um_les(1:nz_les) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_um_les = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-                      'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
-         break
-      end
-   end
-end
-% HOC -- Golaz "best ever"
-if ( cmp_cgbe == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_cgbe_zt
-      if ( strcmp( listofparams_cgbe_zt(i,1:3), 'um ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_cgbe_zt) & (varfnd == 0) )
-         'variable um not found in HOC (Golaz best-ever); value being set to 0.'
-         avg_um_cgbe(1:nz_cgbe_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_um_cgbe = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe_zt], ...
-                       'ieee-le', nz_cgbe_zt, t1_cgbe_zt, t2_cgbe_zt, varnum, numvars_cgbe_zt);
-         break
-      end
-   end
-end
-% HOC -- December 17, 2005
-if ( cmp_1217 == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_1217_zt
-      if ( strcmp( listofparams_1217_zt(i,1:3), 'um ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_1217_zt) & (varfnd == 0) )
-         'variable um not found in HOC (12/17/2005); value being set to 0.'
-         avg_um_1217(1:nz_1217_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_um_1217 = read_grads_hoc_endian([dir_1217, '/', filename_1217_zt], ...
-                       'ieee-le', nz_1217_zt, t1_1217_zt, t2_1217_zt, varnum, numvars_1217_zt);
-         break
-      end
-   end
-end
-% HOC -- previous
-if ( cmp_prev == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_prev_zt
-      if ( strcmp( listofparams_prev_zt(i,1:3), 'um ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_prev_zt) & (varfnd == 0) )
-         'variable um not found in HOC (previous); value being set to 0.'
-         avg_um_prev(1:nz_prev_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_um_prev = read_grads_hoc_endian([dir_prev, '/', filename_prev_zt], ...
-                       'ieee-le', nz_prev_zt, t1_prev_zt, t2_prev_zt, varnum, numvars_prev_zt);
-         break
-      end
-   end
-end
-% HOC -- current
-if ( cmp_curr == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_curr_zt
-      if ( strcmp( listofparams_curr_zt(i,1:3), 'um ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_curr_zt) & (varfnd == 0) )
-         'variable um not found in HOC (current); value being set to 0.'
-         avg_um_curr(1:nz_curr_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_um_curr = read_grads_hoc_endian([dir_curr, '/', filename_curr_zt], ...
-                       'ieee-le', nz_curr_zt, t1_curr_zt, t2_curr_zt, varnum, numvars_curr_zt);
-         break
-      end
-   end
-end
+[avg_um_les, avg_um_cgbe, avg_um_1217, avg_um_prev, avg_um_curr] = var_load( filename_les, listofparams_les, les_um_len, ...
+		numvars_les, les_um, nz_les, t1_les, t2_les, filename_cgbe_zt, listofparams_cgbe_zt, 3, numvars_cgbe_zt, 'um ', nz_cgbe_zt, t1_cgbe_zt, ...
+		t2_cgbe_zt, filename_1217_zt, listofparams_1217_zt, 3, numvars_1217_zt, 'um ', nz_1217_zt, t1_1217_zt, t2_1217_zt, filename_prev_zt, listofparams_prev_zt, ...
+		3, numvars_prev_zt, 'um ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, 3, numvars_curr_zt, ...
+		'um ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 
 %--------------------------------------------------------------------------
 
 % Meridional Wind Component (var "vm")
-% LES
-if ( cmp_les == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_les
-      if ( strcmp( listofparams_les(i,1:les_vm_len), les_vm ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_les) & (varfnd == 0) )
-         'variable vm not found in LES; value being set to 0.'
-         avg_vm_les(1:nz_les) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_vm_les = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-                      'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
-         break
-      end
-   end
-end
-% HOC -- Golaz "best ever"
-if ( cmp_cgbe == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_cgbe_zt
-      if ( strcmp( listofparams_cgbe_zt(i,1:3), 'vm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_cgbe_zt) & (varfnd == 0) )
-         'variable vm not found in HOC (Golaz best-ever); value being set to 0.'
-         avg_vm_cgbe(1:nz_cgbe_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_vm_cgbe = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe_zt], ...
-                       'ieee-le', nz_cgbe_zt, t1_cgbe_zt, t2_cgbe_zt, varnum, numvars_cgbe_zt);
-         break
-      end
-   end
-end
-% HOC -- December 17, 2005
-if ( cmp_1217 == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_1217_zt
-      if ( strcmp( listofparams_1217_zt(i,1:3), 'vm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_1217_zt) & (varfnd == 0) )
-         'variable vm not found in HOC (12/17/2005); value being set to 0.'
-         avg_vm_1217(1:nz_1217_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_vm_1217 = read_grads_hoc_endian([dir_1217, '/', filename_1217_zt], ...
-                       'ieee-le', nz_1217_zt, t1_1217_zt, t2_1217_zt, varnum, numvars_1217_zt);
-         break
-      end
-   end
-end
-% HOC -- previous
-if ( cmp_prev == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_prev_zt
-      if ( strcmp( listofparams_prev_zt(i,1:3), 'vm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_prev_zt) & (varfnd == 0) )
-         'variable vm not found in HOC (previous); value being set to 0.'
-         avg_vm_prev(1:nz_prev_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_vm_prev = read_grads_hoc_endian([dir_prev, '/', filename_prev_zt], ...
-                       'ieee-le', nz_prev_zt, t1_prev_zt, t2_prev_zt, varnum, numvars_prev_zt);
-         break
-      end
-   end
-end
-% HOC -- current
-if ( cmp_curr == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_curr_zt
-      if ( strcmp( listofparams_curr_zt(i,1:3), 'vm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_curr_zt) & (varfnd == 0) )
-         'variable vm not found in HOC (current); value being set to 0.'
-         avg_vm_curr(1:nz_curr_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_vm_curr = read_grads_hoc_endian([dir_curr, '/', filename_curr_zt], ...
-                       'ieee-le', nz_curr_zt, t1_curr_zt, t2_curr_zt, varnum, numvars_curr_zt);
-         break
-      end
-   end
-end
+[avg_vm_les, avg_vm_cgbe, avg_vm_1217, avg_vm_prev, avg_vm_curr] = var_load( filename_les, listofparams_les, les_vm_len, ...
+		numvars_les, les_vm, nz_les, t1_les, t2_les, filename_cgbe_zt, listofparams_cgbe_zt, 3, numvars_cgbe_zt, 'vm ', nz_cgbe_zt, t1_cgbe_zt, ...
+		t2_cgbe_zt, filename_1217_zt, listofparams_1217_zt, 3, numvars_1217_zt, 'vm ', nz_1217_zt, t1_1217_zt, t2_1217_zt, filename_prev_zt, listofparams_prev_zt, ...
+		3, numvars_prev_zt, 'vm ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, 3, numvars_curr_zt, ...
+		'vm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 
 %--------------------------------------------------------------------------
     
 % u'w' (var "upwp")
-% LES
-if ( cmp_les == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_les
-      if ( strcmp( listofparams_les(i,1:les_upwp_len), les_upwp ) )
-         varnum = i;
-         varfnd = 1;
-         avg_upwp_les = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-                       'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
-         les_grph_upwp = 1;
-         break
-      end
-   end
-   if ( (varfnd == 0) & ( strcmp( les_type, 'coamps' ) ) )
-      for i = 1:1:numvars_les2
-         if ( strcmp( listofparams_les2(i,1:les_upwp_len), les_upwp ) )
-            varnum = i;
-            varfnd = 1;
-         end
-         if ( (i == numvars_les2) & (varfnd == 0) )
-            'variable upwp not found in LES; value being set to 0.'
-            avg_upwp_les(1:nz_les2) = 0.0;
-            les_grph_upwp = 2;
-         elseif ( varfnd == 1 )
-            avg_upwp_les = read_grads_hoc_endian([dir_LES, '/', filename_les2], ...
-                          'ieee-be', nz_les2, t1_les2, t2_les2, varnum, numvars_les2);
-            les_grph_upwp = 2;
-            break
-         end
-      end
-   elseif ( (varfnd == 0) & ( strcmp( les_type, 'rams' ) ) )
-      'variable upwp not found in LES; value being set to 0.'
-      avg_upwp_les(1:nz_les) = 0.0;
-      les_grph_upwp = 1;
-   end
-end
-% HOC -- Golaz "best ever"
-   if ( cmp_cgbe == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_cgbe_zm
-      if ( strcmp( listofparams_cgbe_zm(i,1:5), 'upwp ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_cgbe_zm) & (varfnd == 0) )
-         'variable upwp not found in HOC (Golaz best-ever); value being set to 0.'
-         avg_upwp_cgbe(1:nz_cgbe_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_upwp_cgbe = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe_zm], ...
-                        'ieee-le', nz_cgbe_zm, t1_cgbe_zm, t2_cgbe_zm, varnum, numvars_cgbe_zm);
-         break
-      end
-   end
-end
-% HOC -- December 17, 2005
-if ( cmp_1217 == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_1217_zm
-      if ( strcmp( listofparams_1217_zm(i,1:5), 'upwp ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_1217_zm) & (varfnd == 0) )
-         'variable upwp not found in HOC (12/17/2005); value being set to 0.'
-         avg_upwp_1217(1:nz_1217_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_upwp_1217 = read_grads_hoc_endian([dir_1217, '/', filename_1217_zm], ...
-                         'ieee-le', nz_1217_zm, t1_1217_zm, t2_1217_zm, varnum, numvars_1217_zm);
-         break
-      end
-   end
-end
-% HOC -- previous
-if ( cmp_prev == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_prev_zm
-      if ( strcmp( listofparams_prev_zm(i,1:5), 'upwp ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_prev_zm) & (varfnd == 0) )
-         'variable upwp not found in HOC (previous); value being set to 0.'
-         avg_upwp_prev(1:nz_prev_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_upwp_prev = read_grads_hoc_endian([dir_prev, '/', filename_prev_zm], ...
-                        'ieee-le', nz_prev_zm, t1_prev_zm, t2_prev_zm, varnum, numvars_prev_zm);
-         break
-      end
-   end
-end
-% HOC -- current
-if ( cmp_curr == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_curr_zm
-      if ( strcmp( listofparams_curr_zm(i,1:5), 'upwp ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_curr_zm) & (varfnd == 0) )
-         'variable upwp not found in HOC (current); value being set to 0.'
-         avg_upwp_curr(1:nz_curr_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_upwp_curr = read_grads_hoc_endian([dir_curr, '/', filename_curr_zm], ...
-                        'ieee-le', nz_curr_zm, t1_curr_zm, t2_curr_zm, varnum, numvars_curr_zm);
-         break
-      end
-   end
-end
+[avg_upwp_les, avg_upwp_cgbe, avg_upwp_1217, avg_upwp_prev, avg_upwp_curr] = var_load( filename_les, listofparams_les, les_upwp_len, ...
+		numvars_les, les_upwp, nz_les, t1_les, t2_les, filename_cgbe_zm, listofparams_cgbe_zm, 5, numvars_cgbe_zm, 'upwp ', nz_cgbe_zm, t1_cgbe_zm, ...
+		t2_cgbe_zm, filename_1217_zm, listofparams_1217_zm, 5, numvars_1217_zm, 'upwp ', nz_1217_zm, t1_1217_zm, t2_1217_zm, filename_prev_zm, listofparams_prev_zm, ...
+		5, numvars_prev_zm, 'upwp ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, 5, numvars_curr_zm, ...
+		'upwp ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 1 );
 
 %--------------------------------------------------------------------------
     
 % v'w' (var "vpwp")
-% LES
-if ( cmp_les == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_les
-      if ( strcmp( listofparams_les(i,1:les_vpwp_len), les_vpwp ) )
-         varnum = i;
-         varfnd = 1;
-         avg_vpwp_les = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-                       'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
-         les_grph_vpwp = 1;
-         break
-      end
-   end
-   if ( (varfnd == 0) & ( strcmp( les_type, 'coamps' ) ) )
-      for i = 1:1:numvars_les2
-         if ( strcmp( listofparams_les2(i,1:les_vpwp_len), les_vpwp ) )
-            varnum = i;
-            varfnd = 1;
-         end
-         if ( (i == numvars_les2) & (varfnd == 0) )
-            'variable vpwp not found in LES; value being set to 0.'
-            avg_vpwp_les(1:nz_les2) = 0.0;
-            les_grph_vpwp = 2;
-         elseif ( varfnd == 1 )
-            avg_vpwp_les = read_grads_hoc_endian([dir_LES, '/', filename_les2], ...
-                          'ieee-be', nz_les2, t1_les2, t2_les2, varnum, numvars_les2);
-            les_grph_vpwp = 2;
-            break
-         end
-      end
-   elseif ( (varfnd == 0) & ( strcmp( les_type, 'rams' ) ) )
-      'variable vpwp not found in LES; value being set to 0.'
-      avg_vpwp_les(1:nz_les) = 0.0;
-      les_grph_vpwp = 1;
-   end
-end
-% HOC -- Golaz "best ever"
-if ( cmp_cgbe == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_cgbe_zm
-      if ( strcmp( listofparams_cgbe_zm(i,1:5), 'vpwp ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_cgbe_zm) & (varfnd == 0) )
-         'variable vpwp not found in HOC (Golaz best-ever); value being set to 0.'
-         avg_vpwp_cgbe(1:nz_cgbe_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_vpwp_cgbe = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe_zm], ...
-                        'ieee-le', nz_cgbe_zm, t1_cgbe_zm, t2_cgbe_zm, varnum, numvars_cgbe_zm);
-         break
-      end
-   end
-end
-% HOC -- December 17, 2005
-if ( cmp_1217 == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_1217_zm
-      if ( strcmp( listofparams_1217_zm(i,1:5), 'vpwp ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_1217_zm) & (varfnd == 0) )
-         'variable vpwp not found in HOC (12/17/2005); value being set to 0.'
-         avg_vpwp_1217(1:nz_1217_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_vpwp_1217 = read_grads_hoc_endian([dir_1217, '/', filename_1217_zm], ...
-                         'ieee-le', nz_1217_zm, t1_1217_zm, t2_1217_zm, varnum, numvars_1217_zm);
-         break
-      end
-   end
-end
-% HOC -- previous
-if ( cmp_prev == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_prev_zm
-      if ( strcmp( listofparams_prev_zm(i,1:5), 'vpwp ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_prev_zm) & (varfnd == 0) )
-         'variable vpwp not found in HOC (previous); value being set to 0.'
-         avg_vpwp_prev(1:nz_prev_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_vpwp_prev = read_grads_hoc_endian([dir_prev, '/', filename_prev_zm], ...
-                        'ieee-le', nz_prev_zm, t1_prev_zm, t2_prev_zm, varnum, numvars_prev_zm);
-         break
-      end
-   end
-end
-% HOC -- current
-if ( cmp_curr == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_curr_zm
-      if ( strcmp( listofparams_curr_zm(i,1:5), 'vpwp ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_curr_zm) & (varfnd == 0) )
-         'variable vpwp not found in HOC (current); value being set to 0.'
-         avg_vpwp_curr(1:nz_curr_zm) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_vpwp_curr = read_grads_hoc_endian([dir_curr, '/', filename_curr_zm], ...
-                        'ieee-le', nz_curr_zm, t1_curr_zm, t2_curr_zm, varnum, numvars_curr_zm);
-         break
-      end
-   end
-end
+[avg_vpwp_les, avg_vpwp_cgbe, avg_vpwp_1217, avg_vpwp_prev, avg_vpwp_curr] = var_load( filename_les, listofparams_les, les_vpwp_len, ...
+		numvars_les, les_vpwp, nz_les, t1_les, t2_les, filename_cgbe_zm, listofparams_cgbe_zm, 5, numvars_cgbe_zm, 'vpwp ', nz_cgbe_zm, t1_cgbe_zm, ...
+		t2_cgbe_zm, filename_1217_zm, listofparams_1217_zm, 5, numvars_1217_zm, 'vpwp ', nz_1217_zm, t1_1217_zm, t2_1217_zm, filename_prev_zm, listofparams_prev_zm, ...
+		5, numvars_prev_zm, 'vpwp ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, 5, numvars_curr_zm, ...
+		'vpwp ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 1 );
 
 %--------------------------------------------------------------------------
-
 % Rain water mixing ratio (var "rrainm")
-% LES
-if ( cmp_les == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_les
-      if ( strcmp( listofparams_les(i,1:les_rrainm_len), les_rrainm ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_les) & (varfnd == 0) )
-         'variable qrm not found in LES; value being set to 0.'
-         avg_rrainm_les(1:nz_les) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rrainm_les = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-                       'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
-         break
-      end
-   end
-end
-% HOC -- Golaz "best ever"
-if ( cmp_cgbe == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_cgbe_zt
-      if ( strcmp( listofparams_cgbe_zt(i,1:4), 'rrm ' ) )
-         display listofparams_cgbe_zt(i,1:4) 
-   	 varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_cgbe_zt) & (varfnd == 0) )
-         'variable rrm not found in HOC (Golaz best-ever); value being set to 0.'
-         avg_rrainm_cgbe(1:nz_cgbe_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rrainm_cgbe = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe_zt], ...
-                        'ieee-le', nz_cgbe_zt, t1_cgbe_zt, t2_cgbe_zt, varnum, numvars_cgbe_zt);
-         break
-      end
-   end
-end
-% HOC -- December 17, 2005
-if ( cmp_1217 == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_1217_zt
-      if ( strcmp( listofparams_1217_zt(i,1:4), 'rrm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_1217_zt) & (varfnd == 0) )
-         'variable rrm not found in HOC (12/17/2005); value being set to 0.'
-         avg_rrainm_1217(1:nz_1217_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rrainm_1217 = read_grads_hoc_endian([dir_1217, '/', filename_1217_zt], ...
-                        'ieee-le', nz_1217_zt, t1_1217_zt, t2_1217_zt, varnum, numvars_1217_zt);
-         break
-      end
-   end
-end
-% HOC -- previous
-if ( cmp_prev == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_prev_zt
-      if ( strcmp( listofparams_prev_zt(i,1:7), 'rrainm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_prev_zt) & (varfnd == 0) )
-         'variable rrainm not found in HOC (previous); value being set to 0.'
-         avg_rrainm_prev(1:nz_prev_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rrainm_prev = read_grads_hoc_endian([dir_prev, '/', filename_prev_zt], ...
-                        'ieee-le', nz_prev_zt, t1_prev_zt, t2_prev_zt, varnum, numvars_prev_zt);
-         break
-      end
-   end
-end
-% HOC -- current
-if ( cmp_curr == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_curr_zt
-      if ( strcmp( listofparams_curr_zt(i,1:7), 'rrainm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_curr_zt) & (varfnd == 0) )
-         'variable rrainm not found in HOC (current); value being set to 0.'
-         avg_rrainm_curr(1:nz_curr_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_rrainm_curr = read_grads_hoc_endian([dir_curr, '/', filename_curr_zt], ...
-                        'ieee-le', nz_curr_zt, t1_curr_zt, t2_curr_zt, varnum, numvars_curr_zt);
-         break
-      end
-   end
-end
+[avg_rrainm_les, avg_rrainm_cgbe, avg_rrainm_1217, avg_rrainm_prev, avg_rrainm_curr] = var_load( filename_les, listofparams_les, les_rrainm_len, ...
+		numvars_les, les_rrainm, nz_les, t1_les, t2_les, filename_cgbe_zt, listofparams_cgbe_zt, 4, numvars_cgbe_zt, 'rrm ', nz_cgbe_zt, t1_cgbe_zt, ...
+		t2_cgbe_zt, filename_1217_zt, listofparams_1217_zt, 4, numvars_1217_zt, 'rrm ', nz_1217_zt, t1_1217_zt, t2_1217_zt, filename_prev_zt, listofparams_prev_zt, ...
+		7, numvars_prev_zt, 'rrainm ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, 7, numvars_curr_zt, ...
+		'rrainm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 
 %--------------------------------------------------------------------------
 
 % Rain drop concentration (var "Nrm")
-% LES
-if ( cmp_les == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_les
-      if ( strcmp( listofparams_les(i,1:les_Nrm_len), les_Nrm ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_les) & (varfnd == 0) )
-         'variable Nrm not found in LES; value being set to 0.'
-         avg_Nrm_les(1:nz_les) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_Nrm_les = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-                       'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
-         break
-      end
-   end
-end
-% HOC -- Golaz "best ever"
-if ( cmp_cgbe == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_cgbe_zt
-      if ( strcmp( listofparams_cgbe_zt(i,1:4), 'Nrm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_cgbe_zt) & (varfnd == 0) )
-         'variable Nrm not found in HOC (Golaz best-ever); value being set to 0.'
-         avg_Nrm_cgbe(1:nz_cgbe_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_Nrm_cgbe = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe_zt], ...
-                        'ieee-le', nz_cgbe_zt, t1_cgbe_zt, t2_cgbe_zt, varnum, numvars_cgbe_zt);
-         break
-      end
-   end
-end
-% HOC -- December 17, 2005
-if ( cmp_1217 == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_1217_zt
-      if ( strcmp( listofparams_1217_zt(i,1:4), 'Nrm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_1217_zt) & (varfnd == 0) )
-         'variable Nrm not found in HOC (12/17/2005); value being set to 0.'
-         avg_Nrm_1217(1:nz_1217_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_Nrm_1217 = read_grads_hoc_endian([dir_1217, '/', filename_1217_zt], ...
-                        'ieee-le', nz_1217_zt, t1_1217_zt, t2_1217_zt, varnum, numvars_1217_zt);
-         break
-      end
-   end
-end
-% HOC -- previous
-if ( cmp_prev == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_prev_zt
-      if ( strcmp( listofparams_prev_zt(i,1:4), 'Nrm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_prev_zt) & (varfnd == 0) )
-         'variable Nrm not found in HOC (previous); value being set to 0.'
-         avg_Nrm_prev(1:nz_prev_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_Nrm_prev = read_grads_hoc_endian([dir_prev, '/', filename_prev_zt], ...
-                        'ieee-le', nz_prev_zt, t1_prev_zt, t2_prev_zt, varnum, numvars_prev_zt);
-         break
-      end
-   end
-end
-% HOC -- current
-if ( cmp_curr == 1 )
-   varfnd = 0;
-   for i = 1:1:numvars_curr_zt
-      if ( strcmp( listofparams_curr_zt(i,1:4), 'Nrm ' ) )
-         varnum = i;
-         varfnd = 1;
-      end
-      if ( (i == numvars_curr_zt) & (varfnd == 0) )
-         'variable Nrm not found in HOC (current); value being set to 0.'
-         avg_Nrm_curr(1:nz_curr_zt) = 0.0;
-      elseif ( varfnd == 1 )
-         avg_Nrm_curr = read_grads_hoc_endian([dir_curr, '/', filename_curr_zt], ...
-                        'ieee-le', nz_curr_zt, t1_curr_zt, t2_curr_zt, varnum, numvars_curr_zt);
-         break
-      end
-   end
-end
+[avg_Nrm_les, avg_Nrm_cgbe, avg_Nrm_1217, avg_Nrm_prev, avg_Nrm_curr] = var_load( filename_les, listofparams_les, les_Nrm_len, ...
+		numvars_les, les_Nrm, nz_les, t1_les, t2_les, filename_cgbe_zt, listofparams_cgbe_zt, 4, numvars_cgbe_zt, 'Nrm ', nz_cgbe_zt, t1_cgbe_zt, ...
+		t2_cgbe_zt, filename_1217_zt, listofparams_1217_zt, 4, numvars_1217_zt, 'Nrm ', nz_1217_zt, t1_1217_zt, t2_1217_zt, filename_prev_zt, listofparams_prev_zt, ...
+		4, numvars_prev_zt, 'Nrm ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, 4, numvars_curr_zt, ...
+		'Nrm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 
 % Adjustment:  COAMPS LES outputs Nrm in num/cm^3.  This factor needs to be
 %              multiplied by 10^6 in order to be converted to num/m^3.
@@ -2348,675 +1001,35 @@ percentage = percentage/100;
 equiv_space = 0.01;
 
 % thlm - this plot has a legend
-subplot(3,2,1)
-i = 0;
-if ( cmp_les == 1 )
-   i = i + 1;
-   h(i) = plot( avg_thlm_les, z_les, '-', 'Color', les_color, 'LineWidth', les_width );
-   legend_text(i,1:15) = '\fontsize{6}LES';
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_les
-      if ( z_les(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_les )
-         graphtopidx = nz_les;
-      end
-   end
-   minval(i) = min(avg_thlm_les(1:graphtopidx));
-   maxval(i) = max(avg_thlm_les(1:graphtopidx));
-end
-if ( cmp_cgbe == 1 )
-   i = i + 1;
-   h(i) = plot( avg_thlm_cgbe, z_cgbe_zt, '-', 'Color', cgbe_color, 'LineWidth', cgbe_width );
-   legend_text(i,1:27) = '\fontsize{6}HOC "best-ever"';
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_cgbe_zt
-      if ( z_cgbe_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_cgbe_zt )
-         graphtopidx = nz_cgbe_zt;
-      end
-   end
-   minval(i) = min(avg_thlm_cgbe(1:graphtopidx));
-   maxval(i) = max(avg_thlm_cgbe(1:graphtopidx));
-end
-if ( cmp_1217 == 1 )
-   i = i + 1;
-   h(i) = plot( avg_thlm_1217, z_1217_zt, '-.', 'Color', dec12_color, 'LineWidth', dec12_width );
-   legend_text(i,1:26) = '\fontsize{6}HOC 12/17/2005';
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_1217_zt
-      if ( z_1217_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_1217_zt )
-         graphtopidx = nz_1217_zt;
-      end
-   end
-   minval(i) = min(avg_thlm_1217(1:graphtopidx));
-   maxval(i) = max(avg_thlm_1217(1:graphtopidx));
-end
-if ( cmp_prev == 1 )
-   i = i + 1;
-   h(i) = plot( avg_thlm_prev, z_prev_zt, '--', 'Color', prev_color, 'LineWidth', prev_width );
-   sim1_title = strcat('\fontsize{6}', dir_prev);
-   sim1_title = regexprep(sim1_title, '_', ' ');
-   legend_text(i,1:length(sim1_title)) = sim1_title;
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_prev_zt
-      if ( z_prev_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_prev_zt )
-         graphtopidx = nz_prev_zt;
-      end
-   end
-   minval(i) = min(avg_thlm_prev(1:graphtopidx));
-   maxval(i) = max(avg_thlm_prev(1:graphtopidx));
-end
-if ( cmp_curr == 1 )
-   i = i + 1;
-   h(i) = plot( avg_thlm_curr, z_curr_zt, '-', 'Color', curr_color, 'LineWidth', curr_width );
-   sim2_title = strcat('\fontsize{6}', dir_curr);
-   sim2_title = regexprep(sim2_title, '_', ' ');
-   legend_text(i,1:length(sim2_title)) = sim2_title;
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_curr_zt
-      if ( z_curr_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_curr_zt )
-         graphtopidx = nz_curr_zt;
-      end
-   end
-   minval(i) = min(avg_thlm_curr(1:graphtopidx));
-   maxval(i) = max(avg_thlm_curr(1:graphtopidx));
-end
-hold off
-% Brian's New Universal Legend (for output page 1).
-legend( h, legend_text, 'Location', 'SouthEast' )
-% Axis labels and graph title.
-xlabel('thlm    [K]')
-ylabel('Height    [m]')
-title('Liquid Water Potential Temperature, \theta_l')
-% Extent of graph.
-xmin = min(minval);
-xmax = max(maxval);
-if ( xmax == xmin )
-   xmin = xmin - equiv_space;
-   xmax = xmax + equiv_space;
-else
-   xdiff = xmax - xmin;
-   xrange = xdiff/percentage;
-   xmedian = ( xmin + xmax ) / 2;
-   xmin = xmedian - xrange/2;
-   xmax = xmedian + xrange/2;
-end
-zmin = graphbase;
-%zmax = max(z_les);
-zmax = graphtop;
-axis([ xmin xmax zmin zmax ])
+create_plot(3, 2, 1, 'Liquid Water Potential Temperature, \theta_l', 'thlm    [K]', avg_thlm_les, avg_thlm_cgbe, avg_thlm_1217, avg_thlm_prev, avg_thlm_curr, 1, 1);
 
 %--------------------------------------------------------------------------
 
 % rtm
-subplot(3,2,2)
-i = 0;
-if ( cmp_les == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rtm_les, z_les, '-', 'Color', les_color, 'LineWidth', les_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_les
-      if ( z_les(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_les )
-         graphtopidx = nz_les;
-      end
-   end
-   minval(i) = min(avg_rtm_les(1:graphtopidx));
-   maxval(i) = max(avg_rtm_les(1:graphtopidx));
-end
-if ( cmp_cgbe == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rtm_cgbe, z_cgbe_zt, '-', 'Color', cgbe_color, 'LineWidth', cgbe_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_cgbe_zt
-      if ( z_cgbe_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_cgbe_zt )
-         graphtopidx = nz_cgbe_zt;
-      end
-   end
-   minval(i) = min(avg_rtm_cgbe(1:graphtopidx));
-   maxval(i) = max(avg_rtm_cgbe(1:graphtopidx));
-end
-if ( cmp_1217 == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rtm_1217, z_1217_zt, '-.', 'Color', dec12_color, 'LineWidth', dec12_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_1217_zt
-      if ( z_1217_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_1217_zt )
-         graphtopidx = nz_1217_zt;
-      end
-   end
-   minval(i) = min(avg_rtm_1217(1:graphtopidx));
-   maxval(i) = max(avg_rtm_1217(1:graphtopidx));
-end
-if ( cmp_prev == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rtm_prev, z_prev_zt, '--', 'Color', prev_color, 'LineWidth', prev_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_prev_zt
-      if ( z_prev_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_prev_zt )
-         graphtopidx = nz_prev_zt;
-      end
-   end
-   minval(i) = min(avg_rtm_prev(1:graphtopidx));
-   maxval(i) = max(avg_rtm_prev(1:graphtopidx));
-end
-if ( cmp_curr == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rtm_curr, z_curr_zt, '-', 'Color', curr_color, 'LineWidth', curr_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_curr_zt
-      if ( z_curr_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_curr_zt )
-         graphtopidx = nz_curr_zt;
-      end
-   end
-   minval(i) = min(avg_rtm_curr(1:graphtopidx));
-   maxval(i) = max(avg_rtm_curr(1:graphtopidx));
-end
-hold off
-% Axis labels and graph title.
-xlabel('rtm    [kg/kg]')
-ylabel('Height    [m]')
-title('Total Water Mixing Ratio, r_{ t}')
-% Extent of graph.
-xmin = min(minval);
-xmax = max(maxval);
-if ( xmax == xmin )
-   xmin = xmin - equiv_space;
-   xmax = xmax + equiv_space;
-else
-   xdiff = xmax - xmin;
-   xrange = xdiff/percentage;
-   xmedian = ( xmin + xmax ) / 2;
-   xmin = xmedian - xrange/2;
-   xmax = xmedian + xrange/2;
-end
-zmin = graphbase;
-%zmax = max(z_les);
-zmax = graphtop;
-axis([ xmin xmax zmin zmax ])
+create_plot(3, 2, 2, 'Total Water Mixing Ratio, r_{ t}', 'rtm    [kg/kg]', avg_rtm_les, avg_rtm_cgbe, avg_rtm_1217, avg_rtm_prev, avg_rtm_curr, 1, 0);
 
 %--------------------------------------------------------------------------
 
 % cf
-subplot(3,2,3)
-i = 0;
-if ( cmp_les == 1 )
-   i = i + 1;
-   h(i) = plot( 100.*avg_cf_les, z_les, '-', 'Color', les_color, 'LineWidth', les_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_les
-      if ( z_les(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_les )
-         graphtopidx = nz_les;
-      end
-   end
-   minval(i) = min(100.*avg_cf_les(1:graphtopidx));
-   maxval(i) = max(100.*avg_cf_les(1:graphtopidx));
-end
-if ( cmp_cgbe == 1 )
-   i = i + 1;
-   h(i) = plot( 100.*avg_cf_cgbe, z_cgbe_zt, '-', 'Color', cgbe_color, 'LineWidth', cgbe_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_cgbe_zt
-      if ( z_cgbe_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_cgbe_zt )
-         graphtopidx = nz_cgbe_zt;
-      end
-   end
-   minval(i) = min(100.*avg_cf_cgbe(1:graphtopidx));
-   maxval(i) = max(100.*avg_cf_cgbe(1:graphtopidx));
-end
-if ( cmp_1217 == 1 )
-   i = i + 1;
-   h(i) = plot( 100.*avg_cf_1217, z_1217_zt, '-.', 'Color', dec12_color, 'LineWidth', dec12_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_1217_zt
-      if ( z_1217_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_1217_zt )
-         graphtopidx = nz_1217_zt;
-      end
-   end
-   minval(i) = min(100.*avg_cf_1217(1:graphtopidx));
-   maxval(i) = max(100.*avg_cf_1217(1:graphtopidx));
-end
-if ( cmp_prev == 1 )
-   i = i + 1;
-   h(i) = plot( 100.*avg_cf_prev, z_prev_zt, '--', 'Color', prev_color, 'LineWidth', prev_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_prev_zt
-      if ( z_prev_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_prev_zt )
-         graphtopidx = nz_prev_zt;
-      end
-   end
-   minval(i) = min(100.*avg_cf_prev(1:graphtopidx));
-   maxval(i) = max(100.*avg_cf_prev(1:graphtopidx));
-end
-if ( cmp_curr == 1 )
-   i = i + 1;
-   h(i) = plot( 100.*avg_cf_curr, z_curr_zt, '-', 'Color', curr_color, 'LineWidth', curr_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_curr_zt
-      if ( z_curr_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_curr_zt )
-         graphtopidx = nz_curr_zt;
-      end
-   end
-   minval(i) = min(100.*avg_cf_curr(1:graphtopidx));
-   maxval(i) = max(100.*avg_cf_curr(1:graphtopidx));
-end
-hold off
-% Axis labels and graph title.
-xlabel('cf    [%]')
-ylabel('Height    [m]')
-title('Cloud Fraction')
-% Extent of graph.
-xmin = min(minval);
-xmax = max(maxval);
-if ( xmax == xmin )
-   xmin = xmin - equiv_space;
-   xmax = xmax + equiv_space;
-else
-   xdiff = xmax - xmin;
-   xrange = xdiff/percentage;
-   xmedian = ( xmin + xmax ) / 2;
-   xmin = xmedian - xrange/2;
-   xmax = xmedian + xrange/2;
-end
-zmin = graphbase;
-%zmax = max(z_les);
-zmax = graphtop;
-axis([ xmin xmax zmin zmax ])
+create_plot(3, 2, 3, 'Cloud Fraction', 'cf    [%]', 100*avg_cf_les, 100*avg_cf_cgbe, 100*avg_cf_1217, 100*avg_cf_prev, 100*avg_cf_curr, 1, 0);
 
 %--------------------------------------------------------------------------
 
 % rcm
-subplot(3,2,4)
-i = 0;
-if ( cmp_les == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rcm_les, z_les, '-', 'Color', les_color, 'LineWidth', les_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_les
-      if ( z_les(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_les )
-         graphtopidx = nz_les;
-      end
-   end
-   minval(i) = min(avg_rcm_les(1:graphtopidx));
-   maxval(i) = max(avg_rcm_les(1:graphtopidx));
-end
-if ( cmp_cgbe == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rcm_cgbe, z_cgbe_zt, '-', 'Color', cgbe_color, 'LineWidth', cgbe_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_cgbe_zt
-      if ( z_cgbe_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_cgbe_zt )
-         graphtopidx = nz_cgbe_zt;
-      end
-   end
-   minval(i) = min(avg_rcm_cgbe(1:graphtopidx));
-   maxval(i) = max(avg_rcm_cgbe(1:graphtopidx));
-end
-if ( cmp_1217 == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rcm_1217, z_1217_zt, '-.', 'Color', dec12_color, 'LineWidth', dec12_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_1217_zt
-      if ( z_1217_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_1217_zt )
-         graphtopidx = nz_1217_zt;
-      end
-   end
-   minval(i) = min(avg_rcm_1217(1:graphtopidx));
-   maxval(i) = max(avg_rcm_1217(1:graphtopidx));
-end
-if ( cmp_prev == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rcm_prev, z_prev_zt, '--', 'Color', prev_color, 'LineWidth', prev_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_prev_zt
-      if ( z_prev_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_prev_zt )
-         graphtopidx = nz_prev_zt;
-      end
-   end
-   minval(i) = min(avg_rcm_prev(1:graphtopidx));
-   maxval(i) = max(avg_rcm_prev(1:graphtopidx));
-end
-if ( cmp_curr == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rcm_curr, z_curr_zt, '-', 'Color', curr_color, 'LineWidth', curr_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_curr_zt
-      if ( z_curr_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_curr_zt )
-         graphtopidx = nz_curr_zt;
-      end
-   end
-   minval(i) = min(avg_rcm_curr(1:graphtopidx));
-   maxval(i) = max(avg_rcm_curr(1:graphtopidx));
-end
-hold off
-% Axis labels and graph title.
-xlabel('rcm    [kg/kg]')
-ylabel('Height    [m]')
-title('Cloud Water Mixing Ratio, r_c')
-% Extent of graph.
-xmin = min(minval);
-xmax = max(maxval);
-if ( xmax == xmin )
-   xmin = xmin - equiv_space;
-   xmax = xmax + equiv_space;
-else
-   xdiff = xmax - xmin;
-   xrange = xdiff/percentage;
-   xmedian = ( xmin + xmax ) / 2;
-   xmin = xmedian - xrange/2;
-   xmax = xmedian + xrange/2;
-end
-zmin = graphbase;
-%zmax = max(z_les);
-zmax = graphtop;
-axis([ xmin xmax zmin zmax ])
+create_plot(3, 2, 4, 'Cloud Water Mixing Ratio, r_c', 'rcm    [kg/kg]', avg_rcm_les, avg_rcm_cgbe, avg_rcm_1217, avg_rcm_prev, avg_rcm_curr, 1, 0);
 
 %--------------------------------------------------------------------------
 
 % wp2
-subplot(3,2,5)
-i = 0;
-if ( cmp_les == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wp2_les, z_les, '-', 'Color', les_color, 'LineWidth', les_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_les
-      if ( z_les(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_les )
-         graphtopidx = nz_les;
-      end
-   end
-   minval(i) = min(avg_wp2_les(1:graphtopidx));
-   maxval(i) = max(avg_wp2_les(1:graphtopidx));
-end
-if ( cmp_cgbe == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wp2_cgbe, z_cgbe_zm, '-', 'Color', cgbe_color, 'LineWidth', cgbe_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_cgbe_zm
-      if ( z_cgbe_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_cgbe_zm )
-         graphtopidx = nz_cgbe_zm;
-      end
-   end
-   minval(i) = min(avg_wp2_cgbe(1:graphtopidx));
-   maxval(i) = max(avg_wp2_cgbe(1:graphtopidx));
-end
-if ( cmp_1217 == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wp2_1217, z_1217_zm, '-.', 'Color', dec12_color, 'LineWidth', dec12_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_1217_zm
-      if ( z_1217_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_1217_zm )
-         graphtopidx = nz_1217_zm;
-      end
-   end
-   minval(i) = min(avg_wp2_1217(1:graphtopidx));
-   maxval(i) = max(avg_wp2_1217(1:graphtopidx));
-end
-if ( cmp_prev == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wp2_prev, z_prev_zm, '--', 'Color', prev_color, 'LineWidth', prev_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_prev_zm
-      if ( z_prev_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_prev_zm )
-         graphtopidx = nz_prev_zm;
-      end
-   end
-   minval(i) = min(avg_wp2_prev(1:graphtopidx));
-   maxval(i) = max(avg_wp2_prev(1:graphtopidx));
-end
-if ( cmp_curr == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wp2_curr, z_curr_zm, '-', 'Color', curr_color, 'LineWidth', curr_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_curr_zm
-      if ( z_curr_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_curr_zm )
-         graphtopidx = nz_curr_zm;
-      end
-   end
-   minval(i) = min(avg_wp2_curr(1:graphtopidx));
-   maxval(i) = max(avg_wp2_curr(1:graphtopidx));
-end
-hold off
-% Axis labels and graph title.
-xlabel('wp2    [m^2/s^2]')
-ylabel('Height    [m]')
-title('Variance of w')
-% Extent of graph.
-xmin = min(minval);
-xmax = max(maxval);
-if ( xmax == xmin )
-   xmin = xmin - equiv_space;
-   xmax = xmax + equiv_space;
-else
-   xdiff = xmax - xmin;
-   xrange = xdiff/percentage;
-   xmedian = ( xmin + xmax ) / 2;
-   xmin = xmedian - xrange/2;
-   xmax = xmedian + xrange/2;
-end
-zmin = graphbase;
-%zmax = max(z_les);
-zmax = graphtop;
-axis([ xmin xmax zmin zmax ])
+create_plot(3, 2, 5, 'Variance of w', 'wp2    [m^2/s^2]', avg_wp2_les, avg_wp2_cgbe, avg_wp2_1217, avg_wp2_prev, avg_wp2_curr, 1, 0);
 
 %--------------------------------------------------------------------------
 
 % wp3
-subplot(3,2,6)
-i = 0;
-if ( cmp_les == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wp3_les, z_les, '-', 'Color', les_color, 'LineWidth', les_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_les
-      if ( z_les(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_les )
-         graphtopidx = nz_les;
-      end
-   end
-   minval(i) = min(avg_wp3_les(1:graphtopidx));
-   maxval(i) = max(avg_wp3_les(1:graphtopidx));
-end
-if ( cmp_cgbe == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wp3_cgbe, z_cgbe_zt, '-', 'Color', cgbe_color, 'LineWidth', cgbe_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_cgbe_zt
-      if ( z_cgbe_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_cgbe_zt )
-         graphtopidx = nz_cgbe_zt;
-      end
-   end
-   minval(i) = min(avg_wp3_cgbe(1:graphtopidx));
-   maxval(i) = max(avg_wp3_cgbe(1:graphtopidx));
-end
-if ( cmp_1217 == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wp3_1217, z_1217_zt, '-.', 'Color', dec12_color, 'LineWidth', dec12_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_1217_zt
-      if ( z_1217_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_1217_zt )
-         graphtopidx = nz_1217_zt;
-      end
-   end
-   minval(i) = min(avg_wp3_1217(1:graphtopidx));
-   maxval(i) = max(avg_wp3_1217(1:graphtopidx));
-end
-if ( cmp_prev == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wp3_prev, z_prev_zt, '--', 'Color', prev_color, 'LineWidth', prev_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_prev_zt
-      if ( z_prev_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_prev_zt )
-         graphtopidx = nz_prev_zt;
-      end
-   end
-   minval(i) = min(avg_wp3_prev(1:graphtopidx));
-   maxval(i) = max(avg_wp3_prev(1:graphtopidx));
-end
-if ( cmp_curr == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wp3_curr, z_curr_zt, '-', 'Color', curr_color, 'LineWidth', curr_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_curr_zt
-      if ( z_curr_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_curr_zt )
-         graphtopidx = nz_curr_zt;
-      end
-   end
-   minval(i) = min(avg_wp3_curr(1:graphtopidx));
-   maxval(i) = max(avg_wp3_curr(1:graphtopidx));
-end
-hold off
-% Axis labels and graph title.
-xlabel('wp3    [m^3/s^3]')
-ylabel('Height    [m]')
-title('Third-order Moment of w')
-% Extent of graph.
-xmin = min(minval);
-xmax = max(maxval);
-if ( xmax == xmin )
-   xmin = xmin - equiv_space;
-   xmax = xmax + equiv_space;
-else
-   xdiff = xmax - xmin;
-   xrange = xdiff/percentage;
-   xmedian = ( xmin + xmax ) / 2;
-   xmin = xmedian - xrange/2;
-   xmax = xmedian + xrange/2;
-end
-zmin = graphbase;
-%zmax = max(z_les);
-zmax = graphtop;
-axis([ xmin xmax zmin zmax ])
+create_plot(3, 2, 6, 'Third-order Moment of w', 'wp3    [m^3/s^3]', avg_wp3_les, avg_wp3_cgbe, avg_wp3_1217, avg_wp3_prev, avg_wp3_curr, 1, 0);
 
-% Print 1st Page for Case (.eps document)
-outputfilename = [ 'output/eps/', case_name, '_page1.eps' ];
-print( '-depsc2', outputfilename )
-% Print 1st Page for Case (.jpg document)
-outputfilename = [ 'output/jpg/', case_name, '_page1.jpg' ];
-print( '-djpeg', outputfilename )
-% Print 3-page Document for each Case (.ps document)
-outputfilename = [ 'output/ps/', case_name, '_doc.ps' ];
-print( '-dpsc', outputfilename )
-
-% Close the current figure (so it doesn't produce a new one for each page
-% and for each case).
-closereq
+outputfilename = [ case_name, '_page1' ];
+print_page(outputfilename, 1, 0, 1);
 
 %--------------------------------------------------------------------------
 
@@ -3026,675 +1039,35 @@ set(gcf, 'PaperUnits', 'inches')
 set(gcf, 'PaperPosition', [ 1.0 1.0 6.5 9.0 ])
 
 % wpthlp
-subplot(3,2,1)
-i = 0;
-if ( cmp_les == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wpthlp_les, z_les, '-', 'Color', les_color, 'LineWidth', les_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_les
-      if ( z_les(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_les )
-         graphtopidx = nz_les;
-      end
-   end
-   minval(i) = min(avg_wpthlp_les(1:graphtopidx));
-   maxval(i) = max(avg_wpthlp_les(1:graphtopidx));
-end
-if ( cmp_cgbe == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wpthlp_cgbe, z_cgbe_zm, '-', 'Color', cgbe_color, 'LineWidth', cgbe_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_cgbe_zm
-      if ( z_cgbe_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_cgbe_zm )
-         graphtopidx = nz_cgbe_zm;
-      end
-   end
-   minval(i) = min(avg_wpthlp_cgbe(1:graphtopidx));
-   maxval(i) = max(avg_wpthlp_cgbe(1:graphtopidx));
-end
-if ( cmp_1217 == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wpthlp_1217, z_1217_zm, '-.', 'Color', dec12_color, 'LineWidth', dec12_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_1217_zm
-      if ( z_1217_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_1217_zm )
-         graphtopidx = nz_1217_zm;
-      end
-   end
-   minval(i) = min(avg_wpthlp_1217(1:graphtopidx));
-   maxval(i) = max(avg_wpthlp_1217(1:graphtopidx));
-end
-if ( cmp_prev == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wpthlp_prev, z_prev_zm, '--', 'Color', prev_color, 'LineWidth', prev_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_prev_zm
-      if ( z_prev_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_prev_zm )
-         graphtopidx = nz_prev_zm;
-      end
-   end
-   minval(i) = min(avg_wpthlp_prev(1:graphtopidx));
-   maxval(i) = max(avg_wpthlp_prev(1:graphtopidx));
-end
-if ( cmp_curr == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wpthlp_curr, z_curr_zm, '-', 'Color', curr_color, 'LineWidth', curr_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_curr_zm
-      if ( z_curr_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_curr_zm )
-         graphtopidx = nz_curr_zm;
-      end
-   end
-   minval(i) = min(avg_wpthlp_curr(1:graphtopidx));
-   maxval(i) = max(avg_wpthlp_curr(1:graphtopidx));
-end
-hold off
-% Axis labels and graph title.
-xlabel('wpthlp    [K m/s]')
-ylabel('Height    [m]')
-title('Turbulent Flux of \theta_l')
-% Extent of graph.
-xmin = min(minval);
-xmax = max(maxval);
-if ( xmax == xmin )
-   xmin = xmin - equiv_space;
-   xmax = xmax + equiv_space;
-else
-   xdiff = xmax - xmin;
-   xrange = xdiff/percentage;
-   xmedian = ( xmin + xmax ) / 2;
-   xmin = xmedian - xrange/2;
-   xmax = xmedian + xrange/2;
-end
-zmin = graphbase;
-%zmax = max(z_les);
-zmax = graphtop;
-axis([ xmin xmax zmin zmax ])
+create_plot(3, 2, 1, 'Turbulent Flux of \theta_l', 'wpthlp    [K m/s]', avg_wpthlp_les, avg_wpthlp_cgbe, avg_wpthlp_1217, avg_wpthlp_prev, avg_wpthlp_curr, 1, 0);
 
 %--------------------------------------------------------------------------
 
 % wprtp
-subplot(3,2,2)
-i = 0;
-if ( cmp_les == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wprtp_les, z_les, '-', 'Color', les_color, 'LineWidth', les_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_les
-      if ( z_les(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_les )
-         graphtopidx = nz_les;
-      end
-   end
-   minval(i) = min(avg_wprtp_les(1:graphtopidx));
-   maxval(i) = max(avg_wprtp_les(1:graphtopidx));
-end
-if ( cmp_cgbe == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wprtp_cgbe, z_cgbe_zm, '-', 'Color', cgbe_color, 'LineWidth', cgbe_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_cgbe_zm
-      if ( z_cgbe_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_cgbe_zm )
-         graphtopidx = nz_cgbe_zm;
-      end
-   end
-   minval(i) = min(avg_wprtp_cgbe(1:graphtopidx));
-   maxval(i) = max(avg_wprtp_cgbe(1:graphtopidx));
-end
-if ( cmp_1217 == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wprtp_1217, z_1217_zm, '-.', 'Color', dec12_color, 'LineWidth', dec12_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_1217_zm
-      if ( z_1217_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_1217_zm )
-         graphtopidx = nz_1217_zm;
-      end
-   end
-   minval(i) = min(avg_wprtp_1217(1:graphtopidx));
-   maxval(i) = max(avg_wprtp_1217(1:graphtopidx));
-end
-if ( cmp_prev == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wprtp_prev, z_prev_zm, '--', 'Color', prev_color, 'LineWidth', prev_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_prev_zm
-      if ( z_prev_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_prev_zm )
-         graphtopidx = nz_prev_zm;
-      end
-   end
-   minval(i) = min(avg_wprtp_prev(1:graphtopidx));
-   maxval(i) = max(avg_wprtp_prev(1:graphtopidx));
-end
-if ( cmp_curr == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wprtp_curr, z_curr_zm, '-', 'Color', curr_color, 'LineWidth', curr_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_curr_zm
-      if ( z_curr_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_curr_zm )
-         graphtopidx = nz_curr_zm;
-      end
-   end
-   minval(i) = min(avg_wprtp_curr(1:graphtopidx));
-   maxval(i) = max(avg_wprtp_curr(1:graphtopidx));
-end
-hold off
-% Axis labels and graph title.
-xlabel('wprtp    [(kg/kg) m/s]')
-ylabel('Height    [m]')
-title('Turbulent Flux of r_{ t}')
-% Extent of graph.
-xmin = min(minval);
-xmax = max(maxval);
-if ( xmax == xmin )
-   xmin = xmin - equiv_space;
-   xmax = xmax + equiv_space;
-else
-   xdiff = xmax - xmin;
-   xrange = xdiff/percentage;
-   xmedian = ( xmin + xmax ) / 2;
-   xmin = xmedian - xrange/2;
-   xmax = xmedian + xrange/2;
-end
-zmin = graphbase;
-%zmax = max(z_les);
-zmax = graphtop;
-axis([ xmin xmax zmin zmax ])
+create_plot(3, 2, 2, 'Turbulent Flux of r_{ t}', 'wprtp    [(kg/kg) m/s]', avg_wprtp_les, avg_wprtp_cgbe, avg_wprtp_1217, avg_wprtp_prev, avg_wprtp_curr, 1, 0);
 
 %--------------------------------------------------------------------------
 
 % thlp2
-subplot(3,2,3)
-i = 0;
-if ( cmp_les == 1 )
-   i = i + 1;
-   h(i) = plot( avg_thlp2_les, z_les, '-', 'Color', les_color, 'LineWidth', les_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_les
-      if ( z_les(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_les )
-         graphtopidx = nz_les;
-      end
-   end
-   minval(i) = min(avg_thlp2_les(1:graphtopidx));
-   maxval(i) = max(avg_thlp2_les(1:graphtopidx));
-end
-if ( cmp_cgbe == 1 )
-   i = i + 1;
-   h(i) = plot( avg_thlp2_cgbe, z_cgbe_zm, '-', 'Color', cgbe_color, 'LineWidth', cgbe_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_cgbe_zm
-      if ( z_cgbe_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_cgbe_zm )
-         graphtopidx = nz_cgbe_zm;
-      end
-   end
-   minval(i) = min(avg_thlp2_cgbe(1:graphtopidx));
-   maxval(i) = max(avg_thlp2_cgbe(1:graphtopidx));
-end
-if ( cmp_1217 == 1 )
-   i = i + 1;
-   h(i) = plot( avg_thlp2_1217, z_1217_zm, '-.', 'Color', dec12_color, 'LineWidth', dec12_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_1217_zm
-      if ( z_1217_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_1217_zm )
-         graphtopidx = nz_1217_zm;
-      end
-   end
-   minval(i) = min(avg_thlp2_1217(1:graphtopidx));
-   maxval(i) = max(avg_thlp2_1217(1:graphtopidx));
-end
-if ( cmp_prev == 1 )
-   i = i + 1;
-   h(i) = plot( avg_thlp2_prev, z_prev_zm, '--', 'Color', prev_color, 'LineWidth', prev_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_prev_zm
-      if ( z_prev_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_prev_zm )
-         graphtopidx = nz_prev_zm;
-      end
-   end
-   minval(i) = min(avg_thlp2_prev(1:graphtopidx));
-   maxval(i) = max(avg_thlp2_prev(1:graphtopidx));
-end
-if ( cmp_curr == 1 )
-   i = i + 1;
-   h(i) = plot( avg_thlp2_curr, z_curr_zm, '-', 'Color', curr_color, 'LineWidth', curr_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_curr_zm
-      if ( z_curr_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_curr_zm )
-         graphtopidx = nz_curr_zm;
-      end
-   end
-   minval(i) = min(avg_thlp2_curr(1:graphtopidx));
-   maxval(i) = max(avg_thlp2_curr(1:graphtopidx));
-end
-hold off
-% Axis labels and graph title.
-xlabel('thlp2    [K^2]')
-ylabel('Height    [m]')
-title('Variance of \theta_l')
-% Extent of graph.
-xmin = min(minval);
-xmax = max(maxval);
-if ( xmax == xmin )
-   xmin = xmin - equiv_space;
-   xmax = xmax + equiv_space;
-else
-   xdiff = xmax - xmin;
-   xrange = xdiff/percentage;
-   xmedian = ( xmin + xmax ) / 2;
-   xmin = xmedian - xrange/2;
-   xmax = xmedian + xrange/2;
-end
-zmin = graphbase;
-%zmax = max(z_les);
-zmax = graphtop;
-axis([ xmin xmax zmin zmax ])
+create_plot(3, 2, 3, 'Variance of \theta_l', 'thlp2    [K^2]', avg_thlp2_les, avg_thlp2_cgbe, avg_thlp2_1217, avg_thlp2_prev, avg_thlp2_curr, 1, 0);
 
 %--------------------------------------------------------------------------
 
 % rtp2
-subplot(3,2,4)
-i = 0;
-if ( cmp_les == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rtp2_les, z_les, '-', 'Color', les_color, 'LineWidth', les_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_les
-      if ( z_les(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_les )
-         graphtopidx = nz_les;
-      end
-   end
-   minval(i) = min(avg_rtp2_les(1:graphtopidx));
-   maxval(i) = max(avg_rtp2_les(1:graphtopidx));
-end
-if ( cmp_cgbe == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rtp2_cgbe, z_cgbe_zm, '-', 'Color', cgbe_color, 'LineWidth', cgbe_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_cgbe_zm
-      if ( z_cgbe_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_cgbe_zm )
-         graphtopidx = nz_cgbe_zm;
-      end
-   end
-   minval(i) = min(avg_rtp2_cgbe(1:graphtopidx));
-   maxval(i) = max(avg_rtp2_cgbe(1:graphtopidx));
-end
-if ( cmp_1217 == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rtp2_1217, z_1217_zm, '-.', 'Color', dec12_color, 'LineWidth', dec12_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_1217_zm
-      if ( z_1217_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_1217_zm )
-         graphtopidx = nz_1217_zm;
-      end
-   end
-   minval(i) = min(avg_rtp2_1217(1:graphtopidx));
-   maxval(i) = max(avg_rtp2_1217(1:graphtopidx));
-end
-if ( cmp_prev == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rtp2_prev, z_prev_zm, '--', 'Color', prev_color, 'LineWidth', prev_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_prev_zm
-      if ( z_prev_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_prev_zm )
-         graphtopidx = nz_prev_zm;
-      end
-   end
-   minval(i) = min(avg_rtp2_prev(1:graphtopidx));
-   maxval(i) = max(avg_rtp2_prev(1:graphtopidx));
-end
-if ( cmp_curr == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rtp2_curr, z_curr_zm, '-', 'Color', curr_color, 'LineWidth', curr_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_curr_zm
-      if ( z_curr_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_curr_zm )
-         graphtopidx = nz_curr_zm;
-      end
-   end
-   minval(i) = min(avg_rtp2_curr(1:graphtopidx));
-   maxval(i) = max(avg_rtp2_curr(1:graphtopidx));
-end
-hold off
-% Axis labels and graph title.
-xlabel('rtp2    [(kg/kg)^2]')
-ylabel('Height    [m]')
-title('Variance of r_t')
-% Extent of graph.
-xmin = min(minval);
-xmax = max(maxval);
-if ( xmax == xmin )
-   xmin = xmin - equiv_space;
-   xmax = xmax + equiv_space;
-else
-   xdiff = xmax - xmin;
-   xrange = xdiff/percentage;
-   xmedian = ( xmin + xmax ) / 2;
-   xmin = xmedian - xrange/2;
-   xmax = xmedian + xrange/2;
-end
-zmin = graphbase;
-%zmax = max(z_les);
-zmax = graphtop;
-axis([ xmin xmax zmin zmax ])
+create_plot(3, 2, 4, 'Variance of r_t', 'rtp2    [(kg/kg)^2]', avg_rtp2_les, avg_rtp2_cgbe, avg_rtp2_1217, avg_rtp2_prev, avg_rtp2_curr, 1, 0);
 
 %--------------------------------------------------------------------------
 
 % rtpthlp - this plot has a legend
-subplot(3,2,5)
-i = 0;
-if ( cmp_les == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rtpthlp_les, z_les, '-', 'Color', les_color, 'LineWidth', les_width );
-   legend_text(i,1:15) = '\fontsize{6}LES';
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_les
-      if ( z_les(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_les )
-         graphtopidx = nz_les;
-      end
-   end
-   minval(i) = min(avg_rtpthlp_les(1:graphtopidx));
-   maxval(i) = max(avg_rtpthlp_les(1:graphtopidx));
-end
-if ( cmp_cgbe == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rtpthlp_cgbe, z_cgbe_zm, '-', 'Color', cgbe_color, 'LineWidth', cgbe_width );
-   legend_text(i,1:27) = '\fontsize{6}HOC "best-ever"';
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_cgbe_zm
-      if ( z_cgbe_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_cgbe_zm )
-         graphtopidx = nz_cgbe_zm;
-      end
-   end
-   minval(i) = min(avg_rtpthlp_cgbe(1:graphtopidx));
-   maxval(i) = max(avg_rtpthlp_cgbe(1:graphtopidx));
-end
-if ( cmp_1217 == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rtpthlp_1217, z_1217_zm, '-.', 'Color', dec12_color, 'LineWidth', dec12_width );
-   legend_text(i,1:26) = '\fontsize{6}HOC 12/17/2005';
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_1217_zm
-      if ( z_1217_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_1217_zm )
-         graphtopidx = nz_1217_zm;
-      end
-   end
-   minval(i) = min(avg_rtpthlp_1217(1:graphtopidx));
-   maxval(i) = max(avg_rtpthlp_1217(1:graphtopidx));
-end
-if ( cmp_prev == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rtpthlp_prev, z_prev_zm, '--', 'Color', prev_color, 'LineWidth', prev_width );
-   sim1_title = strcat('\fontsize{6}', dir_prev);
-   sim1_title = regexprep(sim1_title, '_', ' ');
-   legend_text(i,1:length(sim1_title)) = sim1_title;
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_prev_zm
-      if ( z_prev_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_prev_zm )
-         graphtopidx = nz_prev_zm;
-      end
-   end
-   minval(i) = min(avg_rtpthlp_prev(1:graphtopidx));
-   maxval(i) = max(avg_rtpthlp_prev(1:graphtopidx));
-end
-if ( cmp_curr == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rtpthlp_curr, z_curr_zm, '-', 'Color', curr_color, 'LineWidth', curr_width );
-   sim2_title = strcat('\fontsize{6}', dir_curr);
-   sim2_title = regexprep(sim2_title, '_', ' ');
-   legend_text(i,1:length(sim2_title)) = sim2_title;
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_curr_zm
-      if ( z_curr_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_curr_zm )
-         graphtopidx = nz_curr_zm;
-      end
-   end
-   minval(i) = min(avg_rtpthlp_curr(1:graphtopidx));
-   maxval(i) = max(avg_rtpthlp_curr(1:graphtopidx));
-end
-hold off
-% Brian's New Universal Legend (for output page 2).
-legend( h, legend_text, 'Location', 'SouthWest' )
-% Axis labels and graph title.
-xlabel('rtpthlp    [(kg/kg) K]')
-ylabel('Height    [m]')
-title('Covariance of r_t & \theta_l')
-% Extent of graph.
-xmin = min(minval);
-xmax = max(maxval);
-if ( xmax == xmin )
-   xmin = xmin - equiv_space;
-   xmax = xmax + equiv_space;
-else
-   xdiff = xmax - xmin;
-   xrange = xdiff/percentage;
-   xmedian = ( xmin + xmax ) / 2;
-   xmin = xmedian - xrange/2;
-   xmax = xmedian + xrange/2;
-end
-zmin = graphbase;
-%zmax = max(z_les);
-zmax = graphtop;
-axis([ xmin xmax zmin zmax ])
+create_plot(3, 2, 5, 'Covariance of r_t & \theta_l', 'rtpthlp    [(kg/kg) K]', avg_rtpthlp_les, avg_rtpthlp_cgbe, avg_rtpthlp_1217, avg_rtpthlp_prev, avg_rtpthlp_curr, 1, 1);
 
 %--------------------------------------------------------------------------
 
 % wm
-subplot(3,2,6)
-i = 0;
-if ( cmp_les == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wm_les, z_les, '-', 'Color', les_color, 'LineWidth', les_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_les
-      if ( z_les(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_les )
-         graphtopidx = nz_les;
-      end
-   end
-   minval(i) = min(avg_wm_les(1:graphtopidx));
-   maxval(i) = max(avg_wm_les(1:graphtopidx));
-end
-if ( cmp_cgbe == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wm_cgbe, z_cgbe_zt, '-', 'Color', cgbe_color, 'LineWidth', cgbe_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_cgbe_zt
-      if ( z_cgbe_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_cgbe_zt )
-         graphtopidx = nz_cgbe_zt;
-      end
-   end
-   minval(i) = min(avg_wm_cgbe(1:graphtopidx));
-   maxval(i) = max(avg_wm_cgbe(1:graphtopidx));
-end
-if ( cmp_1217 == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wm_1217, z_1217_zt, '-.', 'Color', dec12_color, 'LineWidth', dec12_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_1217_zt
-      if ( z_1217_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_1217_zt )
-         graphtopidx = nz_1217_zt;
-      end
-   end
-   minval(i) = min(avg_wm_1217(1:graphtopidx));
-   maxval(i) = max(avg_wm_1217(1:graphtopidx));
-end
-if ( cmp_prev == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wm_prev, z_prev_zt, '--', 'Color', prev_color, 'LineWidth', prev_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_prev_zt
-      if ( z_prev_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_prev_zt )
-         graphtopidx = nz_prev_zt;
-      end
-   end
-   minval(i) = min(avg_wm_prev(1:graphtopidx));
-   maxval(i) = max(avg_wm_prev(1:graphtopidx));
-end
-if ( cmp_curr == 1 )
-   i = i + 1;
-   h(i) = plot( avg_wm_curr, z_curr_zt, '-', 'Color', curr_color, 'LineWidth', curr_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_curr_zt
-      if ( z_curr_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_curr_zt )
-         graphtopidx = nz_curr_zt;
-      end
-   end
-   minval(i) = min(avg_wm_curr(1:graphtopidx));
-   maxval(i) = max(avg_wm_curr(1:graphtopidx));
-end
-hold off
-% Axis labels and graph title.
-xlabel('wm    [m/s]')
-ylabel('Height    [m]')
-title('Vertical Wind Component, w (subsidence)')
-% Extent of graph.
-xmin = min(minval);
-xmax = max(maxval);
-if ( xmax == xmin )
-   xmin = xmin - equiv_space;
-   xmax = xmax + equiv_space;
-else
-   xdiff = xmax - xmin;
-   xrange = xdiff/percentage;
-   xmedian = ( xmin + xmax ) / 2;
-   xmin = xmedian - xrange/2;
-   xmax = xmedian + xrange/2;
-end
-zmin = graphbase;
-%zmax = max(z_les);
-zmax = graphtop;
-axis([ xmin xmax zmin zmax ])
+create_plot(3, 2, 6, 'Vertical Wind Component, w (subsidence)', 'wm    [m/s]', avg_wm_les, avg_wm_cgbe, avg_wm_1217, avg_wm_prev, avg_wm_curr, 1, 0);
 
-% Print 2nd Page for Case (.eps document)
-outputfilename = [ 'output/eps/', case_name, '_page2.eps' ];
-print( '-depsc2', outputfilename )
-% Print 2nd Page for Case (.jpg document)
-outputfilename = [ 'output/jpg/', case_name, '_page2.jpg' ];
-print( '-djpeg', outputfilename )
-% Print 3-page Document for each Case (.ps document)
-outputfilename = [ 'output/ps/', case_name, '_doc.ps' ];
-print( '-dpsc', '-append', outputfilename )
-
-% Close the current figure (so it doesn't produce a new one for each page
-% and for each case).
-closereq
+outputfilename = [ case_name, '_page2' ];
+print_page(outputfilename, 1, 0, 1);
 
 %--------------------------------------------------------------------------
 
@@ -3704,692 +1077,437 @@ set(gcf, 'PaperUnits', 'inches')
 set(gcf, 'PaperPosition', [ 1.0 1.0 6.5 9.0 ])
 
 % um
-subplot(3,2,1)
-i = 0;
-if ( cmp_les == 1 )
-   i = i + 1;
-   h(i) = plot( avg_um_les, z_les, '-', 'Color', les_color, 'LineWidth', les_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_les
-      if ( z_les(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_les )
-         graphtopidx = nz_les;
-      end
-   end
-   minval(i) = min(avg_um_les(1:graphtopidx));
-   maxval(i) = max(avg_um_les(1:graphtopidx));
-end
-if ( cmp_cgbe == 1 )
-   i = i + 1;
-   h(i) = plot( avg_um_cgbe, z_cgbe_zt, '-', 'Color', cgbe_color, 'LineWidth', cgbe_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_cgbe_zt
-      if ( z_cgbe_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_cgbe_zt )
-         graphtopidx = nz_cgbe_zt;
-      end
-   end
-   minval(i) = min(avg_um_cgbe(1:graphtopidx));
-   maxval(i) = max(avg_um_cgbe(1:graphtopidx));
-end
-if ( cmp_1217 == 1 )
-   i = i + 1;
-   h(i) = plot( avg_um_1217, z_1217_zt, '-.', 'Color', dec12_color, 'LineWidth', dec12_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_1217_zt
-      if ( z_1217_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_1217_zt )
-         graphtopidx = nz_1217_zt;
-      end
-   end
-   minval(i) = min(avg_um_1217(1:graphtopidx));
-   maxval(i) = max(avg_um_1217(1:graphtopidx));
-end
-if ( cmp_prev == 1 )
-   i = i + 1;
-   h(i) = plot( avg_um_prev, z_prev_zt, '--', 'Color', prev_color, 'LineWidth', prev_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_prev_zt
-      if ( z_prev_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_prev_zt )
-         graphtopidx = nz_prev_zt;
-      end
-   end
-   minval(i) = min(avg_um_prev(1:graphtopidx));
-   maxval(i) = max(avg_um_prev(1:graphtopidx));
-end
-if ( cmp_curr == 1 )
-   i = i + 1;
-   h(i) = plot( avg_um_curr, z_curr_zt, '-', 'Color', curr_color, 'LineWidth', curr_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_curr_zt
-      if ( z_curr_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_curr_zt )
-         graphtopidx = nz_curr_zt;
-      end
-   end
-   minval(i) = min(avg_um_curr(1:graphtopidx));
-   maxval(i) = max(avg_um_curr(1:graphtopidx));
-end
-hold off
-% Axis labels and graph title.
-xlabel('um    [m/s]')
-ylabel('Height    [m]')
-title('Zonal Wind Component, u')
-% Extent of graph.
-xmin = min(minval);
-xmax = max(maxval);
-if ( xmax == xmin )
-   xmin = xmin - equiv_space;
-   xmax = xmax + equiv_space;
-else
-   xdiff = xmax - xmin;
-   xrange = xdiff/percentage;
-   xmedian = ( xmin + xmax ) / 2;
-   xmin = xmedian - xrange/2;
-   xmax = xmedian + xrange/2;
-end
-zmin = graphbase;
-%zmax = max(z_les);
-zmax = graphtop;
-axis([ xmin xmax zmin zmax ])
+create_plot(3, 2, 1, 'Zonal Wind Component, u', 'um    [m/s]', avg_um_les, avg_um_cgbe, avg_um_1217, avg_um_prev, avg_um_curr, 1, 0);
 
 %--------------------------------------------------------------------------
 
 % vm
-subplot(3,2,2)
-i = 0;
-if ( cmp_les == 1 )
-   i = i + 1;
-   h(i) = plot( avg_vm_les, z_les, '-', 'Color', les_color, 'LineWidth', les_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_les
-      if ( z_les(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_les )
-         graphtopidx = nz_les;
-      end
-   end
-   minval(i) = min(avg_vm_les(1:graphtopidx));
-   maxval(i) = max(avg_vm_les(1:graphtopidx));
-end
-if ( cmp_cgbe == 1 )
-   i = i + 1;
-   h(i) = plot( avg_vm_cgbe, z_cgbe_zt, '-', 'Color', cgbe_color, 'LineWidth', cgbe_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_cgbe_zt
-      if ( z_cgbe_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_cgbe_zt )
-         graphtopidx = nz_cgbe_zt;
-      end
-   end
-   minval(i) = min(avg_vm_cgbe(1:graphtopidx));
-   maxval(i) = max(avg_vm_cgbe(1:graphtopidx));
-end
-if ( cmp_1217 == 1 )
-   i = i + 1;
-   h(i) = plot( avg_vm_1217, z_1217_zt, '-.', 'Color', dec12_color, 'LineWidth', dec12_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_1217_zt
-      if ( z_1217_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_1217_zt )
-         graphtopidx = nz_1217_zt;
-      end
-   end
-   minval(i) = min(avg_vm_1217(1:graphtopidx));
-   maxval(i) = max(avg_vm_1217(1:graphtopidx));
-end
-if ( cmp_prev == 1 )
-   i = i + 1;
-   h(i) = plot( avg_vm_prev, z_prev_zt, '--', 'Color', prev_color, 'LineWidth', prev_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_prev_zt
-      if ( z_prev_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_prev_zt )
-         graphtopidx = nz_prev_zt;
-      end
-   end
-   minval(i) = min(avg_vm_prev(1:graphtopidx));
-   maxval(i) = max(avg_vm_prev(1:graphtopidx));
-end
-if ( cmp_curr == 1 )
-   i = i + 1;
-   h(i) = plot( avg_vm_curr, z_curr_zt, '-', 'Color', curr_color, 'LineWidth', curr_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_curr_zt
-      if ( z_curr_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_curr_zt )
-         graphtopidx = nz_curr_zt;
-      end
-   end
-   minval(i) = min(avg_vm_curr(1:graphtopidx));
-   maxval(i) = max(avg_vm_curr(1:graphtopidx));
-end
-hold off
-% Axis labels and graph title.
-xlabel('vm    [m/s]')
-ylabel('Height    [m]')
-title('Meridional Wind Component, v')
-% Extent of graph.
-xmin = min(minval);
-xmax = max(maxval);
-if ( xmax == xmin )
-   xmin = xmin - equiv_space;
-   xmax = xmax + equiv_space;
-else
-   xdiff = xmax - xmin;
-   xrange = xdiff/percentage;
-   xmedian = ( xmin + xmax ) / 2;
-   xmin = xmedian - xrange/2;
-   xmax = xmedian + xrange/2;
-end
-zmin = graphbase;
-%zmax = max(z_les);
-zmax = graphtop;
-axis([ xmin xmax zmin zmax ])
+create_plot(3, 2, 2, 'Meridional Wind Component, v', 'vm    [m/s]', avg_vm_les, avg_vm_cgbe, avg_vm_1217, avg_vm_prev, avg_vm_curr, 1, 0);
 
 %--------------------------------------------------------------------------
 
 % upwp
-subplot(3,2,3)
-i = 0;
-if ( cmp_les == 1 )
-   i = i + 1;
-   if ( les_grph_upwp == 1 )
-      h(i) = plot( avg_upwp_les, z_les, '-', 'Color', les_color, 'LineWidth', les_width );
-      nz_upwp = nz_les;
-      z_upwp = z_les;
-   elseif ( les_grph_upwp == 2 )
-      h(i) = plot( avg_upwp_les, z_les2, '-', 'Color', les_color, 'LineWidth', les_width );
-      nz_upwp = nz_les2;
-      z_upwp = z_les2;
-   end
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_upwp
-      if ( z_upwp(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_upwp )
-         graphtopidx = nz_upwp;
-      end
-   end
-   minval(i) = min(avg_upwp_les(1:graphtopidx));
-   maxval(i) = max(avg_upwp_les(1:graphtopidx));
+if ( les_grph_upwp == 1 )
+	create_plot(3, 2, 3, 'Covariance of u & w', 'upwp    [m^2/s^2]', avg_upwp_les, avg_upwp_cgbe, avg_upwp_1217, avg_upwp_prev, avg_upwp_curr, 1, 0);
+elseif ( les_grph_upwp == 2 )
+	create_plot(3, 2, 3, 'Covariance of u & w', 'upwp    [m^2/s^2]', avg_upwp_les, avg_upwp_cgbe, avg_upwp_1217, avg_upwp_prev, avg_upwp_curr, 2, 0);
 end
-if ( cmp_cgbe == 1 )
-   i = i + 1;
-   h(i) = plot( avg_upwp_cgbe, z_cgbe_zm, '-', 'Color', cgbe_color, 'LineWidth', cgbe_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_cgbe_zm
-      if ( z_cgbe_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_cgbe_zm )
-         graphtopidx = nz_cgbe_zm;
-      end
-   end
-   minval(i) = min(avg_upwp_cgbe(1:graphtopidx));
-   maxval(i) = max(avg_upwp_cgbe(1:graphtopidx));
-end
-if ( cmp_1217 == 1 )
-   i = i + 1;
-   h(i) = plot( avg_upwp_1217, z_1217_zm, '-.', 'Color', dec12_color, 'LineWidth', dec12_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_1217_zm
-      if ( z_1217_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_1217_zm )
-         graphtopidx = nz_1217_zm;
-      end
-   end
-   minval(i) = min(avg_upwp_1217(1:graphtopidx));
-   maxval(i) = max(avg_upwp_1217(1:graphtopidx));
-end
-if ( cmp_prev == 1 )
-   i = i + 1;
-   h(i) = plot( avg_upwp_prev, z_prev_zm, '--', 'Color', prev_color, 'LineWidth', prev_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_prev_zm
-      if ( z_prev_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_prev_zm )
-         graphtopidx = nz_prev_zm;
-      end
-   end
-   minval(i) = min(avg_upwp_prev(1:graphtopidx));
-   maxval(i) = max(avg_upwp_prev(1:graphtopidx));
-end
-if ( cmp_curr == 1 )
-   i = i + 1;
-   h(i) = plot( avg_upwp_curr, z_curr_zm, '-', 'Color', curr_color, 'LineWidth', curr_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_curr_zm
-      if ( z_curr_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_curr_zm )
-         graphtopidx = nz_curr_zm;
-      end
-   end
-   minval(i) = min(avg_upwp_curr(1:graphtopidx));
-   maxval(i) = max(avg_upwp_curr(1:graphtopidx));
-end
-hold off
-% Axis labels and graph title.
-xlabel('upwp    [m^2/s^2]')
-ylabel('Height    [m]')
-title('Covariance of u & w')
-% Extent of graph.
-xmin = min(minval);
-xmax = max(maxval);
-if ( xmax == xmin )
-   xmin = xmin - equiv_space;
-   xmax = xmax + equiv_space;
-else
-   xdiff = xmax - xmin;
-   xrange = xdiff/percentage;
-   xmedian = ( xmin + xmax ) / 2;
-   xmin = xmedian - xrange/2;
-   xmax = xmedian + xrange/2;
-end
-zmin = graphbase;
-%zmax = max(z_les);
-zmax = graphtop;
-axis([ xmin xmax zmin zmax ])
-
 %--------------------------------------------------------------------------
 
 % vpwp
-subplot(3,2,4)
-i = 0;
-if ( cmp_les == 1 )
-   i = i + 1;
-   if ( les_grph_vpwp == 1 )
-      h(i) = plot( avg_vpwp_les, z_les, '-', 'Color', les_color, 'LineWidth', les_width );
-      nz_vpwp = nz_les;
-      z_vpwp = z_les;
-   elseif ( les_grph_vpwp == 2 )
-      h(i) = plot( avg_vpwp_les, z_les2, '-', 'Color', les_color, 'LineWidth', les_width );
-      nz_vpwp = nz_les2;
-      z_vpwp = z_les2;
-   end
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_vpwp
-      if ( z_vpwp(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_vpwp )
-         graphtopidx = nz_vpwp;
-      end
-   end
-   minval(i) = min(avg_vpwp_les(1:graphtopidx));
-   maxval(i) = max(avg_vpwp_les(1:graphtopidx));
+if ( les_grph_vpwp == 1 )
+	create_plot(3, 2, 4, 'Covariance of v & w', 'vpwp    [m^2/s^2]', avg_vpwp_les, avg_vpwp_cgbe, avg_vpwp_1217, avg_vpwp_prev, avg_vpwp_curr, 1, 0);
+elseif ( les_grph_vpwp == 2 )
+	create_plot(3, 2, 4, 'Covariance of v & w', 'vpwp    [m^2/s^2]', avg_vpwp_les, avg_vpwp_cgbe, avg_vpwp_1217, avg_vpwp_prev, avg_vpwp_curr, 2, 0);
 end
-if ( cmp_cgbe == 1 )
-   i = i + 1;
-   h(i) = plot( avg_vpwp_cgbe, z_cgbe_zm, '-', 'Color', cgbe_color, 'LineWidth', cgbe_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_cgbe_zm
-      if ( z_cgbe_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_cgbe_zm )
-         graphtopidx = nz_cgbe_zm;
-      end
-   end
-   minval(i) = min(avg_vpwp_cgbe(1:graphtopidx));
-   maxval(i) = max(avg_vpwp_cgbe(1:graphtopidx));
-end
-if ( cmp_1217 == 1 )
-   i = i + 1;
-   h(i) = plot( avg_vpwp_1217, z_1217_zm, '-.', 'Color', dec12_color, 'LineWidth', dec12_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_1217_zm
-      if ( z_1217_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_1217_zm )
-         graphtopidx = nz_1217_zm;
-      end
-   end
-   minval(i) = min(avg_vpwp_1217(1:graphtopidx));
-   maxval(i) = max(avg_vpwp_1217(1:graphtopidx));
-end
-if ( cmp_prev == 1 )
-   i = i + 1;
-   h(i) = plot( avg_vpwp_prev, z_prev_zm, '--', 'Color', prev_color, 'LineWidth', prev_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_prev_zm
-      if ( z_prev_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_prev_zm )
-         graphtopidx = nz_prev_zm;
-      end
-   end
-   minval(i) = min(avg_vpwp_prev(1:graphtopidx));
-   maxval(i) = max(avg_vpwp_prev(1:graphtopidx));
-end
-if ( cmp_curr == 1 )
-   i = i + 1;
-   h(i) = plot( avg_vpwp_curr, z_curr_zm, '-', 'Color', curr_color, 'LineWidth', curr_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_curr_zm
-      if ( z_curr_zm(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_curr_zm )
-         graphtopidx = nz_curr_zm;
-      end
-   end
-   minval(i) = min(avg_vpwp_curr(1:graphtopidx));
-   maxval(i) = max(avg_vpwp_curr(1:graphtopidx));
-end
-hold off
-% Axis labels and graph title.
-xlabel('vpwp    [m^2/s^2]')
-ylabel('Height    [m]')
-title('Covariance of v & w')
-% Extent of graph.
-xmin = min(minval);
-xmax = max(maxval);
-if ( xmax == xmin )
-   xmin = xmin - equiv_space;
-   xmax = xmax + equiv_space;
-else
-   xdiff = xmax - xmin;
-   xrange = xdiff/percentage;
-   xmedian = ( xmin + xmax ) / 2;
-   xmin = xmedian - xrange/2;
-   xmax = xmedian + xrange/2;
-end
-zmin = graphbase;
-%zmax = max(z_les);
-zmax = graphtop;
-axis([ xmin xmax zmin zmax ])
-
+  
 %--------------------------------------------------------------------------
 
 % rrainm
-subplot(3,2,5)
-i = 0;
-if ( cmp_les == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rrainm_les, z_les, '-', 'Color', les_color, 'LineWidth', les_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_les
-      if ( z_les(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_les )
-         graphtopidx = nz_les;
-      end
-   end
-   minval(i) = min(avg_rrainm_les(1:graphtopidx));
-   maxval(i) = max(avg_rrainm_les(1:graphtopidx));
-end
-if ( cmp_cgbe == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rrainm_cgbe, z_cgbe_zt, '-', 'Color', cgbe_color, 'LineWidth', cgbe_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_cgbe_zt
-      if ( z_cgbe_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_cgbe_zt )
-         graphtopidx = nz_cgbe_zt;
-      end
-   end
-   minval(i) = min(avg_rrainm_cgbe(1:graphtopidx));
-   maxval(i) = max(avg_rrainm_cgbe(1:graphtopidx));
-end
-if ( cmp_1217 == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rrainm_1217, z_1217_zt, '-.', 'Color', dec12_color, 'LineWidth', dec12_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_1217_zt
-      if ( z_1217_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_1217_zt )
-         graphtopidx = nz_1217_zt;
-      end
-   end
-   minval(i) = min(avg_rrainm_1217(1:graphtopidx));
-   maxval(i) = max(avg_rrainm_1217(1:graphtopidx));
-end
-if ( cmp_prev == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rrainm_prev, z_prev_zt, '--', 'Color', prev_color, 'LineWidth', prev_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_prev_zt
-      if ( z_prev_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_prev_zt )
-         graphtopidx = nz_prev_zt;
-      end
-   end
-   minval(i) = min(avg_rrainm_prev(1:graphtopidx));
-   maxval(i) = max(avg_rrainm_prev(1:graphtopidx));
-end
-if ( cmp_curr == 1 )
-   i = i + 1;
-   h(i) = plot( avg_rrainm_curr, z_curr_zt, '-', 'Color', curr_color, 'LineWidth', curr_width );
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_curr_zt
-      if ( z_curr_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_curr_zt )
-         graphtopidx = nz_curr_zt;
-      end
-   end
-   minval(i) = min(avg_rrainm_curr(1:graphtopidx));
-   maxval(i) = max(avg_rrainm_curr(1:graphtopidx));
-end
-hold off
-% Axis labels and graph title.
-xlabel('rrainm    [kg/kg]')
-ylabel('Height    [m]')
-title('Rain Water Mixing Ratio, r_r')
-% Extent of graph.
-xmin = min(minval);
-xmax = max(maxval);
-if ( xmax == xmin )
-   xmin = xmin - equiv_space;
-   xmax = xmax + equiv_space;
-else
-   xdiff = xmax - xmin;
-   xrange = xdiff/percentage;
-   xmedian = ( xmin + xmax ) / 2;
-   xmin = xmedian - xrange/2;
-   xmax = xmedian + xrange/2;
-end
-zmin = graphbase;
-%zmax = max(z_les);
-zmax = graphtop;
-axis([ xmin xmax zmin zmax ])
+create_plot(3, 2, 5, 'Rain Water Mixing Ratio, r_r', 'rrainm    [kg/kg]', avg_rrainm_les, avg_rrainm_cgbe, avg_rrainm_1217, avg_rrainm_prev, avg_rrainm_curr, 1, 0);
 
 %--------------------------------------------------------------------------
 
 % Nrm - this plot has a legend
-subplot(3,2,6)
-i = 0;
-if ( cmp_les == 1 )
-   i = i + 1;
-   h(i) = plot( avg_Nrm_les, z_les, '-', 'Color', les_color, 'LineWidth', les_width );
-   legend_text(i,1:15) = '\fontsize{6}LES';
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_les
-      if ( z_les(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_les )
-         graphtopidx = nz_les;
-      end
-   end
-   minval(i) = min(avg_Nrm_les(1:graphtopidx));
-   maxval(i) = max(avg_Nrm_les(1:graphtopidx));
-end
-if ( cmp_cgbe == 1 )
-   i = i + 1;
-   h(i) = plot( avg_Nrm_cgbe, z_cgbe_zt, '-', 'Color', cgbe_color, 'LineWidth', cgbe_width );
-   legend_text(i,1:27) = '\fontsize{6}HOC "best-ever"';
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_cgbe_zt
-      if ( z_cgbe_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_cgbe_zt )
-         graphtopidx = nz_cgbe_zt;
-      end
-   end
-   minval(i) = min(avg_Nrm_cgbe(1:graphtopidx));
-   maxval(i) = max(avg_Nrm_cgbe(1:graphtopidx));
-end
-if ( cmp_1217 == 1 )
-   i = i + 1;
-   h(i) = plot( avg_Nrm_1217, z_1217_zt, '-.', 'Color', dec12_color, 'LineWidth', dec12_width );
-   legend_text(i,1:26) = '\fontsize{6}HOC 12/17/2005';
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_1217_zt
-      if ( z_1217_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_1217_zt )
-         graphtopidx = nz_1217_zt;
-      end
-   end
-   minval(i) = min(avg_Nrm_1217(1:graphtopidx));
-   maxval(i) = max(avg_Nrm_1217(1:graphtopidx));
-end
-if ( cmp_prev == 1 )
-   i = i + 1;
-   h(i) = plot( avg_Nrm_prev, z_prev_zt, '--', 'Color', prev_color, 'LineWidth', prev_width );
-   sim1_title = strcat('\fontsize{6}', dir_prev);
-   sim1_title = regexprep(sim1_title, '_', ' ');
-   legend_text(i,1:length(sim1_title)) = sim1_title;
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_prev_zt
-      if ( z_prev_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_prev_zt )
-         graphtopidx = nz_prev_zt;
-      end
-   end
-   minval(i) = min(avg_Nrm_prev(1:graphtopidx));
-   maxval(i) = max(avg_Nrm_prev(1:graphtopidx));
-end
-if ( cmp_curr == 1 )
-   i = i + 1;
-   h(i) = plot( avg_Nrm_curr, z_curr_zt, '-', 'Color', curr_color, 'LineWidth', curr_width );
-   sim2_title = strcat('\fontsize{6}', dir_curr);
-   sim2_title = regexprep(sim2_title, '_', ' ');
-   legend_text(i,1:length(sim2_title)) = sim2_title;
-   hold on
-   % Find vertical level index right below top of graph.
-   for k = 2:1:nz_curr_zt
-      if ( z_curr_zt(k) > graphtop )
-         graphtopidx = k - 1;
-         break
-      elseif ( k == nz_curr_zt )
-         graphtopidx = nz_curr_zt;
-      end
-   end
-   minval(i) = min(avg_Nrm_curr(1:graphtopidx));
-   maxval(i) = max(avg_Nrm_curr(1:graphtopidx));
-end
-hold off
-% Brian's New Universal Legend (for output page 3).
-legend( h, legend_text, 'Location', 'NorthEast' )
-% Axis labels and graph title.
-xlabel('Nrm    [num/m^3]')
-ylabel('Height    [m]')
-title('Rain Drop Concentration, N_r')
-% Extent of graph.
-xmin = min(minval);
-xmax = max(maxval);
-if ( xmax == xmin )
-   xmin = xmin - equiv_space;
-   xmax = xmax + equiv_space;
-else
-   xdiff = xmax - xmin;
-   xrange = xdiff/percentage;
-   xmedian = ( xmin + xmax ) / 2;
-   xmin = xmedian - xrange/2;
-   xmax = xmedian + xrange/2;
-end
-zmin = graphbase;
-%zmax = max(z_les);
-zmax = graphtop;
-axis([ xmin xmax zmin zmax ])
+create_plot(3, 2, 6, 'Rain Drop Concentration, N_r', 'Nrm    [num/m^3]', avg_Nrm_les, avg_Nrm_cgbe, avg_Nrm_1217, avg_Nrm_prev, avg_Nrm_curr, 1, 1);
 
 % Print 3rd Page for Case (.eps document)
-outputfilename = [ 'output/eps/', case_name, '_page3.eps' ];
-print( '-depsc2', outputfilename )
-% Print 3rd Page for Case (.jpg document)
-outputfilename = [ 'output/jpg/', case_name, '_page3.jpg' ];
-print( '-djpeg', outputfilename )
-% Print 3-page Document for each Case (.ps document)
-outputfilename = [ 'output/ps/', case_name, '_doc.ps' ];
-print( '-dpsc', '-append', outputfilename )
-
-% Close the current figure (so it doesn't produce a new one for each page
-% and for each case).
-closereq
+outputfilename = [ case_name, '_page3' ];
+print_page(outputfilename, 1, 0, 1);
 
 % Statement
 [ 'Case ', case_name, ' has successfully been output!' ]
 [ '=====================================================================' ]
+
+end
+
+function [avg_les_values, avg_cgbe_values, avg_1217_values, avg_prev_values, avg_curr_values] = var_load( filename_les, listofparams_les, les_var_len, ...
+		numvars_les, les_var, nz_les, t1_les, t2_les, filename_cgbe, listofparams_cgbe, cgbe_var_len, numvars_cgbe, cgbe_var, nz_cgbe, t1_cgbe, ...
+		t2_cgbe, filename_1217, listofparams_1217, dec17_var_len, numvars_1217, dec17_var, nz_1217, t1_1217, t2_1217, filename_prev, listofparams_prev, ...
+		prev_var_len, numvars_prev, prev_var, nz_prev, t1_prev, t2_prev, filename_curr, listofparams_curr, curr_var_len, numvars_curr, ...
+		curr_var, nz_curr, t1_curr, t2_curr, les_type, var_type )		
+
+	global dir_prev
+	global dir_curr
+	global dir_LES
+	global dir_cgbe
+	global dir_1217
+	global cmp_les
+	global cmp_cgbe
+	global cmp_1217
+	global cmp_prev
+	global cmp_curr
+	global les_grph_upwp 
+	global les_grph_vpwp
+	global nz_les2
+	global t1_les2
+	global t2_les2
+	global numvars_les2
+	global filename_les2
+	global listofparams_les2
+	global les_upwp
+	global les_vpwp
+
+	avg_les_values = 0;
+	avg_cgbe_values = 0;
+       	avg_1217_values = 0;
+       	avg_prev_values = 0;
+       	avg_curr_values = 0;
+
+	%LES
+	if ( cmp_les == 1 )
+
+		if ( var_type == 0)
+			varfnd = 0;
+			for i = 1:1:numvars_les
+				if ( strcmp( listofparams_les(i,1:les_var_len), les_var ) )
+					varnum = i;
+					varfnd = 1;
+				end
+				if ( (i == numvars_les) & (varfnd == 0) )
+					[ 'LES Variable: ', les_var, ' not found for case, being set to 0!' ]
+					avg_les_values(1:nz_les) = 0.0;
+				elseif ( varfnd == 1 )
+					avg_les_values = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
+					'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
+					break
+				end
+			end
+		%The var_type == 1 is exlusively for handling UPWP and VPWP
+		elseif (var_type == 1)
+			varfnd = 0;
+   			for i = 1:1:numvars_les
+				if ( strcmp( listofparams_les(i,1:les_var_len), les_var ) )
+					varnum = i;
+					varfnd = 1;
+					avg_les_values = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
+					'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
+					
+					if (les_var == les_upwp)
+						les_grph_upwp = 1;
+					elseif (les_var == les_vpwp)
+						les_grph_vpwp = 1;
+					end
+
+					break
+				end
+			end
+
+   			if ( (varfnd == 0) & ( strcmp( les_type, 'coamps' ) ) )
+      				for i = 1:1:numvars_les2
+         				if ( strcmp( listofparams_les2(i,1:les_var_len), les_var ) )
+            					varnum = i;
+            					varfnd = 1;
+         				end
+         				if ( (i == numvars_les2) & (varfnd == 0) )
+            					[ 'LES Variable: ', les_var, ' not found for case, being set to 0!' ]
+            					avg_les_values(1:nz_les2) = 0.0;
+            					
+						if (les_var == les_upwp)
+							les_grph_upwp = 2;
+						elseif (les_var == les_vpwp)
+							les_grph_vpwp = 2;
+						end
+
+         				elseif ( varfnd == 1 )
+            					avg_les_values = read_grads_hoc_endian([dir_LES, '/', filename_les2], ...
+                          			'ieee-be', nz_les2, t1_les2, t2_les2, varnum, numvars_les2);
+            					
+						if (les_var == les_upwp)
+							les_grph_upwp = 2;
+						elseif (les_var == les_vpwp)
+							les_grph_vpwp = 2;
+						end
+
+            					break
+         				end
+      				end
+   			elseif ( (varfnd == 0) & ( strcmp( les_type, 'rams' ) ) )
+      				[ 'LES Variable: ', les_var, ' not found for case, being set to 0!' ]
+      				avg_les_values(1:nz_les) = 0.0;
+      				
+				if (les_var == les_upwp)
+					les_grph_upwp = 1;
+				elseif (les_var == les_vpwp)
+					les_grph_vpwp = 1;
+				end
+   			end
+		end
+	end	
+
+	% HOC -- Golaz "best ever"
+	if ( cmp_cgbe == 1 )
+		varfnd = 0;
+		for i = 1:1:numvars_cgbe
+			if ( strcmp( listofparams_cgbe(i,1:cgbe_var_len), cgbe_var ) )
+				display listofparams_cgbe(i,1:4) 
+				varnum = i;
+				varfnd = 1;
+			end
+			if ( (i == numvars_cgbe) & (varfnd == 0) )
+				[ 'Chris Golaz Best Ever Variable: ', cgbe_var, ' not found for case, being set to 0!' ]
+				avg_cgbe_values(1:nz_cgbe) = 0.0;
+			elseif ( varfnd == 1 )
+				avg_cgbe_values = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe], ...
+				'ieee-le', nz_cgbe, t1_cgbe, t2_cgbe, varnum, numvars_cgbe);
+				break
+			end
+		end
+	end
+
+	% HOC -- December 17, 2005
+	if ( cmp_1217 == 1 )
+		varfnd = 0;
+		for i = 1:1:numvars_1217
+			if ( strcmp( listofparams_1217(i,1:dec17_var_len), dec17_var ) )
+				varnum = i;
+				varfnd = 1;
+			end
+			if ( (i == numvars_1217) & (varfnd == 0) )
+				[ 'Dec. 17 Variable: ', cgbe_var, ' not found for case, being set to 0!' ]
+				avg_1217_values(1:nz_1217) = 0.0;
+			elseif ( varfnd == 1 )
+				avg_1217_values = read_grads_hoc_endian([dir_1217, '/', filename_1217], ...
+				'ieee-le', nz_1217, t1_1217, t2_1217, varnum, numvars_1217);
+				break
+			end
+		end
+	end
+
+	% HOC -- previous
+	if ( cmp_prev == 1 )
+		varfnd = 0;
+		for i = 1:1:numvars_prev
+			if ( strcmp( listofparams_prev(i,1:prev_var_len), prev_var ) )
+				varnum = i;
+				varfnd = 1;
+			end
+			if ( (i == numvars_prev) & (varfnd == 0) )
+				[ filename_prev, ' Variable: ', cgbe_var, ' not found for case, being set to 0!' ]
+				avg_prev_values(1:nz_prev) = 0.0;
+			elseif ( varfnd == 1 )
+				avg_prev_values = read_grads_hoc_endian([dir_prev, '/', filename_prev], ...
+				'ieee-le', nz_prev, t1_prev, t2_prev, varnum, numvars_prev);
+				break
+			end
+		end
+	end
+
+	% HOC -- current
+	if ( cmp_curr == 1 )
+		varfnd = 0;
+		for i = 1:1:numvars_curr
+			if ( strcmp( listofparams_curr(i,1:curr_var_len), curr_var ) )
+				varnum = i;
+				varfnd = 1;
+			end
+			if ( (i == numvars_curr) & (varfnd == 0) )
+				[ filename_curr, ' Variable: ', cgbe_var, ' not found for case, being set to 0!' ]
+				avg_curr_values(1:nz_curr) = 0.0;
+			elseif ( varfnd == 1 )
+				avg_curr_values = read_grads_hoc_endian([dir_curr, '/', filename_curr], ...
+				'ieee-le', nz_curr, t1_curr, t2_curr, varnum, numvars_curr);
+				break
+			end
+		end
+	end
+%End var_load
+end
+
+function create_plot( plot_x, plot_y, plot_z, plot_title, plot_units, les_data, cgbe_data, ...
+			dec12_data, prev_data, curr_data, nz_type, add_legend )
+	
+	
+	global dir_prev
+	global dir_curr
+	global cmp_les
+	global cmp_cgbe
+	global cmp_1217
+	global cmp_prev
+	global cmp_curr
+	global z_les
+	global z_les2
+	global nz_les
+	global nz_les2
+	global z_cgbe_zt
+	global nz_cgbe_zt
+	global z_1217_zt
+	global nz_1217_zt
+	global z_prev_zt
+	global nz_prev_zt
+	global z_curr_zt
+	global nz_curr_zt
+	global les_color
+	global les_width
+	global cgbe_color
+	global cgbe_width
+	global dec12_color
+	global dec12_width
+	global prev_color
+	global prev_width
+	global curr_color
+	global curr_width
+	global graphtop
+	global graphbase
+	global equiv_space
+	global percentage	
+			
+	subplot(plot_x, plot_y, plot_z)
+	i = 0;
+	clear h;
+	
+	if ( cmp_les == 1 )
+   		i = i + 1;
+   		
+		if ( nz_type == 1 )
+			h(i) = plot( les_data, z_les, '-', 'Color', les_color, 'LineWidth', les_width );
+			nz_data = nz_les;
+			z_data = z_les;
+		elseif ( nz_type == 2 )
+			h(i) = plot( les_data, z_les2, '-', 'Color', les_color, 'LineWidth', les_width );
+			nz_data = nz_les2;
+			z_data = z_les2;
+		end
+		legend_text(i,1:15) = '\fontsize{6}LES';
+		hold on
+
+   		% Find vertical level index right below top of graph.
+   		for k = 2:1:nz_data
+      			if ( z_data(k) > graphtop )
+         			graphtopidx = k - 1;
+        			break
+      			elseif ( k == nz_data )
+         			graphtopidx = nz_data;
+      			end
+   		end
+
+   		minval(i) = min(les_data(1:graphtopidx));
+   		maxval(i) = max(les_data(1:graphtopidx));
+	end
+
+	if ( cmp_cgbe == 1 )
+   		i = i + 1;
+   		h(i) = plot( cgbe_data, z_cgbe_zt, '-', 'Color', cgbe_color, 'LineWidth', cgbe_width );
+		legend_text(i,1:27) = '\fontsize{6}HOC "best-ever"';
+   		hold on
+   		% Find vertical level index right below top of graph.
+   		for k = 2:1:nz_cgbe_zt
+      			if ( z_cgbe_zt(k) > graphtop )
+         			graphtopidx = k - 1;
+         			break
+      			elseif ( k == nz_cgbe_zt )
+         			graphtopidx = nz_cgbe_zt;
+      			end
+   		end
+		minval(i) = min(cgbe_data(1:graphtopidx));
+   		maxval(i) = max(cgbe_data(1:graphtopidx));
+	end
+
+	if ( cmp_1217 == 1 )
+   		i = i + 1;
+   		h(i) = plot( dec12_data, z_1217_zt, '-.', 'Color', dec12_color, 'LineWidth', dec12_width );
+		legend_text(i,1:26) = '\fontsize{6}HOC 12/17/2005';
+   		hold on
+   		% Find vertical level index right below top of graph.
+   		for k = 2:1:nz_1217_zt
+      			if ( z_1217_zt(k) > graphtop )
+         			graphtopidx = k - 1;
+         			break
+      			elseif ( k == nz_1217_zt )
+         			graphtopidx = nz_1217_zt;
+      			end
+   		end
+   		minval(i) = min(dec12_data(1:graphtopidx));
+   		maxval(i) = max(dec12_data(1:graphtopidx));
+	end
+	
+	if ( cmp_prev == 1 )
+   		i = i + 1;
+   		h(i) = plot( prev_data, z_prev_zt, '--', 'Color', prev_color, 'LineWidth', prev_width );
+   		sim1_title = strcat('\fontsize{6}', dir_prev);
+   		sim1_title = regexprep(sim1_title, '_', ' ');
+   		legend_text(i,1:length(sim1_title)) = sim1_title;
+   		hold on
+   		% Find vertical level index right below top of graph.
+   		for k = 2:1:nz_prev_zt
+      			if ( z_prev_zt(k) > graphtop )
+         			graphtopidx = k - 1;
+         			break
+      			elseif ( k == nz_prev_zt )
+         			graphtopidx = nz_prev_zt;
+      			end
+   		end
+   		minval(i) = min(prev_data(1:graphtopidx));
+   		maxval(i) = max(prev_data(1:graphtopidx));
+	end
+
+	if ( cmp_curr == 1 )
+   		i = i + 1;
+   		h(i) = plot( curr_data, z_curr_zt, '-', 'Color', curr_color, 'LineWidth', curr_width );
+		sim2_title = strcat('\fontsize{6}', dir_curr);
+   		sim2_title = regexprep(sim2_title, '_', ' ');
+   		legend_text(i,1:length(sim2_title)) = sim2_title;
+   		hold on
+   		% Find vertical level index right below top of graph.
+   		for k = 2:1:nz_curr_zt
+      			if ( z_curr_zt(k) > graphtop )
+         			graphtopidx = k - 1;
+         			break
+      			elseif ( k == nz_curr_zt )
+         			graphtopidx = nz_curr_zt;
+      			end
+   		end
+   		minval(i) = min(curr_data(1:graphtopidx));
+   		maxval(i) = max(curr_data(1:graphtopidx));
+	end
+
+	hold off
+
+	if ( add_legend == 1 )
+		legend( h, legend_text, 'Location', 'NorthEast' )
+	end	
+	
+	% Axis labels and graph title.
+	xlabel(plot_units)
+	ylabel('Height    [m]')
+	title(plot_title)
+
+	% Extent of graph.
+	xmin = min(minval);
+	xmax = max(maxval);
+	if ( xmax == xmin )
+   		xmin = xmin - equiv_space;
+   		xmax = xmax + equiv_space;
+	else
+   		xdiff = xmax - xmin;
+   		xrange = xdiff/percentage;
+   		xmedian = ( xmin + xmax ) / 2;
+   		xmin = xmedian - xrange/2;
+   		xmax = xmedian + xrange/2;
+	end
+
+	zmin = graphbase;
+	zmax = graphtop;
+	axis([ xmin xmax zmin zmax ])
+end
+
+function print_page( file_name, output_eps, output_jpeg, output_ps )
+	if (output_eps == 1)
+		eps_file_name = [ 'output/eps/', file_name, '.eps' ];
+		print( '-depsc2', eps_file_name )
+	end
+
+	if (output_jpeg == 1)
+		jpg_file_name = [ 'output/jpeg/', file_name, '.jpg' ];
+		print( '-djpeg', jpg_file_name )
+	end
+	
+	if (output_ps == 1)
+		ps_file_name = [ 'output/ps/', file_name, '.ps' ];
+		print( '-dpsc', '-append', ps_file_name )
+	end
+
+	% Close the current figure (so it doesn't produce a new one for each page
+	% and for each case).
+	closereq
+end
