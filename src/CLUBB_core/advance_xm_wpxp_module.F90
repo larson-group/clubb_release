@@ -85,7 +85,8 @@ contains
         zm2zt ! Procedure(s)
 
     use model_flags, only: &
-        l_3pt_sqd_dfsn ! Variable(s)
+        l_3pt_sqd_dfsn,     & ! Variable(s)
+        l_clip_semi_implicit  
 
     use stats_precision, only:  & 
         time_precision ! Variable(s)
@@ -228,14 +229,12 @@ contains
 
 
     ! Define the Coefficent of Eddy Diffusivity for the wpthlp and wprtp.
-    do k = 1, gr%nnzp, 1
+     ! Kw6 is used for wpthlp and wprtp, which are located on momentum levels.
+     ! Kw6 is located on thermodynamic levels.
+     ! Kw6 = c_K6 * Kh_zt
 
-       ! Kw6 is used for wpthlp and wprtp, which are located on momentum levels.
-       ! Kw6 is located on thermodynamic levels.
-       ! Kw6 = c_K6 * Kh_zt
-       Kw6(k) = c_K6 * Kh_zt(k)
+     Kw6(1:gr%nnzp) = c_K6 * Kh_zt(1:gr%nnzp)
 
-    enddo
 
     ! (wpxp)^2: 3-point average diffusion coefficient.
     if ( l_3pt_sqd_dfsn ) then
@@ -298,8 +297,11 @@ contains
     ! based on the correlation of w and r_t, such that:
     ! corr_(w,r_t) = w'r_t' / [ sqrt(w'^2) * sqrt(r_t'^2) ];
     ! -1 <= corr_(w,r_t) <= 1.
-    wpxp_upper_lim =  max_mag_correlation * sqrt( wp2 * rtp2 )
-    wpxp_lower_lim = -max_mag_correlation * sqrt( wp2 * rtp2 )
+    if ( l_clip_semi_implicit ) then
+      wpxp_upper_lim =  max_mag_correlation * sqrt( wp2 * rtp2 )
+      wpxp_lower_lim = -wpxp_upper_lim
+
+    end if
 
     ! Compute the implicit portion of the r_t and w'r_t' equations.
     ! Build the left-hand side matrix.
@@ -366,8 +368,11 @@ contains
     ! based on the correlation of w and th_l, such that:
     ! corr_(w,th_l) = w'th_l' / [ sqrt(w'^2) * sqrt(th_l'^2) ];
     ! -1 <= corr_(w,th_l) <= 1.
-    wpxp_upper_lim =  max_mag_correlation * sqrt( wp2 * thlp2 )
-    wpxp_lower_lim = -max_mag_correlation * sqrt( wp2 * thlp2 )
+    if ( l_clip_semi_implicit ) then
+      wpxp_upper_lim =  max_mag_correlation * sqrt( wp2 * thlp2 )
+      wpxp_lower_lim = -wpxp_upper_lim
+
+    end if
 
     ! Compute the implicit portion of the th_l and w'th_l' equations.
     ! Build the left-hand side matrix.
@@ -427,8 +432,11 @@ contains
       ! based on the correlation of w and sclr, such that:
       ! corr_(w,sclr) = w'sclr' / [ sqrt(w'^2) * sqrt(sclr'^2) ];
       ! -1 <= corr_(w,sclr) <= 1.
-      wpxp_upper_lim(:) =  max_mag_correlation * sqrt( wp2(:) * sclrp2(:,i) )
-      wpxp_lower_lim(:) = -max_mag_correlation * sqrt( wp2(:) * sclrp2(:,i) )
+      if ( l_clip_semi_implicit ) then
+        wpxp_upper_lim(:) =  max_mag_correlation * sqrt( wp2(:) * sclrp2(:,i) )
+        wpxp_lower_lim(:) = -wpxp_upper_lim(:)
+
+      end if
 
       ! Compute the implicit portion of the sclr and w'sclr' equations.
       ! Build the left-hand side matrix.
@@ -1524,8 +1532,7 @@ contains
 
     ! Apply a flux limiting positive definite scheme if the solution
     ! for the mean field is negative and we're determining total water
-    if ( trim( solve_type ) == "rtm" .and. l_pos_def .and. & 
-         any( xm < 0.0 ) ) then
+    if ( trim( solve_type ) == "rtm" .and. l_pos_def .and. any( xm < 0.0 ) ) then
 
       call pos_definite_adj( dt, "zt", xm, wpxp, & 
                              xm_n, xm_pd, wpxp_pd )
