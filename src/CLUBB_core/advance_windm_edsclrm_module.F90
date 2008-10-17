@@ -23,20 +23,20 @@ module advance_windm_edsclrm_module
                                     upwp_sfc, vpwp_sfc, wpedsclrp_sfc, fcor,  &
                                     l_implemented, um, vm, edsclrm,           &
                                     upwp, vpwp, wpedsclrp, err_code )
-! Description:
-!   Solves for both mean horizontal wind components, um and vm, and for the
-!   eddy-scalars (passive scalars that don't use the high-order closure).
+    ! Description:
+    ! Solves for both mean horizontal wind components, um and vm, and for the
+    ! eddy-scalars (passive scalars that don't use the high-order closure).
 
-!   Uses the LAPACK tridiagonal solver subroutine with 2 + # of scalar(s)
-!   back substitutions (since the left hand side matrix is the same for all
-!   input variables).
+    ! Uses the LAPACK tridiagonal solver subroutine with 2 + # of scalar(s)
+    ! back substitutions (since the left hand side matrix is the same for all
+    ! input variables).
 
-! References:
-!   Eqn. 8 & 9 on p. 3545 of
-!   ``A PDF-Based Model for Boundary Layer Clouds. Part I:
-!     Method and Model Description'' Golaz, et al. (2002)
-!   JAS, Vol. 59, pp. 3540--3551.
-!-------------------------------------------------------------------------------
+    ! References:
+    ! Eqn. 8 & 9 on p. 3545 of
+    ! ``A PDF-Based Model for Boundary Layer Clouds. Part I:
+    ! Method and Model Description'' Golaz, et al. (2002)
+    ! JAS, Vol. 59, pp. 3540--3551.
+    !-----------------------------------------------------------------------
 
     use grid_class, only:  &
       gr  ! Variables(s)
@@ -731,15 +731,15 @@ module advance_windm_edsclrm_module
     return
   end subroutine windm_edsclrm_solve
 
-!===============================================================================
+  !=============================================================================
   subroutine windm_edsclrm_implicit_stats( solve_type, xm )
 
-! Description:
-!   Compute implicit contributions to um and vm
+    ! Description:
+    ! Compute implicit contributions to um and vm
 
-! References:
-!   None
-!-------------------------------------------------------------------------------
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
 
     use stats_variables, only: & 
       ium_ma,  & ! Variables
@@ -981,14 +981,14 @@ module advance_windm_edsclrm_module
   subroutine windm_edsclrm_lhs( dt, wm_zt, Kh_zm,  &
                                 l_implemented, lhs )
 
-! Description:
-!   Calculate the implicit portion of the horizontal wind or eddy-scalar
-!   time-tendency equation.  See the description in subroutine
-!   windm_edsclrm_solve for more details.
+    ! Description:
+    ! Calculate the implicit portion of the horizontal wind or eddy-scalar
+    ! time-tendency equation.  See the description in subroutine
+    ! windm_edsclrm_solve for more details.
 
-! References:
-!   None
-!-------------------------------------------------------------------------------
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
 
     use grid_class, only:  & 
         gr  ! Variable(s)
@@ -1187,14 +1187,14 @@ module advance_windm_edsclrm_module
                               xm_tndcy, xpwp_sfc ) result( rhs )
 
 
-! Description:
-!   Calculate the explicit portion of the horizontal wind or eddy-scalar
-!   time-tendency equation.  See the description in subroutine
-!   windm_edsclrm_solve for more details.
+    ! Description:
+    ! Calculate the explicit portion of the horizontal wind or eddy-scalar
+    ! time-tendency equation.  See the description in subroutine
+    ! windm_edsclrm_solve for more details.
 
-! References:
-!   None
-!-----------------------------------------------------------------------
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
 
     use stats_precision, only:  & 
         time_precision ! Variable(s)
@@ -1396,12 +1396,12 @@ module advance_windm_edsclrm_module
 !===============================================================================
   elemental function xpwp_fnc( Kh_zm, xm, xmp1, dzm )
 
-! Description:
-!   Compute x'w' from x<k>, x<k+1>, Kh and dzm
+    ! Description:
+    ! Compute x'w' from x<k>, x<k+1>, Kh and dzm
 
-! References:
-!   None
-!-------------------------------------------------------------------------------
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
 
     implicit none
 
@@ -1415,7 +1415,7 @@ module advance_windm_edsclrm_module
     real :: &
       xpwp_fnc ! x'w'   [(units vary)(m/s)]
 
-!-------------------------------------------------------------------------------
+    !-----------------------------------------------------------------------
     ! --- Begin Code ---
 
     ! Solve for x'w' at all intermediate model levels.

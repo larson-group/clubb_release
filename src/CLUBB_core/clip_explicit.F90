@@ -14,30 +14,30 @@ module clip_explicit
 
   contains
 
-!===============================================================================
+  !=============================================================================
   subroutine clip_covariances_denom( dt, rtp2, thlp2, up2, vp2, wp2, &
                                      sclrp2, wprtp_cl_num, wpthlp_cl_num, &
                                      wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, &
                                      wprtp, wpthlp, upwp, vpwp, wpsclrp )
 
-! Description:
-!   Some of the covariances found in the CLUBB model code need to be clipped
-!   multiple times during each timestep to ensure that the correlation between
-!   the two relevant variables stays between -1 and 1 at all times during the
-!   model run.  The covariances that need to be clipped multiple times are
-!   w'r_t', w'th_l', w'sclr', u'w', and v'w'.  One of the times that each one
-!   of these covariances is clipped is immediately after each one is set.
-!   However, each covariance still needs to be clipped two more times during
-!   each timestep (once after advance_xp2_xpyp is called and once after
-!   advance_wp2_wp3 is called).  This subroutine handles the times that the
-!   covariances are clipped away from the time that they are set.  In other
-!   words, this subroutine clips the covariances after the denominator terms
-!   in the relevant correlation equation have been altered, ensuring that
-!   all correlations will remain between -1 and 1 at all times.
+    ! Description:
+    ! Some of the covariances found in the CLUBB model code need to be clipped
+    ! multiple times during each timestep to ensure that the correlation between
+    ! the two relevant variables stays between -1 and 1 at all times during the
+    ! model run.  The covariances that need to be clipped multiple times are
+    ! w'r_t', w'th_l', w'sclr', u'w', and v'w'.  One of the times that each one
+    ! of these covariances is clipped is immediately after each one is set.
+    ! However, each covariance still needs to be clipped two more times during
+    ! each timestep (once after advance_xp2_xpyp is called and once after
+    ! advance_wp2_wp3 is called).  This subroutine handles the times that the
+    ! covariances are clipped away from the time that they are set.  In other
+    ! words, this subroutine clips the covariances after the denominator terms
+    ! in the relevant correlation equation have been altered, ensuring that
+    ! all correlations will remain between -1 and 1 at all times.
 
-! References:
-!   None
-!-------------------------------------------------------------------------------
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
 
     use grid_class, only: &
         gr ! Variable(s)
@@ -344,49 +344,49 @@ module clip_explicit
     return
   end subroutine clip_covariances_denom
 
-!=============================================================================
+  !=============================================================================
   subroutine clip_covariance( solve_type, l_first_clip_ts,  & 
                               l_last_clip_ts, dt, xp2, yp2,  & 
                               xpyp )
 
-! Description:
-!   Clipping the value of covariance x'y' based on the correlation between x
-!   and y.
-!
-!   The correlation between variables x and y is:
-!
-!   corr_(x,y) = x'y' / [ sqrt(x'^2) * sqrt(y'^2) ];
-!
-!   where x'^2 is the variance of x, y'^2 is the variance of y, and x'y' is
-!   the covariance of x and y.
-!
-!   The correlation of two variables must always have a value
-!   between -1 and 1, such that:
-!
-!   -1 <= corr_(x,y) <= 1.
-!
-!   Therefore, there is an upper limit on x'y', such that:
-!
-!   x'y' <=  [ sqrt(x'^2) * sqrt(y'^2) ];
-!
-!   and a lower limit on x'y', such that:
-!
-!   x'y' >= -[ sqrt(x'^2) * sqrt(y'^2) ].
-!
-!   The values of x'y', x'^2, and y'^2 are all found on momentum levels.
-!
-!   The value of x'y' may need to be clipped whenever x'y', x'^2, or y'^2 is
-!   updated.
-!
-!   The following covariances are found in the code:
-!
-!   w'r_t', w'th_l', w'sclr', (computed in advance_xm_wpxp);
-!   r_t'th_l', sclr'r_t', sclr'th_l', (computed in advance_xp2_xpyp);
-!   u'w', v'w', w'edsclr' (computed in advance_windm_edsclrm).
+    ! Description:
+    ! Clipping the value of covariance x'y' based on the correlation between x
+    ! and y.
+    !
+    ! The correlation between variables x and y is:
+    !
+    ! corr_(x,y) = x'y' / [ sqrt(x'^2) * sqrt(y'^2) ];
+    !
+    ! where x'^2 is the variance of x, y'^2 is the variance of y, and x'y' is
+    ! the covariance of x and y.
+    !
+    ! The correlation of two variables must always have a value between -1
+    ! and 1, such that:
+    !
+    ! -1 <= corr_(x,y) <= 1.
+    !
+    ! Therefore, there is an upper limit on x'y', such that:
+    !
+    ! x'y' <=  [ sqrt(x'^2) * sqrt(y'^2) ];
+    !
+    ! and a lower limit on x'y', such that:
+    !
+    ! x'y' >= -[ sqrt(x'^2) * sqrt(y'^2) ].
+    !
+    ! The values of x'y', x'^2, and y'^2 are all found on momentum levels.
+    !
+    ! The value of x'y' may need to be clipped whenever x'y', x'^2, or y'^2 is
+    ! updated.
+    !
+    ! The following covariances are found in the code:
+    !
+    ! w'r_t', w'th_l', w'sclr', (computed in advance_xm_wpxp);
+    ! r_t'th_l', sclr'r_t', sclr'th_l', (computed in advance_xp2_xpyp);
+    ! u'w', v'w', w'edsclr' (computed in advance_windm_edsclrm).
 
-! References:
-!   None
-!-----------------------------------------------------------------------
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
 
     use grid_class, only: & 
         gr ! Variable(s)
@@ -494,23 +494,24 @@ module clip_explicit
     return
   end subroutine clip_covariance
 
-!===============================================================================
+  !=============================================================================
   subroutine clip_variance( solve_type, dt, threshold, &
                             xp2 )
-! Description:
-!   Clipping the value of variance x'^2 based on a minimum threshold value.
-!   The threshold value must be greater than or equal to 0.
-!
-!   The values of x'^2 are found on the momentum levels.
-!
-!   The following variances are found in the code:
-!
-!   r_t'^2, th_l'^2, u'^2, v'^2, sclr'^2, (computed in advance_xp2_xpyp);
-!   w'^2 (computed in advance_wp2_wp3).
 
-! References:
-!   None
-!-------------------------------------------------------------------------------
+    ! Description:
+    ! Clipping the value of variance x'^2 based on a minimum threshold value.
+    ! The threshold value must be greater than or equal to 0.
+    !
+    ! The values of x'^2 are found on the momentum levels.
+    !
+    ! The following variances are found in the code:
+    !
+    ! r_t'^2, th_l'^2, u'^2, v'^2, sclr'^2, (computed in advance_xp2_xpyp);
+    ! w'^2 (computed in advance_wp2_wp3).
+
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
 
     use grid_class, only: & 
         gr ! Variable(s)
@@ -596,44 +597,44 @@ module clip_explicit
     return
   end subroutine clip_variance
 
-!===============================================================================
+  !=============================================================================
   subroutine clip_skewness( dt, wp2_zt, wp3 )
 
-! Description:
-!   Clipping the value of w'^3 based on the skewness of w, Sk_w.
-!
-!   The skewness of w is:
-!
-!   Sk_w = w'^3 / (w'^2)^(3/2).
-!
-!   The value of Sk_w is limited to a range between an upper limit and a lower
-!   limit.  The values of the limits depend on whether the level altitude is
-!   within 100 meters of the surface.
-!
-!   For altitudes within 100 meters of the surface:
-!
-!   -0.2*sqrt(2) <= Sk_w <= 0.2*sqrt(2);
-!
-!   while for all other altitudes:
-!
-!   -4.5 <= Sk_w <= 4.5.
-!
-!   Therefore, there is an upper limit on w'^3, such that:
-!
-!   w'^3  <=  threshold_magnitude * (w'^2)^(3/2);
-!
-!   and a lower limit on w'^3, such that:
-!
-!   w'^3  >= -threshold_magnitude * (w'^2)^(3/2).
-!
-!   The values of w'^3 are found on the thermodynamic levels, while the values
-!   of w'^2 are found on the momentum levels.  Therefore, the values of w'^2
-!   are interpolated to the thermodynamic levels before being used to
-!   calculate the upper and lower limits for w'^3.
+    ! Description:
+    ! Clipping the value of w'^3 based on the skewness of w, Sk_w.
+    !
+    ! The skewness of w is:
+    !
+    ! Sk_w = w'^3 / (w'^2)^(3/2).
+    !
+    ! The value of Sk_w is limited to a range between an upper limit and a lower
+    ! limit.  The values of the limits depend on whether the level altitude is
+    ! within 100 meters of the surface.
+    !
+    ! For altitudes within 100 meters of the surface:
+    !
+    ! -0.2*sqrt(2) <= Sk_w <= 0.2*sqrt(2);
+    !
+    ! while for all other altitudes:
+    !
+    ! -4.5 <= Sk_w <= 4.5.
+    !
+    ! Therefore, there is an upper limit on w'^3, such that:
+    !
+    ! w'^3  <=  threshold_magnitude * (w'^2)^(3/2);
+    !
+    ! and a lower limit on w'^3, such that:
+    !
+    ! w'^3  >= -threshold_magnitude * (w'^2)^(3/2).
+    !
+    ! The values of w'^3 are found on the thermodynamic levels, while the values
+    ! of w'^2 are found on the momentum levels.  Therefore, the values of w'^2
+    ! are interpolated to the thermodynamic levels before being used to
+    ! calculate the upper and lower limits for w'^3.
 
-! References:
-!   None
-!-------------------------------------------------------------------------------
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
 
     use grid_class, only: & 
       gr ! Variable(s)
