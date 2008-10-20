@@ -507,8 +507,8 @@ les_upwp        = 'wpup ';
 les_upwp_len    = 5;
 les_vpwp        = 'wpvp ';
 les_vpwp_len    = 5;
-les_rrainm         = 'qrm ';
-les_rrainm_len     = 4;
+les_rrainm      = 'qrm ';
+les_rrainm_len  = 4;
 les_Nrm         = 'nrm ';
 les_Nrm_len     = 4;
 
@@ -547,8 +547,8 @@ if ( strcmp(les_type, 'rams' ) )
 	les_upwp_len    = 5;
 	les_vpwp        = 'wpvp ';
 	les_vpwp_len    = 5;
-	les_rrainm         = 'qrm ';
-	les_rrainm_len     = 4;
+	les_rrainm      = 'qrm ';
+	les_rrainm_len  = 4;
 	les_Nrm         = 'nrm ';
 	les_Nrm_len     = 4;   
 end
@@ -1006,6 +1006,7 @@ if ( les_grph_upwp == 1 )
 elseif ( les_grph_upwp == 2 )
 	create_plot(3, 2, 3, 'Covariance of u & w', 'upwp    [m^2/s^2]', avg_upwp_les, avg_upwp_cgbe, avg_upwp_1217, avg_upwp_prev, avg_upwp_curr, 2, 0);
 end
+
 %--------------------------------------------------------------------------
 
 % v'w' (var "vpwp")
@@ -1188,7 +1189,6 @@ function [avg_les_values, avg_cgbe_values, avg_1217_values, avg_prev_values, avg
 		varfnd = 0;
 		for i = 1:1:numvars_cgbe
 			if ( strcmp( listofparams_cgbe(i,1:cgbe_var_len), cgbe_var ) )
-				display listofparams_cgbe(i,1:4) 
 				varnum = i;
 				varfnd = 1;
 			end
