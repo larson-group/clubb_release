@@ -757,6 +757,8 @@ module clubb_driver
 
     use hydrostatic_mod, only: hydrostatic ! Procedure(s)
 
+    use surface, only: initialize_surface ! Procedure(s)
+
     implicit none
 
     intrinsic :: min, max, trim, sqrt, size
@@ -1175,6 +1177,8 @@ module clubb_driver
     case ( "gabls3" )
       em = 1.0
       wp2 = 2.0 / 3.0 * em
+!      call initialize_surface( 300.15,294.63,288.58 )
+      call initialize_surface( 300.15,300.15,288.58 )
 
     end select
 
@@ -1269,6 +1273,7 @@ module clubb_driver
 
     use lba, only: lba_init ! Procedure(s)
 
+    use surface, only: initialize_surface ! Procedure(s)
 
     implicit none
 
@@ -1401,6 +1406,9 @@ module clubb_driver
       call lba_init()
     case( "mpace_a" )
       call mpace_a_init()
+    case( "gabls3" )
+      call initialize_surface(300.,300.,300.)
+
     end select
 
     wm_zm = zt2zm( wm_zt )
@@ -1441,7 +1449,9 @@ module clubb_driver
     use grid_class, only: zt2zm ! Procedure(s)
 
     use variables_diagnostic_module, only: hydromet, Ncm, radht, um_ref,  & ! Variable(s)
-                                    vm_ref, Frad, Ncnm, thvm, ustar, & 
+                                    vm_ref, Frad,  Frad_SW_up,  Frad_LW_up, &
+                                    Frad_SW_down, Frad_LW_down, &
+                                    Ncnm, thvm, ustar, & 
                                     pdf_parms, Kh_zm, Akm_est, Akm, Nim, ug, vg
 
     use variables_diagnostic_module, only: wpedsclrp ! Passive scalar variables
@@ -1923,11 +1933,13 @@ module clubb_driver
                           wpthlp_sfc, wprtp_sfc, ustar, &           ! Intent(out)
                           wpsclrp_sfc, wpedsclrp_sfc )              ! Intent(out)
     case( "gabls3" )
-      call gabls3_sfclyr( time_current,um(2), vm(2), thlm(2), rtm(2), &          ! Intent(in)
-                        gr%zt(2), 102440., & 
-                        upwp_sfc, vpwp_sfc, &                       ! Intent(out)
-                        wpthlp_sfc, wprtp_sfc, ustar, &             ! Intent(out)
-                        wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
+      call gabls3_sfclyr( time_initial, time_current, dtmain, rho_zm(1), um(2), vm(2), &
+                          thlm(2), rtm(2), gr%zt(2), 102440., &
+                          Frad_SW_up(1),Frad_SW_down(1), & 
+                          Frad_LW_up(1), Frad_LW_down(1), & 
+                          upwp_sfc, vpwp_sfc, &                       ! Intent(out)
+                          wpthlp_sfc, wprtp_sfc, ustar, &             ! Intent(out)
+                          wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
 
     case default
 
@@ -2054,7 +2066,9 @@ module clubb_driver
                         thlm, rcm, rtm, rsnowm, ricem,   & ! In
                         cf, p_in_Pa, zt2zm( p_in_Pa ), exner, rho_zm,  & ! In
                         radht, Frad,                     & ! Out
-                        thlm_forcing )                  ! In/Out
+                        Frad_SW_up, Frad_LW_up, &          ! Out
+                        Frad_SW_down, Frad_LW_down, &      ! Out
+                        thlm_forcing )        ! In/Out
 
       if ( isnan2d( thlm_forcing ) ) then
         print *, "thlm_forcing after BUGSrad is NaN"

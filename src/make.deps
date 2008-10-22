@@ -111,7 +111,8 @@ fill_holes.o    : fill_holes.F90 grid.o
 clip_semi_implicit.o : constants.o stats_precision.o clip_semi_implicit.F90
 clip_explicit.o : grid.o stats_precision.o stats_type.o stats_variables.o \
 	model_flags.o parameters_tunable.o clip_explicit.F90
-
+surface.o: constants.o stats_precision.o surface.F90
+test.o: stats_precision.o surface.o test.F90
 # == Latin Hypercube dependencies  ==
 math_utilities.o	: math_utilities.F90
 lh_sampler.o		: constants.o random.o matrix_operations.o lh_sampler.F90
@@ -136,7 +137,7 @@ cobra.o     : constants.o parameters_tunable.o model_flags.o grid.o cobra.F90
 fire.o      : constants.o model_flags.o grid.o stats_variables.o cloud_rad.o fire.F90
 gabls2.o    : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o gabls2.F90
 gabls3.o    : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o \
-	interpolation.o gabls3.F90
+	interpolation.o surface.o gabls3.F90
 lba.o       : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o \
 	interpolation.o lba.F90
 mpace_a.o     : constants.o model_flags.o grid.o stats_variables.o mpace_a.F90 \

@@ -40,9 +40,13 @@ real, target, allocatable, dimension(:), public :: &
 
 real, target, allocatable, dimension(:), public :: & 
   Frad,  & ! Radiative flux (momentum point)
-  radht    ! SW + LW heating rate
+  radht, &    ! SW + LW heating rate
+  Frad_SW_up, & ! SW radiative upwelling flux       [W/m^2]
+  Frad_LW_up, & ! LW radiative upwelling flux       [W/m^2]
+  Frad_SW_down, & ! SW radiative downwelling flux       [W/m^2]
+  Frad_LW_down ! LW radiative downwelling flux       [W/m^2]
 
-!$omp   threadprivate(Frad, radht)
+!$omp   threadprivate(Frad, radht, Frad_SW_up,Frad_SW_down, Frad_LW_up, Frad_LW_down)
 
 ! Second order moments
 real, target, allocatable, dimension(:), public :: & 
@@ -247,6 +251,10 @@ allocate( thvm(1:nzmax) )            ! Virtual potential temperature
 allocate( rsat(1:nzmax) )       ! Saturation mixing ratio  ! Brian
 
 allocate( Frad(1:nzmax) )      ! radiative flux (momentum point)
+allocate( Frad_SW_up(1:nzmax) )
+allocate( Frad_LW_up(1:nzmax) )
+allocate( Frad_SW_down(1:nzmax) )
+allocate( Frad_LW_down(1:nzmax) )
 
 allocate( radht(1:nzmax) )     ! SW + LW heating rate
 
@@ -355,6 +363,12 @@ rsat  = 0.0  ! Saturation mixing ratio  ! Brian
 
 radht = 0.0 ! Heating rate
 Frad  = 0.0 ! Radiative flux
+Frad_SW_up = 0.0
+Frad_LW_up = 0.0
+Frad_SW_down = 0.0
+Frad_LW_down = 0.0 
+
+
 
 shear = 0.0    ! Wind shear production
 

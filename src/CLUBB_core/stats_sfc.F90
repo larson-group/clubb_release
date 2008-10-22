@@ -21,7 +21,10 @@ subroutine stats_init_sfc( vars_sfc, l_error )
 
 use stats_variables, only: & 
     sfc,  & ! Variables
-    iustar, & 
+    iustar, &
+    iveg_t_sfc, &
+    it_sfc,&
+    ideep_t_sfc, &
     ilh, & 
     ish, & 
     icc, & 
@@ -67,6 +70,9 @@ integer :: i, k
 ! Default initialization for array indices for sfc
 
 iustar         = 0
+iveg_t_sfc     = 0
+it_sfc         = 0
+ideep_t_sfc    = 0
 ilh            = 0
 ish            = 0
 icc            = 0
@@ -109,6 +115,24 @@ do i=1,sfc%nn
 
     call stat_assign(iustar,"ustar", & 
          "ustar [m/s]","m/s",sfc)
+    k = k + 1
+  case ('veg_t_sfc')
+    iveg_t_sfc = k
+
+    call stat_assign(iveg_t_sfc,"veg_t_sfc", & 
+         "Surface Vegetation Temperature [K]","K",sfc)
+    k = k + 1
+  case ('t_sfc')
+    it_sfc = k
+
+    call stat_assign(it_sfc,"t_sfc", & 
+         "Surface Temperature [K]","K",sfc)
+    k = k + 1
+  case ('deep_t_sfc')
+    ideep_t_sfc = k
+
+    call stat_assign(ideep_t_sfc,"deep_t_sfc", & 
+         "Deep soil Temperature [K]","K",sfc)
     k = k + 1
 
   case ('lh')

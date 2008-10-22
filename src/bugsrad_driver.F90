@@ -16,7 +16,8 @@ subroutine bugsrad_clubb &
              day, month, year, time,         &
              thlm, rcm, rtm, rsnwm, rim,     & 
              cf, p_in_Pa, p_in_Pam, exner, rho_zm, &
-             radht, Frad, thlm_forcing )
+             radht, Frad, Frad_SW_up, Frad_LW_up, &
+             Frad_SW_down, Frad_LW_down, thlm_forcing ) 
 ! Description:
 ! Does the necessary operations to interface the HOC model with
 ! the bugsrad subprogram.
@@ -112,16 +113,16 @@ subroutine bugsrad_clubb &
 ! Output Variables
   real, intent(out), dimension(nz) :: &
   Frad, & ! Total radiative flux       [W/m^2]
+  Frad_SW_up, & ! SW radiative upwelling flux       [W/m^2]
+  Frad_LW_up, & ! LW radiative upwelling flux       [W/m^2]
+  Frad_SW_down, & ! SW radiative downwelling flux       [W/m^2]
+  Frad_LW_down,&  ! LW radiative downwelling flux       [W/m^2]
   radht   ! Total heating rate         [K/s]
 
 ! Local Variables
   real, dimension(nz) :: &
   Frad_SW, & ! SW radiative flux       [W/m^2]
   Frad_LW, & ! LW radiative flux       [W/m^2]
-  Frad_SW_up, & ! SW radiative upwelling flux       [W/m^2]
-  Frad_LW_up, & ! LW radiative upwelling flux       [W/m^2]
-  Frad_SW_down, & ! SW radiative downwelling flux       [W/m^2]
-  Frad_LW_down, & ! LW radiative downwelling flux       [W/m^2]
   radht_SW,& ! SW heating rate         [K/s]
   radht_LW   ! LW heating rate         [K/s]
 

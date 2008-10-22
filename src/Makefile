@@ -70,7 +70,7 @@ MODEL = $(COAMPS_MICRO) \
 	diag_ustar.o cobra.o rico.o gabls2.o gabls3.o \
 	KK_microphys_module.o microphys_driver.o \
 	Parabolic_constants.o AiryFunction.o Parabolic.o \
-	lba.o ice_dfsn_mod.o coamps_micro_driver.o
+	lba.o ice_dfsn_mod.o coamps_micro_driver.o surface.o
 
 PARAMETERIZATION = \
 	$(LATIN_HYP) \

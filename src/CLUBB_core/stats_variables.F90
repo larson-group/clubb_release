@@ -517,7 +517,10 @@ module stats_variables
   ! Indices for statistics in sfc file
 
   integer, public :: & 
-    iustar, & 
+    iustar, &
+    iveg_t_sfc,&
+    it_sfc, &
+    ideep_t_sfc,& 
     ilh, & 
     ish, & 
     icc, & 
@@ -547,7 +550,7 @@ module stats_variables
     ium_matrix_condt_num, &
     ivm_matrix_condt_num 
 
-!$omp threadprivate(iustar, ilh, ish, icc, ilwp, izb, izi, &
+!$omp threadprivate(iustar, iveg_t_sfc, it_sfc, ideep_t_sfc, ilh, ish, icc, ilwp, izb, izi, &
 !$omp   irain, ipflux, irrainm_sfc, &
 !$omp   iwpthlp_sfc, iwprtp_sfc, iupwp_sfc, ivpwp_sfc, &
 !$omp   ithlm_vert_avg, irtm_vert_avg, ium_vert_avg, ivm_vert_avg, &

@@ -4,15 +4,17 @@
 ! $Id: gabls3.F90 2839 2008-09-04 14:50:14Z faschinj $
 module gabls3
 
-!       Description:
-!       Contains subroutines for the GABLS3.
-!----------------------------------------------------------------------
+  !       Description:
+  !       Contains subroutines for the GABLS3.
+  !----------------------------------------------------------------------
 
   implicit none
 
   public :: gabls3_tndcy, gabls3_sfclyr
 
   private :: time_select ! Defualt Scope
+
+  real, private, dimension(2) :: veg_T_in_K, surface_T_in_K, deep_T_in_K
 
   private
 
@@ -22,18 +24,16 @@ module gabls3
   subroutine gabls3_tndcy( time, rtm, exner, p_in_Pa, thvm, &
                            wm_zt, wm_zm, thlm_forcing, rtm_forcing,&
                            um_forcing, vm_forcing, ug, vg )
- !       Description:
- !       Subroutine to set thetal and total water tendencies for GABLS3 case
+    !       Description:
+    !       Subroutine to set thetal and total water tendencies for GABLS3 case
 
- !       References:
- !       None
- !----------------------------------------------------------------------
+    !       References:
+    !       None
+    !----------------------------------------------------------------------
 
     use grid_class, only: gr, zt2zm ! Variable(s)
 
     use stats_precision, only: time_precision ! Variable(s)
-
-    use error_code, only: clubb_debug ! Procedure(s)
 
     use constants, only: Cp, Lv, grav, Rd ! Procedure(s)
 
@@ -98,8 +98,10 @@ module gabls3
       vg
 
     real, dimension(gr%nnzp) :: velocity_omega, T_in_K_forcing, sp_humidity_forcing
+
     real :: time_frac, T_t_interp, q_t_interp, omega_t_interp,&
             u_t_interp, v_t_interp, ug_interp,vg_interp
+
     integer :: i1, i2,i
 
     call time_select( time, T_adv_time, 6, i1, i2 )
@@ -110,12 +112,14 @@ module gabls3
     T_t_interp = factor_interp(time_frac, T_adv_t(i2), T_adv_t(i1))
 
     call time_select( time, q_adv_time, 10, i1, i2)
+
     time_frac = real((time - q_adv_time(i1)) /  &          ! at the first time a=0;
             (q_adv_time(i2) - q_adv_time(i1)))             ! at the second time a=1.
 
     q_t_interp = factor_interp( time_frac, q_adv_t(i2), q_adv_t(i1))
 
     call time_select( time, omega_time, 4, i1, i2)
+
     time_frac = real((time - omega_time(i1)) /  &          ! at the first time a=0;
             (omega_time(i2) - omega_time(i1)))             ! at the second time a=1.
 
@@ -129,6 +133,7 @@ module gabls3
     v_t_interp = factor_interp( time_frac, v_adv_t(i2), v_adv_t(i1) )
 
     call time_select( time, geo_time, 6, i1, i2)
+
     time_frac = real((time - geo_time(i1)) /  &          ! at the first time a=0;
             (geo_time(i2) - geo_time(i1)))             ! at the second time a=1.
 
@@ -198,45 +203,53 @@ module gabls3
     wm_zm(gr%nnzp) = 0.0  ! Model top
     i = 1
 
-
-
-!-----------------------------------------------------------------------
-
-
   end subroutine gabls3_tndcy
-  subroutine gabls3_sfclyr( time, um_sfc, vm_sfc, thlm_sfc, rtm_sfc,  & 
-                          lowest_level, psfc, &
-                          upwp_sfc, vpwp_sfc,  & 
-                          wpthlp_sfc, wprtp_sfc, ustar, & 
-                          wpsclrp_sfc, wpedsclrp_sfc )
-!       Description:
-!       This subroutine computes surface fluxes of horizontal momentum,
-!       heat and moisture according to GCSS ATEX specifications
 
-!       References:
+  !-----------------------------------------------------------------------
+  subroutine gabls3_sfclyr( time_start, time_current, dt, rho_sfc, um_sfc, vm_sfc, &
+                            thlm_sfc, rtm_sfc, lowest_level, psfc,& 
+                            Frad_SW_up_sfc, Frad_SW_down_sfc, &
+                            Frad_LW_up_sfc, Frad_LW_down_sfc, &
+                            upwp_sfc, vpwp_sfc,  & 
+                            wpthlp_sfc, wprtp_sfc, ustar, & 
+                            wpsclrp_sfc, wpedsclrp_sfc )
+    !       Description:
+    !       This subroutine computes surface fluxes of horizontal momentum,
+    !       heat and moisture according to GCSS ATEX specifications
 
-!----------------------------------------------------------------------
+    !       References:
 
-    use constants, only: kappa, grav, Rd, Cp, p0 ! Variable(s)
+    !----------------------------------------------------------------------
+
+    use constants, only: kappa, grav, Rd, Cp, p0,lv ! Variable(s)
 
     use parameters_tunable, only: sclr_dim ! Variable(s)
 
-    use array_index, only: iisclr_rt, iisclr_thl
+    use array_index, only: iisclr_rt, iisclr_thl ! Variable(s)
 
-    use diag_ustar_mod, only: diag_ustar
+    use diag_ustar_mod, only: diag_ustar ! Procedure(s)
+
     use stats_precision, only: time_precision ! Variable(s)
-    use interpolation, only:factor_interp, lin_int ! Procedure(s)
+
+    use stats_variables, only: l_stats_samp, sfc, iveg_t_sfc, it_sfc, ideep_T_sfc ! Variables
+
+    use stats_type, only: stat_update_var_pt ! Procedure(s)
+
+    use interpolation, only: lin_int ! Procedure(s)
+
+    use surface, only: compute_surface_temp ! Procedure(s)
 
     implicit none
 
-! Constants
+    ! Constants
 
     real, parameter ::  & 
       ubmin = 0.25, & 
-  !     .  ustar = 0.3,
+     ! ustar = 0.3,
      ! C_10  = 0.0013, & ATEX value
       C_10  = 0.013, & ! Fudged value
       z0 = 0.15
+
     real, parameter, dimension(25) :: sst_given = (/300., 300.8, 300.9, 301.,300.9, &
                                         300.5, 300., 298.5, 297., 296., 295.,&
                                         294., 293.5, 292.5, 291.5, 291.,&
@@ -249,57 +262,91 @@ module gabls3
                                         115200., 118800., 122400., 126000., 129600./)
 
 
-! Input variables
+    ! Input variables
 
-    real(kind=time_precision), intent(in) :: time
+    real(kind=time_precision), intent(in) :: time_start, time_current,dt
+
     real, intent(in) ::  & 
       um_sfc,     & ! um at zt(2)           [m/s]
       vm_sfc,     & ! vm at zt(2)           [m/s]
       thlm_sfc,   & ! Theta_l at zt(2)      [K]
       rtm_sfc,    & ! rt at zt(2)           [kg/kg]
+      rho_sfc,    &
       lowest_level, &
-      psfc
+      psfc,&
+      Frad_SW_up_sfc, &
+      Frad_SW_down_sfc,&
+      Frad_LW_up_sfc, &
+      Frad_LW_down_sfc
 
-! Output variables
+    ! Output variables
     real, intent(out) ::  & 
       upwp_sfc,    & ! u'w' at surface           [m^2/s^2]
       vpwp_sfc,    & ! v'w' at surface           [m^2/s^2]
-      wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
-      wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
       ustar          ! surface friction velocity [m/s]
 
-! Output variables (optional)
+    real, intent(inout):: &
+      wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
+      wprtp_sfc      ! w'rt' surface flux        [(m kg)/(kg s)]
+
+    ! Output variables (optional)
 
     real, dimension(sclr_dim), intent(out) ::  & 
       wpsclrp_sfc,    & ! Passive scalar surface flux      [units m/s]
       wpedsclrp_sfc     ! Passive eddy-scalar surface flux [units m/s]
 
     ! Local Variables
-    real :: ubar, sstheta, bflx, sst
+    real :: ubar, sstheta, bflx, sst, wtq
 
     integer :: i1, i2
     ! Compute heat and moisture fluxes
     ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
 
     ! Set SST by time in lieu of a surface scheme
-     
-    call time_select( time, sst_time, 25, i1, i2)
-    sst = lin_int( real(time), sst_time(i2), sst_time(i1), sst_given(i2), sst_given(i1) )
-    print *, "SST = ", sst 
+    call time_select( time_current, sst_time, 25, i1, i2)
+    sst = lin_int( real(time_current), sst_time(i2), sst_time(i1), sst_given(i2), sst_given(i1) )
+    !----- Experimental Code -------------
+    !print *, "SST = ", sst
+    !print *, "wpthlp_sfc = ", wpthlp_sfc
+    !print *, "wprtp_sfc = ", wprtp_sfc
+    ! Turbulent Flux of equivalent potential temperature
+    wtq = wpthlp_sfc + (Lv/Cp)*((p0/psfc)**kappa) * wprtp_sfc
+    !print *, "WTQ = ", wtq
+
+    call compute_surface_temp( time_start, time_current,real( dt), 1, 2, rho_sfc, &
+                               Frad_SW_down_sfc-Frad_SW_up_sfc, Frad_SW_down_sfc,&
+                               Frad_LW_down_sfc, Frad_LW_up_sfc, wtq, &
+                               veg_T_in_K, surface_T_in_K, deep_T_in_K )
+
+
+    sst = surface_T_in_K(1)
+
+    if(l_stats_samp) then
+      call stat_update_var_pt( iveg_t_sfc, 1, veg_T_in_K(1), sfc )
+      call stat_update_var_pt( it_sfc, 1, surface_T_in_K(1), sfc )
+      call stat_update_var_pt( ideep_t_sfc, 1, deep_T_in_K(1), sfc )
+    end if
+
+    surface_T_in_k(1) = surface_T_in_k(2)
+    veg_T_in_K(1) = veg_T_in_K(2)
+    deep_T_in_K(1) = deep_T_in_K(2)
+    !-------------------------------------
+
     sstheta = sst * (( p0 / psfc )**(Rd/Cp))
 
     wpthlp_sfc = -C_10 * ubar * ( thlm_sfc - SST * (p0/psfc)**kappa )
     wprtp_sfc  = -C_10 * ubar * ( rtm_sfc - 7.5e-3 )
+    !print *, "wpthlp_sfc = ", wpthlp_sfc
+    !print *, "wprtp_sfc = ", wprtp_sfc
 
-
-! Let passive scalars be equal to rt and theta_l for now
+    ! Let passive scalars be equal to rt and theta_l for now
     if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
     if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
     if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
     if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-! Compute momentum fluxes
+    ! Compute momentum fluxes
     bflx = wpthlp_sfc * grav / sstheta
     ustar = diag_ustar( lowest_level, bflx, ubar, z0)
 
@@ -309,19 +356,36 @@ module gabls3
     return
   end subroutine gabls3_sfclyr
 
-!----------------------------------------------------------------------
+  !----------------------------------------------------------------------
   subroutine time_select( time, time_array, nvar, left_time, right_time )
+    !
+    !   Description: This subroutine determines which indexes of the given
+    !                time_array should be used when interpolating a value 
+    !                at the specified time.
+    !
+    !
+    !----------------------------------------------------------------------
+
     use stats_precision, only: time_precision ! Variable(s)
 
-    use interpolation, only: binary_search
+    use interpolation, only: binary_search    ! Procedure(s)
+  
     implicit none
-    real(kind=time_precision), intent(in) :: time
-    real, dimension(nvar), intent(in) :: time_array
-    integer, intent(in) :: nvar
-    integer, intent(out) :: right_time, left_time
+  
+    real(kind=time_precision), intent(in) :: time       ! Target time              [s]
+  
+    real, dimension(nvar), intent(in) :: time_array     ! Array of times           [s]
+  
+    integer, intent(in) :: nvar                         ! Number of array elements []
+  
+    integer, intent(out) :: &
+      right_time, &                                     ! Index of a time later
+      !                                                   than the target time []
+      left_time                                         ! Index of time before 
+      !                                                   the target time       []
+  
     integer :: k
 
-    ! Interpolate in time for Temperature tendency
     if( time <= time_array(1)) then
       left_time = 1
       right_time = 2
