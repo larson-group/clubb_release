@@ -1024,6 +1024,38 @@ end
   
 %--------------------------------------------------------------------------
 
+% u" (var "up2")
+[avg_up2_les, avg_up2_cgbe, avg_up2_1217, avg_up2_prev, avg_up2_curr] = var_load( filename_les, listofparams_les, ...
+		numvars_les, les_upwp, nz_les, t1_les, t2_les, filename_cgbe_zm, listofparams_cgbe_zm, numvars_cgbe_zm, 'up2 ', nz_cgbe_zm, t1_cgbe_zm, ...
+		t2_cgbe_zm, filename_1217_zm, listofparams_1217_zm, numvars_1217_zm, 'up2 ', nz_1217_zm, t1_1217_zm, t2_1217_zm, filename_prev_zm, listofparams_prev_zm, ...
+		numvars_prev_zm, 'up2 ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, numvars_curr_zm, ...
+		'up2 ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
+
+create_plot(3, 2, 5, 'Second derivative of u wind', 'up2    [m^2/s^2]', avg_up2_les, avg_up2_cgbe, avg_up2_1217, avg_up2_prev, avg_up2_curr, 1, 0);
+
+%--------------------------------------------------------------------------
+
+% v" (var "vp2")
+[avg_vp2_les, avg_vp2_cgbe, avg_vp2_1217, avg_vp2_prev, avg_vp2_curr] = var_load( filename_les, listofparams_les, ...
+		numvars_les, les_vpwp, nz_les, t1_les, t2_les, filename_cgbe_zm, listofparams_cgbe_zm, numvars_cgbe_zm, 'vp2 ', nz_cgbe_zm, t1_cgbe_zm, ...
+		t2_cgbe_zm, filename_1217_zm, listofparams_1217_zm, numvars_1217_zm, 'vp2 ', nz_1217_zm, t1_1217_zm, t2_1217_zm, filename_prev_zm, listofparams_prev_zm, ...
+		numvars_prev_zm, 'vp2 ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, numvars_curr_zm, ...
+		'vp2 ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
+
+create_plot(3, 2, 6, 'Second derivative of v wind', 'vp2    [m^2/s^2]', avg_vp2_les, avg_vp2_cgbe, avg_vp2_1217, avg_vp2_prev, avg_vp2_curr, 1, 0);
+
+%--------------------------------------------------------------------------
+
+% Print 3rd Page for Case (.eps document)
+outputfilename = [ case_name, '_page3' ];
+print_page(outputfilename, 1, 0, 1);
+
+figure('Position',[ 0 0 fig_width fig_height ])
+set(gcf, 'PaperPositionMode', 'manual')
+set(gcf, 'PaperUnits', 'inches')
+set(gcf, 'PaperPosition', [ 1.0 1.0 6.5 9.0 ])
+
+
 % Rain water mixing ratio (var "rrainm")
 [avg_rrainm_les, avg_rrainm_cgbe, avg_rrainm_1217, avg_rrainm_prev, avg_rrainm_curr] = var_load( filename_les, listofparams_les, ...
 		numvars_les, les_rrainm, nz_les, t1_les, t2_les, filename_cgbe_zt, listofparams_cgbe_zt, numvars_cgbe_zt, 'rrm ', nz_cgbe_zt, t1_cgbe_zt, ...
@@ -1031,7 +1063,7 @@ end
 		numvars_prev_zt, 'rrainm ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, numvars_curr_zt, ...
 		'rrainm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 
-create_plot(3, 2, 5, 'Rain Water Mixing Ratio, r_r', 'rrainm    [kg/kg]', avg_rrainm_les, avg_rrainm_cgbe, avg_rrainm_1217, avg_rrainm_prev, avg_rrainm_curr, 1, 0);
+create_plot(3, 2, 1, 'Rain Water Mixing Ratio, r_r', 'rrainm    [kg/kg]', avg_rrainm_les, avg_rrainm_cgbe, avg_rrainm_1217, avg_rrainm_prev, avg_rrainm_curr, 1, 0);
 
 %--------------------------------------------------------------------------
 
@@ -1050,12 +1082,12 @@ if ( cmp_les == 1 )
    end
 end
 
-create_plot(3, 2, 6, 'Rain Drop Concentration, N_r', 'Nrm    [num/m^3]', avg_Nrm_les, avg_Nrm_cgbe, avg_Nrm_1217, avg_Nrm_prev, avg_Nrm_curr, 1, 1);
+create_plot(3, 2, 2, 'Rain Drop Concentration, N_r', 'Nrm    [num/m^3]', avg_Nrm_les, avg_Nrm_cgbe, avg_Nrm_1217, avg_Nrm_prev, avg_Nrm_curr, 1, 1);
 
 %--------------------------------------------------------------------------
 
-% Print 3rd Page for Case (.eps document)
-outputfilename = [ case_name, '_page3' ];
+% Print 4th Page for Case (.eps document)
+outputfilename = [ case_name, '_page4' ];
 print_page(outputfilename, 1, 0, 1);
 
 % Statement
