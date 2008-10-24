@@ -21,7 +21,8 @@ module constants
             wtol, thltol, rttol, qttol, sstol, difftol, & 
             wtol_sqd, rc_tol, Nc_tol, rr_tol, Nr_tol, emin, &
             eps, zero_threshold, max_mag_correlation, sec_per_day, &
-            sec_per_hr, sec_per_min, g_per_kg, Lscale_max, T_freeze_K
+            sec_per_hr, sec_per_min, g_per_kg, Lscale_max, T_freeze_K, &
+            Skw_max_mag, Skw_max_mag_sqd
 
   private ! Default scope
 
@@ -88,7 +89,13 @@ module constants
 
   ! The tolerance for w'^2 is the square of the tolerance for w.
   real, parameter :: &
-    wtol_sqd = wtol**2  ! [m^2/s^2]
+    wtol_sqd = wtol**2 ! [m^2/s^2]
+
+  real, parameter :: &
+    Skw_max_mag = 4.5  ! Max magnitude of skewness     [-]
+
+  real, parameter :: &
+    Skw_max_mag_sqd = Skw_max_mag**2 ! Max mag. of Skw squared [-]
 
   ! Set tolerances for Khairoutdinov and Kogan rain microphysics to insure
   ! against numerical errors.  The tolerance values for Nc, rr, and Nr insure

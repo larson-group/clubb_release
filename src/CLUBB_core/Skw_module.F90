@@ -22,7 +22,8 @@ module Skw_module
 !-------------------------------------------------------------------------------
 
     use constants, only:  &
-      wtol_sqd ! Constant for w_{tol}^2, i.e. threshold for vertical velocity
+      wtol_sqd,  &! Constant for w_{tol}^2, i.e. threshold for vertical velocity
+      Skw_max_mag ! Max magnitude of skewness
 
     implicit none
 
@@ -49,7 +50,7 @@ module Skw_module
     ! This is no longer need since clipping is already
     ! imposed on wp2 and wp3 elsewhere in the code
     if ( l_clipping_kluge ) then
-      Skw = min( max( Skw, -4.5 ), 4.5)
+      Skw = min( max( Skw, -Skw_max_mag ), Skw_max_mag )
     end if
 
     return

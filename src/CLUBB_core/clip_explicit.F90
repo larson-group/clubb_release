@@ -651,8 +651,8 @@ module clip_explicit
       iwp3_cl, & 
       l_stats_samp
 
-!   use constants, only: &
-!     sqrt_2 ! Constant
+    use constants, only: &
+      Skw_max_mag_sqd ! [-]      
 
     implicit none
 
@@ -711,7 +711,7 @@ module clip_explicit
       else                          ! Clip skewness consistently with a.
 !       wp3_upper_lim(k) =  4.5 * wp2_zt(k)**(3.0/2.0)
 !       wp3_lower_lim(k) = -4.5 * wp2_zt(k)**(3.0/2.0)
-        wp3_lim_sqd(k) = 20.25 * wp2_zt_cubed(k) ! Where 20.25 == 4.5**2
+        wp3_lim_sqd(k) = Skw_max_mag_sqd * wp2_zt_cubed(k) ! Skw_max_mag = 4.5^2
       endif
     enddo
 
