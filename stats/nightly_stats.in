@@ -6,7 +6,7 @@ vars_zt =
 
 vars_zm =
 'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp',
-'upwp', 'vpwp',
+'upwp', 'vpwp', 'up2', 'vp2',
 ''
 
 vars_sfc =
