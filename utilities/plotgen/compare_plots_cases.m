@@ -476,89 +476,49 @@ end
 
 % COAMPS LES variable names (and string lengths for comparison):
 les_thlm        = 'thlm ';
-les_thlm_len    = 5;
 les_rtm         = 'qtm ';
-les_rtm_len     = 4;
 les_cf          = 'cf ';
-les_cf_len      = 3;
 les_rcm         = 'qcm ';
-les_rcm_len     = 4;
 les_wp2         = 'wp2 ';
-les_wp2_len     = 4;
 les_wp3         = 'wp3 ';
-les_wp3_len     = 4;
 les_wpthlp      = 'wpthlp ';
-les_wpthlp_len  = 7;
 les_wprtp       = 'wpqtp ';
-les_wprtp_len   = 6;
 les_thlp2       = 'thlp2 ';
-les_thlp2_len   = 6;
 les_rtp2        = 'qtp2 ';
-les_rtp2_len    = 5;
 les_rtpthlp     = 'qtpthlp ';
-les_rtpthlp_len = 8;
 les_wm          = 'wlsm ';
-les_wm_len      = 5;
 les_um          = 'um ';
-les_um_len      = 3;
 les_vm          = 'vm ';
-les_vm_len      = 3;
 les_upwp        = 'wpup ';
-les_upwp_len    = 5;
 les_vpwp        = 'wpvp ';
-les_vpwp_len    = 5;
 les_rrainm      = 'qrm ';
-les_rrainm_len  = 4;
 les_Nrm         = 'nrm ';
-les_Nrm_len     = 4;
 les_up2		= 'up2 ';
-les_up2_len	= 4;
 les_vp2		= 'vp2 ';
-les_vp2_len	= 4;
 
 if ( strcmp(les_type, 'rams' ) )
 
 	% RAMS LES variable names (and string lengths for comparison):
 	les_thlm        = 'thlm ';
-	les_thlm_len    = 5;
 	les_rtm         = 'qtm ';
-	les_rtm_len     = 4;
 	les_cf          = 'cf ';
-	les_cf_len      = 3;
 	les_rcm         = 'qcm ';
-	les_rcm_len     = 4;
 	les_wp2         = 'wp2 ';
-	les_wp2_len     = 4;
 	les_wp3         = 'wp3 ';
-	les_wp3_len     = 4;
 	les_wpthlp      = 'wpthlp ';
-	les_wpthlp_len  = 7;
 	les_wprtp       = 'wprtp ';
-	les_wprtp_len   = 6;
 	les_thlp2       = 'thlp2 ';
-	les_thlp2_len   = 6;
 	les_rtp2        = 'qtp2 ';
-	les_rtp2_len    = 5;
 	les_rtpthlp     = 'rtpthlp ';
-	les_rtpthlp_len = 8;
 	les_wm          = 'wm ';
-	les_wm_len      = 3;
 	les_um          = 'um ';
-	les_um_len      = 3;
 	les_vm          = 'vm ';
-	les_vm_len      = 3;
 	les_upwp        = 'wpup ';
-	les_upwp_len    = 5;
 	les_vpwp        = 'wpvp ';
-	les_vpwp_len    = 5;
 	les_rrainm      = 'qrm ';
-	les_rrainm_len  = 4;
 	les_Nrm         = 'nrm ';
-	les_Nrm_len     = 4;   
 	les_up2		= 'up2 ';
-	les_up2_len	= 4;
 	les vp2		= 'vp2 ';
-	les_vp2_len	= 4;
 
 end
 
