@@ -511,6 +511,10 @@ les_rrainm      = 'qrm ';
 les_rrainm_len  = 4;
 les_Nrm         = 'nrm ';
 les_Nrm_len     = 4;
+les_up2		= 'up2 ';
+les_up2_len	= 4;
+les_vp2		= 'vp2 ';
+les_vp2_len	= 4;
 
 if ( strcmp(les_type, 'rams' ) )
 
@@ -551,6 +555,11 @@ if ( strcmp(les_type, 'rams' ) )
 	les_rrainm_len  = 4;
 	les_Nrm         = 'nrm ';
 	les_Nrm_len     = 4;   
+	les_up2		= 'up2 ';
+	les_up2_len	= 4;
+	les vp2		= 'vp2 ';
+	les_vp2_len	= 4;
+
 end
 
 % Find the appropriate output timesteps in each file for the beginning and
@@ -1026,7 +1035,7 @@ end
 
 % u" (var "up2")
 [avg_up2_les, avg_up2_cgbe, avg_up2_1217, avg_up2_prev, avg_up2_curr] = var_load( filename_les, listofparams_les, ...
-		numvars_les, les_upwp, nz_les, t1_les, t2_les, filename_cgbe_zm, listofparams_cgbe_zm, numvars_cgbe_zm, 'up2 ', nz_cgbe_zm, t1_cgbe_zm, ...
+		numvars_les, les_up2, nz_les, t1_les, t2_les, filename_cgbe_zm, listofparams_cgbe_zm, numvars_cgbe_zm, 'up2 ', nz_cgbe_zm, t1_cgbe_zm, ...
 		t2_cgbe_zm, filename_1217_zm, listofparams_1217_zm, numvars_1217_zm, 'up2 ', nz_1217_zm, t1_1217_zm, t2_1217_zm, filename_prev_zm, listofparams_prev_zm, ...
 		numvars_prev_zm, 'up2 ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, numvars_curr_zm, ...
 		'up2 ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
@@ -1037,7 +1046,7 @@ create_plot(3, 2, 5, 'Second derivative of u wind', 'up2    [m^2/s^2]', avg_up2_
 
 % v" (var "vp2")
 [avg_vp2_les, avg_vp2_cgbe, avg_vp2_1217, avg_vp2_prev, avg_vp2_curr] = var_load( filename_les, listofparams_les, ...
-		numvars_les, les_vpwp, nz_les, t1_les, t2_les, filename_cgbe_zm, listofparams_cgbe_zm, numvars_cgbe_zm, 'vp2 ', nz_cgbe_zm, t1_cgbe_zm, ...
+		numvars_les, les_vp2, nz_les, t1_les, t2_les, filename_cgbe_zm, listofparams_cgbe_zm, numvars_cgbe_zm, 'vp2 ', nz_cgbe_zm, t1_cgbe_zm, ...
 		t2_cgbe_zm, filename_1217_zm, listofparams_1217_zm, numvars_1217_zm, 'vp2 ', nz_1217_zm, t1_1217_zm, t2_1217_zm, filename_prev_zm, listofparams_prev_zm, ...
 		numvars_prev_zm, 'vp2 ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, numvars_curr_zm, ...
 		'vp2 ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
