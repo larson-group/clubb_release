@@ -518,7 +518,7 @@ if ( strcmp(les_type, 'rams' ) )
 	les_rrainm      = 'qrm ';
 	les_Nrm         = 'nrm ';
 	les_up2		= 'up2 ';
-	les vp2		= 'vp2 ';
+	les_vp2		= 'vp2 ';
 
 end
 
