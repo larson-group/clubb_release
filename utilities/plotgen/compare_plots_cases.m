@@ -1000,7 +1000,7 @@ end
 		numvars_prev_zm, 'up2 ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, numvars_curr_zm, ...
 		'up2 ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
-create_plot(3, 2, 5, 'Second derivative of u wind', 'up2    [m^2/s^2]', avg_up2_les, avg_up2_cgbe, avg_up2_1217, avg_up2_prev, avg_up2_curr, 1, 0);
+create_plot(3, 2, 5, 'Variance of u wind', 'up2    [m^2/s^2]', avg_up2_les, avg_up2_cgbe, avg_up2_1217, avg_up2_prev, avg_up2_curr, 1, 0);
 
 %--------------------------------------------------------------------------
 
@@ -1011,7 +1011,7 @@ create_plot(3, 2, 5, 'Second derivative of u wind', 'up2    [m^2/s^2]', avg_up2_
 		numvars_prev_zm, 'vp2 ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, numvars_curr_zm, ...
 		'vp2 ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
-create_plot(3, 2, 6, 'Second derivative of v wind', 'vp2    [m^2/s^2]', avg_vp2_les, avg_vp2_cgbe, avg_vp2_1217, avg_vp2_prev, avg_vp2_curr, 1, 0);
+create_plot(3, 2, 6, 'Variance of v wind', 'vp2    [m^2/s^2]', avg_vp2_les, avg_vp2_cgbe, avg_vp2_1217, avg_vp2_prev, avg_vp2_curr, 1, 0);
 
 %--------------------------------------------------------------------------
 
