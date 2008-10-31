@@ -22,7 +22,7 @@ module constants
             wtol_sqd, rc_tol, Nc_tol, rr_tol, Nr_tol, emin, &
             eps, zero_threshold, max_mag_correlation, sec_per_day, &
             sec_per_hr, sec_per_min, g_per_kg, Lscale_max, T_freeze_K, &
-            Skw_max_mag, Skw_max_mag_sqd
+            Skw_max_mag, Skw_max_mag_sqd, stefan_boltzmann
 
   private ! Default scope
 
@@ -49,6 +49,10 @@ module constants
     Lf = 3.33e5,   & ! Latent heat of fusion               [J/kg]
     Rd = 287.04,   & ! Dry air gas constant                [J/kg/K]
     Rv = 461.5       ! Water vapor gas constant            [J/kg/K]
+
+
+  real, parameter :: &
+    stefan_boltzmann = 5.6704e-8 ! Stefan-Boltzmann constant [W/(m^2 K^4)]
 
   real, parameter :: &
     T_freeze_K = 273.15 ! Freezing point of water [K]

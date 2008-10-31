@@ -14,7 +14,7 @@ module gabls3
 
   private :: time_select ! Defualt Scope
 
-  real, private, dimension(2) :: veg_T_in_K, surface_T_in_K, deep_T_in_K
+  real, private, dimension(2) :: veg_T_in_K, sfc_soil_T_in_K, deep_soil_T_in_K
 
   private
 
@@ -237,7 +237,7 @@ module gabls3
 
     use interpolation, only: lin_int ! Procedure(s)
 
-    use surface, only: compute_surface_temp ! Procedure(s)
+    use surface, only: prognose_soil_T_in_K ! Procedure(s)
 
     implicit none
 
@@ -246,8 +246,10 @@ module gabls3
     real, parameter ::  & 
       ubmin = 0.25, & 
      ! ustar = 0.3,
-     ! C_10  = 0.0013, & ATEX value
-      C_10  = 0.013, & ! Fudged value
+!     C_10  = 0.0013, & !ATEX value
+!     C_10  = 0.013, & ! Fudged value
+!      C_10  = 0.0039, & ! Fudged value
+      C_10 = 0.00195, &
       z0 = 0.15
 
     real, parameter, dimension(25) :: sst_given = (/300., 300.8, 300.9, 301.,300.9, &
@@ -296,48 +298,40 @@ module gabls3
       wpedsclrp_sfc     ! Passive eddy-scalar surface flux [units m/s]
 
     ! Local Variables
-    real :: ubar, sstheta, bflx, sst, wtq
+    real :: ubar, veg_theta_in_K, bflx, wpthep
 
     integer :: i1, i2
     ! Compute heat and moisture fluxes
     ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
 
     ! Set SST by time in lieu of a surface scheme
-    call time_select( time_current, sst_time, 25, i1, i2)
-    sst = lin_int( real(time_current), sst_time(i2), sst_time(i1), sst_given(i2), sst_given(i1) )
+    !call time_select( time_current, sst_time, 25, i1, i2)
+    !sfc_soil_T_in_K(1) = lin_int( real(time_current), sst_time(i2), sst_time(i1), sst_given(i2), sst_given(i1) )
     !----- Experimental Code -------------
-    !print *, "SST = ", sst
-    !print *, "wpthlp_sfc = ", wpthlp_sfc
-    !print *, "wprtp_sfc = ", wprtp_sfc
     ! Turbulent Flux of equivalent potential temperature
-    wtq = wpthlp_sfc + (Lv/Cp)*((p0/psfc)**kappa) * wprtp_sfc
-    !print *, "WTQ = ", wtq
+    wpthep = wpthlp_sfc + (Lv/Cp) * ((p0/psfc)**kappa) * wprtp_sfc
 
-    call compute_surface_temp( time_start, time_current,real( dt), 1, 2, rho_sfc, &
+    call prognose_soil_T_in_K( time_start, time_current, real( dt), 1, 2, rho_sfc, &
                                Frad_SW_down_sfc-Frad_SW_up_sfc, Frad_SW_down_sfc,&
-                               Frad_LW_down_sfc, Frad_LW_up_sfc, wtq, &
-                               veg_T_in_K, surface_T_in_K, deep_T_in_K )
-
-
-    sst = surface_T_in_K(1)
+                               Frad_LW_down_sfc, Frad_LW_up_sfc, wpthep, &
+                               veg_T_in_K, sfc_soil_T_in_K, deep_soil_T_in_K )
 
     if(l_stats_samp) then
       call stat_update_var_pt( iveg_t_sfc, 1, veg_T_in_K(1), sfc )
-      call stat_update_var_pt( it_sfc, 1, surface_T_in_K(1), sfc )
-      call stat_update_var_pt( ideep_t_sfc, 1, deep_T_in_K(1), sfc )
+      call stat_update_var_pt( it_sfc, 1, sfc_soil_T_in_K(1), sfc )
+      call stat_update_var_pt( ideep_t_sfc, 1, deep_soil_T_in_K(1), sfc )
     end if
 
-    surface_T_in_k(1) = surface_T_in_k(2)
+    sfc_soil_T_in_K(1) = sfc_soil_T_in_K(2)
     veg_T_in_K(1) = veg_T_in_K(2)
-    deep_T_in_K(1) = deep_T_in_K(2)
+    deep_soil_T_in_K(1) = deep_soil_T_in_K(2)
     !-------------------------------------
 
-    sstheta = sst * (( p0 / psfc )**(Rd/Cp))
+    !sstheta = sfc_soil_T_in_K(1) * (( p0 / psfc )**(Rd/Cp))
+    veg_theta_in_K = veg_T_in_K(1) * (( p0 / psfc )**(Rd/Cp))
 
-    wpthlp_sfc = -C_10 * ubar * ( thlm_sfc - SST * (p0/psfc)**kappa )
+    wpthlp_sfc = -C_10 * ubar * ( thlm_sfc - veg_theta_in_K )
     wprtp_sfc  = -C_10 * ubar * ( rtm_sfc - 7.5e-3 )
-    !print *, "wpthlp_sfc = ", wpthlp_sfc
-    !print *, "wprtp_sfc = ", wprtp_sfc
 
     ! Let passive scalars be equal to rt and theta_l for now
     if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
@@ -347,7 +341,7 @@ module gabls3
     if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
     ! Compute momentum fluxes
-    bflx = wpthlp_sfc * grav / sstheta
+    bflx = wpthlp_sfc * grav / veg_theta_in_K
     ustar = diag_ustar( lowest_level, bflx, ubar, z0)
 
     upwp_sfc = -um_sfc * ustar**2 / ubar

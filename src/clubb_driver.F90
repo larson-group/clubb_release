@@ -801,6 +801,7 @@ module clubb_driver
 
     real :: cloud_top_height ! [m]
     real :: emax
+    real :: sfc_soil_T_in_K, deep_soil_T_in_K, veg_T_in_K
     integer :: k, err_code
 
 !-----------------------------------------------------------------------
@@ -1177,8 +1178,21 @@ module clubb_driver
     case ( "gabls3" )
       em = 1.0
       wp2 = 2.0 / 3.0 * em
-!      call initialize_surface( 300.15,294.63,288.58 )
-      call initialize_surface( 300.15,300.15,288.58 )
+!      veg_T_in_K = 294.63
+!      sfc_soil_T_in_K = 294.63
+!      deep_soil_T_in_K = 288.58
+!      veg_T_in_K = 301
+!      sfc_soil_T_in_K = 301
+!      deep_soil_T_in_K = 270
+      veg_T_in_K = 300.
+      sfc_soil_T_in_K = 300.
+      deep_soil_T_in_K = 288.58
+
+
+      call initialize_surface( veg_T_in_K, sfc_soil_T_in_K, deep_soil_T_in_K )
+!      call initialize_surface( 300.15,300.15,288.58 ) !Best guess
+!      call initialize_surface( 300.15,300.15,277.0 )
+!      call initialize_surface( 297.15,297.15,277.0 )
 
     end select
 
