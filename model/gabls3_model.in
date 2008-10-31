@@ -7,7 +7,7 @@
 
 runtype = "gabls3" ! Case name.
 
-nzmax = 500       ! Number of vertical levels.
+nzmax = 250       ! Number of vertical levels.
 
 grid_type = 1     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
@@ -22,7 +22,7 @@ grid_type = 1     ! Select grid type:
 
 ! Evenly-spaced grid (grid_type = 1).
 ! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
-deltaz  = 10.0    ! Distance between grid levels on evenly-spaced grid.      [m]
+deltaz  = 20.0    ! Distance between grid levels on evenly-spaced grid.      [m]
 zm_init = 0.0     ! Altitude of lowest momentum level on evenly-spaced grid. [m]
 
 ! Stretched grid on thermodynamic levels (grid_type = 2).
@@ -96,7 +96,7 @@ debug_level   = 2
 ! Statistics Settings
 
 l_stats       = .true.    ! Flag for statistical output.
-fname_prefix = "gabls3"  ! Prefix of output filename.
+fname_prefix = "gabls3_output_prognosed_1p5C10_60s_ts_tve"  ! Prefix of output filename.
 stats_tsamp  = 60.       ! Frequency of statistical sampling [s]
                          ! (must multiply evenly into stats_tout).
 stats_tout   = 60.       ! Frequency of statistical output.  [s]
@@ -119,8 +119,12 @@ z = 0, 2, 10, 20, 40, 80, 140, 205, 1800, 2200, 5000
 !theta = 298.0908, 298.3062, 297.5869, 297.4845, 297.3791, 297.3672, 297.2497, 297.3803, 297.5609, 301.6937, 315.0484
 !theta = 298.3908, 298.6062, 297.8869, 297.4845, 297.3791, 297.3672, 297.2497, 297.3803, 297.5609, 301.6937, 315.0484
 !theta = 298.4108, 298.6262, 297.9069, 297.5045, 297.3991, 297.3872, 297.2697, 297.4003, 297.5809, 301.7137, 315.0684
+!From specifications
 !theta = 298.0898, 298.3053, 297.7860, 297.6837, 297.5783, 297.5666, 297.4492, 297.5801, 297.7659, 301.9001, 315.2654 
+! 10/22/2008
 theta = 298.0898, 298.3053, 297.7860, 297.6837, 297.5783, 297.5666, 297.4492, 297.3901, 297.7659, 301.7001, 315.0654 
+!theta = 297.4492, 297.4492, 297.4492, 297.4492, 297.4492, 297.4492, 297.4492, 297.5801, 297.7659, 301.9001, 315.2654 
+
 !theta = 304.9898, 301.4053, 296.0860, 297.0837, 297.5783, 297.5666, 297.4492, 297.3901, 297.7659, 301.7001, 315.0654 
 
 
