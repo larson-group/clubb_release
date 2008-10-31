@@ -30,7 +30,7 @@ NC_LOC = /usr/local/netcdf-intel
 
 # == LAPACK libraries ==
 # Intel Math Kernel Library (v10)
-LAPACK = -L/opt/intel/mkl/10.0.3.020/lib/em64t -Wl,-rpath,/opt/intel/mkl/10.0.3.020/lib/em64t -lmkl_intel_lp64 -lmkl_sequential -lmkl_lapack -lmkl_core -lguide -lpthread
+LAPACK = -L/opt/intel/mkl/10.0.5.025/lib/em64t -Wl,-rpath,/opt/intel/mkl/10.0.5.025/lib/em64t -lmkl_intel_lp64 -lmkl_sequential -lmkl_lapack -lmkl_core -lguide -lpthread
 # (v8)
 #LAPACK = -L/opt/intel/mkl/8.1/lib/64 -Wl,-rpath,/opt/intel/mkl/8.1/lib/64 -lmkl_lapack64 -lmkl_i2p -lmkl -lmkl_vml_i2p -lmkl_vml -lvml -lguide -lpthread
 # Generic library
