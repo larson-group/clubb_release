@@ -24,7 +24,8 @@ module advance_xm_wpxp_module
              wpxp_term_tp_lhs, & 
              wpxp_terms_ac_pr2_lhs, & 
              wpxp_term_pr1_lhs, & 
-             wpxp_terms_bp_pr3_rhs
+             wpxp_terms_bp_pr3_rhs, &
+             xm_correction_wpxp_cl
 
   ! Parameter Constants
   integer, parameter, private :: & 
@@ -1316,6 +1317,9 @@ contains
     real, dimension(gr%nnzp) :: & 
       wpxp_pd, xm_pd ! Change in xm and wpxp due to the pos. def. scheme
 
+    real, dimension(gr%nnzp) :: &
+      wpxp_chnge  ! Net change in w'x' due to clipping        [units vary]
+
     real :: rcond ! Est. of the reciprocal of the condition #
 
     character(len=25) :: & 
@@ -1574,7 +1578,13 @@ contains
     ! the second instance of w'x' clipping.
     call clip_covariance( solve_type_cl, .false.,  & 
                           .false., dt, wp2, xp2,  & 
-                          wpxp )
+                          wpxp, wpxp_chnge )
+
+    ! Adjusting xm based on clipping for w'x'.
+    if ( any( wpxp_chnge /= 0.0 ) ) then
+       call xm_correction_wpxp_cl( solve_type, dt, wpxp_chnge, gr%dzt, &
+                                   xm )
+    endif
 
     if ( l_stats_samp ) then
 
@@ -2073,6 +2083,180 @@ contains
 
     return
   end function wpxp_terms_bp_pr3_rhs
+
+  !=============================================================================
+  subroutine xm_correction_wpxp_cl( solve_type, dt, wpxp_chnge, dzt, &
+                                    xm )
+
+    ! Description:
+    ! Corrects the value of xm if w'x' needed to be clipped, for xm is partially
+    ! based on the derivative of w'x' with respect to altitude.
+    !
+    ! The time-tendency equation for xm is:
+    !
+    ! d(xm)/dt = -w d(xm)/dz - d(w'x')/dz + d(xm)/dt|_ls;
+    !
+    ! where d(xm)/dt|_ls is the rate of change of xm over time due to radiation,
+    ! microphysics, and/or any other large-scale forcing(s).
+    !
+    ! The time-tendency equation for xm is solved in conjunction with the
+    ! time-tendency equation for w'x'.  Both equations are solved together in a
+    ! semi-implicit manner.  However, after both equations have been solved (and
+    ! thus both xm and w'x' have been advanced to the next timestep with
+    ! timestep index {t+1}), the value of covariance w'x' may be clipped at any
+    ! level in order to prevent the correlation of w and x from becoming greater
+    ! than 1 or less than -1.
+    !
+    ! The correlation between w and x is:
+    !
+    ! corr_(w,x) = w'x' / [ sqrt(w'^2) * sqrt(x'^2) ].
+    !
+    ! The correlation must always have a value between -1 and 1, such that:
+    !
+    ! -1 <= corr_(w,x) <= 1.
+    !
+    ! Therefore, there is an upper limit on w'x', such that:
+    !
+    ! w'x' <=  [ sqrt(w'^2) * sqrt(x'^2) ];
+    !
+    ! and a lower limit on w'x', such that:
+    !
+    ! w'x' >= -[ sqrt(w'^2) * sqrt(x'^2) ].
+    !
+    ! The aforementioned time-tendency equation for xm is based on the value of
+    ! w'x' without being clipped (w'x'{t+1}_unclipped), such that:
+    !
+    ! d(xm)/dt = -w d(xm{t+1})/dz - d(w'x'{t+1}_unclipped)/dz + d(xm{t})/dt|_ls;
+    !
+    ! where the both the mean advection term, -w d(xm{t+1})/dz, and the
+    ! turbulent advection term, -d(w'x'{t+1}_unclipped)/dz, are solved
+    ! completely implicitly.  The xm forcing term, +d(xm{t})/dt|_ls, is solved
+    ! completely explicitly.
+    !
+    ! However, if w'x' needs to be clipped after being advanced one timestep,
+    ! then xm needs to be altered to reflect the fact that w'x' has a different
+    ! value than the value used while both were being solved together.  Ideally,
+    ! the xm time-tendency equation that should be used is:
+    !
+    ! d(xm)/dt = -w d(xm{t+1})/dz - d(w'x'{t+1}_clipped)/dz + d(xm{t})/dt|_ls.
+    !
+    ! However, w'x'{t+1}_clipped isn't known until after the w'x' and xm
+    ! equations have been solved together.  However, a proper adjuster can be
+    ! applied to xm through the use of the following relationship:
+    !
+    ! w'x'{t+1}_clipped = w'x'{t+1}_unclipped + w'x'{t+1}_amount_clipped;
+    !
+    ! at any given vertical level.
+    !
+    ! When the expression above is substituted into the preceeding xm
+    ! time-tendency equation, the resulting equation for xm time-tendency is:
+    !
+    ! d(xm)/dt = -w d(xm{t+1})/dz - d(w'x'{t+1}_unclipped)/dz 
+    !               - d(w'x'{t+1}_amount_clipped)/dz + d(xm{t})/dt|_ls.
+    !
+    ! Thus, the resulting xm time-tendency equation is the same as the original
+    ! xm time-tendency equation, but with added adjuster term:
+    !
+    ! -d(w'x'{t+1}_amount_clipped)/dz.
+    !
+    ! Since the adjuster term needs to be applied after xm has already been 
+    ! solved, it needs to be multiplied by the timestep length and added on to
+    ! xm{t+1}, such that:
+    !
+    ! xm{t+1}_after_adjustment = 
+    !    xm{t+1}_before_adjustment + ( -d(w'x'{t+1}_amount_clipped)/dz ) * dt.
+    !
+    ! The adjuster term is discretized as follows:
+    !
+    ! The values of w'x' are located on the momentum levels.  Thus, the values
+    ! of w'x'_amount_clipped are also located on the momentum levels.  The
+    ! values of xm are located on the thermodynamic levels.  The derivatives
+    ! (d/dz) of w'x'_amount_clipped are taken over the intermediate
+    ! thermodynamic levels, where they are applied to xm.
+    !
+    ! =======wpxp_amount_clipped=============================== m(k)
+    !
+    ! -----------------------------d(wpxp_amount_clipped)/dz--- t(k)
+    !
+    ! =======wpxpm1_amount_clipped============================= m(k-1)
+    !
+    ! The vertical indices m(k), t(k), and m(k-1) correspond with altitudes
+    ! zm(k), zt(k), and zm(k-1), respectively.  The letter "t" is used for
+    ! thermodynamic levels and the letter "m" is used for momentum levels.
+    !
+    ! dzt(k) = 1 / ( zm(k) - zm(k-1) )
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use grid_class, only: &
+        gr  ! Variable(s); gr%nnzp only.
+
+    use stats_precision, only: &
+        time_precision
+
+    use stats_type, only: &
+        stat_update_var ! Procedure(s)
+
+    use stats_variables, only: &
+        l_stats_samp, & ! Variable(s)
+        zt, &
+        ithlm_tacl, &
+        irtm_tacl
+
+    implicit none
+
+    ! Input Variables
+    character(len=*), intent(in) :: &
+      solve_type    ! Variable that is being solved for.
+
+    real(kind=time_precision), intent(in) :: &
+      dt            ! Model timestep                            [s]
+
+    real, dimension(gr%nnzp), intent(in) :: &
+      wpxp_chnge, & ! Amount of change in w'x' due to clipping  [m/s {xm units}]
+      dzt           ! Inverse of grid spacing                   [1/m]
+
+    ! Input/Output Variable
+    real, dimension(gr%nnzp), intent(inout) :: &
+      xm            ! xm (thermodynamic levels)                 [{xm units}]
+
+    ! Local Variables
+    real, dimension(gr%nnzp) :: &
+      xm_tndcy_wpxp_cl ! d(xm)/dt due to clipping of w'x'       [{xm units}/s]
+
+    integer :: k    ! Array index
+
+    integer :: ixm_tacl  ! Statistical index
+
+
+    select case ( trim( solve_type ) )
+    case ( "rtm" )
+       ixm_tacl = irtm_tacl
+    case ( "thlm" )
+       ixm_tacl = ithlm_tacl
+    case default
+       ixm_tacl = 0
+    end select
+
+    ! Adjusting xm based on clipping for w'x'.
+    ! Loop over all thermodynamic levels between the second-lowest and the
+    ! highest.
+    do k = 2, gr%nnzp, 1
+       xm_tndcy_wpxp_cl(k) = - dzt(k) * ( wpxp_chnge(k) - wpxp_chnge(k-1) )
+       xm(k) = real( xm(k) + xm_tndcy_wpxp_cl(k) * dt )
+    enddo
+    
+    if ( l_stats_samp ) then
+       ! The adjustment to xm due to turbulent advection term clipping
+       ! (xm term tacl) is completely explicit; call stat_update_var.
+       call stat_update_var( ixm_tacl, xm_tndcy_wpxp_cl, zt )
+    endif
+
+
+    return
+
+  end subroutine xm_correction_wpxp_cl
 
 !===============================================================================
 

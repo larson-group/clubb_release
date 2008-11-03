@@ -75,15 +75,17 @@ use stats_variables, only: &
     irtm_ma, & 
     irtm_ta, & 
     irtm_forcing, & 
-    irtm_mc, & 
+    irtm_mc, &
+    irtm_tacl, & 
     irtm_cl, & 
     irtm_pd, & 
     ithlm_bt, & 
     ithlm_ma, & 
     ithlm_ta, & 
     ithlm_forcing, & 
-    ithlm_mc, & 
-    ithlm_cl,       & 
+    ithlm_mc, &
+    ithlm_tacl, &
+    ithlm_cl, & 
     iwp3_bt, & 
     iwp3_ma, & 
     iwp3_ta, & 
@@ -267,6 +269,7 @@ irtm_ma       = 0
 irtm_ta       = 0
 irtm_forcing  = 0
 irtm_mc       = 0
+irtm_tacl     = 0
 irtm_cl       = 0 ! Josh
 irtm_pd       = 0
 ithlm_bt      = 0
@@ -274,6 +277,7 @@ ithlm_ma      = 0
 ithlm_ta      = 0
 ithlm_forcing = 0
 ithlm_mc      = 0
+ithlm_tacl    = 0
 ithlm_cl      = 0 ! Josh
 
 iwp3_bt       = 0
@@ -758,6 +762,15 @@ do i=1,zt%nn
     call stat_assign(irtm_ta,"rtm_ta", & 
          "rtm ta","kg/kg/s",zt)
     k = k + 1
+
+  case ('rtm_tacl')
+    irtm_tacl = k
+
+    call stat_assign(irtm_tacl, "rtm_tacl", & 
+         "rtm correction due to ta term (wprtp) clipping", "kg/kg/s", zt)
+
+    k = k + 1
+
   case ('rtm_cl')
     irtm_cl = k
 
@@ -765,6 +778,7 @@ do i=1,zt%nn
          "rtm clipping", "kg/kg/s", zt)
 
     k = k + 1
+
   case ('rtm_pd')
     irtm_pd = k
 
@@ -777,28 +791,37 @@ do i=1,zt%nn
     ithlm_bt = k
 
     call stat_assign(ithlm_bt,"thlm_bt", & 
-         "thlm bt","kg/kg/s",zt)
+         "thlm bt","K/s",zt)
     k = k + 1
 
   case ('thlm_ma')
     ithlm_ma = k
 
     call stat_assign(ithlm_ma,"thlm_ma", & 
-         "thlm ma","kg/kg/s",zt)
+         "thlm ma","K/s",zt)
     k = k + 1
 
   case ('thlm_ta')
     ithlm_ta = k
 
     call stat_assign(ithlm_ta,"thlm_ta", & 
-         "thlm ta","kg/kg/s",zt)
+         "thlm ta","K/s",zt)
     k = k + 1
+
+  case ('thlm_tacl')
+    ithlm_tacl = k
+
+    call stat_assign(ithlm_tacl,"thlm_tacl", & 
+          "thlm correction due to ta term (wpthlp) clipping", "K/s",zt)
+    k = k + 1 
+
   case ('thlm_cl')
     ithlm_cl = k
 
     call stat_assign(ithlm_cl,"thlm_cl", & 
-          "thlm_cl", "kg/kg/s",zt)
+          "thlm_cl", "K/s",zt)
     k = k + 1 
+
   case ('wp3_bt')
     iwp3_bt = k
 

@@ -126,6 +126,7 @@ module stats_variables
     irtm_ta,       & ! rtm turb. advect. term
     irtm_forcing,  & ! rtm large scale forcing term
     irtm_mc,       & ! rtm change from microphysics
+    irtm_tacl,     & ! rtm correction from turbulent advection (wprtp) clipping
     irtm_cl,       & ! rtm clipping term
     irtm_pd,       & ! thlm postive definite adj term
     ithlm_bt,      & ! thlm total time tendency
@@ -133,12 +134,13 @@ module stats_variables
     ithlm_ta,      & ! thlm turb. advect. term
     ithlm_forcing, & ! thlm large scale forcing term
     ithlm_mc,      & ! thlm change from microphysics
-    ithlm_cl      ! thlm clipping term
+    ithlm_tacl,    & ! thlm correction from turbulent advection (wpthlp) clipping
+    ithlm_cl         ! thlm clipping term
 
 !$omp   threadprivate(irtm_bt, irtm_ma, irtm_ta, irtm_forcing)
-!$omp   threadprivate(irtm_cl, irtm_pd)
-!$omp   threadprivate(ithlm_bt, ithlm_ma, ithlm_ta)
-!$omp   threadprivate(ithlm_forcing, ithlm_mc, ithlm_cl)
+!$omp   threadprivate(irtm_mc, irtm_tacl, irtm_cl, irtm_pd)
+!$omp   threadprivate(ithlm_bt, ithlm_ma, ithlm_ta, ithlm_forcing)
+!$omp   threadprivate(ithlm_mc, ithlm_tacl, ithlm_cl)
 
 
   integer, public :: & 

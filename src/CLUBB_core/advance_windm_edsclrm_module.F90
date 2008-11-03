@@ -128,7 +128,11 @@ module advance_windm_edsclrm_module
       vm_tndcy       ! v wind component tendency                     [m/s^2]
 
     real, dimension(gr%nnzp) ::  &
-      zero_1d ! Used for Eddy-scalar tendency    [units vary]
+      zero_1d        ! Used for Eddy-scalar tendency                 [units vary]
+
+    real, dimension(gr%nnzp) ::  &
+      upwp_chnge,  & ! Net change of u'w' due to clipping            [m^2/s^2]
+      vpwp_chnge     ! Net change of v'w' due to clipping            [m^2/s^2]
 
     real, dimension(3,gr%nnzp) :: &
       lhs ! The implicit part of the tridiagonal matrix              [units vary]
@@ -281,6 +285,7 @@ module advance_windm_edsclrm_module
 
 
     if ( l_tke_aniso ) then
+
       ! Clipping for u'w'
       !
       ! Clipping u'w' at each vertical level, based on the
@@ -294,7 +299,7 @@ module advance_windm_edsclrm_module
       ! This is the third instance of u'w' clipping.
       call clip_covariance( "upwp", .false.,      & ! intent(in)
                             .true., dt, wp2, up2, & ! intent(in)
-                            upwp )                  ! intent(inout)
+                            upwp, upwp_chnge )      ! intent(inout)
 
       ! Clipping for v'w'
       !
@@ -309,18 +314,21 @@ module advance_windm_edsclrm_module
       ! This is the third instance of v'w' clipping.
       call clip_covariance( "vpwp", .false.,      & ! intent(in)
                             .true., dt, wp2, vp2, & ! intent(in)
-                            vpwp )                  ! intent(inout)
+                            vpwp, vpwp_chnge )      ! intent(inout)
+
     else
+
       ! In this case, it is assumed that
       !   u'^2 == v'^2 == w'^2, and the variables `up2' and `vp2' do not interact with
       !   any other variables.
 
       call clip_covariance( "upwp", .false.,      & ! intent(in)
                             .true., dt, wp2, wp2, & ! intent(in)
-                            upwp )                  ! intent(inout)
+                            upwp, upwp_chnge )      ! intent(inout)
+
       call clip_covariance( "vpwp", .false.,      & ! intent(in)
                             .true., dt, wp2, wp2, & ! intent(in)
-                            vpwp )                  ! intent(inout)
+                            vpwp, vpwp_chnge )      ! intent(inout)
 
     end if ! l_tke_aniso
 

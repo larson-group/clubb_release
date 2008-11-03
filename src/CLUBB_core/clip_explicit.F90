@@ -87,8 +87,8 @@ module clip_explicit
 
     ! Input/Output Variables
     real, dimension(gr%nnzp), intent(inout) :: &
-      wprtp,  & ! w'r_t'        [kg/kg/s]
-      wpthlp, & ! w'theta_l'    [K/s]
+      wprtp,  & ! w'r_t'        [(kg/kg) m/s]
+      wpthlp, & ! w'theta_l'    [K m/s]
       upwp,   & ! u'w'          [m^2/s^2]
       vpwp      ! v'w'          [m^2/s^2]
 
@@ -99,6 +99,15 @@ module clip_explicit
     logical :: & 
       l_first_clip_ts, & ! First instance of clipping in a timestep.
       l_last_clip_ts     ! Last instance of clipping in a timestep.
+
+    real, dimension(gr%nnzp) :: &
+      wprtp_chnge,  & ! Net change in w'r_t' due to clipping  [(kg/kg) m/s]
+      wpthlp_chnge, & ! Net change in w'th_l' due to clipping [K m/s]
+      upwp_chnge,   & ! Net change in u'w' due to clipping    [m^2/s^2]
+      vpwp_chnge      ! Net change in v'w' due to clipping    [m^2/s^2]
+
+    real, dimension(gr%nnzp,sclr_dim) :: &
+      wpsclrp_chnge   ! Net change in w'sclr' due to clipping [{units vary}]
 
     integer :: i  ! scalar array index.
 
@@ -148,7 +157,7 @@ module clip_explicit
     ! Clip w'r_t'
     call clip_covariance( "wprtp", l_first_clip_ts,      & ! intent(in) 
                           l_last_clip_ts, dt, wp2, rtp2, & ! intent(in)
-                          wprtp )                          ! intent(inout)
+                          wprtp, wprtp_chnge )             ! intent(inout)
 
     if ( l_stats_samp ) then
       if ( wprtp_cl_num == 1 ) then
@@ -207,7 +216,7 @@ module clip_explicit
     ! Clip w'th_l'
     call clip_covariance( "wpthlp", l_first_clip_ts,      & ! intent(in)
                           l_last_clip_ts, dt, wp2, thlp2, & ! intent(in)
-                          wpthlp )                          ! intent(inout)
+                          wpthlp, wpthlp_chnge )            ! intent(inout)
 
 
     if ( l_stats_samp ) then
@@ -255,7 +264,7 @@ module clip_explicit
     do i = 1, sclr_dim, 1
       call clip_covariance( "wpsclrp", l_first_clip_ts,              & ! intent(in)
                             l_last_clip_ts, dt, wp2(:), sclrp2(:,i), & ! intent(in)
-                            wpsclrp(:,i) )                             ! intent(inout)
+                            wpsclrp(:,i), wpsclrp_chnge(:,i) )         ! intent(inout)
     enddo
 
 
@@ -291,12 +300,12 @@ module clip_explicit
     if ( l_tke_aniso ) then
       call clip_covariance( "upwp", l_first_clip_ts,      & ! intent(in)
                             l_last_clip_ts, dt, wp2, up2, & ! intent(in)
-                            upwp )                          ! intent(inout)
+                            upwp, upwp_chnge )              ! intent(inout)
     else
       ! In this case, up2 = wp2, and the variable `up2' does not interact
       call clip_covariance( "upwp", l_first_clip_ts,      & ! intent(in)
                             l_last_clip_ts, dt, wp2, wp2, & ! intent(in)
-                            upwp )                          ! intent(inout)
+                            upwp, upwp_chnge )              ! intent(inout)
     end if
 
 
@@ -332,12 +341,12 @@ module clip_explicit
     if ( l_tke_aniso ) then
       call clip_covariance( "vpwp", l_first_clip_ts,      & ! intent(in)
                             l_last_clip_ts, dt, wp2, vp2, & ! intent(in)
-                            vpwp )                          ! intent(inout)
+                            vpwp, vpwp_chnge )              ! intent(inout)
     else
       ! In this case, vp2 = wp2, and the variable `vp2' does not interact
       call clip_covariance( "vpwp", l_first_clip_ts,      & ! intent(in)
                             l_last_clip_ts, dt, wp2, wp2, & ! intent(in)
-                            vpwp )                          ! intent(inout)
+                            vpwp, vpwp_chnge )              ! intent(inout)
     end if
 
 
@@ -347,7 +356,7 @@ module clip_explicit
   !=============================================================================
   subroutine clip_covariance( solve_type, l_first_clip_ts,  & 
                               l_last_clip_ts, dt, xp2, yp2,  & 
-                              xpyp )
+                              xpyp, xpyp_chnge )
 
     ! Description:
     ! Clipping the value of covariance x'y' based on the correlation between x
@@ -430,6 +439,9 @@ module clip_explicit
     real, dimension(gr%nnzp), intent(inout) :: & 
       xpyp   ! Covariance of x and y, x'y' (momentum levels) [{x units}*{y units}]
 
+    real, dimension(gr%nnzp), intent(out) :: &
+      xpyp_chnge  ! Net change in x'y' due to clipping [{x units}*{y units}]
+
 
     ! Local Variable
     integer :: k  ! Array index
@@ -471,16 +483,31 @@ module clip_explicit
       ! Clipping for xpyp at an upper limit corresponding with a correlation
       ! between x and y of max_mag_correlation.
       if ( xpyp(k) >  max_mag_correlation * sqrt( xp2(k) * yp2(k) ) ) then
+
+        xpyp_chnge(k) =  max_mag_correlation * sqrt( xp2(k) * yp2(k) ) - xpyp(k)
+
         xpyp(k) =  max_mag_correlation * sqrt( xp2(k) * yp2(k) )
 
         ! Clipping for xpyp at a lower limit corresponding with a correlation
         ! between x and y of -max_mag_correlation.
       elseif ( xpyp(k) < -max_mag_correlation * sqrt( xp2(k) * yp2(k) ) ) then
+
+        xpyp_chnge(k) = -max_mag_correlation * sqrt( xp2(k) * yp2(k) ) - xpyp(k)
+
         xpyp(k) = -max_mag_correlation * sqrt( xp2(k) * yp2(k) )
+
+      else
+
+        xpyp_chnge(k) = 0.0
 
       endif
 
     enddo
+
+    ! Since there is no covariance clipping at the upper or lower boundaries,
+    ! the change in x'y' due to covariance clipping at those levels is 0.
+    xpyp_chnge(1)       = 0.0
+    xpyp_chnge(gr%nnzp) = 0.0
 
     if ( l_stats_samp ) then
       if ( l_last_clip_ts ) then

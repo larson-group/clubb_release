@@ -219,6 +219,13 @@ contains
       Kw2_thlp2, & 
       Kw2_rtpthlp
 
+    real, dimension(gr%nnzp) :: &
+      rtpthlp_chnge  ! Net change in r_t'th_l' due to clipping [(kg/kg) K]
+
+    real, dimension(gr%nnzp,sclr_dim) :: &
+      sclrprtp_chnge, & ! Net change in sclr'r_t' due to clipping  [{units vary}]
+      sclrpthlp_chnge   ! Net change in sclr'th_l' due to clipping [{units vary}]
+
     logical :: l_scalar_calc
 
     ! Loop indices
@@ -561,7 +568,7 @@ contains
     ! same place, clipping for r_t'th_l' only has to be done once.
     call clip_covariance( "rtpthlp", .true.,  &        ! Intent(in)
                           .true., dt, rtp2, thlp2,  &  ! Intent(in)
-                          rtpthlp )                    ! Intent(inout)
+                          rtpthlp, rtpthlp_chnge )     ! Intent(inout)
 
 
     if ( l_stats_samp ) then
@@ -717,7 +724,7 @@ contains
         else
           call clip_covariance( "sclrprtp", .true.,  &               ! Intent(in) 
                                 .true., dt, sclrp2(:,i), rtp2(:), &  ! Intent(in)
-                                sclrprtp(:,i) )                      ! Intent(inout)
+                                sclrprtp(:,i), sclrprtp_chnge(:,i) ) ! Intent(inout)
         end if
       enddo
 
@@ -737,9 +744,9 @@ contains
                               sclrpthlp(:,i) )              ! Intent(inout)
         else
 
-          call clip_covariance( "sclrpthlp", .true.,  &              ! Intent(in) 
-                                .true., dt, sclrp2(:,i), thlp2(:), & ! Intent(in) 
-                                sclrpthlp(:,i) )                     ! Intent(inout)
+          call clip_covariance( "sclrpthlp", .true.,  &                ! Intent(in) 
+                                .true., dt, sclrp2(:,i), thlp2(:), &   ! Intent(in) 
+                                sclrpthlp(:,i), sclrpthlp_chnge(:,i) ) ! Intent(inout)
         end if
       enddo
 
