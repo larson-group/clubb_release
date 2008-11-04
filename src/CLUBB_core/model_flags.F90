@@ -18,7 +18,7 @@ module model_flags
   logical, parameter, public ::  & 
     l_LH_on              = .false., & ! Latin hypercube calculation
     l_local_kk           = .false., & ! Local drizzle for rain microphysics
-    l_hyper_dfsn         = .false., & ! 4th-order hyper-diffusion
+    l_hyper_dfsn         = .true.,  & ! 4th-order hyper-diffusion
     l_pos_def            = .true.,  & ! Flux limiting pos. def. scheme on rtm
     l_hole_fill          = .true.,  & ! Hole filling pos. def. scheme on wp2,up2,rtp2,etc
     l_clip_semi_implicit = .true.,  & ! Semi-implicit clipping scheme on wpthlp and wprtp
