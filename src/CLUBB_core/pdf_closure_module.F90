@@ -57,7 +57,8 @@ module pdf_closure_module
       thltol,        & ! Tolerance for th_l                  [K]
       sstol,         & ! Tolerance for pdf parameter         [kg/kg]
       fstderr,       &
-      zero_threshold
+      zero_threshold,&
+      a_max_mag 
 
     use parameters_tunable, only: & 
       sclrtol,  & ! Array of passive scalar tolerances  [units vary]
@@ -270,8 +271,10 @@ module pdf_closure_module
       sqrt_wp2 = sqrt( wp2 )
 
       ! Clip a, 1-a, to avoid dividing by zero
-      if ( a > 0.99 ) a = 0.99
-      if ( a < 0.01 ) a = 0.01
+      ! Formula for a_max_mag =
+      ! 1 - ( 1/2 * ( 1 - Skw_max/sqrt( 4*( 1 - sigma_sqd_w )^3 + Skw_max^2 ) ) )
+      ! Where sigma_sqd_w is fixed at 0.4
+      a = min( max( a, 1.0-a_max_mag ), a_max_mag )
 
       w1_n = sqrt( ( (1.-a)/a )*(1.-sigma_sqd_w) )
       w2_n = -sqrt( ( a/(1.-a) )*(1.-sigma_sqd_w) )

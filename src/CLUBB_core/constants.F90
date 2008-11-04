@@ -22,7 +22,7 @@ module constants
             wtol_sqd, rc_tol, Nc_tol, rr_tol, Nr_tol, emin, &
             eps, zero_threshold, max_mag_correlation, sec_per_day, &
             sec_per_hr, sec_per_min, g_per_kg, Lscale_max, T_freeze_K, &
-            Skw_max_mag, Skw_max_mag_sqd, stefan_boltzmann
+            Skw_max_mag, Skw_max_mag_sqd, a_max_mag, stefan_boltzmann
 
   private ! Default scope
 
@@ -100,6 +100,13 @@ module constants
 
   real, parameter :: &
     Skw_max_mag_sqd = Skw_max_mag**2 ! Max mag. of Skw squared [-]
+
+  ! Maximum magnitude of PDF parameter `a'. Formula from closure_new.
+  ! An exponent of 0.5 is used because floating point intrinsic function cannot
+  ! appear in a variable with a parameter attribute in Fortran.
+  real, parameter :: &
+    a_max_mag = 1.0 &
+      - ( 0.5 * ( 1.0 - Skw_max_mag / ( 4.0 * ( 1.0 - 0.4 )**3 + Skw_max_mag**2 )**0.5 ) )
 
   ! Set tolerances for Khairoutdinov and Kogan rain microphysics to insure
   ! against numerical errors.  The tolerance values for Nc, rr, and Nr insure
