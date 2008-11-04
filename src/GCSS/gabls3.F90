@@ -1,5 +1,3 @@
-#define SCLR_THETA 1
-#define SCLR_RT 2
 !----------------------------------------------------------------------
 ! $Id: gabls3.F90 2839 2008-09-04 14:50:14Z faschinj $
 module gabls3
@@ -306,7 +304,8 @@ module gabls3
 
     ! Set SST by time in lieu of a surface scheme
     !call time_select( time_current, sst_time, 25, i1, i2)
-    !sfc_soil_T_in_K(1) = lin_int( real(time_current), sst_time(i2), sst_time(i1), sst_given(i2), sst_given(i1) )
+    !sfc_soil_T_in_K(1) = lin_int( real(time_current), sst_time(i2), &
+    !                   sst_time(i1), sst_given(i2), sst_given(i1) )
     !----- Experimental Code -------------
     ! Turbulent Flux of equivalent potential temperature
     wpthep = wpthlp_sfc + (Lv/Cp) * ((p0/psfc)**kappa) * wprtp_sfc

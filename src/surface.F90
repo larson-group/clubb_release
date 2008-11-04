@@ -133,7 +133,8 @@ SUBROUTINE prognose_soil_T_in_K( BTIME, TIME, DT, ITF, ITL, R0, FS, FSIN, FLDO, 
   C3=SQRT(PI*2.E0)/(EXP(PI/4.E0)*RS*CS*SQRT(KS*3600.E0*24.E0* &
                    365.E0))
   
-  !INITIALIZE SURFACE VEGETATION TEMP (veg_T_in_K), SOIL SURF. TEMP (sfc_soil_T_in_K), DEEP SOIL TEMP (deep_soil_T_in_K)
+  !INITIALIZE SURFACE VEGETATION TEMP (veg_T_in_K), SOIL SURF.
+  ! TEMP (sfc_soil_T_in_K), DEEP SOIL TEMP (deep_soil_T_in_K)
 
   IF (TIME .EQ. BTIME)  THEN
     DO IT=1,LEAF
@@ -152,7 +153,8 @@ SUBROUTINE prognose_soil_T_in_K( BTIME, TIME, DT, ITF, ITL, R0, FS, FSIN, FLDO, 
     !UPDATE SURF VEG TEMP
     veg_T_in_K(ITL)=veg_T_in_K(ITF)+DT*5.E-5*(SHFS-SHF)
     !UPDATE SOIL TEMP
-    sfc_soil_T_in_K(ITL)=sfc_soil_T_in_K(ITF)+DT*( C1*SHF-C2*( sfc_soil_T_in_K(ITF)-deep_soil_T_in_K(ITF) ) )
+    sfc_soil_T_in_K(ITL)=sfc_soil_T_in_K(ITF) & 
+      +DT*( C1*SHF-C2*( sfc_soil_T_in_K(ITF)-deep_soil_T_in_K(ITF) ) )
     !UPDATE DEEP SOIL TEMP
     deep_soil_T_in_K(ITL)=deep_soil_T_in_K(ITF)+DT*C3*SHF
   ENDIF
