@@ -30,23 +30,26 @@ real, target, allocatable, dimension(:), public :: &
   thvm,      & ! Virtual potential Temperature         [K]
   shear        ! Wind shear production
 
-!$omp   threadprivate(sigma_sqd_w_zt, Skw_zm, Skw_zt, ug, vg)
-!$omp   threadprivate(thvm, shear)
-!$omp   threadprivate(um_ref, vm_ref)
+!!! Important Note !!!
+! Do not indent the omp comments, they need to be in the first 4 columns
+!!! End Important Note !!!
+!$omp threadprivate(sigma_sqd_w_zt, Skw_zm, Skw_zt, ug, vg &
+!$omp   thvm, shear, um_ref, vm_ref)
 
 real, target, allocatable, dimension(:), public :: & 
   rsat ! Saturation mixing ratio  ! Brian
-       !$omp   threadprivate(rsat)
+
+!$omp threadprivate(rsat)
 
 real, target, allocatable, dimension(:), public :: & 
-  Frad,  & ! Radiative flux (momentum point)
-  radht, &    ! SW + LW heating rate
-  Frad_SW_up, & ! SW radiative upwelling flux       [W/m^2]
-  Frad_LW_up, & ! LW radiative upwelling flux       [W/m^2]
-  Frad_SW_down, & ! SW radiative downwelling flux       [W/m^2]
-  Frad_LW_down ! LW radiative downwelling flux       [W/m^2]
+  Frad,         & ! Radiative flux (momentum point)   [W/m^2]
+  radht,        & ! SW + LW heating rate              [K/s]
+  Frad_SW_up,   & ! SW radiative upwelling flux       [W/m^2]
+  Frad_LW_up,   & ! LW radiative upwelling flux       [W/m^2]
+  Frad_SW_down, & ! SW radiative downwelling flux     [W/m^2]
+  Frad_LW_down ! LW radiative downwelling flux        [W/m^2]
 
-!$omp   threadprivate(Frad, radht, Frad_SW_up,Frad_SW_down, Frad_LW_up, Frad_LW_down)
+!$omp threadprivate(Frad, radht, Frad_SW_up, Frad_SW_down, Frad_LW_up, Frad_LW_down)
 
 ! Second order moments
 real, target, allocatable, dimension(:), public :: & 
@@ -55,7 +58,7 @@ real, target, allocatable, dimension(:), public :: &
   rtprcp,   & ! rt'rc'               [kg^2/kg^2]
   rcp2        ! rc'^2                [kg^2/kg^2]
 
-!$omp   threadprivate(wprcp, thlprcp, rtprcp, rcp2)
+!$omp threadprivate(wprcp, thlprcp, rtprcp, rcp2)
 
 ! Third order moments
 real, target, allocatable, dimension(:), public :: & 
@@ -66,14 +69,14 @@ real, target, allocatable, dimension(:), public :: &
   wprtpthlp, & ! w'rt'thl'   [m kg K/kg s]
   wp2rcp       ! w'^2 rc'    [m^2 kg/kg s^2]
 
-!$omp   threadprivate(wpthlp2, wp2thlp, wprtp2, wp2rtp )
-!$omp   threadprivate(wprtpthlp, wp2rcp)
+!$omp threadprivate(wpthlp2, wp2thlp, wprtp2, wp2rtp, &
+!$omp   wprtpthlp, wp2rcp )
 
 ! Fourth order moments
 real, target, allocatable, dimension(:), public :: & 
   wp4 ! w'^4      [m^4/s^4]
 
-!$omp   threadprivate(wp4)
+!$omp threadprivate(wp4)
 
 ! Buoyancy related moments
 real, target, allocatable, dimension(:), public :: & 
@@ -82,47 +85,47 @@ real, target, allocatable, dimension(:), public :: &
   thlpthvp, & ! thl'thv'     [K^2] 
   wp2thvp     ! w'^2 thv'    [m^2 K/s^2]
 
-!$omp   threadprivate(wpthvp, rtpthvp, thlpthvp, wp2thvp)
+!$omp threadprivate(wpthvp, rtpthvp, thlpthvp, wp2thvp)
 
 real, target, allocatable, dimension(:), public :: & 
   Kh_zt,  & ! Eddy diffusivity: zt grid        [m^2/s]
   Kh_zm     ! Eddy diffusivity: zm grid        [m^2/s]
 
-!$omp   threadprivate(Kh_zt, Kh_zm)
+!$omp threadprivate(Kh_zt, Kh_zm)
 
 ! Mixing lengths
 real, target, allocatable, dimension(:), public :: & 
   Lscale, Lscale_up, Lscale_down ! [m]
 
-!$omp   threadprivate(Lscale, Lscale_up, Lscale_down)
+!$omp threadprivate(Lscale, Lscale_up, Lscale_down)
 
 real, target, allocatable, dimension(:), public :: & 
   em,   & ! em               [m^2/s^2]
   tau_zt  ! Dissipation time [s]
 
-!$omp   threadprivate(em, tau_zt)
+!$omp threadprivate(em, tau_zt)
 
 ! hydrometeors variable array
 real, allocatable, dimension(:,:), public :: hydromet
 ! When running with COAMPS microphysics this contains:
-! 1 rrainm      Rain water mixing ratio               [kg/kg]
+! 1 rrainm      Rain water mixing ratio            [kg/kg]
 ! 2 Nrm      Rain drop number concentration        [num/kg]
 ! 3 rsnow    Snow water mixing ratio               [kg/kg]
 ! 4 rice     Ice water mixing ratio                [kg/kg]
 ! 5 rgraupel Graupel water mixing ratio            [kg/kg]
-!$omp   threadprivate(hydromet)
+!$omp threadprivate(hydromet)
 
 real, target, allocatable, dimension(:), public :: & 
   Ncm,   & ! Cloud droplet number concentration      [num/kg]
   Ncnm,  & ! Cloud nuclei number concentration       [num/m^3]
   Nim      ! Ice nuclei number concentration         [num/m^3]
-!$omp   threadprivate(Ncm, Ncnm, Nim)
+!$omp threadprivate(Ncm, Ncnm, Nim)
 
 
 ! Surface data
 real, public  :: ustar ! Average value of friction velocity [m/s]
 
-!$omp   threadprivate(ustar)
+!$omp threadprivate(ustar)
 
 ! Passive scalar variables
 
@@ -140,9 +143,9 @@ real, target, allocatable, dimension(:,:), public :: &
   wpsclrprtp,  & ! w'sclr'rt'
   wpsclrpthlp    ! w'sclr'thl'
 
-!$omp   threadprivate(wpedsclrp)
-!$omp   threadprivate(sclrpthvp, sclrprtp, sclrp2, sclrpthlp)
-!$omp   threadprivate(wp2sclrp, wpsclrprtp, wpsclrpthlp)
+!$omp threadprivate(wpedsclrp)
+!$omp threadprivate(sclrpthvp, sclrprtp, sclrp2, sclrpthlp, &
+!$omp   wp2sclrp, wpsclrprtp, wpsclrpthlp )
 
 ! Interpolated variables for tuning
 ! 
@@ -154,8 +157,8 @@ real, target, allocatable, dimension(:), public :: &
   rtp2_zt,    & ! rt'^2 on therm. grid
   rtpthlp_zt    ! rt'thl' on thermo. grid
 
-!$omp   threadprivate(wp2_zt, thlp2_zt, wpthlp_zt, wprtp_zt) 
-!$omp   threadprivate(rtp2_zt, rtpthlp_zt)
+!$omp threadprivate(wp2_zt, thlp2_zt, wpthlp_zt, wprtp_zt &
+!$omp   rtp2_zt, rtpthlp_zt)
 
 ! 
 
@@ -191,7 +194,7 @@ real, target, allocatable, dimension(:), public :: &
 real, target, allocatable, dimension(:,:), public :: & 
   pdf_parms
 
-!$omp   threadprivate(pdf_parms)
+!$omp threadprivate(pdf_parms)
 
 ! Latin Hypercube arrays.  Vince Larson 22 May 2005
 real, target, allocatable, dimension(:), public :: & 
@@ -203,8 +206,8 @@ real, target, allocatable, dimension(:), public :: &
   AKm_rcm,   & ! Kessler ac based on rcm             [???]
   AKm_rcc      ! Kessler ac based on rcm/cf          [???]
 
-!$omp   threadprivate(AKm_est, AKm, AKstd, AKstd_cld, rcm_est, AKm_rcm)
-!$omp   threadprivate(AKm_rcc)
+!$omp threadprivate(AKm_est, AKm, AKstd, AKstd_cld, rcm_est, AKm_rcm, &
+!$omp   AKm_rcc)
 
 contains
 
@@ -234,7 +237,7 @@ integer, intent(in) :: nzmax
 ! Local Variables
 integer :: i
 
-!$omp   parallel
+!$omp parallel
 !   --- Allocation ---
 
 ! Diagnostic variables
@@ -447,7 +450,7 @@ if ( sclr_dim > 0 ) then
 
   wpedsclrp(:,:)     = 0.0
 end if
-!$omp   end parallel
+!$omp end parallel
 
 return
 end subroutine setup_diagnostic_variables
@@ -463,7 +466,7 @@ use model_flags, only: &
 
 implicit none
 
-!$omp   parallel
+!$omp parallel
 
 ! --- Deallocate --- 
 
@@ -479,6 +482,11 @@ deallocate( thvm )      ! virtual potential temperature
 deallocate( rsat )      ! saturation mixing ratio  ! Brian
 
 deallocate( Frad )      ! radiative flux (momentum point)
+
+deallocate( Frad_SW_up )
+deallocate( Frad_LW_up )
+deallocate( Frad_SW_down )
+deallocate( Frad_LW_down )
 
 deallocate( radht )     ! SW + LW heating rate
 
@@ -567,7 +575,7 @@ deallocate( wpsclrprtp )
 deallocate( wpsclrpthlp )
 
 deallocate( wpedsclrp )
-!$omp   end parallel
+!$omp end parallel
 
 return
 end subroutine cleanup_diagnostic_variables
