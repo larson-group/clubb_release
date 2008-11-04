@@ -38,7 +38,7 @@ ARCH = -march=k8 -msse3 -mfpmath=sse         # New Opterons
 # == Optimization ==
 # These are all pretty conservative options. Check your compiler manual
 # for information on using more aggressive techniques (inlining, etc.)
-OPTIMIZE = -O2
+OPTIMIZE = -O3
 
 # == NetCDF Location ==
 #NC_LOC = $(HOME)/netcdf-3.6.1
