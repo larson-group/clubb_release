@@ -483,10 +483,10 @@ deallocate( rsat )      ! saturation mixing ratio  ! Brian
 
 deallocate( Frad )      ! radiative flux (momentum point)
 
-deallocate( Frad_SW_up )
-deallocate( Frad_LW_up )
-deallocate( Frad_SW_down )
-deallocate( Frad_LW_down )
+deallocate( Frad_SW_up ) ! upwelling shortwave radiative flux
+deallocate( Frad_LW_up ) ! upwelling longwave radiative flux
+deallocate( Frad_SW_down ) ! downwelling shortwave radiative flux
+deallocate( Frad_LW_down ) ! downwelling longwave radiative flux
 
 deallocate( radht )     ! SW + LW heating rate
 
