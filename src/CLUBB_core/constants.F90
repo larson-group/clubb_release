@@ -102,12 +102,12 @@ module constants
     Skw_max_mag_sqd = Skw_max_mag**2 ! Max mag. of Skw squared [-]
 
   ! Maximum magnitude of PDF parameter `a'. Formula from closure_new.
-  ! An exponent of 0.5 is used because floating point intrinsic function cannot
-  ! appear in a variable with a parameter attribute in Fortran.
-  real, parameter :: &
-    a_max_mag = 1.0 &
-      - ( 0.5 * ( 1.0 - Skw_max_mag / ( 4.0 * ( 1.0 - 0.4 )**3 + Skw_max_mag**2 )**0.5 ) )
-
+  real, save :: &
+!   a_max_mag = 1.0 &
+!     - ( 0.5 * ( 1.0 - Skw_max_mag / ( 4.0 * ( 1.0 - 0.4 )**3 + Skw_max_mag**2 )**0.5 ) )
+    ! Some compilers don't allow for a non-integer exponent in a constant
+    ! intialization -dschanen 6 Nov 2008
+    a_max_mag = 0.99
   ! Set tolerances for Khairoutdinov and Kogan rain microphysics to insure
   ! against numerical errors.  The tolerance values for Nc, rr, and Nr insure
   ! against underflow errors in computing the PDF for l_kk_rain.  Basically,
