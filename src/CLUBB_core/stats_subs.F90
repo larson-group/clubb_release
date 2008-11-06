@@ -201,22 +201,22 @@ module stats_subs
       write(fstdout,*) "vars_zt = "
       i = 1
       do while ( vars_zt(i) /= '' )
-        i = i + 1
         write(fstdout,*) vars_zt(i)
+        i = i + 1
       end do
  
       write(fstdout,*) "vars_zm = "
       i = 1
       do while ( vars_zm(i) /= '' )
-        i = i + 1
         write(fstdout,*) vars_zm(i)
+        i = i + 1
       end do
 
       write(fstdout,*) "vars_sfc = "
       i = 1
       do while ( vars_sfc(i) /= '' )
-        i = i + 1
         write(fstdout,*) vars_sfc(i)
+        i = i + 1
       end do
 
       write(fstdout,*) "--------------------------------------------------"
