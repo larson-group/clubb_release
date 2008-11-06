@@ -21,7 +21,7 @@ subroutine wangara_tndcy( wm_zt, wm_zm,  &
 
 use grid_class, only: gr ! Variable(s)
 
-use parameters_tunable, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim ! Variable(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 
@@ -68,7 +68,7 @@ subroutine wangara_sfclyr( time, um_sfc, vm_sfc,  &
 
 use constants, only: pi, fstderr, sec_per_day ! Variable(s)
 
-use parameters_tunable, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim ! Variable(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 

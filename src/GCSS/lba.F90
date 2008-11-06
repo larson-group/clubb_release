@@ -47,7 +47,7 @@ use grid_class, only: gr !  Variable(s)
 
 use model_flags, only: l_bugsrad ! Variable(s)
 
-use parameters_tunable, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim ! Variable(s)
 
 use interpolation, only: zlinterp_fnc ! Procedure(s)
 
@@ -149,7 +149,7 @@ subroutine lba_sfclyr( time, z, rho0, &
 
 use constants, only: pi, grav, Lv, Cp ! Variable(s)
 
-use parameters_tunable, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim ! Variable(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 

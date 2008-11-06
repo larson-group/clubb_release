@@ -21,8 +21,8 @@ private ! Default scope
 contains
 !-----------------------------------------------------------------------
 subroutine open_netcdf( unit, fdir, fname, ia, iz, zgrid,  & 
-                    day, month, year, rlat, rlon, & 
-                    time, dtwrite, nvar, ncf )
+                        day, month, year, rlat, rlon, & 
+                        time, dtwrite, nvar, ncf )
 
 ! Description:
 !   Defines the structure used to reference the file `ncf'
@@ -31,14 +31,17 @@ subroutine open_netcdf( unit, fdir, fname, ia, iz, zgrid,  &
 !   None
 !-----------------------------------------------------------------------
 use netcdf, only: & 
-    NF90_CLOBBER, & ! Variable(s)
-    NF90_NOERR,   & 
-    nf90_create,  & ! Procedure
-    nf90_strerror
+  NF90_CLOBBER, & ! Variable(s)
+  NF90_NOERR,   & 
+  nf90_create,  & ! Procedure
+  nf90_strerror
+
 use output_file_module, only: & 
-    outputfile ! Type
+  outputfile ! Type
+
 use stats_precision, only:  & 
-    time_precision ! Variable(s)
+  time_precision ! Variable(s)
+
 use constants, only:  & 
     fstderr ! Variable(s)
 
@@ -103,7 +106,7 @@ else ! Always this for HOC
   do k=1,ia-iz+1
     ncf%z(k) = zgrid(ia-k+1)
   end do
-endif
+end if
 
 ! Create NetCDF dataset: enter define mode  
 stat = nf90_create( path = trim( fdir )//trim( fname )//'.nc',  & 
@@ -114,14 +117,14 @@ if ( stat /= NF90_NOERR ) then
     trim( fdir )//trim( fname )//'.nc', & 
     trim( nf90_strerror( stat ) )
   stop
-endif
+end if
 
 call define_netcdf( ncf%iounit, ncf%ia, ncf%iz, ncf%z, & 
-                ncf%day, ncf%month, ncf%year, ncf%time, & 
-                ncf%dtwrite, ncf%nvar, ncf%LatDimId,  & 
-                ncf%LongDimId, ncf%AltDimId, ncf%TimeDimId, & 
-                ncf%LatVarId,  ncf%LongVarId, ncf%AltVarId,  & 
-                ncf%TimeVarId )
+                    ncf%day, ncf%month, ncf%year, ncf%time, & 
+                    ncf%dtwrite, ncf%nvar, ncf%LatDimId,  & 
+                    ncf%LongDimId, ncf%AltDimId, ncf%TimeDimId, & 
+                    ncf%LatVarId,  ncf%LongVarId, ncf%AltVarId,  & 
+                    ncf%TimeVarId )
 
 
 
@@ -437,7 +440,7 @@ subroutine first_write( ncf )
   use constants, only:  &
     fstderr ! Variable
 
-  use parameters_tunable, only: &
+  use parameters_model, only: &
     T0, &       ! Real variables
     ts_nudge, &
     sclrtol    ! Real array variable

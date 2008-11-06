@@ -29,7 +29,7 @@ subroutine compute_length( thvm, thlm, rtm, rcm, em, p_in_Pa, exner, &
 !       Siebesma recommends mu=2e-3, although most schemes use mu=1e-4
 !       When mu was fixed, we used the value mu = 6.e-4
 
-use constants, only:  & 
+use constants, only:  &
     ! Variable(s)
     Cp,            & ! Dry air specific heat at constant p        [J/kg/K]
     Rd,            & ! Dry air gas constant                       [J/kg/K]
@@ -38,15 +38,17 @@ use constants, only:  &
     ep2,           & ! 1/ep                                       [-]
     Lv,            & ! Latent heat of vaporiztion                 [J/kg/K]
     grav,          & ! Gravitational acceleration                 [m/s^2]
-    Lscale_max,    & ! Maximum value for Lscale                   [m]
     fstderr,       &
     zero_threshold
 
 use parameters_tunable, only: & 
 ! Variable(s)
     mu,   & ! Fractional entrainment rate per unit altitude    [1/m]
-    T0,   & ! Reference temperature                            [K]
-    lmin ! Minimum value for Lscale                         [m]
+    lmin    ! Minimum value for Lscale                         [m]
+
+use parameters_model, only: & 
+    Lscale_max,    & ! Maximum value for Lscale                   [m]
+    T0               ! Reference temperature                      [K]
 
 use grid_class, only: & 
     gr,  & ! Variable(s)

@@ -30,7 +30,7 @@ use grid_class, only: zt2zm, ddzm ! Procedure(s)
 
 use constants, only: fstderr, Cp ! Constant(s)
 
-use parameters_tunable, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim ! Variable(s)
 
 use model_flags, only: l_bugsrad ! Variable(s)
 
@@ -198,7 +198,7 @@ subroutine dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc,  &
 
 use constants, only: Cp, fstderr, Lv ! Variable(s)
 
-use parameters_tunable, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim ! Variable(s)
 
 use saturation, only: sat_mixrat_liq ! Variable(s)
 

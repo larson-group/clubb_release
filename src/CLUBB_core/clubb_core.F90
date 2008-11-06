@@ -67,9 +67,11 @@ module clubb_core
       gamma_coefc,  & ! Variable(s)
       gamma_coefb, & 
       gamma_coef, & 
-      T0, & 
       taumax, & 
-      c_K, & 
+      c_K    
+
+    use parameters_model, only: &
+      T0, &
       sclr_dim
 
     use model_flags, only: & 
@@ -913,6 +915,9 @@ module clubb_core
     use parameters_tunable, only: & 
       setup_parameters ! Procedure
 
+    use parameters_model, only: & 
+      setup_parameters_model ! Procedure
+
     use variables_diagnostic_module, only: & 
       setup_diagnostic_variables ! Procedure
 
@@ -920,8 +925,7 @@ module clubb_core
       setup_prognostic_variables ! Procedure
 
     use constants, only:  & 
-      fstderr,  & ! Variable(s)
-      Lscale_max
+      fstderr  ! Variable(s)
 
     use error_code, only:  & 
       clubb_var_out_of_bounds ! Variable(s)
@@ -1005,6 +1009,9 @@ module clubb_core
     integer, intent(out) :: & 
       err_code   ! Diagnostic for a problem with the setup
 
+    ! Local variables
+    real :: Lscale_max
+
     !----- Begin Code -----
 
     ! Setup flags
@@ -1014,13 +1021,23 @@ module clubb_core
            l_icedfs, l_coamps_micro, l_uv_nudge,  & ! intent(in)
            l_tke_aniso )                            ! intent(in)
 
-    ! Define model constant parameters
 
+    ! Determine the maximum allowable value for Lscale (in meters).
+    if ( l_implemented ) then
+      Lscale_max = 0.25 * min( host_dx, host_dy )
+    else
+      Lscale_max = 1.0e5
+    end if
+
+    ! Define model constant parameters
+    call setup_parameters_model( T0_in, ts_nudge_in, hydromet_dim_in, & ! in
+                                 sclr_dim_in, sclrtol_in, Lscale_max )
+
+    ! Define tunable constant parameters
     call setup_parameters & 
-         ( deltaz, T0_in, ts_nudge_in, hydromet_dim_in, &           ! intent(in)
-           sclr_dim_in, sclrtol_in, params, nzmax, l_implemented, & ! intent(in)
-           grid_type, momentum_heights, thermodynamic_heights, &    ! intent(in)
-           err_code )                                               ! intent(out)
+         ( deltaz, params, nzmax, l_implemented, & ! intent(in)
+           grid_type, momentum_heights, thermodynamic_heights, & ! intent(in)
+           err_code )                                            ! intent(out)
 
     ! Error Report
     ! Joshua Fasching February 2008
@@ -1058,20 +1075,13 @@ module clubb_core
                     deltaz, zm_init, momentum_heights,  & ! intent(in)
                     thermodynamic_heights )               ! intent(in)
 
-    ! Determine the maximum allowable value for Lscale (in meters).
-    if ( l_implemented ) then
-      Lscale_max = 0.25 * min( host_dx, host_dy )
-    else
-      Lscale_max = 1.0e5
-    end if
-
     return
   end subroutine setup_clubb_core
 
   !-----------------------------------------------------------------------
   subroutine cleanup_clubb_core( )
 
-    use parameters_tunable, only: sclrtol
+    use parameters_model, only: sclrtol ! Variable
 
     use variables_diagnostic_module, only: & 
       cleanup_diagnostic_variables ! Procedure

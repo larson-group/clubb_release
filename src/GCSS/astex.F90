@@ -23,7 +23,7 @@ subroutine astex_tndcy( wm_zt, wm_zm,  &
 !       References:
 !----------------------------------------------------------------------
 
-use parameters_tunable, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim ! Variable(s)
 
 use grid_class, only: gr ! Variable(s)
 
@@ -97,7 +97,7 @@ subroutine astex_sfclyr( rho0, &
 
 use constants, only: Cp, Lv ! Variable(s)
 
-use parameters_tunable, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim ! Variable(s)
 
 use array_index, only: iisclr_rt, iisclr_thl ! Variable(s)
 

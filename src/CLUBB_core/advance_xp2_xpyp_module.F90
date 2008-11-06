@@ -80,12 +80,14 @@ contains
       C4,       &
       C14,      &
       C5,       &
-      T0,       &
-      sclr_dim, &
-      sclrtol,  &
       C2,       &
       C2b,      &
       C2c
+
+    use parameters_model, only: &
+      T0,       & ! Variables
+      sclr_dim, &
+      sclrtol    
 
     use grid_class, only: & 
       gr,  & ! Variable(s)

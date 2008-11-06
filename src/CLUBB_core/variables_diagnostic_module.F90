@@ -222,7 +222,7 @@ use model_flags, only:  &
 use constants, only:  & 
     emin ! Variables
 
-use parameters_tunable, only: & 
+use parameters_model, only: & 
     hydromet_dim, & 
     sclr_dim
 

@@ -28,7 +28,7 @@ subroutine fire_tndcy &
 !       None
 !----------------------------------------------------------------------
 
-use parameters_tunable, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim ! Variable(s)
 
 use model_flags, only: l_bugsrad  ! Variable(s)
 
@@ -178,7 +178,7 @@ subroutine sfc_thermo_fluxes( u, v, &
 
 use constants, only: kappa, p0 ! Variable(s)
 
-use parameters_tunable, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim ! Variable(s)
 
 use saturation, only: sat_mixrat_liq ! Procedure(s)
 

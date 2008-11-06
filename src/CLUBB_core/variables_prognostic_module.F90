@@ -122,7 +122,7 @@
             rttol, &
             thltol
 
-        use parameters_tunable, only: & 
+        use parameters_model, only: & 
             sclr_dim ! Variable(s) 
 
         implicit none

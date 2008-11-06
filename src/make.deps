@@ -37,6 +37,7 @@ endian.o	: endian.F90 model_flags.o
 constants.o	: stats_precision.o constants.F90
 parameter_indices.o   : parameter_indices.F90
 parameters_tunable.o    : parameter_indices.o error_code.o parameters_tunable.F90
+parameters_model.o : constants.o parameters_model.F90
 model_flags.o	: constants.o model_flags.F90
 stats_precision.o	: stats_precision.F90
 output_file_module.o    : stats_precision.o output_file_module.F90
@@ -70,9 +71,11 @@ lapack_wrap.o	: error_code.o lapack_wrap.F90
 Skw_module.o	: constants.o Skw_module.F90
 T_in_K_mod.o	: constants.o T_in_K_mod.F90
 
-pdf_closure_module.o	: constants.o parameters_tunable.o grid.o saturation.o erf.o \
-                 error_code.o numer_check.o pdf_closure_module.F90 
-advance_xp2_xpyp_module.o : constants.o parameters_tunable.o grid.o stats_type.o stats_variables.o \
+pdf_closure_module.o : constants.o parameters_tunable.o grid.o saturation.o \
+	erf.o error_code.o numer_check.o parameters_model.o \
+	pdf_closure_module.F90
+advance_xp2_xpyp_module.o : constants.o parameters_tunable.o grid.o \
+	stats_type.o stats_variables.o \
 	lapack_wrap.o fill_holes.o clip_explicit.o \
 	error_code.o diffusion.o advance_xp2_xpyp_module.F90
 advance_xm_wpxp_module.o : constants.o parameters_tunable.o stats_variables.o lapack_wrap.o \
@@ -83,7 +86,7 @@ advance_xm_wpxp_module.o : constants.o parameters_tunable.o stats_variables.o la
 clubb_core.o : constants.o hydrostatic.o advance_xm_wpxp_module.o \
 	model_flags.o numer_check.o Skw_module.o \
 	mixing_length.o stats_type.o stats_variables.o stats_subs.o \
-	stats_zt.o stats_zm.o \
+	stats_zt.o stats_zm.o parameters_model.o \
 	stats_sfc.o stats_type.o sounding.o advance_xp2_xpyp_module.o saturation.o advance_wp2_wp3_mod.o \
 	grid.o saturation.o advance_windm_edsclrm_module.o variables_prognostic_module.o \
 	variables_diagnostic_module.o \

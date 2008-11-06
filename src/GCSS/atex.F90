@@ -30,7 +30,7 @@ subroutine atex_tndcy( time, time_initial, &
 
 use constants, only: fstderr ! Constant(s)
 
-use parameters_tunable, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim ! Variable(s)
 
 use model_flags, only: l_bugsrad ! Variable(s)
 
@@ -196,7 +196,7 @@ subroutine atex_sfclyr( um_sfc, vm_sfc, thlm_sfc, rtm_sfc,  &
 
 use constants, only: kappa ! Variable(s)
 
-use parameters_tunable, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim ! Variable(s)
 
 use array_index, only: iisclr_rt, iisclr_thl
 

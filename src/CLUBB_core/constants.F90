@@ -21,8 +21,8 @@ module constants
             wtol, thltol, rttol, qttol, sstol, difftol, & 
             wtol_sqd, rc_tol, Nc_tol, rr_tol, Nr_tol, emin, &
             eps, zero_threshold, max_mag_correlation, sec_per_day, &
-            sec_per_hr, sec_per_min, g_per_kg, Lscale_max, T_freeze_K, &
-            Skw_max_mag, Skw_max_mag_sqd, a_max_mag, stefan_boltzmann
+            sec_per_hr, sec_per_min, g_per_kg, T_freeze_K, &
+            Skw_max_mag, Skw_max_mag_sqd, stefan_boltzmann
 
   private ! Default scope
 
@@ -101,13 +101,6 @@ module constants
   real, parameter :: &
     Skw_max_mag_sqd = Skw_max_mag**2 ! Max mag. of Skw squared [-]
 
-  ! Maximum magnitude of PDF parameter `a'. Formula from closure_new.
-  real, save :: &
-!   a_max_mag = 1.0 &
-!     - ( 0.5 * ( 1.0 - Skw_max_mag / ( 4.0 * ( 1.0 - 0.4 )**3 + Skw_max_mag**2 )**0.5 ) )
-    ! Some compilers don't allow for a non-integer exponent in a constant
-    ! intialization -dschanen 6 Nov 2008
-    a_max_mag = 0.99
   ! Set tolerances for Khairoutdinov and Kogan rain microphysics to insure
   ! against numerical errors.  The tolerance values for Nc, rr, and Nr insure
   ! against underflow errors in computing the PDF for l_kk_rain.  Basically,
@@ -145,11 +138,6 @@ module constants
 
   real, parameter :: & 
     g_per_kg = 1000.0     ! Grams in a kilogram.
-
-  ! Maximum allowable value for Lscale [m].
-  ! Value depends on whether the model is run by itself or as part of a
-  ! host model.
-  real :: Lscale_max
 
 !===============================================================================
 

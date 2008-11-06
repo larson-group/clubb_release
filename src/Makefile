@@ -86,7 +86,8 @@ PARAMETERIZATION = \
 	variables_prognostic_module.o clubb_core.o lapack_wrap.o \
 	parameters_tunable.o pos_definite_mod.o calendar.o \
 	fill_holes.o clip_semi_implicit.o clip_explicit.o \
-	array_index.o interpolation.o parameter_indices.o
+	array_index.o interpolation.o parameter_indices.o \
+	parameters_model.o
 
 
 INTERFACING = gradsaverage.o inputfields.o inputgrads.o 

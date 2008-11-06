@@ -87,7 +87,7 @@
 !        Joshua Fasching February 2008
 !---------------------------------------------------------------------------
 
-  use parameters_tunable, only: & 
+  use parameters_model, only: & 
       sclr_dim ! Variable
 
   implicit none
@@ -196,7 +196,7 @@
  use grid_class, only: & 
      gr ! Variable
 
- use parameters_tunable, only: & 
+ use parameters_model, only: & 
      sclr_dim ! Variable
  
  implicit none
@@ -376,7 +376,7 @@
 !
 !
 !-----------------------------------------------------------------------
- use parameters_tunable, only: & 
+ use parameters_model, only: & 
      sclr_dim ! Variable
 
  implicit none
@@ -514,7 +514,7 @@
  use constants, only: & 
      fstderr   ! Constant(s)
 
- use parameters_tunable, only: & 
+ use parameters_model, only: & 
      sclr_dim,  & ! Variable(s)
      hydromet_dim 
 

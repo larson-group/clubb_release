@@ -982,7 +982,7 @@ use T_in_K_mod, only: &
 use constants, only: & 
     rc_tol
 
-use parameters_tunable, only: & 
+use parameters_model, only: & 
     sclr_dim  ! Variable(s)
 
 use stats_type, only: & 

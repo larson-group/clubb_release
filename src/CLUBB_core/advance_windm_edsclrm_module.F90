@@ -41,7 +41,7 @@ module advance_windm_edsclrm_module
     use grid_class, only:  &
       gr  ! Variables(s)
 
-    use parameters_tunable, only:  &
+    use parameters_model, only:  &
       ts_nudge,  & ! Variable(s)
       sclr_dim
 
@@ -690,7 +690,7 @@ module advance_windm_edsclrm_module
     use constants, only:  & 
       fstderr ! Variable(s)
 
-    use parameters_tunable, only: &
+    use parameters_model, only: &
       sclr_dim ! Number of passive scalars
 
     implicit none

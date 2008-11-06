@@ -47,7 +47,7 @@ subroutine arm_97_tndcy( time, &
 
 use grid_class, only: gr ! Variable(s)
 
-use parameters_tunable, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim ! Variable(s)
 
 use interpolation, only: zlinterp_fnc ! Procedure(s)
 
@@ -191,7 +191,7 @@ subroutine arm_97_sfclyr( time, z, rho0, &
 
 use constants, only: Cp, Lv, grav ! Variable(s)
 
-use parameters_tunable, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim ! Variable(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 

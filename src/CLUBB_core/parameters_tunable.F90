@@ -20,24 +20,6 @@ module parameters_tunable
   public :: setup_parameters, read_parameters, read_param_spread, &
             get_parameters
 
-  ! Model parameters and constraints setup in the namelists
-  real, public ::  & 
-    T0,       & ! Reference temperature (usually 300)  [K]
-    ts_nudge    ! Timescale of u/v nudging             [s]
-
-!$omp   threadprivate(T0, ts_nudge)
-
-  integer, public :: & 
-    sclr_dim,        & ! Number of passive scalars
-    hydromet_dim       ! Number of hydrometeor species
-
-!$omp   threadprivate(sclr_dim, hydromet_dim)
-
-  real, dimension(:), allocatable, public :: & 
-    sclrtol ! Threshold(s) on the passive scalars  [units vary]
-
-!$omp   threadprivate(sclrtol)
-
   ! Model constant parameters 
   real, public :: & 
      C1,          & ! Low Skewness in C1 Skewness Function.
@@ -155,8 +137,7 @@ contains
 
   !=============================================================================
   subroutine setup_parameters & 
-            ( deltaz, T0_in, ts_nudge_in, hydromet_dim_in, & 
-              sclr_dim_in, sclrtol_in, params, nzmax, l_implemented, &
+            ( deltaz, params, nzmax, l_implemented, &
               grid_type, momentum_heights, thermodynamic_heights, &
               err_code ) 
 
@@ -176,23 +157,10 @@ contains
 
     implicit none
 
-    ! External
-    intrinsic :: allocated
-
-    ! Input Variables
     real, intent(in) ::  & 
-      deltaz,      & ! Change per height level      [m]
-      T0_in,       & ! Ref. temperature             [K]
-      ts_nudge_in    ! Timescale for u/v nudging    [s]
+      deltaz  ! Change per height level        [m]
 
-    integer, intent(in) :: & 
-      hydromet_dim_in,  & ! Number of hydrometeor species
-      sclr_dim_in         ! Number of passive scalars
-
-    real, intent(in), dimension(sclr_dim_in) :: & 
-      sclrtol_in     ! Threshold on passive scalars
-
-    real, intent(in), dimension(nparams) ::  & 
+    real, intent(in), dimension(nparams) :: & 
       params  ! Tuneable model parameters      [-]
 
     ! Grid definition
@@ -251,21 +219,6 @@ contains
     !lmin = lmin_coef * deltaz  ! Old
     lmin = lmin_coef * 40.0 ! New fixed value
 
-    T0       = T0_in
-    ts_nudge = ts_nudge_in
-
-    hydromet_dim = hydromet_dim_in
-    sclr_dim     = sclr_dim_in
-
-    ! In a tuning run, this array has the potential to be allocated already
-    if ( .not. allocated( sclrtol ) ) then
-       allocate( sclrtol(1:sclr_dim) )
-    else
-       deallocate( sclrtol ) 
-       allocate( sclrtol(1:sclr_dim) )
-    endif
-
-    sclrtol(1:sclr_dim) = sclrtol_in(1:sclr_dim)
 
 
     ! ##### Adjust Constant Diffusivity Coefficients Based On Grid Spacing #####

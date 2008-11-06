@@ -144,8 +144,10 @@ use model_flags, only: &
 
 use parameters_tunable, only: & 
     c_Krrainm,  & ! Variable(s) 
-    hydromet_dim,  & 
     nu_r
+
+use parameters_model, only: & 
+    hydromet_dim   ! Integer  
 
 use constants, only:  & 
     Lv,   & ! Constant(s)

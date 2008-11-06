@@ -2003,7 +2003,7 @@ contains
     ! Variable(s)        
         grav ! Gravitational acceleration [m/s^2]
 
-    use parameters_tunable, only: & 
+    use parameters_model, only: & 
     ! Variable(s) 
         T0  ! Reference temperature      [K]
 
@@ -2107,7 +2107,7 @@ contains
     ! Variables 
         grav ! Gravitational acceleration [m/s^2]
 
-    use parameters_tunable, only: & 
+    use parameters_model, only: & 
     ! Variables 
         T0  ! Reference temperature      [K]
 
@@ -2755,7 +2755,7 @@ contains
     use constants, only: & 
     ! Variable(s) 
         grav ! Gravitational acceleration [m/s^2]
-    use parameters_tunable, only:  & 
+    use parameters_model, only:  & 
     ! Variable(s)
         T0  ! Reference temperature      [K]
 

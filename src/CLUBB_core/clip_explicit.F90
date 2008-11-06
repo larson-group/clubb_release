@@ -42,7 +42,7 @@ module clip_explicit
     use grid_class, only: &
         gr ! Variable(s)
 
-    use parameters_tunable, only: &
+    use parameters_model, only: &
         sclr_dim ! Variable(s)
 
     use model_flags, only: &

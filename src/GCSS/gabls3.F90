@@ -221,7 +221,7 @@ module gabls3
 
     use constants, only: kappa, grav, Rd, Cp, p0,lv ! Variable(s)
 
-    use parameters_tunable, only: sclr_dim ! Variable(s)
+    use parameters_model, only: sclr_dim ! Variable(s)
 
     use array_index, only: iisclr_rt, iisclr_thl ! Variable(s)
 

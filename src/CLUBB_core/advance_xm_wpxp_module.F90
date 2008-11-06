@@ -78,7 +78,7 @@ contains
         fstderr, &  ! Constant
         max_mag_correlation
 
-    use parameters_tunable, only: & 
+    use parameters_model, only: & 
         sclr_dim  ! Variable(s)
 
     use grid_class, only: & 
@@ -2064,7 +2064,7 @@ contains
     use constants, only: & 
     ! Variable(s) 
         grav ! Gravitational acceleration [m/s^2]
-    use parameters_tunable, only: & 
+    use parameters_model, only: & 
     ! Variable(s) 
         T0  ! Reference temperature      [K]
 

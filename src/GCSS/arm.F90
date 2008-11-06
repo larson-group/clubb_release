@@ -26,7 +26,7 @@ subroutine arm_tndcy( time, &
 
 use grid_class, only: gr ! Variable(s)
 
-use parameters_tunable, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim ! Variable(s)
 
 use model_flags, only: l_bugsrad ! Variable(s)
 
@@ -166,7 +166,7 @@ subroutine arm_sfclyr( time, z, dn0, thlm_sfc, um_sfc, vm_sfc,  &
 
 use constants, only: Cp, Lv, grav ! Variable(s)
 
-use parameters_tunable, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim ! Variable(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 

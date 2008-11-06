@@ -31,7 +31,7 @@ use grid_class, only: zt2zm ! Procedure(s)
 
 use model_flags, only: l_bugsrad ! Variable(s)
 
-use parameters_tunable, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim ! Variable(s)
 
 use array_index, only:  & 
     iisclr_thl, iisclr_rt ! Variable(s)
@@ -145,7 +145,7 @@ subroutine bomex_sfclyr( um_sfc, vm_sfc,  &
 !       References:
 !----------------------------------------------------------------------
 
-use parameters_tunable, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim ! Variable(s)
 
 use array_index, only: iisclr_rt, iisclr_thl
 

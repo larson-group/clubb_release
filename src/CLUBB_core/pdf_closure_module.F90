@@ -57,17 +57,17 @@ module pdf_closure_module
       thltol,        & ! Tolerance for th_l                  [K]
       sstol,         & ! Tolerance for pdf parameter         [kg/kg]
       fstderr,       &
-      zero_threshold,&
-      a_max_mag 
+      zero_threshold  
 
-    use parameters_tunable, only: & 
+    use parameters_model, only: &
       sclrtol,  & ! Array of passive scalar tolerances  [units vary]
-      sclr_dim ! Number of passive scalar variables
+      sclr_dim, & ! Number of passive scalar variables
+      a_max_mag,& ! Maximum values for PDF parameter 'a'
+      T0          ! Reference temperature         [K]
 
     use parameters_tunable, only: & 
       ! Variable(s)
-      beta, & ! Plume widths for th_l and r_t [-]
-      T0      ! Reference temperature         [K]
+      beta    ! Plume widths for th_l and r_t [-]
 
     use anl_erf, only:  & 
       ! Procedure(s)

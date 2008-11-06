@@ -27,7 +27,7 @@ module sounding
         use constants, only:  & 
             fstderr ! Constant
 
-        use parameters_tunable, only: & 
+        use parameters_model, only: & 
             sclr_dim ! Variable(s)
 
         use std_atmosphere_mod, only:  & 

@@ -1,0 +1,112 @@
+!-------------------------------------------------------------------------------
+! $Id $
+!===============================================================================
+module parameters_model
+
+! Description:
+! Contains model parameters that are determined at run time rather than
+! compile time.
+!
+! References:
+! None
+!-------------------------------------------------------------------------------
+  implicit none
+
+  private ! Default scope
+
+  ! Maximum allowable value for Lscale [m].
+  ! Value depends on whether the model is run by itself or as part of a
+  ! host model.
+  real, public :: Lscale_max
+
+!$omp threadprivate(Lscale_max)
+
+  ! Maximum magnitude of PDF parameter `a'. 
+  real, public :: a_max_mag
+
+!$omp threadprivate(a_max_mag)
+
+  ! Model parameters and constraints setup in the namelists
+  real, public ::  & 
+    T0,       & ! Reference temperature (usually 300)  [K]
+    ts_nudge    ! Timescale of u/v nudging             [s]
+
+!$omp threadprivate(T0, ts_nudge)
+
+  integer, public :: & 
+    sclr_dim,        & ! Number of passive scalars
+    hydromet_dim       ! Number of hydrometeor species
+
+!$omp threadprivate(sclr_dim, hydromet_dim)
+
+  real, dimension(:), allocatable, public :: & 
+    sclrtol ! Threshold(s) on the passive scalars  [units vary]
+
+!$omp threadprivate(sclrtol)
+
+  public :: setup_parameters_model 
+
+  contains
+
+!-------------------------------------------------------------------------------
+  subroutine setup_parameters_model &
+             ( T0_in, ts_nudge_in, hydromet_dim_in, & 
+               sclr_dim_in, sclrtol_in, Lscale_max_in )
+
+! Description:
+!   Sets parameters to their initial values
+!
+! References:
+!   None
+!-------------------------------------------------------------------------------
+    use constants, only: Skw_max_mag, Skw_max_mag_sqd
+
+    implicit none
+
+    ! External
+    intrinsic :: sqrt, allocated
+
+    ! Input Variables
+    real, intent(in) ::  & 
+      T0_in,       & ! Ref. temperature             [K]
+      ts_nudge_in, & ! Timescale for u/v nudging    [s]
+      Lscale_max_in  ! Largest value for Lscale     [m]
+
+    integer, intent(in) :: & 
+      hydromet_dim_in,  & ! Number of hydrometeor species
+      sclr_dim_in         ! Number of passive scalars
+
+    real, intent(in), dimension(sclr_dim_in) :: & 
+      sclrtol_in     ! Threshold on passive scalars
+
+    ! --- Begin Code --- !
+     
+    ! Formula from subroutine pdf_closure, where sigma_sqd_w = 0.4 and Skw =
+    ! Skw_max_mag in this formula.  Note that this is constant, but can't appear
+    ! with a Fortran parameter attribute, so we define it here. 
+    a_max_mag = 1.0 &
+      - ( 0.5 * ( 1.0 - Skw_max_mag / sqrt( 4.0 * ( 1.0 - 0.4 )**3 + Skw_max_mag_sqd ) ) )
+
+    Lscale_max = Lscale_max_in
+
+    T0       = T0_in
+    ts_nudge = ts_nudge_in
+
+    hydromet_dim = hydromet_dim_in
+    sclr_dim     = sclr_dim_in
+
+    ! In a tuning run, this array has the potential to be allocated already
+    if ( .not. allocated( sclrtol ) ) then
+      allocate( sclrtol(1:sclr_dim) )
+    else
+      deallocate( sclrtol )
+      allocate( sclrtol(1:sclr_dim) )
+    end if
+
+    sclrtol(1:sclr_dim) = sclrtol_in(1:sclr_dim)
+
+    return
+  end subroutine setup_parameters_model
+!-------------------------------------------------------------------------------
+
+end module parameters_model

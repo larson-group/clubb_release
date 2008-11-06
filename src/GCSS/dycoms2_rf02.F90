@@ -36,7 +36,7 @@ use grid_class, only: zt2zm ! Procedure(s)
 
 use constants, only: fstderr, Cp, rc_tol ! Variable(s)
 
-use parameters_tunable, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim ! Variable(s)
 
 use model_flags, only: l_bugsrad, l_coamps_micro ! Variable(s)
 
@@ -267,7 +267,7 @@ subroutine dycoms2_rf02_sfclyr( um_sfc, vm_sfc,  &
 
 use constants, only: Cp, Lv ! Variable(s)
 
-use parameters_tunable, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim ! Variable(s)
 
 use array_index, only:  & 
     iisclr_thl, iisclr_rt ! Variable(s)

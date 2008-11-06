@@ -725,7 +725,10 @@ module clubb_driver
         Cp, Lv, ep2, ep1, emin, wtol_sqd, zero_threshold ! Variable(s)
 
     use parameters_tunable, only:  & 
-        T0, taumax, taumin, c_K, sclr_dim ! Variable(s)
+        taumax, taumin, c_K ! Variable(s)
+
+    use parameters_model, only:  & 
+        T0, sclr_dim  ! Variables
 
     use grid_class, only: gr ! Variable(s)
 
@@ -1269,7 +1272,7 @@ module clubb_driver
 
     use constants, only: fstderr ! Variables(s)
 
-    use parameters_tunable, only: sclr_dim ! Variables(s)
+    use parameters_model, only: sclr_dim ! Variables(s)
 
     use sounding, only: read_sounding ! Procedure(s)
 
