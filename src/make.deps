@@ -35,8 +35,8 @@ AiryFunction.o	: Parabolic_constants.o AiryFunction.f90
 Parabolic.o	: AiryFunction.o Parabolic_constants.o Parabolic.f90
 endian.o	: endian.F90 model_flags.o
 constants.o	: stats_precision.o constants.F90
-parameter_indices.o   : parameter_indices.F90
-parameters_tunable.o    : constants.o error_code.o parameters_tunable.F90
+parameter_indices.o : parameter_indices.F90
+parameters_tunable.o : parameter_indices.o constants.o error_code.o parameters_tunable.F90
 parameters_model.o : constants.o parameters_model.F90
 model_flags.o	: constants.o model_flags.F90
 stats_precision.o	: stats_precision.F90
