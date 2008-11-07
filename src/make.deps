@@ -36,7 +36,7 @@ Parabolic.o	: AiryFunction.o Parabolic_constants.o Parabolic.f90
 endian.o	: endian.F90 model_flags.o
 constants.o	: stats_precision.o constants.F90
 parameter_indices.o   : parameter_indices.F90
-parameters_tunable.o    : parameter_indices.o error_code.o parameters_tunable.F90
+parameters_tunable.o    : constants.o error_code.o parameters_tunable.F90
 parameters_model.o : constants.o parameters_model.F90
 model_flags.o	: constants.o model_flags.F90
 stats_precision.o	: stats_precision.F90
@@ -50,9 +50,9 @@ microphys_driver.o : constants.o model_flags.o lapack_wrap.o \
 output_grads.o	: constants.o recl.F90 endian.o output_file_module.o calendar.o \
 	output_grads.F90
 output_netcdf.o	: constants.o calendar.o parameters_tunable.o \
-	output_file_module.o output_netcdf.F90
-variables_diagnostic_module.o: constants.o parameters_tunable.o grid.o model_flags.o variables_diagnostic_module.F90
-variables_prognostic_module.o: constants.o parameters_tunable.o grid.o model_flags.o variables_prognostic_module.F90 
+	parameters_model.o output_file_module.o output_netcdf.F90
+variables_diagnostic_module.o: constants.o parameters_model.o grid.o model_flags.o variables_diagnostic_module.F90
+variables_prognostic_module.o: constants.o parameters_model.o grid.o model_flags.o variables_prognostic_module.F90 
 numer_check.o	: variables_prognostic_module.o variables_diagnostic_module.o constants.o model_flags.o\
 	error_code.o numer_check.F90
 inputgrads.o	: constants.o endian.o recl.F90 inputgrads.F90
@@ -75,10 +75,11 @@ pdf_closure_module.o : constants.o parameters_tunable.o grid.o saturation.o \
 	erf.o error_code.o numer_check.o parameters_model.o \
 	pdf_closure_module.F90
 advance_xp2_xpyp_module.o : constants.o parameters_tunable.o grid.o \
-	stats_type.o stats_variables.o \
+	stats_type.o stats_variables.o parameters_model.o \
 	lapack_wrap.o fill_holes.o clip_explicit.o \
 	error_code.o diffusion.o advance_xp2_xpyp_module.F90
-advance_xm_wpxp_module.o : constants.o parameters_tunable.o stats_variables.o lapack_wrap.o \
+advance_xm_wpxp_module.o : constants.o parameters_tunable.o stats_variables.o \
+	parameters_model.o lapack_wrap.o \
 	pos_definite_mod.o error_code.o diffusion.o mean_adv.o \
 	clip_semi_implicit.o clip_explicit.o \
 	advance_xm_wpxp_module.F90 
@@ -87,20 +88,22 @@ clubb_core.o : constants.o hydrostatic.o advance_xm_wpxp_module.o \
 	model_flags.o numer_check.o Skw_module.o \
 	mixing_length.o stats_type.o stats_variables.o stats_subs.o \
 	stats_zt.o stats_zm.o parameters_model.o \
-	stats_sfc.o stats_type.o sounding.o advance_xp2_xpyp_module.o saturation.o advance_wp2_wp3_mod.o \
-	grid.o saturation.o advance_windm_edsclrm_module.o variables_prognostic_module.o \
-	variables_diagnostic_module.o \
+	stats_sfc.o stats_type.o sounding.o advance_xp2_xpyp_module.o \
+	saturation.o advance_wp2_wp3_mod.o \
+	grid.o saturation.o advance_windm_edsclrm_module.o \
+	variables_prognostic_module.o variables_diagnostic_module.o \
 	sfc.o pdf_closure_module.o lh_sampler.o clip_explicit.o \
-	parameters_tunable.o error_code.o  clubb_core.F90 
-hydrostatic.o	: constants.o grid.o hydrostatic.F90 
+	parameters_tunable.o parameters_model.o error_code.o  clubb_core.F90 
+hydrostatic.o : constants.o grid.o hydrostatic.F90
 
-mixing_length.o	: constants.o parameters_tunable.o numer_check.o error_code.o \
+mixing_length.o	: constants.o parameters_model.o numer_check.o error_code.o \
 	mixing_length.F90
-saturation.o    : constants.o saturation.F90  
-sfc.o		: constants.o parameters_tunable.o numer_check.o error_code.o array_index.o sfc.F90 
-advance_wp2_wp3_mod.o		: constants.o parameters_tunable.o stats_variables.o lapack_wrap.o \
-                  error_code.o diffusion.o mean_adv.o fill_holes.o \
-                  clip_explicit.o advance_wp2_wp3_mod.F90
+saturation.o : constants.o saturation.F90
+sfc.o : constants.o parameters_model.o numer_check.o error_code.o \
+	array_index.o sfc.F90 
+advance_wp2_wp3_mod.o : constants.o parameters_tunable.o stats_variables.o \
+	lapack_wrap.o error_code.o diffusion.o mean_adv.o fill_holes.o \
+	clip_explicit.o advance_wp2_wp3_mod.F90
 
 error_code.o    : constants.o error_code.F90
 advance_windm_edsclrm_module.o : grid.o stats_variables.o lapack_wrap.o \
@@ -113,9 +116,10 @@ pos_definite_mod.o : grid.o stats_precision.o pos_definite_mod.F90
 fill_holes.o    : fill_holes.F90 grid.o
 clip_semi_implicit.o : constants.o stats_precision.o clip_semi_implicit.F90
 clip_explicit.o : grid.o stats_precision.o stats_type.o stats_variables.o \
-	model_flags.o parameters_tunable.o clip_explicit.F90
+	model_flags.o parameters_model.o clip_explicit.F90
 surface.o: constants.o stats_precision.o surface.F90
-test.o: stats_precision.o surface.o test.F90
+# dschanen can't find the file this refers to 7 Nov 2008
+#test.o: stats_precision.o surface.o test.F90
 # == Latin Hypercube dependencies  ==
 math_utilities.o	: math_utilities.F90
 lh_sampler.o		: constants.o random.o matrix_operations.o lh_sampler.F90
@@ -133,10 +137,10 @@ arm_97.o    : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o \
 arm_0003.o  : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o \
 	arm_0003.F90
 arm_3year.o : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o arm_3year.F90
-astex.o     : constants.o parameters_tunable.o model_flags.o grid.o astex.F90
+astex.o     : constants.o parameters_model.o model_flags.o grid.o astex.F90
 atex.o      : constants.o model_flags.o grid.o cloud_rad.o stats_variables.o error_code.o atex.F90
-bomex.o     : constants.o parameters_tunable.o model_flags.o grid.o parameters_tunable.o bomex.F90
-cobra.o     : constants.o parameters_tunable.o model_flags.o grid.o cobra.F90
+bomex.o     : constants.o parameters_model.o model_flags.o grid.o parameters_tunable.o bomex.F90
+cobra.o     : constants.o parameters_model.o model_flags.o grid.o cobra.F90
 fire.o      : constants.o model_flags.o grid.o stats_variables.o cloud_rad.o fire.F90
 gabls2.o    : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o gabls2.F90
 gabls3.o    : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o \
@@ -155,8 +159,8 @@ clex9_nov02.o : constants.o cos_solar_zen.o rad_lwsw.o model_flags.o grid.o \
 	stats_variables.o clex9_nov02.F90
 clex9_oct14.o : constants.o cos_solar_zen.o rad_lwsw.o model_flags.o grid.o stats_variables.o \
 	clex9_oct14.F90
-rico.o      : constants.o parameters_tunable.o model_flags.o grid.o stats_variables.o rico.F90
-wangara.o   : constants.o parameters_tunable.o model_flags.o grid.o wangara.F90
+rico.o      : constants.o parameters_model.o model_flags.o grid.o stats_variables.o rico.F90
+wangara.o   : constants.o parameters_model.o model_flags.o grid.o wangara.F90
 ice_dfsn_mod.o    : constants.o grid.o stats_variables.o ice_dfsn_mod.F90
 cloud_rad.o : constants.o grid.o cloud_rad.F90
 dycoms2_rf01.o : constants.o model_flags.o grid.o stats_variables.o error_code.o dycoms2_rf01.F90
@@ -205,7 +209,7 @@ clubb_driver.o		: clubb_core.o arm.o astex.o atex.o \
 	inputfields.o error_code.o array_index.o clubb_driver.F90
 array_index.o	: array_index.F90
 sounding.o	: grid.o std_atmosphere_mod.o interpolation.o constants.o \
-	parameters_tunable.o array_index.o sounding.F90
+	parameters_model.o array_index.o sounding.F90
 std_atmosphere_mod.o: constants.o interpolation.o std_atmosphere_mod.F90
 interpolation.o : error_code.o interpolation.F90
 calendar.o      : constants.o calendar.F90
