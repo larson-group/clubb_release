@@ -144,6 +144,8 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 			rm "${RUN_CASE[$x]}"_zt.dat
 			rm "${RUN_CASE[$x]}"_zm.ctl
 			rm "${RUN_CASE[$x]}"_zm.dat
+			rm "${RUN_CASE[$x]}"_sfc.ctl
+			rm "${RUN_CASE[$x]}"_sfc.dat
 		fi
 	else
 		if [ $NIGHTLY == true ] ; then
@@ -151,6 +153,9 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 			mv "${RUN_CASE[$x]}"_zt.dat CLUBB_current/
 			mv "${RUN_CASE[$x]}"_zm.ctl CLUBB_current/
 			mv "${RUN_CASE[$x]}"_zm.dat CLUBB_current/
+			mv "${RUN_CASE[$x]}"_sfc.ctl CLUBB_current/
+			mv "${RUN_CASE[$x]}"_sfc.dat CLUBB_current/
+
 		fi
  	fi
 done
