@@ -22,7 +22,8 @@ module model_flags
     l_pos_def            = .true.,  & ! Flux limiting pos. def. scheme on rtm
     l_hole_fill          = .true.,  & ! Hole filling pos. def. scheme on wp2,up2,rtp2,etc
     l_clip_semi_implicit = .true.,  & ! Semi-implicit clipping scheme on wpthlp and wprtp
-    l_3pt_sqd_dfsn       = .true.     ! Three-point squared diffusion coefficient
+    l_3pt_sqd_dfsn       = .true.,  & ! Three-point squared diffusion coefficient
+    l_clip_turb_adv      = .true.     ! Whether to correct thlm/rtm when wpxp is clipped
 
   logical, parameter, public :: &
     l_standard_term_ta = .false.    ! Use the standard discretization for the 
@@ -46,8 +47,9 @@ module model_flags
     l_tke_aniso        ! For anisotropic turbulent kinetic energy,
                        !   i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 
-  !$omp threadprivate(l_bugsrad, l_kk_rain, l_icedfs, &
-  !$omp   l_coamps_micro, l_cloud_sed, l_uv_nudge, l_tke_aniso)
+! OpenMP directives. These cannot be indented.
+!$omp threadprivate(l_bugsrad, l_kk_rain, l_icedfs, &
+!$omp   l_coamps_micro, l_cloud_sed, l_uv_nudge, l_tke_aniso)
 
   contains
 

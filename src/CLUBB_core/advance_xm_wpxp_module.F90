@@ -34,7 +34,7 @@ module advance_xm_wpxp_module
     nrhs = 1      ! Number of RHS vectors
 
 
-contains
+  contains
 
   !=============================================================================
   subroutine advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3, & 
@@ -1214,8 +1214,8 @@ contains
         lapack_error ! Procedure(s)
 
     use model_flags, only: & 
-        l_pos_def  ! Logical for whether to apply the positive
-    !  definite scheme to rtm
+        l_pos_def, &  ! Logical for whether to apply the positive definite scheme to rtm
+        l_clip_turb_adv ! Logical for whether to clip xm when wpxp is clipped
 
     use stats_type, only: & 
         stat_begin_update,  & ! Procedure(s)
@@ -1581,7 +1581,7 @@ contains
                           wpxp, wpxp_chnge )
 
     ! Adjusting xm based on clipping for w'x'.
-    if ( any( wpxp_chnge /= 0.0 ) ) then
+    if ( any( wpxp_chnge /= 0.0 ) .and. l_clip_turb_adv ) then
        call xm_correction_wpxp_cl( solve_type, dt, wpxp_chnge, gr%dzt, &
                                    xm )
     endif
