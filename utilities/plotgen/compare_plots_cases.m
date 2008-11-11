@@ -1679,7 +1679,7 @@ function create_time_plot( plot_x, plot_y, plot_z, plot_title, plot_units, ...
 
 	if ( cmp_curr == 1 )
    		i = i + 1;
-   		h(i) = plot( t_curr, prev_data, '-', 'Color', curr_color, 'LineWidth', curr_width );
+   		h(i) = plot( t_curr, curr_data, '-', 'Color', curr_color, 'LineWidth', curr_width );
 		sim2_title = strcat('\fontsize{6}', dir_curr);
    		sim2_title = regexprep(sim2_title, '_', ' ');
    		legend_text(i,1:length(sim2_title)) = sim2_title;
