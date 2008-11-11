@@ -17,6 +17,9 @@ function [filename,nz,z,t_time_steps,time_step_length,numvars,listofparams] ...
 %         numvars          --    The total number of variables
 %         listofparams     --    The names of all the variables, in vector form
 
+%Hardcode some return values to allow for reading of surface data
+z = 0;
+
 fid = fopen(file_header, 'rt');
 mline = [];
 y = 0;

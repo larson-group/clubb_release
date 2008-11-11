@@ -195,6 +195,10 @@ filename_cgbe_zm = 0;
 filename_1217_zm = 0;
 filename_prev_zm = 0;
 filename_curr_zm = 0;
+filename_cgbe_sfc = 0;
+filename_1217_sfc = 0;
+filename_prev_sfc = 0;
+filename_curr_sfc = 0;
 avg_vm_les = 0;
 avg_vm_cgbe = 0;
 avg_vm_1217 = 0;
@@ -294,6 +298,10 @@ listofparams_cgbe_zm = 0;
 listofparams_1217_zm = 0;
 listofparams_prev_zm = 0;
 listofparams_curr_zm = 0;
+listofparams_cgbe_sfc = 0;
+listofparams_1217_sfc = 0;
+listofparams_prev_sfc = 0;
+listofparams_curr_sfc = 0;
 numvars_les = 0;
 numvars_cgbe_zt = 0;
 numvars_1217_zt = 0;
@@ -303,6 +311,10 @@ numvars_cgbe_zm = 0;
 numvars_1217_zm = 0;
 numvars_prev_zm = 0;
 numvars_curr_zm = 0;
+numvars_cgbe_sfc = 0;
+numvars_1217_sfc = 0;
+numvars_prev_sfc = 0;
+numvars_curr_sfc = 0;
 nz_les = 0;
 t1_les = 0;
 t2_les = 0;
@@ -330,6 +342,18 @@ t2_prev_zm = 0;
 nz_curr_zm = 0;
 t1_curr_zm = 0;
 t2_curr_zm = 0;
+nz_cgbe_sfc = 0;
+t1_cgbe_sfc = 0;
+t2_cgbe_sfc = 0;
+nz_1217_sfc = 0;
+t1_1217_sfc = 0;
+t2_1217_sfc = 0;		
+nz_prev_sfc = 0;
+t1_prev_sfc = 0;
+t2_prev_sfc = 0;
+nz_curr_sfc = 0;
+t1_curr_sfc = 0;
+t2_curr_sfc = 0;
 t1_les2 = 0;
 t2_les2 = 0;
 les_var_len = 0;
@@ -383,18 +407,22 @@ end
 if ( cmp_cgbe == 1 )
    file_header_cgbe_zt = [dir_cgbe, '/', case_name, '_zt.ctl'];
    file_header_cgbe_zm = [dir_cgbe, '/', case_name, '_zm.ctl'];
+   file_header_cgbe_sfc = [dir_cgbe, '/', case_name, '_sfc.ctl'];
 end
 if ( cmp_1217 == 1 )
    file_header_1217_zt = [dir_1217, '/', case_name, '_zt.ctl'];
    file_header_1217_zm = [dir_1217, '/', case_name, '_zm.ctl'];
+   file_header_1217_sfc = [dir_1217, '/', case_name, '_sfc.ctl'];
 end
 if ( cmp_prev == 1 )
    file_header_prev_zt = [dir_prev, '/', case_name, '_zt.ctl'];
    file_header_prev_zm = [dir_prev, '/', case_name, '_zm.ctl'];
+   file_header_prev_sfc = [dir_prev, '/', case_name, '_sfc.ctl'];
 end
 if ( cmp_curr == 1 )
    file_header_curr_zt = [dir_curr, '/', case_name, '_zt.ctl'];
    file_header_curr_zm = [dir_curr, '/', case_name, '_zm.ctl'];
+   file_header_curr_sfc = [dir_curr, '/', case_name, '_sfc.ctl'];
 end
 
 % LES File
@@ -417,6 +445,9 @@ if ( cmp_cgbe == 1 )
    % Momentum-level output
    [filename_cgbe_zm, nz_cgbe_zm, z_cgbe_zm, t_time_steps_cgbe_zm, ts_length_cgbe_zm, ...
    numvars_cgbe_zm, listofparams_cgbe_zm] = header_read_expanded(file_header_cgbe_zm);
+   % Surface level output
+   [filename_cgbe_sfc, nz_cgbe_sfc, z_cgbe_sfc, t_time_steps_cgbe_sfc, ts_length_cgbe_sfc, ...
+   numvars_cgbe_sfc, listofparams_cgbe_sfc] = header_read_expanded(file_header_cgbe_sfc);
 end
 
 % HOC output -- December 17, 2005 version
@@ -427,6 +458,9 @@ if ( cmp_1217 == 1 )
    % Momentum-level output
    [filename_1217_zm, nz_1217_zm, z_1217_zm, t_time_steps_1217_zm, ts_length_1217_zm, ...
    numvars_1217_zm, listofparams_1217_zm] = header_read_expanded(file_header_1217_zm);
+   % Surface level output
+   [filename_1217_sfc, nz_1217_sfc, z_1217_sfc, t_time_steps_1217_sfc, ts_length_1217_sfc, ...
+   numvars_1217_sfc, listofparams_1217_sfc] = header_read_expanded(file_header_1217_sfc);
 end
 
 % HOC output -- previous
@@ -437,6 +471,9 @@ if ( cmp_prev == 1 )
    % Momentum-level output
    [filename_prev_zm, nz_prev_zm, z_prev_zm, t_time_steps_prev_zm, ts_length_prev_zm, ...
    numvars_prev_zm, listofparams_prev_zm] = header_read_expanded(file_header_prev_zm);
+   % Surface level output
+   [filename_prev_sfc, nz_prev_sfc, z_prev_sfc, t_time_steps_prev_sfc, ts_length_prev_sfc, ...
+   numvars_prev_sfc, listofparams_prev_sfc] = header_read_expanded(file_header_prev_sfc);
 end
 
 % HOC output -- current
@@ -447,6 +484,9 @@ if ( cmp_curr == 1 )
    % Momentum-level output
    [filename_curr_zm, nz_curr_zm, z_curr_zm, t_time_steps_curr_zm, ts_length_curr_zm, ...
    numvars_curr_zm, listofparams_curr_zm] = header_read_expanded(file_header_curr_zm);
+   % Surface level output
+   [filename_curr_sfc, nz_curr_sfc, z_curr_sfc, t_time_steps_curr_sfc, ts_length_curr_sfc, ...
+   numvars_curr_sfc, listofparams_curr_sfc] = header_read_expanded(file_header_curr_sfc);
 end
 
 %==========================================================================
@@ -495,6 +535,7 @@ les_rrainm      = 'qrm ';
 les_Nrm         = 'nrm ';
 les_up2		= 'up2 ';
 les_vp2		= 'vp2 ';
+les_lwp		= 'lwp ';
 
 if ( strcmp(les_type, 'rams' ) )
 
@@ -533,42 +574,47 @@ end
 
 if ( cmp_les == 1 )
 
-    if ( strcmp( les_type, 'coamps' ) )
+	if ( strcmp( les_type, 'coamps' ) )
         
-       % COAMPS LES has the first GrADS output at the time that is one
-       % GrADS output timestep after the initial runtime, so the formula
-       % for elapsed time for the GrADS file is:  
-       % elapsed_time = timestep * time_step_length;
-       % which results in:  timestep = elapsed_time/time_step_length.
+	% COAMPS LES has the first GrADS output at the time that is one
+	% GrADS output timestep after the initial runtime, so the formula
+	% for elapsed time for the GrADS file is:  
+	% elapsed_time = timestep * time_step_length;
+	% which results in:  timestep = elapsed_time/time_step_length.
 
-       t1_les = ceil(t1_min/ts_length_les);
-       if ( t1_les < 1 )
-          t1_les = 1;
-       elseif ( t1_les > t_time_steps_les )
-          t1_les = t_time_steps_les;
-       end
+	t1_les = ceil(t1_min/ts_length_les);
+	if ( t1_les < 1 )
+		t1_les = 1;
+	elseif ( t1_les > t_time_steps_les )
+		t1_les = t_time_steps_les;
+	end
 
-       t2_les = ceil(t2_min/ts_length_les);
-       if ( t2_les < 1 )
-          t2_les = 1;
-       elseif ( t2_les > t_time_steps_les )
-          t2_les = t_time_steps_les;
-       end
+	t2_les = ceil(t2_min/ts_length_les);
+	if ( t2_les < 1 )
+		t2_les = 1;
+	elseif ( t2_les > t_time_steps_les )
+		t2_les = t_time_steps_les;
+	end
         
-       t1_les2 = ceil(t1_min/ts_length_les2);
-       if ( t1_les2 < 1 )
-          t1_les2 = 1;
-       elseif ( t1_les2 > t_time_steps_les2 )
-          t1_les2 = t_time_steps_les2;
-       end
+	t1_les2 = ceil(t1_min/ts_length_les2);
+	if ( t1_les2 < 1 )
+		t1_les2 = 1;
+	elseif ( t1_les2 > t_time_steps_les2 )
+		t1_les2 = t_time_steps_les2;
+	end
 
-       t2_les2 = ceil(t2_min/ts_length_les2);
-       if ( t2_les2 < 1 )
-          t2_les2 = 1;
-       elseif ( t2_les2 > t_time_steps_les2 )
-          t2_les2 = t_time_steps_les2;
-       end
+	t2_les2 = ceil(t2_min/ts_length_les2);
+	if ( t2_les2 < 1 )
+		t2_les2 = 1;
+	elseif ( t2_les2 > t_time_steps_les2 )
+		t2_les2 = t_time_steps_les2;
+	end
        
+	timesteps_les(1) = 0;	
+	for j=2:t_time_steps_les,	
+       		timesteps_les(j) = timesteps_les(j-1) + ts_length_les;
+	end
+
     elseif ( strcmp(les_type, 'rams' ) )
    
        % The RAMS LES files have the first GrADS output at the initial
@@ -629,6 +675,20 @@ if ( cmp_cgbe == 1 )
        t2_cgbe_zm = t_time_steps_cgbe_zm;
     end
 
+    t1_cgbe_sfc = ceil(t1_min/ts_length_cgbe_sfc) + 1;
+    if ( t1_cgbe_sfc < 1 )
+       t1_cgbe_sfc = 1;
+    elseif ( t1_cgbe_sfc > t_time_steps_cgbe_sfc )
+       t1_cgbe_sfc = t_time_steps_cgbe_sfc;
+    end
+    
+    t2_cgbe_sfc = ceil(t2_min/ts_length_cgbe_sfc) + 1;
+    if ( t2_cgbe_sfc < 1 )
+       t2_cgbe_sfc = 1;
+    elseif ( t2_cgbe_zm > t_time_steps_cgbe_sfc )
+       t2_cgbe_sfc = t_time_steps_cgbe_sfc;
+    end
+
 end
 
 if ( cmp_1217 == 1 )
@@ -665,83 +725,135 @@ if ( cmp_1217 == 1 )
     elseif ( t2_1217_zm > t_time_steps_1217_zm )
        t2_1217_zm = t_time_steps_1217_zm;
     end
+   
+    t1_1217_sfc = ceil(t1_min/ts_length_1217_sfc) + 1;
+    if ( t1_1217_sfc < 1 )
+       t1_1217_sfc = 1;
+    elseif ( t1_1217_sfc > t_time_steps_1217_sfc )
+       t1_1217_sfc = t_time_steps_1217_sfc;
+    end
     
+    t2_1217_sfc = ceil(t2_min/ts_length_1217_sfc) + 1;
+    if ( t2_1217_sfc < 1 )
+       t2_1217_sfc = 1;
+    elseif ( t2_1217_sfc > t_time_steps_1217_sfc )
+       t2_1217_sfc = t_time_steps_1217_sfc;
+    end 
+
 end
 
 if ( cmp_prev == 1 )
     
-    % HOC now has the first GrADS output at the time that is one GrADS
-    % output timestep after the initial runtime, so the formula for 
-    % elapsed time for the GrADS file is:  
-    % elapsed_time = timestep * time_step_length;
-    % which results in:  timestep = elapsed_time/time_step_length.
+	% HOC now has the first GrADS output at the time that is one GrADS
+	% output timestep after the initial runtime, so the formula for 
+	% elapsed time for the GrADS file is:  
+	% elapsed_time = timestep * time_step_length;
+	% which results in:  timestep = elapsed_time/time_step_length.
 
-    t1_prev_zt = ceil(t1_min/ts_length_prev_zt);
-    if ( t1_prev_zt < 1 )
-       t1_prev_zt = 1;
-    elseif ( t1_prev_zt > t_time_steps_prev_zt )
-       t1_prev_zt = t_time_steps_prev_zt;
-    end
+	t1_prev_zt = ceil(t1_min/ts_length_prev_zt);
+	if ( t1_prev_zt < 1 )
+		t1_prev_zt = 1;
+	elseif ( t1_prev_zt > t_time_steps_prev_zt )
+		t1_prev_zt = t_time_steps_prev_zt;
+	end
 
-    t2_prev_zt = ceil(t2_min/ts_length_prev_zt);
-    if ( t2_prev_zt < 1 )
-       t2_prev_zt = 1;
-    elseif ( t2_prev_zt > t_time_steps_prev_zt )
-       t2_prev_zt = t_time_steps_prev_zt;
-    end
+	t2_prev_zt = ceil(t2_min/ts_length_prev_zt);
+	if ( t2_prev_zt < 1 )
+		t2_prev_zt = 1;
+	elseif ( t2_prev_zt > t_time_steps_prev_zt )
+		t2_prev_zt = t_time_steps_prev_zt;
+	end
     
-    t1_prev_zm = ceil(t1_min/ts_length_prev_zt);
-    if ( t1_prev_zm < 1 )
-       t1_prev_zm = 1;
-    elseif ( t1_prev_zm > t_time_steps_prev_zm )
-       t1_prev_zm = t_time_steps_prev_zm;
-    end
+	t1_prev_zm = ceil(t1_min/ts_length_prev_zt);
+	if ( t1_prev_zm < 1 )
+		t1_prev_zm = 1;
+	elseif ( t1_prev_zm > t_time_steps_prev_zm )
+		t1_prev_zm = t_time_steps_prev_zm;
+	end
     
-    t2_prev_zm = ceil(t2_min/ts_length_prev_zt);
-    if ( t2_prev_zm < 1 )
-       t2_prev_zm = 1;
-    elseif ( t2_prev_zm > t_time_steps_prev_zm )
-       t2_prev_zm = t_time_steps_prev_zm;
-    end
+	t2_prev_zm = ceil(t2_min/ts_length_prev_zt);
+	if ( t2_prev_zm < 1 )
+		t2_prev_zm = 1;
+	elseif ( t2_prev_zm > t_time_steps_prev_zm )
+		t2_prev_zm = t_time_steps_prev_zm;
+	end
     
+	t1_prev_sfc = ceil(t1_min/ts_length_prev_sfc);
+	if ( t1_prev_sfc < 1 )
+		t1_prev_sfc = 1;
+	elseif ( t1_prev_sfc > t_time_steps_prev_sfc )
+		t1_prev_sfc = t_time_steps_prev_sfc;
+	end
+    
+	t2_prev_sfc = ceil(t2_min/ts_length_prev_sfc);
+	if ( t2_prev_sfc < 1 )
+		t2_prev_sfc = 1;
+	elseif ( t2_prev_sfc > t_time_steps_prev_sfc )
+		t2_prev_sfc = t_time_steps_prev_sfc;
+	end
+
+	timesteps_prev(1) = 0;	
+	for j=2:t_time_steps_prev_zt,	
+       		timesteps_prev(j) = timesteps_prev(j-1) + ts_length_prev_zt;
+	end
+
 end
 
 if ( cmp_curr == 1 )
 
-    % HOC now has the first GrADS output at the time that is one GrADS
-    % output timestep after the initial runtime, so the formula for 
-    % elapsed time for the GrADS file is:  
-    % elapsed_time = timestep * time_step_length;
-    % which results in:  timestep = elapsed_time/time_step_length.
+	% HOC now has the first GrADS output at the time that is one GrADS
+	% output timestep after the initial runtime, so the formula for 
+	% elapsed time for the GrADS file is:  
+	% elapsed_time = timestep * time_step_length;
+	% which results in:  timestep = elapsed_time/time_step_length.
     
-    t1_curr_zt = ceil(t1_min/ts_length_curr_zt);
-    if ( t1_curr_zt < 1 )
-       t1_curr_zt = 1;
-    elseif ( t1_curr_zt > t_time_steps_curr_zt )
-       t1_curr_zt = t_time_steps_curr_zt;
-    end
+	t1_curr_zt = ceil(t1_min/ts_length_curr_zt);
+	if ( t1_curr_zt < 1 )
+		t1_curr_zt = 1;
+	elseif ( t1_curr_zt > t_time_steps_curr_zt )
+		t1_curr_zt = t_time_steps_curr_zt;
+	end
 
-    t2_curr_zt = ceil(t2_min/ts_length_curr_zt);
-    if ( t2_curr_zt < 1 )
-       t2_curr_zt = 1;
-    elseif ( t2_curr_zt > t_time_steps_curr_zt )
-       t2_curr_zt = t_time_steps_curr_zt;
-    end
+	t2_curr_zt = ceil(t2_min/ts_length_curr_zt);
+	if ( t2_curr_zt < 1 )
+		t2_curr_zt = 1;
+	elseif ( t2_curr_zt > t_time_steps_curr_zt )
+		t2_curr_zt = t_time_steps_curr_zt;
+	end
     
-    t1_curr_zm = ceil(t1_min/ts_length_curr_zt);
-    if ( t1_curr_zm < 1 )
-       t1_curr_zm = 1;
-    elseif ( t1_curr_zm > t_time_steps_curr_zm )
-       t1_curr_zm = t_time_steps_curr_zm;
-    end
+	t1_curr_zm = ceil(t1_min/ts_length_curr_zt);
+	if ( t1_curr_zm < 1 )
+		t1_curr_zm = 1;
+	elseif ( t1_curr_zm > t_time_steps_curr_zm )
+		t1_curr_zm = t_time_steps_curr_zm;
+	end
     
-    t2_curr_zm = ceil(t2_min/ts_length_curr_zt);
-    if ( t2_curr_zm < 1 )
-       t2_curr_zm = 1;
-    elseif ( t2_curr_zm > t_time_steps_curr_zm )
-       t2_curr_zm = t_time_steps_curr_zm;
-    end
+	t2_curr_zm = ceil(t2_min/ts_length_curr_zt);
+	if ( t2_curr_zm < 1 )
+		t2_curr_zm = 1;
+	elseif ( t2_curr_zm > t_time_steps_curr_zm )
+		t2_curr_zm = t_time_steps_curr_zm;
+	end
     
+	t1_curr_sfc = ceil(t1_min/ts_length_curr_sfc);
+	if ( t1_curr_sfc < 1 )
+		t1_curr_sfc = 1;
+	elseif ( t1_curr_sfc > t_time_steps_curr_sfc )
+		t1_curr_sfc = t_time_steps_curr_sfc;
+	end
+    
+	t2_curr_sfc = ceil(t2_min/ts_length_curr_sfc);
+	if ( t2_curr_sfc < 1 )
+		t2_curr_sfc = 1;
+	elseif ( t2_curr_sfc > t_time_steps_curr_sfc )
+		t2_curr_sfc = t_time_steps_curr_sfc;
+	end
+
+	timesteps_curr(1) = 0;	
+	for j=2:t_time_steps_curr_zt,	
+       		timesteps_curr(j) = timesteps_curr(j-1) + ts_length_curr_zt;
+	end
+
 end
 
 %==========================================================================
@@ -799,7 +911,8 @@ equiv_space = 0.01;
 		numvars_prev_zt, 'thlm ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, numvars_curr_zt, ...
 		'thlm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 
-create_plot(3, 2, 1, 'Liquid Water Potential Temperature, \theta_l', 'thlm    [K]', avg_thlm_les, avg_thlm_cgbe, avg_thlm_1217, avg_thlm_prev, avg_thlm_curr, 1, 1);
+create_plot(3, 2, 1, 'Liquid Water Potential Temperature, \theta_l', 'thlm    [K]', avg_thlm_les, z_les, nz_les, avg_thlm_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_thlm_1217, z_1217_zt, nz_1217_zt, ...
+		avg_thlm_prev, z_prev_zt, nz_prev_zt, avg_thlm_curr, z_curr_zt, nz_curr_zt, 1);
 
 %--------------------------------------------------------------------------
 
@@ -811,7 +924,8 @@ create_plot(3, 2, 1, 'Liquid Water Potential Temperature, \theta_l', 'thlm    [K
 		'rtm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 
 
-create_plot(3, 2, 2, 'Total Water Mixing Ratio, r_{ t}', 'rtm    [kg/kg]', avg_rtm_les, avg_rtm_cgbe, avg_rtm_1217, avg_rtm_prev, avg_rtm_curr, 1, 0);
+create_plot(3, 2, 2, 'Total Water Mixing Ratio, r_{ t}', 'rtm    [kg/kg]', avg_rtm_les, z_les, nz_les, avg_rtm_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_rtm_1217, z_1217_zt, nz_1217_zt, ...
+		avg_rtm_prev, z_prev_zt, nz_prev_zt, avg_rtm_curr, z_curr_zt, nz_curr_zt, 0);
 
 %--------------------------------------------------------------------------
 
@@ -822,7 +936,8 @@ create_plot(3, 2, 2, 'Total Water Mixing Ratio, r_{ t}', 'rtm    [kg/kg]', avg_r
 		numvars_prev_zt, 'cf ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, numvars_curr_zt, ...
 		'cf ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 
-create_plot(3, 2, 3, 'Cloud Fraction', 'cf    [%]', 100*avg_cf_les, 100*avg_cf_cgbe, 100*avg_cf_1217, 100*avg_cf_prev, 100*avg_cf_curr, 1, 0);
+create_plot(3, 2, 3, 'Cloud Fraction', 'cf    [%]', 100*avg_cf_les, z_les, nz_les, 100*avg_cf_cgbe, z_cgbe_zt, nz_cgbe_zt, 100*avg_cf_1217, z_1217_zt, nz_1217_zt, ...
+		100*avg_cf_prev, z_prev_zt, nz_prev_zt, 100*avg_cf_curr, z_curr_zt, nz_curr_zt, 0);
 
 %--------------------------------------------------------------------------
 
@@ -833,7 +948,8 @@ create_plot(3, 2, 3, 'Cloud Fraction', 'cf    [%]', 100*avg_cf_les, 100*avg_cf_c
 		numvars_prev_zt, 'rcm ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, numvars_curr_zt, ...
 		'rcm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 
-create_plot(3, 2, 4, 'Cloud Water Mixing Ratio, r_c', 'rcm    [kg/kg]', avg_rcm_les, avg_rcm_cgbe, avg_rcm_1217, avg_rcm_prev, avg_rcm_curr, 1, 0);
+create_plot(3, 2, 4, 'Cloud Water Mixing Ratio, r_c', 'rcm    [kg/kg]', avg_rcm_les, z_les, nz_les, avg_rcm_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_rcm_1217, z_1217_zt, nz_1217_zt, ...
+		avg_rcm_prev, z_prev_zt, nz_prev_zt, avg_rcm_curr, z_curr_zt, nz_curr_zt, 0);
 
 %--------------------------------------------------------------------------
 
@@ -844,7 +960,8 @@ create_plot(3, 2, 4, 'Cloud Water Mixing Ratio, r_c', 'rcm    [kg/kg]', avg_rcm_
 		numvars_prev_zm, 'wp2 ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, numvars_curr_zm, ...
 		'wp2 ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
-create_plot(3, 2, 5, 'Variance of w', 'wp2    [m^2/s^2]', avg_wp2_les, avg_wp2_cgbe, avg_wp2_1217, avg_wp2_prev, avg_wp2_curr, 1, 0);
+create_plot(3, 2, 5, 'Variance of w', 'wp2    [m^2/s^2]', avg_wp2_les, z_les, nz_les, avg_wp2_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_wp2_1217, z_1217_zt, nz_1217_zt, ...
+		avg_wp2_prev, z_prev_zt, nz_prev_zt, avg_wp2_curr, z_curr_zt, nz_curr_zt, 0);
 
 %--------------------------------------------------------------------------
 
@@ -855,7 +972,8 @@ create_plot(3, 2, 5, 'Variance of w', 'wp2    [m^2/s^2]', avg_wp2_les, avg_wp2_c
 		numvars_prev_zt, 'wp3 ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, numvars_curr_zt, ...
 		'wp3 ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 
-create_plot(3, 2, 6, 'Third-order Moment of w', 'wp3    [m^3/s^3]', avg_wp3_les, avg_wp3_cgbe, avg_wp3_1217, avg_wp3_prev, avg_wp3_curr, 1, 0);
+create_plot(3, 2, 6, 'Third-order Moment of w', 'wp3    [m^3/s^3]', avg_wp3_les, z_les, nz_les, avg_wp3_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_wp3_1217, z_1217_zt, nz_1217_zt, ...
+		avg_wp3_prev, z_prev_zt, nz_prev_zt, avg_wp3_curr, z_curr_zt, nz_curr_zt, 0);
 
 %--------------------------------------------------------------------------
 
@@ -874,7 +992,8 @@ set(gcf, 'PaperPosition', [ 1.0 1.0 6.5 9.0 ])
 		numvars_prev_zm, 'wpthlp ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, numvars_curr_zm, ...
 		'wpthlp ', nz_curr_zt, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
-create_plot(3, 2, 1, 'Turbulent Flux of \theta_l', 'wpthlp    [K m/s]', avg_wpthlp_les, avg_wpthlp_cgbe, avg_wpthlp_1217, avg_wpthlp_prev, avg_wpthlp_curr, 1, 0);
+create_plot(3, 2, 1, 'Turbulent Flux of \theta_l', 'wpthlp    [K m/s]', avg_wpthlp_les, z_les, nz_les, avg_wpthlp_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_wpthlp_1217, z_1217_zt, nz_1217_zt, ...
+		avg_wpthlp_prev, z_prev_zt, nz_prev_zt, avg_wpthlp_curr, z_curr_zt, nz_curr_zt, 0);
 
 %--------------------------------------------------------------------------
 
@@ -885,7 +1004,8 @@ create_plot(3, 2, 1, 'Turbulent Flux of \theta_l', 'wpthlp    [K m/s]', avg_wpth
 		numvars_prev_zm, 'wprtp ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, numvars_curr_zm, ...
 		'wprtp ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
-create_plot(3, 2, 2, 'Turbulent Flux of r_{ t}', 'wprtp    [(kg/kg) m/s]', avg_wprtp_les, avg_wprtp_cgbe, avg_wprtp_1217, avg_wprtp_prev, avg_wprtp_curr, 1, 0);
+create_plot(3, 2, 2, 'Turbulent Flux of r_{ t}', 'wprtp    [(kg/kg) m/s]', avg_wprtp_les, z_les, nz_les, avg_wprtp_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_wprtp_1217, z_1217_zt, nz_1217_zt, ...
+		avg_wprtp_prev, z_prev_zt, nz_prev_zt, avg_wprtp_curr, z_curr_zt, nz_curr_zt, 0);
 
 %--------------------------------------------------------------------------
 
@@ -896,7 +1016,8 @@ create_plot(3, 2, 2, 'Turbulent Flux of r_{ t}', 'wprtp    [(kg/kg) m/s]', avg_w
 		numvars_prev_zm, 'thlp2 ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, numvars_curr_zm, ...
 		'thlp2 ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
-create_plot(3, 2, 3, 'Variance of \theta_l', 'thlp2    [K^2]', avg_thlp2_les, avg_thlp2_cgbe, avg_thlp2_1217, avg_thlp2_prev, avg_thlp2_curr, 1, 0);
+create_plot(3, 2, 3, 'Variance of \theta_l', 'thlp2    [K^2]', avg_thlp2_les, z_les, nz_les, avg_thlp2_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_thlp2_1217, z_1217_zt, nz_1217_zt, ...
+		avg_thlp2_prev, z_prev_zt, nz_prev_zt, avg_thlp2_curr, z_curr_zt, nz_curr_zt, 0);
 
 %--------------------------------------------------------------------------
 
@@ -907,7 +1028,8 @@ create_plot(3, 2, 3, 'Variance of \theta_l', 'thlp2    [K^2]', avg_thlp2_les, av
 		numvars_prev_zm, 'rtp2 ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, numvars_curr_zm, ...
 		'rtp2 ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
-create_plot(3, 2, 4, 'Variance of r_t', 'rtp2    [(kg/kg)^2]', avg_rtp2_les, avg_rtp2_cgbe, avg_rtp2_1217, avg_rtp2_prev, avg_rtp2_curr, 1, 0);
+create_plot(3, 2, 4, 'Variance of r_t', 'rtp2    [(kg/kg)^2]', avg_rtp2_les, z_les, nz_les, avg_rtp2_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_rtp2_1217, z_1217_zt, nz_1217_zt, ...
+		avg_rtp2_prev, z_prev_zt, nz_prev_zt, avg_rtp2_curr, z_curr_zt, nz_curr_zt, 0);
 
 %--------------------------------------------------------------------------
 
@@ -918,7 +1040,8 @@ create_plot(3, 2, 4, 'Variance of r_t', 'rtp2    [(kg/kg)^2]', avg_rtp2_les, avg
 		numvars_prev_zm, 'rtpthlp ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, numvars_curr_zm, ...
 		'rtpthlp ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
-create_plot(3, 2, 5, 'Covariance of r_t & \theta_l', 'rtpthlp    [(kg/kg) K]', avg_rtpthlp_les, avg_rtpthlp_cgbe, avg_rtpthlp_1217, avg_rtpthlp_prev, avg_rtpthlp_curr, 1, 1);
+create_plot(3, 2, 5, 'Covariance of r_t & \theta_l', 'rtpthlp    [(kg/kg) K]', avg_rtpthlp_les, z_les, nz_les, avg_rtpthlp_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_rtpthlp_1217, z_1217_zt, nz_1217_zt, ...
+		avg_rtpthlp_prev, z_prev_zt, nz_prev_zt, avg_rtpthlp_curr, z_curr_zt, nz_curr_zt, 1);
 
 %--------------------------------------------------------------------------
 
@@ -929,7 +1052,8 @@ create_plot(3, 2, 5, 'Covariance of r_t & \theta_l', 'rtpthlp    [(kg/kg) K]', a
 		numvars_prev_zt, 'wm ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, numvars_curr_zt, ...
 		'wm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 
-create_plot(3, 2, 6, 'Vertical Wind Component, w (subsidence)', 'wm    [m/s]', avg_wm_les, avg_wm_cgbe, avg_wm_1217, avg_wm_prev, avg_wm_curr, 1, 0);
+create_plot(3, 2, 6, 'Vertical Wind Component, w (subsidence)', 'wm    [m/s]', avg_wm_les, z_les, nz_les, avg_wm_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_wm_1217, z_1217_zt, nz_1217_zt, ...
+		avg_wm_prev, z_prev_zt, nz_prev_zt, avg_wm_curr, z_curr_zt, nz_curr_zt, 0);
 
 %--------------------------------------------------------------------------
 
@@ -948,7 +1072,8 @@ set(gcf, 'PaperPosition', [ 1.0 1.0 6.5 9.0 ])
 		numvars_prev_zt, 'um ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, numvars_curr_zt, ...
 		'um ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 
-create_plot(3, 2, 1, 'Zonal Wind Component, u', 'um    [m/s]', avg_um_les, avg_um_cgbe, avg_um_1217, avg_um_prev, avg_um_curr, 1, 0);
+create_plot(3, 2, 1, 'Zonal Wind Component, u', 'um    [m/s]', avg_um_les, z_les, nz_les, avg_um_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_um_1217, z_1217_zt, nz_1217_zt, ...
+		avg_um_prev, z_prev_zt, nz_prev_zt, avg_um_curr, z_curr_zt, nz_curr_zt, 0);
 
 %--------------------------------------------------------------------------
 
@@ -959,7 +1084,8 @@ create_plot(3, 2, 1, 'Zonal Wind Component, u', 'um    [m/s]', avg_um_les, avg_u
 		numvars_prev_zt, 'vm ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, numvars_curr_zt, ...
 		'vm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 
-create_plot(3, 2, 2, 'Meridional Wind Component, v', 'vm    [m/s]', avg_vm_les, avg_vm_cgbe, avg_vm_1217, avg_vm_prev, avg_vm_curr, 1, 0);
+create_plot(3, 2, 2, 'Meridional Wind Component, v', 'vm    [m/s]', avg_vm_les, z_les, nz_les, avg_vm_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_vm_1217, z_1217_zt, nz_1217_zt, ...
+		avg_vm_prev, z_prev_zt, nz_prev_zt, avg_vm_curr, z_curr_zt, nz_curr_zt, 0);
 
 %--------------------------------------------------------------------------
 
@@ -971,9 +1097,11 @@ create_plot(3, 2, 2, 'Meridional Wind Component, v', 'vm    [m/s]', avg_vm_les, 
 		'upwp ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 1 );
 
 if ( les_grph_upwp == 1 )
-	create_plot(3, 2, 3, 'Covariance of u & w', 'upwp    [m^2/s^2]', avg_upwp_les, avg_upwp_cgbe, avg_upwp_1217, avg_upwp_prev, avg_upwp_curr, 1, 0);
+	create_plot(3, 2, 3, 'Covariance of u & w', 'upwp    [m^2/s^2]', avg_upwp_les, z_les, nz_les, avg_upwp_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_upwp_1217, z_1217_zt, nz_1217_zt, ...
+	avg_upwp_prev, z_prev_zt, nz_prev_zt, avg_upwp_curr, z_curr_zt, nz_curr_zt, 0);
 elseif ( les_grph_upwp == 2 )
-	create_plot(3, 2, 3, 'Covariance of u & w', 'upwp    [m^2/s^2]', avg_upwp_les, avg_upwp_cgbe, avg_upwp_1217, avg_upwp_prev, avg_upwp_curr, 2, 0);
+	create_plot(3, 2, 3, 'Covariance of u & w', 'upwp    [m^2/s^2]', avg_upwp_les, z_les2, nz_les2, avg_upwp_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_upwp_1217, z_1217_zt, nz_1217_zt, ...
+       	avg_upwp_prev, z_prev_zt, nz_prev_zt, avg_upwp_curr, z_curr_zt, nz_curr_zt, 0);
 end
 
 %--------------------------------------------------------------------------
@@ -986,9 +1114,11 @@ end
 		'vpwp ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 1 );
 
 if ( les_grph_vpwp == 1 )
-	create_plot(3, 2, 4, 'Covariance of v & w', 'vpwp    [m^2/s^2]', avg_vpwp_les, avg_vpwp_cgbe, avg_vpwp_1217, avg_vpwp_prev, avg_vpwp_curr, 1, 0);
+	create_plot(3, 2, 4, 'Covariance of v & w', 'vpwp    [m^2/s^2]', avg_vpwp_les, z_les, nz_les, avg_vpwp_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_vpwp_1217, z_1217_zt, nz_1217_zt, ...
+       	avg_vpwp_prev, z_prev_zt, nz_prev_zt, avg_vpwp_curr, z_curr_zt, nz_curr_zt, 0);
 elseif ( les_grph_vpwp == 2 )
-	create_plot(3, 2, 4, 'Covariance of v & w', 'vpwp    [m^2/s^2]', avg_vpwp_les, avg_vpwp_cgbe, avg_vpwp_1217, avg_vpwp_prev, avg_vpwp_curr, 2, 0);
+	create_plot(3, 2, 4, 'Covariance of v & w', 'vpwp    [m^2/s^2]', avg_vpwp_les, z_les2, nz_les2, avg_vpwp_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_vpwp_1217, z_1217_zt, nz_1217_zt, ...
+	avg_vpwp_prev, z_prev_zt, nz_prev_zt, avg_vpwp_curr, z_curr_zt, nz_curr_zt, 0);
 end
   
 %--------------------------------------------------------------------------
@@ -1000,7 +1130,8 @@ end
 		numvars_prev_zm, 'up2 ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, numvars_curr_zm, ...
 		'up2 ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
-create_plot(3, 2, 5, 'Variance of u wind', 'up2    [m^2/s^2]', avg_up2_les, avg_up2_cgbe, avg_up2_1217, avg_up2_prev, avg_up2_curr, 1, 0);
+create_plot(3, 2, 5, 'Variance of u wind', 'up2    [m^2/s^2]', avg_up2_les, z_les, nz_les, avg_up2_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_up2_1217, z_1217_zt, nz_1217_zt, ...
+		avg_up2_prev, z_prev_zt, nz_prev_zt, avg_up2_curr, z_curr_zt, nz_curr_zt, 0);
 
 %--------------------------------------------------------------------------
 
@@ -1011,7 +1142,8 @@ create_plot(3, 2, 5, 'Variance of u wind', 'up2    [m^2/s^2]', avg_up2_les, avg_
 		numvars_prev_zm, 'vp2 ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, numvars_curr_zm, ...
 		'vp2 ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
-create_plot(3, 2, 6, 'Variance of v wind', 'vp2    [m^2/s^2]', avg_vp2_les, avg_vp2_cgbe, avg_vp2_1217, avg_vp2_prev, avg_vp2_curr, 1, 0);
+create_plot(3, 2, 6, 'Variance of v wind', 'vp2    [m^2/s^2]', avg_vp2_les, z_les, nz_les, avg_vp2_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_vp2_1217, z_1217_zt, nz_1217_zt, ...
+		avg_vp2_prev, z_prev_zt, nz_prev_zt, avg_vp2_curr, z_curr_zt, nz_curr_zt, 0);
 
 %--------------------------------------------------------------------------
 
@@ -1032,7 +1164,8 @@ set(gcf, 'PaperPosition', [ 1.0 1.0 6.5 9.0 ])
 		numvars_prev_zt, 'rrainm ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, numvars_curr_zt, ...
 		'rrainm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 
-create_plot(3, 2, 1, 'Rain Water Mixing Ratio, r_r', 'rrainm    [kg/kg]', avg_rrainm_les, avg_rrainm_cgbe, avg_rrainm_1217, avg_rrainm_prev, avg_rrainm_curr, 1, 0);
+create_plot(3, 2, 1, 'Rain Water Mixing Ratio, r_r', 'rrainm    [kg/kg]', avg_rrainm_les, z_les, nz_les, avg_rrainm_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_rrainm_1217, z_1217_zt, nz_1217_zt, ...
+		avg_rrainm_prev, z_prev_zt, nz_prev_zt, avg_rrainm_curr, z_curr_zt, nz_curr_zt, 0);
 
 %--------------------------------------------------------------------------
 
@@ -1051,9 +1184,21 @@ if ( cmp_les == 1 )
    end
 end
 
-create_plot(3, 2, 2, 'Rain Drop Concentration, N_r', 'Nrm    [num/m^3]', avg_Nrm_les, avg_Nrm_cgbe, avg_Nrm_1217, avg_Nrm_prev, avg_Nrm_curr, 1, 1);
+create_plot(3, 2, 2, 'Rain Drop Concentration, N_r', 'Nrm    [num/m^3]', avg_Nrm_les, z_les, nz_les, avg_Nrm_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_Nrm_1217, z_1217_zt, nz_1217_zt, ...
+		avg_Nrm_prev, z_prev_zt, nz_prev_zt, avg_Nrm_curr, z_curr_zt, nz_curr_zt, 1);
 
 %--------------------------------------------------------------------------
+
+% Liquid water path (var lwp from sfc files)	
+[avg_lwp_curr, avg_lwp_prev] = time_tendency_load( filename_prev_sfc, listofparams_prev_sfc, ...
+		numvars_prev_sfc, 'lwp ', 1, max(size(timesteps_prev)), filename_curr_sfc, listofparams_curr_sfc, numvars_curr_sfc, ...
+		'lwp ', 1, max(size(timesteps_curr)));
+
+create_time_plot(3, 2, 3, 'Liquid Water Path', 'lwp    [kg/m^2]', ...
+		avg_lwp_prev, timesteps_prev, avg_lwp_curr, timesteps_curr );
+
+%--------------------------------------------------------------------------
+
 
 % Print 4th Page for Case (.eps document)
 outputfilename = [ case_name, '_page4' ];
@@ -1216,7 +1361,7 @@ function [avg_les_values, avg_cgbe_values, avg_1217_values, avg_prev_values, avg
 				varfnd = 1;
 			end
 			if ( (i == numvars_1217) & (varfnd == 0) )
-				[ 'Dec. 17 Variable: ', cgbe_var, ' not found for case, being set to 0!' ]
+				[ 'Dec. 17 Variable: ', dec17_var, ' not found for case, being set to 0!' ]
 				avg_1217_values(1:nz_1217) = 0.0;
 			elseif ( varfnd == 1 )
 				avg_1217_values = read_grads_hoc_endian([dir_1217, '/', filename_1217], ...
@@ -1238,7 +1383,7 @@ function [avg_les_values, avg_cgbe_values, avg_1217_values, avg_prev_values, avg
 				varfnd = 1;
 			end
 			if ( (i == numvars_prev) & (varfnd == 0) )
-				[ filename_prev, ' Variable: ', cgbe_var, ' not found for case, being set to 0!' ]
+				[ filename_prev, ' Variable: ', prev_var, ' not found for case, being set to 0!' ]
 				avg_prev_values(1:nz_prev) = 0.0;
 			elseif ( varfnd == 1 )
 				avg_prev_values = read_grads_hoc_endian([dir_prev, '/', filename_prev], ...
@@ -1260,7 +1405,7 @@ function [avg_les_values, avg_cgbe_values, avg_1217_values, avg_prev_values, avg
 				varfnd = 1;
 			end
 			if ( (i == numvars_curr) & (varfnd == 0) )
-				[ filename_curr, ' Variable: ', cgbe_var, ' not found for case, being set to 0!' ]
+				[ filename_curr, ' Variable: ', curr_var, ' not found for case, being set to 0!' ]
 				avg_curr_values(1:nz_curr) = 0.0;
 			elseif ( varfnd == 1 )
 				avg_curr_values = read_grads_hoc_endian([dir_curr, '/', filename_curr], ...
@@ -1272,8 +1417,68 @@ function [avg_les_values, avg_cgbe_values, avg_1217_values, avg_prev_values, avg
 %End var_load
 end
 
-function create_plot( plot_x, plot_y, plot_z, plot_title, plot_units, les_data, cgbe_data, ...
-			dec12_data, prev_data, curr_data, nz_type, add_legend )
+%Use only for loading time tendencies from SFC files.
+function [avg_prev_values, avg_curr_values] = time_tendency_load( filename_prev, listofparams_prev, ...
+		numvars_prev, prev_var, t1_prev, t2_prev, filename_curr, listofparams_curr, numvars_curr, ...
+		curr_var, t1_curr, t2_curr )		
+
+	global dir_prev
+	global dir_curr
+	global cmp_prev
+	global cmp_curr
+
+       	avg_prev_values = 0;
+       	avg_curr_values = 0;
+	
+
+	% HOC -- previous
+	if ( cmp_prev == 1 )
+		
+		prev_var_len = max(size(prev_var));
+		
+		varfnd = 0;
+		for i = 1:1:numvars_prev
+			if ( strcmp( listofparams_prev(i,1:prev_var_len), prev_var ) )
+				varnum = i;
+				varfnd = 1;
+			end
+			if ( (i == numvars_prev) & (varfnd == 0) )
+				[ filename_prev, ' Variable: ', prev_var, ' not found for case, being set to 0!' ]
+				avg_prev_values(1:nz_prev) = 0.0;
+			elseif ( varfnd == 1 )
+				avg_prev_values = read_grads_hoc_sfc_endian([dir_prev, '/', filename_prev], ...
+				'ieee-le', 1, t1_prev, t2_prev, varnum, numvars_prev);
+				break
+			end
+		end
+	end
+
+	% HOC -- current
+	if ( cmp_curr == 1 )
+		
+		curr_var_len = max(size(curr_var));
+		
+		varfnd = 0;
+		for i = 1:1:numvars_curr
+			if ( strcmp( listofparams_curr(i,1:curr_var_len), curr_var ) )
+				varnum = i;
+				varfnd = 1;
+			end
+			if ( (i == numvars_curr) & (varfnd == 0) )
+				[ filename_curr, ' Variable: ', curr_var, ' not found for case, being set to 0!' ]
+				avg_curr_values(1:nz_curr) = 0.0;
+			elseif ( varfnd == 1 )
+				avg_curr_values = read_grads_hoc_sfc_endian([dir_curr, '/', filename_curr], ...
+				'ieee-le', 1, t1_curr, t2_curr, varnum, numvars_curr);
+				break
+			end
+		end
+	end
+%End time_tendency_load
+end
+
+function create_plot( plot_x, plot_y, plot_z, plot_title, plot_units, les_data, z_les, nz_les, cgbe_data, z_cgbe, nz_cgbe, ...
+			dec12_data, z_1217, nz_1217, prev_data, z_prev, nz_prev, curr_data, z_curr, nz_curr, add_legend )
 	
 	
 	global dir_prev
@@ -1283,18 +1488,6 @@ function create_plot( plot_x, plot_y, plot_z, plot_title, plot_units, les_data, 
 	global cmp_1217
 	global cmp_prev
 	global cmp_curr
-	global z_les
-	global z_les2
-	global nz_les
-	global nz_les2
-	global z_cgbe_zt
-	global nz_cgbe_zt
-	global z_1217_zt
-	global nz_1217_zt
-	global z_prev_zt
-	global nz_prev_zt
-	global z_curr_zt
-	global nz_curr_zt
 	global les_color
 	global les_width
 	global cgbe_color
@@ -1317,15 +1510,10 @@ function create_plot( plot_x, plot_y, plot_z, plot_title, plot_units, les_data, 
 	if ( cmp_les == 1 )
    		i = i + 1;
    		
-		if ( nz_type == 1 )
-			h(i) = plot( les_data, z_les, '-', 'Color', les_color, 'LineWidth', les_width );
-			nz_data = nz_les;
-			z_data = z_les;
-		elseif ( nz_type == 2 )
-			h(i) = plot( les_data, z_les2, '-', 'Color', les_color, 'LineWidth', les_width );
-			nz_data = nz_les2;
-			z_data = z_les2;
-		end
+		h(i) = plot( les_data, z_les, '-', 'Color', les_color, 'LineWidth', les_width );
+		nz_data = nz_les;
+		z_data = z_les;
+		
 		legend_text(i,1:15) = '\fontsize{6}LES';
 		hold on
 
@@ -1345,16 +1533,16 @@ function create_plot( plot_x, plot_y, plot_z, plot_title, plot_units, les_data, 
 
 	if ( cmp_cgbe == 1 )
    		i = i + 1;
-   		h(i) = plot( cgbe_data, z_cgbe_zt, '-', 'Color', cgbe_color, 'LineWidth', cgbe_width );
+   		h(i) = plot( cgbe_data, z_cgbe, '-', 'Color', cgbe_color, 'LineWidth', cgbe_width );
 		legend_text(i,1:27) = '\fontsize{6}HOC "best-ever"';
    		hold on
    		% Find vertical level index right below top of graph.
-   		for k = 2:1:nz_cgbe_zt
-      			if ( z_cgbe_zt(k) > graphtop )
+   		for k = 2:1:nz_cgbe
+      			if ( z_cgbe(k) > graphtop )
          			graphtopidx = k - 1;
          			break
-      			elseif ( k == nz_cgbe_zt )
-         			graphtopidx = nz_cgbe_zt;
+      			elseif ( k == nz_cgbe )
+         			graphtopidx = nz_cgbe;
       			end
    		end
 		minval(i) = min(cgbe_data(1:graphtopidx));
@@ -1363,16 +1551,16 @@ function create_plot( plot_x, plot_y, plot_z, plot_title, plot_units, les_data, 
 
 	if ( cmp_1217 == 1 )
    		i = i + 1;
-   		h(i) = plot( dec12_data, z_1217_zt, '-.', 'Color', dec12_color, 'LineWidth', dec12_width );
+   		h(i) = plot( dec12_data, z_1217, '-.', 'Color', dec12_color, 'LineWidth', dec12_width );
 		legend_text(i,1:26) = '\fontsize{6}HOC 12/17/2005';
    		hold on
    		% Find vertical level index right below top of graph.
-   		for k = 2:1:nz_1217_zt
-      			if ( z_1217_zt(k) > graphtop )
+   		for k = 2:1:nz_1217
+      			if ( z_1217(k) > graphtop )
          			graphtopidx = k - 1;
          			break
-      			elseif ( k == nz_1217_zt )
-         			graphtopidx = nz_1217_zt;
+      			elseif ( k == nz_1217 )
+         			graphtopidx = nz_1217;
       			end
    		end
    		minval(i) = min(dec12_data(1:graphtopidx));
@@ -1381,18 +1569,18 @@ function create_plot( plot_x, plot_y, plot_z, plot_title, plot_units, les_data, 
 	
 	if ( cmp_prev == 1 )
    		i = i + 1;
-   		h(i) = plot( prev_data, z_prev_zt, '--', 'Color', prev_color, 'LineWidth', prev_width );
+   		h(i) = plot( prev_data, z_prev, '--', 'Color', prev_color, 'LineWidth', prev_width );
    		sim1_title = strcat('\fontsize{6}', dir_prev);
    		sim1_title = regexprep(sim1_title, '_', ' ');
    		legend_text(i,1:length(sim1_title)) = sim1_title;
    		hold on
    		% Find vertical level index right below top of graph.
-   		for k = 2:1:nz_prev_zt
-      			if ( z_prev_zt(k) > graphtop )
+   		for k = 2:1:nz_prev
+      			if ( z_prev(k) > graphtop )
          			graphtopidx = k - 1;
          			break
-      			elseif ( k == nz_prev_zt )
-         			graphtopidx = nz_prev_zt;
+      			elseif ( k == nz_prev )
+         			graphtopidx = nz_prev;
       			end
    		end
    		minval(i) = min(prev_data(1:graphtopidx));
@@ -1401,18 +1589,18 @@ function create_plot( plot_x, plot_y, plot_z, plot_title, plot_units, les_data, 
 
 	if ( cmp_curr == 1 )
    		i = i + 1;
-   		h(i) = plot( curr_data, z_curr_zt, '-', 'Color', curr_color, 'LineWidth', curr_width );
+   		h(i) = plot( curr_data, z_curr, '-', 'Color', curr_color, 'LineWidth', curr_width );
 		sim2_title = strcat('\fontsize{6}', dir_curr);
    		sim2_title = regexprep(sim2_title, '_', ' ');
    		legend_text(i,1:length(sim2_title)) = sim2_title;
    		hold on
    		% Find vertical level index right below top of graph.
-   		for k = 2:1:nz_curr_zt
-      			if ( z_curr_zt(k) > graphtop )
+   		for k = 2:1:nz_curr
+      			if ( z_curr(k) > graphtop )
          			graphtopidx = k - 1;
          			break
-      			elseif ( k == nz_curr_zt )
-         			graphtopidx = nz_curr_zt;
+      			elseif ( k == nz_curr )
+         			graphtopidx = nz_curr;
       			end
    		end
    		minval(i) = min(curr_data(1:graphtopidx));
@@ -1448,6 +1636,88 @@ function create_plot( plot_x, plot_y, plot_z, plot_title, plot_units, les_data, 
 	zmax = graphtop;
 	axis([ xmin xmax zmin zmax ])
 end
+
+%Do not use for purposes other than plotting time tendencies (using the aforementioned time_tendency_load
+function create_time_plot( plot_x, plot_y, plot_z, plot_title, plot_units, ...
+			prev_data, t_prev, curr_data, t_curr )
+	
+	
+	global dir_prev
+	global dir_curr
+	global cmp_les
+	global cmp_prev
+	global cmp_curr
+	global les_color
+	global les_width
+	global prev_color
+	global prev_width
+	global curr_color
+	global curr_width
+	global graphtop
+	global graphbase
+	global equiv_space
+	global percentage	
+			
+	subplot(plot_x, plot_y, plot_z)
+	i = 0;
+	clear h;
+		
+	if ( cmp_prev == 1 )
+   		i = i + 1;
+		h(i) = plot( t_prev, prev_data, '--', 'Color', prev_color, 'LineWidth', prev_width );
+   		sim1_title = strcat('\fontsize{6}', dir_prev);
+   		sim1_title = regexprep(sim1_title, '_', ' ');
+   		legend_text(i,1:length(sim1_title)) = sim1_title;
+   		hold on
+
+		minval(i) = min(prev_data);
+   		maxval(i) = max(prev_data);
+
+		mintime(i) = min(t_prev);
+		maxtime(i) = max(t_prev);
+	end
+
+	if ( cmp_curr == 1 )
+   		i = i + 1;
+   		h(i) = plot( t_curr, prev_data, '-', 'Color', curr_color, 'LineWidth', curr_width );
+		sim2_title = strcat('\fontsize{6}', dir_curr);
+   		sim2_title = regexprep(sim2_title, '_', ' ');
+   		legend_text(i,1:length(sim2_title)) = sim2_title;
+   		hold on
+
+		minval(i) = min(curr_data);
+   		maxval(i) = max(curr_data);
+
+		mintime(i) = min(t_curr);
+		maxtime(i) = max(t_curr);
+	end
+
+	hold off
+	
+	% Axis labels and graph title.
+	xlabel('Time    [s]')
+	ylabel(plot_units)
+	title(plot_title)
+
+	% Extent of graph.
+	xmin = min(mintime);
+	xmax = max(maxtime);
+	ymin = min(minval);
+	ymax = max(maxval);
+	if ( xmax == xmin )
+   		xmin = xmin - equiv_space;
+   		xmax = xmax + equiv_space;
+	else
+   		xdiff = xmax - xmin;
+   		xrange = xdiff/percentage;
+   		xmedian = ( xmin + xmax ) / 2;
+   		xmin = xmedian - xrange/2;
+   		xmax = xmedian + xrange/2;
+	end
+
+	axis([ xmin xmax ymin ymax ])
+end
+
 
 function print_page( file_name, output_eps, output_jpeg, output_ps )
 	if (output_eps == 1)
