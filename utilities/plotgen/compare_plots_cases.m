@@ -1695,7 +1695,7 @@ function create_time_plot( plot_x, plot_y, plot_z, plot_title, plot_units, ...
 	hold off
 	
 	% Axis labels and graph title.
-	xlabel('Time    [s]')
+	xlabel('Time    [min]')
 	ylabel(plot_units)
 	title(plot_title)
 
@@ -1704,15 +1704,15 @@ function create_time_plot( plot_x, plot_y, plot_z, plot_title, plot_units, ...
 	xmax = max(maxtime);
 	ymin = min(minval);
 	ymax = max(maxval);
-	if ( xmax == xmin )
-   		xmin = xmin - equiv_space;
-   		xmax = xmax + equiv_space;
+	if ( ymax == ymin )
+   		ymin = ymin - equiv_space;
+   		ymax = ymax + equiv_space;
 	else
-   		xdiff = xmax - xmin;
-   		xrange = xdiff/percentage;
-   		xmedian = ( xmin + xmax ) / 2;
-   		xmin = xmedian - xrange/2;
-   		xmax = xmedian + xrange/2;
+   		ydiff = ymax - ymin;
+   		yrange = ydiff/percentage;
+   		ymedian = ( ymin + ymax ) / 2;
+   		ymin = ymedian - yrange/2;
+   		ymax = ymedian + yrange/2;
 	end
 
 	axis([ xmin xmax ymin ymax ])
