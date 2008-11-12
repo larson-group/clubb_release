@@ -120,7 +120,8 @@
         use constants, only:  & 
             emin, &
             rttol, &
-            thltol
+            thltol, &
+            wtol_sqd
 
         use parameters_model, only: & 
             sclr_dim ! Variable(s) 
@@ -205,7 +206,7 @@
 
         up2(1:nzmax)     = 2./3. * emin ! u'^2
         vp2(1:nzmax)     = 2./3. * emin ! v'^2
-        wp2(1:nzmax)     = 2./3. * emin ! w'^2
+        wp2(1:nzmax)     = wtol_sqd     ! w'^2
 
         thlm(1:nzmax)    = 0.0         ! liquid potential temperature
         rtm(1:nzmax)     = 0.0         ! total water mixing ratio

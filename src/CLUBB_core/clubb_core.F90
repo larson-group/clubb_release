@@ -393,7 +393,7 @@ module clubb_core
     ELSE
       ! Variances for cases where the lowest level is not at the surface.
       ! Eliminate surface effects on lowest level variances.
-      wp2(1)     = (2.0/3.0) * emin
+      wp2(1)     = wtol_sqd
       up2(1)     = (2.0/3.0) * emin
       vp2(1)     = (2.0/3.0) * emin
       thlp2(1)   = 0.0
@@ -412,7 +412,7 @@ module clubb_core
     ! Interpolate wp2 & wp3, and then compute Skw for m & t grid
     !----------------------------------------------------------------
 
-    wp2_zt = max( zm2zt( wp2 ), 2./3.*emin ) ! Positive definite quantity
+    wp2_zt = max( zm2zt( wp2 ), wtol_sqd ) ! Positive definite quantity
 
     Skw_zt(1:gr%nnzp) = Skw_func( wp2_zt(1:gr%nnzp), wp3(1:gr%nnzp) )
     Skw_zm(1:gr%nnzp) = zt2zm( Skw_zt(1:gr%nnzp) ) 

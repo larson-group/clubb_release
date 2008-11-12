@@ -345,7 +345,7 @@ contains
         ddzt       ! Function
 
     use constants, only: & 
-        emin,          & ! Variables(s)
+        wtol_sqd,      & ! Variables(s)
         eps,           &
         zero_threshold
 
@@ -749,10 +749,10 @@ contains
       call stat_begin_update( iwp2_pd, real( wp2 / dt ), zm )
     endif
 
-    if ( l_hole_fill .and. any( wp2 < 2./3*emin ) ) then
+    if ( l_hole_fill .and. any( wp2 < wtol_sqd ) ) then
 
       ! Use a simple hole filling algorithm
-      call fill_holes_driver( 2, 2./3.*emin, "zm", wp2 )
+      call fill_holes_driver( 2, wtol_sqd, "zm", wp2 )
 
     endif ! wp2
 
@@ -763,12 +763,12 @@ contains
 
 
     ! Clip w'^2 at a minimum threshold.
-    call clip_variance( "wp2", dt, 2./3.*emin, wp2 )
+    call clip_variance( "wp2", dt, wtol_sqd, wp2 )
 
     ! Interpolate w'^2 from momentum levels to thermodynamic levels.
     ! This is used for the clipping of w'^3 according to the value
     ! of Sk_w now that w'^2 and w'^3 have been advanced one timestep.
-    wp2_zt = max( zm2zt( wp2 ), 2./3.*emin )   ! Positive definite quantity
+    wp2_zt = max( zm2zt( wp2 ), wtol_sqd )   ! Positive definite quantity
 
     ! Clip w'^3 by limiting skewness.
     call clip_skewness( dt, wp2_zt, wp3 )
@@ -1390,7 +1390,7 @@ contains
         nu8
 
     use constants, only: & 
-        emin,  & ! Variable(s)
+        wtol_sqd,  & ! Variable(s)
         eps
 
     use model_flags, only:  & 
@@ -1494,7 +1494,7 @@ contains
       ! RHS dissipation term 1 (dp1).
       rhs(k_wp2) &
       = rhs(k_wp2) &
-      + wp2_term_dp1_rhs( C1_Skw_fnc(k), tau1m(k), 2./3.*emin )
+      + wp2_term_dp1_rhs( C1_Skw_fnc(k), tau1m(k), wtol_sqd )
 
       ! RHS eddy diffusion term: dissipation term 2 (dp2).
       if ( l_crank_nich_diff ) then
@@ -1560,7 +1560,7 @@ contains
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
         ! subtracts the value sent in, reverse the sign on wp2_term_dp1_rhs.
         call stat_begin_update_pt( iwp2_dp1, k, &
-          -wp2_term_dp1_rhs( C1_Skw_fnc(k), tau1m(k), 2./3.*emin ), zm )
+          -wp2_term_dp1_rhs( C1_Skw_fnc(k), tau1m(k), wtol_sqd ), zm )
 
         ! w'^2 term pr3 is completely explicit; call stat_update_var_pt.
         call stat_update_var_pt( iwp2_pr3, k, & 
