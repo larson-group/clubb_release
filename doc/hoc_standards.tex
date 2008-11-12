@@ -159,15 +159,18 @@ subroutine mulmul( x, y, z )
     pi,         & ! Ratio of radii to their circumferance [no units]
     euler_const   ! Made up constant [no units]
 
+  use dimensions, only: &
+    nnzp ! Number of data points of our model [count]
+
   implicit none
 
   ! First list input variables
-  real, dimension(5), intent(in) :: &
+  real, dimension(nnzp), intent(in) :: &
     x, &! First factor   [no units]
     y   ! Second factor  [no units]
 
   ! Then list inout variables, and then outputs 
-  real, dimension(5), intent(out) :: &
+  real, dimension(nnzp), intent(out) :: &
     z  ! output         [no units]
 !-----------------------------------------------------------------------
 
@@ -177,7 +180,7 @@ subroutine mulmul( x, y, z )
   ! independently of other elements of the subroutine
   ! allowing for parallelism if possible.
 
-  z(1:5) = ( x(1:5) / pi ) * ( y(1:5) / euler_const )
+  z(1:nnzp) = ( x(1:nnzp) / pi ) * ( y(1:nnzp) / euler_const )
 
   return
 end subroutine mulmul
@@ -313,6 +316,8 @@ The F90 style operators are:
 <= instead of .le.
 \end{verbatim}
 
+\item When creating a model flag variable of type \texttt{logical}, precede the
+ name with a \verb|l_| to make it easy to see that it is a logical.
 
 \item When writing flow control statements 
 (\texttt{ if, else if, select case }), keep the logic as straightforward and
@@ -419,7 +424,8 @@ section of code is to pass them as an argument.
 compile time checking of input arguments. \newline
 
 \item When putting several subroutines or functions in a module, limit the
- number of public interfaces. \newline
+ number of public interfaces to those that are called from outside the 
+ module.\\
 E.g. 
 \begin{verbatim}
   ! module gcss
@@ -572,6 +578,8 @@ E.g. \\
 \verb*|  | {\small 2 column indent within the scope of \texttt{module}} \\
 \verb|| \\
 \verb*|  implicit|\verb| none| \\
+\verb|| \\
+\verb*|  contains| \\
 \verb|| \\
 \verb*|  subroutine|\verb| advect_2D( ... )| \\
 \verb*|    use|\verb| grid, only: & | {\small 2+2 columns within the scope of \texttt{dynamics/advect\_2D}} \\
