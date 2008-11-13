@@ -394,8 +394,8 @@ module clubb_core
       ! Variances for cases where the lowest level is not at the surface.
       ! Eliminate surface effects on lowest level variances.
       wp2(1)     = wtol_sqd
-      up2(1)     = (2.0/3.0) * emin
-      vp2(1)     = (2.0/3.0) * emin
+      up2(1)     = wtol_sqd
+      vp2(1)     = wtol_sqd
       thlp2(1)   = 0.0
       rtp2(1)    = 0.0
       rtpthlp(1) = 0.0

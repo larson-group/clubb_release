@@ -58,7 +58,7 @@ contains
       wtol_sqd,  & ! Variable(s)
       rttol, & 
       thltol, & 
-      emin, & 
+      wtol_sqd, & 
       fstderr, &
       zero_threshold
 
@@ -509,9 +509,9 @@ contains
                                    rtp2 )                    ! Intent(inout)
       call pos_definite_variances( "thlp2", dt, thltol**2, & ! Intent(in)
                                    thlp2 )                   ! Intent(inout)
-      call pos_definite_variances( "up2", dt, 2./3.*emin, &  ! Intent(in)
+      call pos_definite_variances( "up2", dt, wtol_sqd, &    ! Intent(in)
                                    up2 )                     ! Intent(inout)
-      call pos_definite_variances( "vp2", dt, 2./3.*emin, &  ! Intent(in)
+      call pos_definite_variances( "vp2", dt, wtol_sqd, &    ! Intent(in)
                                    vp2 )                     ! Intent(inout)
     endif
 
@@ -545,8 +545,7 @@ contains
     ! Clipping for u'^2
 
     !threshold = 0.0
-
-    threshold = 2./3.*emin
+    threshold = wtol_sqd
 
     call clip_variance( "up2", dt, threshold, & ! Intent(in)
                         up2 )                   ! Intent(inout)
@@ -555,7 +554,7 @@ contains
     ! Clipping for v'^2
 
     !threshold = 0.0
-    threshold = 2./3.*emin
+    threshold = wtol_sqd
 
     call clip_variance( "vp2", dt, threshold, & ! Intent(in)
                         vp2 )                   ! Intent(inout)

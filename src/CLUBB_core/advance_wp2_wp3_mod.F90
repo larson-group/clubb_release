@@ -812,7 +812,8 @@ contains
         nu_hd
 
     use constants, only:  & 
-        eps ! Variable(s)
+        eps,     & ! Variable(s)
+        weight_timestep_tp1
 
     use model_flags, only: & 
         l_tke_aniso, & ! Variable(s)
@@ -1168,9 +1169,21 @@ contains
       + term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
 
       ! LHS turbulent advection (ta) and turbulent production (tp) terms.
-      lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3) & 
-      = lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3) & 
-      + wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
+      ! Note:  The weight of the implicit portion of these terms is controlled
+      !        by the factor weight_timestep_tp1 (abbreviated "weight" in the
+      !        expression below).  A factor is added to the right-hand side of
+      !        the equation in order to balance a weight that is not equal to 1,
+      !        such that:
+      !             -y(t) * [ weight * X(t+1) + ( 1 - weight ) * X(t) ] + RHS;
+      !        where X is the variable that is being solved for (w'^3 in this
+      !        case), y(t) is the linearized portion of the terms that gets
+      !        treated implicitly, and RHS is the portion of the terms that is
+      !        always treated explicitly.  A weight of greater than 1 can be
+      !        applied to make the term more numerically stable.
+      lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3)  & 
+      = lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3)  &
+      + weight_timestep_tp1  &
+      * wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
                              wp2(k), wp2(km1),  &
                              a1(k), a1_zt(k), a1(km1),  &
                              a3(k), a3_zt(k), a3(km1),  &
@@ -1222,13 +1235,16 @@ contains
 
         ! Note:  To find the contribution of w'^3 term ta, add 3/2 to all of 
         !        the a_3 inputs to function wp3_terms_ta_tp_lhs.
+        ! Note:  A weighting factor of greater than 1 may be used to make the
+        !        term more numerically stable (see note above).
         if ( iwp3_ta > 0 ) then
-          tmp(1:5) =  & 
-          wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
-                               wp2(k), wp2(km1),  &
-                               a1(k), a1_zt(k), a1(km1),  &
-                               a3(k)+(3.0/2.0), a3_zt(k)+(3.0/2.0),  &
-                               a3(km1)+(3.0/2.0), gr%dzt(k), k )
+          tmp(1:5)  &
+          = weight_timestep_tp1  &
+          * wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
+                                 wp2(k), wp2(km1),  &
+                                 a1(k), a1_zt(k), a1(km1),  &
+                                 a3(k)+(3.0/2.0), a3_zt(k)+(3.0/2.0),  &
+                                 a3(km1)+(3.0/2.0), gr%dzt(k), k )
           ztscr05(k) = -tmp(5)
           ztscr06(k) = -tmp(4)
           ztscr07(k) = -tmp(3)
@@ -1239,13 +1255,16 @@ contains
         ! Note:  To find the contribution of w'^3 term tp, substitute 0 for all
         !        of the a_1 and a_3 inputs and subtract 3/2 from all of the a_3
         !        inputs to function wp3_terms_ta_tp_lhs.
+        ! Note:  A weighting factor of greater than 1 may be used to make the
+        !        term more numerically stable (see note above).
         if ( iwp3_tp > 0 ) then
-          tmp(1:5) =  & 
-          wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
-                               wp2(k), wp2(km1),  &
-                               0.0, 0.0, 0.0,  &
-                               0.0-(3.0/2.0), 0.0-(3.0/2.0),  &
-                               0.0-(3.0/2.0), gr%dzt(k), k )
+          tmp(1:5)  &
+          = weight_timestep_tp1  &
+          * wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
+                                 wp2(k), wp2(km1),  &
+                                 0.0, 0.0, 0.0,  &
+                                 0.0-(3.0/2.0), 0.0-(3.0/2.0),  &
+                                 0.0-(3.0/2.0), gr%dzt(k), k )
           ztscr10(k) = -tmp(4)
           ztscr11(k) = -tmp(2)
         endif
@@ -1391,7 +1410,8 @@ contains
 
     use constants, only: & 
         wtol_sqd,  & ! Variable(s)
-        eps
+        eps,     &
+        weight_timestep_tp1
 
     use model_flags, only:  & 
         l_tke_aniso ! Variable
@@ -1408,7 +1428,10 @@ contains
         iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp3_ta, zt, & 
         iwp3_tp, iwp3_bp, iwp3_pr2, iwp3_pr1, iwp3_dp1
 
-    use stats_type, only: stat_update_var_pt, stat_begin_update_pt ! Procedure(s)
+    use stats_type, only:  &
+        stat_update_var_pt,  & ! Procedure(s)
+        stat_begin_update_pt,  &
+        stat_modify_pt
 
 
     implicit none
@@ -1452,6 +1475,13 @@ contains
 
     ! Array indices
     integer :: k, km1, kp1, k_wp2, k_wp3
+
+    ! Holds output from the LHS (implicit) portion of a term so it can be
+    ! applied to the RHS in a weighted fashion.  This is used if the implicit
+    ! portion of the term is strongly weighted in order to increase numerical
+    ! stability.  A factor must be then applied to the right-hand side in
+    ! order to balance the weight.
+    real, dimension(5) :: lhs_fnc_output
 
     ! For use in Crank-Nicholson eddy diffusion.
     real, dimension(3) :: rhs_diff
@@ -1581,12 +1611,38 @@ contains
       real( + ( 1.0 / dt ) * wp3(k) )
 
       ! RHS turbulent advection (ta) and turbulent production (tp) terms.
-      rhs(k_wp3) & 
-      = rhs(k_wp3) & 
+      rhs(k_wp3)  & 
+      = rhs(k_wp3)  & 
       + wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
                              wp2(k), wp2(km1),  &
                              a1(k), a1_zt(k), a1(km1),  &
                              a3(k), a3_zt(k), a3(km1), gr%dzt(k) )
+
+      ! Note:  The weight of the implicit portion of these terms is controlled
+      !        by the factor weight_timestep_tp1 (abbreviated "weight" in the
+      !        expression below).  A factor is added to the right-hand side of
+      !        the equation in order to balance a weight that is not equal to 1,
+      !        such that:
+      !             -y(t) * [ weight * X(t+1) + ( 1 - weight ) * X(t) ] + RHS;
+      !        where X is the variable that is being solved for (w'^3 in this
+      !        case), y(t) is the linearized portion of the terms that gets
+      !        treated implicitly, and RHS is the portion of the terms that is
+      !        always treated explicitly.  A weight of greater than 1 can be
+      !        applied to make the term more numerically stable.
+      lhs_fnc_output(1:5)  &
+      = wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
+                             wp2(k), wp2(km1),  &
+                             a1(k), a1_zt(k), a1(km1),  &
+                             a3(k), a3_zt(k), a3(km1),  &
+                             gr%dzt(k), k )
+      rhs(k_wp3)  & 
+      = rhs(k_wp3)  &
+      + ( 1.0 - weight_timestep_tp1 )  &
+      * ( - lhs_fnc_output(1) * wp3(kp1)  &
+          - lhs_fnc_output(2) * wp2(k)  &
+          - lhs_fnc_output(3) * wp3(k)  &
+          - lhs_fnc_output(4) * wp2(km1)  &
+          - lhs_fnc_output(5) * wp3(km1) )
 
       ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
       rhs(k_wp3) & 
@@ -1629,6 +1685,22 @@ contains
                                 a3(km1)+(3.0/2.0), gr%dzt(k) ),  &
                                    zt )
 
+        ! Note:  An implicit weighting factor of greater than 1 may be used to
+        !        make the term more numerically stable (see note above).
+        lhs_fnc_output(1:5)  &
+        = wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
+                               wp2(k), wp2(km1),  &
+                               a1(k), a1_zt(k), a1(km1),  &
+                               a3(k)+(3.0/2.0), a3_zt(k)+(3.0/2.0),  &
+                               a3(km1)+(3.0/2.0), gr%dzt(k), k )
+        call stat_modify_pt( iwp3_ta, k,  &
+                             + ( 1.0 - weight_timestep_tp1 )  &
+                             * ( - lhs_fnc_output(1) * wp3(kp1)  &
+                                 - lhs_fnc_output(2) * wp2(k)  &
+                                 - lhs_fnc_output(3) * wp3(k)  &
+                                 - lhs_fnc_output(4) * wp2(km1)  &
+                                 - lhs_fnc_output(5) * wp3(km1) ), zt )
+
         ! w'^3 term tp has both implicit and explicit components; call 
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically 
         ! subtracts the value sent in, reverse the sign on wp3_terms_ta_tp_rhs.
@@ -1642,6 +1714,19 @@ contains
                                 0.0-(3.0/2.0), 0.0-(3.0/2.0),  &
                                 0.0-(3.0/2.0), gr%dzt(k) ),  &
                                    zt )
+
+        ! Note:  An implicit weighting factor of greater than 1 may be used to
+        !        make the term more numerically stable (see note above).
+        lhs_fnc_output(1:5)  &
+        = wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
+                               wp2(k), wp2(km1),  &
+                               0.0, 0.0, 0.0,  &
+                               0.0-(3.0/2.0), 0.0-(3.0/2.0),  &
+                               0.0-(3.0/2.0), gr%dzt(k), k )
+        call stat_modify_pt( iwp3_tp, k,  &
+                             + ( 1.0 - weight_timestep_tp1 )  &
+                             * ( - lhs_fnc_output(2) * wp2(k)  &
+                                 - lhs_fnc_output(4) * wp2(km1) ), zt )
 
         ! w'^3 term bp is completely explicit; call stat_update_var_pt.
         ! Note:  To find the contribution of w'^3 term bp, substitute 0 for the

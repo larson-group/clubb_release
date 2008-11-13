@@ -22,7 +22,8 @@ module constants
             wtol_sqd, rc_tol, Nc_tol, rr_tol, Nr_tol, emin, &
             eps, zero_threshold, max_mag_correlation, sec_per_day, &
             sec_per_hr, sec_per_min, g_per_kg, T_freeze_K, &
-            Skw_max_mag, Skw_max_mag_sqd, stefan_boltzmann
+            Skw_max_mag, Skw_max_mag_sqd, stefan_boltzmann, &
+            weight_timestep_tp1
 
   private ! Default scope
 
@@ -129,6 +130,39 @@ module constants
   ! greater than 1, so the maximum magnitude would be 1.
   real, parameter :: &
     max_mag_correlation = 0.99
+
+  ! Weighting factor for implicit portion of a term.
+  !
+  ! The weight of the implicit portion of a term is controlled by the factor
+  ! weight_timestep_tp1 (abbreviated "weight" in the expression below).  A
+  ! factor is added to the right-hand side of the equation in order to balance a
+  ! weight that is not equal to 1, such that:
+  !
+  !      -y(t) * [ weight * X(t+1) + ( 1 - weight ) * X(t) ] + RHS;
+  !
+  ! where X is the variable that is being solved for, y(t) is the linearized
+  ! portion of the term that gets treated implicitly, and RHS is the portion of
+  ! the term that is always treated explicitly.  A weight of greater than 1 can
+  ! be applied to make the term more numerically stable.
+  !
+  !    weight_timestep_tp1          Effect on term
+  !
+  !            0.0               Term becomes completely explicit
+  !
+  !            1.0               Normal semi-implicit breakdown;
+  !                              as it was without the weighting factor.
+  !
+  !            1.5               Strongly weighted implicit portion of the term;
+  !                              increased numerical stability.
+  !
+  !            2.0               More strongly weighted implicit portion of the
+  !                              term; increased numerical stability.
+  !
+  ! Note:  The weighting factor is only applied to terms that tend to
+  !        significantly decrease the amount of numerical stability for
+  !        variable X.
+  real, parameter :: &
+    weight_timestep_tp1 = 1.50
 
   ! Useful conversion factors.
   real(kind=time_precision), parameter ::  & 

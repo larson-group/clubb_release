@@ -118,7 +118,6 @@
 !       None
 !-----------------------------------------------------------------------
         use constants, only:  & 
-            emin, &
             rttol, &
             thltol, &
             wtol_sqd
@@ -204,9 +203,9 @@
         upwp(1:nzmax)    = 0.0     ! vertical u momentum flux
         vpwp(1:nzmax)    = 0.0     ! vertical v momentum flux
 
-        up2(1:nzmax)     = 2./3. * emin ! u'^2
-        vp2(1:nzmax)     = 2./3. * emin ! v'^2
-        wp2(1:nzmax)     = wtol_sqd     ! w'^2
+        up2(1:nzmax)     = wtol_sqd ! u'^2
+        vp2(1:nzmax)     = wtol_sqd ! v'^2
+        wp2(1:nzmax)     = wtol_sqd ! w'^2
 
         thlm(1:nzmax)    = 0.0         ! liquid potential temperature
         rtm(1:nzmax)     = 0.0         ! total water mixing ratio
