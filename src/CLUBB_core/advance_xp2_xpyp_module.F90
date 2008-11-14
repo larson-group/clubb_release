@@ -822,6 +822,9 @@ contains
     use grid_class, only: & 
         gr ! Variable(s)
 
+    use constants, only:  &
+        weight_timestep_tp1 ! Variable(s)
+
     use stats_precision, only:  & 
         time_precision ! Variable(s)
 
@@ -906,6 +909,9 @@ contains
       tmp
 
 
+    ! Initialize LHS matrix to 0.
+    lhs = 0.0
+
     ! Setup LHS of the tridiagonal system
     do k = 2, gr%nnzp-1, 1
 
@@ -913,8 +919,9 @@ contains
       kp1 = min( k+1, gr%nnzp )
 
       ! LHS eddy diffusion term: dissipation term 2 (dp2).
-      lhs(kp1_mdiag:km1_mdiag,k) & 
-      = diffusion_zm_lhs( Kw(k), Kw(kp1), nu, & 
+      lhs(kp1_mdiag:km1_mdiag,k)  & 
+      = lhs(kp1_mdiag:km1_mdiag,k)  & 
+      + diffusion_zm_lhs( Kw(k), Kw(kp1), nu, & 
                           gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
 
       ! LHS dissipation term 1 (dp1)
@@ -933,9 +940,21 @@ contains
       + term_ma_zm_lhs( wm_zm(k), gr%dzm(k), k )
 
       ! LHS turbulent advection (ta) term.
-      lhs(kp1_mdiag:km1_mdiag,k) & 
-      = lhs(kp1_mdiag:km1_mdiag,k) & 
-      + term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+      ! Note:  The weight of the implicit portion of this term is controlled
+      !        by the factor weight_timestep_tp1 (abbreviated "weight" in the
+      !        expression below).  A factor is added to the right-hand side of
+      !        the equation in order to balance a weight that is not equal to 1,
+      !        such that:
+      !             -y(t) * [ weight * X(t+1) + ( 1 - weight ) * X(t) ] + RHS;
+      !        where X is the variable that is being solved for (x'^2 or x'y' in
+      !        this case), y(t) is the linearized portion of the term that gets
+      !        treated implicitly, and RHS is the portion of the term that is
+      !        always treated explicitly.  A weight of greater than 1 can be
+      !        applied to make the term more numerically stable.
+      lhs(kp1_mdiag:km1_mdiag,k)  &
+      = lhs(kp1_mdiag:km1_mdiag,k)  &
+      + weight_timestep_tp1  &
+      * term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
                      a1_zt(kp1), a1(k), a1_zt(k), gr%dzm(k), beta, k )
 
       if ( l_stats_samp ) then
@@ -964,8 +983,11 @@ contains
 
         if ( irtp2_ta + ithlp2_ta + irtpthlp_ta + & 
              iup2_ta + ivp2_ta > 0 ) then
-          tmp(1:3) & 
-          = term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+          ! Note:  A weighting factor of greater than 1 may be used to make the
+          !        term more numerically stable (see note above).
+          tmp(1:3)  &
+          = weight_timestep_tp1  &
+          * term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
                          a1_zt(kp1), a1(k), a1_zt(k), gr%dzm(k), beta, k )
           zmscr05(k) = -tmp(3)
           zmscr06(k) = -tmp(2)
@@ -1301,14 +1323,16 @@ contains
         gr ! Variable(s)
 
     use constants, only:  & 
-        grav ! Variable(s)
+        grav,   & ! Variable(s)
+        weight_timestep_tp1
 
     use stats_precision, only:  & 
         time_precision ! Variable(s)
 
     use stats_type, only: & 
         stat_begin_update_pt, & ! Procedure(s)
-        stat_update_var_pt
+        stat_update_var_pt, &
+        stat_modify_pt
 
     use stats_variables, only: & 
         ivp2_ta,  & ! Variable(s)
@@ -1368,8 +1392,14 @@ contains
     ! Local Variables
 
     ! Array indices
-    integer :: k, kp1
-    !integer :: km1
+    integer :: k, kp1, km1
+
+    ! Holds output from the LHS (implicit) portion of a term so it can be
+    ! applied to the RHS in a weighted fashion.  This is used if the implicit
+    ! portion of the term is strongly weighted in order to increase numerical
+    ! stability.  A factor must be then applied to the right-hand side in
+    ! order to balance the weight.
+    real, dimension(3) :: lhs_fnc_output
 
     real :: tmp
 
@@ -1404,23 +1434,57 @@ contains
     end select
 
 
+    ! Initialize RHS vector to 0.
+    rhs = 0.0
+
     do k = 2, gr%nnzp-1, 1
 
-      !km1 = max( k-1, 1 )
+      km1 = max( k-1, 1 )
       kp1 = min( k+1, gr%nnzp )
 
-      rhs(k,1) & 
       ! RHS turbulent advection (ta) term.
-      = term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &
+      rhs(k,1)  & 
+      = rhs(k,1)  & 
+      + term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &
                      a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
-                     wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ) &
+                     wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta )
+
+      ! Note:  The weight of the implicit portion of this term is controlled
+      !        by the factor weight_timestep_tp1 (abbreviated "weight" in the
+      !        expression below).  A factor is added to the right-hand side of
+      !        the equation in order to balance a weight that is not equal to 1,
+      !        such that:
+      !             -y(t) * [ weight * X(t+1) + ( 1 - weight ) * X(t) ] + RHS;
+      !        where X is the variable that is being solved for (x'^2 or x'y' in
+      !        this case), y(t) is the linearized portion of the term that gets
+      !        treated implicitly, and RHS is the portion of the term that is
+      !        always treated explicitly.  A weight of greater than 1 can be
+      !        applied to make the term more numerically stable.
+      lhs_fnc_output(1:3)  &
+      = term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+                     a1_zt(kp1), a1(k), a1_zt(k), gr%dzm(k), beta, k )
+      rhs(k,1)  &
+      = rhs(k,1)  &
+      + ( 1.0 - weight_timestep_tp1 )  &
+      * ( - lhs_fnc_output(1) * xap2(kp1)  &
+          - lhs_fnc_output(2) * xap2(k)  &
+          - lhs_fnc_output(3) * xap2(km1) )
+
       ! RHS turbulent production (tp) term.
+      rhs(k,1)  &
+      = rhs(k,1)  &
       + (1.0 - C5)  & 
          * term_tp( xam(kp1), xam(k), xam(kp1), xam(k), & 
-                    wpxap(k), wpxap(k), gr%dzm(k) ) & 
+                    wpxap(k), wpxap(k), gr%dzm(k) )
+
       ! RHS pressure term 1 (pr1) (and dissipation term 1 (dp1)).
-      + term_pr1( C4, C14, xbp2(k), wp2(k), tau_zm(k) ) & 
+      rhs(k,1)  &
+      = rhs(k,1)  &
+      + term_pr1( C4, C14, xbp2(k), wp2(k), tau_zm(k) )
+
       ! RHS pressure term 2 (pr2).
+      rhs(k,1)  &
+      = rhs(k,1)  &
       + term_pr2( C5, grav, T0, wpthvp(k), wpxap(k), wpxbp(k), & 
                   xam(kp1), xam(k), xbm(kp1), xbm(k), gr%dzm(k) )
 
@@ -1441,6 +1505,18 @@ contains
                       a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
                       wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ), &
                                    zm )                             ! Intent(inout)
+
+        ! Note:  An implicit weighting factor of greater than 1 may be used to
+        !        make the term more numerically stable (see note above).
+        lhs_fnc_output(1:3)  &
+        = term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+                       a1_zt(kp1), a1(k), a1_zt(k), gr%dzm(k), beta, k )
+        call stat_modify_pt( ixapxbp_ta, k,  &          ! Intent(in)
+              + ( 1.0 - weight_timestep_tp1 )  &        ! Intent(in)
+              * ( - lhs_fnc_output(1) * xap2(kp1)  &
+                  - lhs_fnc_output(2) * xap2(k)  &
+                  - lhs_fnc_output(3) * xap2(km1) ),  &
+                             zm )                       ! Intent(inout)
 
         if ( ixapxbp_dp1 > 0 ) then
           ! Note:  The function term_pr1 is the explicit component of a
@@ -1536,12 +1612,16 @@ contains
     use grid_class, only: & 
         gr ! Variable(s)
 
+    use constants, only: &
+        weight_timestep_tp1 ! Variable(s)
+
     use stats_precision, only:  & 
         time_precision ! Variable(s)
 
     use stats_type, only: & 
         stat_begin_update_pt, & ! Procedure(s)
-        stat_update_var_pt
+        stat_update_var_pt, &
+        stat_modify_pt
 
     use stats_variables, only: & 
         irtp2_ta,  & ! Variable(s)
@@ -1595,8 +1675,14 @@ contains
     ! Local Variables
 
     ! Array indices
-    integer :: k, kp1
-    !integer :: km1
+    integer :: k, kp1, km1
+
+    ! Holds output from the LHS (implicit) portion of a term so it can be
+    ! applied to the RHS in a weighted fashion.  This is used if the implicit
+    ! portion of the term is strongly weighted in order to increase numerical
+    ! stability.  A factor must be then applied to the right-hand side in
+    ! order to balance the weight.
+    real, dimension(3) :: lhs_fnc_output
 
     integer :: & 
       ixapxbp_ta, & 
@@ -1635,17 +1721,45 @@ contains
     end select
 
 
+    ! Initialize RHS vector to 0.
+    rhs = 0.0
+
     do k = 2, gr%nnzp-1, 1
 
-      !km1 = max( k-1, 1 )
+      km1 = max( k-1, 1 )
       kp1 = min( k+1, gr%nnzp )
 
-      rhs(k,1) & 
       ! RHS turbulent advection (ta) term.
-      = term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &
+      rhs(k,1)  & 
+      = rhs(k,1)  & 
+      + term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &
                      a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
-                     wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ) &
+                     wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta )
+
+      ! Note:  The weight of the implicit portion of this term is controlled
+      !        by the factor weight_timestep_tp1 (abbreviated "weight" in the
+      !        expression below).  A factor is added to the right-hand side of
+      !        the equation in order to balance a weight that is not equal to 1,
+      !        such that:
+      !             -y(t) * [ weight * X(t+1) + ( 1 - weight ) * X(t) ] + RHS;
+      !        where X is the variable that is being solved for (x'^2 or x'y' in
+      !        this case), y(t) is the linearized portion of the term that gets
+      !        treated implicitly, and RHS is the portion of the term that is
+      !        always treated explicitly.  A weight of greater than 1 can be
+      !        applied to make the term more numerically stable.
+      lhs_fnc_output(1:3)  &
+      = term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+                     a1_zt(kp1), a1(k), a1_zt(k), gr%dzm(k), beta, k )
+      rhs(k,1)  &
+      = rhs(k,1)  &
+      + ( 1.0 - weight_timestep_tp1 )  &
+      * ( - lhs_fnc_output(1) * xapxbp(kp1)  &
+          - lhs_fnc_output(2) * xapxbp(k)  &
+          - lhs_fnc_output(3) * xapxbp(km1) )
+
       ! RHS turbulent production (tp) term.
+      rhs(k,1)  & 
+      = rhs(k,1)  & 
       + term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), & 
                  wpxbp(k), wpxap(k), gr%dzm(k) )
 
@@ -1670,6 +1784,18 @@ contains
                       a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
                       wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ), &
                                    zm )                            ! Intent(inout)
+
+        ! Note:  An implicit weighting factor of greater than 1 may be used to
+        !        make the term more numerically stable (see note above).
+        lhs_fnc_output(1:3)  &
+        = term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+                       a1_zt(kp1), a1(k), a1_zt(k), gr%dzm(k), beta, k )
+        call stat_modify_pt( ixapxbp_ta, k,  &            ! Intent(in)
+              + ( 1.0 - weight_timestep_tp1 )  &          ! Intent(in)
+              * ( - lhs_fnc_output(1) * xapxbp(kp1)  &
+                  - lhs_fnc_output(2) * xapxbp(k)  &
+                  - lhs_fnc_output(3) * xapxbp(km1) ),  &
+                             zm )                         ! Intent(inout)
 
         ! x'y' term dp1 has both implicit and explicit components; call
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
