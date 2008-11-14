@@ -342,7 +342,7 @@ module stats_variables
 !$omp   threadprivate(iwprcp, ithlprcp, irtprcp, ircp2, iupwp, ivpwp)
 !$omp   threadprivate(irho_zm, isigma_sqd_w, iem, ishear, iFrad, iFrad_LW)
 !$omp   threadprivate(iFrad_SW, iFrad_SW_up, iFrad_SW_down) 
-!$omp   threadprivae(iFrad_LW_up,iFrad_LW_down,iFprec, iFcsed)
+!$omp   threadprivate(iFrad_LW_up,iFrad_LW_down,iFprec, iFcsed)
 
   ! Sedimentation velocities
   integer, public :: & 

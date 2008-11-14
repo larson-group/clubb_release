@@ -33,7 +33,7 @@ real, target, allocatable, dimension(:), public :: &
 !!! Important Note !!!
 ! Do not indent the omp comments, they need to be in the first 4 columns
 !!! End Important Note !!!
-!$omp threadprivate(sigma_sqd_w_zt, Skw_zm, Skw_zt, ug, vg &
+!$omp threadprivate(sigma_sqd_w_zt, Skw_zm, Skw_zt, ug, vg, &
 !$omp   thvm, shear, um_ref, vm_ref)
 
 real, target, allocatable, dimension(:), public :: & 
@@ -157,7 +157,7 @@ real, target, allocatable, dimension(:), public :: &
   rtp2_zt,    & ! rt'^2 on therm. grid
   rtpthlp_zt    ! rt'thl' on thermo. grid
 
-!$omp threadprivate(wp2_zt, thlp2_zt, wpthlp_zt, wprtp_zt &
+!$omp threadprivate(wp2_zt, thlp2_zt, wpthlp_zt, wprtp_zt, &
 !$omp   rtp2_zt, rtpthlp_zt)
 
 ! 
