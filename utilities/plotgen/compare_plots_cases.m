@@ -792,11 +792,11 @@ if ( cmp_prev == 1 )
 		t2_prev_sfc = t_time_steps_prev_sfc;
 	end
 
-	timesteps_prev(1) = 0;	
-	for j=2:t_time_steps_prev_zt,	
-       		timesteps_prev(j) = timesteps_prev(j-1) + ts_length_prev_zt;
+	timesteps_prev(1) = ts_length_prev_sfc;	
+	for j=2:t_time_steps_prev_sfc,	
+       		timesteps_prev(j) = timesteps_prev(j-1) + ts_length_prev_sfc;
 	end
-
+	
 end
 
 if ( cmp_curr == 1 )
@@ -849,9 +849,9 @@ if ( cmp_curr == 1 )
 		t2_curr_sfc = t_time_steps_curr_sfc;
 	end
 
-	timesteps_curr(1) = 0;	
-	for j=2:t_time_steps_curr_zt,	
-       		timesteps_curr(j) = timesteps_curr(j-1) + ts_length_curr_zt;
+	timesteps_curr(1) = ts_length_curr_sfc;	
+	for j=2:t_time_steps_curr_sfc,	
+       		timesteps_curr(j) = timesteps_curr(j-1) + ts_length_curr_sfc;
 	end
 
 end
