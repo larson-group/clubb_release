@@ -16,9 +16,9 @@ module advance_xm_wpxp_module
 
   public  :: advance_xm_wpxp
 
-  private :: mixing_lhs, & 
-             mixing_rhs, & 
-             mixing_solve, & 
+  private :: xm_wpxp_lhs, & 
+             xm_wpxp_rhs, & 
+             xm_wpxp_solve, & 
              xm_term_ta_lhs, & 
              wpxp_term_ta_lhs, & 
              wpxp_term_tp_lhs, & 
@@ -87,7 +87,7 @@ module advance_xm_wpxp_module
 
     use model_flags, only: &
         l_3pt_sqd_dfsn,     & ! Variable(s)
-        l_clip_semi_implicit  
+        l_clip_semi_implicit
 
     use stats_precision, only:  & 
         time_precision ! Variable(s)
@@ -132,7 +132,7 @@ module advance_xm_wpxp_module
       ! Added for clipping by Vince Larson 29 Sep 2007
       rtp2,          & ! r_t'^2 (momentum levels)                 [(kg/kg)^2]
       thlp2            ! th_l'^2 (momentum levels)                [K^2]
-      ! End of Vince Larson's addition.
+    ! End of Vince Larson's addition.
 
     logical, intent(in) ::  & 
       l_implemented      ! Flag for CLUBB being implemented in a larger model.
@@ -201,8 +201,8 @@ module advance_xm_wpxp_module
       C6rt_Skw_fnc(1:gr%nnzp) = C6rtb + (C6rt-C6rtb) & 
         *EXP( -0.5 * (Skw_zm(1:gr%nnzp)/C6rtc)**2 )
 
-    else 
-      C6rt_Skw_fnc(1:gr%nnzp) = C6rtb 
+    else
+      C6rt_Skw_fnc(1:gr%nnzp) = C6rtb
 
     end if
 
@@ -210,7 +210,7 @@ module advance_xm_wpxp_module
       C6thl_Skw_fnc(1:gr%nnzp) = C6thlb + (C6thl-C6thlb) & 
         *EXP( -0.5 * (Skw_zm(1:gr%nnzp)/C6thlc)**2 )
 
-    else 
+    else
       C6thl_Skw_fnc(1:gr%nnzp) = C6thlb
 
     end if
@@ -219,7 +219,7 @@ module advance_xm_wpxp_module
       C7_Skw_fnc(1:gr%nnzp) = C7b + (C7-C7b) & 
         *EXP( -0.5 * (Skw_zm(1:gr%nnzp)/C7c)**2 )
 
-    else 
+    else
       C7_Skw_fnc(1:gr%nnzp) = C7b
 
     end if
@@ -230,64 +230,64 @@ module advance_xm_wpxp_module
 
 
     ! Define the Coefficent of Eddy Diffusivity for the wpthlp and wprtp.
-     ! Kw6 is used for wpthlp and wprtp, which are located on momentum levels.
-     ! Kw6 is located on thermodynamic levels.
-     ! Kw6 = c_K6 * Kh_zt
+    ! Kw6 is used for wpthlp and wprtp, which are located on momentum levels.
+    ! Kw6 is located on thermodynamic levels.
+    ! Kw6 = c_K6 * Kh_zt
 
-     Kw6(1:gr%nnzp) = c_K6 * Kh_zt(1:gr%nnzp)
+    Kw6(1:gr%nnzp) = c_K6 * Kh_zt(1:gr%nnzp)
 
 
     ! (wpxp)^2: 3-point average diffusion coefficient.
     if ( l_3pt_sqd_dfsn ) then
 
-       ! Interpolate w'x' (w'r_t' and w'th_l') from the momentum levels to the 
-       ! thermodynamic levels.  This is used for extra diffusion based on a 
-       ! three-point average of (w'x')^2.
-       wprtp_zt  = zm2zt( wprtp )
-       wpthlp_zt = zm2zt( wpthlp )
+      ! Interpolate w'x' (w'r_t' and w'th_l') from the momentum levels to the
+      ! thermodynamic levels.  This is used for extra diffusion based on a
+      ! three-point average of (w'x')^2.
+      wprtp_zt  = zm2zt( wprtp )
+      wpthlp_zt = zm2zt( wpthlp )
 
-       do k = 1, gr%nnzp, 1
+      do k = 1, gr%nnzp, 1
 
-          km1 = max( k-1, 1 )
-          kp1 = min( k+1, gr%nnzp )
+        km1 = max( k-1, 1 )
+        kp1 = min( k+1, gr%nnzp )
 
-          ! Compute the square of wprtp_zt, averaged over 3 points.  26 Jan 2008
-          wprtp_zt_sqd_3pt(k) = ( wprtp_zt(km1)**2 + wprtp_zt(k)**2 & 
-                                  + wprtp_zt(kp1)**2 ) / 3.0
-          ! Account for units of mix ratio (kg/kg)**2   Vince Larson 29 Jan 2008
-          wprtp_zt_sqd_3pt(k) = 1e6 * wprtp_zt_sqd_3pt(k)
+        ! Compute the square of wprtp_zt, averaged over 3 points.  26 Jan 2008
+        wprtp_zt_sqd_3pt(k) = ( wprtp_zt(km1)**2 + wprtp_zt(k)**2 & 
+                                + wprtp_zt(kp1)**2 ) / 3.0
+        ! Account for units of mix ratio (kg/kg)**2   Vince Larson 29 Jan 2008
+        wprtp_zt_sqd_3pt(k) = 1e6 * wprtp_zt_sqd_3pt(k)
 
-          ! Compute the square of wpthlp_zt, averaged over 3 points.  
-          ! 26 Jan 2008
-          wpthlp_zt_sqd_3pt(k) = ( wpthlp_zt(km1)**2 + wpthlp_zt(k)**2 & 
-                                   + wpthlp_zt(kp1)**2 ) / 3.0
+        ! Compute the square of wpthlp_zt, averaged over 3 points.
+        ! 26 Jan 2008
+        wpthlp_zt_sqd_3pt(k) = ( wpthlp_zt(km1)**2 + wpthlp_zt(k)**2 & 
+                                 + wpthlp_zt(kp1)**2 ) / 3.0
 
-       enddo
+      enddo
 
-       ! Define Kw6_rt and Kw6_thl
-       do k = 1, gr%nnzp, 1
+      ! Define Kw6_rt and Kw6_thl
+      do k = 1, gr%nnzp, 1
 
-          ! Kw6_rt must have units of m^2/s.  Since wprtp_zt_sqd_3pt has units 
-          ! of m/s (kg/kg), c_Ksqd is given units of m/(kg/kg) in this case.
-          ! Vince Larson increased by c_Ksqd, 29Jan2008
-          Kw6_rt(k)  = Kw6(k) + c_Ksqd * wprtp_zt_sqd_3pt(k)
+        ! Kw6_rt must have units of m^2/s.  Since wprtp_zt_sqd_3pt has units
+        ! of m/s (kg/kg), c_Ksqd is given units of m/(kg/kg) in this case.
+        ! Vince Larson increased by c_Ksqd, 29Jan2008
+        Kw6_rt(k)  = Kw6(k) + c_Ksqd * wprtp_zt_sqd_3pt(k)
 
-          ! Kw6_thl must have units of m^2/s.  Since wpthlp_zt_sqd_3pt has units
-          ! of m/s K, c_Ksqd is given units of m/K in this case.
-          Kw6_thl(k) = Kw6(k) + c_Ksqd * wpthlp_zt_sqd_3pt(k)
-          ! End Vince Larson's change
+        ! Kw6_thl must have units of m^2/s.  Since wpthlp_zt_sqd_3pt has units
+        ! of m/s K, c_Ksqd is given units of m/K in this case.
+        Kw6_thl(k) = Kw6(k) + c_Ksqd * wpthlp_zt_sqd_3pt(k)
+        ! End Vince Larson's change
 
-       enddo
+      enddo
 
     else  ! Three-point squared diffusion turned off.
 
-       ! Define Kw6_rt and Kw6_thl
-       do k = 1, gr%nnzp, 1
+      ! Define Kw6_rt and Kw6_thl
+      do k = 1, gr%nnzp, 1
 
-          Kw6_rt(k)  = Kw6(k)
-          Kw6_thl(k) = Kw6(k)
+        Kw6_rt(k)  = Kw6(k)
+        Kw6_thl(k) = Kw6(k)
 
-       enddo
+      enddo
 
     endif  ! l_3pt_sqd_dfsn
 
@@ -306,26 +306,26 @@ module advance_xm_wpxp_module
 
     ! Compute the implicit portion of the r_t and w'r_t' equations.
     ! Build the left-hand side matrix.
-    call mixing_lhs( .true., dt, wprtp, sigma_sqd_w, wm_zm, wm_zt, wp2, &     ! Intent(in)
+    call xm_wpxp_lhs( .true., dt, wprtp, sigma_sqd_w, wm_zm, wm_zt, wp2, &     ! Intent(in)
                      wp2_zt, wp3, Kw6_rt, tau_zm, C7_Skw_fnc, C6rt_Skw_fnc, & ! Intent(in)
                      wpxp_upper_lim, wpxp_lower_lim, l_implemented, &         ! Intent(in)
                      lhs )                                                    ! Intent(out)
 
     ! Compute the explicit portion of the r_t and w'r_t' equations.
     ! Build the right-hand side vector.
-    call mixing_rhs( "rtm", .true., dt, rtm, wprtp, &      ! Intent(in)
+    call xm_wpxp_rhs( "rtm", .true., dt, rtm, wprtp, &      ! Intent(in)
                      rtm_forcing, C7_Skw_fnc, rtpthvp, &   ! Intent(in)
                      wpxp_upper_lim, wpxp_lower_lim, &     ! Intent(in)
                      rhs )                                 ! Intent(out)
 
     ! Solve r_t / w'r_t'
-    call mixing_solve( "rtm", dt, wp2, rtp2, &  ! Intent(in)
+    call xm_wpxp_solve( "rtm", dt, wp2, rtp2, &  ! Intent(in)
                        lhs, rhs, rtm, wprtp, &  ! Intent(inout)
                        err_code )               ! Intent(out)
 
     if ( lapack_error( err_code ) )  then
 
-      write(fstderr,'(a)') "rt mixing failed"
+      write(fstderr,'(a)') "rt LU decomp. failed"
       return
     endif
 
@@ -377,25 +377,25 @@ module advance_xm_wpxp_module
 
     ! Compute the implicit portion of the th_l and w'th_l' equations.
     ! Build the left-hand side matrix.
-    call mixing_lhs( .true., dt, wpthlp, sigma_sqd_w, wm_zm, wm_zt, wp2, &      ! Intent(in)
+    call xm_wpxp_lhs( .true., dt, wpthlp, sigma_sqd_w, wm_zm, wm_zt, wp2, &      ! Intent(in)
                      wp2_zt, wp3, Kw6_thl, tau_zm, C7_Skw_fnc, C6thl_Skw_fnc, & ! Intent(in)
                      wpxp_upper_lim, wpxp_lower_lim, l_implemented, &           ! Intent(in)
                      lhs )                                                      ! Intent(inout)
 
     ! Compute the explicit portion of the th_l and w'th_l' equations.
     ! Build the right-hand side vector.
-    call mixing_rhs( "thlm", .true., dt, thlm, wpthlp, &    ! Intent(in)
+    call xm_wpxp_rhs( "thlm", .true., dt, thlm, wpthlp, &    ! Intent(in)
                      thlm_forcing, C7_Skw_fnc, thlpthvp,  & ! Intent(in)
                      wpxp_upper_lim, wpxp_lower_lim, &      ! Intent(in)
                      rhs )                                  ! Intent(out)
 
     ! Solve for th_l / w'th_l'
-    call mixing_solve( "thlm", dt, wp2, thlp2, & ! Intent(in) 
+    call xm_wpxp_solve( "thlm", dt, wp2, thlp2, & ! Intent(in) 
                        lhs, rhs, thlm, wpthlp, & ! Intent(inout)
                        err_code )                ! Intent(out)
 
     if ( lapack_error( err_code ) ) then
-      write(fstderr,'(a)') "thetal mixing failed"
+      write(fstderr,'(a)') "thetal LU decomp. failed"
       return
     endif
 
@@ -441,25 +441,25 @@ module advance_xm_wpxp_module
 
       ! Compute the implicit portion of the sclr and w'sclr' equations.
       ! Build the left-hand side matrix.
-      call mixing_lhs( .true., dt, wpsclrp(:,i), sigma_sqd_w, wm_zm, wm_zt, wp2, &  ! Intent(in)
+      call xm_wpxp_lhs( .true., dt, wpsclrp(:,i), sigma_sqd_w, wm_zm, wm_zt, wp2, &  ! Intent(in)
                        wp2_zt, wp3, Kw6, tau_zm, C7_Skw_fnc, C6rt_Skw_fnc,&         ! Intent(in)
                        wpxp_upper_lim, wpxp_lower_lim, l_implemented, &             ! Intent(in)
                        lhs )                                                        ! Intent(out)
 
       ! Compute the explicit portion of the sclrm and w'sclr' equations.
       ! Build the right-hand side vector.
-      call mixing_rhs( "scalars", .true., dt, sclrm(:,i), wpsclrp(:,i),  & ! Intent(in)
+      call xm_wpxp_rhs( "scalars", .true., dt, sclrm(:,i), wpsclrp(:,i),  & ! Intent(in)
                        sclrm_forcing(:,i), C7_Skw_fnc, sclrpthvp(:,i), &   ! Intent(in)
                        wpxp_upper_lim, wpxp_lower_lim, &                   ! Intent(in)
                        rhs )                                               ! Intent(out)
 
       ! Solve for sclrm / w'sclr'
-      call mixing_solve( "scalars", dt, wp2, sclrp2(:,i), &     ! Intent(in) 
+      call xm_wpxp_solve( "scalars", dt, wp2, sclrp2(:,i), &     ! Intent(in) 
                          lhs, rhs, sclrm(:,i), wpsclrp(:,i), &  ! Intent(inout)
                          err_code )                             ! Intent(out)
 
       if ( lapack_error( err_code ) ) then
-        write(fstderr,'(a)') "Passive scalar ", i, " mixing failed."
+        write(fstderr,'(a)') "Passive scalar ", i, " LU decomp. failed."
         return
       end if
 
@@ -536,14 +536,14 @@ module advance_xm_wpxp_module
   end subroutine advance_xm_wpxp
 
   !=============================================================================
-  subroutine mixing_lhs( l_iter, dt, wpxp, sigma_sqd_w, wm_zm, wm_zt, wp2, &
+  subroutine xm_wpxp_lhs( l_iter, dt, wpxp, sigma_sqd_w, wm_zm, wm_zt, wp2, &
                          wp2_zt, wp3, Kw6, tau_zm, C7_Skw_fnc, C6x_Skw_fnc, & 
                          wpxp_upper_lim, wpxp_lower_lim, l_implemented, &
                          lhs )
 
     ! Description:
     ! Compute LHS band diagonal matrix for xm and w'x'.
-    ! This subroutine computes the implicit portion of 
+    ! This subroutine computes the implicit portion of
     ! the xm and w'x' equations.
 
     ! References:
@@ -691,7 +691,7 @@ module advance_xm_wpxp_module
     ! located on momentum levels).
     a1(1:gr%nnzp) = 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nnzp) )
 
-    ! Interpolate a_1 from momentum levels to thermodynamic levels.  This will 
+    ! Interpolate a_1 from momentum levels to thermodynamic levels.  This will
     ! be used for the w'x' turbulent advection (ta) term.
     a1_zt  = max( zm2zt( a1 ), zero_threshold )   ! Positive definite quantity
 
@@ -831,11 +831,11 @@ module advance_xm_wpxp_module
       ! LHS portion of semi-implicit clipping term.
       if ( l_clip_semi_implicit ) then
 
-         lhs(m_k_mdiag,k_wpxp) & 
-         = lhs(m_k_mdiag,k_wpxp) & 
-         + clip_semi_imp_lhs( dt, wpxp(k),  & 
-                              .true., wpxp_upper_lim(k),  & 
-                              .true., wpxp_lower_lim(k) )
+        lhs(m_k_mdiag,k_wpxp) & 
+        = lhs(m_k_mdiag,k_wpxp) & 
+        + clip_semi_imp_lhs( dt, wpxp(k),  & 
+                             .true., wpxp_upper_lim(k),  & 
+                             .true., wpxp_lower_lim(k) )
 
       endif
 
@@ -956,17 +956,17 @@ module advance_xm_wpxp_module
 
 
     return
-  end subroutine mixing_lhs
+  end subroutine xm_wpxp_lhs
 
   !=============================================================================
-  subroutine mixing_rhs( solve_type, l_iter, dt, xm, wpxp, & 
+  subroutine xm_wpxp_rhs( solve_type, l_iter, dt, xm, wpxp, & 
                          xm_forcing, C7_Skw_fnc, xpthvp,  & 
                          wpxp_upper_lim, wpxp_lower_lim, &
                          rhs )
 
     ! Description:
     ! Compute RHS vector for xm and w'x'.
-    ! This subroutine computes the explicit portion of 
+    ! This subroutine computes the explicit portion of
     ! the xm and w'x' equations.
 
     ! References:
@@ -1109,11 +1109,11 @@ module advance_xm_wpxp_module
       ! RHS portion of semi-implicit clipping term.
       if ( l_clip_semi_implicit ) then
 
-         rhs(k_wpxp,1) & 
-         = rhs(k_wpxp,1) & 
-         + clip_semi_imp_rhs( dt, wpxp(k), & 
-                              .true., wpxp_upper_lim(k), & 
-                              .true., wpxp_lower_lim(k) )
+        rhs(k_wpxp,1) & 
+        = rhs(k_wpxp,1) & 
+        + clip_semi_imp_rhs( dt, wpxp(k), & 
+                             .true., wpxp_upper_lim(k), & 
+                             .true., wpxp_lower_lim(k) )
 
       endif
 
@@ -1129,8 +1129,8 @@ module advance_xm_wpxp_module
         call stat_update_var_pt( iwpxp_pr3, k, & 
             wpxp_terms_bp_pr3_rhs( (1.0+C7_Skw_fnc(k)),xpthvp(k)), zm)
 
-        ! w'x' term sicl has both implicit and explicit components; call 
-        ! stat_begin_update_pt.  Since stat_begin_update_pt automatically 
+        ! w'x' term sicl has both implicit and explicit components; call
+        ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
         ! subtracts the value sent in, reverse the sign on clip_semi_imp_rhs.
         if ( l_clip_semi_implicit ) then
           call stat_begin_update_pt( iwpxp_sicl, k, & 
@@ -1178,10 +1178,10 @@ module advance_xm_wpxp_module
     rhs(k_wpxp,1) = 0.0
 
 
-  end subroutine mixing_rhs
+  end subroutine xm_wpxp_rhs
 
   !=============================================================================
-  subroutine mixing_solve( solve_type, dt, wp2, xp2, & 
+  subroutine xm_wpxp_solve( solve_type, dt, wp2, xp2, & 
                            lhs, rhs, xm, wpxp, & 
                            err_code )
 
@@ -1364,7 +1364,7 @@ module advance_xm_wpxp_module
       iwpxp_pd   = iwprtp_pd
       iwpxp_sicl = iwprtp_sicl
       ! This is a diagnostic from inverting the matrix, not a budget
-      ixm_matrix_condt_num = irtm_matrix_condt_num 
+      ixm_matrix_condt_num = irtm_matrix_condt_num
     case ( "thlm" ) ! thlm/wpthlp budget terms
       ixm_bt     = ithlm_bt
       ixm_ta     = ithlm_ta
@@ -1381,7 +1381,7 @@ module advance_xm_wpxp_module
       iwpxp_pd   = 0
       iwpxp_sicl = iwpthlp_sicl
       ! This is a diagnostic from inverting the matrix, not a budget
-      ixm_matrix_condt_num = ithlm_matrix_condt_num 
+      ixm_matrix_condt_num = ithlm_matrix_condt_num
     case default  ! this includes the sclrm case
       ixm_bt     = 0
       ixm_ta     = 0
@@ -1409,10 +1409,10 @@ module advance_xm_wpxp_module
       call stat_begin_update( ixm_bt, real( xm /dt ), zt )
 
       ! wpxp is clipped after xp2 is updated in subroutine advance_xp2_xpyp and
-      ! after wp2 is updated in subroutine advance_wp2_wp3.  The overall time 
+      ! after wp2 is updated in subroutine advance_wp2_wp3.  The overall time
       ! tendency must include the effects of those two clippings, as well.
       ! Therefore, the wpxp total time tendency term is just being modified in
-      ! advance_xm_wpxp_module.F90, rather than being entirely contained in 
+      ! advance_xm_wpxp_module.F90, rather than being entirely contained in
       ! advance_xm_wpxp_module.F90.
       !!  wpxp total time tendency (1st calculation)
       !call stat_begin_update( iwpxp_bt, real( wpxp / dt ), zm )
@@ -1522,7 +1522,7 @@ module advance_xm_wpxp_module
           + zmscr13(k) * wpxp(k) & 
           + zmscr14(k) * wpxp(kp1), zm )
 
-        ! w'x' term sicl has both implicit and explicit components; 
+        ! w'x' term sicl has both implicit and explicit components;
         ! call stat_end_update_pt.
         if ( l_clip_semi_implicit ) then
           call stat_end_update_pt( iwpxp_sicl, k, & 
@@ -1582,8 +1582,8 @@ module advance_xm_wpxp_module
 
     ! Adjusting xm based on clipping for w'x'.
     if ( any( wpxp_chnge /= 0.0 ) .and. l_clip_turb_adv ) then
-       call xm_correction_wpxp_cl( solve_type, dt, wpxp_chnge, gr%dzt, &
-                                   xm )
+      call xm_correction_wpxp_cl( solve_type, dt, wpxp_chnge, gr%dzt, &
+                                  xm )
     endif
 
     if ( l_stats_samp ) then
@@ -1592,10 +1592,10 @@ module advance_xm_wpxp_module
       call stat_end_update( ixm_bt, real( xm / dt ), zt )
 
       ! wpxp is clipped after xp2 is updated in subroutine advance_xp2_xpyp and
-      ! after wp2 is updated in subroutine advance_wp2_wp3.  The overall time 
+      ! after wp2 is updated in subroutine advance_wp2_wp3.  The overall time
       ! tendency must include the effects of those two clippings, as well.
       ! Therefore, the wpxp total time tendency term is just being modified in
-      ! advance_xm_wpxp_module.F90, rather than being entirely contained in 
+      ! advance_xm_wpxp_module.F90, rather than being entirely contained in
       ! advance_xm_wpxp_module.F90.
       !! wpxp time tendency (2nd calculation)
       !call stat_end_update( iwpxp_bt, real( wpxp / dt ), zm )
@@ -1608,7 +1608,7 @@ module advance_xm_wpxp_module
 
 
     return
-  end subroutine mixing_solve
+  end subroutine xm_wpxp_solve
 
   !=============================================================================
   pure function xm_term_ta_lhs( dzt ) & 
@@ -1625,19 +1625,19 @@ module advance_xm_wpxp_module
     !
     ! - d( w'x'(t+1) )/dz.
     !
-    ! Note:  When the term is brought over to the left-hand side, the sign 
-    !        is reversed and the leading "-" in front of the term is changed 
+    ! Note:  When the term is brought over to the left-hand side, the sign
+    !        is reversed and the leading "-" in front of the term is changed
     !        to a "+".
     !
-    ! The timestep index (t+1) means that the value of w'x' being used is from 
+    ! The timestep index (t+1) means that the value of w'x' being used is from
     ! the next timestep, which is being advanced to in solving the d(xm)/dt and
     ! d(w'x')/dt equations.
     !
     ! This term is discretized as follows:
     !
-    ! While the values of xm are found on the thermodynamic levels, the values 
+    ! While the values of xm are found on the thermodynamic levels, the values
     ! of w'x' are found on the momentum levels.  The derivative of w'x' is taken
-    ! over the intermediate (central) thermodynamic level, yielding the desired 
+    ! over the intermediate (central) thermodynamic level, yielding the desired
     ! results.
     !
     ! ===================wpxp================================== m(k)
@@ -1646,8 +1646,8 @@ module advance_xm_wpxp_module
     !
     ! ===================wpxpm1================================ m(k-1)
     !
-    ! The vertical indices m(k), t(k), and m(k-1) correspond with altitudes 
-    ! zm(k), zt(k), and zm(k-1), respectively.  The letter "t" is used for 
+    ! The vertical indices m(k), t(k), and m(k-1) correspond with altitudes
+    ! zm(k), zt(k), and zm(k-1), respectively.  The letter "t" is used for
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
     ! dzt(k) = 1 / ( zm(k) - zm(k-1) )
@@ -1693,7 +1693,7 @@ module advance_xm_wpxp_module
     !
     ! - d(w'^2x')/dz.
     !
-    ! A substitution is made in order to close the turbulent advection term, 
+    ! A substitution is made in order to close the turbulent advection term,
     ! such that:
     !
     ! w'^2x' = a_1 * ( w'^3 / w'^2 ) * w'x',
@@ -1707,23 +1707,23 @@ module advance_xm_wpxp_module
     !
     ! - d [ a_1 * ( w'^3 / w'^2 ) * w'x'(t+1) ] / dz.
     !
-    ! Note:  When the term is brought over to the left-hand side, the sign 
-    !        is reversed and the leading "-" in front of the term is changed 
+    ! Note:  When the term is brought over to the left-hand side, the sign
+    !        is reversed and the leading "-" in front of the term is changed
     !        to a "+".
     !
-    ! The timestep index (t+1) means that the value of w'x' being used is from 
-    ! the next timestep, which is being advanced to in solving the d(w'x')/dt 
+    ! The timestep index (t+1) means that the value of w'x' being used is from
+    ! the next timestep, which is being advanced to in solving the d(w'x')/dt
     ! equation.
     !
     ! This term is discretized as follows:
     !
-    ! The values of w'x', w'^2, and a_1 are found on the momentum levels, while 
-    ! the values of w'^3 are found on the thermodynamic levels.  Each of the 
-    ! variables w'x', w'^2, and a_1 are interpolated to the intermediate 
+    ! The values of w'x', w'^2, and a_1 are found on the momentum levels, while
+    ! the values of w'^3 are found on the thermodynamic levels.  Each of the
+    ! variables w'x', w'^2, and a_1 are interpolated to the intermediate
     ! thermodynamic levels.  The values of the mathematical expression (called F
-    ! here) within the dF/dz term are computed on the thermodynamic levels.  
-    ! Then, the derivative (d/dz) of the expression (F) is taken over the 
-    ! central momentum level, yielding the desired result.  In this function, 
+    ! here) within the dF/dz term are computed on the thermodynamic levels.
+    ! Then, the derivative (d/dz) of the expression (F) is taken over the
+    ! central momentum level, yielding the desired result.  In this function,
     ! the values of F are as follows:
     !
     ! F = a_1(t) * ( w'^3(t) / w'^2(t) ) * w'x'(t+1);
@@ -1741,8 +1741,8 @@ module advance_xm_wpxp_module
     !
     ! =a1m1========wp2m1========wpxpm1========================= m(k-1)
     !
-    ! The vertical indices m(k+1), t(k+1), m(k), t(k), and m(k-1) correspond 
-    ! with altitudes zm(k+1), zt(k+1), zm(k), zt(k), and zm(k-1), respectively. 
+    ! The vertical indices m(k+1), t(k+1), m(k), t(k), and m(k-1) correspond
+    ! with altitudes zm(k+1), zt(k+1), zm(k), zt(k), and zm(k-1), respectively.
     ! The letter "t" is used for thermodynamic levels and the letter "m" is used
     ! for momentum levels.
     !
@@ -1803,39 +1803,39 @@ module advance_xm_wpxp_module
 
     ! Note:  The w'x' turbulent advection term, which is
     !        - d [ a_1 * ( w'^3 / w'^2 ) * w'x' ] / dz, still keeps the a_1 term
-    !        inside the derivative, unlike the w'^3 equation (found in 
-    !        advance_wp2_wp3_mod.F90) and the equations for r_t'^2, th_l'^2, 
+    !        inside the derivative, unlike the w'^3 equation (found in
+    !        advance_wp2_wp3_mod.F90) and the equations for r_t'^2, th_l'^2,
     !        r_t'th_l', u'^2, v'^2, sclr'r_t', sclr'th_l', and sclr'^2 (found in
     !        advance_xp2_xpyp_module.F90).  Brian.
 
-    ! Always use the standard discretization for the w'x' turbulent advection 
+    ! Always use the standard discretization for the w'x' turbulent advection
     ! term.  Brian.
     !if ( l_standard_term_ta ) then
 
-       ! The turbulent advection term is discretized normally, in accordance
-       ! with the model equations found in the documentation and the description
-       ! listed above.
+    ! The turbulent advection term is discretized normally, in accordance
+    ! with the model equations found in the documentation and the description
+    ! listed above.
 
-       ! Momentum superdiagonal: [ x wpxp(k+1,<t+1>) ]
-       lhs(kp1_mdiag) & 
-       = + dzm & 
-           * a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) ) & 
-           * gr%weights_zm2zt(m_above,tkp1)
+    ! Momentum superdiagonal: [ x wpxp(k+1,<t+1>) ]
+    lhs(kp1_mdiag) & 
+    = + dzm & 
+        * a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) ) & 
+        * gr%weights_zm2zt(m_above,tkp1)
 
-       ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
-       lhs(k_mdiag) & 
-       = + dzm & 
-           * (   a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) ) & 
-                 * gr%weights_zm2zt(m_below,tkp1) & 
-               - a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) ) & 
-                 * gr%weights_zm2zt(m_above,tk) & 
-             )
+    ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
+    lhs(k_mdiag) & 
+    = + dzm & 
+        * (   a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) ) & 
+              * gr%weights_zm2zt(m_below,tkp1) & 
+            - a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) ) & 
+              * gr%weights_zm2zt(m_above,tk) & 
+          )
 
-       ! Momentum subdiagonal: [ x wpxp(k-1,<t+1>) ]
-       lhs(km1_mdiag) & 
-       = - dzm & 
-           * a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) ) & 
-           * gr%weights_zm2zt(m_below,tk)
+    ! Momentum subdiagonal: [ x wpxp(k-1,<t+1>) ]
+    lhs(km1_mdiag) & 
+    = - dzm & 
+        * a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) ) & 
+        * gr%weights_zm2zt(m_below,tk)
 
     !endif
 
@@ -1858,8 +1858,8 @@ module advance_xm_wpxp_module
     !
     ! - w'^2 * d( xm(t+1) )/dz.
     !
-    ! Note:  When the term is brought over to the left-hand side, the sign 
-    !        is reversed and the leading "-" in front of the term is changed 
+    ! Note:  When the term is brought over to the left-hand side, the sign
+    !        is reversed and the leading "-" in front of the term is changed
     !        to a "+".
     !
     ! The timestep index (t+1) means that the value of xm being used is from the
@@ -1868,7 +1868,7 @@ module advance_xm_wpxp_module
     !
     ! This term is discretized as follows:
     !
-    ! The values of xm are found on thermodynamic levels, while the values of 
+    ! The values of xm are found on thermodynamic levels, while the values of
     ! w'^2 are found on momentum levels.  The derivative of xm is taken over the
     ! intermediate (central) momentum level, where it is multiplied by w'^2,
     ! yielding the desired result.
@@ -1879,8 +1879,8 @@ module advance_xm_wpxp_module
     !
     ! ---------------------------xm---------------------------- t(k)
     !
-    ! The vertical indices t(k+1), m(k), and t(k) correspond with altitudes 
-    ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for 
+    ! The vertical indices t(k+1), m(k), and t(k) correspond with altitudes
+    ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
     ! dzm(k) = 1 / ( zt(k+1) - zt(k) )
@@ -1920,7 +1920,7 @@ module advance_xm_wpxp_module
   result( lhs )
 
     ! Description:
-    ! Accumulation of w'x' and w'x' pressure term 2:  implicit portion of the 
+    ! Accumulation of w'x' and w'x' pressure term 2:  implicit portion of the
     ! code.
     !
     ! The d(w'x')/dt equation contains an accumulation term:
@@ -1931,27 +1931,27 @@ module advance_xm_wpxp_module
     !
     ! + C_7 w'x' dw/dz.
     !
-    ! Both the w'x' accumulation term and pressure term 2 are completely 
-    ! implicit.  The accumulation term and pressure term 2 are combined and 
+    ! Both the w'x' accumulation term and pressure term 2 are completely
+    ! implicit.  The accumulation term and pressure term 2 are combined and
     ! solved together as:
     !
     ! - ( 1 - C_7 ) * w'x'(t+1) * dw/dz.
     !
-    ! Note:  When the term is brought over to the left-hand side, the sign 
-    !        is reversed and the leading "-" in front of the term is changed 
+    ! Note:  When the term is brought over to the left-hand side, the sign
+    !        is reversed and the leading "-" in front of the term is changed
     !        to a "+".
     !
-    ! The timestep index (t+1) means that the value of w'x' being used is from 
-    ! the next timestep, which is being advanced to in solving the d(w'x')/dt 
+    ! The timestep index (t+1) means that the value of w'x' being used is from
+    ! the next timestep, which is being advanced to in solving the d(w'x')/dt
     ! equation.
     !
     ! The terms are discretized as follows:
     !
     ! The values of w'x' are found on momentum levels, while the values of wm_zt
-    ! (mean vertical velocity on thermodynamic levels) are found on 
-    ! thermodynamic levels.  The vertical derivative of wm_zt is taken over the 
-    ! intermediate (central) momentum level.  It is then multiplied by w'x' 
-    ! (implicitly calculated at timestep (t+1)) and the coefficients to yield 
+    ! (mean vertical velocity on thermodynamic levels) are found on
+    ! thermodynamic levels.  The vertical derivative of wm_zt is taken over the
+    ! intermediate (central) momentum level.  It is then multiplied by w'x'
+    ! (implicitly calculated at timestep (t+1)) and the coefficients to yield
     ! the desired results.
     !
     ! -------wm_ztp1------------------------------------------- t(k+1)
@@ -1960,8 +1960,8 @@ module advance_xm_wpxp_module
     !
     ! -------wm_zt--------------------------------------------- t(k)
     !
-    ! The vertical indices t(k+1), m(k), and t(k) correspond with altitudes 
-    ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for 
+    ! The vertical indices t(k+1), m(k), and t(k) correspond with altitudes
+    ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
     ! dzm(k) = 1 / ( zt(k+1) - zt(k) )
@@ -2004,15 +2004,15 @@ module advance_xm_wpxp_module
     !
     ! - ( C_6 / tau_m ) w'x'(t+1)
     !
-    ! Note:  When the term is brought over to the left-hand side, the sign 
-    !        is reversed and the leading "-" in front of the term is changed 
+    ! Note:  When the term is brought over to the left-hand side, the sign
+    !        is reversed and the leading "-" in front of the term is changed
     !        to a "+".
     !
-    ! The timestep index (t+1) means that the value of w'x' being used is from 
-    ! the next timestep, which is being advanced to in solving the d(w'x')/dt 
+    ! The timestep index (t+1) means that the value of w'x' being used is from
+    ! the next timestep, which is being advanced to in solving the d(w'x')/dt
     ! equation.
     !
-    ! The values of w'x' are found on the momentum levels.  The values of the 
+    ! The values of w'x' are found on the momentum levels.  The values of the
     ! C_6 skewness function and time-scale tau_m are also found on the momentum
     ! levels.
 
@@ -2053,7 +2053,7 @@ module advance_xm_wpxp_module
     ! - C_7 (g/th_0) x'th_v'.
     !
     ! Both the w'x' buoyancy production term and pressure term 3 are completely
-    ! explicit.  The buoyancy production term and pressure term 3 are combined 
+    ! explicit.  The buoyancy production term and pressure term 3 are combined
     ! and solved together as:
     !
     ! + ( 1 - C_7 ) * (g/th_0) * x'th_v'.
@@ -2151,7 +2151,7 @@ module advance_xm_wpxp_module
     ! When the expression above is substituted into the preceeding xm
     ! time-tendency equation, the resulting equation for xm time-tendency is:
     !
-    ! d(xm)/dt = -w d(xm{t+1})/dz - d(w'x'{t+1}_unclipped)/dz 
+    ! d(xm)/dt = -w d(xm{t+1})/dz - d(w'x'{t+1}_unclipped)/dz
     !               - d(w'x'{t+1}_amount_clipped)/dz + d(xm{t})/dt|_ls.
     !
     ! Thus, the resulting xm time-tendency equation is the same as the original
@@ -2159,11 +2159,11 @@ module advance_xm_wpxp_module
     !
     ! -d(w'x'{t+1}_amount_clipped)/dz.
     !
-    ! Since the adjuster term needs to be applied after xm has already been 
+    ! Since the adjuster term needs to be applied after xm has already been
     ! solved, it needs to be multiplied by the timestep length and added on to
     ! xm{t+1}, such that:
     !
-    ! xm{t+1}_after_adjustment = 
+    ! xm{t+1}_after_adjustment =
     !    xm{t+1}_before_adjustment + ( -d(w'x'{t+1}_amount_clipped)/dz ) * dt.
     !
     ! The adjuster term is discretized as follows:
@@ -2232,25 +2232,25 @@ module advance_xm_wpxp_module
 
     select case ( trim( solve_type ) )
     case ( "rtm" )
-       ixm_tacl = irtm_tacl
+      ixm_tacl = irtm_tacl
     case ( "thlm" )
-       ixm_tacl = ithlm_tacl
+      ixm_tacl = ithlm_tacl
     case default
-       ixm_tacl = 0
+      ixm_tacl = 0
     end select
 
     ! Adjusting xm based on clipping for w'x'.
     ! Loop over all thermodynamic levels between the second-lowest and the
     ! highest.
     do k = 2, gr%nnzp, 1
-       xm_tndcy_wpxp_cl(k) = - dzt(k) * ( wpxp_chnge(k) - wpxp_chnge(k-1) )
-       xm(k) = real( xm(k) + xm_tndcy_wpxp_cl(k) * dt )
+      xm_tndcy_wpxp_cl(k) = - dzt(k) * ( wpxp_chnge(k) - wpxp_chnge(k-1) )
+      xm(k) = real( xm(k) + xm_tndcy_wpxp_cl(k) * dt )
     enddo
-    
+
     if ( l_stats_samp ) then
-       ! The adjustment to xm due to turbulent advection term clipping
-       ! (xm term tacl) is completely explicit; call stat_update_var.
-       call stat_update_var( ixm_tacl, xm_tndcy_wpxp_cl, zt )
+      ! The adjustment to xm due to turbulent advection term clipping
+      ! (xm term tacl) is completely explicit; call stat_update_var.
+      call stat_update_var( ixm_tacl, xm_tndcy_wpxp_cl, zt )
     endif
 
 
