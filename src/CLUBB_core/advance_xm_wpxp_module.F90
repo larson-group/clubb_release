@@ -571,7 +571,7 @@ module advance_xm_wpxp_module
         zm2zt ! Procedure(s)
 
     use constants, only: &
-        weight_timestep_tp1 ! Variable(s)
+        gamma_over_implicit_ts ! Variable(s)
 
     use model_flags, only: &
         l_clip_semi_implicit ! Variable(s)
@@ -803,15 +803,15 @@ module advance_xm_wpxp_module
       !        the equation in order to balance a weight that is not equal to 1,
       !        such that:
       !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
-      !        where X is the variable that is being solved for (w'x' in this
-      !        case), y(t) is the linearized portion of the term that gets
-      !        treated implicitly, and RHS is the portion of the term that is
-      !        always treated explicitly (in the case of the w'x' turbulent
-      !        advection term, RHS = 0).  A weight of greater than 1 can be
-      !        applied to make the term more numerically stable.
+      !        where X is the variable that is being solved for in a predictive
+      !        equation (w'x' in this case), y(t) is the linearized portion of
+      !        the term that gets treated implicitly, and RHS is the portion of
+      !        the term that is always treated explicitly (in the case of the
+      !        w'x' turbulent advection term, RHS = 0).  A weight of greater
+      !        than 1 can be applied to make the term more numerically stable.
       lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wpxp)  & 
       = lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wpxp)  &
-      + weight_timestep_tp1  &
+      + gamma_over_implicit_ts  &
       * wpxp_term_ta_lhs( wp2_zt(kp1), wp2_zt(k),  & 
                           a1_zt(kp1), a1_zt(k),  & 
                           wp3(kp1), wp3(k), gr%dzm(k), k )
@@ -871,7 +871,7 @@ module advance_xm_wpxp_module
         !        advection (ta) term).
         if ( iwprtp_ta > 0 .or. iwpthlp_ta > 0 ) then
           tmp(1:3)  &
-          = weight_timestep_tp1  &
+          = gamma_over_implicit_ts  &
           * wpxp_term_ta_lhs( wp2_zt(kp1), wp2_zt(k),  &
                               a1_zt(kp1), a1_zt(k),  &
                               wp3(kp1), wp3(k), gr%dzm(k), k )
@@ -995,7 +995,7 @@ module advance_xm_wpxp_module
         gr ! Variable(s)
 
     use constants, only:  &
-        weight_timestep_tp1 ! Variable(s)
+        gamma_over_implicit_ts ! Variable(s)
 
     use model_flags, only: &
         l_clip_semi_implicit ! Variable(s)
@@ -1171,19 +1171,19 @@ module advance_xm_wpxp_module
       !        the equation in order to balance a weight that is not equal to 1,
       !        such that:
       !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
-      !        where X is the variable that is being solved for (w'x' in this
-      !        case), y(t) is the linearized portion of the term that gets
-      !        treated implicitly, and RHS is the portion of the term that is
-      !        always treated explicitly (in the case of the w'x' turbulent
-      !        advection term, RHS = 0).  A weight of greater than 1 can be
-      !        applied to make the term more numerically stable.
+      !        where X is the variable that is being solved for in a predictive
+      !        equation (w'x' in this case), y(t) is the linearized portion of
+      !        the term that gets treated implicitly, and RHS is the portion of
+      !        the term that is always treated explicitly (in the case of the
+      !        w'x' turbulent advection term, RHS = 0).  A weight of greater
+      !        than 1 can be applied to make the term more numerically stable.
       lhs_fnc_output(1:3)  &
       = wpxp_term_ta_lhs( wp2_zt(kp1), wp2_zt(k),  &
                           a1_zt(kp1), a1_zt(k),  &
                           wp3(kp1), wp3(k), gr%dzm(k), k )
       rhs(k_wpxp,1)  &
       = rhs(k_wpxp,1)  &
-      + ( 1.0 - weight_timestep_tp1 )  &
+      + ( 1.0 - gamma_over_implicit_ts )  &
       * ( - lhs_fnc_output(1) * wpxp(kp1)  &
           - lhs_fnc_output(2) * wpxp(k)  &
           - lhs_fnc_output(3) * wpxp(km1) )
@@ -1214,17 +1214,21 @@ module advance_xm_wpxp_module
                                  .true., wpxp_lower_lim(k) ), zm )
         endif
 
-        ! w'x' term ta is normally completely implicit.  However, due to the
-        ! RHS contribution from the "over-implicit" weighted time step,
-        ! w'x' term ta has both implicit and explicit components; call
-        ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
-        ! subtracts the value sent in, reverse the sign on the input value.
+        ! w'x' term ta is normally completely implicit.  However, there is a
+        ! RHS contribution from the "over-implicit" weighted time step.  A
+        ! weighting factor of greater than 1 may be used to make the term more
+        ! numerically stable (see note above for RHS contribution from
+        ! "over-implicit" weighted time step for LHS turbulent advection (ta)
+        ! term).  Therefore, w'x' term ta has both implicit and explicit
+        ! components; call stat_begin_update_pt.  Since stat_begin_update_pt
+        ! automatically subtracts the value sent in, reverse the sign on the
+        ! input value.
         lhs_fnc_output(1:3)  &
         = wpxp_term_ta_lhs( wp2_zt(kp1), wp2_zt(k),  &
                             a1_zt(kp1), a1_zt(k),  &
                             wp3(kp1), wp3(k), gr%dzm(k), k )
         call stat_begin_update_pt( iwpxp_ta, k, &
-              - ( 1.0 - weight_timestep_tp1 )  &
+              - ( 1.0 - gamma_over_implicit_ts )  &
               * ( - lhs_fnc_output(1) * wpxp(kp1)  &
                   - lhs_fnc_output(2) * wpxp(k)  &
                   - lhs_fnc_output(3) * wpxp(km1) ), zm )

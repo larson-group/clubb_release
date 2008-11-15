@@ -23,7 +23,7 @@ module constants
             eps, zero_threshold, max_mag_correlation, sec_per_day, &
             sec_per_hr, sec_per_min, g_per_kg, T_freeze_K, &
             Skw_max_mag, Skw_max_mag_sqd, stefan_boltzmann, &
-            weight_timestep_tp1
+            gamma_over_implicit_ts
 
   private ! Default scope
 
@@ -131,25 +131,26 @@ module constants
   real, parameter :: &
     max_mag_correlation = 0.99
 
-  ! Weighting factor for implicit portion of a term.
+  ! "Over-implicit" weighted time step.
   !
   ! The weight of the implicit portion of a term is controlled by the factor
-  ! weight_timestep_tp1 (abbreviated "weight" in the expression below).  A
+  ! gamma_over_implicit_ts (abbreviated "gamma" in the expression below).  A
   ! factor is added to the right-hand side of the equation in order to balance a
   ! weight that is not equal to 1, such that:
   !
-  !      -y(t) * [ weight * X(t+1) + ( 1 - weight ) * X(t) ] + RHS;
+  !      -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
   !
-  ! where X is the variable that is being solved for, y(t) is the linearized
-  ! portion of the term that gets treated implicitly, and RHS is the portion of
-  ! the term that is always treated explicitly.  A weight of greater than 1 can
-  ! be applied to make the term more numerically stable.
+  ! where X is the variable that is being solved for in a predictive equation
+  ! (such as w'^3, w'th_l', r_t'^2, etc), y(t) is the linearized portion of the
+  ! term that gets treated implicitly, and RHS is the portion of the term that
+  ! is always treated explicitly.  A weight of greater than 1 can be applied to
+  ! make the term more numerically stable.
   !
-  !    weight_timestep_tp1          Effect on term
+  !    gamma_over_implicit_ts          Effect on term
   !
   !            0.0               Term becomes completely explicit
   !
-  !            1.0               Normal semi-implicit breakdown;
+  !            1.0               Standard implicit portion of the term;
   !                              as it was without the weighting factor.
   !
   !            1.5               Strongly weighted implicit portion of the term;
@@ -158,11 +159,19 @@ module constants
   !            2.0               More strongly weighted implicit portion of the
   !                              term; increased numerical stability.
   !
-  ! Note:  The weighting factor is only applied to terms that tend to
-  !        significantly decrease the amount of numerical stability for
+  ! Note:  The "over-implicit" weighted time step is only applied to terms that
+  !        tend to significantly decrease the amount of numerical stability for
   !        variable X.
+  !        The "over-implicit" weighted time step is applied to the turbulent
+  !        advection term for the following variables:
+  !           w'^3 (also applied to the turbulent production term), found in
+  !           module advance_wp2_wp3_module;
+  !           w'r_t', w'th_l', and w'sclr', found in
+  !           module advance_xm_wpxp_module; and
+  !           r_t'^2, th_l'^2, r_t'th_l', u'^2, v'^2, sclr'^2, sclr'r_t',
+  !           and sclr'th_l', found in module advance_xp2_xpyp_module.
   real, parameter :: &
-    weight_timestep_tp1 = 1.50
+    gamma_over_implicit_ts = 1.50
 
   ! Useful conversion factors.
   real(kind=time_precision), parameter ::  & 

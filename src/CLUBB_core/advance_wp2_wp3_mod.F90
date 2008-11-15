@@ -813,7 +813,7 @@ contains
 
     use constants, only:  & 
         eps,     & ! Variable(s)
-        weight_timestep_tp1
+        gamma_over_implicit_ts
 
     use model_flags, only: & 
         l_tke_aniso, & ! Variable(s)
@@ -1169,20 +1169,21 @@ contains
       + term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
 
       ! LHS turbulent advection (ta) and turbulent production (tp) terms.
-      ! Note:  The weight of the implicit portion of these terms is controlled
-      !        by the factor weight_timestep_tp1 (abbreviated "weight" in the
+      ! Note:  An "over-implicit" weighted time step is applied to these terms.
+      !        The weight of the implicit portion of these terms is controlled
+      !        by the factor gamma_over_implicit_ts (abbreviated "gamma" in the
       !        expression below).  A factor is added to the right-hand side of
       !        the equation in order to balance a weight that is not equal to 1,
       !        such that:
-      !             -y(t) * [ weight * X(t+1) + ( 1 - weight ) * X(t) ] + RHS;
-      !        where X is the variable that is being solved for (w'^3 in this
-      !        case), y(t) is the linearized portion of the terms that gets
-      !        treated implicitly, and RHS is the portion of the terms that is
-      !        always treated explicitly.  A weight of greater than 1 can be
-      !        applied to make the term more numerically stable.
+      !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
+      !        where X is the variable that is being solved for in a predictive
+      !        equation (w'^3 in this case), y(t) is the linearized portion of
+      !        the terms that gets treated implicitly, and RHS is the portion of
+      !        the terms that is always treated explicitly.  A weight of greater
+      !        than 1 can be applied to make the terms more numerically stable.
       lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3)  & 
       = lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3)  &
-      + weight_timestep_tp1  &
+      + gamma_over_implicit_ts  &
       * wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
                              wp2(k), wp2(km1),  &
                              a1(k), a1_zt(k), a1(km1),  &
@@ -1235,11 +1236,13 @@ contains
 
         ! Note:  To find the contribution of w'^3 term ta, add 3/2 to all of 
         !        the a_3 inputs to function wp3_terms_ta_tp_lhs.
-        ! Note:  A weighting factor of greater than 1 may be used to make the
-        !        term more numerically stable (see note above).
+        ! Note:  An "over-implicit" weighted time step is applied to this term.
+        !        A weighting factor of greater than 1 may be used to make the
+        !        term more numerically stable (see note above for LHS turbulent
+        !        advection (ta) and turbulent production (tp) terms).
         if ( iwp3_ta > 0 ) then
           tmp(1:5)  &
-          = weight_timestep_tp1  &
+          = gamma_over_implicit_ts  &
           * wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
                                  wp2(k), wp2(km1),  &
                                  a1(k), a1_zt(k), a1(km1),  &
@@ -1255,11 +1258,13 @@ contains
         ! Note:  To find the contribution of w'^3 term tp, substitute 0 for all
         !        of the a_1 and a_3 inputs and subtract 3/2 from all of the a_3
         !        inputs to function wp3_terms_ta_tp_lhs.
-        ! Note:  A weighting factor of greater than 1 may be used to make the
-        !        term more numerically stable (see note above).
+        ! Note:  An "over-implicit" weighted time step is applied to this term.
+        !        A weighting factor of greater than 1 may be used to make the
+        !        term more numerically stable (see note above for LHS turbulent
+        !        advection (ta) and turbulent production (tp) terms).
         if ( iwp3_tp > 0 ) then
           tmp(1:5)  &
-          = weight_timestep_tp1  &
+          = gamma_over_implicit_ts  &
           * wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
                                  wp2(k), wp2(km1),  &
                                  0.0, 0.0, 0.0,  &
@@ -1411,7 +1416,7 @@ contains
     use constants, only: & 
         wtol_sqd,  & ! Variable(s)
         eps,     &
-        weight_timestep_tp1
+        gamma_over_implicit_ts
 
     use model_flags, only:  & 
         l_tke_aniso ! Variable
@@ -1476,11 +1481,13 @@ contains
     ! Array indices
     integer :: k, km1, kp1, k_wp2, k_wp3
 
-    ! Holds output from the LHS (implicit) portion of a term so it can be
-    ! applied to the RHS in a weighted fashion.  This is used if the implicit
-    ! portion of the term is strongly weighted in order to increase numerical
-    ! stability.  A factor must be then applied to the right-hand side in
-    ! order to balance the weight.
+    ! For "over-implicit" weighted time step.
+    ! This vector holds output from the LHS (implicit) portion of a term at a
+    ! given vertical level.  This output is weighted and applied to the RHS.
+    ! This is used if the implicit portion of the term is "over-implicit", which
+    ! means that the LHS contribution is given extra weight (>1) in order to
+    ! increase numerical stability.  A weighted factor must then be applied to
+    ! the RHS in order to balance the weight.
     real, dimension(5) :: lhs_fnc_output
 
     ! For use in Crank-Nicholson eddy diffusion.
@@ -1618,17 +1625,21 @@ contains
                              a1(k), a1_zt(k), a1(km1),  &
                              a3(k), a3_zt(k), a3(km1), gr%dzt(k) )
 
-      ! Note:  The weight of the implicit portion of these terms is controlled
-      !        by the factor weight_timestep_tp1 (abbreviated "weight" in the
+      ! RHS contribution from "over-implicit" weighted time step
+      ! for LHS turbulent advection (ta) and turbulent production (tp) terms.
+      !
+      ! Note:  An "over-implicit" weighted time step is applied to these terms.
+      !        The weight of the implicit portion of these terms is controlled
+      !        by the factor gamma_over_implicit_ts (abbreviated "gamma" in the
       !        expression below).  A factor is added to the right-hand side of
       !        the equation in order to balance a weight that is not equal to 1,
       !        such that:
-      !             -y(t) * [ weight * X(t+1) + ( 1 - weight ) * X(t) ] + RHS;
-      !        where X is the variable that is being solved for (w'^3 in this
-      !        case), y(t) is the linearized portion of the terms that gets
-      !        treated implicitly, and RHS is the portion of the terms that is
-      !        always treated explicitly.  A weight of greater than 1 can be
-      !        applied to make the term more numerically stable.
+      !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
+      !        where X is the variable that is being solved for in a predictive
+      !        equation (w'^3 in this case), y(t) is the linearized portion of
+      !        the terms that gets treated implicitly, and RHS is the portion of
+      !        the terms that is always treated explicitly.  A weight of greater
+      !        than 1 can be applied to make the terms more numerically stable.
       lhs_fnc_output(1:5)  &
       = wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
                              wp2(k), wp2(km1),  &
@@ -1637,7 +1648,7 @@ contains
                              gr%dzt(k), k )
       rhs(k_wp3)  & 
       = rhs(k_wp3)  &
-      + ( 1.0 - weight_timestep_tp1 )  &
+      + ( 1.0 - gamma_over_implicit_ts )  &
       * ( - lhs_fnc_output(1) * wp3(kp1)  &
           - lhs_fnc_output(2) * wp2(k)  &
           - lhs_fnc_output(3) * wp3(k)  &
@@ -1685,8 +1696,10 @@ contains
                                 a3(km1)+(3.0/2.0), gr%dzt(k) ),  &
                                    zt )
 
-        ! Note:  An implicit weighting factor of greater than 1 may be used to
-        !        make the term more numerically stable (see note above).
+        ! Note:  An "over-implicit" weighted time step is applied to this term.
+        !        A weighting factor of greater than 1 may be used to make the
+        !        term more numerically stable (see note above for RHS turbulent
+        !        advection (ta) and turbulent production (tp) terms).
         lhs_fnc_output(1:5)  &
         = wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
                                wp2(k), wp2(km1),  &
@@ -1694,7 +1707,7 @@ contains
                                a3(k)+(3.0/2.0), a3_zt(k)+(3.0/2.0),  &
                                a3(km1)+(3.0/2.0), gr%dzt(k), k )
         call stat_modify_pt( iwp3_ta, k,  &
-                             + ( 1.0 - weight_timestep_tp1 )  &
+                             + ( 1.0 - gamma_over_implicit_ts )  &
                              * ( - lhs_fnc_output(1) * wp3(kp1)  &
                                  - lhs_fnc_output(2) * wp2(k)  &
                                  - lhs_fnc_output(3) * wp3(k)  &
@@ -1715,8 +1728,10 @@ contains
                                 0.0-(3.0/2.0), gr%dzt(k) ),  &
                                    zt )
 
-        ! Note:  An implicit weighting factor of greater than 1 may be used to
-        !        make the term more numerically stable (see note above).
+        ! Note:  An "over-implicit" weighted time step is applied to this term.
+        !        A weighting factor of greater than 1 may be used to make the
+        !        term more numerically stable (see note above for RHS turbulent
+        !        advection (ta) and turbulent production (tp) terms).
         lhs_fnc_output(1:5)  &
         = wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
                                wp2(k), wp2(km1),  &
@@ -1724,7 +1739,7 @@ contains
                                0.0-(3.0/2.0), 0.0-(3.0/2.0),  &
                                0.0-(3.0/2.0), gr%dzt(k), k )
         call stat_modify_pt( iwp3_tp, k,  &
-                             + ( 1.0 - weight_timestep_tp1 )  &
+                             + ( 1.0 - gamma_over_implicit_ts )  &
                              * ( - lhs_fnc_output(2) * wp2(k)  &
                                  - lhs_fnc_output(4) * wp2(km1) ), zt )
 
