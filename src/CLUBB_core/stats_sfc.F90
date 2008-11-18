@@ -49,8 +49,7 @@ use stats_variables, only: &
     ithlp2_matrix_condt_num, & 
     irtpthlp_matrix_condt_num, & 
     iup2_vp2_matrix_condt_num, & 
-    ium_matrix_condt_num, &
-    ivm_matrix_condt_num
+    iwindm_matrix_condt_num
 
 use stats_type, only: & 
     stat_assign ! Procedure
@@ -100,8 +99,7 @@ irtp2_matrix_condt_num    = 0
 ithlp2_matrix_condt_num   = 0
 irtpthlp_matrix_condt_num = 0
 iup2_vp2_matrix_condt_num = 0
-ivm_matrix_condt_num      = 0
-ium_matrix_condt_num      = 0
+iwindm_matrix_condt_num   = 0
 
 ! Assign pointers for statistics variables sfc
 
@@ -296,17 +294,10 @@ do i=1,sfc%nn
          "Estimate of the condition number for up2/vp2","count",sfc)
     k = k + 1
 
-  case ('vm_matrix_condt_num')
-    ivm_matrix_condt_num = k  
-    call stat_assign(ivm_matrix_condt_num,"vm_matrix_condt_num", & 
-         "Estimate of the condition number for vm","count",sfc)
-
-    k = k + 1
-
-  case ('um_matrix_condt_num')
-    ium_matrix_condt_num = k  
-    call stat_assign(ium_matrix_condt_num,"um_matrix_condt_num", & 
-         "Estimate of the condition number for um","count",sfc)
+  case ('windm_matrix_condt_num')
+    iwindm_matrix_condt_num = k  
+    call stat_assign(iwindm_matrix_condt_num,"windm_matrix_condt_num", & 
+         "Estimate of the condition number for the mean wind","count",sfc)
 
     k = k + 1
 

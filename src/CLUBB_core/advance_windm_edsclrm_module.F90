@@ -680,7 +680,7 @@ module advance_windm_edsclrm_module
       tridag_solvex
 
     use stats_variables, only: & 
-      ium_matrix_condt_num,  &  ! Variables
+      iwindm_matrix_condt_num,  &  ! Variables
       sfc,     & 
       l_stats_samp
 
@@ -720,14 +720,14 @@ module advance_windm_edsclrm_module
     real :: rcond ! Estimate of the reciprocal of the condition number on the LHS matrix
 
     ! Solve tridiagonal system for xm.
-    if ( l_stats_samp .and. ium_matrix_condt_num > 0 ) then
+    if ( l_stats_samp .and. iwindm_matrix_condt_num > 0 ) then
       call tridag_solvex & 
            ( "windm_edsclrm", gr%nnzp, 2+sclr_dim, &                    ! Intent(in) 
              lhs(kp1_tdiag,:), lhs(k_tdiag,:), lhs(km1_tdiag,:), rhs, & ! Intent(inout)
              solution, rcond, err_code )                                ! Intent(out)
 
       ! Est. of the condition number of the variance LHS matrix
-      call stat_update_var_pt( ium_matrix_condt_num, 1, 1.0 / rcond, &  ! Intent(in)
+      call stat_update_var_pt( iwindm_matrix_condt_num, 1, 1.0 / rcond, &  ! Intent(in)
                                sfc )                      ! Intent(inout)
     else
 

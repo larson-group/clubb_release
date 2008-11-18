@@ -549,8 +549,7 @@ module stats_variables
     ithlp2_matrix_condt_num, & 
     irtpthlp_matrix_condt_num, & 
     iup2_vp2_matrix_condt_num, & 
-    ium_matrix_condt_num, &
-    ivm_matrix_condt_num 
+    iwindm_matrix_condt_num
 
 !$omp threadprivate(iustar, iveg_t_sfc, it_sfc, ideep_t_sfc, ilh, ish, icc, ilwp, izb, izi, &
 !$omp   irain, ipflux, irrainm_sfc, &
@@ -558,7 +557,7 @@ module stats_variables
 !$omp   ithlm_vert_avg, irtm_vert_avg, ium_vert_avg, ivm_vert_avg, &
 !$omp   iwp23_matrix_condt_num, irtm_matrix_condt_num, ithlm_matrix_condt_num, &
 !$omp   irtp2_matrix_condt_num, ithlp2_matrix_condt_num, irtpthlp_matrix_condt_num, &
-!$omp   iup2_vp2_matrix_condt_num, ium_matrix_condt_num, ivm_matrix_condt_num )
+!$omp   iup2_vp2_matrix_condt_num, iwindm_matrix_condt_num )
 
   ! Variables that contains all the statistics
 
