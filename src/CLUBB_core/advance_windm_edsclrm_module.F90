@@ -70,7 +70,8 @@ module advance_windm_edsclrm_module
       clubb_at_least_debug_level
 
     use constants, only:  & 
-        fstderr  ! Constant
+        fstderr, &  ! Constant
+        eps
 
     implicit none
 
@@ -137,9 +138,18 @@ module advance_windm_edsclrm_module
     real, dimension(3,gr%nnzp) :: &
       lhs ! The implicit part of the tridiagonal matrix              [units vary]
 
-    real, dimension(gr%nnzp,2+sclr_dim) :: &
+    real, dimension(gr%nnzp,max(2,sclr_dim)) :: &
       rhs,     &! The explicit part of the tridiagonal matrix        [units vary]
       solution  ! The solution to the tridiagonal matrix             [units vary]
+
+    real, dimension(gr%nnzp) :: &
+      wind_speed  ! wind speed; sqrt(u^2 + v^2)                      [m/s]
+
+    real :: &
+      u_star_sqd  ! Surface friction velocity, u_star, squared       [m/s]
+
+    logical :: &
+      l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
 
     integer :: i     ! Array index
 
@@ -154,36 +164,38 @@ module advance_windm_edsclrm_module
 
     endif
 
+    !----------------------------------------------------------------
+    ! Prepare tridiagonal system for horizontal winds, um and vm
+    !----------------------------------------------------------------
+
+    ! Compute Coriolis, geostrophic, and other prescribed wind forcings for um.
     call compute_uv_tndcy( "um", fcor, vm, vg, um_forcing, l_implemented, & ! in
-                           um_tndcy ) ! out
+                           um_tndcy )                                       ! out
 
-
+    ! Compute Coriolis, geostrophic, and other prescribed wind forcings for vm.
     call compute_uv_tndcy( "vm", fcor, um, ug, vm_forcing, l_implemented, & ! in
-                           vm_tndcy ) ! out
+                           vm_tndcy )                                       ! out
 
-    zero_1d = 0.
-
-    !----------------------------------------------------------------
-    ! Prepare tridiagonal system
-    !----------------------------------------------------------------
+    ! Momentum surface fluxes, u'w'|_sfc and v'w'|_sfc, are applied to through
+    ! an implicit method, such that:
+    !    x'w'|_sfc = - ( u_star(t)^2 / wind_speed(t) ) * xm(t+1).
+    !l_imp_sfc_momentum_flux = .true.
+    l_imp_sfc_momentum_flux = .false.
+    ! Compute wind speed (use threshold "eps" to prevent divide-by-zero error).
+    wind_speed = max( sqrt( um**2 + vm**2 ), eps )
+    ! Compute u_star_sqd according to the definition of u_star.
+    u_star_sqd = sqrt( upwp_sfc**2 + vpwp_sfc**2 )
 
     ! Compute the explicit portion of the um equation.
     ! Build the right-hand side vector.
-    rhs(1:gr%nnzp,1) = windm_edsclrm_rhs( "um", dt, Kh_zm, um, um_tndcy, upwp_sfc ) ! in
+    rhs(1:gr%nnzp,1) = windm_edsclrm_rhs( "um", dt, Kh_zm, um, um_tndcy,  &   ! in
+                                          l_imp_sfc_momentum_flux, upwp_sfc ) ! in
  
-    ! Compute the explicit portion of the um equation.
+    ! Compute the explicit portion of the vm equation.
     ! Build the right-hand side vector.
-    rhs(1:gr%nnzp,2) = windm_edsclrm_rhs( "vm", dt, Kh_zm, vm, vm_tndcy, vpwp_sfc ) ! in
+    rhs(1:gr%nnzp,2) = windm_edsclrm_rhs( "vm", dt, Kh_zm, vm, vm_tndcy,  &   ! in
+                                          l_imp_sfc_momentum_flux, vpwp_sfc ) ! in
 
-    ! Compute the explicit portion of eddy scalar equation.
-    ! Build the right-hand side vector.
-    ! Because of statistics, we have to use a DO rather than a FORALL here
-    ! -dschanen 7 Oct 2008
-    !HPF$ INDEPENDENT
-    do i = 1, sclr_dim
-      rhs(1:gr%nnzp,2+i) = windm_edsclrm_rhs( "scalars", dt, Kh_zm, edsclrm(:,i), & ! in
-                                              zero_1d, wpedsclrp_sfc(i) ) ! in
-    end do
 
     ! Store momentum flux (explicit component)
 
@@ -191,43 +203,31 @@ module advance_windm_edsclrm_module
     upwp(1) = upwp_sfc
     vpwp(1) = vpwp_sfc
 
-    wpedsclrp(1,1:sclr_dim) =  wpedsclrp_sfc(1:sclr_dim)
-
     ! Solve for x'w' at all intermediate model levels.
     ! A Crank-Nicholson timestep is used.
 
     upwp(2:gr%nnzp-1) = - 0.5 * xpwp_fnc( Kh_zm(2:gr%nnzp-1), um(2:gr%nnzp-1), & ! in
-                                          um(3:gr%nnzp), gr%dzm(2:gr%nnzp-1) ) ! in
+                                          um(3:gr%nnzp), gr%dzm(2:gr%nnzp-1) )   ! in
 
     vpwp(2:gr%nnzp-1) = - 0.5 * xpwp_fnc( Kh_zm(2:gr%nnzp-1), vm(2:gr%nnzp-1), & ! in
-                                          vm(3:gr%nnzp), gr%dzm(2:gr%nnzp-1) ) ! in
-
-    ! Here we use a forall and high performance fortran directive to try to
-    ! parallelize this computation.  Note that FORALL is more restrictive than DO.
-    !HPF$ INDEPENDENT
-    forall( i = 1:sclr_dim )
-      wpedsclrp(2:gr%nnzp-1,i) = &
-        - 0.5 * xpwp_fnc( Kh_zm(2:gr%nnzp-1), edsclrm(2:gr%nnzp-1,i), & ! in
-                          edsclrm(3:gr%nnzp,i), gr%dzm(2:gr%nnzp-1) )   ! in
-    end forall
+                                          vm(3:gr%nnzp), gr%dzm(2:gr%nnzp-1) )   ! in
 
     ! A zero-flux boundary condition at the top of the model, d(xm)/dz = 0,
-    ! means that u'w' at the top model level is 0,
+    ! means that x'w' at the top model level is 0,
     ! since x'w' = - K_zm * d(xm)/dz.
     upwp(gr%nnzp) = 0.
     vpwp(gr%nnzp) = 0.
 
-    wpedsclrp(gr%nnzp,1:sclr_dim) = 0.
 
-    ! Compute the implicit portion of the xm equation.
+    ! Compute the implicit portion of the um and vm equations.
     ! Build the left-hand side matrix.
-    ! Since these are the same for all equations, we only need to do this once
-    call windm_edsclrm_lhs( dt, wm_zt, Kh_zm, l_implemented, & ! in
-                            lhs ) ! out
+    call windm_edsclrm_lhs( dt, wm_zt, Kh_zm, wind_speed, u_star_sqd,  & ! in
+                            l_implemented, l_imp_sfc_momentum_flux,  &   ! in
+                            lhs )                                        ! out
 
-    ! Decompose and back substitute for all variables
-    call windm_edsclrm_solve( lhs, rhs, & ! in/out
-                              solution, err_code ) ! out
+    ! Decompose and back substitute for um and vm
+    call windm_edsclrm_solve( 2, lhs, rhs, &          ! in/out
+                              solution, err_code )    ! out
 
     !----------------------------------------------------------------
     ! Update zonal (west-to-east) component of mean wind, um
@@ -254,11 +254,6 @@ module advance_windm_edsclrm_module
     endif ! l_stats_samp
 
 
-    !----------------------------------------------------------------
-    ! Update Eddy-diff. Passive Scalars
-    !----------------------------------------------------------------
-    edsclrm(1:gr%nnzp,1:sclr_dim) = solution(1:gr%nnzp,2+1:2+sclr_dim)
-
     ! Second part of momentum (implicit component)
 
     ! Solve for x'w' at all intermediate model levels.
@@ -270,12 +265,6 @@ module advance_windm_edsclrm_module
     vpwp(2:gr%nnzp-1) = vpwp(2:gr%nnzp-1) &
       - 0.5 * xpwp_fnc( Kh_zm(2:gr%nnzp-1), vm(2:gr%nnzp-1), vm(3:gr%nnzp), gr%dzm(2:gr%nnzp-1) )!in
 
-    !HPF$ INDEPENDENT
-    forall( i=1:sclr_dim )
-      wpedsclrp(2:gr%nnzp-1,i) = wpedsclrp(2:gr%nnzp-1,i) &
-        - 0.5 * xpwp_fnc( Kh_zm(2:gr%nnzp-1), edsclrm(2:gr%nnzp-1,i), & ! in
-                          edsclrm(3:gr%nnzp,i), gr%dzm(2:gr%nnzp-1) )   ! in
-    end forall
  
     ! Adjust um and vm if nudging is turned on.
     if ( l_uv_nudge ) then
@@ -330,10 +319,88 @@ module advance_windm_edsclrm_module
                             .true., dt, wp2, wp2, & ! intent(in)
                             vpwp, vpwp_chnge )      ! intent(inout)
 
-    end if ! l_tke_aniso
+    endif ! l_tke_aniso
 
-    ! Note that the w'edsclr' terms are not clipped, since we don't compute the
-    ! variance of edsclr anywhere. -dschanen 7 Oct 2008
+
+    !----------------------------------------------------------------
+    ! Prepare tridiagonal system for eddy-scalars
+    !----------------------------------------------------------------
+
+    if ( sclr_dim > 0 ) then
+
+       ! Eddy-scalars don't use wind forcings; prepare a zero-array.
+       zero_1d = 0.
+
+       ! Eddy-scalar surface fluxes, x'w'|_sfc, are applied through an explicit
+       ! method.
+       l_imp_sfc_momentum_flux = .false.
+
+       ! Compute the explicit portion of eddy scalar equation.
+       ! Build the right-hand side vector.
+       ! Because of statistics, we have to use a DO rather than a FORALL here
+       ! -dschanen 7 Oct 2008
+       !HPF$ INDEPENDENT
+       do i = 1, sclr_dim
+          rhs(1:gr%nnzp,i)  &
+          = windm_edsclrm_rhs( "scalars", dt, Kh_zm, edsclrm(:,i), zero_1d,  & ! in
+                               l_imp_sfc_momentum_flux, wpedsclrp_sfc(i) )     ! in
+       enddo
+
+
+       ! Store momentum flux (explicit component)
+
+       ! The surface flux, x'w'(1) = x'w'|_sfc, is set elsewhere in the model.
+       wpedsclrp(1,1:sclr_dim) =  wpedsclrp_sfc(1:sclr_dim)
+
+       ! Solve for x'w' at all intermediate model levels.
+       ! A Crank-Nicholson timestep is used.
+       ! Here we use a forall and high performance fortran directive to try to
+       ! parallelize this computation.  Note that FORALL is more restrictive than DO.
+       !HPF$ INDEPENDENT
+       forall( i = 1:sclr_dim )
+         wpedsclrp(2:gr%nnzp-1,i) = &
+           - 0.5 * xpwp_fnc( Kh_zm(2:gr%nnzp-1), edsclrm(2:gr%nnzp-1,i), & ! in
+                             edsclrm(3:gr%nnzp,i), gr%dzm(2:gr%nnzp-1) )   ! in
+       end forall
+
+       ! A zero-flux boundary condition at the top of the model, d(xm)/dz = 0,
+       ! means that x'w' at the top model level is 0,
+       ! since x'w' = - K_zm * d(xm)/dz.
+       wpedsclrp(gr%nnzp,1:sclr_dim) = 0.
+
+
+       ! Compute the implicit portion of the xm (eddy-scalar) equations.
+       ! Build the left-hand side matrix.
+       call windm_edsclrm_lhs( dt, wm_zt, Kh_zm, wind_speed, u_star_sqd,  & ! in
+                               l_implemented, l_imp_sfc_momentum_flux,  &   ! in
+                               lhs )                                        ! out
+
+       ! Decompose and back substitute for all eddy-scalar variables
+       call windm_edsclrm_solve( sclr_dim, lhs, rhs, & ! in/out
+                                 solution, err_code )  ! out
+
+       !----------------------------------------------------------------
+       ! Update Eddy-diff. Passive Scalars
+       !----------------------------------------------------------------
+       edsclrm(1:gr%nnzp,1:sclr_dim) = solution(1:gr%nnzp,1:sclr_dim)
+
+
+       ! Second part of momentum (implicit component)
+
+       ! Solve for x'w' at all intermediate model levels.
+       ! A Crank-Nicholson timestep is used.
+       !HPF$ INDEPENDENT
+       forall( i=1:sclr_dim )
+         wpedsclrp(2:gr%nnzp-1,i) = wpedsclrp(2:gr%nnzp-1,i) &
+           - 0.5 * xpwp_fnc( Kh_zm(2:gr%nnzp-1), edsclrm(2:gr%nnzp-1,i), & ! in
+                             edsclrm(3:gr%nnzp,i), gr%dzm(2:gr%nnzp-1) )   ! in
+       end forall
+ 
+       ! Note that the w'edsclr' terms are not clipped, since we don't compute the
+       ! variance of edsclr anywhere. -dschanen 7 Oct 2008
+
+    endif
+
 
     ! Error report
     ! Joshua Fasching February 2008
@@ -380,7 +447,7 @@ module advance_windm_edsclrm_module
   end subroutine advance_windm_edsclrm
 
   !=============================================================================
-  subroutine windm_edsclrm_solve( lhs, rhs, solution, err_code )
+  subroutine windm_edsclrm_solve( nrhs, lhs, rhs, solution, err_code )
 
     ! Description:
     ! Solves the horizontal wind or eddy-scalar time-tendency equation, and
@@ -478,89 +545,185 @@ module advance_windm_edsclrm_module
     ! d(xm)/dt equation is the value of x'w' at the surface (the first momentum
     ! level), which is written as x'w'|_sfc.
     !
-    ! Since x'w' = - K_zm * d(xm)/dz, a substitution can be made in the xm eddy
-    ! diffusion equation for - K_zm * d(xm/dz) at the surface, such that:
+    ! 1) x'w' surface flux; generalized explicit form
     !
-    ! - K_zm(1) * dzm(1) * ( xm(2) - xm(1) ) = x'w'|_sfc;
+    !    The x'w' surface flux is applied to the d(xm)/dt equation through the
+    !    turbulent advection term, which is:
     !
-    ! where x'w'|_sfc is the surface momentum flux that is computed elsewhere in
-    ! the model code.
+    !    - d(x'w')/dz.
     !
-    ! The lower boundary condition, which in this case needs to be applied to
-    ! the d(xm)/dt equation at level 2, is discretized as follows:
+    !    At most vertical levels, a substitution can be made for x'w', such
+    !    that:
     !
-    ! ---xm(3)------------------------------------------------- t(3)
+    !    x'w' = - K_zm * d(xm)/dz.
     !
-    ! =============[ + K_zm(2) * d(xm)/dz ]==================== m(2)
+    !    However, the same substitution cannot be made at the surface (momentum
+    !    level 1), as x'w'|_sfc is a surface flux that is explicitly computed
+    !    elsewhere in the model code.
     !
-    ! ---xm(2)---------------------------d[K_zm*d(xm)/dz]/dz--- t(2)
+    !    The lower boundary condition, which in this case needs to be applied to
+    !    the d(xm)/dt equation at level 2, is discretized as follows:
     !
-    ! =============[ - K_zm(1) * d(xm)/dz = x'w'|_sfc ]======== m(1) (surface)
+    !    ---xm(3)------------------------------------------------ t(3)
     !
-    ! ---xm(1)------------------------------------------------- t(1)
+    !    =============[x'w'(2) = -K_zm(2)*d(xm)/dz]============== m(2)
     !
-    ! The vertically discretized form of the turbulent advection term (treated
-    ! as an eddy diffusion term), with the x'w'|_sfc substitution in place, is
-    ! written out as:
+    !    ---xm(2)--------------------------d[K_zm*d(xm)/dz]/dz--- t(2)
     !
-    ! + dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3) - xm(2) ) + x'w'|_sfc ];
+    !    =============[x'w'|_sfc]================================ m(1) (surface)
     !
-    ! which can be re-written as:
+    !    ---xm(1)-------(below surface; not applicable)---------- t(1)
     !
-    ! + dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3) - xm(2) ) ] + dzt(2) * x'w'|_sfc.
+    !    The vertically discretized form of the turbulent advection term
+    !    (treated as an eddy diffusion term), with the explicit surface flux,
+    !    x'w'|_sfc, in place, is written out as:
     !
-    ! For this equation, a Crank-Nicholson (semi-implicit) diffusion scheme is
-    ! used to solve the d [ K_zm * d(xm)/dz ] / dz eddy-diffusion term.  The
-    ! discretized implicit portion of the term is written out as:
+    !    + dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3) - xm(2) ) + x'w'|_sfc ];
     !
-    ! + (1/2)*dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3,<t+1>) - xm(2,<t+1>) ) ].
+    !    which can be re-written as:
     !
-    ! Note:  When the implicit term is brought over to the left-hand side,
-    !        the sign is reversed and the leading "+" in front of the term
-    !        is changed to a "-".
+    !    + dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3) - xm(2) ) ]
+    !       + dzt(2) * x'w'|_sfc.
     !
-    ! The discretized explicit portion of the term is written out as:
+    !    For this equation, a Crank-Nicholson (semi-implicit) diffusion scheme
+    !    is used to solve the d [ K_zm * d(xm)/dz ] / dz eddy-diffusion term.
+    !    The discretized implicit portion of the term is written out as:
     !
-    ! + (1/2)*dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3,<t>) - xm(2,<t>) ) ]
-    !    + dzt(2) * x'w'|_sfc.
+    !    + (1/2)*dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3,<t+1>) - xm(2,<t+1>) ) ].
     !
-    ! Note:  The x'w'|_sfc portion of the term written above has been pulled
-    !        away from the rest of the explicit form written above because the
-    !        (1/2) factor due to Crank-Nicholson time_stepping does not apply to
-    !        it, as there isn't an implicit portion for x'w'|_sfc.
+    !    Note:  When the implicit term is brought over to the left-hand side,
+    !           the sign is reversed and the leading "+" in front of the term
+    !           is changed to a "-".
     !
-    ! Timestep index (t) stands for the index of the current timestep, while
-    ! timestep index (t+1) stands for the index of the next timestep, which is
-    ! being advanced to in solving the d(xm)/dt equation.
+    !    The discretized explicit portion of the term is written out as:
+    !
+    !    + (1/2)*dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3,<t>) - xm(2,<t>) ) ]
+    !       + dzt(2) * x'w'|_sfc.
+    !
+    !    Note:  The x'w'|_sfc portion of the term written above has been pulled
+    !           away from the rest of the explicit form written above because
+    !           the (1/2) factor due to Crank-Nicholson time_stepping does not
+    !           apply to it, as there isn't an implicit portion for x'w'|_sfc.
+    !
+    !    Timestep index (t) stands for the index of the current timestep, while
+    !    timestep index (t+1) stands for the index of the next timestep, which
+    !    is being advanced to in solving the d(xm)/dt equation.
+    !
+    ! 2) x'w' surface flux; implicit form for momentum fluxes u'w' and v'w'
+    !
+    !    The x'w' surface flux is applied to the d(xm)/dt equation through the
+    !    turbulent advection term, which is:
+    !
+    !    - d(x'w')/dz.
+    !
+    !    At most vertical levels, a substitution can be made for x'w', such
+    !    that:
+    !
+    !    x'w' = - K_zm * d(xm)/dz.
+    !
+    !    However, the same substitution cannot be made at the surface (momentum
+    !    level 1), as x'w'|_sfc is a surface momentum flux that is found by the
+    !    following equation:
+    !
+    !    x'w'|_sfc = - [ u_star^2 / sqrt( um^2 + vm^2 ) ] * xm;
+    !
+    !    where x'w'|_sfc and xm are either u'w'|_sfc and um or v'w'|_sfc and vm
+    !    (um and vm are located at the first thermodynamic level above the
+    !    surface, which is thermodynamic level 2), sqrt( um^2 + vm^2 ) is the
+    !    wind speed (also at thermodynamic level 2), and u_star is defined as:
+    !
+    !    u_star = ( u'w'|_sfc^2 + v'w'|_sfc^2 )^(1/4);
+    !
+    !    and thus u_star^2 is defined as:
+    !
+    !    u_star^2 = sqrt( u'w'|_sfc^2 + v'w'|_sfc^2 ).
+    !
+    !    The value of u_star is either set to a constant value or computed
+    !    (through function diag_ustar) based on the surface wind speed, the
+    !    height above surface of the surface wind speed (as compared to the
+    !    roughness height), and the buoyancy flux at the surface.  Either way,
+    !    u_star is computed elsewhere in the model, and the values of u'w'|_sfc
+    !    and v'w'|_sfc are based on it and computed along with it.  The values
+    !    of u'w'|_sfc and v'w'|_sfc are then passed into advance_clubb_core,
+    !    and are eventually passed into advance_windm_edsclrm.  In subroutine
+    !    advance_windm_edsclrm, the value of u_star_sqd is then recomputed
+    !    based on u'w'|_sfc and v'w'|_sfc.  The value of sqrt( u_star_sqd ) is
+    !    consistent with the value of the original computation of u_star.
+    !
+    !    The equation listed above is substituted for x'w'|_sfc.  The lower
+    !    boundary condition, which in this case needs to be applied to the
+    !    d(xm)/dt equation at level 2, is discretized as follows:
+    !
+    !    ---xm(3)------------------------------------------------ t(3)
+    !
+    !    =========[x'w'(2) = -K_zm(2)*d(xm)/dz]================== m(2)
+    !
+    !    ---xm(2)--------------------------d[K_zm*d(xm)/dz]/dz--- t(2)
+    !
+    !    =========[x'w'|_sfc = -[u_star^2/sqrt(um^2+vm^2)]*xm]=== m(1) (surface)
+    !
+    !    ---xm(1)-------(below surface; not applicable)---------- t(1)
+    !
+    !    The vertically discretized form of the turbulent advection term
+    !    (treated as an eddy diffusion term), with the implicit surface momentum
+    !    flux in place, is written out as:
+    !
+    !    + dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3) - xm(2) ) 
+    !                  - [ u_star^2 / sqrt( um(2)^2 + vm(2)^2 ) ] * xm(2) ];
+    !
+    !    which can be re-written as:
+    !
+    !    + dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3) - xm(2) ) ]
+    !    - dzt(2) * [ u_star^2 / sqrt( um(2)^2 + vm(2)^2 ) ] * xm(2).
+    !
+    !    For this equation, a Crank-Nicholson (semi-implicit) diffusion scheme
+    !    is used to solve the d [ K_zm * d(xm)/dz ] / dz eddy-diffusion term.
+    !    The discretized implicit portion of the term is written out as:
+    !
+    !    + (1/2)*dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3,<t+1>) - xm(2,<t+1>) ) ]
+    !    - dzt(2) * [u_star^2/sqrt( um(2,<t>)^2 + vm(2,<t>)^2 )] * xm(2,<t+1>).
+    !
+    !    Note:  When the implicit term is brought over to the left-hand side,
+    !           the signs are reversed and the leading "+" in front of the first
+    !           part of the term is changed to a "-", while the leading "-" in
+    !           front of the second part of the term is changed to a "+".
+    !
+    !    Note:  The x'w'|_sfc portion of the term written above has been pulled
+    !           away from the rest of the implicit form written above because
+    !           the (1/2) factor due to Crank-Nicholson time_stepping does not
+    !           apply to it.  The x'w'|_sfc portion of the term is treated
+    !           completely implicitly in order to enhance numerical stability.
+    !
+    !    The discretized explicit portion of the term is written out as:
+    !
+    !    + (1/2)*dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3,<t>) - xm(2,<t>) ) ].
+    !
+    !    Timestep index (t) stands for the index of the current timestep, while
+    !    timestep index (t+1) stands for the index of the next timestep, which
+    !    is being advanced to in solving the d(xm)/dt equation.
+    !
     !
     ! The lower boundary condition for the implicit and explicit portions of the
-    ! term, without the x'w'|_sfc portion of the term, can easily be invoked by
-    ! using the zero-flux boundary conditions found in the generalized diffusion
-    ! function (function diffusion_zt_lhs) used for many other equations in this
-    ! model.  The dzt(2) * x'w'|_sfc term needs to be added onto the explicit
-    ! term after this function has been called.  However, all other equations in
-    ! this model that use zero-flux diffusion have level 1 as the level to which
-    ! the lower boundary condition is applied.  Thus, an adjuster will have to
-    ! be used at level 2 to call diffusion_zt_lhs with level 1 as the input
-    ! level (the last variable being passed in during the function call).
-    ! However, the other variables passed in (K_zm, gr%dzt, and gr%dzm\
-    ! variables) will have to be passed in as solving for level 2.
+    ! turbulent advection term, without the x'w'|_sfc portion of the term, can
+    ! easily be invoked by using the zero-flux boundary conditions found in the
+    ! generalized diffusion function (function diffusion_zt_lhs), which is used
+    ! for many other equations in this model.  Either the generalized explicit
+    ! surface flux needs to be added onto the explicit term after the diffusion
+    ! function has been called from subroutine windm_edsclrm_rhs, or the
+    ! implicit momentum surface flux needs to be added onto the implicit term
+    ! after the diffusion function has been called from subroutine
+    ! windm_edsclrm_lhs.  However, all other equations in this model that use
+    ! zero-flux diffusion have level 1 as the level to which the lower boundary
+    ! condition needs to be applied.  Thus, an adjuster will have to be used at
+    ! level 2 to call diffusion_zt_lhs with level 1 as the input level (the last
+    ! variable being passed in during the function call).  However, the other
+    ! variables passed in (K_zm, gr%dzt, and gr%dzm variables) will have to be
+    ! passed in as solving for level 2.
     !
-    ! The value of xm(1) is located below the model surface and is not treated
-    ! as a time-tendency equation, but rather is solved for based on the result
-    ! of xm(2) after xm(2) has been advanced to the next timestep.  Since,
-    ! x'w'|_sfc = - K_zm(1) * dzm(1) * ( xm(2) - xm(1) ):
-    !
-    ! xm(1)  =  xm(2)  +  x'w'|_sfc / ( K_zm(1) * dzm(1) ).
-    !
-    ! This equation can be broken down into implicit and explicit components.
-    ! The implicit portion of this equation is:
-    !
-    ! [+1] * xm(1,<t+1>) + [-1] * xm(2,<t+1>);
-    !
-    ! while the explicit portion of this equation is:
-    !
-    ! + x'w'|_sfc / ( K_zm(1) * dzm(1) ).
+    ! The value of xm(1) is located below the model surface and does not effect
+    ! the rest of the model.  Since the wind components, um and vm, decrease
+    ! to zero right at the ground level, the value of xm below ground is set
+    ! to 0, as well.
     !
     !
     ! Conservation Properties:
@@ -568,18 +731,24 @@ module advance_windm_edsclrm_module
     ! When a fixed-flux lower boundary condition is used (combined with a
     ! zero-flux upper boundary condition), this technique of discretizing the
     ! turbulent advection term (treated as an eddy-diffusion term) leads to
-    ! conservative differencing.  The column totals for each column in the
+    ! conservative differencing.  When the implicit momentum surface flux is
+    ! either zero or not used, the column totals for each column in the
     ! left-hand side matrix (for the turbulent advection term) should be equal
-    ! to 0, while the column total for the right-hand side vector (for the
-    ! turbulent advection term) should be equal to the surface flux.  This
-    ! ensures that the total amount of quantity xm over the entire vertical
-    ! domain is only changed by the surface flux (neglecting any forcing terms).
-    ! The total amount of change is equal to the surface flux.
+    ! to 0.  Otherwise, the column total for the second column will be equal to
+    ! the surface flux.   When the generalized explicit surface flux is either
+    ! zero or not used, the column total for the right-hand side vector (for the
+    ! turbulent advection term) should be equal to 0.  Otherwise, the column
+    ! total for the right-hand side vector (for the turbulent advection term)
+    ! should be equal to the surface flux.  This ensures that the total amount
+    ! of quantity xm over the entire vertical domain is only changed by the
+    ! surface flux (neglecting any forcing terms).  The total amount of change
+    ! is equal to the surface flux.
     !
     ! To see that this conservation law is satisfied by the left-hand side
-    ! matrix, compute the turbulent advection (treated as eddy diffusion) of xm
-    ! and integrate vertically.  In discretized matrix notation (where "i"
-    ! stands for the matrix column and "j" stands for the matrix row):
+    ! matrix, compute the turbulent advection (treated as eddy diffusion) of xm,
+    ! neglecting any implicit momentum surface flux, and integrate vertically.
+    ! In discretized matrix notation (where "i" stands for the matrix column
+    ! and "j" stands for the matrix row):
     !
     !  0 = Sum_j Sum_i ( 1/dzt )_i ( 0.5 * dzt * (K_zm*dzm) )_ij (xm<t+1>)_j.
     !
@@ -613,17 +782,22 @@ module advance_windm_edsclrm_module
     ! Note:  The superdiagonal term from level 4 and both the main diagonal and
     !        superdiagonal terms from level 5 are not shown on this diagram.
     !
-    ! To see that the above conservation law is satisfied by the right-hand side
-    ! vector, compute the turbulent advection (treated as eddy diffusion) of xm
-    ! and integrate vertically.  In discretized matrix notation (where "i"
-    ! stands for the matrix column and "j" stands for the matrix row):
+    ! Note:  If an implicit momentum surface flux is used, an additional term,
+    !        + dzt(2) * [ u_star^2 / sqrt( um(2,<t>)^2 + vm(2,<t>)^2 ) ], is
+    !        added to row 2 (k=2), column 2.
     !
-    !  x'w'|_sfc = Sum_j Sum_i ( 1/dzt )_i ( rhs_vector )_j.
+    ! To see that the above conservation law is satisfied by the right-hand side
+    ! vector, compute the turbulent advection (treated as eddy diffusion) of xm,
+    ! neglecting any generalized explicit surface flux, and integrate
+    ! vertically.  In discretized matrix notation (where "i" stands for the
+    ! matrix column and "j" stands for the matrix row):
+    !
+    !  0 = Sum_j Sum_i ( 1/dzt )_i ( rhs_vector )_j.
     !
     ! The right-hand side vector, ( rhs_vector )_j, is partially written below.
     ! The sum over i in the above equation removes dzt everywhere from the
     ! vector below.  The sum over j leaves the column total that is desired,
-    ! which is x'w'|_sfc.
+    ! which is 0.
     !
     ! Right-hand side vector contributions from the turbulent advection term
     ! (treated as an eddy-diffusion term using a Crank-Nicholson timestep);
@@ -636,7 +810,6 @@ module advance_windm_edsclrm_module
     !k=2 | +0.5*dzt(k)*                               |
     !    |       [ K_zm(k)*dzm(k)*                    |
     !    |                  (xm(k+1,<t>)-xm(k,<t>)) ] |
-    !    | +dzt(k) * x'w'|_sfc                        |
     !    |                                            |
     !k=3 | +0.5*dzt(k)*                               |
     !    |       [ K_zm(k)*dzm(k)*                    |
@@ -656,6 +829,9 @@ module advance_windm_edsclrm_module
     !    |        -K_zm(k-1)*dzm(k-1)*                |
     !    |                  (xm(k,<t>)-xm(k-1,<t>)) ] |
     !   \ /                                          \ /
+    !
+    ! Note:  If a generalized explicit surface flux is used, an additional term,
+    !        + dzt(2) * x'w'|_sfc, is added to row 2 (k=2).
     !
     ! Note:  Only the contributions by the turbulent advection term are shown
     !        for both the left-hand side matrix and the right-hand side vector.
@@ -690,9 +866,6 @@ module advance_windm_edsclrm_module
     use constants, only:  & 
       fstderr ! Variable(s)
 
-    use parameters_model, only: &
-      sclr_dim ! Number of passive scalars
-
     implicit none
 
     ! Constant parameters
@@ -704,13 +877,17 @@ module advance_windm_edsclrm_module
 
     ! Input Variables
 
-    real, dimension(3,gr%nnzp), intent(inout) :: &
-      lhs ! Implicit contributions to um, vm, and eddy scalars  [units vary]
+    integer, intent(in) :: &
+      nrhs   ! Number of right-hand side (explicit) vectors.
+             ! Number of solution vectors.
 
-    real, dimension(gr%nnzp,2+sclr_dim), intent(inout) :: &
+    real, dimension(3,gr%nnzp), intent(inout) :: &
+      lhs    ! Implicit contributions to um, vm, and eddy scalars  [units vary]
+
+    real, dimension(gr%nnzp,nrhs), intent(inout) :: &
       rhs    ! Right-hand side (explicit) contributions.
 
-    real, dimension(gr%nnzp,2+sclr_dim), intent(out) :: &
+    real, dimension(gr%nnzp,nrhs), intent(out) :: &
       solution ! Solution to the system of equations    [units vary]
 
     integer, intent(out) :: & 
@@ -722,18 +899,18 @@ module advance_windm_edsclrm_module
     ! Solve tridiagonal system for xm.
     if ( l_stats_samp .and. iwindm_matrix_condt_num > 0 ) then
       call tridag_solvex & 
-           ( "windm_edsclrm", gr%nnzp, 2+sclr_dim, &                    ! Intent(in) 
+           ( "windm_edsclrm", gr%nnzp, nrhs, &                          ! Intent(in) 
              lhs(kp1_tdiag,:), lhs(k_tdiag,:), lhs(km1_tdiag,:), rhs, & ! Intent(inout)
              solution, rcond, err_code )                                ! Intent(out)
 
       ! Est. of the condition number of the variance LHS matrix
       call stat_update_var_pt( iwindm_matrix_condt_num, 1, 1.0 / rcond, &  ! Intent(in)
-                               sfc )                      ! Intent(inout)
+                               sfc )                                       ! Intent(inout)
     else
 
-      call tridag_solve( "windm_edsclrm", gr%nnzp, 2+sclr_dim, & ! In
+      call tridag_solve( "windm_edsclrm", gr%nnzp, nrhs, &                           ! In
                          lhs(kp1_tdiag,:),  lhs(k_tdiag,:), lhs(km1_tdiag,:), rhs, & ! Inout
-                         solution, err_code ) ! Out
+                         solution, err_code )                                        ! Out
     end if
 
     return
@@ -986,8 +1163,9 @@ module advance_windm_edsclrm_module
   end subroutine compute_uv_tndcy
 
 !===============================================================================
-  subroutine windm_edsclrm_lhs( dt, wm_zt, Kh_zm,  &
-                                l_implemented, lhs )
+  subroutine windm_edsclrm_lhs( dt, wm_zt, Kh_zm, wind_speed, u_star_sqd,   &
+                                l_implemented, l_imp_sfc_momentum_flux,  &
+                                lhs )
 
     ! Description:
     ! Calculate the implicit portion of the horizontal wind or eddy-scalar
@@ -1037,10 +1215,15 @@ module advance_windm_edsclrm_module
 
     real, dimension(gr%nnzp), intent(in) :: &
       wm_zt,      & ! w wind component on thermodynamic levels [m/s]
-      Kh_zm         ! Eddy diffusivity on momentum levels      [m^2/s]
+      Kh_zm,      & ! Eddy diffusivity on momentum levels      [m^2/s]
+      wind_speed    ! wind speed; sqrt( u^2 + v^2 )            [m/s]
+
+    real, intent(in) :: &
+      u_star_sqd    ! Surface friction velocity, u_*, squared  [m/s]
 
     logical, intent(in) ::  & 
-      l_implemented ! Flag for CLUBB being implemented in a larger model.
+      l_implemented, & ! Flag for CLUBB being implemented in a larger model.
+      l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
 
     ! Output Variable
     real, dimension(3,gr%nnzp), intent(out) :: &
@@ -1139,16 +1322,37 @@ module advance_windm_edsclrm_module
     ! Lower Boundary
 
     ! The lower boundary condition is a fixed-flux boundary condition, which
-    ! gets added into the time-tendency equation at level 2.
-    ! The value of xm(1) is solved for based on the result of xm(2) after xm(2)
-    ! has been advanced to the next timestep.  The new result for xm(1) is based
-    ! on the relationship:  x'w'|_sfc = - K_zm(1) * dzm(1) * ( xm(2) - xm(1) );
-    ! where x'w'|_sfc is the given value of the surface flux, and K_zm(1),
-    ! dzm(1), and xm(2) are known values.  The implicit portion of the equation
-    ! is:  [+1] * xm(1,<t+1>)  +  [-1] * xm(2,<t+1>); while the explicit portion
-    ! of the equation is:  + x'w'|_sfc / ( K_zm(1) * dzm(1) ).
-    lhs(k_tdiag,1)   = 1.0
-    lhs(kp1_tdiag,1) = -1.0
+    ! gets added into the time-tendency equation at level 2.  The value of
+    ! xm(1), which is below the model surface, should be set to 0.
+    ! k = 1
+    lhs(k_tdiag,1) = 1.0
+
+    ! k = 2; add implicit momentum surface flux.
+    if ( l_imp_sfc_momentum_flux ) then
+
+       ! LHS momentum surface flux.
+       lhs(k_tdiag,2)  &
+       = lhs(k_tdiag,2)  &
+       + gr%dzt(2) * ( u_star_sqd / wind_speed(2) )
+
+       if ( l_stats_samp ) then
+
+          ! Statistics:  implicit contributions for um or vm.
+
+          ! xm term ta is modified at level 2 to include the effects of the
+          ! surface flux.  In this case, this effects the implicit portion of
+          ! the term (after zmscr05, which handles the main diagonal for the
+          ! turbulent advection term, has already been called at level 2).
+          ! Modify zmscr05 accordingly.
+          if ( ium_ta + ivm_ta > 0 ) then
+             ztscr05(2)  &
+             = ztscr05(2)  &
+             - gr%dzt(2) * ( u_star_sqd / wind_speed(2) )
+          endif
+
+       endif ! l_stats_samp
+      
+    endif ! l_imp_sfc_momentum_flux
 
     ! Upper Boundary
 
@@ -1191,9 +1395,9 @@ module advance_windm_edsclrm_module
   end subroutine windm_edsclrm_lhs
 
   !=============================================================================
-  function windm_edsclrm_rhs( solve_type, dt, Kh_zm, xm,  &
-                              xm_tndcy, xpwp_sfc ) result( rhs )
-
+  function windm_edsclrm_rhs( solve_type, dt, Kh_zm, xm, xm_tndcy,  &
+                              l_imp_sfc_momentum_flux, xpwp_sfc )  &
+  result( rhs )
 
     ! Description:
     ! Calculate the explicit portion of the horizontal wind or eddy-scalar
@@ -1242,6 +1446,9 @@ module advance_windm_edsclrm_module
 
     real, intent(in) :: &
       xpwp_sfc     ! x'w' at the surface                              [units vary]
+
+    logical, intent(in) :: &
+      l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
 
     ! Output Variable
     real, dimension(gr%nnzp) :: &
@@ -1332,32 +1539,33 @@ module advance_windm_edsclrm_module
     ! Lower Boundary
 
     ! The lower boundary condition is a fixed-flux boundary condition, which
-    ! gets added into the time-tendency equation at level 2.
-    rhs(2) = rhs(2) + gr%dzt(2) * xpwp_sfc
-    ! The value of xm(1) is solved for based on the result of xm(2) after xm(2)
-    ! has been advanced to the next timestep.  The new result for xm(1) is based
-    ! on the relationship:  x'w'|_sfc = - K_zm(1) * dzm(1) * ( xm(2) - xm(1) );
-    ! where x'w'|_sfc is the given value of the surface flux, and K_zm(1),
-    ! dzm(1), and xm(2) are known values.  The implicit portion of the equation
-    ! is:  [+1] * xm(1,<t+1>)  +  [-1] * xm(2,<t+1>); while the explicit portion
-    ! of the equation is:  + x'w'|_sfc / ( K_zm(1) * dzm(1) ).
-    rhs(1) = + xpwp_sfc / ( Kh_zm(1) * gr%dzm(1) )
+    ! gets added into the time-tendency equation at level 2.  The value of
+    ! xm(1), which is below the model surface, should be set to 0.
+    ! k = 1
+    rhs(1) = 0.0
 
-    if ( l_stats_samp ) then
+    ! k = 2; add generalized explicit surface flux.
+    if ( .not. l_imp_sfc_momentum_flux ) then
 
-      ! Statistics:  explicit contributions for um or vm.
+       ! RHS generalized surface flux.
+       rhs(2) = rhs(2) + gr%dzt(2) * xpwp_sfc
 
-      ! xm term ta is modified at level 2 to include the effects of the surface
-      ! flux.  This effects the explicit portion of the term (after
-      ! stat_begin_update_pt has already been called at level 2);
-      ! call stat_modify_pt.
-      if ( ixm_ta > 0 ) then
-        call stat_modify_pt( ixm_ta, 2, &
-             + gr%dzt(2) * xpwp_sfc, zt )
-      endif
+       if ( l_stats_samp ) then
 
-    endif  ! l_stats_samp
+          ! Statistics:  explicit contributions for um or vm.
 
+          ! xm term ta is modified at level 2 to include the effects of the
+          ! surface flux.  In this case, this effects the explicit portion of
+          ! the term (after stat_begin_update_pt has already been called at
+          ! level 2); call stat_modify_pt.
+          if ( ixm_ta > 0 ) then
+             call stat_modify_pt( ixm_ta, 2, &
+                  + gr%dzt(2) * xpwp_sfc, zt )
+          endif
+
+       endif  ! l_stats_samp
+
+    endif ! l_imp_sfc_momentum_flux
 
     ! Upper Boundary
 
