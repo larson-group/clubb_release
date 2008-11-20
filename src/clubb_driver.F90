@@ -722,13 +722,21 @@ module clubb_driver
 !-----------------------------------------------------------------------
 
     use constants, only:  & 
-        Cp, Lv, ep2, ep1, emin, wtol_sqd, zero_threshold ! Variable(s)
+        Cp,  &  ! Variable(s)
+        Lv,  &
+        ep2,  &
+        ep1,  &
+        emin,  &
+        zero_threshold
 
     use parameters_tunable, only:  & 
-        taumax, taumin, c_K ! Variable(s)
+        taumax,  &  ! Variable(s)
+        !taumin,  &
+        c_K
 
     use parameters_model, only:  & 
-        T0, sclr_dim  ! Variables
+        T0,  &  ! Variable(s)
+        sclr_dim
 
     use grid_class, only: gr ! Variable(s)
 
@@ -1098,6 +1106,7 @@ module clubb_driver
       em = 0.1
       wp2 = 2./3. * em
       call lba_init()
+
       ! Michael Falk for mpace_a Arctic Stratus case.
     case ( "mpace_a" )
 
@@ -1116,6 +1125,7 @@ module clubb_driver
 
       wp2 = 2.0 / 3.0 * em
       call mpace_a_init
+
       ! Michael Falk for mpace_b Arctic Stratus case.
     case ( "mpace_b" )
 
@@ -1138,9 +1148,7 @@ module clubb_driver
       ! Brian Griffin for COBRA CO2 case.
     case ( "cobra" )
       em = 0.1
-
       wp2 = 2.0 / 3.0 * em
-
 
       ! Michael Falk for RICO tropical cumulus case, 13 Dec 2006
     case ( "rico" )
@@ -1203,33 +1211,35 @@ module clubb_driver
 
     ! Compute mixing length
 
-    call compute_length( thvm, thlm, rtm, rcm,  & ! Intent(in)
-                          em, p_in_Pa, exner,   & ! Intent(in)    
-                          err_code,             & ! Intent(inout)
-                          Lscale )                ! Intent(out)
+    call compute_length( thvm, thlm, rtm, rcm, & ! Intent(in)
+                         em, p_in_Pa, exner,   & ! Intent(in)    
+                         err_code,             & ! Intent(inout)
+                         Lscale )                ! Intent(out)
 
     ! Dissipation time
-    tmp1 = sqrt( max( wtol_sqd, zm2zt( em ) ) )
+    tmp1 = sqrt( max( emin, zm2zt( em ) ) )
     tau_zt = min( Lscale / tmp1, taumax )
-    tau_zm = min( ( max( zt2zm( Lscale ), zero_threshold ) & 
-                   / sqrt( max( wtol_sqd, em ) ) ), taumax )
-!        tau_zm = zt2zm( tau_zt )
+    tau_zm = min( ( max( zt2zm( Lscale ), zero_threshold ) &
+                   / sqrt( max( emin, em ) ) ), taumax )
 
     ! Modification to damp noise in stable region
-    do k=1,gr%nnzp
-      if ( wp2(k) <= 0.005 ) then
-        tau_zt(k) = taumin
-        tau_zm(k) = taumin
-      end if
-    end do
+! Brian commented this out to match code found in advance_clubb_core.
+! Vince Larson commented out because it may prevent turbulence from
+!    initiating in unstable regions.  7 Jul 2007
+!    do k=1,gr%nnzp
+!      if ( wp2(k) <= 0.005 ) then
+!        tau_zt(k) = taumin
+!        tau_zm(k) = taumin
+!      end if
+!    end do
+! End Vince Larson's commenting.
 
     ! Eddy diffusivity coefficient
     ! c_K is 0.548 usually (Duynkerke and Driedonks 1987)
 
     Kh_zt = c_K * Lscale * tmp1
     Kh_zm = c_K * max( zt2zm( Lscale ), zero_threshold )  & 
-              * sqrt( max( em, emin ) )
-!        Kh_zm = zt2zm( Kh_zt )
+                * sqrt( max( em, emin ) )
 
     ! Moved this to be more general -dschanen July 16 2007
     if ( l_uv_nudge ) then

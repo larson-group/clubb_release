@@ -643,11 +643,13 @@ module clubb_core
 !       tau_zt = MIN( Lscale / tmp1, taumax )
 !       tau_zm &
 !       = MIN( ( zt2zm( Lscale ) / SQRT( MAX( emin, em ) ) ), taumax )
-    tmp1   = SQRT( MAX( wtol_sqd, zm2zt( em ) ) )
+!   Addition by Brian:  Model constant emin is now set to (3/2)*wtol_sqd.
+!                       Thus, emin can replace wtol_sqd here.
+    tmp1   = SQRT( MAX( emin, zm2zt( em ) ) )
     tau_zt = MIN( Lscale / tmp1, taumax )
     tau_zm = MIN( ( MAX( zt2zm( Lscale ), zero_threshold )  & 
-                   / SQRT( MAX( wtol_sqd, em ) ) ), taumax )
-    ! End Vince Larson's replacement.
+                   / SQRT( MAX( emin, em ) ) ), taumax )
+! End Vince Larson's replacement.
 
     ! Modification to damp noise in stable region
 ! Vince Larson commented out because it may prevent turbulence from

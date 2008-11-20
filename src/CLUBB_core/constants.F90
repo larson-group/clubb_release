@@ -117,7 +117,11 @@ module constants
     Nr_tol = 1.0E-18    ! [#/m^3]
 
   ! Minimum value for em (turbulence kinetic energy)
-  real, parameter :: emin = 1.0e-6  ! [m^2/s^2]
+  ! If anisotropic TKE is enabled, em = (1/2) * ( up2 + vp2 + wp2 );
+  ! otherwise, em = (3/2) * wp2.  Since up2, vp2, and wp2 all have
+  ! the same minimum threshold value of wtol_sqd, em cannot be less
+  ! than (3/2) * wtol_sqd.  Thus, emin = (3/2) * wtol_sqd.
+  real, parameter :: emin = 1.5 * wtol_sqd  ! [m^2/s^2]
 
   real, parameter ::  & 
     eps = 1.0e-10 ! Small value to prevent a divide by zero
