@@ -34,6 +34,36 @@ set_args()
 	done
 }
 
+run_case()
+{
+        #######################################################################
+        # Enable G95 Runtime option that sets uninitialized 
+        # memory to a NaN value
+        #######################################################################
+        G95_MEM_INIT="NAN"
+        export G95_MEM_INIT
+
+	#######################################################################
+	#
+	# State which case is being run
+	echo "Running ""${RUN_CASE[$x]}"
+	# Run HOC 
+	#RESULT=`../bin/clubb_standalone 2>&1 |grep 'normal'`
+	RESULT=`../bin/clubb_standalone 2>&1`
+
+	if [ $NIGHTLY == true ]; then  
+		echo -e "$RESULT";
+	fi
+
+	RESULT=`echo "$RESULT" | grep 'normal'`
+	if [ -z "$RESULT" ]; then
+		EXIT_CODE[$x]=-1
+	fi
+
+	# remove the namelists
+	rm -f 'clubb.in'
+}
+
 set_args $*
 
 if [ $NIGHTLY == true ] ; then
@@ -102,60 +132,57 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 		# and replaces it with 'stats_tout = 3600.'
 		cat $MODEL_IN | sed 's/stats_tout\s*=\s*.*/stats_tout = 3600\./g' >> 'clubb.in'
 		cat $STATS_IN >> 'clubb.in'
-	else
-		cat $PARAMS_IN $MODEL_IN $STATS_IN > 'clubb.in'
-	fi
+		run_case
 
-        #######################################################################
-        # Enable G95 Runtime option that sets uninitialized 
-        # memory to a NaN value
-        #######################################################################
-        G95_MEM_INIT="NAN"
-        export G95_MEM_INIT
-
-	#######################################################################
-	#
-	# State which case is being run
-	echo "Running ""${RUN_CASE[$x]}"
-	# Run HOC 
-	#RESULT=`../bin/clubb_standalone 2>&1 |grep 'normal'`
-	RESULT=`../bin/clubb_standalone 2>&1`
-
-	if [ $NIGHTLY == true ]; then  
-		echo -e "$RESULT";
-	fi
-
-	RESULT=`echo "$RESULT" | grep 'normal'`
-	if [ -z "$RESULT" ]; then
-		EXIT_CODE[$x]=-1
-	fi
-
-	# remove the namelists
-	rm -f 'clubb.in'
-done
-
-# Print the results and copy files for a nightly run
-for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
-	if [ "${EXIT_CODE[$x]}" != 0 ]; then
-		echo "${RUN_CASE[$x]}"' failure'
-
-		if [ $NIGHTLY == true ] ; then
+		#Move the ZT and SM files out of the way
+		if [ "${EXIT_CODE[$x]}" != 0 ]; then
 			rm "${RUN_CASE[$x]}"_zt.ctl
 			rm "${RUN_CASE[$x]}"_zt.dat
 			rm "${RUN_CASE[$x]}"_zm.ctl
 			rm "${RUN_CASE[$x]}"_zm.dat
 			rm "${RUN_CASE[$x]}"_sfc.ctl
 			rm "${RUN_CASE[$x]}"_sfc.dat
-		fi
-	else
-		if [ $NIGHTLY == true ] ; then
+		else
 			mv "${RUN_CASE[$x]}"_zt.ctl CLUBB_current/
 			mv "${RUN_CASE[$x]}"_zt.dat CLUBB_current/
 			mv "${RUN_CASE[$x]}"_zm.ctl CLUBB_current/
 			mv "${RUN_CASE[$x]}"_zm.dat CLUBB_current/
+			rm "${RUN_CASE[$x]}"_sfc.ctl
+			rm "${RUN_CASE[$x]}"_sfc.dat
+		fi
+		
+		#Run again with a finer time step
+		cat $PARAMS_IN > 'clubb.in'
+		cat $MODEL_IN | sed 's/stats_tout\s*=\s*.*/stats_tout = 60\./g' >> 'clubb.in'
+		cat $STATS_IN >> 'clubb.in'
+		run_case
+
+		#Now move the SFC file
+		if [ "${EXIT_CODE[$x]}" != 0 ]; then
+			rm "${RUN_CASE[$x]}"_zt.ctl
+			rm "${RUN_CASE[$x]}"_zt.dat
+			rm "${RUN_CASE[$x]}"_zm.ctl
+			rm "${RUN_CASE[$x]}"_zm.dat
+			rm "${RUN_CASE[$x]}"_sfc.ctl
+			rm "${RUN_CASE[$x]}"_sfc.dat
+		else
+			rm "${RUN_CASE[$x]}"_zt.ctl
+			rm "${RUN_CASE[$x]}"_zt.dat
+			rm "${RUN_CASE[$x]}"_zm.ctl
+			rm "${RUN_CASE[$x]}"_zm.dat
 			mv "${RUN_CASE[$x]}"_sfc.ctl CLUBB_current/
 			mv "${RUN_CASE[$x]}"_sfc.dat CLUBB_current/
-
 		fi
+
+	else
+		cat $PARAMS_IN $MODEL_IN $STATS_IN > 'clubb.in'
+		run_case
+	fi
+done
+
+# Print the results and copy files for a nightly run
+for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
+	if [ "${EXIT_CODE[$x]}" != 0 ]; then
+		echo "${RUN_CASE[$x]}"' failure'
  	fi
 done
