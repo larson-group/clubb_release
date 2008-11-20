@@ -179,8 +179,7 @@ module advance_windm_edsclrm_module
     ! Momentum surface fluxes, u'w'|_sfc and v'w'|_sfc, are applied to through
     ! an implicit method, such that:
     !    x'w'|_sfc = - ( u_star(t)^2 / wind_speed(t) ) * xm(t+1).
-    !l_imp_sfc_momentum_flux = .true.
-    l_imp_sfc_momentum_flux = .false.
+    l_imp_sfc_momentum_flux = .true.
     ! Compute wind speed (use threshold "eps" to prevent divide-by-zero error).
     wind_speed = max( sqrt( um**2 + vm**2 ), eps )
     ! Compute u_star_sqd according to the definition of u_star.
