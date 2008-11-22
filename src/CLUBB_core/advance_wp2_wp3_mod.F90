@@ -1197,9 +1197,11 @@ contains
                               wm_zm(k), wm_zm(km1), gr%dzt(k) )
 
       ! LHS pressure term 1 (pr1).
-      lhs(t_k_tdiag,k_wp3) & 
-      = lhs(t_k_tdiag,k_wp3) & 
-      + wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skw_zt(k) )
+      ! Note:  An "over-implicit" weighted time step is applied to this term.
+      lhs(t_k_tdiag,k_wp3)  &
+      = lhs(t_k_tdiag,k_wp3)  &
+      + gamma_over_implicit_ts  &
+      * wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skw_zt(k) )
 
       ! LHS eddy diffusion term: dissipation term 1 (dp1).
       !  Added a new constant, C12.
@@ -1298,9 +1300,14 @@ contains
                                   wm_zm(k), wm_zm(km1), gr%dzt(k) )
         endif
 
+        ! Note:  An "over-implicit" weighted time step is applied to this term.
+        !        A weighting factor of greater than 1 may be used to make the
+        !        term more numerically stable (see note above for LHS turbulent
+        !        advection (ta) and turbulent production (tp) terms).
         if ( iwp3_pr1 > 0 ) then
-          ztscr01(k) = & 
-          - wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skw_zt(k) )
+          ztscr01(k)  &
+          = - gamma_over_implicit_ts  &
+            * wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skw_zt(k) )
         endif
 
         if ( iwp3_dp1 > 0 ) then
@@ -1665,6 +1672,17 @@ contains
       = rhs(k_wp3) & 
       + wp3_term_pr1_rhs( C8, C8b, tauw3t(k), Skw_zt(k), wp3(k) )
 
+      ! RHS contribution from "over-implicit" weighted time step
+      ! for LHS pressure term 1 (pr1).
+      !
+      ! Note:  An "over-implicit" weighted time step is applied to this term.
+      lhs_fnc_output(1)  &
+      = wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skw_zt(k) )
+      rhs(k_wp3)  & 
+      = rhs(k_wp3)  &
+      + ( 1.0 - gamma_over_implicit_ts )  &
+      * ( - lhs_fnc_output(1) * wp3(k) )
+
       ! RHS eddy diffusion term: dissipation term 1 (dp1).
       if ( l_crank_nich_diff ) then
         ! These lines are for the diffusional term with a Crank-Nicholson
@@ -1763,7 +1781,17 @@ contains
         ! subtracts the value sent in, reverse the sign on wp3_term_pr1_rhs.
         call stat_begin_update_pt( iwp3_pr1, k, & 
           -wp3_term_pr1_rhs( C8, C8b, tauw3t(k), Skw_zt(k), wp3(k) ), & 
-                                   zt)
+                                   zt )
+
+        ! Note:  An "over-implicit" weighted time step is applied to this term.
+        !        A weighting factor of greater than 1 may be used to make the
+        !        term more numerically stable (see note above for RHS turbulent
+        !        advection (ta) and turbulent production (tp) terms).
+        lhs_fnc_output(1)  &
+        = wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skw_zt(k) )
+        call stat_modify_pt( iwp3_pr1, k,  &
+                             + ( 1.0 - gamma_over_implicit_ts )  &
+                             * ( - lhs_fnc_output(1) * wp3(k) ), zt )
 
         ! w'^3 term dp1 has both implicit and explicit components (if the
         ! Crank-Nicholson scheme is selected); call stat_begin_update_pt.  
