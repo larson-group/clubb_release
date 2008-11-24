@@ -143,25 +143,25 @@ module gabls3
       case (1:199)
         T_in_K_forcing(i) = lin_int(gr%zt(i), 200., 0., T_t_interp, 0. )
         sp_humidity_forcing(i)  =  lin_int(gr%zt(i), 200., 0., q_t_interp, 0.)
-        velocity_omega(i)  =  lin_int(gr%zt(i), 200., 0., omega_t_interp, 0.)
+!        velocity_omega(i)  =  lin_int(gr%zt(i), 200., 0., omega_t_interp, 0.)
         um_forcing(i)  =  lin_int(gr%zt(i), 200., 0., u_t_interp, 0.)
         vm_forcing(i)  =  lin_int(gr%zt(i), 200., 0., v_t_interp, 0.)
       case (200:999)
         T_in_K_forcing(i) = T_t_interp ! Convert!
         sp_humidity_forcing(i) = q_t_interp
-        velocity_omega(i) = omega_t_interp
+!        velocity_omega(i) = omega_t_interp
         um_forcing(i) = u_t_interp
         vm_forcing(i) = v_t_interp
       case (1000:1499)
         T_in_K_forcing(i) = lin_int( gr%zt(i), 1500., 1000., 0., T_t_interp )
         sp_humidity_forcing(i) = lin_int( gr%zt(i), 1500., 1000., 0. ,q_t_interp )
-        velocity_omega(i) = lin_int( gr%zt(i), 1500., 1000., 0. ,omega_t_interp )
+!        velocity_omega(i) = lin_int( gr%zt(i), 1500., 1000., 0. ,omega_t_interp )
         um_forcing(i) = lin_int( gr%zt(i), 1500., 1000., 0. , u_t_interp )
         vm_forcing(i) = lin_int( gr%zt(i), 1500., 1000., 0. , v_t_interp )
       case default
         T_in_K_forcing(i) = 0
         sp_humidity_forcing(i) = 0
-        velocity_omega(i) = 0
+!        velocity_omega(i) = 0
         um_forcing(i) = 0
         vm_forcing(i) = 0
       end select
@@ -184,8 +184,23 @@ module gabls3
     rtm_forcing = sp_humidity_forcing * ( 1. + rtm )**2
 !    thlm_forcing = ( thlm_forcing - Lv * rcm/Cp ) / exner
     thlm_forcing = T_in_K_forcing / exner
+
     ! Compute vertical motion
+    ! Vince Larson extended non-zero vertical velocity to 5000 m altitude.  24 Nov 2008. 
     do i=2,gr%nnzp
+
+      if( gr%zt(i) > 5000. ) then
+        velocity_omega(i) = 0
+      elseif( gr%zt(i) > 1500. .and. gr%zt(i) <= 5000. ) then
+        velocity_omega(i) = omega_t_interp
+      elseif( gr%zt(i) <= 1500. ) then
+        velocity_omega(i) = lin_int( gr%zt(i), 1500., 0., omega_t_interp, 0. )
+      else
+        print*, 'Error in interpolation of velocity_omega'
+        stop
+      endif
+
+      ! This line needs to be changed to w = -omega / ( rho * grav ) !!!
       wm_zt(i) = -velocity_omega(i) * Rd * thvm(i) / p_in_Pa(i) / grav
 
     end do
@@ -330,7 +345,8 @@ module gabls3
     veg_theta_in_K = veg_T_in_K(1) * (( p0 / psfc )**(Rd/Cp))
 
     wpthlp_sfc = -C_10 * ubar * ( thlm_sfc - veg_theta_in_K )
-    wprtp_sfc  = -C_10 * ubar * ( rtm_sfc - 7.5e-3 )
+!    wprtp_sfc  = -C_10 * ubar * ( rtm_sfc - 7.5e-3 )
+    wprtp_sfc  = -C_10 * 10. * ubar * ( rtm_sfc - 9.9e-3 )
 
     ! Let passive scalars be equal to rt and theta_l for now
     if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
