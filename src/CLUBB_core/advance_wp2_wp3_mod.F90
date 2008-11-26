@@ -1019,9 +1019,14 @@ contains
       + wp2_terms_ac_pr2_lhs( C5, wm_zt(kp1), wm_zt(k), gr%dzm(k)  )
 
       ! LHS dissipation term 1 (dp1).
-      lhs(m_k_mdiag,k_wp2) & 
-      = lhs(m_k_mdiag,k_wp2) & 
-      + wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
+      ! Note:  An "over-implicit" weighted time step is applied to this term.
+      !        A weighting factor of greater than 1 may be used to make the term
+      !        more numerically stable (see note below for w'^3 LHS turbulent
+      !        advection (ta) and turbulent production (tp) terms).
+      lhs(m_k_mdiag,k_wp2)  & 
+      = lhs(m_k_mdiag,k_wp2)  &
+      + gamma_over_implicit_ts  & 
+      * wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
 
       ! LHS eddy diffusion term: dissipation term 2 (dp2).
       if ( l_crank_nich_diff ) then
@@ -1040,11 +1045,16 @@ contains
       endif
 
       ! LHS pressure term 1 (pr1).
+      ! Note:  An "over-implicit" weighted time step is applied to this term.
+      !        A weighting factor of greater than 1 may be used to make the term
+      !        more numerically stable (see note below for w'^3 LHS turbulent
+      !        advection (ta) and turbulent production (tp) terms).
       if ( l_tke_aniso ) then
         ! Add in this term if we're not assuming tke = 1.5 * wp2
-        lhs(m_k_mdiag,k_wp2) & 
-        = lhs(m_k_mdiag,k_wp2) & 
-        + wp2_term_pr1_lhs( C4, tau1m(k) )
+        lhs(m_k_mdiag,k_wp2)  & 
+        = lhs(m_k_mdiag,k_wp2)  &
+        + gamma_over_implicit_ts  & 
+        * wp2_term_pr1_lhs( C4, tau1m(k) )
       endif
 
       ! LHS 4th-order hyper-diffusion (4hd).
@@ -1061,9 +1071,14 @@ contains
 
         ! Statistics: implicit contributions for wp2.
 
+        ! Note:  An "over-implicit" weighted time step is applied to this term.
+        !        A weighting factor of greater than 1 may be used to make the
+        !        term more numerically stable (see note below for w'^3 LHS
+        !        turbulent advection (ta) and turbulent production (tp) terms).
         if ( iwp2_dp1 > 0 ) then
-          zmscr01(k) = & 
-          - wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
+          zmscr01(k)  &
+          = - gamma_over_implicit_ts  &
+            * wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
         endif
 
         if ( iwp2_dp2 > 0 ) then
@@ -1116,8 +1131,14 @@ contains
                                   gr%dzm(k)  )
         endif
 
+        ! Note:  An "over-implicit" weighted time step is applied to this term.
+        !        A weighting factor of greater than 1 may be used to make the
+        !        term more numerically stable (see note below for w'^3 LHS
+        !        turbulent advection (ta) and turbulent production (tp) terms).
         if ( iwp2_pr1 > 0 .and. l_tke_aniso ) then
-          zmscr12(k) = - wp2_term_pr1_lhs( C4, tau1m(k) )
+          zmscr12(k)  &
+          = - gamma_over_implicit_ts  &
+            * wp2_term_pr1_lhs( C4, tau1m(k) )
         endif
 
         if ( iwp2_4hd > 0 .and. l_hyper_dfsn ) then
@@ -1540,6 +1561,20 @@ contains
       = rhs(k_wp2) &
       + wp2_term_dp1_rhs( C1_Skw_fnc(k), tau1m(k), wtol_sqd )
 
+      ! RHS contribution from "over-implicit" weighted time step
+      ! for LHS dissipation term 1 (dp1).
+      !
+      ! Note:  An "over-implicit" weighted time step is applied to this term.
+      !        A weighting factor of greater than 1 may be used to make the term
+      !        more numerically stable (see note below for w'^3 RHS turbulent
+      !        advection (ta) and turbulent production (tp) terms).
+      lhs_fnc_output(1)  &
+      = wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
+      rhs(k_wp2)  &
+      = rhs(k_wp2)  &
+      + ( 1.0 - gamma_over_implicit_ts )  &
+      * ( - lhs_fnc_output(1) * wp2(k) )
+
       ! RHS eddy diffusion term: dissipation term 2 (dp2).
       if ( l_crank_nich_diff ) then
         ! These lines are for the diffusional term with a Crank-Nicholson
@@ -1556,9 +1591,25 @@ contains
 
       ! RHS pressure term 1 (pr1).
       if ( l_tke_aniso ) then
+
         rhs(k_wp2) & 
         = rhs(k_wp2) & 
         + wp2_term_pr1_rhs( C4, up2(k), vp2(k), tau1m(k) )
+
+        ! RHS contribution from "over-implicit" weighted time step
+        ! for LHS dissipation term 1 (dp1).
+        !
+        ! Note:  An "over-implicit" weighted time step is applied to this term.
+        !        A weighting factor of greater than 1 may be used to make the
+        !        term more numerically stable (see note below for w'^3 RHS
+        !        turbulent advection (ta) and turbulent production (tp) terms).
+        lhs_fnc_output(1)  &
+        = wp2_term_pr1_lhs( C4, tau1m(k) )
+        rhs(k_wp2)  &
+        = rhs(k_wp2)  &
+        + ( 1.0 - gamma_over_implicit_ts )  &
+        * ( - lhs_fnc_output(1) * wp2(k) )
+
       endif
 
       if ( l_stats_samp ) then
@@ -1590,6 +1641,17 @@ contains
         if ( l_tke_aniso ) then
           call stat_begin_update_pt( iwp2_pr1, k, & 
             -wp2_term_pr1_rhs( C4, up2(k), vp2(k), tau1m(k) ), zm )
+
+          ! Note:  An "over-implicit" weighted time step is applied to this
+          !        term.  A weighting factor of greater than 1 may be used to
+          !        make the term more numerically stable (see note below for
+          !        w'^3 RHS turbulent advection (ta) and turbulent
+          !        production (tp) terms).
+          lhs_fnc_output(1)  &
+          = wp2_term_pr1_lhs( C4, tau1m(k) )
+          call stat_modify_pt( iwp2_pr1, k, &
+                               + ( 1.0 - gamma_over_implicit_ts )  &
+                               * ( - lhs_fnc_output(1) * wp2(k) ), zm )
         endif
 
         ! w'^2 term pr2 has both implicit and explicit components; call
@@ -1605,6 +1667,16 @@ contains
         ! subtracts the value sent in, reverse the sign on wp2_term_dp1_rhs.
         call stat_begin_update_pt( iwp2_dp1, k, &
           -wp2_term_dp1_rhs( C1_Skw_fnc(k), tau1m(k), wtol_sqd ), zm )
+
+        ! Note:  An "over-implicit" weighted time step is applied to this term.
+        !        A weighting factor of greater than 1 may be used to make the
+        !        term more numerically stable (see note below for w'^3 RHS
+        !        turbulent advection (ta) and turbulent production (tp) terms).
+        lhs_fnc_output(1)  &
+        = wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
+        call stat_modify_pt( iwp2_dp1, k, &
+                             + ( 1.0 - gamma_over_implicit_ts )  &
+                             * ( - lhs_fnc_output(1) * wp2(k) ), zm )
 
         ! w'^2 term pr3 is completely explicit; call stat_update_var_pt.
         call stat_update_var_pt( iwp2_pr3, k, & 
