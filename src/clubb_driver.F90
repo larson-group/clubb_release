@@ -521,9 +521,9 @@ module clubb_driver
       time_current = time_initial
       iinit = 1
 
-      call initialize_clubb( iunit, runfile, psfc, &              ! Intent(in)
+      call initialize_clubb( iunit, runfile, psfc, &            ! Intent(in)
                            thlm, rtm, um, vm, &                 ! Intent(inout)
-                           ug, vg, wp2, rcm,  &                 ! Intent(inout)
+                           ug, vg, wp2, up2, vp2, rcm,  &       ! Intent(inout)
                            wm_zt, wm_zm, em, exner, &           ! Intent(inout)
                            tau_zt, tau_zm, thvm, p_in_Pa, &     ! Intent(inout)
                            rho, rho_zm, Lscale, &               ! Intent(inout) 
@@ -698,7 +698,7 @@ module clubb_driver
 !-----------------------------------------------------------------------
   subroutine initialize_clubb( iunit, runfile, psfc, &
                              thlm, rtm, um, vm, & 
-                             ug, vg, wp2, rcm, & 
+                             ug, vg, wp2, up2, vp2, rcm, & 
                              wm_zt, wm_zm, em, exner, &
                              tau_zt, tau_zm, thvm, p_in_Pa, & 
                              rho, rho_zm, Lscale, & 
@@ -744,7 +744,9 @@ module clubb_driver
 
     use sounding, only: read_sounding ! Procedure(s)
 
-    use model_flags, only: l_uv_nudge ! Variable(s)
+    use model_flags, only: &
+        l_uv_nudge, & ! Variable(s)
+        l_tke_aniso
 
     use arm_0003, only: arm_0003_init ! Procedure(s)
 
@@ -789,6 +791,8 @@ module clubb_driver
     ug,              & ! u geostrophic wind            [m/s] 
     vg,              & ! u geostrophic wind            [m/s] 
     wp2,             & ! w'^2                          [m^2/s^2]
+    up2,             & ! u'^2                          [m^2/s^2]
+    vp2,             & ! v'^2                          [m^2/s^2]
     rcm,             & ! Cloud water mixing ratio      [kg/kg]
     wm_zt, wm_zm,    & ! w wind                        [m/s]
     em,              & ! Turbulence kinetic energy     [m^2/s^2]
@@ -886,13 +890,17 @@ module clubb_driver
     end do
 
     ! Initialize TKE and other fields as needed
-    select case ( trim( runtype ) )
-    case ( "generic" )
-      em = 1.0
-      wp2 = 2.0 / 3.0 * em
 
-      ! GCSS BOMEX
+    select case ( trim( runtype ) )
+
+    ! Generic case
+    case ( "generic" )
+
+      em = 1.0
+
+    ! GCSS BOMEX
     case ( "bomex" )
+
 !---> Reduction of initial sounding for stability
 !         do k = 1, gr%nnzp
 !            em(k) = 1.0 - (gr%zm(k)/3000.0)
@@ -902,14 +910,13 @@ module clubb_driver
 !         end do
 !         em(1) = em(2)
 !         em(gr%nnzp) = em(gr%nnzp-1)
-
-!         wp2 = 2.0 / 3.0 * em
 !<--- End reduction of initial sounding for stability 24 Jan 07
-      em(:) = emin
-      wp2 = 2.0 / 3.0 * em
 
-      ! GCSS ARM
+      em(:) = emin
+
+    ! GCSS ARM
     case ( "arm" )
+
 !---> Reduction of initial sounding for stability
 !         do k = 1, gr%nnzp
 !            if ( gr%zm(k) < 150.0 ) then
@@ -920,31 +927,31 @@ module clubb_driver
 !         end do
 !         em(1) = em(2)
 !         em(gr%nnzp) = em(gr%nnzp-1)
-
 !<--- End reduction of initial sounding for stability 24 Jan 07
-      em(:) = emin
-      wp2 = 2.0 / 3.0 * em
 
-      ! March 2000 ARM case
+      em(:) = emin
+
+    ! March 2000 ARM case
     case ( "arm_0003" )
+
       em = 1.0
-      wp2 = 2.0 / 3.0 * em
       call arm_0003_init()
 
-      ! 3 year ARM case
+    ! 3 year ARM case
     case ( "arm_3year" )
+
       em = 1.0
-      wp2 = 2.0 / 3.0 * em
       call arm_3year_init()
 
-      ! June 27 1997 ARM case
+    ! June 27 1997 ARM case
     case ( "arm_97" )
+
       em = 1.0
-      wp2 = 2.0 / 3.0 * em
       call arm_97_init()
 
-      ! GCSS FIRE Sc
+    ! GCSS FIRE Sc
     case ( "fire" )
+
       cloud_top_height = 700. ! 700 m is the top of the cloud in FIRE
       do k=1,gr%nnzp
         if ( gr%zm(k) < cloud_top_height ) then
@@ -956,10 +963,9 @@ module clubb_driver
       em(1) = em(2)
       em(gr%nnzp) = em(gr%nnzp-1)
 
-      wp2 = 2.0 / 3.0 * em
-
-      ! GCSS ATEX
+    ! GCSS ATEX
     case ( "atex" )
+
       um = max( um, -8. )
 
 !---> Reduction of initial sounding for stability
@@ -971,14 +977,11 @@ module clubb_driver
 !         end do
 !         em(1) = em(2)
 !         em(gr%nnzp) = em(gr%nnzp-1)
-
-!         wp2 = 2.0 / 3.0 * em
-
 !<--- End reduction of initial sounding for stability 24 Jan 07
-      em(:) = emin
-      wp2 = 2.0 / 3.0 * em
 
-      ! GCSS DYCOMS II RF01
+      em(:) = emin
+
+    ! GCSS DYCOMS II RF01
     case ( "dycoms2_rf01" )
       cloud_top_height = 800. ! 800 m is the top of the cloud in RF01
       do k=1,gr%nnzp
@@ -991,16 +994,13 @@ module clubb_driver
       em(1) = em(2)
       em(gr%nnzp) = em(gr%nnzp-1)
 
-      wp2 = 2.0 / 3.0 * em
-
-      ! GCSS DYCOMS II RF02
+    ! GCSS DYCOMS II RF02
     case ( "dycoms2_rf02_do", "dycoms2_rf02_ds", & 
            "dycoms2_rf02_nd", "dycoms2_rf02_so" )
+
       em = 1.0
 
-      wp2 = 2.0 / 3.0 * em
-
-      ! Brian for Nov. 11 altocumulus case.
+    ! Brian for Nov. 11 altocumulus case.
     case ( "nov11_altocu" )
 
       ! Vince Larson reduced initial forcing.  4 Nov 2005
@@ -1025,9 +1025,7 @@ module clubb_driver
       em(gr%nnzp) = em(gr%nnzp-1)
       ! End Vince Larson's change.
 
-      wp2 = 2.0 / 3.0  * em
-
-      ! Adam Smith addition for June 25 altocumulus case.
+    ! Adam Smith addition for June 25 altocumulus case.
     case ( "jun25_altocu" )
 
       ! Vince Larson reduced initial forcing.  4 Nov 2005
@@ -1043,20 +1041,19 @@ module clubb_driver
 
       ! Note: emin = 1.0e-6, defined in constants.F
       ! Adam Smith, 28 June 2006
+      ! Note: now emin = 1.5 * wtol_sqd
+      ! Brian Griffin;  Nov. 26, 2008.
       do k = 1, gr%nnzp
         em(k) = 0.01
       end do
-
 
       em(1) = em(2)
       em(gr%nnzp) = em(gr%nnzp-1)
       ! End Vince Larson's change.
 
-      wp2 = 2.0 / 3.0  * em
+    ! End of ajsmith4's addition
 
-      ! End of ajsmith4's addition
-
-      ! Adam Smith addition for CLEX-9: Nov. 02 altocumulus case.
+    ! Adam Smith addition for CLEX-9: Nov. 02 altocumulus case.
     case ( "clex9_nov02" )
 
       ! Vince Larson reduced initial forcing.  4 Nov 2005
@@ -1075,11 +1072,9 @@ module clubb_driver
       em(gr%nnzp) = em(gr%nnzp-1)
       ! End Vince Larson's change.
 
-      wp2 = 2.0 / 3.0  * em
+    ! End of ajsmith4's addition
 
-      ! End of ajsmith4's addition
-
-      ! Adam Smith addition for CLEX-9: Oct. 14 altocumulus case.
+    ! Adam Smith addition for CLEX-9: Oct. 14 altocumulus case.
     case ( "clex9_oct14" )
 
       ! Vince Larson reduced initial forcing.  4 Nov 2005
@@ -1098,16 +1093,14 @@ module clubb_driver
       em(gr%nnzp) = em(gr%nnzp-1)
       ! End Vince Larson's change.
 
-      wp2 = 2.0 / 3.0  * em
-
-      ! End of ajsmith4's addition
+    ! End of ajsmith4's addition
 
     case ( "lba" )
+
       em = 0.1
-      wp2 = 2./3. * em
       call lba_init()
 
-      ! Michael Falk for mpace_a Arctic Stratus case.
+    ! Michael Falk for mpace_a Arctic Stratus case.
     case ( "mpace_a" )
 
       cloud_top_height = 2000.
@@ -1123,10 +1116,9 @@ module clubb_driver
       em(1) = em(2)
       em(gr%nnzp) = em(gr%nnzp-1)
 
-      wp2 = 2.0 / 3.0 * em
       call mpace_a_init
 
-      ! Michael Falk for mpace_b Arctic Stratus case.
+    ! Michael Falk for mpace_b Arctic Stratus case.
     case ( "mpace_b" )
 
       cloud_top_height = 1300. ! 1300 m is the cloud top in mpace_b.  Michael Falk 17 Aug 2006
@@ -1143,14 +1135,12 @@ module clubb_driver
       em(1) = em(2)
       em(gr%nnzp) = em(gr%nnzp-1)
 
-      wp2 = 2.0 / 3.0 * em
-
-      ! Brian Griffin for COBRA CO2 case.
+    ! Brian Griffin for COBRA CO2 case.
     case ( "cobra" )
-      em = 0.1
-      wp2 = 2.0 / 3.0 * em
 
-      ! Michael Falk for RICO tropical cumulus case, 13 Dec 2006
+      em = 0.1
+
+    ! Michael Falk for RICO tropical cumulus case, 13 Dec 2006
     case ( "rico" )
 
       cloud_top_height = 1500.
@@ -1166,9 +1156,7 @@ module clubb_driver
       em(1) = em(2)
       em(gr%nnzp) = em(gr%nnzp-1)
 
-      wp2(1:gr%nnzp) = 2.0 / 3.0 * em(1:gr%nnzp) ! Michael Falk reworded this.
-
-      ! Michael Falk for GABLS2 case, 29 Dec 2006
+    ! Michael Falk for GABLS2 case, 29 Dec 2006
     case ( "gabls2" )
 
       cloud_top_height = 800.  ! per GABLS2 specifications
@@ -1184,11 +1172,8 @@ module clubb_driver
       em(1) = em(2)
       em(gr%nnzp) = em(gr%nnzp-1)
 
-      wp2(1:gr%nnzp) = 2.0 / 3.0 * em(1:gr%nnzp)
-
     case ( "gabls3" )
       em = 1.0
-      wp2 = 2.0 / 3.0 * em
 !      veg_T_in_K = 294.63
 !      sfc_soil_T_in_K = 294.63
 !      deep_soil_T_in_K = 288.58
@@ -1208,6 +1193,26 @@ module clubb_driver
     end select
 
     ! End Initialize TKE and other fields as needed
+
+    !!!! Initialize w'^2 based on initial TKE !!!
+
+    if ( l_tke_aniso ) then
+
+       ! TKE:  em = (1/2) * ( w'^2 + u'^2 + v'^2 )
+       ! Evenly divide TKE into its component
+       ! contributions (w'^2, u'^2, and v'^2).
+
+       wp2 = (2.0/3.0) * em
+       up2 = (2.0/3.0) * em
+       vp2 = (2.0/3.0) * em
+
+    else
+
+       ! TKE:  em = (3/2) * w'^2
+
+       wp2 = (2.0/3.0) * em
+
+    endif
 
     ! Compute mixing length
 
