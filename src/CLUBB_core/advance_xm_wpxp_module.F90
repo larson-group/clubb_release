@@ -330,7 +330,7 @@ module advance_xm_wpxp_module
 
     ! Setup and decompose matrix for each variable.
 
-    if ( l_clip_semi_implicit .and. l_3pt_sqd_dfsn ) then
+    if ( l_clip_semi_implicit .or. l_3pt_sqd_dfsn ) then
 
       ! Compute the upper and lower limits of w'r_t' at every level,
       ! based on the correlation of w and r_t, such that:
