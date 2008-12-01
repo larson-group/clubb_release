@@ -19,7 +19,7 @@ module gabls3
   contains
 
   !----------------------------------------------------------------------
-  subroutine gabls3_tndcy( time, rtm, exner, p_in_Pa, thvm, &
+  subroutine gabls3_tndcy( time, rtm, exner, p_in_Pa, thvm, rho, &
                            wm_zt, wm_zm, thlm_forcing, rtm_forcing,&
                            um_forcing, vm_forcing, ug, vg )
     !       Description:
@@ -80,7 +80,8 @@ module gabls3
       rtm,  &     ! Total water mixing ratio                        [kg/kg]
       exner,&     ! Exner Function function = (p/p0 ** kappa)       [-]
       p_in_Pa, &  ! Pressure (Pa) on thermodynamic points           [Pa]
-      thvm        ! Virtual Potential Temperature
+      thvm, &       ! Virtual Potential Temperature
+      rho
 
 
     ! Output Variables
@@ -167,7 +168,7 @@ module gabls3
       end select
 
       if( gr%zt(i) < 2000 ) then
-        ! Winterpolate
+        ! Interpolate
         ug(i) = lin_int( gr%zt(i), 2000., 0., -2., ug_interp )
         vg(i) = lin_int( gr%zt(i), 2000., 0., 2., vg_interp )
       else
@@ -201,8 +202,8 @@ module gabls3
       endif
 
       ! This line needs to be changed to w = -omega / ( rho * grav ) !!!
-      wm_zt(i) = -velocity_omega(i) * Rd * thvm(i) / p_in_Pa(i) / grav
-
+      !wm_zt(i) = -velocity_omega(i) * Rd * thvm(i) / p_in_Pa(i) / grav
+      wm_zt(i) = -velocity_omega(i) /( rho(i) * grav );
     end do
 
     ! Boundary condition
@@ -223,8 +224,8 @@ module gabls3
                             thlm_sfc, rtm_sfc, lowest_level, psfc,& 
                             Frad_SW_up_sfc, Frad_SW_down_sfc, &
                             Frad_LW_up_sfc, Frad_LW_down_sfc, &
-                            upwp_sfc, vpwp_sfc,  & 
-                            wpthlp_sfc, wprtp_sfc, ustar, & 
+                            upwp_sfc, vpwp_sfc, &
+                            wpthlp_sfc, wprtp_sfc, ustar, &
                             wpsclrp_sfc, wpedsclrp_sfc )
     !       Description:
     !       This subroutine computes surface fluxes of horizontal momentum,
@@ -234,7 +235,7 @@ module gabls3
 
     !----------------------------------------------------------------------
 
-    use constants, only: kappa, grav, Rd, Cp, p0,lv ! Variable(s)
+    use constants, only: kappa, grav, Rd, Cp, p0, Lv ! Variable(s)
 
     use parameters_model, only: sclr_dim ! Variable(s)
 
@@ -252,6 +253,7 @@ module gabls3
 
     use surface, only: prognose_soil_T_in_K ! Procedure(s)
 
+
     implicit none
 
     ! Constants
@@ -261,9 +263,13 @@ module gabls3
      ! ustar = 0.3,
 !     C_10  = 0.0013, & !ATEX value
 !     C_10  = 0.013, & ! Fudged value
+!      C_10  = 0.0049, & ! Fudged value
 !      C_10  = 0.0039, & ! Fudged value
       C_10 = 0.00195, &
-      z0 = 0.15
+!      C_10 = 0.001, &
+
+!      C_10 = 0.003, &
+    z0 = 0.15
 
     real, parameter, dimension(25) :: sst_given = (/300., 300.8, 300.9, 301.,300.9, &
                                         300.5, 300., 298.5, 297., 296., 295.,&
@@ -293,6 +299,7 @@ module gabls3
       Frad_SW_down_sfc,&
       Frad_LW_up_sfc, &
       Frad_LW_down_sfc
+
 
     ! Output variables
     real, intent(out) ::  & 
@@ -330,7 +337,7 @@ module gabls3
                                Frad_LW_down_sfc, Frad_LW_up_sfc, wpthep, &
                                veg_T_in_K, sfc_soil_T_in_K, deep_soil_T_in_K )
 
-    if(l_stats_samp) then
+    if( l_stats_samp ) then
       call stat_update_var_pt( iveg_t_sfc, 1, veg_T_in_K(1), sfc )
       call stat_update_var_pt( it_sfc, 1, sfc_soil_T_in_K(1), sfc )
       call stat_update_var_pt( ideep_t_sfc, 1, deep_soil_T_in_K(1), sfc )
@@ -345,8 +352,10 @@ module gabls3
     veg_theta_in_K = veg_T_in_K(1) * (( p0 / psfc )**(Rd/Cp))
 
     wpthlp_sfc = -C_10 * ubar * ( thlm_sfc - veg_theta_in_K )
-!    wprtp_sfc  = -C_10 * ubar * ( rtm_sfc - 7.5e-3 )
-    wprtp_sfc  = -C_10 * 10. * ubar * ( rtm_sfc - 9.9e-3 )
+   ! wprtp_sfc  = -C_10 * ubar * ( rtm_sfc - 7.5e-3 )
+    wprtp_sfc  = -C_10 * ubar * 10 * ( rtm_sfc - 9.9e-3 )
+  
+
 
     ! Let passive scalars be equal to rt and theta_l for now
     if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
