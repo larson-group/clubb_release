@@ -1183,6 +1183,9 @@ module clubb_driver
       veg_T_in_K = 300.
       sfc_soil_T_in_K = 300.
       deep_soil_T_in_K = 288.58
+!      veg_T_in_K = 279.7
+!      sfc_soil_T_in_K = 282.8
+!      deep_soil_T_in_K = 282.5
 
 
       call initialize_surface( veg_T_in_K, sfc_soil_T_in_K, deep_soil_T_in_K )
@@ -1763,7 +1766,7 @@ module clubb_driver
                          rtm_forcing, radht, Ncm, &                        ! Intent(out)
                          sclrm_forcing )                                   ! Intent(out)
     case( "gabls3" ) ! GABLS 3 case
-      call gabls3_tndcy( time_current, rtm, exner, p_in_Pa, thvm, &         ! Intent(in)
+      call gabls3_tndcy( time_current, rtm, exner, p_in_Pa, thvm, rho, &         ! Intent(in)
                          wm_zt, wm_zm, thlm_forcing, rtm_forcing,&          ! Intent(out)
                          um_forcing, vm_forcing, ug, vg )                   ! Intent(out)
 
@@ -2090,7 +2093,7 @@ module clubb_driver
          max( int( ( 1000.-mod( gr%zm(gr%nnzp), 1000. ) ) & 
                  * gr%dzm(gr%nnzp) ) - 1, 0 )
 
-      ! print *, "buffer = ", lin_int_buffer !%% debug
+      !print *, "lin_int_buffer = ", lin_int_buffer !%% debug
 
       call bugsrad_clubb( gr%zm, gr%nnzp, lin_int_buffer,  & ! In
                         rlat, rlon,                      & ! In
