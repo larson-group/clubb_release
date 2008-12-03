@@ -11,6 +11,7 @@
 #######################################################################
 
 NIGHTLY=false
+TIMESTEP_TEST=false
 
 # This function reads all the arguments and sets variables that will be used
 # later in the script.
@@ -22,10 +23,37 @@ set_args()
 		case $1 in
 			# '--nightly' sets the script to run the nightly version
 			--nightly ) NIGHTLY=true;;
+                        # '--timestep_test' runs all cases at specified timestep.
+                        # The specified timestep is listed right after '--timestep_test'
+                        # and is entered into the code as "test_ts".
+                        --timestep_test ) TIMESTEP_TEST=true
+                                          if [ "$2" == "" ]; then
+                                             # If '--timestep_test' is used, then a time step
+                                             # length needs to be declared immediately.
+                                             echo "Option '--timestep_test':  the time step length"\
+                                                  "needs to be entered following '--timestep_test'."
+                                             exit 1
+                                          elif [ -n "$(echo $2 | grep "-")" ]; then
+                                             # The time step length, and not another option, needs
+                                             # to follow the '--timestep_test' option.
+                                             echo "Option '--timestep_test':  the time step length"\
+                                                  "needs to follow '--timestep_test', not another"\
+                                                  "option."
+                                             exit 1
+                                          else
+                                             # The time step length is entered as variable 'test_ts'.
+                                             test_ts=$2
+                                             echo ""
+                                             echo "Running all cases at a(n) "$test_ts" second"\
+                                                  "time step."
+                                             shift
+                                          fi;;
 			--help | -h | -? | * ) echo -e "Usage:\n  run_standalone-all.bash [OPTION]..."
 					       echo "Options:"
-					       echo -e "  --nightly\tPerforms the nightly run."
-					       echo -e "  -h, --help\tShows help (this)."
+					       echo -e "  --nightly\t\t\t\tPerforms the nightly run."
+					       echo -e "  --timestep_test  time_step_length\tRuns all"\
+                                                          "cases at the specified time step length (sec)."
+					       echo -e "  -h, --help\t\t\t\tShows help (this)."
 			                       exit 1;;
 		esac
 		# Shift moves the parameters up one. Ex: $2 -> $1 and so on.
@@ -69,7 +97,7 @@ set_args $*
 if [ $NIGHTLY == true ] ; then
 	echo -e "\nPerforming nightly run...\n"
 else
-	echo -e "\nPerforming standard run (all models)\n"
+	echo -e "\nPerforming standard run (all cases)\n"
 fi
 
 EXIT_CODE=( [0]=0 [1]=0 [2]=0 [3]=0 [4]=0 [5]=0 [6]=0 [7]=0 [8]=0 [9]=0 \
@@ -174,10 +202,25 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 			mv "${RUN_CASE[$x]}"_sfc.dat CLUBB_current/
 		fi
 
-	else
+	elif [ $TIMESTEP_TEST == true ]; then
+
+                # Set the model timestep for all cases (and the stats output timestep
+                # unless l_stats is overwritten to .false.) to timestep test_ts.
+                cat $PARAMS_IN > 'clubb.in'
+                cat $MODEL_IN | sed -e 's/dtmain\s*=\s*.*/dtmain = '$test_ts'/g' \
+                                    -e 's/dtclosure\s*=\s*.*/dtclosure = '$test_ts'/g' \
+                                    -e 's/stats_tsamp\s*=\s*.*/stats_tsamp = '$test_ts'/g' \
+                                    -e 's/stats_tout\s*=\s*.*/stats_tout = '$test_ts'/g' >> 'clubb.in'
+                cat $STATS_IN >> 'clubb.in'
+                run_case
+
+        else
+
 		cat $PARAMS_IN $MODEL_IN $STATS_IN > 'clubb.in'
 		run_case
+
 	fi
+
 done
 
 # Print the results and copy files for a nightly run
