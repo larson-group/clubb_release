@@ -38,6 +38,7 @@ use stats_variables, only: &
     iwprtp_sfc, &
     iupwp_sfc, &
     ivpwp_sfc, &
+    iwp2_vert_avg, &
     ithlm_vert_avg, & 
     irtm_vert_avg, & 
     ium_vert_avg, & 
@@ -85,6 +86,7 @@ iwpthlp_sfc    = 0
 iwprtp_sfc     = 0
 iupwp_sfc      = 0
 ivpwp_sfc      = 0
+iwp2_vert_avg  = 0   !nielsenb
 ithlm_vert_avg = 0
 irtm_vert_avg  = 0
 ium_vert_avg   = 0
@@ -215,6 +217,13 @@ do i=1,sfc%nn
 
     call stat_assign(ivpwp_sfc,"vpwp_sfc", &
          "vpwp surface flux","m^2/s^2",sfc)
+    k = k + 1
+
+  case ('wp2_vert_avg')
+    iwp2_vert_avg = k
+
+    call stat_assign(iwp2_vert_avg,"wp2_vert_avg", &
+         "Vertical average of wp2","m^2/s^2",sfc)
     k = k + 1
 
   case ('thlm_vert_avg')

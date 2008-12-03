@@ -25,5 +25,6 @@ vars_zm =
 
 vars_sfc = 
 'ustar', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi', 'rain', 'pflux', 'rrainm_sfc',
+'wp2_vert_avg',
 ''
 /

@@ -536,6 +536,7 @@ module stats_variables
     iwprtp_sfc, &
     iupwp_sfc, &
     ivpwp_sfc, &
+    iwp2_vert_avg, & ! nielsenb
     ithlm_vert_avg, &
     irtm_vert_avg, &
     ium_vert_avg, &

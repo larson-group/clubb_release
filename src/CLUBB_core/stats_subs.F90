@@ -884,6 +884,7 @@ use stats_variables, only: &
     icc, & 
     izb, & 
     ilwp, &
+    iwp2_vert_avg, &
     ithlm_vert_avg, &
     irtm_vert_avg, &
     ium_vert_avg, &
@@ -1257,6 +1258,10 @@ if ( l_stats_samp ) then
    ! level 2 (the first thermodynamic level above model surface) through 
    ! level gr%nnzp (the top of the model).  Use the vertical averaging function
    ! found in fill_holes.F90.
+
+   ! Vertical average of wp2.
+   call stat_update_var_pt( iwp2_vert_avg, 1,  &
+        vertical_avg( 2, gr%nnzp, "zt", thlm(2:gr%nnzp) ), sfc )
 
    ! Vertical average of thlm.
    call stat_update_var_pt( ithlm_vert_avg, 1,  &
