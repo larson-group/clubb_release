@@ -1199,6 +1199,16 @@ create_time_plot(3, 2, 3, 'Liquid Water Path', 'lwp    [kg/m^2]', ...
 
 %--------------------------------------------------------------------------
 
+% Vertically averaged wp2 (var lwp from sfc files)	
+[vert_avg_wp2_prev, vert_avg_wp2_curr] = time_tendency_load( filename_prev_sfc, listofparams_prev_sfc, ...
+		numvars_prev_sfc, 'wp2_vert_avg ', 1, max(size(timesteps_prev)), filename_curr_sfc, listofparams_curr_sfc, numvars_curr_sfc, ...
+		'wp2_vert_avg ', 1, max(size(timesteps_curr)));
+
+create_time_plot(3, 2, 4, 'Vertically Averaged wp2', 'wp2    [m^2/s^2]', ...
+		vert_avg_wp2_prev, timesteps_prev, vert_avg_wp2_curr, timesteps_curr );
+
+%--------------------------------------------------------------------------
+
 
 % Print 4th Page for Case (.eps document)
 outputfilename = [ case_name, '_page4' ];
