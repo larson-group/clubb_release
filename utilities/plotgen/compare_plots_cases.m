@@ -1454,7 +1454,7 @@ function [avg_prev_values, avg_curr_values] = time_tendency_load( filename_prev,
 			end
 			if ( (i == numvars_prev) & (varfnd == 0) )
 				[ filename_prev, ' Variable: ', prev_var, ' not found for case, being set to 0!' ]
-				avg_prev_values(1:nz_prev) = 0.0;
+				avg_prev_values(t1_prev:t2_prev) = 0.0;
 			elseif ( varfnd == 1 )
 				avg_prev_values = read_grads_hoc_sfc_endian([dir_prev, '/', filename_prev], ...
 				'ieee-le', 1, t1_prev, t2_prev, varnum, numvars_prev);
@@ -1476,7 +1476,7 @@ function [avg_prev_values, avg_curr_values] = time_tendency_load( filename_prev,
 			end
 			if ( (i == numvars_curr) & (varfnd == 0) )
 				[ filename_curr, ' Variable: ', curr_var, ' not found for case, being set to 0!' ]
-				avg_curr_values(1:nz_curr) = 0.0;
+				avg_curr_values(t1_curr:t2_curr) = 0.0;
 			elseif ( varfnd == 1 )
 				avg_curr_values = read_grads_hoc_sfc_endian([dir_curr, '/', filename_curr], ...
 				'ieee-le', 1, t1_curr, t2_curr, varnum, numvars_curr);
