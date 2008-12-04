@@ -207,10 +207,15 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
                 # Set the model timestep for all cases (and the stats output timestep
                 # unless l_stats is overwritten to .false.) to timestep test_ts.
                 cat $PARAMS_IN > 'clubb.in'
+                # Use this version if statistical output is desired.
+                #cat $MODEL_IN | sed -e 's/dtmain\s*=\s*.*/dtmain = '$test_ts'/g' \
+                #                    -e 's/dtclosure\s*=\s*.*/dtclosure = '$test_ts'/g' \
+                #                    -e 's/stats_tsamp\s*=\s*.*/stats_tsamp = '$test_ts'/g' \
+                #                    -e 's/stats_tout\s*=\s*.*/stats_tout = '$test_ts'/g' >> 'clubb.in'
+                # Use this version is statistical output is not desired.
                 cat $MODEL_IN | sed -e 's/dtmain\s*=\s*.*/dtmain = '$test_ts'/g' \
                                     -e 's/dtclosure\s*=\s*.*/dtclosure = '$test_ts'/g' \
-                                    -e 's/stats_tsamp\s*=\s*.*/stats_tsamp = '$test_ts'/g' \
-                                    -e 's/stats_tout\s*=\s*.*/stats_tout = '$test_ts'/g' >> 'clubb.in'
+                                    -e 's/l_stats\s*=\s*.*/l_stats = .false./g' >> 'clubb.in'
                 cat $STATS_IN >> 'clubb.in'
                 run_case
 
