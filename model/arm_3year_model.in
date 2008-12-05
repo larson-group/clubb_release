@@ -71,6 +71,12 @@ psfc = 985.5244e2  ! Pressure at model base              [Pa]
 fcor = 8.697e-5    ! Coriolis parameter                  [s^-1]
 T0   = 300.        ! Reference temperature (usually 300) [K]
 
+! Albedo values (for BugsRad Only)
+alvdr = 0.1d0    ! Visible direct surface albedo        [-]
+alvdf = 0.1d0    ! Visible diffuse surface albedo       [-]
+alndr = 0.1d0    ! Near-IR direct surface albedo        [-]
+alndf = 0.1d0    ! Near-IR diffuse surface albedo       [-]
+
 ts_nudge = 7200    ! Timescale of u/v nudging            [s]
 
 l_cloud_sed     = .false.  ! Flag for cloud water sedimentation.

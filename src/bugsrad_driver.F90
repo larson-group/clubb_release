@@ -4,7 +4,21 @@ module bugsrad_clubb_mod
 
 implicit none
 
-public :: bugsrad_clubb
+public :: bugsrad_clubb, set_albedo
+
+! Constant parameters
+integer, private, parameter :: &
+nlen = 1, &   ! Length of the total domain
+slen = 1      ! Length of the sub domain
+
+! Number of levels to take from U.S. Std. Atmos tables
+integer, private, parameter :: std_atmos_buffer = 10 ! For typical cases
+
+double precision, private, dimension(nlen) :: &
+alvdr = 0.1d0, & ! Visible direct surface albedo        [-]
+alvdf = 0.1d0, & ! Visible diffuse surface albedo       [-]
+alndr = 0.1d0, & ! Near-IR direct surface albedo        [-]
+alndf = 0.1d0 ! Near-IR diffuse surface albedo       [-]
 
 private ! Default Scope
 
@@ -69,13 +83,6 @@ subroutine bugsrad_clubb &
 
   intrinsic :: dble, real
 
-! Constant parameters
-  integer, parameter :: &
-  nlen = 1, &   ! Length of the total domain
-  slen = 1      ! Length of the sub domain
-
-! Number of levels to take from U.S. Std. Atmos tables
-  integer, parameter :: std_atmos_buffer = 10 ! For typical cases
 
 ! Input Variables
   real, intent(in) :: &
@@ -155,12 +162,6 @@ subroutine bugsrad_clubb &
   radht_LW2  ! LW Radiative heating rate        [W/m^2]
 
   double precision, dimension(nlen) :: &
-  alvdr,&! Visible direct surface albedo        [-]
-  alvdf,&! Visible diffuse surface albedo       [-]
-  alndr,&! Near-IR direct surface albedo        [-]
-  alndf  ! Near-IR diffuse surface albedo       [-]
-
-  double precision, dimension(nlen) :: &
   slr, & ! Fraction of daylight  
   ts,  & ! Surface temperature [K]
   amu0   ! Cosine of the solar zenith angle
@@ -178,6 +179,8 @@ subroutine bugsrad_clubb &
 
 ! Calculated value of cosine of the solar zenith angle
   amu0 = cos_solar_zen( day, month, year, time, lat_in_degrees, lon_in_degrees )
+
+  !print *, "amu0 = ", amu0
 
 ! Convert to millibars
   pinmb(1,1:(nz-1))  = dble( p_in_Pa(2:nz) / 100.0 ) ! t grid in HOC
@@ -203,16 +206,6 @@ subroutine bugsrad_clubb &
    end do
 
 ! Setup miscellaneous variables
-
-! Albedo values
-  alvdr = 0.1d0
-  alvdf = 0.1d0
-  alndr = 0.1d0
-  alndf = 0.1d0
-  !alvdr = 0.23d0
-  !alvdf = 0.23d0
-  !alndr = 0.23d0
-  !alndf = 0.23d0
 
   slr  = 1.0d0 ! Fraction of daylight
 
@@ -323,7 +316,10 @@ subroutine bugsrad_clubb &
 ! write(10,'(a4,a12,3f12.6)') "","", playerinmb(1,nz+buffer), ts(1), amu0(1)
 ! close(10)
 ! pause
- 
+
+!  print *, "playerinmb = ", playerinmb
+!  print *, "sp_humidity = ", sp_humidity
+
   call bugs_rad( nlen, slen, (nz-1)+buffer, playerinmb,          &
                  pinmb, dpl, T_in_K, sp_humidity,                 &
                  rcm2, rcil, rsnwm2, o3l,                        &
@@ -388,6 +384,30 @@ subroutine bugsrad_clubb &
   return
 end subroutine bugsrad_clubb
 !-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+subroutine set_albedo( alvdr_in, alvdf_in, alndr_in, alndf_in ) 
+  !
+  !       Description:
+  !       This subroutine sets the albedo values for use in bugsrad.
+  !
+  !-----------------------------------------------------------------------
+  implicit none
+
+  double precision, intent(in) :: &
+    alvdr_in, & ! Visible direct surface albedo        [-]
+    alvdf_in, & ! Visible diffuse surface albedo       [-]
+    alndr_in, & ! Near-IR direct surface albedo        [-]
+    alndf_in    ! Near-IR diffuse surface albedo       [-]
+  !-------------------------------------------------------------
+
+  alvdr = alvdr_in 
+  alvdf = alvdf_in  
+  alndr = alndr_in  
+  alndf = alndf_in  
+  
+!------------------------------------------------------------------------
+end subroutine set_albedo
 
 !-----------------------------------------------------------------------
 function flip( x, xdim )

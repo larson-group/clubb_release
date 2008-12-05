@@ -11,6 +11,7 @@ module clubb_driver
 
   use stats_precision, only: time_precision ! Variable(s)
 
+
   implicit none
 
   ! Setup run_clubb() as the sole external interface
@@ -87,7 +88,7 @@ module clubb_driver
   real(kind=time_precision), private ::  & 
     dtmain,      & ! Main model timestep                      [s]
     dtclosure,   & ! Closure model timestep                   [s]
-    dt          ! Current model timestep (based on spinup) [s]
+    dt             ! Current model timestep (based on spinup) [s]
 !$omp threadprivate(dtmain, dtclosure, dt)
 
   contains
@@ -172,6 +173,10 @@ module clubb_driver
       stats_begin_timestep, stats_end_timestep,  & ! Procedure(s)
       stats_finalize, stats_init
 
+#ifdef radoffline
+    use bugsrad_clubb_mod, only: set_albedo ! Procedure(s)
+#endif
+
 
     implicit none
 
@@ -226,13 +231,13 @@ module clubb_driver
     logical ::  & 
       l_cloud_sed,    & ! Flag for cloud water droplet sedimentation. - Brian
       l_kk_rain,      & ! Flag for Khairoutdinov and Kogan rain microphysics. - Brian
-      l_icedfs,      & ! Flag for simplified ice scheme
+      l_icedfs,       & ! Flag for simplified ice scheme
       l_coamps_micro, & ! Flag for COAMPS microphysical scheme
       l_bugsrad,      & ! Flag for BUGsrad radiation scheme
       l_uv_nudge,     & ! Whether to adjust the winds within the timestep
       l_restart,      & ! Flag for restarting from GrADS file
       l_tke_aniso       ! For anisotropic turbulent kinetic energy,
-    !   i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+    !                     i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 
     character(len=50) ::  & 
       restart_path_case ! GRADS file used in case of restart
@@ -260,6 +265,12 @@ module clubb_driver
     integer :: i, i1 ! Internal Loop Variables
     integer :: iinit ! initial iteration
 
+    double precision :: &
+      alvdr, & ! Visible direct surface albedo        [-]
+      alvdf, & ! Visible diffuse surface albedo       [-]
+      alndr, & ! Near-IR direct surface albedo        [-]
+      alndf    ! Near-IR diffuse surface albedo       [-]
+
     integer ::  & 
       iunit,           & ! File unit used for I/O
       hydromet_dim,    & ! Number of hydrometeor species        [#]
@@ -278,6 +289,7 @@ module clubb_driver
       l_cloud_sed, l_kk_rain, l_icedfs, l_coamps_micro,  & 
       l_bugsrad, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, debug_level, & 
+      alvdr, alvdf, alndr, alndf, &
       sclr_tol, & 
       sclr_dim, iisclr_thl, iisclr_rt, iiCO2
 
@@ -332,6 +344,8 @@ module clubb_driver
     time_restart  = 0.
     debug_level   = 2
 
+    call set_albedo( 0.1d0 , 0.1d0, 0.1d0, 0.1d0 )
+
     sclr_dim  = 0
     iisclr_thl = -1
     iisclr_rt  = -1
@@ -374,6 +388,9 @@ module clubb_driver
     ! Set debug level
     call set_clubb_debug_level( debug_level ) ! Intent(in)
 
+    ! Set Bugsrad albedo values
+    call set_albedo( alvdr, alvdf, alndr, alndf )
+
     ! Printing Model Inputs
     if ( clubb_at_least_debug_level( 1 ) ) then
       print *, "--------------------------------------------------"
@@ -398,8 +415,8 @@ module clubb_driver
 
       ! Pick some default values for model_setting
       print *, "&model_setting:"
-      print *,"runtype = ", runtype
-      print *,"nzmax = ", nzmax
+      print *, "runtype = ", runtype
+      print *, "nzmax = ", nzmax
       print *, "grid_type = ", grid_type
       print *, "deltaz = ", deltaz
       print *, "zm_init = ", zm_init
@@ -427,6 +444,12 @@ module clubb_driver
       print *, "LE = ", LE
       print *, "fcor = ", fcor
       print *, "T0 = ", T0
+
+      print *, "alvdr = ", alvdr
+      print *, "alvdf = ", alvdf
+      print *, "alndr = ", alndr
+      print *, "alndf = ", alndf 
+
       print *, "ts_nudge = ", ts_nudge
 
       print *, "l_cloud_sed = ", l_cloud_sed

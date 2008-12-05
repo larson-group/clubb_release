@@ -69,6 +69,12 @@ LE = 0.             ! Fixed surface latent heat flux      [(kg/kg) m/s]
 fcor = 4.506704e-5  ! Coriolis parameter                  [s^-1]
 T0   = 300.         ! Reference temperature (usually 300) [K]
 
+! Albedo values (for BugsRad Only)
+alvdr = 0.1d0    ! Visible direct surface albedo        [-]
+alvdf = 0.1d0    ! Visible diffuse surface albedo       [-]
+alndr = 0.1d0    ! Near-IR direct surface albedo        [-]
+alndf = 0.1d0    ! Near-IR diffuse surface albedo       [-]
+
 l_cloud_sed     = .false.  ! Flag for cloud water sedimentation.
 l_kk_rain       = .true.   ! Flag for Khairoutdinov-Kogan rain microphysics.
 l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
