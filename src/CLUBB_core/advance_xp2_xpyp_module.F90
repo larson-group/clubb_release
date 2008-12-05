@@ -613,12 +613,12 @@ contains
 
         !!!!!***** sclr'^2 *****!!!!!
 
-        call xp2_xpyp_rhs( "sclrp2", dt, l_iter, a1, a1_zt, &       ! Intent(in)
-                           wp2_zt, wp3, wpsclrp(:,i),  &            ! Intent(in)
-                           wpsclrp_zt, wpsclrp(:,i), wpsclrp_zt,  & ! Intent(in)
-                           sclrm(:,i), sclrm(:,i), sclrp2(:,i), &   ! Intent(in)
-                           C2sclr_1d, tau_zm, 0.0, beta, &          ! Intent(in)
-                           sclr_rhs(:,i) )                          ! Intent(out)
+        call xp2_xpyp_rhs( "sclrp2", dt, l_iter, a1, a1_zt, &        ! Intent(in)
+                           wp2_zt, wp3, wpsclrp(:,i),  &             ! Intent(in)
+                           wpsclrp_zt, wpsclrp(:,i), wpsclrp_zt,  &  ! Intent(in)
+                           sclrm(:,i), sclrm(:,i), sclrp2(:,i), &    ! Intent(in)
+                           C2sclr_1d, tau_zm, sclrtol(i)**2, beta, & ! Intent(in)
+                           sclr_rhs(:,i) )                           ! Intent(out)
 
 
         !!!!!***** sclr'r_t' *****!!!!!
