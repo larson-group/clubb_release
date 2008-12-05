@@ -46,7 +46,7 @@ integer :: clubb_debug_level   =  0
 integer, parameter :: & 
 clubb_no_error                 =  0,  & 
 clubb_var_less_than_zero       =  1, & 
-clubb_var_equals_NaN           =  2,  & 
+clubb_var_equals_NaN           =  2, & 
 clubb_singular_matrix          =  3, & 
 clubb_bad_lapack_arg           =  4, & 
 clubb_rtm_level_not_found      =  5, & 
