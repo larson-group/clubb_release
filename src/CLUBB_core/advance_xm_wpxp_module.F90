@@ -93,17 +93,10 @@ module advance_xm_wpxp_module
         time_precision ! Variable(s)
 
     use error_code, only:  & 
-        lapack_error,  & ! Procedure(s)
-        clubb_at_least_debug_level
-
-    use stats_type, only: & 
-        stat_begin_update, stat_end_update ! Procedure(s)
+        lapack_error     ! Procedure(s)
 
     use stats_variables, only: & 
-        zt,  & ! Variable(s)
-        irtm_cl,  & 
-        ithlm_cl, & 
-        irtm_matrix_condt_num, & 
+        irtm_matrix_condt_num, &  ! Variables
         ithlm_matrix_condt_num, & 
         l_stats_samp
 
@@ -367,7 +360,7 @@ module advance_xm_wpxp_module
                             solution, err_code ) ! Intent(out)
       end if
 
-      if ( lapack_error( err_code ) )  then
+      if ( lapack_error( err_code ) ) then
         write(fstderr,'(a)') "rt LU decomp. failed"
         deallocate( rhs, solution )
         return
@@ -375,41 +368,6 @@ module advance_xm_wpxp_module
 
       call xm_wpxp_clipping_and_stats &
            ( "rtm", dt, wp2, rtp2, rtm, wprtp, solution(:,1), rcond )
-      ! Clipping rtm
-      ! Joshua Fasching March 2008
-
-
-      ! Computed value before clipping
-      if ( l_stats_samp ) then
-        call stat_begin_update( irtm_cl, real( rtm / dt ), & ! Intent(in)
-                                zt )                         ! Intent(inout)
-      end if
-
-      ! The arm_0003 case produces negative rtm near the tropopause.
-      !    To avoid this, we clip rtm.  This is not a good solution,
-      !    because it renders rtm non-conserved.  We should look into
-      !    a positive definite advection scheme.
-      !    Vince Larson.  13 Nov 2007
-
-      ! The clipping of rtm causes a spurious source of moisture,
-      !   particularly in SAM-CLUBB mode, and so this code will be
-      !   disabled by default for now.
-      !   David Schanen 15 Apr 2008
-      do k = 1, gr%nnzp, 1
-        if ( rtm(k) < 0.0 ) then
-          !    rtm(k) = 0.0
-          if ( clubb_at_least_debug_level( 1 ) ) then
-            write(fstderr,*) "rtm < 0 in advance_xm_wpxp_module at k= ", k
-          endif
-        endif
-
-      enddo
-
-      if ( l_stats_samp ) then
-        call stat_end_update( irtm_cl, real( rtm / dt ), & ! Intent(in) 
-                              zt )                         ! Intent(inout)
-      endif
-
 
       ! Compute the upper and lower limits of w'th_l' at every level,
       ! based on the correlation of w and th_l, such that:
@@ -454,31 +412,6 @@ module advance_xm_wpxp_module
 
       call xm_wpxp_clipping_and_stats &
            ( "thlm", dt, wp2, thlp2, thlm, wpthlp, solution(:,1), rcond )
-      ! Clipping thlm
-      ! Joshua Fasching March 2008
-
-
-      ! Computed value before clipping
-      if ( l_stats_samp ) then
-        call stat_begin_update( ithlm_cl, real(thlm / dt ), & ! Intent(in)
-                                zt )                          ! Intent(inout)
-      endif
-
-      ! The value of potential temperature cannot fall below 0,
-      ! so we clip accordingly
-      do k = 1, gr%nnzp, 1
-        if ( thlm(k) < 0.0 ) then
-          thlm(k) = 0.0
-          write(fstderr,*) "thlm < 0 in advance_xm_wpxp at k= ", k
-        endif
-      enddo
-
-
-      if ( l_stats_samp ) then
-        call stat_end_update( ithlm_cl, real( thlm/dt ), & ! Intent(in)
-                              zt )                         ! Intent(inout)
-      end if
-      ! End change Joshua Fasching March 2008
 
       ! Solve sclrm / wpsclrp
       ! If sclr_dim is 0, then this loop will execute 0 times.
@@ -1500,8 +1433,19 @@ module advance_xm_wpxp_module
         clip_covariance ! Procedure(s)
 
     use model_flags, only: & 
-        l_pos_def, &  ! Logical for whether to apply the positive definite scheme to rtm
+        l_pos_def, &    ! Logical for whether to apply the positive definite scheme to rtm
+        l_hole_fill, &  ! Logical for whether to apply the hole filling scheme to thlm/rtm
         l_clip_turb_adv ! Logical for whether to clip xm when wpxp is clipped
+
+    use constants, only: &
+      zero_threshold, & ! Quantity that cannot be lower than 0
+      fstderr
+
+    use fill_holes, only: &
+      fill_holes_driver ! Procedure
+
+    use error_code, only: &
+      clubb_at_least_debug_level ! Procedure
 
     use stats_type, only: & 
         stat_begin_update,  & ! Procedure(s)
@@ -1520,6 +1464,7 @@ module advance_xm_wpxp_module
         irtm_ma, & 
         irtm_matrix_condt_num, & 
         irtm_pd, & 
+        irtm_cl,  & 
         iwprtp_bt, & 
         iwprtp_ma, & 
         iwprtp_ta, & 
@@ -1533,6 +1478,7 @@ module advance_xm_wpxp_module
         ithlm_bt, & 
         ithlm_ta, & 
         ithlm_ma, & 
+        ithlm_cl, & 
         ithlm_matrix_condt_num, & 
         iwpthlp_bt, & 
         iwpthlp_ma, & 
@@ -1611,6 +1557,7 @@ module advance_xm_wpxp_module
       ixm_ma, & 
       ixm_matrix_condt_num, & 
       ixm_pd, & 
+      ixm_cl, & 
       iwpxp_bt, & 
       iwpxp_ma, & 
       iwpxp_ta, & 
@@ -1630,6 +1577,7 @@ module advance_xm_wpxp_module
       ixm_ta     = irtm_ta
       ixm_ma     = irtm_ma
       ixm_pd     = irtm_pd
+      ixm_cl     = irtm_cl
       iwpxp_bt   = iwprtp_bt
       iwpxp_ma   = iwprtp_ma
       iwpxp_ta   = iwprtp_ta
@@ -1648,6 +1596,7 @@ module advance_xm_wpxp_module
       ixm_ta     = ithlm_ta
       ixm_ma     = ithlm_ma
       ixm_pd     = 0
+      ixm_cl     = ithlm_cl
       iwpxp_bt   = iwpthlp_bt
       iwpxp_ma   = iwpthlp_ma
       iwpxp_ta   = iwpthlp_ta
@@ -1667,6 +1616,7 @@ module advance_xm_wpxp_module
       ixm_ta     = 0
       ixm_ma     = 0
       ixm_pd     = 0
+      ixm_cl     = 0
       iwpxp_bt   = 0
       iwpxp_ma   = 0
       iwpxp_ta   = 0
@@ -1816,7 +1766,7 @@ module advance_xm_wpxp_module
       xm_pd   = 0.0
       wpxp_pd = 0.0
 
-    end if ! solve_type == "rtm" and rtm <n+1> less than 0
+    end if ! l_pos_def and solve_type == "rtm" and rtm <n+1> less than 0
 
     if ( l_stats_samp ) then
 
@@ -1824,6 +1774,32 @@ module advance_xm_wpxp_module
 
       call stat_update_var( ixm_pd, xm_pd(1:gr%nnzp), zt )
 
+    end if
+
+    ! Computed value before clipping
+    if ( l_stats_samp ) then
+      call stat_begin_update( ixm_cl, real( xm / dt ), & ! Intent(in)
+                              zt )                       ! Intent(inout)
+    end if
+
+
+    if ( any( xm < zero_threshold ) .and. l_hole_fill ) then
+
+      if ( clubb_at_least_debug_level( 1 ) ) then
+        do k = 1, gr%nnzp
+          if ( xm(k) < 0.0 ) then
+            write(fstderr,*) "Negative "//solve_type//" in advance_xm_wpxp_module at k= ", k
+          end if
+        end do
+      end if
+
+      call fill_holes_driver( 2, zero_threshold, "zt", xm )
+
+    end if !  any( xm < zero_threshold ) .and. l_hole_fill
+
+    if ( l_stats_samp ) then
+      call stat_end_update( ixm_cl, real( xm / dt ), & ! Intent(in) 
+                            zt )                       ! Intent(inout)
     end if
 
     ! Use solve_type to find solve_type_cl, which is used
