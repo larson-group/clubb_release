@@ -167,10 +167,12 @@ module sounding
           print *, "vg = ", vg(1:nlevels)
           print *, "theta = ", theta(1:nlevels)
           print *, "rt = ", rt(1:nlevels)
-          if ( sclr_dim > 0 ) then
-            print *, "sclr = ", sclr(1:nlevels,1:sclr_dim)
-            print *, "edsclr = ", edsclr(1:nlevels,1:sclr_dim)
-          end if
+          do i = 1, sclr_dim, 1
+            write(6,'(a5,i2,a2)',advance='no') "sclr(", i,")="
+            write(6,'(8g10.2)') sclr(1:nlevels,i)
+            write(6,'(a7,i2,a2)',advance='no') "edsclr(", i, ")="
+            write(6,'(8g10.3)') edsclr(1:nlevels,i)
+          end do
         end if ! clubb_at_least_debug_level( 1 )
 !----------------------------------------------------------------------
 
