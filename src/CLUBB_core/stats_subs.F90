@@ -1261,7 +1261,7 @@ if ( l_stats_samp ) then
 
    ! Vertical average of wp2.
    call stat_update_var_pt( iwp2_vert_avg, 1,  &
-        vertical_avg( 2, gr%nnzp, "zt", thlm(2:gr%nnzp) ), sfc )
+        vertical_avg( 2, gr%nnzp, "zt", wp2(2:gr%nnzp) ), sfc )
 
    ! Vertical average of thlm.
    call stat_update_var_pt( ithlm_vert_avg, 1,  &

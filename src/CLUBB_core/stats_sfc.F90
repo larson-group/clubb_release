@@ -223,7 +223,7 @@ do i=1,sfc%nn
     iwp2_vert_avg = k
 
     call stat_assign(iwp2_vert_avg,"wp2_vert_avg", &
-         "Vertical average of wp2","m^2/s^2",sfc)
+         "Vertical average of wp2 [m^2/s^2]","m^2/s^2",sfc)
     k = k + 1
 
   case ('thlm_vert_avg')
