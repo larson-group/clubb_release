@@ -253,7 +253,6 @@ module gabls3
 
     use surface, only: prognose_soil_T_in_K ! Procedure(s)
 
-
     implicit none
 
     ! Constants
@@ -261,15 +260,14 @@ module gabls3
     real, parameter ::  & 
       ubmin = 0.25, & 
      ! ustar = 0.3,
-!     C_10  = 0.0013, & !ATEX value
-!     C_10  = 0.013, & ! Fudged value
-!      C_10  = 0.0049, & ! Fudged value
-!      C_10  = 0.0039, & ! Fudged value
+     ! C_10  = 0.0013, & !ATEX value
+     ! C_10  = 0.013, & ! Fudged value
+     ! C_10  = 0.0049, & ! Fudged value
+     ! C_10  = 0.0039, & ! Fudged value
       C_10 = 0.00195, &
-!      C_10 = 0.001, &
-
-!      C_10 = 0.003, &
-    z0 = 0.15
+     ! C_10 = 0.001, &
+     ! C_10 = 0.003, &
+      z0 = 0.15
 
     real, parameter, dimension(25) :: sst_given = (/300., 300.8, 300.9, 301.,300.9, &
                                         300.5, 300., 298.5, 297., 296., 295.,&
@@ -292,14 +290,13 @@ module gabls3
       vm_sfc,     & ! vm at zt(2)           [m/s]
       thlm_sfc,   & ! Theta_l at zt(2)      [K]
       rtm_sfc,    & ! rt at zt(2)           [kg/kg]
-      rho_sfc,    &
-      lowest_level, &
-      psfc,&
-      Frad_SW_up_sfc, &
-      Frad_SW_down_sfc,&
-      Frad_LW_up_sfc, &
-      Frad_LW_down_sfc
-
+      rho_sfc,    & ! rho_zm at zm(1)       [kg/m^3]
+      lowest_level, & ! gr%zt(2)            [m]
+      psfc,&          ! Prescribed surface pressuer [Pa]
+      Frad_SW_up_sfc, &    ! SW upwelling flux at sfc   [W/m^2]
+      Frad_SW_down_sfc,&   ! SW downwelling flux at sfc [W/m^2]
+      Frad_LW_up_sfc, &    ! LW upwelling flux at sfc   [W/m^2]
+      Frad_LW_down_sfc     ! LW downwelling flux at sfc [W/m^2]
 
     ! Output variables
     real, intent(out) ::  & 
@@ -320,7 +317,6 @@ module gabls3
     ! Local Variables
     real :: ubar, veg_theta_in_K, bflx, wpthep
 
-    integer :: i1, i2
     ! Compute heat and moisture fluxes
     ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
 
@@ -334,7 +330,7 @@ module gabls3
 
     call prognose_soil_T_in_K( time_start, time_current, real( dt), 1, 2, rho_sfc, &
                                Frad_SW_down_sfc-Frad_SW_up_sfc, Frad_SW_down_sfc,&
-                               Frad_LW_down_sfc, Frad_LW_up_sfc, wpthep, &
+                               Frad_LW_down_sfc, wpthep, &
                                veg_T_in_K, sfc_soil_T_in_K, deep_soil_T_in_K )
 
     if( l_stats_samp ) then
