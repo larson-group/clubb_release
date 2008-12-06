@@ -2374,10 +2374,10 @@ contains
     !
     ! - ( C_n / tau_zm ) * ( x_a'x_b' - threshold ).
     !
-    ! However, if x_a'x_b' is u'^2 or v'^2, the term is simply damped to 0.  The
-    ! expression reverts to the form found in the first equation.  For u'^2 and
-    ! v'^2, function 'term_dp1_lhs' is called, but function 'term_dp1_rhs' is
-    ! not called.
+    ! However, if x_a'x_b' is u'^2 or v'^2, damping to a minimum threshold value
+    ! is part of pressure term 1 and is handled as part of function 'term_pr1'.
+    ! Thus, for u'^2 and v'^2, function 'term_dp1_lhs' is called, but function
+    ! 'term_dp1_rhs' is not called, as function 'term_pr1' is called instead.
     !
     ! For cases where x_a'x_b' is a covariance (in other words, where x_a and
     ! x_b are different variables), threshold is set to 0, and the expression
@@ -2442,10 +2442,10 @@ contains
     !
     ! - ( C_n / tau_zm ) * ( x_a'x_b' - threshold ).
     !
-    ! However, if x_a'x_b' is u'^2 or v'^2, the term is simply damped to 0.  The
-    ! expression reverts to the form found in the first equation.  For u'^2 and
-    ! v'^2, function 'term_dp1_lhs' is called, but function 'term_dp1_rhs' is
-    ! not called.
+    ! However, if x_a'x_b' is u'^2 or v'^2, damping to a minimum threshold value
+    ! is part of pressure term 1 and is handled as part of function 'term_pr1'.
+    ! Thus, for u'^2 and v'^2, function 'term_dp1_lhs' is called, but function
+    ! 'term_dp1_rhs' is not called, as function 'term_pr1' is called instead.
     !
     ! For cases where x_a'x_b' is a covariance (in other words, where x_a and
     ! x_b are different variables), threshold is set to 0, and the expression
@@ -2501,16 +2501,39 @@ contains
     !
     ! - ( C_4 / tau_zm ) * ( u'^2 - (2/3)*em );
     !
-    ! and pressure term 1:
+    ! where em = (1/2) * ( u'^2 + v'^2 + w'^2 );
     !
-    ! - (2/3) * ( C_14 / tau_zm ) * em;
+    ! and with the substitution applied, dissipation term 1 becomes:
     !
-    ! where em = (1/2) * ( u'^2 + v'^2 + w'^2 ).
+    ! - ( C_4 / tau_zm ) * ( u'^2 - (1/3) * ( u'^2 + v'^2 + w'^2 ) ).
     !
-    ! This simplifies to:
+    ! The d(u'^2)/dt equation also contains pressure term 1:
+    !
+    ! - (2/3) * epsilon;
+    !
+    ! where epsilon = C_14 * ( em / tau_zm ).
+    !
+    ! Additionally, since pressure term 1 is a damping term, em is damped only
+    ! to it's minimum threshold value, emin, where:
+    !
+    ! emin = (1/2) * ( u'^2|_min + v'^2|_min + w'^2|_min )
+    !      = (1/2) * ( wtol^2 + wtol^2 + wtol^2 )
+    !      = (3/2) * wtol^2.
+    !
+    ! With the damping threshold applied, epsilon becomes:
+    !
+    ! epsilon = C_14 * ( ( em - emin ) / tau_zm );
+    !
+    ! and with all substitutions applied, pressure term 1 becomes:
+    !
+    ! - (2/3) * ( C_14 / tau_zm ) 
+    !         * [ (1/2) * ( u'^2 + v'^2 + w'^2 ) - (3/2) * wtol^2 ].
+    !
+    ! Dissipation term 1 and pressure term 1 are combined and simplify to:
     !
     ! - [ ( 2*C_4 + C_14 ) / ( 3 * tau_zm ) ] * u'^2
-    !    + [ ( C_4 - C_14 ) / ( 3 * tau_zm ) ] * ( v'^2 + w'^2 ).
+    !    + [ ( C_4 - C_14 ) / ( 3 * tau_zm ) ] * ( v'^2 + w'^2 )
+    !    + ( C_14 / tau_zm ) * wtol^2.
     !
     ! The combined term has both implicit and explicit components.
     ! The implicit component is:
@@ -2531,7 +2554,8 @@ contains
     !
     ! The explicit component of the combined dp1 and pr1 term is:
     !
-    ! + [ ( C_4 - C_14 ) / ( 3 * tau_zm ) ] * ( v'^2(t) + w'^2(t) );
+    ! + [ ( C_4 - C_14 ) / ( 3 * tau_zm ) ] * ( v'^2(t) + w'^2(t) )
+    ! + ( C_14 / tau_zm ) * wtol^2;
     !
     ! and is discretized as follows:
     !
@@ -2541,6 +2565,9 @@ contains
 
     ! References:
     !-----------------------------------------------------------------------
+
+    use constants, only: &
+        wtol_sqd
 
     implicit none
 
@@ -2555,7 +2582,8 @@ contains
     ! Return Variable
     real :: rhs
 
-    rhs = + 1.0/3.0 * ( C4 - C14 ) * ( xbp2 + wp2 ) / tau_zm
+    rhs = + 1.0/3.0 * ( C4 - C14 ) * ( xbp2 + wp2 ) / tau_zm  &
+          + ( C14 / tau_zm ) * wtol_sqd
 
     return
   end function term_pr1
