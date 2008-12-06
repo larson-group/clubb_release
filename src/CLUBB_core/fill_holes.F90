@@ -19,19 +19,19 @@ module fill_holes
                                 field )
 
     ! Description:
-    !   This subroutine clips values of 'field' that are below 'threshold' as much
-    !   as possible (i.e. "fills holes"), but conserves the total integrated mass
-    !   of 'field'.  This prevents clipping from acting as a spurious source.
+    ! This subroutine clips values of 'field' that are below 'threshold' as much
+    ! as possible (i.e. "fills holes"), but conserves the total integrated mass
+    ! of 'field'.  This prevents clipping from acting as a spurious source.
     !
-    !   Mass is conserved by reducing the clipped field everywhere by a constant
-    !   multiplicative coefficient.
+    ! Mass is conserved by reducing the clipped field everywhere by a constant
+    ! multiplicative coefficient.
     !
-    !   This subroutine does not guarantee that the clipped field will exceed
-    !   threshold everywhere; blunt clipping is needed for that.
+    ! This subroutine does not guarantee that the clipped field will exceed
+    ! threshold everywhere; blunt clipping is needed for that.
     !
-    !   This subroutine doesn't account for variation in air density with
-    !   altitude, and therefore won't properly conserve the vertical integral of
-    !   field if we upgrade to the anelastic equation!!!
+    ! This subroutine doesn't account for variation in air density with
+    ! altitude, and therefore won't properly conserve the vertical integral of
+    ! field if we upgrade to the anelastic equation!!!
 
     ! References:
     !   ``Numerical Methods for Wave Equations in Geophysical Fluid
@@ -46,11 +46,11 @@ module fill_holes
     ! Input variables
     integer, intent(in) :: & 
       num_pts  ! The number of points on either side of the hole;
-    ! Mass is drawn from these points to fill the hole.  []
+               ! Mass is drawn from these points to fill the hole.  []
 
     real, intent(in) :: & 
       threshold  ! A threshold (e.g. wtol*wtol) below which field must not
-    ! fall                           [Units vary; same as field]
+                 ! fall                           [Units vary; same as field]
 
     character(len=2), intent(in) :: & 
       field_grid ! The grid of the field, either zt or zm
@@ -165,7 +165,7 @@ module fill_holes
 
     real, intent(in) :: & 
       threshold  ! A threshold (e.g. wtol*wtol) below which field must not
-    ! fall                           [Units vary; same as field]
+                 ! fall                         [Units vary; same as field]
 
     character(len=2), intent(in) :: & 
       field_grid ! The grid of the field, either zt or zm
@@ -173,18 +173,18 @@ module fill_holes
     ! Input/Output variable
     real, dimension(end_idx-begin_idx+1), intent(inout) ::  & 
       field  ! The field (e.g. wp2) that contains holes
-    !                                    [Units same as threshold]
+             !                                  [Units same as threshold]
 
     ! Local Variables
     real, dimension(end_idx-begin_idx+1)  ::  & 
       field_clipped  ! The raw field (e.g. wp2) that contains no holes
-    !                          [Units same as threshold]
+                     !                          [Units same as threshold]
 
     real ::  & 
-      field_avg,  &  ! Vertical average of field [Units of field]
+      field_avg,  &        ! Vertical average of field [Units of field]
       field_clipped_avg, & ! Vertical average of clipped field [Units of field]
-      mass_fraction  ! Coefficient that multiplies clipped field
-    ! in order to conserve mass.                      []
+      mass_fraction        ! Coefficient that multiplies clipped field
+                           ! in order to conserve mass.                      []
 
     !-----------------------------------------------------------------------
 
@@ -228,6 +228,7 @@ module fill_holes
 
 
     return
+
   end subroutine fill_holes_multiplicative
 
   !=============================================================================
@@ -271,10 +272,8 @@ module fill_holes
       height                ! Altitude range over which we integrate  [m]
 
     integer ::  & 
-!     k,      & ! Loop index for absolute grid level
-!     k_rel,  & ! Loop index for grid level relative to starting idx of field
-      k_start,& ! Starting index for the absolute grid level
-      k_end     ! Ending index for the absolute grid level
+      k_start,  & ! Starting index for the absolute grid level
+      k_end       ! Ending index for the absolute grid level
 
     !-----------------------------------------------------------------------
 
@@ -282,81 +281,72 @@ module fill_holes
     !                    that end_idx   >= 2
     !                    that begin_idx <= end_idx
 
-    ! Initialize variables (not needed)
-    !vertical_integral = 0.0
-    !height = 0.0
-
-    ! If field is on the zt (thermodynamic level) grid
+    ! For fields on the zt (thermodynamic level) grid.
     if ( field_grid == "zt" ) then
 
-!       k_rel = 1   ! k_rel = 1 is equivalent to k = begin_idx.
+       ! The first (k=1) thermodynamic level is below ground (or below the
+       ! official lower boundary at the first momentum level), so it should not
+       ! count in a vertical average, whether that vertical average is used for
+       ! the hole-filling scheme or for statistical purposes. Begin no lower
+       ! than level k=2, which is the first thermodynamic level above ground (or
+       ! above the model lower boundary).
 
-      ! The first (k=1) thermodynamic level is below ground (or below the
-      ! official lower boundary at the first momentum level), so it should not
-      ! count in a vertical average.  Begin no lower than level k=2, which is
-      ! the first thermodynamic level above ground (or above the model lower
-      ! boundary).
+       ! Keep vertical indices inside the bounds of the model.
+       k_start = max( 1, begin_idx )
+       k_end   = min( gr%nnzp, end_idx )
 
-      ! Old code
-!       do k = max(2,begin_idx), end_idx, 1
+       ! Compute the vertical integral.
+       ! Multiply the variable 'field' at level k by the level thickness (for
+       ! the thermodynamic level) at level k.  Then, sum over all vertical
+       ! levels.
+       ! Note:  The level thickness at thermodynamic level k is the distance
+       !        between momentum level k and momentum level k-1.  Thus,
+       !        1.0 / dzt(k) is the level thickness for thermodynamic level k.
+       vertical_integral = sum( field(1:) / gr%dzt(k_start:k_end) )
 
-!          vertical_integral = vertical_integral  &
-!                                   +  field(k_rel) / gr%dzt(k)
-!          height = height + 1.0 / gr%dzt(k)
-!          k_rel = k_rel + 1
+       ! Sum of all vertical level thicknesses (from start level to end level).
+       height = sum( 1.0 / gr%dzt(k_start:k_end) )
 
-!       enddo
-
-      ! New code
-      k_start = max( 2, begin_idx )
-      k_end   = end_idx
-
-      vertical_integral = sum( field(1:) / gr%dzt(k_start:k_end) )
-
-      ! The distance from start to end point
-      height = gr%zm(k_end) - gr%zm(k_start-1)
-
-      ! If field is on the zm (momentum level) grid
+    ! For fields on the zm (momentum level) grid.
     elseif ( field_grid == "zm" ) then
 
-!       k_rel = 1   ! k_rel = 1 is equivalent to k = begin_idx.
+       ! The first (k=1) momentum level is right at ground level (or right at
+       ! the official lower boundary).  The momentum level variables that call
+       ! the hole-filling scheme have set values at the surface (or lower
+       ! boundary), and those set values should not be changed.  Therefore, the
+       ! vertical average (for purposes of hole-filling) should not include the
+       ! surface level (or lower boundary level).  For hole-filling purposes,
+       ! begin no lower than level k=2, which is the second momentum level above
+       ! ground (or above the model lower boundary).  Likewise, the value at the
+       ! model upper boundary (k=gr%nnzp) is also set for momentum level
+       ! variables.  That value should also not be changed.
+       !
+       ! However, this function is also used to keep track (for statistical
+       ! purposes) of the vertical average of certain variables.  In that case,
+       ! the vertical average needs to be taken over the entire vertical domain
+       ! (level 1 to level gr%nnzp).
 
-      ! The first (k=1) momentum level is right at ground level (or right at
-      ! the official lower boundary).  The momentum level variables that call
-      ! the hole-filling scheme have set values at the surface (or lower
-      ! boundary), and those set values should not be changed.  Therefore, the
-      ! vertical average (for purposes of hole-filling) should not include the
-      ! surface level (or lower boundary level).  Begin no lower than level
-      ! k=2, which is the second momentum level above ground (or above the
-      ! model lower boundary).  Likewise, the value at the model upper boundary
-      ! (k=gr%nnzp) is also set for momentum level variables.  That value
-      ! should also not be changed.
+       ! Keep vertical indices inside the bounds of the model.
+       k_start = max( 1, begin_idx )
+       k_end   = min( gr%nnzp, end_idx )
 
-      ! Old code
-!       do k = max(2,begin_idx), min(gr%nnzp-1,end_idx), 1
+       ! Compute the vertical integral.
+       ! Multiply the variable 'field' at level k by the level thickness (for
+       ! the momentum level) at level k.  Then, sum over all vertical levels.
+       ! Note:  The level thickness at momentum level k is the distance between
+       !        thermodynamic level k+1 and thermodynamic level k.  Thus,
+       !        1.0 / dzm(k) is the level thickness for momentum level k.
+       vertical_integral = sum( field(1:) / gr%dzm(k_start:k_end) )
 
-!          vertical_integral = vertical_integral  &
-!                                     +  field(k_rel) / gr%dzm(k)
-!          height = height + 1.0 / gr%dzm(k)
-!          k_rel = k_rel + 1
-
-!       enddo
-
-      ! New code
-      k_start = max( 2, begin_idx )
-      k_end   = min( gr%nnzp-1, end_idx )
-
-      vertical_integral = sum( field(1:) / gr%dzm(k_start:k_end) )
-
-      ! The distance from start to end point
-      height = gr%zt(k_end+1) - gr%zt(k_start)
+       ! Sum of all vertical level thicknesses (from start level to end level).
+       height = sum( 1.0 / gr%dzm(k_start:k_end) )
 
     else
 
-      call clubb_debug( 0,  & 
-         "Neither zt nor zm grid is specified in vert_integrate" )
-      vertical_integral = -9.0e20
-      height = 1.0
+       call clubb_debug( 0,  & 
+          "Neither zt nor zm grid is specified in vert_integrate" )
+       vertical_integral = -9.0e20
+       height = 1.0
 
     endif
 
@@ -364,6 +354,7 @@ module fill_holes
 
 
     return
+
   end function vertical_avg
 
 !===============================================================================
