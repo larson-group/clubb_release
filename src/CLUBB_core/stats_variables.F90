@@ -536,11 +536,15 @@ module stats_variables
     iwprtp_sfc, &
     iupwp_sfc, &
     ivpwp_sfc, &
-    iwp2_vert_avg, & ! nielsenb
     ithlm_vert_avg, &
     irtm_vert_avg, &
     ium_vert_avg, &
-    ivm_vert_avg
+    ivm_vert_avg, &
+    iwp2_vert_avg, & ! nielsenb
+    iup2_vert_avg, &
+    ivp2_vert_avg, &
+    irtp2_vert_avg, &
+    ithlp2_vert_avg
 
   integer, public :: & 
     iwp23_matrix_condt_num, & 
@@ -556,6 +560,7 @@ module stats_variables
 !$omp   irain, ipflux, irrainm_sfc, &
 !$omp   iwpthlp_sfc, iwprtp_sfc, iupwp_sfc, ivpwp_sfc, &
 !$omp   ithlm_vert_avg, irtm_vert_avg, ium_vert_avg, ivm_vert_avg, &
+!$omp   iwp2_vert_avg, iup2_vert_avg, ivp2_vert_avg, irtp2_vert_avg, ithlp2_vert_avg, &
 !$omp   iwp23_matrix_condt_num, irtm_matrix_condt_num, ithlm_matrix_condt_num, &
 !$omp   irtp2_matrix_condt_num, ithlp2_matrix_condt_num, irtpthlp_matrix_condt_num, &
 !$omp   iup2_vp2_matrix_condt_num, iwindm_matrix_condt_num )

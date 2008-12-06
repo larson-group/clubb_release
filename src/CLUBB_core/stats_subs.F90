@@ -884,11 +884,15 @@ use stats_variables, only: &
     icc, & 
     izb, & 
     ilwp, &
-    iwp2_vert_avg, &
     ithlm_vert_avg, &
     irtm_vert_avg, &
     ium_vert_avg, &
-    ivm_vert_avg
+    ivm_vert_avg, &
+    iwp2_vert_avg, &
+    iup2_vert_avg, &
+    ivp2_vert_avg, &
+    irtp2_vert_avg, &
+    ithlp2_vert_avg
 
 use stats_variables, only: & 
     isclram, & 
@@ -1284,6 +1288,22 @@ if ( l_stats_samp ) then
    ! Vertical average of wp2.
    call stat_update_var_pt( iwp2_vert_avg, 1,  &
         vertical_avg( 1, gr%nnzp, "zm", wp2(1:gr%nnzp) ), sfc )
+
+   ! Vertical average of up2.
+   call stat_update_var_pt( iup2_vert_avg, 1,  &
+        vertical_avg( 1, gr%nnzp, "zm", up2(1:gr%nnzp) ), sfc )
+
+   ! Vertical average of vp2.
+   call stat_update_var_pt( ivp2_vert_avg, 1,  &
+        vertical_avg( 1, gr%nnzp, "zm", vp2(1:gr%nnzp) ), sfc )
+
+   ! Vertical average of rtp2.
+   call stat_update_var_pt( irtp2_vert_avg, 1,  &
+        vertical_avg( 1, gr%nnzp, "zm", rtp2(1:gr%nnzp) ), sfc )
+
+   ! Vertical average of thlp2.
+   call stat_update_var_pt( ithlp2_vert_avg, 1,  &
+        vertical_avg( 1, gr%nnzp, "zm", thlp2(1:gr%nnzp) ), sfc )
 
 
 endif  ! l_stats_samp

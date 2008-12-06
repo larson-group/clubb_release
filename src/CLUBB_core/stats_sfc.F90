@@ -38,11 +38,15 @@ use stats_variables, only: &
     iwprtp_sfc, &
     iupwp_sfc, &
     ivpwp_sfc, &
-    iwp2_vert_avg, &
     ithlm_vert_avg, & 
     irtm_vert_avg, & 
     ium_vert_avg, & 
     ivm_vert_avg, & 
+    iwp2_vert_avg, &
+    iup2_vert_avg, &
+    ivp2_vert_avg, &
+    irtp2_vert_avg, &
+    ithlp2_vert_avg, &
     iwp23_matrix_condt_num, & 
     irtm_matrix_condt_num, & 
     ithlm_matrix_condt_num, & 
@@ -69,28 +73,32 @@ integer :: i, k
 
 ! Default initialization for array indices for sfc
 
-iustar         = 0
-iveg_t_sfc     = 0
-it_sfc         = 0
-ideep_t_sfc    = 0
-ilh            = 0
-ish            = 0
-icc            = 0
-ilwp           = 0
-izb            = 0
-izi            = 0
-irain          = 0   ! Brian
-ipflux         = 0   ! Brian
-irrainm_sfc    = 0   ! Brian
-iwpthlp_sfc    = 0
-iwprtp_sfc     = 0
-iupwp_sfc      = 0
-ivpwp_sfc      = 0
-iwp2_vert_avg  = 0   !nielsenb
-ithlm_vert_avg = 0
-irtm_vert_avg  = 0
-ium_vert_avg   = 0
-ivm_vert_avg   = 0
+iustar          = 0
+iveg_t_sfc      = 0
+it_sfc          = 0
+ideep_t_sfc     = 0
+ilh             = 0
+ish             = 0
+icc             = 0
+ilwp            = 0
+izb             = 0
+izi             = 0
+irain           = 0   ! Brian
+ipflux          = 0   ! Brian
+irrainm_sfc     = 0   ! Brian
+iwpthlp_sfc     = 0
+iwprtp_sfc      = 0
+iupwp_sfc       = 0
+ivpwp_sfc       = 0
+ithlm_vert_avg  = 0
+irtm_vert_avg   = 0
+ium_vert_avg    = 0
+ivm_vert_avg    = 0
+iwp2_vert_avg   = 0   !nielsenb
+iup2_vert_avg   = 0
+ivp2_vert_avg   = 0
+irtp2_vert_avg  = 0
+ithlp2_vert_avg = 0
 
 ! These are estimates of the condition number on each implicit
 ! matrices, and not located at the surface of the domain.
@@ -219,13 +227,6 @@ do i=1,sfc%nn
          "vpwp surface flux","m^2/s^2",sfc)
     k = k + 1
 
-  case ('wp2_vert_avg')
-    iwp2_vert_avg = k
-
-    call stat_assign(iwp2_vert_avg,"wp2_vert_avg", &
-         "Vertical average of wp2 [m^2/s^2]","m^2/s^2",sfc)
-    k = k + 1
-
   case ('thlm_vert_avg')
     ithlm_vert_avg = k
 
@@ -252,6 +253,41 @@ do i=1,sfc%nn
 
     call stat_assign(ivm_vert_avg,"vm_vert_avg", &
          "Vertical average of vm","m/s",sfc)
+    k = k + 1
+
+  case ('wp2_vert_avg')
+    iwp2_vert_avg = k
+
+    call stat_assign(iwp2_vert_avg,"wp2_vert_avg", &
+         "Vertical average of wp2 [m^2/s^2]","m^2/s^2",sfc)
+    k = k + 1
+
+  case ('up2_vert_avg')
+    iup2_vert_avg = k
+
+    call stat_assign(iup2_vert_avg,"up2_vert_avg", &
+         "Vertical average of up2 [m^2/s^2]","m^2/s^2",sfc)
+    k = k + 1
+
+  case ('vp2_vert_avg')
+    ivp2_vert_avg = k
+
+    call stat_assign(ivp2_vert_avg,"vp2_vert_avg", &
+         "Vertical average of vp2 [m^2/s^2]","m^2/s^2",sfc)
+    k = k + 1
+
+  case ('rtp2_vert_avg')
+    irtp2_vert_avg = k
+
+    call stat_assign(irtp2_vert_avg,"rtp2_vert_avg", &
+         "Vertical average of rtp2 [kg^2/kg^2]","kg^2/kg^2",sfc)
+    k = k + 1
+
+  case ('thlp2_vert_avg')
+    ithlp2_vert_avg = k
+
+    call stat_assign(ithlp2_vert_avg,"thlp2_vert_avg", &
+         "Vertical average of thlp2 [K^2]","K^2",sfc)
     k = k + 1
 
   case ('wp23_matrix_condt_num')

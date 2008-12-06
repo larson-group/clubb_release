@@ -74,10 +74,10 @@ vars_zm =
 ''
 
 vars_sfc = 
-'ustar', 'veg_t_sfc', 't_sfc', 'deep_t_sfc', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi', 'rain', 'pflux', 'rrainm_sfc',
-'wpthlp_sfc', 'wprtp_sfc', 'upwp_sfc', 'vpwp_sfc',
+'ustar', 'veg_t_sfc', 't_sfc', 'deep_t_sfc', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi',
+'rain', 'pflux', 'rrainm_sfc', 'wpthlp_sfc', 'wprtp_sfc', 'upwp_sfc', 'vpwp_sfc',
 'thlm_vert_avg', 'rtm_vert_avg', 'um_vert_avg', 'vm_vert_avg', 
-'wp2_vert_avg',
+'wp2_vert_avg', 'up2_vert_avg', 'vp2_vert_avg', 'rtp2_vert_avg', 'thlp2_vert_avg', 
 !'wp23_matrix_condt_num', 'rtm_matrix_condt_num', 'thlm_matrix_condt_num', 
 !'rtp2_matrix_condt_num', 'thlp2_matrix_condt_num', 'rtpthlp_matrix_condt_num',
 !'up2_vp2_matrix_condt_num', 'windm_matrix_condt_num',
