@@ -234,6 +234,7 @@ module clubb_driver
       l_icedfs,       & ! Flag for simplified ice scheme
       l_coamps_micro, & ! Flag for COAMPS microphysical scheme
       l_bugsrad,      & ! Flag for BUGsrad radiation scheme
+      l_surface_scheme,& ! Flag for simple surface scheme
       l_uv_nudge,     & ! Whether to adjust the winds within the timestep
       l_restart,      & ! Flag for restarting from GrADS file
       l_tke_aniso       ! For anisotropic turbulent kinetic energy,
@@ -287,7 +288,7 @@ module clubb_driver
       dtmain, dtclosure, & 
       sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge, & 
       l_cloud_sed, l_kk_rain, l_icedfs, l_coamps_micro,  & 
-      l_bugsrad, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
+      l_bugsrad, l_surface_scheme, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, debug_level, & 
       alvdr, alvdf, alndr, alndf, &
       sclr_tol, & 
@@ -337,6 +338,7 @@ module clubb_driver
     l_icedfs      = .false.
     l_coamps_micro = .false.
     l_bugsrad      = .false.
+    l_surface_scheme = .false.
     l_tke_aniso    = .false.
     l_uv_nudge     = .false.
     l_restart      = .false.
@@ -457,6 +459,7 @@ module clubb_driver
       print *, "l_icedfs = ", l_icedfs
       print *, "l_coamps_micro = ", l_coamps_micro
       print *, "l_bugsrad = ", l_bugsrad
+      print *, "l_surface_scheme = " , l_surface_scheme
       print *, "l_tke_aniso = ", l_tke_aniso
       print *, "l_uv_nudge = ", l_uv_nudge
       print *, "l_restart = ", l_restart
@@ -525,7 +528,7 @@ module clubb_driver
     call setup_clubb_core &                               ! Intent(in)
          ( nzmax, T0, ts_nudge, hydromet_dim, sclr_dim,  &      ! Intent(in)
            sclr_tol(1:sclr_dim), params, &                      ! Intent(in)
-           l_bugsrad, l_kk_rain, l_icedfs, l_coamps_micro, &   ! Intent(in)
+           l_bugsrad, l_surface_scheme, l_kk_rain, l_icedfs, l_coamps_micro, &   ! Intent(in)
            l_cloud_sed, l_uv_nudge, l_tke_aniso, &              ! Intent(in)
            .false., grid_type, deltaz, zm_init, &               ! Intent(in)
            momentum_heights, thermodynamic_heights, &           ! Intent(in)
@@ -1498,7 +1501,8 @@ module clubb_driver
         l_icedfs,  &
         l_coamps_micro,  & 
         l_cloud_sed,  &
-        l_bugsrad
+        l_bugsrad, &
+        l_surface_scheme
 
     use constants, only: rc_tol, fstderr ! Variable(s)
 
@@ -1534,7 +1538,7 @@ module clubb_driver
 
     use stats_type, only: stat_update_var_pt ! Procedure(s)
 
-    use constants, only: Cp, Lv ! Variable(s)
+    use constants, only: Cp, Lv, kappa, p0 ! Variable(s)
 
     use variables_prognostic_module, only:  & 
         sclrm_forcing,   & ! Passive scalar variables
@@ -1547,6 +1551,8 @@ module clubb_driver
     use numerical_check, only: isnan2d, rad_check ! Procedure(s)
 
     use microphys_driver, only: advance_microphys ! Procedure(s)
+
+    use surface, only: get_veg_t_in_k, prognose_soil_t_in_k
 
     use error_code, only: lapack_error,  & ! Procedure(s)
                           clubb_at_least_debug_level
@@ -1632,6 +1638,7 @@ module clubb_driver
       um_sfc, &  ! um interpolated to momentum level 1 (sfc) [m/s]
       vm_sfc     ! vm interpolated to momentum level 1 (sfc) [m/s]
 
+    real :: wpthep
     integer :: lin_int_buffer
 
     integer :: k ! Vertical loop index variable
@@ -1991,10 +1998,11 @@ module clubb_driver
                           wpthlp_sfc, wprtp_sfc, ustar, &           ! Intent(out)
                           wpsclrp_sfc, wpedsclrp_sfc )              ! Intent(out)
     case( "gabls3" )
-      call gabls3_sfclyr( time_initial, time_current, dtmain, rho_zm(1), um(2), vm(2), &
+      call gabls3_sfclyr( um(2), vm(2), get_veg_T_in_K(), &
+!      call gabls3_sfclyr( time_initial, time_current, dtmain, rho_zm(1), um(2), vm(2), &
                           thlm(2), rtm(2), gr%zt(2), 102440., &
-                          Frad_SW_up(1),Frad_SW_down(1), & 
-                          Frad_LW_up(1), Frad_LW_down(1), & 
+!                          Frad_SW_up(1),Frad_SW_down(1), & 
+!                          Frad_LW_up(1), Frad_LW_down(1), & 
                           upwp_sfc, vpwp_sfc, &                       ! Intent(out)
                           wpthlp_sfc, wprtp_sfc, ustar, &             ! Intent(out)
                           wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
@@ -2006,6 +2014,19 @@ module clubb_driver
       stop
 
     end select ! runtype
+
+!---------------------------------------------------------------
+! Compute Surface
+!---------------------------------------------------------------
+
+    if( l_surface_scheme ) then
+      wpthep = wpthlp_sfc + (Lv/Cp) * ((p0/psfc)**kappa) * wprtp_sfc
+     
+      call prognose_soil_T_in_K( real( dt), rho_zm(1), &
+                                 Frad_SW_down(1) - Frad_SW_up(1), Frad_SW_down(1), &
+                                 Frad_LW_down(1), wpthep )
+    endif
+
 
 
 !----------------------------------------------------------------

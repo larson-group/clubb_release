@@ -12,8 +12,6 @@ module gabls3
 
   private :: time_select ! Defualt Scope
 
-  real, private, dimension(2) :: veg_T_in_K, sfc_soil_T_in_K, deep_soil_T_in_K
-
   private
 
   contains
@@ -220,10 +218,8 @@ module gabls3
   end subroutine gabls3_tndcy
 
   !-----------------------------------------------------------------------
-  subroutine gabls3_sfclyr( time_start, time_current, dt, rho_sfc, um_sfc, vm_sfc, &
+  subroutine gabls3_sfclyr( um_sfc, vm_sfc, veg_t_in_K, &
                             thlm_sfc, rtm_sfc, lowest_level, psfc,& 
-                            Frad_SW_up_sfc, Frad_SW_down_sfc, &
-                            Frad_LW_up_sfc, Frad_LW_down_sfc, &
                             upwp_sfc, vpwp_sfc, &
                             wpthlp_sfc, wprtp_sfc, ustar, &
                             wpsclrp_sfc, wpedsclrp_sfc )
@@ -245,13 +241,8 @@ module gabls3
 
     use stats_precision, only: time_precision ! Variable(s)
 
-    use stats_variables, only: l_stats_samp, sfc, iveg_t_sfc, it_sfc, ideep_T_sfc ! Variables
 
-    use stats_type, only: stat_update_var_pt ! Procedure(s)
-
-    use interpolation, only: lin_int ! Procedure(s)
-
-    use surface, only: prognose_soil_T_in_K ! Procedure(s)
+    !use surface, only: prognose_soil_T_in_K ! Procedure(s)
 
     implicit none
 
@@ -269,34 +260,29 @@ module gabls3
      ! C_10 = 0.003, &
       z0 = 0.15
 
-    real, parameter, dimension(25) :: sst_given = (/300., 300.8, 300.9, 301.,300.9, &
-                                        300.5, 300., 298.5, 297., 296., 295.,&
-                                        294., 293.5, 292.5, 291.5, 291.,&
-                                        290.5, 292.5, 294.5, 296.5, 298.,&
-                                        298.5, 300.5, 301.5, 301./)
-    real, parameter, dimension(25) :: sst_time = (/43200., 46800., 50400., 54000., 57600., &
-                                        61200., 64800., 68400., 72000., 75600.,&
-                                        79200., 82800., 86400., 90000., 93600., &
-                                        97200., 100800., 104400., 108000., 111600.,&
-                                        115200., 118800., 122400., 126000., 129600./)
+!    real, parameter, dimension(25) :: sst_given = (/300., 300.8, 300.9, 301.,300.9, &
+!                                        300.5, 300., 298.5, 297., 296., 295.,&
+!                                        294., 293.5, 292.5, 291.5, 291.,&
+!                                        290.5, 292.5, 294.5, 296.5, 298.,&
+!                                        298.5, 300.5, 301.5, 301./)
+!    real, parameter, dimension(25) :: sst_time = (/43200., 46800., 50400., 54000., 57600., &
+!                                        61200., 64800., 68400., 72000., 75600.,&
+!                                        79200., 82800., 86400., 90000., 93600., &
+!                                        97200., 100800., 104400., 108000., 111600.,&
+!                                        115200., 118800., 122400., 126000., 129600./)
 
 
     ! Input variables
 
-    real(kind=time_precision), intent(in) :: time_start, time_current,dt
 
     real, intent(in) ::  & 
       um_sfc,     & ! um at zt(2)           [m/s]
       vm_sfc,     & ! vm at zt(2)           [m/s]
       thlm_sfc,   & ! Theta_l at zt(2)      [K]
       rtm_sfc,    & ! rt at zt(2)           [kg/kg]
-      rho_sfc,    & ! rho_zm at zm(1)       [kg/m^3]
+      veg_T_in_K, &
       lowest_level, & ! gr%zt(2)            [m]
-      psfc,&          ! Prescribed surface pressuer [Pa]
-      Frad_SW_up_sfc, &    ! SW upwelling flux at sfc   [W/m^2]
-      Frad_SW_down_sfc,&   ! SW downwelling flux at sfc [W/m^2]
-      Frad_LW_up_sfc, &    ! LW upwelling flux at sfc   [W/m^2]
-      Frad_LW_down_sfc     ! LW downwelling flux at sfc [W/m^2]
+      psfc          ! Prescribed surface pressuer [Pa]
 
     ! Output variables
     real, intent(out) ::  & 
@@ -315,44 +301,16 @@ module gabls3
       wpedsclrp_sfc     ! Passive eddy-scalar surface flux [units m/s]
 
     ! Local Variables
-    real :: ubar, veg_theta_in_K, bflx, wpthep
+    real :: ubar, veg_theta_in_K, bflx
 
     ! Compute heat and moisture fluxes
     ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
 
-    ! Set SST by time in lieu of a surface scheme
-    !call time_select( time_current, sst_time, 25, i1, i2)
-    !sfc_soil_T_in_K(1) = lin_int( real(time_current), sst_time(i2), &
-    !                   sst_time(i1), sst_given(i2), sst_given(i1) )
-    !----- Experimental Code -------------
-    ! Turbulent Flux of equivalent potential temperature
-    wpthep = wpthlp_sfc + (Lv/Cp) * ((p0/psfc)**kappa) * wprtp_sfc
-
-    call prognose_soil_T_in_K( time_start, time_current, real( dt), 1, 2, rho_sfc, &
-                               Frad_SW_down_sfc-Frad_SW_up_sfc, Frad_SW_down_sfc,&
-                               Frad_LW_down_sfc, wpthep, &
-                               veg_T_in_K, sfc_soil_T_in_K, deep_soil_T_in_K )
-
-    if( l_stats_samp ) then
-      call stat_update_var_pt( iveg_t_sfc, 1, veg_T_in_K(1), sfc )
-      call stat_update_var_pt( it_sfc, 1, sfc_soil_T_in_K(1), sfc )
-      call stat_update_var_pt( ideep_t_sfc, 1, deep_soil_T_in_K(1), sfc )
-    end if
-
-    sfc_soil_T_in_K(1) = sfc_soil_T_in_K(2)
-    veg_T_in_K(1) = veg_T_in_K(2)
-    deep_soil_T_in_K(1) = deep_soil_T_in_K(2)
-    !-------------------------------------
-
-    !sstheta = sfc_soil_T_in_K(1) * (( p0 / psfc )**(Rd/Cp))
-    veg_theta_in_K = veg_T_in_K(1) * (( p0 / psfc )**(Rd/Cp))
+    veg_theta_in_K = veg_T_in_K * (( p0 / psfc )**(Rd/Cp))
 
     wpthlp_sfc = -C_10 * ubar * ( thlm_sfc - veg_theta_in_K )
-   ! wprtp_sfc  = -C_10 * ubar * ( rtm_sfc - 7.5e-3 )
     wprtp_sfc  = -C_10 * ubar * 10 * ( rtm_sfc - 9.9e-3 )
   
-
-
     ! Let passive scalars be equal to rt and theta_l for now
     if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
     if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc

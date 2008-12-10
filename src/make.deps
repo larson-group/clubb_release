@@ -117,7 +117,7 @@ fill_holes.o    : fill_holes.F90 grid.o
 clip_semi_implicit.o : constants.o stats_precision.o clip_semi_implicit.F90
 clip_explicit.o : grid.o stats_precision.o stats_type.o stats_variables.o \
 	model_flags.o parameters_model.o clip_explicit.F90
-surface.o: constants.o stats_precision.o surface.F90
+surface.o: constants.o stats_precision.o stats_variables.o surface.F90
 # dschanen can't find the file this refers to 7 Nov 2008
 #test.o: stats_precision.o surface.o test.F90
 # == Latin Hypercube dependencies  ==
@@ -144,7 +144,7 @@ cobra.o     : constants.o parameters_model.o model_flags.o grid.o cobra.F90
 fire.o      : constants.o model_flags.o grid.o stats_variables.o cloud_rad.o fire.F90
 gabls2.o    : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o gabls2.F90
 gabls3.o    : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o \
-	interpolation.o surface.o gabls3.F90
+	interpolation.o gabls3.F90
 lba.o       : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o \
 	interpolation.o lba.F90
 mpace_a.o     : constants.o model_flags.o grid.o stats_variables.o mpace_a.F90 \

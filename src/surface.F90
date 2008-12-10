@@ -3,24 +3,27 @@ module surface
 
   implicit none
 
-  public :: prognose_soil_t_in_k, initialize_surface
+  public :: prognose_soil_t_in_k, initialize_surface, get_veg_T_in_K
 
-  real, private :: initial_veg_t_in_k, initial_sfc_soil_t_in_k, initial_deep_soil_t_in_k
+  integer, private, parameter :: leaf = 2
+
+  real, private, dimension(leaf) :: deep_soil_t_in_k, sfc_soil_t_in_k, veg_t_in_k
 
   private
-
 
   contains
 
   !----------------------------------------------------------------------
-  subroutine prognose_soil_t_in_k( time_start, time_current, dt, itf, itl, rho_sfc, &
-                                   fs, fsin, &
-                                   Frad_LW_down_sfc, wpthep, &
-                                   veg_t_in_k, sfc_soil_t_in_k, deep_soil_t_in_k )
+  subroutine prognose_soil_t_in_k( dt, rho_sfc, &
+                                   Frad_SW_down, fsin, &
+                                   Frad_LW_down_sfc, wpthep )
     !
+    !     Description:
     !
-    !     In this subroutine tq and qw at the surface are calculated as a
-    !     function of the surface temperature (sfc_soil_t_in_k). sfc_soil_t_in_k is calculated  from
+    !     This subroutine updates the surface and soil temp, soil heat flux, while assuming that net radiation
+    !     and turbulent heat fluxes are already available from another subroutine.
+    !
+    !     The surface temperature (sfc_soil_t_in_k) is calculated  from
     !     the surface energy budget.
     !
     ! ************************************** 2
@@ -57,88 +60,46 @@ module surface
 
     use stats_precision, only: time_precision ! Variable(s)
 
+    use stats_variables, only: l_stats_samp, sfc, iveg_t_sfc, it_sfc, ideep_T_sfc ! Variables
+
+    use stats_type, only: stat_update_var_pt ! Procedure(s)
+
     use constants, only: pi, Cp, stefan_boltzmann ! Variable(s)
 
     implicit none
 
-    integer, parameter :: leaf = 2
-
     ! Input variables
-
-    real(kind=time_precision), intent(in) :: &
-    time_start, &  ! Time of start of simulation [s]
-    time_current   ! Current time of simulation  [s]
 
     real, intent(in) :: dt ! Current model timestep (Must be < 60s) [s]
 
-    integer, intent(in) :: &
-    itf, & ! Current Timestep [-]
-    itl    ! Next Timestep    [-]
-
     real, intent(in) :: &
-    rho_sfc, & 
-    fs, &
-    fsin, &
-    Frad_LW_down_sfc, &
-    wpthep
-
-    ! Input/Output variables
-    real, dimension(leaf), intent(inout):: deep_soil_t_in_k, sfc_soil_t_in_k ,veg_t_in_k
+    rho_sfc, &             ! Air density at the surface [kg/m^3]
+    Frad_SW_down, &        ! SW downwelling flux        [W/m^3]
+    fsin, &                ! Net Solar radiation        [W/m^3]
+    Frad_LW_down_sfc, &    ! LW downwelling flux        [W/m^2]
+    wpthep                 ! Turbulent Flux of equivalent potential temperature   [K]
 
     ! Local variables
 
-    real cs,ks,rs,c1,c2,c3,d1,shf,shfs,Frad_LW_up_sfc
+    real cs, &  ! soil heat capacity
+         ks, &  ! soil heat diffusivity
+         rs, &  ! soil density
+         c1, &  ! coefficient in force restore 1
+         c2, &  ! coefficient in force restore 2
+         c3, &  ! coefficient in force restore 3
+         d1, &
+         shf, & ! Soil Heat Flux
+         shfs,&
+         Frad_LW_up_sfc ! LW upwelling flux [W/m2]
 
-    integer :: it
+    integer :: &
+    itf, & ! Current Timestep [-]
+    itl    ! Next Timestep    [-]
 
-    ! Functionality of the code:
-    ! Update surface and soil temp, soil heat flux, while assuming that net radiation
-    ! and turbulent heat fluxes are already available from another subroutine.
-    !
-    !
-    !     meaning of variables
-    !        Frad_LW_down_sfc= downwelling longwaverad
-    !        Frad_LW_up_sfc= upwelling shortwaverad
-    !        shf= soil heatflux
-    !        rho_sfc(0)= air density at surface
-    !        kappa= von karman constant
-    !        Cpd= air heatcapacity at constant pressure
-    !        fsin= net solar radiation
-    !        fs= net solar radiation array
-    !        wpthep= wet bulb equavelnt heatflux (is sum of sensible and latent surfaceheat flux)
-    !        lv = latent heat of vaporization
-    !        ix= index for horizontal dimension (always 0 here)
-    !        iz= index for vertical height
-    !        time_current = time
-    !        time_start= starttime
-    !        dt= model timestep (should be smaller than 60 sec)
-    !        c1= coefficient in force restore 1
-    !        c2= coefficient in force restore 2
-    !        c3= coefficient in force restore 3
-    !        cs= soil heat capacity
-    !        rs= soil density
-    !        ks= soil heat diffusivity
-    !        pi = 3.1415927.....
-    !        itf= current time step
-    !        itl= next time step
-    !        hvel= vector wind speed at first model level
-    !        pes0te,t0tet,atet,btet= coefficiensfc_soil_t_in_k in tetens formula
-    !        g = gravity acceleration
-    !        rd = gas constant dry air
-    !        rv = gas constant water vapor
-    !        cpl = heat capacity liquid water
-    !        qwa= intermediate variable for water vapor
-    !        qw = water vapor array
-    !        qvs= saturated water vapor pressure at surface
-    !        deqw = difference between first model level and surface
-    !        fact= resistance factor between first level and surface humidity (see duynkerke 1991)
-    !        rcan= canopy resistance (rcan about 100 sm-1)
-    !        kgz= surface layer exchange coefficient.
+    !----------------------------
+    !  Soil parameters
+    !---------------------------
 
-
-    !
-    !       soil parameters
-    !
     cs=2.00e3
     rs=1.00e3
     ks=2.00e-7
@@ -148,35 +109,37 @@ module surface
     c3=sqrt(pi*2.e0)/(exp(pi/4.e0)*rs*cs*sqrt(ks*3600.e0*24.e0* &
                      365.e0))
 
-    ! Initialize surface vegetation temp (veg_t_in_k), soil surf.
-    ! temp (sfc_soil_t_in_k), deep soil temp (deep_soil_t_in_k)
+    itl = 2
+    itf = 1
 
-    if (time_current .eq. time_start)  then
-      do it=1,leaf
-        veg_t_in_k(it) = initial_veg_t_in_k
-        sfc_soil_t_in_k(it) = initial_sfc_soil_t_in_k
-        deep_soil_t_in_k(it) = initial_deep_soil_t_in_k
-        shf=0.
-      end do
-    else
-      Frad_LW_up_sfc = stefan_boltzmann * (veg_t_in_k(itf)**4)
 
-      ! Calculate net radiation minus turbulent heat flux
-      shfs = Frad_LW_down_sfc - Frad_LW_up_sfc - wpthep * rho_sfc * Cp + fs
+    Frad_LW_up_sfc = stefan_boltzmann * (veg_t_in_k(itf)**4)
 
-      ! Calculate soil heat flux
-      shf = 10.0 * ( veg_t_in_k(itf) - sfc_soil_t_in_k(itf) ) + 0.05 * fsin
+    ! Calculate net radiation minus turbulent heat flux
+    shfs = Frad_LW_down_sfc - Frad_LW_up_sfc - wpthep * rho_sfc * Cp + Frad_SW_down
 
-      ! Update surf veg temp
-      veg_t_in_k(itl) = veg_t_in_k(itf) + dt * 5.e-5 * ( shfs - shf )
+    ! Calculate soil heat flux
+    shf = 10.0 * ( veg_t_in_k(itf) - sfc_soil_t_in_k(itf) ) + 0.05 * fsin
 
-      ! Update soil temp
-      sfc_soil_t_in_k(itl) = sfc_soil_t_in_k(itf) & 
-        + dt * ( c1 * shf - c2 * ( sfc_soil_t_in_k(itf)-deep_soil_t_in_k(itf) ) )
+    ! Update surf veg temp
+    veg_t_in_k(itl) = veg_t_in_k(itf) + dt * 5.e-5 * ( shfs - shf )
 
-      ! Update deep soil temp
-      deep_soil_t_in_k(itl) = deep_soil_t_in_k(itf) + dt * c3 * shf
-    endif
+    ! Update soil temp
+    sfc_soil_t_in_k(itl) = sfc_soil_t_in_k(itf) & 
+      + dt * ( c1 * shf - c2 * ( sfc_soil_t_in_k(itf)-deep_soil_t_in_k(itf) ) )
+
+    ! Update deep soil temp
+    deep_soil_t_in_k(itl) = deep_soil_t_in_k(itf) + dt * c3 * shf
+
+    if( l_stats_samp ) then
+      call stat_update_var_pt( iveg_t_sfc, 1, veg_T_in_K(1), sfc )
+      call stat_update_var_pt( it_sfc, 1, sfc_soil_T_in_K(1), sfc )
+      call stat_update_var_pt( ideep_t_sfc, 1, deep_soil_T_in_K(1), sfc )
+    end if
+
+    veg_t_in_k = veg_t_in_k(itl)
+    sfc_soil_t_in_k = sfc_soil_t_in_k(itl)
+    deep_soil_t_in_k = deep_soil_t_in_k(itl)
 
     return
   end subroutine prognose_soil_t_in_k
@@ -199,10 +162,24 @@ module surface
 
     !-----------------------------------------------------------------------------------------
 
-    initial_veg_t_in_k = initial_veg_t_in_k_in
-    initial_sfc_soil_t_in_k = initial_sfc_soil_t_in_k_in
-    initial_deep_soil_t_in_k = initial_deep_soil_t_in_k_in
+    veg_t_in_k = initial_veg_t_in_k_in
+    sfc_soil_t_in_k = initial_sfc_soil_t_in_k_in
+    deep_soil_t_in_k = initial_deep_soil_t_in_k_in
 
   end subroutine initialize_surface
 
+  !--------------------------------------------------------------------------------------------
+  real function get_veg_T_in_K()
+    !
+    !     Description: This function serves as accessor to sfc_soil_T_in_K. It
+    !     abstracts the information that sfc_soil_T_in_K is stored as an array.
+    !
+    !--------------------------------------------------------------------------------------------
+    implicit none
+
+    get_veg_T_in_K = veg_T_in_K(1)
+
+    return
+
+  end function
 end module surface

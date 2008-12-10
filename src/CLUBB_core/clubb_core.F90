@@ -902,7 +902,7 @@ module clubb_core
   subroutine setup_clubb_core & 
              ( nzmax, T0_in, ts_nudge_in, hydromet_dim_in,  & 
                sclr_dim_in, sclrtol_in, params,  & 
-               l_bugsrad, l_kk_rain, l_icedfs, l_coamps_micro, & 
+               l_bugsrad, l_surface_scheme, l_kk_rain, l_icedfs, l_coamps_micro, & 
                l_cloud_sed, l_uv_nudge, l_tke_aniso,  & 
                l_implemented, grid_type, deltaz, zm_init, & 
                momentum_heights, thermodynamic_heights,  & 
@@ -999,6 +999,7 @@ module clubb_core
     ! Flags 
     logical, intent(in) ::  & 
       l_bugsrad,      & ! BUGSrad interactive radiation scheme
+      l_surface_scheme,& ! Simple surface scheme
       l_kk_rain,      & ! K & K rain microphysics
       l_icedfs,       & ! Simplified ice scheme
       l_coamps_micro, & ! COAMPS microphysics scheme
@@ -1019,7 +1020,7 @@ module clubb_core
     ! Setup flags
 
     call setup_model_flags & 
-         ( l_bugsrad, l_kk_rain, l_cloud_sed,     & ! intent(in)
+         ( l_bugsrad, l_surface_scheme, l_kk_rain, l_cloud_sed,     & ! intent(in)
            l_icedfs, l_coamps_micro, l_uv_nudge,  & ! intent(in)
            l_tke_aniso )                            ! intent(in)
 
