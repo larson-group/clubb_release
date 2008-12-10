@@ -81,6 +81,7 @@ l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
 l_icedfs       = .false.  ! Flag for simplified ice scheme.
 l_bugsrad      = .true.  ! Flag for BUGSrad interactive radiation scheme.
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
+l_surface_scheme = .true. ! Flag for simple surface scheme
 
 l_restart      = .false.  ! Flag for whether this is a restart run.
 ! Path (from ../standalone/) and filename of GrADS control files
