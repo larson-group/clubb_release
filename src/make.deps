@@ -203,7 +203,7 @@ bugsrad_driver.o 	: kinds.o constants.o bugs_rad.o T_in_K_mod.o \
 # == Misc. program related source files  ==
 clubb_driver.o		: clubb_core.o arm.o astex.o atex.o \
 	bomex.o clex9_nov02.o clex9_oct14.o dycoms2_rf01.o dycoms2_rf02.o \
-	fire.o jun25.o mpace_a.o mpace_b.o nov11.o \
+	fire.o jun25.o mpace_a.o mpace_b.o nov11.o surface.o \
 	wangara.o cobra.o rico.o gabls2.o gabls3.o lba.o arm_97.o arm_0003.o \
 	arm_3year.o cloud_sed_mod.o microphys_driver.o bugsrad_driver.o \
 	inputfields.o error_code.o array_index.o clubb_driver.F90
