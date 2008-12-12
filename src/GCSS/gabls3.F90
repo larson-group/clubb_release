@@ -17,7 +17,7 @@ module gabls3
   contains
 
   !----------------------------------------------------------------------
-  subroutine gabls3_tndcy( time, rtm, exner, p_in_Pa, thvm, rho, &
+  subroutine gabls3_tndcy( time, rtm, exner, rho, &
                            wm_zt, wm_zm, thlm_forcing, rtm_forcing,&
                            um_forcing, vm_forcing, ug, vg )
     !       Description:
@@ -77,22 +77,20 @@ module gabls3
     real, intent(in), dimension(gr%nnzp) ::  & 
       rtm,  &     ! Total water mixing ratio                        [kg/kg]
       exner,&     ! Exner Function function = (p/p0 ** kappa)       [-]
-      p_in_Pa, &  ! Pressure (Pa) on thermodynamic points           [Pa]
-      thvm, &       ! Virtual Potential Temperature
-      rho
+      rho         ! Air density at surface                          [kg/m^3]
 
 
     ! Output Variables
 
     real, intent(out), dimension(gr%nnzp) ::  & 
-      wm_zt,        &
-      wm_zm,        &
+      wm_zt,        &  ! w on the thermodynamic levels                [m/s]
+      wm_zm,        &  ! w on the momentum levels                     [m/s]
       thlm_forcing, &  ! Liquid water potential temperature tendency  [K/s]
       rtm_forcing,  &  ! Total water mixing ratio tendency            [kg/kg/s]
-      um_forcing,   &
-      vm_forcing,   &
-      ug,           &
-      vg
+      um_forcing,   &  ! u wind forcing                               [m/s/s]
+      vm_forcing,   &  ! v wind forcing                               [m/s/s]
+      ug,           &  ! u geostrophic wind                           [m/s]
+      vg               ! v geostrophic wind                           [m/s]
 
     real, dimension(gr%nnzp) :: velocity_omega, T_in_K_forcing, sp_humidity_forcing
 

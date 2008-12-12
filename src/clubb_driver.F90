@@ -1796,7 +1796,7 @@ module clubb_driver
                          rtm_forcing, radht, Ncm, &                        ! Intent(out)
                          sclrm_forcing )                                   ! Intent(out)
     case( "gabls3" ) ! GABLS 3 case
-      call gabls3_tndcy( time_current, rtm, exner, p_in_Pa, thvm, rho, &         ! Intent(in)
+      call gabls3_tndcy( time_current, rtm, exner, rho, &                   ! Intent(in)
                          wm_zt, wm_zm, thlm_forcing, rtm_forcing,&          ! Intent(out)
                          um_forcing, vm_forcing, ug, vg )                   ! Intent(out)
 
