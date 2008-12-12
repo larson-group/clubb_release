@@ -117,9 +117,9 @@ fill_holes.o    : fill_holes.F90 grid.o
 clip_semi_implicit.o : constants.o stats_precision.o clip_semi_implicit.F90
 clip_explicit.o : grid.o stats_precision.o stats_type.o stats_variables.o \
 	model_flags.o parameters_model.o clip_explicit.F90
-surface.o: constants.o stats_precision.o stats_variables.o surface.F90
+soil_vegetation.o: constants.o stats_precision.o stats_variables.o soil_vegetation.F90
 # dschanen can't find the file this refers to 7 Nov 2008
-#test.o: stats_precision.o surface.o test.F90
+#test.o: stats_precision.o soil_vegetation.o test.F90
 # == Latin Hypercube dependencies  ==
 math_utilities.o	: math_utilities.F90
 lh_sampler.o		: constants.o random.o matrix_operations.o lh_sampler.F90
@@ -203,7 +203,7 @@ bugsrad_driver.o 	: kinds.o constants.o bugs_rad.o T_in_K_mod.o \
 # == Misc. program related source files  ==
 clubb_driver.o		: clubb_core.o arm.o astex.o atex.o \
 	bomex.o clex9_nov02.o clex9_oct14.o dycoms2_rf01.o dycoms2_rf02.o \
-	fire.o jun25.o mpace_a.o mpace_b.o nov11.o surface.o \
+	fire.o jun25.o mpace_a.o mpace_b.o nov11.o soil_vegetation.o \
 	wangara.o cobra.o rico.o gabls2.o gabls3.o lba.o arm_97.o arm_0003.o \
 	arm_3year.o cloud_sed_mod.o microphys_driver.o bugsrad_driver.o \
 	inputfields.o error_code.o array_index.o clubb_driver.F90
