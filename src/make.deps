@@ -54,7 +54,7 @@ output_netcdf.o	: constants.o calendar.o parameters_tunable.o \
 variables_diagnostic_module.o: constants.o parameters_model.o grid.o model_flags.o variables_diagnostic_module.F90
 variables_prognostic_module.o: constants.o parameters_model.o grid.o model_flags.o variables_prognostic_module.F90 
 numer_check.o	: variables_prognostic_module.o variables_diagnostic_module.o constants.o model_flags.o\
-	error_code.o numer_check.F90
+	error_code.o stats_variables.o numer_check.F90
 inputgrads.o	: constants.o endian.o recl.F90 inputgrads.F90
 grid.o		: constants.o file_functions.o interpolation.o grid.F90
 stats_type.o    : grid.o output_file_module.o stats_precision.o error_code.o \
