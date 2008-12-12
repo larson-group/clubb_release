@@ -90,6 +90,13 @@
   use parameters_model, only: & 
       sclr_dim ! Variable
 
+  use stats_variables, only: &
+    iwp4,       & ! Variables
+    ircp2,      &
+    iwprtp2,    &
+    iwprtpthlp, &
+    iwpthlp2
+
   implicit none
 
   ! Input Variables
@@ -134,10 +141,10 @@
  character(*), parameter :: proc_name = "pdf_closure_new"
  
 !-------------------------------------------------------------------------------
- call check_nan( wp4,"wp4", proc_name, err_code )
- call check_nan( wprtp2,"wprtp2", proc_name, err_code )
+ if ( iwp4 > 0 ) call check_nan( wp4,"wp4", proc_name, err_code )
+ if ( iwprtp2 > 0 ) call check_nan( wprtp2,"wprtp2", proc_name, err_code )
  call check_nan( wp2rtp,"wp2rtp", proc_name, err_code )
- call check_nan( wpthlp2,"wpthlp2", proc_name, err_code )
+ if ( iwpthlp2 > 0 ) call check_nan( wpthlp2,"wpthlp2", proc_name, err_code )
  call check_nan( wp2thlp,"wp2thlp", proc_name, err_code )
  call check_nan( cf,"cf", proc_name, err_code )
  call check_nan( rcm,"rcm", proc_name, err_code ) 
@@ -149,8 +156,8 @@
  call check_nan( wp2rcp, "wp2rcp", proc_name, err_code )
  call check_nan( rtprcp, "rtprcp", proc_name, err_code )
  call check_nan( thlprcp, "thlprcp", proc_name, err_code )
- call check_nan( rcp2, "rcp2", proc_name, err_code)
- call check_nan( wprtpthlp, "wprtpthlp", proc_name, err_code )
+ if ( ircp2 >  0 ) call check_nan( rcp2, "rcp2", proc_name, err_code)
+ if ( iwprtpthlp > 0 ) call check_nan( wprtpthlp, "wprtpthlp", proc_name, err_code )
  call check_nan( crt1, "crt1", proc_name, err_code )
  call check_nan( crt2, "crt2", proc_name, err_code )
  call check_nan( cthl1, "cthl1", proc_name, err_code )
