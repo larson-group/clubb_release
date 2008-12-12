@@ -796,7 +796,7 @@ module clubb_driver
 
     use hydrostatic_mod, only: hydrostatic ! Procedure(s)
 
-    use surface, only: initialize_surface ! Procedure(s)
+    use soil_vegetation, only: initialize_soil_veg ! Procedure(s)
 
     implicit none
 
@@ -1214,10 +1214,10 @@ module clubb_driver
 !      deep_soil_T_in_K = 282.5
 
 
-      call initialize_surface( veg_T_in_K, sfc_soil_T_in_K, deep_soil_T_in_K )
-!      call initialize_surface( 300.15,300.15,288.58 ) !Best guess
-!      call initialize_surface( 300.15,300.15,277.0 )
-!      call initialize_surface( 297.15,297.15,277.0 )
+      call initialize_soil_veg( veg_T_in_K, sfc_soil_T_in_K, deep_soil_T_in_K )
+!      call initialize_soil_veg( 300.15,300.15,288.58 ) !Best guess
+!      call initialize_soil_veg( 300.15,300.15,277.0 )
+!      call initialize_soil_veg( 297.15,297.15,277.0 )
 
     end select
 
@@ -1334,7 +1334,7 @@ module clubb_driver
 
     use lba, only: lba_init ! Procedure(s)
 
-    use surface, only: initialize_surface ! Procedure(s)
+    use soil_vegetation, only: initialize_soil_veg ! Procedure(s)
 
     implicit none
 
@@ -1468,7 +1468,7 @@ module clubb_driver
     case( "mpace_a" )
       call mpace_a_init()
     case( "gabls3" )
-      call initialize_surface(300.,300.,300.)
+      call initialize_soil_veg(300.,300.,300.)
 
     end select
 
@@ -1552,7 +1552,7 @@ module clubb_driver
 
     use microphys_driver, only: advance_microphys ! Procedure(s)
 
-    use surface, only: get_veg_t_in_k, prognose_soil_t_in_k
+    use soil_vegetation, only: get_veg_t_in_k, advance_soil_veg
 
     use error_code, only: lapack_error,  & ! Procedure(s)
                           clubb_at_least_debug_level
@@ -2022,7 +2022,7 @@ module clubb_driver
     if( l_surface_scheme ) then
       wpthep = wpthlp_sfc + (Lv/Cp) * ((p0/psfc)**kappa) * wprtp_sfc
      
-      call prognose_soil_T_in_K( real( dt), rho_zm(1), &
+      call advance_soil_veg( real( dt), rho_zm(1), &
                                  Frad_SW_down(1) - Frad_SW_up(1), Frad_SW_down(1), &
                                  Frad_LW_down(1), wpthep )
     endif
