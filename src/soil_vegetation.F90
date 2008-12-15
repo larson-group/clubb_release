@@ -5,9 +5,7 @@ module soil_vegetation
 
   public :: advance_soil_veg, initialize_soil_veg, get_veg_T_in_K
 
-  integer, private, parameter :: leaf = 2
-
-  real, private, dimension(leaf) :: deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K
+  real, private :: deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K
 
   private
 
@@ -104,12 +102,8 @@ module soil_vegetation
          c3, &  ! coefficient in force restore 3
          d1, &
          soil_heat_flux, & ! Soil Heat Flux
-         veg_heat_flux,&
+         veg_heat_flux, &
          Frad_LW_up_sfc ! LW upwelling flux [W/m2]
-
-    integer :: &
-    itf, & ! Current Timestep [-]
-    itl    ! Next Timestep    [-]
 
     !----------------------------
     !  Soil parameters
@@ -124,11 +118,13 @@ module soil_vegetation
     c3=sqrt(pi*2.e0)/(exp(pi/4.e0)*rs*cs*sqrt(ks*3600.e0*24.e0* &
                      365.e0))
 
-    itl = 2
-    itf = 1
+    if( l_stats_samp ) then
+      call stat_update_var_pt( iveg_T_in_K, 1, veg_T_in_K, sfc )
+      call stat_update_var_pt( isfc_soil_T_in_K, 1, sfc_soil_T_in_K, sfc )
+      call stat_update_var_pt( ideep_soil_T_in_K, 1, deep_soil_T_in_K, sfc )
+    end if
 
-
-    Frad_LW_up_sfc = stefan_boltzmann * (veg_T_in_K(itf)**4)
+    Frad_LW_up_sfc = stefan_boltzmann * (veg_T_in_K**4)
 
     ! Calculate net radiation minus turbulent heat flux
     veg_heat_flux = Frad_LW_down_sfc - Frad_LW_up_sfc - wpthep * rho_sfc * Cp + Frad_SW_net
@@ -136,27 +132,17 @@ module soil_vegetation
     ! Calculate soil heat flux
     ! Duynkerke (1990) used a coefficient of 3.0, not 10.0
     
-    soil_heat_flux = 10.0 * ( veg_T_in_K(itf) - sfc_soil_T_in_K(itf) ) + 0.05 * Frad_SW_down_sfc
+    soil_heat_flux = 10.0 * ( veg_T_in_K - sfc_soil_T_in_K ) + 0.05 * Frad_SW_down_sfc
 
     ! Update surf veg temp
-    veg_T_in_K(itl) = veg_T_in_K(itf) + dt * 5.e-5 * ( veg_heat_flux - soil_heat_flux )
+    veg_T_in_K = veg_T_in_K + dt * 5.e-5 * ( veg_heat_flux - soil_heat_flux )
 
     ! Update soil temp
-    sfc_soil_T_in_K(itl) = sfc_soil_T_in_K(itf) & 
-      + dt * ( c1 * soil_heat_flux - c2 * ( sfc_soil_T_in_K(itf)-deep_soil_T_in_K(itf) ) )
+    sfc_soil_T_in_K = sfc_soil_T_in_K & 
+      + dt * ( c1 * soil_heat_flux - c2 * ( sfc_soil_T_in_K - deep_soil_T_in_K ) )
 
     ! Update deep soil temp
-    deep_soil_T_in_K(itl) = deep_soil_T_in_K(itf) + dt * c3 * soil_heat_flux
-
-    if( l_stats_samp ) then
-      call stat_update_var_pt( iveg_T_in_K, 1, veg_T_in_K(1), sfc )
-      call stat_update_var_pt( isfc_soil_T_in_K, 1, sfc_soil_T_in_K(1), sfc )
-      call stat_update_var_pt( ideep_soil_T_in_K, 1, deep_soil_T_in_K(1), sfc )
-    end if
-
-    veg_T_in_K = veg_T_in_K(itl)
-    sfc_soil_T_in_K = sfc_soil_T_in_K(itl)
-    deep_soil_T_in_K = deep_soil_T_in_K(itl)
+    deep_soil_T_in_K = deep_soil_T_in_K + dt * c3 * soil_heat_flux
 
     return
   end subroutine advance_soil_veg
@@ -194,7 +180,7 @@ module soil_vegetation
     !--------------------------------------------------------------------------------------------
     implicit none
 
-    get_veg_T_in_K = veg_T_in_K(1)
+    get_veg_T_in_K = veg_T_in_K
 
     return
 
