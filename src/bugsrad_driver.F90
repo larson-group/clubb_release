@@ -12,7 +12,7 @@ nlen = 1, &   ! Length of the total domain
 slen = 1      ! Length of the sub domain
 
 ! Number of levels to take from U.S. Std. Atmos tables
-integer, private, parameter :: std_atmos_buffer = 10 ! For typical cases
+!integer, private, parameter :: std_atmos_buffer = 45 ! For typical cases
 
 double precision, private, dimension(nlen) :: &
 alvdr = 0.1d0, & ! Visible direct surface albedo        [-]
@@ -59,7 +59,7 @@ subroutine bugsrad_clubb &
 ! All code external to this based on the BUGSrad source from 2004/7/10
 !-----------------------------------------------------------------------
 
-  use constants, only: fstderr, sol_const, grav, Cp ! Variable(s)
+  use constants, only: fstderr, grav, Cp ! Variable(s)
   
   use std_atmosphere_mod, only: std_atmos_dim, std_alt, std_pinmb, & ! Variable(s)
       std_T_in_K, std_sp_hmdty, std_o3l
@@ -78,6 +78,8 @@ subroutine bugsrad_clubb &
     iFrad_SW, iFrad_LW, iradht_SW, iradht_LW, &
     iFrad_SW_up, iFrad_LW_up, &
     iFrad_SW_down, iFrad_LW_down
+
+  use parameters_model, only: std_atmos_buffer, sol_const
 
   implicit none
 

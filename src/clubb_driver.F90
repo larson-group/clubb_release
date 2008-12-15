@@ -220,7 +220,11 @@ module clubb_driver
     real ::  & 
       fcor,            & ! Coriolis parameter            [s^-1]
       T0,              & ! Reference Temperature         [K]
-      ts_nudge        ! Timescale for u/v nudging     [s]
+      ts_nudge,        & ! Timescale for u/v nudging     [s]
+      sol_const          ! Solar constant                [W/m^2]
+
+    integer :: &
+      std_atmos_buffer ! Number of levels to take from U.S. Std. Atmos Tables
 
     real, dimension(sclr_max) :: & 
       sclr_tol        ! Thresholds on the passive scalars     [units vary]
@@ -287,6 +291,7 @@ module clubb_driver
       time_initial, time_final, time_spinup, & 
       dtmain, dtclosure, & 
       sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge, & 
+      sol_const, std_atmos_buffer, &
       l_cloud_sed, l_kk_rain, l_icedfs, l_coamps_micro,  & 
       l_bugsrad, l_surface_scheme, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, debug_level, & 
@@ -332,6 +337,8 @@ module clubb_driver
     fcor     = 1.e-4
     T0       = 300.
     ts_nudge = 86400.
+    sol_const = 1367.0
+    std_atmos_buffer = 10
 
     l_cloud_sed    = .false.
     l_kk_rain      = .false.
@@ -447,6 +454,9 @@ module clubb_driver
       print *, "fcor = ", fcor
       print *, "T0 = ", T0
 
+
+      print *, "sol_const = ", sol_const
+      print *, "std_atmos_buffer = ", std_atmos_buffer
       print *, "alvdr = ", alvdr
       print *, "alvdf = ", alvdf
       print *, "alndr = ", alndr
@@ -526,7 +536,8 @@ module clubb_driver
     ! setup grid, setup constants, and setup flags
 
     call setup_clubb_core &                               ! Intent(in)
-         ( nzmax, T0, ts_nudge, hydromet_dim, sclr_dim,  &      ! Intent(in)
+         ( nzmax, T0, ts_nudge, sol_const,& 
+           std_atmos_buffer, hydromet_dim, sclr_dim, & ! Intent(in)
            sclr_tol(1:sclr_dim), params, &                      ! Intent(in)
            l_bugsrad, l_surface_scheme, l_kk_rain, l_icedfs, l_coamps_micro, &   ! Intent(in)
            l_cloud_sed, l_uv_nudge, l_tke_aniso, &              ! Intent(in)

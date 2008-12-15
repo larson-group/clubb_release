@@ -17,7 +17,8 @@ module constants
  
   public :: fstderr, fstdin, fstdout, pi_dp, pi, sqrt_2pi, sqrt_2, &
             Cp, Lv, Ls, Lf, Rd, Rv, ep, ep1, ep2, &
-            kappa, grav, p0, vonk, rho_lw, sol_const, &
+            kappa, grav, p0, vonk, rho_lw, &
+            !sol_const, &
             wtol, thltol, rttol, qttol, sstol, difftol, & 
             wtol_sqd, rc_tol, Nc_tol, rr_tol, Nr_tol, emin, &
             eps, zero_threshold, max_mag_correlation, sec_per_day, &
@@ -80,8 +81,9 @@ module constants
     rho_lw = 1000.0    ! Density of liquid water                [kg/m^3]
 
   ! BUGSrad Constants
-  real, parameter ::  & 
-    sol_const = 1367.0 ! Solar constant     [W/m^2]
+  !real, parameter ::  & 
+  !  sol_const = 1367.0 ! Solar constant     [W/m^2]
+  !  sol_const = 1321.0 ! Solar constant     [W/m^2]
 
   ! Tolerances below which we consider moments to be zero
   real, parameter ::  & 
