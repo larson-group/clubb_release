@@ -56,6 +56,11 @@ module soil_vegetation
     !
     !     The equations given above are analogous to those used by
     !     Deardorff  (1978).
+    ! 
+    !     Reference:
+    !     Duynkerke, Peter G.  "Radiation Fog: A Comparison of Model Simulation with Detailed Observations"
+    !     (February 1991) _Monthly Weather Review_ Vol 119, p. 324-341.
+    !     
     !
     !-----------------------------------------------------------------------
 
