@@ -44,7 +44,7 @@ module model_flags
     l_coamps_micro,  & ! COAMPS rain microphysics
     l_cloud_sed,     & ! Cloud water droplet sedimentation. - Brian
     l_uv_nudge,      & ! For wind speed nudging. - Michael Falk
-    l_surface_scheme,& ! Simple surface scheme - Joshua Fasching
+    l_soil_veg,      & ! Simple surface scheme - Joshua Fasching
     l_tke_aniso        ! For anisotropic turbulent kinetic energy,
                        !   i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 
@@ -56,7 +56,7 @@ module model_flags
 
 !===============================================================================
   subroutine setup_model_flags & 
-             ( l_bugsrad_in, l_surface_scheme_in, l_kk_rain_in, l_cloud_sed_in,  & 
+             ( l_bugsrad_in, l_soil_veg_in, l_kk_rain_in, l_cloud_sed_in,  & 
                l_icedfs_in, l_coamps_micro_in, & 
                l_uv_nudge_in, l_tke_aniso_in )
 
@@ -76,13 +76,13 @@ module model_flags
 
     ! Input Variables
     logical, intent(in) ::  & 
-      l_bugsrad_in, l_surface_scheme_in, l_kk_rain_in, l_cloud_sed_in, & 
+      l_bugsrad_in, l_soil_veg_in, l_kk_rain_in, l_cloud_sed_in, & 
       l_icedfs_in, l_coamps_micro_in, l_uv_nudge_in, & 
       l_tke_aniso_in
 
     !---- Begin Code ----
     
-    l_surface_scheme = l_surface_scheme_in
+    l_soil_veg = l_soil_veg_in
     l_bugsrad      = l_bugsrad_in
     l_kk_rain      = l_kk_rain_in
     l_cloud_sed    = l_cloud_sed_in

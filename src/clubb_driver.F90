@@ -238,7 +238,7 @@ module clubb_driver
       l_icedfs,       & ! Flag for simplified ice scheme
       l_coamps_micro, & ! Flag for COAMPS microphysical scheme
       l_bugsrad,      & ! Flag for BUGsrad radiation scheme
-      l_surface_scheme,& ! Flag for simple surface scheme
+      l_soil_veg,& ! Flag for simple surface scheme
       l_uv_nudge,     & ! Whether to adjust the winds within the timestep
       l_restart,      & ! Flag for restarting from GrADS file
       l_tke_aniso       ! For anisotropic turbulent kinetic energy,
@@ -293,7 +293,7 @@ module clubb_driver
       sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge, & 
       sol_const, std_atmos_buffer, &
       l_cloud_sed, l_kk_rain, l_icedfs, l_coamps_micro,  & 
-      l_bugsrad, l_surface_scheme, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
+      l_bugsrad, l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, debug_level, & 
       alvdr, alvdf, alndr, alndf, &
       sclr_tol, & 
@@ -345,7 +345,7 @@ module clubb_driver
     l_icedfs      = .false.
     l_coamps_micro = .false.
     l_bugsrad      = .false.
-    l_surface_scheme = .false.
+    l_soil_veg = .false.
     l_tke_aniso    = .false.
     l_uv_nudge     = .false.
     l_restart      = .false.
@@ -469,7 +469,7 @@ module clubb_driver
       print *, "l_icedfs = ", l_icedfs
       print *, "l_coamps_micro = ", l_coamps_micro
       print *, "l_bugsrad = ", l_bugsrad
-      print *, "l_surface_scheme = " , l_surface_scheme
+      print *, "l_soil_veg = " , l_soil_veg
       print *, "l_tke_aniso = ", l_tke_aniso
       print *, "l_uv_nudge = ", l_uv_nudge
       print *, "l_restart = ", l_restart
@@ -539,7 +539,7 @@ module clubb_driver
          ( nzmax, T0, ts_nudge, sol_const,& 
            std_atmos_buffer, hydromet_dim, sclr_dim, & ! Intent(in)
            sclr_tol(1:sclr_dim), params, &                      ! Intent(in)
-           l_bugsrad, l_surface_scheme, l_kk_rain, l_icedfs, l_coamps_micro, &   ! Intent(in)
+           l_bugsrad, l_soil_veg, l_kk_rain, l_icedfs, l_coamps_micro, &   ! Intent(in)
            l_cloud_sed, l_uv_nudge, l_tke_aniso, &              ! Intent(in)
            .false., grid_type, deltaz, zm_init, &               ! Intent(in)
            momentum_heights, thermodynamic_heights, &           ! Intent(in)
@@ -1513,7 +1513,7 @@ module clubb_driver
         l_coamps_micro,  & 
         l_cloud_sed,  &
         l_bugsrad, &
-        l_surface_scheme
+        l_soil_veg
 
     use constants, only: rc_tol, fstderr ! Variable(s)
 
@@ -2030,7 +2030,7 @@ module clubb_driver
 ! Compute Surface
 !---------------------------------------------------------------
 
-    if( l_surface_scheme ) then
+    if( l_soil_veg ) then
       wpthep = wpthlp_sfc + (Lv/Cp) * ((p0/psfc)**kappa) * wprtp_sfc
      
       call advance_soil_veg( real( dt), rho_zm(1), &
