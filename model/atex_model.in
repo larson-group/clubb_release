@@ -57,6 +57,10 @@ psfc = 1015.e2     ! Pressure at model base              [Pa]
 fcor = 0.375e-4    ! Coriolis parameter                  [s^-1]
 T0   = 300.        ! Reference temperature (usually 300) [K]
 
+sol_const = 1367.0 ! Solar Constant [W/m^2]
+
+std_atmos_buffer = 10
+
 ! Albedo values (for BugsRad Only)
 alvdr = 0.1d0    ! Visible direct surface albedo        [-]
 alvdf = 0.1d0    ! Visible diffuse surface albedo       [-]

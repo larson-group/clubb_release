@@ -67,6 +67,10 @@ LE = 0.              ! Fixed surface latent heat flux      [(kg/kg) m/s]
 fcor = 8.8983571e-5  ! Coriolis parameter                  [s^-1]
 T0   = 283.15        ! Reference temperature (usually 300) [K]
 
+sol_const = 1367.0 ! Solar Constant [W/m^2]
+
+std_atmos_buffer = 10
+
 l_cloud_sed     = .false.  ! Flag for cloud water sedimentation.
 l_kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
 l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
