@@ -520,9 +520,9 @@ module stats_variables
 
   integer, public :: & 
     iustar, &
-    iveg_t_sfc,&
-    it_sfc, &
-    ideep_t_sfc,& 
+    iveg_T_in_K,&
+    isfc_soil_T_in_K, &
+    ideep_soil_T_in_K,& 
     ilh, & 
     ish, & 
     icc, & 
@@ -556,7 +556,8 @@ module stats_variables
     iup2_vp2_matrix_condt_num, & 
     iwindm_matrix_condt_num
 
-!$omp threadprivate(iustar, iveg_t_sfc, it_sfc, ideep_t_sfc, ilh, ish, icc, ilwp, izb, izi, &
+!$omp threadprivate(iustar, iveg_T_in_K, isfc_soil_T_in_K, ideep_soil_T_in_K, &
+!$omp   ilh, ish, icc, ilwp, izb, izi, &
 !$omp   irain, ipflux, irrainm_sfc, &
 !$omp   iwpthlp_sfc, iwprtp_sfc, iupwp_sfc, ivpwp_sfc, &
 !$omp   ithlm_vert_avg, irtm_vert_avg, ium_vert_avg, ivm_vert_avg, &

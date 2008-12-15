@@ -61,7 +61,8 @@ module soil_vegetation
 
     use stats_precision, only: time_precision ! Variable(s)
 
-    use stats_variables, only: l_stats_samp, sfc, iveg_T_sfc, iT_sfc, ideep_T_sfc ! Variables
+    use stats_variables, only: l_stats_samp, sfc, &
+                                iveg_T_in_K, isfc_soil_T_in_K, ideep_soil_T_in_K ! Variables
 
     use stats_type, only: stat_update_var_pt ! Procedure(s)
 
@@ -142,9 +143,9 @@ module soil_vegetation
     deep_soil_T_in_K(itl) = deep_soil_T_in_K(itf) + dt * c3 * soil_heat_flux
 
     if( l_stats_samp ) then
-      call stat_update_var_pt( iveg_T_sfc, 1, veg_T_in_K(1), sfc )
-      call stat_update_var_pt( iT_sfc, 1, sfc_soil_T_in_K(1), sfc )
-      call stat_update_var_pt( ideep_T_sfc, 1, deep_soil_T_in_K(1), sfc )
+      call stat_update_var_pt( iveg_T_in_K, 1, veg_T_in_K(1), sfc )
+      call stat_update_var_pt( isfc_soil_T_in_K, 1, sfc_soil_T_in_K(1), sfc )
+      call stat_update_var_pt( ideep_soil_T_in_K, 1, deep_soil_T_in_K(1), sfc )
     end if
 
     veg_T_in_K = veg_T_in_K(itl)
