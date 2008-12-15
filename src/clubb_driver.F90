@@ -1211,24 +1211,12 @@ module clubb_driver
 
     case ( "gabls3" )
       em = 1.0
-!      veg_T_in_K = 294.63
-!      sfc_soil_T_in_K = 294.63
-!      deep_soil_T_in_K = 288.58
-!      veg_T_in_K = 301
-!      sfc_soil_T_in_K = 301
-!      deep_soil_T_in_K = 270
+
       veg_T_in_K = 300.
       sfc_soil_T_in_K = 300.
       deep_soil_T_in_K = 288.58
-!      veg_T_in_K = 279.7
-!      sfc_soil_T_in_K = 282.8
-!      deep_soil_T_in_K = 282.5
-
 
       call initialize_soil_veg( veg_T_in_K, sfc_soil_T_in_K, deep_soil_T_in_K )
-!      call initialize_soil_veg( 300.15,300.15,288.58 ) !Best guess
-!      call initialize_soil_veg( 300.15,300.15,277.0 )
-!      call initialize_soil_veg( 297.15,297.15,277.0 )
 
     end select
 
@@ -1479,7 +1467,7 @@ module clubb_driver
     case( "mpace_a" )
       call mpace_a_init()
     case( "gabls3" )
-      call initialize_soil_veg(300.,300.,300.)
+      call initialize_soil_veg(300.,300.,288.58)
 
     end select
 
@@ -1995,25 +1983,22 @@ module clubb_driver
     case ( "rico" )
       call rico_sfclyr( um(2), vm(2), thlm(2), rtm(2), &            ! Intent(in)
                         ! 299.8 K is the RICO SST; 101540 Pa is the sfc pressure.
-                        gr%zt(2), 299.8, 101540.,  &                ! Intent(in)
-!                        gr%zt(2), Tsfc, psfc,
+                        !gr%zt(2), 299.8, 101540.,  &                ! Intent(in)
+                        gr%zt(2), Tsfc, psfc,&
                         upwp_sfc, vpwp_sfc, wpthlp_sfc, &           ! Intent(out) 
                         wprtp_sfc, ustar, &                         ! Intent(out)
                         wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
 
     case ( "gabls2" )
       call gabls2_sfclyr( time_current, time_initial, &             ! Intent(in)
-                          gr%zt(2), 97200., &                       ! Intent(in)
+                          gr%zt(2), psfc, &                       ! Intent(in)
                           um(2), vm(2), thlm(2), rtm(2), &          ! Intent(in)     
                           upwp_sfc, vpwp_sfc, &                     ! Intent(out)   
                           wpthlp_sfc, wprtp_sfc, ustar, &           ! Intent(out)
                           wpsclrp_sfc, wpedsclrp_sfc )              ! Intent(out)
     case( "gabls3" )
-      call gabls3_sfclyr( um(2), vm(2), get_veg_T_in_K(), &
-!      call gabls3_sfclyr( time_initial, time_current, dtmain, rho_zm(1), um(2), vm(2), &
-                          thlm(2), rtm(2), gr%zt(2), 102440., &
-!                          Frad_SW_up(1),Frad_SW_down(1), & 
-!                          Frad_LW_up(1), Frad_LW_down(1), & 
+      call gabls3_sfclyr( um(2), vm(2), get_veg_T_in_K(), &         ! Intent(in)
+                          thlm(2), rtm(2), gr%zt(2), psfc, &     ! Intent(in)
                           upwp_sfc, vpwp_sfc, &                       ! Intent(out)
                           wpthlp_sfc, wprtp_sfc, ustar, &             ! Intent(out)
                           wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
