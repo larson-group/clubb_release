@@ -89,7 +89,7 @@ module constants
   real, parameter ::  & 
     wtol    = 2.e-2,  & ! [m/s]
     thltol  = 1.e-2,  & ! [K]
-    rttol   = 1.e-5,  & ! [kg/kg]
+    rttol   = 1.e-8,  & ! [kg/kg]
     qttol   = 1.e-4,  & ! [?]
     sstol   = 1.e-8,  & ! [kg/kg]
     difftol = 0.4       ! [?]
