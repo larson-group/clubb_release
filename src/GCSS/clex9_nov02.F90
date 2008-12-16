@@ -561,7 +561,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   ! Therefore, we multiply all radht results by (1.0/exner)
   ! to convert from T to theta.
   !---------------------------------------------------------------
-    do k = 1, gr%nnzp-1
+    do k = 2, gr%nnzp-1
       Frad(k)     = Frad_out(gr%nnzp-k+1)
       Frad_LW(k)  = Frad_LW_out(gr%nnzp-k+1)
       Frad_SW(k)  = Frad_SW_out(gr%nnzp-k+1)
@@ -578,6 +578,14 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
     radht(1) = radht(2)
     radht_LW(1) = radht_LW(2)
     radht_SW(1) = radht_SW(2)
+
+    Frad(gr%nnzp)    = 0.
+    Frad_LW(gr%nnzp) = 0.
+    Frad_SW(gr%nnzp) = 0.
+
+    radht(gr%nnzp)    = 0.
+    radht_SW(gr%nnzp) = 0.
+    radht_LW(gr%nnzp) = 0.
 
   end if ! ~ l_bugsrad
 
