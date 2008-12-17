@@ -130,7 +130,7 @@ module soil_vegetation
     veg_heat_flux = Frad_LW_down_sfc - Frad_LW_up_sfc - wpthep * rho_sfc * Cp + Frad_SW_net
 
     ! Calculate soil heat flux
-    ! Duynkerke (1990) used a coefficient of 3.0, not 10.0
+    ! Duynkerke (1991) used a coefficient of 3.0, not 10.0
     
     soil_heat_flux = 10.0 * ( veg_T_in_K - sfc_soil_T_in_K ) + 0.05 * Frad_SW_down_sfc
 
