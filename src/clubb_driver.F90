@@ -1467,6 +1467,8 @@ module clubb_driver
     case( "mpace_a" )
       call mpace_a_init()
     case( "gabls3" )
+      ! The user needs to enter the appropriate soil temperatures manually for restarts.
+      ! At some point, we should automate this by reading in the appropriate sfc values.
       call initialize_soil_veg(300.,300.,288.58)
 
     end select
