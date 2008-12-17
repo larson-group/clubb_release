@@ -1553,7 +1553,7 @@ module clubb_driver
 
     use microphys_driver, only: advance_microphys ! Procedure(s)
 
-    use soil_vegetation, only: get_veg_t_in_k, advance_soil_veg
+    use soil_vegetation, only: get_veg_T_in_K, advance_soil_veg
 
     use error_code, only: lapack_error,  & ! Procedure(s)
                           clubb_at_least_debug_level
