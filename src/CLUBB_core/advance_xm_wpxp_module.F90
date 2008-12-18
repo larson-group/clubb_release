@@ -460,6 +460,10 @@ module advance_xm_wpxp_module
 
     else ! Simple case, where l_clip_semi_implicit and l_3pt_sqd_dfsn are both false
 
+      ! This is initialized solely for the purpose of avoiding a compiler
+      ! warning about uninitialized variables.
+      dummy_1d = 0.
+
       ! Create the lhs once
       call xm_wpxp_lhs( .true., dt, dummy_1d, a1_zt, wm_zm, wm_zt, wp2, wp2_zt, &  ! Intent(in)
                         wp3, Kw6, tau_zm, C7_Skw_fnc, C6rt_Skw_fnc, &  ! Intent(in)
