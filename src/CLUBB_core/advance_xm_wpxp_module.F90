@@ -19,6 +19,7 @@ module advance_xm_wpxp_module
   private :: xm_wpxp_lhs, & 
              xm_wpxp_rhs, & 
              xm_wpxp_solve, & 
+             xm_wpxp_clipping_and_stats, &
              xm_term_ta_lhs, & 
              wpxp_term_ta_lhs, & 
              wpxp_term_tp_lhs, & 
@@ -76,11 +77,14 @@ module advance_xm_wpxp_module
 
     use constants, only:  & 
         fstderr, &  ! Constant
+        rttol, &
+        thltol, &
         max_mag_correlation, &
         zero_threshold
 
     use parameters_model, only: & 
-        sclr_dim  ! Variable(s)
+        sclr_dim, &  ! Variable(s)
+        sclrtol
 
     use grid_class, only: & 
         gr,  & ! Variable(s)
@@ -128,7 +132,7 @@ module advance_xm_wpxp_module
       ! Added for clipping by Vince Larson 29 Sep 2007
       rtp2,          & ! r_t'^2 (momentum levels)                 [(kg/kg)^2]
       thlp2            ! th_l'^2 (momentum levels)                [K^2]
-    ! End of Vince Larson's addition.
+      ! End of Vince Larson's addition.
 
     logical, intent(in) ::  & 
       l_implemented      ! Flag for CLUBB being implemented in a larger model.
@@ -210,7 +214,7 @@ module advance_xm_wpxp_module
       nrhs = 1
     else
       nrhs = 2+sclr_dim
-    end if
+    endif
 
     ! Allocate rhs and solution vector
     allocate( rhs(2*gr%nnzp,nrhs) )
@@ -221,29 +225,23 @@ module advance_xm_wpxp_module
     if ( C6rt /= C6rtb ) then
       C6rt_Skw_fnc(1:gr%nnzp) = C6rtb + (C6rt-C6rtb) & 
         *EXP( -0.5 * (Skw_zm(1:gr%nnzp)/C6rtc)**2 )
-
     else
       C6rt_Skw_fnc(1:gr%nnzp) = C6rtb
-
-    end if
+    endif
 
     if ( C6thl /= C6thlb ) then
       C6thl_Skw_fnc(1:gr%nnzp) = C6thlb + (C6thl-C6thlb) & 
         *EXP( -0.5 * (Skw_zm(1:gr%nnzp)/C6thlc)**2 )
-
     else
       C6thl_Skw_fnc(1:gr%nnzp) = C6thlb
-
-    end if
+    endif
 
     if ( C7 /= C7b ) then
       C7_Skw_fnc(1:gr%nnzp) = C7b + (C7-C7b) & 
         *EXP( -0.5 * (Skw_zm(1:gr%nnzp)/C7c)**2 )
-
     else
       C7_Skw_fnc(1:gr%nnzp) = C7b
-
-    end if
+    endif
 
     !        C6rt_Skw_fnc = C6rt
     !        C6thl_Skw_fnc = C6thl
@@ -333,8 +331,7 @@ module advance_xm_wpxp_module
       if ( l_clip_semi_implicit ) then
         wpxp_upper_lim =  max_mag_correlation * sqrt( wp2 * rtp2 )
         wpxp_lower_lim = -wpxp_upper_lim
-
-      end if
+      endif
 
       ! Compute the implicit portion of the r_t and w'r_t' equations.
       ! Build the left-hand side matrix.
@@ -352,23 +349,24 @@ module advance_xm_wpxp_module
 
       ! Solve r_t / w'r_t'
       if ( l_stats_samp .and. irtm_matrix_condt_num > 0 ) then
-        call xm_wpxp_solve( nrhs, &     ! Intent(in)
-                            lhs, rhs, &  ! Intent(inout)
+        call xm_wpxp_solve( nrhs, &                     ! Intent(in)
+                            lhs, rhs, &                 ! Intent(inout)
                             solution, err_code, rcond ) ! Intent(out)
       else
-        call xm_wpxp_solve( nrhs, &     ! Intent(in)
-                            lhs, rhs, &  ! Intent(inout)
+        call xm_wpxp_solve( nrhs, &              ! Intent(in)
+                            lhs, rhs, &          ! Intent(inout)
                             solution, err_code ) ! Intent(out)
-      end if
+      endif
 
       if ( lapack_error( err_code ) ) then
         write(fstderr,'(a)') "rt LU decomp. failed"
         deallocate( rhs, solution )
         return
-      end if
+      endif
 
-      call xm_wpxp_clipping_and_stats &
-           ( "rtm", dt, wp2, rtp2, rtm, wprtp, solution(:,1), rcond )
+      call xm_wpxp_clipping_and_stats( "rtm", dt, wp2, rtp2, &           ! Intent(in)
+                                       rttol**2, rcond, solution(:,1), & ! Intent(in)
+                                       rtm, wprtp )                      ! Intent(inout)
 
       ! Compute the upper and lower limits of w'th_l' at every level,
       ! based on the correlation of w and th_l, such that:
@@ -377,15 +375,14 @@ module advance_xm_wpxp_module
       if ( l_clip_semi_implicit ) then
         wpxp_upper_lim =  max_mag_correlation * sqrt( wp2 * thlp2 )
         wpxp_lower_lim = -wpxp_upper_lim
-
-      end if
+      endif
 
       ! Compute the implicit portion of the th_l and w'th_l' equations.
       ! Build the left-hand side matrix.
-      call xm_wpxp_lhs( .true., dt, wpthlp, a1_zt, wm_zm, wm_zt, wp2, wp2_zt, &      ! Intent(in)
-                        wp3, Kw6_thl, tau_zm, C7_Skw_fnc, C6thl_Skw_fnc, & ! Intent(in)
-                        wpxp_upper_lim, wpxp_lower_lim, l_implemented, &           ! Intent(in)
-                        lhs )                                                      ! Intent(inout)
+      call xm_wpxp_lhs( .true., dt, wpthlp, a1_zt, wm_zm, wm_zt, wp2, wp2_zt, & ! Intent(in)
+                        wp3, Kw6_thl, tau_zm, C7_Skw_fnc, C6thl_Skw_fnc, &      ! Intent(in)
+                        wpxp_upper_lim, wpxp_lower_lim, l_implemented, &        ! Intent(in)
+                        lhs )                                                   ! Intent(inout)
 
       ! Compute the explicit portion of the th_l and w'th_l' equations.
       ! Build the right-hand side vector.
@@ -396,14 +393,14 @@ module advance_xm_wpxp_module
 
       ! Solve for th_l / w'th_l'
       if ( l_stats_samp .and. ithlm_matrix_condt_num > 0 ) then
-        call xm_wpxp_solve( nrhs, &     ! Intent(in)
-                            lhs, rhs, &  ! Intent(inout)
+        call xm_wpxp_solve( nrhs, &                     ! Intent(in)
+                            lhs, rhs, &                 ! Intent(inout)
                             solution, err_code, rcond ) ! Intent(out)
       else
-        call xm_wpxp_solve( nrhs, &     ! Intent(in)
-                            lhs, rhs, &  ! Intent(inout)
+        call xm_wpxp_solve( nrhs, &              ! Intent(in)
+                            lhs, rhs, &          ! Intent(inout)
                             solution, err_code ) ! Intent(out)
-      end if
+      endif
 
       if ( lapack_error( err_code ) ) then
         write(fstderr,'(a)') "thetal LU decomp. failed"
@@ -411,8 +408,9 @@ module advance_xm_wpxp_module
         return
       endif
 
-      call xm_wpxp_clipping_and_stats &
-           ( "thlm", dt, wp2, thlp2, thlm, wpthlp, solution(:,1), rcond )
+      call xm_wpxp_clipping_and_stats( "thlm", dt, wp2, thlp2, &          ! Intent(in)
+                                       thltol**2, rcond, solution(:,1), & ! Intent(in)
+                                       thlm, wpthlp )                     ! Intent(inout)
 
       ! Solve sclrm / wpsclrp
       ! If sclr_dim is 0, then this loop will execute 0 times.
@@ -425,8 +423,7 @@ module advance_xm_wpxp_module
         if ( l_clip_semi_implicit ) then
           wpxp_upper_lim(:) =  max_mag_correlation * sqrt( wp2(:) * sclrp2(:,i) )
           wpxp_lower_lim(:) = -wpxp_upper_lim(:)
-
-        end if
+        endif
 
         ! Compute the implicit portion of the sclr and w'sclr' equations.
         ! Build the left-hand side matrix.
@@ -444,20 +441,21 @@ module advance_xm_wpxp_module
                           rhs(:,1) )                                         ! Intent(out)
 
         ! Solve for sclrm / w'sclr'
-        call xm_wpxp_solve( nrhs, &     ! Intent(in)
-                            lhs, rhs, &  ! Intent(inout)
+        call xm_wpxp_solve( nrhs, &              ! Intent(in)
+                            lhs, rhs, &          ! Intent(inout)
                             solution, err_code ) ! Intent(out)
 
         if ( lapack_error( err_code ) ) then
           write(fstderr,'(a)') "Passive scalar ", i, " LU decomp. failed."
           deallocate( rhs, solution )
           return
-        end if
+        endif
 
-        call xm_wpxp_clipping_and_stats &
-             ( "scalars", dt, wp2, sclrp2(:,i), sclrm(:,i), wpsclrp(:,i), solution(:,1), rcond )
+        call xm_wpxp_clipping_and_stats( "scalars", dt, wp2, sclrp2(:,i), &     ! Intent(in)
+                                         sclrtol(i)**2, rcond, solution(:,1), & ! Intent(in)
+                                         sclrm(:,i), wpsclrp(:,i) )             ! Intent(inout)
 
-      end do ! passive scalars
+      enddo ! passive scalars
 
     else ! Simple case, where l_clip_semi_implicit and l_3pt_sqd_dfsn are both false
 
@@ -466,10 +464,10 @@ module advance_xm_wpxp_module
       dummy_1d = 0.
 
       ! Create the lhs once
-      call xm_wpxp_lhs( .true., dt, dummy_1d, a1_zt, wm_zm, wm_zt, wp2, wp2_zt, &  ! Intent(in)
-                        wp3, Kw6, tau_zm, C7_Skw_fnc, C6rt_Skw_fnc, &  ! Intent(in)
-                        dummy_1d, dummy_1d, l_implemented, &  ! Intent(in)
-                        lhs ) ! Intent(out)
+      call xm_wpxp_lhs( .true., dt, dummy_1d, a1_zt, wm_zm, wm_zt, wp2, wp2_zt, & ! Intent(in)
+                        wp3, Kw6, tau_zm, C7_Skw_fnc, C6rt_Skw_fnc, &             ! Intent(in)
+                        dummy_1d, dummy_1d, l_implemented, &                      ! Intent(in)
+                        lhs )                                                     ! Intent(out)
 
       ! Compute the explicit portion of the r_t and w'r_t' equations.
       ! Build the right-hand side vector.
@@ -495,33 +493,36 @@ module advance_xm_wpxp_module
 
       ! Solve for all fields
       if ( l_stats_samp .and. ithlm_matrix_condt_num + irtm_matrix_condt_num > 0 ) then
-        call xm_wpxp_solve( nrhs, &     ! Intent(in)
-                            lhs, rhs, &  ! Intent(inout)
+        call xm_wpxp_solve( nrhs, &                     ! Intent(in)
+                            lhs, rhs, &                 ! Intent(inout)
                             solution, err_code, rcond ) ! Intent(out)
       else
-        call xm_wpxp_solve( nrhs, &     ! Intent(in)
-                            lhs, rhs, &  ! Intent(inout)
+        call xm_wpxp_solve( nrhs, &              ! Intent(in)
+                            lhs, rhs, &          ! Intent(inout)
                             solution, err_code ) ! Intent(out)
-      end if
+      endif
 
       if ( lapack_error( err_code ) ) then
         write(fstderr,'(a)') "xm_wpxp LU decomp. failed."
         deallocate( rhs, solution )
         return
-      end if
+      endif
 
-      call xm_wpxp_clipping_and_stats &
-           ( "rtm", dt, wp2, rtp2, rtm, wprtp, solution(:,1), rcond )
+      call xm_wpxp_clipping_and_stats( "rtm", dt, wp2, rtp2, &           ! Intent(in)
+                                       rttol**2, rcond, solution(:,1), & ! Intent(in)
+                                       rtm, wprtp )                      ! Intent(inout)
 
-      call xm_wpxp_clipping_and_stats &
-           ( "thlm", dt, wp2, thlp2, thlm, wpthlp, solution(:,2), rcond )
+      call xm_wpxp_clipping_and_stats( "thlm", dt, wp2, thlp2, &          ! Intent(in)
+                                       thltol**2, rcond, solution(:,2), & ! Intent(in)
+                                       thlm, wpthlp )                     ! Intent(inout)
 
       do i = 1, sclr_dim, 1
-        call xm_wpxp_clipping_and_stats &
-             ( "scalars", dt, wp2, sclrp2(:,i), sclrm(:,i), wpsclrp(:,i), solution(:,2+i), rcond )
-      end do ! 1..sclr_dim
+        call xm_wpxp_clipping_and_stats( "scalars", dt, wp2, sclrp2(:,i), &       ! Intent(in)
+                                         sclrtol(i)**2, rcond, solution(:,2+i), & ! Intent(in)
+                                         sclrm(:,i), wpsclrp(:,i) )               ! Intent(inout)
+      enddo ! 1..sclr_dim
 
-    end if ! l_clip_semi_implicit .and. l_3pt_sqd_dfsn
+    endif ! l_clip_semi_implicit .and. l_3pt_sqd_dfsn
 
     deallocate( rhs, solution )
 
@@ -1414,8 +1415,9 @@ module advance_xm_wpxp_module
   end subroutine xm_wpxp_solve
 
 !===============================================================================
-  subroutine xm_wpxp_clipping_and_stats &
-             ( solve_type, dt, wp2, xp2, xm, wpxp, solution, rcond )
+  subroutine xm_wpxp_clipping_and_stats( solve_type, dt, wp2, xp2, &
+                                         xp2_threshold, rcond, solution, &
+                                         xm, wpxp )
 
     ! Description:
     ! Clips and computes implicit stats for an artitrary xm and wpxp
@@ -1531,11 +1533,12 @@ module advance_xm_wpxp_module
       wp2,  & ! w'^2 (momentum levels)        [m^2/s^2]
       xp2     ! x'^2 (momentum levels)        [{xm units}^2]
 
+    real, intent(in) :: &
+      xp2_threshold, & ! Minimum allowable value of x'^2   [units vary]
+      rcond ! Reciprocal of the estimated condition number (from computing A^-1)
+
     real, intent(in), dimension(2*gr%nnzp) :: &
       solution ! The <t+1> value of xm and wpxp   [units vary]
-
-    real, intent(in) :: &
-      rcond ! Reciprocal of the estimated condition number (from computing A^-1)
 
     real, intent(inout), dimension(gr%nnzp) :: & 
       xm, & ! The mean x field  [units vary]
@@ -1553,6 +1556,9 @@ module advance_xm_wpxp_module
 
     real, dimension(gr%nnzp) :: &
       wpxp_chnge  ! Net change in w'x' due to clipping        [units vary]
+
+    logical, parameter :: &
+      l_mono_flux_lim = .false.  ! Flag for monotonic turbulent flux limiter
 
     ! Indices
     integer :: k, km1, kp1
@@ -1760,6 +1766,12 @@ module advance_xm_wpxp_module
 
     endif ! l_stats_samp
 
+    ! Apply a monotonic turbulent flux limiter to xm/w'x'.
+    if ( l_mono_flux_lim ) then
+       call monotonic_turbulent_flux_limit( solve_type, dt, xm_n,  &
+                                            xp2, xp2_threshold,  &
+                                            xm, wpxp )
+    endif
 
     ! Apply a flux limiting positive definite scheme if the solution
     ! for the mean field is negative and we're determining total water
@@ -2337,7 +2349,8 @@ module advance_xm_wpxp_module
   end function wpxp_terms_bp_pr3_rhs
 
   !=============================================================================
-  subroutine monotonic_turbulent_flux_limit( dt, xm_old, xp2, xp2_threshold,  &
+  subroutine monotonic_turbulent_flux_limit( solve_type, dt, xm_old,  &
+                                             xp2, xp2_threshold,  &
                                              xm, wpxp )
 
     ! Description:
@@ -2552,44 +2565,126 @@ module advance_xm_wpxp_module
         gr,  & ! Variable(s)
         zm2zt  ! Procedure(s)
 
+    use constants, only: &
+        zero_threshold
+
     use stats_precision, only:  & 
         time_precision ! Variable(s)
+
+    use stats_type, only:  &
+        stat_begin_update,  & ! Procedure(s)
+        stat_end_update,  &
+        stat_update_var
+
+    use stats_variables, only:  &
+        zm,  & ! Variable(s)
+        zt,  &
+        iwprtp_mfl,  &
+        irtm_mfl,  &
+        iwpthlp_mfl,  &
+        ithlm_mfl,  &
+        l_stats_samp
 
     implicit none
 
     ! Input Variables
+    character(len=*), intent(in) ::  & 
+      solve_type  ! Variables being solved for.
+
     real(kind=time_precision), intent(in) ::  &
-      dt        ! Model timestep length                           [s]
+      dt        ! Model timestep length                             [s]
 
     real, dimension(gr%nnzp), intent(in) ::  &
-      xm_old, & ! xm at previous time step (thermodynamic levels) [units vary]
-      xp2       ! x'^2 (momentum levels)                          [units vary]
+      xm_old, & ! xm at previous time step (thermodynamic levels)   [units vary]
+      xp2       ! x'^2 (momentum levels)                            [units vary]
 
     real, intent(in) ::  &
-      xp2_threshold   ! Lower limit of x'^2                       [units vary]
+      xp2_threshold   ! Lower limit of x'^2                         [units vary]
 
     ! Input/Output Variables
     real, dimension(gr%nnzp), intent(inout) ::  &
-      xm,  &    ! xm at current time step (thermodynamic levels)  [units vary]
-      wpxp      ! w'x' (momentum levels)                          [units vary]
+      xm,  &    ! xm at current time step (thermodynamic levels)    [units vary]
+      wpxp      ! w'x' (momentum levels)                            [units vary]
 
     ! Local Variables
     real, dimension(gr%nnzp) :: &
-      xp2_zt, & ! x'^2 interpolated to thermodynamic levels       [units vary]
-      max_dev   ! 2*stnd_dev; determines upper/lower limit of x   [units vary]
+      xp2_zt,   & ! x'^2 interpolated to thermodynamic levels       [units vary]
+      max_dev,  & ! Determines approximate upper/lower limit of x   [units vary]
+      wpxp_net_adjust, & ! Net amount of adjustment needed on w'x'  [units vary]
+      dxm_dt_mfl_adjust  ! Rate of change of adjustment to xm       [units vary]
+
+    real, dimension(gr%nnzp) :: &
+      min_x_allowable_lev, & ! Smallest usuable value of x at lev k [units vary]
+      max_x_allowable_lev    ! Largest usuable value of x at lev k  [units vary]
+
+    real :: &
+      min_x_allowable, & ! Smallest usuable x within k +/- num_levs [units vary]
+      max_x_allowable    ! Largest usuable x within k +/- num_levs  [units vary]
 
     real ::  &
-      wpxp_mfl_upper_lim, & ! Upper limit on w'x'(k)            [units vary]
-      wpxp_mfl_lower_lim, & ! Lower limit on w'x'(k)            [units vary]
-      stnd_dev_x              ! Standard deviation of x           [units vary]
+      wpxp_mfl_upper_lim, & ! Upper limit on w'x'(k)                [units vary]
+      wpxp_mfl_lower_lim, & ! Lower limit on w'x'(k)                [units vary]
+      stnd_dev_x,         & ! Standard deviation of x               [units vary]
+      max_xp2               ! Maximum allowable x'^2                [units vary]
 
     integer ::  &
-      k, km1, kp1  ! Array indices
+      k, km1  ! Array indices
+
+    integer, parameter :: &
+      num_levs = 10  ! Number of levels above and below level k to look for
+                    ! maxima and minima of variable x.
+
+    integer :: &
+      low_lev, & ! Lowest level (from level k) to look for x minima and maxima
+      high_lev   ! Highest level (from level k) to look for x minima and maxima
+
+    integer ::  &
+      iwpxp_mfl,  &
+      ixm_mfl
+
+
+    select case( trim( solve_type ) )
+    case ( "rtm" )  ! rtm/wprtp
+       iwpxp_mfl = iwprtp_mfl
+       ixm_mfl   = irtm_mfl
+       max_xp2   = 5.0e-6
+    case ( "thlm" ) ! thlm/wpthlp
+       iwpxp_mfl = iwpthlp_mfl
+       ixm_mfl   = ithlm_mfl
+       max_xp2   = 5.0
+    case default ! passive scalars are involved
+       iwpxp_mfl = 0.0
+       ixm_mfl   = 0.0
+       max_xp2   = 5.0
+    end select
+
+
+    if ( l_stats_samp ) then
+       call stat_begin_update( iwpxp_mfl, real( wpxp / dt ), zm )
+    endif
+
+
+    ! Initialize arrays.
+    wpxp_net_adjust = 0.0
+    dxm_dt_mfl_adjust = 0.0
 
     ! Interpolate x'^2 to thermodynamic levels.
     xp2_zt = max( zm2zt( xp2 ), xp2_threshold )
 
-    do k = 3, gr%nnzp, 1
+    ! Place an upper limit on xp2_zt.
+    ! For purposes of this subroutine, an upper limit has been placed on the
+    ! variance, x'^2.  This does not effect the value of x'^2 anywhere else in
+    ! the model code.  The upper limit is a reasonable upper limit.  This is
+    ! done to prevent unphysically large standard deviations caused by numerical
+    ! instabilities in the x'^2 profile.
+    ! For rtp2 and thlp2, it has been found that values rarely exceed
+    ! ( 100.0 * sqrt(xp2_threshold) ).  Therefore, an upper limit of
+    ! ( 1000.0 * sqrt(xp2_threshold) ) will be placed on all variances in this
+    ! subroutine.
+    !xp2_zt = min( xp2_zt, 1.0e3*sqrt(xp2_threshold) )
+    xp2_zt = min( xp2_zt, max_xp2 )
+
+    do k = 2, gr%nnzp-1, 1
 
        ! Standard deviation is the square root of the variance.
        stnd_dev_x = sqrt( xp2_zt(k) )
@@ -2601,34 +2696,107 @@ module advance_xm_wpxp_module
 
     enddo
 
-    do k = 3, gr%nnzp-1, 1
+    ! Find the maximum and minimum usuable values of variable x at each
+    ! vertical level.  Start from level 2, which is the first level above
+    ! the ground or above the model surface.
+    do k = 2, gr%nnzp, 1
+
+       ! Find the minimum usuable value of variable x at each vertical level.
+       ! Since variable x must be one of theta_l, r_t, or a scalar, all of
+       ! which are positive definite quantities, the value must be >= 0.
+       min_x_allowable_lev(k) = max( xm_old(k) - max_dev(k), zero_threshold )
+
+       ! Find the maximum usuable value of variable x at each vertical level.
+       max_x_allowable_lev(k) = xm_old(k) + max_dev(k)
+
+    enddo
+
+    do k = 3, gr%nnzp-2, 1
 
        km1 = max( k-1, 1 )
-       kp1 = min( k+1, gr%nnzp )
+
+       low_lev  = max( k-num_levs, 2 )
+       high_lev = min( k+num_levs, gr%nnzp )
+
+       ! Find the smallest value of all relevant level minima for variable x.
+       min_x_allowable = minval( min_x_allowable_lev(low_lev:high_lev) )
+
+       ! Find the largest value of all relevant level maxima for variable x.
+       max_x_allowable = maxval( max_x_allowable_lev(low_lev:high_lev) )
 
        ! Find the upper limit for w'x' for a monotonic turbulent flux.
        wpxp_mfl_upper_lim  &
        = real( ( 1.0 / (dt*gr%dzt(k)) )  &
-               * ( xm_old(k) - min( xm_old(km1) - max_dev(km1),  &
-                                    xm_old(k) - max_dev(k),  &
-                                    xm_old(kp1) - max_dev(kp1) ) )  &
+               * ( xm_old(k) - min_x_allowable )  &
                + wpxp(km1) )
 
        ! Find the lower limit for w'x' for a monotonic turbulent flux.
        wpxp_mfl_lower_lim  &
        = real( ( 1.0 / (dt*gr%dzt(k)) )  &
-               * ( xm_old(k) - max( xm_old(km1) + max_dev(km1),  &
-                                    xm_old(k) + max_dev(k),  &
-                                    xm_old(kp1) + max_dev(kp1) ) )  &
+               * ( xm_old(k) - max_x_allowable )  &
                + wpxp(km1) )
 
        if ( wpxp(k) > wpxp_mfl_upper_lim ) then
+
           print *, "wpxp too large (mfl)"
+          print *, "wpxp upper lim = ", wpxp_mfl_upper_lim
+          print *, "wpxp = ", wpxp(k)
+
+          ! Determine the net amount of adjustment needed for w'x'.
+          wpxp_net_adjust(k) = wpxp_mfl_upper_lim - wpxp(k)
+
+          ! Reset w'x' to the upper limit allowed by the monotonic flux limiter.
+          wpxp(k) = wpxp_mfl_upper_lim
+
        elseif ( wpxp(k) < wpxp_mfl_lower_lim ) then
+
           print *, "wpxp too small (mfl)"
+          print *, "wpxp lower lim = ", wpxp_mfl_lower_lim
+          print *, "wpxp = ", wpxp(k)
+
+          ! Determine the net amount of adjustment needed for w'x'.
+          wpxp_net_adjust(k) = wpxp_mfl_lower_lim - wpxp(k)
+
+          ! Reset w'x' to the lower limit allowed by the monotonic flux limiter.
+          wpxp(k) = wpxp_mfl_lower_lim
+
        endif
 
     enddo
+
+    do k = 3, gr%nnzp-1, 1
+
+       km1 = max( k-1, 1 )
+
+       ! The rate of change of the adjustment to xm due to the
+       ! monotonic flux limiter.
+       dxm_dt_mfl_adjust(k)  &
+       = - gr%dzt(k) * ( wpxp_net_adjust(k) - wpxp_net_adjust(km1) )
+
+       if ( dxm_dt_mfl_adjust(k) /= 0.0 ) then
+          print *, "k = ", k, "old xm = ", xm(k)
+       endif
+
+       ! The net change to xm due to the monotonic flux limiter is the
+       ! rate of change multiplied by the time step length.  Add the product
+       ! to xm to find the new xm resulting from the monotonic flux limiter.
+       xm(k) = real( xm(k) + dxm_dt_mfl_adjust(k) * dt )
+
+       if ( dxm_dt_mfl_adjust(k) /= 0.0 ) then
+          print *, "k = ", k, "new xm = ", xm(k)
+       endif
+
+    enddo
+
+
+    if ( l_stats_samp ) then
+
+       call stat_end_update( iwpxp_mfl, real( wpxp / dt ), zm )
+
+       call stat_update_var( ixm_mfl, dxm_dt_mfl_adjust, zt )
+
+    endif
+
 
     return
   end subroutine monotonic_turbulent_flux_limit

@@ -126,6 +126,7 @@ module stats_variables
     irtm_ta,       & ! rtm turb. advect. term
     irtm_forcing,  & ! rtm large scale forcing term
     irtm_mc,       & ! rtm change from microphysics
+    irtm_mfl,      & ! rtm change due to monotonic flux limiter
     irtm_tacl,     & ! rtm correction from turbulent advection (wprtp) clipping
     irtm_cl,       & ! rtm clipping term
     irtm_pd,       & ! thlm postive definite adj term
@@ -134,13 +135,14 @@ module stats_variables
     ithlm_ta,      & ! thlm turb. advect. term
     ithlm_forcing, & ! thlm large scale forcing term
     ithlm_mc,      & ! thlm change from microphysics
+    ithlm_mfl,     & ! thlm change due to monotonic flux limiter
     ithlm_tacl,    & ! thlm correction from turbulent advection (wpthlp) clipping
     ithlm_cl         ! thlm clipping term
 
 !$omp   threadprivate(irtm_bt, irtm_ma, irtm_ta, irtm_forcing)
-!$omp   threadprivate(irtm_mc, irtm_tacl, irtm_cl, irtm_pd)
+!$omp   threadprivate(irtm_mc, irtm_mfl, irtm_tacl, irtm_cl, irtm_pd)
 !$omp   threadprivate(ithlm_bt, ithlm_ma, ithlm_ta, ithlm_forcing)
-!$omp   threadprivate(ithlm_mc, ithlm_tacl, ithlm_cl)
+!$omp   threadprivate(ithlm_mc, ithlm_mfl, ithlm_tacl, ithlm_cl)
 
 
   integer, public :: & 
@@ -384,15 +386,16 @@ module stats_variables
      iwprtp_pr1, & 
      iwprtp_pr2, & 
      iwprtp_pr3, & 
-     iwprtp_dp1, & 
+     iwprtp_dp1, &
+     iwprtp_mfl, &
      iwprtp_cl, & 
      iwprtp_sicl, & 
      iwprtp_pd
 
 !$omp   threadprivate(iwprtp_bt, iwprtp_ma, iwprtp_ta, iwprtp_tp)
 !$omp   threadprivate(iwprtp_ac, iwprtp_bp, iwprtp_pr1, iwprtp_pr2)
-!$omp   threadprivate(iwprtp_pr3, iwprtp_dp1, iwprtp_cl, iwprtp_sicl)
-!$omp   threadprivate(iwprtp_pd)
+!$omp   threadprivate(iwprtp_pr3, iwprtp_dp1, iwprtp_mfl, iwprtp_cl)
+!$omp   threadprivate(iwprtp_sicl, iwprtp_pd)
 
   integer, public :: & 
      iwpthlp_bt, & 
@@ -404,13 +407,15 @@ module stats_variables
      iwpthlp_pr1, & 
      iwpthlp_pr2, & 
      iwpthlp_pr3, & 
-     iwpthlp_dp1, & 
+     iwpthlp_dp1, &
+     iwpthlp_mfl, &
      iwpthlp_cl, & 
      iwpthlp_sicl
 
 !$omp   threadprivate(iwpthlp_bt, iwpthlp_ma, iwpthlp_ta, iwpthlp_tp)
 !$omp   threadprivate(iwpthlp_ac, iwpthlp_bp, iwpthlp_pr1, iwpthlp_pr2)
-!$omp   threadprivate(iwpthlp_pr3, iwpthlp_dp1, iwpthlp_cl, iwpthlp_sicl)
+!$omp   threadprivate(iwpthlp_pr3, iwpthlp_dp1, iwpthlp_mfl, iwpthlp_cl)
+!$omp   threadprivate(iwpthlp_sicl)
 
 !    Dr. Golaz's new variance budget terms
 !    qt was changed to rt to avoid confusion

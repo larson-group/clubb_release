@@ -100,6 +100,7 @@ module stats_zm
           iwprtp_pr2, & 
           iwprtp_pr3, & 
           iwprtp_dp1, & 
+          iwprtp_mfl, & 
           iwprtp_cl, & 
           iwprtp_sicl, & 
           iwprtp_pd, & 
@@ -113,6 +114,7 @@ module stats_zm
           iwpthlp_pr2, & 
           iwpthlp_pr3, & 
           iwpthlp_dp1, & 
+          iwpthlp_mfl, & 
           iwpthlp_cl, & 
           iwpthlp_sicl
 
@@ -276,6 +278,7 @@ module stats_zm
       iwprtp_pr2  = 0
       iwprtp_pr3  = 0
       iwprtp_dp1  = 0
+      iwprtp_mfl  = 0
       iwprtp_cl   = 0
       iwprtp_sicl = 0
       iwprtp_pd   = 0
@@ -290,6 +293,7 @@ module stats_zm
       iwpthlp_pr2  = 0
       iwpthlp_pr3  = 0
       iwpthlp_dp1  = 0
+      iwpthlp_mfl  = 0
       iwpthlp_cl   = 0
       iwpthlp_sicl = 0
 
@@ -734,6 +738,13 @@ module stats_zm
                "wprtp dissipation term 1","(m kg)/(s2 kg)",zm)
           k = k + 1
 
+        case ('wprtp_mfl')
+          iwprtp_mfl = k
+
+          call stat_assign(iwprtp_mfl,"wprtp_mfl", & 
+               "wprtp monotonic flux limiter","(m kg)/(s2 kg)",zm)
+          k = k + 1
+
         case ('wprtp_cl')
           iwprtp_cl = k
 
@@ -820,6 +831,12 @@ module stats_zm
           iwpthlp_dp1 = k
           call stat_assign(iwpthlp_dp1,"wpthlp_dp1", & 
                "wpthlp dissipation term 1","(m K)/s2",zm)
+          k = k + 1
+
+        case ('wpthlp_mfl')
+          iwpthlp_mfl = k
+          call stat_assign(iwpthlp_mfl,"wpthlp_mfl", & 
+               "wpthlp monotonic flux limiter","(m K)/s2",zm)
           k = k + 1
 
         case ('wpthlp_cl')

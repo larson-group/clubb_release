@@ -76,6 +76,7 @@ use stats_variables, only: &
     irtm_ta, & 
     irtm_forcing, & 
     irtm_mc, &
+    irtm_mfl, &
     irtm_tacl, & 
     irtm_cl, & 
     irtm_pd, & 
@@ -84,6 +85,7 @@ use stats_variables, only: &
     ithlm_ta, & 
     ithlm_forcing, & 
     ithlm_mc, &
+    ithlm_mfl, &
     ithlm_tacl, &
     ithlm_cl, & 
     iwp3_bt, & 
@@ -269,6 +271,7 @@ irtm_ma       = 0
 irtm_ta       = 0
 irtm_forcing  = 0
 irtm_mc       = 0
+irtm_mfl      = 0
 irtm_tacl     = 0
 irtm_cl       = 0 ! Josh
 irtm_pd       = 0
@@ -277,6 +280,7 @@ ithlm_ma      = 0
 ithlm_ta      = 0
 ithlm_forcing = 0
 ithlm_mc      = 0
+ithlm_mfl     = 0
 ithlm_tacl    = 0
 ithlm_cl      = 0 ! Josh
 
@@ -746,22 +750,29 @@ do i=1,zt%nn
     irtm_bt = k
 
     call stat_assign(irtm_bt,"rtm_bt", & 
-         "rtm budget","kg/kg/s",zt)
+         "rtm budget", "kg/kg/s", zt)
     k = k + 1
 
   case ('rtm_ma')
     irtm_ma = k
 
     call stat_assign(irtm_ma,"rtm_ma", & 
-         "rtm ma","kg/kg/s",zt)
+         "rtm ma", "kg/kg/s", zt)
     k = k + 1
 
   case ('rtm_ta')
     irtm_ta = k
 
     call stat_assign(irtm_ta,"rtm_ta", & 
-         "rtm ta","kg/kg/s",zt)
+         "rtm ta", "kg/kg/s", zt)
     k = k + 1
+
+  case ('rtm_mfl')
+    irtm_mfl = k
+
+    call stat_assign(irtm_mfl,"rtm_mfl", &
+          "rtm correction due to monotonic flux limiter", "kg/kg/s", zt)
+    k = k + 1 
 
   case ('rtm_tacl')
     irtm_tacl = k
@@ -791,35 +802,42 @@ do i=1,zt%nn
     ithlm_bt = k
 
     call stat_assign(ithlm_bt,"thlm_bt", & 
-         "thlm bt","K/s",zt)
+         "thlm bt", "K/s", zt)
     k = k + 1
 
   case ('thlm_ma')
     ithlm_ma = k
 
     call stat_assign(ithlm_ma,"thlm_ma", & 
-         "thlm ma","K/s",zt)
+         "thlm ma", "K/s", zt)
     k = k + 1
 
   case ('thlm_ta')
     ithlm_ta = k
 
     call stat_assign(ithlm_ta,"thlm_ta", & 
-         "thlm ta","K/s",zt)
+         "thlm ta", "K/s", zt)
     k = k + 1
+
+  case ('thlm_mfl')
+    ithlm_mfl = k
+
+    call stat_assign(ithlm_mfl,"thlm_mfl", &
+          "thlm correction due to monotonic flux limiter", "K/s", zt)
+    k = k + 1 
 
   case ('thlm_tacl')
     ithlm_tacl = k
 
     call stat_assign(ithlm_tacl,"thlm_tacl", & 
-          "thlm correction due to ta term (wpthlp) clipping", "K/s",zt)
+          "thlm correction due to t.a. term (wpthlp) clipping", "K/s", zt)
     k = k + 1 
 
   case ('thlm_cl')
     ithlm_cl = k
 
     call stat_assign(ithlm_cl,"thlm_cl", & 
-          "thlm_cl", "K/s",zt)
+          "thlm_cl", "K/s", zt)
     k = k + 1 
 
   case ('wp3_bt')
