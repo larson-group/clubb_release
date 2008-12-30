@@ -54,14 +54,14 @@ LDFLAGS = -L$(LIBDIR) -R$(LIBDIR) -lclubb_param -lclubb_bugsrad -L$(NC_LOC)/lib 
 # == Compiler flags (all) ==
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
-#   -DCOAMPS_MICRO enables COAMPS microphysics scheme
-#   -DTUNER enables the tuning application
+#    enables COAMPS microphysics scheme
+#    enables the tuning application
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
 
-FCFLAGS = $(ARCH) $(DEBUG)   -DNETCDF -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
-#FCFLAGS = $(ARCH) $(OPTIMIZE)   -DNETCDF -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+FCFLAGS = $(ARCH) $(DEBUG)   -DNETCDF   -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+#FCFLAGS = $(ARCH) $(OPTIMIZE)   -DNETCDF   -Dnooverlap -Dradoffline -I$(NC_LOC)/include
 
 # == Static library processing ==
 AR = ar

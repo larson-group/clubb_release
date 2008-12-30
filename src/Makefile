@@ -42,7 +42,18 @@ NR_DIR = NR
 # directories, and COAMPS_MICRO = list of COAMPS .o files.
 # In either case, CLUBB should compile.  
 COAMPS_MICRO = $(patsubst %.F,%.o, $(notdir $(wildcard $(COAMPS_MICRO_DIR)/*.F)))
+ifeq ($(COAMPS_MICRO),)
+# Append nothing
+else
+FCFLAGS := $(FCFLAGS) -DCOAMPS_MICRO
+endif
+
 NUM_REC = $(patsubst %.f90,%.o, $(notdir $(wildcard $(NR_DIR)/*.f90)))
+ifeq ($(NUM_REC),)
+# Append nothing
+else
+FCFLAGS := $(FCFLAGS) -DTUNER 
+endif
 
 # == Other object files ==
  

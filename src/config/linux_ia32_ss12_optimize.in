@@ -46,13 +46,13 @@ OPTIMIZE = -g -xO4 -libmil -xvector=simd -ftrap=%none
 # == Compiler flags (all) ==
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
-#   -DCOAMPS_MICRO enables COAMPS microphysics scheme
-#   -DTUNER enables the tuning application
+#    enables COAMPS microphysics scheme
+#    enables the tuning application
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
 # Use -M<include path> to set a module file directory
-#FCFLAGS = $(DEBUG) $(ARCH) -DNETCDF -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline -M$(NC_LOC)/include
-FCFLAGS = $(OPTIMIZE) $(ARCH) -DNETCDF -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline -M$(NC_LOC)/include
+#FCFLAGS = $(DEBUG) $(ARCH) -DNETCDF   -Dnooverlap -Dradoffline -M$(NC_LOC)/include
+FCFLAGS = $(OPTIMIZE) $(ARCH) -DNETCDF   -Dnooverlap -Dradoffline -M$(NC_LOC)/include
 #FCFLAGS = $(OPTIMIZE) $(ARCH) -M$(NC_LOC)/include
 
 
