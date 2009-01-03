@@ -364,8 +364,9 @@ module advance_xm_wpxp_module
         return
       endif
 
-      call xm_wpxp_clipping_and_stats( "rtm", dt, wp2, rtp2, &           ! Intent(in)
-                                       rttol**2, rcond, solution(:,1), & ! Intent(in)
+      call xm_wpxp_clipping_and_stats( "rtm", dt, wp2, rtp2, wm_zt,  &   ! Intent(in)
+                                       rtm_forcing, rttol**2, rcond,  &  ! Intent(in)
+                                       l_implemented, solution(:,1), &   ! Intent(in)
                                        rtm, wprtp )                      ! Intent(inout)
 
       ! Compute the upper and lower limits of w'th_l' at every level,
@@ -408,8 +409,9 @@ module advance_xm_wpxp_module
         return
       endif
 
-      call xm_wpxp_clipping_and_stats( "thlm", dt, wp2, thlp2, &          ! Intent(in)
-                                       thltol**2, rcond, solution(:,1), & ! Intent(in)
+      call xm_wpxp_clipping_and_stats( "thlm", dt, wp2, thlp2, wm_zt,  &  ! Intent(in)
+                                       thlm_forcing, thltol**2, rcond,  & ! Intent(in)
+                                       l_implemented, solution(:,1),  &   ! Intent(in)
                                        thlm, wpthlp )                     ! Intent(inout)
 
       ! Solve sclrm / wpsclrp
@@ -451,9 +453,11 @@ module advance_xm_wpxp_module
           return
         endif
 
-        call xm_wpxp_clipping_and_stats( "scalars", dt, wp2, sclrp2(:,i), &     ! Intent(in)
-                                         sclrtol(i)**2, rcond, solution(:,1), & ! Intent(in)
-                                         sclrm(:,i), wpsclrp(:,i) )             ! Intent(inout)
+        call xm_wpxp_clipping_and_stats( "scalars", dt, wp2, sclrp2(:,i),  &     ! Intent(in)
+                                         wm_zt, sclrm_forcing(:,i),  &           ! Intent(in)
+                                         sclrtol(i)**2, rcond, l_implemented,  & ! Intent(in)
+                                         solution(:,1),  &                       ! Intent(in)
+                                         sclrm(:,i), wpsclrp(:,i) )              ! Intent(inout)
 
       enddo ! passive scalars
 
@@ -508,18 +512,22 @@ module advance_xm_wpxp_module
         return
       endif
 
-      call xm_wpxp_clipping_and_stats( "rtm", dt, wp2, rtp2, &           ! Intent(in)
-                                       rttol**2, rcond, solution(:,1), & ! Intent(in)
-                                       rtm, wprtp )                      ! Intent(inout)
+      call xm_wpxp_clipping_and_stats( "rtm", dt, wp2, rtp2, wm_zt,  &  ! Intent(in)
+                                       rtm_forcing, rttol**2, rcond,  & ! Intent(in)
+                                       l_implemented, solution(:,1),  & ! Intent(in)
+                                       rtm, wprtp )                     ! Intent(inout)
 
-      call xm_wpxp_clipping_and_stats( "thlm", dt, wp2, thlp2, &          ! Intent(in)
-                                       thltol**2, rcond, solution(:,2), & ! Intent(in)
+      call xm_wpxp_clipping_and_stats( "thlm", dt, wp2, thlp2, wm_zt,  &  ! Intent(in)
+                                       thlm_forcing, thltol**2, rcond,  & ! Intent(in)
+                                       l_implemented, solution(:,2),  &   ! Intent(in)
                                        thlm, wpthlp )                     ! Intent(inout)
 
       do i = 1, sclr_dim, 1
-        call xm_wpxp_clipping_and_stats( "scalars", dt, wp2, sclrp2(:,i), &       ! Intent(in)
-                                         sclrtol(i)**2, rcond, solution(:,2+i), & ! Intent(in)
-                                         sclrm(:,i), wpsclrp(:,i) )               ! Intent(inout)
+        call xm_wpxp_clipping_and_stats( "scalars", dt, wp2, sclrp2(:,i),  &     ! Intent(in)
+                                         wm_zt, sclrm_forcing(:,i),  &           ! Intent(in)
+                                         sclrtol(i)**2, rcond, l_implemented,  & ! Intent(in)
+                                         solution(:,2+i),  &                     ! Intent(in)
+                                         sclrm(:,i), wpsclrp(:,i) )              ! Intent(inout)
       enddo ! 1..sclr_dim
 
     endif ! l_clip_semi_implicit .and. l_3pt_sqd_dfsn
@@ -1415,8 +1423,9 @@ module advance_xm_wpxp_module
   end subroutine xm_wpxp_solve
 
 !===============================================================================
-  subroutine xm_wpxp_clipping_and_stats( solve_type, dt, wp2, xp2, &
-                                         xp2_threshold, rcond, solution, &
+  subroutine xm_wpxp_clipping_and_stats( solve_type, dt, wp2, xp2, wm_zt,  &
+                                         xm_forcing, xp2_threshold, rcond,  &
+                                         l_implemented, solution,  &
                                          xm, wpxp )
 
     ! Description:
@@ -1530,12 +1539,17 @@ module advance_xm_wpxp_module
       dt  ! Timestep   [s]
 
     real, intent(in), dimension(gr%nnzp) ::  & 
-      wp2,  & ! w'^2 (momentum levels)        [m^2/s^2]
-      xp2     ! x'^2 (momentum levels)        [{xm units}^2]
+      wp2,       & ! w'^2 (momentum levels)                       [m^2/s^2]
+      xp2,       & ! x'^2 (momentum levels)                       [{xm units}^2]
+      wm_zt,     & ! w wind component on thermodynamic levels     [m/s]
+      xm_forcing   ! xm forcings (thermodynamic levels)           [units vary]
 
     real, intent(in) :: &
       xp2_threshold, & ! Minimum allowable value of x'^2   [units vary]
       rcond ! Reciprocal of the estimated condition number (from computing A^-1)
+
+    logical, intent(in) :: &
+      l_implemented   ! Flag for CLUBB being implemented in a larger model.
 
     real, intent(in), dimension(2*gr%nnzp) :: &
       solution ! The <t+1> value of xm and wpxp   [units vary]
@@ -1769,7 +1783,8 @@ module advance_xm_wpxp_module
     ! Apply a monotonic turbulent flux limiter to xm/w'x'.
     if ( l_mono_flux_lim ) then
        call monotonic_turbulent_flux_limit( solve_type, dt, xm_n,  &
-                                            xp2, xp2_threshold,  &
+                                            xp2, wm_zt, xm_forcing,  &
+                                            xp2_threshold, l_implemented,  &
                                             xm, wpxp )
     endif
 
@@ -2350,7 +2365,8 @@ module advance_xm_wpxp_module
 
   !=============================================================================
   subroutine monotonic_turbulent_flux_limit( solve_type, dt, xm_old,  &
-                                             xp2, xp2_threshold,  &
+                                             xp2, wm_zt, xm_forcing,  &
+                                             xp2_threshold, l_implemented,  &
                                              xm, wpxp )
 
     ! Description:
@@ -2362,15 +2378,22 @@ module advance_xm_wpxp_module
     ! Montonic turbulent advection
     ! ----------------------------
     !
-    ! When only the effects of advection are considered (neglecting forcings),
-    ! the value of variable x at a given point should not increase above the
+    ! A monotonic turbulent advection scheme does not allow new extrema for
+    ! variable x to be created (by means of turbulent advection).  In a
+    ! monotonic turbulent advection scheme, when only the effects of turbulent
+    ! advection are considered (neglecting forcings and mean advection), the
+    ! value of variable x at a given point should not increase above the
     ! greatest value of variable x at nearby points, nor decrease below the
     ! smallest value of variable x at nearby points.  Nearby points are points
     ! that are close enough to the given point so that the value of variable x
     ! at the given point is effected by the values of variable x at the nearby
-    ! points by means of transfer by wind during a time step.  Advection only
-    ! transfers around values of variable x and does not create new extrema for
-    ! variable x.
+    ! points by means of transfer by turbulent winds during a time step.  Again,
+    ! a monotonic scheme insures that advection only transfers around values of
+    ! variable x and does not create new extrema for variable x.  A monotonic
+    ! turbulent advection scheme is useful because the turbulent advection term
+    ! (w'x') may go numerically unstable, resulting in large instabilities in
+    ! the mean field (xm).  A monotonic turbulent advection scheme will limit
+    ! the change in xm, and also in w'x'.
     !
     ! The following example illustrates the concept of monotonic turbulent
     ! advection.  Three successive vertical grid levels are shown (k-1, k, and
@@ -2391,38 +2414,62 @@ module advance_xm_wpxp_module
     !             ||      \ /--------------------->|         ||
     ! level = k-1 || --- 287.5 K --- 288.0 K --- 288.5 K --- || thlm = 288.0
     !
-    ! The diagram shows that the value of theta-l at the point on the right at
-    ! level k will increase (when only advection is considered).  However, the
-    ! values of theta-l at the other two points at level k will remain the same
-    ! (when only advection is considered).  Thus, the value of thlm at level k
-    ! will become greater than 288.0 K.  In the same manner, the values of thlm
-    ! at the other two vertical levels (k-1 and k+1) will become smaller than
-    ! 288.0 K.  However, no theta-l point value can become smaller than the
-    ! smallest theta-l point value (287.0 K) or larger than the largest theta-l
-    ! point value (289.0 K).  Since all theta-l point values must fall between
-    ! 287.0 K and 289.0 K, the level averages of theta-l (thlm) must fall
-    ! between 287.0 K and 289.0 K.  Thus, any values of the turbulent flux,
-    ! w'th_l', that would cause thlm to rise above 289.0 K or fall below
-    ! 287.0 K, not considering the effect of other terms on thlm (such as
-    ! forcings), are faulty and need to be limited appropriately.  The values of
-    ! thlm also need to be corrected appropriately.
+    ! Neglecting any contributions from thlm forcings (effects of radiation,
+    ! microphysics, large-scale horizontal advection, etc.), the values of
+    ! theta-l as shown will be altered by only turbulent advection.  As a side
+    ! note, the contribution of mean advection will be 0 since wmm = 0.  The
+    ! diagram shows that the value of theta-l at the point on the right at level
+    ! k will increase.  However, the values of theta-l at the other two points
+    ! at level k will remain the same.  Thus, the value of thlm at level k will
+    ! become greater than 288.0 K.  In the same manner, the values of thlm at
+    ! the other two vertical levels (k-1 and k+1) will become smaller than
+    ! 288.0 K.  However, the monotonic turbulent advection scheme insures that
+    ! any theta-l point value cannot become smaller than the smallest theta-l
+    ! point value (287.0 K) or larger than the largest theta-l point value
+    ! (289.0 K).  Since all theta-l point values must fall between 287.0 K and
+    ! 289.0 K, the level averages of theta-l (thlm) must fall between 287.0 K
+    ! and 289.0 K.  Thus, any values of the turbulent flux, w'th_l', that would
+    ! cause thlm to rise above 289.0 K or fall below 287.0 K, not considering
+    ! the effect of other terms on thlm (such as forcings), are faulty and need
+    ! to be limited appropriately.  The values of thlm also need to be corrected
+    ! appropriately.
     !
     ! Formula for the limitation of w'x' and xm
     ! -----------------------------------------
     !
-    ! The value of xm after it has been advanced to timestep (t+1), owing to
-    ! turbulent advection only, must be in an appropriate range based on the
-    ! values of xm at timestep (t).  The following inequality is used to limit
-    ! the value of xm at level (k) and at timestep (t+1), owing to turbulent
-    ! advection only (written as xm(k,<t+1>)_(t.a. only)):
+    ! The equation for change in the mean field, xm, over time is:
     !
-    ! MIN{ xm(k-1,<t>) - x_max_dev_low(k-1,<t>), 
-    !      xm(k,<t>) - x_max_dev_low(k,<t>), 
-    !      xm(k+1,<t>) - x_max_dev_low(k+1,<t>) }
-    ! <= xm(k,<t+1>)_(t.a. only) <=
-    ! MAX{ xm(k-1,<t>) + x_max_dev_high(k-1,<t>), 
-    !      xm(k,<t>) + x_max_dev_high(k,<t>), 
-    !      xm(k+1,<t>) + x_max_dev_high(k+1,<t>) };
+    ! d(xm)/dt = -w*d(xm)/dz - d(w'x')/dz + xm_forcing;
+    !
+    ! where w*d(xm)/dz is the mean advection component, d(w'x')/dz is the
+    ! turbulent advection component, and xm_forcing is the xm forcing component.
+    ! The d(xm)/dt time tendency component is discretized as:
+    !
+    ! xm(k,<t+1>)/dt = xm(k,<t>)/dt - w*d(xm)/dz - d(w'x')/dz + xm_forcing.
+    !
+    ! The value of xm after it has been advanced to timestep (t+1) must be in an
+    ! appropriate range based on the values of xm at timestep (t), the amount of
+    ! xm forcings applied over the ensuing time step, and the amount of mean
+    ! advection applied over the ensuing time step.  This is exactly the same
+    ! thing as saying that the value of xm(k,<t+1>), with the contribution of
+    ! turbulent advection included, must fall into a certain range based on the
+    ! value of xm(k,<t+1>) without the contribution of the turbulent advection
+    ! component over the last time step.  The following inequality is used to
+    ! limit the value of xm(k,<t+1>):
+    !
+    ! MIN{ xm(k-1,<t>) + dt*xm_forcing(k-1) - dt*wm_zt(k-1)*d(xm)/dz|_(k-1)
+    !         - x_max_dev_low(k-1,<t>),
+    !      xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
+    !         - x_max_dev_low(k,<t>), 
+    !      xm(k+1,<t>) + dt*xm_forcing(k+1) - dt*wm_zt(k+1)*d(xm)/dz|_(k+1)
+    !         - x_max_dev_low(k+1,<t>) }
+    ! <= xm(k,<t+1>) <=
+    ! MAX{ xm(k-1,<t>) + dt*xm_forcing(k-1) - dt*wm_zt(k-1)*d(xm)/dz|_(k-1)
+    !         + x_max_dev_high(k-1,<t>), 
+    !      xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
+    !         + x_max_dev_high(k,<t>), 
+    !      xm(k+1,<t>) + dt*xm_forcing(k+1) - dt*wm_zt(k+1)*d(xm)/dz|_(k+1)
+    !         + x_max_dev_high(k+1,<t>) };
     !
     ! where x_max_dev_low is the absolute value of the deviation from the mean
     ! of the smallest point value of variable x at the given vertical level and
@@ -2433,79 +2480,78 @@ module advance_xm_wpxp_module
     ! x_max_dev_low(k+1,<t>)  = | MIN( x(k+1,<t>) ) - xm(k+1,<t>) |;
     ! x_max_dev_high(k+1,<t>) = MAX( x(k+1,<t>) ) - xm(k+1,<t>).
     !
-    ! It is important to note that for any vertical level (k), only values of
-    ! variable x from the central level (k), one-level-below the central
-    ! level (k-1), and one-level-above the central level (k+1) are considered in
-    ! the limitation of xm(k,<t+1>) due to turbulent advection.  Considering
-    ! values of x from levels outside this range over the course of a time step
-    ! could be a violation of Courant-Friedrich-Lewy (CFL) criteria.
+    ! The inequality shown above only takes into account values from the central
+    ! level, one-level-below the central level, and one-level-above the central
+    ! level.  This is the minimal amount of vertical levels that can have their
+    ! values taken into consideration.  Any vertical level that can have it's
+    ! properties advect to the given level during the course of a single time
+    ! step can be taken into consideration.  However, only three levels will be
+    ! considered in this example for the sake of simplicity.
     !
-    ! In order to find xm(k,<t+1>) due to turbulent advection only, the
-    ! contributions over the last time step from mean advection and xm forcings
-    ! must be multipled by time step length, dt, and removed from the solution
-    ! for xm(k,<t+1>), such that:
+    ! The inequality can now be related to the turbulent flux, w'x'(k,<t+1>),
+    ! through a substitution that is made for xm(k,<t+1>), such that:
     !
-    ! xm(k,<t+1>)_(t.a. only) = xm(k,<t+1>) + dt*wmt*d(xm)/dz - dt*xm_forcing.
+    ! xm(k,<t+1>) = xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
+    !               - dt*d(w'x')/dz|_(k).
     !
     ! The inequality becomes:
     !
-    ! MIN{ xm(k-1,<t>) - x_max_dev_low(k-1,<t>), 
-    !      xm(k,<t>) - x_max_dev_low(k,<t>), 
-    !      xm(k+1,<t>) - x_max_dev_low(k+1,<t>) }
-    ! <= xm(k,<t+1>) + dt*wmt*d(xm)/dz - dt*xm_forcing <=
-    ! MAX{ xm(k-1,<t>) + x_max_dev_high(k-1,<t>), 
-    !      xm(k,<t>) + x_max_dev_high(k,<t>), 
-    !      xm(k+1,<t>) + x_max_dev_high(k+1,<t>) };
+    ! MIN{ xm(k-1,<t>) + dt*xm_forcing(k-1) - dt*wm_zt(k-1)*d(xm)/dz|_(k-1)
+    !         - x_max_dev_low(k-1,<t>),
+    !      xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
+    !         - x_max_dev_low(k,<t>), 
+    !      xm(k+1,<t>) + dt*xm_forcing(k+1) - dt*wm_zt(k+1)*d(xm)/dz|_(k+1)
+    !         - x_max_dev_low(k+1,<t>) }
+    ! <= xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
+    !    - dt*d(w'x')/dz|_(k) <=
+    ! MAX{ xm(k-1,<t>) + dt*xm_forcing(k-1) - dt*wm_zt(k-1)*d(xm)/dz|_(k-1)
+    !         + x_max_dev_high(k-1,<t>), 
+    !      xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
+    !         + x_max_dev_high(k,<t>), 
+    !      xm(k+1,<t>) + dt*xm_forcing(k+1) - dt*wm_zt(k+1)*d(xm)/dz|_(k+1)
+    !         + x_max_dev_high(k+1,<t>) };
     !
-    ! The inequality can now be related to the turbulent flux, w'x', through
-    ! use of the d(xm)/dt equation:
+    ! The inequality is rearranged, and the turbulent advection term,
+    ! d(w'x')/dz, is discretized:
     !
-    ! d(xm)/dt = - wmt*d(xm)/dz - d(w'x')/dz + xm_forcing;
-    !
-    ! which can be rearranged as:
-    !
-    ! d(xm)/dt + wmt*d(xm)/dz - xm_forcing = - d(w'x')/dz.
-    !
-    ! The equation can be discretized in relation to the time-tendency and
-    ! turbulent advection terms, such that:
-    !
-    ! xm(k,<t+1>) + dt*wmt*d(xm)/dz - dt*xm_forcing = xm(k,<t>) - dt*d(w'x')/dz.
-    !
-    ! This can now be substituted back into the inequality.  The inequality
-    ! becomes:
-    !
-    ! MIN{ xm(k-1,<t>) - x_max_dev_low(k-1,<t>), 
-    !      xm(k,<t>) - x_max_dev_low(k,<t>), 
-    !      xm(k+1,<t>) - x_max_dev_low(k+1,<t>) }
-    ! <= xm(k,<t>) - dt*d(w'x')/dz <=
-    ! MAX{ xm(k-1,<t>) + x_max_dev_high(k-1,<t>), 
-    !      xm(k,<t>) + x_max_dev_high(k,<t>), 
-    !      xm(k+1,<t>) + x_max_dev_high(k+1,<t>) }.
-    !
-    ! The inequality is discretized in regards to the turbulent flux, w'x':
-    !
-    ! MIN{ xm(k-1,<t>) - x_max_dev_low(k-1,<t>), 
-    !      xm(k,<t>) - x_max_dev_low(k,<t>), 
-    !      xm(k+1,<t>) - x_max_dev_low(k+1,<t>) }
-    ! <= xm(k,<t>) - dt*dzt(k)*[ w'x'(k,<t+1>) - w'x'(k-1,<t+1>) ] <=
-    ! MAX{ xm(k-1,<t>) + x_max_dev_high(k-1,<t>), 
-    !      xm(k,<t>) + x_max_dev_high(k,<t>), 
-    !      xm(k+1,<t>) + x_max_dev_high(k+1,<t>) };
+    ! - [ xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k) ]
+    ! + MIN{ xm(k-1,<t>) + dt*xm_forcing(k-1) - dt*wm_zt(k-1)*d(xm)/dz|_(k-1)
+    !           - x_max_dev_low(k-1,<t>),
+    !        xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
+    !           - x_max_dev_low(k,<t>), 
+    !        xm(k+1,<t>) + dt*xm_forcing(k+1) - dt*wm_zt(k+1)*d(xm)/dz|_(k+1)
+    !           - x_max_dev_low(k+1,<t>) }
+    ! <= - dt*dzt(k)*[ w'x'(k,<t+1>) - w'x'(k-1,<t+1>) ] <=
+    ! - [ xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k) ]
+    ! + MAX{ xm(k-1,<t>) + dt*xm_forcing(k-1) - dt*wm_zt(k-1)*d(xm)/dz|_(k-1)
+    !           + x_max_dev_high(k-1,<t>), 
+    !        xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
+    !           + x_max_dev_high(k,<t>), 
+    !        xm(k+1,<t>) + dt*xm_forcing(k+1) - dt*wm_zt(k+1)*d(xm)/dz|_(k+1)
+    !           + x_max_dev_high(k+1,<t>) };
     !
     ! where dzt(k) = 1 / ( zm(k) - zm(k-1) ).
     !
     ! The inequality is then rearranged to be based around w'x'(k,<t+1>):
     !
     ! 1/(dt*dzt(k)) 
-    ! * [ xm(k,<t>) - MIN{ xm(k-1,<t>) - x_max_dev_low(k-1,<t>), 
-    !                      xm(k,<t>) - x_max_dev_low(k,<t>), 
-    !                      xm(k+1,<t>) - x_max_dev_low(k+1,<t>) } ]
+    ! * [ xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
+    !    - MIN{ xm(k-1,<t>) + dt*xm_forcing(k-1) - dt*wm_zt(k-1)*d(xm)/dz|_(k-1)
+    !              - x_max_dev_low(k-1,<t>),
+    !           xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
+    !              - x_max_dev_low(k,<t>), 
+    !           xm(k+1,<t>) + dt*xm_forcing(k+1) - dt*wm_zt(k+1)*d(xm)/dz|_(k+1)
+    !              - x_max_dev_low(k+1,<t>) } ]
     ! + w'x'(k-1,<t+1>)
     !    >=   w'x'(k,<t+1>)   >=
     ! 1/(dt*dzt(k))
-    ! * [ xm(k,<t>) - MAX{ xm(k-1,<t>) + x_max_dev_high(k-1,<t>), 
-    !                      xm(k,<t>) + x_max_dev_high(k,<t>), 
-    !                      xm(k+1,<t>) + x_max_dev_high(k+1,<t>) } ]
+    ! * [ xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k) 
+    !    + MAX{ xm(k-1,<t>) + dt*xm_forcing(k-1) - dt*wm_zt(k-1)*d(xm)/dz|_(k-1)
+    !              + x_max_dev_high(k-1,<t>), 
+    !           xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
+    !              + x_max_dev_high(k,<t>), 
+    !           xm(k+1,<t>) + dt*xm_forcing(k+1) - dt*wm_zt(k+1)*d(xm)/dz|_(k+1)
+    !              + x_max_dev_high(k+1,<t>) }
     ! + w'x'(k-1,<t+1>).
     !
     ! Note:  The inequality symbols have been flipped due to division involving
@@ -2513,13 +2559,10 @@ module advance_xm_wpxp_module
     !
     ! The values of w'x' are found on the momentum levels, while the values of
     ! xm are found on the thermodynamic levels.  The inequality is applied to
-    ! w'x'(k,<t+1>) from vertical levels 3 through the second-highest level
+    ! w'x'(k,<t+1>) from vertical levels 2 through the second-highest level
     ! (gr%nnzp-1).  The value of w'x' at level 1 is a set surface (or lowest
-    ! level) flux.  The surface fluxes are entered into the xm profile through
-    ! the xm turbulent advection term at level 2.  The value of w'x' at level
-    ! 2 is not altered because doing so effects the conservation of xm when the
-    ! field is corrected due to w'x' clipping.  The value of w'x' at the highest
-    ! level is also a set value, and therefore is not altered.
+    ! level) flux.  The value of w'x' at the highest level is also a set value,
+    ! and therefore is not altered.
     !
     ! Approximating maximum and minimum values of x at any given vertical level
     ! -------------------------------------------------------------------------
@@ -2568,6 +2611,9 @@ module advance_xm_wpxp_module
     use constants, only: &
         zero_threshold
 
+    use mean_adv, only: & 
+        term_ma_zt_lhs ! Procedure(s)
+
     use stats_precision, only:  & 
         time_precision ! Variable(s)
 
@@ -2592,47 +2638,55 @@ module advance_xm_wpxp_module
       solve_type  ! Variables being solved for.
 
     real(kind=time_precision), intent(in) ::  &
-      dt        ! Model timestep length                             [s]
+      dt          ! Model timestep length                           [s]
 
     real, dimension(gr%nnzp), intent(in) ::  &
-      xm_old, & ! xm at previous time step (thermodynamic levels)   [units vary]
-      xp2       ! x'^2 (momentum levels)                            [units vary]
+      xm_old,   & ! xm at previous time step (thermodynamic levels) [units vary]
+      xp2,      & ! x'^2 (momentum levels)                          [units vary]
+      wm_zt,    & ! w wind component on thermodynamic levels        [m/s]
+      xm_forcing  ! xm forcings (thermodynamic levels)              [units vary]
 
     real, intent(in) ::  &
       xp2_threshold   ! Lower limit of x'^2                         [units vary]
 
+    logical, intent(in) :: &
+      l_implemented   ! Flag for CLUBB being implemented in a larger model.
+
     ! Input/Output Variables
     real, dimension(gr%nnzp), intent(inout) ::  &
-      xm,  &    ! xm at current time step (thermodynamic levels)    [units vary]
-      wpxp      ! w'x' (momentum levels)                            [units vary]
+      xm,  &      ! xm at current time step (thermodynamic levels)  [units vary]
+      wpxp        ! w'x' (momentum levels)                          [units vary]
 
     ! Local Variables
     real, dimension(gr%nnzp) :: &
-      xp2_zt,   & ! x'^2 interpolated to thermodynamic levels       [units vary]
-      max_dev,  & ! Determines approximate upper/lower limit of x   [units vary]
+      xp2_zt,   &      ! x'^2 interpolated to thermodynamic levels  [units vary]
+      xm_without_ta, & ! Value of xm without turb. adv. contrib.    [units vary]
       wpxp_net_adjust, & ! Net amount of adjustment needed on w'x'  [units vary]
       dxm_dt_mfl_adjust  ! Rate of change of adjustment to xm       [units vary]
 
     real, dimension(gr%nnzp) :: &
       min_x_allowable_lev, & ! Smallest usuable value of x at lev k [units vary]
-      max_x_allowable_lev    ! Largest usuable value of x at lev k  [units vary]
-
-    real :: &
+      max_x_allowable_lev, & ! Largest usuable value of x at lev k  [units vary]
       min_x_allowable, & ! Smallest usuable x within k +/- num_levs [units vary]
       max_x_allowable    ! Largest usuable x within k +/- num_levs  [units vary]
 
     real ::  &
+      max_xp2,    & ! Maximum allowable x'^2                        [units vary]
+      stnd_dev_x, & ! Standard deviation of x                       [units vary]
+      max_dev,    & ! Determines approximate upper/lower limit of x [units vary]
+      m_adv_term, & ! Contribution of mean advection to d(xm)/dt    [units vary]
       wpxp_mfl_upper_lim, & ! Upper limit on w'x'(k)                [units vary]
-      wpxp_mfl_lower_lim, & ! Lower limit on w'x'(k)                [units vary]
-      stnd_dev_x,         & ! Standard deviation of x               [units vary]
-      max_xp2               ! Maximum allowable x'^2                [units vary]
+      wpxp_mfl_lower_lim    ! Lower limit on w'x'(k)                [units vary]
+
+    real, dimension(3) :: &
+      tmp  ! Temporary variable storage.
 
     integer ::  &
-      k, km1  ! Array indices
+      k, kp1, km1  ! Array indices
 
     integer, parameter :: &
       num_levs = 10  ! Number of levels above and below level k to look for
-                    ! maxima and minima of variable x.
+                     ! maxima and minima of variable x.
 
     integer :: &
       low_lev, & ! Lowest level (from level k) to look for x minima and maxima
@@ -2652,7 +2706,7 @@ module advance_xm_wpxp_module
        iwpxp_mfl = iwpthlp_mfl
        ixm_mfl   = ithlm_mfl
        max_xp2   = 5.0
-    case default ! passive scalars are involved
+    case default    ! passive scalars are involved
        iwpxp_mfl = 0.0
        ixm_mfl   = 0.0
        max_xp2   = 5.0
@@ -2677,14 +2731,16 @@ module advance_xm_wpxp_module
     ! the model code.  The upper limit is a reasonable upper limit.  This is
     ! done to prevent unphysically large standard deviations caused by numerical
     ! instabilities in the x'^2 profile.
-    ! For rtp2 and thlp2, it has been found that values rarely exceed
-    ! ( 100.0 * sqrt(xp2_threshold) ).  Therefore, an upper limit of
-    ! ( 1000.0 * sqrt(xp2_threshold) ) will be placed on all variances in this
-    ! subroutine.
-    !xp2_zt = min( xp2_zt, 1.0e3*sqrt(xp2_threshold) )
     xp2_zt = min( xp2_zt, max_xp2 )
 
+    
+    ! Find the maximum and minimum usuable values of variable x at each
+    ! vertical level.  Start from level 2, which is the first level above
+    ! the ground (or above the model surface).
     do k = 2, gr%nnzp-1, 1
+
+       km1 = max( k-1, 1 )
+       kp1 = min( k+1, gr%nnzp )
 
        ! Standard deviation is the square root of the variance.
        stnd_dev_x = sqrt( xp2_zt(k) )
@@ -2692,26 +2748,40 @@ module advance_xm_wpxp_module
        ! Most values are found within +/- 2 standard deviations from the mean.
        ! Use +/- 2 standard deviations from the mean as the maximum/minimum
        ! values.
-       max_dev(k) = 2.0*stnd_dev_x
+       max_dev = 2.0*stnd_dev_x
 
-    enddo
+       ! Calculate the contribution of the mean advection term.
+       ! m_adv_term = -wm_zt(k)*d(xm)/dz|_(k)
+       if ( .not. l_implemented ) then
+          tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
+          m_adv_term = - tmp(1) * xm(kp1)  &
+                       - tmp(2) * xm(k)  &
+                       - tmp(3) * xm(km1)
+       else
+          m_adv_term = 0.0
+       endif
 
-    ! Find the maximum and minimum usuable values of variable x at each
-    ! vertical level.  Start from level 2, which is the first level above
-    ! the ground or above the model surface.
-    do k = 2, gr%nnzp, 1
+       ! Find the value of xm without the contribution from the turbulent
+       ! advection term.
+       xm_without_ta(k) = real( xm_old(k) + dt*xm_forcing(k) + dt*m_adv_term )
 
        ! Find the minimum usuable value of variable x at each vertical level.
        ! Since variable x must be one of theta_l, r_t, or a scalar, all of
        ! which are positive definite quantities, the value must be >= 0.
-       min_x_allowable_lev(k) = max( xm_old(k) - max_dev(k), zero_threshold )
+       min_x_allowable_lev(k)  &
+       = max( xm_without_ta(k) - max_dev, zero_threshold )
 
        ! Find the maximum usuable value of variable x at each vertical level.
-       max_x_allowable_lev(k) = xm_old(k) + max_dev(k)
+       max_x_allowable_lev(k) = xm_without_ta(k) + max_dev
 
     enddo
 
-    do k = 3, gr%nnzp-2, 1
+
+    ! Find the maximum and minimum usuable values of x that can effect the value
+    ! of x at level k.  Then, find the upper and lower limits of w'x'.  Reset
+    ! the value of w'x' if it is outside of those limits, and store the amount
+    ! of adjustment that was needed to w'x'.
+    do k = 2, gr%nnzp-2, 1
 
        km1 = max( k-1, 1 )
 
@@ -2719,21 +2789,21 @@ module advance_xm_wpxp_module
        high_lev = min( k+num_levs, gr%nnzp )
 
        ! Find the smallest value of all relevant level minima for variable x.
-       min_x_allowable = minval( min_x_allowable_lev(low_lev:high_lev) )
+       min_x_allowable(k) = minval( min_x_allowable_lev(low_lev:high_lev) )
 
        ! Find the largest value of all relevant level maxima for variable x.
-       max_x_allowable = maxval( max_x_allowable_lev(low_lev:high_lev) )
+       max_x_allowable(k) = maxval( max_x_allowable_lev(low_lev:high_lev) )
 
        ! Find the upper limit for w'x' for a monotonic turbulent flux.
        wpxp_mfl_upper_lim  &
        = real( ( 1.0 / (dt*gr%dzt(k)) )  &
-               * ( xm_old(k) - min_x_allowable )  &
+               * ( xm_without_ta(k) - min_x_allowable(k) )  &
                + wpxp(km1) )
 
        ! Find the lower limit for w'x' for a monotonic turbulent flux.
        wpxp_mfl_lower_lim  &
        = real( ( 1.0 / (dt*gr%dzt(k)) )  &
-               * ( xm_old(k) - max_x_allowable )  &
+               * ( xm_without_ta(k) - max_x_allowable(k) )  &
                + wpxp(km1) )
 
        if ( wpxp(k) > wpxp_mfl_upper_lim ) then
@@ -2745,7 +2815,8 @@ module advance_xm_wpxp_module
           ! Determine the net amount of adjustment needed for w'x'.
           wpxp_net_adjust(k) = wpxp_mfl_upper_lim - wpxp(k)
 
-          ! Reset w'x' to the upper limit allowed by the monotonic flux limiter.
+          ! Reset the value of w'x' to the upper limit allowed by the
+          ! monotonic flux limiter.
           wpxp(k) = wpxp_mfl_upper_lim
 
        elseif ( wpxp(k) < wpxp_mfl_lower_lim ) then
@@ -2757,14 +2828,17 @@ module advance_xm_wpxp_module
           ! Determine the net amount of adjustment needed for w'x'.
           wpxp_net_adjust(k) = wpxp_mfl_lower_lim - wpxp(k)
 
-          ! Reset w'x' to the lower limit allowed by the monotonic flux limiter.
+          ! Reset the value of w'x' to the lower limit allowed by the
+          ! monotonic flux limiter.
           wpxp(k) = wpxp_mfl_lower_lim
 
        endif
 
     enddo
 
-    do k = 3, gr%nnzp-1, 1
+
+    ! Reset the value of xm to compensate for the change to w'x'.
+    do k = 2, gr%nnzp-1, 1
 
        km1 = max( k-1, 1 )
 
