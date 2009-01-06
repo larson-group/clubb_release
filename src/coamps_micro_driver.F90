@@ -926,6 +926,20 @@ end if
 #else /* COAMPS_MICRO not defined */
 stop "Not compiled with COAMPS Microphysics"
 
+! Avoid a compiler error on ifort for ia64
+ritend = 0
+rrtend = 0 
+rgtend = 0
+rsnowtend = 0
+rttend = 0
+thlmtend = 0
+nrmtend = 0
+Vrr = 0
+VNr = 0
+Vsnow = 0
+Vgraupel = 0
+Vice = 0
+
 #endif
 
 return
