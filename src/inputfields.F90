@@ -304,7 +304,7 @@ module inputfields
                     hydromet(1:gr%nnzp,iiNrm), l_error)
     endif
     if ( input_sigma_sqd_w_zt ) then
-      call get_var( fread_var , "sigma_sqd_w", timestep, & 
+      call get_var( fread_var , "sigma_sqd_w_zt", timestep, & 
                     sigma_sqd_w_zt(1:gr%nnzp), l_error)
     endif
 
@@ -395,7 +395,7 @@ module inputfields
                     vp2(1:gr%nnzp), l_error )
    endif
    if ( input_sigma_sqd_w ) then
-      call get_var( fread_var, "scm", & 
+      call get_var( fread_var, "sigma_sqd_w", & 
                     timestep, & 
                     sigma_sqd_w(1:gr%nnzp), l_error )
    endif
