@@ -27,6 +27,7 @@ module advance_xm_wpxp_module
              wpxp_term_pr1_lhs, & 
              wpxp_terms_bp_pr3_rhs, &
              monotonic_turbulent_flux_limit, &
+             calc_turb_adv_range, &
              xm_correction_wpxp_cl
 
   ! Parameter Constants
@@ -183,6 +184,14 @@ module advance_xm_wpxp_module
       Kw6_rt, & 
       Kw6_thl
 
+    ! Variables used as part of the monotonic turbulent advection scheme.
+    ! Find the lowermost and uppermost grid levels that can have an effect
+    ! on the central thermodynamic level during the course of a time step,
+    ! due to the effects of turbulent advection only.
+    integer, dimension(gr%nnzp) ::  &
+      low_lev_effect, & ! Index of the lowest level that has an effect.
+      high_lev_effect   ! Index of the highest level that has an effect.
+
     ! Variables used for clipping of w'x' due to correlation
     ! of w with x, such that:
     ! corr_(w,x) = w'x' / [ sqrt(w'^2) * sqrt(x'^2) ];
@@ -311,6 +320,14 @@ module advance_xm_wpxp_module
     endif  ! l_3pt_sqd_dfsn
 
 
+    ! Find the number of grid levels, both upwards and downwards, that can
+    ! have an effect on the central thermodynamic level during the course of
+    ! one time step due to turbulent advection.  This is used as part of the
+    ! monotonic turbulent advection scheme.
+    call calc_turb_adv_range( dt, wm_zm, wp2,  &
+                              low_lev_effect, high_lev_effect )
+
+
     ! Define a_1 (located on momentum levels).
     ! It is a variable that is a function of sigma_sqd_w (where sigma_sqd_w is
     ! located on momentum levels).
@@ -364,10 +381,11 @@ module advance_xm_wpxp_module
         return
       endif
 
-      call xm_wpxp_clipping_and_stats( "rtm", dt, wp2, rtp2, wm_zt,  &   ! Intent(in)
-                                       rtm_forcing, rttol**2, rcond,  &  ! Intent(in)
-                                       l_implemented, solution(:,1), &   ! Intent(in)
-                                       rtm, wprtp )                      ! Intent(inout)
+      call xm_wpxp_clipping_and_stats( "rtm", dt, wp2, rtp2, wm_zt,  &    ! Intent(in)
+                                       rtm_forcing, rttol**2, rcond,  &   ! Intent(in)
+                                       low_lev_effect, high_lev_effect, & ! Intent(in)
+                                       l_implemented, solution(:,1), &    ! Intent(in)
+                                       rtm, wprtp )                       ! Intent(inout)
 
       ! Compute the upper and lower limits of w'th_l' at every level,
       ! based on the correlation of w and th_l, such that:
@@ -411,6 +429,7 @@ module advance_xm_wpxp_module
 
       call xm_wpxp_clipping_and_stats( "thlm", dt, wp2, thlp2, wm_zt,  &  ! Intent(in)
                                        thlm_forcing, thltol**2, rcond,  & ! Intent(in)
+                                       low_lev_effect, high_lev_effect, & ! Intent(in)
                                        l_implemented, solution(:,1),  &   ! Intent(in)
                                        thlm, wpthlp )                     ! Intent(inout)
 
@@ -453,11 +472,12 @@ module advance_xm_wpxp_module
           return
         endif
 
-        call xm_wpxp_clipping_and_stats( "scalars", dt, wp2, sclrp2(:,i),  &     ! Intent(in)
-                                         wm_zt, sclrm_forcing(:,i),  &           ! Intent(in)
-                                         sclrtol(i)**2, rcond, l_implemented,  & ! Intent(in)
-                                         solution(:,1),  &                       ! Intent(in)
-                                         sclrm(:,i), wpsclrp(:,i) )              ! Intent(inout)
+        call xm_wpxp_clipping_and_stats( "scalars", dt, wp2, sclrp2(:,i),  & ! Intent(in)
+                                         wm_zt, sclrm_forcing(:,i),  &       ! Intent(in)
+                                         sclrtol(i)**2, rcond, &             ! Intent(in)
+                                         low_lev_effect, high_lev_effect, &  ! Intent(in)
+                                         l_implemented, solution(:,1),  &    ! Intent(in)
+                                         sclrm(:,i), wpsclrp(:,i) )          ! Intent(inout)
 
       enddo ! passive scalars
 
@@ -512,22 +532,25 @@ module advance_xm_wpxp_module
         return
       endif
 
-      call xm_wpxp_clipping_and_stats( "rtm", dt, wp2, rtp2, wm_zt,  &  ! Intent(in)
-                                       rtm_forcing, rttol**2, rcond,  & ! Intent(in)
-                                       l_implemented, solution(:,1),  & ! Intent(in)
-                                       rtm, wprtp )                     ! Intent(inout)
+      call xm_wpxp_clipping_and_stats( "rtm", dt, wp2, rtp2, wm_zt,  &    ! Intent(in)
+                                       rtm_forcing, rttol**2, rcond,  &   ! Intent(in)
+                                       low_lev_effect, high_lev_effect, & ! Intent(in)
+                                       l_implemented, solution(:,1),  &   ! Intent(in)
+                                       rtm, wprtp )                       ! Intent(inout)
 
       call xm_wpxp_clipping_and_stats( "thlm", dt, wp2, thlp2, wm_zt,  &  ! Intent(in)
                                        thlm_forcing, thltol**2, rcond,  & ! Intent(in)
+                                       low_lev_effect, high_lev_effect, & ! Intent(in)
                                        l_implemented, solution(:,2),  &   ! Intent(in)
                                        thlm, wpthlp )                     ! Intent(inout)
 
       do i = 1, sclr_dim, 1
-        call xm_wpxp_clipping_and_stats( "scalars", dt, wp2, sclrp2(:,i),  &     ! Intent(in)
-                                         wm_zt, sclrm_forcing(:,i),  &           ! Intent(in)
-                                         sclrtol(i)**2, rcond, l_implemented,  & ! Intent(in)
-                                         solution(:,2+i),  &                     ! Intent(in)
-                                         sclrm(:,i), wpsclrp(:,i) )              ! Intent(inout)
+        call xm_wpxp_clipping_and_stats( "scalars", dt, wp2, sclrp2(:,i),  & ! Intent(in)
+                                         wm_zt, sclrm_forcing(:,i),  &       ! Intent(in)
+                                         sclrtol(i)**2, rcond, &             ! Intent(in)
+                                         low_lev_effect, high_lev_effect, &  ! Intent(in)
+                                         l_implemented, solution(:,2+i),  &  ! Intent(in)
+                                         sclrm(:,i), wpsclrp(:,i) )          ! Intent(inout)
       enddo ! 1..sclr_dim
 
     endif ! l_clip_semi_implicit .and. l_3pt_sqd_dfsn
@@ -1425,6 +1448,7 @@ module advance_xm_wpxp_module
 !===============================================================================
   subroutine xm_wpxp_clipping_and_stats( solve_type, dt, wp2, xp2, wm_zt,  &
                                          xm_forcing, xp2_threshold, rcond,  &
+                                         low_lev_effect, high_lev_effect, &
                                          l_implemented, solution,  &
                                          xm, wpxp )
 
@@ -1547,6 +1571,14 @@ module advance_xm_wpxp_module
     real, intent(in) :: &
       xp2_threshold, & ! Minimum allowable value of x'^2   [units vary]
       rcond ! Reciprocal of the estimated condition number (from computing A^-1)
+
+    ! Variables used as part of the monotonic turbulent advection scheme.
+    ! Find the lowermost and uppermost grid levels that can have an effect
+    ! on the central thermodynamic level during the course of a time step,
+    ! due to the effects of turbulent advection only.
+    integer, dimension(gr%nnzp), intent(in) ::  &
+      low_lev_effect, & ! Index of the lowest level that has an effect.
+      high_lev_effect   ! Index of the highest level that has an effect.
 
     logical, intent(in) :: &
       l_implemented   ! Flag for CLUBB being implemented in a larger model.
@@ -1785,6 +1817,7 @@ module advance_xm_wpxp_module
        call monotonic_turbulent_flux_limit( solve_type, dt, xm_n,  &
                                             xp2, wm_zt, xm_forcing,  &
                                             xp2_threshold, l_implemented,  &
+                                            low_lev_effect, high_lev_effect, &
                                             xm, wpxp )
     endif
 
@@ -2367,6 +2400,7 @@ module advance_xm_wpxp_module
   subroutine monotonic_turbulent_flux_limit( solve_type, dt, xm_old,  &
                                              xp2, wm_zt, xm_forcing,  &
                                              xp2_threshold, l_implemented,  &
+                                             low_lev_effect, high_lev_effect, &
                                              xm, wpxp )
 
     ! Description:
@@ -2652,6 +2686,10 @@ module advance_xm_wpxp_module
     logical, intent(in) :: &
       l_implemented   ! Flag for CLUBB being implemented in a larger model.
 
+    integer, dimension(gr%nnzp), intent(in) ::  &
+      low_lev_effect, & ! Index of lowest level that has an effect (for lev. k)
+      high_lev_effect   ! Index of highest level that has an effect (for lev. k)
+
     ! Input/Output Variables
     real, dimension(gr%nnzp), intent(inout) ::  &
       xm,  &      ! xm at current time step (thermodynamic levels)  [units vary]
@@ -2684,9 +2722,9 @@ module advance_xm_wpxp_module
     integer ::  &
       k, kp1, km1  ! Array indices
 
-    integer, parameter :: &
-      num_levs = 10  ! Number of levels above and below level k to look for
-                     ! maxima and minima of variable x.
+!    integer, parameter :: &
+!      num_levs = 10  ! Number of levels above and below level k to look for
+!                     ! maxima and minima of variable x.
 
     integer :: &
       low_lev, & ! Lowest level (from level k) to look for x minima and maxima
@@ -2736,8 +2774,9 @@ module advance_xm_wpxp_module
     
     ! Find the maximum and minimum usuable values of variable x at each
     ! vertical level.  Start from level 2, which is the first level above
-    ! the ground (or above the model surface).
-    do k = 2, gr%nnzp-1, 1
+    ! the ground (or above the model surface).  This computation needs to be
+    ! performed for all vertical levels above the ground (or model surface).
+    do k = 2, gr%nnzp, 1
 
        km1 = max( k-1, 1 )
        kp1 = min( k+1, gr%nnzp )
@@ -2750,9 +2789,10 @@ module advance_xm_wpxp_module
        ! values.
        max_dev = 2.0*stnd_dev_x
 
-       ! Calculate the contribution of the mean advection term.
-       ! m_adv_term = -wm_zt(k)*d(xm)/dz|_(k)
-       if ( .not. l_implemented ) then
+       ! Calculate the contribution of the mean advection term:
+       ! m_adv_term = -wm_zt(k)*d(xm)/dz|_(k).
+       ! Note:  mean advection is not applied to xm at level gr%nnzp.
+       if ( .not. l_implemented .and. k < gr%nnzp ) then
           tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
           m_adv_term = - tmp(1) * xm(kp1)  &
                        - tmp(2) * xm(k)  &
@@ -2763,6 +2803,7 @@ module advance_xm_wpxp_module
 
        ! Find the value of xm without the contribution from the turbulent
        ! advection term.
+       ! Note:  the contribution of xm_forcing at level gr%nnzp should be 0.
        xm_without_ta(k) = real( xm_old(k) + dt*xm_forcing(k) + dt*m_adv_term )
 
        ! Find the minimum usuable value of variable x at each vertical level.
@@ -2781,12 +2822,26 @@ module advance_xm_wpxp_module
     ! of x at level k.  Then, find the upper and lower limits of w'x'.  Reset
     ! the value of w'x' if it is outside of those limits, and store the amount
     ! of adjustment that was needed to w'x'.
-    do k = 2, gr%nnzp-2, 1
+    ! Note:  The effect of surface heating or cooling is not taken into account
+    !        above, for it is dependent on the value of w'x' at the surface.
+    !        Transfering the surface flux into the xm array depends on the
+    !        derivative between w'x'(1) and w'x'(2).  Thus, w'x' at level 2 is
+    !        not altered in order to avoid artificially altering the surface
+    !        heating or cooling occuring on xm at level 2.  Both w'x' and xm
+    !        may be altered starting at level 3.  Likewise, w'x' at level
+    !        gr%nnzp is set to 0, and xm at level gr%nnzp is set to remain the
+    !        same.  Altering w'x' at level gr%nnzp-1 would force the value of
+    !        xm at level gr%nnzp to be altered.  Thus, the highest level where
+    !        w'x' can be altered is level gr%nnzp-2, and thus the highest level
+    !        where xm can be altered is level gr%nnzp-1.
+    do k = 3, gr%nnzp-2, 1
 
        km1 = max( k-1, 1 )
 
-       low_lev  = max( k-num_levs, 2 )
-       high_lev = min( k+num_levs, gr%nnzp )
+       low_lev  = max( low_lev_effect(k), 2 )
+       high_lev = min( high_lev_effect(k), gr%nnzp )
+       !low_lev  = max( k-num_levs, 2 )
+       !high_lev = min( k+num_levs, gr%nnzp )
 
        ! Find the smallest value of all relevant level minima for variable x.
        min_x_allowable(k) = minval( min_x_allowable_lev(low_lev:high_lev) )
@@ -2808,9 +2863,9 @@ module advance_xm_wpxp_module
 
        if ( wpxp(k) > wpxp_mfl_upper_lim ) then
 
-          print *, "wpxp too large (mfl)"
-          print *, "wpxp upper lim = ", wpxp_mfl_upper_lim
-          print *, "wpxp = ", wpxp(k)
+          !print *, "wpxp too large (mfl)"
+          !print *, "wpxp upper lim = ", wpxp_mfl_upper_lim
+          !print *, "wpxp = ", wpxp(k)
 
           ! Determine the net amount of adjustment needed for w'x'.
           wpxp_net_adjust(k) = wpxp_mfl_upper_lim - wpxp(k)
@@ -2821,9 +2876,9 @@ module advance_xm_wpxp_module
 
        elseif ( wpxp(k) < wpxp_mfl_lower_lim ) then
 
-          print *, "wpxp too small (mfl)"
-          print *, "wpxp lower lim = ", wpxp_mfl_lower_lim
-          print *, "wpxp = ", wpxp(k)
+          !print *, "wpxp too small (mfl)"
+          !print *, "wpxp lower lim = ", wpxp_mfl_lower_lim
+          !print *, "wpxp = ", wpxp(k)
 
           ! Determine the net amount of adjustment needed for w'x'.
           wpxp_net_adjust(k) = wpxp_mfl_lower_lim - wpxp(k)
@@ -2838,7 +2893,19 @@ module advance_xm_wpxp_module
 
 
     ! Reset the value of xm to compensate for the change to w'x'.
-    do k = 2, gr%nnzp-1, 1
+    ! Note:  The effect of surface heating or cooling is not taken into account
+    !        above, for it is dependent on the value of w'x' at the surface.
+    !        Transfering the surface flux into the xm array depends on the
+    !        derivative between w'x'(1) and w'x'(2).  Thus, w'x' at level 2 is
+    !        not altered in order to avoid artificially altering the surface
+    !        heating or cooling occuring on xm at level 2.  Both w'x' and xm
+    !        may be altered starting at level 3.  Likewise, w'x' at level
+    !        gr%nnzp is set to 0, and xm at level gr%nnzp is set to remain the
+    !        same.  Altering w'x' at level gr%nnzp-1 would force the value of
+    !        xm at level gr%nnzp to be altered.  Thus, the highest level where
+    !        w'x' can be altered is level gr%nnzp-2, and thus the highest level
+    !        where xm can be altered is level gr%nnzp-1.
+    do k = 3, gr%nnzp-1, 1
 
        km1 = max( k-1, 1 )
 
@@ -2847,18 +2914,18 @@ module advance_xm_wpxp_module
        dxm_dt_mfl_adjust(k)  &
        = - gr%dzt(k) * ( wpxp_net_adjust(k) - wpxp_net_adjust(km1) )
 
-       if ( dxm_dt_mfl_adjust(k) /= 0.0 ) then
-          print *, "k = ", k, "old xm = ", xm(k)
-       endif
+       !if ( dxm_dt_mfl_adjust(k) /= 0.0 ) then
+       !   print *, "k = ", k, "old xm = ", xm(k)
+       !endif
 
        ! The net change to xm due to the monotonic flux limiter is the
        ! rate of change multiplied by the time step length.  Add the product
        ! to xm to find the new xm resulting from the monotonic flux limiter.
        xm(k) = real( xm(k) + dxm_dt_mfl_adjust(k) * dt )
 
-       if ( dxm_dt_mfl_adjust(k) /= 0.0 ) then
-          print *, "k = ", k, "new xm = ", xm(k)
-       endif
+       !if ( dxm_dt_mfl_adjust(k) /= 0.0 ) then
+       !   print *, "k = ", k, "new xm = ", xm(k)
+       !endif
 
     enddo
 
@@ -2874,6 +2941,351 @@ module advance_xm_wpxp_module
 
     return
   end subroutine monotonic_turbulent_flux_limit
+
+  !=============================================================================
+  subroutine calc_turb_adv_range( dt, wm_zm, wp2,  &
+                                  low_lev_effect, high_lev_effect )
+
+    ! Description:
+    ! Calculates the lowermost and uppermost thermodynamic grid levels that can
+    ! effect the base (or central) thermodynamic level through the effects of
+    ! turbulent advection over the course of one time step.  This is used as
+    ! part of the monotonic turbulent advection scheme.
+    !
+    ! One method is to use the vertical velocity at each level to determine the
+    ! amount of time that it takes to travel across that particular grid level.
+    ! The method is to keep on advancing one grid level until either (a) the 
+    ! total sum of time taken reaches or exceeds the model time step length,
+    ! (b) the top or bottom of the model is reached, or (c) a level is reached
+    ! where the vertical velocity component (with turbulence included) is
+    ! oriented completely opposite of the direction of travel towards the base
+    ! (or central) thermodynamic level.  An example of situation (c) would be,
+    ! while starting from a higher altitude and searching downward for all
+    ! upward vertical velocity components, encountering a strong downdraft
+    ! where the vertical velocity at every single point is oriented downward.
+    ! Such a situation would occur when the mean vertical velocity (wm_zm)
+    ! exceeds any turbulent component (w') that would be oriented upwards.
+    !
+    ! Another method is to simply set the thickness (in meters) of the layer
+    ! that turbulent advection is allowed to act over, for purposes of the 
+    ! monotonic turbulent advection scheme.  The lowermost and uppermost
+    ! grid level that can effect the base (or central) thermodynamic level
+    ! is computed based on the thickness and altitude of each level.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use grid_class, only:  &
+        gr  ! Variable(s)
+
+    use stats_precision, only:  & 
+        time_precision ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real(kind=time_precision), intent(in) ::  &
+      dt        ! Model timestep length                            [s]
+
+    real, dimension(gr%nnzp), intent(in) ::  &
+      wm_zm,  & ! Mean vertical velocity on momentum levels        [m^2/s^2]
+      wp2       ! w'^2 (momentum levels)                           [m^2/s^2]
+
+    ! Output Variables
+    integer, dimension(gr%nnzp), intent(out) ::  &
+      low_lev_effect, & ! Index of lowest level that has an effect (for lev. k)
+      high_lev_effect   ! Index of highest level that has an effect (for lev. k)
+
+    ! Local Variables
+    real, dimension(gr%nnzp) ::  &
+      vert_vel_up,  & ! Average upwards vertical velocity component   [m/s]
+      vert_vel_down   ! Average downwards vertical velocity component [m/s]
+
+    real(kind=time_precision) ::  &
+      dt_one_grid_lev, & ! Amount of time to travel one grid box           [s]
+      dt_all_grid_levs   ! Running count of amount of time taken to travel [s]
+
+    integer :: k, j
+
+    logical, parameter ::  &
+      l_constant_thickness = .true.  ! Toggle constant or variable thickness.
+
+    real, parameter ::  &
+      const_thick = 150.0  ! Constant thickness value               [m]
+
+
+    if ( l_constant_thickness ) then ! thickness is a constant value.
+
+       ! The value of w'x' may only be altered between levels 3 and gr%nnzp-2.
+       do k = 3, gr%nnzp-2, 1
+
+          ! Compute the number of levels that effect the central thermodynamic
+          ! level through upwards motion (traveling from lower levels to reach
+          ! the central thermodynamic level).
+
+          ! Start with the index of the thermodynamic level immediately below
+          ! the central thermodynamic level.
+          j = k - 1
+
+          do ! loop downwards until answer is found.
+
+             if ( gr%zt(k) - gr%zt(j) >= const_thick ) then
+
+                ! Stop, the current grid level is the lowest level that can
+                ! be considered.
+                low_lev_effect(k) = j
+
+                exit
+
+             else
+
+                ! Thermodynamic level 1 cannot be considered because it is
+                ! located below the surface or below the bottom of the model.
+                ! The lowest level that can be considered is thermodynamic
+                ! level 2.
+                if ( j == 2 ) then
+               
+                   ! The current level (level 2) is the lowest level that can
+                   ! be considered.
+                   low_lev_effect(k) = j
+
+                   exit
+
+                else
+
+                   ! Increment to the next vertical level down.
+                   j = j - 1
+
+                endif
+
+             endif
+
+          enddo ! downwards loop
+
+
+          ! Compute the number of levels that effect the central thermodynamic
+          ! level through downwards motion (traveling from higher levels to
+          ! reach the central thermodynamic level).
+
+          ! Start with the index of the thermodynamic level immediately above
+          ! the central thermodynamic level.
+          j = k + 1
+
+          do ! loop upwards until answer is found.
+
+             if ( gr%zt(j) - gr%zt(k) >= const_thick ) then
+
+                ! Stop, the current grid level is the highest level that can
+                ! be considered.
+                high_lev_effect(k) = j
+
+                exit
+
+             else
+
+                ! The highest level that can be considered is thermodynamic
+                ! level gr%nnzp.
+                if ( j == gr%nnzp ) then
+               
+                   ! The current level (level gr%nnzp) is the highest level
+                   ! that can be considered.
+                   high_lev_effect(k) = j
+
+                   exit
+
+                else
+
+                   ! Increment to the next vertical level up.
+                   j = j + 1
+
+                endif
+
+             endif
+
+          enddo ! upwards loop
+
+       enddo ! k = 3, gr%nnzp-2
+
+
+    else ! thickness based on vertical velocity and time step length.
+
+       ! Find the average upwards vertical velocity and the average downwards
+       ! vertical velocity.
+       ! Note:  A level that has all vertical wind moving downwards will have a
+       !        vert_vel_up value that is negative, and vice versa.
+       vert_vel_up   = wm_zm + sqrt( wp2 )
+       vert_vel_down = wm_zm - sqrt( wp2 )
+
+       ! The value of w'x' may only be altered between levels 3 and gr%nnzp-2.
+       do k = 3, gr%nnzp-2, 1
+
+          ! Compute the number of levels that effect the central thermodynamic
+          ! level through upwards motion (traveling from lower levels to reach
+          ! the central thermodynamic level).
+
+          ! Start with the index of the thermodynamic level immediately below
+          ! the central thermodynamic level.
+          j = k - 1
+
+          ! Initialize the overall delta t counter to 0.
+          dt_all_grid_levs = 0.0
+
+          do ! loop downwards until answer is found.
+
+             ! Continue if there is some component of upwards vertical velocity.
+             if ( vert_vel_up(j) > 0.0 ) then
+
+                ! Compute the amount of time it takes to travel one grid level
+                ! upwards:  delta_t = delta_z / vert_vel_up.
+                dt_one_grid_lev = (1.0/gr%dzm(j)) / vert_vel_up(j)
+
+                ! Total time elapsed for crossing all grid levels that have been
+                ! passed, thus far.
+                dt_all_grid_levs = dt_all_grid_levs + dt_one_grid_lev
+
+                ! Stop if has taken more than one model time step (overall) to
+                ! travel the entire extent of the current vertical grid level.
+                if ( dt_all_grid_levs >= dt ) then
+
+                   ! The current level is the lowest level that can be
+                   ! considered.
+                   low_lev_effect(k) = j
+
+                   exit
+
+                ! Continue if the total elapsed time has not reached or exceeded
+                ! one model time step.
+                else
+
+                   ! Thermodynamic level 1 cannot be considered because it is
+                   ! located below the surface or below the bottom of the model.
+                   ! The lowest level that can be considered is thermodynamic
+                   ! level 2.
+                   if ( j == 2 ) then
+               
+                      ! The current level (level 2) is the lowest level that can
+                      ! be considered.
+                      low_lev_effect(k) = j
+
+                      exit
+
+                   else
+
+                      ! Increment to the next vertical level down.
+                      j = j - 1
+
+                   endif
+
+                endif
+
+             ! Stop if there isn't a component of upwards vertical velocity.
+             else
+
+                ! The current level cannot be considered.  The lowest level that
+                ! can be considered is one-level-above the current level.
+                low_lev_effect(k) = j + 1
+
+                exit
+
+             endif
+
+          enddo ! downwards loop
+
+
+          ! Compute the number of levels that effect the central thermodynamic
+          ! level through downwards motion (traveling from higher levels to
+          ! reach the central thermodynamic level).
+
+          ! Start with the index of the thermodynamic level immediately above
+          ! the central thermodynamic level.
+          j = k + 1
+
+          ! Initialize the overall delta t counter to 0.
+          dt_all_grid_levs = 0.0
+
+          do ! loop upwards until answer is found.
+
+             ! Continue if there is some component of downwards vertical velocity.
+             if ( vert_vel_down(j-1) < 0.0 ) then
+
+                ! Compute the amount of time it takes to travel one grid level
+                ! downwards:  delta_t = - delta_z / vert_vel_down.
+                ! Note:  There is a (-) sign in front of delta_z because the
+                !        distance traveled is downwards.  Since vert_vel_down
+                !        has a negative value, dt_one_grid_lev will be a
+                !        positive value.
+                dt_one_grid_lev = -(1.0/gr%dzm(j-1)) / vert_vel_down(j-1)
+
+                ! Total time elapsed for crossing all grid levels that have been
+                ! passed, thus far.
+                dt_all_grid_levs = dt_all_grid_levs + dt_one_grid_lev
+
+                ! Stop if has taken more than one model time step (overall) to
+                ! travel the entire extent of the current vertical grid level.
+                if ( dt_all_grid_levs >= dt ) then
+
+                   ! The current level is the highest level that can be
+                   ! considered.
+                   high_lev_effect(k) = j
+
+                   exit
+
+                ! Continue if the total elapsed time has not reached or exceeded
+                ! one model time step.
+                else
+
+                   ! The highest level that can be considered is thermodynamic
+                   ! level gr%nnzp.
+                   if ( j == gr%nnzp ) then
+               
+                      ! The current level (level gr%nnzp) is the highest level
+                      ! that can be considered.
+                      high_lev_effect(k) = j
+
+                      exit
+
+                   else
+
+                      ! Increment to the next vertical level up.
+                      j = j + 1
+
+                   endif
+
+                endif
+
+             ! Stop if there isn't a component of downwards vertical velocity.
+             else
+
+                ! The current level cannot be considered.  The highest level
+                ! that can be considered is one-level-below the current level.
+                high_lev_effect(k) = j - 1
+
+                exit
+
+             endif
+
+          enddo  ! upwards loop
+
+       enddo ! k = 3, gr%nnzp-2
+
+    endif ! l_constant_thickness
+
+
+    ! Information for levels 1, 2, gr%nnzp-1, and gr%nnzp is not needed.
+    ! However, set the values at these levels for purposes of not having odd
+    ! values in the arrays.
+    low_lev_effect(1)  = 1
+    high_lev_effect(1) = 1
+    low_lev_effect(2)  = 2
+    high_lev_effect(2) = 2
+    low_lev_effect(gr%nnzp-1)  = gr%nnzp-1
+    high_lev_effect(gr%nnzp-1) = gr%nnzp
+    low_lev_effect(gr%nnzp)    = gr%nnzp
+    high_lev_effect(gr%nnzp)   = gr%nnzp
+
+
+    return
+  end subroutine calc_turb_adv_range
 
   !=============================================================================
   subroutine xm_correction_wpxp_cl( solve_type, dt, wpxp_chnge, dzt, &
