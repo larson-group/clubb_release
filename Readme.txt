@@ -84,7 +84,7 @@ Requirements:
 A. A Fortran 95 compiler with a complete implementation of the standard.
 B. GNU make (we use v3.81).
 C. LAPACK & BLAS.  These provide the tri and band diagonal matrix solver
-   subroutines needed by HOC.  Many vendors provide optimized versions of
+   subroutines needed by CLUBB.  Many vendors provide optimized versions of
    these routines, which may be much faster than the reference BLAS.
 D. GNU bash, or an equivalent POSIX compliant shell to use the run scripts.
 
@@ -92,7 +92,7 @@ Optionally:
 E. GrADS for viewing the GrADS output data.
 F. NetCDF >= v3.5.1;  We have not tested our code with anything older.
    If you do not use netCDF, remove -DNETCDF from the compiler flags.
-G. MATLAB or Ncarg for viewing the netCDF output data.
+G. MATLAB or NCAR graphics for viewing the netCDF output data.
 
 Build:
 1. $ cd <BASE DIRECTORY>/src
@@ -121,7 +121,7 @@ A., B., C. as above.
 Build:
 1. and 2. as above.
 
-$ make libhoc_param.a
+$ make libclubb_param.a
 
 This will build just the static library and the f90 modules.
 The static library will be in $(PREFIX)/lib, while the modules will be 
@@ -129,15 +129,15 @@ in the obj directory.  You will need at least the clubb_core.mod file
 to interface with CLUBB.
 
 Addition by Brian:  
-In addition to the above, you will have to make a reference to the CLUBB library 
-from the configuration file of the host program.  Since CLUBB now uses the
-LAPACK libraries, you will also have to make reference to those.  Currently, 
+In addition to the above, you will have to make a reference to the CLUBB 
+library from the configuration file of the host program.  Since CLUBB now uses 
+the LAPACK libraries, you will also have to make reference to those. Currently, 
 we do not include the LAPACK libraries with the CLUBB download.  You will have 
 to find them and then download them onto your own computer if they are not
 included with your operating system or compiler.  Once you have done this, you 
 can reference them in a line such as the following:
 
--L/home/griffinb/hoc_v2.2_tuner/lib -lhoc_param -llapack -lblas
+-L/home/griffinb/hoc_v2.2_tuner/lib -lclubb_param -llapack -lblas
 
 If the LAPACK and BLAS libraries were compiled with GNU Fortran 77, you may 
 need to link to the runtime libs for that with -lg2c as well.
@@ -290,64 +290,18 @@ have other options besides the ramdisk_size.
 Solaris Example
 Note that these instructions only apply to Solaris 9 & 10
 
-1. $ ramdiskadm -a hoc 256m 
-Creates a virtual disk hoc that is 256 megabytes in size.
+1. $ ramdiskadm -a clubb 256m 
+Creates a virtual disk clubb that is 256 megabytes in size.
 
-2. $ newfs /dev/ramdisk/hoc
+2. $ newfs /dev/ramdisk/clubb
 
-3. $ mount /dev/ramdisk/hoc /home/dschanen/hoc_v2.2_tuner/rd_tune/
+3. $ mount /dev/ramdisk/clubb /home/dschanen/hoc_v2.2_tuner/rd_tune/
 
 4. $ cp tune/*.* rd_tune/
 
 5. $ cd rd_tune
 
 (Run your job)
-
------------------------------------------------------------------------
-- (3.2) Executing a budget terms tuning run:
------------------------------------------------------------------------
-
-One run at a time:
-1. cd ~/hoc_v2.2_tuner/tune_budgets/ 
-2. Check hoc_v2.2_tuner/model/<CASE>_model.in to make sure dtmain equals
-  dtclosure.  Make a note of what your statistics file's timestep divided by 
-  dtmain is, since this is the sample_ratio in your budget namelist. 
-  e.g. If the situation is a 1 mn timestep in LES GRaDS statistics paired 
-  with a 5 second dtmain, the sample_ratio is 60.0 / 5.0 = 12.0
-  You might also want to verify that your LES file has sufficient data
-  for the whole duration of the CLUBB run.
-3. Edit <CASE>_budget.in;  You will want to set one case_tune variable to true 
-  and the rest to false, or the resultant parameters from one tuning run 
-  will be used in subsequent runs.  
-
-  Alternatively, you may edit the hoc_tuner_budget_terms.F code, setting liter 
-  to .true., and attempt to optimize the constants over multiple budget terms.  
-  This is some experimental code that starts at 10x's the ftol and loops over
-  all the amoeba cases, updating the constants by small amounts.  The idea
-  being that a ``best fit'' set of constant value will eventually be arrived
-  at when the tolerance is lowest( at ftol) on the 10th iteration of the 
-  do loop.
-
-  Sometimes (usually?) this mode doesn't appear to converge on anything.  
-  The more cases this is run over, the more likely it appears the constants 
-  will descend into values that cause the model become invalid and it will
-  fail altogether.
-
-4. Edit run_budget.bash for your model <CASE> 
-5. ./run_budget.bash 
-
-Batch mode: 
-1.  cd hoc_v2.2_tuner/tune_budgets/
-    mkdir <directory name you like>
-2.  cp BOMEX/create_files.bash <dir from (1)>
-    cp BOMEX/run_batch.bash <dir from (1)>
-3.  cp <CASE>_budget <dir from (1)>/budget.tmpl
-4.  cd <dir from (1)>
-5.  edit budget.tmpl to your liking;  
-    remove the 'case_tune' namelist entirely.
-5.  ./create_files.bash (you shouldn't see any errors)
-6.  ./run_batch.bash
-7.  Make coffee. Play spider solitaire. Wait an hour or two.
 
 -----------------------------------------------------------------------
 - (3.3) Executing an ensemble tuning run:
@@ -556,14 +510,14 @@ LES GrADS files:
   stratocumulus.  BOMEX, FIRE, and ATEX are statistically steady-state; 
   ARM varies over the course of a day.
 
-HOC GrADS files:
+CLUBB GrADS files:
   results/<DATE>/bomex_zt.ctl, etc.
   These are the 4 basic runs using the default constants. Not used in any
   way by the tuner, but useful for comparing runs results in grads.  To obtain
   similar results on differing platforms, check your compiler's documentation
   for information on enabling IEEE 754 standard floating-point arithmetic.
 
-Generated HOC GrADS files:
+Generated CLUBB GrADS files:
   bomex_zt.dat, fire_zt.dat, arm_zt.dat, atex_zt.dat, dycoms_zt.dat,
     wangara_zt.dat, <case>_zm, <case>_sfc ...
   These are the files generated by the hoc subroutine during a model run
@@ -610,7 +564,7 @@ The compare_runs files:
 ------------------------------------------------------------------------
 
   This is an optional more complex radiation scheme, developed apart from
-  HOC by Stephens, et al. The code used in HOC was obtained from Norm Wood 
+  CLUBB by Stephens, et al. The code used in HOC was obtained from Norm Wood 
   on 2004/07/10.
   When enabled, the analytic computation normally
   used for radiation is disabled.  BUGSrad is enabled in the 
