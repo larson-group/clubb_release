@@ -238,6 +238,15 @@ module advance_windm_edsclrm_module
     !----------------------------------------------------------------
     vm(1:gr%nnzp) = solution(1:gr%nnzp,2)
 
+    ! The values of um(1) and vm(1) are located below the model surface and do
+    ! not effect the rest of the model.  The values of um(1) or vm(1) are simply
+    ! set to the values of um(2) and vm(2), respectively, after the equation
+    ! matrices has been solved.  Even though um and vm would sharply decrease
+    ! to a value of 0 at the surface, this is done to avoid confusion on plots
+    ! of the vertical profiles of um and vm.
+    um(1) = um(2)
+    vm(1) = vm(2)
+
     if ( l_stats_samp ) then
 
       ! xm total time tendency (2nd calculation)
@@ -383,6 +392,12 @@ module advance_windm_edsclrm_module
        !----------------------------------------------------------------
        edsclrm(1:gr%nnzp,1:sclr_dim) = solution(1:gr%nnzp,1:sclr_dim)
 
+       ! The value of edsclrm(1) is located below the model surface and does not
+       ! effect the rest of the model.  The value of edsclrm(1) is simply set to
+       ! the value of edsclrm(2) after the equation matrix has been solved.
+       forall( i=1:sclr_dim )
+          edsclrm(1,i) = edsclrm(2,i)
+       end forall
 
        ! Second part of momentum (implicit component)
 
@@ -720,9 +735,9 @@ module advance_windm_edsclrm_module
     ! passed in as solving for level 2.
     !
     ! The value of xm(1) is located below the model surface and does not effect
-    ! the rest of the model.  Since the wind components, um and vm, decrease
-    ! to zero right at the ground level, the value of xm below ground is set
-    ! to 0, as well.
+    ! the rest of the model.  Since xm can be either a horizontal wind component
+    ! or a generic eddy scalar quantity, the value of xm(1) is simply set to the
+    ! value of xm(2) after the equation matrix has been solved.
     !
     !
     ! Conservation Properties:
@@ -1321,8 +1336,12 @@ module advance_windm_edsclrm_module
     ! Lower Boundary
 
     ! The lower boundary condition is a fixed-flux boundary condition, which
-    ! gets added into the time-tendency equation at level 2.  The value of
-    ! xm(1), which is below the model surface, should be set to 0.
+    ! gets added into the time-tendency equation at level 2.
+    ! The value of xm(1) is located below the model surface and does not effect
+    ! the rest of the model.  Since xm can be either a horizontal wind component
+    ! or a generic eddy scalar quantity, the value of xm(1) is simply set to the
+    ! value of xm(2) after the equation matrix has been solved.
+
     ! k = 1
     lhs(k_tdiag,1) = 1.0
 
@@ -1538,8 +1557,13 @@ module advance_windm_edsclrm_module
     ! Lower Boundary
 
     ! The lower boundary condition is a fixed-flux boundary condition, which
-    ! gets added into the time-tendency equation at level 2.  The value of
-    ! xm(1), which is below the model surface, should be set to 0.
+    ! gets added into the time-tendency equation at level 2.
+    ! The value of xm(1) is located below the model surface and does not effect
+    ! the rest of the model.  Since xm can be either a horizontal wind component
+    ! or a generic eddy scalar quantity, the value of xm(1) is simply set to the
+    ! value of xm(2) after the equation matrix has been solved.  For purposes of
+    ! the matrix equation, rhs(1) is simply set to 0.
+
     ! k = 1
     rhs(1) = 0.0
 
