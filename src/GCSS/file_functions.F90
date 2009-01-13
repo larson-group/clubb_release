@@ -55,10 +55,16 @@ real, dimension(num_datapts), intent(out) :: &
 
 integer :: k        ! Data file row number.
 integer :: i        ! Data file column number.
+integer :: ierr
 
 
 ! Open data file.
-open( unit=file_unit, file=path_and_filename, action='read' )
+open( unit=file_unit, file=path_and_filename, action='read', status='old', &
+      iostat=ierr )
+if ( ierr /= 0 ) then
+  write(0,*) "CLUBB encountered an error trying to open "//path_and_filename
+  stop "Error opening forcings file"
+end if
 
 ! Michael Falk wrote this routine to read data files in a particular format for mpace_a.
 ! Each line has a specific number of values, until the last line in the file, which
