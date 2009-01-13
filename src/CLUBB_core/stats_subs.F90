@@ -14,7 +14,7 @@ module stats_subs
   contains
       
 !-----------------------------------------------------------------------
-  subroutine stats_init( iunit, fname_prefix, l_stats_in, stats_fmt_in, stats_tsamp_in, &
+  subroutine stats_init( iunit, fname_prefix, fdir, l_stats_in, stats_fmt_in, stats_tsamp_in, &
                          stats_tout_in, fnamelist, nnzp, gzt, gzm, & 
                          day, month, year, rlat, rlon, time_current, delt )
 
@@ -107,7 +107,8 @@ module stats_subs
     integer, intent(in) :: iunit  ! File unit for fnamelist
 
     character(len=*), intent(in) ::  & 
-      fname_prefix    ! Start of the stats filenames
+      fname_prefix, & ! Start of the stats filenames
+      fdir            ! Directory to output to
 
     logical, intent(in) :: l_stats_in ! Stats on? T/F
 
@@ -158,7 +159,7 @@ module stats_subs
 
     logical :: l_error
 
-    character(len=200) :: fdir, fname
+    character(len=200) :: fname
 
     integer :: i, ntot
 
@@ -338,7 +339,6 @@ module stats_subs
     ztscr20 = 0.0
     ztscr21 = 0.0
 
-    fdir = "./"
     fname = trim( fname_zt )
 
     if ( l_grads ) then
@@ -433,7 +433,6 @@ module stats_subs
     zmscr17 = 0.0
 
 
-    fdir = "./"
     fname = trim( fname_zm )
     if ( l_grads ) then
 
@@ -488,7 +487,6 @@ module stats_subs
     allocate( sfc%f%var( sfc%nn ) )
     allocate( sfc%f%z( sfc%kk ) )
 
-    fdir = "./"
     fname = trim( fname_sfc )
 
     if ( l_grads ) then

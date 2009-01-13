@@ -254,7 +254,8 @@ module clubb_driver
       stats_fmt  ! File format for stats; typically GrADS.
 
     character(len=100) :: & 
-      fname_prefix ! Prefix of stats filenames, to be followed by, for example "_zt"
+      fname_prefix, &! Prefix of stats filenames, to be followed by, for example "_zt"
+      fdir           ! Output directory
 
     real(kind=time_precision) :: & 
       stats_tsamp,   & ! Stats sampling interval [s]
@@ -606,8 +607,11 @@ module clubb_driver
 #else
     iunit = 50
 #endif
+
+    fdir = "./" ! Output directory
+
     ! Initialize statistics output
-    call stats_init( iunit, fname_prefix, l_stats, stats_fmt, stats_tsamp, &    ! Intent(in)
+    call stats_init( iunit, fname_prefix, fdir, l_stats, stats_fmt, stats_tsamp, &! Intent(in)
                      stats_tout, runfile, gr%nnzp, gr%zt, gr%zm, &              ! Intent(in)
                      day, month, year, rlat, rlon, time_current, dtmain )       ! Intent(in)
 
