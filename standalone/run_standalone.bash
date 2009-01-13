@@ -19,16 +19,16 @@ if [ -z $1 ]; then
 	echo "Usage: "$0" <MODEL CASE> [PARAMETER FILE] [STATS FILE]"
 	exit
 else
-	MODEL_FILE='../model/'$1'_model.in'
+	MODEL_FILE='../input/case_setups/'$1'_model.in'
 
 	if [ -z $2 ]; then
-		PARAMS_FILE="default_parameters.in"
+		PARAMS_FILE="../input/tunable_parameters.in"
 	else
 		PARAMS_FILE=$2
 	fi
 
 	if [ -z $3 ]; then
-		STATS_FILE="../stats/all_stats.in"
+		STATS_FILE="../input/stats/all_stats.in"
 	else
 		STATS_FILE=$3
 	fi

@@ -136,13 +136,13 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 # copy them over to the general input files.
 
 	#STANDALONE_IN='standalone_'"${RUN_CASE[$x]}"'.in'
-	PARAMS_IN='default_parameters.in'
-	MODEL_IN='../model/'"${RUN_CASE[$x]}"'_model.in'
+	PARAMS_IN='../input/tunable_parameters.in'
+	MODEL_IN='../input/case_setups/'"${RUN_CASE[$x]}"'_model.in'
 	if [ $NIGHTLY == true ] ; then
-		STATS_IN='../stats/nightly_stats.in'
+		STATS_IN='../input/stats/nightly_stats.in'
 #		STATS_IN='../stats/nobudgets_stats.in'
 	else
-		STATS_IN='../stats/nobudgets_stats.in'
+		STATS_IN='../input/stats/nobudgets_stats.in'
 	fi
 
 	if [ ! -e $PARAMS_IN ] ; then
