@@ -26,8 +26,7 @@ real, dimension(nzrad, ntimes) :: &
 integer, parameter :: per_line = 5
 
 ! File path for forcing the forcing files 
-character(*), parameter ::  & 
-   file_path = '../model/lba_forcings/'
+character(*), parameter :: file_path = '../input/case_setups/lba_forcings/'
 
 
 contains

@@ -17,8 +17,7 @@ integer, parameter :: ntimes = 167, nz = 38, &
  per_line = 5
 
 ! File path for the forcing files
-character(*), parameter :: & 
- file_path = '../model/arm_0003_forcings/'
+character(*), parameter :: file_path = '../input/case_setups/arm_0003_forcings/'
 
 real, dimension(ntimes) :: times       ! Time from day0      [s]
 real, dimension(nz) :: z               ! Height              [m]

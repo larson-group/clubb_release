@@ -1,5 +1,3 @@
-#define SCLR_THETA 1
-#define SCLR_RT 2
 !----------------------------------------------------------------------
 ! $Id$
 module arm_97
@@ -18,8 +16,7 @@ private ! Defualt Scope
 integer, parameter :: ntimes = 169, nz = 18, & 
  per_line = 5
 ! File path for the forcing files
-character(*), parameter :: & 
- file_path = '../model/arm_97_forcings/'
+character(*), parameter :: file_path = '../input/case_setups/arm_97_forcings/'
 
 real, dimension(ntimes) :: times       ! Time from day0      [s]
 real, dimension(nz, ntimes) :: z       ! Height              [m]

@@ -22,7 +22,7 @@
   integer, parameter :: per_line = 5
   
   ! File path for forcing the forcing files 
-  character(*), parameter :: file_path = '../model/mpace_a_forcings/'
+  character(*), parameter :: file_path = '../input/case_setups/mpace_a_forcings/'
 
   real, dimension(file_nlevels) :: file_pressure
   real, dimension(file_nlevels) :: file_heights
