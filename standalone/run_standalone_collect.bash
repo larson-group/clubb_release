@@ -16,9 +16,9 @@ else
 fi
 
 if [ -z $2 ]; then
-	MODEL_FILE='../input/model/arm_model.in'
+	MODEL_FILE='../input/case_setups/arm_model.in'
 else
-	MODEL_FILE='../input/model/'$2'_model.in'
+	MODEL_FILE='../input/case_setups/'$2'_model.in'
 fi
 
 PARAMS_FILE="../input/tunable_parameters.in"
