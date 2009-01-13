@@ -16,12 +16,12 @@ else
 fi
 
 if [ -z $2 ]; then
-	MODEL_FILE='../model/arm_model.in'
+	MODEL_FILE='../input/model/arm_model.in'
 else
-	MODEL_FILE='../model/'$2'_model.in'
+	MODEL_FILE='../input/model/'$2'_model.in'
 fi
 
-PARAMS_FILE="default_parameters.in"
+PARAMS_FILE="../input/tunable_parameters.in"
 
 #######################################################################
 # Check for necessary namelists.  If files exist, then
@@ -57,4 +57,4 @@ collect -p hi -A copy -o $EXPERIMENT_NAME.er ../bin/clubb_standalone
 # Remove the namelists
 rm -f 'clubb.in'
 
-echo "Use analyzer " $EXPERIMENT_NAME".er to view the results"
+echo "Use analyzer "$EXPERIMENT_NAME".er to view the results"
