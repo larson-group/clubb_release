@@ -1,0 +1,26 @@
+
+&model
+run_file  = "dycoms2_rf01_hoc.in"
+stdout   = .true.
+
+/
+
+&setfields
+datafile      = "../les_data/dycoms2_rf01"
+input_type    = "rf1"
+input_um      = .true.
+input_vm      = .true.
+input_rtm     = .true.
+input_thlm    = .true.
+input_wp2     = .true.
+input_wprtp   = .true.
+input_wpthlp  = .true.
+input_wp3     = .true.
+input_rtp2    = .false.
+input_thlp2   = .false.
+input_rtpthlp = .false.
+input_upwp    = .true.
+input_vpwp    = .true.
+
+/
+

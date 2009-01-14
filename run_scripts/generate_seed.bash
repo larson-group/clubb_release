@@ -6,4 +6,4 @@
 # Output:
 # rand_seed.dat: text file that may be edited by hand.
 #----------------------------------------------------------------------
-../bin/int2txt /dev/random > rand_seed.dat
+../bin/int2txt /dev/random > ../input/rand_seed.dat
