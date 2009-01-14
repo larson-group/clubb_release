@@ -259,13 +259,21 @@ module pdf_closure_module
         end do ! 1..sclr_dim
       end if
 
-    else ! Width parameters are non-zero
+    else ! Width (standard deviation) parameters are non-zero
 
+      ! The variable "a" is the weight of Gaussian "plume" 1.  The weight of
+      ! Gaussian "plume" 2 is "1-a".  If there isn't any skewness of w
+      ! (Sk_w = 0 because w'^3 = 0), a = 0.5, and both Gaussian "plumes" are
+      ! equally weighted.  If there is positive skewness of w (Sk_w > 0 because
+      ! w'^3 > 0), 0 < a < 0.5, and Gaussian "plume" 2 has greater weight than
+      ! does Gaussian "plume" 1.  If there is negative skewness of w (Sk_w < 0
+      ! because w'^3 < 0), 0.5 < a < 1, and Gaussian "plume" 1 has greater
+      ! weight than does Gaussian "plume" 2.
       if ( abs( Skw ) <= 1e-5 ) then
         a = 0.5
       else
         a = 0.5 * ( 1.0 - Skw/sqrt( 4.0*( 1.0 - sigma_sqd_w )**3 + Skw**2 ) )
-      end if
+      endif
 
       ! Determine sqrt( wp2 ) here to avoid re-computing it
       sqrt_wp2 = sqrt( wp2 )
@@ -276,11 +284,18 @@ module pdf_closure_module
       ! Where sigma_sqd_w is fixed at 0.4
       a = min( max( a, 1.0-a_max_mag ), a_max_mag )
 
+      ! The variable w1_n is the normalized mean of Gaussian "plume" 1 for w.
+      ! The variable w2_n is the normalized mean of Gaussian "plume" 2 for w.
       w1_n = sqrt( ( (1.-a)/a )*(1.-sigma_sqd_w) )
       w2_n = -sqrt( ( a/(1.-a) )*(1.-sigma_sqd_w) )
+      ! The variable w1 is the mean of Gaussian "plume" 1 for w.
+      ! The variable w2 is the mean of Gaussian "plume" 2 for w.
       w1   = wm + sqrt_wp2*w1_n
       w2   = wm + sqrt_wp2*w2_n
 
+      ! The variable sw1 is the variance of Gaussian "plume" 1 for w.
+      ! The variable sw2 is the variance of Gaussian "plume" 2 for w.
+      ! The variance in both Gaussian "plumes" is defined to be the same.
       sw1  = sigma_sqd_w*wp2
       sw2  = sigma_sqd_w*wp2
 
