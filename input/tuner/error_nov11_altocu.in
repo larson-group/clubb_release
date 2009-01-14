@@ -20,7 +20,7 @@
 !  HOC	 | LES
 !  ------------
 !  cf	 | cf
-!  rcm   | qcm
+!  rlm   | qcm
 !  wp3	 | wp3
 !  thlm	 | thlm
 !  rtm   | qtm
@@ -30,16 +30,15 @@
 !
 !  Values of hoc_v and les_v for other variables can be found in the .ctl files.
 !
-!  Key variables for UWM: qcm/rcm, cf, rtm/qtm, thlm, um, vm, wp3
+!  Key variables for UWM: qcm/rlm, cf, rtm/qtm, thlm, um, vm, wp3
 
 &stats
-
 ftol              = 1.0
 l_results_stdout    = .true.
 l_results_file      = .true.
 l_stdout_on_invalid = .true.
-t_variables       = "wp3", "wp3", "rcm", "qcm"
-weight_var_nl     = 0.5, 0.5,
+t_variables       = "cf", "cf"
+weight_var_nl     = 1.0
 anneal_temp       = 100.
 anneal_iter       = 100
 tune_type         = 0
@@ -54,14 +53,15 @@ tune_type         = 0
 ! time_nl is the time interval(s) to tune for, in ordered pair form.
 
 &cases
-! GCSS DYCOMS II RF 1
-hoc_stats_file_nl(1) = "dycoms2_rf01_zt.ctl"
-les_stats_file_nl(1) = "../les_data/dycoms2_rf01_coamps_sm.ctl"
-run_file_nl(1)       = "dycoms2_rf01_hoc.in"
+! Nov 11 Altocumulus
+hoc_stats_file_nl(1) = "../output/nov11_altocu_zt.ctl"
+les_stats_file_nl(1) = "../les_data/nov11_altocu_coamps_sm.ctl"
+run_file_nl(1)       = "nov11_altocu_hoc.in"
 z_i_nl(1)            = 1
-z_f_nl(1)            = 130
+z_f_nl(1)            = 160
 time_nl(1,:)         = 120, 240
 weight_case_nl(1)    = 1.0
+
 /
 
 &initvars 

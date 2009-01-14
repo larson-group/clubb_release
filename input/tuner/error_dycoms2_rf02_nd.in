@@ -36,8 +36,8 @@
 ftol              = 1.0
 l_results_stdout    = .true.
 l_results_file      = .true.
-l_stdout_on_invalid = .false.
-t_variables       = "rtm", "qtm"
+l_stdout_on_invalid = .true.
+t_variables       = "cf", "cf"
 weight_var_nl     = 1.0
 anneal_temp       = 100.
 anneal_iter       = 100
@@ -52,18 +52,16 @@ tune_type         = 0
 !   Note that the first and last z-levels in hoc are not prognosed.
 ! time_nl is the time interval(s) to tune for, in ordered pair form.
 
-&cases
-! DYCOMS II RF02 Drizzle
-hoc_stats_file_nl(1) = "dycoms2_rf02_do_zt.ctl"
-les_stats_file_nl(1) = "../les_data/dycoms2_rf02_do_coamps_sm.ctl"
-run_file_nl(1)       = "dycoms2_rf02_do_hoc.in"
+! DYCOMS II RF02 No Drizzle
+hoc_stats_file_nl(1) = "../output/dycoms2_rf02_nd_zt.ctl"
+les_stats_file_nl(1) = "../les_data/dycoms2_rf02_nd_coamps_sm.ctl"
+run_file_nl(1)       = "dycoms2_rf02_nd_hoc.in"
 z_i_nl(1)            = 1
 z_f_nl(1)            = 147
 time_nl(1,:)         = 120, 360
-weight_case_nl(1)    = 1.0
+weight_case_nl       = 1.0
 
 /
-
 
 &initvars 
 C1          = 2.500000 ! Low Skewness in C1 Skewness Function.

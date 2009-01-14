@@ -20,7 +20,7 @@
 !  HOC	 | LES
 !  ------------
 !  cf	 | cf
-!  rcm   | qcm
+!  rlm   | qcm
 !  wp3	 | wp3
 !  thlm	 | thlm
 !  rtm   | qtm
@@ -30,7 +30,7 @@
 !
 !  Values of hoc_v and les_v for other variables can be found in the .ctl files.
 !
-!  Key variables for UWM: qcm/rcm, cf, rtm/qtm, thlm, um, vm, wp3
+!  Key variables for UWM: qcm/rlm, cf, rtm/qtm, thlm, um, vm, wp3
 
 &stats
 ftol              = 1.0
@@ -52,15 +52,15 @@ tune_type         = 0
 !   Note that the first and last z-levels in hoc are not prognosed.
 ! time_nl is the time interval(s) to tune for, in ordered pair form.
 
-! DYCOMS II RF02 No Drizzle
-hoc_stats_file_nl(1) = "dycoms2_rf02_nd_zt.ctl"
-les_stats_file_nl(1) = "../les_data/dycoms2_rf02_nd_coamps_sm.ctl"
-run_file_nl(1)       = "dycoms2_rf02_nd_hoc.in"
+&cases
+! Wangara Day 33
+hoc_stats_file_nl(1) = "../output/wangara_zt.ctl"
+les_stats_file_nl(1) = "../les_data/wangara_rams.ctl"
+run_file_nl(1)       = "wangara_hoc.in"
 z_i_nl(1)            = 1
-z_f_nl(1)            = 147
-time_nl(1,:)         = 120, 360
-weight_case_nl       = 1.0
-
+z_f_nl(1)            = 50
+time_nl(1,:)         = 60, 97
+weight_case_nl(1)    = 1.0
 /
 
 &initvars 
