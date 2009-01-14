@@ -608,7 +608,7 @@ module clubb_driver
     iunit = 50
 #endif
 
-    fdir = "./" ! Output directory
+    fdir = "../output/" ! Output directory
 
     ! Initialize statistics output
     call stats_init( iunit, fname_prefix, fdir, l_stats, stats_fmt, stats_tsamp, &! Intent(in)
