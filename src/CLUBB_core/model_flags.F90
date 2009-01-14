@@ -18,11 +18,11 @@ module model_flags
   logical, parameter, public ::  & 
     l_LH_on              = .false., & ! Latin hypercube calculation
     l_local_kk           = .false., & ! Local drizzle for rain microphysics
-    l_hyper_dfsn         = .true.,  & ! 4th-order hyper-diffusion
+    l_hyper_dfsn         = .false., & ! 4th-order hyper-diffusion
     l_pos_def            = .false., & ! Flux limiting pos. def. scheme on rtm
     l_hole_fill          = .true.,  & ! Hole filling pos. def. scheme on wp2,up2,rtp2,etc
-    l_clip_semi_implicit = .true.,  & ! Semi-implicit clipping scheme on wpthlp and wprtp
-    l_3pt_sqd_dfsn       = .true.,  & ! Three-point squared diffusion coefficient
+    l_clip_semi_implicit = .false., & ! Semi-implicit clipping scheme on wpthlp and wprtp
+    l_3pt_sqd_dfsn       = .false., & ! Three-point squared diffusion coefficient
     l_clip_turb_adv      = .false.    ! Corrects thlm/rtm when w'th_l'/w'r_t' is clipped
 
   logical, parameter, public :: &

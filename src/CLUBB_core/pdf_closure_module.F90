@@ -284,20 +284,43 @@ module pdf_closure_module
       ! Where sigma_sqd_w is fixed at 0.4
       a = min( max( a, 1.0-a_max_mag ), a_max_mag )
 
-      ! The variable w1_n is the normalized mean of Gaussian "plume" 1 for w.
-      ! The variable w2_n is the normalized mean of Gaussian "plume" 2 for w.
+      ! The normalized mean of w for Gaussian "plume" 1 is w1_n.  It's value
+      ! will always be greater than 0.  As an example, a value of 1.0 would
+      ! indicate that the actual mean of w for Gaussian "plume" 1 is found
+      ! 1.0 standard deviation above the overall mean for w.
       w1_n = sqrt( ( (1.-a)/a )*(1.-sigma_sqd_w) )
+      ! The normalized mean of w for Gaussian "plume" 2 is w2_n.  It's value
+      ! will always be less than 0.  As an example, a value of -0.5 would
+      ! indicate that the actual mean of w for Gaussian "plume" 2 is found
+      ! 0.5 standard deviations below the overall mean for w.
       w2_n = -sqrt( ( a/(1.-a) )*(1.-sigma_sqd_w) )
-      ! The variable w1 is the mean of Gaussian "plume" 1 for w.
-      ! The variable w2 is the mean of Gaussian "plume" 2 for w.
+      ! The mean of w for Gaussian "plume" 1 is w1.
       w1   = wm + sqrt_wp2*w1_n
+      ! The mean of w for Gaussian "plume" 2 is w2.
       w2   = wm + sqrt_wp2*w2_n
 
-      ! The variable sw1 is the variance of Gaussian "plume" 1 for w.
-      ! The variable sw2 is the variance of Gaussian "plume" 2 for w.
-      ! The variance in both Gaussian "plumes" is defined to be the same.
+      ! The variance of w for Gaussian "plume" 1 for sw1.
       sw1  = sigma_sqd_w*wp2
+      ! The variance of w for Gaussian "plume" 2 for sw2.
+      ! The variance in both Gaussian "plumes" is defined to be the same.
       sw2  = sigma_sqd_w*wp2
+
+
+      ! The normalized variance for thl, rt, and sclr for "plume" 1 is:
+      !
+      ! { 1 - [1/(1-sigma_sqd_w)]*[ (w'x')^2 / (w'^2 * x'^2) ] / a }
+      ! * { (1/3)*beta + a*( 1 - (2/3)*beta ) };
+      !
+      ! where "x" stands for thl, rt, or sclr; "a" is the weight of Gaussian
+      ! "plume" 1, and 0 <= beta <= 3.
+      !
+      ! The factor { (1/3)*beta + a*( 1 - (2/3)*beta ) } does not depend on
+      ! which varable "x" stands for.  The factor is multiplied by 2 and defined
+      ! as width_factor_1.
+      !
+      ! The factor { 1 - [1/(1-sigma_sqd_w)]*[ (w'x')^2 / (w'^2 * x'^2) ] / a }
+      ! depends on which variable "x" stands for.  It is multiplied by 0.5 and
+      ! defined as alpha_x, where "x" stands for thl, rt, or sclr.
 
       ! Vince Larson added a dimensionless factor so that the
       ! width of plumes in theta_l, rt can vary.  

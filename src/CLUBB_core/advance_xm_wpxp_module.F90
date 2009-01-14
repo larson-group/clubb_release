@@ -1604,7 +1604,7 @@ module advance_xm_wpxp_module
       wpxp_chnge  ! Net change in w'x' due to clipping        [units vary]
 
     logical, parameter :: &
-      l_mono_flux_lim = .false.  ! Flag for monotonic turbulent flux limiter
+      l_mono_flux_lim = .true.  ! Flag for monotonic turbulent flux limiter
 
     ! Indices
     integer :: k, km1, kp1
