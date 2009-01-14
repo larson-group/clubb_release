@@ -76,7 +76,7 @@ STATS_DIR='../input/stats/'
 DATE=`date +%F`
 
 # The error_*.in file.
-ERROR_IN='error_'$RUN_CASE'.in'
+ERROR_IN=../input/tuner/'error_'$RUN_CASE'.in'
 
 if [ ! -e "$ERROR_IN" ] ; then
 	echo $ERROR_IN " does not exist"
