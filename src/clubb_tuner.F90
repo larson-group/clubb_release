@@ -108,11 +108,11 @@ if ( l_results_file ) then
   call output_nml_tuner( results_f, param_vals_matrix(1,1:ndim) )
   print *, "New filename is: ", results_f
 
-  ! Standalone namelist
-  print *, "Generating new standalone.in file..."
+  ! Parameters namelist
+  print *, "Generating new tunable_parameters.in file..."
 
-  results_f = "../standalone/standalone_" // current_date // '_'  & 
-              // current_time(1:4) // ".in" 
+  results_f = "../input/tunable_parameters_"//current_date//'_' & 
+    //current_time(1:4)//".in" 
 
   call output_nml_standalone( results_f,  & 
                               param_vals_matrix(1,1:ndim) )
