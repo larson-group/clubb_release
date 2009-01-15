@@ -99,8 +99,8 @@ if ( l_results_file ) then
 
   call date_and_time( current_date, current_time )
 
-  results_f = "error_" // current_date // '_' & 
-              // current_time(1:4) // ".in" 
+  results_f = "../input/error_"//current_date//'_' & 
+    //current_time(1:4)//".in" 
 
   ! Note:
   ! The first column of param_vals_matrix is the optimized result, which
