@@ -893,11 +893,6 @@ module error
 
   write(unit=20,fmt=*) "! Parameter file " // results_f
 
-  write(unit=20,fmt=*) "&model"
-  write(unit=20,fmt=*) "run_file = "//dbqt//"hoc.in"//dbqt
-  write(unit=20,fmt=*) "stdout   = ", ".true."
-  write(unit=20,fmt=*) "/"
-
   write(unit=20,fmt=*) "&initvars"
   ! Copy simplex into a vector of all possible CLUBB parameters
   do i=1, nparams, 1
