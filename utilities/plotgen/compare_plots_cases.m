@@ -366,6 +366,8 @@ prev_var_len = 0;
 prev_var = 0;
 curr_var_len = 0;
 curr_var = 0;
+timesteps_curr = 0;
+timesteps_prev = 0;
 
 %Special cases
 les_grph_upwp = 1;
