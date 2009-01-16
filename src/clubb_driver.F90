@@ -1325,7 +1325,10 @@ module clubb_driver
 
     use stats_precision, only: time_precision ! Variable(s)
 
-    use model_flags, only: l_uv_nudge ! Variable(s)
+    use model_flags, only: &
+    l_uv_nudge, & ! Variable(s)
+    l_kk_rain, &
+    l_coamps_micro
 
     use arm_0003, only: arm_0003_init ! Procedure(s)
 
@@ -1406,10 +1409,19 @@ module clubb_driver
     input_tau_zm = .true.
     input_tau_zt = .true.
     input_thvm = .true.
-    input_rrainm = .true.
-    input_rsnowm = .true.
-    input_ricem = .true.
-    input_rgraupelm = .true.
+    if ( l_kk_rain .or. l_coamps_micro ) then
+      input_rrainm = .true.
+      input_Ncm = .true.
+      input_Nrm = .true.
+    end if
+    if ( l_coamps_micro ) then
+      input_rsnowm = .true.
+      input_ricem = .true.
+      input_rgraupelm = .true.
+      input_Ncnm = .true.
+      input_Nim = .true.
+    end if
+
     input_wprtp = .true.
     input_wpthlp = .true.
     input_wp3 = .true.
@@ -1423,11 +1435,7 @@ module clubb_driver
     input_up2 = .true.
     input_vp2 = .true.
     input_sigma_sqd_w = .true.
-    input_Ncm = .true.
-    input_Ncnm = .true.
-    input_Nim = .true.
     input_cf  = .true.
-    input_Nrm = .true.
     input_sigma_sqd_w_zt = .true.
 
     ! Determine the nearest timestep in the GRADS file to the
