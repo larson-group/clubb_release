@@ -12,6 +12,7 @@
 
 NIGHTLY=false
 TIMESTEP_TEST=false
+OUTPUT_DIR="../output/"
 
 # This function reads all the arguments and sets variables that will be used
 # later in the script.
@@ -118,16 +119,16 @@ fi
 
 if [ $NIGHTLY == true ] ; then
 	# Make the CLUBB_previous and CLUBB_current directories if they don't exist
-	mkdir CLUBB_current
-	mkdir CLUBB_previous
+	mkdir $OUTPUT_DIR"CLUBB_current"
+	mkdir $OUTPUT_DIR"CLUBB_previous"
 	
 	# Eliminate the previous CLUBB results.
 	# This prevents spurious profile generation resulting from
 	# previous profiles not getting overwritten
-	rm -f CLUBB_previous/*
+	rm -f $OUTPUT_DIR"CLUBB_previous/*"
 
-	mv CLUBB_current/*.ctl CLUBB_previous/
-	mv CLUBB_current/*.dat CLUBB_previous/
+	mv $OUTPUT_DIR"CLUBB_current/*.ctl" $OUTPUT_DIR"CLUBB_previous/"
+	mv $OUTPUT_DIR"CLUBB_current/*.dat" $OUTPUT_DIR"CLUBB_previous/"
 fi
 # This will loop over all runs in sequence 
 for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
@@ -164,19 +165,19 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
 		#Move the ZT and SM files out of the way
 		if [ "${EXIT_CODE[$x]}" != 0 ]; then
-			rm "${RUN_CASE[$x]}"_zt.ctl
-			rm "${RUN_CASE[$x]}"_zt.dat
-			rm "${RUN_CASE[$x]}"_zm.ctl
-			rm "${RUN_CASE[$x]}"_zm.dat
-			rm "${RUN_CASE[$x]}"_sfc.ctl
-			rm "${RUN_CASE[$x]}"_sfc.dat
+			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_zt.ctl
+			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_zt.dat
+			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_zm.ctl
+			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_zm.dat
+			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_sfc.ctl
+			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_sfc.dat
 		else
-			mv "${RUN_CASE[$x]}"_zt.ctl CLUBB_current/
-			mv "${RUN_CASE[$x]}"_zt.dat CLUBB_current/
-			mv "${RUN_CASE[$x]}"_zm.ctl CLUBB_current/
-			mv "${RUN_CASE[$x]}"_zm.dat CLUBB_current/
-			rm "${RUN_CASE[$x]}"_sfc.ctl
-			rm "${RUN_CASE[$x]}"_sfc.dat
+			mv "$OUTPUT_DIR${RUN_CASE[$x]}"_zt.ctl ../output/CLUBB_current/
+			mv "$OUTPUT_DIR${RUN_CASE[$x]}"_zt.dat ../output/CLUBB_current/
+			mv "$OUTPUT_DIR${RUN_CASE[$x]}"_zm.ctl ../output/CLUBB_current/
+			mv "$OUTPUT_DIR${RUN_CASE[$x]}"_zm.dat ../output/CLUBB_current/
+			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_sfc.ctl
+			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_sfc.dat
 		fi
 		
 		#Run again with a finer time step
@@ -187,19 +188,19 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
 		#Now move the SFC file
 		if [ "${EXIT_CODE[$x]}" != 0 ]; then
-			rm "${RUN_CASE[$x]}"_zt.ctl
-			rm "${RUN_CASE[$x]}"_zt.dat
-			rm "${RUN_CASE[$x]}"_zm.ctl
-			rm "${RUN_CASE[$x]}"_zm.dat
-			rm "${RUN_CASE[$x]}"_sfc.ctl
-			rm "${RUN_CASE[$x]}"_sfc.dat
+			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_zt.ctl
+			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_zt.dat
+			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_zm.ctl
+			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_zm.dat
+			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_sfc.ctl
+			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_sfc.dat
 		else
-			rm "${RUN_CASE[$x]}"_zt.ctl
-			rm "${RUN_CASE[$x]}"_zt.dat
-			rm "${RUN_CASE[$x]}"_zm.ctl
-			rm "${RUN_CASE[$x]}"_zm.dat
-			mv "${RUN_CASE[$x]}"_sfc.ctl CLUBB_current/
-			mv "${RUN_CASE[$x]}"_sfc.dat CLUBB_current/
+			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_zt.ctl
+			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_zt.dat
+			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_zm.ctl
+			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_zm.dat
+			mv "$OUTPUT_DIR${RUN_CASE[$x]}"_sfc.ctl ../output/CLUBB_current/
+			mv "$OUTPUT_DIR${RUN_CASE[$x]}"_sfc.dat ../output/CLUBB_current/
 		fi
 
 	elif [ $TIMESTEP_TEST == true ]; then
