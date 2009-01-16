@@ -8,9 +8,9 @@
 
 &compare
 les_comparison = .true.
-file1 = "../standalone/bomex_zt.ctl"
+file1 = "../output/bomex_zt.ctl"
 file2 = "../les_data/bomex_coamps_sm.ctl"
-file3 = "../results/20051217/bomex_zt.ctl"
+file3 = "../output/bomex_zt.ctl"
 t(1)  = 1
 t(2)  = 1
 t(3)  = 60
