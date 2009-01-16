@@ -164,10 +164,8 @@ rm -f *'_hoc.in'
 # do a run with the optimal constants
 echo "Running with optimal constants"
 
-cd ../standalone/
-
 # The newest parameter file should have the optimal set
-PARAMS_IN=`ls -t | head -n 1` 
+PARAMS_IN=`ls -t ../input/tunable_parameters* | head -n 1` 
 
 if [ $RUN_TYPE = 'single' ] ; then # Single Case.
 
