@@ -1326,9 +1326,9 @@ module clubb_driver
     use stats_precision, only: time_precision ! Variable(s)
 
     use model_flags, only: &
-    l_uv_nudge, & ! Variable(s)
-    l_kk_rain, &
-    l_coamps_micro
+      l_uv_nudge, & ! Variable(s)
+      l_kk_rain, &
+      l_coamps_micro
 
     use arm_0003, only: arm_0003_init ! Procedure(s)
 
@@ -1413,6 +1413,10 @@ module clubb_driver
       input_rrainm = .true.
       input_Ncm = .true.
       input_Nrm = .true.
+    else
+      input_rrainm = .false.
+      input_Ncm = .false.
+      input_Nrm = .false.
     end if
     if ( l_coamps_micro ) then
       input_rsnowm = .true.
@@ -1420,6 +1424,12 @@ module clubb_driver
       input_rgraupelm = .true.
       input_Ncnm = .true.
       input_Nim = .true.
+    else
+      input_rsnowm = .false.
+      input_ricem = .false.
+      input_rgraupelm = .false.
+      input_Ncnm = .false.
+      input_Nim = .false.
     end if
 
     input_wprtp = .true.
