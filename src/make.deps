@@ -79,7 +79,7 @@ advance_xp2_xpyp_module.o : constants.o parameters_tunable.o grid.o \
 	lapack_wrap.o fill_holes.o clip_explicit.o \
 	error_code.o diffusion.o advance_xp2_xpyp_module.F90
 advance_xm_wpxp_module.o : constants.o parameters_tunable.o stats_variables.o \
-	parameters_model.o lapack_wrap.o \
+	parameters_model.o lapack_wrap.o mono_flux_limiter.o \
 	pos_definite_mod.o error_code.o diffusion.o mean_adv.o \
 	clip_semi_implicit.o clip_explicit.o \
 	advance_xm_wpxp_module.F90 
@@ -114,6 +114,8 @@ mean_adv.o      : grid.o mean_adv.F90
 hyper_diffusion_4th_ord.o : grid.o hyper_diffusion_4th_ord.F90
 pos_definite_mod.o : grid.o stats_precision.o pos_definite_mod.F90
 fill_holes.o    : fill_holes.F90 grid.o
+mono_flux_limiter.o : grid.o constants.o mean_adv.o erf.o stats_precision.o \
+                      stats_type.o stats_variables.o mono_flux_limiter.F90
 clip_semi_implicit.o : constants.o stats_precision.o clip_semi_implicit.F90
 clip_explicit.o : grid.o stats_precision.o stats_type.o stats_variables.o \
 	model_flags.o parameters_model.o clip_explicit.F90

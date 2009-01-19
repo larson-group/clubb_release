@@ -95,8 +95,8 @@ PARAMETERIZATION = \
 	advance_windm_edsclrm_module.o advance_wp2_wp3_mod.o Skw_module.o \
 	error_code.o numer_check.o variables_diagnostic_module.o \
 	variables_prognostic_module.o clubb_core.o lapack_wrap.o \
-	parameters_tunable.o pos_definite_mod.o calendar.o \
-	fill_holes.o clip_semi_implicit.o clip_explicit.o \
+	parameters_tunable.o pos_definite_mod.o calendar.o fill_holes.o \
+	mono_flux_limiter.o clip_semi_implicit.o clip_explicit.o \
 	array_index.o interpolation.o parameter_indices.o \
 	parameters_model.o
 
