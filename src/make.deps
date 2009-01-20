@@ -226,5 +226,4 @@ clubb_tuner.o		: $(NUM_REC) clubb_driver.o error.o clubb_tuner.F90
 clubb_standalone.o	: clubb_driver.o clubb_standalone.F90
 clubb_inputfields.o	: clubb_driver.o inputfields.o clubb_inputfields.F90
 int2txt.o		: int2txt.F90 recl.F90
-compare_runs.o		: endian.o inputgrads.o gradsaverage.o compare_runs.F90
 jacobian.o		: gradsaverage.o clubb_driver.o jacobian.F90

@@ -108,7 +108,6 @@ TUNING = $(MODEL) $(INTERFACING) $(NUM_REC) error.o
 INT2TXT		  = int2txt.o
 CLUBB_TUNER	  = $(MODEL) $(INTERFACING) $(NUM_REC) error.o clubb_tuner.o
 CLUBB_STANDALONE  = $(MODEL) $(INTERFACING) clubb_standalone.o
-COMPARE_RUNS	  = $(INTERFACING) compare_runs.o
 JACOBIAN	  = $(MODEL) $(INTERFACING) jacobian.o
 CLUBB_INPUTFIELDS = $(MODEL) $(INTERFACING) clubb_inputfields.o
 #CLUBB_BUDGET_TERMS= $(MODEL) $(INTERFACING) $(NUM_REC) error.o budget_terms.o clubb_tuner_budget_terms.o
@@ -121,7 +120,7 @@ WARNABLE = $(filter std_atmosphere_mod.o calendar.o cos_solar_zen.o bugsrad_driv
 
 # == Targets == ( clubb_tuner and jacobian assume statistics )
 all:	clubb_standalone clubb_tuner int2txt clubb_inputfields  \
-	compare_runs jacobian
+	jacobian
 # clubb_tuner_budget_terms
 # Note:
 # The budget terms tuner is currently non-working
@@ -198,10 +197,6 @@ jacobian: $(CLUBBLIBS) $(JACOBIAN)
 	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/jacobian \
 	$(JACOBIAN) $(LDFLAGS)
 
-compare_runs:	$(CLUBBLIBS) $(COMPARE_RUNS)
-	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/compare_runs \
-	$(COMPARE_RUNS) $(LDFLAGS)
-
 clean: 
 	-rm -f $(OBJDIR)/*.o $(OBJDIR)/*.mod $(OBJDIR)/core*
 
@@ -209,10 +204,8 @@ distclean:
 	-rm -f $(OBJDIR)/*.o $(OBJDIR)/*.mod $(OBJDIR)/core* \
 	$(BINDIR)/clubb_tuner \
 	$(BINDIR)/int2txt \
-	$(BINDIR)/clubb_tuner_budget_terms \
 	$(BINDIR)/clubb_standalone \
 	$(BINDIR)/clubb_inputfields \
-	$(BINDIR)/compare_runs \
 	$(BINDIR)/jacobian \
 	$(LIBDIR)/lib*
 
