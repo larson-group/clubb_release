@@ -7,11 +7,11 @@
 %\usepackage{amsfonts}
 
 %% These cannot be interpreted by TTH
-%\addtolength{\textheight}{2in}\addtolength{\topmargin}{-1in}
-%\addtolength{\textwidth}{1.25in} \addtolength{\oddsidemargin}{-.75in}
-%\addtolength{\evensidemargin}{-.75in}
+\addtolength{\textheight}{2in}\addtolength{\topmargin}{-1in}
+\addtolength{\textwidth}{1.25in} \addtolength{\oddsidemargin}{-.75in}
+\addtolength{\evensidemargin}{-.75in}
 
-%\pagestyle{empty}
+\pagestyle{empty}
 
 \begin{document}
 
@@ -406,16 +406,18 @@ There several ways to do this:
 	E.g. CLUBB uses \texttt{grav} 
 	rather than \texttt{g} or \texttt{gr} for the gravitational constant.
 	\end{enumerate}
-Avoid using a variable name that overlaps with the text a reserved word or
-Fortran directive as well.
+Avoid using a variable name that overlaps with the text of a reserved word or
+Fortran directive as well (e.g. \texttt{inte} overlaps with \texttt{intent} 
+and \texttt{integer} and would not be a good variable name).
 Try using a command
 like \texttt{grep} if you're uncertain if your variable is a semi-unique string.
 \newline
 
 \item Do not use the prognostic or diagnostic variable modules anywhere they
-are not used already.  Currently prognostic\_variables is used in \texttt{statistics.F}
-and \texttt{hoc.F}, while diagnostic\_variables is used in \texttt{hoc.F}, \texttt{statistics.F}, and 
-\texttt{parameterization\_interface.F}.  Global variables like these make debugging 
+are not used already.  Currently the module prognostic\_variables is used in 
+\texttt{numer\_check.F}, and \texttt{clubb\_driver}, and diagnostic\_variables 
+is used in \texttt{clubb\_driver}, texttt{clubb\_core}, 
+and \texttt{stats\_subs}. Global variables like these make debugging 
 the code more difficult.  The proper way to use these variables in a new 
 section of code is to pass them as an argument.
 \newline
@@ -493,8 +495,8 @@ is an extension of the Fortran standard.  E.g.
   real :: x ! Marks the spot [deg_E]
 \end{verbatim}
 
-\item For clarity, functions, subroutines, and programs should end with 
-their proper Fortran 90 style end statement. \newline
+\item For clarity, functions, subroutines, modules, and programs should end 
+with their proper Fortran 90 style end statement. \newline
 E.g.
 \begin{verbatim}
   ! Like this
@@ -599,9 +601,14 @@ E.g. \\
 \verb|end module dynamics|
 
 \item Wrap all code lines at 100 columns.  Fortran free format source code
-allows for 132, but the number 100 was chosen to so that we can view the code browser
-without word-wrap on one monitor.  \newline
+allows for 132, but the number 100 was chosen to so that we can view the code 
+browser without word-wrap on one monitor.  \newline
 
+\item Do not use deprecated or obsolescent features of Fortran, and do not
+use extensions to the Fortran 95 standard.  This includes but is not limited to
+\texttt{pause}, \texttt{equivalence}, Cray style pointers, 
+arithmetic\texttt{if}, alternate \texttt{return}, and \texttt{float()} for 
+real data type conversions.
 \end{enumerate}
 
 \end{document}
