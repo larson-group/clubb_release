@@ -29,8 +29,8 @@ include config/linux_ia32_g95_optimize.in
 OBJDIR = $(PREFIX)/obj
 SRCDIR = $(PREFIX)/src
 
-COAMPS_MICRO_DIR = coamps_micro
-NR_DIR = NR
+COAMPS_MICRO_DIR = COAMPS_micro
+NR_DIR = Numerical_recipes
 
 # == Object files with licensing restrictions ==
 # We cannot freely distribute COAMPS microphysics or Numerical Recipes code.
@@ -127,15 +127,15 @@ all:	clubb_standalone clubb_tuner int2txt clubb_inputfields  \
 # -dschanen 15 March 2007
 	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/*.F90
 	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/CLUBB_core/*.F90
-	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/GCSS/*.F90
-	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/LH/*.F90
+	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/Benchmark_cases/*.F90
+	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/Latin_hypercube/*.F90
 
 
 # == Rules ==
 # Note: since we're using a virtual path the make command is going to use the
 # first file it finds with that name.  Be careful when making copies of files.
  
-VPATH=.:LH:GCSS:BUGSrad:CLUBB_core:$(OBJDIR):$(NR_DIR):$(COAMPS_MICRO_DIR)
+VPATH=.:Latin_hypercube:Benchmark_cases:BUGSrad:CLUBB_core:$(OBJDIR):$(NR_DIR):$(COAMPS_MICRO_DIR)
 
 # Cancel implicit rules (e.g for modula-2 `m2c -c $@.mod')
 .SUFFIXES:
