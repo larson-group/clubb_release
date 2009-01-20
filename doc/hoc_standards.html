@@ -511,9 +511,11 @@ like <tt>grep</tt> if you're uncertain if your variable is a semi-unique string.
 </li>
 
 <li> Do not use the prognostic or diagnostic variable modules anywhere they
-are not used already.  Currently the module prognostic_variables is used in 
-<tt>numer_check.F</tt>, and <tt>clubb_driver</tt>, and diagnostic_variables 
-is used in <tt>clubb_driver</tt>, textttclubb_core, 
+are not used already.  Currently the module <tt>prognostic_variables</tt> 
+is used in 
+<tt>numer_check</tt> and <tt>clubb_driver</tt>, while 
+<tt>diagnostic_variables</tt> is used in <tt>clubb_driver</tt>, 
+<tt>clubb_core</tt>, 
 and <tt>stats_subs</tt>. Global variables like these make debugging 
 the code more difficult.  The proper way to use these variables in a new 
 section of code is to pass them as an argument.
@@ -741,7 +743,7 @@ browser without word-wrap on one monitor.
 <li> Do not use deprecated or obsolescent features of Fortran, and do not
 use extensions to the Fortran 95 standard.  This includes but is not limited to
 <tt>pause</tt>, <tt>equivalence</tt>, Cray style pointers, 
-arithmetic<tt>if</tt>, alternate <tt>return</tt>, and <tt>float()</tt> for 
+arithmetic <tt>if</tt>, alternate <tt>return</tt>, and <tt>float()</tt> for 
 real data type conversions.
 <div class="p"><!----></div>
 </li>
@@ -753,5 +755,5 @@ real data type conversions.
 T<sub><font size="-1">E</font></sub>X
 by <a href="http://hutchinson.belmont.ma.us/tth/">
 T<sub><font size="-1">T</font></sub>H</a>,
-version 3.82.<br />On 20 Jan 2009, 16:02.</small>
+version 3.82.<br />On 20 Jan 2009, 16:12.</small>
 </html>
