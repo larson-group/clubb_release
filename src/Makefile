@@ -135,7 +135,7 @@ all:	clubb_standalone clubb_tuner int2txt clubb_inputfields  \
 # Note: since we're using a virtual path the make command is going to use the
 # first file it finds with that name.  Be careful when making copies of files.
  
-VPATH=.:Latin_hypercube:Benchmark_cases:BUGSrad:CLUBB_core:$(OBJDIR):$(NR_DIR):$(COAMPS_MICRO_DIR)
+VPATH=.:Latin_hypercube:Benchmark_cases:Benchmark_cases/unreleased_cases:BUGSrad:CLUBB_core:$(OBJDIR):$(NR_DIR):$(COAMPS_MICRO_DIR)
 
 # Cancel implicit rules (e.g for modula-2 `m2c -c $@.mod')
 .SUFFIXES:
