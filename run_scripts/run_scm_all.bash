@@ -127,8 +127,8 @@ if [ $NIGHTLY == true ] ; then
 	# previous profiles not getting overwritten
 	rm -f $OUTPUT_DIR"CLUBB_previous/*"
 
-	mv $OUTPUT_DIR"CLUBB_current/*.ctl" $OUTPUT_DIR"CLUBB_previous/"
-	mv $OUTPUT_DIR"CLUBB_current/*.dat" $OUTPUT_DIR"CLUBB_previous/"
+	mv $OUTPUT_DIR/CLUBB_current/*.ctl $OUTPUT_DIR/CLUBB_previous/
+	mv $OUTPUT_DIR/CLUBB_current/*.dat $OUTPUT_DIR/CLUBB_previous/
 fi
 # This will loop over all runs in sequence 
 for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
@@ -172,10 +172,10 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_sfc.ctl
 			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_sfc.dat
 		else
-			mv "$OUTPUT_DIR${RUN_CASE[$x]}"_zt.ctl ../output/CLUBB_current/
-			mv "$OUTPUT_DIR${RUN_CASE[$x]}"_zt.dat ../output/CLUBB_current/
-			mv "$OUTPUT_DIR${RUN_CASE[$x]}"_zm.ctl ../output/CLUBB_current/
-			mv "$OUTPUT_DIR${RUN_CASE[$x]}"_zm.dat ../output/CLUBB_current/
+			mv "$OUTPUT_DIR${RUN_CASE[$x]}"_zt.ctl "$OUTPUT_DIR"CLUBB_current/
+			mv "$OUTPUT_DIR${RUN_CASE[$x]}"_zt.dat "$OUTPUT_DIR"CLUBB_current/
+			mv "$OUTPUT_DIR${RUN_CASE[$x]}"_zm.ctl "$OUTPUT_DIR"CLUBB_current/
+			mv "$OUTPUT_DIR${RUN_CASE[$x]}"_zm.dat "$OUTPUT_DIR"CLUBB_current/
 			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_sfc.ctl
 			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_sfc.dat
 		fi
@@ -199,8 +199,8 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_zt.dat
 			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_zm.ctl
 			rm "$OUTPUT_DIR${RUN_CASE[$x]}"_zm.dat
-			mv "$OUTPUT_DIR${RUN_CASE[$x]}"_sfc.ctl ../output/CLUBB_current/
-			mv "$OUTPUT_DIR${RUN_CASE[$x]}"_sfc.dat ../output/CLUBB_current/
+			mv "$OUTPUT_DIR${RUN_CASE[$x]}"_sfc.ctl "$OUTPUT_DIR"CLUBB_current/
+			mv "$OUTPUT_DIR${RUN_CASE[$x]}"_sfc.dat "$OUTPUT_DIR"CLUBB_current/
 		fi
 
 	elif [ $TIMESTEP_TEST == true ]; then
