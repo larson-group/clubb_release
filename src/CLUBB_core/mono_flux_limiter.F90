@@ -921,12 +921,13 @@ module mono_flux_limiter
     ! calculates the average positive (upward) velocity and the average negative
     ! (downward) velocity.  However, the reference velocity may be other values,
     ! such as wm_zm, which is the overall mean vertical velocity.  If the
-    ! reference velocity is wm_zm, this subroutine calculates the average
-    ! positive ("upward") perturbation and the average negative ("downward")
-    ! perturbation.  These mean positive and negative vertical velocities are
-    ! useful in determining how long, on average, it takes a parcel of air,
-    ! being driven by subgrid updrafts or downdrafts, to traverse the length of
-    ! the vertical grid level.
+    ! reference velocity is wm_zm, this subroutine calculates the average of all
+    ! values of w that are on the positive ("upward") side of the mean and the
+    ! average of all values of w that are on the negative ("downward") side of
+    ! the mean.  These mean positive and negative vertical velocities are useful
+    ! in determining how long, on average, it takes a parcel of air, being
+    ! driven by subgrid updrafts or downdrafts, to traverse the length of the
+    ! vertical grid level.
     !
     ! Method
     ! ------
@@ -938,241 +939,151 @@ module mono_flux_limiter
     ! The values of vertical velocity, w, along an undefined horizontal plane
     ! at any vertical level, are considered to approximately follow a
     ! distribution that is a mixture of two normal (or Gaussian) distributions.
+    ! The values of w that are a part of the 1st normal distribution are
+    ! referred to as w1, and the values of w that are part of the 2nd normal
+    ! distribution are referred to as w2.  Note that these distributions
+    ! overlap, and there are many values of w that are found in both w1 and w2.
     !
     ! The probability density function (PDF) for w, P(w), is:
     !
-    ! P(w) = a*P_1(w) + (1-a)*P_2(w);
+    ! P(w) = a*P(w1) + (1-a)*P(w2);
     !
-    ! where "a" is the weight of the 1st normal distribution, and P_1(w) and
-    ! P_2(w) are the equations for the 1st and 2nd normal distributions,
+    ! where "a" is the weight of the 1st normal distribution, and P(w1) and
+    ! P(w2) are the equations for the 1st and 2nd normal distributions,
     ! respectively:
     !
-    ! P_1(w) = 1 / ( sigma_w1 * sqrt(2*PI) ) 
-    !          * EXP[ -(w-mu_w1)^2 / (2*(sigma_w1)^2) ]; and
+    ! P(w1) = 1 / ( sigma_w1 * sqrt(2*PI) ) 
+    !         * EXP[ -(w1-mu_w1)^2 / (2*sigma_w1^2) ]; and
     !
-    ! P_2(w) = 1 / ( sigma_w2 * sqrt(2*PI) ) 
-    !          * EXP[ -(w-mu_w2)^2 / (2*(sigma_w2)^2) ].
+    ! P(w2) = 1 / ( sigma_w2 * sqrt(2*PI) ) 
+    !         * EXP[ -(w2-mu_w2)^2 / (2*sigma_w2^2) ].
     !
     ! The mean of the 1st normal distribution is mu_w1, and the standard
     ! deviation of the 1st normal distribution is sigma_w1.  The mean of the
     ! 2nd normal distribution is mu_w2, and the standard deviation of the 2nd
     ! normal distribution is sigma_w2.
     !
-    ! The average value of a function, f(x), between alpha <= x <= beta, is:
+    ! The average value of w, distributed according to the probability
+    ! distribution, between limits alpha and beta, is:
     !
-    ! <f(x)|_alpha:beta> = [1/(beta-alpha)] * INT(alpha:beta) f(x) dx.
+    ! <w|_(alpha:beta)> = INT(alpha:beta) w P(w) dw.
     !
-    ! The average value of a function over a certain domain is used to determine
-    ! the average positive and negative (as compared to the reference velocity)
+    ! The average value of w over a certain domain is used to determine the
+    ! average positive and negative (as compared to the reference velocity)
     ! values of w at any vertical level.
     !
     ! Average Negative Vertical Velocity
     ! ----------------------------------
     !
     ! The average of all values of w in the distribution that are below the
-    ! reference velocity, w|_ref, is the mean value of P(w) over the domain
+    ! reference velocity, w|_ref, is the mean value of w over the domain
     ! -inf <= w <= w|_ref, such that:
     !
-    ! [1 / ( w|_ref - (-inf) )] * INT(-inf:w|_ref) P(w) dw.
+    ! <w|_(-inf:w|_ref)> = INT(-inf:w|_ref) w P(w) dw.
+    !                    = a * INT(-inf:w|_ref) w1 P(w1) dw1
+    !                      + (1-a) * INT(-inf:w|_ref) w2 P(w2) dw2.
     !
-    ! The integral over the PDF for w is:
+    ! For each normal distribution in the mixture of normal distribution, i
+    ! (where "i" can be 1 or 2):
     !
-    ! INT(-inf:w|_ref) P(w) dw = a * INT(-inf:w|_ref) P_1(w) dw
-    !                            + (1-a) * INT(-inf:w|_ref) P_2(w) dw.
+    ! INT(-inf:w|_ref) wi P(wi) dwi =
+    !   - ( sigma_wi / sqrt(2*PI) ) * EXP[ -(w|_ref-mu_wi)^2 / (2*sigma_wi^2) ]
+    !   + mu_wi * (1/2)*[ 1 + erf( (w|_ref-mu_wi) / (sqrt(2)*sigma_wi) ) ];
     !
-    ! The cumulative distribution function (CDF), D(x), is:
+    ! where mu_wi is the mean of w for the ith normal distribution, sigma_wi is
+    ! the standard deviations of w for the ith normal distribution, and erf( )
+    ! is the error function.
     !
-    ! D(x) = INT(-inf:u=x) P(u) du
-    !      = INT(-inf:u=x) 1 / ( sigma_u * sqrt(2*PI) ) 
-    !                      * EXP[ -(u-mu_u)^2 / (2*(sigma_u)^2) ] du
-    !      = (1/2) * [ 1 + erf( (x-mu_u) / (sigma_u*sqrt(2)) ) ];
+    ! The mean of all values of w <= w|_ref is:
     !
-    ! where, for a normal distribution P(u), mu_u is the mean value and sigma_u
-    ! is the standard deviation.  The function erf[ ] is the error function.
-    ! The cumulative distribution yields the sum total of all values of the
-    ! distribution P(u) up to value u = x.
-    !
-    ! Therefore,
-    !
-    ! INT(-inf:w|_ref) P_1(w) dw = D_1(w=w|_ref); and
-    ! INT(-inf:w|_ref) P_2(w) dw = D_2(w=w|_ref).
-    !
-    ! The integral over the PDF for w is:
-    !
-    ! INT(-inf:w|_ref) P(w) dw = 
-    !  a*(1/2)*[ 1 + erf( (w|_ref-mu_w1) / (sigma_w1*sqrt(2)) ) ]
-    !  + (1-a)*(1/2)*[ 1 + erf( (w|_ref-mu_w2) / (sigma_w2*sqrt(2)) ) ].
-    !
-    ! The mean of all values of w less than w|_ref is:
-    !
-    ! [1 / ( w|_ref - (-inf) )] *
-    ! { a*(1/2)*[ 1 + erf( (w|_ref-mu_w1) / (sigma_w1*sqrt(2)) ) ]
-    !   + (1-a)*(1/2)*[ 1 + erf( (w|_ref-mu_w2) / (sigma_w2*sqrt(2)) ) ] };
-    !
-    ! which is the same as:
-    !
-    ! [1 / ( w|_ref - (-inf) )]
-    ! *a*(1/2)*[ 1 + erf( (w|_ref-mu_w1) / (sigma_w1*sqrt(2)) ) ]
-    ! + [1 / ( w|_ref - (-inf) )]
-    !   *(1-a)*(1/2)*[ 1 + erf( (w|_ref-mu_w2) / (sigma_w2*sqrt(2)) ) ].
-    !
-    ! The integral INT(-inf:w|_ref) P_1(w) dw has given the sum total of all
-    ! values of w below w|_ref in the 1st normal distribution.  Likewise, the
-    ! integral INT(-inf:w|_ref) P_2(w) dw has given the sum total of all values
-    ! of w below w|_ref in the 2nd normal distribution.  The mean value of the
-    ! distribution of w over the domain w < w|_ref is found by dividing the
-    ! integrals by the domain size.  However, the domain size of each normal
-    ! distribution is infinite, which makes the mean value over the domain
-    ! become 0.
-    !
-    ! The problem is solved by the fact that w cannot possibly have a value of
-    ! -inf.  The PDF is only an approximation of the distribution of values of
-    ! w.  The absolute minimum of w at any vertical level cannot be computed.
-    ! However, the absolute minima of w, for each normal distribution, is most
-    ! likely 2 or 3 standard deviations below the mean of the relevant normal
-    ! distribution.  Thus, the sum total (result of the integral of P(w) from
-    ! -inf to w|_ref) of all values of w below w|_ref are found within a domain
-    ! with an upper limit of w|_ref and a lower limit of 2 or 3 standard
-    ! deviations below the mean of the relevant normal distribution.
-    !
-    ! For the 1st normal distribution, [1 / ( w|_ref - (-inf) )] becomes
-    ! [1 / ( w|_ref - ( mu_w1 - 3*sigma_w1 ) )].  Likewise, for the 2nd normal
-    ! distribution, [1 / ( w|_ref - (-inf) )] becomes
-    ! [1 / ( w|_ref - ( mu_w2 - 3*sigma_w2 ) )].
-    !
-    ! An absolute minimum of 3 standard deviations below the mean was chosen
-    ! because 99.7% of values in a normal distribution are found within 3
-    ! standard deviations from the mean (compared to 95.4% for 2 standard
-    ! deviations).
-    !
-    ! The mean of all values of w < w|_ref is:
-    !
-    ! a * [1 / ( w|_ref - ( mu_w1 - 3*sigma_w1 ) )]
-    ! * (1/2) * [ 1 + erf( (w|_ref-mu_w1) / (sigma_w1*sqrt(2)) ) ]
-    ! + (1-a) * [1 / ( w|_ref - ( mu_w2 - 3*sigma_w2 ) )]
-    !   * (1/2) * [ 1 + erf( (w|_ref-mu_w2) / (sigma_w2*sqrt(2)) ) ].
-    !
-    ! If ( mu_w1 - 3*sigma_w1 ) > w|_ref, then all values of w within the 1st
-    ! normal distribution are greater than w|_ref, and
-    !  [1 / ( w|_ref - ( mu_w1 - 3*sigma_w1 ) )]
-    !  * (1/2) * [ 1 + erf( (w|_ref-mu_w1) / (sigma_w1*sqrt(2)) ) ] = 0.
-    !
-    ! If ( mu_w2 - 3*sigma_w1 ) > w|_ref, then all values of w within the 2nd
-    ! normal distribution are greater than w|_ref, and
-    !  [1 / ( w|_ref - ( mu_w2 - 3*sigma_w2 ) )]
-    !  * (1/2) * [ 1 + erf( (w|_ref-mu_w2) / (sigma_w2*sqrt(2)) ) ] = 0.
+    ! <w|_(-inf:w|_ref)> =
+    ! a * { - ( sigma_w1 / sqrt(2*PI) ) 
+    !         * EXP[ -(w|_ref-mu_w1)^2 / (2*sigma_w1^2) ]
+    !       + mu_w1 * (1/2)
+    !                 *[1 + erf( (w|_ref-mu_w1) / (sqrt(2)*sigma_w1) )] }
+    ! + (1-a) * { - ( sigma_w2 / sqrt(2*PI) ) 
+    !               * EXP[ -(w|_ref-mu_w2)^2 / (2*sigma_w2^2) ]
+    !             + mu_w2 * (1/2)
+    !                       *[1 + erf( (w|_ref-mu_w2) / (sqrt(2)*sigma_w2) )] }.
     !
     ! Average Positive Vertical Velocity
     ! ----------------------------------
     !
     ! The average of all values of w in the distribution that are above the
-    ! reference velocity, w|_ref, is the mean value of P(w) over the domain
+    ! reference velocity, w|_ref, is the mean value of w over the domain
     ! w|_ref <= w <= inf, such that:
     !
-    ! [1 / ( inf - w|_ref )] * INT(w|_ref:inf) P(w) dw.
+    ! <w|_(w|_ref:inf)> = INT(w|_ref:inf) w P(w) dw.
+    !                   = a * INT(w|_ref:inf) w1 P(w1) dw1
+    !                     + (1-a) * INT(w|_ref:inf) w2 P(w2) dw2.
     !
-    ! The integral over the PDF for w is:
+    ! For each normal distribution in the mixture of normal distribution, i
+    ! (where "i" can be 1 or 2):
     !
-    ! INT(w|_ref:inf) P(w) dw = a * INT(w|_ref:inf) P_1(w) dw
-    !                           + (1-a) * INT(w|_ref:inf) P_2(w) dw.
+    ! INT(w|_ref:inf) wi P(wi) dwi =
+    !     ( sigma_wi / sqrt(2*PI) ) * EXP[ -(w|_ref-mu_wi)^2 / (2*sigma_wi^2) ]
+    !   + mu_wi * (1/2)*[ 1 - erf( (w|_ref-mu_wi) / (sqrt(2)*sigma_wi) ) ];
     !
-    ! The cumulative distribution function (CDF), D(x), is:
+    ! where mu_wi is the mean of w for the ith normal distribution, sigma_wi is
+    ! the standard deviations of w for the ith normal distribution, and erf( )
+    ! is the error function.
     !
-    ! D(x) = INT(-inf:u=x) P(u) du
-    !      = INT(-inf:u=x) 1 / ( sigma_u * sqrt(2*PI) ) 
-    !                      * EXP[ -(u-mu_u)^2 / (2*(sigma_u)^2) ] du
-    !      = (1/2) * [ 1 + erf( (x-mu_u) / (sigma_u*sqrt(2)) ) ];
+    ! The mean of all values of w >= w|_ref is:
     !
-    ! where, for a normal distribution P(u), mu_u is the mean value and sigma_u
-    ! is the standard deviation.  The function erf[ ] is the error function.
-    ! The cumulative distribution yields the sum total of all values of the
-    ! distribution P(u) up to value u = x.
+    ! <w|_(w|_ref:inf)> =
+    ! a * {   ( sigma_w1 / sqrt(2*PI) ) 
+    !         * EXP[ -(w|_ref-mu_w1)^2 / (2*sigma_w1^2) ]
+    !       + mu_w1 * (1/2)
+    !                 *[1 - erf( (w|_ref-mu_w1) / (sqrt(2)*sigma_w1) )] }
+    ! + (1-a) * {   ( sigma_w2 / sqrt(2*PI) ) 
+    !               * EXP[ -(w|_ref-mu_w2)^2 / (2*sigma_w2^2) ]
+    !             + mu_w2 * (1/2)
+    !                       *[1 - erf( (w|_ref-mu_w2) / (sqrt(2)*sigma_w2) )] }.
     !
-    ! An important property of the CDF is:
+    ! Special Limitations:
+    ! --------------------
     !
-    ! D(inf) = INT(-inf:inf) P(u) du = 1.
-    !
-    ! An important property of integrals is:
-    !
-    ! INT(-inf:u=x) P(u) du + INT(u=x:inf) P(u) du = INT(-inf:inf) P(u) du.
+    ! A normal distribution has a domain from -inf to inf.  However, the mixture
+    ! of normal distributions is an approximation of the distribution of values
+    ! of w along a horizontal plane at any given vertical level.  Vertical
+    ! velocity, w, has absolute minimum and maximum values (that cannot be
+    ! predicted by the PDF).  The absolute maximum and minimum for each normal
+    ! distribution is most likely found within 2 or 3 standard deviations of the
+    ! mean for the relevant normal distribution.  In other words, for each
+    ! normal distribution in the mixture of normal distributions, all the values
+    ! of w are found within 2 or 3 standard deviations on both sides of the
+    ! mean.  Therefore, if one (or both) of the normal distributions has a mean
+    ! that is more than 3 standard deviations away from the reference velocity,
+    ! then that entire w distribution is found on ONE side of the reference
+    ! velocity.
     !
     ! Therefore:
     !
-    ! INT(u=x:inf) P(u) du = INT(-inf:inf) P(u) du - INT(-inf:u=x) P(u) du
-    !                      = 1 - D(u=x).
+    ! a) where mu_wi + 3*sigma_wi <= w|_ref:
     !
-    ! Thus,
+    !       The entire ith normal distribution of w is on the negative side of
+    !       w|_ref; and
     !
-    ! INT(w|_ref:inf) P_1(w) dw = 1 - D_1(w=w|_ref); and
-    ! INT(w|_ref:inf) P_2(w) dw = 1 - D_2(w=w|_ref).
+    !       INT(-inf:w|_ref) wi P(wi) dwi = mu_wi; and
+    !       INT(inf:w|_ref) wi P(wi) dwi = 0.
     !
-    ! The integral over the PDF for w is:
+    ! b) where mu_wi - 3*sigma_wi >= w|_ref:
     !
-    ! INT(w|_ref:inf) P(w) dw = 
-    !  a*{ 1 - (1/2)*[ 1 + erf( (w|_ref-mu_w1) / (sigma_w1*sqrt(2)) ) ] }
-    !  + (1-a)*{ 1 - (1/2)*[ 1 + erf( (w|_ref-mu_w2) / (sigma_w2*sqrt(2)) ) ] }.
+    !       The entire ith normal distribution of w is on the positive side of
+    !       w|_ref; and
     !
-    ! The mean of all values of w greater than w|_ref is:
+    !       INT(-inf:w|_ref) wi P(wi) dwi = 0; and
+    !       INT(inf:w|_ref) wi P(wi) dwi = mu_wi.
     !
-    ! [1 / ( inf - w|_ref )] *
-    !  [  a *
-    !      { 1 - (1/2)*[ 1 + erf( (w|_ref-mu_w1) / (sigma_w1*sqrt(2)) ) ] }
-    !   + (1-a) *
-    !      { 1 - (1/2)*[ 1 + erf( (w|_ref-mu_w2) / (sigma_w2*sqrt(2)) ) ] } ].
-    !
-    ! which is the same as:
-    !
-    ! [1 / ( inf - w|_ref )]
-    ! *a*{ 1 - (1/2)*[ 1 + erf( (w|_ref-mu_w1) / (sigma_w1*sqrt(2)) ) ] }
-    ! + [1 / ( inf - w|_ref )]
-    !   *(1-a)*{ 1 - (1/2)*[ 1 + erf( (w|_ref-mu_w2) / (sigma_w2*sqrt(2)) ) ] }.
-    !
-    ! The integral INT(w|_ref:inf) P_1(w) dw has given the sum total of all
-    ! values of w above w|_ref in the 1st normal distribution.  Likewise, the
-    ! integral INT(w|_ref:inf) P_2(w) dw has given the sum total of all values
-    ! of w above w|_ref in the 2nd normal distribution.  The mean value of the
-    ! distribution of w over the domain w > w|_ref is found by dividing the
-    ! integrals by the domain size.  However, the domain size of each normal
-    ! distribution is infinite, which makes the mean value over the domain
-    ! become 0.
-    !
-    ! The problem is solved by the fact that w cannot possibly have a value of
-    ! inf.  The PDF is only an approximation of the distribution of values of
-    ! w.  The absolute maximum of w at any vertical level cannot be computed.
-    ! However, the absolute maxima of w, for each normal distribution, is most
-    ! likely 2 or 3 standard deviations above the mean of the relevant normal
-    ! distribution.  Thus, the sum total (result of the integral of P(w) from
-    ! w|_ref to inf) of all values of w above w|_ref are found within a domain
-    ! with a lower limit of w|_ref and an upper limit of 2 or 3 standard
-    ! deviations above the mean of the relevant normal distribution.
-    !
-    ! For the 1st normal distribution, [1 / ( inf - w|_ref )] becomes
-    ! [1 / ( ( mu_w1 + 3*sigma_w1 ) - w|_ref )].  Likewise, for the 2nd normal
-    ! distribution, [1 / ( inf - w|_ref )] becomes
-    ! [1 / ( ( mu_w2 + 3*sigma_w2 ) - w|_ref )].
-    !
-    ! An absolute maximum of 3 standard deviations above the mean was chosen
-    ! because 99.7% of values in a normal distribution are found within 3
-    ! standard deviations from the mean (compared to 95.4% for 2 standard
-    ! deviations).
-    !
-    ! The mean of all values of w > w|_ref is:
-    !
-    ! a * [1 / ( ( mu_w1 + 3*sigma_w1 ) - w|_ref )]
-    ! * { 1 - (1/2) * [ 1 + erf( (w|_ref-mu_w1) / (sigma_w1*sqrt(2)) ) ] }
-    ! + (1-a) * [1 / ( ( mu_w2 + 3*sigma_w2 ) - w|_ref )]
-    !   * { 1 - (1/2) * [ 1 + erf( (w|_ref-mu_w2) / (sigma_w2*sqrt(2)) ) ] }.
-    !
-    ! If ( mu_w1 + 3*sigma_w1 ) < w|_ref, then all values of w within the 1st
-    ! normal distribution are less than w|_ref, and
-    !  [1 / ( ( mu_w1 + 3*sigma_w1 ) - w|_ref )]
-    !  * { 1 - (1/2) * [ 1 + erf( (w|_ref-mu_w1) / (sigma_w1*sqrt(2)) ) ] } = 0.
-    !
-    ! If ( mu_w2 + 3*sigma_w2 ) < w|_ref, then all values of w within the 2nd
-    ! normal distribution are less than w|_ref, and
-    !  [1 / ( ( mu_w2 + 3*sigma_w2 ) - w|_ref )]
-    !  * { 1 - (1/2) * [ 1 + erf( (w|_ref-mu_w2) / (sigma_w2*sqrt(2)) ) ] } = 0.
-    !
+    ! Note:  A value of 3 standard deviations above and below the mean of the
+    !        ith normal distribution was chosen for the approximate maximum and
+    !        minimum values of the ith normal distribution because 99.7% of
+    !        values in a normal distribution are found within 3 standard
+    !        deviations from the mean (compared to 95.4% for 2 standard
+    !        deviations).  The value of 3 standard deviations provides for a
+    !        reasonable estimate of the absolute maximum and minimum of w, while
+    !        covering a great majority of the normal distribution.
+
     ! References:
     !-----------------------------------------------------------------------
 
@@ -1180,6 +1091,7 @@ module mono_flux_limiter
         gr  ! Variable(s)
 
     use constants, only: &
+        sqrt_2pi, &
         sqrt_2
 
     use anl_erf, only:  & 
@@ -1215,8 +1127,12 @@ module mono_flux_limiter
     integer :: k
 
 
-    ! Loop over every momentum level.
-    do k = 1, gr%nnzp, 1
+    ! All of the PDF parameters are computed on thermodynamic levels.
+    ! Interpolate the needed PDF parameters from thermodynamic levels
+    ! to momentum levels.
+
+    ! Loop over momentum levels from 2 to gr%nnzp.
+    do k = 2, gr%nnzp, 1
 
        ! Standard deviation of w for the 1st normal distribution.
        sigma_w1 = sqrt( sw1(k) )
@@ -1225,54 +1141,75 @@ module mono_flux_limiter
        sigma_w2 = sqrt( sw2(k) )
 
 
-       ! Contribution to mean of downwards w from the 1st normal distribution.
-       if ( w1(k) - 3.0*sigma_w1 < w_ref ) then
-          mean_w_down_1st  &
-          = ( 1.0 / ( w_ref - ( w1(k) - 3.0*sigma_w1 ) ) )  &
-            * 0.5*( 1.0 + erf( (w_ref - w1(k)) / (sigma_w1*sqrt_2) ) )
-       else
+       ! Contributions from the 1st normal distribution.
+       if ( w1(k) + 3*sigma_w1 <= w_ref ) then
+
+          ! The entire 1st normal is on the negative side of w|_ref.
+          mean_w_down_1st = w1(k)
+          mean_w_up_1st   = 0.0
+
+       elseif ( w1(k) - 3*sigma_w1 >= w_ref ) then
+
+          ! The entire 1st normal is on the positive side of w|_ref.
           mean_w_down_1st = 0.0
+          mean_w_up_1st   = w1(k)
+
+       else
+
+          ! The 1st normal has values on both sides of w_ref.
+          mean_w_down_1st =  &
+             - (sigma_w1/sqrt_2pi)  &
+               * exp( -(w_ref-w1(k))**2 / (2.0*sigma_w1**2) )  &
+             + w1(k) * 0.5*( 1.0 + erf( (w_ref-w1(k)) / (sqrt_2*sigma_w1) ) )
+
+          mean_w_up_1st =  &
+             + (sigma_w1/sqrt_2pi)  &
+               * exp( -(w_ref-w1(k))**2 / (2.0*sigma_w1**2) )  &
+             + w1(k) * 0.5*( 1.0 - erf( (w_ref-w1(k)) / (sqrt_2*sigma_w1) ) )
+
        endif
 
-       ! Contribution to mean of downwards w from the 2nd normal distribution.
-       if ( w2(k) - 3.0*sigma_w2 < w_ref ) then
-          mean_w_down_2nd  &
-          = ( 1.0 / ( w_ref - ( w2(k) - 3.0*sigma_w2 ) ) )  &
-            * 0.5*( 1.0 + erf( (w_ref - w2(k)) / (sigma_w2*sqrt_2) ) )
-       else
+
+       ! Contributions from the 2nd normal distribution.
+       if ( w2(k) + 3*sigma_w2 <= w_ref ) then
+
+          ! The entire 2nd normal is on the negative side of w|_ref.
+          mean_w_down_2nd = w2(k)
+          mean_w_up_2nd   = 0.0
+
+       elseif ( w2(k) - 3*sigma_w2 >= w_ref ) then
+
+          ! The entire 2nd normal is on the positive side of w|_ref.
           mean_w_down_2nd = 0.0
+          mean_w_up_2nd   = w2(k)
+
+       else
+
+          ! The 2nd normal has values on both sides of w_ref.
+          mean_w_down_2nd =  &
+             - (sigma_w2/sqrt_2pi)  &
+               * exp( -(w_ref-w2(k))**2 / (2.0*sigma_w2**2) )  &
+             + w2(k) * 0.5*( 1.0 + erf( (w_ref-w2(k)) / (sqrt_2*sigma_w2) ) )
+
+          mean_w_up_2nd =  &
+             + (sigma_w2/sqrt_2pi)  &
+               * exp( -(w_ref-w2(k))**2 / (2.0*sigma_w2**2) )  &
+             + w2(k) * 0.5*( 1.0 - erf( (w_ref-w2(k)) / (sqrt_2*sigma_w2) ) )
+
        endif
 
        ! Overall mean of downwards w.
        mean_w_down(k) = a(k) * mean_w_down_1st  &
                         + ( 1.0 - a(k) ) * mean_w_down_2nd
 
-
-       ! Contribution to mean of upwards w from the 1st normal distribution.
-       if ( w1(k) + 3.0*sigma_w1 > w_ref ) then
-          mean_w_up_1st  &
-          = ( 1.0 / ( ( w1(k) + 3.0*sigma_w1 ) - w_ref ) )  &
-            * ( 1.0 - 0.5*( 1.0 + erf( (w_ref - w1(k)) / (sigma_w1*sqrt_2) ) ) )
-       else
-          mean_w_up_1st = 0.0
-       endif
-
-       ! Contribution to mean of upwards w from the 2nd normal distribution.
-       if ( w2(k) + 3.0*sigma_w2 > w_ref ) then
-          mean_w_up_2nd  &
-          = ( 1.0 / ( ( w2(k) + 3.0*sigma_w2 ) - w_ref ) )  &
-            * ( 1.0 - 0.5*( 1.0 + erf( (w_ref - w2(k)) / (sigma_w2*sqrt_2) ) ) )
-       else
-          mean_w_up_2nd = 0.0
-       endif
-
        ! Overall mean of upwards w.
        mean_w_up(k) = a(k) * mean_w_up_1st  &
                       + ( 1.0 - a(k) ) * mean_w_up_2nd
 
-    enddo
+    enddo ! k = 2, gr%nnzp, 1
 
 
+    return
   end subroutine mean_vert_vel_up_down
 
 !===============================================================================
