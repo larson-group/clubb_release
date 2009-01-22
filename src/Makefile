@@ -31,6 +31,8 @@ SRCDIR = $(PREFIX)/src
 
 COAMPS_MICRO_DIR = COAMPS_micro
 NR_DIR = Numerical_recipes
+UNREL_DIR = Benchmark_cases/unreleased_cases
+#UNREL_DIR = Unreleased_cases
 
 # == Object files with licensing restrictions ==
 # We cannot freely distribute COAMPS microphysics or Numerical Recipes code.
@@ -52,7 +54,14 @@ NUM_REC = $(patsubst %.f90,%.o, $(notdir $(wildcard $(NR_DIR)/*.f90)))
 ifeq ($(NUM_REC),)
 # Append nothing
 else
-FCFLAGS := $(FCFLAGS) -DTUNER 
+FCFLAGS := $(FCFLAGS) -DTUNER
+endif
+
+UNRELEASED = $(patsubst %.f90,%.o, $(notdir $(wildcard $(UNREL_DIR)/*.F90)))
+ifeq ($(UNRELEASED),)
+# Append nothing
+else
+FCFLAGS := $(FCFLAGS) -DUNRELEASED_CODE 
 endif
 
 # == Other object files ==

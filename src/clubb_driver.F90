@@ -31,14 +31,14 @@ module clubb_driver
   integer, private ::  & 
     nzmax,     & ! Vertical extent in levels              [#]
     grid_type    ! 1 ==> evenly-spaced grid levels
-                 ! 2 ==> stretched (unevenly-spaced) grid entered on
-                 !       thermodynamic grid levels; momentum levels
-                 !       halfway between thermodynamic levels (style
-                 !       of SAM stretched grid).
-                 ! 3 ==> stretched (unevenly-spaced) grid entered on
-                 !       momentum grid levels; thermodynamic levels
-                 !       halfway between momentum levels (style
-                 !       of WRF stretched grid).
+  ! 2 ==> stretched (unevenly-spaced) grid entered on
+  !       thermodynamic grid levels; momentum levels
+  !       halfway between thermodynamic levels (style
+  !       of SAM stretched grid).
+  ! 3 ==> stretched (unevenly-spaced) grid entered on
+  !       momentum grid levels; thermodynamic levels
+  !       halfway between momentum levels (style
+  !       of WRF stretched grid).
 
   real, private ::  & 
     deltaz,  & ! Change per grid level                 [m]
@@ -71,9 +71,9 @@ module clubb_driver
 
   integer, private :: &
     sfctype ! 0: fixed sfc sensible and latent heat fluxes as
-            !    given in namelist
-            ! 1: bulk formula: uses given surface temperature
-            !    and assumes over ocean
+  !    given in namelist
+  ! 1: bulk formula: uses given surface temperature
+  !    and assumes over ocean
 
 !$omp threadprivate(sfctype)
 
@@ -422,6 +422,11 @@ module clubb_driver
 #else
       print *, "-DTUNER disabled"
 #endif
+#ifdef UNRELEASED_CODE
+      print *, "-DUNRELEASED_CODE enabled"
+#else
+      print *, "-DUNRELEASED_CODE disabled"
+#endif
 
       ! Pick some default values for model_setting
       print *, "&model_setting:"
@@ -461,7 +466,7 @@ module clubb_driver
       print *, "alvdr = ", alvdr
       print *, "alvdf = ", alvdf
       print *, "alndr = ", alndr
-      print *, "alndf = ", alndf 
+      print *, "alndf = ", alndf
 
       print *, "ts_nudge = ", ts_nudge
 
@@ -505,7 +510,7 @@ module clubb_driver
       print *, "Constant tolerances", "[units]"
       print *, "rttol = ", rttol, "[kg/kg]"
       print *, "thltol = ", thltol,"[K]"
-      print *, "wtol = ", wtol, "[m/s]" 
+      print *, "wtol = ", wtol, "[m/s]"
 
       print *, "--------------------------------------------------"
 
@@ -789,15 +794,17 @@ module clubb_driver
         l_uv_nudge, & ! Variable(s)
         l_tke_aniso
 
+#ifdef UNRELEASED_CODE
     use arm_0003, only: arm_0003_init ! Procedure(s)
 
     use arm_3year, only: arm_3year_init ! Procedure(s)
 
     use arm_97, only: arm_97_init ! Procedure(s)
 
-    use mpace_a, only: mpace_a_init ! Procedure(s)
-
     use lba, only: lba_init ! Procedure(s)
+#endif
+
+    use mpace_a, only: mpace_a_init ! Procedure(s)
 
     use mixing_length, only: compute_length ! Procedure(s)
 
@@ -811,7 +818,9 @@ module clubb_driver
 
     use hydrostatic_mod, only: hydrostatic ! Procedure(s)
 
+#ifdef UNRELEASED_CODE
     use soil_vegetation, only: initialize_soil_veg ! Procedure(s)
+#endif
 
     implicit none
 
@@ -857,7 +866,9 @@ module clubb_driver
 
     real :: cloud_top_height ! [m]
     real :: emax
+#ifdef UNRELEASED_CODE
     real :: sfc_soil_T_in_K, deep_soil_T_in_K, veg_T_in_K
+#endif
     integer :: k, err_code
 
 !-----------------------------------------------------------------------
@@ -934,12 +945,12 @@ module clubb_driver
 
     select case ( trim( runtype ) )
 
-    ! Generic case
+      ! Generic case
     case ( "generic" )
 
       em = 1.0
 
-    ! GCSS BOMEX
+      ! GCSS BOMEX
     case ( "bomex" )
 
 !---> Reduction of initial sounding for stability
@@ -955,7 +966,7 @@ module clubb_driver
 
       em(:) = emin
 
-    ! GCSS ARM
+      ! GCSS ARM
     case ( "arm" )
 
 !---> Reduction of initial sounding for stability
@@ -972,6 +983,7 @@ module clubb_driver
 
       em(:) = emin
 
+#ifdef UNRELEASED_CODE
     ! March 2000 ARM case
     case ( "arm_0003" )
 
@@ -989,6 +1001,7 @@ module clubb_driver
 
       em = 1.0
       call arm_97_init()
+#endif
 
     ! GCSS FIRE Sc
     case ( "fire" )
@@ -1004,7 +1017,7 @@ module clubb_driver
       em(1) = em(2)
       em(gr%nnzp) = em(gr%nnzp-1)
 
-    ! GCSS ATEX
+      ! GCSS ATEX
     case ( "atex" )
 
       um = max( um, -8. )
@@ -1022,7 +1035,7 @@ module clubb_driver
 
       em(:) = emin
 
-    ! GCSS DYCOMS II RF01
+      ! GCSS DYCOMS II RF01
     case ( "dycoms2_rf01" )
       cloud_top_height = 800. ! 800 m is the top of the cloud in RF01
       do k=1,gr%nnzp
@@ -1035,13 +1048,13 @@ module clubb_driver
       em(1) = em(2)
       em(gr%nnzp) = em(gr%nnzp-1)
 
-    ! GCSS DYCOMS II RF02
+      ! GCSS DYCOMS II RF02
     case ( "dycoms2_rf02_do", "dycoms2_rf02_ds", & 
            "dycoms2_rf02_nd", "dycoms2_rf02_so" )
 
       em = 1.0
 
-    ! Brian for Nov. 11 altocumulus case.
+      ! Brian for Nov. 11 altocumulus case.
     case ( "nov11_altocu" )
 
       ! Vince Larson reduced initial forcing.  4 Nov 2005
@@ -1066,7 +1079,7 @@ module clubb_driver
       em(gr%nnzp) = em(gr%nnzp-1)
       ! End Vince Larson's change.
 
-    ! Adam Smith addition for June 25 altocumulus case.
+      ! Adam Smith addition for June 25 altocumulus case.
     case ( "jun25_altocu" )
 
       ! Vince Larson reduced initial forcing.  4 Nov 2005
@@ -1092,9 +1105,9 @@ module clubb_driver
       em(gr%nnzp) = em(gr%nnzp-1)
       ! End Vince Larson's change.
 
-    ! End of ajsmith4's addition
+      ! End of ajsmith4's addition
 
-    ! Adam Smith addition for CLEX-9: Nov. 02 altocumulus case.
+      ! Adam Smith addition for CLEX-9: Nov. 02 altocumulus case.
     case ( "clex9_nov02" )
 
       ! Vince Larson reduced initial forcing.  4 Nov 2005
@@ -1113,9 +1126,9 @@ module clubb_driver
       em(gr%nnzp) = em(gr%nnzp-1)
       ! End Vince Larson's change.
 
-    ! End of ajsmith4's addition
+      ! End of ajsmith4's addition
 
-    ! Adam Smith addition for CLEX-9: Oct. 14 altocumulus case.
+      ! Adam Smith addition for CLEX-9: Oct. 14 altocumulus case.
     case ( "clex9_oct14" )
 
       ! Vince Larson reduced initial forcing.  4 Nov 2005
@@ -1134,12 +1147,14 @@ module clubb_driver
       em(gr%nnzp) = em(gr%nnzp-1)
       ! End Vince Larson's change.
 
-    ! End of ajsmith4's addition
+      ! End of ajsmith4's addition
 
+#ifdef UNRELEASED_CODE
     case ( "lba" )
 
       em = 0.1
       call lba_init()
+#endif
 
     ! Michael Falk for mpace_a Arctic Stratus case.
     case ( "mpace_a" )
@@ -1159,7 +1174,7 @@ module clubb_driver
 
       call mpace_a_init
 
-    ! Michael Falk for mpace_b Arctic Stratus case.
+      ! Michael Falk for mpace_b Arctic Stratus case.
     case ( "mpace_b" )
 
       cloud_top_height = 1300. ! 1300 m is the cloud top in mpace_b.  Michael Falk 17 Aug 2006
@@ -1176,12 +1191,12 @@ module clubb_driver
       em(1) = em(2)
       em(gr%nnzp) = em(gr%nnzp-1)
 
-    ! Brian Griffin for COBRA CO2 case.
+      ! Brian Griffin for COBRA CO2 case.
     case ( "cobra" )
 
       em = 0.1
 
-    ! Michael Falk for RICO tropical cumulus case, 13 Dec 2006
+      ! Michael Falk for RICO tropical cumulus case, 13 Dec 2006
     case ( "rico" )
 
       cloud_top_height = 1500.
@@ -1197,7 +1212,7 @@ module clubb_driver
       em(1) = em(2)
       em(gr%nnzp) = em(gr%nnzp-1)
 
-    ! Michael Falk for GABLS2 case, 29 Dec 2006
+      ! Michael Falk for GABLS2 case, 29 Dec 2006
     case ( "gabls2" )
 
       cloud_top_height = 800.  ! per GABLS2 specifications
@@ -1213,6 +1228,7 @@ module clubb_driver
       em(1) = em(2)
       em(gr%nnzp) = em(gr%nnzp-1)
 
+#ifdef UNRELEASED_CODE
     case ( "gabls3" )
       em = 1.0
 
@@ -1221,6 +1237,7 @@ module clubb_driver
       deep_soil_T_in_K = 288.58
 
       call initialize_soil_veg( veg_T_in_K, sfc_soil_T_in_K, deep_soil_T_in_K )
+#endif
 
     end select
 
@@ -1230,19 +1247,19 @@ module clubb_driver
 
     if ( l_tke_aniso ) then
 
-       ! TKE:  em = (1/2) * ( w'^2 + u'^2 + v'^2 )
-       ! Evenly divide TKE into its component
-       ! contributions (w'^2, u'^2, and v'^2).
+      ! TKE:  em = (1/2) * ( w'^2 + u'^2 + v'^2 )
+      ! Evenly divide TKE into its component
+      ! contributions (w'^2, u'^2, and v'^2).
 
-       wp2 = (2.0/3.0) * em
-       up2 = (2.0/3.0) * em
-       vp2 = (2.0/3.0) * em
+      wp2 = (2.0/3.0) * em
+      up2 = (2.0/3.0) * em
+      vp2 = (2.0/3.0) * em
 
     else
 
-       ! TKE:  em = (3/2) * w'^2
+      ! TKE:  em = (3/2) * w'^2
 
-       wp2 = (2.0/3.0) * em
+      wp2 = (2.0/3.0) * em
 
     endif
 
@@ -1330,17 +1347,21 @@ module clubb_driver
       l_kk_rain, &
       l_coamps_micro
 
+#ifdef UNRELEASED_CODE
     use arm_0003, only: arm_0003_init ! Procedure(s)
 
     use arm_97, only: arm_97_init ! Procedure(s)
 
     use arm_3year, only: arm_3year_init ! Procedure(s)
 
+    use lba, only: lba_init ! Procedure(s)
+#endif
+
     use mpace_a, only: mpace_a_init ! Procedure(s)
 
-    use lba, only: lba_init ! Procedure(s)
-
+#ifdef UNRELEASED_CODE
     use soil_vegetation, only: initialize_soil_veg ! Procedure(s)
+#endif
 
     implicit none
 
@@ -1478,20 +1499,29 @@ module clubb_driver
 
     ! Initialize forcing files for specific cases
     select case( trim( runtype ) )
+#ifdef UNRELEASED_CODE
     case( "arm_3year" )
       call arm_3year_init()
+
     case( "arm_97" )
       call arm_97_init()
+
     case( "arm_0003" )
       call arm_0003_init()
+
     case( "lba" )
       call lba_init()
+#endif
+
     case( "mpace_a" )
       call mpace_a_init()
+
+#ifdef UNRELEASED_CODE
     case( "gabls3" )
       ! The user needs to enter the appropriate soil temperatures manually for restarts.
       ! At some point, we should automate this by reading in the appropriate sfc values.
       call initialize_soil_veg(300.,300.,288.58)
+#endif
 
     end select
 
@@ -1533,11 +1563,11 @@ module clubb_driver
 
     use grid_class, only: zt2zm ! Procedure(s)
 
-    use variables_diagnostic_module, only: hydromet, Ncm, radht, um_ref,  & ! Variable(s)
-                                    vm_ref, Frad,  Frad_SW_up,  Frad_LW_up, &
-                                    Frad_SW_down, Frad_LW_down, &
-                                    Ncnm, thvm, ustar, & 
-                                    pdf_parms, Kh_zm, Akm_est, Akm, Nim, ug, vg
+    use variables_diagnostic_module, only: &
+      hydromet, Ncm, radht, um_ref,  & ! Variable(s)
+      vm_ref, Frad,  Frad_SW_up,  Frad_LW_up, &
+      Frad_SW_down, Frad_LW_down, Ncnm, thvm, ustar, & 
+      pdf_parms, Kh_zm, Akm_est, Akm, Nim, ug, vg
 
     use variables_diagnostic_module, only: wpedsclrp ! Passive scalar variables
 
@@ -1575,7 +1605,9 @@ module clubb_driver
 
     use microphys_driver, only: advance_microphys ! Procedure(s)
 
+#ifdef UNRELEASED_CODE
     use soil_vegetation, only: get_veg_T_in_K, advance_soil_veg
+#endif
 
     use error_code, only: lapack_error,  & ! Procedure(s)
                           clubb_at_least_debug_level
@@ -1584,16 +1616,16 @@ module clubb_driver
         iirsnowm, iiricem, & 
         iisclr_rt, iisclr_thl
 
-! Case specific modules
+    ! Case specific modules
     use arm, only: arm_tndcy, arm_sfclyr ! Procedure(s)
 
-    use arm_97, only: arm_97_tndcy, arm_97_sfclyr ! Procedure(s)
-
-    use gabls3, only: gabls3_tndcy, gabls3_sfclyr ! Procedures(s)
-
+#ifdef UNRELEASED_CODE
     use arm_0003, only: arm_0003_tndcy, arm_0003_sfclyr ! Procedure(s)
 
     use arm_3year, only: arm_3year_tndcy, arm_3year_sfclyr ! Procedure(s)
+
+    use arm_97, only: arm_97_tndcy, arm_97_sfclyr ! Procedure(s)
+#endif
 
     use astex, only: astex_tndcy, astex_sfclyr ! Procedure(s)
 
@@ -1601,7 +1633,13 @@ module clubb_driver
 
     use bomex, only: bomex_tndcy, bomex_sfclyr ! Procedure(s)
 
+#ifdef UNRELEASED_CODE
+    use clex9_nov02, only: clex9_nov02_tndcy ! Procedure(s)
+
+    use clex9_oct14, only: clex9_oct14_tndcy ! Procedure(s)
+
     use cobra, only: cobra_tndcy, cobra_sfclyr ! Procedure(s)
+#endif
 
     use dycoms2_rf01, only:  & 
         dycoms2_rf01_tndcy, dycoms2_rf01_sfclyr ! Procedure(s)
@@ -1616,21 +1654,23 @@ module clubb_driver
 
     use gabls2, only: gabls2_tndcy, gabls2_sfclyr ! Procedure(s)
 
+#ifdef UNRELEASED_CODE
+    use gabls3, only: gabls3_tndcy, gabls3_sfclyr ! Procedures(s)
+
     use rico, only: rico_tndcy, rico_sfclyr ! Procedure(s)
 
     use lba, only: lba_tndcy, lba_sfclyr ! Procedure(s)
+#endif
 
     use mpace_a, only: mpace_a_tndcy, mpace_a_sfclyr ! Procedure(s)
 
     use mpace_b, only: mpace_b_tndcy, mpace_b_sfclyr ! Procedure(s)
 
+#ifdef UNRELEASED_CODE
     use nov11, only: nov11_altocu_tndcy ! Procedure(s)
 
     use jun25, only: jun25_altocu_tndcy ! Procedure(s)
-
-    use clex9_nov02, only: clex9_nov02_tndcy ! Procedure(s)
-
-    use clex9_oct14, only: clex9_oct14_tndcy ! Procedure(s)
+#endif
 
     use wangara, only: wangara_tndcy, wangara_sfclyr ! Procedure(s)
 
@@ -1641,18 +1681,15 @@ module clubb_driver
 
     implicit none
 
-! Input Variables
+    ! Input Variables
     real(kind=time_precision), intent(in) :: & 
       dt         ! Model timestep                            [s]
 
-!logical, intent(in) :: &
-!  stdout ! Whether to print messages to stdout
-
-! Input/Output Variables
+    ! Input/Output Variables
     integer, intent(inout) :: & 
       err_code
 
-! Local Variables
+    ! Local Variables
     real, dimension(gr%nnzp) ::  & 
       rsnowm,  & ! Snow mixing ratio                         [kg/kg]
       ricem      ! Prisitine ice water mixing ratio          [kg/kg]
@@ -1661,10 +1698,11 @@ module clubb_driver
       um_sfc, &  ! um interpolated to momentum level 1 (sfc) [m/s]
       vm_sfc     ! vm interpolated to momentum level 1 (sfc) [m/s]
 
+#ifdef UNRELEASED_CODE
     real :: wpthep
-    integer :: lin_int_buffer
+#endif
 
-    integer :: k ! Vertical loop index variable
+    integer :: lin_int_buffer
 
 !-----------------------------------------------------------------------
 
@@ -1679,112 +1717,121 @@ module clubb_driver
 
     select case ( runtype )
 
-    case( "generic" ) ! Generic run
-      ! Configure for K&K microphysics
-      do k = 1, gr%nnzp, 1
-        if ( rcm(k) >= rc_tol ) then
-          ! Ncm is in units of kg^-1.  If the coefficient is in m^-3, then
-          ! it needs to be divided by rho in order to get units of kg^-1.
-          ! Brian.  Sept. 8, 2007.
-!            Ncm(k) = 30.0 * (1.0 + exp( -gr%zt(k)/2000.0 )) * 1.e6 * rho(k)
-          Ncm(k) = 30.0 * (1.0 + exp( -gr%zt(k)/2000.0 )) * 1.e6 / rho(k)
-        endif
-      enddo
-
-    case( "arm" ) ! ARM Cu case
+    case ( "arm" ) ! ARM Cu case
       call arm_tndcy( time_current, &                                      ! Intent(in)   
                       thlm_forcing, radht, rtm_forcing, sclrm_forcing )    ! Intent(out)
 
-    case( "arm_0003" ) ! ARM March 2000 case
+#ifdef UNRELEASED_CODE
+    case ( "arm_0003" ) ! ARM March 2000 case
       call arm_0003_tndcy( time_current, &                                 ! Intent(in)
                            wm_zm, wm_zt, thlm_forcing, &                   ! Intent(out)
                            rtm_forcing, um_ref, vm_ref, sclrm_forcing )    ! Intent(out)
 
-    case( "arm_3year" ) ! ARM 3 year case
+    case ( "arm_3year" ) ! ARM 3 year case
       call arm_3year_tndcy( time_current, &                                ! Intent(in)
                             wm_zm, wm_zt, thlm_forcing,  &                 ! Intent(out)
                             rtm_forcing, um_ref, vm_ref, sclrm_forcing )   ! Intent(out)
 
-    case( "arm_97" ) ! 27 June 1997 ARM case
+    case ( "arm_97" ) ! 27 June 1997 ARM case
       call arm_97_tndcy( time_current, &                                   ! Intent(in)
                          wm_zm, wm_zt, thlm_forcing,  &                    ! Intent(out)
                          rtm_forcing, um_ref, vm_ref, sclrm_forcing )      ! Intent(out)
+#endif
 
-    case( "bomex" ) ! BOMEX Cu case
-      call bomex_tndcy( wm_zt, wm_zm, radht, &                             ! Intent(out)
-                        thlm_forcing, rtm_forcing, &                       ! Intent(out)
-                        sclrm_forcing )                                    ! Intent(out)
+    case ( "astex_a209" ) ! ASTEX Sc case for K & K
+      call astex_tndcy( wm_zt, wm_zm,  &                                   ! Intent(out) 
+                        thlm_forcing, rtm_forcing, sclrm_forcing )         ! Intent(out)
 
-    case( "fire" ) ! FIRE Sc case
-      call fire_tndcy( rho, rcm, exner,  &                                 ! Intent(in)
-                       wm_zt, wm_zm, Frad, radht, &                        ! Intent(out)
-                       thlm_forcing, rtm_forcing, &                        ! Intent(out) 
-                       sclrm_forcing )                                     ! Intent(out)
-
-    case( "wangara" ) ! Wangara dry CBL
-      call wangara_tndcy( wm_zt, wm_zm,  &                                 ! Intent(out) 
-                          thlm_forcing, rtm_forcing, &                     ! Intent(out)
-                          sclrm_forcing )                                  ! Intent(out)
-
-    case( "atex" ) ! ATEX case
+    case ( "atex" ) ! ATEX case
       call atex_tndcy( time_current, time_initial, &                       ! Intent(in)
                        rtm, rho, rcm, exner, &                             ! Intent(in)
                        err_code, &                                         ! Intent(inout)
                        wm_zt, wm_zm, Frad, radht, &                        ! Intent(out)
                        thlm_forcing, rtm_forcing, sclrm_forcing )          ! Intent(out)
 
-    case( "dycoms2_rf01" ) ! DYCOMS2 RF01 case
+    case ( "bomex" ) ! BOMEX Cu case
+      call bomex_tndcy( wm_zt, wm_zm, radht, &                             ! Intent(out)
+                        thlm_forcing, rtm_forcing, &                       ! Intent(out)
+                        sclrm_forcing )                                    ! Intent(out)
+
+#ifdef UNRELEASED_CODE
+    case ( "clex9_nov02" ) ! CLEX-9: Nov. 02 Altocumulus case.
+      call clex9_nov02_tndcy( time_current, time_initial, rlat, rlon, &    ! Intent(in)
+                              rcm, exner, rho, &                           ! Intent(in)
+                              wm_zt, wm_zm, thlm_forcing, rtm_forcing, &   ! Intent(out)
+                              Frad, radht, Ncnm, sclrm_forcing )           ! Intent(out)
+
+    case ( "clex9_oct14" ) ! CLEX-9: Oct. 14 Altocumulus case.
+      call clex9_oct14_tndcy( time_current, time_initial, rlat, rlon, &    ! Intent(in) 
+                              rcm, exner, rho, &                           ! Intent(in)
+                              wm_zt, wm_zm, thlm_forcing, rtm_forcing, &   ! Intent(out)
+                              Frad, radht, Ncnm, sclrm_forcing )           ! Intent(out)
+    case ( "cobra" )
+      call cobra_tndcy( wm_zt, wm_zm,  &                                   ! Intent(out) 
+                        thlm_forcing, rtm_forcing, &                       ! Intent(out)
+                        sclrm_forcing )                                    ! Intent(out)
+#endif
+
+    case ( "dycoms2_rf01" ) ! DYCOMS2 RF01 case
       call dycoms2_rf01_tndcy( rho, rho_zm, rtm, rcm, exner, &             ! Intent(in)
                                err_code, &                                 ! Intent(inout)
                                wm_zt, wm_zm, Frad, radht,  &               ! Intent(out)
                                thlm_forcing, rtm_forcing, sclrm_forcing )  ! Intent(out)
 
-    case( "astex_a209" ) ! ASTEX Sc case for K & K
-      call astex_tndcy( wm_zt, wm_zm,  &                                   ! Intent(out) 
-                        thlm_forcing, rtm_forcing, sclrm_forcing )         ! Intent(out)
-
-    case( "dycoms2_rf02_do",  & ! DYCOMS2 RF02 case with drizzle only.
-          "dycoms2_rf02_ds",  & ! DYCOMS2 RF02 case with drizzle and cloud sedimentation.
-          "dycoms2_rf02_nd",  & ! DYCOMS2 RF02 case with no drizzle and no cloud sedimentation.
-          "dycoms2_rf02_so" )! DYCOMS2 RF02 case with cloud water sedimentation only.
+    case ( "dycoms2_rf02_do",  & ! DYCOMS2 RF02 case with drizzle only.
+           "dycoms2_rf02_ds",  & ! DYCOMS2 RF02 case with drizzle and cloud sedimentation.
+           "dycoms2_rf02_nd",  & ! DYCOMS2 RF02 case with no drizzle and no cloud sedimentation.
+           "dycoms2_rf02_so" )! DYCOMS2 RF02 case with cloud water sedimentation only.
       call dycoms2_rf02_tndcy( time_current, time_initial, rho, &          ! Intent(in)
                                rho_zm, rtm, rcm, exner, &                  ! Intent(in)
                                err_code, &                                 ! Intent(inout)
                                wm_zt, wm_zm, thlm_forcing, rtm_forcing, &  ! Intent(out) 
                                Frad, radht, Ncm, Ncnm, sclrm_forcing  )    ! Intent(out)
 
-    case( "nov11_altocu" ) ! Nov. 11 Altocumulus case.
-      call nov11_altocu_tndcy( time_current, time_initial, dt, &           ! Intent(in)
-                               ! rlat, rlon, & 
-                               rcm, exner, rho, &                          ! Intent(in)
-                               rtm, &                                      ! Intent(inout)
-                               wm_zt, wm_zm, thlm_forcing, rtm_forcing, &  ! Intent(out)
-                               Frad, radht, Ncnm, sclrm_forcing )          ! Intent(out)
+    case ( "fire" ) ! FIRE Sc case
+      call fire_tndcy( rho, rcm, exner,  &                                 ! Intent(in)
+                       wm_zt, wm_zm, Frad, radht, &                        ! Intent(out)
+                       thlm_forcing, rtm_forcing, &                        ! Intent(out) 
+                       sclrm_forcing )                                     ! Intent(out)
 
-    case( "jun25_altocu" ) ! June 25 Altocumulus case.
+
+    case ( "gabls2" ) ! GABLS 2 case
+      call gabls2_tndcy( time_current, time_initial,  &                    ! Intent(in) 
+                         rho, rcm, l_kk_rain, &                            ! Intent(in)
+                         wm_zt, wm_zm, thlm_forcing, &                     ! Intent(out)
+                         rtm_forcing, radht, Ncm, &                        ! Intent(out)
+                         sclrm_forcing )                                   ! Intent(out)
+
+#ifdef UNRELEASED_CODE
+    case ( "gabls3" ) ! GABLS 3 case
+      call gabls3_tndcy( time_current, rtm, exner, rho, &                   ! Intent(in)
+                         wm_zt, wm_zm, thlm_forcing, rtm_forcing,&          ! Intent(out)
+                         um_forcing, vm_forcing, ug, vg )                   ! Intent(out)
+#endif
+
+    case ( "generic" ) ! Generic run
+      ! Configure for K&K microphysics
+      where ( rcm >= rc_tol )
+        ! Ncm is in units of kg^-1.  If the coefficient is in m^-3, then
+        ! it needs to be divided by rho in order to get units of kg^-1.
+        ! Brian.  Sept. 8, 2007.
+        Ncm = 30.0 * (1.0 + exp( -gr%zt/2000.0 )) * 1.e6 / rho
+      end where
+
+#ifdef UNRELEASED_CODE
+    case ( "jun25_altocu" ) ! June 25 Altocumulus case.
       call jun25_altocu_tndcy( time_current, time_initial, rlat, rlon,  &  ! Intent(in) 
                                rcm, exner, rho, &                          ! Intent(in)
                                wm_zt, wm_zm, thlm_forcing, rtm_forcing, &  ! Intent(inout)
                                Frad, radht, &                              ! Intent(inout)
                                sclrm_forcing )                             ! Intent(out)
 
-    case( "clex9_nov02" ) ! CLEX-9: Nov. 02 Altocumulus case.
-      call clex9_nov02_tndcy( time_current, time_initial, rlat, rlon, &    ! Intent(in)
-                              rcm, exner, rho, &                           ! Intent(in)
-                              wm_zt, wm_zm, thlm_forcing, rtm_forcing, &   ! Intent(out)
-                              Frad, radht, Ncnm, sclrm_forcing )           ! Intent(out)
-
-    case( "clex9_oct14" ) ! CLEX-9: Oct. 14 Altocumulus case.
-      call clex9_oct14_tndcy( time_current, time_initial, rlat, rlon, &    ! Intent(in) 
-                              rcm, exner, rho, &                           ! Intent(in)
-                              wm_zt, wm_zm, thlm_forcing, rtm_forcing, &   ! Intent(out)
-                              Frad, radht, Ncnm, sclrm_forcing )           ! Intent(out)
-
     case ( "lba" )
       call lba_tndcy( time_current, &                                      ! Intent(in) 
                       wm_zt, wm_zm, radht,  &                              ! Intent(out)
                       thlm_forcing, rtm_forcing, &                         ! Intent(out)
                       sclrm_forcing )                                      ! Intent(out)
+#endif
 
     case ( "mpace_a" ) ! mpace_a arctic stratus case
       call mpace_a_tndcy( time_current, time_initial, rlat, &              ! Intent(in) 
@@ -1801,27 +1848,26 @@ module clubb_driver
                           wm_zt, wm_zm, thlm_forcing, rtm_forcing, &       ! Intent(out)
                           Frad, radht, sclrm_forcing )                     ! Intent(out)
 
-    case ( "cobra" )
-      call cobra_tndcy( wm_zt, wm_zm,  &                                   ! Intent(out) 
-                        thlm_forcing, rtm_forcing, &                       ! Intent(out)
-                        sclrm_forcing )                                    ! Intent(out)
+#ifdef UNRELEASED_CODE
+    case ( "nov11_altocu" ) ! Nov. 11 Altocumulus case.
+      call nov11_altocu_tndcy( time_current, time_initial, dt, &           ! Intent(in)
+                               ! rlat, rlon, & 
+                               rcm, exner, rho, &                          ! Intent(in)
+                               rtm, &                                      ! Intent(inout)
+                               wm_zt, wm_zm, thlm_forcing, rtm_forcing, &  ! Intent(out)
+                               Frad, radht, Ncnm, sclrm_forcing )          ! Intent(out)
 
     case ( "rico" ) ! RICO case
       call rico_tndcy( exner, rho, rcm, l_kk_rain, &                       ! Intent(in)
                        wm_zt, wm_zm, &                                     ! Intent(out)
                        thlm_forcing, rtm_forcing, radht, Ncm, &            ! Intent(out)   
                        sclrm_forcing )                                     ! Intent(out)
+#endif
 
-    case ( "gabls2" ) ! GABLS 2 case
-      call gabls2_tndcy( time_current, time_initial,  &                    ! Intent(in) 
-                         rho, rcm, l_kk_rain, &                            ! Intent(in)
-                         wm_zt, wm_zm, thlm_forcing, &                     ! Intent(out)
-                         rtm_forcing, radht, Ncm, &                        ! Intent(out)
-                         sclrm_forcing )                                   ! Intent(out)
-    case( "gabls3" ) ! GABLS 3 case
-      call gabls3_tndcy( time_current, rtm, exner, rho, &                   ! Intent(in)
-                         wm_zt, wm_zm, thlm_forcing, rtm_forcing,&          ! Intent(out)
-                         um_forcing, vm_forcing, ug, vg )                   ! Intent(out)
+    case ( "wangara" ) ! Wangara dry CBL
+      call wangara_tndcy( wm_zt, wm_zm,  &                                 ! Intent(out) 
+                          thlm_forcing, rtm_forcing, &                     ! Intent(out)
+                          sclrm_forcing )                                  ! Intent(out)
 
     case default
 
@@ -1831,6 +1877,14 @@ module clubb_driver
       stop
 
     end select
+
+#ifndef UNRELEASED_CODE
+    ! This is just to avoid a compiler warning -dschanen 22 Jan 2008
+    um_forcing = 0.
+    vm_forcing = 0.
+    ug = 0.
+    vg = 0.
+#endif
 
 
 !----------------------------------------------------------------
@@ -1850,8 +1904,93 @@ module clubb_driver
 
     select case ( trim( runtype ) )
 
-    case( "generic", "fire" )  ! Normal and FIRE
-      !call sfc_momentum_fluxes( um(2), vm(2), &                     ! Intent(in)
+    case ( "arm" )
+      call arm_sfclyr( time_current, gr%zt(2), 1.1,  &              ! Intent(in)
+                       thlm(2), um(2), vm(2), &                     ! Intent(in)
+                       upwp_sfc, vpwp_sfc,  &                       ! Intent(out)
+                       wpthlp_sfc, wprtp_sfc, ustar, &              ! Intent(out)
+                       wpsclrp_sfc, wpedsclrp_sfc )                 ! Intent(in)
+
+#ifdef UNRELEASED_CODE
+    case ( "arm_0003" )
+      call arm_0003_sfclyr( time_current, gr%zt(2), rho_zm(1), &   ! Intent(in)
+                            thlm(2), um(2), vm(2), &               ! Intent(in)
+                            upwp_sfc, vpwp_sfc,  &                 ! Intent(out)
+                            wpthlp_sfc, wprtp_sfc, ustar, &        ! Intent(out)
+                            wpsclrp_sfc, wpedsclrp_sfc )           ! Intent(out)
+
+    case ( "arm_3year" )
+      call arm_3year_sfclyr( time_current, gr%zt(2), rho_zm(1), &  ! Intent(in)
+                             thlm(2), um(2), vm(2), &              ! Intent(in)
+                             upwp_sfc, vpwp_sfc,  &                ! Intent(out)
+                             wpthlp_sfc, wprtp_sfc, ustar, &       ! Intent(out)
+                             wpsclrp_sfc, wpedsclrp_sfc )          ! Intent(out)
+
+
+    case ( "arm_97" )
+      call arm_97_sfclyr( time_current, gr%zt(2), rho_zm(1), &     ! Intent(in)
+                          thlm(2), um(2), vm(2), &                 ! Intent(in)
+                          upwp_sfc, vpwp_sfc,  &                   ! Intent(out)
+                          wpthlp_sfc, wprtp_sfc, ustar, &          ! Intent(out)
+                          wpsclrp_sfc, wpedsclrp_sfc )             ! Intent(out)
+#endif
+
+    case ( "astex_a209" )
+      call astex_sfclyr( rho_zm(1), &                               ! Intent(in) 
+                         upwp_sfc, vpwp_sfc, wpthlp_sfc,  &         ! Intent(out)
+                         wprtp_sfc, wpsclrp_sfc, wpedsclrp_sfc )    ! Intent(out)
+
+    case ( "atex" )
+      call atex_sfclyr( um(2), vm(2), thlm(2), rtm(2), &            ! Intent(in) 
+                        upwp_sfc, vpwp_sfc, &                       ! Intent(out)
+                        wpthlp_sfc, wprtp_sfc, ustar, &             ! Intent(out)
+                        wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
+
+    case ( "bomex" )
+      call bomex_sfclyr( um(2), vm(2), &                            ! Intent(in) 
+                         upwp_sfc, vpwp_sfc, &                      ! Intent(out)
+                         wpthlp_sfc, wprtp_sfc, ustar, &            ! Intent(out)
+                         wpsclrp_sfc, wpedsclrp_sfc )               ! Intent(out)
+
+#ifdef UNRELEASED_CODE
+    case ( "cobra" )
+      call cobra_sfclyr( time_current, gr%zt(2), rho_zm(1), &       ! Intent(in)
+                         thlm(2), um(2), vm(2), &                   ! Intent(in)
+                         upwp_sfc, vpwp_sfc, &                      ! Intent(out)
+                         wpthlp_sfc, wprtp_sfc, ustar, &            ! Intent(out)
+                         wpsclrp_sfc, wpedsclrp_sfc )               ! Intent(out)
+
+    case ( "clex9_nov02" )
+      ! There are no surface momentum or heat fluxes
+      ! for the CLEX-9: Nov. 02 Altocumulus case.
+
+      ! Ensure ustar is set
+      ustar = 0
+
+    case ( "clex9_oct14" )
+      ! There are no surface momentum or heat fluxes
+      ! for the CLEX-9: Oct. 14 Altocumulus case.
+
+      ! Ensure ustar is set.
+      ustar = 0
+#endif
+
+    case ( "dycoms2_rf01" )
+      call dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc,  &             ! Intent(in)
+                                exner(1), um(2), vm(2),  &          ! Intent(in)
+                                thlm(2), rtm(2), rho_zm(1), &       ! Intent(in) 
+                                upwp_sfc, vpwp_sfc,  &              ! Intent(out)
+                                wpthlp_sfc, wprtp_sfc, ustar, &     ! Intent(out)
+                                wpsclrp_sfc, wpedsclrp_sfc )        ! Intent(out)
+
+    case ( "dycoms2_rf02_do", "dycoms2_rf02_ds", & 
+           "dycoms2_rf02_nd", "dycoms2_rf02_so" )
+      call dycoms2_rf02_sfclyr( um(2), vm(2), &                     ! Intent(in)
+                                upwp_sfc, vpwp_sfc, &               ! Intent(out)
+                                wpthlp_sfc, wprtp_sfc, ustar, &     ! Intent(out)
+                                wpsclrp_sfc, wpedsclrp_sfc )        ! Intent(out)
+
+    case( "fire", "generic"  )  ! Generic setup and GCSS FIRE
       call sfc_momentum_fluxes( um_sfc, vm_sfc, &                   ! Intent(in)
                                 upwp_sfc, vpwp_sfc, ustar )         ! Intent(out)
       ! sfctype = 0  fixed sfc sensible and latent heat fluxes
@@ -1883,99 +2022,27 @@ module clubb_driver
 
       endif
 
-    case( "arm" )
-      call arm_sfclyr( time_current, gr%zt(2), 1.1,  &              ! Intent(in)
-                       thlm(2), um(2), vm(2), &                     ! Intent(in)
-                       upwp_sfc, vpwp_sfc,  &                       ! Intent(out)
-                       wpthlp_sfc, wprtp_sfc, ustar, &              ! Intent(out)
-                       wpsclrp_sfc, wpedsclrp_sfc )                 ! Intent(in)
+    case ( "gabls2" )
+      call gabls2_sfclyr( time_current, time_initial, &             ! Intent(in)
+                          gr%zt(2), psfc, &                       ! Intent(in)
+                          um(2), vm(2), thlm(2), rtm(2), &          ! Intent(in)     
+                          upwp_sfc, vpwp_sfc, &                     ! Intent(out)   
+                          wpthlp_sfc, wprtp_sfc, ustar, &           ! Intent(out)
+                          wpsclrp_sfc, wpedsclrp_sfc )              ! Intent(out)
 
-    case( "arm_0003" )
-      call arm_0003_sfclyr( time_current, gr%zt(2), rho_zm(1), &   ! Intent(in)
-                            thlm(2), um(2), vm(2), &               ! Intent(in)
-                            upwp_sfc, vpwp_sfc,  &                 ! Intent(out)
-                            wpthlp_sfc, wprtp_sfc, ustar, &        ! Intent(out)
-                            wpsclrp_sfc, wpedsclrp_sfc )           ! Intent(out)
+#ifdef UNRELEASED_CODE
+    case ( "gabls3" )
+      call gabls3_sfclyr( um(2), vm(2), get_veg_T_in_K(), &         ! Intent(in)
+                          thlm(2), rtm(2), gr%zt(2), psfc, &     ! Intent(in)
+                          upwp_sfc, vpwp_sfc, &                       ! Intent(out)
+                          wpthlp_sfc, wprtp_sfc, ustar, &             ! Intent(out)
+                          wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
 
-    case( "arm_3year" )
-      call arm_3year_sfclyr( time_current, gr%zt(2), rho_zm(1), &  ! Intent(in)
-                             thlm(2), um(2), vm(2), &              ! Intent(in)
-                             upwp_sfc, vpwp_sfc,  &                ! Intent(out)
-                             wpthlp_sfc, wprtp_sfc, ustar, &       ! Intent(out)
-                             wpsclrp_sfc, wpedsclrp_sfc )          ! Intent(out)
-
-
-    case ( "arm_97" )
-      call arm_97_sfclyr( time_current, gr%zt(2), rho_zm(1), &     ! Intent(in)
-                          thlm(2), um(2), vm(2), &                 ! Intent(in)
-                          upwp_sfc, vpwp_sfc,  &                   ! Intent(out)
-                          wpthlp_sfc, wprtp_sfc, ustar, &          ! Intent(out)
-                          wpsclrp_sfc, wpedsclrp_sfc )             ! Intent(out)
-
-    case( "bomex" )
-      call bomex_sfclyr( um(2), vm(2), &                            ! Intent(in) 
-                         upwp_sfc, vpwp_sfc, &                      ! Intent(out)
-                         wpthlp_sfc, wprtp_sfc, ustar, &            ! Intent(out)
-                         wpsclrp_sfc, wpedsclrp_sfc )               ! Intent(out)
-
-    case( "wangara" )
-      call wangara_sfclyr( time_current, um(2), vm(2), &            ! Intent(in)
-                           upwp_sfc, vpwp_sfc, &                    ! Intent(out)
-                           wpthlp_sfc, wprtp_sfc, ustar, &          ! Intent(out)
-                           wpsclrp_sfc, wpedsclrp_sfc )             ! Intent(out)
-
-    case( "atex" )
-      call atex_sfclyr( um(2), vm(2), thlm(2), rtm(2), &            ! Intent(in) 
-                        upwp_sfc, vpwp_sfc, &                       ! Intent(out)
-                        wpthlp_sfc, wprtp_sfc, ustar, &             ! Intent(out)
-                        wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
-
-    case( "dycoms2_rf01" )
-      call dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc,  &             ! Intent(in)
-                                exner(1), um(2), vm(2),  &          ! Intent(in)
-                                thlm(2), rtm(2), rho_zm(1), &       ! Intent(in) 
-                                upwp_sfc, vpwp_sfc,  &              ! Intent(out)
-                                wpthlp_sfc, wprtp_sfc, ustar, &     ! Intent(out)
-                                wpsclrp_sfc, wpedsclrp_sfc )        ! Intent(out)
-
-    case( "astex_a209" )
-      call astex_sfclyr( rho_zm(1), &                               ! Intent(in) 
-                         upwp_sfc, vpwp_sfc, wpthlp_sfc,  &         ! Intent(out)
-                         wprtp_sfc, wpsclrp_sfc, wpedsclrp_sfc )    ! Intent(out)
-
-    case( "dycoms2_rf02_do", "dycoms2_rf02_ds", & 
-          "dycoms2_rf02_nd", "dycoms2_rf02_so" )
-      call dycoms2_rf02_sfclyr( um(2), vm(2), &                     ! Intent(in)
-                                upwp_sfc, vpwp_sfc, &               ! Intent(out)
-                                wpthlp_sfc, wprtp_sfc, ustar, &     ! Intent(out)
-                                wpsclrp_sfc, wpedsclrp_sfc )        ! Intent(out)
-
-    case( "nov11_altocu" )
-      ! There are no surface momentum or heat fluxes
-      ! for the Nov. 11 Altocumulus case.
-
-      ! Ensure ustar is set
-      ustar = 0
-
-    case( "jun25_altocu" )
+    case ( "jun25_altocu" )
       ! There are no surface momentum or heat fluxes
       ! for the Jun. 25 Altocumulus case.
 
       ! Ensure ustar is set
-      ustar = 0
-
-    case( "clex9_nov02" )
-      ! There are no surface momentum or heat fluxes
-      ! for the CLEX-9: Nov. 02 Altocumulus case.
-
-      ! Ensure ustar is set
-      ustar = 0
-
-    case( "clex9_oct14" )
-      ! There are no surface momentum or heat fluxes
-      ! for the CLEX-9: Oct. 14 Altocumulus case.
-
-      ! Ensure ustar is set.
       ustar = 0
 
     case ( "lba" )
@@ -1984,6 +2051,8 @@ module clubb_driver
                        upwp_sfc, vpwp_sfc,  &                      ! Intent(out)
                        wpthlp_sfc, wprtp_sfc, ustar, &             ! Intent(out)
                        wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
+
+#endif
 
     case ( "mpace_a" )
       call mpace_a_sfclyr( time_current, rho_zm(1), um(2), vm(2), & ! Intent(in)
@@ -1997,12 +2066,13 @@ module clubb_driver
                            wpthlp_sfc, wprtp_sfc, ustar, &          ! Intent(out)
                            wpsclrp_sfc, wpedsclrp_sfc )             ! Intent(out)
 
-    case ( "cobra" )
-      call cobra_sfclyr( time_current, gr%zt(2), rho_zm(1), &       ! Intent(in)
-                         thlm(2), um(2), vm(2), &                   ! Intent(in)
-                         upwp_sfc, vpwp_sfc, &                      ! Intent(out)
-                         wpthlp_sfc, wprtp_sfc, ustar, &            ! Intent(out)
-                         wpsclrp_sfc, wpedsclrp_sfc )               ! Intent(out)
+#ifdef UNRELEASED_CODE
+    case ( "nov11_altocu" )
+      ! There are no surface momentum or heat fluxes
+      ! for the Nov. 11 Altocumulus case.
+
+      ! Ensure ustar is set
+      ustar = 0
 
     case ( "rico" )
       call rico_sfclyr( um(2), vm(2), thlm(2), rtm(2), &            ! Intent(in)
@@ -2012,21 +2082,13 @@ module clubb_driver
                         upwp_sfc, vpwp_sfc, wpthlp_sfc, &           ! Intent(out) 
                         wprtp_sfc, ustar, &                         ! Intent(out)
                         wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
+#endif
 
-    case ( "gabls2" )
-      call gabls2_sfclyr( time_current, time_initial, &             ! Intent(in)
-                          gr%zt(2), psfc, &                       ! Intent(in)
-                          um(2), vm(2), thlm(2), rtm(2), &          ! Intent(in)     
-                          upwp_sfc, vpwp_sfc, &                     ! Intent(out)   
-                          wpthlp_sfc, wprtp_sfc, ustar, &           ! Intent(out)
-                          wpsclrp_sfc, wpedsclrp_sfc )              ! Intent(out)
-    case( "gabls3" )
-      call gabls3_sfclyr( um(2), vm(2), get_veg_T_in_K(), &         ! Intent(in)
-                          thlm(2), rtm(2), gr%zt(2), psfc, &     ! Intent(in)
-                          upwp_sfc, vpwp_sfc, &                       ! Intent(out)
-                          wpthlp_sfc, wprtp_sfc, ustar, &             ! Intent(out)
-                          wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
-
+    case ( "wangara" )
+      call wangara_sfclyr( time_current, um(2), vm(2), &            ! Intent(in)
+                           upwp_sfc, vpwp_sfc, &                    ! Intent(out)
+                           wpthlp_sfc, wprtp_sfc, ustar, &          ! Intent(out)
+                           wpsclrp_sfc, wpedsclrp_sfc )             ! Intent(out)
     case default
 
       write(unit=fstderr,fmt=*)  & 
@@ -2038,15 +2100,17 @@ module clubb_driver
 !---------------------------------------------------------------
 ! Compute Surface
 !---------------------------------------------------------------
-
-    if( l_soil_veg ) then
+#ifdef UNRELEASED_CODE
+    if ( l_soil_veg ) then
       wpthep = wpthlp_sfc + (Lv/Cp) * ((p0/psfc)**kappa) * wprtp_sfc
-     
-      call advance_soil_veg( real( dt), rho_zm(1), &
-                                 Frad_SW_down(1) - Frad_SW_up(1), Frad_SW_down(1), &
-                                 Frad_LW_down(1), wpthep )
-    endif
 
+      call advance_soil_veg( real( dt, kind=4 ), rho_zm(1), &
+                             Frad_SW_down(1) - Frad_SW_up(1), Frad_SW_down(1), &
+                             Frad_LW_down(1), wpthep )
+    end if
+#else
+   if ( l_soil_veg ) stop "This code does not contain the soil temp. scheme"
+#endif
 
 
 !----------------------------------------------------------------
@@ -2064,16 +2128,16 @@ module clubb_driver
                               rtm_forcing, thlm_forcing, &                     ! Intent(inout)
                               err_code )                                       ! Intent(out)
 
-      if ( lapack_error(err_code) ) return
+      if ( lapack_error( err_code ) ) return
 
-    endif
+    end if
 
     if ( l_cloud_sed ) then
 
       call cloud_drop_sed( rcm, Ncm, rho_zm, rho, exner, &          ! Intent(in)
                            rtm_forcing, thlm_forcing )              ! Intent(out)
 
-    endif
+    end if
 
 !----------------------------------------------------------------
 ! BUGSrad Radiation
@@ -2083,7 +2147,7 @@ module clubb_driver
 
 #ifdef radoffline /*This directive is needed for BUGSrad to work with CLUBB.*/
 
-      ! Assign pointers to snow and ice
+      ! Copy snow and ice
       if ( iirsnowm > 0 ) then
         rsnowm = hydromet(1:gr%nnzp,iirsnowm)
       else
