@@ -91,7 +91,7 @@ module KK_microphys_module
   CONTAINS
 
   subroutine KK_microphys & 
-             ( T_in_K, p_in_Pa, exner, rho,  & 
+             ( dt, T_in_K, p_in_Pa, exner, rho,  & 
                thl1, thl2, a, rc1, rc2, s1, & 
                s2, ss1, ss2, rcm, Ncm, rrainm, Nrm,  & 
                l_sample,  AKm, & 
@@ -133,6 +133,9 @@ module KK_microphys_module
     use saturation, only:  & 
         sat_mixrat_liq ! Procedure(s)
 
+    use stats_precision, only:  &
+        time_precision ! Variable(s)
+
     use stats_type, only: & 
         stat_update_var, stat_update_var_pt ! Procedure(s)
 
@@ -150,6 +153,9 @@ module KK_microphys_module
 
 
     ! Input
+    real(kind=time_precision), intent(in) ::  &
+    dt            ! Model time step length             [s]
+
     real, intent(in), dimension(gr%nnzp) :: & 
     T_in_K,     & ! Temperature                        [K]
     p_in_Pa,    & ! Pressure                           [Pa]
@@ -206,6 +212,18 @@ module KK_microphys_module
     real ::  & 
 !     .  e,      ! Vapor pressure                [Pa]
     Beta_T  ! Beta_T                        [kg/kg]
+
+    real ::  &
+      rrainm_source,     & ! Total source term rate for rrainm     [(kg/kg)/s]
+      Nrm_source,        & ! Total source term rate for Nrm        [(num/kg)/s]
+      rrainm_src_max,    & ! Maximum allowable rrainm source rate  [(kg/kg)/s]
+      rrainm_auto_ratio, & ! Ratio of rrainm autoconv to overall source term [-]
+      total_rc_needed      ! Amount of r_c needed to over the
+                           ! timestep for rain source terms        [kg/kg]
+
+    real, dimension(gr%nnzp) ::  &
+      rrainm_src_adj, & ! Total adjustment to rrainm source terms  [(kg/kg)/s]
+      Nrm_src_adj       ! Total adjustment to Nrm source terms     [{num/kg)/s]
 
     ! Array indices
     integer :: k
@@ -456,7 +474,7 @@ module KK_microphys_module
       ! Negative meaning a downward velocity now -dschanen 5 Dec 2006
       VNr(k) = -max( VNr(k), zero_threshold )
 
-    end do ! 1..gr%nnzp
+    enddo ! 1..gr%nnzp
 
     ! The flux of rain water through the model top is 0.
     ! Vrr and VNr are set to 0 at the highest model level.
@@ -479,7 +497,7 @@ module KK_microphys_module
       ! Find saturation vapor pressure.
 !           esat(k) = (p(k)*rsat(k))/(ep + rsat(k))
 
-    end do ! 2..gr%nnzp
+    enddo ! 2..gr%nnzp
 
     ! Set the boundary conditions
 !        rvm(1)          = 0.0
@@ -528,7 +546,7 @@ module KK_microphys_module
                         s2(k), ss2(k), a(k), rho(k), & 
                         Ncp2_Ncm2(k), corr_sNc_NL(k) )
 
-      end if ! l_LH_on
+      endif ! l_LH_on
       ! End Vince Larson's addition
 
       rrainm_accr(k)  & 
@@ -557,16 +575,60 @@ module KK_microphys_module
 
         call stat_update_var_pt( iNrm_auto, k, Nrm_auto(k), zt )
 
-      end if ! l_stats_samp and l_sample
+      endif ! l_stats_samp and l_sample
 
-      rrainm_mc_tndcy(k) = rrainm_cond(k) + rrainm_auto(k) + rrainm_accr(k)
+      rrainm_source = rrainm_auto(k) + rrainm_accr(k)
 
-      Nrm_mc_tndcy(k) = Nrm_cond(k) + Nrm_auto(k)
+      Nrm_source = Nrm_auto(k)
+
+      ! The increase of rain due to autoconversion and accretion both draw
+      ! their water from the available cloud water.  Over a long time step
+      ! these rates may over-deplete cloud water.  In other words, these
+      ! processes may draw more cloud water than there is available.  Thus,
+      ! the total source rate multiplied by the time step length cannot exceed
+      ! the total amount of cloud water available.  If it does, then the rate
+      ! must be adjusted.
+      total_rc_needed = real( rrainm_source * dt )
+
+      if ( total_rc_needed > rcm(k) ) then
+
+         ! The maximum allowable rate of the source terms is rcm/dt.
+         rrainm_src_max = real( rcm(k) / dt )
+
+         ! The amount of adjustment to the source terms.
+         ! This value should always be negative.
+         rrainm_src_adj(k) = rrainm_src_max - rrainm_source
+
+         ! Reset the value of the source terms to the maximum allowable value
+         ! of the source terms.
+         rrainm_source = rrainm_src_max
+
+         ! The rrainm source terms are made up of autoconversion and accretion.
+         ! Only the sum of those two terms is corrected.  However, Nrm has only
+         ! an autoconversion term for a source term.  Figure that change in the
+         ! rrainm autoconversion term is proportional to to the total rrainm
+         ! adjustment rate by the ratio of rrainm autoconversion to the overall
+         ! source term.  Then, plug the rrainm autoconversion adjustment into
+         ! the equation for Nrm autoconversion to determine the effect on the
+         ! Nrm source term.
+         rrainm_auto_ratio = rrainm_auto(k) /  &
+                             ( rrainm_auto(k) + rrainm_accr(k) )
+         Nrm_src_adj(k) = autoconv_Nrm( rrainm_auto_ratio * rrainm_src_adj(k) )
+
+         ! Change Nrm by Nrm_src_adj.  Nrm_src_adj will always be negative.
+         Nrm_source = Nrm_source + Nrm_src_adj(k)
+
+      endif
+
+      rrainm_mc_tndcy(k) = rrainm_cond(k) + rrainm_source
+
+      Nrm_mc_tndcy(k) = Nrm_cond(k) + Nrm_source
 
       ! Explicit contributions to thlm and rtm from the microphysics
       hm_rt_tndcy(k)  = -rrainm_mc_tndcy(k)
       hm_thl_tndcy(k) = ( Lv / ( Cp*exner(k) ) ) * rrainm_mc_tndcy(k)
-    end do ! k=2..gr%nnzp-1
+
+    enddo ! k=2..gr%nnzp-1
 
 
     ! Boundary conditions

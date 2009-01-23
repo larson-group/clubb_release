@@ -418,7 +418,7 @@ elseif ( l_kk_rain ) then
   ! Ncm computed beforehand as well.
 
   call kk_microphys & 
-       ( T_in_K, p_in_Pa, exner, rho,  & 
+       ( dt, T_in_K, p_in_Pa, exner, rho,  & 
          thl1, thl2, a, rc1, rc2, s1,  & 
          s2, ss1, ss2, rcm, Ncm,  & 
          hydromet(:,iirrainm), hydromet(:,iiNrm), & 
