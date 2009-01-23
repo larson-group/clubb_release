@@ -124,7 +124,8 @@ soil_vegetation.o: constants.o stats_precision.o stats_variables.o soil_vegetati
 #test.o: stats_precision.o soil_vegetation.o test.F90
 # == Latin Hypercube dependencies  ==
 math_utilities.o	: math_utilities.F90
-lh_sampler.o		: constants.o random.o matrix_operations.o lh_sampler.F90
+lh_sampler.o		: constants.o random.o matrix_operations.o \
+                          variables_diagnostic_module.o lh_sampler.F90
 micro_calcs.o		: constants.o erf.o micro_calcs.F90 
 permute_height_time.o	: random.o permute_height_time.F90
 random.o		: random.F90
