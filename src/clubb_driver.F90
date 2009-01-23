@@ -605,7 +605,8 @@ module clubb_driver
       iinit = floor( ( time_current - time_initial ) / dtmain ) + 1
 
       call restart_clubb &
-           ( iunit, runfile, trim( forcings_file_path ), restart_path_case, time_restart, & ! Intent(in)
+           ( iunit, runfile, trim( forcings_file_path ), & ! Intent(in)
+             restart_path_case, time_restart, &            ! Intent(in)
              thlm, rtm, um, vm, ug, vg, upwp, vpwp, wm_zt, wm_zm,  & ! Intent(inout)
              um_ref, vm_ref, wpthlp, wprtp, sclrm, edsclrm, &        ! Intent(inout)
              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )             ! Intent(out)
@@ -1304,13 +1305,14 @@ module clubb_driver
   end subroutine initialize_clubb
 !-----------------------------------------------------------------------
   subroutine restart_clubb &
-             ( iunit, runfile, forcings_file_path, restart_path_case, time_restart, & 
+             ( iunit, runfile, forcings_file_path, &
+               restart_path_case, time_restart, & 
                thlm, rtm, um, vm, ug, vg, upwp, vpwp, wm_zt, wm_zm,  & 
                um_ref, vm_ref, wpthlp, wprtp, sclrm, edsclrm, & 
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )
-!       Description:
-!       Execute the necessary steps for the initialization of the
-!       CLUBB model to a designated point in the submitted GrADS file.
+! Description:
+!   Execute the necessary steps for the initialization of the
+!   CLUBB model to a designated point in the submitted GrADS file.
 !-----------------------------------------------------------------------
     use inputfields,only:  & 
         datafile, input_type, input_um, input_vm,  & ! Variable(s)
