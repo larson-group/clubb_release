@@ -684,15 +684,15 @@ module clubb_core
     !----------------------------------------------------------------
     ! Advance rtm/wprtp and thlm/wpthlp one time step
     !----------------------------------------------------------------
-    call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3,   & ! intent(in)
-                          Kh_zt, tau_zm, Skw_zm, rtpthvp,    & ! intent(in)
-                          rtm_forcing, thlpthvp,             & ! intent(in)
-                          thlm_forcing, rtp2, thlp2, wp2_zt, & ! intent(in)
-                          l_implemented,                     & ! intent(in)
-                          sclrpthvp, sclrm_forcing, sclrp2,  & ! intent(in)
-                          rtm, wprtp, thlm, wpthlp,          & ! intent(inout)
-                          err_code,                          & ! intent(inout)
-                          sclrm, wpsclrp )                     ! intent(inout)
+    call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3, & ! intent(in)
+                          Kh_zt, tau_zm, Skw_zm, rtpthvp,          & ! intent(in)
+                          rtm_forcing, thlpthvp,                   & ! intent(in)
+                          thlm_forcing, rtp2, thlp2, wp2_zt,       & ! intent(in)
+                          pdf_params, l_implemented,               & ! intent(in)
+                          sclrpthvp, sclrm_forcing, sclrp2,        & ! intent(in)
+                          rtm, wprtp, thlm, wpthlp,                & ! intent(inout)
+                          err_code,                                & ! intent(inout)
+                          sclrm, wpsclrp )                           ! intent(inout)
 
     ! Wrapped LAPACK procedures may report errors, and if so, exit
     ! gracefully.

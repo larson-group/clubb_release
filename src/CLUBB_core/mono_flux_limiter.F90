@@ -561,7 +561,7 @@ module mono_flux_limiter
   end subroutine monotonic_turbulent_flux_limit
 
   !=============================================================================
-  subroutine calc_turb_adv_range( dt, wm_zm, wp2,  &
+  subroutine calc_turb_adv_range( dt, pdf_params,  &
                                   low_lev_effect, high_lev_effect )
 
     ! Description:
@@ -595,7 +595,10 @@ module mono_flux_limiter
     
     use grid_class, only:  &
         gr  ! Variable(s)
-    
+
+    use variables_diagnostic_module, only: &
+        pdf_parameter  ! type
+
     use stats_precision, only:  & 
         time_precision ! Variable(s)
     
@@ -605,9 +608,8 @@ module mono_flux_limiter
     real(kind=time_precision), intent(in) ::  &
       dt        ! Model timestep length                            [s]
 
-    real, dimension(gr%nnzp), intent(in) ::  &
-      wm_zm,  & ! Mean vertical velocity on momentum levels        [m^2/s^2]
-      wp2       ! w'^2 (momentum levels)                           [m^2/s^2]
+    type(pdf_parameter), intent(in) ::  &
+      pdf_params   ! PDF parameters
 
     ! Output Variables
     integer, dimension(gr%nnzp), intent(out) ::  &
@@ -626,7 +628,7 @@ module mono_flux_limiter
     integer :: k, j
 
     logical, parameter ::  &
-      l_constant_thickness = .true.  ! Toggle constant or variable thickness.
+      l_constant_thickness = .false.  ! Toggle constant or variable thickness.
 
     real, parameter ::  &
       const_thick = 150.0  ! Constant thickness value               [m]
@@ -730,9 +732,9 @@ module mono_flux_limiter
        ! Find the average upwards vertical velocity and the average downwards
        ! vertical velocity.
        ! Note:  A level that has all vertical wind moving downwards will have a
-       !        vert_vel_up value that is negative, and vice versa.
-       vert_vel_up   = wm_zm + sqrt( wp2 )
-       vert_vel_down = wm_zm - sqrt( wp2 )
+       !        vert_vel_up value that is 0, and vice versa.
+       call mean_vert_vel_up_down( pdf_params, 0.0,  &
+                                   vert_vel_down, vert_vel_up )
 
        ! The value of w'x' may only be altered between levels 3 and gr%nnzp-2.
        do k = 3, gr%nnzp-2, 1
@@ -906,7 +908,7 @@ module mono_flux_limiter
   end subroutine calc_turb_adv_range
 
   !=============================================================================
-  subroutine mean_vert_vel_up_down( sw1, sw2, w1, w2, a,  &
+  subroutine mean_vert_vel_up_down( pdf_params, w_ref,  &
                                     mean_w_down, mean_w_up )
 
     ! Description
@@ -1088,51 +1090,68 @@ module mono_flux_limiter
     !-----------------------------------------------------------------------
 
     use grid_class, only:  &
-        gr  ! Variable(s)
+        gr,  & ! Variable(s)
+        zt2zm  ! Procedure(s)
 
     use constants, only: &
         sqrt_2pi, &
         sqrt_2
 
+    use variables_diagnostic_module, only: &
+        pdf_parameter  ! type
+
     use anl_erf, only:  & 
-            ! Procedure(s)
-        erf ! The error function
+        erf ! Procedure(s)
+            ! The error function
 
     implicit none
 
     ! Input Variables
-    real, dimension(gr%nnzp), intent(in) :: &
-      sw1, &
-      sw2, &
-      w1,  &
-      w2,  &
-      a
+    type(pdf_parameter), intent(in) ::  &
+      pdf_params     ! PDF parameters
+
+    real, intent(in) ::  &
+      w_ref          ! Reference velocity, w|_ref (normally = 0)   [m/s]
 
     ! Output Variables
     real, dimension(gr%nnzp), intent(out) :: &
-      mean_w_down, &
-      mean_w_up
+      mean_w_down, & ! Overall mean w (<= w|_ref)                  [m/s]
+      mean_w_up      ! Overall mean w (>= w|_ref)                  [m/s]
 
     ! Local Variables
+
+    ! PDF parameters unpacked and interpolated to momentum levels
+    real, dimension(gr%nnzp) :: &
+      w1,  & ! Mean of w for 1st normal distribution               [m/s]
+      w2,  & ! Mean of w for 2nd normal distribution               [m/s]
+      sw1, & ! Variance of w for 1st normal distribution           [m^2/s^2]
+      sw2, & ! Variance of w for 2nd normal distribution           [m^2/s^2]
+      a      ! Weight of 1st normal distribution (Sk_w dependent)  [-]
+
     real :: &
-      sigma_w1, &
-      sigma_w2, &
-      mean_w_down_1st, &
-      mean_w_down_2nd, &
-      mean_w_up_1st, &
-      mean_w_up_2nd
+      sigma_w1, & ! Standard deviation of w for 1st normal distribution    [m/s]
+      sigma_w2, & ! Standard deviation of w for 2nd normal distribution    [m/s]
+      mean_w_down_1st, & ! Mean w (<= w|_ref) from 1st normal distribution [m/s]
+      mean_w_down_2nd, & ! Mean w (<= w|_ref) from 2nd normal distribution [m/s]
+      mean_w_up_1st, &   ! Mean w (>= w|_ref) from 1st normal distribution [m/s]
+      mean_w_up_2nd      ! Mean w (>= w|_ref) from 2nd normal distribution [m/s]
 
-    real, parameter :: w_ref = 0.0
-
-    integer :: k
+    integer :: k  ! Vertical loop index
 
 
     ! All of the PDF parameters are computed on thermodynamic levels.
     ! Interpolate the needed PDF parameters from thermodynamic levels
     ! to momentum levels.
+    w1  = zt2zm( pdf_params%w1 )
+    w2  = zt2zm( pdf_params%w2 )
+    sw1 = zt2zm( pdf_params%sw1 )
+    sw2 = zt2zm( pdf_params%sw2 )
+    a   = zt2zm( pdf_params%a )
 
-    ! Loop over momentum levels from 2 to gr%nnzp.
-    do k = 2, gr%nnzp, 1
+
+    ! Loop over momentum levels from 2 to gr%nnzp-1.  Levels 1 and gr%nnzp
+    ! are not needed.
+    do k = 2, gr%nnzp-1, 1
 
        ! Standard deviation of w for the 1st normal distribution.
        sigma_w1 = sqrt( sw1(k) )

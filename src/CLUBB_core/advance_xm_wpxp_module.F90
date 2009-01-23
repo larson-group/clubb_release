@@ -41,7 +41,7 @@ module advance_xm_wpxp_module
                               Kh_zt, tau_zm, Skw_zm, rtpthvp,  & 
                               rtm_forcing, thlpthvp,  & 
                               thlm_forcing, rtp2, thlp2, wp2_zt, & 
-                              l_implemented, & 
+                              pdf_params, l_implemented, & 
                               sclrpthvp, sclrm_forcing, sclrp2,  & 
                               rtm, wprtp, thlm, wpthlp, & 
                               err_code, & 
@@ -96,6 +96,9 @@ module advance_xm_wpxp_module
     use mono_flux_limiter, only: &
         calc_turb_adv_range ! Procedure(s)
 
+    use variables_diagnostic_module, only: &
+        pdf_parameter  ! type
+
     use stats_precision, only:  & 
         time_precision ! Variable(s)
 
@@ -135,6 +138,9 @@ module advance_xm_wpxp_module
       rtp2,          & ! r_t'^2 (momentum levels)                 [(kg/kg)^2]
       thlp2            ! th_l'^2 (momentum levels)                [K^2]
       ! End of Vince Larson's addition.
+
+    type(pdf_parameter), intent(in) ::  &
+      pdf_params   ! PDF parameters
 
     logical, intent(in) ::  & 
       l_implemented      ! Flag for CLUBB being implemented in a larger model.
@@ -325,7 +331,7 @@ module advance_xm_wpxp_module
     ! have an effect on the central thermodynamic level during the course of
     ! one time step due to turbulent advection.  This is used as part of the
     ! monotonic turbulent advection scheme.
-    call calc_turb_adv_range( dt, wm_zm, wp2,  &
+    call calc_turb_adv_range( dt, pdf_params,  &
                               low_lev_effect, high_lev_effect )
 
 
