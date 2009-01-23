@@ -245,7 +245,8 @@ module clubb_driver
     !                     i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 
     character(len=50) ::  & 
-      restart_path_case ! GRADS file used in case of restart
+      restart_path_case, & ! GrADS file used in case of restart
+      forcings_file_path   ! Path to the forcing files
 
     logical :: & 
       l_stats ! Whether statistics are computed and output to disk
@@ -293,6 +294,7 @@ module clubb_driver
       dtmain, dtclosure, & 
       sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge, & 
       sol_const, std_atmos_buffer, &
+      forcings_file_path, &
       l_cloud_sed, l_kk_rain, l_icedfs, l_coamps_micro,  & 
       l_bugsrad, l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, debug_level, & 
@@ -340,6 +342,8 @@ module clubb_driver
     ts_nudge = 86400.
     sol_const = 1367.0
     std_atmos_buffer = 10
+
+    forcings_file_path = ''
 
     l_cloud_sed    = .false.
     l_kk_rain      = .false.
@@ -470,6 +474,8 @@ module clubb_driver
 
       print *, "ts_nudge = ", ts_nudge
 
+      print *, "forcings_file_path = ", forcings_file_path
+
       print *, "l_cloud_sed = ", l_cloud_sed
       print *, "l_kk_rain = ", l_kk_rain
       print *, "l_icedfs = ", l_icedfs
@@ -564,14 +570,14 @@ module clubb_driver
       time_current = time_initial
       iinit = 1
 
-      call initialize_clubb( iunit, runfile, psfc, &            ! Intent(in)
-                           thlm, rtm, um, vm, &                 ! Intent(inout)
-                           ug, vg, wp2, up2, vp2, rcm,  &       ! Intent(inout)
-                           wm_zt, wm_zm, em, exner, &           ! Intent(inout)
-                           tau_zt, tau_zm, thvm, p_in_Pa, &     ! Intent(inout)
-                           rho, rho_zm, Lscale, &               ! Intent(inout) 
-                           Kh_zt, Kh_zm, um_ref, vm_ref, &      ! Intent(inout)
-                           sclrm, edsclrm )                     ! Intent(out)
+      call initialize_clubb &
+           ( iunit, runfile, trim( forcings_file_path ), psfc, & ! Intent(in)
+             thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,  & ! Intent(inout)
+             wm_zt, wm_zm, em, exner, &           ! Intent(inout)
+             tau_zt, tau_zm, thvm, p_in_Pa, &     ! Intent(inout)
+             rho, rho_zm, Lscale, &               ! Intent(inout) 
+             Kh_zt, Kh_zm, um_ref, vm_ref, &      ! Intent(inout)
+             sclrm, edsclrm )                     ! Intent(out)
 
     else  ! restart
 
@@ -598,10 +604,11 @@ module clubb_driver
 
       iinit = floor( ( time_current - time_initial ) / dtmain ) + 1
 
-      call restart_clubb( iunit, runfile, restart_path_case, time_restart,  &     ! Intent(in)
-                        thlm, rtm, um, vm, ug, vg, upwp, vpwp, wm_zt, wm_zm,  & ! Intent(inout)
-                        um_ref, vm_ref, wpthlp, wprtp, sclrm, edsclrm, &        ! Intent(inout)
-                        wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )             ! Intent(out)
+      call restart_clubb &
+           ( iunit, runfile, trim( forcings_file_path ), restart_path_case, time_restart, & ! Intent(in)
+             thlm, rtm, um, vm, ug, vg, upwp, vpwp, wm_zt, wm_zm,  & ! Intent(inout)
+             um_ref, vm_ref, wpthlp, wprtp, sclrm, edsclrm, &        ! Intent(inout)
+             wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )             ! Intent(out)
 
     end if ! ~l_restart
 
@@ -742,29 +749,19 @@ module clubb_driver
   end subroutine run_clubb
 
 !-----------------------------------------------------------------------
-  subroutine initialize_clubb( iunit, runfile, psfc, &
-                             thlm, rtm, um, vm, & 
-                             ug, vg, wp2, up2, vp2, rcm, & 
-                             wm_zt, wm_zm, em, exner, &
-                             tau_zt, tau_zm, thvm, p_in_Pa, & 
-                             rho, rho_zm, Lscale, & 
-                             Kh_zt, Kh_zm, um_ref, vm_ref, & 
-                             sclrm, edsclrm )
-
-!       Description:
-!       Execute the necessary steps for the initialization of the
-!       CLUBB model run.
-
-!       Calls: ( all these are external except compute_length, sat_mixrat_liq,
-!       stat_rcm )
-!       subroutine read_sounding
-!       subroutine hydrostatic (twice)
-!       subroutine compute_length
-
-!       function sat_mixrat_liq
-!       function sat_rcm
-!       function zt2zm (from grid_class)
-!       function zm2zt (from grid_class)
+  subroutine initialize_clubb &
+             ( iunit, runfile, forcings_file_path, psfc, &
+               thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
+               wm_zt, wm_zm, em, exner, &
+               tau_zt, tau_zm, thvm, p_in_Pa, & 
+               rho, rho_zm, Lscale, & 
+               Kh_zt, Kh_zm, um_ref, vm_ref, & 
+               sclrm, edsclrm )
+! Description:
+!   Execute the necessary steps for the initialization of the
+!   CLUBB model run.
+! References:
+!   None
 !-----------------------------------------------------------------------
 
     use constants, only:  & 
@@ -777,7 +774,6 @@ module clubb_driver
 
     use parameters_tunable, only:  & 
         taumax,  &  ! Variable(s)
-        !taumin,  &
         c_K
 
     use parameters_model, only:  & 
@@ -828,7 +824,10 @@ module clubb_driver
 
     ! Input
     integer, intent(in) :: iunit
-    character(len=*), intent(in) :: runfile  ! filename for the namelist
+
+    character(len=*), intent(in) :: &
+      runfile, &         ! filename for the namelist
+      forcings_file_path ! Path to the .dat files containing the forcings
 
     real, intent(in) :: psfc ! Pressure at the surface [Pa]
 
@@ -988,19 +987,19 @@ module clubb_driver
     case ( "arm_0003" )
 
       em = 1.0
-      call arm_0003_init()
+      call arm_0003_init( iunit, forcings_file_path )
 
     ! 3 year ARM case
     case ( "arm_3year" )
 
       em = 1.0
-      call arm_3year_init()
+      call arm_3year_init( iunit, forcings_file_path )
 
     ! June 27 1997 ARM case
     case ( "arm_97" )
 
       em = 1.0
-      call arm_97_init()
+      call arm_97_init( iunit, forcings_file_path )
 #endif
 
     ! GCSS FIRE Sc
@@ -1153,7 +1152,7 @@ module clubb_driver
     case ( "lba" )
 
       em = 0.1
-      call lba_init()
+      call lba_init( iunit, forcings_file_path )
 #endif
 
     ! Michael Falk for mpace_a Arctic Stratus case.
@@ -1172,7 +1171,7 @@ module clubb_driver
       em(1) = em(2)
       em(gr%nnzp) = em(gr%nnzp-1)
 
-      call mpace_a_init
+      call mpace_a_init( iunit, forcings_file_path )
 
       ! Michael Falk for mpace_b Arctic Stratus case.
     case ( "mpace_b" )
@@ -1304,10 +1303,11 @@ module clubb_driver
     return
   end subroutine initialize_clubb
 !-----------------------------------------------------------------------
-  subroutine restart_clubb( iunit, runfile, restart_path_case, time_restart,  & 
-                          thlm, rtm, um, vm, ug, vg, upwp, vpwp, wm_zt, wm_zm,  & 
-                          um_ref, vm_ref, wpthlp, wprtp, sclrm, edsclrm, & 
-                          wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )
+  subroutine restart_clubb &
+             ( iunit, runfile, forcings_file_path, restart_path_case, time_restart, & 
+               thlm, rtm, um, vm, ug, vg, upwp, vpwp, wm_zt, wm_zm,  & 
+               um_ref, vm_ref, wpthlp, wprtp, sclrm, edsclrm, & 
+               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )
 !       Description:
 !       Execute the necessary steps for the initialization of the
 !       CLUBB model to a designated point in the submitted GrADS file.
@@ -1371,6 +1371,7 @@ module clubb_driver
 
     character(len=*), intent(in) ::  & 
     runfile,           & ! Filename for the namelist
+    forcings_file_path,& ! Path to the forcing files
     restart_path_case    ! Path to GrADS data for restart
 
     real(kind=time_precision), intent(in) :: & 
@@ -1501,26 +1502,26 @@ module clubb_driver
     select case( trim( runtype ) )
 #ifdef UNRELEASED_CODE
     case( "arm_3year" )
-      call arm_3year_init()
+      call arm_3year_init( iunit, forcings_file_path )
 
     case( "arm_97" )
-      call arm_97_init()
+      call arm_97_init( iunit, forcings_file_path )
 
     case( "arm_0003" )
-      call arm_0003_init()
+      call arm_0003_init( iunit, forcings_file_path )
 
     case( "lba" )
-      call lba_init()
+      call lba_init( iunit, forcings_file_path )
 #endif
 
     case( "mpace_a" )
-      call mpace_a_init()
+      call mpace_a_init( iunit, forcings_file_path )
 
 #ifdef UNRELEASED_CODE
     case( "gabls3" )
       ! The user needs to enter the appropriate soil temperatures manually for restarts.
       ! At some point, we should automate this by reading in the appropriate sfc values.
-      call initialize_soil_veg(300.,300.,288.58)
+      call initialize_soil_veg( 300., 300., 288.58 )
 #endif
 
     end select

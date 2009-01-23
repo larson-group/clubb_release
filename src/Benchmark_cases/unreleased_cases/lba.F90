@@ -25,9 +25,6 @@ real, dimension(nzrad, ntimes) :: &
 
 integer, parameter :: per_line = 5
 
-! File path for forcing the forcing files 
-character(*), parameter :: file_path = '../input/case_setups/lba_forcings/'
-
 
 contains
 
@@ -227,7 +224,7 @@ return
 end subroutine lba_sfclyr
 
 !----------------------------------------------------------------
-subroutine lba_init()
+subroutine lba_init( iunit, file_path )
 !
 !       Description:
 !       This subroutine initializes the module by reading in forcing
@@ -238,16 +235,21 @@ subroutine lba_init()
 
   implicit none
 
-  call file_read_1d(10, & 
+  integer, intent(in) :: iunit ! File unit number
+
+  character(len=*), intent(in) :: &
+    file_path ! Path to the forcing files
+
+  call file_read_1d( iunit, & 
     file_path//'lba_heights.dat', & 
-    nzrad, per_line, zrad)
+    nzrad, per_line, zrad )
 
-  call file_read_2d(10, & 
+  call file_read_2d( iunit, & 
     file_path//'lba_rad.dat', & 
-    nzrad, ntimes, per_line, krad)
-   
-end subroutine lba_init
+    nzrad, ntimes, per_line, krad )
 
+  return 
+end subroutine lba_init
 
 end module lba
 

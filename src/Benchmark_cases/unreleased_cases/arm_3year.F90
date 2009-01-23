@@ -17,9 +17,6 @@ private ! Default Scope
 integer, parameter :: ntimes = 26304, nz = 36, & 
  per_line = 5
 
-! File path for the forcing files
-character(*), parameter :: file_path = '../input/case_setups/arm_3year_forcings/'
-
 real, dimension(ntimes) :: times       ! Time from day0      [s]
 real, dimension(nz) :: z               ! Height              [m]
 real, dimension(nz, ntimes) :: thl_ls  ! Potential Temperature
@@ -289,52 +286,57 @@ return
 end subroutine arm_3year_sfclyr
 
 !----------------------------------------------------------------------------        
-subroutine arm_3year_init()
+subroutine arm_3year_init( iunit, file_path )
 !
 !       Description: This subroutine is used to load the forcing
 !       information into arrays.
 !---------------------------------------------------------------------------       
 
-use file_functions, only: file_read_1d, file_read_2d ! Procedure(s)
+  use file_functions, only: file_read_1d, file_read_2d ! Procedure(s)
    
-implicit none
+  implicit none
    
-! Reading in the files located in
-! ../model/arm_3year_forcings/ and storing them in arrays
-! Joshua Fasching (October 2007)
+   ! Reading in the files located in
+   ! ../model/arm_3year_forcings/ and storing them in arrays
+   ! Joshua Fasching (October 2007)
+  integer, intent(in) :: iunit ! File unit number
 
-call file_read_1d(10, & 
+  character(len=*), intent(in) :: &
+    file_path ! Path to the forcing files
+
+call file_read_1d( iunit, & 
     file_path//'arm_3year_times.dat', & 
-    ntimes, per_line, times)
+    ntimes, per_line, times )
 
-call file_read_1d(10, & 
+call file_read_1d( iunit, & 
     file_path//'arm_3year_heights.dat', & 
-    nz, per_line, z)
+    nz, per_line, z )
 
-call file_read_1d(10, & 
+call file_read_1d( iunit, & 
     file_path//'arm_3year_LE.dat', & 
-    ntimes, per_line, LE)
+    ntimes, per_line, LE )
 
-call file_read_1d(10, & 
+call file_read_1d( iunit, & 
     file_path//'arm_3year_SE.dat', & 
-    ntimes, per_line, SE)
+    ntimes, per_line, SE )
 
-call file_read_2d(10, & 
+call file_read_2d( iunit, & 
     file_path//'arm_3year_dTdt.dat', & 
-    nz, ntimes, per_line, thl_ls)
+    nz, ntimes, per_line, thl_ls )
 
-call file_read_2d(10, & 
+call file_read_2d( iunit, & 
      file_path//'arm_3year_dqdt.dat', & 
-     nz, ntimes, per_line, rt_ls)
+     nz, ntimes, per_line, rt_ls )
 
-call file_read_2d(10, & 
+call file_read_2d( iunit, & 
      file_path//'arm_3year_um_obs.dat', & 
      nz, ntimes, per_line, um_obs)
 
-call file_read_2d(10, & 
+call file_read_2d( iunit, & 
      file_path//'arm_3year_vm_obs.dat', & 
-     nz, ntimes, per_line, vm_obs)
+     nz, ntimes, per_line, vm_obs )
 
+ return
 end subroutine arm_3year_init
 
 end module arm_3year

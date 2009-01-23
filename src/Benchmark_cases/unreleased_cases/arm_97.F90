@@ -15,8 +15,6 @@ private ! Defualt Scope
 ! Constant Parameters
 integer, parameter :: ntimes = 169, nz = 18, & 
  per_line = 5
-! File path for the forcing files
-character(*), parameter :: file_path = '../input/case_setups/arm_97_forcings/'
 
 real, dimension(ntimes) :: times       ! Time from day0      [s]
 real, dimension(nz, ntimes) :: z       ! Height              [m]
@@ -292,7 +290,7 @@ vpwp_sfc = -vm_sfc * ustar**2 / ubar
 return
 end subroutine arm_97_sfclyr
 !----------------------------------------------------------------------
-subroutine arm_97_init()
+subroutine arm_97_init( iunit, file_path )
 !
 !       Description:
 !       This subroutine initializes the module by reading in forcing
@@ -303,39 +301,46 @@ subroutine arm_97_init()
 
    implicit none
 
+   integer, intent(in) :: iunit ! File unit number
 
-   call file_read_1d(10, & 
+   character(len=*), intent(in) :: &
+     file_path ! Path to the forcing files
+
+   ! ---- Begin Code ----
+
+   call file_read_1d( iunit, & 
     file_path//'arm_97_times.dat', & 
-    ntimes, per_line, times)
+    ntimes, per_line, times )
 
-   call file_read_2d(10, & 
+   call file_read_2d( iunit, & 
     file_path//'arm_97_heights.dat', & 
-    nz, ntimes, per_line, z)
+    nz, ntimes, per_line, z )
 
-   call file_read_1d(10, & 
+   call file_read_1d( iunit, & 
     file_path//'arm_97_LE.dat', & 
-    ntimes, per_line, LE)
+    ntimes, per_line, LE )
 
-   call file_read_1d(10, & 
+   call file_read_1d( iunit, & 
     file_path//'arm_97_SE.dat', & 
-    ntimes, per_line, SE)
+    ntimes, per_line, SE )
 
-   call file_read_2d(10, & 
+   call file_read_2d( iunit, & 
     file_path//'arm_97_dTdt.dat', & 
-    nz, ntimes, per_line, thl_ls)
+    nz, ntimes, per_line, thl_ls )
 
-   call file_read_2d(10, & 
+   call file_read_2d( iunit, & 
      file_path//'arm_97_dqdt.dat', & 
-     nz, ntimes, per_line, rt_ls)
+     nz, ntimes, per_line, rt_ls )
 
-   call file_read_2d(10, & 
+   call file_read_2d( iunit, & 
      file_path//'arm_97_um_obs.dat', & 
-     nz, ntimes, per_line, um_obs)
+     nz, ntimes, per_line, um_obs )
 
-   call file_read_2d(10, & 
+   call file_read_2d( iunit, & 
      file_path//'arm_97_vm_obs.dat', & 
-     nz, ntimes, per_line, vm_obs)
+     nz, ntimes, per_line, vm_obs )
 
+  return
 end subroutine arm_97_init
 !----------------------------------------------------------------------
 end module arm_97

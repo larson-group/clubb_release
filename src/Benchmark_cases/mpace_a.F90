@@ -2,8 +2,8 @@
 ! $Id$
   module mpace_a
 
-!       Description:
-!       Contains subroutines for the mpace_a intercomparison.
+! Description:
+!   Contains subroutines for the mpace_a intercomparison.
 !----------------------------------------------------------------------
 
   implicit none
@@ -21,9 +21,6 @@
   integer, parameter :: file_nlevels = 38
   integer, parameter :: per_line = 5
   
-  ! File path for forcing the forcing files 
-  character(*), parameter :: file_path = '../input/case_setups/mpace_a_forcings/'
-
   real, dimension(file_nlevels) :: file_pressure
   real, dimension(file_nlevels) :: file_heights
   real, dimension(file_ntimes) :: file_times
@@ -576,7 +573,7 @@ sensible_heat_flx = factor_interp( ratio, file_SH(right_time), file_SH(left_time
   return
   end subroutine mpace_a_sfclyr
 !----------------------------------------------------------------
-  subroutine mpace_a_init()
+  subroutine mpace_a_init( iunit, file_path )
 !
 !       Description:
 !       This subroutine initializes the module by reading in forcing
@@ -586,55 +583,62 @@ sensible_heat_flx = factor_interp( ratio, file_SH(right_time), file_SH(left_time
 
     implicit none
 
-    call file_read_1d(10, & 
+    integer, intent(in) :: iunit ! File unit number
+
+    character(len=*), intent(in) :: &
+      file_path ! Path to the forcing files
+
+    ! ---- Begin Code ----
+
+    call file_read_1d( iunit, & 
       file_path//'mpace_a_press.dat', & 
-      file_nlevels, per_line, file_pressure)
+      file_nlevels, per_line, file_pressure )
 
-    call file_read_1d(10, & 
+    call file_read_1d( iunit, & 
       file_path//'mpace_a_heights.dat', & 
-      file_nlevels, per_line, file_heights)
+      file_nlevels, per_line, file_heights )
 
-    call file_read_1d(10, & 
+    call file_read_1d( iunit, & 
       file_path//'mpace_a_times.dat', & 
-      file_ntimes, per_line, file_times)
+      file_ntimes, per_line, file_times )
 
-!      call file_read_2d(10,
+!      call file_read_2d( iunit,
 !     . file_path//'mpace_a_omega.dat',
 !     . file_nlevels, file_ntimes, per_line, omega_forcing)
 
-    call file_read_2d(10, & 
+    call file_read_2d( iunit, & 
       file_path//'mpace_a_dTdt.dat', & 
-      file_nlevels, file_ntimes, per_line, dTdt_forcing)
+      file_nlevels, file_ntimes, per_line, dTdt_forcing )
 
-    call file_read_2d(10, & 
+    call file_read_2d( iunit, & 
       file_path//'mpace_a_dqdt_horiz.dat', & 
-      file_nlevels, file_ntimes, per_line, dqdt_forcing)
+      file_nlevels, file_ntimes, per_line, dqdt_forcing )
 
-    call file_read_2d(10, & 
+    call file_read_2d( iunit, & 
       file_path//'mpace_a_verts.dat', & 
-      file_nlevels, file_ntimes, per_line, vertT_forcing)
+      file_nlevels, file_ntimes, per_line, vertT_forcing )
 
-    call file_read_2d(10, & 
+    call file_read_2d( iunit, & 
       file_path//'mpace_a_vertq.dat', & 
-      file_nlevels, file_ntimes, per_line, vertq_forcing)
+      file_nlevels, file_ntimes, per_line, vertq_forcing )
 
-    call file_read_2d(10, & 
+    call file_read_2d( iunit, & 
       file_path//'mpace_a_um_obs.dat', & 
-      file_nlevels, file_ntimes, per_line, um_obs)
+      file_nlevels, file_ntimes, per_line, um_obs )
 
-    call file_read_2d(10, & 
+    call file_read_2d( iunit, & 
       file_path//'mpace_a_vm_obs.dat', & 
-      file_nlevels, file_ntimes, per_line, vm_obs)
+      file_nlevels, file_ntimes, per_line, vm_obs )
 
-    call file_read_1d(10, & 
+    call file_read_1d( iunit, & 
       file_path//'mpace_a_lh.dat', & 
-      file_ntimes, per_line, file_LH)
+      file_ntimes, per_line, file_LH )
 
-    call file_read_1d(10, & 
+    call file_read_1d( iunit, & 
       file_path//'mpace_a_sh.dat', & 
-      file_ntimes, per_line, file_SH)
+      file_ntimes, per_line, file_SH )
 
-     
+    return 
   end subroutine mpace_a_init
 
   end module mpace_a

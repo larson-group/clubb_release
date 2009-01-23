@@ -17,7 +17,7 @@ integer, parameter :: ntimes = 167, nz = 38, &
  per_line = 5
 
 ! File path for the forcing files
-character(*), parameter :: file_path = '../input/case_setups/arm_0003_forcings/'
+!character(*), parameter :: file_path = '../input/case_setups/arm_0003_forcings/'
 
 real, dimension(ntimes) :: times       ! Time from day0      [s]
 real, dimension(nz) :: z               ! Height              [m]
@@ -284,7 +284,7 @@ return
 end subroutine arm_0003_sfclyr
 
 !----------------------------------------------------------------------
-subroutine arm_0003_init()
+subroutine arm_0003_init( iunit, file_path )
 !
 !       Description:
 !       This subroutine initializes the module by reading in forcing
@@ -294,39 +294,46 @@ subroutine arm_0003_init()
 
    implicit none
 
-! Reading in the files located in
-! ../model/arm_0003_forcings/ and storing them in arrays
-! Joshua Fasching (October 2007)
+   integer, intent(in) :: iunit ! File unit number
 
-   call file_read_1d(10, & 
+   character(len=*), intent(in) :: &
+     file_path ! Path to the forcing files
+
+   ! Reading in the files located in
+   ! ../model/arm_0003_forcings/ and storing them in arrays
+   ! Joshua Fasching (October 2007)
+
+   ! ---- Begin Code ----
+
+   call file_read_1d(iunit, & 
     file_path//'arm_0003_times.dat', & 
     ntimes, per_line, times)
 
-   call file_read_1d(10, & 
+   call file_read_1d(iunit, & 
     file_path//'arm_0003_heights.dat', & 
     nz, per_line, z)
 
-   call file_read_1d(10, & 
+   call file_read_1d(iunit, & 
     file_path//'arm_0003_LE.dat', & 
     ntimes, per_line, LE)
 
-   call file_read_1d(10, & 
+   call file_read_1d(iunit, & 
     file_path//'arm_0003_SE.dat', & 
     ntimes, per_line, SE)
 
-   call file_read_2d(10, & 
+   call file_read_2d(iunit, & 
     file_path//'arm_0003_dTdt.dat', & 
     nz, ntimes, per_line, thl_ls)
 
-   call file_read_2d(10, & 
+   call file_read_2d(iunit, & 
      file_path//'arm_0003_dqdt.dat', & 
      nz, ntimes, per_line, rt_ls)
 
-   call file_read_2d(10, & 
+   call file_read_2d(iunit, & 
      file_path//'arm_0003_um_obs.dat', & 
      nz, ntimes, per_line, um_obs)
 
-   call file_read_2d(10, & 
+   call file_read_2d(iunit, & 
      file_path//'arm_0003_vm_obs.dat', & 
      nz, ntimes, per_line, vm_obs)
 

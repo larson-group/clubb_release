@@ -78,6 +78,8 @@ alndf = 0.1d0    ! Near-IR diffuse surface albedo       [-]
 
 ts_nudge = 3600.  ! Timescale of u/v nudging            [s]
 
+forcings_file_path = '../input/case_setups/mpace_a_forcings/'
+
 l_cloud_sed     = .false.  ! Flag for cloud water sedimentation.
 l_kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
 l_coamps_micro = .true.   ! Flag for COAMPS microphysics.
