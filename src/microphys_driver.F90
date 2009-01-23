@@ -113,7 +113,7 @@ end subroutine init_microphys
 subroutine advance_microphys & 
            ( runtype, dt, time_current,  & 
              thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm,  & 
-             wm_zt, wm_zm, Kh_zm, AKm_est, AKm, pdf_parms, & 
+             wm_zt, wm_zm, Kh_zm, AKm_est, AKm, pdf_params, & 
              Ncm, Ncnm, Nim, hydromet, & 
              rtm_forcing, thlm_forcing, &
              err_code )
@@ -167,10 +167,11 @@ use coamps_micro_driver_mod, only:  &
 
 use T_in_K_mod, only: thlm2T_in_K ! Procedure(s)
 
+use variables_diagnostic_module, only:  &
+    pdf_parameter  ! type
+
 use array_index, only:  & 
     iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm
-
-
  
 use stats_variables, only: & 
     iVrr,  & ! Variable(s)
@@ -248,8 +249,8 @@ real, dimension(gr%nnzp), intent(in) :: &
   Akm_est, & ! Analytic Kessler ac                    [kg/kg]
   Akm        ! Analytic Kessler estimate              [kg/kg]
 
-  real, target,dimension(gr%nnzp,26), intent(in) :: & 
-  pdf_parms     ! PDF parameters
+  type(pdf_parameter), target, intent(in) :: & 
+  pdf_params     ! PDF parameters
 
 ! Note:
 ! K & K only uses Ncm, while for COAMPS Ncnm is initialized
@@ -333,16 +334,16 @@ integer :: ixrm_cl, ixrm_bt
 
 !-----------------------------------------------------------------------
 
-! Assign pointers to pdf_parms
-thl1 => pdf_parms(1:gr%nnzp,9)
-thl2 => pdf_parms(1:gr%nnzp,10)
-a    => pdf_parms(1:gr%nnzp,13)
-rc1  => pdf_parms(1:gr%nnzp,14)
-rc2  => pdf_parms(1:gr%nnzp,15)
-s1   => pdf_parms(1:gr%nnzp,20)
-s2   => pdf_parms(1:gr%nnzp,21)
-ss1  => pdf_parms(1:gr%nnzp,22)
-ss2  => pdf_parms(1:gr%nnzp,23)
+! Assign pointers to pdf_params
+thl1 => pdf_params%thl1(1:gr%nnzp)
+thl2 => pdf_params%thl2(1:gr%nnzp)
+a    => pdf_params%a(1:gr%nnzp)
+rc1  => pdf_params%rc1(1:gr%nnzp)
+rc2  => pdf_params%rc2(1:gr%nnzp)
+s1   => pdf_params%s1(1:gr%nnzp)
+s2   => pdf_params%s2(1:gr%nnzp)
+ss1  => pdf_params%ss1(1:gr%nnzp)
+ss2  => pdf_params%ss2(1:gr%nnzp)
 
 ! Solve for the value of Kr, the hydrometeor eddy diffusivity.
 do k = 1, gr%nnzp, 1
@@ -687,7 +688,15 @@ if ( lapack_error(err_code) ) then
    write(fstderr,*) "Kh_zm = ", Kh_zm
    write(fstderr,*) "Akm_est = ", Akm_est
    write(fstderr,*) "Akm = ", Akm
-   write(fstderr,*) "pdf_parms = ", pdf_parms
+   write(fstderr,*) "pdf_params%thl1 = ", pdf_params%thl1
+   write(fstderr,*) "pdf_params%thl2 = ", pdf_params%thl2
+   write(fstderr,*) "pdf_params%a = ", pdf_params%a
+   write(fstderr,*) "pdf_params%rc1 = ", pdf_params%rc1
+   write(fstderr,*) "pdf_params%rc2 = ", pdf_params%rc2
+   write(fstderr,*) "pdf_params%s1 = ", pdf_params%s1
+   write(fstderr,*) "pdf_params%s2 = ", pdf_params%s2
+   write(fstderr,*) "pdf_params%ss1 = ", pdf_params%ss1
+   write(fstderr,*) "pdf_params%ss2 = ", pdf_params%ss2
    
    write(fstderr,*) "Intent(inout)"
    

@@ -106,7 +106,7 @@ contains
       Skw_zm,      & ! Skewness of w on momentum levels         [-]
       Skw_zt,      & ! Skewness of w on thermodynamic levels    [-]
       wp2_zt,      & ! w'^2 interpolated to thermodyamic levels [m^2/s^2]
-      a              ! PDF parameter "a": pdf_parms(:,13)       [-]
+      a              ! Weight of 1st normal distribution        [-]
 
     ! Input/Output
     real, dimension(gr%nnzp), intent(inout) ::  & 

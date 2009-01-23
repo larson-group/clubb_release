@@ -20,7 +20,7 @@
  
  public :: invalid_model_arrays, isnan2d,  & 
            rad_check, parameterization_check, & 
-           sfc_var_check, pdf_closure_new_check, & 
+           sfc_var_check, pdf_closure_check, & 
            length_check
  
  private :: check_negative, check_nan, isnan
@@ -71,24 +71,27 @@
   end subroutine length_check
   
 !---------------------------------------------------------------------------
-  subroutine pdf_closure_new_check( wp4, wprtp2, wp2rtp, wpthlp2, & 
+  subroutine pdf_closure_check( wp4, wprtp2, wp2rtp, wpthlp2, & 
                           wp2thlp, cf, rcm, wpthvp, wp2thvp, & 
                           rtpthvp, thlpthvp, wprcp, wp2rcp, & 
                           rtprcp, thlprcp, rcp2, wprtpthlp, & 
-                          crt1, crt2, cthl1, cthl2, pdf_parms, & 
+                          crt1, crt2, cthl1, cthl2, pdf_params, k, &
                           err_code,  & 
                           sclrpthvp, sclrprcp, wpsclrp2, & 
                           wpsclrprtp, wpsclrpthlp, wp2sclrp )
   
 !        Description: This subroutine determines if any of the output
-!        variables for the pdf_closure_new subroutine carry values that
+!        variables for the pdf_closure subroutine carry values that
 !        are NaNs.
 !
 !        Joshua Fasching February 2008
 !---------------------------------------------------------------------------
 
   use parameters_model, only: & 
-      sclr_dim ! Variable
+    sclr_dim ! Variable
+
+  use variables_diagnostic_module, only:  &
+    pdf_parameter  ! type
 
   use stats_variables, only: &
     iwp4,       & ! Variables
@@ -121,9 +124,12 @@
   crt1, crt2,  & 
   cthl1, cthl2
 
- real, intent(in), dimension(26)::  & 
- pdf_parms        ! pdf paramters         [units vary]
-   
+ type(pdf_parameter), intent(in) ::  & 
+ pdf_params        ! PDF parameters          [units vary]
+ 
+ integer, intent(in) ::  &
+ k   ! Level for which the check is occuring (only applies to pdf_params).
+  
  ! Input (Optional passive scalar variables)  
  real, dimension(sclr_dim), intent(in) ::  & 
  sclrpthvp,  & 
@@ -138,9 +144,10 @@
  err_code          ! Returns appropriate error code
  
  ! Local Variable
- character(*), parameter :: proc_name = "pdf_closure_new"
+ character(*), parameter :: proc_name = "pdf_closure"
  
 !-------------------------------------------------------------------------------
+
  if ( iwp4 > 0 ) call check_nan( wp4,"wp4", proc_name, err_code )
  if ( iwprtp2 > 0 ) call check_nan( wprtp2,"wprtp2", proc_name, err_code )
  call check_nan( wp2rtp,"wp2rtp", proc_name, err_code )
@@ -161,8 +168,34 @@
  call check_nan( crt1, "crt1", proc_name, err_code )
  call check_nan( crt2, "crt2", proc_name, err_code )
  call check_nan( cthl1, "cthl1", proc_name, err_code )
- call check_nan( cthl2, "cthl2", proc_name, err_code ) 
- call check_nan( pdf_parms, "pdf_parms", proc_name,err_code )
+ call check_nan( cthl2, "cthl2", proc_name, err_code )
+ ! Check each PDF parameter at the grid level sent in.
+ call check_nan( pdf_params%w1(k), "pdf_params%w1", proc_name, err_code )
+ call check_nan( pdf_params%w2(k), "pdf_params%w2", proc_name, err_code )
+ call check_nan( pdf_params%sw1(k), "pdf_params%sw1", proc_name, err_code )
+ call check_nan( pdf_params%sw2(k), "pdf_params%sw2", proc_name, err_code )
+ call check_nan( pdf_params%rt1(k), "pdf_params%rt1", proc_name, err_code )
+ call check_nan( pdf_params%rt2(k), "pdf_params%rt2", proc_name, err_code )
+ call check_nan( pdf_params%srt1(k), "pdf_params%srt1", proc_name, err_code )
+ call check_nan( pdf_params%srt2(k), "pdf_params%srt2", proc_name, err_code )
+ call check_nan( pdf_params%thl1(k), "pdf_params%thl1", proc_name, err_code )
+ call check_nan( pdf_params%thl2(k), "pdf_params%thl2", proc_name, err_code )
+ call check_nan( pdf_params%sthl1(k), "pdf_params%sthl1", proc_name, err_code )
+ call check_nan( pdf_params%sthl2(k), "pdf_params%sthl2", proc_name, err_code )
+ call check_nan( pdf_params%a(k), "pdf_params%a", proc_name, err_code )
+ call check_nan( pdf_params%rrtthl(k), "pdf_params%rrtthl", proc_name, err_code )
+ call check_nan( pdf_params%rc1(k), "pdf_params%rc1", proc_name, err_code )
+ call check_nan( pdf_params%rc2(k), "pdf_params%rc2", proc_name, err_code )
+ call check_nan( pdf_params%rsl1(k), "pdf_params%rsl1", proc_name, err_code )
+ call check_nan( pdf_params%rsl2(k), "pdf_params%rsl2", proc_name, err_code )
+ call check_nan( pdf_params%R1(k), "pdf_params%R1", proc_name, err_code )
+ call check_nan( pdf_params%R2(k), "pdf_params%R2", proc_name, err_code )
+ call check_nan( pdf_params%s1(k), "pdf_params%s1", proc_name, err_code )
+ call check_nan( pdf_params%s2(k), "pdf_params%s2", proc_name, err_code )
+ call check_nan( pdf_params%ss1(k), "pdf_params%ss1", proc_name, err_code )
+ call check_nan( pdf_params%ss2(k), "pdf_params%ss2", proc_name, err_code )
+ call check_nan( pdf_params%alpha_thl(k), "pdf_params%alpha_thl", proc_name, err_code )
+ call check_nan( pdf_params%alpha_rt(k), "pdf_params%alpha_rt", proc_name, err_code )
 
  if ( sclr_dim > 0 ) then 
    call check_nan( sclrpthvp,"sclrpthvp", & 
@@ -180,7 +213,7 @@
  end if
 
  return
- end subroutine pdf_closure_new_check
+ end subroutine pdf_closure_check
 
 !-------------------------------------------------------------------------------
  subroutine parameterization_check & 
@@ -498,6 +531,7 @@
      wp2thvp, & 
      rtpthvp, & 
      thlpthvp
+
  use variables_prognostic_module, only: & 
      um,  & ! Variable(s)
      vm, & 

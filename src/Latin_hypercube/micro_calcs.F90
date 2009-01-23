@@ -22,7 +22,8 @@ contains
 !        X_u = nxd Latin hypercube sample from uniform dist 
 !        X_nl = Sample from normal-lognormal distribution 
 !        l_sample_flag = logical that tells whether PDF has non-zero micro
-!        pdf_parms = pdf parameters output by closure_new
+!        pdf_params = pdf parameters output by closure_new
+!        level = level on which calculations are occuring (used by pdf_params)
 
 ! Output: AKm_est = LH estimate of grid box avg Kessler autoconv [kg/kg]
 !         AKm = exact grid box avg Kessler autoconversion [kg/kg]
@@ -34,13 +35,19 @@ contains
 !------------------------------------------------------------------------
 
 subroutine micro_calcs( n, d, X_u, X_nl, l_sample_flag, & 
-                        pdf_parms, & 
+                        pdf_params, level, & 
                         AKm_est_k, AKm_k, AKstd_k, AKstd_cld_k, & 
                         AKm_rcm_k, AKm_rcc_k, rcm_est_k )
 
-use constants, only: pi, zero_threshold ! Variable(s)
+use constants, only:  &
+    pi,  & ! Variables(s)
+    zero_threshold
 
-use anl_erf, only: erf ! Procedure(s)
+use anl_erf, only:  &
+    erf ! Procedure(s)
+
+use variables_diagnostic_module, only:  &
+    pdf_parameter  ! type
 
 implicit none
 
@@ -58,7 +65,10 @@ double precision, intent(in) :: X_nl(1:n,1:d)
 logical, intent(in) :: l_sample_flag
 
 ! PDF parameter array
-real, intent(in)    :: pdf_parms(26)
+type(pdf_parameter), intent(in) :: pdf_params
+
+! Level on which calculations are occuring (used by pdf_params)
+integer, intent(in) :: level
 
 ! Output
 
@@ -118,29 +128,29 @@ real AK1var, AK2var
 ! Code begins -------------------------------------------
 
 
-!       save pdf parameters
+! Extract PDF parameters
 
-!      w1    = pdf_parms(1)
-!      w2    = pdf_parms(2)
-!      sw1   = pdf_parms(3)
-!      sw2   = pdf_parms(4)
-!      rt1   = pdf_parms(5)
-!      rt2   = pdf_parms(6)
-!      srt1  = pdf_parms(7)
-!      srt2  = pdf_parms(8)
-!      thl1  = pdf_parms(9)
-!      thl2  = pdf_parms(10)
-!      sthl1 = pdf_parms(11)
-!      sthl2 = pdf_parms(12)
-a     = pdf_parms(13)
-rc1   = pdf_parms(14) 
-rc2   = pdf_parms(15) 
-R1    = pdf_parms(18)
-R2    = pdf_parms(19)
-s1    = pdf_parms(20)
-s2    = pdf_parms(21)
-ss1   = pdf_parms(22)
-ss2   = pdf_parms(23)
+!w1    = pdf_params%w1(level)
+!w2    = pdf_params%w2(level)
+!sw1   = pdf_params%sw1(level)
+!sw2   = pdf_params%sw2(level)
+!rt1   = pdf_params%rt1(level)
+!rt2   = pdf_params%rt2(level)
+!srt1  = pdf_params%srt1(level)
+!srt2  = pdf_params%srt2(level)
+!thl1  = pdf_params%thl1(level)
+!thl2  = pdf_params%thl2(level)
+!sthl1 = pdf_params%sthl1(level)
+!sthl2 = pdf_params%sthl2(level)
+a     = pdf_params%a(level)
+rc1   = pdf_params%rc1(level)
+rc2   = pdf_params%rc2(level)
+R1    = pdf_params%R1(level)
+R2    = pdf_params%R2(level)
+s1    = pdf_params%s1(level)
+s2    = pdf_params%s2(level)
+ss1   = pdf_params%ss1(level)
+ss2   = pdf_params%ss2(level)
 
 !       compute mean cloud fraction and cloud water
 

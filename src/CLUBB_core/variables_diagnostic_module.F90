@@ -160,41 +160,43 @@ real, target, allocatable, dimension(:), public :: &
 !$omp threadprivate(wp2_zt, thlp2_zt, wpthlp_zt, wprtp_zt, &
 !$omp   rtp2_zt, rtpthlp_zt)
 
-! 
+! PDF parameters
+public :: pdf_parameter
 
-! Variables needed for the pdf closure scheme
-!
-!       pdf_parms contains the parameters of the pdf:
-!
-!        pdf_parms(:,1) = w1
-!        pdf_parms(:,2) = w2
-!        pdf_parms(:,3) = sw1
-!        pdf_parms(:,4) = sw2
-!        pdf_parms(:,5) = rt1
-!        pdf_parms(:,6) = rt2
-!        pdf_parms(:,7) = srt1
-!        pdf_parms(:,8) = srt2
-!        pdf_parms(:,9) = thl1
-!        pdf_parms(:,10) = thl2
-!        pdf_parms(:,11) = sthl1
-!        pdf_parms(:,12) = sthl2
-!        pdf_parms(:,13) = a
-!        pdf_parms(:,14) = rc1
-!        pdf_parms(:,15) = rc2
-!        pdf_parms(:,16) = rsl1
-!        pdf_parms(:,17) = rsl2
-!        pdf_parms(:,18) = R1
-!        pdf_parms(:,19) = R2
-!        pdf_parms(:,20) = s1
-!        pdf_parms(:,21) = s2
-!        pdf_parms(:,22) = ss1
-!        pdf_parms(:,23) = ss2
-!        pdf_parms(:,24) = rrtthl
+type pdf_parameter
+  real, pointer, dimension(:) ::  &
+    w1,        & ! Mean of w for 1st normal distribution                 [m/s]
+    w2,        & ! Mean of w for 2nd normal distribution                 [m/s]
+    sw1,       & ! Variance of w for 1st normal distribution         [m^2/s^2]
+    sw2,       & ! Variance of w for 2nd normal distribution         [m^2/s^2]
+    rt1,       & ! Mean of r_t for 1st normal distribution             [kg/kg]
+    rt2,       & ! Mean of r_t for 2nd normal distribution             [kg/kg]
+    srt1,      & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
+    srt2,      & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
+    thl1,      & ! Mean of th_l for 1st normal distribution                [K]
+    thl2,      & ! Mean of th_l for 2nd normal distribution                [K]
+    sthl1,     & ! Variance of th_l for 1st normal distribution          [K^2]
+    sthl2,     & ! Variance of th_l for 2nd normal distribution          [K^2]
+    a,         & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
+    rc1,       & ! Mean of r_c for 1st normal distribution             [kg/kg]
+    rc2,       & ! Mean of r_c for 2nd normal distribution             [kg/kg]
+    rsl1,      & ! Mean of r_sl for 1st normal distribution            [kg/kg]
+    rsl2,      & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
+    R1,        & ! Cloud fraction for 1st normal distribution              [-]
+    R2,        & ! Cloud fraction for 2nd normal distribution              [-]
+    s1,        & ! Mean of s for 1st normal distribution               [kg/kg]
+    s2,        & ! Mean of s for 2nd normal distribution               [kg/kg]
+    ss1,       & ! Standard deviation of s for 1st normal distribution [kg/kg]
+    ss2,       & ! Standard deviation of s for 2nd normal distribution [kg/kg]
+    rrtthl,    & ! Within-a-normal correlation of r_t and th_l             [-]
+    alpha_thl, & ! Factor relating to normalized variance for th_l         [-]
+    alpha_rt     ! Factor relating to normalized variance for r_t          [-]
+end type
 
-real, target, allocatable, dimension(:,:), public :: & 
-  pdf_parms
+type(pdf_parameter), target, public :: &
+  pdf_params
 
-!$omp threadprivate(pdf_parms)
+!$omp threadprivate(pdf_params)
 
 ! Latin Hypercube arrays.  Vince Larson 22 May 2005
 real, target, allocatable, dimension(:), public :: & 
@@ -216,6 +218,7 @@ contains
 !  for the HOC model code
 !-----------------------------------------------------------------------
 subroutine setup_diagnostic_variables( nzmax )
+
 use model_flags, only:  & 
     l_LH_on ! Variable(s)
 
@@ -227,9 +230,6 @@ use parameters_model, only: &
     sclr_dim
 
 implicit none
-
-! Constant Parameters 
-integer, parameter :: pdf_dimension = 26
 
 ! Input Variables
 integer, intent(in) :: nzmax
@@ -310,9 +310,20 @@ allocate( rtp2_zt(1:nzmax) )    ! rt'^2 on thermo. grid
 allocate( rtpthlp_zt(1:nzmax) ) ! rt'thl' on thermo. grid
  
 
-! Array fpr pdf closure scheme
-
-allocate( pdf_parms(1:nzmax,1:pdf_dimension) )
+! Variables for pdf closure scheme
+allocate( pdf_params%w1(1:nzmax),        pdf_params%w2(1:nzmax),  &
+          pdf_params%sw1(1:nzmax),       pdf_params%sw2(1:nzmax),  &
+          pdf_params%rt1(1:nzmax),       pdf_params%rt2(1:nzmax),  &
+          pdf_params%srt1(1:nzmax),      pdf_params%srt2(1:nzmax),  &
+          pdf_params%thl1(1:nzmax),      pdf_params%thl2(1:nzmax),  &
+          pdf_params%sthl1(1:nzmax),     pdf_params%sthl2(1:nzmax),  &
+          pdf_params%a(1:nzmax),         pdf_params%rrtthl(1:nzmax),  &
+          pdf_params%rc1(1:nzmax),       pdf_params%rc2(1:nzmax),  &
+          pdf_params%rsl1(1:nzmax),      pdf_params%rsl2(1:nzmax),  &
+          pdf_params%R1(1:nzmax),        pdf_params%R2(1:nzmax),  &
+          pdf_params%s1(1:nzmax),        pdf_params%s2(1:nzmax),  &
+          pdf_params%ss1(1:nzmax),       pdf_params%ss2(1:nzmax),  &
+          pdf_params%alpha_thl(1:nzmax), pdf_params%alpha_rt(1:nzmax) )
 
 allocate( Ncm(1:nzmax) )
 allocate( Ncnm(1:nzmax) )
@@ -421,8 +432,33 @@ do i = 1, hydromet_dim, 1
   hydromet(1:nzmax,i) = 0.0
 end do
 
-! Array for pdf closure scheme
-pdf_parms(1:nzmax,:) = 0.0
+! Variables for PDF closure scheme
+pdf_params%w1        = 0.0
+pdf_params%w2        = 0.0
+pdf_params%sw1       = 0.0
+pdf_params%sw2       = 0.0
+pdf_params%rt1       = 0.0
+pdf_params%rt2       = 0.0
+pdf_params%srt1      = 0.0
+pdf_params%srt2      = 0.0
+pdf_params%thl1      = 0.0
+pdf_params%thl2      = 0.0
+pdf_params%sthl1     = 0.0
+pdf_params%sthl2     = 0.0
+pdf_params%a         = 0.0
+pdf_params%rc1       = 0.0
+pdf_params%rc2       = 0.0
+pdf_params%rsl1      = 0.0
+pdf_params%rsl2      = 0.0
+pdf_params%R1        = 0.0
+pdf_params%R2        = 0.0
+pdf_params%s1        = 0.0
+pdf_params%s2        = 0.0
+pdf_params%ss1       = 0.0
+pdf_params%ss2       = 0.0
+pdf_params%rrtthl    = 0.0
+pdf_params%alpha_thl = 0.0
+pdf_params%alpha_rt  = 0.0
 
 ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
 if ( l_LH_on ) then
@@ -546,10 +582,21 @@ deallocate( rtp2_zt )    ! rt'^2 on t
 deallocate( rtpthlp_zt ) ! rt'th_l' on t
  
 
+! Variable for pdf closure scheme
+deallocate( pdf_params%w1,        pdf_params%w2,  &
+            pdf_params%sw1,       pdf_params%sw2,  &
+            pdf_params%rt1,       pdf_params%rt2,  &
+            pdf_params%srt1,      pdf_params%srt2,  &
+            pdf_params%thl1,      pdf_params%thl2,  &
+            pdf_params%sthl1,     pdf_params%sthl2,  &
+            pdf_params%a,         pdf_params%rrtthl,  &
+            pdf_params%rc1,       pdf_params%rc2,  &
+            pdf_params%rsl1,      pdf_params%rsl2,  &
+            pdf_params%R1,        pdf_params%R2,  &
+            pdf_params%s1,        pdf_params%s2,  &
+            pdf_params%ss1,       pdf_params%ss2,  &
+            pdf_params%alpha_thl, pdf_params%alpha_rt )
 
-! Array for pdf closure scheme
-
-deallocate( pdf_parms )
 
 ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
 !       if ( l_LH_on ) then

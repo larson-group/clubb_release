@@ -23,7 +23,8 @@ contains
 !         d = number of variates (normally=5) 
 !         p_matrix = nxd random matrix of integers that's fed to closure
 !         cf = cloud fraction, 0 <= cf <= 1
-!         pdf_parms = pdf parameters output by closure_new
+!         pdf_params = pdf parameters output by closure_new
+!         level = level on which calculations are occuring (used by pdf_params)
 !         crt1, crt2, cthl1, cthl2 = coefficients for s
 !         rrainm  = mean of rr; must have rrainm>0. 
 
@@ -32,14 +33,16 @@ contains
 !         l_sample_flag = logical that tells whether PDF has non-zero micro
 !------------------------------------------------------------------------
 subroutine lh_sampler( n, nt, d, p_matrix, & 
-                       cf, & 
-                       pdf_parms, & 
+                       cf, pdf_params, level, & 
                        crt1, crt2, cthl1, cthl2, & 
                        rrainm, & 
                        X_u, X_nl, l_sample_flag)
 
+use constants, only:  &
+    max_mag_correlation
 
-use constants, only: max_mag_correlation
+use variables_diagnostic_module, only:  &
+    pdf_parameter  ! type
 
 implicit none
 
@@ -54,7 +57,8 @@ real, intent(in) :: cf
 
 ! nxd matrix of random integers
 integer, intent(in) :: p_matrix( 1:n , 1:(d+1) )
-real, intent(in)    :: pdf_parms(26)
+type(pdf_parameter), intent(in) :: pdf_params
+integer, intent(in) :: level  ! Level info. for PDF parameters.
 
 !     quantities needed to predict higher order moments
 real, intent(in) :: crt1, crt2, cthl1, cthl2
@@ -121,24 +125,24 @@ double precision :: rr1, rr2, srr1, srr2
 
 !       Input pdf parameters.
 
-  w1     = pdf_parms(1)
-  w2     = pdf_parms(2)
-  sw1    = pdf_parms(3)
-  sw2    = pdf_parms(4)
-!  rt1    = pdf_parms(5)
-!  rt2    = pdf_parms(6)
-  srt1   = pdf_parms(7)
-  srt2   = pdf_parms(8)
-!  thl1   = pdf_parms(9)
-!  thl2   = pdf_parms(10)
-  sthl1  = pdf_parms(11)
-  sthl2  = pdf_parms(12)
-  a      = pdf_parms(13) 
-  R1     = pdf_parms(18)
-  R2     = pdf_parms(19)
-  s1     = pdf_parms(20)
-  s2     = pdf_parms(21)
-  rrtthl = pdf_parms(24)
+  w1     = pdf_params%w1(level)
+  w2     = pdf_params%w2(level)
+  sw1    = pdf_params%sw1(level)
+  sw2    = pdf_params%sw2(level)
+!  rt1    = pdf_params%rt1(level)
+!  rt2    = pdf_params%rt2(level)
+  srt1   = pdf_params%srt1(level)
+  srt2   = pdf_params%srt2(level)
+!  thl1   = pdf_params%thl1(level)
+!  thl2   = pdf_params%thl2(level)
+  sthl1  = pdf_params%sthl1(level)
+  sthl2  = pdf_params%sthl2(level)
+  a      = pdf_params%a(level)
+  R1     = pdf_params%R1(level)
+  R2     = pdf_params%R2(level)
+  s1     = pdf_params%s1(level)
+  s2     = pdf_params%s2(level)
+  rrtthl = pdf_params%rrtthl(level)
 
 !-----------------------------------------------------------------------
 !

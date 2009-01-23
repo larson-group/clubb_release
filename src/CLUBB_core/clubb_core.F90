@@ -99,7 +99,7 @@ module clubb_core
       wprcp, & 
       rtprcp, & 
       thlprcp, & 
-      pdf_parms, & 
+      pdf_params, & 
       rcp2, & 
       rsat, & 
       shear, & 
@@ -531,12 +531,12 @@ module clubb_core
            Skw_zt(k), rtm(k), rtp2_zt(k), zm2zt( wprtp, k ),       & ! intent(in)
            thlm(k), thlp2_zt(k), zm2zt( wpthlp, k ),               & ! intent(in)
            rtpthlp_zt(k), sclrm(k,:), sclr_tmp1(k,:),              & ! intent(in)
-           sclr_tmp3(k,:),sclr_tmp2(k,:), sclr_tmp4(k,:),          & ! intent(in)
+           sclr_tmp3(k,:),sclr_tmp2(k,:), sclr_tmp4(k,:), k,       & ! intent(in)
            wp4(k), wprtp2(k), wp2rtp(k),                           & ! intent(out)
            wpthlp2(k), wp2thlp(k), wprtpthlp(k),                   & ! intent(out)
            cf(k), rcm(k), wpthvp(k), wp2thvp(k), rtpthvp(k),       & ! intent(out)
            thlpthvp(k), wprcp(k), wp2rcp(k), rtprcp(k), thlprcp(k),& ! intent(out)
-           rcp2(k), pdf_parms(k, :), crt1,                         & ! intent(out)
+           rcp2(k), pdf_params, crt1,                              & ! intent(out)
            crt2, cthl1, cthl2, err_code,                           & ! intent(out)
            wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp(k,:),         & ! intent(out)
            wpsclrpthlp(k,:), sclrprcp(k,:), wp2sclrp(k,:) )          ! intent(out)
@@ -726,7 +726,7 @@ module clubb_core
     call advance_wp2_wp3 &
          ( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp,  & ! intent(in)
            um, vm, upwp, vpwp, up2, vp2, Kh_zm, Kh_zt,      & ! intent(in)
-           tau_zm, tau_zt, Skw_zm, Skw_zt, pdf_parms(:,13), & ! intent(in)
+           tau_zm, tau_zt, Skw_zm, Skw_zt, pdf_params%a,    & ! intent(in)
            wp2_zt, wp2, wp3, err_code )                       ! intent(inout)
 
     ! Wrapped LAPACK procedures may report errors, and if so, exit
@@ -829,7 +829,7 @@ module clubb_core
     !-----------------------------------------------------------------------
 
     use variables_diagnostic_module, only:  & 
-        pdf_parms,  & ! Variable(s) 
+        pdf_params,  & ! Variable(s) 
         AKm_est,  & 
         AKm, & 
         AKstd, & 
@@ -879,7 +879,7 @@ module clubb_core
 
     ! Generate LH sample, represented by X_u and X_nl, for level k
     call lh_sampler( n, nt, dvar, p_matrix,       & ! intent(in)
-                     cf(k), pdf_parms(k, :),      & ! intent(in)
+                     cf(k), pdf_params, k,        & ! intent(in)
                      crt1, crt2, cthl1, cthl2,    & ! intent(in)
                      rrainm(k),                   & ! intent(in)
                      X_u, X_nl, l_sflag )           ! intent(out)
@@ -888,7 +888,7 @@ module clubb_core
 
     ! Perform LH and analytic microphysical calculations
     call micro_calcs( n, dvar, X_u, X_nl, l_sflag,                & ! intent(in)
-                      pdf_parms(k,:),                             & ! intent(in)
+                      pdf_params, k,                              & ! intent(in)
                       AKm_est(k), AKm(k), AKstd(k), AKstd_cld(k), & ! intent(out)
                       AKm_rcm(k), AKm_rcc(k), rcm_est(k) )          ! intent(out)
 

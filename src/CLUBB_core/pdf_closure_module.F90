@@ -14,12 +14,12 @@ module pdf_closure_module
                Skw, rtm, rtp2, wprtp, & 
                thlm, thlp2, wpthlp, & 
                rtpthlp, sclrm, wpsclrp, & 
-               sclrp2, sclrprtp, sclrpthlp, & 
+               sclrp2, sclrprtp, sclrpthlp, level, & 
                wp4, wprtp2, wp2rtp, & 
                wpthlp2, wp2thlp, wprtpthlp, & 
                cf, rcm, wpthvp, wp2thvp, rtpthvp,  & 
                thlpthvp, wprcp, wp2rcp, rtprcp, thlprcp, & 
-               rcp2, pdf_parms, crt1,  & 
+               rcp2, pdf_params, crt1,  & 
                crt2, cthl1, cthl2, err_code, & 
                wpsclrprtp, wpsclrp2, sclrpthvp, & 
                wpsclrpthlp, sclrprcp, wp2sclrp )
@@ -60,21 +60,24 @@ module pdf_closure_module
       zero_threshold  
 
     use parameters_model, only: &
-      sclrtol,  & ! Array of passive scalar tolerances  [units vary]
-      sclr_dim, & ! Number of passive scalar variables
-      a_max_mag,& ! Maximum values for PDF parameter 'a'
-      T0          ! Reference temperature         [K]
+      sclrtol,   & ! Array of passive scalar tolerances  [units vary]
+      sclr_dim,  & ! Number of passive scalar variables
+      a_max_mag, & ! Maximum values for PDF parameter 'a'
+      T0           ! Reference temperature         [K]
 
     use parameters_tunable, only: & 
-      ! Variable(s)
-      beta    ! Plume widths for th_l and r_t [-]
+      beta  ! Variable(s)
+            ! Plume widths for th_l and r_t [-]
+
+    use variables_diagnostic_module, only:  &
+        pdf_parameter  ! type
 
     use anl_erf, only:  & 
-      ! Procedure(s)
-      erf ! The error function
+      erf ! Procedure(s)
+          ! The error function
 
     use numerical_check, only:  & 
-      pdf_closure_new_check ! Procedure(s)
+      pdf_closure_check ! Procedure(s)
 
     use saturation, only:  & 
       sat_mixrat_liq ! Procedure(s)
@@ -96,56 +99,59 @@ module pdf_closure_module
 
     ! Input Variables
     real, intent(in) ::  & 
-      p_in_Pa,    & ! Pressure.                     [Pa] 
-      exner,      & ! Exner function.               [-]
-      wm,         & ! mean w                        [m/s] 
-      wp2,        & ! w'^2                          [m^2/s^2] 
-      wp3,        & ! w'^3                          [m^3/s^3]
-      sigma_sqd_w,& ! Width of individual w plumes  [-]
-      Skw,        & ! Skewness of w                 [-]
-      rtm,        & ! Mean total water              [kg/kg]
-      rtp2,       & ! Total water mixing ratio      [kg/kg]
-      wprtp,      & ! w' r_t'                       [(kg m)(kg s)]
-      thlm,       & ! Mean th_l                     [K]
-      thlp2,      & ! th_l'^2                       [K^2]
-      wpthlp,     & ! w' th_l'                      [(m K)/s]
-      rtpthlp       ! r_t' th_l'                    [(K kg)/kg]
+      p_in_Pa,     & ! Pressure.                     [Pa] 
+      exner,       & ! Exner function.               [-]
+      wm,          & ! mean w                        [m/s] 
+      wp2,         & ! w'^2                          [m^2/s^2] 
+      wp3,         & ! w'^3                          [m^3/s^3]
+      sigma_sqd_w, & ! Width of individual w plumes  [-]
+      Skw,         & ! Skewness of w                 [-]
+      rtm,         & ! Mean total water              [kg/kg]
+      rtp2,        & ! Total water mixing ratio      [kg/kg]
+      wprtp,       & ! w' r_t'                       [(kg m)(kg s)]
+      thlm,        & ! Mean th_l                     [K]
+      thlp2,       & ! th_l'^2                       [K^2]
+      wpthlp,      & ! w' th_l'                      [(m K)/s]
+      rtpthlp        ! r_t' th_l'                    [(K kg)/kg]
 
     real, dimension(sclr_dim), intent(in) ::  & 
-      sclrm,      & ! Mean passive scalar        [units vary]
-      wpsclrp,    & ! w' sclr'                   [units vary]
-      sclrp2,     & ! sclr'^2                    [units vary]
-      sclrprtp,   & ! sclr' r_t'                 [units vary]
-      sclrpthlp     ! sclr' th_l'                [units vary]
+      sclrm,       & ! Mean passive scalar        [units vary]
+      wpsclrp,     & ! w' sclr'                   [units vary]
+      sclrp2,      & ! sclr'^2                    [units vary]
+      sclrprtp,    & ! sclr' r_t'                 [units vary]
+      sclrpthlp      ! sclr' th_l'                [units vary]
+
+    integer, intent(in) ::  &
+      level  ! Thermodynamic level for which calculations are taking place.
 
     ! Output Variables
 
     real, intent(out) ::  & 
-      wp4,        & ! w'^4                  [m^4/s^4]
-      wprtp2,     & ! w' r_t'               [(m kg)/(s kg)]
-      wp2rtp,     & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
-      wpthlp2,    & ! w' th_l'^2            [(m K^2)/s]
-      wp2thlp,    & ! w'^2 th_l'            [(m^2 K)/s^2]
-      cf,         & ! Cloud fraction        [%]
-      rcm,        & ! Mean liquid water     [kg/kg]
-      wpthvp,     & ! Buoyancy flux         [(K m)/s] 
-      wp2thvp,    & ! w'^2 th_v'            [(m^2 K)/s^2]
-      rtpthvp,    & ! r_t' th_v'            [(kg K)/kg]
-      thlpthvp,   & ! th_l' th_v'           [K^2]
-      wprcp,      & ! w' r_c'               [(m kg)/(s kg)]
-      wp2rcp,     & ! w'^2 r_c'             [(m^2 kg)/(s^2 kg)]
-      rtprcp,     & ! r_t' r_c'             [(kg^2)/(kg^2)]
-      thlprcp,    & ! th_l' r_c'            [(K kg)/kg]
-      rcp2,       & ! r_c'^2                [(kg^2)/(kg^2)]
-      wprtpthlp,  & ! w' r_t' th_l'         [(m kg K)/(s kg)]
-      crt1, crt2, & 
+      wp4,         & ! w'^4                  [m^4/s^4]
+      wprtp2,      & ! w' r_t'               [(m kg)/(s kg)]
+      wp2rtp,      & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
+      wpthlp2,     & ! w' th_l'^2            [(m K^2)/s]
+      wp2thlp,     & ! w'^2 th_l'            [(m^2 K)/s^2]
+      cf,          & ! Cloud fraction        [%]
+      rcm,         & ! Mean liquid water     [kg/kg]
+      wpthvp,      & ! Buoyancy flux         [(K m)/s] 
+      wp2thvp,     & ! w'^2 th_v'            [(m^2 K)/s^2]
+      rtpthvp,     & ! r_t' th_v'            [(kg K)/kg]
+      thlpthvp,    & ! th_l' th_v'           [K^2]
+      wprcp,       & ! w' r_c'               [(m kg)/(s kg)]
+      wp2rcp,      & ! w'^2 r_c'             [(m^2 kg)/(s^2 kg)]
+      rtprcp,      & ! r_t' r_c'             [(kg^2)/(kg^2)]
+      thlprcp,     & ! th_l' r_c'            [(K kg)/kg]
+      rcp2,        & ! r_c'^2                [(kg^2)/(kg^2)]
+      wprtpthlp,   & ! w' r_t' th_l'         [(m kg K)/(s kg)]
+      crt1, crt2,  & 
       cthl1, cthl2
 
-    real, intent(out), dimension(26) :: & 
-      pdf_parms       ! pdf paramters         [units vary]
+    type(pdf_parameter), intent(out) :: & 
+      pdf_params     ! pdf paramters         [units vary]
 
     integer, intent(out) :: & 
-      err_code         ! Are the outputs usable numbers?
+      err_code       ! Are the outputs usable numbers?
 
     ! Output (passive scalar variables)
 
@@ -160,17 +166,46 @@ module pdf_closure_module
     ! Local Variables 
 
     real ::  & 
-      a,                       & ! pdf parameter
-      w1, w2, sw1, sw2,        & ! pdf parameters
-      thl1, thl2,              & ! pdf parameters
-      sthl1, sthl2,            & ! pdf parameters
-      rt1, rt2,                & ! pdf parameters
-      srt1, srt2,              & ! pdf parameters 
       w1_n, w2_n 
 !     thl1_n, thl2_n, 
 !     rt1_n, rt2_n
 
+    ! Variables that are stored in derived data type pdf_params.
+    real ::  &
+      w1,        & ! Mean of w for 1st normal distribution                 [m/s]
+      w2,        & ! Mean of w for 2nd normal distribution                 [m/s]
+      sw1,       & ! Variance of w for 1st normal distribution         [m^2/s^2]
+      sw2,       & ! Variance of w for 2nd normal distribution         [m^2/s^2]
+      rt1,       & ! Mean of r_t for 1st normal distribution             [kg/kg]
+      rt2,       & ! Mean of r_t for 2nd normal distribution             [kg/kg]
+      srt1,      & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
+      srt2,      & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
+      thl1,      & ! Mean of th_l for 1st normal distribution                [K]
+      thl2,      & ! Mean of th_l for 2nd normal distribution                [K]
+      sthl1,     & ! Variance of th_l for 1st normal distribution          [K^2]
+      sthl2,     & ! Variance of th_l for 2nd normal distribution          [K^2]
+      a,         & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
+      rc1,       & ! Mean of r_c for 1st normal distribution             [kg/kg]
+      rc2,       & ! Mean of r_c for 2nd normal distribution             [kg/kg]
+      rsl1,      & ! Mean of r_sl for 1st normal distribution            [kg/kg]
+      rsl2,      & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
+      R1,        & ! Cloud fraction for 1st normal distribution              [-]
+      R2,        & ! Cloud fraction for 2nd normal distribution              [-]
+      s1,        & ! Mean of s for 1st normal distribution               [kg/kg]
+      s2,        & ! Mean of s for 2nd normal distribution               [kg/kg]
+      ss1,       & ! Standard deviation of s for 1st normal distribution [kg/kg]
+      ss2,       & ! Standard deviation of s for 2nd normal distribution [kg/kg]
+      rrtthl,    & ! Within-a-normal (sub-plume) correlation of r_t and th_l [-]
+      alpha_thl, & ! Factor relating to normalized variance for th_l         [-]
+      alpha_rt     ! Factor relating to normalized variance for r_t          [-]
+
+                   ! Note:  alpha coefficients = 0.5 * ( 1 - correlations^2 ).
+                   !        These are used to calculate the scalar widths
+                   !        sthl1, sthl2, srt1, and srt2 as in Eq. (34) of
+                   !        Larson and Golaz (2005)
+
     ! Passive scalar local variables
+
     real, dimension(sclr_dim) ::  & 
       sclr1, sclr2,  & 
       ssclr1, ssclr2, & 
@@ -184,28 +219,13 @@ module pdf_closure_module
     real ::  & 
       tl1, tl2,  & 
       beta1, beta2,  & 
-      rsl1, rsl2, & 
-      ss1, ss2, & 
-      s1, s2,  & 
-      zeta1, zeta2, & 
-      rc1, rc2,  & 
-      R1, R2
+      zeta1, zeta2
 
     real :: sqrt_wp2
-
-    ! Sub-plume correlation coefficient between rt, thl
-    ! varies between -1 < rrtthl < 1
-
-    real :: rrtthl
 
     ! Thermodynamic quantity
 
     real :: BD
-
-    ! alpha coefficients = 0.5 * ( 1 - correlations^2 ).
-    !    These are used to calculate the scalar widths 
-    ! sthl1, sthl2, srt1, and srt2 as in Eq. (34) of Larson and Golaz (2005)
-    real :: alpha_thl, alpha_rt
 
     ! variables for a generalization of Chris Golaz' closure
     ! varies width of plumes in theta_l, rt
@@ -671,42 +691,42 @@ module pdf_closure_module
     end if
 
 
-    ! Save pdf parameters
+    ! Save PDF parameters
+    pdf_params%w1(level)        = w1
+    pdf_params%w2(level)        = w2
+    pdf_params%sw1(level)       = sw1
+    pdf_params%sw2(level)       = sw2
+    pdf_params%rt1(level)       = rt1
+    pdf_params%rt2(level)       = rt2
+    pdf_params%srt1(level)      = srt1
+    pdf_params%srt2(level)      = srt2
+    pdf_params%thl1(level)      = thl1
+    pdf_params%thl2(level)      = thl2
+    pdf_params%sthl1(level)     = sthl1
+    pdf_params%sthl2(level)     = sthl2
+    pdf_params%a(level)         = a
+    pdf_params%rc1(level)       = rc1
+    pdf_params%rc2(level)       = rc2
+    pdf_params%rsl1(level)      = rsl1
+    pdf_params%rsl2(level)      = rsl2
+    pdf_params%R1(level)        = R1
+    pdf_params%R2(level)        = R2
+    pdf_params%s1(level)        = s1
+    pdf_params%s2(level)        = s2
+    pdf_params%ss1(level)       = ss1
+    pdf_params%ss2(level)       = ss2
+    pdf_params%rrtthl(level)    = rrtthl
+    pdf_params%alpha_thl(level) = alpha_thl
+    pdf_params%alpha_rt(level)  = alpha_rt
 
-    pdf_parms(1)  = w1
-    pdf_parms(2)  = w2
-    pdf_parms(3)  = sw1
-    pdf_parms(4)  = sw2
-    pdf_parms(5)  = rt1
-    pdf_parms(6)  = rt2
-    pdf_parms(7)  = srt1
-    pdf_parms(8)  = srt2
-    pdf_parms(9)  = thl1
-    pdf_parms(10) = thl2
-    pdf_parms(11) = sthl1
-    pdf_parms(12) = sthl2
-    pdf_parms(13) = a
-    pdf_parms(14) = rc1
-    pdf_parms(15) = rc2
-    pdf_parms(16) = rsl1
-    pdf_parms(17) = rsl2
-    pdf_parms(18) = R1
-    pdf_parms(19) = R2
-    pdf_parms(20) = s1
-    pdf_parms(21) = s2
-    pdf_parms(22) = ss1
-    pdf_parms(23) = ss2
-    pdf_parms(24) = rrtthl
-    pdf_parms(25) = alpha_thl
-    pdf_parms(26) = alpha_rt
 
     if ( clubb_at_least_debug_level( 2 ) ) then 
-      call pdf_closure_new_check & 
+      call pdf_closure_check & 
            ( wp4, wprtp2, wp2rtp, wpthlp2, & 
              wp2thlp, cf, rcm, wpthvp, wp2thvp, & 
              rtpthvp, thlpthvp, wprcp, wp2rcp, & 
              rtprcp, thlprcp, rcp2, wprtpthlp, & 
-             crt1, crt2, cthl1, cthl2, pdf_parms, & 
+             crt1, crt2, cthl1, cthl2, pdf_params, level, &
              err_code, & 
              sclrpthvp, sclrprcp, wpsclrp2, & 
              wpsclrprtp, wpsclrpthlp, wp2sclrp )
@@ -742,6 +762,8 @@ module pdf_closure_module
           write(fstderr,*) "sclrpthlp = ", sclrpthlp
         end if
 
+        write(fstderr,*) "level = ", level
+
         write(fstderr,*) "Intent(out)"
   
         write(fstderr,*) "wp4 = ", wp4
@@ -764,7 +786,32 @@ module pdf_closure_module
         write(fstderr,*) "crt2 = ", crt2
         write(fstderr,*) "cthl1 = ", cthl1
         write(fstderr,*) "cthl2 = ", cthl2
-        write(fstderr,*) "pdf_parms = ", pdf_parms
+        write(fstderr,*) "pdf_params%w1 = ", pdf_params%w1(level)
+        write(fstderr,*) "pdf_params%w2 = ", pdf_params%w2(level)
+        write(fstderr,*) "pdf_params%sw1 = ", pdf_params%sw1(level)
+        write(fstderr,*) "pdf_params%sw2 = ", pdf_params%sw2(level)
+        write(fstderr,*) "pdf_params%rt1 = ", pdf_params%rt1(level)
+        write(fstderr,*) "pdf_params%rt2 = ", pdf_params%rt2(level)
+        write(fstderr,*) "pdf_params%srt1 = ", pdf_params%srt1(level)
+        write(fstderr,*) "pdf_params%srt2 = ", pdf_params%srt2(level)
+        write(fstderr,*) "pdf_params%thl1 = ", pdf_params%thl1(level)
+        write(fstderr,*) "pdf_params%thl2 = ", pdf_params%thl2(level)
+        write(fstderr,*) "pdf_params%sthl1 = ", pdf_params%sthl1(level)
+        write(fstderr,*) "pdf_params%sthl2 = ", pdf_params%sthl2(level)
+        write(fstderr,*) "pdf_params%a = ", pdf_params%a(level)
+        write(fstderr,*) "pdf_params%rrtthl = ", pdf_params%rrtthl(level)
+        write(fstderr,*) "pdf_params%rc1 = ", pdf_params%rc1(level)
+        write(fstderr,*) "pdf_params%rc2 = ", pdf_params%rc2(level)
+        write(fstderr,*) "pdf_params%rsl1 = ", pdf_params%rsl1(level)
+        write(fstderr,*) "pdf_params%rsl2 = ", pdf_params%rsl2(level)
+        write(fstderr,*) "pdf_params%R1 = ", pdf_params%R1(level)
+        write(fstderr,*) "pdf_params%R2 = ", pdf_params%R2(level)
+        write(fstderr,*) "pdf_params%s1 = ", pdf_params%s1(level)
+        write(fstderr,*) "pdf_params%s2 = ", pdf_params%s2(level)
+        write(fstderr,*) "pdf_params%ss1 = ", pdf_params%ss1(level)
+        write(fstderr,*) "pdf_params%ss2 = ", pdf_params%ss2(level)
+        write(fstderr,*) "pdf_params%alpha_thl = ", pdf_params%alpha_thl(level)
+        write(fstderr,*) "pdf_params%alpha_rt = ", pdf_params%alpha_rt(level)
 
         if ( sclr_dim > 0 )then
           write(fstderr,*) "sclrpthvp = ", sclrpthvp
