@@ -6,11 +6,11 @@ FC=g95
 LD=g95
 
 # Define path to directories
-dir="$HOME/clubb/compile" # dir where this script resides
-bindir="$HOME/clubb/bin"  # dir for Makefile and executable
-objdir="$HOME/clubb/obj"  # dir for *.o and *.mod files
-libdir="$HOME/clubb/lib"  # dir for *.a library files
-srcdir="$HOME/clubb/src"  # dir where the source files reside
+dir=`pwd` # dir where this script resides
+bindir="$dir/../bin"  # dir for Makefile and executable
+objdir="$dir/../obj"  # dir for *.o and *.mod files
+libdir="$dir/../lib"  # dir for *.a library files
+srcdir="$dir/../src"  # dir where the source files reside
 
 
 # It is sometimes helpful to turn on floating-point trapping for the 
