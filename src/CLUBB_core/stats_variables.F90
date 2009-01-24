@@ -163,34 +163,36 @@ module stats_variables
 
   ! Rain mixing ratio budgets
   integer, public :: & 
-     irrainm_bt, & 
-     irrainm_ma, & 
-     irrainm_sd, & 
-     irrainm_dff, & 
-     irrainm_cond, & 
-     irrainm_auto, & 
-     irrainm_accr, & 
-     irrainm_cond_adj, & 
-     irrainm_mc, & 
+     irrainm_bt, &
+     irrainm_ma, &
+     irrainm_sd, &
+     irrainm_dff, &
+     irrainm_cond, &
+     irrainm_auto, &
+     irrainm_accr, &
+     irrainm_cond_adj, &
+     irrainm_src_adj, &
+     irrainm_mc, &
      irrainm_cl
 
-!$omp   threadprivate(irrainm_bt, irrainm_ma, irrainm_sd, irrainm_dff, irrainm_cond)
-!$omp   threadprivate(irrainm_auto, irrainm_accr, irrainm_cond_adj, irrainm_mc)
-!$omp   threadprivate(irrainm_cl)
+!$omp   threadprivate(irrainm_bt, irrainm_ma, irrainm_sd, irrainm_dff)
+!$omp   threadprivate(irrainm_cond, irrainm_auto, irrainm_accr)
+!$omp   threadprivate(irrainm_cond_adj, irrainm_src_adj, irrainm_mc, irrainm_cl)
 
-  integer, public :: & 
-     iNrm_bt, & 
-     iNrm_ma, & 
-     iNrm_sd, & 
-     iNrm_dff, & 
-     iNrm_cond, & 
-     iNrm_auto, & 
-     iNrm_cond_adj, & 
-     iNrm_mc, & 
+  integer, public :: &
+     iNrm_bt, &
+     iNrm_ma, &
+     iNrm_sd, &
+     iNrm_dff, &
+     iNrm_cond, &
+     iNrm_auto, &
+     iNrm_cond_adj, &
+     iNrm_src_adj, &
+     iNrm_mc, &
      iNrm_cl
 
 !$omp   threadprivate(iNrm_bt, iNrm_ma, iNrm_sd, iNrm_dff, iNrm_cond)
-!$omp   threadprivate(iNrm_auto, iNrm_cond_adj, iNrm_mc, iNrm_cl)
+!$omp   threadprivate(iNrm_auto, iNrm_cond_adj, iNrm_src_adj, iNrm_mc, iNrm_cl)
 
 
   ! Snow/Ice/Graupel mixing ratio budgets

@@ -107,6 +107,7 @@ use stats_variables, only: &
     irrainm_auto, & 
     irrainm_accr, & 
     irrainm_cond_adj, & 
+    irrainm_src_adj, & 
     irrainm_mc, & 
     irrainm_cl, & 
     iNrm_bt, & 
@@ -116,6 +117,7 @@ use stats_variables, only: &
     iNrm_cond, & 
     iNrm_auto, & 
     iNrm_cond_adj, & 
+    iNrm_src_adj, & 
     iNrm_mc, & 
     iNrm_cl, & 
     irsnowm_bt, & 
@@ -304,6 +306,7 @@ irrainm_cond     = 0
 irrainm_auto     = 0
 irrainm_accr     = 0
 irrainm_cond_adj = 0
+irrainm_src_adj  = 0
 irrainm_mc       = 0
 irrainm_cl       = 0
 
@@ -314,6 +317,7 @@ iNrm_dff      = 0
 iNrm_cond     = 0
 iNrm_auto     = 0
 iNrm_cond_adj = 0
+iNrm_src_adj  = 0
 iNrm_mc       = 0
 iNrm_cl       = 0
 
@@ -966,6 +970,14 @@ do i=1,zt%nn
          "(kg/kg)/(s)",zt)
     k = k + 1
  
+  case ('rrainm_src_adj')
+    irrainm_src_adj = k
+
+    call stat_assign(irrainm_src_adj,"rrainm_src_adj", & 
+         "rrainm source term adjustment due to over-depletion of cloud water", &
+         "(kg/kg)/(s)",zt)
+    k = k + 1
+ 
   case ('rrainm_mc')
     irrainm_mc = k
 
@@ -1030,6 +1042,14 @@ do i=1,zt%nn
 
     call stat_assign(iNrm_cond_adj,"Nrm_cond_adj", & 
          "Nrm cond/evap adjustment due to over-evaporation", & 
+         "(count/kg)/s",zt)
+    k = k + 1
+ 
+  case ('Nrm_src_adj')
+    iNrm_src_adj = k
+
+    call stat_assign(iNrm_src_adj,"Nrm_src_adj", & 
+         "Nrm source term adjustment due to over-depletion of cloud water", &
          "(count/kg)/s",zt)
     k = k + 1
  

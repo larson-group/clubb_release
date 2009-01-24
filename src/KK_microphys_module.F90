@@ -1,15 +1,15 @@
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 ! $Id$
-
+!===============================================================================
 module KK_microphys_module
 
-!     Description:
-!     Functions and subroutines for the Khairoutdinov & Kogan
-!     rain parameterization.
+  ! Description:
+  ! Functions and subroutines for the Khairoutdinov & Kogan
+  ! rain parameterization.
 
-!     References:
-!     None
-!----------------------------------------------------------------------
+  ! References:
+  ! None
+  !---------------------------------------------------------------------
 
   implicit none
 
@@ -17,21 +17,14 @@ module KK_microphys_module
   private :: mean_volume_radius, cond_evap_rrainm, cond_evap_Nrm
   private :: autoconv_rrainm, autoconv_Nrm, accretion_rrainm
   PRIVATE :: G_T_p
-!      PRIVATE :: PDF_TRIVAR_2G_LN_LN, PDF_BIVAR_2G_LN, PDF_BIVAR_LN_LN
+  ! PRIVATE :: PDF_TRIVAR_2G_LN_LN, PDF_BIVAR_2G_LN, PDF_BIVAR_LN_LN
   PRIVATE :: Dv_fnc
 
   PRIVATE ! Set default scope
 
-! Statistical rain parameters	.
-! Old parameterization.
-!      REAL, PARAMETER:: rrp2_rrainm2 = 1.2
-!      REAL, PARAMETER:: Nrp2_Nrm2 = 1.0
-!      REAL, PARAMETER:: Ncp2_Ncm2 = 0.07
-!      REAL, PARAMETER:: corr_rrNr_LL =  0.85
-!      REAL, PARAMETER:: corr_srr_NL =  0.10
-!      REAL, PARAMETER:: corr_sNr_NL = -0.15
-!      REAL, PARAMETER:: corr_sNc_NL =  0.45
-! Parameters for in-cloud (from SAM RF02 DO).
+  ! Statistical rain parameters	.
+
+  ! Parameters for in-cloud (from SAM RF02 DO).
   REAL, PARAMETER:: rrp2_rrainm2_cloud = 0.766
   REAL, PARAMETER:: Nrp2_Nrm2_cloud = 0.429
   REAL, PARAMETER:: Ncp2_Ncm2_cloud = 0.003
@@ -39,7 +32,7 @@ module KK_microphys_module
   REAL, PARAMETER:: corr_srr_NL_cloud = 0.242
   REAL, PARAMETER:: corr_sNr_NL_cloud = 0.285
   REAL, PARAMETER:: corr_sNc_NL_cloud = 0.433
-! Parameters for below-cloud (from SAM RF02 DO).
+  ! Parameters for below-cloud (from SAM RF02 DO).
   REAL, PARAMETER:: rrp2_rrainm2_below = 8.97
   REAL, PARAMETER:: Nrp2_Nrm2_below = 12.03
   REAL, PARAMETER:: Ncp2_Ncm2_below = 0.00 ! Not applicable below cloud.
@@ -47,49 +40,51 @@ module KK_microphys_module
   REAL, PARAMETER:: corr_srr_NL_below = 0.056
   REAL, PARAMETER:: corr_sNr_NL_below = 0.015
   REAL, PARAMETER:: corr_sNc_NL_below = 0.00 ! Not applicable below cloud.
-  REAL, PARAMETER:: C_evap = 0.86    ! Khairoutdinov and Kogan (2000)
-  ! ratio of drizzle drop mean
-  ! geometric radius to drizzle drop
-  ! mean volume radius. Khairoutdinov
-  ! and Kogan (2000); p. 233.
-!REAL, PARAMETER:: C_evap = 0.86*0.2 ! COAMPS value of KK C_evap
-!REAL, PARAMETER:: C_evap = 0.55    ! KK 2000, Marshall-Palmer (1948) value.
-! Vince Larson set r_0=28mum to agree with COAMPS-LES formula. 15 April 2005
+  ! Other needed parameters
+  REAL, PARAMETER:: C_evap = 0.86    ! Khairoutdinov and Kogan (2000) ratio of
+                                     ! drizzle drop mean geometric radius to
+                                     ! drizzle drop mean volume radius.
+                                     ! Khairoutdinov and Kogan (2000); p. 233.
+  !REAL, PARAMETER:: C_evap = 0.86*0.2 ! COAMPS value of KK C_evap
+  !REAL, PARAMETER:: C_evap = 0.55     ! KK 2000, Marshall-Palmer (1948) value.
+
   REAL, PARAMETER:: r_0 = 25.0e-6   ! Assumed radius of all new drops; m.
-  ! Value specified in KK (2000); p. 235.
-!REAL, PARAMETER:: r_0 = 28.0e-6   ! Assumed radius of all new drops; m.
-!                                  ! Value that COAMPS LES has in it.
-!REAL, PARAMETER:: r_0 = 30.0e-6   ! Assumed radius of all new drops; m.
-!                                  ! Khairoutdinov said it was okay!
-! End Vince Larson's change.
+                                    ! Value specified in KK (2000); p. 235.
+  ! Vince Larson set r_0=28mum to agree with COAMPS-LES formula. 15 April 2005
+  !REAL, PARAMETER:: r_0 = 28.0e-6   ! Assumed radius of all new drops; m.
+  !                                  ! Value that COAMPS LES has in it.
+  !REAL, PARAMETER:: r_0 = 30.0e-6   ! Assumed radius of all new drops; m.
+  !                                  ! Khairoutdinov said it was okay!
+  ! End Vince Larson's change.
 
-!!!!!!! COMMENTS FOR RICO MARINE CUMULUS CASE
-!!!!!!! In order to correctly run the RICO case, the parameters above
-!!!!!!! need to be changed.  You should comment these in and
-!!!!!!! comment the above copies out.  These are the constants needed to
-!!!!!!! run the RICO case, as I did in my case rico0206, submitted:
-!      REAL, PARAMETER:: rrp2_rrainm2_cloud = 30.
-!      REAL, PARAMETER:: Nrp2_Nrm2_cloud = 10.
-!      REAL, PARAMETER:: Ncp2_Ncm2_cloud = 60.
-!      REAL, PARAMETER:: corr_rrNr_LL_cloud = 0.8
-!      REAL, PARAMETER:: corr_srr_NL_cloud = 0.25
-!      REAL, PARAMETER:: corr_sNr_NL_cloud = 0.3
-!      REAL, PARAMETER:: corr_sNc_NL_cloud = 0.24
+  !!!!!!! COMMENTS FOR RICO MARINE CUMULUS CASE
+  !!!!!!! In order to correctly run the RICO case, the parameters above
+  !!!!!!! need to be changed.  You should comment these in and
+  !!!!!!! comment the above copies out.  These are the constants needed to
+  !!!!!!! run the RICO case, as I did in my case rico0206, submitted:
+  !REAL, PARAMETER:: rrp2_rrainm2_cloud = 30.
+  !REAL, PARAMETER:: Nrp2_Nrm2_cloud = 10.
+  !REAL, PARAMETER:: Ncp2_Ncm2_cloud = 60.
+  !REAL, PARAMETER:: corr_rrNr_LL_cloud = 0.8
+  !REAL, PARAMETER:: corr_srr_NL_cloud = 0.25
+  !REAL, PARAMETER:: corr_sNr_NL_cloud = 0.3
+  !REAL, PARAMETER:: corr_sNc_NL_cloud = 0.24
 
-!      REAL, PARAMETER:: rrp2_rrainm2_below = 20.
-!      REAL, PARAMETER:: Nrp2_Nrm2_below = 2.
-!      REAL, PARAMETER:: Ncp2_Ncm2_below = 0.
-!      REAL, PARAMETER:: corr_rrNr_LL_below = 0.78
-!      REAL, PARAMETER:: corr_srr_NL_below = 0.
-!      REAL, PARAMETER:: corr_sNr_NL_below = 0.
-!      REAL, PARAMETER:: corr_sNc_NL_below = 0.
+  !REAL, PARAMETER:: rrp2_rrainm2_below = 20.
+  !REAL, PARAMETER:: Nrp2_Nrm2_below = 2.
+  !REAL, PARAMETER:: Ncp2_Ncm2_below = 0.
+  !REAL, PARAMETER:: corr_rrNr_LL_below = 0.78
+  !REAL, PARAMETER:: corr_srr_NL_below = 0.
+  !REAL, PARAMETER:: corr_sNr_NL_below = 0.
+  !REAL, PARAMETER:: corr_sNc_NL_below = 0.
 
-!      REAL, PARAMETER:: C_evap = 0.5
-!      REAL, PARAMETER:: r_0 = 100.0e-6
-!!!!!!! END RICO COMMENTS, Michael Falk, 27-28 November 2007
+  !REAL, PARAMETER:: C_evap = 0.5
+  !REAL, PARAMETER:: r_0 = 100.0e-6
+  !!!!!!! END RICO COMMENTS, Michael Falk, 27-28 November 2007
 
   CONTAINS
 
+  !=============================================================================
   subroutine KK_microphys & 
              ( dt, T_in_K, p_in_Pa, exner, rho,  & 
                thl1, thl2, a, rc1, rc2, s1, & 
@@ -98,19 +93,19 @@ module KK_microphys_module
                rrainm_mc_tndcy, Nrm_mc_tndcy,  & 
                hm_rt_tndcy, hm_thl_tndcy, & 
                Vrr, VNr )
-!       Description:
-!       This uses the code from Brian Griffin's old subroutine rain
-!       and computes microphysical tendencies and fall speeds
-!       per se rather than adding in the effects of diffusion, advection,
-!       and sedimentation.  This is for the purpose of generalizing the
-!       code to use different microphysical schemes with the same
-!       diffusion, advection, and sedimentation code.
 
-!       References:
-!       ``A New Cloud Physics Parameterization in a Large-Eddy Simulation
-!         Model of Marine Stratocumulus''  Khairoutdinov and Kogan. (2000)
-!       Monthly Weather Review, Volume 128, Issue 1 pp. 229–-243
-!----------------------------------------------------------------------
+    ! Description:
+    ! This uses the code from Brian Griffin's old subroutine rain and computes
+    ! microphysical tendencies and fall speeds per se rather than adding in the
+    ! effects of diffusion, advection, and sedimentation.  This is for the
+    ! purpose of generalizing the code to use different microphysical schemes
+    ! with the same diffusion, advection, and sedimentation code.
+
+    ! References:
+    ! ``A New Cloud Physics Parameterization in a Large-Eddy Simulation
+    !   Model of Marine Stratocumulus''  Khairoutdinov and Kogan. (2000)
+    ! Monthly Weather Review, Volume 128, Issue 1 pp. 229–-243
+    !-------------------------------------------------------------------
 
     use model_flags, only: & 
         l_LH_on ! Variable(s)
@@ -141,77 +136,75 @@ module KK_microphys_module
 
     use stats_variables, only: & 
         zt,   & ! Variable(s)
-        imean_vol_rad_rain, & 
-        irrainm_cond, & 
-        irrainm_auto, & 
-        irrainm_accr, & 
-        iNrm_cond, & 
-        iNrm_auto, & 
+        imean_vol_rad_rain, &
+        irrainm_cond, &
+        irrainm_auto, &
+        irrainm_accr, &
+        irrainm_src_adj, &
+        iNrm_cond, &
+        iNrm_auto, &
+        iNrm_src_adj, &
         l_stats_samp
 
     implicit none
 
-
-    ! Input
+    ! Input Variables
     real(kind=time_precision), intent(in) ::  &
-    dt            ! Model time step length             [s]
+      dt            ! Model time step length             [s]
 
     real, intent(in), dimension(gr%nnzp) :: & 
-    T_in_K,     & ! Temperature                        [K]
-    p_in_Pa,    & ! Pressure                           [Pa]
-    exner,      & ! Exner function                     [-]
-    rho,        & ! Density on thermo. grid            [kg/m^3]
-    thl1, thl2, & ! PDF parameters thl1 &thl2          [K]
-    a,          & ! PDF parameter a                    [-]
-    s1, s2,     & ! PDF parameters s1 & s2             [kg/kg]
-    ss1, ss2,   & ! PDF parameters ss1 & ss2           [kg/kg]
-    rc1, rc2,   & ! PDF parameters rc1 & rc2           [kg/kg]
-    rcm,        & ! Cloud water mixing ratio           [kg/kg]
-    Ncm,        & ! Cloud droplet number conc.         [number/kg]
-    rrainm,     & ! Rain water mixing ratio            [kg/kg]
-    Nrm           ! Rain drop number conc.             [number/kg]
+      T_in_K,     & ! Temperature                        [K]
+      p_in_Pa,    & ! Pressure                           [Pa]
+      exner,      & ! Exner function                     [-]
+      rho,        & ! Density on thermo. grid            [kg/m^3]
+      thl1, thl2, & ! PDF parameters thl1 &thl2          [K]
+      a,          & ! PDF parameter a                    [-]
+      s1, s2,     & ! PDF parameters s1 & s2             [kg/kg]
+      ss1, ss2,   & ! PDF parameters ss1 & ss2           [kg/kg]
+      rc1, rc2,   & ! PDF parameters rc1 & rc2           [kg/kg]
+      rcm,        & ! Cloud water mixing ratio           [kg/kg]
+      Ncm,        & ! Cloud droplet number conc.         [number/kg]
+      rrainm,     & ! Rain water mixing ratio            [kg/kg]
+      Nrm           ! Rain drop number conc.             [number/kg]
 
     ! Latin hypercube variables - Vince Larson 22 May 2005
     real, intent(in), dimension(gr%nnzp) ::  & 
-    Akm      ! Latin hypercube estimate of Kessler autoconversion
+      Akm      ! Latin hypercube estimate of Kessler autoconversion
 
     logical, intent(in) :: & 
-    l_sample ! Whether to sample stats for this call
+      l_sample ! Whether to sample stats for this call
 
     ! Output
     real, intent(out), dimension(gr%nnzp) ::  & 
-    Vrr,          & ! Mean sedimentation velocity of rrainm       [m/s]    
-    VNr,          & ! Mean sedimentation velocity of Nrm       [m/s]
-    rrainm_mc_tndcy, & ! Rain water microphysical tendency        [(kg/kg)/s]
-    Nrm_mc_tndcy, & ! Rain drop number conc. micro. tend.      [(num/kg)/s]
-    hm_rt_tndcy,  & ! Contributions to total water from micro. [(kg/kg)/s]
-    hm_thl_tndcy ! Contributions to theta_l from micro.     [K/s]
+      Vrr,          &    ! Mean sedimentation velocity of rrainm    [m/s]    
+      VNr,          &    ! Mean sedimentation velocity of Nrm       [m/s]
+      rrainm_mc_tndcy, & ! Rain water microphysical tendency        [(kg/kg)/s]
+      Nrm_mc_tndcy, &    ! Rain drop number conc. micro. tend.      [(num/kg)/s]
+      hm_rt_tndcy,  &    ! Contributions to total water from micro. [(kg/kg)/s]
+      hm_thl_tndcy       ! Contributions to theta_l from micro.     [K/s]
 
     ! Local variables
     real, dimension(gr%nnzp) ::  & 
-    rrainm_cond,     & ! Change in rrainm due to condensation        [(kg/kg)/s]
-    rrainm_auto,     & ! Change in rrainm due to autoconversion      [(kg/kg)/s]
-    rrainm_accr,     & ! Change in rrainm due to accretion           [(kg/kg)/s]
-    Nrm_cond,     & ! Change in Nrm due to condensation        [(num/kg)/s]
-    Nrm_auto,     & ! Change in Nrm due to autoconversion      [(num/kg)/s]
-    mean_vol_rad, & ! Mean volume radius                       [m]
-!     .  rvm,         ! Water vapor mixing ratio                 [kg/kg]
-!     .  esat,          ! Saturation vapor pressure                [Pa]
-    Supsat,       & ! Supersaturation                          [-]
-    rsat          ! Saturation mixing ratio                  [kg/kg]
+      rrainm_cond,  & ! Change in rrainm due to condensation     [(kg/kg)/s]
+      rrainm_auto,  & ! Change in rrainm due to autoconversion   [(kg/kg)/s]
+      rrainm_accr,  & ! Change in rrainm due to accretion        [(kg/kg)/s]
+      Nrm_cond,     & ! Change in Nrm due to condensation        [(num/kg)/s]
+      Nrm_auto,     & ! Change in Nrm due to autoconversion      [(num/kg)/s]
+      mean_vol_rad, & ! Mean volume radius                       [m]
+      Supsat,       & ! Supersaturation                          [-]
+      rsat            ! Saturation mixing ratio                  [kg/kg]
 
     real, dimension(gr%nnzp) ::  & 
-    rrp2_rrainm2,    & ! rrp2/rrainm^2               []
-    Nrp2_Nrm2,    & ! Nrp2/Nrm^2               []
-    Ncp2_Ncm2,    & ! Ncp2/Ncm^2               []
-    corr_rrNr_LL, & ! Correlation of rr and Nr []
-    corr_srr_NL,  & ! Correlation of s and rr  []
-    corr_sNr_NL,  & ! Correlation of s and Nr  []
-    corr_sNc_NL  ! Correlation of s and Nc  []
+      rrp2_rrainm2, & ! rrp2/rrainm^2            []
+      Nrp2_Nrm2,    & ! Nrp2/Nrm^2               []
+      Ncp2_Ncm2,    & ! Ncp2/Ncm^2               []
+      corr_rrNr_LL, & ! Correlation of rr and Nr []
+      corr_srr_NL,  & ! Correlation of s and rr  []
+      corr_sNr_NL,  & ! Correlation of s and Nr  []
+      corr_sNc_NL     ! Correlation of s and Nc  []
 
     real ::  & 
-!     .  e,      ! Vapor pressure                [Pa]
-    Beta_T  ! Beta_T                        [kg/kg]
+      Beta_T          ! Beta_T                   [kg/kg]
 
     real ::  &
       rrainm_source,     & ! Total source term rate for rrainm     [(kg/kg)/s]
@@ -228,142 +221,51 @@ module KK_microphys_module
     ! Array indices
     integer :: k
 
-! DESCRIPTION:
-!
-! This subroutine computes microphysical contributions of
-! the new rain water mixing ratio, rr.
-! It computes it according to the equation:
-!
-! drr/dt(explicit) = (drr/dt)cond + (drr/dt)auto + (drr/dt)accr
-!
-! It also computes Vrr, which is applied to the LHS of the tridiagonal
-! system in subroutine timestep_microphys like so:
-!
-! drr/dt(implicit) = -w*(drr/dz) + Vrr*(drr/dz) + (K+nu_r)*(d2rr/dz2)
-!
-! where Vrr is the mean sedimentation velocity of the rain drops.  It
-! is determined by Vrr = 0.012*rvr - 0.2, with Vrr in m/s and rvr, the
-! rain drop mean volume radius, in um.  In turn the rain drop mean
-! volume radius is given by the following equation:
-!
-! rvr = [(4*PI*rho_lw)/(3*rho)]^(-1/3) * rr^(1/3) * NrV^(-1/3);
-!
-! where NrV is the rain drop concentration (num/m^3).  rvr is given in
-! meters.
-!
-! It is important to note that a one-sided upwind advection scheme is used
-! for sedimentation velocity, with Vrr being from the level above the level
-! which is being dealt with.  This will increase the diffusivity of the
-! model.
-!
-! For the other terms:
-!
-! (drr/dt)cond =
-!      3*Cevap*G(T,p)*[(4*PI*rho_lw)/(3*rho)]^(2/3) * rr^(1/3) * NrV^(2/3) * S
-!
-! G(T,p) = 1/(Fk + Fd); where
-!
-! Fk = [Lv/(Rv*T) - 1]*(Lv*rho_lw)/(Ka*T)
-! Fd = (rho_lw*Rv*T)/(Dv*esat(T))
-!
-! Ka is the Coefficient of Thermal Conductivity of Air, and Dv is the
-! Coefficient of Diffusion of Water Vapor in Air.
-!
-! (drr/dt)auto = 1350 * rc^2.47 * NcV^-1.79;
-!
-! with cloud drop concentration in (num/cm^3) for this particular calculation.
-!
-! (drr/dt)accr = 67*(rc*rr)^1.15
-!
-! The problem is solved by moving around some terms to result in the following
-! equation:
-!
-! drr/dt + w*(drr/dz) - Vrr*(drr/dz) - nu_r*(d2rr/dz2)
-!                      = (drr/dt)cond + (drr/dt)auto + (drr/dt)accr
-!
-! The equation is then broken down as following:
-! (n is the current timestep; n+1 is the next timestep;
-! k is the vertical level).
-!
-! rr(n+1,k)/dt
-! + w(n,k)*(rr(n+1,k+1)-rr(n+1,k-1))/(del_zm(n+1,k)-del_zm(n+1,k-1))
-! - Vr(n,k+1)*(rr(n+1,k+1)-rr(n+1,k))/(del_zm(n+z,k))
-! + nu_r*(1/del_zt(n+1,k))
-!      * [  (rr(n+1,k+1)-rr(n+1,k))/del_zm(n+1,k)
-!         - (rr(n+1,k)-rr(n+1,k-1))/del_zm(n+1,k-1)   ]
-! = rr(n,k)/dt + (drr/dt)cond + (drr/dt)auto + (drr/dt)accr
-!
-! The equation is then broken down into a matrix:
-!
-! LHS*rr = RHS
-!
-! A tridiagonal matrix is used, with
-! subdiagonal aa that deals with rr(n+1,k-1) terms,
-! main diagonal bb that deals with rr(n+1,k) terms,
-! superdiagonal cc that deals with rr(n+1,k+1) terms, and
-! dd, which is the right-hand side matrix with rr(n,k) terms.
-!
-! IMPORTANT NOTES
-!
-! The equations for mean volume radius (and therefore sedimentation
-! velocity), condensation/evaporation, autoconversion, and accretion
-! stated above are all equations from Khairoutdinov and Kogan (2000).
-! These are called the "local" equations, because they show the local
-! value at a grid point with high resolution.  These equations would
-! be used in a LES model.  HOC is a one-dimensional model that uses
-! a Probability Density Function (PDF) to determine variance of values
-! in the horizontal directions.  When put into any 3-dimensional
-! model, HOC can use the PDF to show the subgrid variability of many
-! values.  In order to determine rainfall due to subgrid variability,
-! one needs to put Khairoutdinov and Kogan equations into a PDF
-! form.  Here is a brief description.
-!
-! a) Mean Volume Radius (and therefore sedimentation velocity) uses a
-!    bivariate lognormal distribution because the factors that make it
-!    up (rr and Nr) are both distributed lognormally.
-!
-! b) Condensation/evaporation uses a single normal-lognormal-lognormal
-!    PDF due to the fact that supersaturation, S, (one value that makes
-!    it up) follows a truncated double Gaussian, rr (another factor that
-!    makes it up) follows a single lognormal distribution, and Nr (the
-!    last factor that makes it up) also follows a single lognormal
-!    distribution.
-!
-! c) Autoconversion uses a single normal-lognormal PDF due to the fact
-!    that rc (one factor that makes it up) follows a truncated double
-!    Gaussian and Nc (the other factor that makes it up) follows a
-!    single lognormal distribution.
-!
-! d) Accretion uses a single normal-lognormal PDF due to the fact
-!    that rc (one factor that makes it up) follows a truncated double
-!    Gaussian and rr (the other factor that makes it up) follows a
-!    single lognormal distribution.
-!
-! The above PDF-ed Khairoutdinov and Kogan equations are used for the
-! "non-local" formula, which is the one used in HOC.
-!
-! This subroutine also solves for rain drop number concentration (num/m^3)
-! using the exact same formula as noted in this description.  The left-hand
-! side of the equation is exactly the same as for rr, except for the fact
-! that VNr is used instead of Vrr.  VNr also uses the mean volume radius
-! for it's calculation.  The equation is VNr = 0.007*rvr - 0.1, with VNr
-! in m/s and rvr in micrometers.  The right-hand side of the Nr equation
-! only contains terms for time tendency, condensation/evaporation, and
-! autoconversion.
-!
-! (dNrV/dt)cond = (NrV/rr) * (drr/dt)cond
-!
-! (dNrV/dt)auto = (drr/dt)auto / ( [(4*PI*rho_lw)/(3*rho)] * r_o^3 )
-!
-! where r_o is the assumed radius of all newly-formed rain droplets (m).
-! It is given a value of 25 um.
-!
-! This information is plugged into the tridiagonal matrix in order to
-! solve for NrV at the next timestep.
-!
-! Description and notes written by Brian Griffin.
-!
-! Changes for KK_microphys -dschanen 14 Feb 2007
+    ! IMPORTANT NOTES
+    !
+    ! The equations for mean volume radius (and therefore sedimentation
+    ! velocity), condensation/evaporation, autoconversion, and accretion stated
+    ! above are all equations from Khairoutdinov and Kogan (2000).  These are
+    ! called the "local" equations, because they show the local value at a grid
+    ! point with high resolution.  These equations would be used in a LES model.
+    ! CLUBB is a one-dimensional model that uses a Probability Density Function
+    ! (PDF) to determine variance of values in the horizontal directions.  When
+    ! put into any 3-dimensional model, HOC can use the PDF to show the subgrid
+    ! variability of many values.  In order to determine rainfall due to subgrid
+    ! variability, one needs to put Khairoutdinov and Kogan equations into a PDF
+    ! form.  Here is a brief description.
+    !
+    ! a) Mean Volume Radius (and therefore sedimentation velocity) uses a
+    !    bivariate lognormal distribution because the factors that make it up
+    !    (rr and Nr) are both distributed lognormally.
+    !
+    ! b) Condensation/evaporation uses a single normal-lognormal-lognormal PDF
+    !    due to the fact that supersaturation, S, (one value that makes it up)
+    !    follows a truncated double Gaussian, rr (another factor that makes it
+    !    up) follows a single lognormal distribution, and Nr (the last factor
+    !    that makes it up) also follows a single lognormal distribution.
+    !
+    ! c) Autoconversion uses a single normal-lognormal PDF due to the fact that
+    !    rc (one factor that makes it up) follows a truncated double Gaussian
+    !    and Nc (the other factor that makes it up) follows a single lognormal
+    !    distribution.
+    !
+    ! d) Accretion uses a single normal-lognormal PDF due to the fact that rc
+    !    (one factor that makes it up) follows a truncated double Gaussian and
+    !    rr (the other factor that makes it up) follows a single lognormal
+    !    distribution.
+    !
+    ! The above PDF-ed Khairoutdinov and Kogan equations are used for the
+    ! "non-local" formula, which is the one used in HOC.
+    !
+    ! This subroutine also solves for rain drop concentration (num/kg).  The
+    ! rain drop concentration has an equation for autoconversion that is based
+    ! on the rate of change of rr due to autoconversion.  Likewise, it has an
+    ! equation for condensation/evaporation that is based on the rate of change
+    ! of rr due to condensation/evaporation.  The sedimentation velocity of
+    ! Nr is the same equation as the sedimentation velocity of rr, but with
+    ! different coefficients.
+
 
     ! Set up the values of the statistical correlations and variances.
     ! Since we currently do not have enough variables to compute the
@@ -384,23 +286,23 @@ module KK_microphys_module
     ! If there is cloud at a given vertical level, then the ###_cloud value
     ! is used.  Otherwise, the ###_below value is used.
     DO k = 1, gr%nnzp, 1
-      IF ( rcm(k) >= rc_tol ) THEN
-        rrp2_rrainm2(k)    = rrp2_rrainm2_cloud
-        Nrp2_Nrm2(k)    = Nrp2_Nrm2_cloud
-        Ncp2_Ncm2(k)    = Ncp2_Ncm2_cloud
-        corr_rrNr_LL(k) = corr_rrNr_LL_cloud
-        corr_srr_NL(k)  = corr_srr_NL_cloud
-        corr_sNr_NL(k)  = corr_sNr_NL_cloud
-        corr_sNc_NL(k)  = corr_sNc_NL_cloud
-      ELSE
-        rrp2_rrainm2(k)    = rrp2_rrainm2_below
-        Nrp2_Nrm2(k)    = Nrp2_Nrm2_below
-        Ncp2_Ncm2(k)    = Ncp2_Ncm2_below
-        corr_rrNr_LL(k) = corr_rrNr_LL_below
-        corr_srr_NL(k)  = corr_srr_NL_below
-        corr_sNr_NL(k)  = corr_sNr_NL_below
-        corr_sNc_NL(k)  = corr_sNc_NL_below
-      ENDIF
+       IF ( rcm(k) >= rc_tol ) THEN
+          rrp2_rrainm2(k)    = rrp2_rrainm2_cloud
+          Nrp2_Nrm2(k)    = Nrp2_Nrm2_cloud
+          Ncp2_Ncm2(k)    = Ncp2_Ncm2_cloud
+          corr_rrNr_LL(k) = corr_rrNr_LL_cloud
+          corr_srr_NL(k)  = corr_srr_NL_cloud
+          corr_sNr_NL(k)  = corr_sNr_NL_cloud
+          corr_sNc_NL(k)  = corr_sNc_NL_cloud
+       ELSE
+          rrp2_rrainm2(k)    = rrp2_rrainm2_below
+          Nrp2_Nrm2(k)    = Nrp2_Nrm2_below
+          Ncp2_Ncm2(k)    = Ncp2_Ncm2_below
+          corr_rrNr_LL(k) = corr_rrNr_LL_below
+          corr_srr_NL(k)  = corr_srr_NL_below
+          corr_sNr_NL(k)  = corr_sNr_NL_below
+          corr_sNc_NL(k)  = corr_sNc_NL_below
+       ENDIF
     ENDDO
 
     ! Find the drop mean volume radius.  It is calculated using
@@ -409,19 +311,18 @@ module KK_microphys_module
     ! timestep.  It is located on thermodynamic levels.
     do k = 1, gr%nnzp, 1
 
-      mean_vol_rad(k)  & 
-      = mean_volume_radius & 
-               ( rrainm(k), Nrm(k), rrp2_rrainm2(k),  & 
-                            Nrp2_Nrm2(k), corr_rrNr_LL(k) )
+       mean_vol_rad(k)  & 
+       = mean_volume_radius( rrainm(k), Nrm(k), rrp2_rrainm2(k),  & 
+                             Nrp2_Nrm2(k), corr_rrNr_LL(k) )
 
-    end do
+    enddo
 
 
     ! Save mean volume radius for stats purposes
     ! Note: added l_sample for latin hypercube sampling -dschanen
     if ( l_sample .and. l_stats_samp ) then
-      call stat_update_var(imean_vol_rad_rain, mean_vol_rad, zt )
-    end if
+       call stat_update_var(imean_vol_rad_rain, mean_vol_rad, zt )
+    endif
 
 
 
@@ -462,17 +363,17 @@ module KK_microphys_module
 
     do k = 1, gr%nnzp-1, 1
 
-      ! rrainm sedimentation velocity.
-      Vrr(k) = 0.012 * ( 1.0e6 * zt2zm(mean_vol_rad,k) )  -  0.2
+       ! rrainm sedimentation velocity.
+       Vrr(k) = 0.012 * ( 1.0e6 * zt2zm(mean_vol_rad,k) )  -  0.2
 
-      ! Negative meaning a downward velocity now -dschanen 5 Dec 2006
-      Vrr(k) = -max( Vrr(k), zero_threshold )
+       ! Negative meaning a downward velocity now -dschanen 5 Dec 2006
+       Vrr(k) = -max( Vrr(k), zero_threshold )
 
-      ! Nrm sedimentation velocity.
-      VNr(k) = 0.007 * ( 1.0e6 * zt2zm(mean_vol_rad,k) )  -  0.1
+       ! Nrm sedimentation velocity.
+       VNr(k) = 0.007 * ( 1.0e6 * zt2zm(mean_vol_rad,k) )  -  0.1
 
-      ! Negative meaning a downward velocity now -dschanen 5 Dec 2006
-      VNr(k) = -max( VNr(k), zero_threshold )
+       ! Negative meaning a downward velocity now -dschanen 5 Dec 2006
+       VNr(k) = -max( VNr(k), zero_threshold )
 
     enddo ! 1..gr%nnzp
 
@@ -484,149 +385,147 @@ module KK_microphys_module
     ! Find values for other variables.
     do k = 2, gr%nnzp, 1
 
-      ! Find the important conditions
-
-!           rvm(k) = rtm(k) - rcm(k)   ! rvm is water vapor mixing ratio.
-
-      ! Find current vapor pressure.
-!           e = (p(k)*rvm(k))/(ep + rvm(k))
-
-      ! Saturation mixing ratio
-      rsat(k) = sat_mixrat_liq( p_in_Pa(k), T_in_K(k) )
-
-      ! Find saturation vapor pressure.
-!           esat(k) = (p(k)*rsat(k))/(ep + rsat(k))
+       ! Saturation mixing ratio
+       rsat(k) = sat_mixrat_liq( p_in_Pa(k), T_in_K(k) )
 
     enddo ! 2..gr%nnzp
 
     ! Set the boundary conditions
-!        rvm(1)          = 0.0
-    rsat(1)          = 0.0
-!        esat(1)           = 0.0
+    rsat(1)         = 0.0
     Supsat(1)       = 0.0
     Supsat(gr%nnzp) = 0.0
 
     do k = 2, gr%nnzp-1, 1
 
-      ! Compute supersaturation via s1, s2.
-      !     Larson et al 2002, JAS, Vol 59, p 3534.
-      ! This allows a more direct comparison of local, nonlocal formulas.
-      Beta_T = (Rd/Rv) * ( Lv/(Rd*T_in_K(k)) )  & 
-               * ( Lv/(Cp*T_in_K(k)) )
+       ! Compute supersaturation via s1, s2.
+       !     Larson et al 2002, JAS, Vol 59, p 3534.
+       ! This allows a more direct comparison of local, nonlocal formulas.
+       Beta_T = (Rd/Rv) * ( Lv/(Rd*T_in_K(k)) )  & 
+                * ( Lv/(Cp*T_in_K(k)) )
 
-      Supsat(k) = ( a(k)*s1(k) + (1-a(k))*s2(k) ) & 
-                  *( ( 1.0 + Beta_T*rsat(k) ) / rsat(k) )
+       Supsat(k) = ( a(k)*s1(k) + (1-a(k))*s2(k) ) & 
+                   *( ( 1.0 + Beta_T*rsat(k) ) / rsat(k) )
 
-      ! Now find the elements that make up the right-hand side of the
-      ! equation, dd, for rain water mixing ratio, rrainm.
+       ! Now find the elements that make up the right-hand side of the
+       ! equation for rain water mixing ratio, rrainm.
 
-      rrainm_cond(k)  & 
-      = cond_evap_rrainm & 
-        ( rrainm(k), Nrm(k), & 
-          s1(k), ss1(k), s2(k), ss2(k), & 
-          thl1(k), thl2(k), rc1(k), rc2(k), a(k), & 
-          p_in_Pa(k), exner(k), T_in_K(k), Supsat(k),  & 
-          rrp2_rrainm2(k), Nrp2_Nrm2(k), corr_srr_NL(k), & 
-          corr_sNr_NL(k), corr_rrNr_LL(k) )
+       rrainm_cond(k)  & 
+       = cond_evap_rrainm( rrainm(k), Nrm(k), & 
+                           s1(k), ss1(k), s2(k), ss2(k), & 
+                           thl1(k), thl2(k), rc1(k), rc2(k), a(k), & 
+                           p_in_Pa(k), exner(k), T_in_K(k), Supsat(k),  & 
+                           rrp2_rrainm2(k), Nrp2_Nrm2(k), corr_srr_NL(k), & 
+                           corr_sNr_NL(k), corr_rrNr_LL(k) )
 
 
-      ! Vince Larson added option to call LH sampled Kessler autoconversion.
-      ! 22 May 2005
-!           rrainm_auto(k) = autoconv_rrainm( rcm(k), Ncm(k), rho(k),
-!     .                        a, s1, s2, ss1, ss2, rc1, rc2 )
-      if ( l_LH_on ) then
+       ! Vince Larson added option to call LH sampled Kessler autoconversion.
+       ! 22 May 2005
+       if ( l_LH_on ) then
 
-!              rrainm_auto(k) = AKm_est(k)
-        rrainm_auto(k) = AKm(k)
+          !rrainm_auto(k) = AKm_est(k)
+          rrainm_auto(k) = AKm(k)
 
-      else
+       else
 
-        rrainm_auto(k)  & 
-        = autoconv_rrainm( rcm(k), Ncm(k), s1(k), ss1(k),  & 
-                        s2(k), ss2(k), a(k), rho(k), & 
-                        Ncp2_Ncm2(k), corr_sNc_NL(k) )
+          rrainm_auto(k)  & 
+          = autoconv_rrainm( rcm(k), Ncm(k), s1(k), ss1(k),  & 
+                             s2(k), ss2(k), a(k), rho(k), & 
+                             Ncp2_Ncm2(k), corr_sNc_NL(k) )
 
-      endif ! l_LH_on
-      ! End Vince Larson's addition
+       endif ! l_LH_on
+       ! End Vince Larson's addition
 
-      rrainm_accr(k)  & 
-      = accretion_rrainm( rcm(k), rrainm(k), s1(k), ss1(k), & 
-                       s2(k), ss2(k), a(k),  & 
-                       rrp2_rrainm2(k), corr_srr_NL(k) )
+       rrainm_accr(k)  & 
+       = accretion_rrainm( rcm(k), rrainm(k), s1(k), ss1(k), & 
+                           s2(k), ss2(k), a(k),  & 
+                           rrp2_rrainm2(k), corr_srr_NL(k) )
 
-      ! Now find the elements that make up the right-hand side of the
-      ! equation, rr, for rain drop number concentration, Nrm.
+       ! Now find the elements that make up the right-hand side of the
+       ! equation, rr, for rain drop number concentration, Nrm.
 
-      Nrm_cond(k) = cond_evap_Nrm( rrainm_cond(k), Nrm(k), rrainm(k) )
+       Nrm_cond(k) = cond_evap_Nrm( rrainm_cond(k), Nrm(k), rrainm(k) )
 
-      Nrm_auto(k) = autoconv_Nrm( rrainm_auto(k) )
+       Nrm_auto(k) = autoconv_Nrm( rrainm_auto(k) )
 
-      if ( l_sample .and. l_stats_samp ) then
+       if ( l_sample .and. l_stats_samp ) then
 
-        ! Explicit contributions to rrainm.
-        call stat_update_var_pt( irrainm_cond, k, rrainm_cond(k), zt )
+          ! Explicit contributions to rrainm.
+          call stat_update_var_pt( irrainm_cond, k, rrainm_cond(k), zt )
 
-        call stat_update_var_pt( irrainm_auto, k, rrainm_auto(k), zt )
+          call stat_update_var_pt( irrainm_auto, k, rrainm_auto(k), zt )
 
-        call stat_update_var_pt( irrainm_accr, k, rrainm_accr(k), zt )
+          call stat_update_var_pt( irrainm_accr, k, rrainm_accr(k), zt )
 
-        ! Explicit contributions to Nrm.
-        call stat_update_var_pt( iNrm_cond, k, Nrm_cond(k), zt )
+          ! Explicit contributions to Nrm.
+          call stat_update_var_pt( iNrm_cond, k, Nrm_cond(k), zt )
 
-        call stat_update_var_pt( iNrm_auto, k, Nrm_auto(k), zt )
+          call stat_update_var_pt( iNrm_auto, k, Nrm_auto(k), zt )
 
-      endif ! l_stats_samp and l_sample
+       endif ! l_stats_samp and l_sample
 
-      rrainm_source = rrainm_auto(k) + rrainm_accr(k)
+       rrainm_source = rrainm_auto(k) + rrainm_accr(k)
 
-      Nrm_source = Nrm_auto(k)
+       Nrm_source = Nrm_auto(k)
 
-      ! The increase of rain due to autoconversion and accretion both draw
-      ! their water from the available cloud water.  Over a long time step
-      ! these rates may over-deplete cloud water.  In other words, these
-      ! processes may draw more cloud water than there is available.  Thus,
-      ! the total source rate multiplied by the time step length cannot exceed
-      ! the total amount of cloud water available.  If it does, then the rate
-      ! must be adjusted.
-      total_rc_needed = real( rrainm_source * dt )
+       ! The increase of rain due to autoconversion and accretion both draw
+       ! their water from the available cloud water.  Over a long time step
+       ! these rates may over-deplete cloud water.  In other words, these
+       ! processes may draw more cloud water than there is available.  Thus,
+       ! the total source rate multiplied by the time step length cannot exceed
+       ! the total amount of cloud water available.  If it does, then the rate
+       ! must be adjusted.
+       total_rc_needed = real( rrainm_source * dt )
 
-      if ( total_rc_needed > rcm(k) ) then
+       if ( total_rc_needed > rcm(k) ) then
 
-         ! The maximum allowable rate of the source terms is rcm/dt.
-         rrainm_src_max = real( rcm(k) / dt )
+          ! The maximum allowable rate of the source terms is rcm/dt.
+          rrainm_src_max = real( rcm(k) / dt )
 
-         ! The amount of adjustment to the source terms.
-         ! This value should always be negative.
-         rrainm_src_adj(k) = rrainm_src_max - rrainm_source
+          ! The amount of adjustment to the source terms.
+          ! This value should always be negative.
+          rrainm_src_adj(k) = rrainm_src_max - rrainm_source
 
-         ! Reset the value of the source terms to the maximum allowable value
-         ! of the source terms.
-         rrainm_source = rrainm_src_max
+          ! Reset the value of the source terms to the maximum allowable value
+          ! of the source terms.
+          rrainm_source = rrainm_src_max
 
-         ! The rrainm source terms are made up of autoconversion and accretion.
-         ! Only the sum of those two terms is corrected.  However, Nrm has only
-         ! an autoconversion term for a source term.  Figure that change in the
-         ! rrainm autoconversion term is proportional to to the total rrainm
-         ! adjustment rate by the ratio of rrainm autoconversion to the overall
-         ! source term.  Then, plug the rrainm autoconversion adjustment into
-         ! the equation for Nrm autoconversion to determine the effect on the
-         ! Nrm source term.
-         rrainm_auto_ratio = rrainm_auto(k) /  &
-                             ( rrainm_auto(k) + rrainm_accr(k) )
-         Nrm_src_adj(k) = autoconv_Nrm( rrainm_auto_ratio * rrainm_src_adj(k) )
+          ! The rrainm source terms are made up of autoconversion and accretion.
+          ! Only the sum of those two terms is corrected.  However, Nrm has only
+          ! an autoconversion term for a source term.  Figure that change in the
+          ! rrainm autoconversion term is proportional to to the total rrainm
+          ! adjustment rate by the ratio of rrainm autoconversion to the overall
+          ! source term.  Then, plug the rrainm autoconversion adjustment into
+          ! the equation for Nrm autoconversion to determine the effect on the
+          ! Nrm source term.
+          rrainm_auto_ratio = rrainm_auto(k) /  &
+                              ( rrainm_auto(k) + rrainm_accr(k) )
+          Nrm_src_adj(k) = autoconv_Nrm( rrainm_auto_ratio * rrainm_src_adj(k) )
 
-         ! Change Nrm by Nrm_src_adj.  Nrm_src_adj will always be negative.
-         Nrm_source = Nrm_source + Nrm_src_adj(k)
+          ! Change Nrm by Nrm_src_adj.  Nrm_src_adj will always be negative.
+          Nrm_source = Nrm_source + Nrm_src_adj(k)
 
-      endif
+       else
 
-      rrainm_mc_tndcy(k) = rrainm_cond(k) + rrainm_source
+          rrainm_src_adj(k) = 0.0
+          Nrm_src_adj(k)    = 0.0
 
-      Nrm_mc_tndcy(k) = Nrm_cond(k) + Nrm_source
+       endif
 
-      ! Explicit contributions to thlm and rtm from the microphysics
-      hm_rt_tndcy(k)  = -rrainm_mc_tndcy(k)
-      hm_thl_tndcy(k) = ( Lv / ( Cp*exner(k) ) ) * rrainm_mc_tndcy(k)
+       if ( l_sample .and. l_stats_samp ) then
+
+          call stat_update_var_pt( irrainm_src_adj, k, rrainm_src_adj(k), zt )
+
+          call stat_update_var_pt( iNrm_src_adj, k, Nrm_src_adj(k), zt )
+
+       endif ! l_stats_samp and l_sample
+
+       rrainm_mc_tndcy(k) = rrainm_cond(k) + rrainm_source
+
+       Nrm_mc_tndcy(k) = Nrm_cond(k) + Nrm_source
+
+       ! Explicit contributions to thlm and rtm from the microphysics
+       hm_rt_tndcy(k)  = -rrainm_mc_tndcy(k)
+       hm_thl_tndcy(k) = ( Lv / ( Cp*exner(k) ) ) * rrainm_mc_tndcy(k)
 
     enddo ! k=2..gr%nnzp-1
 
