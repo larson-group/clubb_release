@@ -40,7 +40,9 @@ module stats_zm
           irho_zm, & 
           isigma_sqd_w, & 
           iem, & 
-          ishear, & 
+          ishear, &
+          imean_w_up, &
+          imean_w_down, & 
           iFrad, & 
           iFrad_LW, & 
           iFrad_SW, & 
@@ -199,27 +201,29 @@ module stats_zm
       iwpthvp   = 0
       irtpthvp  = 0
       ithlpthvp = 0
-      itau_zm     = 0
-      iKh_zm      = 0
+      itau_zm   = 0
+      iKh_zm    = 0
       iwprcp    = 0
       ithlprcp  = 0
       irtprcp   = 0
       ircp2     = 0
       iupwp     = 0
       ivpwp     = 0
-      irho_zm     = 0
-      isigma_sqd_w      = 0
-      iem       = 0
-      ishear    = 0  ! Brian
-      iFrad     = 0
-      iFrad_LW  = 0  ! Brian
-      iFrad_SW  = 0  ! Brian
-      iFrad_LW_up  = 0  ! Brian
-      iFrad_SW_up  = 0  ! Brian
-      iFrad_LW_down  = 0  ! Brian
-      iFrad_SW_down  = 0  ! Brian
-      iFprec    = 0  ! Brian
-      iFcsed    = 0  ! Brian
+      irho_zm   = 0
+      isigma_sqd_w  = 0
+      iem           = 0
+      ishear        = 0  ! Brian
+      imean_w_up    = 0
+      imean_w_down  = 0
+      iFrad         = 0
+      iFrad_LW      = 0  ! Brian
+      iFrad_SW      = 0  ! Brian
+      iFrad_LW_up   = 0  ! Brian
+      iFrad_SW_up   = 0  ! Brian
+      iFrad_LW_down = 0  ! Brian
+      iFrad_SW_down = 0  ! Brian
+      iFprec        = 0  ! Brian
+      iFcsed        = 0  ! Brian
 
 
       iup2 = 0
@@ -485,6 +489,16 @@ module stats_zm
           ishear = k
           call stat_assign(ishear,"shear", & 
                "wind shear term (m^2/s^3)","m^2/s^3",zm)
+          k = k + 1
+        case ('mean_w_up')
+          imean_w_up = k
+          call stat_assign(imean_w_up, "mean_w_up", & 
+               "mean of all values of w >= 0", "m/s", zm)
+          k = k + 1
+        case ('mean_w_down')
+          imean_w_down = k
+          call stat_assign(imean_w_down, "mean_w_down", & 
+               "mean of all values of w <= 0", "m/s", zm)
           k = k + 1
         case ('Frad')
           iFrad = k

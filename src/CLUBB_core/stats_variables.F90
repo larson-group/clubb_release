@@ -331,6 +331,8 @@ module stats_variables
      isigma_sqd_w, & 
      iem, & 
      ishear,     & ! Brian
+     imean_w_up, &
+     imean_w_down, &
      iFrad, & 
      iFrad_LW,   & ! Brian
      iFrad_SW,   & ! Brian
@@ -354,7 +356,7 @@ module stats_variables
     iVNr,      & !  " "
     iVsnow,    & ! COAMPS
     iVice,     & !  " "
-    iVgraupel !  " " 
+    iVgraupel    !  " " 
 
 !$omp   threadprivate(iVrr, iVNr, iVsnow, iVice, iVgraupel)
 
@@ -517,11 +519,11 @@ module stats_variables
     iwpsclraprtp,         & ! w'sclr'(1)rt'   / w'rt'^2
     iwpsclrbprtp,         & ! w'sclr'(2)rt'   / w'thl'rt'
     iwpsclrapthlp,        & ! w'sclr'(1)th_l' / w'rt'th_l' 
-    iwpsclrbpthlp        ! w'sclr'(2)th_l' / w'th_l'^2
+    iwpsclrbpthlp           ! w'sclr'(2)th_l' / w'th_l'^2
 
   integer, public :: & 
      iwpedsclrap,   & ! eddy sclr'(1)w'
-     iwpedsclrbp   ! eddy sclr'(2)w'
+     iwpedsclrbp      ! eddy sclr'(2)w'
 
   ! Indices for statistics in sfc file
 

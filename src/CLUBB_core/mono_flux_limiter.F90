@@ -1104,6 +1104,15 @@ module mono_flux_limiter
         erf ! Procedure(s)
             ! The error function
 
+    use stats_type, only:  &
+        stat_update_var_pt  ! Procedure(s)
+
+    use stats_variables, only:  &
+        zm,  & ! Variable(s)
+        imean_w_up, &
+        imean_w_down, &
+        l_stats_samp
+
     implicit none
 
     ! Input Variables
@@ -1224,6 +1233,14 @@ module mono_flux_limiter
        ! Overall mean of upwards w.
        mean_w_up(k) = a(k) * mean_w_up_1st  &
                       + ( 1.0 - a(k) ) * mean_w_up_2nd
+
+       if ( l_stats_samp ) then
+
+          call stat_update_var_pt( imean_w_up, k, mean_w_up(k), zm )
+
+          call stat_update_var_pt( imean_w_down, k, mean_w_down(k), zm )
+
+       endif ! l_stats_samp
 
     enddo ! k = 2, gr%nnzp, 1
 
