@@ -347,10 +347,10 @@ module clubb_driver
 
     l_cloud_sed    = .false.
     l_kk_rain      = .false.
-    l_icedfs      = .false.
+    l_icedfs       = .false.
     l_coamps_micro = .false.
     l_bugsrad      = .false.
-    l_soil_veg = .false.
+    l_soil_veg     = .false.
     l_tke_aniso    = .false.
     l_uv_nudge     = .false.
     l_restart      = .false.
@@ -815,9 +815,7 @@ module clubb_driver
 
     use hydrostatic_mod, only: hydrostatic ! Procedure(s)
 
-#ifdef UNRELEASED_CODE
     use soil_vegetation, only: initialize_soil_veg ! Procedure(s)
-#endif
 
     implicit none
 
@@ -866,9 +864,9 @@ module clubb_driver
 
     real :: cloud_top_height ! [m]
     real :: emax
-#ifdef UNRELEASED_CODE
+
     real :: sfc_soil_T_in_K, deep_soil_T_in_K, veg_T_in_K
-#endif
+
     integer :: k, err_code
 
 !-----------------------------------------------------------------------
@@ -1228,7 +1226,6 @@ module clubb_driver
       em(1) = em(2)
       em(gr%nnzp) = em(gr%nnzp-1)
 
-#ifdef UNRELEASED_CODE
     case ( "gabls3" )
       em = 1.0
 
@@ -1237,7 +1234,6 @@ module clubb_driver
       deep_soil_T_in_K = 288.58
 
       call initialize_soil_veg( veg_T_in_K, sfc_soil_T_in_K, deep_soil_T_in_K )
-#endif
 
     end select
 
@@ -1361,9 +1357,7 @@ module clubb_driver
 
     use mpace_a, only: mpace_a_init ! Procedure(s)
 
-#ifdef UNRELEASED_CODE
     use soil_vegetation, only: initialize_soil_veg ! Procedure(s)
-#endif
 
     implicit none
 
@@ -1519,12 +1513,10 @@ module clubb_driver
     case( "mpace_a" )
       call mpace_a_init( iunit, forcings_file_path )
 
-#ifdef UNRELEASED_CODE
     case( "gabls3" )
       ! The user needs to enter the appropriate soil temperatures manually for restarts.
       ! At some point, we should automate this by reading in the appropriate sfc values.
       call initialize_soil_veg( 300., 300., 288.58 )
-#endif
 
     end select
 
@@ -1608,9 +1600,7 @@ module clubb_driver
 
     use microphys_driver, only: advance_microphys ! Procedure(s)
 
-#ifdef UNRELEASED_CODE
     use soil_vegetation, only: get_veg_T_in_K, advance_soil_veg
-#endif
 
     use error_code, only: lapack_error,  & ! Procedure(s)
                           clubb_at_least_debug_level
@@ -1701,9 +1691,7 @@ module clubb_driver
       um_sfc, &  ! um interpolated to momentum level 1 (sfc) [m/s]
       vm_sfc     ! vm interpolated to momentum level 1 (sfc) [m/s]
 
-#ifdef UNRELEASED_CODE
     real :: wpthep
-#endif
 
     integer :: lin_int_buffer
 
@@ -2103,7 +2091,6 @@ module clubb_driver
 !---------------------------------------------------------------
 ! Compute Surface
 !---------------------------------------------------------------
-#ifdef UNRELEASED_CODE
     if ( l_soil_veg ) then
       wpthep = wpthlp_sfc + (Lv/Cp) * ((p0/psfc)**kappa) * wprtp_sfc
 
@@ -2111,9 +2098,6 @@ module clubb_driver
                              Frad_SW_down(1) - Frad_SW_up(1), Frad_SW_down(1), &
                              Frad_LW_down(1), wpthep )
     end if
-#else
-   if ( l_soil_veg ) stop "This code does not contain the soil temp. scheme"
-#endif
 
 
 !----------------------------------------------------------------
