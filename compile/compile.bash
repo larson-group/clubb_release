@@ -25,7 +25,17 @@
 # Load desired configuration file
 
 #source /home/cjg/clubb/clubb_dev/scripts/config/gfdl_wks.bash
-source ./config/linux_ia32_g95_debug.bash
+#source ./config/linux_ia32_pg.bash
+#source ./config/linux_ia32_absoft.bash
+#source ./config/linux_ia32_g95_debug.bash
+source ./config/linux_ia32_g95_optimize.bash
+#source ./config/linux_ia32_ss12_debug.bash
+#source ./config/linux_ia32_ss12_optimize.bash
+#source ./config/linux_ia32_ifort.bash
+#source ./config/linux_ia32_gfortran.bash
+#source ./config/linux_ia64_ifort.bash
+#source ./config/osf1_alpha_digital.bash
+#source ./config/solaris_generic_ss12.bash
 
 # ------------------------------------------------------------------------------
 # Append preprocessor flags as needed

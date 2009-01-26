@@ -57,7 +57,7 @@ LDFLAGS="-L$libdir -Wl,-rpath,$libdir -lclubb_param -lclubb_bugsrad -L$NETCDF/li
 
 # == Compiler flags ==
 # You will need to `make clean' if you change these
-FFLAGS="$ARCH $DEBUG"
+FFLAGS="$ARCH $OPTIMIZE $DEBUG"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output

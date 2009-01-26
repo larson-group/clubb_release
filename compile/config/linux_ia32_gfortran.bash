@@ -1,10 +1,11 @@
 # $Id$
-# Configuration file for a Linux machine using g95
-# An MS Windows machine with MSYS or Cygwin should be similar
+# Configuration file for a Linux machine using GNU compiler collection Fortran
+# Note that the version of gfortran that comes with RHEL5 cannot compile clubb
+
 
 # Fortran 95 compiler and linker
-FC=g95
-LD=g95
+FC=gfortran
+LD=gfortran
 
 # Define path to directories
 dir=`pwd` # dir where this script resides
@@ -16,38 +17,25 @@ srcdir="$dir/../src"  # dir where the source files reside
 
 # It is sometimes helpful to turn on floating-point trapping for the 
 #  standalone program, but this will not work when using the tuner.
-# In g95: `setenv G95_FPU_INVALID TRUE' or `export G95_FPU_INVALID=TRUE'
-# These are the options for debugging symbols, bounds checking, IEEE-754,
-# and a special g95 flag for debugging, respectively. 
-DEBUG="-g -fbounds-check -mieee-fp -ftrace=full"
-
-# == Warnings ==
-# This is the set of preferred warnings to use when compiling CLUBB with g95.
-# Warnings ignored are:
-# 	142 - Nonblock DO statement is obsolescent 
-# 	165 - Implicit interface is called
-# 	167 - PRIVATE module procedure is never invoked
-WARNINGS="-Wall -Wextra -Wno=142,165,167 -pedantic"
+# These are the options for debugging symbols, bounds checking & IEEE-754 
+# floating point arithmetic
+DEBUG="-g -fbounds-check -mieee-fp"
 
 # == Machine specific flags ==
 # Note: some of these are 64 bit architectures, so make sure NetCDF is
 # compiled accordingly.
-#ARCH="-march=pentium4 -msse2 -mfpmath=sse" # Old P4s
-#ARCH="-march=nocona -msse3 -mfpmath=sse" # New P4s
-#ARCH="-march=nocona -msse3 -mfpmath=sse -r8"# New P4s, double precision
-ARCH="-march=k8 -msse3 -mfpmath=sse" # New Opterons
+#ARCH="-march=nocona -msse3 -mfpmath=sse"    # New P4s
+ARCH="-march=core2 -msse3 -mfpmath=sse" # Core2 Duo's
 
 # == Optimization ==
-# These are all pretty conservative options. Check your compiler manual
-# for information on using more aggressive techniques (inlining, etc.)
-OPTIMIZE="-O3"
+OPTIMIZE="-O2"
 
 # == NetCDF Location ==
-NETCDF="/usr/local/netcdf-g95"
+NETCDF="/usr/local/netcdf-gfortran"
 
 # == LAPACK libraries ==
-#LAPACK="-L/usr/local/lib -llapack -lblas" #  The netlib reference LAPACK/BLAS
-LAPACK="-L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas" # ATLAS BLAS (faster)
+LAPACK="-L/usr/local/lib -llapack -lblas" # The netlib reference LAPACK/BLAS
+#LAPACK="-L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas"# ATLAS BLAS (faster)
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
@@ -62,9 +50,9 @@ FFLAGS="$ARCH $DEBUG"
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
-# Define include directories. 
-# Need location of include and *.mod files for the netcdf library
-CPPFLAGS="-DNETCDF -I$NETCDF/include -Dnooverlap -Dradoffline"
+# You will need to `make clean' if you change these
+# Use -I<include path> to set a module or header file directory
+CPPFLAGS="-DNETCDF -I$NETCDF/include -D__GFORTRAN__ -Dnooverlap -Dradoffline"
 
 # == Static library processing ==
 AR=ar
