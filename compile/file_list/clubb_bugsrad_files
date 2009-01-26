@@ -7,7 +7,6 @@
 ../src/BUGSrad/cloudg.F
 ../src/BUGSrad/comscp1.F
 ../src/BUGSrad/comscp2.F
-../src/BUGSrad/driver_read.F
 ../src/BUGSrad/gascon.F
 ../src/BUGSrad/gases_ckd_data.h
 ../src/BUGSrad/gases_ckd.F90
