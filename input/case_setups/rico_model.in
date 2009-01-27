@@ -79,8 +79,8 @@ alvdf = 0.1d0    ! Visible diffuse surface albedo       [-]
 alndr = 0.1d0    ! Near-IR direct surface albedo        [-]
 alndf = 0.1d0    ! Near-IR diffuse surface albedo       [-]
 
-l_cloud_sed     = .false.  ! Flag for cloud water sedimentation.
-l_kk_rain       = .true.   ! Flag for Khairoutdinov-Kogan rain microphysics.
+l_cloud_sed    = .false.  ! Flag for cloud water sedimentation.
+l_kk_rain      = .true.   ! Flag for Khairoutdinov-Kogan rain microphysics.
 l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
 l_icedfs       = .false.  ! Flag for simplified ice scheme.
 l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
@@ -106,7 +106,7 @@ debug_level   = 2
 
 ! Statistics Settings
 
-l_stats       = .true.   ! Flag for statistical output.
+l_stats      = .true.   ! Flag for statistical output.
 fname_prefix = "rico"   ! Prefix of output filename.
 stats_tsamp  = 60.      ! Frequency of statistical sampling [s]
                         ! (must multiply evenly into stats_tout).
