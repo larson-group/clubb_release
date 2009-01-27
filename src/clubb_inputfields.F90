@@ -39,8 +39,6 @@
 
   logical :: stdout    ! Whether to print iteration number, etc.
 
-  real :: sample_ratio ! Ratio of LES data to model timestep
-
   integer :: err_code   ! Numerical diagnostic
 
 
