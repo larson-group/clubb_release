@@ -84,48 +84,53 @@ using SSE or SSE2 is usually the best way to do this.
 Requirements:
 A. A Fortran 95 compiler with a complete implementation of the standard.
 B. GNU make (we use v3.81).
-C. LAPACK & BLAS.  These provide the tri and band diagonal matrix solver
+C. Perl 5 to run mkmf
+D. LAPACK & BLAS.  These provide the tri and band diagonal matrix solver
    subroutines needed by CLUBB.  Many vendors provide optimized versions of
    these routines, which may be much faster than the reference BLAS.
-D. GNU bash, or an equivalent POSIX compliant shell to use the run scripts.
+E. GNU bash, or an equivalent POSIX compliant shell to use the run scripts.
 
 Optionally:
-E. GrADS for viewing the GrADS output data.
-F. NetCDF >= v3.5.1;  We have not tested our code with anything older.
+F. GrADS for viewing the GrADS output data.
+G. NetCDF >= v3.5.1;  We have not tested our code with anything older.
    If you do not use netCDF, remove -DNETCDF from the compiler flags.
-G. MATLAB or NCAR graphics for viewing the netCDF output data.
+H. MATLAB or NCAR graphics for viewing the netCDF output data.
 
-Build:
-1. $ cd <BASE DIRECTORY>/src
-2. Edit a ./config/<PLATFORM>.in file and choose it in the Makefile for your 
-   compiler and optimization options. Note that PREFIX determines where
+To build:
+1. $ cd <BASE DIRECTORY>/compile
+2. Edit a ./config/<PLATFORM>.bash file and uncomment it the file
+   compile.bash. Depending on your platform you may need to create a new
+   file based on the existing configurations.
+   Note that the variables libdir and bindir determine where
    your executables and libraries will end up, so make sure you set it
-   to the correct location (default is one directory up).
-3. $ make
+   to the correct location (the default is one directory up).
+3. $ ./compile.bash
 
-The executables will appear in $(PREFIX)/bin and libraries in $(PREFIX)/lib.
-The object (.o) and module (.mod) files will appear in $(PREFIX)/obj.
+The executables will appear in <PREFIX>/bin and libraries in <PREFIX>/lib.
+The object (.o) and module (.mod) files will appear in <PREFIX>/obj.
 
-If you're using GNU make and have a fast parallel machine, 
-parallel builds should work as well.  E.g. for 3 threads:
-gmake -j 3
+If you're using GNU make and have a fast parallel machine, parallel builds 
+should work as well.  E.g. for 3 threads, append gmake="gmake -j 3" to the
+file source'd from compile.bash.
 
-At this time, because we separate out non-distributable source code 
-using preprocessor flags, dmake doesn't work.
-
+The mkmf script may or may not generate files that are compatible with
+other versions of make.
 -----------------------------------------------------------------------
 - (1.2) Building for use in a host model:
 -----------------------------------------------------------------------
 Requirements:
-A., B., C. as above.
+A., B., C., & D. as above.
 
 Build:
 1. and 2. as above.
 
-$ make libclubb_param.a
+You can safely remove everything but libclubb_param.a from the "all" section
+of the compile.bash script.
+
+$ ./compile.bash
 
 This will build just the static library and the f90 modules.
-The static library will be in $(PREFIX)/lib, while the modules will be 
+The static library will be in <PREFIX>/lib, while the modules will be 
 in the obj directory.  You will need at least the clubb_core.mod file 
 to interface with CLUBB.
 
@@ -138,7 +143,7 @@ to find them and then download them onto your own computer if they are not
 included with your operating system or compiler.  Once you have done this, you 
 can reference them in a line such as the following:
 
--L/home/griffinb/hoc_v2.2_tuner/lib -lclubb_param -llapack -lblas
+-L/home/griffinb/clubb/lib -lclubb_param -llapack -lblas
 
 If the LAPACK and BLAS libraries were compiled with GNU Fortran 77, you may 
 need to link to the runtime libs for that with -lg2c as well.
@@ -147,7 +152,7 @@ Don't forget that you will also have to make reference
 to the CLUBB modules.  You can reference that with a line
 such as the following:
 
--I/home/griffinb/hoc_v2.2_tuner/obj
+-I/home/griffinb/clubb/obj
 
 -----------------------------------------------------------------------
 - (1.3) Making clean (or starting over)  
@@ -158,12 +163,12 @@ the code starting with nothing.  For instance, this may be required when
 a library or compiler is updated.  
 
 To delete old object files (*.o), and mod (*.mod) files,
-go to hoc_v2.2_tuner/src and type
+go to <PREFIX>/bin and type
 
 make clean
 
 If this doesn't help, then to additionally delete everything in the binary 
-and library directories, go to hoc_v2.2_tuner/src and type
+and library directories, go to <PREFIX>/bin and type
 
 make distclean
 
@@ -461,19 +466,6 @@ Go to the main CLUBB directory and follow these instructions:
          best to look at the results for the top handful of tuning iterations.
          First, to see if they look good for all the cases that were tuned for,
          and then to see if they look good for all the cases we have in CLUBB.
-
------------------------------------------------------------------------
-- (4.1) Executing a run comparison analysis:
------------------------------------------------------------------------
-
-1. $ cd <CLUBB DIR>/input  
-
-2. Edit compare_runs.in.  You need to choose three GrADS files on disk
-   to compare.  If necessary, uncompress the files you choose using
-   the command $ bunzip2 filename.bz2.  You also need to choose the 
-   time intervals over which the files will be compared.
-
-3. $ ../bin/compare_runs
 
 -----------------------------------------------------------------------
 - (5.1) Executing a Jacobian analysis:
