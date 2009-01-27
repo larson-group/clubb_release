@@ -32,7 +32,7 @@ NETCDF="$HOME/netcdf-3.6.3"
 LAPACK="-llapack -lblas"
 
 # == Linking Flags ==
-LDFLAGS="-L$libdir -Wl,-rpath $libdir -lclubb_param -lclubb_bugsrad -L$NETCDF/lib -lnetcdf $LAPACK"
+LDFLAGS="-L$libdir -Wl,-rpath $libdir -lclubb_param -lclubb_bugsrad -lclubb_coamps -L$NETCDF/lib -lnetcdf $LAPACK"
 
 FFLAGS="$ARCH $OPTIMIZE"
 

@@ -39,7 +39,7 @@ LAPACK="-L$ACML_DIR/gfortran64/lib -Wl,-rpath,$ACML_DIR/gfortran64/lib -lacml -l
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
 # Use -Wl,-rpath <library path> to set a search path for shared libs
-LDFLAGS="-lU77 -L$libdir -Wl,-rpath,$libdir -lclubb_param -lclubb_bugsrad $LAPACK"
+LDFLAGS="-lU77 -L$libdir -Wl,-rpath,$libdir -lclubb_param -lclubb_bugsrad -lclubb_coamps $LAPACK"
 
 # == Compiler flags ==
 # You will need to `make clean' if you change these

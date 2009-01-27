@@ -40,13 +40,13 @@ source ./config/linux_ia32_g95_optimize.bash
 # ------------------------------------------------------------------------------
 # Append preprocessor flags as needed
 if [ -e $srcdir/COAMPS_micro ]; then
-	INCLUDE="${INCLUDE} -DCOAMPS_MICRO"
+	CPPFLAGS="${CPPFLAGS} -DCOAMPS_MICRO"
 fi
 if [ -e $srcdir/Numerical_recipes ]; then
-	INCLUDE="${INCLUDE} -DTUNER"
+	CPPFLAGS="${CPPFLAGS} -DTUNER"
 fi
 if [ -e $srcdir/Benchmark_cases/unreleased_cases ]; then
-	INCLUDE="${INCLUDE} -DUNRELEASED_CODE"
+	CPPFLAGS="${CPPFLAGS} -DUNRELEASED_CODE"
 fi
 # ------------------------------------------------------------------------------
 # Generate template for makefile generating tool 'mkmf'
@@ -80,7 +80,7 @@ cd $dir
 # ------------------------------------------------------------------------------
 #  Determine which restricted files are in the source directory and make a list
 ls $srcdir/Benchmark_cases/unreleased_cases/*.F90 > $dir/file_list/clubb_optional_files
-ls $srcdir/COAMPS_micro/*.* >> $dir/file_list/clubb_optional_files
+ls $srcdir/COAMPS_micro/*.F > $dir/file_list/clubb_coamps_files
 ls $srcdir/Numerical_recipes/*.f90 > $dir/file_list/numerical_recipes_files
 
 # ------------------------------------------------------------------------------
@@ -88,17 +88,21 @@ ls $srcdir/Numerical_recipes/*.f90 > $dir/file_list/numerical_recipes_files
 
 cd $objdir
 $mkmf -t $bindir/mkmf_template -p $libdir/libclubb_param.a -m Make.clubb_param \
-  $clubb_param_mods $dir/file_list/clubb_param_files
+  -o "${WARNINGS}" $clubb_param_mods $dir/file_list/clubb_param_files
 
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_bugsrad.a -m Make.clubb_bugsrad $dir/file_list/clubb_bugsrad_files
 
+$mkmf -t $bindir/mkmf_template \
+  -p $libdir/libclubb_coamps.a -m Make.clubb_coamps $dir/file_list/clubb_coamps_files
+
 $mkmf -t $bindir/mkmf_template -p $bindir/clubb_standalone \
-  -m Make.clubb_standalone $clubb_standalone_mods $dir/file_list/clubb_standalone_files \
-  $dir/file_list/clubb_optional_files $dir/file_list/clubb_model_files
+  -m Make.clubb_standalone -o "${WARNINGS}" $clubb_standalone_mods \
+  $dir/file_list/clubb_standalone_files $dir/file_list/clubb_optional_files \
+  $dir/file_list/clubb_model_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/clubb_inputfields \
-  -m Make.clubb_inputfields $dir/file_list/clubb_inputfields_files \
+  -m Make.clubb_inputfields -o "${WARNINGS}" $dir/file_list/clubb_inputfields_files \
   $dir/file_list/clubb_optional_files $dir/file_list/clubb_model_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/clubb_tuner \
@@ -107,11 +111,11 @@ $mkmf -t $bindir/mkmf_template -p $bindir/clubb_tuner \
   $dir/file_list/numerical_recipes_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/jacobian \
-  -m Make.jacobian $dir/file_list/jacobian_files \
+  -m Make.jacobian -o "${WARNINGS}" $dir/file_list/jacobian_files \
   $dir/file_list/clubb_optional_files $dir/file_list/clubb_model_files
 
-$mkmf -t $bindir/mkmf_template -p $bindir/int2txt \
-  -m Make.int2txt $dir/file_list/int2txt_files
+$mkmf -t $bindir/mkmf_template -p $bindir/int2txt -m Make.int2txt \
+  -o "${WARNINGS}" $dir/file_list/int2txt_files
 
 cd $dir
 
@@ -138,23 +142,26 @@ libclubb_bugsrad.a:
 libclubb_param.a:
 	cd $objdir; $gmake -f Make.clubb_param
 
-clubb_standalone: libclubb_bugsrad.a libclubb_param.a
+libclubb_coamps.a:
+	cd $objdir; $gmake -f Make.clubb_coamps
+
+clubb_standalone: libclubb_bugsrad.a libclubb_param.a libclubb_coamps.a
 	-rm -f $bindir/clubb_standalone
 	cd $objdir; $gmake -f Make.clubb_standalone
 
-clubb_tuner: libclubb_bugsrad.a libclubb_param.a
+clubb_tuner: libclubb_bugsrad.a libclubb_param.a libclubb_coamps.a
 	-rm -f $bindir/clubb_tuner
 	cd $objdir; $gmake -f Make.clubb_tuner
 
-clubb_inputfields: libclubb_bugsrad.a libclubb_param.a
+clubb_inputfields: libclubb_bugsrad.a libclubb_param.a libclubb_coamps.a
 	-rm -f $bindir/clubb_inputfields
 	cd $objdir; $gmake -f Make.clubb_inputfields
 
-jacobian: libclubb_bugsrad.a libclubb_param.a
+jacobian: libclubb_bugsrad.a libclubb_param.a libclubb_coamps.a
 	-rm -f $bindir/jacobian
 	cd $objdir; $gmake -f Make.jacobian
 
-int2txt: libclubb_bugsrad.a libclubb_param.a
+int2txt: libclubb_bugsrad.a libclubb_param.a libclubb_coamps.a
 	-rm -rf $bindir/int2txt
 	cd $objdir; $gmake -f Make.int2txt
 

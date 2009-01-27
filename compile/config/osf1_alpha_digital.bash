@@ -33,7 +33,7 @@ LAPACK="-L/usr/lib -lcxml -L/usr/ccs/lib/cmplrs/cc -lexc"
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
-LDFLAGS="-L$libdir -Wl,-rpath,$libdir -lclubb_param -lclubb_bugsrad -L$NETCDF/lib -lnetcdf $LAPACK"
+LDFLAGS="-L$libdir -Wl,-rpath,$libdir -lclubb_param -lclubb_bugsrad -lclubb_coamps -L$NETCDF/lib -lnetcdf $LAPACK"
 
 # == Compiler flags ==
 # You will need to `make clean' if you change these
