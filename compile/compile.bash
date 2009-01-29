@@ -85,6 +85,10 @@ ls $srcdir/Numerical_recipes/*.f90 > $dir/file_list/numerical_recipes_files
 
 # ------------------------------------------------------------------------------
 # Generate makefiles using 'mkmf'
+# Note: I have done a maleficium thing and put ${WARNINGS} as a preprocessor
+# flag when in reality it has nothing to do with preprocessing.  This is because
+# 3rd party code from ACM TOMS and Numerical recipes has a .f90 extension and we
+# don't want use the warning flags on code we didn't write -dschanen 29 Jan 2009
 
 cd $objdir
 $mkmf -t $bindir/mkmf_template -p $libdir/libclubb_param.a -m Make.clubb_param \
@@ -97,21 +101,21 @@ $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_coamps.a -m Make.clubb_coamps $dir/file_list/clubb_coamps_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/clubb_standalone \
-  -m Make.clubb_standalone -o "${WARNINGS}" $clubb_standalone_mods \
+  -m Make.clubb_standalone -c "${WARNINGS}" $clubb_standalone_mods \
   $dir/file_list/clubb_standalone_files $dir/file_list/clubb_optional_files \
   $dir/file_list/clubb_model_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/clubb_inputfields \
-  -m Make.clubb_inputfields -o "${WARNINGS}" $dir/file_list/clubb_inputfields_files \
+  -m Make.clubb_inputfields -c "${WARNINGS}" $dir/file_list/clubb_inputfields_files \
   $dir/file_list/clubb_optional_files $dir/file_list/clubb_model_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/clubb_tuner \
-  -m Make.clubb_tuner $dir/file_list/clubb_tuner_files \
+  -m Make.clubb_tuner -c "${WARNINGS}" $dir/file_list/clubb_tuner_files \
   $dir/file_list/clubb_optional_files $dir/file_list/clubb_model_files \
   $dir/file_list/numerical_recipes_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/jacobian \
-  -m Make.jacobian -o "${WARNINGS}" $dir/file_list/jacobian_files \
+  -m Make.jacobian -c "${WARNINGS}" $dir/file_list/jacobian_files \
   $dir/file_list/clubb_optional_files $dir/file_list/clubb_model_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/int2txt -m Make.int2txt \
