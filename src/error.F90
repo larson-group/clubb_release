@@ -869,9 +869,6 @@ module error
   ! External
   intrinsic :: achar, trim
 
-  ! Constant Parameter
-  character(len=1), parameter :: dbqt = '"'
-
   ! Input variables
   character(len=*), intent(in) :: & 
   results_f ! Results file to write to
@@ -987,6 +984,7 @@ module error
 
   case default !
     stop "Not able to handle specified number of CLUBB z-levels"
+    mean_sqr_diff_zm  = 0. ! Avoid a compiler warning
   end select
 
   return
@@ -1059,6 +1057,7 @@ module error
   case default !
     write(0,*) "CLUBB:", hoc_nz, "LES:", les_nz
     stop "Not able to handle specified number of CLUBB z-levels"
+    mean_sqr_diff_zt = 0. ! To avoid a compiler warning
   end select
 
   return
@@ -1141,6 +1140,7 @@ module error
 
   case default !
     stop "Not able to handle specified number of CLUBB z-levels"
+    mean_sqr_diff_2_zt = 0. ! Avoid a compiler warning
   end select
 
   return

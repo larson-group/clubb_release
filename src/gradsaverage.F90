@@ -56,7 +56,7 @@ type (inputgrads) :: faverage ! Data file derived type
 real, dimension(nz) :: grads_temp ! Temporary variable
 
 integer ::  & 
-  i,  & ! les_array loop index 
+! i,  & ! les_array loop index 
   t  ! timestep loop index
 
 integer ::  & 
