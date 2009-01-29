@@ -31,14 +31,14 @@ module clubb_driver
   integer, private ::  & 
     nzmax,     & ! Vertical extent in levels              [#]
     grid_type    ! 1 ==> evenly-spaced grid levels
-  ! 2 ==> stretched (unevenly-spaced) grid entered on
-  !       thermodynamic grid levels; momentum levels
-  !       halfway between thermodynamic levels (style
-  !       of SAM stretched grid).
-  ! 3 ==> stretched (unevenly-spaced) grid entered on
-  !       momentum grid levels; thermodynamic levels
-  !       halfway between momentum levels (style
-  !       of WRF stretched grid).
+                 ! 2 ==> stretched (unevenly-spaced) grid entered on
+                 !       thermodynamic grid levels; momentum levels
+                 !       halfway between thermodynamic levels (style
+                 !       of SAM stretched grid).
+                 ! 3 ==> stretched (unevenly-spaced) grid entered on
+                 !       momentum grid levels; thermodynamic levels
+                 !       halfway between momentum levels (style
+                 !       of WRF stretched grid).
 
   real, private ::  & 
     deltaz,  & ! Change per grid level                 [m]
@@ -71,9 +71,9 @@ module clubb_driver
 
   integer, private :: &
     sfctype ! 0: fixed sfc sensible and latent heat fluxes as
-  !    given in namelist
-  ! 1: bulk formula: uses given surface temperature
-  !    and assumes over ocean
+            !    given in namelist
+            ! 1: bulk formula: uses given surface temperature
+            !    and assumes over ocean
 
 !$omp threadprivate(sfctype)
 
@@ -238,11 +238,11 @@ module clubb_driver
       l_icedfs,       & ! Flag for simplified ice scheme
       l_coamps_micro, & ! Flag for COAMPS microphysical scheme
       l_bugsrad,      & ! Flag for BUGsrad radiation scheme
-      l_soil_veg,& ! Flag for simple surface scheme
+      l_soil_veg,     & ! Flag for simple surface scheme
       l_uv_nudge,     & ! Whether to adjust the winds within the timestep
       l_restart,      & ! Flag for restarting from GrADS file
       l_tke_aniso       ! For anisotropic turbulent kinetic energy,
-    !                     i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+                        ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 
     character(len=50) ::  & 
       restart_path_case, & ! GrADS file used in case of restart
