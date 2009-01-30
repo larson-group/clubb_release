@@ -21,6 +21,7 @@ function compare_plots_cases_driver( HOC_sim1, HOC_sim2, compare_LES, compare_be
 					plot_jun25_altocu_sim2, plot_lba_sim2, plot_mpace_a_sim2, plot_mpace_b_sim2, ...
                                         plot_nov11_altocu_sim2, plot_rico_sim2, plot_wangara_sim2 )
 
+
 %The data1 and data2 variables represent the directories that the two sets
 %of data being compared
 %The cmp_all variable determines whether the data being passed in will be
@@ -468,7 +469,7 @@ if plot_jun25_altocu_sim1 == 1
 					compare_LES, 'coamps', 0, 0, 1, ...
 					compare_sim2 );
 	end;
-elseif plot_jun25_altocu_sim2 == 0
+elseif plot_jun25_altocu_sim1 == 0
 	if plot_jun25_altocu_sim2 == 0
          	'No sim data available for Jun25_altocu, not plotting Jun25_altocu.';
 	elseif plot_jun25_altocu_sim2 == 1
@@ -494,7 +495,7 @@ if plot_lba_sim1 == 1
 					0, 'coamps', 0, 0, 1, ...
 					compare_sim2 );
 	end;
-elseif plot_lba_sim2 == 0
+elseif plot_lba_sim1 == 0
 	if plot_lba_sim2 == 0
          	'No sim data available for LBA, not LBA';
 	elseif plot_lba_sim2 == 1
