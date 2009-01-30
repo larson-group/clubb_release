@@ -106,7 +106,7 @@ To build:
    to the correct location (the default is one directory up).
 3. $ ./compile.bash
 
-The executables will appear in <PREFIX>/bin and libraries in <PREFIX>/lib.
+The executables and Makefile will appear in <PREFIX>/bin and libraries in <PREFIX>/lib.
 The object (.o) and module (.mod) files will appear in <PREFIX>/obj.
 
 If you're using GNU make and have a fast parallel machine, parallel builds 
@@ -163,7 +163,7 @@ the code starting with nothing.  For instance, this may be required when
 a library or compiler is updated.  
 
 To delete old object files (*.o), and mod (*.mod) files,
-go to <PREFIX>/bin and type
+go to <PREFIX>/bin (where Makefile resides) and type
 
 make clean
 
