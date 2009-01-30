@@ -40,7 +40,7 @@ LAPACK="-L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas"
 # Use -s to strip (no debugging); 
 # -Bstatic; for static linking of libraries
 # -xlibmopt; link the optimized version of libm (this seems not to work on GNU/Linux)
-LDFLAGS="-L$libdir -R$libdir-lclubb_param -lclubb_bugsrad -lclubb_coamps -L$NETCDF/lib -lnetcdf $LAPACK"
+LDFLAGS="-L$libdir -R$libdir -lclubb_param -lclubb_bugsrad -lclubb_coamps -L$NETCDF/lib -lnetcdf $LAPACK"
 
 # == Compiler flags ==
 # You will need to `make clean' if you change these
