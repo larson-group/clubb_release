@@ -18,11 +18,12 @@ module advance_windm_edsclrm_module
   contains
 
   !=============================================================================
-  subroutine advance_windm_edsclrm( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref, &
-                                    wp2, up2, vp2, um_forcing, vm_forcing,    &
-                                    upwp_sfc, vpwp_sfc, wpedsclrp_sfc, fcor,  &
-                                    l_implemented, um, vm, edsclrm,           &
-                                    upwp, vpwp, wpedsclrp, err_code )
+  subroutine advance_windm_edsclrm &
+             ( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref, &
+               wp2, up2, vp2, um_forcing, vm_forcing, edsclrm_forcing, &
+               upwp_sfc, vpwp_sfc, wpedsclrp_sfc, fcor,  &
+               l_implemented, um, vm, edsclrm, &
+               upwp, vpwp, wpedsclrp, err_code )
     ! Description:
     ! Solves for both mean horizontal wind components, um and vm, and for the
     ! eddy-scalars (passive scalars that don't use the high-order closure).
@@ -43,7 +44,7 @@ module advance_windm_edsclrm_module
 
     use parameters_model, only:  &
       ts_nudge,  & ! Variable(s)
-      sclr_dim
+      edsclr_dim
 
     use model_flags, only:  &
       l_uv_nudge,  & ! Variable(s)
@@ -92,24 +93,27 @@ module advance_windm_edsclrm_module
       um_forcing,  & ! u forcing                                     [m/s/s]
       vm_forcing     ! v forcing                                     [m/s/s]
 
+    real, dimension(gr%nnzp,edsclr_dim), intent(in) ::  &
+      edsclrm_forcing  ! Eddy scalar large-scale forcing             [{units vary}/s]
+
     real, intent(in) ::  &
       upwp_sfc,    & ! u'w' at the surface (momentum level 1)        [m^2/s^2]
       vpwp_sfc,    & ! v'w' at the surface (momentum level 1)        [m^2/s^2]
       fcor           ! Coriolis parameter                            [s^-1]
-    real, dimension(sclr_dim), intent(in) :: &
-      wpedsclrp_sfc  ! w'esclr' at the surface (momentum level 1)    [units vary]
+    real, dimension(edsclr_dim), intent(in) :: &
+      wpedsclrp_sfc  ! w'edsclr' at the surface (momentum level 1)    [units vary]
 
     logical, intent(in) ::  &
       l_implemented  ! Flag for CLUBB being implemented in a larger model.
 
     ! Input/Output Variables
     real, dimension(gr%nnzp), intent(inout) ::  &
-      um,          & ! mean u (west-to-east) wind component          [m/s]
-      vm             ! mean v (south-to-north) wind component        [m/s]
+      um,          & ! Mean u (west-to-east) wind component          [m/s]
+      vm             ! Mean v (south-to-north) wind component        [m/s]
 
     ! Input/Output Variable for eddy-scalars
-    real, dimension(gr%nnzp,sclr_dim), intent(inout) ::  &
-      edsclrm        ! mean eddy scalar quantity                     [units vary]
+    real, dimension(gr%nnzp,edsclr_dim), intent(inout) ::  &
+      edsclrm        ! Mean eddy scalar quantity                     [units vary]
 
     ! Output Variables
     real, dimension(gr%nnzp), intent(out) ::  &
@@ -117,7 +121,7 @@ module advance_windm_edsclrm_module
       vpwp           ! v'w' (momentum levels)                        [m^2/s^2]
 
     ! Output Variable for eddy-scalars
-    real, dimension(gr%nnzp,sclr_dim), intent(out) ::  &
+    real, dimension(gr%nnzp,edsclr_dim), intent(out) ::  &
       wpedsclrp      ! w'edsclr' (momentum levels)                   [units vary]
 
     integer, intent(out) :: &
@@ -129,16 +133,13 @@ module advance_windm_edsclrm_module
       vm_tndcy       ! v wind component tendency                     [m/s^2]
 
     real, dimension(gr%nnzp) ::  &
-      zero_1d        ! Used for Eddy-scalar tendency                 [units vary]
-
-    real, dimension(gr%nnzp) ::  &
       upwp_chnge,  & ! Net change of u'w' due to clipping            [m^2/s^2]
       vpwp_chnge     ! Net change of v'w' due to clipping            [m^2/s^2]
 
     real, dimension(3,gr%nnzp) :: &
       lhs ! The implicit part of the tridiagonal matrix              [units vary]
 
-    real, dimension(gr%nnzp,max(2,sclr_dim)) :: &
+    real, dimension(gr%nnzp,max(2,edsclr_dim)) :: &
       rhs,     &! The explicit part of the tridiagonal matrix        [units vary]
       solution  ! The solution to the tridiagonal matrix             [units vary]
 
@@ -334,10 +335,7 @@ module advance_windm_edsclrm_module
     ! Prepare tridiagonal system for eddy-scalars
     !----------------------------------------------------------------
 
-    if ( sclr_dim > 0 ) then
-
-       ! Eddy-scalars don't use wind forcings; prepare a zero-array.
-       zero_1d = 0.
+    if ( edsclr_dim > 0 ) then
 
        ! Eddy-scalar surface fluxes, x'w'|_sfc, are applied through an explicit
        ! method.
@@ -348,9 +346,9 @@ module advance_windm_edsclrm_module
        ! Because of statistics, we have to use a DO rather than a FORALL here
        ! -dschanen 7 Oct 2008
        !HPF$ INDEPENDENT
-       do i = 1, sclr_dim
+       do i = 1, edsclr_dim
           rhs(1:gr%nnzp,i)  &
-          = windm_edsclrm_rhs( "scalars", dt, Kh_zm, edsclrm(:,i), zero_1d,  & ! in
+          = windm_edsclrm_rhs( "scalars", dt, Kh_zm, edsclrm(:,i), edsclrm_forcing,  & ! in
                                l_imp_sfc_momentum_flux, wpedsclrp_sfc(i) )     ! in
        enddo
 
@@ -358,14 +356,14 @@ module advance_windm_edsclrm_module
        ! Store momentum flux (explicit component)
 
        ! The surface flux, x'w'(1) = x'w'|_sfc, is set elsewhere in the model.
-       wpedsclrp(1,1:sclr_dim) =  wpedsclrp_sfc(1:sclr_dim)
+       wpedsclrp(1,1:edsclr_dim) =  wpedsclrp_sfc(1:edsclr_dim)
 
        ! Solve for x'w' at all intermediate model levels.
        ! A Crank-Nicholson timestep is used.
        ! Here we use a forall and high performance fortran directive to try to
        ! parallelize this computation.  Note that FORALL is more restrictive than DO.
        !HPF$ INDEPENDENT
-       forall( i = 1:sclr_dim )
+       forall( i = 1:edsclr_dim )
          wpedsclrp(2:gr%nnzp-1,i) = &
            - 0.5 * xpwp_fnc( Kh_zm(2:gr%nnzp-1), edsclrm(2:gr%nnzp-1,i), & ! in
                              edsclrm(3:gr%nnzp,i), gr%dzm(2:gr%nnzp-1) )   ! in
@@ -374,7 +372,7 @@ module advance_windm_edsclrm_module
        ! A zero-flux boundary condition at the top of the model, d(xm)/dz = 0,
        ! means that x'w' at the top model level is 0,
        ! since x'w' = - K_zm * d(xm)/dz.
-       wpedsclrp(gr%nnzp,1:sclr_dim) = 0.
+       wpedsclrp(gr%nnzp,1:edsclr_dim) = 0.
 
 
        ! Compute the implicit portion of the xm (eddy-scalar) equations.
@@ -384,18 +382,18 @@ module advance_windm_edsclrm_module
                                lhs )                                        ! out
 
        ! Decompose and back substitute for all eddy-scalar variables
-       call windm_edsclrm_solve( sclr_dim, lhs, rhs, & ! in/out
+       call windm_edsclrm_solve( edsclr_dim, lhs, rhs, & ! in/out
                                  solution, err_code )  ! out
 
        !----------------------------------------------------------------
        ! Update Eddy-diff. Passive Scalars
        !----------------------------------------------------------------
-       edsclrm(1:gr%nnzp,1:sclr_dim) = solution(1:gr%nnzp,1:sclr_dim)
+       edsclrm(1:gr%nnzp,1:edsclr_dim) = solution(1:gr%nnzp,1:edsclr_dim)
 
        ! The value of edsclrm(1) is located below the model surface and does not
        ! effect the rest of the model.  The value of edsclrm(1) is simply set to
        ! the value of edsclrm(2) after the equation matrix has been solved.
-       forall( i=1:sclr_dim )
+       forall( i=1:edsclr_dim )
           edsclrm(1,i) = edsclrm(2,i)
        end forall
 
@@ -404,7 +402,7 @@ module advance_windm_edsclrm_module
        ! Solve for x'w' at all intermediate model levels.
        ! A Crank-Nicholson timestep is used.
        !HPF$ INDEPENDENT
-       forall( i=1:sclr_dim )
+       forall( i=1:edsclr_dim )
          wpedsclrp(2:gr%nnzp-1,i) = wpedsclrp(2:gr%nnzp-1,i) &
            - 0.5 * xpwp_fnc( Kh_zm(2:gr%nnzp-1), edsclrm(2:gr%nnzp-1,i), & ! in
                              edsclrm(3:gr%nnzp,i), gr%dzm(2:gr%nnzp-1) )   ! in

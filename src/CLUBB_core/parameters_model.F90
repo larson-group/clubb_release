@@ -39,9 +39,10 @@ module parameters_model
 
   integer, public :: & 
     sclr_dim,        & ! Number of passive scalars
+    edsclr_dim,      & ! Number of eddy-diff. passive scalars
     hydromet_dim       ! Number of hydrometeor species
 
-!$omp threadprivate(sclr_dim, hydromet_dim)
+!$omp threadprivate(sclr_dim, edsclr_dim, hydromet_dim)
 
   real, dimension(:), allocatable, public :: & 
     sclrtol ! Threshold(s) on the passive scalars  [units vary]
@@ -56,7 +57,8 @@ module parameters_model
   subroutine setup_parameters_model &
              ( T0_in, ts_nudge_in, sol_const_in, &
                std_atmos_buffer_in, hydromet_dim_in, & 
-               sclr_dim_in, sclrtol_in, Lscale_max_in )
+               sclr_dim_in, sclrtol_in, edsclr_dim_in, &
+               Lscale_max_in )
 
 ! Description:
 !   Sets parameters to their initial values
@@ -83,7 +85,8 @@ module parameters_model
 
     integer, intent(in) :: & 
       hydromet_dim_in,  & ! Number of hydrometeor species
-      sclr_dim_in         ! Number of passive scalars
+      sclr_dim_in,      & ! Number of passive scalars
+      edsclr_dim_in       ! Number of eddy-diff. passive scalars
 
     real, intent(in), dimension(sclr_dim_in) :: & 
       sclrtol_in     ! Threshold on passive scalars
@@ -106,6 +109,7 @@ module parameters_model
 
     hydromet_dim = hydromet_dim_in
     sclr_dim     = sclr_dim_in
+    edsclr_dim   = edsclr_dim_in
 
     ! In a tuning run, this array has the potential to be allocated already
     if ( .not. allocated( sclrtol ) ) then

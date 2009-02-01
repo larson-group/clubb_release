@@ -26,17 +26,17 @@ module clubb_core
   !-----------------------------------------------------------------------
   subroutine advance_clubb_core & 
              ( iter, l_implemented, dt, fcor, & 
-               thlm_forcing, rtm_forcing, um_forcing, vm_forcing, wm_zm, wm_zt, & 
+               thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & 
+               sclrm_forcing, edsclrm_forcing, wm_zm, wm_zt, &
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
                p_in_Pa, rho_zm, rho, exner, & 
-               wpsclrp_sfc, wpedsclrp_sfc,    & ! Optional
+               wpsclrp_sfc, wpedsclrp_sfc,    &
                um, vm, upwp, vpwp, up2, vp2, & 
                thlm, rtm, wprtp, wpthlp, wp2, wp3, & 
                rtp2, thlp2, rtpthlp, & 
                sigma_sqd_w, tau_zm, rcm, cf, & 
                err_code,  & 
-               sclrm, sclrm_forcing, edsclrm,  & ! Optional
-               wpsclrp )
+               sclrm, sclrp2, wpsclrp, edsclrm  )
 
     ! Description:
     !   Subroutine to advance the model one timestep
@@ -72,7 +72,8 @@ module clubb_core
 
     use parameters_model, only: &
       T0, &
-      sclr_dim
+      sclr_dim, &
+      edsclr_dim
 
     use model_flags, only: & 
       l_LH_on,  & ! Variable(s)
@@ -129,7 +130,6 @@ module clubb_core
       wpedsclrp, & 
       sclrpthvp,   & ! sclr'th_v'
       sclrprtp,    & ! sclr'rt'
-      sclrp2,      & ! sclr'^2
       sclrpthlp,   & ! sclr'th_l'
       sclrprcp,    & ! sclr'rc'
       wp2sclrp,    & ! w'^2 sclr'
@@ -239,9 +239,10 @@ module clubb_core
       upwp_sfc,     & ! u'w' at surface.          [m^2/s^2]
       vpwp_sfc        ! v'w' at surface.          [m^2/s^2]
 
-    ! Optional Input Variables
     real, intent(in),  dimension(sclr_dim) ::  & 
-      wpsclrp_sfc,   & ! Scalar flux at surface           [units m/s]
+      wpsclrp_sfc      ! Scalar flux at surface           [units m/s]
+
+    real, intent(in),  dimension(edsclr_dim) ::  & 
       wpedsclrp_sfc    ! Eddy-Scalar flux at surface      [units m/s]
 
     ! Input/Output
@@ -273,12 +274,20 @@ module clubb_core
     ! Diagnostic, for if some calculation goes amiss.
     integer, intent(inout) :: err_code
 
-    ! Optional Input/Output Variables
+    ! Passive scalar variables
     real, intent(inout), dimension(gr%nnzp,sclr_dim) :: & 
       sclrm,         & ! Passive scalar mean.           [units vary]
-      sclrm_forcing, & ! Passive scalar forcing.        [units vary/s]
-      edsclrm,       & ! Eddy passive scalar mean.      [units vary]
+      sclrp2,        & ! Passive scalar variance.       [{units vary}^2]
       wpsclrp          ! w'sclr'                        [units vary m/s]
+
+    real, intent(in), dimension(gr%nnzp,sclr_dim) :: & 
+      sclrm_forcing    ! Passive scalar forcing.        [{units vary}/s]
+
+    real, intent(inout), dimension(gr%nnzp,edsclr_dim) :: & 
+      edsclrm          ! Eddy passive scalar mean.      [units vary]
+
+    real, intent(in), dimension(gr%nnzp,edsclr_dim) :: & 
+      edsclrm_forcing    ! Eddy passive scalar forcing. [{units vary}/s]
 
 
     ! Local Variables
@@ -335,10 +344,10 @@ module clubb_core
            rho, exner, wpthlp_sfc, wprtp_sfc,                & ! intent(in)
            upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,           & ! intent(in)
            up2, vp2, rtm, wprtp, thlm,                       & ! intent(in)
-           wpthlp, wp2, wp3, sigma_sqd_w, rtp2, thlp2,               & ! intent(in)
+           wpthlp, wp2, wp3, sigma_sqd_w, rtp2, thlp2,       & ! intent(in)
            rtpthlp, tau_zm, rcm, cf, "beginning of ",        & ! intent(in)
            wpsclrp_sfc, wpedsclrp_sfc,                       & ! intent(in)
-           sclrm, sclrm_forcing, edsclrm )                     ! intent(in)
+           sclrm, sclrm_forcing, edsclrm, edsclrm_forcing )    ! intent(in)
     end if
     !-----------------------------------------------------------------------
 
@@ -351,7 +360,10 @@ module clubb_core
     ! Set fluxes for passive scalars (if enabled)
     if ( sclr_dim > 0 ) then
       wpsclrp(1,1:sclr_dim)   = wpsclrp_sfc(1:sclr_dim)
-      wpedsclrp(1,1:sclr_dim) = wpedsclrp_sfc(1:sclr_dim)
+    end if
+
+    if ( edsclr_dim > 0 ) then
+      wpedsclrp(1,1:edsclr_dim) = wpedsclrp_sfc(1:edsclr_dim)
     end if
 
     !----------------------------------------------------------------
@@ -756,10 +768,10 @@ module clubb_core
     ! Advance um, vm, and edsclrm one time step
     !----------------------------------------------------------------
 
-    call advance_windm_edsclrm( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref,  &
-                                wp2, up2, vp2, um_forcing, vm_forcing, &
-                                upwp_sfc, vpwp_sfc, wpedsclrp_sfc, fcor,  &
-                                l_implemented, um, vm, edsclrm,  &
+    call advance_windm_edsclrm( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref,  & ! In
+                                wp2, up2, vp2, um_forcing, vm_forcing, edsclrm_forcing, & ! In
+                                upwp_sfc, vpwp_sfc, wpedsclrp_sfc, fcor,  &  !  In
+                                l_implemented, um, vm, edsclrm, &
                                 upwp, vpwp, wpedsclrp, err_code )
 
     ! Wrapped LAPACK procedures may report errors, and if so, exit
@@ -794,8 +806,9 @@ module clubb_core
          ( um, vm, upwp, vpwp, up2, vp2, thlm,                 & ! intent(in)
            rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp, & ! intent(in)
            p_in_Pa, exner, rho, rho_zm,                        & ! intent(in)
-           wm_zt, sigma_sqd_w, tau_zm, rcm, cf,                        & ! intent(in)
-           sclrm, edsclrm, sclrm_forcing, wpsclrp )              ! intent(in)
+           wm_zt, sigma_sqd_w, tau_zm, rcm, cf,                & ! intent(in)
+           sclrm, sclrp2, sclrm_forcing, wpsclrp,              & ! intent(in)
+           edsclrm, edsclrm_forcing )                            ! intent(in)
 
 
     if ( clubb_at_least_debug_level( 2 ) ) then
@@ -807,7 +820,7 @@ module clubb_core
              wpthlp, wp2, wp3, sigma_sqd_w, rtp2, thlp2,         & ! intent(in)
              rtpthlp, tau_zm, rcm, cf, "end of ",                & ! intent(in)
              wpsclrp_sfc, wpedsclrp_sfc,                         & ! intent(in)
-             sclrm, sclrm_forcing, edsclrm )                       ! intent(in)
+             sclrm, sclrm_forcing, edsclrm, edsclrm_forcing )      ! intent(in)
     end if
 
 !-----------------------------------------------------------------------
@@ -900,13 +913,15 @@ module clubb_core
 
   !-----------------------------------------------------------------------
   subroutine setup_clubb_core & 
-             ( nzmax, T0_in, ts_nudge_in, sol_const_in, std_atmos_buffer_in,& 
-               hydromet_dim_in, sclr_dim_in, sclrtol_in, params,  & 
-               l_bugsrad, l_soil_veg, l_kk_rain, l_icedfs, l_coamps_micro, & 
-               l_cloud_sed, l_uv_nudge, l_tke_aniso,  & 
-               l_implemented, grid_type, deltaz, zm_init, & 
-               momentum_heights, thermodynamic_heights,  & 
-               host_dx, host_dy, err_code )
+             ( nzmax, T0_in, ts_nudge_in, sol_const_in, & ! In
+               std_atmos_buffer_in, hydromet_dim_in, sclr_dim_in, & ! In
+               sclrtol_in, edsclr_dim_in, params,  &  ! In
+               l_bugsrad, l_soil_veg, l_kk_rain, l_icedfs, l_coamps_micro, & ! In
+               l_cloud_sed, l_uv_nudge, l_tke_aniso,  &  ! In
+               l_implemented, grid_type, deltaz, zm_init, &  ! In
+               momentum_heights, thermodynamic_heights,  &  ! In
+               host_dx, host_dy, & ! In
+               err_code ) ! Out
 
     use grid_class, only: & 
       gridsetup ! Procedure
@@ -991,7 +1006,8 @@ module clubb_core
 
     integer, intent(in) :: & 
       hydromet_dim_in,  & ! Number of hydrometeor species
-      sclr_dim_in         ! Number of passive scalars
+      sclr_dim_in,      & ! Number of passive scalars
+      edsclr_dim_in       ! Number of eddy-diff. passive scalars
 
     real, intent(in), dimension(sclr_dim_in) :: & 
       sclrtol_in    ! Thresholds for passive scalars
@@ -1036,9 +1052,10 @@ module clubb_core
     end if
 
     ! Define model constant parameters
-    call setup_parameters_model( T0_in, ts_nudge_in, sol_const_in, &     ! In
-                                 std_atmos_buffer_in, hydromet_dim_in, & ! in
-                                 sclr_dim_in, sclrtol_in, Lscale_max )   ! In
+    call setup_parameters_model( T0_in, ts_nudge_in, sol_const_in, &      ! In
+                                 std_atmos_buffer_in, hydromet_dim_in, &  ! in
+                                 sclr_dim_in, sclrtol_in, edsclr_dim_in, &! In
+                                 Lscale_max )   ! In
 
     ! Define tunable constant parameters
     call setup_parameters & 

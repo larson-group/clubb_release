@@ -777,7 +777,8 @@ subroutine stats_accumulate &
                    rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp, & 
                    p_in_Pa, exner, rho, rho_zm, & 
                    wm_zt, sigma_sqd_w, tau_zm, rcm, cf, & 
-                   sclrm, edsclrm, sclrm_forcing, wpsclrp )
+                   sclrm, sclrp2, sclrm_forcing, wpsclrp, &
+                   edsclrm, edsclrm_forcing )
 
 ! Description:
 ! Accumulate those stats variables that are preserved in HOC from timestep to 
@@ -966,7 +967,6 @@ use variables_diagnostic_module, only: &
     shear, & 
     Frad, & 
     sclrprtp, & 
-    sclrp2, & 
     sclrpthvp, & 
     sclrpthlp, & 
     sclrprcp, & 
@@ -986,7 +986,8 @@ use constants, only: &
     rc_tol
 
 use parameters_model, only: & 
-    sclr_dim  ! Variable(s)
+    sclr_dim,  & ! Variable(s)
+    edsclr_dim
 
 use stats_type, only: & 
     stat_update_var,  & ! Procedure(s)
@@ -1035,10 +1036,14 @@ real, intent(in), dimension(gr%nnzp) :: &
   cf       ! Cloud fraction                          [%]
 
 real, intent(in), dimension(gr%nnzp,sclr_dim) :: & 
-  sclrm,           & ! High-Order Passive scalar     [units vary]
-  edsclrm,         & ! Eddy-diff Passive scalar      [units vary] 
-  sclrm_forcing,   & ! Large-scale forcing of scalar [units/s]
-  wpsclrp         ! w'sclr'                       [units m/s]
+  sclrm,           & ! High-order passive scalar          [units vary]
+  sclrp2,          & ! High-order passive scalar variance [units^2]
+  sclrm_forcing,   & ! Large-scale forcing of scalar      [units/s]
+  wpsclrp            ! w'sclr'                            [units m/s]
+
+real, intent(in), dimension(gr%nnzp,edsclr_dim) :: & 
+  edsclrm,         & ! Eddy-diff passive scalar      [units vary] 
+  edsclrm_forcing    ! Large-scale forcing of edscalar  [units vary] 
 
 ! Prognostic drizzle variable array
 !real, intent(in), dimension(gr%nnzp,hydromet_dim) :: hydromet
@@ -1142,15 +1147,22 @@ if ( l_stats_samp ) then
 
    if ( sclr_dim > 0 ) then
       call stat_update_var( isclram, sclrm(:,1), zt )
+      call stat_update_var( isclrap2, sclrp2(:,1), zm )
       call stat_update_var( isclram_f, sclrm_forcing(:,1),  zt )
-      call stat_update_var( iedsclram, edsclrm(:,1), zt )
-   endif
+   end if
 
    if ( sclr_dim > 1 ) then
       call stat_update_var( isclrbm, sclrm(:,2), zt )
+      call stat_update_var( isclrbp2, sclrp2(:,2), zm )
       call stat_update_var( isclrbm_f, sclrm_forcing(:,2), zt )
+   end if
+
+   if ( edsclr_dim > 0 ) then
+      call stat_update_var( iedsclram, edsclrm(:,1), zt )
+   end if
+   if ( edsclr_dim > 1 ) then
       call stat_update_var( iedsclrbm, edsclrm(:,2), zt )
-   endif
+   end if
 
 
    ! zm variables
@@ -1186,7 +1198,6 @@ if ( l_stats_samp ) then
 
    if ( sclr_dim > 0 ) then
       call stat_update_var( isclraprtp, sclrprtp(:,1), zm )
-      call stat_update_var( isclrap2, sclrp2(:,1), zm )
       call stat_update_var( isclrapthvp, sclrpthvp(:,1), zm )
       call stat_update_var( isclrapthlp, sclrpthlp(:,1), zm )
       call stat_update_var( isclraprcp, sclrprcp(:,1), zm ) 
@@ -1195,12 +1206,13 @@ if ( l_stats_samp ) then
       call stat_update_var( iwpsclrap2, wpsclrp2(:,1), zm )
       call stat_update_var( iwpsclraprtp, wpsclrprtp(:,1), zm )
       call stat_update_var( iwpsclrapthlp, wpsclrpthlp(:,1), zm )
+   endif 
+   if ( edsclr_dim > 0 ) then
       call stat_update_var( iwpedsclrap, wpedsclrp(:,1), zm )
    endif 
 
    if ( sclr_dim > 1 ) then
       call stat_update_var( isclrbprtp, sclrprtp(:,2), zm )
-      call stat_update_var( isclrbp2, sclrp2(:,2), zm )
       call stat_update_var( isclrbpthvp, sclrpthvp(:,2), zm )
       call stat_update_var( isclrbpthlp, sclrpthlp(:,2), zm )
       call stat_update_var( isclrbprcp, sclrprcp(:,2), zm )
@@ -1209,6 +1221,8 @@ if ( l_stats_samp ) then
       call stat_update_var( iwpsclrbp2, wpsclrp2(:,2), zm )
       call stat_update_var( iwpsclrbprtp, wpsclrprtp(:,2), zm )
       call stat_update_var( iwpsclrbpthlp, wpsclrpthlp(:,2), zm )
+   endif 
+   if ( edsclr_dim > 1 ) then
       call stat_update_var( iwpedsclrbp, wpedsclrp(:,2), zm )
    endif 
         

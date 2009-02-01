@@ -1,337 +1,351 @@
 !-----------------------------------------------------------------------
 ! $Id$
-        module variables_prognostic_module
+module variables_prognostic_module
 
 !       This module contains definitions of all prognostic
 !       arrays used in the single column model, as well as subroutines
 !       to allocate, deallocate and initialize them.
 
 !       Note that while these are all same dimension, there is a
-!       thermodynamic grid and a momentum grid, and the grids have 
+!       thermodynamic grid and a momentum grid, and the grids have
 !       different points.
 !-----------------------------------------------------------------------
 
-        implicit none
+  implicit none
 
-        private ! Set Default Scoping
+  private ! Set Default Scoping
 
-        public ::  & 
-        setup_prognostic_variables,  & 
-        cleanup_prognostic_variables
+  public ::  & 
+    setup_prognostic_variables,  & 
+    cleanup_prognostic_variables
 
-        ! Prognostic variables
-        real, target, allocatable, dimension(:), public :: & 
-        um,      & ! u wind                        [m/s]
-        vm,      & ! v wind                        [m/s]
-        upwp,    & ! vertical u momentum flux      [m^2/s^2]
-        vpwp,    & ! vertical v momentum flux      [m^2/s^2]
-        up2,     & ! u'^2                          [m^2/s^2]
-        vp2,     & ! v'^2                          [m^2/s^2]
-        thlm,    & ! liquid potential temperature  [K]
-        rtm,     & ! total water mixing ratio      [kg/kg]
-        wprtp,   & ! w'rt'                         [m kg/s kg]
-        wpthlp,  & ! w'thl'                        [m K /s]
-        wp2,     & ! w'^2                          [m^2/s^2]
-        wp3,     & ! w'^3                          [m^3/s^3]
-        rtp2,    & ! rt'^2                         [kg/kg]
-        thlp2,   & ! thl'^2                        [K^2]
-        rtpthlp    ! rt'thl'                       [kg/kg K]
+  ! Prognostic variables
+  real, target, allocatable, dimension(:), public :: & 
+    um,      & ! u wind                        [m/s]
+    vm,      & ! v wind                        [m/s]
+    upwp,    & ! vertical u momentum flux      [m^2/s^2]
+    vpwp,    & ! vertical v momentum flux      [m^2/s^2]
+    up2,     & ! u'^2                          [m^2/s^2]
+    vp2,     & ! v'^2                          [m^2/s^2]
+    thlm,    & ! liquid potential temperature  [K]
+    rtm,     & ! total water mixing ratio      [kg/kg]
+    wprtp,   & ! w'rt'                         [m kg/s kg]
+    wpthlp,  & ! w'thl'                        [m K /s]
+    wp2,     & ! w'^2                          [m^2/s^2]
+    wp3,     & ! w'^3                          [m^3/s^3]
+    rtp2,    & ! rt'^2                         [kg/kg]
+    thlp2,   & ! thl'^2                        [K^2]
+    rtpthlp    ! rt'thl'                       [kg/kg K]
 
 !$omp   threadprivate(um, vm, upwp, vpwp, up2, vp2)
 !$omp   threadprivate(thlm, rtm, wprtp, wpthlp, wp2)
 !$omp   threadprivate(wp3, rtp2, thlp2, rtpthlp)
 
-        real, target, allocatable, dimension(:), public :: & 
-        p_in_Pa,      & ! Pressure (Pa) on thermodynamic points    [Pa]
-        exner,        & ! Exner function = ( p / p0 ) ** kappa     [-]
-        rho,          & ! Density                                  [kg/m^3]
-        rho_zm,       & ! Density                                  [kg/m^3]
-        thlm_forcing, & ! thlm large-scale forcing                 [K/s]
-        rtm_forcing,  & ! rtm large-scale forcing                  [kg/kg/s]
-        um_forcing,   & ! u wind forcing                           [m/s/s] 
-        vm_forcing      ! v wind forcing                           [m/s/s]
+  real, target, allocatable, dimension(:), public :: & 
+    p_in_Pa,      & ! Pressure (Pa) on thermodynamic points    [Pa]
+    exner,        & ! Exner function = ( p / p0 ) ** kappa     [-]
+    rho,          & ! Density                                  [kg/m^3]
+    rho_zm,       & ! Density                                  [kg/m^3]
+    thlm_forcing, & ! thlm large-scale forcing                 [K/s]
+    rtm_forcing,  & ! rtm large-scale forcing                  [kg/kg/s]
+    um_forcing,   & ! u wind forcing                           [m/s/s] 
+    vm_forcing      ! v wind forcing                           [m/s/s]
 
 !$omp   threadprivate(p_in_Pa, exner, rho, rho_zm, thlm_forcing, rtm_forcing,um_forcing,vm_forcing)
 
-        ! Imposed large scale w
-        real, target, allocatable, dimension(:), public :: & 
-        wm_zm, & ! w on momentum levels              [m/s]
-        wm_zt    ! w on thermodynamic levels         [m/s]
+  ! Imposed large scale w
+  real, target, allocatable, dimension(:), public :: & 
+    wm_zm, & ! w on momentum levels              [m/s]
+    wm_zt    ! w on thermodynamic levels         [m/s]
 
-        ! PDF width parameter: momentum levels
-        real, target, allocatable, dimension(:), public :: sigma_sqd_w  ! [-]
+  ! PDF width parameter: momentum levels
+  real, target, allocatable, dimension(:), public :: sigma_sqd_w  ! [-]
 
-        ! Mixing Lengths
-        real, target, allocatable, dimension(:), public :: tau_zm ! [s]
+  ! Mixing Lengths
+  real, target, allocatable, dimension(:), public :: tau_zm ! [s]
 
 !$omp   threadprivate(wm_zm, wm_zt, sigma_sqd_w, tau_zm)
 
-        ! Cloud water variables
-        real, target, allocatable, dimension(:), public :: & 
-        rcm,   & ! Cloud water mixing ratio                [kg/kg]
-        cf       ! Cloud fraction                          [%]
+  ! Cloud water variables
+  real, target, allocatable, dimension(:), public :: & 
+    rcm,   & ! Cloud water mixing ratio                [kg/kg]
+    cf       ! Cloud fraction                          [%]
 
 !$omp   threadprivate(rcm, cf)
 
-        ! Surface fluxes
-        real, public ::  & 
-        wpthlp_sfc,        & ! w'thl'      [m K/s]
-        wprtp_sfc,         & ! w'rt'       [m kg/kg s]
-        upwp_sfc, vpwp_sfc   ! u'w' & v'w' [m^2/s^2]
+  ! Surface fluxes
+  real, public ::  & 
+    wpthlp_sfc,        & ! w'thl'      [m K/s]
+    wprtp_sfc,         & ! w'rt'       [m kg/kg s]
+    upwp_sfc, vpwp_sfc   ! u'w' & v'w' [m^2/s^2]
 
 !$omp   threadprivate(wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc)
 
-        ! Surface fluxes for passive scalars
-        real, dimension(:), allocatable, public :: & 
-        wpsclrp_sfc,     & ! w'sclr' at surface    [units m/s]
-        wpedsclrp_sfc      ! w'edsclr' at surface  [units m/s]
+  ! Surface fluxes for passive scalars
+  real, dimension(:), allocatable, public :: & 
+    wpsclrp_sfc,     & ! w'sclr' at surface    [units m/s]
+    wpedsclrp_sfc      ! w'edsclr' at surface  [units m/s]
 
 !$omp   threadprivate(wpsclrp_sfc, wpedsclrp_sfc)
 
-        ! More surface data
-        real, public ::  & 
-        Tsfc,  & ! surface temperature     [K]
-        psfc,  & ! surface pressure        [Pa]
-        SE,    & ! sensible heat flux      [K/s]
-        LE       ! latent heat flux        [1/s]
+  ! More surface data
+  real, public ::  & 
+    Tsfc,  & ! surface temperature     [K]
+    psfc,  & ! surface pressure        [Pa]
+    SE,    & ! sensible heat flux      [K/s]
+    LE       ! latent heat flux        [1/s]
 
 !$omp   threadprivate(Tsfc, psfc, SE, LE)
 
-        ! Passive scalars 
-        real, target, allocatable, dimension(:,:), public :: & 
-        sclrm,          & ! Mean passive scalars           [units vary]
-        sclrm_forcing,  & ! Scalars' forcing               [units/s]
-        edsclrm,        & ! Mean eddy-diffusivity scalars  [units vary]
-        wpsclrp           ! w'sclr'                        [units vary m/s]
+  ! Passive scalars
+  real, target, allocatable, dimension(:,:), public :: & 
+    sclrm,           & ! Mean passive scalars           [units vary]
+    sclrp2,          & ! sclr'^2                        [units^2]
+    sclrm_forcing,   & ! Scalars' forcing               [units/s]
+    edsclrm,         & ! Mean eddy-diffusivity scalars  [units vary]
+    edsclrm_forcing, & ! Eddy-diff. scalars forcing     [units/s]
+    wpsclrp            ! w'sclr'                        [units vary m/s]
 
-!$omp   threadprivate(sclrm, sclrm_forcing, edsclrm, wpsclrp)
+!$omp   threadprivate(sclrm, sclrp2, sclrm_forcing, edsclrm, edsclrm_forcing, wpsclrp)
 
-        contains
+  contains
 !-----------------------------------------------------------------------
-        subroutine setup_prognostic_variables( nzmax )
+  subroutine setup_prognostic_variables( nzmax )
 
 !       Description:
-!       Allocates and Initializes prognostic scalar and array variables 
+!       Allocates and Initializes prognostic scalar and array variables
 !       for the HOC model code
 
 !       References:
 !       None
 !-----------------------------------------------------------------------
-        use constants, only:  & 
-            rttol, &
-            thltol, &
-            wtol_sqd
+    use constants, only:  & 
+        rttol, &
+        thltol, &
+        wtol_sqd
 
-        use parameters_model, only: & 
-            sclr_dim ! Variable(s) 
+    use parameters_model, only: & 
+        sclr_dim,  & ! Variable(s)
+        edsclr_dim
 
-        implicit none
+    implicit none
 
-        integer, intent(in) :: nzmax
+    integer, intent(in) :: nzmax
 
-        integer :: i
+    integer :: i
 !$omp   parallel
 !   --- Allocation ---
 
 ! Prognostic variables
 
-        allocate( um(1:nzmax) )        ! u wind
-        allocate( vm(1:nzmax) )        ! v wind
+    allocate( um(1:nzmax) )        ! u wind
+    allocate( vm(1:nzmax) )        ! v wind
 
-        allocate( upwp(1:nzmax) )      ! vertical u momentum flux
-        allocate( vpwp(1:nzmax) )      ! vertical v momentum flux
+    allocate( upwp(1:nzmax) )      ! vertical u momentum flux
+    allocate( vpwp(1:nzmax) )      ! vertical v momentum flux
 
-        allocate( up2(1:nzmax) )
-        allocate( vp2(1:nzmax) )
+    allocate( up2(1:nzmax) )
+    allocate( vp2(1:nzmax) )
 
-        allocate( thlm(1:nzmax) )      ! liquid potential temperature
-        allocate( rtm(1:nzmax) )       ! total water mixing ratio
-        allocate( wprtp(1:nzmax) )     ! w'rt'
-        allocate( wpthlp(1:nzmax) )    ! w'thl'
-        allocate( wp2(1:nzmax) )       ! w'^2
-        allocate( wp3(1:nzmax) )       ! w'^3
-        allocate( rtp2(1:nzmax) )      ! rt'^2
-        allocate( thlp2(1:nzmax) )     ! thl'^2
-        allocate( rtpthlp(1:nzmax) )   ! rt'thlp'
+    allocate( thlm(1:nzmax) )      ! liquid potential temperature
+    allocate( rtm(1:nzmax) )       ! total water mixing ratio
+    allocate( wprtp(1:nzmax) )     ! w'rt'
+    allocate( wpthlp(1:nzmax) )    ! w'thl'
+    allocate( wp2(1:nzmax) )       ! w'^2
+    allocate( wp3(1:nzmax) )       ! w'^3
+    allocate( rtp2(1:nzmax) )      ! rt'^2
+    allocate( thlp2(1:nzmax) )     ! thl'^2
+    allocate( rtpthlp(1:nzmax) )   ! rt'thlp'
 
-        allocate( p_in_Pa(1:nzmax) )   ! pressure (pascals)
-        allocate( exner(1:nzmax) )     ! exner function
-        allocate( rho(1:nzmax) )       ! density: t points
-        allocate( rho_zm(1:nzmax) )    ! density: m points
+    allocate( p_in_Pa(1:nzmax) )   ! pressure (pascals)
+    allocate( exner(1:nzmax) )     ! exner function
+    allocate( rho(1:nzmax) )       ! density: t points
+    allocate( rho_zm(1:nzmax) )    ! density: m points
 
-        allocate( thlm_forcing(1:nzmax) ) ! thlm ls forcing
-        allocate( rtm_forcing(1:nzmax) )  ! rtm ls forcing
-        allocate( um_forcing(1:nzmax) )   ! u forcing
-        allocate( vm_forcing(1:nzmax) )   ! v forcing
+    allocate( thlm_forcing(1:nzmax) ) ! thlm ls forcing
+    allocate( rtm_forcing(1:nzmax) )  ! rtm ls forcing
+    allocate( um_forcing(1:nzmax) )   ! u forcing
+    allocate( vm_forcing(1:nzmax) )   ! v forcing
 
 
-        ! Imposed large scale w
+    ! Imposed large scale w
 
-        allocate( wm_zm(1:nzmax) )       ! momentum levels
-        allocate( wm_zt(1:nzmax) )       ! thermodynamic levels
+    allocate( wm_zm(1:nzmax) )       ! momentum levels
+    allocate( wm_zt(1:nzmax) )       ! thermodynamic levels
 
-        ! PDF width parameter: momentum levels
+    ! PDF width parameter: momentum levels
 
-        allocate( sigma_sqd_w(1:nzmax) ) 
+    allocate( sigma_sqd_w(1:nzmax) )
 
-        ! Mixing lengths
+    ! Mixing lengths
 
-        allocate( tau_zm(1:nzmax) ) 
+    allocate( tau_zm(1:nzmax) )
 
-        ! Cloud water variables
+    ! Cloud water variables
 
-        allocate( rcm(1:nzmax) )
-        allocate( cf(1:nzmax) )
+    allocate( rcm(1:nzmax) )
+    allocate( cf(1:nzmax) )
 
-        ! Passive scalar variables 
-        ! Note that sclr_dim can be 0
-        allocate( wpsclrp_sfc(1:sclr_dim), wpedsclrp_sfc(1:sclr_dim) )
-        allocate( sclrm(1:nzmax, 1:sclr_dim) )
-        allocate( sclrm_forcing(1:nzmax, 1:sclr_dim) )
+    ! Passive scalar variables
+    ! Note that sclr_dim can be 0
+    allocate( wpsclrp_sfc(1:sclr_dim) )
+    allocate( sclrm(1:nzmax, 1:sclr_dim) )
+    allocate( sclrp2(1:nzmax, 1:sclr_dim) )
+    allocate( sclrm_forcing(1:nzmax, 1:sclr_dim) )
 
-        allocate( edsclrm(1:nzmax, 1:sclr_dim) )
-        allocate( wpsclrp(1:nzmax, 1:sclr_dim) )
+    allocate( wpedsclrp_sfc(1:edsclr_dim) )
+    allocate( edsclrm_forcing(1:nzmax, 1:edsclr_dim) )
+
+    allocate( edsclrm(1:nzmax, 1:edsclr_dim) )
+    allocate( wpsclrp(1:nzmax, 1:sclr_dim) )
 
 
 !--------- Set initial values for array variables ---------
 
-        ! Prognostic variables
+    ! Prognostic variables
 
-        um(1:nzmax)      = 0.0     ! u wind
-        vm (1:nzmax)     = 0.0     ! v wind
+    um(1:nzmax)      = 0.0     ! u wind
+    vm (1:nzmax)     = 0.0     ! v wind
 
-        upwp(1:nzmax)    = 0.0     ! vertical u momentum flux
-        vpwp(1:nzmax)    = 0.0     ! vertical v momentum flux
+    upwp(1:nzmax)    = 0.0     ! vertical u momentum flux
+    vpwp(1:nzmax)    = 0.0     ! vertical v momentum flux
 
-        up2(1:nzmax)     = wtol_sqd ! u'^2
-        vp2(1:nzmax)     = wtol_sqd ! v'^2
-        wp2(1:nzmax)     = wtol_sqd ! w'^2
+    up2(1:nzmax)     = wtol_sqd ! u'^2
+    vp2(1:nzmax)     = wtol_sqd ! v'^2
+    wp2(1:nzmax)     = wtol_sqd ! w'^2
 
-        thlm(1:nzmax)    = 0.0         ! liquid potential temperature
-        rtm(1:nzmax)     = 0.0         ! total water mixing ratio
-        wprtp(1:nzmax)   = 0.0         ! w'rt'
-        wpthlp(1:nzmax)  = 0.0         ! w'thl'
-        wp3(1:nzmax)     = 0.0         ! w'^3
-        rtp2(1:nzmax)    = rttol**2    ! rt'^2
-        thlp2(1:nzmax)   = thltol**2   ! thl'^2
-        rtpthlp(1:nzmax) = 0.0         ! rt'thl'
- 
-        p_in_Pa(1:nzmax)= 0.0   ! pressure (Pa)
-        exner(1:nzmax) = 0.0    ! exner
-        rho(1:nzmax)  = 0.0     ! density on thermo. levels
-        rho_zm(1:nzmax)  = 0.0  ! density on moment. levels
+    thlm(1:nzmax)    = 0.0         ! liquid potential temperature
+    rtm(1:nzmax)     = 0.0         ! total water mixing ratio
+    wprtp(1:nzmax)   = 0.0         ! w'rt'
+    wpthlp(1:nzmax)  = 0.0         ! w'thl'
+    wp3(1:nzmax)     = 0.0         ! w'^3
+    rtp2(1:nzmax)    = rttol**2    ! rt'^2
+    thlp2(1:nzmax)   = thltol**2   ! thl'^2
+    rtpthlp(1:nzmax) = 0.0         ! rt'thl'
 
-        thlm_forcing(1:nzmax) = 0.0     ! thlm large-scale forcing
-        rtm_forcing(1:nzmax)  = 0.0     ! rtm large-scale forcing
-        um_forcing(1:nzmax) = 0.0       ! u forcing
-        vm_forcing(1:nzmax) = 0.0       ! v forcing
+    p_in_Pa(1:nzmax)= 0.0   ! pressure (Pa)
+    exner(1:nzmax) = 0.0    ! exner
+    rho(1:nzmax)  = 0.0     ! density on thermo. levels
+    rho_zm(1:nzmax)  = 0.0  ! density on moment. levels
 
-        ! Imposed large scale w
+    thlm_forcing(1:nzmax) = 0.0     ! thlm large-scale forcing
+    rtm_forcing(1:nzmax)  = 0.0     ! rtm large-scale forcing
+    um_forcing(1:nzmax) = 0.0       ! u forcing
+    vm_forcing(1:nzmax) = 0.0       ! v forcing
 
-        wm_zm(1:nzmax) = 0.0      ! Momentum levels
-        wm_zt(1:nzmax) = 0.0      ! Thermodynamic levels
+    ! Imposed large scale w
 
-        ! PDF width parameter: momentum levels
+    wm_zm(1:nzmax) = 0.0      ! Momentum levels
+    wm_zt(1:nzmax) = 0.0      ! Thermodynamic levels
 
-        sigma_sqd_w(1:nzmax)  = 0.0 
+    ! PDF width parameter: momentum levels
 
-        ! Mixing lengths
+    sigma_sqd_w(1:nzmax)  = 0.0
 
-        tau_zm(1:nzmax) = 0.0
+    ! Mixing lengths
 
-        ! Cloud water variables
+    tau_zm(1:nzmax) = 0.0
 
-        rcm(1:nzmax)  = 0.0
-        cf(1:nzmax)   = 0.0
+    ! Cloud water variables
+
+    rcm(1:nzmax)  = 0.0
+    cf(1:nzmax)   = 0.0
 
 
-        ! Surface fluxes
-        wpthlp_sfc = 0.0
-        wprtp_sfc  = 0.0
-        upwp_sfc   = 0.0
-        vpwp_sfc   = 0.0
+    ! Surface fluxes
+    wpthlp_sfc = 0.0
+    wprtp_sfc  = 0.0
+    upwp_sfc   = 0.0
+    vpwp_sfc   = 0.0
 
-        ! Passive scalars 
-        do i = 1, sclr_dim, 1
-          wpsclrp_sfc(i)   = 0.0
-          wpedsclrp_sfc(i) = 0.0
+    ! Passive scalars
+    do i = 1, sclr_dim, 1
+      wpsclrp_sfc(i)   = 0.0
 
-          sclrm(1:nzmax,i)         = 0.0
-          sclrm_forcing(1:nzmax,i) = 0.0
+      sclrm(1:nzmax,i)         = 0.0
+      sclrp2(1:nzmax,i)        = 0.0
+      sclrm_forcing(1:nzmax,i) = 0.0
+      wpsclrp(1:nzmax,i)         = 0.0
+    end do
 
-          edsclrm(1:nzmax,i) = 0.0
-          wpsclrp(1:nzmax,i) = 0.0
-        end do
+    do i = 1, edsclr_dim, 1
+      wpedsclrp_sfc(i) = 0.0
+
+      edsclrm(1:nzmax,i)         = 0.0
+      edsclrm_forcing(1:nzmax,i) = 0.0
+    end do
 
 !$omp   end parallel
 
-        return
-        end subroutine setup_prognostic_variables
+    return
+  end subroutine setup_prognostic_variables
 !-----------------------------------------------------------------------
-        subroutine cleanup_prognostic_variables
-        implicit none
+  subroutine cleanup_prognostic_variables
+    implicit none
 
-        ! Prognostic variables
+    ! Prognostic variables
 !$omp   parallel
 
-        deallocate( um )        ! u wind
-        deallocate( vm )        ! v wind
+    deallocate( um )        ! u wind
+    deallocate( vm )        ! v wind
 
-        deallocate( upwp )      ! vertical u momentum flux
-        deallocate( vpwp )      ! vertical v momentum flux
+    deallocate( upwp )      ! vertical u momentum flux
+    deallocate( vpwp )      ! vertical v momentum flux
 
-        deallocate( up2, vp2 )
+    deallocate( up2, vp2 )
 
-        deallocate( thlm )      ! liquid potential temperature
-        deallocate( rtm )       ! total water mixing ratio
-        deallocate( wprtp )     ! w'rt'
-        deallocate( wpthlp )    ! w'thl'
-        deallocate( wp2 )       ! w'^2
-        deallocate( wp3 )       ! w'^3
-        deallocate( rtp2 )      ! rt'^2
-        deallocate( thlp2 )     ! thl'^2
-        deallocate( rtpthlp )   ! rt'thl'
+    deallocate( thlm )      ! liquid potential temperature
+    deallocate( rtm )       ! total water mixing ratio
+    deallocate( wprtp )     ! w'rt'
+    deallocate( wpthlp )    ! w'thl'
+    deallocate( wp2 )       ! w'^2
+    deallocate( wp3 )       ! w'^3
+    deallocate( rtp2 )      ! rt'^2
+    deallocate( thlp2 )     ! thl'^2
+    deallocate( rtpthlp )   ! rt'thl'
 
-        deallocate( p_in_Pa )   ! pressure
-        deallocate( exner )     ! exner
-        deallocate( rho )       ! density: t points
-        deallocate( rho_zm )    ! density: m points
+    deallocate( p_in_Pa )   ! pressure
+    deallocate( exner )     ! exner
+    deallocate( rho )       ! density: t points
+    deallocate( rho_zm )    ! density: m points
 
-        deallocate( thlm_forcing )
-        deallocate( rtm_forcing )
-        deallocate( um_forcing )
-        deallocate( vm_forcing )
+    deallocate( thlm_forcing )
+    deallocate( rtm_forcing )
+    deallocate( um_forcing )
+    deallocate( vm_forcing )
 
-        ! Imposed large scale w
+    ! Imposed large scale w
 
-        deallocate( wm_zm )     ! momentum levels
-        deallocate( wm_zt )     ! thermodynamic levels
+    deallocate( wm_zm )     ! momentum levels
+    deallocate( wm_zt )     ! thermodynamic levels
 
-        ! PDF width parameter
+    ! PDF width parameter
 
-        deallocate( sigma_sqd_w )
+    deallocate( sigma_sqd_w )
 
-        ! Mixing lengths
+    ! Mixing lengths
 
-        deallocate( tau_zm )
+    deallocate( tau_zm )
 
-        ! Cloud water variables
+    ! Cloud water variables
 
-        deallocate( rcm )
-        deallocate( cf )
+    deallocate( rcm )
+    deallocate( cf )
 
 
-        ! Passive scalars
-        deallocate( wpsclrp_sfc, wpedsclrp_sfc )
-        deallocate( sclrm )
-        deallocate( sclrm_forcing )
+    ! Passive scalars
+    deallocate( wpsclrp_sfc, wpedsclrp_sfc )
+    deallocate( sclrm )
+    deallocate( sclrp2 )
+    deallocate( sclrm_forcing )
+    deallocate( wpsclrp )
 
-        deallocate( edsclrm )
-        deallocate( wpsclrp )
+    deallocate( edsclrm )
+    deallocate( edsclrm_forcing )
 
 !$omp   end parallel
 
-        return
-        end subroutine cleanup_prognostic_variables
+    return
+  end subroutine cleanup_prognostic_variables
 
-        end module variables_prognostic_module
+end module variables_prognostic_module

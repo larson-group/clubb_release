@@ -224,8 +224,7 @@
               wpthlp, wp2, wp3, sigma_sqd_w, rtp2, thlp2, & 
               rtpthlp, tau_zm, rcm, cf, prefix, & 
               wpsclrp_sfc, wpedsclrp_sfc, & 
-              sclrm, sclrm_forcing, edsclrm & 
- )
+              sclrm, sclrm_forcing, edsclrm, edsclrm_forcing )
 !
 !       Description: This subroutine determines what input variables may have 
 !       NaN values.
@@ -237,7 +236,8 @@
      gr ! Variable
 
  use parameters_model, only: & 
-     sclr_dim ! Variable
+     sclr_dim,  & ! Variable
+     edsclr_dim
  
  implicit none
  
@@ -290,14 +290,19 @@
  
  ! Input Variables
  real, intent(in), dimension(sclr_dim) :: & 
- wpsclrp_sfc,   & ! Scalar flux at surface [units m/s]
+ wpsclrp_sfc    ! Scalar flux at surface [units m/s]
+
+ real, intent(in), dimension(edsclr_dim) :: & 
  wpedsclrp_sfc ! Eddy-Scalar flux at surface      [units m/s]
 
  ! Input/Output Variables
  real, intent(in),dimension(gr%nnzp,sclr_dim) :: & 
- sclrm,           & ! Passive scalar mean.
- sclrm_forcing,   & ! Passive scalar forcing.
- edsclrm         !Eddy passive scalar mean.
+ sclrm,           & ! Passive scalar mean.      [units vary]
+ sclrm_forcing      ! Passive scalar forcing.   [units / s]
+
+ real, intent(in),dimension(gr%nnzp,edsclr_dim) :: & 
+ edsclrm,        &  !Eddy passive scalar mean.    [units vary]
+ edsclrm_forcing   ! Eddy passive scalar forcing. [units / s]
 
  ! Local Variables
                                              
@@ -360,13 +365,18 @@
  
    call check_nan( wpsclrp_sfc(i),"wpsclrp_sfc",  & 
                    prefix//proc_name )
-   call check_nan( wpedsclrp_sfc(i),"wpedsclrp_sfc",  & 
-                   prefix//proc_name )
 
    call check_nan( sclrm(:,i),"sclrm", prefix//proc_name )
    call check_nan( sclrm_forcing(:,i),"sclrm_forcing",  & 
                    prefix//proc_name ) 
+
+ end do
+
+ do i = 1, edsclr_dim
    call check_nan( edsclrm(:,i),"edsclrm", prefix//proc_name )
+   call check_nan( edsclrm_forcing(:,i),"edsclrm", prefix//proc_name )
+   call check_nan( wpedsclrp_sfc(i),"wpedsclrp_sfc",  & 
+                   prefix//proc_name )
 
  end do
  
@@ -557,6 +567,7 @@
 
  use parameters_model, only: & 
      sclr_dim,  & ! Variable(s)
+     edsclr_dim, &
      hydromet_dim 
 
  implicit none
@@ -690,8 +701,11 @@
 !           write(fstderr,*) sclrm(:,i)
      invalid_model_arrays = .true.
    end if
+ end do
+
+ do i = 1, edsclr_dim, 1
    if ( isnan2d( edsclrm(:,i) ) ) then
-     write(fstderr,*) "NaN in `edsclrm", i, "model array"
+     write(fstderr,*) "NaN in edsclrm", i, "model array"
 !           write(fstderr,'(a8,i2,a1)') "edsclrm(", i, ")"
 !           write(fstderr,*) edsclrm(:,i)
      invalid_model_arrays = .true.

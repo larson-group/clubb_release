@@ -28,7 +28,8 @@ module sounding
             fstderr ! Constant
 
         use parameters_model, only: & 
-            sclr_dim ! Variable(s)
+            sclr_dim, &! Variable(s)
+            edsclr_dim
 
         use std_atmosphere_mod, only:  & 
             std_atmosphere ! Procedure(s)
@@ -69,7 +70,10 @@ module sounding
 
         ! Optional output variables
         real, intent(out), dimension(gr%nnzp, sclr_dim) ::  & 
-        sclrm, edsclrm ! Passive scalar input   [units vary] 
+          sclrm   ! Passive scalar output      [units vary] 
+
+        real, intent(out), dimension(gr%nnzp, edsclr_dim) ::  & 
+          edsclrm ! Eddy Passive scalar output [units vary] 
 
         ! Local variables
 
@@ -106,7 +110,7 @@ module sounding
         read(unit = iunit, nml = sounding)
 
         ! Read in a passive scalar sounding, if enabled
-        if ( sclr_dim > 0 ) then
+        if ( sclr_dim > 0 .or. edsclr_dim > 0 ) then
           ! Initialize to zero
           sclr   = 0.0
           edsclr = 0.0
@@ -154,7 +158,9 @@ module sounding
           rtm(1)  = rt(1)
           if ( sclr_dim > 0 ) then
             sclrm(1,1:sclr_dim)   = sclr(1,1:sclr_dim)
-            edsclrm(1,1:sclr_dim) = edsclr(1,1:sclr_dim)
+          end if
+          if ( edsclr_dim > 0 ) then
+            edsclrm(1,1:edsclr_dim) = edsclr(1,1:edsclr_dim)
           end if
         end if
 
@@ -169,7 +175,9 @@ module sounding
           print *, "rt = ", rt(1:nlevels)
           do i = 1, sclr_dim, 1
             write(6,'(a5,i2,a2)',advance='no') "sclr(", i,")="
-            write(6,'(8g10.2)') sclr(1:nlevels,i)
+            write(6,'(8g10.3)') sclr(1:nlevels,i)
+          end do
+          do i = 1, edsclr_dim, 1
             write(6,'(a7,i2,a2)',advance='no') "edsclr(", i, ")="
             write(6,'(8g10.3)') edsclr(1:nlevels,i)
           end do
@@ -214,10 +222,13 @@ module sounding
                 do j = 1, sclr_dim 
                   sclrm(i,j) = lin_int( gr%zt(i), z(k), z(k-1),  & 
                                        sclr(k,j), sclr(k-1,j) )
+                end do
+              end if
+              if ( edsclr_dim > 0 ) then
+                do j = 1, edsclr_dim 
                   edsclrm(i,j) = lin_int( gr%zt(i), z(k), z(k-1),  & 
                                          edsclr(k,j), edsclr(k-1,j) )
                 end do
-
               end if
 
             ELSE  ! DYCOMS II RF02 case

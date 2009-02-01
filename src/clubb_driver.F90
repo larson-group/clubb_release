@@ -129,12 +129,15 @@ module clubb_driver
       tau_zm, p_in_Pa, rho_zm, upwp, vpwp, wpthlp, & 
       rho, wprtp, wpthlp_sfc, wprtp_sfc, & 
       upwp_sfc, vpwp_sfc, thlm_forcing, & 
-      rtm_forcing, um_forcing, vm_forcing, up2, vp2, wp3, rtp2, & 
+      rtm_forcing, um_forcing, vm_forcing, &
+      up2, vp2, wp3, rtp2, & 
       thlp2, rtpthlp, sigma_sqd_w, cf
 
     use variables_prognostic_module, only:  & 
-      sclrm, edsclrm, wpsclrp_sfc,  & ! Variables
-      wpedsclrp_sfc, sclrm_forcing, wpsclrp
+      sclrm, sclrp2, sclrm_forcing, & ! Variables
+      wpsclrp, wpsclrp_sfc,  & 
+      edsclrm, edsclrm_forcing, wpedsclrp_sfc
+      
 
     use numerical_check, only: invalid_model_arrays ! Procedure(s)
 
@@ -281,7 +284,8 @@ module clubb_driver
     integer ::  & 
       iunit,           & ! File unit used for I/O
       hydromet_dim,    & ! Number of hydrometeor species        [#]
-      sclr_dim           ! Number of passive scalars            [#]
+      sclr_dim,        & ! Number of passive scalars            [#]
+      edsclr_dim         ! Number of passive scalars            [#]
 
     integer :: itime_nearest ! Used for and inputfields run [s]
 
@@ -299,7 +303,7 @@ module clubb_driver
       l_bugsrad, l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, debug_level, & 
       alvdr, alvdf, alndr, alndf, &
-      sclr_tol, & 
+      sclr_tol, edsclr_dim, & 
       sclr_dim, iisclr_thl, iisclr_rt, iiCO2
 
     namelist /stats_setting/ & 
@@ -360,7 +364,8 @@ module clubb_driver
 
     call set_albedo( 0.1d0 , 0.1d0, 0.1d0, 0.1d0 )
 
-    sclr_dim  = 0
+    sclr_dim   = 0
+    edsclr_dim = 0
     iisclr_thl = -1
     iisclr_rt  = -1
     iiCO2 = -1
@@ -490,6 +495,7 @@ module clubb_driver
       print *, "debug_level = ", debug_level
 
       print *, "sclr_dim = ", sclr_dim
+      print *, "edsclr_dim = ", edsclr_dim
       print *, "iisclr_thl = ", iisclr_thl
       print *, "iisclr_rt = ", iisclr_rt
       print *, "iiCO2 = ", iiCO2
@@ -547,10 +553,10 @@ module clubb_driver
     ! Allocate & initialize variables,
     ! setup grid, setup constants, and setup flags
 
-    call setup_clubb_core &                               ! Intent(in)
-         ( nzmax, T0, ts_nudge, sol_const,& 
-           std_atmos_buffer, hydromet_dim, sclr_dim, & ! Intent(in)
-           sclr_tol(1:sclr_dim), params, &                      ! Intent(in)
+    call setup_clubb_core &                               
+         ( nzmax, T0, ts_nudge, sol_const,&                     ! Intent(in)
+           std_atmos_buffer, hydromet_dim, sclr_dim, &          ! Intent(in)
+           sclr_tol(1:sclr_dim), edsclr_dim, params, &          ! Intent(in)
            l_bugsrad, l_soil_veg, l_kk_rain, l_icedfs, l_coamps_micro, &   ! Intent(in)
            l_cloud_sed, l_uv_nudge, l_tke_aniso, &              ! Intent(in)
            .false., grid_type, deltaz, zm_init, &               ! Intent(in)
@@ -688,17 +694,18 @@ module clubb_driver
 
       do i1=1, niterlong
         call advance_clubb_core & 
-             ( i, .false., dt, fcor, &                          ! Intent(in)
-               thlm_forcing, rtm_forcing, um_forcing, vm_forcing,wm_zm, wm_zt, &       ! Intent(in)
-               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &     ! Intent(in)
-               p_in_Pa, rho_zm, rho, exner, &                   ! Intent(in)
-               wpsclrp_sfc, wpedsclrp_sfc,  &                   ! Intent(in)
-               um, vm, upwp, vpwp, up2, vp2, &                  ! Intent(inout)
-               thlm, rtm, wprtp, wpthlp, wp2, wp3, &            ! Intent(inout)
-               rtp2, thlp2, rtpthlp, &                          ! Intent(inout)
-               sigma_sqd_w, tau_zm, rcm, cf, err_code, &                ! Intent(inout)
-               sclrm, sclrm_forcing, edsclrm, &                 ! Intent(inout)
-               wpsclrp )                                        ! Intent(inout)
+             ( i, .false., dt, fcor, &                             ! Intent(in)
+               thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &! Intent(in)
+               sclrm_forcing, edsclrm_forcing, wm_zm, wm_zt, &     ! Intent(in)
+               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &        ! Intent(in)
+               p_in_Pa, rho_zm, rho, exner, &                      ! Intent(in)
+               wpsclrp_sfc, wpedsclrp_sfc,  &                      ! Intent(in)
+               um, vm, upwp, vpwp, up2, vp2, &                     ! Intent(inout)
+               thlm, rtm, wprtp, wpthlp, wp2, wp3, &               ! Intent(inout)
+               rtp2, thlp2, rtpthlp, &                             ! Intent(inout)
+               sigma_sqd_w, tau_zm, rcm, cf, &                     ! Intent(inout)
+               err_code, &                                         ! Intent(inout)
+               sclrm, sclrp2, wpsclrp, edsclrm )                   ! Intent(inout)
 
 
         call stats_end_timestep( )
@@ -708,7 +715,7 @@ module clubb_driver
         ! Advance time here, not in advance_clubb_core,
         ! in order to facilitate use of stats.
         ! A host model, e.g. WRF, would advance time outside
-        ! of hoc_closure_timestep.  Vince Larson 7 Feb 2006
+        ! of advance_clubb_core.  Vince Larson 7 Feb 2006
         if ( i1 < niterlong ) then
           time_current = time_initial + (i-1) * dtmain  & 
                        + i1 * dtclosure
@@ -779,7 +786,8 @@ module clubb_driver
 
     use parameters_model, only:  & 
         T0,  &  ! Variable(s)
-        sclr_dim
+        sclr_dim, &
+        edsclr_dim
 
     use grid_class, only: gr ! Variable(s)
 
@@ -856,8 +864,10 @@ module clubb_driver
 
     ! Output
     real, dimension(gr%nnzp,sclr_dim), intent(out) ::  & 
-    sclrm,   & ! Standard passive scalar [units vary]
-    edsclrm    ! Eddy diffusivity passive scalar [units vary]
+      sclrm      ! Standard passive scalar [units vary]
+
+    real, dimension(gr%nnzp,edsclr_dim), intent(out) ::  & 
+      edsclrm    ! Eddy diffusivity passive scalar [units vary]
 
     ! Local Variables
     real, dimension(gr%nnzp) :: tmp1
