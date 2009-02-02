@@ -92,6 +92,7 @@ plot_dycoms2_rf02_nd_sim1=0
 plot_dycoms2_rf02_so_sim1=0
 plot_fire_sim1=0
 plot_gabls2_sim1=0
+plot_gabls3_sim1=0
 plot_jun25_altocu_sim1=0
 plot_lba_sim1=0
 plot_mpace_a_sim1=0
@@ -114,6 +115,7 @@ plot_dycoms2_rf02_nd_sim2=0
 plot_dycoms2_rf02_so_sim2=0
 plot_fire_sim2=0
 plot_gabls2_sim2=0
+plot_gabls3_sim2=0
 plot_jun25_altocu_sim2=0
 plot_lba_sim2=0
 plot_mpace_a_sim2=0
@@ -285,6 +287,18 @@ if [ -r "$HOC_sim1/gabls2_zm.ctl" ]; then
 			if [ -r "$HOC_sim1/gabls2_zt.dat" ]; then
 				echo "Plotting Gabls2 for HOC_sim1"
 				plot_gabls2_sim1=1
+			fi
+		fi
+	fi
+fi
+
+#If the Gabls3 files exist, plot Gabls2
+if [ -r "$HOC_sim1/gabls3_zm.ctl" ]; then
+	if [ -r "$HOC_sim1/gabls3_zm.dat" ]; then
+		if [ -r "$HOC_sim1/gabls3_zt.ctl" ]; then
+			if [ -r "$HOC_sim1/gabls3_zt.dat" ]; then
+				echo "Plotting Gabls3 for HOC_sim1"
+				plot_gabls3_sim1=1
 			fi
 		fi
 	fi
@@ -546,6 +560,19 @@ if [ "$HOC_sim2" != 0 ]; then
 		fi
 	fi
 
+
+	#If the Gabls3 files exist, plot Gabls3
+	if [ -r "$HOC_sim2/gabls3_zm.ctl" ]; then
+		if [ -r "$HOC_sim2/gabls3_zm.dat" ]; then
+			if [ -r "$HOC_sim2/gabls3_zt.ctl" ]; then
+				if [ -r "$HOC_sim2/gabls3_zt.dat" ]; then
+					echo "Plotting Gabls3 for HOC_sim2"
+					plot_gabls3_sim2=1
+				fi
+			fi
+		fi
+	fi
+
 	#If the Jun25_Altocu files exist, plot Jun25_Altocu
 	if [ -r "$HOC_sim2/jun25_altocu_zm.ctl" ]; then
 		if [ -r "$HOC_sim2/jun25_altocu_zm.dat" ]; then
@@ -641,10 +668,10 @@ cd $PLOTGEN_DIR
 
 #Actually run the script with the arguments we've parsed out
 if [ "$HOC_sim2" == 0 ]; then
-	echo "quit" | (/usr/local/bin/matlab -nojvm -nodisplay -r compare_plots_cases_driver"( '$HOC_sim1', 0, $compare_LES, $compare_best, $compare_HOC, $plot_arm_sim1, $plot_arm_97_sim1, $plot_atex_sim1, $plot_bomex_sim1, $plot_clex9_nov02_sim1, $plot_clex9_oct14_sim1, $plot_cobra_sim1, $plot_dycoms2_rf01_sim1, $plot_dycoms2_rf02_do_sim1, $plot_dycoms2_rf02_ds_sim1, $plot_dycoms2_rf02_nd_sim1, $plot_dycoms2_rf02_so_sim1, $plot_fire_sim1, $plot_gabls2_sim1, $plot_jun25_altocu_sim1, $plot_lba_sim1, $plot_mpace_a_sim1, $plot_mpace_b_sim1, $plot_nov11_altocu_sim1, $plot_rico_sim1, $plot_wangara_sim1, $plot_arm_sim2, $plot_arm_97_sim2, $plot_atex_sim2, $plot_bomex_sim2, $plot_clex9_nov02_sim2, $plot_clex9_oct14_sim2, $plot_cobra_sim2, $plot_dycoms2_rf01_sim2, $plot_dycoms2_rf02_do_sim2, $plot_dycoms2_rf02_ds_sim2, $plot_dycoms2_rf02_nd_sim2, $plot_dycoms2_rf02_so_sim2, $plot_fire_sim2, $plot_gabls2_sim2, $plot_jun25_altocu_sim2, $plot_lba_sim2, $plot_mpace_a_sim2, $plot_mpace_b_sim2, $plot_nov11_altocu_sim2, $plot_rico_sim2, $plot_wangara_sim2 )") && \
+	echo "quit" | (/usr/local/bin/matlab -nojvm -nodisplay -r compare_plots_cases_driver"( '$HOC_sim1', 0, $compare_LES, $compare_best, $compare_HOC, $plot_arm_sim1, $plot_arm_97_sim1, $plot_atex_sim1, $plot_bomex_sim1, $plot_clex9_nov02_sim1, $plot_clex9_oct14_sim1, $plot_cobra_sim1, $plot_dycoms2_rf01_sim1, $plot_dycoms2_rf02_do_sim1, $plot_dycoms2_rf02_ds_sim1, $plot_dycoms2_rf02_nd_sim1, $plot_dycoms2_rf02_so_sim1, $plot_fire_sim1, $plot_gabls2_sim1,  $plot_gabls3_sim1, $plot_jun25_altocu_sim1, $plot_lba_sim1, $plot_mpace_a_sim1, $plot_mpace_b_sim1, $plot_nov11_altocu_sim1, $plot_rico_sim1, $plot_wangara_sim1, $plot_arm_sim2, $plot_arm_97_sim2, $plot_atex_sim2, $plot_bomex_sim2, $plot_clex9_nov02_sim2, $plot_clex9_oct14_sim2, $plot_cobra_sim2, $plot_dycoms2_rf01_sim2, $plot_dycoms2_rf02_do_sim2, $plot_dycoms2_rf02_ds_sim2, $plot_dycoms2_rf02_nd_sim2, $plot_dycoms2_rf02_so_sim2, $plot_fire_sim2, $plot_gabls2_sim2,  $plot_gabls3_sim2, $plot_jun25_altocu_sim2, $plot_lba_sim2, $plot_mpace_a_sim2, $plot_mpace_b_sim2, $plot_nov11_altocu_sim2, $plot_rico_sim2, $plot_wangara_sim2 )") && \
 	run_success=1
 else
-	echo "quit" | (/usr/local/bin/matlab -nojvm -nodisplay -r compare_plots_cases_driver"( '$HOC_sim1', '$HOC_sim2', $compare_LES, $compare_best, $compare_HOC, $plot_arm_sim1, $plot_arm_97_sim1, $plot_atex_sim1, $plot_bomex_sim1, $plot_clex9_nov02_sim1, $plot_clex9_oct14_sim1, $plot_cobra_sim1, $plot_dycoms2_rf01_sim1, $plot_dycoms2_rf02_do_sim1, $plot_dycoms2_rf02_ds_sim1, $plot_dycoms2_rf02_nd_sim1, $plot_dycoms2_rf02_so_sim1, $plot_fire_sim1, $plot_gabls2_sim1, $plot_jun25_altocu_sim1, $plot_lba_sim1, $plot_mpace_a_sim1, $plot_mpace_b_sim1, $plot_nov11_altocu_sim1, $plot_rico_sim1, $plot_wangara_sim1, $plot_arm_sim2, $plot_arm_97_sim2, $plot_atex_sim2, $plot_bomex_sim2, $plot_clex9_nov02_sim2, $plot_clex9_oct14_sim2, $plot_cobra_sim2, $plot_dycoms2_rf01_sim2, $plot_dycoms2_rf02_do_sim2, $plot_dycoms2_rf02_ds_sim2, $plot_dycoms2_rf02_nd_sim2, $plot_dycoms2_rf02_so_sim2, $plot_fire_sim2, $plot_gabls2_sim2, $plot_jun25_altocu_sim2, $plot_lba_sim2, $plot_mpace_a_sim2, $plot_mpace_b_sim2, $plot_nov11_altocu_sim2, $plot_rico_sim2, $plot_wangara_sim2 )") && \
+	echo "quit" | (/usr/local/bin/matlab -nojvm -nodisplay -r compare_plots_cases_driver"( '$HOC_sim1', '$HOC_sim2', $compare_LES, $compare_best, $compare_HOC, $plot_arm_sim1, $plot_arm_97_sim1, $plot_atex_sim1, $plot_bomex_sim1, $plot_clex9_nov02_sim1, $plot_clex9_oct14_sim1, $plot_cobra_sim1, $plot_dycoms2_rf01_sim1, $plot_dycoms2_rf02_do_sim1, $plot_dycoms2_rf02_ds_sim1, $plot_dycoms2_rf02_nd_sim1, $plot_dycoms2_rf02_so_sim1, $plot_fire_sim1, $plot_gabls2_sim1,  $plot_gabls3_sim1, $plot_jun25_altocu_sim1, $plot_lba_sim1, $plot_mpace_a_sim1, $plot_mpace_b_sim1, $plot_nov11_altocu_sim1, $plot_rico_sim1, $plot_wangara_sim1, $plot_arm_sim2, $plot_arm_97_sim2, $plot_atex_sim2, $plot_bomex_sim2, $plot_clex9_nov02_sim2, $plot_clex9_oct14_sim2, $plot_cobra_sim2, $plot_dycoms2_rf01_sim2, $plot_dycoms2_rf02_do_sim2, $plot_dycoms2_rf02_ds_sim2, $plot_dycoms2_rf02_nd_sim2, $plot_dycoms2_rf02_so_sim2, $plot_fire_sim2, $plot_gabls2_sim2, $plot_gabls3_sim2, $plot_jun25_altocu_sim2, $plot_lba_sim2, $plot_mpace_a_sim2, $plot_mpace_b_sim2, $plot_nov11_altocu_sim2, $plot_rico_sim2, $plot_wangara_sim2 )") && \
 	run_success=1
 fi
 
