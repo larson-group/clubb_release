@@ -19,7 +19,7 @@ subroutine gabls2_tndcy( time, time_initial, &
                          rho, rcm, l_kk_rain, &
                          wm_zt, wm_zm, thlm_forcing, & 
                          rtm_forcing, radht, Ncm, & 
-                         sclrm_forcing )
+                         sclrm_forcing, edsclrm_forcing )
 
 !        Description:
 !          Subroutine to apply case-specific forcings to GABLS2 case
@@ -29,7 +29,7 @@ subroutine gabls2_tndcy( time, time_initial, &
 !          http://people.su.se/~gsven/gabls/
 !-----------------------------------------------------------------------
 
-use parameters_model, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
 use grid_class, only: gr ! Variable(s)
 
@@ -39,7 +39,7 @@ use saturation, only: sat_mixrat_liq ! Procedure(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 
-use array_index, only: iisclr_rt, iisclr_thl
+use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl
 
 implicit none
 
@@ -64,9 +64,11 @@ real, dimension(gr%nnzp), intent(out) :: &
   radht,        & ! dT/dt, then d Theta/dt, due to rad.     [K/s]
   Ncm             ! Number of cloud droplets                [#/kg]
 
-! Output Variables (optional)
 real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
   sclrm_forcing ! Passive scalar LS tendency            [units/s]
+
+real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
+  edsclrm_forcing ! Eddy-passive scalar forcing         [units vary/s]
 
 ! Local Variables, general
 integer :: k ! Loop index
@@ -128,6 +130,10 @@ end if
 if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
 if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
+if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
+if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
+
+
 return
 end subroutine gabls2_tndcy
 !----------------------------------------------------------------------
@@ -140,19 +146,17 @@ subroutine gabls2_sfclyr( time, time_initial, &
                           upwp_sfc, vpwp_sfc, &
                           wpthlp_sfc, wprtp_sfc, ustar, & 
                           wpsclrp_sfc, wpedsclrp_sfc )
-
-!----------------------------------------------------------------------
-!        Description:
-!          Surface forcing subroutine for GABLS2 case.  Written
-!          29 December 2006 by Michael Falk.
+! Description:
+!   Surface forcing subroutine for GABLS2 case.  Written
+!   29 December 2006 by Michael Falk.
 !
-!        References:
-!          http://people.su.se/~gsven/gabls/
+! References:
+!   <http://people.su.se/~gsven/gabls/>
 !-----------------------------------------------------------------------
 
   use constants, only: Cp, Rd, p0, kappa, grav ! Variable(s)
 
-  use parameters_model, only: sclr_dim ! Variable(s)
+  use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
   use saturation, only: sat_mixrat_liq ! Procedure(s)
 
@@ -160,7 +164,7 @@ subroutine gabls2_sfclyr( time, time_initial, &
 
   use diag_ustar_mod, only: diag_ustar ! Variable(s)
   
-  use array_index, only: iisclr_rt, iisclr_thl ! Variable(s)
+  use array_index, only: iiedsclr_rt, iiedsclr_thl, iisclr_rt, iisclr_thl ! Variable(s)
 
   implicit none
 
@@ -193,7 +197,9 @@ subroutine gabls2_sfclyr( time, time_initial, &
 
   ! Output variables (optional)
   real, optional, intent(out), dimension(sclr_dim) :: & 
-    wpsclrp_sfc,    & ! The upward flux of the scalars       [units m/s]
+    wpsclrp_sfc       ! The upward flux of the scalars       [units m/s]
+
+  real, optional, intent(out), dimension(edsclr_dim) :: & 
     wpedsclrp_sfc     ! The upward flux of the eddy-scalars  [units m/s]
 
   ! Local variables
@@ -253,8 +259,8 @@ subroutine gabls2_sfclyr( time, time_initial, &
   if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
   if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-  if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
-  if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
+  if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
+  if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
 return
 end subroutine gabls2_sfclyr

@@ -30,7 +30,8 @@
              ( time, time_initial, rlat, rlon, & 
                rcm, exner, rho, wm_zt, & 
                wm_zm, thlm_forcing, rtm_forcing, & 
-               Frad, radht, Ncnm, sclrm_forcing )
+               Frad, radht, Ncnm, &
+               sclrm_forcing, edsclrm_forcing )
 
 !       Description:
 !       Compute subsidence, radiation, and large-scale tendencies.
@@ -44,7 +45,7 @@
 
   use constants, only: Lv, Cp, zero_threshold ! Variable(s)
 
-  use parameters_model, only: sclr_dim ! Variable(s)
+  use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
   use model_flags, only: l_bugsrad, l_coamps_micro, l_icedfs ! Variable(s)
 
@@ -56,7 +57,7 @@
 
   use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
 
-  use array_index, only: iisclr_thl, iisclr_rt ! Variable(s)
+  use array_index, only: iisclr_thl, iisclr_rt, iiedsclr_thl, iiedsclr_rt ! Variable(s)
  
   use stats_type, only: stat_update_var ! Procedure(s)
 
@@ -122,10 +123,11 @@
   radht,        & ! Radiative heating                       [K/s]
   Ncnm            ! Cloud nuclei number concentration       [num/m^3]
 
-  ! Output variables (optional)
   real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
   sclrm_forcing   ! Passive scalar forcing                  [units/s]
 
+  real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
+  edsclrm_forcing   ! Eddy-passive scalar forcing           [units/s]
 
   ! Local variables
 
@@ -700,6 +702,9 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   ! Test scalars with thetal and rt if desired
   if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
   if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
+
+  if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
+  if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
 
  
   ! Save LW and SW components of radiative heating and

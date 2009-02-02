@@ -32,7 +32,7 @@ contains
 subroutine lba_tndcy( time, & 
                       wm_zt, wm_zm, radht, & 
                       thlm_forcing, rtm_forcing, & 
-                      sclrm_forcing )
+                      sclrm_forcing, edsclrm_forcing )
 !       Description:
 !       Subroutine to set theta and water tendencies for LBA case.
 
@@ -43,7 +43,9 @@ use grid_class, only: gr !  Variable(s)
 
 use model_flags, only: l_bugsrad ! Variable(s)
 
-use parameters_model, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
+
+use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
 use interpolation, only: zlinterp_fnc ! Procedure(s)
 
@@ -67,9 +69,11 @@ real, intent(out), dimension(gr%nnzp) :: &
   thlm_forcing, & ! Liquid water potential temperature tendency  [K/s]
   rtm_forcing     ! Total water mixing ratio tendency            [kg/kg/s]
 
-! Output Variables (optional)
-real, optional, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
+real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
   sclrm_forcing ! Passive scalar forcing [units vary]
+
+real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
+  edsclrm_forcing ! Passive eddy-scalar forcing [units vary]
 
 ! Local Variables
 real, dimension(nzrad) :: radhtz
@@ -125,6 +129,9 @@ rtm_forcing(:) = 0.0
 if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
 if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
+if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
+if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
+
 return
 end subroutine lba_tndcy
 
@@ -145,7 +152,9 @@ subroutine lba_sfclyr( time, z, rho0, &
 
 use constants, only: pi, grav, Lv, Cp ! Variable(s)
 
-use parameters_model, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
+
+use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 
@@ -182,10 +191,11 @@ real, intent(out) ::  &
   wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
   ustar           ! surface friction velocity [m/s]
 
-! Output variables (optional)
-real, intent(out), optional, dimension(sclr_dim) ::  & 
-  wpsclrp_sfc,   & ! Passive scalar surface flux      [units m/s] 
-  wpedsclrp_sfc    ! Passive eddy-scalar surface flux [units m/s]
+real, intent(out), dimension(sclr_dim) ::  & 
+  wpsclrp_sfc     ! Passive scalar surface flux      [units m/s] 
+
+real, intent(out), dimension(edsclr_dim) ::  & 
+  wpedsclrp_sfc   ! Passive eddy-scalar surface flux [units m/s]
 
 ! Local variables
 !        real :: ft, ubar, ustar, bflx
@@ -205,8 +215,8 @@ wprtp_sfc  =  ( 554. * ft**1.3 ) / ( rho0 * Lv )
 if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
 if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
-if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
+if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
+if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
 
 ! Compute momentum fluxes using ARM formulae
 

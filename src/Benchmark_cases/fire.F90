@@ -19,7 +19,7 @@ subroutine fire_tndcy &
            ( rho, rcm, exner,  & 
              wm_zt, wm_zm, Frad, radht,  & 
              thlm_forcing, rtm_forcing, & 
-             sclrm_forcing )
+             sclrm_forcing, edsclrm_forcing )
 !       Description:
 !       Subroutine to large-scale subsidence for FIRE case. Calls
 !       cloud_rad for computing radiation
@@ -28,7 +28,7 @@ subroutine fire_tndcy &
 !       None
 !----------------------------------------------------------------------
 
-use parameters_model, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
 use model_flags, only: l_bugsrad  ! Variable(s)
 
@@ -40,7 +40,7 @@ use atex_cloud_rad, only: cloud_rad ! Procedure(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 
-use array_index, only: iisclr_rt, iisclr_thl ! Variable(s)
+use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
  
 use stats_type, only: stat_update_var ! Procedure(s)
 
@@ -63,11 +63,13 @@ real, intent(out), dimension(gr%nnzp) :: &
   thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
   rtm_forcing     ! Total water mixing ratio tendency [kg/kg/s]
 
-! Output Variables (optional)
 real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
-  sclrm_forcing ! Passive scalar tendency [units vary]
+  sclrm_forcing ! Passive scalar tendency [units/s]
 
-!       Internal variables
+real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
+  edsclrm_forcing ! Passive scalar tendency [units/s]
+
+! Local variables
 
 integer :: k
 
@@ -111,11 +113,14 @@ end if
 if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
 if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
+if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
+if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
+
 return
 end subroutine fire_tndcy
 
 !------------------------------------------------------------------------
-subroutine sfc_momentum_fluxes( u, v, &
+subroutine sfc_momentum_fluxes( um_sfc, vm_sfc, &
                                 upwp_sfc, vpwp_sfc, ustar )
 
 !       Description:
@@ -137,8 +142,8 @@ intrinsic :: sqrt
 
 ! Input variables
 real, intent(in) ::  & 
-  u,  & ! u wind first level above ground    [m/s]
-  v     ! v wind first level above ground    [m/s]
+  um_sfc,  & ! u wind first level above ground    [m/s]
+  vm_sfc     ! v wind first level above ground    [m/s]
 
 ! Output Variables
 real, intent(out) ::  & 
@@ -154,15 +159,15 @@ ustar = 0.3
 
 ! Computes fluxes
 
-M = sqrt( u*u + v*v )
-upwp_sfc = - ustar*ustar * u / M
-vpwp_sfc = - ustar*ustar * v / M
+M = sqrt( um_sfc*um_sfc + vm_sfc*vm_sfc )
+upwp_sfc = - ustar*ustar * um_sfc / M
+vpwp_sfc = - ustar*ustar * vm_sfc / M
 
 return
 end subroutine sfc_momentum_fluxes
 
 !------------------------------------------------------------------------
-subroutine sfc_thermo_fluxes( u, v, &
+subroutine sfc_thermo_fluxes( um_sfc, vm_sfc, &
                               Tsfc, psfc, & 
                               thlair, rtair, & 
                               wpthlp_sfc, wprtp_sfc, & 
@@ -178,24 +183,24 @@ subroutine sfc_thermo_fluxes( u, v, &
 
 use constants, only: kappa, p0 ! Variable(s)
 
-use parameters_model, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
 use saturation, only: sat_mixrat_liq ! Procedure(s)
 
-use array_index, only: iisclr_rt, iisclr_thl
+use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl
 
 implicit none
 
 ! External
-intrinsic :: present, sqrt
+intrinsic :: sqrt
 
 ! Parameter
 real, parameter :: C = 1.3e-3
 
 ! Input Variables
 real, intent(in) ::  & 
-  u,       & ! u wind                        [m/s]
-  v,       & ! u wind                        [m/s]
+  um_sfc,  & ! u wind                        [m/s]
+  vm_sfc,  & ! u wind                        [m/s]
   Tsfc,    & ! Surface temperature           [K]
   psfc,    & ! Surface pressure              [Pa]
   thlair,  & ! theta_l at first model layer  [K]
@@ -207,16 +212,17 @@ real, intent(out) ::  &
   wpthlp_sfc, & ! surface thetal flux        [K m/s]
   wprtp_sfc     ! surface moisture flux      [kg/kg m/s]
 
-! Output Variables (optional) 
-real, optional, intent(out), dimension(sclr_dim) ::  & 
-  wpsclrp_sfc,    & ! scalar surface flux            [units m/s]
+real, intent(out), dimension(sclr_dim) ::  & 
+  wpsclrp_sfc       ! scalar surface flux            [units m/s]
+
+real, intent(out), dimension(edsclr_dim) ::  & 
   wpedsclrp_sfc     ! eddy-scalar surface flux       [units m/s]
 
 ! Local Variables
 real :: M  ! Total wind speed above ground
 
 ! Compute fluxes
-M = sqrt( u*u + v*v )
+M = sqrt( um_sfc*um_sfc + vm_sfc*vm_sfc )
 wpthlp_sfc = -C * M * ( thlair - Tsfc * (psfc/p0)**kappa )
 wprtp_sfc  = -C * M * ( rtair - sat_mixrat_liq( psfc, Tsfc ) )
 
@@ -224,8 +230,8 @@ wprtp_sfc  = -C * M * ( rtair - sat_mixrat_liq( psfc, Tsfc ) )
 if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
 if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
-if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
+if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
+if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
 
 return
 end subroutine sfc_thermo_fluxes

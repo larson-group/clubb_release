@@ -16,20 +16,23 @@ contains
 
 !----------------------------------------------------------------------
 subroutine astex_tndcy( wm_zt, wm_zm,  & 
-                        thlm_forcing, rtm_forcing, sclrm_forcing )
+                        thlm_forcing, rtm_forcing, &
+                        sclrm_forcing, edsclrm_forcing )
 
 !       Description:
 !       Subroutine to set theta and water tendencies for ASTEX KK case
 !       References:
 !----------------------------------------------------------------------
 
-use parameters_model, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
 use grid_class, only: gr ! Variable(s)
 
 use grid_class, only: zt2zm ! Procedure(s)
 
 use stats_precision, only: time_precision ! Variable(s)
+
+use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
 implicit none
 
@@ -42,6 +45,9 @@ real, intent(out), dimension(gr%nnzp) ::  &
 
 real, intent(out), dimension(gr%nnzp,sclr_dim) ::  & 
   sclrm_forcing ! Passive scalar forcing  [units/s]
+
+real, intent(out), dimension(gr%nnzp,edsclr_dim) ::  & 
+  edsclrm_forcing ! Passive scalar forcing  [units/s]
 
 ! Local variables
 
@@ -73,11 +79,12 @@ thlm_forcing = 0.0
 
 rtm_forcing = 0.0
 
-! Passive scalar testing
+! Test scalars with thetal and rt if desired
+if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
-if ( sclr_dim > 0 ) then
-  sclrm_forcing(:,:) = 0.0
-end if
+if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
+if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
 
 return
 end subroutine astex_tndcy
@@ -97,9 +104,10 @@ subroutine astex_sfclyr( rho0, &
 
 use constants, only: Cp, Lv ! Variable(s)
 
-use parameters_model, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-use array_index, only: iisclr_rt, iisclr_thl ! Variable(s)
+use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variables
+
 
 implicit none
 
@@ -115,9 +123,11 @@ real, intent(out) ::  &
   wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
   wprtp_sfc       ! w'r_t'(1) at (1) [(m kg)/(s kg)]
 
-real, intent(out), dimension(sclr_dim) ::  & 
-  wpsclrp_sfc,   & ! w' scalar at surface [units m/s]
-  wpedsclrp_sfc    ! w' scalar at surface [units m/s]
+real,  dimension(sclr_dim), intent(out) ::  & 
+  wpsclrp_sfc        ! Passive scalar surface flux      [units m/s] 
+
+real,  dimension(edsclr_dim), intent(out) ::  & 
+  wpedsclrp_sfc      ! Passive eddy-scalar surface flux [units m/s]
 
 ! Local variables
 
@@ -138,14 +148,11 @@ upwp_sfc = 0.09
 vpwp_sfc = 0.09
 
 ! Test scalars
-if ( iisclr_rt > 0 ) then
-  wpsclrp_sfc(iisclr_rt)    = wprtp_sfc
-  wpedsclrp_sfc(iisclr_thl) = wprtp_sfc
-end if
-if ( iisclr_thl > 0 ) then
-  wpsclrp_sfc(iisclr_thl)   = wpthlp_sfc
-  wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
-end if
+if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
+
+if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
+if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
 
 return
 end subroutine astex_sfclyr

@@ -19,15 +19,16 @@ module dycoms2_rf02
                                  rho_zm, rtm, rcm, exner,  & 
                                  err_code, &
                                  wm_zt, wm_zm, thlm_forcing, rtm_forcing,  & 
-                                 Frad, radht, Ncm, Ncnm, sclrm_forcing )
-!       Description:
-!       Compute wm, thlm_ls, rtm_ls, radiative heating rate, and cloud
-!       droplet number concentration as needed.
+                                 Frad, radht, Ncm, Ncnm, sclrm_forcing, &
+                                 edsclrm_forcing )
+! Description:
+!   Compute wm, thlm_ls, rtm_ls, radiative heating rate, and cloud
+!   droplet number concentration as needed.
 
-!       References:
-!       ``Dynamics and Chemistry of Marine Stratocumulus -- DYCOMS-II''
-!       Stevens, Bjorn, et al., (2003)
-!       Bull. Amer. Meteorol. Soc., 84, 579-593.
+! References:
+!  ``Dynamics and Chemistry of Marine Stratocumulus -- DYCOMS-II''
+!  Stevens, Bjorn, et al., (2003)
+!  Bull. Amer. Meteorol. Soc., 84, 579-593.
 !----------------------------------------------------------------------
 
     use grid_class, only: gr ! Variable(s)
@@ -36,7 +37,7 @@ module dycoms2_rf02
 
     use constants, only: fstderr, Cp, rc_tol ! Variable(s)
 
-    use parameters_model, only: sclr_dim ! Variable(s)
+    use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
     use model_flags, only: l_bugsrad, l_coamps_micro ! Variable(s)
 
@@ -45,7 +46,7 @@ module dycoms2_rf02
     use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
     use array_index, only:  & 
-        iisclr_thl, iisclr_rt ! Variable(s)
+        iisclr_thl, iisclr_rt, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
     use stats_type, only: stat_update_var, stat_update_var_pt ! Procedure(s)
 
@@ -89,9 +90,11 @@ module dycoms2_rf02
       Ncm,          & ! Cloud droplet number conc.     [#/kg]
       Ncnm            ! Cloud nuclei number conc.      [#/m^3]
 
-    ! Output Variables
     real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
-      sclrm_forcing  ! Passive scalar tendency        [units/s]
+      sclrm_forcing    ! Passive scalar tendency        [units/s]
+
+    real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
+      edsclrm_forcing  ! Eddy-passive scalar tendency   [units/s]
 
     ! Local Variables
     real, dimension(gr%nnzp) ::  & 
@@ -256,6 +259,9 @@ module dycoms2_rf02
     if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
     if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
+    if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
+    if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
+
     RETURN
   END SUBROUTINE dycoms2_rf02_tndcy
 
@@ -269,27 +275,27 @@ module dycoms2_rf02
 
     use constants, only: Cp, Lv ! Variable(s)
 
-    use parameters_model, only: sclr_dim ! Variable(s)
+    use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
     use array_index, only:  & 
-        iisclr_thl, iisclr_rt ! Variable(s)
+        iisclr_thl, iisclr_rt, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
     implicit none
 
-! External
+    ! External
     intrinsic :: sqrt
 
-! Constant parameters
+    ! Constant parameters
     real, parameter ::  & 
       SH = 16.0, & 
       LH = 93.0
 
-! Input Variables
+    ! Input Variables
     real, intent(in) ::  & 
       um_sfc,  & ! um(2) [m/s]
       vm_sfc  ! vm(2) [m/s]
 
-! Output
+    ! Output
     real, intent(out) ::  & 
       upwp_sfc,     & ! u'w' at (1)      [m^2/s^2]
       vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
@@ -297,15 +303,16 @@ module dycoms2_rf02
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
       ustar           ! surface friction velocity [m/s]
 
-! Output Variables (optional)
     real, intent(out), dimension(sclr_dim) ::  & 
-      wpsclrp_sfc,    & ! w' scalar at surface [units m/s]
-      wpedsclrp_sfc     ! w' scalar at surface [units m/s]
+      wpsclrp_sfc       ! w' scalar at surface [units m/s]
 
-! Local Variables
+    real, intent(out), dimension(edsclr_dim) ::  & 
+      wpedsclrp_sfc     ! w' eddy-scalar at surface [units m/s]
+
+    ! Local Variables
     real :: wind_sfc  ! ? [m^2/s^2]?
 
-! Declare the value of ustar.
+    ! Declare the value of ustar.
     ustar = 0.25
 
     wind_sfc = sqrt( um_sfc**2 + vm_sfc**2 )
@@ -323,12 +330,12 @@ module dycoms2_rf02
     wpthlp_sfc = SH / (1.21 * Cp)
     wprtp_sfc  = LH / (1.21 * Lv)
 
-! Let passive scalars be equal to rt and theta_l for now
+    ! Let passive scalars be equal to rt and theta_l for now
     if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
     if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-    if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
-    if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
+    if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
+    if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
 
     return
   end subroutine dycoms2_rf02_sfclyr

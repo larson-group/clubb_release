@@ -17,7 +17,7 @@ contains
 !----------------------------------------------------------------------
 subroutine bomex_tndcy( wm_zt, wm_zm, radht, & 
                         thlm_forcing, rtm_forcing, & 
-                        sclrm_forcing )
+                        sclrm_forcing, edsclrm_forcing )
 !       Description:
 !       Subroutine to set theta and water tendencies for BOMEX case
 
@@ -31,10 +31,9 @@ use grid_class, only: zt2zm ! Procedure(s)
 
 use model_flags, only: l_bugsrad ! Variable(s)
 
-use parameters_model, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-use array_index, only:  & 
-    iisclr_thl, iisclr_rt ! Variable(s)
+use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
 implicit none
 
@@ -46,9 +45,11 @@ real, intent(out), dimension(gr%nnzp) :: &
   thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
   rtm_forcing      ! Total water mixing ratio tendency            [kg/kg/s]
 
-! Output Variables (optional)
 real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
-  sclrm_forcing ! Passive scalar forcing [units vary]
+  sclrm_forcing ! Passive scalar forcing        [units vary/s]
+
+real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
+  edsclrm_forcing ! Eddy-passive scalar forcing [units vary/s]
 
 ! Local Variables
 integer :: k
@@ -129,6 +130,9 @@ rtm_forcing(1)  = 0.0  ! Below surface
 if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
 if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
+if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
+if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
+
 return
 end subroutine bomex_tndcy
 
@@ -145,9 +149,9 @@ subroutine bomex_sfclyr( um_sfc, vm_sfc,  &
 !       References:
 !----------------------------------------------------------------------
 
-use parameters_model, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim, edsclr_dim  ! Variable(s)
 
-use array_index, only: iisclr_rt, iisclr_thl
+use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl
 
 implicit none
 
@@ -169,10 +173,11 @@ real, intent(out) ::  &
   wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
   ustar           ! surface friction velocity [m/s]
 
-! Output variables (optional)
-real, intent(out), dimension(sclr_dim) ::  & 
-  wpsclrp_sfc,   & ! Passive scalar surface flux      [units m/s] 
-  wpedsclrp_sfc    ! Passive eddy-scalar surface flux [units m/s]
+real,  dimension(sclr_dim), intent(out) ::  & 
+  wpsclrp_sfc        ! Passive scalar surface flux      [units m/s] 
+
+real,  dimension(edsclr_dim), intent(out) ::  & 
+  wpedsclrp_sfc      ! Passive eddy-scalar surface flux [units m/s]
 
 ! Local variables
 real :: ubar
@@ -185,19 +190,19 @@ ustar = 0.28
 wpthlp_sfc = 8.e-3
 wprtp_sfc  = 5.2e-5
 
-! Let passive scalars be equal to rt and theta_l for now
-if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
-if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
-
-if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
-if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
-
 ! Compute momentum fluxes
 
 ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
 
 upwp_sfc = -um_sfc * ustar**2 / ubar
 vpwp_sfc = -vm_sfc * ustar**2 / ubar
+
+! Let passive scalars be equal to rt and theta_l for now
+if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
+
+if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
+if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
 
 return
 end subroutine bomex_sfclyr

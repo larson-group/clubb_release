@@ -20,7 +20,7 @@ subroutine atex_tndcy( time, time_initial, &
                        err_code, &
                        wm_zt, wm_zm, Frad, radht, & 
                        thlm_forcing, rtm_forcing, & 
-                       sclrm_forcing )
+                       sclrm_forcing, edsclrm_forcing )
 !       Description:
 !       Subroutine to set theta-l and water tendencies for ATEX case
 
@@ -30,7 +30,7 @@ subroutine atex_tndcy( time, time_initial, &
 
 use constants, only: fstderr ! Constant(s)
 
-use parameters_model, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
 use model_flags, only: l_bugsrad ! Variable(s)
 
@@ -44,8 +44,7 @@ use stats_precision, only: time_precision ! Variable(s)
 
 use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
-use array_index, only:  & 
-    iisclr_thl, iisclr_rt ! Variable(s)
+use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
  
 use stats_type, only: stat_update_var ! Procedure(s)
 
@@ -77,9 +76,11 @@ real, intent(out), dimension(gr%nnzp) :: &
   rtm_forcing     ! Total water mixing ratio tendency           [kg/kg/s]
 
 
-! Output (optional)
 real, intent(out), dimension(gr%nnzp, sclr_dim) :: & 
-  sclrm_forcing ! Passive scalar tendency         [units/s]
+  sclrm_forcing   ! Passive scalar tendency         [units/s]
+
+real, intent(out), dimension(gr%nnzp, edsclr_dim) :: & 
+  edsclrm_forcing ! Eddy-passive scalar tendency    [units/s]
 
 ! Internal variables
 integer :: i
@@ -178,6 +179,9 @@ end if
 if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
 if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
+if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
+if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
+
 return
 end subroutine atex_tndcy
 
@@ -186,19 +190,19 @@ subroutine atex_sfclyr( um_sfc, vm_sfc, thlm_sfc, rtm_sfc,  &
                         upwp_sfc, vpwp_sfc,  & 
                         wpthlp_sfc, wprtp_sfc, ustar, & 
                         wpsclrp_sfc, wpedsclrp_sfc )
-!       Description:
-!       This subroutine computes surface fluxes of horizontal momentum,
-!       heat and moisture according to GCSS ATEX specifications
+! Description:
+!   This subroutine computes surface fluxes of horizontal momentum,
+!   heat and moisture according to GCSS ATEX specifications
 
-!       References:
-
+! References:
+!   None
 !----------------------------------------------------------------------
 
 use constants, only: kappa ! Variable(s)
 
-use parameters_model, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-use array_index, only: iisclr_rt, iisclr_thl
+use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
 implicit none
 
@@ -225,11 +229,11 @@ real, intent(out) ::  &
   wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
   ustar          ! surface friction velocity [m/s]
 
-! Output variables (optional)
+real,  dimension(sclr_dim), intent(out) ::  & 
+  wpsclrp_sfc        ! Passive scalar surface flux      [units m/s] 
 
-real, dimension(sclr_dim), intent(out) ::  & 
-  wpsclrp_sfc,    & ! Passive scalar surface flux      [units m/s]
-  wpedsclrp_sfc     ! Passive eddy-scalar surface flux [units m/s]
+real,  dimension(edsclr_dim), intent(out) ::  & 
+  wpedsclrp_sfc      ! Passive eddy-scalar surface flux [units m/s]
 
 ! Local Variables
 real :: ubar
@@ -245,17 +249,17 @@ wpthlp_sfc &
 = -C_10 * ubar * ( thlm_sfc - SST * (1000./1015.)**kappa )
 wprtp_sfc  = -C_10 * ubar * ( rtm_sfc - 0.0198293 )
 
-! Let passive scalars be equal to rt and theta_l for now
-if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
-if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
-
-if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
-if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
-
 ! Compute momentum fluxes
 
 upwp_sfc = -um_sfc * ustar**2 / ubar
 vpwp_sfc = -vm_sfc * ustar**2 / ubar
+
+! Let passive scalars be equal to rt and theta_l for now
+if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
+
+if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
+if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
 
 return
 end subroutine atex_sfclyr

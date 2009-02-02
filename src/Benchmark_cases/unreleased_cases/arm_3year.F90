@@ -34,7 +34,8 @@ contains
 !----------------------------------------------------------------------
 subroutine arm_3year_tndcy( time, &
                             wm_zt, wm_zm, thlm_forcing, &
-                            rtm_forcing, um_hoc_grid, vm_hoc_grid, sclrm_forcing )
+                            rtm_forcing, um_hoc_grid, vm_hoc_grid, &
+                            sclrm_forcing, edsclrm_forcing )
 !       Description:
 !       Subroutine to set thetal and total water tendencies for ARM 3 year case
 
@@ -44,7 +45,7 @@ subroutine arm_3year_tndcy( time, &
 
 use grid_class, only: gr ! Variable(s)
 
-use parameters_model, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
 use interpolation, only: zlinterp_fnc ! Procedure(s)
 
@@ -52,7 +53,7 @@ use stats_precision, only: time_precision ! Variable(s)
 
 use error_code, only: clubb_debug ! Procedure(s)
 
-use array_index, only: iisclr_rt, iisclr_thl ! Variable(s)
+use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
 use interpolation, only: factor_interp ! Procedure(s)
 
@@ -70,9 +71,11 @@ real, intent(out), dimension(gr%nnzp) ::  &
   um_hoc_grid,   & ! Observed wind, for nudging                   [m/s]
   vm_hoc_grid      ! Observed wind, for nudging                   [m/s]
 
-! Output  Variables
 real, intent(out), dimension(gr%nnzp,sclr_dim) ::  & 
-  sclrm_forcing ! Passive scalar tendency [units vary]
+  sclrm_forcing ! Passive scalar tendency        [units vary]
+
+real, intent(out), dimension(gr%nnzp,edsclr_dim) ::  & 
+  edsclrm_forcing ! Eddy-passive scalar tendency [units vary]
 
 real :: time_frac
 integer :: i1, i2
@@ -162,7 +165,10 @@ wm_zm(:) = 0.
 wm_zt(:) = 0.
 
 if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
-if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt) = rtm_forcing
+if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
+
+if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
+if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
 
 return
 end subroutine arm_3year_tndcy
@@ -181,9 +187,9 @@ subroutine arm_3year_sfclyr( time, z, rho0, &
 
 use constants, only: Cp, Lv, grav ! Variable(s)
 
-use parameters_model, only: sclr_dim
+use parameters_model, only: sclr_dim, edsclr_dim
 
-use array_index, only: iisclr_rt, iisclr_thl
+use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl
 
 use stats_precision, only: time_precision ! Variable(s)
 
@@ -218,9 +224,10 @@ real, intent(out) ::  &
   wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
   ustar           ! surface friction velocity [m/s]
 
-! Output variables 
 real, intent(out), dimension(sclr_dim) ::  & 
-  wpsclrp_sfc,   & ! Passive scalar surface flux      [units m/s] 
+  wpsclrp_sfc      ! Passive scalar surface flux      [units m/s] 
+
+real, intent(out), dimension(edsclr_dim) ::  & 
   wpedsclrp_sfc    ! Passive eddy-scalar surface flux [units m/s]
 
 ! Local variables
@@ -263,13 +270,6 @@ else
 wpthlp_sfc = heat_flx / ( Cp * rho0 )     ! (K m/s)
 wprtp_sfc  = moisture_flx / ( Lv * rho0 ) ! (kg m/ kg s)
 
-! Set passive scalars to theta_l and rt for testing purposes
-if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
-if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
-
-if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
-if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
-
 ! Compute momentum fluxes using ARM Cu formulae
 
 ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
@@ -281,6 +281,14 @@ ustar = diag_ustar( z, bflx, ubar, z0 )
 
 upwp_sfc = -um_sfc * ustar**2 / ubar
 vpwp_sfc = -vm_sfc * ustar**2 / ubar
+
+! Set passive scalars to theta_l and rt for testing purposes
+if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
+
+if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
+if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
+
 
 return
 end subroutine arm_3year_sfclyr

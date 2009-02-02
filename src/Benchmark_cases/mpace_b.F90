@@ -19,7 +19,8 @@ subroutine mpace_b_tndcy( time, time_initial, rlat, &
                           rho, p_in_Pa, thvm, rcm, & 
                           Ncnm, Ncm, &
                           wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
-                          Frad, radht, sclrm_forcing )
+                          Frad, radht, &
+                          sclrm_forcing, edsclrm_forcing )
 
 !        Description:
 !          Subroutine to large-scale subsidence for mpace_b case (Michael
@@ -33,7 +34,7 @@ subroutine mpace_b_tndcy( time, time_initial, rlat, &
 
 use constants, only: Rd, Cp, Lv, p0, rc_tol, zero_threshold ! Variable(s)
 
-use parameters_model, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
 use model_flags, only: l_bugsrad, l_coamps_micro, l_kk_rain ! Variable(s)
 
@@ -45,7 +46,7 @@ use stats_precision, only: time_precision ! Variable(s)
 
 use rad_lwsw_mod, only: rad_lwsw ! Variable(s)
 
-use array_index, only: iisclr_rt, iisclr_thl ! Variable(s)
+use array_index, only: iiedsclr_rt, iiedsclr_thl, iisclr_rt, iisclr_thl ! Variable(s)
 
 use stats_type, only: stat_update_var ! Procedure(s)
 
@@ -115,9 +116,11 @@ real, dimension(gr%nnzp), intent(out) ::  &
   Frad,         & ! Total radiative flux                    [W/m^2]
   radht           ! dT/dt, then d Theta/dt, due to rad.     [K/s]
 
-! Output Variables (optional)
-real, optional, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
+real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
   sclrm_forcing ! Passive scalar LS tendency            [units/s]
+
+real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
+  edsclrm_forcing ! Eddy-passive scalar LS tendency     [units/s]
 
 
 ! Local Variables, radiation scheme
@@ -326,6 +329,9 @@ end if
 if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
 if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
+if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
+if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
+
 return
 end subroutine mpace_b_tndcy
 
@@ -345,9 +351,9 @@ subroutine mpace_b_sfclyr( rho0, um_sfc, vm_sfc, &
 
 use constants, only: Cp, Lv ! Variable(s)
 
-use parameters_model, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim, edsclr_dim  ! Variable(s)
 
-use array_index, only: iisclr_rt, iisclr_thl
+use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl
 
 implicit none
 
@@ -377,9 +383,10 @@ real, intent(out) ::  &
   wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
   ustar           ! surface friction velocity [m/s]
 
-! Output Variables (optional) 
 real, dimension(sclr_dim), intent(out) :: & 
-  wpsclrp_sfc,    & ! Passive scalar surface flux      [units m/s]
+  wpsclrp_sfc    ! Passive scalar surface flux      [units m/s]
+
+real, dimension(edsclr_dim), intent(out) :: & 
   wpedsclrp_sfc  ! Passive eddy-scalar surface flux [units m/s]
 
 ! Local Variables
@@ -404,8 +411,8 @@ vpwp_sfc = -vm_sfc * ustar*ustar / ubar
 if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
 if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
-if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
+if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
+if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
 
 return
 end subroutine mpace_b_sfclyr

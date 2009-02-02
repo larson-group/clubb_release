@@ -15,8 +15,8 @@ private ! Default Scope
 contains
 
 !----------------------------------------------------------------------
-subroutine arm_tndcy( time, &
-                      thlm_forcing, radht, rtm_forcing, sclrm_forcing )
+subroutine arm_tndcy( time, thlm_forcing, radht, rtm_forcing, &
+                      sclrm_forcing, edsclrm_forcing )
 !       Description:
 !       Subroutine to set theta and water tendencies for ARM case
 
@@ -26,14 +26,14 @@ subroutine arm_tndcy( time, &
 
 use grid_class, only: gr ! Variable(s)
 
-use parameters_model, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
 use model_flags, only: l_bugsrad ! Variable(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 
 use array_index, only:  & 
-    iisclr_thl, iisclr_rt ! Variable(s)
+    iisclr_thl, iisclr_rt, iiedsclr_thl, iiedsclr_rt ! Variable(s)
 
 use interpolation, only: factor_interp ! Procedure(s) 
  
@@ -44,8 +44,7 @@ use stats_variables, only: iradht_LW, zt, l_stats_samp ! Variable(s)
 implicit none
 
 ! External
-intrinsic :: & 
-  int, min, max, present
+intrinsic :: int, min, max
 
 ! Constant Parameters
 real, parameter, dimension(6) ::  & 
@@ -62,9 +61,11 @@ real, intent(out), dimension(gr%nnzp) ::  &
   radht,         & ! Radiative heating rate                      [K/s]
   rtm_forcing      ! Total water mixing ratio tendency           [kg/kg/s]
 
-! Output (optional) Variables
-real, intent(out), dimension(gr%nnzp,sclr_dim) ::  & 
-  sclrm_forcing ! Passive scalar tendency [units vary]
+real, intent(out), dimension(gr%nnzp, sclr_dim) :: & 
+  sclrm_forcing   ! Passive scalar tendency         [units/s]
+
+real, intent(out), dimension(gr%nnzp, edsclr_dim) :: & 
+  edsclrm_forcing ! Eddy-passive scalar tendency    [units/s]
 
 ! Local variables
 integer :: k, i1, i2 ! Loop indices
@@ -151,6 +152,9 @@ end if
 if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
 if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
+if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
+if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
+
 return
 end subroutine arm_tndcy
 !----------------------------------------------------------------------
@@ -166,13 +170,13 @@ subroutine arm_sfclyr( time, z, dn0, thlm_sfc, um_sfc, vm_sfc,  &
 
 use constants, only: Cp, Lv, grav ! Variable(s)
 
-use parameters_model, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 
 use diag_ustar_mod, only: diag_ustar ! Variable(s)
 
-use array_index, only: iisclr_rt, iisclr_thl
+use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
 implicit none
 
@@ -204,9 +208,10 @@ real, intent(out) ::  &
   wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
   ustar          ! surface friction velocity [m/s]
 
-! Output variables (optional)
-real,  dimension(sclr_dim), optional, intent(out) ::  & 
-  wpsclrp_sfc,     & ! Passive scalar surface flux      [units m/s] 
+real,  dimension(sclr_dim), intent(out) ::  & 
+  wpsclrp_sfc        ! Passive scalar surface flux      [units m/s] 
+
+real,  dimension(edsclr_dim), intent(out) ::  & 
   wpedsclrp_sfc      ! Passive eddy-scalar surface flux [units m/s]
 
 ! Internal variables
@@ -251,8 +256,8 @@ wprtp_sfc  = moisture_flx2
 if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
 if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
-if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
+if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
+if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
 
 return
 end subroutine arm_sfclyr

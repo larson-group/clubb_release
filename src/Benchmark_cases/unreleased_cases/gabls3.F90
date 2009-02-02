@@ -219,8 +219,7 @@ module gabls3
   subroutine gabls3_sfclyr( um_sfc, vm_sfc, veg_t_in_K, &
                             thlm_sfc, rtm_sfc, lowest_level, psfc,& 
                             upwp_sfc, vpwp_sfc, &
-                            wpthlp_sfc, wprtp_sfc, ustar, &
-                            wpsclrp_sfc, wpedsclrp_sfc )
+                            wpthlp_sfc, wprtp_sfc, ustar )
     !       Description:
     !       This subroutine computes surface fluxes of horizontal momentum,
     !       heat and moisture according to GCSS ATEX specifications
@@ -230,10 +229,6 @@ module gabls3
     !----------------------------------------------------------------------
 
     use constants, only: kappa, grav, Rd, Cp, p0, Lv ! Variable(s)
-
-    use parameters_model, only: sclr_dim ! Variable(s)
-
-    use array_index, only: iisclr_rt, iisclr_thl ! Variable(s)
 
     use diag_ustar_mod, only: diag_ustar ! Procedure(s)
 
@@ -292,12 +287,6 @@ module gabls3
       wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
       wprtp_sfc      ! w'rt' surface flux        [(m kg)/(kg s)]
 
-    ! Output variables (optional)
-
-    real, dimension(sclr_dim), intent(out) ::  & 
-      wpsclrp_sfc,    & ! Passive scalar surface flux      [units m/s]
-      wpedsclrp_sfc     ! Passive eddy-scalar surface flux [units m/s]
-
     ! Local Variables
     real :: ubar, veg_theta_in_K, bflx
 
@@ -309,13 +298,6 @@ module gabls3
     wpthlp_sfc = -C_10 * ubar * ( thlm_sfc - veg_theta_in_K )
     wprtp_sfc  = -C_10 * ubar * 10 * ( rtm_sfc - 9.9e-3 )
   
-    ! Let passive scalars be equal to rt and theta_l for now
-    if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
-    if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
-
-    if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
-    if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
-
     ! Compute momentum fluxes
     bflx = wpthlp_sfc * grav / veg_theta_in_K
     ustar = diag_ustar( lowest_level, bflx, ubar, z0)

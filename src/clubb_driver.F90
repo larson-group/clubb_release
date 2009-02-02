@@ -163,7 +163,8 @@ module clubb_driver
 
     use stats_precision, only: time_precision ! Variable(s)
 
-    use array_index, only: iisclr_rt, iisclr_thl, iiCO2 ! Variables
+    use array_index, only: iisclr_rt, iisclr_thl, iiCO2, & ! Variables
+      iiedsclr_rt, iiedsclr_thl, iiedCO2
 
     use microphys_driver, only: init_microphys ! Subroutine
 
@@ -303,8 +304,9 @@ module clubb_driver
       l_bugsrad, l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, debug_level, & 
       alvdr, alvdf, alndr, alndf, &
-      sclr_tol, edsclr_dim, & 
-      sclr_dim, iisclr_thl, iisclr_rt, iiCO2
+      sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iiCO2, &
+      edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedCO2
+
 
     namelist /stats_setting/ & 
       l_stats, fname_prefix, stats_tsamp, stats_tout, stats_fmt
@@ -365,10 +367,14 @@ module clubb_driver
     call set_albedo( 0.1d0 , 0.1d0, 0.1d0, 0.1d0 )
 
     sclr_dim   = 0
-    edsclr_dim = 0
     iisclr_thl = -1
     iisclr_rt  = -1
     iiCO2 = -1
+
+    edsclr_dim = 0
+    iiedsclr_thl = -1
+    iiedsclr_rt  = -1
+    iiedCO2 = -1
 
     sclr_tol(1:sclr_max) = 1.e-2
 
@@ -397,10 +403,17 @@ module clubb_driver
     if ( max( iiCO2, iisclr_rt, iisclr_thl ) > sclr_dim ) then
       write(fstderr,*) "Passive scalar index exceeds sclr_dim ", & 
         "iiCO2 = ", iiCO2, "iisclr_rt = ", iisclr_rt,  & 
-        "sclr_thl = ", iisclr_thl, "sclr_dim = ", sclr_dim
+        "iisclr_thl = ", iisclr_thl, "sclr_dim = ", sclr_dim
 
       err_code = clubb_var_out_of_bounds
+      return
 
+    else if ( max( iiedCO2, iiedsclr_rt, iiedsclr_thl ) > edsclr_dim ) then
+      write(fstderr,*) "Passive scalar index exceeds edsclr_dim ", & 
+        "iiedCO2 = ", iiedCO2, "iiedsclr_rt = ", iiedsclr_rt,  & 
+        "iiedsclr_thl = ", iiedsclr_thl, "edsclr_dim = ", edsclr_dim
+
+      err_code = clubb_var_out_of_bounds
       return
     end if
 
@@ -1600,6 +1613,7 @@ module clubb_driver
 
     use variables_prognostic_module, only:  & 
         sclrm_forcing,   & ! Passive scalar variables
+        edsclrm_forcing, & ! 
         wpsclrp,  & 
         wpsclrp_sfc,  &
         wpedsclrp_sfc
@@ -1617,7 +1631,7 @@ module clubb_driver
 
     use array_index, only: & 
         iirsnowm, iiricem, & 
-        iisclr_rt, iisclr_thl
+        iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl
 
     ! Case specific modules
     use arm, only: arm_tndcy, arm_sfclyr ! Procedure(s)
@@ -1719,65 +1733,74 @@ module clubb_driver
     select case ( runtype )
 
     case ( "arm" ) ! ARM Cu case
-      call arm_tndcy( time_current, &                                      ! Intent(in)   
-                      thlm_forcing, radht, rtm_forcing, sclrm_forcing )    ! Intent(out)
+      call arm_tndcy( time_current, &                     ! Intent(in)   
+                      thlm_forcing, radht, rtm_forcing, & ! Intent(out)
+                      sclrm_forcing, edsclrm_forcing )    ! Intent(out)
 
 #ifdef UNRELEASED_CODE
     case ( "arm_0003" ) ! ARM March 2000 case
-      call arm_0003_tndcy( time_current, &                                 ! Intent(in)
-                           wm_zm, wm_zt, thlm_forcing, &                   ! Intent(out)
-                           rtm_forcing, um_ref, vm_ref, sclrm_forcing )    ! Intent(out)
+      call arm_0003_tndcy( time_current, &                  ! Intent(in)
+                           wm_zm, wm_zt, thlm_forcing,  &   ! Intent(out)
+                           rtm_forcing, um_ref, vm_ref, &   ! Intent(out)
+                           sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
     case ( "arm_3year" ) ! ARM 3 year case
-      call arm_3year_tndcy( time_current, &                                ! Intent(in)
-                            wm_zm, wm_zt, thlm_forcing,  &                 ! Intent(out)
-                            rtm_forcing, um_ref, vm_ref, sclrm_forcing )   ! Intent(out)
+      call arm_3year_tndcy( time_current, &                  ! Intent(in)
+                            wm_zm, wm_zt, thlm_forcing,  &   ! Intent(out)
+                            rtm_forcing, um_ref, vm_ref, &   ! Intent(out)
+                            sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
     case ( "arm_97" ) ! 27 June 1997 ARM case
-      call arm_97_tndcy( time_current, &                                   ! Intent(in)
-                         wm_zm, wm_zt, thlm_forcing,  &                    ! Intent(out)
-                         rtm_forcing, um_ref, vm_ref, sclrm_forcing )      ! Intent(out)
+      call arm_97_tndcy( time_current, &                 ! Intent(in)
+                         wm_zm, wm_zt, thlm_forcing,  &  ! Intent(out)
+                         rtm_forcing, um_ref, vm_ref, &  ! Intent(out)
+                         sclrm_forcing, edsclrm_forcing )! Intent(out)
 #endif
 
     case ( "astex_a209" ) ! ASTEX Sc case for K & K
-      call astex_tndcy( wm_zt, wm_zm,  &                                   ! Intent(out) 
-                        thlm_forcing, rtm_forcing, sclrm_forcing )         ! Intent(out)
+      call astex_tndcy( wm_zt, wm_zm,  &                ! Intent(out) 
+                        thlm_forcing, rtm_forcing , &   ! Intent(out)
+                        sclrm_forcing, edsclrm_forcing )! Intent(out)
 
     case ( "atex" ) ! ATEX case
-      call atex_tndcy( time_current, time_initial, &                       ! Intent(in)
-                       rtm, rho, rcm, exner, &                             ! Intent(in)
-                       err_code, &                                         ! Intent(inout)
-                       wm_zt, wm_zm, Frad, radht, &                        ! Intent(out)
-                       thlm_forcing, rtm_forcing, sclrm_forcing )          ! Intent(out)
+      call atex_tndcy( time_current, time_initial, &   ! Intent(in)
+                       rtm, rho, rcm, exner, &         ! Intent(in)
+                       err_code, &                     ! Intent(inout)
+                       wm_zt, wm_zm, Frad, radht, &    ! Intent(out)
+                       thlm_forcing, rtm_forcing, &    ! Intent(out)
+                       sclrm_forcing, edsclrm_forcing )! Intent(out)
 
     case ( "bomex" ) ! BOMEX Cu case
-      call bomex_tndcy( wm_zt, wm_zm, radht, &                             ! Intent(out)
-                        thlm_forcing, rtm_forcing, &                       ! Intent(out)
-                        sclrm_forcing )                                    ! Intent(out)
+      call bomex_tndcy( wm_zt, wm_zm, radht, &          ! Intent(out)
+                        thlm_forcing, rtm_forcing, &    ! Intent(out)
+                        sclrm_forcing, edsclrm_forcing )! Intent(out)
 
 #ifdef UNRELEASED_CODE
     case ( "clex9_nov02" ) ! CLEX-9: Nov. 02 Altocumulus case.
-      call clex9_nov02_tndcy( time_current, time_initial, rlat, rlon, &    ! Intent(in)
-                              rcm, exner, rho, &                           ! Intent(in)
-                              wm_zt, wm_zm, thlm_forcing, rtm_forcing, &   ! Intent(out)
-                              Frad, radht, Ncnm, sclrm_forcing )           ! Intent(out)
+      call clex9_nov02_tndcy( time_current, time_initial, rlat, rlon, &  ! Intent(in)
+                              rcm, exner, rho, &                         ! Intent(in)
+                              wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
+                              Frad, radht, Ncnm, &                       ! Intent(out)
+                              sclrm_forcing, edsclrm_forcing )           ! Intent(out)
 
     case ( "clex9_oct14" ) ! CLEX-9: Oct. 14 Altocumulus case.
       call clex9_oct14_tndcy( time_current, time_initial, rlat, rlon, &    ! Intent(in) 
                               rcm, exner, rho, &                           ! Intent(in)
                               wm_zt, wm_zm, thlm_forcing, rtm_forcing, &   ! Intent(out)
-                              Frad, radht, Ncnm, sclrm_forcing )           ! Intent(out)
+                              Frad, radht, Ncnm, &                         ! Intent(out)
+                              sclrm_forcing, edsclrm_forcing )             ! Intent(out)
     case ( "cobra" )
-      call cobra_tndcy( wm_zt, wm_zm,  &                                   ! Intent(out) 
-                        thlm_forcing, rtm_forcing, &                       ! Intent(out)
-                        sclrm_forcing )                                    ! Intent(out)
+      call cobra_tndcy( wm_zt, wm_zm,  &                ! Intent(out) 
+                        thlm_forcing, rtm_forcing, &    ! Intent(out)
+                        sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 #endif
 
     case ( "dycoms2_rf01" ) ! DYCOMS2 RF01 case
-      call dycoms2_rf01_tndcy( rho, rho_zm, rtm, rcm, exner, &             ! Intent(in)
-                               err_code, &                                 ! Intent(inout)
-                               wm_zt, wm_zm, Frad, radht,  &               ! Intent(out)
-                               thlm_forcing, rtm_forcing, sclrm_forcing )  ! Intent(out)
+      call dycoms2_rf01_tndcy( rho, rho_zm, rtm, rcm, exner, & ! Intent(in)
+                               err_code, &                     ! Intent(inout)
+                               wm_zt, wm_zm, Frad, radht,  &   ! Intent(out)
+                               thlm_forcing, rtm_forcing,  &   ! Intent(out)
+                               sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
     case ( "dycoms2_rf02_do",  & ! DYCOMS2 RF02 case with drizzle only.
            "dycoms2_rf02_ds",  & ! DYCOMS2 RF02 case with drizzle and cloud sedimentation.
@@ -1787,21 +1810,22 @@ module clubb_driver
                                rho_zm, rtm, rcm, exner, &                  ! Intent(in)
                                err_code, &                                 ! Intent(inout)
                                wm_zt, wm_zm, thlm_forcing, rtm_forcing, &  ! Intent(out) 
-                               Frad, radht, Ncm, Ncnm, sclrm_forcing  )    ! Intent(out)
+                               Frad, radht, Ncm, Ncnm, &                   ! Intent(out)
+                               sclrm_forcing, edsclrm_forcing )            ! Intent(out)
 
     case ( "fire" ) ! FIRE Sc case
-      call fire_tndcy( rho, rcm, exner,  &                                 ! Intent(in)
-                       wm_zt, wm_zm, Frad, radht, &                        ! Intent(out)
-                       thlm_forcing, rtm_forcing, &                        ! Intent(out) 
-                       sclrm_forcing )                                     ! Intent(out)
+      call fire_tndcy( rho, rcm, exner,  &                ! Intent(in)
+                       wm_zt, wm_zm, Frad, radht, &       ! Intent(out)
+                       thlm_forcing, rtm_forcing, &       ! Intent(out) 
+                       sclrm_forcing, edsclrm_forcing )   ! Intent(out)
 
 
     case ( "gabls2" ) ! GABLS 2 case
-      call gabls2_tndcy( time_current, time_initial,  &                    ! Intent(in) 
-                         rho, rcm, l_kk_rain, &                            ! Intent(in)
-                         wm_zt, wm_zm, thlm_forcing, &                     ! Intent(out)
-                         rtm_forcing, radht, Ncm, &                        ! Intent(out)
-                         sclrm_forcing )                                   ! Intent(out)
+      call gabls2_tndcy( time_current, time_initial,  &   ! Intent(in) 
+                         rho, rcm, l_kk_rain, &           ! Intent(in)
+                         wm_zt, wm_zm, thlm_forcing, &    ! Intent(out)
+                         rtm_forcing, radht, Ncm, &       ! Intent(out)
+                         sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
 #ifdef UNRELEASED_CODE
     case ( "gabls3" ) ! GABLS 3 case
@@ -1825,29 +1849,30 @@ module clubb_driver
                                rcm, exner, rho, &                          ! Intent(in)
                                wm_zt, wm_zm, thlm_forcing, rtm_forcing, &  ! Intent(inout)
                                Frad, radht, &                              ! Intent(inout)
-                               sclrm_forcing )                             ! Intent(out)
+                               sclrm_forcing, edsclrm_forcing )            ! Intent(out)
 
     case ( "lba" )
-      call lba_tndcy( time_current, &                                      ! Intent(in) 
-                      wm_zt, wm_zm, radht,  &                              ! Intent(out)
-                      thlm_forcing, rtm_forcing, &                         ! Intent(out)
-                      sclrm_forcing )                                      ! Intent(out)
+      call lba_tndcy( time_current, &                  ! Intent(in) 
+                      wm_zt, wm_zm, radht,  &          ! Intent(out)
+                      thlm_forcing, rtm_forcing, &     ! Intent(out)
+                      sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 #endif
 
     case ( "mpace_a" ) ! mpace_a arctic stratus case
-      call mpace_a_tndcy( time_current, time_initial, rlat, &              ! Intent(in) 
-                          rho, p_in_Pa, rcm, &                             ! Intent(in)
-                          Ncnm, Ncm, &                                     ! Intent(inout)
-                          wm_zt, wm_zm, thlm_forcing, rtm_forcing, &       ! Intent(out)
-                          Frad, radht, um_ref, vm_ref, &                   ! Intent(out)
-                          sclrm_forcing )                                  ! Intent(out)
+      call mpace_a_tndcy( time_current, time_initial, rlat, &        ! Intent(in) 
+                          rho, p_in_Pa, rcm, &                       ! Intent(in)
+                          Ncnm, Ncm, &                               ! Intent(inout)
+                          wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
+                          Frad, radht, um_ref, vm_ref, &             ! Intent(out)
+                          sclrm_forcing, edsclrm_forcing )           ! Intent(out)
 
     case ( "mpace_b" ) ! mpace_b arctic stratus case
-      call mpace_b_tndcy( time_current, time_initial, rlat, &              ! Intent(in)
-                          rho,  p_in_Pa, thvm, rcm, &                      ! Intent(in)
-                          Ncnm, Ncm, &                                     ! Intent(inout)
-                          wm_zt, wm_zm, thlm_forcing, rtm_forcing, &       ! Intent(out)
-                          Frad, radht, sclrm_forcing )                     ! Intent(out)
+      call mpace_b_tndcy( time_current, time_initial, rlat, &        ! Intent(in)
+                          rho,  p_in_Pa, thvm, rcm, &                ! Intent(in)
+                          Ncnm, Ncm, &                               ! Intent(inout)
+                          wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
+                          Frad, radht,  &                            ! Intent(out)
+                          sclrm_forcing, edsclrm_forcing )           ! Intent(out)
 
 #ifdef UNRELEASED_CODE
     case ( "nov11_altocu" ) ! Nov. 11 Altocumulus case.
@@ -1856,19 +1881,20 @@ module clubb_driver
                                rcm, exner, rho, &                          ! Intent(in)
                                rtm, &                                      ! Intent(inout)
                                wm_zt, wm_zm, thlm_forcing, rtm_forcing, &  ! Intent(out)
-                               Frad, radht, Ncnm, sclrm_forcing )          ! Intent(out)
+                               Frad, radht, Ncnm, &                        ! Intent(out)
+                               sclrm_forcing, edsclrm_forcing )            ! Intent(out)
 
     case ( "rico" ) ! RICO case
-      call rico_tndcy( exner, rho, rcm, l_kk_rain, &                       ! Intent(in)
-                       wm_zt, wm_zm, &                                     ! Intent(out)
-                       thlm_forcing, rtm_forcing, radht, Ncm, &            ! Intent(out)   
-                       sclrm_forcing )                                     ! Intent(out)
+      call rico_tndcy( exner, rho, rcm, l_kk_rain, &              ! Intent(in)
+                       wm_zt, wm_zm, &                            ! Intent(out)
+                       thlm_forcing, rtm_forcing, radht, Ncm, &   ! Intent(out)   
+                       sclrm_forcing, edsclrm_forcing )           ! Intent(out)
 #endif
 
     case ( "wangara" ) ! Wangara dry CBL
-      call wangara_tndcy( wm_zt, wm_zm,  &                                 ! Intent(out) 
-                          thlm_forcing, rtm_forcing, &                     ! Intent(out)
-                          sclrm_forcing )                                  ! Intent(out)
+      call wangara_tndcy( wm_zt, wm_zm,  &                  ! Intent(out) 
+                          thlm_forcing, rtm_forcing, &      ! Intent(out)
+                          sclrm_forcing, edsclrm_forcing )  ! Intent(out)
 
     case default
 
@@ -2004,8 +2030,8 @@ module clubb_driver
         wprtp_sfc  = LE
         if ( iisclr_thl > 0 ) wpsclrp(:,iisclr_thl) = SE
         if ( iisclr_rt > 0 ) wpsclrp(:,iisclr_rt)   = LE
-        if ( iisclr_thl > 0 ) wpedsclrp(:,iisclr_thl) = SE
-        if ( iisclr_rt > 0 ) wpedsclrp(:,iisclr_rt)   = LE
+        if ( iiedsclr_thl > 0 ) wpedsclrp(:,iiedsclr_thl) = SE
+        if ( iiedsclr_rt > 0 ) wpedsclrp(:,iiedsclr_rt)   = LE
 
       elseif ( sfctype == 1 ) then
 
@@ -2013,7 +2039,7 @@ module clubb_driver
                                 Tsfc, psfc,  &                      ! Intent(in)
                                 thlm(2), rtm(2), &                  ! Intent(in)
                                 wpthlp_sfc, wprtp_sfc, &            ! Intent(out)
-                                wpsclrp(1,:) )                      ! Intent(out)
+                                wpsclrp_sfc, wpedsclrp_sfc )        ! Intent(out)
 
       else
 
@@ -2036,8 +2062,7 @@ module clubb_driver
       call gabls3_sfclyr( um(2), vm(2), get_veg_T_in_K(), &         ! Intent(in)
                           thlm(2), rtm(2), gr%zt(2), psfc, &     ! Intent(in)
                           upwp_sfc, vpwp_sfc, &                       ! Intent(out)
-                          wpthlp_sfc, wprtp_sfc, ustar, &             ! Intent(out)
-                          wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
+                          wpthlp_sfc, wprtp_sfc, ustar )             ! Intent(out)
 
     case ( "jun25_altocu" )
       ! There are no surface momentum or heat fluxes

@@ -18,7 +18,7 @@ contains
 !----------------------------------------------------------------------
 subroutine cobra_tndcy( wm_zt, wm_zm,  & 
                         thlm_forcing, rtm_forcing, & 
-                        sclrm_forcing )
+                        sclrm_forcing, edsclrm_forcing )
 !       Description:
 !       Subroutine to set theta and water tendencies for COBRA CO2 case
 
@@ -32,25 +32,28 @@ use grid_class, only: zt2zm ! Procedure(s)
 
 use constants, only: fstderr ! Variable(s)
 
-use parameters_model, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 
 use array_index, only:  & 
-    iisclr_thl, iisclr_rt, iiCO2 ! Variable(s)
+    iisclr_thl, iisclr_rt, iiCO2, & ! Variable(s)
+    iiedsclr_thl, iiedsclr_rt, iiedCO2
 
 implicit none
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) :: & 
-  wm_zt,          & ! w wind on thermodynamic grid                 [m/s]
-  wm_zm,          & ! w wind on momentum grid                      [m/s]
-  thlm_forcing,   & ! Liquid water potential temperature tendency  [K/s]
-  rtm_forcing       ! Total water mixing ratio tendency            [kg/kg/s]
+  wm_zt,        & ! w wind on thermodynamic grid                 [m/s]
+  wm_zm,        & ! w wind on momentum grid                      [m/s]
+  thlm_forcing, & ! Liquid water potential temperature tendency  [K/s]
+  rtm_forcing     ! Total water mixing ratio tendency            [kg/kg/s]
 
-! Output Variables
 real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
-  sclrm_forcing ! Passive scalar tendency [units vary]
+  sclrm_forcing ! Passive scalar tendency        [units vary/s]
+
+real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
+  edsclrm_forcing ! Passive eddy-scalar tendency [units/s]
 
 ! Local Variables
 integer :: k
@@ -98,6 +101,9 @@ thlm_forcing = 0.0
 if ( iiCO2 > 0 ) sclrm_forcing(:,iiCO2) = 0.0
 if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
 if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt) = rtm_forcing
+if ( iiedCO2 > 0 ) edsclrm_forcing(:,iiedCO2) = 0.0
+if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
+if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt) = rtm_forcing
 
 return
 end subroutine cobra_tndcy
@@ -120,13 +126,15 @@ subroutine cobra_sfclyr( time, z, dn0, thlm_sfc, um_sfc, vm_sfc, &
 
 use constants, only: Cp, Lv, grav ! Variable(s)
 
-use parameters_model, only: sclr_dim ! Variable(s)
+use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 
 use diag_ustar_mod, only: diag_ustar ! Variable(s)
 
-use array_index, only: iisclr_rt, iisclr_thl, iiCO2 ! Variable(s)
+use array_index, only: &
+  iisclr_rt, iisclr_thl, iiCO2, & ! Variable(s)
+  iiedsclr_rt, iiedsclr_thl, iiedCO2
 
 implicit none
 
@@ -158,7 +166,9 @@ real, intent(out) ::  &
 
 ! Output variables
 real, intent(out), dimension(sclr_dim) ::  & 
-  wpsclrp_sfc, & ! w'sclr' surface flux          [units m/s]
+  wpsclrp_sfc    ! w'sclr' surface flux          [units m/s]
+
+real, intent(out), dimension(edsclr_dim) ::  & 
   wpedsclrp_sfc  ! w' edsclr' surface flux       [units m/s]
 
 ! Local variables
@@ -223,9 +233,9 @@ if ( iiCO2 > 0 ) wpsclrp_sfc(iiCO2) = CO2_flx2
 if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
 if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-if ( iiCO2 > 0 ) wpedsclrp_sfc(iiCO2) = CO2_flx2
-if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
-if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
+if ( iiedCO2 > 0 ) wpedsclrp_sfc(iiedCO2) = CO2_flx2
+if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
+if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
 
 return
 end subroutine cobra_sfclyr

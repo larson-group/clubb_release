@@ -49,7 +49,7 @@
                             wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
                             Frad, radht, & 
                             um_hoc_grid, vm_hoc_grid, & 
-                            sclrm_forcing )
+                            sclrm_forcing, edsclrm_forcing )
 
 !        Description:
 !
@@ -59,7 +59,7 @@
 
   use constants, only: Cp, Rd, Lv, p0, rc_tol, zero_threshold ! Variable(s)
 
-  use parameters_model, only: sclr_dim ! Variable(s)
+  use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
   use model_flags, only: l_bugsrad, l_coamps_micro, l_kk_rain ! Variable(s)
 
@@ -73,7 +73,7 @@
 
   use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
 
-  use array_index, only: iisclr_rt, iisclr_thl ! Variable(s)
+  use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
   use error_code, only: clubb_debug ! Procedure(s)
  
@@ -143,11 +143,11 @@
   Frad,         & ! Total radiative flux                    [W/m^2]
   radht           ! dT/dt, then d Theta/dt, due to rad.     [K/s]
 
-
-  ! Output Variables 
   real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
   sclrm_forcing ! Passive scalar LS tendency            [units/s]
 
+  real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
+  edsclrm_forcing ! Eddy-passive scalar forcing         [units/s]
 
   ! Local Variables, radiation scheme
   real, dimension(gr%nnzp) ::  & 
@@ -441,6 +441,9 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
   if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
   if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
+  if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
+  if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
+
   return
   end subroutine mpace_a_tndcy
 
@@ -459,11 +462,11 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
 
   use constants, only: Cp, Lv ! Variable(s)
 
-  use parameters_model, only: sclr_dim ! Variable(s)
+  use parameters_model, only: sclr_dim, edsclr_dim  ! Variable(s)
 
   use stats_precision, only: time_precision ! Variable(s)
 
-  use array_index, only: iisclr_rt, iisclr_thl ! Variable(s)
+  use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
   use error_code, only: clubb_debug ! Procedure(s)
 
@@ -484,7 +487,7 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
   time     ! current model time           [s]
 
   real, intent(in)  :: & 
-  rho0,     & ! Air density at surface       [kg/m^3
+  rho0,     & ! Air density at surface       [kg/m^3]
   um_sfc,   & ! um at zt(2)                  [m/s]
   vm_sfc      ! vm at zt(2)                  [m/s]
 
@@ -496,9 +499,10 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
   wprtp_sfc,    & ! w'r_t' at (1)    [(m kg)/(s kg)]
   ustar           ! surface friction velocity [m/s]
 
-  ! Output Variables 
   real, dimension(sclr_dim), intent(out) :: & 
-  wpsclrp_sfc, & ! Passive scalar surface flux      [units m/s]
+  wpsclrp_sfc    ! Passive scalar surface flux      [units m/s]
+
+  real, dimension(edsclr_dim), intent(out) :: & 
   wpedsclrp_sfc  ! Passive eddy-scalar surface flux [units m/s]
 
   ! Local Variables
@@ -567,8 +571,8 @@ sensible_heat_flx = factor_interp( ratio, file_SH(right_time), file_SH(left_time
   if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
   if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-  if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
-  if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
+  if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
+  if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
 
   return
   end subroutine mpace_a_sfclyr

@@ -20,9 +20,8 @@ module array_index
 
   ! Scalar quantities
   integer, public :: & 
-    iisclr_rt, iisclr_thl, iiCO2  ! [kg/kg]/[K]/[1e6 mol/mol]
-
-  ! TODO: Add pdf_params?
+    iisclr_rt, iisclr_thl, iiCO2, & ! [kg/kg]/[K]/[1e6 mol/mol]
+    iiedsclr_rt, iiedsclr_thl, iiedCO2 ! "    "
 
   private ! Default Scope
 
