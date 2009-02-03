@@ -734,9 +734,7 @@ E.g. <br />
 
 <li> Wrap all code lines at 100 columns.  Fortran free format source code
 allows for 132, but the number 100 was chosen to so that we can view the code 
-browser without word-wrap on one monitor.  
-<div class="p"><!----></div>
-
+browser without word-wrap on one monitor.
 <div class="p"><!----></div>
 </li>
 
@@ -747,6 +745,12 @@ arithmetic <tt>if</tt>, alternate <tt>return</tt>, and <tt>float()</tt> for
 real data type conversions.
 <div class="p"><!----></div>
 </li>
+
+<li> All files added to the CLUBB code should use a <tt>.F90</tt> file 
+extension.  This is due to the a kluge used with <tt>mkmf</tt> that only enables
+compiler warnings when the file is pre-processed Fortran 90 source.
+<div class="p"><!----></div>
+</li>
 </ol>
 
 <div class="p"><!----></div>
@@ -755,5 +759,5 @@ real data type conversions.
 T<sub><font size="-1">E</font></sub>X
 by <a href="http://hutchinson.belmont.ma.us/tth/">
 T<sub><font size="-1">T</font></sub>H</a>,
-version 3.82.<br />On 20 Jan 2009, 16:12.</small>
+version 3.82.<br />On  3 Feb 2009, 11:51.</small>
 </html>

@@ -604,13 +604,18 @@ E.g. \\
 
 \item Wrap all code lines at 100 columns.  Fortran free format source code
 allows for 132, but the number 100 was chosen to so that we can view the code 
-browser without word-wrap on one monitor.  \newline
+browser without word-wrap on one monitor.
 
 \item Do not use deprecated or obsolescent features of Fortran, and do not
 use extensions to the Fortran 95 standard.  This includes but is not limited to
 \texttt{pause}, \texttt{equivalence}, Cray style pointers, 
 arithmetic \texttt{if}, alternate \texttt{return}, and \texttt{float()} for 
 real data type conversions.
+
+\item All files added to the CLUBB code should use a \texttt{.F90} file 
+extension.  This is due to the a kluge used with \texttt{mkmf} that only enables
+compiler warnings when the file is pre-processed Fortran 90 source. 
+
 \end{enumerate}
 
 \end{document}
