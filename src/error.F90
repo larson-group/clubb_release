@@ -303,7 +303,7 @@ module error
     ! Attempt to generate a pseudo-random seed using a file 
     ! generated from /dev/random.  File is an ASCII text file 
     ! and can be edited manually.
-    call read_random_seed( "../input/tuner/rand_seed.dat" )
+    call read_random_seed( "../input_misc/tuner/rand_seed.dat" )
 
   end if  ! l_read_files
   !-----------------------------------------------------------------------
