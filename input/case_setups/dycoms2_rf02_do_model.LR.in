@@ -6,7 +6,7 @@
 
 ! Model Settings
 
-runtype = "dycoms2_rf02_do" ! Case name.
+runtype = "dycoms2_rf02" ! Case name.
 
 nzmax = 15        ! Number of vertical levels.
 

@@ -828,7 +828,7 @@ module clubb_driver
 
     use error_code, only: clubb_no_error ! Variable(s)
 
-    use array_index, only: iisclr_thl ! Variable(s)
+    use array_index, only: iisclr_thl, iiedsclr_thl ! Variable(s)
 
     ! Joshua Fasching
     ! March 2008
@@ -923,9 +923,7 @@ module clubb_driver
 
     select case ( trim( runtype ) )
     case ( "dycoms2_rf01", "astex_a209", "nov11_altocu", & 
-           "clex9_nov02", "clex9_oct14", & 
-           "dycoms2_rf02_do", "dycoms2_rf02_ds", & 
-           "dycoms2_rf02_nd", "dycoms2_rf02_so" )
+           "clex9_nov02", "clex9_oct14", "dycoms2_rf02" )
       ! thlm profile that is initially saturated at points.
       ! thlm profile remains the same as in the input sounding.
       ! use iterative method to find initial rcm.
@@ -939,8 +937,10 @@ module clubb_driver
 
       ! Testing of passive scalars
       if ( iisclr_thl > 0 ) then
-        sclrm(:,iisclr_thl) = sclrm(:,iisclr_thl)  & 
-                            - Lv/(Cp*exner)*rcm
+        sclrm(:,iisclr_thl) = thlm
+      end if
+      if ( iiedsclr_thl > 0 ) then
+        edsclrm(:,iiedsclr_thl) = thlm
       end if
 
     end select
@@ -1070,8 +1070,7 @@ module clubb_driver
       em(gr%nnzp) = em(gr%nnzp-1)
 
       ! GCSS DYCOMS II RF02
-    case ( "dycoms2_rf02_do", "dycoms2_rf02_ds", & 
-           "dycoms2_rf02_nd", "dycoms2_rf02_so" )
+    case ( "dycoms2_rf02" )
 
       em = 1.0
 
@@ -1802,10 +1801,7 @@ module clubb_driver
                                thlm_forcing, rtm_forcing,  &   ! Intent(out)
                                sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
-    case ( "dycoms2_rf02_do",  & ! DYCOMS2 RF02 case with drizzle only.
-           "dycoms2_rf02_ds",  & ! DYCOMS2 RF02 case with drizzle and cloud sedimentation.
-           "dycoms2_rf02_nd",  & ! DYCOMS2 RF02 case with no drizzle and no cloud sedimentation.
-           "dycoms2_rf02_so" )! DYCOMS2 RF02 case with cloud water sedimentation only.
+    case ( "dycoms2_rf02" ) ! DYCOMS2 RF02 case
       call dycoms2_rf02_tndcy( time_current, time_initial, rho, &          ! Intent(in)
                                rho_zm, rtm, rcm, exner, &                  ! Intent(in)
                                err_code, &                                 ! Intent(inout)
@@ -2010,8 +2006,7 @@ module clubb_driver
                                 wpthlp_sfc, wprtp_sfc, ustar, &     ! Intent(out)
                                 wpsclrp_sfc, wpedsclrp_sfc )        ! Intent(out)
 
-    case ( "dycoms2_rf02_do", "dycoms2_rf02_ds", & 
-           "dycoms2_rf02_nd", "dycoms2_rf02_so" )
+    case ( "dycoms2_rf02" ) 
       call dycoms2_rf02_sfclyr( um(2), vm(2), &                     ! Intent(in)
                                 upwp_sfc, vpwp_sfc, &               ! Intent(out)
                                 wpthlp_sfc, wprtp_sfc, ustar, &     ! Intent(out)

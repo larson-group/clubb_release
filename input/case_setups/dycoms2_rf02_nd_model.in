@@ -6,7 +6,7 @@
 
 ! Model Settings
 
-runtype = "dycoms2_rf02_nd" ! Case name.
+runtype = "dycoms2_rf02" ! Case name.
 
 nzmax = 37       ! Number of vertical levels.  ! For grid_type = 1.
 !nzmax = 148       ! Number of vertical levels.  ! For grid_type = 2.

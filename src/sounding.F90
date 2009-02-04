@@ -205,10 +205,7 @@ module sounding
             end if  ! k > nlevels
 
             ! Regular situation w/ linear int.
-            IF (      trim( runtype ) /= "dycoms2_rf02_do"  & 
-                .AND. trim( runtype ) /= "dycoms2_rf02_ds"  & 
-                .AND. trim( runtype ) /= "dycoms2_rf02_nd"  & 
-                .AND. trim( runtype ) /= "dycoms2_rf02_so" ) THEN  
+            IF ( trim( runtype ) /= "dycoms2_rf02" ) THEN  
 
               um(i)   = lin_int( gr%zt(i), z(k), z(k-1), u(k), u(k-1) )
               vm(i)   = lin_int( gr%zt(i), z(k), z(k-1), v(k), v(k-1) )
