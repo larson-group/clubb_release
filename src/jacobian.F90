@@ -82,9 +82,6 @@ implicit none
   integer, dimension(10) :: & 
   times ! Times to read in [GraDS output file units]
 
-  character(len=50) ::  & 
-  run_file ! namelist for case being run
-
   logical :: & 
   l_use_standard_vars ! use standard constant parameters
 
@@ -116,7 +113,7 @@ implicit none
 
   ! Namelists
   namelist /jcbn_nml/  & 
-    run_file, times, delta_factor, l_use_standard_vars
+    times, delta_factor, l_use_standard_vars
 
 !-----------------------------------------------------------------------
 
@@ -160,7 +157,7 @@ implicit none
   end do
 
   call run_clubb  & 
-       ( clubb_params%value(:), run_file, err_code,  & 
+       ( clubb_params%value(:), 'jacobian.in', err_code,  & 
         .false., .false. )
 
   if ( fatal_error(err_code) ) then
@@ -244,7 +241,7 @@ implicit none
     clubb_params%value(i) = clubb_params%value(i) * delta_factor
 
     call run_clubb & 
-      ( clubb_params%value(:), trim( run_file ), err_code, & 
+      ( clubb_params%value(:), 'jacobian.in', err_code, & 
          .false., .false. )
 
     ! Print a period so the user knows something is happening
