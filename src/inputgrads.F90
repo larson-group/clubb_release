@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputgrads.F90,v 1.3 2008-08-04 20:40:26 faschinj Exp $
+! $Id$
 
 module inputfile_class
 
@@ -315,7 +315,7 @@ contains
   type (inputgrads), intent(in) :: & 
   f ! The file to read data from
 
-  character(len=*) ::  & 
+  character(len=*), intent(in) ::  & 
   varname ! The variable name as it occurs in the control file
   
   integer, intent(in) :: & 
@@ -415,10 +415,10 @@ contains
   intrinsic :: dble, size
 
   ! Input Variables
-  type (inputgrads), intent(in) ::  & 
+  type (inputgrads), intent(in) :: & 
   f ! The GrADS file
 
-  character(len=*) ::  & 
+  character(len=*), intent(in) :: & 
   varname ! The variable name as it occurs in the control file
 
   integer, intent(in) :: & 

@@ -7,27 +7,36 @@
 %\usepackage{amsfonts}
 
 %% These cannot be interpreted by TTH
-%\addtolength{\textheight}{2in}\addtolength{\topmargin}{-1in}
-%\addtolength{\textwidth}{1.25in} \addtolength{\oddsidemargin}{-.75in}
-%\addtolength{\evensidemargin}{-.75in}
+\addtolength{\textheight}{2in}\addtolength{\topmargin}{-1in}
+\addtolength{\textwidth}{1.25in} \addtolength{\oddsidemargin}{-.75in}
+\addtolength{\evensidemargin}{-.75in}
 
-%\pagestyle{empty}
+\pagestyle{empty}
 
 \begin{document}
 
-\title{\textbf{Standards and Coding Practices for HOC}}
+\title{\textbf{Standards and Coding Practices for CLUBB}}
 \author{Larson Group UW--Milwaukee}
 
 \maketitle
 
+
+The following rules apply only to the parts of CLUBB that we have written.  We try not to modify
+code from external contributors such as BUGSRad, 
+Numerical Recipes, and so forth, because such external code is
+less familiar to us, and we might introduce bugs.  Furthermore, our changes would be lost if
+we were to update to a new version of the external code.
+\newline
+
+
 %\flushleft
 \begin{enumerate}
-\item All files in the repository should have a standard header with a CVS 
+\item All files in the repository should have a standard header with a SVN 
 \texttt{\$Id\$} tag at the top.
 \newline
 When initially checking in a new source file, enter the Id tag as 
 the string \texttt{\$Id\$} on a commented line at the top of the source file
- (CVS will expand this after checking it in).
+ (SVN will expand this after checking it in).
 
 \bigskip
 
@@ -116,12 +125,6 @@ This will allow other users to contact you with any questions about the section 
 Use the same name identifier, e.g. dschanen or Vince Larson, everywhere.
 Then everyone can use \texttt{grep} to search for all code comments you've made.
 
-\item When writing new source code, use fixed format rather than free format.  However, 
-this convention is not always followed in code from external contributors such as BUGSRad, 
-Numerical Recipes, and so forth.  We do not usually modify such external code because it is
-less familiar, and we might introduce bugs.
-\newline
-
 \item Minimize the number of variables or amount of data made available to any 
 subroutine in either 
 passed arguments or \texttt{use} statements.  Always specify \texttt{intent} 
@@ -156,15 +159,18 @@ subroutine mulmul( x, y, z )
     pi,         & ! Ratio of radii to their circumferance [no units]
     euler_const   ! Made up constant [no units]
 
+  use dimensions, only: &
+    nnzp ! Number of data points of our model [count]
+
   implicit none
 
   ! First list input variables
-  real, dimension(5), intent(in) :: &
+  real, dimension(nnzp), intent(in) :: &
     x, &! First factor   [no units]
     y   ! Second factor  [no units]
 
   ! Then list inout variables, and then outputs 
-  real, dimension(5), intent(out) :: &
+  real, dimension(nnzp), intent(out) :: &
     z  ! output         [no units]
 !-----------------------------------------------------------------------
 
@@ -174,14 +180,14 @@ subroutine mulmul( x, y, z )
   ! independently of other elements of the subroutine
   ! allowing for parallelism if possible.
 
-  z(1:5) = ( x(1:5) / pi ) * ( y(1:5) / euler_const )
+  z(1:nnzp) = ( x(1:nnzp) / pi ) * ( y(1:nnzp) / euler_const )
 
   return
 end subroutine mulmul
 !-----------------------------------------------------------------------
 \end{verbatim}
 
-\item The general convention in HOC is to have the dummy arguments of a subroutine 
+\item The general convention in CLUBB is to have the dummy arguments of a subroutine 
 ordered with input first, input/output second, and output arguments third. 
 The exception to this is optional variables, which must occur last.  In that case,
 standard variables should be ordered as above; below this, the optional variables should
@@ -238,7 +244,7 @@ Not this:
     *v + t*h
 \end{verbatim}
 
-\item Do not use assumed size or assumed shape arrays in HOC.  
+\item Do not use assumed size or assumed shape arrays in CLUBB.  
 Generally speaking, the grid class defines the length of model arrays, 
 and the use of assumed size arrays introduces 
 another level of complexity that can cause bugs.  An exception may occur
@@ -310,6 +316,8 @@ The F90 style operators are:
 <= instead of .le.
 \end{verbatim}
 
+\item When creating a model flag variable of type \texttt{logical}, precede the
+ name with a \verb|l_| to make it easy to see that it is a logical.
 
 \item When writing flow control statements 
 (\texttt{ if, else if, select case }), keep the logic as straightforward and
@@ -395,19 +403,23 @@ There several ways to do this:
 	contain them. 
 	 E.g. \texttt{p0} for $P_0$.
 	\item Use 3 or more characters in the variable name.
-	E.g. HOC uses \texttt{grav} 
+	E.g. CLUBB uses \texttt{grav} 
 	rather than \texttt{g} or \texttt{gr} for the gravitational constant.
 	\end{enumerate}
-Avoid using a variable name that overlaps with the text a reserved word or
-Fortran directive as well.
+Avoid using a variable name that overlaps with the text of a reserved word or
+Fortran directive as well (e.g. \texttt{inte} overlaps with \texttt{intent} 
+and \texttt{integer} and would not be a good variable name).
 Try using a command
 like \texttt{grep} if you're uncertain if your variable is a semi-unique string.
 \newline
 
 \item Do not use the prognostic or diagnostic variable modules anywhere they
-are not used already.  Currently prognostic\_variables is used in \texttt{statistics.F}
-and \texttt{hoc.F}, while diagnostic\_variables is used in \texttt{hoc.F}, \texttt{statistics.F}, and 
-\texttt{parameterization\_interface.F}.  Global variables like these make debugging 
+are not used already.  Currently the module \texttt{prognostic\_variables} 
+is used in 
+\texttt{numer\_check} and \texttt{clubb\_driver}, while 
+\texttt{diagnostic\_variables} is used in \texttt{clubb\_driver}, 
+\texttt{clubb\_core}, 
+and \texttt{stats\_subs}. Global variables like these make debugging 
 the code more difficult.  The proper way to use these variables in a new 
 section of code is to pass them as an argument.
 \newline
@@ -416,7 +428,8 @@ section of code is to pass them as an argument.
 compile time checking of input arguments. \newline
 
 \item When putting several subroutines or functions in a module, limit the
- number of public interfaces. \newline
+ number of public interfaces to those that are called from outside the 
+ module.\\
 E.g. 
 \begin{verbatim}
   ! module gcss
@@ -449,7 +462,7 @@ E.g.
 \end{verbatim}
 
 \item Good use of whitespace can make code easier to read and debug.  
-One simple convention used in HOC is to put an extra space between 
+One simple convention used in CLUBB is to put an extra space between 
 parenthesis for functions and subroutines to differentiate them from 
 array variables. \newline
 E.g.
@@ -484,8 +497,8 @@ is an extension of the Fortran standard.  E.g.
   real :: x ! Marks the spot [deg_E]
 \end{verbatim}
 
-\item For clarity, functions, subroutines, and programs should end with 
-their proper Fortran 90 style end statement. \newline
+\item For clarity, functions, subroutines, modules, and programs should end 
+with their proper Fortran 90 style end statement. \newline
 E.g.
 \begin{verbatim}
   ! Like this
@@ -531,9 +544,9 @@ E.g.
 \end{verbatim}
 
 % These two items are no longer true since we moved to Free format code -dschanen 6 Aug 08
-%\item A convention of HOC is to use the exclamation point character \texttt{!} for a comment, rather than a \texttt{C} or a \texttt{*}.  Consistent coding style makes comments easier to spot at a glance.
+%\item A convention of CLUBB is to use the exclamation point character \texttt{!} for a comment, rather than a \texttt{C} or a \texttt{*}.  Consistent coding style makes comments easier to spot at a glance.
 
-%\item A convention of HOC is to use the period ( \texttt{.} ) as the 
+%\item A convention of CLUBB is to use the period ( \texttt{.} ) as the 
 %continuation character.  This gives the code a clean and consistent look.
 %e.g.
 %\begin{verbatim}
@@ -570,6 +583,8 @@ E.g. \\
 \verb|| \\
 \verb*|  implicit|\verb| none| \\
 \verb|| \\
+\verb*|  contains| \\
+\verb|| \\
 \verb*|  subroutine|\verb| advect_2D( ... )| \\
 \verb*|    use|\verb| grid, only: & | {\small 2+2 columns within the scope of \texttt{dynamics/advect\_2D}} \\
 \verb*|      nz,|\verb| & | {\small 2+2+2 columns since we're continuing the \texttt{use} statement}  \\
@@ -588,8 +603,18 @@ E.g. \\
 \verb|end module dynamics|
 
 \item Wrap all code lines at 100 columns.  Fortran free format source code
-allows for 132, but the number 100 was chosen to keep the line length 
-within reason.  \newline
+allows for 132, but the number 100 was chosen to so that we can view the code 
+browser without word-wrap on one monitor.
+
+\item Do not use deprecated or obsolescent features of Fortran, and do not
+use extensions to the Fortran 95 standard.  This includes but is not limited to
+\texttt{pause}, \texttt{equivalence}, Cray style pointers, 
+arithmetic \texttt{if}, alternate \texttt{return}, and \texttt{float()} for 
+real data type conversions.
+
+\item All files added to the CLUBB code should use a \texttt{.F90} file 
+extension.  This is due to the a kluge used with \texttt{mkmf} that only enables
+compiler warnings when the file is pre-processed Fortran 90 source. 
 
 \end{enumerate}
 

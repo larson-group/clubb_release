@@ -1,22 +1,22 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F90,v 1.3 2008-07-30 19:17:34 dschanen Exp $
+! $Id$
 
 program jacobian
  
 
-!     Description:
-!     Generates a matrix based on variation between parameter 
-!     constants (C1,C2...etc) and variables (cf,rcm,thlm...etc)
+! Description:
+!   Generates a matrix based on variation between parameter 
+!   constants (C1,C2...etc) and variables (cf,rcm,thlm...etc)
 
-!     References:
-!     None
+! References:
+!   None
 !-----------------------------------------------------------------------
 
-use hoc, only:  & 
-    hoc_model ! Procedure(s)
-use param_index, only:  & 
+use clubb_driver, only:  & 
+    run_clubb ! Procedure(s)
+use parameter_indices, only:  & 
     nparams ! Variable(s)
-use parameters, only:  & 
+use parameters_tunable, only:  & 
     params_list,  & ! Variable(s)
     read_parameters ! Procedure(s) 
 use constants, only:  & 
@@ -86,17 +86,17 @@ implicit none
   run_file ! namelist for case being run
 
   logical :: & 
-  use_standard_vars ! use standard constant parameters
+  l_use_standard_vars ! use standard constant parameters
 
 
 !     ! Types to hold GrADS variables and parameter constants
-  type (param_array) :: hoc_params
+  type (param_array) :: clubb_params
 
   type (variable_array) ::  & 
   var1zt,  & ! thermo grid GRaDS results [units vary]
   var2zt,  & ! thermo grid GRaDS results [units vary]
   var1zm,  & ! momentum grid GRaDS results [units vary]
-  var2zm  ! momentum grid GRaDS results [units vary]
+  var2zm     ! momentum grid GRaDS results [units vary]
 
 
   real, dimension(nparams, nvarzt+nvarzm) :: jmatrix
@@ -116,7 +116,7 @@ implicit none
 
   ! Namelists
   namelist /jcbn_nml/  & 
-    run_file, times, delta_factor, use_standard_vars
+    run_file, times, delta_factor, l_use_standard_vars
 
 !-----------------------------------------------------------------------
 
@@ -127,12 +127,12 @@ implicit none
 
   err_code = clubb_no_error
 
-  allocate( hoc_params%value( nparams ),  & 
-            hoc_params%name( nparams ), & 
+  allocate( clubb_params%value( nparams ),  & 
+            clubb_params%name( nparams ), & 
             stat=alloc_stat )
   if (alloc_stat /= 0 ) stop "allocate failed"
 
-  hoc_params%entries = nparams
+  clubb_params%entries = nparams
 
   ! Read namelists
   open( unit=10, file='jacobian.in', status='old')
@@ -140,38 +140,38 @@ implicit none
 
   close( unit=10 )
 
-  if ( .not. use_standard_vars ) then
-    call read_parameters( 10, 'jacobian.in', hoc_params%value )
+  if ( .not. l_use_standard_vars ) then
+    call read_parameters( 10, 'jacobian.in', clubb_params%value )
 
   else
     call read_parameters & 
-         ( 10, "../cmp_stats/std_const/std_const_nml.in", & 
-           hoc_params%value )
+         ( 10, "", clubb_params%value )
 
   end if
 
-  hoc_params%name(1:nparams) = params_list(1:nparams)
+  clubb_params%name(1:nparams) = params_list(1:nparams)
    
   write(unit=fstdout,fmt='(a11,2a12)')  & 
     "Parameter  ", "Initial     ", "Varied      "
 
-  do i = 1, hoc_params%entries, 1
-    write(unit=*,fmt='(a11,2f12.5)') hoc_params%name(i),  & 
-      hoc_params%value(i), hoc_params%value(i) * delta_factor
+  do i = 1, clubb_params%entries, 1
+    write(unit=*,fmt='(a11,2f12.5)') clubb_params%name(i),  & 
+      clubb_params%value(i), clubb_params%value(i) * delta_factor
   end do
 
-  call hoc_model  & 
-       ( hoc_params%value(:), run_file, err_code,  & 
+  call run_clubb  & 
+       ( clubb_params%value(:), run_file, err_code,  & 
         .false., .false. )
 
   if ( fatal_error(err_code) ) then
-  
-     stop "Initial run wasn't valid"
-  endif
+     stop "The initial set of parameters caused a fatal error."
+
+  end if
+
   ! Obtain nz from the generated GrADS files
 
-  nzt = grads_zlvl( trim( fname_zt )//".ctl" )
-  nzm = grads_zlvl( trim( fname_zm )//".ctl" )
+  nzt = grads_zlvl( "../output/"//trim( fname_zt )//".ctl" )
+  nzm = grads_zlvl( "../output/"//trim( fname_zm )//".ctl" )
 
   ! Initialize the structures holding the variables
 
@@ -239,12 +239,12 @@ implicit none
 
   call getvariables( var1zm, trim( fname_zm )//".ctl" )
 
-  do i = 1, hoc_params%entries
-    tmp_param = hoc_params%value(i)
-    hoc_params%value(i) = hoc_params%value(i) * delta_factor
+  do i = 1, clubb_params%entries
+    tmp_param = clubb_params%value(i)
+    clubb_params%value(i) = clubb_params%value(i) * delta_factor
 
-    call hoc_model & 
-      ( hoc_params%value(:), trim( run_file ), err_code, & 
+    call run_clubb & 
+      ( clubb_params%value(:), trim( run_file ), err_code, & 
          .false., .false. )
 
     ! Print a period so the user knows something is happening
@@ -255,7 +255,7 @@ implicit none
       ! Pos. Infinity bit pattern 
       jmatrix(i, :) & 
       = transfer( int( nanbits ), jmatrix(1,1) )
-      hoc_params%value(i) = tmp_param
+      clubb_params%value(i) = tmp_param
       cycle
     end if
 
@@ -276,7 +276,7 @@ implicit none
 
     do j = 1, nvarzt
       jmatrix(i, j) = impact_matrix(i, j)  & 
-                    / ( hoc_params%value(i) - tmp_param )
+                    / ( clubb_params%value(i) - tmp_param )
     end do
 
     do j = 1, nvarzm
@@ -292,20 +292,20 @@ implicit none
     do j = 1, nvarzm
       jmatrix(i, j+nvarzt) =  & 
       impact_matrix(i, j+nvarzt)  & 
-       / (hoc_params%value(i) - tmp_param)
+       / (clubb_params%value(i) - tmp_param)
     end do
 
-    hoc_params%value(i) = tmp_param ! Set parameter back
+    clubb_params%value(i) = tmp_param ! Set parameter back
 
-  end do !i = 1..hoc_params%entries
+  end do !i = 1..clubb_params%entries
 
   ! Output Results to the terminal
-  do i = 1, hoc_params%entries
+  do i = 1, clubb_params%entries
 
       do j = 1, var2zt%entries
         write(unit=*,fmt='(3(a,e10.4))')  & 
         delta//var2zt%name(j)//"/" & 
-        //delta//hoc_params%name(i)//" = ", jmatrix(i, j), & 
+        //delta//clubb_params%name(i)//" = ", jmatrix(i, j), & 
         " impact: ", impact_matrix(i, j), & 
         " fc imp: ", fc_impact_matrix(i, j)
 
@@ -314,7 +314,7 @@ implicit none
       do j = 1, var2zm%entries
         write(unit=*,fmt='(3(a,e10.4))')  & 
         delta//var2zm%name(j)//"/" & 
-        //delta//hoc_params%name(i)//" = ", jmatrix(i, j+nvarzt), & 
+        //delta//clubb_params%name(i)//" = ", jmatrix(i, j+nvarzt), & 
         " impact: ", impact_matrix(i, j+nvarzt), & 
         " fc imp: ", fc_impact_matrix(i, j+nvarzt)
 
@@ -322,7 +322,7 @@ implicit none
 
     write(unit=fstderr,fmt=*) ""
 
-  end do ! 1..hoc_params%entries
+  end do ! 1..clubb_params%entries
 
   ! Output results to an ASCII file
 
@@ -366,7 +366,7 @@ implicit none
   character(len=*), intent(in) :: fname_zx
 
   ! Local Variable
-  logical :: error
+  logical :: l_error
 
 
     
@@ -374,9 +374,9 @@ implicit none
 
     varray%value(1:varray%nz, k) =  & 
     grads_average_interval & 
-    ( fname_zx, varray%nz, times(:), varray%name(k), 1, error )
+    ( "../output/"//fname_zx, varray%nz, times(:), varray%name(k), 1, l_error )
 
-    if ( error ) then
+    if ( l_error ) then
       write(unit=fstderr,fmt=*) "Error in reading"//varray%name(i)
       stop
     end if

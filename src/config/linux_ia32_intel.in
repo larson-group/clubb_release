@@ -1,4 +1,4 @@
-# $Id: linux_ia32_intel.in,v 1.4 2008-07-30 19:17:37 dschanen Exp $
+# $Id$
 # Makefile definitions customized for Linux x86_64 using the Intel Fortran 
 # compiler 
 
@@ -12,7 +12,7 @@ LIBDIR = $(PREFIX)/lib
 FC = ifort
 
 # == Debugging ==
-DEBUG = -g -check bounds
+DEBUG = -g -check bounds -check uninit
 
 # == Warnings ++
 WARNINGS = -warn -warn notruncated_source
@@ -22,34 +22,37 @@ ARCH = -xW # This should work on carson/steele
 #ARCH = -xT # Core2 Duo (overlie)
 
 # == Optimization ==
-OPTIMIZE = -O2
+OPTIMIZE = -O3
 
 # == NetCDF Location ==
 #NC_LOC = $(HOME)/netcdf-3.6.0-p1
+NC_LOC = /usr/local/netcdf-intel
 
 # == LAPACK libraries ==
-# Intel Math Kernel Library (v8)
+# Intel Math Kernel Library (v10)
+LAPACK = -L/opt/intel/mkl/10.0.5.025/lib/em64t -Wl,-rpath,/opt/intel/mkl/10.0.5.025/lib/em64t -lmkl_intel_lp64 -lmkl_sequential -lmkl_lapack -lmkl_core -lguide -lpthread
+# (v8)
 #LAPACK = -L/opt/intel/mkl/8.1/lib/64 -Wl,-rpath,/opt/intel/mkl/8.1/lib/64 -lmkl_lapack64 -lmkl_i2p -lmkl -lmkl_vml_i2p -lmkl_vml -lvml -lguide -lpthread
 # Generic library
 #LAPACK = -llapack -lblas -lgfortran
-LAPACK = -L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas # ATLAS BLAS (faster)
+#LAPACK = -L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas # ATLAS BLAS (faster then generic library)
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
-LDFLAGS = -L$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib $(LAPACK)
+LDFLAGS = -L$(LIBDIR) -lclubb_param -lclubb_bugsrad -L$(NC_LOC)/lib $(LAPACK)
 
 # == Compiler flags (all) ==
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
-#   -DCOAMPS_MICRO enables COAMPS microphysics scheme
-#   -DTUNER enables the tuning application
+#    enables COAMPS microphysics scheme
+#    enables the tuning application
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
 
-#FCFLAGS = $(ARCH) $(OPTIMIZE)   -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
-FCFLAGS = $(ARCH) $(DEBUG)   -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+#FCFLAGS = $(ARCH) $(OPTIMIZE)   -Dradoffline -I$(NC_LOC)/include
+FCFLAGS = $(ARCH) $(DEBUG)   -Dnooverlap -Dradoffline -I$(NC_LOC)/include
 
 # == Static library processing ==
 AR = ar

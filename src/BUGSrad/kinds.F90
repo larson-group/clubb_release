@@ -1,4 +1,4 @@
-! CVS:  $Id: kinds.F90,v 1.2 2006-03-22 04:17:08 dschanen Exp $
+! CVS:  $Id$
 ! CVS:  $Name: not supported by cvs2svn $
 
 !|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||

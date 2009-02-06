@@ -1,4 +1,4 @@
-! $Id: sounding.F90,v 1.6 2008-08-12 16:12:27 dschanen Exp $
+! $Id$
 module sounding
 
   implicit none
@@ -27,8 +27,9 @@ module sounding
         use constants, only:  & 
             fstderr ! Constant
 
-        use parameters, only: & 
-            sclr_dim ! Variable(s)
+        use parameters_model, only: & 
+            sclr_dim, &! Variable(s)
+            edsclr_dim
 
         use std_atmosphere_mod, only:  & 
             std_atmosphere ! Procedure(s)
@@ -42,7 +43,7 @@ module sounding
 !           ,iisclr_CO2
 
         use error_code, only: &
-          clubb_at_debug_level ! Function
+          clubb_at_least_debug_level ! Function
 
         implicit none
 
@@ -69,7 +70,10 @@ module sounding
 
         ! Optional output variables
         real, intent(out), dimension(gr%nnzp, sclr_dim) ::  & 
-        sclrm, edsclrm ! Passive scalar input   [units vary] 
+          sclrm   ! Passive scalar output      [units vary] 
+
+        real, intent(out), dimension(gr%nnzp, edsclr_dim) ::  & 
+          edsclrm ! Eddy Passive scalar output [units vary] 
 
         ! Local variables
 
@@ -106,7 +110,7 @@ module sounding
         read(unit = iunit, nml = sounding)
 
         ! Read in a passive scalar sounding, if enabled
-        if ( sclr_dim > 0 ) then
+        if ( sclr_dim > 0 .or. edsclr_dim > 0 ) then
           ! Initialize to zero
           sclr   = 0.0
           edsclr = 0.0
@@ -154,11 +158,13 @@ module sounding
           rtm(1)  = rt(1)
           if ( sclr_dim > 0 ) then
             sclrm(1,1:sclr_dim)   = sclr(1,1:sclr_dim)
-            edsclrm(1,1:sclr_dim) = edsclr(1,1:sclr_dim)
+          end if
+          if ( edsclr_dim > 0 ) then
+            edsclrm(1,1:edsclr_dim) = edsclr(1,1:edsclr_dim)
           end if
         end if
 
-        if ( clubb_at_debug_level( 1 ) ) then
+        if ( clubb_at_least_debug_level( 1 ) ) then
           print *, "Reading in sounding information"
 !------------------Printing Model Inputs-------------------------------
           print *, "u = ", u(1:nlevels)
@@ -167,11 +173,15 @@ module sounding
           print *, "vg = ", vg(1:nlevels)
           print *, "theta = ", theta(1:nlevels)
           print *, "rt = ", rt(1:nlevels)
-          if ( sclr_dim > 0 ) then
-            print *, "sclr = ", sclr(1:nlevels,1:sclr_dim)
-            print *, "edsclr = ", edsclr(1:nlevels,1:sclr_dim)
-          end if
-        end if ! clubb_at_debug_level( 1 )
+          do i = 1, sclr_dim, 1
+            write(6,'(a5,i2,a2)',advance='no') "sclr(", i,")="
+            write(6,'(8g10.3)') sclr(1:nlevels,i)
+          end do
+          do i = 1, edsclr_dim, 1
+            write(6,'(a7,i2,a2)',advance='no') "edsclr(", i, ")="
+            write(6,'(8g10.3)') edsclr(1:nlevels,i)
+          end do
+        end if ! clubb_at_least_debug_level( 1 )
 !----------------------------------------------------------------------
 
 ! Use linear interpolation from two nearest prescribed grid points
@@ -195,10 +205,7 @@ module sounding
             end if  ! k > nlevels
 
             ! Regular situation w/ linear int.
-            IF (      trim( runtype ) /= "dycoms2_rf02_do"  & 
-                .AND. trim( runtype ) /= "dycoms2_rf02_ds"  & 
-                .AND. trim( runtype ) /= "dycoms2_rf02_nd"  & 
-                .AND. trim( runtype ) /= "dycoms2_rf02_so" ) THEN  
+            IF ( trim( runtype ) /= "dycoms2_rf02" ) THEN  
 
               um(i)   = lin_int( gr%zt(i), z(k), z(k-1), u(k), u(k-1) )
               vm(i)   = lin_int( gr%zt(i), z(k), z(k-1), v(k), v(k-1) )
@@ -212,10 +219,13 @@ module sounding
                 do j = 1, sclr_dim 
                   sclrm(i,j) = lin_int( gr%zt(i), z(k), z(k-1),  & 
                                        sclr(k,j), sclr(k-1,j) )
+                end do
+              end if
+              if ( edsclr_dim > 0 ) then
+                do j = 1, edsclr_dim 
                   edsclrm(i,j) = lin_int( gr%zt(i), z(k), z(k-1),  & 
                                          edsclr(k,j), edsclr(k-1,j) )
                 end do
-
               end if
 
             ELSE  ! DYCOMS II RF02 case

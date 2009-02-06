@@ -1,0 +1,95 @@
+!------------------------------------------------------------------------
+! $Id$
+
+module hydrostatic_mod
+
+implicit none
+
+private ! Default Scope
+
+public :: hydrostatic
+
+contains
+
+subroutine hydrostatic( thvm, psfc, &
+                        p_in_Pa, exner, rho, rho_zm )
+!       Description:
+!       Subprogram to integrate hydrostatic equation
+
+!       References:
+!
+!------------------------------------------------------------------------
+
+use constants, only: & 
+    kappa,  & ! Variable(s)
+    p0, & 
+    Cp, & 
+    grav, & 
+    Rd, &
+    zero_threshold
+
+use grid_class, only: & 
+    gr,  & ! Variable(s)
+    zm2zt,  & ! Procedure(s)
+    zt2zm
+
+
+implicit none
+
+! Input Variables
+real, intent(in) :: psfc ! Pressure at the surface      [Pa]
+
+real, intent(in), dimension(gr%nnzp) ::  & 
+  thvm  ! Virtual potential temperature   [K]
+
+! Output Variables
+real, intent(out), dimension(gr%nnzp) ::  & 
+  p_in_Pa,  & ! Pressure                       [Pa]
+  exner,    & ! Exner function                 [-]
+  rho,      & ! Density on thermo. points      [kg/m^3]
+  rho_zm      ! Density on moment. points      [kg/m^3]
+
+!  Local Variables
+
+integer :: k
+
+! Integrate hydrostatic equation: we first compute Exner function
+! on the momentum grid
+
+exner(1) = ( psfc/p0 )**kappa
+do k=2,gr%nnzp
+  exner(k) = exner(k-1) - grav/( Cp * thvm(k) * gr%dzt(k) )
+end do
+
+! Now interpolate Exner to the thermodynamic grid points
+
+exner = zm2zt( exner )
+
+! Exner is defined on the thermodynamic grid point except for the first
+! element which corresponds to surface value
+
+! Note: kappa = Rd / Cp
+
+exner(1) = ( psfc/p0 )**kappa
+
+! Compute pressure on thermodynamic points
+
+do k=1,gr%nnzp
+  p_in_Pa(k) = p0 * exner(k)**( 1./kappa )
+end do
+
+! Compute density on thermodynamic grid
+
+do k=1,gr%nnzp
+  rho(k) = p_in_Pa(k) / ( Rd * thvm(k) * exner(k) )
+end do
+
+! Interpolate density back to momentum grid
+
+rho_zm = max( zt2zm( rho ), zero_threshold )   ! Positive definite quantity
+rho_zm(1) = p_in_Pa(1) / ( Rd * thvm(1) * exner(1) )
+
+return
+end subroutine hydrostatic
+
+end module hydrostatic_mod

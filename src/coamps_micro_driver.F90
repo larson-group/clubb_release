@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: coamps_micro_driver.F90,v 1.10 2008-08-08 14:47:17 faschinj Exp $
+! $Id$
 module coamps_micro_driver_mod
 
 ! This module wraps the adjtq subroutine so that it may be used by
@@ -925,6 +925,20 @@ end if
 
 #else /* COAMPS_MICRO not defined */
 stop "Not compiled with COAMPS Microphysics"
+
+! Avoid a compiler error on ifort for ia64
+ritend = 0
+rrtend = 0 
+rgtend = 0
+rsnowtend = 0
+rttend = 0
+thlmtend = 0
+nrmtend = 0
+Vrr = 0
+VNr = 0
+Vsnow = 0
+Vgraupel = 0
+Vice = 0
 
 #endif
 

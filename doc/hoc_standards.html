@@ -13,30 +13,37 @@
  span.overacc2 {position: relative;  left: .8em; top: -1.2ex;}
  span.overacc1 {position: relative;  left: .6em; top: -1.2ex;} --></style>
 
+  
+<title> {Standards and Coding Practices for CLUBB}</title>
  
-<title> {Standards and Coding Practices for HOC}</title>
- 
-<h1 align="center"><b>Standards and Coding Practices for HOC</b> </h1>
+<h1 align="center"><b>Standards and Coding Practices for CLUBB</b> </h1>
 
 <h3 align="center">Larson Group UW-Milwaukee </h3>
 
 <div class="p"><!----></div>
+The following rules apply only to the parts of CLUBB that we have written.  We try not to modify
+code from external contributors such as BUGSRad, 
+Numerical Recipes, and so forth, because such external code is
+less familiar to us, and we might introduce bugs.  Furthermore, our changes would be lost if
+we were to update to a new version of the external code.
+
+<div class="p"><!----></div>
 
 <ol type="1">
-<li> All files in the repository should have a standard header with a CVS 
-<tt>$Id: hoc_standards.html,v 1.2 2008-08-18 18:22:44 dschanen Exp $</tt> tag at the top.
+<li> All files in the repository should have a standard header with a SVN 
+<tt>$Id$</tt> tag at the top.
 
 <div class="p"><!----></div>
 When initially checking in a new source file, enter the Id tag as 
-the string <tt>$Id: hoc_standards.html,v 1.2 2008-08-18 18:22:44 dschanen Exp $</tt> on a commented line at the top of the source file
- (CVS will expand this after checking it in).
+the string <tt>$Id$</tt> on a commented line at the top of the source file
+ (SVN will expand this after checking it in).
 
 <div class="p"><!----></div>
 <br /><br />After checking in the file, something like the following will appear:
 
 <pre>
 !-----------------------------------------------------------------------
-!&nbsp;$Id: hoc_standards.html,v 1.2 2008-08-18 18:22:44 dschanen Exp $
+!&nbsp;$Id:&nbsp;hoc_standards.tex,v&nbsp;1.4&nbsp;2008-08-18&nbsp;17:53:48&nbsp;dschanen&nbsp;Exp&nbsp;$
 
 
 </pre>
@@ -130,16 +137,6 @@ Then everyone can use <tt>grep</tt> to search for all code comments you've made.
 <div class="p"><!----></div>
 </li>
 
-<li> When writing new source code, use fixed format rather than free format.  However, 
-this convention is not always followed in code from external contributors such as BUGSRad, 
-Numerical Recipes, and so forth.  We do not usually modify such external code because it is
-less familiar, and we might introduce bugs.
-
-<div class="p"><!----></div>
-
-<div class="p"><!----></div>
-</li>
-
 <li> Minimize the number of variables or amount of data made available to any 
 subroutine in either 
 passed arguments or <tt>use</tt> statements.  Always specify <tt>intent</tt> 
@@ -176,15 +173,18 @@ subroutine&nbsp;mulmul(&nbsp;x,&nbsp;y,&nbsp;z&nbsp;)
 &nbsp;&nbsp;&nbsp;&nbsp;pi,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&amp;&nbsp;!&nbsp;Ratio&nbsp;of&nbsp;radii&nbsp;to&nbsp;their&nbsp;circumferance&nbsp;[no&nbsp;units]
 &nbsp;&nbsp;&nbsp;&nbsp;euler_const&nbsp;&nbsp;&nbsp;!&nbsp;Made&nbsp;up&nbsp;constant&nbsp;[no&nbsp;units]
 
+&nbsp;&nbsp;use&nbsp;dimensions,&nbsp;only:&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;nnzp&nbsp;!&nbsp;Number&nbsp;of&nbsp;data&nbsp;points&nbsp;of&nbsp;our&nbsp;model&nbsp;[count]
+
 &nbsp;&nbsp;implicit&nbsp;none
 
 &nbsp;&nbsp;!&nbsp;First&nbsp;list&nbsp;input&nbsp;variables
-&nbsp;&nbsp;real,&nbsp;dimension(5),&nbsp;intent(in)&nbsp;::&nbsp;&amp;
+&nbsp;&nbsp;real,&nbsp;dimension(nnzp),&nbsp;intent(in)&nbsp;::&nbsp;&amp;
 &nbsp;&nbsp;&nbsp;&nbsp;x,&nbsp;&amp;!&nbsp;First&nbsp;factor&nbsp;&nbsp;&nbsp;[no&nbsp;units]
 &nbsp;&nbsp;&nbsp;&nbsp;y&nbsp;&nbsp;&nbsp;!&nbsp;Second&nbsp;factor&nbsp;&nbsp;[no&nbsp;units]
 
 &nbsp;&nbsp;!&nbsp;Then&nbsp;list&nbsp;inout&nbsp;variables,&nbsp;and&nbsp;then&nbsp;outputs&nbsp;
-&nbsp;&nbsp;real,&nbsp;dimension(5),&nbsp;intent(out)&nbsp;::&nbsp;&amp;
+&nbsp;&nbsp;real,&nbsp;dimension(nnzp),&nbsp;intent(out)&nbsp;::&nbsp;&amp;
 &nbsp;&nbsp;&nbsp;&nbsp;z&nbsp;&nbsp;!&nbsp;output&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[no&nbsp;units]
 !-----------------------------------------------------------------------
 
@@ -194,7 +194,7 @@ subroutine&nbsp;mulmul(&nbsp;x,&nbsp;y,&nbsp;z&nbsp;)
 &nbsp;&nbsp;!&nbsp;independently&nbsp;of&nbsp;other&nbsp;elements&nbsp;of&nbsp;the&nbsp;subroutine
 &nbsp;&nbsp;!&nbsp;allowing&nbsp;for&nbsp;parallelism&nbsp;if&nbsp;possible.
 
-&nbsp;&nbsp;z(1:5)&nbsp;=&nbsp;(&nbsp;x(1:5)&nbsp;/&nbsp;pi&nbsp;)&nbsp;*&nbsp;(&nbsp;y(1:5)&nbsp;/&nbsp;euler_const&nbsp;)
+&nbsp;&nbsp;z(1:nnzp)&nbsp;=&nbsp;(&nbsp;x(1:nnzp)&nbsp;/&nbsp;pi&nbsp;)&nbsp;*&nbsp;(&nbsp;y(1:nnzp)&nbsp;/&nbsp;euler_const&nbsp;)
 
 &nbsp;&nbsp;return
 end&nbsp;subroutine&nbsp;mulmul
@@ -204,7 +204,7 @@ end&nbsp;subroutine&nbsp;mulmul
 <div class="p"><!----></div>
 </li>
 
-<li> The general convention in HOC is to have the dummy arguments of a subroutine 
+<li> The general convention in CLUBB is to have the dummy arguments of a subroutine 
 ordered with input first, input/output second, and output arguments third. 
 The exception to this is optional variables, which must occur last.  In that case,
 standard variables should be ordered as above; below this, the optional variables should
@@ -279,7 +279,7 @@ Not this:
 <div class="p"><!----></div>
 </li>
 
-<li> Do not use assumed size or assumed shape arrays in HOC.  
+<li> Do not use assumed size or assumed shape arrays in CLUBB.  
 Generally speaking, the grid class defines the length of model arrays, 
 and the use of assumed size arrays introduces 
 another level of complexity that can cause bugs.  An exception may occur
@@ -373,6 +373,11 @@ The F90 style operators are:
 &lt;=&nbsp;instead&nbsp;of&nbsp;.le.
 
 </pre>
+<div class="p"><!----></div>
+</li>
+
+<li> When creating a model flag variable of type <tt>logical</tt>, precede the
+ name with a <tt>l_</tt> to make it easy to see that it is a logical.
 <div class="p"><!----></div>
 </li>
 
@@ -489,13 +494,14 @@ There several ways to do this:
 </li>
 
 <li> Use 3 or more characters in the variable name.
-	E.g. HOC uses <tt>grav</tt> 
+	E.g. CLUBB uses <tt>grav</tt> 
 	rather than <tt>g</tt> or <tt>gr</tt> for the gravitational constant.
 <div class="p"><!----></div>
 </li>
 </ol>
-Avoid using a variable name that overlaps with the text a reserved word or
-Fortran directive as well.
+Avoid using a variable name that overlaps with the text of a reserved word or
+Fortran directive as well (e.g. <tt>inte</tt> overlaps with <tt>intent</tt> 
+and <tt>integer</tt> and would not be a good variable name).
 Try using a command
 like <tt>grep</tt> if you're uncertain if your variable is a semi-unique string.
 
@@ -505,9 +511,12 @@ like <tt>grep</tt> if you're uncertain if your variable is a semi-unique string.
 </li>
 
 <li> Do not use the prognostic or diagnostic variable modules anywhere they
-are not used already.  Currently prognostic_variables is used in <tt>statistics.F</tt>
-and <tt>hoc.F</tt>, while diagnostic_variables is used in <tt>hoc.F</tt>, <tt>statistics.F</tt>, and 
-<tt>parameterization_interface.F</tt>.  Global variables like these make debugging 
+are not used already.  Currently the module <tt>prognostic_variables</tt> 
+is used in 
+<tt>numer_check</tt> and <tt>clubb_driver</tt>, while 
+<tt>diagnostic_variables</tt> is used in <tt>clubb_driver</tt>, 
+<tt>clubb_core</tt>, 
+and <tt>stats_subs</tt>. Global variables like these make debugging 
 the code more difficult.  The proper way to use these variables in a new 
 section of code is to pass them as an argument.
 
@@ -524,8 +533,8 @@ compile time checking of input arguments.
 </li>
 
 <li> When putting several subroutines or functions in a module, limit the
- number of public interfaces. 
-<div class="p"><!----></div>
+ number of public interfaces to those that are called from outside the 
+ module.<br />
 E.g. 
 
 <pre>
@@ -562,7 +571,7 @@ E.g.
 </li>
 
 <li> Good use of whitespace can make code easier to read and debug.  
-One simple convention used in HOC is to put an extra space between 
+One simple convention used in CLUBB is to put an extra space between 
 parenthesis for functions and subroutines to differentiate them from 
 array variables. 
 <div class="p"><!----></div>
@@ -610,8 +619,8 @@ is an extension of the Fortran standard.  E.g.
 <div class="p"><!----></div>
 </li>
 
-<li> For clarity, functions, subroutines, and programs should end with 
-their proper Fortran 90 style end statement. 
+<li> For clarity, functions, subroutines, modules, and programs should end 
+with their proper Fortran 90 style end statement. 
 <div class="p"><!----></div>
 E.g.
 
@@ -628,7 +637,7 @@ E.g.
 
 &nbsp;&nbsp;&nbsp;&nbsp;...
 
-&nbsp;&nbsp;&nbsp;end
+&nbsp;&nbsp;end
 
 </pre>
 <div class="p"><!----></div>
@@ -701,6 +710,8 @@ E.g. <br />
 <tt></tt> <br />
 <tt>&nbsp;&nbsp;implicit</tt><tt>&nbsp;none</tt> <br />
 <tt></tt> <br />
+<tt>&nbsp;&nbsp;contains</tt> <br />
+<tt></tt> <br />
 <tt>&nbsp;&nbsp;subroutine</tt><tt>&nbsp;advect_2D(&nbsp;...&nbsp;)</tt> <br />
 <tt>&nbsp;&nbsp;&nbsp;&nbsp;use</tt><tt>&nbsp;grid,&nbsp;only:&nbsp;&amp;&nbsp;</tt> <font size="-1">2+2 columns within the scope of <tt>dynamics/advect_2D</tt></font> <br />
 <tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nz,</tt><tt>&nbsp;&amp;&nbsp;</tt> <font size="-1">2+2+2 columns since we're continuing the <tt>use</tt> statement</font>  <br />
@@ -722,10 +733,22 @@ E.g. <br />
 </li>
 
 <li> Wrap all code lines at 100 columns.  Fortran free format source code
-allows for 132, but the number 100 was chosen to keep the line length 
-within reason.  
+allows for 132, but the number 100 was chosen to so that we can view the code 
+browser without word-wrap on one monitor.
 <div class="p"><!----></div>
+</li>
 
+<li> Do not use deprecated or obsolescent features of Fortran, and do not
+use extensions to the Fortran 95 standard.  This includes but is not limited to
+<tt>pause</tt>, <tt>equivalence</tt>, Cray style pointers, 
+arithmetic <tt>if</tt>, alternate <tt>return</tt>, and <tt>float()</tt> for 
+real data type conversions.
+<div class="p"><!----></div>
+</li>
+
+<li> All files added to the CLUBB code should use a <tt>.F90</tt> file 
+extension.  This is due to the a kluge used with <tt>mkmf</tt> that only enables
+compiler warnings when the file is pre-processed Fortran 90 source.
 <div class="p"><!----></div>
 </li>
 </ol>
@@ -736,5 +759,5 @@ within reason.
 T<sub><font size="-1">E</font></sub>X
 by <a href="http://hutchinson.belmont.ma.us/tth/">
 T<sub><font size="-1">T</font></sub>H</a>,
-version 3.82.<br />On 18 Aug 2008, 12:43.</small>
+version 3.82.<br />On  3 Feb 2009, 11:51.</small>
 </html>

@@ -1,4 +1,4 @@
-! $Id: gradsaverage.F90,v 1.4 2008-08-04 20:07:22 faschinj Exp $
+! $Id$
 module grads_common
 
 implicit none
@@ -56,7 +56,7 @@ type (inputgrads) :: faverage ! Data file derived type
 real, dimension(nz) :: grads_temp ! Temporary variable
 
 integer ::  & 
-  i,  & ! les_array loop index 
+! i,  & ! les_array loop index 
   t  ! timestep loop index
 
 integer ::  & 

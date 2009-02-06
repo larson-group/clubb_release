@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F90,v 1.15 2008-08-08 14:47:18 faschinj Exp $
+! $Id$
 
 ! Module inputfields
 
@@ -85,7 +85,7 @@ module inputfields
 !       subroutine close_grads_read
 !-----------------------------------------------------------------------
 
-  use prognostic_variables, only: & 
+  use variables_prognostic_module, only: & 
       um,  & ! Variable(s)
       vm, & 
       rtm, & 
@@ -113,7 +113,7 @@ module inputfields
       vp2, & 
       sigma_sqd_w
 
-  use diagnostic_variables, only: & 
+  use variables_diagnostic_module, only: & 
       hydromet,  & ! Variable(s)
       tau_zt, & 
       ug, & 
@@ -133,6 +133,10 @@ module inputfields
   use grid_class, only: & 
       gr,  & ! Variable(s)
       zt2zm ! Procedure(s)
+
+  use constants, only:  &
+      rttol,   & ! Variable(s)
+      wtol_sqd
 
   use array_index, only:  & 
       iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm
@@ -300,7 +304,7 @@ module inputfields
                     hydromet(1:gr%nnzp,iiNrm), l_error)
     endif
     if ( input_sigma_sqd_w_zt ) then
-      call get_var( fread_var , "sigma_sqd_w", timestep, & 
+      call get_var( fread_var , "sigma_sqd_w_zt", timestep, & 
                     sigma_sqd_w_zt(1:gr%nnzp), l_error)
     endif
 
@@ -391,7 +395,7 @@ module inputfields
                     vp2(1:gr%nnzp), l_error )
    endif
    if ( input_sigma_sqd_w ) then
-      call get_var( fread_var, "scm", & 
+      call get_var( fread_var, "sigma_sqd_w", & 
                     timestep, & 
                     sigma_sqd_w(1:gr%nnzp), l_error )
    endif
@@ -561,12 +565,12 @@ module inputfields
       rtp2(3:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-2) )
       ! Using a linear extension here resulted in negatives.
       rtp2(1:2) =  rtp2(3)
-      if ( any (rtp2(1:gr%nnzp) < 0.0 ) ) then
+      if ( any ( rtp2(1:gr%nnzp) < rttol**2 ) ) then
 ! %% debug
 !              print *, "Some values of rtp2 are negative, compensating."
 ! %% debug
         do k=1, gr%nnzp
-          rtp2(k) = max(rtp2(k), 0.0)
+          rtp2(k) = max(rtp2(k), rttol**2)
         enddo
       endif
     endif
@@ -772,12 +776,12 @@ module inputfields
       rtp2(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
       ! Using a linear extension here resulted in negatives.
       rtp2(1) =  rtp2(2)
-      if ( any (rtp2(1:gr%nnzp) < 0.0 ) ) then
+      if ( any ( rtp2(1:gr%nnzp) < rttol**2 ) ) then
 ! %% debug
 !              print *, "Some values of rtp2 are negative, compensating."
 ! %% debug
         do k=1, gr%nnzp
-          rtp2(k) = max(rtp2(k), 0.0)
+          rtp2(k) = max(rtp2(k), rttol**2)
         enddo
       endif
     endif
@@ -871,12 +875,12 @@ module inputfields
                     timestep, & 
                     tmp1(1:gr%nnzp+1), l_error )
       wp2(1:gr%nnzp) = tmp1(1:gr%nnzp)
-      if ( any (wp2(1:gr%nnzp) < 0.0 ) ) then
+      if ( any ( wp2(1:gr%nnzp) < wtol_sqd ) ) then
 ! %% debug
 !              print *, "Some values of wp2 are negative, compensating."
 ! %% debug
         do k=1, gr%nnzp
-          wp2(k) = max(wp2(k), 0.0)
+          wp2(k) = max(wp2(k), wtol_sqd)
         end do
       end if
     end if

@@ -1,0 +1,202 @@
+! $Id$
+! Parameter file for GCSS ARM 0003 deep convective case
+
+&model_setting
+
+! Model Settings
+
+runtype = "arm_0003" ! Case name.
+
+!nzmax = 108       ! Number of vertical levels.  ! For grid_type = 1 (and 3).
+nzmax = 128       ! Number of vertical levels.  ! For grid_type = 2.
+
+grid_type = 2     ! Select grid type:
+                  ! 1 ==> evenly-spaced grid levels.
+                  ! 2 ==> stretched (unevenly-spaced) grid
+                  !       entered on thermodynamic grid levels;
+                  !       mom. levels halfway between thermo. levels
+                  !       (style of SAM stretched grid).
+                  ! 3 ==> stretched (unevenly-spaced) grid
+                  !       entered on momentum grid levels;
+                  !       thermo. levels halfway between mom. levels
+                  !       (style of WRF stretched grid).
+
+! Evenly-spaced grid (grid_type = 1).
+! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
+deltaz  = 200.0   ! Distance between grid levels on evenly-spaced grid.      [m]
+zm_init = 0.0     ! Altitude of lowest momentum level on evenly-spaced grid. [m]
+
+! Stretched grid on thermodynamic levels (grid_type = 2).
+! Path (from ../standalone/) and filename of data file that contains
+! thermodynamic level altitudes (in meters).
+! Note:  For this option, zm_grid_fname must be ''.
+zt_grid_fname = '../input/grid/deep_convection_128lev_27km_zt_grid.grd'
+!zt_grid_fname = ''
+
+! Stretched grid on momentum levels (grid_type = 3).
+! Path (from ../standalone/) and filename to data file that contains
+! momentum level altitudes (in meters).
+! Note:  For this option, zt_grid_fname must be ''.
+zm_grid_fname = ''
+
+day   = 1     ! Day of model start (1 to 31).
+month = 3     ! Month of model start (1 to 12).
+year  = 2000  ! Year of model start.
+
+!rlat = 36.61  ! Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [degrees]
+rlat = 36.5   ! Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [degrees]
+!rlon = -97.49 ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees]
+rlon = -97.5  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees]
+
+time_initial = 63003.0  ! Model start time [seconds since midnight on start date]
+!time_final = 322202.0   ! Model end time [seconds since midnight on start date]
+time_final = 1931404.0  ! Model end time [seconds since midnight on start date]
+time_spinup = 63003.0   ! End of spin-up period [seconds since midnight on start date]
+
+dtmain    = 60.0   ! Model timestep [s]
+dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
+
+sfctype = 1      ! Select surface scheme (cases without specified surface fluxes).
+                 ! 0 ==> fixed surface sensible and latent heat fluxes,
+                 !       as defined by SE and LE, respectively.
+                 ! 1 ==> determine surface sensible and latent heat fluxes 
+                 !       through a bulk formula that uses the given surface 
+                 !       temperature (Tsfc) and assumes over ocean.
+
+Tsfc = 286.0     ! Temperature at model base           [K]
+!Tsfc = 282.889   ! Temperature at model base           [K]
+psfc = 978.9e2   ! Pressure at model base              [Pa]
+fcor = 8.697e-5  ! Coriolis parameter                  [s^-1]
+T0   = 300.      ! Reference temperature (usually 300) [K]
+
+sol_const = 1367.0 ! Solar Constant [W/m^2]
+
+std_atmos_buffer = 10
+
+! Albedo values (for BugsRad Only)
+alvdr = 0.1d0    ! Visible direct surface albedo        [-]
+alvdf = 0.1d0    ! Visible diffuse surface albedo       [-]
+alndr = 0.1d0    ! Near-IR direct surface albedo        [-]
+alndf = 0.1d0    ! Near-IR diffuse surface albedo       [-]
+
+ts_nudge = 7200  ! Timescale of u/v nudging            [s]
+
+forcings_file_path = '../input/case_setups/arm_0003_forcings/'
+
+l_cloud_sed    = .false.  ! Flag for cloud water sedimentation.
+l_kk_rain      = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
+l_coamps_micro = .true.   ! Flag for COAMPS microphysics.
+l_icedfs       = .false.  ! Flag for simplified ice scheme.
+l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
+l_tke_aniso    = .true.   ! Flag for anisotropic tke.
+l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
+
+l_restart      = .false.  ! Flag for whether this is a restart run.
+! Path (from ../standalone/) and filename of GrADS control files
+! (without '_zt.ctl' or '_zm.ctl').
+restart_path_case = "restart/arm_0003"
+time_restart  = 0.0      ! Time of model restart.
+                         ! [seconds since start time listed in GrADS control file]
+
+! Select debug level:
+!        0 => Print no debug messages to the screen
+!        1 => Print lightweight debug messages, e.g. print statements
+!        2 => Print debug messages that require extra testing,
+!                e.g. checks for NaNs and spurious negative values.
+debug_level   = 2
+
+/
+
+&stats_setting
+
+! Statistics Settings
+
+l_stats      = .true.           ! Flag for statistical output.
+fname_prefix = "arm_0003_clip"  ! Prefix of output filename.
+stats_tsamp  = 60.              ! Frequency of statistical sampling [s]
+                                ! (must multiply evenly into stats_tout).
+stats_tout   = 60.              ! Frequency of statistical output.  [s]
+stats_fmt    = "grads"          ! Type of statistical output file (GrADS or netCDF).
+
+/
+
+&sounding
+
+! Initial sounding
+
+! Number of sounding points
+nlevels = 39
+
+! Altitudes at which sounding points are located   [m]
+z =       0.,
+          119.44444, 337.60824, 560.5889,  788.8671,  1023.0391, 1263.5466, 
+          1510.6641, 1764.6189, 2025.4763, 2293.4047, 2568.8073, 2852.1623, 
+          3144.201,  3445.9326, 3758.1726, 4081.3193, 4415.6743, 4761.836, 
+          5120.683,  5493.266,  5880.871,  6285.1054, 6707.794,  7150.9174,
+          7616.696,  8107.7504, 8627.361,  9179.806,  9770.717,  10407.99,
+          11105.372, 11885.818, 12778.419, 13815.486, 15046.753, 16568.223, 
+          18582.188, 21596.254,
+
+! Either potential temperature or liquid water potential temperature,
+!   depending on source code in hoc_initialize.   [K]
+theta = 287.728, 
+        287.728,  288.410,  289.379,  290.717,  292.545,  294.258,
+        295.989,  297.442,  298.493,  299.473,  300.518,  301.570,
+        303.117,  305.089,  306.981,  308.337,  309.337,  310.247,
+        311.143,  312.035,  313.057,  314.282,  315.591,  316.904,
+        318.148,  319.371,  320.671,  322.268,  324.315,  327.489,
+        334.589,  347.220,  362.418,  377.088,  395.143,  420.739,
+        462.427,  533.814,
+
+! Total water mixing ratio = vapor + cloud water, but not ice   [kg/kg]
+rt =    3.439E-3,
+        3.439E-3, 2.823E-3, 2.473E-3, 2.357E-3, 2.276E-3, 2.275E-3, 
+        2.116E-3, 1.945E-3, 1.781E-3, 1.582E-3, 1.350E-3, 1.100E-3, 
+        0.759E-3, 0.654E-3, 0.924E-3, 0.960E-3, 0.763E-3, 0.671E-3, 
+        0.523E-3, 0.620E-3, 0.625E-3, 0.528E-3, 0.458E-3, 0.332E-3, 
+        0.248E-3, 0.199E-3, 0.143E-3, 0.097E-3, 0.063E-3, 0.042E-3, 
+        0.030E-3, 0.019E-3, 0.006E-3, 0.005E-3, 0.005E-3, 0.005E-3,
+        0.008E-3, 0.014E-3,
+
+! East-west wind component   [m/s]
+u = -4.596,      
+    -4.596, -4.65, -5.53, -5.2,  -4.58, -3.12,
+    -0.8,  1.75,  4.39,  6.45,  7.86, 9.15,
+    11.09, 13.59, 15.15, 16.07,16.4,  16.46, 
+    16.55, 17.44, 18.82, 20.19, 21.31, 22.49,
+    24.08, 26.37, 29.19, 32.02, 34.82, 37.48, 
+    38.85, 37.93, 33.87, 28.13, 21.53, 13.8,
+    4.48,  -3.13,
+
+! North-south wind component   [m/s]
+v =     0.205,
+        0.205,  0.14, -0.28, -0.81, -1.53, -1.88,
+        -2.64,  -2.93,-3.34, -3.38, -2.66, -1.79,
+        -0.81,  0.26, 1.11,  2.25,  3.17,  4.08,
+        4.68,   4.88, 4.81, 4.57,   4.32,  4.84, 
+        5.74,   6.5,  7.07, 7.77,   8.76,  9.84,
+        10.22, 9.68,  8.27, 6.92,   5,     2.88,
+        0.43,-0.66,
+
+! East-west geostrophic wind component   [m/s]
+ug = -4.596,      
+    -4.596,-4.65, -5.53, -5.2,  -4.58, -3.12,
+    -0.8,  1.75,  4.39,  6.45,  7.86,  9.15,  
+    11.09, 13.59, 15.15, 16.07, 16.4,  16.46, 
+    16.55, 17.44, 18.82, 20.19, 21.31, 22.49, 
+    24.08, 26.37, 29.19, 32.02, 34.82, 37.48, 
+    38.85, 37.93, 33.87, 28.13, 21.53, 13.8,
+    4.48, -3.13,
+
+! North-south geostrophic wind component   [m/s]
+vg =   0.205,
+        0.205,  0.14, -0.28, -0.81, -1.53, -1.88,
+        -2.64,  -2.93,-3.34, -3.38, -2.66, -1.79,
+        -0.81,  0.26, 1.11,  2.25,  3.17,  4.08,
+        4.68,   4.88, 4.81, 4.57,   4.32,  4.84, 
+        5.74,   6.5,  7.07, 7.77,   8.76,  9.84,
+        10.22, 9.68,  8.27, 6.92,   5,     2.88,
+        0.43,-0.66,
+/
+&scalar_sounding
+/

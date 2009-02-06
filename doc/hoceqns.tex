@@ -73,7 +73,7 @@
 \ptlder{\bar{q}_t}{t}
 = - \bar{w}\ptlder{\bar{q}_t}{z} 
   - \ptlder{}{z}\overline{w'q'_t} 
-  + \left. \ptlder{\bar{q}_t}{t} \right|_{\rm ls}
+  + \left. \ptlder{\bar{q}_t}{t} \right|_{\rm{ls}}
 \end{equation}
 %
 \begin{equation}
@@ -82,7 +82,7 @@
 = - \bar{w}\ptlder{\bar{\theta}_l}{z} 
   - \ptlder{}{z}\overline{w'\theta'_l} 
   + \bar{R}   
-  + \left. \ptlder{\bar{\theta}_l}{t} \right|_{\rm ls}
+  + \left. \ptlder{\bar{\theta}_l}{t} \right|_{\rm{ls}}
 \end{equation}
 %
 \begin{equation}
@@ -92,9 +92,9 @@
 =& - \bar{w}\ptlder{\overline{w^{'2}}}{z}	 
    - \ptlder{\overline{w^{'3}}}{z} 
    - 2\overline{w^{'2}}\ptlder{\bar{w}}{z}
-   + \frac{2g}{\theta_0} \overline{w'\theta'_v} \\
- & - \frac{C_4}{\tau} \left( \overline{w^{'2}} -\frac{2}{3}\bar{e} \right)
-   - C_5 
+   + \frac{2g}{\theta_0} \overline{w'\theta'_v}
+   - \frac{C_4}{\tau} \left( \overline{w^{'2}} -\frac{2}{3}\bar{e} \right) \\
+ & - C_5 
      \left(
        - 2\overline{w^{'2}}\ptlder{\bar{w}}{z}
        + \frac{2g}{\theta_0} \overline{w'\theta'_v}
@@ -105,38 +105,48 @@
        - \overline{u'w'}\ptlder{\bar{u}}{z} 
        - \overline{v'w'}\ptlder{\bar{v}}{z} 
      \right) \\
- & - \dfrac{C_1}{\tau} \overline{w^{'2}} 
-%   + \nu_1 \nabla_z^2 \, \overline{w^{'2}}
+ & - \dfrac{C_1}{\tau} \left(   \overline{w^{'2}} 
+                              - \left. w \right|_{\rm{tol}}^{2} \right)
    + \ptlder{}{z} \left[ \left( K_{w1} + \nu_1 \right)
                          \ptlder{}{z} \overline{w^{'2}} 
                   \right]
+   + \left. \ptlder{\overline{w^{'2}}}{t} \right|_{\rm{pd}}
+   + \left. \ptlder{\overline{w^{'2}}}{t} \right|_{\rm{cl}}
 \end{split}
 \end{equation}
 %
 \begin{equation}
 \label{eq_qtp2}
+\begin{split}
 \ptlder{\overline{q_t^{'2}}}{t}
-= - \bar{w}\ptlder{\overline{q^{'2}_t}}{z}	  
-  - \ptlder{\overline{w'q_t^{'2}}}{z}
-  - 2\overline{w'q'_t}\ptlder{\bar{q}_t}{z} 
-  - \dfrac{C_2}{\tau} \overline{q_t^{'2}}
-%  + \nu_2 \nabla_z^2 \overline{q_t^{'2}}
-  + \ptlder{}{z} \left[ \left( K_{w2} + \nu_2 \right)
-                        \ptlder{}{z} \overline{q_t^{'2}} 
-                 \right]
+=& - \bar{w}\ptlder{\overline{q^{'2}_t}}{z}	  
+   - \ptlder{\overline{w'q_t^{'2}}}{z}
+   - 2\overline{w'q'_t}\ptlder{\bar{q}_t}{z}
+   - \dfrac{C_2}{\tau} \left(   \overline{q_t^{'2}} 
+                              - \left. q_t \right|_{\rm{tol}}^{2} \right) \\
+ & + \ptlder{}{z} \left[ \left( K_{w2} + \nu_2 \right)
+                         \ptlder{}{z} \overline{q_t^{'2}} 
+                  \right]
+   + \left. \ptlder{\overline{q_t^{'2}}}{t} \right|_{\rm{pd}}
+   + \left. \ptlder{\overline{q_t^{'2}}}{t} \right|_{\rm{cl}}
+\end{split}
 \end{equation}
 %
 \begin{equation}
 \label{eq_thlp2}
+\begin{split}
 \ptlder{\overline{\theta_l^{'2}}}{t}
-= - \bar{w}\ptlder{\overline{\theta^{'2}_l}}{z}	 
-  - \ptlder{\overline{w'\theta_l^{'2}}}{z}
-  - 2\overline{w'\theta'_l}\ptlder{\bar{\theta}_l}{z} 
-  - \dfrac{C_2}{\tau} \overline{\theta_l^{'2}}
-%  + \nu_2 \nabla_z^2 \overline{\theta_l^{'2}}
-  + \ptlder{}{z} \left[ \left( K_{w2} + \nu_2 \right)
-                        \ptlder{}{z} \overline{\theta_l^{'2}} 
-                 \right]
+=& - \bar{w}\ptlder{\overline{\theta^{'2}_l}}{z}	 
+   - \ptlder{\overline{w'\theta_l^{'2}}}{z}
+   - 2\overline{w'\theta'_l}\ptlder{\bar{\theta}_l}{z}
+   - \dfrac{C_2}{\tau} \left(   \overline{\theta_l^{'2}} 
+                              - \left. \theta_l \right|_{\rm{tol}}^{2} \right) \\
+ & + \ptlder{}{z} \left[ \left( K_{w2} + \nu_2 \right)
+                         \ptlder{}{z} \overline{\theta_l^{'2}} 
+                  \right]
+   + \left. \ptlder{\overline{\theta_l^{'2}}}{t} \right|_{\rm{pd}}
+   + \left. \ptlder{\overline{\theta_l^{'2}}}{t} \right|_{\rm{cl}}
+\end{split}
 \end{equation}
 %
 \begin{equation}
@@ -147,10 +157,10 @@
   - \overline{w'q'_t}\ptlder{\bar{\theta}_l}{z} 
   - \overline{w'\theta'_l}\ptlder{\bar{q}_t}{z}
   - \dfrac{C_2}{\tau} \overline{q_t' \theta_l'}
-%  + \nu_2 \nabla_z^2 \overline{q_t^{'}\theta_l^{'}}
   + \ptlder{}{z} \left[ \left( K_{w2} + \nu_2 \right)
                         \ptlder{}{z} \overline{q_t' \theta_l'} 
                  \right]
+  + \left. \ptlder{\overline{q'_t\theta'_l}}{t} \right|_{\rm{cl}}
 \end{equation}
 %
 \begin{equation}
@@ -161,16 +171,17 @@
     - \ptlder{\overline{w^{'2}q'_t}}{z}
     - \overline{w^{'2}}\ptlder{\bar{q}_t}{z} 
     - \overline{w'q'_t}\ptlder{\bar{w}}{z}
-    + \frac{g}{\theta_0} \overline{q'_t\theta'_v} \\
-  & - \frac{C_6}{\tau}\overline{w'q'_t}
-    - C_7 \left(
+    + \frac{g}{\theta_0} \overline{q'_t\theta'_v}
+    - \frac{C_6}{\tau}\overline{w'q'_t} \\
+  & - C_7 \left(
              - \overline{w'q'_t}\ptlder{\bar{w}}{z}
              + \frac{g}{\theta_0} \overline{q'_t\theta'_v}
           \right) 
-%    + \nu_6 \nabla_z^2 \overline{w^{'}q_t^{'}}
     + \ptlder{}{z} \left[ \left( K_{w6} + \nu_6 \right)
                           \ptlder{}{z} \overline{w'q'_t} 
                    \right]
+    + \left. \ptlder{\overline{w'q'_t}}{t} \right|_{\rm{sicl}}
+    + \left. \ptlder{\overline{w'q'_t}}{t} \right|_{\rm{cl}}
 \end{split}
 \end{equation}
 %
@@ -182,16 +193,17 @@
     - \ptlder{\overline{w^{'2}\theta'_l}}{z}
     - \overline{w^{'2}}\ptlder{\bar{\theta}_l}{z} 
     - \overline{w'\theta'_l}\ptlder{\bar{w}}{z}
-    + \frac{g}{\theta_0} \overline{\theta'_l\theta'_v} \\
-  & - \frac{C_6}{\tau}\overline{w'\theta'_l}
-    - C_7 \left( 
+    + \frac{g}{\theta_0} \overline{\theta'_l\theta'_v}
+    - \frac{C_6}{\tau}\overline{w'\theta'_l} \\
+  & - C_7 \left( 
              - \overline{w'\theta'_l}\ptlder{\bar{w}}{z}
              + \frac{g}{\theta_0} \overline{\theta'_l\theta'_v}
           \right)
-%    + \nu_6 \nabla_z^2 \overline{w^{'}\theta_l^{'}}
     + \ptlder{}{z} \left[ \left( K_{w6} + \nu_6 \right)
                           \ptlder{}{z} \overline{w'\theta'_l} 
                    \right]
+    + \left. \ptlder{\overline{w'\theta'_l}}{t} \right|_{\rm{sicl}}
+    + \left. \ptlder{\overline{w'\theta'_l}}{t} \right|_{\rm{cl}}
 \end{split}
 \end{equation}
 %
@@ -203,16 +215,16 @@
     - \ptlder{\overline{w^{'4}}}{z} 
     + 3\overline{w^{'2}}\ptlder{\overline{w^{'2}}}{z}
     - 3\overline{w^{'3}}\ptlder{\bar{w}}{z}
-    + \frac{3g}{\theta_0} \overline{w^{'2}\theta'_v} \\
-  & - \frac{C_8}{\tau}\left( C_{8b} \, Skw^4 + 1 \right) \overline{w^{'3}}
-    - C_{11} \left(
+    + \frac{3g}{\theta_0} \overline{w^{'2}\theta'_v}
+    - \frac{C_8}{\tau}\left( C_{8b} \, Skw^4 + 1 \right) \overline{w^{'3}} \\
+  & - C_{11} \left(
                 - 3 \overline{w^{'3}}\ptlder{\bar{w}}{z}
                 + \frac{3g}{\theta_0} \overline{w^{'2}\theta'_v}
              \right)
-%    + \left( K_w + \nu_8 \right) \nabla_z^2 \overline{w^{'3}}
     + \ptlder{}{z} \left[ \left( K_{w8} + \nu_8 \right)
                           \ptlder{}{z} \overline{w^{'3}} 
                    \right]
+    + \left. \ptlder{\overline{w^{'3}}}{t} \right|_{\rm{cl}}
 \end{split}
 \end{equation}
 %
@@ -223,6 +235,17 @@ $\left. \ptlder{\bar{\theta}_l}{t} \right|_{\rm ls}$ are
 large-scale moisture and temperature forcings.
 $g$ is the gravity, $\rho_0$ and $\theta_0$ the reference
 density and potential temperature.
+$\left. w \right|_{\rm{tol}}^{2}$ is the minimum threshold value
+for $\overline{w^{'2}}$; 
+$\left. q_t \right|_{\rm{tol}}^{2}$ is the minimum threshold value
+for $\overline{q_t^{'2}}$; and 
+$\left. \theta_l \right|_{\rm{tol}}^{2}$ is the minimum threshold value
+for $\overline{\theta_l^{'2}}$.
+The subscript $\left.\right|_{\rm{pd}}$ stands for the rate of change due to the
+positive-definite hole-filling scheme; the subscript $\left.\right|_{\rm{sicl}}$
+stands for the rate of change due to the semi-implicit clipping scheme; and the 
+subscript $\left.\right|_{\rm{cl}}$ stands for the rate of change due to 
+completely explicit clipping.
 
 If the model does not predict any higher-order moments of the
 horizontal winds, we assume that the turbulence kinetic energy, $\bar{e}$,
@@ -267,10 +290,11 @@ In the second case, the horizontal wind variance terms are determined as in
         - \overline{v'w'}\ptlder{\bar{v}}{z} 
       \right) \\
   & - \dfrac{C_4}{\tau} \left( \overline{u^{'2}} - \frac{2}{3} \bar{e} \right)
-%    + \nu_9 \nabla_z^2 \overline{u^{'2}}
     + \ptlder{}{z} \left[ \left( K_{w9} + \nu_9 \right)
                           \ptlder{}{z} \overline{u^{'2}} 
                    \right]
+    + \left. \ptlder{\overline{u^{'2}}}{t} \right|_{\rm{pd}}
+    + \left. \ptlder{\overline{u^{'2}}}{t} \right|_{\rm{cl}}
 \end{split}
 \end{equation}
 %
@@ -291,17 +315,18 @@ In the second case, the horizontal wind variance terms are determined as in
         - \overline{v'w'}\ptlder{\bar{v}}{z} 
       \right) \\
   & - \dfrac{C_4}{\tau} \left( \overline{v^{'2}} - \frac{2}{3} \bar{e} \right)
-%    + \nu_9 \nabla_z^2 \overline{v^{'2}}
     + \ptlder{}{z} \left[ \left( K_{w9} + \nu_9 \right)
                           \ptlder{}{z} \overline{v^{'2}} 
                    \right]
+    + \left. \ptlder{\overline{v^{'2}}}{t} \right|_{\rm{pd}}
+    + \left. \ptlder{\overline{v^{'2}}}{t} \right|_{\rm{cl}}
 \end{split}
 \end{equation}
 %
 
-Where, $\epsilon$, the dissipation of $\bar{e}$, is defined in HOC as:
+Where, $\epsilon$, the dissipation of $\bar{e}$, is defined in CLUBB as:
 \begin{equation}
-\epsilon = -C_{14} \frac{\bar{e}}{\tau}
+\epsilon = C_{14} \frac{\bar{e}}{\tau}
 \end{equation}
 
 The time scale $\tau$ is:
@@ -335,7 +360,9 @@ The momentum fluxes are closed using a down gradient approach:
 \end{equation}
 \end{subequations}
 %
-where the turbulent-transfer coefficient $K_m$ is given by:
+The momentum fluxes, $\overline{u'w'}$ and $\overline{v'w'}$, are also subject 
+to completely explicit clipping.  The turbulent-transfer coefficient $K_m$ is 
+given by:
 %
 \begin{equation}
 \label{eq_Km}
@@ -703,8 +730,9 @@ The layer-averaged cloud properties are given by:
 
 \subsection{ $\overline{q_t^{'2}}$ and $\overline{\theta_l^{'2}}$ }
 
-Start with (\ref{eq_qtp2}), substitute (\ref{eq_wpqtp2}), assume steady-state 
-and rearrange:
+Start with (\ref{eq_qtp2}) (for simplicity, neglect the 
+$\left.\right|_{\rm{pd}}$ and $\left.\right|_{\rm{cl}}$ terms), substitute 
+(\ref{eq_wpqtp2}), assume steady-state and rearrange:
 %
 \begin{equation}
 \begin{split}
@@ -718,7 +746,6 @@ and rearrange:
        \frac{\overline{w^{'3}}}{\overline{w^{'2}}} \,
        \overline{q_t^{'2}}
      \right)
-%- \nu_2 \nabla_z^2 \overline{q_t^{'2}} \\
 - \ptlder{}{z} \left[ \left( K_{w2} + \nu_2 \right)
                       \ptlder{}{z} \overline{q_t^{'2}}
                \right]  \\
@@ -730,6 +757,7 @@ and rearrange:
            \overline{w'q_t'}^2
          \right)
    - 2 \, \overline{w'q'_t} \, \ptlder{\bar{q}_t}{z} 
+   + \dfrac{C_2}{\tau} \left. q_t \right|_{\rm{tol}}^{2}
 \end{split}
 \end{equation}
 %
@@ -769,7 +797,7 @@ We now compute the contributions of each term in (\ref{eq_qtp2_ss}) to
 $\mathtt{lhs(3,k)}$, $\mathtt{lhs(2,k)}$, $\mathtt{lhs(1,k)}$, 
 and $\mathtt{rhs(k)}$.
 
-\subsubsection{Term 1:  dp1}
+\subsubsection{Term 1:  dp1, implicit component}
 
 \begin{equation}
 \mathtt{ lhs(2,k) = lhs(2,k) + \frac{C_2}{taum(k)} }
@@ -906,16 +934,9 @@ Separating out the contributions:
 
 \begin{equation}
 \begin{split}
-%& \left. - \nu_2 \nabla_z^2 \overline{q_t^{'2}} \right|_{\mathtt{zm(k)}}
 & - \ptlder{}{z} \left[ \left( K_{w2} + \nu_2 \right)
                         \ptlder{}{z} \overline{q_t^{'2}}
                  \right]  \\
-%=& \mathtt{
-%    \frac{\nu_2}{dzm(k)}
-%    \left( \frac{qtp2(k+1)-qtp2(k)}{dzt(k+1)}
-%          -\frac{qtp2(k)-qtp2(k-1)}{dzt(k)}
-%    \right)
-%   }
  &= \mathtt{
     -\frac{1}{dzm(k)}
      \bigg( \frac{ \left( Kw2(k+1) + \nu_2 \right)
@@ -932,10 +953,6 @@ Separating out the contributions:
 %
 \begin{equation}
 \begin{split}
-%&\mathtt{lhs(3,k) = lhs(3,k) - \frac{\nu_2}{dzm(k)dzt(k)} } \\
-%&\mathtt{lhs(2,k) = lhs(2,k) + \frac{\nu_2}{dzm(k)}
-%                       \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) } \\
-%&\mathtt{lhs(1,k) = lhs(1,k) - \frac{\nu_2}{dzm(k)dzt(k+1)} }
 &\mathtt{lhs(3,k) = lhs(3,k) - \frac{Kw2(k)+\nu_2}{dzm(k)dzt(k)} } \\
 &\mathtt{lhs(2,k) = lhs(2,k) + \frac{1}{dzm(k)}
                                \left(   \frac{Kw2(k+1)+\nu_2}{dzt(k+1)}
@@ -1044,10 +1061,18 @@ Separating out the contributions:
 \end{split}
 \end{equation}
 
+\subsubsection{Term 7:  dp1, explicit component}
+
+\begin{equation}
+\mathtt{ rhs(k) = rhs(k) + \frac{C_2}{taum(k)} qttol^{2} }
+\end{equation}
+
+
 \subsection{ $\overline{q_t'\theta_l'}$  }
 
-Start with (\ref{eq_qtpthlp}), substitute (\ref{eq_wpqtpthlp}), assume steady-state 
-and rearrange:
+Start with (\ref{eq_qtpthlp}) (for simplicity, neglect the 
+$\left.\right|_{\rm{cl}}$ term), substitute (\ref{eq_wpqtpthlp}), assume 
+steady-state and rearrange:
 %
 \begin{equation}
 \label{eq_qtpthlp_ss}
@@ -1061,7 +1086,6 @@ and rearrange:
        \frac{\overline{w^{'3}}}{\overline{w^{'2}}} \,
        \overline{q_t'\theta_l'}
      \right)
-%- \nu_2 \nabla_z^2 \overline{q_t^{'}\theta_l^{'}} \\
 - \ptlder{}{z} \left[ \left( K_{w2} + \nu_2 \right)
                       \ptlder{}{z} \overline{q_t^{'}\theta_l^{'}}
                \right]  \\
@@ -1227,16 +1251,9 @@ Separating out the contributions:
 
 \begin{equation}
 \begin{split}
-%& \left. - \nu_2 \nabla_z^2 \overline{q_t^{'}\theta_l^{'}} \right|_{\mathtt{zm(k)}}
 & - \ptlder{}{z} \left[ \left( K_{w2} + \nu_2 \right)
                         \ptlder{}{z} \overline{q_t'\theta_l'}
                  \right]  \\
-%=& \mathtt{
-%    \frac{\nu_2}{dzm(k)}
-%    \left( \frac{qptthlp(k+1)-qptthlp(k)}{dzt(k+1)}
-%          -\frac{qptthlp(k)-qptthlp(k-1)}{dzt(k)}
-%    \right)
-%   }
  &= \mathtt{
     -\frac{1}{dzm(k)}
      \bigg( \frac{ \left( Kw2(k+1) + \nu_2 \right)
@@ -1253,10 +1270,6 @@ Separating out the contributions:
 %
 \begin{equation}
 \begin{split}
-%&\mathtt{lhs(3,k) = lhs(3,k) - \frac{\nu_2}{dzm(k)dzt(k)} } \\
-%&\mathtt{lhs(2,k) = lhs(2,k) + \frac{\nu_2}{dzm(k)}
-%                       \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) } \\
-%&\mathtt{lhs(1,k) = lhs(1,k) - \frac{\nu_2}{dzm(k)dzt(k+1)} }
 &\mathtt{lhs(3,k) = lhs(3,k) - \frac{Kw2(k)+\nu_2}{dzm(k)dzt(k)} } \\
 &\mathtt{lhs(2,k) = lhs(2,k) + \frac{1}{dzm(k)}
                                \left(   \frac{Kw2(k+1)+\nu_2}{dzt(k+1)} 
@@ -1386,8 +1399,9 @@ Separating out the contributions:
 
 $\bar{q}_t$ and $\overline{w'q_t'}$ can be solved simultaneously and
 implicitly.
-Start with eqs (\ref{eq_qtm}), (\ref{eq_wpqtp}) and substitute expression
-for the transport term (\ref{eq_wp2qtp}):
+Start with eqs (\ref{eq_qtm}), (\ref{eq_wpqtp}) (for simplicity, neglect the 
+$\left.\right|_{\rm{sicl}}$ and $\left.\right|_{\rm{cl}}$ terms), and substitute
+expression for the transport term (\ref{eq_wp2qtp}):
 %
 \begin{equation}
 \ptlder{\bar{q}_t}{t}
@@ -1410,7 +1424,6 @@ for the transport term (\ref{eq_wp2qtp}):
     - (1-C_7) \overline{w'q'_t}\ptlder{\bar{w}}{z}
     + (1-C_7) \frac{g}{\theta_0} \overline{q'_t\theta'_v} \\
   & - \frac{C_6}{\tau}\overline{w'q'_t}
-%    + \nu_6 \nabla_z^2 \overline{w^{'}q_t^{'}}
     + \ptlder{}{z} \left[ \left( K_{w6} + \nu_6 \right)
                           \ptlder{}{z} \overline{w'q'_t}
                    \right]
@@ -1444,7 +1457,6 @@ After discretizing the time derivative and rearranging terms:
   + \overline{w^{'2}}\ptlder{\bar{q}_t^{\, t+\Delta t}}{z} \\
 & + (1-C_7) \overline{w'q'_t}^{\, t+\Delta t}\ptlder{\bar{w}}{z}
   + \frac{C_6}{\tau}\overline{w'q'_t}^{\, t+\Delta t}
-%  - \nu_6 \nabla_z^2 \overline{w^{'}q_t^{'}}^{\, t+\Delta t} \\
   - \ptlder{}{z} \left[ \left( K_{w6} + \nu_6 \right)
                         \ptlder{}{z} \overline{w'q'_t}^{\, t+\Delta t}
                  \right]  \\
@@ -1645,16 +1657,13 @@ the finite difference equivalent to (\ref{eq_wpqxp2}):
   + \frac{C_6}{taum(k)} \, wpqtp^{new}(k)
   } \\
 & \mathtt{
-  %-\frac{\nu_6}{dzm(k)dzt(k)} wpqtp^{new}(k-1)
   - \frac{Kw6(k)+\nu_6}{dzm(k)dzt(k)} wpqtp^{new}(k-1)
   } \\
 & \mathtt{
-  %+\frac{\nu_6}{dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) wpqtp^{new}(k)
   + \frac{1}{dzm(k)} \left(   \frac{Kw6(k+1)+\nu_6}{dzt(k+1)}
                             + \frac{Kw6(k)+\nu_6}{dzt(k)} \right) wpqtp^{new}(k)
   } \\
 & \mathtt{
-  %-\frac{\nu_6}{dzm(k)dzt(k+1)} wpqtp^{new}(k+1)
   - \frac{Kw6(k+1)+\nu_6}{dzm(k)dzt(k+1)} wpqtp^{new}(k+1)
   } \\
 =& \mathtt{ \frac{wpqtp(k)}{dt} + (1-C_7) \frac{g}{\theta_0} qtpthvp(k) }
@@ -1671,7 +1680,6 @@ Contributions to $lhs$ from (\ref{eq_wpqxp3}) are:
 - \frac{1}{2 dzm(k)}
   \frac{\left(a1m(k-1)+a1m(k)\right) wp3(k)}
        {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)}
-%- \frac{\nu_6}{dzm(k)dzt(k)}
 - \frac{Kw6(k)+\nu_6}{dzm(k)dzt(k)}
   }
 \end{split}
@@ -1699,7 +1707,6 @@ Contributions to $lhs$ from (\ref{eq_wpqxp3}) are:
 &  \mathtt{
 + (1-C_7) \, \frac{wmt(k+1)-wmt(k)}{dzm(k)}
 + \frac{C_6}{taum(k)}
-%+\frac{\nu_6}{dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right)
 + \frac{1}{dzm(k)} \left(   \frac{Kw6(k+1)+\nu_6}{dzt(k+1)} 
                           + \frac{Kw6(k)+\nu_6}{dzt(k)} \right)
    }
@@ -1720,7 +1727,6 @@ Contributions to $lhs$ from (\ref{eq_wpqxp3}) are:
 + \frac{1}{2 dzm(k)}
   \frac{\left(a1m(k)+a1m(k+1)\right) wp3(k+1)}
        {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)}
-%-\frac{\nu_6}{dzm(k)dzt(k+1)}
 - \frac{Kw6(k+1)+\nu_6}{dzm(k)dzt(k+1)}
   }
 \end{split}
@@ -1740,17 +1746,15 @@ Contributions to $rhs$ from (\ref{eq_wpqxp3}) are:
 %
 where $\mathtt{k\_wpxp = 2 k}$.
 
-
-
-
-
 The procedure for solving implicitly for $\bar{\theta}_l$ 
 and $\overline{w'\theta_l'}$ is identical. It leads to the same matrix
 $lhs$, so $lhs$ needs to be inverted only once.
 
+
 \section{Implicit solution for the vertical velocity moments}
 
-Start with equations (\ref{eq_wp2}) and (\ref{eq_wp3}):
+Start with equations (\ref{eq_wp2}) and (\ref{eq_wp3}) (for simplicity, neglect 
+the $\left.\right|_{\rm{pd}}$ and $\left.\right|_{\rm{cl}}$ terms):
 %
 \begin{equation}
 \label{eq_wp2b}
@@ -1772,8 +1776,8 @@ Start with equations (\ref{eq_wp2}) and (\ref{eq_wp3}):
        - \overline{u'w'}\ptlder{\bar{u}}{z} 
        - \overline{v'w'}\ptlder{\bar{v}}{z} 
      \right) \\
- & - \dfrac{C_1}{\tau} \overline{w^{'2}} 
-%   + \nu_1 \nabla_z^2 \, \overline{w^{'2}}
+ & - \dfrac{C_1}{\tau} \left(   \overline{w^{'2}} 
+                              - \left. w \right|_{\rm{tol}}^{2} \right)
    + \ptlder{}{z} \left[ \left( K_{w1} + \nu_1 \right)
                          \ptlder{}{z} \overline{w^{'2}} 
                   \right]
@@ -1794,7 +1798,6 @@ Start with equations (\ref{eq_wp2}) and (\ref{eq_wp3}):
                 - 3 \overline{w^{'3}}\ptlder{\bar{w}}{z}
                 + \frac{3g}{\theta_0} \overline{w^{'2}\theta'_v}
              \right)
-%    + \left( K_w + \nu_8 \right) \nabla_z^2 \overline{w^{'3}}
     + \ptlder{}{z} \left[ \left( K_{w8} + \nu_8 \right)
                           \ptlder{}{z} \overline{w^{'3}} 
                    \right]
@@ -1823,16 +1826,16 @@ Rearranging terms and making use of (\ref{eq_tke}):
 \label{eq_wp2c}
 \begin{split}
 & \ptlder{\overline{w^{'2}}}{t} 
+  + \bar{w}\ptlder{\overline{w^{'2}}}{z}	 
   + \ptlder{\overline{w^{'3}}}{z} 
   + \dfrac{C_1}{\tau} \overline{w^{'2}} 
-%  - \nu_1 \nabla_z^2 \, \overline{w^{'2}} \\
   - \ptlder{}{z} \left[ \left( K_{w1} + \nu_1 \right)
                         \ptlder{}{z} \overline{w^{'2}} 
                  \right]  \\
 & =
-  - \bar{w}\ptlder{\overline{w^{'2}}}{z}	 
   + ( 1 - C_5 ) \frac{2g}{\theta_0} \overline{w'\theta'_v}
   - 2 ( 1 - C_5 ) \overline{w^{'2}}\ptlder{\bar{w}}{z}
+  + \dfrac{C_1}{\tau} \left. w \right|_{\rm{tol}}^{2}
   + \frac{2}{3} C_5
      \left(
        \frac{g}{\theta_0} \overline{w'\theta'_v} 
@@ -1846,18 +1849,18 @@ Rearranging terms and making use of (\ref{eq_tke}):
 \label{eq_wp3c}
 \begin{split}
 & \ptlder{\overline{w^{'3}}}{t}
-%  - \left( K_w + \nu_8 \right) \nabla_z^2 \overline{w^{'3}}
+   + \bar{w}\ptlder{\overline{w^{'3}}}{z}
    - \ptlder{}{z} \left[ \left( K_{w8} + \nu_8 \right)
                          \ptlder{}{z} \overline{w^{'3}} 
                   \right]
-  + \frac{C_8}{\tau}\left( C_{8b} \, Skw^4 + 1 \right) \overline{w^{'3}}
+  + \frac{C_8}{\tau}\left( C_{8b} \, Skw^4 + 1 \right) \overline{w^{'3}} \\
+& \qquad 
   + \ptlder{}{z} \left( a_3 \overline{w^{'2}}^2 \right)
   + \ptlder{}{z} 
        \left(
           a_1 \frac{ \overline{w^{'3}}^2 }{ \overline{w^{'2}} }
        \right) \\
 & = 
-  - \bar{w}\ptlder{\overline{w^{'3}}}{z}
   + (1 - C_{11}) \frac{3g}{\theta_0} \overline{w^{'2}\theta'_v}
   - 3 ( 1 - C_{11} ) \overline{w^{'3}}\ptlder{\bar{w}}{z} \\
 \end{split}
@@ -1874,15 +1877,14 @@ Terms on the RHS explicitly:
 \label{eq_wp2d}
 \begin{split}
 & \frac{\overline{w^{'2}}^{t+\Delta t}}{\Delta t} 
+  + \bar{w}\ptlder{\overline{w^{'2}}^{t+\Delta t}}{z}	 
   + \ptlder{\overline{w^{'3}}^{t+\Delta t}}{z} 
   + \dfrac{C_1}{\tau} \overline{w^{'2}}^{t+\Delta t} 
-%  - \frac{1}{2} \nu_1 \nabla_z^2 \, \overline{w^{'2}}^{t+\Delta t}
   - \frac{1}{2} \ptlder{}{z} \left[ \left( K_{w1} + \nu_1 \right)
                                     \ptlder{}{z} \overline{w^{'2}}^{t+\Delta t} 
                              \right]  \\
 &=
   \frac{\overline{w^{'2}}^{t}}{\Delta t} 
-%  + \frac{1}{2} \nu_1 \nabla_z^2 \, \overline{w^{'2}}^t
   + \frac{1}{2} \ptlder{}{z} \left[ \left( K_{w1} + \nu_1 \right)
                                     \ptlder{}{z} \overline{w^{'2}}^{t}
                              \right]
@@ -1894,17 +1896,19 @@ where
 %
 \begin{equation}
 \label{eq_wp2t}
+\begin{split}
 \left. \overline{w^{'2}} \right|_{\rm expl}
-= 
-  - \bar{w}\ptlder{\overline{w^{'2}}^{t}}{z}	 
-  + ( 1 - C_5 ) \frac{2g}{\theta_0} \overline{w'\theta'_v}^{t}
-  - 2 ( 1 - C_5 ) \overline{w^{'2}}^{t}\ptlder{\bar{w}}{z}
-  + \frac{2}{3} C_5
-     \left(
-       \frac{g}{\theta_0} \overline{w'\theta'_v}
-       - \overline{u'w'}\ptlder{\bar{u}}{z} 
-       - \overline{v'w'}\ptlder{\bar{v}}{z} 
-     \right)^{t}
+=& 
+   + ( 1 - C_5 ) \frac{2g}{\theta_0} \overline{w'\theta'_v}^{t}
+   - 2 ( 1 - C_5 ) \overline{w^{'2}}^{t}\ptlder{\bar{w}}{z}
+   + \dfrac{C_1}{\tau} \left. w \right|_{\rm{tol}}^{2} \\
+ & + \frac{2}{3} C_5
+      \left(
+        \frac{g}{\theta_0} \overline{w'\theta'_v}
+        - \overline{u'w'}\ptlder{\bar{u}}{z} 
+        - \overline{v'w'}\ptlder{\bar{v}}{z} 
+      \right)^{t}
+\end{split}
 \end{equation}
 %
 The next step consists of writing the finite difference equivalent to
@@ -1915,18 +1919,12 @@ The next step consists of writing the finite difference equivalent to
 \begin{split}
 & \mathtt{
   \frac{wp2^{new}(k)}{dt}
++ wmm(k) \frac{wp2^{new}(k+1) - wp2^{new}(k-1)}{2 \ dzm(k)}
+  } \\
+& \mathtt{
 + \frac{wp3^{new}(k+1) - wp3^{new}(k)}{dzm(k)}
 + \frac{C_1}{taum(k)} wp2^{new}(k)
   } \\
-%& \mathtt{
-%  -\frac{\nu_1}{2 dzm(k)dzt(k)} wp2^{new}(k-1)
-%  } \\
-%& \mathtt{
-%  +\frac{\nu_1}{2 dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) wp2^{new}(k)
-%  } \\
-%& \mathtt{
-%  -\frac{\nu_1}{2 dzm(k)dzt(k+1)} wp2^{new}(k+1)
-%  } \\
 & \mathtt{
   -\frac{Kw1(k)+\nu_1}{2 dzm(k)dzt(k)} wp2^{new}(k-1)
   } \\
@@ -1940,15 +1938,6 @@ The next step consists of writing the finite difference equivalent to
 =& \mathtt{
   \frac{wp2(k)}{dt}
   } \\
-%& \mathtt{
-%  +\frac{\nu_1}{2 dzm(k)dzt(k)} wp2(k-1)
-%  } \\
-%& \mathtt{
-%  -\frac{\nu_1}{2 dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) wp2(k)
-%  } \\
-%& \mathtt{
-%  +\frac{\nu_1}{2 dzm(k)dzt(k+1)} wp2(k+1)
-%  } \\
 & \mathtt{
   +\frac{Kw1(k)+\nu_1}{2 dzm(k)dzt(k)} wp2(k-1)
   } \\
@@ -2023,8 +2012,6 @@ Separating out the contributions:
   }
 \end{split}
 \end{equation}
-
-
 
 
 \subsection{$\overline{w^{'3}}$}
@@ -2146,7 +2133,7 @@ We can now assemble the time discrete equivalent to (\ref{eq_wp3c}) using
 \label{eq_wp3d}
 \begin{split}
 & \frac{\overline{w^{'3}}^{t+\Delta t}}{\Delta t} 
-%- \frac{1}{2} (K_w + \nu_8) \nabla_z^2 \, \overline{w^{'3}}^{t+\Delta t}
++ \bar{w}\ptlder{\overline{w^{'3}}^{t+\Delta t}}{z}	 
 - \frac{1}{2}\ptlder{}{z} \left[ \left( K_{w8} + \nu_8 \right)
                                  \ptlder{}{z} \overline{w^{'3}}^{t+\Delta t} 
                           \right]
@@ -2163,7 +2150,6 @@ We can now assemble the time discrete equivalent to (\ref{eq_wp3c}) using
 \\
 &=
   \frac{\overline{w^{'3}}^{t}}{\Delta t} 
-%  + \frac{1}{2} (K_w + \nu_8) \nabla_z^2 \, \overline{w^{'3}}^t
   + \frac{1}{2}\ptlder{}{z} \left[ \left( K_{w8} + \nu_8 \right)
                                    \ptlder{}{z} \overline{w^{'3}}^{t} 
                             \right]
@@ -2186,7 +2172,6 @@ where
 \label{eq_wp3t}
 \left. \overline{w^{'3}} \right|_{\rm expl}
 = 
-  - \bar{w}\ptlder{\overline{w^{'3}}^{t}}{z}	 
   + (1 - C_{11}) \frac{3g}{\theta_0} \overline{w^{'2}\theta'_v}^t
   - 3 ( 1 - C_{11} ) \overline{w^{'3}}^t\ptlder{\bar{w}}{z}
 \end{equation}
@@ -2198,16 +2183,14 @@ Finally, we derive the finite difference form of (\ref{eq_wp3d}):
 \begin{split}
 & \mathtt{
   \frac{wp3^{new}(k)}{dt}
-%  - \frac{Kwt(k) + \nu_8}{2dzt(k)} 
-%    \left( 
-%        \frac{wp3^{new}(k+1)-wp3^{new}(k)}{dzm(k)}
-%      - \frac{wp3^{new}(k)-wp3^{new}(k-1)}{dzm(k-1)}
-%    \right)
+  + wmt(k) \frac{wp3^{new}(k+1)-wp3^{new}(k-1)}{2 \ dzt(k)}
+  } \\
+& \mathtt{
   - \frac{1}{2dzt(k)} 
     \bigg( 
             \left(Kw8(k)+\nu_8\right)
             \frac{wp3^{new}(k+1)-wp3^{new}(k)}{dzm(k)} }  \\
-& \mathtt{ \qquad \qquad \qquad \qquad \qquad \qquad
+& \mathtt{ \qquad \qquad \qquad \qquad
           - \left(Kw8(k-1)+\nu_8\right)
             \frac{wp3^{new}(k)-wp3^{new}(k-1)}{dzm(k-1)}
     \bigg)
@@ -2237,11 +2220,6 @@ Finally, we derive the finite difference form of (\ref{eq_wp3d}):
   } \\
 =& \mathtt{
   \frac{wp3(k)}{dt} 
-%  + \frac{Kwt(k) + \nu_8}{2dzt(k)} 
-%    \left( 
-%        \frac{wp3(k+1)-wp3(k)}{dzm(k)}
-%      - \frac{wp3(k)-wp3(k-1)}{dzm(k-1)}
-%    \right)
   + \frac{1}{2dzt(k)} 
     \bigg( 
             \left(Kw8(k)+\nu_8\right)
@@ -2289,11 +2267,14 @@ correct, but it does help to increase stability.  Brian Griffin.  Feb. 21, 2008.
 \begin{split}
 & \mathtt{
   \frac{wp3^{new}(k)}{dt}
+  + wmt(k) \frac{wp3^{new}(k+1)-wp3^{new}(k-1)}{2 \ dzt(k)}
+  } \\
+& \mathtt{
   - \frac{1}{2dzt(k)} 
     \bigg( 
             \left(Kw8(k)+\nu_8\right)
             \frac{wp3^{new}(k+1)-wp3^{new}(k)}{dzm(k)} }  \\
-& \mathtt{ \qquad \qquad \qquad \qquad \qquad \qquad
+& \mathtt{ \qquad \qquad \qquad \qquad
           - \left(Kw8(k-1)+\nu_8\right)
             \frac{wp3^{new}(k)-wp3^{new}(k-1)}{dzm(k-1)}
     \bigg)
@@ -2438,8 +2419,9 @@ efficiently using a LU decomposition algorithm for band diagonal matrices.
 Contributions to $lhs_{\mathtt{wp23}}$ from (\ref{eq_wp2e}):
 %
 \begin{equation}
-%\mathtt{ lhs(k\_wp2,5) = lhs(k\_wp2,5) -\frac{\nu_1}{2 dzm(k)dzt(k)} }
-\mathtt{ lhs(k\_wp2,5) = lhs(k\_wp2,5) -\frac{Kw1(k)+\nu_1}{2 dzm(k)dzt(k)} }
+\mathtt{ lhs(k\_wp2,5) = lhs(k\_wp2,5) -\frac{Kw1(k)+\nu_1}{2 dzm(k)dzt(k)} 
+                                       -\frac{ wmm(k) }{ 2 \ dzm(k) }
+       }
 \end{equation}
 %
 \begin{equation}
@@ -2452,7 +2434,6 @@ Contributions to $lhs_{\mathtt{wp23}}$ from (\ref{eq_wp2e}):
  = lhs(k\_wp2,3) 
  +\frac{1}{dt}
  +\frac{C_1}{taum(k)}
-% +\frac{\nu_1}{2 dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) }
  +\frac{1}{2 dzm(k)} \left(  \frac{Kw1(k+1)+\nu_1}{dzt(k+1)}
                            + \frac{Kw1(k)+\nu_1}{dzt(k)} \right) }
 \end{equation}
@@ -2462,8 +2443,9 @@ Contributions to $lhs_{\mathtt{wp23}}$ from (\ref{eq_wp2e}):
 \end{equation}
 %
 \begin{equation}
-%\mathtt{ lhs(k\_wp2,1) = lhs(k\_wp2,1) -\frac{\nu_1}{2 dzm(k)dzt(k+1)} }
-\mathtt{ lhs(k\_wp2,1) = lhs(k\_wp2,1) -\frac{Kw1(k+1)+\nu_1}{2 dzm(k)dzt(k+1)} }
+\mathtt{ lhs(k\_wp2,1) = lhs(k\_wp2,1) -\frac{Kw1(k+1)+\nu_1}{2 dzm(k)dzt(k+1)} 
+                                       +\frac{ wmm(k) }{ 2 \ dzm(k) }
+       }
 \end{equation}
 %
 Contributions to $rhs_{\mathtt{wp23}}$ from (\ref{eq_wp2e}):
@@ -2474,15 +2456,6 @@ Contributions to $rhs_{\mathtt{wp23}}$ from (\ref{eq_wp2e}):
 & \mathtt{
   +\frac{wp2(k)}{dt}
   } \\
-%& \mathtt{
-%  +\frac{\nu_1}{2 dzm(k)dzt(k)} wp2(k-1)
-%  } \\
-%& \mathtt{
-%  -\frac{\nu_1}{2 dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) wp2(k)
-%  } \\
-%& \mathtt{
-%  +\frac{\nu_1}{2 dzm(k)dzt(k+1)} wp2(k+1)
-%  } \\
 & \mathtt{
   +\frac{Kw1(k)+\nu_1}{2 dzm(k)dzt(k)} wp2(k-1)
   } \\
@@ -2511,8 +2484,8 @@ Contributions to $lhs_{\mathtt{wp23}}$ from (\ref{eq_wp3e}):
 \begin{split}
 & \mathtt{ lhs(k\_wp3,5) = lhs(k\_wp3,5) }\\
 & \mathtt{
-%- \frac{Kwt(k) + \nu_8}{2dzt(k)dzm(k-1)} 
 - \frac{Kw8(k-1)+\nu_8}{2 dzt(k)dzm(k-1)}
+- \frac{ wmt(k) }{ 2 \ dzt(k) }
 - \frac{1}{2 \, dzt(k)}
   \frac{ a1m(k-1)
          \left(wp3(k-1)+wp3(k)\right) }
@@ -2536,8 +2509,6 @@ Contributions to $lhs_{\mathtt{wp23}}$ from (\ref{eq_wp3e}):
 + \frac{1}{dt}
 + \frac{C_8}{taut(k)}
    \left(  5 \, C_{8b} \, {Skwt(k)}^4 + 1 \right)
-%+ \frac{Kwt(k) + \nu_8}{2dzt(k)}
-%  \left( \frac{1}{dzm(k-1)} + \frac{1}{dzm(k)}  \right)
 + \frac{1}{2 dzt(k)} \left(  \frac{Kw8(k)+\nu_8}{dzm(k)}
                            + \frac{Kw8(k-1)+\nu_8}{dzm(k-1)} \right)
 } \\
@@ -2567,8 +2538,8 @@ Contributions to $lhs_{\mathtt{wp23}}$ from (\ref{eq_wp3e}):
 \begin{split}
 & \mathtt{ lhs(k\_wp3,1) = lhs(k\_wp3,1) }\\
 & \mathtt{
-%- \frac{Kwt(k) + \nu_8}{2dzt(k)dzm(k)} 
 - \frac{Kw8(k)+\nu_8}{2 dzt(k)dzm(k)}
++ \frac{ wmt(k) }{ 2 \ dzt(k) }
 + \frac{1}{2 \, dzt(k)}
   \frac{ a1m(k) \left(wp3(k)+wp3(k+1)\right) }
        { \max\left( wp2(k), \epsilon \right) }
@@ -2583,11 +2554,6 @@ Contributions to $rhs_{\mathtt{wp23}}$ from (\ref{eq_wp3e}):
 & \mathtt{ rhs(k\_wp3) = rhs(k\_wp3) } \\
 & \mathtt{
   + \frac{wp3(k)}{dt} 
-%  + \frac{Kwt(k) + \nu_8}{2dzt(k)} 
-%    \left( 
-%        \frac{wp3(k+1)-wp3(k)}{dzm(k)}
-%      - \frac{wp3(k)-wp3(k-1)}{dzm(k-1)}
-%    \right)
   + \frac{1}{2dzt(k)}
       \bigg(
               \left(Kw8(k)+\nu_8\right)
@@ -2639,8 +2605,8 @@ Contributions to $lhs_{\mathtt{wp23}}$ from (\ref{eq_wp3e}):
 \begin{split}
 & \mathtt{ lhs(k\_wp3,5) = lhs(k\_wp3,5) }\\
 & \mathtt{
-%- \frac{Kwt(k) + \nu_8}{2dzt(k)dzm(k-1)} 
 - \frac{Kw8(k-1)+\nu_8}{2 dzt(k)dzm(k-1)}
+- \frac{ wmt(k) }{ 2 \ dzt(k) }
 - \left(\frac{a1m(k)+a1m(k-1)}{2}\right) \frac{1}{2 \, dzt(k)}
   \frac{ \left(wp3(k-1)+wp3(k)\right) }
        { \max\left( wp2(k-1), \epsilon \right) }
@@ -2663,8 +2629,6 @@ Contributions to $lhs_{\mathtt{wp23}}$ from (\ref{eq_wp3e}):
 + \frac{1}{dt}
 + \frac{C_8}{taut(k)}
    \left(  5 \, C_{8b} \, {Skwt(k)}^4 + 1 \right)
-%+ \frac{Kwt(k) + \nu_8}{2dzt(k)}
-%  \left( \frac{1}{dzm(k-1)} + \frac{1}{dzm(k)}  \right)
 + \frac{1}{2 dzt(k)} \left(  \frac{Kw8(k)+\nu_8}{dzm(k)}
                            + \frac{Kw8(k-1)+\nu_8}{dzm(k-1)} \right)
 } \\
@@ -2692,8 +2656,8 @@ Contributions to $lhs_{\mathtt{wp23}}$ from (\ref{eq_wp3e}):
 \begin{split}
 & \mathtt{ lhs(k\_wp3,1) = lhs(k\_wp3,1) }\\
 & \mathtt{
-%- \frac{Kwt(k) + \nu_8}{2dzt(k)dzm(k)} 
 - \frac{Kw8(k)+\nu_8}{2 dzt(k)dzm(k)}
++ \frac{ wmt(k) }{ 2 \ dzt(k) }
 + \left(\frac{a1m(k)+a1m(k-1)}{2}\right) \frac{1}{2 \, dzt(k)}
   \frac{ \left(wp3(k)+wp3(k+1)\right) }
        { \max\left( wp2(k), \epsilon \right) }
@@ -2708,11 +2672,6 @@ Contributions to $rhs_{\mathtt{wp23}}$ from (\ref{eq_wp3e}):
 & \mathtt{ rhs(k\_wp3) = rhs(k\_wp3) } \\
 & \mathtt{
   + \frac{wp3(k)}{dt} 
-%  + \frac{Kwt(k) + \nu_8}{2dzt(k)} 
-%    \left( 
-%        \frac{wp3(k+1)-wp3(k)}{dzm(k)}
-%      - \frac{wp3(k)-wp3(k-1)}{dzm(k-1)}
-%    \right)
   + \frac{1}{2dzt(k)}
       \bigg(
               \left(Kw8(k)+\nu_8\right)
@@ -2750,7 +2709,9 @@ As an alternative to assuming $\bar{e} = \frac{3}{2}\overline{w^{'2}}$,
 we can obtain an anisotropic solution using a semi-implicit discretization for 
 $\overline{u^{'2}}$ and $\overline{v^{'2}}$.
 Similarly to (\ref{eq_qtp2}), start with equations (\ref{eq_up2}) and 
-(\ref{eq_vp2}), substitute (\ref{eq_wpup2}) and (\ref{eq_wpvp2}) respectively.
+(\ref{eq_vp2}) (for simplicity, neglect the $\left.\right|_{\rm{pd}}$ and 
+$\left.\right|_{\rm{cl}}$ terms), substitute (\ref{eq_wpup2}) and 
+(\ref{eq_wpvp2}) respectively.
 
 \subsection{$\overline{u^{'2}}$}
 Assume a steady-state and rearrange $\overline{u^{'2}}$ for a semi-implicit
@@ -2780,7 +2741,6 @@ solution to obtain:
        \overline{u^{'2}}
      \right) }_{ta}
   \underbrace{
-%- \nu_9 \nabla_z^2 \overline{u^{'2}} }_{dp2} \\
 - \ptlder{}{z} \left[ \left( K_{w9} + \nu_9 \right)
                       \ptlder{}{z} \overline{u^{'2}}
                \right] }_{dp2}  \\
@@ -3008,16 +2968,9 @@ Separating out the contributions:
 %
 \begin{equation}
 \begin{split}
-%& \left. - \nu_9 \nabla_z^2 \overline{u^{'2}} \right|_{\mathtt{zm(k)}}
 & \left. - \ptlder{}{z} \left[ \left( K_{w9} + \nu_9 \right)
                                \ptlder{}{z} \overline{u^{'2}}
                         \right] \right|_{\mathtt{zm(k)}}  \\
-%=& \mathtt{
-%    \frac{\nu_9}{dzm(k)}
-%    \left( \frac{up2(k+1)-up2(k)}{dzt(k+1)}
-%          -\frac{up2(k)-up2(k-1)}{dzt(k)}
-%    \right)
-%   }
  &= \mathtt{
     -\frac{1}{dzm(k)}
      \bigg( \frac{ \left( Kw9(k+1) + \nu_9 \right)
@@ -3033,10 +2986,6 @@ Separating out the contributions:
 %
 \begin{equation}
 \begin{split}
-%&\mathtt{lhs(3,k) = lhs(3,k) - \frac{\nu_9}{dzm(k)dzt(k)} } \\
-%&\mathtt{lhs(2,k) = lhs(2,k) + \frac{\nu_9}{dzm(k)}
-%                       \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) } \\
-%&\mathtt{lhs(1,k) = lhs(1,k) - \frac{\nu_9}{dzm(k)dzt(k+1)} }
 &\mathtt{lhs(3,k) = lhs(3,k) - \frac{Kw9(k)+\nu_9}{dzm(k)dzt(k)} } \\
 &\mathtt{lhs(2,k) = lhs(2,k) + \frac{1}{dzm(k)}
                                \left(   \frac{Kw9(k+1)+\nu_9}{dzt(k+1)}
@@ -3207,7 +3156,6 @@ semi-implicit solution to obtain:
        \frac{\overline{w^{'3}}}{\overline{w^{'2}}} \,
        \overline{v^{'2}}
      \right)
-%- \nu_9 \nabla_z^2 \overline{v^{'2}} \\
 - \ptlder{}{z} \left[ \left( K_{w9} + \nu_9 \right)
                       \ptlder{}{z} \overline{v^{'2}}
                \right]  \\

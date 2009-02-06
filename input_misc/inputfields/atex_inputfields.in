@@ -1,0 +1,24 @@
+&model
+run_file  = "atex_hoc.in"
+stdout   = .true.
+
+/
+
+&setfields
+datafile      = "../les_data/atex"
+input_type    = "les"
+input_um      = .true.
+input_vm      = .true.
+input_rtm     = .true.
+input_thlm    = .true.
+input_wp2     = .true.
+input_wprtp   = .true.
+input_wpthlp  = .true.
+input_wp3     = .true.
+input_rtp2    = .true.
+input_thlp2   = .true.
+input_rtpthlp = .true.
+input_upwp    = .true.
+input_vpwp    = .true.
+
+/

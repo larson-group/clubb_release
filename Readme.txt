@@ -2,7 +2,7 @@ $Id: Readme.txt,v 1.72 2008-08-01 19:10:01 vlarson Exp $
 
 ************************************************************************
 *                           Copyright Notice
-*                         This code is (C) 2006 
+*                         This code is (C) 2006-2009 
 *         Jean-Christophe Golaz, Vincent E. Larson, Brian M. Griffin, 
 *            David P. Schanen, Adam J. Smith, and Michael J. Falk.
 *
@@ -13,9 +13,9 @@ $Id: Readme.txt,v 1.72 2008-08-01 19:10:01 vlarson Exp $
 *         Numerical Recipes, etc.) are the property of their respective
 *         authors as noted and also subject to copyright.
 ************************************************************************
-
+ 
 ************************************************************************
-*                     Overview of the HOC code
+*                     Overview of the CLUBB code
 ************************************************************************
 
 For a detailed description of the model code see:
@@ -24,14 +24,18 @@ For a detailed description of the model code see:
   Method and Model Description'' Golaz, et al. (2002)
   JAS, Vol. 59, pp. 3540--3551.
 
-See also the hoc_v2.2_tuner/doc/hoc_eqns.pdf file in the CVS repository for
+See also the ./doc/hoc_eqns.pdf file in the svn repository for
 finer details on how the discretization was done.
 
+The single column model executable ("clubb_standalone") runs a particular 
+case (e.g. BOMEX) and outputs statisistical data in either GrADS or 
+netCDF format.
+
 The tuner code tunes certain parameters in a one-dimensional boundary layer 
-cloud parameterization (``hoc''), to best fit large-eddy simulation output.  
+cloud parameterization (``CLUBB''), to best fit large-eddy simulation output.  
 The optimization technique is the downhill-simplex method of Needler and Mead, 
 as implemented in _Numerical Recipes In Fortran 90_ (amoeba.f90).  
-The parameterization is called as a subroutine ( hoc_model() ) with 
+The parameterization is called as a subroutine ( run_clubb() ) with 
 parameter values as input.
 
 The code is highly flexible.  One can vary the cases (bomex, fire, arm, or
@@ -39,18 +43,17 @@ atex) to match; the variables to match (cloud fraction, liquid water, third
 moment of vertical velocity, etc.); the altitude and times over which to match
 these variables; and the parameters to tune (C1, beta, etc.). 
 
-The code is written in Fortran 90/95 and executed by a bash runscript. 
+The code is written in Fortran 95 and executed by a bash runscript. 
 On the Microsoft Windows platform this could work using MSYS or Cygwin 
 with G95, but we have not tested this sort of configuration.
 
-
-We use the G95 compiler on Intel processors running Redhat Enterprise 3.
+We use the G95 compiler on Intel x64 processors running Redhat Enterprise 5.
 
 G95 <http://www.g95.org/> has been tested on SPARC & x86 Solaris,
 x64 & x86 GNU/Linux.
 
 Sun Fortran 8.x on Solaris SPARC/x86 work, but has not been as rigorously 
-tested as pgf90.
+tested as G95.
 
 Using Intel Fortran 9 we have been able to compile on Linux x86/x64 and
 Itanium.
@@ -58,13 +61,13 @@ Itanium.
 HP/Compaq/DEC Fortran on Alpha also appears to work but because future 
 Alpha processor development has ceased it is not extensively tested.
 
-The GNU Fortran compiler (GCC 4.0.x) does not implement the entire 
-Fortran 90 standard yet, and so does not work at all.
+The GNU Fortran compiler (GCC 4.1.x) may or may not work.  The version that
+ships with RHEL 5 does not.
 
 It is important to note that all these compilers use *incompatible* module
 formats for the .mod files!  If you want to use different compilers on the
 same system, you will need to build a different set of netCDF mod files for
-each compiler and use -M or -I to specify their location.
+each compiler and use -M or -I flags to specify their location.
 
 In order to get similar results on differing architectures, platforms, and
 compilers, initially try a conservative optimization and enable 
@@ -72,74 +75,84 @@ IEEE-754 standard style floating point math.  On x86 compatible machines
 using SSE or SSE2 is usually the best way to do this.
 
 ***********************************************************************
-*                         Using the HOC Model                         *
+*                        Using the CLUBB Model                        *
 ***********************************************************************
 -----------------------------------------------------------------------
 - (1.1) Building Everything:
 -----------------------------------------------------------------------
 
 Requirements:
-A. A Fortran 90/95 compiler with a complete implementation of the standard.
-B. A POSIX compliant version of the make utility.  BSD or GNU make work fine.
-C. NetCDF >= v3.5.1;  We have not tested our code with anything older.
-D. LAPACK & BLAS.  These provide the tri and band diagonal solver
-   subroutines needed by HOC.  Many vendors provide optimized versions of
+A. A Fortran 95 compiler with a complete implementation of the standard.
+B. GNU make (we use v3.81).
+C. Perl 5 to run mkmf
+D. LAPACK & BLAS.  These provide the tri and band diagonal matrix solver
+   subroutines needed by CLUBB.  Many vendors provide optimized versions of
    these routines, which may be much faster than the reference BLAS.
 E. GNU bash, or an equivalent POSIX compliant shell to use the run scripts.
 
-Build:
-1. $ cd ~/hoc_v2.2_tuner/src
-2. Edit a config.<PLATFORM>.in file and choose it in the Makefile for your 
-   compiler and optimization options. Note that PREFIX determines where
+Optionally:
+F. GrADS for viewing the GrADS output data.
+G. NetCDF >= v3.5.1;  We have not tested our code with anything older.
+   If you do not use netCDF, remove -DNETCDF from the compiler flags.
+H. MATLAB or NCAR graphics for viewing the netCDF output data.
+
+To build:
+1. $ cd <BASE DIRECTORY>/compile
+2. Edit a ./config/<PLATFORM>.bash file and uncomment it the file
+   compile.bash. Depending on your platform you may need to create a new
+   file based on the existing configurations.
+   Note that the variables libdir and bindir determine where
    your executables and libraries will end up, so make sure you set it
-   to the correct location.
-3. $ make
+   to the correct location (the default is one directory up).
+3. $ ./compile.bash
 
-The executables will appear in $(PREFIX)/bin and libraries in $(PREFIX)/lib.
-The object (.o) and module (.mod) files will appear in $(PREFIX)/obj.
+The executables and Makefile will appear in <PREFIX>/bin and libraries in <PREFIX>/lib.
+The object (.o) and module (.mod) files will appear in <PREFIX>/obj.
 
-If you're using GNU make and have a fast parallel machine, 
-parallel builds should work as well.  E.g. for 3 threads:
-gmake -j 3
+If you're using GNU make and have a fast parallel machine, parallel builds 
+should work as well.  E.g. for 3 threads, append gmake="gmake -j 3" to the
+file source'd from compile.bash.
 
-At this time, because we separate out non-distributable source code 
-using preprocessor flags, dmake doesn't work.
-
+The mkmf script may or may not generate files that are compatible with
+other versions of make.
 -----------------------------------------------------------------------
 - (1.2) Building for use in a host model:
 -----------------------------------------------------------------------
 Requirements:
-A. and D. as above.
+A., B., C., & D. as above.
 
 Build:
 1. and 2. as above.
 
-$ make libhoc_param.a
+You can safely remove everything but libclubb_param.a from the "all" section
+of the compile.bash script.
+
+$ ./compile.bash
 
 This will build just the static library and the f90 modules.
-The static library will be in $(PREFIX)/lib, while the modules will be 
-in the src directory.  You will need at least the parameterization_interface 
-mod to interface with HOC.
+The static library will be in <PREFIX>/lib, while the modules will be 
+in the obj directory.  You will need at least the clubb_core.mod file 
+to interface with CLUBB.
 
 Addition by Brian:  
-In addition to the above, you will have to make a reference to the HOC library 
-from the configuration file of the host program.  Since HOC now uses the
-LAPACK libraries, you will also have to make reference to those.  Currently, 
-we do not include the LAPACK libraries with the HOC download.  You will have 
+In addition to the above, you will have to make a reference to the CLUBB 
+library from the configuration file of the host program.  Since CLUBB now uses 
+the LAPACK libraries, you will also have to make reference to those. Currently, 
+we do not include the LAPACK libraries with the CLUBB download.  You will have 
 to find them and then download them onto your own computer if they are not
 included with your operating system or compiler.  Once you have done this, you 
 can reference them in a line such as the following:
 
--L/home/griffinb/hoc_v2.2_tuner/lib -lhoc_param -llapack -lblas
+-L/home/griffinb/clubb/lib -lclubb_param -llapack -lblas
 
 If the LAPACK and BLAS libraries were compiled with GNU Fortran 77, you may 
 need to link to the runtime libs for that with -lg2c as well.
 
 Don't forget that you will also have to make reference
-to the HOC src code.  You can reference that with a line
+to the CLUBB modules.  You can reference that with a line
 such as the following:
 
--I/home/griffinb/hoc_v2.2_tuner/src
+-I/home/griffinb/clubb/obj
 
 -----------------------------------------------------------------------
 - (1.3) Making clean (or starting over)  
@@ -149,39 +162,47 @@ Occasionally, one needs to erase old executables or libraries and re-compile
 the code starting with nothing.  For instance, this may be required when 
 a library or compiler is updated.  
 
-To delete old object files (*.o), libraries (*.a), and mod files,
-go to hoc_v2.2_tuner/src and type
+To delete old object files (*.o), and mod (*.mod) files,
+go to <PREFIX>/bin (where Makefile resides) and type
 
 make clean
 
 If this doesn't help, then to additionally delete everything in the binary 
-and library directories, go to hoc_v2.2_tuner/src and type
+and library directories, go to <PREFIX>/bin and type
 
 make distclean
 
 
 -----------------------------------------------------------------------
-- (2.1) Executing a standalone run:
+- (2.1) Executing a single column run:
 -----------------------------------------------------------------------
+   <CLUBB DIR> refers the the directory where clubb is installed.
 
-1.  cd ~/hoc_v2.2_tuner/model
+1. cd <CLUBB DIR>/input/case_setups
 
 2. Edit <CASE>_model.in for each case you wish to run, or just leave 
    them as is.  Usually you will want to keep these the same.
-   See the rain code for description of kk_rain and cloud_sed.
+   See the rain code for description of l_kk_rain and l_cloud_sed.
    See BUGSrad description below for a description of the interactive
    radiation scheme.
    Enabling any of these flags may increase runtime considerably.
 
-3. cd ../stats
+3. cd <CLUBB DIR>/input/stats
    Edit a stats file you would like to use.  A complete list of all computable
-   statistics is found in all_stats.in.  Note that HOC now supports GrADS or
-   NetCDF, but you can only use the hoc_tuner using GrADS.
+   statistics is found in all_stats.in.  Note that CLUBB now supports GrADS or
+   netCDF, but you can only use the clubb_tuner using GrADS.
 
-4. $ cd ../standalone.  Edit standalone_<CASE>.in or select a premade one.
+4. $ cd <CLUBB DIR>/input
+   Edit tunable_parameters.in if you wish. The default values have been
+   tested rigorously and will work with all the current cases.
 
-5. $ ./run_standalone.bash <CASE> or
-   $ ./run_standalone.bash <CASE> <STATS_FILE>
+5. $ cd <CLUBB DIR>/run_scripts
+   $ ./run_scm.bash <MODEL CASE> or
+   $ ./run_standalone.bash <MODEL CASE> [PARAMETER FILE] [STATS FILE]
+
+   Where the parameter file and stats file are optional arguments. The default
+   is all_stats.in and tunable_parameters.in.
+   The resulting data will be written in the directory "output"
 
 -----------------------------------------------------------------------
 - (2.2) Executing a restart run:
@@ -195,13 +216,13 @@ The new simulation is then called a "restart" simulation.
 1.  Perform the original simulation of case <CASE> and save the GrADS output 
     files.  These data will be accessed to restart the simulation.
 
-2.  Create a subdirectory in /standalone called "restart" and move the GrADS
-    output files to that subdirectory.
+2.  Create a subdirectory in the CLUBB directory called "restart" and move the 
+    GrADS output files to that subdirectory.
 
 3.  Edit the following three variables at the end of the flag section of 
     the model file:
 
-    lrestart = .true.
+    l_restart = .true.
     restart_path = restart/<CASE>
     time_restart = initial time of restart run in seconds
 
@@ -210,7 +231,7 @@ The new simulation is then called a "restart" simulation.
 
 4.  Execute the run as usual from /standalone using 
     
-    ./run_standalone.bash <CASE>
+    ./run_scm.bash <CASE>
 
 -----------------------------------------------------------------------
 - (3.1) Executing a tuning run:
@@ -218,19 +239,21 @@ The new simulation is then called a "restart" simulation.
 
 Do steps 1, 2, & 3 as outlined in the standalone run.
 
-4.  Edit error_<runtype>.in or select an existing one. Note that there are two
-  tuning subroutines, specified by tune_type in the /stats/ namelist.  If 
-  runtype = 0, then the amoeba subroutine, a downhill simplex algorithm, will
-  be used.  If runtype is any other value, then amebsa, a variant which uses
-  simulated annealing, is used.  A complete explanation of these minimization
-  algorithms can be found in _Numerical Recipes in Fortran 90_.
-  Sometimes the variable names in HOC's zt and the LES grads files will 
-  differ.
-  Currently, it is only possible to tune for variables that occur in zt.
+4. Edit input/tuner/error_<CASE>.in or select an existing one. Note that there 
+   are two tuning subroutines, specified by tune_type in the error_<CASE>.in 
+   /stats/ namelist.  
+   If tune_type = 0, then the amoeba subroutine, a downhill simplex algorithm,
+   will be used.  If runtype is any other value, then amebsa, a variant of 
+   amoeba which uses simulated annealing instead, is used.  A complete 
+   explanation of these minimization algorithms can be found 
+   in _Numerical Recipes in Fortran 90_.
+   Sometimes the variable names in CLUBB's zt and the LES grads files 
+   will differ.  Currently, it is only possible to tune for variables that 
+   occur in zt grid.
 
-5.  Edit run_tuner.bash to use your namelists
+5. Edit run_tuner.bash to use your namelists
 
-6.  ./run_tuner.bash
+6. ./run_tuner.bash
 
 -----------------------------------------------------------------------
 - (3.1.1) Creating a RAM disk (optional)
@@ -245,13 +268,9 @@ powered off.
 
 Generally:
 
-1. mkdir <HOC PATH>/rd_tune/
+1. Create and mount RAM disk on "output"
 
-2. Create and mount RAM disk on rd_tune
-
-3. Copy tune directory to rd_tune
-
-4. Run tuner
+1. Run tuner
 
 Linux Example
 Note that you will need ram disk support compiled into your kernel, which is
@@ -262,89 +281,39 @@ about when you are allowed to change the ramdisk size.
    Append to 'kernel' line:
    kernel /vmlinuz-2.4.21-40.EL ro root=LABEL=/ ramdisk_size=262144
 
-Sets ram disks to be 256 megabytes in size.  Note that your own system may
+This sets ram disks to be 256 megabytes in size.  Note that your own system may
 have other options besides the ramdisk_size.
 
 2. $ mkfs.ext2 /dev/ram0
 
-3. $ mount /dev/ram0 /home/dschanen/hoc_v2.2_tuner/rd_tune
+3. $ mount /dev/ram0 /home/dschanen/clubb/output
 
-4. $ cp tune/*.* rd_tune/
-
-5. $ cd rd_tune
+4. $ cd run_scripts
 
 (Run your job)
 
 Solaris Example
-Note that these instructions are for Solaris 9 & 10
+Note that these instructions only apply to Solaris 9 & 10
 
-1. $ ramdiskadm -a hoc 256m 
-Creates a virtual disk hoc that is 256 megabytes in size.
+1. $ ramdiskadm -a clubb 256m 
+Creates a virtual disk clubb that is 256 megabytes in size.
 
-2. $ newfs /dev/ramdisk/hoc
+2. $ newfs /dev/ramdisk/clubb
 
-3. $ mount /dev/ramdisk/hoc /home/dschanen/hoc_v2.2_tuner/rd_tune/
+3. $ mount /dev/ramdisk/clubb /home/dschanen/clubb/output/
 
-4. $ cp tune/*.* rd_tune/
-
-5. $ cd rd_tune
+4. $ cd run_scripts
 
 (Run your job)
-
------------------------------------------------------------------------
-- (3.2) Executing a budget terms tuning run:
------------------------------------------------------------------------
-
-One run at a time:
-1. cd ~/hoc_v2.2_tuner/tune_budgets/ 
-2. Check hoc_v2.2_tuner/model/<CASE>_model.in to make sure dtmain equals
-  dtclosure.  Make a note of what your statistics file's timestep divided by 
-  dtmain is, since this is the sample_ratio in your budget namelist. 
-  e.g. If the situation is a 1 mn timestep in LES GRaDS statistics paired 
-  with a 5 second dtmain, the sample_ratio is 60.0 / 5.0 = 12.0
-  You might also want to verify that your LES file has sufficient data
-  for the whole duration of the HOC run.
-3. Edit <CASE>_budget.in;  You will want to set one case_tune variable to true 
-  and the rest to false, or the resultant parameters from one tuning run 
-  will be used in subsequent runs.  
-
-  Alternatively, you may edit the hoc_tuner_budget_terms.F code, setting liter 
-  to .true., and attempt to optimize the constants over multiple budget terms.  
-  This is some experimental code that starts at 10x's the ftol and loops over
-  all the amoeba cases, updating the constants by small amounts.  The idea
-  being that a ``best fit'' set of constant value will eventually be arrived
-  at when the tolerance is lowest( at ftol) on the 10th iteration of the 
-  do loop.
-
-  Sometimes (usually?) this mode doesn't appear to converge on anything.  
-  The more cases this is run over, the more likely it appears the constants 
-  will descend into values that cause the model become invalid and it will
-  fail altogether.
-
-4. Edit run_budget.bash for your model <CASE> 
-5. ./run_budget.bash 
-
-Batch mode: 
-1.  cd hoc_v2.2_tuner/tune_budgets/
-    mkdir <directory name you like>
-2.  cp BOMEX/create_files.bash <dir from (1)>
-    cp BOMEX/run_batch.bash <dir from (1)>
-3.  cp <CASE>_budget <dir from (1)>/budget.tmpl
-4.  cd <dir from (1)>
-5.  edit budget.tmpl to your liking;  
-    remove the 'case_tune' namelist entirely.
-5.  ./create_files.bash (you shouldn't see any errors)
-6.  ./run_batch.bash
-7.  Make coffee. Play spider solitaire. Wait an hour or two.
 
 -----------------------------------------------------------------------
 - (3.3) Executing an ensemble tuning run:
 -----------------------------------------------------------------------
 
-NOTES AND INSTRUCTIONS FOR THE HOC ENSEMBLE TUNER
+NOTES AND INSTRUCTIONS FOR THE CLUBB ENSEMBLE TUNER
 -------------------------------------------------
 
-Go to the main directory (hoc_v2.2_tuner/) and follow these instructions:
+Go to the main CLUBB directory and follow these instructions:
 
 1)  Copy the ens_tune directory to a new directory with a slightly different
     name, such as ens_tune_two.  From this point on, I will refer to this new
@@ -357,8 +326,8 @@ Go to the main directory (hoc_v2.2_tuner/) and follow these instructions:
 
 4)  For EACH case being tuned for:
 
-     a)  Copy the <CASE>_model.in file from the model/ directory to the
-         ens_tune_xyz/ directory.  Make sure that the file is set up
+     a)  Copy the <CASE>_model.in file from the input/case_setups directory 
+	 to the ens_tune_xyz/ directory.  Make sure that the file is set up
          correctly.
 
      b)  Create/copy the <CASE>_stats_tune.in file.  A sample of this file can
@@ -367,38 +336,38 @@ Go to the main directory (hoc_v2.2_tuner/) and follow these instructions:
          This file is used in the tuning process itself.  In order for this
          process to work, stats_fmt in this file must be set to 'grads'.  The
          tuner code reads the LES GrADS files and compares the results with the
-         HOC GrADS files (which are written according the specifications stated
-         in this file).  This file MUST also contain the names of the HOC
-         variables that are being tuned for.  During the process of tuning,
-         small GrADS files will be written that contain the results for ONLY the
-         variables that are listed here.  This makes the tuning process go
+         CLUBB GrADS files (which are written according the specifications 
+         stated in this file).  This file MUST also contain the names of the 
+	 CLUBB variables that are being tuned for.  During the process of 
+	 tuning, small GrADS files will be written that contain the results for 	 ONLY the variables that are listed here.  This makes the tuning go
          faster because it is not being slowed down by the writing of
          unnecessary variables.
 
      c)  Copy the <CASE>_stats.in file from the stats/ directory to the
          ens_tune_xyz/ directory.  Once the tuner has found the optimal value
-         and the tuning process has finished, standalone HOC will run for
+         and the tuning process has finished, standalone CLUBB will run for
          each case that was tuned for with the values of the constants that the
          tuner found.  The statistics that it finally outputs will be directed
          according to this file.  This file produces the normal statistical
-         files that one sees after a normal HOC run.  The main thing that might
-         be changed is whether the final statistical output is in GrADS or in
-         netCDF.  The user can choose either one.  The user just has to set
-         stats_fmt to either 'grads' or 'netcdf'.  Of course, if the user
+         files that one sees after a normal CLUBB run.  The main thing that 
+	 might be changed is whether the final statistical output is in GrADS 
+	 or in netCDF.  The user can choose either one.  The user just has to
+         set stats_fmt to either 'grads' or 'netcdf'.  Of course, if the user
          desires, the sampling and output timesteps or the variables that are
          output can also be changed.
 
 5)  Edit the error_messner_001.in file:
 
          The error_messner_001.in file is the same type of file as the error.in
-         file in the regular HOC tuner.  This file must include all the relevant
-         information for EVERY case being tuned for, such as the HOC and LES
-         stats files, the HOC run file, the vertical levels and time periods
-         being tuned for, and the general weighting of each case.  This file
-         also must include other important factors such as the variable(s) being
-         tuned for and the general weighting of each variable.  Of course, the
-         initial values of the constants and the amount of deviation allowed for
-         each of the constants are also declared here.
+         file in the regular CLUBB tuner.  This file must include all the 
+         relevant information for EVERY case being tuned for, such as the 
+	 CLUBB and LES stats files, the CLUBB run file, the vertical 
+	 levels and time periods being tuned for, and the general weighting of 
+         each case.  This file also must include other important factors such 
+	 as the variable(s) being tuned for and the general weighting of each 
+         variable.  Of course, the initial values of the constants and the 
+	 amount of deviation allowed for each of the constants are also 
+	 declared here.
 
          The runscript copies any error*.in file over to the remote nodes for
          running (as error.in).  So, the last file copied would end up being
@@ -423,7 +392,7 @@ Go to the main directory (hoc_v2.2_tuner/) and follow these instructions:
          c) CASE:  The subdirectory within ARCHIVE to put this tuning runs
                    specific results in.
 
-         d) HOC:  The path to the HOC main level directory.  This is the
+         d) CLUBB:  The path to the CLUBB main level directory.  This is the
                   directory above ens_tune_xyz, where the tuner is being run
                   from.
 
@@ -438,11 +407,11 @@ Go to the main directory (hoc_v2.2_tuner/) and follow these instructions:
          amount of disk space you will need.  You need to take into account
          the size of all the LES data files for each case you are tuning for.
          You also need to take into account the size of the binary
-         (executable) files that you will need.  These files include hoc_tuner,
-         hoc_standalone, and int2txt.  Finally, you need to know the size of
-         the HOC output files for each of the cases you are tuning for.  These
+         (executable) files that you will need.  These files include clubb_tuner,
+         clubb_standalone, and int2txt.  Finally, you need to know the size of
+         the CLUBB output files for each of the cases you are tuning for.  These
          files will be generated when the individual tuning iterations are
-         done.  One set of the HOC output files will be generated for each
+         done.  One set of the CLUBB output files will be generated for each
          tuning iteration that you run.
 
          For example, let's say that the executable files sum to about 25 MB.
@@ -450,9 +419,9 @@ Go to the main directory (hoc_v2.2_tuner/) and follow these instructions:
          DYCOMS2 RF01.  Let's say that the LES data files for these four cases
          sum to about 200 MB.  So, that's already 225 MB of space needed on
          EACH NODE used in the tuning run.  Now, let's say that the netCDF
-         output files for the HOC results for these four cases sum to about
+         output files for the CLUBB results for these four cases sum to about
          150 MB.  However, you are running 25 iterations of the tuner on EACH
-         NODE.  So, you will be producing those 150 MB worth of HOC files 25
+         NODE.  So, you will be producing those 150 MB worth of CLUBB files 25
          times over.  The total space needed on the node is then:
 
          25 MB + 200 MB + (150 MB/iteration)*(25 iterations) = 3975 MB
@@ -463,11 +432,11 @@ Go to the main directory (hoc_v2.2_tuner/) and follow these instructions:
          order to make sure that EACH NODE has enough space.
 
          Say that you were running the above ensemble tuning run on nodes
-         1-10.  That would yield a grand total of 250 iterations of the HOC
+         1-10.  That would yield a grand total of 250 iterations of the CLUBB
          tuner.  The first 10 runs would be launched (one on each node).  When
          ALL of them are completed, then the next set of 10 runs are launched,
          and so on and so on.  When the last set is finally complete, all the
-         HOC results are copied back to Messner, and then deleted off the
+         CLUBB results are copied back to Messner, and then deleted off the
          remote tom nodes.  The amount of disk space you would need on Messner
          is:
 
@@ -496,33 +465,21 @@ Go to the main directory (hoc_v2.2_tuner/) and follow these instructions:
          Usually, only the top so many values produce good results.  It is
          best to look at the results for the top handful of tuning iterations.
          First, to see if they look good for all the cases that were tuned for,
-         and then to see if they look good for all the cases we have in HOC.
-
------------------------------------------------------------------------
-- (4.1) Executing a run comparison analysis:
------------------------------------------------------------------------
-
-1. $ cd ../compare_runs  
-
-2. Edit compare_runs.in.  You need to choose three GrADS files on disk
-   to compare.  If necessary, uncompress the files you choose using
-   the command $ bunzip2 filename.bz2.  You also need to choose the 
-   time intervals over which the files will be compared.
-
-3. $ ../bin/compare_runs
+         and then to see if they look good for all the cases we have in CLUBB.
 
 -----------------------------------------------------------------------
 - (5.1) Executing a Jacobian analysis:
 -----------------------------------------------------------------------
 
-1. $ cd ../jacobian
+1. $ cd ../input
 
 2. Edit jacobian.in. 
-   cat ../model/<model name>_model.in ../stats/<model name>_stats.in \
-   >  <model name>_hoc.in
+   cat case_setups/<case name>_model.in stats/all_stats.in > clubb.in
+
    Note that choosing a high delta_factor may make the model
    crash, which will result in no data (results for that term will come
-   back as infinite).  The model namelists come from ../model.
+   back as NaN).
+
 3. $ ../bin/jacobian
 
 
@@ -539,20 +496,14 @@ read_grads_hoc.m:  A MATLAB function that reads GrADS data files.
 LES GrADS files:
   les_data/bomex_coamps_sw.ctl, les_data/wangara_rams.ctl
   FIRE, BOMEX, ARM & ATEX are our 4 basic ``datasets'', simulated by COAMPS, 
-  that we use to match HOC data.  Each output file includes an hour of 
+  that we use to match CLUBB data.  Each output file includes an hour of 
   unphysical spinup time.  BOMEX is trade-wind cumulus; FIRE is marine 
   stratocumulus; ARM is continental cumulus; and ATEX is cumulus under 
   stratocumulus.  BOMEX, FIRE, and ATEX are statistically steady-state; 
   ARM varies over the course of a day.
 
-HOC GrADS files:
-  results/<DATE>/bomex_zt.ctl, etc.
-  These are the 4 basic runs using the default constants. Not used in any
-  way by the tuner, but useful for comparing runs results in grads.  To obtain
-  similar results on differing platforms, check your compiler's documentation
-  for information on enabling IEEE 754 standard floating-point arithmetic.
 
-Generated HOC GrADS files:
+Generated CLUBB GrADS files:
   bomex_zt.dat, fire_zt.dat, arm_zt.dat, atex_zt.dat, dycoms_zt.dat,
     wangara_zt.dat, <case>_zm, <case>_sfc ...
   These are the files generated by the hoc subroutine during a model run
@@ -563,47 +514,48 @@ Generated HOC GrADS files:
   files to another directory or rename them.
   The tuner currently only uses variables in the zt file.
 
-The Namelist files:
+The namelist files:
 
-  model/bomex_model.in, fire_model.in, arm_model.in & atex_model.in.
-  These files specify the standard HOC model parameters.  Usually these 
+  input/case_setups/bomex_model.in, fire_model.in, arm_model.in & atex_model.in.
+  These files specify the standard CLUBB model parameters.  Usually these 
   do not need to be modified.
 
-  stats/bomex_stats.in, fire_stats.in, arm_stats.in & atex_stats.in.
-  These files specify statistics output for each simulation.  See statistics.F
-  for a complete list of the all output supported.
+  input/stats/all_stats.in, nobudgets_stats.in, etc.
+  These files specify statistics output for each simulation.  See
+  all_stats.in for a complete list of the all output supported.
   
-  tune/error_all.in, error_<CASE>.in, error_<DATE>.in.
-  These specify tuning parameters, case information initial constant values, 
-    and constant variance.
+  input/tuner/error_all.in, error_<CASE>.in, error_<DATE>.in.
+  These specify tunable parameters, the initial spread of the simplex
+  containing the tunable parameters, and which cases to "tune" for.
 
-The Randomization files:
+The randomization files:
 
-  generate_seed.bash, rand_seed.dat, bin/int2txt
+  run_scripts/generate_seed.bash, input/tuner/rand_seed.dat, bin/int2txt
   The script uses intrinsic functionality in the Linux kernel to generate
   a pseudo random seed (the .dat) used by the tuner for randomizing initial
   parameters.  This works on any operating system with a Linux style 
-  /dev/random (Solaris, Tru64, etc.) as well.  The seed file is now ASCII 
+  /dev/random (Solaris, Tru64, etc.) as well.  The seed file is now plain text 
   text and can be edited by hand.
 
 The compare_runs files:
 
-  compare_runs and compare_runs.in.  This is the executable and namelist for a
-  program which compares the variation between two GRaDS files with a number
-  of key variables.  Useful for checking the soundness of the model when the
-  code is modified and also for getting the raw difference between LES and 
-  HOC profiles.
+  bin/compare_runs and input/compare_runs.in.  This is the executable and 
+  namelist for a program which compares the variation between two GrADS files
+  with a number of key variables.  Useful for checking the soundness of the 
+  model when the code is modified and also for getting the raw difference 
+  between LES and SCM profiles.
 
 ------------------------------------------------------------------------
 - (2.1) The BUGSrad Radiation scheme
 ------------------------------------------------------------------------
 
-  This is an optional more complex radiation scheme, developed apart from
-  HOC by Stephens, et al. The code used in HOC was obtained from Norm Wood 
+  This is an optional interactive radiation scheme, developed apart from
+  CLUBB by Stephens, et al. The code used in CLUBB was obtained from Norm Wood 
   on 2004/07/10.
   When enabled, the analytic computation normally
   used for radiation is disabled.  BUGSrad is enabled in the 
-  model/<RUN CASE>_model.in file by setting lbugsrad = .true.
+  input/case_setups/<CASE>_model.in file by setting lbugsrad = .true.
+  Furthermore, you must compile CLUBB with the -Dradoffline preprocessor flag.
 
   BUGSrad allows the output of the following variables:
 
@@ -613,7 +565,8 @@ The compare_runs files:
   Thermodynamic grid:
   radht, radht_SW, radht_LW:  Radiative Heat; Short-wave/Long-wave component;
 
-  The thlm forcing will also be influenced by this calculation.
+  The thlm_forcing variable will also have radht added to it.  This is an
+  explicit contribution to the thlm calculation.
 
   Note that for most cases SW and LW components are not calculated 
   without using BUGSrad.
@@ -630,63 +583,42 @@ The compare_runs files:
   Monterey, California.  COAMPS is a registered trademark of the
   Naval Research Laboratory.
 
+     COAMPS microphysics is not distributed with the code outside of UWM
+  because of licensing restrictions.
+
 ------------------------------------------------------------------------
-- (3.1) The new scalar code ( HOC with -DSCALARS enabled )
+- (3.1) The passive scalar code
 ------------------------------------------------------------------------
 
+The CLUBB code can be run with additional non-interactive scalars.
 The scalars in the code provide a generalized way of simulating a 
-passive scalar in the atmosphere.
+passive scalar in the atmosphere (e.g. carbon dioxide) 
 
-By default HOC should be setup to compile without this option.  To use 
-this option, you must modify the Makefile in the src directory so that 
-FCFLAGS includes "-DSCALARS", and then do a make clean, and then make.  
-To output the scalar fields from a HOC simulation, be sure to include 
-them in the appropriate stats/*_stats.in file.
+By default CLUBB should be setup to run without any passive scalars.  To use 
+this option, you must modify the input/case_setups/<CASE>_model.in
+so that sclr_dim is equal to the number of passive scalars and also set 
+ii<SCALAR NAME> to point the index in the array containing the passive scalar.
+The intial sounding can be done at run time in this file, but large scale
+forcing and surface fluxes for these passive scalars must be configured
+in the clubb_driver code and handled at compile time.
+To output the scalar fields from a CLUBB simulation, be sure to include 
+sclram, sclrap2, etc. your stats file. See input/stats/all_stats.in for a
+complete list (commented out).
 
-Currently the code contains eddy-diffusivity scalar code and the more complex
-code used in diag_var(), closure_new(), and timestep_mixing().  Both use two
+Currently the code contains eddy-diffusivity scalar code (edsclram, edsclrbm)
+and the more sophisticated high-order scalars (sclram, sclrbm).  Both use two
 dimensional arrays, but the code and results for each is separated.
 
-Initially, the sclr arrays are configured to contain two vertical columns
-containing copies of thl and rt (the first and second elements, respectively).
+Initially, the scalar arrays were configured to contain two vertical columns
+containing copies of thl and rt.
 The code is sufficiently general that an arbitrary number of scalars can be
-added with a small number of modifications.  The following files must be
-adjusted to customize the scalars:
+added with a small number of modifications.
+The following files must be adjusted to customize the scalars:
 
-constants.F:  sclrm_dimension is the number of scalars per array and sclrtol 
-is used used in the code to diagnose variances. (see diag_var.F for the
-algorithm used).
-
-hoc.F & parameterization_interface.F:  
-The boundary conditions, while fairly general, are setup for thl
-in some places as is noted in the code.  Search for SCLR_THETA and SCLR_RT to
-find places where the code is not general for both cases.
-
-mixing.F:  When timestep_mixing calls mixing_solve, it needs an argument that
-indicates the correct equation to use.  This relies on a case statement within
-mixing_solve, and should be easy to add to as needed. Calling the "rtm" and 
-"thlm" cases more than once each will cause sampling errors in some of the
-budget terms.  Currently budget terms are not setup for rtm/thlm or the
-sclr.
-
-statistics.F:  Currently it is only configured to generate data for 2 elements 
-for each of the sclr arrays.  Adding more will probably take some time.
-
-sfc.F:  sfc_var has a peculiar constant factor used for calculations on rt
-and thl.  Commenting out the case statement in that subroutine will disable 
-this for a new sclr element.
-The other subroutine, sfc_thermo_fluxes, only affects the fire case and just
-requires a small modification to change its influence on sclrm, found on the
-lines that begin with the "if ( present ( sclrm )" statements.
-
-gcss.F: All the cases that you wish to run will require a modification to the
-tndcy and sfclyr subroutines, since they will be configured for thl and rt by
-default.  Searching for SCLR_RT and SCLR_THETA should locate the code for all 
-of them.
-
-All the other source files should work as is.
-
-The edsclrs are only computed in subroutine update().
+stats_variables.F:  Currently it is only configured to generate data for 
+2 elements for each of the sclr arrays.  Using the sclra and sclrb variables
+as a template, it should be possible to add additional variables (sclrc, etc.)
+without any issues.
 
 The Namelists:
 

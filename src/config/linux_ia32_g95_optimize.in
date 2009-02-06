@@ -1,4 +1,4 @@
-# $Id: linux_ia32_g95_optimize.in,v 1.7 2008-07-30 19:17:36 dschanen Exp $
+# $Id$
 # Configuration file for Linux machine using g95
 # An MS Windows machine with MSYS should be similar
 
@@ -38,7 +38,7 @@ ARCH = -march=k8 -msse3 -mfpmath=sse         # New Opterons
 # == Optimization ==
 # These are all pretty conservative options. Check your compiler manual
 # for information on using more aggressive techniques (inlining, etc.)
-OPTIMIZE = -O2
+OPTIMIZE = -O3
 
 # == NetCDF Location ==
 #NC_LOC = $(HOME)/netcdf-3.6.1
@@ -52,18 +52,18 @@ LAPACK = -L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas 
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
 # Use -Wl,-rpath <library path> to set a search path for shared libs
-LDFLAGS = -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf $(LAPACK)
+LDFLAGS = -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lclubb_param -lclubb_bugsrad -L$(NC_LOC)/lib -lnetcdf $(LAPACK)
 
 # == Compiler flags (all) ==
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
-#   -DCOAMPS_MICRO enables COAMPS microphysics scheme
-#   -DTUNER enables the tuning application
+#    enables COAMPS microphysics scheme
+#    enables the tuning application
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
 
-FCFLAGS = $(ARCH) $(DEBUG) $(OPTIMIZE) -DNETCDF -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+FCFLAGS = $(ARCH) $(DEBUG) $(OPTIMIZE) -DNETCDF -Dnooverlap -Dradoffline -I$(NC_LOC)/include
 
 # == Static library processing ==
 AR = ar

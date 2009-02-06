@@ -1,4 +1,4 @@
-# $Id: linux_ia32_absoft.in,v 1.3 2008-07-30 19:17:36 dschanen Exp $
+# $Id$
 # Configuration file for Linux machine using Absoft Fortran
 
 # == Paths ==
@@ -38,19 +38,19 @@ LAPACK = -L$(ACML_DIR)/gfortran64/lib -Wl,-rpath,$(ACML_DIR)/gfortran64/lib -lac
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
 # Use -Wl,-rpath <library path> to set a search path for shared libs
-LDFLAGS = -lU77 -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lhoc_param -lhoc_bugsrad $(LAPACK)
+LDFLAGS = -lU77 -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lclubb_param -lclubb_bugsrad $(LAPACK)
 
 # == Compiler flags (all) ==
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
-#   -DCOAMPS_MICRO enables COAMPS microphysics scheme
-#   -DTUNER enables the tuning application
+#    enables COAMPS microphysics scheme
+#    enables the tuning application
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
 
-FCFLAGS = $(ARCH) $(DEBUG) -DAbsoftUNIXFortran -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline
-#FCFLAGS = $(ARCH) $(OPTIMIZE) -DAbsoftUNIXFortran -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline
+FCFLAGS = $(ARCH) $(DEBUG) -DAbsoftUNIXFortran   -Dnooverlap -Dradoffline
+#FCFLAGS = $(ARCH) $(OPTIMIZE) -DAbsoftUNIXFortran   -Dnooverlap -Dradoffline
 
 # == Static library processing ==
 AR = ar

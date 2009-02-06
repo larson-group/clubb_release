@@ -1,4 +1,4 @@
-# $Id: solaris_generic_ss12_debug.in,v 1.6 2008-07-30 19:17:37 dschanen Exp $
+# $Id$
 # Makefile definitions for Sun Studio's Fortran compiler
 
 # == Paths ==
@@ -45,13 +45,13 @@ OPTIMIZE = -g -xO3 -xvector=simd -ftrap=%none
 # == Compiler flags (all) ==
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
-#   -DCOAMPS_MICRO enables COAMPS microphysics scheme
-#   -DTUNER enables the tuning application
+#    enables COAMPS microphysics scheme
+#    enables the tuning application
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
 # Use -M<include path> to set a module file directory
-FCFLAGS = $(DEBUG) $(ARCH)   -DNETCDF -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline -M$(NC_LOC)/include
-#FCFLAGS = $(OPTIMIZE) $(ARCH)   -DTUNER -DCOAMPS_MICRO -DNETCDF -Dnooverlap -Dradoffline -M$(NC_LOC)/include
+FCFLAGS = $(DEBUG) $(ARCH)   -DNETCDF   -Dnooverlap -Dradoffline -M$(NC_LOC)/include
+#FCFLAGS = $(OPTIMIZE) $(ARCH)     -DNETCDF -Dnooverlap -Dradoffline -M$(NC_LOC)/include
 #FCFLAGS = $(OPTIMIZE) $(ARCH) -M$(NC_LOC)/include
 
 
@@ -66,7 +66,7 @@ LAPACK = -xlic_lib=sunperf
 # Use -s to strip (no debugging); 
 # -Bstatic; for static linking of libraries
 # -xlibmopt; link the optimized version of libm (this can affect results)
-LDFLAGS = -L$(LIBDIR) -R$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf -xlibmopt $(LAPACK)
+LDFLAGS = -L$(LIBDIR) -R$(LIBDIR) -lclubb_param -lclubb_bugsrad -L$(NC_LOC)/lib -lnetcdf -xlibmopt $(LAPACK)
 
 # == Static library processing ==
 AR = ar

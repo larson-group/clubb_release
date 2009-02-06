@@ -1,0 +1,194 @@
+! $Id$
+! Parameter file for Wangara day 33 dry convective boundary layer
+! Observed soundings
+
+&model_setting
+
+! Model Settings
+
+runtype = "wangara" ! Case name.
+
+nzmax = 50        ! Number of vertical levels.
+
+grid_type = 1     ! Select grid type:
+                  ! 1 ==> evenly-spaced grid levels.
+                  ! 2 ==> stretched (unevenly-spaced) grid
+                  !       entered on thermodynamic grid levels;
+                  !       mom. levels halfway between thermo. levels
+                  !       (style of SAM stretched grid).
+                  ! 3 ==> stretched (unevenly-spaced) grid
+                  !       entered on momentum grid levels;
+                  !       thermo. levels halfway between mom. levels
+                  !       (style of WRF stretched grid).
+
+! Evenly-spaced grid (grid_type = 1).
+! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
+deltaz  = 40.0    ! Distance between grid levels on evenly-spaced grid.      [m]
+zm_init = 0.0     ! Altitude of lowest momentum level on evenly-spaced grid. [m]
+
+! Stretched grid on thermodynamic levels (grid_type = 2).
+! Path (from ../standalone/) and filename of data file that contains
+! thermodynamic level altitudes (in meters).
+! Note:  For this option, zm_grid_fname must be ''.
+zt_grid_fname = ''
+
+! Stretched grid on momentum levels (grid_type = 3).
+! Path (from ../standalone/) and filename to data file that contains
+! momentum level altitudes (in meters).
+! Note:  For this option, zt_grid_fname must be ''.
+zm_grid_fname = ''
+
+day   = 15    ! Day of model start (1 to 31).
+month = 8     ! Month of model start (1 to 12).
+year  = 1967  ! Year of model start.
+
+! Note: this is the isocenter of Hay, Toogimbie, & Burrabogie
+rlat = -34.6       ! Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [degrees]
+rlon = 145.072222  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees]
+
+time_initial = 82800.0  ! Model start time [seconds since midnight on start date]
+time_final = 111600.0   ! Model end time [seconds since midnight on start date]
+time_spinup = 82800.0   ! End of spin-up period [seconds since midnight on start date]
+
+dtmain    = 60.0   ! Model timestep [s]
+dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
+
+sfctype = 1      ! Select surface scheme (cases without specified surface fluxes).
+                 ! 0 ==> fixed surface sensible and latent heat fluxes,
+                 !       as defined by SE and LE, respectively.
+                 ! 1 ==> determine surface sensible and latent heat fluxes
+                 !       through a bulk formula that uses the given surface
+                 !       temperature (Tsfc) and assumes over ocean.
+
+Tsfc = 276.88     ! Temperature at model base           [K]
+psfc = 1023.e2    ! Pressure at model base              [Pa]
+SE = 0.0          ! Fixed surface sensible heat flux    [K m/s]
+LE = 0.0          ! Fixed surface latent heat flux      [(kg/kg) m/s]
+
+fcor = -8.21e-5   ! Coriolis parameter                  [s^-1]
+T0   = 300.       ! Reference temperature (usually 300) [K]
+
+sol_const = 1367.0 ! Solar Constant [W/m^2]
+
+std_atmos_buffer = 10
+
+! Albedo values (for BugsRad Only)
+alvdr = 0.1d0    ! Visible direct surface albedo        [-]
+alvdf = 0.1d0    ! Visible diffuse surface albedo       [-]
+alndr = 0.1d0    ! Near-IR direct surface albedo        [-]
+alndf = 0.1d0    ! Near-IR diffuse surface albedo       [-]
+
+l_cloud_sed     = .false.  ! Flag for cloud water sedimentation.
+l_kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
+l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
+l_icedfs       = .false.  ! Flag for simplified ice scheme.
+l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
+l_tke_aniso    = .true.   ! Flag for anisotropic tke.
+
+l_restart      = .false.  ! Flag for whether this is a restart run.
+! Path (from ../standalone/) and filename of GrADS control files
+! (without '_zt.ctl' or '_zm.ctl').
+restart_path_case  = "restart/wangara"
+time_restart  = 0.0      ! Time of model restart.
+                         ! [seconds since start time listed in GrADS control file]
+
+! Select debug level:
+!        0 => Print no debug messages to the screen
+!        1 => Print lightweight debug messages, e.g. print statements
+!        2 => Print debug messages that require extra testing,
+!                e.g. checks for NaNs and spurious negative values.
+debug_level   = 2
+
+/
+
+&stats_setting
+
+! Statistics Settings
+
+l_stats       = .true.     ! Flag for statistical output.
+fname_prefix = "wangara"  ! Prefix of output filename.
+stats_tsamp  = 60.        ! Frequency of statistical sampling [s]
+                          ! (must multiply evenly into stats_tout).
+stats_tout   = 60.        ! Frequency of statistical output.  [s]
+stats_fmt    = "grads"    ! Type of statistical output file (GrADS or netCDF).
+/
+
+&sounding
+
+! Initial sounding
+
+! Number of sounding points
+nlevels = 31
+
+! Altitudes at which sounding points are located   [m]
+z =    0,   50,  100,  150,  200,  250,  300,  350,  400,  450,
+     500,  550,  600,  650,  700,  750,  800,  850,  900,  950,
+    1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900,
+    2000
+
+! Either potential temperature or liquid water potential temperature,
+!   depending on source code in hoc_initialize.   [K]
+theta = 276.85,  276.91,  277.68,  279.83,  280.81,  281.40,  281.68,  281.97,
+        282.07,  282.06,  281.97,  281.97,  281.87,  281.87,  281.98,  282.29,
+        282.62,  282.84,  283.06,  283.19,  283.62,  284.72,  285.42,  285.92,
+        287.17,  288.34,  288.89,  289.56,  290.57,  290.95,  291.02
+
+! Total water mixing ratio = vapor + cloud water, but not ice   [kg/kg]
+rt = 0.0042, 0.0037, 0.0035, 0.0038, 0.0038, 0.0038, 0.0037, 0.0036, 
+     0.0035, 0.0034, 0.0033, 0.0032, 0.0032, 0.0031, 0.0029, 0.0027, 
+     0.0025, 0.0023, 0.0022, 0.0021, 0.0020, 0.0018, 0.0015, 0.0012, 
+     0.0008, 0.0010, 0.0008, 0.0007, 0.0007, 0.0007, 0.0006
+
+! East-west wind component   [m/s]
+u =  0.00, -2.84, -2.92, -2.90, -2.79, -2.79, -3.12, -3.39, -3.20, -2.87
+    -2.49, -2.66, -2.79, -2.68, -2.43, -2.42, -2.45, -2.41, -2.28, -2.29
+    -2.55, -2.29, -1.93, -2.10, -1.45, -1.20, -1.19, -1.49, -0.70,  0.05
+     0.50
+
+! North-south wind component   [m/s]
+v =  0.00,  0.03, -0.38, -0.62, -0.57, -0.51, -0.51, -0.53, -0.47, -0.44
+    -0.37, -0.30, -0.26, -0.24, -0.35, -0.44, -0.48, -0.62, -0.76, -0.91
+    -1.16, -1.41, -0.90, -0.28,  0.07,  0.09,  0.26,  1.15,  1.72,  1.47
+     1.10
+
+! East-west geostrophic wind component   [m/s]
+ug = -5.50, -5.36, -5.21, -5.07, -4.92, -4.78, -4.63, -4.49, -4.34,
+     -4.19, -4.05, -3.90, -3.76, -3.61, -3.47, -3.32, -3.18, -3.03,
+     -2.89, -2.74, -2.60, -2.46, -2.32, -2.18, -2.04, -1.90, -1.76,
+     -1.62, -1.48, -1.34, -1.20
+
+! North-south geostrophic wind component   [m/s]
+vg = 0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,
+     0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,
+     0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,
+     0.00,  0.00,  0.00,  0.00
+
+/
+
+&scalar_sounding
+
+! Initial sounding for passive scalars
+
+! Passive scalars computed using higher-order closure
+! sclra is set to thlm in the example below.
+sclr(:,1) = 276.85, 276.91, 277.68, 279.83, 280.81, 281.40, 281.68, 281.97,
+            282.07, 282.06, 281.97, 281.97, 281.87, 281.87, 281.98, 282.29,
+            282.62, 282.84, 283.06, 283.19, 283.62, 284.72, 285.42, 285.92,
+            287.17, 288.34, 288.89, 289.56, 290.57, 290.95, 291.02
+! sclrb is set to rtm in the example below.
+sclr(:,2) = 0.0042, 0.0037, 0.0035, 0.0038, 0.0038, 0.0038, 0.0037, 0.0036, 
+     0.0035, 0.0034, 0.0033, 0.0032, 0.0032, 0.0031, 0.0029, 0.0027, 
+     0.0025, 0.0023, 0.0022, 0.0021, 0.0020, 0.0018, 0.0015, 0.0012, 
+     0.0008, 0.0010, 0.0008, 0.0007, 0.0007, 0.0007, 0.0006
+
+! Passive scalars computed using eddy diffusivity
+edsclr(:,1) = 276.85, 276.91, 277.68, 279.83, 280.81, 281.40, 281.68, 281.97,
+            282.07, 282.06, 281.97, 281.97, 281.87, 281.87, 281.98, 282.29,
+            282.62, 282.84, 283.06, 283.19, 283.62, 284.72, 285.42, 285.92,
+            287.17, 288.34, 288.89, 289.56, 290.57, 290.95, 291.02
+edsclr(:,2) = 0.0042, 0.0037, 0.0035, 0.0038, 0.0038, 0.0038, 0.0037, 0.0036, 
+     0.0035, 0.0034, 0.0033, 0.0032, 0.0032, 0.0031, 0.0029, 0.0027, 
+     0.0025, 0.0023, 0.0022, 0.0021, 0.0020, 0.0018, 0.0015, 0.0012, 
+     0.0008, 0.0010, 0.0008, 0.0007, 0.0007, 0.0007, 0.0006
+
+/
