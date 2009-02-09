@@ -1,5 +1,5 @@
 ! Parameter file for subroutine tuner_init in there error module. 
-! All parameters are used by amoeba or amebsa to "tune" hoc.
+! All parameters are used by amoeba or amebsa to "tune" CLUBB.
 
 ! ftol is the degree of accuracy in "tuning" (i.e. the # of digits)
 ! l_results_stdout print all results of tuning to the terminal if true
@@ -11,13 +11,13 @@
 !   or any other integer for amebsa(downhill simplex with simulated annealing)
 
 ! Setting t_variables:
-! Most variables are named in the same fashion in both HOC and LES, but
+! Most variables are named in the same fashion in both CLUBB and LES, but
 !   because some are not they must be specified as an ordered pair of strings.
 
-! Known values of hoc_v and les_v for some variables are listed in the 
+! Known values of the CLUBB variables and LES variables are listed in the 
 ! following table:
 !  Variables
-!  HOC	 | LES
+!  CLUBB | COAMPS-LES
 !  ------------
 !  cf	 | cf
 !  rcm   | qcm

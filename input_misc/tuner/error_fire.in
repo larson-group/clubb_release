@@ -1,6 +1,6 @@
 ! $Id: error_fire.in,v 1.20 2008-04-30 23:12:48 dschanen Exp $
 ! Parameter file for subroutine tuner_init in there error module. 
-! All parameters are used by amoeba or amebsa to "tune" hoc.
+! All parameters are used by amoeba or amebsa to "tune" CLUBB.
 
 ! ftol is the degree of accuracy in "tuning" (i.e. the # of digits)
 ! l_results_stdout print all results of tuning to the terminal if true
@@ -12,13 +12,13 @@
 !   or any other integer for amebsa(downhill simplex with simulated annealing)
 
 ! Setting t_variables:
-! Most variables are named in the same fashion in both HOC and LES, but
+! Most variables are named in the same fashion in both CLUBB and LES, but
 !   because some are not they must be specified as an ordered pair of strings.
 
-! Known values of hoc_v and les_v for some variables are listed in the 
+! Known values of the CLUBB variables and LES variables are listed in the 
 ! following table:
 !  Variables
-!  HOC	 | LES
+!  CLUBB | COAMPS-LES
 !  ------------
 !  cf	 | cf
 !  rlm   | qcm
@@ -34,7 +34,7 @@
 !  Key variables for UWM: qcm/rlm, cf, rtm/qtm, thlm, um, vm, wp3
 
 &stats
-ftol              = 1.0,
+ftol              = 0.05,
 l_results_stdout    = .true.,
 l_results_file      = .true.,
 l_stdout_on_invalid = .true.,
@@ -96,7 +96,7 @@ C11c        = 0.500000 ! Degree of Slope of C11 Skewness Function. From Golaz.
 C12         = 1.000000 ! Constant applied to vertical velocity diffusion.
 C13         = 0.100000 ! Not currently used in model.
 C14         = 1.000000 ! Constant applied to up2 and vp2.
-!c_K         = 0.548000 ! From Duynkerke and Driedonks (1987).
+!c_K        = 0.548000 ! From Duynkerke and Driedonks (1987).
 c_K         = 0.200000 ! Tuned by Michael Falk for new wp2 formulation.
 c_K1        = 0.000000 ! Coefficient of Eddy Diffusion for wp2.
 nu1         = 20.00000 ! Background Coefficient of Eddy Diffusion for wp2.
@@ -107,7 +107,7 @@ nu6         = 5.000000 ! Background Coefficient of Eddy Diffusion for wpxp.
 c_K8        = 0.500000 ! Coefficient of Eddy Diffusion for wp3.
 nu8         = 20.00000 ! Background Coefficient of Eddy Diffusion for wp3.
 nu9         = 20.00000 ! Coefficient of Eddy Diffusion for up2 and vp2.
-c_Krrainm      = 0.075000 ! Coefficient of Eddy Diffusion for hydrometeors.
+c_Krrainm   = 0.075000 ! Coefficient of Eddy Diffusion for hydrometeors.
 nu_r        = 3.000000 ! Background Coefficient of Eddy Diffusion for hydrometeors.
 c_Ksqd      = 10.00000 ! Constant for scaling effect of value-squared diffusion.
 beta        = 1.750000 ! Constant from Chris Golaz.
@@ -124,7 +124,7 @@ mu          = 6.000E-4 ! Constant from Chris Golaz.
 ! Parameter * ( (1 - spread) + rannum * spread * 2 )
 ! thus a spread of 0 will keep a constant static through the run
 &initspread
-C1          = 1.
+C1          = 0.41
 C1b         = 0.
 C1c         = 0.
 C2rt        = 0.
@@ -141,13 +141,13 @@ C6rtc       = 0.
 C6thl       = 0.
 C6thlb      = 0.
 C6thlc      = 0.
-C7          = 0.
+C7          = 0.41
 C7b         = 0.
 C7c         = 0.
 C8          = 0.
 C8b         = 0.
 C10         = 0.
-C11         = 0.
+C11         = 0.41
 C11b        = 0.
 C11c        = 0.
 C12         = 0.
@@ -163,7 +163,7 @@ nu6         = 0.
 c_K8        = 0.
 nu8         = 0.
 nu9         = 0.
-c_Krrainm      = 0.
+c_Krrainm   = 0.
 nu_r        = 0.
 c_Ksqd      = 0.
 beta        = 0.
