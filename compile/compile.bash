@@ -34,20 +34,30 @@
 # aren't available due to licensing restrictions.
 # ------------------------------------------------------------------------------
 
+if [ -z $1 ]; then
+	# Set using the default config flags
+
+	CONFIG=./config/linux_ia32_g95_optimize.bash
+#	CONFIG=/home/cjg/clubb/clubb_dev/scripts/config/gfdl_wks.bash
+#	CONFIG=./config/linux_ia32_pg.bash
+#	CONFIG=./config/linux_ia32_absoft.bash
+#	CONFIG=./config/linux_ia32_g95_debug.bash
+#	CONFIG=./config/linux_ia32_ss12_debug.bash
+#	CONFIG=./config/linux_ia32_ss12_optimize.bash
+#	CONFIG=./config/linux_ia32_ifort.bash
+#	CONFIG=./config/linux_ia32_gfortran.bash
+#	CONFIG=./config/linux_ia64_ifort.bash
+#	CONFIG=./config/osf1_alpha_digital.bash
+#	CONFIG=./config/solaris_generic_ss12.bash
+else
+	# Set config based on the first argument given to compile.bash
+
+	CONFIG=$1
+fi
+
 # Load desired configuration file
 
-#source /home/cjg/clubb/clubb_dev/scripts/config/gfdl_wks.bash
-#source ./config/linux_ia32_pg.bash
-#source ./config/linux_ia32_absoft.bash
-#source ./config/linux_ia32_g95_debug.bash
-source ./config/linux_ia32_g95_optimize.bash
-#source ./config/linux_ia32_ss12_debug.bash
-#source ./config/linux_ia32_ss12_optimize.bash
-#source ./config/linux_ia32_ifort.bash
-#source ./config/linux_ia32_gfortran.bash
-#source ./config/linux_ia64_ifort.bash
-#source ./config/osf1_alpha_digital.bash
-#source ./config/solaris_generic_ss12.bash
+source $CONFIG
 
 # ------------------------------------------------------------------------------
 # Append preprocessor flags as needed
