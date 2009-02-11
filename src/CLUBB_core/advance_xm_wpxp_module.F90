@@ -388,11 +388,12 @@ module advance_xm_wpxp_module
         return
       endif
 
-      call xm_wpxp_clipping_and_stats( "rtm", dt, wp2, rtp2, wm_zt,  &    ! Intent(in)
-                                       rtm_forcing, rttol**2, rcond,  &   ! Intent(in)
-                                       low_lev_effect, high_lev_effect, & ! Intent(in)
-                                       l_implemented, solution(:,1), &    ! Intent(in)
-                                       rtm, wprtp )                       ! Intent(inout)
+      call xm_wpxp_clipping_and_stats &
+           ( "rtm", dt, wp2, rtp2, wm_zt,  &        ! Intent(in)
+             rtm_forcing, rttol**2, rttol, rcond, & ! Intent(in)
+             low_lev_effect, high_lev_effect, &     ! Intent(in)
+             l_implemented, solution(:,1), &        ! Intent(in)
+             rtm, wprtp )                           ! Intent(inout)
 
       ! Compute the upper and lower limits of w'th_l' at every level,
       ! based on the correlation of w and th_l, such that:
@@ -434,11 +435,12 @@ module advance_xm_wpxp_module
         return
       endif
 
-      call xm_wpxp_clipping_and_stats( "thlm", dt, wp2, thlp2, wm_zt,  &  ! Intent(in)
-                                       thlm_forcing, thltol**2, rcond,  & ! Intent(in)
-                                       low_lev_effect, high_lev_effect, & ! Intent(in)
-                                       l_implemented, solution(:,1),  &   ! Intent(in)
-                                       thlm, wpthlp )                     ! Intent(inout)
+      call xm_wpxp_clipping_and_stats &
+           ( "thlm", dt, wp2, thlp2, wm_zt,  &        ! Intent(in)
+             thlm_forcing, thltol**2, rttol, rcond, & ! Intent(in)
+             low_lev_effect, high_lev_effect, &       ! Intent(in)
+             l_implemented, solution(:,1),  &         ! Intent(in)
+             thlm, wpthlp )                           ! Intent(inout)
 
       ! Solve sclrm / wpsclrp
       ! If sclr_dim is 0, then this loop will execute 0 times.
@@ -479,12 +481,13 @@ module advance_xm_wpxp_module
           return
         endif
 
-        call xm_wpxp_clipping_and_stats( "scalars", dt, wp2, sclrp2(:,i),  & ! Intent(in)
-                                         wm_zt, sclrm_forcing(:,i),  &       ! Intent(in)
-                                         sclrtol(i)**2, rcond, &             ! Intent(in)
-                                         low_lev_effect, high_lev_effect, &  ! Intent(in)
-                                         l_implemented, solution(:,1),  &    ! Intent(in)
-                                         sclrm(:,i), wpsclrp(:,i) )          ! Intent(inout)
+        call xm_wpxp_clipping_and_stats &
+             ( "scalars", dt, wp2, sclrp2(:,i),  & ! Intent(in)
+               wm_zt, sclrm_forcing(:,i),  &       ! Intent(in)
+               sclrtol(i)**2, sclrtol(i), rcond, & ! Intent(in)
+               low_lev_effect, high_lev_effect, &  ! Intent(in)
+               l_implemented, solution(:,1),  &    ! Intent(in)
+               sclrm(:,i), wpsclrp(:,i) )          ! Intent(inout)
 
       enddo ! passive scalars
 
@@ -539,25 +542,28 @@ module advance_xm_wpxp_module
         return
       endif
 
-      call xm_wpxp_clipping_and_stats( "rtm", dt, wp2, rtp2, wm_zt,  &    ! Intent(in)
-                                       rtm_forcing, rttol**2, rcond,  &   ! Intent(in)
-                                       low_lev_effect, high_lev_effect, & ! Intent(in)
-                                       l_implemented, solution(:,1),  &   ! Intent(in)
-                                       rtm, wprtp )                       ! Intent(inout)
+      call xm_wpxp_clipping_and_stats &
+           ( "rtm", dt, wp2, rtp2, wm_zt,  &        ! Intent(in)
+             rtm_forcing, rttol**2, rttol, rcond, & ! Intent(in)
+             low_lev_effect, high_lev_effect, &     ! Intent(in)
+             l_implemented, solution(:,1),  &       ! Intent(in)
+             rtm, wprtp )                           ! Intent(inout)
 
-      call xm_wpxp_clipping_and_stats( "thlm", dt, wp2, thlp2, wm_zt,  &  ! Intent(in)
-                                       thlm_forcing, thltol**2, rcond,  & ! Intent(in)
-                                       low_lev_effect, high_lev_effect, & ! Intent(in)
-                                       l_implemented, solution(:,2),  &   ! Intent(in)
-                                       thlm, wpthlp )                     ! Intent(inout)
+      call xm_wpxp_clipping_and_stats &
+           ( "thlm", dt, wp2, thlp2, wm_zt,  &        ! Intent(in)
+             thlm_forcing, thltol**2, rttol, rcond, & ! Intent(in)
+             low_lev_effect, high_lev_effect, &       ! Intent(in)
+             l_implemented, solution(:,2),  &         ! Intent(in)
+             thlm, wpthlp )                           ! Intent(inout)
 
       do i = 1, sclr_dim, 1
-        call xm_wpxp_clipping_and_stats( "scalars", dt, wp2, sclrp2(:,i),  & ! Intent(in)
-                                         wm_zt, sclrm_forcing(:,i),  &       ! Intent(in)
-                                         sclrtol(i)**2, rcond, &             ! Intent(in)
-                                         low_lev_effect, high_lev_effect, &  ! Intent(in)
-                                         l_implemented, solution(:,2+i),  &  ! Intent(in)
-                                         sclrm(:,i), wpsclrp(:,i) )          ! Intent(inout)
+        call xm_wpxp_clipping_and_stats &
+             ( "scalars", dt, wp2, sclrp2(:,i), wm_zt,  & ! Intent(in)
+               sclrm_forcing(:,i), sclrtol(i)**2, sclrtol(i), rcond, & ! Intent(in)
+               low_lev_effect, high_lev_effect, &  ! Intent(in)
+               l_implemented, solution(:,2+i),  &  ! Intent(in)
+               sclrm(:,i), wpsclrp(:,i) )          ! Intent(inout)
+
       enddo ! 1..sclr_dim
 
     endif ! l_clip_semi_implicit .and. l_3pt_sqd_dfsn
@@ -1453,11 +1459,12 @@ module advance_xm_wpxp_module
   end subroutine xm_wpxp_solve
 
 !===============================================================================
-  subroutine xm_wpxp_clipping_and_stats( solve_type, dt, wp2, xp2, wm_zt,  &
-                                         xm_forcing, xp2_threshold, rcond,  &
-                                         low_lev_effect, high_lev_effect, &
-                                         l_implemented, solution,  &
-                                         xm, wpxp )
+  subroutine xm_wpxp_clipping_and_stats &
+             ( solve_type, dt, wp2, xp2, wm_zt,  &
+               xm_forcing, xp2_threshold, xm_threshold, rcond,  &
+               low_lev_effect, high_lev_effect, &
+               l_implemented, solution,  &
+               xm, wpxp )
 
     ! Description:
     ! Clips and computes implicit stats for an artitrary xm and wpxp
@@ -1490,8 +1497,7 @@ module advance_xm_wpxp_module
         l_clip_turb_adv ! Logical for whether to clip xm when wpxp is clipped
 
     use constants, only: &
-      zero_threshold, & ! Quantity that cannot be lower than 0
-      fstderr
+      fstderr ! Standard error i/o unit
 
     use fill_holes, only: &
       fill_holes_driver ! Procedure
@@ -1580,6 +1586,7 @@ module advance_xm_wpxp_module
 
     real, intent(in) :: &
       xp2_threshold, & ! Minimum allowable value of x'^2   [units vary]
+      xm_threshold,  & ! Minimum allowable value of xm     [units vary]
       rcond ! Reciprocal of the estimated condition number (from computing A^-1)
 
     ! Variables used as part of the monotonic turbulent advection scheme.
@@ -1860,19 +1867,20 @@ module advance_xm_wpxp_module
     end if
 
 
-    if ( any( xm < zero_threshold ) .and. l_hole_fill ) then
+    if ( any( xm < xm_threshold ) .and. l_hole_fill ) then
 
       if ( clubb_at_least_debug_level( 1 ) ) then
         do k = 1, gr%nnzp
           if ( xm(k) < 0.0 ) then
-            write(fstderr,*) "Negative "//solve_type//" in advance_xm_wpxp_module at k= ", k
+            write(fstderr,*) solve_type//" < ", xm_threshold, &
+              " in advance_xm_wpxp_module at k= ", k
           end if
         end do
       end if
 
-      call fill_holes_driver( 2, zero_threshold, "zt", xm )
+      call fill_holes_driver( 2, xm_threshold, "zt", xm )
 
-    end if !  any( xm < zero_threshold ) .and. l_hole_fill
+    end if !  any( xm < xm_threshold ) .and. l_hole_fill
 
     if ( l_stats_samp ) then
       call stat_end_update( ixm_cl, real( xm / dt ), & ! Intent(in) 
