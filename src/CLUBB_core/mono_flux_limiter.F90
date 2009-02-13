@@ -352,6 +352,8 @@ module mono_flux_limiter
       iwpxp_mfl,  &
       ixm_mfl
 
+    ! Default Initialization required due to G95 compiler warning
+    max_xp2 = 0.0
 
     select case( trim( solve_type ) )
     case ( "rtm" )  ! rtm/wprtp
