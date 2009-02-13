@@ -27,11 +27,14 @@ ARCH="-xW" # This should work on carson/steele (AMD Opteron)
 OPTIMIZE="-O3"
 
 # == NetCDF Location ==
-NETCDF="/usr/local/netcdf-intel"
+NETCDF="/usr/local/netcdf-intel64"
 
 # == LAPACK libraries ==
+# Intel Math Kernel Library (v11)
+MKLPATH="/opt/intel/Compiler/11.0/081/mkl/lib/em64t"
 # Intel Math Kernel Library (v10)
-LAPACK="-L/opt/intel/mkl/10.0.5.025/lib/em64t -Wl,-rpath,/opt/intel/mkl/10.0.5.025/lib/em64t -lmkl_intel_lp64 -lmkl_sequential -lmkl_lapack -lmkl_core -lguide -lpthread"
+#MKLPATH=/opt/intel/mkl/10.0.5.025/lib/em64t 
+LAPACK="-L$MKLPATH -Wl,-rpath,$MKLPATH -lmkl_intel_lp64 -lmkl_sequential -lmkl_lapack -lmkl_core -lguide -lpthread"
 # (v8)
 #LAPACK="-L/opt/intel/mkl/8.1/lib/64 -Wl,-rpath,/opt/intel/mkl/8.1/lib/64 -lmkl_lapack64 -lmkl_i2p -lmkl -lmkl_vml_i2p -lmkl_vml -lvml -lguide -lpthread"
 # Generic library
