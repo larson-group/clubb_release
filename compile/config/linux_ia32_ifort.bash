@@ -73,5 +73,5 @@ SHAREDFLAGS="-fPIC -shared"
 mkmf=$dir/mkmf
 
 # gmake command to use and options: '-j 2' enables parallel compilation
-gmake="gmake -j 2"
+gmake="make -j 2"
 
