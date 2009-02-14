@@ -1165,16 +1165,16 @@ module error
 
   ! Input
   character(len=*), intent(in) ::  & 
-  seed_file ! This should usually contain > 34 integers
+    seed_file ! This should usually contain >= 34 integers
 
   ! Local Variables
-  integer(kind=4), dimension(:), allocatable ::  & 
-  rand_seed  ! Set of 32 bit integers for seeding the generator
+  integer, dimension(:), allocatable ::  & 
+    rand_seed  ! Set of 32 bit integers for seeding the generator
 
-  integer ::  & 
-  AllocateStatus, & 
-  InputStatus, & 
-  rand_size ! For the random seed
+  integer :: & 
+    AllocateStatus, & 
+    InputStatus, & 
+    rand_size ! For the random seed
 
 !-----------------------------------------------------------------------
 
