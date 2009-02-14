@@ -18,7 +18,7 @@ module inputfile_class
 !       * Overloaded subroutine get_var to allow for 8 byte real output.
 !       * Added preprocesing for RECL 
 !-----------------------------------------------------------------------
-#include "recl.F90"
+#include "recl.inc"
 use endian, only: & 
     little_endian,  & ! Procedure(s)
     big_endian, & 

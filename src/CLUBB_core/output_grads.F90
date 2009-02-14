@@ -452,7 +452,7 @@ module output_grads
 
   if ( f%nvar < 1 ) return
 
-#include "../recl.F90"
+#include "../recl.inc"
 
   ! Output data to file
   open( unit=f%iounit, & 

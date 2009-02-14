@@ -47,7 +47,7 @@ microphys_driver.o : constants.o model_flags.o lapack_wrap.o \
 	KK_microphys_module.o coamps_micro_driver.o parameters_tunable.o \
 	stats_variables.o stats_type.o error_code.o \
         ice_dfsn_mod.o diffusion.o array_index.o microphys_driver.F90 
-output_grads.o	: constants.o recl.F90 endian.o output_file_module.o calendar.o \
+output_grads.o	: constants.o recl.inc endian.o output_file_module.o calendar.o \
 	output_grads.F90
 output_netcdf.o	: constants.o calendar.o parameters_tunable.o \
 	parameters_model.o output_file_module.o output_netcdf.F90
@@ -55,7 +55,7 @@ variables_diagnostic_module.o: constants.o parameters_model.o grid.o model_flags
 variables_prognostic_module.o: constants.o parameters_model.o grid.o model_flags.o variables_prognostic_module.F90 
 numer_check.o	: variables_prognostic_module.o variables_diagnostic_module.o constants.o model_flags.o\
 	error_code.o stats_variables.o numer_check.F90
-inputgrads.o	: constants.o endian.o recl.F90 inputgrads.F90
+inputgrads.o	: constants.o endian.o recl.inc inputgrads.F90
 grid.o		: constants.o file_functions.o interpolation.o grid.F90
 stats_type.o    : grid.o output_file_module.o stats_precision.o error_code.o \
 	stats_type.F90
@@ -226,5 +226,5 @@ cloud_sed_mod.o : cloud_sed_mod.F90 stats_variables.o grid.o constants.o
 clubb_tuner.o		: $(NUM_REC) clubb_driver.o error.o clubb_tuner.F90
 clubb_standalone.o	: clubb_driver.o clubb_standalone.F90
 clubb_inputfields.o	: clubb_driver.o inputfields.o clubb_inputfields.F90
-int2txt.o		: int2txt.F90 recl.F90
+int2txt.o		: int2txt.F90 recl.inc
 jacobian.o		: gradsaverage.o clubb_driver.o jacobian.F90
