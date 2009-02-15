@@ -1,6 +1,8 @@
 # $Id$
 # Configuration file for a Linux machine using GNU compiler collection Fortran
-# Note that the version of gfortran that comes with RHEL5 cannot compile clubb
+# Note that the version of gfortran that comes with RHEL5 cannot compile clubb.
+# However, following options did work on Ubuntu 8.04 LTS (with the packaged
+# versions of netcdf and netcdf-dev)
 
 
 # Fortran 95 compiler and linker
@@ -24,24 +26,23 @@ DEBUG="-g -fbounds-check -mieee-fp"
 # == Machine specific flags ==
 # Note: some of these are 64 bit architectures, so make sure NetCDF is
 # compiled accordingly.
-#ARCH="-march=nocona -msse3 -mfpmath=sse"    # New P4s
-ARCH="-march=core2 -msse3 -mfpmath=sse" # Core2 Duo's
+ARCH="-march=native -msse3 -mfpmath=sse"
 
 # == Optimization ==
 OPTIMIZE="-O2"
 
 # == NetCDF Location ==
-NETCDF="/usr/local/netcdf-gfortran"
+NETCDF="/usr"
 
 # == LAPACK libraries ==
-LAPACK="-L/usr/local/lib -llapack -lblas" # The netlib reference LAPACK/BLAS
-#LAPACK="-L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas"# ATLAS BLAS (faster)
+#LAPACK="-llapack -lblas" # The netlib reference LAPACK/BLAS
+LAPACK="-L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas" # ATLAS BLAS (faster)
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
 # Use -Wl,-rpath <library path> to set a search path for shared libs
-LDFLAGS="-L$libdir -Wl,-rpath,$libdir -lclubb_param -lclubb_bugsrad -lclubb_coamps -L$NETCDF/lib -lnetcdf $LAPACK"
+LDFLAGS="-L$libdir -Wl,-rpath,$libdir -lclubb_param -lclubb_bugsrad -lclubb_coamps -L$NETCDF/lib -lnetcdf -lnetcdff $LAPACK"
 
 # == Compiler flags ==
 # You will need to `make clean' if you change these
@@ -49,7 +50,7 @@ FFLAGS="$ARCH $DEBUG"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
-#   -Dradoffline and -Dnooverlap (see bugsrad documentation)
+#   -Dradoffline and -Dnooverlap (see BUGSrad documentation)
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
 CPPFLAGS="-DNETCDF -I$NETCDF/include -D__GFORTRAN__ -Dnooverlap -Dradoffline"
@@ -63,11 +64,8 @@ RANLIB=ranlib
 SHARED=$FC
 SHAREDFLAGS="-fPIC -shared"
 
-
-
 # Location of 'mkmf' utility
 mkmf=$dir/mkmf
 
 # gmake command to use and options: '-j 2' enables parallel compilation
 gmake="make -j 2"
-
