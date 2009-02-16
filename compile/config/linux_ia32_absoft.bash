@@ -32,7 +32,7 @@ OPTIMIZE="-O3"
 
 # == LAPACK libraries ==
 #LAPACK = -L/usr/local/lib -llapack -lblas #  The netlib reference LAPACK/BLAS
-#LAPACK = -L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas # ATLAS BLAS (faster)
+#LAPACK = -L/usr/local/lib -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas # ATLAS BLAS (faster)
 LAPACK="-L$ACML_DIR/gfortran64/lib -Wl,-rpath,$ACML_DIR/gfortran64/lib -lacml -lacml_mv -L/usr/lib64 -lgfortran"
 
 # == Linking Flags ==
