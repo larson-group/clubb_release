@@ -47,7 +47,7 @@ NETCDF="/usr/local/netcdf-g95"
 
 # == LAPACK libraries ==
 #LAPACK="-L/usr/local/lib -llapack -lblas" #  The netlib reference LAPACK/BLAS
-LAPACK="-L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas" # ATLAS BLAS (faster)
+LAPACK="-L/usr/local/lib -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas" # ATLAS BLAS (faster)
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
