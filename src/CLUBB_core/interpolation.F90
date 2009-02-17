@@ -89,10 +89,15 @@ module interpolation
 !-------------------------------------------------------------------------------
   pure integer function binary_search( n, array, var ) & 
     result( i ) 
-!       Description: This subroutine performs a binary search to find
-!       the closest value greater than or equal to var in the array.
-!        
-!-------------------------------------------------------------------------------
+
+    ! Description:
+    ! This subroutine performs a binary search to find the closest value greater
+    ! than or equal to var in the array.  This function returns the index of the
+    ! closest value of array that is greater than or equal to var.  It returns a
+    ! value of -1 if var is outside the bounds of array.
+    !        
+    !-----------------------------------------------------------------------
+
     implicit none
 
     ! Input Variables
@@ -100,7 +105,8 @@ module interpolation
     ! Size of the array
     integer, intent(in) :: n
 
-    ! The array being searched
+    ! The array being searched (must be sorted from least value to greatest
+    ! value).
     real, dimension(n), intent(in) :: array
 
     ! The value being searched for
@@ -119,32 +125,69 @@ module interpolation
 
     l_found = .false.
 
-    low = 1
+    ! The initial value of low has been changed from 1 to 2 due to a problem
+    ! that was occuring when var was close to the lower bound.
+    !
+    ! The lowest value in the array (which is sorted by increasing values) is
+    ! found at index 1, while the highest value in the array is found at
+    ! index n.  Unless the value of var exactly corresponds with one of the
+    ! values found in the array, or unless the value of var is found outside of
+    ! the array, the value of var will be found between two levels of the array.
+    ! In this scenario, the output of function binary_search is the index of the
+    ! HIGHER level.  For example, if the value of var is found between array(1)
+    ! and array(2), the output of function binary_search will be 2.
+    !
+    ! Therefore, the lowest index of a HIGHER level in an interpolation is 2.
+    ! Thus, the initial value of low has been changed to 2.  This will prevent
+    ! the value of variable "i" below from becoming 1.  If the value of "i"
+    ! becomes 1, the code below tries to access array(0) (which is array(i-1)
+    ! when i = 1) and produces an error.
+
+    low = 2
 
     high = n 
 
+    ! This line is here to avoid a false compiler warning about "i" being used
+    ! uninitialized in this function.
     i = (low + high) / 2
 
     do while( .not. l_found .and. low <= high )
         
-      i = (low + high) / 2
+       i = (low + high) / 2
 
-      if ( var > array( i - 1 ) .and. var <= array( i ) )then
-        l_found = .true.
+       if ( var > array( i - 1 ) .and. var <= array( i ) ) then
 
-      else if (var < array( i ) )then
-        high = i - 1
-      else if (var > array( i ) )then
-        low = i + 1
-      end if              
+          l_found = .true.
 
-    end do  ! while ( ~l_found & low <= high )
+       elseif ( var == array(1) ) then
+
+          ! Special case where var falls exactly on the lowest value in the
+          ! array, which is array(1).  This case is not covered by the statement
+          ! above.
+          l_found = .true.
+          ! The value of "i" must be set to 2 because an interpolation is
+          ! performed in the subroutine that calls this function that uses
+          ! indices "i" and "i-1".
+          i = 2
+
+       elseif ( var < array( i ) ) then
+
+          high = i - 1
+
+       elseif ( var > array( i ) ) then
+
+          low = i + 1
+
+      endif              
+
+    enddo  ! while ( ~l_found & low <= high )
         
     if ( .not. l_found ) i = -1 
 
     return
   
-    end function binary_search
+  end function binary_search
+
 !-------------------------------------------------------------------------------
   function zlinterp_fnc( dim_out, dim_src, grid_out,  & 
                        grid_src, var_src )  & 
