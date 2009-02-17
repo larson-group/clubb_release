@@ -198,8 +198,14 @@ contains
     integer, intent(out) ::  &
       err_code ! Error condition
 
-    ! Local Variable
+    ! Local Variables
     real :: avg_deltaz  ! Average grid box height   [m]
+
+    ! Flag for adjusting the values of the constant diffusivity coefficients
+    ! based on the grid spacing.  If this flag is turned off, the values of the
+    ! various nu coefficients will remain as they are declared in the
+    ! parameters.in file.
+    logical, parameter :: l_adj_low_res_nu = .true.
 
 
     call unpack_parameters( params, & 
@@ -219,151 +225,33 @@ contains
     !lmin = lmin_coef * deltaz  ! Old
     lmin = lmin_coef * 40.0 ! New fixed value
 
+    ! Flag for adjusting the values of the constant diffusivity coefficients
+    ! based on the grid spacing.  If this flag is turned off, the values of the
+    ! various nu coefficients will remain as they are declared in the
+    ! parameters.in file.
+    if ( l_adj_low_res_nu ) then
 
+       ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
 
-    ! ##### Adjust Constant Diffusivity Coefficients Based On Grid Spacing #####
+       ! All of the background coefficients of eddy diffusivity, as well as the
+       ! constant coefficient for 4th-order hyper-diffusion, must be adjusted
+       ! based on the size of the grid spacing.  For a case that uses an
+       ! evenly-spaced grid, the adjustment is based on the constant grid
+       ! spacing deltaz.  For a case that uses a stretched grid, the adjustment
+       ! is based on avg_deltaz, which is the average grid spacing over the
+       ! vertical domain.
 
-    ! All of the background coefficients of eddy diffusivity, as well as the
-    ! constant coefficient for 4th-order hyper-diffusion, must be adjusted based
-    ! on the size of the grid spacing.  For a case that uses an evenly-spaced
-    ! grid, the adjustment is based on the constant grid spacing deltaz.  For a
-    ! case that uses a stretched grid, the adjustment is based on avg_deltaz,
-    ! which is the average grid spacing over the vertical domain.
+       if ( l_implemented ) then
 
-    if ( l_implemented ) then
+          ! CLUBB is implemented in a host model.
 
-       ! CLUBB is implemented in a host model.
-
-       ! Find the average deltaz over the grid based on momentum level inputs.
-       ! Note:  The use of momentum level inputs will avoid any 
-       !        descrepancy between the CLUBB thermodynamic level profile, which
-       !        places the first thermodynamic level below the model surface,
-       !        and many host models, which place the first thermodynamic level
-       !        above the model surface.
-
-       avg_deltaz  &
-          = ( momentum_heights(nzmax) - momentum_heights(1) )  &
-            / ( nzmax - 1 )
-
-       ! The nu's are chosen for avg_deltaz <= 40 m. Looks like they must 
-       ! be adjusted for larger grid spacings (Vince Larson)
-
-       if ( avg_deltaz > 40.0 ) then
-          nu1 = nu1 * avg_deltaz / 40.0
-          nu2 = nu2 * avg_deltaz / 40.0
-          nu6 = nu6 * avg_deltaz / 40.0
-          nu8 = nu8 * avg_deltaz / 40.0
-          nu9 = nu9 * avg_deltaz / 40.0
-       endif
-
-       ! There should be a different formula for determining nu_r for different
-       ! sized grid spacings.  For DYCOMS2 RF02, nu_r is set to 5.0 for the
-       ! high-resolution 10 m. grid spacing and to 25.0 for the low-resolution
-       ! 100 m. grid spacing.  The following equation allows for both of those
-       ! parameters.  Brian.
-
-       if ( avg_deltaz > 20.0 ) then
-          nu_r = nu_r * avg_deltaz / 20.0
-       endif
-
-       ! The value of nu_hd is based on an average grid box spacing of 40 m.
-       ! The value of nu_hd should be adjusted proportionally to the average
-       ! grid box size, whether the average grid box size is less than 40 m. or
-       ! greater than 40 m.
-       ! Since nu_hd should be very large for large grid boxes, but
-       ! substantially smaller for small grid boxes, the grid spacing adjuster
-       ! is squared.
-       
-       nu_hd = nu_hd * ( avg_deltaz / 40.0 )**2
-
-    else
-
-       ! CLUBB model is running on it's own.
-
-       if ( grid_type == 1 ) then
-
-          ! Evenly-spaced grid.
-
-          ! The nu's are chosen for deltaz <= 40 m. Looks like they must 
-          ! be adjusted for larger grid spacings (Vince Larson)
-
-          if ( deltaz > 40.0 ) then
-             nu1 = nu1 * deltaz / 40.0
-             nu2 = nu2 * deltaz / 40.0
-             nu6 = nu6 * deltaz / 40.0
-             nu8 = nu8 * deltaz / 40.0
-             nu9 = nu9 * deltaz / 40.0
-          endif
-
-          ! There should be a different formula for determining nu_r for
-          ! different sized grid spacings.  For DYCOMS2 RF02, nu_r is set to 5.0
-          ! for the high-resolution 10 m. grid spacing and to 25.0 for the
-          ! low-resolution 100 m. grid spacing.  The following equation allows
-          ! for both of those parameters.  Brian.
-
-          if ( deltaz > 20.0 ) then
-             nu_r = nu_r * deltaz / 20.0
-          endif
-
-          ! The value of nu_hd is based on a grid box spacing of 40 m.  The
-          ! value of nu_hd should be adjusted proportionally to the grid box
-          ! size, whether the grid box size is less than 40 m. or greater than
-          ! 40 m.
-          ! Since nu_hd should be very large for large grid boxes, but
-          ! substantially smaller for small grid boxes, the grid spacing
-          ! adjuster is squared.
-       
-          nu_hd = nu_hd * ( deltaz / 40.0 )**2
-
-       elseif ( grid_type == 2 ) then
-
-          ! Stretched (unevenly-spaced) grid:  stretched thermodynamic level
-          ! input.
-
-          ! Find the average deltaz over the stretched grid based on
-          ! thermodynamic level inputs.
-
-          avg_deltaz  &
-             = ( thermodynamic_heights(nzmax) - thermodynamic_heights(1) )  &
-               / ( nzmax - 1 )
-
-          ! The nu's are chosen for avg_deltaz <= 40 m. Looks like they must 
-          ! be adjusted for larger grid spacings (Vince Larson)
-
-          if ( avg_deltaz > 40.0 ) then
-             nu1 = nu1 * avg_deltaz / 40.0
-             nu2 = nu2 * avg_deltaz / 40.0
-             nu6 = nu6 * avg_deltaz / 40.0
-             nu8 = nu8 * avg_deltaz / 40.0
-             nu9 = nu9 * avg_deltaz / 40.0
-          endif
-
-          ! There should be a different formula for determining nu_r for
-          ! different sized grid spacings.  For DYCOMS2 RF02, nu_r is set to 5.0
-          ! for the high-resolution 10 m. grid spacing and to 25.0 for the
-          ! low-resolution 100 m. grid spacing.  The following equation allows
-          ! for both of those parameters.  Brian.
-
-          if ( avg_deltaz > 20.0 ) then
-             nu_r = nu_r * avg_deltaz / 20.0
-          endif
-
-          ! The value of nu_hd is based on an average grid box spacing of 40 m.
-          ! The value of nu_hd should be adjusted proportionally to the average
-          ! grid box size, whether the average grid box size is less than 40 m.
-          ! or greater than 40 m.
-          ! Since nu_hd should be very large for large grid boxes, but
-          ! substantially smaller for small grid boxes, the grid spacing
-          ! adjuster is squared.
-       
-          nu_hd = nu_hd * ( avg_deltaz / 40.0 )**2
-
-       elseif ( grid_type == 3 ) then
-
-          ! Stretched (unevenly-spaced) grid:  stretched momentum level input.
-
-          ! Find the average deltaz over the stretched grid based on momentum
-          ! level inputs.
+          ! Find the average deltaz over the grid based on momentum level
+          ! inputs.
+          ! Note:  The use of momentum level inputs will avoid any 
+          !        descrepancy between the CLUBB thermodynamic level profile,
+          !        which places the first thermodynamic level below the model
+          !        surface, and many host models, which place the first
+          !        thermodynamic level above the model surface.
 
           avg_deltaz  &
              = ( momentum_heights(nzmax) - momentum_heights(1) )  &
@@ -400,10 +288,136 @@ contains
        
           nu_hd = nu_hd * ( avg_deltaz / 40.0 )**2
 
-       endif
+       else
 
-    endif  ! l_implemented
+          ! CLUBB model is running on it's own.
 
+          if ( grid_type == 1 ) then
+
+             ! Evenly-spaced grid.
+
+             ! The nu's are chosen for deltaz <= 40 m. Looks like they must 
+             ! be adjusted for larger grid spacings (Vince Larson)
+
+             if ( deltaz > 40.0 ) then
+                nu1 = nu1 * deltaz / 40.0
+                nu2 = nu2 * deltaz / 40.0
+                nu6 = nu6 * deltaz / 40.0
+                nu8 = nu8 * deltaz / 40.0
+                nu9 = nu9 * deltaz / 40.0
+             endif
+
+             ! There should be a different formula for determining nu_r for
+             ! different sized grid spacings.  For DYCOMS2 RF02, nu_r is set to
+             ! 5.0 for the high-resolution 10 m. grid spacing and to 25.0 for
+             ! the low-resolution 100 m. grid spacing.  The following equation
+             ! allows for both of those parameters.  Brian.
+
+             if ( deltaz > 20.0 ) then
+                nu_r = nu_r * deltaz / 20.0
+             endif
+
+             ! The value of nu_hd is based on a grid box spacing of 40 m.  The
+             ! value of nu_hd should be adjusted proportionally to the grid box
+             ! size, whether the grid box size is less than 40 m. or greater
+             ! than 40 m.
+             ! Since nu_hd should be very large for large grid boxes, but
+             ! substantially smaller for small grid boxes, the grid spacing
+             ! adjuster is squared.
+       
+             nu_hd = nu_hd * ( deltaz / 40.0 )**2
+
+          elseif ( grid_type == 2 ) then
+
+             ! Stretched (unevenly-spaced) grid:  stretched thermodynamic level
+             ! input.
+
+             ! Find the average deltaz over the stretched grid based on
+             ! thermodynamic level inputs.
+
+             avg_deltaz  &
+                = ( thermodynamic_heights(nzmax) - thermodynamic_heights(1) )  &
+                  / ( nzmax - 1 )
+
+             ! The nu's are chosen for avg_deltaz <= 40 m. Looks like they must 
+             ! be adjusted for larger grid spacings (Vince Larson)
+
+             if ( avg_deltaz > 40.0 ) then
+                nu1 = nu1 * avg_deltaz / 40.0
+                nu2 = nu2 * avg_deltaz / 40.0
+                nu6 = nu6 * avg_deltaz / 40.0
+                nu8 = nu8 * avg_deltaz / 40.0
+                nu9 = nu9 * avg_deltaz / 40.0
+             endif
+
+             ! There should be a different formula for determining nu_r for
+             ! different sized grid spacings.  For DYCOMS2 RF02, nu_r is set to
+             ! 5.0 for the high-resolution 10 m. grid spacing and to 25.0 for
+             ! the low-resolution 100 m. grid spacing.  The following equation
+             ! allows for both of those parameters.  Brian.
+
+             if ( avg_deltaz > 20.0 ) then
+                nu_r = nu_r * avg_deltaz / 20.0
+             endif
+
+             ! The value of nu_hd is based on an average grid box spacing of
+             ! 40 m.  The value of nu_hd should be adjusted proportionally to
+             ! the average grid box size, whether the average grid box size is
+             ! less than 40 m. or greater than 40 m.
+             ! Since nu_hd should be very large for large grid boxes, but
+             ! substantially smaller for small grid boxes, the grid spacing
+             ! adjuster is squared.
+       
+             nu_hd = nu_hd * ( avg_deltaz / 40.0 )**2
+
+          elseif ( grid_type == 3 ) then
+
+             ! Stretched (unevenly-spaced) grid:  stretched momentum level
+             ! input.
+
+             ! Find the average deltaz over the stretched grid based on momentum
+             ! level inputs.
+
+             avg_deltaz  &
+                = ( momentum_heights(nzmax) - momentum_heights(1) )  &
+                  / ( nzmax - 1 )
+
+             ! The nu's are chosen for avg_deltaz <= 40 m. Looks like they must 
+             ! be adjusted for larger grid spacings (Vince Larson)
+
+             if ( avg_deltaz > 40.0 ) then
+                nu1 = nu1 * avg_deltaz / 40.0
+                nu2 = nu2 * avg_deltaz / 40.0
+                nu6 = nu6 * avg_deltaz / 40.0
+                nu8 = nu8 * avg_deltaz / 40.0
+                nu9 = nu9 * avg_deltaz / 40.0
+             endif
+
+             ! There should be a different formula for determining nu_r for
+             ! different sized grid spacings.  For DYCOMS2 RF02, nu_r is set to
+             ! 5.0 for the high-resolution 10 m. grid spacing and to 25.0 for
+             ! the low-resolution 100 m. grid spacing.  The following equation
+             ! allows for both of those parameters.  Brian.
+
+             if ( avg_deltaz > 20.0 ) then
+                nu_r = nu_r * avg_deltaz / 20.0
+             endif
+
+             ! The value of nu_hd is based on an average grid box spacing of
+             ! 40 m.  The value of nu_hd should be adjusted proportionally to
+             ! the average grid box size, whether the average grid box size is
+             ! less than 40 m. or greater than 40 m.
+             ! Since nu_hd should be very large for large grid boxes, but
+             ! substantially smaller for small grid boxes, the grid spacing
+             ! adjuster is squared.
+       
+             nu_hd = nu_hd * ( avg_deltaz / 40.0 )**2
+
+          endif
+
+       endif  ! l_implemented
+
+    endif  ! l_adj_low_res_nu
 
     ! Sanity check
     if ( beta < 0.0 .or. beta > 3.0 ) then
