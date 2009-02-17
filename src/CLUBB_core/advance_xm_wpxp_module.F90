@@ -436,11 +436,11 @@ module advance_xm_wpxp_module
       endif
 
       call xm_wpxp_clipping_and_stats &
-           ( "thlm", dt, wp2, thlp2, wm_zt,  &        ! Intent(in)
-             thlm_forcing, thltol**2, rttol, rcond, & ! Intent(in)
-             low_lev_effect, high_lev_effect, &       ! Intent(in)
-             l_implemented, solution(:,1),  &         ! Intent(in)
-             thlm, wpthlp )                           ! Intent(inout)
+           ( "thlm", dt, wp2, thlp2, wm_zt,  &         ! Intent(in)
+             thlm_forcing, thltol**2, thltol, rcond, & ! Intent(in)
+             low_lev_effect, high_lev_effect, &        ! Intent(in)
+             l_implemented, solution(:,1),  &          ! Intent(in)
+             thlm, wpthlp )                            ! Intent(inout)
 
       ! Solve sclrm / wpsclrp
       ! If sclr_dim is 0, then this loop will execute 0 times.
@@ -550,16 +550,17 @@ module advance_xm_wpxp_module
              rtm, wprtp )                           ! Intent(inout)
 
       call xm_wpxp_clipping_and_stats &
-           ( "thlm", dt, wp2, thlp2, wm_zt,  &        ! Intent(in)
-             thlm_forcing, thltol**2, rttol, rcond, & ! Intent(in)
-             low_lev_effect, high_lev_effect, &       ! Intent(in)
-             l_implemented, solution(:,2),  &         ! Intent(in)
-             thlm, wpthlp )                           ! Intent(inout)
+           ( "thlm", dt, wp2, thlp2, wm_zt,  &         ! Intent(in)
+             thlm_forcing, thltol**2, thltol, rcond, & ! Intent(in)
+             low_lev_effect, high_lev_effect, &        ! Intent(in)
+             l_implemented, solution(:,2),  &          ! Intent(in)
+             thlm, wpthlp )                            ! Intent(inout)
 
       do i = 1, sclr_dim, 1
         call xm_wpxp_clipping_and_stats &
-             ( "scalars", dt, wp2, sclrp2(:,i), wm_zt,  & ! Intent(in)
-               sclrm_forcing(:,i), sclrtol(i)**2, sclrtol(i), rcond, & ! Intent(in)
+             ( "scalars", dt, wp2, sclrp2(:,i),  & ! Intent(in)
+               wm_zt, sclrm_forcing(:,i), &        ! Intent(in)
+               sclrtol(i)**2, sclrtol(i), rcond, & ! Intent(in)
                low_lev_effect, high_lev_effect, &  ! Intent(in)
                l_implemented, solution(:,2+i),  &  ! Intent(in)
                sclrm(:,i), wpsclrp(:,i) )          ! Intent(inout)
