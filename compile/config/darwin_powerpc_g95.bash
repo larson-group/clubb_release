@@ -1,6 +1,5 @@
 # $Id: linux_ia32_g95_optimize.bash 3201 2009-01-27 23:37:48Z dschanen $
-# Configuration file for a Linux machine using g95
-# An MS Windows machine with MSYS or Cygwin should be similar
+# Configuration file for a MacOS X system using g95
 
 # Fortran 95 compiler and linker
 FC=g95
@@ -36,7 +35,7 @@ WARNINGS="-Wall -Wextra -Wno=142,165,167 -pedantic"
 #ARCH="-march=nocona -msse3 -mfpmath=sse" # New P4s
 #ARCH="-march=nocona -msse3 -mfpmath=sse -r8"# New P4s, double precision
 #ARCH="-march=k8 -msse3 -mfpmath=sse" # New Opterons
-ARCH="" # Darwin Power-PC
+ARCH="-march arch" # Darwin PowerPC / x86
 
 # == Optimization ==
 # These are all pretty conservative options. Check your compiler manual
@@ -77,8 +76,6 @@ RANLIB=ranlib
 # == Shared library processing ==
 SHARED=$FC
 SHAREDFLAGS="-fPIC -shared"
-
-
 
 # Location of 'mkmf' utility
 mkmf=$dir/mkmf
