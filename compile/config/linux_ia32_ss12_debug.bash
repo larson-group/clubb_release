@@ -31,10 +31,8 @@ ARCH="-m64 -xarch=sse3 -xcache=native -xchip=native -dalign"
 NETCDF="/usr/local/netcdf-sun64"
 
 # == LAPACK libraries ==
-# For our purposes, we use ATLAS, since the OpenMP part of the Sun Performance
-# Library on Linux creates overhead not found on Solaris -dschanen 20 Aug 08
-#LAPACK = -xlic_lib=sunperf # Sun performance library
-LAPACK="-L/usr/local/lib -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas"
+LAPACK="-xlic_lib=sunperf" # Sun performance library
+#LAPACK="-L/usr/local/lib -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas"
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
