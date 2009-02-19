@@ -43,7 +43,7 @@
 
   use grid_class, only: zt2zm ! Procedure(s)
 
-  use constants, only: Cp, Lv, zero_threshold ! Variable(s)
+  use constants, only: Cp, Lv, zero_threshold, fstderr ! Variable(s)
 
   use parameters_model, only: sclr_dim, edsclr_dim ! Variables
 
@@ -56,6 +56,8 @@
   use cos_solar_zen_mod, only: cos_solar_zen ! Procedure(s)
 
   use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
+
+  use error_code, only: clubb_at_least_debug_level ! Procedure(s)
 
   use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
@@ -679,9 +681,21 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
 
   do k=2,gr%nnzp
     if ( (time >= time_initial + 3600.0) .and. l_subs_on ) then
-      call linear_interpolation( 7, zsubs, wt1, gr%zt(k), wm_zt(k) )
+      if ( gr%zt(k) <= zsubs(7) ) then
+         call linear_interpolation( 7, zsubs, wt1, gr%zt(k), wm_zt(k) )
+      else
+         wm_zt(k) = 0.0
+         if ( clubb_at_least_debug_level( 1 ) ) then
+            write(fstderr,*) "Thermodynamic grid level", k, "at height",  &
+                             gr%zt(k), "m. is above the highest level ",  &
+                             "specified in the subsidence sounding, which ",  &
+                             "is at height", zsubs(7), "m."
+            write(fstderr,*) "The value of subsidence is being set to 0 at ",  &
+                             "this altitude."
+         endif
+      endif
     else
-!           If time is not yet one hour, we have no subsidence
+      ! If time is not yet one hour, we have no subsidence
       wm_zt(k) = 0.0
     end if
 
