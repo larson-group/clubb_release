@@ -25,7 +25,8 @@ module sounding
             gr ! Variable(s)
 
         use constants, only:  & 
-            fstderr ! Constant
+            fstderr, & ! Constant
+            fstdout
 
         use parameters_model, only: & 
             sclr_dim, &! Variable(s)
@@ -124,21 +125,20 @@ module sounding
            write(fstderr,*) 'Error in sounding: nlevels > nmaxsnd'
            write(fstderr,*) 'nlevels = ',nlevels
            write(fstderr,*) 'nmaxsnd = ',nmaxsnd
-           stop 'STOP in sounding'
+           stop 'STOP in read_sounding'
         end if
 
-        ! Error check: if lowest themodynamic grid height is lower than the
-        ! lowest value from the input sounding, then the linear interpolation
-        ! scheme will fail
+        ! Error check: if lowest above-model-surface themodynamic grid height
+        ! (gr%zt(2)) is lower than the lowest value from the input sounding,
+        ! then the linear interpolation scheme will fail.
 
         if ( gr%zt(2) < z(1) ) then
-           write(fstderr,*) 'First level of input sounding must be', & 
-           ' below first thermodynamic level'
-           write(fstderr,*) ' first sounding level z(1) = ',z(1)
-           write(fstderr,*) ' first thermodynamic level gr%zt(2) = ', & 
-             gr%zt(2)
-           stop 'STOP in sounding'
-        end if
+           write(fstderr,*) "Lowest level of input sounding, z(1), must be",  &
+           " below the first above-model-surface thermodynamic level, gr%zt(2)"
+           write(fstderr,*) " First sounding level z(1) = ", z(1)
+           write(fstderr,*) " First thermodynamic level gr%zt(2) = ", gr%zt(2)
+           stop 'STOP in read_sounding'
+        endif
 
         ! First sounding level should be near ground value
 
@@ -148,7 +148,7 @@ module sounding
 !       if ( abs(z(1)) > 1.e-8 ) then
         if ( .false. ) then
            write(fstderr,*) 'First level of input sounding must be z=0'
-           stop 'STOP in sounding'
+           stop 'STOP in read_sounding'
         else
           um(1)   = u(1)
           vm(1)   = v(1)
@@ -165,23 +165,27 @@ module sounding
         end if
 
         if ( clubb_at_least_debug_level( 1 ) ) then
-          print *, "Reading in sounding information"
+
+           write(fstdout,*) "Reading in sounding information"
 !------------------Printing Model Inputs-------------------------------
-          print *, "u = ", u(1:nlevels)
-          print *, "v = ", v(1:nlevels)
-          print *, "ug = ", ug(1:nlevels)
-          print *, "vg = ", vg(1:nlevels)
-          print *, "theta = ", theta(1:nlevels)
-          print *, "rt = ", rt(1:nlevels)
-          do i = 1, sclr_dim, 1
-            write(6,'(a5,i2,a2)',advance='no') "sclr(", i,")="
-            write(6,'(8g10.3)') sclr(1:nlevels,i)
-          end do
-          do i = 1, edsclr_dim, 1
-            write(6,'(a7,i2,a2)',advance='no') "edsclr(", i, ")="
-            write(6,'(8g10.3)') edsclr(1:nlevels,i)
-          end do
-        end if ! clubb_at_least_debug_level( 1 )
+           write(fstdout,*) "u = ", u(1:nlevels)
+           write(fstdout,*) "v = ", v(1:nlevels)
+           write(fstdout,*) "ug = ", ug(1:nlevels)
+           write(fstdout,*) "vg = ", vg(1:nlevels)
+           write(fstdout,*) "theta = ", theta(1:nlevels)
+           write(fstdout,*) "rt = ", rt(1:nlevels)
+
+           do i = 1, sclr_dim, 1
+              write(fstdout,'(a5,i2,a2)',advance='no') "sclr(", i,") = "
+              write(fstdout,'(8g10.3)') sclr(1:nlevels,i)
+           enddo
+
+           do i = 1, edsclr_dim, 1
+              write(fstdout,'(a7,i2,a2)',advance='no') "edsclr(", i, ") = "
+              write(fstdout,'(8g10.3)') edsclr(1:nlevels,i)
+           enddo
+
+        endif ! clubb_at_least_debug_level( 1 )
 !----------------------------------------------------------------------
 
 ! Use linear interpolation from two nearest prescribed grid points
@@ -211,20 +215,19 @@ module sounding
               vm(i)   = lin_int( gr%zt(i), z(k), z(k-1), v(k), v(k-1) )
               ugm(i)  = lin_int( gr%zt(i), z(k), z(k-1), ug(k), ug(k-1) )
               vgm(i)  = lin_int( gr%zt(i), z(k), z(k-1), vg(k), vg(k-1) )
-              thlm(i) = lin_int( gr%zt(i), z(k), z(k-1),  & 
-                            theta(k), theta(k-1) )
+              thlm(i) = lin_int( gr%zt(i), z(k), z(k-1), theta(k), theta(k-1) )
               rtm(i)  = lin_int( gr%zt(i), z(k), z(k-1), rt(k), rt(k-1) )
               
               if ( sclr_dim > 0 ) then
                 do j = 1, sclr_dim 
                   sclrm(i,j) = lin_int( gr%zt(i), z(k), z(k-1),  & 
-                                       sclr(k,j), sclr(k-1,j) )
+                                        sclr(k,j), sclr(k-1,j) )
                 end do
               end if
               if ( edsclr_dim > 0 ) then
                 do j = 1, edsclr_dim 
                   edsclrm(i,j) = lin_int( gr%zt(i), z(k), z(k-1),  & 
-                                         edsclr(k,j), edsclr(k-1,j) )
+                                          edsclr(k,j), edsclr(k-1,j) )
                 end do
               end if
 
@@ -287,7 +290,7 @@ module sounding
         end do   ! i=2, gr%nnzp
         
         if ( l_std_atmo ) then
-          write(fstderr,*) "Warning: 1976 Standard Atmosphere "// & 
+          write(fstdout,*) "Warning: 1976 Standard Atmosphere "// & 
             "was used to complete the grid."
         end if
 
@@ -303,8 +306,12 @@ module sounding
 
         use grid_class, only:  & 
             gr ! Variable(s)
+
         use interpolation, only:  & 
             lin_int ! Procedure
+
+        use constants, only:  &
+            fstderr ! Constant
         
         implicit none
 
@@ -340,23 +347,23 @@ module sounding
         close(10)
 
         if ( nlevels > nmaxsnd ) then
-           write(*,*) 'Error in sounding: nlevels > nmaxsnd'
-           write(*,*) 'nlevels = ',nlevels
-           write(*,*) 'nmaxsnd = ',nmaxsnd
-           stop 'STOP in sounding'
-        end if
+           write(fstderr,*) 'Error in sounding: nlevels > nmaxsnd'
+           write(fstderr,*) 'nlevels = ', nlevels
+           write(fstderr,*) 'nmaxsnd = ', nmaxsnd
+           stop 'STOP in read_profile (sounding.F90)'
+        endif
 
-! Error check: if lowest themodynamic grid height is lower than the
-! lowest value from the input sounding, then the linear interpolation
-! scheme will fail
+        ! Error check: if lowest above-model-surface themodynamic grid height
+        ! (gr%zt(2)) is lower than the lowest value from the input sounding,
+        ! then the linear interpolation scheme will fail.
 
         if ( gr%zt(2) < z(1) ) then
-           write(*,*) 'First level of input sounding must be', & 
-           ' below first thermodynamic level'
-           write(*,*) ' first sounding level z(1) = ',z(1)
-           write(*,*) ' first thermodynamic level gr%zt(2) = ',gr%zt(2)
-           stop 'STOP in sounding'
-        end if
+           write(fstderr,*) "Lowest level of input sounding, z(1), must be",  &
+           " below the first above-model-surface thermodynamic level, gr%zt(2)"
+           write(fstderr,*) " First sounding level z(1) = ", z(1)
+           write(fstderr,*) " First thermodynamic level gr%zt(2) = ", gr%zt(2)
+           stop 'STOP in read_profile (sounding.F90)'
+        endif
 
 ! Use linear interpolation from two nearest prescribed grid points
 ! (one above and one below) to initialize mean quantities in the model
@@ -367,19 +374,18 @@ module sounding
           do while ( z(k) < gr%zt(i) )
             k = k + 1
               if ( k > nlevels ) then
-                write(*,*) 'STOP Not enough sounding data to ', & 
-                           'initialize grid:'
-                write(*,'(a,f7.1,/a,f7.1)') '  highest sounding level' & 
-                ,z(nlevels) & 
-                ,'  should be higher than highest thermodynamic point' & 
-                ,gr%zt(gr%nnzp)
-
-                write(*,*) ' filename: ',fname
-                stop 'STOP in read_profile'
-              end if
+                write(fstderr,*) 'STOP Not enough sounding data to ',  & 
+                                 'initialize grid:'
+                write(fstderr,'(a,f7.1,/a,f7.1)') ' Highest sounding level',  &
+                     z(nlevels),  &
+                     'should be higher than highest thermodynamic point',  &
+                     gr%zt(gr%nnzp)
+                write(*,*) ' Filename: ', fname
+                stop 'STOP in read_profile (sounding.F90)'
+              endif
             x(i) = lin_int( gr%zt(i), z(k), z(k-1), var(k), var(k-1) )
           enddo ! while
-        end do ! i=2, gr%nzzp
+        enddo ! i=2, gr%nzzp
 
         return
         end subroutine read_profile
