@@ -644,4 +644,20 @@ sclr portion of their name.  For example. the first scalar mean is 'sclram',
 and the second is 'sclrbm'.  These and their forcings are all that occurs in
 the zt file, the rest all occur in the zm file.
 
+------------------------------------------------------------------------
+- (4.1) Contributing code changes 
+------------------------------------------------------------------------
+
+If you have changes that you'd like to see included in the repository version
+of CLUBB, please feel free to contribute them.  We'll gladly review your changes 
+and consider them for inclusion.  
+
+To contribute the changes, type 'svn update' to merge the latest repository
+version of CLUBB with your local version, and then create a file containing 
+the differences between the repository and your version:
+
+$ svn diff > patchfile
+
+Then email us patchfile.  See the svn book online for more details about svn.
+
 ****************************************************************************
