@@ -198,7 +198,7 @@ make distclean
 
 5. $ cd <CLUBB DIR>/run_scripts
    $ ./run_scm.bash <MODEL CASE> or
-   $ ./run_standalone.bash <MODEL CASE> [PARAMETER FILE] [STATS FILE]
+   $ ./run_scm.bash <MODEL CASE> [PARAMETER FILE] [STATS FILE]
 
    Where the parameter file and stats file are optional arguments. The default
    is all_stats.in and tunable_parameters.in.
@@ -229,7 +229,7 @@ The new simulation is then called a "restart" simulation.
     Compute time_restart as (time_initial + n_out * stats_tout), where n_out
     is the number of output intervals before the restart time.
 
-4.  Execute the run as usual from /standalone using 
+4.  Execute the run as usual from /run_scripts using 
     
     ./run_scm.bash <CASE>
 
