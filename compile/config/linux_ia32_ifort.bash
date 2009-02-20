@@ -44,7 +44,7 @@ LAPACK="-L$MKLPATH -Wl,-rpath,$MKLPATH -lmkl_intel_lp64 -lmkl_sequential -lmkl_l
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
-LDFLAGS="-L$libdir -lclubb_param -lclubb_bugsrad -lclubb_coamps -L$NETCDF/lib -lnetcdf $LAPACK"
+LDFLAGS="-L$libdir -lclubb_param -lclubb_bugsrad -L$NETCDF/lib -lnetcdf $LAPACK"
 
 FCFLAGS="$ARCH $DEBUG"
 

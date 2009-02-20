@@ -35,7 +35,7 @@ WARNINGS="-Wall -Wextra -Wno=142,165,167 -pedantic"
 #ARCH="-march=nocona -msse3 -mfpmath=sse" # New P4s
 #ARCH="-march=nocona -msse3 -mfpmath=sse -r8"# New P4s, double precision
 #ARCH="-march=k8 -msse3 -mfpmath=sse" # New Opterons
-ARCH="-march arch" # Darwin PowerPC / x86
+ARCH="-m64" # Darwin PowerPC / x86
 
 # == Optimization ==
 # These are all pretty conservative options. Check your compiler manual
@@ -53,8 +53,8 @@ LAPACK="-L/usr/lib -llapack -lblas" #  The netlib reference LAPACK/BLAS
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
 # Use -Wl,-rpath <library path> to set a search path for shared libs
-#LDFLAGS="-L$libdir -lclubb_param -lclubb_bugsrad -lclubb_coamps -L$NETCDF/lib -lnetcdf $LAPACK"
-LDFLAGS="-L$libdir -lclubb_param -lclubb_bugsrad -lclubb_coamps $LAPACK"
+#LDFLAGS="-L$libdir -lclubb_param -lclubb_bugsrad -L$NETCDF/lib -lnetcdf $LAPACK"
+LDFLAGS="-L$libdir -lclubb_param -lclubb_bugsrad $LAPACK"
 
 # == Compiler flags ==
 # You will need to `make clean' if you change these

@@ -39,6 +39,7 @@ if [ -z $1 ]; then
 
 	CONFIG=./config/linux_ia32_g95_optimize.bash
 #	CONFIG=/home/cjg/clubb/clubb_dev/scripts/config/gfdl_wks.bash
+#	CONFIG=./config/darwin_powerpc_g95.bash
 #	CONFIG=./config/linux_ia32_pg.bash
 #	CONFIG=./config/linux_ia32_absoft.bash
 #	CONFIG=./config/linux_ia32_g95_debug.bash
@@ -63,6 +64,8 @@ source $CONFIG
 # Append preprocessor flags as needed
 if [ -e $srcdir/COAMPS_micro ]; then
 	CPPFLAGS="${CPPFLAGS} -DCOAMPS_MICRO"
+	LDFLAGS="${LDFLAGS} -lclubb_coamps"
+	COAMPS_LIB="libclubb_coamps.a"
 fi
 if [ -e $srcdir/Numerical_recipes ]; then
 	CPPFLAGS="${CPPFLAGS} -DTUNER"
@@ -72,6 +75,7 @@ if [ -e $srcdir/Benchmark_cases/unreleased_cases ]; then
 fi
 # ------------------------------------------------------------------------------
 # Generate template for makefile generating tool 'mkmf'
+
 
 cd $bindir
 cat > mkmf_template << EOF
@@ -173,23 +177,23 @@ libclubb_param.a:
 libclubb_coamps.a:
 	cd $objdir; $gmake -f Make.clubb_coamps
 
-clubb_standalone: libclubb_bugsrad.a libclubb_param.a libclubb_coamps.a
+clubb_standalone: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB
 	-rm -f $bindir/clubb_standalone
 	cd $objdir; $gmake -f Make.clubb_standalone
 
-clubb_tuner: libclubb_bugsrad.a libclubb_param.a libclubb_coamps.a
+clubb_tuner: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB
 	-rm -f $bindir/clubb_tuner
 	cd $objdir; $gmake -f Make.clubb_tuner
 
-clubb_inputfields: libclubb_bugsrad.a libclubb_param.a libclubb_coamps.a
+clubb_inputfields: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB
 	-rm -f $bindir/clubb_inputfields
 	cd $objdir; $gmake -f Make.clubb_inputfields
 
-jacobian: libclubb_bugsrad.a libclubb_param.a libclubb_coamps.a
+jacobian: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB
 	-rm -f $bindir/jacobian
 	cd $objdir; $gmake -f Make.jacobian
 
-int2txt: libclubb_bugsrad.a libclubb_param.a libclubb_coamps.a
+int2txt: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB
 	-rm -rf $bindir/int2txt
 	cd $objdir; $gmake -f Make.int2txt
 
