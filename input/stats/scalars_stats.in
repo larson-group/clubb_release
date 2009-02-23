@@ -33,7 +33,7 @@ vars_zt =
 's1', 's2', 'ss1', 'ss2', 'rrtthl',
 'wp2_zt', 'thlp2_zt', 'wpthlp_zt', 'wprtp_zt', 'rtp2_zt', 'rtpthlp_zt',
 'sclram', 'sclram_f', 'sclrbm', 'sclrbm_f',
-'edsclram', 'edsclrbm',
+'edsclram', 'edsclrbm', 'edsclram_f', 'edsclrbm_f',
 ''
 
 vars_zm = 
