@@ -294,17 +294,20 @@ module stats_variables
 !$omp   threadprivate(iwp2_zt, ithlp2_zt, iwpthlp_zt, irtp2_zt, irtpthlp_zt)
 
   integer, public :: & 
-    isclram,    & ! Passive scalar mean (currently mean thl)
-    isclrbm,    & ! Passive scalar mean (currently mean rt)
-    isclram_f,  & ! Passive scalar tendency (currently mean thl forcing)
-    isclrbm_f  ! Passive scalar tendency (currently mean rt forcing)
-
-  integer, public :: & 
-    iedsclram,  & ! Eddy-diff. scalar term (currently rt)
-    iedsclrbm  ! Eddy-diff. scalar term (currently thl)
+    isclram,    & ! Passive scalar mean (1)
+    isclrbm,    & ! Passive scalar mean (2)
+    isclram_f,  & ! Passive scalar forcing (1)
+    isclrbm_f     ! Passive scalar forcing (2)
 
 !$omp   threadprivate(isclram, isclrbm, isclram_f, isclrbm_f)
-!$omp   threadprivate(iedsclram, iedsclrbm)
+
+  integer, public :: & 
+    iedsclram,   & ! Eddy-diff. scalar term (1)
+    iedsclrbm,   & ! Eddy-diff. scalar term (2)
+    iedsclram_f, & ! Eddy-diffusivity scalar forcing (1)
+    iedsclrbm_f    ! Eddy-diffusivity scalar forcing (2)
+
+!$omp   threadprivate(iedsclram, iedsclrbm, iedsclram_f, iedsclrbm_f)
 
 !       Indices for statistics in zm file
 

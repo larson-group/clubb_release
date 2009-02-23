@@ -20,7 +20,7 @@ module stats_subs
 
 
 !     Description: Initializes the statistics saving functionality of
-!     the HOC model.
+!     the CLUBB model.
 !-----------------------------------------------------------------------
     use stats_variables, only: & 
       zt,      & ! Variables
@@ -899,7 +899,9 @@ use stats_variables, only: &
     isclrbm, & 
     isclrbm_f, & 
     iedsclram, & 
+    iedsclram_f, & 
     iedsclrbm, & 
+    iedsclrbm_f, & 
     isclraprtp, & 
     isclrbprtp, & 
     isclrap2, & 
@@ -1159,9 +1161,11 @@ if ( l_stats_samp ) then
 
    if ( edsclr_dim > 0 ) then
       call stat_update_var( iedsclram, edsclrm(:,1), zt )
+      call stat_update_var( iedsclram_f, edsclrm_forcing(:,1), zt )
    end if
    if ( edsclr_dim > 1 ) then
       call stat_update_var( iedsclrbm, edsclrm(:,2), zt )
+      call stat_update_var( iedsclrbm_f, edsclrm_forcing(:,2), zt )
    end if
 
 

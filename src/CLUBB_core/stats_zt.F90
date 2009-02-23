@@ -188,7 +188,9 @@ use stats_variables, only: &
     isclrbm, & 
     isclrbm_f, & 
     iedsclram, & 
-    iedsclrbm
+    iedsclram_f, & 
+    iedsclrbm, &
+    iedsclrbm_f
 
 use stats_type, only: & 
   stat_assign ! Procedure
@@ -395,6 +397,9 @@ isclrbm_f   = 0
 
 iedsclram   = 0
 iedsclrbm   = 0
+
+iedsclram_f = 0
+iedsclrbm_f = 0
 
 l_error = .false.
 
@@ -1482,47 +1487,59 @@ do i=1,zt%nn
   case ('sclram')
     isclram = k
 
-    call stat_assign(isclram,"sclram", & 
-         "passive scalar (currently thlm)","K",zt)
+    call stat_assign(isclram,"sclram", "passive scalar 1","K",zt)
     k = k + 1
 
   case ('sclram_f')
     isclram_f = k
 
     call stat_assign(isclram_f,"sclram_f", & 
-         "passive scalar (currently thlm_forcing)","K/s",zt)
+         "passive scalar 1 forcing","unknown",zt)
     k = k + 1
 
   case ('sclrbm')
     isclrbm = k
 
-    call stat_assign(isclrbm,"sclrbm", & 
-         "passive scalar (currently rtm)","kg/kg",zt)
+    call stat_assign(isclrbm,"sclrbm", "passive scalar 2","unknown",zt)
     k = k + 1
 
   case ('sclrbm_f')
     isclrbm_f = k
     call stat_assign(isclrbm_f,"sclrbm_f", & 
-         "passive scalar (currently rtm_forcing)","kg/kg",zt)
+         "passive scalar 2 forcing","unknown",zt)
     k = k + 1
 
   case ('edsclram')
     iedsclram = k
 
     call stat_assign(iedsclram,"edsclram", & 
-         "eddy-diff scalar (currently thlm)","K",zt)
+         "eddy-diff scalar 1","unknown",zt)
     k = k + 1
 
   case ('edsclrbm')
     iedsclrbm = k
 
     call stat_assign(iedsclrbm,"edsclrbm", & 
-         "eddy-diff scalar (currently rt)","kg/kg",zt)
+         "eddy-diff scalar 2","unknown",zt)
+    k = k + 1
+
+  case ('edsclram_f')
+    iedsclram_f = k
+
+    call stat_assign(iedsclram_f,"edsclram_f", & 
+         "eddy-diff scalar 1","unknown",zt)
+    k = k + 1
+
+  case ('edsclrbm_f')
+    iedsclrbm_f = k
+
+    call stat_assign(iedsclrbm,"edsclrbm", & 
+         "eddy-diff scalar 2","unknown",zt)
     k = k + 1
 
   case default
     write(0,*) 'Error: unrecognized variable in vars_zt: ', & 
-       trim(vars_zt(i))
+       trim( vars_zt(i) )
     l_error = .true.
 
   end select
