@@ -1533,7 +1533,7 @@ do i=1,zt%nn
   case ('edsclrbm_f')
     iedsclrbm_f = k
 
-    call stat_assign(iedsclrbm,"edsclrbm", & 
+    call stat_assign(iedsclrbm_f,"edsclrbm_f", & 
          "eddy-diff scalar 2","unknown",zt)
     k = k + 1
 
