@@ -374,7 +374,7 @@
 
  do i = 1, edsclr_dim
    call check_nan( edsclrm(:,i),"edsclrm", prefix//proc_name )
-   call check_nan( edsclrm_forcing(:,i),"edsclrm", prefix//proc_name )
+   call check_nan( edsclrm_forcing(:,i),"edsclrm_forcing", prefix//proc_name )
    call check_nan( wpedsclrp_sfc(i),"wpedsclrp_sfc",  & 
                    prefix//proc_name )
 
