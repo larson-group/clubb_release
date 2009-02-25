@@ -110,7 +110,7 @@ PARAMETERIZATION = \
 	parameters_model.o
 
 
-INTERFACING = gradsaverage.o inputfields.o inputgrads.o 
+INTERFACING = grads_common.o inputfields.o inputgrads.o 
 
 TUNING = $(MODEL) $(INTERFACING) $(NUM_REC) error.o
 

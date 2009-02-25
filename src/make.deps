@@ -218,8 +218,8 @@ interpolation.o : error_code.o interpolation.F90
 calendar.o      : constants.o calendar.F90
 inputfields.o	: grid.o inputgrads.o variables_prognostic_module.o variables_diagnostic_module.o \
 	inputfields.F90 
-gradsaverage.o	: grid.o inputgrads.o gradsaverage.F90 
-error.o		: gradsaverage.o clubb_driver.o parameters_tunable.o error_code.o error.F90
+grads_common.o	: grid.o inputgrads.o grads_common.F90 
+error.o		: grads_common.o clubb_driver.o parameters_tunable.o error_code.o error.F90
 cloud_sed_mod.o : cloud_sed_mod.F90 stats_variables.o grid.o constants.o
 
 # == Executables ==
@@ -227,4 +227,4 @@ clubb_tuner.o		: $(NUM_REC) clubb_driver.o error.o clubb_tuner.F90
 clubb_standalone.o	: clubb_driver.o clubb_standalone.F90
 clubb_inputfields.o	: clubb_driver.o inputfields.o clubb_inputfields.F90
 int2txt.o		: int2txt.F90 recl.inc
-jacobian.o		: gradsaverage.o clubb_driver.o jacobian.F90
+jacobian.o		: grads_common.o clubb_driver.o jacobian.F90
