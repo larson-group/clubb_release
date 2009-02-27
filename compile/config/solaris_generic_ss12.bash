@@ -18,6 +18,7 @@ srcdir="$dir/../src"  # dir where the source files reside
 # In Sun f95: remove the reference to ftrap, or use -ftrap=common
 DEBUG="-g -C -fns=no -ftrap=%none" #-stackvar -xcheck=init_local -ftrap=common
 
+WARNINGS="-w3 -ansi"
 # == Machine specific flags ==
 # The 2nd line is specific to ketley.math.uwm.edu.
 # Note that when linking to sunperf (for LAPACK) you must use -dalign

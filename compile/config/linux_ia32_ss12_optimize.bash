@@ -19,7 +19,7 @@ OPTIMIZE="-xO3 -xvector=simd"
 # This is the preferred warning level when compiling CLUBB with Sun Studio.
 #   Level -w4 produces a warning message for each call to an overloaded 
 #   operator, resulting in a huge number of warnings.
-WARNINGS="-w3"
+WARNINGS="-w3 -ansi"
 
 # == Machine specific flags ==
 # Note that when linking to sunperf (for LAPACK) you must use -dalign
