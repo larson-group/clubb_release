@@ -836,7 +836,7 @@ module clubb_driver
 
     use hydrostatic_mod, only: hydrostatic ! Procedure(s)
 
-    use soil_vegetation, only: initialize_soil_veg ! Procedure(s)
+    use soil_vegetation, only: sfc_soil_T_in_K, deep_soil_T_in_K, veg_T_in_K ! Variable(s)
 
     implicit none
 
@@ -887,8 +887,6 @@ module clubb_driver
 
     real :: cloud_top_height ! [m]
     real :: emax
-
-    real :: sfc_soil_T_in_K, deep_soil_T_in_K, veg_T_in_K
 
     integer :: k, err_code
 
@@ -1255,8 +1253,6 @@ module clubb_driver
       sfc_soil_T_in_K = 300.
       deep_soil_T_in_K = 288.58
 
-      call initialize_soil_veg( veg_T_in_K, sfc_soil_T_in_K, deep_soil_T_in_K )
-
     end select
 
     ! End Initialize TKE and other fields as needed
@@ -1346,7 +1342,8 @@ module clubb_driver
         input_thlm_forcing, input_rtm_forcing,   & 
         input_up2, input_vp2, input_sigma_sqd_w, input_Ncm, & 
         input_Ncnm, input_Nim, input_cf, input_Nrm, & 
-        input_sigma_sqd_w_zt
+        input_sigma_sqd_w_zt, input_veg_T_in_K, input_deep_soil_T_in_K, &
+        input_sfc_soil_T_in_K
 
     use inputfields, only: compute_timestep, grads_fields_reader ! Procedure(s)
 
@@ -1365,7 +1362,8 @@ module clubb_driver
     use model_flags, only: &
       l_uv_nudge, & ! Variable(s)
       l_kk_rain, &
-      l_coamps_micro
+      l_coamps_micro, &
+      l_soil_veg
 
 #ifdef UNRELEASED_CODE
     use arm_0003, only: arm_0003_init ! Procedure(s)
@@ -1378,8 +1376,6 @@ module clubb_driver
 #endif
 
     use mpace_a, only: mpace_a_init ! Procedure(s)
-
-    use soil_vegetation, only: initialize_soil_veg ! Procedure(s)
 
     implicit none
 
@@ -1471,6 +1467,12 @@ module clubb_driver
       input_Ncnm = .false.
       input_Nim = .false.
     end if
+    if( l_soil_veg ) then
+      input_veg_T_in_K = .true.
+      input_deep_soil_T_in_K = .true.
+      input_sfc_soil_T_in_K = .true.
+    end if
+
 
     input_wprtp = .true.
     input_wpthlp = .true.
@@ -1534,11 +1536,6 @@ module clubb_driver
 
     case( "mpace_a" )
       call mpace_a_init( iunit, forcings_file_path )
-
-    case( "gabls3" )
-      ! The user needs to enter the appropriate soil temperatures manually for restarts.
-      ! At some point, we should automate this by reading in the appropriate sfc values.
-      call initialize_soil_veg( 300., 300., 288.58 )
 
     end select
 
@@ -1621,7 +1618,7 @@ module clubb_driver
 
     use microphys_driver, only: advance_microphys ! Procedure(s)
 
-    use soil_vegetation, only: get_veg_T_in_K, advance_soil_veg
+    use soil_vegetation, only: advance_soil_veg, veg_T_in_K
 
     use error_code, only: lapack_error,  & ! Procedure(s)
                           clubb_at_least_debug_level
@@ -2052,7 +2049,7 @@ module clubb_driver
 
 #ifdef UNRELEASED_CODE
     case ( "gabls3" )
-      call gabls3_sfclyr( um(2), vm(2), get_veg_T_in_K(), &         ! Intent(in)
+      call gabls3_sfclyr( um(2), vm(2), veg_T_in_K, &         ! Intent(in)
                           thlm(2), rtm(2), gr%zt(2), psfc, &     ! Intent(in)
                           upwp_sfc, vpwp_sfc, &                       ! Intent(out)
                           wpthlp_sfc, wprtp_sfc, ustar )             ! Intent(out)

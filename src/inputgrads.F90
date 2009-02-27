@@ -180,8 +180,11 @@ contains
        allocate( f%z(f%ia:f%iz) )
        ! Implied Do Loop with the purpose of reading in
        ! altitudes
-       read(unit=unit,fmt=*) (f%z(i),i=f%ia,f%iz)
-
+       if(f%iz == 1) then
+         f%z(1) = 1
+       else
+         read(unit=unit,fmt=*) (f%z(i),i=f%ia,f%iz)
+       endif
      else if ( index(line,'TDEF') > 0 ) then
 
        read(unit=line,fmt=*) tmp, f%ntimes, tmp, date, dt
@@ -361,9 +364,9 @@ contains
 
   if ( i > f%nvar ) then
     l_error = .true.
-!            write(*,*) 'get_var: i > f%nvar'
-!            write(*,*) 'i = ',i
-!            write(*,*) 'f%nvar = ',f%nvar
+            write(*,*) 'get_var: i > f%nvar'
+            write(*,*) 'i = ',i
+            write(*,*) 'f%nvar = ',f%nvar
     return
   end if
 

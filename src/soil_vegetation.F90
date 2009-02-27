@@ -3,9 +3,9 @@ module soil_vegetation
 
   implicit none
 
-  public :: advance_soil_veg, initialize_soil_veg, get_veg_T_in_K
+  public :: advance_soil_veg
 
-  real, private :: deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K
+  real, public :: deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K
 
   private
 
@@ -147,42 +147,5 @@ module soil_vegetation
     return
   end subroutine advance_soil_veg
 
-  !------------------------------------------------------------------------------------------
-  subroutine initialize_soil_veg( initial_veg_T_in_K_in, initial_sfc_soil_T_in_K_in, &
-                                 initial_deep_soil_T_in_K_in )
-    !
-    !       Description: This subroutine sets the initial state of the temperature
-    !       of the ground at vegetation, surface soil, and deep soil levels.
-    !
-    !-----------------------------------------------------------------------------------------
-    implicit none
 
-    ! Input variables
-    real, intent(in) :: &
-    initial_veg_T_in_K_in, &            ! Initial temperature of vegetation layer [K]
-    initial_sfc_soil_T_in_K_in, &       ! Initial temperature of surface soil layer [K]
-    initial_deep_soil_T_in_K_in         ! Initial temperature of deep soil layer [K]
-
-    !-----------------------------------------------------------------------------------------
-
-    veg_T_in_K = initial_veg_T_in_K_in
-    sfc_soil_T_in_K = initial_sfc_soil_T_in_K_in
-    deep_soil_T_in_K = initial_deep_soil_T_in_K_in
-
-  end subroutine initialize_soil_veg
-
-  !--------------------------------------------------------------------------------------------
-  real function get_veg_T_in_K()
-    !
-    !     Description: This function serves as accessor to sfc_soil_T_in_K. It
-    !     abstracts the information that sfc_soil_T_in_K is stored as an array.
-    !
-    !--------------------------------------------------------------------------------------------
-    implicit none
-
-    get_veg_T_in_K = veg_T_in_K
-
-    return
-
-  end function
 end module soil_vegetation

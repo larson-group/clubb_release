@@ -34,7 +34,9 @@ module inputfields
                      input_rsnowm, input_ricem, input_rgraupelm,  & 
                      input_thlm_forcing, input_rtm_forcing, & 
                      input_up2, input_vp2, input_sigma_sqd_w, input_Ncm,  & 
-                     input_Ncnm, input_Nim, input_cf, input_sigma_sqd_w_zt 
+                     input_Ncnm, input_Nim, input_cf, input_sigma_sqd_w_zt, &
+                     input_veg_T_in_K, input_deep_soil_T_in_K, &
+                     input_sfc_soil_T_in_K 
 
 
   public  :: grads_fields_reader, compute_timestep, set_filenames
@@ -146,6 +148,8 @@ module inputfields
       get_var,  & ! Procedure(s)
       open_grads_read, & 
       close_grads_read
+
+  use soil_vegetation, only: deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K
 
   implicit none
 
@@ -401,6 +405,33 @@ module inputfields
    endif
 
 !-----------------------------------------------------------
+    call close_grads_read( fread_var )
+
+    call open_grads_read( 15, trim( datafile )//"_sfc.ctl",  & 
+                          fread_var )
+
+   if ( input_veg_T_in_K ) then
+      call get_var( fread_var, "veg_T_in_K", & 
+                    timestep, & 
+                    tmp1, l_error )
+      veg_T_in_K = tmp1(1)
+      print *, "Veg T = ", veg_T_in_K
+   endif
+   if ( input_deep_soil_T_in_K ) then
+      call get_var( fread_var, "deep_soil_T_in_", & 
+                    timestep, & 
+                    tmp1, l_error )
+        deep_soil_T_in_K = tmp1(1)
+      print *,"Deep soil = ",deep_soil_T_in_K
+   endif
+   if ( input_sfc_soil_T_in_K ) then
+      call get_var( fread_var, "sfc_soil_T_in_K", & 
+                    timestep, & 
+                    tmp1, l_error )
+        sfc_soil_T_in_K = tmp1(1)
+        print *,"surface_soil = ", sfc_soil_T_in_K
+   endif
+
 
     if ( l_error ) stop "oops, get_var failed in field_reader"
 
