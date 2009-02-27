@@ -8,6 +8,9 @@ module stats_zm
       
   public :: stats_init_zm
 
+  ! Constant parameters
+  integer, parameter, public :: nvarmax_zm = 250  ! Maximum variables allowed
+
   contains
 
 !-----------------------------------------------------------------------
@@ -16,6 +19,9 @@ module stats_zm
 ! Description: 
 !   Initializes array indices for zm
 !-----------------------------------------------------------------------
+
+    use constants, only: &
+        fstderr ! Constant(s)
 
     use stats_variables, only: & 
           zm, & 
@@ -169,19 +175,17 @@ module stats_zm
           iwpedsclrbp
 
     use stats_type, only: & 
-      stat_assign ! Procedure
+        stat_assign ! Procedure
 
 !   use error_code, only: &
-!     clubb_at_least_debug_level ! Function
+!       clubb_at_least_debug_level ! Function
 
     implicit none
-
-      integer, parameter :: nvarmax = 250  ! Max variables
 
       ! Input Variable
       ! zm variable names
       
-      character(len= * ), dimension(nvarmax), intent(in) :: vars_zm
+      character(len= * ), dimension(nvarmax_zm), intent(in) :: vars_zm
 
       ! Output Variable	
       logical, intent(inout) :: l_error
@@ -1254,9 +1258,9 @@ module stats_zm
           k = k + 1
 
         case default
-          write(0,*) 'Error: unrecognized variable in vars_zm: ', & 
+          write(fstderr,*) 'Error:  unrecognized variable in vars_zm:  ',  & 
              trim(vars_zm(i))
-          l_error = .true.
+          l_error = .true.  ! This will stop the run.
 
         end select
 
@@ -1267,9 +1271,9 @@ module stats_zm
 
 !   if ( .not. clubb_at_least_debug_level( 1 ) ) then 
 !     if ( iwp4 + ircp2 + ishear > 0 ) then
-!       write(0,'(a)') &
+!       write(fstderr,'(a)') &
 !         "Warning: at debug level 0.  Non-interactive diagnostics will not be computed, "
-!       write(0,'(a)') "but some appear in the stats_zm namelist variable."
+!       write(fstderr,'(a)') "but some appear in the stats_zm namelist variable."
 !     end if
 !   end if
 

@@ -22,6 +22,7 @@ module stats_subs
 !     Description: Initializes the statistics saving functionality of
 !     the CLUBB model.
 !-----------------------------------------------------------------------
+
     use stats_variables, only: & 
       zt,      & ! Variables
       ztscr01, & 
@@ -75,20 +76,29 @@ module stats_subs
       fname_sfc, & 
       l_netcdf, & 
       l_grads
+
     use stats_precision, only: & 
       time_precision   ! Variable(s)
+
     use output_grads, only: & 
       open_grads  ! Procedure
+
 #ifdef NETCDF
     use output_netcdf, only: & 
       open_netcdf     ! Procedure
 #endif
-    use stats_zm, only: & 
-      stats_init_zm ! Procedure
+
+    use stats_zm, only: &
+      nvarmax_zm, & ! Constant(s) 
+      stats_init_zm ! Procedure(s)
+
     use stats_zt, only: & 
-      stats_init_zt ! Procedure
-    use stats_sfc, only: & 
-      stats_init_sfc ! Procedure
+      nvarmax_zt, & ! Constant(s)
+      stats_init_zt ! Procedure(s)
+
+    use stats_sfc, only: &
+      nvarmax_sfc, & ! Constant(s)
+      stats_init_sfc ! Procedure(s)
 
     use error_code, only: &
       clubb_at_least_debug_level ! Function
@@ -97,10 +107,6 @@ module stats_subs
       fstdout, fstderr ! Constants
 
     implicit none
-
-    ! Constant Parameters
- 
-    integer, parameter :: nvarmax = 250  ! Max variables
 
     ! Input Variables
 
@@ -145,10 +151,14 @@ module stats_subs
 
     character(len=10) :: stats_fmt  ! File storage convention
 
-    character(len=30), dimension(nvarmax) ::  & 
-      vars_zt,   & ! Variables on the thermodynamic levels
-      vars_zm,   & ! Variables on the momentum levels
-      vars_sfc  ! Variables at the model surface
+    character(len=30), dimension(nvarmax_zt) ::  & 
+      vars_zt  ! Variables on the thermodynamic levels
+
+    character(len=30), dimension(nvarmax_zm) ::  & 
+      vars_zm  ! Variables on the momentum levels
+
+    character(len=30), dimension(nvarmax_sfc) ::  &
+      vars_sfc ! Variables at the model surface
 
     namelist /statsnl/ & 
       vars_zt, & 
@@ -161,7 +171,7 @@ module stats_subs
 
     character(len=200) :: fname
 
-    integer :: i, ntot
+    integer :: i, ntot, read_status
 
     ! Initialize
     l_error = .false.
@@ -190,7 +200,19 @@ module stats_subs
       ! Read namelist
 
     open(unit=iunit, file=fnamelist)
-    read(unit=iunit, nml=statsnl, end=100)
+    read(unit=iunit, nml=statsnl, iostat=read_status, end=100)
+    if ( read_status > 0 ) then
+       write(fstderr,*) "Error reading stats namelist in file ",  &
+                        trim( fnamelist )
+       write(fstderr,*) "One cause is having more statistical variables ",  &
+                        "listed in the namelist for var_zt, var_zm, or ",  &
+                        "var_sfc than allowed by nvarmax_zt, nvarmax_zm, ",  &
+                        "or nvarmax_sfc, respectively."
+       write(fstderr,*) "Maximum variables allowed for var_zt = ", nvarmax_zt
+       write(fstderr,*) "Maximum variables allowed for var_zm = ", nvarmax_zm
+       write(fstderr,*) "Maximum variables allowed for var_sfc = ", nvarmax_sfc
+       stop "stats_init:  error reading stats namelist."
+    endif
     close(unit=iunit)
 
     if ( clubb_at_least_debug_level( 1 ) ) then
@@ -248,39 +270,49 @@ module stats_subs
 
     ! Check sampling and output frequencies
 
+    ! The model time step length, delt (which is dtmain), should multiply
+    ! evenly into the statistical sampling time step length, stats_tsamp.
     if ( abs( stats_tsamp/delt - floor(stats_tsamp/delt) )  & 
            > 1.e-8 ) then
-      l_error = .true.
-      write(fstderr,*) 'Error: stats_tsamp should be a multiple of delt'
-      write(fstderr,*) 'stats_tsamp = ',stats_tsamp
-      write(fstderr,*) 'delt = ',delt
-    end if
+      l_error = .true.  ! This will cause the run to stop.
+      write(fstderr,*) 'Error:  stats_tsamp should be an even multiple of ',  &
+                       'delt (which is dtmain).  Check the appropriate ',  &
+                       'model.in file.'
+      write(fstderr,*) 'stats_tsamp = ', stats_tsamp
+      write(fstderr,*) 'delt = ', delt
+    endif
 
+    ! The statistical sampling time step length, stats_tsamp, should multiply
+    ! evenly into the statistical output time step length, stats_tout.
     if ( abs( stats_tout/stats_tsamp - floor(stats_tout/stats_tsamp) ) & 
            > 1.e-8 ) then
-      l_error = .true.
-      write(0,*)  'Error: stats_tout should be a multiple of stats_tsamp'
-      write(0,*) 'stats_tout = ',stats_tout
-      write(0,*) 'stats_tsamp = ',stats_tsamp
-    end if
+      l_error = .true.  ! This will cause the run to stop.
+      write(fstderr,*) 'Error:  stats_tout should be an even multiple of ',  &
+                       'stats_tsamp.  Check the appropriate model.in file.'
+      write(fstderr,*) 'stats_tout = ', stats_tout
+      write(fstderr,*) 'stats_tsamp = ', stats_tsamp
+    endif
 
     ! Initialize zt (mass points)
 
     i = 1
     do while ( ichar(vars_zt(i)(1:1)) /= 0  & 
                .and. len_trim(vars_zt(i)) /= 0 & 
-               .and. i <= nvarmax )
+               .and. i <= nvarmax_zt )
       i = i + 1
-    end do
-
+    enddo
     ntot = i - 1
-    if ( ntot == nvarmax ) then
-      write(fstderr,*) 'WARNING: check nvarmax in statistics.f'
-    end if
+    if ( ntot == nvarmax_zt ) then
+       write(fstderr,*) "There are more statistical variables listed in ",  &
+                        "vars_zt than allowed for by nvarmax_zt."
+       write(fstderr,*) "Check the number of variables listed for vars_zt ",  &
+                        "in the stats namelist, or change nvarmax_zt."
+       write(fstderr,*) "nvarmax_zt = ", nvarmax_zt
+       stop "stats_init:  number of zt statistical variables exceeds limit"
+    endif
       
     zt%nn = ntot
     zt%kk = nnzp
-!      write(*,*) 'Number of variables for zt ',zt%nn
 
     allocate( zt%z( zt%kk ) )
     zt%z = gzt
@@ -372,15 +404,21 @@ module stats_subs
     i = 1
     do while ( ichar(vars_zm(i)(1:1)) /= 0  & 
                .and. len_trim(vars_zm(i)) /= 0 & 
-               .and. i <= nvarmax )
+               .and. i <= nvarmax_zm )
       i = i + 1
     end do
     ntot = i - 1
-    if ( ntot == nvarmax ) write(fstderr,*) 'WARNING: check nvarmax in statistics.f'
+    if ( ntot == nvarmax_zm ) then
+       write(fstderr,*) "There are more statistical variables listed in ",  &
+                        "vars_zm than allowed for by nvarmax_zm."
+       write(fstderr,*) "Check the number of variables listed for vars_zm ",  &
+                        "in the stats namelist, or change nvarmax_zm."
+       write(fstderr,*) "nvarmax_zm = ", nvarmax_zm
+       stop "stats_init:  number of zm statistical variables exceeds limit"
+    endif
 
     zm%nn = ntot
     zm%kk = nnzp
-!   write(*,*) 'Number of variables for zm ',zm%nn
 
     allocate( zm%z( zm%kk ) )
     zm%z = gzm
@@ -463,17 +501,21 @@ module stats_subs
     i = 1
     do while ( ichar(vars_sfc(i)(1:1)) /= 0  & 
                .and. len_trim(vars_sfc(i)) /= 0 & 
-               .and. i <= nvarmax )
+               .and. i <= nvarmax_sfc )
       i = i + 1
     end do
-
     ntot = i - 1
-
-    if ( ntot == nvarmax ) write(fstderr,*) 'WARNING: check nvarmax in statistics.f'
+    if ( ntot == nvarmax_sfc ) then
+       write(fstderr,*) "There are more statistical variables listed in ",  &
+                        "vars_sfc than allowed for by nvarmax_sfc."
+       write(fstderr,*) "Check the number of variables listed for vars_sfc ",  &
+                        "in the stats namelist, or change nvarmax_sfc."
+       write(fstderr,*) "nvarmax_sfc = ", nvarmax_sfc
+       stop "stats_init:  number of sfc statistical variables exceeds limit"
+    endif
 
     sfc%nn = ntot
     sfc%kk = 1
-!   write(*,*) 'Number of variables for sfc ',sfc%nn
 
     allocate( sfc%z( sfc%kk ) )
     sfc%z = gzm(1)
@@ -516,9 +558,9 @@ module stats_subs
     ! Check for errors
 
     if ( l_error ) then
-      write(fstderr,*) 'stats_init: errors found'
+      write(fstderr,*) 'stats_init:  errors found'
       stop
-    end if
+    endif
 
     return
 
@@ -664,6 +706,9 @@ module stats_subs
 !     Description:
 !-----------------------------------------------------------------------
 
+      use constants, only: &
+          fstderr ! Constant(s)
+
       use stats_variables, only: & 
           zt,  & ! Variable(s)
           zm, & 
@@ -679,6 +724,9 @@ module stats_subs
       use output_grads, only: & 
           write_grads ! Procedure(s)
 
+      use error_code, only: &
+          clubb_at_least_debug_level ! Procedure(s)
+
 #ifdef NETCDF
       use output_netcdf, only: & 
           write_netcdf ! Procedure(s)
@@ -690,57 +738,95 @@ module stats_subs
 
       integer :: i, k
 
+      logical :: l_error
+
       ! Check if it is time to write to file
 
       if ( .not. l_stats_last ) return
 
-      ! Check number of sampling points
+      ! Initialize
+      l_error = .false.
 
-      do i=1,zt%nn
-       do k=1,zt%kk
-         if ( zt%n(k,i) /= 0  & 
-              .and. zt%n(k,i) /= floor(stats_tout/stats_tsamp) ) then
-           write(0,*) 'Possible sampling error for variable ', & 
-                           trim(zt%f%var(i)%name),' in zt ','at k =',k, & 
-                           ' zt%n(',k,',',i,')=',zt%n(k,i)
-!           write(0,*) 'Possible sampling error for zt ',i,k,zt%n(k,i)
-           !pause
-         end if
-        end do
-      end do
-      
-      do i=1,zm%nn
-       do k=1,zm%kk
-         if ( zm%n(k,i) /= 0  & 
-              .and. zm%n(k,i) /= floor(stats_tout/stats_tsamp) ) then
-           write(0,*) 'Possible sampling error for variable ', & 
-                           trim(zm%f%var(i)%name),' in zm ','at k =',k, & 
-                           ' zm%n(',k,',',i,')=',zm%n(k,i)
-!           write(0,*) 'Possible sampling error for zm ',i,k,zm%n(k,i)
-!           Made error message more descriptive
-!           Joshua Fasching July 2008
+      ! Check number of sampling points for each variable in the zt statistics
+      ! at each vertical level.
+      do i = 1, zt%nn
+         do k = 1, zt%kk
 
-           !pause
-         end if
-        end do
-      end do
-      
-      do i=1,sfc%nn
-       do k=1,sfc%kk
-         if ( sfc%n(k,i) /= 0  & 
-              .and. sfc%n(k,i) /= floor(stats_tout/stats_tsamp) ) then
-           write(0,*) 'Possible sampling error for variable ', & 
-                          trim(sfc%f%var(i)%name),' in sfc ','at k =',k, & 
-                           ' sfc%n(',k,',',i,')=',sfc%n(k,i)
-!           write(0,*) 'Possible sampling error for sfc ',i,k,sfc%n(k,i)
-!           Made error message more descriptive
-!           Joshua Fasching July 2008
+            if ( zt%n(k,i) /= 0 .and.  &
+                 zt%n(k,i) /= floor(stats_tout/stats_tsamp) ) then
 
-           !pause
-         end if
-        end do
-      end do
+               l_error = .true.  ! This will stop the run
+
+               if ( clubb_at_least_debug_level( 1 ) ) then
+                  ! Made error message more descriptive
+                  ! Joshua Fasching July 2008
+                  write(fstderr,*) 'Possible sampling error for variable ',  &
+                                   trim(zt%f%var(i)%name), ' in zt ',  &
+                                   'at k = ', k,  &
+                                   '; zt%n(',k,',',i,') = ', zt%n(k,i)
+               endif
+
+            endif
+
+         enddo
+      enddo
       
+      ! Check number of sampling points for each variable in the zm statistics
+      ! at each vertical level.
+      do i = 1, zm%nn
+         do k = 1, zm%kk
+
+            if ( zm%n(k,i) /= 0 .and.  &
+                 zm%n(k,i) /= floor(stats_tout/stats_tsamp) ) then
+
+               l_error = .true.  ! This will stop the run
+
+               if ( clubb_at_least_debug_level( 1 ) ) then
+                  ! Made error message more descriptive
+                  ! Joshua Fasching July 2008
+                  write(fstderr,*) 'Possible sampling error for variable ',  &
+                                   trim(zm%f%var(i)%name), ' in zm ',  &
+                                   'at k = ', k,  &
+                                   '; zm%n(',k,',',i,') = ', zm%n(k,i)
+               endif
+
+            endif
+
+         enddo
+      enddo
+      
+      ! Check number of sampling points for each variable in the zm statistics
+      ! at each vertical level.
+      do i = 1, sfc%nn
+         do k = 1, sfc%kk
+
+            if ( sfc%n(k,i) /= 0 .and.  &
+                 sfc%n(k,i) /= floor(stats_tout/stats_tsamp) ) then
+
+               l_error = .true.  ! This will stop the run
+
+               if ( clubb_at_least_debug_level( 1 ) ) then
+                  ! Made error message more descriptive
+                  ! Joshua Fasching July 2008
+                  write(fstderr,*) 'Possible sampling error for variable ',  &
+                                   trim(sfc%f%var(i)%name), ' in sfc ',  &
+                                   'at k = ', k,  &
+                                   '; sfc%n(',k,',',i,') = ', sfc%n(k,i)
+               endif
+
+            endif
+
+         enddo
+      enddo
+
+      ! Stop the run if errors are found.
+      if ( l_error ) then
+         write(fstderr,*) 'Possible statistical sampling error'
+         write(fstderr,*) 'For details, set debug_level to a value of at ',  &
+                          'least 1 in the appropriate model.in file.'
+         stop 'stats_end_timestep:  error(s) found'
+      endif
+
       ! Compute averages
 
       call stats_avg( zt%kk, zt%nn, zt%x, zt%n )
@@ -760,7 +846,7 @@ module stats_subs
 #else 
         stop "This program was not compiled with netCDF support"
 #endif
-      end if
+      endif
 
       ! Reset sample fields
       call stats_zero( zt%kk, zt%nn, zt%x, zt%n, zt%l_in_update )

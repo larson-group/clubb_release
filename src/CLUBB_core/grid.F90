@@ -227,6 +227,9 @@ contains
     use constants, only:  & 
         fstderr ! Variable(s)
 
+    use error_code, only:  &
+        clubb_at_least_debug_level ! Procedure(s)
+
     implicit none
 
     ! Constant parameters
@@ -283,9 +286,10 @@ contains
 
     ! Define the grid size
 
-    if ( nnzp > NWARNING ) then
-      write(fstderr,*) "Warning: running with vertical grid "// & 
-        "which is larger than ", NWARNING
+    if ( nnzp > NWARNING .and.  &
+         clubb_at_least_debug_level( 1 ) ) then
+       write(fstderr,*) "Warning:  running with vertical grid "// & 
+                        "which is larger than", NWARNING, "levels."
     endif
 
     gr%nnzp = nnzp

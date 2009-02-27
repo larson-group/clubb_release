@@ -10,6 +10,9 @@ private ! Set Default Scope
 
 public :: stats_init_sfc
 
+! Constant parameters
+integer, parameter, public :: nvarmax_sfc = 250  ! Maximum variables allowed
+
 contains 
 
 !-----------------------------------------------------------------------
@@ -18,6 +21,9 @@ subroutine stats_init_sfc( vars_sfc, l_error )
 !     Description:
 !     Initializes array indices for sfc
 !-----------------------------------------------------------------------
+
+use constants, only: &
+    fstderr ! Constant(s)
 
 use stats_variables, only: & 
     sfc,  & ! Variables
@@ -61,14 +67,13 @@ use stats_type, only: &
 
 implicit none
 
-integer, parameter :: nvarmax = 250  ! Max variables
-!Input Variable
-character(len= * ), dimension(nvarmax), intent(in) :: vars_sfc
+! Input Variable
+character(len= * ), dimension(nvarmax_sfc), intent(in) :: vars_sfc
 
-!Output Variable	
+! Output Variable	
 logical, intent(inout) :: l_error
 
-!Local Varables
+! Local Varables
 integer :: i, k
 
 ! Default initialization for array indices for sfc
@@ -347,9 +352,9 @@ do i=1,sfc%nn
     k = k + 1
 
   case default
-    write(0,*) 'Error: unrecognized variable in vars_sfc: ', & 
+    write(fstderr,*) 'Error:  unrecognized variable in vars_sfc:  ',  &
           trim( vars_sfc(i) )
-    l_error = .true.
+    l_error = .true.  ! This will stop the run.
 
   end select
 

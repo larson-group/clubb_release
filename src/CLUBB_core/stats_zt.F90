@@ -9,6 +9,9 @@ private ! Default Scope
 
 public :: stats_init_zt
 
+! Constant parameters
+integer, parameter, public :: nvarmax_zt = 250 ! Maximum variables allowed
+
 contains
 
 !-----------------------------------------------------------------------
@@ -17,6 +20,9 @@ subroutine stats_init_zt( vars_zt, l_error )
 !     Description:
 !     Initializes array indices for zt 
 !-----------------------------------------------------------------------
+
+use constants, only:  &
+    fstderr ! Constant(s)
 
 use stats_variables, only: & 
     ithlm,  & ! Variable(s)
@@ -193,23 +199,21 @@ use stats_variables, only: &
     iedsclrbm_f
 
 use stats_type, only: & 
-  stat_assign ! Procedure
+    stat_assign ! Procedure
 
 !use error_code, only: &
-!  clubb_at_least_debug_level ! Function
+!    clubb_at_least_debug_level ! Function
 
 
 implicit none
 
-integer, parameter :: nvarmax = 250
+! Input Variable
+character(len= * ), dimension(nvarmax_zt), intent(in) :: vars_zt
 
-!Input Variable
-character(len= * ), dimension(nvarmax), intent(in) :: vars_zt
-
-!Output Variable	
+! Output Variable	
 logical, intent(inout) :: l_error
 
-!Local Varables
+! Local Varables
 integer :: i, k
 
 ! Default initialization for array indices for zt
@@ -400,8 +404,6 @@ iedsclrbm   = 0
 
 iedsclram_f = 0
 iedsclrbm_f = 0
-
-l_error = .false.
 
 !     Assign pointers for statistics variables zt
 
@@ -1538,9 +1540,9 @@ do i=1,zt%nn
     k = k + 1
 
   case default
-    write(0,*) 'Error: unrecognized variable in vars_zt: ', & 
+    write(fstderr,*) 'Error:  unrecognized variable in vars_zt:  ',  &
        trim( vars_zt(i) )
-    l_error = .true.
+    l_error = .true.  ! This will stop the run.
 
   end select
 
@@ -1550,9 +1552,9 @@ end do
 !   iwprtp2, iwprtpthlp, iwpthlp2 
 !   if ( .not. clubb_at_least_debug_level( 1 ) ) then 
 !     if ( iwprtp2 + iwprtpthlp + iwpthlp2 + irsat > 0 ) then
-!       write(0,'(a)') &
+!       write(fstderr,'(a)') &
 !         "Warning: at debug level 0.  Non-interactive diagnostics will not be computed, "
-!       write(0,'(a)') "but some appear in the stats_zt namelist variable."
+!       write(fstderr,'(a)') "but some appear in the stats_zt namelist variable."
 !     end if
 !   end if
 

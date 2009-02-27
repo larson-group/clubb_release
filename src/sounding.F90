@@ -289,10 +289,11 @@ module sounding
 
         end do   ! i=2, gr%nnzp
         
-        if ( l_std_atmo ) then
-          write(fstdout,*) "Warning: 1976 Standard Atmosphere "// & 
-            "was used to complete the grid."
-        end if
+        if ( l_std_atmo .and.  &
+             clubb_at_least_debug_level( 1 ) ) then
+           write(fstderr,*) "Warning:  1976 Standard Atmosphere "// & 
+                            "was used to complete the grid."
+        endif
 
   return
   end subroutine read_sounding

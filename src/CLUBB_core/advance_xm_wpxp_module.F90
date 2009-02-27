@@ -571,70 +571,68 @@ module advance_xm_wpxp_module
 
     deallocate( rhs, solution )
 
-!       Error Report
-!       (This code is unreachable)
-!       Joshua Fasching Feb 2008
-
-!        if ( lapack_error( err_code ) ) then
-
-!           write(fstderr,*) "Error in advance_xm_wpxp"
-
-!           write(fstderr,*) "Intent(in)"
-
-
-!           write(fstderr,*) "dt = ", dt
-!           write(fstderr,*) "tau_zm = ", tau_zm
-!           write(fstderr,*) "wm_zm = ", wm_zm
-!           write(fstderr,*) "wm_zt = ", wm_zt
-!           write(fstderr,*) "wp2 = ", wp2
-!           write(fstderr,*) "wp3 = ", wp3
-!           write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
-!           write(fstderr,*) "Skw_zm = ", Skw_zm
-
-    !write(fstderr,*) "dt = ", dt
-    !write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
-    !write(fstderr,*) "wm_zm = ", wm_zm
-    !write(fstderr,*) "wm_zt = ", wm_zt
-    !write(fstderr,*) "wp2 = ", wp2
-    !write(fstderr,*) "wp3 = ", wp3
-    !write(fstderr,*) "Kh_zt = ", Kh_zt
-    !write(fstderr,*) "tau_zm = ", tau_zm
-    !write(fstderr,*) "Skw_zm = ", Skw_zm
-    !write(fstderr,*) "rtpthvp = ", rtpthvp
-    !write(fstderr,*) "rtm_forcing = ", rtm_forcing
-    !write(fstderr,*) "thlpthvp = ", thlpthvp
-    !write(fstderr,*) "thlm_forcing = ", thlm_forcing
-    !write(fstderr,*) "rtp2 = ", rtp2
-    !write(fstderr,*) "thlp2 = ", thlp2
-
-!           if( present( sclrpthvp ) ) then
-!              write(fstderr,*) "sclrpthvp = ", sclrpthvp
-!           endif
-
-!           if( present( sclrm_forcing ) ) then
-!              write(fstderr,*) "sclrm_forcing = ", sclrm_forcing
-!           endif
-
-!           if( present( sclrp2 ) ) then
-!              write(fstderr,*) "sclrp2 = ", sclrp2
-!           endif
-
-!           write(fstderr,*) "Intent(inout)"
-
-!           write(fstderr,*) "rtm = ", rtm
-!           write(fstderr,*) "wprtp = ", wprtp
-!           write(fstderr,*) "thlm = ", thlm
-!           write(fstderr,*) "wpthlp =", wpthlp
-
-!           if( present( sclrm ) ) then
-!              write(fstderr,*) "sclrm = ", sclrm
-!           endif
-
-!           if( present( wpsclrp ) ) then
-!              write(fstderr,*) "wpsclrp = ", wpsclrp
-!           endif
-
-!        end if
+    ! Error Report
+    ! (This code is unreachable)
+    ! Joshua Fasching Feb 2008
+    !
+    !if ( lapack_error( err_code ) .and.  &
+    !     clubb_at_least_debug_level( 1 ) ) then
+    !
+    !   write(fstderr,*) "Error in advance_xm_wpxp"
+    !
+    !   write(fstderr,*) "Intent(in)"
+    !
+    !   write(fstderr,*) "dt = ", dt
+    !   write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
+    !   write(fstderr,*) "wm_zm = ", wm_zm
+    !   write(fstderr,*) "wm_zt = ", wm_zt
+    !   write(fstderr,*) "wp2 = ", wp2
+    !   write(fstderr,*) "wp3 = ", wp3
+    !   write(fstderr,*) "Kh_zt = ", Kh_zt
+    !   write(fstderr,*) "tau_zm = ", tau_zm
+    !   write(fstderr,*) "Skw_zm = ", Skw_zm
+    !   write(fstderr,*) "rtpthvp = ", rtpthvp
+    !   write(fstderr,*) "rtm_forcing = ", rtm_forcing
+    !   write(fstderr,*) "thlpthvp = ", thlpthvp
+    !   write(fstderr,*) "thlm_forcing = ", thlm_forcing
+    !   write(fstderr,*) "rtp2 = ", rtp2
+    !   write(fstderr,*) "thlp2 = ", thlp2
+    !   write(fstderr,*) "wp2_zt = ", wp2_zt
+    !   write(fstderr,*) "pdf_params%w1 = ", pdf_params%w1
+    !   write(fstderr,*) "pdf_params%w2 = ", pdf_params%w2
+    !   write(fstderr,*) "pdf_params%sw1 = ", pdf_params%sw1
+    !   write(fstderr,*) "pdf_params%sw2 = ", pdf_params%sw2
+    !   write(fstderr,*) "pdf_params%a = ", pdf_params%a
+    !   write(fstderr,*) "l_implemented = ", l_implemented
+    !
+    !   if ( present( sclrpthvp ) ) then
+    !      write(fstderr,*) "sclrpthvp = ", sclrpthvp
+    !   endif
+    !
+    !   if ( present( sclrm_forcing ) ) then
+    !      write(fstderr,*) "sclrm_forcing = ", sclrm_forcing
+    !   endif
+    !
+    !   if ( present( sclrp2 ) ) then
+    !      write(fstderr,*) "sclrp2 = ", sclrp2
+    !   endif
+    !
+    !   write(fstderr,*) "Intent(inout)"
+    !
+    !   write(fstderr,*) "rtm = ", rtm
+    !   write(fstderr,*) "wprtp = ", wprtp
+    !   write(fstderr,*) "thlm = ", thlm
+    !   write(fstderr,*) "wpthlp =", wpthlp
+    !
+    !   if ( present( sclrm ) ) then
+    !      write(fstderr,*) "sclrm = ", sclrm
+    !   endif
+    !
+    !   if ( present( wpsclrp ) ) then
+    !      write(fstderr,*) "wpsclrp = ", wpsclrp
+    !   endif
+    !
+    !endif
 
     return
 
