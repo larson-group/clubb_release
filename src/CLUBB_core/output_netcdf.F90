@@ -464,12 +464,14 @@ subroutine first_write( ncf )
     l_single_C2_Skw, &
     l_gamma_Skw, &
     l_bugsrad, &
+    l_uv_nudge, &
+    l_tke_aniso
+
+  use parameters_microphys, only: &
     l_kk_rain, &
     l_icedfs, &
     l_coamps_micro, &
-    l_cloud_sed, &
-    l_uv_nudge, &
-    l_tke_aniso
+    l_cloud_sed
 
   implicit none
 

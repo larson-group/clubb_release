@@ -72,10 +72,6 @@ alndf = 0.1d0    ! Near-IR diffuse surface albedo       [-]
 
 !-- End BugsRad settings --
 
-l_cloud_sed     = .false.  ! Flag for cloud water sedimentation.
-l_kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
-l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
-l_icedfs       = .false.  ! Flag for simplified ice scheme.
 l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 
@@ -93,6 +89,13 @@ time_restart  = 0.0      ! Time of model restart.
 !                e.g. checks for NaNs and spurious negative values.
 debug_level = 2
 
+/
+
+&microphysics_setting
+l_cloud_sed    = .false.  ! Flag for cloud water sedimentation.
+l_kk_rain      = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
+l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
+l_icedfs       = .false.  ! Flag for simplified ice scheme.
 /
 
 &stats_setting

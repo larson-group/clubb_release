@@ -79,10 +79,6 @@ alndf = 0.1d0    ! Near-IR diffuse surface albedo       [-]
 std_atmos_buffer = 10
 !-- End BugsRad settings --
 
-l_cloud_sed     = .false.  ! Flag for cloud water sedimentation.
-l_kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
-l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
-l_icedfs       = .false.  ! Flag for simplified ice scheme.
 l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 
@@ -109,6 +105,13 @@ iisclr_rt  = 2  ! Location in the array to place a scalar like total water
 
 sclr_tol  = 1.e-2, 1.e-5 ! Tolerances below which we consider scalar to be 0.
 
+/
+
+&microphysics_setting
+l_cloud_sed    = .false.  ! Flag for cloud water sedimentation.
+l_kk_rain      = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
+l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
+l_icedfs       = .false.  ! Flag for simplified ice scheme.
 /
 
 &stats_setting

@@ -62,7 +62,10 @@
 
   use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-  use model_flags, only: l_bugsrad, l_coamps_micro, l_kk_rain ! Variable(s)
+  use model_flags, only: l_bugsrad ! Variable
+
+  use parameters_microphys, only: &
+    l_coamps_micro, l_kk_rain ! Variable(s)
 
   use grid_class, only: gr ! Variable(s)
 

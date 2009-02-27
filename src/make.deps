@@ -50,7 +50,7 @@ microphys_driver.o : constants.o model_flags.o lapack_wrap.o \
 output_grads.o	: constants.o recl.inc endian.o output_file_module.o calendar.o \
 	output_grads.F90
 output_netcdf.o	: constants.o calendar.o parameters_tunable.o \
-	parameters_model.o output_file_module.o output_netcdf.F90
+	parameters_model.o parameters_microphys.o output_file_module.o output_netcdf.F90
 variables_diagnostic_module.o: constants.o parameters_model.o grid.o model_flags.o variables_diagnostic_module.F90
 variables_prognostic_module.o: constants.o parameters_model.o grid.o model_flags.o variables_prognostic_module.F90 
 numer_check.o	: variables_prognostic_module.o variables_diagnostic_module.o constants.o model_flags.o\
@@ -135,9 +135,9 @@ matrix_operations.o     : matrix_operations.F90
 diag_ustar.o: constants.o diag_ustar.F90
 arm.o       : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o \
 	array_index.o arm.F90
-arm_97.o    : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o \
+arm_97.o    : constants.o diag_ustar.o parameters_microphys.o model_flags.o grid.o stats_variables.o \
 	interpolation.o arm.F90
-arm_0003.o  : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o \
+arm_0003.o  : constants.o diag_ustar.o parameters_microphys.o model_flags.o grid.o stats_variables.o \
 	arm_0003.F90
 arm_3year.o : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o arm_3year.F90
 astex.o     : constants.o parameters_model.o model_flags.o grid.o astex.F90
@@ -149,20 +149,20 @@ gabls2.o    : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o ga
 gabls3.o    : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o \
 	interpolation.o gabls3.F90
 lba.o       : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o \
-	interpolation.o lba.F90
+	interpolation.o parameters_microphys.o lba.F90
 mpace_a.o     : constants.o model_flags.o grid.o stats_variables.o mpace_a.F90 \
-	interpolation.o file_functions.o rad_lwsw.o
+	parameters_microphys.o interpolation.o file_functions.o rad_lwsw.o
 mpace_b.o     : constants.o model_flags.o grid.o stats_variables.o rad_lwsw.o \
-	mpace_b.F90
+	parameters_microphys.o mpace_b.F90
 nov11.o     : constants.o model_flags.o grid.o stats_variables.o rad_lwsw.o \
-        nov11.F90
+        parameters_microphys.o nov11.F90
 jun25.o     : constants.o model_flags.o grid.o stats_variables.o rad_lwsw.o \
 	cos_solar_zen.o jun25.F90
 clex9_nov02.o : constants.o cos_solar_zen.o rad_lwsw.o model_flags.o grid.o \
-	stats_variables.o clex9_nov02.F90
-clex9_oct14.o : constants.o cos_solar_zen.o rad_lwsw.o model_flags.o grid.o stats_variables.o \
+	stats_variables.o parameters_microphys.o clex9_nov02.F90
+clex9_oct14.o : constants.o cos_solar_zen.o rad_lwsw.o model_flags.o grid.o stats_variables.o parameters_microphys.o \
 	clex9_oct14.F90
-rico.o      : constants.o parameters_model.o model_flags.o grid.o stats_variables.o rico.F90
+rico.o      : constants.o parameters_model.o model_flags.o grid.o stats_variables.o rico.F90 parameters_microphys.o
 wangara.o   : constants.o parameters_model.o model_flags.o grid.o wangara.F90
 ice_dfsn_mod.o    : constants.o grid.o stats_variables.o ice_dfsn_mod.F90
 cloud_rad.o : constants.o grid.o cloud_rad.F90

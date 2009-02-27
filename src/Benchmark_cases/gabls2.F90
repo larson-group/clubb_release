@@ -16,9 +16,9 @@ contains
 
 !----------------------------------------------------------------------
 subroutine gabls2_tndcy( time, time_initial, &
-                         rho, rcm, l_kk_rain, &
+                         rho, rcm, &
                          wm_zt, wm_zm, thlm_forcing, & 
-                         rtm_forcing, radht, Ncm, & 
+                         rtm_forcing, radht, & 
                          sclrm_forcing, edsclrm_forcing )
 
 !        Description:
@@ -52,17 +52,13 @@ real, dimension(gr%nnzp), intent(in) :: &
   rho,  & ! Air density on t-grid           [kg/m^3]
   rcm     ! Cloud water mixing ratio        [kg/kg]
 
-logical, intent(in) :: & 
-  l_kk_rain  !  Logical variable-- are we using KK scheme?
-
 ! Output Variables
 real, dimension(gr%nnzp), intent(out) :: & 
   wm_zt,        & ! Large-scale vertical motion on t grid   [m/s]
   wm_zm,        & ! Large-scale vertical motion on m grid   [m/s]
   thlm_forcing, & ! Large-scale thlm tendency               [K/s]
   rtm_forcing,  & ! Large-scale rtm tendency                [kg/kg/s]
-  radht,        & ! dT/dt, then d Theta/dt, due to rad.     [K/s]
-  Ncm             ! Number of cloud droplets                [#/kg]
+  radht           ! dT/dt, then d Theta/dt, due to rad.     [K/s]
 
 real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
   sclrm_forcing ! Passive scalar LS tendency            [units/s]
@@ -109,22 +105,6 @@ do k=1,gr%nnzp
   rtm_forcing(k) = 0.
 end do
 
-! Compute initial cloud droplet concentration
-if ( l_kk_rain ) then
-  do k=1,gr%nnzp
-    if ( rcm(k) >= 1.e-6 ) then
-      ! Ncm is in units of kg^-1.  If the coefficient is in m^-3, then
-      ! it needs to be divided by rho in order to get units of kg^-1.
-      ! Brian.  Sept. 8, 2007.
-!              Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6
-!     .                 * rho(k)
-      Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6 & 
-               / rho(k)
-    else
-      Ncm(k) = 0.
-    end if
-  end do
-end if
 
 ! Test scalars with thetal and rt if desired
 if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing

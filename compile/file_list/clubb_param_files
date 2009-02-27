@@ -21,6 +21,7 @@
 ../src/CLUBB_core/interpolation.F90
 ../src/CLUBB_core/lapack_wrap.F90
 ../src/CLUBB_core/mean_adv.F90
+../src/CLUBB_core/parameters_microphys.F90
 ../src/CLUBB_core/mixing_length.F90
 ../src/CLUBB_core/model_flags.F90
 ../src/CLUBB_core/mono_flux_limiter.F90

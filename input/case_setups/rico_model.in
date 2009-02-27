@@ -84,10 +84,6 @@ alndf = 0.1d0    ! Near-IR diffuse surface albedo       [-]
 !-- End BugsRad settings --
 
 
-l_cloud_sed    = .false.  ! Flag for cloud water sedimentation.
-l_kk_rain      = .true.   ! Flag for Khairoutdinov-Kogan rain microphysics.
-l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
-l_icedfs       = .false.  ! Flag for simplified ice scheme.
 l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 
@@ -105,6 +101,35 @@ time_restart  = 0.0      ! Time of model restart.
 !                e.g. checks for NaNs and spurious negative values.
 debug_level   = 2
 
+/
+
+&microphysics_setting
+l_cloud_sed    = .false.  ! Flag for cloud water sedimentation.
+l_kk_rain      = .true.  ! Flag for Khairoutdinov-Kogan rain microphysics.
+l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
+l_icedfs       = .false.  ! Flag for simplified ice scheme.
+!!!!!!! COMMENTS FOR RICO MARINE CUMULUS CASE
+!!!!!!! These are the constants needed to
+!!!!!!! run the RICO case, as I did in my case rico0206, submitted:
+rrp2_rrainm2_cloud = 30.
+Nrp2_Nrm2_cloud = 10.
+Ncp2_Ncm2_cloud = 60.
+corr_rrNr_LL_cloud = 0.8
+corr_srr_NL_cloud = 0.25
+corr_sNr_NL_cloud = 0.3
+corr_sNc_NL_cloud = 0.24
+
+rrp2_rrainm2_below = 20.
+Nrp2_Nrm2_below = 2.
+Ncp2_Ncm2_below = 0.
+corr_rrNr_LL_below = 0.78
+corr_srr_NL_below = 0.
+corr_sNr_NL_below = 0.
+corr_sNc_NL_below = 0.
+
+C_evap = 0.5
+r_0 = 100.0e-6
+!!!!!!! END RICO COMMENTS, Michael Falk, 27-28 November 2007
 /
 
 &stats_setting

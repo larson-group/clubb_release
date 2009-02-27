@@ -558,7 +558,7 @@
      edsclrm
 
  
- use model_flags, only:  & 
+ use parameters_microphys, only:  & 
      l_coamps_micro,  & ! Variable(s) 
      l_kk_rain
 

@@ -36,7 +36,9 @@ use constants, only: Rd, Cp, Lv, p0, rc_tol, zero_threshold ! Variable(s)
 
 use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-use model_flags, only: l_bugsrad, l_coamps_micro, l_kk_rain ! Variable(s)
+use model_flags, only: l_bugsrad  ! Variable(s)
+
+use parameters_microphys, only: l_coamps_micro, l_kk_rain ! Variable(s)
 
 use grid_class, only: gr ! Variable(s)
 

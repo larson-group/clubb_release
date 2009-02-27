@@ -16,39 +16,39 @@ module KK_microphys_module
   public :: KK_microphys
   private :: mean_volume_radius, cond_evap_rrainm, cond_evap_Nrm
   private :: autoconv_rrainm, autoconv_Nrm, accretion_rrainm
-  PRIVATE :: G_T_p
-  ! PRIVATE :: PDF_TRIVAR_2G_LN_LN, PDF_BIVAR_2G_LN, PDF_BIVAR_LN_LN
-  PRIVATE :: Dv_fnc
+  private :: G_T_p
+  ! private :: PDF_TRIVAR_2G_LN_LN, PDF_BIVAR_2G_LN, PDF_BIVAR_LN_LN
+  private :: Dv_fnc
 
-  PRIVATE ! Set default scope
+  private ! Set default scope
 
   ! Statistical rain parameters	.
 
   ! Parameters for in-cloud (from SAM RF02 DO).
-  REAL, PARAMETER:: rrp2_rrainm2_cloud = 0.766
-  REAL, PARAMETER:: Nrp2_Nrm2_cloud = 0.429
-  REAL, PARAMETER:: Ncp2_Ncm2_cloud = 0.003
-  REAL, PARAMETER:: corr_rrNr_LL_cloud = 0.786
-  REAL, PARAMETER:: corr_srr_NL_cloud = 0.242
-  REAL, PARAMETER:: corr_sNr_NL_cloud = 0.285
-  REAL, PARAMETER:: corr_sNc_NL_cloud = 0.433
+  real, public :: rrp2_rrainm2_cloud ! 0.766
+  real, public :: Nrp2_Nrm2_cloud ! 0.429
+  real, public :: Ncp2_Ncm2_cloud ! 0.003
+  real, public :: corr_rrNr_LL_cloud ! 0.786
+  real, public :: corr_srr_NL_cloud ! 0.242
+  real, public :: corr_sNr_NL_cloud ! 0.285
+  real, public :: corr_sNc_NL_cloud ! 0.433
   ! Parameters for below-cloud (from SAM RF02 DO).
-  REAL, PARAMETER:: rrp2_rrainm2_below = 8.97
-  REAL, PARAMETER:: Nrp2_Nrm2_below = 12.03
-  REAL, PARAMETER:: Ncp2_Ncm2_below = 0.00 ! Not applicable below cloud.
-  REAL, PARAMETER:: corr_rrNr_LL_below = 0.886
-  REAL, PARAMETER:: corr_srr_NL_below = 0.056
-  REAL, PARAMETER:: corr_sNr_NL_below = 0.015
-  REAL, PARAMETER:: corr_sNc_NL_below = 0.00 ! Not applicable below cloud.
+  real, public :: rrp2_rrainm2_below ! 8.97
+  real, public :: Nrp2_Nrm2_below ! 12.03
+  real, public :: Ncp2_Ncm2_below ! 0.00 ! Not applicable below cloud.
+  real, public :: corr_rrNr_LL_below ! 0.886
+  real, public :: corr_srr_NL_below ! 0.056
+  real, public :: corr_sNr_NL_below ! 0.015
+  real, public :: corr_sNc_NL_below ! 0.00 ! Not applicable below cloud.
   ! Other needed parameters
-  REAL, PARAMETER:: C_evap = 0.86    ! Khairoutdinov and Kogan (2000) ratio of
+  real, public :: C_evap ! 0.86    ! Khairoutdinov and Kogan (2000) ratio of
                                      ! drizzle drop mean geometric radius to
                                      ! drizzle drop mean volume radius.
                                      ! Khairoutdinov and Kogan (2000); p. 233.
-  !REAL, PARAMETER:: C_evap = 0.86*0.2 ! COAMPS value of KK C_evap
-  !REAL, PARAMETER:: C_evap = 0.55     ! KK 2000, Marshall-Palmer (1948) value.
+  !real, public :: C_evap = 0.86*0.2 ! COAMPS value of KK C_evap
+  !real, public :: C_evap = 0.55     ! KK 2000, Marshall-Palmer (1948) value.
 
-  REAL, PARAMETER:: r_0 = 25.0e-6   ! Assumed radius of all new drops; m.
+  real, public :: r_0 ! 25.0e-6   ! Assumed radius of all new drops; m.
                                     ! Value specified in KK (2000); p. 235.
   ! Vince Larson set r_0=28mum to agree with COAMPS-LES formula. 15 April 2005
   !REAL, PARAMETER:: r_0 = 28.0e-6   ! Assumed radius of all new drops; m.

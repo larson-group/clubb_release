@@ -39,7 +39,9 @@ module dycoms2_rf02
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-    use model_flags, only: l_bugsrad, l_coamps_micro ! Variable(s)
+    use model_flags, only: l_bugsrad  ! Variable(s)
+
+    use parameters_microphys, only: l_coamps_micro ! Variable(s)
 
     use stats_precision, only: time_precision ! Variable(s)
 

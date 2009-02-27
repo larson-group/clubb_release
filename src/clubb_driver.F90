@@ -168,6 +168,12 @@ module clubb_driver
 
     use microphys_driver, only: init_microphys ! Subroutine
 
+    use parameters_microphys, only: &
+      l_kk_rain,  & ! Variable(s)
+      l_icedfs,  &
+      l_coamps_micro,  & 
+      l_cloud_sed
+
     use model_flags, only: l_LH_on, l_local_kk, & ! Constants
       l_pos_def, l_hole_fill, l_single_C2_Skw, l_gamma_Skw, l_byteswap_io
 
@@ -237,10 +243,6 @@ module clubb_driver
       time_restart    ! Time of model restart run     [s]
 
     logical ::  & 
-      l_cloud_sed,    & ! Flag for cloud water droplet sedimentation. - Brian
-      l_kk_rain,      & ! Flag for Khairoutdinov and Kogan rain microphysics. - Brian
-      l_icedfs,       & ! Flag for simplified ice scheme
-      l_coamps_micro, & ! Flag for COAMPS microphysical scheme
       l_bugsrad,      & ! Flag for BUGsrad radiation scheme
       l_soil_veg,     & ! Flag for simple surface scheme
       l_uv_nudge,     & ! Whether to adjust the winds within the timestep
@@ -300,7 +302,6 @@ module clubb_driver
       sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge, & 
       sol_const, std_atmos_buffer, &
       forcings_file_path, &
-      l_cloud_sed, l_kk_rain, l_icedfs, l_coamps_micro,  & 
       l_bugsrad, l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, debug_level, & 
       alvdr, alvdf, alndr, alndf, &
@@ -351,10 +352,6 @@ module clubb_driver
 
     forcings_file_path = ''
 
-    l_cloud_sed    = .false.
-    l_kk_rain      = .false.
-    l_icedfs       = .false.
-    l_coamps_micro = .false.
     l_bugsrad      = .false.
     l_soil_veg     = .false.
     l_tke_aniso    = .false.
@@ -494,10 +491,11 @@ module clubb_driver
 
       print *, "forcings_file_path = ", forcings_file_path
 
-      print *, "l_cloud_sed = ", l_cloud_sed
       print *, "l_kk_rain = ", l_kk_rain
       print *, "l_icedfs = ", l_icedfs
       print *, "l_coamps_micro = ", l_coamps_micro
+      print *, "l_cloud_sed = ", l_cloud_sed
+
       print *, "l_bugsrad = ", l_bugsrad
       print *, "l_soil_veg = " , l_soil_veg
       print *, "l_tke_aniso = ", l_tke_aniso
@@ -560,8 +558,8 @@ module clubb_driver
     dummy_dy = 0.0
 
     ! Setup microphysical fields
-    call init_microphys( l_kk_rain, l_coamps_micro, l_icedfs, &  ! Intent(in)
-                         hydromet_dim )                           ! Intent(out)
+    call init_microphys( iunit, runfile, & ! Intent(in)
+                         hydromet_dim )    ! Intent(out)
 
     ! Allocate & initialize variables,
     ! setup grid, setup constants, and setup flags
@@ -570,8 +568,7 @@ module clubb_driver
          ( nzmax, T0, ts_nudge, sol_const,&                     ! Intent(in)
            std_atmos_buffer, hydromet_dim, sclr_dim, &          ! Intent(in)
            sclr_tol(1:sclr_dim), edsclr_dim, params, &          ! Intent(in)
-           l_bugsrad, l_soil_veg, l_kk_rain, l_icedfs, l_coamps_micro, &   ! Intent(in)
-           l_cloud_sed, l_uv_nudge, l_tke_aniso, &              ! Intent(in)
+           l_bugsrad, l_soil_veg, l_uv_nudge, l_tke_aniso, &    ! Intent(in)
            .false., grid_type, deltaz, zm_init, &               ! Intent(in)
            momentum_heights, thermodynamic_heights, &           ! Intent(in)
            dummy_dx, dummy_dy, &                                ! Intent(in)
@@ -1360,8 +1357,10 @@ module clubb_driver
     use stats_precision, only: time_precision ! Variable(s)
 
     use model_flags, only: &
-      l_uv_nudge, & ! Variable(s)
-      l_kk_rain, &
+      l_uv_nudge   ! Variable(s)
+
+    use parameters_microphys, only : &
+      l_kk_rain, & ! Variables
       l_coamps_micro, &
       l_soil_veg
 
@@ -1564,10 +1563,6 @@ module clubb_driver
 
 ! Modules to be included
     use model_flags, only:  &
-        l_kk_rain,  & ! Variable(s)
-        l_icedfs,  &
-        l_coamps_micro,  & 
-        l_cloud_sed,  &
         l_bugsrad, &
         l_soil_veg
 
@@ -1617,6 +1612,9 @@ module clubb_driver
     use numerical_check, only: isnan2d, rad_check ! Procedure(s)
 
     use microphys_driver, only: advance_microphys ! Procedure(s)
+
+    use parameters_microphys, only: &
+      l_icedfs, l_coamps_micro, l_cloud_sed, l_kk_rain ! Variables
 
     use soil_vegetation, only: advance_soil_veg, veg_T_in_K
 
@@ -1813,9 +1811,9 @@ module clubb_driver
 
     case ( "gabls2" ) ! GABLS 2 case
       call gabls2_tndcy( time_current, time_initial,  &   ! Intent(in) 
-                         rho, rcm, l_kk_rain, &           ! Intent(in)
+                         rho, rcm, &                      ! Intent(in)
                          wm_zt, wm_zm, thlm_forcing, &    ! Intent(out)
-                         rtm_forcing, radht, Ncm, &       ! Intent(out)
+                         rtm_forcing, radht, &            ! Intent(out)
                          sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
 #ifdef UNRELEASED_CODE
@@ -1876,7 +1874,7 @@ module clubb_driver
                                sclrm_forcing, edsclrm_forcing )            ! Intent(out)
 
     case ( "rico" ) ! RICO case
-      call rico_tndcy( exner, rho, rcm, l_kk_rain, &              ! Intent(in)
+      call rico_tndcy( exner, rho, rcm, &              ! Intent(in)
                        wm_zt, wm_zm, &                            ! Intent(out)
                        thlm_forcing, rtm_forcing, radht, Ncm, &   ! Intent(out)   
                        sclrm_forcing, edsclrm_forcing )           ! Intent(out)

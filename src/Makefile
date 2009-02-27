@@ -107,7 +107,7 @@ PARAMETERIZATION = \
 	parameters_tunable.o pos_definite_mod.o calendar.o fill_holes.o \
 	mono_flux_limiter.o clip_semi_implicit.o clip_explicit.o \
 	array_index.o interpolation.o parameter_indices.o \
-	parameters_model.o
+	parameters_model.o parameters_microphys.o
 
 
 INTERFACING = grads_common.o inputfields.o inputgrads.o 
