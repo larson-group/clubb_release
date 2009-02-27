@@ -238,7 +238,7 @@ module microphys_driver
         time_precision ! Variable(s)
 
     use error_code, only:  & 
-        lapack_error, ! Procedure
+        lapack_error, & ! Procedure
         clubb_at_least_debug_level
 
     use coamps_micro_driver_mod, only:  & 

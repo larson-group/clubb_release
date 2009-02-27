@@ -1357,12 +1357,12 @@ module clubb_driver
     use stats_precision, only: time_precision ! Variable(s)
 
     use model_flags, only: &
-      l_uv_nudge   ! Variable(s)
+      l_uv_nudge, & ! Variable(s)
+      l_soil_veg
 
     use parameters_microphys, only : &
       l_kk_rain, & ! Variables
-      l_coamps_micro, &
-      l_soil_veg
+      l_coamps_micro
 
 #ifdef UNRELEASED_CODE
     use arm_0003, only: arm_0003_init ! Procedure(s)
