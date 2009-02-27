@@ -26,9 +26,13 @@ module bugsrad_clubb_mod
                lat_in_degrees, lon_in_degrees, &
                day, month, year, time,         &
                thlm, rcm, rtm, rsnwm, rim,     & 
-               cf, p_in_Pa, p_in_Pam, exner, rho_zm, &
-               radht, Frad, Frad_SW_up, Frad_LW_up, &
-               Frad_SW_down, Frad_LW_down, thlm_forcing )
+               cf, p_in_Pa, p_in_Pam,          &
+               exner, rho_zm,                  &
+               radht, Frad,                    &
+               Frad_SW_up, Frad_LW_up,         &
+               Frad_SW_down, Frad_LW_down,     &
+               thlm_forcing )
+
 ! Description:
 !   Does the necessary operations to interface the CLUBB model with
 !   the BUGS radition scheme.
@@ -241,14 +245,38 @@ module bugsrad_clubb_mod
     ! lin_int_buffer layers between 3200 m and 4000 m (variable grid spacing) +
     ! std_atmos_buffer layers from 4000 m to 14000 m  (1 km grid spacing)
 
-    j = 1 ! initial altitude
-    do while ( ( std_alt(j) ) < alt(nz) )
-      j = j + 1
-      if ( (j + std_atmos_buffer ) > std_atmos_dim ) then
-        write(fstderr,*) "j = ", j, "alt = ", alt(nz), " m"
-        stop "bugsrad_clubb: cannot handle this altitude" ! exceeds a 50 km altitude
-      end if
-    end do
+    if ( alt(nz) > std_alt(std_atmos_dim) ) then
+
+       write(fstderr,*) "The CLUBB model grid (for zm levels) contains an ",  &
+                        "altitude above the top of the standard atmosphere ",  &
+                        "profile."
+       write(fstderr,*) "Top of CLUBB model zm grid =", alt(nz), "m."
+       write(fstderr,*) "Top of standard atmosphere profile =",  &
+                        std_alt(std_atmos_dim), "m."
+       write(fstderr,*) "Reduce the vertical extent of the CLUBB model grid."
+       ! CLUBB zm grid exceeds a 50 km altitude
+       stop "bugsrad_clubb: cannot handle this altitude"
+
+    else
+
+       j = 1 ! initial altitude
+       do while ( std_alt(j) < alt(nz) )
+          j = j + 1
+          if ( (j + std_atmos_buffer ) > std_atmos_dim ) then
+             write(fstderr,*) "The value of j + std_atmos_buffer exceeds ",  &
+                              "the value of std_atmos_dim."
+             write(fstderr,*) "std_atmos_buffer = ", std_atmos_buffer
+             write(fstderr,*) "j = ", j
+             write(fstderr,*) "std_atmos_dim = ", std_atmos_dim
+             write(fstderr,*) "Either reduce the value of std_atmos_buffer ",  &
+                              "or reduce the vertical extent of the CLUBB ",  &
+                              "model grid (for zm levels)."
+             ! The value of j + std_atmos_buffer exceeds std_atmos_dim
+             stop "bugsrad_clubb: cannot handle this altitude"
+          endif
+       enddo
+
+    endif
 
     ! Add the standard atmospheric profile above the linear interpolation
     do i = 1, std_atmos_buffer, 1

@@ -370,6 +370,12 @@ subroutine sample_points( n, nt, d, p_matrix, a, &
 !     .    mean,
 !     .    std
 
+use constants, only:  &
+    fstderr  ! Constant(s)
+
+use error_code, only:  &
+    clubb_at_least_debug_level  ! Procedure(s)
+
 implicit none
 
 ! Input variables  ---------------------------------------
@@ -465,8 +471,10 @@ call gaus_mixt_points( n, d, a, mu1, mu2,  &
 if (d > 3) then
    X_nl(1:n,(d-1):d) = exp( X_nl(1:n,(d-1):d) )
 else
-   print*, 'd<4 in sampling_driver: ', & 
-           'will not convert last two variates to lognormal'
+   if ( clubb_at_least_debug_level( 1 ) ) then
+      write(fstderr,*) 'd<4 in sampling_driver:  ',  &
+                       'will not convert last two variates to lognormal'
+   endif
 endif
 
 ! Test diagnostics
@@ -505,6 +513,8 @@ end subroutine sample_points
 !-----------------------------------------------------------------------
 subroutine rtpthlp_2_sptp( d, Sigma_rtthlw, crt, cthl, Sigma_stw )
 
+use constants, only: fstderr ! Constant(s)
+
 use matrix_operations, only: matmult ! Procedure(s)      
 
 implicit none
@@ -527,8 +537,7 @@ double precision T_transpose(d,d), T(d,d), M_int(d,d)
 
 ! Check that matrix is large enough (at least 2x2)
 if (d < 3) then
-   print*, 'Error: Input matrix too small ', & 
-                        'in rtpthlp_2_stpthlp.'
+   write(fstderr,*) 'Error: Input matrix too small in rtpthlp_2_stpthlp.'
    stop
 endif
 
@@ -666,6 +675,12 @@ end subroutine rtpthlp_2_sptp
 subroutine gaus_mixt_points( n, d, a, mu1, mu2, Sigma1, Sigma2, & 
                              C1, C2, X_u, s_pts, X_gm )
 
+use constants, only:  &
+    fstderr  ! Constant(s)
+
+use error_code, only:  &
+    clubb_at_least_debug_level  ! Procedure(s)
+
 implicit none
 
 ! Input
@@ -691,25 +706,27 @@ double precision fraction_1
 
 ! Handle some possible errors re: proper ranges of a, C1, C2.
 if (a > 1.0d0 .or. a < 0.0d0) then
-  print *, 'Error in gaus_mixt_points:  ',& 
-             'mixture fraction, a, does not lie in [0,1].'
+   write(fstderr,*) 'Error in gaus_mixt_points:  ',  &
+                    'mixture fraction, a, does not lie in [0,1].'
    stop
 endif
 if (C1 > 1.0d0 .or. C1 < 0.0d0) then 
-  print *, 'Error in gaus_mixt_points: ', & 
-           'cloud fraction 1, C1, does not lie in [0,1].'
+   write(fstderr,*) 'Error in gaus_mixt_points:  ',  &
+                    'cloud fraction 1, C1, does not lie in [0,1].'
    stop
 endif
 if (C2 > 1.0d0 .or. C2 < 0.0d0) then 
-  print *, 'Error in gaus_mixt_points: ', & 
-           'cloud fraction 2, C2, does not lie in [0,1].'
-  stop
+   write(fstderr,*) 'Error in gaus_mixt_points:  ',  &
+                    'cloud fraction 2, C2, does not lie in [0,1].'
+   stop
 endif
 
 ! Make sure there is some cloud.
-if (a*C1 < 0.001d0 .and. (1-a)*C2 < 0.001d0) then 
-  print *, 'Error in gaus_mixt_points: ', & 
-              'there is none or almost no cloud!'
+if (a*C1 < 0.001d0 .and. (1-a)*C2 < 0.001d0) then
+   if ( clubb_at_least_debug_level( 1 ) ) then
+      write(fstderr,*) 'Error in gaus_mixt_points:  ',  &
+                       'there is no cloud or almost no cloud!'
+   endif
 endif
 
 do sample = 1, n
@@ -760,6 +777,12 @@ end subroutine gaus_mixt_points
 subroutine truncate_gaus_mixt( n, d, col, a, mu1, mu2, & 
                 Sigma1, Sigma2, C1, C2, X_u, truncated_column )
 
+use constants, only:  &
+    fstderr  ! Constant(s)
+
+use error_code, only:  &
+    clubb_at_least_debug_level  ! Procedure(s)
+
 implicit none
 
 ! Input
@@ -785,25 +808,27 @@ double precision fraction_1
 
 ! Handle some possible errors re: proper ranges of a, C1, C2.
 if ( (a > 1.0d0) .or. (a < 0.0d0) ) then
-  print*, 'Error in truncate_gaus_mixt: ', & 
-             'mixture fraction, a, does not lie in [0,1].'
-  stop
+   write(fstderr,*) 'Error in truncate_gaus_mixt:  ',  &
+                    'mixture fraction, a, does not lie in [0,1].'
+   stop
 endif
 if ( (C1 > 1.0d0) .or. (C1 < 0.0d0) ) then 
-  print*, 'Error in truncate_gaus_mixt: ', & 
-           'cloud fraction 1, C1, does not lie in [0,1].'
-  stop
+   write(fstderr,*) 'Error in truncate_gaus_mixt:  ',  &
+                    'cloud fraction 1, C1, does not lie in [0,1].'
+   stop
 endif
 if ( (C2 > 1.0d0) .or. (C2 < 0.0d0) ) then 
-  print*, 'Error in truncate_gaus_mixt: ', & 
-           'cloud fraction 2, C2, does not lie in [0,1].'
-  stop
+   write(fstderr,*) 'Error in truncate_gaus_mixt:  ',  &
+                    'cloud fraction 2, C2, does not lie in [0,1].'
+   stop
 endif
 
 ! Make sure there is some cloud.
-if (a*C1 < 0.001d0 .and. (1-a) * C2 < 0.001d0) then 
-  print*, 'Error in truncate_gaus_mixt: ', & 
-              'there is none or almost no cloud!'
+if (a*C1 < 0.001d0 .and. (1-a) * C2 < 0.001d0) then
+   if ( clubb_at_least_debug_level( 1 ) ) then
+      write(fstderr,*) 'Error in truncate_gaus_mixt:  ',  &
+                       'there is no cloud or almost no cloud!'
+   endif
 endif
 
 ! Make s PDF (1st column) a truncated Gaussian.
@@ -1124,6 +1149,12 @@ subroutine st_2_rtthl( n, d, a, rt1, thl1, rt2, thl2, &
                        crt1, cthl1, crt2, cthl2, & 
                        C1, C2, s1, s2, s, t, X_u, rt, thl )
 
+use constants, only:  &
+    fstderr  ! Constant(s)
+
+use error_code, only:  &
+    clubb_at_least_debug_level  ! Procedure(s)
+
 implicit none
 
 ! Input
@@ -1149,25 +1180,27 @@ double precision fraction_1
 
 ! Handle some possible errors re: proper ranges of a, C1, C2.
 if (a > 1.0d0 .or. a < 0.0d0) then
-   print*, 'Error in sptp_2_rtpthlp: ', & 
-             'mixture fraction, a, does not lie in [0,1].'
+   write(fstderr,*) 'Error in st_2_rtthl:  ',  &
+                    'mixture fraction, a, does not lie in [0,1].'
    stop
 endif
 if (C1 > 1.0d0 .or. C1 < 0.0d0) then 
-   print*, 'Error in sptp_2_rtpthp: ', & 
-           'cloud fraction 1, C1, does not lie in [0,1].'
+   write(fstderr,*) 'Error in st_2_rtthl:  ',  &
+                    'cloud fraction 1, C1, does not lie in [0,1].'
    stop
 endif
 if (C2 > 1.0d0 .or. C2 < 0.0d0) then 
-   print*, 'Error in sptp_2_rtpthp: ', & 
-           'cloud fraction 2, C2, does not lie in [0,1].'
+   write(fstderr,*) 'Error in st_2_rtthl:  ',  &
+                    'cloud fraction 2, C2, does not lie in [0,1].'
    stop
 endif
 
 ! Make sure there is some cloud.
-if (a*C1 < 0.001d0 .and. (1-a)*C2 < 0.001d0) then 
-   print*, 'Error in sptp_2_rtpthp:  ', & 
-              'there is none or almost no cloud!'
+if (a*C1 < 0.001d0 .and. (1-a)*C2 < 0.001d0) then
+   if ( clubb_at_least_debug_level( 1 ) ) then
+      write(fstderr,*) 'Error in st_2_rtthl:  ',  &
+                       'there is no cloud or almost no cloud!'
+   endif
 endif
 
 do sample = 1, n

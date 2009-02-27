@@ -160,7 +160,8 @@ use stats_precision, only:  &
     time_precision ! Variable(s)
 
 use error_code, only:  & 
-    lapack_error ! Procedure
+    lapack_error,  & ! Procedure(s)
+    clubb_at_least_debug_level
 
 use coamps_micro_driver_mod, only:  & 
     coamps_micro_driver ! Procedure
@@ -670,7 +671,8 @@ end if ! l_stats_samp
 !       Error Report
 !       Joshua Fasching Feb 2008
 
-if ( lapack_error(err_code) ) then
+if ( lapack_error( err_code ) .and.  &
+     clubb_at_least_debug_level( 1 ) ) then
         
    write(fstderr,*) "Error in advance_microphys"
    

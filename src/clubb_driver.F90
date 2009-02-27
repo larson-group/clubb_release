@@ -1574,8 +1574,6 @@ module clubb_driver
         l_bugsrad, &
         l_soil_veg
 
-    use constants, only: rc_tol, fstderr ! Variable(s)
-
     use grid_class, only: gr ! Variable(s)
 
     use grid_class, only: zt2zm ! Procedure(s)
@@ -1608,7 +1606,7 @@ module clubb_driver
 
     use stats_type, only: stat_update_var_pt ! Procedure(s)
 
-    use constants, only: Cp, Lv, kappa, p0 ! Variable(s)
+    use constants, only: Cp, Lv, kappa, p0, rc_tol, fstderr ! Variable(s)
 
     use variables_prognostic_module, only:  & 
         sclrm_forcing,   & ! Passive scalar variables
@@ -2180,51 +2178,53 @@ module clubb_driver
       ! NaN checks added to detect possible errors with BUGSrad
       ! Joshua Fasching November 2007
 
-      if ( isnan2d( thlm ) ) then
-        print *, "thlm before BUGSrad is NaN"
-      endif
-
-      if ( isnan2d( rcm ) ) then
-        print *, "rcm before BUGSrad is NaN"
-      endif
-
-      if ( isnan2d( rtm ) ) then
-        print *, "rtm before BUGSrad is NaN"
-      endif
-
-      if ( isnan2d( rsnowm ) ) then
-        print *, "rsnowm before BUGSrad is NaN"
-      endif
-
-      if ( isnan2d( ricem ) ) then
-        print *, "ricem before BUGSrad is NaN"
-      endif
-
-      if ( isnan2d( cf ) ) then
-        print *, "cf before BUGSrad is NaN"
-      endif
-
-      if ( isnan2d( p_in_Pa ) ) then
-        print *, "p_in_Pa before BUGSrad is NaN"
-      endif
-
-      if ( isnan2d( exner ) ) then
-        print *, "exner before BUGSrad is NaN"
-      endif
-
-      if ( isnan2d( rho_zm ) ) then
-        print *, "rho_zm before BUGSrad is NaN"
-      endif
-
-      if ( isnan2d( thlm_forcing ) ) then
-        print *, "thlm_forcing before BUGSrad is NaN"
-      endif
-
-      ! Check for impossible negative values
       if ( clubb_at_least_debug_level( 2 ) ) then
-        call rad_check( thlm, rcm, rtm, ricem, &            ! Intent(in)
-                        cf, p_in_Pa, exner, rho_zm )        ! Intent(in)
-      endif
+
+         if ( isnan2d( thlm ) ) then
+            write(fstderr,*) "thlm before BUGSrad is NaN"
+         endif
+
+         if ( isnan2d( rcm ) ) then
+            write(fstderr,*) "rcm before BUGSrad is NaN"
+         endif
+
+         if ( isnan2d( rtm ) ) then
+            write(fstderr,*) "rtm before BUGSrad is NaN"
+         endif
+
+         if ( isnan2d( rsnowm ) ) then
+            write(fstderr,*) "rsnowm before BUGSrad is NaN"
+         endif
+
+         if ( isnan2d( ricem ) ) then
+            write(fstderr,*) "ricem before BUGSrad is NaN"
+         endif
+
+         if ( isnan2d( cf ) ) then
+            write(fstderr,*) "cf before BUGSrad is NaN"
+         endif
+
+         if ( isnan2d( p_in_Pa ) ) then
+            write(fstderr,*) "p_in_Pa before BUGSrad is NaN"
+         endif
+
+         if ( isnan2d( exner ) ) then
+            write(fstderr,*) "exner before BUGSrad is NaN"
+         endif
+
+         if ( isnan2d( rho_zm ) ) then
+            write(fstderr,*) "rho_zm before BUGSrad is NaN"
+         endif
+
+         if ( isnan2d( thlm_forcing ) ) then
+            write(fstderr,*) "thlm_forcing before BUGSrad is NaN"
+         endif
+
+         ! Check for impossible negative values
+         call rad_check( thlm, rcm, rtm, ricem, &            ! Intent(in)
+                         cf, p_in_Pa, exner, rho_zm )        ! Intent(in)
+
+      endif  ! clubb_at_least_debug_level( 2 )
 
       ! Initially we will set this to a constant for testing purposes
       ! lin_int_buffer = 20
@@ -2241,30 +2241,34 @@ module clubb_driver
       !print *, "lin_int_buffer = ", lin_int_buffer !%% debug
 
       call bugsrad_clubb( gr%zm, gr%nnzp, lin_int_buffer,  & ! In
-                        rlat, rlon,                      & ! In
-                        day, month, year, time_current,  & ! In
-                        thlm, rcm, rtm, rsnowm, ricem,   & ! In
-                        cf, p_in_Pa, zt2zm( p_in_Pa ), exner, rho_zm,  & ! In
-                        radht, Frad,                     & ! Out
-                        Frad_SW_up, Frad_LW_up, &          ! Out
-                        Frad_SW_down, Frad_LW_down, &      ! Out
-                        thlm_forcing )        ! In/Out
+                          rlat, rlon,                      & ! In
+                          day, month, year, time_current,  & ! In
+                          thlm, rcm, rtm, rsnowm, ricem,   & ! In
+                          cf, p_in_Pa, zt2zm( p_in_Pa ),   & ! In
+                          exner, rho_zm,                   & ! In
+                          radht, Frad,                     & ! Out
+                          Frad_SW_up, Frad_LW_up,          & ! Out
+                          Frad_SW_down, Frad_LW_down,      & ! Out
+                          thlm_forcing )                     ! In/Out
 
-      if ( isnan2d( thlm_forcing ) ) then
-        print *, "thlm_forcing after BUGSrad is NaN"
-!      print *,thlm_forcing
+      if ( clubb_at_least_debug_level( 2 ) ) then
 
-      endif
+         if ( isnan2d( thlm_forcing ) ) then
+            write(fstderr,*) "thlm_forcing after BUGSrad is NaN"
+            !write(fstderr,*) thlm_forcing
+         endif
 
-      if ( isnan2d( Frad ) ) then
-        print *, "Frad after BUGSrad is NaN"
-!      print *, Frad
-      endif
+         if ( isnan2d( Frad ) ) then
+            write(fstderr,*) "Frad after BUGSrad is NaN"
+            !write(fstderr,*) Frad
+         endif
 
-      if ( isnan2d( radht ) ) then
-        print *, "radht after BUGSrad is NaN"
-!      print *,radht
-      endif
+         if ( isnan2d( radht ) ) then
+            write(fstderr,*) "radht after BUGSrad is NaN"
+            !write(fstderr,*) radht
+         endif
+
+      endif  ! clubb_at_least_debug_level( 2 )
 
 #else
 

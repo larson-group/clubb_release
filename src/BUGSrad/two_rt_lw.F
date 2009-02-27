@@ -14,7 +14,13 @@
 #ifdef usenewexp
       use newexp, only: exp
 #endif
+
+      use constants, only:  fstdout  ! Constant(s)
+
+      use error_code, only:  clubb_at_least_debug_level  ! Procedure(s)
+
       implicit none
+
 !-----------------------------------------------------------------------
 ! REFERENCES:
 ! two_rt_lw replaces two_rt and add written by G. Stephens. two_rt_lw
@@ -126,7 +132,9 @@
             if (fail.and.tauscat.ge.tausthresh) goto 2000
  
 !>> BEGIN SELECTION RULES <<
-           print *,'selection rules'
+           if ( clubb_at_least_debug_level( 1 ) ) then
+              write(fstdout,*) 'selection rules'
+           endif
             do l = 1, nlm
                exptau(l) = exp(-2*tau(i,l))
                if(tau(i,l) .lt. .8e-2) then

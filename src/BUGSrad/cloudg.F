@@ -13,6 +13,8 @@
 
       use kinds
 
+      use constants, only:  fstderr  ! Constant(s)
+
       implicit none
 
 !-----------------------------------------------------------------------
@@ -185,11 +187,11 @@
               ! print *,'wcont,ext,abs',wcont(i,l),ext,abs,cnr,cni
               ! print *,'**',ib,wcld(i,l),area,c1,p0,p1,vm
                if(wcld(i,l) .lt. 0.) then
-                      print *,wcld(i,l),ext,abs,wcont(i,l)
-                      print *,pp(i,l),pp(i,l+1)
-                      print *,tt(i,l)
-                      print *,re(i,l)
-                      stop
+                  write(fstderr,*) wcld(i,l), ext, abs, wcont(i,l)
+                  write(fstderr,*) pp(i,l), pp(i,l+1)
+                  write(fstderr,*) tt(i,l)
+                  write(fstderr,*) re(i,l)
+                  stop
                endif
 
                asycld(i,l)=0.85

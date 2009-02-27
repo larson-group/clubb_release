@@ -316,6 +316,12 @@ subroutine autoconv_driver( n, d, a, R1, R2, ql, & !w,  &
 !                            Nc, rr, 
                             X_u, ac_m )
 
+use constants, only:  &
+    fstderr  ! Constant(s)
+
+use error_code, only:  &
+    clubb_at_least_debug_level  ! Procedure(s)
+
 implicit none
 
 ! Input
@@ -344,28 +350,30 @@ double precision, intent(out) :: ac_m
 
 ! Handle some possible errors re: proper ranges of a, R1, R2.
   if (a .gt. 1.0d0 .or. a .lt. 0.0d0) then
-     print*, 'Error in autoconv_driver: ', & 
-             'mixture fraction, a, does not lie in [0,1].'
-     print*, 'a=', a
+     write(fstderr,*) 'Error in autoconv_driver:  ',  &
+                      'mixture fraction, a, does not lie in [0,1].'
+     write(fstderr,*) 'a = ', a
      stop
   endif
   if (R1 .gt. 1.0d0 .or. R1 .lt. 0.0d0) then 
-     print*, 'Error in autoconv_driver: ', & 
-           'cloud fraction 1, R1, does not lie in [0,1].'
-     print*, 'R1=', R1
+     write(fstderr,*) 'Error in autoconv_driver:  ',  &
+                      'cloud fraction 1, R1, does not lie in [0,1].'
+     write(fstderr,*) 'R1 = ', R1
      stop
   endif
   if (R2 .gt. 1.0d0 .or. R2 .lt. 0.0d0) then 
-     print*, 'Error in autoconv_driver: ', & 
-           'cloud fraction 2, R2, does not lie in [0,1].'
-     print*, 'R2=', R2
+     write(fstderr,*) 'Error in autoconv_driver:  ',  &
+                      'cloud fraction 2, R2, does not lie in [0,1].'
+     write(fstderr,*) 'R2 = ', R2
      stop
   endif
 
 ! Make sure there is some cloud.
-  if (a*R1 .lt. 0.001d0 .and. (1-a)*R2 .lt. 0.001d0) then 
-     print*, 'Error in autoconv_driver: ', & 
-              'there is none or almost no cloud!'
+  if (a*R1 .lt. 0.001d0 .and. (1-a)*R2 .lt. 0.001d0) then
+     if ( clubb_at_least_debug_level( 1 ) ) then
+        write(fstderr,*) 'Error in autoconv_driver:  ',  &
+                         'there is no cloud or almost no cloud!'
+     endif
   endif
 
 ! Autoconversion formula prefactor and exponent.
@@ -439,8 +447,7 @@ double precision, intent(out) :: ac_m
 !    then we estimate the plume liquid water by the
 !    other plume's value.
 if (n1 == 0 .and. n2 == 0) then
-  print*, 'Error: no sample points in autoconv_driver'
-  stop
+  stop 'Error:  no sample points in autoconv_driver'
 endif
 
  if ( .not. (n1 == 0) ) then
@@ -492,6 +499,12 @@ subroutine ql_estimate( n, d, a, C1, C2, ql, & ! w,   &
                          !N_pts, rr, 
                          X_u, ql_m )
 
+use constants, only:  &
+    fstderr  ! Constant(s)
+
+use error_code, only:  &
+    clubb_at_least_debug_level  ! Procedure(s)
+
 implicit none
 
 ! Input
@@ -519,25 +532,27 @@ double precision fraction_1
 
 ! Handle some possible errors re: proper ranges of a, C1, C2.
 if (a > 1.0d0 .or. a < 0.0d0) then
-   print*, 'Error in autoconv_driver: ', & 
-             'mixture fraction, a, does not lie in [0,1].'
+   write(fstderr,*) 'Error in ql_estimate:  ',  &
+                    'mixture fraction, a, does not lie in [0,1].'
    stop
 endif
-if (C1 > 1.0d0 .or. C1 < 0.0d0) then 
-   print*, 'Error in autoconv_driver: ', & 
-           'cloud fraction 1, C1, does not lie in [0,1].'
+if (C1 > 1.0d0 .or. C1 < 0.0d0) then
+   write(fstderr,*) 'Error in ql_estimate:  ',  &
+                    'cloud fraction 1, C1, does not lie in [0,1].'
    stop
 endif
-if (C2 > 1.0d0 .or. C2 < 0.0d0) then 
-   print*, 'Error in autoconv_driver: ', & 
-           'cloud fraction 2, C2, does not lie in [0,1].'
+if (C2 > 1.0d0 .or. C2 < 0.0d0) then
+   write(fstderr,*) 'Error in ql_estimate:  ',  &
+                    'cloud fraction 2, C2, does not lie in [0,1].'
    stop
 endif
 
 ! Make sure there is some cloud.
-if (a*C1 < 0.001d0 .and. (1-a)*C2 < 0.001d0) then 
-   print*, 'Error in autoconv_driver: ', & 
-              'there is none or almost no cloud!'
+if (a*C1 < 0.001d0 .and. (1-a)*C2 < 0.001d0) then
+   if ( clubb_at_least_debug_level( 1 ) ) then
+      write(fstderr,*) 'Error in ql_estimate:  ',  &
+                       'there is no cloud or almost no cloud!'
+   endif
 endif
 
 ! To compute liquid water, need to set coeff=expn=1.
@@ -594,8 +609,7 @@ enddo
 !    then we estimate the plume liquid water by the
 !    other plume's value.
 if (n1 == 0 .and. n2 == 0) then
-   print*, 'Error: no sample points in ql_estimate'
-   stop
+   stop 'Error:  no sample points in ql_estimate'
 endif
 
 if ( .not. (n1 == 0) ) then

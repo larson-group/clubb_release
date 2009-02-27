@@ -142,8 +142,7 @@
 
 ! Check whether matrices A and B have consistent dimensions
         if ( colsa /= rowsb ) then
-          print *, 'Error: Matrix dims inconsistent in matmult.'
-          stop
+            stop 'Error:  Matrix dims inconsistent in matmult.'
         endif
 
 ! Perform matrix multiplication

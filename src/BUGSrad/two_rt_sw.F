@@ -14,6 +14,11 @@
 #ifdef usenewexp
       use newexp, only: exp
 #endif
+
+      use constants, only:  fstdout  ! Constant(s)
+
+      use error_code, only:  clubb_at_least_debug_level  ! Procedure(s)
+
       implicit none
 
 !-----------------------------------------------------------------------
@@ -139,7 +144,9 @@
             if (fail.and.tauscat.ge.tausthresh) goto 2000
  
 !>> BEGIN SELECTION RULES <<
-           print *,'selection rules'
+           if ( clubb_at_least_debug_level( 1 ) ) then
+              write(fstdout,*) 'selection rules'
+           endif
             fddir(i,1) = amu0(i)*slr(i)
             fddif(i,:) = 0.0
             do l = 1, nlm

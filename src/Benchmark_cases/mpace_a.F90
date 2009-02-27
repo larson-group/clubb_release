@@ -57,7 +57,8 @@
 !          Liou, Wallace and Hobbs, Shettle and Weinman
 !-----------------------------------------------------------------------
 
-  use constants, only: Cp, Rd, Lv, p0, rc_tol, zero_threshold ! Variable(s)
+  use constants, only: Cp, Rd, Lv, p0, rc_tol, & ! Variable(s)
+                       zero_threshold, fstderr
 
   use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
@@ -75,12 +76,12 @@
 
   use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
-  use error_code, only: clubb_debug ! Procedure(s)
+  use error_code, only: clubb_debug, clubb_at_least_debug_level ! Procedure(s)
  
   use stats_type, only: stat_update_var ! Procedure(s)
 
   use stats_variables, only: iradht_LW, iradht_SW, iFrad_LW,  & ! Variable(s)
-                 iFrad_SW, zt, zm, l_stats_samp
+                             iFrad_SW, zt, zm, l_stats_samp
  
   implicit none
 
@@ -232,11 +233,15 @@ left_time = -1
 right_time = -1
 
 if (time <= file_times(1)) then
-  print *,'Time is at or before the first time in the list.'
+  if ( clubb_at_least_debug_level( 1 ) ) then
+     write(fstderr,*) 'Time is at or before the first time in the list.'
+  endif
   left_time = 1
   right_time = 1
 else if (time >= file_times(file_ntimes)) then
-  print *,'Time is at or after the last time in the list.'
+  if ( clubb_at_least_debug_level( 1 ) ) then
+     write(fstderr,*) 'Time is at or after the last time in the list.'
+  endif
   left_time = file_ntimes
   right_time = file_ntimes
 else
@@ -460,7 +465,7 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
 !          mpace_a specification from arm.gov
 !-----------------------------------------------------------------------
 
-  use constants, only: Cp, Lv ! Variable(s)
+  use constants, only: Cp, Lv, fstderr ! Variable(s)
 
   use parameters_model, only: sclr_dim, edsclr_dim  ! Variable(s)
 
@@ -468,7 +473,7 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
 
   use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
-  use error_code, only: clubb_debug ! Procedure(s)
+  use error_code, only: clubb_debug, clubb_at_least_debug_level ! Procedure(s)
 
   use interpolation, only: factor_interp ! Procedure(s)
 
@@ -524,11 +529,15 @@ right_time = -1
 
 ! choose which times to use
 if (time <= file_times(1)) then
-  print *,'Time is at or before the first time in the list.'
+  if ( clubb_at_least_debug_level( 1 ) ) then
+     write(fstderr,*) 'Time is at or before the first time in the list.'
+  endif
   left_time = 1
   right_time = 1
 else if (time >= file_times(file_ntimes)) then
-  print *,'Time is at or after the last time in the list.'
+  if ( clubb_at_least_debug_level( 1 ) ) then
+     write(fstderr,*) 'Time is at or after the last time in the list.'
+  endif
   left_time = file_ntimes
   right_time = file_ntimes
 else
