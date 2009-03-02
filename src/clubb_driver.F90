@@ -1811,7 +1811,6 @@ module clubb_driver
 
     case ( "gabls2" ) ! GABLS 2 case
       call gabls2_tndcy( time_current, time_initial,  &   ! Intent(in) 
-                         rho, rcm, &                      ! Intent(in)
                          wm_zt, wm_zm, thlm_forcing, &    ! Intent(out)
                          rtm_forcing, radht, &            ! Intent(out)
                          sclrm_forcing, edsclrm_forcing ) ! Intent(out)
