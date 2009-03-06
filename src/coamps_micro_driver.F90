@@ -127,7 +127,9 @@ real, parameter :: &
   tvr2 = 206., & 
   tvr3 = -2045., & 
   tvr4 = 9060., & 
-  tzero = 273.16, & 
+  tzero = 273.16
+
+real, parameter :: & 
   visair = 1.718e-5, & 
   bgrp = 0.66, & 
   ex1 = 0.2, & 
@@ -322,7 +324,9 @@ real, dimension(1,1,gr%nnzp-1) :: &
   prevp,       & ! evaporation of raindrops
   psdep,       & ! depositional growth of snow
   pmltge,      & ! ???
-  pgmlt,       & ! ???
+  pgmlt          ! ???
+
+real, dimension(1,1,gr%nnzp-1) :: & 
   psmlt,       & ! melting of snow
   pgacrm,      & ! ???
   pgacwm,      & ! ???

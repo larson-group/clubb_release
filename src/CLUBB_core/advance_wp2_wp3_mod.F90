@@ -400,7 +400,9 @@ contains
         iwp3_pr1, &
         iwp3_pr2, &
         iwp3_4hd, &
-        iwp23_matrix_condt_num, &
+        iwp23_matrix_condt_num
+
+    use stats_variables, only:  & 
         zmscr01, &
         zmscr02, &
         zmscr03, &
@@ -833,7 +835,7 @@ contains
 
     use stats_precision, only: time_precision
 
-    use stats_variables, only:       & 
+    use stats_variables, only: & 
         zmscr01,    &
         zmscr02,    &
         zmscr03,    &
@@ -871,7 +873,9 @@ contains
         ztscr18,    &
         ztscr19,    &
         ztscr20,    &
-        ztscr21,    &
+        ztscr21
+
+    use stats_variables, only: & 
         l_stats_samp, & 
         iwp2_dp1, & 
         iwp2_dp2, & 

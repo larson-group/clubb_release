@@ -57,7 +57,9 @@ module stats_zm
           iFrad_LW_down, & 
           iFrad_SW_down, & 
           iFprec, & 
-          iFcsed, & 
+          iFcsed
+
+    use stats_variables, only: & 
           iup2, & 
           ivp2, & 
           iup2_bt, & 
@@ -84,7 +86,9 @@ module stats_zm
           iVNr, & 
           iVice, & 
           iVgraupel, & 
-          iVsnow, & 
+          iVsnow
+
+    use stats_variables, only: & 
           iwp2_bt, & 
           iwp2_ma, & 
           iwp2_ta, & 
@@ -97,7 +101,9 @@ module stats_zm
           iwp2_dp2, &
           iwp2_4hd, & 
           iwp2_cl, & 
-          iwp2_pd, & 
+          iwp2_pd
+
+    use stats_variables, only: & 
           iwprtp_bt, & 
           iwprtp_ma, & 
           iwprtp_ta, & 
@@ -150,7 +156,9 @@ module stats_zm
           irtpthlp_tp2, & 
           irtpthlp_dp1, & 
           irtpthlp_dp2, & 
-          irtpthlp_cl, & 
+          irtpthlp_cl
+
+      use stats_variables, only: & 
           isclraprtp, & 
           isclrbprtp, & 
           isclrap2, & 

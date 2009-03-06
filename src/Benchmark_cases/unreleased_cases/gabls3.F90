@@ -99,35 +99,35 @@ module gabls3
 
     integer :: i1, i2,i
 
-    call time_select( time, T_adv_time, 6, i1, i2 )
+    call time_select( time, 6, T_adv_time, i1, i2 )
 
     time_frac = real((time - T_adv_time(i1)) /  &          ! at the first time a=0;
             (T_adv_time(i2) - T_adv_time(i1)))             ! at the second time a=1.
 
     T_t_interp = factor_interp(time_frac, T_adv_t(i2), T_adv_t(i1))
 
-    call time_select( time, q_adv_time, 10, i1, i2)
+    call time_select( time, 10, q_adv_time, i1, i2)
 
     time_frac = real((time - q_adv_time(i1)) /  &          ! at the first time a=0;
             (q_adv_time(i2) - q_adv_time(i1)))             ! at the second time a=1.
 
     q_t_interp = factor_interp( time_frac, q_adv_t(i2), q_adv_t(i1))
 
-    call time_select( time, omega_time, 4, i1, i2)
+    call time_select( time, 4, omega_time, i1, i2)
 
     time_frac = real((time - omega_time(i1)) /  &          ! at the first time a=0;
             (omega_time(i2) - omega_time(i1)))             ! at the second time a=1.
 
     omega_t_interp = factor_interp( time_frac, omega_t(i2), omega_t(i1))
 
-    call time_select( time, uv_adv_time, 8, i1, i2)
+    call time_select( time, 8, uv_adv_time, i1, i2)
     time_frac = real((time - uv_adv_time(i1)) /  &          ! at the first time a=0;
             (uv_adv_time(i2) - uv_adv_time(i1)))             ! at the second time a=1.
 
     u_t_interp = factor_interp( time_frac, u_adv_t(i2), u_adv_t(i1) )
     v_t_interp = factor_interp( time_frac, v_adv_t(i2), v_adv_t(i1) )
 
-    call time_select( time, geo_time, 6, i1, i2)
+    call time_select( time, 6, geo_time, i1, i2)
 
     time_frac = real((time - geo_time(i1)) /  &          ! at the first time a=0;
             (geo_time(i2) - geo_time(i1)))             ! at the second time a=1.
@@ -136,7 +136,7 @@ module gabls3
     vg_interp = factor_interp( time_frac, vg_sfc(i2), vg_sfc(i1) )
 
     do i = 1, gr%nnzp,1
-      select case (int (gr%zt(i)))
+      select case ( int( gr%zt(i) ) )
       case (1:199)
         T_in_K_forcing(i) = lin_int(gr%zt(i), 200., 0., T_t_interp, 0. )
         sp_humidity_forcing(i)  =  lin_int(gr%zt(i), 200., 0., q_t_interp, 0.)
@@ -163,13 +163,13 @@ module gabls3
         vm_forcing(i) = 0
       end select
 
-      if( gr%zt(i) < 2000 ) then
+      if( gr%zt(i) < 2000. ) then
         ! Interpolate
         ug(i) = lin_int( gr%zt(i), 2000., 0., -2., ug_interp )
         vg(i) = lin_int( gr%zt(i), 2000., 0., 2., vg_interp )
       else
         ug(i) = -2.0
-        vg(i) = 2.0
+        vg(i) =  2.0
       endif
       !print *, "zt (",i,") =", gr%zt(i)
       !print *, "T_t_interp (",i,") =", T_t_interp
@@ -187,7 +187,7 @@ module gabls3
     do i=2,gr%nnzp
 
       if( gr%zt(i) > 5000. ) then
-        velocity_omega(i) = 0
+        velocity_omega(i) = 0.
       elseif( gr%zt(i) > 1500. .and. gr%zt(i) <= 5000. ) then
         velocity_omega(i) = omega_t_interp
       elseif( gr%zt(i) <= 1500. ) then
@@ -309,7 +309,7 @@ module gabls3
   end subroutine gabls3_sfclyr
 
   !----------------------------------------------------------------------
-  subroutine time_select( time, time_array, nvar, left_time, right_time )
+  subroutine time_select( time, nvar, time_array, left_time, right_time )
     !
     !   Description: This subroutine determines which indexes of the given
     !                time_array should be used when interpolating a value 
@@ -324,17 +324,15 @@ module gabls3
   
     implicit none
   
-    real(kind=time_precision), intent(in) :: time       ! Target time              [s]
+    integer, intent(in) :: nvar                     ! Number of array elements [-]
   
-    real, dimension(nvar), intent(in) :: time_array     ! Array of times           [s]
+    real(kind=time_precision), intent(in) :: time   ! Target time              [s]
   
-    integer, intent(in) :: nvar                         ! Number of array elements []
+    real, dimension(nvar), intent(in) :: time_array ! Array of times           [s]
   
     integer, intent(out) :: &
-      right_time, &                                     ! Index of a time later
-      !                                                   than the target time []
-      left_time                                         ! Index of time before 
-      !                                                   the target time       []
+      right_time, &  ! Index of a time later than the target time [-]
+      left_time      ! Index of time before the target time       [-]
   
     integer :: k
 

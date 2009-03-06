@@ -72,7 +72,9 @@ module stats_variables
      iwp2rcp, & 
      iwprtpthlp, & 
      isigma_sqd_w_zt, & 
-     irho, & 
+     irho
+
+  integer, public :: & 
      iNcm,            & ! Brian
      iNcnm, & 
      iNim, & 

@@ -262,7 +262,6 @@ module microphys_driver
         irtm_mc, & 
         irain_rate, & 
         iFprec, & 
-        zm, & 
         irrainm_bt, & 
         irrainm_mc, & 
         irrainm_cond_adj, & 
@@ -288,10 +287,13 @@ module microphys_driver
         irsnowm_bt, & 
         irsnowm_mc, & 
         irsnowm_cl, & 
-        zt, & 
         irain, & 
         ipflux, & 
-        irrainm_sfc, & 
+        irrainm_sfc
+
+    use stats_variables, only: & 
+        zt, &  ! Variables
+        zm, & 
         sfc, & 
         l_stats_samp
 

@@ -51,7 +51,9 @@ use stats_variables, only: &
     iwp2thvp, & 
     iwp2rcp, & 
     iwprtpthlp, & 
-    isigma_sqd_w_zt, & 
+    isigma_sqd_w_zt
+
+use stats_variables, only: & 
     irho, & 
     iNcm, & 
     iNcnm, & 
@@ -76,7 +78,9 @@ use stats_variables, only: &
     imean_vol_rad_cloud, & 
     irsnowm, & 
     irgraupelm, & 
-    iricem, & 
+    iricem
+
+use stats_variables, only: & 
     irtm_bt, & 
     irtm_ma, & 
     irtm_ta, & 
@@ -104,7 +108,9 @@ use stats_variables, only: &
     iwp3_pr2, & 
     iwp3_dp1, &
     iwp3_4hd, & 
-    iwp3_cl, & 
+    iwp3_cl
+
+use stats_variables, only: & 
     irrainm_bt, & 
     irrainm_ma, & 
     irrainm_sd, & 
@@ -157,7 +163,9 @@ use stats_variables, only: &
     ium_gf, & 
     ium_cf, & 
     ium_ta, &
-    ium_f, & 
+    ium_f
+
+use stats_variables, only: & 
     ia, & 
     iw1, & 
     iw2, & 
@@ -187,7 +195,9 @@ use stats_variables, only: &
     iwpthlp_zt, & 
     iwprtp_zt, & 
     irtp2_zt, & 
-    irtpthlp_zt, & 
+    irtpthlp_zt
+
+use stats_variables, only: & 
     zt, & 
     isclram, & 
     isclram_f, & 

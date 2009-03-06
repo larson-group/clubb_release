@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
 ! $Id$
 !===============================================================================
-module parameters_tunable 
+module parameters_tunable
 
   ! Description:
   ! Contains tuneable model parameters_tunable.
@@ -20,7 +20,7 @@ module parameters_tunable
   public :: setup_parameters, read_parameters, read_param_spread, &
             get_parameters
 
-  ! Model constant parameters 
+  ! Model constant parameters
   real, public :: & 
      C1,          & ! Low Skewness in C1 Skewness Function.
      C1b,         & ! High Skewness in C1 Skewness Function.
@@ -50,7 +50,9 @@ module parameters_tunable
      C11c,        & ! Degree of Slope of C11 Skewness Function.  From Golaz.
      C12,         & ! Constant in w'^3 Crank-Nicholson diffusional term.
      C13,         & ! Not currently used in model.
-     C14,         & ! Constant for u'^2 and v'^2 terms.
+     C14            ! Constant for u'^2 and v'^2 terms.
+
+  real, public :: & 
      c_K,         & ! Constant C_mu^(1/4) in Duynkerke & Driedonks 1987.
      c_K1,        & ! Coefficient of Eddy Diffusion for wp2.
      nu1,         & ! Background Coefficient of Eddy Diffusion for wp2.
@@ -72,7 +74,7 @@ module parameters_tunable
      mu,          & ! Fractional entrainment rate per unit altitude.
      taumin,      & ! Previously determined value.
      taumax,      & ! Previously determined value.
-     lmin        ! Minimum value for the length scale.
+     lmin           ! Minimum value for the length scale.
 
 !$omp   threadprivate(C1, C1b, C1c, C2, C2b, C2c)
 !$omp   threadprivate(C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6rtb, C6rtc)
@@ -95,7 +97,7 @@ module parameters_tunable
 
 !$omp   threadprivate(lmin_coef)
 
-  ! Since we lack a devious way to do this just once, this namelist 
+  ! Since we lack a devious way to do this just once, this namelist
   ! must be changed as well when a new parameter is added.
   namelist /initvars/  & 
      C1, C1b, C1c, C2, C2b, C2c,  & 
@@ -107,8 +109,8 @@ module parameters_tunable
      nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
      lmin_coef, taumin, taumax, mu
 
-  ! These are referenced together often enough that it made sense to 
-  ! make a list of them.  Note that lmin_coef is the input parameter, 
+  ! These are referenced together often enough that it made sense to
+  ! make a list of them.  Note that lmin_coef is the input parameter,
   ! while the actual lmin model constant is computed from this.
   !***************************************************************
   !                    ***** IMPORTANT *****
@@ -133,13 +135,13 @@ module parameters_tunable
        "gamma_coef ", "gamma_coefb", "gamma_coefc", "mu         ", &
        "beta       ", "lmin_coef  ", "taumin     ", "taumax     " /)
 
-contains
+  contains
 
   !=============================================================================
   subroutine setup_parameters & 
             ( deltaz, params, nzmax, l_implemented, &
               grid_type, momentum_heights, thermodynamic_heights, &
-              err_code ) 
+              err_code )
 
     ! Description:
     ! Subroutine to setup model parameters
@@ -231,212 +233,212 @@ contains
     ! parameters.in file.
     if ( l_adj_low_res_nu ) then
 
-       ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
+      ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
 
-       ! All of the background coefficients of eddy diffusivity, as well as the
-       ! constant coefficient for 4th-order hyper-diffusion, must be adjusted
-       ! based on the size of the grid spacing.  For a case that uses an
-       ! evenly-spaced grid, the adjustment is based on the constant grid
-       ! spacing deltaz.  For a case that uses a stretched grid, the adjustment
-       ! is based on avg_deltaz, which is the average grid spacing over the
-       ! vertical domain.
+      ! All of the background coefficients of eddy diffusivity, as well as the
+      ! constant coefficient for 4th-order hyper-diffusion, must be adjusted
+      ! based on the size of the grid spacing.  For a case that uses an
+      ! evenly-spaced grid, the adjustment is based on the constant grid
+      ! spacing deltaz.  For a case that uses a stretched grid, the adjustment
+      ! is based on avg_deltaz, which is the average grid spacing over the
+      ! vertical domain.
 
-       if ( l_implemented ) then
+      if ( l_implemented ) then
 
-          ! CLUBB is implemented in a host model.
+        ! CLUBB is implemented in a host model.
 
-          ! Find the average deltaz over the grid based on momentum level
-          ! inputs.
-          ! Note:  The use of momentum level inputs will avoid any 
-          !        descrepancy between the CLUBB thermodynamic level profile,
-          !        which places the first thermodynamic level below the model
-          !        surface, and many host models, which place the first
-          !        thermodynamic level above the model surface.
+        ! Find the average deltaz over the grid based on momentum level
+        ! inputs.
+        ! Note:  The use of momentum level inputs will avoid any
+        !        descrepancy between the CLUBB thermodynamic level profile,
+        !        which places the first thermodynamic level below the model
+        !        surface, and many host models, which place the first
+        !        thermodynamic level above the model surface.
+
+        avg_deltaz  &
+           = ( momentum_heights(nzmax) - momentum_heights(1) )  &
+             / ( nzmax - 1 )
+
+        ! The nu's are chosen for avg_deltaz <= 40 m. Looks like they must
+        ! be adjusted for larger grid spacings (Vince Larson)
+
+        if ( avg_deltaz > 40.0 ) then
+          nu1 = nu1 * avg_deltaz / 40.0
+          nu2 = nu2 * avg_deltaz / 40.0
+          nu6 = nu6 * avg_deltaz / 40.0
+          nu8 = nu8 * avg_deltaz / 40.0
+          nu9 = nu9 * avg_deltaz / 40.0
+        endif
+
+        ! There should be a different formula for determining nu_r for
+        ! different sized grid spacings.  For DYCOMS2 RF02, nu_r is set to 5.0
+        ! for the high-resolution 10 m. grid spacing and to 25.0 for the
+        ! low-resolution 100 m. grid spacing.  The following equation allows
+        ! for both of those parameters.  Brian.
+
+        if ( avg_deltaz > 20.0 ) then
+          nu_r = nu_r * avg_deltaz / 20.0
+        endif
+
+        ! The value of nu_hd is based on an average grid box spacing of 40 m.
+        ! The value of nu_hd should be adjusted proportionally to the average
+        ! grid box size, whether the average grid box size is less than 40 m.
+        ! or greater than 40 m.
+        ! Since nu_hd should be very large for large grid boxes, but
+        ! substantially smaller for small grid boxes, the grid spacing
+        ! adjuster is squared.
+
+        nu_hd = nu_hd * ( avg_deltaz / 40.0 )**2
+
+      else
+
+        ! CLUBB model is running on it's own.
+
+        if ( grid_type == 1 ) then
+
+          ! Evenly-spaced grid.
+
+          ! The nu's are chosen for deltaz <= 40 m. Looks like they must
+          ! be adjusted for larger grid spacings (Vince Larson)
+
+          if ( deltaz > 40.0 ) then
+            nu1 = nu1 * deltaz / 40.0
+            nu2 = nu2 * deltaz / 40.0
+            nu6 = nu6 * deltaz / 40.0
+            nu8 = nu8 * deltaz / 40.0
+            nu9 = nu9 * deltaz / 40.0
+          endif
+
+          ! There should be a different formula for determining nu_r for
+          ! different sized grid spacings.  For DYCOMS2 RF02, nu_r is set to
+          ! 5.0 for the high-resolution 10 m. grid spacing and to 25.0 for
+          ! the low-resolution 100 m. grid spacing.  The following equation
+          ! allows for both of those parameters.  Brian.
+
+          if ( deltaz > 20.0 ) then
+            nu_r = nu_r * deltaz / 20.0
+          endif
+
+          ! The value of nu_hd is based on a grid box spacing of 40 m.  The
+          ! value of nu_hd should be adjusted proportionally to the grid box
+          ! size, whether the grid box size is less than 40 m. or greater
+          ! than 40 m.
+          ! Since nu_hd should be very large for large grid boxes, but
+          ! substantially smaller for small grid boxes, the grid spacing
+          ! adjuster is squared.
+
+          nu_hd = nu_hd * ( deltaz / 40.0 )**2
+
+        elseif ( grid_type == 2 ) then
+
+          ! Stretched (unevenly-spaced) grid:  stretched thermodynamic level
+          ! input.
+
+          ! Find the average deltaz over the stretched grid based on
+          ! thermodynamic level inputs.
+
+          avg_deltaz  &
+             = ( thermodynamic_heights(nzmax) - thermodynamic_heights(1) )  &
+               / ( nzmax - 1 )
+
+          ! The nu's are chosen for avg_deltaz <= 40 m. Looks like they must
+          ! be adjusted for larger grid spacings (Vince Larson)
+
+          if ( avg_deltaz > 40.0 ) then
+            nu1 = nu1 * avg_deltaz / 40.0
+            nu2 = nu2 * avg_deltaz / 40.0
+            nu6 = nu6 * avg_deltaz / 40.0
+            nu8 = nu8 * avg_deltaz / 40.0
+            nu9 = nu9 * avg_deltaz / 40.0
+          endif
+
+          ! There should be a different formula for determining nu_r for
+          ! different sized grid spacings.  For DYCOMS2 RF02, nu_r is set to
+          ! 5.0 for the high-resolution 10 m. grid spacing and to 25.0 for
+          ! the low-resolution 100 m. grid spacing.  The following equation
+          ! allows for both of those parameters.  Brian.
+
+          if ( avg_deltaz > 20.0 ) then
+            nu_r = nu_r * avg_deltaz / 20.0
+          endif
+
+          ! The value of nu_hd is based on an average grid box spacing of
+          ! 40 m.  The value of nu_hd should be adjusted proportionally to
+          ! the average grid box size, whether the average grid box size is
+          ! less than 40 m. or greater than 40 m.
+          ! Since nu_hd should be very large for large grid boxes, but
+          ! substantially smaller for small grid boxes, the grid spacing
+          ! adjuster is squared.
+
+          nu_hd = nu_hd * ( avg_deltaz / 40.0 )**2
+
+        elseif ( grid_type == 3 ) then
+
+          ! Stretched (unevenly-spaced) grid:  stretched momentum level
+          ! input.
+
+          ! Find the average deltaz over the stretched grid based on momentum
+          ! level inputs.
 
           avg_deltaz  &
              = ( momentum_heights(nzmax) - momentum_heights(1) )  &
                / ( nzmax - 1 )
 
-          ! The nu's are chosen for avg_deltaz <= 40 m. Looks like they must 
+          ! The nu's are chosen for avg_deltaz <= 40 m. Looks like they must
           ! be adjusted for larger grid spacings (Vince Larson)
 
           if ( avg_deltaz > 40.0 ) then
-             nu1 = nu1 * avg_deltaz / 40.0
-             nu2 = nu2 * avg_deltaz / 40.0
-             nu6 = nu6 * avg_deltaz / 40.0
-             nu8 = nu8 * avg_deltaz / 40.0
-             nu9 = nu9 * avg_deltaz / 40.0
+            nu1 = nu1 * avg_deltaz / 40.0
+            nu2 = nu2 * avg_deltaz / 40.0
+            nu6 = nu6 * avg_deltaz / 40.0
+            nu8 = nu8 * avg_deltaz / 40.0
+            nu9 = nu9 * avg_deltaz / 40.0
           endif
 
           ! There should be a different formula for determining nu_r for
-          ! different sized grid spacings.  For DYCOMS2 RF02, nu_r is set to 5.0
-          ! for the high-resolution 10 m. grid spacing and to 25.0 for the
-          ! low-resolution 100 m. grid spacing.  The following equation allows
-          ! for both of those parameters.  Brian.
+          ! different sized grid spacings.  For DYCOMS2 RF02, nu_r is set to
+          ! 5.0 for the high-resolution 10 m. grid spacing and to 25.0 for
+          ! the low-resolution 100 m. grid spacing.  The following equation
+          ! allows for both of those parameters.  Brian.
 
           if ( avg_deltaz > 20.0 ) then
-             nu_r = nu_r * avg_deltaz / 20.0
+            nu_r = nu_r * avg_deltaz / 20.0
           endif
 
-          ! The value of nu_hd is based on an average grid box spacing of 40 m.
-          ! The value of nu_hd should be adjusted proportionally to the average
-          ! grid box size, whether the average grid box size is less than 40 m.
-          ! or greater than 40 m.
+          ! The value of nu_hd is based on an average grid box spacing of
+          ! 40 m.  The value of nu_hd should be adjusted proportionally to
+          ! the average grid box size, whether the average grid box size is
+          ! less than 40 m. or greater than 40 m.
           ! Since nu_hd should be very large for large grid boxes, but
           ! substantially smaller for small grid boxes, the grid spacing
           ! adjuster is squared.
-       
+
           nu_hd = nu_hd * ( avg_deltaz / 40.0 )**2
 
-       else
+        endif
 
-          ! CLUBB model is running on it's own.
-
-          if ( grid_type == 1 ) then
-
-             ! Evenly-spaced grid.
-
-             ! The nu's are chosen for deltaz <= 40 m. Looks like they must 
-             ! be adjusted for larger grid spacings (Vince Larson)
-
-             if ( deltaz > 40.0 ) then
-                nu1 = nu1 * deltaz / 40.0
-                nu2 = nu2 * deltaz / 40.0
-                nu6 = nu6 * deltaz / 40.0
-                nu8 = nu8 * deltaz / 40.0
-                nu9 = nu9 * deltaz / 40.0
-             endif
-
-             ! There should be a different formula for determining nu_r for
-             ! different sized grid spacings.  For DYCOMS2 RF02, nu_r is set to
-             ! 5.0 for the high-resolution 10 m. grid spacing and to 25.0 for
-             ! the low-resolution 100 m. grid spacing.  The following equation
-             ! allows for both of those parameters.  Brian.
-
-             if ( deltaz > 20.0 ) then
-                nu_r = nu_r * deltaz / 20.0
-             endif
-
-             ! The value of nu_hd is based on a grid box spacing of 40 m.  The
-             ! value of nu_hd should be adjusted proportionally to the grid box
-             ! size, whether the grid box size is less than 40 m. or greater
-             ! than 40 m.
-             ! Since nu_hd should be very large for large grid boxes, but
-             ! substantially smaller for small grid boxes, the grid spacing
-             ! adjuster is squared.
-       
-             nu_hd = nu_hd * ( deltaz / 40.0 )**2
-
-          elseif ( grid_type == 2 ) then
-
-             ! Stretched (unevenly-spaced) grid:  stretched thermodynamic level
-             ! input.
-
-             ! Find the average deltaz over the stretched grid based on
-             ! thermodynamic level inputs.
-
-             avg_deltaz  &
-                = ( thermodynamic_heights(nzmax) - thermodynamic_heights(1) )  &
-                  / ( nzmax - 1 )
-
-             ! The nu's are chosen for avg_deltaz <= 40 m. Looks like they must 
-             ! be adjusted for larger grid spacings (Vince Larson)
-
-             if ( avg_deltaz > 40.0 ) then
-                nu1 = nu1 * avg_deltaz / 40.0
-                nu2 = nu2 * avg_deltaz / 40.0
-                nu6 = nu6 * avg_deltaz / 40.0
-                nu8 = nu8 * avg_deltaz / 40.0
-                nu9 = nu9 * avg_deltaz / 40.0
-             endif
-
-             ! There should be a different formula for determining nu_r for
-             ! different sized grid spacings.  For DYCOMS2 RF02, nu_r is set to
-             ! 5.0 for the high-resolution 10 m. grid spacing and to 25.0 for
-             ! the low-resolution 100 m. grid spacing.  The following equation
-             ! allows for both of those parameters.  Brian.
-
-             if ( avg_deltaz > 20.0 ) then
-                nu_r = nu_r * avg_deltaz / 20.0
-             endif
-
-             ! The value of nu_hd is based on an average grid box spacing of
-             ! 40 m.  The value of nu_hd should be adjusted proportionally to
-             ! the average grid box size, whether the average grid box size is
-             ! less than 40 m. or greater than 40 m.
-             ! Since nu_hd should be very large for large grid boxes, but
-             ! substantially smaller for small grid boxes, the grid spacing
-             ! adjuster is squared.
-       
-             nu_hd = nu_hd * ( avg_deltaz / 40.0 )**2
-
-          elseif ( grid_type == 3 ) then
-
-             ! Stretched (unevenly-spaced) grid:  stretched momentum level
-             ! input.
-
-             ! Find the average deltaz over the stretched grid based on momentum
-             ! level inputs.
-
-             avg_deltaz  &
-                = ( momentum_heights(nzmax) - momentum_heights(1) )  &
-                  / ( nzmax - 1 )
-
-             ! The nu's are chosen for avg_deltaz <= 40 m. Looks like they must 
-             ! be adjusted for larger grid spacings (Vince Larson)
-
-             if ( avg_deltaz > 40.0 ) then
-                nu1 = nu1 * avg_deltaz / 40.0
-                nu2 = nu2 * avg_deltaz / 40.0
-                nu6 = nu6 * avg_deltaz / 40.0
-                nu8 = nu8 * avg_deltaz / 40.0
-                nu9 = nu9 * avg_deltaz / 40.0
-             endif
-
-             ! There should be a different formula for determining nu_r for
-             ! different sized grid spacings.  For DYCOMS2 RF02, nu_r is set to
-             ! 5.0 for the high-resolution 10 m. grid spacing and to 25.0 for
-             ! the low-resolution 100 m. grid spacing.  The following equation
-             ! allows for both of those parameters.  Brian.
-
-             if ( avg_deltaz > 20.0 ) then
-                nu_r = nu_r * avg_deltaz / 20.0
-             endif
-
-             ! The value of nu_hd is based on an average grid box spacing of
-             ! 40 m.  The value of nu_hd should be adjusted proportionally to
-             ! the average grid box size, whether the average grid box size is
-             ! less than 40 m. or greater than 40 m.
-             ! Since nu_hd should be very large for large grid boxes, but
-             ! substantially smaller for small grid boxes, the grid spacing
-             ! adjuster is squared.
-       
-             nu_hd = nu_hd * ( avg_deltaz / 40.0 )**2
-
-          endif
-
-       endif  ! l_implemented
+      endif  ! l_implemented
 
     endif  ! l_adj_low_res_nu
 
     ! Sanity check
     if ( beta < 0.0 .or. beta > 3.0 ) then
 
-       ! Constraints on beta
-       write(fstderr,*) "beta= ", beta
-       write(fstderr,*) "beta cannot be < 0 or > 3"
-       err_code = clubb_var_out_of_bounds    
+      ! Constraints on beta
+      write(fstderr,*) "beta= ", beta
+      write(fstderr,*) "beta cannot be < 0 or > 3"
+      err_code = clubb_var_out_of_bounds
 
     elseif ( lmin < 4.0 ) then
 
-       ! Constraints on mixing length
-       write(fstderr,*) "lmin= ", lmin
-       write(fstderr,*) "lmin is < 4.0"
-       err_code = clubb_var_out_of_bounds
+      ! Constraints on mixing length
+      write(fstderr,*) "lmin= ", lmin
+      write(fstderr,*) "lmin is < 4.0"
+      err_code = clubb_var_out_of_bounds
 
     else
 
-       err_code = clubb_no_error
+      err_code = clubb_no_error
 
     endif
 
@@ -470,58 +472,58 @@ contains
     ! If the filename is empty, assume we're using a `working' set of
     ! parameters that are set statically here (handy for host models).
     if ( filename == "" ) then
-       C1          = 2.5
-       C1b         = 2.5
-       C1c         = 1.0
-       C2rt        = 1.0
-       C2thl       = 1.0
-       C2rtthl     = 2.0
-       C2          = 1.3
-       C2b         = 1.3
-       C2c         = 5.0
-       C4          = 5.2
-       C5          = 0.3 
-       C6rt        = 6.0 
-       C6rtb       = 6.0
-       C6rtc       = 1.0
-       C6thl       = 6.0 
-       C6thlb      = 6.0 
-       C6thlc      = 1.0 
-       C7          = 0.1 
-       C7b         = 0.8 
-       C7c         = 0.5 
-       C8          = 3.0  
-       C8b         = 0.005
-       C10         = 3.3
-       C11         = 0.75
-       C11b        = 0.35
-       C11c        = 0.5
-       C12         = 1.0
-       C13         = 0.1
-       C14         = 1.0
-       c_K         = 0.548
-       c_K1        = 0.0
-       nu1         = 20.0
-       c_K2        = 0.0
-       nu2         = 5.0
-       c_K6        = 0.0
-       nu6         = 5.0
-       c_K8        = 0.5
-       nu8         = 20.0
-       c_K9        = 0.0
-       nu9         = 20.0
-       c_Krrainm   = 0.075
-       nu_r        = 3.0
-       c_Ksqd      = 10.0
-       nu_hd       = 100000.0
-       beta        = 1.75
-       gamma_coef  = 0.32
-       gamma_coefb = 0.32
-       gamma_coefc = 5.0
-       taumin      = 90.0
-       taumax      = 3600.0
-       lmin_coef   = 0.5
-       mu          = 6.000E-4
+      C1          = 2.5
+      C1b         = 2.5
+      C1c         = 1.0
+      C2rt        = 1.0
+      C2thl       = 1.0
+      C2rtthl     = 2.0
+      C2          = 1.3
+      C2b         = 1.3
+      C2c         = 5.0
+      C4          = 5.2
+      C5          = 0.3
+      C6rt        = 6.0
+      C6rtb       = 6.0
+      C6rtc       = 1.0
+      C6thl       = 6.0
+      C6thlb      = 6.0
+      C6thlc      = 1.0
+      C7          = 0.1
+      C7b         = 0.8
+      C7c         = 0.5
+      C8          = 3.0
+      C8b         = 0.005
+      C10         = 3.3
+      C11         = 0.75
+      C11b        = 0.35
+      C11c        = 0.5
+      C12         = 1.0
+      C13         = 0.1
+      C14         = 1.0
+      c_K         = 0.548
+      c_K1        = 0.0
+      nu1         = 20.0
+      c_K2        = 0.0
+      nu2         = 5.0
+      c_K6        = 0.0
+      nu6         = 5.0
+      c_K8        = 0.5
+      nu8         = 20.0
+      c_K9        = 0.0
+      nu9         = 20.0
+      c_Krrainm   = 0.075
+      nu_r        = 3.0
+      c_Ksqd      = 10.0
+      nu_hd       = 100000.0
+      beta        = 1.75
+      gamma_coef  = 0.32
+      gamma_coefb = 0.32
+      gamma_coefc = 5.0
+      taumin      = 90.0
+      taumax      = 3600.0
+      lmin_coef   = 0.5
+      mu          = 6.000E-4
 
     else
 
@@ -534,7 +536,7 @@ contains
 
     endif
 
-    ! Put the variables in the output array 
+    ! Put the variables in the output array
     call pack_parameters( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                           C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                           C7, C7b, C7c, C8, C8b, C10, & 
@@ -571,7 +573,7 @@ contains
 
     ! An array of array indices (i.e. which elements of the array `params'
     ! are contained within the simplex and the spread variable)
-    integer, intent(out), dimension(nparams) :: nindex  
+    integer, intent(out), dimension(nparams) :: nindex
 
     real, intent(out), dimension(nparams) ::  & 
       param_spread  ! Amount to vary the parameter in the initial simplex
@@ -600,7 +602,7 @@ contains
 
     close(unit=iunit)
 
-    ! Put the variables in the output array 
+    ! Put the variables in the output array
     call pack_parameters( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                           C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                           C7, C7b, C7c, C8, C8b, C10, & 
@@ -617,10 +619,10 @@ contains
     ! Determine how many variables are being changed
     do i = 1, nparams, 1
 
-       if ( param_spread(i) /= 0.0 ) then
-          ndim = ndim + 1   ! Increase the total
-          nindex(ndim) = i  ! Set the next array index
-       endif
+      if ( param_spread(i) /= 0.0 ) then
+        ndim = ndim + 1   ! Increase the total
+        nindex(ndim) = i  ! Set the next array index
+      endif
 
     enddo
 
@@ -677,7 +679,9 @@ contains
         iC11c, & 
         iC12, & 
         iC13, & 
-        iC14, & 
+        iC14
+
+    use parameter_indices, only: & 
         ic_K,  & 
         ic_K1, & 
         inu1, & 
@@ -703,7 +707,7 @@ contains
         itaumax, & 
         nparams
 
-     implicit none
+    implicit none
 
     ! Input variables
     real, intent(in) :: & 
@@ -748,7 +752,7 @@ contains
     params(iC13)     = C13
     params(iC14)     = C14
 
-    params(ic_K)       = c_K 
+    params(ic_K)       = c_K
     params(ic_K1)      = c_K1
     params(inu1)       = nu1
     params(ic_K2)      = c_K2
@@ -830,7 +834,9 @@ contains
         iC11c, & 
         iC12, & 
         iC13, & 
-        iC14, & 
+        iC14
+
+    use parameter_indices, only: & 
         ic_K,  & 
         ic_K1, & 
         inu1, & 

@@ -45,7 +45,9 @@ module stats_subs
       ztscr18, & 
       ztscr19, & 
       ztscr20, & 
-      ztscr21, & 
+      ztscr21
+
+    use stats_variables, only: & 
       zm,      & 
       zmscr01, & 
       zmscr02, & 
@@ -908,7 +910,9 @@ use stats_variables, only: &
     irsat, & 
     iAKm, & 
     iAKm_est, & 
-    iradht, & 
+    iradht
+
+use stats_variables, only: & 
     ia, & 
     iw1, & 
     iw2, & 
@@ -963,7 +967,9 @@ use stats_variables, only: &
     ivp2, & 
     irho_zm, & 
     isigma_sqd_w, & 
-    iem, & 
+    iem
+
+use stats_variables, only: & 
     ishear, & 
     iFrad, & 
     icc, & 
@@ -1035,7 +1041,9 @@ use variables_diagnostic_module, only: &
     rsat, & 
     Akm, & 
     Akm_est, & 
-    radht, & 
+    radht
+
+use variables_diagnostic_module, only: & 
     wp2_zt, & 
     thlp2_zt, & 
     wpthlp_zt, & 
@@ -1426,7 +1434,11 @@ end subroutine stats_accumulate
           zt,  & ! Variable(s)
           zm, & 
           sfc, & 
-          ztscr01, & 
+          l_netcdf, & 
+          l_stats
+
+      use stats_variables, only: & 
+          ztscr01, &  ! Variable(s)
           ztscr02, & 
           ztscr03, & 
           ztscr04, & 
@@ -1446,8 +1458,10 @@ end subroutine stats_accumulate
           ztscr18, & 
           ztscr19, & 
           ztscr20, & 
-          ztscr21, & 
-          zmscr01, & 
+          ztscr21
+
+      use stats_variables, only: & 
+          zmscr01, &  ! Variable(s)
           zmscr02, & 
           zmscr03, & 
           zmscr04, & 
@@ -1463,9 +1477,8 @@ end subroutine stats_accumulate
           zmscr14, & 
           zmscr15, & 
           zmscr16, & 
-          zmscr17, & 
-          l_netcdf, & 
-          l_stats
+          zmscr17
+
 #ifdef NETCDF
       use output_netcdf, only:  & 
           close_netcdf ! Procedure

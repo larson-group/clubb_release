@@ -679,7 +679,7 @@ module advance_xm_wpxp_module
         clip_semi_imp_lhs ! Procedure(s)
 
     use stats_variables, only: & 
-        ztscr01,  & ! Variable(s)
+        ztscr01, & ! Variable(s)
         ztscr02, & 
         ztscr03, & 
         ztscr04, & 
@@ -698,7 +698,9 @@ module advance_xm_wpxp_module
         zmscr12, & 
         zmscr13, & 
         zmscr14, & 
-        zmscr15, & 
+        zmscr15
+
+    use stats_variables, only: & 
         l_stats_samp, & 
         ithlm_ma, & 
         ithlm_ta, & 
@@ -1545,7 +1547,9 @@ module advance_xm_wpxp_module
         iwpthlp_pr1, & 
         iwpthlp_pr2, & 
         iwpthlp_dp1, & 
-        iwpthlp_sicl, & 
+        iwpthlp_sicl    
+
+    use stats_variables, only: & 
         l_stats_samp, & 
         ztscr01, & 
         ztscr02, & 

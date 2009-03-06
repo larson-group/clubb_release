@@ -126,7 +126,9 @@ module clubb_core
       wpthlp_zt, & 
       wprtp_zt, & 
       rtp2_zt, & 
-      rtpthlp_zt, & 
+      rtpthlp_zt
+
+    use variables_diagnostic_module, only: & 
       wpedsclrp, & 
       sclrpthvp,   & ! sclr'th_v'
       sclrprtp,    & ! sclr'rt'
