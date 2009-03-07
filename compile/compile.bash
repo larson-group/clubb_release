@@ -116,7 +116,7 @@ ls $srcdir/Numerical_recipes/*.f90 > $dir/file_list/numerical_recipes_files
 # flag when in reality it has nothing to do with preprocessing.  This is because
 # 3rd party code from ACM TOMS and Numerical recipes has a .f90 extension and we
 # don't want use the warning flags on code we didn't write.  The consequence of
-# this is that if we add a new file that is has a .f90 extension 
+# this is that if we add a new file that has a .f90 extension 
 # the warning flags will not be used on that file.  -dschanen 29 Jan 2009
 
 cd $objdir
