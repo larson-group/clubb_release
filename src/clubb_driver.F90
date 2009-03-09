@@ -121,7 +121,7 @@ module clubb_driver
 
     use variables_diagnostic_module, only: ug, vg, em,  & ! Variable(s)
       tau_zt, thvm, Lscale, Kh_zt, Kh_zm, & 
-      um_ref, vm_ref
+      um_ref, vm_ref, Ncnm
 
     use variables_prognostic_module, only:  & 
       Tsfc, psfc, SE, LE, thlm, rtm,     & ! Variable(s)
@@ -169,9 +169,7 @@ module clubb_driver
     use microphys_driver, only: init_microphys ! Subroutine
 
     use parameters_microphys, only: &
-      l_kk_rain,  & ! Variable(s)
-      l_icedfs,  &
-      l_coamps_micro,  & 
+      micro_scheme,  & 
       l_cloud_sed
 
     use model_flags, only: l_LH_on, l_local_kk, & ! Constants
@@ -491,9 +489,7 @@ module clubb_driver
 
       print *, "forcings_file_path = ", forcings_file_path
 
-      print *, "l_kk_rain = ", l_kk_rain
-      print *, "l_icedfs = ", l_icedfs
-      print *, "l_coamps_micro = ", l_coamps_micro
+      print *, "micro_scheme = ", trim( micro_scheme )
       print *, "l_cloud_sed = ", l_cloud_sed
 
       print *, "l_bugsrad = ", l_bugsrad
@@ -559,7 +555,7 @@ module clubb_driver
 
     ! Setup microphysical fields
     call init_microphys( iunit, runfile, & ! Intent(in)
-                         hydromet_dim )    ! Intent(out)
+                         Ncnm, hydromet_dim )    ! Intent(out)
 
     ! Allocate & initialize variables,
     ! setup grid, setup constants, and setup flags
@@ -1361,8 +1357,7 @@ module clubb_driver
       l_soil_veg
 
     use parameters_microphys, only : &
-      l_kk_rain, & ! Variables
-      l_coamps_micro
+      micro_scheme ! Variable
 
 #ifdef UNRELEASED_CODE
     use arm_0003, only: arm_0003_init ! Procedure(s)
@@ -1444,34 +1439,45 @@ module clubb_driver
     input_tau_zm = .true.
     input_tau_zt = .true.
     input_thvm = .true.
-    if ( l_kk_rain .or. l_coamps_micro ) then
+
+    select case ( trim( micro_scheme ) )
+    case ( "coamps" )
       input_rrainm = .true.
-      input_Ncm = .true.
-      input_Nrm = .true.
-    else
-      input_rrainm = .false.
-      input_Ncm = .false.
-      input_Nrm = .false.
-    end if
-    if ( l_coamps_micro ) then
       input_rsnowm = .true.
       input_ricem = .true.
       input_rgraupelm = .true.
       input_Ncnm = .true.
+      input_Ncm = .true.
+      input_Nrm = .true.
       input_Nim = .true.
-    else
+
+    case ( "khairoutdinov_kogan" )
+      input_rrainm = .true.
       input_rsnowm = .false.
       input_ricem = .false.
       input_rgraupelm = .false.
       input_Ncnm = .false.
+      input_Ncm = .true.
+      input_Nrm = .true.
       input_Nim = .false.
-    end if
-    if( l_soil_veg ) then
+
+    case default
+      input_rrainm = .false.
+      input_rsnowm = .false.
+      input_ricem = .false.
+      input_rgraupelm = .false.
+      input_Ncnm = .false.
+      input_Ncm = .false.
+      input_Nrm = .false.
+      input_Nim = .false.
+
+    end select
+
+    if ( l_soil_veg ) then
       input_veg_T_in_K = .true.
       input_deep_soil_T_in_K = .true.
       input_sfc_soil_T_in_K = .true.
     end if
-
 
     input_wprtp = .true.
     input_wpthlp = .true.
@@ -1614,7 +1620,7 @@ module clubb_driver
     use microphys_driver, only: advance_microphys ! Procedure(s)
 
     use parameters_microphys, only: &
-      l_icedfs, l_coamps_micro, l_cloud_sed, l_kk_rain ! Variables
+      micro_scheme, l_cloud_sed  ! Variables
 
     use soil_vegetation, only: advance_soil_veg, veg_T_in_K
 
@@ -1772,14 +1778,14 @@ module clubb_driver
       call clex9_nov02_tndcy( time_current, time_initial, rlat, rlon, &  ! Intent(in)
                               rcm, exner, rho, &                         ! Intent(in)
                               wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
-                              Frad, radht, Ncnm, &                       ! Intent(out)
+                              Frad, radht, &                       ! Intent(out)
                               sclrm_forcing, edsclrm_forcing )           ! Intent(out)
 
     case ( "clex9_oct14" ) ! CLEX-9: Oct. 14 Altocumulus case.
       call clex9_oct14_tndcy( time_current, time_initial, rlat, rlon, &    ! Intent(in) 
                               rcm, exner, rho, &                           ! Intent(in)
                               wm_zt, wm_zm, thlm_forcing, rtm_forcing, &   ! Intent(out)
-                              Frad, radht, Ncnm, &                         ! Intent(out)
+                              Frad, radht, &                         ! Intent(out)
                               sclrm_forcing, edsclrm_forcing )             ! Intent(out)
     case ( "cobra" )
       call cobra_tndcy( wm_zt, wm_zm,  &                ! Intent(out) 
@@ -1799,7 +1805,7 @@ module clubb_driver
                                rho_zm, rtm, rcm, exner, &                  ! Intent(in)
                                err_code, &                                 ! Intent(inout)
                                wm_zt, wm_zm, thlm_forcing, rtm_forcing, &  ! Intent(out) 
-                               Frad, radht, Ncm, Ncnm, &                   ! Intent(out)
+                               Frad, radht, &                   ! Intent(out)
                                sclrm_forcing, edsclrm_forcing )            ! Intent(out)
 
     case ( "fire" ) ! FIRE Sc case
@@ -1822,15 +1828,6 @@ module clubb_driver
                          um_forcing, vm_forcing, ug, vg )                   ! Intent(out)
 #endif
 
-    case ( "generic" ) ! Generic run
-      ! Configure for K&K microphysics
-      where ( rcm >= rc_tol )
-        ! Ncm is in units of kg^-1.  If the coefficient is in m^-3, then
-        ! it needs to be divided by rho in order to get units of kg^-1.
-        ! Brian.  Sept. 8, 2007.
-        Ncm = 30.0 * (1.0 + exp( -gr%zt/2000.0 )) * 1.e6 / rho
-      end where
-
 #ifdef UNRELEASED_CODE
     case ( "jun25_altocu" ) ! June 25 Altocumulus case.
       call jun25_altocu_tndcy( time_current, time_initial, rlat, rlon,  &  ! Intent(in) 
@@ -1849,7 +1846,6 @@ module clubb_driver
     case ( "mpace_a" ) ! mpace_a arctic stratus case
       call mpace_a_tndcy( time_current, time_initial, rlat, &        ! Intent(in) 
                           rho, p_in_Pa, rcm, &                       ! Intent(in)
-                          Ncnm, Ncm, &                               ! Intent(inout)
                           wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
                           Frad, radht, um_ref, vm_ref, &             ! Intent(out)
                           sclrm_forcing, edsclrm_forcing )           ! Intent(out)
@@ -1857,7 +1853,6 @@ module clubb_driver
     case ( "mpace_b" ) ! mpace_b arctic stratus case
       call mpace_b_tndcy( time_current, time_initial, rlat, &        ! Intent(in)
                           rho,  p_in_Pa, thvm, rcm, &                ! Intent(in)
-                          Ncnm, Ncm, &                               ! Intent(inout)
                           wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
                           Frad, radht,  &                            ! Intent(out)
                           sclrm_forcing, edsclrm_forcing )           ! Intent(out)
@@ -1865,17 +1860,17 @@ module clubb_driver
 #ifdef UNRELEASED_CODE
     case ( "nov11_altocu" ) ! Nov. 11 Altocumulus case.
       call nov11_altocu_tndcy( time_current, time_initial, dt, &           ! Intent(in)
-                               ! rlat, rlon, & 
+                               day, month, year, rlat, rlon, & 
                                rcm, exner, rho, &                          ! Intent(in)
                                rtm, &                                      ! Intent(inout)
                                wm_zt, wm_zm, thlm_forcing, rtm_forcing, &  ! Intent(out)
-                               Frad, radht, Ncnm, &                        ! Intent(out)
+                               Frad, radht, &                        ! Intent(out)
                                sclrm_forcing, edsclrm_forcing )            ! Intent(out)
 
     case ( "rico" ) ! RICO case
       call rico_tndcy( exner, rho, rcm, &              ! Intent(in)
                        wm_zt, wm_zm, &                            ! Intent(out)
-                       thlm_forcing, rtm_forcing, radht, Ncm, &   ! Intent(out)   
+                       thlm_forcing, rtm_forcing, radht, &   ! Intent(out)   
                        sclrm_forcing, edsclrm_forcing )           ! Intent(out)
 #endif
 
@@ -2125,10 +2120,66 @@ module clubb_driver
 !----------------------------------------------------------------
 ! Compute Microphysics
 !----------------------------------------------------------------
+    ! Determine Ncm for K&K microphysics or cloud droplet sedimentation
+    if ( l_cloud_sed .or. trim( micro_scheme ) == "khairoutdinov_kogan" ) then
+
+      if ( trim( runtype ) == "dycoms2_rf02" ) then
+        ! The following lines of code specify cloud droplet
+        ! concentration (Ncm).  The cloud droplet concentration has
+        ! been moved here instead of being stated in KK_microphys
+        ! for the following reasons:
+        !    a) The effects of cloud droplet sedimentation can be computed
+        !       without having to call the precipitation scheme.
+        !    b) Ncm tends to be a case-specific parameter.  Therefore, it
+        !       is appropriate to declare in the same place as other
+        !       case-specific parameters.
+        !
+        ! Someday, we could move the setting of Ncm to pdf_closure_new
+        ! for the following reasons:
+        !    a) The cloud water mixing ratio (rcm) is computed using the
+        !       PDF scheme.  Perhaps someday Ncm can also be computed by
+        !       the same scheme.
+        !    b) It seems more appropriate to declare Ncm in the same place
+        !       where rcm is computed.
+        !
+        ! Since cloud base (zb) is determined by the mixing ratio rc_tol,
+        ! so will cloud droplet number concentration (Ncm).
+        where ( rcm >= rc_tol )
+          Ncm = 55000000.0 / rho
+        else where
+          Ncm = 0.0
+        end where
+
+      else if ( trim( runtype ) == "rico" ) then
+
+        where ( rcm >= rc_tol )
+! Brian:  Ncm has now been changed in the model to be the concentration per 
+!         mass off air, in kg^-1.  However, in order to get that quantity, the
+!         concentration per volume of air must be divided by rho.  9/8/07.
+! Vince Larson removed factor of rho so that Ncm would be in units of m^{-3}.
+! 3 Aug 2007.
+!         Ncm = 70.0 * 1.e6 * rho
+!         Ncm = 70.0 * 1.e6
+          Ncm = 70.0 * 1.e6 / rho
+        else where
+          Ncm = 0.0
+        end where
+
+      else 
+
+        where ( rcm >= rc_tol )
+          Ncm = 30.0 * (1.0 + exp( -gr%zt/2000.0 )) * 1.e6 / rho
+        else where
+          Ncm = 0.0
+        end where
+
+      end if ! RF02
+
+    end if ! cloud_sed / K&K
 
 ! Call Khairoutdinov and Kogan (2000) scheme, or COAMPS for rain microphysics.
 
-    if ( l_kk_rain .or. l_coamps_micro .or. l_icedfs ) then
+    if ( trim( micro_scheme ) /= "none" ) then
 
       call advance_microphys( runtype, dt, time_current, &                     ! Intent(in)
                               thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, &   ! Intent(in) 

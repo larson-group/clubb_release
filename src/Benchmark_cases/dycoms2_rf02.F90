@@ -19,7 +19,7 @@ module dycoms2_rf02
                                  rho_zm, rtm, rcm, exner,  & 
                                  err_code, &
                                  wm_zt, wm_zm, thlm_forcing, rtm_forcing,  & 
-                                 Frad, radht, Ncm, Ncnm, sclrm_forcing, &
+                                 Frad, radht, sclrm_forcing, &
                                  edsclrm_forcing )
 ! Description:
 !   Compute wm, thlm_ls, rtm_ls, radiative heating rate, and cloud
@@ -40,8 +40,6 @@ module dycoms2_rf02
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
     use model_flags, only: l_bugsrad  ! Variable(s)
-
-    use parameters_microphys, only: l_coamps_micro ! Variable(s)
 
     use stats_precision, only: time_precision ! Variable(s)
 
@@ -88,9 +86,7 @@ module dycoms2_rf02
       thlm_forcing, & ! theta_l forcing                [K/s]
       rtm_forcing,  & ! r_t forcing                    [(kg/kg)/s] 
       Frad,         & ! Radiative flux                 [W/m^2]
-      radht,        & ! Radiative heating rate         [K/s] 
-      Ncm,          & ! Cloud droplet number conc.     [#/kg]
-      Ncnm            ! Cloud nuclei number conc.      [#/m^3]
+      radht           ! Radiative heating rate         [K/s] 
 
     real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
       sclrm_forcing    ! Passive scalar tendency        [units/s]
@@ -213,49 +209,6 @@ module dycoms2_rf02
 
       call stat_update_var_pt( izi, 1, z_i, sfc )
     endif
-
-
-! The following lines of code specify cloud droplet
-! concentration (Ncm).  The cloud droplet concentration has
-! been moved here instead of being stated in Subroutine rain
-! for the following reasons:
-!    a) The effects of cloud droplet sedimentation can be computed
-!       without having to call the precipitation scheme.
-!    b) Ncm tends to be a case-specific parameter.  Therefore, it
-!       is appropriate to declare in the same place as other
-!       case-specific parameters.
-!
-! Someday, we could move the setting of Ncm to pdf_closure_new
-! for the following reasons:
-!    a) The cloud water mixing ratio (rcm) is computed using the
-!       PDF scheme.  Perhaps someday Ncm can also be computed by
-!       the same scheme.
-!    b) It seems more appropriate to declare Ncm in the same place
-!       where rcm is computed.
-!
-! Since cloud base (zb) is determined by the mixing ratio rc_tol,
-! so will cloud droplet number concentration (Ncm).
-
-    if ( l_coamps_micro .and. time == time_initial ) then
-
-      ! Taken from COAMPS subroutine ncn_init()
-      Ncnm(1:gr%nnzp) = 55000000.0 / rho(1:gr%nnzp)
-
-    else
-
-      ! K & K or no microphysics
-      DO k = 1, gr%nnzp, 1
-        IF ( rcm(k) > rc_tol ) THEN
-          ! The specified cloud droplet concentration is 55 cm^-3, which
-          ! is then converted to m^-3, and then divided by rho to get the
-          ! concentration in units of kg^-1.
-          Ncm(k) = 55000000.0 / rho(k)
-        ELSE
-          Ncm(k) = 0.0
-        END IF
-      END DO ! k=1..gr%nnzp
-
-    end if
 
     ! Test scalars with thetal and rt if desired
     if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing

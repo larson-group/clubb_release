@@ -45,7 +45,6 @@
 !----------------------------------------------------------------------
   subroutine mpace_a_tndcy( time, time_initial, rlat, & 
                             rho, p_in_Pa, rcm, & 
-                            Ncnm, Ncm, &
                             wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
                             Frad, radht, & 
                             um_hoc_grid, vm_hoc_grid, & 
@@ -65,7 +64,7 @@
   use model_flags, only: l_bugsrad ! Variable
 
   use parameters_microphys, only: &
-    l_coamps_micro, l_kk_rain ! Variable(s)
+    micro_scheme ! Variable(s)
 
   use grid_class, only: gr ! Variable(s)
 
@@ -132,11 +131,6 @@
   rho,     & ! Density of air                         [kg/m^3]
   p_in_Pa, & ! Pressure                               [Pa]
   rcm        ! Cloud water mixing ratio               [kg/kg]
-
-  ! Input/Output Variables
-  real, dimension(gr%nnzp), intent(inout) ::  & 
-  Ncm,     & ! Cloud droplet number concentration      [count/m^3]
-  Ncnm       ! Cloud nuclei number concentration       [count/m^3]
 
   ! Output Variables
   real, dimension(gr%nnzp), intent(out) ::  & 
@@ -425,23 +419,6 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
 
     call stat_update_var( iFrad_LW, Frad_LW, zm )
 
-  end if
- 
-
-  ! Initialize Ncnm on first timestep
-  if ( l_coamps_micro .and. time == time_initial ) then
-    Ncnm(1:gr%nnzp) = 30.0 * (1.0 + exp(-gr%zt(1:gr%nnzp)/2000.0)) * 1.e6
-
-  else if ( l_kk_rain ) then
-    ! Note: Khairoutdinov and Kogan microphysics has only been
-    ! tested for marine stratocumulous clouds, and does not
-    ! account for snow and ice.
-    do k=1, gr%nnzp, 1
-      if ( rcm(k) >= rc_tol ) then
-        Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6 & 
-                 / rho(k) 
-      end if
-    end do
   end if
 
 

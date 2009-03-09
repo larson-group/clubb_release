@@ -15,12 +15,6 @@
   ! Note: bottom point not at surface, so there is no sfc
   ! subroutine
 
-  ! Used to start the microphysics after predetermined amount of time
-  logical, private ::  & 
-  l_tdelay_coamps_micro, l_tdelay_icedfs 
-
-!$omp   threadprivate(l_tdelay_coamps_micro, l_tdelay_icedfs)
-
   private ! Default Scope
 
   contains
@@ -30,7 +24,7 @@
              ( time, time_initial, rlat, rlon, & 
                rcm, exner, rho, wm_zt, & 
                wm_zm, thlm_forcing, rtm_forcing, & 
-               Frad, radht, Ncnm, &
+               Frad, radht, &
                sclrm_forcing, edsclrm_forcing )
 
 !       Description:
@@ -49,7 +43,7 @@
 
   use model_flags, only: l_bugsrad ! Variable(s)
 
-  use parameters_microphys, only: l_coamps_micro, l_icedfs ! Variable(s)
+  use parameters_microphys, only: micro_scheme ! Variable(s)
 
   use stats_precision, only: time_precision ! Variable(s)
 
@@ -124,8 +118,7 @@
   thlm_forcing, & ! Theta_l forcing                         [K/s]
   rtm_forcing,  & ! Total water forcing                     [kg/kg/s]
   Frad,         & ! Radiative flux                          [W/m^2]
-  radht,        & ! Radiative heating                       [K/s]
-  Ncnm            ! Cloud nuclei number concentration       [num/m^3]
+  radht           ! Radiative heating                       [K/s]
 
   real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
   sclrm_forcing   ! Passive scalar forcing                  [units/s]
@@ -594,47 +587,6 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
     radht_LW(gr%nnzp) = 0.
 
   end if ! ~ l_bugsrad
-
-  if ( time == time_initial ) then
-
-    if ( l_coamps_micro ) then
-      ! Turn off microphysics for now, re-enable at
-      ! time = 3600.
-      l_coamps_micro        = .false.
-      l_tdelay_coamps_micro = .true.
-
-    else if ( l_icedfs ) then
-      l_icedfs        = .false.
-      l_tdelay_icedfs = .true.
-
-    else
-      l_tdelay_coamps_micro = .false.
-      l_tdelay_icedfs       = .false.
-    end if
-
-  end if
-
-  if ( time >= ( time_initial + 3600.0 )  & 
-            .and. l_tdelay_icedfs ) then
-  !---------------------------------------------------------------
-  ! Compute the loss of total water due to diffusional
-  ! growth of ice.  This is defined on thermodynamic levels.
-  !---------------------------------------------------------------
-    l_icedfs = .true.
-    
-
-  else if ( time == ( time_initial + 3600.0 )  & 
-            .and. l_tdelay_coamps_micro ) then
-
-  !---------------------------------------------------------------
-  ! Start COAMPS micro after predefined time delay
-  !---------------------------------------------------------------
-
-    l_coamps_micro = .true.
-
-    Ncnm(1:gr%nnzp) = 0.0
-
-  end if
 
 
 !---------------------------------------------------------------------

@@ -557,11 +557,6 @@
      sclrm, & 
      edsclrm
 
- 
- use parameters_microphys, only:  & 
-     l_coamps_micro,  & ! Variable(s) 
-     l_kk_rain
-
  use constants, only: & 
      fstderr   ! Constant(s)
 
@@ -657,7 +652,7 @@
 !         return
  end if
 
- if ( l_kk_rain .or. l_coamps_micro ) then
+ if ( hydromet_dim > 0 ) then
    do i = 1, hydromet_dim, 1
      if ( isnan2d( hydromet(:,i) ) ) then
        write(fstderr,*) "NaN in a hydrometeor model array" 

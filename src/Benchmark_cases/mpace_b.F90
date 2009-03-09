@@ -17,7 +17,6 @@ contains
 !----------------------------------------------------------------------
 subroutine mpace_b_tndcy( time, time_initial, rlat, & 
                           rho, p_in_Pa, thvm, rcm, & 
-                          Ncnm, Ncm, &
                           wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
                           Frad, radht, &
                           sclrm_forcing, edsclrm_forcing )
@@ -37,8 +36,6 @@ use constants, only: Rd, Cp, Lv, p0, rc_tol, zero_threshold ! Variable(s)
 use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
 use model_flags, only: l_bugsrad  ! Variable(s)
-
-use parameters_microphys, only: l_coamps_micro, l_kk_rain ! Variable(s)
 
 use grid_class, only: gr ! Variable(s)
 
@@ -103,11 +100,6 @@ real, dimension(gr%nnzp), intent(in) :: &
   p_in_Pa, & ! Pressure                               [Pa]
   thvm,    & ! Virtual potential temperature          [K]
   rcm        ! Cloud water mixing ratio               [kg/kg]
-
-! Input/Output Variables
-real, dimension(gr%nnzp), intent(inout) ::  & 
-  Ncm,  & ! Cloud droplet number concentration      [count/m^3]
-  Ncnm    ! Cloud nuclei number concentration       [count/m^3]
 
 ! Output Variables
 real, dimension(gr%nnzp), intent(out) ::  & 
@@ -305,27 +297,6 @@ if ( .not.l_bugsrad .and. l_stats_samp ) then
 
 end if
  
-
-! Initialize Ncnm on first timestep
-if ( l_coamps_micro .and. time == time_initial ) then
-  Ncnm(1:gr%nnzp)  & 
-  = 30.0 * (1.0 + exp(-gr%zt(1:gr%nnzp)/2000.0)) * 1.e6
-
-else if ( l_kk_rain ) then
-  ! Note: Khairoutdinov and Kogan microphysics has only been
-  ! tested for marine stratocumulous clouds, and does not
-  ! account for snow and ice.
-  do k=1, gr%nnzp, 1
-    if ( rcm(k) >= rc_tol ) then
-      ! Ncm is in units of kg^-1.  If the coefficient is in m^-3, then
-      ! it needs to be divided by rho in order to get units of kg^-1.
-      ! Brian.  Sept. 8, 2007.
-      Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6 & 
-               / rho(k) 
-    end if
-  end do
-end if
-
 
 ! Test scalars with thetal and rt if desired
 if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing

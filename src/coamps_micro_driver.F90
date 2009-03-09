@@ -59,6 +59,7 @@ use stats_variables, only: zt, l_stats_samp,  & ! Variable(s)
    ,isnowslope & 
    ,iNsnowm
 ! End of ajsmith4's addition
+use parameters_microphys, only: l_graupel, l_ice_micro
 
 implicit none
 
@@ -81,13 +82,6 @@ external ::  &
     icond  = 3  ! Autoconversion; 1=Kessler, 2=Manton/Cotton, 3=K&K, 4=none
 
 
-  logical, parameter :: & 
-    lice = .true.  ! Whether to produce ice in COAMPS.
-                 ! According to Jerry Schmidt of NRL,
-                 !   if lice = .true., then we should
-                 !   set ldrizzle = .false.
-                 !   because collection of drizzle by ice
-                 !   is not implemented yet.
    
 ! Local Constants
 real, parameter :: & 
@@ -179,17 +173,12 @@ real, dimension(gr%nnzp), intent(in) :: &
   rrainm,     & ! Rain water mixing ratio    [kg/kg]
   rgraupelm,  & ! Graupel water mixing ratio [kg/kg]
   rsnowm,     & ! Snow water mixing ratio    [kg/kg]
-! Nrm is now in kg^-1.  Brian.  Sept. 8, 2007.
-!     .  Nrm        ! Number of rain drops       [count/m^3]
   Nrm        ! Number of rain drops       [count/kg]
 
 real, dimension(gr%nnzp), intent(inout) :: & 
-! Ncm is now in kg^-1.  Brian.  Sept. 8, 2007.
-!     .  Ncm,       ! Number of cloud droplets   [count/m^3]
   Ncm,        & ! Number of cloud droplets   [count/kg]
   Ncnm,       & ! Number of cloud nuclei     [count/m^3]
   Nim           ! Number of ice crystals     [count/m^3]
-
 
 real, dimension(1,1,gr%nnzp-1), intent(inout) :: &
   cond ! condensation/evaporation of liquid water
@@ -207,8 +196,6 @@ real, dimension(gr%nnzp), intent(out) :: &
   rsnowtend,  & ! d(rsnow)/dt                [kg/kg/s]
   rttend,     & ! d(rt)/dt                   [kg/kg/s]
   thlmtend,   & ! d(thlm)/dt                 [K/s]
-! Nrm is now in kg^-1.  Brian.  Sept. 8, 2007.
-!     .  nrmtend    ! d(Nrm)/dt                  [count/m^3/s]
   nrmtend    ! d(Nrm)/dt                  [count/kg/s]
 
 real, dimension(gr%nnzp), intent(out) :: & 
@@ -401,8 +388,7 @@ integer, dimension(gr%nnzp-1) :: &
   kcomp          !
 
 logical :: & 
-  ldrizzle,       & ! is drizzle on?
-  lgrpl          ! is graupel on?
+  ldrizzle  ! is drizzle on?
 
 
 real ::  & ! Regular precision to be passed into COAMPS micro. Brian.
@@ -422,11 +408,21 @@ kk = gr%nnzp-1
 kmax = gr%nnzp
 
 ! Comment by Adam Smith, 25 March 2008
-! These variables activate rain/drizzle and graupel in the COAMPS
+! These variables activate rain/drizzle in the COAMPS
 ! micro scheme.  Set these variables to .TRUE. if you need these
 ! hydrometeors in your simulations.
 ldrizzle = .FALSE.
-lgrpl    = .FALSE.
+
+! Whether to produce ice in COAMPS.
+! According to Jerry Schmidt of NRL,
+!   if lice = .true., then we should
+!   set ldrizzle = .false.
+!   because collection of drizzle by ice
+!   is not implemented yet.
+if ( l_ice_micro .and. ldrizzle ) then
+  write(0,*) "l_ice_micro must be false to use ldrizzle"
+  stop 
+end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Comment by Adam Smith, 25 March 2008
@@ -486,8 +482,8 @@ eic      = 1.0
 ! Brian set regular precision variables "timea" and "deltf" to the values
 ! brought in from CLUBB as precision "time_precision" variables "timea_in" and
 ! "deltf_in".  Brian; 4/5/2008.
-timea = real(timea_in)
-deltf = real(deltf_in)
+timea = real( timea_in )
+deltf = real( deltf_in )
 
 ! Michael Falk changed this, November 2007.
 ! This is the stock COAMPS value, 2e7:
@@ -579,13 +575,13 @@ end do
 ! Note that this is much simpler approx. of gamma than the ANL function
 ! used in the rest of the CLUBB code.
 ! It is used only to have a direct comparison with COAMPS-LES -dschanen
-call gamma( 3.0,gm3 )
-call gamma( 4.0,gm4 )
-call gamma( 5.0,gm5 )
-call gamma( 6.0,gm6 )
-call gamma( 7.0,gm7 )
-call gamma( 8.0,gm8 )
-call gamma( 9.0,gm9 )
+call gamma( 3.0, gm3 )
+call gamma( 4.0, gm4 )
+call gamma( 5.0, gm5 )
+call gamma( 6.0, gm6 )
+call gamma( 7.0, gm7 )
+call gamma( 8.0, gm8 )
+call gamma( 9.0, gm9 )
 call gamma( bsnow+3.0, gmbp3 )
 call gamma( bsnow*0.5 + 2.5, gmbov2 )
 call gamma( bgrp*0.5 + 2.5, gmbov2g )
@@ -649,7 +645,7 @@ do k=nrdamp,kk
 ! determine if point is saturated as in COAMPS
 !***********************************************************************
 !
-if ( .not.lice ) then
+if ( .not. l_ice_micro ) then
   sat = qv3_flip(1,1,k)/qsatv3d_flip(1,1,k)-1.0
 else
   if ( temp3d_flip(1,1,k) >= T_freeze_K ) then
@@ -721,7 +717,7 @@ if ( len > 0 ) call adjtq &
 !     3       ,nc3,nr3,ncn3,ni3,cp,deltf,Lf,Ls,Lv 
        ,nc3(1,1,kk:1:-1),nr3(1,1,kk:1:-1),ncn3(1,1,kk:1:-1) &
        ,ni3(1,1,kk:1:-1),cp,deltf,Lf,Ls,Lv &
-       ,pcut,p0,Rd,Rv,sloper,slopes,slopeg,timea,lice &
+       ,pcut,p0,Rd,Rv,sloper,slopes,slopeg,timea,l_ice_micro &
        ,nne,kk,i1d,j1d,ary1d,i1dflg,n1d,maxpt1d,maxvr1d &
        ,kmax,nrdamp,ipts,nkpts,icomp,kcomp,j &
        ,xland,aa0,aa1,aa2,aa3,abar,apr,aprpr,bsnow &
@@ -732,7 +728,7 @@ if ( len > 0 ) call adjtq &
        ,gm7,gm8,gm9,gmbp3,gmbov2,gmbov2g,bgrp,ex1,ex2 &
        ,ex2g,ex3,hlvoka,hkaolf,hlsoka,hlvorv,hlsorv &
        ,rvochi,lfocp,lvocp,lsocp,ex7,ex7g,ex4,ex4g,ex5 &
-       ,ldrizzle,lgrpl,icon,icond,len,icase &
+       ,ldrizzle,l_graupel,icon,icond,len,icase &
        ,snowv_flip(:,:,1:kk) &
        ,snowslope(1,1,kk:1:-1),pcond(1,1,kk:1:-1) &
        ,psmlti(1,1,kk:1:-1),psacw(1,1,kk:1:-1),pgacw(1,1,kk:1:-1) &

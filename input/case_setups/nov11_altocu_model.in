@@ -91,10 +91,9 @@ debug_level   = 2
 /
 
 &microphysics_setting
-l_cloud_sed    = .false.  ! Flag for cloud water sedimentation.
-l_kk_rain      = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
-l_coamps_micro = .false.  ! Flag for COAMPS microphysics.
-l_icedfs       = .true.  ! Flag for simplified ice scheme.
+micro_scheme = "simplified_ice"
+microphys_start_time = 64800.0
+
 /
 
 &stats_setting

@@ -10,11 +10,20 @@ module microphys_driver
 ! None
 !-----------------------------------------------------------------------
   use parameters_microphys, only: &
-    l_cloud_sed,     & ! Cloud water sedimentation
-    l_kk_rain,       & ! K&K microphysics
-    l_coamps_micro,  & ! COAMPS microphysics
-    l_icedfs,        & ! Simplified ice
-    hydromet_list      ! Names of the hydrometeor species
+    l_cloud_sed,             & ! Cloud water sedimentation
+    l_ice_micro,             & ! Compute ice
+    l_graupel,               & ! Compute graupel
+    l_hail,                  & ! 
+    l_seifert_behneng,       & ! Use Seifert and Behneng warm drizzle
+    l_predictnc,             & ! Predict cloud droplet number conc
+    l_specify_aerosol,       & ! Specify aerosol
+    l_subgrid_w,             & ! Use subgrid w 
+    l_arctic_nucl,           & ! Use MPACE observations
+    l_cloud_edge_activation, & ! Activate on cloud edges
+    l_fix_pgam,              & ! Fix pgam
+    micro_scheme,            & ! The microphysical scheme in use
+    hydromet_list,           & ! Names of the hydrometeor species
+    microphys_start_time       ! When to start the microphysics [s]
 
   implicit none
 
@@ -32,21 +41,21 @@ module microphys_driver
   contains
 
 !-----------------------------------------------------------------------
-  subroutine init_microphys( iunit, namelist_file, hydromet_dim )
+  subroutine init_microphys( iunit, namelist_file, Ncnm, hydromet_dim )
 
 ! Description:
-!   Set indices to the various hydrometeor species and define hydromet_dim for the
-!   purposes of allocating memory.
+!   Set indices to the various hydrometeor species and define hydromet_dim for 
+!   the purposes of allocating memory.
 
 ! References:
 !   None
 !-----------------------------------------------------------------------
 
     use array_index, only:  & 
-      iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm
+      iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm ! Variables
 
     use KK_microphys_module, only: &
-      rrp2_rrainm2_cloud, Nrp2_Nrm2_cloud, Ncp2_Ncm2_cloud, &
+      rrp2_rrainm2_cloud, Nrp2_Nrm2_cloud, Ncp2_Ncm2_cloud, & ! Variables
       corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
       corr_sNc_NL_cloud, rrp2_rrainm2_below, &
       Nrp2_Nrm2_below, Ncp2_Ncm2_below, &
@@ -54,13 +63,16 @@ module microphys_driver
       corr_sNr_NL_below, corr_sNc_NL_below, &
       C_evap, r_0
 
+    use grid_class, only: &
+      gr ! Variable
+
     use constants, only: &
-      fstderr
+      fstderr ! Constant
 
     implicit none
 
     ! External
-    intrinsic :: count ! Determines the number of .true. logicals in an array
+    intrinsic :: trim
 
     ! Input variables
     integer, intent(in) :: &
@@ -69,28 +81,34 @@ module microphys_driver
     character(len=*), intent(in) :: &
       namelist_file ! File name
 
+    ! Input/Output variables
+    real, dimension(gr%nnzp), intent(inout) :: &
+      Ncnm ! Cloud nuclei number conc.  [num/m^3]
+
     ! Output variables
     integer, intent(out) :: & 
       hydromet_dim ! Number of hydrometeor fields.
 
 
     namelist /microphysics_setting/ &
-      l_kk_rain, l_coamps_micro, l_cloud_sed, l_icedfs, &
+      micro_scheme, l_cloud_sed, &
+      l_cloud_sed, l_ice_micro, l_graupel, l_hail, &
+      l_seifert_behneng, l_predictnc, l_specify_aerosol, l_subgrid_w, &
+      l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, &
       rrp2_rrainm2_cloud, Nrp2_Nrm2_cloud, Ncp2_Ncm2_cloud, &
       corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
       corr_sNc_NL_cloud, rrp2_rrainm2_below, &
       Nrp2_Nrm2_below, Ncp2_Ncm2_below, &
       corr_rrNr_LL_below, corr_srr_NL_below, &
       corr_sNr_NL_below, corr_sNc_NL_below, &
-      C_evap, r_0
+      C_evap, r_0, microphys_start_time
 
     ! ---- Begin Code ----
 
     ! Set default values, then read in the namelist
-    l_kk_rain      = .false.
-    l_coamps_micro = .false.
-    l_cloud_sed    = .false.
-    l_icedfs       = .false.
+    micro_scheme = "none"
+
+    l_cloud_sed = .false.
 
     ! Parameters for in-cloud (from SAM RF02 DO).
     rrp2_rrainm2_cloud = 0.766
@@ -118,27 +136,29 @@ module microphys_driver
 
     r_0 = 25.0e-6   ! Assumed radius of all new drops; m.
 
+    l_ice_micro = .true.
+    l_graupel = .true.
+    l_hail = .false.
+    l_seifert_behneng = .false.
+    l_predictnc = .true.
+    l_specify_aerosol = .true.
+    l_subgrid_w = .true.
+    l_arctic_nucl = .false.
+    l_cloud_edge_activation = .true.
+    l_fix_pgam  = .false.
+
+    microphys_start_time = 0.0
+
     open(unit=iunit, file=namelist_file, status='old',action='read')
     read(iunit, nml=microphysics_setting)
     close(unit=iunit)
-
-    ! Make sure only one microphysical scheme is enabled.
-
-    if ( count( (/l_kk_rain, l_coamps_micro, l_icedfs/) ) > 1 ) then
-
-      write(unit=fstderr, fmt='(3(a18,l1,a1))')  & 
-        "l_kk_rain = ", l_kk_rain, ",", & 
-        "l_coamps_micro = ", l_coamps_micro,",", & 
-        "l_icedfs = ", l_icedfs, "."
-      stop "Only one microphysics scheme may be enabled per run"
-
-    end if ! More than one microphysical scheme enabled
 
     ! The location of the fields in the hydromet array are arbitrary,
     ! and don't need to be set consistently among schemes so long as
     ! the 'i' indices point to the correct parts of the array.
 
-    if ( l_coamps_micro ) then
+    select case ( trim( micro_scheme ) )
+    case ( "coamps" )
       iirrainm    = 1
       iiNrm       = 2
       iirsnowm    = 3
@@ -155,7 +175,11 @@ module microphys_driver
       hydromet_list(iiricem)     = "ricem"
       hydromet_list(iirgraupelm) = "rgraupelm"
 
-    else if ( l_kk_rain ) then
+      ! Initialize Ncnm as in COAMPS
+      Ncnm(1:gr%nnzp) = 30.0 * (1.0 + exp( -gr%zt(1:gr%nnzp)/2000.0 )) * 1.e6
+
+
+    case ( "khairoutdinov_kogan" )
       iirrainm    = 1
       iiNrm       = 2
       iirsnowm    = -1
@@ -169,7 +193,7 @@ module microphys_driver
       hydromet_list(iirrainm) = "rrainm"
       hydromet_list(iiNrm) = "Nrm"
 
-    else if ( l_icedfs ) then
+    case ( "simplified_ice" )
       iirrainm    = -1
       iiNrm       = -1
       iirsnowm    = -1
@@ -178,7 +202,7 @@ module microphys_driver
 
       hydromet_dim = 0
 
-    else
+    case ( "none" )
       iirrainm    = -1
       iiNrm       = -1
       iirsnowm    = -1
@@ -187,7 +211,11 @@ module microphys_driver
 
       hydromet_dim = 0
 
-    end if
+    case default
+      write(fstderr,*) "Unknown micro_scheme"// trim( micro_scheme )
+      stop
+
+    end select
 
     return
   end subroutine init_microphys
@@ -414,8 +442,13 @@ module microphys_driver
     integer :: ixrm_cl, ixrm_bt
 
 !-----------------------------------------------------------------------
+    ! ---- Begin code ----
 
-! Assign pointers to pdf_params
+    ! Return if there is delay between the model start time and start of the
+    ! microphysics
+    if ( time_current < microphys_start_time ) return
+
+    ! Assign pointers to pdf_params
     thl1 => pdf_params%thl1(1:gr%nnzp)
     thl2 => pdf_params%thl2(1:gr%nnzp)
     a    => pdf_params%a(1:gr%nnzp)
@@ -426,21 +459,22 @@ module microphys_driver
     ss1  => pdf_params%ss1(1:gr%nnzp)
     ss2  => pdf_params%ss2(1:gr%nnzp)
 
-! Solve for the value of Kr, the hydrometeor eddy diffusivity.
+    ! Solve for the value of Kr, the hydrometeor eddy diffusivity.
     do k = 1, gr%nnzp, 1
       Kr(k) = c_Krrainm * Kh_zm(k)
     end do
 
-! Determine temperature in K for the microphysics
+    ! Determine temperature in K for the microphysics
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
 
-! Begin by calling either Brian Griffin's implementation of the
-! Khairoutdinov and Kogan microphysical scheme or
-! alternatively the Rutlege and Hobbes scheme from COAMPS(R).
-! Note: COAMPS appears to have some K&K elements to it as well.
+   ! Begin by calling either Brian Griffin's implementation of the
+   ! Khairoutdinov and Kogan microphysical scheme or
+   ! alternatively the Rutlege and Hobbes scheme from COAMPS(R).
+   ! Note: COAMPS appears to have some K&K elements to it as well.
 
-    if ( l_coamps_micro ) then
+    select case ( trim( micro_scheme ) )
 
+    case ( "coamps" ) 
       call coamps_micro_driver & 
            ( runtype, time_current, dt, & 
              rtm, wm_zm, p_in_Pa, exner, rho, T_in_K, & 
@@ -492,12 +526,7 @@ module microphys_driver
 
       endif ! l_stats_samp
 
-    elseif ( l_kk_rain ) then
-
-      ! Note that Ncm for DYCOMS II RF02 is specified in the
-      ! dycoms_rf02_tndcy subroutine, so new cases will need
-      ! Ncm computed beforehand as well.
-
+    case ( "khairoutdinov_kogan" )
       call kk_microphys & 
            ( dt, T_in_K, p_in_Pa, exner, rho,  & 
              thl1, thl2, a, rc1, rc2, s1,  & 
@@ -524,7 +553,7 @@ module microphys_driver
 
       end if ! lstats_samp
 
-    end if ! coamps micro or KK rain.
+    end select ! coamps micro or K&K.
 
 !-----------------------------------------------------------------------
 !       Loop over all hydrometeor species and apply sedimentation,
@@ -660,7 +689,7 @@ module microphys_driver
 
 
 ! Call the ice diffusion scheme
-      if ( l_icedfs ) then
+      if ( trim( micro_scheme ) == "simplified_ice" ) then
         call ice_dfsn( dt, T_in_K, rcm, p_in_Pa, rho, rtm_mc )
         thlm_mc = - ( Lv/(Cp*exner) ) * rtm_mc
       end if
@@ -705,7 +734,7 @@ module microphys_driver
       thlm_forcing = thlm_forcing + thlm_mc
 
 
-      if ( l_stats_samp .and. ( l_coamps_micro .or. l_kk_rain ) ) then
+      if ( l_stats_samp .and. iirrainm > 0 ) then
         ! Rainfall rate (mm/day) should be defined on thermodynamic
         ! levels.  -Brian
         ! The absolute value of Vrr is taken because rainfall rate
@@ -790,7 +819,7 @@ module microphys_driver
         write(fstderr,*) "rtm_mc = ", rtm_mc
         write(fstderr,*) "thlm_mc = ", thlm_mc
 
-      endif
+      end if
 
       return
     end subroutine advance_microphys
@@ -847,27 +876,27 @@ module microphys_driver
 
       implicit none
 
-! Input Variables
+      ! Input Variables
       character(len=*), intent(in) :: solve_type
 
       real(kind=time_precision), intent(in) :: dt ! Timestep     [s]
 
-! Tendency computed tendency from COAMPS routine adjtq
-! or Brian Griffin's K & K microphysics implementation
+      ! Explicit contrbution to the hydrometeor, e.g. evaporation
+      ! from Brian Griffin's K & K microphysics implementation
       real, intent(in), dimension(gr%nnzp) :: & 
         xrm_tndcy !                                     [units/s]
 
-! Input/Output Variables
+      ! Input/Output Variables
       real, intent(inout), dimension(3,gr%nnzp) :: & 
         lhs ! Left hand side
 
       real, intent(inout), dimension(gr%nnzp) :: & 
         xrm ! Hydrometeor being solved for              [units vary]
 
-! Output Variables
+      ! Output Variables
       integer, intent(out) :: err_code
 
-! Local Variables
+      ! Local Variables
       real, dimension(gr%nnzp) :: & 
         rhs ! Right hand side
 
@@ -908,29 +937,23 @@ module microphys_driver
       end select
 
 
-! RHS of equation, following Brian's method from the rain subroutine
+      ! RHS of equation, following Brian's method from the rain subroutine
       rhs(2:gr%nnzp-1)  & 
       = real((xrm(2:gr%nnzp-1) / dt )  & ! Time tendency
       + xrm_tndcy(2:gr%nnzp-1))
 
 
-! Boundary condition on the RHS
+      ! Boundary condition on the RHS
       rhs(1) = real( xrm(1) / dt )
       rhs(gr%nnzp) =  & 
          real( ( xrm(gr%nnzp) / dt ) + xrm_tndcy(gr%nnzp-1) )
 
 
-! Solve system using tridag_solve. This uses LAPACK sgtsv,
-! which relies on Gaussian elimination to decompose the matrix.
+      ! Solve system using tridag_solve. This uses LAPACK sgtsv,
+      ! which relies on Gaussian elimination to decompose the matrix.
       call tridag_solve & 
            ( solve_type, gr%nnzp, 1, lhs(1,:), lhs(2,:), lhs(3,:), & 
              rhs, xrm, err_code )
-
-! Alternative: Use LU decomposition instead.
-! This doesn't seem to change the answer too much.
-!       call band_solve
-!    .       ( solve_type, 1, 1, gr%nnzp, 1,
-!    .         lhs, rhs, xrm, isValid )
 
       if ( l_stats_samp ) then
 
@@ -1102,14 +1125,14 @@ module microphys_driver
       end select
 
 
-! Reset LHS Matrix for current timestep.
+      ! Reset LHS Matrix for current timestep.
       lhs = 0.0
 
-! Setup LHS Matrix
+      ! Setup LHS Matrix
       do k = 2, gr%nnzp-1, 1
 
         km1 = max( k-1, 1 )
-!   kp1 = min( k+1, gr%nnzp )
+        !kp1 = min( k+1, gr%nnzp )
 
         ! Main diagonal
 
@@ -1172,28 +1195,28 @@ module microphys_driver
       enddo ! 2..gr%nnzp-1
 
 
-! Boundary Conditions
+      ! Boundary Conditions
 
-! The hydrometeor eddy-diffusion term has zero-flux boundary conditions, meaning
-! that amounts of a hydrometeor are not allowed to escape the model boundaries
-! through the process of eddy-diffusion.  It should be noted that amounts of a
-! hydrometeor are allowed to leave the model at the lower boundary through the
-! process of hydrometeor sedimentation.  However, only the eddy-diffusion term
-! contributes to the LHS matrix at the k=1 and k=gr%nnzp levels.  Thus, function
-! diffusion_zt_lhs needs to be called at both the upper boundary level and the
-! lower boundary level.
+      ! The hydrometeor eddy-diffusion term has zero-flux boundary conditions, meaning
+      ! that amounts of a hydrometeor are not allowed to escape the model boundaries
+      ! through the process of eddy-diffusion.  It should be noted that amounts of a
+      ! hydrometeor are allowed to leave the model at the lower boundary through the
+      ! process of hydrometeor sedimentation.  However, only the eddy-diffusion term
+      ! contributes to the LHS matrix at the k=1 and k=gr%nnzp levels.  Thus, function
+      ! diffusion_zt_lhs needs to be called at both the upper boundary level and the
+      ! lower boundary level.
 
 
-! Lower Boundary
+      ! Lower Boundary
       k   = 1
       km1 = max( k-1, 1 )
-! Note:  In function diffusion_zt_lhs, at the k=1 (lower boundary) level,
-!        variables referenced at the km1 level don't factor into the equation.
+      ! Note:  In function diffusion_zt_lhs, at the k=1 (lower boundary) level,
+      !        variables referenced at the km1 level don't factor into the equation.
 
-! LHS time tendency at the lower boundary.
+      ! LHS time tendency at the lower boundary.
       lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
 
-! LHS eddy-diffusion term at the lower boundary.
+      ! LHS eddy-diffusion term at the lower boundary.
       lhs(kp1_tdiag:km1_tdiag,k) &
       = lhs(kp1_tdiag:km1_tdiag,k) &
       + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  &
@@ -1215,14 +1238,14 @@ module microphys_driver
       endif  ! l_stats_samp
 
 
-! Upper Boundary
+      ! Upper Boundary
       k   = gr%nnzp
       km1 = max( k-1, 1 )
 
-! LHS time tendency at the upper boundary.
+      ! LHS time tendency at the upper boundary.
       lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
 
-! LHS eddy-diffusion term at the upper boundary.
+      ! LHS eddy-diffusion term at the upper boundary.
       lhs(kp1_tdiag:km1_tdiag,k) &
       = lhs(kp1_tdiag:km1_tdiag,k) &
       + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  &
@@ -1370,7 +1393,7 @@ module microphys_driver
 
       implicit none
 
-! Constant parameters
+      ! Constant parameters
       integer, parameter :: & 
         kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
         k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
@@ -1380,7 +1403,7 @@ module microphys_driver
         t_above = 1,    & ! Index for upper thermodynamic level grid weight.
         t_below = 2       ! Index for lower thermodynamic level grid weight.
 
-! Input Variables
+      ! Input Variables
       real, intent(in) :: & 
         V_hm,    & ! Sedimentation velocity of hydrometeor (k)                [m/s]
         V_hmm1,  & ! Sedimentation velocity of hydrometeor (k-1)              [m/s]
@@ -1389,26 +1412,26 @@ module microphys_driver
       integer, intent(in) ::  & 
         level ! Central thermodynamic level (on which calculation occurs).
 
-! Return Variable
+      ! Return Variable
       real, dimension(3) :: lhs
 
-! Local Variables
+      ! Local Variables
       integer :: & 
         mk,    & ! Momentum level directly above central thermodynamic level.
         mkm1     ! Momentum level directly below central thermodynamic level.
 
-! Momentum level (k) is between thermodynamic level (k+1)
-! and thermodynamic level (k).
+      ! Momentum level (k) is between thermodynamic level (k+1)
+      ! and thermodynamic level (k).
       mk   = level
-! Momentum level (k-1) is between thermodynamic level (k)
-! and thermodynamic level (k-1).
+      ! Momentum level (k-1) is between thermodynamic level (k)
+      ! and thermodynamic level (k-1).
       mkm1 = level - 1
 
-! Note:  The code is now written so that V_hm has been pulled inside of the
-!        derivative.  The sedimentation term is now of the form -d(V_hm*hm)/dz,
-!        rather than of the form -V_hm d(hm)/dz.  The term has been
-!        re-discretized in a conservative manner and the results are listed
-!        below, with the old code commented out.
+      ! Note:  The code is now written so that V_hm has been pulled inside of the
+      !        derivative.  The sedimentation term is now of the form -d(V_hm*hm)/dz,
+      !        rather than of the form -V_hm d(hm)/dz.  The term has been
+      !        re-discretized in a conservative manner and the results are listed
+      !        below, with the old code commented out.
 
       if ( level == 1 ) then
 
@@ -1427,22 +1450,22 @@ module microphys_driver
       elseif ( level > 1 .and. level < gr%nnzp ) then
 
         ! Most of the interior model; normal conditions.
-
-! Vince Larson pulled V_hm inside derivative to make conservative.
-! 13 Dec 2007
+        
+        ! Vince Larson pulled V_hm inside derivative to make conservative.
+        ! 13 Dec 2007
+        !
+        ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+!       lhs(kp1_tdiag)  &
+!       = + V_hmzt * dzt * gr%weights_zt2zm(t_above,mk)
+      
+!       ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+!       lhs(k_tdiag)  &
+!       = + V_hmzt * dzt * (   gr%weights_zt2zm(t_below,mk)  &
+!                          - gr%weights_zt2zm(t_above,mkm1)  )
 !
-!   ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-!   lhs(kp1_tdiag)  &
-!   = + V_hmzt * dzt * gr%weights_zt2zm(t_above,mk)
-!
-!   ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-!   lhs(k_tdiag)  &
-!   = + V_hmzt * dzt * (   gr%weights_zt2zm(t_below,mk)  &
-!                        - gr%weights_zt2zm(t_above,mkm1)  )
-!
-!   ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-!   lhs(km1_tdiag)  &
-!   = - V_hmzt * dzt * gr%weights_zt2zm(t_below,mkm1)
+!       ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+!       lhs(km1_tdiag)  &
+!       = - V_hmzt * dzt * gr%weights_zt2zm(t_below,mkm1)
 
         ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
         lhs(kp1_tdiag)  & 
@@ -1457,7 +1480,7 @@ module microphys_driver
         lhs(km1_tdiag)  & 
         = - dzt * V_hmm1 * gr%weights_zt2zm(t_below,mkm1)
 
-!  End Vince Larson change
+        !  End Vince Larson change
 
 
       elseif ( level == gr%nnzp ) then
@@ -1595,21 +1618,14 @@ module microphys_driver
           term_ma_zt_lhs ! Procedure(s)
 
       implicit none
-!
-!use stats_variables
-!
-! Joshua Fasching 2007
 
-! Input variables.
+      ! Input variables.
 
-! Hydrometeor microphysical tendency.
-      real, dimension(gr%nnzp), intent(in) :: xrm_tndcy  ! [hm_units/s]
-! Vertical velocity (thermo. levels).
-      real, dimension(gr%nnzp), intent(in) :: wm_zt        ! [m/s]
-! Sedimentation velocity (interpolated to thermo. levels).
-      real, dimension(gr%nnzp), intent(in) :: V_hm       ! [m/s]
-! Eddy diffusivity for hydrometeors (m-lev).
-      real, dimension(gr%nnzp), intent(in) :: Kr         ! [m^2/s]
+      real, dimension(gr%nnzp), intent(in) :: &
+        xrm_tndcy, & ! Hydrometeor microphysical tendency.                      [hm_units/s]
+        wm_zt,     & ! Vertical velocity (thermo. levels).                      [m/s]
+        V_hm,      & ! Sedimentation velocity (interpolated to thermo. levels). [m/s]
+        Kr           ! Eddy diffusivity for hydrometeors (m-lev).               [m^2/s]
 
       real, intent(in) :: nu  ! Diffusion coefficient      [m^2/s]
 
@@ -1620,17 +1636,17 @@ module microphys_driver
       logical, intent(in) :: l_sed   ! Whether to add a sedimentation term
 
 
-! Input/output variable.
+      ! Input/output variable.
 
-! Hydrometeor.
-      real, dimension(gr%nnzp), intent(inout) :: xrm     ! [hm_units]
+      real, dimension(gr%nnzp), intent(inout) :: &
+        xrm  ! Hydrometeor.  [hm_units]
 
-! Output variable.
+      ! Output variable.
 
-! Excess evaporation rate.
+      ! Excess evaporation rate.
       real, intent(out) :: overevap_rate                 ! [hm_units/s]
 
-! Local variables.
+      ! Local variables.
       real :: ma_subdiag   ! Term to be multiplied by xrm(k-1) in m.a. eq.
       real :: ma_maindiag  ! Term to be multiplied by xrm(k) in m.a. eq.
       real :: ma_supdiag   ! Term to be multiplied by xrm(k+1) in m.a. eq.
@@ -1652,8 +1668,8 @@ module microphys_driver
       real :: xrm_chge_trsed    ! Net change in hm. due to only transport/sed.
       real :: xrm_trsed_only    ! New hm. val. due only to transport/sed.
 
-!        real :: evap_amt          ! The actual evaporation amount over the t.s.
-!        real :: evap_rate         ! The time-averaged rate.
+!     real :: evap_amt          ! The actual evaporation amount over the t.s.
+!     real :: evap_rate         ! The time-averaged rate.
       real :: overevap_amt      ! The amount of h.m. that was over-evap.
 
       real, dimension(1:3) :: tmp
@@ -1674,8 +1690,8 @@ module microphys_driver
 ! Joshua Fasching 2007
 
       k = level
-      km1 = max(k-1,1)
-      kp1 = min(k+1,gr%nnzp)
+      km1 = max( k-1, 1 )
+      kp1 = min( k+1, gr%nnzp )
 
 
 ! Mean advection tendency component

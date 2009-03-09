@@ -663,31 +663,6 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   END IF ! ~l_bugsrad
 
 
-  !-------------------------------------------------------------
-  ! Compute the loss of total water due to diffusional
-  ! growth of ice.  This is defined on thermodynamic levels.
-  !-------------------------------------------------------------
-
-!        if ( time == time_initial ) then
-
-!          if ( l_coamps_micro ) then
-      ! Turn off microphysics for now, re-enable at
-      ! time = 3600.
-!            l_coamps_micro        = .false.
-!            l_tdelay_coamps_micro = .true.
-
-!          else if ( l_icedfs ) then
-!            l_icedfs        = .false.
-!            l_tdelay_icedfs = .true.
-
-!          else
-!            l_tdelay_coamps_micro = .false.
-!            l_tdelay_icedfs       = .false.
-!          end if
-
-!        end if
-
-
   !---------------------------------------------------------------
   ! Using linear interpolation to calculate subsidence
   ! Original code by Michael Falk

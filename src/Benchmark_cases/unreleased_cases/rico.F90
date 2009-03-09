@@ -17,7 +17,7 @@ module rico
 !----------------------------------------------------------------------
   subroutine rico_tndcy( exner, rho, rcm, &
                          wm_zt, wm_zm, & 
-                         thlm_forcing, rtm_forcing, radht, Ncm, & 
+                         thlm_forcing, rtm_forcing, radht, & 
                          sclrm_forcing, edsclrm_forcing )
 !
 !        Description:
@@ -30,9 +30,6 @@ module rico
   use constants, only: rc_tol ! Variable(s)
 
   use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
-
-  use parameters_microphys, only: &
-    l_kk_rain  !  Flag-- is KK rain being used?
 
   use grid_class, only: gr ! Variable(s)
 
@@ -61,8 +58,7 @@ module rico
   wm_zm,        & ! Large-scale vertical motion on m grid   [m s^-1]
   thlm_forcing, & ! Large-scale thlm tendency               [K s^-1]
   rtm_forcing,  & ! Large-scale rtm tendency                [kg kg^-1 s^-1]
-  radht,        & ! dT/dt, then d Theta/dt, due to rad.     [K s^-1]
-  Ncm             ! Initial cloud droplet concentration     [# kg^-1]
+  radht           ! dT/dt, then d Theta/dt, due to rad.     [K s^-1]
 
   real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
   sclrm_forcing ! Passive scalar LS tendency            [units/s]
@@ -130,24 +126,6 @@ module rico
     end if
     rtm_forcing(k) = rtm_forcing(k) / 1000.  ! Converts [g kg^-1 s^-1] to [kg kg^-1 s^-1]
   end do
-
-  if ( l_kk_rain ) then
-    do k=1,gr%nnzp
-      if ( rcm(k) >= rc_tol ) then
-! Brian:  Ncm has now been changed in the model to be the concentration per 
-!         mass off air, in kg^-1.  However, in order to get that quantity, the
-!         concentration per volume of air must be divided by rho.  9/8/07.
-! Vince Larson removed factor of rho so that Ncm would be in units of m^{-3}.
-! 3 Aug 2007.
-!              Ncm(k) = 70.0 * 1.e6 * rho(k)
-!              Ncm(k) = 70.0 * 1.e6
-        Ncm(k) = 70.0 * 1.e6 / rho(k)
-! End Vince Larson's change.
-      else
-        Ncm(k) = 0.
-      end if
-    end do
-  end if
 
   ! Test scalars with thetal and rt if desired
   if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
