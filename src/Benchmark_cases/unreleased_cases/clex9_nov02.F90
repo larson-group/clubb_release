@@ -43,8 +43,6 @@
 
   use model_flags, only: l_bugsrad ! Variable(s)
 
-  use parameters_microphys, only: micro_scheme ! Variable(s)
-
   use stats_precision, only: time_precision ! Variable(s)
 
   use cos_solar_zen_mod, only: cos_solar_zen ! Procedure(s)

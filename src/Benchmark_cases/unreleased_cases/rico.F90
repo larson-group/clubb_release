@@ -15,7 +15,7 @@ module rico
   contains
 
 !----------------------------------------------------------------------
-  subroutine rico_tndcy( exner, rho, rcm, &
+  subroutine rico_tndcy( exner, &
                          wm_zt, wm_zm, & 
                          thlm_forcing, rtm_forcing, radht, & 
                          sclrm_forcing, edsclrm_forcing )
@@ -26,8 +26,6 @@ module rico
 !
 !        References:
 !-----------------------------------------------------------------------
-
-  use constants, only: rc_tol ! Variable(s)
 
   use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
@@ -48,9 +46,7 @@ module rico
   ! Input Variables
 
   real, dimension(gr%nnzp), intent(in) :: & 
-  exner, & ! Exner function                         [-]
-  rho,   & ! Air density on t levels                [kg m^-3]
-  rcm      ! Cloud water mixing ratio               [kg kg^-1]
+  exner    ! Exner function                         [-]
 
   ! Output Variables
   real, dimension(gr%nnzp), intent(out) :: & 

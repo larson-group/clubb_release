@@ -43,8 +43,6 @@
 
   use model_flags, only: l_bugsrad ! Variable(s)
 
-  use parameters_microphys, only: micro_scheme ! Variable(s)
-
   use stats_precision, only: time_precision ! Variable(s)
 
   use interpolation, only: linear_interpolation ! Procedure(s)

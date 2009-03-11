@@ -229,7 +229,7 @@ module nov11
       ! Setting xi_abs <= 0.0 will de-activate solar radiation.
       xi_abs = 0.4329
     else
-      xi_abs = cos_solar_zen( day, month, year, time, rlat, rlon )
+      xi_abs = real( cos_solar_zen( day, month, year, time, rlat, rlon ) )
     end if
 !-----------------------------------------------------------------------
 ! Modification by Adam Smith 26 June 2006

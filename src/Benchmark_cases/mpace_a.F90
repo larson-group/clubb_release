@@ -63,9 +63,6 @@
 
   use model_flags, only: l_bugsrad ! Variable
 
-  use parameters_microphys, only: &
-    micro_scheme ! Variable(s)
-
   use grid_class, only: gr ! Variable(s)
 
   use grid_class, only: zt2zm ! Procedure(s)

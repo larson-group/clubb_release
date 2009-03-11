@@ -1868,10 +1868,10 @@ module clubb_driver
                                sclrm_forcing, edsclrm_forcing )            ! Intent(out)
 
     case ( "rico" ) ! RICO case
-      call rico_tndcy( exner, rho, rcm, &              ! Intent(in)
-                       wm_zt, wm_zm, &                            ! Intent(out)
-                       thlm_forcing, rtm_forcing, radht, &   ! Intent(out)   
-                       sclrm_forcing, edsclrm_forcing )           ! Intent(out)
+      call rico_tndcy( exner, &                            ! Intent(in)
+                       wm_zt, wm_zm, &                     ! Intent(out)
+                       thlm_forcing, rtm_forcing, radht, & ! Intent(out)   
+                       sclrm_forcing, edsclrm_forcing )    ! Intent(out)
 #endif
 
     case ( "wangara" ) ! Wangara dry CBL
