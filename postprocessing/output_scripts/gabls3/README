@@ -8,4 +8,6 @@ netcdf_gabls3_matlab_reader.m is the file that reads the netCDF file created by 
 
 read_grads_hoc_endian.m is the file that reads in GrADS variable information so that it can be used in MATLAB.
 
-test_surface.m is the file used to verify the operation of the soil-vegetation scheme that was added to CLUBB since it was a requirement. 
+test_surface.m is the file used to verify the operation of the soil-vegetation scheme that was added to CLUBB since it was a requirement.
+
+convert.m is the file that contains a class with functions used for converting units. 

@@ -1,7 +1,5 @@
-function[] = gabls3_output_creator_matlab_test()
-% GABLS3_OUTPUT_CREATOR This function creates netCDF files required by the
-%   Gabls 3 intercomparison. It uses CLUBB output files as source
-%   information.
+function[] = gabls3_output_creator()
+% GABLS3_OUTPUT_CREATOR This function creates netCDF files required by the GABLS 3 intercomparison. It uses CLUBB output files as source information.
 %
 %   This file is also meant to be an example for future MATLAB scripts to
 %   convert CLUBB output for data submission in netCDF format.
@@ -109,29 +107,23 @@ end
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-% Useful constants
-g0 = 9.8;
-p0 = 1e5;
-R  = 287.04;
-Cp = 1004.67;
-Lv = 2.5e6;
-
 % Perform Necessary conversions
-qtm_array = total_water_mixing_ratio_to_specific_humidity( rtm_array );
-T_forcing_array = (thlm_f_array - radht_array) .* exner_array;
-ome_array = -(wm_array .* g0 .*rho_array);
-wt_array = wpthlp_array .* exner_array;
+qtm_array = convert.total_water_mixing_ratio_to_specific_humidity( rtm_array );
+T_forcing_array = convert.thlm_f_to_t_f( thlm_f_array, radht_array, exner_array );
+ome_array = convert.w_wind_in_ms_to_Pas( wm_array, rho_array );
+wt_array = convert.potential_temperature_to_temperature( wpthlp_array, exner_array );
+
 wq_array = wprtp_array ./ (1 + rtm_array);
+
 
 time_out = 1:sizet;
 for i=1:sizet
     time_out(i) =  i*10.0*60.0;
 end
 
-full_z  = create_time_height_series( z, sizet );
-full_w_z = create_time_height_series( w_z, sizet );
-full_sfc_z = create_time_height_series( sfc_z, sizet );
+full_z  = convert.create_time_height_series( z, sizet );
+full_w_z = convert.create_time_height_series( w_z, sizet );
+full_sfc_z = convert.create_time_height_series( sfc_z, sizet );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -371,17 +363,11 @@ netcdf.putAtt(file_id, varid,'long_name',long_name);
 
 end
 
-function time_height = create_time_height_series( height, sizet )
 
-col = reshape(height,max(size(height)),1);
-multiplier(1:sizet) = 1;
-time_height = col * multiplier;
 
-end
 
-function specific_humidity = total_water_mixing_ratio_to_specific_humidity ...
-    ( total_water_mixing_ratio )
-    
-specific_humidity = total_water_mixing_ratio ./ (1 + total_water_mixing_ratio);
 
-end
+
+
+
+
