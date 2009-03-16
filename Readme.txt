@@ -62,7 +62,7 @@ HP/Compaq/DEC Fortran on Alpha also appears to work but because future
 Alpha processor development has ceased it is not extensively tested.
 
 The GNU Fortran compiler (GCC 4.1.x) may or may not work.  The version that
-ships with RHEL 5 does not.
+comes with RHEL 5 does not.
 
 It is important to note that all these compilers use *incompatible* module
 formats for the .mod files!  If you want to use different compilers on the
