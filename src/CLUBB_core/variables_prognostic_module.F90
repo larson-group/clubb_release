@@ -30,7 +30,8 @@ module variables_prognostic_module
     thlm,    & ! liquid potential temperature  [K]
     rtm,     & ! total water mixing ratio      [kg/kg]
     wprtp,   & ! w'rt'                         [m kg/s kg]
-    wpthlp,  & ! w'thl'                        [m K /s]
+    wpthlp,  & ! w'thl'                        [m K/s]
+    wpthvp,  & ! w'thv'                        [m K/s]
     wp2,     & ! w'^2                          [m^2/s^2]
     wp3,     & ! w'^3                          [m^3/s^3]
     rtp2,    & ! rt'^2                         [kg/kg]
@@ -38,12 +39,13 @@ module variables_prognostic_module
     rtpthlp    ! rt'thl'                       [kg/kg K]
 
 !$omp   threadprivate(um, vm, upwp, vpwp, up2, vp2)
-!$omp   threadprivate(thlm, rtm, wprtp, wpthlp, wp2)
+!$omp   threadprivate(thlm, rtm, wprtp, wpthlp, wpthvp, wp2)
 !$omp   threadprivate(wp3, rtp2, thlp2, rtpthlp)
 
   real, target, allocatable, dimension(:), public :: & 
     p_in_Pa,      & ! Pressure (Pa) on thermodynamic points    [Pa]
     exner,        & ! Exner function = ( p / p0 ) ** kappa     [-]
+    Kh_zt,        & ! Eddy diffusivity: zt grid                [m^2/s]
     rho,          & ! Density                                  [kg/m^3]
     rho_zm,       & ! Density                                  [kg/m^3]
     thlm_forcing, & ! thlm large-scale forcing                 [K/s]
@@ -51,7 +53,8 @@ module variables_prognostic_module
     um_forcing,   & ! u wind forcing                           [m/s/s] 
     vm_forcing      ! v wind forcing                           [m/s/s]
 
-!$omp   threadprivate(p_in_Pa, exner, rho, rho_zm, thlm_forcing, rtm_forcing,um_forcing,vm_forcing)
+!$omp   threadprivate(p_in_Pa, exner, Kh_zt, rho, rho_zm, thlm_forcing, &
+!$omp     rtm_forcing, um_forcing, vm_forcing)
 
   ! Imposed large scale w
   real, target, allocatable, dimension(:), public :: & 
@@ -154,6 +157,7 @@ module variables_prognostic_module
     allocate( rtm(1:nzmax) )       ! total water mixing ratio
     allocate( wprtp(1:nzmax) )     ! w'rt'
     allocate( wpthlp(1:nzmax) )    ! w'thl'
+    allocate( wpthvp(1:nzmax) )    ! w'thv'
     allocate( wp2(1:nzmax) )       ! w'^2
     allocate( wp3(1:nzmax) )       ! w'^3
     allocate( rtp2(1:nzmax) )      ! rt'^2
@@ -170,6 +174,7 @@ module variables_prognostic_module
     allocate( um_forcing(1:nzmax) )   ! u forcing
     allocate( vm_forcing(1:nzmax) )   ! v forcing
 
+    allocate( Kh_zt(1:nzmax) ) ! Eddy diffusivity
 
     ! Imposed large scale w
 
@@ -223,6 +228,7 @@ module variables_prognostic_module
     rtm(1:nzmax)     = 0.0         ! total water mixing ratio
     wprtp(1:nzmax)   = 0.0         ! w'rt'
     wpthlp(1:nzmax)  = 0.0         ! w'thl'
+    wpthvp(1:nzmax)  = 0.0         ! w'thv'
     wp3(1:nzmax)     = 0.0         ! w'^3
     rtp2(1:nzmax)    = rttol**2    ! rt'^2
     thlp2(1:nzmax)   = thltol**2   ! thl'^2
@@ -256,6 +262,8 @@ module variables_prognostic_module
     rcm(1:nzmax)  = 0.0
     cf(1:nzmax)   = 0.0
 
+    ! Eddy diffusivity
+    Kh_zt      = 0.0
 
     ! Surface fluxes
     wpthlp_sfc = 0.0
@@ -305,6 +313,7 @@ module variables_prognostic_module
     deallocate( rtm )       ! total water mixing ratio
     deallocate( wprtp )     ! w'rt'
     deallocate( wpthlp )    ! w'thl'
+    deallocate( wpthvp )
     deallocate( wp2 )       ! w'^2
     deallocate( wp3 )       ! w'^3
     deallocate( rtp2 )      ! rt'^2
@@ -313,6 +322,7 @@ module variables_prognostic_module
 
     deallocate( p_in_Pa )   ! pressure
     deallocate( exner )     ! exner
+    deallocate( Kh_zt )     ! Eddy diffusivity
     deallocate( rho )       ! density: t points
     deallocate( rho_zm )    ! density: m points
 

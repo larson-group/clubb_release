@@ -8,7 +8,7 @@
 !  since there may be situations where the fields are be calculated 
 !  analytically or by calling a different model without reading a datafile.
 !  Using a module also saves the trouble of writing an interface definition
-!  within the hoc_inputfields code.
+!  within the clubb_inputfields code.
 !===============================================================================
 module inputfields
   implicit none
@@ -30,6 +30,7 @@ module inputfields
                      input_p, input_rho, input_rho_zm, & 
                      input_Lscale, input_Lscale_up, input_Lscale_down, & 
                      input_Kh_zt, input_Kh_zm, input_tau_zm, input_tau_zt, & 
+                     input_wpthvp, &
                      input_thvm, input_rrainm,input_Nrm,  & 
                      input_rsnowm, input_ricem, input_rgraupelm,  & 
                      input_thlm_forcing, input_rtm_forcing, & 
@@ -96,11 +97,13 @@ module inputfields
       wp3, & 
       wprtp, & 
       wpthlp, & 
+      wpthvp, & 
       rtp2, & 
       thlp2, & 
       rtpthlp, & 
       upwp, & 
       vpwp, & 
+      Kh_zt, & 
       p_in_Pa, & 
       exner, & 
       rcm, & 
@@ -123,7 +126,6 @@ module inputfields
       Lscale, & 
       Lscale_up, & 
       Lscale_down, & 
-      Kh_zt, & 
       Kh_zm, & 
       thvm, & 
       Ncnm, & 
@@ -332,6 +334,13 @@ module inputfields
       call get_var( fread_var, "wpthlp",  & 
                     timestep,  & 
                     wpthlp(1:gr%nnzp),  & 
+                    l_error )
+    endif
+
+    if ( input_wpthvp) then 
+      call get_var( fread_var, "wpthvp",  & 
+                    timestep,  & 
+                    wpthvp(1:gr%nnzp),  & 
                     l_error )
     endif
 

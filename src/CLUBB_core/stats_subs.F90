@@ -862,8 +862,9 @@ module stats_subs
 !----------------------------------------------------------------------
 subroutine stats_accumulate & 
                  ( um, vm, upwp, vpwp, up2, vp2, thlm, & 
-                   rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp, & 
-                   p_in_Pa, exner, rho, rho_zm, & 
+                   rtm, wprtp, wpthlp, wpthvp, &
+                   wp2, wp3, rtp2, thlp2, rtpthlp, & 
+                   p_in_Pa, exner, rho, rho_zm, Kh_zt, & 
                    wm_zt, sigma_sqd_w, tau_zm, rcm, cf, & 
                    sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
                    wpsclrp, edsclrm, edsclrm_forcing )
@@ -1033,7 +1034,6 @@ use variables_diagnostic_module, only: &
     Lscale_up, & 
     Lscale_down, & 
     tau_zt, & 
-    Kh_zt, & 
     wp2thvp, & 
     wp2rcp, & 
     wprtpthlp, & 
@@ -1051,7 +1051,6 @@ use variables_diagnostic_module, only: &
     rtp2_zt, & 
     rtpthlp_zt, & 
     wp4, & 
-    wpthvp, & 
     rtpthvp, & 
     thlpthvp, & 
     Kh_zm, & 
@@ -1107,6 +1106,7 @@ real, intent(in), dimension(gr%nnzp) :: &
   rtm,     & ! total water mixing ratio      [kg/kg]
   wprtp,   & ! w'rt'                         [m kg/s kg]
   wpthlp,  & ! w'thl'                        [m K /s]
+  wpthvp,  & ! w'thv'                        [m K /s]
   wp2,     & ! w'^2                          [m^2/s^2]
   wp3,     & ! w'^3                          [m^3/s^3]
   rtp2,    & ! rt'^2                         [kg/kg]
@@ -1118,6 +1118,7 @@ real, intent(in), dimension(gr%nnzp) :: &
   exner,        & ! Exner function = ( p / p0 ) ** kappa     [-]
   rho,          & ! Density                                  [kg/m^3]
   rho_zm,       & ! Density                                  [kg/m^3]
+  Kh_zt,        & ! Eddy diffusivity                         [m^2/s]
   wm_zt,        & ! w on thermodynamic levels                [m/s]
   sigma_sqd_w,  & ! PDF width paramter                       [-]
   tau_zm          ! Dissipation time                         [s]
@@ -1137,15 +1138,6 @@ real, intent(in), dimension(gr%nnzp,sclr_dim) :: &
 real, intent(in), dimension(gr%nnzp,edsclr_dim) :: & 
   edsclrm,         & ! Eddy-diff passive scalar      [units vary] 
   edsclrm_forcing    ! Large-scale forcing of edscalar  [units vary] 
-
-! Prognostic drizzle variable array
-!real, intent(in), dimension(gr%nnzp,hydromet_dim) :: hydromet
-! Contains:
-! 1 rrainm   Rain water mixing ratio               [kg/kg]
-! 2 Nrm      Rain droplet number concentration     [num/kg]
-! 3 rsnow    Snow water mixing ratio               [kg/kg]
-! 4 rice     Ice water mixing ratio                [kg/kg]
-! 5 rgraupel Graupel water mixing ratio            [kg/kg]
 
 ! Local Variables
 

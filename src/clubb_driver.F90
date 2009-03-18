@@ -120,14 +120,14 @@ module clubb_driver
     use parameter_indices, only: nparams ! Variable(s)
 
     use variables_diagnostic_module, only: ug, vg, em,  & ! Variable(s)
-      tau_zt, thvm, Lscale, Kh_zt, Kh_zm, & 
+      tau_zt, thvm, Lscale, Kh_zm, & 
       um_ref, vm_ref, Ncnm, wp2_zt
 
     use variables_prognostic_module, only:  & 
       Tsfc, psfc, SE, LE, thlm, rtm,     & ! Variable(s)
       um, vm, wp2, rcm, wm_zt, wm_zm, exner, & 
-      tau_zm, p_in_Pa, rho_zm, upwp, vpwp, wpthlp, & 
-      rho, wprtp, wpthlp_sfc, wprtp_sfc, & 
+      tau_zm, p_in_Pa, rho_zm, upwp, vpwp, wpthlp, wpthvp, & 
+      Kh_zt, rho, wprtp, wpthlp_sfc, wprtp_sfc, & 
       upwp_sfc, vpwp_sfc, thlm_forcing, & 
       rtm_forcing, um_forcing, vm_forcing, &
       up2, vp2, wp3, rtp2, & 
@@ -704,10 +704,11 @@ module clubb_driver
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &! Intent(in)
                sclrm_forcing, edsclrm_forcing, wm_zm, wm_zt, &     ! Intent(in)
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &        ! Intent(in)
-               p_in_Pa, rho_zm, rho, exner, &                      ! Intent(in)
                wpsclrp_sfc, wpedsclrp_sfc,  &                      ! Intent(in)
+               p_in_Pa, rho_zm, rho, exner, &                      ! Intent(in)
                um, vm, upwp, vpwp, up2, vp2, &                     ! Intent(inout)
-               thlm, rtm, wprtp, wpthlp, wp2, wp3, &               ! Intent(inout)
+               thlm, rtm, wprtp, wpthlp, wpthvp, &                 ! Intent(inout)
+               Kh_zt, wp2, wp3, &                                  ! Intent(inout)
                rtp2, thlp2, rtpthlp, &                             ! Intent(inout)
                sigma_sqd_w, tau_zm, rcm, cf, &                     ! Intent(inout)
                sclrm, sclrp2, sclrprtp, sclrpthlp, &               ! Intent(inout)
@@ -1332,7 +1333,7 @@ module clubb_driver
         input_Lscale, input_Lscale_up, input_Lscale_down, input_Kh_zt, & 
         input_Kh_zm, input_tau_zm, input_tau_zt, input_thvm,  & 
         input_rrainm, input_rsnowm, input_ricem,  & 
-        input_rgraupelm, input_wprtp, input_wpthlp, & 
+        input_rgraupelm, input_wprtp, input_wpthlp, input_wpthvp, & 
         input_wp3, input_rtp2, input_thlp2,  & 
         input_rtpthlp, input_upwp, input_vpwp,  & 
         input_thlm_forcing, input_rtm_forcing,   & 

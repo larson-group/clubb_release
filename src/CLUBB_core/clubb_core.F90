@@ -29,10 +29,11 @@ module clubb_core
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & 
                sclrm_forcing, edsclrm_forcing, wm_zm, wm_zt, &
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
+               wpsclrp_sfc, wpedsclrp_sfc, &
                p_in_Pa, rho_zm, rho, exner, & 
-               wpsclrp_sfc, wpedsclrp_sfc,    &
                um, vm, upwp, vpwp, up2, vp2, & 
-               thlm, rtm, wprtp, wpthlp, wp2, wp3, & 
+               thlm, rtm, wprtp, wpthlp, wpthvp, &
+               Kh_zt, wp2, wp3, & 
                rtp2, thlp2, rtpthlp, & 
                sigma_sqd_w, tau_zm, rcm, cf, & 
                sclrm, sclrp2, sclrprtp, sclrpthlp, &
@@ -95,7 +96,7 @@ module clubb_core
       Skw_zm, & 
       sigma_sqd_w_zt, & 
       wp4, & 
-      wpthvp, & 
+!     wpthvp, & 
       thlpthvp, & 
       rtpthvp, & 
       wprcp, & 
@@ -105,7 +106,7 @@ module clubb_core
       rcp2, & 
       rsat, & 
       shear, & 
-      Kh_zt, & 
+!     Kh_zt, & 
       wprtp2, & 
       wp2rtp, & 
       wpthlp2, & 
@@ -259,6 +260,8 @@ module clubb_core
       wprtp,      & ! w' r_t'.                      [(m kg)/(s kg)]
       thlm,       & ! th_l Liquid potential temp.   [K]
       wpthlp,     & ! w' th_l'.                     [(m K)/s]
+      wpthvp,     & ! w' th_v'.                     [(m K)/s]
+      Kh_zt,      & ! Eddy-diffusivity              [m^2/s]
       wp2,        & ! w'^2.                         [m^2/s^2]
       wp3,        & ! w'^3.                         [m^3/s^3]
       sigma_sqd_w,& ! sigma_sqd_w on moment. grid.           [-]
@@ -291,7 +294,6 @@ module clubb_core
 
     real, intent(in), dimension(gr%nnzp,edsclr_dim) :: & 
       edsclrm_forcing    ! Eddy passive scalar forcing. [{units vary}/s]
-
 
     ! Local Variables
     integer :: i, k
@@ -807,8 +809,9 @@ module clubb_core
 
     call stats_accumulate & 
          ( um, vm, upwp, vpwp, up2, vp2, thlm,                 & ! intent(in)
-           rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp, & ! intent(in)
-           p_in_Pa, exner, rho, rho_zm,                        & ! intent(in)
+           rtm, wprtp, wpthlp, wpthvp,                         & ! intent(in) 
+           wp2, wp3, rtp2, thlp2, rtpthlp,                     & ! intent(in)
+           p_in_Pa, exner, rho, rho_zm, Kh_zt,                 & ! intent(in)
            wm_zt, sigma_sqd_w, tau_zm, rcm, cf,                & ! intent(in)
            sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing,  & ! intent(in)
            wpsclrp, edsclrm, edsclrm_forcing )                   ! intent(in)

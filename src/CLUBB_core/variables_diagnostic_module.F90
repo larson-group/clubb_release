@@ -80,7 +80,6 @@ module variables_diagnostic_module
 
 ! Buoyancy related moments
   real, target, allocatable, dimension(:), public :: & 
-    wpthvp,   & ! w'thv'       [m K/s]
     rtpthvp,  & ! rt' thv'     [kg K/kg]
     thlpthvp, & ! thl'thv'     [K^2] 
     wp2thvp     ! w'^2 thv'    [m^2 K/s^2]
@@ -88,10 +87,9 @@ module variables_diagnostic_module
 !$omp threadprivate(wpthvp, rtpthvp, thlpthvp, wp2thvp)
 
   real, target, allocatable, dimension(:), public :: & 
-    Kh_zt,  & ! Eddy diffusivity: zt grid        [m^2/s]
     Kh_zm     ! Eddy diffusivity: zm grid        [m^2/s]
 
-!$omp threadprivate(Kh_zt, Kh_zm)
+!$omp threadprivate(Kh_zm)
 
 ! Mixing lengths
   real, target, allocatable, dimension(:), public :: & 
@@ -210,7 +208,7 @@ module variables_diagnostic_module
 
 !-----------------------------------------------------------------------
 !  Allocates and initializes prognostic scalar and array variables
-!  for the HOC model code
+!  for the CLUBB model code
 !-----------------------------------------------------------------------
   subroutine setup_diagnostic_variables( nzmax )
 
@@ -227,16 +225,17 @@ module variables_diagnostic_module
 
     implicit none
 
-! Input Variables
+    ! Input Variables
     integer, intent(in) :: nzmax
 
-! Local Variables
+    ! Local Variables
     integer :: i
 
 !$omp parallel
+
 !   --- Allocation ---
 
-! Diagnostic variables
+    ! Diagnostic variables
 
     allocate( sigma_sqd_w_zt(1:nzmax) )  ! PDF width parameter: t point
     allocate( Skw_zm(1:nzmax) )          ! Skw
@@ -259,14 +258,14 @@ module variables_diagnostic_module
 
     allocate( shear(1:nzmax) )     ! wind shear production
 
-! Second order moments
+    ! Second order moments
 
     allocate( wprcp(1:nzmax) )     ! w'rc'
     allocate( thlprcp(1:nzmax) )   ! thl'rc'
     allocate( rtprcp(1:nzmax) )    ! rt'rc'
     allocate( rcp2(1:nzmax) )      ! rc'^2
 
-! Third order moments
+    ! Third order moments
 
     allocate( wpthlp2(1:nzmax) )   ! w'thl'^2
     allocate( wp2thlp(1:nzmax) )   ! w'^2thl'
@@ -275,18 +274,16 @@ module variables_diagnostic_module
     allocate( wprtpthlp(1:nzmax) ) ! w'rt'thl'
     allocate( wp2rcp(1:nzmax) )    ! w'^2rc'
 
-! Fourth order moments
+    ! Fourth order moments
 
     allocate( wp4(1:nzmax) )
 
-! Buoyancy related moments
+    ! Buoyancy related moments
 
-    allocate( wpthvp(1:nzmax) )
     allocate( rtpthvp(1:nzmax) )
     allocate( thlpthvp(1:nzmax) )
     allocate( wp2thvp(1:nzmax) )
 
-    allocate( Kh_zt(1:nzmax) )
     allocate( Kh_zm(1:nzmax) )
 
     allocate( em(1:nzmax) )
@@ -294,7 +291,7 @@ module variables_diagnostic_module
     allocate( Lscale_up(1:nzmax) )
     allocate( Lscale_down(1:nzmax) )
     allocate( tau_zt(1:nzmax) )
-!       allocate( tau_zm(1:nzmax) )
+!   allocate( tau_zm(1:nzmax) )
 
 
 ! Tuning Variables
@@ -383,7 +380,7 @@ module variables_diagnostic_module
     rtprcp  = 0.0
     rcp2    = 0.0
 
-! Third order moments
+    ! Third order moments
     wpthlp2   = 0.0
     wp2thlp   = 0.0
     wprtp2    = 0.0
@@ -391,37 +388,36 @@ module variables_diagnostic_module
     wp2rcp    = 0.0
     wprtpthlp = 0.0
 
-! Fourth order moments
+    ! Fourth order moments
     wp4 = 0.0
 
-! Buoyancy related moments
-    wpthvp   = 0.0
+    ! Buoyancy related moments
     rtpthvp  = 0.0
     thlpthvp = 0.0
     wp2thvp  = 0.0
 
-! Eddy diffusivity
-    Kh_zt      = 0.0
+    ! Eddy diffusivity
     Kh_zm      = 0.0
 
+    ! TKE
     em       = emin
 
-! Length scale
+    ! Length scale
     Lscale   = 0.0
     Lscale_up      = 0.0
     Lscale_down    = 0.0
 
-! Dissipation time
+    ! Dissipation time
     tau_zt     = 0.0
 
-! Hydrometer types
-    Ncnm(1:nzmax) = 0.0
+    ! Hydrometer types
+    Ncnm(1:nzmax) = 0.0 ! Cloud nuclei number concentration (COAMPS)
 
     do i = 1, hydromet_dim, 1
       hydromet(1:nzmax,i) = 0.0
     end do
 
-! Variables for PDF closure scheme
+    ! Variables for PDF closure scheme
     pdf_params%w1        = 0.0
     pdf_params%w2        = 0.0
     pdf_params%sw1       = 0.0
@@ -449,7 +445,7 @@ module variables_diagnostic_module
     pdf_params%alpha_thl = 0.0
     pdf_params%alpha_rt  = 0.0
 
-! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
+    ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
     if ( l_LH_on ) then
       AKm_est   = 0.0  ! Kessler ac estimate
       AKm       = 0.0  ! Exact Kessler ac
@@ -539,12 +535,10 @@ module variables_diagnostic_module
 
 ! Buoyancy related moments
 
-    deallocate( wpthvp )
     deallocate( rtpthvp )
     deallocate( thlpthvp )
     deallocate( wp2thvp )
 
-    deallocate( Kh_zt )
     deallocate( Kh_zm )
 
     deallocate( em )
