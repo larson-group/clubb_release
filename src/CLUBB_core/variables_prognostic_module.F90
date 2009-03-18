@@ -101,12 +101,15 @@ module variables_prognostic_module
   real, target, allocatable, dimension(:,:), public :: & 
     sclrm,           & ! Mean passive scalars           [units vary]
     sclrp2,          & ! sclr'^2                        [units^2]
+    sclrprtp,        & ! sclr'rt'                       [units kg/kg]
+    sclrpthlp,       & ! sclr'th_l'                     [units K]
     sclrm_forcing,   & ! Scalars' forcing               [units/s]
     edsclrm,         & ! Mean eddy-diffusivity scalars  [units vary]
     edsclrm_forcing, & ! Eddy-diff. scalars forcing     [units/s]
     wpsclrp            ! w'sclr'                        [units vary m/s]
 
-!$omp   threadprivate(sclrm, sclrp2, sclrm_forcing, edsclrm, edsclrm_forcing, wpsclrp)
+!$omp   threadprivate(sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
+!$omp     edsclrm, edsclrm_forcing, wpsclrp)
 
   contains
 !-----------------------------------------------------------------------
@@ -192,6 +195,8 @@ module variables_prognostic_module
     allocate( sclrm(1:nzmax, 1:sclr_dim) )
     allocate( sclrp2(1:nzmax, 1:sclr_dim) )
     allocate( sclrm_forcing(1:nzmax, 1:sclr_dim) )
+    allocate( sclrprtp(1:nzmax, 1:sclr_dim) )
+    allocate( sclrpthlp(1:nzmax, 1:sclr_dim) )
 
     allocate( wpedsclrp_sfc(1:edsclr_dim) )
     allocate( edsclrm_forcing(1:nzmax, 1:edsclr_dim) )
@@ -264,6 +269,8 @@ module variables_prognostic_module
 
       sclrm(1:nzmax,i)         = 0.0
       sclrp2(1:nzmax,i)        = 0.0
+      sclrprtp(1:nzmax,i)      = 0.0
+      sclrpthlp(1:nzmax,i)     = 0.0
       sclrm_forcing(1:nzmax,i) = 0.0
       wpsclrp(1:nzmax,i)         = 0.0
     end do
@@ -337,6 +344,8 @@ module variables_prognostic_module
     deallocate( wpsclrp_sfc, wpedsclrp_sfc )
     deallocate( sclrm )
     deallocate( sclrp2 )
+    deallocate( sclrprtp )
+    deallocate( sclrpthlp )
     deallocate( sclrm_forcing )
     deallocate( wpsclrp )
 

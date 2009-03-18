@@ -35,8 +35,9 @@ module clubb_core
                thlm, rtm, wprtp, wpthlp, wp2, wp3, & 
                rtp2, thlp2, rtpthlp, & 
                sigma_sqd_w, tau_zm, rcm, cf, & 
-               err_code,  & 
-               sclrm, sclrp2, wpsclrp, edsclrm  )
+               sclrm, sclrp2, sclrprtp, sclrpthlp, &
+               wpsclrp, edsclrm, &
+               err_code ) 
 
     ! Description:
     !   Subroutine to advance the model one timestep
@@ -131,8 +132,6 @@ module clubb_core
     use variables_diagnostic_module, only: & 
       wpedsclrp, & 
       sclrpthvp,   & ! sclr'th_v'
-      sclrprtp,    & ! sclr'rt'
-      sclrpthlp,   & ! sclr'th_l'
       sclrprcp,    & ! sclr'rc'
       wp2sclrp,    & ! w'^2 sclr'
       wpsclrp2,    & ! w'sclr'^2
@@ -280,6 +279,8 @@ module clubb_core
     real, intent(inout), dimension(gr%nnzp,sclr_dim) :: & 
       sclrm,         & ! Passive scalar mean.           [units vary]
       sclrp2,        & ! Passive scalar variance.       [{units vary}^2]
+      sclrprtp,      & ! sclr'rt'                       [{units vary}^2]
+      sclrpthlp,     & ! sclr'thl'                      [{units vary}^2]
       wpsclrp          ! w'sclr'                        [units vary m/s]
 
     real, intent(in), dimension(gr%nnzp,sclr_dim) :: & 
@@ -809,8 +810,8 @@ module clubb_core
            rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp, & ! intent(in)
            p_in_Pa, exner, rho, rho_zm,                        & ! intent(in)
            wm_zt, sigma_sqd_w, tau_zm, rcm, cf,                & ! intent(in)
-           sclrm, sclrp2, sclrm_forcing, wpsclrp,              & ! intent(in)
-           edsclrm, edsclrm_forcing )                            ! intent(in)
+           sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing,  & ! intent(in)
+           wpsclrp, edsclrm, edsclrm_forcing )                   ! intent(in)
 
 
     if ( clubb_at_least_debug_level( 2 ) ) then

@@ -132,8 +132,6 @@ module variables_diagnostic_module
 
   real, target, allocatable, dimension(:,:), public :: & 
     sclrpthvp,   & ! sclr'th_v'
-    sclrprtp,    & ! sclr'rt'
-    sclrpthlp,   & ! sclr'th_l'
     sclrprcp,    & ! sclr'rc'
     wp2sclrp,    & ! w'^2 sclr'
     wpsclrp2,    & ! w'sclr'^2
@@ -141,7 +139,7 @@ module variables_diagnostic_module
     wpsclrpthlp    ! w'sclr'thl'
 
 !$omp threadprivate(wpedsclrp)
-!$omp threadprivate(sclrpthvp, sclrprtp, sclrpthlp, &
+!$omp threadprivate(sclrpthvp, &
 !$omp   wp2sclrp, wpsclrprtp, wpsclrpthlp )
 
 ! Interpolated variables for tuning
@@ -339,10 +337,8 @@ module variables_diagnostic_module
 !       end if ! l_LH_on
 ! End of variables for Latin hypercube.
 
-! Variables for new mixing scheme
-    allocate( sclrprtp(1:nzmax, 1:sclr_dim) )
+    ! High-order passive scalars
     allocate( sclrpthvp(1:nzmax, 1:sclr_dim) )
-    allocate( sclrpthlp(1:nzmax, 1:sclr_dim) )
     allocate( sclrprcp(1:nzmax, 1:sclr_dim) )
 
     allocate( wp2sclrp(1:nzmax, 1:sclr_dim) )
@@ -466,9 +462,7 @@ module variables_diagnostic_module
 
 ! Passive scalars
     if ( sclr_dim > 0 ) then
-      sclrprtp(:,:)      = 0.0
       sclrpthvp(:,:)     = 0.0
-      sclrpthlp(:,:)     = 0.0
       sclrprcp(:,:)      = 0.0
 
       wp2sclrp(:,:)      = 0.0
@@ -603,9 +597,7 @@ module variables_diagnostic_module
 !       end if ! l_LH_on
 
 ! Passive scalars
-    deallocate( sclrprtp )
     deallocate( sclrpthvp )
-    deallocate( sclrpthlp )
     deallocate( sclrprcp )
 
     deallocate( wp2sclrp )

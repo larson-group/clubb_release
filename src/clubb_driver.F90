@@ -134,7 +134,7 @@ module clubb_driver
       thlp2, rtpthlp, sigma_sqd_w, cf
 
     use variables_prognostic_module, only:  & 
-      sclrm, sclrp2, sclrm_forcing, & ! Variables
+      sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, & ! Variables
       wpsclrp, wpsclrp_sfc,  & 
       edsclrm, edsclrm_forcing, wpedsclrp_sfc
       
@@ -710,8 +710,9 @@ module clubb_driver
                thlm, rtm, wprtp, wpthlp, wp2, wp3, &               ! Intent(inout)
                rtp2, thlp2, rtpthlp, &                             ! Intent(inout)
                sigma_sqd_w, tau_zm, rcm, cf, &                     ! Intent(inout)
-               err_code, &                                         ! Intent(inout)
-               sclrm, sclrp2, wpsclrp, edsclrm )                   ! Intent(inout)
+               sclrm, sclrp2, sclrprtp, sclrpthlp, &               ! Intent(inout)
+               wpsclrp, edsclrm, &                                 ! Intent(inout)
+               err_code )                                          ! Intent(inout)
 
 
         call stats_end_timestep( )

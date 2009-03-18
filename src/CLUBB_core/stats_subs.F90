@@ -865,8 +865,8 @@ subroutine stats_accumulate &
                    rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp, & 
                    p_in_Pa, exner, rho, rho_zm, & 
                    wm_zt, sigma_sqd_w, tau_zm, rcm, cf, & 
-                   sclrm, sclrp2, sclrm_forcing, wpsclrp, &
-                   edsclrm, edsclrm_forcing )
+                   sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
+                   wpsclrp, edsclrm, edsclrm_forcing )
 
 ! Description:
 ! Accumulate those stats variables that are preserved in HOC from timestep to 
@@ -1062,9 +1062,7 @@ use variables_diagnostic_module, only: &
     em, & 
     shear, & 
     Frad, & 
-    sclrprtp, & 
     sclrpthvp, & 
-    sclrpthlp, & 
     sclrprcp, & 
     wp2sclrp, & 
     wpsclrp2, & 
@@ -1126,14 +1124,13 @@ real, intent(in), dimension(gr%nnzp) :: &
 
 real, intent(in), dimension(gr%nnzp) :: & 
   rcm,   & ! Cloud water mixing ratio                [kg/kg]
-!  Ncm,   & ! Cloud droplet number concentration      [num/kg]
-!  Ncnm,  & ! Cloud nuclei number concentration       [num/m^3]
-!  Nim,   & ! Ice nuclei number concentration         [num/m^3]
   cf       ! Cloud fraction                          [%]
 
 real, intent(in), dimension(gr%nnzp,sclr_dim) :: & 
   sclrm,           & ! High-order passive scalar          [units vary]
   sclrp2,          & ! High-order passive scalar variance [units^2]
+  sclrprtp,        & ! High-order passive scalar covariance [units kg/kg]
+  sclrpthlp,       & ! High-order passive scalar covariance [units K]
   sclrm_forcing,   & ! Large-scale forcing of scalar      [units/s]
   wpsclrp            ! w'sclr'                            [units m/s]
 
