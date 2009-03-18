@@ -18,7 +18,7 @@ module constants
   public :: fstderr, fstdin, fstdout, pi_dp, pi, sqrt_2pi, sqrt_2, &
             Cp, Lv, Ls, Lf, Rd, Rv, ep, ep1, ep2, &
             kappa, grav, p0, vonk, rho_lw, &
-            wtol, thltol, rttol, qttol, sstol, difftol, & 
+            wtol, thltol, rttol, sstol, & 
             wtol_sqd, rc_tol, Nc_tol, rr_tol, Nr_tol, emin, &
             eps, zero_threshold, max_mag_correlation, sec_per_day, &
             sec_per_hr, sec_per_min, g_per_kg, T_freeze_K, &
