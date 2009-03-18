@@ -537,33 +537,36 @@
 !------------------------------------------------------------------------
 
  use variables_diagnostic_module, only: & 
-     hydromet,  & ! Variable(s)
-     wp2thvp, & 
-     rtpthvp, & 
-     thlpthvp
+   hydromet,  & ! Variable(s)
+   wp2thvp, & 
+   rtpthvp, & 
+   thlpthvp
 
  use variables_prognostic_module, only: & 
-     um,  & ! Variable(s)
-     vm, & 
-     wp2, & 
-     wp3, & 
-     rtm, & 
-     thlm, & 
-     rtp2, & 
-     thlp2, & 
-     wprtp, & 
-     wpthlp, & 
-     rtpthlp, & 
-     sclrm, & 
-     edsclrm
+   um,  & ! Variable(s)
+   vm, & 
+   wp2, & 
+   wp3, & 
+   rtm, & 
+   thlm, & 
+   rtp2, & 
+   thlp2, & 
+   wprtp, & 
+   wpthlp, & 
+   rtpthlp, & 
+   sclrm, & 
+   edsclrm
 
  use constants, only: & 
-     fstderr   ! Constant(s)
+   fstderr   ! Constant(s)
 
  use parameters_model, only: & 
-     sclr_dim,  & ! Variable(s)
-     edsclr_dim, &
-     hydromet_dim 
+   sclr_dim,  & ! Variable(s)
+   edsclr_dim, &
+   hydromet_dim 
+
+ use parameters_microphys, only: &
+   hydromet_list ! Variable(s)
 
  implicit none
 
@@ -655,7 +658,8 @@
  if ( hydromet_dim > 0 ) then
    do i = 1, hydromet_dim, 1
      if ( isnan2d( hydromet(:,i) ) ) then
-       write(fstderr,*) "NaN in a hydrometeor model array" 
+       write(fstderr,*) "NaN in a hydrometeor model array "// &
+         trim( hydromet_list(i) )
 !             write(fstderr,*) "hydromet= ", hydromet
        invalid_model_arrays = .true.
 !             return

@@ -57,9 +57,7 @@ use stats_variables, only: &
     irho, & 
     iNcm, & 
     iNcnm, & 
-    iNim, & 
     isnowslope, & 
-    iNsnowm, & 
     ised_rcm, & 
     irsat, & 
     irrainm, & 
@@ -208,6 +206,29 @@ use stats_variables, only: &
     iedsclrbm, &
     iedsclrbm_f
 
+use stats_variables, only: & 
+  iNsnowm, &
+  iNgraupelm, &
+  iNim, & 
+  iNsnowm_bt, &
+  iNsnowm_mc, &
+  iNsnowm_ma, &
+  iNsnowm_dff, &
+  iNsnowm_sd, &
+  iNsnowm_cl, &
+  iNgraupelm_bt, &
+  iNgraupelm_mc, &
+  iNgraupelm_ma, &
+  iNgraupelm_dff, &
+  iNgraupelm_sd, &
+  iNgraupelm_cl, &
+  iNim_bt, &
+  iNim_mc, &
+  iNim_ma, &
+  iNim_dff, &
+  iNim_sd, &
+  iNim_cl
+
 use stats_type, only: & 
     stat_assign ! Procedure
 
@@ -260,17 +281,21 @@ iNcm          = 0  ! Brian
 iNcnm         = 0
 iNim          = 0
 isnowslope    = 0  ! Adam Smith, 22 April 2008
-iNsnowm       = 0  ! Adam Smith, 22 April 2008
 ised_rcm      = 0  ! Brian
 irsat         = 0  ! Brian
 irrainm       = 0  ! Brian
-iNrm          = 0  ! Brian
 irain_rate    = 0  ! Brian
 iAKm          = 0  ! analytic Kessler.  Vince Larson 22 May 2005
 iAKm_est      = 0  ! LH Kessler.  Vince Larson 22 May 2005
 iradht        = 0
 iradht_LW     = 0
 iradht_SW     = 0
+
+! Number concentrations
+iNsnowm    = 0  ! Adam Smith, 22 April 2008
+iNrm       = 0  ! Brian
+iNgraupelm = 0
+iNim       = 0
 
 idiam           = 0
 imass_ice_cryst = 0
@@ -336,6 +361,20 @@ iNrm_cond_adj = 0
 iNrm_src_adj  = 0
 iNrm_mc       = 0
 iNrm_cl       = 0
+
+iNsnowm_bt    = 0
+iNsnowm_ma    = 0
+iNsnowm_sd    = 0
+iNsnowm_dff   = 0
+iNsnowm_mc    = 0
+iNsnowm_cl    = 0
+
+iNim_bt    = 0
+iNim_ma    = 0
+iNim_sd    = 0
+iNim_dff   = 0
+iNim_mc    = 0
+iNim_cl    = 0
 
 irsnowm_bt    = 0
 irsnowm_ma    = 0
@@ -642,6 +681,12 @@ do i=1,zt%nn
          "Snow particle number concentration (num/m^3)", & 
          "count/m^3",zt)
     k = k + 1
+
+  case ('Ngraupelm')        ! Adam Smith, 22 April 2008
+    iNgraupelm = k
+    call stat_assign(iNgraupelm,"Ngraupelm", & 
+         "Graupel number concentration (num/m^3)", & 
+         "count/m^3",zt)
 
   case ('sed_rcm')       ! Brian
     ised_rcm = k
@@ -1124,7 +1169,50 @@ do i=1,zt%nn
          "rsnowm clipping term","(kg/kg)/s",zt)
     k = k + 1
 
- case ('ricem_bt')
+  case ('Nsnowm_bt')
+    iNsnowm_bt = k
+    call stat_assign(iNsnowm_bt,"Nsnowm_bt", & 
+         "Nsnowm budget","(count/kg)/s",zt)
+
+    k = k + 1
+ 
+  case ('Nsnowm_ma')
+    iNsnowm_ma = k
+
+    call stat_assign(iNsnowm_ma,"Nsnowm_ma", & 
+         "Nsnowm mean advection","(count/kg)/s",zt)
+    k = k + 1
+ 
+  case ('Nsnowm_sd')
+    iNsnowm_sd = k
+
+    call stat_assign(iNsnowm_sd,"Nsnowm_sd", & 
+         "Nsnowm sedimentation","(count/kg)/s",zt)
+
+    k = k + 1
+ 
+  case ('Nsnowm_dff')
+    iNsnowm_dff = k
+    call stat_assign(iNsnowm_dff,"Nsnowm_dff", & 
+         "Nsnowm diffusion","(count/kg)/s",zt)
+
+    k = k + 1
+
+  case ('Nsnowm_mc')
+    iNsnowm_mc = k
+    call stat_assign(iNsnowm_mc,"Nsnowm_mc", & 
+         "Nsnowm microphysics","(count/kg)/s",zt)
+
+    k = k + 1
+
+  case ('Nsnowm_cl')
+    iNsnowm_cl = k
+
+    call stat_assign(iNsnowm_cl,"Nsnowm_cl", & 
+         "Nsnowm clipping term","(kg/kg)/s",zt)
+    k = k + 1
+
+  case ('ricem_bt')
     iricem_bt = k
 
     call stat_assign(iricem_bt,"ricem_bt", & 
@@ -1207,6 +1295,49 @@ do i=1,zt%nn
 
     call stat_assign(irgraupelm_cl,"rgraupelm_cl", & 
          "rgraupelm clipping term","(kg/kg)/s",zt)
+    k = k + 1
+
+  case ('Ngraupelm_bt')
+    iNgraupelm_bt = k
+    call stat_assign(iNgraupelm_bt,"Ngraupelm_bt", & 
+         "Ngraupelm budget","(count/kg)/s",zt)
+
+    k = k + 1
+ 
+  case ('Ngraupelm_ma')
+    iNgraupelm_ma = k
+
+    call stat_assign(iNgraupelm_ma,"Ngraupelm_ma", & 
+         "Ngraupelm mean advection","(count/kg)/s",zt)
+    k = k + 1
+ 
+  case ('Ngraupelm_sd')
+    iNgraupelm_sd = k
+
+    call stat_assign(iNgraupelm_sd,"Ngraupelm_sd", & 
+         "Ngraupelm sedimentation","(count/kg)/s",zt)
+
+    k = k + 1
+ 
+  case ('Ngraupelm_dff')
+    iNgraupelm_dff = k
+    call stat_assign(iNgraupelm_dff,"Ngraupelm_dff", & 
+         "Ngraupelm diffusion","(count/kg)/s",zt)
+
+    k = k + 1
+
+  case ('Ngraupelm_mc')
+    iNgraupelm_mc = k
+
+    call stat_assign(iNgraupelm_mc,"Ngraupelm_mc", & 
+         "Ngraupelm microphysics term","(kg/kg)/s",zt)
+    k = k + 1
+
+  case ('Ngraupelm_cl')
+    iNgraupelm_cl = k
+
+    call stat_assign(iNgraupelm_cl,"Ngraupelm_cl", & 
+         "Ngraupelm clipping term","(kg/kg)/s",zt)
     k = k + 1
 
   case ('vm_bt')

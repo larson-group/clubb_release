@@ -27,14 +27,17 @@ module microphys_driver
 
   implicit none
 
+  ! Subroutines
   public :: advance_microphys, init_microphys
 
-  ! Subroutines
   private :: microphys_lhs, microphys_solve
   private :: adj_microphys_tndcy
 
   ! Functions
   private :: sedimentation
+
+  ! Variables
+  logical, private, allocatable, dimension(:) :: hydromet_sed ! Whether to sediment variables
 
   private ! Default Scope
 
@@ -52,7 +55,8 @@ module microphys_driver
 !-----------------------------------------------------------------------
 
     use array_index, only:  & 
-      iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm ! Variables
+      iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm, & ! Variables
+      iiNcm, iiNsnowm, iiNim, iiNgraupelm
 
     use KK_microphys_module, only: &
       rrp2_rrainm2_cloud, Nrp2_Nrm2_cloud, Ncp2_Ncm2_cloud, & ! Variables
@@ -62,6 +66,24 @@ module microphys_driver
       corr_rrNr_LL_below, corr_srr_NL_below, &
       corr_sNr_NL_below, corr_sNc_NL_below, &
       C_evap, r_0
+
+    use module_mp_GRAUPEL, only: &
+      Nc0, ccnconst, ccnexpnt, & ! Variables
+      aer_rm1, aer_rm2, aer_n1, aer_n2, &
+      aer_sig1, aer_sig2, pgam_fixed, &
+      doicemicro, &         ! use ice species (snow/cloud ice/graupel)
+      dograupel, &          ! use graupel
+      dohail, &             ! make graupel species have properties of hail
+      dosb_warm_rain, &     ! use Seifert & Beheng (2001) warm rain parameterization
+      dopredictNc, &        ! prediction of cloud droplet number
+      dospecifyaerosol, &   ! specify two modes of (sulfate) aerosol
+      dosubgridw, &         ! input estimate of subgrid w to microphysics
+      doarcticicenucl, &    ! use arctic parameter values for ice nucleation
+      docloudedgeactivation,& ! activate cloud droplets throughout the cloud
+      dofix_pgam            ! option to fix value of pgam (exponent in cloud water gamma distn)
+
+    use module_mp_Graupel, only: &
+      GRAUPEL_INIT ! Subroutine
 
     use grid_class, only: &
       gr ! Variable
@@ -101,13 +123,17 @@ module microphys_driver
       Nrp2_Nrm2_below, Ncp2_Ncm2_below, &
       corr_rrNr_LL_below, corr_srr_NL_below, &
       corr_sNr_NL_below, corr_sNc_NL_below, &
-      C_evap, r_0, microphys_start_time
+      C_evap, r_0, microphys_start_time, &
+      Nc0, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
+      aer_n1, aer_n1, aer_sig1, aer_sig2, pgam_fixed
 
     ! ---- Begin Code ----
 
     ! Set default values, then read in the namelist
     micro_scheme = "none"
 
+    ! Cloud water sedimentation from the RF02 case
+    ! This has no effect on Morrison's cloud water sedimentation
     l_cloud_sed = .false.
 
     ! Parameters for in-cloud (from SAM RF02 DO).
@@ -136,6 +162,8 @@ module microphys_driver
 
     r_0 = 25.0e-6   ! Assumed radius of all new drops; m.
 
+    ! The l_ice_micro & l_graupel flags are shared between COAMPS and Morrison
+    ! microphysics
     l_ice_micro = .true.
     l_graupel = .true.
     l_hail = .false.
@@ -149,6 +177,18 @@ module microphys_driver
 
     microphys_start_time = 0.0
 
+    ! Aerosol for RF02 from Mikhail Ovtchinnikov
+    aer_rm1  = 0.011
+    aer_sig1 = 1.2
+    aer_n1   = 125.
+    aer_rm2  = 0.06
+    aer_sig2 = 1.7
+    aer_n2   = 65.
+
+    pgam_fixed = 5.
+
+    Nc0 = 100.
+
     open(unit=iunit, file=namelist_file, status='old',action='read')
     read(iunit, nml=microphysics_setting)
     close(unit=iunit)
@@ -158,58 +198,210 @@ module microphys_driver
     ! the 'i' indices point to the correct parts of the array.
 
     select case ( trim( micro_scheme ) )
-    case ( "coamps" )
+    case ( "morrison" )
       iirrainm    = 1
-      iiNrm       = 2
-      iirsnowm    = 3
-      iiricem     = 4
-      iirgraupelm = 5
+      iirsnowm    = 2
+      iiricem     = 3
+      iirgraupelm = 4
 
-      hydromet_dim = 5
+      iiNrm       = 5
+      iiNsnowm    = 6
+      iiNim       = 7
+      iiNgraupelm = 8
+      iiNcm       = 9
+
+      hydromet_dim = 9
 
       allocate( hydromet_list(hydromet_dim) )
 
       hydromet_list(iirrainm)    = "rrainm"
-      hydromet_list(iiNrm)       = "Nrm"
       hydromet_list(iirsnowm)    = "rsnowm"
       hydromet_list(iiricem)     = "ricem"
       hydromet_list(iirgraupelm) = "rgraupelm"
 
+      hydromet_list(iiNrm)       = "Nrm"
+      hydromet_list(iiNsnowm)    = "Nsnowm"
+      hydromet_list(iiNim)       = "Nim"
+      hydromet_list(iiNgraupelm) = "Ngraupelm"
+      hydromet_list(iiNcm)       = "Ncm"
+
+      ! Set flags from the Morrison scheme as in GRAUPEL_INIT
+      if ( l_predictnc ) then
+        dopredictNc = .true.
+      else
+        dopredictNc = .false.
+      end if
+
+      if ( l_specify_aerosol ) then
+        dospecifyaerosol = .true.
+      else
+        dospecifyaerosol = .false.
+      end if
+
+      if ( l_cloud_edge_activation ) then
+        docloudedgeactivation = .true.
+      else
+        docloudedgeactivation = .false.
+      end if
+
+      if ( l_ice_micro ) then
+        doicemicro = .true.
+      else
+        doicemicro = .false.
+      end if
+
+      if ( l_arctic_nucl ) then
+        doarcticicenucl = .true.
+      else
+        doarcticicenucl = .false.
+      end if
+
+      if ( l_graupel ) then
+        dograupel = .true.
+      else
+        dograupel = .false.
+      end if
+
+      if ( l_hail ) then
+        dohail = .true.
+      else
+        dohail = .false.
+      end if
+
+      if ( l_seifert_behneng ) then
+        dosb_warm_rain = .true.
+      else
+        dosb_warm_rain = .false.
+      end if
+
+      if ( l_fix_pgam ) then
+        dofix_pgam = .true.
+      else
+        dofix_pgam = .false.
+      end if
+
+      if ( l_fix_pgam ) then
+        dosubgridw = .true.
+      else
+        dosubgridw = .false.
+      end if
+
+      allocate( hydromet_sed(hydromet_dim) )
+      ! Sedimentation is handled within the Morrison microphysics
+      hydromet_sed(iiNrm) = .false.
+      hydromet_sed(iiNim) = .false.
+      hydromet_sed(iiNcm) = .false.
+      hydromet_sed(iiNgraupelm) = .false.
+      hydromet_sed(iiNsnowm) = .false.
+
+      hydromet_sed(iirrainm)    = .false.
+      hydromet_sed(iirsnowm)    = .false.
+      hydromet_sed(iiricem)     = .false.
+      hydromet_sed(iirgraupelm) = .false.
+
+      call GRAUPEL_INIT()
+
+    case ( "coamps" )
+      iirrainm    = 1
+      iirsnowm    = 2
+      iiricem     = 3
+      iirgraupelm = 4
+
+      iiNrm       = 5
+      iiNsnowm    = -1
+      iiNim       = 6
+      iiNgraupelm = -1
+      iiNcm       = 7
+
+      hydromet_dim = 7
+
+      allocate( hydromet_sed(hydromet_dim) )
+
+      allocate( hydromet_list(hydromet_dim) )
+
+      hydromet_list(iirrainm)    = "rrainm"
+      hydromet_list(iirsnowm)    = "rsnowm"
+      hydromet_list(iiricem)     = "ricem"
+      hydromet_list(iirgraupelm) = "rgraupelm"
+
+      hydromet_list(iiNrm)       = "Nrm"
+      hydromet_list(iiNcm)       = "Ncm"
+      hydromet_list(iiNim)       = "Nim"
+
       ! Initialize Ncnm as in COAMPS
       Ncnm(1:gr%nnzp) = 30.0 * (1.0 + exp( -gr%zt(1:gr%nnzp)/2000.0 )) * 1.e6
 
+      hydromet_sed(iiNrm) = .true.
+      hydromet_sed(iiNim) = .false.
+      hydromet_sed(iiNcm) = .false.
+
+      hydromet_sed(iirrainm)    = .true.
+      hydromet_sed(iirsnowm)    = .true.
+      hydromet_sed(iiricem)     = .true.
+      hydromet_sed(iirgraupelm) = .true.
 
     case ( "khairoutdinov_kogan" )
       iirrainm    = 1
-      iiNrm       = 2
       iirsnowm    = -1
       iiricem     = -1
       iirgraupelm = -1
 
-      hydromet_dim = 2
+      iiNrm       = 2
+      iiNsnowm    = -1
+      iiNim       = -1
+      iiNgraupelm = -1
+      iiNcm       = 3
+
+      hydromet_dim = 3
+
+      allocate( hydromet_sed(hydromet_dim) )
 
       allocate( hydromet_list(hydromet_dim) )
 
       hydromet_list(iirrainm) = "rrainm"
       hydromet_list(iiNrm) = "Nrm"
+      hydromet_list(iiNcm) = "Ncm"
+
+      hydromet_sed(iirrainm) = .true.
+      hydromet_sed(iiNrm)    = .true.
+      hydromet_sed(iiNcm)    = .false.
 
     case ( "simplified_ice" )
       iirrainm    = -1
-      iiNrm       = -1
       iirsnowm    = -1
       iiricem     = -1
       iirgraupelm = -1
+
+      iiNrm       = -1
+      iiNsnowm    = -1
+      iiNim       = -1
+      iiNgraupelm = -1
+      iiNcm       = -1
 
       hydromet_dim = 0
 
     case ( "none" )
+      if ( l_cloud_sed ) then
+        iiNcm       = 1
+        hydromet_dim = 1
+
+        allocate( hydromet_sed(hydromet_dim) )
+        allocate( hydromet_list(hydromet_dim) )
+        hydromet_list(iiNcm) = "Ncm"
+      else
+        iiNcm = -1
+        hydromet_dim = 0
+      end if
+
       iirrainm    = -1
-      iiNrm       = -1
       iirsnowm    = -1
       iiricem     = -1
       iirgraupelm = -1
 
-      hydromet_dim = 0
+      iiNrm       = -1
+      iiNsnowm    = -1
+      iiNim       = -1
+      iiNgraupelm = -1
 
     case default
       write(fstderr,*) "Unknown micro_scheme"// trim( micro_scheme )
@@ -223,9 +415,10 @@ module microphys_driver
 !-----------------------------------------------------------------------
   subroutine advance_microphys & 
              ( runtype, dt, time_current,  & 
-               thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm,  & 
+               thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cf, & 
                wm_zt, wm_zm, Kh_zm, AKm_est, AKm, pdf_params, & 
-               Ncm, Ncnm, Nim, hydromet, & 
+               wp2_zt, &
+               Ncnm, hydromet, & 
                rtm_forcing, thlm_forcing, &
                err_code )
 
@@ -272,52 +465,69 @@ module microphys_driver
     use coamps_micro_driver_mod, only:  & 
         coamps_micro_driver ! Procedure
 
-    use T_in_K_mod, only: thlm2T_in_K ! Procedure(s)
+    use module_MP_graupel, only: &
+      M2005MICRO_GRAUPEL, & ! Procedure
+      Nc0  ! Variable
+
+    use T_in_K_mod, only: thlm2T_in_K, T_in_K2thlm ! Procedure(s)
 
     use variables_diagnostic_module, only:  &
         pdf_parameter  ! type
 
     use array_index, only:  & 
-        iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm
+        iirrainm, iirsnowm, iiricem, iirgraupelm, &
+        iiNrm, iiNsnowm, iiNim, iiNgraupelm, iiNcm
 
     use stats_variables, only: & 
-        iVrr,  & ! Variable(s)
-        iVnr, & 
-        iVsnow, & 
-        iVice, & 
-        iVgraupel, & 
-        ithlm_mc, & 
-        irtm_mc, & 
-        irain_rate, & 
-        iFprec, & 
-        irrainm_bt, & 
-        irrainm_mc, & 
-        irrainm_cond_adj, & 
-        irrainm_cl, & 
-        iNrm_bt, & 
-        iNrm_mc, & 
-        iNrm_cond_adj, & 
-        iNrm_cl, & 
-        iNcm, & 
-        iNim, & 
-        iNcnm, & 
-        irrainm, & 
-        iNrm, & 
-        irsnowm, & 
-        iricem, & 
-        irgraupelm, & 
-        iricem_bt, & 
-        iricem_mc, & 
-        iricem_cl, & 
-        irgraupelm_bt, & 
-        irgraupelm_mc, & 
-        irgraupelm_cl, & 
-        irsnowm_bt, & 
-        irsnowm_mc, & 
-        irsnowm_cl, & 
-        irain, & 
-        ipflux, & 
-        irrainm_sfc
+      iVrr,  & ! Variable(s)
+      iVnr, & 
+      iVsnow, & 
+      iVice, & 
+      iVgraupel, & 
+      ithlm_mc, & 
+      irtm_mc, & 
+      irain_rate, & 
+      iFprec, & 
+      irrainm_bt, & 
+      irrainm_mc, & 
+      irrainm_cond_adj, & 
+      irrainm_cl, & 
+      iNrm_bt, & 
+      iNrm_mc, & 
+      iNrm_cond_adj, & 
+      iNrm_cl, & 
+      iNcnm, & 
+      irrainm, & 
+      irsnowm, & 
+      iricem, & 
+      irgraupelm, & 
+      iricem_bt, & 
+      iricem_mc, & 
+      iricem_cl, & 
+      irgraupelm_bt, & 
+      irgraupelm_mc, & 
+      irgraupelm_cl, & 
+      irsnowm_bt, & 
+      irsnowm_mc, & 
+      irsnowm_cl, & 
+      irain, & 
+      ipflux, & 
+      irrainm_sfc
+
+    use stats_variables, only: & 
+      iNcm, & 
+      iNim, & 
+      iNrm, & 
+      iNsnowm, &
+      iNgraupelm
+
+    use stats_variables, only: & 
+      iNsnowm_mc, &
+      iNim_mc, & 
+      iNrm_mc, & 
+      iNsnowm_mc, &
+      iNgraupelm_mc
+
 
     use stats_variables, only: & 
         zt, &  ! Variables
@@ -331,8 +541,7 @@ module microphys_driver
 
     implicit none
 
-! Constant Parameters
-    logical, parameter :: l_sed = .true.
+    ! Constant Parameters
 
     character(len=*), intent(in) :: & 
       runtype ! Name of the run, for case specific effects.
@@ -343,7 +552,6 @@ module microphys_driver
     real(kind=time_precision), intent(in) ::  & 
       time_current ! Current time     [s]
 
-
     real, dimension(gr%nnzp), intent(in) :: & 
       thlm,    & ! Liquid potential temp.                 [K]
       p_in_Pa, & ! Pressure                               [Pa]
@@ -352,6 +560,7 @@ module microphys_driver
       rho_zm,  & ! Density on moment. grid                [kg/m^3]
       rtm,     & ! Total water mixing ratio               [kg/kg]
       rcm,     & ! Liquid water mixing ratio              [kg/kg]
+      cf,      & ! Cloud fraction                         [%]
       wm_zt,   & ! w wind on moment. grid                 [m/s]
       wm_zm,   & ! w wind on thermo. grid                 [m/s]
       Kh_zm,   & ! Kh Eddy diffusivity on momentum grid   [m^2/s]
@@ -359,15 +568,16 @@ module microphys_driver
       Akm        ! Analytic Kessler estimate              [kg/kg]
 
     type(pdf_parameter), target, intent(in) :: & 
-    pdf_params     ! PDF parameters
+      pdf_params     ! PDF parameters
 
-! Note:
-! K & K only uses Ncm, while for COAMPS Ncnm is initialized
-! and Nim & Ncm are computed within subroutine adjtg.
+    real, dimension(gr%nnzp), intent(in) :: & 
+      wp2_zt ! w'^2 on the thermo. grid         [m^2/s^2]
+
+    ! Note:
+    ! K & K only uses Ncm, while for COAMPS Ncnm is initialized
+    ! and Nim & Ncm are computed within subroutine adjtg.
     real, dimension(gr%nnzp), intent(inout) :: & 
-      Ncm,     & ! Cloud drop number concentration       [count/kg]
-      Ncnm,    & ! Cloud nuclei number concentration     [count/m^3]
-      Nim        ! Ice crystal number concentration      [count/m^3]
+      Ncnm       ! Cloud nuclei number concentration     [count/m^3]
 
     real, dimension(gr%nnzp,hydromet_dim), intent(inout) :: & 
       hydromet      ! Array of rain, prist. ice, graupel, etc. [units vary]
@@ -378,7 +588,7 @@ module microphys_driver
 
     integer, intent(out) :: err_code ! Exit code returned from subroutine
 
-! Local Variables
+    ! Local Variables
     real, dimension(3,gr%nnzp) :: & 
       lhs ! Left hand side of tridiagonal matrix
 
@@ -392,32 +602,35 @@ module microphys_driver
     !  Vgraupel ! Graupel mixing ratio sedimentation velocity  [m/s]
 
     real, dimension(gr%nnzp) :: & 
-      rtm_mc,   & ! Change in total water due to microphysics    [(kg/kg)/s]
-      thlm_mc     ! Change in liquid potential temperature
-    ! due to microphysics                          [K/s]
+      rtm_mc,   & ! Change in total water due to microphysics   [kg/kg/s]
+      rvm_mc,   & ! Change in vapor water due to microphysics   [kg/kg/s]
+      rcm_mc,   & ! Change in liquid water due to microphysics  [kg/kg/s]
+      thlm_mc     ! Change in liquid potential temperature due to microphysics [K/s]
 
     real, dimension(gr%nnzp,hydromet_dim) :: & 
-      hydromet_mc
-    ! Rain mixing ratio tendency      [(kg/kg)/s]
-    ! Rain number conc. tendency      [(count/kg)/s]
-    ! Snow mixing ratio tendency      [(kg/kg)/s]
-    ! Ice mixing ratio tendency       [(kg/kg)/s]
-    ! Graupel mixing ratio tendency   [(kg/kg)/s]
+      hydromet_mc,   & ! Change in hydrometeors due to microphysics  [units/s]
+      hydromet_sten, & ! Change in hydrometeors due to sedimentation [units/s]
+      hydromet_tmp     ! Temporary variable
+
+
+    real, dimension(gr%nnzp) :: &
+      rcm_tmp, & ! Temporary array for cloud water mixing ratio        [kg/kg]
+      rvm_tmp, & ! Temporary array for vapor water mixing ratio        [kg/kg]
+      rcm_sten, & ! Cloud dropet sedimentation tendency                 [kg/kg/s]
+      dzq         ! Difference in height levels [m]
+
 
     real, dimension(gr%nnzp) :: & 
-      T_in_K  ! Temperature   [K]
+      T_in_K, &  ! Temperature          [K]
+      T_in_K_mc  ! Temperature tendency [K/s]
+
+    real, dimension(gr%nnzp) :: & 
+      effc, effi, effg, effs, effr ! Effective droplet radii [μ]
 
     real, dimension(1,1,gr%nnzp) :: & 
       cond ! COAMPS stat for condesation/evap of rcm
 
-!real, pointer, dimension(:) ::  &
-!  rrainm,   & ! Pointer for rain water mixing ratio   [kg/kg]
-!  Nrm,      & ! Pointer for rain droplet number conc. [count/kg]
-!  rsnowm,   & ! Pointer for snow mixing ratio         [kg/kg]
-!  ricem,    & ! Pointer for ice mixing ratio          [kg/kg]
-!  rgraupelm   ! Pointer for graupel mixing ratio      [kg/kg]
-
-! Various PDF parameters needed for Brian's K&K microphysics
+    ! Various PDF parameters needed for Brian's K&K microphysics
     real, pointer, dimension(:) :: & 
       a, & 
       thl1, thl2, & 
@@ -425,17 +638,19 @@ module microphys_driver
       ss1, ss2, & 
       rc1, rc2
 
-! Eddy diffusivity for rain and rain drop concentration.
-! It is also used for the other hydrometeor variables.
-! Kr = Constant * Kh_zm; Constant is named c_Krrainm.
+    ! Eddy diffusivity for rain and rain drop concentration.
+    ! It is also used for the other hydrometeor variables.
+    ! Kr = Constant * Kh_zm; Constant is named c_Krrainm.
     real, dimension(gr%nnzp) :: Kr   ! [m^2/s]
 
-! Variable needed to handle correction to rtm and thlm microphysics
-! tendency arrays, as well rrainm_cond and Nrm_cond statistical
-! tendency arrays, due to a negative result being produced by
-! over-evaporation of rain water over the course of a timestep.
-! Brian Griffin.  April 14, 2007.
+    ! Variable needed to handle correction to rtm and thlm microphysics
+    ! tendency arrays, as well rrainm_cond and Nrm_cond statistical
+    ! tendency arrays, due to a negative result being produced by
+    ! over-evaporation of rain water over the course of a timestep.
+    ! Brian Griffin.  April 14, 2007.
     real :: overevap_rate ! Absolute value of negative evap. rate.
+
+    real :: snow_rate, rain_rate
 
     integer :: i, k ! Array index
 
@@ -480,7 +695,7 @@ module microphys_driver
              rtm, wm_zm, p_in_Pa, exner, rho, T_in_K, & 
              thlm, hydromet(:,iiricem), hydromet(:,iirrainm),  & 
              hydromet(:,iirgraupelm), hydromet(:,iirsnowm), & 
-             rcm, Ncm, hydromet(:,iiNrm), Ncnm, Nim, cond, & 
+             rcm, hydromet(:,iiNcm), hydromet(:,iiNrm), Ncnm, hydromet(:,iiNim), cond, & 
              hydromet_vel(:,iirsnowm), hydromet_vel(:,iiricem), & 
              hydromet_vel(:,iirrainm), hydromet_vel(:,iiNrm),  & 
              hydromet_vel(:,iirgraupelm), & 
@@ -488,6 +703,9 @@ module microphys_driver
              hydromet_mc(:,iirgraupelm), hydromet_mc(:,iirsnowm), & 
              hydromet_mc(:,iiNrm), & 
              rtm_mc, thlm_mc )
+
+      hydromet_mc(:,iiNcm) = 0.
+      hydromet_mc(:,iiNim) = 0.
 
       if ( l_stats_samp ) then
 
@@ -524,13 +742,93 @@ module microphys_driver
         call stat_update_var( irsnowm_mc,  & 
                               hydromet_mc(:,iirsnowm), zt )
 
-      endif ! l_stats_samp
+      end if ! l_stats_samp
+
+    case ( "morrison" )
+      rcm_tmp = rcm
+      rvm_tmp = rtm - rcm
+
+      dzq(1:gr%nnzp) = 1./gr%dzm(1:gr%nnzp)
+
+      do i = 1, hydromet_dim, 1
+        hydromet_tmp(:,i) = hydromet(:,i)
+      end do
+
+      if ( .not. l_predictnc ) then
+        hydromet_tmp(:,iiNcm) = Nc0
+      end if
+
+      ! Initialize tendencies to zero
+      hydromet_mc(:,:) = 0.0
+      rcm_mc(:) = 0.0
+      rvm_mc(:) = 0.0
+      T_in_K_mc(:) = 0.0
+
+      call M2005MICRO_GRAUPEL &
+           ( rcm_mc, hydromet_mc(:,iiricem), hydromet_mc(:,iirsnowm), &
+             hydromet_mc(:,iirrainm), hydromet_mc(:,iiNcm), &
+             hydromet_mc(:,iiNim), hydromet_mc(:,iiNsnowm), &
+             hydromet_mc(:,iiNrm), rcm_tmp, hydromet_tmp(:,iiricem), &
+             hydromet_tmp(:,iirsnowm), hydromet_tmp(:,iirrainm), hydromet_tmp(:,iiNcm), &
+             hydromet_tmp(:,iiNim), hydromet_tmp(:,iiNsnowm), hydromet_tmp(:,iiNrm), &
+             T_in_K_mc, rvm_mc, T_in_K, rvm_tmp, P_in_pa, rho, dzq, wm_zt, sqrt( wp2_zt ), &
+             rain_rate, snow_rate,  effc, effi, effs, effr, real( dt ), &
+             1,1, 1,1, 1,gr%nnzp, 1,1, 1,1, 1,gr%nnzp, &
+             hydromet_mc(:,iirgraupelm), hydromet_mc(:,iiNgraupelm), &
+             hydromet_tmp(:,iirgraupelm), hydromet_tmp(:,iiNgraupelm), effg, &
+             hydromet_sten(:,iirgraupelm), hydromet_sten(:,iiNrm), &
+             hydromet_sten(:,iiNim), hydromet_sten(:,iiNsnowm), &
+             rcm_sten, cf )
+
+      ! Update hydrometeor tendencies
+      do i = 1, hydromet_dim, 1
+        hydromet_mc(:,i) = ( hydromet_tmp(:,i) - hydromet(:,i)  ) / real( dt )
+      end do
+
+      ! Update total water tendency
+      rtm_mc = ( ( rcm_tmp + rvm_tmp ) - rtm ) / real( dt )
+
+      ! Update thetal based on absolute temperature
+      thlm_mc = ( T_in_K2thlm( T_in_K, exner, rcm_tmp ) - thlm ) / real( dt )
+
+      hydromet_vel(:,:) = 0.0 ! Sedimentation is handled within the Morrison microphysics
+      if ( l_stats_samp ) then
+
+        ! Mixing ratios
+
+        ! Sum total of rrainm microphysics
+        call stat_update_var( irrainm_mc, hydromet_mc(:,iirrainm), zt )
+
+        ! Sum total of snow microphysics
+        call stat_update_var( irsnowm_mc, hydromet_mc(:,iirsnowm), zt )
+
+        ! Sum total of ice microphysics
+        call stat_update_var( iricem_mc, hydromet_mc(:,iiricem), zt )
+
+        ! Sum total of graupel microphysics
+        call stat_update_var( irgraupelm_mc, hydromet_mc(:,iirgraupelm), zt )
+
+        ! Number concentrations
+
+        ! Sum total of rain droplet number concentration microphysics
+        call stat_update_var( iNrm_mc, hydromet_mc(:,iiNrm), zt )
+
+        ! Sum total of snow microphysical processeses
+        call stat_update_var( iNsnowm_mc,  hydromet_mc(:,iiNsnowm), zt )
+
+        ! Sum total of ice number concentration microphysics
+        call stat_update_var( iNim_mc, hydromet_mc(:,iiNim), zt )
+
+        ! Sum total of graupel number concentration microphysics
+        call stat_update_var( iNgraupelm_mc, hydromet_mc(:,iiNgraupelm), zt )
+
+      end if ! l_stats_samp
 
     case ( "khairoutdinov_kogan" )
       call kk_microphys & 
            ( dt, T_in_K, p_in_Pa, exner, rho,  & 
              thl1, thl2, a, rc1, rc2, s1,  & 
-             s2, ss1, ss2, rcm, Ncm,  & 
+             s2, ss1, ss2, rcm, hydromet(:,iiNcm),  & 
              hydromet(:,iirrainm), hydromet(:,iiNrm), & 
              .true., AKm,  & 
              hydromet_mc(:,iirrainm), hydromet_mc(:,iiNrm),  & 
@@ -553,7 +851,9 @@ module microphys_driver
 
       end if ! lstats_samp
 
-    end select ! coamps micro or K&K.
+    case default
+
+    end select ! micro_scheme
 
 !-----------------------------------------------------------------------
 !       Loop over all hydrometeor species and apply sedimentation,
@@ -592,11 +892,11 @@ module microphys_driver
 
 
         call microphys_lhs & 
-             ( trim( hydromet_list(i) ), l_sed, dt, Kr, nu_r, wm_zt, & 
+             ( trim( hydromet_list(i) ), hydromet_sed(i), dt, Kr, nu_r, wm_zt, & 
                hydromet_vel(:,i), lhs )
 
         call microphys_solve & 
-             ( trim( hydromet_list(i) ), dt, lhs, hydromet_mc(:,i),  & 
+             ( trim( hydromet_list(i) ), hydromet_sed(i), dt, lhs, hydromet_mc(:,i),  & 
                hydromet(:,i), err_code )
 
         if ( i == iirrainm ) then
@@ -688,7 +988,7 @@ module microphys_driver
       end if ! hydromet_dim > 0
 
 
-! Call the ice diffusion scheme
+      ! Call the ice diffusion scheme
       if ( trim( micro_scheme ) == "simplified_ice" ) then
         call ice_dfsn( dt, T_in_K, rcm, p_in_Pa, rho, rtm_mc )
         thlm_mc = - ( Lv/(Cp*exner) ) * rtm_mc
@@ -696,18 +996,14 @@ module microphys_driver
 
       if ( l_stats_samp ) then
 
-        call stat_update_var( iNcm, Ncm, zt )
+        if ( iiNcm > 0 ) then
+          call stat_update_var( iNcm, hydromet(:,iiNcm), zt )
+        end if
 
         call stat_update_var( iNcnm, Ncnm, zt )
 
-        call stat_update_var( iNim, Nim, zt )
-
         if ( iirrainm > 0 ) then
           call stat_update_var( irrainm, hydromet(:,iirrainm), zt )
-        end if
-
-        if ( iiNrm > 0 ) then
-          call stat_update_var( iNrm, hydromet(:,iiNrm), zt )
         end if
 
         if ( iirsnowm > 0 ) then
@@ -721,6 +1017,23 @@ module microphys_driver
         if ( iirgraupelm > 0 ) then
           call stat_update_var( irgraupelm,  & 
                                 hydromet(:,iirgraupelm), zt )
+        end if
+
+
+        if ( iiNim > 0 ) then
+          call stat_update_var( iNim, hydromet(:,iiNim), zt )
+        end if
+
+        if ( iiNrm > 0 ) then
+          call stat_update_var( iNrm, hydromet(:,iiNrm), zt )
+        end if
+
+        if ( iiNsnowm > 0 ) then
+          call stat_update_var( iNsnowm, hydromet(:,iiNsnowm), zt )
+        end if
+
+        if ( iiNgraupelm > 0 ) then
+          call stat_update_var( iNgraupelm, hydromet(:,iiNgraupelm), zt )
         end if
 
         call stat_update_var( ithlm_mc, thlm_mc(:), zt )
@@ -811,9 +1124,7 @@ module microphys_driver
 
         write(fstderr,*) "Intent(inout)"
 
-        write(fstderr,*) "Ncm = ", Ncm
         write(fstderr,*) "Ncnm = ", Ncnm
-        write(fstderr,*) "Nim = ", Nim
         write(fstderr,*) "hydromet = ", hydromet
         write(fstderr,*) "Intent(out)"
         write(fstderr,*) "rtm_mc = ", rtm_mc
@@ -825,7 +1136,7 @@ module microphys_driver
     end subroutine advance_microphys
 
 !===============================================================================
-    subroutine microphys_solve( solve_type, dt, lhs, & 
+    subroutine microphys_solve( solve_type, l_sed, dt, lhs, & 
                                 xrm_tndcy, xrm, err_code )
 
 ! Description:
@@ -849,9 +1160,6 @@ module microphys_driver
           irrainm_ma, & 
           irrainm_sd, & 
           irrainm_dff, & 
-          iNrm_ma, & 
-          iNrm_sd, & 
-          iNrm_dff, & 
           iricem_ma, & 
           iricem_sd, & 
           iricem_dff, & 
@@ -872,6 +1180,20 @@ module microphys_driver
           ztscr08, & 
           ztscr09
 
+      use stats_variables, only: & 
+          iNrm_ma, & 
+          iNrm_sd, & 
+          iNrm_dff, & 
+          iNim_ma, & 
+          iNim_sd, & 
+          iNim_dff, & 
+          iNsnowm_ma, & 
+          iNsnowm_sd, & 
+          iNsnowm_dff, & 
+          iNgraupelm_ma, & 
+          iNgraupelm_sd, & 
+          iNgraupelm_dff 
+
       use stats_type, only: stat_update_var_pt ! Procedure(s)
 
       implicit none
@@ -880,6 +1202,9 @@ module microphys_driver
       character(len=*), intent(in) :: solve_type
 
       real(kind=time_precision), intent(in) :: dt ! Timestep     [s]
+
+      logical, intent(in) :: &
+        l_sed ! Whether sedimentation is included in lhs (T/F)
 
       ! Explicit contrbution to the hydrometeor, e.g. evaporation
       ! from Brian Griffin's K & K microphysics implementation
@@ -914,10 +1239,6 @@ module microphys_driver
         ixrm_ma  = irrainm_ma
         ixrm_sd  = irrainm_sd
         ixrm_dff = irrainm_dff
-      case( "Nrm" )
-        ixrm_ma  = iNrm_ma
-        ixrm_sd  = iNrm_sd
-        ixrm_dff = iNrm_dff
       case( "ricem" )
         ixrm_ma  = iricem_ma
         ixrm_sd  = iricem_sd
@@ -930,6 +1251,22 @@ module microphys_driver
         ixrm_ma  = irgraupelm_ma
         ixrm_sd  = irgraupelm_sd
         ixrm_dff = irgraupelm_dff
+      case( "Nrm" )
+        ixrm_ma  = iNrm_ma
+        ixrm_sd  = iNrm_sd
+        ixrm_dff = iNrm_dff
+      case( "Nim" )
+        ixrm_ma  = iNim_ma
+        ixrm_sd  = iNim_sd
+        ixrm_dff = iNim_dff
+      case( "Nsnowm" )
+        ixrm_ma  = iNsnowm_ma
+        ixrm_sd  = iNsnowm_sd
+        ixrm_dff = iNsnowm_dff
+      case( "Ngraupelm" )
+        ixrm_ma  = iNgraupelm_ma
+        ixrm_sd  = iNgraupelm_sd
+        ixrm_dff = iNgraupelm_dff
       case default
         ixrm_ma  = 0
         ixrm_sd  = 0
@@ -971,10 +1308,12 @@ module microphys_driver
               + ztscr03(k) * xrm(kp1), zt)
 
           ! xrm term sd is completely implicit; call stat_update_var_pt.
-          call stat_update_var_pt( ixrm_sd, k, & 
-                ztscr04(k) * xrm(km1) & 
-              + ztscr05(k) * xrm(k) & 
-              + ztscr06(k) * xrm(kp1), zt )
+          if ( l_sed ) then
+            call stat_update_var_pt( ixrm_sd, k, & 
+                  ztscr04(k) * xrm(km1) & 
+                + ztscr05(k) * xrm(k) & 
+                + ztscr06(k) * xrm(kp1), zt )
+          end if
 
           ! xrm term dff is completely implicit; call stat_update_var_pt.
           call stat_update_var_pt( ixrm_dff, k, & 

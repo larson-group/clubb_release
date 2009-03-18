@@ -121,7 +121,7 @@ module clubb_driver
 
     use variables_diagnostic_module, only: ug, vg, em,  & ! Variable(s)
       tau_zt, thvm, Lscale, Kh_zt, Kh_zm, & 
-      um_ref, vm_ref, Ncnm
+      um_ref, vm_ref, Ncnm, wp2_zt
 
     use variables_prognostic_module, only:  & 
       Tsfc, psfc, SE, LE, thlm, rtm,     & ! Variable(s)
@@ -584,7 +584,7 @@ module clubb_driver
 
       call initialize_clubb &
            ( iunit, runfile, trim( forcings_file_path ), psfc, & ! Intent(in)
-             thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,  & ! Intent(inout)
+             thlm, rtm, um, vm, ug, vg, wp2, wp2_zt, up2, vp2, rcm,  & ! Intent(inout)
              wm_zt, wm_zm, em, exner, &           ! Intent(inout)
              tau_zt, tau_zm, thvm, p_in_Pa, &     ! Intent(inout)
              rho, rho_zm, Lscale, &               ! Intent(inout) 
@@ -765,7 +765,7 @@ module clubb_driver
 !-----------------------------------------------------------------------
   subroutine initialize_clubb &
              ( iunit, runfile, forcings_file_path, psfc, &
-               thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
+               thlm, rtm, um, vm, ug, vg, wp2, wp2_zt, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
                tau_zt, tau_zm, thvm, p_in_Pa, & 
                rho, rho_zm, Lscale, & 
@@ -852,7 +852,7 @@ module clubb_driver
     vm,              & ! v wind                        [m/s]
     ug,              & ! u geostrophic wind            [m/s] 
     vg,              & ! u geostrophic wind            [m/s] 
-    wp2,             & ! w'^2                          [m^2/s^2]
+    wp2, wp2_zt,     & ! w'^2                          [m^2/s^2]
     up2,             & ! u'^2                          [m^2/s^2]
     vp2,             & ! v'^2                          [m^2/s^2]
     rcm,             & ! Cloud water mixing ratio      [kg/kg]
@@ -1270,6 +1270,8 @@ module clubb_driver
 
     endif
 
+    wp2_zt = zm2zt( wp2 )
+
     ! Compute mixing length
 
     call compute_length( thvm, thlm, rtm, rcm, & ! Intent(in)
@@ -1357,7 +1359,8 @@ module clubb_driver
       l_soil_veg
 
     use parameters_microphys, only : &
-      micro_scheme ! Variable
+      micro_scheme, & ! Variable
+      l_cloud_sed
 
 #ifdef UNRELEASED_CODE
     use arm_0003, only: arm_0003_init ! Procedure(s)
@@ -1449,7 +1452,17 @@ module clubb_driver
       input_Ncnm = .true.
       input_Ncm = .true.
       input_Nrm = .true.
-      input_Nim = .true.
+      input_Nim =  .true.
+
+    case ( "morrison" )
+      input_rrainm = .true.
+      input_rsnowm = .true.
+      input_ricem = .true.
+      input_rgraupelm = .true.
+      input_Ncnm = .false.
+      input_Ncm = .true.
+      input_Nrm = .true.
+      input_Nim =  .true.
 
     case ( "khairoutdinov_kogan" )
       input_rrainm = .true.
@@ -1472,6 +1485,10 @@ module clubb_driver
       input_Nim = .false.
 
     end select
+
+    if ( l_cloud_sed ) then
+      input_Ncm = .true.
+    end if
 
     if ( l_soil_veg ) then
       input_veg_T_in_K = .true.
@@ -1574,13 +1591,13 @@ module clubb_driver
 
     use grid_class, only: gr ! Variable(s)
 
-    use grid_class, only: zt2zm ! Procedure(s)
+    use grid_class, only: zt2zm, zm2zt ! Procedure(s)
 
     use variables_diagnostic_module, only: &
-      hydromet, Ncm, radht, um_ref,  & ! Variable(s)
+      hydromet, radht, um_ref,  & ! Variable(s)
       vm_ref, Frad,  Frad_SW_up,  Frad_LW_up, &
       Frad_SW_down, Frad_LW_down, Ncnm, thvm, ustar, & 
-      pdf_params, Kh_zm, Akm_est, Akm, Nim, ug, vg
+      pdf_params, Kh_zm, Akm_est, Akm, ug, vg
 
     use variables_diagnostic_module, only: wpedsclrp ! Passive scalar variables
 
@@ -1613,6 +1630,9 @@ module clubb_driver
         wpsclrp_sfc,  &
         wpedsclrp_sfc
 
+    use variables_diagnostic_module, only:  & 
+      wp2_zt ! w'^2 interpolated the themo levels [m^2/s^2]
+
     use stats_precision, only: time_precision ! Variable(s)
 
     use numerical_check, only: isnan2d, rad_check ! Procedure(s)
@@ -1628,8 +1648,8 @@ module clubb_driver
                           clubb_at_least_debug_level
 
     use array_index, only: & 
-        iirsnowm, iiricem, & 
-        iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl
+      iirsnowm, iiricem, iiNcm, & 
+      iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl
 
     ! Case specific modules
     use arm, only: arm_tndcy, arm_sfclyr ! Procedure(s)
@@ -2145,9 +2165,9 @@ module clubb_driver
         ! Since cloud base (zb) is determined by the mixing ratio rc_tol,
         ! so will cloud droplet number concentration (Ncm).
         where ( rcm >= rc_tol )
-          Ncm = 55000000.0 / rho
+          hydromet(:,iiNcm) = 55000000.0 / rho
         else where
-          Ncm = 0.0
+          hydromet(:,iiNcm) = 0.0
         end where
 
       else if ( trim( runtype ) == "rico" ) then
@@ -2160,17 +2180,17 @@ module clubb_driver
 ! 3 Aug 2007.
 !         Ncm = 70.0 * 1.e6 * rho
 !         Ncm = 70.0 * 1.e6
-          Ncm = 70.0 * 1.e6 / rho
+          hydromet(:,iiNcm) = 70.0 * 1.e6 / rho
         else where
-          Ncm = 0.0
+          hydromet(:,iiNcm) = 0.0
         end where
 
       else 
 
         where ( rcm >= rc_tol )
-          Ncm = 30.0 * (1.0 + exp( -gr%zt/2000.0 )) * 1.e6 / rho
+          hydromet(:,iiNcm) = 30.0 * (1.0 + exp( -gr%zt/2000.0 )) * 1.e6 / rho
         else where
-          Ncm = 0.0
+          hydromet(:,iiNcm) = 0.0
         end where
 
       end if ! RF02
@@ -2181,12 +2201,14 @@ module clubb_driver
 
     if ( trim( micro_scheme ) /= "none" ) then
 
-      call advance_microphys( runtype, dt, time_current, &                     ! Intent(in)
-                              thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, &   ! Intent(in) 
-                              wm_zt, wm_zm, Kh_zm, AKm_est, Akm, pdf_params, & ! Intent(in)
-                              Ncm, Ncnm, Nim, hydromet, &                      ! Intent(inout)
-                              rtm_forcing, thlm_forcing, &                     ! Intent(inout)
-                              err_code )                                       ! Intent(out)
+      call advance_microphys &
+           ( runtype, dt, time_current, &                     ! Intent(in)
+             thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cf, & ! Intent(in) 
+             wm_zt, wm_zm, Kh_zm, AKm_est, Akm, pdf_params, & ! Intent(in)
+             wp2_zt, &                                        ! Intent(in)
+             Ncnm, hydromet, &                                ! Intent(inout)
+             rtm_forcing, thlm_forcing, &                     ! Intent(inout)
+             err_code )                                       ! Intent(out)
 
       if ( lapack_error( err_code ) ) return
 
@@ -2194,7 +2216,7 @@ module clubb_driver
 
     if ( l_cloud_sed ) then
 
-      call cloud_drop_sed( rcm, Ncm, rho_zm, rho, exner, &          ! Intent(in)
+      call cloud_drop_sed( rcm, hydromet(:,iiNcm), rho_zm, rho, exner, & ! Intent(in)
                            rtm_forcing, thlm_forcing )              ! Intent(out)
 
     end if

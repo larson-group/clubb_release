@@ -74,6 +74,9 @@ fi
 if [ -e $srcdir/Benchmark_cases/unreleased_cases ]; then
 	CPPFLAGS="${CPPFLAGS} -DUNRELEASED_CODE"
 fi
+
+LDFLAGS="$LDFLAGS -lclubb_morrison"
+
 # ------------------------------------------------------------------------------
 # Generate template for makefile generating tool 'mkmf'
 
@@ -129,6 +132,9 @@ $mkmf -t $bindir/mkmf_template \
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_coamps.a -m Make.clubb_coamps $dir/file_list/clubb_coamps_files
 
+$mkmf -t $bindir/mkmf_template \
+  -p $libdir/libclubb_morrison.a -m Make.clubb_morrison -o "-DCLUBB" $dir/file_list/clubb_morrison_files
+
 $mkmf -t $bindir/mkmf_template -p $bindir/clubb_standalone \
   -m Make.clubb_standalone -c "${WARNINGS}" $clubb_standalone_mods \
   $dir/file_list/clubb_standalone_files $dir/file_list/clubb_optional_files \
@@ -179,23 +185,26 @@ libclubb_bugsrad.a: libclubb_param.a
 libclubb_coamps.a:
 	cd $objdir; $gmake -f Make.clubb_coamps
 
-clubb_standalone: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB
+libclubb_morrison.a: libclubb_param.a
+	cd $objdir; $gmake -f Make.clubb_morrison
+
+clubb_standalone: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a
 	-rm -f $bindir/clubb_standalone
 	cd $objdir; $gmake -f Make.clubb_standalone
 
-clubb_tuner: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB
+clubb_tuner: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a
 	-rm -f $bindir/clubb_tuner
 	cd $objdir; $gmake -f Make.clubb_tuner
 
-clubb_inputfields: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB
+clubb_inputfields: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a
 	-rm -f $bindir/clubb_inputfields
 	cd $objdir; $gmake -f Make.clubb_inputfields
 
-jacobian: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB
+jacobian: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a
 	-rm -f $bindir/jacobian
 	cd $objdir; $gmake -f Make.jacobian
 
-int2txt: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB
+int2txt: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a
 	-rm -rf $bindir/int2txt
 	cd $objdir; $gmake -f Make.int2txt
 

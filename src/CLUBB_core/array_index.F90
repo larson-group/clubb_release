@@ -14,9 +14,13 @@ module array_index
   implicit none
 
   ! Variables
-  ! Microphysical quantities
-  integer, public :: & 
-    iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm ! [kg/kg]
+  ! Microphysics mixing ratios
+  integer, public :: &
+    iirrainm, iirsnowm, iiricem, iirgraupelm ! [kg/kg]
+
+  ! Microphysics number concentration
+  integer, public :: &
+    iiNrm, iiNsnowm, iiNim, iiNgraupelm, iiNcm ! [#/kg]
 
   ! Scalar quantities
   integer, public :: & 

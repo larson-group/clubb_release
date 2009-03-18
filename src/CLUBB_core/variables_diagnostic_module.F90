@@ -116,10 +116,8 @@ module variables_diagnostic_module
 !$omp threadprivate(hydromet)
 
   real, target, allocatable, dimension(:), public :: & 
-    Ncm,   & ! Cloud droplet number concentration      [num/kg]
-    Ncnm,  & ! Cloud nuclei number concentration       [num/m^3]
-    Nim      ! Ice nuclei number concentration         [num/m^3]
-!$omp threadprivate(Ncm, Ncnm, Nim)
+    Ncnm     ! Cloud nuclei number concentration       [num/m^3]
+!$omp threadprivate(Ncnm)
 
 
 ! Surface data
@@ -325,9 +323,7 @@ module variables_diagnostic_module
               pdf_params%ss1(1:nzmax),       pdf_params%ss2(1:nzmax),  &
               pdf_params%alpha_thl(1:nzmax), pdf_params%alpha_rt(1:nzmax) )
 
-    allocate( Ncm(1:nzmax) )
     allocate( Ncnm(1:nzmax) )
-    allocate( Nim(1:nzmax) )
     allocate( hydromet(1:nzmax,1:hydromet_dim) ) ! All hydrometeor fields
 
 
@@ -423,9 +419,7 @@ module variables_diagnostic_module
     tau_zt     = 0.0
 
 ! Hydrometer types
-    Ncm(1:nzmax)  = 0.0
     Ncnm(1:nzmax) = 0.0
-    Nim(1:nzmax)  = 0.0
 
     do i = 1, hydromet_dim, 1
       hydromet(1:nzmax,i) = 0.0
@@ -567,9 +561,7 @@ module variables_diagnostic_module
 
 ! Cloud water variables
 
-    deallocate( Ncm )
     deallocate( Ncnm )
-    deallocate( Nim )
 
     deallocate( hydromet )  ! Hydrometeor fields
 

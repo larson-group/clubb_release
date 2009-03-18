@@ -126,9 +126,7 @@ module inputfields
       Kh_zt, & 
       Kh_zm, & 
       thvm, & 
-      Ncm, & 
       Ncnm, & 
-      Nim, & 
       sigma_sqd_w_zt, & 
       em
 
@@ -141,7 +139,7 @@ module inputfields
       wtol_sqd
 
   use array_index, only:  & 
-      iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm
+      iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm, iiNim, iiNcm
 
   use inputfile_class, only: & 
       inputgrads,  & ! Type
@@ -289,7 +287,7 @@ module inputfields
     endif
     if ( input_Ncm) then
       call get_var( fread_var , "Ncm", timestep, & 
-                    Ncm(1:gr%nnzp), l_error)
+                    hydromet(1:gr%nnzp,iiNcm), l_error)
     endif
     if ( input_Ncnm) then
       call get_var( fread_var , "Ncnm", timestep, & 
@@ -297,7 +295,7 @@ module inputfields
     endif
     if ( input_Nim) then
       call get_var( fread_var , "Nim", timestep, & 
-                    Nim(1:gr%nnzp), l_error)
+                    hydromet(1:gr%nnzp,iiNim), l_error)
     endif
     if ( input_cf) then
       call get_var( fread_var , "cf", timestep, & 

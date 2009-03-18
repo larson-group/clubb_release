@@ -77,21 +77,24 @@ module stats_variables
   integer, public :: & 
      iNcm,            & ! Brian
      iNcnm, & 
-     iNim, & 
      isnowslope,      & ! Adam Smith, 22 April 2008
-     iNsnowm,         & ! Adam Smith, 22 April 2008
      ised_rcm,        & ! Brian
      irsat,           & ! Brian
      irrainm,         & ! Brian
-     iNrm,            & ! Brian
      imean_vol_rad_rain,   & ! Brian
      imean_vol_rad_cloud,  & ! COAMPS only. dschanen 6 Dec 2006
      irain_rate,      & ! Brian
      iAKm,            & ! analytic Kessler.  Vince Larson 22 May 2005 
      iAKm_est,        & ! LH Kessler.  Vince Larson  22 May 2005
-     iradht,          & ! Radiative heating. dschanen 7 Oct 2005
-     iradht_LW,       & !   "           "   Long-wave
-     iradht_SW          !   "           "   Short-wave
+     iradht,          & ! Radiative heating.
+     iradht_LW,       & !   "           "   Long-wave component
+     iradht_SW          !   "           "   Short-wave component
+
+  integer, public :: & 
+     iNrm,       & ! Rain droplet number concentration
+     iNim,       & ! Ice number concentration
+     iNsnowm,    & ! Snow number concentration
+     iNgraupelm    ! Graupel number concentration
 
   integer, public :: & 
      iT_in_K      ! Absolute temperature
@@ -101,12 +104,13 @@ module stats_variables
 !$omp   threadprivate(ivg, icf, ip_in_Pa, iexner, iLscale, iwp3, iwpthlp2)
 !$omp   threadprivate(iwp2thlp, iwprtp2, iwp2rtp, iLscale_up, iLscale_down, itau_zt)
 !$omp   threadprivate(iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, isigma_sqd_w_zt, irho)
-!$omp   threadprivate(iNcm, iNcnm, iNim, isnowslope, iNsnowm)
-!$omp   threadprivate(ised_rcm, irsat, irrainm, iNrm)
+!$omp   threadprivate(iNcm, iNcnm, isnowslope, iNsnowm)
+!$omp   threadprivate(ised_rcm, irsat, irrainm)
 !$omp   threadprivate(imean_vol_rad_rain, imean_vol_rad_cloud)
 !$omp   threadprivate(irain_rate, iAKm, iAKm_est)
 !$omp   threadprivate(iradht, iradht_LW, iradht_SW)
 !$omp   threadprivate(iT_in_K)
+!$omp   threadprivate(iNrm, iNim, iNsnowm, iNgraupelm)
 
   integer, public :: & 
     irsnowm, & 
@@ -230,6 +234,40 @@ module stats_variables
 
 !$omp   threadprivate(iricem_bt, iricem_ma, iricem_sd, iricem_dff)
 !$omp   threadprivate(iricem_mc, iricem_cl)
+
+  integer, public :: &
+    iNsnowm_bt,  &
+    iNsnowm_ma,  &
+    iNsnowm_sd,  &
+    iNsnowm_dff, &
+    iNsnowm_mc,  &
+    iNsnowm_cl
+
+!$omp threadprivate(iNsnowm_bt, iNsnowm_ma, iNsnowm_sd, iNsnowm_dff, &
+!$omp   iNsnowm_mc, iNsnowm_cl)
+
+  integer, public :: &
+    iNgraupelm_bt,  &
+    iNgraupelm_ma,  &
+    iNgraupelm_sd,  &
+    iNgraupelm_dff, &
+    iNgraupelm_mc,  &
+    iNgraupelm_cl
+
+!$omp threadprivate(iNgraupelm_bt, iNgraupelm_ma, iNgraupelm_sd, &
+!$omp   iNgraupelm_dff, iNgraupelm_mc, iNgraupelm_cl)
+
+  integer, public :: &
+    iNim_bt,  &
+    iNim_ma,  &
+    iNim_sd,  &
+    iNim_dff, &
+    iNim_mc,  &
+    iNim_cl
+
+!$omp threadprivate(iNim_bt, iNim_ma, iNim_sd, iNim_dff, &
+!$omp   iNim_mc, iNim_cl)
+
 
   ! Wind budgets
   integer, public :: & 
