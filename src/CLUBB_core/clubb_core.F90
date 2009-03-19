@@ -923,7 +923,7 @@ module clubb_core
                std_atmos_buffer_in, hydromet_dim_in, sclr_dim_in, & ! In
                sclrtol_in, edsclr_dim_in, params,  &  ! In
                l_bugsrad, l_soil_veg, & ! In
-               l_uv_nudge, l_tke_aniso,  &  ! In
+               l_uv_nudge, l_tke_aniso, saturation_formula, &  ! In
                l_implemented, grid_type, deltaz, zm_init, &  ! In
                momentum_heights, thermodynamic_heights,  &  ! In
                host_dx, host_dy, & ! In
@@ -1024,10 +1024,13 @@ module clubb_core
     ! Flags 
     logical, intent(in) ::  & 
       l_bugsrad,      & ! BUGSrad interactive radiation scheme
-      l_soil_veg,& ! Simple surface scheme
+      l_soil_veg,     & ! Simple surface scheme
       l_uv_nudge,     & ! Wind nudging
       l_tke_aniso       ! For anisotropic turbulent kinetic energy,
                         !   i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+
+    integer, intent(in) :: &
+      saturation_formula ! 1 = Bolton approx., 2 = Flatau approx.
 
     ! Output variables
     integer, intent(out) :: & 
@@ -1042,7 +1045,7 @@ module clubb_core
 
     call setup_model_flags & 
          ( l_bugsrad, l_soil_veg, l_uv_nudge,  & ! intent(in)
-           l_tke_aniso )                         ! intent(in)
+           l_tke_aniso, saturation_formula )     ! intent(in)
 
 
     ! Determine the maximum allowable value for Lscale (in meters).

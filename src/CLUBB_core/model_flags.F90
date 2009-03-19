@@ -43,16 +43,18 @@ module model_flags
     l_soil_veg,      & ! Simple surface scheme - Joshua Fasching
     l_tke_aniso        ! For anisotropic turbulent kinetic energy,
                        !   i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+   integer, public :: &
+     saturation_formula ! 1 = Bolton approx., 2 = Flatau approx.
 
 ! OpenMP directives. These cannot be indented.
-!$omp threadprivate(l_bugsrad, l_uv_nudge, l_tke_aniso)
+!$omp threadprivate(l_bugsrad, l_uv_nudge, l_tke_aniso, saturation_formula)
 
   contains
 
 !===============================================================================
   subroutine setup_model_flags & 
              ( l_bugsrad_in, l_soil_veg_in, & 
-               l_uv_nudge_in, l_tke_aniso_in )
+               l_uv_nudge_in, l_tke_aniso_in, saturation_formula_in )
 
 ! Description:
 !   Setup model flags
@@ -71,13 +73,19 @@ module model_flags
       l_uv_nudge_in, & 
       l_tke_aniso_in
 
+    integer, intent(in) :: &
+      saturation_formula_in
+
     !---- Begin Code ----
-    
+
+    ! Logicals
     l_soil_veg     = l_soil_veg_in
     l_bugsrad      = l_bugsrad_in
     l_uv_nudge     = l_uv_nudge_in
     l_tke_aniso    = l_tke_aniso_in
 
+    ! Integer
+    saturation_formula = saturation_formula_in
 
     return
   end subroutine setup_model_flags

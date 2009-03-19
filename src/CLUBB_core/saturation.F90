@@ -12,7 +12,8 @@ module saturation
 
   public   :: sat_mixrat_liq, sat_mixrat_ice, sat_rcm
 
-  private  :: sat_vapor_press_liq, sat_vapor_press_ice
+  private  :: sat_vapor_press_liq_flatau, sat_vapor_press_liq_bolton
+  private  :: sat_vapor_press_ice
 
   contains
 
@@ -27,7 +28,11 @@ module saturation
 !-------------------------------------------------------------------------
 
     use constants, only: & 
-      ep ! Variable
+      ep, & ! Variable
+      fstderr
+
+    use model_flags, only: &
+      saturation_formula ! Variable
 
     implicit none
 
@@ -41,8 +46,11 @@ module saturation
 
     ! Saturation Vapor Pressure, esat, can be found to be approximated
     ! in many different ways.
-
-    esatv = sat_vapor_press_liq( T_in_K )
+    if ( saturation_formula == 1 ) then
+      esatv = sat_vapor_press_liq_bolton( T_in_K )
+    else ! saturation_formula == 2 
+      esatv = sat_vapor_press_liq_flatau( T_in_K )
+    end if
 
     ! Formula for Saturation Mixing Ratio:
     !
@@ -51,30 +59,23 @@ module saturation
     sat_mixrat_liq = ep * ( esatv / ( p_in_Pa - esatv ) )
 
     return
-
   end function sat_mixrat_liq
 
 !------------------------------------------------------------------------
-  pure function sat_vapor_press_liq( T_in_K ) result ( esat )
+  pure function sat_vapor_press_liq_flatau( T_in_K ) result ( esat )
 
-!       Description:
-!       Computes SVP for water vapor.
+! Description:
+!   Computes SVP for water vapor.
 
-!       References:
-!       ``Polynomial Fits to Saturation Vapor Pressure'' Falatau, Walko,
-!         and Cotton.  (1992)  Journal of Applied Meteorology, Vol. 31,
-!         pp. 1507--1513
+! References:
+!   ``Polynomial Fits to Saturation Vapor Pressure'' Falatau, Walko,
+!     and Cotton.  (1992)  Journal of Applied Meteorology, Vol. 31,
+!     pp. 1507--1513
 !------------------------------------------------------------------------
 
     use constants, only: T_freeze_K
 
     implicit none
-
-    ! External
-    intrinsic :: exp
-
-    ! Parameter Constants
-    logical, parameter :: l_Flatau = .true.
 
     ! Relative error norm expansion (-50 to 50 deg_C) from
     ! Table 3 of pp. 1510 of Flatau et al. 1992 (Water Vapor)
@@ -100,49 +101,59 @@ module saturation
     real :: T_in_C
 !   integer :: i ! Loop index
 
-    if ( l_Flatau ) then
-      ! Determine deg K - 273.15
-      T_in_C = T_in_K - T_freeze_K
+    ! Determine deg K - 273.15
+    T_in_C = T_in_K - T_freeze_K
 
-      ! Polynomial approx. (Flatau, et al. 1992)
+    ! Polynomial approx. (Flatau, et al. 1992)
 
-      ! Formulation 1
-      ! This is the most generalized and the least efficient.
-      ! Based on Wexler's expressions(2.1)-(2.4) (See Flatau et al. p 1508)
-      ! e_{sat} = a_1 + a_2 ( T - T_0 ) + ... + a_{n+1} ( T - T_0 )^n
+    ! This is the generalized formula but is not computationally efficient.
+    ! Based on Wexler's expressions(2.1)-(2.4) (See Flatau et al. p 1508)
+    ! e_{sat} = a_1 + a_2 ( T - T_0 ) + ... + a_{n+1} ( T - T_0 )^n
 
-!     esat = a(1)
+!   esat = a(1)
 
-!     do i = 2, size( a ) , 1
-!       esat = esat + a(i) * ( T_in_C )**(i-1)
-!     end do
+!   do i = 2, size( a ) , 1
+!     esat = esat + a(i) * ( T_in_C )**(i-1)
+!   end do
 
-      ! Formulation 2 (no loop)
-      ! This would be efficient if GNU's libm pow function wasn't slow
-!    esat = 100.*( a(1) + a(2) * T_in_C + a(3) * T_in_C**2 + a(4) * T_in_C**3 &
-!       + a(5) * T_in_C**4 + a(6) * T_in_C**5 + a(7) * T_in_C**6 )
-
-      ! Formulation 3 (no pow, no loop)
-!     esat = ( a(1) + T_in_C *( a(2) + T_in_C *( a(3) + T_in_C *( a(4) + T_in_C &
-!        *( a(5) + T_in_C*( a(6) + T_in_C*( a(7) ) ) ) ) ) ) )
-
-      ! Experiment with the 8th order polynomial fit.  When running deep 
-      ! convective cases I noted that absolute temperature often dips below
-      ! -50 deg_C at higher altitudes, which may cause problems. 
-      ! -dschanen 20 Nov 2008
-      esat = a(1) + T_in_C*( a(2) + T_in_C*( a(3) + T_in_C*( a(4) + T_in_C &
-         *( a(5) + T_in_C*( a(6) + T_in_C*( a(7) + T_in_C*( a(8) + T_in_C*( a(9) ) ) ) ) ) ) ) )
-
-
-    else
-      ! (Bolton 1980) approx.
-      ! Generally more expensive, but not on Sun Fortran with -xlibmopt
-      esat = 611.2 * exp( (17.67*(T_in_K-T_freeze_K)) / (T_in_K-29.65) )
-    end if
+    ! The 8th order polynomial fit.  When running deep 
+    ! convective cases I noted that absolute temperature often dips below
+    ! -50 deg_C at higher altitudes, where the 6th order approximation is
+    ! not accurate.  -dschanen 20 Nov 2008
+    esat = a(1) + T_in_C*( a(2) + T_in_C*( a(3) + T_in_C*( a(4) + T_in_C &
+    *( a(5) + T_in_C*( a(6) + T_in_C*( a(7) + T_in_C*( a(8) + T_in_C*( a(9) ) ) ) ) ) ) ) )
 
     return
+  end function sat_vapor_press_liq_flatau
 
-  end function sat_vapor_press_liq
+
+!------------------------------------------------------------------------
+  pure function sat_vapor_press_liq_bolton( T_in_K ) result ( esat )
+! Description:
+!   Computes SVP for water vapor.
+! References:
+!   Bolton 1980
+!------------------------------------------------------------------------
+
+    use constants, only: T_freeze_K
+
+    implicit none
+
+    ! External
+    intrinsic :: exp
+
+    ! Input Variables
+    real, intent(in) :: T_in_K   ! Temperature   [K]
+
+    ! Output Variables
+    real :: esat  ! Saturation vapor pressure over water [Pa]
+
+    ! (Bolton 1980) approx.
+    ! Generally this more computationally expensive than the Flatau polnomial expansion
+    esat = 611.2 * exp( (17.67*(T_in_K-T_freeze_K)) / (T_in_K-29.65) )
+
+    return
+  end function sat_vapor_press_liq_bolton
 
 !------------------------------------------------------------------------
   real function sat_mixrat_ice( p_in_Pa, T_in_K )

@@ -247,6 +247,8 @@ module clubb_driver
       l_restart,      & ! Flag for restarting from GrADS file
       l_tke_aniso       ! For anisotropic turbulent kinetic energy,
                         ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+    integer :: &
+      saturation_formula ! 1 = Bolton approx., 2 = Flatau approx.
 
     character(len=50) ::  & 
       restart_path_case, & ! GrADS file used in case of restart
@@ -358,6 +360,8 @@ module clubb_driver
     restart_path_case = "none"
     time_restart  = 0.
     debug_level   = 2
+
+    saturation_formula = 2 ! Flatau polynomial approx.
 
     call set_albedo( 0.1d0 , 0.1d0, 0.1d0, 0.1d0 )
 
@@ -561,14 +565,15 @@ module clubb_driver
     ! setup grid, setup constants, and setup flags
 
     call setup_clubb_core &                               
-         ( nzmax, T0, ts_nudge, sol_const,&                     ! Intent(in)
-           std_atmos_buffer, hydromet_dim, sclr_dim, &          ! Intent(in)
-           sclr_tol(1:sclr_dim), edsclr_dim, params, &          ! Intent(in)
-           l_bugsrad, l_soil_veg, l_uv_nudge, l_tke_aniso, &    ! Intent(in)
-           .false., grid_type, deltaz, zm_init, &               ! Intent(in)
-           momentum_heights, thermodynamic_heights, &           ! Intent(in)
-           dummy_dx, dummy_dy, &                                ! Intent(in)
-           err_code )                                           ! Intent(out)
+         ( nzmax, T0, ts_nudge, sol_const,&             ! Intent(in)
+           std_atmos_buffer, hydromet_dim, sclr_dim, &  ! Intent(in)
+           sclr_tol(1:sclr_dim), edsclr_dim, params, &  ! Intent(in)
+           l_bugsrad, l_soil_veg, &                     ! Intent(in)
+           l_uv_nudge, l_tke_aniso, saturation_formula,&! Intent(in)
+           .false., grid_type, deltaz, zm_init, &       ! Intent(in)
+           momentum_heights, thermodynamic_heights, &   ! Intent(in)
+           dummy_dx, dummy_dy, &                        ! Intent(in)
+           err_code )                                   ! Intent(out)
 
 
     if ( err_code == clubb_var_out_of_bounds ) return
