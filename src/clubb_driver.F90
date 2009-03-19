@@ -1444,6 +1444,7 @@ module clubb_driver
     input_tau_zm = .true.
     input_tau_zt = .true.
     input_thvm = .true.
+    input_wpthvp = .true.
 
     select case ( trim( micro_scheme ) )
     case ( "coamps" )
