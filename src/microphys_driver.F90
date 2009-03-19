@@ -23,7 +23,8 @@ module microphys_driver
     l_fix_pgam,              & ! Fix pgam
     micro_scheme,            & ! The microphysical scheme in use
     hydromet_list,           & ! Names of the hydrometeor species
-    microphys_start_time       ! When to start the microphysics [s]
+    microphys_start_time,    & ! When to start the microphysics [s]
+    Ncm_initial                ! Initial value for Ncm
 
   implicit none
 
@@ -124,7 +125,7 @@ module microphys_driver
       corr_rrNr_LL_below, corr_srr_NL_below, &
       corr_sNr_NL_below, corr_sNc_NL_below, &
       C_evap, r_0, microphys_start_time, &
-      Nc0, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
+      Ncm_initial, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
       aer_n1, aer_n1, aer_sig1, aer_sig2, pgam_fixed
 
     ! ---- Begin Code ----
@@ -187,7 +188,7 @@ module microphys_driver
 
     pgam_fixed = 5.
 
-    Nc0 = 100.
+    Ncm_initial = 100.
 
     open(unit=iunit, file=namelist_file, status='old',action='read')
     read(iunit, nml=microphysics_setting)
@@ -224,6 +225,9 @@ module microphys_driver
       hydromet_list(iiNim)       = "Nim"
       hydromet_list(iiNgraupelm) = "Ngraupelm"
       hydromet_list(iiNcm)       = "Ncm"
+
+      ! Set Nc0 module_MP_graupel based on Ncm_initial
+      Nc0 = Ncm_initial
 
       ! Set flags from the Morrison scheme as in GRAUPEL_INIT
       if ( l_predictnc ) then
@@ -528,6 +532,13 @@ module microphys_driver
       iNsnowm_mc, &
       iNgraupelm_mc
 
+    use stats_variables, only: & 
+      irsnowm_sd, &
+      iricem_sd, & 
+      irrainm_sd, & 
+      irsnowm_sd, &
+      irgraupelm_sd
+
 
     use stats_variables, only: & 
         zt, &  ! Variables
@@ -616,7 +627,7 @@ module microphys_driver
     real, dimension(gr%nnzp) :: &
       rcm_tmp, & ! Temporary array for cloud water mixing ratio        [kg/kg]
       rvm_tmp, & ! Temporary array for vapor water mixing ratio        [kg/kg]
-      rcm_sten, & ! Cloud dropet sedimentation tendency                 [kg/kg/s]
+      rcm_sten, & ! Cloud dropet sedimentation tendency                [kg/kg/s]
       dzq         ! Difference in height levels [m]
 
 
@@ -776,11 +787,13 @@ module microphys_driver
              1,1, 1,1, 1,gr%nnzp, 1,1, 1,1, 1,gr%nnzp, &
              hydromet_mc(:,iirgraupelm), hydromet_mc(:,iiNgraupelm), &
              hydromet_tmp(:,iirgraupelm), hydromet_tmp(:,iiNgraupelm), effg, &
-             hydromet_sten(:,iirgraupelm), hydromet_sten(:,iiNrm), &
-             hydromet_sten(:,iiNim), hydromet_sten(:,iiNsnowm), &
+             hydromet_sten(:,iirgraupelm), hydromet_sten(:,iirrainm), &
+             hydromet_sten(:,iiricem), hydromet_sten(:,iirsnowm), &
              rcm_sten, cf )
 
       ! Update hydrometeor tendencies
+      ! This done because the hydromet_mc arrays that are produced by
+      ! M2005MICRO_GRAUPEL doesn't include the clipping term
       do i = 1, hydromet_dim, 1
         hydromet_mc(:,i) = ( hydromet_tmp(:,i) - hydromet(:,i)  ) / real( dt )
       end do
@@ -792,9 +805,13 @@ module microphys_driver
       thlm_mc = ( T_in_K2thlm( T_in_K, exner, rcm_tmp ) - thlm ) / real( dt )
 
       hydromet_vel(:,:) = 0.0 ! Sedimentation is handled within the Morrison microphysics
+
       if ( l_stats_samp ) then
 
-        ! Mixing ratios
+        ! -------- Total tendency from the Morrison microphysics --------
+        ! (Includes sedimentation, but not diffusion or mean advection)
+
+        ! --- Mixing ratios ---
 
         ! Sum total of rrainm microphysics
         call stat_update_var( irrainm_mc, hydromet_mc(:,iirrainm), zt )
@@ -808,7 +825,7 @@ module microphys_driver
         ! Sum total of graupel microphysics
         call stat_update_var( irgraupelm_mc, hydromet_mc(:,iirgraupelm), zt )
 
-        ! Number concentrations
+        ! --- Number concentrations ---
 
         ! Sum total of rain droplet number concentration microphysics
         call stat_update_var( iNrm_mc, hydromet_mc(:,iiNrm), zt )
@@ -821,6 +838,21 @@ module microphys_driver
 
         ! Sum total of graupel number concentration microphysics
         call stat_update_var( iNgraupelm_mc, hydromet_mc(:,iiNgraupelm), zt )
+
+        ! -------- Sedimentation tendency from Morrison microphysics --------
+
+        ! --- Mixing ratios ---
+
+        call stat_update_var( irgraupelm_sd, hydromet_sten(:,iirgraupelm), zt )
+
+        call stat_update_var( irrainm_sd, hydromet_sten(:,iirrainm), zt )
+
+        call stat_update_var( irsnowm_sd, hydromet_sten(:,iirsnowm), zt )
+
+        call stat_update_var( iricem_sd, hydromet_sten(:,iiricem), zt )
+
+        ! --- Number concentrations ---
+        ! No budgets
 
       end if ! l_stats_samp
 

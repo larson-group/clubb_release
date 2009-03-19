@@ -1339,6 +1339,49 @@ do i=1,zt%nn
     call stat_assign(iNgraupelm_cl,"Ngraupelm_cl", & 
          "Ngraupelm clipping term","(kg/kg)/s",zt)
     k = k + 1
+!!!
+  case ('Nim_bt')
+    iNim_bt = k
+    call stat_assign(iNim_bt,"Nim_bt", & 
+         "Nim budget","(count/kg)/s",zt)
+
+    k = k + 1
+ 
+  case ('Nim_ma')
+    iNim_ma = k
+
+    call stat_assign(iNim_ma,"Nim_ma", & 
+         "Nim mean advection","(count/kg)/s",zt)
+    k = k + 1
+ 
+  case ('Nim_sd')
+    iNim_sd = k
+
+    call stat_assign(iNim_sd,"Nim_sd", & 
+         "Nim sedimentation","(count/kg)/s",zt)
+
+    k = k + 1
+ 
+  case ('Nim_dff')
+    iNim_dff = k
+    call stat_assign(iNim_dff,"Nim_dff", & 
+         "Nim diffusion","(count/kg)/s",zt)
+
+    k = k + 1
+
+  case ('Nim_mc')
+    iNim_mc = k
+
+    call stat_assign(iNim_mc,"Nim_mc", & 
+         "Nim microphysics term","(kg/kg)/s",zt)
+    k = k + 1
+
+  case ('Nim_cl')
+    iNim_cl = k
+
+    call stat_assign(iNim_cl,"Nim_cl", & 
+         "Nim clipping term","(kg/kg)/s",zt)
+    k = k + 1
 
   case ('vm_bt')
     ivm_bt = k
