@@ -225,6 +225,10 @@ module inputfields
     call open_grads_read( 15, trim( datafile )//"_zt.ctl",  & 
                           fread_var )
 
+
+    ! Initialize l_error for case ( "hoc" )
+    l_error = .false.
+
     if ( input_um ) then
       call get_var( fread_var, "um", timestep, & 
                     um(1:gr%nnzp),  l_error )
@@ -542,6 +546,9 @@ module inputfields
                                     upper_lev_idx_zm(k), l_lin_int_zm(k) )
     enddo
 
+
+    ! Initialize l_error for case ( "rf1" )
+    l_error = .false.
 
     if ( input_um) then
       call get_var( fread_var, "um", timestep, & 
@@ -942,6 +949,9 @@ module inputfields
     enddo
 
 
+    ! Initialize l_error for case ( "les" )
+    l_error = .false.
+
     if ( input_um) then
       call get_var( fread_var, "um", timestep, & 
                     LES_tmp1(fread_var%ia:fread_var%iz), l_error )
@@ -1300,6 +1310,9 @@ module inputfields
                                     upper_lev_idx_zm(k), l_lin_int_zm(k) )
     enddo
 
+
+    ! Note:  l_error has already been initialized for both case ( "les" ) and
+    !        case ( "rf1" ).
 
     ! Note:  wpup_sgs and wpvp_sgs must be added to make the u'w' and v'w' terms
     !        as they are in CLUBB.
