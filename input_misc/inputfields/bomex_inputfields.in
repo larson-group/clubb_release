@@ -6,7 +6,7 @@ stdout   = .true.
 /
 
 &setfields
-datafile      = "../les_data/bomex"
+datafile      = "../les_data/les_runs/bomex"
 input_type    = "les"
 input_um      = .true.
 input_vm      = .true.

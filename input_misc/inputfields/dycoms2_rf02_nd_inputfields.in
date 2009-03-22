@@ -6,7 +6,7 @@ stdout   = .true.
 /
 
 &setfields
-datafile      = "../les_data/dycoms2_rf02_nd"
+datafile      = "../les_data/les_runs/dycoms2_rf02_nd"
 input_type    = "les"
 input_um      = .true.
 input_vm      = .true.

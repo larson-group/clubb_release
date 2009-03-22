@@ -5,7 +5,7 @@ stdout   = .true.
 /
 
 &setfields
-datafile      = "../les_data/atex"
+datafile      = "../les_data/les_runs/atex"
 input_type    = "les"
 input_um      = .true.
 input_vm      = .true.
