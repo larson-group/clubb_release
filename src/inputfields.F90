@@ -40,9 +40,14 @@ module inputfields
                      input_sfc_soil_T_in_K 
 
 
-  public  :: grads_fields_reader, compute_timestep, set_filenames
+  public  :: grads_fields_reader, &
+             compute_timestep, &
+             set_filenames
 
-  private :: lin_ext_zm_bottom, lin_ext_zt_bottom
+  private :: CLUBB_levels_within_LES_domain, &
+             LES_grid_to_CLUBB_grid, &
+             lin_ext_zm_bottom, &
+             lin_ext_zt_bottom
 
   private ! Default Scope
 
@@ -137,7 +142,7 @@ module inputfields
       zt2zm ! Procedure(s)
 
   use constants, only:  &
-      rttol,   & ! Variable(s)
+      rttol,    & ! Variable(s)
       wtol_sqd
 
   use array_index, only:  & 
@@ -148,6 +153,9 @@ module inputfields
       get_var,  & ! Procedure(s)
       open_grads_read, & 
       close_grads_read
+
+  use interpolation, only: &
+      lin_int ! Procedure(s)
 
   use soil_vegetation, only: deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K
 
@@ -161,23 +169,57 @@ module inputfields
 
   type (inputgrads) :: fread_var
 
+  real, dimension(:), allocatable :: LES_tmp1
+
   real, dimension(gr%nnzp+1) :: tmp1
 
-  integer :: k
+  integer ::  &
+    k_lowest_zt_input, &  ! The lowest CLUBB thermodynamic level that's within
+                          ! the LES domain.
+    k_highest_zt_input, & ! The highest CLUBB thermodynamic level that's within
+                          ! the LES domain.
+    k_lowest_zm_input, &  ! The lowest CLUBB momentum level that's within the
+                          ! LES domain.
+    k_highest_zm_input    ! The highest CLUBB momentum level that's within the
+                          ! LES domain.
+
+  ! Variables used to reconcile CLUBB thermodynamic levels with LES vertical levels.
+  integer, dimension(:), allocatable ::  &
+    exact_lev_idx_zt, & ! In case of an exact match, index of LES level that is
+                        ! exactly even with CLUBB thermodynamic level k.
+    lower_lev_idx_zt, & ! In case linear interpolation is needed, index of LES
+                        ! level that is immediately below CLUBB thermo. level k.
+    upper_lev_idx_zt    ! In case linear interpolation is needed, index of LES
+                        ! level that is immediately above CLUBB thermo. level k.
+
+  logical, dimension(:), allocatable ::  &
+    l_lin_int_zt  ! Flag that is turned on if linear interpolation is needed.
+
+  ! Variables used to reconcile CLUBB momentum levels with LES vertical levels.
+  integer, dimension(:), allocatable ::  &
+    exact_lev_idx_zm, & ! In case of an exact match, index of LES level that is
+                        ! exactly even with CLUBB momentum level k.
+    lower_lev_idx_zm, & ! In case linear interpolation is needed, index of LES
+                        ! level that is immediately below CLUBB momentum level k
+    upper_lev_idx_zm    ! In case linear interpolation is needed, index of LES
+                        ! level that is immediately above CLUBB momentum level k
+
+  logical, dimension(:), allocatable ::  &
+    l_lin_int_zm  ! Flag that is turned on if linear interpolation is needed.
+
+  integer :: k  ! Array index
 
 
   select case( input_type )
 
   case( "hoc" )
 
-    ! NOTE:  The code is not set up to compensate for grid 
-    !        discrepancies between the CLUBB GrADS file that is 
-    !        having its variable values passed in and the CLUBB 
-    !        inputfields run that is using those values as 
-    !        variable inputs.  Therefore, CLUBB should be set up
-    !        to match the number of grid levels and altitude of 
-    !        each grid level found in the CLUBB GrADS zt and zm
-    !        files.
+    ! NOTE:  The code is not set up to compensate for grid discrepancies between
+    !        the CLUBB GrADS file that is having its variable values passed in
+    !        and the CLUBB inputfields or restart run that is using those values
+    !        as variable inputs.  Therefore, CLUBB should be set up to match the
+    !        number of grid levels and altitude of each grid level found in the
+    !        CLUBB GrADS zt and zm files.
 
     !  Thermo grid - zt file 
     call open_grads_read( 15, trim( datafile )//"_zt.ctl",  & 
@@ -440,425 +482,782 @@ module inputfields
    endif
 
 
-    if ( l_error ) stop "oops, get_var failed in field_reader"
+    if ( l_error ) stop "oops, get_var failed in grads_fields_reader"
 
     call close_grads_read( fread_var )
 
 
   case( "rf1" )   ! special case for COAMPS DYCOMS-II RF01
 
-    ! NOTE:  The code is not set up to compensate for discrepancies
-    !        in thermodynamic level altitudes between CLUBB and 
-    !        COAMPS LES (other than for thermodynamic level 
-    !        indices).  Therefore, CLUBB should be set up so that 
-    !        CLUBB thermodynamic level altitudes from thermodynamic 
-    !        level indices 3 to gr%nnzp match COAMPS thermodynamic 
-    !        level altitudes from thermodynamic level indices 1 to 
-    !        gr%nnzp-2.
-
-!         stats_sm
+    ! stats_sm
     call open_grads_read( 15, trim(datafile)//"_coamps_sm.ctl",  & 
                           fread_var )
 
+    ! Temporarily store LES output in variable array LES_tmp1.
+    ! Allocate LES_tmp1 based on lowest and highest vertical indices of LES
+    ! output.
+    allocate( LES_tmp1(fread_var%ia:fread_var%iz) )
+
+    ! Find the lowest and highest indices of CLUBB thermodynamic levels that
+    ! fall within the domain of the LES output.
+    call CLUBB_levels_within_LES_domain( fread_var, gr%zt,  &
+                                         k_lowest_zt_input, k_highest_zt_input )
+
+    allocate( exact_lev_idx_zt(k_lowest_zt_input:k_highest_zt_input) )
+    allocate( lower_lev_idx_zt(k_lowest_zt_input:k_highest_zt_input) )
+    allocate( upper_lev_idx_zt(k_lowest_zt_input:k_highest_zt_input) )
+    allocate( l_lin_int_zt(k_lowest_zt_input:k_highest_zt_input) )
+
+    ! For all CLUBB thermodynamic levels, k, that are within the LES domain,
+    ! find either the index of the LES level that exactly matches the altitude
+    ! of the CLUBB level, or find the two indices of the LES levels that are on
+    ! either side of the CLUBB level.
+    do k = k_lowest_zt_input, k_highest_zt_input, 1
+       ! CLUBB vertical level k is found at an altitude that is within the
+       ! domain of the LES output.
+       call LES_grid_to_CLUBB_grid( fread_var, gr%zt, k,  &
+                                    exact_lev_idx_zt(k), lower_lev_idx_zt(k),  &
+                                    upper_lev_idx_zt(k), l_lin_int_zt(k) )
+    enddo
+
+    ! Find the lowest and highest indices of CLUBB momentum levels that fall
+    ! within the domain of the LES output.
+    call CLUBB_levels_within_LES_domain( fread_var, gr%zm,  &
+                                         k_lowest_zm_input, k_highest_zm_input )
+
+    allocate( exact_lev_idx_zm(k_lowest_zm_input:k_highest_zm_input) )
+    allocate( lower_lev_idx_zm(k_lowest_zm_input:k_highest_zm_input) )
+    allocate( upper_lev_idx_zm(k_lowest_zm_input:k_highest_zm_input) )
+    allocate( l_lin_int_zm(k_lowest_zm_input:k_highest_zm_input) )
+
+    ! For all CLUBB momentum levels, k, that are within the LES domain, find
+    ! either the index of the LES level that exactly matches the altitude of the
+    ! CLUBB level, or find the two indices of the LES levels that are on either
+    ! side of the CLUBB level.
+    do k = k_lowest_zm_input, k_highest_zm_input, 1
+       ! CLUBB vertical level k is found at an altitude that is within the
+       ! domain of the LES output.
+       call LES_grid_to_CLUBB_grid( fread_var, gr%zm, k,  &
+                                    exact_lev_idx_zm(k), lower_lev_idx_zm(k),  &
+                                    upper_lev_idx_zm(k), l_lin_int_zm(k) )
+    enddo
+
+
     if ( input_um) then
       call get_var( fread_var, "um", timestep, & 
-                    tmp1(1:gr%nnzp-2), l_error )
-      ! tmp1 is the value of um from the LES GrADS file.  
-      ! It has been output onto thermodynamic levels starting at 
-      ! thermodynamic level 3 on the CLUBB grid for this 
-      ! particular case.
-      um(3:gr%nnzp) = tmp1(1:gr%nnzp-2) 
-      ! Use the values of um at thermodynamic levels 4 and 3 
-      ! to find the value at thermodynamic level 2 through the use
-      ! of a linear extension.  Then, use the values of um at
-      ! thermodynamic levels 3 and 2 to find the value at 
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of um from the LES GrADS file.
+      do k = k_lowest_zt_input, k_highest_zt_input, 1
+         if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            um(k) = lin_int( gr%zt(k),  &
+                             fread_var%z(upper_lev_idx_zt(k)),  &
+                             fread_var%z(lower_lev_idx_zt(k)),  &
+                             LES_tmp1(upper_lev_idx_zt(k)),  &
+                             LES_tmp1(lower_lev_idx_zt(k)) )
+         else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            um(k) = LES_tmp1(exact_lev_idx_zt(k))
+         endif
+      enddo
+      ! When this is a standard scenario, where CLUBB thermodynamic level 3 is
+      ! the first thermodynamic level at or above the lowest LES level, use the
+      ! values of um at thermodynamic levels 4 and 3 to find the value at
+      ! thermodynamic level 2 through the use of a linear extension.  Then, use
+      ! the values of um at thermodynamic levels 3 and 2 to find the value at 
       ! thermodynamic level 1 through the use of a linear extension.
-      um(2)  & 
-      = lin_ext_zt_bottom( um(4), um(3), & 
-                           gr%zt(4), gr%zt(3), gr%zt(2) )
-      um(1)  & 
-      = lin_ext_zt_bottom( um(3), um(2), & 
-                           gr%zt(3), gr%zt(2), gr%zt(1) )
-    endif
-
-    if ( input_vm ) then 
-      call get_var( fread_var, "vm", timestep, & 
-                    tmp1(1:gr%nnzp-2), l_error )
-      ! tmp1 is the value of vm from the LES GrADS file.  
-      ! It has been output onto thermodynamic levels starting at 
-      ! thermodynamic level 3 on the CLUBB grid for this 
-      ! particular case.
-      vm(3:gr%nnzp) = tmp1(1:gr%nnzp-2) 
-      ! Use the values of vm at thermodynamic levels 4 and 3 
-      ! to find the value at thermodynamic level 2 through the use
-      ! of a linear extension.  Then, use the values of vm at
-      ! thermodynamic levels 3 and 2 to find the value at 
-      ! thermodynamic level 1 through the use of a linear extension.
-      vm(2)  & 
-      = lin_ext_zt_bottom( vm(4), vm(3), & 
-                           gr%zt(4), gr%zt(3), gr%zt(2) )
-      vm(1)  & 
-      = lin_ext_zt_bottom( vm(3), vm(2), & 
-                           gr%zt(3), gr%zt(2), gr%zt(1) )
-    endif
-
-    if ( input_rtm) then 
-      call get_var( fread_var, "qtm", timestep, & 
-                    tmp1(1:gr%nnzp-2), l_error )
-      ! tmp1 is the value of rtm from the LES GrADS file.  
-      ! It has been output onto thermodynamic levels starting at 
-      ! thermodynamic level 3 on the CLUBB grid for this 
-      ! particular case.
-      rtm(3:gr%nnzp) = tmp1(1:gr%nnzp-2) 
-      ! Set values of rtm at thermodynamic levels 2 and 1 to the
-      ! value at thermodynamic level 3.
-      rtm(1:2) = rtm(3)
-    endif
-
-    if ( input_thlm) then
-      call get_var( fread_var, "thlm",  & 
-                    timestep, & 
-                    tmp1(1:gr%nnzp-2), l_error )
-      ! tmp1 is the value of thlm from the LES GrADS file.  
-      ! It has been output onto thermodynamic levels starting at 
-      ! thermodynamic level 3 on the CLUBB grid for this 
-      ! particular case.
-      thlm(3:gr%nnzp) = tmp1(1:gr%nnzp-2) 
-      ! Set values of thlm at thermodynamic levels 2 and 1 to the
-      ! value at thermodynamic level 3.
-      thlm(1:2) = thlm(3)
-    endif
-
-    if ( input_wp3) then 
-      call get_var( fread_var, "wp3", timestep, & 
-                    tmp1(1:gr%nnzp-2), l_error )
-      ! tmp1 is the value of wp3 from the LES GrADS file.  
-      ! It has been output onto thermodynamic levels starting at 
-      ! thermodynamic level 3 on the CLUBB grid for this 
-      ! particular case.
-      wp3(3:gr%nnzp) = tmp1(1:gr%nnzp-2) 
-      ! Set values of wp3 at thermodynamic levels 2 and 1 to 0.
-      wp3(1:2) = 0.
-    endif
-
-    if ( input_wprtp) then
-      call get_var( fread_var, "wpqtp",  & 
-                    timestep, tmp1(1:gr%nnzp-1), & 
-                    l_error )
-      ! tmp1 is the value of wprtp from the LES GrADS file.  
-      ! It has been output onto thermodynamic levels starting at 
-      ! thermodynamic level 3 on the CLUBB grid for this 
-      ! particular case.  Interpolate the read-in values of 
-      ! wprtp to their appropriate places on the momentum levels.
-      wprtp(3:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-2) )
-      ! Use the values of wprtp at momentum levels 4 and 3 to 
-      ! find the value at momentum level 2 through the use of a
-      ! linear extension.  Then, use the values of wprtp at
-      ! momentum levels 3 and 2 to find the value at momentum
-      ! level 1 through the use of a linear extension.  It should 
-      ! be pointed out that the boundary flux is usually solved in
-      ! LES or hoc via a subroutine like sfc_var.
-      wprtp(2)  & 
-      = lin_ext_zm_bottom( wprtp(4), wprtp(3), & 
-                           gr%zm(4), gr%zm(3), gr%zm(2) )
-      wprtp(1)  & 
-      = lin_ext_zm_bottom( wprtp(3), wprtp(2), & 
-                           gr%zm(3), gr%zm(2), gr%zm(1) )
-    endif
-
-    if ( input_wpthlp) then 
-      call get_var( fread_var, "wpthlp",  & 
-                    timestep, tmp1(1:gr%nnzp-1),  & 
-                    l_error )
-      ! tmp1 is the value of wpthlp from the LES GrADS file.  
-      ! It has been output onto thermodynamic levels starting at 
-      ! thermodynamic level 3 on the CLUBB grid for this 
-      ! particular case.  Interpolate the read-in values of 
-      ! wpthlp to their appropriate places on the momentum levels.
-      wpthlp(3:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-2) )
-      ! Use the values of wpthlp at momentum levels 4 and 3 to 
-      ! find the value at momentum level 2 through the use of a
-      ! linear extension.  Then, use the values of wpthlp at
-      ! momentum levels 3 and 2 to find the value at momentum
-      ! level 1 through the use of a linear extension.  It should 
-      ! be pointed out that the boundary flux is usually solved in
-      ! LES or hoc via a subroutine like sfc_var.
-      wpthlp(2)  & 
-      = lin_ext_zm_bottom( wpthlp(4), wpthlp(3), & 
-                           gr%zm(4), gr%zm(3), gr%zm(2) )
-      wpthlp(1)  & 
-      = lin_ext_zm_bottom( wpthlp(3), wpthlp(2), & 
-                           gr%zm(3), gr%zm(2), gr%zm(1) )
-    endif
-
-    if ( input_rtp2) then 
-      call get_var( fread_var, "qtp2",  & 
-                    timestep, & 
-                    tmp1(1:gr%nnzp-1), l_error )
-      ! tmp1 is the value of rtp2 from the LES GrADS file.  
-      ! It has been output onto thermodynamic levels starting at 
-      ! thermodynamic level 3 on the CLUBB grid for this 
-      ! particular case.  Interpolate the read-in values of 
-      ! rtp2 to their appropriate places on the momentum levels.
-      rtp2(3:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-2) )
-      ! Using a linear extension here resulted in negatives.
-      rtp2(1:2) =  rtp2(3)
-      if ( any ( rtp2(1:gr%nnzp) < rttol**2 ) ) then
-! %% debug
-!              print *, "Some values of rtp2 are negative, compensating."
-! %% debug
-        do k=1, gr%nnzp
-          rtp2(k) = max(rtp2(k), rttol**2)
-        enddo
+      if ( k_lowest_zt_input == 3 ) then
+         um(2)  & 
+         = lin_ext_zt_bottom( um(4), um(3), & 
+                              gr%zt(4), gr%zt(3), gr%zt(2) )
+         um(1)  & 
+         = lin_ext_zt_bottom( um(3), um(2), & 
+                              gr%zt(3), gr%zt(2), gr%zt(1) )
       endif
     endif
 
-    if ( input_thlp2 ) then 
-      call get_var( fread_var, "thlp2",  & 
-                    timestep, tmp1(1:gr%nnzp), l_error )
-      ! tmp1 is the value of thlp2 from the LES GrADS file.  
-      ! It has been output onto thermodynamic levels starting at 
-      ! thermodynamic level 3 on the CLUBB grid for this 
-      ! particular case.  Interpolate the read-in values of 
-      ! thlp2 to their appropriate places on the momentum levels.
-      thlp2(3:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-2) )
+    if ( input_vm ) then
+      call get_var( fread_var, "vm", timestep, & 
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of vm from the LES GrADS file.
+      do k = k_lowest_zt_input, k_highest_zt_input, 1
+         if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            vm(k) = lin_int( gr%zt(k),  &
+                             fread_var%z(upper_lev_idx_zt(k)),  &
+                             fread_var%z(lower_lev_idx_zt(k)),  &
+                             LES_tmp1(upper_lev_idx_zt(k)),  &
+                             LES_tmp1(lower_lev_idx_zt(k)) )
+         else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            vm(k) = LES_tmp1(exact_lev_idx_zt(k))
+         endif
+      enddo
+      ! When this is a standard scenario, where CLUBB thermodynamic level 3 is
+      ! the first thermodynamic level at or above the lowest LES level, use the
+      ! values of vm at thermodynamic levels 4 and 3 to find the value at
+      ! thermodynamic level 2 through the use of a linear extension.  Then, use
+      ! the values of vm at thermodynamic levels 3 and 2 to find the value at
+      ! thermodynamic level 1 through the use of a linear extension.
+      if ( k_lowest_zt_input == 3 ) then
+         vm(2)  & 
+         = lin_ext_zt_bottom( vm(4), vm(3), & 
+                              gr%zt(4), gr%zt(3), gr%zt(2) )
+         vm(1)  & 
+         = lin_ext_zt_bottom( vm(3), vm(2), & 
+                              gr%zt(3), gr%zt(2), gr%zt(1) )
+      endif
+    endif
+
+    if ( input_rtm) then
+      call get_var( fread_var, "qtm", timestep, & 
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of rtm from the LES GrADS file.
+      do k = k_lowest_zt_input, k_highest_zt_input, 1
+         if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            rtm(k) = lin_int( gr%zt(k),  &
+                              fread_var%z(upper_lev_idx_zt(k)),  &
+                              fread_var%z(lower_lev_idx_zt(k)),  &
+                              LES_tmp1(upper_lev_idx_zt(k)),  &
+                              LES_tmp1(lower_lev_idx_zt(k)) )
+         else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            rtm(k) = LES_tmp1(exact_lev_idx_zt(k))
+         endif
+      enddo
+      ! When this is a standard scenario, where CLUBB thermodynamic level 3 is
+      ! the first thermodynamic level at or above the lowest LES level, set the
+      ! values of rtm at thermodynamic levels 2 and 1 to the value at
+      ! thermodynamic level 3.
+      if ( k_lowest_zt_input == 3 ) then
+         rtm(1:2) = rtm(3)
+      endif
+    endif
+
+    if ( input_thlm) then
+      call get_var( fread_var, "thlm", timestep, & 
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of thlm from the LES GrADS file.
+      do k = k_lowest_zt_input, k_highest_zt_input, 1
+         if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            thlm(k) = lin_int( gr%zt(k),  &
+                               fread_var%z(upper_lev_idx_zt(k)),  &
+                               fread_var%z(lower_lev_idx_zt(k)),  &
+                               LES_tmp1(upper_lev_idx_zt(k)),  &
+                               LES_tmp1(lower_lev_idx_zt(k)) )
+         else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            thlm(k) = LES_tmp1(exact_lev_idx_zt(k))
+         endif
+      enddo
+      ! When this is a standard scenario, where CLUBB thermodynamic level 3 is
+      ! the first thermodynamic level at or above the lowest LES level, set the
+      ! values of thlm at thermodynamic levels 2 and 1 to the value at
+      ! thermodynamic level 3.
+      if ( k_lowest_zt_input == 3 ) then
+         thlm(1:2) = thlm(3)
+      endif
+    endif
+
+    if ( input_wp3) then
+      call get_var( fread_var, "wp3", timestep, & 
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of wp3 from the LES GrADS file.
+      do k = k_lowest_zt_input, k_highest_zt_input, 1
+         if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            wp3(k) = lin_int( gr%zt(k),  &
+                              fread_var%z(upper_lev_idx_zt(k)),  &
+                              fread_var%z(lower_lev_idx_zt(k)),  &
+                              LES_tmp1(upper_lev_idx_zt(k)),  &
+                              LES_tmp1(lower_lev_idx_zt(k)) )
+         else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            wp3(k) = LES_tmp1(exact_lev_idx_zt(k))
+         endif
+      enddo
+      ! When this is a standard scenario, where CLUBB thermodynamic level 3 is
+      ! the first thermodynamic level at or above the lowest LES level, set the
+      ! values of wp3 at thermodynamic levels 2 and 1 to 0.
+      if ( k_lowest_zt_input == 3 ) then
+         wp3(1:2) = 0.
+      endif
+    endif
+
+    if ( input_wprtp) then
+      call get_var( fread_var, "wpqtp", timestep, &
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of wprtp from the LES GrADS file.
+      do k = k_lowest_zm_input, k_highest_zm_input, 1
+         if ( l_lin_int_zm(k) ) then
+            ! CLUBB momentum level k is found at an altitude that is between two
+            ! LES levels.  Linear interpolation is required.
+            wprtp(k) = lin_int( gr%zm(k),  &
+                                fread_var%z(upper_lev_idx_zm(k)),  &
+                                fread_var%z(lower_lev_idx_zm(k)),  &
+                                LES_tmp1(upper_lev_idx_zm(k)),  &
+                                LES_tmp1(lower_lev_idx_zm(k)) )
+         else
+            ! CLUBB momentum level k is found at an altitude that is an exact
+            ! match with an LES level altitude.
+            wprtp(k) = LES_tmp1(exact_lev_idx_zm(k))
+         endif
+      enddo
+      ! When this is a standard scenario, where CLUBB momentum level 3 is the
+      ! first momentum level above the lowest LES level, use the values of
+      ! wprtp at momentum levels 4 and 3 to find the value at momentum level 2
+      ! through the use of a linear extension.  Then, use the values of wprtp
+      ! at momentum levels 3 and 2 to find the value at momentum level 1 through
+      ! the use of a linear extension.  It should be pointed out that the
+      ! boundary flux is usually solved in LES or CLUBB via a subroutine
+      ! like sfc_var.
+      if ( k_lowest_zm_input == 3 ) then
+         wprtp(2)  & 
+         = lin_ext_zm_bottom( wprtp(4), wprtp(3), & 
+                              gr%zm(4), gr%zm(3), gr%zm(2) )
+         wprtp(1)  & 
+         = lin_ext_zm_bottom( wprtp(3), wprtp(2), & 
+                              gr%zm(3), gr%zm(2), gr%zm(1) )
+      endif
+    endif
+
+    if ( input_wpthlp) then
+      call get_var( fread_var, "wpthlp", timestep,  &
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of wpthlp from the LES GrADS file.
+      do k = k_lowest_zm_input, k_highest_zm_input, 1
+         if ( l_lin_int_zm(k) ) then
+            ! CLUBB momentum level k is found at an altitude that is between two
+            ! LES levels.  Linear interpolation is required.
+            wpthlp(k) = lin_int( gr%zm(k),  &
+                                 fread_var%z(upper_lev_idx_zm(k)),  &
+                                 fread_var%z(lower_lev_idx_zm(k)),  &
+                                 LES_tmp1(upper_lev_idx_zm(k)),  &
+                                 LES_tmp1(lower_lev_idx_zm(k)) )
+         else
+            ! CLUBB momentum level k is found at an altitude that is an exact
+            ! match with an LES level altitude.
+            wpthlp(k) = LES_tmp1(exact_lev_idx_zm(k))
+         endif
+      enddo
+      ! When this is a standard scenario, where CLUBB momentum level 3 is the
+      ! first momentum level above the lowest LES level, use the values of
+      ! wpthlp at momentum levels 4 and 3 to find the value at momentum level 2
+      ! through the use of a linear extension.  Then, use the values of wpthlp
+      ! at momentum levels 3 and 2 to find the value at momentum level 1 through
+      ! the use of a linear extension.  It should be pointed out that the
+      ! boundary flux is usually solved in LES or CLUBB via a subroutine
+      ! like sfc_var.
+      if ( k_lowest_zm_input == 3 ) then
+         wpthlp(2)  & 
+         = lin_ext_zm_bottom( wpthlp(4), wpthlp(3), & 
+                              gr%zm(4), gr%zm(3), gr%zm(2) )
+         wpthlp(1)  & 
+         = lin_ext_zm_bottom( wpthlp(3), wpthlp(2), & 
+                              gr%zm(3), gr%zm(2), gr%zm(1) )
+      endif
+    endif
+
+    if ( input_rtp2) then
+      call get_var( fread_var, "qtp2", timestep, &
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of rtp2 from the LES GrADS file.
+      do k = k_lowest_zm_input, k_highest_zm_input, 1
+         if ( l_lin_int_zm(k) ) then
+            ! CLUBB momentum level k is found at an altitude that is between two
+            ! LES levels.  Linear interpolation is required.
+            rtp2(k) = lin_int( gr%zm(k),  &
+                               fread_var%z(upper_lev_idx_zm(k)),  &
+                               fread_var%z(lower_lev_idx_zm(k)),  &
+                               LES_tmp1(upper_lev_idx_zm(k)),  &
+                               LES_tmp1(lower_lev_idx_zm(k)) )
+         else
+            ! CLUBB momentum level k is found at an altitude that is an exact
+            ! match with an LES level altitude.
+            rtp2(k) = LES_tmp1(exact_lev_idx_zm(k))
+         endif
+      enddo
+      ! When this is a standard scenario, where CLUBB momentum level 3 is the
+      ! first momentum level above the lowest LES level, set the values of rtp2
+      ! at momentum levels 1 and 2 to the value at momentum level 3.
       ! Using a linear extension here resulted in negatives.
-      thlp2(1:2) = thlp2(3)
+      if ( k_lowest_zm_input == 3 ) then
+         rtp2(1:2) = rtp2(3)
+      endif
+      if ( any ( rtp2(1:gr%nnzp) < rttol**2 ) ) then
+         do k=1, gr%nnzp
+            rtp2(k) = max(rtp2(k), rttol**2)
+         enddo
+       endif
     endif
 
-    if ( input_rtpthlp) then 
-      call get_var( fread_var, "qtpthlp",  & 
-                    timestep, tmp1(1:gr%nnzp-1), & 
-                    l_error )
-      ! tmp1 is the value of rtpthlp from the LES GrADS file.  
-      ! It has been output onto thermodynamic levels starting at 
-      ! thermodynamic level 3 on the CLUBB grid for this 
-      ! particular case.  Interpolate the read-in values of 
-      ! rtpthlp to their appropriate places on the momentum levels.
-      rtpthlp(3:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-2) )
-      ! Use the values of rtpthlp at momentum levels 4 and 3 to 
-      ! find the value at momentum level 2 through the use of a
-      ! linear extension.  Then, use the values of rtpthlp at
-      ! momentum levels 3 and 2 to find the value at momentum
-      ! level 1 through the use of a linear extension.  It should 
-      ! be pointed out that the boundary flux is usually solved in
-      ! LES or hoc via a subroutine like sfc_var.
-      rtpthlp(2)  & 
-      = lin_ext_zm_bottom( rtpthlp(4), rtpthlp(3), & 
-                           gr%zm(4), gr%zm(3), gr%zm(2) )
-      rtpthlp(1)  & 
-      = lin_ext_zm_bottom( rtpthlp(3), rtpthlp(2), & 
-                           gr%zm(3), gr%zm(2), gr%zm(1) )
+    if ( input_thlp2 ) then
+      call get_var( fread_var, "thlp2", timestep, &
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of thlp2 from the LES GrADS file.
+      do k = k_lowest_zm_input, k_highest_zm_input, 1
+         if ( l_lin_int_zm(k) ) then
+            ! CLUBB momentum level k is found at an altitude that is between two
+            ! LES levels.  Linear interpolation is required.
+            thlp2(k) = lin_int( gr%zm(k),  &
+                                fread_var%z(upper_lev_idx_zm(k)),  &
+                                fread_var%z(lower_lev_idx_zm(k)),  &
+                                LES_tmp1(upper_lev_idx_zm(k)),  &
+                                LES_tmp1(lower_lev_idx_zm(k)) )
+         else
+            ! CLUBB momentum level k is found at an altitude that is an exact
+            ! match with an LES level altitude.
+            thlp2(k) = LES_tmp1(exact_lev_idx_zm(k))
+         endif
+      enddo
+      ! When this is a standard scenario, where CLUBB momentum level 3 is the
+      ! first momentum level above the lowest LES level, set the values of thlp2
+      ! at momentum levels 1 and 2 to the value at momentum level 3.
+      ! Using a linear extension here resulted in negatives.
+      if ( k_lowest_zm_input == 3 ) then
+         thlp2(1:2) = thlp2(3)
+      endif
     endif
 
-    if ( l_error ) stop "oops, get_var failed in field_reader"
+    if ( input_rtpthlp) then
+      call get_var( fread_var, "qtpthlp", timestep, &
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of rtpthlp from the LES GrADS file.
+      do k = k_lowest_zm_input, k_highest_zm_input, 1
+         if ( l_lin_int_zm(k) ) then
+            ! CLUBB momentum level k is found at an altitude that is between two
+            ! LES levels.  Linear interpolation is required.
+            rtpthlp(k) = lin_int( gr%zm(k),  &
+                                  fread_var%z(upper_lev_idx_zm(k)),  &
+                                  fread_var%z(lower_lev_idx_zm(k)),  &
+                                  LES_tmp1(upper_lev_idx_zm(k)),  &
+                                  LES_tmp1(lower_lev_idx_zm(k)) )
+         else
+            ! CLUBB momentum level k is found at an altitude that is an exact
+            ! match with an LES level altitude.
+            rtpthlp(k) = LES_tmp1(exact_lev_idx_zm(k))
+         endif
+      enddo
+      ! When this is a standard scenario, where CLUBB momentum level 3 is the
+      ! first momentum level above the lowest LES level, use the values of
+      ! rtpthlp at momentum levels 4 and 3 to find the value at momentum level 2
+      ! through the use of a linear extension.  Then, use the values of rtpthlp
+      ! at momentum levels 3 and 2 to find the value at momentum level 1 through
+      ! the use of a linear extension.  It should be pointed out that the
+      ! boundary flux is usually solved in LES or CLUBB via a subroutine
+      ! like sfc_var.
+      if ( k_lowest_zm_input == 3 ) then
+         rtpthlp(2)  & 
+         = lin_ext_zm_bottom( rtpthlp(4), rtpthlp(3), & 
+                              gr%zm(4), gr%zm(3), gr%zm(2) )
+         rtpthlp(1)  & 
+         = lin_ext_zm_bottom( rtpthlp(3), rtpthlp(2), & 
+                              gr%zm(3), gr%zm(2), gr%zm(1) )
+      endif
+    endif
+
+    if ( l_error ) stop "oops, get_var failed in grads_fields_reader"
+
+    ! Deallocate temporary storage variable LES_tmp1.
+    deallocate( LES_tmp1 )
+
+    deallocate( exact_lev_idx_zt )
+    deallocate( lower_lev_idx_zt )
+    deallocate( upper_lev_idx_zt )
+    deallocate( l_lin_int_zt )
+
+    deallocate( exact_lev_idx_zm )
+    deallocate( lower_lev_idx_zm )
+    deallocate( upper_lev_idx_zm )
+    deallocate( l_lin_int_zm )
 
     call close_grads_read( fread_var )
 
 
   case( "les" )   ! COAMPS LES -- all other cases.
 
-    ! NOTE:  The code is not set up to compensate for discrepancies
-    !        in thermodynamic level altitudes between CLUBB and 
-    !        COAMPS LES (other than for thermodynamic level 
-    !        indices).  Therefore, CLUBB should be set up so that 
-    !        CLUBB thermodynamic level altitudes from thermodynamic 
-    !        level indices 2 to gr%nnzp match COAMPS thermodynamic 
-    !        level altitudes from thermodynamic level indices 1 to 
-    !        gr%nnzp-1.
-
-!         stats_sm
+    ! stats_sm
     call open_grads_read( 15, trim(datafile)//"_coamps_sm.ctl",  & 
                           fread_var )
 
+    ! Temporarily store LES output in variable array LES_tmp1.
+    ! Allocate LES_tmp1 based on lowest and highest vertical indices of LES
+    ! output.
+    allocate( LES_tmp1(fread_var%ia:fread_var%iz) )
+
+    ! Find the lowest and highest indices of CLUBB thermodynamic levels that
+    ! fall within the domain of the LES output.
+    call CLUBB_levels_within_LES_domain( fread_var, gr%zt,  &
+                                         k_lowest_zt_input, k_highest_zt_input )
+
+    allocate( exact_lev_idx_zt(k_lowest_zt_input:k_highest_zt_input) )
+    allocate( lower_lev_idx_zt(k_lowest_zt_input:k_highest_zt_input) )
+    allocate( upper_lev_idx_zt(k_lowest_zt_input:k_highest_zt_input) )
+    allocate( l_lin_int_zt(k_lowest_zt_input:k_highest_zt_input) )
+
+    ! For all CLUBB thermodynamic levels, k, that are within the LES domain,
+    ! find either the index of the LES level that exactly matches the altitude
+    ! of the CLUBB level, or find the two indices of the LES levels that are on
+    ! either side of the CLUBB level.
+    do k = k_lowest_zt_input, k_highest_zt_input, 1
+       ! CLUBB vertical level k is found at an altitude that is within the
+       ! domain of the LES output.
+       call LES_grid_to_CLUBB_grid( fread_var, gr%zt, k,  &
+                                    exact_lev_idx_zt(k), lower_lev_idx_zt(k),  &
+                                    upper_lev_idx_zt(k), l_lin_int_zt(k) )
+    enddo
+
+    ! Find the lowest and highest indices of CLUBB momentum levels that fall
+    ! within the domain of the LES output.
+    call CLUBB_levels_within_LES_domain( fread_var, gr%zm,  &
+                                         k_lowest_zm_input, k_highest_zm_input )
+
+    allocate( exact_lev_idx_zm(k_lowest_zm_input:k_highest_zm_input) )
+    allocate( lower_lev_idx_zm(k_lowest_zm_input:k_highest_zm_input) )
+    allocate( upper_lev_idx_zm(k_lowest_zm_input:k_highest_zm_input) )
+    allocate( l_lin_int_zm(k_lowest_zm_input:k_highest_zm_input) )
+
+    ! For all CLUBB momentum levels, k, that are within the LES domain, find
+    ! either the index of the LES level that exactly matches the altitude of the
+    ! CLUBB level, or find the two indices of the LES levels that are on either
+    ! side of the CLUBB level.
+    do k = k_lowest_zm_input, k_highest_zm_input, 1
+       ! CLUBB vertical level k is found at an altitude that is within the
+       ! domain of the LES output.
+       call LES_grid_to_CLUBB_grid( fread_var, gr%zm, k,  &
+                                    exact_lev_idx_zm(k), lower_lev_idx_zm(k),  &
+                                    upper_lev_idx_zm(k), l_lin_int_zm(k) )
+    enddo
+
+
     if ( input_um) then
       call get_var( fread_var, "um", timestep, & 
-                    tmp1(1:gr%nnzp), l_error )
-      ! tmp1 is the value of um from the LES GrADS file.  
-      ! It has been output onto thermodynamic levels starting at 
-      ! the first level above ground (thermodynamic level 2 on 
-      ! the CLUBB grid). 
-      um(2:gr%nnzp) = tmp1(1:gr%nnzp-1) 
-      ! Use the values of um at thermodynamic levels 3 and 2 
-      ! to find the value at thermodynamic level 1 through the use
-      ! of a linear extension.  
-      um(1)  & 
-      = lin_ext_zt_bottom( um(3), um(2), & 
-                           gr%zt(3), gr%zt(2), gr%zt(1) )
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of um from the LES GrADS file.
+      do k = k_lowest_zt_input, k_highest_zt_input, 1
+         if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            um(k) = lin_int( gr%zt(k),  &
+                             fread_var%z(upper_lev_idx_zt(k)),  &
+                             fread_var%z(lower_lev_idx_zt(k)),  &
+                             LES_tmp1(upper_lev_idx_zt(k)),  &
+                             LES_tmp1(lower_lev_idx_zt(k)) )
+         else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            um(k) = LES_tmp1(exact_lev_idx_zt(k))
+         endif
+      enddo
+      ! When this is a standard scenario, where CLUBB thermodynamic level 2 is
+      ! the first thermodynamic level at or above the lowest LES level, use the
+      ! values of um at thermodynamic levels 3 and 2 to find the value at
+      ! thermodynamic level 1 through the use of a linear extension.
+      if ( k_lowest_zt_input == 2 ) then
+         um(1)  & 
+         = lin_ext_zt_bottom( um(3), um(2), & 
+                              gr%zt(3), gr%zt(2), gr%zt(1) )
+         
+      endif
     endif
 
     if ( input_vm) then 
       call get_var( fread_var, "vm", timestep, & 
-                    tmp1(1:gr%nnzp), l_error )
-      ! tmp1 is the value of vm from the LES GrADS file.  
-      ! It has been output onto thermodynamic levels starting at 
-      ! the first level above ground (thermodynamic level 2 on 
-      ! the CLUBB grid). 
-      vm(2:gr%nnzp) = tmp1(1:gr%nnzp-1) 
-      ! Use the values of um at thermodynamic levels 3 and 2 
-      ! to find the value at thermodynamic level 1 through the use
-      ! of a linear extension.  
-      vm(1)  & 
-      = lin_ext_zt_bottom( vm(3), vm(2), & 
-                           gr%zt(3), gr%zt(2), gr%zt(1) )
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of vm from the LES GrADS file.
+      do k = k_lowest_zt_input, k_highest_zt_input, 1
+         if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            vm(k) = lin_int( gr%zt(k),  &
+                             fread_var%z(upper_lev_idx_zt(k)),  &
+                             fread_var%z(lower_lev_idx_zt(k)),  &
+                             LES_tmp1(upper_lev_idx_zt(k)),  &
+                             LES_tmp1(lower_lev_idx_zt(k)) )
+         else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            vm(k) = LES_tmp1(exact_lev_idx_zt(k))
+         endif
+      enddo
+      ! When this is a standard scenario, where CLUBB thermodynamic level 2 is
+      ! the first thermodynamic level at or above the lowest LES level, use the
+      ! values of vm at thermodynamic levels 3 and 2 to find the value at
+      ! thermodynamic level 1 through the use of a linear extension.
+      if ( k_lowest_zt_input == 2 ) then
+         vm(1)  & 
+         = lin_ext_zt_bottom( vm(3), vm(2), & 
+                              gr%zt(3), gr%zt(2), gr%zt(1) )
+      endif
     endif
 
     if ( input_rtm) then 
       call get_var( fread_var, "qtm", timestep, & 
-                    tmp1(1:gr%nnzp), l_error )
-      ! tmp1 is the value of rtm from the LES GrADS file.  
-      ! It has been output onto thermodynamic levels starting at 
-      ! the first level above ground (thermodynamic level 2 on 
-      ! the CLUBB grid). 
-      rtm(2:gr%nnzp) = tmp1(1:gr%nnzp-1) 
-      ! Set values of rtm at thermodynamic level 1 to the value 
-      ! at thermodynamic level 2, as it is done in mixing.F.
-      rtm(1) = rtm(2)
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of rtm from the LES GrADS file.
+      do k = k_lowest_zt_input, k_highest_zt_input, 1
+         if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            rtm(k) = lin_int( gr%zt(k),  &
+                              fread_var%z(upper_lev_idx_zt(k)),  &
+                              fread_var%z(lower_lev_idx_zt(k)),  &
+                              LES_tmp1(upper_lev_idx_zt(k)),  &
+                              LES_tmp1(lower_lev_idx_zt(k)) )
+         else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            rtm(k) = LES_tmp1(exact_lev_idx_zt(k))
+         endif
+      enddo
+      ! When this is a standard scenario, where CLUBB thermodynamic level 2 is
+      ! the first thermodynamic level at or above the lowest LES level, set the
+      ! value of rtm at thermodynamic level 1 to the value at thermodynamic
+      ! level 2, as it is done in advance_xm_wpxp.
+      if ( k_lowest_zt_input == 2 ) then
+         rtm(1) = rtm(2)
+      endif
     endif
 
     if ( input_thlm) then
-      call get_var( fread_var, "thlm",  & 
-                    timestep, & 
-                    tmp1(1:gr%nnzp), l_error )
-      ! tmp1 is the value of thlm from the LES GrADS file.  
-      ! It has been output onto thermodynamic levels starting at 
-      ! the first level above ground (thermodynamic level 2 on 
-      ! the CLUBB grid). 
-      thlm(2:gr%nnzp) = tmp1(1:gr%nnzp-1) 
-      ! Set values of thlm at thermodynamic level 1 to the value 
-      ! at thermodynamic level 2, as it is done in mixing.F.
-      thlm(1) = thlm(2)
+      call get_var( fread_var, "thlm", timestep, & 
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of thlm from the LES GrADS file.
+      do k = k_lowest_zt_input, k_highest_zt_input, 1
+         if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            thlm(k) = lin_int( gr%zt(k),  &
+                               fread_var%z(upper_lev_idx_zt(k)),  &
+                               fread_var%z(lower_lev_idx_zt(k)),  &
+                               LES_tmp1(upper_lev_idx_zt(k)),  &
+                               LES_tmp1(lower_lev_idx_zt(k)) )
+         else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            thlm(k) = LES_tmp1(exact_lev_idx_zt(k))
+         endif
+      enddo
+      ! When this is a standard scenario, where CLUBB thermodynamic level 2 is
+      ! the first thermodynamic level at or above the lowest LES level, set the
+      ! value of thlm at thermodynamic level 1 to the value at thermodynamic
+      ! level 2, as it is done in advance_xm_wpxp.
+      if ( k_lowest_zt_input == 2 ) then
+         thlm(1) = thlm(2)
+      endif
     endif
 
     if ( input_wp3) then 
       call get_var( fread_var, "wp3", timestep, & 
-                    tmp1(1:gr%nnzp), l_error )
-      ! tmp1 is the value of wp3 from the LES GrADS file.  
-      ! It has been output onto thermodynamic levels starting at 
-      ! the first level above ground (thermodynamic level 2 on 
-      ! the CLUBB grid). 
-      wp3(2:gr%nnzp) = tmp1(1:gr%nnzp-1) 
-      ! Set values of wp3 at thermodynamic level 1 to 0, as it is
-      ! done in wp23.F.
-      wp3(1) = 0.  ! Computed as in hoc.F
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of wp3 from the LES GrADS file.
+      do k = k_lowest_zt_input, k_highest_zt_input, 1
+         if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            wp3(k) = lin_int( gr%zt(k),  &
+                              fread_var%z(upper_lev_idx_zt(k)),  &
+                              fread_var%z(lower_lev_idx_zt(k)),  &
+                              LES_tmp1(upper_lev_idx_zt(k)),  &
+                              LES_tmp1(lower_lev_idx_zt(k)) )
+         else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            wp3(k) = LES_tmp1(exact_lev_idx_zt(k))
+         endif
+      enddo
+      ! When this is a standard scenario, where CLUBB thermodynamic level 2 is
+      ! the first thermodynamic level at or above the lowest LES level, set the
+      ! value of wp3 at thermodynamic level 1 to 0, as it is done in
+      ! advance_wp2_wp3.
+      if ( k_lowest_zt_input == 2 ) then
+         wp3(1) = 0.0
+      endif
     endif
 
-!          if ( ( wp2 )) then 
-!            call get_var( fread_var, "wp2", timestep,
-!     .                    tmp1(1:gr%nnzp), l_error )
-!            ! tmp1 is the value of wp2 from the LES GrADS file.  
-!            ! It has been output onto thermodynamic levels starting at 
-!            ! the first level above ground (thermodynamic level 2 on 
-!            ! the CLUBB grid).  Interpolate the read-in values of 
-!            ! wp2 to their appropriate places on the momentum levels.
-!            wp2(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
-!            ! Use the values of wp2 at momentum levels 3 and 2 to 
-!            ! find the value at momentum level 1 through the use of a
-!            ! linear extension.  It should be pointed out that the 
-!            ! boundary flux is usually solved in LES or hoc via a 
-!            ! subroutine like sfc_var.
-!            wp2(1) 
-!     .      = lin_ext_zm_bottom( wp2(3), wp2(2),
-!     .                           gr%zm(3), gr%zm(2), gr%zm(1) )
-!          endif
-
     if ( input_wprtp) then
-      call get_var( fread_var, "wpqtp",  & 
-                    timestep, tmp1(1:gr%nnzp), & 
-                    l_error )
-      ! tmp1 is the value of wprtp from the LES GrADS file.  
-      ! It has been output onto thermodynamic levels starting at 
-      ! the first level above ground (thermodynamic level 2 on 
-      ! the CLUBB grid).  Interpolate the read-in values of 
-      ! wprtp to their appropriate places on the momentum levels.
-      wprtp(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
-      ! Use the values of wprtp at momentum levels 3 and 2 to 
-      ! find the value at momentum level 1 through the use of a
-      ! linear extension.  It should be pointed out that the 
-      ! boundary flux is usually solved in LES or hoc via a 
-      ! subroutine like sfc_var.
-      wprtp(1)  & 
-      = lin_ext_zm_bottom( wprtp(3), wprtp(2), & 
-                           gr%zm(3), gr%zm(2), gr%zm(1) )
+      call get_var( fread_var, "wpqtp", timestep, &
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of wprtp from the LES GrADS file.
+      do k = k_lowest_zm_input, k_highest_zm_input, 1
+         if ( l_lin_int_zm(k) ) then
+            ! CLUBB momentum level k is found at an altitude that is between two
+            ! LES levels.  Linear interpolation is required.
+            wprtp(k) = lin_int( gr%zm(k),  &
+                                fread_var%z(upper_lev_idx_zm(k)),  &
+                                fread_var%z(lower_lev_idx_zm(k)),  &
+                                LES_tmp1(upper_lev_idx_zm(k)),  &
+                                LES_tmp1(lower_lev_idx_zm(k)) )
+         else
+            ! CLUBB momentum level k is found at an altitude that is an exact
+            ! match with an LES level altitude.
+            wprtp(k) = LES_tmp1(exact_lev_idx_zm(k))
+         endif
+      enddo
+      ! When this is a standard scenario, where CLUBB momentum level 2 is the
+      ! first momentum level above the lowest LES level, use the values of
+      ! wprtp at momentum levels 3 and 2 to find the value at momentum level 1
+      ! through the use of a linear extension.  It should be pointed out that
+      ! the boundary flux is usually solved in LES or CLUBB via a subroutine
+      ! like sfc_var.
+      if ( k_lowest_zm_input == 2 ) then
+         wprtp(1)  & 
+         = lin_ext_zm_bottom( wprtp(3), wprtp(2), & 
+                              gr%zm(3), gr%zm(2), gr%zm(1) )
+      endif
     endif
 
     if ( input_wpthlp) then 
-      call get_var( fread_var, "wpthlp",  & 
-                    timestep, tmp1(1:gr%nnzp),  & 
-                    l_error )
-      ! tmp1 is the value of wpthlp from the LES GrADS file.  
-      ! It has been output onto thermodynamic levels starting at 
-      ! the first level above ground (thermodynamic level 2 on 
-      ! the CLUBB grid).  Interpolate the read-in values of 
-      ! wpthlp to their appropriate places on the momentum levels.
-      wpthlp(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
-      ! Use the values of wpthlp at momentum levels 3 and 2 to 
-      ! find the value at momentum level 1 through the use of a
-      ! linear extension.  It should be pointed out that the 
-      ! boundary flux is usually solved in LES or hoc via a 
-      ! subroutine like sfc_var.
-      wpthlp(1)  & 
-      = lin_ext_zm_bottom( wpthlp(3), wpthlp(2), & 
-                           gr%zm(3), gr%zm(2), gr%zm(1) )
+      call get_var( fread_var, "wpthlp", timestep,  &
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of wpthlp from the LES GrADS file.
+      do k = k_lowest_zm_input, k_highest_zm_input, 1
+         if ( l_lin_int_zm(k) ) then
+            ! CLUBB momentum level k is found at an altitude that is between two
+            ! LES levels.  Linear interpolation is required.
+            wpthlp(k) = lin_int( gr%zm(k),  &
+                                 fread_var%z(upper_lev_idx_zm(k)),  &
+                                 fread_var%z(lower_lev_idx_zm(k)),  &
+                                 LES_tmp1(upper_lev_idx_zm(k)),  &
+                                 LES_tmp1(lower_lev_idx_zm(k)) )
+         else
+            ! CLUBB momentum level k is found at an altitude that is an exact
+            ! match with an LES level altitude.
+            wpthlp(k) = LES_tmp1(exact_lev_idx_zm(k))
+         endif
+      enddo
+      ! When this is a standard scenario, where CLUBB momentum level 2 is the
+      ! first momentum level above the lowest LES level, use the values of
+      ! wpthlp at momentum levels 3 and 2 to find the value at momentum level 1
+      ! through the use of a linear extension.  It should be pointed out that
+      ! the boundary flux is usually solved in LES or CLUBB via a subroutine
+      ! like sfc_var.
+      if ( k_lowest_zm_input == 2 ) then
+         wpthlp(1)  & 
+         = lin_ext_zm_bottom( wpthlp(3), wpthlp(2), & 
+                              gr%zm(3), gr%zm(2), gr%zm(1) )
+      endif
     endif
 
     if ( input_rtp2) then 
-      call get_var( fread_var, "qtp2",  & 
-                    timestep, & 
-                    tmp1(1:gr%nnzp), l_error )
-      ! tmp1 is the value of rtp2 from the LES GrADS file.  
-      ! It has been output onto thermodynamic levels starting at 
-      ! the first level above ground (thermodynamic level 2 on 
-      ! the CLUBB grid).  Interpolate the read-in values of 
-      ! rtp2 to their appropriate places on the momentum levels.
-      rtp2(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
+      call get_var( fread_var, "qtp2", timestep, &
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of rtp2 from the LES GrADS file.
+      do k = k_lowest_zm_input, k_highest_zm_input, 1
+         if ( l_lin_int_zm(k) ) then
+            ! CLUBB momentum level k is found at an altitude that is between two
+            ! LES levels.  Linear interpolation is required.
+            rtp2(k) = lin_int( gr%zm(k),  &
+                               fread_var%z(upper_lev_idx_zm(k)),  &
+                               fread_var%z(lower_lev_idx_zm(k)),  &
+                               LES_tmp1(upper_lev_idx_zm(k)),  &
+                               LES_tmp1(lower_lev_idx_zm(k)) )
+         else
+            ! CLUBB momentum level k is found at an altitude that is an exact
+            ! match with an LES level altitude.
+            rtp2(k) = LES_tmp1(exact_lev_idx_zm(k))
+         endif
+      enddo
+      ! When this is a standard scenario, where CLUBB momentum level 2 is the
+      ! first momentum level above the lowest LES level, set the value of rtp2
+      ! at momentum level 1 to the value at momentum level 2.
       ! Using a linear extension here resulted in negatives.
-      rtp2(1) =  rtp2(2)
+      if ( k_lowest_zm_input == 2 ) then
+         rtp2(1) =  rtp2(2)
+      endif
       if ( any ( rtp2(1:gr%nnzp) < rttol**2 ) ) then
-! %% debug
-!              print *, "Some values of rtp2 are negative, compensating."
-! %% debug
-        do k=1, gr%nnzp
-          rtp2(k) = max(rtp2(k), rttol**2)
-        enddo
+         do k=1, gr%nnzp
+            rtp2(k) = max(rtp2(k), rttol**2)
+         enddo
       endif
     endif
 
     if ( input_thlp2) then 
-      call get_var( fread_var, "thlp2",  & 
-                    timestep, tmp1(1:gr%nnzp), l_error )
-      ! tmp1 is the value of thlp2 from the LES GrADS file.  
-      ! It has been output onto thermodynamic levels starting at 
-      ! the first level above ground (thermodynamic level 2 on 
-      ! the CLUBB grid).  Interpolate the read-in values of 
-      ! thlp2 to their appropriate places on the momentum levels.
-      thlp2(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
+      call get_var( fread_var, "thlp2", timestep, &
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of thlp2 from the LES GrADS file.
+      do k = k_lowest_zm_input, k_highest_zm_input, 1
+         if ( l_lin_int_zm(k) ) then
+            ! CLUBB momentum level k is found at an altitude that is between two
+            ! LES levels.  Linear interpolation is required.
+            thlp2(k) = lin_int( gr%zm(k),  &
+                                fread_var%z(upper_lev_idx_zm(k)),  &
+                                fread_var%z(lower_lev_idx_zm(k)),  &
+                                LES_tmp1(upper_lev_idx_zm(k)),  &
+                                LES_tmp1(lower_lev_idx_zm(k)) )
+         else
+            ! CLUBB momentum level k is found at an altitude that is an exact
+            ! match with an LES level altitude.
+            thlp2(k) = LES_tmp1(exact_lev_idx_zm(k))
+         endif
+      enddo
+      ! When this is a standard scenario, where CLUBB momentum level 2 is the
+      ! first momentum level above the lowest LES level, set the value of thlp2
+      ! at momentum level 1 to the value at momentum level 2.
       ! Using a linear extension here resulted in negatives.
-      thlp2(1) = thlp2(2)
+      if ( k_lowest_zm_input == 2 ) then
+         thlp2(1) = thlp2(2)
+      endif
     endif
 
     if ( input_rtpthlp) then 
-      call get_var( fread_var, "qtpthlp",  & 
-                    timestep,  & 
-                    tmp1(1:gr%nnzp), & 
-                    l_error )
-      ! tmp1 is the value of rtpthlp from the LES GrADS file.  
-      ! It has been output onto thermodynamic levels starting at 
-      ! the first level above ground (thermodynamic level 2 on 
-      ! the CLUBB grid).  Interpolate the read-in values of 
-      ! rtpthlp to their appropriate places on the momentum levels.
-      rtpthlp(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
-      ! Use the values of rtpthlp at momentum levels 3 and 2 to 
-      ! find the value at momentum level 1 through the use of a
-      ! linear extension.  It should be pointed out that the 
-      ! boundary flux is usually solved in LES or hoc via a 
-      ! subroutine like sfc_var.
-      rtpthlp(1)  & 
-      = lin_ext_zm_bottom( rtpthlp(3), rtpthlp(2), & 
-                           gr%zm(3), gr%zm(2), gr%zm(1) )
+      call get_var( fread_var, "qtpthlp", timestep, &
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of rtpthlp from the LES GrADS file.
+      do k = k_lowest_zm_input, k_highest_zm_input, 1
+         if ( l_lin_int_zm(k) ) then
+            ! CLUBB momentum level k is found at an altitude that is between two
+            ! LES levels.  Linear interpolation is required.
+            rtpthlp(k) = lin_int( gr%zm(k),  &
+                                  fread_var%z(upper_lev_idx_zm(k)),  &
+                                  fread_var%z(lower_lev_idx_zm(k)),  &
+                                  LES_tmp1(upper_lev_idx_zm(k)),  &
+                                  LES_tmp1(lower_lev_idx_zm(k)) )
+         else
+            ! CLUBB momentum level k is found at an altitude that is an exact
+            ! match with an LES level altitude.
+            rtpthlp(k) = LES_tmp1(exact_lev_idx_zm(k))
+         endif
+      enddo
+      ! When this is a standard scenario, where CLUBB momentum level 2 is the
+      ! first momentum level above the lowest LES level, use the values of
+      ! rtpthlp at momentum levels 3 and 2 to find the value at momentum level 1
+      ! through the use of a linear extension.  It should be pointed out that
+      ! the boundary flux is usually solved in LES or CLUBB via a subroutine
+      ! like sfc_var.
+      if ( k_lowest_zm_input == 2 ) then
+         rtpthlp(1)  & 
+         = lin_ext_zm_bottom( rtpthlp(3), rtpthlp(2), & 
+                              gr%zm(3), gr%zm(2), gr%zm(1) )
+      endif
     endif
 
-    if ( l_error ) stop "oops, get_var failed in field_reader"
+    if ( l_error ) stop "oops, get_var failed in grads_fields_reader"
+
+    ! Deallocate temporary storage variable LES_tmp1.
+    deallocate( LES_tmp1 )
+
+    deallocate( exact_lev_idx_zt )
+    deallocate( lower_lev_idx_zt )
+    deallocate( upper_lev_idx_zt )
+    deallocate( l_lin_int_zt )
+
+    deallocate( exact_lev_idx_zm )
+    deallocate( lower_lev_idx_zm )
+    deallocate( upper_lev_idx_zm )
+    deallocate( l_lin_int_zm )
 
     call close_grads_read( fread_var )
 
@@ -870,59 +1269,166 @@ module inputfields
 
   case( "les", "rf1" )
 
-    ! NOTE:  The code is not set up to compensate for discrepancies
-    !        in momentum level altitudes between CLUBB and COAMPS 
-    !        LES.  Therefore, CLUBB should be set up so that CLUBB 
-    !        momentum level altitudes from momentum level indices 
-    !        1 to gr%nnzp match COAMPS momentum level altitudes 
-    !        from momentum level indices 1 to gr%nnzp.
-
     ! stats_sw
     call open_grads_read( 15, trim(datafile)//"_coamps_sw.ctl",  & 
                           fread_var )
-   ! no interpolation is required, however, the stats_sw files have
-   ! an extra top z-level, and wpup_sgs must be added to make the
-   ! u'w' and v'w' terms as they are in CLUBB.
+
+    ! Temporarily store LES output in variable array LES_tmp1.
+    ! Allocate LES_tmp1 based on lowest and highest vertical indices of LES
+    ! output.
+    allocate( LES_tmp1(fread_var%ia:fread_var%iz) )
+
+    ! Find the lowest and highest indices of CLUBB momentum levels that fall
+    ! within the domain of the LES output.
+    call CLUBB_levels_within_LES_domain( fread_var, gr%zm,  &
+                                         k_lowest_zm_input, k_highest_zm_input )
+
+    allocate( exact_lev_idx_zm(k_lowest_zm_input:k_highest_zm_input) )
+    allocate( lower_lev_idx_zm(k_lowest_zm_input:k_highest_zm_input) )
+    allocate( upper_lev_idx_zm(k_lowest_zm_input:k_highest_zm_input) )
+    allocate( l_lin_int_zm(k_lowest_zm_input:k_highest_zm_input) )
+
+    ! For all CLUBB momentum levels, k, that are within the LES domain, find
+    ! either the index of the LES level that exactly matches the altitude of the
+    ! CLUBB level, or find the two indices of the LES levels that are on either
+    ! side of the CLUBB level.
+    do k = k_lowest_zm_input, k_highest_zm_input, 1
+       ! CLUBB vertical level k is found at an altitude that is within the
+       ! domain of the LES output.
+       call LES_grid_to_CLUBB_grid( fread_var, gr%zm, k,  &
+                                    exact_lev_idx_zm(k), lower_lev_idx_zm(k),  &
+                                    upper_lev_idx_zm(k), l_lin_int_zm(k) )
+    enddo
+
+
+    ! Note:  wpup_sgs and wpvp_sgs must be added to make the u'w' and v'w' terms
+    !        as they are in CLUBB.
 
     if ( input_upwp) then 
-      call get_var( fread_var, "wpup",  & 
-                    timestep, tmp1(1:gr%nnzp+1), l_error )
-      upwp(1:gr%nnzp) = tmp1(1:gr%nnzp) 
 
-      call get_var( fread_var, "wpup_sgs",  & 
-                    timestep, tmp1(1:gr%nnzp+1), l_error )
-      upwp(1:gr%nnzp) = tmp1(1:gr%nnzp) + upwp(1:gr%nnzp)
+      call get_var( fread_var, "wpup", timestep, &
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of upwp from the LES GrADS file.
+      do k = k_lowest_zm_input, k_highest_zm_input, 1
+         if ( l_lin_int_zm(k) ) then
+            ! CLUBB momentum level k is found at an altitude that is between two
+            ! LES levels.  Linear interpolation is required.
+            upwp(k) = lin_int( gr%zm(k),  &
+                               fread_var%z(upper_lev_idx_zm(k)),  &
+                               fread_var%z(lower_lev_idx_zm(k)),  &
+                               LES_tmp1(upper_lev_idx_zm(k)),  &
+                               LES_tmp1(lower_lev_idx_zm(k)) )
+         else
+            ! CLUBB momentum level k is found at an altitude that is an exact
+            ! match with an LES level altitude.
+            upwp(k) = LES_tmp1(exact_lev_idx_zm(k))
+         endif
+      enddo
+
+      call get_var( fread_var, "wpup_sgs", timestep, &
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of upwp_sgs from the LES GrADS file.
+      do k = k_lowest_zm_input, k_highest_zm_input, 1
+         if ( l_lin_int_zm(k) ) then
+            ! CLUBB momentum level k is found at an altitude that is between two
+            ! LES levels.  Linear interpolation is required.
+            upwp(k) = lin_int( gr%zm(k),  &
+                               fread_var%z(upper_lev_idx_zm(k)),  &
+                               fread_var%z(lower_lev_idx_zm(k)),  &
+                               LES_tmp1(upper_lev_idx_zm(k)),  &
+                               LES_tmp1(lower_lev_idx_zm(k)) )  &
+                      + upwp(k)
+         else
+            ! CLUBB momentum level k is found at an altitude that is an exact
+            ! match with an LES level altitude.
+            upwp(k) = LES_tmp1(exact_lev_idx_zm(k)) + upwp(k)
+         endif
+      enddo
+
     endif
 
-    if ( l_error ) stop "get_var failed for upwp in field_reader"
+    if ( l_error ) stop "get_var failed for upwp in grads_fields_reader"
 
     if ( input_vpwp) then
-      call get_var( fread_var, "wpvp",  & 
-                    timestep, & 
-                    tmp1(1:gr%nnzp+1), l_error )
-      vpwp(1:gr%nnzp) = tmp1(1:gr%nnzp) 
-      call get_var( fread_var, "wpvp_sgs",  & 
-                    timestep, & 
-                    tmp1(1:gr%nnzp+1), l_error )
-      vpwp(1:gr%nnzp) = tmp1(1:gr%nnzp) + vpwp(1:gr%nnzp)
+
+      call get_var( fread_var, "wpvp", timestep, &
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of vpwp from the LES GrADS file.
+      do k = k_lowest_zm_input, k_highest_zm_input, 1
+         if ( l_lin_int_zm(k) ) then
+            ! CLUBB momentum level k is found at an altitude that is between two
+            ! LES levels.  Linear interpolation is required.
+            vpwp(k) = lin_int( gr%zm(k),  &
+                               fread_var%z(upper_lev_idx_zm(k)),  &
+                               fread_var%z(lower_lev_idx_zm(k)),  &
+                               LES_tmp1(upper_lev_idx_zm(k)),  &
+                               LES_tmp1(lower_lev_idx_zm(k)) )
+         else
+            ! CLUBB momentum level k is found at an altitude that is an exact
+            ! match with an LES level altitude.
+            vpwp(k) = LES_tmp1(exact_lev_idx_zm(k))
+         endif
+      enddo
+
+      call get_var( fread_var, "wpvp_sgs", timestep, &
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of vpwp_sgs from the LES GrADS file.
+      do k = k_lowest_zm_input, k_highest_zm_input, 1
+         if ( l_lin_int_zm(k) ) then
+            ! CLUBB momentum level k is found at an altitude that is between two
+            ! LES levels.  Linear interpolation is required.
+            vpwp(k) = lin_int( gr%zm(k),  &
+                               fread_var%z(upper_lev_idx_zm(k)),  &
+                               fread_var%z(lower_lev_idx_zm(k)),  &
+                               LES_tmp1(upper_lev_idx_zm(k)),  &
+                               LES_tmp1(lower_lev_idx_zm(k)) )  &
+                      + vpwp(k)
+         else
+            ! CLUBB momentum level k is found at an altitude that is an exact
+            ! match with an LES level altitude.
+            vpwp(k) = LES_tmp1(exact_lev_idx_zm(k)) + vpwp(k)
+         endif
+      enddo
+
     endif
-    if ( l_error ) stop "get_var failed for vpwp in field_reader"
+
+    if ( l_error ) stop "get_var failed for vpwp in grads_fields_reader"
 
     if ( input_wp2 ) then 
-      call get_var( fread_var, "wp2",  & 
-                    timestep, & 
-                    tmp1(1:gr%nnzp+1), l_error )
-      wp2(1:gr%nnzp) = tmp1(1:gr%nnzp)
+      call get_var( fread_var, "wp2", timestep, & 
+                    LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+      ! LES_tmp1 is the value of wp2 from the LES GrADS file.
+      do k = k_lowest_zm_input, k_highest_zm_input, 1
+         if ( l_lin_int_zm(k) ) then
+            ! CLUBB momentum level k is found at an altitude that is between two
+            ! LES levels.  Linear interpolation is required.
+            wp2(k) = lin_int( gr%zm(k),  &
+                              fread_var%z(upper_lev_idx_zm(k)),  &
+                              fread_var%z(lower_lev_idx_zm(k)),  &
+                              LES_tmp1(upper_lev_idx_zm(k)),  &
+                              LES_tmp1(lower_lev_idx_zm(k)) )
+         else
+            ! CLUBB momentum level k is found at an altitude that is an exact
+            ! match with an LES level altitude.
+            wp2(k) = LES_tmp1(exact_lev_idx_zm(k))
+         endif
+      enddo
       if ( any ( wp2(1:gr%nnzp) < wtol_sqd ) ) then
-! %% debug
-!              print *, "Some values of wp2 are negative, compensating."
-! %% debug
-        do k=1, gr%nnzp
-          wp2(k) = max(wp2(k), wtol_sqd)
-        end do
-      end if
-    end if
-    if ( l_error ) stop "get_var failed for wp2 in field_reader"
+         do k=1, gr%nnzp
+            wp2(k) = max(wp2(k), wtol_sqd)
+         enddo
+      endif
+    endif
+
+    if ( l_error ) stop "get_var failed for wp2 in grads_fields_reader"
+
+    ! Deallocate temporary storage variable LES_tmp1.
+    deallocate( LES_tmp1 )
+
+    deallocate( exact_lev_idx_zm )
+    deallocate( lower_lev_idx_zm )
+    deallocate( upper_lev_idx_zm )
+    deallocate( l_lin_int_zm )
 
     call close_grads_read( fread_var )
 
@@ -934,83 +1440,290 @@ module inputfields
   end subroutine grads_fields_reader
 
 !===============================================================================
-  pure function lin_ext_zm_bottom( var_zmp2, var_zmp1, & 
-                                   zmp2, zmp1, zm ) & 
+  subroutine CLUBB_levels_within_LES_domain( fread_var, CLUBB_grid,  &
+                                             k_lowest_input, k_highest_input )
+
+    ! Description:
+    ! This subroutine finds both the lowest and the highest CLUBB grid levels
+    ! (for either the thermodynamic grid or the momentum grid) that are with the
+    ! domain of the LES grid.
+
+    !-----------------------------------------------------------------------
+
+    use grid_class, only:  &
+        gr  ! Variables
+
+    use inputfile_class, only:  &
+        inputgrads  ! Variable type
+
+    use constants, only:  &
+        fstderr ! Constant
+
+    implicit none
+
+    ! Input Variables.
+    type(inputgrads), intent(in) ::  &
+      fread_var  ! Information about LES run.
+
+    real, dimension(gr%nnzp), intent(in) ::  &
+      CLUBB_grid ! Altitude of CLUBB grid levels
+                 ! (either thermodynamic or momentum grid levels)  [m]
+
+    ! Output Variables
+    integer, intent(out) ::  &
+      k_lowest_input,  & ! The lowest CLUBB level that's within the LES domain.
+      k_highest_input    ! The highest CLUBB level that's within the LES domain.
+
+    ! Local Variable
+    integer :: k  ! Array index
+
+    ! Find the lowest CLUBB level that falls within the LES domain.
+    k = gr%nnzp
+    do
+       if ( CLUBB_grid(k) < fread_var%z(fread_var%ia) ) then
+
+          if ( k == gr%nnzp ) then
+             ! The bottom of the LES domain is above the top of the CLUBB
+             ! domain.
+             write(fstderr,*) "The lowest LES input level is above the top ",  &
+                              "of the CLUBB model domain."
+             stop "Error in CLUBB_levels_within_LES_domain"
+          else
+             ! Level k is the first CLUBB level below the LES domain.  Thus, the
+             ! lowest CLUBB level within the LES domain has the index k + 1.
+             k_lowest_input = k + 1
+             exit
+          endif
+
+       elseif ( k == 1 ) then
+
+          ! The bottom CLUBB level is within the LES domain.
+          k_lowest_input = 1
+          exit
+
+       else   ! k > 1 and k <= gr%nnzp; level not yet found.
+
+          ! Increment one more CLUBB vertical level down.
+          k = k - 1
+
+       endif
+    enddo
+
+    ! Find the highest CLUBB level that falls within the LES domain.
+    k = 1
+    do
+       if ( CLUBB_grid(k) > fread_var%z(fread_var%iz) ) then
+
+          if ( k == 1 ) then
+             ! The top of the LES domain is below the bottom of the CLUBB
+             ! domain.
+             write(fstderr,*) "The highest LES input level is below the ",  &
+                              "bottom of the CLUBB model domain."
+             stop "Error in CLUBB_levels_within_LES_domain"
+          else
+             ! Level k is the first CLUBB level above the LES domain.  Thus, the
+             ! highest CLUBB level within the LES domain has the index k - 1.
+             k_highest_input = k - 1
+             exit
+          endif
+
+       elseif ( k == gr%nnzp ) then
+
+          ! The top CLUBB level is within the LES domain.
+          k_highest_input = gr%nnzp
+          exit
+
+       else   ! k < gr%nnzp and k >= 1; level not yet found.
+
+          ! Increment one more CLUBB vertical level up.
+          k = k + 1
+
+       endif
+    enddo
+
+    return
+  end subroutine CLUBB_levels_within_LES_domain
+
+!===============================================================================
+  subroutine LES_grid_to_CLUBB_grid( fread_var, CLUBB_grid, k,  &
+                                     exact_lev_idx, lower_lev_idx,  &
+                                     upper_lev_idx, l_lin_int )
+
+    ! Description:
+    ! Finds the level on the LES grid that is exactly even with the CLUBB
+    ! grid level (either thermodynamic or momentum grid) that is input
+    ! (level k).  Else, it finds the two LES levels that sandwich the CLUBB
+    ! grid level that is input.
+
+    !-----------------------------------------------------------------------
+
+    use grid_class, only:  &
+        gr  ! Variables
+
+    use inputfile_class, only:  &
+        inputgrads  ! Variable type
+
+    implicit none
+
+    ! Input Variables.
+    type(inputgrads), intent(in) ::  &
+      fread_var  ! Information about LES run.
+
+    real, dimension(gr%nnzp), intent(in) ::  &
+      CLUBB_grid ! Altitude of CLUBB grid levels
+                 ! (either thermodynamic or momentum grid levels)  [m]
+
+    integer, intent(in) ::  &
+      k  ! Index of CLUBB vertical level that is being compared to.
+
+    ! Output Variables.
+    integer, intent(out) ::  &
+      exact_lev_idx, & ! In case of an exact match, index of LES level that is
+                       ! exactly even with CLUBB level k.
+      lower_lev_idx, & ! In case linear interpolation is needed, index of LES
+                       ! level that is immediately below CLUBB level k.
+      upper_lev_idx    ! In case linear interpolation is needed, index of LES
+                       ! level that is immediately above CLUBB level k.
+
+    logical, intent(out) ::  &
+      l_lin_int  ! Flag that is turned on if linear interpolation is needed.
+
+    ! Local Variable.
+    integer :: j
+
+    ! Initialize the output quantities.
+    exact_lev_idx = 0
+    lower_lev_idx = 0
+    upper_lev_idx = 0
+    l_lin_int     = .false.
+
+    ! Initialize LES vertical grid loop index, j, at the lowest LES grid index,
+    ! which is fread_var%ia.
+    j = fread_var%ia
+
+    do
+
+       if ( fread_var%z(j) == CLUBB_grid(k) ) then
+
+          ! There is an LES level altitude at LES level j that is an exact
+          ! match to the CLUBB level altitude at CLUBB grid level k.
+          exact_lev_idx = j
+          l_lin_int = .false.
+
+       elseif ( fread_var%z(j) < CLUBB_grid(k) ) then
+
+          ! The LES level altitude at LES level j is lower than the CLUBB level
+          ! altitude at CLUBB grid level k.
+          lower_lev_idx = j
+
+       else   ! fread_var%z(j) > CLUBB_grid(k)
+
+          ! The LES level altitude at LES level j is higher than the CLUBB level
+          ! altitude at CLUBB grid level k.
+          upper_lev_idx = j
+
+       endif
+
+       if ( exact_lev_idx > 0 ) exit  ! An exact answer has been found,
+                                      ! exit the loop.
+
+       if ( upper_lev_idx == lower_lev_idx + 1 ) then
+
+          ! CLUBB level k has been found between two successive LES levels.
+          ! Linear interpolation is needed.  An answer has been found, exit
+          ! the loop.
+          l_lin_int = .true.
+          exit
+
+       endif
+
+       ! An answer has not been found yet, iterate the j index.
+       j = j + 1
+
+    enddo
+
+    return
+  end subroutine LES_grid_to_CLUBB_grid
+
+!===============================================================================
+  pure function lin_ext_zm_bottom( var_zmp2, var_zmp1,  & 
+                                   zmp2, zmp1, zm )  & 
   result( var_zm )
 
-!       Description:
-!       This function computes the value of a momentum-level variable
-!       at a bottom grid level by using a linear extension of the values
-!       of the variable at the two levels immediately above the level
-!       where the result value is needed.
+    ! Description:
+    ! This function computes the value of a momentum-level variable at a bottom
+    ! grid level by using a linear extension of the values of the variable at
+    ! the two levels immediately above the level where the result value is
+    ! needed.
 
-!-------------------------------------------------------------------------
+    !-----------------------------------------------------------------------
 
-  implicit none
+    implicit none
 
 
-  ! Input Variables
-  real, intent(in) :: & 
-  var_zmp2,    & ! Momentum level variable at level (k+2)   [units vary]
-  var_zmp1,    & ! Momentum level variable at level (k+1)   [units vary]
-  zmp2,        & ! Altitude at momentum level (k+2)         [m]
-  zmp1,        & ! Altitude at momentum level (k+1)         [m]
-  zm          ! Altitude at momentum level (k)           [m]
+    ! Input Variables
+    real, intent(in) :: & 
+      var_zmp2,    & ! Momentum level variable at level (k+2)  [units vary]
+      var_zmp1,    & ! Momentum level variable at level (k+1)  [units vary]
+      zmp2,        & ! Altitude at momentum level (k+2)        [m]
+      zmp1,        & ! Altitude at momentum level (k+1)        [m]
+      zm             ! Altitude at momentum level (k)          [m]
 
-  ! Return Variable
-  real :: var_zm  ! Momentum level variable at level (k) [units vary]
+    ! Return Variable
+    real :: var_zm   ! Momentum level variable at level (k)    [units vary]
 
-  var_zm = ( ( var_zmp2 - var_zmp1 ) / ( zmp2 - zmp1 ) ) & 
-           * ( zm - zmp1 ) + var_zmp1
+    var_zm = ( ( var_zmp2 - var_zmp1 ) / ( zmp2 - zmp1 ) ) & 
+             * ( zm - zmp1 ) + var_zmp1
 
-  return
+    return
   end function lin_ext_zm_bottom
 
 !===============================================================================
-  pure function lin_ext_zt_bottom( var_ztp2, var_ztp1, & 
-                                   ztp2, ztp1, zt ) & 
+  pure function lin_ext_zt_bottom( var_ztp2, var_ztp1,  & 
+                                   ztp2, ztp1, zt )  & 
   result( var_zt )
 
-!       Description:
-!       This function computes the value of a thermodynamic-level 
-!       variable at a bottom grid level by using a linear extension of 
-!       the values of the variable at the two levels immediately above 
-!       the level where the result value is needed.
+    ! Description:
+    ! This function computes the value of a thermodynamic-level variable at a
+    ! bottom grid level by using a linear extension of the values of the
+    ! variable at the two levels immediately above the level where the result
+    ! value is needed.
 
-!-------------------------------------------------------------------------
+    !-----------------------------------------------------------------------
 
-  implicit none
+    implicit none
 
-  ! Input Variables
-  real, intent(in) :: & 
-  var_ztp2,    & ! Thermodynamic level variable at level (k+2)   [units vary]
-  var_ztp1,    & ! Thermodynamic level variable at level (k+1)   [units vary]
-  ztp2,        & ! Altitude at thermodynamic level (k+2)         [m]
-  ztp1,        & ! Altitude at thermodynamic level (k+1)         [m]
-  zt          ! Altitude at thermodynamic level (k)           [m]
+    ! Input Variables
+    real, intent(in) :: & 
+      var_ztp2,    & ! Thermodynamic level variable at level (k+2)  [units vary]
+      var_ztp1,    & ! Thermodynamic level variable at level (k+1)  [units vary]
+      ztp2,        & ! Altitude at thermodynamic level (k+2)        [m]
+      ztp1,        & ! Altitude at thermodynamic level (k+1)        [m]
+      zt             ! Altitude at thermodynamic level (k)          [m]
 
-  ! Return Variable
-  real :: var_zt  ! Thermodynamic level variable at level (k) [units vary]
+    ! Return Variable
+    real :: var_zt   ! Thermodynamic level variable at level (k)    [units vary]
 
-  var_zt = ( ( var_ztp2 - var_ztp1 ) / ( ztp2 - ztp1 ) ) & 
-           * ( zt - ztp1 ) + var_ztp1
+    var_zt = ( ( var_ztp2 - var_ztp1 ) / ( ztp2 - ztp1 ) ) & 
+             * ( zt - ztp1 ) + var_ztp1
 
-  return
+    return
   end function lin_ext_zt_bottom
 
 !===============================================================================
   subroutine compute_timestep( iunit, filename, l_restart, & 
                                time, nearest_timestep )
-!
-!       Description: Given a time 'time', determines the closest 
-!       output time in a GrADS file
-!
-!-------------------------------------------------------------------------
+
+    ! Description:
+    ! Given a time 'time', determines the closest output time in a GrADS file.
+
+    !-----------------------------------------------------------------------
 
     use inputfile_class, only: & 
         inputgrads,  & ! Type
         open_grads_read,  & ! Procedure(s)
         close_grads_read
+
     use constants, only:  & 
         sec_per_min ! Variable(s)
 
