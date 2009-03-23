@@ -522,6 +522,11 @@ module microphys_driver
       irrainm_sfc
 
     use stats_variables, only: & 
+      iNcm_bt, & 
+      iNcm_mc, & 
+      iNcm_cl
+
+    use stats_variables, only: & 
       iNcm, & 
       iNim, & 
       iNrm, & 
@@ -531,6 +536,7 @@ module microphys_driver
     use stats_variables, only: & 
       iNsnowm_mc, &
       iNim_mc, & 
+      iNcm_mc, & 
       iNrm_mc, & 
       iNsnowm_mc, &
       iNgraupelm_mc
@@ -664,6 +670,8 @@ module microphys_driver
     ! Brian Griffin.  April 14, 2007.
     real :: overevap_rate ! Absolute value of negative evap. rate.
 
+    real, dimension(gr%nnzp) :: wtmp   ! [m/s]
+
     real :: snow_rate, rain_rate
 
     integer :: i, k ! Array index
@@ -774,6 +782,14 @@ module microphys_driver
       rvm_mc(:) = 0.0
       T_in_K_mc(:) = 0.0
 
+      wtmp(:) = sqrt( wp2_zt(:) )
+      ! Based on YSU PBL interface to the Morrison scheme WRF driver, the standard dev. of w
+      ! should be clipped to be between 0.1 m/s and 4.0 m/s -dschanen 23 Mar 2009
+      wtmp(:) = max( 0.1, wtmp ) 
+      wtmp(:) = min( 4., wtmp )  
+
+!     wtmp = 0.5 ! %% debug
+      
       call M2005MICRO_GRAUPEL &
            ( rcm_mc, hydromet_mc(:,iiricem), hydromet_mc(:,iirsnowm), &
              hydromet_mc(:,iirrainm), hydromet_mc(:,iiNcm), &
@@ -781,7 +797,7 @@ module microphys_driver
              hydromet_mc(:,iiNrm), rcm_tmp, hydromet_tmp(:,iiricem), &
              hydromet_tmp(:,iirsnowm), hydromet_tmp(:,iirrainm), hydromet_tmp(:,iiNcm), &
              hydromet_tmp(:,iiNim), hydromet_tmp(:,iiNsnowm), hydromet_tmp(:,iiNrm), &
-             T_in_K_mc, rvm_mc, T_in_K, rvm_tmp, P_in_pa, rho, dzq, wm_zt, sqrt( wp2_zt ), &
+             T_in_K_mc, rvm_mc, T_in_K, rvm_tmp, P_in_pa, rho, dzq, wm_zt, wtmp, &
              rain_rate, snow_rate,  effc, effi, effs, effr, real( dt ), &
              1,1, 1,1, 1,gr%nnzp, 1,1, 1,1, 1,gr%nnzp, &
              hydromet_mc(:,iirgraupelm), hydromet_mc(:,iiNgraupelm), &
@@ -831,6 +847,9 @@ module microphys_driver
         call stat_update_var( irgraupelm_mc, hydromet_mc(:,iirgraupelm), zt )
 
         ! --- Number concentrations ---
+
+        ! Sum total of cloud droplet number concentration microphysics
+        call stat_update_var( iNcm_mc, hydromet_mc(:,iiNcm), zt )
 
         ! Sum total of rain droplet number concentration microphysics
         call stat_update_var( iNrm_mc, hydromet_mc(:,iiNrm), zt )
@@ -907,6 +926,9 @@ module microphys_driver
         case( "Nrm" )
           ixrm_bt = iNrm_bt
           ixrm_cl = iNrm_cl
+        case( "Ncm" )
+          ixrm_bt = iNcm_bt
+          ixrm_cl = iNcm_cl
         case( "ricem" )
           ixrm_bt = iricem_bt
           ixrm_cl = iricem_cl
@@ -1231,6 +1253,11 @@ module microphys_driver
           iNgraupelm_sd, & 
           iNgraupelm_dff 
 
+      use stats_variables, only: & 
+          iNcm_ma, & 
+          iNcm_dff
+
+
       use stats_type, only: stat_update_var_pt ! Procedure(s)
 
       implicit none
@@ -1288,6 +1315,10 @@ module microphys_driver
         ixrm_ma  = irgraupelm_ma
         ixrm_sd  = irgraupelm_sd
         ixrm_dff = irgraupelm_dff
+      case( "Ncm" )
+        ixrm_ma  = iNcm_ma
+        ixrm_sd  = 0
+        ixrm_dff = iNcm_dff
       case( "Nrm" )
         ixrm_ma  = iNrm_ma
         ixrm_sd  = iNrm_sd

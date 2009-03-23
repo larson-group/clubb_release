@@ -57,7 +57,7 @@ module stats_type
 
   end type stats
 
-contains
+  contains
 
   !=============================================================================
   subroutine stat_assign( var_index, var_name,  & 

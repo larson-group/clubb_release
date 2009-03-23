@@ -229,6 +229,14 @@ use stats_variables, only: &
   iNim_sd, &
   iNim_cl
 
+use stats_variables, only: & 
+  iNcm_bt, &
+  iNcm_mc, &
+  iNcm_ma, &
+  iNcm_dff, &
+  iNcm_cl
+
+
 use stats_type, only: & 
     stat_assign ! Procedure
 
@@ -375,6 +383,12 @@ iNim_sd    = 0
 iNim_dff   = 0
 iNim_mc    = 0
 iNim_cl    = 0
+
+iNcm_bt    = 0
+iNcm_ma    = 0
+iNcm_dff   = 0
+iNcm_mc    = 0
+iNcm_cl    = 0
 
 irsnowm_bt    = 0
 irsnowm_ma    = 0
@@ -1339,7 +1353,7 @@ do i=1,zt%nn
     call stat_assign(iNgraupelm_cl,"Ngraupelm_cl", & 
          "Ngraupelm clipping term","(kg/kg)/s",zt)
     k = k + 1
-!!!
+
   case ('Nim_bt')
     iNim_bt = k
     call stat_assign(iNim_bt,"Nim_bt", & 
@@ -1381,6 +1395,41 @@ do i=1,zt%nn
 
     call stat_assign(iNim_cl,"Nim_cl", & 
          "Nim clipping term","(kg/kg)/s",zt)
+    k = k + 1
+
+  case ('Ncm_bt')
+    iNcm_bt = k
+    call stat_assign(iNcm_bt,"Ncm_bt", & 
+         "Cloud droplet number concentration budget","(count/kg)/s",zt)
+
+    k = k + 1
+ 
+  case ('Ncm_ma')
+    iNcm_ma = k
+
+    call stat_assign(iNcm_ma,"Ncm_ma", & 
+         "Ncm mean advection","(count/kg)/s",zt)
+    k = k + 1
+ 
+  case ('Ncm_dff')
+    iNcm_dff = k
+    call stat_assign(iNcm_dff,"Ncm_dff", & 
+         "Ncm diffusion","(count/kg)/s",zt)
+
+    k = k + 1
+
+  case ('Ncm_mc')
+    iNcm_mc = k
+
+    call stat_assign(iNcm_mc,"Ncm_mc", & 
+         "Ncm microphysics term","(kg/kg)/s",zt)
+    k = k + 1
+
+  case ('Ncm_cl')
+    iNcm_cl = k
+
+    call stat_assign(iNcm_cl,"Ncm_cl", & 
+         "Ncm clipping term","(kg/kg)/s",zt)
     k = k + 1
 
   case ('vm_bt')

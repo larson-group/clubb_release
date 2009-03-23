@@ -268,6 +268,16 @@ module stats_variables
 !$omp threadprivate(iNim_bt, iNim_ma, iNim_sd, iNim_dff, &
 !$omp   iNim_mc, iNim_cl)
 
+  integer, public :: &
+    iNcm_bt,  &
+    iNcm_ma,  &
+    iNcm_dff, &
+    iNcm_mc,  &
+    iNcm_cl
+
+!$omp threadprivate(iNcm_bt, iNcm_ma, iNcm_dff, &
+!$omp   iNcm_mc, iNcm_cl)
+
 
   ! Wind budgets
   integer, public :: & 
