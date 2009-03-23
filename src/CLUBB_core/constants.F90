@@ -1,6 +1,6 @@
-!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------------
 ! $Id$
-!===============================================================================
+!=============================================================================
 module constants
 
   ! Description:
@@ -8,7 +8,7 @@ module constants
 
   ! References:
   ! None
-  !-----------------------------------------------------------------------
+  !---------------------------------------------------------------------------
 
   use stats_precision, only:  & 
       time_precision ! Variable(s)
@@ -23,6 +23,7 @@ module constants
             eps, zero_threshold, max_mag_correlation, sec_per_day, &
             sec_per_hr, sec_per_min, g_per_kg, T_freeze_K, &
             Skw_max_mag, Skw_max_mag_sqd, stefan_boltzmann, &
+            cm3_per_m3, &
             gamma_over_implicit_ts
 
   private ! Default scope
@@ -180,6 +181,9 @@ module constants
   real, parameter :: & 
     g_per_kg = 1000.0     ! Grams in a kilogram.
 
-!===============================================================================
+  real, parameter :: & 
+    cm3_per_m3 = 1.e6 ! Cubic centimeters per cubic meter
+
+!=============================================================================
 
 end module constants

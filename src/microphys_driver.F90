@@ -14,7 +14,7 @@ module microphys_driver
     l_ice_micro,             & ! Compute ice
     l_graupel,               & ! Compute graupel
     l_hail,                  & ! 
-    l_seifert_behneng,       & ! Use Seifert and Behneng warm drizzle
+    l_seifert_beheng,        & ! Use Seifert and Beheng (2001) warm drizzle
     l_predictnc,             & ! Predict cloud droplet number conc
     l_specify_aerosol,       & ! Specify aerosol
     l_subgrid_w,             & ! Use subgrid w 
@@ -116,7 +116,7 @@ module microphys_driver
     namelist /microphysics_setting/ &
       micro_scheme, l_cloud_sed, &
       l_cloud_sed, l_ice_micro, l_graupel, l_hail, &
-      l_seifert_behneng, l_predictnc, l_specify_aerosol, l_subgrid_w, &
+      l_seifert_beheng, l_predictnc, l_specify_aerosol, l_subgrid_w, &
       l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, &
       rrp2_rrainm2_cloud, Nrp2_Nrm2_cloud, Ncp2_Ncm2_cloud, &
       corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
@@ -168,7 +168,7 @@ module microphys_driver
     l_ice_micro = .true.
     l_graupel = .true.
     l_hail = .false.
-    l_seifert_behneng = .false.
+    l_seifert_beheng = .false.
     l_predictnc = .true.
     l_specify_aerosol = .true.
     l_subgrid_w = .true.
@@ -186,9 +186,13 @@ module microphys_driver
     aer_sig2 = 1.7
     aer_n2   = 65.
 
+    ! Other parameters, set as in SAM
+    ccnconst = 120.
+    ccnexpnt = 0.4
+
     pgam_fixed = 5.
 
-    Ncm_initial = 100.
+    Ncm_initial = 100. ! #/cm^3 TODO: Use this value with K&K microphysics as well
 
     open(unit=iunit, file=namelist_file, status='old',action='read')
     read(iunit, nml=microphysics_setting)
@@ -272,7 +276,7 @@ module microphys_driver
         dohail = .false.
       end if
 
-      if ( l_seifert_behneng ) then
+      if ( l_seifert_beheng ) then
         dosb_warm_rain = .true.
       else
         dosb_warm_rain = .false.
@@ -470,8 +474,7 @@ module microphys_driver
         coamps_micro_driver ! Procedure
 
     use module_MP_graupel, only: &
-      M2005MICRO_GRAUPEL, & ! Procedure
-      Nc0  ! Variable
+      M2005MICRO_GRAUPEL  ! Procedure
 
     use T_in_K_mod, only: thlm2T_in_K, T_in_K2thlm ! Procedure(s)
 
@@ -765,10 +768,6 @@ module microphys_driver
         hydromet_tmp(:,i) = hydromet(:,i)
       end do
 
-      if ( .not. l_predictnc ) then
-        hydromet_tmp(:,iiNcm) = Nc0
-      end if
-
       ! Initialize tendencies to zero
       hydromet_mc(:,:) = 0.0
       rcm_mc(:) = 0.0
@@ -802,7 +801,13 @@ module microphys_driver
       rtm_mc = ( ( rcm_tmp + rvm_tmp ) - rtm ) / real( dt )
 
       ! Update thetal based on absolute temperature
-      thlm_mc = ( T_in_K2thlm( T_in_K, exner, rcm_tmp ) - thlm ) / real( dt )
+      !   This assumes the Morrison microphysics will only adjust thetal within
+      !   cloud, as do the modifications to M2005MICRO_GRAUPEL
+      where ( cf > 0.01 ) 
+        thlm_mc = ( T_in_K2thlm( T_in_K, exner, rcm_tmp ) - thlm ) / real( dt ) * cf
+      else where
+        thlm_mc = 0.0
+      end where
 
       hydromet_vel(:,:) = 0.0 ! Sedimentation is handled within the Morrison microphysics
 
@@ -852,7 +857,7 @@ module microphys_driver
         call stat_update_var( iricem_sd, hydromet_sten(:,iiricem), zt )
 
         ! --- Number concentrations ---
-        ! No budgets
+        ! No budgets for sedimentation are output
 
       end if ! l_stats_samp
 
@@ -952,7 +957,7 @@ module microphys_driver
               if ( l_stats_samp ) then
 
                 call stat_update_var_pt( irrainm_cond_adj, k,  & 
-                                     overevap_rate, zt )
+                                         overevap_rate, zt )
               end if
 
             else
@@ -983,7 +988,7 @@ module microphys_driver
               ! Moved from adj_microphys_tndcy
 
               call stat_update_var_pt( iNrm_cond_adj, k,  & 
-                                     overevap_rate, zt )
+                                       overevap_rate, zt )
             else
               if( l_stats_samp ) then
                 call stat_update_var_pt( iNrm_cond_adj,k, 0.0, zt )

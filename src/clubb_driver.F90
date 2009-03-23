@@ -121,7 +121,8 @@ module clubb_driver
 
     use variables_diagnostic_module, only: ug, vg, em,  & ! Variable(s)
       tau_zt, thvm, Lscale, Kh_zm, & 
-      um_ref, vm_ref, Ncnm, wp2_zt
+      um_ref, vm_ref, Ncnm, wp2_zt, &
+      hydromet
 
     use variables_prognostic_module, only:  & 
       Tsfc, psfc, SE, LE, thlm, rtm,     & ! Variable(s)
@@ -594,6 +595,7 @@ module clubb_driver
              tau_zt, tau_zm, thvm, p_in_Pa, &     ! Intent(inout)
              rho, rho_zm, Lscale, &               ! Intent(inout) 
              Kh_zt, Kh_zm, um_ref, vm_ref, &      ! Intent(inout)
+             hydromet, &                          ! Intent(inout)
              sclrm, edsclrm )                     ! Intent(out)
 
     else  ! restart
@@ -777,6 +779,7 @@ module clubb_driver
                tau_zt, tau_zm, thvm, p_in_Pa, & 
                rho, rho_zm, Lscale, & 
                Kh_zt, Kh_zm, um_ref, vm_ref, & 
+               hydromet, &
                sclrm, edsclrm )
 ! Description:
 !   Execute the necessary steps for the initialization of the
@@ -786,21 +789,27 @@ module clubb_driver
 !-----------------------------------------------------------------------
 
     use constants, only:  & 
-        Cp,  &  ! Variable(s)
-        Lv,  &
-        ep2,  &
-        ep1,  &
-        emin,  &
-        zero_threshold
+      Cp,  &  ! Variable(s)
+      Lv,  &
+      ep2,  &
+      ep1,  &
+      emin,  &
+      zero_threshold, &
+      cm3_per_m3
 
     use parameters_tunable, only:  & 
-        taumax,  &  ! Variable(s)
-        c_K
+      taumax,  &  ! Variable(s)
+      c_K
 
     use parameters_model, only:  & 
-        T0,  &  ! Variable(s)
-        sclr_dim, &
-        edsclr_dim
+      T0,  &  ! Variable(s)
+      sclr_dim, &
+      edsclr_dim, &
+      hydromet_dim
+
+    use parameters_microphys, only: &
+      Ncm_initial,     & ! Variable(s)
+      micro_scheme
 
     use grid_class, only: gr ! Variable(s)
 
@@ -828,7 +837,9 @@ module clubb_driver
 
     use error_code, only: clubb_no_error ! Variable(s)
 
-    use array_index, only: iisclr_thl, iiedsclr_thl ! Variable(s)
+    use array_index, only: &
+      iisclr_thl, iiedsclr_thl, & ! Variable(s)
+      iiNcm
 
     ! Joshua Fasching
     ! March 2008
@@ -853,27 +864,30 @@ module clubb_driver
 
     ! Output
     real, dimension(gr%nnzp), intent(inout) ::  & 
-    thlm,            & ! Theta l mean                  [K] 
-    rtm,             & ! Total water mixing ratio      [kg/kg]
-    um,              & ! u wind                        [m/s]
-    vm,              & ! v wind                        [m/s]
-    ug,              & ! u geostrophic wind            [m/s] 
-    vg,              & ! u geostrophic wind            [m/s] 
-    wp2, wp2_zt,     & ! w'^2                          [m^2/s^2]
-    up2,             & ! u'^2                          [m^2/s^2]
-    vp2,             & ! v'^2                          [m^2/s^2]
-    rcm,             & ! Cloud water mixing ratio      [kg/kg]
-    wm_zt, wm_zm,    & ! w wind                        [m/s]
-    em,              & ! Turbulence kinetic energy     [m^2/s^2]
-    exner,           & ! Exner function                [-] 
-    tau_zm, tau_zt,  & ! Dissipation time              [s]
-    thvm,            & ! Virtual potential temperature [K]
-    p_in_Pa,         & ! Pressure                      [Pa]
-    rho, rho_zm,     & ! Density                       [kg/m^3]
-    Lscale,          & ! Mixing length                 [m] 
-    Kh_zt, Kh_zm,    & ! Eddy diffusivity              [m^2/s]
-    um_ref,          & ! Initial profile of u wind     [m/s]
-    vm_ref             ! Initial profile of v wind     [m/s]
+      thlm,            & ! Theta l mean                  [K] 
+      rtm,             & ! Total water mixing ratio      [kg/kg]
+      um,              & ! u wind                        [m/s]
+      vm,              & ! v wind                        [m/s]
+      ug,              & ! u geostrophic wind            [m/s] 
+      vg,              & ! u geostrophic wind            [m/s] 
+      wp2, wp2_zt,     & ! w'^2                          [m^2/s^2]
+      up2,             & ! u'^2                          [m^2/s^2]
+      vp2,             & ! v'^2                          [m^2/s^2]
+      rcm,             & ! Cloud water mixing ratio      [kg/kg]
+      wm_zt, wm_zm,    & ! w wind                        [m/s]
+      em,              & ! Turbulence kinetic energy     [m^2/s^2]
+      exner,           & ! Exner function                [-] 
+      tau_zm, tau_zt,  & ! Dissipation time              [s]
+      thvm,            & ! Virtual potential temperature [K]
+      p_in_Pa,         & ! Pressure                      [Pa]
+      rho, rho_zm,     & ! Density                       [kg/m^3]
+      Lscale,          & ! Mixing length                 [m] 
+      Kh_zt, Kh_zm,    & ! Eddy diffusivity              [m^2/s]
+      um_ref,          & ! Initial profile of u wind     [m/s]
+      vm_ref             ! Initial profile of v wind     [m/s]
+
+    real, dimension(gr%nnzp,hydromet_dim), intent(inout) :: &
+      hydromet ! Hydrometeor species    [kg/kg] or [#/kg]
 
     ! Output
     real, dimension(gr%nnzp,sclr_dim), intent(out) ::  & 
@@ -952,6 +966,12 @@ module clubb_driver
 
     call hydrostatic( thvm, psfc, &                    ! Intent(in)
                       p_in_Pa, exner, rho, rho_zm )    ! Intent(out)
+
+    ! Determine initial value cloud droplet number concentration for the
+    ! Morrison microphysics
+    if ( trim( micro_scheme ) == "morrison" ) then
+      hydromet(1:gr%nnzp,iiNcm) = cm3_per_m3 * Ncm_initial / rho(1:gr%nnzp)
+    end if
 
     ! Initialize imposed w
 
