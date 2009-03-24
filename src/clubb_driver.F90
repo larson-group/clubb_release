@@ -2159,7 +2159,7 @@ module clubb_driver
     if ( l_soil_veg ) then
       wpthep = wpthlp_sfc + (Lv/Cp) * ((p0/psfc)**kappa) * wprtp_sfc
 
-      call advance_soil_veg( real( dt, kind=4 ), rho_zm(1), &
+      call advance_soil_veg( real( dt ), rho_zm(1), &
                              Frad_SW_down(1) - Frad_SW_up(1), Frad_SW_down(1), &
                              Frad_LW_down(1), wpthep )
     end if
