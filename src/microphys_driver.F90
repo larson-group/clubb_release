@@ -1,19 +1,25 @@
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 ! $Id$
 module microphys_driver
 
 ! Description:
-! Call a microphysical scheme to compute hydrometeor species, and advect,
-! sediment, & diffuse using a tridiagonal system.
+!   Call a microphysical scheme to compute hydrometeor species, and advect,
+!   sediment, & diffuse using a tridiagonal system.
 
 ! References:
-! None
-!-----------------------------------------------------------------------
+!  H. Morrison, J. A. Curry, and V. I. Khvorostyanov, 2005: A new double-
+!  moment microphysics scheme for application in cloud and
+!  climate models. Part 1: Description. J. Atmos. Sci., 62, 1665–1677.
+
+! Khairoutdinov, M. and Kogan, Y.: A new cloud physics parameteri-
+! zation in a large-eddy simulation model of marine stratocumulus,
+! Mon. Wea. Rev., 128, 229–243, 2000. 
+!-------------------------------------------------------------------------------
   use parameters_microphys, only: &
     l_cloud_sed,             & ! Cloud water sedimentation
     l_ice_micro,             & ! Compute ice
     l_graupel,               & ! Compute graupel
-    l_hail,                  & ! 
+    l_hail,                  & ! See module_mp_graupel for a description
     l_seifert_beheng,        & ! Use Seifert and Beheng (2001) warm drizzle
     l_predictnc,             & ! Predict cloud droplet number conc
     l_specify_aerosol,       & ! Specify aerosol
@@ -44,7 +50,7 @@ module microphys_driver
 
   contains
 
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
   subroutine init_microphys( iunit, namelist_file, Ncnm, hydromet_dim )
 
 ! Description:
@@ -53,7 +59,7 @@ module microphys_driver
 
 ! References:
 !   None
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 
     use array_index, only:  & 
       iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm, & ! Variables
@@ -112,7 +118,6 @@ module microphys_driver
     integer, intent(out) :: & 
       hydromet_dim ! Number of hydrometeor fields.
 
-
     namelist /microphysics_setting/ &
       micro_scheme, l_cloud_sed, &
       l_cloud_sed, l_ice_micro, l_graupel, l_hail, &
@@ -136,6 +141,10 @@ module microphys_driver
     ! Cloud water sedimentation from the RF02 case
     ! This has no effect on Morrison's cloud water sedimentation
     l_cloud_sed = .false.
+
+    !---------------------------------------------------------------------------
+    ! Parameters for Khairoutdinov and Kogan microphysics 
+    !---------------------------------------------------------------------------
 
     ! Parameters for in-cloud (from SAM RF02 DO).
     rrp2_rrainm2_cloud = 0.766
@@ -163,10 +172,15 @@ module microphys_driver
 
     r_0 = 25.0e-6   ! Assumed radius of all new drops; m.
 
-    ! The l_ice_micro & l_graupel flags are shared between COAMPS and Morrison
-    ! microphysics
+    !---------------------------------------------------------------------------
+    ! Parameters for Morrison and COAMPS microphysics 
+    !---------------------------------------------------------------------------
     l_ice_micro = .true.
     l_graupel = .true.
+
+    !---------------------------------------------------------------------------
+    ! Parameters for Morrison microphysics only
+    !---------------------------------------------------------------------------
     l_hail = .false.
     l_seifert_beheng = .false.
     l_predictnc = .true.
@@ -175,8 +189,6 @@ module microphys_driver
     l_arctic_nucl = .false.
     l_cloud_edge_activation = .true.
     l_fix_pgam  = .false.
-
-    microphys_start_time = 0.0
 
     ! Aerosol for RF02 from Mikhail Ovtchinnikov
     aer_rm1  = 0.011
@@ -193,6 +205,12 @@ module microphys_driver
     pgam_fixed = 5.
 
     Ncm_initial = 100. ! #/cm^3 TODO: Use this value with K&K microphysics as well
+
+    !---------------------------------------------------------------------------
+    ! Parameters for all microphysics schemes
+    !---------------------------------------------------------------------------
+    microphys_start_time = 0.0
+
 
     open(unit=iunit, file=namelist_file, status='old',action='read')
     read(iunit, nml=microphysics_setting)
@@ -230,7 +248,7 @@ module microphys_driver
       hydromet_list(iiNgraupelm) = "Ngraupelm"
       hydromet_list(iiNcm)       = "Ncm"
 
-      ! Set Nc0 module_MP_graupel based on Ncm_initial
+      ! Set Nc0 in the Morrison code (module_MP_graupel) based on Ncm_initial
       Nc0 = Ncm_initial
 
       ! Set flags from the Morrison scheme as in GRAUPEL_INIT
@@ -288,7 +306,7 @@ module microphys_driver
         dofix_pgam = .false.
       end if
 
-      if ( l_fix_pgam ) then
+      if ( l_subgrid_w ) then
         dosubgridw = .true.
       else
         dosubgridw = .false.
@@ -307,6 +325,7 @@ module microphys_driver
       hydromet_sed(iiricem)     = .false.
       hydromet_sed(iirgraupelm) = .false.
 
+      ! Setup the Morrison scheme
       call GRAUPEL_INIT()
 
     case ( "coamps" )
@@ -420,7 +439,7 @@ module microphys_driver
     return
   end subroutine init_microphys
 
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
   subroutine advance_microphys & 
              ( runtype, dt, time_current,  & 
                thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cf, & 
@@ -430,13 +449,13 @@ module microphys_driver
                rtm_forcing, thlm_forcing, &
                err_code )
 
-!       Description:
-!       Compute pristine ice, snow, graupel, & rain hydrometeor fields.
-!       Uses implicit discretization.
+! Description:
+!   Compute pristine ice, snow, graupel, & rain hydrometeor fields.
+!   Uses implicit discretization.
 
-!       References:
-!       None
-!-----------------------------------------------------------------------
+! References:
+!   None
+!-------------------------------------------------------------------------------
 
     use grid_class, only: & 
         gr,  & ! Variable(s)
@@ -678,7 +697,8 @@ module microphys_driver
 
     integer :: ixrm_cl, ixrm_bt
 
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
+
     ! ---- Begin code ----
 
     ! Return if there is delay between the model start time and start of the
@@ -704,9 +724,9 @@ module microphys_driver
     ! Determine temperature in K for the microphysics
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
 
-   ! Begin by calling either Brian Griffin's implementation of the
-   ! Khairoutdinov and Kogan microphysical scheme or
-   ! alternatively the Rutlege and Hobbes scheme from COAMPS(R).
+   ! Begin by calling Brian Griffin's implementation of the
+   ! Khairoutdinov and Kogan microphysical scheme, 
+   ! the Rutlege and Hobbes scheme from COAMPS, or the Morrison scheme.
    ! Note: COAMPS appears to have some K&K elements to it as well.
 
     select case ( trim( micro_scheme ) )
@@ -782,6 +802,7 @@ module microphys_driver
       rvm_mc(:) = 0.0
       T_in_K_mc(:) = 0.0
 
+      ! Compute standard deviation of vertical velocity in the grid column
       wtmp(:) = sqrt( wp2_zt(:) )
       ! Based on YSU PBL interface to the Morrison scheme WRF driver, the standard dev. of w
       ! should be clipped to be between 0.1 m/s and 4.0 m/s -dschanen 23 Mar 2009
@@ -789,7 +810,8 @@ module microphys_driver
       wtmp(:) = min( 4., wtmp )  
 
 !     wtmp = 0.5 ! %% debug
-      
+
+      ! Call the Morrison microphysics 
       call M2005MICRO_GRAUPEL &
            ( rcm_mc, hydromet_mc(:,iiricem), hydromet_mc(:,iirsnowm), &
              hydromet_mc(:,iirrainm), hydromet_mc(:,iiNcm), &
@@ -1210,8 +1232,8 @@ module microphys_driver
           time_precision ! Variable(s)
 
       use lapack_wrap, only:  & 
-          tridag_solve ! Procedure(s)
-!    .     ,band_solve
+          tridag_solve !,& ! Procedure(s)
+!         band_solve
 
 
       use stats_variables, only: & 
@@ -1588,7 +1610,7 @@ module microphys_driver
             ztscr06(k) = -tmp(1)
           endif
 
-          if ( ixrm_dff > 0 ) then
+          if ( ixrm_dff > 0 .and. l_sed ) then
             tmp(1:3) & 
             = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
                                 gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
