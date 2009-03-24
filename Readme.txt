@@ -38,14 +38,17 @@ as implemented in _Numerical Recipes In Fortran 90_ (amoeba.f90).
 The parameterization is called as a subroutine ( run_clubb() ) with 
 parameter values as input.
 
-The code is highly flexible.  One can vary the cases (bomex, fire, arm, or
-atex) to match; the variables to match (cloud fraction, liquid water, third
+The tuner code is highly flexible.  One can vary the cases (bomex, fire, arm, 
+or atex) to match; the variables to match (cloud fraction, liquid water, third
 moment of vertical velocity, etc.); the altitude and times over which to match
 these variables; and the parameters to tune (C1, beta, etc.). 
 
-The code is written in Fortran 95 and executed by a bash runscript. 
-On the Microsoft Windows platform this could work using MSYS or Cygwin 
-with G95, but we have not tested this sort of configuration.
+The code is written in ISO Fortran 95 and executed by a GNU Bash scripts. 
+The mkmf Makefile generating script and some other optional code checking
+scripts are written in Perl.
+On the Microsoft Windows platform the CLUBB parameterization could be configured
+and compiled using MSYS or Cygwin with G95, but we have not tested this sort 
+of configuration.
 
 We use the G95 compiler on Intel x64 processors running Redhat Enterprise 5.
 
@@ -93,7 +96,8 @@ E. GNU bash, or an equivalent POSIX compliant shell to use the run scripts.
 Optionally:
 F. GrADS for viewing the GrADS output data.
 G. NetCDF >= v3.5.1;  We have not tested our code with anything older.
-   If you do not use netCDF, remove -DNETCDF from the compiler flags.
+   If you do not use netCDF, you must remove -DNETCDF from the preprocessor
+   flags, found in the compile/config/<platform>.bash file.
 H. MATLAB or NCAR graphics for viewing the netCDF output data.
 
 To build:
@@ -106,7 +110,8 @@ To build:
    to the correct location (the default is one directory up).
 3. $ ./compile.bash
 
-The executables and Makefile will appear in <PREFIX>/bin and libraries in <PREFIX>/lib.
+The executables and Makefile will appear in <PREFIX>/bin and libraries in 
+<PREFIX>/lib.
 The object (.o) and module (.mod) files will appear in <PREFIX>/obj.
 
 If you're using GNU make and have a fast parallel machine, parallel builds 
@@ -122,10 +127,10 @@ Requirements:
 A., B., C., & D. as above.
 
 Build:
-1. and 2. as above.
+1, 2, & 3 as above.
 
 You can safely remove everything but libclubb_param.a from the "all" section
-of the compile.bash script.
+of the compile.bash script if you only want to use CLUBB in a host model.
 
 $ ./compile.bash
 
@@ -339,7 +344,8 @@ Go to the main CLUBB directory and follow these instructions:
          CLUBB GrADS files (which are written according the specifications 
          stated in this file).  This file MUST also contain the names of the 
 	 CLUBB variables that are being tuned for.  During the process of 
-	 tuning, small GrADS files will be written that contain the results for 	 ONLY the variables that are listed here.  This makes the tuning go
+	 tuning, small GrADS files will be written that contain the results for 
+         ONLY the variables that are listed here.  This makes the tuning go
          faster because it is not being slowed down by the writing of
          unnecessary variables.
 
@@ -471,16 +477,15 @@ Go to the main CLUBB directory and follow these instructions:
 - (5.1) Executing a Jacobian analysis:
 -----------------------------------------------------------------------
 
-1. $ cd ../input
+1. $ cd ../run_scripts
 
-2. Edit jacobian.in. 
-   cat case_setups/<case name>_model.in stats/all_stats.in > clubb.in
+2. Edit ../input_misc/jacobian.in. 
 
    Note that choosing a high delta_factor may make the model
    crash, which will result in no data (results for that term will come
    back as NaN).
 
-3. $ ../bin/jacobian
+3. $  ./run_jacobian.bash <CASE> [PARAMETER FILE] [STATS FILE]
 
 
 -----------------------------------------------------------------------
@@ -524,7 +529,7 @@ The namelist files:
   These files specify statistics output for each simulation.  See
   all_stats.in for a complete list of the all output supported.
   
-  input/tuner/error_all.in, error_<CASE>.in, error_<DATE>.in.
+  input_misc/tuner/error_all.in, error_<CASE>.in, error_<DATE>.in.
   These specify tunable parameters, the initial spread of the simplex
   containing the tunable parameters, and which cases to "tune" for.
 
@@ -536,14 +541,6 @@ The randomization files:
   parameters.  This works on any operating system with a Linux style 
   /dev/random (Solaris, Tru64, etc.) as well.  The seed file is now plain text 
   text and can be edited by hand.
-
-The compare_runs files:
-
-  bin/compare_runs and input/compare_runs.in.  This is the executable and 
-  namelist for a program which compares the variation between two GrADS files
-  with a number of key variables.  Useful for checking the soundness of the 
-  model when the code is modified and also for getting the raw difference 
-  between LES and SCM profiles.
 
 ------------------------------------------------------------------------
 - (2.1) The BUGSrad Radiation scheme
@@ -587,6 +584,17 @@ The compare_runs files:
   because of licensing restrictions.
 
 ------------------------------------------------------------------------
+- (2.3) The Morrison microphysics scheme
+------------------------------------------------------------------------
+  Morrison microphysics is a double-moment scheme that can predict mixing
+  ratio's and number concentrations for cloud water, rain, cloud ice,
+  snow, and graupel.  Details of its implementation may be found in:
+
+  H. Morrison, J. A. Curry, and V. I. Khvorostyanov, 2005: A new double-
+  moment microphysics scheme for application in cloud and climate models. 
+  Part 1: Description. J. Atmos. Sci., 62, 1665–1677. 
+
+------------------------------------------------------------------------
 - (3.1) The passive scalar code
 ------------------------------------------------------------------------
 
@@ -594,7 +602,7 @@ The CLUBB code can be run with additional non-interactive scalars.
 The scalars in the code provide a generalized way of simulating a 
 passive scalar in the atmosphere (e.g. carbon dioxide) 
 
-By default CLUBB should be setup to run without any passive scalars.  To use 
+By default CLUBB is configured to run without any passive scalars.  To use 
 this option, you must modify the input/case_setups/<CASE>_model.in
 so that sclr_dim is equal to the number of passive scalars and also set 
 ii<SCALAR NAME> to point the index in the array containing the passive scalar.
@@ -603,11 +611,13 @@ forcing and surface fluxes for these passive scalars must be configured
 in the clubb_driver code and handled at compile time.
 To output the scalar fields from a CLUBB simulation, be sure to include 
 sclram, sclrap2, etc. your stats file. See input/stats/all_stats.in for a
-complete list (commented out).
+complete list (commented out by default).
 
 Currently the code contains eddy-diffusivity scalar code (edsclram, edsclrbm)
 and the more sophisticated high-order scalars (sclram, sclrbm).  Both use two
 dimensional arrays, but the code and results for each is separated.
+The high-order scalars require a tolerance, called `sclrtol' to set in the
+namelist file. Generally this value should be larger than machine epsilon.
 
 Initially, the scalar arrays were configured to contain two vertical columns
 containing copies of thl and rt.
@@ -615,18 +625,18 @@ The code is sufficiently general that an arbitrary number of scalars can be
 added with a small number of modifications.
 The following files must be adjusted to customize the scalars:
 
-stats_variables.F:  Currently it is only configured to generate data for 
+stats_variables.F:  Currently this is only configured to generate data for 
 2 elements for each of the sclr arrays.  Using the sclra and sclrb variables
 as a template, it should be possible to add additional variables (sclrc, etc.)
 without any issues.
 
 The Namelists:
 
-Within the existing _model.in for each run a sounding for the scalar variable
+Within the existing <CASE>_model.in for each run, a sounding for the scalar variable
 must be added. 
 
 Setting sclrm(:,1) equal to thlm, and sclrm(:,2) equal to rtm in 
-the bomex case can be done like so:
+the BOMEX case can be done like so:
 
 &scalar_sounding
 sclr(:,1) = 298.7, 298.7, 299.39375, 302.4, 308.4, 313.675
