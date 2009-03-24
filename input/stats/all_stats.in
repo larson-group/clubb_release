@@ -30,6 +30,7 @@ vars_zt =
 'rrainm_accr', 'rrainm_cond_adj', 'rrainm_src_adj', 'rrainm_mc', 'rrainm_cl',
 'Nrm_bt', 'Nrm_ma', 'Nrm_sd', 'Nrm_dff', 'Nrm_cond', 'Nrm_auto',
 'Nrm_cond_adj', 'Nrm_src_adj', 'Nrm_mc', 'Nrm_cl',
+'Ncm_bt', 'Ncm_ma', 'Ncm_dff', 'Ncm_mc', 'Ncm_cl',
 'rsnowm_bt', 'rsnowm_ma', 'rsnowm_sd', 'rsnowm_dff', 'rsnowm_mc',
 'rsnowm_cl', 'ricem_bt', 'ricem_ma', 'ricem_sd', 'ricem_dff',
 'ricem_mc', 'ricem_cl', 'rgraupelm_bt', 'rgraupelm_ma',
