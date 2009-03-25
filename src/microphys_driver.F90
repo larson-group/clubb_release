@@ -96,7 +96,8 @@ module microphys_driver
       gr ! Variable
 
     use constants, only: &
-      fstderr ! Constant
+      fstderr,   & ! Constant
+      cm3_per_m3
 
     implicit none
 
@@ -191,16 +192,16 @@ module microphys_driver
     l_fix_pgam  = .false.
 
     ! Aerosol for RF02 from Mikhail Ovtchinnikov
-    aer_rm1  = 0.011
-    aer_sig1 = 1.2
-    aer_n1   = 125.
-    aer_rm2  = 0.06
+    aer_rm1  = 0.011 ! Mean geometric radius                 [μ]
+    aer_sig1 = 1.2   ! Std dev of aerosol size distribution  [??]
+    aer_n1   = 125.  ! Aerosol contentration                 [#/cm3]
+    aer_rm2  = 0.06 
     aer_sig2 = 1.7
     aer_n2   = 65.
 
     ! Other parameters, set as in SAM
-    ccnconst = 120.
-    ccnexpnt = 0.4
+    ccnconst = 120. ! Parameter for powerlaw CCN [#/cm3]
+    ccnexpnt = 0.4 
 
     pgam_fixed = 5.
 
@@ -209,8 +210,7 @@ module microphys_driver
     !---------------------------------------------------------------------------
     ! Parameters for all microphysics schemes
     !---------------------------------------------------------------------------
-    microphys_start_time = 0.0
-
+    microphys_start_time = 0.0 ! [s]
 
     open(unit=iunit, file=namelist_file, status='old',action='read')
     read(iunit, nml=microphysics_setting)
@@ -324,6 +324,13 @@ module microphys_driver
       hydromet_sed(iirsnowm)    = .false.
       hydromet_sed(iiricem)     = .false.
       hydromet_sed(iirgraupelm) = .false.
+
+      ! Convert from μ to m as in SAM
+      aer_rm1 = 1.e-6*aer_rm1 
+      aer_rm2 = 1.e-6*aer_rm2 
+      ! Convert from #/cm3 to #/m3
+      aer_n1 = cm3_per_m3 * aer_n1 
+      aer_n2 = cm3_per_m3 * aer_n2
 
       ! Setup the Morrison scheme
       call GRAUPEL_INIT()
