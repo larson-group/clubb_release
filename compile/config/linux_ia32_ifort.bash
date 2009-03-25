@@ -14,7 +14,7 @@ objdir="$dir/../obj"  # dir for *.o and *.mod files
 libdir="$dir/../lib"  # dir for *.a library files
 srcdir="$dir/../src"  # dir where the source files reside
 
-DEBUG="-g -check bounds -check uninit"
+DEBUG="-g -check bounds -check uninit -vec-report0"
 
 # == Warnings ==
 WARNINGS="-warn -warn notruncated_source"
@@ -46,7 +46,7 @@ LAPACK="-L$MKLPATH -Wl,-rpath,$MKLPATH -lmkl_intel_lp64 -lmkl_sequential -lmkl_l
 # Use -L<library path> -l<lib> to link in an external library
 LDFLAGS="-L$libdir -lclubb_param -lclubb_bugsrad -L$NETCDF/lib -lnetcdf $LAPACK"
 
-FCFLAGS="$ARCH $DEBUG"
+FFLAGS="$ARCH $DEBUG"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
