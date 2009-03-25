@@ -970,7 +970,13 @@ module clubb_driver
     ! Determine initial value cloud droplet number concentration for the
     ! Morrison microphysics
     if ( trim( micro_scheme ) == "morrison" ) then
-      hydromet(1:gr%nnzp,iiNcm) = cm3_per_m3 * Ncm_initial / rho(1:gr%nnzp)
+      ! Lower boundary condition
+      hydromet(1,iiNcm) = 0.
+
+      hydromet(2:gr%nnzp-1,iiNcm) = cm3_per_m3 * Ncm_initial / rho(2:gr%nnzp-1)
+
+      ! Upper boundary condition
+      hydromet(gr%nnzp,iiNcm) = 0.
     end if
 
     ! Initialize imposed w
