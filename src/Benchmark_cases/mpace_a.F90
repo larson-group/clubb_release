@@ -43,7 +43,7 @@
   contains
 
 !----------------------------------------------------------------------
-  subroutine mpace_a_tndcy( time, time_initial, rlat, & 
+  subroutine mpace_a_tndcy( time, rlat, & 
                             rho, p_in_Pa, rcm, & 
                             wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
                             Frad, radht, & 
@@ -118,8 +118,7 @@
 
   ! Input Variables
   real(kind=time_precision), intent(in) ::  & 
-  time,         & ! Current time of simulation      [s]
-  time_initial    ! Initial time of simulation      [s]
+  time            ! Current time of simulation      [s]
 
   real, intent(in) ::  & 
   rlat          ! Latitude                        [Degrees North]

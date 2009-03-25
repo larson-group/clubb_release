@@ -15,7 +15,7 @@ module dycoms2_rf02
   contains
 
 !----------------------------------------------------------------------
-  SUBROUTINE dycoms2_rf02_tndcy( time, time_initial, rho, & 
+  SUBROUTINE dycoms2_rf02_tndcy( rho, & 
                                  rho_zm, rtm, rcm, exner,  & 
                                  err_code, &
                                  wm_zt, wm_zm, thlm_forcing, rtm_forcing,  & 
@@ -41,8 +41,6 @@ module dycoms2_rf02
 
     use model_flags, only: l_bugsrad  ! Variable(s)
 
-    use stats_precision, only: time_precision ! Variable(s)
-
     use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
     use array_index, only:  & 
@@ -65,9 +63,6 @@ module dycoms2_rf02
       F1     = 22.0       ! [W/m^2]
 
     ! Input Variables
-    real(kind=time_precision), intent(in) :: & 
-      time,        & ! Current time    [s]
-      time_initial   ! Initial time    [s]
 
     real, intent(in), dimension(gr%nnzp) :: & 
       rho,    & ! Density on thermo. grid        [kg/m^3] 

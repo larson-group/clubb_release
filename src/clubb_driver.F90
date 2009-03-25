@@ -1855,7 +1855,7 @@ module clubb_driver
                                sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
     case ( "dycoms2_rf02" ) ! DYCOMS2 RF02 case
-      call dycoms2_rf02_tndcy( time_current, time_initial, rho, &          ! Intent(in)
+      call dycoms2_rf02_tndcy( rho, &          ! Intent(in)
                                rho_zm, rtm, rcm, exner, &                  ! Intent(in)
                                err_code, &                                 ! Intent(inout)
                                wm_zt, wm_zm, thlm_forcing, rtm_forcing, &  ! Intent(out) 
@@ -1898,14 +1898,14 @@ module clubb_driver
 #endif
 
     case ( "mpace_a" ) ! mpace_a arctic stratus case
-      call mpace_a_tndcy( time_current, time_initial, rlat, &        ! Intent(in) 
+      call mpace_a_tndcy( time_current, rlat, &        ! Intent(in) 
                           rho, p_in_Pa, rcm, &                       ! Intent(in)
                           wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
                           Frad, radht, um_ref, vm_ref, &             ! Intent(out)
                           sclrm_forcing, edsclrm_forcing )           ! Intent(out)
 
     case ( "mpace_b" ) ! mpace_b arctic stratus case
-      call mpace_b_tndcy( time_current, time_initial, rlat, &        ! Intent(in)
+      call mpace_b_tndcy( time_current, rlat, &        ! Intent(in)
                           rho,  p_in_Pa, thvm, rcm, &                ! Intent(in)
                           wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
                           Frad, radht,  &                            ! Intent(out)
