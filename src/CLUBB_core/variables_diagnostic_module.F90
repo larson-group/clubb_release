@@ -223,12 +223,6 @@ module variables_diagnostic_module
       sclr_dim, &
       edsclr_dim
 
-    use parameters_microphys, only: &
-      Ncm_initial ! Variable
-
-    use array_index, only: &
-      iiNcm  ! Variables
-
     implicit none
 
     ! Input Variables
@@ -420,11 +414,7 @@ module variables_diagnostic_module
     Ncnm(1:nzmax) = 0.0 ! Cloud nuclei number concentration (COAMPS)
 
     do i = 1, hydromet_dim, 1
-      if ( i == iiNcm ) then
-        hydromet(1:nzmax,i) = Ncm_initial
-      else
-        hydromet(1:nzmax,i) = 0.0
-      end if
+      hydromet(1:nzmax,i) = 0.0
     end do
 
     ! Variables for PDF closure scheme
