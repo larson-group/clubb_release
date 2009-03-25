@@ -47,7 +47,7 @@ module output_netcdf
 
     implicit none
 
-! Input Variables
+    ! Input Variables
     character(len=*), intent(in) ::  & 
      fdir,   & ! Directory name of file
      fname     ! File name
@@ -77,6 +77,9 @@ module output_netcdf
     ! Local Variables
     integer :: stat  ! Error status
     integer :: k     ! Array index
+   
+    ! Make the compiler warning about unused variables go away
+    if ( .false. ) k = unit 
 
     ! Initialization for NetCDF
     ncf%l_defined = .false.
