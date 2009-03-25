@@ -764,7 +764,7 @@ module clubb_driver
 
     ! Free memory
 
-    call cleanup_clubb_core( )
+    call cleanup_clubb_core( .false. )
 
     call stats_finalize( )
 

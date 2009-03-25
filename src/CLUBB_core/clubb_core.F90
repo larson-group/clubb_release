@@ -4,7 +4,7 @@
 module clubb_core
 
 ! Description:
-!   The module containing the `core' of the HOC model.
+!   The module containing the `core' of the CLUBB model.
 
 ! References:
 !   None
@@ -96,7 +96,6 @@ module clubb_core
       Skw_zm, & 
       sigma_sqd_w_zt, & 
       wp4, & 
-!     wpthvp, & 
       thlpthvp, & 
       rtpthvp, & 
       wprcp, & 
@@ -106,7 +105,6 @@ module clubb_core
       rcp2, & 
       rsat, & 
       shear, & 
-!     Kh_zt, & 
       wprtp2, & 
       wp2rtp, & 
       wpthlp2, & 
@@ -563,7 +561,7 @@ module clubb_core
       ! Joshua Fasching March 2008
 
       if ( err_code == clubb_var_equals_NaN ) then
-        write(0,*) "At grid level = ",k
+        write(fstderr,*) "At grid level = ",k
         return
       end if
 
@@ -840,11 +838,12 @@ module clubb_core
              ( k, n, dvar, nt, i_rmd, & 
                crt1, crt2, cthl1, cthl2, & 
                rrainm, cf, grid, l_sflag, p_height_time )
-    !       Description:
-    !       Estimate using Latin Hypercubes.  This is usually disabled by default.
-    !       The actual generation of a random matrix is done in a call from the
-    !       subroutine hoc_initialize to permute_height_time()
-    !       References:
+    ! Description:
+    !   Estimate using Latin Hypercubes.  This is usually disabled by default.
+    !   The actual generation of a random matrix is done in a call from the
+    !   subroutine hoc_initialize to permute_height_time()
+    ! References:
+    !   None
     !-----------------------------------------------------------------------
 
     use variables_diagnostic_module, only:  & 
@@ -1088,15 +1087,14 @@ module clubb_core
 
     end if
 
-    ! if ( .not. l_implemented ) then
-    !   call setup_diagnostic_variables( nzmax )
-    ! end if
+    if ( .not. l_implemented ) then
+      call setup_prognostic_variables( nzmax )        ! intent(in)
+    end if
 
     ! Both prognostic variables and diagnostic variables need to be
-    ! declared, allocated, initialized, and deallocated whether HOC
+    ! declared, allocated, initialized, and deallocated whether CLUBB
     ! is part of a larger model or not.
-    call setup_prognostic_variables( nzmax )        ! intent(in)
-    call setup_diagnostic_variables( nzmax )        ! intent(in)
+    call setup_diagnostic_variables( nzmax )
 
     ! Setup grid
     call gridsetup( nzmax, l_implemented, grid_type,    & ! intent(in)
@@ -1107,7 +1105,7 @@ module clubb_core
   end subroutine setup_clubb_core
 
   !-----------------------------------------------------------------------
-  subroutine cleanup_clubb_core( )
+  subroutine cleanup_clubb_core( l_implemented )
 
     use parameters_model, only: sclrtol ! Variable
 
@@ -1118,16 +1116,19 @@ module clubb_core
 
     implicit none
 
+    ! Flag to see if CLUBB is running on it's own,
+    ! or if it's implemented as part of a host model.
+    logical, intent(in) :: l_implemented   ! (T/F)
+
     !----- Begin Code -----
 
-    !if ( .not. l_implemented ) then
-    !  call cleanup_diagnostic_variables( )
-    !end if
+    if ( .not. l_implemented ) then
+      call cleanup_prognostic_variables( )
+    end if
 
     ! Both prognostic variables and diagnostic variables need to be
-    ! declared, allocated, initialized, and deallocated whether HOC
+    ! declared, allocated, initialized, and deallocated whether CLUBB
     ! is part of a larger model or not.
-    call cleanup_prognostic_variables( )
     call cleanup_diagnostic_variables( )
 
     ! De-allocate the array for the passive scalar tolerances
