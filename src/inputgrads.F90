@@ -13,46 +13,46 @@ module inputfile_class
 !       Chris Golaz, 9/12/2000
 
 !       Modifications:
-!       * Uses functions rather than subroutines to get endian type. 
+!       * Uses functions rather than subroutines to get endian type.
 !       * Other cosmetic changes.
 !       * Overloaded subroutine get_var to allow for 8 byte real output.
-!       * Added preprocesing for RECL 
+!       * Added preprocesing for RECL
 !-----------------------------------------------------------------------
 #include "recl.inc"
-use endian, only: & 
-    little_endian,  & ! Procedure(s)
-    big_endian, & 
-    byte_order_swap
-use constants, only:  & 
-    fstdout,  & ! Variable(s) 
-    fstderr
-use stats_precision, only:  & 
-    time_precision ! Variable(s)
+  use endian, only: & 
+      little_endian,  & ! Procedure(s)
+      big_endian, & 
+      byte_order_swap
+  use constants, only:  & 
+      fstdout,  & ! Variable(s) 
+      fstderr
+  use stats_precision, only:  & 
+      time_precision ! Variable(s)
 
-implicit none
+  implicit none
 
-private ! Default Scope
+  private ! Default Scope
 
-public :: get_var, inputgrads, open_grads_read,  & 
-          close_grads_read, variable 
+  public :: get_var, inputgrads, open_grads_read,  & 
+            close_grads_read, variable
 
 
 ! Overloaded interface for get_var.  All GrADS files are assumed
 ! to store variable as 4 byte IEEE floats, but the model may be
 ! using double or extended precision.
-interface get_var
-  module procedure get_4byte_var, get_8byte_var
-end interface
+  interface get_var
+    module procedure get_4byte_var, get_8byte_var
+  end interface
 
 ! Structure to hold description of a variable
-type variable
+  type variable
   integer :: index
   character(len=15) :: name ! variable name
-end type variable
+  end type variable
 
 ! Structure to hold description of a GrADS input file
 
-type inputgrads
+  type inputgrads
 
   ! File information
   character(len=128) :: fname ! Binary data file name
@@ -77,190 +77,191 @@ type inputgrads
 
   type (variable), pointer :: var(:)
 
-end type inputgrads
+  end type inputgrads
 
-contains
+  contains
 
 !-----------------------------------------------------------------------
   subroutine open_grads_read( unit, fname, f )
 
-!         Description:
-!         Open a GrADS data set in read-only mode
+! Description:
+!   Open a GrADS data set in read-only mode
 !-----------------------------------------------------------------------
-  implicit none
+    implicit none
 
-  ! Input Variables
-  integer, intent(in) :: unit ! Fortran I/O unit
+    ! Input Variables
+    integer, intent(in) :: unit ! Fortran I/O unit
 
-  character(len=*), intent(in) ::  & 
-  fname ! The file name
+    character(len=*), intent(in) ::  & 
+      fname ! The file name
 
-  ! Input / Output
-  type (inputgrads), intent(inout) ::  & 
-  f ! The GrADS file
+    ! Input / Output
+    type (inputgrads), intent(inout) ::  & 
+      f ! The GrADS file
 
-  ! Local Variables
-  logical :: l_done, l_error
-  integer :: ierr
+    ! Local Variables
+    logical :: l_done, l_error
+    integer :: ierr
 
-  character(len=256) ::  & 
-  line, tmp, date, dt
+    character(len=256) ::  & 
+      line, tmp, date, dt
 
-  integer ::  & 
-  i, nx, ny, nz, & 
-  ihour, imin
+    integer ::  & 
+      i, nx, ny, nz, & 
+      ihour, imin
 
 !-----------------------------------------------------------------------
-  !  Initialize status booleans
-  f%l_byteswapped = .false.
-  l_error          = .false.
-  l_done           = .false.
+    !  Initialize status booleans
+    f%l_byteswapped = .false.
+    l_error          = .false.
+    l_done           = .false.
 
-  ! Open control file
-  open( unit=unit, file=trim( fname ), status = 'old' )
+    ! Open control file
+    open( unit=unit, file=trim( fname ), status = 'old' )
 
-  ! Read and process it
-  read(unit,iostat=ierr,fmt='(a256)') line
-  if ( ierr < 0 ) l_done = .true.
+    ! Read and process it
+    read(unit,iostat=ierr,fmt='(a256)') line
+    if ( ierr < 0 ) l_done = .true.
 
-  do while ( .not. l_done )
+    do while ( .not. l_done )
 
-     if ( index(line,'DSET') > 0 ) then
+      if ( index(line,'DSET') > 0 ) then
 
-       read(unit=line,fmt=*) tmp, f%fname
-       if ( f%fname(1:1) == '^' ) then
+        read(unit=line,fmt=*) tmp, f%fname
+        if ( .false. ) dt = tmp ! Dummy code to eliminate a compiler warning
+        if ( f%fname(1:1) == '^' ) then
           ! Get the name of the associated .dat file
-          f%fname = f%fname(2:len_trim(f%fname)) 
+          f%fname = f%fname(2:len_trim(f%fname))
           ! Figure out the file path
           i = index( fname, '/', back = .true. )
           if ( i > 0 ) then
-             ! Construct a path for the .date file
-             f%fname = fname(1:i) // f%fname
+            ! Construct a path for the .date file
+            f%fname = fname(1:i) // f%fname
           end if
-       end if
+        end if
 
-     else if ( index(line,'BYTESWAPPED') > 0 ) then
+      else if ( index(line,'BYTESWAPPED') > 0 ) then
 
-       f%l_byteswapped = .true.
+        f%l_byteswapped = .true.
 
-     else if ( index(line,'BIG_ENDIAN') > 0 ) then
+      else if ( index(line,'BIG_ENDIAN') > 0 ) then
 
-       ! Swap bytes if local machine is little_endian and file
-       ! big_endian
+        ! Swap bytes if local machine is little_endian and file
+        ! big_endian
 
-       if ( little_endian( ) ) f%l_byteswapped = .true.
+        if ( little_endian( ) ) f%l_byteswapped = .true.
 
-     else if ( index(line,'LITTLE_ENDIAN') > 0 ) then
+      else if ( index(line,'LITTLE_ENDIAN') > 0 ) then
 
-       ! Swap bytes if local machine is big_endian and file
-       ! little_endian
+        ! Swap bytes if local machine is big_endian and file
+        ! little_endian
 
-       if ( big_endian( ) ) f%l_byteswapped = .true.
+        if ( big_endian( ) ) f%l_byteswapped = .true.
 
-     else if ( index(line,'XDEF') > 0 ) then
+      else if ( index(line,'XDEF') > 0 ) then
 
-       read(unit=line,fmt=*) tmp, nx
-       if ( nx /= 1 ) then
-         write(unit=fstderr,fmt=*) 'Error: XDEF can only be 1'
-         l_error = .true.
-       end if
+        read(unit=line,fmt=*) tmp, nx
+        if ( nx /= 1 ) then
+          write(unit=fstderr,fmt=*) 'Error: XDEF can only be 1'
+          l_error = .true.
+        end if
 
-     else if ( index(line,'YDEF') > 0 ) then
+      else if ( index(line,'YDEF') > 0 ) then
 
-       read(unit=line,fmt=*) tmp, ny
-       if ( ny /= 1 ) then
-         write(unit=fstderr,fmt=*) 'Error: YDEF can only be 1'
-         l_error = .true.
-       end if
+        read(unit=line,fmt=*) tmp, ny
+        if ( ny /= 1 ) then
+          write(unit=fstderr,fmt=*) 'Error: YDEF can only be 1'
+          l_error = .true.
+        end if
 
-     else if ( index(line,'ZDEF') > 0 ) then
+      else if ( index(line,'ZDEF') > 0 ) then
 
-       read(unit=line,fmt=*) tmp, f%iz
-       f%ia = 1
-       allocate( f%z(f%ia:f%iz) )
-       ! Implied Do Loop with the purpose of reading in
-       ! altitudes
-       if(f%iz == 1) then
-         f%z(1) = 1
-       else
-         read(unit=unit,fmt=*) (f%z(i),i=f%ia,f%iz)
-       endif
-     else if ( index(line,'TDEF') > 0 ) then
+        read(unit=line,fmt=*) tmp, f%iz
+        f%ia = 1
+        allocate( f%z(f%ia:f%iz) )
+        ! Implied Do Loop with the purpose of reading in
+        ! altitudes
+        if(f%iz == 1) then
+          f%z(1) = 1
+        else
+          read(unit=unit,fmt=*) (f%z(i),i=f%ia,f%iz)
+        endif
+      else if ( index(line,'TDEF') > 0 ) then
 
-       read(unit=line,fmt=*) tmp, f%ntimes, tmp, date, dt
-       read(unit=date(1:2),fmt=*) ihour
-       read(unit=date(4:5),fmt=*) imin
+        read(unit=line,fmt=*) tmp, f%ntimes, tmp, date, dt
+        read(unit=date(1:2),fmt=*) ihour
+        read(unit=date(4:5),fmt=*) imin
 
-       f%time = ihour * 3600. + imin * 60.
+        f%time = ihour * 3600. + imin * 60.
 
-       read(unit=date(7:8),fmt=*) f%day
-       read(unit=date(12:15),fmt=*) f%year
+        read(unit=date(7:8),fmt=*) f%day
+        read(unit=date(12:15),fmt=*) f%year
 
-       select case( date(9:11) )
-       case( 'JAN' )
-         f%month = 1
-       case( 'FEB' )
-         f%month = 2
-       case( 'MAR' )
-         f%month = 3
-       case( 'APR' )
-         f%month = 4
-       case( 'MAY' )
-         f%month = 5
-       case( 'JUN' )
-         f%month = 6
-       case( 'JUL' )
-         f%month = 7
-       case( 'AUG' )
-         f%month = 8
-       case( 'SEP' )
-         f%month = 9
-       case( 'OCT' )
-         f%month = 10
-       case( 'NOV' )
-         f%month = 11
-       case( 'DEC' )
-         f%month = 12
-       case default
-         write(unit=fstderr,fmt=*) "Unknown month: "//date(9:11)
-         l_error = .true.
-       end select
-       ! Assumes minutes
-       read(dt(1:len_trim(dt)-2),*) f%dtwrite
-       f%dtwrite = f%dtwrite * 60.
+        select case( date(9:11) )
+        case( 'JAN' )
+          f%month = 1
+        case( 'FEB' )
+          f%month = 2
+        case( 'MAR' )
+          f%month = 3
+        case( 'APR' )
+          f%month = 4
+        case( 'MAY' )
+          f%month = 5
+        case( 'JUN' )
+          f%month = 6
+        case( 'JUL' )
+          f%month = 7
+        case( 'AUG' )
+          f%month = 8
+        case( 'SEP' )
+          f%month = 9
+        case( 'OCT' )
+          f%month = 10
+        case( 'NOV' )
+          f%month = 11
+        case( 'DEC' )
+          f%month = 12
+        case default
+          write(unit=fstderr,fmt=*) "Unknown month: "//date(9:11)
+          l_error = .true.
+        end select
+        ! Assumes minutes
+        read(dt(1:len_trim(dt)-2),*) f%dtwrite
+        f%dtwrite = f%dtwrite * 60.
 
-     else if ( index(line,'ENDVARS') > 0 ) then
+      else if ( index(line,'ENDVARS') > 0 ) then
 
-       l_done = .true.
+        l_done = .true.
 
-     else if ( index(line,'VARS') > 0 ) then
+      else if ( index(line,'VARS') > 0 ) then
 
-       read(unit=line,fmt=*) tmp, f%nvar
-       allocate( f%var(f%nvar) )
+        read(unit=line,fmt=*) tmp, f%nvar
+        allocate( f%var(f%nvar) )
 
-       do i = 1, f%nvar, 1
+        do i = 1, f%nvar, 1
 
           read(unit=unit,iostat=ierr,fmt='(a256)') line
           read(unit=line,fmt=*) f%var(i)%name, nz
 
           if ( nz /= f%iz ) then
-             write(unit=fstderr,fmt=*) "Error reading ",  & 
-               trim( f%var(i)%name )
-             l_error = .true.
+            write(unit=fstderr,fmt=*) "Error reading ",  & 
+              trim( f%var(i)%name )
+            l_error = .true.
           end if
 
           f%var(i)%index = i
 
-       end do ! 1..f%nvar
+        end do ! 1..f%nvar
 
-     end if
+      end if
 
-     read(unit=unit,iostat=ierr,fmt='(a256)') line
-     if ( ierr < 0 ) l_done = .true.
+      read(unit=unit,iostat=ierr,fmt='(a256)') line
+      if ( ierr < 0 ) l_done = .true.
 
-  end do
-  
-  close( unit )
+    end do
+
+    close( unit )
 
 !--------- Debug -------------------------------------------------------
 !         write(*,*) 'f%fname = ',trim(f%fname)
@@ -279,102 +280,103 @@ contains
 !            write(*,*) trim(f%var(i)%name)
 !         end do
 !--------- Debug -------------------------------------------------------
-  if ( l_error ) then
-     write(unit=fstderr,fmt=*)  & 
-       'Fatal error encountered while reading control file'
-     write(unit=fstderr,fmt=*) 'Cannot do miracles...'
-     stop
-  end if
+    if ( l_error ) then
+      write(unit=fstderr,fmt=*)  & 
+        'Fatal error encountered while reading control file'
+      write(unit=fstderr,fmt=*) 'Cannot do miracles...'
+      stop
+    end if
 
 ! Open binary file for direct access
 
-  f%iounit = unit
-  open( unit = f%iounit, & 
-        file = trim( f%fname ), & 
-        form = 'unformatted', access = 'direct',  & 
-        recl = F_RECL, status='old', iostat=ierr )
+    f%iounit = unit
+    open( unit = f%iounit, & 
+          file = trim( f%fname ), & 
+          form = 'unformatted', access = 'direct',  & 
+          recl = F_RECL, status='old', iostat=ierr )
 
-  if ( ierr /= 0 ) then
-    write(unit=fstderr,fmt=*)  & 
-      "input_grads: error opening binary file"
-    write(unit=fstderr,fmt=*) "iostat = ", ierr
-    stop
-  end if
+    if ( ierr /= 0 ) then
+      write(unit=fstderr,fmt=*)  & 
+        "input_grads: error opening binary file"
+      write(unit=fstderr,fmt=*) "iostat = ", ierr
+      stop
+    end if
 
-  return
+    return
   end subroutine open_grads_read
 
 !----------------------------------------------------------------------
   subroutine get_4byte_var( f, varname, itime, x, l_error )
 
 !         Description:
-!         Read binary data from file units and return the result as 
+!         Read binary data from file units and return the result as
 !         as 4 byte float 'x'
 !----------------------------------------------------------------------
 
-  implicit none
+    implicit none
 
-  ! Input Variables
-  type (inputgrads), intent(in) :: & 
-  f ! The file to read data from
+    ! Input Variables
+    type (inputgrads), intent(in) :: & 
+    f ! The file to read data from
 
-  character(len=*), intent(in) ::  & 
-  varname ! The variable name as it occurs in the control file
-  
-  integer, intent(in) :: & 
-  itime ! Obtain variable varname at time itime [m]
+    character(len=*), intent(in) ::  & 
+    varname ! The variable name as it occurs in the control file
 
-  ! Output
-  real(kind=4), dimension(:), intent(out) ::  & 
-  x ! Result variable
+    integer, intent(in) :: & 
+    itime ! Obtain variable varname at time itime [m]
 
-  logical, intent(out) :: l_error
+    ! Output
+    real(kind=4), dimension(:), intent(out) ::  & 
+    x ! Result variable
 
-  ! Internal
-  logical :: l_done
-  integer :: i, k, nrec, ivar
+    logical, intent(out) :: l_error
 
-  ! Initialize l_error to false
-  l_error = .false.
+    ! Internal
+    logical :: l_done
+    integer :: i, k, nrec, ivar
 
-  ! Check time index
-  ! Now assumes itime is in minutes
-  if ( itime < 1 .or. (itime/(f%dtwrite/60.)) > f%ntimes ) then
-    l_error = .true.
-    write(unit=fstderr,fmt=*)  & 
-      "get_var: itime < 1 .or. itime > f%ntimes"
-    write(unit=fstderr,fmt=*) "itime = ", itime
-    write(unit=fstderr,fmt=*) "f%ntimes = ", f%ntimes
+    ! Initialize l_error to false
+    l_error = .false.
 
-    return
-  end if
-            
-  ! Look up variable in list
-  l_done = .false.
-  i    = 1
-  do while ( .not. l_done )
-     if ( trim( varname ) == trim( f%var(i)%name ) ) then
-       ivar = i
-       l_done = .true.
-     else
-       i = i + 1
-       if ( i > f%nvar ) l_done = .true.
-     end if
-  end do ! .not. l_done
+    ! Check time index
+    ! Now assumes itime is in minutes
+    if ( itime < 1 .or. (itime/(f%dtwrite/60.)) > f%ntimes ) then
+      l_error = .true.
+      write(unit=fstderr,fmt=*)  & 
+        "get_var: itime < 1 .or. itime > f%ntimes"
+      write(unit=fstderr,fmt=*) "itime = ", itime
+      write(unit=fstderr,fmt=*) "f%ntimes = ", f%ntimes
 
-  if ( i > f%nvar ) then
-    l_error = .true.
-            write(*,*) 'get_var: i > f%nvar'
-            write(*,*) 'i = ',i
-            write(*,*) 'f%nvar = ',f%nvar
-    return
-  end if
+      return
+    end if
 
-  ! Read variable from file
+    ! Look up variable in list
+    l_done = .false.
+    i    = 1
+    ivar = -1 ! Initialization to avoid a compiler warning
+    do while ( .not. l_done )
+      if ( trim( varname ) == trim( f%var(i)%name ) ) then
+        ivar = i
+        l_done = .true.
+      else
+        i = i + 1
+        if ( i > f%nvar ) l_done = .true.
+      end if
+    end do ! .not. l_done
 
-  ! dschanen changed this to take into account varying dtwrite
-  ! numbers 22 March 2007
-!         nrec = (itime-1)*f%nvar*(f%iz-f%ia+1) 
+    if ( i > f%nvar ) then
+      l_error = .true.
+      write(*,*) 'get_var: i > f%nvar'
+      write(*,*) 'i = ',i
+      write(*,*) 'f%nvar = ',f%nvar
+      return
+    end if
+
+    ! Read variable from file
+
+    ! dschanen changed this to take into account varying dtwrite
+    ! numbers 22 March 2007
+!         nrec = (itime-1)*f%nvar*(f%iz-f%ia+1)
 !    .         + (ivar-1)*(f%iz-f%ia+1) + 1
 
 !          print *, "Division check", nint(itime/(f%dtwrite/60.))-1
@@ -382,26 +384,26 @@ contains
 !          print *, "varindex", ivar-1
 !          print *, "nlevels", (f%iz-f%ia+1)
 
-  ! Probably not the most elegant to round but it does allow
-  ! cases like arm_3year with their default _stats.in and
-  ! _model.in to restart
-  ! Joshua Fasching March 2008
-  
-  nrec = (nint(itime/(f%dtwrite/60.))-1)*f%nvar*(f%iz-f%ia+1)  & 
-       + (ivar-1)*(f%iz-f%ia+1)
-  nrec = nrec + 1
-  ! Debug
+    ! Probably not the most elegant to round but it does allow
+    ! cases like arm_3year with their default _stats.in and
+    ! _model.in to restart
+    ! Joshua Fasching March 2008
+
+    nrec = (nint(itime/(f%dtwrite/60.))-1)*f%nvar*(f%iz-f%ia+1)  & 
+         + (ivar-1)*(f%iz-f%ia+1)
+    nrec = nrec + 1
+    ! Debug
 !          print *, varname
 !          print *, "ivar = ", ivar
 !          print *, "nrec = ", nrec
-  
-  do k=f%ia,f%iz
-    read(unit=f%iounit,rec=nrec) x(k)
-    if ( f%l_byteswapped ) call byte_order_swap( x(k) )
-    nrec = nrec + 1
-  end do
 
-  return
+    do k=f%ia,f%iz
+      read(unit=f%iounit,rec=nrec) x(k)
+      if ( f%l_byteswapped ) call byte_order_swap( x(k) )
+      nrec = nrec + 1
+    end do
+
+    return
   end subroutine get_4byte_var
 
 !----------------------------------------------------------------------
@@ -412,34 +414,34 @@ contains
 !         precision type, allowing for compile time promotion.
 !----------------------------------------------------------------------
 
-  implicit none
+    implicit none
 
-  ! External
-  intrinsic :: dble, size
+    ! External
+    intrinsic :: dble, size
 
-  ! Input Variables
-  type (inputgrads), intent(in) :: & 
-  f ! The GrADS file
+    ! Input Variables
+    type (inputgrads), intent(in) :: & 
+    f ! The GrADS file
 
-  character(len=*), intent(in) :: & 
-  varname ! The variable name as it occurs in the control file
+    character(len=*), intent(in) :: & 
+    varname ! The variable name as it occurs in the control file
 
-  integer, intent(in) :: & 
-  itime   ! Obtain variable varname at time itime 
+    integer, intent(in) :: & 
+    itime   ! Obtain variable varname at time itime
 
-  ! Output Variables
-  real(kind=8), intent(out) :: x(:)
+    ! Output Variables
+    real(kind=8), intent(out) :: x(:)
 
-  logical, intent(out) :: l_error
+    logical, intent(out) :: l_error
 
-  ! Internal
-  real(kind=4), dimension(size( x )) :: tmp
+    ! Internal
+    real(kind=4), dimension(size( x )) :: tmp
 
-  call get_4byte_var( f, varname, itime, tmp, l_error )
+    call get_4byte_var( f, varname, itime, tmp, l_error )
 
-  x = dble( tmp )
+    x = dble( tmp )
 
-  return
+    return
   end subroutine get_8byte_var
 
 !-----------------------------------------------------------------------
@@ -449,20 +451,20 @@ contains
 !         Close a previously opened GrADS file
 !-----------------------------------------------------------------------
 
-  implicit none
+    implicit none
 
-  ! Input Variables
-  type (inputgrads), intent(INOUT) :: f
+    ! Input Variables
+    type (inputgrads), intent(INOUT) :: f
 
 !-----------------------------------------------------------------------
-  ! Close file 
-  close( unit=f%iounit )
+    ! Close file
+    close( unit=f%iounit )
 
-  ! Deallocate
-  deallocate( f%var )
-  deallocate( f%z )
+    ! Deallocate
+    deallocate( f%var )
+    deallocate( f%z )
 
-  return
+    return
   end subroutine close_grads_read
 
 end module inputfile_class
