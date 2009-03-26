@@ -22,59 +22,59 @@ module parameters_tunable
 
   ! Model constant parameters
   real, public :: & 
-     C1,          & ! Low Skewness in C1 Skewness Function.
-     C1b,         & ! High Skewness in C1 Skewness Function.
-     C1c,         & ! Degree of Slope of C1 Skewness Function.
-     C2,          & ! Low Skewness in C2 Skewness Function.
-     C2rt,        & ! C2 coefficient for the rtp2_dp1 term.
-     C2thl,       & ! C2 coefficient for the thlp2_dp1 term.
-     C2rtthl,     & ! C2 coefficient for the rtpthlp_dp1 term.
-     C2b,         & ! High Skewness in C2 Skewness Function.  
-     C2c,         & ! Degree of Slope of C2 Skewness Function.
-     C4,          & ! Used only when l_Kh_zm_aniso is true.
-     C5,          & ! Coefficient in pressure terms in the w'^2 eqn.
-     C6rt,        & ! Low Skewness in C6rt Skewness Function.
-     C6rtb,       & ! High Skewness in C6rt Skewness Function.
-     C6rtc,       & ! Degree of Slope of C6rt Skewness Function.
-     C6thl,       & ! Low Skewness in C6thl Skewness Function.
-     C6thlb,      & ! High Skewness in C6thl Skewness Function.
-     C6thlc,      & ! Degree of Slope of C6thl Skewness Function.
-     C7,          & ! Low Skewness in C7 Skewness Function.
-     C7b,         & ! High Skewness in C7 Skewness Function.
-     C7c,         & ! Degree of Slope of C7 Skewness Function.
-     C8,          & ! Coefficient #1 in C8 Skewness Equation.
-     C8b,         & ! Coefficient #2 in C8 Skewness Equation.  From Golaz.
-     C10,         & ! Currently Not Used in the Model.
-     C11,         & ! Low Skewness in C11 Skewness Function.
-     C11b,        & ! High Skewness in C11 Skewness Function.  From Golaz.
-     C11c,        & ! Degree of Slope of C11 Skewness Function.  From Golaz.
-     C12,         & ! Constant in w'^3 Crank-Nicholson diffusional term.
-     C13,         & ! Not currently used in model.
-     C14            ! Constant for u'^2 and v'^2 terms.
+    C1,          & ! Low Skewness in C1 Skewness Function.
+    C1b,         & ! High Skewness in C1 Skewness Function.
+    C1c,         & ! Degree of Slope of C1 Skewness Function.
+    C2,          & ! Low Skewness in C2 Skewness Function.
+    C2rt,        & ! C2 coefficient for the rtp2_dp1 term.
+    C2thl,       & ! C2 coefficient for the thlp2_dp1 term.
+    C2rtthl,     & ! C2 coefficient for the rtpthlp_dp1 term.
+    C2b,         & ! High Skewness in C2 Skewness Function.  
+    C2c,         & ! Degree of Slope of C2 Skewness Function.
+    C4,          & ! Used only when l_Kh_zm_aniso is true.
+    C5,          & ! Coefficient in pressure terms in the w'^2 eqn.
+    C6rt,        & ! Low Skewness in C6rt Skewness Function.
+    C6rtb,       & ! High Skewness in C6rt Skewness Function.
+    C6rtc,       & ! Degree of Slope of C6rt Skewness Function.
+    C6thl,       & ! Low Skewness in C6thl Skewness Function.
+    C6thlb,      & ! High Skewness in C6thl Skewness Function.
+    C6thlc,      & ! Degree of Slope of C6thl Skewness Function.
+    C7,          & ! Low Skewness in C7 Skewness Function.
+    C7b,         & ! High Skewness in C7 Skewness Function.
+    C7c,         & ! Degree of Slope of C7 Skewness Function.
+    C8,          & ! Coefficient #1 in C8 Skewness Equation.
+    C8b,         & ! Coefficient #2 in C8 Skewness Equation.  From Golaz.
+    C10,         & ! Currently Not Used in the Model.
+    C11,         & ! Low Skewness in C11 Skewness Function.
+    C11b,        & ! High Skewness in C11 Skewness Function.  From Golaz.
+    C11c,        & ! Degree of Slope of C11 Skewness Function.  From Golaz.
+    C12,         & ! Constant in w'^3 Crank-Nicholson diffusional term.
+    C13,         & ! Not currently used in model.
+    C14            ! Constant for u'^2 and v'^2 terms.
 
   real, public :: & 
-     c_K,         & ! Constant C_mu^(1/4) in Duynkerke & Driedonks 1987.
-     c_K1,        & ! Coefficient of Eddy Diffusion for wp2.
-     nu1,         & ! Background Coefficient of Eddy Diffusion for wp2.
-     c_K2,        & ! Coefficient of Eddy Diffusion for xp2.
-     nu2,         & ! Background Coefficient of Eddy Diffusion for xp2.
-     c_K6,        & ! Coefficient of Eddy Diffusion for wpthlp and wprtp.
-     nu6,         & ! Background Coefficient of Eddy Diffusion for wpxp.
-     c_K8,        & ! Coefficient of Eddy Diffusion for wp3.
-     nu8,         & ! Background Coefficient of Eddy Diffusion for wp3.
-     c_K9,        & ! Coefficient of Eddy Diffusion for up2 and vp2.
-     nu9,         & ! Background Coefficient of Eddy Diffusion for up2 and vp2.
-     c_Krrainm,   & ! Coefficient of Eddy Diffusion for hydrometeors.
-     nu_r,        & ! Background Coefficient of Eddy Diffusion for hydrometeors.
-     c_Ksqd,      & ! Constant for scaling effect of value-squared diffusion.
-     nu_hd,       & ! Constant coefficient for 4th-order hyper-diffusion.
-     gamma_coef,  & ! Low Skewness in gamma coefficient Skewness Function.
-     gamma_coefb, & ! High Skewness in gamma coefficient Skewness Function.
-     gamma_coefc, & ! Degree of Slope of gamma coefficient Skewness Function.
-     mu,          & ! Fractional entrainment rate per unit altitude.
-     taumin,      & ! Previously determined value.
-     taumax,      & ! Previously determined value.
-     lmin           ! Minimum value for the length scale.
+    c_K,         & ! Constant C_mu^(1/4) in Duynkerke & Driedonks 1987.
+    c_K1,        & ! Coefficient of Eddy Diffusion for wp2.
+    nu1,         & ! Background Coefficient of Eddy Diffusion for wp2.
+    c_K2,        & ! Coefficient of Eddy Diffusion for xp2.
+    nu2,         & ! Background Coefficient of Eddy Diffusion for xp2.
+    c_K6,        & ! Coefficient of Eddy Diffusion for wpthlp and wprtp.
+    nu6,         & ! Background Coefficient of Eddy Diffusion for wpxp.
+    c_K8,        & ! Coefficient of Eddy Diffusion for wp3.
+    nu8,         & ! Background Coefficient of Eddy Diffusion for wp3.
+    c_K9,        & ! Coefficient of Eddy Diffusion for up2 and vp2.
+    nu9,         & ! Background Coefficient of Eddy Diffusion for up2 and vp2.
+    c_Krrainm,   & ! Coefficient of Eddy Diffusion for hydrometeors.
+    nu_r,        & ! Background Coefficient of Eddy Diffusion for hydrometeors.
+    c_Ksqd,      & ! Constant for scaling effect of value-squared diffusion.
+    nu_hd,       & ! Constant coefficient for 4th-order hyper-diffusion.
+    gamma_coef,  & ! Low Skewness in gamma coefficient Skewness Function.
+    gamma_coefb, & ! High Skewness in gamma coefficient Skewness Function.
+    gamma_coefc, & ! Degree of Slope of gamma coefficient Skewness Function.
+    mu,          & ! Fractional entrainment rate per unit altitude.
+    taumin,      & ! Previously determined value.
+    taumax,      & ! Previously determined value.
+    lmin           ! Minimum value for the length scale.
 
 !$omp   threadprivate(C1, C1b, C1c, C2, C2b, C2c)
 !$omp   threadprivate(C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6rtb, C6rtc)
@@ -100,14 +100,14 @@ module parameters_tunable
   ! Since we lack a devious way to do this just once, this namelist
   ! must be changed as well when a new parameter is added.
   namelist /initvars/  & 
-     C1, C1b, C1c, C2, C2b, C2c,  & 
-     C2rt, C2thl, C2rtthl, C4, C5, & 
-     C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
-     C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
-     C12, C13, C14, c_K, c_K1, nu1, c_K2, nu2,  & 
-     c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd,  & 
-     nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
-     lmin_coef, taumin, taumax, mu
+    C1, C1b, C1c, C2, C2b, C2c,  & 
+    C2rt, C2thl, C2rtthl, C4, C5, & 
+    C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
+    C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
+    C12, C13, C14, c_K, c_K1, nu1, c_K2, nu2,  & 
+    c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd,  & 
+    nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
+    lmin_coef, taumin, taumax, mu
 
   ! These are referenced together often enough that it made sense to
   ! make a list of them.  Note that lmin_coef is the input parameter,
@@ -151,11 +151,11 @@ module parameters_tunable
     !-----------------------------------------------------------------------
 
     use constants, only:  & 
-        fstderr ! Variable(s)
+      fstderr ! Variable(s)
 
     use error_code, only:  & 
-        clubb_var_out_of_bounds,  & ! Variable(s)
-        clubb_no_error
+      clubb_var_out_of_bounds,  & ! Variable(s)
+      clubb_no_error
 
     implicit none
 
@@ -586,14 +586,14 @@ module parameters_tunable
     ! Amount to change each parameter for the initial simplex
     ! This MUST be changed to match the initvars namelist if parameters are added!
     namelist /initspread/  & 
-       C1, C1b, C1c, C2, C2b, C2c,  & 
-       C2rt, C2thl, C2rtthl, C4, C5, & 
-       C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
-       C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
-       C12, C13, C14, c_K, c_K1, nu1, c_K2, nu2,  & 
-       c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd,  & 
-       nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
-       lmin_coef, taumin, taumax, mu
+      C1, C1b, C1c, C2, C2b, C2c,  & 
+      C2rt, C2thl, C2rtthl, C4, C5, & 
+      C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
+      C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
+      C12, C13, C14, c_K, c_K1, nu1, c_K2, nu2,  & 
+      c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd,  & 
+      nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
+      lmin_coef, taumin, taumax, mu
 
     ! Read the namelist
     open(unit=iunit, file=filename, status='old', action='read')
@@ -651,61 +651,61 @@ module parameters_tunable
     !-----------------------------------------------------------------------
 
     use parameter_indices, only: & 
-        iC1,  & ! Variable(s)
-        iC1b, & 
-        iC1c, & 
-        iC2, & 
-        iC2b, & 
-        iC2c, & 
-        iC2rt, & 
-        iC2thl, & 
-        iC2rtthl, & 
-        iC4, & 
-        iC5, & 
-        iC6rt, & 
-        iC6rtb, & 
-        iC6rtc, & 
-        iC6thl, & 
-        iC6thlb, & 
-        iC6thlc, & 
-        iC7, & 
-        iC7b, & 
-        iC7c, & 
-        iC8, & 
-        iC8b, & 
-        iC10, & 
-        iC11, & 
-        iC11b, & 
-        iC11c, & 
-        iC12, & 
-        iC13, & 
-        iC14
+      iC1,  & ! Variable(s)
+      iC1b, & 
+      iC1c, & 
+      iC2, & 
+      iC2b, & 
+      iC2c, & 
+      iC2rt, & 
+      iC2thl, & 
+      iC2rtthl, & 
+      iC4, & 
+      iC5, & 
+      iC6rt, & 
+      iC6rtb, & 
+      iC6rtc, & 
+      iC6thl, & 
+      iC6thlb, & 
+      iC6thlc, & 
+      iC7, & 
+      iC7b, & 
+      iC7c, & 
+      iC8, & 
+      iC8b, & 
+      iC10, & 
+      iC11, & 
+      iC11b, & 
+      iC11c, & 
+      iC12, & 
+      iC13, & 
+      iC14
 
     use parameter_indices, only: & 
-        ic_K,  & 
-        ic_K1, & 
-        inu1, & 
-        ic_K2, & 
-        inu2, & 
-        ic_K6, & 
-        inu6, & 
-        ic_K8, & 
-        inu8, & 
-        ic_K9, & 
-        inu9, & 
-        ic_Krrainm, & 
-        inu_r, & 
-        ic_Ksqd, &
-        inu_hd, & 
-        igamma_coef, & 
-        igamma_coefb, & 
-        igamma_coefc, & 
-        imu, & 
-        ibeta, & 
-        ilmin_coef, & 
-        itaumin, & 
-        itaumax, & 
-        nparams
+      ic_K,  & 
+      ic_K1, & 
+      inu1, & 
+      ic_K2, & 
+      inu2, & 
+      ic_K6, & 
+      inu6, & 
+      ic_K8, & 
+      inu8, & 
+      ic_K9, & 
+      inu9, & 
+      ic_Krrainm, & 
+      inu_r, & 
+      ic_Ksqd, &
+      inu_hd, & 
+      igamma_coef, & 
+      igamma_coefb, & 
+      igamma_coefc, & 
+      imu, & 
+      ibeta, & 
+      ilmin_coef, & 
+      itaumin, & 
+      itaumax, & 
+      nparams
 
     implicit none
 
@@ -806,61 +806,61 @@ module parameters_tunable
     !-----------------------------------------------------------------------
 
     use parameter_indices, only: & 
-        iC1,  & ! Variable(s)
-        iC1b, & 
-        iC1c, & 
-        iC2, & 
-        iC2b, & 
-        iC2c, & 
-        iC2rt, & 
-        iC2thl, & 
-        iC2rtthl, & 
-        iC4, & 
-        iC5, & 
-        iC6rt, & 
-        iC6rtb, & 
-        iC6rtc, & 
-        iC6thl, & 
-        iC6thlb, & 
-        iC6thlc, & 
-        iC7, & 
-        iC7b, & 
-        iC7c, & 
-        iC8, & 
-        iC8b, & 
-        iC10, & 
-        iC11, & 
-        iC11b, & 
-        iC11c, & 
-        iC12, & 
-        iC13, & 
-        iC14
+      iC1,  & ! Variable(s)
+      iC1b, & 
+      iC1c, & 
+      iC2, & 
+      iC2b, & 
+      iC2c, & 
+      iC2rt, & 
+      iC2thl, & 
+      iC2rtthl, & 
+      iC4, & 
+      iC5, & 
+      iC6rt, & 
+      iC6rtb, & 
+      iC6rtc, & 
+      iC6thl, & 
+      iC6thlb, & 
+      iC6thlc, & 
+      iC7, & 
+      iC7b, & 
+      iC7c, & 
+      iC8, & 
+      iC8b, & 
+      iC10, & 
+      iC11, & 
+      iC11b, & 
+      iC11c, & 
+      iC12, & 
+      iC13, & 
+      iC14
 
     use parameter_indices, only: & 
-        ic_K,  & 
-        ic_K1, & 
-        inu1, & 
-        ic_K2, & 
-        inu2, & 
-        ic_K6, & 
-        inu6, & 
-        ic_K8, & 
-        inu8, & 
-        ic_K9, & 
-        inu9, & 
-        ic_Krrainm, & 
-        inu_r, & 
-        ic_Ksqd, & 
-        inu_hd, & 
-        igamma_coef, & 
-        igamma_coefb, & 
-        igamma_coefc, & 
-        imu, & 
-        ibeta, & 
-        ilmin_coef, & 
-        itaumin, & 
-        itaumax, & 
-        nparams
+      ic_K,  & 
+      ic_K1, & 
+      inu1, & 
+      ic_K2, & 
+      inu2, & 
+      ic_K6, & 
+      inu6, & 
+      ic_K8, & 
+      inu8, & 
+      ic_K9, & 
+      inu9, & 
+      ic_Krrainm, & 
+      inu_r, & 
+      ic_Ksqd, & 
+      inu_hd, & 
+      igamma_coef, & 
+      igamma_coefb, & 
+      igamma_coefc, & 
+      imu, & 
+      ibeta, & 
+      ilmin_coef, & 
+      itaumin, & 
+      itaumax, & 
+      nparams
 
     implicit none
 
