@@ -1035,8 +1035,8 @@ module clubb_core
       l_tke_aniso       ! For anisotropic turbulent kinetic energy,
                         !   i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 
-    integer, intent(in) :: &
-      saturation_formula ! 1 = Bolton approx., 2 = Flatau approx.
+    character(len=*), intent(in) :: &
+      saturation_formula ! "bolton" approx. or "flatau" approx.
 
     ! Output variables
     integer, intent(out) :: & 
@@ -1046,6 +1046,22 @@ module clubb_core
     real :: Lscale_max
 
     !----- Begin Code -----
+
+    ! Sanity check for the saturation formula
+    select case ( trim( saturation_formula ) )
+    case ( "bolton", "Bolton" )
+      ! Using the Bolton 1980 approximations for SVP over vapor/ice
+
+    case ( "flatau", "Flatau" )
+      ! Using the Flatau, et al. polynomial approximation for SVP over vapor/ice
+
+      ! Add new cases after this
+    case default
+      write(fstderr,*) "Error in setup_clubb_core."
+      write(fstderr,*) "Unknown approx. of saturation vapor pressure: "// &
+        trim( saturation_formula )
+      stop
+    end select
 
     ! Setup flags
 

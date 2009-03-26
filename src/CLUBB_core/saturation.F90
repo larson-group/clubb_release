@@ -13,7 +13,7 @@ module saturation
   public   :: sat_mixrat_liq, sat_mixrat_ice, sat_rcm
 
   private  :: sat_vapor_press_liq_flatau, sat_vapor_press_liq_bolton
-  private  :: sat_vapor_press_ice
+  private  :: sat_vapor_press_ice_flatau, sat_vapor_press_ice_bolton
 
   contains
 
@@ -46,11 +46,22 @@ module saturation
 
     ! Saturation Vapor Pressure, esat, can be found to be approximated
     ! in many different ways.
-    if ( saturation_formula == 1 ) then
+
+    select case ( trim( saturation_formula ) )
+    case ( "bolton", "Bolton" )
+      ! Using the Bolton 1980 approximations for SVP over vapor
       esatv = sat_vapor_press_liq_bolton( T_in_K )
-    else ! saturation_formula == 2 
+
+    case ( "flatau", "Flatau" )
+      ! Using the Flatau, et al. polynomial approximation for SVP over vapor
       esatv = sat_vapor_press_liq_flatau( T_in_K )
-    end if
+
+      ! Add new cases after this
+
+    case default
+       ! Undefined approximation
+       esatv = -99999.999
+    end select
 
     ! Formula for Saturation Mixing Ratio:
     !
@@ -62,7 +73,7 @@ module saturation
   end function sat_mixrat_liq
 
 !------------------------------------------------------------------------
-  pure function sat_vapor_press_liq_flatau( T_in_K ) result ( esat )
+  elemental function sat_vapor_press_liq_flatau( T_in_K ) result ( esat )
 
 ! Description:
 !   Computes SVP for water vapor.
@@ -88,7 +99,7 @@ module saturation
     ! Table 4 of pp. 1511 of Flatau et al.
     real, dimension(9), parameter :: a = & 
     100.* (/ 6.11583699,      0.444606896,     0.143177157E-01, & 
-             0.264224321E-03,  0.299291081E-05, 0.203154182E-07, & 
+             0.264224321E-03, 0.299291081E-05, 0.203154182E-07, & 
              0.702620698E-10, 0.379534310E-13,-0.321582393E-15 /)
 
     ! Input Variables
@@ -128,7 +139,7 @@ module saturation
 
 
 !------------------------------------------------------------------------
-  pure function sat_vapor_press_liq_bolton( T_in_K ) result ( esat )
+  elemental function sat_vapor_press_liq_bolton( T_in_K ) result ( esat )
 ! Description:
 !   Computes SVP for water vapor.
 ! References:
@@ -156,33 +167,50 @@ module saturation
   end function sat_vapor_press_liq_bolton
 
 !------------------------------------------------------------------------
-  real function sat_mixrat_ice( p_in_Pa, T_in_K )
+  elemental real function sat_mixrat_ice( p_in_Pa, T_in_K )
 
-!       Description:
-!       Used to compute the saturation mixing ratio of ice.
+! Description:
+!   Used to compute the saturation mixing ratio of ice.
 
-!       References:
-!       Formula from Emanuel 1994, 4.4.15
+! References:
+!   Formula from Emanuel 1994, 4.4.15
 !-------------------------------------------------------------------------
 
     use constants, only: & 
         ep ! Variable(s)
+    use model_flags, only: &
+      saturation_formula ! Variable(s)
 
     implicit none
+
+    ! External
+    intrinsic :: trim
 
     ! Input Variables
 
     real, intent(in) :: &
-    p_in_Pa, &          ! Pressure [Pa]
-    T_in_K              ! Temperature [K]
+      p_in_Pa, &          ! Pressure [Pa]
+      T_in_K              ! Temperature [K]
 
     ! Local Variables
 
     real :: esat_ice
 
-    ! Compute SVP for ice
+    select case ( trim( saturation_formula ) )
+    case ( "bolton", "Bolton" )
+      ! Using the Bolton 1980 approximations for SVP over ice
+      esat_ice = sat_vapor_press_ice_bolton( T_in_K )
 
-    esat_ice = sat_vapor_press_ice( T_in_K )
+    case ( "flatau", "Flatau" )
+      ! Using the Flatau, et al. polynomial approximation for SVP over ice
+      esat_ice = sat_vapor_press_ice_flatau( T_in_K )
+
+      ! Add new cases after this
+
+    case default
+       ! Undefined approximation
+       esat_ice = -99999.999
+    end select
 
     ! Formula for Saturation Mixing Ratio:
     !
@@ -196,56 +224,85 @@ module saturation
   end function sat_mixrat_ice
 
 !------------------------------------------------------------------------
-  real pure function sat_vapor_press_ice( T_in_K ) result ( esati )
+  elemental function sat_vapor_press_ice_flatau( T_in_K ) result ( esati )
 !
-!       Description:
-!       Computes SVP for ice.
+! Description:
+!   Computes SVP for ice.
 !
-!       References:
-!       ``Polynomial Fits to Saturation Vapor Pressure'' Falatau, Walko,
-!         and Cotton.  (1992)  Journal of Applied Meteorology, Vol. 31,
-!         pp. 1507--1513
+! References:
+!   ``Polynomial Fits to Saturation Vapor Pressure'' Falatau, Walko,
+!     and Cotton.  (1992)  Journal of Applied Meteorology, Vol. 31,
+!     pp. 1507--1513
 !------------------------------------------------------------------------
     use constants, only: T_freeze_K
 
 
     implicit none
 
+    ! Relative error norm expansion (-90 to 0 deg_C) from
+    ! Table 4 of pp. 1511 of Flatau et al. 1992 (Ice)
+    real, dimension(9), parameter :: a = & 
+    100. * (/ 6.09868993,      0.499320233,     0.184672631E-01, &
+              0.402737184E-03, 0.565392987E-05, 0.521693933E-07, &
+              0.307839583E-09, 0.105785160E-11, 0.161444444E-14 /)
+
+    ! Input Variables
+    real, intent(in) :: T_in_K   ! Temperature   [deg_K]
+
+    ! Output Variables
+    real :: esati  ! Saturation vapor pressure over ice [Pa]
+
+    ! Local Variables
+    real :: T_in_C ! Temperature [deg_C]
+!   integer :: i
+
+    ! ---- Begin Code ----
+
+    ! Determine deg K - 273.15
+    T_in_C = T_in_K - T_freeze_K
+
+    ! Polynomial approx. (Flatau, et al. 1992)
+!   esati = a(1)
+
+!   do i = 2, size( a ), 1
+!     esati = esati + a(i) * ( T_in_C )**(i-1)
+!   end do
+
+    esati = a(1) + T_in_C*( a(2) + T_in_C*( a(3) + T_in_C*( a(4) + T_in_C &
+    *( a(5) + T_in_C*( a(6) + T_in_C*( a(7) + T_in_C*( a(8) + T_in_C*( a(9) ) ) ) ) ) ) ) )
+
+    return
+
+  end function sat_vapor_press_ice_flatau
+
+!------------------------------------------------------------------------
+  elemental function sat_vapor_press_ice_bolton( T_in_K ) result ( esati )
+!
+! Description:
+!   Computes SVP for ice.
+!
+! References:
+!   Bolton 1980
+!------------------------------------------------------------------------
+    use constants, only: T_freeze_K
+
+    implicit none
+
     ! External
     intrinsic :: exp, log
-
-    ! Parameter Constants
-    logical, parameter :: l_Flatau = .false.
-
-    ! Relative error norm expansion (-50 to 0 deg_C) from
-    ! Table 3 of pp. 1510 of Flatau et al. 1992 (Ice)
-    real, dimension(7), parameter :: a = & 
-    100. * (/ 6.10952665,      0.501948366,     0.18628899E-01, & 
-              0.403488906E-03, 0.539797852E-05, 0.420713632E-07, & 
-              0.147271071E-09 /)
 
     ! Input Variables
     real, intent(in) :: T_in_K   ! Temperature   [K]
 
-    ! Local Variables
-    integer :: i
+    ! Output Variables
+    real :: esati  ! Saturation vapor pressure over ice [Pa]
 
-    if ( l_Flatau ) then
-      ! Polynomial approx. (Flatau, et al. 1992)
-      esati = a(1)
-
-      do i = 2, size( a ), 1
-        esati = esati + a(i) * ( T_in_K-T_freeze_K )**(i-1)
-      end do
-
-    else
-      ! Exponential approx. (Bolton?)
-      esati = 100.0 * exp( 23.33086 - (6111.72784/T_in_K) + (0.15215*log( T_in_K )) )
-    end if
+    ! Exponential approx.
+    esati = 100.0 * exp( 23.33086 - (6111.72784/T_in_K) + (0.15215*log( T_in_K )) )
 
     return
 
-  end function sat_vapor_press_ice
+  end function sat_vapor_press_ice_bolton
 
 !-------------------------------------------------------------------------
   FUNCTION sat_rcm( thlm, rtm, p_in_Pa, exner )

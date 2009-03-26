@@ -248,8 +248,8 @@ module clubb_driver
       l_restart,      & ! Flag for restarting from GrADS file
       l_tke_aniso       ! For anisotropic turbulent kinetic energy,
                         ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
-    integer :: &
-      saturation_formula ! 1 = Bolton approx., 2 = Flatau approx.
+    character(len=6) :: &
+      saturation_formula ! "bolton" approx. or "flatau" approx.
 
     character(len=50) ::  & 
       restart_path_case, & ! GrADS file used in case of restart
@@ -362,7 +362,7 @@ module clubb_driver
     time_restart  = 0.
     debug_level   = 2
 
-    saturation_formula = 2 ! Flatau polynomial approx.
+    saturation_formula = "flatau" ! Flatau polynomial approx.
 
     call set_albedo( 0.1d0 , 0.1d0, 0.1d0, 0.1d0 )
 
@@ -493,9 +493,6 @@ module clubb_driver
       print *, "ts_nudge = ", ts_nudge
 
       print *, "forcings_file_path = ", forcings_file_path
-
-      print *, "micro_scheme = ", trim( micro_scheme )
-      print *, "l_cloud_sed = ", l_cloud_sed
 
       print *, "l_bugsrad = ", l_bugsrad
       print *, "l_soil_veg = " , l_soil_veg
