@@ -43,7 +43,8 @@ or atex) to match; the variables to match (cloud fraction, liquid water, third
 moment of vertical velocity, etc.); the altitude and times over which to match
 these variables; and the parameters to tune (C1, beta, etc.). 
 
-The code is written in ISO Fortran 95 and executed by a GNU Bash scripts. 
+The code is written in ISO Fortran 95 and executed by scripts written for
+GNU Bash. 
 The mkmf Makefile generating script and some other optional code checking
 scripts are written in Perl.
 On the Microsoft Windows platform the CLUBB parameterization could be configured
@@ -136,8 +137,8 @@ $ ./compile.bash
 
 This will build just the static library and the f90 modules.
 The static library will be in <PREFIX>/lib, while the modules will be 
-in the obj directory.  You will need at least the clubb_core.mod file 
-to interface with CLUBB.
+in the obj directory.  You will need at least the clubb_core.mod &
+constants.mod file to interface with CLUBB.
 
 Addition by Brian:  
 In addition to the above, you will have to make a reference to the CLUBB 
@@ -150,8 +151,8 @@ can reference them in a line such as the following:
 
 -L/home/griffinb/clubb/lib -lclubb_param -llapack -lblas
 
-If the LAPACK and BLAS libraries were compiled with GNU Fortran 77, you may 
-need to link to the runtime libs for that with -lg2c as well.
+If the LAPACK and BLAS libraries were compiled with GNU Fortran, you may 
+need to link to the runtime libs for that with -lg2c or -lgfortran as well.
 
 Don't forget that you will also have to make reference
 to the CLUBB modules.  You can reference that with a line
@@ -187,10 +188,12 @@ make distclean
 
 2. Edit <CASE>_model.in for each case you wish to run, or just leave 
    them as is.  Usually you will want to keep these the same.
-   See the rain code for description of l_kk_rain and l_cloud_sed.
+   See the KK_microphys code for a description of Khairoutdinov and Kogan
+   drizzle parameterization.
    See BUGSrad description below for a description of the interactive
    radiation scheme.
-   Enabling any of these flags may increase runtime considerably.
+   Enabling radiation or microphysics parameterizations may increase runtime 
+   considerably.
 
 3. cd <CLUBB DIR>/input/stats
    Edit a stats file you would like to use.  A complete list of all computable
