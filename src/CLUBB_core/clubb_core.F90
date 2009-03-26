@@ -514,7 +514,7 @@ module clubb_core
        )
 
     sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )  ! Pos. def. quantity
-
+#ifdef UNRELEASED_CODE
     ! Latin hypercube sample generation
     ! Generate p_height_time, an nnzp x nt_repeat x d_variables array of random integers
     if ( l_LH_on ) then
@@ -527,6 +527,7 @@ module clubb_core
     ! End Latin hypercube sample generation
 
     ! print*, 'hoc.F: i_rmd=', i_rmd
+#endif /*UNRELEASED_CODE*/
 
     !----------------------------------------------------------------
     ! Call closure scheme
