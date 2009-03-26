@@ -175,6 +175,7 @@ if ( size( t ) > tmax .or. size( t ) < 2 ) then
   return
 end if
 
+tdim = -1
 do i = 1, size( t )
   if ( t( i ) == 0 ) exit
   tdim = i
