@@ -1,18 +1,18 @@
 Cloud Layers Unified By Binormals (CLUBB) user license agreement.
 
-Thank you for your interest in CLUBB.  We work hard to create a code that is free of major bugs, implements the best software engineering practices, is supported to the extent allowed by our limited resources, and is available without cost to external users.  You may use CLUBB if, in return, you abide by these conditions:
+Thank you for your interest in CLUBB.  We work hard to create a code that is free of major bugs, implements the best software engineering practices, is supported to the extent allowed by our limited resources, and is available without cost to non-commercial users.  You may use CLUBB if, in return, you abide by these conditions:
  
 1.  You must acknowledge CLUBB in all presentations and publications that contain results obtained using CLUBB. 
 
 2.  You may not use any part of CLUBB to create or modify another single-column (1D) model that is not called CLUBB.  However, you may modify or improve CLUBB or parts of CLUBB if you include "CLUBB" in the name of the resulting single-column model.  For example, a user at MIT might modify CLUBB and call the modified version "CLUBB-MIT."  Or, for example, a user of the CLM land-surface model might interface CLM to CLUBB and call it CLM-CLUBB.  
 
-3.  You may implement CLUBB as a parameterization in a large-scale host model that has 2 or 3 spatial dimensions without including "CLUBB" in the combined model name, but only if you acknowledge in presentations and publications that CLUBB has been included as a parameterization. 
+3.  You may implement CLUBB as a parameterization in a large-scale host model that has 2 or 3 spatial dimensions without including "CLUBB" in the combined model name, but please acknowledge in presentations and publications that CLUBB has been included as a parameterization. 
 
 4.  You may not give all or part of CLUBB to anyone without prior permission from Vincent Larson (vlarson@uwm.edu).  If you wish to share CLUBB with your collaborators without seeking permission, ask your collaborators to register as CLUBB users at http://clubb.larson-group.com and download CLUBB from there.  
 
 5.  You may not use CLUBB for commercial purposes unless you receive permission from Vincent Larson.
 
-We encourage users to contribute their CLUBB modifications or extensions to the CLUBB development group.  We will then consider them for inclusion in the mainbranch of CLUBB.  In this way, CLUBB can be improved for the benefit of all users. 
+We hope that CLUBB will develop into a community resource.  Therefore, we encourage users to contribute their CLUBB modifications or extensions to the CLUBB development group.  We will then consider them for inclusion in the main branch of CLUBB.  In this way, CLUBB can be improved for the benefit of all users.  We would be pleased to acknowledge contributors and list references to their CLUBB-related papers on our "About CLUBB" webpage (http://clubb.larson-group.com/about.php).   
 
 Thanks so much and best wishes for your research!
 
