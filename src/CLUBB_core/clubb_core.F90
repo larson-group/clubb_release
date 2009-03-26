@@ -17,7 +17,9 @@ module clubb_core
     advance_clubb_core, & 
     cleanup_clubb_core
 
+#ifdef UNRELEASED_CODE
   private :: latin_hypercube_sampling
+#endif
 
   private ! Default Scope
 
@@ -311,6 +313,7 @@ module clubb_core
       upwp_cl_num,    & ! Instance of u'w' clipping (1st or 2nd).
       vpwp_cl_num       ! Instance of v'w' clipping (1st or 2nd).
 
+#ifdef UNRELEASED_CODE
     !------- Local variables for Latin Hypercube sampling ------------------
 
     integer i_rmd
@@ -333,6 +336,7 @@ module clubb_core
 
     integer, dimension(gr%nnzp, nt_repeat, d_variables+1)  & 
     :: p_height_time ! matrix of rand ints
+#endif
 
     ! coeffs of s from pdf_closure
     real :: crt1, crt2, cthl1, cthl2
