@@ -167,8 +167,8 @@ all:	libclubb_param.a libclubb_bugsrad.a clubb_standalone clubb_tuner \
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/*.F90
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/CLUBB_core/*.F90
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/Benchmark_cases/*.F90
-	perl ../utilities/CLUBBStandardsCheck.pl ../src/Benchmark_cases/unreleased_cases/*.F90
-	perl ../utilities/CLUBBStandardsCheck.pl ../src/Latin_hypercube/*.F90
+	-perl ../utilities/CLUBBStandardsCheck.pl ../src/Benchmark_cases/unreleased_cases/*.F90
+	-perl ../utilities/CLUBBStandardsCheck.pl ../src/Latin_hypercube/*.F90
 
 libclubb_param.a:
 	cd $objdir; $gmake -f Make.clubb_param
