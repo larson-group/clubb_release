@@ -179,8 +179,10 @@ module clubb_core
     use clip_explicit, only: & 
       clip_covariances_denom ! Procedure(s)
 
+#ifdef UNRELEASED_CODE
     use permute_height_time_mod, only:  & 
       permute_height_time ! Procedure
+#endif
 
     use T_in_K_mod, only: &
       ! Read values from namelist
