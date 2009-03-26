@@ -832,7 +832,7 @@ module clubb_core
     return
   end subroutine advance_clubb_core
 
-
+#ifdef UNRELEASED_CODE
   !-----------------------------------------------------------------------
   subroutine latin_hypercube_sampling & 
              ( k, n, dvar, nt, i_rmd, & 
@@ -915,7 +915,7 @@ module clubb_core
 
     return
   end subroutine latin_hypercube_sampling
-
+#endif /*UNRELEASED_CODE*/
   !-----------------------------------------------------------------------
   subroutine setup_clubb_core & 
              ( nzmax, T0_in, ts_nudge_in, sol_const_in, & ! In
