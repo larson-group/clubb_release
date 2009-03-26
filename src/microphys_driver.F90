@@ -193,10 +193,12 @@ module microphys_driver
 
     ! Aerosol for RF02 from Mikhail Ovtchinnikov
     aer_rm1  = 0.011 ! Mean geometric radius                 [μ]
-    aer_sig1 = 1.2   ! Std dev of aerosol size distribution  [??]
-    aer_n1   = 125.  ! Aerosol contentration                 [#/cm3]
     aer_rm2  = 0.06 
+
+    aer_sig1 = 1.2   ! Std dev of aerosol size distribution  [-]
     aer_sig2 = 1.7
+
+    aer_n1   = 125.  ! Aerosol contentration                 [#/cm3]
     aer_n2   = 65.
 
     ! Other parameters, set as in SAM
@@ -812,9 +814,9 @@ module microphys_driver
       ! Compute standard deviation of vertical velocity in the grid column
       wtmp(:) = sqrt( wp2_zt(:) )
       ! Based on YSU PBL interface to the Morrison scheme WRF driver, the standard dev. of w
-      ! should be clipped to be between 0.1 m/s and 4.0 m/s -dschanen 23 Mar 2009
-      wtmp(:) = max( 0.1, wtmp ) 
-      wtmp(:) = min( 4., wtmp )  
+      ! will be clipped to be between 0.1 m/s and 4.0 m/s i WRF.  -dschanen 23 Mar 2009
+!     wtmp(:) = max( 0.1, wtmp ) ! Disabled for now
+!     wtmp(:) = min( 4., wtmp )  
 
 !     wtmp = 0.5 ! %% debug
 
@@ -837,7 +839,7 @@ module microphys_driver
 
       ! Update hydrometeor tendencies
       ! This done because the hydromet_mc arrays that are produced by
-      ! M2005MICRO_GRAUPEL doesn't include the clipping term
+      ! M2005MICRO_GRAUPEL don't include the clipping term.
       do i = 1, hydromet_dim, 1
         hydromet_mc(:,i) = ( hydromet_tmp(:,i) - hydromet(:,i)  ) / real( dt )
       end do
