@@ -31,8 +31,8 @@
 # - file_list/coamps_files : files needed for libclubb_coamps.a
 # - file_list/numerical_recipes_files : Numerical Recipes files for clubb_tuner
 # - file_list/clubb_optional_files: Code in the UNRELEASED_CODE blocks of clubb
-# These three file lists can be empty if Numerical Recipes or COAMPS microphysics 
-# aren't available due to licensing restrictions.
+# These three file lists can be empty if Numerical Recipes or COAMPS 
+# microphysics is not available due to licensing restrictions.
 # ------------------------------------------------------------------------------
 
 if [ -z $1 ]; then
@@ -99,17 +99,11 @@ cd $dir
 # It would be nice to generate file lists for clubb_standalone / clubb_tuner dynamically,
 # but this not possible without some major re-factoring of the source directories.
 
-#ls $srcdir/CLUBB_core/*.F90 $srcdir/Latin_hypercube/*.F90 \
-# > $dir/file_list/clubb_param_files
-
-#ls $srcdir/BUGSrad/*.* > $dir/file_list/clubb_bugsrad_files
-
-#ls $srcdir/*.[Ff]90 $srcdir/Benchmark_cases/*.F90 \
-# $srcdir/Benchmark_cases/unreleased_cases/*.F90 > $dir/file_list/clubb_standalone_files
-
 # ------------------------------------------------------------------------------
 #  Determine which restricted files are in the source directory and make a list
 ls $srcdir/Benchmark_cases/unreleased_cases/*.F90 > $dir/file_list/clubb_optional_files
+ls $srcdir/CLUBB_core/*.F90 > $dir/file_list/clubb_param_files
+ls $srcdir/Latin_hypercube/*.F90 >> $dir/file_list/clubb_param_files
 ls $srcdir/COAMPS_micro/*.F > $dir/file_list/clubb_coamps_files
 ls $srcdir/Numerical_recipes/*.f90 > $dir/file_list/numerical_recipes_files
 
