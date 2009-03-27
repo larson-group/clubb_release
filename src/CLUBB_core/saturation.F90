@@ -44,6 +44,11 @@ module saturation
     ! Local Variables
     real :: esatv
 
+    ! --- Begin Code ---
+
+    ! Undefined approximation
+    esatv = -99999.999
+
     ! Saturation Vapor Pressure, esat, can be found to be approximated
     ! in many different ways.
 
@@ -56,11 +61,8 @@ module saturation
       ! Using the Flatau, et al. polynomial approximation for SVP over vapor
       esatv = sat_vapor_press_liq_flatau( T_in_K )
 
-      ! Add new cases after this
+    ! Add new cases after this
 
-    case default
-       ! Undefined approximation
-       esatv = -99999.999
     end select
 
     ! Formula for Saturation Mixing Ratio:
@@ -196,6 +198,11 @@ module saturation
 
     real :: esat_ice
 
+    ! --- Begin Code ---
+
+    ! Undefined approximation
+    esat_ice = -99999.999
+
     select case ( trim( saturation_formula ) )
     case ( "bolton", "Bolton" )
       ! Using the Bolton 1980 approximations for SVP over ice
@@ -205,11 +212,8 @@ module saturation
       ! Using the Flatau, et al. polynomial approximation for SVP over ice
       esat_ice = sat_vapor_press_ice_flatau( T_in_K )
 
-      ! Add new cases after this
+    ! Add new cases after this
 
-    case default
-       ! Undefined approximation
-       esat_ice = -99999.999
     end select
 
     ! Formula for Saturation Mixing Ratio:
