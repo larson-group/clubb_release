@@ -74,6 +74,7 @@ module microphys_driver
       corr_sNr_NL_below, corr_sNc_NL_below, &
       C_evap, r_0
 
+    ! The version of the Morrison 2005 microphysics that is in SAM.
     use module_mp_GRAUPEL, only: &
       Nc0, ccnconst, ccnexpnt, & ! Variables
       aer_rm1, aer_rm2, aer_n1, aer_n2, &
@@ -501,6 +502,7 @@ module microphys_driver
     use coamps_micro_driver_mod, only:  & 
         coamps_micro_driver ! Procedure
 
+    ! The version of the Morrison 2005 microphysics that is in SAM.
     use module_MP_graupel, only: &
       M2005MICRO_GRAUPEL  ! Procedure
 
