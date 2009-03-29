@@ -147,11 +147,11 @@ do i=2,gr%nnzp
 
     ! thl, rt of parcel are conserved except for entrainment
 
-    thl_par_j = ( 1 - mu/gr%dzm(j-1) ) * thl_par_j_minus_1 & 
-              + ( mu/gr%dzm(j-1) ) * thlm(j)
+    thl_par_j = thlm(j) * ( 1.0 - exp(-mu/gr%dzm(j-1)) )  &
+                + exp(-mu/gr%dzm(j-1)) * thl_par_j_minus_1
 
-    rt_par_j = ( 1 - mu/gr%dzm(j-1) ) * rt_par_j_minus_1 & 
-             + ( mu/gr%dzm(j-1) ) * rtm(j)
+    rt_par_j = rtm(j) * ( 1.0 - exp(-mu/gr%dzm(j-1)) )  &
+               + exp(-mu/gr%dzm(j-1)) * rt_par_j_minus_1
 
 !           Include effects of latent heating on Lscale_up 6/12/00
 !           Use thermodynamic formula of Bougeault 1981 JAS Vol. 38, 2416
@@ -219,11 +219,11 @@ do i=gr%nnzp,2,-1
 
     ! thl, rt of parcel are conserved except for entrainment
 
-    thl_par_j = ( 1 - mu/gr%dzm(j) ) * thl_par_j_plus_1 & 
-              +  ( mu/gr%dzm(j) ) * thlm(j)
+    thl_par_j = thlm(j) * ( 1.0 - exp(-mu/gr%dzm(j)) )  &
+                + exp(-mu/gr%dzm(j)) * thl_par_j_plus_1
 
-    rt_par_j = ( 1 - mu/gr%dzm(j) ) * rt_par_j_plus_1 & 
-             +  ( mu/gr%dzm(j) ) * rtm(j)
+    rt_par_j = rtm(j) * ( 1.0 - exp(-mu/gr%dzm(j)) )  &
+               + exp(-mu/gr%dzm(j)) * rt_par_j_plus_1
 
    ! Include effects of latent heating on Lscale_down
    ! Use thermodynamic formula of Bougeault 1981 JAS Vol. 38, 2416
