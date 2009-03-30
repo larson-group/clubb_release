@@ -169,9 +169,9 @@ module clubb_driver
 
     use microphys_driver, only: init_microphys ! Subroutine
 
-    use parameters_microphys, only: &
-      micro_scheme,  & 
-      l_cloud_sed
+!   use parameters_microphys, only: &
+!     micro_scheme,  & 
+!     l_cloud_sed
 
     use model_flags, only: l_LH_on, l_local_kk, & ! Constants
       l_pos_def, l_hole_fill, l_single_C2_Skw, l_gamma_Skw, l_byteswap_io
