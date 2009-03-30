@@ -29,40 +29,47 @@ module endian
   logical function big_endian( )
 
 !   Description:
-!     Adapted from Chris Golaz's subroutine
+!     Code from a posting by: Paul van Delst, CIMSS @ NOAA/NCEP/EMC
 !     Return .true. if the system uses most significant bit (MSB) byte 
 !     ordering.  Breaks on EBCDIC systems?
 !   References:
 !     None
 !----------------------------------------------------------------------
+    use model_flags, only: l_byteswap_io
 
     implicit none
 
-    ! External 
-    logical, external :: internal_endian
+    ! External
+    intrinsic :: selected_int_kind, iachar, transfer
 
     ! Parameters
-    integer, parameter ::  & 
-      ascii_0 = 48,  ascii_1 = 49, ascii_2 = 50, ascii_3 = 51
+    integer, parameter :: short = selected_int_kind( 4 )
 
-    ! Local variables
-    integer(kind=4) :: i
+    integer(kind=short), parameter :: source = 1_short
 
-    i = ascii_0 + ascii_1*256 + ascii_2*(256**2) + ascii_3*(256**3)
+    ! --- Begin Code ---
 
-    big_endian = internal_endian( i )
+    if ( iachar( transfer( source, 'a' ) ) == 0 ) then
+      big_endian = .true.
+    else
+      big_endian = .false.
+    end if
+
+    ! If the Fortran compiler is configured to swap bytes on output, then
+    ! give the opposite of the native byte ordering
+    if ( l_byteswap_io ) big_endian = .not. big_endian
 
     return
   end function big_endian
 
-!----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
   logical function little_endian( )
 
 ! Description:
 !   Wrapper function for big_endian()
 !   Returns .true. if the system uses least significant bit (LSB) 
 !   byte ordering.
-!----------------------------------------------------------------------
+!------------------------------------------------------------------------------
 
     implicit none
 
@@ -71,7 +78,7 @@ module endian
     return
   end function little_endian
 
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 !     SUBPROGRAM: native_4byte_real
 !
 !         AUTHOR: David Stepaniak, NCAR/CGD/CAS
@@ -159,12 +166,12 @@ module endian
     RETURN
   END SUBROUTINE native_4byte_real
 
-!----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
   subroutine native_8byte_real( realInOut )
 
-!   Description:
+! Description:
 !   This is just a modification of the above routine for 64 bit data
-!----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 
     implicit none
 
@@ -178,7 +185,7 @@ module endian
     integer(kind=8) :: i_element
     integer(kind=8) :: i_element_br
 
-!----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 
     ! Transfer 64 bits of realIn to generic 64 bit INTEGER space:
     i_element = transfer( realInOut, i_element )
@@ -198,39 +205,8 @@ module endian
 
     return
   end subroutine native_8byte_real
-!----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 
 end module endian
 
-!----------------------------------------------------------------------
-logical function internal_endian( i )
-
-!       Description:
-!       Take advantage of Fortran's non-typesafeness for a function
-!       outside a module and pass an integer as a 4 character data type,
-!       for the purpose of determining the byte ordering of the host.
-!       This function is only called indirectly
-!----------------------------------------------------------------------
-  use model_flags, only: l_byteswap_io
-
-  implicit none
-
-  character(len=4),intent(in) :: i
-
-  ! Try to determine big vs little endian status. Override internal
-  ! determination if l_byteswap_io is true.
-  ! (for example for compilers that perform byte swapping during I/O).
-
-  if ( trim(i) == '0123' ) then
-    internal_endian = .false.  ! little_endian
-  else if ( trim(i) == '3210' ) then
-    internal_endian = .true.   ! big_endian
-  else
-    stop "endian() failed"
-  end if
-
-  if ( l_byteswap_io ) internal_endian = .not. internal_endian
- 
-  return
-end function internal_endian
-!----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
