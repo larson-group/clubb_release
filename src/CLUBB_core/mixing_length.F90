@@ -101,6 +101,9 @@ contains
     ! Minimum value for Lscale that will taper off with height
     real :: lminh
 
+    ! Average value of environmental air between two grid levels.
+    real :: avg_thlm_env, avg_rtm_env
+
     ! Parcel quantities at grid level j
     real :: thl_par_j, rt_par_j, rc_par_j, thv_par_j
 
@@ -144,10 +147,36 @@ contains
 
           ! thl, rt of parcel are conserved except for entrainment
 
-          thl_par_j = thlm(j) * ( 1.0 - exp(-mu/gr%dzm(j-1)) )  &
+          ! For a parcel of air ascending from level j-1 to level j:
+          !
+          ! thl_par(j) = avg_thlm_env * ( 1 - exp( -mu*delta_z ) )
+          !              + exp( -mu*delta_z ) * thl_par(j-1);
+          !
+          ! where thl_par(j) is the resulting value of theta_l in the parcel,
+          ! avg_thlm_env is the average value of thlm in the environmental air
+          ! that the parcel ascended through, delta_z is the absolute value of
+          ! the layer thickness between the two vertical (thermodynamic) levels,
+          ! and thl_par(j-1) is the initial value of theta_l in the parcel.
+
+          avg_thlm_env = 0.5 * ( thlm(j) + thlm(j-1) )
+
+          thl_par_j = avg_thlm_env * ( 1.0 - exp(-mu/gr%dzm(j-1)) )  &
                       + exp(-mu/gr%dzm(j-1)) * thl_par_j_minus_1
 
-          rt_par_j = rtm(j) * ( 1.0 - exp(-mu/gr%dzm(j-1)) )  &
+          ! For a parcel of air ascending from level j-1 to level j:
+          !
+          ! rt_par(j) = avg_rtm_env * ( 1 - exp( -mu*delta_z ) )
+          !             + exp( -mu*delta_z ) * rt_par(j-1);
+          !
+          ! where rt_par(j) is the resulting value of r_t in the parcel,
+          ! avg_rtm_env is the average value of rtm in the environmental air
+          ! that the parcel ascended through, delta_z is the absolute value of
+          ! the layer thickness between the two vertical (thermodynamic) levels,
+          ! and rt_par(j-1) is the initial value of r_t in the parcel.
+
+          avg_rtm_env = 0.5 * ( rtm(j) + rtm(j-1) )
+
+          rt_par_j = avg_rtm_env * ( 1.0 - exp(-mu/gr%dzm(j-1)) )  &
                      + exp(-mu/gr%dzm(j-1)) * rt_par_j_minus_1
 
           ! Include effects of latent heating on Lscale_up 6/12/00
@@ -216,10 +245,36 @@ contains
 
           ! thl, rt of parcel are conserved except for entrainment
 
-          thl_par_j = thlm(j) * ( 1.0 - exp(-mu/gr%dzm(j)) )  &
+          ! For a parcel of air descending from level j+1 to level j:
+          !
+          ! thl_par(j) = avg_thlm_env * ( 1 - exp( -mu*delta_z ) )
+          !              + exp( -mu*delta_z ) * thl_par(j+1);
+          !
+          ! where thl_par(j) is the resulting value of theta_l in the parcel,
+          ! avg_thlm_env is the average value of thlm in the environmental air
+          ! that the parcel descended through, delta_z is the absolute value of
+          ! the layer thickness between the two vertical (thermodynamic) levels,
+          ! and thl_par(j+1) is the initial value of theta_l in the parcel.
+
+          avg_thlm_env = 0.5 * ( thlm(j) + thlm(j+1) )
+
+          thl_par_j = avg_thlm_env * ( 1.0 - exp(-mu/gr%dzm(j)) )  &
                       + exp(-mu/gr%dzm(j)) * thl_par_j_plus_1
 
-          rt_par_j = rtm(j) * ( 1.0 - exp(-mu/gr%dzm(j)) )  &
+          ! For a parcel of air descending from level j+1 to level j:
+          !
+          ! rt_par(j) = avg_rtm_env * ( 1 - exp( -mu*delta_z ) )
+          !             + exp( -mu*delta_z ) * rt_par(j+1);
+          !
+          ! where rt_par(j) is the resulting value of r_t in the parcel,
+          ! avg_rtm_env is the average value of rtm in the environmental air
+          ! that the parcel descended through, delta_z is the absolute value of
+          ! the layer thickness between the two vertical (thermodynamic) levels,
+          ! and rt_par(j+1) is the initial value of r_t in the parcel.
+
+          avg_rtm_env = 0.5 * ( rtm(j) + rtm(j+1) )
+
+          rt_par_j = avg_rtm_env * ( 1.0 - exp(-mu/gr%dzm(j)) )  &
                      + exp(-mu/gr%dzm(j)) * rt_par_j_plus_1
 
           ! Include effects of latent heating on Lscale_down
