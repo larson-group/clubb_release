@@ -1,0 +1,27 @@
+
+Benchmark cases that have been set up in CLUBB.
+
+arm:          Shallow cumulus over the ARM site in Oklahoma.
+
+astex:        Shallow Cu rising into Sc over the Northern Altantic.
+
+atex:         Trade-wind Cu under a strong inversion.
+
+bomex:        Trade-wind non-precipitating Cu.
+
+dycoms2_rf01: Marine Sc under a strong inversion.
+
+dycoms2_rf02: Drizzling marine Sc.
+
+fire:         Marine Sc.
+
+gabls2:       Diurnal cycle of boundary layer over land, including
+              stable nighttime layer.
+
+mpace_a:      Multi-layered, mixed-phase Arctic stratus.
+
+mpace_b:      Single-layered, mixed-phase Arctic stratus.
+
+wangara:      Dry convective boundary layer over land.
+
+
