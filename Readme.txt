@@ -220,7 +220,20 @@ above.)
    The resulting data will be written in the directory "output"
 
 -----------------------------------------------------------------------
-- (2.2) Executing a restart run:
+- (2.2) Plotting output from a single-column run:
+-----------------------------------------------------------------------
+
+Plotting scripts are contained in the directory postprocessing/plotgen.
+
+If you have MATLAB, you may use the script compare_plots_cases_driver.m.
+
+If you have MATLAB and Linux, you can drive this MATLAB script
+using the bash script plotgen.sh.
+
+See postprocessing/plotgen/README for more information.
+
+-----------------------------------------------------------------------
+- (2.3) Executing a restart run:
 -----------------------------------------------------------------------
 
 After a long simulation has been performed, it is sometimes convenient to 
