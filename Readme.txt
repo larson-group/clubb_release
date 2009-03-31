@@ -82,7 +82,7 @@ using SSE or SSE2 is usually the best way to do this.
 *                        Using the CLUBB Model                        *
 ***********************************************************************
 -----------------------------------------------------------------------
-- (1.1) Building Everything:
+- (1.1) Building (compiling) everything:
 -----------------------------------------------------------------------
 
 Requirements:
@@ -101,7 +101,7 @@ G. NetCDF >= v3.5.1;  We have not tested our code with anything older.
    flags, found in the compile/config/<platform>.bash file.
 H. MATLAB or NCAR graphics for viewing the netCDF output data.
 
-To build:
+To build, perform the following three steps:
 1. $ cd <BASE DIRECTORY>/compile
 2. Edit a ./config/<PLATFORM>.bash file and uncomment it the file
    compile.bash. Depending on your platform you may need to create a new
@@ -124,6 +124,10 @@ other versions of make.
 -----------------------------------------------------------------------
 - (1.2) Building for use in a host model:
 -----------------------------------------------------------------------
+
+The build procedure is slightly different if you have implemented CLUBB
+in a large-scale weather or climate model.
+
 Requirements:
 A., B., C., & D. as above.
 
@@ -161,7 +165,7 @@ such as the following:
 -I/home/griffinb/clubb/obj
 
 -----------------------------------------------------------------------
-- (1.3) Making clean (or starting over)  
+- (1.3) Making clean (for re-compiling from scratch)  
 -----------------------------------------------------------------------
 
 Occasionally, one needs to erase old executables or libraries and re-compile 
@@ -171,17 +175,19 @@ a library or compiler is updated.
 To delete old object files (*.o), and mod (*.mod) files,
 go to <PREFIX>/bin (where Makefile resides) and type
 
-make clean
+$ make clean
 
 If this doesn't help, then to additionally delete everything in the binary 
 and library directories, go to <PREFIX>/bin and type
 
-make distclean
+$ make distclean
 
 
 -----------------------------------------------------------------------
-- (2.1) Executing a single column run:
+- (2.1) Executing a single-column run:
 -----------------------------------------------------------------------
+   Before you can execute CLUBB, you must compile it (see Build section 
+above.)
    <CLUBB DIR> refers the the directory where clubb is installed.
 
 1. cd <CLUBB DIR>/input/case_setups
@@ -210,6 +216,7 @@ make distclean
 
    Where the parameter file and stats file are optional arguments. The default
    is all_stats.in and tunable_parameters.in.
+
    The resulting data will be written in the directory "output"
 
 -----------------------------------------------------------------------
