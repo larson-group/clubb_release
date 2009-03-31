@@ -1537,7 +1537,7 @@ and $\overline{w'r'_t}$ and can therefore be rewritten in matrix form:
 The matrix $lhs$ is obtained by vertical discretization of the LHSs,
 and the vector $rhs$ by discretization of the RHSs. $lhs$ is band-diagonal
 with two rows above and two below the main diagonal. $lhs$ is stored
-in compact form in a array with dimensions $\mathtt{(5, 2\,nnzp)}$.
+in compact form in an array with dimensions $\mathtt{(5, 2\,nnzp)}$.
 $rhs$ is a vector with dimension $\mathtt{(2\,nnzp)}$.
 $lhs$ can be inverted efficiently using an LU decomposition algorithm for 
 band diagonal matrices.
@@ -2409,7 +2409,7 @@ form:
 \end{equation}
 %
 $lhs_{\mathtt{wp23}}$ is a band-diagonal matrix with two rows above and two below 
-the main diagonal. $lhs_{\mathtt{wp23}}$ is stored in compact form in a array 
+the main diagonal. $lhs_{\mathtt{wp23}}$ is stored in compact form in an array 
 with dimensions $\mathtt{(5,2\,nnzp)}$. $rhs_{\mathtt{wp23}}$ is a vector 
 with dimension $\mathtt{(2\,nnzp)}$. $lhs_{\mathtt{wp23}}$ can be inverted 
 efficiently using a LU decomposition algorithm for band diagonal matrices.
@@ -3561,7 +3561,8 @@ Width of the individual $w$ plumes&$\tilde{\sigma}^2_w$&sigma\_sqd\_w\\\hline
 \multicolumn{3}{|c|}{On the thermodynamic (or half) levels}\\\hline
 Description&Variable&Variable name in CLUBB code\\\hline
 Third-order Moment of $w$&$\overline{w^{'3}}$&wp3\\\hline
-Cloud water mixing ratio&$r_c$&rcm\\\hline
+Eddy-diffusivity &$K_{w}$&Kh\_zt\\\hline
+Cloud water mixing ratio&$\overline{r_c}$&rcm\\\hline
 Cloud fraction&cf&cf\\\hline
 \end{tabular}
 \end{center}
