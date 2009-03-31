@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.72 2008-08-01 19:10:01 vlarson Exp $
+$Id$
 
 ************************************************************************
 *                           Copyright Notice
@@ -260,6 +260,28 @@ The new simulation is then called a "restart" simulation.
 4.  Execute the run as usual from /run_scripts using 
     
     ./run_scm.bash <CASE>
+
+-----------------------------------------------------------------------
+- (2.4) Executing a clubb_inputfields run:
+-----------------------------------------------------------------------
+
+One supported mode of running clubb is to use GrADS data from either a
+prior CLUBB run or a horizontally averaged set of data from an LES to
+set some of the prognosed variables to the data set's values at each timestep.
+E.g. If desired, the horizontal winds (variables um and vm in the code)
+could be fixed to the COAMPS-LES value at each timestep, while the other
+fields will evolve as in the standard single-column run.
+Currently, the only LES data the code works with comes from COAMPS.
+The relevant namelist files are in <PREFIX>/input_misc/inputfields, and new
+cases could be added using the existing cases as a template.
+
+To execute an inputfields run, you need to set the 'datafile' variable in the
+setfields to the location of the GrADS files, and set 'input_'<varname> to
+.true. for those fields for which you want to use a fixed value from
+the GrADS dataset at the beginning of each timestep.  Then, change your 
+directory to run_scripts and execute the run_inputfields.bash script like so:
+
+  ./run_inputfields.bash <CASE>
 
 -----------------------------------------------------------------------
 - (3.1) Executing a tuning run:
