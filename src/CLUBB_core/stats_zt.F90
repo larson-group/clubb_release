@@ -84,6 +84,8 @@ use stats_variables, only: &
     irtm_ta, & 
     irtm_forcing, & 
     irtm_mc, &
+    ircm_mc, &
+    irvm_mc, &
     irtm_mfl, &
     irtm_tacl, & 
     irtm_cl, & 
@@ -322,6 +324,8 @@ irtm_ma       = 0
 irtm_ta       = 0
 irtm_forcing  = 0
 irtm_mc       = 0
+ircm_mc       = 0 ! For the change due to COAMPS/Morrison microphysics
+irvm_mc       = 0 ! "     "
 irtm_mfl      = 0
 irtm_tacl     = 0
 irtm_cl       = 0 ! Josh
@@ -571,10 +575,23 @@ do i=1,zt%nn
     call stat_assign(irtm_forcing,"rtm_f", & 
          "rt forcing", "kg/(kg s)",zt)
     k = k + 1
+
   case ('rtm_mc')
     irtm_mc = k
-    call stat_assign(irtm_mc,"rtm_mc", & 
-         "rt micro (not in budget)", "kg/(kg s)",zt)
+    call stat_assign(irtm_mc, "rtm_mc", & 
+         "Change in rt due to microphysics (not in budget)", "kg/(kg s)",zt)
+    k = k + 1
+
+  case ('rvm_mc')
+    irvm_mc = k
+    call stat_assign(irvm_mc, "rvm_mc", & 
+         "Change in rv due to microphysics (not in budget)", "kg/(kg s)",zt)
+    k = k + 1
+
+  case ('rcm_mc')
+    ircm_mc = k
+    call stat_assign(ircm_mc, "rcm_mc", & 
+         "Change in rc due microphysics (not in budget)", "kg/(kg s)",zt)
     k = k + 1
 
   case ('wp3')

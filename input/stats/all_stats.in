@@ -19,7 +19,7 @@ vars_zt =
 'rain_rate', 'AKm', 'AKm_est', 'rsnowm', 'ricem', 'rgraupelm',
 'diam', 'mass_ice_cryst', 'rcm_icedfs', 'u_T_cm',
 'rtm_bt', 'rtm_ma', 'rtm_ta', 'rtm_mfl', 'rtm_tacl', 'rtm_cl',
-'rtm_forcing', 'rtm_mc', 'rtm_pd',
+'rtm_forcing', 'rtm_mc', 'rtm_pd', 'rvm_mc', 'rcm_mc',
 'thlm_bt', 'thlm_ma', 'thlm_ta', 'thlm_mfl', 'thlm_tacl', 'thlm_cl',
 'thlm_forcing', 'thlm_mc',
 'um_bt', 'um_ma', 'um_gf', 'um_cf', 'um_ta','um_f',

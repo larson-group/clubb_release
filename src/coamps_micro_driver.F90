@@ -31,7 +31,7 @@ subroutine coamps_micro_driver &
 !      Monterey, California.  COAMPS is a registered trademark of the 
 !      Naval Research Laboratory.
 
-!      This subroutine assumes the HOC convention that k=1 is at the
+!      This subroutine assumes the CLUBB convention that k=1 is at the
 !      surface rather than the top of the model domain.  adjtq.F will
 !      work whichever way it is called, since it does no advection or
 !      sedimentation, but any COAMPS code incorporated into this driver
@@ -42,23 +42,26 @@ subroutine coamps_micro_driver &
 !      Rutledge and Hobbs, 1984; COAMPS Users Guide.
 !----------------------------------------------------------------------
                         
-use constants, only: Cp, Lv, pi, Lf, Ls, Rv, Rd, p0, T_freeze_K ! Variable(s)
+use constants, only: Cp, Lv, pi, Lf, Ls, Rv, Rd, p0, T_freeze_K, cm3_per_m3 ! Variable(s)
 use saturation, only: sat_mixrat_liq, sat_mixrat_ice ! Procedure(s)
 use stats_precision, only: time_precision ! Variable(s)
 use error_code, only: clubb_debug ! Procedure(s)
 use grid_class, only: zt2zm ! Procedure(s)
 use grid_class, only: gr ! Variable(s)
  
-use stats_type, only: stat_update_var_pt ! Procedure(s)
+use stats_type, only: stat_update_var_pt, stat_update_var ! Procedure(s)
 
 use stats_variables, only: zt, l_stats_samp,  & ! Variable(s)
     imean_vol_rad_rain, & 
-    imean_vol_rad_cloud & 
+    imean_vol_rad_cloud, & 
 ! Addition by Adam Smith, 24 April 2008
 ! Adding snow particle number concentration and snowslope
-   ,isnowslope & 
-   ,iNsnowm
+   isnowslope, & 
+   iNsnowm, &
 ! End of ajsmith4's addition
+   irvm_mc, & ! Budgets for vapor and cloud water
+   ircm_mc
+
 use parameters_microphys, only: l_graupel, l_ice_micro
 
 implicit none
@@ -66,14 +69,14 @@ implicit none
 ! External Calls
 #ifdef COAMPS_MICRO
 external ::  & 
-  gamma,  & ! From COAMPS, and not the same gamma approx. used in HOC
+  gamma,  & ! From COAMPS, and not the same gamma approx. used in CLUBB
   adjtq  ! COAMPS microphysics subroutine
 #endif
 
 ! COAMPS parameters
   integer, parameter ::  & 
-    nne = 1,   & ! Horizontal domain parameter (always 1 for HOC)
-    j   = 1,   & ! Horizontal grid box (always 1 for HOC)
+    nne = 1,   & ! Horizontal domain parameter (always 1 for CLUBB)
+    j   = 1,   & ! Horizontal grid box (always 1 for CLUBB)
     icon = 5,  & ! Ice nucleation scheme; 1 = Fletcher, 
                !                        2 = Meyers, 
                !                        3 = Hobbs & Rangno, 
@@ -238,6 +241,10 @@ real, dimension(1,1,gr%nnzp-1) :: &
   qg3_flip, & 
   qs3_flip
 ! eMFc
+
+real, dimension(gr%nnzp) :: & 
+  rvtend,  & ! d(rv)/dt                   [kg/kg/s]
+  rctend     ! d(rc)/dt                   [kg/kg/s]
 
 real :: & 
   gmbov2, & 
@@ -488,7 +495,6 @@ deltf = real( deltf_in )
 ! Michael Falk changed this, November 2007.
 ! This is the stock COAMPS value, 2e7:
 if ( trim( runtype ) == "mpace_a" ) then
-!     if ( .false. ) then
   ! and this is the value, 2e6, which works for MPACE-A:
   snzero = 2.0e6
 else ! don't cheat
@@ -528,7 +534,7 @@ w3(1,1,1:kk+1) = wm_zm(1:kk+1)
 ! Since values 1 to kk are the only ones used, they are the only
 ! ones that are assigned.
 ! When setting up COAMPS variables, we remove the sub-ground ghost
-! point (at k=1) from the HOC variables.  Since in HOC k=2 is the
+! point (at k=1) from the CLUBB variables.  Since in CLUBB k=2 is the
 ! first above-ground gridpoint and in COAMPS k=1 is the first
 ! above-ground gridpoint, we assign the variables accordingly.
 ! Comments by Michael Falk, David Schanen, and Vince Larson
@@ -807,7 +813,7 @@ do k=1, kk, 1
   end if
 end do ! k=1..kk
 
-! Transfer back to HOC arrays
+! Transfer back to CLUBB arrays
 do k=1, kk, 1
   ! Convert to MKS as needed
   ! nc3, in cm^-3, needs to be converted to m^-3, and then divided by
@@ -861,11 +867,12 @@ do k=1, kk, 1
   ! have units of kg^-1 s^-1, which is what we want.  
   ! Brian.  Sept. 8, 2007.
   !nrmtend(k+1)   = ( nr3(1,1,k)*1.e6 - Nrm(k+1) ) / deltf ! Conversion factor
-  nrmtend(k+1)   = ( (nr3(1,1,k)*1.e6)/rho(k+1) - Nrm(k+1) )  & 
+  nrmtend(k+1)   = ( (nr3(1,1,k)*cm3_per_m3)/rho(k+1) - Nrm(k+1) )  & 
                    / deltf ! Conversion factor
   rsnowtend(k+1) = ( qs3(1,1,k) - rsnowm(k+1) ) / deltf
-  rttend(k+1)    = ((qv3(1,1,k) - rvm(k+1)) / deltf) & 
-                 + ((qc3(1,1,k) - rcm(k+1)) / deltf)
+  rvtend(k+1)    = ((qv3(1,1,k) - rvm(k+1)) / deltf)
+  rctend(k+1)    = ((qc3(1,1,k) - rcm(k+1)) / deltf)
+  rttend(k+1)    = rvtend(k+1) + rctend(k+1)
   thlmtend(k+1)  & 
   = ( ( th3(1,1,k) - (Lv / (Cp * exbm(1,1,k)) * qc3(1,1,k) ) ) & 
       - thlm(k+1) ) / deltf
@@ -876,49 +883,35 @@ rgtend(1)    = 0.0
 ritend(1)    = 0.0
 nrmtend(1)   = 0.0
 rsnowtend(1) = 0.0
+rctend(1)    = 0.0
+rvtend(1)    = 0.0
 rttend(1)    = 0.0
 thlmtend(1)  = 0.0
 
 if ( l_stats_samp ) then
+  ! Mean volume radius of rain and cloud droplets
   do k=2,kk+1
-     call stat_update_var_pt( imean_vol_rad_rain, k, & 
+     call stat_update_var_pt( imean_vol_rad_rain, k, &
           rvr(1,1,k-1) / 100.0, zt )
-!        if ( imean_vol_rad_rain > 0 ) then
-!          zt%x(2:,imean_vol_rad_rain) 
-!     .    = zt%x(2:,imean_vol_rad_rain) + rvr(1,1,:) / 100.0
-!          zt%n(2:,imean_vol_rad_rain) 
-!     .    = zt%n(2:,imean_vol_rad_rain) + 1
-!        end if
-     call stat_update_var_pt( imean_vol_rad_cloud, k, & 
+     call stat_update_var_pt( imean_vol_rad_cloud, k, &
           rvc(1,1,k-1) / 100.0, zt )
   end do
-!        if ( imean_vol_rad_cloud > 0 ) then
-!          zt%x(2:,imean_vol_rad_cloud) 
-!     .    = zt%x(2:,imean_vol_rad_cloud) + rvc(1,1,:) / 100.0
-!          zt%n(2:,imean_vol_rad_cloud) 
-!     .    = zt%n(2:,imean_vol_rad_cloud) + 1
-!        end if
+
+  ! Total microphysical tendency of vapor and cloud water mixing ratios
+  call stat_update_var( irvm_mc, rvtend, zt ) ! kg/kg/s
+  call stat_update_var( ircm_mc, rctend, zt ) ! kg/kg/s
 
 ! Addition by Adam Smith, 24 April 2008
 ! Adding calculation for snow particle number concentration       
-!        if (isnowslope > 0) then
-    do k = 2,kk,1
-     call stat_update_var_pt( isnowslope, k, snowslope(1,1,k), zt)
-!            zt%x(k,isnowslope) = zt%x(k,isnowslope) + snowslope(1,1,k)
-!            zt%n(k,isnowslope) = zt%n(k,isnowslope) + 1
-    end do
-!        end if
+  do k = 2,kk,1
+    call stat_update_var_pt( isnowslope, k, snowslope(1,1,k), zt)
+  end do
 
 ! Addition by Adam Smith, 25 April 2008
 ! Adding calculation for snow particle number concentration
   do k=2, kk+1 
-  call stat_update_var_pt( iNsnowm, k, Nsnowm(k) ,zt )
-  end do      
-!        if (iNsnowm > 0) then
-!          zt%x(2:,iNsnowm) = zt%x(2:,iNsnowm) + Nsnowm(2:kk+1)
-!          zt%n(2:,iNsnowm) = zt%n(2:,iNsnowm) + 1
-!        end if
-! End of ajsmith4's additions
+    call stat_update_var_pt( iNsnowm, k, Nsnowm(k) ,zt )
+  end do
 
 end if
  

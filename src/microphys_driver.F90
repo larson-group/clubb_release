@@ -345,7 +345,8 @@ module microphys_driver
       iirgraupelm = 4
 
       iiNrm       = 5
-      iiNsnowm    = -1
+      ! Nsnowm is computed diagnostically in the subroutine coamps_micro_driver
+      iiNsnowm    = -1 
       iiNim       = 6
       iiNgraupelm = -1
       iiNcm       = 7
@@ -366,7 +367,7 @@ module microphys_driver
       hydromet_list(iiNim)       = "Nim"
 
       ! Initialize Ncnm as in COAMPS
-      Ncnm(1:gr%nnzp) = 30.0 * (1.0 + exp( -gr%zt(1:gr%nnzp)/2000.0 )) * 1.e6
+      Ncnm(1:gr%nnzp) = 30.0 * (1.0 + exp( -gr%zt(1:gr%nnzp)/2000.0 )) * cm3_per_m3
 
       hydromet_sed(iiNrm) = .true.
       hydromet_sed(iiNim) = .false.
@@ -552,6 +553,10 @@ module microphys_driver
       irrainm_sfc
 
     use stats_variables, only: & 
+      irvm_mc, &
+      ircm_mc
+
+    use stats_variables, only: & 
       iNcm_bt, & 
       iNcm_mc, & 
       iNcm_cl
@@ -564,7 +569,6 @@ module microphys_driver
       iNgraupelm
 
     use stats_variables, only: & 
-      iNsnowm_mc, &
       iNim_mc, & 
       iNcm_mc, & 
       iNrm_mc, & 
@@ -831,7 +835,7 @@ module microphys_driver
              hydromet_tmp(:,iirsnowm), hydromet_tmp(:,iirrainm), hydromet_tmp(:,iiNcm), &
              hydromet_tmp(:,iiNim), hydromet_tmp(:,iiNsnowm), hydromet_tmp(:,iiNrm), &
              T_in_K_mc, rvm_mc, T_in_K, rvm_tmp, P_in_pa, rho, dzq, wm_zt, wtmp, &
-             rain_rate, snow_rate,  effc, effi, effs, effr, real( dt ), &
+             rain_rate, snow_rate, effc, effi, effs, effr, real( dt ), &
              1,1, 1,1, 1,gr%nnzp, 1,1, 1,1, 1,gr%nnzp, &
              hydromet_mc(:,iirgraupelm), hydromet_mc(:,iiNgraupelm), &
              hydromet_tmp(:,iirgraupelm), hydromet_tmp(:,iiNgraupelm), effg, &
@@ -870,6 +874,12 @@ module microphys_driver
         ! (Includes sedimentation, but not diffusion or mean advection)
 
         ! --- Mixing ratios ---
+
+        ! Sum total of cloud water microphysics
+        call stat_update_var( ircm_mc, (rcm_tmp - rcm) / real( dt ), zt )
+
+        ! Sum total of vapor microphysics
+        call stat_update_var( irvm_mc, (rvm_tmp - rtm + rcm) / real( dt ), zt )
 
         ! Sum total of rrainm microphysics
         call stat_update_var( irrainm_mc, hydromet_mc(:,iirrainm), zt )

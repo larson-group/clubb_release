@@ -18,21 +18,24 @@ module stats_variables
   private ! Set Default Scope
   
   ! Sampling and output frequencies
-  real(kind=time_precision), public :: stats_tsamp    ! Sampling interval   [s]
-  real(kind=time_precision), public :: stats_tout     ! Output interval     [s]
+  real(kind=time_precision), public :: &
+    stats_tsamp, & ! Sampling interval   [s]
+    stats_tout     ! Output interval     [s]
 
-  logical, public ::  & 
-  l_stats,  & ! Main flag to turn statistics on/off
-  l_netcdf, & ! Output to NetCDF format
-  l_grads     ! Output to GrADS format
-
-!$omp   threadprivate(l_stats, l_netcdf, l_grads)
 !$omp   threadprivate(stats_tsamp, stats_tout)
 
+  logical, public ::  & 
+    l_stats,  & ! Main flag to turn statistics on/off
+    l_netcdf, & ! Output to NetCDF format
+    l_grads     ! Output to GrADS format
+
+!$omp   threadprivate(l_stats, l_netcdf, l_grads, &
+!$omp     stats_tsamp, stats_tout)
+
   logical, public :: & 
-  l_stats_samp,   & ! Sample flag for current time step
-  l_stats_first,  & ! First time step of output period
-  l_stats_last      ! Last time step of output period
+    l_stats_samp,   & ! Sample flag for current time step
+    l_stats_first,  & ! First time step of output period
+    l_stats_last      ! Last time step of output period
 
 !$omp   threadprivate(l_stats_samp, l_stats_first, l_stats_last)
 
@@ -132,6 +135,8 @@ module stats_variables
     irtm_ta,       & ! rtm turb. advect. term
     irtm_forcing,  & ! rtm large scale forcing term
     irtm_mc,       & ! rtm change from microphysics
+    irvm_mc,       & ! rvm change from microphysics
+    ircm_mc,       & ! rcm change from microphysics
     irtm_mfl,      & ! rtm change due to monotonic flux limiter
     irtm_tacl,     & ! rtm correction from turbulent advection (wprtp) clipping
     irtm_cl,       & ! rtm clipping term
@@ -146,9 +151,10 @@ module stats_variables
     ithlm_cl         ! thlm clipping term
 
 !$omp   threadprivate(irtm_bt, irtm_ma, irtm_ta, irtm_forcing)
-!$omp   threadprivate(irtm_mc, irtm_mfl, irtm_tacl, irtm_cl, irtm_pd)
-!$omp   threadprivate(ithlm_bt, ithlm_ma, ithlm_ta, ithlm_forcing)
-!$omp   threadprivate(ithlm_mc, ithlm_mfl, ithlm_tacl, ithlm_cl)
+!$omp     irtm_mc, irtm_mfl, irtm_tacl, irtm_cl, irtm_pd, &
+!$omp     irvm_mc, ircm_mc, &
+!$omp     ithlm_bt, ithlm_ma, ithlm_ta, ithlm_forcing, &
+!$omp     ithlm_mc, ithlm_mfl, ithlm_tacl, ithlm_cl)
 
 
   integer, public :: & 
