@@ -1,27 +1,59 @@
 
-Benchmark cases that have been set up in CLUBB.
+Some benchmark cases that have been set up in CLUBB.
 
 arm:          Shallow cumulus over the ARM site in Oklahoma.
+              http://appconv.metoffice.com/blclouds/GCSS_BLclouds_files/Past_cases.html#case7
+              Brown et al., 2002:  Large-eddy simulation 
+              of the diurnal cycle of shallow cumulus convection over land. 
+              Quart. J. Roy. Meteor.  Soc., 128, 1075-1093. 
 
 astex:        Shallow Cu rising into Sc over the Northern Altantic.
+              http://appconv.metoffice.com/blclouds/GCSS_BLclouds_files/Past_cases.html#case3
+              Bretherton, C. S., S. K. Krueger, M. C. Wyant, P. Bechtold, E. van Meijgaard, 
+              B. Stevens, and J. Teixeira, 1999: A GCSS boundary layer model intercomparison 
+              study of the first ASTEX Lagrangian experiment. Bound.-Layer Meteor., 93, 341-380. 
 
 atex:         Trade-wind Cu under a strong inversion.
+              http://appconv.metoffice.com/blclouds/GCSS_BLclouds_files/Past_cases.html#case6
+              B. Stevens et al., 2000: Simulations of trade-wind cumuli under a strong inversion, 
+              J. Atmos. Sci, 58,1870-1891. 
 
 bomex:        Trade-wind non-precipitating Cu.
+              http://appconv.metoffice.com/blclouds/GCSS_BLclouds_files/Past_cases.html#case5
+              Siebesma, A. P., and coauthors, 2003: A large-eddy simulation intercomparison 
+              study of shallow cumulus convection. J. Atmos. Sci., 60, 1201-1219.
 
 dycoms2_rf01: Marine Sc under a strong inversion.
+              http://appconv.metoffice.com/blclouds/GCSS_BLclouds_files/Past_cases.html#case9
+              Stevens, B., and coauthors, 2005: Observations of nocturnal marine 
+              stratocumulus as represented by large eddy simulation. 
+              Mon. Wea. Rev., 133, 1443-1462.
 
 dycoms2_rf02: Drizzling marine Sc.
+              http://appconv.metoffice.com/blclouds/GCSS_BLclouds_files/Past_cases.html#case10
+              Wyant,M.C. and coauthors, 2007: A single-column model intercomparison 
+              of a heavily drizzling stratocumulus-topped boundary layer, 
+              J. Geophys. Res., 112, D24204, doi:10.1029/2007JD008536. 
 
 fire:         Marine Sc.
+              http://appconv.metoffice.com/blclouds/GCSS_BLclouds_files/Past_cases.html#case1
+              Bechtold, P., and coauthors, 1996: Modeling a stratocumulus-topped PBL: 
+              Intercomparisons among different 1D codes and with LES. 
+              Bull. Amer. Meteor. Soc., 77, 2033-2042.
 
 gabls2:       Diurnal cycle of boundary layer over land, including
               stable nighttime layer.
+              http://www.misu.su.se/~gunilla/gabls/
 
 mpace_a:      Multi-layered, mixed-phase Arctic stratus.
+              http://science.arm.gov/workinggroup/cpm/scm/scmic5/index.html
 
 mpace_b:      Single-layered, mixed-phase Arctic stratus.
+              http://science.arm.gov/workinggroup/cpm/scm/scmic5/index.html
 
 wangara:      Dry convective boundary layer over land.
-
+              2002: "A PDF-based model for boundary layer clouds. 
+              Part II: Model results." J.-C. Golaz,
+              V. E. Larson, and W. R. Cotton. 
+              J. Atmos. Sci., 59, 3552.3571.        
 
