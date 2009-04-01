@@ -432,8 +432,8 @@ module output_grads
   use constants, only: & 
     fstderr ! Variable(s)
 
-  use model_flags, only: &
-    l_byteswap_io ! Variable
+! use model_flags, only: &
+!   l_byteswap_io ! Variable
 
   use endian, only: & 
     big_endian ! Variable
@@ -515,7 +515,7 @@ module output_grads
   end if
 
   ! Write file header
-  if ( big_endian .and. .not. l_byteswap_io ) then
+  if ( big_endian ) then
     write(unit=f%iounit,fmt='(a)') 'OPTIONS BIG_ENDIAN'
   else
     write(unit=f%iounit,fmt='(a)') 'OPTIONS LITTLE_ENDIAN'
