@@ -89,7 +89,7 @@ module inputfile_class
 ! Description:
 !   Open a GrADS data set in read-only mode
 !-----------------------------------------------------------------------
-!   use model_flags, only: l_byteswap_io
+    use model_flags, only: l_byteswap_io
 
     implicit none
 
@@ -153,7 +153,7 @@ module inputfile_class
         ! Swap bytes if local machine is little_endian and file
         ! big_endian
 
-        if ( little_endian ) then
+        if ( little_endian .or. ( l_byteswap_io .and. big_endian ) ) then
           f%l_byteswapped = .true.
         end if
 
@@ -162,7 +162,7 @@ module inputfile_class
         ! Swap bytes if local machine is big_endian and file
         ! little_endian
 
-        if ( big_endian ) then
+        if ( big_endian .or. ( l_byteswap_io .and. little_endian ) ) then
           f%l_byteswapped = .true.
         end if
 

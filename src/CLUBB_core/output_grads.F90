@@ -432,11 +432,12 @@ module output_grads
   use constants, only: & 
     fstderr ! Variable(s)
 
-! use model_flags, only: &
-!   l_byteswap_io ! Variable
+  use model_flags, only: &
+    l_byteswap_io ! Variable
 
   use endian, only: & 
-    big_endian ! Variable
+    big_endian, & ! Variable
+    little_endian
 
   use output_file_module, only: & 
     outputfile ! Type
@@ -515,11 +516,15 @@ module output_grads
   end if
 
   ! Write file header
-  if ( big_endian ) then
+  if ( ( big_endian .and. .not. l_byteswap_io ) &
+    .or. ( little_endian .and. l_byteswap_io ) ) then
     write(unit=f%iounit,fmt='(a)') 'OPTIONS BIG_ENDIAN'
+
   else
     write(unit=f%iounit,fmt='(a)') 'OPTIONS LITTLE_ENDIAN'
+
   end if 
+
   write(unit=f%iounit,fmt='(a)') 'DSET ^'//trim(f%fname)//'.dat'
   write(unit=f%iounit,fmt='(a,e11.5)') 'UNDEF ',undef
   write(unit=f%iounit,fmt='(a)') 'XDEF    1 LINEAR 0. 1.'
