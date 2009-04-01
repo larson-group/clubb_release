@@ -135,6 +135,8 @@ use diag_ustar_mod, only: diag_ustar ! Variable(s)
 use array_index, only: &
   iisclr_rt, iisclr_thl, iiCO2, & ! Variable(s)
   iiedsclr_rt, iiedsclr_thl, iiedCO2
+  
+use surface_flux, only: compute_ubar, compute_momentum_flux
 
 implicit none
 
@@ -142,7 +144,6 @@ intrinsic :: sqrt, max
 
 ! Parameter Constants
 real, parameter :: & 
-  ubmin = 0.25, & 
   M_da  = 0.02897  ! Molecular weight of dry air.
 
 ! Input variables
@@ -173,7 +174,7 @@ real, intent(out), dimension(edsclr_dim) ::  &
 
 ! Local variables
 real ::  & 
-  usfc, vsfc, ubar, & 
+  ubar, & 
   true_time, & 
   heat_flx, moisture_flx, & 
   heat_flx2, moisture_flx2, & 
@@ -216,16 +217,16 @@ CO2_flx2 = CO2_flx * ( M_da / dn0 )
 bflx = grav/thlm_sfc * heat_flx2
 
 ! Surface winds
-usfc = um_sfc
-vsfc = vm_sfc
-ubar = max( ubmin, sqrt( usfc ** 2 + vsfc ** 2 ) )
+ubar = compute_ubar( um_sfc, vm_sfc )
 
 ! Compute ustar
 ustar = diag_ustar( z, bflx, ubar, z0 )
 
 ! Assign fluxes
-upwp_sfc   = -usfc/ubar * ustar * ustar
-vpwp_sfc   = -vsfc/ubar * ustar * ustar
+
+call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
+			    upwp_sfc, vpwp_sfc )
+
 wpthlp_sfc = heat_flx2
 wprtp_sfc  = moisture_flx2
 

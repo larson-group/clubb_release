@@ -115,7 +115,7 @@ module gabls2
 !-------------------------------------------------------------------------------
   subroutine gabls2_sfclyr( time, time_initial, &
                             lowest_level, psfc, & 
-                            um, vm, thlm, rtm, & 
+                            um, vm, thlm, rtm, exner_sfc, & 
                             upwp_sfc, vpwp_sfc, &
                             wpthlp_sfc, wprtp_sfc, ustar, & 
                             wpsclrp_sfc, wpedsclrp_sfc )
@@ -139,11 +139,12 @@ module gabls2
 
     use array_index, only: iiedsclr_rt, iiedsclr_thl, iisclr_rt, iisclr_thl ! Variable(s)
 
+    use surface_flux, only: compute_ubar, compute_momentum_flux, compute_wprtp_sfc, &
+                            compute_wpthlp_sfc
     implicit none
 
     ! Local constants
     real, parameter ::     & 
-      ubmin   = 0.25,      & ! Minimum value for ubar.
       C_10    = 0.0013,    & ! Drag coefficient, defined by ATEX specification
       z0      = 0.03         ! Roughness length, defined by GABLS2 specification
 
@@ -159,7 +160,9 @@ module gabls2
       vm,                  & ! v at the lowest above-ground model level.  [m/s]
       thlm,                & ! theta-l at the lowest above-ground model level. 
                            ! (theta = theta-l because there's no liquid in this case)  [K]
-      rtm                    ! rt at the lowest above-ground model level.  [kg/kg]
+      rtm,                 &   ! rt at the lowest above-ground model level.  [kg/kg]
+      exner_sfc
+
     ! Output variables
     real, intent(out) :: & 
       upwp_sfc,   & ! The turbulent upward flux of u-momentum         [(m/s)^2]
@@ -178,7 +181,6 @@ module gabls2
     ! Local variables
     real :: & 
       ubar,                & ! Root (u^2 + v^2), per ATEX and RICO spec.
-!    ustar,               & ! Friction velocity, computed from diag_ustar.
       Cz,                  & ! C_10 scaled to the height of the lowest 
                            ! model level. (Per ATEX spec)
       time_in_hours,       & ! time in hours from 00 local on first day of experiment 
@@ -188,7 +190,8 @@ module gabls2
       bflx                   ! Needed for diag_ustar; equal to wpthlp_sfc * (g/theta)
 
     ! Define variable values
-    ubar = max( ubmin, sqrt( um*um + vm*vm ) )
+    ubar = compute_ubar( um, vm )
+
     Cz   = C_10 * ((log( 10/z0 ))/(log( lowest_level/z0 ))) * & 
            ((log( 10/z0 ))/(log( lowest_level/z0 ))) ! Modification in case
     ! lowest model level isn't at 10 m,
@@ -217,16 +220,18 @@ module gabls2
     sstheta = sst * ((p0 / psfc)**(Rd/Cp))
 
     ! Compute heat and moisture fluxes
-    wpthlp_sfc  = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa ) ! [K * m/s]
-    wprtp_sfc  = -Cz * ubar *  & 
-                  ( rtm - sat_mixrat_liq(psfc,sst) ) * 0.025   ! [kg/kg * m/s]
+    wpthlp_sfc = compute_wpthlp_sfc( Cz, ubar, thlm, sst, exner_sfc ) 
+    wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm, sat_mixrat_liq(psfc,sst) ) * 0.025
+
     ! 2.5% factor from
     ! GABLS2 specification
+
     ! Compute momentum fluxes
     bflx  = wpthlp_sfc * grav / sstheta
     ustar = diag_ustar(lowest_level,bflx,ubar,z0)
-    upwp_sfc    = -um * ustar*ustar / ubar                       ! [(m/s)^2]
-    vpwp_sfc    = -vm * ustar*ustar / ubar                       ! [(m/s)^2]
+
+    call compute_momentum_flux( um, vm, ubar, ustar, &
+                                upwp_sfc, vpwp_sfc )
 
     ! Let passive scalars be equal to rt and theta_l for now
     if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc

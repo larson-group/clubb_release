@@ -139,7 +139,7 @@ module rico
 
 !----------------------------------------------------------------------
   subroutine rico_sfclyr( um_sfc, vm_sfc, thlm, rtm, & 
-                          lowestlevel, sst, psfc, & 
+                          lowestlevel, sst, psfc, exner_sfc, & 
                           upwp_sfc, vpwp_sfc, wpthlp_sfc, & 
                           wprtp_sfc, ustar,  & 
                           wpsclrp_sfc, wpedsclrp_sfc )
@@ -165,14 +165,15 @@ module rico
 
   use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
+  use surface_flux, only: compute_ubar, compute_momentum_flux, &
+                          compute_wpthlp_sfc, compute_wprtp_sfc
+
   implicit none
 
   intrinsic :: max, log, sqrt
 
   ! Constants
   real, parameter :: & 
-    ubmin   = 0.25,      & ! Minimum value for ubar.
-!    ustar   = 0.3,       & ! Defined by ATEX specification
     C_10    = 0.0013,    & ! Drag coefficient, defined by ATEX specification
     C_m_20  = 0.001229,  & ! Drag coefficient, defined by RICO 3D specification
     C_h_20  = 0.001094,  & ! Drag coefficient, defined by RICO 3D specification
@@ -199,8 +200,8 @@ module rico
     rtm,           & ! This is rt at the lowest above-ground model level.  [kg/kg]
     lowestlevel,   & ! This is z at the lowest above-ground model level.  [m]
     sst,           & ! This is the sea surface temperature [K].
-    psfc             ! This is the surface pressure [Pa].
-
+    psfc,          &   ! This is the surface pressure [Pa].
+    exner_sfc
 
   ! Output variables
   real, intent(out) ::  & 
@@ -224,7 +225,8 @@ module rico
   l_use_old_atex = .FALSE.
 
   ! Define variable values
-  ubar = max(ubmin, sqrt(um_sfc*um_sfc + vm_sfc*vm_sfc))
+  ubar = compute_ubar( um_sfc, vm_sfc )
+
   ! Modification in case lowest model level isn't at 10 m, from ATEX specification
   Cz   = C_10 * ((log(10/z0))/(log(lowestlevel/z0))) * & 
          ((log(10/z0))/(log(lowestlevel/z0)))         
@@ -240,19 +242,20 @@ module rico
 
 ! Compute heat and moisture fluxes
   if (l_use_old_atex) then ! Use ATEX version
-    wpthlp_sfc = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa ) ! [K m s^-1
-    wprtp_sfc  = -Cz * ubar * ( rtm - sat_mixrat_liq(psfc,sst) ) ! [kg kg^-1  m s^-1]
-    upwp_sfc   = -um_sfc * ustar*ustar / ubar                    ! [m^2 s^-2]
-    vpwp_sfc   = -vm_sfc * ustar*ustar / ubar                    ! [m^2 s^-2]
-
+    wpthlp_sfc = compute_wpthlp_sfc( Cz, ubar, thlm, sst, exner_sfc )
+    wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm, sat_mixrat_liq(psfc,sst) )
+  call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
+                              upwp_sfc, vpwp_sfc )
   else ! Use RICO version
-    wpthlp_sfc  = -Ch * ubar * ( thlm - sst * (p0/psfc)**kappa ) ! K m s^-1
+    wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm, sst, exner_sfc )
 !    wprtp_sfc  = -Cz * ubar * ( .01726 - sat_mixrat_liq(psfc,sst) ) ! kg kg^-1  m s^-1
 !    wprtp_sfc  = -Cz * ubar * ( .01626 - sat_mixrat_liq(psfc,sst) ) ! kg kg^-1  m s^-1
-    wprtp_sfc  = -Cq * ubar * ( rtm - sat_mixrat_liq(psfc,sst) ) ! kg kg^-1 m s^-1
+    wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm, sat_mixrat_liq(psfc,sst) )
     upwp_sfc   = -um_sfc * Cm * ubar  ! m^2 s^-2
     vpwp_sfc   = -vm_sfc * Cm * ubar  ! m^2 s^-2
+
   end if
+  
 
   ! Let passive scalars be equal to rt and theta_l for now
   if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc

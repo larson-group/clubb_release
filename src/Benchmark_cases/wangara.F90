@@ -80,14 +80,11 @@ use stats_precision, only: time_precision ! Variable(s)
 use array_index, only:  & 
     iisclr_thl, iisclr_rt ! Variable(s)
 
+use surface_flux, only: compute_ubar, compute_momentum_flux
+
 implicit none
 
 intrinsic :: mod, max, cos, sqrt, present
-
-! Constants
-real, parameter ::  & 
-  ubmin = 0.25
-  !     .  ustar = 0.13
 
 ! Input variables
 real(kind=time_precision), intent(in) ::  & 
@@ -150,10 +147,10 @@ if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
 ! Compute momentum fluxes
 
-ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
+ubar = compute_ubar( um_sfc, vm_sfc )
 
-upwp_sfc = -um_sfc * ustar**2 / ubar
-vpwp_sfc = -vm_sfc * ustar**2 / ubar
+call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
+                            upwp_sfc, vpwp_sfc )
 
 return
 end subroutine wangara_sfclyr

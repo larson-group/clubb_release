@@ -169,10 +169,6 @@ module clubb_driver
 
     use microphys_driver, only: init_microphys ! Subroutine
 
-!   use parameters_microphys, only: &
-!     micro_scheme,  & 
-!     l_cloud_sed
-
     use model_flags, only: l_LH_on, l_local_kk, & ! Constants
       l_pos_def, l_hole_fill, l_single_C2_Skw, l_gamma_Skw, l_byteswap_io
 
@@ -2002,7 +1998,8 @@ module clubb_driver
                          wprtp_sfc, wpsclrp_sfc, wpedsclrp_sfc )    ! Intent(out)
 
     case ( "atex" )
-      call atex_sfclyr( um(2), vm(2), thlm(2), rtm(2), &            ! Intent(in) 
+      call atex_sfclyr( um(2), vm(2), thlm(2), rtm(2), &            ! Intent(in)
+                        exner(1), Tsfc, psfc, & 
                         upwp_sfc, vpwp_sfc, &                       ! Intent(out)
                         wpthlp_sfc, wprtp_sfc, ustar, &             ! Intent(out)
                         wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
@@ -2070,7 +2067,7 @@ module clubb_driver
 
         call sfc_thermo_fluxes( um(2), vm(2), &                     ! Intent(in)
                                 Tsfc, psfc,  &                      ! Intent(in)
-                                thlm(2), rtm(2), &                  ! Intent(in)
+                                thlm(2), rtm(2), exner(1), &         ! Intent(in)
                                 wpthlp_sfc, wprtp_sfc, &            ! Intent(out)
                                 wpsclrp_sfc, wpedsclrp_sfc )        ! Intent(out)
 
@@ -2084,8 +2081,8 @@ module clubb_driver
 
     case ( "gabls2" )
       call gabls2_sfclyr( time_current, time_initial, &             ! Intent(in)
-                          gr%zt(2), psfc, &                       ! Intent(in)
-                          um(2), vm(2), thlm(2), rtm(2), &          ! Intent(in)     
+                          gr%zt(2), psfc, &                         ! Intent(in)
+                          um(2), vm(2), thlm(2), rtm(2), exner(1), &! Intent(in)     
                           upwp_sfc, vpwp_sfc, &                     ! Intent(out)   
                           wpthlp_sfc, wprtp_sfc, ustar, &           ! Intent(out)
                           wpsclrp_sfc, wpedsclrp_sfc )              ! Intent(out)
@@ -2093,7 +2090,7 @@ module clubb_driver
 #ifdef UNRELEASED_CODE
     case ( "gabls3" )
       call gabls3_sfclyr( um(2), vm(2), veg_T_in_K, &         ! Intent(in)
-                          thlm(2), rtm(2), gr%zt(2), psfc, &     ! Intent(in)
+                          thlm(2), rtm(2), gr%zt(2), psfc, exner(1) , &     ! Intent(in)
                           upwp_sfc, vpwp_sfc, &                       ! Intent(out)
                           wpthlp_sfc, wprtp_sfc, ustar )             ! Intent(out)
 
@@ -2137,7 +2134,7 @@ module clubb_driver
       call rico_sfclyr( um(2), vm(2), thlm(2), rtm(2), &            ! Intent(in)
                         ! 299.8 K is the RICO SST; 101540 Pa is the sfc pressure.
                         !gr%zt(2), 299.8, 101540.,  &                ! Intent(in)
-                        gr%zt(2), Tsfc, psfc,&
+                        gr%zt(2), Tsfc, psfc, exner(1), &
                         upwp_sfc, vpwp_sfc, wpthlp_sfc, &           ! Intent(out) 
                         wprtp_sfc, ustar, &                         ! Intent(out)
                         wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)

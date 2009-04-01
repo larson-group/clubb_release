@@ -202,12 +202,13 @@ use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl
 
 use interpolation, only: factor_interp
 
+use surface_flux, only: compute_ubar, compute_momentum_flux
+
 implicit none
 
 intrinsic :: max, sqrt, present
 
 real, parameter ::  & 
-  ubmin = 0.25, & ! Minimum value for ubar 
   z0    = 0.035   ! ARM Cu mom. roughness height
 
 
@@ -284,15 +285,15 @@ if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
 
 ! Compute momentum fluxes using ARM Cu formulae
 
-ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
+ubar = compute_ubar( um_sfc, vm_sfc )
 
 bflx = grav/thlm_sfc * wpthlp_sfc
 
 ! Compute ustar
 ustar = diag_ustar( z, bflx, ubar, z0 )
 
-upwp_sfc = -um_sfc * ustar**2 / ubar
-vpwp_sfc = -vm_sfc * ustar**2 / ubar
+call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
+                            upwp_sfc, vpwp_sfc )
 
 return
 end subroutine arm_97_sfclyr

@@ -131,14 +131,12 @@ subroutine sfc_momentum_fluxes( um_sfc, vm_sfc, &
 !       None
 !------------------------------------------------------------------------
 
+use surface_flux, only: compute_ubar, compute_momentum_flux
+
 implicit none
 
 ! External
 intrinsic :: sqrt
-
-! Constant parameter
-!        real, intent(out) :: 
-!     .  ustar = 0.3
 
 ! Input variables
 real, intent(in) ::  & 
@@ -152,16 +150,17 @@ real, intent(out) ::  &
   ustar       ! surface friction velocity [m/s]
 
 ! Local Variables
-real :: M ! total wind speed above ground
+real :: ubar ! total wind speed above ground
 
 ! Declare the value of ustar
 ustar = 0.3
 
 ! Computes fluxes
 
-M = sqrt( um_sfc*um_sfc + vm_sfc*vm_sfc )
-upwp_sfc = - ustar*ustar * um_sfc / M
-vpwp_sfc = - ustar*ustar * vm_sfc / M
+ubar = compute_ubar( um_sfc, vm_sfc )
+
+call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
+                            upwp_sfc, vpwp_sfc )
 
 return
 end subroutine sfc_momentum_fluxes
@@ -169,7 +168,7 @@ end subroutine sfc_momentum_fluxes
 !------------------------------------------------------------------------
 subroutine sfc_thermo_fluxes( um_sfc, vm_sfc, &
                               Tsfc, psfc, & 
-                              thlair, rtair, & 
+                              thlair, rtair, exner_sfc, & 
                               wpthlp_sfc, wprtp_sfc, & 
                               wpsclrp_sfc, & 
                               wpedsclrp_sfc )
@@ -189,6 +188,8 @@ use saturation, only: sat_mixrat_liq ! Procedure(s)
 
 use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl
 
+use surface_flux, only: compute_ubar, compute_wprtp_sfc, compute_wpthlp_sfc
+
 implicit none
 
 ! External
@@ -204,8 +205,8 @@ real, intent(in) ::  &
   Tsfc,    & ! Surface temperature           [K]
   psfc,    & ! Surface pressure              [Pa]
   thlair,  & ! theta_l at first model layer  [K]
-  rtair      ! rt at first model layer       [kg/kg]
-
+  rtair,   & ! rt at first model layer       [kg/kg]
+  exner_sfc
 
 ! Output Variables
 real, intent(out) ::  & 
@@ -219,12 +220,13 @@ real, intent(out), dimension(edsclr_dim) ::  &
   wpedsclrp_sfc     ! eddy-scalar surface flux       [units m/s]
 
 ! Local Variables
-real :: M  ! Total wind speed above ground
+real :: ubar  ! Total wind speed above ground
 
 ! Compute fluxes
-M = sqrt( um_sfc*um_sfc + vm_sfc*vm_sfc )
-wpthlp_sfc = -C * M * ( thlair - Tsfc * (psfc/p0)**kappa )
-wprtp_sfc  = -C * M * ( rtair - sat_mixrat_liq( psfc, Tsfc ) )
+ubar = compute_ubar( um_sfc, vm_sfc )
+
+wpthlp_sfc = compute_wpthlp_sfc ( C, ubar, thlair, Tsfc, exner_sfc )
+wprtp_sfc = compute_wprtp_sfc( C, ubar, rtair, sat_mixrat_liq( psfc, Tsfc ) )
 
 ! Let passive scalars be equal to rt and theta_l for now
 if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc

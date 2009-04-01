@@ -196,12 +196,13 @@ use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variab
 
 use interpolation, only: factor_interp ! Procedure(s)
 
+use surface_flux, only: compute_ubar, compute_momentum_flux
+
 implicit none
 
 intrinsic :: max, sqrt
 
-real, parameter ::  & 
-  ubmin = 0.25,    & ! Minimum value for ubar 
+real, parameter ::  &  
   z0    = 0.035   ! ARM Cu mom. roughness height
 
 ! Input Variables
@@ -230,7 +231,6 @@ real, intent(out), dimension(edsclr_dim) ::  &
   wpedsclrp_sfc    ! Passive eddy-scalar surface flux [units m/s]
 
 ! Local variables
-!        real :: ubar, ustar, bflx, heat_flx, moisture_flx, time_frac
 real :: ubar, bflx, heat_flx, moisture_flx, time_frac
 integer :: i1, i2
 !----------------------------------------------------------------------
@@ -270,15 +270,15 @@ wprtp_sfc  = moisture_flx / ( Lv * rho0 ) ! (kg m/ kg s)
 
 ! Compute momentum fluxes using ARM Cu formulae
 
-ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
+ubar = compute_ubar( um_sfc, vm_sfc )
 
 bflx = grav/thlm_sfc * wpthlp_sfc
 
 ! Compute ustar
 ustar = diag_ustar( z, bflx, ubar, z0 )
 
-upwp_sfc = -um_sfc * ustar**2 / ubar
-vpwp_sfc = -vm_sfc * ustar**2 / ubar
+call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
+			    upwp_sfc, vpwp_sfc )
 
 ! Let passive scalars be equal to rt and theta_l for testing
 if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc

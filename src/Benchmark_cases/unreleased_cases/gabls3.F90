@@ -217,7 +217,7 @@ module gabls3
 
   !-----------------------------------------------------------------------
   subroutine gabls3_sfclyr( um_sfc, vm_sfc, veg_t_in_K, &
-                            thlm_sfc, rtm_sfc, lowest_level, psfc,& 
+                            thlm_sfc, rtm_sfc, lowest_level, psfc, exner_sfc, & 
                             upwp_sfc, vpwp_sfc, &
                             wpthlp_sfc, wprtp_sfc, ustar )
     !       Description:
@@ -234,6 +234,9 @@ module gabls3
 
     use stats_precision, only: time_precision ! Variable(s)
 
+    use surface_flux, only: compute_momentum_flux, &
+                            compute_wpthlp_sfc, &
+                            compute_wprtp_sfc
 
     !use surface, only: prognose_soil_T_in_K ! Procedure(s)
 
@@ -275,7 +278,8 @@ module gabls3
       rtm_sfc,    & ! rt at zt(2)           [kg/kg]
       veg_T_in_K, &
       lowest_level, & ! gr%zt(2)            [m]
-      psfc          ! Prescribed surface pressuer [Pa]
+      psfc, &          ! Prescribed surface pressuer [Pa]
+      exner_sfc
 
     ! Output variables
     real, intent(out) ::  & 
@@ -293,17 +297,19 @@ module gabls3
     ! Compute heat and moisture fluxes
     ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
 
-    veg_theta_in_K = veg_T_in_K * (( p0 / psfc )**(Rd/Cp))
-
-    wpthlp_sfc = -C_10 * ubar * ( thlm_sfc - veg_theta_in_K )
-    wprtp_sfc  = -C_10 * ubar * 10 * ( rtm_sfc - 9.9e-3 )
+    veg_theta_in_K = veg_T_in_K / exner_sfc
+    wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, veg_T_in_K, exner_sfc)
+    !print *, wpthlp_sfc
+    !wpthlp_sfc = -C_10 * ubar * ( thlm_sfc - veg_theta_in_K )
+    !print *, wpthlp_sfc
+    wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, 9.9e-3 ) * 10
   
     ! Compute momentum fluxes
     bflx = wpthlp_sfc * grav / veg_theta_in_K
     ustar = diag_ustar( lowest_level, bflx, ubar, z0)
 
-    upwp_sfc = -um_sfc * ustar**2 / ubar
-    vpwp_sfc = -vm_sfc * ustar**2 / ubar
+    call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
+                                upwp_sfc, vpwp_sfc )
 
     return
   end subroutine gabls3_sfclyr

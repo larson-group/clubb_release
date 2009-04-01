@@ -81,7 +81,7 @@ module dycoms2_rf02
       thlm_forcing, & ! theta_l forcing                [K/s]
       rtm_forcing,  & ! r_t forcing                    [(kg/kg)/s] 
       Frad,         & ! Radiative flux                 [W/m^2]
-      radht           ! Radiative heating rate         [K/s] 
+      radht           ! Radiative heating rate         [K/s]
 
     real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
       sclrm_forcing    ! Passive scalar tendency        [units/s]
@@ -98,7 +98,7 @@ module dycoms2_rf02
 
     integer :: k  ! Loop index
 
-   ! Large-scale subsidence
+    ! Large-scale subsidence
 
     DO k = 2, gr%nnzp, 1
       wm_zt(k) = -ls_div * gr%zt(k)
@@ -230,6 +230,9 @@ module dycoms2_rf02
     use array_index, only:  & 
         iisclr_thl, iisclr_rt, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
+    use surface_flux, only: &
+        compute_ubar, compute_momentum_flux
+
     implicit none
 
     ! External
@@ -260,22 +263,15 @@ module dycoms2_rf02
       wpedsclrp_sfc     ! w' eddy-scalar at surface [units m/s]
 
     ! Local Variables
-    real :: wind_sfc  ! ? [m^2/s^2]?
+    real :: ubar  ! ? [m^2/s^2]?
 
     ! Declare the value of ustar.
     ustar = 0.25
 
-    wind_sfc = sqrt( um_sfc**2 + vm_sfc**2 )
+    ubar = compute_ubar( um_sfc, vm_sfc )
 
-    if (wind_sfc > 0.0) then
-      upwp_sfc = -um_sfc * ( ustar**2 ) / wind_sfc
-      vpwp_sfc = -vm_sfc * ( ustar**2 ) / wind_sfc
-
-    else
-      upwp_sfc = 0.0
-      vpwp_sfc = 0.0
-
-    end if  ! wind_sfc > 0
+    call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
+                                upwp_sfc, vpwp_sfc )
 
     wpthlp_sfc = SH / (1.21 * Cp)
     wprtp_sfc  = LH / (1.21 * Lv)

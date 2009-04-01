@@ -453,15 +453,12 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
 
   use interpolation, only: factor_interp ! Procedure(s)
 
+  use surface_flux, only: compute_ubar, compute_momentum_flux
+
   implicit none
 
   ! External
   intrinsic :: max, sqrt, present
-
-  ! Parameter Constants
-  real, parameter :: & 
-  ubmin = 0.25
-!     .  ustar = 0.25
 
   ! Input Variables
   real(kind=time_precision), intent(in) :: & 
@@ -544,13 +541,13 @@ sensible_heat_flx = factor_interp( ratio, file_SH(right_time), file_SH(left_time
   wprtp_sfc  = latent_heat_flx/(rho0*Lv)
 
   ! Compute momentum fluxes
-  ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
+  ubar = compute_ubar( um_sfc, vm_sfc )
 
   ! Declare the value of ustar.
   ustar = 0.25
 
-  upwp_sfc = -um_sfc * ustar*ustar / ubar
-  vpwp_sfc = -vm_sfc * ustar*ustar / ubar
+  call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
+                              upwp_sfc, vpwp_sfc )
 
   ! Let passive scalars be equal to rt and theta_l for now
   if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc

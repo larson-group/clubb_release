@@ -327,14 +327,15 @@ use parameters_model, only: sclr_dim, edsclr_dim  ! Variable(s)
 
 use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl
 
+use surface_flux, only: compute_ubar, compute_momentum_flux
+
 implicit none
 
 ! External
 intrinsic :: max, sqrt
 
 ! Parameter Constants
-real, parameter :: & 
-  ubmin = 0.25, & 
+real, parameter :: &
 !     .  ustar = 0.25,
 ! The values of these are from the mpace_b specification.
   sensible_heat_flx  = 136.5,  & ! Sensible Heat Flux     [W m^-2] 
@@ -374,10 +375,10 @@ wpthlp_sfc = sensible_heat_flx/(rho0*Cp)
 wprtp_sfc  = latent_heat_flx/(rho0*Lv)
 
 ! Compute momentum fluxes
-ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
+ubar = compute_ubar( um_sfc, vm_sfc )
 
-upwp_sfc = -um_sfc * ustar*ustar / ubar
-vpwp_sfc = -vm_sfc * ustar*ustar / ubar
+call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
+                            upwp_sfc, vpwp_sfc )
 
 ! Let passive scalars be equal to rt and theta_l for now
 if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc

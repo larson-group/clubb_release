@@ -197,12 +197,13 @@ use diag_ustar_mod, only: diag_ustar ! Variable(s)
 
 use interpolation, only: factor_interp ! Procedure(s)
 
+use surface_flux, only: compute_ubar, compute_momentum_flux
+
 implicit none
 
 intrinsic :: max, sqrt, present
 
-real, parameter ::  & 
-  ubmin = 0.25, & ! Minimum value for ubar 
+real, parameter ::  &  
   z0    = 0.035   ! ARM Cu mom. roughness height
 
 ! Input Variables
@@ -272,16 +273,16 @@ wprtp_sfc  = moisture_flx / ( Lv * rho0 ) ! (kg m/ kg s)
 
 ! Compute momentum fluxes using ARM Cu formulae
 
-ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
+ubar = compute_ubar( um_sfc, vm_sfc )
 
 bflx = grav/thlm_sfc * wpthlp_sfc
 
 ! Compute ustar
 ustar = diag_ustar( z, bflx, ubar, z0 )
 
-upwp_sfc = -um_sfc * ustar**2 / ubar
-vpwp_sfc = -vm_sfc * ustar**2 / ubar
-
+call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
+			    upwp_sfc, vpwp_sfc )
+			    
 ! Set passive scalars to theta_l and rt for testing purposes
 if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
 if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc

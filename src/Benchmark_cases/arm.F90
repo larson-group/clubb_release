@@ -178,13 +178,12 @@ use diag_ustar_mod, only: diag_ustar ! Variable(s)
 
 use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
+use surface_flux, only: compute_momentum_flux, compute_ubar
+
 implicit none
 
 intrinsic :: max, sqrt
 
-! Parameter Constants
-real, parameter :: & 
-  ubmin = 0.25
 ! ARM roughness height
 real, parameter ::  & 
   z0 = 0.035  ! momentum roughness height
@@ -195,7 +194,7 @@ real(kind=time_precision), intent(in) ::  &
 
 real, intent(in) ::  & 
   z,               & ! Height at zt(2)       [m]
-  dn0,             & ! ???
+  dn0,             & ! Density at zm(1)      [kg/m^3]
   thlm_sfc,        & ! Theta_l at zt(2)      [K]
   um_sfc,          & ! um at zt(2)           [m/s]
   vm_sfc             ! vm at zt(2)           [m/s]
@@ -216,8 +215,6 @@ real,  dimension(edsclr_dim), intent(out) ::  &
 
 ! Internal variables
 real ::  & 
-  usfc,  & 
-  vsfc,  & 
   ubar, & 
   true_time, & 
   heat_flx, moisture_flx, & 
@@ -239,16 +236,16 @@ moisture_flx2 = moisture_flx / ( Lv * dn0 )! (m/s)
 bflx = grav/thlm_sfc * heat_flx2
 
 ! Surface winds
-usfc = um_sfc
-vsfc = vm_sfc
-ubar = max( ubmin, sqrt( usfc ** 2 + vsfc ** 2 ) )
 
+! Compute ubar
+ubar = compute_ubar( um_sfc, vm_sfc )
 ! Compute ustar
 ustar = diag_ustar( z, bflx, ubar, z0 )
 
 ! Assign fluxes
-upwp_sfc   = -usfc/ubar * ustar * ustar
-vpwp_sfc   = -vsfc/ubar * ustar * ustar
+call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
+                              upwp_sfc, vpwp_sfc )
+
 wpthlp_sfc = heat_flx2
 wprtp_sfc  = moisture_flx2
 

@@ -153,12 +153,11 @@ use parameters_model, only: sclr_dim, edsclr_dim  ! Variable(s)
 
 use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl
 
+use surface_flux, only: compute_momentum_flux, compute_ubar
+
+
 implicit none
 
-! Constant Parameters
-real, parameter ::  & 
-  ubmin = 0.25
-  !     .  ustar = 0.28
 
 ! Input Variables
 real, intent(in) ::  & 
@@ -192,10 +191,10 @@ wprtp_sfc  = 5.2e-5
 
 ! Compute momentum fluxes
 
-ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
+ubar = compute_ubar( um_sfc, vm_sfc )
 
-upwp_sfc = -um_sfc * ustar**2 / ubar
-vpwp_sfc = -vm_sfc * ustar**2 / ubar
+call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
+                            upwp_sfc, vpwp_sfc )
 
 ! Let passive scalars be equal to rt and theta_l for now
 if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc

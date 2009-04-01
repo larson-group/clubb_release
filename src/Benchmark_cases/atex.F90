@@ -186,7 +186,8 @@ return
 end subroutine atex_tndcy
 
 !----------------------------------------------------------------------
-subroutine atex_sfclyr( um_sfc, vm_sfc, thlm_sfc, rtm_sfc,  & 
+subroutine atex_sfclyr( um_sfc, vm_sfc, thlm_sfc, rtm_sfc,  &
+                        exner_sfc, Tsfc, psfc, &
                         upwp_sfc, vpwp_sfc,  & 
                         wpthlp_sfc, wprtp_sfc, ustar, & 
                         wpsclrp_sfc, wpedsclrp_sfc )
@@ -204,22 +205,25 @@ use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
 use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
+use surface_flux, only: compute_ubar, compute_wpthlp_sfc, compute_momentum_flux, &
+                        compute_wprtp_sfc
+
 implicit none
 
 ! Constants
 
 real, parameter ::  & 
-  ubmin = 0.25, & 
-  !     .  ustar = 0.3,
-  C_10  = 0.0013, & 
-  SST   = 298.
+  C_10  = 0.0013
 
 ! Input variables
 real, intent(in) ::  & 
   um_sfc,     & ! um at zt(2)           [m/s]
   vm_sfc,     & ! vm at zt(2)           [m/s]
   thlm_sfc,   & ! Theta_l at zt(2)      [K]
-  rtm_sfc       ! rt at zt(2)           [kg/kg]
+  rtm_sfc, &     ! rt at zt(2)           [kg/kg]
+  exner_sfc, &
+  Tsfc, &
+  psfc
 
 ! Output variables
 real, intent(out) ::  & 
@@ -243,16 +247,15 @@ ustar = 0.3
 
 ! Compute heat and moisture fluxes
 
-ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
+ubar = compute_ubar( um_sfc, vm_sfc )
 
-wpthlp_sfc & 
-= -C_10 * ubar * ( thlm_sfc - SST * (1000./1015.)**kappa )
-wprtp_sfc  = -C_10 * ubar * ( rtm_sfc - 0.0198293 )
+wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, Tsfc, exner_sfc )
+wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, 0.0198293 )
 
 ! Compute momentum fluxes
 
-upwp_sfc = -um_sfc * ustar**2 / ubar
-vpwp_sfc = -vm_sfc * ustar**2 / ubar
+call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
+                            upwp_sfc, vpwp_sfc )
 
 ! Let passive scalars be equal to rt and theta_l for now
 if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
