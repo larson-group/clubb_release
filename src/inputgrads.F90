@@ -20,14 +20,16 @@ module inputfile_class
 !-----------------------------------------------------------------------
 #include "recl.inc"
   use endian, only: & 
-      little_endian,  & ! Procedure(s)
-      big_endian, & 
-      byte_order_swap
+    little_endian, & ! Variable(s)
+    big_endian, & 
+    byte_order_swap ! Procedure
+
   use constants, only:  & 
-      fstdout,  & ! Variable(s) 
-      fstderr
+    fstdout,  & ! Variable(s) 
+    fstderr
+
   use stats_precision, only:  & 
-      time_precision ! Variable(s)
+    time_precision ! Variable(s)
 
   implicit none
 
@@ -87,6 +89,8 @@ module inputfile_class
 ! Description:
 !   Open a GrADS data set in read-only mode
 !-----------------------------------------------------------------------
+    use model_flags, only: l_byteswap_io
+
     implicit none
 
     ! Input Variables
@@ -149,14 +153,18 @@ module inputfile_class
         ! Swap bytes if local machine is little_endian and file
         ! big_endian
 
-        if ( little_endian( ) ) f%l_byteswapped = .true.
+        if ( little_endian .and. .not. l_byteswap_io  ) then
+          f%l_byteswapped = .true.
+        end if
 
       else if ( index(line,'LITTLE_ENDIAN') > 0 ) then
 
         ! Swap bytes if local machine is big_endian and file
         ! little_endian
 
-        if ( big_endian( ) ) f%l_byteswapped = .true.
+        if ( big_endian .and. .not. l_byteswap_io ) then
+          f%l_byteswapped = .true.
+        end if
 
       else if ( index(line,'XDEF') > 0 ) then
 

@@ -425,16 +425,21 @@ module output_grads
 !---------------------------------------------------------
   subroutine write_grads( f )
 
-!         Description:
-!         Write part of a GrADS file to disk
+! Description:
+!   Write part of a GrADS file to disk
 !---------------------------------------------------------
 
   use constants, only: & 
-      fstderr ! Variable(s)
+    fstderr ! Variable(s)
+
+  use model_flags, only: &
+    l_byteswap_io ! Variable
+
   use endian, only: & 
-      big_endian ! Procedure
+    big_endian ! Variable
+
   use output_file_module, only: & 
-      outputfile ! Type
+    outputfile ! Type
 
   implicit none
 
@@ -510,7 +515,7 @@ module output_grads
   end if
 
   ! Write file header
-  if ( big_endian( ) ) then
+  if ( big_endian .and. .not. l_byteswap_io ) then
     write(unit=f%iounit,fmt='(a)') 'OPTIONS BIG_ENDIAN'
   else
     write(unit=f%iounit,fmt='(a)') 'OPTIONS LITTLE_ENDIAN'

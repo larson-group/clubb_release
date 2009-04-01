@@ -4,13 +4,15 @@
 !----------------------------------------------------------------------
 module endian
 
-!       Contents:
-!       big_endian( ) and little_endian( ) are
-!       simple boolean functions to determine byte ordering on the system
-!       One would be sufficent, the pair are available for convenience
+! Description:
+!   big_endian and little_endian are parameters set at compile time
+!   based on whether the architecture is big or little endian.
 
-!       native_4byte_real is a portable byte re-ordering subroutine
-!       native_8byte_real is a knock off of the other routine for 8 bytes
+!   native_4byte_real is a portable byte re-ordering subroutine
+!   native_8byte_real is a knock off of the other routine for 8 bytes
+! References:
+!   big_endian, little_endian from:
+!   <http://www.star.le.ac.uk/~cgp/f90course/f90.html>
 !----------------------------------------------------------------------
 
   implicit none
@@ -18,65 +20,22 @@ module endian
   interface byte_order_swap
     module procedure native_4byte_real, native_8byte_real 
   end interface
-
+  
   public  :: big_endian, little_endian, byte_order_swap
   private :: native_4byte_real, native_8byte_real
 
   private ! Default scope
+  ! External
+  intrinsic :: selected_int_kind, ichar, transfer
+
+  ! Parameters
+  integer, parameter :: i4 = selected_int_kind( 4 )
+  
+  logical, parameter :: &
+    big_endian    = ichar( transfer( 1_i4, "a" ) ) == 0, &
+    little_endian = .not. big_endian
 
   contains
-!----------------------------------------------------------------------
-  logical function big_endian( )
-
-!   Description:
-!     Code from a posting by: Paul van Delst, CIMSS @ NOAA/NCEP/EMC
-!     Return .true. if the system uses most significant bit (MSB) byte 
-!     ordering.  Breaks on EBCDIC systems?
-!   References:
-!     None
-!----------------------------------------------------------------------
-    use model_flags, only: l_byteswap_io
-
-    implicit none
-
-    ! External
-    intrinsic :: selected_int_kind, iachar, transfer
-
-    ! Parameters
-    integer, parameter :: short = selected_int_kind( 4 )
-
-    integer(kind=short), parameter :: source = 1_short
-
-    ! --- Begin Code ---
-
-    if ( iachar( transfer( source, 'a' ) ) == 0 ) then
-      big_endian = .true.
-    else
-      big_endian = .false.
-    end if
-
-    ! If the Fortran compiler is configured to swap bytes on output, then
-    ! give the opposite of the native byte ordering
-    if ( l_byteswap_io ) big_endian = .not. big_endian
-
-    return
-  end function big_endian
-
-!-------------------------------------------------------------------------------
-  logical function little_endian( )
-
-! Description:
-!   Wrapper function for big_endian()
-!   Returns .true. if the system uses least significant bit (LSB) 
-!   byte ordering.
-!------------------------------------------------------------------------------
-
-    implicit none
-
-    little_endian = .not. big_endian( )
-
-    return
-  end function little_endian
 
 !-------------------------------------------------------------------------------
 !     SUBPROGRAM: native_4byte_real
