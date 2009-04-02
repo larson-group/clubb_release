@@ -98,7 +98,6 @@ debug_level   = 2
 &microphysics_setting
 l_cloud_sed    = .false.  ! Flag for cloud water sedimentation.
 micro_scheme = "none"
-
 /
 
 &stats_setting

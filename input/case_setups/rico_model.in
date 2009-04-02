@@ -128,6 +128,7 @@ corr_sNc_NL_below = 0.
 C_evap = 0.5
 r_0 = 100.0e-6
 !!!!!!! END RICO COMMENTS, Michael Falk, 27-28 November 2007
+Ncm_initial = 70. ! #/cm3 
 /
 
 &stats_setting

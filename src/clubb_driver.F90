@@ -1628,34 +1628,37 @@ module clubb_driver
 
     use variables_diagnostic_module, only: wpedsclrp ! Passive scalar variables
 
-    use variables_prognostic_module, only: rtm_forcing, thlm_forcing,  & ! Variable(s)
-                                    wm_zt, wm_zm, rho, rtm, thlm, p_in_Pa, & 
-                                    exner, rcm, rho_zm, um, psfc, vm, & 
-                                    upwp_sfc, vpwp_sfc, Tsfc, & 
-                                    wpthlp_sfc, SE, LE, wprtp_sfc, cf, &
-                                    um_forcing, vm_forcing
+    use variables_prognostic_module, only: &
+      rtm_forcing, thlm_forcing,  & ! Variable(s)
+      wm_zt, wm_zm, rho, rtm, thlm, p_in_Pa, & 
+      exner, rcm, rho_zm, um, psfc, vm, & 
+      upwp_sfc, vpwp_sfc, Tsfc, & 
+      wpthlp_sfc, SE, LE, wprtp_sfc, cf, &
+      um_forcing, vm_forcing
 
     use stats_variables, only: &
-        ish, & ! Variable(s)
-        ilh, &
-        iwpthlp_sfc, &
-        iwprtp_sfc, &
-        iupwp_sfc, &
-        ivpwp_sfc, &
-        iustar, &
-        l_stats_samp, &
-        sfc
+      ish, & ! Variable(s)
+      ilh, &
+      iwpthlp_sfc, &
+      iwprtp_sfc, &
+      iupwp_sfc, &
+      ivpwp_sfc, &
+      iustar, &
+      l_stats_samp, &
+      sfc
 
     use stats_type, only: stat_update_var_pt ! Procedure(s)
 
-    use constants, only: Cp, Lv, kappa, p0, rc_tol, fstderr ! Variable(s)
+    use constants, only: & 
+      Cp, Lv, kappa, p0, & ! Variable(s)
+      rc_tol, fstderr, cm3_per_m3 
 
     use variables_prognostic_module, only:  & 
-        sclrm_forcing,   & ! Passive scalar variables
-        edsclrm_forcing, & ! 
-        wpsclrp,  & 
-        wpsclrp_sfc,  &
-        wpedsclrp_sfc
+      sclrm_forcing,   & ! Passive scalar variables
+      edsclrm_forcing, & ! 
+      wpsclrp,  & 
+      wpsclrp_sfc,  &
+      wpedsclrp_sfc
 
     use variables_diagnostic_module, only:  & 
       wp2_zt ! w'^2 interpolated the themo levels [m^2/s^2]
@@ -1667,7 +1670,7 @@ module clubb_driver
     use microphys_driver, only: advance_microphys ! Procedure(s)
 
     use parameters_microphys, only: &
-      micro_scheme, l_cloud_sed  ! Variables
+      micro_scheme, l_cloud_sed, Ncm_initial  ! Variables
 
     use soil_vegetation, only: advance_soil_veg, veg_T_in_K
 
@@ -2051,7 +2054,7 @@ module clubb_driver
       call sfc_momentum_fluxes( um_sfc, vm_sfc, &                   ! Intent(in)
                                 upwp_sfc, vpwp_sfc, ustar )         ! Intent(out)
       ! sfctype = 0  fixed sfc sensible and latent heat fluxes
-      !                   as given in hoc.in
+      !                   as given in the namelist
       ! sfctype = 1  bulk formula: uses given surface temperature
       !                   and assumes over ocean
       if ( sfctype == 0 ) then
@@ -2171,57 +2174,31 @@ module clubb_driver
     ! Determine Ncm for K&K microphysics or cloud droplet sedimentation
     if ( l_cloud_sed .or. trim( micro_scheme ) == "khairoutdinov_kogan" ) then
 
-      if ( trim( runtype ) == "dycoms2_rf02" ) then
-        ! The following lines of code specify cloud droplet
-        ! concentration (Ncm).  The cloud droplet concentration has
-        ! been moved here instead of being stated in KK_microphys
-        ! for the following reasons:
-        !    a) The effects of cloud droplet sedimentation can be computed
-        !       without having to call the precipitation scheme.
-        !    b) Ncm tends to be a case-specific parameter.  Therefore, it
-        !       is appropriate to declare in the same place as other
-        !       case-specific parameters.
-        !
-        ! Someday, we could move the setting of Ncm to pdf_closure_new
-        ! for the following reasons:
-        !    a) The cloud water mixing ratio (rcm) is computed using the
-        !       PDF scheme.  Perhaps someday Ncm can also be computed by
-        !       the same scheme.
-        !    b) It seems more appropriate to declare Ncm in the same place
-        !       where rcm is computed.
-        !
-        ! Since cloud base (zb) is determined by the mixing ratio rc_tol,
-        ! so will cloud droplet number concentration (Ncm).
-        where ( rcm >= rc_tol )
-          hydromet(:,iiNcm) = 55000000.0 / rho
-        else where
-          hydromet(:,iiNcm) = 0.0
-        end where
-
-      else if ( trim( runtype ) == "rico" ) then
-
-        where ( rcm >= rc_tol )
-! Brian:  Ncm has now been changed in the model to be the concentration per 
-!         mass off air, in kg^-1.  However, in order to get that quantity, the
-!         concentration per volume of air must be divided by rho.  9/8/07.
-! Vince Larson removed factor of rho so that Ncm would be in units of m^{-3}.
-! 3 Aug 2007.
-!         Ncm = 70.0 * 1.e6 * rho
-!         Ncm = 70.0 * 1.e6
-          hydromet(:,iiNcm) = 70.0 * 1.e6 / rho
-        else where
-          hydromet(:,iiNcm) = 0.0
-        end where
-
-      else 
-
-        where ( rcm >= rc_tol )
-          hydromet(:,iiNcm) = 30.0 * (1.0 + exp( -gr%zt/2000.0 )) * 1.e6 / rho
-        else where
-          hydromet(:,iiNcm) = 0.0
-        end where
-
-      end if ! RF02
+      ! The following lines of code specify cloud droplet
+      ! concentration (Ncm).  The cloud droplet concentration has
+      ! been moved here instead of being stated in KK_microphys
+      ! for the following reasons:
+      !    a) The effects of cloud droplet sedimentation can be computed
+      !       without having to call the precipitation scheme.
+      !    b) Ncm tends to be a case-specific parameter.  Therefore, it
+      !       is appropriate to declare in the same place as other
+      !       case-specific parameters.
+      !
+      ! Someday, we could move the setting of Ncm to pdf_closure
+      ! for the following reasons:
+      !    a) The cloud water mixing ratio (rcm) is computed using the
+      !       PDF scheme.  Perhaps someday Ncm can also be computed by
+      !       the same scheme.
+      !    b) It seems more appropriate to declare Ncm in the same place
+      !       where rcm is computed.
+      !
+      ! Since cloud base (zb) is determined by the mixing ratio rc_tol,
+      ! so will cloud droplet number concentration (Ncm).
+      where ( rcm >= rc_tol )
+        hydromet(:,iiNcm) = Ncm_initial * cm3_per_m3 / rho
+      else where
+        hydromet(:,iiNcm) = 0.0
+      end where
 
     end if ! cloud_sed / K&K
 
