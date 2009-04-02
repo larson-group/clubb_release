@@ -225,7 +225,7 @@ ustar = diag_ustar( z, bflx, ubar, z0 )
 ! Assign fluxes
 
 call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
-			    upwp_sfc, vpwp_sfc )
+                            upwp_sfc, vpwp_sfc )
 
 wpthlp_sfc = heat_flx2
 wprtp_sfc  = moisture_flx2

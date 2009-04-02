@@ -278,7 +278,7 @@ bflx = grav/thlm_sfc * wpthlp_sfc
 ustar = diag_ustar( z, bflx, ubar, z0 )
 
 call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
-			    upwp_sfc, vpwp_sfc )
+                            upwp_sfc, vpwp_sfc )
 
 ! Let passive scalars be equal to rt and theta_l for testing
 if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
