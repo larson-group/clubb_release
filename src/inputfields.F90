@@ -31,6 +31,8 @@ module inputfields
                      input_Lscale, input_Lscale_up, input_Lscale_down, & 
                      input_Kh_zt, input_Kh_zm, input_tau_zm, input_tau_zt, & 
                      input_wpthvp, &
+                     input_thl1, input_thl2, input_a, input_s1, input_s2, &
+                     input_ss1, input_ss2, input_rc1, input_rc2, &
                      input_thvm, input_rrainm,input_Nrm,  & 
                      input_rsnowm, input_ricem, input_rgraupelm,  & 
                      input_thlm_forcing, input_rtm_forcing, & 
@@ -58,8 +60,8 @@ module inputfields
 
 !-----------------------------------------------------------------------
   subroutine set_filenames( )
-!       Description: Set the names of the GrADS files to be used.
-!       Used by hoc_inputfields.
+! Description: Set the names of the GrADS files to be used.
+!   Used by clubb_inputfields and clubb_restart.
 !-----------------------------------------------------------------------
 
   implicit none
@@ -136,6 +138,9 @@ module inputfields
       Ncnm, & 
       sigma_sqd_w_zt, & 
       em
+
+  use variables_diagnostic_module, only: & 
+      pdf_params ! Variable(s)
 
   use grid_class, only: & 
       gr,  & ! Variable(s)
@@ -276,7 +281,7 @@ module inputfields
     endif
 
 !--------------------------------------------------------
-! Added variables for hoc_restart
+! Added variables for clubb_restart
     if ( input_p ) then
       call get_var( fread_var, "p_in_Pa", timestep, & 
                     p_in_Pa(1:gr%nnzp),  l_error )
@@ -353,15 +358,62 @@ module inputfields
       call get_var( fread_var , "Nrm", timestep, & 
                     hydromet(1:gr%nnzp,iiNrm), l_error)
     endif
+
     if ( input_sigma_sqd_w_zt ) then
       call get_var( fread_var , "sigma_sqd_w_zt", timestep, & 
                     sigma_sqd_w_zt(1:gr%nnzp), l_error)
     endif
 
+    ! PDF Parameters (needed for K&K microphysics)
+    if ( input_thl1 ) then
+      call get_var( fread_var , "thl1", timestep, & 
+                    pdf_params%thl1(1:gr%nnzp), l_error )
+    end if
+
+    if ( input_thl2 ) then
+      call get_var( fread_var , "thl2", timestep, & 
+                    pdf_params%thl2(1:gr%nnzp), l_error )
+    end if
+
+    if ( input_a ) then
+      call get_var( fread_var , "a", timestep, & 
+                    pdf_params%a(1:gr%nnzp), l_error )
+    end if
+
+    if ( input_s1 ) then
+      call get_var( fread_var , "s1", timestep, & 
+                    pdf_params%s1(1:gr%nnzp), l_error )
+    end if
+
+    if ( input_s2 ) then
+      call get_var( fread_var , "s2", timestep, & 
+                    pdf_params%s2(1:gr%nnzp), l_error )
+    end if
+
+    if ( input_ss1 ) then
+      call get_var( fread_var , "ss1", timestep, & 
+                    pdf_params%ss1(1:gr%nnzp), l_error )
+    end if
+
+    if ( input_ss2 ) then
+      call get_var( fread_var , "ss2", timestep, & 
+                    pdf_params%ss2(1:gr%nnzp), l_error )
+    end if
+
+    if ( input_rc1 ) then
+      call get_var( fread_var , "rc1", timestep, & 
+                    pdf_params%rc1(1:gr%nnzp), l_error ) 
+    end if
+
+    if ( input_rc2 ) then
+      call get_var( fread_var , "rc2", timestep, & 
+                    pdf_params%rc2(1:gr%nnzp), l_error )
+    end if
+
 !--------------------------------------------------------
     call close_grads_read( fread_var )
 
-!         zm file
+    ! Read in the zm file
     call open_grads_read( 15, trim(datafile)//"_zm.ctl", & 
                           fread_var )
 

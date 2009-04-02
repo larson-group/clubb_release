@@ -1350,21 +1350,26 @@ module clubb_driver
 !   CLUBB model to a designated point in the submitted GrADS file.
 !-----------------------------------------------------------------------
     use inputfields,only:  & 
-        datafile, input_type, input_um, input_vm,  & ! Variable(s)
-        input_rtm, input_thlm, input_wp2, input_ug, & 
-        input_vg, input_rcm, input_wm_zt, input_exner, & 
-        input_em, input_p, input_rho, input_rho_zm, & 
-        input_Lscale, input_Lscale_up, input_Lscale_down, input_Kh_zt, & 
-        input_Kh_zm, input_tau_zm, input_tau_zt, input_thvm,  & 
-        input_rrainm, input_rsnowm, input_ricem,  & 
-        input_rgraupelm, input_wprtp, input_wpthlp, input_wpthvp, & 
+        datafile, input_type, &  ! Variable(s)
+        input_um, input_vm, input_rtm, input_thlm, & 
+        input_wp2, input_wprtp, input_wpthlp,  & 
         input_wp3, input_rtp2, input_thlp2,  & 
-        input_rtpthlp, input_upwp, input_vpwp,  & 
-        input_thlm_forcing, input_rtm_forcing,   & 
-        input_up2, input_vp2, input_sigma_sqd_w, input_Ncm, & 
-        input_Ncnm, input_Nim, input_cf, input_Nrm, & 
-        input_sigma_sqd_w_zt, input_veg_T_in_K, input_deep_soil_T_in_K, &
-        input_sfc_soil_T_in_K
+        input_rtpthlp, input_upwp, input_vpwp, & 
+        input_ug, input_vg, input_rcm,  & 
+        input_wm_zt, input_exner, input_em, & 
+        input_p, input_rho, input_rho_zm, & 
+        input_Lscale, input_Lscale_up, input_Lscale_down, & 
+        input_Kh_zt, input_Kh_zm, input_tau_zm, input_tau_zt, & 
+        input_wpthvp, &
+        input_thl1, input_thl2, input_a, input_s1, input_s2, &
+        input_ss1, input_ss2, input_rc1, input_rc2, &
+        input_thvm, input_rrainm,input_Nrm,  & 
+        input_rsnowm, input_ricem, input_rgraupelm,  & 
+        input_thlm_forcing, input_rtm_forcing, & 
+        input_up2, input_vp2, input_sigma_sqd_w, input_Ncm,  & 
+        input_Ncnm, input_Nim, input_cf, input_sigma_sqd_w_zt, &
+        input_veg_T_in_K, input_deep_soil_T_in_K, &
+        input_sfc_soil_T_in_K 
 
     use inputfields, only: compute_timestep, grads_fields_reader ! Procedure(s)
 
@@ -1407,41 +1412,44 @@ module clubb_driver
     integer, intent(in) :: iunit
 
     character(len=*), intent(in) ::  & 
-    runfile,           & ! Filename for the namelist
-    forcings_file_path,& ! Path to the forcing files
-    restart_path_case    ! Path to GrADS data for restart
+      runfile,           & ! Filename for the namelist
+      forcings_file_path,& ! Path to the forcing files
+      restart_path_case    ! Path to GrADS data for restart
 
     real(kind=time_precision), intent(in) :: & 
-    time_restart
+      time_restart
 
     ! Input/Output Variables
     real, dimension(gr%nnzp), intent(inout) ::  & 
-    thlm,            & ! Theta l mean                 [K] 
-    rtm,             & ! Total water mixing ratio     [kg/kg]
-    um,              & ! u wind                       [m/s]
-    vm,              & ! v wind                       [m/s]
-    ug,              & ! u geostrophic wind           [m/s] 
-    vg,              & ! v geostrophic wind           [m/s] 
-    upwp,            & ! u'w'                         [m^2/s^2]
-    vpwp,            & ! v'w'                         [m^2/s^2]
-    wm_zt, wm_zm,    & ! w wind                       [m/s]
-    um_ref,          & ! Initial profile of u wind    [m/s]
-    vm_ref,          & ! Initial profile of v wind    [m/s]
-    wpthlp,          & ! w' th_l'                     [(m K)/s]
-    wprtp              ! w' r_t'                      [(kg m)(kg s)]
+      thlm,            & ! Theta l mean                 [K] 
+      rtm,             & ! Total water mixing ratio     [kg/kg]
+      um,              & ! u wind                       [m/s]
+      vm,              & ! v wind                       [m/s]
+      ug,              & ! u geostrophic wind           [m/s] 
+      vg,              & ! v geostrophic wind           [m/s] 
+      upwp,            & ! u'w'                         [m^2/s^2]
+      vpwp,            & ! v'w'                         [m^2/s^2]
+      wm_zt, wm_zm,    & ! w wind                       [m/s]
+      um_ref,          & ! Initial profile of u wind    [m/s]
+      vm_ref,          & ! Initial profile of v wind    [m/s]
+      wpthlp,          & ! w' th_l'                     [(m K)/s]
+      wprtp              ! w' r_t'                      [(kg m)(kg s)]
 
     real, dimension(gr%nnzp,sclr_dim), intent(inout) ::  & 
-    sclrm,   & ! Standard passive scalar [units vary]
-    edsclrm    ! Eddy diffusivity passive scalar [units vary]
+      sclrm,   & ! Standard passive scalar [units vary]
+      edsclrm    ! Eddy diffusivity passive scalar [units vary]
 
     ! Output
     real, intent(out) :: & 
-    wpthlp_sfc,      & ! w'theta_l' surface flux   [(m K)/s]
-    wprtp_sfc,       & ! w'rt' surface flux        [(m kg)/(kg s)]
-    upwp_sfc,        & ! u'w' at surface           [m^2/s^2] 
-    vpwp_sfc           ! v'w' at surface           [m^2/s^2]
+      wpthlp_sfc,      & ! w'theta_l' surface flux   [(m K)/s]
+      wprtp_sfc,       & ! w'rt' surface flux        [(m kg)/(kg s)]
+      upwp_sfc,        & ! u'w' at surface           [m^2/s^2] 
+      vpwp_sfc           ! v'w' at surface           [m^2/s^2]
 
+    ! Local variables
     integer :: timestep
+
+    ! --- Begin Code ---
 
     ! Inform inputfields module
     datafile = "../"//trim( restart_path_case )
@@ -1469,6 +1477,15 @@ module clubb_driver
     input_tau_zt = .true.
     input_thvm = .true.
     input_wpthvp = .true.
+    input_thl1 = .true.
+    input_thl2 = .true.
+    input_a    = .true.
+    input_s1   = .true.
+    input_s2   = .true.
+    input_ss1  = .true.
+    input_ss2  = .true.
+    input_rc1  = .true.
+    input_rc2  = .true.
 
     select case ( trim( micro_scheme ) )
     case ( "coamps" )
