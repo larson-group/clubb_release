@@ -217,7 +217,7 @@ module gabls3
 
   !-----------------------------------------------------------------------
   subroutine gabls3_sfclyr( um_sfc, vm_sfc, veg_t_in_K, &
-                            thlm_sfc, rtm_sfc, lowest_level, psfc, exner_sfc, & 
+                            thlm_sfc, rtm_sfc, lowest_level, exner_sfc, & 
                             upwp_sfc, vpwp_sfc, &
                             wpthlp_sfc, wprtp_sfc, ustar )
     !       Description:
@@ -272,14 +272,13 @@ module gabls3
 
 
     real, intent(in) ::  & 
-      um_sfc,     & ! um at zt(2)           [m/s]
-      vm_sfc,     & ! vm at zt(2)           [m/s]
-      thlm_sfc,   & ! Theta_l at zt(2)      [K]
-      rtm_sfc,    & ! rt at zt(2)           [kg/kg]
-      veg_T_in_K, &
-      lowest_level, & ! gr%zt(2)            [m]
-      psfc, &          ! Prescribed surface pressuer [Pa]
-      exner_sfc
+      um_sfc,       & ! um at zt(2)            [m/s]
+      vm_sfc,       & ! vm at zt(2)            [m/s]
+      thlm_sfc,     & ! Theta_l at zt(2)       [K]
+      rtm_sfc,      & ! rt at zt(2)            [kg/kg]
+      veg_T_in_K,   & ! Vegetation temperature [K]
+      lowest_level, & ! gr%zt(2)               [m]
+      exner_sfc       ! Exner function         [-]
 
     ! Output variables
     real, intent(out) ::  & 

@@ -187,7 +187,7 @@ end subroutine atex_tndcy
 
 !----------------------------------------------------------------------
 subroutine atex_sfclyr( um_sfc, vm_sfc, thlm_sfc, rtm_sfc,  &
-                        exner_sfc, Tsfc, psfc, &
+                        exner_sfc, Tsfc, &
                         upwp_sfc, vpwp_sfc,  & 
                         wpthlp_sfc, wprtp_sfc, ustar, & 
                         wpsclrp_sfc, wpedsclrp_sfc )
@@ -217,13 +217,12 @@ real, parameter ::  &
 
 ! Input variables
 real, intent(in) ::  & 
-  um_sfc,     & ! um at zt(2)           [m/s]
-  vm_sfc,     & ! vm at zt(2)           [m/s]
-  thlm_sfc,   & ! Theta_l at zt(2)      [K]
-  rtm_sfc, &     ! rt at zt(2)           [kg/kg]
-  exner_sfc, &
-  Tsfc, &
-  psfc
+  um_sfc,     & ! um at zt(2)          [m/s]
+  vm_sfc,     & ! vm at zt(2)          [m/s]
+  thlm_sfc,   & ! Theta_l at zt(2)     [K]
+  rtm_sfc,    & ! rt at zt(2)          [kg/kg]
+  exner_sfc,  & ! Exner function       [-]
+  Tsfc          ! Surface temperature  [K]
 
 ! Output variables
 real, intent(out) ::  & 

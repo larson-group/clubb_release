@@ -2001,11 +2001,11 @@ module clubb_driver
                          wprtp_sfc, wpsclrp_sfc, wpedsclrp_sfc )    ! Intent(out)
 
     case ( "atex" )
-      call atex_sfclyr( um(2), vm(2), thlm(2), rtm(2), &            ! Intent(in)
-                        exner(1), Tsfc, psfc, & 
-                        upwp_sfc, vpwp_sfc, &                       ! Intent(out)
-                        wpthlp_sfc, wprtp_sfc, ustar, &             ! Intent(out)
-                        wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
+      call atex_sfclyr( um(2), vm(2), thlm(2), rtm(2), &  ! Intent(in)
+                        exner(1), Tsfc, &                 ! Intent(in)
+                        upwp_sfc, vpwp_sfc, &             ! Intent(out)
+                        wpthlp_sfc, wprtp_sfc, ustar, &   ! Intent(out)
+                        wpsclrp_sfc, wpedsclrp_sfc )      ! Intent(out)
 
     case ( "bomex" )
       call bomex_sfclyr( um(2), vm(2), &                            ! Intent(in) 
@@ -2092,10 +2092,10 @@ module clubb_driver
 
 #ifdef UNRELEASED_CODE
     case ( "gabls3" )
-      call gabls3_sfclyr( um(2), vm(2), veg_T_in_K, &         ! Intent(in)
-                          thlm(2), rtm(2), gr%zt(2), psfc, exner(1) , &     ! Intent(in)
-                          upwp_sfc, vpwp_sfc, &                       ! Intent(out)
-                          wpthlp_sfc, wprtp_sfc, ustar )             ! Intent(out)
+      call gabls3_sfclyr( um(2), vm(2), veg_T_in_K, &             ! Intent(in)
+                          thlm(2), rtm(2), gr%zt(2), exner(1) , & ! Intent(in)
+                          upwp_sfc, vpwp_sfc, &                   ! Intent(out)
+                          wpthlp_sfc, wprtp_sfc, ustar )          ! Intent(out)
 
     case ( "jun25_altocu" )
       ! There are no surface momentum or heat fluxes
