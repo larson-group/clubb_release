@@ -115,6 +115,14 @@ module stats_variables
 !$omp   threadprivate(iT_in_K)
 !$omp   threadprivate(iNrm, iNim, iNsnowm, iNgraupelm)
 
+  integer, public :: &
+    ieff_rad_cloud, &
+    ieff_rad_ice, &
+    ieff_rad_snow, &
+    ieff_rad_rain, &
+    ieff_rad_graupel
+
+
   integer, public :: & 
     irsnowm, & 
     irgraupelm, & 

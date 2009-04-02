@@ -79,6 +79,13 @@ use stats_variables, only: &
     iricem
 
 use stats_variables, only: & 
+  ieff_rad_cloud, &
+  ieff_rad_ice, &
+  ieff_rad_snow, &
+  ieff_rad_rain, &
+  ieff_rad_graupel
+
+use stats_variables, only: & 
     irtm_bt, & 
     irtm_ma, & 
     irtm_ta, & 
@@ -238,6 +245,12 @@ use stats_variables, only: &
   iNcm_dff, &
   iNcm_cl
 
+use stats_variables, only: & 
+  ieff_rad_cloud, &
+  ieff_rad_ice, &
+  ieff_rad_snow, &
+  ieff_rad_rain, &
+  ieff_rad_graupel
 
 use stats_type, only: & 
     stat_assign ! Procedure
@@ -312,8 +325,16 @@ imass_ice_cryst = 0
 ircm_icedfs     = 0
 iu_T_cm         = 0
 
+! From K&K microphysics
 imean_vol_rad_rain  = 0  ! Brian
 imean_vol_rad_cloud = 0
+
+! From Morrison microphysics
+ieff_rad_cloud   = 0
+ieff_rad_ice     = 0
+ieff_rad_snow    = 0
+ieff_rad_rain    = 0
+ieff_rad_graupel = 0
 
 irsnowm       = 0
 irgraupelm    = 0
@@ -771,9 +792,39 @@ do i=1,zt%nn
 
   case ('mean_vol_rad_cloud')
     imean_vol_rad_cloud = k
-
     call stat_assign(imean_vol_rad_cloud,"mvrc", & 
          "Cloud drop mean volume radius (m)","m",zt)
+    k = k + 1
+
+  case ('eff_rad_cloud')
+    ieff_rad_cloud = k
+    call stat_assign(ieff_rad_cloud,"eff_rad_cloud", & 
+         "Cloud drop mean volume radius (microns)","micron",zt)
+    k = k + 1
+
+  case ('eff_rad_ice')
+    ieff_rad_ice = k
+
+    call stat_assign(ieff_rad_ice, "eff_rad_ice", & 
+         "Ice mean volume radius (microns)","micron",zt)
+    k = k + 1
+
+  case ('eff_rad_snow')
+    ieff_rad_snow = k
+    call stat_assign(ieff_rad_snow, "eff_rad_snow", & 
+         "Snow mean volume radius (microns)","micron",zt)
+    k = k + 1
+
+  case ('eff_rad_rain')
+    ieff_rad_rain = k
+    call stat_assign(ieff_rad_rain,"eff_rad_rain", & 
+         "Rain drop mean volume radius (microns)","micron",zt)
+    k = k + 1
+
+  case ('eff_rad_graupel')
+    ieff_rad_graupel = k
+    call stat_assign(ieff_rad_graupel,"eff_rad_graupel", & 
+         "Graupel mean volume radius (microns)","micron",zt)
     k = k + 1
 
   case ('rain_rate')     ! Brian

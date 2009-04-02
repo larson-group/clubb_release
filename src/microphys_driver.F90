@@ -208,7 +208,10 @@ module microphys_driver
 
     pgam_fixed = 5.
 
-    Ncm_initial = 100. ! #/cm^3 TODO: Use this value with K&K microphysics as well
+    !---------------------------------------------------------------------------
+    ! Parameters for Morrison microphysics and Khairoutdinov & Kogan microphysics 
+    !---------------------------------------------------------------------------
+    Ncm_initial = 100. ! #/cm^3 
 
     !---------------------------------------------------------------------------
     ! Parameters for all microphysics schemes
@@ -576,6 +579,13 @@ module microphys_driver
       iNgraupelm_mc
 
     use stats_variables, only: & 
+      ieff_rad_cloud, &
+      ieff_rad_ice, &
+      ieff_rad_snow, &
+      ieff_rad_rain, &
+      ieff_rad_graupel
+
+    use stats_variables, only: & 
       irsnowm_sd, &
       iricem_sd, & 
       irrainm_sd, & 
@@ -668,10 +678,10 @@ module microphys_driver
 
 
     real, dimension(gr%nnzp) :: &
-      rcm_tmp, & ! Temporary array for cloud water mixing ratio        [kg/kg]
-      rvm_tmp, & ! Temporary array for vapor water mixing ratio        [kg/kg]
-      rcm_sten, & ! Cloud dropet sedimentation tendency                [kg/kg/s]
-      dzq         ! Difference in height levels [m]
+      rcm_tmp,  & ! Temporary array for cloud water mixing ratio  [kg/kg]
+      rvm_tmp,  & ! Temporary array for vapor water mixing ratio  [kg/kg]
+      rcm_sten, & ! Cloud dropet sedimentation tendency           [kg/kg/s]
+      dzq         ! Difference in height levels                   [m]
 
 
     real, dimension(gr%nnzp) :: & 
@@ -706,7 +716,7 @@ module microphys_driver
 
     real, dimension(gr%nnzp) :: wtmp   ! [m/s]
 
-    real :: snow_rate, rain_rate
+    real :: Morr_snow_rate, Morr_rain_rate
 
     integer :: i, k ! Array index
 
@@ -835,7 +845,7 @@ module microphys_driver
              hydromet_tmp(:,iirsnowm), hydromet_tmp(:,iirrainm), hydromet_tmp(:,iiNcm), &
              hydromet_tmp(:,iiNim), hydromet_tmp(:,iiNsnowm), hydromet_tmp(:,iiNrm), &
              T_in_K_mc, rvm_mc, T_in_K, rvm_tmp, P_in_pa, rho, dzq, wm_zt, wtmp, &
-             rain_rate, snow_rate, effc, effi, effs, effr, real( dt ), &
+             Morr_rain_rate, Morr_snow_rate, effc, effi, effs, effr, real( dt ), &
              1,1, 1,1, 1,gr%nnzp, 1,1, 1,1, 1,gr%nnzp, &
              hydromet_mc(:,iirgraupelm), hydromet_mc(:,iiNgraupelm), &
              hydromet_tmp(:,iirgraupelm), hydromet_tmp(:,iiNgraupelm), effg, &
@@ -924,6 +934,13 @@ module microphys_driver
 
         ! --- Number concentrations ---
         ! No budgets for sedimentation are output
+
+        ! Effective radii of hydrometeor species
+        call stat_update_var( ieff_rad_cloud, effc(:), zt )
+        call stat_update_var( ieff_rad_ice, effi(:), zt )
+        call stat_update_var( ieff_rad_snow, effs(:), zt )
+        call stat_update_var( ieff_rad_rain, effr(:), zt )
+        call stat_update_var( ieff_rad_graupel, effg(:), zt )
 
       end if ! l_stats_samp
 
