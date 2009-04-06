@@ -544,6 +544,7 @@ module clubb_driver
     ! Do some simple error checking for all grid options.
     call read_grid_heights( nzmax, grid_type, &                 ! Intent(in)
                             zm_grid_fname, zt_grid_fname, &     ! Intent(in)
+                            iunit, &                            ! Intent(in) 
                             momentum_heights, &                 ! Intent(out)
                             thermodynamic_heights )             ! Intent(out)
 

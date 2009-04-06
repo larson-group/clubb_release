@@ -936,7 +936,7 @@ module clubb_core
                err_code ) ! Out
 
     use grid_class, only: & 
-      gridsetup ! Procedure
+      setup_grid ! Procedure
 
     use parameter_indices, only:  & 
       nparams ! Variable(s)
@@ -1120,9 +1120,9 @@ module clubb_core
     call setup_diagnostic_variables( nzmax )
 
     ! Setup grid
-    call gridsetup( nzmax, l_implemented, grid_type,    & ! intent(in)
-                    deltaz, zm_init, momentum_heights,  & ! intent(in)
-                    thermodynamic_heights )               ! intent(in)
+    call setup_grid( nzmax, l_implemented, grid_type,    & ! intent(in)
+                     deltaz, zm_init, momentum_heights,  & ! intent(in)
+                     thermodynamic_heights )               ! intent(in)
 
     return
   end subroutine setup_clubb_core
