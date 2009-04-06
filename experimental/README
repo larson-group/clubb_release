@@ -1,16 +1,16 @@
 Overview
 --------
 
-This directory has been made as a place of storage for experimental HOC files.
-In other words, if you have a HOC file that contains experimental pieces of 
-code that you don't want to commit to the actual HOC source code, then it 
+This directory has been made as a place of storage for experimental CLUBB files.
+In other words, if you have a CLUBB file that contains experimental pieces of 
+code that you don't want to commit to the actual CLUBB source code, then it 
 can be stored in this directory for safe keeping.  For example, if you have 
 a bit of new code that you have tested and you don't like the results, but 
 you want to keep it around for future use or reference, then this is the 
 directory to keep it in.  By storing it here, it will become part of the CVS
 repository, so you don't have to worry about accidentally deleting it in your
 home directory.  When you finally decide to either commit your new experimental
-code to the actual HOC source code or entirely junk it, then please remove it 
+code to the actual CLUBB source code or entirely junk it, then please remove it 
 from this directory.
 
 Naming Convention
