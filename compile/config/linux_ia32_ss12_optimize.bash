@@ -23,7 +23,8 @@ WARNINGS="-w3 -ansi"
 
 # == Machine specific flags ==
 # Note that when linking to sunperf (for LAPACK) you must use -dalign
-ARCH="-m64 -xarch=sse3 -xcache=native -xchip=native -dalign"
+# The -g option allows for viewing the source code in the analyzer program
+ARCH="-g -m64 -xarch=sse3 -xcache=native -xchip=native -dalign"
 
 # == NetCDF Location ==
 NETCDF="/usr/local/netcdf-sun64"
