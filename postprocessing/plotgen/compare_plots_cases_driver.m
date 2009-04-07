@@ -22,21 +22,25 @@ function compare_plots_cases_driver( HOC_sim1, HOC_sim2, compare_LES, compare_be
                                         plot_nov11_altocu_sim2, plot_rico_sim2, plot_wangara_sim2 )
 
 % Example call that plots one output of the arm case:                                    
-%compare_plots_cases_driver( '../../output/', '../../output/', 0, 0, 0, ...
-%					1, 0, 0, 0, ...
-%                    0, 0, 0, ...
-%					0, 0, ...
-%					0, 0, ...
-%					0, 0, 0, 0, ...
-%					0, 0, 0, 0, ...
-%                    0, 0, 0 , ...
-%					0, 0, 0, 0, ...
-%                    0, 0, 0, ...
-%					0, 0, ...
-%					0, 0, ...
-%					0, 0, 0, 0, ...
-%					0, 0, 0, 0, ...
-%                    0, 0, 0 )
+%compare_plots_cases_driver( '../../output/', '../../output/', 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )
+
+% To run compare_plots_cases_driver manually, you need to cut and paste the above command, with possibly 
+% modified arguments, into the MATLAB command prompt.  Plots should appear in subdirectory output/eps
+% whatever directory compare_plots_cases_driver.m is in.
+
+% The arguments to this function (compare_plots_cases_driver) are:
+%
+% HOC_sim1    = The directory path to the first set of CLUBB data files to be plotted.
+% HOC_sim2    = The directory path to the second set of CLUBB data files to be plotted.
+% compare_LES:  Set to 1 to overplot LES benchmark results; else set to 0. (Set to 0 if you're outside larsongroup.)
+% compare_best: Set to 1 to overplot some prior CLUBB benchmarks; else 0. (Set to 0 if you're outside larsongroup.)
+% compare_HOC:  Set to 1 to overplot some other prior CLUBB benchmarks; else 0. (Set to 0 if you're outside larsongroup.)
+% plot_arm_sim1:   1 if you want to plot a line from the arm case; 0 if not.
+% plot_arm97_sim1: 1 if you want to plot a line from the arm97 case; 0 if not.
+% ...  for all other cases
+% plot_arm_sim2:   1 if you want to overplot a second line from the arm case; 0 if not.
+% plot_arm97_sim2: 1 if you want to overplot a second line from the arm97 case; 0 if not.
+% ... for all other cases.
 
 %The data1 and data2 variables represent the directories that the two sets
 %of data being compared
@@ -48,7 +52,7 @@ function compare_plots_cases_driver( HOC_sim1, HOC_sim2, compare_LES, compare_be
 % Fix how cmp_all works, even in test trim it is worthless junk (ex. does not work when 0) (Fixed July 31, 2007)
 % Ensure names are meteorologist friendly
 
-% Function call variable description:
+% Function arguments description for the call to compare_plots_cases below:
 %
 % 1st entry:   Case name.
 % 2nd entry:   First time of variable comparison (in minutes since the
