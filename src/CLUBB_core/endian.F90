@@ -29,7 +29,7 @@ module endian
   intrinsic :: selected_int_kind, ichar, transfer
 
   ! Parameters
-  integer, parameter :: i4 = selected_int_kind( 4 )
+  integer, parameter :: i4 = 4 ! 4 byte long integer
   
   logical, parameter :: &
     big_endian    = ichar( transfer( 1_i4, "a" ) ) == 0, &
