@@ -81,8 +81,15 @@ using SSE or SSE2 is usually the best way to do this.
 ***********************************************************************
 *                        Using the CLUBB Model                        *
 ***********************************************************************
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% CHAPTER 1: COMPILING 
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 -----------------------------------------------------------------------
-- (1.1) Building (compiling) everything:
+- (1.1) Building (i.e. compiling) everything:
 -----------------------------------------------------------------------
 
 Requirements:
@@ -96,13 +103,15 @@ E. GNU bash, or an equivalent POSIX compliant shell to use the run scripts.
 
 Optionally:
 F. GrADS for viewing the GrADS output data.
-G. NetCDF >= v3.5.1;  We have not tested our code with anything older.
+G. netCDF >= v3.5.1;  We have not tested our code with anything older.
    If you do not use netCDF, you must remove -DNETCDF from the preprocessor
    flags, found in the compile/config/<platform>.bash file.
 H. MATLAB or NCAR graphics for viewing the netCDF output data.
 
 To build, perform the following three steps:
-1. $ cd <BASE DIRECTORY>/compile
+1. $ cd <CLUBB BASE DIRECTORY>/compile
+   (<CLUBB BASE DIRECTORY> is the directory to which you checked out CLUBB.  
+    Usually it is called "clubb" or some variant.)
 2. Edit a ./config/<PLATFORM>.bash file and uncomment it the file
    compile.bash. Depending on your platform you may need to create a new
    file based on the existing configurations.
@@ -111,9 +120,9 @@ To build, perform the following three steps:
    to the correct location (the default is one directory up).
 3. $ ./compile.bash
 
-The executables and Makefile will appear in <PREFIX>/bin and libraries in 
-<PREFIX>/lib.
-The object (.o) and module (.mod) files will appear in <PREFIX>/obj.
+The executables and Makefile will appear in <CLUBB BASE DIRECTORY>/bin 
+and libraries in <CLUBB BASE DIRECTORY>/lib.  The object (.o) and 
+module (.mod) files will appear in <CLUBB BASE DIRECTORY>/obj.
 
 If you're using GNU make and have a fast parallel machine, parallel builds 
 should work as well.  E.g. for 3 threads, append gmake="gmake -j 3" to the
@@ -121,28 +130,32 @@ file source'd from compile.bash.
 
 The mkmf script may or may not generate files that are compatible with
 other versions of make.
+
 -----------------------------------------------------------------------
-- (1.2) Building for use in a host model:
+- (1.2) Building (i.e. compiling) for use in a host model:
 -----------------------------------------------------------------------
 
-The build procedure is slightly different if you have implemented CLUBB
-in a large-scale weather or climate model.
+You do not need to build all the components if you have implemented CLUBB
+in a large-scale weather or climate model and want to run the combined
+model, rather than running CLUBB in standalone (single-column) mode 
+as described above.
 
 Requirements:
 A., B., C., & D. as above.
 
 Build:
-1, 2, & 3 as above.
+Do 1, 2, & 3 as above.
 
-You can safely remove everything but libclubb_param.a from the "all" section
+Optionally, you can safely remove everything but libclubb_param.a from the "all" section
 of the compile.bash script if you only want to use CLUBB in a host model.
+Then, do
 
 $ ./compile.bash
 
 This will build just the static library and the f90 modules.
-The static library will be in <PREFIX>/lib, while the modules will be 
-in the obj directory.  You will need at least the clubb_core.mod &
-constants.mod file to interface with CLUBB.
+The static library will be in <CLUBB BASE DIRECTORY>/lib, while the modules will be 
+in the <CLUBB BASE DIRECTORY>/obj directory.  You will need at least the 
+clubb_core.mod and constants.mod file to interface with CLUBB.
 
 Addition by Brian:  
 In addition to the above, you will have to make a reference to the CLUBB 
@@ -173,26 +186,33 @@ the code starting with nothing.  For instance, this may be required when
 a library or compiler is updated.  
 
 To delete old object files (*.o), and mod (*.mod) files,
-go to <PREFIX>/bin (where Makefile resides) and type
+go to <CLUBB BASE DIRECTORY>/bin (where Makefile resides) and type
 
 $ make clean
 
 If this doesn't help, then to additionally delete everything in the binary 
-and library directories, go to <PREFIX>/bin and type
+and library directories, go to <CLUBB BASE DIRECTORY>/bin and type
 
 $ make distclean
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% CHAPTER 2: EXECUTING BASIC SIMULATIONS
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -----------------------------------------------------------------------
-- (2.1) Executing a single-column run:
+- (2.1) Executing a single-column (standalone) run:
 -----------------------------------------------------------------------
+
    Before you can execute CLUBB, you must compile it (see Build section 
 above.)
-   <CLUBB DIR> refers the the directory where clubb is installed.
+   <CLUBB BASE DIRECTORY> refers the the directory where clubb is installed.
+   <CASE NAME> refers to the cloud case, e.g. arm, atex, bomex, etc.
 
-1. cd <CLUBB DIR>/input/case_setups
+1. cd <CLUBB BASE DIRECTORY>/input/case_setups
 
-2. Edit <CASE>_model.in for each case you wish to run, or just leave 
+2. Edit <CASE NAME>_model.in for each case you wish to run, or just leave 
    them as is.  Usually you will want to keep these the same.
    See the KK_microphys code for a description of Khairoutdinov and Kogan
    drizzle parameterization.
@@ -201,39 +221,112 @@ above.)
    Enabling radiation or microphysics parameterizations may increase runtime 
    considerably.
 
-3. cd <CLUBB DIR>/input/stats
+3. cd <CLUBB BASE DIRECTORY>/input/stats
    Edit a stats file you would like to use.  A complete list of all computable
    statistics is found in all_stats.in.  Note that CLUBB now supports GrADS or
    netCDF, but you can only use the clubb_tuner using GrADS.
 
-4. $ cd <CLUBB DIR>/input
+4. $ cd <CLUBB BASE DIRECTORY>/input
    Edit tunable_parameters.in if you wish. The default values have been
    tested rigorously and will work with all the current cases.
 
-5. $ cd <CLUBB DIR>/run_scripts
-   $ ./run_scm.bash <MODEL CASE> or
-   $ ./run_scm.bash <MODEL CASE> [PARAMETER FILE] [STATS FILE]
+5. $ cd <CLUBB BASE DIRECTORY>/run_scripts
+   $ ./run_scm.bash <CASE NAME> or
+   $ ./run_scm.bash <CASE NAME> [PARAMETER FILE] [STATS FILE]
 
    Where the parameter file and stats file are optional arguments. The default
    is all_stats.in and tunable_parameters.in.
 
-   The resulting data will be written in the directory "output"
+   The resulting data will be written in the directory clubb/output.
 
 -----------------------------------------------------------------------
-- (2.2) Plotting output from a single-column run:
+- (2.2) Explanation of CLUBB's output and input files
+-----------------------------------------------------------------------
+
+Nota bene: Our numerical output is usually in GrADS format
+(http://www.iges.org/grads/).  Each output has a header, or control file 
+(.ctl), and a data file (.dat).  The .ctl file is a text file that 
+describes the file format, which variables are output in which order, etc.  
+CLUBB also can output in netCDF (.nc) format.
+
+
+Output:
+------
+
+Generated CLUBB GrADS files (in clubb/output):
+  bomex_zt.dat, fire_zt.dat, arm_zt.dat, atex_zt.dat, dycoms_zt.dat,
+    wangara_zt.dat, <case>_zm, <case>_sfc ...
+  These are the files generated by the hoc subroutine during a model run
+  and compared to the COAMPS LES results.  The last of these generated
+  when tuning will we the optimized results.  Every time the hoc subroutine
+  is called, these are overwritten, so if you want to prevent them
+  from being erased be sure to either copy the .ctl and .dat
+  files to another directory or rename them.
+  The tuner currently only uses variables in the zt file.
+
+read_grads_hoc.m:  A MATLAB function that reads GrADS data files.
+
+LES GrADS files (only for larsongroup members):
+  les_data/bomex_coamps_sw.ctl, les_data/wangara_rams.ctl
+  FIRE, BOMEX, ARM & ATEX are our 4 basic ``datasets'', simulated by COAMPS,
+  that we use to match CLUBB data.  Each output file includes an hour of
+  unphysical spinup time.  BOMEX is trade-wind cumulus; FIRE is marine
+  stratocumulus; ARM is continental cumulus; and ATEX is cumulus under
+  stratocumulus.  BOMEX, FIRE, and ATEX are statistically steady-state;
+  ARM varies over the course of a day.
+
+Input:
+-----
+
+The namelist files:
+
+  input/case_setups/bomex_model.in, fire_model.in, arm_model.in & atex_model.in.
+  These files specify the standard CLUBB model parameters.  Usually these 
+  do not need to be modified.
+
+  input/stats/all_stats.in, nobudgets_stats.in, etc.
+  These files specify statistics output for each simulation.  See
+  all_stats.in for a complete list of the all output supported.
+  
+  input_misc/tuner/error_all.in, error_<CASE NAME>.in, error_<DATE>.in.
+  These specify tunable parameters, the initial spread of the simplex
+  containing the tunable parameters, and which cases to "tune" for.
+
+The randomization files (only needed for the tuner described below):
+
+  run_scripts/generate_seed.bash, input/tuner/rand_seed.dat, bin/int2txt
+  The script uses intrinsic functionality in the Linux kernel to generate
+  a pseudo random seed (the .dat) used by the tuner for randomizing initial
+  parameters.  This works on any operating system with a Linux style 
+  /dev/random (Solaris, Tru64, etc.) as well.  The seed file is now plain text 
+  text and can be edited by hand.
+
+-----------------------------------------------------------------------
+- (2.3) Plotting output from a single-column run:
 -----------------------------------------------------------------------
 
 Plotting scripts are contained in the directory postprocessing/plotgen.
 
-If you have MATLAB, you may use the script compare_plots_cases_driver.m.
+If you have MATLAB, you may use the script compare_plots_cases_driver.m.  
+This script plots some important fields averaged over interesting time 
+periods.
 
-If you have MATLAB and Linux, you can drive this MATLAB script
-using the bash script plotgen.sh.
+If you have MATLAB and Linux, you can conveniently drive this MATLAB 
+script using the bash script postprocessing/plotgen/plotgen.sh.  
+However, you will need to customize plotgen.sh for your computer.  
+See postprocessing/plotgen/README for more information on plotgen.sh.
 
-See postprocessing/plotgen/README for more information.
+Otherwise, you can view the raw CLUBB output files in GrADS or netCDF
+format using a plotting program such as GrADS (http://www.iges.org/grads/).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% CHAPTER 3: FANCIER TYPES OF SIMULATIONS
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -----------------------------------------------------------------------
-- (2.3) Executing a restart run:
+- (3.1) Executing a restart run:
 -----------------------------------------------------------------------
 
 After a long simulation has been performed, it is sometimes convenient to 
@@ -241,17 +334,18 @@ perform a new simulation that starts some time in the middle of the original
 simulation, rather than wasting time by starting again from the initial time.  
 The new simulation is then called a "restart" simulation.
 
-1.  Perform the original simulation of case <CASE> and save the GrADS output 
-    files.  These data will be accessed to restart the simulation.
+1.  Perform the original simulation of case <CASE NAME> and save the GrADS output 
+    files in the <CLUBB BASE DIRECTORY>/output directory.  These data will be 
+    accessed to restart the simulation.
 
-2.  Create a subdirectory in the CLUBB directory called "restart" and move the 
-    GrADS output files to that subdirectory.
+2.  Create a subdirectory in the CLUBB BASE DIRECTORY called "restart" and 
+    move the GrADS output files to that subdirectory.
 
 3.  Edit the following three variables at the end of the flag section of 
     the model file:
 
     l_restart = .true.
-    restart_path = restart/<CASE>
+    restart_path = restart/<CASE NAME>
     time_restart = initial time of restart run in seconds
 
     Compute time_restart as (time_initial + n_out * stats_tout), where n_out
@@ -259,10 +353,10 @@ The new simulation is then called a "restart" simulation.
 
 4.  Execute the run as usual from /run_scripts using 
     
-    ./run_scm.bash <CASE>
+    ./run_scm.bash <CASE NAME>
 
 -----------------------------------------------------------------------
-- (2.4) Executing a clubb_inputfields run:
+- (3.2) Executing a clubb_inputfields run:
 -----------------------------------------------------------------------
 
 One supported mode of running clubb is to use GrADS data from either a
@@ -272,8 +366,8 @@ E.g. If desired, the horizontal winds (variables um and vm in the code)
 could be fixed to the COAMPS-LES value at each timestep, while the other
 fields will evolve as in the standard single-column run.
 Currently, the only LES data the code works with comes from COAMPS.
-The relevant namelist files are in <PREFIX>/input_misc/inputfields, and new
-cases could be added using the existing cases as a template.
+The relevant namelist files are in <CLUBB BASE DIRECTORY>/input_misc/inputfields, 
+and new cases could be added using the existing cases as a template.
 
 To execute an inputfields run, you need to set the 'datafile' variable in the
 setfields to the location of the GrADS files, and set 'input_'<varname> to
@@ -281,22 +375,22 @@ setfields to the location of the GrADS files, and set 'input_'<varname> to
 the GrADS dataset at the beginning of each timestep.  Then, change your 
 directory to run_scripts and execute the run_inputfields.bash script like so:
 
-  ./run_inputfields.bash <CASE>
+  ./run_inputfields.bash <CASE NAME>
 
 -----------------------------------------------------------------------
-- (3.1) Executing a tuning run:
+- (3.3) Executing a tuning run:
 -----------------------------------------------------------------------
 
 Do steps 1, 2, & 3 as outlined in the standalone run.
 
-4. Edit input/tuner/error_<CASE>.in or select an existing one. Note that there 
-   are two tuning subroutines, specified by tune_type in the error_<CASE>.in 
+4. Edit input/tuner/error_<CASE NAME>.in or select an existing one. Note that there 
+   are two tuning subroutines, specified by tune_type in the error_<CASE NAME>.in 
    /stats/ namelist.  
    If tune_type = 0, then the amoeba subroutine, a downhill simplex algorithm,
    will be used.  If runtype is any other value, then amebsa, a variant of 
    amoeba which uses simulated annealing instead, is used.  A complete 
    explanation of these minimization algorithms can be found 
-   in _Numerical Recipes in Fortran 90_.
+   in "Numerical Recipes" by Press et al., .
    Sometimes the variable names in CLUBB's zt and the LES grads files 
    will differ.  Currently, it is only possible to tune for variables that 
    occur in zt grid.
@@ -306,7 +400,7 @@ Do steps 1, 2, & 3 as outlined in the standalone run.
 6. ./run_tuner.bash
 
 -----------------------------------------------------------------------
-- (3.1.1) Creating a RAM disk (optional)
+- (3.3.1) Creating a RAM disk (optional)
 -----------------------------------------------------------------------
 
 One means of speeding up tuning runs is reducing the time spent writing
@@ -357,11 +451,11 @@ Creates a virtual disk clubb that is 256 megabytes in size.
 (Run your job)
 
 -----------------------------------------------------------------------
-- (3.3) Executing an ensemble tuning run:
+- (3.3.2) Executing an ensemble tuning run:
 -----------------------------------------------------------------------
 
-NOTES AND INSTRUCTIONS FOR THE CLUBB ENSEMBLE TUNER
--------------------------------------------------
+Notes and instructions for the CLUBB ensemble tuner
+---------------------------------------------------
 
 Go to the main CLUBB directory and follow these instructions:
 
@@ -376,11 +470,11 @@ Go to the main CLUBB directory and follow these instructions:
 
 4)  For EACH case being tuned for:
 
-     a)  Copy the <CASE>_model.in file from the input/case_setups directory 
+     a)  Copy the <CASE NAME>_model.in file from the input/case_setups directory 
 	 to the ens_tune_xyz/ directory.  Make sure that the file is set up
          correctly.
 
-     b)  Create/copy the <CASE>_stats_tune.in file.  A sample of this file can
+     b)  Create/copy the <CASE NAME>_stats_tune.in file.  A sample of this file can
          be found in the ens_tune/ directory (and subsequently in the
          ens_tune_xyz/ directory if it was copied from the ens_tune/ directory).
          This file is used in the tuning process itself.  In order for this
@@ -394,7 +488,7 @@ Go to the main CLUBB directory and follow these instructions:
          faster because it is not being slowed down by the writing of
          unnecessary variables.
 
-     c)  Copy the <CASE>_stats.in file from the stats/ directory to the
+     c)  Copy the <CASE NAME>_stats.in file from the stats/ directory to the
          ens_tune_xyz/ directory.  Once the tuner has found the optimal value
          and the tuning process has finished, standalone CLUBB will run for
          each case that was tuned for with the values of the constants that the
@@ -432,7 +526,7 @@ Go to the main CLUBB directory and follow these instructions:
          There are 6 global variables to edit:
 
          a) EXPERIMENTS:  List the names of the cases that you are tuning for.
-                          This should match the <CASE> model, stats, and
+                          This should match the <CASE NAME> model, stats, and
                           stats_tune files that were copied or created and the
                           listing of cases that is found in error*.in
 
@@ -519,7 +613,7 @@ Go to the main CLUBB directory and follow these instructions:
          and then to see if they look good for all the cases we have in CLUBB.
 
 -----------------------------------------------------------------------
-- (5.1) Executing a Jacobian analysis:
+- (3.4) Executing a Jacobian analysis:
 -----------------------------------------------------------------------
 
 1. $ cd ../run_scripts
@@ -530,117 +624,16 @@ Go to the main CLUBB directory and follow these instructions:
    crash, which will result in no data (results for that term will come
    back as NaN).
 
-3. $  ./run_jacobian.bash <CASE> [PARAMETER FILE] [STATS FILE]
+3. $  ./run_jacobian.bash <CASE NAME> [PARAMETER FILE] [STATS FILE]
 
-
------------------------------------------------------------------------
-- (1.1) Explanation of the Input and Output Files
------------------------------------------------------------------------
-
-Nota bene: Our numerical output is usually in GrADS format.  Each output 
-has a header, or control file, (.ctl) and a data file (.dat).  The .ctl file 
-describes the file format, which variables are output in which order, etc.
-
-read_grads_hoc.m:  A MATLAB function that reads GrADS data files.
-
-LES GrADS files:
-  les_data/bomex_coamps_sw.ctl, les_data/wangara_rams.ctl
-  FIRE, BOMEX, ARM & ATEX are our 4 basic ``datasets'', simulated by COAMPS, 
-  that we use to match CLUBB data.  Each output file includes an hour of 
-  unphysical spinup time.  BOMEX is trade-wind cumulus; FIRE is marine 
-  stratocumulus; ARM is continental cumulus; and ATEX is cumulus under 
-  stratocumulus.  BOMEX, FIRE, and ATEX are statistically steady-state; 
-  ARM varies over the course of a day.
-
-
-Generated CLUBB GrADS files:
-  bomex_zt.dat, fire_zt.dat, arm_zt.dat, atex_zt.dat, dycoms_zt.dat,
-    wangara_zt.dat, <case>_zm, <case>_sfc ...
-  These are the files generated by the hoc subroutine during a model run
-  and compared to the COAMPS LES results.  The last of these generated
-  when tuning will we the optimized results.  Every time the hoc subroutine
-  is called, these are overwritten, so if you want to prevent them
-  from being erased be sure to either copy the .ctl and .dat
-  files to another directory or rename them.
-  The tuner currently only uses variables in the zt file.
-
-The namelist files:
-
-  input/case_setups/bomex_model.in, fire_model.in, arm_model.in & atex_model.in.
-  These files specify the standard CLUBB model parameters.  Usually these 
-  do not need to be modified.
-
-  input/stats/all_stats.in, nobudgets_stats.in, etc.
-  These files specify statistics output for each simulation.  See
-  all_stats.in for a complete list of the all output supported.
-  
-  input_misc/tuner/error_all.in, error_<CASE>.in, error_<DATE>.in.
-  These specify tunable parameters, the initial spread of the simplex
-  containing the tunable parameters, and which cases to "tune" for.
-
-The randomization files:
-
-  run_scripts/generate_seed.bash, input/tuner/rand_seed.dat, bin/int2txt
-  The script uses intrinsic functionality in the Linux kernel to generate
-  a pseudo random seed (the .dat) used by the tuner for randomizing initial
-  parameters.  This works on any operating system with a Linux style 
-  /dev/random (Solaris, Tru64, etc.) as well.  The seed file is now plain text 
-  text and can be edited by hand.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% CHAPTER 4: "NON-CORE" CLUBB CODE
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 ------------------------------------------------------------------------
-- (2.1) The BUGSrad Radiation scheme
-------------------------------------------------------------------------
-
-  This is an optional interactive radiation scheme, developed apart from
-  CLUBB by Stephens, et al. The code used in CLUBB was obtained from Norm Wood 
-  on 2004/07/10.
-  When enabled, the analytic computation normally
-  used for radiation is disabled.  BUGSrad is enabled in the 
-  input/case_setups/<CASE>_model.in file by setting lbugsrad = .true.
-  Furthermore, you must compile CLUBB with the -Dradoffline preprocessor flag.
-
-  BUGSrad allows the output of the following variables:
-
-  Momentum grid:
-  Frad, Frad_SW, Frad_LW:  Radiative Flux; Short-wave/Long-wave component;
-
-  Thermodynamic grid:
-  radht, radht_SW, radht_LW:  Radiative Heat; Short-wave/Long-wave component;
-
-  The thlm_forcing variable will also have radht added to it.  This is an
-  explicit contribution to the thlm calculation.
-
-  Note that for most cases SW and LW components are not calculated 
-  without using BUGSrad.
-
-------------------------------------------------------------------------
-- (2.2) The COAMPS microphysics scheme
-------------------------------------------------------------------------
-
-     COAMPS microphysics is a single-moment scheme that includes
-  the following hydrometeor categories: cloud water, rain, cloud ice,
-  snow, and graupel.  It is based on Rutledge and Hobbs (1983).
-
-     COAMPS was developed by the Naval Research Laboratory,
-  Monterey, California.  COAMPS is a registered trademark of the
-  Naval Research Laboratory.
-
-     COAMPS microphysics is not distributed with the code outside of UWM
-  because of licensing restrictions.
-
-------------------------------------------------------------------------
-- (2.3) The Morrison microphysics scheme
-------------------------------------------------------------------------
-  Morrison microphysics is a double-moment scheme that can predict mixing
-  ratio's and number concentrations for cloud water, rain, cloud ice,
-  snow, and graupel.  Details of its implementation may be found in:
-
-  H. Morrison, J. A. Curry, and V. I. Khvorostyanov, 2005: A new double-
-  moment microphysics scheme for application in cloud and climate models. 
-  Part 1: Description. J. Atmos. Sci., 62, 1665–1677. 
-
-------------------------------------------------------------------------
-- (3.1) The passive scalar code
+- (4.1) The passive scalar code
 ------------------------------------------------------------------------
 
 The CLUBB code can be run with additional non-interactive scalars.
@@ -648,7 +641,7 @@ The scalars in the code provide a generalized way of simulating a
 passive scalar in the atmosphere (e.g. carbon dioxide) 
 
 By default CLUBB is configured to run without any passive scalars.  To use 
-this option, you must modify the input/case_setups/<CASE>_model.in
+this option, you must modify the input/case_setups/<CASE NAME>_model.in
 so that sclr_dim is equal to the number of passive scalars and also set 
 ii<SCALAR NAME> to point the index in the array containing the passive scalar.
 The intial sounding can be done at run time in this file, but large scale
@@ -677,7 +670,7 @@ without any issues.
 
 The Namelists:
 
-Within the existing <CASE>_model.in for each run, a sounding for the scalar variable
+Within the existing <CASE NAME>_model.in for each run, a sounding for the scalar variable
 must be added. 
 
 Setting sclrm(:,1) equal to thlm, and sclrm(:,2) equal to rtm in 
@@ -699,8 +692,74 @@ sclr portion of their name.  For example. the first scalar mean is 'sclram',
 and the second is 'sclrbm'.  These and their forcings are all that occurs in
 the zt file, the rest all occur in the zm file.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% CHAPTER 5: CODE CONTRIBUTED BY EXTERNAL RESEARCH GROUPS
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 ------------------------------------------------------------------------
-- (4.1) Contributing code changes 
+- (5.1) The BUGSrad Radiation scheme
+------------------------------------------------------------------------
+
+  This is an optional interactive radiation scheme, developed separately from
+  CLUBB by Stephens, et al. The code used in CLUBB was obtained from Norm Wood 
+  on 2004/07/10.
+  When enabled, the analytic computation normally
+  used for radiation is disabled.  BUGSrad is enabled in the 
+  input/case_setups/<CASE NAME>_model.in file by setting lbugsrad = .true.
+  Furthermore, you must compile CLUBB with the -Dradoffline preprocessor flag.
+
+  BUGSrad allows the output of the following variables:
+
+  Momentum grid:
+  Frad, Frad_SW, Frad_LW:  Radiative Flux; Short-wave/Long-wave component;
+
+  Thermodynamic grid:
+  radht, radht_SW, radht_LW:  Radiative Heat; Short-wave/Long-wave component;
+
+  The thlm_forcing variable will also have radht added to it.  This is an
+  explicit contribution to the thlm calculation.
+
+  Note that for most cases SW and LW components are not calculated 
+  without using BUGSrad.
+
+------------------------------------------------------------------------
+- (5.2) The COAMPS microphysics scheme
+------------------------------------------------------------------------
+
+     COAMPS microphysics is a single-moment scheme that includes
+  the following hydrometeor categories: cloud water, rain, cloud ice,
+  snow, and graupel.  It is based on Rutledge and Hobbs (1983).
+
+     COAMPS was developed by the Naval Research Laboratory,
+  Monterey, California.  COAMPS is a registered trademark of the
+  Naval Research Laboratory.
+
+     By default, COAMPS microphysics is not distributed with the code 
+  outside of UWM.  If you are interested in this code, please contact
+  James Doyle at the Naval Research Laboratory.
+
+------------------------------------------------------------------------
+- (5.3) The Morrison microphysics scheme
+------------------------------------------------------------------------
+
+  Morrison microphysics is a double-moment scheme that can predict mixing
+  ratio's and number concentrations for cloud water, rain, cloud ice,
+  snow, and graupel.  Details of its implementation may be found in:
+
+  H. Morrison, J. A. Curry, and V. I. Khvorostyanov, 2005: A new double-
+  moment microphysics scheme for application in cloud and climate models. 
+  Part 1: Description. J. Atmos. Sci., 62, 1665–1677. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% CHAPTER 6: CONTRIBUTING CODE CHANGES TO UNIV WISC --- MILWAUKEE
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+------------------------------------------------------------------------
+- (6.1) Contributing code changes 
 ------------------------------------------------------------------------
 
 If you have changes that you'd like to see included in the repository version
