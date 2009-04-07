@@ -101,9 +101,6 @@ contains
     ! Minimum value for Lscale that will taper off with height
     real :: lminh
 
-    ! Average value of environmental air between two grid levels.
-    real :: avg_thlm_env, avg_rtm_env
-
     ! Parcel quantities at grid level j
     real :: thl_par_j, rt_par_j, rc_par_j, thv_par_j
 
@@ -147,42 +144,34 @@ contains
 
           ! thl, rt of parcel are conserved except for entrainment
 
-          ! For a parcel of air ascending from level j-1 to level j:
+          ! theta_l of the parcel at grid level j.
           !
-          ! thl_par(j) = avg_thlm_env * ( 1 - exp( -mu*delta_z ) )
-          !              + exp( -mu*delta_z ) * thl_par(j-1);
+          ! For a parcel of air ascending from level j-1 to level j, the value
+          ! of the ambient (or environmental) air is considered to change
+          ! linearly between two successive thermodynamic grid levels.
+
+          thl_par_j = thlm(j) - thlm(j-1)*exp(-mu/gr%dzm(j-1))  &
+                      - ( 1.0 - exp(-mu/gr%dzm(j-1)) )  &
+                        * ( (thlm(j) - thlm(j-1)) / (mu/gr%dzm(j-1)) )  &
+                      + thl_par_j_minus_1 * exp(-mu/gr%dzm(j-1))
+
+          ! r_t of the parcel at grid level j.
           !
-          ! where thl_par(j) is the resulting value of theta_l in the parcel,
-          ! avg_thlm_env is the average value of thlm in the environmental air
-          ! that the parcel ascended through, delta_z is the absolute value of
-          ! the layer thickness between the two vertical (thermodynamic) levels,
-          ! and thl_par(j-1) is the initial value of theta_l in the parcel.
+          ! For a parcel of air ascending from level j-1 to level j, the value
+          ! of the ambient (or environmental) air is considered to change
+          ! linearly between two successive thermodynamic grid levels.
 
-          avg_thlm_env = 0.5 * ( thlm(j) + thlm(j-1) )
-
-          thl_par_j = avg_thlm_env * ( 1.0 - exp(-mu/gr%dzm(j-1)) )  &
-                      + exp(-mu/gr%dzm(j-1)) * thl_par_j_minus_1
-
-          ! For a parcel of air ascending from level j-1 to level j:
-          !
-          ! rt_par(j) = avg_rtm_env * ( 1 - exp( -mu*delta_z ) )
-          !             + exp( -mu*delta_z ) * rt_par(j-1);
-          !
-          ! where rt_par(j) is the resulting value of r_t in the parcel,
-          ! avg_rtm_env is the average value of rtm in the environmental air
-          ! that the parcel ascended through, delta_z is the absolute value of
-          ! the layer thickness between the two vertical (thermodynamic) levels,
-          ! and rt_par(j-1) is the initial value of r_t in the parcel.
-
-          avg_rtm_env = 0.5 * ( rtm(j) + rtm(j-1) )
-
-          rt_par_j = avg_rtm_env * ( 1.0 - exp(-mu/gr%dzm(j-1)) )  &
-                     + exp(-mu/gr%dzm(j-1)) * rt_par_j_minus_1
+          rt_par_j = rtm(j) - rtm(j-1)*exp(-mu/gr%dzm(j-1))  &
+                     - ( 1.0 - exp(-mu/gr%dzm(j-1)) )  &
+                       * ( (rtm(j) - rtm(j-1)) / (mu/gr%dzm(j-1)) )  &
+                     + rt_par_j_minus_1 * exp(-mu/gr%dzm(j-1))
 
           ! Include effects of latent heating on Lscale_up 6/12/00
           ! Use thermodynamic formula of Bougeault 1981 JAS Vol. 38, 2416
           ! Probably should use properties of bump 1 in Gaussian, not mean!!!
 
+          ! Calculate r_c of the parcel at grid level j based on the values of
+          ! theta_l of the parcel and r_t of the parcel at grid level j.
           tl_par_j = thl_par_j*exner(j)
           rsl_par_j = sat_mixrat_liq( p_in_Pa(j), tl_par_j )
           ! SD's beta (eqn. 8)
@@ -191,7 +180,7 @@ contains
           s_par_j = (rt_par_j-rsl_par_j)/(1+beta_par_j*rsl_par_j)
           rc_par_j = max( s_par_j, zero_threshold )
 
-          ! theta_v of entraining parcel
+          ! theta_v of entraining parcel at grid level j.
           thv_par_j = thl_par_j + ep1 * T0 * rt_par_j  & 
                       + ( Lv / (exner(j)*cp) - ep2 * T0 ) * rc_par_j
 
@@ -245,42 +234,34 @@ contains
 
           ! thl, rt of parcel are conserved except for entrainment
 
-          ! For a parcel of air descending from level j+1 to level j:
+          ! theta_l of the parcel at grid level j.
           !
-          ! thl_par(j) = avg_thlm_env * ( 1 - exp( -mu*delta_z ) )
-          !              + exp( -mu*delta_z ) * thl_par(j+1);
+          ! For a parcel of air descending from level j+1 to level j, the value
+          ! of the ambient (or environmental) air is considered to change
+          ! linearly between two successive thermodynamic grid levels.
+
+          thl_par_j = thlm(j) - thlm(j+1)*exp(-mu/gr%dzm(j))  &
+                      - ( 1.0 - exp(-mu/gr%dzm(j)) )  &
+                        * ( (thlm(j) - thlm(j+1)) / (mu/gr%dzm(j)) )  &
+                      + thl_par_j_plus_1 * exp(-mu/gr%dzm(j))
+
+          ! r_t of the parcel at grid level j.
           !
-          ! where thl_par(j) is the resulting value of theta_l in the parcel,
-          ! avg_thlm_env is the average value of thlm in the environmental air
-          ! that the parcel descended through, delta_z is the absolute value of
-          ! the layer thickness between the two vertical (thermodynamic) levels,
-          ! and thl_par(j+1) is the initial value of theta_l in the parcel.
+          ! For a parcel of air descending from level j+1 to level j, the value
+          ! of the ambient (or environmental) air is considered to change
+          ! linearly between two successive thermodynamic grid levels.
 
-          avg_thlm_env = 0.5 * ( thlm(j) + thlm(j+1) )
-
-          thl_par_j = avg_thlm_env * ( 1.0 - exp(-mu/gr%dzm(j)) )  &
-                      + exp(-mu/gr%dzm(j)) * thl_par_j_plus_1
-
-          ! For a parcel of air descending from level j+1 to level j:
-          !
-          ! rt_par(j) = avg_rtm_env * ( 1 - exp( -mu*delta_z ) )
-          !             + exp( -mu*delta_z ) * rt_par(j+1);
-          !
-          ! where rt_par(j) is the resulting value of r_t in the parcel,
-          ! avg_rtm_env is the average value of rtm in the environmental air
-          ! that the parcel descended through, delta_z is the absolute value of
-          ! the layer thickness between the two vertical (thermodynamic) levels,
-          ! and rt_par(j+1) is the initial value of r_t in the parcel.
-
-          avg_rtm_env = 0.5 * ( rtm(j) + rtm(j+1) )
-
-          rt_par_j = avg_rtm_env * ( 1.0 - exp(-mu/gr%dzm(j)) )  &
-                     + exp(-mu/gr%dzm(j)) * rt_par_j_plus_1
+          rt_par_j = rtm(j) - rtm(j+1)*exp(-mu/gr%dzm(j))  &
+                     - ( 1.0 - exp(-mu/gr%dzm(j)) )  &
+                       * ( (rtm(j) - rtm(j+1)) / (mu/gr%dzm(j)) )  &
+                     + rt_par_j_plus_1 * exp(-mu/gr%dzm(j))
 
           ! Include effects of latent heating on Lscale_down
           ! Use thermodynamic formula of Bougeault 1981 JAS Vol. 38, 2416
           ! Probably should use properties of bump 1 in Gaussian, not mean!!!
 
+          ! Calculate r_c of the parcel at grid level j based on the values of
+          ! theta_l of the parcel and r_t of the parcel at grid level j.
           tl_par_j = thl_par_j*exner(j)
           rsl_par_j = sat_mixrat_liq(p_in_Pa(j),tl_par_j)
           ! SD's beta (eqn. 8)
@@ -289,7 +270,7 @@ contains
           s_par_j = (rt_par_j-rsl_par_j)/(1+beta_par_j*rsl_par_j)
           rc_par_j = max( s_par_j, zero_threshold )
 
-          ! theta_v of entraining parcel
+          ! theta_v of the entraining parcel at grid level j.
           thv_par_j = thl_par_j + ep1 * T0 * rt_par_j & 
                       + ( Lv / (exner(j)*cp) - ep2 * T0 ) * rc_par_j
 
