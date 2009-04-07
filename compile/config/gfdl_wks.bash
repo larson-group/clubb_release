@@ -32,8 +32,7 @@ FFLAGS="-O2"
 #FFLAGS="-g"
 
 # Linker flags: specifiy location and libraries for CLUBB, netcdf and LAPACK
-LDFLAGS="-L../lib -lclubb_bugsrad -lclubb_param \
- -L/home/cjg/local/desktop/netcdf/lib -lnetcdf \
+LDFLAGS="-L/home/cjg/local/desktop/netcdf/lib -lnetcdf \
  -L/usr/lib -llapack -lblas"
 
 

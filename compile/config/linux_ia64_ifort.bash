@@ -38,7 +38,7 @@ LAPACK="-L/opt/intel/mkl/8.1/lib/64 -Wl,-rpath,/opt/intel/mkl/8.1/lib/64 -lmkl_l
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
-LDFLAGS="-L$libdir -lclubb_param -lclubb_bugsrad -L$NETCDF/lib -lnetcdf $LAPACK"
+LDFLAGS="-L$NETCDF/lib -lnetcdf $LAPACK"
 
 # == Compiler flags ==
 # You will need to `make clean' if you change these

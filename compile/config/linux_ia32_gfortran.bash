@@ -42,7 +42,7 @@ LAPACK="-L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas" 
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
 # Use -Wl,-rpath <library path> to set a search path for shared libs
-LDFLAGS="-L$libdir -Wl,-rpath,$libdir -lclubb_param -lclubb_bugsrad -L$NETCDF/lib -lnetcdf -lnetcdff $LAPACK"
+LDFLAGS="-L$NETCDF/lib -lnetcdf -lnetcdff $LAPACK"
 
 # == Compiler flags ==
 # You will need to `make clean' if you change these

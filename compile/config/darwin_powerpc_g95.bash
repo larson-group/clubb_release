@@ -54,7 +54,7 @@ LAPACK="-L/usr/lib -llapack -lblas" #  The netlib reference LAPACK/BLAS
 # Use -L<library path> -l<lib> to link in an external library
 # Use -Wl,-rpath <library path> to set a search path for shared libs
 #LDFLAGS="-L$libdir -lclubb_param -lclubb_bugsrad -L$NETCDF/lib -lnetcdf $LAPACK"
-LDFLAGS="-L$libdir -lclubb_param -lclubb_bugsrad $LAPACK"
+LDFLAGS="$LAPACK"
 
 # == Compiler flags ==
 # You will need to `make clean' if you change these

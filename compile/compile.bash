@@ -62,7 +62,8 @@ fi
 source $CONFIG
 
 # ------------------------------------------------------------------------------
-# Append preprocessor flags as needed
+# Append preprocessor flags and libraries as needed
+
 if [ -e $srcdir/COAMPS_micro ]; then
 	CPPFLAGS="${CPPFLAGS} -DCOAMPS_MICRO"
 	LDFLAGS="${LDFLAGS} -lclubb_coamps"
@@ -75,7 +76,9 @@ if [ -e $srcdir/Benchmark_cases/unreleased_cases ]; then
 	CPPFLAGS="${CPPFLAGS} -DUNRELEASED_CODE"
 fi
 
-LDFLAGS="$LDFLAGS -lclubb_morrison"
+# ------------------------------------------------------------------------------
+# Required libraries + platform specific libraries from LDFLAGS
+LDFLAGS="-L$libdir -lclubb_param -lclubb_bugsrad -lclubb_morrison $LDFLAGS"
 
 # ------------------------------------------------------------------------------
 # Generate template for makefile generating tool 'mkmf'
@@ -96,8 +99,9 @@ cd $dir
 
 # ------------------------------------------------------------------------------
 # Generate file lists
-# It would be nice to generate file lists for clubb_standalone / clubb_tuner dynamically,
-# but this not possible without some major re-factoring of the source directories.
+# It would be nice to generate file lists for clubb_standalone / clubb_tuner 
+# dynamically, but this not possible without some major re-factoring of 
+# the CLUBB the source directories.
 
 # ------------------------------------------------------------------------------
 #  Determine which restricted files are in the source directory and make a list
