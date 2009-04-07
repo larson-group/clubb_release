@@ -140,7 +140,8 @@ module grid_class
 
   public :: gr, grid, zt2zm, interp_weights_zt2zm_imp, zm2zt, & 
             interp_weights_zm2zt_imp, ddzm, ddzt, & 
-            setup_grid, read_grid_heights
+            setup_grid, setup_grid_heights, &
+            read_grid_heights
 
   private :: interpolated_azm, interpolated_azmk, & 
              interpolated_azmk_imp, interpolated_azt, & 
@@ -288,6 +289,7 @@ module grid_class
     ! Local Variables
     integer :: ierr ! Allocation stat
 
+    ! ---- Begin Code ----
 
     ! Define the grid size
 
@@ -335,7 +337,7 @@ module grid_class
   !   None
   !------------------------------------------------------------------------------
 
-    use constants, only: fstderr
+    use constants, only: fstderr ! Constant
 
     implicit none
 
@@ -604,6 +606,7 @@ module grid_class
 
     integer :: k   ! Loop index
 
+    ! ---- Begin Code ----
 
     ! Declare the momentum level altitude array and the thermodynamic level
     ! altitude array to be 0 until overwritten.
@@ -830,6 +833,8 @@ module grid_class
     ! Local Variable
     integer :: k
 
+    ! ---- Begin Code ----
+
     ! Do the actual interpolation.
     ! Use linear interpolation.
     do k = 1, gr%nnzp-1, 1
@@ -875,8 +880,10 @@ module grid_class
     ! Return Variable
     real :: interpolated_azmk
 
+    ! ---- Begin Code ----
+
     ! Do the actual interpolation.
-    ! Use linear interpolation.
+    ! Use a linear interpolation.
     if ( k /= gr%nnzp ) then
 
       interpolated_azmk = &
@@ -1010,6 +1017,8 @@ module grid_class
     real :: factor
     integer :: k
 
+    ! ---- Begin Code ----
+
     ! Compute the weighting factors at momentum level k.
     k = m_lev
 
@@ -1059,8 +1068,10 @@ module grid_class
     ! Local Variable
     integer :: k  ! Index
 
+    ! ---- Begin Code ----
+
     ! Do actual interpolation.
-    ! Use linear interpolation.
+    ! Use a linear interpolation.
     do k = gr%nnzp, 2, -1
       interpolated_azt(k) = &
          factor_interp( gr%weights_zm2zt( 1, k ), azm(k), azm(k-1) )
@@ -1101,8 +1112,10 @@ module grid_class
     ! Return Variables
     real :: interpolated_aztk
 
+    ! ---- Begin Code ----
+
     ! Do actual interpolation.
-    ! Use linear interpolation.
+    ! Use a linear interpolation.
     if ( k /= 1 ) then
 
       interpolated_aztk = &
@@ -1234,6 +1247,8 @@ module grid_class
     real :: factor
     integer :: k
 
+    ! ---- Begin Code ----
+
     ! Compute the weighting factors at thermodynamic level k.
     k = t_lev
 
@@ -1277,6 +1292,8 @@ module grid_class
 
     ! Local Variable
     integer :: k
+
+    ! ---- Begin Code ----
 
     ! Compute vertical derivatives.
     do k = gr%nnzp, 2, -1
@@ -1322,6 +1339,8 @@ module grid_class
 
     ! Local Variable
     integer :: k
+
+    ! ---- Begin Code ----
 
     ! Compute vertical derivative.
     do k = 1, gr%nnzp-1, 1
