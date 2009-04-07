@@ -45,7 +45,7 @@ module exp_approx_mod
     implicit none
 
     ! External
-    intrinsic :: int, transfer
+    intrinsic :: int, transfer, huge, tiny
 
     ! Constant parameters
     real(kind=r8), parameter :: &
@@ -64,6 +64,15 @@ module exp_approx_mod
     integer(kind=i4), dimension(2) :: exi
 
     ! --- Begin Code ---
+
+    ! Handle the overflow/underflow condition
+    if ( x >= 700._r8 ) then
+      dp_exp = huge( dp_exp )
+      return
+    else if ( x <= -700._r8 ) then
+      dp_exp = tiny( dp_exp )
+      return
+    end if
 
     if ( big_endian ) then
       exi(1) = int( exp_a*x ) + exp_c      
@@ -114,6 +123,15 @@ module exp_approx_mod
     real(kind=r8) :: tmp_exp
 
     ! --- Begin Code ---
+
+    ! Handle the overflow/underflow condition
+    if ( x >= 700._r4 ) then
+      sp_exp = huge( sp_exp )
+      return
+    else if ( x <= -700._r4 ) then
+      sp_exp = tiny( sp_exp )
+      return
+    end if
 
     if ( big_endian ) then
       exi(1) = int( exp_a*x ) + exp_c      
