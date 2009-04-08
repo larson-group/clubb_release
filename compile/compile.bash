@@ -228,5 +228,9 @@ cd $dir
 
 cd $bindir
 $gmake
+# Get the exit status of the gmake command
+exit_status=${?}
 cd $dir
 
+# Exit returing the result of the make
+exit $exit_status
