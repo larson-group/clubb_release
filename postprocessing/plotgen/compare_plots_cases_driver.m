@@ -24,14 +24,14 @@ function compare_plots_cases_driver( HOC_sim1, HOC_sim2, compare_LES, compare_be
 % Example call that plots one output of the arm case:                                    
 %compare_plots_cases_driver( '../../output/', '../../output/', 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )
 
-% To run compare_plots_cases_driver manually, you need to cut and paste the above command, with possibly 
+% To run compare_plots_cases_driver manually, you need to cut and paste the above example call, with possibly 
 % modified arguments, into the MATLAB command prompt.  Plots should appear in subdirectory output/eps
-% whatever directory compare_plots_cases_driver.m is in.
+% of whatever directory compare_plots_cases_driver.m is in.
 
 % The arguments to this function (compare_plots_cases_driver) are:
 %
-% HOC_sim1    = The directory path to the first set of CLUBB data files to be plotted.
-% HOC_sim2    = The directory path to the second set of CLUBB data files to be plotted.
+% HOC_sim1    = The directory path to the first set of CLUBB output files (.ctl and .dat files) to be plotted.
+% HOC_sim2    = The directory path to the second set of CLUBB output files (.ctl and .dat files) to be plotted.
 % compare_LES:  Set to 1 to overplot LES benchmark results; else set to 0. (Set to 0 if you're outside larsongroup.)
 % compare_best: Set to 1 to overplot some prior CLUBB benchmarks; else 0. (Set to 0 if you're outside larsongroup.)
 % compare_HOC:  Set to 1 to overplot some other prior CLUBB benchmarks; else 0. (Set to 0 if you're outside larsongroup.)
@@ -41,11 +41,12 @@ function compare_plots_cases_driver( HOC_sim1, HOC_sim2, compare_LES, compare_be
 % plot_arm_sim2:   1 if you want to overplot a second line from the arm case; 0 if not.
 % plot_arm97_sim2: 1 if you want to overplot a second line from the arm97 case; 0 if not.
 % ... for all other cases.
-
-%The data1 and data2 variables represent the directories that the two sets
-%of data being compared
-%The cmp_all variable determines whether the data being passed in will be
-%compared to the data Chris_Golaz_best_ever, HOC_20051217, and LES_files
+%
+% E.g., if plot_arm_sim1 = 1, then compare_plots_cases_driver will look in directory HOC_sim1 for 
+%   CLUBB output files that begin with "arm_" and plot the data; if plot_arm_sim2 = 1, then 
+%   compare_plots_cases_driver will look in HOC_sim2 for "arm_" files and overplot that data.
+%   If, additionally, plot_arm97_sim1 = 1, then compare_plot_cases_driver will create an additional
+%   set of plots from arm97 output that it finds in directory HOC_sim1.  
 
 % ################# TO-DO #################
 % Make it possible to turn plots on and off
