@@ -84,7 +84,7 @@ module variables_diagnostic_module
     thlpthvp, & ! thl'thv'     [K^2] 
     wp2thvp     ! w'^2 thv'    [m^2 K/s^2]
 
-!$omp threadprivate(wpthvp, rtpthvp, thlpthvp, wp2thvp)
+!$omp threadprivate(rtpthvp, thlpthvp, wp2thvp)
 
   real, target, allocatable, dimension(:), public :: & 
     Kh_zm     ! Eddy diffusivity: zm grid        [m^2/s]
@@ -105,12 +105,6 @@ module variables_diagnostic_module
 
 ! hydrometeors variable array
   real, allocatable, dimension(:,:), public :: hydromet
-! When running with COAMPS microphysics this contains:
-! 1 rrainm      Rain water mixing ratio            [kg/kg]
-! 2 Nrm      Rain drop number concentration        [num/kg]
-! 3 rsnow    Snow water mixing ratio               [kg/kg]
-! 4 rice     Ice water mixing ratio                [kg/kg]
-! 5 rgraupel Graupel water mixing ratio            [kg/kg]
 !$omp threadprivate(hydromet)
 
   real, target, allocatable, dimension(:), public :: & 
