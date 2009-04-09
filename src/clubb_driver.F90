@@ -1708,9 +1708,9 @@ module clubb_driver
     use arm_3year, only: arm_3year_tndcy, arm_3year_sfclyr ! Procedure(s)
 
     use arm_97, only: arm_97_tndcy, arm_97_sfclyr ! Procedure(s)
-#endif
 
     use astex, only: astex_tndcy, astex_sfclyr ! Procedure(s)
+#endif
 
     use atex, only: atex_tndcy, atex_sfclyr ! Procedure(s)
 
@@ -1821,12 +1821,12 @@ module clubb_driver
                          wm_zm, wm_zt, thlm_forcing,  &  ! Intent(out)
                          rtm_forcing, um_ref, vm_ref, &  ! Intent(out)
                          sclrm_forcing, edsclrm_forcing )! Intent(out)
-#endif
 
     case ( "astex_a209" ) ! ASTEX Sc case for K & K
       call astex_tndcy( wm_zt, wm_zm,  &                ! Intent(out) 
                         thlm_forcing, rtm_forcing , &   ! Intent(out)
                         sclrm_forcing, edsclrm_forcing )! Intent(out)
+#endif
 
     case ( "atex" ) ! ATEX case
       call atex_tndcy( time_current, time_initial, &   ! Intent(in)
@@ -2011,12 +2011,13 @@ module clubb_driver
                           upwp_sfc, vpwp_sfc,  &                   ! Intent(out)
                           wpthlp_sfc, wprtp_sfc, ustar, &          ! Intent(out)
                           wpsclrp_sfc, wpedsclrp_sfc )             ! Intent(out)
-#endif
 
     case ( "astex_a209" )
       call astex_sfclyr( rho_zm(1), &                               ! Intent(in) 
                          upwp_sfc, vpwp_sfc, wpthlp_sfc,  &         ! Intent(out)
                          wprtp_sfc, wpsclrp_sfc, wpedsclrp_sfc )    ! Intent(out)
+
+#endif
 
     case ( "atex" )
       call atex_sfclyr( um(2), vm(2), thlm(2), rtm(2), &  ! Intent(in)

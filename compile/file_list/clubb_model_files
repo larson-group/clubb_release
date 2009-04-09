@@ -1,6 +1,5 @@
 ../src/AiryFunction.f90
 ../src/Benchmark_cases/arm.F90
-../src/Benchmark_cases/astex.F90
 ../src/Benchmark_cases/atex.F90
 ../src/Benchmark_cases/bomex.F90
 ../src/Benchmark_cases/cloud_rad.F90
