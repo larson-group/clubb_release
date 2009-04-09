@@ -29,8 +29,7 @@ module stats_variables
     l_netcdf, & ! Output to NetCDF format
     l_grads     ! Output to GrADS format
 
-!$omp   threadprivate(l_stats, l_netcdf, l_grads, &
-!$omp     stats_tsamp, stats_tout)
+!$omp   threadprivate(l_stats, l_netcdf, l_grads)
 
   logical, public :: & 
     l_stats_samp,   & ! Sample flag for current time step
@@ -107,7 +106,7 @@ module stats_variables
 !$omp   threadprivate(ivg, icf, ip_in_Pa, iexner, iLscale, iwp3, iwpthlp2)
 !$omp   threadprivate(iwp2thlp, iwprtp2, iwp2rtp, iLscale_up, iLscale_down, itau_zt)
 !$omp   threadprivate(iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, isigma_sqd_w_zt, irho)
-!$omp   threadprivate(iNcm, iNcnm, isnowslope, iNsnowm)
+!$omp   threadprivate(iNcm, iNcnm, isnowslope)
 !$omp   threadprivate(ised_rcm, irsat, irrainm)
 !$omp   threadprivate(imean_vol_rad_rain, imean_vol_rad_cloud)
 !$omp   threadprivate(irain_rate, iAKm, iAKm_est)
@@ -158,7 +157,7 @@ module stats_variables
     ithlm_tacl,    & ! thlm correction from turbulent advection (wpthlp) clipping
     ithlm_cl         ! thlm clipping term
 
-!$omp   threadprivate(irtm_bt, irtm_ma, irtm_ta, irtm_forcing)
+!$omp   threadprivate(irtm_bt, irtm_ma, irtm_ta, irtm_forcing, &
 !$omp     irtm_mc, irtm_mfl, irtm_tacl, irtm_cl, irtm_pd, &
 !$omp     irvm_mc, ircm_mc, &
 !$omp     ithlm_bt, ithlm_ma, ithlm_ta, ithlm_forcing, &
