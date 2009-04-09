@@ -774,4 +774,49 @@ $ svn diff > patchfile
 
 Then email us patchfile.  See the svn book online for more details about svn.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% CHAPTER 7: VARIABLES NAMES IN CLUBB
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+------------------------------------------------------------------------
+- (7.1) Generic naming conventions 
+------------------------------------------------------------------------
+
+Certain letters in CLUBB's variable names have special meanings (usually):
+
+m   = horizontal mean.          E.g., wm is the mean vertical velocity.
+p   = prime or perturbation.    E.g., wp2 is the variance of vertical velocity  
+r   = mixing ratio.             E.g., rtm is the mean total water mixing ratio.
+th  = theta or potential temp.  E.g., thlm is the liquid water pot. temp.                 
+_zm = interpolated to the       E.g., rho_zm is the density on the     
+      momentum grid.                momentum grid.
+_zt = interpolated to the       E.g., wp2_zt is wp2 on the
+      thermodynamic grid.           thermodynamic grid
+
+-------------------------------------------------------------------------                            
+- (7.2) Some important variables in CLUBB:
+-------------------------------------------------------------------------
+
+thlm    = <thl>     = Liquid water potential temperature       [K]
+rtm     = <rt>      = Total water mixing ratio                 [kg/kg]
+cf      = Cloud fraction                                       [-]
+rcm     = <rc>      = Cloud water mixing ratio                 [kg/kg]
+wp2     = <w'2>     = Variance of vertical velocity            [m^2/s^2]
+wp3     = <w'3>     = Third order moment of vertical velocity  [m^3/s^3]
+wpthlp  = <w'thl'>  = Vertical turbulent flux of thl           [(m/s) K] 
+wprtp   = <w'rt'>   = Vertical turbulent flux of rt            [(kg/kg) (m/s)]
+thlp2   = <thl'2>   = Variance of thl                          [K^2]
+rtp2    = <rt'2>    = Variance of rt                           [(kg/kg)^2]
+rtpthlp = <rt'thl'> = Covariance of rt and thl                 [(kg/kg) K]
+wm      = <w>       = Mean vertical wind                       [m/s]
+um      = <u>       = Mean east-west wind                      [m/s]
+vm      = <v>       = Mean north-south wind                    [m/s]
+upwp    = <u'w'>    = Covariance of u and w                    [m^2/s^2]
+vpwp    = <v'w'>    = Covariance of v and w                    [m^2/s^2]
+up2     = <u'2>     = Variance of u                            [m^2/s^2]
+vp2     = <v'2>     = Variance of v                            [m^2/s^2]
+rrainm  = Mean rainwater mixing ratio                          [kg/kg]
+
 ****************************************************************************
