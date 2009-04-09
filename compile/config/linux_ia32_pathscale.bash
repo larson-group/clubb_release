@@ -1,4 +1,4 @@
-# $Id: linux_ia32_g95_optimize.bash 3371 2009-04-07 16:39:56Z dschanen@uwm.edu $
+# $Id$
 # Configuration file for a Linux machine using the Pathscale Fortran compiler.
 
 # Fortran 95 compiler and linker
