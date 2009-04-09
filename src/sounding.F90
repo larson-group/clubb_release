@@ -322,7 +322,7 @@ module sounding
 
         ! Input Variables
 
-        character*(*), intent(in) :: fname
+        character(len=*), intent(in) :: fname
 
         ! Output
 

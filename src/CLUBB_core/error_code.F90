@@ -184,7 +184,7 @@ implicit none
 ! Input Variable(s)  
 
 ! The message being reported
-character*(*), intent(in) :: str ! The message being reported
+character(len=*), intent(in) :: str ! The message being reported
 
 ! The debug level being checked against the current setting
 integer, intent(in) :: level 

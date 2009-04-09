@@ -61,7 +61,7 @@ module output_grads
 
   integer, intent(IN) :: unit   ! File unit being written to            [-]
 
-  character*(*), intent(IN) ::  & 
+  character(len=*), intent(IN) ::  & 
   fdir,                         & ! Directory where file is stored        [-]
   fname                           ! Name of file                          [-]
 
@@ -207,7 +207,7 @@ module output_grads
   day, month, year,  & ! Day, month and year numbers
   nvar              ! Number of variables in the file
 
-  character*(*), intent(in) :: & 
+  character(len=*), intent(in) :: & 
   fdir, fname ! File directory and name
 
   real(kind=time_precision), intent(in) :: & 
