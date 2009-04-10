@@ -7,6 +7,8 @@
 #PLOTGEN_DIR=$(readlink -f $(dirname "$0"))
 PLOTGEN_DIR=`readlink -f $0`
 PLOTGEN_DIR=`dirname $PLOTGEN_DIR`
+#External Use: Comment above 2 lines, uncomment line below
+#PLOTGEN_DIR=`pwd`
 
 #We need to unset the term type for this to work with Matlab 2008a
 SessionType=$DISPLAY
@@ -160,6 +162,7 @@ if [ "$output_dir_rel" != "/"  ]; then
 fi
 
 if [ "$output_arg" == "-r"  ]; then
+	#External Use: Remove "sudo - u matlabuser" from below
 	sudo -u matlabuser $PLOTGEN_DIR/generate_plots.sh $HOC_dir1 $HOC_dir2 $compare_LES $compare_best $compare_HOC && \
 	rm -rf "$output_dir"
 	mkdir "$output_dir"
@@ -170,10 +173,15 @@ elif [ "$output_arg" == "-c" ]; then
 		cd $working_directory
 		exit 1
 	fi
+	#External Use: Remove "sudo - u matlabuser" from below
 	mkdir -p "$output_dir" && \
 	sudo -u matlabuser $PLOTGEN_DIR/generate_plots.sh $HOC_dir1 $HOC_dir2 $compare_LES $compare_best $compare_HOC && \
+	
+	#External Use: Comment out the line below, uncomment the line below it
 	cp -rf $PLOTGEN_DIR/profiles/* "$output_dir"
+	#cp -rf $PLOTGEN_DIR/output/* "$output_dir"
 else
+	#External Use: Remove "sudo - u matlabuser" from below
 	sudo -u matlabuser $PLOTGEN_DIR/generate_plots.sh $HOC_dir1 $HOC_dir2 $compare_LES $compare_best $compare_HOC
 	echo "Invalid output argument."
 	echo "Results stored in $PLOTGEN_DIR/profiles"
