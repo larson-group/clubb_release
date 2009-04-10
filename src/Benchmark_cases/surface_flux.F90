@@ -20,7 +20,8 @@ module surface_flux
   real function compute_ubar( um_sfc, vm_sfc )
 !
 !  Description:
-!    This function determins the value of ubar based on the momentum at the surface.
+!    This function determines the value of ubar based on the momentum at 
+!    the surface.
 !  References:
 !    None
 !-------------------------------------------------------------------------------
@@ -31,7 +32,7 @@ module surface_flux
     intrinsic :: max, sqrt
 
     ! Constant paramter(s)
-    real, parameter :: ubmin = 0.25
+    real, parameter :: ubmin = 0.25 ! [m/s]
 
     ! Input Variable(s)
     real, intent(in) :: &
