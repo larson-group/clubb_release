@@ -146,9 +146,26 @@ contains
 
           ! theta_l of the parcel at grid level j.
           !
-          ! For a parcel of air ascending from level j-1 to level j, the value
-          ! of the ambient (or environmental) air is considered to change
-          ! linearly between two successive thermodynamic grid levels.
+          ! The equation for the rate of change of theta_l of the parcel with
+          ! respect to height, due to entrainment, is:
+          !
+          ! d(thl_par)/dz = - mu * ( thl_par - thl_env );
+          !
+          ! where thl_par is theta_l of the parcel, thl_env is theta_l of the
+          ! ambient (or environmental) air, and mu is the entrainment rate,
+          ! such that:
+          !
+          ! mu = (1/m)*(dm/dz);
+          !
+          ! where m is the mass of the parcel.  The value of mu is set to be a
+          ! constant.
+          !
+          ! The differential equation is solved for thl_par_j (thl_par at
+          ! height gr%zt(j)) given the boundary condition thl_par_j_minus_1
+          ! (thl_par at height gr%zt(j-1)), and given the fact that the value
+          ! of thl_env is treated as changing linearly for a parcel of air
+          ! ascending from level j-1 (where thl_env has the value thlm(j-1)) to
+          ! level j (where thl_env has the value thlm(j)).
 
           thl_par_j = thlm(j) - thlm(j-1)*exp(-mu/gr%dzm(j-1))  &
                       - ( 1.0 - exp(-mu/gr%dzm(j-1)) )  &
@@ -157,9 +174,25 @@ contains
 
           ! r_t of the parcel at grid level j.
           !
-          ! For a parcel of air ascending from level j-1 to level j, the value
-          ! of the ambient (or environmental) air is considered to change
-          ! linearly between two successive thermodynamic grid levels.
+          ! The equation for the rate of change of r_t of the parcel with
+          ! respect to height, due to entrainment, is:
+          !
+          ! d(rt_par)/dz = - mu * ( rt_par - rt_env );
+          !
+          ! where rt_par is r_t of the parcel, rt_env is r_t of the ambient (or
+          ! environmental) air, and mu is the entrainment rate, such that:
+          !
+          ! mu = (1/m)*(dm/dz);
+          !
+          ! where m is the mass of the parcel.  The value of mu is set to be a
+          ! constant.
+          !
+          ! The differential equation is solved for rt_par_j (rt_par at height
+          ! gr%zt(j)) given the boundary condition rt_par_j_minus_1 (rt_par at
+          ! height gr%zt(j-1)), and given the fact that the value of rt_env is
+          ! treated as changing linearly for a parcel of air ascending from
+          ! level j-1 (where rt_env has the value rtm(j-1)) to level j (where
+          ! rt_env has the value rtm(j)).
 
           rt_par_j = rtm(j) - rtm(j-1)*exp(-mu/gr%dzm(j-1))  &
                      - ( 1.0 - exp(-mu/gr%dzm(j-1)) )  &
@@ -236,9 +269,36 @@ contains
 
           ! theta_l of the parcel at grid level j.
           !
-          ! For a parcel of air descending from level j+1 to level j, the value
-          ! of the ambient (or environmental) air is considered to change
-          ! linearly between two successive thermodynamic grid levels.
+          ! The equation for the rate of change of theta_l of the parcel with
+          ! respect to height, due to entrainment, is:
+          !
+          ! d(thl_par)/dz = - mu * ( thl_par - thl_env );
+          !
+          ! where thl_par is theta_l of the parcel, thl_env is theta_l of the
+          ! ambient (or environmental) air, and mu is the entrainment rate,
+          ! such that:
+          !
+          ! mu = (1/m)*(dm/dz);
+          !
+          ! where m is the mass of the parcel.  The value of mu is set to be a
+          ! constant.
+          !
+          ! NOTE:  For an entraining, descending parcel, parcel mass will
+          !        increase as height decreases.  Thus dm/dz < 0, and therefore
+          !        mu < 0.  However, in the equation for thl_par_j, mu is always
+          !        multiplied by the delta_z factor ( gr%zt(j) - gr%zt(j+1) ),
+          !        which always has the propery delta_z < 0 for a descending
+          !        parcel.  Thus, mu*delta_z > 0, just as for an entraining,
+          !        ascending parcel.  Therefore, the same general form of the
+          !        entrainment equation (only with differing grid level indices)
+          !        can be used for both the ascending and descending parcels.
+          !
+          ! The differential equation is solved for thl_par_j (thl_par at
+          ! height gr%zt(j)) given the boundary condition thl_par_j_plus_1
+          ! (thl_par at height gr%zt(j+1)), and given the fact that the value
+          ! of thl_env is treated as changing linearly for a parcel of air
+          ! descending from level j+1 (where thl_env has the value thlm(j+1)) to
+          ! level j (where thl_env has the value thlm(j)).
 
           thl_par_j = thlm(j) - thlm(j+1)*exp(-mu/gr%dzm(j))  &
                       - ( 1.0 - exp(-mu/gr%dzm(j)) )  &
@@ -247,9 +307,35 @@ contains
 
           ! r_t of the parcel at grid level j.
           !
-          ! For a parcel of air descending from level j+1 to level j, the value
-          ! of the ambient (or environmental) air is considered to change
-          ! linearly between two successive thermodynamic grid levels.
+          ! The equation for the rate of change of r_t of the parcel with
+          ! respect to height, due to entrainment, is:
+          !
+          ! d(rt_par)/dz = - mu * ( rt_par - rt_env );
+          !
+          ! where rt_par is r_t of the parcel, rt_env is r_t of the ambient (or
+          ! environmental) air, and mu is the entrainment rate, such that:
+          !
+          ! mu = (1/m)*(dm/dz);
+          !
+          ! where m is the mass of the parcel.  The value of mu is set to be a
+          ! constant.
+          !
+          ! NOTE:  For an entraining, descending parcel, parcel mass will
+          !        increase as height decreases.  Thus dm/dz < 0, and therefore
+          !        mu < 0.  However, in the equation for rt_par_j, mu is always
+          !        multiplied by the delta_z factor ( gr%zt(j) - gr%zt(j+1) ),
+          !        which always has the propery delta_z < 0 for a descending
+          !        parcel.  Thus, mu*delta_z > 0, just as for an entraining,
+          !        ascending parcel.  Therefore, the same general form of the
+          !        entrainment equation (only with differing grid level indices)
+          !        can be used for both the ascending and descending parcels.
+          !
+          ! The differential equation is solved for rt_par_j (rt_par at height
+          ! gr%zt(j)) given the boundary condition rt_par_j_plus_1 (rt_par at
+          ! height gr%zt(j+1)), and given the fact that the value of rt_env is
+          ! treated as changing linearly for a parcel of air descending from
+          ! level j+1 (where rt_env has the value rtm(j+1)) to level j (where
+          ! rt_env has the value rtm(j)).
 
           rt_par_j = rtm(j) - rtm(j+1)*exp(-mu/gr%dzm(j))  &
                      - ( 1.0 - exp(-mu/gr%dzm(j)) )  &
