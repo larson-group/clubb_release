@@ -14,20 +14,27 @@ program jacobian
 
 use clubb_driver, only:  & 
     run_clubb ! Procedure(s)
+
 use parameter_indices, only:  & 
     nparams ! Variable(s)
+
 use parameters_tunable, only:  & 
     params_list,  & ! Variable(s)
     read_parameters ! Procedure(s) 
+
 use constants, only:  & 
     fstdout,  & ! Variable(s) 
     fstderr
+
 use grads_common, only:  & 
     grads_average_interval,  & ! Procedure(s) 
-    grads_zlvl
+    grads_num_vertical_levels, &
+    grads_vertical_levels
+
 use stats_variables, only:  & 
     fname_zt,  & ! Variable(s) 
     fname_zm
+
 use error_code, only:  & 
     clubb_no_error,  & ! Variable(s)
     fatal_error ! Procedure(s)
@@ -50,11 +57,13 @@ implicit none
 
     integer ::  & 
     nz,      & ! Z dimension [grid boxes] 
-    entries ! Total variables
+    entries    ! Total variables
+
+    real, pointer, dimension(:) :: z
 
     character(len=12), pointer :: name(:)
 
-    real, pointer :: value(:,:) ! (1:nz, entries)
+    real, pointer, dimension(:,:) :: value ! (1:nz, entries)
 
   end type variable_array
 !----------------------------------------------------------------------
@@ -167,8 +176,8 @@ implicit none
 
   ! Obtain nz from the generated GrADS files
 
-  nzt = grads_zlvl( "../output/"//trim( fname_zt )//".ctl" )
-  nzm = grads_zlvl( "../output/"//trim( fname_zm )//".ctl" )
+  nzt = grads_num_vertical_levels( "../output/"//trim( fname_zt )//".ctl" )
+  nzm = grads_num_vertical_levels( "../output/"//trim( fname_zm )//".ctl" )
 
   ! Initialize the structures holding the variables
 
@@ -176,6 +185,8 @@ implicit none
             var2zt%value(nzt, nvarzt), & 
             var1zt%name(nvarzt), & 
             var2zt%name(nvarzt), & 
+            var1zt%z(nzt), & 
+            var2zt%z(nzt), & 
             stat=alloc_stat )
 
   if (alloc_stat /= 0 ) stop "allocate failed"
@@ -185,10 +196,15 @@ implicit none
   var2zt%entries = nvarzt 
   var2zt%nz      = nzt
 
+  var1zt%z = grads_vertical_levels( "../output/"//trim( fname_zt )//".ctl", nzt )
+  var2zt%z = grads_vertical_levels( "../output/"//trim( fname_zt )//".ctl", nzt )
+
   allocate( var1zm%value(nzm, nvarzm), & 
             var2zm%value(nzm, nvarzm), & 
             var1zm%name(nvarzm), & 
             var2zm%name(nvarzm), & 
+            var1zm%z(nzm), & 
+            var2zm%z(nzm), & 
             stat = alloc_stat )
 
   if (alloc_stat /= 0 ) stop "allocate failed"
@@ -197,6 +213,9 @@ implicit none
   var1zm%nz      = nzm
   var2zm%entries = nvarzm 
   var2zm%nz      = nzm
+
+  var1zm%z = grads_vertical_levels( "../output/"//trim( fname_zm )//".ctl", nzm )
+  var2zm%z = grads_vertical_levels( "../output/"//trim( fname_zm )//".ctl", nzm )
 
 
 
@@ -371,7 +390,8 @@ implicit none
 
     varray%value(1:varray%nz, k) =  & 
     grads_average_interval & 
-    ( "../output/"//fname_zx, varray%nz, times(:), varray%name(k), 1, l_error )
+    ( "../output/"//fname_zx, varray%nz, times(:), varray%name(k), &
+      varray%z, 1, l_error )
 
     if ( l_error ) then
       write(unit=fstderr,fmt=*) "Error in reading"//varray%name(i)

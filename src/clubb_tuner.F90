@@ -4,8 +4,8 @@
 program clubb_tuner 
 
 !     Description:
-!     ``Tunes'' constants in hoc so that the output matches LES output.
-!     Uses amoeba or amebsa to calculate the min of (f_les - f_hoc)^2
+!     ``Tunes'' constants in clubb so that the output matches LES output.
+!     Uses amoeba or amebsa to calculate the min of (f_les - f_clubb)^2
 
 !     References:
 !     _Numerical Recipes in Fortran 90_ (Chapter 10) 
@@ -19,7 +19,7 @@ program clubb_tuner
 !                         * Amoeba tolerance: ftol
 !                        Initializes
 !                         * The initial dependent variable vector, i.e. the 
-!                          total error between the les and hoc models
+!                          total error between the les and clubb models
 !                         * The initial independent variable array, formed
 !                           from C1,...C11, and nu1,...nu8
 
@@ -27,9 +27,9 @@ program clubb_tuner
 !     AMEBSA    : The simulated annealing tuner from _Numerical Recipes_
 !
 !   Functions Called :
-!      min_les_hoc_diff  : A parameter of the amoeba subroutine, and 
+!      min_les_clubb_diff  : A parameter of the amoeba subroutine, and 
 !                        strictly speaking is directly called from
-!                        the hoc_tuner program only initially.  
+!                        the clubb_tuner program only initially.  
 !                        This is the counterpart to the
 !                        minimization function `funk' in amoeba. It returns
 !                        the error vector and takes the independent variable
@@ -38,7 +38,7 @@ program clubb_tuner
 !           Portability module from _Numerical Recipes In Fortran 90_ 
 !----------------------------------------------------------------------
 use error, only:  & 
-  tuner_init, min_les_hoc_diff,                  & ! Subroutines 
+  tuner_init, min_les_clubb_diff,                  & ! Subroutines 
   output_results_stdout,                         & ! Subroutine
   output_nml_standalone, output_nml_tuner,       & ! Subroutines
   param_vals_matrix,            & ! Variables
@@ -144,7 +144,7 @@ use error, only:  &
   param_vals_matrix, cost_fnc_vector,  & ! The 'p' matrix and 'y' vector resp.
   ftol,                                & ! Tolerance of tuning run
   iter,                                & ! Iteration number
-  min_les_hoc_diff,                    & ! Cost function
+  min_les_clubb_diff,                  & ! Cost function
   min_err                             ! Minimum value of the cost function
 
 
@@ -155,7 +155,7 @@ intrinsic :: minval
 
 call amoeba( param_vals_matrix(1:ndim+1,1:ndim),  & 
              cost_fnc_vector(1:ndim+1),  & 
-             ftol, min_les_hoc_diff, iter)
+             ftol, min_les_clubb_diff, iter)
 
 ! Note:
 ! Amoeba will make the optimal cost result the first element of
@@ -194,7 +194,7 @@ use error, only: &
     cost_fnc_vector, & 
     ftol, & 
     min_err, & 
-    min_les_hoc_diff ! Procedure(s)
+    min_les_clubb_diff ! Procedure(s)
 
 implicit none
 
@@ -229,7 +229,7 @@ do jiter = 1, anneal_iter ! anneal_iter taken from /stat/ namelist
   call amebsa & 
        ( param_vals_matrix(1:ndim+1,1:ndim),  & 
          cost_fnc_vector(1:ndim+1), & 
-         pb(1:ndim), yb, ftol, min_les_hoc_diff, iter, tmptr )
+         pb(1:ndim), yb, ftol, min_les_clubb_diff, iter, tmptr )
 
   nit = nit + iiter - iter
   if ( yb < ybb ) then

@@ -8,11 +8,11 @@ module error
 !       subroutine tuner_init: reads in namelists /stats/, /cases/, 
 !          /initvars/, & /variance/ from 'error.in' 
 !       It then uses them to setup the initial param_vals_matrix of independent
-!       variables, i.e. the hoc constants, and allocate the runtime arrays
+!       variables, i.e. the CLUBB constants, and allocate the runtime arrays
 !       for each of the model runs and each of the variables
 
-!       function min_les_hoc_diff:  A driver for the hoc program/module.
-!       Calls run_clubb, reads in les & hoc results from GRADS files, and 
+!       function min_les_clubb_diff:  A driver for the CLUBB program/module.
+!       Calls run_clubb, reads in les & CLUBB results from GRADS files, and 
 !       calculates the average difference between the two over all z-levels.
 
 !       subroutine output_results_stdout : 
@@ -24,7 +24,7 @@ module error
 
 !       subroutine output_nml_standalone :  
 !       Generates the standalone.in file using the current constants.
-!       Standalone hoc is only configured to run a single model, and so only
+!       Standalone CLUBB is only configured to run a single model, and so only
 !       the first model is used to make the namelist.
 
 !-----------------------------------------------------------------------
@@ -38,92 +38,92 @@ module error
   ! 'err_code' is an important integer used by the min_diff to 
   ! determine whether CLUBB has become numerically unstable
   integer, public ::  & 
-  err_code 
+    err_code 
 
   ! inv_count is a modular counter [1-3] used to determine 
   ! which file to output to if l_stdout_on_invalid is true.
   integer, private ::  & 
-  inv_count
+    inv_count
 
   !----------------------------------------------------------------------- 
 
   integer, parameter, private ::  & 
-  max_run = 12,  & ! Maximum model runs the tuner can handle at a time
-  max_variables = 32 ! This number / 2 is maximum variables to tune for
+    max_run = 12,  & ! Maximum model runs the tuner can handle at a time
+    max_variables = 32 ! This number / 2 is maximum variables to tune for
 
   real, public ::  & 
-  ftol,        & ! The precision to tune for
-  anneal_temp ! Initial temperature for the simulated annealing algorithm
+    ftol,        & ! The precision to tune for
+    anneal_temp ! Initial temperature for the simulated annealing algorithm
 
   integer, public :: & 
-  anneal_iter, & ! Number of annealing iterations to perform
-  tune_type,   & ! Toggle for downhill simplex of simulated annealing
-  c_total,     & ! Total number of simulation cases to tune over
-  v_total     ! Total number of variables to tune over
+    anneal_iter, & ! Number of annealing iterations to perform
+    tune_type,   & ! Toggle for downhill simplex of simulated annealing
+    c_total,     & ! Total number of simulation cases to tune over
+    v_total     ! Total number of variables to tune over
 
   logical, public :: & 
-  l_results_stdout, & 
-  l_results_file, & 
-  l_stdout_on_invalid
+    l_results_stdout, & 
+    l_results_file, & 
+    l_stdout_on_invalid
 
   character(len=10), dimension(:), allocatable, private ::  & 
-  hoc_v,  & ! Variables in CLUBB GrADS files
-  les_v  ! Variables in LES GrADS files
+    hoc_v,  & ! Variables in CLUBB GrADS files
+    les_v  ! Variables in LES GrADS files
 
   integer, dimension(:,:), allocatable, private ::  & 
-  time ! Time intervals
+    time ! Time intervals
 
   ! Additions for using imposed weights as scaling factors
   logical :: l_initialize_sigma
 
   real, dimension(:,:), allocatable, private ::  & 
-  err_terms, & 
-  invsigma2, & 
-  min_err_terms, & 
-  init_err_terms
+    err_terms, & 
+    invsigma2, & 
+    min_err_terms, & 
+    init_err_terms
 
   real, dimension(:), allocatable, private ::  & 
-  weight_case, weight_var
+    weight_case, weight_var
 
   ! End additions for using imposed weights
 
   integer, dimension(:), allocatable, private :: & 
-  z_i,  & ! Initial z level for tuning purposes
-  z_f  ! Final z level for tuning purposes
+    z_i, & ! Initial z level for tuning purposes
+    z_f    ! Final z level for tuning purposes
 
   character(len=50), dimension(:), allocatable, private ::  & 
-  run_file,        & ! Model run files
-  hoc_stats_file,  & ! Model GrADS files
-  les_stats_file  ! Model GrADS files
+    run_file,        & ! Model run files
+    hoc_stats_file,  & ! Model GrADS files
+    les_stats_file  ! Model GrADS files
 
-  ! Various Variables for returning results ----------------------
-  integer, public :: iter ! Total number of iterations amoeba spent 
-  !                         calculating optimal values
+  ! Various Variables for returning results
+  integer, public :: &
+    iter ! Total number of iterations amoeba spent calculating optimal values
 
   real, public :: & 
-  init_err,  & ! error for the initial constants
-  min_err      ! the lowest the minimization algorithm could go
+    init_err,  & ! error for the initial constants
+    min_err      ! the lowest the minimization algorithm could go
 
   real, dimension(nparams), private :: & 
-  params  ! Vector of all possible CLUBB parameters
+    params  ! Vector of all possible CLUBB parameters
 
   integer, dimension(nparams), private :: & 
-  params_index  ! Index of the params elements that are used in the simplex
+    params_index  ! Index of the params elements that are used in the simplex
 
   real, allocatable, dimension(:,:), public ::  & 
-  param_vals_matrix ! Holds 2D simplex the CLUBB constant parameters
+    param_vals_matrix ! Holds 2D simplex the CLUBB constant parameters
 
   real, allocatable, dimension(:), public :: & 
-  param_vals_spread,  & ! Amount to vary each respec. constant by
-  cost_fnc_vector    ! cache of differences between the LES and CLUBB
+    param_vals_spread,  & ! Amount to vary each respec. constant by
+    cost_fnc_vector    ! cache of differences between the LES and CLUBB
 
   real, allocatable, dimension(:), private ::  & 
-  rand_vect ! A vector of random reals for initializing the x array
+    rand_vect ! A vector of random reals for initializing the x array
 
-  public :: tuner_init, min_les_hoc_diff, output_results_stdout, & 
-          output_nml_standalone, output_nml_tuner
+  public :: tuner_init, min_les_clubb_diff, output_results_stdout, & 
+    output_nml_standalone, output_nml_tuner
 
-  private ! Default Scope !
+  private ! Default Scope
 
   contains
 
@@ -331,10 +331,10 @@ module error
 
   l_initialize_sigma = .true.
   cost_fnc_vector(1) =  & 
-       min_les_hoc_diff( param_vals_matrix(1,1:ndim) )
+       min_les_clubb_diff( param_vals_matrix(1,1:ndim) )
   l_initialize_sigma = .false.
 
-  ! Note: min_les_hoc_diff is written to deal with undefined and 
+  ! Note: min_les_clubb_diff is written to deal with undefined and 
   ! invalid values for variations on the initial vector, but that 
   ! algorithm relies on the initial vector being valid. 
 
@@ -352,10 +352,10 @@ module error
   ! Other initialization runs
 
   ! Initialize the 'y' vector for amoeba 
-  ! This is done by calling min_les_hoc_diff with the initial vector 
+  ! This is done by calling min_les_clubb_diff with the initial vector 
   do i = 2, ndim+1, 1
     cost_fnc_vector(i) =  & 
-         min_les_hoc_diff( param_vals_matrix(i,1:ndim) )
+         min_les_clubb_diff( param_vals_matrix(i,1:ndim) )
   end do 
 
   write(unit=fstdout,fmt=*) "cost_fnc_vector:"
@@ -365,20 +365,23 @@ module error
   end subroutine tuner_init
 
   !-----------------------------------------------------------------------
-  real function min_les_hoc_diff( param_vals_vector )
+  real function min_les_clubb_diff( param_vals_vector )
 
-  !       Description: 
-  !       Function that returns the sum of the error between the dependent
-  !       variable(i.e. the variable we want to match) in each of the models
+  ! Description: 
+  !   Function that returns the sum of the error between the dependent
+  !   variable(i.e. the variable we want to match) in each of the models
 
-  !       References:
-  !       _Numerical Recipes in Fortran 77_ P.402-406 (Description)
-  !       _Numerical Recipes in Fortran 90_ source code (Routine)
+  ! References:
+  !   _Numerical Recipes in Fortran 77_ P.402-406 (Description)
+  !   _Numerical Recipes in Fortran 90_ source code (Routine)
   !-----------------------------------------------------------------------
 
   use clubb_driver, only: run_clubb ! Procedure(s)
 
-  use grads_common, only: grads_zlvl, grads_average_interval ! Procedure(s)
+  use grads_common, only: &
+    grads_num_vertical_levels, & ! Procedure(s)
+    grads_vertical_levels, &
+    grads_average_interval 
 
   use parameters_tunable, only: params_list ! Variable(s)
 
@@ -406,8 +409,7 @@ module error
 
   ! These are read after each run from the GrADS control files
   integer ::  & 
-  les_nz,  & ! Extent of the LES domain in the z dimension
-  hoc_nz  ! Extent of the CLUBB domain in the z dimension
+    clubb_nz   ! Extent of the CLUBB domain in the z dimension
 
   character(50) ::  & 
   errorfile ! nml filename for invalid runs
@@ -422,10 +424,11 @@ module error
   c_terms ! num of terms in err_sum (for normalization)
 
   ! LES and CLUBB values over nz z-levels
-  REAL, DIMENSIon(:), allocatable ::  & 
-  hoc_zl, & 
-  hoc2_zl, & 
-  les_zl 
+  real, dimension(:), allocatable ::  & 
+    clubb_zl, & 
+    clubb2_zl, & 
+    les_zl, &
+    clubb_grid_heights
 
   real, dimension(:,:), allocatable ::  & 
   err_sums  ! To save breakdown of cost function
@@ -516,19 +519,19 @@ module error
 
   !-----------------------------------------------------------------------
 
-  ! Now check if hoc has blown up, i.e. if hoc has set a variable to NaN, 
+  ! Now check if CLUBB has blown up, i.e. if CLUBB has set a variable to NaN, 
   ! or encountered a failure in the matrix solver routines
 
   ! If it has, it returns higher value than those previous to
   ! Amoeba (the downhill simplex)
   if ( fatal_error(err_code) ) then
 
-    min_les_hoc_diff = 2 * maxval( cost_fnc_vector )  & 
+    min_les_clubb_diff = 2 * maxval( cost_fnc_vector )  & 
                      - minval( cost_fnc_vector )
 
     if ( l_stdout_on_invalid ) then
       inv_count = modulo( inv_count, 3 ) + 1 ! 1,2,3,1,2,3...
-      errorfile = "error_crash_"// achar( inv_count+48 )// ".in"
+      errorfile = "error_crash_"// achar( inv_count+48 ) // ".in"
       call output_nml_tuner( errorfile,  & 
                              param_vals_vector(1:ndim) )
     end if
@@ -540,15 +543,18 @@ module error
   do c_run=1, c_total, 1
 
     ! Determine how large the GrADS input is
-    hoc_nz = grads_zlvl( hoc_stats_file(c_run) )
-    les_nz = grads_zlvl( les_stats_file(c_run) )
+    clubb_nz = grads_num_vertical_levels( hoc_stats_file(c_run) )
 
     ! Allocate the arrays for reading in the GrADS plot data
-    allocate( hoc_zl(hoc_nz), hoc2_zl(hoc_nz),  & 
-              les_zl(les_nz), stat=AllocateStatus )
+    allocate( clubb_zl(clubb_nz), clubb2_zl(clubb_nz),  & 
+              les_zl(clubb_nz), clubb_grid_heights(clubb_nz), stat=AllocateStatus )
+
     if ( AllocateStatus /= 0 ) then 
       stop "Allocation of arrays in minimization function failed"
     end if
+
+    ! Determine the height of GrADS input
+    clubb_grid_heights = grads_vertical_levels( hoc_stats_file(c_run), clubb_nz )
 
     ! Start with first CLUBB & LES variables, then loop through and 
     ! calculate the mean squared difference for all the variables
@@ -557,26 +563,26 @@ module error
       ! Read in LES grads data for one variable, averaged
       ! over specified time intervals
       les_zl =  & 
-      grads_average_interval & 
-      ( les_stats_file(c_run), les_nz,  & 
-        time(c_run,:), les_v(i), 1, l_error )
+      grads_average_interval &
+      ( les_stats_file(c_run), clubb_nz,  & 
+        time(c_run,:), les_v(i), clubb_grid_heights, 1, l_error )
 
       if ( l_error ) stop "The specified LES variable was invalid"
 
       ! Read in CLUBB grads data for one variable, averaged
       ! over specified time intervals
-      hoc_zl =  & 
+      clubb_zl =  & 
       grads_average_interval & 
-      ( hoc_stats_file(c_run), hoc_nz,  & 
-        time(c_run,:), hoc_v(i), 1, l_error )
+      ( hoc_stats_file(c_run), clubb_nz,  & 
+        time(c_run,:), hoc_v(i), clubb_grid_heights, 1, l_error )
 
       if ( l_error ) stop "The specified CLUBB variable was invalid"
 
       ! The same variable, with npower = 2
-      hoc2_zl =  & 
+      clubb2_zl =  & 
       grads_average_interval & 
-      ( hoc_stats_file(c_run), hoc_nz, & 
-        time(c_run,:), hoc_v(i), 2, l_error )
+      ( hoc_stats_file(c_run), clubb_nz, & 
+        time(c_run,:), hoc_v(i), clubb_grid_heights, 2, l_error )
 
       if ( l_error ) stop "The specified CLUBB variable was invalid"
 
@@ -598,7 +604,7 @@ module error
 
       ! Old code
 !           err_sum = err_sum 
-!    .              + mean_sqr_diff_zt( hoc_nz, les_nz, hoc_zl, 
+!    .              + mean_sqr_diff_zt( clubb_nz, les_nz, clubb_zl, 
 !    .                                  les_zl, les_minmax )
 
       ! Chris Golaz modification: mean_sqr_diff_2_zt was designed to try
@@ -606,19 +612,18 @@ module error
       ! New code
 !           err_sum = err_sum 
 !    .              + mean_sqr_diff_2_zt
-!    .                ( hoc_nz, les_nz, hoc_zl, hoc2_zl, 
+!    .                ( clubb_nz, les_nz, clubb_zl, clubb2_zl, 
 !    .                  les_zl, les_minmax )
       ! End new code
       ! Modification for weighting
-      err_sums(c_run,i) & 
-      = mean_sqr_diff_2_zt( hoc_nz, les_nz, hoc_zl,  & 
-                            hoc2_zl, les_zl, les_minmax )
+      err_sums(c_run,i) = mean_sqr_diff_2_zt( clubb_nz, z_i(c_run), z_f(c_run), clubb_zl,  & 
+                            clubb2_zl, les_zl, les_minmax )
 
       c_terms = c_terms + 1
 
     end do ! i=1..v_total
 
-    deallocate( hoc_zl, hoc2_zl, les_zl )
+    deallocate( clubb_zl, clubb2_zl, les_zl )
 
   end do     ! end of do c_run=1, c_total
 !----------------------------------------------------------------------
@@ -626,7 +631,7 @@ module error
   ! Return error averaged over all cases, variables, 
   ! and vertical levels
   ! Old Code
-!       min_les_hoc_diff = err_sum / real( c_terms )
+!       min_les_clubb_diff = err_sum / real( c_terms )
 
   !---------------------------------------------------------------
   ! Compute normalization factors to satisfy imposed weights
@@ -650,14 +655,14 @@ module error
   ! Save total error and error contributions breakdown
   !---------------------------------------------------------------
   err_terms = err_sums
-  min_les_hoc_diff = err_sum
+  min_les_clubb_diff = err_sum
 
   deallocate( err_sums )
 
-  write(*,'(a,f12.5)') "Cost function= ", min_les_hoc_diff
+  write(*,'(a,f12.5)') "Cost function= ", min_les_clubb_diff
 
   return
-  end function min_les_hoc_diff
+  end function min_les_clubb_diff
 
   !----------------------------------------------------------------------
   subroutine output_results_stdout( )
@@ -885,7 +890,7 @@ module error
   open(unit=20, file=results_f,  & 
        action="write", access="sequential")
 
-  ! Write variables to namelist for standalone hoc. 
+  ! Write variables to namelist for standalone CLUBB. 
   ! All this is based on the previous error.in, except the constants
 
   write(unit=20,fmt=*) "! Parameter file " // results_f
@@ -920,79 +925,8 @@ module error
   end subroutine output_nml_standalone
 
 !-----------------------------------------------------------------------
-  real function mean_sqr_diff_zm & 
-                ( hoc_nz, les_nz, hoc_zl, les_zl, norm_term )
-!       Description
-!       Calculate the mean squared difference between two input vectors, 
-!       then normalize.
-
-!       References:
-!       None
-
-!       Notes:
-!       Configured to do interpolation on LES / CLUBB comparisons on the 
-!       momentum grid.
-!-----------------------------------------------------------------------
-  implicit none
-
-  ! External
-  intrinsic sum
-
-  ! Input Variables
-  integer, intent(in) ::  & 
-  hoc_nz,  & ! Vertical extent for CLUBB
-  les_nz  ! Vertical extent for the LES
-
-  real, intent(in), dimension(hoc_nz) ::  & 
-  hoc_zl  ! CLUBB GrADS variable [units vary]
-
-  real, intent(in), dimension(les_nz) ::  & 
-  les_zl  ! The LES GrADS variable [units vary]
-
-  real, intent(in) ::  & 
-  norm_term ! normalization term;  
-            !typically maxval(les) - minval(les) 
-
-  ! Local Variables
-  real, dimension(hoc_nz) ::  & 
-  tmp_zl
-
-!----------------------------------------------------------------------
-
-  select case ( hoc_nz - les_nz )
-  case ( 0 ) ! most cases
-  ! Due to hoc's lower starting point, we can only use
-  ! (total number of z-levels) - 1 (a maximum of 74 for BOMEX).
-  ! The code below assumes the LES data are on an evenly spaced grid.
-  ! (Need to interpolate hoc to LES' levels.  Right now we just
-  !   compare adjacent z levels.  Vince Larson 12 Jan 2005)
-
-    tmp_zl(1:hoc_nz-1) =  & 
-    ( hoc_zl(1:hoc_nz) - les_zl(1:(les_nz)) ) / norm_term 
-
-    tmp_zl = tmp_zl**2
-
-    mean_sqr_diff_zm = sum( tmp_zl(1:(hoc_nz-1)), 1 ) 
-
-  case ( 2 )  !  the DYCOMS II RF01 case
-    tmp_zl(1:les_nz) =  & 
-    ( hoc_zl(1:les_nz) - les_zl(1:les_nz) ) / norm_term
-
-    tmp_zl = tmp_zl**2
-
-    mean_sqr_diff_zm = sum( tmp_zl(1:(les_nz)), 1 )
-
-  case default !
-    stop "Not able to handle specified number of CLUBB z-levels"
-    mean_sqr_diff_zm  = 0. ! Avoid a compiler warning
-  end select
-
-  return
-  end function mean_sqr_diff_zm
-
-!-----------------------------------------------------------------------
-  real function mean_sqr_diff_zt & 
-                ( hoc_nz, les_nz, hoc_zl, les_zl, norm_term )
+! real function mean_sqr_diff_zt & 
+!               ( hoc_nz, les_nz, hoc_zl, les_zl, norm_term )
 !       Description
 !       Calculate the mean squared difference between two input vectors, 
 !       then normalize.
@@ -1005,66 +939,66 @@ module error
 !       thermodynamic grid.  We use a modified version for tuning runs
 !       now, see below.
 !-----------------------------------------------------------------------
-  implicit none
+! implicit none
 
-  ! External
-  intrinsic sum
+! ! External
+! intrinsic sum
 
-  ! Input Variables
-  integer, intent(in) ::  & 
-  hoc_nz,  & ! Vertical extent for CLUBB
-  les_nz  ! Vertical extent for the LES
+! ! Input Variables
+! integer, intent(in) ::  & 
+! hoc_nz,  & ! Vertical extent for CLUBB
+! les_nz  ! Vertical extent for the LES
 
-  real, intent(in), dimension(hoc_nz) ::  & 
-  hoc_zl  ! CLUBB GrADS variable [units vary]
+! real, intent(in), dimension(hoc_nz) ::  & 
+! hoc_zl  ! CLUBB GrADS variable [units vary]
 
-  real, intent(in), dimension(les_nz) ::  & 
-  les_zl  ! The LES GrADS variable [units vary]
+! real, intent(in), dimension(les_nz) ::  & 
+! les_zl  ! The LES GrADS variable [units vary]
 
-  real, intent(in) ::  & 
-  norm_term ! normalization term;  
-            !typically maxval(les) - minval(les) 
+! real, intent(in) ::  & 
+! norm_term ! normalization term;  
+!           !typically maxval(les) - minval(les) 
 
-  ! Local Variables
-  real, dimension(hoc_nz) ::  & 
-  tmp_zl
+! ! Local Variables
+! real, dimension(hoc_nz) ::  & 
+! tmp_zl
 
 !----------------------------------------------------------------------
 
-  select case ( hoc_nz - les_nz )
-  case ( 0 ) ! most cases
-  ! Due to hoc's lower starting point, we can only use
-  ! (total number of z-levels) - 1 (a maximum of 74 for BOMEX).
-  ! The code below assumes the LES data are on an evenly spaced grid.
-  ! (Need to interpolate hoc to LES' levels.  Right now we just
-  !   compare adjacent z levels.  Vince Larson 12 Jan 2005)
+! select case ( hoc_nz - les_nz )
+! case ( 0 ) ! most cases
+! ! Due to hoc's lower starting point, we can only use
+! ! (total number of z-levels) - 1 (a maximum of 74 for BOMEX).
+! ! The code below assumes the LES data are on an evenly spaced grid.
+! ! (Need to interpolate hoc to LES' levels.  Right now we just
+! !   compare adjacent z levels.  Vince Larson 12 Jan 2005)
 
-    tmp_zl(1:hoc_nz-1) =  & 
-    ( hoc_zl(2:hoc_nz) - les_zl(1:(les_nz-1)) ) / norm_term 
+!   tmp_zl(1:hoc_nz-1) =  & 
+!   ( hoc_zl(2:hoc_nz) - les_zl(1:(les_nz-1)) ) / norm_term 
 
-    tmp_zl = tmp_zl**2
+!   tmp_zl = tmp_zl**2
 
-    mean_sqr_diff_zt = sum( tmp_zl(1:(hoc_nz-1)), 1 ) 
+!   mean_sqr_diff_zt = sum( tmp_zl(1:(hoc_nz-1)), 1 ) 
 
-  case ( 2 )  !  the DYCOMS II RF01 case
-    tmp_zl(1:les_nz) =  & 
-    ( hoc_zl(3:hoc_nz) - les_zl(1:les_nz) ) / norm_term
+! case ( 2 )  !  the DYCOMS II RF01 case
+!   tmp_zl(1:les_nz) =  & 
+!   ( hoc_zl(3:hoc_nz) - les_zl(1:les_nz) ) / norm_term
 
-    tmp_zl = tmp_zl**2
+!   tmp_zl = tmp_zl**2
 
-    mean_sqr_diff_zt = sum( tmp_zl(1:(les_nz)), 1 )
+!   mean_sqr_diff_zt = sum( tmp_zl(1:(les_nz)), 1 )
 
-  case default !
-    write(0,*) "CLUBB:", hoc_nz, "LES:", les_nz
-    stop "Not able to handle specified number of CLUBB z-levels"
-    mean_sqr_diff_zt = 0. ! To avoid a compiler warning
-  end select
+! case default !
+!   write(0,*) "CLUBB:", hoc_nz, "LES:", les_nz
+!   stop "Not able to handle specified number of CLUBB z-levels"
+!   mean_sqr_diff_zt = 0. ! To avoid a compiler warning
+! end select
 
-  return
-  end function mean_sqr_diff_zt
+! return
+! end function mean_sqr_diff_zt
 !-----------------------------------------------------------------------
   real function mean_sqr_diff_2_zt & 
-                ( hoc_nz, les_nz, hoc_zl,  & 
+                ( nz, z_init, z_final, hoc_zl,  & 
                   hoc2_zl, les_zl, norm_term )
 !       Description:
 !       Alternate function to compute mean difference between input 
@@ -1089,59 +1023,67 @@ module error
   implicit none
 
   ! External
-  intrinsic sum
+  intrinsic :: sum
 
   ! Input Variables
   integer, intent(in) ::  & 
-  hoc_nz,  & ! Vertical extent for CLUBB
-  les_nz  ! Vertical extent for the LES
+    nz,      & ! Vertical extent for CLUBB
+    z_init,  & ! Initial point for the purposes of computing the sum
+    z_final    ! Final point for the purpose of computign the sum
 
-  real, intent(in), dimension(hoc_nz) ::  & 
-  hoc_zl,  & ! CLUBB GrADS variable [units vary]
-  hoc2_zl ! CLUBB GrADS variable [units vary]
-
-  real, intent(in), dimension(les_nz) ::  & 
-  les_zl  ! The LES GrADS variable [units vary]
+  real, intent(in), dimension(nz) ::  & 
+    hoc_zl,  & ! CLUBB GrADS variable [units vary]
+    hoc2_zl, & ! CLUBB GrADS variable [units vary]
+    les_zl     ! The LES GrADS variable [units vary]
 
   real, intent(in) ::  & 
-  norm_term ! normalization term;  
-            !typically maxval(les) - minval(les) 
+    norm_term ! normalization term. Typically maxval(les) - minval(les) 
 
   ! Local Variables
-  real, dimension(hoc_nz) ::  & 
-  tmp_zl
+  real, dimension(nz) ::  & 
+    tmp_zl
+
+  integer :: k
 
 !----------------------------------------------------------------------
 
-  select case ( hoc_nz - les_nz )
-  case ( 0 ) ! most cases
-  !  Due to hoc's lower starting point, we can only use
-  !  (total number of z-levels) - 1 (a maximum of 74 for BOMEX).
-  !  The code below assumes the LES data are on an evenly spaced grid.
-  !  (Need to interpolate hoc to LES' levels.  Right now we just
-  !   compare adjacent z levels.  Vince Larson 12 Jan 2005)
+! select case ( hoc_nz - les_nz )
+! case ( 0 ) ! most cases
+! !  Due to CLUBB's lower starting point, we can only use
+! !  (total number of z-levels) - 1 (a maximum of 74 for BOMEX).
+! !  The code below assumes the LES data are on an evenly spaced grid.
+! !  (Need to interpolate hoc to LES' levels.  Right now we just
+! !   compare adjacent z levels.  Vince Larson 12 Jan 2005)
 
-    tmp_zl(1:hoc_nz-1)  & 
-    = ( hoc2_zl(2:hoc_nz)  & 
-        - 2.0*hoc_zl(2:hoc_nz)*les_zl(1:(les_nz-1)) & 
-        + les_zl(1:(les_nz-1))*les_zl(1:(les_nz-1)) & 
-      ) / (norm_term * norm_term)
+!   tmp_zl(1:hoc_nz-1)  & 
+!   = ( hoc2_zl(2:hoc_nz)  & 
+!       - 2.0*hoc_zl(2:hoc_nz)*les_zl(1:(les_nz-1)) & 
+!       + les_zl(1:(les_nz-1))*les_zl(1:(les_nz-1)) & 
+!     ) / (norm_term * norm_term)
 
-    mean_sqr_diff_2_zt   = sum( tmp_zl(1:(hoc_nz-1)), 1 ) 
+!   mean_sqr_diff_2_zt   = sum( tmp_zl(1:(hoc_nz-1)), 1 ) 
 
-  case ( 2 )  !  the DYCOMS II RF01 case
-    tmp_zl(1:les_nz)  & 
-    = ( hoc2_zl(3:hoc_nz)  & 
-        - 2.0*hoc_zl(3:hoc_nz)*les_zl(1:les_nz) & 
-        + les_zl(1:les_nz)*les_zl(1:les_nz) & 
-      ) / (norm_term * norm_term)
+! case ( 2 )  !  the DYCOMS II RF01 case
+!   tmp_zl(1:les_nz)  & 
+!   = ( hoc2_zl(3:hoc_nz)  & 
+!       - 2.0*hoc_zl(3:hoc_nz)*les_zl(1:les_nz) & 
+!       + les_zl(1:les_nz)*les_zl(1:les_nz) & 
+!     ) / (norm_term * norm_term)
 
-    mean_sqr_diff_2_zt = sum( tmp_zl(1:(les_nz)), 1 )
+!   mean_sqr_diff_2_zt = sum( tmp_zl(1:(les_nz)), 1 )
 
-  case default !
-    stop "Not able to handle specified number of CLUBB z-levels"
-    mean_sqr_diff_2_zt = 0. ! Avoid a compiler warning
-  end select
+! case default !
+!   stop "Not able to handle specified number of CLUBB z-levels"
+!   mean_sqr_diff_2_zt = 0. ! Avoid a compiler warning
+! end select
+  tmp_zl = 0.0
+
+  do k = z_init, z_final, 1
+    tmp_zl(k) = ( hoc2_zl(k) - 2.0 * hoc_zl(k)*les_zl(k) + les_zl(k)**2 ) &
+      / norm_term**2
+  end do
+
+  mean_sqr_diff_2_zt = sum( tmp_zl )
 
   return
   end function mean_sqr_diff_2_zt
@@ -1150,11 +1092,11 @@ module error
 
   subroutine read_random_seed( seed_file )
 
-!       Description:
-!       Reads an ASCII flat file passed as an argument
+! Description:
+!   Reads an ASCII flat file passed as an argument
 
-!       References:
-!       None
+! References:
+!   None
 !-----------------------------------------------------------------------
   use constants, only: fstderr
 

@@ -1,212 +1,290 @@
 ! $Id$
 module grads_common
 
-implicit none
+  implicit none
 
-public :: grads_average, grads_average_interval, grads_zlvl
+  public :: grads_average, grads_average_interval, &
+    grads_num_vertical_levels, grads_vertical_levels
 
-private ! Default Scope
+  private ! Default Scope
 
-contains
+  contains
 
 !----------------------------------------------------------------------
-function grads_average( filename, nz, t1, t2, variable_name,  & 
-                        npower, l_error )
-!       Description:
-!       Average a GrADS file variable over the interval t1 to t2
+  function grads_average( filename, out_nz, &
+                          t1, t2, out_heights, variable_name,  & 
+                          npower, l_error )
+! Description:
+!   Average a GrADS file variable over the interval t1 to t2
 
-!       References:
-!       None
+! References:
+!   None
 !----------------------------------------------------------------------
 
-use constants, only: fstderr ! Variable(s)
+    use constants, only: fstderr ! Variable(s)
 
-use inputfile_class, only: inputgrads ! Type(s)
+    use inputfile_class, only: inputgrads ! Type(s)
 
-use inputfile_class, only: open_grads_read, get_var,  & ! Procedures
-                     close_grads_read
+    use inputfile_class, only: open_grads_read, get_var,  & ! Procedures
+                         close_grads_read
+    use inputfields, only: &
+      CLUBB_levels_within_LES_domain, &
+      LES_grid_to_CLUBB_grid, &
+      lin_ext_zt_bottom
 
-implicit none
+    use interpolation, only: &
+      lin_int
 
-! Input Variables
-character(len=*), intent(in) ::  & 
-  filename ! Name of the file
+    implicit none
 
-integer, intent(in) ::  & 
-  nz,  & ! Number of vertial levels in the GrADS file.
-  t1,  & ! Beginning timestep to look at
-  t2     ! Ending timestep to look at
+    ! Constant paramters
+    integer, parameter :: &
+      iunit = 10
 
-character(len=*), intent(in) ::  & 
-  variable_name ! Name of the variable to read in
+    ! Input Variables
+    character(len=*), intent(in) ::  & 
+      filename ! Name of the file
 
-integer, intent(in) ::  & 
-  npower ! Exponent operator, must be 1 or 2
+    integer, intent(in) ::  & 
+      out_nz,  & ! Number of vertial levels in the GrADS file.
+      t1,      & ! Beginning timestep to look at
+      t2         ! Ending timestep to look at
 
-! Output Variable
-logical, intent(out) ::  & 
-  l_error ! error status for this function
+    real, dimension(out_nz), intent(in) :: &
+      out_heights ! Heights of the output grid [m]
 
-! Return Variable for function
-real, dimension(nz) :: grads_average
+    character(len=*), intent(in) :: & 
+      variable_name ! Name of the variable to read in
 
-! Local Variables
-type (inputgrads) :: faverage ! Data file derived type
+    integer, intent(in) :: & 
+      npower ! Exponent operator, must be 1 or 2
 
-real, dimension(nz) :: grads_temp ! Temporary variable
+    ! Output Variable
+    logical, intent(out) :: & 
+      l_error ! error status for this function
 
-integer ::  & 
-! i,  & ! les_array loop index 
-  t  ! timestep loop index
+    ! Return Variable for function
+    real, dimension(out_nz) :: grads_average
 
-integer ::  & 
-  num_timesteps ! steps between t1 and t2 
+    ! Local Variables
+    type (inputgrads) :: faverage ! Data file derived type
+
+    real, allocatable, dimension(:) :: file_variable ! Temporary variable
+
+    real, dimension(out_nz) ::  interp_variable ! Temporary variable
+
+    integer :: & 
+      t, &  ! Timestep loop index
+      k     ! Vertical loop index
+    integer :: file_nz
+    logical :: l_interpolate
+
+    logical, dimension(out_nz) :: l_lin_int
+
+    integer, dimension(out_nz) :: &
+      exact_lev_idx, &
+      lower_lev_idx, &
+      upper_lev_idx
+
+    integer :: & 
+      num_timesteps,  & ! steps between t1 and t2
+      k_lowest_input, &
+      k_highest_input
 
 !-----------------------------------------------------------------------
 
-! Initialize variables
-num_timesteps = ( t2 - t1 ) + 1
-grads_average = 0.0
+    ! Initialize variables
+    num_timesteps = ( t2 - t1 ) + 1
+    grads_average = 0.0
 
-! Open grads file
-call open_grads_read( 10, filename, faverage )
+    ! Open grads file
+    call open_grads_read( iunit, filename, faverage )
 
-! Read in variables from GrADS file
-do t = t1, t2
-  call get_var( faverage, variable_name, t,  & 
-                grads_temp(1:nz), l_error ) 
-  if ( l_error ) then
-     write(fstderr,*) "grads_average: get_var failed for "  & 
-       //trim( variable_name )//" in "//trim( filename ) & 
-       //" at time=", t
-     return 
-  end if
+    ! Determine variable size
+    file_nz = size( faverage%z ) 
 
-  if ( npower == 1 ) then
-    grads_average(1:nz)  & 
-    = grads_average(1:nz) + grads_temp(1:nz)
+    allocate( file_variable(file_nz) ) 
 
-  else if ( npower == 2 ) then
-    grads_average(1:nz)  & 
-    = grads_average(1:nz) + grads_temp(1:nz)*grads_temp(1:nz)
+    ! Do we need to interpolate?
+    if ( out_nz /= file_nz ) then
+      l_interpolate = .true.
+    else if ( any( faverage%z(:) /= out_heights(:) ) ) then
+      l_interpolate = .true.
+    else
+      l_interpolate = .false.
+    end if
 
-  else
-    write(fstderr,*) "gradsaverage: invalid npower = ", npower
-    l_error = .true.
+    call CLUBB_levels_within_LES_domain( faverage, out_heights,  &
+                                         k_lowest_input, k_highest_input )
+
+    do  k = k_lowest_input, k_highest_input, 1
+      ! CLUBB vertical level k is found at an altitude that is within the
+      ! domain of the LES output.
+      call LES_grid_to_CLUBB_grid( faverage, out_heights, k,  &
+                                   exact_lev_idx(k), lower_lev_idx(k),  &
+                                   upper_lev_idx(k), l_lin_int(k) )
+    end do
+
+    ! Read in variables from GrADS file
+    do t = t1, t2
+      call get_var( faverage, variable_name, t,  & 
+                    file_variable(1:file_nz), l_error )
+
+      if ( l_error ) then
+        write(fstderr,*) "grads_average: get_var failed for "  & 
+          //trim( variable_name )//" in "//trim( filename )//" at time=", t
+        return
+      end if
+
+      ! Interpolate as needed using the inputfields code
+      if ( l_interpolate ) then
+
+        do k = k_lowest_input, k_highest_input, 1
+          if ( l_lin_int(k) ) then
+            interp_variable(k) = lin_int( out_heights(k), &
+              faverage%z(upper_lev_idx(k)), faverage%z(lower_lev_idx(k)), &
+              file_variable(upper_lev_idx(k)), file_variable(lower_lev_idx(k)) )
+          else
+            interp_variable(k) = file_variable(exact_lev_idx(k))
+          end if
+        end do
+
+        ! Do a linear extension on the lower points
+        do k = k_lowest_input-1, 1, -1
+          interp_variable(k) = lin_ext_zt_bottom( interp_variable(k+4), &
+            interp_variable(k+1), out_heights(k+2), out_heights(k+1), out_heights(k) )
+        end do
+
+        ! Do the the dum-dum thing and set points above output domain 
+        ! to be constant with height
+        do k = k_highest_input+1, out_nz, 1
+          interp_variable(k) = interp_variable(k-1)
+        end do
+
+      else
+        interp_variable(1:out_nz) = file_variable(1:out_nz)
+
+      end if
+
+
+      ! Apply an exponent (for the tuner)
+      if ( npower /= 1 ) then
+        grads_average(1:out_nz) = grads_average(1:out_nz) + interp_variable(1:out_nz)**npower
+
+      else
+        grads_average(1:out_nz) = grads_average(1:out_nz) + interp_variable(1:out_nz)
+
+      end if
+
+    end do ! t = t1, t2
+
+    ! Close the GrADS file
+    call close_grads_read( faverage )
+
+    ! Take average over num_timesteps
+    grads_average(1:out_nz) = grads_average(1:out_nz) / real( num_timesteps )
+
     return
-
-  end if ! npower
-
-end do ! t = t1, t2
-
-! Close GrADS file
-call close_grads_read( faverage )
-
-! Take average over num_timesteps
-grads_average(1:nz)  & 
-= grads_average(1:nz) / real( num_timesteps )
-
-return
-end function grads_average
+  end function grads_average
 
 !-------------------------------------------------------------------------
-function grads_average_interval & 
-         ( filename, nz, t, variable_name, & 
-           npower, l_error )
+  function grads_average_interval & 
+           ( filename, nz, t, variable_name, & 
+             out_heights, npower, l_error )
 
-!       Description:
-!       Reads in GrADS data from a file and then takes several averages 
-!       over an interval.
+! Description:
+!   Reads in GrADS data from a file and then takes several averages
+!   over an interval.
 
-!       References:
-!       None
+! References:
+!   None
 
-!       Notes:
-!       The variable t is assumed size, which needs to be used with
-!       caution.
+! Notes:
+!   The variable t is assumed size, which needs to be used with caution.
 !-------------------------------------------------------------------------
-use constants, only: fstderr ! Variable(s)
+    use constants, only: fstderr ! Variable(s)
 
-implicit none
+    implicit none
 
-! Constant Parameters
-integer, parameter ::  & 
-  tmax = huge( 1 ) ! Sanity check for huge t array
+    ! Constant Parameters
+    integer, parameter ::  & 
+      tmax = huge( 1 ) ! Sanity check for huge t array
 
-! Input Variables
-character(len=*), intent(in) ::  & 
-  filename ! Name of the file
+    ! Input Variables
+    character(len=*), intent(in) ::  & 
+      filename ! Name of the file
 
-integer, intent(in) ::  & 
-  nz ! Number of vertical grid levels
+    integer, intent(in) ::  & 
+      nz     ! Number of vertical grid levels in the host model
 
-integer, dimension(:), intent(in) ::  & 
-  t ! Timesteps to use for taking an average over an interval
+    integer, dimension(:), intent(in) ::  & 
+      t ! Timesteps to use for taking an average over an interval
 
-character(len=*), intent(in) ::  & 
-  variable_name  ! Name of the variable to read in
+    character(len=*), intent(in) ::  & 
+      variable_name  ! Name of the variable to read in
 
-integer, intent(in) ::  & 
-  npower ! exponent applied to data retrieved from the file( 1 or 2) 
+    real, dimension(nz), intent(in) :: out_heights
 
-! Output Variables
-logical, intent(out) ::  & 
-  l_error ! status of this function
+    integer, intent(in) ::  & 
+      npower ! exponent applied to data retrieved from the file (1 or 2)
 
-! Return Variables
-real, dimension(nz) ::  & 
-  grads_average_interval
+    ! Output Variables
+    logical, intent(out) ::  & 
+      l_error ! status of this function
 
-! Local Variables 
-real, dimension(nz) :: grads_temp
+    ! Return Variables
+    real, dimension(nz) ::  & 
+      grads_average_interval
 
-integer ::  & 
-  i,       & ! Loop variable 
-  tdim,    & ! Dimension to read over for t variable
-  divisor
+    ! Local Variables
+    real, dimension(nz) :: grads_temp
+
+    integer ::  & 
+      i,       & ! Loop variable 
+      tdim,    & ! Dimension to read over for t variable
+      divisor
 
 !-------------------------------------------------------------------------
 
-! Sanity check
-if ( size( t ) > tmax .or. size( t ) < 2 ) then
-  write(unit=fstderr,fmt=*)  & 
-    "grads_average_interval: Invalid time interval"
-  l_error = .true.
-  return
-end if
+    ! Sanity check
+    if ( size( t ) > tmax .or. size( t ) < 2 ) then
+      write(unit=fstderr,fmt=*)  & 
+        "grads_average_interval: Invalid time interval"
+      l_error = .true.
+      return
+    end if
 
-tdim = -1
-do i = 1, size( t )
-  if ( t( i ) == 0 ) exit
-  tdim = i
-end do
+    tdim = -1
+    do i = 1, size( t )
+      if ( t( i ) == 0 ) exit
+      tdim = i
+    end do
 
-grads_average_interval & 
-= grads_average & 
-  ( filename, nz, t(1), t(2), variable_name, npower, l_error )  & 
-  * ( t(2) - t(1) )
+    grads_average_interval & 
+    = grads_average & 
+      ( filename, nz, t(1), t(2), out_heights, variable_name, npower, l_error )  & 
+      * ( t(2) - t(1) )
 
-divisor = t(2) - t(1)
+    divisor = t(2) - t(1)
 
-if ( l_error ) return
+    if ( l_error ) return
 
-do i=3, tdim, 2 
-  grads_temp = grads_average & 
-               ( filename, nz, t(i), t(i+1),  & 
-                 variable_name, npower, l_error )
-  grads_average_interval  & 
-  = grads_average_interval + grads_temp * ( t(i+1) - t(i) )
-  divisor = divisor + ( t(i+1) - t(i) )
-end do
+    do i=3, tdim, 2
+      grads_temp = grads_average & 
+                   ( filename, nz, t(i), t(i+1), out_heights,  & 
+                     variable_name, npower, l_error )
+      grads_average_interval  & 
+      = grads_average_interval + grads_temp * ( t(i+1) - t(i) )
+      divisor = divisor + ( t(i+1) - t(i) )
+    end do
 
-grads_average_interval(1:nz)  & 
-= grads_average_interval(1:nz) / real( divisor )
+    grads_average_interval(1:nz)  = grads_average_interval(1:nz) / real( divisor )
 
-return
-end function grads_average_interval
+    return
+  end function grads_average_interval
 
 !-------------------------------------------------------------------------
-integer function grads_zlvl( filename )
+  integer function grads_num_vertical_levels( filename )
 
 !       Description:
 !       Returns a integer for the number of vertical levels in a file
@@ -219,29 +297,63 @@ integer function grads_zlvl( filename )
 !       determine the number of levels
 !-------------------------------------------------------------------------
 
-use inputfile_class, only: inputgrads ! Type(s)
+    use inputfile_class, only: inputgrads ! Type(s)
 
-use inputfile_class, only: open_grads_read, close_grads_read ! Procedure(s)
+    use inputfile_class, only: open_grads_read, close_grads_read ! Procedure(s)
 
-implicit none
+    implicit none
 
-! Input Variables
-character(len=*), intent(in) ::  & 
-  filename ! File name
+    ! Input Variables
+    character(len=*), intent(in) ::  & 
+      filename ! File name
 
-! Local Variables
-type (inputgrads) :: fz            ! Data file
+    ! Local Variables
+    type (inputgrads) :: fz            ! Data file
 
-! Read in the control file
-call open_grads_read( 10, filename, fz )
+    ! Read in the control file
+    call open_grads_read( 10, filename, fz )
 
-! Set return variable
-grads_zlvl = fz%iz
+    ! Set return variable
+    grads_num_vertical_levels = fz%iz
 
-! Close file
-call close_grads_read( fz )
+    ! Close file
+    call close_grads_read( fz )
 
-return
-end function grads_zlvl
+    return
+  end function grads_num_vertical_levels
 
+!-------------------------------------------------------------------------
+  function grads_vertical_levels( filename, nz )
+
+    use inputfile_class, only: inputgrads ! Type(s)
+
+    use inputfile_class, only: open_grads_read, close_grads_read ! Procedure(s)
+
+    implicit none
+
+    ! Input Variables
+    character(len=*), intent(in) ::  & 
+      filename ! File name
+
+    integer, intent(in) :: &
+      nz ! Number of vertical levels
+
+    ! Output Variables
+    real, dimension(nz) :: grads_vertical_levels
+
+    ! Local Variables
+    type (inputgrads) :: fz  ! Data file
+
+    ! Read in the control file
+    call open_grads_read( 10, filename, fz )
+
+    ! Set return variable
+    grads_vertical_levels(1:nz) = fz%z(1:nz)
+
+    ! Close file
+    call close_grads_read( fz )
+
+    return
+  end function grads_vertical_levels
+!-------------------------------------------------------------------------
 end module grads_common

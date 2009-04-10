@@ -316,9 +316,9 @@ module inputfile_class
 !----------------------------------------------------------------------
   subroutine get_4byte_var( f, varname, itime, x, l_error )
 
-!         Description:
-!         Read binary data from file units and return the result as
-!         as 4 byte float 'x'
+! Description:
+!   Read binary data from file units and return the result as
+!   as 4 byte float 'x'
 !----------------------------------------------------------------------
 
     implicit none
@@ -342,6 +342,8 @@ module inputfile_class
     ! Internal
     logical :: l_done
     integer :: i, k, nrec, ivar
+
+    ! ---- Begin Code ----
 
     ! Initialize l_error to false
     l_error = .false.
@@ -400,6 +402,7 @@ module inputfile_class
     nrec = (nint(itime/(f%dtwrite/60.))-1)*f%nvar*(f%iz-f%ia+1)  & 
          + (ivar-1)*(f%iz-f%ia+1)
     nrec = nrec + 1
+
     ! Debug
 !          print *, varname
 !          print *, "ivar = ", ivar
