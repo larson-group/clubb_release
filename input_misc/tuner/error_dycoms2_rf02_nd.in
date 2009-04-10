@@ -33,15 +33,16 @@
 !  Key variables for UWM: qcm/rcm, cf, rtm/qtm, thlm, um, vm, wp3
 
 &stats
-ftol              = 1.0
-l_results_stdout    = .true.
-l_results_file      = .true.
-l_stdout_on_invalid = .true.
-t_variables       = "cf", "cf"
-weight_var_nl     = 1.0
-anneal_temp       = 100.
-anneal_iter       = 100
+ftol              = 0.05,
+l_results_stdout    = .true.,
+l_results_file      = .true.,
+l_stdout_on_invalid = .true.,
+t_variables       = "wp2", "wp2", "up2", "up2", "vp2", "vp2",
+weight_var_nl     = 0.5, 0.5, 0.5,
+anneal_temp       = 100.,
+anneal_iter       = 100,
 tune_type         = 0
+
 /
 
 ! hoc_stats_file is the name of hoc zt data file;  This should be the same as 
@@ -52,13 +53,14 @@ tune_type         = 0
 !   Note that the first and last z-levels in hoc are not prognosed.
 ! time_nl is the time interval(s) to tune for, in ordered pair form.
 
+&cases
 ! DYCOMS II RF02 No Drizzle
-hoc_stats_file_nl(1) = "../output/dycoms2_rf02_nd_zt.ctl"
+hoc_stats_file_nl(1) = "../output/dycoms2_rf02_nd_zm.ctl"
 les_stats_file_nl(1) = "../les_data/dycoms2_rf02_nd_coamps_sm.ctl"
 run_file_nl(1)       = "dycoms2_rf02_nd_hoc.in"
-z_i_nl(1)            = 1
-z_f_nl(1)            = 147
-time_nl(1,:)         = 120, 360
+z_i_nl(1)            = 2
+z_f_nl(1)            = 37
+time_nl(1,:)         = 300, 360
 weight_case_nl       = 1.0
 
 /
@@ -104,7 +106,7 @@ nu6         = 5.000000 ! Background Coefficient of Eddy Diffusion for wpxp.
 c_K8        = 0.500000 ! Coefficient of Eddy Diffusion for wp3.
 nu8         = 20.00000 ! Background Coefficient of Eddy Diffusion for wp3.
 nu9         = 20.00000 ! Coefficient of Eddy Diffusion for up2 and vp2.
-c_Krrainm      = 0.075000 ! Coefficient of Eddy Diffusion for hydrometeors.
+c_Krrainm   = 0.075000 ! Coefficient of Eddy Diffusion for hydrometeors.
 nu_r        = 3.000000 ! Background Coefficient of Eddy Diffusion for hydrometeors.
 c_Ksqd      = 10.00000 ! Constant for scaling effect of value-squared diffusion.
 beta        = 1.750000 ! Constant from Chris Golaz.
@@ -130,8 +132,8 @@ C2rtthl     = 0.
 C2          = 0.
 C2b         = 0.
 C2c         = 0.
-C4          = 0.
-C5          = 0.
+C4          = 0.5
+C5          = 0.5
 C6rt        = 0.
 C6rtb       = 0.
 C6rtc       = 0.
@@ -149,8 +151,8 @@ C11b        = 0.
 C11c        = 0.
 C12         = 0.
 C13         = 0.
-C14         = 0.
-c_K         = 0.
+C14         = 0.5
+c_K         = 0.5
 c_K1        = 0.
 nu1         = 0.
 c_K2        = 0.
@@ -160,7 +162,7 @@ nu6         = 0.
 c_K8        = 0.
 nu8         = 0.
 nu9         = 0.
-c_Krrainm      = 0.
+c_Krrainm   = 0.
 nu_r        = 0.
 c_Ksqd      = 0.
 beta        = 0.
@@ -170,5 +172,5 @@ gamma_coefc = 0.
 taumin      = 0.
 taumax      = 0.
 lmin_coef   = 0.
-mu          = 0.
+mu          = 0.5
 /
