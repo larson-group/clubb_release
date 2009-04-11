@@ -37,6 +37,9 @@ module grads_common
 
     implicit none
 
+    ! External
+    intrinsic :: transfer
+
     ! Constant paramters
     integer, parameter :: &
       iunit = 10
@@ -89,9 +92,14 @@ module grads_common
     integer :: & 
       num_timesteps,  & ! steps between t1 and t2
       k_lowest_input, &
-      k_highest_input
+      k_highest_input, &
+      nanbits
+
+    ! Set nanbits to NaN
+    data nanbits /Z"7F800000"/
 
 !-----------------------------------------------------------------------
+    l_error = .false.
 
     ! Initialize variables
     num_timesteps = ( t2 - t1 ) + 1
@@ -149,16 +157,22 @@ module grads_common
           end if
         end do
 
-        ! Do a linear extension on the lower points
         do k = k_lowest_input-1, 1, -1
-          interp_variable(k) = lin_ext_zt_bottom( interp_variable(k+4), &
-            interp_variable(k+1), out_heights(k+2), out_heights(k+1), out_heights(k) )
+          ! Do a linear extension on the lower points
+!         interp_variable(k) = lin_ext_zt_bottom( interp_variable(k+4), &
+!           interp_variable(k+1), out_heights(k+2), out_heights(k+1), out_heights(k) )
+
+          ! Set undefined points to NaN
+          interp_variable(k) = transfer( nanbits, interp_variable(k) )
         end do
 
-        ! Do the the dum-dum thing and set points above output domain 
-        ! to be constant with height
         do k = k_highest_input+1, out_nz, 1
-          interp_variable(k) = interp_variable(k-1)
+          ! Do the the dum-dum thing and set points above output domain 
+          ! to be constant with height
+!         interp_variable(k) = interp_variable(k-1)
+
+          ! Set undefined points to NaN
+          interp_variable(k) = transfer( nanbits, interp_variable(k) )
         end do
 
       else
@@ -245,6 +259,7 @@ module grads_common
       divisor
 
 !-------------------------------------------------------------------------
+    l_error = .false.
 
     ! Sanity check
     if ( size( t ) > tmax .or. size( t ) < 2 ) then
