@@ -139,7 +139,7 @@ module variables_prognostic_module
     integer, intent(in) :: nzmax
 
     integer :: i
-!$omp   parallel
+
 !   --- Allocation ---
 
 ! Prognostic variables
@@ -290,8 +290,6 @@ module variables_prognostic_module
       edsclrm_forcing(1:nzmax,i) = 0.0
     end do
 
-!$omp   end parallel
-
     return
   end subroutine setup_prognostic_variables
 !-----------------------------------------------------------------------
@@ -299,7 +297,6 @@ module variables_prognostic_module
     implicit none
 
     ! Prognostic variables
-!$omp   parallel
 
     deallocate( um )        ! u wind
     deallocate( vm )        ! v wind
@@ -361,8 +358,6 @@ module variables_prognostic_module
 
     deallocate( edsclrm )
     deallocate( edsclrm_forcing )
-
-!$omp   end parallel
 
     return
   end subroutine cleanup_prognostic_variables

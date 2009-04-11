@@ -225,8 +225,6 @@ module variables_diagnostic_module
     ! Local Variables
     integer :: i
 
-!$omp parallel
-
 !   --- Allocation ---
 
     ! Diagnostic variables
@@ -465,7 +463,6 @@ module variables_diagnostic_module
     if ( edsclr_dim > 0 ) then
       wpedsclrp(:,:)     = 0.0
     end if
-!$omp end parallel
 
     return
   end subroutine setup_diagnostic_variables
@@ -481,7 +478,6 @@ module variables_diagnostic_module
 
     implicit none
 
-!$omp parallel
 
 ! --- Deallocate ---
 
@@ -594,7 +590,6 @@ module variables_diagnostic_module
     deallocate( wpsclrpthlp )
 
     deallocate( wpedsclrp )
-!$omp end parallel
 
     return
   end subroutine cleanup_diagnostic_variables
