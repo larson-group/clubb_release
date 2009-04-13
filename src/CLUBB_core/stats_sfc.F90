@@ -62,6 +62,10 @@ use stats_variables, only: &
     iup2_vp2_matrix_condt_num, & 
     iwindm_matrix_condt_num
 
+use stats_variables, only: & 
+  imorr_rain_rate, &
+  imorr_snow_rate
+
 use stats_type, only: & 
     stat_assign ! Procedure
 
@@ -115,6 +119,9 @@ ithlp2_matrix_condt_num   = 0
 irtpthlp_matrix_condt_num = 0
 iup2_vp2_matrix_condt_num = 0
 iwindm_matrix_condt_num   = 0
+
+imorr_rain_rate = 0
+imorr_snow_rate = 0
 
 ! Assign pointers for statistics variables sfc
 
@@ -202,6 +209,18 @@ do i=1,sfc%nn
 
     call stat_assign(irrainm_sfc,"rrainm_sfc", & 
          "Surface rain water mixing ratio","kg/kg",sfc)
+    k = k + 1
+
+  case ( 'morr_rain_rate' )
+    imorr_rain_rate = k
+    call stat_assign( imorr_rain_rate, "morr_rain_rate", & 
+         "Rain rate [mm/day]","mm/day", sfc )
+    k = k + 1
+
+  case ( 'morr_snow_rate' )
+    imorr_snow_rate = k
+    call stat_assign( imorr_snow_rate, "morr_snow_rate", & 
+         "Snow rate [mm/day]","mm/day", sfc )
     k = k + 1
 
   case ('wpthlp_sfc')

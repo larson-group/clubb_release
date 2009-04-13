@@ -631,6 +631,11 @@ module stats_variables
     iup2_vp2_matrix_condt_num, & 
     iwindm_matrix_condt_num
 
+  integer, public :: & 
+    imorr_rain_rate, &
+    imorr_snow_rate
+
+
 !$omp threadprivate(iustar, iveg_T_in_K, isfc_soil_T_in_K, ideep_soil_T_in_K, &
 !$omp   ilh, ish, icc, ilwp, izb, izi, &
 !$omp   irain, ipflux, irrainm_sfc, &
@@ -639,7 +644,8 @@ module stats_variables
 !$omp   iwp2_vert_avg, iup2_vert_avg, ivp2_vert_avg, irtp2_vert_avg, ithlp2_vert_avg, &
 !$omp   iwp23_matrix_condt_num, irtm_matrix_condt_num, ithlm_matrix_condt_num, &
 !$omp   irtp2_matrix_condt_num, ithlp2_matrix_condt_num, irtpthlp_matrix_condt_num, &
-!$omp   iup2_vp2_matrix_condt_num, iwindm_matrix_condt_num )
+!$omp   iup2_vp2_matrix_condt_num, iwindm_matrix_condt_num, & 
+!$omp   imorr_rain_rate, imorr_snow_rate)
 
   ! Variables that contains all the statistics
 

@@ -586,6 +586,10 @@ module microphys_driver
       ieff_rad_graupel
 
     use stats_variables, only: & 
+      imorr_rain_rate, &
+      imorr_snow_rate
+
+    use stats_variables, only: & 
       irsnowm_sd, &
       iricem_sd, & 
       irrainm_sd, & 
@@ -941,6 +945,13 @@ module microphys_driver
         call stat_update_var( ieff_rad_snow, effs(:), zt )
         call stat_update_var( ieff_rad_rain, effr(:), zt )
         call stat_update_var( ieff_rad_graupel, effg(:), zt )
+
+        ! Snow and Rain rates over the entire domain, in mm/day
+        call stat_update_var_pt( imorr_rain_rate, 1, &
+          real( dt ) * Morr_rain_rate / real( sec_per_day ), sfc )
+
+        call stat_update_var_pt( imorr_snow_rate, 1, &
+          real( dt ) * Morr_snow_rate / real(  sec_per_day ), sfc )
 
       end if ! l_stats_samp
 
@@ -1526,13 +1537,13 @@ module microphys_driver
 
       implicit none
 
-! Constant parameters
+      ! Constant parameters
       integer, parameter :: & 
         kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
         k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
         km1_tdiag = 3       ! Thermodynamic subdiagonal index.
 
-! Input Variables
+      ! Input Variables
       character(len=*), intent(in) :: &
         solve_type  ! Description of which hydrometeor is being solved for.
 
@@ -1553,13 +1564,13 @@ module microphys_driver
       real, intent(out), dimension(3,gr%nnzp) :: & 
         lhs      ! Left hand side of tridiagonal matrix.
 
-! Local Variables
+      ! Local Variables
       real, dimension(3) :: tmp
 
-! Array indices
+      ! Array indices
       integer :: k, km1
 
-!integer kp1
+      !integer kp1
 
 
       integer :: & 
@@ -1567,6 +1578,7 @@ module microphys_driver
         ixrm_sd,  & ! Sedimentation budget stats toggle
         ixrm_dff    ! Diffusion budget stats toggle
 
+      ! ----- Begin Code -----
 
       select case( solve_type )
       case( "rrainm" )
@@ -1743,7 +1755,7 @@ module microphys_driver
 
 !===============================================================================
     pure function sedimentation( V_hm, V_hmm1, dzt, level ) & 
-    result( lhs )
+      result( lhs )
 
 ! Description:
 ! Sedimentation of a hydrometeor:  implicit portion of the code.
@@ -1890,6 +1902,8 @@ module microphys_driver
       integer :: & 
         mk,    & ! Momentum level directly above central thermodynamic level.
         mkm1     ! Momentum level directly below central thermodynamic level.
+
+      ! ---- Begin Code ----
 
       ! Momentum level (k) is between thermodynamic level (k+1)
       ! and thermodynamic level (k).
@@ -2269,8 +2283,8 @@ module microphys_driver
         ! computed an evaporation rate, we figure that the transport and
         ! sedimentation terms made the value of the hydrometeor negative, so we say
         ! that the evaporation amount and rate is 0.
-!    evap_amt = 0.0
-!    evap_rate = 0.0
+!       evap_amt = 0.0
+!       evap_rate = 0.0
         ! The amount of the hydrometeor that was artificially excessively evaporated.
         ! Define as positive.  In this case, any evaporation that was computed is
         ! considered to be over-evaporation.  Define as positive.
@@ -2285,7 +2299,7 @@ module microphys_driver
         xrm(k) = xrm_trsed_only
       endif
 
-
+      return
     end subroutine adj_microphys_tndcy
 
 !===============================================================================
