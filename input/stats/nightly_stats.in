@@ -1,12 +1,13 @@
 &statsnl
 vars_zt =
 'thlm', 'rtm', 'cf', 'rcm', 'wp3',
-'um', 'vm', 'wm_zt', 'rrainm', 'Nrm',
+'um', 'vm', 'wm_zt', 'rrainm', 'Nrm', 'sclram', 'sclrbm',
+
 ''
 
 vars_zm =
 'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp',
-'upwp', 'vpwp', 'up2', 'vp2',
+'upwp', 'vpwp', 'up2', 'vp2', 'sclrap2', 'sclrbp2',
 ''
 
 vars_sfc =
