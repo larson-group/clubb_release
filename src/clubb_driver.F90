@@ -554,15 +554,15 @@ module clubb_driver
     ! setup grid, setup constants, and setup flags
 
     call setup_clubb_core &                               
-         ( nzmax, T0, ts_nudge, sol_const,&             ! Intent(in)
-           std_atmos_buffer, hydromet_dim, sclr_dim, &  ! Intent(in)
-           sclr_tol(1:sclr_dim), edsclr_dim, params, &  ! Intent(in)
-           l_soil_veg, &                                ! Intent(in)
-           l_uv_nudge, l_tke_aniso, saturation_formula,&! Intent(in)
-           .false., grid_type, deltaz, zm_init, &       ! Intent(in)
-           momentum_heights, thermodynamic_heights, &   ! Intent(in)
-           dummy_dx, dummy_dy, &                        ! Intent(in)
-           err_code )                                   ! Intent(out)
+         ( nzmax, T0, ts_nudge, &                         ! Intent(in)
+           hydromet_dim, sclr_dim, &                      ! Intent(in)
+           sclr_tol(1:sclr_dim), edsclr_dim, params, &    ! Intent(in)
+           l_soil_veg, &                                  ! Intent(in)
+           l_uv_nudge, l_tke_aniso, saturation_formula, & ! Intent(in)
+           .false., grid_type, deltaz, zm_init, &         ! Intent(in)
+           momentum_heights, thermodynamic_heights, &     ! Intent(in)
+           dummy_dx, dummy_dy, &                          ! Intent(in)
+           err_code )                                     ! Intent(out)
 
 
     if ( err_code == clubb_var_out_of_bounds ) return

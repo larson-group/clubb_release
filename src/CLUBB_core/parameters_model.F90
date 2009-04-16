@@ -29,13 +29,9 @@ module parameters_model
   ! Model parameters and constraints setup in the namelists
   real, public ::  & 
     T0,       & ! Reference temperature (usually 300)  [K]
-    ts_nudge, & ! Timescale of u/v nudging             [s]
-    sol_const   ! Solar constant                       [W/m^2]
+    ts_nudge    ! Timescale of u/v nudging             [s]
     
-  integer, public :: &
-    std_atmos_buffer ! Number of levels to take from U.S. Std. Atmos Tables 
-                     ! when it is necessary to increase the profile [-]
-!$omp threadprivate(T0, ts_nudge, sol_const, std_atmos_buffer)
+!$omp threadprivate(T0, ts_nudge)
 
   integer, public :: & 
     sclr_dim,        & ! Number of passive scalars
@@ -55,8 +51,8 @@ module parameters_model
 
 !-------------------------------------------------------------------------------
   subroutine setup_parameters_model &
-             ( T0_in, ts_nudge_in, sol_const_in, &
-               std_atmos_buffer_in, hydromet_dim_in, & 
+             ( T0_in, ts_nudge_in, &
+               hydromet_dim_in, & 
                sclr_dim_in, sclrtol_in, edsclr_dim_in, &
                Lscale_max_in )
 
@@ -75,13 +71,10 @@ module parameters_model
 
     ! Input Variables
     real, intent(in) ::  & 
-      T0_in,       & ! Ref. temperature             [K]
-      ts_nudge_in, & ! Timescale for u/v nudging    [s]
-      Lscale_max_in,&! Largest value for Lscale     [m]
-      sol_const_in   ! Solar constant                       [W/m^2]
+      T0_in,        & ! Ref. temperature             [K]
+      ts_nudge_in,  & ! Timescale for u/v nudging    [s]
+      Lscale_max_in   ! Largest value for Lscale     [m]
     
-    integer, intent(in) :: &
-      std_atmos_buffer_in ! Number of levels to take from U.S. Std. Atmos Tables 
 
     integer, intent(in) :: & 
       hydromet_dim_in,  & ! Number of hydrometeor species
@@ -103,9 +96,6 @@ module parameters_model
 
     T0       = T0_in
     ts_nudge = ts_nudge_in
-    sol_const = sol_const_in 
-    
-    std_atmos_buffer = std_atmos_buffer_in 
 
     hydromet_dim = hydromet_dim_in
     sclr_dim     = sclr_dim_in

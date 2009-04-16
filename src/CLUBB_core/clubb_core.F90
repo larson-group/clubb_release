@@ -925,8 +925,8 @@ module clubb_core
 #endif /*UNRELEASED_CODE*/
   !-----------------------------------------------------------------------
   subroutine setup_clubb_core & 
-             ( nzmax, T0_in, ts_nudge_in, sol_const_in, & ! In
-               std_atmos_buffer_in, hydromet_dim_in, sclr_dim_in, & ! In
+             ( nzmax, T0_in, ts_nudge_in, & ! In
+               hydromet_dim_in, sclr_dim_in, & ! In
                sclrtol_in, edsclr_dim_in, params,  &  ! In
                l_soil_veg, & ! In
                l_uv_nudge, l_tke_aniso, saturation_formula, &  ! In
@@ -1011,10 +1011,7 @@ module clubb_core
 
     ! Model parameters
     real, intent(in) ::  & 
-      T0_in, ts_nudge_in, sol_const_in
-
-    integer, intent(in) :: &
-      std_atmos_buffer_in
+      T0_in, ts_nudge_in
 
     integer, intent(in) :: & 
       hydromet_dim_in,  & ! Number of hydrometeor species
@@ -1077,8 +1074,8 @@ module clubb_core
     end if
 
     ! Define model constant parameters
-    call setup_parameters_model( T0_in, ts_nudge_in, sol_const_in, &      ! In
-                                 std_atmos_buffer_in, hydromet_dim_in, &  ! in
+    call setup_parameters_model( T0_in, ts_nudge_in, &      ! In
+                                 hydromet_dim_in, &  ! in
                                  sclr_dim_in, sclrtol_in, edsclr_dim_in, &! In
                                  Lscale_max )   ! In
 
