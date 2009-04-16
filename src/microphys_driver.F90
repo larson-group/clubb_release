@@ -51,7 +51,7 @@ module microphys_driver
   contains
 
 !-------------------------------------------------------------------------------
-  subroutine init_microphys( iunit, namelist_file, Ncnm, hydromet_dim )
+  subroutine init_microphys( iunit, namelist_file, hydromet_dim )
 
 ! Description:
 !   Set indices to the various hydrometeor species and define hydromet_dim for 
@@ -93,9 +93,6 @@ module microphys_driver
     use module_mp_Graupel, only: &
       GRAUPEL_INIT ! Subroutine
 
-    use grid_class, only: &
-      gr ! Variable
-
     use constants, only: &
       fstderr,   & ! Constant
       cm3_per_m3
@@ -111,10 +108,6 @@ module microphys_driver
 
     character(len=*), intent(in) :: &
       namelist_file ! File name
-
-    ! Input/Output variables
-    real, dimension(gr%nnzp), intent(inout) :: &
-      Ncnm ! Cloud nuclei number conc.  [num/m^3]
 
     ! Output variables
     integer, intent(out) :: & 
@@ -368,9 +361,6 @@ module microphys_driver
       hydromet_list(iiNrm)       = "Nrm"
       hydromet_list(iiNcm)       = "Ncm"
       hydromet_list(iiNim)       = "Nim"
-
-      ! Initialize Ncnm as in COAMPS
-      Ncnm(1:gr%nnzp) = 30.0 * (1.0 + exp( -gr%zt(1:gr%nnzp)/2000.0 )) * cm3_per_m3
 
       hydromet_sed(iiNrm) = .true.
       hydromet_sed(iiNim) = .false.

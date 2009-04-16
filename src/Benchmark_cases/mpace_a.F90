@@ -43,7 +43,7 @@
   contains
 
 !----------------------------------------------------------------------
-  subroutine mpace_a_tndcy( time, rlat, & 
+  subroutine mpace_a_tndcy( time, xi_abs, & 
                             rho, p_in_Pa, rcm, & 
                             wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
                             Frad, radht, & 
@@ -60,8 +60,6 @@
                        zero_threshold, fstderr
 
   use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
-
-  use model_flags, only: l_bugsrad ! Variable
 
   use grid_class, only: gr ! Variable(s)
 
@@ -81,7 +79,11 @@
 
   use stats_variables, only: iradht_LW, iradht_SW, iFrad_LW,  & ! Variable(s)
                              iFrad_SW, zt, zm, l_stats_samp
- 
+
+  use parameters_radiation, only: &
+    F0, F1, Fs_list, alvdr, kappa, omega, gc, eff_drop_radius, rad_scheme
+    
+
   implicit none
 
   ! Local constants, subsidence
@@ -92,36 +94,25 @@
 !     .  pinv  = 85000.   ! Pa; ditto
 
   ! Local constants, LW radiation (from DYCOMS II-RF01)
-  real, parameter :: & 
-  F0  = 100.0, & 
-  F1  = 20.0, & 
-  kap = 119.0
+! real, parameter :: & 
+! F0  = 100.0, & 
+! F1  = 20.0, & 
+! kap = 119.0
 
-  ! Local constants, SW radiation (Shettle and Weinman)
-  real, parameter :: & 
-  Fs0    = 1212.75, & 
-  radius = 1.0e-5, & 
-  A      = 0.1, & 
-  gc     = 0.86, & 
-  omega  = 0.9965
-!    .  rlat = 71.75
-
-  ! Local constants, SW radiation (Liou solar angle scheme)
-  real, parameter :: & 
-  c_0 = 0.006918, & 
-  c_1 = -0.399912, & 
-  c_2 = -0.006758, & 
-  c_3 = -0.002697, & 
-  d_1 = 0.070257, & 
-  d_2 = 0.000907, & 
-  d_3 = 0.000148
+! ! Local constants, SW radiation (Shettle and Weinman)
+! real, parameter :: & 
+! Fs0    = 1212.75, & 
+! radius = 1.0e-5, & 
+! A      = 0.1, & 
+! gc     = 0.86, & 
+! omega  = 0.9965
 
   ! Input Variables
   real(kind=time_precision), intent(in) ::  & 
-  time            ! Current time of simulation      [s]
+  time  ! Current time of simulation      [s]
 
   real, intent(in) ::  & 
-  rlat          ! Latitude                        [Degrees North]
+  xi_abs ! Cosine of the solar zenith angle [-]
 
   real, dimension(gr%nnzp), intent(in) :: & 
   rho,     & ! Density of air                         [kg/m^3]
@@ -159,16 +150,6 @@
 !        real ::
 !     .  velocity_omega
 
-
-  ! Local Variables, radiation scheme
-  real :: & 
-  xi_abs, & 
-  sda_t, & 
-  sda_delta, & 
-  sda_h, & 
-  t_since_noon, & 
-  julday, & 
-  start_time_until_noon
 
   real, dimension(gr%nnzp) :: & 
   radht_theta, & 
@@ -294,7 +275,7 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
   ! Set which schemes to use
   l_lw_on           = .TRUE.
   l_sw_on           = .TRUE.
-!        l_subs_on         = .TRUE.
+! l_subs_on         = .TRUE.
   l_center          = .TRUE.
 
   ! Compute vertical motion
@@ -326,45 +307,27 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
   end do
 
   ! Compute radiation
-  julday = 282
-  start_time_until_noon = 29051 + 50400
-  t_since_noon   = real( time - start_time_until_noon )
-  sda_t = 2*3.14*(julday-1)/365
 
-  sda_delta = c_0 + c_1*cos(sda_t) + d_1*sin(sda_t) + & 
-              c_2*cos(2*sda_t) + d_2*sin(2*sda_t) + & 
-              c_3*cos(3*sda_t) + d_3*sin(3*sda_t)
+  if ( trim( rad_scheme ) == "simplified" ) then
 
-  sda_h = 2*3.14*t_since_noon/86400
-
-  xi_abs = sin(rlat*3.14/180) * sin(sda_delta) + & 
-           cos(rlat*3.14/180) * cos(sda_delta) * cos(sda_h)
-
-  xi_abs = max(xi_abs,zero_threshold)
-
-  if (xi_abs == 0.) then
-    l_sw_on = .FALSE.
-  end if
-
-  if (.not. l_sw_on) then
-    xi_abs = 0.
-  end if
-
-  if ( .not. l_bugsrad ) then
     do k = 1, gr%nnzp
       rcm_rad(k)  = rcm(gr%nnzp-k+1)
       rho_rad(k) = rho(gr%nnzp-k+1)
       dsigm(k)    = 1.0 / gr%dzt(gr%nnzp-k+1)
       coamps_zm(k) = gr%zm(gr%nnzp-k+1)
       coamps_zt(k) = gr%zt(gr%nnzp-k+1)
-    enddo
+    end do
+
+    if ( xi_abs == 0. ) then
+      l_sw_on = .false.
+    end if
 
     call rad_lwsw( rcm_rad, rho_rad, dsigm, & 
                    coamps_zm, coamps_zt, & 
                    Frad_out, Frad_LW_out, Frad_SW_out, & 
                    radhtk, radht_LW_out, radht_SW_out, & 
                    gr%nnzp-1, l_center, & 
-                   xi_abs, F0, F1, kap, radius, A, gc, Fs0, omega, & 
+                   xi_abs, F0, F1, kappa, eff_drop_radius, real( alvdr ), gc, Fs_list(1), omega, & 
                    l_sw_on, l_lw_on )
 
     do k = 2, gr%nnzp-1
@@ -403,19 +366,20 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
       thlm_forcing(k) = thlm_forcing(k) + radht_theta(k)
     end do
 
-  end if ! ~ l_bugsrad
-
-  if ( .not.l_bugsrad .and. l_stats_samp ) then
+    if ( l_stats_samp ) then
  
-    call stat_update_var( iradht_LW, radht_LW, zt )
+      call stat_update_var( iradht_LW, radht_LW, zt )
 
-    call stat_update_var( iradht_SW, radht_SW, zt )
+      call stat_update_var( iradht_SW, radht_SW, zt )
 
-    call stat_update_var( iFrad_SW, Frad_SW, zm )
+      call stat_update_var( iFrad_SW, Frad_SW, zm )
 
-    call stat_update_var( iFrad_LW, Frad_LW, zm )
+      call stat_update_var( iFrad_LW, Frad_LW, zm )
 
-  end if
+    end if
+
+  end if ! rad_lwsw
+
 
 
   ! Test scalars with thetal and rt if desired

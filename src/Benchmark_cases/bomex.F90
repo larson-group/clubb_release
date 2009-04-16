@@ -29,7 +29,7 @@ use grid_class, only: gr ! Variable(s)
 
 use grid_class, only: zt2zm ! Procedure(s)
 
-use model_flags, only: l_bugsrad ! Variable(s)
+use parameters_radiation, only: rad_scheme ! Variable(s)
 
 use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
@@ -78,7 +78,7 @@ wm_zm = zt2zm( wm_zt )
 wm_zm(1) = 0.0        ! At surface
 wm_zm(gr%nnzp) = 0.0  ! Model top
 
-if ( .not. l_bugsrad ) then
+if ( trim( rad_scheme ) == "simplified" ) then
 
 ! Radiative theta-l tendency
   do k = 2, gr%nnzp
@@ -104,7 +104,7 @@ else ! Compute radht interactively with BUGSrad
 
   thlm_forcing = 0.0
 
-end if ! ~l_bugsrad
+end if ! simplified
 
 ! Large scale advective moisture tendency
 do k = 2, gr%nnzp

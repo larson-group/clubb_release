@@ -71,25 +71,11 @@ psfc = 985.5244e2  ! Pressure at model base              [Pa]
 fcor = 8.697e-5    ! Coriolis parameter                  [s^-1]
 T0   = 300.        ! Reference temperature (usually 300) [K]
 
-!-- BugsRad related settings -- only used when l_bugsrad = .true.--
-
-sol_const = 1367.0 ! Solar Constant [W/m^2]
-
-std_atmos_buffer = 10
-
-! Albedo values (for BugsRad Only)
-alvdr = 0.1d0    ! Visible direct surface albedo        [-]
-alvdf = 0.1d0    ! Visible diffuse surface albedo       [-]
-alndr = 0.1d0    ! Near-IR direct surface albedo        [-]
-alndf = 0.1d0    ! Near-IR diffuse surface albedo       [-]
-
-!-- End BugsRad settings --
 
 ts_nudge = 7200    ! Timescale of u/v nudging            [s]
 
 forcings_file_path = '../input/case_setups/arm_3year_forcings/'
 
-l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme. ! Use poor man's radiation instead
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
 
@@ -111,6 +97,10 @@ debug_level   = 2
 
 &microphysics_setting
 micro_scheme = "coamps"
+/
+
+&radiation_setting
+rad_scheme = "none" ! Use non-interactive radiation?
 /
 
 &stats_setting

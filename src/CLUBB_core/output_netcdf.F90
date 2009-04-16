@@ -455,13 +455,15 @@ module output_netcdf
       l_standard_term_ta, &
       l_single_C2_Skw, &
       l_gamma_Skw, &
-      l_bugsrad, &
       l_uv_nudge, &
       l_tke_aniso
 
     use parameters_microphys, only: &
       micro_scheme, & ! Variable(s)
       l_cloud_sed
+
+    use parameters_radiation, only: &
+      rad_scheme
 
     implicit none
 
@@ -554,7 +556,7 @@ module output_netcdf
 
     deallocate( stat )
 
-    allocate( stat(4) )
+    allocate( stat(5) )
 
     ! Define global attributes of the file, for reproducing the results and
     ! determining how a run was configured
@@ -573,6 +575,9 @@ module output_netcdf
     stat(4) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "micro_scheme", &
                             trim( micro_scheme ) )
 
+    stat(5) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "rad_scheme", &
+                            trim( rad_scheme ) )
+
     if ( any( stat /= NF90_NOERR ) ) then
       write(fstderr,*) "Error writing model information"
       do i = 1, size( stat ), 1
@@ -583,7 +588,7 @@ module output_netcdf
 
     ! Write the model flags to the file
     deallocate( stat )
-    allocate( stat(12) ) ! # of model flags
+    allocate( stat(11) ) ! # of model flags
 
     stat(1) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_local_kk", lchar( l_local_kk ) )
     stat(2) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_pos_def", lchar( l_pos_def ) )
@@ -597,10 +602,9 @@ module output_netcdf
     stat(7) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_single_C2_Skw", &
       lchar( l_single_C2_Skw ) )
     stat(8) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_gamma_Skw", lchar( l_gamma_Skw ) )
-    stat(9) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_bugsrad", lchar( l_bugsrad ) )
-    stat(10) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_cloud_sed", lchar( l_cloud_sed ) )
-    stat(11) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_uv_nudge", lchar( l_uv_nudge ) )
-    stat(12) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_tke_aniso", lchar( l_tke_aniso ) )
+    stat(9) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_cloud_sed", lchar( l_cloud_sed ) )
+    stat(10) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_uv_nudge", lchar( l_uv_nudge ) )
+    stat(11) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_tke_aniso", lchar( l_tke_aniso ) )
 
     if ( any( stat /= NF90_NOERR ) ) then
       write(fstderr,*) "Error writing model flags"

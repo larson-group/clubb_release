@@ -62,21 +62,6 @@ psfc = 1017.8e2    ! Pressure at model base              [Pa]
 fcor = 7.6e-5      ! Coriolis parameter                  [s^-1]
 T0   = 300.        ! Reference temperature (usually 300) [K]
 
-!-- BugsRad related settings -- only used when l_bugsrad = .true.--
-
-sol_const = 1367.0 ! Solar Constant [W/m^2]
-
-std_atmos_buffer = 10
-
-! Albedo values (for BugsRad Only)
-alvdr = 0.1d0    ! Visible direct surface albedo        [-]
-alvdf = 0.1d0    ! Visible diffuse surface albedo       [-]
-alndr = 0.1d0    ! Near-IR direct surface albedo        [-]
-alndf = 0.1d0    ! Near-IR diffuse surface albedo       [-]
-
-!-- End BugsRad settings --
-
-l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 
 l_restart      = .false.  ! Flag for whether this is a restart run.
@@ -99,6 +84,14 @@ debug_level   = 2
 l_cloud_sed    = .true.  ! Flag for cloud water sedimentation.
 micro_scheme = "khairoutdinov_kogan"
 Ncm_initial  = 55. ! #/cm3
+
+/
+
+&radiation_setting
+rad_scheme = "simplified",
+F0 = 70.0,
+F1 = 22.0,
+kappa = 85.0,
 
 /
 

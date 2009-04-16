@@ -169,6 +169,8 @@ module clubb_driver
 
     use microphys_driver, only: init_microphys ! Subroutine
 
+    use parameters_radiation, only: init_radiation ! Subroutine
+
     use model_flags, only: l_LH_on, l_local_kk, & ! Constants
       l_pos_def, l_hole_fill, l_single_C2_Skw, l_gamma_Skw, l_byteswap_io
 
@@ -177,11 +179,6 @@ module clubb_driver
     use stats_subs, only:  & 
       stats_begin_timestep, stats_end_timestep,  & ! Procedure(s)
       stats_finalize, stats_init
-
-#ifdef radoffline
-    use bugsrad_clubb_mod, only: set_albedo ! Procedure(s)
-#endif
-
 
     implicit none
 
@@ -360,8 +357,6 @@ module clubb_driver
 
     saturation_formula = "flatau" ! Flatau polynomial approx.
 
-    call set_albedo( 0.1d0 , 0.1d0, 0.1d0, 0.1d0 )
-
     sclr_dim   = 0
     iisclr_thl = -1
     iisclr_rt  = -1
@@ -415,9 +410,6 @@ module clubb_driver
 
     ! Set debug level
     call set_clubb_debug_level( debug_level ) ! Intent(in)
-
-    ! Set Bugsrad albedo values
-    call set_albedo( alvdr, alvdf, alndr, alndf )
 
     ! Printing Model Inputs
     if ( clubb_at_least_debug_level( 1 ) ) then
@@ -554,7 +546,9 @@ module clubb_driver
 
     ! Setup microphysical fields
     call init_microphys( iunit, runfile, & ! Intent(in)
-                         Ncnm, hydromet_dim )    ! Intent(out)
+                         hydromet_dim )    ! Intent(out)
+
+    call init_radiation( iunit, runfile ) ! Intent(in)
 
     ! Allocate & initialize variables,
     ! setup grid, setup constants, and setup flags
@@ -563,7 +557,7 @@ module clubb_driver
          ( nzmax, T0, ts_nudge, sol_const,&             ! Intent(in)
            std_atmos_buffer, hydromet_dim, sclr_dim, &  ! Intent(in)
            sclr_tol(1:sclr_dim), edsclr_dim, params, &  ! Intent(in)
-           l_bugsrad, l_soil_veg, &                     ! Intent(in)
+           l_soil_veg, &                                ! Intent(in)
            l_uv_nudge, l_tke_aniso, saturation_formula,&! Intent(in)
            .false., grid_type, deltaz, zm_init, &       ! Intent(in)
            momentum_heights, thermodynamic_heights, &   ! Intent(in)
@@ -589,7 +583,7 @@ module clubb_driver
              tau_zt, tau_zm, thvm, p_in_Pa, &     ! Intent(inout)
              rho, rho_zm, Lscale, &               ! Intent(inout) 
              Kh_zt, Kh_zm, um_ref, vm_ref, &      ! Intent(inout)
-             hydromet, &                          ! Intent(inout)
+             hydromet, Ncnm, &                    ! Intent(inout)
              sclrm, edsclrm )                     ! Intent(out)
 
     else  ! restart
@@ -773,7 +767,7 @@ module clubb_driver
                tau_zt, tau_zm, thvm, p_in_Pa, & 
                rho, rho_zm, Lscale, & 
                Kh_zt, Kh_zm, um_ref, vm_ref, & 
-               hydromet, &
+               hydromet, Ncnm, &
                sclrm, edsclrm )
 ! Description:
 !   Execute the necessary steps for the initialization of the
@@ -883,6 +877,9 @@ module clubb_driver
     real, dimension(gr%nnzp,hydromet_dim), intent(inout) :: &
       hydromet ! Hydrometeor species    [kg/kg] or [#/kg]
 
+    real, dimension(gr%nnzp), intent(inout) :: &
+      Ncnm ! Cloud nuclei number concentration
+
     ! Output
     real, dimension(gr%nnzp,sclr_dim), intent(out) ::  & 
       sclrm      ! Standard passive scalar [units vary]
@@ -963,7 +960,8 @@ module clubb_driver
 
     ! Determine initial value cloud droplet number concentration for the
     ! Morrison microphysics
-    if ( trim( micro_scheme ) == "morrison" ) then
+    select case ( trim( micro_scheme ) )
+    case ( "morrison" )
       ! Lower boundary condition
       hydromet(1,iiNcm) = 0.
 
@@ -971,7 +969,12 @@ module clubb_driver
 
       ! Upper boundary condition
       hydromet(gr%nnzp,iiNcm) = 0.
-    end if
+
+    case ( "coamps" )
+      ! Initialize Ncnm as in COAMPS
+      Ncnm(1:gr%nnzp) = 30.0 * (1.0 + exp( -gr%zt(1:gr%nnzp)/2000.0 )) * cm3_per_m3
+    end select
+
 
     ! Initialize imposed w
 
@@ -1631,8 +1634,7 @@ module clubb_driver
 
 ! Modules to be included
     use model_flags, only:  &
-        l_bugsrad, &
-        l_soil_veg
+      l_soil_veg
 
     use grid_class, only: gr ! Variable(s)
 
@@ -1689,6 +1691,9 @@ module clubb_driver
 
     use parameters_microphys, only: &
       micro_scheme, l_cloud_sed, Ncm_initial  ! Variables
+
+    use parameters_radiation, only: &
+      rad_scheme
 
     use soil_vegetation, only: advance_soil_veg, veg_T_in_K
 
@@ -1760,6 +1765,7 @@ module clubb_driver
 #ifdef radoffline
     use bugsrad_clubb_mod, only: bugsrad_clubb ! Procedure(s)
 #endif
+    use cos_solar_zen_mod, only: cos_solar_zen ! Function
 
 
     implicit none
@@ -1781,7 +1787,7 @@ module clubb_driver
       um_sfc, &  ! um interpolated to momentum level 1 (sfc) [m/s]
       vm_sfc     ! vm interpolated to momentum level 1 (sfc) [m/s]
 
-    real :: wpthep
+    real :: wpthep, amu0
 
     integer :: lin_int_buffer
 
@@ -1790,6 +1796,16 @@ module clubb_driver
 !#######################################################################
 !##############      FIND ALL DIAGNOSTIC VARIABLES        ##############
 !#######################################################################
+
+!----------------------------------------------------------------
+! Find the cosine of the solar zenith angle if needed
+! The abs() clipping prevents an error with sunray_sw code.
+!----------------------------------------------------------------
+    if ( trim( rad_scheme ) == "simplified" ) then
+      amu0 = max( real( cos_solar_zen( day, month, year, time_current, rlat, rlon ) ), 0. )
+    else
+      amu0 = -999.0
+    end if
 
 !----------------------------------------------------------------
 ! Set vertical velocity, w, and compute large-scale forcings
@@ -1912,14 +1928,16 @@ module clubb_driver
 #endif
 
     case ( "mpace_a" ) ! mpace_a arctic stratus case
-      call mpace_a_tndcy( time_current, rlat, &        ! Intent(in) 
+
+      call mpace_a_tndcy( time_current, amu0, &        ! Intent(in) 
                           rho, p_in_Pa, rcm, &                       ! Intent(in)
                           wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
                           Frad, radht, um_ref, vm_ref, &             ! Intent(out)
                           sclrm_forcing, edsclrm_forcing )           ! Intent(out)
 
     case ( "mpace_b" ) ! mpace_b arctic stratus case
-      call mpace_b_tndcy( time_current, rlat, &        ! Intent(in)
+
+      call mpace_b_tndcy( time_current, amu0, &        ! Intent(in)
                           rho,  p_in_Pa, thvm, rcm, &                ! Intent(in)
                           wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
                           Frad, radht,  &                            ! Intent(out)
@@ -2249,7 +2267,7 @@ module clubb_driver
 ! BUGSrad Radiation
 !----------------------------------------------------------------
 
-    if ( l_bugsrad ) then
+    if ( trim( rad_scheme ) == "bugsrad" ) then
 
 #ifdef radoffline /*This directive is needed for BUGSrad to work with CLUBB.*/
 
@@ -2367,7 +2385,7 @@ module clubb_driver
 
 #endif /*radoffline*/
 
-    endif ! l_bugsrad
+    end if ! BUGSrad radiation scheme
 
 
 ! Store values of surface fluxes for statistics

@@ -38,7 +38,6 @@ module model_flags
     l_byteswap_io   = .false.     ! Swap byte order in GrADS output
 
   logical, public :: & 
-    l_bugsrad,       & ! BUGSrad interactive radiation scheme
     l_uv_nudge,      & ! For wind speed nudging. - Michael Falk
     l_soil_veg,      & ! Simple surface scheme - Joshua Fasching
     l_tke_aniso        ! For anisotropic turbulent kinetic energy,
@@ -47,13 +46,13 @@ module model_flags
      saturation_formula ! "bolton" approx. or "flatau" approx.
 
 ! OpenMP directives. These cannot be indented.
-!$omp threadprivate(l_bugsrad, l_uv_nudge, l_tke_aniso, saturation_formula)
+!$omp threadprivate(l_uv_nudge, l_tke_aniso, saturation_formula)
 
   contains
 
 !===============================================================================
   subroutine setup_model_flags & 
-             ( l_bugsrad_in, l_soil_veg_in, & 
+             ( l_soil_veg_in, & 
                l_uv_nudge_in, l_tke_aniso_in, saturation_formula_in )
 
 ! Description:
@@ -72,7 +71,7 @@ module model_flags
 
     ! Input Variables
     logical, intent(in) ::  & 
-      l_bugsrad_in, l_soil_veg_in, & 
+      l_soil_veg_in, & 
       l_uv_nudge_in, & 
       l_tke_aniso_in
 
@@ -83,7 +82,6 @@ module model_flags
 
     ! Logicals
     l_soil_veg     = l_soil_veg_in
-    l_bugsrad      = l_bugsrad_in
     l_uv_nudge     = l_uv_nudge_in
     l_tke_aniso    = l_tke_aniso_in
 

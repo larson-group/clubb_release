@@ -65,20 +65,7 @@ LE = 0.0         ! Fixed surface latent heat flux      [(kg/kg) m/s]
 
 fcor = 1.e-4     ! Coriolis parameter                  [s^-1]
 T0   = 300.      ! Reference temperature (usually 300) [K]
-!-- BugsRad related settings -- only used when l_bugsrad = .true.--
-sol_const = 1367.0 ! Solar Constant [W/m^2]
 
-std_atmos_buffer = 10
-
-! Albedo values (for BugsRad Only)
-alvdr = 0.1d0    ! Visible direct surface albedo        [-]
-alvdf = 0.1d0    ! Visible diffuse surface albedo       [-]
-alndr = 0.1d0    ! Near-IR direct surface albedo        [-]
-alndf = 0.1d0    ! Near-IR diffuse surface albedo       [-]
-
-!-- End BugsRad settings --
-
-l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 
 l_restart      = .false.  ! Flag for whether this is a restart run.
@@ -101,18 +88,23 @@ debug_level   = 2
 micro_scheme = "none"
 /
 
+&radiation_setting
+rad_scheme = "simplified",
+F0 = 74.0,
+kappa = 130.,
+/
+
 &stats_setting
 
 ! Statistics Settings
 
-l_stats       = .true.   ! Flag for statistical output.
+l_stats      = .true.   ! Flag for statistical output.
 fname_prefix = "fire"   ! Prefix of output filename.
 stats_tsamp  = 60.      ! Frequency of statistical sampling [s]
                         ! (must multiply evenly into stats_tout).
 stats_tout   = 60.      ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"  ! Type of statistical output file (GrADS or netCDF).
 /
-
 
 &sounding
 

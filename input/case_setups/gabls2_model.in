@@ -67,19 +67,6 @@ LE = 0.              ! Fixed surface latent heat flux      [(kg/kg) m/s]
 fcor = 8.8983571e-5  ! Coriolis parameter                  [s^-1]
 T0   = 283.15        ! Reference temperature (usually 300) [K]
 
-!-- BugsRad related settings -- only used when l_bugsrad = .true.--
-sol_const = 1367.0 ! Solar Constant [W/m^2]
-
-! Albedo values (for BugsRad Only)
-alvdr = 0.1d0    ! Visible direct surface albedo        [-]
-alvdf = 0.1d0    ! Visible diffuse surface albedo       [-]
-alndr = 0.1d0    ! Near-IR direct surface albedo        [-]
-alndf = 0.1d0    ! Near-IR diffuse surface albedo       [-]
-
-std_atmos_buffer = 10
-!-- End BugsRad settings --
-
-l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 
 l_restart      = .false.  ! Flag for whether this is a restart run.
@@ -109,6 +96,10 @@ sclr_tol  = 1.e-2, 1.e-5 ! Tolerances below which we consider scalar to be 0.
 
 &microphysics_setting
 micro_scheme = "none"
+/
+
+&radiation_setting
+rad_scheme = "none",
 /
 
 &stats_setting

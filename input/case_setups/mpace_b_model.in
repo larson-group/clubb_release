@@ -67,24 +67,9 @@ LE = 0.           ! Fixed surface latent heat flux      [(kg/kg) m/s]
 fcor = 1.e-4      ! Coriolis parameter                  [s^-1]
 T0   = 300.       ! Reference temperature (usually 300) [K]
 
-!-- BugsRad related settings -- only used when l_bugsrad = .true.--
-
-sol_const = 1367.0 ! Solar Constant [W/m^2]
-
-std_atmos_buffer = 10
-
-! Albedo values (for BugsRad Only)
-alvdr = 0.1d0    ! Visible direct surface albedo        [-]
-alvdf = 0.1d0    ! Visible diffuse surface albedo       [-]
-alndr = 0.1d0    ! Near-IR direct surface albedo        [-]
-alndf = 0.1d0    ! Near-IR diffuse surface albedo       [-]
-
-!-- End BugsRad settings --
-
 
 ts_nudge = 3600.  ! Timescale of u/v nudging            [s]
 
-l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
 
@@ -106,6 +91,18 @@ debug_level   = 2
 
 &microphysics_setting
 micro_scheme = "simplified_ice"
+/
+
+&radiation_setting
+rad_scheme = "simplified",
+F0 = 70.0,
+F1 = 22.0,
+kappa = 85.0,
+Fs_list = 1212.75,
+eff_drop_radius = 1.e-5,
+alvdr = 0.1,
+gc = 0.86,
+omega = 0.9965,
 /
 
 &stats_setting

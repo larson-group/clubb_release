@@ -45,8 +45,6 @@ module nov11
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-    use model_flags, only: l_bugsrad  ! Variable(s)
-
     use stats_precision, only: time_precision ! Variable(s)
 
     use interpolation, only: linear_interpolation ! Procedure(s)
@@ -65,33 +63,37 @@ module nov11
 
     use cos_solar_zen_mod, only: cos_solar_zen
 
+    use parameters_radiation, only: &
+      F0, F1, Fs_list, cos_solar_zen_list, alvdr, kappa, omega, gc, &
+      eff_drop_radius, rad_scheme, l_fix_cos_solar_zen, nparam
+
     implicit none
 
     ! Local constants
 
-    integer, parameter ::  & 
-    nparam = 2 ! Number of Fs0 values in the SW radiation lists
+!   integer, parameter ::  & 
+!   nparam = 2 ! Number of Fs0 values in the SW radiation lists
 
     ! LW Radiative constants
-    real, parameter :: & 
-      F0   = 104.0,  & ! Coefficient for cloud top heating (see Stevens) [W/m^2]
-      F1   = 62.0,   & ! Coefficient for cloud base heating (see Stevens)[W/m^2]
-      kap  = 94.2      ! A "constant" according to Duynkerke eqn. 5,
+!   real, parameter :: & 
+!     F0   = 104.0,  & ! Coefficient for cloud top heating (see Stevens) [W/m^2]
+!     F1   = 62.0,   & ! Coefficient for cloud base heating (see Stevens)[W/m^2]
+!     kap  = 94.2      ! A "constant" according to Duynkerke eqn. 5,
                        ! where his value is 130 m^2/kg [m^2/kg]
 
     ! SW Radiative constants
-    real, parameter :: & 
-      radius = 1.0e-5, & ! Effective droplet radius                      [m]
-      A      = 0.1,    & ! Albedo -- sea surface, according to Lenderink [-]
-      gc     = 0.86,   & ! Asymmetry parameter, "g" in Duynkerke.        [-]
-      omega  = 0.9965    ! Single-scattering albedo                      [-]
+!   real, parameter :: & 
+!     radius = 1.0e-5, & ! Effective droplet radius                      [m]
+!     A      = 0.1,    & ! Albedo -- sea surface, according to Lenderink [-]
+!     gc     = 0.86,   & ! Asymmetry parameter, "g" in Duynkerke.        [-]
+!     omega  = 0.9965    ! Single-scattering albedo                      [-]
 
 
     ! Toggles for activating/deactivating forcings
     logical, parameter ::  & 
       l_subs_on   = .true., & 
-      l_lw_on     = .true., &  ! ( To set 1_sw_on = .false., set xi_abs < 0.0 )
-      l_fix_cos_solar_zen = .true. 
+      l_lw_on     = .true.     ! ( To set 1_sw_on = .false., set xi_abs < 0.0 )
+!     l_fix_cos_solar_zen = .true. 
 
     ! Toggle for centered/forward differencing (in interpolations)
     ! To use centered differencing, set the toggle to .true.
@@ -185,10 +187,9 @@ module nov11
 
     ! Working arrays for SW radiation interpolation
 
-    real, dimension(nparam) ::  & 
-    xilist, & ! Values of cosine of solar zenith angle corresponding 
-            !   to the values in Fslist
-    Fslist ! Values of Fs0 corresponding to the values in xilist.
+!   real, dimension(nparam) ::  & 
+!   xilist  ! Values of cosine of solar zenith angle corresponding 
+!           !   to the values in Fslist
 
 
     ! Additional SW radiative variables
@@ -276,13 +277,14 @@ module nov11
 ! Comment by Adam Smith on 26 June 2006
 !-----------------------------------------------------------------------
 
-    xilist(1) = 0.
-    xilist(2) = 1.
+!   xilist(1) = 0.
+!   xilist(2) = 1.
 
-    Fslist(1) = 1212.75
-    Fslist(2) = 1212.75
+!   Fslist(1) = 1212.75
+!   Fslist(2) = 1212.75
 
-    call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
+    call linear_interpolation( nparam, cos_solar_zen_list(1:nparam), &
+                               Fs_list(1:nparam), xi_abs, Fs0 )
 
 
 !-----------------------------------------------------------------------
@@ -503,7 +505,7 @@ module nov11
     ! We only implement this section if we choose not to use the
     ! BUGSRAD radiation scheme
     !---------------------------------------------------------------
-    if ( .not. l_bugsrad ) then
+    if ( trim( rad_scheme ) == "simplified" ) then
 
       !---------------------------------------------------------------
       ! This code transforms these profiles from CLUBB grid to COAMPS
@@ -528,7 +530,7 @@ module nov11
                      Frad_out, Frad_LW_out, Frad_SW_out, & 
                      radhtk, radht_LW_out, radht_SW_out, & 
                      gr%nnzp-1, l_center, & 
-                     xi_abs, F0, F1, kap, radius, A, gc, Fs0, omega, & 
+                     xi_abs, F0, F1, kappa, eff_drop_radius, real( alvdr ), gc, Fs0, omega, & 
                      l_sw_on, l_lw_on )
 
       !---------------------------------------------------------------
@@ -568,7 +570,22 @@ module nov11
       radht_SW(gr%nnzp) = 0.
       radht_LW(gr%nnzp) = 0.
 
-    end if ! ~ l_bugsrad
+      thlm_forcing(1:gr%nnzp) = radht(1:gr%nnzp)
+
+      ! Save LW and SW components of radiative heating and
+      ! radiative flux based on simplified radiation.
+      if ( l_stats_samp ) then
+        call stat_update_var( iradht_LW, radht_LW, zt )
+
+        call stat_update_var( iradht_SW, radht_SW, zt )
+
+        call stat_update_var( iFrad_SW, Frad_SW, zm )
+
+        call stat_update_var( iFrad_LW, Frad_LW, zm )
+
+      end if
+
+    end if ! simplifed radiation
 
 
 !---------------------------------------------------------------------
@@ -637,14 +654,9 @@ module nov11
 
     wm_zm = zt2zm(wm_zt)
 
-    ! Enter the final theta-l and rtm tendencies
+    ! Enter the final rtm tendency
     do k = 1, gr%nnzp, 1
 
-      if ( .not. l_bugsrad ) then
-        thlm_forcing(k) = radht(k)
-      else
-        thlm_forcing(k) = 0.
-      end if
 
       rtm_forcing(k) = 0.
     end do
@@ -656,19 +668,6 @@ module nov11
     if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
     if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
 
-
-    ! Save LW and SW components of radiative heating and
-    ! radiative flux based on simplified radiation.
-    if ( .not.l_bugsrad .and. l_stats_samp ) then
-      call stat_update_var( iradht_LW, radht_LW, zt )
-
-      call stat_update_var( iradht_SW, radht_SW, zt )
-
-      call stat_update_var( iFrad_SW, Frad_SW, zm )
-
-      call stat_update_var( iFrad_LW, Frad_LW, zm )
-
-    end if
 
 
     return

@@ -28,13 +28,15 @@ use grid_class, only: ddzm ! Procedure(s)
 
 use constants, only: Cp ! Variable(s)
 
+use parameters_radiation, only: F0, kappa
+
 implicit none
 
 ! External
 intrinsic :: exp
 
 ! Constant parameters
-real, parameter :: F0 = 74., ktemp = 130.
+!real, parameter :: F0 = 74., ktemp = 130.
 
 ! Input Variables
 real, dimension(gr%nnzp), intent(in) ::  & 
@@ -70,7 +72,7 @@ end do ! k=gr%nnzp..1
 
 do k = 1, gr%nnzp, 1
 
-  Frad(k) = F0 * EXP( -ktemp * 1.0 * LWP(k) )
+  Frad(k) = F0 * EXP( -kappa * 1.0 * LWP(k) )
 
 end do
 

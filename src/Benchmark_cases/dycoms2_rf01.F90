@@ -33,7 +33,7 @@ module dycoms2_rf01
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-    use model_flags, only: l_bugsrad ! Variable(s)
+    use parameters_radiation, only: rad_scheme ! Variable(s)
 
     use stats_precision, only: time_precision ! Variable(s)
 
@@ -48,6 +48,10 @@ module dycoms2_rf01
     use stats_variables, only:  & 
         izi, iradht_LW, zt, sfc, l_stats_samp ! Variable(s)
 
+    use parameters_radiation, only: &
+      F0,  & ! Variable(s)
+      F1,  &
+      kappa
 
     implicit none
 
@@ -56,9 +60,9 @@ module dycoms2_rf01
 
 ! Constant Parameters
     real, parameter ::  & 
-      lsdiv =  3.75e-6, & 
-      F0 = 70.0, F1 = 22.0,  & 
-      kay = 85.0
+      lsdiv =  3.75e-6
+!     F0 = 70.0, F1 = 22.0,  & 
+!     kay = 85.0
 
 ! Input Variables
     real, dimension(gr%nnzp), intent(in) ::  & 
@@ -138,7 +142,7 @@ module dycoms2_rf01
 
 ! Theta-l radiative tendency
 
-    if ( .not. l_bugsrad ) then
+    if ( trim( rad_scheme ) == "simplified" ) then
 
       ! Compute liquid water path from top of the model
       ! We define liquid water path on momentum levels
@@ -152,8 +156,8 @@ module dycoms2_rf01
       ! Compute IR radiative flux
 
       do i = 1, gr%nnzp, 1
-        Frad(i) = F0 * EXP( -kay * lwp(i) ) & 
-                + F1 * EXP( -kay * (lwp(1)-lwp(i)) )
+        Frad(i) = F0 * EXP( -kappa * lwp(i) ) & 
+                + F1 * EXP( -kappa * (lwp(1)-lwp(i)) )
         if ( zi > 0 .and. gr%zm(i) > zi ) then
           Frad(i) = Frad(i) & 
                   + rho_zm(i) * cp * lsdiv & 
@@ -172,14 +176,17 @@ module dycoms2_rf01
       if ( l_stats_samp ) then
         call stat_update_var( iradht_LW, radht, zt )
       end if
-    end if ! ~ l_bugsrad
+    else
 
-! Add heating rate to theta-l forcing
+      radht = 0.0 ! Computed elsewhere
 
-    if ( .not. l_bugsrad ) thlm_forcing = thlm_forcing + radht
+    end if ! simplified
 
+    ! Add heating rate to theta-l forcing
 
-! Test scalars with thetal and rt if desired
+   thlm_forcing = thlm_forcing + radht
+
+    ! Test scalars with thetal and rt if desired
     if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
     if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 

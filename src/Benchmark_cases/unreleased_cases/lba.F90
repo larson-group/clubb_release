@@ -41,8 +41,6 @@ subroutine lba_tndcy( time, &
 
 use grid_class, only: gr !  Variable(s)
 
-use model_flags, only: l_bugsrad ! Variable(s)
-
 use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
 use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
@@ -55,6 +53,8 @@ use array_index, only:  &
     iisclr_thl, iisclr_rt ! Variable(s)
 
 use interpolation, only: factor_interp ! Procedure(s)
+
+use parameters_radiation, only: rad_scheme ! Variable(s)
 
 implicit none
 
@@ -84,7 +84,7 @@ integer :: i1, i2
 wm_zt(1:gr%nnzp) = 0.0
 wm_zm(1:gr%nnzp) = 0.0
 
-if ( .not. l_bugsrad ) then
+if ( trim( rad_scheme ) == "simplified" ) then
 
   ! Calculate radiative heating rate
   if ( time <=  600. ) then
@@ -117,7 +117,7 @@ else ! Compute heating rate interactively with BUGSrad
 
   thlm_forcing = 0.0
 
-end if ! ~l_bugsrad
+end if ! Simplified radiation
 
 ! Boundary conditions
 thlm_forcing(1) = 0.0  ! Below surface

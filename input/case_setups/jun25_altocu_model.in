@@ -57,21 +57,6 @@ psfc = 574.87e2    ! Pressure at model base              [Pa]
 fcor = 8.9763e-5   ! Coriolis parameter                  [s^-1]
 T0   = 300.        ! Reference temperature (usually 300) [K]
 
-!-- BugsRad related settings -- only used when l_bugsrad = .true.--
-
-sol_const = 1367.0 ! Solar Constant [W/m^2]
-
-std_atmos_buffer = 10
-
-! Albedo values (for BugsRad Only)
-alvdr = 0.1d0    ! Visible direct surface albedo        [-]
-alvdf = 0.1d0    ! Visible diffuse surface albedo       [-]
-alndr = 0.1d0    ! Near-IR direct surface albedo        [-]
-alndf = 0.1d0    ! Near-IR diffuse surface albedo       [-]
-
-!-- End BugsRad settings --
-
-l_bugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 
 l_restart      = .false.  ! Flag for whether this is a restart run.
@@ -93,6 +78,21 @@ debug_level   = 2
 &microphysics_setting
 micro_scheme = "none"
 
+/
+
+&radiation_setting
+rad_scheme = "simplified",
+F0 = 107.0,
+F1 = 61.0,
+kappa = 100.,
+eff_drop_radius = 1.0e-5,
+alvdr = 0.1,
+gc = 0.85,
+omega = 0.992,
+cos_solar_zen_list = 0.0, 0.01, 0.1, 0.2, 0.3, 0.4,
+  0.5, 0.6, 0.7, 0.8, 0.9, 1.0,
+Fs_list = 0.0, 715.86, 1073.577, 1165.0905, 1204.7033, 1227.6898,
+  1243.1772, 1254.5893, 1263.5491, 1270.8668, 1277.0474, 1282.3994,
 /
 
 &stats_setting

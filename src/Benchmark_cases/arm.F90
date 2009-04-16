@@ -28,7 +28,7 @@ use grid_class, only: gr ! Variable(s)
 
 use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-use model_flags, only: l_bugsrad ! Variable(s)
+use parameters_radiation, only: rad_scheme ! Variable(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 
@@ -92,7 +92,7 @@ else
    a = ( true_time - (41400. + 10800. * (i1-1)) ) / 9000.
 end if
 
-if ( .not. l_bugsrad ) then
+if ( trim( rad_scheme ) == "simplified" ) then
 !  theta_tmp = ( 1. - a ) * ( atheta(i1) ) & 
 !            + a * ( atheta(i2) )
   theta_tmp = factor_interp( a, atheta(i2), atheta(i1) )
@@ -105,7 +105,7 @@ else ! Factor in radiation later
   theta_tmp = factor_interp( a, atheta(i2) + 0.0, atheta(i1) + 0.0 )
   rad_tmp   = 0.0
 
-end if ! ~ l_bugsrad
+end if
 
 !rt_tmp = ( 1. - a ) * art(i1) + a * art(i2)
 rt_tmp = factor_interp(a, art(i2), art(i1) )
@@ -143,8 +143,7 @@ rtm_forcing(1)  = 0.0
 thlm_forcing(1) = 0.0
 radht(1)        = 0.0
 
-if ( l_stats_samp .and. .not.l_bugsrad ) then
- 
+if ( l_stats_samp .and. trim( rad_scheme ) == "simplified" ) then
   call stat_update_var( iradht_LW, radht, zt )
 end if
 

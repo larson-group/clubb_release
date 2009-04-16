@@ -68,20 +68,7 @@ fcor = 0.000114566338 ! Coriolis parameter                  [s^-1]
 
 !T0   = 283.15        ! Reference temperature (usually 300) [K]
 T0    = 300
-!-- BugsRad related settings -- only used when l_bugsrad = .true.--
-sol_const = 1321.0 ! Solar Constant for July [W/m^2]
 
-std_atmos_buffer = 45
-
-! Albedo values (for BugsRad Only)
-alvdr = 0.23d0    ! Visible direct surface albedo        [-]
-alvdf = 0.23d0    ! Visible diffuse surface albedo       [-]
-alndr = 0.23d0    ! Near-IR direct surface albedo        [-]
-alndf = 0.23d0    ! Near-IR diffuse surface albedo       [-]
-
-!-- End BugsRad settings --
-
-l_bugsrad      = .true.  ! Flag for BUGSrad interactive radiation scheme.
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 l_soil_veg     = .true. ! Flag for simple surface scheme
 
@@ -103,6 +90,22 @@ debug_level   = 2
 
 &microphysics_setting
 micro_scheme = "none"
+/
+
+&radiation_setting
+rad_scheme = "bugsrad",
+
+! BugsRad related settings
+sol_const = 1321.0 ! Solar Constant for July [W/m^2]
+
+std_atmos_buffer = 45
+
+! Albedo values
+alvdr = 0.23d0    ! Visible direct surface albedo        [-]
+alvdf = 0.23d0    ! Visible diffuse surface albedo       [-]
+alndr = 0.23d0    ! Near-IR direct surface albedo        [-]
+alndf = 0.23d0    ! Near-IR diffuse surface albedo       [-]
+
 /
 
 &stats_setting

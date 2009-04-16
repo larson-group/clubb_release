@@ -30,7 +30,7 @@ subroutine fire_tndcy &
 
 use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-use model_flags, only: l_bugsrad  ! Variable(s)
+use parameters_radiation, only: rad_scheme  ! Variable(s)
 
 use grid_class, only: gr ! Variable(s)
 
@@ -101,12 +101,14 @@ thlm_forcing = 0.0
 rtm_forcing = 0.0
 
 ! Use cloud_rad to compute radiation
-if ( .not. l_bugsrad ) then
-  call cloud_rad( rho, rcm, exner, Frad, radht, thlm_forcing )
-end if
+if ( trim( rad_scheme ) == "simplified" ) then
 
-if ( .not. l_bugsrad .and. l_stats_samp ) then
-  call stat_update_var( iradht_LW, radht, zt )
+  call cloud_rad( rho, rcm, exner, Frad, radht, thlm_forcing )
+
+  if ( l_stats_samp ) then
+    call stat_update_var( iradht_LW, radht, zt )
+  end if
+
 end if
 
 ! Test scalars with thetal and rt if desired

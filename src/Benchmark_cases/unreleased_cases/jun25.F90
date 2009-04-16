@@ -42,8 +42,6 @@
 
   use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-  use model_flags, only: l_bugsrad ! Variable(s)
-
 !  use model_flags, only: l_coamps_micro, l_icedfs ! Variables(s)
 
   use stats_precision, only: time_precision ! Variable(s)
@@ -65,6 +63,11 @@
       zt, zm, l_stats_samp
   
   use interpolation, only: lin_int ! Procedure(s) 
+
+  use parameters_radiation, only: &
+    F0, F1, Fs_list, cos_solar_zen_list, alvdr, kappa, omega, gc, &
+    eff_drop_radius, rad_scheme, nparam
+
 
   implicit none
 
@@ -249,26 +252,26 @@
   !---------------------------------------------------------------
   ! LW Radiative constants
   !---------------------------------------------------------------
-  real, parameter ::  & 
-  F0   = 107.0,  & ! [W/m^2]
-  F1   = 61.0,   & ! [W/m^2]
-  kap  = 100.0  ! [m^2/kg]
+! real, parameter ::  & 
+! F0   = 107.0,  & ! [W/m^2]
+! F1   = 61.0,   & ! [W/m^2]
+! kap  = 100.0  ! [m^2/kg]
 
   !---------------------------------------------------------------
   ! Working arrays for SW radiation interpolation
   !---------------------------------------------------------------
-  integer, parameter :: nparam = 12
+! integer, parameter :: nparam = 12
 
-  real, dimension(nparam) :: xilist, Fslist
+! real, dimension(nparam) :: xilist, Fslist
 
   !---------------------------------------------------------------
   ! SW Radiative constants
   !---------------------------------------------------------------
-  real, parameter ::  & 
-  radius = 1.0e-5, & 
-  AA     = 0.1, & 
-  gc     = 0.85, & 
-  omega  = 0.992
+! real, parameter ::  & 
+! radius = 1.0e-5, & 
+! AA     = 0.1, & 
+! gc     = 0.85, & 
+! omega  = 0.992
 
   !---------------------------------------------------------------
   ! Additional SW radiative variables
@@ -353,33 +356,38 @@ end if
 ! The linear_interpolation function returns Fs0.                       c
 !-----------------------------------------------------------------------
 
-xilist(1) = 0.0
-xilist(2) = 0.01
-xilist(3) = 0.1
-xilist(4) = 0.2
-xilist(5) = 0.3
-xilist(6) = 0.4
-xilist(7) = 0.5
-xilist(8) = 0.6
-xilist(9) = 0.7
-xilist(10) = 0.8
-xilist(11) = 0.9
-xilist(12) = 1.0
+ !xilist(1) = 0.0
+ !xilist(2) = 0.01
+ !xilist(3) = 0.1
+ !xilist(4) = 0.2
+ !xilist(5) = 0.3
+ !xilist(6) = 0.4
+ !xilist(7) = 0.5
+ !xilist(8) = 0.6
+ !xilist(9) = 0.7
+ !xilist(10) = 0.8
+ !xilist(11) = 0.9
+ !xilist(12) = 1.0
 
-Fslist(1)  = 0.0
-Fslist(2)  = 715.86
-Fslist(3)  = 1073.577
-Fslist(4)  = 1165.0905
-Fslist(5)  = 1204.7033
-Fslist(6)  = 1227.6898
-Fslist(7)  = 1243.1772
-Fslist(8)  = 1254.5893
-Fslist(9)  = 1263.5491
-Fslist(10) = 1270.8668
-Fslist(11) = 1277.0474
-Fslist(12) = 1282.3994
+ !Fslist(1)  = 0.0
+ !Fslist(2)  = 715.86
+ !Fslist(3)  = 1073.577
+ !Fslist(4)  = 1165.0905
+ !Fslist(5)  = 1204.7033
+ !Fslist(6)  = 1227.6898
+ !Fslist(7)  = 1243.1772
+ !Fslist(8)  = 1254.5893
+ !Fslist(9)  = 1263.5491
+ !Fslist(10) = 1270.8668
+ !Fslist(11) = 1277.0474
+ !Fslist(12) = 1282.3994
 
-call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
+ !call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
+
+    call linear_interpolation( nparam, cos_solar_zen_list(1:nparam), &
+                               Fs_list(1:nparam), xi_abs, Fs0 )
+
+
 
 !-----------------------------------------------------------------------
 ! Subsidence Parameters
@@ -594,7 +602,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   ! BUGSrad interactive radiation scheme.
   !---------------------------------------------------------------
 
-  if ( .not. l_bugsrad ) then
+  if ( trim( rad_scheme ) == "simplified" ) then
 
   !----------------------------------------------------------------
   ! This code transforms these profiles from CLUBB grid to COAMPS
@@ -614,13 +622,13 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   ! grid method.  All input and output profiles use the COAMPS
   ! grid setup.
   !----------------------------------------------------------------
-    call rad_lwsw(rcm_rad, rho_rad, dsigm, & 
-                  coamps_zm, coamps_zt, & 
-                  Frad_out, Frad_LW_out, Frad_SW_out, & 
-                  radhtk, radht_LW_out, radht_SW_out, & 
-                  gr%nnzp-1, l_center, & 
-                  xi_abs, F0, F1, kap, radius, AA, gc, Fs0, omega, & 
-                  l_sw_on, l_lw_on)
+    call rad_lwsw( rcm_rad, rho_rad, dsigm, & 
+                   coamps_zm, coamps_zt, & 
+                   Frad_out, Frad_LW_out, Frad_SW_out, & 
+                   radhtk, radht_LW_out, radht_SW_out, & 
+                   gr%nnzp-1, l_center, & 
+                   xi_abs, F0, F1, kappa, eff_drop_radius, real( alvdr ), gc, Fs0, omega, & 
+                   l_sw_on, l_lw_on )
 
 
   !-------------------------------------------------------------
@@ -659,8 +667,24 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
     radht(gr%nnzp)    = 0.
     radht_SW(gr%nnzp) = 0.
     radht_LW(gr%nnzp) = 0.
+    !---------------------------------------------------------------
+    ! Enter the final theta-l and rtm tendencies
+    !---------------------------------------------------------------
+    thlm_forcing(1:gr%nnzp) = radht(1:gr%nnzp)
 
-  END IF ! ~l_bugsrad
+    if ( l_stats_samp ) then
+ 
+      call stat_update_var( iradht_LW, radht_LW, zt )        
+
+      call stat_update_var( iradht_SW, radht_SW, zt )
+
+      call stat_update_var( iFrad_SW, Frad_SW, zm )
+
+      call stat_update_var( iFrad_LW, Frad_LW, zm )
+
+    end if
+
+  end if ! Simplified radiation
 
 
   !---------------------------------------------------------------
@@ -822,18 +846,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
 
   wm_zm = zt2zm(wm_zt)
 
-
-  !---------------------------------------------------------------
-  ! Enter the final theta-l and rtm tendencies
-  !---------------------------------------------------------------
-  DO k = 1, gr%nnzp, 1
-    IF ( .not. l_bugsrad ) THEN
-      thlm_forcing(k) = radht(k)
-    ELSE
-      thlm_forcing(k) = 0.
-    END IF
-    rtm_forcing(k) = 0.
-  END DO
+  rtm_forcing(1:gr%nnzp) = 0.
 
   ! Test scalars with thetal and rt if desired
   if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
@@ -841,19 +854,6 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
 
   if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
   if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
-
-  if ( .not.l_bugsrad .and. l_stats_samp ) then
- 
-    call stat_update_var( iradht_LW, radht_LW, zt )        
-
-    call stat_update_var( iradht_SW, radht_SW, zt )
-
-    call stat_update_var( iFrad_SW, Frad_SW, zm )
-
-    call stat_update_var( iFrad_LW, Frad_LW, zm )
-
-  end if
- 
 
   return
   end subroutine jun25_altocu_tndcy

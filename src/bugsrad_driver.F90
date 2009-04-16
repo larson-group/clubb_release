@@ -4,18 +4,12 @@ module bugsrad_clubb_mod
 
   implicit none
 
-  public :: bugsrad_clubb, set_albedo
+  public :: bugsrad_clubb
 
   ! Constant parameters
   integer, private, parameter :: &
     nlen = 1, &   ! Length of the total domain
     slen = 1      ! Length of the sub domain
-
-  double precision, private, dimension(nlen) :: &
-    alvdr = 0.1d0, & ! Visible direct surface albedo        [-]
-    alvdf = 0.1d0, & ! Visible diffuse surface albedo       [-]
-    alndr = 0.1d0, & ! Near-IR direct surface albedo        [-]
-    alndf = 0.1d0    ! Near-IR diffuse surface albedo       [-]
 
   private ! Default Scope
 
@@ -80,12 +74,17 @@ module bugsrad_clubb_mod
       iFrad_SW_up, iFrad_LW_up, &
       iFrad_SW_down, iFrad_LW_down
 
-    use parameters_model, only: std_atmos_buffer, sol_const
+    use parameters_radiation, only: &
+      std_atmos_buffer, & ! Variable(s)
+      sol_const, &
+      alvdr, &
+      alvdf, &
+      alndr, &
+      alndf
 
     implicit none
 
     intrinsic :: dble, real
-
 
     ! Input Variables
     real, intent(in) :: &
@@ -247,36 +246,36 @@ module bugsrad_clubb_mod
 
     if ( alt(nz) > std_alt(std_atmos_dim) ) then
 
-       write(fstderr,*) "The CLUBB model grid (for zm levels) contains an ",  &
-                        "altitude above the top of the standard atmosphere ",  &
-                        "profile."
-       write(fstderr,*) "Top of CLUBB model zm grid =", alt(nz), "m."
-       write(fstderr,*) "Top of standard atmosphere profile =",  &
-                        std_alt(std_atmos_dim), "m."
-       write(fstderr,*) "Reduce the vertical extent of the CLUBB model grid."
-       ! CLUBB zm grid exceeds a 50 km altitude
-       stop "bugsrad_clubb: cannot handle this altitude"
+      write(fstderr,*) "The CLUBB model grid (for zm levels) contains an ",  &
+                       "altitude above the top of the standard atmosphere ",  &
+                       "profile."
+      write(fstderr,*) "Top of CLUBB model zm grid =", alt(nz), "m."
+      write(fstderr,*) "Top of standard atmosphere profile =",  &
+                       std_alt(std_atmos_dim), "m."
+      write(fstderr,*) "Reduce the vertical extent of the CLUBB model grid."
+      ! CLUBB zm grid exceeds a 50 km altitude
+      stop "bugsrad_clubb: cannot handle this altitude"
 
     else
 
-       j = 1 ! initial altitude
-       do while ( std_alt(j) < alt(nz) )
-          j = j + 1
-          if ( (j + std_atmos_buffer ) > std_atmos_dim ) then
-             write(fstderr,*) "The value of j + std_atmos_buffer exceeds ",  &
-                              "the value of std_atmos_dim."
-             write(fstderr,*) "std_atmos_buffer = ", std_atmos_buffer
-             write(fstderr,*) "j = ", j
-             write(fstderr,*) "std_atmos_dim = ", std_atmos_dim
-             write(fstderr,*) "Either reduce the value of std_atmos_buffer ",  &
-                              "or reduce the vertical extent of the CLUBB ",  &
-                              "model grid (for zm levels)."
-             ! The value of j + std_atmos_buffer exceeds std_atmos_dim
-             stop "bugsrad_clubb: cannot handle this altitude"
-          endif
-       enddo
+      j = 1 ! initial altitude
+      do while ( std_alt(j) < alt(nz) )
+        j = j + 1
+        if ( (j + std_atmos_buffer ) > std_atmos_dim ) then
+          write(fstderr,*) "The value of j + std_atmos_buffer exceeds ",  &
+                           "the value of std_atmos_dim."
+          write(fstderr,*) "std_atmos_buffer = ", std_atmos_buffer
+          write(fstderr,*) "j = ", j
+          write(fstderr,*) "std_atmos_dim = ", std_atmos_dim
+          write(fstderr,*) "Either reduce the value of std_atmos_buffer ",  &
+                           "or reduce the vertical extent of the CLUBB ",  &
+                           "model grid (for zm levels)."
+          ! The value of j + std_atmos_buffer exceeds std_atmos_dim
+          stop "bugsrad_clubb: cannot handle this altitude"
+        end if
+      end do
 
-    endif
+    end if
 
     ! Add the standard atmospheric profile above the linear interpolation
     do i = 1, std_atmos_buffer, 1
@@ -335,7 +334,7 @@ module bugsrad_clubb_mod
 ! do i=1, (nz-1)+buffer
 !   write(10,'(i4,9f12.6)') i, pinmb(1,i), playerinmb(1,i),T_in_K(1,i),         &
 !   sp_humidity(1,i), 100000.0*o3l(1,i), rcm2(1,i), rcil(1,i),cf2(1,i),dpl(1,i)
-! enddo
+! end do
 ! write(10,'(a4,a12,3f12.6)') "","", playerinmb(1,nz+buffer), ts(1), amu0(1)
 ! close(10)
 ! pause
@@ -344,10 +343,10 @@ module bugsrad_clubb_mod
 !  print *, "sp_humidity = ", sp_humidity
 
     call bugs_rad( nlen, slen, (nz-1)+buffer, playerinmb,          &
-                   pinmb, dpl, T_in_K, sp_humidity,                 &
+                   pinmb, dpl, T_in_K, sp_humidity,                &
                    rcm2, rcil, rsnwm2, o3l,                        &
                    ts, amu0, slr, alvdf,                           &
-                   alndf, alvdr, alndr, dble( sol_const ),         &
+                   alndf, alvdr, alndr, sol_const,                 &
                    dble( grav ), dble( Cp ), radht_SW2, radht_LW2, &
                    Frad_dSW, Frad_uSW, Frad_dLW, Frad_uLW,         &
                    cf2 )
@@ -406,31 +405,6 @@ module bugsrad_clubb_mod
 
     return
   end subroutine bugsrad_clubb
-!-------------------------------------------------------------------------------
-
-!-------------------------------------------------------------------------------
-  subroutine set_albedo( alvdr_in, alvdf_in, alndr_in, alndf_in )
-!
-! Description:
-!   This subroutine sets the albedo values for use in BUGSrad.
-!
-!-------------------------------------------------------------------------------
-    implicit none
-
-    double precision, intent(in) :: &
-      alvdr_in, & ! Visible direct surface albedo        [-]
-      alvdf_in, & ! Visible diffuse surface albedo       [-]
-      alndr_in, & ! Near-IR direct surface albedo        [-]
-      alndf_in    ! Near-IR diffuse surface albedo       [-]
-    !-------------------------------------------------------------
-
-    alvdr = alvdr_in
-    alvdf = alvdf_in
-    alndr = alndr_in
-    alndf = alndf_in
-
-    return 
-  end subroutine set_albedo
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

@@ -15,7 +15,7 @@ module dycoms2_rf02
   contains
 
 !----------------------------------------------------------------------
-  SUBROUTINE dycoms2_rf02_tndcy( rho, & 
+  subroutine dycoms2_rf02_tndcy( rho, & 
                                  rho_zm, rtm, rcm, exner,  & 
                                  err_code, &
                                  wm_zt, wm_zm, thlm_forcing, rtm_forcing,  & 
@@ -39,7 +39,7 @@ module dycoms2_rf02
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-    use model_flags, only: l_bugsrad  ! Variable(s)
+    use parameters_radiation, only: rad_scheme  ! Variable(s)
 
     use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
@@ -48,19 +48,24 @@ module dycoms2_rf02
 
     use stats_type, only: stat_update_var, stat_update_var_pt ! Procedure(s)
 
-    USE stats_variables, only:  & 
+    use stats_variables, only:  & 
         iradht_LW, izi, sfc, zt, l_stats_samp ! Variable(s)
 
     use interpolation, only: lin_int
+
+    use parameters_radiation, only: &
+      F0,  & ! Variable(s)
+      F1,  &
+      kappa
 
     implicit none
 
     ! Constant parameters
     real, parameter ::  & 
-      ls_div = 3.75e-6, & 
-      kap    = 85.0,    & ! [m^2/kg]
-      F0     = 70.0,    & ! [W/m^2]
-      F1     = 22.0       ! [W/m^2]
+      ls_div = 3.75e-6
+!     kap    = 85.0       ! [m^2/kg]
+!     F0     = 70.0,    & ! [W/m^2]
+!     F1     = 22.0       ! [W/m^2]
 
     ! Input Variables
 
@@ -100,9 +105,9 @@ module dycoms2_rf02
 
     ! Large-scale subsidence
 
-    DO k = 2, gr%nnzp, 1
+    do k = 2, gr%nnzp, 1
       wm_zt(k) = -ls_div * gr%zt(k)
-    END DO
+    end do
 
     ! Boundary condition on zt
     wm_zt(1) = 0.0        ! Below surface
@@ -113,7 +118,7 @@ module dycoms2_rf02
     wm_zm(1) = 0.0        ! At surface
     wm_zm(gr%nnzp) = 0.0  ! Model top
 
-    IF ( .not. l_bugsrad ) THEN
+    if ( trim( rad_scheme ) == "simplified" ) then
 
       ! Radiation
 
@@ -121,17 +126,17 @@ module dycoms2_rf02
       ! We define liquid water path on momentum levels
 
       LWP(gr%nnzp) = 0.0
-      DO k = gr%nnzp-1, 1, -1
+      do k = gr%nnzp-1, 1, -1
         LWP(k) = LWP(k+1) + rho(k+1)*rcm(k+1)/gr%dzt(k+1)
-      END DO  ! k = gr%nnzp..1
+      end do  ! k = gr%nnzp..1
 
       ! Find the height of the isotherm rtm = 8.0 g/kg.
 
       k = 2
-      DO WHILE ( k <= gr%nnzp .AND. rtm(k) > 8.0e-3 )
+      do while ( k <= gr%nnzp .and. rtm(k) > 8.0e-3 )
         k = k + 1
-      END DO
-      IF ( k == gr%nnzp+1 .or. k == 2 ) THEN
+      end do
+      if ( k == gr%nnzp+1 .or. k == 2 ) then
         write(fstderr,*) "Identification of 8.0 g/kg level failed"
         write(fstderr,*) "Subroutine: dycoms2_rf02_tndcy. " & 
           // "File: dycoms2_rf02.F"
@@ -139,71 +144,72 @@ module dycoms2_rf02
         write(fstderr,*) "rtm(k) = ", rtm(k)
         err_code = clubb_rtm_level_not_found
         return
-      END IF
+      end if
 !  z_i = ( (gr%zt(k)-gr%zt(k-1))/(rtm(k)-rtm(k-1)) ) &
 !      * (8.0e-3-rtm(k-1)) + gr%zt(k-1)
 
       z_i = lin_int( 8.0e-3, rtm(k), rtm(k-1), gr%zt(k), gr%zt(k-1) )
 !         Compute the Heaviside step function for z - z_i.
 
-      DO k = 1, gr%nnzp, 1
-        IF ( gr%zm(k) - z_i  <  0.0 ) THEN
+      do k = 1, gr%nnzp, 1
+        if ( gr%zm(k) - z_i  <  0.0 ) then
           Heaviside(k) = 0.0
-        ELSE IF ( gr%zm(k) - z_i  ==  0.0 ) THEN
+        else if ( gr%zm(k) - z_i  ==  0.0 ) then
           Heaviside(k) = 0.5
-        ELSE IF ( gr%zm(k) - z_i  >  0.0 ) THEN
+        else if ( gr%zm(k) - z_i  >  0.0 ) then
           Heaviside(k) = 1.0
-        END IF
-      END DO
+        end if
+      end do
 
 !         Compute radiative flux profile (Frad).
 !         Radiative flux is defined on momentum levels.
 
-      DO k = 1, gr%nnzp, 1
+      do k = 1, gr%nnzp, 1
 
-        Frad(k) = F0 * EXP( -kap * LWP(k) ) & 
-                + F1 * EXP( -kap * (LWP(1) - LWP(k)) )
+        Frad(k) = F0 * EXP( -kappa * LWP(k) ) & 
+                + F1 * EXP( -kappa * (LWP(1) - LWP(k)) )
 
-        IF ( Heaviside(k) > 0.0 ) THEN
+        if ( Heaviside(k) > 0.0 ) then
           Frad(k) = Frad(k) & 
                   + rho_zm(k) * Cp * ls_div * Heaviside(k) & 
                     * ( 0.25 * ((gr%zm(k)-z_i)**(4.0/3.0)) & 
                   + z_i * ((gr%zm(k)-z_i)**(1.0/3.0)) )
-        END IF
+        end if
 
-      END DO
+      end do
 
-! Compute the radiative heating rate.
-! The radiative heating rate is defined on thermodynamic levels.
+      ! Compute the radiative heating rate.
+      ! The radiative heating rate is defined on thermodynamic levels.
 
-      DO k = 2, gr%nnzp, 1
+      do k = 2, gr%nnzp, 1
         radht(k) = ( 1.0 / exner(k) ) * ( -1.0/(Cp*rho(k)) ) & 
                  * ( Frad(k) - Frad(k-1) ) * gr%dzt(k)
-      END DO
+      end do
       radht(1) = radht(2)
 
       if ( l_stats_samp ) then
-
         call stat_update_var( iradht_LW, radht, zt )
-      endif
+      end if
 
-    END IF ! ~ l_bugsrad
-
-! Enter the final theta-l and rtm tendencies
-
-    IF ( .not. l_bugsrad ) THEN
       thlm_forcing(1:gr%nnzp) = radht(1:gr%nnzp)
-    ELSE
-      thlm_forcing(1:gr%nnzp) = 0.0
-    END IF
 
+    else
+      ! Compute heating rate elsewhere
+      radht(1:gr%nnzp)        = 0.0
+      thlm_forcing(1:gr%nnzp) = 0.0
+
+    end if ! simplified
+
+    ! Enter the final rtm tendency
+    
     rtm_forcing(1:gr%nnzp) = 0.0
 
-! Update surface statistics
+    ! Update surface statistics
     if ( l_stats_samp ) then
 
       call stat_update_var_pt( izi, 1, z_i, sfc )
-    endif
+
+    end if
 
     ! Test scalars with thetal and rt if desired
     if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
@@ -212,8 +218,8 @@ module dycoms2_rf02
     if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
     if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
 
-    RETURN
-  END SUBROUTINE dycoms2_rf02_tndcy
+    return
+  end subroutine dycoms2_rf02_tndcy
 
 
 !----------------------------------------------------------------------
