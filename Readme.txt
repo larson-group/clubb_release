@@ -145,7 +145,10 @@ Requirements:
 A., B., C., & D. as above.
 
 Build:
-Do 1, 2, & 3 as above.
+Do 1, 2, & 3 as above.  Important Note: The host model, CLUBB, and ancillary 
+programs such as netCDF and MPI need to be compiled using the same version 
+of Fortran and with the same compiler flags.  Not using the same compiler and 
+flags may cause errors and/or spurious results. 
 
 Optionally, you can safely remove everything but libclubb_param.a from the "all" section
 of the compile.bash script if you only want to use CLUBB in a host model.
