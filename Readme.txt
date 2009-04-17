@@ -317,8 +317,10 @@ periods.
 
 If you have MATLAB and Linux, you can conveniently drive this MATLAB 
 script using the bash script postprocessing/plotgen/plotgen.sh.  
-However, you will need to customize plotgen.sh for your computer.  
-See postprocessing/plotgen/README for more information on plotgen.sh.
+However, you will need to customize plotgen.sh and generate_plots.sh
+for your computer.  For hints on how to do this, search these two files 
+for the phrase "External Use".  See postprocessing/plotgen/README for 
+more information on plotgen.sh.
 
 Otherwise, you can view the raw CLUBB output files in GrADS or netCDF
 format using a plotting program such as GrADS (http://www.iges.org/grads/).
