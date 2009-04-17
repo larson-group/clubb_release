@@ -14,6 +14,7 @@
 ../src/Benchmark_cases/rad_lwsw.F90
 ../src/Benchmark_cases/surface_flux.F90
 ../src/Benchmark_cases/wangara.F90
+../src/Benchmark_cases/surface_flux.F90
 ../src/clubb_driver.F90
 ../src/bugsrad_driver.F90
 ../src/coamps_micro_driver.F90
@@ -25,6 +26,7 @@
 ../src/recl.inc
 ../src/soil_vegetation.F90
 ../src/sounding.F90
+../src/input_reader.F90
 ../src/std_atmosphere_mod.F90
 ../src/inputfields.F90
 ../src/inputgrads.F90

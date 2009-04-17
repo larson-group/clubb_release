@@ -31,87 +31,87 @@ module clubb_driver
   integer, private ::  & 
     nzmax,     & ! Vertical extent in levels              [#]
     grid_type    ! 1 ==> evenly-spaced grid levels
-                 ! 2 ==> stretched (unevenly-spaced) grid entered on
-                 !       thermodynamic grid levels; momentum levels
-                 !       halfway between thermodynamic levels (style
-                 !       of SAM stretched grid).
-                 ! 3 ==> stretched (unevenly-spaced) grid entered on
-                 !       momentum grid levels; thermodynamic levels
-                 !       halfway between momentum levels (style
-                 !       of WRF stretched grid).
+  !                2 ==> stretched (unevenly-spaced) grid entered on
+  !                      thermodynamic grid levels; momentum levels
+  !                      halfway between thermodynamic levels (style
+  !                      of SAM stretched grid).
+  !                3 ==> stretched (unevenly-spaced) grid entered on
+  !                      momentum grid levels; thermodynamic levels
+  !                      halfway between momentum levels (style
+  !                      of WRF stretched grid).
 
   real, private ::  & 
     deltaz,  & ! Change per grid level                 [m]
     zm_init    ! Initial point on the momentum grid    [m]
 
-!$omp threadprivate(nzmax, grid_type, zm_init, deltaz)
+  !$omp threadprivate(nzmax, grid_type, zm_init, deltaz)
 
-! For grid_type 2 or 3 (stretched grid cases)
+  ! For grid_type 2 or 3 (stretched grid cases)
   character(len=100), private :: & 
     zt_grid_fname, & ! Path and filename of thermodynamic level altitudes
     zm_grid_fname    ! Path and filename of momentum level altitudes
 
-!$omp threadprivate(zt_grid_fname, zm_grid_fname)
+  !$omp threadprivate(zt_grid_fname, zm_grid_fname)
 
   integer, private ::  & 
     day, month, year ! Day of start of simulation
 
-!$omp threadprivate(day, month, year)
+  !$omp threadprivate(day, month, year)
 
   real, private ::  & 
     rlat,  & ! Latitude  [Degrees North]
     rlon     ! Longitude [Degrees East]
 
-!$omp threadprivate(rlat, rlon)
+  !$omp threadprivate(rlat, rlon)
 
   character(len=50), private ::  & 
     runtype ! String identifying the model case; e.g. bomex
 
-!$omp threadprivate(runtype)
+  !$omp threadprivate(runtype)
 
   integer, private :: &
     sfctype ! 0: fixed sfc sensible and latent heat fluxes as
-            !    given in namelist
-            ! 1: bulk formula: uses given surface temperature
-            !    and assumes over ocean
+  !              given in namelist
+  !           1: bulk formula: uses given surface temperature
+  !              and assumes over ocean
 
-!$omp threadprivate(sfctype)
+  !$omp threadprivate(sfctype)
 
   real(kind=time_precision), private :: & 
     time_initial,  & ! Time of start of simulation     [s]
     time_final,    & ! Time end of simulation          [s]
     time_spinup,   & ! Time end of spin up period      [s]
     time_current     ! Current time of simulation      [s]
-!$omp threadprivate(time_initial, time_final, time_spinup, &
-!$omp               time_current)
+  !$omp threadprivate(time_initial, time_final, time_spinup, &
+  !$omp               time_current)
 
   real(kind=time_precision), private ::  & 
     dtmain,      & ! Main model timestep                      [s]
     dtclosure,   & ! Closure model timestep                   [s]
     dt             ! Current model timestep (based on spinup) [s]
-!$omp threadprivate(dtmain, dtclosure, dt)
+  !$omp threadprivate(dtmain, dtclosure, dt)
 
   contains
 
-!-----------------------------------------------------------------------
+  !-----------------------------------------------------------------------
   subroutine run_clubb & 
              ( params, runfile, err_code, l_stdout, l_input_fields )
-!       Description:
-!       Subprogram to integrate the pde equations for pdf closure.
-!       This is the standard call.
+    !       Description:
+    !       Subprogram to integrate the pde equations for pdf closure.
+    !       This is the standard call.
 
-!       Calls:  subroutine initialize_clubb (once)
-!          subroutine advance_clubb_forcings (ifinal times)
-!          subroutine hoc_closure_timestep (ifinal*niterlong times)
-!          subroutine deallocate_model_arrays (once)
-!          function invalid_model_arrays
-!          subroutine set_fields (passed as a parameter)
+    !       Calls:  subroutine initialize_clubb (once)
+    !          subroutine advance_clubb_forcings (ifinal times)
+    !          subroutine hoc_closure_timestep (ifinal*niterlong times)
+    !          subroutine deallocate_model_arrays (once)
+    !          function invalid_model_arrays
+    !          subroutine set_fields (passed as a parameter)
 
-!       Output:
-!         err_code:  An error code is returned indicating the status of the
-!         model. See error_code.F.
+    !       Output:
+    !         err_code:  An error code is returned indicating the status of the
+    !         model. See error_code.F.
 
-!-----------------------------------------------------------------------
+    !-----------------------------------------------------------------------
 
     use grid_class, only: gr ! Variable(s)
 
@@ -138,7 +138,7 @@ module clubb_driver
       sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, & ! Variables
       wpsclrp, wpsclrp_sfc,  & 
       edsclrm, edsclrm_forcing, wpedsclrp_sfc
-      
+
 
     use numerical_check, only: invalid_model_arrays ! Procedure(s)
 
@@ -240,7 +240,7 @@ module clubb_driver
       l_uv_nudge,     & ! Whether to adjust the winds within the timestep
       l_restart,      & ! Flag for restarting from GrADS file
       l_tke_aniso       ! For anisotropic turbulent kinetic energy,
-                        ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+    ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
     character(len=6) :: &
       saturation_formula ! "bolton" approx. or "flatau" approx.
 
@@ -525,7 +525,7 @@ module clubb_driver
 
     end if ! clubb_at_least_debug_level(1)
 
-!----------------------------------------------------------------------
+    !----------------------------------------------------------------------
 
     ! Allocate stretched grid altitude arrays.
     allocate( momentum_heights(1:nzmax),  & 
@@ -759,7 +759,7 @@ module clubb_driver
     return
   end subroutine run_clubb
 
-!-----------------------------------------------------------------------
+  !-----------------------------------------------------------------------
   subroutine initialize_clubb &
              ( iunit, runfile, forcings_file_path, psfc, &
                thlm, rtm, um, vm, ug, vg, wp2, wp2_zt, up2, vp2, rcm, &
@@ -769,12 +769,12 @@ module clubb_driver
                Kh_zt, Kh_zm, um_ref, vm_ref, & 
                hydromet, Ncnm, &
                sclrm, edsclrm )
-! Description:
-!   Execute the necessary steps for the initialization of the
-!   CLUBB model run.
-! References:
-!   None
-!-----------------------------------------------------------------------
+    ! Description:
+    !   Execute the necessary steps for the initialization of the
+    !   CLUBB model run.
+    ! References:
+    !   None
+    !-----------------------------------------------------------------------
 
     use constants, only:  & 
       Cp,  &  ! Variable(s)
@@ -895,14 +895,15 @@ module clubb_driver
 
     integer :: k, err_code
 
-!-----------------------------------------------------------------------
+    character(len=50) :: theta_type
+    !-----------------------------------------------------------------------
 
     err_code = clubb_no_error
 
     ! Read sounding information
 
     call read_sounding( iunit, runfile, runtype, &          ! Intent(in) 
-                        thlm, rtm, um, vm, ug, vg,  &       ! Intent(out)
+                        thlm, theta_type, rtm, um, vm, ug, vg,  &       ! Intent(out)
                         sclrm, edsclrm )                    ! Intent(out)
 
 
@@ -924,13 +925,15 @@ module clubb_driver
 
     ! Compute initial theta-l
 
-    select case ( trim( runtype ) )
-    case ( "dycoms2_rf01", "astex_a209", "nov11_altocu", & 
-           "clex9_nov02", "clex9_oct14", "dycoms2_rf02" )
+    select case ( trim( theta_type ) )
+      !select case ( trim( runtype ) )
+    case ( "thetal[K]" )
+      !case ( "dycoms2_rf01", "astex_a209", "nov11_altocu", &
+      !      "clex9_nov02", "clex9_oct14", "dycoms2_rf02" )
       ! thlm profile that is initially saturated at points.
       ! thlm profile remains the same as in the input sounding.
       ! use iterative method to find initial rcm.
-      do k = 1, gr%nnzp, 1
+      do k =1, gr%nnzp, 1
         rcm(k) = sat_rcm( thlm(k), rtm(k), p_in_Pa(k), exner(k) )
       end do
 
@@ -1026,26 +1029,26 @@ module clubb_driver
       em(:) = emin
 
 #ifdef UNRELEASED_CODE
-    ! March 2000 ARM case
+      ! March 2000 ARM case
     case ( "arm_0003" )
 
       em = 1.0
       call arm_0003_init( iunit, forcings_file_path )
 
-    ! 3 year ARM case
+      ! 3 year ARM case
     case ( "arm_3year" )
 
       em = 1.0
       call arm_3year_init( iunit, forcings_file_path )
 
-    ! June 27 1997 ARM case
+      ! June 27 1997 ARM case
     case ( "arm_97" )
 
       em = 1.0
       call arm_97_init( iunit, forcings_file_path )
 #endif
 
-    ! GCSS FIRE Sc
+      ! GCSS FIRE Sc
     case ( "fire" )
 
       cloud_top_height = 700. ! 700 m is the top of the cloud in FIRE
@@ -1197,7 +1200,7 @@ module clubb_driver
       call lba_init( iunit, forcings_file_path )
 #endif
 
-    ! Michael Falk for mpace_a Arctic Stratus case.
+      ! Michael Falk for mpace_a Arctic Stratus case.
     case ( "mpace_a" )
 
       cloud_top_height = 2000.
@@ -1342,17 +1345,17 @@ module clubb_driver
 
     return
   end subroutine initialize_clubb
-!-----------------------------------------------------------------------
+  !-----------------------------------------------------------------------
   subroutine restart_clubb &
              ( iunit, runfile, forcings_file_path, &
                restart_path_case, time_restart, & 
                thlm, rtm, um, vm, ug, vg, upwp, vpwp, wm_zt, wm_zm,  & 
                um_ref, vm_ref, wpthlp, wprtp, sclrm, edsclrm, & 
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )
-! Description:
-!   Execute the necessary steps for the initialization of the
-!   CLUBB model to a designated point in the submitted GrADS file.
-!-----------------------------------------------------------------------
+    ! Description:
+    !   Execute the necessary steps for the initialization of the
+    !   CLUBB model to a designated point in the submitted GrADS file.
+    !-----------------------------------------------------------------------
     use inputfields,only:  & 
         datafile, input_type, &  ! Variable(s)
         input_um, input_vm, input_rtm, input_thlm, & 
@@ -1373,7 +1376,7 @@ module clubb_driver
         input_up2, input_vp2, input_sigma_sqd_w, input_Ncm,  & 
         input_Ncnm, input_Nim, input_cf, input_sigma_sqd_w_zt, &
         input_veg_T_in_K, input_deep_soil_T_in_K, &
-        input_sfc_soil_T_in_K 
+        input_sfc_soil_T_in_K
 
     use inputfields, only: compute_timestep, grads_fields_reader ! Procedure(s)
 
@@ -1452,6 +1455,8 @@ module clubb_driver
 
     ! Local variables
     integer :: timestep
+
+    character(len=50) :: theta_type
 
     ! --- Begin Code ---
 
@@ -1576,9 +1581,9 @@ module clubb_driver
     ! Read in sounding to get appropriate nudging information for um
     ! and vm
 
-    call read_sounding( iunit, runfile, runtype, &          ! Intent(in)
-                        thlm, rtm, um, vm, ug, vg,  &       ! Intent(out)
-                        sclrm, edsclrm )                    ! Intent(out)
+    call read_sounding( iunit, runfile, runtype, &                ! Intent(in)
+                        thlm, theta_type, rtm, um, vm, ug, vg,  & ! Intent(out)
+                        sclrm, edsclrm )                          ! Intent(out)
 
     if ( l_uv_nudge ) then
       um_ref = um
@@ -1619,20 +1624,20 @@ module clubb_driver
     return
   end subroutine restart_clubb
 
-!----------------------------------------------------------------------
+  !----------------------------------------------------------------------
   subroutine advance_clubb_forcings( dt, err_code )
 
-! Description:
-! Calculate tendency and surface variables
+    ! Description:
+    ! Calculate tendency and surface variables
 
-! Calls: (* = model case)
-!         subroutines *_sfclyr
-!         subroutines *_tndncy
-!         subroutine sfc_thermo_fluxes
-!         subroutine sfc_momentum_fluxes
-!----------------------------------------------------------------------
+    ! Calls: (* = model case)
+    !         subroutines *_sfclyr
+    !         subroutines *_tndncy
+    !         subroutine sfc_thermo_fluxes
+    !         subroutine sfc_momentum_fluxes
+    !----------------------------------------------------------------------
 
-! Modules to be included
+    ! Modules to be included
     use model_flags, only:  &
       l_soil_veg
 
@@ -1671,7 +1676,7 @@ module clubb_driver
 
     use constants, only: & 
       Cp, Lv, kappa, p0, & ! Variable(s)
-      rc_tol, fstderr, cm3_per_m3 
+      rc_tol, fstderr, cm3_per_m3
 
     use variables_prognostic_module, only:  & 
       sclrm_forcing,   & ! Passive scalar variables
@@ -1797,19 +1802,19 @@ module clubb_driver
 !##############      FIND ALL DIAGNOSTIC VARIABLES        ##############
 !#######################################################################
 
-!----------------------------------------------------------------
-! Find the cosine of the solar zenith angle if needed
-! The abs() clipping prevents an error with sunray_sw code.
-!----------------------------------------------------------------
+    !----------------------------------------------------------------
+    ! Find the cosine of the solar zenith angle if needed
+    ! The abs() clipping prevents an error with sunray_sw code.
+    !----------------------------------------------------------------
     if ( trim( rad_scheme ) == "simplified" ) then
       amu0 = max( real( cos_solar_zen( day, month, year, time_current, rlat, rlon ) ), 0. )
     else
       amu0 = -999.0
     end if
 
-!----------------------------------------------------------------
-! Set vertical velocity, w, and compute large-scale forcings
-!----------------------------------------------------------------
+    !----------------------------------------------------------------
+    ! Set vertical velocity, w, and compute large-scale forcings
+    !----------------------------------------------------------------
 
 
     select case ( runtype )
@@ -1862,14 +1867,14 @@ module clubb_driver
       call clex9_nov02_tndcy( time_current, time_initial, rlat, rlon, &  ! Intent(in)
                               rcm, exner, rho, &                         ! Intent(in)
                               wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
-                              Frad, radht, &                       ! Intent(out)
+                              Frad, radht, &                             ! Intent(out)
                               sclrm_forcing, edsclrm_forcing )           ! Intent(out)
 
     case ( "clex9_oct14" ) ! CLEX-9: Oct. 14 Altocumulus case.
       call clex9_oct14_tndcy( time_current, time_initial, rlat, rlon, &    ! Intent(in) 
                               rcm, exner, rho, &                           ! Intent(in)
                               wm_zt, wm_zm, thlm_forcing, rtm_forcing, &   ! Intent(out)
-                              Frad, radht, &                         ! Intent(out)
+                              Frad, radht, &                               ! Intent(out)
                               sclrm_forcing, edsclrm_forcing )             ! Intent(out)
     case ( "cobra" )
       call cobra_tndcy( wm_zt, wm_zm,  &                ! Intent(out) 
@@ -1889,7 +1894,7 @@ module clubb_driver
                                rho_zm, rtm, rcm, exner, &                  ! Intent(in)
                                err_code, &                                 ! Intent(inout)
                                wm_zt, wm_zm, thlm_forcing, rtm_forcing, &  ! Intent(out) 
-                               Frad, radht, &                   ! Intent(out)
+                               Frad, radht, &                              ! Intent(out)
                                sclrm_forcing, edsclrm_forcing )            ! Intent(out)
 
     case ( "fire" ) ! FIRE Sc case
@@ -1937,7 +1942,7 @@ module clubb_driver
 
     case ( "mpace_b" ) ! mpace_b arctic stratus case
 
-      call mpace_b_tndcy( time_current, amu0, &        ! Intent(in)
+      call mpace_b_tndcy( time_current, amu0, &                      ! Intent(in)
                           rho,  p_in_Pa, thvm, rcm, &                ! Intent(in)
                           wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
                           Frad, radht,  &                            ! Intent(out)
@@ -1946,11 +1951,11 @@ module clubb_driver
 #ifdef UNRELEASED_CODE
     case ( "nov11_altocu" ) ! Nov. 11 Altocumulus case.
       call nov11_altocu_tndcy( time_current, time_initial, dt, &           ! Intent(in)
-                               day, month, year, rlat, rlon, & 
+                               day, month, year, rlat, rlon, &             ! Intent(in)
                                rcm, exner, rho, &                          ! Intent(in)
                                rtm, &                                      ! Intent(inout)
                                wm_zt, wm_zm, thlm_forcing, rtm_forcing, &  ! Intent(out)
-                               Frad, radht, &                        ! Intent(out)
+                               Frad, radht, &                              ! Intent(out)
                                sclrm_forcing, edsclrm_forcing )            ! Intent(out)
 
     case ( "rico" ) ! RICO case
@@ -1983,19 +1988,19 @@ module clubb_driver
 #endif
 
 
-!----------------------------------------------------------------
-! Compute Surface Fluxes
-!----------------------------------------------------------------
+    !----------------------------------------------------------------
+    ! Compute Surface Fluxes
+    !----------------------------------------------------------------
 
-! Boundary conditions for the second order moments
+    ! Boundary conditions for the second order moments
 
-! Find the value of um at the surface (momentum level 1) by interpolating the
-! values of um found at thermodynamic levels 2 and 1.  This will be helpful in
-! computing the surface flux u'w'|_sfc.
+    ! Find the value of um at the surface (momentum level 1) by interpolating the
+    ! values of um found at thermodynamic levels 2 and 1.  This will be helpful in
+    ! computing the surface flux u'w'|_sfc.
     um_sfc = zt2zm( um, 1 )
-! Find the value of vm at the surface (momentum level 1) by interpolating the
-! values of vm found at thermodynamic levels 2 and 1.  This will be helpful in
-! computing the surface flux v'w'|_sfc.
+    ! Find the value of vm at the surface (momentum level 1) by interpolating the
+    ! values of vm found at thermodynamic levels 2 and 1.  This will be helpful in
+    ! computing the surface flux v'w'|_sfc.
     vm_sfc = zt2zm( vm, 1 )
 
     select case ( trim( runtype ) )
@@ -2081,7 +2086,7 @@ module clubb_driver
                                 wpthlp_sfc, wprtp_sfc, ustar, &     ! Intent(out)
                                 wpsclrp_sfc, wpedsclrp_sfc )        ! Intent(out)
 
-    case ( "dycoms2_rf02" ) 
+    case ( "dycoms2_rf02" )
       call dycoms2_rf02_sfclyr( um(2), vm(2), &                     ! Intent(in)
                                 upwp_sfc, vpwp_sfc, &               ! Intent(out)
                                 wpthlp_sfc, wprtp_sfc, ustar, &     ! Intent(out)
@@ -2107,7 +2112,7 @@ module clubb_driver
 
         call sfc_thermo_fluxes( um(2), vm(2), &                     ! Intent(in)
                                 Tsfc, psfc,  &                      ! Intent(in)
-                                thlm(2), rtm(2), exner(1), &         ! Intent(in)
+                                thlm(2), rtm(2), exner(1), &        ! Intent(in)
                                 wpthlp_sfc, wprtp_sfc, &            ! Intent(out)
                                 wpsclrp_sfc, wpedsclrp_sfc )        ! Intent(out)
 
@@ -2193,9 +2198,9 @@ module clubb_driver
 
     end select ! runtype
 
-!---------------------------------------------------------------
-! Compute Surface
-!---------------------------------------------------------------
+    !---------------------------------------------------------------
+    ! Compute Surface
+    !---------------------------------------------------------------
     if ( l_soil_veg ) then
       wpthep = wpthlp_sfc + (Lv/Cp) * ((p0/psfc)**kappa) * wprtp_sfc
 
@@ -2205,9 +2210,9 @@ module clubb_driver
     end if
 
 
-!----------------------------------------------------------------
-! Compute Microphysics
-!----------------------------------------------------------------
+    !----------------------------------------------------------------
+    ! Compute Microphysics
+    !----------------------------------------------------------------
     ! Determine Ncm for K&K microphysics or cloud droplet sedimentation
     if ( l_cloud_sed .or. trim( micro_scheme ) == "khairoutdinov_kogan" ) then
 
@@ -2239,7 +2244,7 @@ module clubb_driver
 
     end if ! cloud_sed / K&K
 
-! Call Khairoutdinov and Kogan (2000) scheme, or COAMPS for rain microphysics.
+    ! Call Khairoutdinov and Kogan (2000) scheme, or COAMPS for rain microphysics.
 
     if ( trim( micro_scheme ) /= "none" ) then
 
@@ -2263,9 +2268,9 @@ module clubb_driver
 
     end if
 
-!----------------------------------------------------------------
-! BUGSrad Radiation
-!----------------------------------------------------------------
+    !----------------------------------------------------------------
+    ! BUGSrad Radiation
+    !----------------------------------------------------------------
 
     if ( trim( rad_scheme ) == "bugsrad" ) then
 
@@ -2289,49 +2294,49 @@ module clubb_driver
 
       if ( clubb_at_least_debug_level( 2 ) ) then
 
-         if ( isnan2d( thlm ) ) then
-            write(fstderr,*) "thlm before BUGSrad is NaN"
-         endif
+        if ( isnan2d( thlm ) ) then
+          write(fstderr,*) "thlm before BUGSrad is NaN"
+        endif
 
-         if ( isnan2d( rcm ) ) then
-            write(fstderr,*) "rcm before BUGSrad is NaN"
-         endif
+        if ( isnan2d( rcm ) ) then
+          write(fstderr,*) "rcm before BUGSrad is NaN"
+        endif
 
-         if ( isnan2d( rtm ) ) then
-            write(fstderr,*) "rtm before BUGSrad is NaN"
-         endif
+        if ( isnan2d( rtm ) ) then
+          write(fstderr,*) "rtm before BUGSrad is NaN"
+        endif
 
-         if ( isnan2d( rsnowm ) ) then
-            write(fstderr,*) "rsnowm before BUGSrad is NaN"
-         endif
+        if ( isnan2d( rsnowm ) ) then
+          write(fstderr,*) "rsnowm before BUGSrad is NaN"
+        endif
 
-         if ( isnan2d( ricem ) ) then
-            write(fstderr,*) "ricem before BUGSrad is NaN"
-         endif
+        if ( isnan2d( ricem ) ) then
+          write(fstderr,*) "ricem before BUGSrad is NaN"
+        endif
 
-         if ( isnan2d( cf ) ) then
-            write(fstderr,*) "cf before BUGSrad is NaN"
-         endif
+        if ( isnan2d( cf ) ) then
+          write(fstderr,*) "cf before BUGSrad is NaN"
+        endif
 
-         if ( isnan2d( p_in_Pa ) ) then
-            write(fstderr,*) "p_in_Pa before BUGSrad is NaN"
-         endif
+        if ( isnan2d( p_in_Pa ) ) then
+          write(fstderr,*) "p_in_Pa before BUGSrad is NaN"
+        endif
 
-         if ( isnan2d( exner ) ) then
-            write(fstderr,*) "exner before BUGSrad is NaN"
-         endif
+        if ( isnan2d( exner ) ) then
+          write(fstderr,*) "exner before BUGSrad is NaN"
+        endif
 
-         if ( isnan2d( rho_zm ) ) then
-            write(fstderr,*) "rho_zm before BUGSrad is NaN"
-         endif
+        if ( isnan2d( rho_zm ) ) then
+          write(fstderr,*) "rho_zm before BUGSrad is NaN"
+        endif
 
-         if ( isnan2d( thlm_forcing ) ) then
-            write(fstderr,*) "thlm_forcing before BUGSrad is NaN"
-         endif
+        if ( isnan2d( thlm_forcing ) ) then
+          write(fstderr,*) "thlm_forcing before BUGSrad is NaN"
+        endif
 
-         ! Check for impossible negative values
-         call rad_check( thlm, rcm, rtm, ricem, &            ! Intent(in)
-                         cf, p_in_Pa, exner, rho_zm )        ! Intent(in)
+        ! Check for impossible negative values
+        call rad_check( thlm, rcm, rtm, ricem, &            ! Intent(in)
+                        cf, p_in_Pa, exner, rho_zm )        ! Intent(in)
 
       endif  ! clubb_at_least_debug_level( 2 )
 
@@ -2362,20 +2367,20 @@ module clubb_driver
 
       if ( clubb_at_least_debug_level( 2 ) ) then
 
-         if ( isnan2d( thlm_forcing ) ) then
-            write(fstderr,*) "thlm_forcing after BUGSrad is NaN"
-            !write(fstderr,*) thlm_forcing
-         endif
+        if ( isnan2d( thlm_forcing ) ) then
+          write(fstderr,*) "thlm_forcing after BUGSrad is NaN"
+          !write(fstderr,*) thlm_forcing
+        endif
 
-         if ( isnan2d( Frad ) ) then
-            write(fstderr,*) "Frad after BUGSrad is NaN"
-            !write(fstderr,*) Frad
-         endif
+        if ( isnan2d( Frad ) ) then
+          write(fstderr,*) "Frad after BUGSrad is NaN"
+          !write(fstderr,*) Frad
+        endif
 
-         if ( isnan2d( radht ) ) then
-            write(fstderr,*) "radht after BUGSrad is NaN"
-            !write(fstderr,*) radht
-         endif
+        if ( isnan2d( radht ) ) then
+          write(fstderr,*) "radht after BUGSrad is NaN"
+          !write(fstderr,*) radht
+        endif
 
       endif  ! clubb_at_least_debug_level( 2 )
 

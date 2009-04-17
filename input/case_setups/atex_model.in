@@ -99,36 +99,7 @@ stats_fmt    = "grads"  ! Type of statistical output file (GrADS or netCDF).
 
 /
 
-&sounding
 
-! Initial sounding
-
-! Number of sounding points
-nlevels = 7
-
-! Altitudes at which sounding points are located   [m]
-z = 0, 150, 700, 750, 1400, 1650, 4000
-
-! Either potential temperature or liquid water potential temperature,
-!   depending on source code in hoc_initialize.   [K]
-theta = 295.75, 295.75, 295.75, 296.125, 297.75, 306.75, 314.975
-
-! Total water mixing ratio = vapor + cloud water, but not ice   [kg/kg]
-rt = 0.013, 0.0125, 0.0125, 0.0115, 0.01025, 0.0045, 0.0045
-
-! East-west wind component   [m/s]
-u = -11, -10.55, -8.9, -8.75, -6.8, -5.75, 1
-
-! North-south wind component   [m/s]
-v = -2, -1.9, -1.1, -1, -0.14, 0.18, 2.75
-
-! East-west geostrophic wind component   [m/s]
-ug = -11, -10.55, -8.9, -8.75, -6.8, -5.75, 1
-
-! North-south geostrophic wind component   [m/s]
-vg = -2, -1.9, -1.1, -1, -0.14, 0.18, 2.75
-
-/
 
 &scalar_sounding
 

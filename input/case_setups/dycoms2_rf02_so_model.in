@@ -107,38 +107,7 @@ stats_tout   = 60.                ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"            ! Type of statistical output file (GrADS or netCDF).
 /
 
-&sounding
-
-! Initial sounding
-
 ! The DYCOMS2 RF02 soundings are hardwired in the file ../src/sounding.F   ! Brian
-
-! Number of sounding points
-nlevels = 4
-
-! Altitudes at which sounding points are located   [m]
-z = 0.0, 794.0, 795.0, 1600.0
-
-! Either potential temperature or liquid water potential temperature,
-!   depending on source code in hoc_initialize.   [K]
-theta = 288.30, 288.30, 295.00, 304.30
-
-! Total water mixing ratio = vapor + cloud water, but not ice   [kg/kg]
-rt = 9.45e-3, 9.45e-3, 5.00e-3, 2.60e-3
-
-! East-west wind component   [m/s]
-u = 3.0000, 6.4142, 6.4185, 9.8800
-
-! North-south wind component   [m/s]
-v = -9.0000, -4.5336, -4.5480, -0.0400
-
-! East-west geostrophic wind component   [m/s]
-ug = 3.0000, 6.4142, 6.4185, 9.8800
-
-! North-south geostrophic wind component   [m/s]
-vg = -9.0000, -4.5336, -4.5480, -0.0400
-
-/
 
 &scalar_sounding
 
