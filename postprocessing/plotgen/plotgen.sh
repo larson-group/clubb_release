@@ -162,7 +162,7 @@ if [ "$output_dir_rel" != "/"  ]; then
 fi
 
 if [ "$output_arg" == "-r"  ]; then
-	#External Use: Remove "sudo - u matlabuser" from below
+	#External Use: Remove "sudo - u matlabuser" from command below
 	sudo -u matlabuser $PLOTGEN_DIR/generate_plots.sh $HOC_dir1 $HOC_dir2 $compare_LES $compare_best $compare_HOC && \
 	rm -rf "$output_dir"
 	mkdir "$output_dir"
@@ -173,11 +173,11 @@ elif [ "$output_arg" == "-c" ]; then
 		cd $working_directory
 		exit 1
 	fi
-	#External Use: Remove "sudo - u matlabuser" from below
 	mkdir -p "$output_dir" && \
+	#External Use: Remove "sudo - u matlabuser" from command below
 	sudo -u matlabuser $PLOTGEN_DIR/generate_plots.sh $HOC_dir1 $HOC_dir2 $compare_LES $compare_best $compare_HOC && \
 	
-	#External Use: Comment out the line below, uncomment the line below it
+	#External Use: Comment out the line immediately below, uncomment the line below it
 	cp -rf $PLOTGEN_DIR/profiles/* "$output_dir"
 	#cp -rf $PLOTGEN_DIR/output/* "$output_dir"
 else
