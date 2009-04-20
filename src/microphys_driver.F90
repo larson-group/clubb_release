@@ -311,6 +311,12 @@ module microphys_driver
         dosubgridw = .false.
       end if
 
+      if ( l_cloud_sed ) then
+        write(0,*) "Morrison microphysics has seperate code for cloud water sedimentation,"
+        write(0,*) " therefore l_cloud_sed should be set to .false."
+        stop "Fatal error."
+      end if
+
       allocate( hydromet_sed(hydromet_dim) )
       ! Sedimentation is handled within the Morrison microphysics
       hydromet_sed(iiNrm) = .false.
