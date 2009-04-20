@@ -30,15 +30,15 @@ module parameters_radiation
 
   ! Long-wave constants (simplified radiation)
   real, public :: &
-    kappa, & !
-    F0,    & !
-    F1
+    kappa, & ! A constant (Duynkerke eqn. 5)                   [m^2/kg]
+    F0,    & ! Coefficient for cloud top heating (see Stevens) [W/m^2] 
+    F1       ! Coefficient for cloud base heating (see Stevens)[W/m^2]
 
   ! Short-wave constants
   real, public :: &
-    eff_drop_radius, &
-    gc, &
-    omega
+    eff_drop_radius, & ! Effective droplet radius [m] 
+    gc, & ! Asymmetry parameter, "g" in Duynkerke           [-]
+    omega ! Single-scattering albedo                        [-] 
 
 
   real, public, dimension(20) :: &
