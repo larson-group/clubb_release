@@ -222,11 +222,7 @@ module clubb_driver
     real ::  & 
       fcor,            & ! Coriolis parameter            [s^-1]
       T0,              & ! Reference Temperature         [K]
-      ts_nudge,        & ! Timescale for u/v nudging     [s]
-      sol_const          ! Solar constant                [W/m^2]
-
-    integer :: &
-      std_atmos_buffer ! Number of levels to take from U.S. Std. Atmos Tables
+      ts_nudge           ! Timescale for u/v nudging     [s]
 
     real, dimension(sclr_max) :: & 
       sclr_tol        ! Thresholds on the passive scalars     [units vary]
@@ -235,12 +231,12 @@ module clubb_driver
       time_restart    ! Time of model restart run     [s]
 
     logical ::  & 
-      l_bugsrad,      & ! Flag for BUGsrad radiation scheme
       l_soil_veg,     & ! Flag for simple surface scheme
       l_uv_nudge,     & ! Whether to adjust the winds within the timestep
       l_restart,      & ! Flag for restarting from GrADS file
       l_tke_aniso       ! For anisotropic turbulent kinetic energy,
     ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+
     character(len=6) :: &
       saturation_formula ! "bolton" approx. or "flatau" approx.
 
@@ -272,12 +268,6 @@ module clubb_driver
     integer :: i, i1 ! Internal Loop Variables
     integer :: iinit ! initial iteration
 
-    double precision :: &
-      alvdr, & ! Visible direct surface albedo        [-]
-      alvdf, & ! Visible diffuse surface albedo       [-]
-      alndr, & ! Near-IR direct surface albedo        [-]
-      alndf    ! Near-IR diffuse surface albedo       [-]
-
     integer ::  & 
       iunit,           & ! File unit used for I/O
       hydromet_dim,    & ! Number of hydrometeor species        [#]
@@ -294,11 +284,9 @@ module clubb_driver
       time_initial, time_final, time_spinup, & 
       dtmain, dtclosure, & 
       sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge, & 
-      sol_const, std_atmos_buffer, &
       forcings_file_path, &
-      l_bugsrad, l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
+      l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, debug_level, & 
-      alvdr, alvdf, alndr, alndf, &
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iiCO2, &
       edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedCO2
 
@@ -341,12 +329,9 @@ module clubb_driver
     fcor     = 1.e-4
     T0       = 300.
     ts_nudge = 86400.
-    sol_const = 1367.0
-    std_atmos_buffer = 10
 
     forcings_file_path = ''
 
-    l_bugsrad      = .false.
     l_soil_veg     = .false.
     l_tke_aniso    = .false.
     l_uv_nudge     = .false.
@@ -469,20 +454,10 @@ module clubb_driver
       print *, "LE = ", LE
       print *, "fcor = ", fcor
       print *, "T0 = ", T0
-
-
-      print *, "sol_const = ", sol_const
-      print *, "std_atmos_buffer = ", std_atmos_buffer
-      print *, "alvdr = ", alvdr
-      print *, "alvdf = ", alvdf
-      print *, "alndr = ", alndr
-      print *, "alndf = ", alndf
-
       print *, "ts_nudge = ", ts_nudge
 
       print *, "forcings_file_path = ", forcings_file_path
 
-      print *, "l_bugsrad = ", l_bugsrad
       print *, "l_soil_veg = " , l_soil_veg
       print *, "l_tke_aniso = ", l_tke_aniso
       print *, "l_uv_nudge = ", l_uv_nudge
