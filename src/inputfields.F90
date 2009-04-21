@@ -11,6 +11,7 @@
 !  within the clubb_inputfields code.
 !===============================================================================
 module inputfields
+
   implicit none
 
 !----- Run information--------------------------------------------------
@@ -33,11 +34,11 @@ module inputfields
                      input_wpthvp, &
                      input_thl1, input_thl2, input_a, input_s1, input_s2, &
                      input_ss1, input_ss2, input_rc1, input_rc2, &
-                     input_thvm, input_rrainm,input_Nrm,  & 
-                     input_rsnowm, input_ricem, input_rgraupelm,  & 
+                     input_thvm, input_rrainm, input_Nrm,  input_Ncm,  & 
+                     input_rsnowm, input_ricem, input_rgraupelm, input_Ncnm, input_Nim, & 
                      input_thlm_forcing, input_rtm_forcing, & 
-                     input_up2, input_vp2, input_sigma_sqd_w, input_Ncm,  & 
-                     input_Ncnm, input_Nim, input_cf, input_sigma_sqd_w_zt, &
+                     input_up2, input_vp2, input_sigma_sqd_w, & 
+                     input_cf, input_sigma_sqd_w_zt, &
                      input_veg_T_in_K, input_deep_soil_T_in_K, &
                      input_sfc_soil_T_in_K
 
@@ -148,7 +149,10 @@ module inputfields
 
     use constants, only:  &
         rttol,    & ! Variable(s)
-        wtol_sqd
+        thltol,   &
+        wtol_sqd, &
+        emin,     &
+        fstderr
 
     use array_index, only:  & 
         iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm, iiNim, iiNcm
@@ -162,15 +166,21 @@ module inputfields
     use interpolation, only: &
         lin_int ! Procedure(s)
 
+    use parameters_microphys, only: &
+      micro_scheme ! Variable(s)
+
     use soil_vegetation, only: deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K
 
     implicit none
+
+    ! External
+    intrinsic :: max, trim, any
 
     ! Arguments
     integer, intent(in) :: timestep
 
     ! Local Variables
-    logical :: l_error
+    logical :: l_read_error, l_fatal_error
 
     type (inputgrads) :: fread_var
 
@@ -227,183 +237,223 @@ module inputfields
                             fread_var )
 
 
-      ! Initialize l_error for case ( "hoc" )
-      l_error = .false.
+      ! Initialize l_fatal_error for case ( "hoc" )
+      l_fatal_error = .false.
 
       if ( input_um ) then
         call get_var( fread_var, "um", timestep, & 
-                      um(1:gr%nnzp),  l_error )
+                      um(1:gr%nnzp), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_vm ) then
         call get_var( fread_var, "vm", timestep, & 
-                      vm(1:gr%nnzp),  l_error )
+                      vm(1:gr%nnzp), l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_rtm ) then
         call get_var( fread_var, "rtm", timestep, & 
-                      rtm(1:gr%nnzp),  l_error )
+                      rtm(1:gr%nnzp),  l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_thlm ) then
         call get_var( fread_var, "thlm",  & 
                       timestep, & 
-                      thlm(1:gr%nnzp),  l_error )
+                      thlm(1:gr%nnzp),  l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_wp3 ) then
         call get_var( fread_var, "wp3", timestep, & 
-                      wp3(1:gr%nnzp),  l_error )
+                      wp3(1:gr%nnzp),  l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_tau_zt ) then
         call get_var( fread_var, "tau_zt", timestep, & 
-                      tau_zt(1:gr%nnzp),  l_error )
+                      tau_zt(1:gr%nnzp),  l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_rrainm ) then
         call get_var( fread_var, "rrainm", timestep, & 
-                      hydromet(1:gr%nnzp,iirrainm),  l_error )
+                      hydromet(1:gr%nnzp,iirrainm),  l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_rsnowm ) then
         call get_var( fread_var, "rsnowm", timestep, & 
-                      hydromet(1:gr%nnzp,iirsnowm),  l_error )
+                      hydromet(1:gr%nnzp,iirsnowm),  l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_ricem ) then
         call get_var( fread_var, "ricem", timestep, & 
-                      hydromet(1:gr%nnzp,iiricem),  l_error )
+                      hydromet(1:gr%nnzp,iiricem),  l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_rgraupelm ) then
         call get_var( fread_var, "rgraupelm", timestep, & 
-                      hydromet(1:gr%nnzp,iirgraupelm),  l_error )
+                      hydromet(1:gr%nnzp,iirgraupelm),  l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
 !--------------------------------------------------------
 ! Added variables for clubb_restart
       if ( input_p ) then
         call get_var( fread_var, "p_in_Pa", timestep, & 
-                      p_in_Pa(1:gr%nnzp),  l_error )
+                      p_in_Pa(1:gr%nnzp),  l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_exner) then
         call get_var( fread_var , "exner", timestep, & 
-                      exner(1:gr%nnzp),  l_error)
+                      exner(1:gr%nnzp),  l_read_error)
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_ug) then
         call get_var( fread_var , "ug", timestep, & 
-                      ug(1:gr%nnzp),  l_error)
+                      ug(1:gr%nnzp),  l_read_error)
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_vg) then
         call get_var( fread_var , "vg", timestep, & 
-                      vg(1:gr%nnzp),  l_error)
+                      vg(1:gr%nnzp),  l_read_error)
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_rcm) then
         call get_var( fread_var , "rcm", timestep, & 
-                      rcm(1:gr%nnzp),  l_error)
+                      rcm(1:gr%nnzp),  l_read_error)
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_wm_zt) then
         call get_var( fread_var , "wm", timestep, & 
-                      wm_zt(1:gr%nnzp),  l_error)
+                      wm_zt(1:gr%nnzp),  l_read_error)
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_rho) then
         call get_var( fread_var , "rho", timestep, & 
-                      rho(1:gr%nnzp), l_error)
+                      rho(1:gr%nnzp), l_read_error)
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_Lscale) then
         call get_var( fread_var , "lscale", timestep, & 
-                      Lscale(1:gr%nnzp), l_error)
+                      Lscale(1:gr%nnzp), l_read_error)
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_Lscale_up) then
         call get_var( fread_var , "Lscale_up", timestep, & 
-                      Lscale_up(1:gr%nnzp), l_error)
+                      Lscale_up(1:gr%nnzp), l_read_error)
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_Lscale_down) then
         call get_var( fread_var , "Lscale_down", timestep, & 
-                      Lscale_down(1:gr%nnzp), l_error)
+                      Lscale_down(1:gr%nnzp), l_read_error)
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_Kh_zt) then
         call get_var( fread_var , "Kh_zt", timestep, & 
-                      Kh_zt(1:gr%nnzp), l_error)
+                      Kh_zt(1:gr%nnzp), l_read_error)
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_thvm) then
         call get_var( fread_var , "thvm", timestep, & 
-                      thvm(1:gr%nnzp), l_error)
+                      thvm(1:gr%nnzp), l_read_error)
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_thlm_forcing ) then
         call get_var( fread_var , "thlm_f", timestep, & 
-                      thlm_forcing(1:gr%nnzp), l_error)
+                      thlm_forcing(1:gr%nnzp), l_read_error)
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_rtm_forcing ) then
         call get_var( fread_var , "rtm_f", timestep, & 
-                      rtm_forcing(1:gr%nnzp), l_error)
+                      rtm_forcing(1:gr%nnzp), l_read_error)
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_Ncm) then
         call get_var( fread_var , "Ncm", timestep, & 
-                      hydromet(1:gr%nnzp,iiNcm), l_error)
+                      hydromet(1:gr%nnzp,iiNcm), l_read_error)
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_Ncnm) then
         call get_var( fread_var , "Ncnm", timestep, & 
-                      Ncnm(1:gr%nnzp), l_error)
+                      Ncnm(1:gr%nnzp), l_read_error)
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_Nim) then
         call get_var( fread_var , "Nim", timestep, & 
-                      hydromet(1:gr%nnzp,iiNim), l_error)
+                      hydromet(1:gr%nnzp,iiNim), l_read_error)
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_cf) then
         call get_var( fread_var , "cf", timestep, & 
-                      cf(1:gr%nnzp), l_error)
+                      cf(1:gr%nnzp), l_read_error)
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_Nrm ) then
         call get_var( fread_var , "Nrm", timestep, & 
-                      hydromet(1:gr%nnzp,iiNrm), l_error)
+                      hydromet(1:gr%nnzp,iiNrm), l_read_error)
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_sigma_sqd_w_zt ) then
         call get_var( fread_var , "sigma_sqd_w_zt", timestep, & 
-                      sigma_sqd_w_zt(1:gr%nnzp), l_error)
+                      sigma_sqd_w_zt(1:gr%nnzp), l_read_error)
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       ! PDF Parameters (needed for K&K microphysics)
       if ( input_thl1 ) then
         call get_var( fread_var , "thl1", timestep, & 
-                      pdf_params%thl1(1:gr%nnzp), l_error )
+                      pdf_params%thl1(1:gr%nnzp), l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       end if
 
       if ( input_thl2 ) then
         call get_var( fread_var , "thl2", timestep, & 
-                      pdf_params%thl2(1:gr%nnzp), l_error )
+                      pdf_params%thl2(1:gr%nnzp), l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       end if
 
       if ( input_a ) then
         call get_var( fread_var , "a", timestep, & 
-                      pdf_params%a(1:gr%nnzp), l_error )
+                      pdf_params%a(1:gr%nnzp), l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       end if
 
       if ( input_s1 ) then
         call get_var( fread_var , "s1", timestep, & 
-                      pdf_params%s1(1:gr%nnzp), l_error )
+                      pdf_params%s1(1:gr%nnzp), l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       end if
 
       if ( input_s2 ) then
         call get_var( fread_var , "s2", timestep, & 
-                      pdf_params%s2(1:gr%nnzp), l_error )
+                      pdf_params%s2(1:gr%nnzp), l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       end if
 
       if ( input_ss1 ) then
         call get_var( fread_var , "ss1", timestep, & 
-                      pdf_params%ss1(1:gr%nnzp), l_error )
+                      pdf_params%ss1(1:gr%nnzp), l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       end if
 
       if ( input_ss2 ) then
         call get_var( fread_var , "ss2", timestep, & 
-                      pdf_params%ss2(1:gr%nnzp), l_error )
+                      pdf_params%ss2(1:gr%nnzp), l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       end if
 
       if ( input_rc1 ) then
         call get_var( fread_var , "rc1", timestep, & 
-                      pdf_params%rc1(1:gr%nnzp), l_error )
+                      pdf_params%rc1(1:gr%nnzp), l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       end if
 
       if ( input_rc2 ) then
         call get_var( fread_var , "rc2", timestep, & 
-                      pdf_params%rc2(1:gr%nnzp), l_error )
+                      pdf_params%rc2(1:gr%nnzp), l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       end if
 
 !--------------------------------------------------------
@@ -415,94 +465,110 @@ module inputfields
 
       if ( input_wp2 ) then
         call get_var( fread_var, "wp2", timestep, & 
-                      wp2(1:gr%nnzp),  l_error )
+                      wp2(1:gr%nnzp),  l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_wprtp ) then
         call get_var( fread_var, "wprtp",  & 
                       timestep, wprtp(1:gr%nnzp), & 
-                      l_error )
+                      l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_wpthlp ) then
         call get_var( fread_var, "wpthlp",  & 
                       timestep,  & 
                       wpthlp(1:gr%nnzp),  & 
-                      l_error )
+                      l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_wpthvp ) then
         call get_var( fread_var, "wpthvp",  & 
                       timestep,  & 
                       wpthvp(1:gr%nnzp),  & 
-                      l_error )
+                      l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_rtp2 ) then
         call get_var( fread_var, "rtp2",  & 
                       timestep, & 
-                      rtp2(1:gr%nnzp), l_error )
+                      rtp2(1:gr%nnzp), l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_thlp2 ) then
         call get_var( fread_var, "thlp2",  & 
                       timestep, & 
-                      thlp2(1:gr%nnzp), l_error )
+                      thlp2(1:gr%nnzp), l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_rtpthlp ) then
         call get_var( fread_var, "rtpthlp",  & 
                       timestep,  & 
                       rtpthlp(1:gr%nnzp), & 
-                      l_error )
+                      l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_upwp ) then
         call get_var( fread_var, "upwp",  & 
                       timestep, & 
-                      upwp(1:gr%nnzp), l_error )
+                      upwp(1:gr%nnzp), l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_vpwp ) then
         call get_var( fread_var, "vpwp",  & 
                       timestep, & 
-                      vpwp(1:gr%nnzp), l_error )
+                      vpwp(1:gr%nnzp), l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
 !-----------------------------------------------------------
       if ( input_em ) then
         call get_var( fread_var, "em", & 
                       timestep, & 
-                      em(1:gr%nnzp), l_error )
+                      em(1:gr%nnzp), l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_rho_zm ) then
         call get_var( fread_var, "rho_zm", & 
                       timestep, & 
-                      rho_zm(1:gr%nnzp), l_error )
+                      rho_zm(1:gr%nnzp), l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_Kh_zm ) then
         call get_var( fread_var, "Kh_zm", & 
                       timestep, & 
-                      Kh_zm(1:gr%nnzp), l_error )
+                      Kh_zm(1:gr%nnzp), l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_tau_zm) then
         call get_var( fread_var, "tau_zm", & 
                       timestep, & 
-                      tau_zm(1:gr%nnzp), l_error )
+                      tau_zm(1:gr%nnzp), l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_up2) then
         call get_var( fread_var, "up2", & 
                       timestep, & 
-                      up2(1:gr%nnzp), l_error )
+                      up2(1:gr%nnzp), l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_vp2) then
         call get_var( fread_var, "vp2", & 
                       timestep, & 
-                      vp2(1:gr%nnzp), l_error )
+                      vp2(1:gr%nnzp), l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_sigma_sqd_w ) then
         call get_var( fread_var, "sigma_sqd_w", & 
                       timestep, & 
-                      sigma_sqd_w(1:gr%nnzp), l_error )
+                      sigma_sqd_w(1:gr%nnzp), l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
 !-----------------------------------------------------------
@@ -514,27 +580,30 @@ module inputfields
       if ( input_veg_T_in_K ) then
         call get_var( fread_var, "veg_T_in_K", & 
                       timestep, & 
-                      tmp1, l_error )
+                      tmp1, l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
         veg_T_in_K = tmp1(1)
         print *, "Veg T = ", veg_T_in_K
       endif
       if ( input_deep_soil_T_in_K ) then
         call get_var( fread_var, "deep_soil_T_in_", & 
                       timestep, & 
-                      tmp1, l_error )
+                      tmp1, l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
         deep_soil_T_in_K = tmp1(1)
         print *,"Deep soil = ",deep_soil_T_in_K
       endif
       if ( input_sfc_soil_T_in_K ) then
         call get_var( fread_var, "sfc_soil_T_in_K", & 
                       timestep, & 
-                      tmp1, l_error )
+                      tmp1, l_read_error )
+        l_fatal_error = l_fatal_error .or. l_read_error
         sfc_soil_T_in_K = tmp1(1)
         print *,"surface_soil = ", sfc_soil_T_in_K
       endif
 
 
-      if ( l_error ) stop "oops, get_var failed in grads_fields_reader"
+      if ( l_fatal_error ) stop "oops, get_var failed in grads_fields_reader"
 
       call close_grads_read( fread_var )
 
@@ -595,12 +664,15 @@ module inputfields
       enddo
 
 
-      ! Initialize l_error for case ( "rf1" )
-      l_error = .false.
+      ! Initialize l_fatal_error for case ( "rf1" )
+      l_fatal_error = .false.
 
       if ( input_um ) then
         call get_var( fread_var, "um", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of um from the LES GrADS file.
         do k = k_lowest_zt_input, k_highest_zt_input, 1
           if ( l_lin_int_zt(k) ) then
@@ -635,7 +707,10 @@ module inputfields
 
       if ( input_vm ) then
         call get_var( fread_var, "vm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of vm from the LES GrADS file.
         do k = k_lowest_zt_input, k_highest_zt_input, 1
           if ( l_lin_int_zt(k) ) then
@@ -670,7 +745,10 @@ module inputfields
 
       if ( input_rtm) then
         call get_var( fread_var, "qtm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of rtm from the LES GrADS file.
         do k = k_lowest_zt_input, k_highest_zt_input, 1
           if ( l_lin_int_zt(k) ) then
@@ -698,7 +776,10 @@ module inputfields
 
       if ( input_thlm) then
         call get_var( fread_var, "thlm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of thlm from the LES GrADS file.
         do k = k_lowest_zt_input, k_highest_zt_input, 1
           if ( l_lin_int_zt(k) ) then
@@ -726,7 +807,10 @@ module inputfields
 
       if ( input_wp3) then
         call get_var( fread_var, "wp3", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of wp3 from the LES GrADS file.
         do k = k_lowest_zt_input, k_highest_zt_input, 1
           if ( l_lin_int_zt(k) ) then
@@ -753,7 +837,10 @@ module inputfields
 
       if ( input_wprtp) then
         call get_var( fread_var, "wpqtp", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of wprtp from the LES GrADS file.
         do k = k_lowest_zm_input, k_highest_zm_input, 1
           if ( l_lin_int_zm(k) ) then
@@ -790,7 +877,10 @@ module inputfields
 
       if ( input_wpthlp) then
         call get_var( fread_var, "wpthlp", timestep,  &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of wpthlp from the LES GrADS file.
         do k = k_lowest_zm_input, k_highest_zm_input, 1
           if ( l_lin_int_zm(k) ) then
@@ -827,7 +917,10 @@ module inputfields
 
       if ( input_rtp2) then
         call get_var( fread_var, "qtp2", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of rtp2 from the LES GrADS file.
         do k = k_lowest_zm_input, k_highest_zm_input, 1
           if ( l_lin_int_zm(k) ) then
@@ -860,7 +953,10 @@ module inputfields
 
       if ( input_thlp2 ) then
         call get_var( fread_var, "thlp2", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of thlp2 from the LES GrADS file.
         do k = k_lowest_zm_input, k_highest_zm_input, 1
           if ( l_lin_int_zm(k) ) then
@@ -888,7 +984,10 @@ module inputfields
 
       if ( input_rtpthlp) then
         call get_var( fread_var, "qtpthlp", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of rtpthlp from the LES GrADS file.
         do k = k_lowest_zm_input, k_highest_zm_input, 1
           if ( l_lin_int_zm(k) ) then
@@ -923,7 +1022,7 @@ module inputfields
         endif
       endif
 
-      if ( l_error ) stop "oops, get_var failed in grads_fields_reader"
+      if ( l_fatal_error ) stop "oops, get_var failed in grads_fields_reader"
 
       ! Deallocate temporary storage variable LES_tmp1.
       deallocate( LES_tmp1 )
@@ -946,6 +1045,7 @@ module inputfields
       ! stats_sm
       call open_grads_read( 15, trim(datafile)//"_coamps_sm.ctl",  & 
                             fread_var )
+      l_fatal_error = .false.
 
       ! Temporarily store LES output in variable array LES_tmp1.
       ! Allocate LES_tmp1 based on lowest and highest vertical indices of LES
@@ -997,12 +1097,15 @@ module inputfields
       enddo
 
 
-      ! Initialize l_error for case ( "les" )
-      l_error = .false.
+      ! Initialize l_read_error for case ( "les" )
+      l_read_error = .false.
 
       if ( input_um ) then
         call get_var( fread_var, "um", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of um from the LES GrADS file.
         do k = k_lowest_zt_input, k_highest_zt_input, 1
           if ( l_lin_int_zt(k) ) then
@@ -1033,7 +1136,10 @@ module inputfields
 
       if ( input_vm ) then
         call get_var( fread_var, "vm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of vm from the LES GrADS file.
         do k = k_lowest_zt_input, k_highest_zt_input, 1
           if ( l_lin_int_zt(k) ) then
@@ -1063,7 +1169,10 @@ module inputfields
 
       if ( input_rtm ) then
         call get_var( fread_var, "qtm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of rtm from the LES GrADS file.
         do k = k_lowest_zt_input, k_highest_zt_input, 1
           if ( l_lin_int_zt(k) ) then
@@ -1089,9 +1198,12 @@ module inputfields
         endif
       endif
 
-      if ( input_thlm) then
+      if ( input_thlm ) then
         call get_var( fread_var, "thlm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of thlm from the LES GrADS file.
         do k = k_lowest_zt_input, k_highest_zt_input, 1
           if ( l_lin_int_zt(k) ) then
@@ -1117,9 +1229,14 @@ module inputfields
         endif
       endif
 
+      ! We obtain wp2 from stats_sw
+
       if ( input_wp3 ) then
         call get_var( fread_var, "wp3", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of wp3 from the LES GrADS file.
         do k = k_lowest_zt_input, k_highest_zt_input, 1
           if ( l_lin_int_zt(k) ) then
@@ -1147,7 +1264,10 @@ module inputfields
 
       if ( input_wprtp ) then
         call get_var( fread_var, "wpqtp", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of wprtp from the LES GrADS file.
         do k = k_lowest_zm_input, k_highest_zm_input, 1
           if ( l_lin_int_zm(k) ) then
@@ -1179,7 +1299,10 @@ module inputfields
 
       if ( input_wpthlp ) then
         call get_var( fread_var, "wpthlp", timestep,  &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of wpthlp from the LES GrADS file.
         do k = k_lowest_zm_input, k_highest_zm_input, 1
           if ( l_lin_int_zm(k) ) then
@@ -1211,7 +1334,10 @@ module inputfields
 
       if ( input_rtp2 ) then
         call get_var( fread_var, "qtp2", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of rtp2 from the LES GrADS file.
         do k = k_lowest_zm_input, k_highest_zm_input, 1
           if ( l_lin_int_zm(k) ) then
@@ -1235,7 +1361,7 @@ module inputfields
         if ( k_lowest_zm_input == 2 ) then
           rtp2(1) =  rtp2(2)
         endif
-        if ( any ( rtp2(1:gr%nnzp) < rttol**2 ) ) then
+        if ( any( rtp2(1:gr%nnzp) < rttol**2 ) ) then
           do k=1, gr%nnzp
             rtp2(k) = max(rtp2(k), rttol**2)
           enddo
@@ -1244,7 +1370,10 @@ module inputfields
 
       if ( input_thlp2 ) then
         call get_var( fread_var, "thlp2", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of thlp2 from the LES GrADS file.
         do k = k_lowest_zm_input, k_highest_zm_input, 1
           if ( l_lin_int_zm(k) ) then
@@ -1268,11 +1397,19 @@ module inputfields
         if ( k_lowest_zm_input == 2 ) then
           thlp2(1) = thlp2(2)
         endif
+        if ( any( thlp2(1:gr%nnzp) < thltol**2 ) ) then
+          do k=1, gr%nnzp
+            thlp2(k) = max(thlp2(k), thltol**2)
+          enddo
+        endif
       endif
 
       if ( input_rtpthlp) then
         call get_var( fread_var, "qtpthlp", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of rtpthlp from the LES GrADS file.
         do k = k_lowest_zm_input, k_highest_zm_input, 1
           if ( l_lin_int_zm(k) ) then
@@ -1302,7 +1439,688 @@ module inputfields
         endif
       endif
 
-      if ( l_error ) stop "oops, get_var failed in grads_fields_reader"
+      ! upwp/vpwp in stats_sw
+      if ( input_ug ) then
+        write(fstderr,*) "The variable ug is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_vg ) then
+        write(fstderr,*) "The variable vg is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_rcm ) then
+        call get_var( fread_var, "qcm", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
+        ! LES_tmp1 is the value of rcm from the LES GrADS file.
+        do k = k_lowest_zt_input, k_highest_zt_input, 1
+          if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            rcm(k) = lin_int( gr%zt(k),  &
+                              fread_var%z(upper_lev_idx_zt(k)),  &
+                              fread_var%z(lower_lev_idx_zt(k)),  &
+                              LES_tmp1(upper_lev_idx_zt(k)),  &
+                              LES_tmp1(lower_lev_idx_zt(k)) )
+          else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            rcm(k) = LES_tmp1(exact_lev_idx_zt(k))
+          endif
+        enddo
+      endif
+
+      if ( input_wm_zt ) then
+        call get_var( fread_var, "wlsm", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
+        ! LES_tmp1 is the value of wm_zt from the LES GrADS file.
+        do k = k_lowest_zt_input, k_highest_zt_input, 1
+          if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            wm_zt(k) = lin_int( gr%zt(k),  &
+                              fread_var%z(upper_lev_idx_zt(k)),  &
+                              fread_var%z(lower_lev_idx_zt(k)),  &
+                              LES_tmp1(upper_lev_idx_zt(k)),  &
+                              LES_tmp1(lower_lev_idx_zt(k)) )
+          else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            wm_zt(k) = LES_tmp1(exact_lev_idx_zt(k))
+          endif
+        enddo
+      endif
+
+      if ( input_exner ) then
+        call get_var( fread_var, "ex0", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
+        ! LES_tmp1 is the value of exner from the LES GrADS file.
+        do k = k_lowest_zt_input, k_highest_zt_input, 1
+          if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            exner(k) = lin_int( gr%zt(k),  &
+                              fread_var%z(upper_lev_idx_zt(k)),  &
+                              fread_var%z(lower_lev_idx_zt(k)),  &
+                              LES_tmp1(upper_lev_idx_zt(k)),  &
+                              LES_tmp1(lower_lev_idx_zt(k)) )
+          else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            exner(k) = LES_tmp1(exact_lev_idx_zt(k))
+          endif
+        enddo
+      endif
+
+      if ( input_em ) then
+
+        ! Read in SGS TKE
+        call get_var( fread_var, "em", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
+        ! LES_tmp1 is the value of em from the LES GrADS file.
+        do k = k_lowest_zm_input, k_highest_zm_input, 1
+          if ( l_lin_int_zm(k) ) then
+            ! CLUBB momentum level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            em(k) = lin_int( gr%zm(k),  &
+                              fread_var%z(upper_lev_idx_zm(k)),  &
+                              fread_var%z(lower_lev_idx_zm(k)),  &
+                              LES_tmp1(upper_lev_idx_zm(k)),  &
+                              LES_tmp1(lower_lev_idx_zm(k)) )
+          else
+            ! CLUBB momentum level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            em(k) = LES_tmp1(exact_lev_idx_zm(k))
+          endif
+        enddo
+
+        ! Read in Resolved TKE
+        call get_var( fread_var, "tke", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
+        ! LES_tmp1 is the value of em from the LES GrADS file.
+        do k = k_lowest_zm_input, k_highest_zm_input, 1
+          if ( l_lin_int_zm(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            em(k) = em(k) + lin_int( gr%zm(k),  &
+                              fread_var%z(upper_lev_idx_zm(k)),  &
+                              fread_var%z(lower_lev_idx_zm(k)),  &
+                              LES_tmp1(upper_lev_idx_zm(k)),  &
+                              LES_tmp1(lower_lev_idx_zm(k)) )
+          else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            em(k) = em(k) + LES_tmp1(exact_lev_idx_zm(k))
+          endif
+        enddo
+
+        where ( em < emin ) em = emin
+
+      endif ! input_em
+
+      if ( input_p ) then
+        call get_var( fread_var, "pm", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
+        ! LES_tmp1 is the value of pressure from the LES GrADS file.
+        do k = k_lowest_zt_input, k_highest_zt_input, 1
+          if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            p_in_Pa(k) = lin_int( gr%zt(k),  &
+                              fread_var%z(upper_lev_idx_zt(k)),  &
+                              fread_var%z(lower_lev_idx_zt(k)),  &
+                              LES_tmp1(upper_lev_idx_zt(k)),  &
+                              LES_tmp1(lower_lev_idx_zt(k)) )
+          else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            p_in_Pa(k) = LES_tmp1(exact_lev_idx_zt(k))
+          endif
+        enddo
+      endif
+
+      if ( input_rho ) then
+        call get_var( fread_var, "dn0", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
+        ! LES_tmp1 is the value of rho from the LES GrADS file.
+        do k = k_lowest_zt_input, k_highest_zt_input, 1
+          if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            rho(k) = lin_int( gr%zt(k),  &
+                              fread_var%z(upper_lev_idx_zt(k)),  &
+                              fread_var%z(lower_lev_idx_zt(k)),  &
+                              LES_tmp1(upper_lev_idx_zt(k)),  &
+                              LES_tmp1(lower_lev_idx_zt(k)) )
+          else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            rho(k) = LES_tmp1(exact_lev_idx_zt(k))
+          endif
+        enddo
+      endif
+
+      ! rho_zm is in stats_sw
+
+      if ( input_Lscale ) then
+        call get_var( fread_var, "lm", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
+        ! LES_tmp1 is the value of mixing length from the LES GrADS file.
+        do k = k_lowest_zt_input, k_highest_zt_input, 1
+          if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            Lscale(k) = lin_int( gr%zt(k),  &
+                              fread_var%z(upper_lev_idx_zt(k)),  &
+                              fread_var%z(lower_lev_idx_zt(k)),  &
+                              LES_tmp1(upper_lev_idx_zt(k)),  &
+                              LES_tmp1(lower_lev_idx_zt(k)) )
+          else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            Lscale(k) = LES_tmp1(exact_lev_idx_zt(k))
+          endif
+        enddo
+      endif
+
+      if ( input_Lscale_up ) then
+        write(fstderr,*) "The variable Lscale_up is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_Lscale_down ) then
+        write(fstderr,*) "The variable Lscale_down is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_Kh_zt ) then
+        call get_var( fread_var, "kh", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+        ! LES_tmp1 is the value of mixing length from the LES GrADS file.
+        do k = k_lowest_zt_input, k_highest_zt_input, 1
+          if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            Kh_zt(k) = lin_int( gr%zt(k),  &
+                              fread_var%z(upper_lev_idx_zt(k)),  &
+                              fread_var%z(lower_lev_idx_zt(k)),  &
+                              LES_tmp1(upper_lev_idx_zt(k)),  &
+                              LES_tmp1(lower_lev_idx_zt(k)) )
+          else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            Kh_zt(k) = LES_tmp1(exact_lev_idx_zt(k))
+          endif
+        enddo
+      endif
+
+      if ( input_Kh_zm ) then
+        write(fstderr,*) "The variable Kh_zm is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_tau_zt ) then
+        write(fstderr,*) "The variable tau_zt is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_tau_zm ) then
+        write(fstderr,*) "The variable tau_zm is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_wpthvp ) then
+        call get_var( fread_var, "wpthvp", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_fatal_error )
+        ! LES_tmp1 is the value of wpthvp from the LES GrADS file.
+        do k = k_lowest_zm_input, k_highest_zm_input, 1
+          if ( l_lin_int_zm(k) ) then
+            ! CLUBB momentum level k is found at an altitude that is between two
+            ! LES levels.  Linear interpolation is required.
+            wpthvp(k) = lin_int( gr%zm(k),  &
+                              fread_var%z(upper_lev_idx_zm(k)),  &
+                              fread_var%z(lower_lev_idx_zm(k)),  &
+                              LES_tmp1(upper_lev_idx_zm(k)),  &
+                              LES_tmp1(lower_lev_idx_zm(k)) )
+          else
+            ! CLUBB momentum level k is found at an altitude that is an exact
+            ! match with an LES level altitude.
+            wpthvp(k) = LES_tmp1(exact_lev_idx_zm(k))
+          endif
+        enddo
+      endif
+
+      if ( input_thl1 ) then
+        write(fstderr,*) "The variable thl1 is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_thl2 ) then
+        write(fstderr,*) "The variable thl2 is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_a ) then
+        write(fstderr,*) "The variable a is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_s1 ) then
+        write(fstderr,*) "The variable s1 is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_s2 ) then
+        write(fstderr,*) "The variable s2 is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_ss1 ) then
+        write(fstderr,*) "The variable ss1 is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_ss2 ) then
+        write(fstderr,*) "The variable ss2 is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_rc1 ) then
+        write(fstderr,*) "The variable rc1 is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_rc2 ) then
+        write(fstderr,*) "The variable rc2 is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_thvm ) then
+        call get_var( fread_var, "thvm", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
+        ! LES_tmp1 is the value of thvm from the LES GrADS file.
+        do k = k_lowest_zt_input, k_highest_zt_input, 1
+          if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            thvm(k) = lin_int( gr%zt(k),  &
+                               fread_var%z(upper_lev_idx_zt(k)),  &
+                               fread_var%z(lower_lev_idx_zt(k)),  &
+                               LES_tmp1(upper_lev_idx_zt(k)),  &
+                               LES_tmp1(lower_lev_idx_zt(k)) )
+          else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            thvm(k) = LES_tmp1(exact_lev_idx_zt(k))
+          endif
+        enddo
+      endif
+
+      if ( input_rrainm ) then
+        call get_var( fread_var, "qrm", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
+        ! LES_tmp1 is the value of rain water mixing ratio from the LES GrADS file.
+        do k = k_lowest_zt_input, k_highest_zt_input, 1
+
+          if ( iirrainm < 1 ) then
+            write(fstderr,*) "Rain water mixing ratio cannot be input with"// &
+              " micro_scheme = "//micro_scheme
+            l_fatal_error = .true.
+            exit
+          end if
+
+          if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            hydromet(k,iirrainm) = lin_int( gr%zt(k),  &
+                               fread_var%z(upper_lev_idx_zt(k)),  &
+                               fread_var%z(lower_lev_idx_zt(k)),  &
+                               LES_tmp1(upper_lev_idx_zt(k)),  &
+                               LES_tmp1(lower_lev_idx_zt(k)) )
+          else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            hydromet(k,iirrainm) = LES_tmp1(exact_lev_idx_zt(k))
+          endif
+        enddo
+      endif
+
+      if ( input_Nrm ) then
+        call get_var( fread_var, "nrm", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
+        ! LES_tmp1 is the value of rain water mixing ratio from the LES GrADS file.
+        do k = k_lowest_zt_input, k_highest_zt_input, 1
+
+          if ( iiNrm < 1 ) then
+            write(fstderr,*) "Rain droplet number conc. cannot be input with"// &
+              " micro_scheme = "//micro_scheme
+            l_fatal_error = .true.
+            exit
+          end if
+
+          if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            hydromet(k,iiNrm) = lin_int( gr%zt(k),  &
+                               fread_var%z(upper_lev_idx_zt(k)),  &
+                               fread_var%z(lower_lev_idx_zt(k)),  &
+                               LES_tmp1(upper_lev_idx_zt(k)),  &
+                               LES_tmp1(lower_lev_idx_zt(k)) )
+          else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            hydromet(k,iiNrm) = LES_tmp1(exact_lev_idx_zt(k))
+          endif
+        enddo
+      endif
+
+      if ( input_Ncm ) then
+        call get_var( fread_var, "ncm", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
+        ! LES_tmp1 is the value of rain water mixing ratio from the LES GrADS file.
+        do k = k_lowest_zt_input, k_highest_zt_input, 1
+
+          if ( iiNcm < 1 ) then
+            write(fstderr,*) "Cloud droplet number conc. cannot be input with"// &
+              " micro_scheme = "//micro_scheme
+            l_fatal_error = .true.
+            exit
+          end if
+
+          if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            hydromet(k,iiNcm) = lin_int( gr%zt(k),  &
+                               fread_var%z(upper_lev_idx_zt(k)),  &
+                               fread_var%z(lower_lev_idx_zt(k)),  &
+                               LES_tmp1(upper_lev_idx_zt(k)),  &
+                               LES_tmp1(lower_lev_idx_zt(k)) )
+          else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            hydromet(k,iiNcm) = LES_tmp1(exact_lev_idx_zt(k))
+          endif
+        enddo
+      endif
+
+
+      if ( input_rsnowm ) then
+        call get_var( fread_var, "qsm", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
+        ! LES_tmp1 is the value of rain water mixing ratio from the LES GrADS file.
+        do k = k_lowest_zt_input, k_highest_zt_input, 1
+          if ( iirsnowm < 1 ) then
+            write(fstderr,*) "Snow mixing ratio cannot be input with"// &
+              " micro_scheme = "//micro_scheme
+            l_fatal_error = .true.
+            exit
+          end if
+          if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            hydromet(k,iirsnowm) = lin_int( gr%zt(k),  &
+                               fread_var%z(upper_lev_idx_zt(k)),  &
+                               fread_var%z(lower_lev_idx_zt(k)),  &
+                               LES_tmp1(upper_lev_idx_zt(k)),  &
+                               LES_tmp1(lower_lev_idx_zt(k)) )
+          else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            hydromet(k,iirsnowm) = LES_tmp1(exact_lev_idx_zt(k))
+          endif
+        enddo
+      endif
+
+      if ( input_ricem ) then
+        call get_var( fread_var, "qim", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
+        ! LES_tmp1 is the value of rain water mixing ratio from the LES GrADS file.
+        do k = k_lowest_zt_input, k_highest_zt_input, 1
+          if ( iiricem < 1 ) then
+            write(fstderr,*) "Ice mixing ratio cannot be input with"// &
+              " micro_scheme = "//micro_scheme
+            l_fatal_error = .true.
+            exit
+          end if
+          if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            hydromet(k,iiricem) = lin_int( gr%zt(k),  &
+                               fread_var%z(upper_lev_idx_zt(k)),  &
+                               fread_var%z(lower_lev_idx_zt(k)),  &
+                               LES_tmp1(upper_lev_idx_zt(k)),  &
+                               LES_tmp1(lower_lev_idx_zt(k)) )
+          else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            hydromet(k,iiricem) = LES_tmp1(exact_lev_idx_zt(k))
+          endif
+        enddo
+      endif
+
+      if ( input_rgraupelm ) then
+        call get_var( fread_var, "qgm", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
+        ! LES_tmp1 is the value of rain water mixing ratio from the LES GrADS file.
+        do k = k_lowest_zt_input, k_highest_zt_input, 1
+          if ( iirgraupelm < 1 ) then
+            write(fstderr,*) "Graupel mixing ratio cannot be input with"// &
+              " micro_scheme = "//micro_scheme
+            l_fatal_error = .true.
+            exit
+          end if
+          if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            hydromet(k,iirgraupelm) = lin_int( gr%zt(k),  &
+                               fread_var%z(upper_lev_idx_zt(k)),  &
+                               fread_var%z(lower_lev_idx_zt(k)),  &
+                               LES_tmp1(upper_lev_idx_zt(k)),  &
+                               LES_tmp1(lower_lev_idx_zt(k)) )
+          else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            hydromet(k,iirgraupelm) = LES_tmp1(exact_lev_idx_zt(k))
+          endif
+        enddo
+      endif
+
+      if ( input_Ncnm ) then
+        call get_var( fread_var, "ncnm", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
+        ! LES_tmp1 is the value of rain water mixing ratio from the LES GrADS file.
+        do k = k_lowest_zt_input, k_highest_zt_input, 1
+          if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            Ncnm(k) = lin_int( gr%zt(k),  &
+                               fread_var%z(upper_lev_idx_zt(k)),  &
+                               fread_var%z(lower_lev_idx_zt(k)),  &
+                               LES_tmp1(upper_lev_idx_zt(k)),  &
+                               LES_tmp1(lower_lev_idx_zt(k)) )
+          else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            Ncnm(k) = LES_tmp1(exact_lev_idx_zt(k))
+          endif
+        enddo
+      endif
+
+      if ( input_Nim ) then
+        call get_var( fread_var, "nim", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
+        ! LES_tmp1 is the value of rain water mixing ratio from the LES GrADS file.
+        do k = k_lowest_zt_input, k_highest_zt_input, 1
+          if ( iiNim < 1 ) then
+            write(fstderr,*) "Ice number conc. cannot be input with"// &
+              " micro_scheme = "//micro_scheme
+            l_fatal_error = .true.
+            exit
+          end if
+          if ( l_lin_int_zt(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            hydromet(k,iiNim) = lin_int( gr%zt(k),  &
+                               fread_var%z(upper_lev_idx_zt(k)),  &
+                               fread_var%z(lower_lev_idx_zt(k)),  &
+                               LES_tmp1(upper_lev_idx_zt(k)),  &
+                               LES_tmp1(lower_lev_idx_zt(k)) )
+          else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            hydromet(k,iiNim) = LES_tmp1(exact_lev_idx_zt(k))
+          endif
+        enddo
+      endif
+
+      if ( input_thlm_forcing ) then
+        write(fstderr,*) "The variable thlm_forcing is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_rtm_forcing ) then
+        write(fstderr,*) "The variable rtm_forcing is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_up2 ) then
+        call get_var( fread_var, "up2", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
+        ! LES_tmp1 is the value of up2 from the LES GrADS file.
+        do k = k_lowest_zm_input, k_highest_zm_input, 1
+          if ( l_lin_int_zm(k) ) then
+            ! CLUBB momentum level k is found at an altitude that is between two
+            ! LES levels.  Linear interpolation is required.
+            up2(k) = lin_int( gr%zm(k),  &
+                              fread_var%z(upper_lev_idx_zm(k)),  &
+                              fread_var%z(lower_lev_idx_zm(k)),  &
+                              LES_tmp1(upper_lev_idx_zm(k)),  &
+                              LES_tmp1(lower_lev_idx_zm(k)) )
+          else
+            ! CLUBB momentum level k is found at an altitude that is an exact
+            ! match with an LES level altitude.
+            up2(k) = LES_tmp1(exact_lev_idx_zm(k))
+          endif
+        enddo
+
+        ! Clip up2 to be no smaller than wtol_sqd
+        where ( up2 < wtol_sqd ) up2 = wtol_sqd
+
+      endif
+
+      if ( input_vp2 ) then
+        call get_var( fread_var, "vp2", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
+        ! LES_tmp1 is the value of vp2 from the LES GrADS file.
+        do k = k_lowest_zm_input, k_highest_zm_input, 1
+          if ( l_lin_int_zm(k) ) then
+            ! CLUBB momentum level k is found at an altitude that is between two
+            ! LES levels.  Linear interpolation is required.
+            vp2(k) = lin_int( gr%zm(k),  &
+                              fread_var%z(upper_lev_idx_zm(k)),  &
+                              fread_var%z(lower_lev_idx_zm(k)),  &
+                              LES_tmp1(upper_lev_idx_zm(k)),  &
+                              LES_tmp1(lower_lev_idx_zm(k)) )
+          else
+            ! CLUBB momentum level k is found at an altitude that is an exact
+            ! match with an LES level altitude.
+            vp2(k) = LES_tmp1(exact_lev_idx_zm(k))
+          endif
+        enddo
+
+        where ( vp2 < wtol_sqd ) vp2 = wtol_sqd
+
+      endif
+
+      if ( input_sigma_sqd_w ) then
+        write(fstderr,*) "The variable sigma_sqd_w is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_sigma_sqd_w_zt ) then
+        write(fstderr,*) "The variable sigma_sqd_w_zt is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_cf ) then
+        write(fstderr,*) "The variable cf is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_veg_T_in_K ) then
+        write(fstderr,*) "The variable veg_T_in_K is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_deep_soil_T_in_K ) then
+        write(fstderr,*) "The variable deep_soil_T_in_K is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( input_sfc_soil_T_in_K ) then
+        write(fstderr,*) "The variable sfc_soil_T_in_K is not setup for input_type = les"
+        l_fatal_error = .true.
+      end if
+
+      if ( l_fatal_error ) stop "oops, get_var failed in grads_fields_reader"
 
       ! Deallocate temporary storage variable LES_tmp1.
       deallocate( LES_tmp1 )
@@ -1318,7 +2136,6 @@ module inputfields
       deallocate( l_lin_int_zm )
 
       call close_grads_read( fread_var )
-
 
     end select
 
@@ -1359,7 +2176,7 @@ module inputfields
       enddo
 
 
-      ! Note:  l_error has already been initialized for both case ( "les" ) and
+      ! Note:  l_fatal_error has already been initialized for both case ( "les" ) and
       !        case ( "rf1" ).
 
       ! Note:  wpup_sgs and wpvp_sgs must be added to make the u'w' and v'w' terms
@@ -1368,7 +2185,10 @@ module inputfields
       if ( input_upwp) then
 
         call get_var( fread_var, "wpup", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of upwp from the LES GrADS file.
         do k = k_lowest_zm_input, k_highest_zm_input, 1
           if ( l_lin_int_zm(k) ) then
@@ -1387,7 +2207,10 @@ module inputfields
         enddo
 
         call get_var( fread_var, "wpup_sgs", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of upwp_sgs from the LES GrADS file.
         do k = k_lowest_zm_input, k_highest_zm_input, 1
           if ( l_lin_int_zm(k) ) then
@@ -1408,12 +2231,13 @@ module inputfields
 
       endif
 
-      if ( l_error ) stop "get_var failed for upwp in grads_fields_reader"
-
       if ( input_vpwp) then
 
         call get_var( fread_var, "wpvp", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of vpwp from the LES GrADS file.
         do k = k_lowest_zm_input, k_highest_zm_input, 1
           if ( l_lin_int_zm(k) ) then
@@ -1432,7 +2256,10 @@ module inputfields
         enddo
 
         call get_var( fread_var, "wpvp_sgs", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of vpwp_sgs from the LES GrADS file.
         do k = k_lowest_zm_input, k_highest_zm_input, 1
           if ( l_lin_int_zm(k) ) then
@@ -1453,11 +2280,12 @@ module inputfields
 
       endif
 
-      if ( l_error ) stop "get_var failed for vpwp in grads_fields_reader"
-
       if ( input_wp2 ) then
         call get_var( fread_var, "wp2", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_error )
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
         ! LES_tmp1 is the value of wp2 from the LES GrADS file.
         do k = k_lowest_zm_input, k_highest_zm_input, 1
           if ( l_lin_int_zm(k) ) then
@@ -1474,14 +2302,38 @@ module inputfields
             wp2(k) = LES_tmp1(exact_lev_idx_zm(k))
           endif
         enddo
-        if ( any ( wp2(1:gr%nnzp) < wtol_sqd ) ) then
+        if ( any( wp2(1:gr%nnzp) < wtol_sqd ) ) then
           do k=1, gr%nnzp
-            wp2(k) = max(wp2(k), wtol_sqd)
+            wp2(k) = max( wp2(k), wtol_sqd )
           enddo
         endif
       endif
 
-      if ( l_error ) stop "get_var failed for wp2 in grads_fields_reader"
+      if ( input_rho_zm ) then
+        call get_var( fread_var, "dn0", timestep, & 
+                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+
+        l_fatal_error = l_fatal_error .or. l_read_error
+
+        ! LES_tmp1 is the value of rho_zm from the LES GrADS file.
+        do k = k_lowest_zm_input, k_highest_zm_input, 1
+          if ( l_lin_int_zm(k) ) then
+            ! CLUBB thermodynamic level k is found at an altitude that is
+            ! between two LES levels.  Linear interpolation is required.
+            rho_zm(k) = lin_int( gr%zt(k),  &
+                              fread_var%z(upper_lev_idx_zm(k)),  &
+                              fread_var%z(lower_lev_idx_zm(k)),  &
+                              LES_tmp1(upper_lev_idx_zm(k)),  &
+                              LES_tmp1(lower_lev_idx_zm(k)) )
+          else
+            ! CLUBB thermodynamic level k is found at an altitude that is an
+            ! exact match with an LES level altitude.
+            rho_zm(k) = LES_tmp1(exact_lev_idx_zm(k))
+          endif
+        enddo
+      endif
+
+      if ( l_fatal_error ) stop "get_var failed for stats_sw in grads_fields_reader"
 
       ! Deallocate temporary storage variable LES_tmp1.
       deallocate( LES_tmp1 )
