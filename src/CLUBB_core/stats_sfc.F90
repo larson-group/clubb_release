@@ -214,13 +214,13 @@ do i=1,sfc%nn
   case ( 'morr_rain_rate' )
     imorr_rain_rate = k
     call stat_assign( imorr_rain_rate, "morr_rain_rate", & 
-         "Rain rate [mm/day]","mm/day", sfc )
+         "Total precip fallout rate [mm/day]","mm/day", sfc )
     k = k + 1
 
   case ( 'morr_snow_rate' )
     imorr_snow_rate = k
     call stat_assign( imorr_snow_rate, "morr_snow_rate", & 
-         "Snow rate [mm/day]","mm/day", sfc )
+         "Snow+Ice+Gruapel fallout rate [mm/day]","mm/day", sfc )
     k = k + 1
 
   case ('wpthlp_sfc')
