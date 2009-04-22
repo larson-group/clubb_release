@@ -484,7 +484,7 @@ E.g.
 \item Code should not make use of explicit precision variables unless there is 
 an unique reason for it (e.g. writing 4 byte records to disk).  This allows for 
 compile time promotion of reals and doubles on different computer architectures.
-Also, do not use the asterisks notation to specify precision, because
+Also, do not use the asterisks notation to specify precision, because it
 is an extension of the Fortran standard.  E.g.
 \begin{verbatim}
   ! This does not allow for compile time promotion.
