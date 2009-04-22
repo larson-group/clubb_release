@@ -58,7 +58,7 @@ module parameters_radiation
 ! OpenMP directives. These cannot be indented.
 !$omp threadprivate(rad_scheme, sol_const, alvdr, alvdf, alndr, alndf, &
 !$omp   kappa, F0, F1, eff_drop_radius, gc, omega, std_atmos_buffer, Fs_list, &
-!$omp   cos_solar_zen, l_fix_cos_solar_zen, nparam)
+!$omp   cos_solar_zen_list, l_fix_cos_solar_zen, nparam)
 
   contains
 
