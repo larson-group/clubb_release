@@ -335,7 +335,7 @@ module inputfields
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_Lscale) then
-        call get_var( fread_var , "lscale", timestep, & 
+        call get_var( fread_var , "Lscale", timestep, & 
                       Lscale(1:gr%nnzp), l_read_error)
         l_fatal_error = l_fatal_error .or. l_read_error
       endif

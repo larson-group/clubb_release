@@ -376,9 +376,10 @@ module inputfile_class
 
     if ( i > f%nvar ) then
       l_error = .true.
-      write(*,*) 'get_var: i > f%nvar'
-      write(*,*) 'i = ',i
-      write(*,*) 'f%nvar = ',f%nvar
+!     write(*,*) 'get_var: i > f%nvar'
+!     write(*,*) 'i = ',i
+!     write(*,*) 'f%nvar = ',f%nvar
+      write(0,*) "inputgrads get_var: "//trim( varname ), " variable not found."
       return
     end if
 
