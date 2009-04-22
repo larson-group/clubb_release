@@ -95,7 +95,7 @@ micro_scheme = "none"
 &radiation_setting
 rad_scheme = "bugsrad",
 
-! BugsRad related settings
+! BUGSrad related settings
 sol_const = 1321.0 ! Solar Constant for July [W/m^2]
 
 std_atmos_buffer = 45

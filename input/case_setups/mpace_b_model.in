@@ -95,14 +95,15 @@ micro_scheme = "simplified_ice"
 
 &radiation_setting
 rad_scheme = "simplified",
-F0 = 70.0,
-F1 = 22.0,
-kappa = 85.0,
+F0 = 70.0,   ! Coefficient for cloud top heating (see Stevens) [W/m^2] 
+F1 = 22.0,    ! Coefficient for cloud base heating (see Stevens)[W/m^2] 
+kappa = 85., ! A constant (Duynkerke eqn. 5)                   [m^2/kg]
+eff_drop_radius = 1.0e-5, ! Effective droplet radius		[m]
+alvdr = 0.1,   ! Visible direct surface albedo        		[-]
+gc    = 0.86,  ! Asymmetry parameter, "g" in Duynkerke          [-]
+omega = 0.9965,! Single-scattering albedo                       [-] 
 Fs_list = 1212.75,
-eff_drop_radius = 1.e-5,
-alvdr = 0.1,
-gc = 0.86,
-omega = 0.9965,
+
 /
 
 &stats_setting

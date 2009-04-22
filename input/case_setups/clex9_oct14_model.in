@@ -83,15 +83,20 @@ microphys_start_time = 54862.5
 
 &radiation_setting
 rad_scheme = "simplified",
-F0 = 104.0,
-F1 = 62.0,
-kappa = 94.2,
-eff_drop_radius = 1e-5,
-alvdr = 0.1,
-gc = 0.86,
-omega = 0.9965,
+F0 = 104.0,   ! Coefficient for cloud top heating (see Stevens) [W/m^2] 
+F1 = 62.0,    ! Coefficient for cloud base heating (see Stevens) [W/m^2] 
+kappa = 94.2, ! A constant (Duynkerke eqn. 5)                   [m^2/kg]
+eff_drop_radius = 1.0e-5, ! Effective droplet radius		[m]
+alvdr = 0.1, ! Visible direct surface albedo        		[-]
+gc = 0.86, ! Asymmetry parameter, "g" in Duynkerke           	[-]
+omega = 0.9965, ! Single-scattering albedo                      [-] 
+
+! Cosine of the solar zenith angle	[-]
 cos_solar_zen_list = 0.0, 0.01, 0.1, 0.2, 0.3, 0.4,
   0.5, 0.6, 0.7, 0.8, 0.9, 1.0,
+
+! The incident of incoming SW insolation at cloud top the
+! direction of the incoming beam (not the vertical)   [W/m^2]
 Fs_list = 0.0, 715.86, 1073.577, 1165.0905, 1204.7033, 1227.6898,
   1243.1772, 1254.5893, 1263.5491, 1270.8668, 1277.0474, 1282.3994,
 /

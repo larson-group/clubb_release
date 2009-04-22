@@ -94,7 +94,7 @@ debug_level   = 2
 /
 
 &microphysics_setting
-micro_scheme = "coamps"
+micro_scheme = "coamps" !"khairoutdinov_kogan", "morrison", "simplified_ice".  
 /
 &radiation_setting
 rad_scheme = "none",
