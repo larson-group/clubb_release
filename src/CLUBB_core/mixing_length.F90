@@ -73,8 +73,8 @@ contains
 
     ! Constant Parameters
     real, parameter ::  & 
-      zlmin = 0.1,  & 
-      zeps  = 1.e-10
+      zlmin = 0.1 !,  & 
+      !zeps  = 1.e-10
 
     ! Input Variables
     real, dimension(gr%nnzp), intent(in) ::  & 
@@ -97,6 +97,8 @@ contains
     integer :: i, j
 
     real :: tke_i, CAPE_incr
+
+    real :: dCAPE_dz_j, dCAPE_dz_j_minus_1, dCAPE_dz_j_plus_1
 
     ! Minimum value for Lscale that will taper off with height
     real :: lminh
@@ -126,6 +128,9 @@ contains
     Lscale_up(1)   = 0.0
     Lscale_down(1) = 0.0
 
+
+    !!!!! Compute Lscale_up for every vertical level.
+
     ! Upwards loop
 
     Lscale_up_max_alt = 0.
@@ -139,6 +144,7 @@ contains
        thl_par_j_minus_1 = thlm(i)
        rt_par_j_minus_1  = rtm(i)
        !rc_par_j_minus_1  = rcm(i)
+       dCAPE_dz_j_minus_1 = 0.0
 
        do while ((tke_i > 0.) .and. (j < gr%nnzp))
 
@@ -166,11 +172,26 @@ contains
           ! of thl_env is treated as changing linearly for a parcel of air
           ! ascending from level j-1 (where thl_env has the value thlm(j-1)) to
           ! level j (where thl_env has the value thlm(j)).
+          !
+          ! For the special case where entrainment rate, mu, is set to 0,
+          ! thl_par remains constant as the parcel ascends.
 
-          thl_par_j = thlm(j) - thlm(j-1)*exp(-mu/gr%dzm(j-1))  &
-                      - ( 1.0 - exp(-mu/gr%dzm(j-1)) )  &
-                        * ( (thlm(j) - thlm(j-1)) / (mu/gr%dzm(j-1)) )  &
-                      + thl_par_j_minus_1 * exp(-mu/gr%dzm(j-1))
+          if ( mu /= 0.0 ) then
+
+             ! The ascending parcel is entraining at rate mu.
+
+             thl_par_j = thlm(j) - thlm(j-1)*exp(-mu/gr%dzm(j-1))  &
+                         - ( 1.0 - exp(-mu/gr%dzm(j-1)) )  &
+                           * ( (thlm(j) - thlm(j-1)) / (mu/gr%dzm(j-1)) )  &
+                         + thl_par_j_minus_1 * exp(-mu/gr%dzm(j-1))
+
+          else
+
+             ! The ascending parcel is not entraining.
+
+             thl_par_j = thl_par_j_minus_1
+
+          endif
 
           ! r_t of the parcel at grid level j.
           !
@@ -193,11 +214,26 @@ contains
           ! treated as changing linearly for a parcel of air ascending from
           ! level j-1 (where rt_env has the value rtm(j-1)) to level j (where
           ! rt_env has the value rtm(j)).
+          !
+          ! For the special case where entrainment rate, mu, is set to 0,
+          ! rt_par remains constant as the parcel ascends.
 
-          rt_par_j = rtm(j) - rtm(j-1)*exp(-mu/gr%dzm(j-1))  &
-                     - ( 1.0 - exp(-mu/gr%dzm(j-1)) )  &
-                       * ( (rtm(j) - rtm(j-1)) / (mu/gr%dzm(j-1)) )  &
-                     + rt_par_j_minus_1 * exp(-mu/gr%dzm(j-1))
+          if ( mu /= 0.0 ) then
+
+             ! The ascending parcel is entraining at rate mu.
+
+             rt_par_j = rtm(j) - rtm(j-1)*exp(-mu/gr%dzm(j-1))  &
+                        - ( 1.0 - exp(-mu/gr%dzm(j-1)) )  &
+                          * ( (rtm(j) - rtm(j-1)) / (mu/gr%dzm(j-1)) )  &
+                        + rt_par_j_minus_1 * exp(-mu/gr%dzm(j-1))
+
+          else
+
+             ! The ascending parcel is not entraining.
+
+             rt_par_j = rt_par_j_minus_1
+
+          endif
 
           ! Include effects of latent heating on Lscale_up 6/12/00
           ! Use thermodynamic formula of Bougeault 1981 JAS Vol. 38, 2416
@@ -217,19 +253,98 @@ contains
           thv_par_j = thl_par_j + ep1 * T0 * rt_par_j  & 
                       + ( Lv / (exner(j)*cp) - ep2 * T0 ) * rc_par_j
 
-          CAPE_incr = ( ( grav/thvm(j) ) / gr%dzm(j-1) )  & 
-                      * ( thv_par_j - thvm(j) ) 
+          ! Lscale_up and CAPE increment.
+          !
+          ! The equation for Lscale_up is:
+          !
+          ! INT(z_i:z_i+Lscale_up) g * ( thv_par - thvm ) / thvm dz = -em(z_i);
+          !
+          ! where thv_par is theta_v of the parcel, thvm is the mean
+          ! environmental value of theta_v, z_i is the altitude that the parcel
+          ! started its ascent from, and em is the mean value of TKE at
+          ! altitude z_i (which gives the parcel its initial upward boost).
+          !
+          ! The increment of CAPE for any two successive vertical levels (z_0
+          ! and z_1, such that z_0 < z_1, and where z_0 is gr%zt(j-1) and z_1
+          ! is gr%zt(j)) is:
+          !
+          ! CAPE_incr = INT(z_0:z_1) g * ( thv_par - thvm ) / thvm dz.
+          !
+          ! Thus, the derivative of CAPE with respect to height is:
+          !
+          ! dCAPE/dz = g * ( thv_par - thvm ) / thvm.
+          !
+          ! A purely trapezoidal rule is used between levels z_0 and z_1, such
+          ! that dCAPE/dz is evaluated at levels z_0 and z_1, and is considered
+          ! to vary linearly at all altitudes z_0 <= z <= z_1.  Thus, dCAPE/dz
+          ! is considered to be of the form:  A * (z-zo) + dCAPE/dz|_(z_0),
+          ! where A = ( dCAPE/dz|_(z_1) - dCAPE/dz|_(z_0) ) / ( z_1 - z_0 ).
+          !
+          ! The integral is evaluated to find the CAPE increment between two
+          ! successive vertical levels.  The result either adds to or depletes
+          ! from the total amount of energy that keeps the parcel ascending.
+
+          dCAPE_dz_j = ( grav/thvm(j) ) * ( thv_par_j - thvm(j) )
+
+          CAPE_incr = 0.5 * ( dCAPE_dz_j + dCAPE_dz_j_minus_1 ) / gr%dzm(j-1)
 
           if ( tke_i + CAPE_incr > 0.0 ) then
+
+             ! The total amount of CAPE increment has not exhausted the initial
+             ! TKE (plus any additions by CAPE increments due to upward
+             ! buoyancy) that boosted and carried the parcel upward.  The
+             ! thickness of the full grid level is added to Lscale_up.
+
              Lscale_up(i) = Lscale_up(i) + gr%zt(j) - gr%zt(j-1)
+
           else
-             Lscale_up(i) = Lscale_up(i) + ( gr%zt(j) - gr%zt(j-1) )  & 
-                               * tke_i/max( zeps, -CAPE_incr )
+
+             ! The total amount of CAPE increment has exhausted the initial TKE
+             ! (plus any additions by CAPE increments due to upward buoyancy)
+             ! that boosted and carried the parcel upward.  Add the thickness
+             ! z - z_0 (where z_0 < z <= z_1) to Lscale_up.  The calculation of
+             ! Lscale_up is complete.
+
+             if ( dCAPE_dz_j == dCAPE_dz_j_minus_1 ) then
+
+                ! Special case where dCAPE/dz|_(z_1) - dCAPE/dz|_(z_0) = 0,
+                ! thus making factor A (above) equal to 0.  Find the remaining
+                ! distance z - z_0 that it takes to exhaust the remaining TKE
+                ! (tke_i).
+
+                Lscale_up(i)  &
+                = Lscale_up(i)  &
+                + ( - tke_i / dCAPE_dz_j )
+
+             else
+
+                ! Case used for most scenarios where dCAPE/dz|_(z_1)
+                ! /= dCAPE/dz|_(z_0), thus making factor A /= 0.  Find the
+                ! remaining distance z - z_0 that it takes to exhaust the
+                ! remaining TKE (tke_i), using the quadratic formula (only the
+                ! negative (-) root works in this scenario).
+
+                Lscale_up(i)  &
+                = Lscale_up(i)  &
+                + ( - dCAPE_dz_j_minus_1 /  &
+                     ( dCAPE_dz_j - dCAPE_dz_j_minus_1 ) )  &
+                     / gr%dzm(j-1)  &
+                - sqrt( dCAPE_dz_j_minus_1**2  &
+                        - 2.0 * tke_i * gr%dzm(j-1)  &
+                          * ( dCAPE_dz_j - dCAPE_dz_j_minus_1 ) )  &
+                     / ( dCAPE_dz_j - dCAPE_dz_j_minus_1 )  &
+                     / gr%dzm(j-1)
+
+             endif
+
           endif
+
+          ! Reset values for use during the next vertical level up.
 
           thl_par_j_minus_1 = thl_par_j
           rt_par_j_minus_1 = rt_par_j
           !rc_par_j_minus_1 = rc_par_j
+          dCAPE_dz_j_minus_1 = dCAPE_dz_j
 
           tke_i = tke_i + CAPE_incr
           j = j + 1
@@ -237,13 +352,38 @@ contains
        enddo
 
        ! Make Lscale_up nonlocal
+       !
+       ! This code makes the value of Lscale_up nonlocal.  Thus, if a parcel
+       ! starting from a lower altitude can ascend to altitude
+       ! Lscale_up_max_alt, then a parcel starting from a higher altitude should
+       ! also be able to ascend to at least altitude Lscale_up_max_alt, even if
+       ! the local result of Lscale_up for the parcel that started at a higher
+       ! altitude is not sufficient for the parcel to reach altitude
+       ! Lscale_up_max_alt.
+       !
+       ! For example, if it was found that a parcel starting at an altitude of
+       ! 100 m. ascended to an altitude of 2100 m. (an Lscale_up value of
+       ! 2000 m.), then a parcel starting at an altitude of 200 m. should also
+       ! be able to ascend to an altitude of at least 2100 m.  If Lscale_up
+       ! was found to be only 1800 m. for the parcel starting at 200 m.
+       ! (resulting in the parcel only being able to ascend to an altitude of
+       ! 2000 m.), then this code will overwrite the 1800 m. value with a
+       ! Lscale_up value of 1900 m. (so that the parcel reaches an altitude of
+       ! 2100 m.).
+       !
+       ! This feature insures that the profile of Lscale_up will be very smooth,
+       ! thus reducing numerical instability in the model.
 
        Lscale_up_max_alt = max( Lscale_up_max_alt, Lscale_up(i)+gr%zt(i) )
+
        if ( ( gr%zt(i) + Lscale_up(i) ) < Lscale_up_max_alt ) then
           Lscale_up(i) = Lscale_up_max_alt - gr%zt(i)
        endif
 
     enddo
+
+
+    !!!!! Compute Lscale_down for every vertical level.
 
     ! Do it again for downwards particle motion.
     ! For now, do not include latent heat 
@@ -262,6 +402,7 @@ contains
        thl_par_j_plus_1 = thlm(i)
        rt_par_j_plus_1 = rtm(i)
        !rc_par_j_plus_1 = rcm(i)
+       dCAPE_dz_j_plus_1 = 0.0
 
        do while ( (tke_i > 0.) .and. (j >= 2) )
 
@@ -299,11 +440,26 @@ contains
           ! of thl_env is treated as changing linearly for a parcel of air
           ! descending from level j+1 (where thl_env has the value thlm(j+1)) to
           ! level j (where thl_env has the value thlm(j)).
+          !
+          ! For the special case where entrainment rate, mu, is set to 0,
+          ! thl_par remains constant as the parcel descends.
 
-          thl_par_j = thlm(j) - thlm(j+1)*exp(-mu/gr%dzm(j))  &
-                      - ( 1.0 - exp(-mu/gr%dzm(j)) )  &
-                        * ( (thlm(j) - thlm(j+1)) / (mu/gr%dzm(j)) )  &
-                      + thl_par_j_plus_1 * exp(-mu/gr%dzm(j))
+          if ( mu /= 0.0 ) then
+
+             ! The descending parcel is entraining at rate mu.
+
+             thl_par_j = thlm(j) - thlm(j+1)*exp(-mu/gr%dzm(j))  &
+                         - ( 1.0 - exp(-mu/gr%dzm(j)) )  &
+                           * ( (thlm(j) - thlm(j+1)) / (mu/gr%dzm(j)) )  &
+                         + thl_par_j_plus_1 * exp(-mu/gr%dzm(j))
+
+          else
+
+             ! The descending parcel is not entraining.
+
+             thl_par_j = thl_par_j_plus_1
+
+          endif
 
           ! r_t of the parcel at grid level j.
           !
@@ -336,11 +492,26 @@ contains
           ! treated as changing linearly for a parcel of air descending from
           ! level j+1 (where rt_env has the value rtm(j+1)) to level j (where
           ! rt_env has the value rtm(j)).
+          !
+          ! For the special case where entrainment rate, mu, is set to 0,
+          ! rt_par remains constant as the parcel descends.
 
-          rt_par_j = rtm(j) - rtm(j+1)*exp(-mu/gr%dzm(j))  &
-                     - ( 1.0 - exp(-mu/gr%dzm(j)) )  &
-                       * ( (rtm(j) - rtm(j+1)) / (mu/gr%dzm(j)) )  &
-                     + rt_par_j_plus_1 * exp(-mu/gr%dzm(j))
+          if ( mu /= 0.0 ) then
+
+             ! The descending parcel is entraining at rate mu.
+
+             rt_par_j = rtm(j) - rtm(j+1)*exp(-mu/gr%dzm(j))  &
+                        - ( 1.0 - exp(-mu/gr%dzm(j)) )  &
+                          * ( (rtm(j) - rtm(j+1)) / (mu/gr%dzm(j)) )  &
+                        + rt_par_j_plus_1 * exp(-mu/gr%dzm(j))
+
+          else
+
+             ! The descending parcel is not entraining.
+
+             rt_par_j = rt_par_j_plus_1
+
+          endif
 
           ! Include effects of latent heating on Lscale_down
           ! Use thermodynamic formula of Bougeault 1981 JAS Vol. 38, 2416
@@ -360,35 +531,149 @@ contains
           thv_par_j = thl_par_j + ep1 * T0 * rt_par_j & 
                       + ( Lv / (exner(j)*cp) - ep2 * T0 ) * rc_par_j
 
-          CAPE_incr = -( ( grav/thvm(j) ) / gr%dzm(j) )  & 
-                       * ( thv_par_j - thvm(j) ) 
+          ! Lscale_down and CAPE increment.
+          !
+          ! The equation for Lscale_down (where Lscale_down is the absolute
+          ! value of downward distance) is:
+          !
+          ! INT(z_i-Lscale_down:z_i) g * ( thv_par - thvm ) / thvm dz = em(z_i);
+          !
+          ! where thv_par is theta_v of the parcel, thvm is the mean
+          ! environmental value of theta_v, z_i is the altitude that the parcel
+          ! started its descent from, and em is the mean value of TKE at
+          ! altitude z_i (which gives the parcel its initial downward boost).
+          !
+          ! The increment of CAPE for any two successive vertical levels (z_0
+          ! and z_(-1), such that z_(-1) < z_0, and where z_0 is gr%zt(j+1) and
+          ! z_(-1) is gr%zt(j)) is:
+          !
+          ! CAPE_incr = INT(z_(-1):z_0) g * ( thv_par - thvm ) / thvm dz.
+          !
+          ! Thus, the derivative of CAPE with respect to height is:
+          !
+          ! dCAPE/dz = g * ( thv_par - thvm ) / thvm.
+          !
+          ! A purely trapezoidal rule is used between levels z_(-1) and z_0,
+          ! such that dCAPE/dz is evaluated at levels z_(-1) and z_0, and is
+          ! considered to vary linearly at all altitudes z_(-1) <= z <= z_0.
+          ! Thus, dCAPE/dz is considered to be of the form:
+          ! A * (z-zo) + dCAPE/dz|_(z_0), where
+          ! A = ( dCAPE/dz|_(z_(-1)) - dCAPE/dz|_(z_0) ) / ( z_(-1) - z_0 ).
+          !
+          ! The integral is evaluated to find the CAPE increment between two
+          ! successive vertical levels.  The result either adds to or depletes
+          ! from the total amount of energy that keeps the parcel descending.
 
-          if ( tke_i + CAPE_incr > 0.0 ) then
+          dCAPE_dz_j = ( grav/thvm(j) ) * ( thv_par_j - thvm(j) )
+
+          CAPE_incr = 0.5 * ( dCAPE_dz_j + dCAPE_dz_j_plus_1 ) / gr%dzm(j)
+
+          if ( tke_i - CAPE_incr > 0.0 ) then
+
+             ! The total amount of CAPE increment has not exhausted the initial
+             ! TKE (plus any additions by CAPE increments due to downward
+             ! buoyancy) that boosted and carried the parcel downward.  The
+             ! thickness of the full grid level is added to Lscale_down.
+
              Lscale_down(i) = Lscale_down(i) + gr%zt(j+1) - gr%zt(j)
+
           else
-             Lscale_down(i) = Lscale_down(i) + ( gr%zt(j+1) - gr%zt(j) )  & 
-                                 * tke_i/max( zeps, -CAPE_incr )
+
+             ! The total amount of CAPE increment has exhausted the initial TKE
+             ! (plus any additions by CAPE increments due to downward buoyancy)
+             ! that boosted and carried the parcel downward.  Add the thickness
+             ! z_0 - z (where z_(-1) <= z < z_0) to Lscale_down.  The
+             ! calculation of Lscale_down is complete.
+
+             if ( dCAPE_dz_j == dCAPE_dz_j_plus_1 ) then
+
+                ! Special case where dCAPE/dz|_(z_(-1)) - dCAPE/dz|_(z_0) = 0,
+                ! thus making factor A (above) equal to 0.  Find the remaining
+                ! distance z_0 - z that it takes to exhaust the remaining TKE
+                ! (tke_i).
+
+                Lscale_down(i)  &
+                = Lscale_down(i)  &
+                + ( tke_i / dCAPE_dz_j )
+
+             else
+
+                ! Case used for most scenarios where dCAPE/dz|_(z_(-1))
+                ! /= dCAPE/dz|_(z_0), thus making factor A /= 0.  Find the
+                ! remaining distance z_0 - z that it takes to exhaust the
+                ! remaining TKE (tke_i), using the quadratic formula (only the
+                ! negative (-) root works in this scenario -- however, the
+                ! negative (-) root is divided by another negative (-) factor,
+                ! which results in an overall plus (+) sign in front of the
+                ! square root term in the equation below).
+
+                Lscale_down(i)  &
+                = Lscale_down(i)  &
+                + ( - dCAPE_dz_j_plus_1 /  &
+                     ( dCAPE_dz_j - dCAPE_dz_j_plus_1 ) )  &
+                     / gr%dzm(j)  &
+                + sqrt( dCAPE_dz_j_plus_1**2  &
+                        + 2.0 * tke_i * gr%dzm(j)  &
+                          * ( dCAPE_dz_j - dCAPE_dz_j_plus_1 ) )  &
+                     / ( dCAPE_dz_j - dCAPE_dz_j_plus_1 )  &
+                     / gr%dzm(j)
+
+             endif
+
           endif
+
+          ! Reset values for use during the next vertical level down.
 
           thl_par_j_plus_1 = thl_par_j
           rt_par_j_plus_1  = rt_par_j
           !rc_par_j_plus_1  = rc_par_j
+          dCAPE_dz_j_plus_1 = dCAPE_dz_j
 
-          tke_i = tke_i + CAPE_incr
+          tke_i = tke_i - CAPE_incr
           j = j - 1
 
        enddo
 
        ! Make Lscale_down nonlocal
-       !Lscale_down_min_alt = max( Lscale_down_min_alt, gr%zt(i)-Lscale_down(i) )
-       Lscale_down_min_alt = min( Lscale_down_min_alt, gr%zt(i)-Lscale_down(i) ) ! %% test
+       !
+       ! This code makes the value of Lscale_down nonlocal.  Thus, if a parcel
+       ! starting from a higher altitude can descend to altitude
+       ! Lscale_down_min_alt, then a parcel starting from a lower altitude
+       ! should also be able to descend to at least altitude
+       ! Lscale_down_min_alt, even if the local result of Lscale_down for the
+       ! parcel that started at a lower altitude is not sufficient for the
+       ! parcel to reach altitude Lscale_down_min_alt.
+       !
+       ! For example, if it was found that a parcel starting at an altitude of
+       ! 1100 m. descended to an altitude of 100 m. (an Lscale_down value of
+       ! 1000 m.), then a parcel starting at an altitude of 1000 m. should also
+       ! be able to descend to an altitude of at least 100 m.  If Lscale_down
+       ! was found to be only 800 m. for the parcel starting at 1000 m.
+       ! (resulting in the parcel only being able to descend to an altitude of
+       ! 200 m.), then this code will overwrite the 800 m. value with a
+       ! Lscale_down value of 900 m. (so that the parcel reaches an altitude of
+       ! 100 m.).
+       !
+       ! This feature insures that the profile of Lscale_down will be very
+       ! smooth, thus reducing numerical instability in the model.
+
+       Lscale_down_min_alt = min( Lscale_down_min_alt, gr%zt(i)-Lscale_down(i) )
+
        if ( (gr%zt(i)-Lscale_down(i)) > Lscale_down_min_alt ) then
           Lscale_down(i) = gr%zt(i) - Lscale_down_min_alt
        endif
 
     enddo
 
+
+    !!!!! Compute Lscale for every vertical level.
+
     do i = 2, gr%nnzp, 1
+
+       ! The equation for Lscale is:
+       !
+       ! Lscale = sqrt( Lscale_up * Lscale_down ).
+
        ! Make lminh a linear function starting at value lmin at the bottom
        ! and going to zero at 500 meters in altitude.
        ! -dschanen 27 April 2007
@@ -401,6 +686,7 @@ contains
 
     enddo
 
+    ! Set the value of Lscale at the upper and lower boundaries.
     Lscale(1) = Lscale(2)
     Lscale(gr%nnzp) = Lscale(gr%nnzp-1)
 

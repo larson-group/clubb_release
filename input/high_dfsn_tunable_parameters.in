@@ -57,5 +57,5 @@ gamma_coefc = 5.000000 ! Degree of Slope of gamma coefficient Skewness Function.
 taumin      = 90.00000 ! Previously determined value.
 taumax      = 3600.000 ! Previously determined value.
 lmin_coef   = 0.500000 ! Previously determined value.
-mu          = 6.000E-4 ! Constant from Chris Golaz.
+mu          = 1.000E-3 ! Constant Parcel Entrainment Rate (Lscale).
 /

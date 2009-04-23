@@ -425,14 +425,21 @@ module parameters_tunable
     if ( beta < 0.0 .or. beta > 3.0 ) then
 
       ! Constraints on beta
-      write(fstderr,*) "beta= ", beta
+      write(fstderr,*) "beta = ", beta
       write(fstderr,*) "beta cannot be < 0 or > 3"
+      err_code = clubb_var_out_of_bounds
+
+    elseif ( mu < 0.0 ) then
+
+      ! Constraints on entrainment rate, mu.
+      write(fstderr,*) "mu = ", mu
+      write(fstderr,*) "mu cannot be < 0"
       err_code = clubb_var_out_of_bounds
 
     elseif ( lmin < 4.0 ) then
 
       ! Constraints on mixing length
-      write(fstderr,*) "lmin= ", lmin
+      write(fstderr,*) "lmin = ", lmin
       write(fstderr,*) "lmin is < 4.0"
       err_code = clubb_var_out_of_bounds
 
@@ -502,20 +509,20 @@ module parameters_tunable
       C13         = 0.1
       C14         = 1.0
       c_K         = 0.548
-      c_K1        = 0.0
+      c_K1        = 0.5
       nu1         = 20.0
       c_K2        = 0.0
       nu2         = 5.0
       c_K6        = 0.0
       nu6         = 5.0
-      c_K8        = 0.5
+      c_K8        = 1.0
       nu8         = 20.0
       c_K9        = 0.0
       nu9         = 20.0
       c_Krrainm   = 0.075
       nu_r        = 3.0
       c_Ksqd      = 10.0
-      nu_hd       = 100000.0
+      nu_hd       = 20000.0
       beta        = 1.75
       gamma_coef  = 0.32
       gamma_coefb = 0.32
@@ -523,7 +530,7 @@ module parameters_tunable
       taumin      = 90.0
       taumax      = 3600.0
       lmin_coef   = 0.5
-      mu          = 6.000E-4
+      mu          = 1.000E-3
 
     else
 
