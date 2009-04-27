@@ -1625,27 +1625,8 @@ module inputfields
       ! rho_zm is in stats_sw
 
       if ( input_Lscale ) then
-        call get_var( fread_var, "lm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of mixing length from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            Lscale(k) = lin_int( gr%zt(k),  &
-                              fread_var%z(upper_lev_idx_zt(k)),  &
-                              fread_var%z(lower_lev_idx_zt(k)),  &
-                              LES_tmp1(upper_lev_idx_zt(k)),  &
-                              LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            Lscale(k) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
+        write(fstderr,*) "The variable Lscale is not setup for input_type = les"
+        l_fatal_error = .true.
       endif
 
       if ( input_Lscale_up ) then
