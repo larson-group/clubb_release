@@ -1917,7 +1917,7 @@ module clubb_driver
 
     case ( "mpace_b" ) ! mpace_b arctic stratus case
 
-      call mpace_b_tndcy( time_current, amu0, &                      ! Intent(in)
+      call mpace_b_tndcy( amu0, &                      ! Intent(in)
                           rho,  p_in_Pa, thvm, rcm, &                ! Intent(in)
                           wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
                           Frad, radht,  &                            ! Intent(out)

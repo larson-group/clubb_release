@@ -117,7 +117,7 @@ module input_reader
   end subroutine read_two_dim_file
 
   !-------------------------------------------------------------------------------------------------
-  subroutine read_one_dim_file( nCol, filename, read_vars )
+  subroutine read_one_dim_file( iunit, nCol, filename, read_vars )
     !
     ! Description: This subroutine reads from a file containing data that varies
     !              in one dimensions. This is typically time.
@@ -126,6 +126,9 @@ module input_reader
     implicit none
 
     ! Input Variable(s)
+
+    integer, intent(in) :: iunit ! I/O unit
+
     integer, intent(in) :: nCol ! Number of columns expected in the data file
 
     character(len=*), intent(in)  :: filename ! Name of the file being read from
@@ -142,19 +145,19 @@ module input_reader
     real, dimension(ncol) :: tmp
 
     ! First run through, take names and determine how large the data file is.
-    open(unit=10, file=trim(filename), status = 'old' )
+    open(unit=iunit, file=trim(filename), status = 'old' )
 
-    read(10, fmt=*) names
+    read(iunit, fmt=*) names
 
     nRow = 0
     do while(.true.)
-      read(10, *, end=77) tmp
+      read(iunit, *, end=77) tmp
       nRow = nRow+1
     end do
     77 continue
 
-    rewind(10)
-    read(10, *) ! Skip the line
+    rewind(iunit)
+    read(iunit, *) ! Skip the line
 
     ! Store the names into the structure and allocate accordingly
     do k =1, nCol
@@ -165,10 +168,10 @@ module input_reader
 
     ! Read in the data again to the newly allocated arrays
     do k=1, nRow
-      read(10,*) ( read_vars(j)%values(k), j=1, nCol)
+      read(iunit,*) ( read_vars(j)%values(k), j=1, nCol)
     end do
 
-    close(10)
+    close(iunit)
 
     ! Avoiding compiler warning
     if(.false.) print *, tmp

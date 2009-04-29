@@ -358,7 +358,7 @@ module sounding
 
     type(one_dim_read_var), dimension(nCol) :: retVars
 
-    call read_one_dim_file( nCol, &
+    call read_one_dim_file( iunit, nCol, &
     '../input/case_setups/'//trim(runtype)//'_sounding.in', retVars )
 
     call fill_blanks_one_dim_vars( nCol, retVars )

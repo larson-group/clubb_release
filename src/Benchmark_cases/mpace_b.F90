@@ -15,7 +15,7 @@ private ! Default Scope
 contains
 
 !----------------------------------------------------------------------
-subroutine mpace_b_tndcy( time, xi_abs, & 
+subroutine mpace_b_tndcy( xi_abs, & 
                           rho, p_in_Pa, thvm, rcm, & 
                           wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
                           Frad, radht, &
@@ -78,9 +78,6 @@ real, parameter :: &
 !  omega  = 0.9965
 
 ! Input Variables
-real(kind=time_precision), intent(in) ::  & 
-  time   ! Current time of simulation      [s]
-
 real, intent(in) ::  & 
   xi_abs ! Cosine of the solar zenith angle [-]
 
