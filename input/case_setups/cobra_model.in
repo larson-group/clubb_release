@@ -95,6 +95,7 @@ iiedsclr_rt = 2 ! Location in the edsclrm array to place a scalar like total wat
 /
 
 &microphysics_setting
+! The schemes are: "khairoutdinov_kogan", "morrison", "coamps", "simplified_ice", "none"  
 micro_scheme = "none"
 /
 

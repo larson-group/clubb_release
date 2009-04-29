@@ -115,7 +115,8 @@ r_0 = 100.0e-6
 Ncm_initial = 70. ! #/cm3 
 /
 
-&radiation_setting
+&radiation_settingS
+! The schemes are: "khairoutdinov_kogan", "morrison", "coamps", "simplified_ice", "none"  
 rad_scheme = "none"
 /
 

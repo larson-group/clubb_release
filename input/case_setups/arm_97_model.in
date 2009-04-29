@@ -81,7 +81,8 @@ debug_level = 2
 /
 
 &microphysics_setting
-micro_scheme = "coamps" ! "khairoutdinov_kogan", "morrison", "simplified_ice".  
+! The schemes are: "khairoutdinov_kogan", "morrison", "coamps", "simplified_ice", "none"  
+micro_scheme = "coamps"
 l_graupel = .true.
 /
 

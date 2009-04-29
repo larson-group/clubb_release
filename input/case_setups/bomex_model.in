@@ -81,6 +81,7 @@ rad_scheme = "simplified",
 /
 
 &microphysics_setting
+! The schemes are: "khairoutdinov_kogan", "morrison", "coamps", "simplified_ice", "none"  
 micro_scheme = "none"
 /
 
