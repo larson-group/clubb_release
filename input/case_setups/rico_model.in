@@ -88,6 +88,7 @@ debug_level   = 2
 /
 
 &microphysics_setting
+! The schemes are: "khairoutdinov_kogan", "morrison", "coamps", "simplified_ice", "none"  
 micro_scheme = "khairoutdinov_kogan"
 
 !!!!!!! COMMENTS FOR RICO MARINE CUMULUS CASE
@@ -115,8 +116,7 @@ r_0 = 100.0e-6
 Ncm_initial = 70. ! #/cm3 
 /
 
-&radiation_settingS
-! The schemes are: "khairoutdinov_kogan", "morrison", "coamps", "simplified_ice", "none"  
+&radiation_setting
 rad_scheme = "none"
 /
 
