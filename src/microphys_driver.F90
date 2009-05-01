@@ -864,19 +864,10 @@ module microphys_driver
       rtm_mc = ( ( rcm_tmp + rvm_tmp ) - rtm ) / real( dt )
 
       ! Update thetal based on absolute temperature
-      !   This assumes the Morrison microphysics will only adjust thetal within
-      !   cloud, as do the modifications to M2005MICRO_GRAUPEL
-      ! This formula is somewhat inconsistent, because T_in_K is the within-cloud updated
-      !   value from the Morrison scheme, whereas the other quantities are grid-box means.
-      !   This may cause non-conservation of heat. However, it is not easy to fix this 
-      !   without Latin hypercube sampling.
-      where ( cf > 0.01 ) 
-        thlm_mc = ( T_in_K2thlm( T_in_K, exner, rcm_tmp ) - thlm ) / real( dt ) * cf
-      else where
-        thlm_mc = 0.0
-      end where
+      thlm_mc = ( T_in_K2thlm( T_in_K, exner, rcm_tmp ) - thlm ) / real( dt )
 
-      hydromet_vel(:,:) = 0.0 ! Sedimentation is handled within the Morrison microphysics
+      ! Sedimentation is handled within the Morrison microphysics
+      hydromet_vel(:,:) = 0.0 
 
       if ( l_stats_samp ) then
 
