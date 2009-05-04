@@ -5,7 +5,7 @@ module sounding
 
   public ::  & 
     read_sounding, & 
-    read_profile ! Not currently used in HOC
+    read_profile ! Not currently used in CLUBB
 
   private :: read_sounding_file, read_x_profile, read_z_profile, &
   read_theta_profile
