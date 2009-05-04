@@ -9,11 +9,11 @@ module microphys_driver
 ! References:
 !  H. Morrison, J. A. Curry, and V. I. Khvorostyanov, 2005: A new double-
 !  moment microphysics scheme for application in cloud and
-!  climate models. Part 1: Description. J. Atmos. Sci., 62, 1665–1677.
+!  climate models. Part 1: Description. J. Atmos. Sci., 62, 1665-1677.
 
 ! Khairoutdinov, M. and Kogan, Y.: A new cloud physics parameteri-
 ! zation in a large-eddy simulation model of marine stratocumulus,
-! Mon. Wea. Rev., 128, 229–243, 2000. 
+! Mon. Wea. Rev., 128, 229-243, 2000. 
 !-------------------------------------------------------------------------------
   use parameters_microphys, only: &
     l_cloud_sed,             & ! Cloud water sedimentation
@@ -312,8 +312,8 @@ module microphys_driver
       end if
 
       if ( l_cloud_sed ) then
-        write(0,*) "Morrison microphysics has seperate code for cloud water sedimentation,"
-        write(0,*) " therefore l_cloud_sed should be set to .false."
+        write(fstderr,*) "Morrison microphysics has seperate code for cloud water sedimentation,"
+        write(fstderr,*) " therefore l_cloud_sed should be set to .false."
         stop "Fatal error."
       end if
 
@@ -490,6 +490,7 @@ module microphys_driver
         Cp,  & 
         rho_lw,  & 
         fstderr, & 
+        zero_threshold, &
         sec_per_day
 
     use stats_precision, only:  & 
@@ -829,8 +830,9 @@ module microphys_driver
 
       ! Compute standard deviation of vertical velocity in the grid column
       wtmp(:) = sqrt( wp2_zt(:) )
+
       ! Based on YSU PBL interface to the Morrison scheme WRF driver, the standard dev. of w
-      ! will be clipped to be between 0.1 m/s and 4.0 m/s i WRF.  -dschanen 23 Mar 2009
+      ! will be clipped to be between 0.1 m/s and 4.0 m/s in WRF.  -dschanen 23 Mar 2009
 !     wtmp(:) = max( 0.1, wtmp ) ! Disabled for now
 !     wtmp(:) = min( 4., wtmp )  
 
@@ -933,7 +935,7 @@ module microphys_driver
         call stat_update_var( ieff_rad_rain, effr(:), zt )
         call stat_update_var( ieff_rad_graupel, effg(:), zt )
 
-        ! Snow and Rain rates over the entire domain, in mm/day
+        ! Snow and Rain rates at the bottom of the domain, in mm/day
         call stat_update_var_pt( imorr_rain_rate, 1, &
           real( dt ) * Morr_rain_rate / real( sec_per_day ), sfc )
 
@@ -1091,8 +1093,8 @@ module microphys_driver
 
         end if
 
-        ! Clip to zero
-        where ( hydromet(:,i) < 0.0 ) hydromet(:,i) = 0.0
+        ! Clip all hydrometeor species to be > zero
+        where ( hydromet(:,i) < zero_threshold ) hydromet(:,i) = zero_threshold
 
           if ( l_stats_samp ) then
 
@@ -1163,7 +1165,7 @@ module microphys_driver
 
       end if
 
-
+      ! Add microphysical tendencies to large-scale and radiative tendencies
       rtm_forcing  = rtm_forcing + rtm_mc
       thlm_forcing = thlm_forcing + thlm_mc
 
