@@ -1,7 +1,7 @@
 
-function avg_field = read_grads_hoc_endian(filename,MachineFormat,nz,t1,t2,varnum,numvars)
+function avg_field = read_grads_clubb_endian(filename,MachineFormat,nz,t1,t2,varnum,numvars)
 
-% READ_GRADS_HOC_ENDIAN   Reads and time-averages profiles from 1D GrADS *.dat files.
+% READ_GRADS_CLUBB_ENDIAN   Reads and time-averages profiles from 1D GrADS *.dat files.
 %
 %   Written by Vince Larson (vlarson@uwm.edu)
 %
@@ -49,4 +49,4 @@ avg_field = avg_field/num_timesteps;
 % close GrADS file
 status = fclose(fid);
 
-% End of read_grads_hoc_endian program...Returning to parent program
+% End of read_grads_clubb_endian program...Returning to parent program

@@ -1,13 +1,8 @@
-gabls3_output_creator.m is the file responsible for changing GrADS output from CLUBB for gabls3 into the netCDF file requested for the GABLS3 SCM intercomparison. It requires header_read.m and read_grads_hoc_endian.m in order to read GrADS data. It uses MATLAB R2008b's built in netCDF functions in order to write out the file.
+gabls3_output_creator.m is the file responsible for changing GrADS output from CLUBB for gabls3 into the netCDF file requested for the GABLS3 SCM intercomparison. It requires header_read.m and read_grads_clubb_endian.m in order to read GrADS data. It uses MATLAB R2008b's built in netCDF functions in order to write out the file.
 
-gabls2_profile.m is the file used to create the input information for CLUBB.
-
-header_read.m is the file that reads in header information from a GrADS file.
+gabls3_profile.m is the file used to create the input information for CLUBB.
 
 netcdf_gabls3_matlab_reader.m is the file that reads the netCDF file created by gabls3_output_creator.m. It was used to verify the proper operation of gabls3_output_creator.m.
 
-read_grads_hoc_endian.m is the file that reads in GrADS variable information so that it can be used in MATLAB.
-
 test_surface.m is the file used to verify the operation of the soil-vegetation scheme that was added to CLUBB since it was a requirement.
 
-convert.m is the file that contains a class with functions used for converting units. 

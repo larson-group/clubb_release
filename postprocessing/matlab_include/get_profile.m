@@ -1,7 +1,7 @@
 function stat_profile = get_profile(les_path,datfile,numvars,list_vars,nz,t1,t2, ...
                                variable,sim)
 
-%GET_PROFILE   Accesses stats files, calls read_grads_hoc_endian to get profiles.
+%GET_PROFILE   Accesses stats files, calls read_grads_clubb_endian to get profiles.
 %
 %   Original program: plot_les_scm.m
 %   Written by Michael J. Falk (mjfalk@uwm.edu)
@@ -12,7 +12,7 @@ function stat_profile = get_profile(les_path,datfile,numvars,list_vars,nz,t1,t2,
 %
 %   This program takes a variable list from the parent program, and loops through it
 %   until we find an entry matching the name of the variable to be observed.  The
-%   program then generates and executes a call statement to read_grads_hoc_endian.m,
+%   program then generates and executes a call statement to read_grads_clubb_endian.m,
 %   which returns the desired variable profile.  get_profile then passes the profile
 %   back to the parent program for observation and manipulation.
 %
@@ -52,20 +52,20 @@ filename = [les_path,datfile];
 
 % This section loops once for each stats variable in the simulation.  If the
 % variable name for an iteration matches the variable we are looking for, we
-% generate and execute a call statement to read_grads_hoc_endian to get the
+% generate and execute a call statement to read_grads_clubb_endian to get the
 % corresponding profile.
 
 for i=1:numvars
     varname=list_vars(i,:);  % Obtain the i'th variable in the varlist
     varname=deblank(varname);          % Removes excess spaces used in array
     
-    % If varname is the variable we are looking for, call read_grads_hoc_endian
+    % If varname is the variable we are looking for, call read_grads_clubb_endian
     % to get the profile
     if (strcmp(varname,variable) & sim == 1)
-        stringtoeval = ['stat_profile = read_grads_hoc_endian(filename,''ieee-le'',nz,t1,t2,i,numvars);'];    
+        stringtoeval = ['stat_profile = read_grads_clubb_endian(filename,''ieee-le'',nz,t1,t2,i,numvars);'];    
         eval(stringtoeval);
     elseif (strcmp(varname,variable) & sim == 0)
-        stringtoeval = ['stat_profile = read_grads_hoc_endian(filename,''ieee-be'',nz,t1,t2,i,numvars);'];
+        stringtoeval = ['stat_profile = read_grads_clubb_endian(filename,''ieee-be'',nz,t1,t2,i,numvars);'];
         eval(stringtoeval);
     end
 end

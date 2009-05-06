@@ -27,6 +27,10 @@ function[] = gabls3_output_creator()
 %           output file.
 %
 
+
+% Necessary include
+addpath '../../matlab_include/'
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %   File Input Section
@@ -60,7 +64,7 @@ sizet = ntimesteps;
 % Variables will be usable in the form <GrADS Variable Name>_array.
 for i=1:numvars
     for timestep = 1:sizet
-    	stringtoeval = [list_vars(i,:), ' = read_grads_hoc_endian([scm_path,filename],''ieee-le'',nz,t(timestep),t(timestep),i,numvars);'];
+    	stringtoeval = [list_vars(i,:), ' = read_grads_clubb_endian([scm_path,filename],''ieee-le'',nz,t(timestep),t(timestep),i,numvars);'];
     	eval(stringtoeval);
     	str = list_vars(i,:);
         arraydata(1:nz,timestep) = eval([str,'(1:nz)']);
@@ -76,7 +80,7 @@ end
 % Variables will be usable in the form <GrADS Variable Name>_array
 for i=1:w_numvars
      for timestep = 1:sizet
-         stringtoeval = [w_list_vars(i,:), ' = read_grads_hoc_endian([scm_path,w_filename],''ieee-le'',w_nz,t(timestep),t(timestep),i,w_numvars);'];
+         stringtoeval = [w_list_vars(i,:), ' = read_grads_clubb_endian([scm_path,w_filename],''ieee-le'',w_nz,t(timestep),t(timestep),i,w_numvars);'];
          eval(stringtoeval)
          str = w_list_vars(i,:);
          arraydata(1:w_nz,timestep) = eval([str,'(1:w_nz)']);
@@ -92,7 +96,7 @@ end
 % Variables will be usable in the form <GrADS Variable Name>_array
 for i=1:sfc_numvars
     for timestep = 1:sizet
-        stringtoeval = [sfc_list_vars(i,:), ' = read_grads_hoc_endian([scm_path,sfc_filename],''ieee-le'',sfc_nz,t(timestep),t(timestep),i,sfc_numvars);'];
+        stringtoeval = [sfc_list_vars(i,:), ' = read_grads_clubb_endian([scm_path,sfc_filename],''ieee-le'',sfc_nz,t(timestep),t(timestep),i,sfc_numvars);'];
         eval(stringtoeval)
         str = sfc_list_vars(i,:);
         arraydata(1:sfc_nz,timestep) = eval([str,'(1:sfc_nz)']);
@@ -108,10 +112,10 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Perform Necessary conversions
-qtm_array = convert.total_water_mixing_ratio_to_specific_humidity( rtm_array );
-T_forcing_array = convert.thlm_f_to_t_f( thlm_f_array, radht_array, exner_array );
-ome_array = convert.w_wind_in_ms_to_Pas( wm_array, rho_array );
-wt_array = convert.potential_temperature_to_temperature( wpthlp_array, exner_array );
+qtm_array = convert_units.total_water_mixing_ratio_to_specific_humidity( rtm_array );
+T_forcing_array = convert_units.thlm_f_to_t_f( thlm_f_array, radht_array, exner_array );
+ome_array = convert_units.w_wind_in_ms_to_Pas( wm_array, rho_array );
+wt_array = convert_units.potential_temperature_to_temperature( wpthlp_array, exner_array );
 
 wq_array = wprtp_array ./ (1 + rtm_array);
 
@@ -121,9 +125,9 @@ for i=1:sizet
     time_out(i) =  i*10.0*60.0;
 end
 
-full_z  = convert.create_time_height_series( z, sizet );
-full_w_z = convert.create_time_height_series( w_z, sizet );
-full_sfc_z = convert.create_time_height_series( sfc_z, sizet );
+full_z  = convert_units.create_time_height_series( z, sizet );
+full_w_z = convert_units.create_time_height_series( w_z, sizet );
+full_sfc_z = convert_units.create_time_height_series( sfc_z, sizet );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %

@@ -2,11 +2,11 @@ Find_grads_differences.m is a MATLAB script which will compare three
 different sets of GrADS output, compare each variable within the files, 
 and tell you which fields differ.
 
-I wrote this because I was make infinitesimal changes in the code 
+Michael Falk wrote this because he was making infinitesimal changes in the code 
 between each individual run and the binary data files produced were 
-not identical.  All of the "usual" fields I checked (cf, rcm, thlm, 
+not identical.  All of the "usual" fields he checked (cf, rcm, thlm, 
 wp2zt) were identical over the course of the run, so instead checking 
-each of 400 fields by hand, I decided to write a script to do it for me.
+each of 400 fields by hand, he decided to write a script to do it for him.
 
 The script itself contains documentation at its beginning.
 

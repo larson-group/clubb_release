@@ -15,7 +15,7 @@ function [filename,nz,z,t_time_steps,numvars,listofparams] = header_read(file_he
 % Output files: none
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % This program reads a GrADS control file and returns the output
-% parameters so that read_grads_hoc_endian has its necessary inputs.
+% parameters so that read_grads_clubb_endian has its necessary inputs.
 % All comments below are intact from original and modified versions.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
