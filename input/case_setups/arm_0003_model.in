@@ -114,6 +114,3 @@ stats_fmt    = "grads"          ! Type of statistical output file (GrADS or netC
 
 /
 
-
-&scalar_sounding
-/

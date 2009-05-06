@@ -987,36 +987,21 @@ module stats_subs
         ithlp2_vert_avg
 
     use stats_variables, only: & 
-        isclram, & 
-        isclram_f, & 
-        isclrbm, & 
-        isclrbm_f, & 
-        iedsclram, & 
-        iedsclram_f, & 
-        iedsclrbm, & 
-        iedsclrbm_f, & 
-        isclraprtp, & 
-        isclrbprtp, & 
-        isclrap2, & 
-        isclrbp2, & 
-        isclrapthvp, & 
-        isclrbpthvp, & 
-        isclrapthlp, & 
-        isclrbpthlp, & 
-        isclraprcp, & 
-        isclrbprcp, & 
-        iwpsclrap, & 
-        iwpsclrbp, & 
-        iwp2sclrap, & 
-        iwp2sclrbp, & 
-        iwpsclrap2, & 
-        iwpsclrbp2, & 
-        iwpsclraprtp, & 
-        iwpsclrbprtp, & 
-        iwpsclrapthlp, & 
-        iwpsclrbpthlp, & 
-        iwpedsclrap, & 
-        iwpedsclrbp
+        isclrm, & 
+        isclrm_f, & 
+        iedsclrm, & 
+        iedsclrm_f, & 
+        isclrprtp, & 
+        isclrp2, & 
+        isclrpthvp, & 
+        isclrpthlp, & 
+        isclrprcp, & 
+        iwpsclrp, & 
+        iwp2sclrp, & 
+        iwpsclrp2, & 
+        iwpsclrprtp, & 
+        iwpsclrpthlp, & 
+        iwpedsclrp
 
     use grid_class, only: & 
         gr ! Variable
@@ -1230,27 +1215,19 @@ module stats_subs
       call stat_update_var( irtp2_zt, rtp2_zt, zt )
       call stat_update_var( irtpthlp_zt, rtpthlp_zt, zt )
 
-      if ( sclr_dim > 0 ) then
-        call stat_update_var( isclram, sclrm(:,1), zt )
-        call stat_update_var( isclrap2, sclrp2(:,1), zm )
-        call stat_update_var( isclram_f, sclrm_forcing(:,1),  zt )
-      end if
-
-      if ( sclr_dim > 1 ) then
-        call stat_update_var( isclrbm, sclrm(:,2), zt )
-        call stat_update_var( isclrbp2, sclrp2(:,2), zm )
-        call stat_update_var( isclrbm_f, sclrm_forcing(:,2), zt )
+      if (sclr_dim > 0 ) then
+        do i=1, sclr_dim
+          call stat_update_var( isclrm(i), sclrm(:,i), zt )
+          call stat_update_var( isclrm_f(i), sclrm_forcing(:,i),  zt )
+        end do
       end if
 
       if ( edsclr_dim > 0 ) then
-        call stat_update_var( iedsclram, edsclrm(:,1), zt )
-        call stat_update_var( iedsclram_f, edsclrm_forcing(:,1), zt )
+        do i=1, edsclr_dim
+          call stat_update_var( iedsclrm(i), edsclrm(:,i), zt )
+          call stat_update_var( iedsclrm_f(i), edsclrm_forcing(:,i), zt )
+        end do
       end if
-      if ( edsclr_dim > 1 ) then
-        call stat_update_var( iedsclrbm, edsclrm(:,2), zt )
-        call stat_update_var( iedsclrbm_f, edsclrm_forcing(:,2), zt )
-      end if
-
 
       ! zm variables
 
@@ -1284,33 +1261,23 @@ module stats_subs
 !   endif
 
       if ( sclr_dim > 0 ) then
-        call stat_update_var( isclraprtp, sclrprtp(:,1), zm )
-        call stat_update_var( isclrapthvp, sclrpthvp(:,1), zm )
-        call stat_update_var( isclrapthlp, sclrpthlp(:,1), zm )
-        call stat_update_var( isclraprcp, sclrprcp(:,1), zm )
-        call stat_update_var( iwpsclrap, wpsclrp(:,1), zm )
-        call stat_update_var( iwp2sclrap, wp2sclrp(:,1), zm )
-        call stat_update_var( iwpsclrap2, wpsclrp2(:,1), zm )
-        call stat_update_var( iwpsclraprtp, wpsclrprtp(:,1), zm )
-        call stat_update_var( iwpsclrapthlp, wpsclrpthlp(:,1), zm )
+        do i=1, sclr_dim
+          call stat_update_var( isclrp2(i), sclrp2(:,i), zm )
+          call stat_update_var( isclrprtp(i), sclrprtp(:,i), zm )
+          call stat_update_var( isclrpthvp(i), sclrpthvp(:,i), zm )
+          call stat_update_var( isclrpthlp(i), sclrpthlp(:,i), zm )
+          call stat_update_var( isclrprcp(i), sclrprcp(:,i), zm )
+          call stat_update_var( iwpsclrp(i), wpsclrp(:,i), zm )
+          call stat_update_var( iwp2sclrp(i), wp2sclrp(:,i), zm )
+          call stat_update_var( iwpsclrp2(i), wpsclrp2(:,i), zm )
+          call stat_update_var( iwpsclrprtp(i), wpsclrprtp(:,i), zm )
+          call stat_update_var( iwpsclrpthlp(i), wpsclrpthlp(:,i), zm )
+        end do
       endif
       if ( edsclr_dim > 0 ) then
-        call stat_update_var( iwpedsclrap, wpedsclrp(:,1), zm )
-      endif
-
-      if ( sclr_dim > 1 ) then
-        call stat_update_var( isclrbprtp, sclrprtp(:,2), zm )
-        call stat_update_var( isclrbpthvp, sclrpthvp(:,2), zm )
-        call stat_update_var( isclrbpthlp, sclrpthlp(:,2), zm )
-        call stat_update_var( isclrbprcp, sclrprcp(:,2), zm )
-        call stat_update_var( iwpsclrbp, wpsclrp(:,2), zm )
-        call stat_update_var( iwp2sclrbp, wp2sclrp(:,2), zm )
-        call stat_update_var( iwpsclrbp2, wpsclrp2(:,2), zm )
-        call stat_update_var( iwpsclrbprtp, wpsclrprtp(:,2), zm )
-        call stat_update_var( iwpsclrbpthlp, wpsclrpthlp(:,2), zm )
-      endif
-      if ( edsclr_dim > 1 ) then
-        call stat_update_var( iwpedsclrbp, wpedsclrp(:,2), zm )
+        do i=1, edsclr_dim
+          call stat_update_var( iwpedsclrp(i), wpedsclrp(:,i), zm )
+        end do
       endif
 
 
@@ -1468,6 +1435,23 @@ module stats_subs
         zmscr16, & 
         zmscr17
 
+    use stats_variables, only: & 
+    isclrm, & 
+    isclrm_f, & 
+    iedsclrm, & 
+    iedsclrm_f, & 
+    isclrprtp, & 
+    isclrp2, & 
+    isclrpthvp, & 
+    isclrpthlp, & 
+    isclrprcp, & 
+    iwpsclrp, & 
+    iwp2sclrp, & 
+    iwpsclrp2, & 
+    iwpsclrprtp, & 
+    iwpsclrpthlp, & 
+    iwpedsclrp
+
 #ifdef NETCDF
     use output_netcdf, only:  & 
         close_netcdf ! Procedure
@@ -1558,6 +1542,22 @@ module stats_subs
       deallocate( sfc%f%var )
       deallocate( sfc%f%z )
     end if ! l_stats
+
+    deallocate( isclrm )
+    deallocate( isclrm_f )
+    deallocate( iedsclrm )
+    deallocate( iedsclrm_f )
+    deallocate( isclrprtp )
+    deallocate( isclrp2 )
+    deallocate( isclrpthvp )
+    deallocate( isclrpthlp )
+    deallocate( isclrprcp )
+    deallocate( iwpsclrp )
+    deallocate( iwp2sclrp )
+    deallocate( iwpsclrp2 )
+    deallocate( iwpsclrprtp )
+    deallocate( iwpsclrpthlp )
+    deallocate( iwpedsclrp )
 
     return
   end subroutine stats_finalize

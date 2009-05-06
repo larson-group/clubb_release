@@ -108,16 +108,4 @@ stats_fmt    = "grads"            ! Type of statistical output file (GrADS or ne
 
 ! The DYCOMS2 RF02 soundings are hardwired in the file ../src/sounding.F   ! Brian
 
-&scalar_sounding
 
-! Initial sounding for passive scalars
-
-! Passive scalars computed using higher-order closure
-sclr(:,1) = 288.30, 288.30, 295.00, 304.30
-sclr(:,2) = 9.45e-3, 9.45e-3, 5.00e-3, 2.60e-3
-
-! Passive scalars computed using eddy diffusivity
-edsclr(:,1) = 288.30, 288.30, 295.00, 304.30
-edsclr(:,2) = 9.45e-3, 9.45e-3, 5.00e-3, 2.60e-3
-
-/

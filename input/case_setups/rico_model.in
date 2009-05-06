@@ -136,16 +136,3 @@ stats_fmt    = "grads"  ! Type of statistical output file (GrADS or netCDF).
 !theta = 297.900, 297.900, 312.664, 317.000, 335.210, 348.098, 352.784, 362.812, 392.084, 470.365
 
 
-&scalar_sounding
-
-! Initial sounding for passive scalars
-
-! Passive scalars computed using higher-order closure
-sclr(:,1) = 297.897, 297.842, 312.2371, 316.913, 335.198, 348.085, 352.771, 362.799, 392.069, 470.347
-sclr(:,2) = .021362, .014113, .002409, .001805, 0, 0, 0, 0, 0, 0
-
-! Passive scalars computed using eddy diffusivity
-edsclr(:,1) = 297.897, 297.842, 312.2371, 316.913, 335.198, 348.085, 352.771, 362.799, 392.069, 470.347
-edsclr(:,2) = .021362, .014113, .002409, .001805, 0, 0, 0, 0, 0, 0
-
-/

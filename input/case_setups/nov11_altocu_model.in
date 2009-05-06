@@ -111,18 +111,3 @@ stats_tout   = 60.             ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"         ! Type of statistical output file (GrADS or netCDF).
 /
 
-
-
-&scalar_sounding
-
-! Initial sounding for passive scalars
-
-! Passive scalars computed using higher-order closure
-sclr(:,1) = 303.83, 309.15, 311.50, 312.50, 314.00, 324.66
-sclr(:,2) = 4.25e-3, 3.20e-3, 2.70e-3, 2.53e-3, 2.25e-3, 0.55e-3
-
-! Passive scalars computed using eddy diffusivity
-edsclr(:,1) = 303.83, 309.15, 311.50, 312.50, 314.00, 324.66
-edsclr(:,2) = 4.25e-3, 3.20e-3, 2.70e-3, 2.53e-3, 2.25e-3, 0.55e-3
-
-/

@@ -180,6 +180,8 @@ module clubb_driver
       stats_begin_timestep, stats_end_timestep,  & ! Procedure(s)
       stats_finalize, stats_init
 
+    use sounding, only: sclr_max
+
     implicit none
 
     ! Because Fortran I/O is not thread safe, we use this here to
@@ -190,10 +192,6 @@ module clubb_driver
 #endif
     ! External
     intrinsic :: mod, real, int
-
-    ! Constant parameters
-    integer, parameter :: &
-      sclr_max = 10  ! Maximum number of passive scalars (arbitrary)
 
     ! Input Variables
     logical, intent(in) ::  & 

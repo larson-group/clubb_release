@@ -7,13 +7,16 @@ module sounding
     read_sounding, & 
     read_profile ! Not currently used in CLUBB
 
-  private :: read_sounding_file, read_x_profile, read_z_profile, &
-  read_theta_profile
+  private :: read_sounding_file, read_sclr_sounding_file, &
+    read_edsclr_sounding_file, read_x_profile, read_z_profile, &
+    read_theta_profile
 
-  private ! Default Scope
 
   ! Constant parameter
-  integer, private, parameter :: nmaxsnd = 600
+  integer, public, parameter :: nmaxsnd = 600
+  integer, public, parameter :: sclr_max = 1000
+
+  private ! Default Scope
 
   contains
   !------------------------------------------------------------------------
@@ -57,7 +60,6 @@ module sounding
 
     ! Constant parameter
     integer, parameter :: nmaxsnd = 600
-    integer, parameter :: sclr_max = 10
 
     ! Input variables
     integer, intent(in) :: iunit ! File unit to use for namelist
@@ -90,6 +92,9 @@ module sounding
     integer :: nlevels  ! Levels in the input sounding
 
     logical :: sounding_exists = .false.
+    logical :: sclr_sounding_exists = .false.
+    logical :: edsclr_sounding_exists = .false.
+
 
     real, dimension(nmaxsnd) :: & 
     z,      & ! Altitude                               [m]
@@ -98,13 +103,10 @@ module sounding
     u,      & ! u wind sounding                        [m/s] 
     v,      & ! v wind sounding                        [m/s]
     ug,     & ! u geostrophic wind sounding            [m/s]
-    vg     ! v geostrophic wind sounding            [m/s]
+    vg        ! v geostrophic wind sounding            [m/s]
 
     real, dimension(nmaxsnd, sclr_max) ::  & 
     sclr, edsclr ! Passive scalar input sounding    [units vary]
-
-    ! Namelist
-    namelist /scalar_sounding/ sclr, edsclr
 
     integer :: i, j, k  ! Loop indices
 
@@ -116,20 +118,31 @@ module sounding
 
     theta_type = "theta[K]" ! Default value
 
+    ! Determine which files exist ahead of time to allow for a graceful exit if
+    ! one is missing.
     inquire(file="../input/case_setups/"//trim(runtype)//"_sounding.in", exist=sounding_exists)
+    
+    inquire(file="../input/case_setups/"//trim(runtype)//"_sclr_sounding.in", &
+      exist=sclr_sounding_exists)
+    
+    inquire(file="../input/case_setups/"//trim(runtype)//"_edsclr_sounding.in", &
+      exist=edsclr_sounding_exists)
 
     !---------------------------------------------------------------------------------------------
     ! Status Message
     if( clubb_at_least_debug_level(1) ) then
       print *, "Path to sounding: ", trim(runtype)//'_sounding.in'
       print *, "File exists? ", sounding_exists
+      print *, "Path to sclr_sounding: ", trim(runtype)//'_sclr_sounding.in'
+      print *, "File exists? ", sclr_sounding_exists
+      print *, "Path to sounding: ", trim(runtype)//'_edsclr_sounding.in'
+      print *, "File exists? ", edsclr_sounding_exists
     end if
     !----------------------------------------------------------------------------------------------
 
     if( sounding_exists ) then
       ! Read in SAM-Like <runtype>_sounding.in file
       call read_sounding_file( iunit, runtype, nlevels, z, theta, theta_type, rt, u, v, ug, vg )
-      open(unit = iunit, file = runfile, status = 'old')
     else
       stop 'Cannot open <runtype>_sounding.in file'
       ! sounding namelist is no longer used.
@@ -140,11 +153,23 @@ module sounding
       ! Initialize to zero
       sclr   = 0.0
       edsclr = 0.0
-      ! Read values from namelist
-      read(unit = iunit, nml = scalar_sounding)
+      ! Read in SAM-Like <runtype>_sclr_sounding.in and
+      !                  <runtype>_edsclr_sounding.in
+      if( sclr_dim > 0 ) then
+        if( sclr_sounding_exists ) then
+          call read_sclr_sounding_file( iunit, runtype, sclr )
+        else
+          stop 'Cannot open <runtype>_sclr_sounding.in file'
+        end if
+      end if
+      if( edsclr_dim > 0 ) then
+        if( edsclr_sounding_exists  ) then
+          call read_edsclr_sounding_file( iunit, runtype, edsclr )
+        else
+          stop 'Cannot open <runtype>_edsclr_sounding.in file'
+        end if
+      end if
     end if
-
-    close(unit=iunit)
 
     if ( nlevels > nmaxsnd ) then
       write(fstderr,*) 'Error in sounding: nlevels > nmaxsnd'
@@ -382,6 +407,122 @@ module sounding
     !call deallocate_one_dim_vars( nCol, retVars)
 
   end subroutine read_sounding_file
+
+  !-------------------------------------------------------------------------------------------------
+  subroutine read_sclr_sounding_file( iunit, runtype, sclr )
+    !
+    !  Description: This subroutine reads in a <runtype>_sclr_sounding.in file and
+    !  returns the values contained in that file.
+    !
+    !-----------------------------------------------------------------------------------------------
+    use input_reader, only: read_one_dim_file, fill_blanks_one_dim_vars, &
+                            one_dim_read_var
+
+    use parameters_model, only: sclr_dim
+
+    use array_index, only: iisclr_rt, iisclr_thl, iiCO2
+
+    implicit none
+
+    ! Input Variable(s)
+    integer, intent(in) :: iunit ! I/O unit
+
+    character(len=*), intent(in) :: runtype ! String identifying the model case;
+    !                                         e.g. bomex
+
+    ! Output Variable(s)
+    real, intent(out), dimension(nmaxsnd,sclr_max) :: & 
+    sclr        ! Scalar sounding [?]
+
+
+    type(one_dim_read_var), dimension(sclr_dim) :: retVars
+
+    integer i
+
+    call read_one_dim_file( iunit, sclr_dim, &
+    '../input/case_setups/'//trim(runtype)//'_sclr_sounding.in', retVars )
+
+    call fill_blanks_one_dim_vars( sclr_dim, retVars )
+
+    do i=1, sclr_dim
+      select case(trim(retVars(i)%name))
+      case("CO2")
+        if( i /= iiCO2 .and. iiCO2 > 0) then
+          stop "iiCO2 index does not match column."
+        end if
+      case('rt[kg\kg]')
+        if( i /= iisclr_rt .and. iisclr_rt > 0) then
+          stop "iisclr_rt index does not match column."
+        end if
+      case("thl[K}")
+        if( i /= iisclr_thl .and. iisclr_thl > 0) then
+          stop "iisclr_thl index does not match column."
+        end if
+      end select
+      sclr(1:size(retVars(i)%values),i) = retVars(i)%values
+    end do
+
+    !call deallocate_one_dim_vars( nCol, retVars)
+
+  end subroutine read_sclr_sounding_file
+
+  !-------------------------------------------------------------------------------------------------
+  subroutine read_edsclr_sounding_file( iunit, runtype, edsclr )
+    !
+    !  Description: This subroutine reads in a <runtype>_edsclr_sounding.in file and
+    !  returns the values contained in that file.
+    !
+    !-----------------------------------------------------------------------------------------------
+    use input_reader, only: read_one_dim_file, fill_blanks_one_dim_vars, &
+                            one_dim_read_var
+
+    use parameters_model, only: edsclr_dim
+
+    use array_index, only: iiedsclr_rt, iiedsclr_thl, iiedCO2
+
+    implicit none
+
+    ! Input Variable(s)
+    integer, intent(in) :: iunit ! I/O unit
+
+    character(len=*), intent(in) :: runtype ! String identifying the model case;
+    !                                         e.g. bomex
+
+    ! Output Variable(s)
+    real, intent(out), dimension(nmaxsnd,sclr_max) :: & 
+    edsclr ! Eddy Scalars [?]
+
+    type(one_dim_read_var), dimension(edsclr_dim) :: retVars
+
+    integer i
+
+    call read_one_dim_file( iunit, edsclr_dim, &
+    '../input/case_setups/'//trim(runtype)//'_edsclr_sounding.in', retVars )
+
+    call fill_blanks_one_dim_vars( edsclr_dim, retVars )
+
+    do i=1, edsclr_dim
+      select case(trim(retVars(i)%name))
+      case("CO2")
+        if( i /= iiedCO2 .and. iiedCO2 > 0) then
+          stop "iiCO2 index does not match column."
+        end if
+      case('rt[kg\kg]')
+        if( i /= iiedsclr_rt .and. iiedsclr_rt > 0) then
+          stop "iisclr_rt index does not match column."
+        end if
+      case("thl[K}")
+        if( i /= iiedsclr_thl .and. iiedsclr_thl > 0) then
+          stop "iisclr_thl index does not match column."
+        end if
+      end select
+      edsclr(1:size(retVars(i)%values),i) = retVars(i)%values
+    end do
+
+    !call deallocate_one_dim_vars( nCol, retVars)
+
+  end subroutine read_edsclr_sounding_file
+
 
   !-------------------------------------------------------------------------------------------------
   function read_x_profile( nvar, target_name, retVars ) result(x)

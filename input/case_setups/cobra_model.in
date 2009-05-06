@@ -91,7 +91,6 @@ edsclr_dim  = 2
 iiedCO2     = 1 ! Location in the edsclrm array to place CO2
 iiedsclr_rt = 2 ! Location in the edsclrm array to place a scalar like total water
 
-
 /
 
 &microphysics_setting
@@ -116,29 +115,4 @@ stats_fmt    = "grads"  ! Type of statistical output file (GrADS or netCDF).
 
 /
 
-&scalar_sounding
 
-! Initial sounding for passive scalars
-
-! Passive scalars computed using higher-order closure
-! CO2 sounding
-sclr(:,1) = 379.000, 379.053, 379.093, 379.200, 379.293, 379.400,
-            379.700, 379.900, 380.200, 380.079, 379.350, 380.600
-! sclr rt
-sclr(:,2) = 3.050e-3, 3.200e-3, 2.750e-3, 2.653e-3, 2.569e-3, 2.472e-3,
-     2.400e-3, 2.273e-3, 2.082e-3, 2.018e-3, 1.636e-3, 1.000e-3
-! sclr thl
-sclr(:,3) = 286.100, 285.586, 285.200, 285.614, 285.976, 286.390,
-        286.700, 287.864, 289.609, 290.191, 293.682, 299.500
-
-! Passive scalars computed using eddy diffusivity
-! CO2 sounding
-edsclr(:,1) = 379.000, 379.053, 379.093, 379.200, 379.293, 379.400,
-              379.700, 379.900, 380.200, 380.079, 379.350, 380.600
-! sclr rt
-edsclr(:,2) = 3.050e-3, 3.200e-3, 2.750e-3, 2.653e-3, 2.569e-3, 2.472e-3,
-     2.400e-3, 2.273e-3, 2.082e-3, 2.018e-3, 1.636e-3, 1.000e-3
-! sclr thl
-edsclr(:,3) = 286.100, 285.586, 285.200, 285.614, 285.976, 286.390,
-        286.700, 287.864, 289.609, 290.191, 293.682, 299.500
-/

@@ -6,17 +6,18 @@
 !  holds pointers to variables to be written to GrADS files
 !-----------------------------------------------------------------------
 module stats_variables
- 
-  
+
+
   use stats_type, only:  & 
       stats ! Type
   use stats_precision, only:  & 
       time_precision ! Variable
 
+
   implicit none
-  
+
   private ! Set Default Scope
-  
+
   ! Sampling and output frequencies
   real(kind=time_precision), public :: &
     stats_tsamp, & ! Sampling interval   [s]
@@ -356,21 +357,17 @@ module stats_variables
 
 !$omp   threadprivate(iwp2_zt, ithlp2_zt, iwpthlp_zt, irtp2_zt, irtpthlp_zt)
 
-  integer, public :: & 
-    isclram,    & ! Passive scalar mean (1)
-    isclrbm,    & ! Passive scalar mean (2)
-    isclram_f,  & ! Passive scalar forcing (1)
-    isclrbm_f     ! Passive scalar forcing (2)
+  integer, target, allocatable, dimension(:), public :: & 
+    isclrm,    & ! Passive scalar mean (1)
+    isclrm_f     ! Passive scalar forcing (1)
 
-!$omp   threadprivate(isclram, isclrbm, isclram_f, isclrbm_f)
+!$omp   threadprivate(isclrm, isclrm, isclrm_f, isclrm_f)
 
-  integer, public :: & 
-    iedsclram,   & ! Eddy-diff. scalar term (1)
-    iedsclrbm,   & ! Eddy-diff. scalar term (2)
-    iedsclram_f, & ! Eddy-diffusivity scalar forcing (1)
-    iedsclrbm_f    ! Eddy-diffusivity scalar forcing (2)
+  integer, target, allocatable, dimension(:), public :: & 
+    iedsclrm,   & ! Eddy-diff. scalar term (1)
+    iedsclrm_f    ! Eddy-diffusivity scalar forcing (1)
 
-!$omp   threadprivate(iedsclram, iedsclrbm, iedsclram_f, iedsclrbm_f)
+!$omp   threadprivate(iedsclrm, iedsclrm, iedsclrm_f, iedsclrm_f)
 
 !       Indices for statistics in zm file
 
@@ -413,7 +410,7 @@ module stats_variables
 !$omp   threadprivate(iwp4, iwpthvp, irtpthvp, ithlpthvp, itau_zm, iKh_zm)
 !$omp   threadprivate(iwprcp, ithlprcp, irtprcp, ircp2, iupwp, ivpwp)
 !$omp   threadprivate(irho_zm, isigma_sqd_w, iem, ishear, iFrad, iFrad_LW)
-!$omp   threadprivate(iFrad_SW, iFrad_SW_up, iFrad_SW_down) 
+!$omp   threadprivate(iFrad_SW, iFrad_SW_up, iFrad_SW_down)
 !$omp   threadprivate(iFrad_LW_up,iFrad_LW_down,iFprec, iFcsed)
 
   ! Sedimentation velocities
@@ -422,7 +419,7 @@ module stats_variables
     iVNr,      & !  " "
     iVsnow,    & ! COAMPS
     iVice,     & !  " "
-    iVgraupel    !  " " 
+    iVgraupel    !  " "
 
 !$omp   threadprivate(iVrr, iVNr, iVsnow, iVice, iVgraupel)
 
@@ -563,33 +560,22 @@ module stats_variables
 !$omp   threadprivate(ivp2_dp2, ivp2_pr1, ivp2_pr2, ivp2_cl)
 !$omp   threadprivate(iup2_pd, ivp2_pd)
 
-!       Passive scalars.  Note that floating point roundoff may make 
+!       Passive scalars.  Note that floating point roundoff may make
 !       mathematically equivalent variables different values.
-  integer, public :: & 
-    isclraprtp,           & ! sclr'(1)rt'     / rt'^2
-    isclrbprtp,           & ! sclr'(2)rt'     / thl'rt'
-    isclrap2,             & ! sclr'(1)^2      / rt'^2
-    isclrbp2,             & ! sclr'(2)^2      / thl'^2
-    isclrapthvp,          & ! sclr'(1)th_v'   / rt'th_v' 
-    isclrbpthvp,          & ! sclr'(2)th_v'   / th_l' th_v'
-    isclrapthlp,          & ! sclr'(1)th_l'   / rt'th_l' 
-    isclrbpthlp,          & ! sclr'(2)th_l'   / th_l'^2
-    isclraprcp,           & ! sclr'(1)rc'     / rt'rc'
-    isclrbprcp,           & ! sclr'(2)rc'     / th_l'rc'
-    iwpsclrap,            & ! w'slcr'(1)      / w'rt'
-    iwpsclrbp,            & ! w'sclr'(2)      / w'th_l'
-    iwp2sclrap,           & ! w'^2 sclr'(1)   / w'^2 rt'
-    iwp2sclrbp,           & ! w'^2 sclr'(2)   / w'^2 th_l'
-    iwpsclrap2,           & ! w'sclr'(1)^2    / w'rt'^2
-    iwpsclrbp2,           & ! w'sclr'(2)^2    / w'th_l'^2
-    iwpsclraprtp,         & ! w'sclr'(1)rt'   / w'rt'^2
-    iwpsclrbprtp,         & ! w'sclr'(2)rt'   / w'thl'rt'
-    iwpsclrapthlp,        & ! w'sclr'(1)th_l' / w'rt'th_l' 
-    iwpsclrbpthlp           ! w'sclr'(2)th_l' / w'th_l'^2
+  integer,target, allocatable, dimension(:), public :: & 
+    isclrprtp,           & ! sclr'(1)rt'     / rt'^2
+    isclrp2,             & ! sclr'(1)^2      / rt'^2
+    isclrpthvp,          & ! sclr'(1)th_v'   / rt'th_v' 
+    isclrpthlp,          & ! sclr'(1)th_l'   / rt'th_l' 
+    isclrprcp,           & ! sclr'(1)rc'     / rt'rc'
+    iwpsclrp,            & ! w'slcr'(1)      / w'rt'
+    iwp2sclrp,           & ! w'^2 sclr'(1)   / w'^2 rt'
+    iwpsclrp2,           & ! w'sclr'(1)^2    / w'rt'^2
+    iwpsclrprtp,         & ! w'sclr'(1)rt'   / w'rt'^2
+    iwpsclrpthlp           ! w'sclr'(1)th_l' / w'rt'th_l'
 
-  integer, public :: & 
-     iwpedsclrap,   & ! eddy sclr'(1)w'
-     iwpedsclrbp      ! eddy sclr'(2)w'
+  integer, target, allocatable, dimension(:), public :: & 
+     iwpedsclrp ! eddy sclr'(1)w'
 
   ! Indices for statistics in sfc file
 
@@ -644,7 +630,7 @@ module stats_variables
 !$omp   iwp2_vert_avg, iup2_vert_avg, ivp2_vert_avg, irtp2_vert_avg, ithlp2_vert_avg, &
 !$omp   iwp23_matrix_condt_num, irtm_matrix_condt_num, ithlm_matrix_condt_num, &
 !$omp   irtp2_matrix_condt_num, ithlp2_matrix_condt_num, irtpthlp_matrix_condt_num, &
-!$omp   iup2_vp2_matrix_condt_num, iwindm_matrix_condt_num, & 
+!$omp   iup2_vp2_matrix_condt_num, iwindm_matrix_condt_num, &
 !$omp   imorr_rain_rate, imorr_snow_rate)
 
   ! Variables that contains all the statistics
@@ -678,11 +664,11 @@ module stats_variables
                                zmscr13(:), zmscr14(:), zmscr15(:), &
                                zmscr16(:), zmscr17(:)
 
-!$omp   threadprivate(zmscr01, zmscr02, zmscr03, zmscr04, zmscr05) 
+!$omp   threadprivate(zmscr01, zmscr02, zmscr03, zmscr04, zmscr05)
 !$omp   threadprivate(zmscr06, zmscr07, zmscr08, zmscr09, zmscr10)
 !$omp   threadprivate(zmscr11, zmscr12, zmscr13, zmscr14, zmscr15)
 !$omp   threadprivate(zmscr16, zmscr17)
 
- 
+
 end module stats_variables
 
