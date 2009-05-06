@@ -347,7 +347,7 @@ module advance_windm_edsclrm_module
       ! Build the right-hand side vector.
       ! Because of statistics, we have to use a DO rather than a FORALL here
       ! -dschanen 7 Oct 2008
-      !HPF$ INDEPENDENT
+!HPF$ INDEPENDENT
       do i = 1, edsclr_dim
         rhs(1:gr%nnzp,i)  &
         = windm_edsclrm_rhs( "scalars", dt, Kh_zm, edsclrm(:,i), edsclrm_forcing,  & ! in
@@ -364,7 +364,7 @@ module advance_windm_edsclrm_module
       ! A Crank-Nicholson timestep is used.
       ! Here we use a forall and high performance fortran directive to try to
       ! parallelize this computation.  Note that FORALL is more restrictive than DO.
-      !HPF$ INDEPENDENT
+!HPF$ INDEPENDENT, REDUCTION(wpedsclrp)
       forall( i = 1:edsclr_dim )
         wpedsclrp(2:gr%nnzp-1,i) = &
           - 0.5 * xpwp_fnc( Kh_zm(2:gr%nnzp-1), edsclrm(2:gr%nnzp-1,i), & ! in
@@ -404,7 +404,7 @@ module advance_windm_edsclrm_module
 
       ! Solve for x'w' at all intermediate model levels.
       ! A Crank-Nicholson timestep is used.
-      !HPF$ INDEPENDENT
+!HPF$ INDEPENDENT, REDUCTION(wpedsclrp)
       forall( i = 1:edsclr_dim )
         wpedsclrp(2:gr%nnzp-1,i) = wpedsclrp(2:gr%nnzp-1,i) &
           - 0.5 * xpwp_fnc( Kh_zm(2:gr%nnzp-1), edsclrm(2:gr%nnzp-1,i), & ! in
