@@ -136,7 +136,7 @@ outputs of each subroutine.  Furthermore,
 this makes it easier for the compiler to optimize, because modern computers can 
 vectorize floating point instructions, thereby providing some 
 parallelization when your calculation does not rely on previous results.
-Note however, than an \texttt{intent(out)} variable that is not set in the scope of the subroutine
+Note however, that an \texttt{intent(out)} variable that is not set in the scope of the subroutine
 is \emph{not defined}!  It often preserves the previous value, but it may not.
 When using modules with public variables, limit 
 the number of variables with an \texttt{only:} statement.  This makes code 
