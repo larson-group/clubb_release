@@ -26,7 +26,30 @@ classdef convert
             time_height = col * multiplier;
             
         end
+
+        function height = pressure_in_hPa_to_height_m( t_in_k, p_in_hPa, psfc )
+        % PRESSURE_IN_HPA_TO_HEIGHT_M Converts temperature and pressure
+        % profiles into a height profile.
+        %
+        % Reference;
+        %
+        %     setdata.f90 from SAM
+        %
         
+           t_in_k = t_in_k .* (p_in_hPa/1000).^(convert.R/convert.Cp)
+
+	      height(1) = convert.R/convert.g0*t_in_k(1)*log( psfc/p_in_hPa(1))
+	    
+          for i=2:size(p_in_hPa,2)
+	      
+              height(i) = height(i-1) + 0.5 * convert.R / convert.g0 * ...
+                ( t_in_k(i) + t_in_k(i-1) ) * ... 
+                                         log( p_in_hPa(i-1) / p_in_hPa(i) )
+          
+          end
+        end
+	    
+
         function specific_humidity = total_water_mixing_ratio_to_specific_humidity ...
                 ( total_water_mixing_ratio )
         % TOTAL_WATER_MIXING_RATIO_TO_SPECIFIC_HUMIDITY Converts total water mixing ratio to specific humidity.
