@@ -126,7 +126,7 @@ module microphys_driver
       corr_sNr_NL_below, corr_sNc_NL_below, &
       C_evap, r_0, microphys_start_time, &
       Ncm_initial, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
-      aer_n1, aer_n1, aer_sig1, aer_sig2, pgam_fixed
+      aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed
 
     ! ---- Begin Code ----
 
