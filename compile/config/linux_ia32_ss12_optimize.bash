@@ -13,7 +13,7 @@ libdir="$dir/../lib"  # dir for *.a library files
 srcdir="$dir/../src"  # dir where the source files reside
 
 # == Optimization ==
-OPTIMIZE="-xO3 -xvector=simd"
+OPTIMIZE="-C -xO4 -xvector=simd -libmil -ftrap=%none"
 
 # == Warnings ==
 # This is the preferred warning level when compiling CLUBB with Sun Studio.
