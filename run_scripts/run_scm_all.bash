@@ -140,8 +140,13 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 	PARAMS_IN='../input/tunable_parameters.in'
 	MODEL_IN='../input/case_setups/'"${RUN_CASE[$x]}"'_model.in'
 	if [ $NIGHTLY == true ] ; then
-		STATS_IN='../input/stats/nightly_stats.in'
-#		STATS_IN='../stats/nobudgets_stats.in'
+		if [ "${RUN_CASE[$x]}" = gabls2 ] ; then
+			#gabls2 uses scalars
+			STATS_IN='../input/stats/nightly_stats_scalars.in'
+		else
+			STATS_IN='../input/stats/nightly_stats.in'
+			#STATS_IN='../stats/nobudgets_stats.in'
+		fi
 	else
 		STATS_IN='../input/stats/nobudgets_stats.in'
 	fi
