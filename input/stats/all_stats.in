@@ -40,6 +40,11 @@ vars_zt =
 'rt1', 'rt2', 'srt1', 'srt2', 'rc1', 'rc2', 'rsl1', 'rsl2', 'R1', 'R2',
 's1', 's2', 'ss1', 'ss2', 'rrtthl',
 'wp2_zt', 'thlp2_zt', 'wpthlp_zt', 'wprtp_zt', 'rtp2_zt', 'rtpthlp_zt',
+! To output a scalar variable result, 
+! follow the form <sclr_type> + <column_number> + <variable_type>
+!
+! Ex.   'sclr' + '1' + 'm_f' = 'sclr1m_f' 
+!
 !'sclr1m', 'sclr1m_f', 'sclr2m', 'sclr2m_f',
 !'edsclr1m', 'edsclr2m', 'edsclr1m_f', 'edsclr2m_f',
 ''
