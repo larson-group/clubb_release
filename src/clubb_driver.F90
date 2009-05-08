@@ -875,9 +875,9 @@ module clubb_driver
 
     ! Read sounding information
 
-    call read_sounding( iunit, runfile, runtype, &          ! Intent(in) 
-                        thlm, theta_type, rtm, um, vm, ug, vg,  &       ! Intent(out)
-                        sclrm, edsclrm )                    ! Intent(out)
+    call read_sounding( iunit, runtype, &                         ! Intent(in) 
+                        thlm, theta_type, rtm, um, vm, ug, vg,  & ! Intent(out)
+                        sclrm, edsclrm )                          ! Intent(out)
 
 
     ! At this point, thlm actually contains theta (except for DYCOMS).
@@ -1554,7 +1554,7 @@ module clubb_driver
     ! Read in sounding to get appropriate nudging information for um
     ! and vm
 
-    call read_sounding( iunit, runfile, runtype, &                ! Intent(in)
+    call read_sounding( iunit, runtype, &                         ! Intent(in)
                         thlm, theta_type, rtm, um, vm, ug, vg,  & ! Intent(out)
                         sclrm, edsclrm )                          ! Intent(out)
 

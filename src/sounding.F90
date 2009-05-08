@@ -20,7 +20,7 @@ module sounding
 
   contains
   !------------------------------------------------------------------------
-  subroutine read_sounding( iunit, runfile, runtype,  & 
+  subroutine read_sounding( iunit, runtype,  & 
                             thlm, theta_type, rtm, um, vm, ugm, vgm, &
                             sclrm, edsclrm )
 
@@ -65,7 +65,6 @@ module sounding
     integer, intent(in) :: iunit ! File unit to use for namelist
 
     character(len=*), intent(in) ::  & 
-    runfile,   & ! Contains namelists
     runtype      ! String for DYCOMS II RF02
 
     ! Output variables
