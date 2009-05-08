@@ -445,7 +445,7 @@ module sounding
 
     do i=1, sclr_dim
       select case(trim(retVars(i)%name))
-      case("CO2")
+      case("CO2[ppmv]")
         if( i /= iiCO2 .and. iiCO2 > 0) then
           stop "iiCO2 index does not match column."
         end if
@@ -502,7 +502,7 @@ module sounding
 
     do i=1, edsclr_dim
       select case(trim(retVars(i)%name))
-      case("CO2")
+      case("CO2[ppmv]")
         if( i /= iiedCO2 .and. iiedCO2 > 0) then
           stop "iiCO2 index does not match column."
         end if
