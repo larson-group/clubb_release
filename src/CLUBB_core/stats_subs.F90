@@ -1541,23 +1541,26 @@ module stats_subs
 
       deallocate( sfc%f%var )
       deallocate( sfc%f%z )
-    end if ! l_stats
 
-    deallocate( isclrm )
-    deallocate( isclrm_f )
-    deallocate( iedsclrm )
-    deallocate( iedsclrm_f )
-    deallocate( isclrprtp )
-    deallocate( isclrp2 )
-    deallocate( isclrpthvp )
-    deallocate( isclrpthlp )
-    deallocate( isclrprcp )
-    deallocate( iwpsclrp )
-    deallocate( iwp2sclrp )
-    deallocate( iwpsclrp2 )
-    deallocate( iwpsclrprtp )
-    deallocate( iwpsclrpthlp )
-    deallocate( iwpedsclrp )
+      ! De-allocate scalar indices
+      deallocate( isclrm )
+      deallocate( isclrm_f )
+      deallocate( iedsclrm )
+      deallocate( iedsclrm_f )
+      deallocate( isclrprtp )
+      deallocate( isclrp2 )
+      deallocate( isclrpthvp )
+      deallocate( isclrpthlp )
+      deallocate( isclrprcp )
+      deallocate( iwpsclrp )
+      deallocate( iwp2sclrp )
+      deallocate( iwpsclrp2 )
+      deallocate( iwpsclrprtp )
+      deallocate( iwpsclrpthlp )
+      deallocate( iwpedsclrp )
+
+    endif ! l_stats
+
 
     return
   end subroutine stats_finalize
