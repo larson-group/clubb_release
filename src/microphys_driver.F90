@@ -955,6 +955,8 @@ module microphys_driver
              rtm_mc, thlm_mc, & 
              hydromet_vel(:,iirrainm), hydromet_vel(:,iiNrm) )
 
+      hydromet_mc(:,iiNcm) = 0.
+
       if ( l_stats_samp ) then
 
         ! Sedimentation velocity for rrainm
