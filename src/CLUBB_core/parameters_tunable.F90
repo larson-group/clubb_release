@@ -465,6 +465,9 @@ module parameters_tunable
     ! References:
     ! None
     !-----------------------------------------------------------------------
+    use constants, only: fstderr ! Constant
+
+    use numerical_check, only: isnan ! Procedure
 
     implicit none
 
@@ -475,6 +478,14 @@ module parameters_tunable
 
     ! Output variables
     real, intent(out), dimension(nparams) :: params
+
+    ! Local variables
+    integer :: i
+
+    logical :: l_error
+
+    ! Initialize values to NaN
+    call init_parameters_nan( )
 
     ! If the filename is empty, assume we're using a `working' set of
     ! parameters that are set statically here (handy for host models).
@@ -553,6 +564,18 @@ module parameters_tunable
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, taumin, taumax, params )
 
+    l_error = .false.
+
+    do i = 1, nparams
+      if ( isnan( params(i) ) ) then
+        write(fstderr,*) "Tuning parameter "//trim( params_list(i) )// &
+          " was missing from "//trim( filename )
+        l_error = .true.
+      end if
+    end do
+
+    if ( l_error ) stop "Fatal error."
+
     return
 
   end subroutine read_parameters
@@ -568,6 +591,9 @@ module parameters_tunable
     ! References:
     ! None
     !-----------------------------------------------------------------------
+    use constants, only: fstderr ! Constant
+
+    use numerical_check, only: isnan ! Procedure
 
     implicit none
 
@@ -590,6 +616,8 @@ module parameters_tunable
     ! Local variables
     integer :: i
 
+    logical :: l_error
+
     ! Amount to change each parameter for the initial simplex
     ! This MUST be changed to match the initvars namelist if parameters are added!
     namelist /initspread/  & 
@@ -601,6 +629,9 @@ module parameters_tunable
       c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd,  & 
       nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
       lmin_coef, taumin, taumax, mu
+
+    ! Initialize values to NaN
+    call init_parameters_nan( )
 
     ! Read the namelist
     open(unit=iunit, file=filename, status='old', action='read')
@@ -618,6 +649,18 @@ module parameters_tunable
                           c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, taumin, taumax, param_spread )
+
+    l_error = .false.
+
+    do i = 1, nparams
+      if ( isnan( param_spread(i) ) ) then
+        write(fstderr,*) "A spread parameter "//trim( params_list(i) )// &
+          " was missing from "//trim( filename )
+        l_error = .true.
+      end if
+    end do
+
+    if ( l_error ) stop "Fatal error."
 
     ! Initialize to zero
     nindex(1:nparams) = 0
@@ -975,6 +1018,83 @@ module parameters_tunable
 
   end subroutine get_parameters
 
+  !=============================================================================
+  subroutine init_parameters_nan( )
+
+    ! Description:
+    ! Set all tunable parameters to NaN
+
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    integer(kind=4) :: nanbits
+
+    real(kind=4) :: PosInf
+
+    data nanbits /Z"7F800000"/
+
+    ! --- Begin Code ---
+
+    PosInf = transfer( nanbits, PosInf )
+
+    C1          = PosInf
+    C1b         = PosInf
+    C1c         = PosInf
+    C2rt        = PosInf
+    C2thl       = PosInf
+    C2rtthl     = PosInf
+    C2          = PosInf
+    C2b         = PosInf
+    C2c         = PosInf
+    C4          = PosInf
+    C5          = PosInf
+    C6rt        = PosInf
+    C6rtb       = PosInf
+    C6rtc       = PosInf
+    C6thl       = PosInf
+    C6thlb      = PosInf
+    C6thlc      = PosInf
+    C7          = PosInf
+    C7b         = PosInf
+    C7c         = PosInf
+    C8          = PosInf
+    C8b         = PosInf
+    C10         = PosInf
+    C11         = PosInf
+    C11b        = PosInf
+    C11c        = PosInf
+    C12         = PosInf
+    C13         = PosInf
+    C14         = PosInf
+    c_K         = PosInf
+    c_K1        = PosInf
+    nu1         = PosInf
+    c_K2        = PosInf
+    nu2         = PosInf
+    c_K6        = PosInf
+    nu6         = PosInf
+    c_K8        = PosInf
+    nu8         = PosInf
+    c_K9        = PosInf
+    nu9         = PosInf
+    c_Krrainm   = PosInf
+    nu_r        = PosInf
+    c_Ksqd      = PosInf
+    nu_hd       = PosInf
+    beta        = PosInf
+    gamma_coef  = PosInf
+    gamma_coefb = PosInf
+    gamma_coefc = PosInf
+    taumin      = PosInf
+    taumax      = PosInf
+    lmin_coef   = PosInf
+    mu          = PosInf
+
+    return
+  end subroutine init_parameters_nan
 !===============================================================================
 
 end module parameters_tunable
