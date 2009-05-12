@@ -34,7 +34,7 @@
 !  Key variables for UWM: qcm/rlm, cf, rtm/qtm, thlm, um, vm, wp3
 
 &stats
-ftol              = 0.05,
+ftol              = 0.01,
 l_results_stdout    = .true.,
 l_results_file      = .true.,
 l_stdout_on_invalid = .true.,
@@ -164,6 +164,7 @@ c_K6        = 0.
 nu6         = 0.
 c_K8        = 0.
 nu8         = 0.
+c_K9        = 0.
 nu9         = 0.
 c_Krrainm   = 0.
 nu_r        = 0.
