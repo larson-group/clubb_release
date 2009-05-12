@@ -203,11 +203,27 @@ module parameters_tunable
     ! Local Variables
     real :: avg_deltaz  ! Average grid box height   [m]
 
-    ! Flag for adjusting the values of the constant diffusivity coefficients
-    ! based on the grid spacing.  If this flag is turned off, the values of the
-    ! various nu coefficients will remain as they are declared in the
-    ! parameters.in file.
+    ! Flag for adjusting the values of the constant background eddy diffusivity
+    ! coefficients based on the average vertical grid spacing.  If this flag is
+    ! turned off, the values of the various nu coefficients will remain as they
+    ! are declared in the tunable_parameters.in file.
     logical, parameter :: l_adj_low_res_nu = .true.
+
+    ! The size of the average vertical grid spacing that serves as a threshold
+    ! for when to increase the size of the background eddy diffusivity
+    ! coefficients (nus) by a certain factor above what the background
+    ! coefficients are specified to be in tunable_parameters.in.  At any average
+    ! grid spacing at or below this value, the values of the background
+    ! diffusivities remain the same.  However, at any average vertical grid
+    ! spacing above this value, the values of the background eddy diffusivities
+    ! are increased.  Traditionally, the threshold grid spacing has been set to
+    ! 40.0 meters.  This is only relevant if l_adj_low_res_nu is turned on.
+    real, parameter :: grid_spacing_thresh = 40.0  ! grid spacing threshold  [m]
+
+    ! The factor by which to multiply the coefficients of background eddy
+    ! diffusivity if the grid spacing threshold is exceeded and l_adj_low_res_nu
+    ! is turned on.
+    real :: mult_factor
 
 
     call unpack_parameters( params, & 
@@ -262,22 +278,17 @@ module parameters_tunable
         ! The nu's are chosen for avg_deltaz <= 40 m. Looks like they must
         ! be adjusted for larger grid spacings (Vince Larson)
 
-        if ( avg_deltaz > 40.0 ) then
-          nu1 = nu1 * avg_deltaz / 40.0
-          nu2 = nu2 * avg_deltaz / 40.0
-          nu6 = nu6 * avg_deltaz / 40.0
-          nu8 = nu8 * avg_deltaz / 40.0
-          nu9 = nu9 * avg_deltaz / 40.0
-        endif
+        if ( avg_deltaz > grid_spacing_thresh ) then
 
-        ! There should be a different formula for determining nu_r for
-        ! different sized grid spacings.  For DYCOMS2 RF02, nu_r is set to 5.0
-        ! for the high-resolution 10 m. grid spacing and to 25.0 for the
-        ! low-resolution 100 m. grid spacing.  The following equation allows
-        ! for both of those parameters.  Brian.
+           mult_factor = 1.0 + 2.0 * log( avg_deltaz / grid_spacing_thresh )
 
-        if ( avg_deltaz > 20.0 ) then
-          nu_r = nu_r * avg_deltaz / 20.0
+           nu1  =  nu1 * mult_factor
+           nu2  =  nu2 * mult_factor
+           nu6  =  nu6 * mult_factor
+           nu8  =  nu8 * mult_factor
+           nu9  =  nu9 * mult_factor
+           nu_r =  nu_r * mult_factor
+
         endif
 
         ! The value of nu_hd is based on an average grid box spacing of 40 m.
@@ -288,7 +299,7 @@ module parameters_tunable
         ! substantially smaller for small grid boxes, the grid spacing
         ! adjuster is squared.
 
-        nu_hd = nu_hd * ( avg_deltaz / 40.0 )**2
+        nu_hd = nu_hd * ( avg_deltaz / grid_spacing_thresh )**2
 
       else
 
@@ -301,22 +312,17 @@ module parameters_tunable
           ! The nu's are chosen for deltaz <= 40 m. Looks like they must
           ! be adjusted for larger grid spacings (Vince Larson)
 
-          if ( deltaz > 40.0 ) then
-            nu1 = nu1 * deltaz / 40.0
-            nu2 = nu2 * deltaz / 40.0
-            nu6 = nu6 * deltaz / 40.0
-            nu8 = nu8 * deltaz / 40.0
-            nu9 = nu9 * deltaz / 40.0
-          endif
+          if ( deltaz > grid_spacing_thresh ) then
 
-          ! There should be a different formula for determining nu_r for
-          ! different sized grid spacings.  For DYCOMS2 RF02, nu_r is set to
-          ! 5.0 for the high-resolution 10 m. grid spacing and to 25.0 for
-          ! the low-resolution 100 m. grid spacing.  The following equation
-          ! allows for both of those parameters.  Brian.
+             mult_factor = 1.0 + 2.0 * log( deltaz / grid_spacing_thresh )
 
-          if ( deltaz > 20.0 ) then
-            nu_r = nu_r * deltaz / 20.0
+             nu1  =  nu1 * mult_factor
+             nu2  =  nu2 * mult_factor
+             nu6  =  nu6 * mult_factor
+             nu8  =  nu8 * mult_factor
+             nu9  =  nu9 * mult_factor
+             nu_r =  nu_r * mult_factor
+
           endif
 
           ! The value of nu_hd is based on a grid box spacing of 40 m.  The
@@ -327,7 +333,7 @@ module parameters_tunable
           ! substantially smaller for small grid boxes, the grid spacing
           ! adjuster is squared.
 
-          nu_hd = nu_hd * ( deltaz / 40.0 )**2
+          nu_hd = nu_hd * ( deltaz / grid_spacing_thresh )**2
 
         elseif ( grid_type == 2 ) then
 
@@ -344,22 +350,17 @@ module parameters_tunable
           ! The nu's are chosen for avg_deltaz <= 40 m. Looks like they must
           ! be adjusted for larger grid spacings (Vince Larson)
 
-          if ( avg_deltaz > 40.0 ) then
-            nu1 = nu1 * avg_deltaz / 40.0
-            nu2 = nu2 * avg_deltaz / 40.0
-            nu6 = nu6 * avg_deltaz / 40.0
-            nu8 = nu8 * avg_deltaz / 40.0
-            nu9 = nu9 * avg_deltaz / 40.0
-          endif
+          if ( avg_deltaz > grid_spacing_thresh ) then
 
-          ! There should be a different formula for determining nu_r for
-          ! different sized grid spacings.  For DYCOMS2 RF02, nu_r is set to
-          ! 5.0 for the high-resolution 10 m. grid spacing and to 25.0 for
-          ! the low-resolution 100 m. grid spacing.  The following equation
-          ! allows for both of those parameters.  Brian.
+             mult_factor = 1.0 + 2.0 * log( avg_deltaz / grid_spacing_thresh )
 
-          if ( avg_deltaz > 20.0 ) then
-            nu_r = nu_r * avg_deltaz / 20.0
+             nu1  =  nu1 * mult_factor
+             nu2  =  nu2 * mult_factor
+             nu6  =  nu6 * mult_factor
+             nu8  =  nu8 * mult_factor
+             nu9  =  nu9 * mult_factor
+             nu_r =  nu_r * mult_factor
+
           endif
 
           ! The value of nu_hd is based on an average grid box spacing of
@@ -370,7 +371,7 @@ module parameters_tunable
           ! substantially smaller for small grid boxes, the grid spacing
           ! adjuster is squared.
 
-          nu_hd = nu_hd * ( avg_deltaz / 40.0 )**2
+          nu_hd = nu_hd * ( avg_deltaz / grid_spacing_thresh )**2
 
         elseif ( grid_type == 3 ) then
 
@@ -387,22 +388,17 @@ module parameters_tunable
           ! The nu's are chosen for avg_deltaz <= 40 m. Looks like they must
           ! be adjusted for larger grid spacings (Vince Larson)
 
-          if ( avg_deltaz > 40.0 ) then
-            nu1 = nu1 * avg_deltaz / 40.0
-            nu2 = nu2 * avg_deltaz / 40.0
-            nu6 = nu6 * avg_deltaz / 40.0
-            nu8 = nu8 * avg_deltaz / 40.0
-            nu9 = nu9 * avg_deltaz / 40.0
-          endif
+          if ( avg_deltaz > grid_spacing_thresh ) then
 
-          ! There should be a different formula for determining nu_r for
-          ! different sized grid spacings.  For DYCOMS2 RF02, nu_r is set to
-          ! 5.0 for the high-resolution 10 m. grid spacing and to 25.0 for
-          ! the low-resolution 100 m. grid spacing.  The following equation
-          ! allows for both of those parameters.  Brian.
+             mult_factor = 1.0 + 2.0 * log( avg_deltaz / grid_spacing_thresh )
 
-          if ( avg_deltaz > 20.0 ) then
-            nu_r = nu_r * avg_deltaz / 20.0
+             nu1  =  nu1 * mult_factor
+             nu2  =  nu2 * mult_factor
+             nu6  =  nu6 * mult_factor
+             nu8  =  nu8 * mult_factor
+             nu9  =  nu9 * mult_factor
+             nu_r =  nu_r * mult_factor
+
           endif
 
           ! The value of nu_hd is based on an average grid box spacing of
@@ -413,7 +409,7 @@ module parameters_tunable
           ! substantially smaller for small grid boxes, the grid spacing
           ! adjuster is squared.
 
-          nu_hd = nu_hd * ( avg_deltaz / 40.0 )**2
+          nu_hd = nu_hd * ( avg_deltaz / grid_spacing_thresh )**2
 
         endif
 
