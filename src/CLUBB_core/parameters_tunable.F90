@@ -43,11 +43,11 @@ module parameters_tunable
     C7b,         & ! High Skewness in C7 Skewness Function.
     C7c,         & ! Degree of Slope of C7 Skewness Function.
     C8,          & ! Coefficient #1 in C8 Skewness Equation.
-    C8b,         & ! Coefficient #2 in C8 Skewness Equation.  From Golaz.
+    C8b,         & ! Coefficient #2 in C8 Skewness Equation.
     C10,         & ! Currently Not Used in the Model.
     C11,         & ! Low Skewness in C11 Skewness Function.
-    C11b,        & ! High Skewness in C11 Skewness Function.  From Golaz.
-    C11c,        & ! Degree of Slope of C11 Skewness Function.  From Golaz.
+    C11b,        & ! High Skewness in C11 Skewness Function.
+    C11c,        & ! Degree of Slope of C11 Skewness Function.
     C12,         & ! Constant in w'^3 Crank-Nicholson diffusional term.
     C13,         & ! Not currently used in model.
     C14            ! Constant for u'^2 and v'^2 terms.
@@ -72,8 +72,8 @@ module parameters_tunable
     gamma_coefb, & ! High Skewness in gamma coefficient Skewness Function.
     gamma_coefc, & ! Degree of Slope of gamma coefficient Skewness Function.
     mu,          & ! Fractional entrainment rate per unit altitude.
-    taumin,      & ! Previously determined value.
-    taumax,      & ! Previously determined value.
+    taumin,      & ! Minimum allowable value of time-scale tau.
+    taumax,      & ! Maximum allowable value of time-scale tau.
     lmin           ! Minimum value for the length scale.
 
 !$omp   threadprivate(C1, C1b, C1c, C2, C2b, C2c)
@@ -280,7 +280,7 @@ module parameters_tunable
 
         if ( avg_deltaz > grid_spacing_thresh ) then
 
-           mult_factor = 1.0 + 2.0 * log( avg_deltaz / grid_spacing_thresh )
+           mult_factor = 1.0 + 1.5 * log( avg_deltaz / grid_spacing_thresh )
 
            nu1  =  nu1 * mult_factor
            nu2  =  nu2 * mult_factor
@@ -314,7 +314,7 @@ module parameters_tunable
 
           if ( deltaz > grid_spacing_thresh ) then
 
-             mult_factor = 1.0 + 2.0 * log( deltaz / grid_spacing_thresh )
+             mult_factor = 1.0 + 1.5 * log( deltaz / grid_spacing_thresh )
 
              nu1  =  nu1 * mult_factor
              nu2  =  nu2 * mult_factor
@@ -352,7 +352,7 @@ module parameters_tunable
 
           if ( avg_deltaz > grid_spacing_thresh ) then
 
-             mult_factor = 1.0 + 2.0 * log( avg_deltaz / grid_spacing_thresh )
+             mult_factor = 1.0 + 1.5 * log( avg_deltaz / grid_spacing_thresh )
 
              nu1  =  nu1 * mult_factor
              nu2  =  nu2 * mult_factor
@@ -390,7 +390,7 @@ module parameters_tunable
 
           if ( avg_deltaz > grid_spacing_thresh ) then
 
-             mult_factor = 1.0 + 2.0 * log( avg_deltaz / grid_spacing_thresh )
+             mult_factor = 1.0 + 1.5 * log( avg_deltaz / grid_spacing_thresh )
 
              nu1  =  nu1 * mult_factor
              nu2  =  nu2 * mult_factor
@@ -515,19 +515,20 @@ module parameters_tunable
       C12         = 1.0
       C13         = 0.1
       C14         = 1.0
-      c_K         = 0.548
-      c_K1        = 0.5
+      !c_K         = 0.548
+      c_K         = 0.2
+      c_K1        = 0.75
       nu1         = 20.0
-      c_K2        = 0.0
+      c_K2        = 0.125
       nu2         = 5.0
-      c_K6        = 0.0
+      c_K6        = 0.375
       nu6         = 5.0
-      c_K8        = 1.0
+      c_K8        = 1.25
       nu8         = 20.0
-      c_K9        = 0.0
+      c_K9        = 0.25
       nu9         = 20.0
-      c_Krrainm   = 0.075
-      nu_r        = 3.0
+      c_Krrainm   = 0.2
+      nu_r        = 1.5
       c_Ksqd      = 10.0
       nu_hd       = 20000.0
       beta        = 1.75
