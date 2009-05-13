@@ -431,7 +431,7 @@ if ( l_ice_micro .and. ldrizzle ) then
   stop 
 end if
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!------------------------------------------
 ! Comment by Adam Smith, 25 March 2008
 ! The variable "icase" is used in the COAMPS namelist to identify
 ! the simulation being run.  Normally, each icase value represents
@@ -451,9 +451,9 @@ end if
 ! icase = 1001: Jun.25 multilayered altocu
 ! icase = 1002: CLEX-9: Oct.14, 2001 altocu
 ! icase = 1003: CLEX-9: Nov.02, 2001 altocu
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!------------------------------------------
 ! End of ajsmith4's comment
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!------------------------------------------
 ! dschanen on 27 Mar 2008 made icase as function of runtype
 select case ( trim( runtype ) )
 case ( "mpace_a", "mpace_b" )
@@ -617,8 +617,8 @@ ary1d(1,1:kk,1) = 0. ! 1d graphics parameters
 nkpts = 0
 len = 0
 
-!!! Michael Falk, 6 July 2007
-!!! Assigning values to the "flip" variables, in which k=1 is the top of the domain
+! Michael Falk, 6 July 2007
+! Assigning values to the "flip" variables, in which k=1 is the top of the domain
 
 !     cond_flip(1,1,1:kk) = cond(1,1,kk:1:-1) ! this is uninitialized -dschanen
 p3_flip(1,1,1:kk)  = p3(1,1,kk:1:-1)     ! Pressure
@@ -646,11 +646,9 @@ th2t3d_flip(1,1,1:kk)  = th2t3d(1,1,kk:1:-1) ! " "
 
 ! determination of which points are "in_cloud" are which are outside of cloud
 do k=nrdamp,kk
-!
-!***********************************************************************
+!-------------------------------------------------------------------------------
 ! determine if point is saturated as in COAMPS
-!***********************************************************************
-!
+!-------------------------------------------------------------------------------
 if ( .not. l_ice_micro ) then
   sat = qv3_flip(1,1,k)/qsatv3d_flip(1,1,k)-1.0
 else
@@ -824,13 +822,13 @@ do k=1, kk, 1
   Nim(k+1)  = ni3(1,1,k)
 end do ! k=1..kk+1
 
-!*******************************************
+!-------------------------------------------------
 ! Addition by Adam Smith, 24 April 2008
 ! Adding snow particle number concentration
 ! Values of snowslope < 1.0 lead to excessive and
 ! unrealistic Nsnowm outside of the snow region.
 ! The "if" statement prevents these results.
-!*******************************************
+!-------------------------------------------------
 do k = 1, kk, 1
   if (snowslope(1,1,k) < 2.0) then
     snowslope(1,1,k) = 0.
@@ -839,9 +837,9 @@ do k = 1, kk, 1
     Nsnowm(k+1) = snzero / snowslope(1,1,k)
   end if
 end do
-!****************************
+!-------------------------------------------------
 ! End of ajsmith4's addition
-!****************************
+!-------------------------------------------------
 
 ! Linear extrapolation for the ghost point of fall speeds
 fallr(1,1,1) = .5 * ( fallr(1,1,2) + fallr(1,1,3) )
