@@ -713,7 +713,7 @@ the zt file, the rest all occur in the zm file.
   on 2004/07/10.
   When enabled, the analytic computation normally
   used for radiation is disabled.  BUGSrad is enabled in the 
-  input/case_setups/<CASE NAME>_model.in file by setting lbugsrad = .true.
+  input/case_setups/<CASE NAME>_model.in file by setting rad_scheme = "bugsrad".
   Furthermore, you must compile CLUBB with the -Dradoffline preprocessor flag.
 
   BUGSrad allows the output of the following variables:
