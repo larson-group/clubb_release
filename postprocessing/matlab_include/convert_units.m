@@ -31,20 +31,24 @@ classdef convert_units
         % PRESSURE_IN_HPA_TO_HEIGHT_M Converts temperature and pressure
         % profiles into a height profile.
         %
-        % Reference;
+	%   Input(s)
+	%     t_in_k Absolute Temperature [K]
+	%     p_in_hPa Pressure [hPa]
+	%
+        %   Reference;
         %
         %     setdata.f90 from SAM
         %
-        
-           t_in_k = t_in_k .* (p_in_hPa/1000).^(convert_units.R/convert_units.Cp)
+          
+          t_in_k = t_in_k .* (p_in_hPa/1000).^(convert_units.R/convert_units.Cp);
 
-	      height(1) = convert_units.R/convert_units.g0*t_in_k(1)*log( psfc/p_in_hPa(1))
+	  height(1) = convert_units.R/convert_units.g0*t_in_k(1)*log( psfc/p_in_hPa(1));
 	    
-          for i=2:size(p_in_hPa,2)
+          for i=2:length(p_in_hPa)
 	      
               height(i) = height(i-1) + 0.5 * convert_units.R / convert_units.g0 * ...
                 ( t_in_k(i) + t_in_k(i-1) ) * ... 
-                                         log( p_in_hPa(i-1) / p_in_hPa(i) )
+                                         log( p_in_hPa(i-1) / p_in_hPa(i) );
           
           end
         end
