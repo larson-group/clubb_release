@@ -550,7 +550,7 @@ module clubb_driver
       iinit = 1
 
       call initialize_clubb &
-           ( iunit, runfile, trim( forcings_file_path ), psfc, & ! Intent(in)
+           ( iunit, trim( forcings_file_path ), psfc, & ! Intent(in)
              thlm, rtm, um, vm, ug, vg, wp2, wp2_zt, up2, vp2, rcm,  & ! Intent(inout)
              wm_zt, wm_zm, em, exner, &           ! Intent(inout)
              tau_zt, tau_zm, thvm, p_in_Pa, &     ! Intent(inout)
@@ -734,7 +734,7 @@ module clubb_driver
 
   !-----------------------------------------------------------------------
   subroutine initialize_clubb &
-             ( iunit, runfile, forcings_file_path, psfc, &
+             ( iunit, forcings_file_path, psfc, &
                thlm, rtm, um, vm, ug, vg, wp2, wp2_zt, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
                tau_zt, tau_zm, thvm, p_in_Pa, & 
@@ -818,7 +818,6 @@ module clubb_driver
     integer, intent(in) :: iunit
 
     character(len=*), intent(in) :: &
-      runfile, &         ! filename for the namelist
       forcings_file_path ! Path to the .dat files containing the forcings
 
     real, intent(in) :: psfc ! Pressure at the surface [Pa]
