@@ -24,8 +24,8 @@ module array_index
 
   ! Scalar quantities
   integer, public :: & 
-    iisclr_rt, iisclr_thl, iiCO2, & ! [kg/kg]/[K]/[1e6 mol/mol]
-    iiedsclr_rt, iiedsclr_thl, iiedCO2 ! "    "
+    iisclr_rt, iisclr_thl, iisclr_CO2, & ! [kg/kg]/[K]/[1e6 mol/mol]
+    iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2 ! "    "
 
   private ! Default Scope
 

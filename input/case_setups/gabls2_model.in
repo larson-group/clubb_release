@@ -91,7 +91,7 @@ sclr_dim   = 2  ! Total number of scalars
 
 iisclr_thl = 1 ! Location in the array to place a scalar like thetal
 iisclr_rt  = 2  ! Location in the array to place a scalar like total water
-iiCO2     = -1  ! Location in the array to place CO2
+iisclr_CO2     = -1  ! Location in the array to place CO2
 
 sclr_tol  = 1.e-2, 1.e-8 ! Tolerances below which we consider scalar to be 0.
 
@@ -105,7 +105,7 @@ iiedsclr_thl = 1 ! Location in the edsclrm array to place a scalar like thetal
 
 iiedsclr_rt  = 2 ! Location in the edsclrm array to place a scalar like total water 
 
-iiedCO2 = -1
+iiedsclr_CO2 = -1
 
 
 

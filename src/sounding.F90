@@ -419,7 +419,7 @@ module sounding
 
     use parameters_model, only: sclr_dim
 
-    use array_index, only: iisclr_rt, iisclr_thl, iiCO2
+    use array_index, only: iisclr_rt, iisclr_thl, iisclr_CO2
 
     implicit none
 
@@ -446,8 +446,8 @@ module sounding
     do i=1, sclr_dim
       select case(trim(retVars(i)%name))
       case("CO2[ppmv]")
-        if( i /= iiCO2 .and. iiCO2 > 0) then
-          stop "iiCO2 index does not match column."
+        if( i /= iisclr_CO2 .and. iisclr_CO2 > 0) then
+          stop "iisclr_CO2 index does not match column."
         end if
       case('rt[kg\kg]')
         if( i /= iisclr_rt .and. iisclr_rt > 0) then
@@ -477,7 +477,7 @@ module sounding
 
     use parameters_model, only: edsclr_dim
 
-    use array_index, only: iiedsclr_rt, iiedsclr_thl, iiedCO2
+    use array_index, only: iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2
 
     implicit none
 
@@ -503,8 +503,8 @@ module sounding
     do i=1, edsclr_dim
       select case(trim(retVars(i)%name))
       case("CO2[ppmv]")
-        if( i /= iiedCO2 .and. iiedCO2 > 0) then
-          stop "iiCO2 index does not match column."
+        if( i /= iiedsclr_CO2 .and. iiedsclr_CO2 > 0) then
+          stop "iisclr_CO2 index does not match column."
         end if
       case('rt[kg\kg]')
         if( i /= iiedsclr_rt .and. iiedsclr_rt > 0) then

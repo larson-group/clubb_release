@@ -164,8 +164,8 @@ module clubb_driver
 
     use stats_precision, only: time_precision ! Variable(s)
 
-    use array_index, only: iisclr_rt, iisclr_thl, iiCO2, & ! Variables
-      iiedsclr_rt, iiedsclr_thl, iiedCO2
+    use array_index, only: iisclr_rt, iisclr_thl, iisclr_CO2, & ! Variables
+      iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2
 
     use microphys_driver, only: init_microphys ! Subroutine
 
@@ -285,8 +285,8 @@ module clubb_driver
       forcings_file_path, &
       l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, debug_level, & 
-      sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iiCO2, &
-      edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedCO2
+      sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
+      edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2
 
 
     namelist /stats_setting/ & 
@@ -343,12 +343,12 @@ module clubb_driver
     sclr_dim   = 0
     iisclr_thl = -1
     iisclr_rt  = -1
-    iiCO2 = -1
+    iisclr_CO2 = -1
 
     edsclr_dim = 0
     iiedsclr_thl = -1
     iiedsclr_rt  = -1
-    iiedCO2 = -1
+    iiedsclr_CO2 = -1
 
     sclr_tol(1:sclr_max) = 1.e-2
 
@@ -374,17 +374,17 @@ module clubb_driver
 
     ! Sanity check on passive scalars
     ! When adding new 'ii' scalar indices, add them to this list.
-    if ( max( iiCO2, iisclr_rt, iisclr_thl ) > sclr_dim ) then
+    if ( max( iisclr_CO2, iisclr_rt, iisclr_thl ) > sclr_dim ) then
       write(fstderr,*) "Passive scalar index exceeds sclr_dim ", & 
-        "iiCO2 = ", iiCO2, "iisclr_rt = ", iisclr_rt,  & 
+        "iisclr_CO2 = ", iisclr_CO2, "iisclr_rt = ", iisclr_rt,  & 
         "iisclr_thl = ", iisclr_thl, "sclr_dim = ", sclr_dim
 
       err_code = clubb_var_out_of_bounds
       return
 
-    else if ( max( iiedCO2, iiedsclr_rt, iiedsclr_thl ) > edsclr_dim ) then
+    else if ( max( iiedsclr_CO2, iiedsclr_rt, iiedsclr_thl ) > edsclr_dim ) then
       write(fstderr,*) "Passive scalar index exceeds edsclr_dim ", & 
-        "iiedCO2 = ", iiedCO2, "iiedsclr_rt = ", iiedsclr_rt,  & 
+        "iiedsclr_CO2 = ", iiedsclr_CO2, "iiedsclr_rt = ", iiedsclr_rt,  & 
         "iiedsclr_thl = ", iiedsclr_thl, "edsclr_dim = ", edsclr_dim
 
       err_code = clubb_var_out_of_bounds
@@ -468,7 +468,7 @@ module clubb_driver
       print *, "edsclr_dim = ", edsclr_dim
       print *, "iisclr_thl = ", iisclr_thl
       print *, "iisclr_rt = ", iisclr_rt
-      print *, "iiCO2 = ", iiCO2
+      print *, "iisclr_CO2 = ", iisclr_CO2
 
       print *, "sclr_tol = ", sclr_tol(1:sclr_dim)
 

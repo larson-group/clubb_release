@@ -37,8 +37,8 @@ use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 use stats_precision, only: time_precision ! Variable(s)
 
 use array_index, only:  & 
-    iisclr_thl, iisclr_rt, iiCO2, & ! Variable(s)
-    iiedsclr_thl, iiedsclr_rt, iiedCO2
+    iisclr_thl, iisclr_rt, iisclr_CO2, & ! Variable(s)
+    iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2
 
 implicit none
 
@@ -98,10 +98,10 @@ rtm_forcing  = 0.0
 thlm_forcing = 0.0
 
 ! Setup passive scalars, if they're enabled
-if ( iiCO2 > 0 ) sclrm_forcing(:,iiCO2) = 0.0
+if ( iisclr_CO2 > 0 ) sclrm_forcing(:,iisclr_CO2) = 0.0
 if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
 if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt) = rtm_forcing
-if ( iiedCO2 > 0 ) edsclrm_forcing(:,iiedCO2) = 0.0
+if ( iiedsclr_CO2 > 0 ) edsclrm_forcing(:,iiedsclr_CO2) = 0.0
 if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
 if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt) = rtm_forcing
 
@@ -133,8 +133,8 @@ use stats_precision, only: time_precision ! Variable(s)
 use diag_ustar_mod, only: diag_ustar ! Variable(s)
 
 use array_index, only: &
-  iisclr_rt, iisclr_thl, iiCO2, & ! Variable(s)
-  iiedsclr_rt, iiedsclr_thl, iiedCO2
+  iisclr_rt, iisclr_thl, iisclr_CO2, & ! Variable(s)
+  iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2
   
 use surface_flux, only: compute_ubar, compute_momentum_flux
 
@@ -230,11 +230,11 @@ call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
 wpthlp_sfc = heat_flx2
 wprtp_sfc  = moisture_flx2
 
-if ( iiCO2 > 0 ) wpsclrp_sfc(iiCO2) = CO2_flx2
+if ( iisclr_CO2 > 0 ) wpsclrp_sfc(iisclr_CO2) = CO2_flx2
 if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
 if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-if ( iiedCO2 > 0 ) wpedsclrp_sfc(iiedCO2) = CO2_flx2
+if ( iiedsclr_CO2 > 0 ) wpedsclrp_sfc(iiedsclr_CO2) = CO2_flx2
 if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
 if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
 
