@@ -31,12 +31,14 @@ we were to update to a new version of the external code.
 
 %\flushleft
 \begin{enumerate}
-\item All files in the repository should have a standard header with a SVN 
+\item All source code, namelists, and script files in the repository should 
+have a standard header with a SVN 
 \texttt{\$Id\$} tag at the top.
 \newline
 When initially checking in a new source file, enter the Id tag as 
-the string \texttt{\$Id\$} on a commented line at the top of the source file
- (SVN will expand this after checking it in).
+the string \texttt{\$Id\$} on a commented out line at the top of the 
+source file (SVN will expand this after checking it in).
+E.g. \verb| ! $Id$ |.
 
 \bigskip
 
@@ -125,10 +127,11 @@ This will allow other users to contact you with any questions about the section 
 Use the same name identifier, e.g. dschanen or Vince Larson, everywhere.
 Then everyone can use \texttt{grep} to search for all code comments you've made.
 
-\item Minimize the number of variables or amount of data made available to any 
-subroutine in either 
-passed arguments or \texttt{use} statements.  Always specify \texttt{intent} 
-attributes on your arguments, and use \texttt{intent(in)} 
+\item Minimize the number of variables and the amount of data that can be 
+modified by subroutines and functions.  This includes variables passed as an 
+argument and those coming from a \texttt{use} statement. 
+Always specify the \texttt{intent} attributes of arguments, and 
+use \texttt{intent(in)} 
 and \texttt{intent(out)} rather than \texttt{intent(inout)} whenever possible.
 This makes the code more clear to new users by allowing them to trace where a 
 given variable is changed in the code and spot at a glance what are the inputs and
