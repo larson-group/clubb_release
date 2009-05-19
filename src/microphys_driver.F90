@@ -758,6 +758,10 @@ module microphys_driver
     select case ( trim( micro_scheme ) )
 
     case ( "coamps" ) 
+
+      ! Initialize tendencies to zero
+      hydromet_mc(:,:) = 0.0
+
       call coamps_micro_driver & 
            ( runtype, time_current, dt, & 
              rtm, wm_zm, p_in_Pa, exner, rho, T_in_K, & 
@@ -771,9 +775,6 @@ module microphys_driver
              hydromet_mc(:,iirgraupelm), hydromet_mc(:,iirsnowm), & 
              hydromet_mc(:,iiNrm), & 
              rtm_mc, thlm_mc )
-
-      hydromet_mc(:,iiNcm) = 0.
-      hydromet_mc(:,iiNim) = 0.
 
       if ( l_stats_samp ) then
 
@@ -945,6 +946,10 @@ module microphys_driver
       end if ! l_stats_samp
 
     case ( "khairoutdinov_kogan" )
+
+      ! Initialize tendencies to zero
+      hydromet_mc(:,:) = 0.0
+
       call kk_microphys & 
            ( dt, T_in_K, p_in_Pa, exner, rho,  & 
              thl1, thl2, a, rc1, rc2, s1,  & 
@@ -954,8 +959,6 @@ module microphys_driver
              hydromet_mc(:,iirrainm), hydromet_mc(:,iiNrm),  & 
              rtm_mc, thlm_mc, & 
              hydromet_vel(:,iirrainm), hydromet_vel(:,iiNrm) )
-
-      hydromet_mc(:,iiNcm) = 0.
 
       if ( l_stats_samp ) then
 
