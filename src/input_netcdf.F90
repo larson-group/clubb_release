@@ -11,50 +11,147 @@ module input_netcdf
 
   private ! Default Scope
 
-  public :: get_var, open_netcdf_read,  & 
+  public :: get_var, open_netcdf_read, & 
     close_netcdf_read
 
   contains
 
 !-----------------------------------------------------------------------
-  subroutine open_netcdf_read( path, ncid )
+  subroutine open_netcdf_read( test_variable, path, ncf, l_error )
 
 ! Description:
 !   Open a netCDF data set in read-only mode
 !-----------------------------------------------------------------------
-    use netcdf, only: nf90_open, nf90_strerror ! Function(s)
+    use netcdf, only: &
+      nf90_inq_varid, & ! Function(s)
+      nf90_get_var, &
+      nf90_inquire_variable, &
+      nf90_open, &
+      nf90_strerror, &
+      nf90_inquire_dimension
 
-    use netcdf, only: NF90_NOWRITE, NF90_NOERR ! Constant(s)
+    use netcdf, only: &
+      NF90_NOWRITE,      & ! Constant(s) 
+      NF90_NOERR,        & 
+      NF90_MAX_VAR_DIMS, &
+      NF90_FLOAT, &
+      NF90_MAX_NAME
+
+    use stat_file_module, only: stat_file
 
     implicit none
 
     ! Input Variables
+    character(len=*), intent(in) :: &
+      test_variable ! Variable used to determine the dimensions in the file
+
     character(len=*), intent(in) ::  & 
       path ! The file name
 
     ! Output Variables
-    integer, intent(out) :: ncid ! The netCDF id of the file
+    type(stat_file), intent(out) :: ncf ! Derived type for the netCDF file
+
+    logical, intent(out) :: l_error
 
     ! Local Variables
-    integer :: ierr
+    integer :: i, ierr, itmp, varid, xtype
+
+    integer :: xdim, ydim, ndims
+
+    character(len=NF90_MAX_NAME) :: zname, dim_name
+
+    integer, dimension(NF90_MAX_VAR_DIMS) :: dimIds
 
 !-----------------------------------------------------------------------
 
     ! ---- Begin Code ----
 
-    ierr = nf90_open( path=trim( path ), mode=NF90_NOWRITE, ncid=ncid )
+    ! Initialize l_error to false
+    l_error = .false.
+
+    ierr = nf90_open( path=trim( path ), mode=NF90_NOWRITE, ncid=ncf%iounit )
 
     if ( ierr /= NF90_NOERR ) then
       write(fstderr,*) "Error opening netCDF file: "//trim( path )
       write(fstderr,*) nf90_strerror( ierr )
-      stop "Fatal error."
+      l_error = .true.
+      return 
+    end if
+
+    ierr = nf90_inq_varid( ncid=ncf%iounit, name=test_variable, varid=varid )
+
+    if ( ierr /= NF90_NOERR ) then
+      write(fstderr,*) nf90_strerror( ierr )
+      l_error = .true.
+      return
+    end if
+
+    ierr = nf90_inquire_variable( ncid=ncf%iounit, varid=varid, xtype=xtype, &
+                                  ndims=ndims, dimIds=dimIds )
+
+    if ( ierr /= NF90_NOERR .or. ndims /= 4 .or. xtype /= NF90_FLOAT ) then
+            write(fstderr,*) "input_netcdf.open_netcdf_read : The netCDF data doesn't "// &
+            "conform to expected precision, shape, or dimensions"
+      l_error = .true.
+      return
+
+    end if
+
+    xdim = -1
+    ydim = -1
+    ncf%iz = -1
+    ncf%ntimes = -1
+
+    do i = 1, ndims
+
+      ierr = nf90_inquire_dimension( ncid=ncf%iounit, dimId=dimIds(i), name=dim_name, len=itmp )
+
+      select case ( trim( dim_name ) )
+      case ( "Z", "z", "altitude", "height" )
+        ncf%ia = 1
+        ncf%iz = itmp
+        ncf%AltDimId = i
+        zname = dim_name
+      case ( "X", "x", "longitude" )
+        xdim = itmp
+        ncf%LongDimId = i
+      case ( "Y", "y", "latitude" )
+        ydim = itmp
+        ncf%LatDimId = i
+      case ( "T", "t", "time" )
+        ncf%ntimes = itmp
+        ncf%TimeDimId = i
+      case default
+        l_error = .true.
+        return
+      end select
+
+    end do
+
+    if ( ydim /= 1 .or. xdim /= 1 ) then
+      write(fstderr,*) "input_netcdf.open_netcdf_read : The netCDF data doesn't "// &
+        "conform to the expected X or Y dimension"
+      l_error = .true.
+      return
+    end if
+      
+
+    if ( .not. l_error ) then
+      allocate( ncf%z(ncf%iz) )
+
+      ierr = nf90_inq_varid( ncid=ncf%iounit, name=trim( zname ), varid=ncf%AltVarId )
+
+      ierr = nf90_inquire_variable( ncid=ncf%iounit, varid=ncf%AltVarId )
+
+      ierr = nf90_get_var( ncid=ncf%iounit, varid=varid, values=ncf%z(:) )
+
     end if
 
     return
   end subroutine open_netcdf_read
 
 !----------------------------------------------------------------------
-  subroutine get_var( ncid, varname, itime, x, l_error )
+  subroutine get_var( ncf, varname, itime, x, l_error )
 
 ! Description:
 !   Read in values from a netCDF file.
@@ -66,8 +163,7 @@ module input_netcdf
       nf90_inq_varid, & ! Function(s)
       nf90_get_var, &
       nf90_inquire_variable, &
-      nf90_strerror, &
-      nf90_inquire_dimension
+      nf90_strerror
 
     use netcdf, only: &
       NF90_NOERR, & ! Constant(s)
@@ -75,11 +171,14 @@ module input_netcdf
       NF90_FLOAT, &
       NF90_MAX_NAME
 
+    use stat_file_module, only: &
+      stat_file ! Type(s)
+
     implicit none
 
     ! Input Variables
-    integer, intent(in) :: &
-      ncid ! NetCDF file id.
+    type (stat_file), intent(in) :: &
+      ncf ! NetCDF file structure
 
     character(len=*), intent(in) ::  & 
       varname ! The variable name as it occurs in the control file
@@ -94,11 +193,11 @@ module input_netcdf
     logical, intent(out) :: l_error
 
     ! Local Variables
+
+    integer :: varid, ierr, xtype, ndims
+
+    ! Local Variables
     integer, dimension(NF90_MAX_VAR_DIMS) :: dimIds
-
-    integer :: varid, ierr, tdim, xdim, ydim, zdim, i, itmp, xtype, ndims
-
-    character(len=NF90_MAX_NAME) :: dim_name
 
     real(kind=4), dimension(:,:,:,:), allocatable :: & 
       x4 ! The variable from the file
@@ -109,7 +208,7 @@ module input_netcdf
     ! Initialize l_error to false
     l_error = .false.
 
-    ierr = nf90_inq_varid( ncid=ncid, name=varname, varid=varid )
+    ierr = nf90_inq_varid( ncid=ncf%iounit, name=varname, varid=varid )
 
     if ( ierr /= NF90_NOERR ) then
       write(fstderr,*) nf90_strerror( ierr )
@@ -117,7 +216,8 @@ module input_netcdf
       return
     end if
 
-    ierr = nf90_inquire_variable( ncid=ncid, varid=varid, xtype=xtype, ndims=ndims, dimIds=dimIds )
+    ierr = nf90_inquire_variable( ncid=ncf%iounit, varid=varid, xtype=xtype, &
+                                  ndims=ndims, dimIds=dimIds )
 
     if ( ierr /= NF90_NOERR .or. ndims /= 4 .or. xtype /= NF90_FLOAT ) then
             write(fstderr,*) "input_netcdf.get_var : The netCDF data doesn't "// &
@@ -126,48 +226,27 @@ module input_netcdf
       return
 
     else
-      xdim = -1
-      ydim = -1
-      zdim = -1
-      tdim = -1
-      do i = 1, ndims
-        ierr = nf90_inquire_dimension( ncid=ncid, dimId=dimIds(i), name=dim_name, len=itmp )
-        select case ( trim( dim_name ) )
-        case ( "Z", "z", "altitude", "height" )
-          zdim = itmp
-        case ( "X", "x", "longitude" )
-          xdim = itmp
-        case ( "Y", "y", "latitude" )
-          ydim = itmp
-        case ( "T", "t", "time" )
-          tdim = itmp
-        case default
-          l_error = .true.
-          return
-        end select
 
-      end do
-
-      if ( tdim > itmp ) then
+      if ( itime > ncf%ntimes ) then
         write(fstderr,*) "input_netcdf.get_var: The time specified exceeds the netCDF data"
         l_error = .true.
         return
       end if
 
-      allocate( x4(xdim,ydim,zdim,1) )
+      allocate( x4(1,1,ncf%iz,1) )
 
     end if
 
     ! Obtain a vertical column at time itime
-    ierr = nf90_get_var( ncid=ncid, varid=varid, values=x4, &
-      start=(/1,1,1,itime/), count=(/1,1,zdim,1/) )
+    ierr = nf90_get_var( ncid=ncf%iounit, varid=varid, values=x4, &
+      start=(/1,1,1,itime/), count=(/1,1,ncf%iz,1/) )
 
     if ( ierr /= NF90_NOERR ) then
       write(fstderr,*) nf90_strerror( ierr )
       l_error = .true.
       return
     else
-      x = real( x4(1,:,1,1) )
+      x = real( x4(1,1,:,1) )
     end if
 
     return
@@ -175,7 +254,7 @@ module input_netcdf
 
 
 !-----------------------------------------------------------------------
-  subroutine close_netcdf_read( ncid )
+  subroutine close_netcdf_read( ncf )
 
 ! Description:
 !   Close a previously opened netCDF file
@@ -184,15 +263,19 @@ module input_netcdf
 
     use netcdf, only: NF90_NOERR ! Constant(s)
 
+    use stat_file_module, only: &
+      stat_file ! Type(s)
+
     implicit none
 
     ! Input Variables
-    integer, intent(in) :: &
-      ncid
+    type(stat_file), intent(in) :: &
+      ncf
+
     integer :: ierr
 !-----------------------------------------------------------------------
     ! Close file
-    ierr = nf90_close( ncid=ncid )
+    ierr = nf90_close( ncid=ncf%iounit )
 
     if ( ierr /= NF90_NOERR ) then
       write(fstderr,*) "Error closing a netCDF file"
