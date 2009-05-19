@@ -8,8 +8,8 @@ module stats_type
   ! Used for storing output statistics to disk.
   !-----------------------------------------------------------------------
 
-  use output_file_module, only: & 
-      outputfile ! Type
+  use stat_file_module, only: & 
+      stat_file ! Type
 
   use stats_precision, only: & 
       stat_rknd,  & ! Variable(s)
@@ -51,9 +51,9 @@ module stats_type
     ! Tracks if a field is in the process of an update
     logical, pointer, dimension(:,:) :: l_in_update
 
-    ! Data for GrADS output
+    ! Data for GrADS / netCDF output
 
-    type (outputfile) f
+    type (stat_file) f
 
   end type stats
 

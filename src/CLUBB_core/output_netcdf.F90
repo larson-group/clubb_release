@@ -36,8 +36,8 @@ module output_netcdf
       nf90_create,  & ! Procedure
       nf90_strerror
 
-    use output_file_module, only: & 
-      outputfile ! Type
+    use stat_file_module, only: & 
+      stat_file ! Type
 
     use stats_precision, only:  & 
       time_precision ! Variable(s)
@@ -72,7 +72,7 @@ module output_netcdf
      zgrid  ! The model grid                  [m]
 
     ! Input/output Variables
-    type (outputfile), intent(inout) :: ncf
+    type (stat_file), intent(inout) :: ncf
 
     ! Local Variables
     integer :: stat  ! Error status
@@ -144,15 +144,15 @@ module output_netcdf
         nf90_put_var,  & ! Procedure
         nf90_strerror
 
-    use output_file_module, only: & 
-        outputfile ! Variable
+    use stat_file_module, only: & 
+        stat_file ! Variable
     use constants, only:  & 
         fstderr ! Variable
 
     implicit none
 
 ! Input
-    type (outputfile), intent(inout) :: ncf    ! The file
+    type (stat_file), intent(inout) :: ncf    ! The file
 
 ! Local Variables
     integer, dimension(:), allocatable :: stat ! Error status
@@ -181,13 +181,13 @@ module output_netcdf
 
     do i = 1, ncf%nvar, 1
 !        provide values for the variables
-!        stat(i) = nf90_put_var( ncid=ncf%iounit, varid=ncf%var(i)%Id,
+!        stat(i) = nf90_put_var( ncid=ncf%iounit, varid=ncf%var(i)%indx,
 !    .          values=reshape( ncf%var(i)%ptr(ncf%ia:ncf%iz),
 !    .                          (/1, 1, ncf%iz, 1/ ) ) ,
 !    .          start=(/1,1,1,ncf%ntimes/) )
 ! Work around for a performance issue on pgf90
       stat(i)  & 
-      = nf90_put_var( ncid=ncf%iounit, varid=ncf%var(i)%Id,  & 
+      = nf90_put_var( ncid=ncf%iounit, varid=ncf%var(i)%indx,  & 
                       values=ncf%var(i)%ptr(ncf%ia:ncf%iz),  & 
                       start=(/1,1,1,ncf%ntimes/), & 
                       count=(/1,1,ncf%iz,1/) )
@@ -379,8 +379,8 @@ module output_netcdf
 !      details. -dschanen
 !-----------------------------------------------------------------------
 
-    use output_file_module, only: & 
-        outputfile ! Type
+    use stat_file_module, only: & 
+        stat_file ! Type
     use netcdf, only: & 
         NF90_NOERR,  & ! Variable
         nf90_close,  & ! Procedure(s)
@@ -392,7 +392,7 @@ module output_netcdf
     implicit none
 
 ! Input/Output Variables
-    type (outputfile), intent(inout) :: ncf
+    type (stat_file), intent(inout) :: ncf
 
 ! Local Variables
     integer :: stat
@@ -426,8 +426,8 @@ module output_netcdf
       nf90_put_att, & 
       nf90_enddef
 
-    use output_file_module, only: &
-      outputfile ! Derived type
+    use stat_file_module, only: &
+      stat_file ! Derived type
 
     use constants, only:  &
       fstderr ! Variable
@@ -468,7 +468,7 @@ module output_netcdf
     implicit none
 
     ! Input/Output Variables
-    type (outputfile), intent(inout) :: ncf
+    type (stat_file), intent(inout) :: ncf
 
     ! Local Variables
     integer, dimension(:), allocatable :: stat
@@ -518,16 +518,16 @@ module output_netcdf
     do i = 1, ncf%nvar, 1
 !        stat(i) = nf90_def_var( ncf%iounit, trim( ncf%var(i)%name ),
 !    .             NF90_FLOAT, (/ncf%TimeDimId, ncf%AltDimId,
-!    .             ncf%LatDimId, ncf%LongDimId/), ncf%var(i)%Id )
+!    .             ncf%LatDimId, ncf%LongDimId/), ncf%var(i)%indx )
       stat(i) = nf90_def_var( ncf%iounit, trim( ncf%var(i)%name ), & 
-                NF90_FLOAT, var_dim(:), ncf%var(i)%Id )
+                NF90_FLOAT, var_dim(:), ncf%var(i)%indx )
       if ( stat(i) /= NF90_NOERR ) then
         write(fstderr,*) "Error defining variable ",  & 
           ncf%var(i)%name //": ", trim( nf90_strerror( stat(i) ) )
         l_error = .true.
       endif
 
-      stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%Id, & 
+      stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%indx, & 
                 "valid_range", var_range(1:2) )
       if ( stat(i) /= NF90_NOERR ) then
         write(fstderr,*) "Error defining valid range", & 
@@ -535,7 +535,7 @@ module output_netcdf
         l_error = .true.
       endif
 
-      stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%Id, "title",  & 
+      stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%indx, "title",  & 
                 trim( ncf%var(i)%description ) )
       if ( stat(i) /= NF90_NOERR ) then
         write(fstderr,*) "Error in description", & 
@@ -543,7 +543,7 @@ module output_netcdf
         l_error = .true.
       endif
 
-      stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%Id, "units",  & 
+      stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%indx, "units",  & 
                 trim( ncf%var(i)%units ) )
       if ( stat(i) /= NF90_NOERR ) then
         write(fstderr,*) "Error in units", & 
@@ -659,8 +659,8 @@ module output_netcdf
         NF90_NOERR,   & ! Variable(s)
         nf90_put_var,  & ! Procedure(s)
         nf90_strerror
-    use output_file_module, only: & 
-        outputfile ! Type
+    use stat_file_module, only: & 
+        stat_file ! Type
     use constants, only:  & 
         fstderr ! Variable
 
@@ -671,7 +671,7 @@ module output_netcdf
 !      real, parameter, dimension(1) :: deg_north = 0.0
 
 !      Input
-    type (outputfile), intent(inout) :: ncf
+    type (stat_file), intent(inout) :: ncf
 
     integer :: stat
 

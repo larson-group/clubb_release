@@ -10,6 +10,7 @@ module stats_variables
 
   use stats_type, only:  & 
       stats ! Type
+
   use stats_precision, only:  & 
       time_precision ! Variable
 

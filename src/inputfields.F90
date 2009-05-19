@@ -157,8 +157,10 @@ module inputfields
     use array_index, only:  & 
         iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm, iiNim, iiNcm
 
+    use stat_file_module, only: & 
+        stat_file     ! Type
+
     use inputfile_class, only: & 
-        inputgrads,  & ! Type
         get_var,  & ! Procedure(s)
         open_grads_read, & 
         close_grads_read
@@ -182,7 +184,7 @@ module inputfields
     ! Local Variables
     logical :: l_read_error, l_fatal_error
 
-    type (inputgrads) :: fread_var
+    type (stat_file) :: fread_var
 
     real, dimension(:), allocatable :: LES_tmp1
 
@@ -2347,8 +2349,8 @@ module inputfields
     !-----------------------------------------------------------------------
 
 
-    use inputfile_class, only:  &
-        inputgrads  ! Variable type
+    use stat_file_module, only:  &
+        stat_file  ! Variable type
 
     use constants, only:  &
         fstderr ! Constant
@@ -2356,7 +2358,7 @@ module inputfields
     implicit none
 
     ! Input Variables.
-    type(inputgrads), intent(in) ::  &
+    type(stat_file), intent(in) ::  &
       fread_var  ! Information about LES run.
 
     real, dimension(:), intent(in) ::  &
@@ -2454,13 +2456,13 @@ module inputfields
 
     !-----------------------------------------------------------------------
 
-    use inputfile_class, only:  &
-        inputgrads  ! Variable type
+    use stat_file_module, only:  &
+        stat_file  ! Variable type
 
     implicit none
 
     ! Input Variables.
-    type(inputgrads), intent(in) ::  &
+    type(stat_file), intent(in) ::  &
       fread_var  ! Information about LES run.
 
     real, dimension(:), intent(in) ::  &
@@ -2613,8 +2615,10 @@ module inputfields
 
     !-----------------------------------------------------------------------
 
-    use inputfile_class, only: & 
-        inputgrads,  & ! Type
+    use stat_file_module, only: & 
+        stat_file     ! Type
+
+    use inputfile_class, only: &
         open_grads_read,  & ! Procedure(s)
         close_grads_read
 
@@ -2643,7 +2647,7 @@ module inputfields
       nearest_timestep ! Nearest GrADS output time to time [min]
 
     ! Local Variables
-    type (inputgrads) :: fread_var
+    type (stat_file) :: fread_var
 
     real(kind=time_precision) :: delta_time   ! In seconds
 

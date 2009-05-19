@@ -23,7 +23,7 @@ module grads_common
 
     use constants, only: fstderr ! Variable(s)
 
-    use inputfile_class, only: inputgrads ! Type(s)
+    use stat_file_module, only: stat_file ! Type(s)
 
     use inputfile_class, only: open_grads_read, get_var,  & ! Procedures
                          close_grads_read
@@ -70,7 +70,7 @@ module grads_common
     real, dimension(out_nz) :: grads_average
 
     ! Local Variables
-    type (inputgrads) :: faverage ! Data file derived type
+    type (stat_file) :: faverage ! Data file derived type
 
     real, allocatable, dimension(:) :: file_variable ! Temporary variable
 
@@ -312,7 +312,7 @@ module grads_common
 !       determine the number of levels
 !-------------------------------------------------------------------------
 
-    use inputfile_class, only: inputgrads ! Type(s)
+    use stat_file_module, only: stat_file ! Type(s)
 
     use inputfile_class, only: open_grads_read, close_grads_read ! Procedure(s)
 
@@ -323,7 +323,7 @@ module grads_common
       filename ! File name
 
     ! Local Variables
-    type (inputgrads) :: fz            ! Data file
+    type (stat_file) :: fz            ! Data file
 
     ! Read in the control file
     call open_grads_read( 10, filename, fz )
@@ -340,7 +340,7 @@ module grads_common
 !-------------------------------------------------------------------------
   function grads_vertical_levels( filename, nz )
 
-    use inputfile_class, only: inputgrads ! Type(s)
+    use stat_file_module, only: stat_file ! Type(s)
 
     use inputfile_class, only: open_grads_read, close_grads_read ! Procedure(s)
 
@@ -357,7 +357,7 @@ module grads_common
     real, dimension(nz) :: grads_vertical_levels
 
     ! Local Variables
-    type (inputgrads) :: fz  ! Data file
+    type (stat_file) :: fz  ! Data file
 
     ! Read in the control file
     call open_grads_read( 10, filename, fz )

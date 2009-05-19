@@ -1,6 +1,6 @@
 !-----------------------------------------------------------------------
-! $Id$
-module output_file_module
+! $Id: output_file_module.F90 2878 2008-09-08 19:09:02Z dschanen $
+module stat_file_module
  
 
 !     Description:
@@ -12,7 +12,7 @@ module output_file_module
  
    implicit none
 
-   public :: variable, outputfile
+   public :: variable, stat_file
 
    private ! Default scope
    
@@ -26,63 +26,67 @@ module output_file_module
      character(len = 50) :: description ! Variable description
      character(len = 20) :: units       ! Variable units
 
-     integer :: Id                      ! NetCDF module Id for var
+     integer :: indx ! NetCDF module Id for var / GrADS index
    end type variable
 
   ! Structure to hold the description of a NetCDF output file
   ! This makes the new code as compatible as possible with the
   ! GrADS output code
 
-   type outputfile
+   type stat_file
 
-  ! File information
+     ! File information
 
      character(len = 200) ::  & 
-     fname,   & ! File name without suffix
-     fdir    ! Path where fname resides
+       fname,   & ! File name without suffix
+       fdir    ! Path where fname resides
 
      integer :: iounit  ! This number is used internally by the 
                         ! NetCDF module to track the data set, or by 
                         ! GrADS to track the actual file unit.
                                    
-     integer :: nrecord  ! Number of records written
-     integer :: ntimes   ! Number of times written
-     logical :: l_defined ! Whether nf90_enddef() has been called
+     integer :: &
+       nrecord, & ! Number of records written
+       ntimes     ! Number of times written
 
-  ! NetCDF datafile dimensions indices
+     logical :: &
+       l_defined,  &  ! Whether nf90_enddef() has been called
+       l_byte_swapped ! Is this a file in the opposite byte ordering?
+
+    ! NetCDF datafile dimensions indices
      integer ::  & 
-     LatDimId, LongDimId, AltDimId, TimeDimId, & 
-     LatVarId, LongVarId, AltVarId, TimeVarId
+       LatDimId, LongDimId, AltDimId, TimeDimId, & 
+       LatVarId, LongVarId, AltVarId, TimeVarId
 
 
-  ! Grid information
+     ! Grid information
 
      integer :: ia, iz  ! Vertical extent
 
      real, dimension(:), pointer ::  & 
-     z ! Height of vertical levels [m]
+       z ! Height of vertical levels [m]
 
-  ! Time information
+     ! Time information
 
      integer :: day, month, year ! Date of starting time
 
      real ::  & 
-     rlat,    & ! Latitude                   [Degrees N]
-     rlon    ! Longitude                  [Degrees E]
+       rlat,    & ! Latitude                   [Degrees N]
+       rlon    ! Longitude                  [Degrees E]
 
      real(kind=time_precision) :: & 
-     dtwrite ! Interval between output    [Seconds]
+       dtwrite ! Interval between output    [Seconds]
 
      real(kind=time_precision) ::  & 
-     time    ! Start time                 [Seconds]
+       time    ! Start time                 [Seconds]
 
-  ! Statistical Variables
+     ! Statistical Variables
 
      integer :: nvar  ! Number of variables for this file
 
      type (variable), dimension(:), pointer ::  & 
-     var ! List and variable description
+       var ! List and variable description
 
-   end type outputfile
+   end type stat_file
 
- end module output_file_module
+ end module stat_file_module

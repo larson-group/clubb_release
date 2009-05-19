@@ -7,7 +7,7 @@ module output_grads
 !       This module contains structure and subroutine definitions to
 !       create GrADS output data files for one dimensional arrays.
 !
-!       The structure type (outputfile) contains all necessay information
+!       The structure type (stat_file) contains all necessay information
 !       to generate a GrADS file and a list of variables to be output
 !       in the data file.
 !
@@ -49,8 +49,8 @@ module output_grads
       fstderr,  & ! Variable 
       fstdout
 
-  use output_file_module, only: & 
-      outputfile ! Type
+  use stat_file_module, only: & 
+      stat_file ! Type
 
   use stats_precision, only:  & 
       time_precision ! Variable
@@ -86,7 +86,7 @@ module output_grads
   integer, intent(IN) :: nvar
 
   ! Input/Output Variables
-  type (outputfile), intent(INOUT) :: f ! File data [-]
+  type (stat_file), intent(INOUT) :: f ! File data [-]
 
   ! Local Variables
 
@@ -189,10 +189,12 @@ module output_grads
 !         to determine whether data can be safely appended to
 !         existing file.
 !-----------------------------------------------------------------------
-  use output_file_module, only: & 
+  use stat_file_module, only: & 
       variable ! Type
+
   use stats_precision, only: & 
       time_precision ! Variable
+
   use constants, only:  & 
       fstderr,  & ! Variable 
       fstdout
@@ -439,13 +441,13 @@ module output_grads
     big_endian, & ! Variable
     little_endian
 
-  use output_file_module, only: & 
-    outputfile ! Type
+  use stat_file_module, only: & 
+    stat_file ! Type
 
   implicit none
 
   ! Input Variables
-  type (outputfile), intent(inout) :: f
+  type (stat_file), intent(inout) :: f
 
   ! Local Variables
   integer ::  & 

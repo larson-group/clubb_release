@@ -35,7 +35,7 @@ module inputfile_class
 
   private ! Default Scope
 
-  public :: get_var, inputgrads, open_grads_read,  & 
+  public :: get_var, open_grads_read,  & 
             close_grads_read, variable
 
 
@@ -46,40 +46,13 @@ module inputfile_class
     module procedure get_4byte_var, get_8byte_var
   end interface
 
-! Structure to hold description of a variable
+  ! Structure to hold description of a variable
   type variable
-  integer :: index
-  character(len=15) :: name ! variable name
+    integer :: index
+    character(len=15) :: name ! variable name
   end type variable
 
-! Structure to hold description of a GrADS input file
-
-  type inputgrads
-
-  ! File information
-  character(len=128) :: fname ! Binary data file name
-  integer :: iounit           ! Fortran unit #
-  logical :: l_byteswapped     ! Need to swap bytes? (T/F)
-
-  ! Grid information
-  integer ia, iz              ! Vertical extent
-  real, pointer :: z(:)       ! Height of levels        [m]
-
-  ! Time information
-  integer day, month, year    ! date of starting time
-
-  real(kind=time_precision) ::  & 
-  time,     & ! Start time                 [s]
-  dtwrite  ! Interval between output    [s]
-
-  integer :: ntimes ! Number of time records in file
-
-  ! Local Variables
-  integer :: nvar
-
-  type (variable), pointer :: var(:)
-
-  end type inputgrads
+  ! Structure to hold description of a GrADS input file
 
   contains
 
@@ -91,6 +64,8 @@ module inputfile_class
 !-----------------------------------------------------------------------
     use model_flags, only: l_byteswap_io
 
+    use stat_file_module, only: stat_file
+
     implicit none
 
     ! Input Variables
@@ -100,7 +75,7 @@ module inputfile_class
       fname ! The file name
 
     ! Input / Output
-    type (inputgrads), intent(inout) ::  & 
+    type (stat_file), intent(inout) ::  & 
       f ! The GrADS file
 
     ! Local Variables
@@ -116,7 +91,7 @@ module inputfile_class
 
 !-----------------------------------------------------------------------
     !  Initialize status booleans
-    f%l_byteswapped = .false.
+    f%l_byte_swapped = .false.
     l_error          = .false.
     l_done           = .false.
 
@@ -146,7 +121,7 @@ module inputfile_class
 
       else if ( index(line,'BYTESWAPPED') > 0 ) then
 
-        f%l_byteswapped = .true.
+        f%l_byte_swapped = .true.
 
       else if ( index(line,'BIG_ENDIAN') > 0 ) then
 
@@ -154,7 +129,7 @@ module inputfile_class
         ! big_endian
 
         if ( little_endian .or. ( l_byteswap_io .and. big_endian ) ) then
-          f%l_byteswapped = .true.
+          f%l_byte_swapped = .true.
         end if
 
       else if ( index(line,'LITTLE_ENDIAN') > 0 ) then
@@ -163,7 +138,7 @@ module inputfile_class
         ! little_endian
 
         if ( big_endian .or. ( l_byteswap_io .and. little_endian ) ) then
-          f%l_byteswapped = .true.
+          f%l_byte_swapped = .true.
         end if
 
       else if ( index(line,'XDEF') > 0 ) then
@@ -258,7 +233,7 @@ module inputfile_class
             l_error = .true.
           end if
 
-          f%var(i)%index = i
+          f%var(i)%indx = i
 
         end do ! 1..f%nvar
 
@@ -273,7 +248,7 @@ module inputfile_class
 
 !--------- Debug -------------------------------------------------------
 !         write(*,*) 'f%fname = ',trim(f%fname)
-!         write(*,*) 'f%l_byteswapped = ',f%l_byteswapped
+!         write(*,*) 'f%l_byte_swapped = ',f%l_byte_swapped
 !         write(*,*) 'f%ia = ',f%ia
 !         write(*,*) 'f%iz = ',f%iz
 !         write(*,'(8f8.1)') (f%z(i),i=f%ia,f%iz)
@@ -320,26 +295,28 @@ module inputfile_class
 !   Read binary data from file units and return the result as
 !   as 4 byte float 'x'
 !----------------------------------------------------------------------
+    use constants, only: fstderr
+    use stat_file_module, only: stat_file
 
     implicit none
 
     ! Input Variables
-    type (inputgrads), intent(in) :: & 
-    f ! The file to read data from
+    type (stat_file), intent(in) :: & 
+      f ! The file to read data from
 
     character(len=*), intent(in) ::  & 
-    varname ! The variable name as it occurs in the control file
+      varname ! The variable name as it occurs in the control file
 
     integer, intent(in) :: & 
-    itime ! Obtain variable varname at time itime [m]
+      itime ! Obtain variable varname at time itime [m]
 
-    ! Output
+    ! Output Variables
     real(kind=4), dimension(:), intent(out) ::  & 
-    x ! Result variable
+      x ! Result variable
 
     logical, intent(out) :: l_error
 
-    ! Internal
+    ! Local Variables
     logical :: l_done
     integer :: i, k, nrec, ivar
 
@@ -379,7 +356,7 @@ module inputfile_class
 !     write(*,*) 'get_var: i > f%nvar'
 !     write(*,*) 'i = ',i
 !     write(*,*) 'f%nvar = ',f%nvar
-      write(0,*) "inputgrads get_var: "//trim( varname ), " variable not found."
+      write(fstderr,*) "inputgrads get_var: "//trim( varname ), " variable not found."
       return
     end if
 
@@ -411,7 +388,7 @@ module inputfile_class
 
     do k=f%ia,f%iz
       read(unit=f%iounit,rec=nrec) x(k)
-      if ( f%l_byteswapped ) call byte_order_swap( x(k) )
+      if ( f%l_byte_swapped ) call byte_order_swap( x(k) )
       nrec = nrec + 1
     end do
 
@@ -425,6 +402,7 @@ module inputfile_class
 !         Takes the result from get_4byte_var and returns it as a double
 !         precision type, allowing for compile time promotion.
 !----------------------------------------------------------------------
+    use stat_file_module, only: stat_file
 
     implicit none
 
@@ -432,8 +410,8 @@ module inputfile_class
     intrinsic :: dble, size
 
     ! Input Variables
-    type (inputgrads), intent(in) :: & 
-    f ! The GrADS file
+    type (stat_file), intent(in) :: & 
+      f ! The GrADS file
 
     character(len=*), intent(in) :: & 
     varname ! The variable name as it occurs in the control file
@@ -463,10 +441,12 @@ module inputfile_class
 !         Close a previously opened GrADS file
 !-----------------------------------------------------------------------
 
+    use stat_file_module, only: stat_file
+
     implicit none
 
     ! Input Variables
-    type (inputgrads), intent(INOUT) :: f
+    type (stat_file), intent(inout) :: f
 
 !-----------------------------------------------------------------------
     ! Close file
