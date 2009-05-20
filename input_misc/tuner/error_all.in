@@ -1,4 +1,4 @@
-! $Id: error_all.in,v 1.21 2008-04-30 23:12:48 dschanen Exp $
+! $Id$
 ! Parameter file for subroutine tuner_init in there error module. 
 ! All parameters are used by amoeba or amebsa to "tune" CLUBB.
 
