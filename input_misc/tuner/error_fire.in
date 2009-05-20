@@ -12,7 +12,7 @@
 !   or any other integer for amebsa(downhill simplex with simulated annealing)
 
 ! Setting t_variables:
-! Most variables are named in the same fashion in both CLUBB and LES, but
+! Most variables are named in the same fashion in both CLUBB and the LES, but
 !   because some are not they must be specified as an ordered pair of strings.
 
 ! Known values of the CLUBB variables and LES variables are listed in the 
@@ -21,7 +21,7 @@
 !  CLUBB | COAMPS-LES
 !  ------------
 !  cf	 | cf
-!  rlm   | qcm
+!  rcm   | qcm
 !  wp3	 | wp3
 !  thlm	 | thlm
 !  rtm   | qtm
@@ -31,7 +31,7 @@
 !
 !  Values of hoc_v and les_v for other variables can be found in the .ctl files.
 !
-!  Key variables for UWM: qcm/rlm, cf, rtm/qtm, thlm, um, vm, wp3
+!  Key variables for UWM: qcm/rcm, cf, rtm/qtm, thlm, um, vm, wp3
 
 &stats
 ftol              = 0.01,
