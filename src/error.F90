@@ -379,10 +379,10 @@ module error
 
     use clubb_driver, only: run_clubb ! Procedure(s)
 
-    use grads_common, only: &
-      grads_num_vertical_levels, & ! Procedure(s)
-      grads_vertical_levels, &
-      grads_average_interval
+    use stat_file_utils, only: &
+      stat_file_num_vertical_levels, & ! Procedure(s)
+      stat_file_vertical_levels, &
+      stat_file_average_interval
 
     use parameters_tunable, only: params_list ! Variable(s)
 
@@ -548,7 +548,7 @@ module error
     do c_run=1, c_total, 1
 
       ! Determine how large the GrADS input is
-      clubb_nz = grads_num_vertical_levels( hoc_stats_file(c_run) )
+      clubb_nz = stat_file_num_vertical_levels( hoc_v(1), hoc_stats_file(c_run) )
 
       ! Allocate the arrays for reading in the GrADS plot data
       allocate( clubb_zl(clubb_nz), clubb2_zl(clubb_nz),  & 
@@ -559,7 +559,7 @@ module error
       end if
 
       ! Determine the height of GrADS input
-      clubb_grid_heights = grads_vertical_levels( hoc_stats_file(c_run), clubb_nz )
+      clubb_grid_heights = stat_file_vertical_levels( hoc_v(1), hoc_stats_file(c_run), clubb_nz )
 
       ! Start with first CLUBB & LES variables, then loop through and
       ! calculate the mean squared difference for all the variables
@@ -568,7 +568,7 @@ module error
         ! Read in LES grads data for one variable, averaged
         ! over specified time intervals
         les_zl =  & 
-        grads_average_interval &
+        stat_file_average_interval &
         ( les_stats_file(c_run), clubb_nz,  & 
           time(c_run,:), les_v(i), clubb_grid_heights, 1, l_error )
 
@@ -586,7 +586,7 @@ module error
         ! Read in CLUBB grads data for one variable, averaged
         ! over specified time intervals
         clubb_zl =  & 
-        grads_average_interval & 
+        stat_file_average_interval & 
         ( hoc_stats_file(c_run), clubb_nz,  & 
           time(c_run,:), hoc_v(i), clubb_grid_heights, 1, l_error )
 
@@ -594,7 +594,7 @@ module error
 
         ! The same variable, with npower = 2
         clubb2_zl =  & 
-        grads_average_interval & 
+        stat_file_average_interval & 
         ( hoc_stats_file(c_run), clubb_nz, & 
           time(c_run,:), hoc_v(i), clubb_grid_heights, 2, l_error )
 

@@ -26,7 +26,8 @@
 ../src/recl.inc
 ../src/soil_vegetation.F90
 ../src/sounding.F90
-../src/input_reader.F90
 ../src/std_atmosphere_mod.F90
+../src/input_netcdf.F90
+../src/input_reader.F90
 ../src/inputfields.F90
 ../src/inputgrads.F90

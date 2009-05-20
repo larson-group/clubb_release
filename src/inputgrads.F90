@@ -15,7 +15,7 @@ module inputfile_class
 !       Modifications:
 !       * Uses functions rather than subroutines to get endian type.
 !       * Other cosmetic changes.
-!       * Overloaded subroutine get_var to allow for 8 byte real output.
+!       * Overloaded subroutine get_grads_var to allow for 8 byte real output.
 !       * Added preprocesing for RECL
 !-----------------------------------------------------------------------
 #include "recl.inc"
@@ -35,14 +35,14 @@ module inputfile_class
 
   private ! Default Scope
 
-  public :: get_var, open_grads_read,  & 
+  public :: get_grads_var, open_grads_read,  & 
             close_grads_read, variable
 
 
-! Overloaded interface for get_var.  All GrADS files are assumed
+! Overloaded interface for get_grads_var.  All GrADS files are assumed
 ! to store variable as 4 byte IEEE floats, but the model may be
 ! using double or extended precision.
-  interface get_var
+  interface get_grads_var
     module procedure get_4byte_var, get_8byte_var
   end interface
 
@@ -330,7 +330,7 @@ module inputfile_class
     if ( itime < 1 .or. (itime/(f%dtwrite/60.)) > f%ntimes ) then
       l_error = .true.
       write(unit=fstderr,fmt=*)  & 
-        "get_var: itime < 1 .or. itime > f%ntimes"
+        "get_4byte_var: itime < 1 .or. itime > f%ntimes"
       write(unit=fstderr,fmt=*) "itime = ", itime
       write(unit=fstderr,fmt=*) "f%ntimes = ", f%ntimes
 
@@ -353,10 +353,10 @@ module inputfile_class
 
     if ( i > f%nvar ) then
       l_error = .true.
-!     write(*,*) 'get_var: i > f%nvar'
+!     write(*,*) 'get_4byte_var: i > f%nvar'
 !     write(*,*) 'i = ',i
 !     write(*,*) 'f%nvar = ',f%nvar
-      write(fstderr,*) "inputgrads get_var: "//trim( varname ), " variable not found."
+      write(fstderr,*) "inputgrads get_4byte_var: "//trim( varname ), " variable not found."
       return
     end if
 

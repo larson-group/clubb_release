@@ -92,7 +92,7 @@ module inputfields
 
 !       Calls:
 !       subroutine open_grads_read
-!       subroutine get_var
+!       subroutine get_grads_var
 !       subroutine close_grads_read
 !-----------------------------------------------------------------------
 
@@ -161,7 +161,7 @@ module inputfields
         stat_file     ! Type
 
     use inputfile_class, only: & 
-        get_var,  & ! Procedure(s)
+        get_grads_var,  & ! Procedure(s)
         open_grads_read, & 
         close_grads_read
 
@@ -243,58 +243,58 @@ module inputfields
       l_fatal_error = .false.
 
       if ( input_um ) then
-        call get_var( fread_var, "um", timestep, & 
+        call get_grads_var( fread_var, "um", timestep, & 
                       um(1:gr%nnzp), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_vm ) then
-        call get_var( fread_var, "vm", timestep, & 
+        call get_grads_var( fread_var, "vm", timestep, & 
                       vm(1:gr%nnzp), l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_rtm ) then
-        call get_var( fread_var, "rtm", timestep, & 
+        call get_grads_var( fread_var, "rtm", timestep, & 
                       rtm(1:gr%nnzp),  l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_thlm ) then
-        call get_var( fread_var, "thlm",  & 
+        call get_grads_var( fread_var, "thlm",  & 
                       timestep, & 
                       thlm(1:gr%nnzp),  l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_wp3 ) then
-        call get_var( fread_var, "wp3", timestep, & 
+        call get_grads_var( fread_var, "wp3", timestep, & 
                       wp3(1:gr%nnzp),  l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_tau_zt ) then
-        call get_var( fread_var, "tau_zt", timestep, & 
+        call get_grads_var( fread_var, "tau_zt", timestep, & 
                       tau_zt(1:gr%nnzp),  l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_rrainm ) then
-        call get_var( fread_var, "rrainm", timestep, & 
+        call get_grads_var( fread_var, "rrainm", timestep, & 
                       hydromet(1:gr%nnzp,iirrainm),  l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_rsnowm ) then
-        call get_var( fread_var, "rsnowm", timestep, & 
+        call get_grads_var( fread_var, "rsnowm", timestep, & 
                       hydromet(1:gr%nnzp,iirsnowm),  l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_ricem ) then
-        call get_var( fread_var, "ricem", timestep, & 
+        call get_grads_var( fread_var, "ricem", timestep, & 
                       hydromet(1:gr%nnzp,iiricem),  l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_rgraupelm ) then
-        call get_var( fread_var, "rgraupelm", timestep, & 
+        call get_grads_var( fread_var, "rgraupelm", timestep, & 
                       hydromet(1:gr%nnzp,iirgraupelm),  l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
@@ -302,158 +302,158 @@ module inputfields
 !--------------------------------------------------------
 ! Added variables for clubb_restart
       if ( input_p ) then
-        call get_var( fread_var, "p_in_Pa", timestep, & 
+        call get_grads_var( fread_var, "p_in_Pa", timestep, & 
                       p_in_Pa(1:gr%nnzp),  l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_exner) then
-        call get_var( fread_var , "exner", timestep, & 
+        call get_grads_var( fread_var , "exner", timestep, & 
                       exner(1:gr%nnzp),  l_read_error)
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_ug) then
-        call get_var( fread_var , "ug", timestep, & 
+        call get_grads_var( fread_var , "ug", timestep, & 
                       ug(1:gr%nnzp),  l_read_error)
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_vg) then
-        call get_var( fread_var , "vg", timestep, & 
+        call get_grads_var( fread_var , "vg", timestep, & 
                       vg(1:gr%nnzp),  l_read_error)
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_rcm) then
-        call get_var( fread_var , "rcm", timestep, & 
+        call get_grads_var( fread_var , "rcm", timestep, & 
                       rcm(1:gr%nnzp),  l_read_error)
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_wm_zt) then
-        call get_var( fread_var , "wm", timestep, & 
+        call get_grads_var( fread_var , "wm", timestep, & 
                       wm_zt(1:gr%nnzp),  l_read_error)
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_rho) then
-        call get_var( fread_var , "rho", timestep, & 
+        call get_grads_var( fread_var , "rho", timestep, & 
                       rho(1:gr%nnzp), l_read_error)
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_Lscale) then
-        call get_var( fread_var , "Lscale", timestep, & 
+        call get_grads_var( fread_var , "Lscale", timestep, & 
                       Lscale(1:gr%nnzp), l_read_error)
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_Lscale_up) then
-        call get_var( fread_var , "Lscale_up", timestep, & 
+        call get_grads_var( fread_var , "Lscale_up", timestep, & 
                       Lscale_up(1:gr%nnzp), l_read_error)
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_Lscale_down) then
-        call get_var( fread_var , "Lscale_down", timestep, & 
+        call get_grads_var( fread_var , "Lscale_down", timestep, & 
                       Lscale_down(1:gr%nnzp), l_read_error)
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_Kh_zt) then
-        call get_var( fread_var , "Kh_zt", timestep, & 
+        call get_grads_var( fread_var , "Kh_zt", timestep, & 
                       Kh_zt(1:gr%nnzp), l_read_error)
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_thvm) then
-        call get_var( fread_var , "thvm", timestep, & 
+        call get_grads_var( fread_var , "thvm", timestep, & 
                       thvm(1:gr%nnzp), l_read_error)
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_thlm_forcing ) then
-        call get_var( fread_var , "thlm_f", timestep, & 
+        call get_grads_var( fread_var , "thlm_f", timestep, & 
                       thlm_forcing(1:gr%nnzp), l_read_error)
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_rtm_forcing ) then
-        call get_var( fread_var , "rtm_f", timestep, & 
+        call get_grads_var( fread_var , "rtm_f", timestep, & 
                       rtm_forcing(1:gr%nnzp), l_read_error)
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_Ncm) then
-        call get_var( fread_var , "Ncm", timestep, & 
+        call get_grads_var( fread_var , "Ncm", timestep, & 
                       hydromet(1:gr%nnzp,iiNcm), l_read_error)
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_Ncnm) then
-        call get_var( fread_var , "Ncnm", timestep, & 
+        call get_grads_var( fread_var , "Ncnm", timestep, & 
                       Ncnm(1:gr%nnzp), l_read_error)
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_Nim) then
-        call get_var( fread_var , "Nim", timestep, & 
+        call get_grads_var( fread_var , "Nim", timestep, & 
                       hydromet(1:gr%nnzp,iiNim), l_read_error)
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_cf) then
-        call get_var( fread_var , "cf", timestep, & 
+        call get_grads_var( fread_var , "cf", timestep, & 
                       cf(1:gr%nnzp), l_read_error)
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_Nrm ) then
-        call get_var( fread_var , "Nrm", timestep, & 
+        call get_grads_var( fread_var , "Nrm", timestep, & 
                       hydromet(1:gr%nnzp,iiNrm), l_read_error)
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_sigma_sqd_w_zt ) then
-        call get_var( fread_var , "sigma_sqd_w_zt", timestep, & 
+        call get_grads_var( fread_var , "sigma_sqd_w_zt", timestep, & 
                       sigma_sqd_w_zt(1:gr%nnzp), l_read_error)
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       ! PDF Parameters (needed for K&K microphysics)
       if ( input_thl1 ) then
-        call get_var( fread_var , "thl1", timestep, & 
+        call get_grads_var( fread_var , "thl1", timestep, & 
                       pdf_params%thl1(1:gr%nnzp), l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       end if
 
       if ( input_thl2 ) then
-        call get_var( fread_var , "thl2", timestep, & 
+        call get_grads_var( fread_var , "thl2", timestep, & 
                       pdf_params%thl2(1:gr%nnzp), l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       end if
 
       if ( input_a ) then
-        call get_var( fread_var , "a", timestep, & 
+        call get_grads_var( fread_var , "a", timestep, & 
                       pdf_params%a(1:gr%nnzp), l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       end if
 
       if ( input_s1 ) then
-        call get_var( fread_var , "s1", timestep, & 
+        call get_grads_var( fread_var , "s1", timestep, & 
                       pdf_params%s1(1:gr%nnzp), l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       end if
 
       if ( input_s2 ) then
-        call get_var( fread_var , "s2", timestep, & 
+        call get_grads_var( fread_var , "s2", timestep, & 
                       pdf_params%s2(1:gr%nnzp), l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       end if
 
       if ( input_ss1 ) then
-        call get_var( fread_var , "ss1", timestep, & 
+        call get_grads_var( fread_var , "ss1", timestep, & 
                       pdf_params%ss1(1:gr%nnzp), l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       end if
 
       if ( input_ss2 ) then
-        call get_var( fread_var , "ss2", timestep, & 
+        call get_grads_var( fread_var , "ss2", timestep, & 
                       pdf_params%ss2(1:gr%nnzp), l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       end if
 
       if ( input_rc1 ) then
-        call get_var( fread_var , "rc1", timestep, & 
+        call get_grads_var( fread_var , "rc1", timestep, & 
                       pdf_params%rc1(1:gr%nnzp), l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       end if
 
       if ( input_rc2 ) then
-        call get_var( fread_var , "rc2", timestep, & 
+        call get_grads_var( fread_var , "rc2", timestep, & 
                       pdf_params%rc2(1:gr%nnzp), l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       end if
@@ -466,20 +466,20 @@ module inputfields
                             fread_var )
 
       if ( input_wp2 ) then
-        call get_var( fread_var, "wp2", timestep, & 
+        call get_grads_var( fread_var, "wp2", timestep, & 
                       wp2(1:gr%nnzp),  l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_wprtp ) then
-        call get_var( fread_var, "wprtp",  & 
+        call get_grads_var( fread_var, "wprtp",  & 
                       timestep, wprtp(1:gr%nnzp), & 
                       l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_wpthlp ) then
-        call get_var( fread_var, "wpthlp",  & 
+        call get_grads_var( fread_var, "wpthlp",  & 
                       timestep,  & 
                       wpthlp(1:gr%nnzp),  & 
                       l_read_error )
@@ -487,7 +487,7 @@ module inputfields
       endif
 
       if ( input_wpthvp ) then
-        call get_var( fread_var, "wpthvp",  & 
+        call get_grads_var( fread_var, "wpthvp",  & 
                       timestep,  & 
                       wpthvp(1:gr%nnzp),  & 
                       l_read_error )
@@ -495,21 +495,21 @@ module inputfields
       endif
 
       if ( input_rtp2 ) then
-        call get_var( fread_var, "rtp2",  & 
+        call get_grads_var( fread_var, "rtp2",  & 
                       timestep, & 
                       rtp2(1:gr%nnzp), l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_thlp2 ) then
-        call get_var( fread_var, "thlp2",  & 
+        call get_grads_var( fread_var, "thlp2",  & 
                       timestep, & 
                       thlp2(1:gr%nnzp), l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_rtpthlp ) then
-        call get_var( fread_var, "rtpthlp",  & 
+        call get_grads_var( fread_var, "rtpthlp",  & 
                       timestep,  & 
                       rtpthlp(1:gr%nnzp), & 
                       l_read_error )
@@ -517,57 +517,57 @@ module inputfields
       endif
 
       if ( input_upwp ) then
-        call get_var( fread_var, "upwp",  & 
+        call get_grads_var( fread_var, "upwp",  & 
                       timestep, & 
                       upwp(1:gr%nnzp), l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
 
       if ( input_vpwp ) then
-        call get_var( fread_var, "vpwp",  & 
+        call get_grads_var( fread_var, "vpwp",  & 
                       timestep, & 
                       vpwp(1:gr%nnzp), l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
 !-----------------------------------------------------------
       if ( input_em ) then
-        call get_var( fread_var, "em", & 
+        call get_grads_var( fread_var, "em", & 
                       timestep, & 
                       em(1:gr%nnzp), l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_rho_zm ) then
-        call get_var( fread_var, "rho_zm", & 
+        call get_grads_var( fread_var, "rho_zm", & 
                       timestep, & 
                       rho_zm(1:gr%nnzp), l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_Kh_zm ) then
-        call get_var( fread_var, "Kh_zm", & 
+        call get_grads_var( fread_var, "Kh_zm", & 
                       timestep, & 
                       Kh_zm(1:gr%nnzp), l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_tau_zm) then
-        call get_var( fread_var, "tau_zm", & 
+        call get_grads_var( fread_var, "tau_zm", & 
                       timestep, & 
                       tau_zm(1:gr%nnzp), l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_up2) then
-        call get_var( fread_var, "up2", & 
+        call get_grads_var( fread_var, "up2", & 
                       timestep, & 
                       up2(1:gr%nnzp), l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_vp2) then
-        call get_var( fread_var, "vp2", & 
+        call get_grads_var( fread_var, "vp2", & 
                       timestep, & 
                       vp2(1:gr%nnzp), l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
       endif
       if ( input_sigma_sqd_w ) then
-        call get_var( fread_var, "sigma_sqd_w", & 
+        call get_grads_var( fread_var, "sigma_sqd_w", & 
                       timestep, & 
                       sigma_sqd_w(1:gr%nnzp), l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -580,7 +580,7 @@ module inputfields
                             fread_var )
 
       if ( input_veg_T_in_K ) then
-        call get_var( fread_var, "veg_T_in_K", & 
+        call get_grads_var( fread_var, "veg_T_in_K", & 
                       timestep, & 
                       tmp1, l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -588,7 +588,7 @@ module inputfields
         print *, "Veg T = ", veg_T_in_K
       endif
       if ( input_deep_soil_T_in_K ) then
-        call get_var( fread_var, "deep_soil_T_in_", & 
+        call get_grads_var( fread_var, "deep_soil_T_in_", & 
                       timestep, & 
                       tmp1, l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -596,7 +596,7 @@ module inputfields
         print *,"Deep soil = ",deep_soil_T_in_K
       endif
       if ( input_sfc_soil_T_in_K ) then
-        call get_var( fread_var, "sfc_soil_T_in_K", & 
+        call get_grads_var( fread_var, "sfc_soil_T_in_K", & 
                       timestep, & 
                       tmp1, l_read_error )
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -605,7 +605,7 @@ module inputfields
       endif
 
 
-      if ( l_fatal_error ) stop "oops, get_var failed in grads_fields_reader"
+      if ( l_fatal_error ) stop "oops, get_grads_var failed in grads_fields_reader"
 
       call close_grads_read( fread_var )
 
@@ -670,7 +670,7 @@ module inputfields
       l_fatal_error = .false.
 
       if ( input_um ) then
-        call get_var( fread_var, "um", timestep, & 
+        call get_grads_var( fread_var, "um", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -708,7 +708,7 @@ module inputfields
       endif
 
       if ( input_vm ) then
-        call get_var( fread_var, "vm", timestep, & 
+        call get_grads_var( fread_var, "vm", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -746,7 +746,7 @@ module inputfields
       endif
 
       if ( input_rtm) then
-        call get_var( fread_var, "qtm", timestep, & 
+        call get_grads_var( fread_var, "qtm", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -777,7 +777,7 @@ module inputfields
       endif
 
       if ( input_thlm) then
-        call get_var( fread_var, "thlm", timestep, & 
+        call get_grads_var( fread_var, "thlm", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -808,7 +808,7 @@ module inputfields
       endif
 
       if ( input_wp3) then
-        call get_var( fread_var, "wp3", timestep, & 
+        call get_grads_var( fread_var, "wp3", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -838,7 +838,7 @@ module inputfields
       endif
 
       if ( input_wprtp) then
-        call get_var( fread_var, "wpqtp", timestep, &
+        call get_grads_var( fread_var, "wpqtp", timestep, &
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -878,7 +878,7 @@ module inputfields
       endif
 
       if ( input_wpthlp) then
-        call get_var( fread_var, "wpthlp", timestep,  &
+        call get_grads_var( fread_var, "wpthlp", timestep,  &
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -918,7 +918,7 @@ module inputfields
       endif
 
       if ( input_rtp2) then
-        call get_var( fread_var, "qtp2", timestep, &
+        call get_grads_var( fread_var, "qtp2", timestep, &
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -954,7 +954,7 @@ module inputfields
       endif
 
       if ( input_thlp2 ) then
-        call get_var( fread_var, "thlp2", timestep, &
+        call get_grads_var( fread_var, "thlp2", timestep, &
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -985,7 +985,7 @@ module inputfields
       endif
 
       if ( input_rtpthlp) then
-        call get_var( fread_var, "qtpthlp", timestep, &
+        call get_grads_var( fread_var, "qtpthlp", timestep, &
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1024,7 +1024,7 @@ module inputfields
         endif
       endif
 
-      if ( l_fatal_error ) stop "oops, get_var failed in grads_fields_reader"
+      if ( l_fatal_error ) stop "oops, get_grads_var failed in grads_fields_reader"
 
       ! Deallocate temporary storage variable LES_tmp1.
       deallocate( LES_tmp1 )
@@ -1103,7 +1103,7 @@ module inputfields
       l_read_error = .false.
 
       if ( input_um ) then
-        call get_var( fread_var, "um", timestep, & 
+        call get_grads_var( fread_var, "um", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1137,7 +1137,7 @@ module inputfields
       endif
 
       if ( input_vm ) then
-        call get_var( fread_var, "vm", timestep, & 
+        call get_grads_var( fread_var, "vm", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1170,7 +1170,7 @@ module inputfields
       endif
 
       if ( input_rtm ) then
-        call get_var( fread_var, "qtm", timestep, & 
+        call get_grads_var( fread_var, "qtm", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1201,7 +1201,7 @@ module inputfields
       endif
 
       if ( input_thlm ) then
-        call get_var( fread_var, "thlm", timestep, & 
+        call get_grads_var( fread_var, "thlm", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1234,7 +1234,7 @@ module inputfields
       ! We obtain wp2 from stats_sw
 
       if ( input_wp3 ) then
-        call get_var( fread_var, "wp3", timestep, & 
+        call get_grads_var( fread_var, "wp3", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1265,7 +1265,7 @@ module inputfields
       endif
 
       if ( input_wprtp ) then
-        call get_var( fread_var, "wpqtp", timestep, &
+        call get_grads_var( fread_var, "wpqtp", timestep, &
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1300,7 +1300,7 @@ module inputfields
       endif
 
       if ( input_wpthlp ) then
-        call get_var( fread_var, "wpthlp", timestep,  &
+        call get_grads_var( fread_var, "wpthlp", timestep,  &
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1335,7 +1335,7 @@ module inputfields
       endif
 
       if ( input_rtp2 ) then
-        call get_var( fread_var, "qtp2", timestep, &
+        call get_grads_var( fread_var, "qtp2", timestep, &
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1371,7 +1371,7 @@ module inputfields
       endif
 
       if ( input_thlp2 ) then
-        call get_var( fread_var, "thlp2", timestep, &
+        call get_grads_var( fread_var, "thlp2", timestep, &
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1407,7 +1407,7 @@ module inputfields
       endif
 
       if ( input_rtpthlp) then
-        call get_var( fread_var, "qtpthlp", timestep, &
+        call get_grads_var( fread_var, "qtpthlp", timestep, &
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1453,7 +1453,7 @@ module inputfields
       end if
 
       if ( input_rcm ) then
-        call get_var( fread_var, "qcm", timestep, & 
+        call get_grads_var( fread_var, "qcm", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1477,7 +1477,7 @@ module inputfields
       endif
 
       if ( input_wm_zt ) then
-        call get_var( fread_var, "wlsm", timestep, & 
+        call get_grads_var( fread_var, "wlsm", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1501,7 +1501,7 @@ module inputfields
       endif
 
       if ( input_exner ) then
-        call get_var( fread_var, "ex0", timestep, & 
+        call get_grads_var( fread_var, "ex0", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1527,7 +1527,7 @@ module inputfields
       if ( input_em ) then
 
         ! Read in SGS TKE
-        call get_var( fread_var, "em", timestep, & 
+        call get_grads_var( fread_var, "em", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1550,7 +1550,7 @@ module inputfields
         enddo
 
         ! Read in Resolved TKE
-        call get_var( fread_var, "tke", timestep, & 
+        call get_grads_var( fread_var, "tke", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1577,7 +1577,7 @@ module inputfields
       endif ! input_em
 
       if ( input_p ) then
-        call get_var( fread_var, "pm", timestep, & 
+        call get_grads_var( fread_var, "pm", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1601,7 +1601,7 @@ module inputfields
       endif
 
       if ( input_rho ) then
-        call get_var( fread_var, "dn0", timestep, & 
+        call get_grads_var( fread_var, "dn0", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1642,7 +1642,7 @@ module inputfields
       end if
 
       if ( input_Kh_zt ) then
-        call get_var( fread_var, "kh", timestep, & 
+        call get_grads_var( fread_var, "kh", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
         ! LES_tmp1 is the value of mixing length from the LES GrADS file.
         do k = k_lowest_zt_input, k_highest_zt_input, 1
@@ -1678,7 +1678,7 @@ module inputfields
       end if
 
       if ( input_wpthvp ) then
-        call get_var( fread_var, "wpthvp", timestep, & 
+        call get_grads_var( fread_var, "wpthvp", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_fatal_error )
         ! LES_tmp1 is the value of wpthvp from the LES GrADS file.
         do k = k_lowest_zm_input, k_highest_zm_input, 1
@@ -1744,7 +1744,7 @@ module inputfields
       end if
 
       if ( input_thvm ) then
-        call get_var( fread_var, "thvm", timestep, & 
+        call get_grads_var( fread_var, "thvm", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1768,7 +1768,7 @@ module inputfields
       endif
 
       if ( input_rrainm ) then
-        call get_var( fread_var, "qrm", timestep, & 
+        call get_grads_var( fread_var, "qrm", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1800,7 +1800,7 @@ module inputfields
       endif
 
       if ( input_Nrm ) then
-        call get_var( fread_var, "nrm", timestep, & 
+        call get_grads_var( fread_var, "nrm", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1832,7 +1832,7 @@ module inputfields
       endif
 
       if ( input_Ncm ) then
-        call get_var( fread_var, "ncm", timestep, & 
+        call get_grads_var( fread_var, "ncm", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1865,7 +1865,7 @@ module inputfields
 
 
       if ( input_rsnowm ) then
-        call get_var( fread_var, "qsm", timestep, & 
+        call get_grads_var( fread_var, "qsm", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1895,7 +1895,7 @@ module inputfields
       endif
 
       if ( input_ricem ) then
-        call get_var( fread_var, "qim", timestep, & 
+        call get_grads_var( fread_var, "qim", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1925,7 +1925,7 @@ module inputfields
       endif
 
       if ( input_rgraupelm ) then
-        call get_var( fread_var, "qgm", timestep, & 
+        call get_grads_var( fread_var, "qgm", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1955,7 +1955,7 @@ module inputfields
       endif
 
       if ( input_Ncnm ) then
-        call get_var( fread_var, "ncnm", timestep, & 
+        call get_grads_var( fread_var, "ncnm", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -1979,7 +1979,7 @@ module inputfields
       endif
 
       if ( input_Nim ) then
-        call get_var( fread_var, "nim", timestep, & 
+        call get_grads_var( fread_var, "nim", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -2019,7 +2019,7 @@ module inputfields
       end if
 
       if ( input_up2 ) then
-        call get_var( fread_var, "up2", timestep, & 
+        call get_grads_var( fread_var, "up2", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -2047,7 +2047,7 @@ module inputfields
       endif
 
       if ( input_vp2 ) then
-        call get_var( fread_var, "vp2", timestep, & 
+        call get_grads_var( fread_var, "vp2", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -2103,7 +2103,7 @@ module inputfields
         l_fatal_error = .true.
       end if
 
-      if ( l_fatal_error ) stop "oops, get_var failed in grads_fields_reader"
+      if ( l_fatal_error ) stop "oops, get_grads_var failed in grads_fields_reader"
 
       ! Deallocate temporary storage variable LES_tmp1.
       deallocate( LES_tmp1 )
@@ -2167,7 +2167,7 @@ module inputfields
 
       if ( input_upwp) then
 
-        call get_var( fread_var, "wpup", timestep, &
+        call get_grads_var( fread_var, "wpup", timestep, &
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -2189,7 +2189,7 @@ module inputfields
           endif
         enddo
 
-        call get_var( fread_var, "wpup_sgs", timestep, &
+        call get_grads_var( fread_var, "wpup_sgs", timestep, &
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -2216,7 +2216,7 @@ module inputfields
 
       if ( input_vpwp) then
 
-        call get_var( fread_var, "wpvp", timestep, &
+        call get_grads_var( fread_var, "wpvp", timestep, &
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -2238,7 +2238,7 @@ module inputfields
           endif
         enddo
 
-        call get_var( fread_var, "wpvp_sgs", timestep, &
+        call get_grads_var( fread_var, "wpvp_sgs", timestep, &
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -2264,7 +2264,7 @@ module inputfields
       endif
 
       if ( input_wp2 ) then
-        call get_var( fread_var, "wp2", timestep, & 
+        call get_grads_var( fread_var, "wp2", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -2293,7 +2293,7 @@ module inputfields
       endif
 
       if ( input_rho_zm ) then
-        call get_var( fread_var, "dn0", timestep, & 
+        call get_grads_var( fread_var, "dn0", timestep, & 
                       LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
         l_fatal_error = l_fatal_error .or. l_read_error
@@ -2316,7 +2316,7 @@ module inputfields
         enddo
       endif
 
-      if ( l_fatal_error ) stop "get_var failed for stats_sw in grads_fields_reader"
+      if ( l_fatal_error ) stop "get_grads_var failed for stats_sw in grads_fields_reader"
 
       ! Deallocate temporary storage variable LES_tmp1.
       deallocate( LES_tmp1 )

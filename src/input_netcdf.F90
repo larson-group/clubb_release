@@ -11,7 +11,7 @@ module input_netcdf
 
   private ! Default Scope
 
-  public :: get_var, open_netcdf_read, & 
+  public :: get_netcdf_var, open_netcdf_read, & 
     close_netcdf_read
 
   contains
@@ -110,17 +110,17 @@ module input_netcdf
       case ( "Z", "z", "altitude", "height" )
         ncf%ia = 1
         ncf%iz = itmp
-        ncf%AltDimId = i
+        ncf%AltDimId = dimIds(i)
         zname = dim_name
       case ( "X", "x", "longitude" )
         xdim = itmp
-        ncf%LongDimId = i
+        ncf%LongDimId = dimIds(i)
       case ( "Y", "y", "latitude" )
         ydim = itmp
-        ncf%LatDimId = i
+        ncf%LatDimId = dimIds(i)
       case ( "T", "t", "time" )
         ncf%ntimes = itmp
-        ncf%TimeDimId = i
+        ncf%TimeDimId = dimIds(i)
       case default
         l_error = .true.
         return
@@ -140,10 +140,25 @@ module input_netcdf
       allocate( ncf%z(ncf%iz) )
 
       ierr = nf90_inq_varid( ncid=ncf%iounit, name=trim( zname ), varid=ncf%AltVarId )
+      if ( ierr /= NF90_NOERR ) then
+        write(fstderr,*) nf90_strerror( ierr )
+        l_error = .true.
+      end if
 
-      ierr = nf90_inquire_variable( ncid=ncf%iounit, varid=ncf%AltVarId )
+      ierr = nf90_inquire_variable( ncid=ncf%iounit, varid=ncf%AltVarId, ndims=itmp )
 
-      ierr = nf90_get_var( ncid=ncf%iounit, varid=varid, values=ncf%z(:) )
+      if ( ierr /= NF90_NOERR ) then
+        write(fstderr,*) nf90_strerror( ierr )
+        l_error = .true.
+      end if
+
+      ierr = nf90_get_var( ncid=ncf%iounit, varid=ncf%AltVarId, start=(/1/), &
+                           count=(/ncf%iz/), values=ncf%z(:) )
+
+      if ( ierr /= NF90_NOERR ) then
+        write(fstderr,*) nf90_strerror( ierr )
+        l_error = .true.
+      end if
 
     end if
 
@@ -151,12 +166,14 @@ module input_netcdf
   end subroutine open_netcdf_read
 
 !----------------------------------------------------------------------
-  subroutine get_var( ncf, varname, itime, x, l_error )
+  subroutine get_netcdf_var( ncf, varname, itime, x, l_error )
 
 ! Description:
 !   Read in values from a netCDF file.
+
 ! Assumptions:
-!   We assume the variable in question is 4 bytes long
+!   We assume a NF90_FLOAT the same as a kind=4 real in Fortran, and
+!   That the variables will obey COARDS conventions and have 4 dimensions.
 !----------------------------------------------------------------------
 
     use netcdf, only: &
@@ -250,7 +267,7 @@ module input_netcdf
     end if
 
     return
-  end subroutine get_var
+  end subroutine get_netcdf_var
 
 
 !-----------------------------------------------------------------------

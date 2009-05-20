@@ -1,17 +1,19 @@
 ! $Id$
-module grads_common
+module stat_file_utils
 
   implicit none
 
-  public :: grads_average, grads_average_interval, &
-    grads_num_vertical_levels, grads_vertical_levels
+  public :: stat_file_average, stat_file_average_interval, &
+    stat_file_num_vertical_levels, stat_file_vertical_levels
+
+  private :: l_netcdf_file
 
   private ! Default Scope
 
   contains
 
 !----------------------------------------------------------------------
-  function grads_average( filename, out_nz, &
+  function stat_file_average( filename, out_nz, &
                           t1, t2, out_heights, variable_name,  & 
                           npower, l_error )
 ! Description:
@@ -25,8 +27,14 @@ module grads_common
 
     use stat_file_module, only: stat_file ! Type(s)
 
-    use inputfile_class, only: open_grads_read, get_var,  & ! Procedures
-                         close_grads_read
+    use inputfile_class, only: &
+      open_grads_read, get_grads_var,  & ! Procedures
+      close_grads_read
+
+    use input_netcdf, only: &
+      open_netcdf_read, get_netcdf_var, & ! Procedures
+      close_netcdf_read
+
     use inputfields, only: &
       CLUBB_levels_within_LES_domain, &
       LES_grid_to_CLUBB_grid, &
@@ -67,7 +75,7 @@ module grads_common
       l_error ! error status for this function
 
     ! Return Variable for function
-    real, dimension(out_nz) :: grads_average
+    real, dimension(out_nz) :: stat_file_average
 
     ! Local Variables
     type (stat_file) :: faverage ! Data file derived type
@@ -79,8 +87,10 @@ module grads_common
     integer :: & 
       t, &  ! Timestep loop index
       k     ! Vertical loop index
+
     integer :: file_nz
-    logical :: l_interpolate
+
+    logical :: l_interpolate, l_grads_file
 
     logical, dimension(out_nz) :: l_lin_int
 
@@ -99,14 +109,28 @@ module grads_common
     data nanbits /Z"7F800000"/
 
 !-----------------------------------------------------------------------
-    l_error = .false.
 
     ! Initialize variables
-    num_timesteps = ( t2 - t1 ) + 1
-    grads_average = 0.0
+    l_error = .false.
 
-    ! Open grads file
-    call open_grads_read( iunit, filename, faverage )
+    num_timesteps = ( t2 - t1 ) + 1
+    stat_file_average = 0.0
+
+    ! Determine file type
+    l_grads_file = .not. l_netcdf_file( filename )  
+
+    ! Open GraDS file
+    if ( l_grads_file ) then
+
+      call open_grads_read( iunit, filename, faverage )
+
+    else
+
+      call open_netcdf_read( variable_name, filename, faverage, l_error )
+
+      if ( l_error ) return
+
+    end if
 
     ! Determine variable size
     file_nz = size( faverage%z ) 
@@ -135,11 +159,18 @@ module grads_common
 
     ! Read in variables from GrADS file
     do t = t1, t2
-      call get_var( faverage, variable_name, t,  & 
-                    file_variable(1:file_nz), l_error )
+
+      if ( l_grads_file ) then
+        call get_grads_var( faverage, variable_name, t,  & 
+                            file_variable(1:file_nz), l_error )
+      else
+        call get_netcdf_var( faverage, variable_name, t, &
+                             file_variable(1:file_nz), l_error )
+      end if
+
 
       if ( l_error ) then
-        write(fstderr,*) "grads_average: get_var failed for "  & 
+        write(fstderr,*) "stat_file_average: get_var failed for "  & 
           //trim( variable_name )//" in "//trim( filename )//" at time=", t
         return
       end if
@@ -183,26 +214,33 @@ module grads_common
 
       ! Apply an exponent (for the tuner)
       if ( npower /= 1 ) then
-        grads_average(1:out_nz) = grads_average(1:out_nz) + interp_variable(1:out_nz)**npower
+        stat_file_average(1:out_nz) = stat_file_average(1:out_nz) &
+        + interp_variable(1:out_nz)**npower
 
       else
-        grads_average(1:out_nz) = grads_average(1:out_nz) + interp_variable(1:out_nz)
+        stat_file_average(1:out_nz) = stat_file_average(1:out_nz) &
+        + interp_variable(1:out_nz)
 
       end if
 
     end do ! t = t1, t2
 
-    ! Close the GrADS file
-    call close_grads_read( faverage )
+    if ( l_grads_file ) then
+      ! Close the GrADS file
+      call close_grads_read( faverage )
+    else
+      ! Close the netCDF file
+      call close_netcdf_read( faverage )
+    end if
 
     ! Take average over num_timesteps
-    grads_average(1:out_nz) = grads_average(1:out_nz) / real( num_timesteps )
+    stat_file_average(1:out_nz) = stat_file_average(1:out_nz) / real( num_timesteps )
 
     return
-  end function grads_average
+  end function stat_file_average
 
 !-------------------------------------------------------------------------
-  function grads_average_interval & 
+  function stat_file_average_interval & 
            ( filename, nz, t, variable_name, & 
              out_heights, npower, l_error )
 
@@ -248,10 +286,10 @@ module grads_common
 
     ! Return Variables
     real, dimension(nz) ::  & 
-      grads_average_interval
+      stat_file_average_interval
 
     ! Local Variables
-    real, dimension(nz) :: grads_temp
+    real, dimension(nz) :: stat_file_temp
 
     integer ::  & 
       i,       & ! Loop variable 
@@ -264,7 +302,7 @@ module grads_common
     ! Sanity check
     if ( size( t ) > tmax .or. size( t ) < 2 ) then
       write(unit=fstderr,fmt=*)  & 
-        "grads_average_interval: Invalid time interval"
+        "stat_file_average_interval: Invalid time interval"
       l_error = .true.
       return
     end if
@@ -275,8 +313,8 @@ module grads_common
       tdim = i
     end do
 
-    grads_average_interval & 
-    = grads_average & 
+    stat_file_average_interval & 
+    = stat_file_average & 
       ( filename, nz, t(1), t(2), out_heights, variable_name, npower, l_error )  & 
       * ( t(2) - t(1) )
 
@@ -285,21 +323,21 @@ module grads_common
     if ( l_error ) return
 
     do i=3, tdim, 2
-      grads_temp = grads_average & 
+      stat_file_temp = stat_file_average & 
                    ( filename, nz, t(i), t(i+1), out_heights,  & 
                      variable_name, npower, l_error )
-      grads_average_interval  & 
-      = grads_average_interval + grads_temp * ( t(i+1) - t(i) )
+      stat_file_average_interval  & 
+      = stat_file_average_interval + stat_file_temp * ( t(i+1) - t(i) )
       divisor = divisor + ( t(i+1) - t(i) )
     end do
 
-    grads_average_interval(1:nz)  = grads_average_interval(1:nz) / real( divisor )
+    stat_file_average_interval(1:nz)  = stat_file_average_interval(1:nz) / real( divisor )
 
     return
-  end function grads_average_interval
+  end function stat_file_average_interval
 
 !-------------------------------------------------------------------------
-  integer function grads_num_vertical_levels( filename )
+  integer function stat_file_num_vertical_levels( varname, filename )
 
 !       Description:
 !       Returns a integer for the number of vertical levels in a file
@@ -316,59 +354,140 @@ module grads_common
 
     use inputfile_class, only: open_grads_read, close_grads_read ! Procedure(s)
 
+    use input_netcdf, only: open_netcdf_read, close_netcdf_read ! Procedure(s)
+
     implicit none
 
     ! Input Variables
     character(len=*), intent(in) ::  & 
-      filename ! File name
+      filename, & ! File name
+      varname     ! Variable name
 
     ! Local Variables
     type (stat_file) :: fz            ! Data file
 
-    ! Read in the control file
-    call open_grads_read( 10, filename, fz )
+    logical :: l_grads_file, l_error
+
+    ! ---- Begin Code ----
+
+    l_grads_file = .not. l_netcdf_file( filename )  
+
+    if ( l_grads_file ) then
+      ! Read in the control file
+      call open_grads_read( 10, filename, fz )
+
+    else
+
+      call open_netcdf_read( varname, filename, fz, l_error )
+
+      if ( l_error ) then
+        write(0,*) "Error opening "// filename
+        stop
+      end if
+
+    end if
 
     ! Set return variable
-    grads_num_vertical_levels = fz%iz
+    stat_file_num_vertical_levels = fz%iz
 
     ! Close file
-    call close_grads_read( fz )
+    if ( l_grads_file ) then
+      call close_grads_read( fz )
+    else
+      call close_netcdf_read( fz )
+    end if
 
     return
-  end function grads_num_vertical_levels
+  end function stat_file_num_vertical_levels
 
 !-------------------------------------------------------------------------
-  function grads_vertical_levels( filename, nz )
+  function stat_file_vertical_levels( varname, filename, nz )
 
     use stat_file_module, only: stat_file ! Type(s)
 
     use inputfile_class, only: open_grads_read, close_grads_read ! Procedure(s)
+    use input_netcdf, only: open_netcdf_read, close_netcdf_read ! Procedure(s)
 
     implicit none
 
     ! Input Variables
     character(len=*), intent(in) ::  & 
-      filename ! File name
+      filename, & ! File name
+      varname     ! Variable name
 
     integer, intent(in) :: &
       nz ! Number of vertical levels
 
     ! Output Variables
-    real, dimension(nz) :: grads_vertical_levels
+    real, dimension(nz) :: stat_file_vertical_levels
 
     ! Local Variables
     type (stat_file) :: fz  ! Data file
 
-    ! Read in the control file
-    call open_grads_read( 10, filename, fz )
+    logical :: l_grads_file, l_error
+
+    ! ---- Begin Code ----
+
+    l_grads_file = .not. l_netcdf_file( filename )  
+
+    if ( l_grads_file ) then
+      ! Read in the control file
+      call open_grads_read( 10, filename, fz )
+
+    else
+
+      call open_netcdf_read( varname, filename, fz, l_error )
+
+      if ( l_error ) then
+        write(0,*) "Error opening "// filename
+        stop
+      end if
+
+    end if
 
     ! Set return variable
-    grads_vertical_levels(1:nz) = fz%z(1:nz)
+    stat_file_vertical_levels(1:nz) = fz%z(1:nz)
 
     ! Close file
-    call close_grads_read( fz )
+    if ( l_grads_file ) then
+      call close_grads_read( fz )
+    else
+      call close_netcdf_read( fz )
+    end if
 
     return
-  end function grads_vertical_levels
+  end function stat_file_vertical_levels
 !-------------------------------------------------------------------------
-end module grads_common
+  logical function l_netcdf_file( filename )
+
+    use constants, only : fstderr
+
+    implicit none
+
+    ! External
+    intrinsic :: len, trim
+
+    ! Input Variables
+    character(len=*), intent(in) :: &
+      filename
+
+    ! Local Variables
+    integer :: length
+
+    ! ---- Begin Code ----
+
+    length = len( trim( filename ) )
+
+    if ( filename(length-2:length) == ".nc" ) then
+      l_netcdf_file = .true.
+    else if ( filename(length-3:length) == ".ctl" ) then
+      l_netcdf_file = .false.
+    else
+      l_netcdf_file = .false.
+      write(fstderr,*) "Unrecognized file type: "//trim( filename )
+      stop
+    end if
+
+    return
+  end function l_netcdf_file
+end module stat_file_utils

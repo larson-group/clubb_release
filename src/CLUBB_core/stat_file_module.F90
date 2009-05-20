@@ -70,8 +70,8 @@ module stat_file_module
 
      integer :: day, month, year ! Date of starting time
 
-     real ::  & 
-       rlat,    & ! Latitude                   [Degrees N]
+     real :: & 
+       rlat, & ! Latitude                   [Degrees N]
        rlon    ! Longitude                  [Degrees E]
 
      real(kind=time_precision) :: & 

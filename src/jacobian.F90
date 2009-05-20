@@ -2,68 +2,68 @@
 ! $Id$
 
 program jacobian
- 
+
 
 ! Description:
-!   Generates a matrix based on variation between parameter 
+!   Generates a matrix based on variation between parameter
 !   constants (C1,C2...etc) and variables (cf,rcm,thlm...etc)
 
 ! References:
 !   None
 !-----------------------------------------------------------------------
 
-use clubb_driver, only:  & 
-    run_clubb ! Procedure(s)
+  use clubb_driver, only:  & 
+      run_clubb ! Procedure(s)
 
-use parameter_indices, only:  & 
-    nparams ! Variable(s)
+  use parameter_indices, only:  & 
+      nparams ! Variable(s)
 
-use parameters_tunable, only:  & 
-    params_list,  & ! Variable(s)
-    read_parameters ! Procedure(s) 
+  use parameters_tunable, only:  & 
+      params_list,  & ! Variable(s)
+      read_parameters ! Procedure(s)
 
-use constants, only:  & 
-    fstdout,  & ! Variable(s) 
-    fstderr
+  use constants, only:  & 
+      fstdout,  & ! Variable(s) 
+      fstderr
 
-use grads_common, only:  & 
-    grads_average_interval,  & ! Procedure(s) 
-    grads_num_vertical_levels, &
-    grads_vertical_levels
+  use stat_file_utils, only:  & 
+      stat_file_average_interval,  & ! Procedure(s) 
+      stat_file_num_vertical_levels, &
+      stat_file_vertical_levels
 
-use stats_variables, only:  & 
-    fname_zt,  & ! Variable(s) 
-    fname_zm
+  use stats_variables, only:  & 
+      fname_zt,  & ! Variable(s) 
+      fname_zm
 
-use error_code, only:  & 
-    clubb_no_error,  & ! Variable(s)
-    fatal_error ! Procedure(s)
+  use error_code, only:  & 
+      clubb_no_error,  & ! Variable(s)
+      fatal_error ! Procedure(s)
 
-implicit none
+  implicit none
 
 ! Variable derived types
 !----------------------------------------------------------------------
   type param_array
 
-    integer :: entries ! Total constant parameters
+  integer :: entries ! Total constant parameters
 
-    character(len=11), pointer :: name(:)
+  character(len=11), pointer :: name(:)
 
-    real, pointer :: value(:)
+  real, pointer :: value(:)
 
   end type param_array
 !----------------------------------------------------------------------
   type variable_array
 
-    integer ::  & 
-    nz,      & ! Z dimension [grid boxes] 
-    entries    ! Total variables
+  integer ::  & 
+  nz,      & ! Z dimension [grid boxes] 
+  entries    ! Total variables
 
-    real, pointer, dimension(:) :: z
+  real, pointer, dimension(:) :: z
 
-    character(len=12), pointer :: name(:)
+  character(len=12), pointer :: name(:)
 
-    real, pointer, dimension(:,:) :: value ! (1:nz, entries)
+  real, pointer, dimension(:,:) :: value ! (1:nz, entries)
 
   end type variable_array
 !----------------------------------------------------------------------
@@ -76,7 +76,7 @@ implicit none
   nvarzt = 14, & 
   nvarzm = 40
 
-  ! 42 must be changed to be equal to nparams 
+  ! 42 must be changed to be equal to nparams
   character(len=12), parameter :: write_format = "(42(e18.10))"
 
 !       character, parameter :: delta   = greek_'Δ' ! Doesn't work
@@ -156,7 +156,7 @@ implicit none
   end if
 
   clubb_params%name(1:nparams) = params_list(1:nparams)
-   
+
   write(unit=fstdout,fmt='(a11,2a12)')  & 
     "Parameter  ", "Initial     ", "Varied      "
 
@@ -170,14 +170,14 @@ implicit none
         .false., .false. )
 
   if ( fatal_error(err_code) ) then
-     stop "The initial set of parameters caused a fatal error."
+    stop "The initial set of parameters caused a fatal error."
 
   end if
 
   ! Obtain nz from the generated GrADS files
 
-  nzt = grads_num_vertical_levels( "../output/"//trim( fname_zt )//".ctl" )
-  nzm = grads_num_vertical_levels( "../output/"//trim( fname_zm )//".ctl" )
+  nzt = stat_file_num_vertical_levels( var1zt%name(1), "../output/"//trim( fname_zt )//".ctl" )
+  nzm = stat_file_num_vertical_levels( var1zm%name(1), "../output/"//trim( fname_zm )//".ctl" )
 
   ! Initialize the structures holding the variables
 
@@ -191,13 +191,15 @@ implicit none
 
   if (alloc_stat /= 0 ) stop "allocate failed"
 
-  var1zt%entries = nvarzt 
+  var1zt%entries = nvarzt
   var1zt%nz      = nzt
-  var2zt%entries = nvarzt 
+  var2zt%entries = nvarzt
   var2zt%nz      = nzt
 
-  var1zt%z = grads_vertical_levels( "../output/"//trim( fname_zt )//".ctl", nzt )
-  var2zt%z = grads_vertical_levels( "../output/"//trim( fname_zt )//".ctl", nzt )
+  var1zt%z = stat_file_vertical_levels &
+    ( var1zt%name(1), "../output/"//trim( fname_zt )//".ctl", nzt )
+  var2zt%z = stat_file_vertical_levels &
+    ( var1zt%name(1), "../output/"//trim( fname_zt )//".ctl", nzt )
 
   allocate( var1zm%value(nzm, nvarzm), & 
             var2zm%value(nzm, nvarzm), & 
@@ -209,13 +211,15 @@ implicit none
 
   if (alloc_stat /= 0 ) stop "allocate failed"
 
-  var1zm%entries = nvarzm 
+  var1zm%entries = nvarzm
   var1zm%nz      = nzm
-  var2zm%entries = nvarzm 
+  var2zm%entries = nvarzm
   var2zm%nz      = nzm
 
-  var1zm%z = grads_vertical_levels( "../output/"//trim( fname_zm )//".ctl", nzm )
-  var2zm%z = grads_vertical_levels( "../output/"//trim( fname_zm )//".ctl", nzm )
+  var1zm%z = stat_file_vertical_levels &
+    ( var1zm%name(1), "../output/"//trim( fname_zm )//".ctl", nzm )
+  var2zm%z = stat_file_vertical_levels &
+    ( var1zm%name(1), "../output/"//trim( fname_zm )//".ctl", nzm )
 
 
 
@@ -245,9 +249,9 @@ implicit none
     "rtpthlp_ta  ", "rtpthlp_tp1 ", "rtpthlp_tp2 ",  & 
     "rtpthlp_dp1 ", "rtpthlp_dp2 "/)
 
-  var2zt%name(1:nvarzt) = var1zt%name(1:nvarzt) 
+  var2zt%name(1:nvarzt) = var1zt%name(1:nvarzt)
 
-  var2zm%name(1:nvarzm) = var1zm%name(1:nvarzm) 
+  var2zm%name(1:nvarzm) = var1zm%name(1:nvarzm)
 
   ! Set var1 fields with initial run results
 
@@ -267,8 +271,8 @@ implicit none
     write(unit=fstdout, fmt='(a1)', advance='no') "."
 
     if ( fatal_error(err_code) ) then
-   
-      ! Pos. Infinity bit pattern 
+
+      ! Pos. Infinity bit pattern
       jmatrix(i, :) & 
       = transfer( int( nanbits ), jmatrix(1,1) )
       clubb_params%value(i) = tmp_param
@@ -318,23 +322,23 @@ implicit none
   ! Output Results to the terminal
   do i = 1, clubb_params%entries
 
-      do j = 1, var2zt%entries
-        write(unit=*,fmt='(3(a,e10.4))')  & 
-        delta//var2zt%name(j)//"/" & 
-        //delta//clubb_params%name(i)//" = ", jmatrix(i, j), & 
-        " impact: ", impact_matrix(i, j), & 
-        " fc imp: ", fc_impact_matrix(i, j)
+    do j = 1, var2zt%entries
+      write(unit=*,fmt='(3(a,e10.4))')  & 
+      delta//var2zt%name(j)//"/" & 
+      //delta//clubb_params%name(i)//" = ", jmatrix(i, j), & 
+      " impact: ", impact_matrix(i, j), & 
+      " fc imp: ", fc_impact_matrix(i, j)
 
-      end do
+    end do
 
-      do j = 1, var2zm%entries
-        write(unit=*,fmt='(3(a,e10.4))')  & 
-        delta//var2zm%name(j)//"/" & 
-        //delta//clubb_params%name(i)//" = ", jmatrix(i, j+nvarzt), & 
-        " impact: ", impact_matrix(i, j+nvarzt), & 
-        " fc imp: ", fc_impact_matrix(i, j+nvarzt)
+    do j = 1, var2zm%entries
+      write(unit=*,fmt='(3(a,e10.4))')  & 
+      delta//var2zm%name(j)//"/" & 
+      //delta//clubb_params%name(i)//" = ", jmatrix(i, j+nvarzt), & 
+      " impact: ", impact_matrix(i, j+nvarzt), & 
+      " fc imp: ", fc_impact_matrix(i, j+nvarzt)
 
-      end do
+    end do
 
     write(unit=fstderr,fmt=*) ""
 
@@ -364,7 +368,7 @@ implicit none
 
   contains
 !-----------------------------------------------------------------------
-  subroutine getvariables( varray, fname_zx ) 
+  subroutine getvariables( varray, fname_zx )
 
 !       Description:
 !       Returns a variable_array structure over namelist defined
@@ -373,35 +377,35 @@ implicit none
 !       References:
 !       None
 !-----------------------------------------------------------------------
- 
-  implicit none
 
-  ! Input
-  type (variable_array), intent(inout) :: varray
+    implicit none
 
-  character(len=*), intent(in) :: fname_zx
+    ! Input
+    type (variable_array), intent(inout) :: varray
 
-  ! Local Variable
-  logical :: l_error
+    character(len=*), intent(in) :: fname_zx
+
+    ! Local Variable
+    logical :: l_error
 
 
-    
-  do k = 1, varray%entries, 1
 
-    varray%value(1:varray%nz, k) =  & 
-    grads_average_interval & 
-    ( "../output/"//fname_zx, varray%nz, times(:), varray%name(k), &
-      varray%z, 1, l_error )
+    do k = 1, varray%entries, 1
 
-    if ( l_error ) then
-      write(unit=fstderr,fmt=*) "Error in reading"//varray%name(i)
-      stop
-    end if
+      varray%value(1:varray%nz, k) =  & 
+      stat_file_average_interval & 
+      ( "../output/"//fname_zx, varray%nz, times(:), varray%name(k), &
+        varray%z, 1, l_error )
 
-  end do
+      if ( l_error ) then
+        write(unit=fstderr,fmt=*) "Error in reading"//varray%name(i)
+        stop
+      end if
 
-  return
-  end subroutine getvariables 
+    end do
+
+    return
+  end subroutine getvariables
 
 !-----------------------------------------------------------------------
-  end program jacobian
+end program jacobian
