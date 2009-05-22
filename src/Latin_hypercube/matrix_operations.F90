@@ -26,7 +26,7 @@
       double precision, intent(in)  :: a_in(np,np)
 
       parameter (NMAX=50)
-      integer :: i, icol, irow, j, k, l, ll
+      integer :: i, icol, irow, j, k, l, ll, ii
       integer :: indxc(NMAX), indxr(NMAX), ipiv(NMAX)
       double precision big, dum, pivinv
 
@@ -68,7 +68,12 @@
         endif
         indxr(i)=irow
         indxc(i)=icol
-        if (a(icol,icol).eq.0.) stop 'singular matrix in gaussj'
+        if (a(icol,icol).eq.0.) then
+          do ii = 1, n
+            write(*,*) a(1:n,i)
+          end do
+          stop 'singular matrix in gaussj'
+        end if
         pivinv=1./a(icol,icol)
         a(icol,icol)=1.
         do 16 l=1,n

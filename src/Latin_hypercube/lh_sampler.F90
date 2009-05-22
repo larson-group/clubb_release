@@ -39,7 +39,9 @@ subroutine lh_sampler( n, nt, d, p_matrix, &
                        X_u, X_nl, l_sample_flag)
 
 use constants, only:  &
-    max_mag_correlation
+    max_mag_correlation, &
+    rr_tol, &
+    Nc_tol
 
 use variables_diagnostic_module, only:  &
     pdf_parameter  ! type
@@ -197,20 +199,34 @@ else
 ! N1  = PDF parameter for mean of plume 1. [N1] = (#/mg)
 ! N2  = PDF parameter for mean of plume 2. [N2] = (#/mg)
 ! sN1,2 = PDF param for width of plume 1,2. [sN1,2] = (#/mg)**2
-  N1  = 0.5*log( (Ncm**2) / (1. + Ncp2_Ncm2) )
-  N2  = N1
-  sN1 = log( 1. + Ncp2_Ncm2 )
-  sN2 = sN1
+  if ( Ncm > Nc_tol ) then
+    N1  = 0.5*log( (Ncm**2) / (1. + Ncp2_Ncm2) )
+    N2  = N1
+    sN1 = log( 1. + Ncp2_Ncm2 )
+    sN2 = sN1
+  else
+    N1 = 0.0
+    N2 = 0.0
+    sN1 = 0.0
+    sN2 = 0.0
+  end if
 
 ! rr = specific rain content. [rr] = g rain / kg air
 ! rrainm  = mean of rr; rrp2 = variance of rr, must have rrp2>0.
 ! rr1  = PDF parameter for mean of plume 1. [rr1] = (g/kg)
 ! rr2  = PDF parameter for mean of plume 2. [rr2] = (g/kg)
 ! srr1,2 = PDF param for width of plume 1,2. [srr1,2] = (g/kg)**2
-  rr1  = 0.5*log( (dble(rrainm)**2) / (1. + rrp2_rrainm2) )
-  rr2  = rr1
-  srr1 = log( 1. + rrp2_rrainm2 )
-  srr2 = srr1
+  if ( rrainm > rr_tol ) then
+    rr1  = 0.5*log( (dble(rrainm)**2) / (1. + rrp2_rrainm2) )
+    rr2  = rr1
+    srr1 = log( 1. + rrp2_rrainm2 )
+    srr2 = srr1
+  else
+     rr1 = 0.0
+     rr2 = 0.0
+     srr1 = 0.0
+     srr2 = 0.0
+  end if
 
 ! Means of s, t, w, N, rr for Gaussians 1 and 2
   mu1 = (/  dble(1.e3*s1), 0.d0, dble(w1), N1, rr1  /)
@@ -741,11 +757,11 @@ do sample = 1, n
 ! Follow M. E. Johnson (1987), p. 56.
   fraction_1 = ( a*C1 ) / ( a*C1 + (1-a)*C2 )
   if ( X_u(sample, d+1) < fraction_1 ) then
-    call gaus_condt( n, & !d, 
+    call gaus_condt( d, &
                      std_normal, mu1, Sigma1, s_pts(sample), & 
                      X_gm(sample, 1:d) )    
   else
-    call gaus_condt( n, & !d, 
+    call gaus_condt( d, &
                      std_normal, mu2, Sigma2, s_pts(sample), & 
                      X_gm(sample, 1:d) )   
   endif
@@ -1039,11 +1055,11 @@ implicit none
   double precision, intent(in) :: Sigma(1:d,1:d)
   double precision, intent(in) :: s_pt
 
-! Output
+  ! Output
 
-double precision, intent(out) :: nonstd_normal(1:d) 
+  double precision, intent(out) :: nonstd_normal(1:d) 
 
-! Local
+  ! Local
 
   integer v
 !       integer j
