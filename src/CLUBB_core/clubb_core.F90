@@ -39,7 +39,7 @@ module clubb_core
                rtp2, thlp2, rtpthlp, & 
                sigma_sqd_w, tau_zm, rcm, cf, & 
                sclrm, sclrp2, sclrprtp, sclrpthlp, &
-               wpsclrp, edsclrm, &
+               wpsclrp, edsclrm, hydromet, &
                err_code ) 
 
     ! Description:
@@ -77,7 +77,8 @@ module clubb_core
     use parameters_model, only: &
       T0, &
       sclr_dim, &
-      edsclr_dim
+      edsclr_dim, &
+      hydromet_dim
 
     use model_flags, only: & 
       l_LH_on,  & ! Variable(s)
@@ -172,6 +173,7 @@ module clubb_core
 
     use error_code, only :  & 
       clubb_var_equals_NaN, & ! Variable(s)
+      clubb_var_out_of_bounds, & 
       lapack_error,  & ! Procedure(s)
       clubb_at_least_debug_level
 
@@ -180,6 +182,9 @@ module clubb_core
 
     use clip_explicit, only: & 
       clip_covariances_denom ! Procedure(s)
+
+    use array_index, only: &
+      iirrainm
 
 #ifdef UNRELEASED_CODE
     use permute_height_time_mod, only:  & 
@@ -297,10 +302,13 @@ module clubb_core
     real, intent(in), dimension(gr%nnzp,edsclr_dim) :: & 
       edsclrm_forcing    ! Eddy passive scalar forcing. [{units vary}/s]
 
+    real, intent(in), dimension(gr%nnzp,hydromet_dim) :: & 
+      hydromet ! Hydrometeor species    [units vary]
+
     ! Local Variables
     integer :: i, k
 
-    real, dimension(gr%nnzp) :: & 
+    real, dimension(gr%nnzp) :: &
       tmp1, gamma_Skw_fnc
 
     real, dimension(gr%nnzp,sclr_dim) :: & 
@@ -332,7 +340,7 @@ module clubb_core
 
     ! A true/false flag that determines whether
     !     the PDF allows us to construct a sample
-    !       logical sample_flag
+    logical :: sample_flag
 
     integer, dimension(gr%nnzp, nt_repeat, d_variables+1)  & 
     :: p_height_time ! matrix of rand ints
@@ -532,7 +540,7 @@ module clubb_core
     end if
     ! End Latin hypercube sample generation
 
-    ! print*, 'hoc.F: i_rmd=', i_rmd
+    ! print*, 'advance_clubb_core: i_rmd=', i_rmd
 #endif /*UNRELEASED_CODE*/
 
     !----------------------------------------------------------------
@@ -572,21 +580,30 @@ module clubb_core
         return
       end if
 
+#ifdef UNRELEASED_CODE
       !--------------------------------------------------------------
       ! Latin hypercube sampling
       !--------------------------------------------------------------
       if ( l_LH_on ) then
-        ! call latin_hypercube_sampling
-        !           ( k, n_micro_call, d_variables, nt_repeat, i_rmd, &
-        !             crt1, crt2, cthl1, cthl2, hydromet(:,1), &
-        !             cf, gr%nnzp, sample_flag, p_height_time ) &
+
+        if ( iirrainm < 1 ) then
+          write(fstderr,*) "Latin hypercube sampling is enabled, but there is"// &
+          " no rain water mixing ratio being predicted."
+          err_code = clubb_var_out_of_bounds
+          return
+        end if
+
+        call latin_hypercube_sampling &
+                   ( k, n_micro_call, d_variables, nt_repeat, i_rmd, &
+                     crt1, crt2, cthl1, cthl2, hydromet(:,iirrainm), &
+                     cf, gr%nnzp, sample_flag, p_height_time )
       end if
 
-    end do ! k = 2, nz-1
+    end do ! k = 2, gr%nnzp-1
 
-    !            print*, 'hoc.F: AKm=', AKm
-    !            print*, 'hoc.F: AKm_est=', AKm_est
-
+    ! print*, 'advance_clubb_core: AKm=', AKm
+    ! print*, 'advance_clubb_core: AKm_est=', AKm_est
+#endif 
     ! Interpolate momentum variables back to momentum grid.
     ! Since top momentum level is higher than top thermo level,
     ! Set variables at top momentum level to 0.
@@ -848,7 +865,7 @@ module clubb_core
     ! Description:
     !   Estimate using Latin Hypercubes.  This is usually disabled by default.
     !   The actual generation of a random matrix is done in a call from the
-    !   subroutine hoc_initialize to permute_height_time()
+    !   subroutine advance_clubb_core to permute_height_time()
     ! References:
     !   None
     !-----------------------------------------------------------------------
@@ -900,7 +917,7 @@ module clubb_core
     p_matrix(1:n,1:(dvar+1)) = & 
     p_height_time( k,n*i_rmd+1:n*i_rmd+n, 1:(dvar+1) )
 
-    ! print*, 'hoc.F: got past p_matrix'
+    ! print*, 'latin_hypercube_sampling: got past p_matrix'
 
     ! Generate LH sample, represented by X_u and X_nl, for level k
     call lh_sampler( n, nt, dvar, p_matrix,       & ! intent(in)
@@ -909,7 +926,7 @@ module clubb_core
                      rrainm(k),                   & ! intent(in)
                      X_u, X_nl, l_sflag )           ! intent(out)
 
-    !print *, 'hoc.F: got past lh_sampler'
+    !print *, 'latin_hypercube_sampling: got past lh_sampler'
 
     ! Perform LH and analytic microphysical calculations
     call micro_calcs( n, dvar, X_u, X_nl, l_sflag,                & ! intent(in)

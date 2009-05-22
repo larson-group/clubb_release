@@ -680,7 +680,7 @@ module clubb_driver
                rtp2, thlp2, rtpthlp, &                             ! Intent(inout)
                sigma_sqd_w, tau_zm, rcm, cf, &                     ! Intent(inout)
                sclrm, sclrp2, sclrprtp, sclrpthlp, &               ! Intent(inout)
-               wpsclrp, edsclrm, &                                 ! Intent(inout)
+               wpsclrp, edsclrm, hydromet, &                       ! Intent(inout)
                err_code )                                          ! Intent(inout)
 
 
