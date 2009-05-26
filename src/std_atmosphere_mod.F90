@@ -96,7 +96,7 @@ module std_atmosphere_mod
   contains
  
 !-----------------------------------------------------------------------
-  subroutine std_atmosphere( alt, theta, rtm )
+  subroutine std_atmosphere( alt, theta, rtm, p_in_Pa )
 !
 !       Description: 
 !       Given a specific altitude this subroutine will return interpolated 
@@ -124,12 +124,12 @@ module std_atmosphere_mod
   ! Output Variables
   real,intent(out) ::  & 
   theta,  & ! Potential Temperature         [K]        
-  rtm       ! Total Water Mixing Ratio      [kg/kg]
-  
+  rtm,    & ! Total Water Mixing Ratio      [kg/kg]
+  p_in_Pa   ! Pressure                      [Pa]
+
   ! Local Variables
   real ::  & 
   exner,       & ! Exner function                [-]
-  p_in_Pa,     & ! Pressure                      [Pa]
   sp_humidity, & ! Specific humidity             [kg/kg]
   tabs0          ! Temperature                   [K]
   

@@ -550,7 +550,7 @@ module clubb_driver
       iinit = 1
 
       call initialize_clubb &
-           ( iunit, trim( forcings_file_path ), psfc, & ! Intent(in)
+           ( iunit, trim( forcings_file_path ), psfc, zm_init, & ! Intent(in)
              thlm, rtm, um, vm, ug, vg, wp2, wp2_zt, up2, vp2, rcm,  & ! Intent(inout)
              wm_zt, wm_zm, em, exner, &           ! Intent(inout)
              tau_zt, tau_zm, thvm, p_in_Pa, &     ! Intent(inout)
@@ -615,7 +615,7 @@ module clubb_driver
 
 
 !-------------------------------------------------------------------------------
-!                         Main Time Stepping Loop 
+!                         Main Time Stepping Loop
 !-------------------------------------------------------------------------------
 
     do i = iinit, ifinal, 1
@@ -663,7 +663,7 @@ module clubb_driver
       end if
 
 !-------------------------------------------------------------------------------
-!                                Closure loop 
+!                                Closure loop
 !-------------------------------------------------------------------------------
 
       do i1=1, niterlong
@@ -712,7 +712,7 @@ module clubb_driver
       end do ! i1=1..niterlong
 
 !-------------------------------------------------------------------------------
-!                             End Closure Loop 
+!                             End Closure Loop
 !-------------------------------------------------------------------------------
 
       if ( fatal_error( err_code ) ) exit
@@ -720,7 +720,7 @@ module clubb_driver
     end do ! i=1, ifinal
 
 !-------------------------------------------------------------------------------
-!                       End Main Time Stepping Loop 
+!                       End Main Time Stepping Loop
 !-------------------------------------------------------------------------------
 
     ! Free memory
@@ -734,7 +734,7 @@ module clubb_driver
 
   !-----------------------------------------------------------------------
   subroutine initialize_clubb &
-             ( iunit, forcings_file_path, psfc, &
+             ( iunit, forcings_file_path, psfc, zm_init, &
                thlm, rtm, um, vm, ug, vg, wp2, wp2_zt, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
                tau_zt, tau_zm, thvm, p_in_Pa, & 
@@ -756,7 +756,7 @@ module clubb_driver
       ep1,  &
       emin,  &
       zero_threshold, &
-      cm3_per_m3
+      cm3_per_m3, kappa, p0, Rd
 
     use parameters_tunable, only:  & 
       taumax,  &  ! Variable(s)
@@ -820,7 +820,7 @@ module clubb_driver
     character(len=*), intent(in) :: &
       forcings_file_path ! Path to the .dat files containing the forcings
 
-    real, intent(in) :: psfc ! Pressure at the surface [Pa]
+    real, intent(in) :: psfc,zm_init ! Pressure at the surface [Pa]
 
     ! Output
     real, dimension(gr%nnzp), intent(inout) ::  & 
@@ -868,70 +868,123 @@ module clubb_driver
     integer :: k, err_code
 
     character(len=50) :: theta_type
+    character(len=50) :: alt_type
     !-----------------------------------------------------------------------
 
     err_code = clubb_no_error
 
     ! Read sounding information
 
-    call read_sounding( iunit, runtype, &                         ! Intent(in) 
+    call read_sounding( iunit, runtype, psfc, zm_init, &          ! Intent(in) 
                         thlm, theta_type, rtm, um, vm, ug, vg,  & ! Intent(out)
+                        alt_type, p_in_Pa, &
                         sclrm, edsclrm )                          ! Intent(out)
 
+    select case( trim(alt_type) )
+    case ( "z[m]")
+      ! At this point, thlm actually contains theta (except for DYCOMS).
+      ! We need to compute liquid water content, and initilialize thlm properly
 
-    ! At this point, thlm actually contains theta (except for DYCOMS).
-    ! We need to compute liquid water content, and initilialize thlm properly
+      ! First, compute approximate pressure using theta
+      call hydrostatic( thlm, psfc, &                         ! Intent(in)
+                        p_in_Pa, exner, rho, rho_zm )         ! Intent(out)
 
-    ! First, compute approximate pressure using theta
-    call hydrostatic( thlm, psfc, &                         ! Intent(in)
-                      p_in_Pa, exner, rho, rho_zm )         ! Intent(out)
+      ! Second, use this pressure to compute liquid water
+      ! from excess saturation
 
-    ! Second, use this pressure to compute liquid water
-    ! from excess saturation
+      do k = 1,gr%nnzp
+        rcm(k) = &
+           max( rtm(k) - sat_mixrat_liq( p_in_Pa(k), thlm(k) * exner(k) ), &
+                zero_threshold )
+      enddo
 
-    do k = 1,gr%nnzp
-      rcm(k) = &
-         max( rtm(k) - sat_mixrat_liq( p_in_Pa(k), thlm(k) * exner(k) ), &
-              zero_threshold )
-    enddo
+      ! Compute initial theta-l
 
-    ! Compute initial theta-l
+      select case ( trim( theta_type ) )
+        !select case ( trim( runtype ) )
+      case ( "thetal[K]" )
+        !case ( "dycoms2_rf01", "astex_a209", "nov11_altocu", &
+        !      "clex9_nov02", "clex9_oct14", "dycoms2_rf02" )
+        ! thlm profile that is initially saturated at points.
+        ! thlm profile remains the same as in the input sounding.
+        ! use iterative method to find initial rcm.
+        do k =1, gr%nnzp, 1
+          rcm(k) = sat_rcm( thlm(k), rtm(k), p_in_Pa(k), exner(k) )
+        end do
 
-    select case ( trim( theta_type ) )
-      !select case ( trim( runtype ) )
-    case ( "thetal[K]" )
-      !case ( "dycoms2_rf01", "astex_a209", "nov11_altocu", &
-      !      "clex9_nov02", "clex9_oct14", "dycoms2_rf02" )
-      ! thlm profile that is initially saturated at points.
-      ! thlm profile remains the same as in the input sounding.
-      ! use iterative method to find initial rcm.
-      do k =1, gr%nnzp, 1
-        rcm(k) = sat_rcm( thlm(k), rtm(k), p_in_Pa(k), exner(k) )
+      case default ! ('theta[K]')
+        ! Initial profile is non-saturated thlm or any type of theta.
+        thlm = thlm - Lv/(Cp*exner) * rcm
+
+        ! Testing of passive scalars
+        if ( iisclr_thl > 0 ) then
+          sclrm(:,iisclr_thl) = thlm
+        end if
+        if ( iiedsclr_thl > 0 ) then
+          edsclrm(:,iiedsclr_thl) = thlm
+        end if
+
+      end select
+
+      ! Now, compute initial thetav
+
+      thvm = thlm + ep1 * T0 * rtm  & 
+                  + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
+
+      ! Recompute more accurate initial exner function and pressure using thvm
+
+      call hydrostatic( thvm, psfc, &                    ! Intent(in)
+                        p_in_Pa, exner, rho, rho_zm )    ! Intent(out)
+    case default ! ('Press[Pa]')
+
+      exner(1) = ( psfc/p0 )**kappa
+      do k=2, gr%nnzp
+        exner(k) = (p_in_Pa(k)/p0) ** kappa  ! zt
       end do
 
-    case default
-      ! Initial profile is non-saturated thlm or any type of theta.
-      thlm = thlm - Lv/(Cp*exner) * rcm
+      select case ( trim( theta_type ) )
+        !select case ( trim( runtype ) )
+      case ( "thetal[K]" )
+        !case ( "dycoms2_rf01", "astex_a209", "nov11_altocu", &
+        !      "clex9_nov02", "clex9_oct14", "dycoms2_rf02" )
+        ! thlm profile that is initially saturated at points.
+        ! thlm profile remains the same as in the input sounding.
+        ! use iterative method to find initial rcm.
+        do k =1, gr%nnzp, 1
+          rcm(k) = sat_rcm( thlm(k), rtm(k), p_in_Pa(k), exner(k) )
+        end do
 
-      ! Testing of passive scalars
-      if ( iisclr_thl > 0 ) then
-        sclrm(:,iisclr_thl) = thlm
-      end if
-      if ( iiedsclr_thl > 0 ) then
-        edsclrm(:,iiedsclr_thl) = thlm
-      end if
+      case default ! ('theta[K]')
+        ! Initial profile is non-saturated thlm or any type of theta.
+        thlm = thlm - Lv/(Cp*exner) * rcm
 
-    end select
+        ! Testing of passive scalars
+        if ( iisclr_thl > 0 ) then
+          sclrm(:,iisclr_thl) = thlm
+        end if
+        if ( iiedsclr_thl > 0 ) then
+          edsclrm(:,iiedsclr_thl) = thlm
+        end if
 
-    ! Now, compute initial thetav
+      end select
 
-    thvm = thlm + ep1 * T0 * rtm  & 
-                + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
+      ! Now, compute initial thetav
 
-    ! Recompute more accurate initial exner function and pressure using thvm
+      thvm = thlm + ep1 * T0 * rtm  & 
+                  + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
 
-    call hydrostatic( thvm, psfc, &                    ! Intent(in)
-                      p_in_Pa, exner, rho, rho_zm )    ! Intent(out)
+      ! Recompute more accurate initial exner function and pressure using thvm
+
+      do k=1,gr%nnzp
+        rho(k) = p_in_Pa(k) / ( Rd * thvm(k) * exner(k) )
+      end do
+
+      ! Interpolate density back to momentum grid
+
+      rho_zm = max( zt2zm( rho ), zero_threshold )   ! Positive definitequantity
+      rho_zm(1) = p_in_Pa(1) / ( Rd * thvm(1) * exner(1) )
+
+    end select ! either 'z[m]' or 'Press[Pa]'
 
     ! Determine initial value cloud droplet number concentration for the
     ! Morrison microphysics
@@ -1278,7 +1331,6 @@ module clubb_driver
     wp2_zt = zm2zt( wp2 )
 
     ! Compute mixing length
-
     call compute_length( thvm, thlm, rtm, rcm, & ! Intent(in)
                          em, p_in_Pa, exner,   & ! Intent(in)    
                          err_code,             & ! Intent(inout)
@@ -1360,7 +1412,6 @@ module clubb_driver
 
     use parameters_model, only: sclr_dim ! Variables(s)
 
-    use sounding, only: read_sounding ! Procedure(s)
 
     use stats_precision, only: time_precision ! Variable(s)
 
@@ -1384,16 +1435,22 @@ module clubb_driver
 
     use mpace_a, only: mpace_a_init ! Procedure(s)
 
+    use input_reader, only: read_one_dim_file, fill_blanks_one_dim_vars, & ! Procedures
+      one_dim_read_var ! Type
+
+    use sounding, only: read_x_profile ! Procedure(s)
+
     implicit none
+    integer, parameter :: nCol = 7
 
     ! Input Variables
 
     integer, intent(in) :: iunit
 
     character(len=*), intent(in) ::  & 
-      runfile,           & ! Filename for the namelist
-      forcings_file_path,& ! Path to the forcing files
-      restart_path_case    ! Path to GrADS data for restart
+      runfile,            & ! Filename for the namelist
+      forcings_file_path, & ! Path to the forcing files
+      restart_path_case     ! Path to GrADS data for restart
 
     real(kind=time_precision), intent(in) :: & 
       time_restart
@@ -1428,7 +1485,7 @@ module clubb_driver
     ! Local variables
     integer :: timestep
 
-    character(len=50) :: theta_type
+    type(one_dim_read_var), dimension(nCol) :: retVars
 
     ! --- Begin Code ---
 
@@ -1549,18 +1606,15 @@ module clubb_driver
         "file: "//trim( runfile )
       stop
     end if
-
-    ! Read in sounding to get appropriate nudging information for um
-    ! and vm
-
-    call read_sounding( iunit, runtype, &                         ! Intent(in)
-                        thlm, theta_type, rtm, um, vm, ug, vg,  & ! Intent(out)
-                        sclrm, edsclrm )                          ! Intent(out)
-
     if ( l_uv_nudge ) then
-      um_ref = um
-      vm_ref = vm
+      call read_one_dim_file( iunit, nCol, &
+          '../input/case_setups/'//trim(runtype)//'_sounding.in', retVars )
+
+      call fill_blanks_one_dim_vars( nCol, retVars )
+      um_ref = read_x_profile(nCol, 'u[m\s]', retVars)
+      vm_ref = read_x_profile(nCol, 'v[m\s]', retVars)
     end if
+
 
     ! Read data from GrADS files
     call grads_fields_reader( timestep )                    ! Intent(in)
@@ -1771,7 +1825,7 @@ module clubb_driver
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-!                    FIND ALL DIAGNOSTIC VARIABLES        
+!                    FIND ALL DIAGNOSTIC VARIABLES
 !-----------------------------------------------------------------------
 
     !----------------------------------------------------------------

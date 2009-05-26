@@ -5,10 +5,11 @@ module sounding
 
   public ::  & 
     read_sounding, & 
+    read_x_profile, &
     read_profile ! Not currently used in CLUBB
 
   private :: read_sounding_file, read_sclr_sounding_file, &
-    read_edsclr_sounding_file, read_x_profile, read_z_profile, &
+    read_edsclr_sounding_file, read_z_profile, &
     read_theta_profile
 
 
@@ -20,8 +21,9 @@ module sounding
 
   contains
   !------------------------------------------------------------------------
-  subroutine read_sounding( iunit, runtype,  & 
+  subroutine read_sounding( iunit, runtype, psfc, zm_init,& 
                             thlm, theta_type, rtm, um, vm, ugm, vgm, &
+                            alt_type, press, &
                             sclrm, edsclrm )
 
     !       Description:
@@ -67,6 +69,8 @@ module sounding
     character(len=*), intent(in) ::  & 
     runtype      ! String for DYCOMS II RF02
 
+
+    real, intent(in) :: psfc,zm_init
     ! Output variables
     real, intent(out), dimension(gr%nnzp) ::  & 
     thlm,  & ! Liquid potential temperature    [K]
@@ -74,9 +78,13 @@ module sounding
     um,    & ! u wind                          [m/s]
     vm,    & ! v wind                          [m/s]
     ugm,   & ! u geostrophic wind              [m/s]
-    vgm      ! v geostrophic wind              [m/s]
+    vgm,   & ! v geostrophic wind              [m/s]
+    press    ! Pressure                        [Pa]
 
     character(len=*), intent(out) :: theta_type
+
+    character(len=*), intent(out) :: alt_type
+
 
     ! Optional output variables
     real, intent(out), dimension(gr%nnzp, sclr_dim) ::  & 
@@ -102,7 +110,8 @@ module sounding
     u,      & ! u wind sounding                        [m/s] 
     v,      & ! v wind sounding                        [m/s]
     ug,     & ! u geostrophic wind sounding            [m/s]
-    vg        ! v geostrophic wind sounding            [m/s]
+    vg,     & ! v geostrophic wind sounding            [m/s]
+    p_in_Pa   ! Pressure                               [Pa]
 
     real, dimension(nmaxsnd, sclr_max) ::  & 
     sclr, edsclr ! Passive scalar input sounding    [units vary]
@@ -116,14 +125,15 @@ module sounding
     l_std_atmo = .false.
 
     theta_type = "theta[K]" ! Default value
+    alt_type = "z[m]" ! Default value
 
     ! Determine which files exist ahead of time to allow for a graceful exit if
     ! one is missing.
     inquire(file="../input/case_setups/"//trim(runtype)//"_sounding.in", exist=sounding_exists)
-    
+
     inquire(file="../input/case_setups/"//trim(runtype)//"_sclr_sounding.in", &
       exist=sclr_sounding_exists)
-    
+
     inquire(file="../input/case_setups/"//trim(runtype)//"_edsclr_sounding.in", &
       exist=edsclr_sounding_exists)
 
@@ -141,7 +151,8 @@ module sounding
 
     if( sounding_exists ) then
       ! Read in SAM-Like <runtype>_sounding.in file
-      call read_sounding_file( iunit, runtype, nlevels, z, theta, theta_type, rt, u, v, ug, vg )
+      call read_sounding_file( iunit, runtype, nlevels, psfc, zm_init, & 
+                               z, theta, theta_type, rt, u, v, ug, vg, alt_type, p_in_Pa )
     else
       stop 'Cannot open <runtype>_sounding.in file'
       ! sounding namelist is no longer used.
@@ -205,6 +216,7 @@ module sounding
       vgm(1)  = vg(1)
       thlm(1) = theta(1)
       rtm(1)  = rt(1)
+      press(1) = p_in_Pa(1)
       if ( sclr_dim > 0 ) then
         sclrm(1,1:sclr_dim)   = sclr(1,1:sclr_dim)
       end if
@@ -217,12 +229,14 @@ module sounding
 
       write(fstdout,*) "Reading in sounding information"
       !------------Printing Model Inputs-------------------------------
+      write(fstdout,*) "z = ", z(1:nlevels)
       write(fstdout,*) "u = ", u(1:nlevels)
       write(fstdout,*) "v = ", v(1:nlevels)
       write(fstdout,*) "ug = ", ug(1:nlevels)
       write(fstdout,*) "vg = ", vg(1:nlevels)
       write(fstdout,*) "theta = ", theta(1:nlevels)
       write(fstdout,*) "rt = ", rt(1:nlevels)
+      write(fstdout,*) "p_in_Pa = ", p_in_Pa(1:nlevels)
 
       do i = 1, sclr_dim, 1
         write(fstdout,'(a5,i2,a2)',advance='no') "sclr(", i,") = "
@@ -265,6 +279,7 @@ module sounding
           vgm(i)  = lin_int( gr%zt(i), z(k), z(k-1), vg(k), vg(k-1) )
           thlm(i) = lin_int( gr%zt(i), z(k), z(k-1), theta(k), theta(k-1) )
           rtm(i)  = lin_int( gr%zt(i), z(k), z(k-1), rt(k), rt(k-1) )
+          press(i) = lin_int( gr%zt(i), z(k), z(k-1), p_in_Pa(k), p_in_Pa(k-1) )
 
           if ( sclr_dim > 0 ) then
             do j = 1, sclr_dim
@@ -298,6 +313,7 @@ module sounding
               sclrm(i, iisclr_rt)    = rtm(i)
               edsclrm(i, iisclr_rt)  = rtm(i)
             end if
+            press(i) = lin_int( gr%zt(i), z(k), z(k-1), p_in_Pa(k), p_in_Pa(k-1) )
           ELSE
             um(i)   =  3.0 + (4.3*gr%zt(i))/1000.0
             vm(i)   = -9.0 + (5.6*gr%zt(i))/1000.0
@@ -316,6 +332,7 @@ module sounding
               sclrm(i, iisclr_rt)    = rtm(i)
               edsclrm(i, iisclr_rt)  = rtm(i)
             end if
+            press(i) = lin_int( gr%zt(i), z(k), z(k-1), p_in_Pa(k), p_in_Pa(k-1) )
           END IF
 
         END IF ! runtype
@@ -326,7 +343,7 @@ module sounding
       ! Standard Atmosphere
       ! Joshua Fasching April 2009
       if ( l_std_atmo ) then
-        call std_atmosphere( gr%zt(i), thlm(i), rtm(i) )
+        call std_atmosphere( gr%zt(i), thlm(i), rtm(i), press(i) )
 
         um(i) = um(i-1)
         vm(i) = vm(i-1)
@@ -347,7 +364,8 @@ module sounding
   end subroutine read_sounding
 
   !-------------------------------------------------------------------------------------------------
-  subroutine read_sounding_file( iunit, runtype, nlevels, z, theta, theta_type, rt, u, v, ug, vg )
+  subroutine read_sounding_file( iunit, runtype, nlevels, psfc, zm_init, &
+                                 z, theta, theta_type, rt, u, v, ug, vg,alt_type, p_in_Pa )
     !
     !  Description: This subroutine reads in a <runtype>_sounding.in file and
     !  returns the values contained in that file.
@@ -364,6 +382,10 @@ module sounding
     character(len=*), intent(in) :: runtype ! String identifying the model case;
     !                                         e.g. bomex
 
+    real, intent(in) :: &
+      psfc, & ! Pressure at the surface [Pa]
+      zm_init ! Height at zm(1)         [m]
+
     ! Output Variable(s)
     integer, intent(out) :: nlevels ! Number of levels from the sounding.in file
 
@@ -374,10 +396,13 @@ module sounding
     u,      & ! u wind sounding                        [m/s] 
     v,      & ! v wind sounding                        [m/s]
     ug,     & ! u geostrophic wind sounding            [m/s]
-    vg        ! v geostrophic wind sounding            [m/s]
-
+    vg,     & ! v geostrophic wind sounding            [m/s]
+    p_in_Pa   ! Pressure sounding                      [Pa]
 
     character(len=*), intent(out) :: theta_type
+
+    character(len=*), intent(out) :: alt_type
+    
     integer, parameter :: nCol = 7
 
     type(one_dim_read_var), dimension(nCol) :: retVars
@@ -387,7 +412,7 @@ module sounding
 
     call fill_blanks_one_dim_vars( nCol, retVars )
 
-    z = read_z_profile(nCol, retVars)
+    call read_z_profile(nCol, retVars, psfc, zm_init, z, p_in_Pa, alt_type )
 
     call read_theta_profile(nCol, retVars, theta_type, theta)
 
@@ -572,7 +597,7 @@ module sounding
   end function read_x_profile
 
   !-------------------------------------------------------------------------------------------------
-  function read_z_profile(nvar, retVars) result(z)
+  subroutine read_z_profile(nvar, retVars, psfc, zm_init,z, p_in_Pa, alt_type)
     !
     !  Description: Searches for the variable specified by 'z[m]' in the
     !  collection of retVars. If the function finds the variable then it returns
@@ -580,12 +605,23 @@ module sounding
     !  with a warning message.
     !
     !-----------------------------------------------------------------------------------------------
+
     use input_reader, only: one_dim_read_var
+
+    use constants, only: kappa, p0, Cp, Lv, zero_threshold, ep2, ep1
+
+    use saturation, only: sat_mixrat_liq, sat_rcm
+
+    use parameters_model, only: T0
+
+    use hydrostatic_mod, only: inverse_hydrostatic
 
     implicit none
 
     ! String identifier
-    character(len=*), parameter :: target_name = 'z[m]'
+    character(len=*), parameter :: z_name = 'z[m]'
+
+    character(len=*), parameter :: pressure_name = 'Press[Pa]'
 
     ! Input Variable(s)
     integer, intent(in) :: nvar ! Number of elements in retVars
@@ -593,12 +629,89 @@ module sounding
     type(one_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection
     !                                                                being searched
 
+    real, intent(in) :: psfc,zm_init
+
     ! Output Variable(s)
-    real, dimension(nmaxsnd) :: z
 
-    z = read_x_profile(nvar, target_name, retVars)
+    real, intent(out), dimension(nmaxsnd) :: z
 
-  end function read_z_profile
+    real, intent(out), dimension(nmaxsnd) :: p_in_Pa
+
+    character(len=*), intent(out) :: alt_type
+
+    intrinsic :: max
+    ! Local Variables
+    real, dimension(nmaxsnd) :: exner,thvm, rcm, theta, rtm
+
+    integer :: nlevels, k
+    character(len=40) :: theta_type
+
+    if( count( (/ any(retVars%name == z_name), any(retVars%name == pressure_name) /)) <= 1) then
+      if( any(retVars%name == z_name))then
+        alt_type = z_name
+        z = read_x_profile( nvar, alt_type, retVars )
+        p_in_Pa = -999.9
+
+      elseif( any(retVars%name == pressure_name))then
+        alt_type = pressure_name
+
+        p_in_Pa = read_x_profile( nvar, alt_type, retVars )
+
+        nlevels = size(retVars(1)%values)
+
+        call read_theta_profile(nvar, retVars, theta_type, theta )
+
+        rtm = read_x_profile(nvar, 'rt[kg\kg]', retVars)
+
+        exner(1) = ( psfc/p0 )**kappa
+
+        do k=2, nlevels
+          exner(k) = (p_in_Pa(k)/p0) ** kappa  ! zt
+        end do
+
+        do k = 1,nlevels
+          rcm(k) = &
+          max( rtm(k) - sat_mixrat_liq( p_in_Pa(k), theta(k) * exner(k) ), &
+            zero_threshold )
+        enddo
+
+        ! Compute initial theta-l
+
+        select case ( trim( theta_type ) )
+          !select case ( trim( runtype ) )
+        case ( "thetal[K]" )
+          !case ( "dycoms2_rf01", "astex_a209", "nov11_altocu", &
+          !      "clex9_nov02", "clex9_oct14", "dycoms2_rf02" )
+          ! thlm profile that is initially saturated at points.
+          ! thlm profile remains the same as in the input sounding.
+          ! use iterative method to find initial rcm.
+          do k =1, nlevels, 1
+            rcm(k) = sat_rcm( theta(k), rtm(k), p_in_Pa(k), exner(k) )
+          end do
+
+        case default ! ('theta[K]')
+          ! Initial profile is non-saturated thlm or any type of theta.
+          theta = theta - Lv/(Cp*exner) * rcm
+
+        end select
+
+        ! Now, compute initial thetav
+
+        thvm = theta + ep1 * T0 * rtm  & 
+                    + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
+
+
+        ! Recompute more accurate initial exner function and pressure using thvm
+
+        call inverse_hydrostatic ( thvm, zm_init, exner, nlevels, &
+                                     z )
+      else
+        stop "Could not read theta compatable variable"
+      endif
+
+    end if
+
+  end subroutine read_z_profile
 
   !-------------------------------------------------------------------------------------------------
   subroutine read_theta_profile(nvar, retVars, theta_type, theta)
