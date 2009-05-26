@@ -15,8 +15,6 @@
 
 !     integer m, mp
 
-      integer nmax
-
       integer, intent(in) :: n, np
 ! Output: a = Matrix inverse
 
@@ -25,9 +23,8 @@
 
       double precision, intent(in)  :: a_in(np,np)
 
-      parameter (NMAX=50)
       integer :: i, icol, irow, j, k, l, ll, ii
-      integer :: indxc(NMAX), indxr(NMAX), ipiv(NMAX)
+      integer :: indxc(n), indxr(n), ipiv(n)
       double precision big, dum, pivinv
 
       ! Default Initialization
