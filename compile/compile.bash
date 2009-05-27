@@ -107,7 +107,7 @@ cd $dir
 #  Determine which restricted files are in the source directory and make a list
 ls $srcdir/Benchmark_cases/unreleased_cases/*.F90 > $dir/file_list/clubb_optional_files
 ls $srcdir/CLUBB_core/*.F90 > $dir/file_list/clubb_param_files
-ls $srcdir/Latin_hypercube/*.F90 >> $dir/file_list/clubb_param_files
+ls $srcdir/Latin_hypercube/*.?90 >> $dir/file_list/clubb_param_files
 ls $srcdir/COAMPS_micro/*.F > $dir/file_list/clubb_coamps_files
 ls $srcdir/Numerical_recipes/*.f90 > $dir/file_list/numerical_recipes_files
 
