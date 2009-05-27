@@ -13,6 +13,7 @@ module lh_sampler_mod
   private ! Default scope
 
   contains
+
 !-------------------------------------------------------------------------------
   subroutine lh_sampler( n_micro_calls, nt_repeat, d_variables, p_matrix, & 
                          cf, pdf_params, level, & 
@@ -24,7 +25,7 @@ module lh_sampler_mod
 
 ! References:
 !   ``Supplying Local Microphysical Parameterizations with Information about
-!     Subgrid Variability: Latin Hypercube Sampling'', JAS Vol. 62, 
+!     Subgrid Variability: Latin Hypercube Sampling'', JAS Vol. 62,
 !     p. 4010--4026, Larson, et al. 2005.
 !-------------------------------------------------------------------------------
 
@@ -38,14 +39,22 @@ module lh_sampler_mod
 
     implicit none
 
+    ! Constant Parameters
+    double precision, parameter :: &
+      Ncm       = 0.065, & ! 65 per cc
+      Ncp2_Ncm2 = 0.07     ! 0.07 is for DYCOMS2 RF02 (in cloud)
+
+    ! 0.4 is for DYCOMS2 RF02 in cloud, rrp2_rrainm2 = rrp2 divided by rrainm^2
+    double precision, parameter :: rrp2_rrainm2 = 0.4
+
     ! Input Variables
     integer, intent(in) :: &
       n_micro_calls, & ! `n'   Number of calls to microphysics (normally=2)
       nt_repeat,     & ! `n_t' Num. random samples before sequence repeats (normally=10)
       d_variables      ! `d'   Number of variates (normally=5)
 
-     ! rrainm  = mean of rr; must have rrainm>0.
-    real, intent(in) :: rrainm ! Rain water mixing ratio [kg/kg] 
+    ! rrainm  = mean of rr; must have rrainm>0.
+    real, intent(in) :: rrainm ! Rain water mixing ratio [kg/kg]
 
     ! Cloud fraction
     real, intent(in) :: cf !  Cloud fraction, 0 <= cf <= 1
@@ -79,46 +88,41 @@ module lh_sampler_mod
     real :: sthl1, sthl2
     !real :: rt1, rt2
     real :: srt1, srt2
-!        sub-plume correlation coefficient between rt, thl
-!        varies between -1 < rrtthl < 1
+    ! sub-plume correlation coefficient between rt, thl
+    ! varies between -1 < rrtthl < 1
     real :: rrtthl
 
     real :: s1, s2
     real :: R1, R2
 
-! Clip the magnitude of the correlation between rt and thl
+    ! Clip the magnitude of the correlation between rt and thl
     real :: rrtthl_reduced
     double precision :: rrtthl_reduced1, rrtthl_reduced2
 
-! Means of s, t, w, N, rr for plumes 1 and 2
+    ! Means of s, t, w, N, rr for plumes 1 and 2
     double precision, dimension(d_variables) :: &
       mu1, mu2
-! Covariance (not correlation) matrix of rt, thl, w, N, rr
-!     for plumes 1 and 2
+    ! Covariance (not correlation) matrix of rt, thl, w, N, rr
+    ! for plumes 1 and 2
     double precision, dimension(d_variables,d_variables) :: &
       Sigma_rtthlw_1,  & 
       Sigma_rtthlw_2
 
-! N   = droplet number concentration.  [N] = number / mg air
-! N1  = PDF parameter for mean of plume 1. [N1] = (#/mg)
-! N2  = PDF parameter for mean of plume 2. [N2] = (#/mg)
-! sN1,2 = PDF param for width of plume 1,2. [sN1,2] = (#/mg)**2
-! Ncm = 65 per cc, Ncp2_Ncm2 = 0.07 is for DYCOMS2 RF02 (in cloud)
-    double precision, parameter :: Ncm       = 0.065
-    double precision, parameter :: Ncp2_Ncm2 = 0.07 ! someday from constants.F
+
+    ! N   = droplet number concentration.  [N] = number / mg air
+    ! N1  = PDF parameter for mean of plume 1. [N1] = (#/mg)
+    ! N2  = PDF parameter for mean of plume 2. [N2] = (#/mg)
+    ! sN1,2 = PDF param for width of plume 1,2. [sN1,2] = (#/mg)**2
     double precision :: N1, N2, sN1, sN2
 
-! rr = specific rain content. [rr] = g rain / kg air
-! rr1  = PDF parameter for mean of plume 1. [rr1] = (g/kg)
-! rr2  = PDF parameter for mean of plume 2. [rr2] = (g/kg)
-! srr1,2 = PDF param for width of plume 1,2. [srr1,2] = (g/kg)**2
-! rrp2_rrainm2 = rrp2 divided by rrainm^2 []
-! rrp2_rrainm2 = 0.4 is for DYCOMS2 RF02 in cloud
-    double precision, parameter :: rrp2_rrainm2 = 0.4
-    double precision :: rr1, rr2, srr1, srr2
+    ! rr = specific rain content. [rr] = g rain / kg air
+    double precision :: &
+      rr1, &  ! PDF parameter for mean of plume 1. [g/kg]
+      rr2, &  ! PDF parameter for mean of plume 2. [g/kg]
+      srr1, & ! PDF param for width of plume 1     [(g/kg)^2]
+      srr2    ! PDF param for width of plume 2.    [(g/kg)^2]
 
-
-! Code begins -------------------------------------------
+    ! ---- Begin Code ----
 
 
 !       Input pdf parameters.
@@ -142,34 +146,34 @@ module lh_sampler_mod
     s2     = pdf_params%s2(level)
     rrtthl = pdf_params%rrtthl(level)
 
-!-----------------------------------------------------------------------
-!
-! Call Latin Hypercube sampler to compute microphysics.
-!    V. Larson Mar 2004.
-! This acts as an interface between the boundary layer scheme
-!   and the microphysics.  To add a call to a microphysics scheme,
-!   alter two lines in autoconversion_driver.f.
-!-----------------------------------------------------------------------
+    !-----------------------------------------------------------------------
+    !
+    ! Call Latin Hypercube sampler to compute microphysics.
+    !    V. Larson Mar 2004.
+    ! This acts as an interface between the boundary layer scheme
+    !   and the microphysics.  To add a call to a microphysics scheme,
+    !   alter two lines in autoconversion_driver.f.
+    !-----------------------------------------------------------------------
 
-! Use units of [g/kg] to ameliorate numerical roundoff errors.
-! We prognose rt-thl-w,
-!    but we set means, covariance of N, qr to constants.
+    ! Use units of [g/kg] to ameliorate numerical roundoff errors.
+    ! We prognose rt-thl-w,
+    !    but we set means, covariance of N, qr to constants.
 
     l_sample_flag = .true.
     if ( cf < 0.001 ) then
-! In this case there are essentially no cloudy points to sample;
-! Set sample points to zero.
+      ! In this case there are essentially no cloudy points to sample;
+      ! Set sample points to zero.
 
       X_u(:,:)    = 0.0
       X_nl(:,:)   = 0.0
       l_sample_flag = .false.
 
-    elseif ( srt1  == 0. .or. srt2  == 0. .or. & 
-             sthl1 == 0. .or. sthl2 == 0. .or. & 
-             sw1   == 0. .or. sw2   == 0. ) then
+    else if ( srt1  == 0. .or. srt2  == 0. .or. & 
+              sthl1 == 0. .or. sthl2 == 0. .or. & 
+              sw1   == 0. .or. sw2   == 0. ) then
 
-! In this case, Sigma_rtthlw matrix is ill-conditioned;
-!     then matrix operations will fail.
+      ! In this case, Sigma_rtthlw matrix is ill-conditioned;
+      !     then matrix operations will fail.
 
 !         print*,'srt1=', srt1
 !         print*,'srt2=', srt2
@@ -186,15 +190,15 @@ module lh_sampler_mod
 
     else
 
-! Compute PDF parameters for N, rr.
-! Assume that N, rr obey single-lognormal distributions
+      ! Compute PDF parameters for N, rr.
+      ! Assume that N, rr obey single-lognormal distributions
 
-! N   = droplet number concentration.  [N] = number / mg air
-! Ncm  = mean of N; must have Ncm>0
-! Ncp2_Ncm2 = variance of N divided by Ncm^2; must have Np2>0.
-! N1  = PDF parameter for mean of plume 1. [N1] = (#/mg)
-! N2  = PDF parameter for mean of plume 2. [N2] = (#/mg)
-! sN1,2 = PDF param for width of plume 1,2. [sN1,2] = (#/mg)**2
+      ! N   = droplet number concentration.  [N] = number / mg air
+      ! Ncm  = mean of N; must have Ncm>0
+      ! Ncp2_Ncm2 = variance of N divided by Ncm^2; must have Np2>0.
+      ! N1  = PDF parameter for mean of plume 1. [N1] = (#/mg)
+      ! N2  = PDF parameter for mean of plume 2. [N2] = (#/mg)
+      ! sN1,2 = PDF param for width of plume 1,2. [sN1,2] = (#/mg)**2
       if ( Ncm > Nc_tol ) then
         N1  = 0.5*log( (Ncm**2) / (1. + Ncp2_Ncm2) )
         N2  = N1
@@ -207,11 +211,11 @@ module lh_sampler_mod
         sN2 = 0.0
       end if
 
-! rr = specific rain content. [rr] = g rain / kg air
-! rrainm  = mean of rr; rrp2 = variance of rr, must have rrp2>0.
-! rr1  = PDF parameter for mean of plume 1. [rr1] = (g/kg)
-! rr2  = PDF parameter for mean of plume 2. [rr2] = (g/kg)
-! srr1,2 = PDF param for width of plume 1,2. [srr1,2] = (g/kg)**2
+      ! rr = specific rain content. [rr] = g rain / kg air
+      ! rrainm  = mean of rr; rrp2 = variance of rr, must have rrp2>0.
+      ! rr1  = PDF parameter for mean of plume 1. [rr1] = (g/kg)
+      ! rr2  = PDF parameter for mean of plume 2. [rr2] = (g/kg)
+      ! srr1,2 = PDF param for width of plume 1,2. [srr1,2] = (g/kg)**2
       if ( rrainm > rr_tol ) then
         rr1  = 0.5*log( (dble(rrainm)**2) / (1. + rrp2_rrainm2) )
         rr2  = rr1
@@ -224,24 +228,24 @@ module lh_sampler_mod
         srr2 = 0.0
       end if
 
-! Means of s, t, w, N, rr for Gaussians 1 and 2
+      ! Means of s, t, w, N, rr for Gaussians 1 and 2
       mu1 = (/  dble(1.e3*s1), 0.d0, dble(w1), N1, rr1  /)
       mu2 = (/  dble(1.e3*s2), 0.d0, dble(w2), N2, rr2  /)
 
-! An old subroutine, gaus_rotate, couldn't handle large correlations;
-!   I assume the replacement, gaus_condt, has equal trouble.
-!   Therefore we input smaller correlations
-! max_mag_correlation = 0.99 in constants.F90
+      ! An old subroutine, gaus_rotate, couldn't handle large correlations;
+      !   I assume the replacement, gaus_condt, has equal trouble.
+      !   Therefore we input smaller correlations
+      ! max_mag_correlation = 0.99 in constants.F90
       rrtthl_reduced = min( max_mag_correlation, max( rrtthl, -max_mag_correlation ) )
 
-! Within-plume rt-thl correlation terms with rt in g/kg
+      ! Within-plume rt-thl correlation terms with rt in g/kg
       rrtthl_reduced1 = dble(rrtthl_reduced*1.d3*sqrt(srt1*sthl1))
       rrtthl_reduced2 = dble(rrtthl_reduced*1.d3*sqrt(srt2*sthl2))
 
-! Covariance (not correlation) matrices of rt-thl-w-N-qr
-!    for Gaussians 1 and 2
-! For now, assume no within-plume correlation of w,N,qr with
-!    any other variables.
+      ! Covariance (not correlation) matrices of rt-thl-w-N-qr
+      !    for Gaussians 1 and 2
+      ! For now, assume no within-plume correlation of w,N,qr with
+      !    any other variables.
       Sigma_rtthlw_1(1,1:d_variables)   = (/  & 
                dble(1.e6*srt1), & 
                rrtthl_reduced1, & 
@@ -316,7 +320,7 @@ module lh_sampler_mod
 
 !         print*, 'New call to sample_points -----------------'
 
-! Use units of [g/kg] to ameliorate numerical roundoff
+      ! Use units of [g/kg] to ameliorate numerical roundoff
       call sample_points( n_micro_calls, nt_repeat, d_variables, p_matrix, dble(a), & 
   !                    dble(1.e3*rt1), dble(thl1),  & 
   !                    dble(1.e3*rt2), dble(thl2), & 
@@ -327,46 +331,22 @@ module lh_sampler_mod
                           dble(R1), dble(R2), & 
                           X_u, X_nl)
 
-! End of overall if-then statement for Latin hypercube code
+      ! End of overall if-then statement for Latin hypercube code
     end if
 
     return
   end subroutine lh_sampler
 
 !----------------------------------------------------------------------
-! Generates n random samples from a d-dim Gaussian-mixture PDF.
-! Uses Latin hypercube method.
-! To be called from pdf_closure of CLUBB.
+! Description:
+!   Generates n random samples from a d-dim Gaussian-mixture PDF.
+!   Uses Latin hypercube method.
+!   To be called from pdf_closure of CLUBB.
 
-! Input:  n = number of calls to microphysics (normally=2)
-!         d = number of variates (normally=5)
-!         p_matrix = n x d+1 matrix of random integers.
-!         a = mixture fraction of Gaussians
-!         rt1, thl1 = mean of rt, thl for Gaus comp 1
-!         rt2, thl2 = mean of rt, thl for Gaus comp 2
-!         crt1 = coefficient relating rt, s and t for Gaus comp 1
-!         cthl1 = coeff relating thl, s and t for component 1
-!         crt2 = coefficient relating rt, s and t for component 2
-!         cthl2 = coefficient relating thl, s and t for comp. 2
-!         mu1, mu2 = d-dimensional column vector of means of
-!                           1st, 2nd components
-!         Sigma_rtthlw_1, Sigma_rtthlw_2 =
-!          dxd dimensional covariance matrix for components 1 & 2
-!         C1, C2 = cloud fraction associated w/
-!                            1st, 2nd mixture component
-
-! Output: X_u = Sample drawn from uniform distribution
-!         X_nl = Sample that is transformed ultimately to normal-lognormal
-
-! Columns of Sigma_rtthlw:     1   2   3   4   5dgesv
-!                              rt  thl w   N   rr
-!
-! Columns of Sigma_stw, X_nl:  1   2   3   4   5
-!                              s   t   w   N   rr
-
-! We take samples only from the cloudy part
-!       of the grid box.
-! We use units of g/kg.
+!   We take samples only from the cloudy part of the grid box.
+!   We use units of g/kg.
+! References:
+!   None
 !----------------------------------------------------------------------
 
   subroutine sample_points( n_micro_calls, nt_repeat, d_variables, p_matrix, a, & 
@@ -392,27 +372,40 @@ module lh_sampler_mod
       nt_repeat,     & ! `n_t' Num. random samples before sequence repeats (normally=10)
       d_variables      ! Number of variates (normally=5)
 
-    integer, intent(in), dimension(n_micro_calls,d_variables+1) :: p_matrix
+    integer, intent(in), dimension(n_micro_calls,d_variables+1) :: &
+      p_matrix ! N x D+1 matrix of random integers.
 
     ! Weight of 1st Gaussian, 0 <= a <= 1
     double precision, intent(in) :: a
 
-    ! Thermodynamic constants for plumes 1 and 2, units of g/kg
+    !rt1, thl1 = mean of rt, thl for Gaus comp 1
+    !rt2, thl2 = mean of rt, thl for Gaus comp 2
     !double precision, intent(in) :: rt1, thl1, rt2, thl2
-    double precision, intent(in) :: crt1, cthl1, crt2, cthl2
+
+    ! Thermodynamic constants for plumes 1 and 2, units of g/kg
+    double precision, intent(in) :: &
+      crt1,  & ! coefficient relating rt, s and t for Gaus comp 1
+      cthl1, & ! coeff relating thl, s and t for component 1
+      crt2,  & ! coefficient relating rt, s and t for component 2
+      cthl2    ! coefficient relating thl, s and t for comp. 2
 
     ! Latin hypercube variables, i.e. s, t, w, etc.
     double precision, intent(in), dimension(d_variables) :: &
-      mu1, mu2
+      mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd components
 
     ! Covariance matrices of rt, thl, w for each Gaussian
-    ! Ordering of matrix is rt, thl, w
+    ! Columns of Sigma_rtthlw:     1   2   3   4   5dgesv
+    !                              rt  thl w   N   rr
+    !
+    ! Columns of Sigma_stw, X_nl:  1   2   3   4   5
+    !                              s   t   w   N   rr
     double precision, intent(in), dimension(d_variables,d_variables) :: &
       Sigma_rtthlw_1, &
-      Sigma_rtthlw_2 
+      Sigma_rtthlw_2
 
     ! Cloud fractions for components 1 and 2
-    double precision, intent(in) :: C1, C2
+    double precision, intent(in) :: &
+      C1, C2 ! cloud fraction associated w/ 1st, 2nd mixture component
 
     ! Output Variables
 
@@ -428,40 +421,40 @@ module lh_sampler_mod
 
     ! Covariance matrices for variables s, t, w for comps 1 & 2
     double precision, dimension(d_variables,d_variables) :: &
-    Sigma_stw_1, Sigma_stw_2
+      Sigma_stw_1, Sigma_stw_2
 
     ! Sample of s points that is drawn only from normal distribution
     double precision, dimension(n_micro_calls) :: s_pts
 
-! Total water, theta_l: mean plus perturbations
-!      double precision rt(1:n), thl(1:n)
+    ! Total water, theta_l: mean plus perturbations
+    ! double precision rt(1:n), thl(1:n)
 
     ! ---- Begin Code ----
 
-! Convert each Gaussian from rt-thl-w variables to s-t-w vars.
+    ! Convert each Gaussian from rt-thl-w variables to s-t-w vars.
     call rtpthlp_2_sptp( d_variables, Sigma_rtthlw_1, crt1, cthl1, Sigma_stw_1 )
     call rtpthlp_2_sptp( d_variables, Sigma_rtthlw_2, crt2, cthl2, Sigma_stw_2 )
 
-! Generate Latin hypercube sample, with one extra dimension
-!    for mixture component.
+    ! Generate Latin hypercube sample, with one extra dimension
+    !    for mixture component.
     call latin_hyper_sample( n_micro_calls, nt_repeat, d_variables+1, p_matrix, X_u )
 
-! Standard sample for testing purposes when n=2
-!     X_u(1,1:(d+1)) = ( / 0.0001d0, 0.46711825945881d0,
-!     .       0.58015016959859d0, 0.61894015386778d0, 0.1d0, 0.1d0  / )
-!     X_u(2,1:(d+1)) = ( / 0.999d0, 0.63222458307464d0,
-!     .       0.43642762850981d0, 0.32291562498749d0, 0.1d0, 0.1d0  / )
+    ! Standard sample for testing purposes when n=2
+    ! X_u(1,1:(d+1)) = ( / 0.0001d0, 0.46711825945881d0, &
+    !             0.58015016959859d0, 0.61894015386778d0, 0.1d0, 0.1d0  / )
+    ! X_u(2,1:(d+1)) = ( / 0.999d0, 0.63222458307464d0, &
+    !             0.43642762850981d0, 0.32291562498749d0, 0.1d0, 0.1d0  / )
 
 
-! Let s PDF (1st column) be a truncated Gaussian.
-! Take sample solely from cloud points.
+    ! Let s PDF (1st column) be a truncated Gaussian.
+    ! Take sample solely from cloud points.
     col = 1
     call truncate_gaus_mixt( n_micro_calls, d_variables, col, a, mu1, mu2, & 
                              Sigma_stw_1, Sigma_stw_2, C1, C2, X_u, & 
                              s_pts )
 
-! Generate n samples of a d-variate Gaussian mixture
-! by transforming Latin hypercube points, X_u.
+    ! Generate n samples of a d-variate Gaussian mixture
+    ! by transforming Latin hypercube points, X_u.
     call gaus_mixt_points( n_micro_calls, d_variables, a, mu1, mu2,  & 
                            Sigma_stw_1, Sigma_stw_2, & 
                            C1, C2, X_u, s_pts, X_nl )
@@ -513,20 +506,15 @@ module lh_sampler_mod
 !-------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-! Transform covariance matrix from rt', theta_l' coordinates
-!         to s', t' coordinates.
-! Use linear approximation for s', t'.
-
-! Input:  d = number of variates (normally=5)
-!         crt, cthl = coefficients that define s', t'
-!         Sigma_rtthlw = dxd dimensional covariance matrix of
-!                 rt, thl, w, ...
-!           ordering of Sigma is rt, thl, w, ...
-
-! Output: Sigma_stw = covariance matrix in terms of s', t'
-!           ordering of Sigma_stw is s, t, w, ...
-!-----------------------------------------------------------------------
   subroutine rtpthlp_2_sptp( d_variables, Sigma_rtthlw, crt, cthl, Sigma_stw )
+
+! Description:
+!   Transform covariance matrix from rt', theta_l' coordinates
+!   to s', t' coordinates.
+!   Use linear approximation for s', t'.
+! References:
+!   None
+!-----------------------------------------------------------------------
 
     use constants, only: fstderr ! Constant(s)
 
@@ -541,14 +529,15 @@ module lh_sampler_mod
     integer, intent(in) :: d_variables ! Number of variates
 
     double precision, intent(in), dimension(d_variables,d_variables) :: &
-      Sigma_rtthlw
+      Sigma_rtthlw ! D x D dimensional covariance matrix of rt, thl, w, ...
 
-    double precision, intent(in) :: crt, cthl
+    double precision, intent(in) :: &
+      crt, cthl ! Coefficients that define s', t'
 
     ! Output Variables
 
     double precision, intent(out), dimension(d_variables,d_variables) :: &
-      Sigma_stw
+      Sigma_stw ! Covariance matrix in terms of s', t' ordering of Sigma_stw is s, t, w, ...
 
     ! Local Variables
 
@@ -646,7 +635,7 @@ module lh_sampler_mod
 
     real(kind=genrand_real) :: rand ! Random float with a range of (0,1)
 
-    integer j, k
+    integer :: j, k
 
     ! ---- Begin Code ----
 
@@ -657,10 +646,10 @@ module lh_sampler_mod
 !         call rand_permute( n, p_matrix(1:n,j) )
 !       end do
 
-   ! Choose values of sample using permuted vector and random number generator
+    ! Choose values of sample using permuted vector and random number generator
     do j = 1,n_micro_calls
       do k = 1,dp1
-      call genrand_real3( rand ) ! genrand_real3's range is (0,1)
+        call genrand_real3( rand ) ! genrand_real3's range is (0,1)
         X(j,k) = (1.0d0/nt_repeat)*(p_matrix(j,k) + rand )
       end do
     end do
@@ -675,9 +664,11 @@ module lh_sampler_mod
 !----------------------------------------------------------------------
   subroutine gaus_mixt_points( n_micro_calls, d_variables, a, mu1, mu2, Sigma1, Sigma2, & 
                                C1, C2, X_u, s_pts, X_gm )
-! Generates n random samples
-!     from a d-dimensional Gaussian-mixture PDF.
-! Uses Latin hypercube method.
+! Description:
+!   Generates n random samples from a d-dimensional Gaussian-mixture PDF.
+!   Uses Latin hypercube method.
+! References:
+!   None
 !----------------------------------------------------------------------
 
     use constants, only:  &
@@ -706,7 +697,7 @@ module lh_sampler_mod
 
     double precision, intent(in), dimension(n_micro_calls,d_variables+1) :: &
       X_u ! nxd Latin hypercube sample from uniform distribution
-    
+
     double precision, intent(in), dimension(n_micro_calls) :: &
      s_pts ! n-dimensional vector giving values of s
 
@@ -721,6 +712,7 @@ module lh_sampler_mod
     double precision, dimension(n_micro_calls) :: std_normal
     double precision :: fraction_1
 
+    ! ---- Begin Code ----
 
     ! Handle some possible errors re: proper ranges of a, C1, C2.
     if (a > 1.0d0 .or. a < 0.0d0) then
@@ -768,7 +760,7 @@ module lh_sampler_mod
                          X_gm(sample, 1:d_variables) )
       end if
 
-    ! Loop to get new sample
+      ! Loop to get new sample
     end do
 
     return
@@ -782,6 +774,8 @@ module lh_sampler_mod
 ! Description:
 !   Converts sample points drawn from a uniform distribution
 !    to truncated Gaussian points.
+! References:
+!   None
 !-------------------------------------------------------------------------------
 
     use constants, only:  &
@@ -797,7 +791,7 @@ module lh_sampler_mod
     integer, intent(in) :: &
       n_micro_calls, &  ! Number of calls to microphysics (normally=2) 
       d_variables,   &  ! Number of variates (normally=5)
-      col               ! Scalar indicated which column of X_nl to truncate 
+      col               ! Scalar indicated which column of X_nl to truncate
 
     double precision, intent(in) :: &
       a,    & ! Mixture fraction of Gaussians
@@ -876,7 +870,7 @@ module lh_sampler_mod
                       s_std * sqrt( Sigma2(col,col) ) + mu2(col)
       end if
 
-    ! Loop to get new sample
+      ! Loop to get new sample
     end do
 
     return
@@ -972,13 +966,13 @@ module lh_sampler_mod
       z = (((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6)/ & 
                 ((((d1*q+d2)*q+d3)*q+d4)*q+1.d0)
 !  Rational approximation for central region:
-    elseif (p >= plow .and. p <= phigh) then
+    else if (p >= plow .and. p <= phigh) then
       q = p - 0.5d0
       r = q * q
       z = (((((a1*r+a2)*r+a3)*r+a4)*r+a5)*r+a6)*q & 
                  /(((((b1*r+b2)*r+b3)*r+b4)*r+b5)*r+1.d0)
 ! Rational approximation for upper region:
-    elseif (p > phigh .and. p < 1.d0) then
+    else if (p > phigh .and. p < 1.d0) then
       q  = sqrt( -2.d0 * log(1.d0 - p) )
       z  = -(((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6) & 
                   /((((d1*q+d2)*q+d3)*q+d4)*q+1.d0)
@@ -1063,10 +1057,10 @@ module lh_sampler_mod
 
     ! Output Variables
 
-    ! nxd matrix of n samples from d-variate normal distribution 
+    ! nxd matrix of n samples from d-variate normal distribution
     !   with mean mu and covariance structure Sigma
     double precision, intent(out) :: &
-      nonstd_normal(d_variables) 
+      nonstd_normal(d_variables)
 
     ! Local Variables
 
@@ -1153,7 +1147,7 @@ module lh_sampler_mod
          + mu_condt_const  & 
          + dum(1,1)
 
-    ! Loop to obtain new variable
+      ! Loop to obtain new variable
     end do ! 2..d_variables
 
     return
@@ -1161,11 +1155,7 @@ module lh_sampler_mod
 
 !-----------------------------------------------------------------------
 ! Description:
-! Converts from s, t variables to rt, thl
-
-
-! Output: rt, thl: n-dimensional column vectors of rt and thl,
-!           including mean and perturbation
+!   Converts from s, t variables to rt, thl
 !-----------------------------------------------------------------------
   subroutine st_2_rtthl( n_micro_calls, d_variables, a, rt1, thl1, rt2, thl2, & 
                          crt1, cthl1, crt2, cthl2, & 
@@ -1203,10 +1193,10 @@ module lh_sampler_mod
     double precision, dimension(n_micro_calls,d_variables+1), intent(in) :: &
       X_u ! n_micro_calls x d_var+1 Latin hypercube sample from uniform distribution
 
-    ! Output
+    ! Output variables
 
     double precision, dimension(n_micro_calls), intent(out) :: &
-      rt, thl
+      rt, thl ! n-dimensional column vectors of rt and thl, including mean and perturbation
 
     ! Local
 
@@ -1217,24 +1207,24 @@ module lh_sampler_mod
 
     ! Handle some possible errors re: proper ranges of a, C1, C2.
 
-    if (a > 1.0d0 .or. a < 0.0d0) then
+    if ( a > 1.0d0 .or. a < 0.0d0 ) then
       write(fstderr,*) 'Error in st_2_rtthl:  ',  &
                        'mixture fraction, a, does not lie in [0,1].'
       stop
     end if
-    if (C1 > 1.0d0 .or. C1 < 0.0d0) then
+    if ( C1 > 1.0d0 .or. C1 < 0.0d0 ) then
       write(fstderr,*) 'Error in st_2_rtthl:  ',  &
                        'cloud fraction 1, C1, does not lie in [0,1].'
       stop
     end if
-    if (C2 > 1.0d0 .or. C2 < 0.0d0) then
+    if ( C2 > 1.0d0 .or. C2 < 0.0d0 ) then
       write(fstderr,*) 'Error in st_2_rtthl:  ',  &
                        'cloud fraction 2, C2, does not lie in [0,1].'
       stop
     end if
 
     ! Make sure there is some cloud.
-    if (a*C1 < 0.001d0 .and. (1-a)*C2 < 0.001d0) then
+    if ( a*C1 < 0.001d0 .and. (1-a)*C2 < 0.001d0 ) then
       if ( clubb_at_least_debug_level( 1 ) ) then
         write(fstderr,*) 'Error in st_2_rtthl:  ',  &
                          'there is no cloud or almost no cloud!'
@@ -1259,13 +1249,12 @@ module lh_sampler_mod
                            (0.5d0/cthl2)*t(sample)
       end if
 
-    ! Loop to get new sample
+      ! Loop to get new sample
     end do
 
     return
   end subroutine st_2_rtthl
 !-------------------------------------------------------------------------------
-
 
 end module lh_sampler_mod
 

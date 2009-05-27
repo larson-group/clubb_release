@@ -78,26 +78,28 @@ module matrix_operations
     ! Level 2 BLAS to multiply a vector by a band diagonal matrix
     external :: sgbmv, dgbmv
 
+    intrinsic :: kind
+
     character(len=1), intent(in) ::  & 
-    trans  ! Whether to use the transposition of the lhs matrix
+      trans  ! Whether to use the transposition of the lhs matrix
 
     integer, intent(in) :: & 
-    ndim, mdim,   & ! Dimensions of the matrix when not compact
-    nsup, nsub,   & ! Super and Sub diagonals
-    yinc, xinc   ! Increments of y and x vector
+      ndim, mdim,   & ! Dimensions of the matrix when not compact
+      nsup, nsub,   & ! Super and Sub diagonals
+      yinc, xinc   ! Increments of y and x vector
 
     real, intent(in) :: & 
-    alpha,  & ! Coefficient of the matrix lhs
-    beta      ! Coefficient of Y vector
+      alpha,  & ! Coefficient of the matrix lhs
+      beta      ! Coefficient of Y vector
 
     real, dimension(nsup+nsub+1, ndim), intent(in) :: & 
-    lhs  ! The matrix 'A' in the blas subroutine
+      lhs  ! The matrix 'A' in the blas subroutine
 
     real, dimension(ndim), intent(in) :: & 
-    xvec ! The vector X
+      xvec ! The vector X
 
     real, dimension(ndim), intent(inout) :: & 
-    yvec ! The vector Y
+      yvec ! The vector Y
 
 
 !-----------------------------------------------------------------------

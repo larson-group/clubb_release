@@ -1,116 +1,140 @@
 !$Id$
-module math_utilities         
+module math_utilities
 !-----------------------------------------------------------------------
 ! Various mathematical utilities
 !-----------------------------------------------------------------------
-implicit none
-!-----------------------------------------------------------------------
-!  function corrcoef( )
+  implicit none
 
-! Correlation coefficient of two vectors
-!-----------------------------------------------------------------------
+  public :: corrcoef, std, cov, mean
 
-public :: corrcoef, std, cov, mean
+  private
 
-private
-
-contains
-
-function corrcoef( vect1, vect2, n )
-
-implicit none
-
-! Input
-integer, intent(in)          :: n
-double precision, intent(in) :: vect1(1:n), vect2(1:n)
-
-! Return type
-double precision corrcoef
-
-corrcoef = cov( vect1, vect2, n ) / & 
-       sqrt( cov( vect1, vect1, n ) * cov( vect2, vect2, n ) )
-
-return
-end function corrcoef
+  contains
 
 !-----------------------------------------------------------------------
-!  function std( )
+  function corrcoef( vect1, vect2, n )
+
+! Description:
+!   Correlation coefficient of two vectors
+
+! References:
+!   None
 !-----------------------------------------------------------------------
-function std( vector, n ) 
 
-implicit none
+    implicit none
 
-! Input
-integer, intent(in)          :: n
-double precision, intent(in) :: vector(1:n)
+    ! Input
+    integer, intent(in) :: n
 
-! Return type
-double precision std
+    double precision, dimension(n), intent(in) :: &
+      vect1, vect2
 
-std = sqrt( cov( vector, vector, n )*( n/(n-1) ) )
+    ! Return type
+    double precision :: corrcoef
 
-return
-end function std
+    corrcoef = cov( vect1, vect2, n ) / & 
+           sqrt( cov( vect1, vect1, n ) * cov( vect2, vect2, n ) )
 
-!-----------------------------------------------------------------------
-!  function cov( )
-
-! Covariance of two vectors
-!-----------------------------------------------------------------------
-function cov( vect1, vect2, n )
-
-implicit none
-
-!       Input
-integer, intent(in)          :: n
-double precision, intent(in) :: vect1(1:n), vect2(1:n)
-
-!       Return type
-double precision cov
-
-!       Internal
-double precision sum, avg1, avg2 
-integer j
-
-avg1 = mean( vect1, n )
-avg2 = mean( vect2, n )
-
-sum = 0.d0
-do j = 1, n
-   sum = sum + (vect1(j) - avg1) * (vect2(j) - avg2)
-enddo
-
-cov = sum / n
-
-return
-end function cov
+    return
+  end function corrcoef
 
 !-----------------------------------------------------------------------
-!  function mean( )
+  function std( vector, n )
+! Description:
+!   Compute standard deviation of vector
+! References:
+!   None
 !-----------------------------------------------------------------------
-function mean( vector, n )
 
-implicit none
+    implicit none
 
-!       Input 
-integer, intent(in)          :: n
-double precision, intent(in) :: vector(1:n)
+    ! Input Variables
+    integer, intent(in) :: n
 
-!       Internal
-double precision sum
-integer j
+    double precision, dimension(n), intent(in) :: &
+      vector
 
-!       Return type
-double precision mean
+    ! Return type
+    double precision std
 
-sum = 0.d0
-do j=1, n
-   sum = sum + vector(j)
-enddo
+    std = sqrt( cov( vector, vector, n )*( n/(n-1) ) )
 
-mean = sum/n
+    return
+  end function std
 
-return
-end function mean
+
 !-----------------------------------------------------------------------
-end module math_utilities 
+  function cov( vect1, vect2, n )
+
+! Description:
+!   Covariance of two vectors
+! References:
+!   None
+!-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: n
+
+    double precision, dimension(n), intent(in) :: &
+      vect1, vect2
+
+    ! Return type
+    double precision :: cov
+
+    ! Internal
+    double precision :: sum, avg1, avg2
+    integer :: j
+
+    avg1 = mean( vect1, n )
+    avg2 = mean( vect2, n )
+
+    sum = 0.d0
+    do j = 1, n
+      sum = sum + (vect1(j) - avg1) * (vect2(j) - avg2)
+    enddo
+
+    cov = sum / n
+
+    return
+  end function cov
+
+!-----------------------------------------------------------------------
+  function mean( vector, n )
+! Description:
+!   Find the mean of the vector
+
+! References:
+!   None
+!-----------------------------------------------------------------------
+
+    implicit none
+
+    ! External
+    intrinsic :: dble
+
+    ! Input Varibles
+    integer, intent(in) :: n
+
+    double precision, dimension(n), intent(in) :: &
+      vector
+
+    ! Local Variables
+    double precision :: sum
+    integer :: j
+
+    ! Return type
+    double precision :: mean
+
+    sum = 0.d0
+    do j=1, n
+      sum = sum + vector(j)
+    enddo
+
+    mean = sum/ dble( n )
+
+    return
+  end function mean
+!-----------------------------------------------------------------------
+end module math_utilities
