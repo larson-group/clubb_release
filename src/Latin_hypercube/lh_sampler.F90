@@ -622,7 +622,9 @@ module lh_sampler_mod
 !      a chapter from SIGGRAPH 2003
 !-------------------------------------------------------------------------------
 
-    use random, only: ran2 ! Procedure(s)
+    use mt95, only: genrand_real3 ! Procedure(s)
+
+    use mt95, only: genrand_real ! Constants
 
     implicit none
 
@@ -642,13 +644,11 @@ module lh_sampler_mod
 
     ! Local Variables
 
-    integer j, k, seed
+    real(kind=genrand_real) :: rand ! Random float with a range of (0,1)
+
+    integer j, k
 
     ! ---- Begin Code ----
-
-    ! Continue the old string of random numbers by choosing seed>0
-    seed = 1
-!   seed = 2
 
 !  Compute random permutation row by row
 !       do j=1,dp1
@@ -660,7 +660,8 @@ module lh_sampler_mod
    ! Choose values of sample using permuted vector and random number generator
     do j = 1,n_micro_calls
       do k = 1,dp1
-        X(j,k) = (1.0d0/nt_repeat)*(p_matrix(j,k) + ran2( seed ) )
+      call genrand_real3( rand ) ! genrand_real3's range is (0,1)
+        X(j,k) = (1.0d0/nt_repeat)*(p_matrix(j,k) + rand )
       end do
     end do
 
