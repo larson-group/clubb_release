@@ -27,12 +27,12 @@ classdef convert_units
             
         end
 
-        function height = pressure_in_hPa_to_height_m( t_in_k, p_in_hPa, psfc )
+        function height = pressure_in_hPa_to_height_m( T_in_K, p_in_hPa, psfc )
         % PRESSURE_IN_HPA_TO_HEIGHT_M Converts temperature and pressure
         % profiles into a height profile.
         %
 	%   Input(s)
-	%     t_in_k Absolute Temperature [K]
+	%     T_in_K Absolute Temperature [K]
 	%     p_in_hPa Pressure [hPa]
 	%
         %   Reference;
@@ -40,14 +40,14 @@ classdef convert_units
         %     setdata.f90 from SAM
         %
           
-          t_in_k = t_in_k .* (p_in_hPa/1000).^(convert_units.R/convert_units.Cp);
+          T_in_K = T_in_K .* (p_in_hPa/1000).^(convert_units.R/convert_units.Cp);
 
-	  height(1) = convert_units.R/convert_units.g0*t_in_k(1)*log( psfc/p_in_hPa(1));
+	  height(1) = convert_units.R/convert_units.g0*T_in_K(1)*log( psfc/p_in_hPa(1));
 	    
           for i=2:length(p_in_hPa)
 	      
               height(i) = height(i-1) + 0.5 * convert_units.R / convert_units.g0 * ...
-                ( t_in_k(i) + t_in_k(i-1) ) * ... 
+                ( T_in_K(i) + T_in_K(i-1) ) * ... 
                                          log( p_in_hPa(i-1) / p_in_hPa(i) );
           
           end
@@ -68,8 +68,8 @@ classdef convert_units
             
         end
         
-        function T_forcing = thlm_f_to_t_f(thlm_f, radht, exner)
-        % THLM_F_TO_T_F Converts thlm_f to t_f using exner
+        function T_forcing = thlm_f_to_T_f(thlm_f, radht, exner)
+        % THLM_F_TO_T_F Converts thlm_f to T_f using exner
         %
         %   Input(s)
         %       thlm_f Potential Temperature Forcing [K/s]
