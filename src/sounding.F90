@@ -613,16 +613,18 @@ module sounding
 
   end function read_x_profile
 
-  !-------------------------------------------------------------------------------------------------
+!------------------------------------------------------------------------------
   subroutine read_z_profile(nvar, retVars, psfc, zm_init, z, p_in_Pa, alt_type)
-    !
-    !  Description: Searches for the variable specified by either 'z[m]' or
-    !  'Press[Pa]' in the collection of retVars. If the subroutine finds the variable indicated by 'z[m]' 
-    !  then it returns it. If the subroutine finds 'Press[Pa]' then it converts it to values of altitude in meters. 
-    !   If it does not find either or finds both the program using this subroutine will exit gracefully
-    !  with a warning message.
-    !
-    !-----------------------------------------------------------------------------------------------
+!
+!  Description: Searches for the variable specified by either 'z[m]' or
+!  'Press[Pa]' in the collection of retVars. If the subroutine finds the 
+!  variable indicated by 'z[m]', 
+!  then it returns it. If the subroutine finds 'Press[Pa]' then it converts
+!  it to values of altitude in meters. 
+!  If it does not find either or finds both the program using this subroutine 
+!  will exit gracefully with a warning message.
+!
+!-------------------------------------------------------------------------------
 
     use input_reader, only: one_dim_read_var ! Procedure(s)
 
