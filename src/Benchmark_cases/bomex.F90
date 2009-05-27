@@ -15,7 +15,7 @@ private ! Default Scope
 contains
 
 !----------------------------------------------------------------------
-subroutine bomex_tndcy( wm_zt, wm_zm, radht, & 
+subroutine bomex_tndcy( radht, & 
                         thlm_forcing, rtm_forcing, & 
                         sclrm_forcing, edsclrm_forcing )
 !       Description:
@@ -39,8 +39,6 @@ implicit none
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) :: & 
-  wm_zt,         & ! w wind on thermodynamic grid                 [m/s]
-  wm_zm,         & ! w wind on momentum grid                      [m/s]
   radht,         & ! Radiative heating rate                       [K/s]
   thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
   rtm_forcing      ! Total water mixing ratio tendency            [kg/kg/s]
@@ -53,30 +51,6 @@ real, intent(out), dimension(gr%nnzp,edsclr_dim) :: &
 
 ! Local Variables
 integer :: k
-
-! Large scale subsidence
-do k = 2, gr%nnzp, 1
-
-   if ( gr%zt(k) >= 0. .and. gr%zt(k) < 1500. ) then
-      wm_zt(k) = - ( 0.0065 / 1500. ) * gr%zt(k)
-   else if ( gr%zt(k) >= 1500. .and. gr%zt(k) < 2100. ) then
-      wm_zt(k) & 
-        = - 0.0065  & 
-          + 0.0065 * ( gr%zt(k) - 1500. ) / ( 2100. - 1500. )
-   else
-      wm_zt(k) = 0.
-   end if
-
-end do ! k=2..gr%nnzp
-
-! Boundary condition on subsidence (thermo grid)
-wm_zt(1) = 0.0        ! Below surface
-
-wm_zm = zt2zm( wm_zt )
-
-! Boundary conditions on subsidence (mom. grid)
-wm_zm(1) = 0.0        ! At surface
-wm_zm(gr%nnzp) = 0.0  ! Model top
 
 if ( trim( rad_scheme ) == "simplified" ) then
 

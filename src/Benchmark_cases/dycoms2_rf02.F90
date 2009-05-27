@@ -2,9 +2,9 @@
 ! $Id$
 module dycoms2_rf02
 
-!       Description:
-!       Contains subroutines for the DYCOMS II RF02 case.
-!----------------------------------------------------------------------
+  !       Description:
+  !       Contains subroutines for the DYCOMS II RF02 case.
+  !----------------------------------------------------------------------
 
   implicit none
 
@@ -14,22 +14,22 @@ module dycoms2_rf02
 
   contains
 
-!----------------------------------------------------------------------
+  !----------------------------------------------------------------------
   subroutine dycoms2_rf02_tndcy( rho, & 
                                  rho_zm, rtm, rcm, exner,  & 
                                  err_code, &
-                                 wm_zt, wm_zm, thlm_forcing, rtm_forcing,  & 
+                                 thlm_forcing, rtm_forcing,  & 
                                  Frad, radht, sclrm_forcing, &
                                  edsclrm_forcing )
-! Description:
-!   Compute wm, thlm_ls, rtm_ls, radiative heating rate, and cloud
-!   droplet number concentration as needed.
+    ! Description:
+    !   Compute thlm_ls, rtm_ls, radiative heating rate, and cloud
+    !   droplet number concentration as needed.
 
-! References:
-!  ``Dynamics and Chemistry of Marine Stratocumulus -- DYCOMS-II''
-!  Stevens, Bjorn, et al., (2003)
-!  Bull. Amer. Meteorol. Soc., 84, 579-593.
-!----------------------------------------------------------------------
+    ! References:
+    !  ``Dynamics and Chemistry of Marine Stratocumulus -- DYCOMS-II''
+    !  Stevens, Bjorn, et al., (2003)
+    !  Bull. Amer. Meteorol. Soc., 84, 579-593.
+    !----------------------------------------------------------------------
 
     use grid_class, only: gr ! Variable(s)
 
@@ -81,8 +81,6 @@ module dycoms2_rf02
 
     ! Output Variables
     real, intent(out), dimension(gr%nnzp) ::  & 
-      wm_zt,        & ! wm on thermodynamic grid       [m/s]
-      wm_zm,        & ! wm on momentum grid            [m/s]
       thlm_forcing, & ! theta_l forcing                [K/s]
       rtm_forcing,  & ! r_t forcing                    [(kg/kg)/s] 
       Frad,         & ! Radiative flux                 [W/m^2]
@@ -102,21 +100,6 @@ module dycoms2_rf02
     real :: z_i
 
     integer :: k  ! Loop index
-
-    ! Large-scale subsidence
-
-    do k = 2, gr%nnzp, 1
-      wm_zt(k) = -ls_div * gr%zt(k)
-    end do
-
-    ! Boundary condition on zt
-    wm_zt(1) = 0.0        ! Below surface
-
-    wm_zm = zt2zm( wm_zt )
-
-    ! Boundary conditions on zm
-    wm_zm(1) = 0.0        ! At surface
-    wm_zm(gr%nnzp) = 0.0  ! Model top
 
     if ( trim( rad_scheme ) == "simplified" ) then
 
@@ -161,8 +144,8 @@ module dycoms2_rf02
         end if
       end do
 
-!         Compute radiative flux profile (Frad).
-!         Radiative flux is defined on momentum levels.
+      ! Compute radiative flux profile (Frad).
+      ! Radiative flux is defined on momentum levels.
 
       do k = 1, gr%nnzp, 1
 
@@ -201,7 +184,7 @@ module dycoms2_rf02
     end if ! simplified
 
     ! Enter the final rtm tendency
-    
+
     rtm_forcing(1:gr%nnzp) = 0.0
 
     ! Update surface statistics

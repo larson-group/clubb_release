@@ -17,7 +17,7 @@ contains
 !----------------------------------------------------------------------
 subroutine fire_tndcy & 
            ( rho, rcm, exner,  & 
-             wm_zt, wm_zm, Frad, radht,  & 
+             Frad, radht,  & 
              thlm_forcing, rtm_forcing, & 
              sclrm_forcing, edsclrm_forcing )
 !       Description:
@@ -56,8 +56,6 @@ real, intent(in), dimension(gr%nnzp) :: &
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) :: & 
-  wm_zt,        & ! w wind on thermodynamic grid     [m/s]
-  wm_zm,        & ! w wind on momentum grid          [m/s]
   Frad,         & ! Radiative flux                   [W/m^2]
   radht,        & ! Radiative heating rate           [K/s]
   thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
@@ -69,28 +67,6 @@ real, intent(out), dimension(gr%nnzp,sclr_dim) :: &
 real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
   edsclrm_forcing ! Passive scalar tendency [units/s]
 
-! Local variables
-
-integer :: k
-
-!       Large-scale subsidence
-
-do k = 2, gr%nnzp
-
-   if ( gr%zt(k) >= 0. .and. gr%zt(k) < 1500. ) then
-      wm_zt(k) = - 5.e-6 * gr%zt(k)
-   end if
-
-end do
-
-! Boundary condition.
-wm_zt(1) = 0.0        ! Below surface
-
-wm_zm = zt2zm( wm_zt )
-
-! Boundary condition.
-wm_zm(1) = 0.0        ! At surface
-wm_zm(gr%nnzp) = 0.0  ! Model top
 
 ! Radiative theta-l tendency is computed interactively elsewhere
 

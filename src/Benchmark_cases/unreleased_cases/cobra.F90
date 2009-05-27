@@ -16,8 +16,7 @@ public :: &
 contains
 
 !----------------------------------------------------------------------
-subroutine cobra_tndcy( wm_zt, wm_zm,  & 
-                        thlm_forcing, rtm_forcing, & 
+subroutine cobra_tndcy( thlm_forcing, rtm_forcing, & 
                         sclrm_forcing, edsclrm_forcing )
 !       Description:
 !       Subroutine to set theta and water tendencies for COBRA CO2 case
@@ -44,8 +43,6 @@ implicit none
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) :: & 
-  wm_zt,        & ! w wind on thermodynamic grid                 [m/s]
-  wm_zm,        & ! w wind on momentum grid                      [m/s]
   thlm_forcing, & ! Liquid water potential temperature tendency  [K/s]
   rtm_forcing     ! Total water mixing ratio tendency            [kg/kg/s]
 
@@ -58,40 +55,14 @@ real, intent(out), dimension(gr%nnzp,edsclr_dim) :: &
 ! Local Variables
 integer :: k
 
-! Large-scale subsidence
-
 DO k = 2, gr%nnzp, 1
-
-!  Vince Larson tapered the subsidence to zero to avoid 
-!     constant thlm and instability aloft. 
-!  6 Mar 2007
-!          wm_zt(k) = -5.0E-6 * gr%zt(k)
-
-   if ( gr%zt(k) >= 0. .and. gr%zt(k) < 3000. ) then
-      wm_zt(k) = -5.0E-6 * gr%zt(k)
-   else if ( gr%zt(k) >= 3000. ) then
-      wm_zt(k) & 
-        = - 0.0150 & 
-          + 0.0150 * ( gr%zt(k) - 3000. ) / ( 4000. - 3000. )
-   else
+   if ( gr%zt(k) < 0. ) then
       write(fstderr,*) "cobra_tndcy:" & 
          //" error in subsidence profile."
       write(fstderr,*) 'Altitude gr%zt = ', gr%zt(k)
       stop
    end if
-! End Vince Larson's change
-
 END DO
-
-! Boundary condition.
-wm_zt(1) = 0.0        ! Below surface
-
-! Interpolation
-wm_zm = zt2zm( wm_zt )
-
-! Boundary conditions.
-wm_zm(1) = 0.0        ! At surface
-wm_zm(gr%nnzp) = 0.0  ! Model top
 
 ! No large-scale water tendency or cooling
 rtm_forcing  = 0.0

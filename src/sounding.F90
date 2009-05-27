@@ -23,7 +23,7 @@ module sounding
   !------------------------------------------------------------------------
   subroutine read_sounding( iunit, runtype, psfc, zm_init,& 
                             thlm, theta_type, rtm, um, vm, ugm, vgm, &
-                            alt_type, press, &
+                            alt_type, press, subs_type, wm, &
                             sclrm, edsclrm )
 
     !       Description:
@@ -70,7 +70,10 @@ module sounding
     runtype      ! String for DYCOMS II RF02
 
 
-    real, intent(in) :: psfc,zm_init
+    real, intent(in) :: &
+      psfc, & ! Pressure at the surface [Pa]
+      zm_init ! Height at zm(1)         [m]
+
     ! Output variables
     real, intent(out), dimension(gr%nnzp) ::  & 
     thlm,  & ! Liquid potential temperature    [K]
@@ -79,12 +82,13 @@ module sounding
     vm,    & ! v wind                          [m/s]
     ugm,   & ! u geostrophic wind              [m/s]
     vgm,   & ! v geostrophic wind              [m/s]
-    press    ! Pressure                        [Pa]
+    press, & ! Pressure                        [Pa]
+    wm       ! Subsidence                      [m/s or Pa/s]
 
-    character(len=*), intent(out) :: theta_type
-
-    character(len=*), intent(out) :: alt_type
-
+    character(len=*), intent(out) :: &
+      theta_type, &     ! Type of temperature sounding
+      alt_type, &       ! Type of independant coordinate
+      subs_type         ! Type of subsidence
 
     ! Optional output variables
     real, intent(out), dimension(gr%nnzp, sclr_dim) ::  & 
@@ -111,7 +115,8 @@ module sounding
     v,      & ! v wind sounding                        [m/s]
     ug,     & ! u geostrophic wind sounding            [m/s]
     vg,     & ! v geostrophic wind sounding            [m/s]
-    p_in_Pa   ! Pressure                               [Pa]
+    p_in_Pa, &   ! Pressure                               [Pa]
+    subs      ! Subsidence                             [m/s or Pa/s]
 
     real, dimension(nmaxsnd, sclr_max) ::  & 
     sclr, edsclr ! Passive scalar input sounding    [units vary]
@@ -121,11 +126,11 @@ module sounding
     ! Is this model being extended by 1976 Standard Atmosphere?
     logical :: l_std_atmo
 
-
     l_std_atmo = .false.
 
     theta_type = "theta[K]" ! Default value
     alt_type = "z[m]" ! Default value
+    subs_type = "w[m\s]" ! Defuault Value
 
     ! Determine which files exist ahead of time to allow for a graceful exit if
     ! one is missing.
@@ -152,7 +157,8 @@ module sounding
     if( sounding_exists ) then
       ! Read in SAM-Like <runtype>_sounding.in file
       call read_sounding_file( iunit, runtype, nlevels, psfc, zm_init, & 
-                               z, theta, theta_type, rt, u, v, ug, vg, alt_type, p_in_Pa )
+                               z, theta, theta_type, rt, u, v, ug, vg, &
+                               alt_type, p_in_Pa, subs_type, subs )
     else
       stop 'Cannot open <runtype>_sounding.in file'
       ! sounding namelist is no longer used.
@@ -217,6 +223,7 @@ module sounding
       thlm(1) = theta(1)
       rtm(1)  = rt(1)
       press(1) = p_in_Pa(1)
+      wm(1) = subs(1)
       if ( sclr_dim > 0 ) then
         sclrm(1,1:sclr_dim)   = sclr(1,1:sclr_dim)
       end if
@@ -237,6 +244,7 @@ module sounding
       write(fstdout,*) "theta = ", theta(1:nlevels)
       write(fstdout,*) "rt = ", rt(1:nlevels)
       write(fstdout,*) "p_in_Pa = ", p_in_Pa(1:nlevels)
+      write(fstdout,*) "subs = ", subs(1:nlevels)
 
       do i = 1, sclr_dim, 1
         write(fstdout,'(a5,i2,a2)',advance='no') "sclr(", i,") = "
@@ -280,6 +288,7 @@ module sounding
           thlm(i) = lin_int( gr%zt(i), z(k), z(k-1), theta(k), theta(k-1) )
           rtm(i)  = lin_int( gr%zt(i), z(k), z(k-1), rt(k), rt(k-1) )
           press(i) = lin_int( gr%zt(i), z(k), z(k-1), p_in_Pa(k), p_in_Pa(k-1) )
+          wm(i) = lin_int( gr%zt(i), z(k), z(k-1), subs(k), subs(k-1) )
 
           if ( sclr_dim > 0 ) then
             do j = 1, sclr_dim
@@ -314,6 +323,7 @@ module sounding
               edsclrm(i, iisclr_rt)  = rtm(i)
             end if
             press(i) = lin_int( gr%zt(i), z(k), z(k-1), p_in_Pa(k), p_in_Pa(k-1) )
+            wm(i) = lin_int( gr%zt(i), z(k), z(k-1), subs(k), subs(k-1) )
           ELSE
             um(i)   =  3.0 + (4.3*gr%zt(i))/1000.0
             vm(i)   = -9.0 + (5.6*gr%zt(i))/1000.0
@@ -333,6 +343,7 @@ module sounding
               edsclrm(i, iisclr_rt)  = rtm(i)
             end if
             press(i) = lin_int( gr%zt(i), z(k), z(k-1), p_in_Pa(k), p_in_Pa(k-1) )
+            wm(i) = lin_int( gr%zt(i), z(k), z(k-1), subs(k), subs(k-1) )
           END IF
 
         END IF ! runtype
@@ -347,6 +358,7 @@ module sounding
 
         um(i) = um(i-1)
         vm(i) = vm(i-1)
+        wm(i) = wm(i-1)
         ugm(i) = um(i)
         vgm(i) = vm(i)
 
@@ -365,7 +377,8 @@ module sounding
 
   !-------------------------------------------------------------------------------------------------
   subroutine read_sounding_file( iunit, runtype, nlevels, psfc, zm_init, &
-                                 z, theta, theta_type, rt, u, v, ug, vg,alt_type, p_in_Pa )
+                                 z, theta, theta_type, rt, u, v, ug, vg, &
+                                 alt_type, p_in_Pa, subs_type, subs )
     !
     !  Description: This subroutine reads in a <runtype>_sounding.in file and
     !  returns the values contained in that file.
@@ -397,13 +410,15 @@ module sounding
     v,      & ! v wind sounding                        [m/s]
     ug,     & ! u geostrophic wind sounding            [m/s]
     vg,     & ! v geostrophic wind sounding            [m/s]
-    p_in_Pa   ! Pressure sounding                      [Pa]
+    p_in_Pa,& ! Pressure sounding                      [Pa]
+    subs      ! Subsidence sounding                    [m/s or Pa/s] 
 
-    character(len=*), intent(out) :: theta_type
-
-    character(len=*), intent(out) :: alt_type
+    character(len=*), intent(out) :: & 
+      theta_type, &     ! Type of temperature sounding
+      alt_type, &       ! Type of independant coordinate
+      subs_type         ! Type of subsidence
     
-    integer, parameter :: nCol = 7
+    integer, parameter :: nCol = 8
 
     type(one_dim_read_var), dimension(nCol) :: retVars
 
@@ -425,6 +440,8 @@ module sounding
     ug = read_x_profile(nCol, 'ug[m\s]', retVars)
 
     vg = read_x_profile(nCol, 'vg[m\s]', retVars)
+
+    call read_subs_profile(nCol, retVars, subs_type, subs)
 
     nlevels = size(retVars(1)%values)
 
@@ -597,28 +614,29 @@ module sounding
   end function read_x_profile
 
   !-------------------------------------------------------------------------------------------------
-  subroutine read_z_profile(nvar, retVars, psfc, zm_init,z, p_in_Pa, alt_type)
+  subroutine read_z_profile(nvar, retVars, psfc, zm_init, z, p_in_Pa, alt_type)
     !
-    !  Description: Searches for the variable specified by 'z[m]' in the
-    !  collection of retVars. If the function finds the variable then it returns
-    !  it. If it does not the program using this function will exit gracefully
+    !  Description: Searches for the variable specified by either 'z[m]' or
+    !  'Press[Pa]' in the collection of retVars. If the subroutine finds the variable indicated by 'z[m]' 
+    !  then it returns it. If the subroutine finds 'Press[Pa]' then it converts it to values of altitude in meters. 
+    !   If it does not find either or finds both the program using this subroutine will exit gracefully
     !  with a warning message.
     !
     !-----------------------------------------------------------------------------------------------
 
-    use input_reader, only: one_dim_read_var
+    use input_reader, only: one_dim_read_var ! Procedure(s)
 
-    use constants, only: kappa, p0, Cp, Lv, zero_threshold, ep2, ep1
+    use constants, only: kappa, p0, Cp, Lv, zero_threshold, ep2, ep1 ! Variable(s)
 
-    use saturation, only: sat_mixrat_liq, sat_rcm
+    use saturation, only: sat_mixrat_liq, sat_rcm ! Procedure(s)
 
-    use parameters_model, only: T0
+    use parameters_model, only: T0 ! Variable(s)
 
-    use hydrostatic_mod, only: inverse_hydrostatic
+    use hydrostatic_mod, only: inverse_hydrostatic ! Procedure(s)
 
     implicit none
 
-    ! String identifier
+    ! String identifiers
     character(len=*), parameter :: z_name = 'z[m]'
 
     character(len=*), parameter :: pressure_name = 'Press[Pa]'
@@ -629,21 +647,26 @@ module sounding
     type(one_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection
     !                                                                being searched
 
-    real, intent(in) :: psfc,zm_init
+    real, intent(in) :: &
+      psfc, &         ! Pressure at the surface [Pa]
+      zm_init         ! Height at zm(1)         [m]
 
     ! Output Variable(s)
 
-    real, intent(out), dimension(nmaxsnd) :: z
+    real, intent(out), dimension(nmaxsnd) :: z ! Height sounding profile [m]
 
-    real, intent(out), dimension(nmaxsnd) :: p_in_Pa
+    real, intent(out), dimension(nmaxsnd) :: p_in_Pa ! Pressure sounding profile [Pa]
 
-    character(len=*), intent(out) :: alt_type
+    character(len=*), intent(out) :: alt_type ! Indicates where altitudes were
+    !                                           gained from
 
     intrinsic :: max
+
     ! Local Variables
     real, dimension(nmaxsnd) :: exner,thvm, rcm, theta, rtm
 
     integer :: nlevels, k
+
     character(len=40) :: theta_type
 
     if( count( (/ any(retVars%name == z_name), any(retVars%name == pressure_name) /)) <= 1) then
@@ -752,6 +775,47 @@ module sounding
 
     end if
   end subroutine read_theta_profile
+  !-------------------------------------------------------------------------------------------------
+  subroutine read_subs_profile(nvar, retVars, subs_type, subs )
+    !
+    !  Description: Searches for the variable specified by either 'w[m\s]' or 'omega[Pa\s]' in the
+    !  collection of retVars. If the function finds the variable then it returns
+    !  it. If it does not the program using this function will exit gracefully
+    !  with a warning message.
+    !
+    !-----------------------------------------------------------------------------------------------
+    use input_reader, only: one_dim_read_var
+
+    implicit none
+
+    ! String Identifiers
+    character(len=*), parameter :: wm_name = 'w[m\s]'
+
+    character(len=*), parameter :: omega_name = 'omega[Pa\s]'
+
+    ! Input Variable(s)
+    integer, intent(in) :: nvar ! Number of elements in retVars
+
+    type(one_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection being
+    !                                                                searched through
+
+    ! Output Variable(s)
+    character(len=*), intent(out) :: subs_type ! Indicates type of subsidence measurement
+
+    real, dimension(nmaxsnd), intent(out) :: subs ! Subsidence profile [m/s or Pa/s]
+
+    if( count( (/ any(retVars%name == wm_name), any(retVars%name == omega_name) /)) <= 1) then
+      if( any(retVars%name == wm_name))then
+        subs_type = wm_name
+      elseif( any(retVars%name == omega_name))then
+        subs_type = omega_name
+      else
+        stop "Could not read vertical velocity compatable variable"
+      endif
+      subs = read_x_profile(nvar, subs_type, retVars)
+
+    end if
+  end subroutine read_subs_profile
 
   !------------------------------------------------------------------------
   subroutine read_profile( fname, x )

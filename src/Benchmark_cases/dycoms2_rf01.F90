@@ -13,17 +13,17 @@ module dycoms2_rf01
 
   contains
 
-!----------------------------------------------------------------------
+  !----------------------------------------------------------------------
   subroutine dycoms2_rf01_tndcy( rho, rho_zm, rtm, rcm, exner, & 
                                  err_code, & 
-                                 wm_zt, wm_zm, Frad, radht, & 
+                                 Frad, radht, & 
                                  thlm_forcing, rtm_forcing, &
                                  sclrm_forcing, edsclrm_forcing )
-!       Description:
-!       Subroutine to set theta and water tendencies for DYCOMS RF01 case.
+    !       Description:
+    !       Subroutine to set theta and water tendencies for DYCOMS RF01 case.
 
-!       References:
-!----------------------------------------------------------------------
+    !       References:
+    !----------------------------------------------------------------------
 
     use grid_class, only: gr ! Variable(s)
 
@@ -55,16 +55,16 @@ module dycoms2_rf01
 
     implicit none
 
-! External
+    ! External
     intrinsic :: exp, sqrt, present
 
-! Constant Parameters
+    ! Constant Parameters
     real, parameter ::  & 
       lsdiv =  3.75e-6
-!     F0 = 70.0, F1 = 22.0,  & 
+!     F0 = 70.0, F1 = 22.0,  &
 !     kay = 85.0
 
-! Input Variables
+    ! Input Variables
     real, dimension(gr%nnzp), intent(in) ::  & 
       rho_zm,  & ! Density on moment. grid         [kg/m^3]
       rho,     & ! Density on thermo. grid         [kg/m^3] 
@@ -72,13 +72,11 @@ module dycoms2_rf01
       rcm,     & ! Cloud water mixing ratio        [kg/kg]
       exner      ! Exner function                  [-]
 
-! Input/Output Variables
+    ! Input/Output Variables
     integer, intent(inout) :: err_code
 
-! Output Variables
+    ! Output Variables
     real, intent(out), dimension(gr%nnzp) ::  & 
-      wm_zt,         & ! w wind on thermodynamic grid                 [m/s]
-      wm_zm,         & ! w wind on momentum grid                      [m/s]
       radht,         & ! Radiative heating rate                       [K/s]
       Frad,          & ! Radiative flux                               [W/m^2]
       thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
@@ -90,18 +88,16 @@ module dycoms2_rf01
     real, intent(out), dimension(gr%nnzp, edsclr_dim) :: & 
       edsclrm_forcing ! Eddy-passive scalar tendency    [units/s]
 
-! Local variables
+    ! Local variables
     real, dimension(gr%nnzp) :: lwp
 
     integer :: i
     real :: zi
 
-    wm_zt        = 0.
-    wm_zm        = 0.
     thlm_forcing = 0.
     rtm_forcing  = 0.
 
-! Identify height of 8.0 g/kg moisture level
+    ! Identify height of 8.0 g/kg moisture level
 
     i = 2
     do while ( i <= gr%nnzp .and. rtm(i) > 8.0e-3 )
@@ -125,22 +121,7 @@ module dycoms2_rf01
       call stat_update_var_pt( izi, 1, zi, sfc )
     end if
 
-
-
-!       Large scale subsidence
-
-    do i=2,gr%nnzp
-      wm_zt(i) = - lsdiv * gr%zt(i)
-    end do
-
-    wm_zm = zt2zm( wm_zt )
-
-! Boundary conditions.
-    wm_zt(1) = 0.0        ! Below surface
-    wm_zm(1) = 0.0        ! At surface
-    wm_zm(gr%nnzp) = 0.0  ! Model top
-
-! Theta-l radiative tendency
+    ! Theta-l radiative tendency
 
     if ( trim( rad_scheme ) == "simplified" ) then
 
@@ -184,7 +165,7 @@ module dycoms2_rf01
 
     ! Add heating rate to theta-l forcing
 
-   thlm_forcing = thlm_forcing + radht
+    thlm_forcing = thlm_forcing + radht
 
     ! Test scalars with thetal and rt if desired
     if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
@@ -196,19 +177,19 @@ module dycoms2_rf01
     return
   end subroutine dycoms2_rf01_tndcy
 
-!----------------------------------------------------------------------
+  !----------------------------------------------------------------------
   subroutine dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc,  & 
                                   exner_sfc, um_sfc, vm_sfc,  & 
                                   thlm_sfc, rtm_sfc, rho_zm_sfc, &
                                   upwp_sfc, vpwp_sfc, & 
                                   wpthlp_sfc, wprtp_sfc, ustar, & 
                                   wpsclrp_sfc, wpedsclrp_sfc )
-!       Description:
-!       This subroutine computes surface fluxes of horizontal momentum,
-!       heat and moisture according to GCSS DYCOMS II RF 01 specifications
-!
-!       References:
-!----------------------------------------------------------------------
+    !       Description:
+    !       This subroutine computes surface fluxes of horizontal momentum,
+    !       heat and moisture according to GCSS DYCOMS II RF 01 specifications
+    !
+    !       References:
+    !----------------------------------------------------------------------
 
     use constants, only: Cp, fstderr, Lv ! Variable(s)
 
@@ -223,14 +204,14 @@ module dycoms2_rf01
 
     implicit none
 
-! External
+    ! External
     intrinsic :: max, sqrt, present
 
-! Constant parameters
+    ! Constant parameters
     real, parameter ::  & 
       Cd    = 0.0011
 
-! Input variables
+    ! Input variables
     integer, intent(in) :: sfctype
 
     real, intent(in) ::  & 
@@ -243,7 +224,7 @@ module dycoms2_rf01
       rtm_sfc,    & ! r_t at the surface                 [kg/kg]
       rho_zm_sfc    ! Density at the surface             [kg/m^3]
 
-! Output variables
+    ! Output variables
     real, intent(out) ::  & 
       upwp_sfc,    & ! u' w' at the surface              [m^2/s^2]
       vpwp_sfc,    & ! v' w' at the surface              [m^2/s^2]
@@ -257,22 +238,20 @@ module dycoms2_rf01
     real,  dimension(edsclr_dim), intent(out) ::  & 
       wpedsclrp_sfc      ! Passive eddy-scalar surface flux [units m/s]
 
-! Local variables
-
+    ! Local variables
     real :: ubar
 
-! Declare the value of ustar.
+    ! Declare the value of ustar.
     ustar = 0.25
-
-! Compute heat and moisture fluxes
 
     ubar = compute_ubar( um_sfc, vm_sfc )
 
-! Compute momentum fluxes
+    ! Compute momentum fluxes
 
     call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
                                 upwp_sfc, vpwp_sfc )
 
+    ! Compute heat and moisture fluxes
     if ( sfctype == 0 ) then
 
       wpthlp_sfc =  15.0 / ( rho_zm_sfc * Cp )
@@ -290,7 +269,7 @@ module dycoms2_rf01
 
     end if
 
-! Let passive scalars be equal to rt and theta_l for now
+    ! Let passive scalars be equal to rt and theta_l for now
     if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
     if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 

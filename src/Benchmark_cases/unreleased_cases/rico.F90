@@ -16,7 +16,6 @@ module rico
 
 !----------------------------------------------------------------------
   subroutine rico_tndcy( exner, &
-                         wm_zt, wm_zm, & 
                          thlm_forcing, rtm_forcing, radht, & 
                          sclrm_forcing, edsclrm_forcing )
 !
@@ -33,8 +32,6 @@ module rico
 
   use grid_class, only: zt2zm ! Procedure(s)
 
-  use stats_precision, only: time_precision ! Variable(s)
-
   use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
  
@@ -50,8 +47,6 @@ module rico
 
   ! Output Variables
   real, dimension(gr%nnzp), intent(out) :: & 
-  wm_zt,        & ! Large-scale vertical motion on t grid   [m s^-1]
-  wm_zm,        & ! Large-scale vertical motion on m grid   [m s^-1]
   thlm_forcing, & ! Large-scale thlm tendency               [K s^-1]
   rtm_forcing,  & ! Large-scale rtm tendency                [kg kg^-1 s^-1]
   radht           ! dT/dt, then d Theta/dt, due to rad.     [K s^-1]
@@ -65,27 +60,6 @@ module rico
   ! Local Variables, general
   integer :: k          ! Loop index
   real    :: t_tendency ! Temperature (not potential temperature) tendency [K s^-1]
-
-  ! Compute vertical motion
-  do k=1,gr%nnzp
-    if (gr%zt(k) < 2260) then
-      wm_zt(k) = -(0.005 / 2260) * gr%zt(k)
-    else if (gr%zt(k) < 4000) then
-      wm_zt(k) = -0.005
-    else if (gr%zt(k) < 5000) then
-      wm_zt(k) = -0.005 + (0.005 / (5000 - 4000)) & 
-               * (gr%zt(k) - 4000)
-    else
-      wm_zt(k) = 0.
-    end if
-  end do
-  wm_zm = zt2zm( wm_zt )
-
-  ! Boundary conditions on vertical motion.
-  wm_zt(1) = 0.0        ! Below surface
-  wm_zm(1) = 0.0        ! At surface
-  wm_zm(gr%nnzp) = 0.0  ! Model top
-
 
   ! Compute large-scale horizontal temperature advection
   ! NEW-- "And Radiation"... 15 Dec 2006, Michael Falk
@@ -132,30 +106,28 @@ module rico
 
   return
   end subroutine rico_tndcy
-!----------------------------------------------------------------------
+ !----------------------------------------------------------------------
 
 
-
-
-!----------------------------------------------------------------------
+ !----------------------------------------------------------------------
   subroutine rico_sfclyr( um_sfc, vm_sfc, thlm, rtm, & 
                           lowestlevel, sst, psfc, exner_sfc, & 
                           upwp_sfc, vpwp_sfc, wpthlp_sfc, & 
                           wprtp_sfc, ustar,  & 
                           wpsclrp_sfc, wpedsclrp_sfc )
-!----------------------------------------------------------------------
-!        Description:
-!          Surface forcing subroutine for RICO case.  Written
-!          December 2006 by Michael Falk.
-!
-!          Updated to use specific formulations for surface fluxes
-!          as specified in the RICO 3D LES specification, in hopes that
-!          they'll be more accurate.
-!
-!        References:
-!          ATEX: http://www.atmos.ucla.edu/~bstevens/gcss/setup.html
-!          RICO: http://www.knmi.nl/samenw/rico/setup3d.html
-!-----------------------------------------------------------------------
+  !----------------------------------------------------------------------
+  !        Description:
+  !          Surface forcing subroutine for RICO case.  Written
+  !          December 2006 by Michael Falk.
+  !
+  !          Updated to use specific formulations for surface fluxes
+  !          as specified in the RICO 3D LES specification, in hopes that
+  !          they'll be more accurate.
+  !
+  !        References:
+  !          ATEX: http://www.atmos.ucla.edu/~bstevens/gcss/setup.html
+  !          RICO: http://www.knmi.nl/samenw/rico/setup3d.html
+  !-----------------------------------------------------------------------
 
   use constants, only: kappa, p0 ! Variable(s)
 

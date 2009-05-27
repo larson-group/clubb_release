@@ -755,6 +755,7 @@ module clubb_driver
       ep2,  &
       ep1,  &
       emin,  &
+      grav, &
       zero_threshold, &
       cm3_per_m3, kappa, p0, Rd
 
@@ -869,6 +870,7 @@ module clubb_driver
 
     character(len=50) :: theta_type
     character(len=50) :: alt_type
+    character(len=50) :: subs_type
     !-----------------------------------------------------------------------
 
     err_code = clubb_no_error
@@ -877,7 +879,7 @@ module clubb_driver
 
     call read_sounding( iunit, runtype, psfc, zm_init, &          ! Intent(in) 
                         thlm, theta_type, rtm, um, vm, ug, vg,  & ! Intent(out)
-                        alt_type, p_in_Pa, &
+                        alt_type, p_in_Pa, subs_type, wm_zt, &
                         sclrm, edsclrm )                          ! Intent(out)
 
     select case( trim(alt_type) )
@@ -1005,11 +1007,29 @@ module clubb_driver
 
 
     ! Initialize imposed w
+    select case ( trim(subs_type) ) ! Perform different operations based off
+    !                                 sounding file
+    case ( 'w[m\s]')
+      wm_zm = zt2zm( wm_zt )
 
-    do k = 1, gr%nnzp
-      wm_zt(k) = 0.0
-      wm_zm(k) = 0.0
-    end do
+      wm_zm(1) = 0.0
+      wm_zm(gr%nnzp) = 0.0
+    case ("omega[Pa\s]")
+      do k=2,gr%nnzp
+         wm_zt(k) = wm_zt(k) * Rd * thvm(k) / p_in_Pa(k) / grav
+      end do
+
+      wm_zt(1) = 0.0
+      wm_zt(gr%nnzp) = 0.0
+
+      wm_zm = zt2zm( wm_zt )
+      wm_zm(gr%nnzp) = 0.0
+    case default ! This should not happen
+            
+      wm_zt = 0.0
+      wm_zm = 0.0
+
+    end select
 
     ! Initialize TKE and other fields as needed
 
@@ -1853,19 +1873,19 @@ module clubb_driver
 #ifdef UNRELEASED_CODE
     case ( "arm_0003" ) ! ARM March 2000 case
       call arm_0003_tndcy( time_current, &                  ! Intent(in)
-                           wm_zm, wm_zt, thlm_forcing,  &   ! Intent(out)
+                           thlm_forcing,  &                 ! Intent(out)
                            rtm_forcing, um_ref, vm_ref, &   ! Intent(out)
                            sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
     case ( "arm_3year" ) ! ARM 3 year case
       call arm_3year_tndcy( time_current, &                  ! Intent(in)
-                            wm_zm, wm_zt, thlm_forcing,  &   ! Intent(out)
+                            thlm_forcing,  &                 ! Intent(out)
                             rtm_forcing, um_ref, vm_ref, &   ! Intent(out)
                             sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
     case ( "arm_97" ) ! 27 June 1997 ARM case
       call arm_97_tndcy( time_current, &                 ! Intent(in)
-                         wm_zm, wm_zt, thlm_forcing,  &  ! Intent(out)
+                         thlm_forcing,  &                ! Intent(out)
                          rtm_forcing, um_ref, vm_ref, &  ! Intent(out)
                          sclrm_forcing, edsclrm_forcing )! Intent(out)
 
@@ -1884,7 +1904,7 @@ module clubb_driver
                        sclrm_forcing, edsclrm_forcing )! Intent(out)
 
     case ( "bomex" ) ! BOMEX Cu case
-      call bomex_tndcy( wm_zt, wm_zm, radht, &          ! Intent(out)
+      call bomex_tndcy( radht, &                        ! Intent(out)
                         thlm_forcing, rtm_forcing, &    ! Intent(out)
                         sclrm_forcing, edsclrm_forcing )! Intent(out)
 
@@ -1903,29 +1923,28 @@ module clubb_driver
                               Frad, radht, &                               ! Intent(out)
                               sclrm_forcing, edsclrm_forcing )             ! Intent(out)
     case ( "cobra" )
-      call cobra_tndcy( wm_zt, wm_zm,  &                ! Intent(out) 
-                        thlm_forcing, rtm_forcing, &    ! Intent(out)
+      call cobra_tndcy( thlm_forcing, rtm_forcing, &     ! Intent(out)
                         sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 #endif
 
     case ( "dycoms2_rf01" ) ! DYCOMS2 RF01 case
-      call dycoms2_rf01_tndcy( rho, rho_zm, rtm, rcm, exner, & ! Intent(in)
-                               err_code, &                     ! Intent(inout)
-                               wm_zt, wm_zm, Frad, radht,  &   ! Intent(out)
-                               thlm_forcing, rtm_forcing,  &   ! Intent(out)
+      call dycoms2_rf01_tndcy( rho, rho_zm, rtm, rcm, exner, &  ! Intent(in)
+                               err_code, &                      ! Intent(inout)
+                               Frad, radht,  &                  ! Intent(out)
+                               thlm_forcing, rtm_forcing,  &    ! Intent(out)
                                sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
     case ( "dycoms2_rf02" ) ! DYCOMS2 RF02 case
       call dycoms2_rf02_tndcy( rho, &          ! Intent(in)
                                rho_zm, rtm, rcm, exner, &                  ! Intent(in)
                                err_code, &                                 ! Intent(inout)
-                               wm_zt, wm_zm, thlm_forcing, rtm_forcing, &  ! Intent(out) 
+                               thlm_forcing, rtm_forcing, &                ! Intent(out) 
                                Frad, radht, &                              ! Intent(out)
                                sclrm_forcing, edsclrm_forcing )            ! Intent(out)
 
     case ( "fire" ) ! FIRE Sc case
       call fire_tndcy( rho, rcm, exner,  &                ! Intent(in)
-                       wm_zt, wm_zm, Frad, radht, &       ! Intent(out)
+                       Frad, radht, &                     ! Intent(out)
                        thlm_forcing, rtm_forcing, &       ! Intent(out) 
                        sclrm_forcing, edsclrm_forcing )   ! Intent(out)
 
@@ -1953,7 +1972,7 @@ module clubb_driver
 
     case ( "lba" )
       call lba_tndcy( time_current, &                  ! Intent(in) 
-                      wm_zt, wm_zm, radht,  &          ! Intent(out)
+                      radht,  &                        ! Intent(out)
                       thlm_forcing, rtm_forcing, &     ! Intent(out)
                       sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 #endif
@@ -1986,7 +2005,6 @@ module clubb_driver
 
     case ( "rico" ) ! RICO case
       call rico_tndcy( exner, &                            ! Intent(in)
-                       wm_zt, wm_zm, &                     ! Intent(out)
                        thlm_forcing, rtm_forcing, radht, & ! Intent(out)   
                        sclrm_forcing, edsclrm_forcing )    ! Intent(out)
 #endif
