@@ -22,7 +22,7 @@ module KK_microphys_module
 
   private ! Set default scope
 
-  ! Statistical rain parameters	.
+  ! Statistical rain parameters        .
 
   ! Parameters for in-cloud (from SAM RF02 DO).
   real, public :: rrp2_rrainm2_cloud ! 0.766
@@ -42,14 +42,14 @@ module KK_microphys_module
   real, public :: corr_sNc_NL_below ! 0.00 ! Not applicable below cloud.
   ! Other needed parameters
   real, public :: C_evap ! 0.86    ! Khairoutdinov and Kogan (2000) ratio of
-                                     ! drizzle drop mean geometric radius to
-                                     ! drizzle drop mean volume radius.
-                                     ! Khairoutdinov and Kogan (2000); p. 233.
+  ! drizzle drop mean geometric radius to
+  ! drizzle drop mean volume radius.
+  ! Khairoutdinov and Kogan (2000); p. 233.
   !real, public :: C_evap = 0.86*0.2 ! COAMPS value of KK C_evap
   !real, public :: C_evap = 0.55     ! KK 2000, Marshall-Palmer (1948) value.
 
   real, public :: r_0 ! 25.0e-6   ! Assumed radius of all new drops; m.
-                                    ! Value specified in KK (2000); p. 235.
+  ! Value specified in KK (2000); p. 235.
   ! Vince Larson set r_0=28mum to agree with COAMPS-LES formula. 15 April 2005
   !REAL, PARAMETER:: r_0 = 28.0e-6   ! Assumed radius of all new drops; m.
   !                                  ! Value that COAMPS LES has in it.
@@ -91,7 +91,7 @@ module KK_microphys_module
                s2, ss1, ss2, rcm, Ncm, rrainm, Nrm,  & 
                l_sample,  AKm, & 
                rrainm_mc_tndcy, Nrm_mc_tndcy,  & 
-               hm_rt_tndcy, hm_thl_tndcy, & 
+               rtm_mc, thlm_mc, & 
                Vrr, VNr )
 
     ! Description:
@@ -125,10 +125,10 @@ module KK_microphys_module
         Rv, &
         zero_threshold
 
-    use saturation, only:  & 
+    use saturation, only: & 
         sat_mixrat_liq ! Procedure(s)
 
-    use stats_precision, only:  &
+    use stats_precision, only: &
         time_precision ! Variable(s)
 
     use stats_type, only: & 
@@ -149,7 +149,7 @@ module KK_microphys_module
     implicit none
 
     ! Input Variables
-    real(kind=time_precision), intent(in) ::  &
+    real(kind=time_precision), intent(in) :: &
       dt            ! Model time step length             [s]
 
     real, intent(in), dimension(gr%nnzp) :: & 
@@ -168,23 +168,23 @@ module KK_microphys_module
       Nrm           ! Rain drop number conc.             [number/kg]
 
     ! Latin hypercube variables - Vince Larson 22 May 2005
-    real, intent(in), dimension(gr%nnzp) ::  & 
-      Akm      ! Latin hypercube estimate of Kessler autoconversion
+    real, intent(in), dimension(gr%nnzp) :: & 
+      AKm      ! Latin hypercube estimate of Kessler autoconversion
 
     logical, intent(in) :: & 
       l_sample ! Whether to sample stats for this call
 
     ! Output
-    real, intent(out), dimension(gr%nnzp) ::  & 
+    real, intent(out), dimension(gr%nnzp) :: & 
       Vrr,          &    ! Mean sedimentation velocity of rrainm    [m/s]    
       VNr,          &    ! Mean sedimentation velocity of Nrm       [m/s]
       rrainm_mc_tndcy, & ! Rain water microphysical tendency        [(kg/kg)/s]
       Nrm_mc_tndcy, &    ! Rain drop number conc. micro. tend.      [(num/kg)/s]
-      hm_rt_tndcy,  &    ! Contributions to total water from micro. [(kg/kg)/s]
-      hm_thl_tndcy       ! Contributions to theta_l from micro.     [K/s]
+      rtm_mc,  &         ! Contributions to total water from micro. [(kg/kg)/s]
+      thlm_mc            ! Contributions to theta_l from micro.     [K/s]
 
     ! Local variables
-    real, dimension(gr%nnzp) ::  & 
+    real, dimension(gr%nnzp) :: & 
       rrainm_cond,  & ! Change in rrainm due to condensation     [(kg/kg)/s]
       rrainm_auto,  & ! Change in rrainm due to autoconversion   [(kg/kg)/s]
       rrainm_accr,  & ! Change in rrainm due to accretion        [(kg/kg)/s]
@@ -194,7 +194,7 @@ module KK_microphys_module
       Supsat,       & ! Supersaturation                          [-]
       rsat            ! Saturation mixing ratio                  [kg/kg]
 
-    real, dimension(gr%nnzp) ::  & 
+    real, dimension(gr%nnzp) :: & 
       rrp2_rrainm2, & ! rrp2/rrainm^2            []
       Nrp2_Nrm2,    & ! Nrp2/Nrm^2               []
       Ncp2_Ncm2,    & ! Ncp2/Ncm^2               []
@@ -211,8 +211,7 @@ module KK_microphys_module
       Nrm_source,        & ! Total source term rate for Nrm        [(num/kg)/s]
       rrainm_src_max,    & ! Maximum allowable rrainm source rate  [(kg/kg)/s]
       rrainm_auto_ratio, & ! Ratio of rrainm autoconv to overall source term [-]
-      total_rc_needed      ! Amount of r_c needed to over the
-                           ! timestep for rain source terms        [kg/kg]
+      total_rc_needed      ! Amount of r_c needed to over the timestep for rain source terms [kg/kg]
 
     real, dimension(gr%nnzp) ::  &
       rrainm_src_adj, & ! Total adjustment to rrainm source terms  [(kg/kg)/s]
@@ -286,23 +285,23 @@ module KK_microphys_module
     ! If there is cloud at a given vertical level, then the ###_cloud value
     ! is used.  Otherwise, the ###_below value is used.
     DO k = 1, gr%nnzp, 1
-       IF ( rcm(k) >= rc_tol ) THEN
-          rrp2_rrainm2(k)    = rrp2_rrainm2_cloud
-          Nrp2_Nrm2(k)    = Nrp2_Nrm2_cloud
-          Ncp2_Ncm2(k)    = Ncp2_Ncm2_cloud
-          corr_rrNr_LL(k) = corr_rrNr_LL_cloud
-          corr_srr_NL(k)  = corr_srr_NL_cloud
-          corr_sNr_NL(k)  = corr_sNr_NL_cloud
-          corr_sNc_NL(k)  = corr_sNc_NL_cloud
-       ELSE
-          rrp2_rrainm2(k)    = rrp2_rrainm2_below
-          Nrp2_Nrm2(k)    = Nrp2_Nrm2_below
-          Ncp2_Ncm2(k)    = Ncp2_Ncm2_below
-          corr_rrNr_LL(k) = corr_rrNr_LL_below
-          corr_srr_NL(k)  = corr_srr_NL_below
-          corr_sNr_NL(k)  = corr_sNr_NL_below
-          corr_sNc_NL(k)  = corr_sNc_NL_below
-       ENDIF
+      IF ( rcm(k) >= rc_tol ) THEN
+        rrp2_rrainm2(k)    = rrp2_rrainm2_cloud
+        Nrp2_Nrm2(k)    = Nrp2_Nrm2_cloud
+        Ncp2_Ncm2(k)    = Ncp2_Ncm2_cloud
+        corr_rrNr_LL(k) = corr_rrNr_LL_cloud
+        corr_srr_NL(k)  = corr_srr_NL_cloud
+        corr_sNr_NL(k)  = corr_sNr_NL_cloud
+        corr_sNc_NL(k)  = corr_sNc_NL_cloud
+      ELSE
+        rrp2_rrainm2(k)    = rrp2_rrainm2_below
+        Nrp2_Nrm2(k)    = Nrp2_Nrm2_below
+        Ncp2_Ncm2(k)    = Ncp2_Ncm2_below
+        corr_rrNr_LL(k) = corr_rrNr_LL_below
+        corr_srr_NL(k)  = corr_srr_NL_below
+        corr_sNr_NL(k)  = corr_sNr_NL_below
+        corr_sNc_NL(k)  = corr_sNc_NL_below
+      ENDIF
     ENDDO
 
     ! Find the drop mean volume radius.  It is calculated using
@@ -311,9 +310,9 @@ module KK_microphys_module
     ! timestep.  It is located on thermodynamic levels.
     do k = 1, gr%nnzp, 1
 
-       mean_vol_rad(k)  & 
-       = mean_volume_radius( rrainm(k), Nrm(k), rrp2_rrainm2(k),  & 
-                             Nrp2_Nrm2(k), corr_rrNr_LL(k) )
+      mean_vol_rad(k)  & 
+      = mean_volume_radius( rrainm(k), Nrm(k), rrp2_rrainm2(k),  & 
+                            Nrp2_Nrm2(k), corr_rrNr_LL(k) )
 
     enddo
 
@@ -321,7 +320,7 @@ module KK_microphys_module
     ! Save mean volume radius for stats purposes
     ! Note: added l_sample for latin hypercube sampling -dschanen
     if ( l_sample .and. l_stats_samp ) then
-       call stat_update_var(imean_vol_rad_rain, mean_vol_rad, zt )
+      call stat_update_var(imean_vol_rad_rain, mean_vol_rad, zt )
     endif
 
 
@@ -363,17 +362,17 @@ module KK_microphys_module
 
     do k = 1, gr%nnzp-1, 1
 
-       ! rrainm sedimentation velocity.
-       Vrr(k) = 0.012 * ( 1.0e6 * zt2zm(mean_vol_rad,k) )  -  0.2
+      ! rrainm sedimentation velocity.
+      Vrr(k) = 0.012 * ( 1.0e6 * zt2zm(mean_vol_rad,k) )  -  0.2
 
-       ! Negative meaning a downward velocity now -dschanen 5 Dec 2006
-       Vrr(k) = -max( Vrr(k), zero_threshold )
+      ! Negative meaning a downward velocity now -dschanen 5 Dec 2006
+      Vrr(k) = -max( Vrr(k), zero_threshold )
 
-       ! Nrm sedimentation velocity.
-       VNr(k) = 0.007 * ( 1.0e6 * zt2zm(mean_vol_rad,k) )  -  0.1
+      ! Nrm sedimentation velocity.
+      VNr(k) = 0.007 * ( 1.0e6 * zt2zm(mean_vol_rad,k) )  -  0.1
 
-       ! Negative meaning a downward velocity now -dschanen 5 Dec 2006
-       VNr(k) = -max( VNr(k), zero_threshold )
+      ! Negative meaning a downward velocity now -dschanen 5 Dec 2006
+      VNr(k) = -max( VNr(k), zero_threshold )
 
     enddo ! 1..gr%nnzp
 
@@ -385,8 +384,8 @@ module KK_microphys_module
     ! Find values for other variables.
     do k = 2, gr%nnzp, 1
 
-       ! Saturation mixing ratio
-       rsat(k) = sat_mixrat_liq( p_in_Pa(k), T_in_K(k) )
+      ! Saturation mixing ratio
+      rsat(k) = sat_mixrat_liq( p_in_Pa(k), T_in_K(k) )
 
     enddo ! 2..gr%nnzp
 
@@ -397,135 +396,135 @@ module KK_microphys_module
 
     do k = 2, gr%nnzp-1, 1
 
-       ! Compute supersaturation via s1, s2.
-       !     Larson et al 2002, JAS, Vol 59, p 3534.
-       ! This allows a more direct comparison of local, nonlocal formulas.
-       Beta_T = (Rd/Rv) * ( Lv/(Rd*T_in_K(k)) )  & 
-                * ( Lv/(Cp*T_in_K(k)) )
+      ! Compute supersaturation via s1, s2.
+      !     Larson et al 2002, JAS, Vol 59, p 3534.
+      ! This allows a more direct comparison of local, nonlocal formulas.
+      Beta_T = (Rd/Rv) * ( Lv/(Rd*T_in_K(k)) )  & 
+               * ( Lv/(Cp*T_in_K(k)) )
 
-       Supsat(k) = ( a(k)*s1(k) + (1-a(k))*s2(k) ) & 
-                   *( ( 1.0 + Beta_T*rsat(k) ) / rsat(k) )
+      Supsat(k) = ( a(k)*s1(k) + (1-a(k))*s2(k) ) & 
+                  *( ( 1.0 + Beta_T*rsat(k) ) / rsat(k) )
 
-       ! Now find the elements that make up the right-hand side of the
-       ! equation for rain water mixing ratio, rrainm.
+      ! Now find the elements that make up the right-hand side of the
+      ! equation for rain water mixing ratio, rrainm.
 
-       rrainm_cond(k)  & 
-       = cond_evap_rrainm( rrainm(k), Nrm(k), & 
-                           s1(k), ss1(k), s2(k), ss2(k), & 
-                           thl1(k), thl2(k), rc1(k), rc2(k), a(k), & 
-                           p_in_Pa(k), exner(k), T_in_K(k), Supsat(k),  & 
-                           rrp2_rrainm2(k), Nrp2_Nrm2(k), corr_srr_NL(k), & 
-                           corr_sNr_NL(k), corr_rrNr_LL(k) )
+      rrainm_cond(k)  & 
+      = cond_evap_rrainm( rrainm(k), Nrm(k), & 
+                          s1(k), ss1(k), s2(k), ss2(k), & 
+                          thl1(k), thl2(k), rc1(k), rc2(k), a(k), & 
+                          p_in_Pa(k), exner(k), T_in_K(k), Supsat(k),  & 
+                          rrp2_rrainm2(k), Nrp2_Nrm2(k), corr_srr_NL(k), & 
+                          corr_sNr_NL(k), corr_rrNr_LL(k) )
 
 
-       ! Vince Larson added option to call LH sampled Kessler autoconversion.
-       ! 22 May 2005
-       if ( l_LH_on ) then
+      ! Vince Larson added option to call LH sampled Kessler autoconversion.
+      ! 22 May 2005
+      if ( l_LH_on ) then
 
-          !rrainm_auto(k) = AKm_est(k)
-          rrainm_auto(k) = AKm(k)
+        !rrainm_auto(k) = AKm_est(k)
+        rrainm_auto(k) = AKm(k)
 
-       else
+      else
 
-          rrainm_auto(k)  & 
-          = autoconv_rrainm( rcm(k), Ncm(k), s1(k), ss1(k),  & 
-                             s2(k), ss2(k), a(k), rho(k), & 
-                             Ncp2_Ncm2(k), corr_sNc_NL(k) )
+        rrainm_auto(k)  & 
+        = autoconv_rrainm( rcm(k), Ncm(k), s1(k), ss1(k),  & 
+                           s2(k), ss2(k), a(k), rho(k), & 
+                           Ncp2_Ncm2(k), corr_sNc_NL(k) )
 
-       endif ! l_LH_on
-       ! End Vince Larson's addition
+      endif ! l_LH_on
+      ! End Vince Larson's addition
 
-       rrainm_accr(k)  & 
-       = accretion_rrainm( rcm(k), rrainm(k), s1(k), ss1(k), & 
-                           s2(k), ss2(k), a(k),  & 
-                           rrp2_rrainm2(k), corr_srr_NL(k) )
+      rrainm_accr(k)  & 
+      = accretion_rrainm( rcm(k), rrainm(k), s1(k), ss1(k), & 
+                          s2(k), ss2(k), a(k),  & 
+                          rrp2_rrainm2(k), corr_srr_NL(k) )
 
-       ! Now find the elements that make up the right-hand side of the
-       ! equation, rr, for rain drop number concentration, Nrm.
+      ! Now find the elements that make up the right-hand side of the
+      ! equation, rr, for rain drop number concentration, Nrm.
 
-       Nrm_cond(k) = cond_evap_Nrm( rrainm_cond(k), Nrm(k), rrainm(k) )
+      Nrm_cond(k) = cond_evap_Nrm( rrainm_cond(k), Nrm(k), rrainm(k) )
 
-       Nrm_auto(k) = autoconv_Nrm( rrainm_auto(k) )
+      Nrm_auto(k) = autoconv_Nrm( rrainm_auto(k) )
 
-       if ( l_sample .and. l_stats_samp ) then
+      if ( l_sample .and. l_stats_samp ) then
 
-          ! Explicit contributions to rrainm.
-          call stat_update_var_pt( irrainm_cond, k, rrainm_cond(k), zt )
+        ! Explicit contributions to rrainm.
+        call stat_update_var_pt( irrainm_cond, k, rrainm_cond(k), zt )
 
-          call stat_update_var_pt( irrainm_auto, k, rrainm_auto(k), zt )
+        call stat_update_var_pt( irrainm_auto, k, rrainm_auto(k), zt )
 
-          call stat_update_var_pt( irrainm_accr, k, rrainm_accr(k), zt )
+        call stat_update_var_pt( irrainm_accr, k, rrainm_accr(k), zt )
 
-          ! Explicit contributions to Nrm.
-          call stat_update_var_pt( iNrm_cond, k, Nrm_cond(k), zt )
+        ! Explicit contributions to Nrm.
+        call stat_update_var_pt( iNrm_cond, k, Nrm_cond(k), zt )
 
-          call stat_update_var_pt( iNrm_auto, k, Nrm_auto(k), zt )
+        call stat_update_var_pt( iNrm_auto, k, Nrm_auto(k), zt )
 
-       endif ! l_stats_samp and l_sample
+      endif ! l_stats_samp and l_sample
 
-       rrainm_source = rrainm_auto(k) + rrainm_accr(k)
+      rrainm_source = rrainm_auto(k) + rrainm_accr(k)
 
-       Nrm_source = Nrm_auto(k)
+      Nrm_source = Nrm_auto(k)
 
-       ! The increase of rain due to autoconversion and accretion both draw
-       ! their water from the available cloud water.  Over a long time step
-       ! these rates may over-deplete cloud water.  In other words, these
-       ! processes may draw more cloud water than there is available.  Thus,
-       ! the total source rate multiplied by the time step length cannot exceed
-       ! the total amount of cloud water available.  If it does, then the rate
-       ! must be adjusted.
-       total_rc_needed = real( rrainm_source * dt )
+      ! The increase of rain due to autoconversion and accretion both draw
+      ! their water from the available cloud water.  Over a long time step
+      ! these rates may over-deplete cloud water.  In other words, these
+      ! processes may draw more cloud water than there is available.  Thus,
+      ! the total source rate multiplied by the time step length cannot exceed
+      ! the total amount of cloud water available.  If it does, then the rate
+      ! must be adjusted.
+      total_rc_needed = real( rrainm_source * dt )
 
-       if ( total_rc_needed > rcm(k) ) then
+      if ( total_rc_needed > rcm(k) ) then
 
-          ! The maximum allowable rate of the source terms is rcm/dt.
-          rrainm_src_max = real( rcm(k) / dt )
+        ! The maximum allowable rate of the source terms is rcm/dt.
+        rrainm_src_max = real( rcm(k) / dt )
 
-          ! The amount of adjustment to the source terms.
-          ! This value should always be negative.
-          rrainm_src_adj(k) = rrainm_src_max - rrainm_source
+        ! The amount of adjustment to the source terms.
+        ! This value should always be negative.
+        rrainm_src_adj(k) = rrainm_src_max - rrainm_source
 
-          ! Reset the value of the source terms to the maximum allowable value
-          ! of the source terms.
-          rrainm_source = rrainm_src_max
+        ! Reset the value of the source terms to the maximum allowable value
+        ! of the source terms.
+        rrainm_source = rrainm_src_max
 
-          ! The rrainm source terms are made up of autoconversion and accretion.
-          ! Only the sum of those two terms is corrected.  However, Nrm has only
-          ! an autoconversion term for a source term.  Figure that change in the
-          ! rrainm autoconversion term is proportional to to the total rrainm
-          ! adjustment rate by the ratio of rrainm autoconversion to the overall
-          ! source term.  Then, plug the rrainm autoconversion adjustment into
-          ! the equation for Nrm autoconversion to determine the effect on the
-          ! Nrm source term.
-          rrainm_auto_ratio = rrainm_auto(k) /  &
-                              ( rrainm_auto(k) + rrainm_accr(k) )
-          Nrm_src_adj(k) = autoconv_Nrm( rrainm_auto_ratio * rrainm_src_adj(k) )
+        ! The rrainm source terms are made up of autoconversion and accretion.
+        ! Only the sum of those two terms is corrected.  However, Nrm has only
+        ! an autoconversion term for a source term.  Figure that change in the
+        ! rrainm autoconversion term is proportional to to the total rrainm
+        ! adjustment rate by the ratio of rrainm autoconversion to the overall
+        ! source term.  Then, plug the rrainm autoconversion adjustment into
+        ! the equation for Nrm autoconversion to determine the effect on the
+        ! Nrm source term.
+        rrainm_auto_ratio = rrainm_auto(k) /  &
+                            ( rrainm_auto(k) + rrainm_accr(k) )
+        Nrm_src_adj(k) = autoconv_Nrm( rrainm_auto_ratio * rrainm_src_adj(k) )
 
-          ! Change Nrm by Nrm_src_adj.  Nrm_src_adj will always be negative.
-          Nrm_source = Nrm_source + Nrm_src_adj(k)
+        ! Change Nrm by Nrm_src_adj.  Nrm_src_adj will always be negative.
+        Nrm_source = Nrm_source + Nrm_src_adj(k)
 
-       else
+      else
 
-          rrainm_src_adj(k) = 0.0
-          Nrm_src_adj(k)    = 0.0
+        rrainm_src_adj(k) = 0.0
+        Nrm_src_adj(k)    = 0.0
 
-       endif
+      endif
 
-       if ( l_sample .and. l_stats_samp ) then
+      if ( l_sample .and. l_stats_samp ) then
 
-          call stat_update_var_pt( irrainm_src_adj, k, rrainm_src_adj(k), zt )
+        call stat_update_var_pt( irrainm_src_adj, k, rrainm_src_adj(k), zt )
 
-          call stat_update_var_pt( iNrm_src_adj, k, Nrm_src_adj(k), zt )
+        call stat_update_var_pt( iNrm_src_adj, k, Nrm_src_adj(k), zt )
 
-       endif ! l_stats_samp and l_sample
+      endif ! l_stats_samp and l_sample
 
-       rrainm_mc_tndcy(k) = rrainm_cond(k) + rrainm_source
+      rrainm_mc_tndcy(k) = rrainm_cond(k) + rrainm_source
 
-       Nrm_mc_tndcy(k) = Nrm_cond(k) + Nrm_source
+      Nrm_mc_tndcy(k) = Nrm_cond(k) + Nrm_source
 
-       ! Explicit contributions to thlm and rtm from the microphysics
-       hm_rt_tndcy(k)  = -rrainm_mc_tndcy(k)
-       hm_thl_tndcy(k) = ( Lv / ( Cp*exner(k) ) ) * rrainm_mc_tndcy(k)
+      ! Explicit contributions to thlm and rtm from the microphysics
+      rtm_mc(k)  = -rrainm_mc_tndcy(k)
+      thlm_mc(k) = ( Lv / ( Cp*exner(k) ) ) * rrainm_mc_tndcy(k)
 
     enddo ! k=2..gr%nnzp-1
 
@@ -543,12 +542,12 @@ module KK_microphys_module
     Nrm_mc_tndcy(gr%nnzp) = 0.0
 
     ! Contributions to theta_l and rt.  See further comments
-    ! about this in the subroutine mixing_solve.
-    hm_rt_tndcy(1)  = 0.0
-    hm_thl_tndcy(1) = 0.0
+    ! about this in the subroutine advance_xm_wpxp.
+    rtm_mc(1)  = 0.0
+    thlm_mc(1) = 0.0
 
-    hm_rt_tndcy(gr%nnzp)  = 0.0
-    hm_thl_tndcy(gr%nnzp) = 0.0
+    rtm_mc(gr%nnzp)  = 0.0
+    thlm_mc(gr%nnzp) = 0.0
 
     return
   end subroutine KK_microphys
@@ -3238,19 +3237,19 @@ module KK_microphys_module
 
     ! Parameter constants
     integer, parameter :: & 
-    scaling = 0 ! 0 = Unscaled functions, 1 = scaled functions
+      scaling = 0 ! 0 = Unscaled functions, 1 = scaled functions
 
     double precision, parameter :: limit = 10.0d0**308
 
     ! Input Variables
     double precision, intent(in) :: & 
-    order,    & ! Order 'a' of Dv(a,x)         [-]
-    argument ! Argument 'x' of Dv(a,x)      [-]
+      order,    & ! Order 'a' of Dv(a,x)         [-]
+      argument    ! Argument 'x' of Dv(a,x)      [-]
 
     ! Local Variables
     double precision, dimension(2) :: & 
-    uaxx,   & ! U(a,x), U'(a,x)                [-]
-    vaxx   ! V(a,x), V'(a,x)                [-]
+      uaxx, & ! U(a,x), U'(a,x)                [-]
+      vaxx    ! V(a,x), V'(a,x)                [-]
     ! Where a is the order and x is the argument
 
     integer :: ierr ! Error condition
