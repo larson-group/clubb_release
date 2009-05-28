@@ -866,6 +866,7 @@ module stats_subs
                      wp2, wp3, rtp2, thlp2, rtpthlp, & 
                      p_in_Pa, exner, rho, rho_zm, Kh_zt, & 
                      wm_zt, sigma_sqd_w, tau_zm, rcm, cf, & 
+                     pdf_params, &
                      sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
                      wpsclrp, edsclrm, edsclrm_forcing )
 
@@ -1007,8 +1008,7 @@ module stats_subs
         gr ! Variable
 
     use variables_diagnostic_module, only: & 
-        pdf_params,  & ! Variable(s)
-        thvm, & 
+        thvm, & ! Variable(s)
         ug, & 
         vg, & 
         Lscale, & 
@@ -1053,6 +1053,9 @@ module stats_subs
         wpsclrprtp, & 
         wpsclrpthlp, & 
         wpedsclrp
+
+    use variables_prognostic_module, only: & 
+      pdf_parameter ! Type
 
     use model_flags, only: & 
         l_LH_on ! Variable(s)
@@ -1111,6 +1114,9 @@ module stats_subs
     real, intent(in), dimension(gr%nnzp) :: & 
       rcm,   & ! Cloud water mixing ratio                [kg/kg]
       cf       ! Cloud fraction                          [%]
+
+    type(pdf_parameter), intent(in) :: & 
+      pdf_params ! PDF parameters [units vary]
 
     real, intent(in), dimension(gr%nnzp,sclr_dim) :: & 
       sclrm,           & ! High-order passive scalar          [units vary]

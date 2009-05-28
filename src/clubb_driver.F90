@@ -131,7 +131,7 @@ module clubb_driver
       Kh_zt, rho, wprtp, wpthlp_sfc, wprtp_sfc, & 
       upwp_sfc, vpwp_sfc, thlm_forcing, & 
       rtm_forcing, um_forcing, vm_forcing, &
-      up2, vp2, wp3, rtp2, & 
+      up2, vp2, wp3, rtp2, pdf_params, & 
       thlp2, rtpthlp, sigma_sqd_w, cf
 
     use variables_prognostic_module, only:  & 
@@ -680,7 +680,7 @@ module clubb_driver
                rtp2, thlp2, rtpthlp, &                             ! Intent(inout)
                sigma_sqd_w, tau_zm, rcm, cf, &                     ! Intent(inout)
                sclrm, sclrp2, sclrprtp, sclrpthlp, &               ! Intent(inout)
-               wpsclrp, edsclrm, hydromet, &                       ! Intent(inout)
+               wpsclrp, edsclrm, pdf_params, &                     ! Intent(inout)
                err_code )                                          ! Intent(inout)
 
 
@@ -1695,7 +1695,7 @@ module clubb_driver
       hydromet, radht, um_ref,  & ! Variable(s)
       vm_ref, Frad,  Frad_SW_up,  Frad_LW_up, &
       Frad_SW_down, Frad_LW_down, Ncnm, thvm, ustar, & 
-      pdf_params, Kh_zm, Akm_est, Akm, ug, vg
+      Kh_zm, Akm_est, Akm, ug, vg
 
     use variables_diagnostic_module, only: wpedsclrp ! Passive scalar variables
 
@@ -1705,7 +1705,7 @@ module clubb_driver
       exner, rcm, rho_zm, um, psfc, vm, & 
       upwp_sfc, vpwp_sfc, Tsfc, & 
       wpthlp_sfc, SE, LE, wprtp_sfc, cf, &
-      um_forcing, vm_forcing
+      um_forcing, vm_forcing, pdf_params
 
     use stats_variables, only: &
       ish, & ! Variable(s)

@@ -32,7 +32,7 @@ module micro_calcs_mod
     use anl_erf, only:  &
         erf ! Procedure(s)
 
-    use variables_diagnostic_module, only:  &
+    use variables_prognostic_module, only:  &
         pdf_parameter  ! type
 
     implicit none

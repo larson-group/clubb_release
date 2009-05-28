@@ -34,7 +34,7 @@ module lh_sampler_mod
         rr_tol, &
         Nc_tol
 
-    use variables_diagnostic_module, only:  &
+    use variables_prognostic_module, only:  &
         pdf_parameter  ! type
 
     implicit none
@@ -64,6 +64,7 @@ module lh_sampler_mod
 
     type(pdf_parameter), intent(in) :: &
       pdf_params ! PDF parameters output by closure_new [units vary]
+
     integer, intent(in) :: level  ! Level info. for PDF parameters.
 
     ! Quantities needed to predict higher order moments

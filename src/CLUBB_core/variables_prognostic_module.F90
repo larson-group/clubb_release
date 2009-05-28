@@ -114,6 +114,44 @@ module variables_prognostic_module
 !$omp   threadprivate(sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
 !$omp     edsclrm, edsclrm_forcing, wpsclrp)
 
+! PDF parameters
+  public :: pdf_parameter
+
+  type pdf_parameter
+    real, pointer, dimension(:) ::  &
+      w1,        & ! Mean of w for 1st normal distribution                 [m/s]
+      w2,        & ! Mean of w for 2nd normal distribution                 [m/s]
+      sw1,       & ! Variance of w for 1st normal distribution         [m^2/s^2]
+      sw2,       & ! Variance of w for 2nd normal distribution         [m^2/s^2]
+      rt1,       & ! Mean of r_t for 1st normal distribution             [kg/kg]
+      rt2,       & ! Mean of r_t for 2nd normal distribution             [kg/kg]
+      srt1,      & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
+      srt2,      & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
+      thl1,      & ! Mean of th_l for 1st normal distribution                [K]
+      thl2,      & ! Mean of th_l for 2nd normal distribution                [K]
+      sthl1,     & ! Variance of th_l for 1st normal distribution          [K^2]
+      sthl2,     & ! Variance of th_l for 2nd normal distribution          [K^2]
+      a,         & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
+      rc1,       & ! Mean of r_c for 1st normal distribution             [kg/kg]
+      rc2,       & ! Mean of r_c for 2nd normal distribution             [kg/kg]
+      rsl1,      & ! Mean of r_sl for 1st normal distribution            [kg/kg]
+      rsl2,      & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
+      R1,        & ! Cloud fraction for 1st normal distribution              [-]
+      R2,        & ! Cloud fraction for 2nd normal distribution              [-]
+      s1,        & ! Mean of s for 1st normal distribution               [kg/kg]
+      s2,        & ! Mean of s for 2nd normal distribution               [kg/kg]
+      ss1,       & ! Standard deviation of s for 1st normal distribution [kg/kg]
+      ss2,       & ! Standard deviation of s for 2nd normal distribution [kg/kg]
+      rrtthl,    & ! Within-a-normal correlation of r_t and th_l             [-]
+      alpha_thl, & ! Factor relating to normalized variance for th_l         [-]
+      alpha_rt     ! Factor relating to normalized variance for r_t          [-]
+  end type
+
+  type(pdf_parameter), target, public :: &
+    pdf_params
+
+!$omp threadprivate(pdf_params)
+
   contains
 !-----------------------------------------------------------------------
   subroutine setup_prognostic_variables( nzmax )
@@ -209,6 +247,22 @@ module variables_prognostic_module
     allocate( edsclrm(1:nzmax, 1:edsclr_dim) )
     allocate( wpsclrp(1:nzmax, 1:sclr_dim) )
 
+! Variables for pdf closure scheme
+    allocate( pdf_params%w1(1:nzmax),        pdf_params%w2(1:nzmax),  &
+              pdf_params%sw1(1:nzmax),       pdf_params%sw2(1:nzmax),  &
+              pdf_params%rt1(1:nzmax),       pdf_params%rt2(1:nzmax),  &
+              pdf_params%srt1(1:nzmax),      pdf_params%srt2(1:nzmax),  &
+              pdf_params%thl1(1:nzmax),      pdf_params%thl2(1:nzmax),  &
+              pdf_params%sthl1(1:nzmax),     pdf_params%sthl2(1:nzmax),  &
+              pdf_params%a(1:nzmax),         pdf_params%rrtthl(1:nzmax),  &
+              pdf_params%rc1(1:nzmax),       pdf_params%rc2(1:nzmax),  &
+              pdf_params%rsl1(1:nzmax),      pdf_params%rsl2(1:nzmax),  &
+              pdf_params%R1(1:nzmax),        pdf_params%R2(1:nzmax),  &
+              pdf_params%s1(1:nzmax),        pdf_params%s2(1:nzmax),  &
+              pdf_params%ss1(1:nzmax),       pdf_params%ss2(1:nzmax),  &
+              pdf_params%alpha_thl(1:nzmax), pdf_params%alpha_rt(1:nzmax) )
+
+
 
 !--------- Set initial values for array variables ---------
 
@@ -264,6 +318,34 @@ module variables_prognostic_module
 
     ! Eddy diffusivity
     Kh_zt      = 0.0
+
+    ! Variables for PDF closure scheme
+    pdf_params%w1        = 0.0
+    pdf_params%w2        = 0.0
+    pdf_params%sw1       = 0.0
+    pdf_params%sw2       = 0.0
+    pdf_params%rt1       = 0.0
+    pdf_params%rt2       = 0.0
+    pdf_params%srt1      = 0.0
+    pdf_params%srt2      = 0.0
+    pdf_params%thl1      = 0.0
+    pdf_params%thl2      = 0.0
+    pdf_params%sthl1     = 0.0
+    pdf_params%sthl2     = 0.0
+    pdf_params%a         = 0.0
+    pdf_params%rc1       = 0.0
+    pdf_params%rc2       = 0.0
+    pdf_params%rsl1      = 0.0
+    pdf_params%rsl2      = 0.0
+    pdf_params%R1        = 0.0
+    pdf_params%R2        = 0.0
+    pdf_params%s1        = 0.0
+    pdf_params%s2        = 0.0
+    pdf_params%ss1       = 0.0
+    pdf_params%ss2       = 0.0
+    pdf_params%rrtthl    = 0.0
+    pdf_params%alpha_thl = 0.0
+    pdf_params%alpha_rt  = 0.0
 
     ! Surface fluxes
     wpthlp_sfc = 0.0
@@ -346,6 +428,20 @@ module variables_prognostic_module
     deallocate( rcm )
     deallocate( cf )
 
+    ! Variable for pdf closure scheme
+    deallocate( pdf_params%w1,        pdf_params%w2,  &
+                pdf_params%sw1,       pdf_params%sw2,  &
+                pdf_params%rt1,       pdf_params%rt2,  &
+                pdf_params%srt1,      pdf_params%srt2,  &
+                pdf_params%thl1,      pdf_params%thl2,  &
+                pdf_params%sthl1,     pdf_params%sthl2,  &
+                pdf_params%a,         pdf_params%rrtthl,  &
+                pdf_params%rc1,       pdf_params%rc2,  &
+                pdf_params%rsl1,      pdf_params%rsl2,  &
+                pdf_params%R1,        pdf_params%R2,  &
+                pdf_params%s1,        pdf_params%s2,  &
+                pdf_params%ss1,       pdf_params%ss2,  &
+                pdf_params%alpha_thl, pdf_params%alpha_rt )
 
     ! Passive scalars
     deallocate( wpsclrp_sfc, wpedsclrp_sfc )

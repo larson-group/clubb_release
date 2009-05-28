@@ -598,8 +598,8 @@ module mono_flux_limiter
     use grid_class, only:  &
         gr  ! Variable(s)
 
-    use variables_diagnostic_module, only: &
-        pdf_parameter  ! type
+    use variables_prognostic_module, only: &
+        pdf_parameter  ! Type
 
     use stats_precision, only:  & 
         time_precision ! Variable(s)
@@ -1099,7 +1099,7 @@ module mono_flux_limiter
         sqrt_2pi, &
         sqrt_2
 
-    use variables_diagnostic_module, only: &
+    use variables_prognostic_module, only: &
         pdf_parameter  ! type
 
     use anl_erf, only:  & 

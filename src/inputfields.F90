@@ -140,7 +140,7 @@ module inputfields
         sigma_sqd_w_zt, & 
         em
 
-    use variables_diagnostic_module, only: & 
+    use variables_prognostic_module, only: & 
         pdf_params ! Variable(s)
 
     use grid_class, only: & 

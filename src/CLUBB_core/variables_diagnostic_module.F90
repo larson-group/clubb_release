@@ -147,43 +147,6 @@ module variables_diagnostic_module
 !$omp threadprivate(wp2_zt, thlp2_zt, wpthlp_zt, wprtp_zt, &
 !$omp   rtp2_zt, rtpthlp_zt)
 
-! PDF parameters
-  public :: pdf_parameter
-
-  type pdf_parameter
-  real, pointer, dimension(:) ::  &
-    w1,        & ! Mean of w for 1st normal distribution                 [m/s]
-    w2,        & ! Mean of w for 2nd normal distribution                 [m/s]
-    sw1,       & ! Variance of w for 1st normal distribution         [m^2/s^2]
-    sw2,       & ! Variance of w for 2nd normal distribution         [m^2/s^2]
-    rt1,       & ! Mean of r_t for 1st normal distribution             [kg/kg]
-    rt2,       & ! Mean of r_t for 2nd normal distribution             [kg/kg]
-    srt1,      & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
-    srt2,      & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
-    thl1,      & ! Mean of th_l for 1st normal distribution                [K]
-    thl2,      & ! Mean of th_l for 2nd normal distribution                [K]
-    sthl1,     & ! Variance of th_l for 1st normal distribution          [K^2]
-    sthl2,     & ! Variance of th_l for 2nd normal distribution          [K^2]
-    a,         & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
-    rc1,       & ! Mean of r_c for 1st normal distribution             [kg/kg]
-    rc2,       & ! Mean of r_c for 2nd normal distribution             [kg/kg]
-    rsl1,      & ! Mean of r_sl for 1st normal distribution            [kg/kg]
-    rsl2,      & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
-    R1,        & ! Cloud fraction for 1st normal distribution              [-]
-    R2,        & ! Cloud fraction for 2nd normal distribution              [-]
-    s1,        & ! Mean of s for 1st normal distribution               [kg/kg]
-    s2,        & ! Mean of s for 2nd normal distribution               [kg/kg]
-    ss1,       & ! Standard deviation of s for 1st normal distribution [kg/kg]
-    ss2,       & ! Standard deviation of s for 2nd normal distribution [kg/kg]
-    rrtthl,    & ! Within-a-normal correlation of r_t and th_l             [-]
-    alpha_thl, & ! Factor relating to normalized variance for th_l         [-]
-    alpha_rt     ! Factor relating to normalized variance for r_t          [-]
-  end type
-
-  type(pdf_parameter), target, public :: &
-    pdf_params
-
-!$omp threadprivate(pdf_params)
 
 ! Latin Hypercube arrays.  Vince Larson 22 May 2005
   real, target, allocatable, dimension(:), public :: & 
@@ -295,21 +258,6 @@ module variables_diagnostic_module
     allocate( rtpthlp_zt(1:nzmax) ) ! rt'thl' on thermo. grid
 
 
-! Variables for pdf closure scheme
-    allocate( pdf_params%w1(1:nzmax),        pdf_params%w2(1:nzmax),  &
-              pdf_params%sw1(1:nzmax),       pdf_params%sw2(1:nzmax),  &
-              pdf_params%rt1(1:nzmax),       pdf_params%rt2(1:nzmax),  &
-              pdf_params%srt1(1:nzmax),      pdf_params%srt2(1:nzmax),  &
-              pdf_params%thl1(1:nzmax),      pdf_params%thl2(1:nzmax),  &
-              pdf_params%sthl1(1:nzmax),     pdf_params%sthl2(1:nzmax),  &
-              pdf_params%a(1:nzmax),         pdf_params%rrtthl(1:nzmax),  &
-              pdf_params%rc1(1:nzmax),       pdf_params%rc2(1:nzmax),  &
-              pdf_params%rsl1(1:nzmax),      pdf_params%rsl2(1:nzmax),  &
-              pdf_params%R1(1:nzmax),        pdf_params%R2(1:nzmax),  &
-              pdf_params%s1(1:nzmax),        pdf_params%s2(1:nzmax),  &
-              pdf_params%ss1(1:nzmax),       pdf_params%ss2(1:nzmax),  &
-              pdf_params%alpha_thl(1:nzmax), pdf_params%alpha_rt(1:nzmax) )
-
     allocate( Ncnm(1:nzmax) )
     allocate( hydromet(1:nzmax,1:hydromet_dim) ) ! All hydrometeor fields
 
@@ -409,33 +357,6 @@ module variables_diagnostic_module
       hydromet(1:nzmax,i) = 0.0
     end do
 
-    ! Variables for PDF closure scheme
-    pdf_params%w1        = 0.0
-    pdf_params%w2        = 0.0
-    pdf_params%sw1       = 0.0
-    pdf_params%sw2       = 0.0
-    pdf_params%rt1       = 0.0
-    pdf_params%rt2       = 0.0
-    pdf_params%srt1      = 0.0
-    pdf_params%srt2      = 0.0
-    pdf_params%thl1      = 0.0
-    pdf_params%thl2      = 0.0
-    pdf_params%sthl1     = 0.0
-    pdf_params%sthl2     = 0.0
-    pdf_params%a         = 0.0
-    pdf_params%rc1       = 0.0
-    pdf_params%rc2       = 0.0
-    pdf_params%rsl1      = 0.0
-    pdf_params%rsl2      = 0.0
-    pdf_params%R1        = 0.0
-    pdf_params%R2        = 0.0
-    pdf_params%s1        = 0.0
-    pdf_params%s2        = 0.0
-    pdf_params%ss1       = 0.0
-    pdf_params%ss2       = 0.0
-    pdf_params%rrtthl    = 0.0
-    pdf_params%alpha_thl = 0.0
-    pdf_params%alpha_rt  = 0.0
 
     ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
     if ( l_LH_on ) then
@@ -448,7 +369,7 @@ module variables_diagnostic_module
       AKm_rcc   = 0.0  ! Kessler ac based on rcm/cf
     end if ! l_LH_on
 
-! Passive scalars
+    ! Passive scalars
     if ( sclr_dim > 0 ) then
       sclrpthvp(:,:)     = 0.0
       sclrprcp(:,:)      = 0.0
@@ -479,7 +400,7 @@ module variables_diagnostic_module
     implicit none
 
 
-! --- Deallocate ---
+    ! --- Deallocate ---
 
     deallocate( sigma_sqd_w_zt )       ! PDF width parameter: t point
     deallocate( Skw_zm )
@@ -503,14 +424,14 @@ module variables_diagnostic_module
 
     deallocate( shear )     ! wind shear production
 
-! Second order moments
+    ! Second order moments
 
     deallocate( wprcp )     ! w'rc'
     deallocate( thlprcp )   ! thl'rc'
     deallocate( rtprcp )    ! rt'rc'
     deallocate( rcp2 )      ! rc'^2
 
-! Third order moments
+    ! Third order moments
 
     deallocate( wpthlp2 )   ! w'thl'^2
     deallocate( wp2thlp )   ! w'^2thl'
@@ -519,11 +440,11 @@ module variables_diagnostic_module
     deallocate( wprtpthlp ) ! w'rt'thl'
     deallocate( wp2rcp )    ! w'^2rc'
 
-! Fourth order moments
+    ! Fourth order moments
 
     deallocate( wp4 )
 
-! Buoyancy related moments
+    ! Buoyancy related moments
 
     deallocate( rtpthvp )
     deallocate( thlpthvp )
@@ -537,14 +458,14 @@ module variables_diagnostic_module
     deallocate( Lscale_down )
     deallocate( tau_zt )
 
-! Cloud water variables
+    ! Cloud water variables
 
     deallocate( Ncnm )
 
     deallocate( hydromet )  ! Hydrometeor fields
 
 
-! Interpolated variables for tuning
+    ! Interpolated variables for tuning
     deallocate( wp2_zt )     ! w'^2 on t
     deallocate( thlp2_zt )   ! th_l'^2 on t
     deallocate( wpthlp_zt )  ! w'th_l' on t
@@ -552,25 +473,7 @@ module variables_diagnostic_module
     deallocate( rtp2_zt )    ! rt'^2 on t
     deallocate( rtpthlp_zt ) ! rt'th_l' on t
 
-
-! Variable for pdf closure scheme
-    deallocate( pdf_params%w1,        pdf_params%w2,  &
-                pdf_params%sw1,       pdf_params%sw2,  &
-                pdf_params%rt1,       pdf_params%rt2,  &
-                pdf_params%srt1,      pdf_params%srt2,  &
-                pdf_params%thl1,      pdf_params%thl2,  &
-                pdf_params%sthl1,     pdf_params%sthl2,  &
-                pdf_params%a,         pdf_params%rrtthl,  &
-                pdf_params%rc1,       pdf_params%rc2,  &
-                pdf_params%rsl1,      pdf_params%rsl2,  &
-                pdf_params%R1,        pdf_params%R2,  &
-                pdf_params%s1,        pdf_params%s2,  &
-                pdf_params%ss1,       pdf_params%ss2,  &
-                pdf_params%alpha_thl, pdf_params%alpha_rt )
-
-
-! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
-!       if ( l_LH_on ) then
+    ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
     deallocate( AKm_est )   ! Kessler ac estimate
     deallocate( AKm )       ! Exact Kessler ac
     deallocate( AKstd )     ! St dev of exact Kessler ac
@@ -578,9 +481,8 @@ module variables_diagnostic_module
     deallocate( rcm_est )   ! Monte Carlo rcm estimate
     deallocate( AKm_rcm )   ! Kessler ac based on rcm
     deallocate( AKm_rcc )   ! Kessler ac based on rcm/cf
-!       end if ! l_LH_on
 
-! Passive scalars
+    ! Passive scalars
     deallocate( sclrpthvp )
     deallocate( sclrprcp )
 

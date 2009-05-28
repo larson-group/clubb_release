@@ -53,9 +53,9 @@ module numerical_check
 
     ! Input Variables
     real, dimension(gr%nnzp), intent(in) ::  & 
-    Lscale,  & ! Mixing length                 [m]
-    Lscale_up,     & ! Upward mixing length          [m]
-    Lscale_down   ! Downward mixing length        [m]
+      Lscale,     & ! Mixing length                 [m]
+      Lscale_up,  & ! Upward mixing length          [m]
+      Lscale_down   ! Downward mixing length        [m]
 
     ! Output Variable
     integer, intent(inout) :: & 
@@ -68,6 +68,7 @@ module numerical_check
     call check_nan( Lscale_up, "Lscale_up", proc_name, err_code )
     call check_nan( Lscale_down, "Lscale_down", proc_name, err_code )
 
+    return
   end subroutine length_check
 
 !---------------------------------------------------------------------------
@@ -90,7 +91,7 @@ module numerical_check
     use parameters_model, only: & 
       sclr_dim ! Variable
 
-    use variables_diagnostic_module, only:  &
+    use variables_prognostic_module, only:  &
       pdf_parameter  ! type
 
     use stats_variables, only: &

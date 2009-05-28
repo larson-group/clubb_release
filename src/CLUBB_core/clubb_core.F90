@@ -39,7 +39,7 @@ module clubb_core
                rtp2, thlp2, rtpthlp, & 
                sigma_sqd_w, tau_zm, rcm, cf, & 
                sclrm, sclrp2, sclrprtp, sclrpthlp, &
-               wpsclrp, edsclrm, hydromet, &
+               wpsclrp, edsclrm, pdf_params, &
                err_code ) 
 
     ! Description:
@@ -77,8 +77,7 @@ module clubb_core
     use parameters_model, only: &
       T0, &
       sclr_dim, &
-      edsclr_dim, &
-      hydromet_dim
+      edsclr_dim
 
     use model_flags, only: & 
       l_LH_on,  & ! Variable(s)
@@ -104,7 +103,6 @@ module clubb_core
       wprcp, & 
       rtprcp, & 
       thlprcp, & 
-      pdf_params, & 
       rcp2, & 
       rsat, & 
       shear, & 
@@ -139,6 +137,12 @@ module clubb_core
       wpsclrp2,    & ! w'sclr'^2
       wpsclrprtp,  & ! w'sclr'rt'
       wpsclrpthlp    ! w'sclr'thl'
+
+    use variables_diagnostic_module, only: & 
+      hydromet ! Hydrometeor species (temporary fix for Latin Hypercube)
+
+    use variables_prognostic_module, only: &
+      pdf_parameter
 
     use advance_xm_wpxp_module, only: & 
       ! Variable(s) 
@@ -302,8 +306,8 @@ module clubb_core
     real, intent(in), dimension(gr%nnzp,edsclr_dim) :: & 
       edsclrm_forcing    ! Eddy passive scalar forcing. [{units vary}/s]
 
-    real, intent(in), dimension(gr%nnzp,hydromet_dim) :: & 
-      hydromet ! Hydrometeor species    [units vary]
+    type(pdf_parameter), intent(inout) :: & 
+      pdf_params ! PDF parameters [units vary]
 
     ! Local Variables
     integer :: i, k
@@ -324,7 +328,7 @@ module clubb_core
 #ifdef UNRELEASED_CODE
     !------- Local variables for Latin Hypercube sampling ------------------
 
-    integer i_rmd
+    integer :: i_rmd
 
     ! Number of variables to sample
     integer, parameter :: d_variables = 5
@@ -342,8 +346,8 @@ module clubb_core
     !     the PDF allows us to construct a sample
     logical :: sample_flag
 
-    integer, dimension(gr%nnzp, nt_repeat, d_variables+1)  & 
-    :: p_height_time ! matrix of rand ints
+    integer, dimension(gr%nnzp, nt_repeat, d_variables+1) :: & 
+      height_time_matrix ! matrix of rand ints
 #endif
 
     ! coeffs of s from pdf_closure
@@ -530,12 +534,12 @@ module clubb_core
     sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )  ! Pos. def. quantity
 #ifdef UNRELEASED_CODE
     ! Latin hypercube sample generation
-    ! Generate p_height_time, an nnzp x nt_repeat x d_variables array of random integers
+    ! Generate height_time_matrix, an nnzp x nt_repeat x d_variables array of random integers
     if ( l_LH_on ) then
       i_rmd = mod( iter-1, sequence_length )
-      if ( i_rmd == 0) then
+      if ( i_rmd == 0 ) then
         call permute_height_time( gr%nnzp, nt_repeat, d_variables+1, & ! intent(in)
-                                  p_height_time )                   ! intent(out)
+                                  height_time_matrix )                 ! intent(out)
       end if
     end if
     ! End Latin hypercube sample generation
@@ -595,8 +599,8 @@ module clubb_core
 
         call latin_hypercube_sampling &
                    ( k, n_micro_call, d_variables, nt_repeat, i_rmd, &
-                     crt1, crt2, cthl1, cthl2, hydromet(:,iirrainm), &
-                     cf, gr%nnzp, sample_flag, p_height_time )
+                     pdf_params, crt1, crt2, cthl1, cthl2, hydromet(:,iirrainm), &
+                     cf, gr%nnzp, sample_flag, height_time_matrix )
       end if
 
     end do ! k = 2, gr%nnzp-1
@@ -835,6 +839,7 @@ module clubb_core
            wp2, wp3, rtp2, thlp2, rtpthlp,                     & ! intent(in)
            p_in_Pa, exner, rho, rho_zm, Kh_zt,                 & ! intent(in)
            wm_zt, sigma_sqd_w, tau_zm, rcm, cf,                & ! intent(in)
+           pdf_params,                                         & ! intent(in)
            sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing,  & ! intent(in)
            wpsclrp, edsclrm, edsclrm_forcing )                   ! intent(in)
 
@@ -860,8 +865,8 @@ module clubb_core
   !-----------------------------------------------------------------------
   subroutine latin_hypercube_sampling & 
              ( k, n, dvar, nt, i_rmd, & 
-               crt1, crt2, cthl1, cthl2, & 
-               rrainm, cf, grid, l_sflag, p_height_time )
+               pdf_params, crt1, crt2, cthl1, cthl2, & 
+               rrainm, cf, grid, l_sflag, height_time_matrix )
     ! Description:
     !   Estimate using Latin Hypercubes.  This is usually disabled by default.
     !   The actual generation of a random matrix is done in a call from the
@@ -870,8 +875,7 @@ module clubb_core
     !   None
     !-----------------------------------------------------------------------
 
-    use variables_diagnostic_module, only:  & 
-        pdf_params,  & ! Variable(s) 
+    use variables_diagnostic_module, only: & 
         AKm_est,  & 
         AKm, & 
         AKstd, & 
@@ -879,6 +883,9 @@ module clubb_core
         AKm_rcm, & 
         AKm_rcc, & 
         rcm_est
+
+    use variables_prognostic_module, only: & 
+      pdf_parameter
 
     use lh_sampler_mod, only: & 
         lh_sampler ! Procedure
@@ -892,17 +899,22 @@ module clubb_core
     ! Input Variables
     integer, intent(in) :: k  ! index
     integer, intent(in) :: n, dvar, i_rmd, nt, grid
-    logical, intent(out) :: l_sflag
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params ! PDF parameters [units vary]
 
     ! coeffs of s from pdf_closure
     real, intent(in) :: crt1, crt2, cthl1, cthl2
 
     real, dimension(grid), intent(in) ::  & 
-    rrainm,  & ! Rain water mixing ratio  [kg/kg]
-    cf   ! Cloud fraction           [%]
+      rrainm,  & ! Rain water mixing ratio  [kg/kg]
+      cf         ! Cloud fraction           [%]
 
     integer, dimension(1:grid, 1:nt, 1:(dvar+1) ), intent(in) :: & 
-    p_height_time ! matrix of rand ints
+      height_time_matrix ! matrix of rand ints
+
+    ! Output Variables
+    logical, intent(out) :: l_sflag
 
     ! Local Variables
 
@@ -915,7 +927,7 @@ module clubb_core
 
     ! Choose which rows of LH sample to feed into closure.
     p_matrix(1:n,1:(dvar+1)) = & 
-    p_height_time( k,n*i_rmd+1:n*i_rmd+n, 1:(dvar+1) )
+      height_time_matrix( k,n*i_rmd+1:n*i_rmd+n, 1:(dvar+1) )
 
     ! print*, 'latin_hypercube_sampling: got past p_matrix'
 

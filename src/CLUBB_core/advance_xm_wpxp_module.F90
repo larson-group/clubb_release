@@ -96,7 +96,7 @@ module advance_xm_wpxp_module
     use mono_flux_limiter, only: &
         calc_turb_adv_range ! Procedure(s)
 
-    use variables_diagnostic_module, only: &
+    use variables_prognostic_module, only: &
         pdf_parameter  ! type
 
     use stats_precision, only:  & 

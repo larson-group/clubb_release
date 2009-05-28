@@ -509,7 +509,7 @@ module microphys_driver
 
     use T_in_K_mod, only: thlm2T_in_K, T_in_K2thlm ! Procedure(s)
 
-    use variables_diagnostic_module, only:  &
+    use variables_prognostic_module, only:  &
         pdf_parameter  ! type
 
     use array_index, only:  & 

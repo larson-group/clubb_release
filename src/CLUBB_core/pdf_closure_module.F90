@@ -69,7 +69,7 @@ module pdf_closure_module
       beta  ! Variable(s)
             ! Plume widths for th_l and r_t [-]
 
-    use variables_diagnostic_module, only:  &
+    use variables_prognostic_module, only:  &
         pdf_parameter  ! type
 
     use anl_erf, only:  & 
