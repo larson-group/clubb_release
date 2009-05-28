@@ -587,8 +587,8 @@ module clubb_driver
       call restart_clubb &
            ( iunit, runfile, trim( forcings_file_path ), & ! Intent(in)
              restart_path_case, time_restart, &            ! Intent(in)
-             thlm, rtm, um, vm, ug, vg, upwp, vpwp, wm_zt, wm_zm,  & ! Intent(inout)
-             um_ref, vm_ref, wpthlp, wprtp, sclrm, edsclrm, &        ! Intent(inout)
+             upwp, vpwp, wm_zt, wm_zm,  &                  ! Intent(inout)
+             um_ref, vm_ref, wpthlp, wprtp, &        ! Intent(inout)
              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )             ! Intent(out)
 
     end if ! ~l_restart
@@ -1406,8 +1406,8 @@ module clubb_driver
   subroutine restart_clubb &
              ( iunit, runfile, forcings_file_path, &
                restart_path_case, time_restart, & 
-               thlm, rtm, um, vm, ug, vg, upwp, vpwp, wm_zt, wm_zm,  & 
-               um_ref, vm_ref, wpthlp, wprtp, sclrm, edsclrm, & 
+               upwp, vpwp, wm_zt, wm_zm,  & 
+               um_ref, vm_ref, wpthlp, wprtp, & 
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )
     ! Description:
     !   Execute the necessary steps for the initialization of the
@@ -1442,9 +1442,6 @@ module clubb_driver
     use grid_class, only: zt2zm ! Procedure(s)
 
     use constants, only: fstderr ! Variables(s)
-
-    use parameters_model, only: sclr_dim ! Variables(s)
-
 
     use stats_precision, only: time_precision ! Variable(s)
 
@@ -1490,12 +1487,6 @@ module clubb_driver
 
     ! Input/Output Variables
     real, dimension(gr%nnzp), intent(inout) ::  & 
-      thlm,            & ! Theta l mean                 [K] 
-      rtm,             & ! Total water mixing ratio     [kg/kg]
-      um,              & ! u wind                       [m/s]
-      vm,              & ! v wind                       [m/s]
-      ug,              & ! u geostrophic wind           [m/s] 
-      vg,              & ! v geostrophic wind           [m/s] 
       upwp,            & ! u'w'                         [m^2/s^2]
       vpwp,            & ! v'w'                         [m^2/s^2]
       wm_zt, wm_zm,    & ! w wind                       [m/s]
@@ -1503,10 +1494,6 @@ module clubb_driver
       vm_ref,          & ! Initial profile of v wind    [m/s]
       wpthlp,          & ! w' th_l'                     [(m K)/s]
       wprtp              ! w' r_t'                      [(kg m)(kg s)]
-
-    real, dimension(gr%nnzp,sclr_dim), intent(inout) ::  & 
-      sclrm,   & ! Standard passive scalar [units vary]
-      edsclrm    ! Eddy diffusivity passive scalar [units vary]
 
     ! Output
     real, intent(out) :: & 

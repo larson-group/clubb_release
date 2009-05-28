@@ -3,7 +3,7 @@
 ! Prescribed, time-independent vertical velocity can be entered as velocity (w[m\s]) or pressure velocity (omega[Pa\s])
 ! If vertical velocity is time dependent, insert missing values throughout column.
 ! In all cases, missing values are denoted by -999.9
-z[m]    thml[K]   rt[kg\kg]   u[m\s]   v[m\s]    w[m\s]   ug[m\s]   vg[m\s]   
+z[m]    thlm[K]   rt[kg\kg]   u[m\s]   v[m\s]    w[m\s]   ug[m\s]   vg[m\s]   
 0.      288.3       0.00945     3.       -9.       0.       3.        -9.       
 794.    288.3       0.00945     6.4142   -4.5336   -999.9   6.4142    -4.5336   
 795.    295.        0.005       6.4185   -4.548    -999.9   6.4185    -4.548    
