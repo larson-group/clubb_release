@@ -272,7 +272,9 @@ module input_reader
         temp_grid(amt) = grid(i)
       end if
     end do
-    if (amt < dim_grid) then
+    if( amt == 0 ) then
+      var_out = 0.0
+    else if (amt < dim_grid) then
       var_out = zlinterp_fnc(dim_grid, amt, grid, temp_grid(1:amt), temp_var(1:amt))
     else
       var_out = var
