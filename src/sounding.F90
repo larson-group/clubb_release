@@ -20,6 +20,7 @@ module sounding
   ! Column identifiers
   character(len=*), public, parameter :: z_name = 'z[m]'
   character(len=*), public, parameter :: pressure_name = 'Press[Pa]'
+  character(len=*), public, parameter :: temp_name = 'T[K]'
   character(len=*), public, parameter :: theta_name = 'thm[K]'
   character(len=*), public, parameter :: thetal_name = 'thlm[K]'
   character(len=*), public, parameter :: wm_name = 'w[m\s]'
@@ -698,6 +699,11 @@ module sounding
           exner(k) = (p_in_Pa(k)/p0) ** kappa  ! zt
         end do
 
+        if( trim( theta_type ) == temp_name ) then
+           theta = theta / exner
+           theta_type = theta_name     
+        end if
+
         do k = 1,nlevels
           rcm(k) = &
           max( rtm(k) - sat_mixrat_liq( p_in_Pa(k), theta(k) * exner(k) ), &
@@ -762,11 +768,15 @@ module sounding
     ! Output Variable(s)
     real, dimension(nmaxsnd), intent(out) :: theta
 
-    if( count( (/ any(retVars%name == theta_name), any(retVars%name == thetal_name) /)) <= 1) then
+    if( count( (/ any(retVars%name == theta_name), &
+                  any(retVars%name == thetal_name), &
+                  any(retVars%name == temp_name) /) )<= 1) then
       if( any(retVars%name == theta_name))then
         theta_type = theta_name
       elseif( any(retVars%name == thetal_name))then
         theta_type = thetal_name
+      elseif( any(retVars%name == temp_name))then
+        theta_type = temp_name
       else
         stop "Could not read theta compatable variable"
       endif

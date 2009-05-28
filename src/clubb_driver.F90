@@ -777,7 +777,8 @@ module clubb_driver
 
     use grid_class, only: zm2zt, zt2zm ! Procedure(s)
 
-    use sounding, only: read_sounding, z_name, thetal_name, wm_name, omega_name ! Procedure(s)
+    use sounding, only: read_sounding, & ! Procedure(s)
+                        z_name, thetal_name, wm_name, omega_name, temp_name ! Variable(s)
 
     use model_flags, only: &
         l_uv_nudge, & ! Variable(s)
@@ -884,6 +885,14 @@ module clubb_driver
 
     select case( trim(alt_type) )
     case ( z_name )
+
+      if (theta_type == temp_name ) then
+        stop 'Interpetation of sounding files with z as the independant'// &
+        'variable and absolute temperature as the temperature variable has not'//  &
+        'been implemented. Either specify pressure as the independant variable or'// &
+        'thm/thlm as the temperature variable'
+      end if
+
       ! At this point, thlm actually contains theta (except for DYCOMS).
       ! We need to compute liquid water content, and initilialize thlm properly
 
@@ -943,6 +952,10 @@ module clubb_driver
       do k=2, gr%nnzp
         exner(k) = (p_in_Pa(k)/p0) ** kappa  ! zt
       end do
+
+      if( trim( theta_type ) == temp_name ) then
+           thlm = thlm / exner
+      end if
 
       select case ( trim( theta_type ) )
         !select case ( trim( runtype ) )
