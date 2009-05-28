@@ -777,7 +777,7 @@ module clubb_driver
 
     use grid_class, only: zm2zt, zt2zm ! Procedure(s)
 
-    use sounding, only: read_sounding ! Procedure(s)
+    use sounding, only: read_sounding, z_name, thetal_name, wm_name, omega_name ! Procedure(s)
 
     use model_flags, only: &
         l_uv_nudge, & ! Variable(s)
@@ -883,7 +883,7 @@ module clubb_driver
                         sclrm, edsclrm )                          ! Intent(out)
 
     select case( trim(alt_type) )
-    case ( "z[m]")
+    case ( z_name )
       ! At this point, thlm actually contains theta (except for DYCOMS).
       ! We need to compute liquid water content, and initilialize thlm properly
 
@@ -904,7 +904,7 @@ module clubb_driver
 
       select case ( trim( theta_type ) )
         !select case ( trim( runtype ) )
-      case ( "thetal[K]" )
+      case ( thetal_name )
         !case ( "dycoms2_rf01", "astex_a209", "nov11_altocu", &
         !      "clex9_nov02", "clex9_oct14", "dycoms2_rf02" )
         ! thlm profile that is initially saturated at points.
@@ -946,7 +946,7 @@ module clubb_driver
 
       select case ( trim( theta_type ) )
         !select case ( trim( runtype ) )
-      case ( "thetal[K]" )
+      case ( thetal_name )
         !case ( "dycoms2_rf01", "astex_a209", "nov11_altocu", &
         !      "clex9_nov02", "clex9_oct14", "dycoms2_rf02" )
         ! thlm profile that is initially saturated at points.
@@ -1009,12 +1009,12 @@ module clubb_driver
     ! Initialize imposed w
     select case ( trim(subs_type) ) ! Perform different operations based off
     !                                 sounding file
-    case ( 'w[m\s]')
+    case ( wm_name )
       wm_zm = zt2zm( wm_zt )
 
       wm_zm(1) = 0.0
       wm_zm(gr%nnzp) = 0.0
-    case ("omega[Pa\s]")
+    case ( omega_name )
       do k=2,gr%nnzp
          wm_zt(k) = wm_zt(k) * Rd * thvm(k) / p_in_Pa(k) / grav
       end do

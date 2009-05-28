@@ -17,6 +17,14 @@ module sounding
   integer, public, parameter :: nmaxsnd = 600
   integer, public, parameter :: sclr_max = 1000
 
+  ! Column identifiers
+  character(len=*), public, parameter :: z_name = 'z[m]'
+  character(len=*), public, parameter :: pressure_name = 'Press[Pa]'
+  character(len=*), public, parameter :: theta_name = 'thm[K]'
+  character(len=*), public, parameter :: thetal_name = 'thlm[K]'
+  character(len=*), public, parameter :: wm_name = 'w[m\s]'
+  character(len=*), public, parameter :: omega_name = 'omega[Pa\s]'
+
   private ! Default Scope
 
   contains
@@ -128,9 +136,9 @@ module sounding
 
     l_std_atmo = .false.
 
-    theta_type = "theta[K]" ! Default value
-    alt_type = "z[m]" ! Default value
-    subs_type = "w[m\s]" ! Defuault Value
+    theta_type = theta_name ! Default value
+    alt_type = z_name ! Default value
+    subs_type = wm_name ! Defuault Value
 
     ! Determine which files exist ahead of time to allow for a graceful exit if
     ! one is missing.
@@ -411,13 +419,13 @@ module sounding
     ug,     & ! u geostrophic wind sounding            [m/s]
     vg,     & ! v geostrophic wind sounding            [m/s]
     p_in_Pa,& ! Pressure sounding                      [Pa]
-    subs      ! Subsidence sounding                    [m/s or Pa/s] 
+    subs      ! Subsidence sounding                    [m/s or Pa/s]
 
     character(len=*), intent(out) :: & 
       theta_type, &     ! Type of temperature sounding
       alt_type, &       ! Type of independant coordinate
       subs_type         ! Type of subsidence
-    
+
     integer, parameter :: nCol = 8
 
     type(one_dim_read_var), dimension(nCol) :: retVars
@@ -495,7 +503,7 @@ module sounding
         if( i /= iisclr_rt .and. iisclr_rt > 0) then
           stop "iisclr_rt index does not match column."
         end if
-      case("thl[K}")
+      case("thl[K]")
         if( i /= iisclr_thl .and. iisclr_thl > 0) then
           stop "iisclr_thl index does not match column."
         end if
@@ -552,7 +560,7 @@ module sounding
         if( i /= iiedsclr_rt .and. iiedsclr_rt > 0) then
           stop "iisclr_rt index does not match column."
         end if
-      case("thl[K}")
+      case("thl[K]")
         if( i /= iiedsclr_thl .and. iiedsclr_thl > 0) then
           stop "iisclr_thl index does not match column."
         end if
@@ -617,11 +625,11 @@ module sounding
   subroutine read_z_profile(nvar, retVars, psfc, zm_init, z, p_in_Pa, alt_type)
 !
 !  Description: Searches for the variable specified by either 'z[m]' or
-!  'Press[Pa]' in the collection of retVars. If the subroutine finds the 
-!  variable indicated by 'z[m]', 
+!  'Press[Pa]' in the collection of retVars. If the subroutine finds the
+!  variable indicated by 'z[m]',
 !  then it returns it. If the subroutine finds 'Press[Pa]' then it converts
-!  it to values of altitude in meters. 
-!  If it does not find either or finds both the program using this subroutine 
+!  it to values of altitude in meters.
+!  If it does not find either or finds both the program using this subroutine
 !  will exit gracefully with a warning message.
 !
 !-------------------------------------------------------------------------------
@@ -638,10 +646,6 @@ module sounding
 
     implicit none
 
-    ! String identifiers
-    character(len=*), parameter :: z_name = 'z[m]'
-
-    character(len=*), parameter :: pressure_name = 'Press[Pa]'
 
     ! Input Variable(s)
     integer, intent(in) :: nvar ! Number of elements in retVars
@@ -703,8 +707,7 @@ module sounding
         ! Compute initial theta-l
 
         select case ( trim( theta_type ) )
-          !select case ( trim( runtype ) )
-        case ( "thetal[K]" )
+        case ( thetal_name )
           !case ( "dycoms2_rf01", "astex_a209", "nov11_altocu", &
           !      "clex9_nov02", "clex9_oct14", "dycoms2_rf02" )
           ! thlm profile that is initially saturated at points.
@@ -714,7 +717,7 @@ module sounding
             rcm(k) = sat_rcm( theta(k), rtm(k), p_in_Pa(k), exner(k) )
           end do
 
-        case default ! ('theta[K]')
+        case default ! theta_name
           ! Initial profile is non-saturated thlm or any type of theta.
           theta = theta - Lv/(Cp*exner) * rcm
 
@@ -724,9 +727,6 @@ module sounding
 
         thvm = theta + ep1 * T0 * rtm  & 
                     + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
-
-
-        ! Recompute more accurate initial exner function and pressure using thvm
 
         call inverse_hydrostatic ( thvm, zm_init, exner, nlevels, &
                                      z )
@@ -751,9 +751,6 @@ module sounding
 
     implicit none
 
-    character(len=*), parameter :: theta_name = 'theta[K]'
-
-    character(len=*), parameter :: thetal_name = 'thetal[K]'
     ! Input Variable(s)
     integer, intent(in) :: nvar ! Number of elements in retVars
 
@@ -790,10 +787,6 @@ module sounding
 
     implicit none
 
-    ! String Identifiers
-    character(len=*), parameter :: wm_name = 'w[m\s]'
-
-    character(len=*), parameter :: omega_name = 'omega[Pa\s]'
 
     ! Input Variable(s)
     integer, intent(in) :: nvar ! Number of elements in retVars
