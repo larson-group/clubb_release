@@ -62,12 +62,12 @@ module micro_calcs_mod
     ! Output Variables
 
     real, intent(out) :: &
-      AKm_est_k,   & ! Monte Carlo estimate of Kessler autoconversion for kth vertical level [kg/kg]
-      AKm_k,       & ! Exact Kessler autoconversion, AKm, for kth vertical level             [kg/kg]
-      AKstd_k,     & ! Exact standard deviation of gba Kessler for kth level                 [kg/kg]
-      AKstd_cld_k, & ! Exact w/in cloud std of gba Kessler for kth level                     [kg/kg]
-      AKm_rcm_k,   & ! Exact local gba Kessler auto based on rcm for kth level               [kg/kg]
-      AKm_rcc_k      ! Exact local gba Kessler based on w/in cloud rc for kth level          [kg/kg]
+      AKm_est_k,   & ! Monte Carlo estimate of Kessler autoconversion for kth vert level [kg/kg/s]
+      AKm_k,       & ! Exact Kessler autoconversion, AKm, for kth vert level             [kg/kg/s]
+      AKstd_k,     & ! Exact standard deviation of gba Kessler for kth level             [kg/kg/s]
+      AKstd_cld_k, & ! Exact w/in cloud std of gba Kessler for kth level                 [kg/kg/s]
+      AKm_rcm_k,   & ! Exact local gba Kessler auto based on rcm for kth level           [kg/kg/s]
+      AKm_rcc_k      ! Exact local gba Kessler based on w/in cloud rc for kth level      [kg/kg/s]
 
     ! For comparison, estimate kth liquid water using Monte Carlo
     real, intent(out) :: &
@@ -333,19 +333,19 @@ module micro_calcs_mod
     ! ---- Begin Code ----
 
     ! Handle some possible errors re: proper ranges of a, R1, R2.
-    if (a .gt. 1.0d0 .or. a .lt. 0.0d0) then
+    if (a > 1.0d0 .or. a < 0.0d0) then
       write(fstderr,*) 'Error in autoconv_driver:  ',  &
                        'mixture fraction, a, does not lie in [0,1].'
       write(fstderr,*) 'a = ', a
       stop
     end if
-    if (R1 .gt. 1.0d0 .or. R1 .lt. 0.0d0) then
+    if (R1 > 1.0d0 .or. R1 < 0.0d0) then
       write(fstderr,*) 'Error in autoconv_driver:  ',  &
                        'cloud fraction 1, R1, does not lie in [0,1].'
       write(fstderr,*) 'R1 = ', R1
       stop
     end if
-    if (R2 .gt. 1.0d0 .or. R2 .lt. 0.0d0) then
+    if (R2 > 1.0d0 .or. R2 < 0.0d0) then
       write(fstderr,*) 'Error in autoconv_driver:  ',  &
                        'cloud fraction 2, R2, does not lie in [0,1].'
       write(fstderr,*) 'R2 = ', R2

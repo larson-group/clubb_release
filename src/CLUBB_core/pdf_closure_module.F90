@@ -19,8 +19,8 @@ module pdf_closure_module
                wpthlp2, wp2thlp, wprtpthlp, & 
                cf, rcm, wpthvp, wp2thvp, rtpthvp,  & 
                thlpthvp, wprcp, wp2rcp, rtprcp, thlprcp, & 
-               rcp2, pdf_params, crt1,  & 
-               crt2, cthl1, cthl2, err_code, & 
+               rcp2, pdf_params, & 
+               err_code, & 
                wpsclrprtp, wpsclrp2, sclrpthvp, & 
                wpsclrpthlp, sclrprcp, wp2sclrp )
 
@@ -143,9 +143,7 @@ module pdf_closure_module
       rtprcp,      & ! r_t' r_c'             [(kg^2)/(kg^2)]
       thlprcp,     & ! th_l' r_c'            [(K kg)/kg]
       rcp2,        & ! r_c'^2                [(kg^2)/(kg^2)]
-      wprtpthlp,   & ! w' r_t' th_l'         [(m kg K)/(s kg)]
-      crt1, crt2,  & 
-      cthl1, cthl2
+      wprtpthlp      ! w' r_t' th_l'         [(m kg K)/(s kg)]
 
     type(pdf_parameter), intent(out) :: & 
       pdf_params     ! pdf paramters         [units vary]
@@ -180,6 +178,10 @@ module pdf_closure_module
       rt2,       & ! Mean of r_t for 2nd normal distribution             [kg/kg]
       srt1,      & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
       srt2,      & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
+      crt1,      & ! Coefficient for s'                                      [-]
+      crt2,      & ! Coefficient for s'                                      [-]
+      cthl1,     & ! Coefficient for s'                                    [1/K]
+      cthl2,     & ! Coefficient for s'                                    [1/K]
       thl1,      & ! Mean of th_l for 1st normal distribution                [K]
       thl2,      & ! Mean of th_l for 2nd normal distribution                [K]
       sthl1,     & ! Variance of th_l for 1st normal distribution          [K^2]
@@ -700,6 +702,10 @@ module pdf_closure_module
     pdf_params%rt2(level)       = rt2
     pdf_params%srt1(level)      = srt1
     pdf_params%srt2(level)      = srt2
+    pdf_params%crt1(level)      = crt1
+    pdf_params%crt2(level)      = crt2
+    pdf_params%cthl1(level)     = cthl1
+    pdf_params%cthl2(level)     = cthl2
     pdf_params%thl1(level)      = thl1
     pdf_params%thl2(level)      = thl2
     pdf_params%sthl1(level)     = sthl1

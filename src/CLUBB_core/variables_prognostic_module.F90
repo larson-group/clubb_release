@@ -127,6 +127,10 @@ module variables_prognostic_module
       rt2,       & ! Mean of r_t for 2nd normal distribution             [kg/kg]
       srt1,      & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
       srt2,      & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
+      crt1,      & ! Coefficient for s'                                      [-]
+      crt2,      & ! Coefficient for s'                                      [-]
+      cthl1,     & ! Coefficient for s'                                    [1/K]
+      cthl2,     & ! Coefficient for s'                                    [1/K]
       thl1,      & ! Mean of th_l for 1st normal distribution                [K]
       thl2,      & ! Mean of th_l for 2nd normal distribution                [K]
       sthl1,     & ! Variance of th_l for 1st normal distribution          [K^2]
@@ -247,7 +251,7 @@ module variables_prognostic_module
     allocate( edsclrm(1:nzmax, 1:edsclr_dim) )
     allocate( wpsclrp(1:nzmax, 1:sclr_dim) )
 
-! Variables for pdf closure scheme
+    ! Variables for pdf closure scheme
     allocate( pdf_params%w1(1:nzmax),        pdf_params%w2(1:nzmax),  &
               pdf_params%sw1(1:nzmax),       pdf_params%sw2(1:nzmax),  &
               pdf_params%rt1(1:nzmax),       pdf_params%rt2(1:nzmax),  &
@@ -260,7 +264,9 @@ module variables_prognostic_module
               pdf_params%R1(1:nzmax),        pdf_params%R2(1:nzmax),  &
               pdf_params%s1(1:nzmax),        pdf_params%s2(1:nzmax),  &
               pdf_params%ss1(1:nzmax),       pdf_params%ss2(1:nzmax),  &
-              pdf_params%alpha_thl(1:nzmax), pdf_params%alpha_rt(1:nzmax) )
+              pdf_params%alpha_thl(1:nzmax), pdf_params%alpha_rt(1:nzmax), &
+              pdf_params%crt1(1:nzmax),      pdf_params%crt2(1:nzmax), &
+              pdf_params%cthl1(1:nzmax),     pdf_params%cthl2(1:nzmax) )
 
 
 
@@ -346,6 +352,10 @@ module variables_prognostic_module
     pdf_params%rrtthl    = 0.0
     pdf_params%alpha_thl = 0.0
     pdf_params%alpha_rt  = 0.0
+    pdf_params%crt1      = 0.0
+    pdf_params%crt2      = 0.0
+    pdf_params%cthl1     = 0.0
+    pdf_params%cthl2     = 0.0
 
     ! Surface fluxes
     wpthlp_sfc = 0.0
@@ -441,7 +451,9 @@ module variables_prognostic_module
                 pdf_params%R1,        pdf_params%R2,  &
                 pdf_params%s1,        pdf_params%s2,  &
                 pdf_params%ss1,       pdf_params%ss2,  &
-                pdf_params%alpha_thl, pdf_params%alpha_rt )
+                pdf_params%alpha_thl, pdf_params%alpha_rt, &
+                pdf_params%crt1,      pdf_params%crt2, &
+                pdf_params%cthl1,     pdf_params%cthl2 )
 
     ! Passive scalars
     deallocate( wpsclrp_sfc, wpedsclrp_sfc )

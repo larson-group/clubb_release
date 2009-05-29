@@ -17,7 +17,6 @@ module lh_sampler_mod
 !-------------------------------------------------------------------------------
   subroutine lh_sampler( n_micro_calls, nt_repeat, d_variables, p_matrix, & 
                          cf, pdf_params, level, & 
-                         crt1, crt2, cthl1, cthl2, & 
                          rrainm, & 
                          X_u, X_nl, l_sample_flag)
 ! Description:
@@ -67,9 +66,6 @@ module lh_sampler_mod
 
     integer, intent(in) :: level  ! Level info. for PDF parameters.
 
-    ! Quantities needed to predict higher order moments
-    real, intent(in) :: crt1, crt2, cthl1, cthl2 ! Coefficients for s
-
     ! Output Variables
     double precision, intent(out), dimension(n_micro_calls,d_variables+1) :: &
       X_u ! Sample drawn from uniform distribution
@@ -95,6 +91,8 @@ module lh_sampler_mod
 
     real :: s1, s2
     real :: R1, R2
+    real :: crt1, crt2
+    real :: cthl1, cthl2
 
     ! Clip the magnitude of the correlation between rt and thl
     real :: rrtthl_reduced
@@ -146,6 +144,10 @@ module lh_sampler_mod
     s1     = pdf_params%s1(level)
     s2     = pdf_params%s2(level)
     rrtthl = pdf_params%rrtthl(level)
+    crt1   = pdf_params%crt1(level)
+    crt2   = pdf_params%crt2(level)
+    cthl1  = pdf_params%cthl1(level)
+    cthl2  = pdf_params%cthl2(level)
 
     !-----------------------------------------------------------------------
     !
@@ -325,12 +327,12 @@ module lh_sampler_mod
       call sample_points( n_micro_calls, nt_repeat, d_variables, p_matrix, dble(a), & 
   !                    dble(1.e3*rt1), dble(thl1),  & 
   !                    dble(1.e3*rt2), dble(thl2), & 
-                          dble(crt1), dble(1.e3*cthl1),  & 
-                          dble(crt2), dble(1.e3*cthl2), & 
-                          dble(mu1), dble(mu2),  & 
+                          dble( crt1 ), dble(1.e3*cthl1),  & 
+                          dble( crt2 ), dble(1.e3*cthl2), & 
+                          dble( mu1 ), dble( mu2 ),  & 
                           Sigma_rtthlw_1, Sigma_rtthlw_2, & 
-                          dble(R1), dble(R2), & 
-                          X_u, X_nl)
+                          dble( R1 ), dble( R2 ), & 
+                          X_u, X_nl )
 
       ! End of overall if-then statement for Latin hypercube code
     end if

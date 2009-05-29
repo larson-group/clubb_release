@@ -150,13 +150,13 @@ module variables_diagnostic_module
 
 ! Latin Hypercube arrays.  Vince Larson 22 May 2005
   real, target, allocatable, dimension(:), public :: & 
-    AKm_est,   & ! Kessler ac estimate                 [kg/kg]
-    AKm,       & ! Exact Kessler ac                    [kg/kg]
-    AKstd,     & ! St dev of exact Kessler ac          [???]
-    AKstd_cld, & ! Stdev of exact w/in cloud ac        [???]
+    AKm_est,   & ! Kessler ac estimate                 [kg/kg/s]
+    AKm,       & ! Exact Kessler ac                    [kg/kg/s]
+    AKstd,     & ! St dev of exact Kessler ac          [kg/kg/s]
+    AKstd_cld, & ! Stdev of exact w/in cloud ac        [kg/kg/s]
     rcm_est,   & ! Monte Carlo rcm estimate            [kg/kg]
-    AKm_rcm,   & ! Kessler ac based on rcm             [???]
-    AKm_rcc      ! Kessler ac based on rcm/cf          [???]
+    AKm_rcm,   & ! Kessler ac based on rcm             [kg/kg/s]
+    AKm_rcc      ! Kessler ac based on rcm/cf          [kg/kg/s]
 
 !$omp threadprivate(AKm_est, AKm, AKstd, AKstd_cld, rcm_est, AKm_rcm, &
 !$omp   AKm_rcc)

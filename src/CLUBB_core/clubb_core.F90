@@ -352,8 +352,6 @@ module clubb_core
       height_time_matrix ! matrix of rand ints
 #endif
 
-    ! coeffs of s from pdf_closure
-    real :: crt1, crt2, cthl1, cthl2
     !-------- End Latin hypercube section ----------------------------------
 
     !----- Begin Code -----
@@ -572,8 +570,8 @@ module clubb_core
            wpthlp2(k), wp2thlp(k), wprtpthlp(k),                   & ! intent(out)
            cf(k), rcm(k), wpthvp(k), wp2thvp(k), rtpthvp(k),       & ! intent(out)
            thlpthvp(k), wprcp(k), wp2rcp(k), rtprcp(k), thlprcp(k),& ! intent(out)
-           rcp2(k), pdf_params, crt1,                              & ! intent(out)
-           crt2, cthl1, cthl2, err_code,                           & ! intent(out)
+           rcp2(k), pdf_params,                                    & ! intent(out)
+           err_code,                                               & ! intent(out)
            wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp(k,:),         & ! intent(out)
            wpsclrpthlp(k,:), sclrprcp(k,:), wp2sclrp(k,:) )          ! intent(out)
 
@@ -601,7 +599,7 @@ module clubb_core
 
         call latin_hypercube_sampling &
                    ( k, n_micro_call, d_variables, nt_repeat, i_rmd, &
-                     pdf_params, crt1, crt2, cthl1, cthl2, hydromet(:,iirrainm), &
+                     pdf_params, hydromet(:,iirrainm), &
                      cf, gr%nnzp, sample_flag, height_time_matrix )
       end if
 
@@ -867,7 +865,7 @@ module clubb_core
   !-----------------------------------------------------------------------
   subroutine latin_hypercube_sampling & 
              ( k, n, dvar, nt, i_rmd, & 
-               pdf_params, crt1, crt2, cthl1, cthl2, & 
+               pdf_params, & 
                rrainm, cf, grid, l_sflag, height_time_matrix )
     ! Description:
     !   Estimate using Latin Hypercubes.  This is usually disabled by default.
@@ -905,9 +903,6 @@ module clubb_core
     type(pdf_parameter), intent(in) :: &
       pdf_params ! PDF parameters [units vary]
 
-    ! coeffs of s from pdf_closure
-    real, intent(in) :: crt1, crt2, cthl1, cthl2
-
     real, dimension(grid), intent(in) ::  & 
       rrainm,  & ! Rain water mixing ratio  [kg/kg]
       cf         ! Cloud fraction           [%]
@@ -936,7 +931,6 @@ module clubb_core
     ! Generate LH sample, represented by X_u and X_nl, for level k
     call lh_sampler( n, nt, dvar, p_matrix,       & ! intent(in)
                      cf(k), pdf_params, k,        & ! intent(in)
-                     crt1, crt2, cthl1, cthl2,    & ! intent(in)
                      rrainm(k),                   & ! intent(in)
                      X_u, X_nl, l_sflag )           ! intent(out)
 
