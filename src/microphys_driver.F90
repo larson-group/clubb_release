@@ -16,21 +16,22 @@ module microphys_driver
 ! Mon. Wea. Rev., 128, 229-243, 2000. 
 !-------------------------------------------------------------------------------
   use parameters_microphys, only: &
-    l_cloud_sed,             & ! Cloud water sedimentation
-    l_ice_micro,             & ! Compute ice
-    l_graupel,               & ! Compute graupel
-    l_hail,                  & ! See module_mp_graupel for a description
-    l_seifert_beheng,        & ! Use Seifert and Beheng (2001) warm drizzle
-    l_predictnc,             & ! Predict cloud droplet number conc
-    l_specify_aerosol,       & ! Specify aerosol
-    l_subgrid_w,             & ! Use subgrid w 
-    l_arctic_nucl,           & ! Use MPACE observations
-    l_cloud_edge_activation, & ! Activate on cloud edges
-    l_fix_pgam,              & ! Fix pgam
-    micro_scheme,            & ! The microphysical scheme in use
-    hydromet_list,           & ! Names of the hydrometeor species
-    microphys_start_time,    & ! When to start the microphysics [s]
-    Ncm_initial                ! Initial value for Ncm
+    l_cloud_sed,                & ! Cloud water sedimentation (K&K or no microphysics)
+    l_ice_micro,                & ! Compute ice (COAMPS / Morrison)
+    l_graupel,                  & ! Compute graupel (Morrison)
+    l_hail,                     & ! See module_mp_graupel for a description
+    l_seifert_beheng,           & ! Use Seifert and Beheng (2001) warm drizzle (Morrison)
+    l_predictnc,                & ! Predict cloud droplet number conc (Morrison)
+    l_specify_aerosol,          & ! Specify aerosol (Morrison)
+    l_subgrid_w,                & ! Use subgrid w  (Morrison)
+    l_arctic_nucl,              & ! Use MPACE observations (Morrison)
+    l_cloud_edge_activation,    & ! Activate on cloud edges (Morrison)
+    l_fix_pgam,                 & ! Fix pgam (Morrison)
+    l_latin_hypercube_sampling, & ! Use Latin Hypercube Sampling (K&K only)
+    micro_scheme,               & ! The microphysical scheme in use
+    hydromet_list,              & ! Names of the hydrometeor species
+    microphys_start_time,       & ! When to start the microphysics [s]
+    Ncm_initial                   ! Initial value for Ncm (K&K, l_cloud_sed, Morrison)
 
   implicit none
 
@@ -118,6 +119,7 @@ module microphys_driver
       l_cloud_sed, l_ice_micro, l_graupel, l_hail, &
       l_seifert_beheng, l_predictnc, l_specify_aerosol, l_subgrid_w, &
       l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, &
+      l_latin_hypercube_sampling, &
       rrp2_rrainm2_cloud, Nrp2_Nrm2_cloud, Ncp2_Ncm2_cloud, &
       corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
       corr_sNc_NL_cloud, rrp2_rrainm2_below, &
@@ -182,8 +184,8 @@ module microphys_driver
     l_specify_aerosol = .true.
     l_subgrid_w = .true.
     l_arctic_nucl = .false.
-    l_cloud_edge_activation = .true.
     l_fix_pgam  = .false.
+    l_cloud_edge_activation = .true.
 
     ! Aerosol for RF02 from Mikhail Ovtchinnikov
     aer_rm1  = 0.011 ! Mean geometric radius                 [μ]
@@ -205,6 +207,11 @@ module microphys_driver
     ! Parameters for Morrison microphysics and Khairoutdinov & Kogan microphysics 
     !---------------------------------------------------------------------------
     Ncm_initial = 100. ! #/cm^3 
+
+    !---------------------------------------------------------------------------
+    ! Parameters for Khairoutdinov & Kogan microphysics 
+    !---------------------------------------------------------------------------
+    l_latin_hypercube_sampling = .false.
 
     !---------------------------------------------------------------------------
     ! Parameters for all microphysics schemes
@@ -473,7 +480,7 @@ module microphys_driver
         zt2zm
 
     use KK_microphys_module, only: & 
-        kk_microphys ! Procedure(s)
+        KK_microphys ! Procedure(s)
 
     use ice_dfsn_mod, only: & 
         ice_dfsn ! Procedure(s)
@@ -950,7 +957,7 @@ module microphys_driver
       ! Initialize tendencies to zero
       hydromet_mc(:,:) = 0.0
 
-      call kk_microphys & 
+      call KK_microphys & 
            ( dt, T_in_K, p_in_Pa, exner, rho,  & 
              thl1, thl2, a, rc1, rc2, s1,  & 
              s2, ss1, ss2, rcm, hydromet(:,iiNcm),  & 

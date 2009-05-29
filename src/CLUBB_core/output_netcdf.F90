@@ -447,7 +447,6 @@ module output_netcdf
       nparams ! Integer
 
     use model_flags, only: &
-      l_local_kk, & ! Logicals
       l_pos_def, &
       l_hole_fill, &
       l_clip_semi_implicit, &
@@ -460,6 +459,7 @@ module output_netcdf
 
     use parameters_microphys, only: &
       micro_scheme, & ! Variable(s)
+      l_local_kk, & ! Logicals
       l_cloud_sed
 
     use parameters_radiation, only: &

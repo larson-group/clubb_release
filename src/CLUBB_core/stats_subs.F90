@@ -1057,9 +1057,6 @@ module stats_subs
     use variables_prognostic_module, only: & 
       pdf_parameter ! Type
 
-    use model_flags, only: & 
-        l_LH_on ! Variable(s)
-
     use T_in_K_mod, only: & 
         thlm2T_in_K ! Procedure
 
@@ -1171,23 +1168,10 @@ module stats_subs
       call stat_update_var( iwprtpthlp, wprtpthlp, zt )
       call stat_update_var( isigma_sqd_w_zt, sigma_sqd_w_zt, zt )
       call stat_update_var( irho, rho, zt )
-!   call stat_update_var( iNcm, Ncm, zt )
-!   call stat_update_var( iNcnm, Ncnm, zt )
-!   call stat_update_var( iNim, Nim, zt )
-!   if ( l_cloud_sed ) then
-!      call stat_update_var( ised_rcm, sed_rcm, zt )
-!   endif
       call stat_update_var( irsat, rsat, zt )
-!   call stat_update_var( irrainm, hydromet(:,1), zt )
-!   call stat_update_var( iNrm, hydromet(:,2), zt )
-!   call stat_update_var( irsnowm, hydromet(:,3), zt )
-!   call stat_update_var( iricem, hydromet(:,4), zt )
-!   call stat_update_var( irgraupelm, hydromet(:,5), zt )
 
-      if ( l_LH_on ) then
-        call stat_update_var( iAKm, AKm, zt )
-        call stat_update_var( iAkm_est, AKm_est, zt)
-      endif
+      call stat_update_var( iAKm, AKm, zt )
+      call stat_update_var( iAkm_est, AKm_est, zt)
 
       call stat_update_var( iradht, radht, zt )
       call stat_update_var( ia, pdf_params%a, zt )

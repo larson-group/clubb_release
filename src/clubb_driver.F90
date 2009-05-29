@@ -162,8 +162,9 @@ module clubb_driver
 
     use parameters_radiation, only: init_radiation ! Subroutine
 
-    use model_flags, only: l_LH_on, l_local_kk, & ! Constants
-      l_pos_def, l_hole_fill, l_single_C2_Skw, l_gamma_Skw, l_byteswap_io
+    use model_flags, only: & 
+      l_pos_def, l_hole_fill, & ! Constants
+      l_single_C2_Skw, l_gamma_Skw, l_byteswap_io
 
     use stats_variables, only: l_stats_last ! Variable(s
 
@@ -473,8 +474,6 @@ module clubb_driver
       print *, "stats_tout = ", stats_tout
 
       print *, "Constant flags:"
-      print *, "l_LH_on = ", l_LH_on
-      print *, "l_local_kk = ", l_local_kk
       print *, "l_pos_def = ", l_pos_def
       print *, "l_hole_fill = ", l_hole_fill
       print *, "l_single_C2_Skw = ", l_single_C2_Skw

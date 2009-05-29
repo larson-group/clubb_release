@@ -13,11 +13,10 @@ module model_flags
   implicit none
 
   public :: setup_model_flags
+
   private ! Default Scope
 
   logical, parameter, public ::  & 
-    l_LH_on              = .false., & ! Latin hypercube calculation
-    l_local_kk           = .false., & ! Local drizzle for rain microphysics
     l_hyper_dfsn         = .false., & ! 4th-order hyper-diffusion
     l_pos_def            = .false., & ! Flux limiting pos. def. scheme on rtm
     l_hole_fill          = .true.,  & ! Hole filling pos. def. scheme on wp2,up2,rtp2,etc

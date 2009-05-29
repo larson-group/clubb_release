@@ -80,7 +80,6 @@ module clubb_core
       edsclr_dim
 
     use model_flags, only: & 
-      l_LH_on,  & ! Variable(s)
       l_tke_aniso, & 
       l_gamma_Skw
 
@@ -212,6 +211,9 @@ module clubb_core
       irsat,      &
       iwprtp_zt,  &
       iwpthlp_zt
+
+    use parameters_microphys, only: &
+      l_latin_hypercube_sampling
 
     implicit none
 
@@ -535,7 +537,7 @@ module clubb_core
 #ifdef UNRELEASED_CODE
     ! Latin hypercube sample generation
     ! Generate height_time_matrix, an nnzp x nt_repeat x d_variables array of random integers
-    if ( l_LH_on ) then
+    if ( l_latin_hypercube_sampling ) then
       i_rmd = mod( iter-1, sequence_length )
       if ( i_rmd == 0 ) then
         call permute_height_time( gr%nnzp, nt_repeat, d_variables+1, & ! intent(in)
@@ -588,7 +590,7 @@ module clubb_core
       !--------------------------------------------------------------
       ! Latin hypercube sampling
       !--------------------------------------------------------------
-      if ( l_LH_on ) then
+      if ( l_latin_hypercube_sampling ) then
 
         if ( iirrainm < 1 ) then
           write(fstderr,*) "Latin hypercube sampling is enabled, but there is"// &
@@ -603,11 +605,11 @@ module clubb_core
                      cf, gr%nnzp, sample_flag, height_time_matrix )
       end if
 
-    end do ! k = 2, gr%nnzp-1
-
     ! print*, 'advance_clubb_core: AKm=', AKm
     ! print*, 'advance_clubb_core: AKm_est=', AKm_est
 #endif 
+    end do ! k = 2, gr%nnzp-1
+
     ! Interpolate momentum variables back to momentum grid.
     ! Since top momentum level is higher than top thermo level,
     ! Set variables at top momentum level to 0.

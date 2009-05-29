@@ -164,13 +164,14 @@ module variables_diagnostic_module
   contains
 
 !-----------------------------------------------------------------------
-!  Allocates and initializes prognostic scalar and array variables
-!  for the CLUBB model code
-!-----------------------------------------------------------------------
   subroutine setup_diagnostic_variables( nzmax )
+! Description: 
+!   Allocates and initializes prognostic scalar and array variables
+!   for the CLUBB model code
+!-----------------------------------------------------------------------
 
-    use model_flags, only:  & 
-      l_LH_on ! Variable(s)
+    use parameters_microphys, only:  & 
+      l_latin_hypercube_sampling ! Variable(s)
 
     use constants, only:  & 
       emin ! Variables
@@ -263,7 +264,6 @@ module variables_diagnostic_module
 
 
 ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
-!       if ( l_LH_on ) then
     allocate( AKm_est(1:nzmax) )    ! Kessler ac estimate
     allocate( AKm(1:nzmax) )        ! Exact Kessler ac
     allocate( AKstd(1:nzmax) )      ! St dev of exact Kessler ac
@@ -271,7 +271,6 @@ module variables_diagnostic_module
     allocate( rcm_est(1:nzmax) )      ! Monte Carlo rcm estimate
     allocate( AKm_rcm(1:nzmax) )      ! Kessler ac based on rcm
     allocate( AKm_rcc(1:nzmax) )      ! Kessler ac based on rcm/cf
-!       end if ! l_LH_on
 ! End of variables for Latin hypercube.
 
     ! High-order passive scalars
@@ -359,7 +358,7 @@ module variables_diagnostic_module
 
 
     ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
-    if ( l_LH_on ) then
+    if ( l_latin_hypercube_sampling ) then
       AKm_est   = 0.0  ! Kessler ac estimate
       AKm       = 0.0  ! Exact Kessler ac
       AKstd     = 0.0  ! St dev of exact Kessler ac
@@ -367,7 +366,7 @@ module variables_diagnostic_module
       rcm_est   = 0.0  ! Monte Carlo rcm estimate
       AKm_rcm   = 0.0  ! Kessler ac based on rcm
       AKm_rcc   = 0.0  ! Kessler ac based on rcm/cf
-    end if ! l_LH_on
+    end if ! l_latin_hypercube_sampling
 
     ! Passive scalars
     if ( sclr_dim > 0 ) then
@@ -391,11 +390,9 @@ module variables_diagnostic_module
 !------------------------------------------------------------------------
   subroutine cleanup_diagnostic_variables( )
 
-!       Description:
-!       Subroutine to deallocate variables defined in module global
+! Description:
+!   Subroutine to deallocate variables defined in module global
 !------------------------------------------------------------------------
-    use model_flags, only: & 
-        l_LH_on ! Variable(s)
 
     implicit none
 

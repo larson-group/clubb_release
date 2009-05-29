@@ -6,7 +6,7 @@ module parameters_microphys
 !   Parameters for microphysical schemes
 
 ! References:
-! None
+!   None
 !-------------------------------------------------------------------------------
   use stats_precision, only: &
     time_precision
@@ -14,21 +14,25 @@ module parameters_microphys
   implicit none
 
   logical, public :: & 
-    l_cloud_sed,       & ! Cloud water sedimentation
-    l_ice_micro,       & ! Compute ice
-    l_graupel,         & ! Compute graupel
-    l_hail,            & ! 
-    l_seifert_beheng,  & ! Use Seifert and Behneng warm drizzle
-    l_predictnc,       & ! Predict cloud droplet number conc
-    l_specify_aerosol, & ! Specify aerosol
-    l_subgrid_w,       & ! Use subgrid w 
-    l_arctic_nucl,     & ! Use MPACE observations
-    l_cloud_edge_activation, &! Activate on cloud edges
-    l_fix_pgam  ! Fix pgam
+    l_cloud_sed,       & ! Cloud water sedimentation (K&K/No microphysics)
+    l_ice_micro,       & ! Compute ice (COAMPS/Morrison)
+    l_graupel,         & ! Compute graupel (COAMPS/Morrison)
+    l_hail,            & ! Assumption about graupel/hail? (Morrison)
+    l_seifert_beheng,  & ! Use Seifert and Behneng warm drizzle (Morrison)
+    l_predictnc,       & ! Predict cloud droplet number conc (Morrison)
+    l_specify_aerosol, & ! Specify aerosol (Morrison)
+    l_subgrid_w,       & ! Use subgrid w (Morrison)
+    l_arctic_nucl,     & ! Use MPACE observations (Morrison)
+    l_fix_pgam           ! Fix pgam (Morrison)
 
 !$omp threadprivate(l_cloud_sed, l_ice_micro, l_graupel, l_hail, &
 !$omp   l_seifert_beheng, l_predictnc, l_specify_aerosol, l_subgrid_w, &
-!$omp   l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam)
+!$omp   l_arctic_nucl, l_fix_pgam)
+
+  logical, public :: & 
+    l_cloud_edge_activation,  & ! Activate on cloud edges (Morrison)
+    l_latin_hypercube_sampling  ! Latin Hypercube Sampling (K&K)
+!$omp threadprivate(l_cloud_edge_activation, l_latin_hypercube_sampling)
 
 
   character(len=50), public :: &
@@ -50,6 +54,10 @@ module parameters_microphys
     Ncm_initial ! Initial cloud droplet number concentration
 
 !$omp threadprivate(Ncm_initial)
+
+  logical, parameter, public :: &
+    l_local_kk = .false.  ! Local drizzle for Khairoutdinov & Kogan microphysics
+
 
   private ! Default Scope
 

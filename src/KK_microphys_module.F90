@@ -107,8 +107,8 @@ module KK_microphys_module
     ! Monthly Weather Review, Volume 128, Issue 1 pp. 229–-243
     !-------------------------------------------------------------------
 
-    use model_flags, only: & 
-        l_LH_on ! Variable(s)
+    use parameters_microphys, only: & 
+        l_latin_hypercube_sampling ! Variable(s)
 
     use grid_class, only: & 
         gr,  & ! Variable(s)
@@ -419,7 +419,7 @@ module KK_microphys_module
 
       ! Vince Larson added option to call LH sampled Kessler autoconversion.
       ! 22 May 2005
-      if ( l_LH_on ) then
+      if ( l_latin_hypercube_sampling ) then
 
         !rrainm_auto(k) = AKm_est(k)
         rrainm_auto(k) = AKm(k)
@@ -431,7 +431,7 @@ module KK_microphys_module
                            s2(k), ss2(k), a(k), rho(k), & 
                            Ncp2_Ncm2(k), corr_sNc_NL(k) )
 
-      endif ! l_LH_on
+      endif ! l_latin_hypercube_sampling
       ! End Vince Larson's addition
 
       rrainm_accr(k)  & 
