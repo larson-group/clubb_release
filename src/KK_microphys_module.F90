@@ -600,7 +600,7 @@ module KK_microphys_module
         rho_lw, & 
         pi
 
-    USE model_flags, only: & 
+    USE parameters_microphys, only: & 
         l_local_kk ! Variable(s)
 
     implicit none
@@ -771,7 +771,7 @@ module KK_microphys_module
         Rd, & 
         Rv
 
-    USE model_flags, only: & 
+    USE parameters_microphys, only: & 
         l_local_kk ! Variable(s)
 
     USE saturation, only:  & 
@@ -1049,7 +1049,7 @@ module KK_microphys_module
     USE constants, only: & 
         Nc_tol,  & ! Variable(s)
         rc_tol
-    USE model_flags, only: & 
+    USE parameters_microphys, only: & 
         l_local_kk ! Variable(s)
 
     implicit none
@@ -1226,7 +1226,7 @@ module KK_microphys_module
         rr_tol,  & ! Variable(s)
         rc_tol
 
-    USE model_flags, only: & 
+    USE parameters_microphys, only: & 
         l_local_kk ! Variable(s)
 
     implicit none
