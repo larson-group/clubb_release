@@ -4,9 +4,9 @@
 module clubb_driver
 
 ! Description:
-! Contains the necessary subroutines to execute individual CLUBB
-! model runs, using one of the driver programs (the simplest case
-! being the hoc_standalone program).
+!   Contains the necessary subroutines to execute individual CLUBB
+!   model runs, using one of the driver programs (the simplest case
+!   being the clubb_standalone program).
 !-----------------------------------------------------------------------
 
   use stats_precision, only: time_precision ! Variable(s)
@@ -44,30 +44,31 @@ module clubb_driver
     deltaz,  & ! Change per grid level                 [m]
     zm_init    ! Initial point on the momentum grid    [m]
 
-  !$omp threadprivate(nzmax, grid_type, zm_init, deltaz)
+! Do not indent these omp directives, they must begin in the 2nd column
+!$omp threadprivate(nzmax, grid_type, zm_init, deltaz)
 
   ! For grid_type 2 or 3 (stretched grid cases)
   character(len=100), private :: & 
     zt_grid_fname, & ! Path and filename of thermodynamic level altitudes
     zm_grid_fname    ! Path and filename of momentum level altitudes
 
-  !$omp threadprivate(zt_grid_fname, zm_grid_fname)
+!$omp threadprivate(zt_grid_fname, zm_grid_fname)
 
   integer, private ::  & 
     day, month, year ! Day of start of simulation
 
-  !$omp threadprivate(day, month, year)
+!$omp threadprivate(day, month, year)
 
   real, private ::  & 
     rlat,  & ! Latitude  [Degrees North]
     rlon     ! Longitude [Degrees East]
 
-  !$omp threadprivate(rlat, rlon)
+!$omp threadprivate(rlat, rlon)
 
   character(len=50), private ::  & 
     runtype ! String identifying the model case; e.g. bomex
 
-  !$omp threadprivate(runtype)
+!$omp threadprivate(runtype)
 
   integer, private :: &
     sfctype ! 0: fixed sfc sensible and latent heat fluxes as
@@ -75,42 +76,32 @@ module clubb_driver
   !           1: bulk formula: uses given surface temperature
   !              and assumes over ocean
 
-  !$omp threadprivate(sfctype)
+!$omp threadprivate(sfctype)
 
   real(kind=time_precision), private :: & 
     time_initial,  & ! Time of start of simulation     [s]
     time_final,    & ! Time end of simulation          [s]
     time_spinup,   & ! Time end of spin up period      [s]
     time_current     ! Current time of simulation      [s]
-  !$omp threadprivate(time_initial, time_final, time_spinup, &
-  !$omp               time_current)
+!$omp threadprivate(time_initial, time_final, time_spinup, &
+!$omp               time_current)
 
   real(kind=time_precision), private ::  & 
     dtmain,      & ! Main model timestep                      [s]
     dtclosure,   & ! Closure model timestep                   [s]
     dt             ! Current model timestep (based on spinup) [s]
-  !$omp threadprivate(dtmain, dtclosure, dt)
+!$omp threadprivate(dtmain, dtclosure, dt)
 
   contains
 
   !-----------------------------------------------------------------------
   subroutine run_clubb & 
              ( params, runfile, err_code, l_stdout, l_input_fields )
-    !       Description:
-    !       Subprogram to integrate the pde equations for pdf closure.
-    !       This is the standard call.
+    ! Description:
+    !   Subprogram to integrate the pde equations for pdf closure.
 
-    !       Calls:  subroutine initialize_clubb (once)
-    !          subroutine advance_clubb_forcings (ifinal times)
-    !          subroutine hoc_closure_timestep (ifinal*niterlong times)
-    !          subroutine deallocate_model_arrays (once)
-    !          function invalid_model_arrays
-    !          subroutine set_fields (passed as a parameter)
-
-    !       Output:
-    !         err_code:  An error code is returned indicating the status of the
-    !         model. See error_code.F.
-
+    ! References:
+    !   None
     !-----------------------------------------------------------------------
 
     use grid_class, only: gr ! Variable(s)
@@ -191,7 +182,7 @@ module clubb_driver
     integer :: omp_get_thread_num ! Function
 #endif
     ! External
-    intrinsic :: mod, real, int
+    intrinsic :: mod, real, int, trim, floor, max
 
     ! Input Variables
     logical, intent(in) ::  & 
@@ -206,7 +197,8 @@ module clubb_driver
       runfile ! Name of file containing &model_setting and &sounding
 
     ! Output Variables
-    integer, intent(inout) :: err_code    ! valid run?
+    integer, intent(inout) :: &
+      err_code ! An error code is returned indicating the status of the run. See error_code.F90
 
     ! Local Variables
     ! Internal Timing Variables
@@ -359,7 +351,7 @@ module clubb_driver
     stats_tsamp  = 0.
     stats_tout   = 0.
 
-    ! Figure out which iounit to use
+    ! Figure out which I/O unit to use for OpenMP runs
 #ifdef _OPENMP
     iunit = omp_get_thread_num( ) + 10
 #else
@@ -610,8 +602,8 @@ module clubb_driver
 
 
     ! Time integration
-    ! Call hoc_closure_timestep once per each GrADS output time
-    ifinal = floor(( time_final - time_initial ) / dtmain)
+    ! Call advance_clubb_core once per each statistics output time
+    ifinal = floor( ( time_final - time_initial ) / dtmain )
 
 
 !-------------------------------------------------------------------------------
@@ -856,7 +848,7 @@ module clubb_driver
       hydromet ! Hydrometeor species    [kg/kg] or [#/kg]
 
     real, dimension(gr%nnzp), intent(inout) :: &
-      Ncnm ! Cloud nuclei number concentration
+      Ncnm ! Cloud nuclei number concentration (COAMPS microphysics)
 
     ! Output
     real, dimension(gr%nnzp,sclr_dim), intent(out) ::  & 
@@ -873,9 +865,10 @@ module clubb_driver
 
     integer :: k, err_code
 
-    character(len=50) :: theta_type
-    character(len=50) :: alt_type
-    character(len=50) :: subs_type
+    character(len=50) :: &
+      theta_type, & ! Type of temperature sounding 
+      alt_type,   & ! Type of altitude sounding
+      subs_type     ! Type of large-scale subsidence sounding
     !-----------------------------------------------------------------------
 
     err_code = clubb_no_error
@@ -887,7 +880,7 @@ module clubb_driver
                         alt_type, p_in_Pa, subs_type, wm_zt, &
                         sclrm, edsclrm )                          ! Intent(out)
 
-    select case( trim(alt_type) )
+    select case( trim( alt_type ) )
     case ( z_name )
 
       if (theta_type == temp_name ) then
@@ -951,6 +944,7 @@ module clubb_driver
 
       call hydrostatic( thvm, psfc, &                    ! Intent(in)
                         p_in_Pa, exner, rho, rho_zm )    ! Intent(out)
+
     case default ! ('Press[Pa]')
 
       exner(1) = ( psfc/p0 )**kappa
@@ -958,8 +952,8 @@ module clubb_driver
         exner(k) = (p_in_Pa(k)/p0) ** kappa  ! zt
       end do
 
-      if( trim( theta_type ) == temp_name ) then
-           thlm = thlm / exner
+      if ( trim( theta_type ) == temp_name ) then
+        thlm = thlm / exner
       end if
 
       select case ( trim( theta_type ) )
@@ -1024,8 +1018,8 @@ module clubb_driver
 
 
     ! Initialize imposed w
-    select case ( trim(subs_type) ) ! Perform different operations based off
-    !                                 sounding file
+    select case ( trim( subs_type ) ) ! Perform different operations based off
+    !                                   the sounding file
     case ( wm_name )
       wm_zm = zt2zm( wm_zt )
 
