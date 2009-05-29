@@ -792,6 +792,8 @@ module clubb_driver
     use arm_97, only: arm_97_init ! Procedure(s)
 
     use lba, only: lba_init ! Procedure(s)
+
+    use twp_ice, only: twp_ice_init ! Procedure(s)
 #endif
 
     use mpace_a, only: mpace_a_init ! Procedure(s)
@@ -975,7 +977,6 @@ module clubb_driver
       case default ! ('theta[K]')
         ! Initial profile is non-saturated thlm or any type of theta.
         thlm = thlm - Lv/(Cp*exner) * rcm
-
         ! Testing of passive scalars
         if ( iisclr_thl > 0 ) then
           sclrm(:,iisclr_thl) = thlm
@@ -1107,6 +1108,13 @@ module clubb_driver
 
       em = 1.0
       call arm_97_init( iunit, forcings_file_path )
+
+      ! twp_ice
+    case ( "twp_ice" )
+
+      em = 1.0
+      call twp_ice_init( iunit, forcings_file_path )
+      ! twp_ice case
 #endif
 
       ! GCSS FIRE Sc
@@ -1464,6 +1472,8 @@ module clubb_driver
     use arm_3year, only: arm_3year_init ! Procedure(s)
 
     use lba, only: lba_init ! Procedure(s)
+
+    use twp_ice, only: twp_ice_init ! Procedure(s)
 #endif
 
     use mpace_a, only: mpace_a_init ! Procedure(s)
@@ -1656,6 +1666,9 @@ module clubb_driver
 
     case( "lba" )
       call lba_init( iunit, forcings_file_path )
+
+    case( "twp_ice" )
+      call twp_ice_init( iunit, forcings_file_path )
 #endif
 
     case( "mpace_a" )
@@ -1810,6 +1823,8 @@ module clubb_driver
 
 #ifdef UNRELEASED_CODE
     use nov11, only: nov11_altocu_tndcy ! Procedure(s)
+
+    use twp_ice, only: twp_ice_tndcy, twp_ice_sfclyr ! Procedure(s)
 
     use jun25, only: jun25_altocu_tndcy ! Procedure(s)
 #endif
@@ -2010,6 +2025,12 @@ module clubb_driver
       call rico_tndcy( exner, &                            ! Intent(in)
                        thlm_forcing, rtm_forcing, radht, & ! Intent(out)   
                        sclrm_forcing, edsclrm_forcing )    ! Intent(out)
+
+    case ( "twp_ice" ) ! TWP_ICE case
+      call twp_ice_tndcy( time_current, p_in_Pa, thvm, &    ! Intent(in)
+                           wm_zt, wm_zm, thlm_forcing,  &   ! Intent(out)
+                           rtm_forcing, um_ref, vm_ref, &   ! Intent(out)
+                           sclrm_forcing, edsclrm_forcing ) ! Intent(out)                   
 #endif
 
     case ( "wangara" ) ! Wangara dry CBL
@@ -2230,6 +2251,14 @@ module clubb_driver
                         upwp_sfc, vpwp_sfc, wpthlp_sfc, &           ! Intent(out) 
                         wprtp_sfc, ustar, &                         ! Intent(out)
                         wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
+
+    case ( "twp_ice" )
+      call twp_ice_sfclyr( time_current, gr%zt(2), rho_zm(1), Tsfc, &    ! Intent(in)
+                            exner(1), thlm(2), um(2), vm(2), rtm(2), &   ! Intent(in)
+                            psfc, upwp_sfc, vpwp_sfc,  &                 ! Intent(out)
+                            wpthlp_sfc, wprtp_sfc, ustar, &              ! Intent(out)
+                            wpsclrp_sfc, wpedsclrp_sfc )                 ! Intent(out)
+                    
 #endif
 
     case ( "wangara" )
