@@ -800,6 +800,8 @@ module clubb_driver
 
     use error_code, only: clubb_no_error ! Variable(s)
 
+    use constants, only: fstderr ! Variables(s)
+
     use array_index, only: &
       iisclr_thl, iiedsclr_thl, & ! Variable(s)
       iiNcm
@@ -887,10 +889,11 @@ module clubb_driver
     case ( z_name )
 
       if (theta_type == temp_name ) then
-        stop 'Interpetation of sounding files with z as the independant'// &
-        'variable and absolute temperature as the temperature variable has not'//  &
-        'been implemented. Either specify pressure as the independant variable or'// &
+        write(fstderr,*) 'Interpetation of sounding files with z as the independant ', &
+        'variable and absolute temperature as the temperature variable has not ', &
+        'been implemented. Either specify pressure as the independant variable. or ', &
         'thm/thlm as the temperature variable'
+        stop
       end if
 
       ! At this point, thlm actually contains theta (except for DYCOMS).
