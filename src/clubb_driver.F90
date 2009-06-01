@@ -639,7 +639,7 @@ module clubb_driver
         exit ! Leave the main loop
       end if
 
-      call advance_clubb_forcings( dtmain, &     ! Intent(in)
+      call advance_clubb_forcings( i, dtmain, & ! Intent(in)
                                   err_code )    ! Intent(out)
 
       if ( err_code == clubb_rtm_level_not_found ) exit
@@ -1680,16 +1680,12 @@ module clubb_driver
   end subroutine restart_clubb
 
   !----------------------------------------------------------------------
-  subroutine advance_clubb_forcings( dt, err_code )
+  subroutine advance_clubb_forcings( iter, dt, err_code )
 
     ! Description:
-    ! Calculate tendency and surface variables
-
-    ! Calls: (* = model case)
-    !         subroutines *_sfclyr
-    !         subroutines *_tndncy
-    !         subroutine sfc_thermo_fluxes
-    !         subroutine sfc_momentum_fluxes
+    !   Calculate tendency and surface variables
+    ! References:
+    !   None
     !----------------------------------------------------------------------
 
     ! Modules to be included
@@ -1833,6 +1829,8 @@ module clubb_driver
     implicit none
 
     ! Input Variables
+    integer, intent(in) :: iter ! Model iteration number
+
     real(kind=time_precision), intent(in) :: & 
       dt         ! Model timestep                            [s]
 
@@ -2318,7 +2316,7 @@ module clubb_driver
     if ( trim( micro_scheme ) /= "none" ) then
 
       call advance_microphys &
-           ( runtype, dt, time_current, &                     ! Intent(in)
+           ( iter, runtype, dt, time_current, &               ! Intent(in)
              thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cf, & ! Intent(in) 
              wm_zt, wm_zm, Kh_zm, AKm_est, Akm, pdf_params, & ! Intent(in)
              wp2_zt, &                                        ! Intent(in)

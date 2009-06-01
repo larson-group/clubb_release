@@ -458,7 +458,7 @@ module microphys_driver
 
 !-------------------------------------------------------------------------------
   subroutine advance_microphys & 
-             ( runtype, dt, time_current,  & 
+             ( iter, runtype, dt, time_current,  & 
                thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cf, & 
                wm_zt, wm_zm, Kh_zm, AKm_est, AKm, pdf_params, & 
                wp2_zt, &
@@ -481,6 +481,9 @@ module microphys_driver
 
     use KK_microphys_module, only: & 
         KK_microphys ! Procedure(s)
+
+    use latin_hypercube_mod, only: &
+      latin_hypercube_driver ! Procedure
 
     use ice_dfsn_mod, only: & 
         ice_dfsn ! Procedure(s)
@@ -613,7 +616,9 @@ module microphys_driver
 
     implicit none
 
-    ! Constant Parameters
+    ! Input Variables
+
+    integer, intent(in) :: iter ! Model iteration number
 
     character(len=*), intent(in) :: & 
       runtype ! Name of the run, for case specific effects.
@@ -756,6 +761,10 @@ module microphys_driver
 
     ! Determine temperature in K for the microphysics
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
+
+   if ( l_latin_hypercube_sampling ) then
+      call latin_hypercube_driver( iter, gr%nnzp, pdf_params, hydromet, cf )
+   end if
 
    ! Begin by calling Brian Griffin's implementation of the
    ! Khairoutdinov and Kogan microphysical scheme, 

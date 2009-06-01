@@ -17,10 +17,6 @@ module clubb_core
     advance_clubb_core, & 
     cleanup_clubb_core
 
-#ifdef UNRELEASED_CODE
-  private :: latin_hypercube_sampling
-#endif
-
   private ! Default Scope
 
   contains
@@ -137,9 +133,6 @@ module clubb_core
       wpsclrprtp,  & ! w'sclr'rt'
       wpsclrpthlp    ! w'sclr'thl'
 
-    use variables_diagnostic_module, only: & 
-      hydromet ! Hydrometeor species (temporary fix for Latin Hypercube)
-
     use variables_prognostic_module, only: &
       pdf_parameter
 
@@ -186,14 +179,6 @@ module clubb_core
     use clip_explicit, only: & 
       clip_covariances_denom ! Procedure(s)
 
-    use array_index, only: &
-      iirrainm
-
-#ifdef UNRELEASED_CODE
-    use permute_height_time_mod, only:  & 
-      permute_height_time ! Procedure
-#endif
-
     use T_in_K_mod, only: &
       ! Read values from namelist
       thlm2T_in_K ! Procedure
@@ -212,16 +197,13 @@ module clubb_core
       iwprtp_zt,  &
       iwpthlp_zt
 
-    use parameters_microphys, only: &
-      l_latin_hypercube_sampling
-
     implicit none
 
     intrinsic :: sqrt, min, max, exp, mod
 
     ! Input
     integer, intent(in) ::  & 
-      iter      ! Closure iteration number
+      iter      ! Model iteration number
 
     logical, intent(in) ::  & 
       l_implemented ! Is this part of a larger host model (T/F) ?
@@ -327,32 +309,6 @@ module clubb_core
       upwp_cl_num,    & ! Instance of u'w' clipping (1st or 2nd).
       vpwp_cl_num       ! Instance of v'w' clipping (1st or 2nd).
 
-#ifdef UNRELEASED_CODE
-    !------- Local variables for Latin Hypercube sampling ------------------
-
-    integer :: i_rmd
-
-    ! Number of variables to sample
-    integer, parameter :: d_variables = 5
-
-    ! n = number of calls to microphysics per timestep (normally=2)
-    integer, parameter :: n_micro_call = 12
-
-    ! sequence_length = nt/n = number of timesteps before sequence repeats.
-    integer, parameter :: sequence_length = 1
-
-    ! nt = number of random samples before sequence of repeats (normally=10)
-    integer, parameter :: nt_repeat = n_micro_call * sequence_length
-
-    ! A true/false flag that determines whether
-    !     the PDF allows us to construct a sample
-    logical :: sample_flag
-
-    integer, dimension(gr%nnzp, nt_repeat, d_variables+1) :: & 
-      height_time_matrix ! matrix of rand ints
-#endif
-
-    !-------- End Latin hypercube section ----------------------------------
 
     !----- Begin Code -----
 
@@ -532,20 +488,6 @@ module clubb_core
        )
 
     sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )  ! Pos. def. quantity
-#ifdef UNRELEASED_CODE
-    ! Latin hypercube sample generation
-    ! Generate height_time_matrix, an nnzp x nt_repeat x d_variables array of random integers
-    if ( l_latin_hypercube_sampling ) then
-      i_rmd = mod( iter-1, sequence_length )
-      if ( i_rmd == 0 ) then
-        call permute_height_time( gr%nnzp, nt_repeat, d_variables+1, & ! intent(in)
-                                  height_time_matrix )                 ! intent(out)
-      end if
-    end if
-    ! End Latin hypercube sample generation
-
-    ! print*, 'advance_clubb_core: i_rmd=', i_rmd
-#endif /*UNRELEASED_CODE*/
 
     !----------------------------------------------------------------
     ! Call closure scheme
@@ -584,28 +526,6 @@ module clubb_core
         return
       end if
 
-#ifdef UNRELEASED_CODE
-      !--------------------------------------------------------------
-      ! Latin hypercube sampling
-      !--------------------------------------------------------------
-      if ( l_latin_hypercube_sampling ) then
-
-        if ( iirrainm < 1 ) then
-          write(fstderr,*) "Latin hypercube sampling is enabled, but there is"// &
-          " no rain water mixing ratio being predicted."
-          err_code = clubb_var_out_of_bounds
-          return
-        end if
-
-        call latin_hypercube_sampling &
-                   ( k, n_micro_call, d_variables, nt_repeat, i_rmd, &
-                     pdf_params, hydromet(:,iirrainm), &
-                     cf, gr%nnzp, sample_flag, height_time_matrix )
-      end if
-
-    ! print*, 'advance_clubb_core: AKm=', AKm
-    ! print*, 'advance_clubb_core: AKm_est=', AKm_est
-#endif 
     end do ! k = 2, gr%nnzp-1
 
     ! Interpolate momentum variables back to momentum grid.
@@ -856,98 +776,9 @@ module clubb_core
              sclrm, sclrm_forcing, edsclrm, edsclrm_forcing )      ! intent(in)
     end if
 
-!-----------------------------------------------------------------------
-
     return
   end subroutine advance_clubb_core
 
-#ifdef UNRELEASED_CODE
-  !-----------------------------------------------------------------------
-  subroutine latin_hypercube_sampling & 
-             ( k, n, dvar, nt, i_rmd, & 
-               pdf_params, & 
-               rrainm, cf, grid, l_sflag, height_time_matrix )
-    ! Description:
-    !   Estimate using Latin Hypercubes.  This is usually disabled by default.
-    !   The actual generation of a random matrix is done in a call from the
-    !   subroutine advance_clubb_core to permute_height_time()
-    ! References:
-    !   None
-    !-----------------------------------------------------------------------
-
-    use variables_diagnostic_module, only: & 
-        AKm_est,  & 
-        AKm, & 
-        AKstd, & 
-        AKstd_cld, & 
-        AKm_rcm, & 
-        AKm_rcc, & 
-        rcm_est
-
-    use variables_prognostic_module, only: & 
-      pdf_parameter
-
-    use lh_sampler_mod, only: & 
-        lh_sampler ! Procedure
-
-    use micro_calcs_mod, only: & 
-        micro_calcs ! Procedure
-
-    implicit none
-
-
-    ! Input Variables
-    integer, intent(in) :: k  ! index
-    integer, intent(in) :: n, dvar, i_rmd, nt, grid
-
-    type(pdf_parameter), intent(in) :: &
-      pdf_params ! PDF parameters [units vary]
-
-    real, dimension(grid), intent(in) ::  & 
-      rrainm,  & ! Rain water mixing ratio  [kg/kg]
-      cf         ! Cloud fraction           [%]
-
-    integer, dimension(1:grid, 1:nt, 1:(dvar+1) ), intent(in) :: & 
-      height_time_matrix ! matrix of rand ints
-
-    ! Output Variables
-    logical, intent(out) :: l_sflag
-
-    ! Local Variables
-
-    integer :: p_matrix(n, dvar+1)
-    ! Sample drawn from uniform distribution
-    double precision, dimension(1:n,1:(dvar+1)) :: X_u
-
-    ! Sample that is transformed ultimately to normal-lognormal
-    double precision, dimension(1:n,1:dvar) :: X_nl
-
-    ! Choose which rows of LH sample to feed into closure.
-    p_matrix(1:n,1:(dvar+1)) = & 
-      height_time_matrix( k,n*i_rmd+1:n*i_rmd+n, 1:(dvar+1) )
-
-    ! print*, 'latin_hypercube_sampling: got past p_matrix'
-
-    ! Generate LH sample, represented by X_u and X_nl, for level k
-    call lh_sampler( n, nt, dvar, p_matrix,       & ! intent(in)
-                     cf(k), pdf_params, k,        & ! intent(in)
-                     rrainm(k),                   & ! intent(in)
-                     X_u, X_nl, l_sflag )           ! intent(out)
-
-    !print *, 'latin_hypercube_sampling: got past lh_sampler'
-
-    ! Perform LH and analytic microphysical calculations
-    call micro_calcs( n, dvar, X_u, X_nl, l_sflag,                & ! intent(in)
-                      pdf_params, k,                              & ! intent(in)
-                      AKm_est(k), AKm(k), AKstd(k), AKstd_cld(k), & ! intent(out)
-                      AKm_rcm(k), AKm_rcc(k), rcm_est(k) )          ! intent(out)
-
-    !print*, 'k, AKm_est=', k, AKm_est(k)
-    !print*, 'k, AKm=', k, AKm(k)
-
-    return
-  end subroutine latin_hypercube_sampling
-#endif /*UNRELEASED_CODE*/
   !-----------------------------------------------------------------------
   subroutine setup_clubb_core & 
              ( nzmax, T0_in, ts_nudge_in, & ! In
