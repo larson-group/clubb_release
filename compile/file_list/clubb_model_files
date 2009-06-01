@@ -20,6 +20,7 @@
 ../src/coamps_micro_driver.F90
 ../src/cos_solar_zen.F90
 ../src/KK_microphys_module.F90
+../src/latin_hypercube_driver.F90
 ../src/microphys_driver.F90
 ../src/Parabolic_constants.f90
 ../src/Parabolic.f90
