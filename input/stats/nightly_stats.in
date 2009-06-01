@@ -2,6 +2,8 @@
 vars_zt =
 'thlm', 'rtm', 'cf', 'rcm', 'wp3',
 'um', 'vm', 'wm_zt', 'rrainm', 'Nrm',
+'Ncm', 'rgraupelm', 'ricem', 'Nim',
+'rsnowm', 'Nsnowm',
 ''
 
 vars_zm =
@@ -10,6 +12,6 @@ vars_zm =
 ''
 
 vars_sfc =
-'wp2_vert_avg', 'lwp',
+'wp2_vert_avg', 'lwp', 'swp', 'iwp',
 ''
 /

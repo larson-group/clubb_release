@@ -977,6 +977,8 @@ module stats_subs
         icc, & 
         izb, & 
         ilwp, &
+        iswp, &
+        iiwp, &
         ithlm_vert_avg, &
         irtm_vert_avg, &
         ium_vert_avg, &
@@ -1008,6 +1010,7 @@ module stats_subs
         gr ! Variable
 
     use variables_diagnostic_module, only: & 
+        hydromet, &
         thvm, & ! Variable(s)
         ug, & 
         vg, & 
@@ -1077,6 +1080,9 @@ module stats_subs
     use interpolation, only: & 
         lin_int ! Procedure
 
+    use array_index, only: & 
+        iirsnowm, iiricem
+
     implicit none
 
 ! Input Variable
@@ -1132,6 +1138,11 @@ module stats_subs
     integer :: i, k
 
     real :: xtmp
+
+    real, dimension(gr%nnzp) ::  & 
+      rsnowm,  & ! Snow mixing ratio                         [kg/kg]
+      ricem      ! Prisitine ice water mixing ratio          [kg/kg]
+
 
 ! Sample fields
 
@@ -1309,6 +1320,44 @@ module stats_subs
         enddo
 
         call stat_update_var_pt( ilwp, 1, xtmp, sfc )
+
+      endif
+
+      ! Snow Water Path
+      if ( iswp > 0 ) then
+
+        ! Calculate rsnowm      
+        if ( iirsnowm > 0 ) then
+          rsnowm = hydromet(1:gr%nnzp,iirsnowm)
+        else
+          rsnowm = 0.0
+        end if
+              
+        xtmp = 0.
+        do i = gr%nnzp-1, 1, -1
+          xtmp = xtmp + rho(i+1) * rsnowm(i+1) / gr%dzt(i+1)
+        enddo
+
+        call stat_update_var_pt( iswp, 1, xtmp, sfc )
+
+      endif
+
+      ! Ice Water Path
+      if ( iiwp > 0 ) then
+
+        ! Calculate ricem      
+        if ( iiricem > 0 ) then
+          ricem = hydromet(1:gr%nnzp,iiricem)
+        else
+          ricem = 0.0
+        end if
+
+        xtmp = 0.
+        do i = gr%nnzp-1, 1, -1
+          xtmp = xtmp + rho(i+1) * ricem(i+1) / gr%dzt(i+1)
+        enddo
+
+        call stat_update_var_pt( iiwp, 1, xtmp, sfc )
 
       endif
 

@@ -104,7 +104,7 @@ l_stats      = .true.           ! Flag for statistical output.
 fname_prefix = "twp_ice"  ! Prefix of output filename.
 stats_tsamp  = 60.              ! Frequency of statistical sampling [s]
                                 ! (must multiply evenly into stats_tout).
-stats_tout   = 60.              ! Frequency of statistical output.  [s]
+stats_tout   = 3600.              ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"          ! Type of statistical output file (GrADS or netCDF).
 
 /

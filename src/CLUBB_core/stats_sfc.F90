@@ -34,7 +34,9 @@ use stats_variables, only: &
     ilh, & 
     ish, & 
     icc, & 
-    ilwp, & 
+    ilwp, &
+    iiwp, &
+    iswp, & 
     izb, & 
     izi, & 
     irain, & 
@@ -90,6 +92,8 @@ ilh             = 0
 ish             = 0
 icc             = 0
 ilwp            = 0
+iiwp            = 0
+iswp            = 0
 izb             = 0
 izi             = 0
 irain           = 0   ! Brian
@@ -177,6 +181,18 @@ do i=1,sfc%nn
     ilwp = k
     call stat_assign(ilwp,"lwp", & 
          "Liquid water path [kg/m^2]","kg/m2",sfc)
+    k = k + 1
+
+  case ('iwp')
+    iiwp = k
+    call stat_assign(iiwp,"iwp", & 
+         "Ice water path [kg/m^2]","kg/m2",sfc)
+    k = k + 1
+
+  case ('swp')
+    iswp = k
+    call stat_assign(iswp,"swp", & 
+         "Snow water path [kg/m^2]","kg/m2",sfc)
     k = k + 1
 
   case ('zb')
