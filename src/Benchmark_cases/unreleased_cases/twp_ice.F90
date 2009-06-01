@@ -192,8 +192,8 @@ if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
 return
 end subroutine twp_ice_tndcy
 !----------------------------------------------------------------------
-subroutine twp_ice_sfclyr( time, z, rho0, sst, exner_sfc, & 
-                            thlm_sfc, um_sfc, vm_sfc, rtm, psfc,  & 
+subroutine twp_ice_sfclyr( z, sst, exner_sfc, thlm_sfc, & 
+                            um_sfc, vm_sfc, rtm, psfc,  & 
                             upwp_sfc, vpwp_sfc, & 
                             wpthlp_sfc, wprtp_sfc, ustar, & 
                             wpsclrp_sfc, wpedsclrp_sfc )
@@ -225,13 +225,8 @@ real, parameter :: &
   C_q_20  = 0.001133,  & ! Drag coefficient, defined by RICO 3D specification
   z0      = 0.00015      ! Roughness length, defined by ATEX specification
 
-! Input Variables
-real(kind=time_precision), intent(in) ::  & 
-  time      ! Current time        [s] 
-
 real, intent(in) ::  & 
   z,             & ! Height at zt=2      [s] 
-  rho0,          & ! Density at zm=1     [kg/m^3]
   sst,           & ! Sea surface temp    [K]
   exner_sfc,     & ! Exner function at (2) 
   um_sfc,        & ! um at (2)           [m/s]

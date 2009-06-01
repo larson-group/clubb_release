@@ -2246,11 +2246,11 @@ module clubb_driver
                         wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
 
     case ( "twp_ice" )
-      call twp_ice_sfclyr( time_current, gr%zt(2), rho_zm(1), Tsfc, &    ! Intent(in)
-                            exner(1), thlm(2), um(2), vm(2), rtm(2), &   ! Intent(in)
-                            psfc, upwp_sfc, vpwp_sfc,  &                 ! Intent(out)
-                            wpthlp_sfc, wprtp_sfc, ustar, &              ! Intent(out)
-                            wpsclrp_sfc, wpedsclrp_sfc )                 ! Intent(out)
+      call twp_ice_sfclyr( gr%zt(2), Tsfc, exner(1), thlm(2), &     ! Intent(in)
+                            um(2), vm(2), rtm(2), &                 ! Intent(in)
+                            psfc, upwp_sfc, vpwp_sfc,  &            ! Intent(out)
+                            wpthlp_sfc, wprtp_sfc, ustar, &         ! Intent(out)
+                            wpsclrp_sfc, wpedsclrp_sfc )            ! Intent(out)
                     
 #endif
 
