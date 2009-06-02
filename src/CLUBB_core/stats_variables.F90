@@ -362,13 +362,13 @@ module stats_variables
     isclrm,    & ! Passive scalar mean (1)
     isclrm_f     ! Passive scalar forcing (1)
 
-!$omp   threadprivate(isclrm, isclrm, isclrm_f, isclrm_f)
+!$omp   threadprivate(isclrm, isclrm_f)
 
   integer, target, allocatable, dimension(:), public :: & 
     iedsclrm,   & ! Eddy-diff. scalar term (1)
     iedsclrm_f    ! Eddy-diffusivity scalar forcing (1)
 
-!$omp   threadprivate(iedsclrm, iedsclrm, iedsclrm_f, iedsclrm_f)
+!$omp   threadprivate(iedsclrm, iedsclrm_f)
 
 !       Indices for statistics in zm file
 
