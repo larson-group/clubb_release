@@ -219,6 +219,36 @@ avg_rrainm_cgbe = 0;
 avg_rrainm_1217 = 0;
 avg_rrainm_prev = 0;
 avg_rrainm_curr = 0;
+avg_rsnowm_les = 0;
+avg_rsnowm_cgbe = 0;
+avg_rsnowm_1217 = 0;
+avg_rsnowm_prev = 0;
+avg_rsnowm_curr = 0;
+avg_Nsnowm_les = 0;
+avg_Nsnowm_cgbe = 0;
+avg_Nsnowm_1217 = 0;
+avg_Nsnowm_prev = 0;
+avg_Nsnowm_curr = 0;
+avg_Nim_les = 0;
+avg_Nim_cgbe = 0;
+avg_Nim_1217 = 0;
+avg_Nim_prev = 0;
+avg_Nim_curr = 0;
+avg_ricem_les = 0;
+avg_ricem_cgbe = 0;
+avg_ricem_1217 = 0;
+avg_ricem_prev = 0;
+avg_ricem_curr = 0;
+avg_rgraupelm_les = 0;
+avg_rgraupelm_cgbe = 0;
+avg_rgraupelm_1217 = 0;
+avg_rgraupelm_prev = 0;
+avg_rgraupelm_curr = 0;
+avg_Ncm_les = 0;
+avg_Ncm_cgbe = 0;
+avg_Ncm_1217 = 0;
+avg_Ncm_prev = 0;
+avg_Ncm_curr = 0;
 avg_Nrm_les = 0;
 avg_Nrm_cgbe = 0;
 avg_Nrm_1217 = 0;
@@ -538,6 +568,12 @@ les_Nrm         = 'nrm ';
 les_up2		= 'up2 ';
 les_vp2		= 'vp2 ';
 les_lwp		= 'lwp ';
+les_nim		= 'nim ';
+les_ricem	= 'qim ';
+les_rgraupelm	= 'qgm ';
+les_ncm		= 'ncm ';
+les_rsnowm	= 'qsm ';
+les_nsnowm	= ''; %Nonexistent
 
 if ( strcmp(les_type, 'rams' ) )
 
@@ -562,7 +598,11 @@ if ( strcmp(les_type, 'rams' ) )
 	les_Nrm         = 'nrm ';
 	les_up2		= 'up2 ';
 	les_vp2		= 'vp2 ';
-
+	les_nim		= 'nim ';
+	les_ricem	= 'qim ';
+	les_rgraupelm	= 'qgm ';
+	les_ncm		= 'ncm ';
+	les_rsnowm	= 'qsm ';
 end
 
 % Find the appropriate output timesteps in each file for the beginning and
@@ -1226,6 +1266,97 @@ create_plot(3, 2, 2, 'Rain Drop Concentration, N_r', 'Nrm    [num/m^3]', avg_Nrm
 
 %--------------------------------------------------------------------------
 
+% Cloud droplet concentration (var "Ncm")
+[avg_Ncm_les, avg_Ncm_cgbe, avg_Ncm_1217, avg_Ncm_prev, avg_Ncm_curr] = var_load( filename_les, listofparams_les, ...
+		numvars_les, les_ncm, nz_les, t1_les, t2_les, filename_cgbe_zt, listofparams_cgbe_zt, numvars_cgbe_zt, 'Ncm ', nz_cgbe_zt, t1_cgbe_zt, ...
+		t2_cgbe_zt, filename_1217_zt, listofparams_1217_zt, numvars_1217_zt, 'Ncm ', nz_1217_zt, t1_1217_zt, t2_1217_zt, filename_prev_zt, listofparams_prev_zt, ...
+		numvars_prev_zt, 'Ncm ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, numvars_curr_zt, ...
+		'Ncm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
+
+if ( cmp_les == 1 )
+   if ( strcmp( les_type, 'coamps' ) )
+      avg_Ncm_les = (10^6).*avg_Ncm_les;
+   end
+end
+
+create_plot(3, 2, 3, 'Cloud Droplet Concentration', 'Ncm    [num/m^3]', avg_Ncm_les, z_les, nz_les, avg_Ncm_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_Ncm_1217, z_1217_zt, nz_1217_zt, ...
+		avg_Ncm_prev, z_prev_zt, nz_prev_zt, avg_Ncm_curr, z_curr_zt, nz_curr_zt, 0);
+		
+%--------------------------------------------------------------------------
+
+% Graupel mixing ratio (var "rgraupelm")
+[avg_rgraupelm_les, avg_rgraupelm_cgbe, avg_rgraupelm_1217, avg_rgraupelm_prev, avg_rgraupelm_curr] = var_load( filename_les, listofparams_les, ...
+		numvars_les, les_rgraupelm, nz_les, t1_les, t2_les, filename_cgbe_zt, listofparams_cgbe_zt, numvars_cgbe_zt, 'rgraupelm ', nz_cgbe_zt, t1_cgbe_zt, ...
+		t2_cgbe_zt, filename_1217_zt, listofparams_1217_zt, numvars_1217_zt, 'rgraupelm ', nz_1217_zt, t1_1217_zt, t2_1217_zt, filename_prev_zt, listofparams_prev_zt, ...
+		numvars_prev_zt, 'rgraupelm ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, numvars_curr_zt, ...
+		'rgraupelm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
+
+create_plot(3, 2, 4, 'Graupel Mixing Ratio', 'rgraupelm    [kg/kg]', avg_rgraupelm_les, z_les, nz_les, avg_rgraupelm_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_rgraupelm_1217, z_1217_zt, nz_1217_zt, ...
+		avg_rgraupelm_prev, z_prev_zt, nz_prev_zt, avg_rgraupelm_curr, z_curr_zt, nz_curr_zt, 0);
+
+%--------------------------------------------------------------------------
+
+% Cloud ice mixing ratio (var "ricem")
+[avg_ricem_les, avg_ricem_cgbe, avg_ricem_1217, avg_ricem_prev, avg_ricem_curr] = var_load( filename_les, listofparams_les, ...
+		numvars_les, les_ricem, nz_les, t1_les, t2_les, filename_cgbe_zt, listofparams_cgbe_zt, numvars_cgbe_zt, 'ricem ', nz_cgbe_zt, t1_cgbe_zt, ...
+		t2_cgbe_zt, filename_1217_zt, listofparams_1217_zt, numvars_1217_zt, 'ricem ', nz_1217_zt, t1_1217_zt, t2_1217_zt, filename_prev_zt, listofparams_prev_zt, ...
+		numvars_prev_zt, 'ricem ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, numvars_curr_zt, ...
+		'ricem ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
+
+create_plot(3, 2, 5, 'Cloud Ice Mixing Ratio', 'ricem    [kg/kg]', avg_ricem_les, z_les, nz_les, avg_ricem_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_ricem_1217, z_1217_zt, nz_1217_zt, ...
+		avg_ricem_prev, z_prev_zt, nz_prev_zt, avg_ricem_curr, z_curr_zt, nz_curr_zt, 0);
+
+%--------------------------------------------------------------------------
+
+% Cloud ice concentration (var "Nim")
+[avg_Nim_les, avg_Nim_cgbe, avg_Nim_1217, avg_Nim_prev, avg_Nim_curr] = var_load( filename_les, listofparams_les, ...
+		numvars_les, les_nim, nz_les, t1_les, t2_les, filename_cgbe_zt, listofparams_cgbe_zt, numvars_cgbe_zt, 'Nim ', nz_cgbe_zt, t1_cgbe_zt, ...
+		t2_cgbe_zt, filename_1217_zt, listofparams_1217_zt, numvars_1217_zt, 'Nim ', nz_1217_zt, t1_1217_zt, t2_1217_zt, filename_prev_zt, listofparams_prev_zt, ...
+		numvars_prev_zt, 'Nim ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, numvars_curr_zt, ...
+		'Nim ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
+
+if ( cmp_les == 1 )
+   if ( strcmp( les_type, 'coamps' ) )
+      avg_Nim_les = (10^6).*avg_Nim_les;
+   end
+end
+
+create_plot(3, 2, 6, 'Cloud Ice Concentration', 'Nim    [num/m^3]', avg_Nim_les, z_les, nz_les, avg_Nim_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_Nim_1217, z_1217_zt, nz_1217_zt, ...
+		avg_Nim_prev, z_prev_zt, nz_prev_zt, avg_Nim_curr, z_curr_zt, nz_curr_zt, 0);
+
+% Print 4rd Page for Case (.eps document)
+outputfilename = [ case_name, '_page4' ];
+print_page(outputfilename, 1, 0, 1);
+
+figure('Position',[ 0 0 fig_width fig_height ])
+set(gcf, 'PaperPositionMode', 'manual')
+set(gcf, 'PaperUnits', 'inches')
+set(gcf, 'PaperPosition', [ 1.0 1.0 6.5 9.0 ])
+
+% Snow mixing ratio (var "rsnowm")
+[avg_rsnowm_les, avg_rsnowm_cgbe, avg_rsnowm_1217, avg_rsnowm_prev, avg_rsnowm_curr] = var_load( filename_les, listofparams_les, ...
+		numvars_les, les_rsnowm, nz_les, t1_les, t2_les, filename_cgbe_zt, listofparams_cgbe_zt, numvars_cgbe_zt, 'rsnowm ', nz_cgbe_zt, t1_cgbe_zt, ...
+		t2_cgbe_zt, filename_1217_zt, listofparams_1217_zt, numvars_1217_zt, 'rsnowm ', nz_1217_zt, t1_1217_zt, t2_1217_zt, filename_prev_zt, listofparams_prev_zt, ...
+		numvars_prev_zt, 'rsnowm ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, numvars_curr_zt, ...
+		'rsnowm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
+
+create_plot(3, 2, 1, 'Snow Mixing Ratio', 'rsnowm    [kg/kg]', avg_rsnowm_les, z_les, nz_les, avg_rsnowm_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_rsnowm_1217, z_1217_zt, nz_1217_zt, ...
+		avg_rsnowm_prev, z_prev_zt, nz_prev_zt, avg_rsnowm_curr, z_curr_zt, nz_curr_zt, 0);
+
+%--------------------------------------------------------------------------
+
+% Snow number concentration (var "Nsnowm")
+[avg_Nsnowm_les, avg_Nsnowm_cgbe, avg_Nsnowm_1217, avg_Nsnowm_prev, avg_Nsnowm_curr] = var_load( filename_les, listofparams_les, ...
+		numvars_les, les_nsnowm, nz_les, t1_les, t2_les, filename_cgbe_zt, listofparams_cgbe_zt, numvars_cgbe_zt, 'Nsnowm ', nz_cgbe_zt, t1_cgbe_zt, ...
+		t2_cgbe_zt, filename_1217_zt, listofparams_1217_zt, numvars_1217_zt, 'Nsnowm ', nz_1217_zt, t1_1217_zt, t2_1217_zt, filename_prev_zt, listofparams_prev_zt, ...
+		numvars_prev_zt, 'Nsnowm ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, numvars_curr_zt, ...
+		'Nsnowm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
+
+create_plot(3, 2, 2, 'Snow Number Concentration', 'Nsnowm    [num/m^3]', avg_Nsnowm_les, z_les, nz_les, avg_Nsnowm_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_Nsnowm_1217, z_1217_zt, nz_1217_zt, ...
+		avg_Nsnowm_prev, z_prev_zt, nz_prev_zt, avg_Nsnowm_curr, z_curr_zt, nz_curr_zt, 0);
+
+%--------------------------------------------------------------------------
+
 % Liquid water path (var lwp from sfc files)	
 [avg_lwp_prev, avg_lwp_curr] = time_tendency_load( filename_prev_sfc, listofparams_prev_sfc, ...
 		numvars_prev_sfc, 'lwp ', 1, max(size(timesteps_prev)), filename_curr_sfc, listofparams_curr_sfc, numvars_curr_sfc, ...
@@ -1246,9 +1377,29 @@ create_time_plot(3, 2, 4, 'Vertically Averaged wp2', 'wp2    [m^2/s^2]', ...
 
 %--------------------------------------------------------------------------
 
+% Ice water path (var iwp from sfc files)	
+[avg_iwp_prev, avg_iwp_curr] = time_tendency_load( filename_prev_sfc, listofparams_prev_sfc, ...
+		numvars_prev_sfc, 'iwp ', 1, max(size(timesteps_prev)), filename_curr_sfc, listofparams_curr_sfc, numvars_curr_sfc, ...
+		'iwp ', 1, max(size(timesteps_curr)));
+
+create_time_plot(3, 2, 5, 'Cloud Ice Water Path', 'iwp    [kg/m^2]', ...
+		avg_iwp_prev, timesteps_prev, avg_iwp_curr, timesteps_curr );
+
+%--------------------------------------------------------------------------
+
+% Snow water path (var swp from sfc files)	
+[avg_swp_prev, avg_swp_curr] = time_tendency_load( filename_prev_sfc, listofparams_prev_sfc, ...
+		numvars_prev_sfc, 'swp ', 1, max(size(timesteps_prev)), filename_curr_sfc, listofparams_curr_sfc, numvars_curr_sfc, ...
+		'swp ', 1, max(size(timesteps_curr)));
+
+create_time_plot(3, 2, 6, 'Snow Water Path', 'swp    [kg/m^2]', ...
+		avg_swp_prev, timesteps_prev, avg_swp_curr, timesteps_curr );		
+
+%--------------------------------------------------------------------------
+
 
 % Print 4th Page for Case (.eps document)
-outputfilename = [ case_name, '_page4' ];
+outputfilename = [ case_name, '_page5' ];
 print_page(outputfilename, 1, 0, 1);
 
 % Statement
