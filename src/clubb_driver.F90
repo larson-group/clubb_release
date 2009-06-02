@@ -1026,7 +1026,7 @@ module clubb_driver
       wm_zm(gr%nnzp) = 0.0
     case ( omega_name )
       do k=2,gr%nnzp
-         wm_zt(k) = -wm_zt(k) * Rd * thvm(k) / p_in_Pa(k) / grav
+         wm_zt(k) = -wm_zt(k) / ( grav*rho(k) )
       end do
 
       wm_zt(1) = 0.0
