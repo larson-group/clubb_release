@@ -971,7 +971,7 @@ module microphys_driver
              thl1, thl2, a, rc1, rc2, s1,  & 
              s2, ss1, ss2, rcm, hydromet(:,iiNcm),  & 
              hydromet(:,iirrainm), hydromet(:,iiNrm), & 
-             .true., AKm,  & 
+             .true., AKm, AKm_est, & 
              hydromet_mc(:,iirrainm), hydromet_mc(:,iiNrm),  & 
              rtm_mc, thlm_mc, & 
              hydromet_vel(:,iirrainm), hydromet_vel(:,iiNrm) )

@@ -89,7 +89,7 @@ module KK_microphys_module
              ( dt, T_in_K, p_in_Pa, exner, rho,  & 
                thl1, thl2, a, rc1, rc2, s1, & 
                s2, ss1, ss2, rcm, Ncm, rrainm, Nrm,  & 
-               l_sample,  AKm, & 
+               l_sample,  AKm, AKm_est, & 
                rrainm_mc_tndcy, Nrm_mc_tndcy,  & 
                rtm_mc, thlm_mc, & 
                Vrr, VNr )
@@ -169,7 +169,8 @@ module KK_microphys_module
 
     ! Latin hypercube variables - Vince Larson 22 May 2005
     real, intent(in), dimension(gr%nnzp) :: & 
-      AKm      ! Latin hypercube estimate of Kessler autoconversion
+      AKm,   & ! Kessler autoconversion
+      AKm_est  ! Latin hypercube estimate of Kessler autoconversion
 
     logical, intent(in) :: & 
       l_sample ! Whether to sample stats for this call
@@ -320,7 +321,7 @@ module KK_microphys_module
     ! Save mean volume radius for stats purposes
     ! Note: added l_sample for latin hypercube sampling -dschanen
     if ( l_sample .and. l_stats_samp ) then
-      call stat_update_var(imean_vol_rad_rain, mean_vol_rad, zt )
+      call stat_update_var( imean_vol_rad_rain, mean_vol_rad, zt )
     endif
 
 
