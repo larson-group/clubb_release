@@ -394,7 +394,7 @@ module sounding
     !
     !-----------------------------------------------------------------------------------------------
     use input_reader, only: read_one_dim_file, fill_blanks_one_dim_vars, &
-                            one_dim_read_var
+                            one_dim_read_var, deallocate_one_dim_vars
 
     implicit none
 
@@ -454,7 +454,7 @@ module sounding
 
     nlevels = size(retVars(1)%values)
 
-    !call deallocate_one_dim_vars( nCol, retVars)
+    call deallocate_one_dim_vars( nCol, retVars )
 
   end subroutine read_sounding_file
 
@@ -466,7 +466,7 @@ module sounding
     !
     !-----------------------------------------------------------------------------------------------
     use input_reader, only: read_one_dim_file, fill_blanks_one_dim_vars, &
-                            one_dim_read_var
+                            one_dim_read_var, deallocate_one_dim_vars
 
     use parameters_model, only: sclr_dim
 
@@ -512,7 +512,7 @@ module sounding
       sclr(1:size(retVars(i)%values),i) = retVars(i)%values
     end do
 
-    !call deallocate_one_dim_vars( nCol, retVars)
+    call deallocate_one_dim_vars( sclr_dim, retVars)
 
   end subroutine read_sclr_sounding_file
 
@@ -524,7 +524,7 @@ module sounding
     !
     !-----------------------------------------------------------------------------------------------
     use input_reader, only: read_one_dim_file, fill_blanks_one_dim_vars, &
-                            one_dim_read_var
+                            one_dim_read_var, deallocate_one_dim_vars
 
     use parameters_model, only: edsclr_dim
 
@@ -569,7 +569,7 @@ module sounding
       edsclr(1:size(retVars(i)%values),i) = retVars(i)%values
     end do
 
-    !call deallocate_one_dim_vars( nCol, retVars)
+    call deallocate_one_dim_vars( edsclr_dim, retVars )
 
   end subroutine read_edsclr_sounding_file
 

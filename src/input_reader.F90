@@ -16,7 +16,8 @@ module input_reader
             read_one_dim_file, &
             two_dim_read_var, &
             read_two_dim_file, &
-            fill_blanks_one_dim_vars
+            fill_blanks_one_dim_vars, &
+            deallocate_one_dim_vars
 
   ! Derived type for representing a rank 1 variable that has been read in by one
   ! of the procedures.
@@ -281,22 +282,30 @@ module input_reader
     end if
     return
   end function linear_fill_blanks
+  !----------------------------------------------------------------------------
+  subroutine deallocate_one_dim_vars( num_vars, one_dim_vars )
+  !
+  !  Description: This subroutine deallocates the pointer stored in
+  !  one_dim_vars%value for the whole array
+  !
+  !------------------------------------------------------------------------------
+    implicit none
+   
+    ! Input Variable(s) 
+    integer, intent(in) :: num_vars ! Number of elements in one_dim_vars
 
-  !subroutine deallocate_one_dim_vars( num_vars, one_dim_vars )
-  !  integer, intent(in) :: num_vars ! Number of elements in one_dim_vars
+    type(one_dim_read_var), dimension(num_vars), intent(in):: one_dim_vars ! Read data
+    !                                                                        that may have gaps.
 
-  ! Input/Output Variable(s)
-  !  type(one_dim_read_var), dimension(num_vars), intent(in):: one_dim_vars ! Read data
-  !                                                                           that may have gaps.
+    intrinsic :: associated
+    integer i
 
-  !  integer i
+   do i=1, num_vars
+     if(associated(one_dim_vars(i)%values) ) then
+       deallocate(one_dim_vars(i)%values)
+     end if
+   end do
 
-  ! do i=1, num_vars
-  !   if(allocated(one_dim_vars(i)%values) ) then
-  !     deallocate(one_dim_vars(i)%values)
-  !   end if
-  ! end do
-
-  ! end subroutine deallocate_one_dim_vars
+   end subroutine deallocate_one_dim_vars
 
 end module input_reader

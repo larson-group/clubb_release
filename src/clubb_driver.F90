@@ -1472,6 +1472,7 @@ module clubb_driver
     use mpace_a, only: mpace_a_init ! Procedure(s)
 
     use input_reader, only: read_one_dim_file, fill_blanks_one_dim_vars, & ! Procedures
+      deallocate_one_dim_vars, & 
       one_dim_read_var ! Type
 
     use sounding, only: read_x_profile ! Procedure(s)
@@ -1632,13 +1633,18 @@ module clubb_driver
         "file: "//trim( runfile )
       stop
     end if
+
     if ( l_uv_nudge ) then
+
       call read_one_dim_file( iunit, nCol, &
           '../input/case_setups/'//trim(runtype)//'_sounding.in', retVars )
 
       call fill_blanks_one_dim_vars( nCol, retVars )
+
       um_ref = read_x_profile(nCol, 'u[m\s]', retVars)
       vm_ref = read_x_profile(nCol, 'v[m\s]', retVars)
+
+      call deallocate_one_dim_vars( nCol, retVars )
     end if
 
 
