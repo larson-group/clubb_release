@@ -2024,7 +2024,7 @@ module clubb_driver
                        sclrm_forcing, edsclrm_forcing )    ! Intent(out)
 
     case ( "twp_ice" ) ! TWP_ICE case
-      call twp_ice_tndcy( time_current, p_in_Pa, thvm, &    ! Intent(in)
+      call twp_ice_tndcy( time_current, p_in_Pa, rho, thvm, &    ! Intent(in)
                            wm_zt, wm_zm, thlm_forcing,  &   ! Intent(out)
                            rtm_forcing, um_ref, vm_ref, &   ! Intent(out)
                            sclrm_forcing, edsclrm_forcing ) ! Intent(out)                   

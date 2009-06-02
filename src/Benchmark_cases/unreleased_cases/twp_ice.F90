@@ -32,7 +32,7 @@ real, dimension(nz, ntimes) :: omega_forcing   ! Vertical velocity forcing [mb/h
 contains
 
 !----------------------------------------------------------------------
-subroutine twp_ice_tndcy( time, p_in_Pa, thvm, &
+subroutine twp_ice_tndcy( time, p_in_Pa, rho, thvm, &
                            wm_zt, wm_zm, thlm_forcing, &
                            rtm_forcing, um_hoc_grid, vm_hoc_grid, &
                            sclrm_forcing, edsclrm_forcing )
@@ -71,6 +71,7 @@ real(kind=time_precision), intent(in) :: time ! Model time [s]
 
 real, dimension(gr%nnzp), intent(in) ::  &
   p_in_Pa,  &    ! Pressure [Pa]
+  rho,      &
   thvm
 
 ! Output Variables
@@ -168,7 +169,7 @@ omega_hoc_grid(1:gr%nnzp) = zlinterp_fnc &
 ! Compute vertical motion
 do i=2,gr%nnzp
    velocity_omega = omega_hoc_grid(i) * 100 / 3600 ! convering mb/hr to Pa/s
-   wm_zt(i) = -velocity_omega * Rd * thvm(i) / p_in_Pa(i) / grav
+   wm_zt(i) = -velocity_omega / (grav * rho(i))
    !wm_zt(i) = 0.
 end do
 
