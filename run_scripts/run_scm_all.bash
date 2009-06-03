@@ -188,9 +188,21 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 		fi
 		
 		#Run again with a finer time step
-		cat $PARAMS_IN > 'clubb.in'
-		cat $MODEL_IN | sed 's/stats_tout\s*=\s*.*/stats_tout = 60\./g' >> 'clubb.in'
-		cat $STATS_IN >> 'clubb.in'
+		#Note, TWP_ICE requires dt to be changed as well
+		if [ ${RUN_CASE[$x]} = twp_ice ]; then
+			cat $PARAMS_IN > 'clubb.in'
+			cat $MODEL_IN | sed 's/stats_tout\s*=\s*.*/stats_tout = 60\./g' >> 'clubb.in'
+			cat $STATS_IN >> 'clubb.in'
+			cat 'clubb.in' | sed 's/dtmain\s*=\s*.*/dtmain = 60\./g' > 'tmp.in'
+			cat 'tmp.in' | sed 's/dtclosure\s*=\s*.*/dtclosure = 60\./g' > 'clubb.in'
+			cat 'clubb.in' | sed 's/stats_tsamp\s*=\s*.*/stats_tsamp = 60\./g' > 'tmp.in'
+			mv 'tmp.in' 'clubb.in'
+		else
+			cat $PARAMS_IN > 'clubb.in'
+			cat $MODEL_IN | sed 's/stats_tout\s*=\s*.*/stats_tout = 60\./g' >> 'clubb.in'
+			cat $STATS_IN >> 'clubb.in'
+		fi
+		
 		run_case
 
 		#Now move the SFC file
