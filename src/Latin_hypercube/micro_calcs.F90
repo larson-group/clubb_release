@@ -242,7 +242,14 @@ module micro_calcs_mod
         AKm_rcm(level) = K_one * max( zero_threshold, rcm-q_crit )
 
         ! Kessler ac, using within cloud liquid, rcm/cf, as input
-        AKm_rcc(level) = cf * K_one * max( zero_threshold, rcm/cf-q_crit )
+        ! We found that for small values of cf this formula
+        ! can still produce NaN values and therefore added this 
+        ! threshold of 0.001 here. -dschanen 3 June 2009
+        if ( cf > 0.001 ) then
+          AKm_rcc(level) = cf * K_one * max( zero_threshold, rcm/cf-q_crit )
+        else
+          AKm_rcc(level) = zero_threshold
+        end if
 
 !       print*, 'a=', a
 !       print*, 's1=', s1
@@ -301,8 +308,8 @@ module micro_calcs_mod
     use constants, only:  &
       fstderr  ! Constant(s)
 
-    use error_code, only:  &
-      clubb_at_least_debug_level  ! Procedure(s)
+!   use error_code, only:  &
+!     clubb_at_least_debug_level  ! Procedure(s)
 
     implicit none
 
@@ -365,12 +372,14 @@ module micro_calcs_mod
     end if
 
     ! Make sure there is some cloud.
-    if ( a*R1 < 0.001d0 .and. (1-a)*R2 < 0.001d0 ) then
-      if ( clubb_at_least_debug_level( 1 ) ) then
-        write(fstderr,*) 'Error in autoconv_driver:  ',  &
-                         'there is no cloud or almost no cloud!'
-      end if
-    end if
+    ! Disable this for now, so we can loop over the whole domain.
+    ! -dschanen 3 June 2009
+!   if ( a*R1 < 0.001d0 .and. (1-a)*R2 < 0.001d0 ) then
+!     if ( clubb_at_least_debug_level( 1 ) ) then
+!       write(fstderr,*) 'Error in autoconv_driver:  ',  &
+!                        'there is no cloud or almost no cloud!'
+!     end if
+!   end if
 
     ! Autoconversion formula prefactor and exponent.
     ! These are for Kessler autoconversion in (g/kg)/s.
@@ -483,8 +492,8 @@ module micro_calcs_mod
     use constants, only:  &
         fstderr  ! Constant(s)
 
-    use error_code, only:  &
-        clubb_at_least_debug_level  ! Procedure(s)
+!   use error_code, only:  &
+!       clubb_at_least_debug_level  ! Procedure(s)
 
     implicit none
 
@@ -541,12 +550,14 @@ module micro_calcs_mod
     end if
 
     ! Make sure there is some cloud.
-    if ( a*C1 < 0.001d0 .and. (1-a)*C2 < 0.001d0 ) then
-      if ( clubb_at_least_debug_level( 1 ) ) then
-        write(fstderr,*) 'Error in ql_estimate:  ',  &
-                         'there is no cloud or almost no cloud!'
-      end if
-    end if
+    ! Disable this for now, so we can loop over the whole domain.
+    ! -dschanen 3 June 2009
+!   if ( a*C1 < 0.001d0 .and. (1-a)*C2 < 0.001d0 ) then
+!     if ( clubb_at_least_debug_level( 1 ) ) then
+!       write(fstderr,*) 'Error in ql_estimate:  ',  &
+!                        'there is no cloud or almost no cloud!'
+!     end if
+!   end if
 
     ! To compute liquid water, need to set coeff=expn=1.
     coeff = 1.d0

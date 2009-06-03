@@ -1706,7 +1706,7 @@ module clubb_driver
       hydromet, radht, um_ref,  & ! Variable(s)
       vm_ref, Frad,  Frad_SW_up,  Frad_LW_up, &
       Frad_SW_down, Frad_LW_down, Ncnm, thvm, ustar, & 
-      Kh_zm, Akm_est, Akm, ug, vg
+      Kh_zm, ug, vg
 
     use variables_diagnostic_module, only: wpedsclrp ! Passive scalar variables
 
@@ -2324,7 +2324,7 @@ module clubb_driver
       call advance_microphys &
            ( iter, runtype, dt, time_current, &               ! Intent(in)
              thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cf, & ! Intent(in) 
-             wm_zt, wm_zm, Kh_zm, AKm_est, Akm, pdf_params, & ! Intent(in)
+             wm_zt, wm_zm, Kh_zm, pdf_params, & ! Intent(in)
              wp2_zt, &                                        ! Intent(in)
              Ncnm, hydromet, &                                ! Intent(inout)
              rtm_forcing, thlm_forcing, &                     ! Intent(inout)

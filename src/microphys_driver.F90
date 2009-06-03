@@ -460,7 +460,7 @@ module microphys_driver
   subroutine advance_microphys & 
              ( iter, runtype, dt, time_current,  & 
                thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cf, & 
-               wm_zt, wm_zm, Kh_zm, AKm_est, AKm, pdf_params, & 
+               wm_zt, wm_zm, Kh_zm, pdf_params, & 
                wp2_zt, &
                Ncnm, hydromet, & 
                rtm_forcing, thlm_forcing, &
@@ -640,9 +640,7 @@ module microphys_driver
       cf,      & ! Cloud fraction                         [%]
       wm_zt,   & ! w wind on moment. grid                 [m/s]
       wm_zm,   & ! w wind on thermo. grid                 [m/s]
-      Kh_zm,   & ! Kh Eddy diffusivity on momentum grid   [m^2/s]
-      Akm_est, & ! Analytic Kessler ac                    [kg/kg]
-      Akm        ! Analytic Kessler estimate              [kg/kg]
+      Kh_zm      ! Kh Eddy diffusivity on momentum grid   [m^2/s]
 
     type(pdf_parameter), target, intent(in) :: & 
       pdf_params     ! PDF parameters
@@ -971,7 +969,7 @@ module microphys_driver
              thl1, thl2, a, rc1, rc2, s1,  & 
              s2, ss1, ss2, rcm, hydromet(:,iiNcm),  & 
              hydromet(:,iirrainm), hydromet(:,iiNrm), & 
-             .true., AKm, AKm_est, & 
+             .true., &
              hydromet_mc(:,iirrainm), hydromet_mc(:,iiNrm),  & 
              rtm_mc, thlm_mc, & 
              hydromet_vel(:,iirrainm), hydromet_vel(:,iiNrm) )
@@ -1254,8 +1252,6 @@ module microphys_driver
         write(fstderr,*) "wm_zt = ", wm_zt
         write(fstderr,*) "wm_zm = ", wm_zm
         write(fstderr,*) "Kh_zm = ", Kh_zm
-        write(fstderr,*) "Akm_est = ", Akm_est
-        write(fstderr,*) "Akm = ", Akm
         write(fstderr,*) "pdf_params%thl1 = ", pdf_params%thl1
         write(fstderr,*) "pdf_params%thl2 = ", pdf_params%thl2
         write(fstderr,*) "pdf_params%a = ", pdf_params%a

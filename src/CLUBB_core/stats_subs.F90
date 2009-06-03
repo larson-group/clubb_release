@@ -1006,6 +1006,12 @@ module stats_subs
         iwpsclrpthlp, & 
         iwpedsclrp
 
+    use stats_variables, only: &
+      iAKstd, &
+      iAKstd_cld, &
+      iAKm_rcm, &
+      iAKm_rcc
+
     use grid_class, only: & 
         gr ! Variable
 
@@ -1056,6 +1062,12 @@ module stats_subs
         wpsclrprtp, & 
         wpsclrpthlp, & 
         wpedsclrp
+
+    use variables_diagnostic_module, only: & 
+      AKstd, & ! Variable(s)
+      AKstd_cld, &
+      AKm_rcm, &
+      AKm_rcc
 
     use variables_prognostic_module, only: & 
       pdf_parameter ! Type
@@ -1182,7 +1194,13 @@ module stats_subs
       call stat_update_var( irsat, rsat, zt )
 
       call stat_update_var( iAKm, AKm, zt )
-      call stat_update_var( iAkm_est, AKm_est, zt)
+      call stat_update_var( iAKm_est, AKm_est, zt)
+
+      call stat_update_var( iAKstd, AKstd, zt )
+      call stat_update_var( iAKstd_cld, AKstd_cld, zt )
+
+      call stat_update_var( iAKm_rcm, AKm_rcm, zt)
+      call stat_update_var( iAKm_rcc, AKm_rcc, zt )
 
       call stat_update_var( iradht, radht, zt )
       call stat_update_var( ia, pdf_params%a, zt )

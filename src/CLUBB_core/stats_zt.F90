@@ -65,6 +65,10 @@ module stats_zt
         irain_rate, & 
         iAKm, & 
         iAKm_est, & 
+        iAKstd, & 
+        iAKstd_cld, & 
+        iAKm_rcm, & 
+        iAKm_rcc, & 
         iradht, & 
         iradht_LW, & 
         iradht_SW, & 
@@ -314,6 +318,10 @@ module stats_zt
     irain_rate    = 0  ! Brian
     iAKm          = 0  ! analytic Kessler.  Vince Larson 22 May 2005
     iAKm_est      = 0  ! LH Kessler.  Vince Larson 22 May 2005
+    iAKstd        = 0
+    iAKstd_cld    = 0
+    iAKm_rcm      = 0
+    iAKm_rcc      = 0
     iradht        = 0
     iradht_LW     = 0
     iradht_SW     = 0
@@ -840,17 +848,45 @@ module stats_zt
              "Rain rate (mm/day)", "mm/day", zt )
         k = k + 1
 
-      case ('AKm')           ! Vince Larson 22 May 2005
+      case ( 'AKm' )           ! Vince Larson 22 May 2005
         iAKm = k
         call stat_assign( iAKm, "AKm", & 
-             "Analytic Kessler ac [kg/kg]", "kg/kg", zt )
+             "Analytic Kessler ac kg/kg", "kg/kg/s", zt )
         k = k + 1
 
-      case ('AKm_est')       ! Vince Larson 22 May 2005
+      case ( 'AKm_est' )       ! Vince Larson 22 May 2005
         iAKm_est = k
 
         call stat_assign( iAKm_est, "AKm_est", & 
-             "LH Kessler estimate [kg/kg]", "kg/kg", zt )
+             "LH Kessler estimate kg/kg/s", "kg/kg/s", zt )
+        k = k + 1
+
+      case ( 'AKstd' )
+        iAKstd = k
+
+        call stat_assign( iAKstd, "AKstd", & 
+             "Exact standard deviation of gba Kessler kg/kg/s", "kg/kg/s", zt )
+        k = k + 1
+
+      case ( 'AKstd_cld' )
+        iAKstd_cld = k
+
+        call stat_assign( iAKstd_cld, "AKstd_cld", & 
+             "Exact w/in cloud std of gba Kessler kg/kg/s", "kg/kg/s", zt )
+        k = k + 1
+
+     case ( 'AKm_rcm' )
+        iAKm_rcm = k
+
+        call stat_assign( iAKm_rcm, "AKm_rcm", & 
+             "Exact local gba auto based on rcm kg/kg/s", "kg/kg/s", zt )
+        k = k + 1
+
+      case ( 'AKm_rcc' )
+        iAKm_rcc = k
+
+        call stat_assign( iAKm_rcc, "AKm_rcc", & 
+             "Exact local gba based on w/in cloud rc kg/kg/s", "kg/kg/s", zt )
         k = k + 1
 
       case ('radht')

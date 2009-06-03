@@ -164,13 +164,16 @@ module lh_sampler_mod
 
     l_sample_flag = .true.
     if ( cf < 0.001 ) then
-!   if ( .false. ) then
       ! In this case there are essentially no cloudy points to sample;
       ! Set sample points to zero.
 
-      X_u(:,:)    = 0.0
-      X_nl(:,:)   = 0.0
-      l_sample_flag = .false.
+      !X_u(:,:)    = 0.0
+      !X_nl(:,:)   = 0.0
+      !l_sample_flag = .false.
+
+      ! Sample non-cloudy grid boxes as well -dschanen 3 June 2009
+      R1 = 1.0
+      R2 = 1.0
 
     else if ( srt1  == 0. .or. srt2  == 0. .or. & 
               sthl1 == 0. .or. sthl2 == 0. .or. & 
@@ -188,9 +191,12 @@ module lh_sampler_mod
 
 !         print*, 'Covariance matrix of r-thl-w is ill-conditioned'
 
-      X_u(:,:)    = 0.0
-      X_nl(:,:)   = 0.0
-      l_sample_flag = .false.
+      !X_u(:,:)    = 0.0
+      !X_nl(:,:)   = 0.0
+      !l_sample_flag = .false.
+      ! Sample non-cloudy grid boxes as well -dschanen 3 June 2009
+      R1 = 1.0
+      R2 = 1.0
 
     else
 

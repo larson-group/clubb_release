@@ -89,7 +89,7 @@ module KK_microphys_module
              ( dt, T_in_K, p_in_Pa, exner, rho,  & 
                thl1, thl2, a, rc1, rc2, s1, & 
                s2, ss1, ss2, rcm, Ncm, rrainm, Nrm,  & 
-               l_sample,  AKm, AKm_est, & 
+               l_sample,  & ! AKm, AKm_est, & 
                rrainm_mc_tndcy, Nrm_mc_tndcy,  & 
                rtm_mc, thlm_mc, & 
                Vrr, VNr )
@@ -107,8 +107,8 @@ module KK_microphys_module
     ! Monthly Weather Review, Volume 128, Issue 1 pp. 229–-243
     !-------------------------------------------------------------------
 
-    use parameters_microphys, only: & 
-        l_latin_hypercube_sampling ! Variable(s)
+!   use parameters_microphys, only: & 
+!       l_latin_hypercube_sampling ! Variable(s)
 
     use grid_class, only: & 
         gr,  & ! Variable(s)
@@ -168,9 +168,9 @@ module KK_microphys_module
       Nrm           ! Rain drop number conc.             [number/kg]
 
     ! Latin hypercube variables - Vince Larson 22 May 2005
-    real, intent(in), dimension(gr%nnzp) :: & 
-      AKm,   & ! Kessler autoconversion
-      AKm_est  ! Latin hypercube estimate of Kessler autoconversion
+!   real, intent(in), dimension(gr%nnzp) :: & 
+!     AKm,   & ! Kessler autoconversion
+!     AKm_est  ! Latin hypercube estimate of Kessler autoconversion
 
     logical, intent(in) :: & 
       l_sample ! Whether to sample stats for this call
@@ -420,19 +420,22 @@ module KK_microphys_module
 
       ! Vince Larson added option to call LH sampled Kessler autoconversion.
       ! 22 May 2005
-      if ( l_latin_hypercube_sampling ) then
+      ! Uncomment these lines to use the Kessler autoconversion from the
+      ! micro_calcs subroutine.  Currently, we only sample diagnostically.
+      ! -dschanen 3 June 2009
+!     if ( l_latin_hypercube_sampling ) then
 
         !rrainm_auto(k) = AKm_est(k)
-        rrainm_auto(k) = AKm(k)
+        !rrainm_auto(k) = AKm(k)
 
-      else
+!     else
 
         rrainm_auto(k)  & 
         = autoconv_rrainm( rcm(k), Ncm(k), s1(k), ss1(k),  & 
                            s2(k), ss2(k), a(k), rho(k), & 
                            Ncp2_Ncm2(k), corr_sNc_NL(k) )
 
-      endif ! l_latin_hypercube_sampling
+!     endif ! l_latin_hypercube_sampling
       ! End Vince Larson's addition
 
       rrainm_accr(k)  & 

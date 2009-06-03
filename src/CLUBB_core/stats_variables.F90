@@ -95,6 +95,12 @@ module stats_variables
      iradht_SW          !   "           "   Short-wave component
 
   integer, public :: & 
+     iAKstd,     & 
+     iAKstd_cld, & 
+     iAKm_rcm, & 
+     iAKm_rcc
+
+  integer, public :: & 
      iNrm,       & ! Rain droplet number concentration
      iNim,       & ! Ice number concentration
      iNsnowm,    & ! Snow number concentration
@@ -115,6 +121,7 @@ module stats_variables
 !$omp   threadprivate(iradht, iradht_LW, iradht_SW)
 !$omp   threadprivate(iT_in_K)
 !$omp   threadprivate(iNrm, iNim, iNsnowm, iNgraupelm)
+!$omp   threadprivate(iAKstd, iAKstd_cld, iAKm_rcm, iAKm_rcc)
 
   integer, public :: &
     ieff_rad_cloud, &
