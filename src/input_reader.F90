@@ -294,7 +294,7 @@ module input_reader
     ! Input Variable(s) 
     integer, intent(in) :: num_vars ! Number of elements in one_dim_vars
 
-    type(one_dim_read_var), dimension(num_vars), intent(in):: one_dim_vars ! Read data
+    type(one_dim_read_var), dimension(num_vars), intent(inout):: one_dim_vars ! Read data
     !                                                                        that may have gaps.
 
     intrinsic :: associated
