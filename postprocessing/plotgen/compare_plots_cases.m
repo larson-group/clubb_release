@@ -1038,7 +1038,7 @@ create_plot(3, 2, 6, 'Third-order Moment of w', 'wp3    [m^3/s^3]', avg_wp3_les,
 %--------------------------------------------------------------------------
 
 outputfilename = [ case_name, '_page1' ];
-print_page(outputfilename, 1, 0, 1);
+print_page(outputfilename, 1, 1, 1);
 
 figure('Position',[ 0 0 fig_width fig_height ])
 set(gcf, 'PaperPositionMode', 'manual')
@@ -1135,7 +1135,7 @@ create_plot(3, 2, 6, 'Vertical Wind Component, w (subsidence)', 'wm    [m/s]', a
 %--------------------------------------------------------------------------
 
 outputfilename = [ case_name, '_page2' ];
-print_page(outputfilename, 1, 0, 1);
+print_page(outputfilename, 1, 1, 1);
 
 figure('Position',[ 0 0 fig_width fig_height ])
 set(gcf, 'PaperPositionMode', 'manual')
@@ -1226,7 +1226,7 @@ create_plot(3, 2, 6, 'Variance of v wind', 'vp2    [m^2/s^2]', avg_vp2_les, z_le
 
 % Print 3rd Page for Case (.eps document)
 outputfilename = [ case_name, '_page3' ];
-print_page(outputfilename, 1, 0, 1);
+print_page(outputfilename, 1, 1, 1);
 
 figure('Position',[ 0 0 fig_width fig_height ])
 set(gcf, 'PaperPositionMode', 'manual')
@@ -1326,7 +1326,7 @@ create_plot(3, 2, 6, 'Cloud Ice Concentration', 'Nim    [num/m^3]', avg_Nim_les,
 
 % Print 4rd Page for Case (.eps document)
 outputfilename = [ case_name, '_page4' ];
-print_page(outputfilename, 1, 0, 1);
+print_page(outputfilename, 1, 1, 1);
 
 figure('Position',[ 0 0 fig_width fig_height ])
 set(gcf, 'PaperPositionMode', 'manual')
@@ -1400,7 +1400,7 @@ create_time_plot(3, 2, 6, 'Snow Water Path', 'swp    [kg/m^2]', ...
 
 % Print 4th Page for Case (.eps document)
 outputfilename = [ case_name, '_page5' ];
-print_page(outputfilename, 1, 0, 1);
+print_page(outputfilename, 1, 1, 1);
 
 % Statement
 [ 'Case ', case_name, ' has successfully been output!' ]
@@ -1924,7 +1924,7 @@ function print_page( file_name, output_eps, output_jpeg, output_ps )
 	end
 
 	if (output_jpeg == 1)
-		jpg_file_name = [ 'output/jpeg/', file_name, '.jpg' ];
+		jpg_file_name = [ 'output/jpg/', file_name, '.jpg' ];
 		print( '-djpeg', jpg_file_name )
 	end
 	
