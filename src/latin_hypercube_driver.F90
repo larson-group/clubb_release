@@ -17,11 +17,7 @@ module latin_hypercube_mod
   integer, parameter :: &
     nt_repeat = n_micro_call * sequence_length 
 
-  ! A true/false flag that determines whether
-  !     the PDF allows us to construct a sample
-  logical :: sample_flag
 
-! integer, dimension(gr%nnzp, nt_repeat, d_variables+1) :: & 
   integer, allocatable, dimension(:,:,:) :: & 
     height_time_matrix ! matrix of rand ints
 
@@ -29,6 +25,7 @@ module latin_hypercube_mod
 
 !-------------------------------------------------------------------------------
   subroutine latin_hypercube_driver( iter, nnzp, pdf_params, hydromet, cf )
+
 ! Description:
 !   Do latin hypercube sampling
 ! References:
@@ -41,10 +38,25 @@ module latin_hypercube_mod
     use permute_height_time_mod, only: & 
       permute_height_time ! Procedure
 
+    use lh_sampler_mod, only: & 
+      lh_sampler ! Procedure
+
+    use micro_calcs_mod, only: & 
+      micro_calcs ! Procedure
+
     use variables_prognostic_module, only: &
       pdf_parameter  ! Type
 
     use constants, only: fstderr
+
+    use variables_diagnostic_module, only: & 
+      AKm_est,  & 
+      AKm, & 
+      AKstd, & 
+      AKstd_cld, & 
+      AKm_rcm, & 
+      AKm_rcc, & 
+      rcm_est
 
     implicit none
 
@@ -63,7 +75,19 @@ module latin_hypercube_mod
 
     real, dimension(nnzp), intent(in) :: cf ! Cloud fraction [%]
 
+    ! Local variables
+    integer :: p_matrix(n_micro_call,d_variables+1)
+
+    ! Sample drawn from uniform distribution
+    double precision, dimension(nnzp,n_micro_call,(d_variables+1)) :: X_u
+
+    ! Sample that is transformed ultimately to normal-lognormal
+    double precision, dimension(nnzp,n_micro_call,d_variables) :: X_nl
+
     integer :: i_rmd, k
+
+    ! A true/false flag that determines whether the PDF allows us to construct a sample
+    logical, dimension(nnzp) :: l_sample_flag 
 
     ! ---- Begin Code ----
 
@@ -77,11 +101,11 @@ module latin_hypercube_mod
 
     if ( i_rmd == 0 ) then
       call permute_height_time( nnzp, nt_repeat, d_variables+1, & ! intent(in)
-                                height_time_matrix )                 ! intent(out)
+                                height_time_matrix )              ! intent(out)
     end if
     ! End Latin hypercube sample generation
 
-    ! print*, 'advance_clubb_core: i_rmd=', i_rmd
+    ! print*, 'latin_hypercube_driver: i_rmd=', i_rmd
       !--------------------------------------------------------------
       ! Latin hypercube sampling
       !--------------------------------------------------------------
@@ -91,105 +115,32 @@ module latin_hypercube_mod
       stop
     end if
 
-    do k = 2, nnzp, 1
+    do k = 2, nnzp
+      ! Choose which rows of LH sample to feed into closure.
+      p_matrix(1:n_micro_call,1:(d_variables+1)) = &
+        height_time_matrix(k,n_micro_call*i_rmd+1:n_micro_call*i_rmd+n_micro_call,1:d_variables+1)
 
-      call latin_hypercube_sampling &
-           ( k, n_micro_call, d_variables, nt_repeat, i_rmd, &
-             pdf_params, hydromet(:,iirrainm), &
-             cf, nnzp, sample_flag, height_time_matrix )
+      ! print*, 'latin_hypercube_sampling: got past p_matrix'
 
-    ! print*, 'advance_clubb_core: AKm=', AKm
-    ! print*, 'advance_clubb_core: AKm_est=', AKm_est
+      ! Generate LH sample, represented by X_u and X_nl, for level k
+      call lh_sampler( n_micro_call, nt_repeat, d_variables, p_matrix, & ! intent(in)
+                       cf(k), pdf_params, k, &                           ! intent(in)
+                       hydromet(k,iirrainm), &                           ! intent(in)
+                       X_u(k,:,:), X_nl(k,:,:), l_sample_flag(k) ) ! intent(out)
 
-    end do
+      ! print *, 'latin_hypercube_sampling: got past lh_sampler'
+    end do ! 2..nnzp
 
+      ! Perform LH and analytic microphysical calculations
+    call micro_calcs( nnzp, n_micro_call, d_variables, X_u, X_nl, & ! intent(in)
+                      l_sample_flag, pdf_params, &                  ! intent(in)
+                      AKm_est, AKm, AKstd, AKstd_cld, &             ! intent(out)
+                      AKm_rcm, AKm_rcc, rcm_est )                   ! intent(out)
+
+    ! print*, 'latin_hypercube_driver: AKm=', AKm
+    ! print*, 'latin_hypercube_driver: AKm_est=', AKm_est
 
     return
   end subroutine latin_hypercube_driver
 
-  !-----------------------------------------------------------------------
-  subroutine latin_hypercube_sampling & 
-             ( k, n, dvar, nt, i_rmd, & 
-               pdf_params, & 
-               rrainm, cf, nnzp, l_sflag, height_time_matrix )
-    ! Description:
-    !   Estimate using Latin Hypercubes.  This is usually disabled by default.
-    !   The actual generation of a random matrix is done in a call from the
-    !   subroutine advance_clubb_core to permute_height_time()
-    ! References:
-    !   None
-    !-----------------------------------------------------------------------
-
-    use variables_diagnostic_module, only: & 
-        AKm_est,  & 
-        AKm, & 
-        AKstd, & 
-        AKstd_cld, & 
-        AKm_rcm, & 
-        AKm_rcc, & 
-        rcm_est
-
-    use variables_prognostic_module, only: & 
-      pdf_parameter
-
-    use lh_sampler_mod, only: & 
-        lh_sampler ! Procedure
-
-    use micro_calcs_mod, only: & 
-        micro_calcs ! Procedure
-
-    implicit none
-
-
-    ! Input Variables
-    integer, intent(in) :: k  ! index
-    integer, intent(in) :: n, dvar, i_rmd, nt, nnzp
-
-    type(pdf_parameter), intent(in) :: &
-      pdf_params ! PDF parameters [units vary]
-
-    real, dimension(nnzp), intent(in) ::  & 
-      rrainm,  & ! Rain water mixing ratio  [kg/kg]
-      cf         ! Cloud fraction           [%]
-
-    integer, dimension(nnzp, nt, (dvar+1) ), intent(in) :: & 
-      height_time_matrix ! matrix of rand ints
-
-    ! Output Variables
-    logical, intent(out) :: l_sflag
-
-    ! Local Variables
-
-    integer :: p_matrix(n, dvar+1)
-    ! Sample drawn from uniform distribution
-    double precision, dimension(n,(dvar+1)) :: X_u
-
-    ! Sample that is transformed ultimately to normal-lognormal
-    double precision, dimension(n,dvar) :: X_nl
-
-    ! Choose which rows of LH sample to feed into closure.
-    p_matrix(1:n,1:(dvar+1)) = & 
-      height_time_matrix( k,n*i_rmd+1:n*i_rmd+n, 1:(dvar+1) )
-
-    ! print*, 'latin_hypercube_sampling: got past p_matrix'
-
-    ! Generate LH sample, represented by X_u and X_nl, for level k
-    call lh_sampler( n, nt, dvar, p_matrix,       & ! intent(in)
-                     cf(k), pdf_params, k,        & ! intent(in)
-                     rrainm(k),                   & ! intent(in)
-                     X_u, X_nl, l_sflag )           ! intent(out)
-
-    !print *, 'latin_hypercube_sampling: got past lh_sampler'
-
-    ! Perform LH and analytic microphysical calculations
-    call micro_calcs( n, dvar, X_u, X_nl, l_sflag,                & ! intent(in)
-                      pdf_params, k,                              & ! intent(in)
-                      AKm_est(k), AKm(k), AKstd(k), AKstd_cld(k), & ! intent(out)
-                      AKm_rcm(k), AKm_rcc(k), rcm_est(k) )          ! intent(out)
-
-    !print*, 'k, AKm_est=', k, AKm_est(k)
-    !print*, 'k, AKm=', k, AKm(k)
-
-    return
-  end subroutine latin_hypercube_sampling
 end module latin_hypercube_mod

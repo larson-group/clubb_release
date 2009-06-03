@@ -164,6 +164,7 @@ module lh_sampler_mod
 
     l_sample_flag = .true.
     if ( cf < 0.001 ) then
+!   if ( .false. ) then
       ! In this case there are essentially no cloudy points to sample;
       ! Set sample points to zero.
 
@@ -397,7 +398,7 @@ module lh_sampler_mod
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd components
 
     ! Covariance matrices of rt, thl, w for each Gaussian
-    ! Columns of Sigma_rtthlw:     1   2   3   4   5dgesv
+    ! Columns of Sigma_rtthlw:     1   2   3   4   5
     !                              rt  thl w   N   rr
     !
     ! Columns of Sigma_stw, X_nl:  1   2   3   4   5
