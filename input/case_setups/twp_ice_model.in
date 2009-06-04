@@ -1,4 +1,4 @@
-! $Id: arm_0003_model.in 3405 2009-04-17 14:21:46Z fasching@uwm.edu $
+! $Id$
 ! Parameter file for GCSS ARM 0003 deep convective case
 
 &model_setting
