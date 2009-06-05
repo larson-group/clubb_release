@@ -113,7 +113,7 @@ end
 
 % Perform Necessary conversions
 qtm_array = convert_units.total_water_mixing_ratio_to_specific_humidity( rtm_array );
-T_forcing_array = convert_units.thlm_f_to_t_f( thlm_f_array, radht_array, exner_array );
+T_forcing_array = convert_units.thlm_f_to_T_f( thlm_f_array, radht_array, exner_array );
 ome_array = convert_units.w_wind_in_ms_to_Pas( wm_array, rho_array );
 wt_array = convert_units.potential_temperature_to_temperature( wpthlp_array, exner_array );
 
@@ -136,7 +136,7 @@ full_sfc_z = convert_units.create_time_height_series( sfc_z, sizet );
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Create the new file. By default it is in definition mode.
-ncid = netcdf.create('gabls3_scm_UWM_CLUBB_v3.nc','NC_WRITE');
+ncid = netcdf.create('/home/matlabuser/gabls3_scm_UWM_CLUBB_v4.nc','NC_WRITE');
 
 % Define Global Attributes
 
@@ -309,6 +309,7 @@ netcdf.putVar( ncid, q2mvarid, qtm_array(1,:));
 netcdf.putVar( ncid, u10mvarid, um_array(2,:));
 netcdf.putVar( ncid, v10mvarid, vm_array(2,:));
 netcdf.putVar( ncid, ccvarid, cc_array(1,:));
+netcdf.putVar( ncid, gvarid, shf_array(1,:));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Mean State Output

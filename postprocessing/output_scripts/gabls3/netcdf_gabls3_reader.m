@@ -5,11 +5,11 @@ addpath '/home/mjfalk/netcdf_toolbox/netcdf_toolbox/netcdf/' -end
 addpath '/home/mjfalk/netcdf_toolbox/netcdf_toolbox/netcdf/nctype/' -end
 addpath '/home/mjfalk/netcdf_toolbox/netcdf_toolbox/netcdf/ncutility/' -end
 
-path = '/home/matlabuser/gabls3/';
+path = '/home/matlabuser/';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-file1        = netcdf([path,'gabls3_scm_UWM_CLUBB_v3.nc'],'nowrite');
+file1        = netcdf([path,'gabls3_scm_UWM_CLUBB_v4.nc'],'nowrite');
 file1_time      = file1{'time'}(:)
 file1_ldw       = file1{'ldw'}(:)
 file1_lup       = file1{'lup'}(:)
