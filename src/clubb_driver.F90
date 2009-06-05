@@ -174,6 +174,9 @@ module clubb_driver
 
     use sounding, only: sclr_max
 
+    use time_dependant_input, only: l_time_dependant, &
+      finalize_time_dependant_input
+
     implicit none
 
     ! Because Fortran I/O is not thread safe, we use this here to
@@ -275,7 +278,7 @@ module clubb_driver
       time_initial, time_final, time_spinup, & 
       dtmain, dtclosure, & 
       sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge, & 
-      forcings_file_path, &
+      forcings_file_path, l_time_dependant, &
       l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, debug_level, & 
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
@@ -322,6 +325,8 @@ module clubb_driver
     ts_nudge = 86400.
 
     forcings_file_path = ''
+
+    l_time_dependant = .false.
 
     l_soil_veg     = .false.
     l_tke_aniso    = .false.
@@ -448,6 +453,8 @@ module clubb_driver
       print *, "ts_nudge = ", ts_nudge
 
       print *, "forcings_file_path = ", forcings_file_path
+
+      print *, "l_time_dependant = ", l_time_dependant
 
       print *, "l_soil_veg = " , l_soil_veg
       print *, "l_tke_aniso = ", l_tke_aniso
@@ -716,6 +723,10 @@ module clubb_driver
 
     ! Free memory
 
+    if( l_time_dependant ) then
+      call finalize_time_dependant_input()
+    end if
+
     call cleanup_clubb_core( .false. )
 
     call stats_finalize( )
@@ -780,7 +791,8 @@ module clubb_driver
 
     use arm_3year, only: arm_3year_init ! Procedure(s)
 
-    use arm_97, only: arm_97_init ! Procedure(s)
+    use time_dependant_input, only: initialize_time_dependant_input,&
+                                    l_time_dependant
 
     use lba, only: lba_init ! Procedure(s)
 
@@ -817,7 +829,7 @@ module clubb_driver
     character(len=*), intent(in) :: &
       forcings_file_path ! Path to the .dat files containing the forcings
 
-    real, intent(in) :: psfc,zm_init ! Pressure at the surface [Pa]
+    real, intent(in) :: psfc, zm_init ! Pressure at the surface [Pa]
 
     ! Output
     real, dimension(gr%nnzp), intent(inout) ::  & 
@@ -1041,6 +1053,14 @@ module clubb_driver
 
     end select
 
+
+    ! Initilize Time Dependant Input
+
+    if( l_time_dependant ) then
+      call initialize_time_dependant_input &
+                   ( iunit, runtype, gr%nnzp, gr%zt )
+    end if
+
     ! Initialize TKE and other fields as needed
 
     select case ( trim( runtype ) )
@@ -1100,8 +1120,6 @@ module clubb_driver
     case ( "arm_97" )
 
       em = 1.0
-      call arm_97_init( iunit, forcings_file_path )
-
       ! twp_ice
     case ( "twp_ice" )
 
@@ -1449,6 +1467,9 @@ module clubb_driver
 
     use stats_precision, only: time_precision ! Variable(s)
 
+    use time_dependant_input, only: l_time_dependant, & ! Variable(s)
+                                    initialize_time_dependant_input ! Procedure(s)
+
     use model_flags, only: &
       l_uv_nudge, & ! Variable(s)
       l_soil_veg
@@ -1459,8 +1480,6 @@ module clubb_driver
 
 #ifdef UNRELEASED_CODE
     use arm_0003, only: arm_0003_init ! Procedure(s)
-
-    use arm_97, only: arm_97_init ! Procedure(s)
 
     use arm_3year, only: arm_3year_init ! Procedure(s)
 
@@ -1641,8 +1660,8 @@ module clubb_driver
 
       call fill_blanks_one_dim_vars( nCol, retVars )
 
-      um_ref = read_x_profile(nCol, 'u[m\s]', retVars)
-      vm_ref = read_x_profile(nCol, 'v[m\s]', retVars)
+      um_ref = read_x_profile(nCol, nzmax, 'u[m\s]', retVars)
+      vm_ref = read_x_profile(nCol, nzmax,'v[m\s]', retVars)
 
       call deallocate_one_dim_vars( nCol, retVars )
     end if
@@ -1656,9 +1675,6 @@ module clubb_driver
 #ifdef UNRELEASED_CODE
     case( "arm_3year" )
       call arm_3year_init( iunit, forcings_file_path )
-
-    case( "arm_97" )
-      call arm_97_init( iunit, forcings_file_path )
 
     case( "arm_0003" )
       call arm_0003_init( iunit, forcings_file_path )
@@ -1674,6 +1690,12 @@ module clubb_driver
       call mpace_a_init( iunit, forcings_file_path )
 
     end select
+
+
+    if( l_time_dependant ) then
+      call initialize_time_dependant_input &
+           ( iunit, runtype, gr%nnzp, gr%zt )
+    end if
 
     wm_zm = zt2zm( wm_zt )
 

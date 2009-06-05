@@ -440,15 +440,15 @@ module sounding
 
     call read_theta_profile(nCol, retVars, theta_type, theta)
 
-    rt = read_x_profile(nCol, 'rt[kg\kg]', retVars)
+    rt = read_x_profile(nCol, nmaxsnd, 'rt[kg\kg]', retVars)
 
-    u = read_x_profile(nCol, 'u[m\s]', retVars)
+    u = read_x_profile(nCol, nmaxsnd, 'u[m\s]', retVars)
 
-    v = read_x_profile(nCol, 'v[m\s]', retVars)
+    v = read_x_profile(nCol, nmaxsnd, 'v[m\s]', retVars)
 
-    ug = read_x_profile(nCol, 'ug[m\s]', retVars)
+    ug = read_x_profile(nCol, nmaxsnd, 'ug[m\s]', retVars)
 
-    vg = read_x_profile(nCol, 'vg[m\s]', retVars)
+    vg = read_x_profile(nCol, nmaxsnd, 'vg[m\s]', retVars)
 
     call read_subs_profile(nCol, retVars, subs_type, subs)
 
@@ -575,7 +575,7 @@ module sounding
 
 
   !-------------------------------------------------------------------------------------------------
-  function read_x_profile( nvar, target_name, retVars ) result(x)
+  function read_x_profile( nvar, dim_size, target_name, retVars ) result(x)
     !
     !  Description: Searches for the variable specified by target_name in the
     !  collection of retVars. If the function finds the variable then it returns
@@ -591,6 +591,9 @@ module sounding
     ! Input Variable(s)
     integer, intent(in) :: nvar ! Number of variables in retVars
 
+    integer, intent(in) :: dim_size
+
+
     character(len=*), intent(in) :: target_name ! Variable that is being
     !                                             searched for
 
@@ -598,7 +601,7 @@ module sounding
     !                                                                being searched through
 
     ! Output Variable(s)
-    real, dimension(nmaxsnd) :: x
+    real, dimension(dim_size) :: x
 
     ! Local Variables
     integer i
@@ -679,19 +682,19 @@ module sounding
     if( count( (/ any(retVars%name == z_name), any(retVars%name == pressure_name) /)) <= 1) then
       if( any(retVars%name == z_name))then
         alt_type = z_name
-        z = read_x_profile( nvar, alt_type, retVars )
+        z = read_x_profile( nvar, nmaxsnd, alt_type, retVars )
         p_in_Pa = -999.9
 
       elseif( any(retVars%name == pressure_name))then
         alt_type = pressure_name
 
-        p_in_Pa = read_x_profile( nvar, alt_type, retVars )
+        p_in_Pa = read_x_profile( nvar, nmaxsnd, alt_type, retVars )
 
         nlevels = size(retVars(1)%values)
 
         call read_theta_profile(nvar, retVars, theta_type, theta )
 
-        rtm = read_x_profile(nvar, 'rt[kg\kg]', retVars)
+        rtm = read_x_profile(nvar, nmaxsnd, 'rt[kg\kg]', retVars)
 
         exner(1) = ( psfc/p0 )**kappa
 
@@ -780,7 +783,7 @@ module sounding
       else
         stop "Could not read theta compatable variable"
       endif
-      theta = read_x_profile(nvar, theta_type, retVars)
+      theta = read_x_profile(nvar, nmaxsnd,theta_type, retVars)
 
     end if
   end subroutine read_theta_profile
@@ -817,7 +820,7 @@ module sounding
       else
         stop "Could not read vertical velocity compatable variable"
       endif
-      subs = read_x_profile(nvar, subs_type, retVars)
+      subs = read_x_profile(nvar, nmaxsnd, subs_type, retVars)
 
     end if
   end subroutine read_subs_profile

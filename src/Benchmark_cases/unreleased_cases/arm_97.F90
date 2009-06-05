@@ -8,24 +8,10 @@ module arm_97
 
   implicit none
 
-  public :: arm_97_tndcy, arm_97_sfclyr, arm_97_init
+  public :: arm_97_tndcy, arm_97_sfclyr
 
   private ! Defualt Scope
 
-  ! Constant Parameters
-  integer, parameter :: ntimes = 169, nz = 18, & 
-   per_line = 5
-
-  real, dimension(ntimes) :: times       ! Time from day0      [s]
-  real, dimension(nz, ntimes) :: z       ! Height              [m]
-  real, dimension(nz, ntimes) :: thl_ls  ! Potential Temperature
-  ! Tendency            [K/s]
-  real, dimension(nz, ntimes) :: rt_ls   ! Water Vapor Advective
-  ! Tendency            [Kg/Kg/s]
-  real, dimension(nz, ntimes) :: um_obs  ! Obs. wind u         [m/s]
-  real, dimension(nz, ntimes) :: vm_obs  ! Obs. wind v         [m/s]
-  real, dimension(ntimes) :: SE          ! Sensible heat flux  [W/m^2]
-  real, dimension(ntimes) :: LE          ! Evaporation         [W/m^2]
 
   contains
 
@@ -45,8 +31,6 @@ module arm_97
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-    use interpolation, only: zlinterp_fnc ! Procedure(s)
-
     use stats_precision, only: time_precision ! Variable(s)
 
     use error_code, only: clubb_debug ! Procedure(s)
@@ -56,11 +40,20 @@ module arm_97
 
     use interpolation, only: factor_interp ! Procedure(s)
 
+    use time_dependant_input, only: &
+      time_select,  &
+      time_f_given, &
+      thlm_f_given, &
+      rtm_f_given,  &
+      um_given,     &
+      vm_given, &
+      l_time_dependant
+
+
     implicit none
 
     ! External
     intrinsic :: present
-
 
     ! Input Variables
     real(kind=time_precision), intent(in) :: time ! Model time [s]
@@ -80,11 +73,7 @@ module arm_97
 
     real :: time_frac
     integer :: i1, i2
-
-    real, dimension(nz) :: thlm_t_interp, & 
-      rtm_t_interp, um_obs_t_interp, vm_obs_t_interp
-
-
+    if(l_time_dependant ) then
     !-----------------------------------------------------------------------
 
     ! Thetal forcing is equal to the LS tendency given here and the
@@ -98,67 +87,29 @@ module arm_97
 
     time_frac = -1.0 ! Default initialization
 
-    if ( time == times(1) ) then
-      time_frac = 0.0
-      i1 = 1
-      i2 = 2
-    else if ( time >= times(ntimes) ) then
-      time_frac = 1.0
-      i1 = ntimes-1
-      i2 = ntimes
-    else
-      i1 = 1
-      do while ( i1 <= ntimes-1 )
-        i2 = i1 + 1
-        if ( time >= times(i1) .and. time < times(i2) ) then
-          time_frac = real((time-times(i1))/(times(i2)-times(i1)))
-          exit
-        end if
-        i1 = i2
-      end do
-    end if ! time <= times(1)
+    call time_select( time,size(time_f_given), time_f_given, i1, i2 )
+
+    time_frac = real((time-time_f_given(i1))/(time_f_given(i2)-time_f_given(i1)))
 
     if( time_frac == -1.0 ) then
       call clubb_debug(1,"times is not sorted in arm_97_tndcy")
     endif
 
-    ! Interpolate LS thetal tendency to the HOC grid
+    ! Interpolate LS thetal tendency to the CLUBB grid
     ! Time
-    !thlm_t_interp = (1.-time_frac) * thl_ls(:,i1) + time_frac *  &
-    !   thl_ls(:,i2)
-    thlm_t_interp = factor_interp( time_frac, thl_ls(:, i2), thl_ls(:, i1) )
-    ! Vertical
-    thlm_forcing(1:gr%nnzp) = zlinterp_fnc & 
-             ( gr%nnzp, nz, gr%zt(:), z(:,i1), thlm_t_interp )
-
+    thlm_forcing = factor_interp( time_frac, thlm_f_given(:,i2), thlm_f_given(  :,i1 ) )
     ! Interpolate LS rt tendency to the HOC grid
-    ! Time
-    !rtm_t_interp = (1.-time_frac) * rt_ls(:,i1) + time_frac *  &
-    !   rt_ls(:,i2)
-    rtm_t_interp = factor_interp( time_frac, rt_ls(:,i2), rt_ls(:,i1) )
-    ! Vertical
-    rtm_forcing(1:gr%nnzp) = zlinterp_fnc & 
-             ( gr%nnzp, nz, gr%zt(:), z(:,i1), rtm_t_interp )
-    ! Modified by Joshua Fasching (October 2007)
 
+    ! Time
+    rtm_forcing = factor_interp( time_frac, rtm_f_given(:,i2), rtm_f_given(:,i1) )
+    
     ! Interpolate um observed to the HOC grid
     ! Time
-    !um_obs_t_interp = (1.-time_frac) * um_obs(:,i1) + time_frac *  &
-    !   um_obs(:,i2)
-    um_obs_t_interp = factor_interp( time_frac, um_obs(:,i2), um_obs(:,i1) )
-    ! Vertical
-    um_hoc_grid(1:gr%nnzp) = zlinterp_fnc & 
-             ( gr%nnzp, nz, gr%zt(:), z(:,i1), um_obs_t_interp )
-    ! Added by Joshua Fasching (October 27 2007)
+    um_hoc_grid = factor_interp( time_frac, um_given(:,i2), um_given(:,i1) )
 
     ! Interpolate vm observed to the HOC grid
-    ! Time
-    !vm_obs_t_interp = (1.-time_frac) * vm_obs(:,i1) + time_frac *  &
-    !   vm_obs(:,i2)
-    vm_obs_t_interp = factor_interp( time_frac, vm_obs(:,i2), vm_obs(:,i1) )
-    ! Vertical
-    vm_hoc_grid(1:gr%nnzp) = zlinterp_fnc & 
-             ( gr%nnzp, nz, gr%zt(:), z(:,i1), vm_obs_t_interp )
+    vm_hoc_grid = factor_interp( time_frac, vm_given(:,i2), vm_given(:,i1) )
+
     ! Added by Joshua Fasching (October 27 2007)
     um_hoc_grid (1) = um_hoc_grid(2)
     vm_hoc_grid (1) = vm_hoc_grid(2)
@@ -170,7 +121,7 @@ module arm_97
 
     if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
     if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
-
+    endif
     return
   end subroutine arm_97_tndcy
 !----------------------------------------------------------------------
@@ -197,6 +148,14 @@ module arm_97
     use interpolation, only: factor_interp ! Procedure(s)
 
     use surface_flux, only: compute_ubar, compute_momentum_flux ! Procedure(s)
+    use error_code, only: clubb_debug ! Procedure(s)
+
+    use time_dependant_input, only: &
+      time_select, &
+      time_sfc_given, &
+      LH_given, &
+      SH_given, &
+      l_time_dependant
 
     implicit none
 
@@ -236,35 +195,24 @@ module arm_97
     real :: ubar, bflx, heat_flx, moisture_flx, time_frac
     integer :: i1, i2
     !----------------------------------------------------------------------
-
+    if( l_time_dependant ) then
     ! Default initialization
     heat_flx = 0.0
     moisture_flx = 0.0
 
-    if ( time <= times(1) ) then
-      heat_flx     = SE(1)
-      moisture_flx = LE(1)
-    else if ( time >= times(ntimes) ) then
-      heat_flx     = SE(ntimes)
-      moisture_flx = LE(ntimes)
-    else
-      i1 = 1
-      do while ( i1 <= ntimes-1 )
-        i2 = i1 + 1
-        if ( time >= times(i1) .and. time < times(i2) ) then
-          time_frac            = real((time-times(i1))/(times(i2) & 
-             - times(i1)))
-!      heat_flx     = ( 1. - time_frac ) * SE(i1) +  &
-!         time_frac * SE(i2)
-          heat_flx = factor_interp( time_frac, SE(i2), SE(i1) )
-!      moisture_flx = ( 1. - time_frac ) * LE(i1) +  &
-!         time_frac * LE(i2)
-          moisture_flx = factor_interp( time_frac, LE(i2), LE(i1) )
-          i1           = ntimes
-        end if
-        i1 = i2
-      end do
-    end if ! time <= times(1)
+    time_frac = -1.0 ! Default initialization
+
+    call time_select( time, size(time_sfc_given), time_sfc_given, i1, i2 )
+
+    time_frac = real((time-time_sfc_given(i1))/(time_sfc_given(i2)-time_sfc_given(i1)))
+
+    if( time_frac == -1.0 ) then
+      call clubb_debug(1,"times is not sorted in arm_97_tndcy")
+    endif
+
+
+    heat_flx = factor_interp( time_frac, SH_given(i2), SH_given(i1) )
+    moisture_flx = factor_interp( time_frac, LH_given(i2), LH_given(i1) )
 
     ! Convert W/m^2 into w'thl' w'rt' units
     wpthlp_sfc = heat_flx / ( Cp * rho0 )     ! (K m/s)
@@ -288,61 +236,8 @@ module arm_97
 
     call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
                                 upwp_sfc, vpwp_sfc )
-
+     endif
     return
   end subroutine arm_97_sfclyr
-  !----------------------------------------------------------------------
-  subroutine arm_97_init( iunit, file_path )
-    !
-    !       Description:
-    !       This subroutine initializes the module by reading in forcing
-    !       data used in the tndcy and sfclyr subroutines.
-    !----------------------------------------------------------------------
-
-    use file_functions, only: file_read_1d, file_read_2d ! Procedure(s)
-
-    implicit none
-
-    integer, intent(in) :: iunit ! File unit number
-
-    character(len=*), intent(in) :: &
-      file_path ! Path to the forcing files
-
-    ! ---- Begin Code ----
-
-    call file_read_1d( iunit, & 
-     file_path//'arm_97_times.dat', & 
-     ntimes, per_line, times )
-
-    call file_read_2d( iunit, & 
-     file_path//'arm_97_heights.dat', & 
-     nz, ntimes, per_line, z )
-
-    call file_read_1d( iunit, & 
-     file_path//'arm_97_LE.dat', & 
-     ntimes, per_line, LE )
-
-    call file_read_1d( iunit, & 
-     file_path//'arm_97_SE.dat', & 
-     ntimes, per_line, SE )
-
-    call file_read_2d( iunit, & 
-     file_path//'arm_97_dTdt.dat', & 
-     nz, ntimes, per_line, thl_ls )
-
-    call file_read_2d( iunit, & 
-      file_path//'arm_97_dqdt.dat', & 
-      nz, ntimes, per_line, rt_ls )
-
-    call file_read_2d( iunit, & 
-      file_path//'arm_97_um_obs.dat', & 
-      nz, ntimes, per_line, um_obs )
-
-    call file_read_2d( iunit, & 
-      file_path//'arm_97_vm_obs.dat', & 
-      nz, ntimes, per_line, vm_obs )
-
-    return
-  end subroutine arm_97_init
   !----------------------------------------------------------------------
 end module arm_97

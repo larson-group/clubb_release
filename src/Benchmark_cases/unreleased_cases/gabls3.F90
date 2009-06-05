@@ -10,8 +10,6 @@ module gabls3
 
   public :: gabls3_tndcy, gabls3_sfclyr
 
-  private :: time_select ! Defualt Scope
-
   private
 
   contains
@@ -34,6 +32,8 @@ module gabls3
     use constants, only: Cp, Lv, grav, Rd ! Procedure(s)
 
     use interpolation, only:factor_interp, lin_int ! Procedure(s)
+
+    use time_dependant_input, only: time_select
 
     implicit none
 
@@ -171,15 +171,10 @@ module gabls3
         ug(i) = -2.0
         vg(i) =  2.0
       endif
-      !print *, "zt (",i,") =", gr%zt(i)
-      !print *, "T_t_interp (",i,") =", T_t_interp
-      !print *, "q_t_interp (",i,") =", q_t_interp
-      !print *, "Thlm_forcing (",i,") =", thlm_forcing(i)
-      !print *, "rtm_forcing (",i,") =", rtm_forcing(i)
     end do
-!    rtm_forcing = rtm_forcing/(1. - rtm_forcing)
+
     rtm_forcing = sp_humidity_forcing * ( 1. + rtm )**2
-!    thlm_forcing = ( thlm_forcing - Lv * rcm/Cp ) / exner
+
     thlm_forcing = T_in_K_forcing / exner
 
     ! Compute vertical motion
@@ -313,51 +308,6 @@ module gabls3
     return
   end subroutine gabls3_sfclyr
 
-  !----------------------------------------------------------------------
-  subroutine time_select( time, nvar, time_array, left_time, right_time )
-    !
-    !   Description: This subroutine determines which indexes of the given
-    !                time_array should be used when interpolating a value 
-    !                at the specified time.
-    !
-    !
-    !----------------------------------------------------------------------
 
-    use stats_precision, only: time_precision ! Variable(s)
-
-    use interpolation, only: binary_search    ! Procedure(s)
-  
-    implicit none
-  
-    integer, intent(in) :: nvar                     ! Number of array elements [-]
-  
-    real(kind=time_precision), intent(in) :: time   ! Target time              [s]
-  
-    real, dimension(nvar), intent(in) :: time_array ! Array of times           [s]
-  
-    integer, intent(out) :: &
-      right_time, &  ! Index of a time later than the target time [-]
-      left_time      ! Index of time before the target time       [-]
-  
-    integer :: k
-
-    if( time <= time_array(1)) then
-      left_time = 1
-      right_time = 2
-    else if ( time >= time_array(nvar) ) then
-      left_time = nvar
-      right_time = nvar - 1
-    else
-      do k=1,nvar-1
-        if ((time > time_array(k)) .AND. &
-         (time <= time_array(k+1))) then
-          left_time = k
-          right_time = k+1
-        end if
-      end do
-    endif
-    !print *, "Left time = ", left_time
-    !print *, "Right time = ", right_time
-  end subroutine time_select
 end module gabls3
 
