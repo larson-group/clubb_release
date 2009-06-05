@@ -359,15 +359,13 @@ module variables_diagnostic_module
 
 
     ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
-    if ( l_latin_hypercube_sampling ) then
-      AKm_est   = 0.0  ! Kessler ac estimate
-      AKm       = 0.0  ! Exact Kessler ac
-      AKstd     = 0.0  ! St dev of exact Kessler ac
-      AKstd_cld = 0.0  ! St dev of exact w/in cloud Kessler ac
-      rcm_est   = 0.0  ! Monte Carlo rcm estimate
-      AKm_rcm   = 0.0  ! Kessler ac based on rcm
-      AKm_rcc   = 0.0  ! Kessler ac based on rcm/cf
-    end if ! l_latin_hypercube_sampling
+    AKm_est   = 0.0  ! Kessler ac estimate
+    AKm       = 0.0  ! Exact Kessler ac
+    AKstd     = 0.0  ! St dev of exact Kessler ac
+    AKstd_cld = 0.0  ! St dev of exact w/in cloud Kessler ac
+    rcm_est   = 0.0  ! Monte Carlo rcm estimate
+    AKm_rcm   = 0.0  ! Kessler ac based on rcm
+    AKm_rcc   = 0.0  ! Kessler ac based on rcm/cf
 
     ! Passive scalars
     if ( sclr_dim > 0 ) then
