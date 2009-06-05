@@ -96,26 +96,26 @@ module soil_vegetation
     real, intent(out) :: soil_heat_flux ! Soil Heat flux [W/m^2]
     ! Local variables
 
-    real cs, &  ! soil heat capacity
-         ks, &  ! soil heat diffusivity
-         rs, &  ! soil density
+    real cs, &  ! soil heat capacity              [Jg/K]
+         ks, &  ! soil heat diffusivity           [m^2/s]
+         rs, &  ! soil density                    [g/m^3]
          c1, &  ! coefficient in force restore 1
          c2, &  ! coefficient in force restore 2
          c3, &  ! coefficient in force restore 3
          d1, &
-         veg_heat_flux, &
+         veg_heat_flux, &                         
          Frad_LW_up_sfc ! LW upwelling flux [W/m2]
 
     !----------------------------
     !  Soil parameters
     !---------------------------
 
-    cs=2.00e3
-    rs=1.00e3
-    ks=2.00e-7
+    cs=2.00e3  ! cs
+    rs=1.00e3  ! ps 
+    ks=2.00e-7 ! as
     d1=sqrt(ks*3600.e0*24.e0)
-    c1=2.e0*sqrt(pi)/(rs*cs*d1)
-    c2=2.e0*pi/(3600.e0*24.e0)
+    c1=2.e0*sqrt(pi)/(rs*cs*d1) 
+    c2=2.e0*pi/(3600.e0*24.e0) ! Omega
     c3=sqrt(pi*2.e0)/(exp(pi/4.e0)*rs*cs*sqrt(ks*3600.e0*24.e0* &
                      365.e0))
 
@@ -131,7 +131,9 @@ module soil_vegetation
     veg_heat_flux = Frad_LW_down_sfc - Frad_LW_up_sfc - wpthep * rho_sfc * Cp + Frad_SW_net
 
     ! Calculate soil heat flux
-    ! Duynkerke (1991) used a coefficient of 3.0, not 10.0
+    ! Duynkerke (1991) used a coefficient of 3.0 W/m^2*K, not 10.0 W/m^2*K
+    !
+    ! Equation 19 p.328
     
     soil_heat_flux = 10.0 * ( veg_T_in_K - sfc_soil_T_in_K ) + 0.05 * Frad_SW_down_sfc
 
