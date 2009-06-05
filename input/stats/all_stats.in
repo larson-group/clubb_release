@@ -84,7 +84,7 @@ vars_zm =
 ''
 
 vars_sfc = 
-'ustar', 'veg_T_in_K', 'sfc_soil_T_in_K', 'deep_soil_T_in_K', 'lh', 'sh', 'cc', 'lwp', 'swp', 'iwp',
+'ustar', 'shf', 'veg_T_in_K', 'sfc_soil_T_in_K', 'deep_soil_T_in_K', 'lh', 'sh', 'cc', 'lwp', 'swp', 'iwp',
 'zb', 'zi', 'rain', 'pflux', 'rrainm_sfc', 'wpthlp_sfc', 'wprtp_sfc', 'upwp_sfc', 'vpwp_sfc',
 'morr_rain_rate', 'morr_snow_rate',
 'thlm_vert_avg', 'rtm_vert_avg', 'um_vert_avg', 'vm_vert_avg', 

@@ -28,6 +28,7 @@ use constants, only: &
 use stats_variables, only: & 
     sfc,  & ! Variables
     iustar, &
+    ishf, &
     iveg_T_in_K, &
     isfc_soil_T_in_K,&
     ideep_soil_T_in_K, &
@@ -85,6 +86,7 @@ integer :: i, k
 ! Default initialization for array indices for sfc
 
 iustar          = 0
+ishf            = 0
 iveg_T_in_K      = 0
 isfc_soil_T_in_K          = 0
 ideep_soil_T_in_K     = 0
@@ -133,7 +135,12 @@ k = 1
 do i=1,sfc%nn
 
   select case ( trim(vars_sfc(i)) )
+  case ('shf')
+    ishf = k
 
+    call stat_assign(ishf, "shf", & 
+         "shf[W/m^2]","W/m^2",sfc )
+    k = k + 1
   case ('ustar')
     iustar = k
 

@@ -14,7 +14,7 @@ module soil_vegetation
   !----------------------------------------------------------------------
   subroutine advance_soil_veg( dt, rho_sfc, &
                                    Frad_SW_net, Frad_SW_down_sfc, &
-                                   Frad_LW_down_sfc, wpthep )
+                                   Frad_LW_down_sfc, wpthep, soil_heat_flux )
     !
     !     Description:
     !
@@ -92,6 +92,8 @@ module soil_vegetation
     Frad_LW_down_sfc, &    ! LW downwelling flux        [W/m^2]
     wpthep                 ! Turbulent Flux of equivalent potential temperature   [K]
 
+
+    real, intent(out) :: soil_heat_flux ! Soil Heat flux [W/m^2]
     ! Local variables
 
     real cs, &  ! soil heat capacity
@@ -101,7 +103,6 @@ module soil_vegetation
          c2, &  ! coefficient in force restore 2
          c3, &  ! coefficient in force restore 3
          d1, &
-         soil_heat_flux, & ! Soil Heat Flux
          veg_heat_flux, &
          Frad_LW_up_sfc ! LW upwelling flux [W/m2]
 

@@ -1728,7 +1728,7 @@ module clubb_driver
       hydromet, radht, um_ref,  & ! Variable(s)
       vm_ref, Frad,  Frad_SW_up,  Frad_LW_up, &
       Frad_SW_down, Frad_LW_down, Ncnm, thvm, ustar, & 
-      Kh_zm, ug, vg
+      shf, Kh_zm, ug, vg
 
     use variables_diagnostic_module, only: wpedsclrp ! Passive scalar variables
 
@@ -1748,6 +1748,7 @@ module clubb_driver
       iupwp_sfc, &
       ivpwp_sfc, &
       iustar, &
+      ishf, &
       l_stats_samp, &
       sfc
 
@@ -2224,7 +2225,7 @@ module clubb_driver
       call gabls3_sfclyr( um(2), vm(2), veg_T_in_K, &             ! Intent(in)
                           thlm(2), rtm(2), gr%zt(2), exner(1) , & ! Intent(in)
                           upwp_sfc, vpwp_sfc, &                   ! Intent(out)
-                          wpthlp_sfc, wprtp_sfc, ustar )          ! Intent(out)
+                          wpthlp_sfc, wprtp_sfc, ustar )     ! Intent(out)
 
     case ( "jun25_altocu" )
       ! There are no surface momentum or heat fluxes
@@ -2301,7 +2302,7 @@ module clubb_driver
 
       call advance_soil_veg( real( dt ), rho_zm(1), &
                              Frad_SW_down(1) - Frad_SW_up(1), Frad_SW_down(1), &
-                             Frad_LW_down(1), wpthep )
+                             Frad_LW_down(1), wpthep, shf )
     end if
 
 
@@ -2512,6 +2513,8 @@ module clubb_driver
       call stat_update_var_pt( iustar, 1, ustar,  & ! intent(in)
                                sfc )                ! intent(inout)
 
+      call stat_update_var_pt( ishf, 1, shf, & ! intent(in)
+                               sfc )           ! intent(inout)
     endif
 
 

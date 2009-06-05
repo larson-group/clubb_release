@@ -115,7 +115,8 @@ module variables_diagnostic_module
 ! Surface data
   real, public  :: ustar ! Average value of friction velocity [m/s]
 
-!$omp threadprivate(ustar)
+  real, public :: shf    ! Soil Heat Flux [W/m^2]
+!$omp threadprivate(ustar, shf)
 
 ! Passive scalar variables
 
