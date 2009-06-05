@@ -113,31 +113,31 @@ classdef convert_units
             
         end
 
-	function in_kms = flux_in_w_m_sq_to_kms( in_w_m_sq, rho )
+	function in_Kms = flux_in_W_m_sq_to_Kms( in_W_m_sq, rho )
 	%FLUX_IN_W_M_SQ_TO_KMS Converts flux in W/m^2 to Km/s
 	%
 	%   Input(s)
-	%	in_w_m_sq	Flux of temperature	[W/m^2]
+	%	in_W_m_sq	Flux of temperature	[W/m^2]
 	%	rho		Density			[kg/m^3]
 	%   Output(s)
-	%	in_kms		Flux of temperature	[Km/s]
+	%	in_Kms		Flux of temperature	[Km/s]
 	%	
 
-	    in_kms = in_w_m_sq ./ (rho * convert_units.Cp);
+	    in_Kms = in_W_m_sq ./ (rho * convert_units.Cp);
 
 	end
 
-	function in_kgkgms = flux_in_w_m_sq_to_kgkgms( in_w_m_sq, rho )
+	function in_kgkgms = flux_in_W_m_sq_to_kgkgms( in_W_m_sq, rho )
 	%FLUX_IN_W_M_SQ_TO_KMS Converts flux in W/m^2 to Km/s
 	%
 	%   Input(s)
-	%	in_w_m_sq	Flux of moisture	[W/m^2]
+	%	in_W_m_sq	Flux of moisture	[W/m^2]
 	%	rho		Density			[kg/m^3]
 	%   Output(s)
 	%	in_kgkgms	Flux of moisture	[(kg*kg)/s]
 	%	
 
-	    in_kgkgms = in_w_m_sq ./ (rho * convert_units.Lv);
+	    in_kgkgms = in_W_m_sq ./ (rho * convert_units.Lv);
 
        end
  
