@@ -171,9 +171,6 @@ module variables_diagnostic_module
 !   for the CLUBB model code
 !-----------------------------------------------------------------------
 
-    use parameters_microphys, only:  & 
-      l_latin_hypercube_sampling ! Variable(s)
-
     use constants, only:  & 
       emin ! Variables
 
