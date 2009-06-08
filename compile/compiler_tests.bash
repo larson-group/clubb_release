@@ -69,12 +69,6 @@ set_args $*
 echo -e "Running the compiler tests. Output will be placed in compiler_output."
 echo -e "Use 'tail -f compiler_output' to view the progress."
 
-# Compile with g95
-echo -e "\ng95 Compiler Warnings/Errors:" > $outputFile
-echo "-----------------------------" >> $outputFile
-clean
-compile g95
-
 # Compile with SunStudio
 echo -e "\nSun Studio Compiler Warnings/Errors:" >> $outputFile
 echo "------------------------------------" >> $outputFile
@@ -86,5 +80,11 @@ echo -e "\nIntel Fortran Compiler Warnings/Errors:" >> $outputFile
 echo "---------------------------------------" >> $outputFile
 clean
 compile ifort
+
+# Compile with g95
+echo -e "\ng95 Compiler Warnings/Errors:" > $outputFile
+echo "-----------------------------" >> $outputFile
+clean
+compile g95
 
 echo -e "\nDone! View the file 'compiler_output' to see the results."
