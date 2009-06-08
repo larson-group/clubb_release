@@ -174,8 +174,8 @@ module clubb_driver
 
     use sounding, only: sclr_max
 
-    use time_dependant_input, only: l_time_dependant, &
-      finalize_time_dependant_input
+    use time_dependant_input, only: l_t_dependant, &
+      finalize_t_dependant_input
 
     implicit none
 
@@ -278,7 +278,7 @@ module clubb_driver
       time_initial, time_final, time_spinup, & 
       dtmain, dtclosure, & 
       sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge, & 
-      forcings_file_path, l_time_dependant, &
+      forcings_file_path, l_t_dependant, &
       l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, debug_level, & 
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
@@ -326,7 +326,7 @@ module clubb_driver
 
     forcings_file_path = ''
 
-    l_time_dependant = .false.
+    l_t_dependant = .false.
 
     l_soil_veg     = .false.
     l_tke_aniso    = .false.
@@ -454,7 +454,7 @@ module clubb_driver
 
       print *, "forcings_file_path = ", forcings_file_path
 
-      print *, "l_time_dependant = ", l_time_dependant
+      print *, "l_t_dependant = ", l_t_dependant
 
       print *, "l_soil_veg = " , l_soil_veg
       print *, "l_tke_aniso = ", l_tke_aniso
@@ -723,8 +723,8 @@ module clubb_driver
 
     ! Free memory
 
-    if( l_time_dependant ) then
-      call finalize_time_dependant_input()
+    if( l_t_dependant ) then
+      call finalize_t_dependant_input()
     end if
 
     call cleanup_clubb_core( .false. )
@@ -791,8 +791,8 @@ module clubb_driver
 
     use arm_3year, only: arm_3year_init ! Procedure(s)
 
-    use time_dependant_input, only: initialize_time_dependant_input,&
-                                    l_time_dependant
+    use time_dependant_input, only: initialize_t_dependant_input,&
+                                    l_t_dependant
 
     use lba, only: lba_init ! Procedure(s)
 
@@ -1056,8 +1056,8 @@ module clubb_driver
 
     ! Initilize Time Dependant Input
 
-    if( l_time_dependant ) then
-      call initialize_time_dependant_input &
+    if( l_t_dependant ) then
+      call initialize_t_dependant_input &
                    ( iunit, runtype, gr%nnzp, gr%zt )
     end if
 
@@ -1467,8 +1467,8 @@ module clubb_driver
 
     use stats_precision, only: time_precision ! Variable(s)
 
-    use time_dependant_input, only: l_time_dependant, & ! Variable(s)
-                                    initialize_time_dependant_input ! Procedure(s)
+    use time_dependant_input, only: l_t_dependant, & ! Variable(s)
+                                    initialize_t_dependant_input ! Procedure(s)
 
     use model_flags, only: &
       l_uv_nudge, & ! Variable(s)
@@ -1692,8 +1692,8 @@ module clubb_driver
     end select
 
 
-    if( l_time_dependant ) then
-      call initialize_time_dependant_input &
+    if( l_t_dependant ) then
+      call initialize_t_dependant_input &
            ( iunit, runtype, gr%nnzp, gr%zt )
     end if
 

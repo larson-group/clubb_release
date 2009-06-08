@@ -9,12 +9,12 @@ module time_dependant_input
 
   implicit none
 
-  public :: initialize_time_dependant_input, finalize_time_dependant_input, time_select
+  public :: initialize_t_dependant_input, finalize_t_dependant_input, time_select
 
-  private :: initialize_time_dependant_forcings, &
-             finalize_time_dependant_forcings, & 
-             initialize_time_dependant_surface, &
-             finalize_time_dependant_surface, &
+  private :: initialize_t_dependant_forcings, &
+             finalize_t_dependant_forcings, & 
+             initialize_t_dependant_surface, &
+             finalize_t_dependant_surface, &
              read_to_grid
 
   ! array(altitude,time)
@@ -39,7 +39,7 @@ module time_dependant_input
     psfc_given
 
 
-  logical, public :: l_time_dependant ! Flag used to determine when
+  logical, public :: l_t_dependant ! Flag used to determine when
   !                                     time dependant information is read in.
   !                                     It is suggested that the flag be checked
   !                                     before using any of the variables stored
@@ -58,7 +58,7 @@ module time_dependant_input
   contains
 
   !-------------------------------------------------------------------------------------------------
-  subroutine initialize_time_dependant_input( iunit, runtype, grid_size, grid )
+  subroutine initialize_t_dependant_input( iunit, runtype, grid_size, grid )
     !
     !  Description: This subroutine reads in time dependant information about a
     !  case that is stored inside the module.
@@ -78,16 +78,16 @@ module time_dependant_input
 
     ! Begin Code
 
-    call initialize_time_dependant_forcings &
+    call initialize_t_dependant_forcings &
                    ( iunit, input_path//trim(runtype)//forcings_path, grid_size, grid )
 
-    call initialize_time_dependant_surface &
+    call initialize_t_dependant_surface &
                    ( iunit, input_path//trim(runtype)//surface_path )
 
-  end subroutine initialize_time_dependant_input
+  end subroutine initialize_t_dependant_input
 
   !------------------------------------------------------------------------------
-  subroutine finalize_time_dependant_input()
+  subroutine finalize_t_dependant_input()
     !
     ! Description: This subroutine frees memory stored after initilizing the
     ! time dependant data of this module.
@@ -98,13 +98,13 @@ module time_dependant_input
 
     ! Begin Code
 
-    call finalize_time_dependant_forcings()
-    call finalize_time_dependant_surface()
+    call finalize_t_dependant_forcings()
+    call finalize_t_dependant_surface()
 
   end subroutine
 
   !------------------------------------------------------------------------------
-  subroutine initialize_time_dependant_surface( iunit, input_file )
+  subroutine initialize_t_dependant_surface( iunit, input_file )
     !
     !  Description: This subroutine reads in a file that details time dependant
     !  input values that vary in one dimension.
@@ -166,7 +166,7 @@ module time_dependant_input
   end subroutine
 
   !-------------------------------------------------------------------------------------
-  subroutine initialize_time_dependant_forcings( iunit, input_file, grid_size, grid )
+  subroutine initialize_t_dependant_forcings( iunit, input_file, grid_size, grid )
     !
     !  Description: This subroutine reads in a file that details time dependant
     !  input values that vary in two dimensions.
@@ -262,12 +262,12 @@ module time_dependant_input
 
     return
 
-  end subroutine initialize_time_dependant_forcings
+  end subroutine initialize_t_dependant_forcings
 
   !----------------------------------------------------------
-  subroutine finalize_time_dependant_forcings()
+  subroutine finalize_t_dependant_forcings()
     !
-    !   Description: Clears memory initialized in initialize_time_dependant_forcings.
+    !   Description: Clears memory initialized in initialize_t_dependant_forcings.
     !   This should be called at the end of the model
     !----------------------------------------------------------
 
@@ -286,11 +286,11 @@ module time_dependant_input
     deallocate( vg_given )
 
 
-  end subroutine finalize_time_dependant_forcings
+  end subroutine finalize_t_dependant_forcings
   !-------------------------------------------------------------------------------------------------
-  subroutine finalize_time_dependant_surface( )
+  subroutine finalize_t_dependant_surface( )
     !
-    !  Description: Clears memory initialized in initialize_time_dependant_surface.
+    !  Description: Clears memory initialized in initialize_t_dependant_surface.
     !  This should be called at the end of the model.
     !
     !-----------------------------------------------------------------------------------------------
@@ -306,7 +306,7 @@ module time_dependant_input
     deallocate( rtm_sfc_given )
     deallocate( psfc_given )
 
-  end subroutine finalize_time_dependant_surface
+  end subroutine finalize_t_dependant_surface
 
   !------------------------------------------------------------------------------------------------
   function read_to_grid( ntwo_dim_vars, dim_size, other_dim_size, &

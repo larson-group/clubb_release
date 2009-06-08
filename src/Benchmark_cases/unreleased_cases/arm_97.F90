@@ -47,7 +47,7 @@ module arm_97
       rtm_f_given,  &
       um_given,     &
       vm_given, &
-      l_time_dependant
+      l_t_dependant
 
 
     implicit none
@@ -73,7 +73,7 @@ module arm_97
 
     real :: time_frac
     integer :: i1, i2
-    if(l_time_dependant ) then
+    if(l_t_dependant ) then
     !-----------------------------------------------------------------------
 
     ! Thetal forcing is equal to the LS tendency given here and the
@@ -155,7 +155,7 @@ module arm_97
       time_sfc_given, &
       LH_given, &
       SH_given, &
-      l_time_dependant
+      l_t_dependant
 
     implicit none
 
@@ -195,7 +195,7 @@ module arm_97
     real :: ubar, bflx, heat_flx, moisture_flx, time_frac
     integer :: i1, i2
     !----------------------------------------------------------------------
-    if( l_time_dependant ) then
+    if( l_t_dependant ) then
     ! Default initialization
     heat_flx = 0.0
     moisture_flx = 0.0

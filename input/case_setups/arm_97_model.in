@@ -61,7 +61,7 @@ ts_nudge = 7200.   ! Timescale of u/v nudging            [s]
 
 forcings_file_path = '../input/case_setups/arm_97_forcings/'
 
-l_time_dependant = .true.
+l_t_dependant = .true.
 
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
