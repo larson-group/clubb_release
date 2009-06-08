@@ -1976,7 +1976,7 @@ module clubb_driver
     case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
            "cloud_feedback_s11", "cloud_feedback_s11_p2k", &
            "cloud_feedback_s12", "cloud_feedback_s12_p2k" ) ! Cloud Feedback cases
-      call cloud_feedback_tndcy(time_current, rcm, exner, p_in_Pa, &  ! Intent(in) 
+      call cloud_feedback_tndcy(exner, p_in_Pa, &                     ! Intent(in) 
                                 thlm_forcing, rtm_forcing, &          ! Intent(out)
                                 sclrm_forcing, edsclrm_forcing )      ! Intent(out)
     case ( "cobra" )

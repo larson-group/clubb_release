@@ -29,8 +29,7 @@ real, dimension(1)    :: shflx ! Surface sensible heat flux
 contains
 
 !----------------------------------------------------------------------
-subroutine cloud_feedback_tndcy( time, rcm, exner, & 
-                                 p_in_Pa, & 
+subroutine cloud_feedback_tndcy( exner, p_in_Pa, & 
                                  thlm_forcing, rtm_forcing, & 
                                  sclrm_forcing, edsclrm_forcing )
 !       Description:
@@ -55,10 +54,7 @@ use array_index, only:  &
 implicit none
 
 ! Input
-real(kind=time_precision), intent(in) :: time ! Model time [s]
-
 real, intent(in), dimension(gr%nnzp) :: &
-  rcm,          & ! Liquid water mixing ratio     [kg/kg]
   exner,        & ! Exner function                [-]
   p_in_Pa         ! Pressure                      [Pa]
 
@@ -164,7 +160,7 @@ real, parameter :: &
 
 ! Internal variables
 real :: & 
-  ubar
+  ubar, temp
 !  Cz,   & ! This is C_10 scaled to the height of the lowest model level.
 !  Cm,   & ! This is C_m_20 scaled to the height of the lowest model level.
 !  Ch,   & ! This is C_h_20 scaled to the height of the lowest model level.
@@ -174,6 +170,11 @@ ubar = compute_ubar( um_sfc, vm_sfc )
 
 ! Just set ustar = 0.3
 ustar = 0.3
+
+! Since I have a lot of commented out code while I test changes, I
+! have a lot of compiler warnings of unused variables. Get rid of those here.
+temp = real ( time + p_in_Pa + rho0 + lowestlevel )
+temp = temp + 1
 
 ! Modification in case lowest model level isn't at 10 m, from ATEX specification
 !Cz   = C_10 * ((log(10/z0))/(log(lowestlevel/z0))) * & 
