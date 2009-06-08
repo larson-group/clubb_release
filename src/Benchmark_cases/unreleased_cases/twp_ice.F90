@@ -32,7 +32,7 @@ real, dimension(nz, ntimes) :: omega_forcing   ! Vertical velocity forcing [mb/h
 contains
 
 !----------------------------------------------------------------------
-subroutine twp_ice_tndcy( time, p_in_Pa, rho, thvm, &
+subroutine twp_ice_tndcy( time, rho, &
                            wm_zt, wm_zm, thlm_forcing, &
                            rtm_forcing, um_hoc_grid, vm_hoc_grid, &
                            sclrm_forcing, edsclrm_forcing )
@@ -69,10 +69,7 @@ intrinsic :: present
 ! Input Variables
 real(kind=time_precision), intent(in) :: time ! Model time [s]
 
-real, dimension(gr%nnzp), intent(in) ::  &
-  p_in_Pa,  &    ! Pressure [Pa]
-  rho,      &
-  thvm
+real, dimension(gr%nnzp), intent(in) :: rho
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) ::  & 
