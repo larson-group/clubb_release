@@ -1,0 +1,12 @@
+This directory contains scripts to compile CLUBB. 
+
+If you want to compile with the default compiler (g95):
+  ./compile.bash
+
+To compile with a different compiler, pass the .bash script for the compiler
+you want to use (found in ./config/) into the compile script:
+  ./compile.bash [COMPILER_CONFIG]
+
+If you want to run the compiler tests, which compiles CLUBB using the g95, 
+SunStudio, and Intel Fortran compilers:
+  ./compiler_tests.bash
