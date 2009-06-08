@@ -98,7 +98,7 @@ iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thet
 
 &microphysics_setting
 ! The schemes are: "khairoutdinov_kogan", "morrison", "coamps", "simplified_ice", "none"  
-micro_scheme = "simplified_ice"
+micro_scheme = "coamps"
 microphys_start_time = 64800.0
 
 /
