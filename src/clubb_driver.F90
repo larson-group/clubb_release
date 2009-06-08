@@ -1728,7 +1728,7 @@ module clubb_driver
       hydromet, radht, um_ref,  & ! Variable(s)
       vm_ref, Frad,  Frad_SW_up,  Frad_LW_up, &
       Frad_SW_down, Frad_LW_down, Ncnm, thvm, ustar, & 
-      shf, Kh_zm, ug, vg
+      soil_heat_flux, Kh_zm, ug, vg
 
     use variables_diagnostic_module, only: wpedsclrp ! Passive scalar variables
 
@@ -1748,7 +1748,7 @@ module clubb_driver
       iupwp_sfc, &
       ivpwp_sfc, &
       iustar, &
-      ishf, &
+      isoil_heat_flux, &
       l_stats_samp, &
       sfc
 
@@ -2302,7 +2302,7 @@ module clubb_driver
 
       call advance_soil_veg( real( dt ), rho_zm(1), &
                              Frad_SW_down(1) - Frad_SW_up(1), Frad_SW_down(1), &
-                             Frad_LW_down(1), wpthep, shf )
+                             Frad_LW_down(1), wpthep, soil_heat_flux )
     end if
 
 
@@ -2513,7 +2513,7 @@ module clubb_driver
       call stat_update_var_pt( iustar, 1, ustar,  & ! intent(in)
                                sfc )                ! intent(inout)
 
-      call stat_update_var_pt( ishf, 1, shf, & ! intent(in)
+      call stat_update_var_pt( isoil_heat_flux, 1, soil_heat_flux, & ! intent(in)
                                sfc )           ! intent(inout)
     endif
 

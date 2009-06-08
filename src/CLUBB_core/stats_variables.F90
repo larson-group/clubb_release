@@ -589,7 +589,7 @@ module stats_variables
 
   integer, public :: & 
     iustar, &
-    ishf,&
+    isoil_heat_flux,&
     iveg_T_in_K,&
     isfc_soil_T_in_K, &
     ideep_soil_T_in_K,& 
@@ -633,7 +633,7 @@ module stats_variables
     imorr_snow_rate
 
 
-!$omp threadprivate(iustar, ishf, iveg_T_in_K, isfc_soil_T_in_K, ideep_soil_T_in_K, &
+!$omp threadprivate(iustar, isoil_heat_flux, iveg_T_in_K, isfc_soil_T_in_K, ideep_soil_T_in_K, &
 !$omp   ilh, ish, icc, ilwp, izb, izi, &
 !$omp   irain, ipflux, irrainm_sfc, &
 !$omp   iwpthlp_sfc, iwprtp_sfc, iupwp_sfc, ivpwp_sfc, &

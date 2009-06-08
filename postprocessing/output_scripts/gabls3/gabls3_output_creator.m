@@ -309,7 +309,7 @@ netcdf.putVar( ncid, q2mvarid, qtm_array(1,:));
 netcdf.putVar( ncid, u10mvarid, um_array(2,:));
 netcdf.putVar( ncid, v10mvarid, vm_array(2,:));
 netcdf.putVar( ncid, ccvarid, cc_array(1,:));
-netcdf.putVar( ncid, gvarid, shf_array(1,:));
+netcdf.putVar( ncid, gvarid, soil_heat_flux_array(1,:));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Mean State Output
