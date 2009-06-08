@@ -170,7 +170,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 		cat $STATS_IN >> 'clubb.in'
 		run_case
 
-		#Move the ZT and SM files out of the way
+		#Move the ZT and ZM files out of the way
 		if [ "${EXIT_CODE[$x]}" != 0 ]; then
 			rm "../output/${RUN_CASE[$x]}"_zt.ctl
 			rm "../output/${RUN_CASE[$x]}"_zt.dat
@@ -183,44 +183,43 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 			mv "../output/${RUN_CASE[$x]}"_zt.dat "$OUTPUT_DIR"/CLUBB_current/
 			mv "../output/${RUN_CASE[$x]}"_zm.ctl "$OUTPUT_DIR"/CLUBB_current/
 			mv "../output/${RUN_CASE[$x]}"_zm.dat "$OUTPUT_DIR"/CLUBB_current/
-			rm "../output/${RUN_CASE[$x]}"_sfc.ctl
-			rm "../output/${RUN_CASE[$x]}"_sfc.dat
+			#We only run TWP_ICE once so we want to keep the SFC files
+			if [ ${RUN_CASE[$x]} = twp_ice ]; then
+				mv "../output/${RUN_CASE[$x]}"_sfc.ctl "$OUTPUT_DIR"/CLUBB_current/
+				mv "../output/${RUN_CASE[$x]}"_sfc.dat "$OUTPUT_DIR"/CLUBB_current/
+			else
+				rm "../output/${RUN_CASE[$x]}"_sfc.ctl
+				rm "../output/${RUN_CASE[$x]}"_sfc.dat
+			fi
 		fi
 		
-		#Run again with a finer time step
-		#Note, TWP_ICE requires dt to be changed as well
-		if [ ${RUN_CASE[$x]} = twp_ice ]; then
+		#Run again with a finer output time interval
+		#Note, we do not run TWP_ICE a second time
+		if [ ${RUN_CASE[$x]} != twp_ice ]; then
 			cat $PARAMS_IN > 'clubb.in'
 			cat $MODEL_IN | sed 's/stats_tout\s*=\s*.*/stats_tout = 60\./g' >> 'clubb.in'
 			cat $STATS_IN >> 'clubb.in'
-			cat 'clubb.in' | sed 's/dtmain\s*=\s*.*/dtmain = 60\./g' > 'tmp.in'
-			cat 'tmp.in' | sed 's/dtclosure\s*=\s*.*/dtclosure = 60\./g' > 'clubb.in'
-			cat 'clubb.in' | sed 's/stats_tsamp\s*=\s*.*/stats_tsamp = 60\./g' > 'tmp.in'
-			mv 'tmp.in' 'clubb.in'
-		else
-			cat $PARAMS_IN > 'clubb.in'
-			cat $MODEL_IN | sed 's/stats_tout\s*=\s*.*/stats_tout = 60\./g' >> 'clubb.in'
-			cat $STATS_IN >> 'clubb.in'
-		fi
-		
-		run_case
 
-		#Now move the SFC file
-		if [ "${EXIT_CODE[$x]}" != 0 ]; then
-			rm "../output/${RUN_CASE[$x]}"_zt.ctl
-			rm "../output/${RUN_CASE[$x]}"_zt.dat
-			rm "../output/${RUN_CASE[$x]}"_zm.ctl
-			rm "../output/${RUN_CASE[$x]}"_zm.dat
-			rm "../output/${RUN_CASE[$x]}"_sfc.ctl
-			rm "../output/${RUN_CASE[$x]}"_sfc.dat
-		else
-			rm "../output/${RUN_CASE[$x]}"_zt.ctl
-			rm "../output/${RUN_CASE[$x]}"_zt.dat
-			rm "../output/${RUN_CASE[$x]}"_zm.ctl
-			rm "../output/${RUN_CASE[$x]}"_zm.dat
-			mv "../output/${RUN_CASE[$x]}"_sfc.ctl "$OUTPUT_DIR"/CLUBB_current/
-			mv "../output/${RUN_CASE[$x]}"_sfc.dat "$OUTPUT_DIR"/CLUBB_current/
+			run_case
+
+			#Now move the SFC file
+			if [ "${EXIT_CODE[$x]}" != 0 ]; then
+				rm "../output/${RUN_CASE[$x]}"_zt.ctl
+				rm "../output/${RUN_CASE[$x]}"_zt.dat
+				rm "../output/${RUN_CASE[$x]}"_zm.ctl
+				rm "../output/${RUN_CASE[$x]}"_zm.dat
+				rm "../output/${RUN_CASE[$x]}"_sfc.ctl
+				rm "../output/${RUN_CASE[$x]}"_sfc.dat
+			else
+				rm "../output/${RUN_CASE[$x]}"_zt.ctl
+				rm "../output/${RUN_CASE[$x]}"_zt.dat
+				rm "../output/${RUN_CASE[$x]}"_zm.ctl
+				rm "../output/${RUN_CASE[$x]}"_zm.dat
+				mv "../output/${RUN_CASE[$x]}"_sfc.ctl "$OUTPUT_DIR"/CLUBB_current/
+				mv "../output/${RUN_CASE[$x]}"_sfc.dat "$OUTPUT_DIR"/CLUBB_current/
+			fi
 		fi
+		
 
 	elif [ $TIMESTEP_TEST == true ]; then
 
