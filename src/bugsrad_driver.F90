@@ -80,7 +80,10 @@ module bugsrad_clubb_mod
       alvdr, &
       alvdf, &
       alndr, &
-      alndf
+      alndf, &
+      amu0,  &
+      slr,   &
+      l_fix_cos_solar_zen
 
     implicit none
 
@@ -164,10 +167,8 @@ module bugsrad_clubb_mod
       radht_LW2  ! LW Radiative heating rate        [W/m^2]
 
     double precision, dimension(nlen) :: &
-      slr, & ! Fraction of daylight  
-      ts,  & ! Surface temperature [K]
-      amu0   ! Cosine of the solar zenith angle
-
+      ts  ! Surface temperature [K]
+    
     double precision :: z1_fact, z2_fact, tmp ! Temp storage
 
     integer :: i, j, z, z1, z2  ! Loop indices
@@ -177,8 +178,11 @@ module bugsrad_clubb_mod
 
     buffer = lin_int_buffer + std_atmos_buffer
 
-    ! Calculated value of cosine of the solar zenith angle
-    amu0 = cos_solar_zen( day, month, year, time, lat_in_degrees, lon_in_degrees )
+    ! If l_fix_cos_solar_zen is not set in the model.in, calculate amu0
+    ! Otherwise, it was defined in the model.in file
+    if ( .not. l_fix_cos_solar_zen ) then
+      amu0 =  cos_solar_zen( day, month, year, time, lat_in_degrees, lon_in_degrees ) 
+    end if
 
     ! Convert to millibars
     pinmb(1,1:(nz-1))  = dble( p_in_Pa(2:nz) / 100.0 ) ! t grid in CLUBB
@@ -204,9 +208,7 @@ module bugsrad_clubb_mod
     end do
 
     ! Setup miscellaneous variables
-
-    slr  = 1.0d0 ! Fraction of daylight
-
+    
     ! Ozone at < 1 km = 5.4e-5 g/m^3 from U.S. Standard Atmosphere, 1976.
     !   Convert from g to kg.
     o3l(1,1:(nz-1)) = dble( ( 5.4e-5 / rho_zm(1:(nz-1)) ) * 0.001 )

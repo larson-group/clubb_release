@@ -234,9 +234,9 @@ module clubb_driver
     character(len=6) :: &
       saturation_formula ! "bolton" approx. or "flatau" approx.
 
-    character(len=50) ::  & 
-      restart_path_case, & ! GrADS file used in case of restart
-      forcings_file_path   ! Path to the forcing files
+    character(len=128) ::  & 
+      restart_path_case,   & ! GrADS file used in case of restart
+      forcings_file_path     ! Path to the forcing files
 
     logical :: & 
       l_stats ! Whether statistics are computed and output to disk
@@ -796,6 +796,8 @@ module clubb_driver
 
     use lba, only: lba_init ! Procedure(s)
 
+    use cloud_feedback, only: cloud_feedback_init ! Procedure(s)
+
     use twp_ice, only: twp_ice_init ! Procedure(s)
 #endif
 
@@ -1126,6 +1128,14 @@ module clubb_driver
       em = 1.0
       call twp_ice_init( iunit, forcings_file_path )
       ! twp_ice case
+
+    case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
+           "cloud_feedback_s11", "cloud_feedback_s11_p2k", &
+           "cloud_feedback_s12", "cloud_feedback_s12_p2k" )
+
+      em = 1.0
+      call cloud_feedback_init( iunit, forcings_file_path )
+
 #endif
 
       ! GCSS FIRE Sc
@@ -1833,6 +1843,9 @@ module clubb_driver
     use rico, only: rico_tndcy, rico_sfclyr ! Procedure(s)
 
     use lba, only: lba_tndcy, lba_sfclyr ! Procedure(s)
+
+    use cloud_feedback, only: cloud_feedback_tndcy, &
+                              cloud_feedback_sfclyr ! Procedure(s)
 #endif
 
     use mpace_a, only: mpace_a_tndcy, mpace_a_sfclyr ! Procedure(s)
@@ -1960,6 +1973,12 @@ module clubb_driver
                               wm_zt, wm_zm, thlm_forcing, rtm_forcing, &   ! Intent(out)
                               Frad, radht, &                               ! Intent(out)
                               sclrm_forcing, edsclrm_forcing )             ! Intent(out)
+    case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
+           "cloud_feedback_s11", "cloud_feedback_s11_p2k", &
+           "cloud_feedback_s12", "cloud_feedback_s12_p2k" ) ! Cloud Feedback cases
+      call cloud_feedback_tndcy(time_current, rcm, exner, p_in_Pa, &  ! Intent(in) 
+                                thlm_forcing, rtm_forcing, &          ! Intent(out)
+                                sclrm_forcing, edsclrm_forcing )      ! Intent(out)
     case ( "cobra" )
       call cobra_tndcy( thlm_forcing, rtm_forcing, &     ! Intent(out)
                         sclrm_forcing, edsclrm_forcing ) ! Intent(out)
@@ -2164,6 +2183,16 @@ module clubb_driver
 
       ! Ensure ustar is set.
       ustar = 0
+
+    case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
+           "cloud_feedback_s11", "cloud_feedback_s11_p2k", &
+           "cloud_feedback_s12", "cloud_feedback_s12_p2k" ) ! Cloud Feedback cases
+      call cloud_feedback_sfclyr( time_current, p_in_Pa(2), rho_zm(1), gr%zt(2),  & ! Intent(in)
+                                  thlm(2), rtm(2), um(2), vm(2), &       ! Intent(in)
+                                  exner(1), psfc, Tsfc, &                ! Intent(in)
+                                  upwp_sfc, vpwp_sfc, &                  ! Intent(out)
+                                  wpthlp_sfc, wprtp_sfc, ustar, &        ! Intent(out)
+                                  wpsclrp_sfc, wpedsclrp_sfc )           ! Intent(out)
 #endif
 
     case ( "dycoms2_rf01" )

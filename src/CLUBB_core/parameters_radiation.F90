@@ -40,6 +40,9 @@ module parameters_radiation
     gc, & ! Asymmetry parameter, "g" in Duynkerke           [-]
     omega ! Single-scattering albedo                        [-] 
 
+  double precision, public :: &
+    amu0, & ! Calculated value of cosine of the solar zenith angle
+    slr     ! Fraction of daylight
 
   real, public, dimension(20) :: &
     Fs_list, &          ! List of Fs0 values for simplified radiation
@@ -81,7 +84,8 @@ module parameters_radiation
     namelist /radiation_setting/ &
      rad_scheme, sol_const, alvdr, alvdf, alndr, alndf, &
      kappa, F0, F1, eff_drop_radius, gc, omega, Fs_list, &
-     cos_solar_zen_list, std_atmos_buffer, l_fix_cos_solar_zen
+     cos_solar_zen_list, std_atmos_buffer, l_fix_cos_solar_zen, &
+     amu0, slr
 
     ! ---- Begin Code ----
 
@@ -106,6 +110,9 @@ module parameters_radiation
     kappa = 119.0  ! A constant (Duynkerke eqn. 5)                   [m^2/kg]
     gc    = 0.86   ! Asymmetry parameter, "g" in Duynkerke           [-]
     omega = 0.9965 ! Single-scattering albedo                        [-]
+
+    slr  = 1.0d0  ! Fraction of daylight
+    amu0 = -999.0 ! Calculated value of cosine of the solar zenith angle
 
     ! Parameters for fixing the value of cosine of the solar zenith angle
     l_fix_cos_solar_zen = .false.
