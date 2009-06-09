@@ -2189,7 +2189,7 @@ module clubb_driver
            "cloud_feedback_s12", "cloud_feedback_s12_p2k" ) ! Cloud Feedback cases
       call cloud_feedback_sfclyr( time_current, p_in_Pa(2), rho_zm(1), gr%zt(2),  & ! Intent(in)
                                   thlm(2), rtm(2), um(2), vm(2), &       ! Intent(in)
-                                  exner(1), psfc, Tsfc, &                ! Intent(in)
+                                  exner(1), psfc, Tsfc, rcm(2), &           ! Intent(in)
                                   upwp_sfc, vpwp_sfc, &                  ! Intent(out)
                                   wpthlp_sfc, wprtp_sfc, ustar, &        ! Intent(out)
                                   wpsclrp_sfc, wpedsclrp_sfc )           ! Intent(out)
