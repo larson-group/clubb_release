@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id:$
+! $Id$
 module cloud_feedback
 
 !       Description:
@@ -88,7 +88,7 @@ end subroutine cloud_feedback_tndcy
 !----------------------------------------------------------------------
 subroutine cloud_feedback_sfclyr( time, p_in_Pa, rho0, lowestlevel, & 
                                   thlm_sfc, rtm_sfc, um_sfc, vm_sfc,  &
-                                  exner_sfc, psfc, Tsfc, & 
+                                  exner_sfc, psfc, Tsfc, rcm, & 
                                   upwp_sfc, vpwp_sfc, & 
                                   wpthlp_sfc, wprtp_sfc, ustar, & 
                                   wpsclrp_sfc, wpedsclrp_sfc )
@@ -115,6 +115,9 @@ use array_index, only:  &
 use surface_flux, only: &
     compute_ubar, compute_momentum_flux, compute_wprtp_sfc, compute_wpthlp_sfc
 
+use T_in_K_mod, only: &
+    thlm2T_in_K ! Procedure
+
 implicit none
 
 intrinsic :: max, sqrt
@@ -130,6 +133,7 @@ real, intent(in) ::  &
   rtm_sfc,   & ! rtm at (2)          [kg/kg]
   Tsfc,      & ! Temperature         [K]
   psfc,      &
+  rcm,       & ! Cloud water mixing ratio      [kg/kg]
   exner_sfc, & ! Exner function      [-]
   lowestlevel,   & ! This is z at the lowest above-ground model level.  [m]
   um_sfc,    & ! um at (2)           [m/s]
@@ -151,20 +155,22 @@ real, intent(out), dimension(edsclr_dim) ::  &
 
 ! Constants
 real, parameter :: & 
-  C_10    = 0.0013       ! Drag coefficient, defined by ATEX specification
+  C_10    = 0.0013, &     ! Drag coefficient, defined by ATEX specification
 !  C_m_20  = 0.001229,  & ! Drag coefficient, defined by RICO 3D specification
 !  C_h_20  = 0.001094,  & ! Drag coefficient, defined by RICO 3D specification
 !  C_q_20  = 0.001133,  & ! Drag coefficient, defined by RICO 3D specification
 !  z0      = 0.00015      ! Roughness length, defined by ATEX specification
-!  rho_sfc_flux = 1.0
+  rho_sfc_flux = 1.0
 
 ! Internal variables
 real :: & 
-  ubar, temp
+  ubar, temp, T_in_K
 !  Cz,   & ! This is C_10 scaled to the height of the lowest model level.
 !  Cm,   & ! This is C_m_20 scaled to the height of the lowest model level.
 !  Ch,   & ! This is C_h_20 scaled to the height of the lowest model level.
 !  Cq      ! This is C_q_20 scaled to the height of the lowest model level.
+
+T_in_K = thlm2T_in_K( thlm_sfc, exner_sfc, rcm )
 
 ubar = compute_ubar( um_sfc, vm_sfc )
 
@@ -206,24 +212,36 @@ temp = temp + 1
 !--------------------------------------------------------------------------------
 ! Old Style
 
-wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, & 
-                                 Tsfc, exner_sfc )
-wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, sat_mixrat_liq( psfc, Tsfc ) )
+!wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, & 
+!                                 Tsfc, exner_sfc )
+!wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, 0.8 * sat_mixrat_liq( psfc, Tsfc ) )
 
-call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
-                            upwp_sfc, vpwp_sfc )
+!call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
+!                            upwp_sfc, vpwp_sfc )
 
 !--------------------------------------------------------------------------------
 ! Email way
 ! wprtp = value_from_forcings_file_in_W_m**2 / ( rho_sfc_flux * Lv )
 ! wpthlp = value_from_forcings_file_in_W_m**2 / ( rho_sfc_flux * Cp )
 
-!lhflx = 0.001 * ubar * rho_sfc_flux * Lv * ( sat_mixrat_liq( psfc, Tsfc ) - & 
-!                                              sat_mixrat_liq( psfc, T_in_K ) * 0.8 )
-!shflx = 0.001 * ubar * rho_sfc_flux * Cp * [ Tsfc - T_in_K ]
+print *, "lhflx(1) forcings", lhflx(1)
+print *, "shflx(1) forcings", shflx(1)
+print *, "T_in_K", T_in_K
+print *, "rcm", rcm
+print *, "Tsfc", Tsfc
 
-!wprtp_sfc = lhflx / ( rho_sfc_flux * Lv )
-!wpthlp_sfc = shflx / ( rho_sfc_flux * Cp )
+lhflx(1) = 0.001 * ubar * rho_sfc_flux * Lv * ( sat_mixrat_liq( psfc, Tsfc ) - & 
+                                                sat_mixrat_liq( psfc, T_in_K ) * 0.8 )
+shflx(1) = 0.001 * ubar * rho_sfc_flux * Cp * ( Tsfc - T_in_K )
+
+print *, "lhflx(1)", lhflx(1)
+print *, "shflx(1)", shflx(1)
+
+wprtp_sfc = lhflx(1) / ( rho_sfc_flux * Lv )
+wpthlp_sfc = shflx(1) / ( rho_sfc_flux * Cp )
+
+call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
+                            upwp_sfc, vpwp_sfc )
 
 ! Let passive scalars be equal to rt and theta_l for now
 if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
@@ -268,13 +286,13 @@ subroutine cloud_feedback_init( iunit, file_path )
     file_path//'cloud_feedback_press.dat', & 
     ndiv, per_line, press )
 
-  call file_read_1d( iunit, & 
-    file_path//'cloud_feedback_shflx.dat', & 
-    1, 1, shflx )
+!  call file_read_1d( iunit, & 
+!    file_path//'cloud_feedback_shflx.dat', & 
+!    1, 1, shflx )
 
-  call file_read_1d( iunit, & 
-    file_path//'cloud_feedback_lhflx.dat', & 
-    1, 1, lhflx )
+!  call file_read_1d( iunit, & 
+!    file_path//'cloud_feedback_lhflx.dat', & 
+!    1, 1, lhflx )
 
   return 
 end subroutine cloud_feedback_init
