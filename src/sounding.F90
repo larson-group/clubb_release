@@ -492,7 +492,7 @@ module sounding
     call read_one_dim_file( iunit, sclr_dim, &
     '../input/case_setups/'//trim(runtype)//'_sclr_sounding.in', retVars )
 
-    call fill_blanks_one_dim_vars( sclr_dim, retVars )
+!    call fill_blanks_one_dim_vars( sclr_dim, retVars )
 
     do i=1, sclr_dim
       select case(trim(retVars(i)%name))
@@ -549,7 +549,7 @@ module sounding
     call read_one_dim_file( iunit, edsclr_dim, &
     '../input/case_setups/'//trim(runtype)//'_edsclr_sounding.in', retVars )
 
-    call fill_blanks_one_dim_vars( edsclr_dim, retVars )
+ !   call fill_blanks_one_dim_vars( edsclr_dim, retVars )
 
     do i=1, edsclr_dim
       select case(trim(retVars(i)%name))

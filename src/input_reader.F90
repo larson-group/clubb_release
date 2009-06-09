@@ -137,6 +137,7 @@ module input_reader
     ! Avoiding compiler warning
     if(.false.) print *, tmp
 
+    return
   end subroutine read_two_dim_file
 
   !-------------------------------------------------------------------------------------------------
@@ -253,10 +254,12 @@ module input_reader
 
     do i=1, num_vars
       one_dim_vars(i)%values = linear_fill_blanks( size(one_dim_vars(i)%values), &
-                                                   one_dim_vars(1)%values, one_dim_vars(i)%values )
+                                                   one_dim_vars(1)%values, one_dim_vars(i)%values, &
+                                                   0.0 )
     end do
 
   end subroutine fill_blanks_one_dim_vars
+
   !-------------------------------------------------------------------------------------------------
   subroutine fill_blanks_two_dim_vars( num_vars, other_dim, two_dim_vars )
     !
@@ -305,14 +308,14 @@ module input_reader
       do j=1, other_dim_size
         two_dim_vars(i)%values(:,j) = linear_fill_blanks( dim_size, &
                                                two_dim_vars(1)%values(:,j), &
-                                               two_dim_vars(i)%values(:,j) )
+                                               two_dim_vars(i)%values(:,j), -999.9 )
       end do
-
       ! Interpopate along other dim
       do j=1, dim_size
         two_dim_vars(i)%values(j,:) = linear_fill_blanks( other_dim_size, &
-                                               other_dim%values, two_dim_vars(i)%values(j,:) )
+                                               other_dim%values, two_dim_vars(i)%values(j,:), 0.0 )
       end do
+
 
     end do
 
@@ -320,7 +323,7 @@ module input_reader
 
 
   !-------------------------------------------------------------------------------------------------
-  function linear_fill_blanks( dim_grid, grid, var ) &
+  function linear_fill_blanks( dim_grid, grid, var, default_value ) &
   !
   !  Description: This function fills blanks in array var using the grid
   !               as a guide. Blank values in var are signified by being
@@ -340,6 +343,8 @@ module input_reader
     !                                               interpolated to.
 
     real, dimension(dim_grid), intent(in) :: var ! Array that may contain gaps.
+
+    real, intent(in) :: default_value ! Default value if entire profile is -999.9
 
     ! Output Variable(s)
     real, dimension(dim_grid) :: var_out ! Return variable
@@ -366,8 +371,10 @@ module input_reader
         temp_grid(amt) = grid(i)
       end if
     end do
+
+
     if( amt == 0 ) then
-      var_out = 0.0
+      var_out = default_value
     else if (amt < dim_grid) then
       var_out = zlinterp_fnc(dim_grid, amt, grid, temp_grid(1:amt), temp_var(1:amt))
     else
