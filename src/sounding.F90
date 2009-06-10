@@ -465,7 +465,7 @@ module sounding
     !  returns the values contained in that file.
     !
     !-----------------------------------------------------------------------------------------------
-    use input_reader, only: read_one_dim_file, fill_blanks_one_dim_vars, &
+    use input_reader, only: read_one_dim_file, &
                             one_dim_read_var, deallocate_one_dim_vars
 
     use parameters_model, only: sclr_dim
@@ -523,7 +523,7 @@ module sounding
     !  returns the values contained in that file.
     !
     !-----------------------------------------------------------------------------------------------
-    use input_reader, only: read_one_dim_file, fill_blanks_one_dim_vars, &
+    use input_reader, only: read_one_dim_file, &
                             one_dim_read_var, deallocate_one_dim_vars
 
     use parameters_model, only: edsclr_dim

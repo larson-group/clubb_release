@@ -100,6 +100,11 @@ module input_reader
     nRowO = 0
     do while(.true.)
       read(iunit, *, end=77, err=77) tmp(1), nRowI
+
+      if( nRowI < 1 ) then
+        stop "Number of elements must be an integer and greater than zero in two-dim  input file."
+      end if 
+
       do k =1, nRowI
         read(iunit, *) tmp
       end do

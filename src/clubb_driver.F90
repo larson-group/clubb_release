@@ -1359,6 +1359,9 @@ module clubb_driver
       em(1) = em(2)
       em(gr%nnzp) = em(gr%nnzp-1)
 
+
+    case ( "gabls3_night" )
+      em = 1.0  
     case ( "gabls3" )
       em = 1.0
 
@@ -1693,7 +1696,6 @@ module clubb_driver
 
     end select
 
-
     if( l_t_dependant ) then
       call initialize_t_dependant_input &
            ( iunit, runtype, gr%nnzp, gr%zt )
@@ -1831,6 +1833,8 @@ module clubb_driver
 
 #ifdef UNRELEASED_CODE
     use gabls3, only: gabls3_tndcy, gabls3_sfclyr ! Procedures(s)
+
+    use gabls3_night, only: gabls3_night_sfclyr
 
     use rico, only: rico_tndcy, rico_sfclyr ! Procedure(s)
 
@@ -2005,7 +2009,7 @@ module clubb_driver
                          sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
 #ifdef UNRELEASED_CODE
-    case ( "gabls3" ) ! GABLS 3 case
+    case ( "gabls3", "gabls3_night" ) ! GABLS 3 case
       call gabls3_tndcy( time_current, rtm, exner, rho, &                   ! Intent(in)
                          wm_zt, wm_zm, thlm_forcing, rtm_forcing,&          ! Intent(out)
                          um_forcing, vm_forcing, ug, vg )                   ! Intent(out)
@@ -2247,6 +2251,12 @@ module clubb_driver
                           thlm(2), rtm(2), gr%zt(2), exner(1) , & ! Intent(in)
                           upwp_sfc, vpwp_sfc, &                   ! Intent(out)
                           wpthlp_sfc, wprtp_sfc, ustar )     ! Intent(out)
+    case ( "gabls3_night" )
+      call gabls3_night_sfclyr( time_current, um(2), vm(2),  &          ! Intent(in)
+                          thlm(2), rtm(2), gr%zt(2), exner(1) , & ! Intent(in)
+                          upwp_sfc, vpwp_sfc, &                   ! Intent(out)
+                          wpthlp_sfc, wprtp_sfc, ustar )          ! Intent(out)
+
 
     case ( "jun25_altocu" )
       ! There are no surface momentum or heat fluxes

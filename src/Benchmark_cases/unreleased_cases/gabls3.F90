@@ -33,7 +33,8 @@ module gabls3
 
     use interpolation, only:factor_interp, lin_int,binary_search ! Procedure(s)
 
-    use time_dependant_input, only: time_select, &
+    use time_dependant_input, only: l_t_dependant, &
+                                    time_select, &
                                     thlm_f_given, &
                                     rtm_f_given,&
                                     wm_given,&
@@ -71,43 +72,44 @@ module gabls3
     real :: time_frac
 
     integer :: i1, i2
+ 
+    if( l_t_dependant ) then
+      call time_select( time, size(time_f_given), time_f_given, i1, i2 )
 
-    call time_select( time, size(time_f_given), time_f_given, i1, i2 )
+      time_frac = real((time - time_f_given(i1)) /  &          ! at the first time a=0;
+              (time_f_given(i2) - time_f_given(i1)))             ! at the second time a=1.
 
-    time_frac = real((time - time_f_given(i1)) /  &          ! at the first time a=0;
-            (time_f_given(i2) - time_f_given(i1)))             ! at the second time a=1.
-
-    T_in_K_forcing = factor_interp(time_frac, thlm_f_given(:,i2), thlm_f_given(:,i1))
-
-
-    sp_humidity_forcing = factor_interp( time_frac, rtm_f_given(:,i2), rtm_f_given(:,i1))
+      T_in_K_forcing = factor_interp(time_frac, thlm_f_given(:,i2), thlm_f_given(:,i1))
 
 
-    velocity_omega  = factor_interp( time_frac, wm_given(:,i2), wm_given(:,i1))
-
-    um_forcing  = factor_interp( time_frac, um_f_given(:,i2), um_f_given(:,i1) )
-    vm_forcing = factor_interp( time_frac, vm_f_given(:,i2), vm_f_given(:,i1) )
-
-    ug = factor_interp( time_frac, ug_given(:,i2), ug_given(:,i1) )
-    vg = factor_interp( time_frac, vg_given(:,i2), vg_given(:,i1) )
+      sp_humidity_forcing = factor_interp( time_frac, rtm_f_given(:,i2), rtm_f_given(:,i1))
 
 
-    rtm_forcing = sp_humidity_forcing * ( 1. + rtm )**2
+      velocity_omega  = factor_interp( time_frac, wm_given(:,i2), wm_given(:,i1))
 
-    thlm_forcing = T_in_K_forcing / exner
+      um_forcing  = factor_interp( time_frac, um_f_given(:,i2), um_f_given(:,i1) )
+      vm_forcing = factor_interp( time_frac, vm_f_given(:,i2), vm_f_given(:,i1) )
 
-    wm_zt = -velocity_omega /( rho * grav );
+      ug = factor_interp( time_frac, ug_given(:,i2), ug_given(:,i1) )
+      vg = factor_interp( time_frac, vg_given(:,i2), vg_given(:,i1) )
 
-    ! Boundary condition
-    wm_zt(1) = 0.0        ! Below surface
+      rtm_forcing = sp_humidity_forcing * ( 1. + rtm )**2
 
-    ! Interpolation
-    wm_zm = zt2zm( wm_zt )
+      thlm_forcing = T_in_K_forcing / exner
 
-    ! Boundary condition
-    wm_zm(1) = 0.0        ! At surface
-    wm_zm(gr%nnzp) = 0.0  ! Model top
+      wm_zt = -velocity_omega /( rho * grav );
 
+      ! Boundary condition
+      wm_zt(1) = 0.0        ! Below surface
+
+      ! Interpolation
+      wm_zm = zt2zm( wm_zt )
+
+      ! Boundary condition
+      wm_zm(1) = 0.0        ! At surface
+      wm_zm(gr%nnzp) = 0.0  ! Model top
+
+    end if
   end subroutine gabls3_tndcy
 
   !-----------------------------------------------------------------------
