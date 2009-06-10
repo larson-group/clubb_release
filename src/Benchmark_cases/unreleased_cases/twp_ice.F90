@@ -115,7 +115,6 @@ if(l_t_dependant) then
 
      time_frac = -1.0 ! Default initialization
 
-     print *, 'time_f_given = ', time_f_given
      call time_select( time,size(time_f_given), time_f_given, i1, i2 )
 
      time_frac = real((time-time_f_given(i1))/(time_f_given(i2)-time_f_given(i1)))
