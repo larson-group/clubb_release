@@ -6,7 +6,7 @@ module micro_calcs_mod
 
   public :: micro_calcs
 
-  private :: autoconv_driver, ql_estimate
+  private :: autoconv_driver, ql_estimate, micro_driver
 
   private ! Default Scope
 
@@ -14,10 +14,15 @@ module micro_calcs_mod
 
 !------------------------------------------------------------------------
 
-  subroutine micro_calcs( nnzp, n_micro_calls, d_variables, X_u, X_nl, & 
+  subroutine micro_calcs( dt, nnzp, n_micro_calls, d_variables, X_u, X_nl, & 
                           l_sample_flag, pdf_params, & 
+                          T_in_K, p_in_Pa, exner, rho, &
+                          wm, w_std_dev, altitudes, rcm, rvm, &        
+                          cf, hydromet, &
+                          hydromet_mc_est, hydromet_vel_est, &                                   
+                          rcm_mc_est, rvm_mc_est, thlm_mc_est, &
                           AKm_est, AKm, AKstd, AKstd_cld, & 
-                          AKm_rcm, AKm_rcc, rcm_est )
+                          AKm_rcm, AKm_rcc, rcm_est, microphys_sub )
 ! Description:
 !   This subroutine computes microphysical grid box averages,
 !   given a Latin Hypercube sample.
@@ -35,9 +40,17 @@ module micro_calcs_mod
     use variables_prognostic_module, only:  &
         pdf_parameter  ! type
 
+    use parameters_model, only: &
+      hydromet_dim
+
     implicit none
 
+    ! External
+#include "microphys_interface.inc"
+
     ! Input Variables
+
+    real, intent(in) :: dt ! Model timestep     [s]
 
     integer, intent(in) :: &
       nnzp, &          ! Number of vertical levels
@@ -54,10 +67,36 @@ module micro_calcs_mod
     ! Flag that determines whether we have a special case (false)
     logical, dimension(nnzp), intent(in) :: l_sample_flag
 
-    ! PDF parameter array
+    real, dimension(nnzp), intent(in) :: &
+      cf,         & ! Cloud fraction           [%]
+      T_in_K,     & ! Temperature              [K]
+      p_in_Pa,    & ! Pressure                 [Pa]
+      exner,      & ! Exner function           [-]
+      rho           ! Density on thermo. grid  [kg/m^3]
+
+    real, dimension(nnzp), intent(in) :: &
+      wm, &        ! Mean w                     [m/s]
+      w_std_dev, & ! Standard deviation of w    [m/s]
+      altitudes    ! Altitudes                  [m]
+
+    real, dimension(nnzp), intent(in) :: &
+      rcm, & ! Liquid water mixing ratio        [kg/kg]
+      rvm    ! Vapor water mixing ratio         [kg/kg]
+
     type(pdf_parameter), intent(in) :: pdf_params
 
+    real, dimension(nnzp,hydromet_dim), intent(in) :: &
+      hydromet ! Hydrometeor species    [units vary]
+
     ! Output Variables
+    real, dimension(nnzp,hydromet_dim), intent(inout) :: &
+      hydromet_mc_est, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
+      hydromet_vel_est   ! LH estimate of hydrometeor sedimentation velocity [m/s]
+
+    real, dimension(nnzp), intent(out) :: &
+      rcm_mc_est, & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
+      rvm_mc_est, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
+      thlm_mc_est   ! LH estimate of time tendency of liquid potential temperature [K/s]
 
     real, dimension(nnzp), intent(out) :: &
       AKm_est,   & ! Monte Carlo estimate of Kessler autoconversion [kg/kg/s]
@@ -85,10 +124,10 @@ module micro_calcs_mod
 !   real :: srt1, srt2
     real :: ss1, ss2, s1, s2
     real :: R1, R2
-    real :: rc1, rc2
+!   real :: rc1, rc2
 
     ! Cloud fraction 0<cf<1, mean liquid water mix ratio [kg/kg]
-    real :: cf, rcm
+!   real :: cf, rcm
 
     ! Double precision version of Monte Carlo Kessler ac
     double precision :: AKm_est_dp
@@ -134,8 +173,8 @@ module micro_calcs_mod
       !sthl1 = pdf_params%sthl1(level)
       !sthl2 = pdf_params%sthl2(level)
       a     = pdf_params%a(level)
-      rc1   = pdf_params%rc1(level)
-      rc2   = pdf_params%rc2(level)
+!     rc1   = pdf_params%rc1(level)
+!     rc2   = pdf_params%rc2(level)
       R1    = pdf_params%R1(level)
       R2    = pdf_params%R2(level)
       s1    = pdf_params%s1(level)
@@ -145,8 +184,8 @@ module micro_calcs_mod
 
       ! Compute mean cloud fraction and cloud water
 
-      cf    = a * R1 + (1-a) * R2
-      rcm   = a * rc1 + (1-a) * rc2
+!     cf    = a * R1 + (1-a) * R2
+!     rcm   = a * rc1 + (1-a) * rc2
 
       !------------------------------------------------------------------------
       ! Call Kessler autoconversion microphysics using Latin hypercube sample
@@ -232,21 +271,21 @@ module micro_calcs_mod
                     )
         ! This formula is for a within-cloud average:
         AKstd_cld(level) = sqrt( max( zero_threshold,   & 
-                  (1./cf) * ( a  * ( AK1**2 + AK1var ) & 
+                  (1./cf(level)) * ( a  * ( AK1**2 + AK1var ) & 
                             + (1-a) * ( AK2**2 + AK2var )  & 
                             ) & 
-                 - (AKm(level)/cf)**2  ) & 
+                 - (AKm(level)/cf(level))**2  ) & 
                         )
 
         ! Kessler autoconversion, using grid box avg liquid, rcm, as input
-        AKm_rcm(level) = K_one * max( zero_threshold, rcm-q_crit )
+        AKm_rcm(level) = K_one * max( zero_threshold, rcm(level)-q_crit )
 
         ! Kessler ac, using within cloud liquid, rcm/cf, as input
         ! We found that for small values of cf this formula
         ! can still produce NaN values and therefore added this 
         ! threshold of 0.001 here. -dschanen 3 June 2009
-        if ( cf > 0.001 ) then
-          AKm_rcc(level) = cf * K_one * max( zero_threshold, rcm/cf-q_crit )
+        if ( cf(level) > 0.001 ) then
+          AKm_rcc(level) = cf(level) * K_one * max( zero_threshold, rcm(level)/cf(level)-q_crit )
         else
           AKm_rcc(level) = zero_threshold
         end if
@@ -292,9 +331,15 @@ module micro_calcs_mod
 
     end do ! level = 2, nnzp
 
+    call micro_driver( dt, nnzp, n_micro_calls, d_variables, &
+                       X_nl(:,:,1), X_nl(:,:,2), X_nl(:,:,3), X_nl(:,:,4), X_nl(:,:,5), X_u, &
+                       T_in_K, p_in_Pa, exner, rho, wm, w_std_dev, &
+                       altitudes, rcm, rvm, pdf_params, hydromet, &
+                       rvm_mc_est, rcm_mc_est, hydromet_mc_est, &
+                       hydromet_vel_est, thlm_mc_est, microphys_sub )
+
     return
   end subroutine micro_calcs
-
 !-----------------------------------------------------------------------
   subroutine autoconv_driver( n_micro_calls, d_variables, a, R1, R2, ql, &
                              !w, Nc, rr, &
@@ -312,6 +357,9 @@ module micro_calcs_mod
 !     clubb_at_least_debug_level  ! Procedure(s)
 
     implicit none
+
+    ! External
+    intrinsic :: epsilon
 
     ! Input Variables
 
@@ -403,7 +451,7 @@ module micro_calcs_mod
       ! Choose which mixture fraction we are in.
       ! Account for cloud fraction.
       ! Follow M. E. Johnson (1987), p. 56.
-      fraction_1 = a*R1/(a*R1+(1-a)*R2)
+      fraction_1 = a*R1/max( a*R1+(1-a)*R2, epsilon( a ) )
 !          print*, 'fraction_1= ', fraction_1
 
 ! V. Larson change to try to fix sampling
@@ -478,6 +526,264 @@ module micro_calcs_mod
 
     return
   end subroutine autoconv_driver
+
+!-----------------------------------------------------------------------
+  subroutine micro_driver( dt, nnzp, n_micro_calls, d_variables, &
+                           rc, t, w, Nc, rr, X_u, &
+                           T_in_K, p_in_Pa, exner, rho, wm, w_std_dev, &
+                           altitudes, rcm, rvm, pdf_params, hydromet,  &
+                           rvm_mc_est, rcm_mc_est, hydromet_mc_est, &
+                           hydromet_vel_est, thlm_mc_est, microphys_sub )
+! Description:
+! References:
+!   None
+!-----------------------------------------------------------------------
+
+    use constants, only:  &
+      fstderr  ! Constant(s)
+
+    use parameters_model, only: &
+      hydromet_dim
+
+    use array_index, only: &
+      iirrainm, &
+      iiNcm
+
+    use variables_prognostic_module, only: &
+      pdf_parameter
+
+    implicit none
+
+    ! External
+#include "microphys_interface.inc"
+
+    intrinsic :: epsilon
+
+    ! Input Variables
+    real, intent(in) :: &
+      dt ! Model timestep       [s]
+
+    integer, intent(in) :: &
+      nnzp, &          ! Number of vertical levels
+      n_micro_calls, & ! Number of calls to microphysics (normally=2)
+      d_variables      ! Number of variates (normally=5)
+
+    double precision, dimension(nnzp,n_micro_calls), intent(in) :: &
+      rc, & ! n in-cloud values of spec liq water content [kg/kg].
+      t,  & ! n in-cloud values of temperature            [K]
+      w,  & ! n in-cloud values of vertical velocity      [m/s]
+      Nc, & ! n in-cloud values of droplet number         [#/mg air]
+      rr    ! n in-cloud values of specific rain content  [kg/kg]
+
+    double precision, dimension(nnzp,n_micro_calls,d_variables+1), intent(in) :: &
+      X_u ! N x D+1 Latin hypercube sample from uniform dist
+
+    real, dimension(nnzp), intent(in) :: &
+      T_in_K,     & ! Temperature              [K]
+      p_in_Pa,    & ! Pressure                 [Pa]
+      exner,      & ! Exner function           [-]
+      rho           ! Density on thermo. grid  [kg/m^3]
+
+    real, dimension(nnzp), intent(in) :: &
+      wm, &        ! Mean w                     [m/s]
+      w_std_dev, & ! Standard deviation of w    [m/s]
+      altitudes    ! Altitudes                  [m]
+
+    real, dimension(nnzp), intent(in) :: &
+      rcm, & ! Liquid water mixing ratio        [kg/kg]
+      rvm    ! Vapor water mixing ratio         [kg/kg]
+
+    type(pdf_parameter), intent(in) :: pdf_params
+
+    real, dimension(nnzp,hydromet_dim), intent(in) :: &
+      hydromet ! Hydrometeor species    [units vary]
+
+
+    ! Output Variables
+
+    ! a scalar representing grid box average autoconversion;
+    ! has same units as ql/s; divide by total cloud fraction to obtain
+    ! within-cloud autoconversion
+    real, dimension(nnzp,hydromet_dim), intent(inout) :: &
+      hydromet_mc_est, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
+      hydromet_vel_est   ! LH estimate of hydrometeor sedimentation velocity [m/s]
+
+    real, dimension(nnzp), intent(out) :: &
+      rcm_mc_est, & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
+      rvm_mc_est, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
+      thlm_mc_est   ! LH estimate of time tendency of liquid potential temperature [K/s]
+
+
+    double precision, dimension(nnzp,hydromet_dim) :: &
+      hydromet_mc_est_m1,  & ! LH est of hydrometeor time tendency          [(units vary)/s]
+      hydromet_mc_est_m2,  & ! LH est of hydrometeor time tendency          [(units vary)/s]
+      hydromet_vel_est_m1, & ! LH est of hydrometeor sedimentation velocity [m/s]
+      hydromet_vel_est_m2    ! LH est of hydrometeor sedimentation velocity [m/s]
+
+    double precision, dimension(nnzp) :: &
+      rcm_mc_est_m1,       & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
+      rcm_mc_est_m2,       & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
+      rvm_mc_est_m1,       & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
+      rvm_mc_est_m2,       & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
+      thlm_mc_est_m1,      & ! LH est of time tendency of liquid potential temperature [K/s]
+      thlm_mc_est_m2         ! LH est of time tendency of liquid potential temperature [K/s]
+
+    ! Local Variables
+
+    real, dimension(nnzp,hydromet_dim) :: &
+      hydromet_tmp ! Hydrometeor species    [units vary]
+
+    real, dimension(nnzp) :: &
+      rcm_tmp,    & ! Liquid water                [kg/kg]
+      T_in_K_tmp, & ! Absolute temperature        [K]
+      wm_tmp        ! Vertical velocity           [m/s]
+
+    integer, dimension(nnzp) :: n1, n2, zero
+
+    double precision, dimension(nnzp) :: &
+      R1, R2, a, &
+      fraction_1
+
+    integer :: i, k, sample
+
+    logical :: l_error
+
+    ! ---- Begin Code ----
+
+    a(:)  = dble( pdf_params%a(:) )
+    R1(:) = dble( pdf_params%R1(:) )
+    R2(:) = dble( pdf_params%R2(:) )
+
+    zero(:) = 0
+
+    ! Initialize microphysical tendencies for each mixture component
+    hydromet_mc_est_m1(:,:) = 0.d0
+    hydromet_mc_est_m2(:,:) = 0.d0
+
+    hydromet_vel_est_m1(:,:) = 0.d0
+    hydromet_vel_est_m2(:,:) = 0.d0
+
+    rcm_mc_est_m1(:) = 0.d0
+    rcm_mc_est_m2(:) = 0.d0
+
+    rvm_mc_est_m1(:) = 0.d0
+    rvm_mc_est_m2(:) = 0.d0
+
+    thlm_mc_est_m1(:) = 0.d0
+    thlm_mc_est_m2(:) = 0.d0
+
+    ! Initialize numbers of sample points corresponding
+    !    to each mixture component
+    n1 = 0
+    n2 = 0
+
+    do sample = 1, n_micro_calls
+
+      ! Choose which mixture fraction we are in.
+      ! Account for cloud fraction.
+      ! Follow M. E. Johnson (1987), p. 56.
+      fraction_1(:) = a(:)*R1(:)/max( a(:)*R1(:)+(1.-a(:))*R2(:), epsilon( a ) )
+!     print*, 'fraction_1= ', fraction_1
+      rcm_tmp    = real( rc(:,sample) ) / 1000.
+      T_in_K_tmp = T_in_K
+!     wm_tmp     = real( w(:,sample) )
+      wm_tmp     = wm
+
+      do i = 1, hydromet_dim, 1
+!       if ( i == iirrainm ) then
+!         hydromet_tmp(:,i) = real( rr(:,sample) ) / 1000.
+!       else if ( i == iiNcm ) then
+!         hydromet_tmp(:,i) = 1.e-6 * real( Nc(:,sample) ) / rho(:)
+!       else
+          hydromet_tmp(:,i) = hydromet(:,i)
+!       end if
+      end do
+
+      call microphys_sub &
+           ( dt, nnzp, .false., T_in_K_tmp, p_in_Pa, exner, rho, pdf_params, &
+             wm_tmp, w_std_dev, altitudes, rcm_tmp, rvm, hydromet_tmp, hydromet_mc_est, &
+             hydromet_vel_est, rcm_mc_est, rvm_mc_est, thlm_mc_est )
+
+      do i = 1, hydromet_dim
+        where ( X_u(1:nnzp,1,d_variables+1) < fraction_1 )
+          hydromet_vel_est_m1(:,i) = hydromet_vel_est_m1(:,i) + hydromet_vel_est(:,i)
+          hydromet_mc_est_m1(:,i) = hydromet_mc_est_m1(:,i) + hydromet_mc_est(:,i)
+        else where
+          hydromet_vel_est_m2(:,i) = hydromet_vel_est_m2(:,i) + hydromet_vel_est(:,i)
+          hydromet_mc_est_m2(:,i) = hydromet_mc_est_m2(:,i) + hydromet_mc_est(:,i)
+        end where
+      end do
+
+      where ( X_u(1:nnzp,1,d_variables+1) < fraction_1 )
+        rcm_mc_est_m1(:) = rcm_mc_est_m1(:) + rcm_mc_est(:)
+        rvm_mc_est_m1(:) = rvm_mc_est_m1(:) + rvm_mc_est(:)
+        thlm_mc_est_m1(:) = thlm_mc_est_m1(:) + thlm_mc_est(:)
+        n1(:) = n1(:) + 1
+
+      else where
+        rcm_mc_est_m2(:) = rcm_mc_est_m2(:) + rcm_mc_est(:)
+        rvm_mc_est_m2(:) = rvm_mc_est_m2(:) + rvm_mc_est(:)
+        thlm_mc_est_m2(:) = thlm_mc_est_m2(:) + thlm_mc_est(:)
+        n2(:) = n2(:) + 1
+
+      end where
+
+      ! Loop to get new sample
+    end do ! sample = 1, n_micro_calls
+
+! Convert sums to averages.
+! If we have no sample points for a certain plume,
+!    then we estimate the plume liquid water by the
+!    other plume's value.
+    l_error = .false.
+    do k = 1, nnzp
+      if ( n1(i) == 0 .and. n2(i) == 0 ) then
+        l_error = .true.
+        write(0,*) 'Error:  no sample points in micro_driver, k =', k
+      end if
+    end do
+    if ( l_error ) stop
+
+    do i = 1, hydromet_dim
+      where ( n1 /= zero )
+        hydromet_vel_est_m1(:,i) = hydromet_vel_est_m1(:,i) / dble( n1 )
+        hydromet_mc_est_m1(:,i) = hydromet_mc_est_m1(:,i) / dble( n1 )
+      end where
+    end do
+
+    where ( n1 /= zero )
+      rcm_mc_est_m1 = rcm_mc_est_m1 / dble( n1 )
+      rvm_mc_est_m1 = rvm_mc_est_m1 / dble( n1 )
+      thlm_mc_est_m1 = thlm_mc_est_m1 / dble( n1 )
+    end where
+
+    do i = 1, hydromet_dim
+      where ( n2 /= zero )
+        hydromet_vel_est_m2(:,i) = hydromet_vel_est_m2(:,i) / dble( n2 )
+        hydromet_mc_est_m2(:,i) = hydromet_mc_est_m2(:,i) / dble( n2 )
+      end where
+    end do
+
+    where ( n2 /= zero )
+      rcm_mc_est_m2 = rcm_mc_est_m2 / dble( n2 )
+      rvm_mc_est_m2 = rvm_mc_est_m2 / dble( n2 )
+      thlm_mc_est_m2 = thlm_mc_est_m2 / dble( n2 )
+    end where
+
+    ! Grid box average.
+    forall( i = 1:hydromet_dim )
+      hydromet_vel_est(:,i) = real( a * R1 * hydromet_vel_est_m1(:,i) &
+        + (1.d0-a) * R2 * hydromet_vel_est_m2(:,i) )
+      hydromet_mc_est(:,i)  = real( a * R1 * hydromet_mc_est_m1(:,i) &
+        + (1.d0-a) * R2 * hydromet_mc_est_m2(:,i) )
+    end forall
+
+    rcm_mc_est = real( a * R1 * rcm_mc_est_m1 + (1.d0-a) * R2 * rcm_mc_est_m2 )
+    rvm_mc_est = real( a * R1 * rvm_mc_est_m1 + (1.d0-a) * R2 * rvm_mc_est_m2 )
+    thlm_mc_est = real( a * R1 * thlm_mc_est_m1 + (1.d0-a) * R2 * thlm_mc_est_m2 )
+
+    return
+  end subroutine micro_driver
 
 !----------------------------------------------------------------------
   subroutine ql_estimate( n_micro_calls, d_variables, a, C1, C2, ql, & ! w,   & 

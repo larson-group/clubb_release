@@ -377,6 +377,14 @@ module stats_variables
 
 !$omp   threadprivate(iedsclrm, iedsclrm_f)
 
+  integer, public :: &
+    iLH_rrainm_mc_est, & ! Latin hypercube estimate of rrainm_mc
+    iLH_Nrm_mc_est,    & ! Latin hypercube estimate of Nrm_mc
+    iLH_rcm_mc_est,    & ! Latin hypercube estimate of rcm_mc
+    iLH_rvm_mc_est       ! Latin hypercube estimate of rvm_mc
+!$omp   threadprivate(iLH_rrainm_mc_est,  iLH_Nrm_mc_est, &
+!$omp                 iLH_rcm_mc_est, iLH_rvm_mc_est)
+
 !       Indices for statistics in zm file
 
   integer, public :: & 

@@ -252,9 +252,14 @@ module stats_zt
       ieff_rad_rain, &
       ieff_rad_graupel
 
+    use stats_variables, only: &
+      iLH_rvm_mc_est, &
+      iLH_rcm_mc_est, &
+      iLH_rrainm_mc_est, &
+      iLH_Nrm_mc_est
+
     use stats_type, only: & 
         stat_assign ! Procedure
-
 
     use parameters_model, only: &
         sclr_dim,&
@@ -493,6 +498,11 @@ module stats_zt
     iwprtp_zt   = 0
     irtp2_zt    = 0
     irtpthlp_zt = 0
+
+    iLH_rcm_mc_est = 0
+    iLH_rvm_mc_est = 0
+    iLH_rrainm_mc_est = 0
+    iLH_Nrm_mc_est = 0
 
     allocate( isclrm(1:sclr_dim) )
     allocate( isclrm_f(1:sclr_dim) )
@@ -1828,6 +1838,35 @@ module stats_zt
         call stat_assign( irtpthlp_zt, "rtpthlp_zt", & 
              "rtpthlp_zt", "(kg K)/kg", zt )
         k = k + 1
+
+      case('LH_rrainm_mc_est')
+        iLH_rrainm_mc_est = k
+
+        call stat_assign( iLH_rrainm_mc_est, "LH_rrainm_mc_est", & 
+             "Latin hypercube estimate of rrainm_mc", "kg/kg/s", zt )
+        k = k + 1
+
+      case('LH_Nrm_mc_est')
+        iLH_Nrm_mc_est = k
+
+        call stat_assign( iLH_Nrm_mc_est, "LH_Nrm_mc_est", & 
+             "Latin hypercube estimate of Nrm_mc", "kg/kg/s", zt )
+        k = k + 1
+
+      case('LH_rcm_mc_est')
+        iLH_rcm_mc_est = k
+
+        call stat_assign( iLH_rcm_mc_est, "LH_rcm_mc_est", & 
+             "Latin hypercube estimate of rcm_mc", "kg/kg/s", zt )
+        k = k + 1
+
+      case('LH_rvm_mc_est')
+        iLH_rvm_mc_est = k
+
+        call stat_assign( iLH_rvm_mc_est, "LH_rvm_mc_est", & 
+             "Latin hypercube estimate of rvm_mc", "kg/kg/s", zt )
+        k = k + 1
+
       case default
 
         l_found =.false.

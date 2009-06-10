@@ -18,6 +18,7 @@ vars_zt =
 'rrainm', 'Nrm', 'mean_vol_rad_rain', 'mean_vol_rad_cloud',
 'eff_rad_cloud', 'eff_rad_ice', 'eff_rad_snow', 'eff_rad_rain', 'eff_rad_graupel',
 'rain_rate', 'AKm', 'AKm_est', 'AKstd', 'AKstd_cld', 'AKm_rcm', 'AKm_rcc',
+'LH_rvm_mc_est', 'LH_rcm_mc_est', 'LH_rrainm_mc_est', 'LH_Nrm_mc_est',
  'rsnowm', 'ricem', 'rgraupelm',
 'diam', 'mass_ice_cryst', 'rcm_icedfs', 'u_T_cm',
 'rtm_bt', 'rtm_ma', 'rtm_ta', 'rtm_mfl', 'rtm_tacl', 'rtm_cl',

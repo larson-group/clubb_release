@@ -14,32 +14,39 @@ module KK_microphys_module
   implicit none
 
   public :: KK_microphys
-  private :: mean_volume_radius, cond_evap_rrainm, cond_evap_Nrm
-  private :: autoconv_rrainm, autoconv_Nrm, accretion_rrainm
+
+  private :: mean_volume_radius, cond_evap_rrainm, cond_evap_Nrm, &
+    autoconv_rrainm, autoconv_Nrm, accretion_rrainm
+
   private :: G_T_p
+
   ! private :: PDF_TRIVAR_2G_LN_LN, PDF_BIVAR_2G_LN, PDF_BIVAR_LN_LN
   private :: Dv_fnc
 
-  private ! Set default scope
+  private ! Set default scope to private
 
   ! Statistical rain parameters        .
 
   ! Parameters for in-cloud (from SAM RF02 DO).
-  real, public :: rrp2_rrainm2_cloud ! 0.766
-  real, public :: Nrp2_Nrm2_cloud ! 0.429
-  real, public :: Ncp2_Ncm2_cloud ! 0.003
-  real, public :: corr_rrNr_LL_cloud ! 0.786
-  real, public :: corr_srr_NL_cloud ! 0.242
-  real, public :: corr_sNr_NL_cloud ! 0.285
-  real, public :: corr_sNc_NL_cloud ! 0.433
+  real, public :: &       ! RF02 value
+    rrp2_rrainm2_cloud, & ! 0.766
+    Nrp2_Nrm2_cloud,    & ! 0.429
+    Ncp2_Ncm2_cloud,    & ! 0.003
+    corr_rrNr_LL_cloud, & ! 0.786
+    corr_srr_NL_cloud,  & ! 0.242
+    corr_sNr_NL_cloud,  & ! 0.285
+    corr_sNc_NL_cloud     ! 0.433
+
   ! Parameters for below-cloud (from SAM RF02 DO).
-  real, public :: rrp2_rrainm2_below ! 8.97
-  real, public :: Nrp2_Nrm2_below ! 12.03
-  real, public :: Ncp2_Ncm2_below ! 0.00 ! Not applicable below cloud.
-  real, public :: corr_rrNr_LL_below ! 0.886
-  real, public :: corr_srr_NL_below ! 0.056
-  real, public :: corr_sNr_NL_below ! 0.015
-  real, public :: corr_sNc_NL_below ! 0.00 ! Not applicable below cloud.
+  real, public :: &       ! RF02 value
+    rrp2_rrainm2_below, & ! 8.97
+    Nrp2_Nrm2_below,    & ! 12.03
+    Ncp2_Ncm2_below,    & ! 0.00 ! Not applicable below cloud.
+    corr_rrNr_LL_below, & ! 0.886
+    corr_srr_NL_below,  & ! 0.056
+    corr_sNr_NL_below,  & ! 0.015
+    corr_sNc_NL_below     ! 0.00 ! Not applicable below cloud.
+
   ! Other needed parameters
   real, public :: C_evap ! 0.86    ! Khairoutdinov and Kogan (2000) ratio of
   ! drizzle drop mean geometric radius to
@@ -57,42 +64,13 @@ module KK_microphys_module
   !                                  ! Khairoutdinov said it was okay!
   ! End Vince Larson's change.
 
-  !!!!!!! COMMENTS FOR RICO MARINE CUMULUS CASE
-  !!!!!!! In order to correctly run the RICO case, the parameters above
-  !!!!!!! need to be changed.  You should comment these in and
-  !!!!!!! comment the above copies out.  These are the constants needed to
-  !!!!!!! run the RICO case, as I did in my case rico0206, submitted:
-  !REAL, PARAMETER:: rrp2_rrainm2_cloud = 30.
-  !REAL, PARAMETER:: Nrp2_Nrm2_cloud = 10.
-  !REAL, PARAMETER:: Ncp2_Ncm2_cloud = 60.
-  !REAL, PARAMETER:: corr_rrNr_LL_cloud = 0.8
-  !REAL, PARAMETER:: corr_srr_NL_cloud = 0.25
-  !REAL, PARAMETER:: corr_sNr_NL_cloud = 0.3
-  !REAL, PARAMETER:: corr_sNc_NL_cloud = 0.24
-
-  !REAL, PARAMETER:: rrp2_rrainm2_below = 20.
-  !REAL, PARAMETER:: Nrp2_Nrm2_below = 2.
-  !REAL, PARAMETER:: Ncp2_Ncm2_below = 0.
-  !REAL, PARAMETER:: corr_rrNr_LL_below = 0.78
-  !REAL, PARAMETER:: corr_srr_NL_below = 0.
-  !REAL, PARAMETER:: corr_sNr_NL_below = 0.
-  !REAL, PARAMETER:: corr_sNc_NL_below = 0.
-
-  !REAL, PARAMETER:: C_evap = 0.5
-  !REAL, PARAMETER:: r_0 = 100.0e-6
-  !!!!!!! END RICO COMMENTS, Michael Falk, 27-28 November 2007
-
-  CONTAINS
+  contains
 
   !=============================================================================
-  subroutine KK_microphys & 
-             ( dt, T_in_K, p_in_Pa, exner, rho,  & 
-               thl1, thl2, a, rc1, rc2, s1, & 
-               s2, ss1, ss2, rcm, Ncm, rrainm, Nrm,  & 
-               l_sample,  & ! AKm, AKm_est, & 
-               rrainm_mc_tndcy, Nrm_mc_tndcy,  & 
-               rtm_mc, thlm_mc, & 
-               Vrr, VNr )
+  subroutine KK_microphys( dt, ndim, l_sample, T_in_K, p_in_Pa, exner, rho, pdf_params, &
+                           wm, w_std_dev, altitudes, rcm, rvm, hydromet, hydromet_mc, &
+                           hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
+
 
     ! Description:
     ! This uses the code from Brian Griffin's old subroutine rain and computes
@@ -104,14 +82,14 @@ module KK_microphys_module
     ! References:
     ! ``A New Cloud Physics Parameterization in a Large-Eddy Simulation
     !   Model of Marine Stratocumulus''  Khairoutdinov and Kogan. (2000)
-    ! Monthly Weather Review, Volume 128, Issue 1 pp. 229–-243
+    ! Monthly Weather Review, Volume 128, Issue 1 pp. 229--243
     !-------------------------------------------------------------------
 
 !   use parameters_microphys, only: & 
 !       l_latin_hypercube_sampling ! Variable(s)
 
     use grid_class, only: & 
-        gr,  & ! Variable(s)
+!       gr,  & ! Variable(s)
         zt2zm ! Procedure(s)
 
     use constants, only: & 
@@ -146,46 +124,63 @@ module KK_microphys_module
         iNrm_src_adj, &
         l_stats_samp
 
+    use array_index, only: iirrainm, iiNcm, iiNrm
+
+    use variables_prognostic_module, only: pdf_parameter
+
+    use parameters_model, only: hydromet_dim
+
     implicit none
 
     ! Input Variables
-    real(kind=time_precision), intent(in) :: &
+    real, intent(in) :: &
       dt            ! Model time step length             [s]
 
-    real, intent(in), dimension(gr%nnzp) :: & 
+    integer, intent(in) :: &
+      ndim ! Points in the vertical     [-]
+
+    logical, intent(in) :: &
+      l_sample ! Whether to sample stats (budgets)
+
+    real, dimension(ndim), intent(in) :: &
       T_in_K,     & ! Temperature                        [K]
       p_in_Pa,    & ! Pressure                           [Pa]
       exner,      & ! Exner function                     [-]
-      rho,        & ! Density on thermo. grid            [kg/m^3]
-      thl1, thl2, & ! PDF parameters thl1 &thl2          [K]
-      a,          & ! PDF parameter a                    [-]
-      s1, s2,     & ! PDF parameters s1 & s2             [kg/kg]
-      ss1, ss2,   & ! PDF parameters ss1 & ss2           [kg/kg]
-      rc1, rc2,   & ! PDF parameters rc1 & rc2           [kg/kg]
-      rcm,        & ! Cloud water mixing ratio           [kg/kg]
-      Ncm,        & ! Cloud droplet number conc.         [number/kg]
-      rrainm,     & ! Rain water mixing ratio            [kg/kg]
-      Nrm           ! Rain drop number conc.             [number/kg]
+      rho           ! Density on thermo. grid            [kg/m^3]
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params ! PDF parameters
+
+    real, dimension(ndim), intent(in) :: &
+      wm, &        ! Mean w                     [m/s]
+      w_std_dev, & ! Standard deviation of w    [m/s]
+      altitudes    ! Altitudes                  [m]
+
+   real, dimension(ndim), intent(in) :: &
+      rcm, & ! Liquid water mixing ratio        [kg/kg]
+      rvm    ! Vapor water mixing ratio         [kg/kg]
+
+    real, dimension(ndim,hydromet_dim), target, intent(in) :: &
+      hydromet ! Hydrometeor species    [units vary]
+
+    ! Input / Output Variables
+    real, dimension(ndim,hydromet_dim), target, intent(inout) :: &
+      hydromet_mc, & ! Hydrometeor time tendency          [(units vary)/s]
+      hydromet_vel   ! Hydrometeor sedimentation velocity [m/s]
 
     ! Latin hypercube variables - Vince Larson 22 May 2005
-!   real, intent(in), dimension(gr%nnzp) :: & 
+!   real, intent(in), dimension(ndim) :: & 
 !     AKm,   & ! Kessler autoconversion
 !     AKm_est  ! Latin hypercube estimate of Kessler autoconversion
 
-    logical, intent(in) :: & 
-      l_sample ! Whether to sample stats for this call
-
-    ! Output
-    real, intent(out), dimension(gr%nnzp) :: & 
-      Vrr,          &    ! Mean sedimentation velocity of rrainm    [m/s]    
-      VNr,          &    ! Mean sedimentation velocity of Nrm       [m/s]
-      rrainm_mc_tndcy, & ! Rain water microphysical tendency        [(kg/kg)/s]
-      Nrm_mc_tndcy, &    ! Rain drop number conc. micro. tend.      [(num/kg)/s]
-      rtm_mc,  &         ! Contributions to total water from micro. [(kg/kg)/s]
-      thlm_mc            ! Contributions to theta_l from micro.     [K/s]
+    ! Output Variables
+    real, dimension(ndim), intent(out) :: &
+      rcm_mc, & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
+      rvm_mc, & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
+      thlm_mc   ! Time tendency of liquid potential temperature [K/s]
 
     ! Local variables
-    real, dimension(gr%nnzp) :: & 
+    real, dimension(ndim) :: & 
       rrainm_cond,  & ! Change in rrainm due to condensation     [(kg/kg)/s]
       rrainm_auto,  & ! Change in rrainm due to autoconversion   [(kg/kg)/s]
       rrainm_accr,  & ! Change in rrainm due to accretion        [(kg/kg)/s]
@@ -195,7 +190,21 @@ module KK_microphys_module
       Supsat,       & ! Supersaturation                          [-]
       rsat            ! Saturation mixing ratio                  [kg/kg]
 
-    real, dimension(gr%nnzp) :: & 
+    real, pointer, dimension(:) :: & 
+      Ncm,             & ! Cloud droplet number conc.         [number/kg]
+      rrainm,          & ! Rain water mixing ratio            [kg/kg]
+      Nrm,             & ! Rain drop number conc.             [number/kg]
+      thl1, thl2,      & ! PDF parameters thl1 &thl2          [K]
+      a,               & ! PDF parameter a                    [-]
+      s1, s2,          & ! PDF parameters s1 & s2             [kg/kg]
+      ss1, ss2,        & ! PDF parameters ss1 & ss2           [kg/kg]
+      rc1, rc2,        & ! PDF parameters rc1 & rc2           [kg/kg]
+      Vrr,             & ! Mean sedimentation velocity of rrainm    [m/s]    
+      VNr,             & ! Mean sedimentation velocity of Nrm       [m/s]
+      rrainm_mc_tndcy, & ! Rain water microphysical tendency        [(kg/kg)/s]
+      Nrm_mc_tndcy       ! Rain drop number conc. micro. tend.      [(num/kg)/s]
+
+    real, dimension(ndim) :: & 
       rrp2_rrainm2, & ! rrp2/rrainm^2            []
       Nrp2_Nrm2,    & ! Nrp2/Nrm^2               []
       Ncp2_Ncm2,    & ! Ncp2/Ncm^2               []
@@ -214,7 +223,7 @@ module KK_microphys_module
       rrainm_auto_ratio, & ! Ratio of rrainm autoconv to overall source term [-]
       total_rc_needed      ! Amount of r_c needed to over the timestep for rain source terms [kg/kg]
 
-    real, dimension(gr%nnzp) ::  &
+    real, dimension(ndim) ::  &
       rrainm_src_adj, & ! Total adjustment to rrainm source terms  [(kg/kg)/s]
       Nrm_src_adj       ! Total adjustment to Nrm source terms     [{num/kg)/s]
 
@@ -230,7 +239,7 @@ module KK_microphys_module
     ! point with high resolution.  These equations would be used in a LES model.
     ! CLUBB is a one-dimensional model that uses a Probability Density Function
     ! (PDF) to determine variance of values in the horizontal directions.  When
-    ! put into any 3-dimensional model, HOC can use the PDF to show the subgrid
+    ! put into any 3-dimensional model, CLUBB can use the PDF to show the subgrid
     ! variability of many values.  In order to determine rainfall due to subgrid
     ! variability, one needs to put Khairoutdinov and Kogan equations into a PDF
     ! form.  Here is a brief description.
@@ -256,7 +265,7 @@ module KK_microphys_module
     !    distribution.
     !
     ! The above PDF-ed Khairoutdinov and Kogan equations are used for the
-    ! "non-local" formula, which is the one used in HOC.
+    ! "non-local" formula, which is the one used in CLUBB.
     !
     ! This subroutine also solves for rain drop concentration (num/kg).  The
     ! rain drop concentration has an equation for autoconversion that is based
@@ -285,33 +294,52 @@ module KK_microphys_module
     ! (rcm) must be greater than or equal to the tolerance level (rc_tol).
     ! If there is cloud at a given vertical level, then the ###_cloud value
     ! is used.  Otherwise, the ###_below value is used.
-    DO k = 1, gr%nnzp, 1
-      IF ( rcm(k) >= rc_tol ) THEN
-        rrp2_rrainm2(k)    = rrp2_rrainm2_cloud
-        Nrp2_Nrm2(k)    = Nrp2_Nrm2_cloud
-        Ncp2_Ncm2(k)    = Ncp2_Ncm2_cloud
-        corr_rrNr_LL(k) = corr_rrNr_LL_cloud
-        corr_srr_NL(k)  = corr_srr_NL_cloud
-        corr_sNr_NL(k)  = corr_sNr_NL_cloud
-        corr_sNc_NL(k)  = corr_sNc_NL_cloud
-      ELSE
-        rrp2_rrainm2(k)    = rrp2_rrainm2_below
-        Nrp2_Nrm2(k)    = Nrp2_Nrm2_below
-        Ncp2_Ncm2(k)    = Ncp2_Ncm2_below
-        corr_rrNr_LL(k) = corr_rrNr_LL_below
-        corr_srr_NL(k)  = corr_srr_NL_below
-        corr_sNr_NL(k)  = corr_sNr_NL_below
-        corr_sNc_NL(k)  = corr_sNc_NL_below
-      ENDIF
-    ENDDO
+    where ( rcm >= rc_tol )
+      rrp2_rrainm2 = rrp2_rrainm2_cloud
+      Nrp2_Nrm2    = Nrp2_Nrm2_cloud
+      Ncp2_Ncm2    = Ncp2_Ncm2_cloud
+      corr_rrNr_LL = corr_rrNr_LL_cloud
+      corr_srr_NL  = corr_srr_NL_cloud
+      corr_sNr_NL  = corr_sNr_NL_cloud
+      corr_sNc_NL  = corr_sNc_NL_cloud
+    else where
+      rrp2_rrainm2 = rrp2_rrainm2_below
+      Nrp2_Nrm2    = Nrp2_Nrm2_below
+      Ncp2_Ncm2    = Ncp2_Ncm2_below
+      corr_rrNr_LL = corr_rrNr_LL_below
+      corr_srr_NL  = corr_srr_NL_below
+      corr_sNr_NL  = corr_sNr_NL_below
+      corr_sNc_NL  = corr_sNc_NL_below
+    end where
+
+    ! Assign pointers
+    thl1 => pdf_params%thl1(:)
+    thl2 => pdf_params%thl2(:)
+    a    => pdf_params%a(:)
+    rc1  => pdf_params%rc1(:)
+    rc2  => pdf_params%rc2(:)
+    s1   => pdf_params%s1(:)
+    s2   => pdf_params%s2(:)
+    ss1  => pdf_params%ss1(:)
+    ss2  => pdf_params%ss2(:)
+
+    Ncm => hydromet(:,iiNcm)
+
+    rrainm => hydromet(:,iirrainm)
+    Vrr => hydromet_vel(:,iirrainm)
+    rrainm_mc_tndcy => hydromet_mc(:,iirrainm)
+
+    Nrm => hydromet(:,iiNrm)
+    VNr => hydromet_vel(:,iiNrm)
+    Nrm_mc_tndcy => hydromet_mc(:,iiNrm)
 
     ! Find the drop mean volume radius.  It is calculated using
     ! the rain water ratio, the rain droplet concentration,
     ! and the air density.  These values are taken from the previous
     ! timestep.  It is located on thermodynamic levels.
-    do k = 1, gr%nnzp, 1
+    do k = 1, ndim, 1
 
-      mean_vol_rad(k)  & 
+      mean_vol_rad(k) &
       = mean_volume_radius( rrainm(k), Nrm(k), rrp2_rrainm2(k),  & 
                             Nrp2_Nrm2(k), corr_rrNr_LL(k) )
 
@@ -359,10 +387,10 @@ module KK_microphys_module
     !
     ! d(rr)/dt = -w (drr/dz) - V_rr (drr/dz) + ...;
     !
-    ! This enters into computation in microphysics.F.  Brian Griffin.
+    ! This enters into computation in microphys_driver.  Brian Griffin.
 
-    do k = 1, gr%nnzp-1, 1
-
+    do k = 1, ndim-1, 1
+      ! FIXME: Replace zt2zm with a grid independent interpolation
       ! rrainm sedimentation velocity.
       Vrr(k) = 0.012 * ( 1.0e6 * zt2zm(mean_vol_rad,k) )  -  0.2
 
@@ -375,27 +403,27 @@ module KK_microphys_module
       ! Negative meaning a downward velocity now -dschanen 5 Dec 2006
       VNr(k) = -max( VNr(k), zero_threshold )
 
-    enddo ! 1..gr%nnzp
+    enddo ! 1..ndim
 
     ! The flux of rain water through the model top is 0.
     ! Vrr and VNr are set to 0 at the highest model level.
-    Vrr(gr%nnzp) = 0.0
-    VNr(gr%nnzp) = 0.0
+    Vrr(ndim) = 0.0
+    VNr(ndim) = 0.0
 
     ! Find values for other variables.
-    do k = 2, gr%nnzp, 1
+    do k = 2, ndim, 1
 
       ! Saturation mixing ratio
       rsat(k) = sat_mixrat_liq( p_in_Pa(k), T_in_K(k) )
 
-    enddo ! 2..gr%nnzp
+    enddo ! 2..ndim
 
     ! Set the boundary conditions
-    rsat(1)         = 0.0
-    Supsat(1)       = 0.0
-    Supsat(gr%nnzp) = 0.0
+    rsat(1)      = 0.0
+    Supsat(1)    = 0.0
+    Supsat(ndim) = 0.0
 
-    do k = 2, gr%nnzp-1, 1
+    do k = 2, ndim-1, 1
 
       ! Compute supersaturation via s1, s2.
       !     Larson et al 2002, JAS, Vol 59, p 3534.
@@ -527,10 +555,11 @@ module KK_microphys_module
       Nrm_mc_tndcy(k) = Nrm_cond(k) + Nrm_source
 
       ! Explicit contributions to thlm and rtm from the microphysics
-      rtm_mc(k)  = -rrainm_mc_tndcy(k)
+      rvm_mc(k)  = -( rrainm_cond(k) )
+      rcm_mc(k)  = -( rrainm_source ) ! Accretion + Autoconversion
       thlm_mc(k) = ( Lv / ( Cp*exner(k) ) ) * rrainm_mc_tndcy(k)
 
-    enddo ! k=2..gr%nnzp-1
+    enddo ! k=2..ndim-1
 
 
     ! Boundary conditions
@@ -542,16 +571,18 @@ module KK_microphys_module
     rrainm_mc_tndcy(1) = 0.0
     Nrm_mc_tndcy(1) = 0.0
 
-    rrainm_mc_tndcy(gr%nnzp) = 0.0
-    Nrm_mc_tndcy(gr%nnzp) = 0.0
+    rrainm_mc_tndcy(ndim) = 0.0
+    Nrm_mc_tndcy(ndim) = 0.0
 
     ! Contributions to theta_l and rt.  See further comments
     ! about this in the subroutine advance_xm_wpxp.
-    rtm_mc(1)  = 0.0
+    rvm_mc(1)  = 0.0
+    rcm_mc(1)  = 0.0
     thlm_mc(1) = 0.0
 
-    rtm_mc(gr%nnzp)  = 0.0
-    thlm_mc(gr%nnzp) = 0.0
+    rcm_mc(ndim)  = 0.0
+    rvm_mc(ndim)  = 0.0
+    thlm_mc(ndim) = 0.0
 
     return
   end subroutine KK_microphys
@@ -852,7 +883,7 @@ module KK_microphys_module
 
         ELSE
           ! The air is saturated, so there is no evaporation.
-          ! In the HOC code, any condensation is added into cloud water
+          ! In the CLUBB code, any condensation is added into cloud water
           ! instead of rain water.
 
           cond_evap_rrainm = 0.0

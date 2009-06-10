@@ -603,6 +603,11 @@ module microphys_driver
       irsnowm_sd, &
       irgraupelm_sd
 
+    use stats_variables, only: & 
+      iLH_rcm_mc_est, &
+      iLH_rvm_mc_est, &
+      iLH_rrainm_mc_est, &
+      iLH_Nrm_mc_est
 
     use stats_variables, only: & 
         zt, &  ! Variables
@@ -642,7 +647,7 @@ module microphys_driver
       wm_zm,   & ! w wind on thermo. grid                 [m/s]
       Kh_zm      ! Kh Eddy diffusivity on momentum grid   [m^2/s]
 
-    type(pdf_parameter), target, intent(in) :: & 
+    type(pdf_parameter), intent(in) :: & 
       pdf_params     ! PDF parameters
 
     real, dimension(gr%nnzp), intent(in) :: & 
@@ -705,14 +710,6 @@ module microphys_driver
     real, dimension(1,1,gr%nnzp) :: & 
       cond ! COAMPS stat for condesation/evap of rcm
 
-    ! Various PDF parameters needed for Brian's K&K microphysics
-    real, pointer, dimension(:) :: & 
-      a, & 
-      thl1, thl2, & 
-      s1, s2, & 
-      ss1, ss2, & 
-      rc1, rc2
-
     ! Eddy diffusivity for rain and rain drop concentration.
     ! It is also used for the other hydrometeor variables.
     ! Kr = Constant * Kh_zm; Constant is named c_Krrainm.
@@ -741,17 +738,6 @@ module microphys_driver
     ! microphysics
     if ( time_current < microphys_start_time ) return
 
-    ! Assign pointers to pdf_params
-    thl1 => pdf_params%thl1(1:gr%nnzp)
-    thl2 => pdf_params%thl2(1:gr%nnzp)
-    a    => pdf_params%a(1:gr%nnzp)
-    rc1  => pdf_params%rc1(1:gr%nnzp)
-    rc2  => pdf_params%rc2(1:gr%nnzp)
-    s1   => pdf_params%s1(1:gr%nnzp)
-    s2   => pdf_params%s2(1:gr%nnzp)
-    ss1  => pdf_params%ss1(1:gr%nnzp)
-    ss2  => pdf_params%ss2(1:gr%nnzp)
-
     ! Solve for the value of Kr, the hydrometeor eddy diffusivity.
     do k = 1, gr%nnzp, 1
       Kr(k) = c_Krrainm * Kh_zm(k)
@@ -760,9 +746,8 @@ module microphys_driver
     ! Determine temperature in K for the microphysics
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
 
-   if ( l_latin_hypercube_sampling ) then
-      call latin_hypercube_driver( iter, gr%nnzp, pdf_params, hydromet, cf )
-   end if
+    ! Compute standard deviation of vertical velocity in the grid column
+    wtmp(:) = sqrt( wp2_zt(:) )
 
    ! Begin by calling Brian Griffin's implementation of the
    ! Khairoutdinov and Kogan microphysical scheme, 
@@ -828,23 +813,20 @@ module microphys_driver
       end if ! l_stats_samp
 
     case ( "morrison" )
-      rcm_tmp = rcm
-      rvm_tmp = rtm - rcm
-
       dzq(1:gr%nnzp) = 1./gr%dzm(1:gr%nnzp)
 
       do i = 1, hydromet_dim, 1
         hydromet_tmp(:,i) = hydromet(:,i)
       end do
 
+      rcm_tmp = rcm
+      rvm_tmp = rtm - rcm
+
       ! Initialize tendencies to zero
       hydromet_mc(:,:) = 0.0
       rcm_mc(:) = 0.0
       rvm_mc(:) = 0.0
       T_in_K_mc(:) = 0.0
-
-      ! Compute standard deviation of vertical velocity in the grid column
-      wtmp(:) = sqrt( wp2_zt(:) )
 
       ! Based on YSU PBL interface to the Morrison scheme WRF driver, the standard dev. of w
       ! will be clipped to be between 0.1 m/s and 4.0 m/s in WRF.  -dschanen 23 Mar 2009
@@ -963,17 +945,42 @@ module microphys_driver
 
       ! Initialize tendencies to zero
       hydromet_mc(:,:) = 0.0
+      rcm_mc(:) = 0.0
+      rvm_mc(:) = 0.0
+      thlm_mc(:) = 0.0
+
+      if ( l_latin_hypercube_sampling ) then
+
+        call latin_hypercube_driver &
+             ( real( dt ), iter, gr%nnzp, cf, T_in_K, p_in_Pa, exner, &
+               rho, pdf_params, wm_zt, wtmp, gr%zt, rcm, rtm-rcm, &
+               hydromet, hydromet_mc, hydromet_vel, rcm_mc, &
+               rvm_mc, thlm_mc, KK_microphys )
+
+        if ( l_stats_samp ) then
+
+          ! Latin hypercube estimate for cloud water mixing ratio microphysical tendency
+          call stat_update_var( iLH_rcm_mc_est, rcm_mc, zt )
+
+          ! Latin hypercube estimate for vapor water mixing ratio microphysical tendency
+          call stat_update_var( iLH_rvm_mc_est, rvm_mc, zt )
+
+          ! Latin hypercube estimate for rain water mixing ratio microphysical tendency
+          call stat_update_var( iLH_rrainm_mc_est, hydromet_mc(:,iirrainm), zt )
+
+          ! Latin hypercube estimate for rain water number concentration microphysical tendency
+          call stat_update_var( iLH_Nrm_mc_est, hydromet_mc(:,iiNrm), zt )
+
+        end if
+      end if ! l_latin_hypercube_sampling
 
       call KK_microphys & 
-           ( dt, T_in_K, p_in_Pa, exner, rho,  & 
-             thl1, thl2, a, rc1, rc2, s1,  & 
-             s2, ss1, ss2, rcm, hydromet(:,iiNcm),  & 
-             hydromet(:,iirrainm), hydromet(:,iiNrm), & 
-             .true., &
-             hydromet_mc(:,iirrainm), hydromet_mc(:,iiNrm),  & 
-             rtm_mc, thlm_mc, & 
-             hydromet_vel(:,iirrainm), hydromet_vel(:,iiNrm) )
+           ( real( dt ), gr%nnzp, .true., T_in_K, p_in_Pa, exner, rho, pdf_params, &
+             wm_zt, wtmp, gr%zt, rcm, rtm-rcm, hydromet, hydromet_mc, &
+             hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 
+      rtm_mc = rcm_mc + rvm_mc
+ 
       if ( l_stats_samp ) then
 
         ! Sedimentation velocity for rrainm
@@ -987,6 +994,12 @@ module microphys_driver
 
         ! Sum total of Nrm microphysics (auto + cond)
         call stat_update_var( iNrm_mc, hydromet_mc(:,iiNrm), zt )
+
+        ! Sum total of cloud water microphysics
+        call stat_update_var( irvm_mc, rvm_mc, zt )
+
+        ! Sum total of vapor microphysics
+        call stat_update_var( ircm_mc, rcm_mc, zt )
 
       end if ! lstats_samp
 
