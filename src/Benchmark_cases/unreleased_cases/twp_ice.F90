@@ -8,7 +8,7 @@ module twp_ice
 
 implicit none
 
-public :: twp_ice_tndcy, twp_ice_sfclyr, twp_ice_init
+public :: twp_ice_tndcy, twp_ice_sfclyr
 
 private ! Default Scope
 
@@ -55,6 +55,16 @@ use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
 use interpolation, only: zlinterp_fnc ! Procedure(s)
 
+use time_dependant_input, only: &
+  time_select,  &
+  time_f_given, &
+  thlm_f_given, &
+  rtm_f_given,  &
+  um_given,     &
+  vm_given,     &
+  wm_given,     &
+  l_t_dependant
+
 use stats_precision, only: time_precision ! Variable(s)
 
 use error_code, only: clubb_debug ! Procedure(s)
@@ -89,7 +99,7 @@ real, intent(out), dimension(gr%nnzp,edsclr_dim) ::  &
   edsclrm_forcing ! Eddy-passive scalar tendency[units/s]
 
 real :: time_frac
-integer :: i, i1, i2
+integer :: i1, i2, i3
 
 real :: velocity_omega
 
@@ -101,92 +111,78 @@ real, dimension(nz) :: thlm_t_interp, &
 ! Thetal forcing is equal to the LS tendency given here and the
 ! interactive calculation done in BUGSrad
 
-time_frac = -1.0 ! Default initialization
+if(l_t_dependant) then
 
-if ( time == times(1) ) then
-  time_frac = 0.0
-  i1 = 1
-  i2 = 2
-else if ( time >= times(ntimes) ) then
-  time_frac = 1.0
-  i1 = ntimes-1
-  i2 = ntimes
-else
-  i1 = 1
-  do while ( i1 <= ntimes-1 )
-    i2 = i1 + 1
-    if ( time >= times(i1) .and. time < times(i2) ) then
-      time_frac = real((time-times(i1))/(times(i2)-times(i1)))
-      exit
-    end if
-      i1 = i2
-  end do
-end if ! time <= times(1)
+     time_frac = -1.0 ! Default initialization
 
-if (time_frac == -1.0) then
-        call clubb_debug & 
-           (1,"times not sorted in twp_ice_tndcy")
+     print *, 'time_f_given = ', time_f_given
+     call time_select( time,size(time_f_given), time_f_given, i1, i2 )
+
+     time_frac = real((time-time_f_given(i1))/(time_f_given(i2)-time_f_given(i1)))
+
+     if( time_frac == -1.0 ) then
+       call clubb_debug(1,"times is not sorted in arm_97_tndcy")
+     endif
+
+   if (time_frac == -1.0) then
+      call clubb_debug & 
+            (1,"times not sorted in twp_ice_tndcy")
+   endif
+
+   ! Interpolate LS thetal tendency to the HOC grid
+   ! Time
+   thlm_t_interp = factor_interp( time_frac, thlm_f_given(:,i2), thlm_f_given(:,i1) )
+   ! Vertical
+   thlm_forcing(1:gr%nnzp) = zlinterp_fnc( gr%nnzp, nz, gr%zt(:), z, thlm_t_interp )
+
+   ! Interpolate LS rt tendency to the HOC grid
+   ! Time
+   rtm_t_interp = factor_interp( time_frac, rtm_f_given(:,i2), rtm_f_given(:,i1) )
+   ! Vertical
+   rtm_forcing(1:gr%nnzp) = zlinterp_fnc & 
+            ( gr%nnzp, nz, gr%zt(:), z, rtm_t_interp )
+
+   ! Interpolate um observed to the HOC grid
+   ! Time
+   um_obs_t_interp = factor_interp( time_frac, um_given(:,i2), vm_given(:,i1) )
+   ! Vertical
+   um_hoc_grid(1:gr%nnzp) = zlinterp_fnc & 
+            ( gr%nnzp, nz, gr%zt(:), z, um_obs_t_interp )
+
+   ! Interpolate vm observed to the HOC grid
+   ! Time
+   vm_obs_t_interp = factor_interp( time_frac, vm_given(:,i2), vm_given(:,i1) )
+   ! Vertical
+   vm_hoc_grid(1:gr%nnzp) = zlinterp_fnc & 
+            ( gr%nnzp, nz, gr%zt(:), z, vm_obs_t_interp )
+
+   omega_interp = factor_interp( time_frac, wm_given(:,i2), wm_given(:,i1) )
+   ! Vertical
+   omega_hoc_grid(1:gr%nnzp) = zlinterp_fnc & 
+            ( gr%nnzp, nz, gr%zt(:), z, omega_interp )
+
+   ! Compute vertical motion
+   do i3=2,gr%nnzp
+      velocity_omega = omega_hoc_grid(i3) * 100 / 3600 ! convering mb/hr to Pa/s
+      wm_zt(i3) = -velocity_omega / (grav * rho(i3))
+   end do
+
+   ! Boundary condition
+   wm_zt(1) = 0.0        ! Below surface
+
+   ! Interpolation
+   wm_zm = zt2zm( wm_zt )
+
+   um_hoc_grid (1) = um_hoc_grid(2)
+   vm_hoc_grid (1) = vm_hoc_grid(2)
+
+   ! Test scalars with thetal and rt if desired
+   if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+   if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
+
+   if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
+   if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
 endif
-
-! Interpolate LS thetal tendency to the HOC grid
-! Time
-thlm_t_interp = factor_interp( time_frac, thl_ls(:,i2), thl_ls(:,i1) )
-! Vertical
-thlm_forcing(1:gr%nnzp) = zlinterp_fnc( gr%nnzp, nz, gr%zt(:), z, thlm_t_interp )
-!thlm_forcing(1:gr%nnzp) = 0
-
-! Interpolate LS rt tendency to the HOC grid
-! Time
-rtm_t_interp = factor_interp( time_frac, rt_ls(:,i2), rt_ls(:,i1) )
-! Vertical
-rtm_forcing(1:gr%nnzp) = zlinterp_fnc & 
-         ( gr%nnzp, nz, gr%zt(:), z, rtm_t_interp )
-!rtm_forcing(1:gr%nnzp) = 0
-! Modified by Joshua Fasching (October 2007)
-
-! Interpolate um observed to the HOC grid
-! Time
-um_obs_t_interp = factor_interp( time_frac, um_obs(:,i2), um_obs(:,i1) )
-! Vertical
-um_hoc_grid(1:gr%nnzp) = zlinterp_fnc & 
-         ( gr%nnzp, nz, gr%zt(:), z, um_obs_t_interp )
-
-! Interpolate vm observed to the HOC grid
-! Time
-vm_obs_t_interp = factor_interp( time_frac, vm_obs(:,i2), vm_obs(:,i1) )
-! Vertical
-vm_hoc_grid(1:gr%nnzp) = zlinterp_fnc & 
-         ( gr%nnzp, nz, gr%zt(:), z, vm_obs_t_interp )
-
-omega_interp = factor_interp( time_frac, omega_forcing(:,i2), omega_forcing(:,i1) )
-! Vertical
-omega_hoc_grid(1:gr%nnzp) = zlinterp_fnc & 
-         ( gr%nnzp, nz, gr%zt(:), z, omega_interp )
-
-! Compute vertical motion
-do i=2,gr%nnzp
-   velocity_omega = omega_hoc_grid(i) * 100 / 3600 ! convering mb/hr to Pa/s
-   wm_zt(i) = -velocity_omega / (grav * rho(i))
-   !wm_zt(i) = 0.
-end do
-
-! Boundary condition
-wm_zt(1) = 0.0        ! Below surface
-
-! Interpolation
-wm_zm = zt2zm( wm_zt )
-
-! Added by Joshua Fasching (October 27 2007)
-um_hoc_grid (1) = um_hoc_grid(2)
-vm_hoc_grid (1) = vm_hoc_grid(2)
-
-! Test scalars with thetal and rt if desired
-if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
-if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
-
-if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
-if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
-
 return
 end subroutine twp_ice_tndcy
 !----------------------------------------------------------------------
@@ -289,58 +285,4 @@ if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
 
 return
 end subroutine twp_ice_sfclyr
-
-!----------------------------------------------------------------------
-subroutine twp_ice_init( iunit, file_path )
-!
-!       Description:
-!       This subroutine initializes the module by reading in forcing
-!       data used in the tndcy and sfclyr subroutines.
-!----------------------------------------------------------------------
-   use file_functions, only: file_read_1d, file_read_2d ! Procedure(s)
-
-   implicit none
-
-   integer, intent(in) :: iunit ! File unit number
-
-   character(len=*), intent(in) :: &
-     file_path ! Path to the forcing files
-
-   ! Reading in the files located in
-   ! ../model/twp_ice_forcings/ and storing them in arrays
-   ! Joshua Fasching (October 2007)
-
-   ! ---- Begin Code ----
-
-   call file_read_1d(iunit, & 
-    file_path//'twp_ice_times.dat', & 
-    ntimes, per_line, times)
-
-   call file_read_1d(iunit, & 
-    file_path//'twp_ice_heights.dat', & 
-    nz, per_line, z)
-
-   call file_read_2d(iunit, & 
-    file_path//'twp_ice_dTdt.dat', & 
-    nz, ntimes, per_line, thl_ls)
-
-   call file_read_2d(iunit, & 
-     file_path//'twp_ice_dqdt.dat', & 
-     nz, ntimes, per_line, rt_ls)
-
-   call file_read_2d(iunit, & 
-     file_path//'twp_ice_um_obs.dat', & 
-     nz, ntimes, per_line, um_obs)
-
-   call file_read_2d(iunit, & 
-     file_path//'twp_ice_vm_obs.dat', & 
-     nz, ntimes, per_line, vm_obs)
-
-   call file_read_2d( iunit, &
-     file_path//'twp_ice_omega.dat', &
-     nz, ntimes, per_line, omega_forcing)
-
-end subroutine twp_ice_init
-!----------------------------------------------------------------------
 end module twp_ice
-

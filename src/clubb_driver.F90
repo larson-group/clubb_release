@@ -797,8 +797,6 @@ module clubb_driver
     use lba, only: lba_init ! Procedure(s)
 
     use cloud_feedback, only: cloud_feedback_init ! Procedure(s)
-
-    use twp_ice, only: twp_ice_init ! Procedure(s)
 #endif
 
     use mpace_a, only: mpace_a_init ! Procedure(s)
@@ -1126,7 +1124,6 @@ module clubb_driver
     case ( "twp_ice" )
 
       em = 1.0
-      call twp_ice_init( iunit, forcings_file_path )
       ! twp_ice case
 
     case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
@@ -1494,8 +1491,6 @@ module clubb_driver
     use arm_3year, only: arm_3year_init ! Procedure(s)
 
     use lba, only: lba_init ! Procedure(s)
-
-    use twp_ice, only: twp_ice_init ! Procedure(s)
 #endif
 
     use mpace_a, only: mpace_a_init ! Procedure(s)
@@ -1691,9 +1686,6 @@ module clubb_driver
 
     case( "lba" )
       call lba_init( iunit, forcings_file_path )
-
-    case( "twp_ice" )
-      call twp_ice_init( iunit, forcings_file_path )
 #endif
 
     case( "mpace_a" )
