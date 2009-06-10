@@ -120,46 +120,26 @@ if(l_t_dependant) then
      time_frac = real((time-time_f_given(i1))/(time_f_given(i2)-time_f_given(i1)))
 
      if( time_frac == -1.0 ) then
-       call clubb_debug(1,"times is not sorted in arm_97_tndcy")
+       call clubb_debug(1,"times is not sorted in twp_ice_tndcy")
      endif
-
-   if (time_frac == -1.0) then
-      call clubb_debug & 
-            (1,"times not sorted in twp_ice_tndcy")
-   endif
 
    ! Interpolate LS thetal tendency to the HOC grid
    ! Time
-   thlm_t_interp = factor_interp( time_frac, thlm_f_given(:,i2), thlm_f_given(:,i1) )
-   ! Vertical
-   thlm_forcing(1:gr%nnzp) = zlinterp_fnc( gr%nnzp, nz, gr%zt(:), z, thlm_t_interp )
+   thlm_forcing = factor_interp( time_frac, thlm_f_given(:,i2), thlm_f_given(:,i1) )
 
    ! Interpolate LS rt tendency to the HOC grid
    ! Time
-   rtm_t_interp = factor_interp( time_frac, rtm_f_given(:,i2), rtm_f_given(:,i1) )
-   ! Vertical
-   rtm_forcing(1:gr%nnzp) = zlinterp_fnc & 
-            ( gr%nnzp, nz, gr%zt(:), z, rtm_t_interp )
+   rtm_forcing = factor_interp( time_frac, rtm_f_given(:,i2), rtm_f_given(:,i1) )
 
    ! Interpolate um observed to the HOC grid
    ! Time
-   um_obs_t_interp = factor_interp( time_frac, um_given(:,i2), vm_given(:,i1) )
-   ! Vertical
-   um_hoc_grid(1:gr%nnzp) = zlinterp_fnc & 
-            ( gr%nnzp, nz, gr%zt(:), z, um_obs_t_interp )
+   um_hoc_grid = factor_interp( time_frac, um_given(:,i2), vm_given(:,i1) )
 
    ! Interpolate vm observed to the HOC grid
    ! Time
-   vm_obs_t_interp = factor_interp( time_frac, vm_given(:,i2), vm_given(:,i1) )
-   ! Vertical
-   vm_hoc_grid(1:gr%nnzp) = zlinterp_fnc & 
-            ( gr%nnzp, nz, gr%zt(:), z, vm_obs_t_interp )
+   vm_hoc_grid = factor_interp( time_frac, vm_given(:,i2), vm_given(:,i1) )
 
-   omega_interp = factor_interp( time_frac, wm_given(:,i2), wm_given(:,i1) )
-   ! Vertical
-   omega_hoc_grid(1:gr%nnzp) = zlinterp_fnc & 
-            ( gr%nnzp, nz, gr%zt(:), z, omega_interp )
-
+   omega_hoc_grid = factor_interp( time_frac, wm_given(:,i2), wm_given(:,i1) )
    ! Compute vertical motion
    do i3=2,gr%nnzp
       velocity_omega = omega_hoc_grid(i3) * 100 / 3600 ! convering mb/hr to Pa/s
