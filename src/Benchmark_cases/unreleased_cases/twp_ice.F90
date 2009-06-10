@@ -12,22 +12,8 @@ public :: twp_ice_tndcy, twp_ice_sfclyr
 
 private ! Default Scope
 
-! Constant Parameters
-integer, parameter :: ntimes = 214, nz = 40, & 
- per_line = 5
-
 ! File path for the forcing files
 !character(*), parameter :: file_path = '../input/case_setups/twp_ice_forcings/'
-
-real, dimension(ntimes) :: times               ! Time from day0      [s]
-real, dimension(nz) :: z                       ! Height              [m]
-real, dimension(nz, ntimes) :: thl_ls          ! Potential Temperature
-                                               ! Tendency            [K/s]
-real, dimension(nz, ntimes) :: rt_ls           ! Water Vapor Advective
-                                               ! Tendency            [Kg/Kg/s]
-real, dimension(nz, ntimes) :: um_obs          ! Obs. wind u         [m/s]
-real, dimension(nz, ntimes) :: vm_obs          ! Obs. wind v         [m/s]
-real, dimension(nz, ntimes) :: omega_forcing   ! Vertical velocity forcing [mb/hr]
 
 contains
 
@@ -52,8 +38,6 @@ use grid_class, only: gr ! Variable(s)
 use grid_class, only: zt2zm ! Procedure(s)
 
 use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
-
-use interpolation, only: zlinterp_fnc ! Procedure(s)
 
 use time_dependant_input, only: &
   time_select,  &
@@ -102,9 +86,6 @@ real :: time_frac
 integer :: i1, i2, i3
 
 real :: velocity_omega
-
-real, dimension(nz) :: thlm_t_interp, & 
-  rtm_t_interp, um_obs_t_interp, vm_obs_t_interp, omega_interp
 
 !-----------------------------------------------------------------------
 
