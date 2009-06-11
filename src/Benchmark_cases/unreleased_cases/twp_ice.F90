@@ -114,7 +114,7 @@ if(l_t_dependant) then
 
    ! Interpolate um observed to the HOC grid
    ! Time
-   um_hoc_grid = factor_interp( time_frac, um_given(:,i2), vm_given(:,i1) )
+   um_hoc_grid = factor_interp( time_frac, um_given(:,i2), um_given(:,i1) )
 
    ! Interpolate vm observed to the HOC grid
    ! Time
