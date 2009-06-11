@@ -156,19 +156,32 @@ real, intent(out), dimension(edsclr_dim) ::  &
 ! Constants
 real, parameter :: & 
   C_10    = 0.0013, &     ! Drag coefficient, defined by ATEX specification
-!  C_m_20  = 0.001229,  & ! Drag coefficient, defined by RICO 3D specification
-!  C_h_20  = 0.001094,  & ! Drag coefficient, defined by RICO 3D specification
-!  C_q_20  = 0.001133,  & ! Drag coefficient, defined by RICO 3D specification
-!  z0      = 0.00015      ! Roughness length, defined by ATEX specification
+  C_m_20  = 0.001229,  & ! Drag coefficient, defined by RICO 3D specification
+  C_h_20  = 0.001094,  & ! Drag coefficient, defined by RICO 3D specification
+  C_q_20  = 0.001133,  & ! Drag coefficient, defined by RICO 3D specification
+  z0      = 0.00015,   & ! Roughness length, defined by ATEX specification
   rho_sfc_flux = 1.0
 
 ! Internal variables
 real :: & 
-  ubar, temp, T_in_K
-!  Cz,   & ! This is C_10 scaled to the height of the lowest model level.
-!  Cm,   & ! This is C_m_20 scaled to the height of the lowest model level.
-!  Ch,   & ! This is C_h_20 scaled to the height of the lowest model level.
-!  Cq      ! This is C_q_20 scaled to the height of the lowest model level.
+  ubar, temp, T_in_K, &
+  Cz,   & ! This is C_10 scaled to the height of the lowest model level.
+  Cm,   & ! This is C_m_20 scaled to the height of the lowest model level.
+  Ch,   & ! This is C_h_20 scaled to the height of the lowest model level.
+  Cq      ! This is C_q_20 scaled to the height of the lowest model level.
+
+! Modification in case lowest model level isn't at 10 m, from ATEX specification
+Cz   = C_10 * ((log(10/z0))/(log(lowestlevel/z0))) * & 
+       ((log(10/z0))/(log(lowestlevel/z0)))         
+! Modification in case lowest model level isn't at 10 m, from ATEX specification
+Cm   = C_m_20 * ((log(20/z0))/(log(lowestlevel/z0))) * & 
+       ((log(20/z0))/(log(lowestlevel/z0)))             
+! Modification in case lowest model level isn't at 10 m, from ATEX specification
+Ch   = C_h_20 * ((log(20/z0))/(log(lowestlevel/z0))) * & 
+       ((log(20/z0))/(log(lowestlevel/z0)))          
+! Modification in case lowest model level isn't at 10 m, from ATEX specification
+Cq   = C_q_20 * ((log(20/z0))/(log(lowestlevel/z0))) * & 
+       ((log(20/z0))/(log(lowestlevel/z0)))
 
 T_in_K = thlm2T_in_K( thlm_sfc, exner_sfc, rcm )
 
@@ -176,31 +189,6 @@ ubar = compute_ubar( um_sfc, vm_sfc )
 
 ! Just set ustar = 0.3
 ustar = 0.3
-
-! Since I have a lot of commented out code while I test changes, I
-! have a lot of compiler warnings of unused variables. Get rid of those here.
-temp = real ( time + p_in_Pa + rho0 + lowestlevel )
-temp = temp + 1
-
-! Modification in case lowest model level isn't at 10 m, from ATEX specification
-!Cz   = C_10 * ((log(10/z0))/(log(lowestlevel/z0))) * & 
-!       ((log(10/z0))/(log(lowestlevel/z0)))         
-! Modification in case lowest model level isn't at 10 m, from ATEX specification
-!Cm   = C_m_20 * ((log(20/z0))/(log(lowestlevel/z0))) * & 
-!       ((log(20/z0))/(log(lowestlevel/z0)))             
-! Modification in case lowest model level isn't at 10 m, from ATEX specification
-!Ch   = C_h_20 * ((log(20/z0))/(log(lowestlevel/z0))) * & 
-!       ((log(20/z0))/(log(lowestlevel/z0)))          
-! Modification in case lowest model level isn't at 10 m, from ATEX specification
-!Cq   = C_q_20 * ((log(20/z0))/(log(lowestlevel/z0))) * & 
-!       ((log(20/z0))/(log(lowestlevel/z0)))
-
-!--------------------------------------------------------------------------------
-! ATEX Style
-!wpthlp_sfc = compute_wpthlp_sfc( Cz, ubar, thlm_sfc, Tsfc, exner_sfc )
-!wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm_sfc, sat_mixrat_liq( psfc,Tsfc ) )
-!call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
-!                            upwp_sfc, vpwp_sfc )
 
 !--------------------------------------------------------------------------------
 ! Rico Style
@@ -224,24 +212,27 @@ temp = temp + 1
 ! wprtp = value_from_forcings_file_in_W_m**2 / ( rho_sfc_flux * Lv )
 ! wpthlp = value_from_forcings_file_in_W_m**2 / ( rho_sfc_flux * Cp )
 
-print *, "lhflx(1) forcings", lhflx(1)
-print *, "shflx(1) forcings", shflx(1)
-print *, "T_in_K", T_in_K
-print *, "rcm", rcm
-print *, "Tsfc", Tsfc
+! S11 is not affected much by using the calculated surface fluxes other then cf is lower (with 0.8)
+! S6 crashes when when compute_wpthlp_sfc and compute_wprtp_sfc are used (with 0.8)
+! S6 and S12 crash when the calculated surface fluxes are used to calculate wpthlp (0.8)
+! S6 crashes with calculated surface fluxes (without 0.8)
 
-lhflx(1) = 0.001 * ubar * rho_sfc_flux * Lv * ( sat_mixrat_liq( psfc, Tsfc ) - & 
-                                                sat_mixrat_liq( psfc, T_in_K ) * 0.8 )
-shflx(1) = 0.001 * ubar * rho_sfc_flux * Cp * ( Tsfc - T_in_K )
+!lhflx(1) = 0.001 * ubar * rho_sfc_flux * Lv * ( sat_mixrat_liq( psfc, Tsfc ) - & 
+!                                                sat_mixrat_liq( psfc, T_in_K ) * 0.8 )
+!shflx(1) = 0.001 * ubar * rho_sfc_flux * Cp * ( Tsfc - T_in_K )
 
-print *, "lhflx(1)", lhflx(1)
-print *, "shflx(1)", shflx(1)
-
-wprtp_sfc = lhflx(1) / ( rho_sfc_flux * Lv )
-wpthlp_sfc = shflx(1) / ( rho_sfc_flux * Cp )
+wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, & 
+                                 Tsfc, exner_sfc )
+wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, 0.8 * sat_mixrat_liq( psfc, Tsfc ) )
 
 call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
                             upwp_sfc, vpwp_sfc )
+
+!print *, "T_in_K", T_in_K
+!print *, "rcm", rcm
+!print *, "Tsfc", Tsfc
+!print *, "lhflx(1)", lhflx(1)
+!print *, "shflx(1)", shflx(1)
 
 ! Let passive scalars be equal to rt and theta_l for now
 if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc

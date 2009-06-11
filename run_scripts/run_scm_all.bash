@@ -103,10 +103,11 @@ fi
 
 EXIT_CODE=( [0]=0 [1]=0 [2]=0 [3]=0 [4]=0 [5]=0 [6]=0 [7]=0 [8]=0 [9]=0 \
 	    [10]=0 [11]=0 [12]=0 [13]=0 [14]=0 [15]=0 [16]=0 [17]=0 [18]=0 \ 
-	    [19]=0 [20]=0 [21]=0 [22]=0)
+	    [19]=0 [20]=0 [21]=0 [22]=0 [23]=0 [24]=0 [25]=0 )
 
 RUN_CASE=( \
-	arm arm_97 atex bomex clex9_nov02 clex9_oct14 cobra dycoms2_rf01
+	arm arm_97 atex bomex clex9_nov02 clex9_oct14 cloud_feedback_s6 \
+        cloud_feedback_s11 cloud_feedback_s12 cobra dycoms2_rf01 \
         dycoms2_rf02_do dycoms2_rf02_ds	dycoms2_rf02_nd dycoms2_rf02_so \
         fire gabls2 gabls3 jun25_altocu lba mpace_a mpace_b nov11_altocu \
        	rico twp_ice wangara )
@@ -170,7 +171,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 		cat $STATS_IN >> 'clubb.in'
 		run_case
 
-		#Move the ZT and ZM files out of the way
+		# Move the ZT and ZM files out of the way
 		if [ "${EXIT_CODE[$x]}" != 0 ]; then
 			rm "../output/${RUN_CASE[$x]}"_zt.ctl
 			rm "../output/${RUN_CASE[$x]}"_zt.dat
@@ -183,44 +184,49 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 			mv "../output/${RUN_CASE[$x]}"_zt.dat "$OUTPUT_DIR"/CLUBB_current/
 			mv "../output/${RUN_CASE[$x]}"_zm.ctl "$OUTPUT_DIR"/CLUBB_current/
 			mv "../output/${RUN_CASE[$x]}"_zm.dat "$OUTPUT_DIR"/CLUBB_current/
-			#We only run TWP_ICE once so we want to keep the SFC files
-			if [ ${RUN_CASE[$x]} = twp_ice ]; then
-				mv "../output/${RUN_CASE[$x]}"_sfc.ctl "$OUTPUT_DIR"/CLUBB_current/
-				mv "../output/${RUN_CASE[$x]}"_sfc.dat "$OUTPUT_DIR"/CLUBB_current/
-			else
-				rm "../output/${RUN_CASE[$x]}"_sfc.ctl
-				rm "../output/${RUN_CASE[$x]}"_sfc.dat
-			fi
+			case ${RUN_CASE[$x]} in
+				# We only run TWP_ICE and Cloud Feedback once so we want to keep the SFC files
+				twp_ice | cloud_feedback* )
+					mv "../output/${RUN_CASE[$x]}"_sfc.ctl "$OUTPUT_DIR"/CLUBB_current/
+					mv "../output/${RUN_CASE[$x]}"_sfc.dat "$OUTPUT_DIR"/CLUBB_current/
+					;;
+				* )
+					rm "../output/${RUN_CASE[$x]}"_sfc.ctl
+					rm "../output/${RUN_CASE[$x]}"_sfc.dat
+					;;
+			esac
 		fi
 		
-		#Run again with a finer output time interval
-		#Note, we do not run TWP_ICE a second time
-		if [ ${RUN_CASE[$x]} != twp_ice ]; then
-			cat $PARAMS_IN > 'clubb.in'
-			cat $MODEL_IN | sed 's/stats_tout\s*=\s*.*/stats_tout = 60\./g' >> 'clubb.in'
-			cat $STATS_IN >> 'clubb.in'
-
-			run_case
-
-			#Now move the SFC file
-			if [ "${EXIT_CODE[$x]}" != 0 ]; then
-				rm "../output/${RUN_CASE[$x]}"_zt.ctl
-				rm "../output/${RUN_CASE[$x]}"_zt.dat
-				rm "../output/${RUN_CASE[$x]}"_zm.ctl
-				rm "../output/${RUN_CASE[$x]}"_zm.dat
-				rm "../output/${RUN_CASE[$x]}"_sfc.ctl
-				rm "../output/${RUN_CASE[$x]}"_sfc.dat
-			else
-				rm "../output/${RUN_CASE[$x]}"_zt.ctl
-				rm "../output/${RUN_CASE[$x]}"_zt.dat
-				rm "../output/${RUN_CASE[$x]}"_zm.ctl
-				rm "../output/${RUN_CASE[$x]}"_zm.dat
-				mv "../output/${RUN_CASE[$x]}"_sfc.ctl "$OUTPUT_DIR"/CLUBB_current/
-				mv "../output/${RUN_CASE[$x]}"_sfc.dat "$OUTPUT_DIR"/CLUBB_current/
-			fi
-		fi
-		
-
+		# Run again with a finer output time interval
+		# Note, we do not run TWP_ICE and Cloud Feedback a second time
+		case ${RUN_CASE[$x]} in 
+			twp_ice | cloud_feedback* )
+				;;
+			* )
+				cat $PARAMS_IN > 'clubb.in'
+				cat $MODEL_IN | sed 's/stats_tout\s*=\s*.*/stats_tout = 60\./g' >> 'clubb.in'
+				cat $STATS_IN >> 'clubb.in'
+	
+				run_case
+	
+				#Now move the SFC file
+				if [ "${EXIT_CODE[$x]}" != 0 ]; then
+					rm "../output/${RUN_CASE[$x]}"_zt.ctl
+					rm "../output/${RUN_CASE[$x]}"_zt.dat
+					rm "../output/${RUN_CASE[$x]}"_zm.ctl
+					rm "../output/${RUN_CASE[$x]}"_zm.dat
+					rm "../output/${RUN_CASE[$x]}"_sfc.ctl
+					rm "../output/${RUN_CASE[$x]}"_sfc.dat
+				else
+					rm "../output/${RUN_CASE[$x]}"_zt.ctl
+					rm "../output/${RUN_CASE[$x]}"_zt.dat
+					rm "../output/${RUN_CASE[$x]}"_zm.ctl
+					rm "../output/${RUN_CASE[$x]}"_zm.dat
+					mv "../output/${RUN_CASE[$x]}"_sfc.ctl "$OUTPUT_DIR"/CLUBB_current/
+					mv "../output/${RUN_CASE[$x]}"_sfc.dat "$OUTPUT_DIR"/CLUBB_current/
+				fi
+				;;
+		esac
 	elif [ $TIMESTEP_TEST == true ]; then
 
                 # Set the model timestep for all cases (and the stats output timestep
@@ -231,7 +237,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
                 #                    -e 's/dtclosure\s*=\s*.*/dtclosure = '$test_ts'/g' \
                 #                    -e 's/stats_tsamp\s*=\s*.*/stats_tsamp = '$test_ts'/g' \
                 #                    -e 's/stats_tout\s*=\s*.*/stats_tout = '$test_ts'/g' >> 'clubb.in'
-                # Use this version is statistical output is not desired.
+                # Use this version if statistical output is not desired.
                 cat $MODEL_IN | sed -e 's/dtmain\s*=\s*.*/dtmain = '$test_ts'/g' \
                                     -e 's/dtclosure\s*=\s*.*/dtclosure = '$test_ts'/g' \
                                     -e 's/l_stats\s*=\s*.*/l_stats = .false./g' >> 'clubb.in'

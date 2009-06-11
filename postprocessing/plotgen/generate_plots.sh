@@ -89,6 +89,9 @@ plot_atex_sim1=0
 plot_bomex_sim1=0
 plot_clex9_nov02_sim1=0
 plot_clex9_oct14_sim1=0
+plot_cloud_feedback_s6_sim1=0
+plot_cloud_feedback_s11_sim1=0
+plot_cloud_feedback_s12_sim1=0
 plot_cobra_sim1=0
 plot_dycoms2_rf01_sim1=0
 plot_dycoms2_rf02_do_sim1=0
@@ -113,6 +116,9 @@ plot_atex_sim2=0
 plot_bomex_sim2=0
 plot_clex9_nov02_sim2=0
 plot_clex9_oct14_sim2=0
+plot_cloud_feedback_s6_sim2=0
+plot_cloud_feedback_s11_sim2=0
+plot_cloud_feedback_s12_sim2=0
 plot_cobra_sim2=0
 plot_dycoms2_rf01_sim2=0
 plot_dycoms2_rf02_do_sim2=0
@@ -202,6 +208,43 @@ if [ -r "$HOC_sim1/clex9_oct14_zm.ctl" ]; then
 		fi
 	fi
 fi
+
+#If the Cloud Feedback S6 files exist, plot Cloud Feedback S6
+if [ -r "$HOC_sim1/cloud_feedback_s6_zm.ctl" ]; then
+	if [ -r "$HOC_sim1/cloud_feedback_s6_zm.dat" ]; then
+		if [ -r "$HOC_sim1/cloud_feedback_s6_zt.ctl" ]; then
+			if [ -r "$HOC_sim1/cloud_feedback_s6_zt.dat" ]; then
+				echo "Plotting Cloud Feedback S6 for HOC_sim1"
+				plot_cloud_feedback_s6_sim1=1
+			fi
+		fi
+	fi
+fi
+
+#If the Cloud Feedback S11 files exist, plot Cloud Feedback S11
+if [ -r "$HOC_sim1/cloud_feedback_s11_zm.ctl" ]; then
+	if [ -r "$HOC_sim1/cloud_feedback_s11_zm.dat" ]; then
+		if [ -r "$HOC_sim1/cloud_feedback_s11_zt.ctl" ]; then
+			if [ -r "$HOC_sim1/cloud_feedback_s11_zt.dat" ]; then
+				echo "Plotting Cloud Feedback S11 for HOC_sim1"
+				plot_cloud_feedback_s11_sim1=1
+			fi
+		fi
+	fi
+fi
+
+#If the Cloud Feedback S12 files exist, plot Cloud Feedback S12
+if [ -r "$HOC_sim1/cloud_feedback_s12_zm.ctl" ]; then
+	if [ -r "$HOC_sim1/cloud_feedback_s12_zm.dat" ]; then
+		if [ -r "$HOC_sim1/cloud_feedback_s12_zt.ctl" ]; then
+			if [ -r "$HOC_sim1/cloud_feedback_s12_zt.dat" ]; then
+				echo "Plotting Cloud Feedback S12 for HOC_sim1"
+				plot_cloud_feedback_s12_sim1=1
+			fi
+		fi
+	fi
+fi
+
 
 #If the Cobra files exist, plot Cobra
 if [ -r "$HOC_sim1/cobra_zm.ctl" ]; then
@@ -483,6 +526,43 @@ if [ "$HOC_sim2" != 0 ]; then
 		fi
 	fi
 
+	#If the Cloud Feedback S6 files exist, plot Cloud Feedback S6
+	if [ -r "$HOC_sim2/cloud_feedback_s6_zm.ctl" ]; then
+		if [ -r "$HOC_sim2/cloud_feedback_s6_zm.dat" ]; then
+			if [ -r "$HOC_sim2/cloud_feedback_s6_zt.ctl" ]; then
+				if [ -r "$HOC_sim2/cloud_feedback_s6_zt.dat" ]; then
+					echo "Plotting Cloud Feedback S6 for HOC_sim2"
+					plot_cloud_feedback_s6_sim2=1
+				fi
+			fi
+		fi
+	fi
+
+	#If the Cloud Feedback S11 files exist, plot Cloud Feedback S11
+	if [ -r "$HOC_sim2/cloud_feedback_s11_zm.ctl" ]; then
+		if [ -r "$HOC_sim2/cloud_feedback_s11_zm.dat" ]; then
+			if [ -r "$HOC_sim2/cloud_feedback_s11_zt.ctl" ]; then
+				if [ -r "$HOC_sim2/cloud_feedback_s11_zt.dat" ]; then
+					echo "Plotting Cloud Feedback S11 for HOC_sim2"
+					plot_cloud_feedback_s11_sim2=1
+				fi
+			fi
+		fi
+	fi
+
+
+	#If the Cloud Feedback S6 files exist, plot Cloud Feedback S6
+	if [ -r "$HOC_sim2/cloud_feedback_s12_zm.ctl" ]; then
+		if [ -r "$HOC_sim2/cloud_feedback_s12_zm.dat" ]; then
+			if [ -r "$HOC_sim2/cloud_feedback_s12_zt.ctl" ]; then
+				if [ -r "$HOC_sim2/cloud_feedback_s12_zt.dat" ]; then
+					echo "Plotting Cloud Feedback S12 for HOC_sim2"
+					plot_cloud_feedback_s12_sim2=1
+				fi
+			fi
+		fi
+	fi
+
 	#If the Cobra files exist, plot Cobra
 	if [ -r "$HOC_sim2/cobra_zm.ctl" ]; then
 		if [ -r "$HOC_sim2/cobra_zm.dat" ]; then
@@ -699,10 +779,10 @@ cd $PLOTGEN_DIR
 
 #Actually run the script with the arguments we've parsed out
 if [ "$HOC_sim2" == 0 ]; then
-	echo "quit" | ($MATLAB_PATH -nodisplay -nodesktop -r compare_plots_cases_driver"( '$HOC_sim1', 0, $compare_LES, $compare_best, $compare_HOC, $plot_arm_sim1, $plot_arm_97_sim1, $plot_atex_sim1, $plot_bomex_sim1, $plot_clex9_nov02_sim1, $plot_clex9_oct14_sim1, $plot_cobra_sim1, $plot_dycoms2_rf01_sim1, $plot_dycoms2_rf02_do_sim1, $plot_dycoms2_rf02_ds_sim1, $plot_dycoms2_rf02_nd_sim1, $plot_dycoms2_rf02_so_sim1, $plot_fire_sim1, $plot_gabls2_sim1,  $plot_gabls3_sim1, $plot_jun25_altocu_sim1, $plot_lba_sim1, $plot_mpace_a_sim1, $plot_mpace_b_sim1, $plot_nov11_altocu_sim1, $plot_rico_sim1, $plot_twp_ice_sim1, $plot_wangara_sim1, $plot_arm_sim2, $plot_arm_97_sim2, $plot_atex_sim2, $plot_bomex_sim2, $plot_clex9_nov02_sim2, $plot_clex9_oct14_sim2, $plot_cobra_sim2, $plot_dycoms2_rf01_sim2, $plot_dycoms2_rf02_do_sim2, $plot_dycoms2_rf02_ds_sim2, $plot_dycoms2_rf02_nd_sim2, $plot_dycoms2_rf02_so_sim2, $plot_fire_sim2, $plot_gabls2_sim2,  $plot_gabls3_sim2, $plot_jun25_altocu_sim2, $plot_lba_sim2, $plot_mpace_a_sim2, $plot_mpace_b_sim2, $plot_nov11_altocu_sim2, $plot_rico_sim2, $plot_twp_ice_sim2, $plot_wangara_sim2 )") && \
+	echo "quit" | ($MATLAB_PATH -nodisplay -nodesktop -r compare_plots_cases_driver"( '$HOC_sim1', 0, $compare_LES, $compare_best, $compare_HOC, $plot_arm_sim1, $plot_arm_97_sim1, $plot_atex_sim1, $plot_bomex_sim1, $plot_clex9_nov02_sim1, $plot_clex9_oct14_sim1, $plot_cloud_feedback_s6_sim1, $plot_cloud_feedback_s11_sim1, $plot_cloud_feedback_s12_sim1, $plot_cobra_sim1, $plot_dycoms2_rf01_sim1, $plot_dycoms2_rf02_do_sim1, $plot_dycoms2_rf02_ds_sim1, $plot_dycoms2_rf02_nd_sim1, $plot_dycoms2_rf02_so_sim1, $plot_fire_sim1, $plot_gabls2_sim1,  $plot_gabls3_sim1, $plot_jun25_altocu_sim1, $plot_lba_sim1, $plot_mpace_a_sim1, $plot_mpace_b_sim1, $plot_nov11_altocu_sim1, $plot_rico_sim1, $plot_twp_ice_sim1, $plot_wangara_sim1, $plot_arm_sim2, $plot_arm_97_sim2, $plot_atex_sim2, $plot_bomex_sim2, $plot_clex9_nov02_sim2, $plot_clex9_oct14_sim2, $plot_cloud_feedback_s6_sim2, $plot_cloud_feedback_s11_sim2, $plot_cloud_feedback_s12_sim2, $plot_cobra_sim2, $plot_dycoms2_rf01_sim2, $plot_dycoms2_rf02_do_sim2, $plot_dycoms2_rf02_ds_sim2, $plot_dycoms2_rf02_nd_sim2, $plot_dycoms2_rf02_so_sim2, $plot_fire_sim2, $plot_gabls2_sim2,  $plot_gabls3_sim2, $plot_jun25_altocu_sim2, $plot_lba_sim2, $plot_mpace_a_sim2, $plot_mpace_b_sim2, $plot_nov11_altocu_sim2, $plot_rico_sim2, $plot_twp_ice_sim2, $plot_wangara_sim2 )") && \
 	run_success=1
 else
-	echo "quit" | ($MATLAB_PATH -nodisplay -nodesktop -r compare_plots_cases_driver"( '$HOC_sim1', '$HOC_sim2', $compare_LES, $compare_best, $compare_HOC, $plot_arm_sim1, $plot_arm_97_sim1, $plot_atex_sim1, $plot_bomex_sim1, $plot_clex9_nov02_sim1, $plot_clex9_oct14_sim1, $plot_cobra_sim1, $plot_dycoms2_rf01_sim1, $plot_dycoms2_rf02_do_sim1, $plot_dycoms2_rf02_ds_sim1, $plot_dycoms2_rf02_nd_sim1, $plot_dycoms2_rf02_so_sim1, $plot_fire_sim1, $plot_gabls2_sim1,  $plot_gabls3_sim1, $plot_jun25_altocu_sim1, $plot_lba_sim1, $plot_mpace_a_sim1, $plot_mpace_b_sim1, $plot_nov11_altocu_sim1, $plot_rico_sim1, $plot_twp_ice_sim1, $plot_wangara_sim1, $plot_arm_sim2, $plot_arm_97_sim2, $plot_atex_sim2, $plot_bomex_sim2, $plot_clex9_nov02_sim2, $plot_clex9_oct14_sim2, $plot_cobra_sim2, $plot_dycoms2_rf01_sim2, $plot_dycoms2_rf02_do_sim2, $plot_dycoms2_rf02_ds_sim2, $plot_dycoms2_rf02_nd_sim2, $plot_dycoms2_rf02_so_sim2, $plot_fire_sim2, $plot_gabls2_sim2,  $plot_gabls3_sim2, $plot_jun25_altocu_sim2, $plot_lba_sim2, $plot_mpace_a_sim2, $plot_mpace_b_sim2, $plot_nov11_altocu_sim2, $plot_rico_sim2, $plot_twp_ice_sim2, $plot_wangara_sim2 )") && \
+	echo "quit" | ($MATLAB_PATH -nodisplay -nodesktop -r compare_plots_cases_driver"( '$HOC_sim1', '$HOC_sim2', $compare_LES, $compare_best, $compare_HOC, $plot_arm_sim1, $plot_arm_97_sim1, $plot_atex_sim1, $plot_bomex_sim1, $plot_clex9_nov02_sim1, $plot_clex9_oct14_sim1, $plot_cloud_feedback_s6_sim1, $plot_cloud_feedback_s11_sim1, $plot_cloud_feedback_s12_sim1, $plot_cobra_sim1, $plot_dycoms2_rf01_sim1, $plot_dycoms2_rf02_do_sim1, $plot_dycoms2_rf02_ds_sim1, $plot_dycoms2_rf02_nd_sim1, $plot_dycoms2_rf02_so_sim1, $plot_fire_sim1, $plot_gabls2_sim1,  $plot_gabls3_sim1, $plot_jun25_altocu_sim1, $plot_lba_sim1, $plot_mpace_a_sim1, $plot_mpace_b_sim1, $plot_nov11_altocu_sim1, $plot_rico_sim1, $plot_twp_ice_sim1, $plot_wangara_sim1, $plot_arm_sim2, $plot_arm_97_sim2, $plot_atex_sim2, $plot_bomex_sim2, $plot_clex9_nov02_sim2, $plot_clex9_oct14_sim2, $plot_cloud_feedback_s6_sim2, $plot_cloud_feedback_s11_sim2, $plot_cloud_feedback_s12_sim2, $plot_cobra_sim2, $plot_dycoms2_rf01_sim2, $plot_dycoms2_rf02_do_sim2, $plot_dycoms2_rf02_ds_sim2, $plot_dycoms2_rf02_nd_sim2, $plot_dycoms2_rf02_so_sim2, $plot_fire_sim2, $plot_gabls2_sim2,  $plot_gabls3_sim2, $plot_jun25_altocu_sim2, $plot_lba_sim2, $plot_mpace_a_sim2, $plot_mpace_b_sim2, $plot_nov11_altocu_sim2, $plot_rico_sim2, $plot_twp_ice_sim2, $plot_wangara_sim2 )") && \
 	run_success=1
 fi
 

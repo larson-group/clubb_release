@@ -49,8 +49,10 @@ time_initial = 0.0       ! Model start time [seconds since midnight on start dat
 time_final   = 2592000.0 ! Model end time [seconds since midnight on start date]
 time_spinup  = 100000.0  ! End of spin-up period [seconds since midnight on start date]
 
-dtmain    = 300.0   ! Model timestep [s]
-dtclosure = 300.0   ! Closure timestep [s] (must multiply evenly into dtmain).
+!dtmain    = 300.0   ! Model timestep [s]
+!dtclosure = 300.0   ! Closure timestep [s] (must multiply evenly into dtmain).
+dtmain    = 600.0   ! Model timestep [s]
+dtclosure = 600.0   ! Closure timestep [s] (must multiply evenly into dtmain).
 
 sfctype = 1      ! Select surface scheme (cases without specified surface fluxes).
                  ! 0 ==> fixed surface sensible and latent heat fluxes,
@@ -131,7 +133,7 @@ sol_const           = 1367.0 ! Solar Constant given in spec [W/m^2]
 
 l_stats       = .true.   ! Flag for statistical output.
 fname_prefix = "cloud_feedback_s6"    ! Prefix of output filename.
-stats_tsamp  = 300.      ! Frequency of statistical sampling [s]
+stats_tsamp  = 600.      ! Frequency of statistical sampling [s]
                         ! (must multiply evenly into stats_tout).
 stats_tout   = 3600.      ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"  ! Type of statistical output file (GrADS or netCDF).
