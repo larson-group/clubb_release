@@ -115,8 +115,8 @@ use array_index, only:  &
 use surface_flux, only: &
     compute_ubar, compute_momentum_flux, compute_wprtp_sfc, compute_wpthlp_sfc
 
-use T_in_K_mod, only: &
-    thlm2T_in_K ! Procedure
+!use T_in_K_mod, only: &
+!    thlm2T_in_K ! Procedure
 
 implicit none
 
@@ -155,47 +155,21 @@ real, intent(out), dimension(edsclr_dim) ::  &
 
 ! Constants
 real, parameter :: & 
-  C_10    = 0.0013, &     ! Drag coefficient, defined by ATEX specification
-  C_m_20  = 0.001229,  & ! Drag coefficient, defined by RICO 3D specification
-  C_h_20  = 0.001094,  & ! Drag coefficient, defined by RICO 3D specification
-  C_q_20  = 0.001133,  & ! Drag coefficient, defined by RICO 3D specification
-  z0      = 0.00015,   & ! Roughness length, defined by ATEX specification
-  rho_sfc_flux = 1.0
+  C_10    = 0.0013     ! Drag coefficient, defined by ATEX specification
+!  z0      = 0.00015,   & ! Roughness length, defined by ATEX specification
+!  rho_sfc_flux = 1.0
 
 ! Internal variables
 real :: & 
-  ubar, temp, T_in_K, &
-  Cz,   & ! This is C_10 scaled to the height of the lowest model level.
-  Cm,   & ! This is C_m_20 scaled to the height of the lowest model level.
-  Ch,   & ! This is C_h_20 scaled to the height of the lowest model level.
-  Cq      ! This is C_q_20 scaled to the height of the lowest model level.
+  ubar 
+!  T_in_K
 
-! Modification in case lowest model level isn't at 10 m, from ATEX specification
-Cz   = C_10 * ((log(10/z0))/(log(lowestlevel/z0))) * & 
-       ((log(10/z0))/(log(lowestlevel/z0)))         
-! Modification in case lowest model level isn't at 10 m, from ATEX specification
-Cm   = C_m_20 * ((log(20/z0))/(log(lowestlevel/z0))) * & 
-       ((log(20/z0))/(log(lowestlevel/z0)))             
-! Modification in case lowest model level isn't at 10 m, from ATEX specification
-Ch   = C_h_20 * ((log(20/z0))/(log(lowestlevel/z0))) * & 
-       ((log(20/z0))/(log(lowestlevel/z0)))          
-! Modification in case lowest model level isn't at 10 m, from ATEX specification
-Cq   = C_q_20 * ((log(20/z0))/(log(lowestlevel/z0))) * & 
-       ((log(20/z0))/(log(lowestlevel/z0)))
-
-T_in_K = thlm2T_in_K( thlm_sfc, exner_sfc, rcm )
+!T_in_K = thlm2T_in_K( thlm_sfc, exner_sfc, rcm )
 
 ubar = compute_ubar( um_sfc, vm_sfc )
 
 ! Just set ustar = 0.3
 ustar = 0.3
-
-!--------------------------------------------------------------------------------
-! Rico Style
-!wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm_sfc, Tsfc, exner_sfc )
-!wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm_sfc, 0.8 * sat_mixrat_liq( psfc,Tsfc ) )
-!upwp_sfc   = -um_sfc * Cm * ubar  ! m^2 s^-2
-!vpwp_sfc   = -vm_sfc * Cm * ubar  ! m^2 s^-2
 
 !--------------------------------------------------------------------------------
 ! Old Style
@@ -221,18 +195,15 @@ ustar = 0.3
 !                                                sat_mixrat_liq( psfc, T_in_K ) * 0.8 )
 !shflx(1) = 0.001 * ubar * rho_sfc_flux * Cp * ( Tsfc - T_in_K )
 
+!wprtp_sfc = lhflx(1) / ( rho_sfc_flux * Lv )
+!wpthlp_sfc = shflx(1) / ( rho_sfc_flux * Cp )
+
 wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, & 
                                  Tsfc, exner_sfc )
-wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, 0.8 * sat_mixrat_liq( psfc, Tsfc ) )
+wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, sat_mixrat_liq( psfc, Tsfc ) )
 
 call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
                             upwp_sfc, vpwp_sfc )
-
-!print *, "T_in_K", T_in_K
-!print *, "rcm", rcm
-!print *, "Tsfc", Tsfc
-!print *, "lhflx(1)", lhflx(1)
-!print *, "shflx(1)", shflx(1)
 
 ! Let passive scalars be equal to rt and theta_l for now
 if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
@@ -277,13 +248,13 @@ subroutine cloud_feedback_init( iunit, file_path )
     file_path//'cloud_feedback_press.dat', & 
     ndiv, per_line, press )
 
-!  call file_read_1d( iunit, & 
-!    file_path//'cloud_feedback_shflx.dat', & 
-!    1, 1, shflx )
+  call file_read_1d( iunit, & 
+    file_path//'cloud_feedback_shflx.dat', & 
+    1, 1, shflx )
 
-!  call file_read_1d( iunit, & 
-!    file_path//'cloud_feedback_lhflx.dat', & 
-!    1, 1, lhflx )
+  call file_read_1d( iunit, & 
+    file_path//'cloud_feedback_lhflx.dat', & 
+    1, 1, lhflx )
 
   return 
 end subroutine cloud_feedback_init
