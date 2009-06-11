@@ -10,7 +10,7 @@ module latin_hypercube_mod
 
   integer, parameter :: &
     d_variables     = 5,  & ! Number of variables to sample
-    n_micro_call    = 100, & ! Number of calls to microphysics per timestep (normally=2)
+    n_micro_call    = 12, & ! Number of calls to microphysics per timestep (normally=2)
     sequence_length = 1     ! nt_repeat/n_micro_call; number of timesteps before sequence repeats.
 
   ! Number of random samples before sequence of repeats (normally=10)
