@@ -86,8 +86,8 @@ return
 end subroutine cloud_feedback_tndcy
 
 !----------------------------------------------------------------------
-subroutine cloud_feedback_sfclyr( time, p_in_Pa, rho0, lowestlevel, & 
-                                  thlm_sfc, rtm_sfc, um_sfc, vm_sfc,  &
+subroutine cloud_feedback_sfclyr( runtype, time, p_in_Pa, rho0, & 
+                                  lowestlevel, thlm_sfc, rtm_sfc, um_sfc, vm_sfc,  &
                                   exner_sfc, psfc, Tsfc, rcm, & 
                                   upwp_sfc, vpwp_sfc, & 
                                   wpthlp_sfc, wprtp_sfc, ustar, & 
@@ -126,6 +126,8 @@ intrinsic :: max, sqrt
 real(kind=time_precision), intent(in) ::  & 
   time      ! Current time        [s] 
 
+character(len=50), intent(in) :: runtype ! The case that is being run
+
 real, intent(in) ::  & 
   p_in_Pa,   & ! Pressure            [Pa] 
   rho0,      & ! Density at zm=1     [kg/m^3] 
@@ -155,9 +157,9 @@ real, intent(out), dimension(edsclr_dim) ::  &
 
 ! Constants
 real, parameter :: & 
-  C_10    = 0.0013     ! Drag coefficient, defined by ATEX specification
+  C_10    = 0.0013, &     ! Drag coefficient, defined by ATEX specification
 !  z0      = 0.00015,   & ! Roughness length, defined by ATEX specification
-!  rho_sfc_flux = 1.0
+  rho_sfc_flux = 1.0
 
 ! Internal variables
 real :: & 
@@ -195,12 +197,15 @@ ustar = 0.3
 !                                                sat_mixrat_liq( psfc, T_in_K ) * 0.8 )
 !shflx(1) = 0.001 * ubar * rho_sfc_flux * Cp * ( Tsfc - T_in_K )
 
-!wprtp_sfc = lhflx(1) / ( rho_sfc_flux * Lv )
-!wpthlp_sfc = shflx(1) / ( rho_sfc_flux * Cp )
-
-wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, & 
-                                 Tsfc, exner_sfc )
-wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, sat_mixrat_liq( psfc, Tsfc ) )
+! If this is the S6 case, fudge the values of the fluxes using values from the forcings
+if ( runtype == "cloud_feedback_s6" .or. runtype == "cloud_feedback_s6_p2k" ) then
+    wprtp_sfc = lhflx(1) / ( rho_sfc_flux * Lv )
+    wpthlp_sfc = shflx(1) / ( rho_sfc_flux * Cp )
+else
+    wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, sat_mixrat_liq( psfc, Tsfc ) )
+    wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, & 
+                                     Tsfc, exner_sfc )
+end if
 
 call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
                             upwp_sfc, vpwp_sfc )
