@@ -666,7 +666,7 @@ module clubb_driver
 
       do i1=1, niterlong
         call advance_clubb_core & 
-             ( i, .false., dt, fcor, &                             ! Intent(in)
+             ( .false., dt, fcor, &                             ! Intent(in)
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &! Intent(in)
                sclrm_forcing, edsclrm_forcing, wm_zm, wm_zt, &     ! Intent(in)
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &        ! Intent(in)

@@ -23,7 +23,7 @@ module clubb_core
 
   !-----------------------------------------------------------------------
   subroutine advance_clubb_core & 
-             ( iter, l_implemented, dt, fcor, & 
+             ( l_implemented, dt, fcor, & 
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & 
                sclrm_forcing, edsclrm_forcing, wm_zm, wm_zt, &
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
@@ -199,12 +199,10 @@ module clubb_core
 
     implicit none
 
+    ! External
     intrinsic :: sqrt, min, max, exp, mod
 
-    ! Input
-    integer, intent(in) ::  & 
-      iter      ! Model iteration number
-
+    ! Input Variables
     logical, intent(in) ::  & 
       l_implemented ! Is this part of a larger host model (T/F) ?
 
