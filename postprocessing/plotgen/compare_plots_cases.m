@@ -52,6 +52,7 @@ function compare_plots_cases( case_name, t1_min, t2_min, graphbase_in, graphtop_
 % DYCOMS2 RF02 ND
 % FIRE
 % GABLS
+% GABLS3_NIGHT
 % June 25 altocumulus QC3
 % June 25 altocumulus QCBAR
 % November 11 altocumulus
@@ -434,6 +435,8 @@ if ( cmp_les == 1 )
       file_header_les2 = [dir_LES, '/', case_name_les, '_coamps_sw.ctl'];
    elseif ( strcmp( les_type, 'rams' ) )
       file_header_les = [dir_LES, '/', case_name_les, '_rams.ctl'];
+   elseif ( strcmp( les_type, 'sam') )
+      file_header_les = [dir_LES, '/', case_name_les, '.nc'];
    end
 end
 if ( cmp_cgbe == 1 )
@@ -459,9 +462,14 @@ end
 
 % LES File
 if ( cmp_les == 1 )
-   % Main LES file (COAMPS sm or RAMS)
-   [filename_les, nz_les, z_les, t_time_steps_les, ts_length_les, ...
-   numvars_les, listofparams_les] = header_read_expanded(file_header_les);
+   % Main LES file (COAMPS sm or RAMS or SAM)
+   if(strcmp( les_type, 'sam'))
+	[filename_les, nz_les, z_les, t_time_steps_les, ts_length_les, ...
+	 numvars_les, listofparams_les] = header_read_expanded_netcdf(file_header_les);	   
+   else
+   	[filename_les, nz_les, z_les, t_time_steps_les, ts_length_les, ...
+   	numvars_les, listofparams_les] = header_read_expanded(file_header_les);
+   end
    % Secondary LES file (COAMPS sw)
    if ( strcmp( les_type, 'coamps' ) )
       [filename_les2, nz_les2, z_les2, t_time_steps_les2, ts_length_les2, ...
@@ -575,7 +583,36 @@ les_ncm		= 'ncm ';
 les_rsnowm	= 'qsm ';
 les_nsnowm	= ''; %Nonexistent
 
-if ( strcmp(les_type, 'rams' ) )
+if ( strcmp(les_type, 'sam' ) )
+
+	% RAMS LES variable names (and string lengths for comparison):
+	les_thlm        = 'THETA ';
+	les_rtm         = 'QT ';
+	les_cf          = 'CLD ';
+	les_rcm         = 'QC ';
+	les_wp2         = 'W2 ';
+	les_wp3         = 'W3 ';
+	les_wpthlp      = '';
+	les_wprtp       = '';
+	les_thlp2       = '';
+	les_rtp2        = '';
+	les_rtpthlp     = '';
+	les_wm          = '';
+	les_um          = 'U ';
+	les_vm          = 'V ';
+	les_upwp        = 'UW ';
+	les_vpwp        = 'VW ';
+	les_rrainm      = '';
+	les_Nrm         = '';
+	les_up2		= 'U2 ';
+	les_vp2		= 'V2 ';
+	les_nim		= '';
+	les_ricem	= '';
+	les_rgraupelm	= '';
+	les_ncm		= '';
+	les_rsnowm	= '';
+
+elseif ( strcmp(les_type, 'rams' ) )
 
 	% RAMS LES variable names (and string lengths for comparison):
 	les_thlm        = 'thlm ';
@@ -677,9 +714,22 @@ if ( cmp_les == 1 )
        elseif ( t2_les > t_time_steps_les )
           t2_les = t_time_steps_les;
        end
+    elseif ( strcmp(les_type, 'sam' ) )
+	t1_les = ceil(t1_min/ts_length_les);
+	if ( t1_les < 1 )
+		t1_les = 1;
+	elseif ( t1_les > t_time_steps_les )
+		t1_les = t_time_steps_les;
+	end
+
+	t2_les = ceil(t2_min/ts_length_les);
+	if ( t2_les < 1 )
+		t2_les = 1;
+	elseif ( t2_les > t_time_steps_les )
+		t2_les = t_time_steps_les;
+	end
         
     end
-    
 end
 
 if ( cmp_cgbe == 1 )
@@ -962,6 +1012,10 @@ else
 		'thlm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 end
 
+if(strcmp(les_type, 'sam'))
+	avg_thlm_les
+end
+
 create_plot(3, 2, 1, 'Liquid Water Potential Temperature, \theta_l', 'thlm    [K]', avg_thlm_les, z_les, nz_les, avg_thlm_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_thlm_1217, z_1217_zt, nz_1217_zt, ...
 		avg_thlm_prev, z_prev_zt, nz_prev_zt, avg_thlm_curr, z_curr_zt, nz_curr_zt, 1);
 
@@ -983,6 +1037,10 @@ else
 		'rtm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 end
 
+
+if ( strcmp(les_type, 'sam')) 
+	avg_rtm_les = avg_rtm_les / 1000.0
+end
 
 create_plot(3, 2, 2, 'Total Water Mixing Ratio, r_{ t}', 'rtm    [kg/kg]', avg_rtm_les, z_les, nz_les, avg_rtm_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_rtm_1217, z_1217_zt, nz_1217_zt, ...
 		avg_rtm_prev, z_prev_zt, nz_prev_zt, avg_rtm_curr, z_curr_zt, nz_curr_zt, 0);
@@ -1007,6 +1065,10 @@ create_plot(3, 2, 3, 'Cloud Fraction', 'cf    [%]', 100*avg_cf_les, z_les, nz_le
 		t2_cgbe_zt, filename_1217_zt, listofparams_1217_zt, numvars_1217_zt, 'rcm ', nz_1217_zt, t1_1217_zt, t2_1217_zt, filename_prev_zt, listofparams_prev_zt, ...
 		numvars_prev_zt, 'rcm ', nz_prev_zt, t1_prev_zt, t2_prev_zt, filename_curr_zt, listofparams_curr_zt, numvars_curr_zt, ...
 		'rcm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
+
+if ( strcmp(les_type, 'sam')) 
+	avg_rcm_les = avg_rcm_les / 1000.0;
+end
 
 create_plot(3, 2, 4, 'Cloud Water Mixing Ratio, r_c', 'rcm    [kg/kg]', avg_rcm_les, z_les, nz_les, avg_rcm_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_rcm_1217, z_1217_zt, nz_1217_zt, ...
 		avg_rcm_prev, z_prev_zt, nz_prev_zt, avg_rcm_curr, z_curr_zt, nz_curr_zt, 0);
@@ -1442,88 +1504,141 @@ function [avg_les_values, avg_cgbe_values, avg_1217_values, avg_prev_values, avg
        	avg_curr_values = 0;
 	
 	%LES
-	if ( cmp_les == 1 )
-
-		%Calculate the LES variable length
-		les_var_len = max(size(les_var));
-
-		if ( var_type == 0)
-			varfnd = 0;
-			for i = 1:1:numvars_les
-				if ( strcmp( listofparams_les(i,1:les_var_len), les_var ) )
-					varnum = i;
-					varfnd = 1;
-				end
-				if ( (i == numvars_les) & (varfnd == 0) )
-					[ 'LES Variable: ', les_var, ' not found for case, being set to 0!' ]
-					avg_les_values(1:nz_les) = 0.0;
-				elseif ( varfnd == 1 )
-					avg_les_values = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-					'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
-					break
-				end
-			end
-		%The var_type == 1 is exlusively for handling UPWP and VPWP
-		elseif (var_type == 1)
-			varfnd = 0;
-   			for i = 1:1:numvars_les
-				if ( strcmp( listofparams_les(i,1:les_var_len), les_var ) )
-					varnum = i;
-					varfnd = 1;
-					avg_les_values = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-					'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
-					
-					if (les_var == les_upwp)
-						les_grph_upwp = 1;
-					elseif (les_var == les_vpwp)
-						les_grph_vpwp = 1;
-					end
-
-					break
-				end
-			end
-
-   			if ( (varfnd == 0) & ( strcmp( les_type, 'coamps' ) ) )
-      				for i = 1:1:numvars_les2
-         				if ( strcmp( listofparams_les2(i,1:les_var_len), les_var ) )
-            					varnum = i;
-            					varfnd = 1;
-         				end
-         				if ( (i == numvars_les2) & (varfnd == 0) )
-            					[ 'LES Variable: ', les_var, ' not found for case, being set to 0!' ]
-            					avg_les_values(1:nz_les2) = 0.0;
-            					
-						if (les_var == les_upwp)
-							les_grph_upwp = 2;
-						elseif (les_var == les_vpwp)
-							les_grph_vpwp = 2;
-						end
-
-         				elseif ( varfnd == 1 )
-            					avg_les_values = read_grads_hoc_endian([dir_LES, '/', filename_les2], ...
-                          			'ieee-be', nz_les2, t1_les2, t2_les2, varnum, numvars_les2);
-            					
-						if (les_var == les_upwp)
-							les_grph_upwp = 2;
-						elseif (les_var == les_vpwp)
-							les_grph_vpwp = 2;
-						end
-
-            					break
-         				end
-      				end
-   			elseif ( (varfnd == 0) & ( strcmp( les_type, 'rams' ) ) )
-      				[ 'LES Variable: ', les_var, ' not found for case, being set to 0!' ]
-      				avg_les_values(1:nz_les) = 0.0;
-      				
-				if (les_var == les_upwp)
-					les_grph_upwp = 1;
-				elseif (les_var == les_vpwp)
-					les_grph_vpwp = 1;
-				end
-   			end
-		end
-	end	
+    if ( cmp_les == 1 )
+        
+        %Calculate the LES variable length
+        les_var_len = max(size(les_var));
+        
+        if ( var_type == 0)
+            varfnd = 0;
+            if( strcmp( les_type, 'sam' ))
+                for i = 1:1:numvars_les
+                    if ( strcmp( listofparams_les(i,1:les_var_len), les_var ) )
+                        varnum = i;
+                        varfnd = 1;
+                    end
+                    if ( (i == numvars_les) & (varfnd == 0) )
+                        
+                        [ 'LES Variable: ', les_var, ' not found for case, being set to 0!' ]
+                        
+                        avg_les_values(1:nz_les) = 0.0;
+                    elseif ( varfnd == 1 )
+                        avg_les_values = read_netcdf_hoc([dir_LES, '/', filename_les],...
+                            nz_les, t1_les, t2_les, varnum, numvars_les );
+                        break
+                    end
+                end
+            else
+                for i = 1:1:numvars_les
+                    if ( strcmp( listofparams_les(i,1:les_var_len), les_var ) )
+                        varnum = i;
+                        varfnd = 1;
+                    end
+                    if ( (i == numvars_les) & (varfnd == 0) )
+                        
+                        [ 'LES Variable: ', les_var, ' not found for case, being set to 0!' ]
+                        
+                        avg_les_values(1:nz_les) = 0.0;
+                    elseif ( varfnd == 1 )
+                        avg_les_values = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
+                            'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
+                        break
+                    end
+                end
+            end
+            
+            %The var_type == 1 is exlusively for handling UPWP and VPWP
+        elseif (var_type == 1)
+            varfnd = 0;
+            if( strcmp( les_type, 'sam' ))
+                for i = 1:1:numvars_les
+                    if ( strcmp( listofparams_les(i,1:les_var_len), les_var ) )
+                        varnum = i;
+                        varfnd = 1;
+                    end
+                    if ( (i == numvars_les) & (varfnd == 0) )
+                        
+                        [ 'LES Variable: ', les_var, ' not found for case, being set to 0!' ]
+                        
+                        avg_les_values(1:nz_les) = 0.0;
+                    elseif ( varfnd == 1 )
+                        avg_les_values = read_netcdf_hoc([dir_LES, '/', filename_les],...
+                            nz_les, t1_les, t2_les, varnum, numvars_les );
+                        
+                        if (les_var == les_upwp)
+                            les_grph_upwp = 1;
+                        elseif (les_var == les_vpwp)
+                            les_grph_vpwp = 1;
+                        end
+                        
+                        break
+                    end
+                end
+            else
+                for i = 1:1:numvars_les
+                    if ( strcmp( listofparams_les(i,1:les_var_len), les_var ) )
+                        varnum = i;
+                        varfnd = 1;
+                        
+                        avg_les_values = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
+                            'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
+                        
+                        if (les_var == les_upwp)
+                            les_grph_upwp = 1;
+                        elseif (les_var == les_vpwp)
+                            les_grph_vpwp = 1;
+                        end
+                        
+                        break
+                    end
+                end
+            end
+            
+            if ( (varfnd == 0) & ( strcmp( les_type, 'coamps' ) ) )
+                for i = 1:1:numvars_les2
+                    if ( strcmp( listofparams_les2(i,1:les_var_len), les_var ) )
+                        varnum = i;
+                        varfnd = 1;
+                    end
+                    if ( (i == numvars_les2) & (varfnd == 0) )
+                        
+                        [ 'LES Variable: ', les_var, ' not found for case, being set to 0!' ]
+                        
+                        avg_les_values(1:nz_les2) = 0.0;
+                        
+                        if (les_var == les_upwp)
+                            les_grph_upwp = 2;
+                        elseif (les_var == les_vpwp)
+                            les_grph_vpwp = 2;
+                        end
+                        
+                        
+                    elseif ( varfnd == 1 )
+                        
+                        avg_les_values = read_grads_hoc_endian([dir_LES, '/', filename_les2], ...
+                            'ieee-be', nz_les2, t1_les2, t2_les2, varnum, numvars_les2);
+                        
+                        if (les_var == les_upwp)
+                            les_grph_upwp = 2;
+                        elseif (les_var == les_vpwp)
+                            les_grph_vpwp = 2;
+                        end
+                        
+                        break
+                    end
+                end
+            elseif ( (varfnd == 0) & ( strcmp( les_type, 'rams' ) || strcmp( les_type, 'sam' ) ) )
+                [ 'LES Variable: ', les_var, ' not found for case, being set to 0!' ]
+                avg_les_values(1:nz_les) = 0.0;
+                
+                if (les_var == les_upwp)
+                    les_grph_upwp = 1;
+                elseif (les_var == les_vpwp)
+                    les_grph_vpwp = 1;
+                end
+            end
+        end
+    end
 
 	% HOC -- Golaz "best ever"
 	if ( cmp_cgbe == 1 )
