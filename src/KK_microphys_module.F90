@@ -67,8 +67,8 @@ module KK_microphys_module
   contains
 
   !=============================================================================
-  subroutine KK_microphys( dt, ndim, l_sample, T_in_K, p_in_Pa, exner, rho, pdf_params, &
-                           wm, w_std_dev, altitudes, rcm, rvm, hydromet, hydromet_mc, &
+  subroutine KK_microphys( dt, ndim, l_sample, thlm, p_in_Pa, exner, rho, pdf_params, &
+                           wm, w_std_dev, dzq, rcm, rvm, hydromet, hydromet_mc, &
                            hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 
 
@@ -85,7 +85,7 @@ module KK_microphys_module
     ! Monthly Weather Review, Volume 128, Issue 1 pp. 229--243
     !-------------------------------------------------------------------
 
-!   use parameters_microphys, only: & 
+!   use parameters_microphys, only: &
 !       l_latin_hypercube_sampling ! Variable(s)
 
     use grid_class, only: & 
@@ -106,6 +106,8 @@ module KK_microphys_module
     use saturation, only: & 
         sat_mixrat_liq ! Procedure(s)
 
+    use T_in_K_mod, only: thlm2T_in_K ! Procedure(s)
+
     use stats_precision, only: &
         time_precision ! Variable(s)
 
@@ -114,6 +116,7 @@ module KK_microphys_module
 
     use stats_variables, only: & 
         zt,   & ! Variable(s)
+        zm, &
         imean_vol_rad_rain, &
         irrainm_cond, &
         irrainm_auto, &
@@ -123,6 +126,14 @@ module KK_microphys_module
         iNrm_auto, &
         iNrm_src_adj, &
         l_stats_samp
+
+    use stats_variables, only: & 
+      iVrr,  & ! Variable(s)
+      iVnr, & 
+      irrainm_mc, &
+      iNrm_mc, &
+      irvm_mc, &
+      ircm_mc
 
     use array_index, only: iirrainm, iiNcm, iiNrm
 
@@ -143,7 +154,7 @@ module KK_microphys_module
       l_sample ! Whether to sample stats (budgets)
 
     real, dimension(ndim), intent(in) :: &
-      T_in_K,     & ! Temperature                        [K]
+      thlm,       & ! Temperature                        [K]
       p_in_Pa,    & ! Pressure                           [Pa]
       exner,      & ! Exner function                     [-]
       rho           ! Density on thermo. grid            [kg/m^3]
@@ -154,11 +165,11 @@ module KK_microphys_module
     real, dimension(ndim), intent(in) :: &
       wm, &        ! Mean w                     [m/s]
       w_std_dev, & ! Standard deviation of w    [m/s]
-      altitudes    ! Altitudes                  [m]
+      dzq          ! Difference in heights      [m]
 
-   real, dimension(ndim), intent(in) :: &
-      rcm, & ! Liquid water mixing ratio        [kg/kg]
-      rvm    ! Vapor water mixing ratio         [kg/kg]
+    real, dimension(ndim), intent(in) :: &
+       rcm, & ! Liquid water mixing ratio        [kg/kg]
+       rvm    ! Vapor water mixing ratio         [kg/kg]
 
     real, dimension(ndim,hydromet_dim), target, intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
@@ -169,7 +180,7 @@ module KK_microphys_module
       hydromet_vel   ! Hydrometeor sedimentation velocity [m/s]
 
     ! Latin hypercube variables - Vince Larson 22 May 2005
-!   real, intent(in), dimension(ndim) :: & 
+!   real, intent(in), dimension(ndim) :: &
 !     AKm,   & ! Kessler autoconversion
 !     AKm_est  ! Latin hypercube estimate of Kessler autoconversion
 
@@ -212,6 +223,9 @@ module KK_microphys_module
       corr_srr_NL,  & ! Correlation of s and rr  []
       corr_sNr_NL,  & ! Correlation of s and Nr  []
       corr_sNc_NL     ! Correlation of s and Nc  []
+
+    real, dimension(ndim) :: & 
+      T_in_K ! Absolute temperature     [K]
 
     real ::  & 
       Beta_T          ! Beta_T                   [kg/kg]
@@ -410,6 +424,9 @@ module KK_microphys_module
     Vrr(ndim) = 0.0
     VNr(ndim) = 0.0
 
+    ! Determine temperature
+    T_in_K = thlm2T_in_K( thlm, exner, rcm )
+
     ! Find values for other variables.
     do k = 2, ndim, 1
 
@@ -453,15 +470,15 @@ module KK_microphys_module
       ! -dschanen 3 June 2009
 !     if ( l_latin_hypercube_sampling ) then
 
-        !rrainm_auto(k) = AKm_est(k)
-        !rrainm_auto(k) = AKm(k)
+      !rrainm_auto(k) = AKm_est(k)
+      !rrainm_auto(k) = AKm(k)
 
 !     else
 
-        rrainm_auto(k)  & 
-        = autoconv_rrainm( rcm(k), Ncm(k), s1(k), ss1(k),  & 
-                           s2(k), ss2(k), a(k), rho(k), & 
-                           Ncp2_Ncm2(k), corr_sNc_NL(k) )
+      rrainm_auto(k)  & 
+      = autoconv_rrainm( rcm(k), Ncm(k), s1(k), ss1(k),  & 
+                         s2(k), ss2(k), a(k), rho(k), & 
+                         Ncp2_Ncm2(k), corr_sNc_NL(k) )
 
 !     endif ! l_latin_hypercube_sampling
       ! End Vince Larson's addition
@@ -583,6 +600,28 @@ module KK_microphys_module
     rcm_mc(ndim)  = 0.0
     rvm_mc(ndim)  = 0.0
     thlm_mc(ndim) = 0.0
+
+    if ( l_sample .and. l_stats_samp ) then
+
+      ! Sedimentation velocity for rrainm
+      call stat_update_var( iVrr, hydromet_vel(:,iirrainm), zm )
+
+      ! Sedimentation velocity for Nrm
+      call stat_update_var( iVNr, hydromet_vel(:,iiNrm), zm )
+
+      ! Sum total of rrainm microphysics (auto + accr + cond)
+      call stat_update_var( irrainm_mc, hydromet_mc(:,iirrainm), zt )
+
+      ! Sum total of Nrm microphysics (auto + cond)
+      call stat_update_var( iNrm_mc, hydromet_mc(:,iiNrm), zt )
+
+      ! Sum total of cloud water microphysics
+      call stat_update_var( irvm_mc, rvm_mc, zt )
+
+      ! Sum total of vapor microphysics
+      call stat_update_var( ircm_mc, rcm_mc, zt )
+
+    end if ! l_stats_samp
 
     return
   end subroutine KK_microphys

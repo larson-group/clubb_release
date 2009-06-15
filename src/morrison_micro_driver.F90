@@ -1,0 +1,271 @@
+! $Id$
+module morrison_micro_driver_mod
+
+  implicit none
+
+  public :: morrison_micro_driver
+
+  private
+
+  contains
+!-------------------------------------------------------------------------------
+  subroutine morrison_micro_driver &
+             ( dt, ndim, l_sample, thlm, p_in_Pa, exner, rho, pdf_params, &
+               wm, w_std_dev, dzq, rcm, rvm, hydromet, hydromet_mc, &
+               hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
+! Description:
+!   Wrapper for the Morrison microphysics
+! References:
+!   None
+!-------------------------------------------------------------------------------
+
+    use variables_prognostic_module, only: pdf_parameter
+
+    use parameters_model, only: hydromet_dim
+
+    ! The version of the Morrison 2005 microphysics that is in SAM.
+    use module_MP_graupel, only: &
+      M2005MICRO_GRAUPEL  ! Procedure
+
+    use stats_variables, only: &
+      zt,  & ! Variables
+      sfc, &
+      l_stats_samp
+
+    use stats_variables, only: & 
+      irsnowm_sd, & ! Variables
+      iricem_sd, & 
+      irrainm_sd, & 
+      irsnowm_sd, &
+      irgraupelm_sd
+
+    use stats_variables, only: & 
+      ieff_rad_cloud, & ! Variables
+      ieff_rad_ice, &
+      ieff_rad_snow, &
+      ieff_rad_rain, &
+      ieff_rad_graupel
+
+    use stats_variables, only: & 
+      imorr_rain_rate, & ! Variables
+      imorr_snow_rate
+
+    use stats_variables, only: & 
+      irvm_mc, & ! Variables
+      ircm_mc, &
+      irrainm_mc, &
+      irsnowm_mc, &
+      iricem_mc, &
+      irgraupelm_mc, &
+      iNcm_mc, &
+      iNrm_mc, &
+      iNgraupelm_mc, &
+      iNim_mc, &
+      iNsnowm_mc
+
+    use stats_variables, only: & 
+      zt, &  ! Variables
+      sfc, & 
+      l_stats_samp
+
+    use stats_type, only:  & 
+        stat_update_var, stat_update_var_pt  ! Procedure(s)
+
+    use T_in_K_mod, only: &
+      T_in_K2thlm, & ! Procedure(s)
+      thlm2T_in_K
+
+    use array_index, only:  & 
+      iirrainm, iirsnowm, iiricem, iirgraupelm, &
+      iiNrm, iiNsnowm, iiNim, iiNgraupelm, iiNcm
+
+    use constants, only: &
+      sec_per_day, &
+      zero_threshold
+
+    implicit none
+
+    ! External
+    intrinsic :: max
+
+    ! Input Variables
+    real, intent(in) :: dt ! Model timestep        [s]
+
+    integer, intent(in) :: ndim ! Points in the Vertical        [-]
+
+    logical, intent(in) :: l_sample ! Whether to accumulate statistics [T/F]
+
+    real, dimension(ndim), intent(in) :: &
+      thlm,       & ! Liquid potential temperature       [K]
+      p_in_Pa,    & ! Pressure                           [Pa]
+      exner,      & ! Exner function                     [-]
+      rho           ! Density on thermo. grid            [kg/m^3]
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params ! PDF parameters
+
+    real, dimension(ndim), intent(in) :: &
+      wm, &        ! Mean w                     [m/s]
+      w_std_dev, & ! Standard deviation of w    [m/s]
+      dzq          ! Difference in heights      [m]
+
+    real, dimension(ndim), intent(in) :: &
+      rcm, & ! Liquid water mixing ratio        [kg/kg]
+      rvm    ! Vapor water mixing ratio         [kg/kg]
+
+    real, dimension(ndim,hydromet_dim), intent(in) :: &
+      hydromet ! Hydrometeor species    [units vary]
+
+    real, dimension(ndim,hydromet_dim), intent(inout) :: &
+      hydromet_mc,   & ! Hydrometeor time tendency          [(units vary)/s]
+      hydromet_vel     ! Hydrometeor sedimentation velocity [m/s]
+
+    real, dimension(ndim), intent(out) :: &
+      rcm_mc, & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
+      rvm_mc, & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
+      thlm_mc   ! Time tendency of liquid potential temperature [K/s]
+
+    real, dimension(ndim) :: & 
+      effc, effi, effg, effs, effr ! Effective droplet radii [μ]
+
+    real, dimension(ndim) :: & 
+      T_in_K,    & ! Temperature                        [K]
+      T_in_K_mc, & ! Temperature tendency               [K/s]
+      rcm_tmp,   & ! Temporary array for cloud water mixing ratio  [kg/kg]
+      rvm_tmp,   & ! Temporary array for vapor water mixing ratio  [kg/kg]
+      rcm_sten     ! Cloud dropet sedimentation tendency           [kg/kg/s]
+
+    real, dimension(ndim) :: & 
+      cf  ! Cloud fraction
+
+    real, dimension(ndim,hydromet_dim) :: & 
+      hydromet_sten, & ! Hydrometeor sedimentation tendency [(units vary)/s]
+      hydromet_tmp     ! Temporary variable
+
+    real :: Morr_snow_rate, Morr_rain_rate
+
+    integer :: i
+
+    ! ---- Begin Code ----
+
+    rcm_tmp = rcm
+    rvm_tmp = rvm
+    T_in_K_mc(:) = 0.0
+
+    ! Determine temperature
+    T_in_K = thlm2T_in_K( thlm, exner, rcm )
+
+    cf(1:ndim) = max( zero_threshold, &
+                      pdf_params%a * pdf_params%R1 + (1.-pdf_params%a) * pdf_params%R2 )
+
+    do i = 1, hydromet_dim, 1
+      hydromet_tmp(:,i) = hydromet(:,i)
+    end do
+
+    ! Call the Morrison microphysics
+    call M2005MICRO_GRAUPEL &
+         ( rcm_mc, hydromet_mc(:,iiricem), hydromet_mc(:,iirsnowm), &
+           hydromet_mc(:,iirrainm), hydromet_mc(:,iiNcm), &
+           hydromet_mc(:,iiNim), hydromet_mc(:,iiNsnowm), &
+           hydromet_mc(:,iiNrm), rcm_tmp, hydromet_tmp(:,iiricem), &
+           hydromet_tmp(:,iirsnowm), hydromet_tmp(:,iirrainm), hydromet_tmp(:,iiNcm), &
+           hydromet_tmp(:,iiNim), hydromet_tmp(:,iiNsnowm), hydromet_tmp(:,iiNrm), &
+           T_in_K_mc, rvm_mc, T_in_K, rvm_tmp, P_in_pa, rho, dzq, wm, w_std_dev, &
+           Morr_rain_rate, Morr_snow_rate, effc, effi, effs, effr, dt, &
+           1,1, 1,1, 1,ndim, 1,1, 1,1, 1,ndim, &
+           hydromet_mc(:,iirgraupelm), hydromet_mc(:,iiNgraupelm), &
+           hydromet_tmp(:,iirgraupelm), hydromet_tmp(:,iiNgraupelm), effg, &
+           hydromet_sten(:,iirgraupelm), hydromet_sten(:,iirrainm), &
+           hydromet_sten(:,iiricem), hydromet_sten(:,iirsnowm), &
+           rcm_sten, cf )
+
+    ! Update hydrometeor tendencies
+    ! This done because the hydromet_mc arrays that are produced by
+    ! M2005MICRO_GRAUPEL don't include the clipping term.
+    do i = 1, hydromet_dim, 1
+      hydromet_mc(:,i) = ( hydromet_tmp(:,i) - hydromet(:,i)  ) / real( dt )
+    end do
+
+    ! Update thetal based on absolute temperature
+    thlm_mc = ( T_in_K2thlm( T_in_K, exner, rcm_tmp ) - thlm ) / real( dt )
+
+    ! Sedimentation is handled within the Morrison microphysics
+    hydromet_vel(:,:) = 0.0
+
+    if ( l_sample .and. l_stats_samp ) then
+
+      ! -------- Total tendency from the Morrison microphysics --------
+      ! (Includes sedimentation, but not diffusion or mean advection)
+
+      ! --- Mixing ratios ---
+
+      ! Sum total of cloud water microphysics
+      call stat_update_var( ircm_mc, (rcm_tmp - rcm) / real( dt ), zt )
+
+      ! Sum total of vapor microphysics
+      call stat_update_var( irvm_mc, (rvm_tmp - rvm) / real( dt ), zt )
+
+      ! Sum total of rrainm microphysics
+      call stat_update_var( irrainm_mc, hydromet_mc(:,iirrainm), zt )
+
+      ! Sum total of snow microphysics
+      call stat_update_var( irsnowm_mc, hydromet_mc(:,iirsnowm), zt )
+
+      ! Sum total of ice microphysics
+      call stat_update_var( iricem_mc, hydromet_mc(:,iiricem), zt )
+
+      ! Sum total of graupel microphysics
+      call stat_update_var( irgraupelm_mc, hydromet_mc(:,iirgraupelm), zt )
+
+      ! --- Number concentrations ---
+
+      ! Sum total of cloud droplet number concentration microphysics
+      call stat_update_var( iNcm_mc, hydromet_mc(:,iiNcm), zt )
+
+      ! Sum total of rain droplet number concentration microphysics
+      call stat_update_var( iNrm_mc, hydromet_mc(:,iiNrm), zt )
+
+      ! Sum total of snow microphysical processeses
+      call stat_update_var( iNsnowm_mc,  hydromet_mc(:,iiNsnowm), zt )
+
+      ! Sum total of ice number concentration microphysics
+      call stat_update_var( iNim_mc, hydromet_mc(:,iiNim), zt )
+
+      ! Sum total of graupel number concentration microphysics
+      call stat_update_var( iNgraupelm_mc, hydromet_mc(:,iiNgraupelm), zt )
+
+      ! -------- Sedimentation tendency from Morrison microphysics --------
+
+      ! --- Mixing ratios ---
+
+      call stat_update_var( irgraupelm_sd, hydromet_sten(:,iirgraupelm), zt )
+
+      call stat_update_var( irrainm_sd, hydromet_sten(:,iirrainm), zt )
+
+      call stat_update_var( irsnowm_sd, hydromet_sten(:,iirsnowm), zt )
+
+      call stat_update_var( iricem_sd, hydromet_sten(:,iiricem), zt )
+
+      ! --- Number concentrations ---
+      ! No budgets for sedimentation are output
+
+      ! Effective radii of hydrometeor species
+      call stat_update_var( ieff_rad_cloud, effc(:), zt )
+      call stat_update_var( ieff_rad_ice, effi(:), zt )
+      call stat_update_var( ieff_rad_snow, effs(:), zt )
+      call stat_update_var( ieff_rad_rain, effr(:), zt )
+      call stat_update_var( ieff_rad_graupel, effg(:), zt )
+
+      ! Snow and Rain rates at the bottom of the domain, in mm/day
+      call stat_update_var_pt( imorr_rain_rate, 1, &
+        dt * Morr_rain_rate / real( sec_per_day ), sfc )
+
+      call stat_update_var_pt( imorr_snow_rate, 1, &
+        dt * Morr_snow_rate / real(  sec_per_day ), sfc )
+
+    end if ! l_stats_samp
+
+    return
+  end subroutine morrison_micro_driver
+
+end module morrison_micro_driver_mod

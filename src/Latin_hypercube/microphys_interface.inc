@@ -2,11 +2,12 @@
 ! hypercube sampling for.  New microphysics drivers will need to have the same
 ! number and type of arguments as this does.
 interface
-  subroutine microphys_sub( dt, ndim, l_sample, T_in_K, p_in_Pa, exner, rho, pdf_params, &
-                            wm, w_std_dev, altitudes, rcm, rvm, hydromet, hydromet_mc, &
+  subroutine microphys_sub( dt, ndim, l_sample, thlm, p_in_Pa, exner, rho, pdf_params, &
+                            wm, w_std_dev, dzq, rcm, rvm, hydromet, hydromet_mc, &
                             hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 
     use variables_prognostic_module, only: pdf_parameter
+
     use parameters_model, only : hydromet_dim
 
     real, intent(in) :: dt ! Model timestep        [s]
@@ -16,7 +17,7 @@ interface
     logical, intent(in) :: l_sample ! Whether to accumulate statistics [T/F]
 
     real, dimension(ndim), intent(in) :: &
-      T_in_K,     & ! Temperature                        [K]
+      thlm,       & ! Liquid potential temperature       [K]
       p_in_Pa,    & ! Pressure                           [Pa]
       exner,      & ! Exner function                     [-]
       rho           ! Density on thermo. grid            [kg/m^3]
@@ -27,7 +28,7 @@ interface
     real, dimension(ndim), intent(in) :: &
       wm, &        ! Mean w                     [m/s]
       w_std_dev, & ! Standard deviation of w    [m/s]
-      altitudes    ! Altitudes                  [m]
+      dzq          ! Difference in height       [m]
 
     real, dimension(ndim), intent(in) :: &
       rcm, & ! Liquid water mixing ratio        [kg/kg]

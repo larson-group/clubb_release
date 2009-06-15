@@ -16,7 +16,7 @@ module micro_calcs_mod
 
   subroutine micro_calcs( dt, nnzp, n_micro_calls, d_variables, X_u, X_nl, & 
                           l_sample_flag, pdf_params, & 
-                          T_in_K, p_in_Pa, exner, rho, &
+                          thlm, p_in_Pa, exner, rho, &
                           wm, w_std_dev, altitudes, rcm, rvm, &        
                           cf, hydromet, &
                           hydromet_mc_est, hydromet_vel_est, &                                   
@@ -69,7 +69,7 @@ module micro_calcs_mod
 
     real, dimension(nnzp), intent(in) :: &
       cf,         & ! Cloud fraction           [%]
-      T_in_K,     & ! Temperature              [K]
+      thlm,       & ! Liquid pot. temperature  [K]
       p_in_Pa,    & ! Pressure                 [Pa]
       exner,      & ! Exner function           [-]
       rho           ! Density on thermo. grid  [kg/m^3]
@@ -332,8 +332,8 @@ module micro_calcs_mod
     end do ! level = 2, nnzp
 
     call micro_driver( dt, nnzp, n_micro_calls, d_variables, &
-                       X_nl(:,:,1), X_nl(:,:,2), X_nl(:,:,3), X_nl(:,:,4), X_nl(:,:,5), X_u, &
-                       T_in_K, p_in_Pa, exner, rho, wm, w_std_dev, &
+                       X_nl(:,:,1), X_nl(:,:,3), X_nl(:,:,4), X_nl(:,:,5), X_u, &
+                       thlm, p_in_Pa, exner, rho, wm, w_std_dev, &
                        altitudes, rcm, rvm, pdf_params, hydromet, &
                        rvm_mc_est, rcm_mc_est, hydromet_mc_est, &
                        hydromet_vel_est, thlm_mc_est, microphys_sub )
@@ -529,8 +529,8 @@ module micro_calcs_mod
 
 !-----------------------------------------------------------------------
   subroutine micro_driver( dt, nnzp, n_micro_calls, d_variables, &
-                           rc, t, w, Nc, rr, X_u, &
-                           T_in_K, p_in_Pa, exner, rho, wm, w_std_dev, &
+                           rc, w, Nc, rr, X_u, &
+                           thlm, p_in_Pa, exner, rho, wm, w_std_dev, &
                            altitudes, rcm, rvm, pdf_params, hydromet,  &
                            rvm_mc_est, rcm_mc_est, hydromet_mc_est, &
                            hydromet_vel_est, thlm_mc_est, microphys_sub )
@@ -570,7 +570,6 @@ module micro_calcs_mod
 
     double precision, dimension(nnzp,n_micro_calls), intent(in) :: &
       rc, & ! n in-cloud values of spec liq water content [kg/kg].
-      t,  & ! n in-cloud values of temperature            [K]
       w,  & ! n in-cloud values of vertical velocity      [m/s]
       Nc, & ! n in-cloud values of droplet number         [#/mg air]
       rr    ! n in-cloud values of specific rain content  [kg/kg]
@@ -579,7 +578,7 @@ module micro_calcs_mod
       X_u ! N x D+1 Latin hypercube sample from uniform dist
 
     real, dimension(nnzp), intent(in) :: &
-      T_in_K,     & ! Temperature              [K]
+      thlm,       & ! Liquid pot. temperature  [K]
       p_in_Pa,    & ! Pressure                 [Pa]
       exner,      & ! Exner function           [-]
       rho           ! Density on thermo. grid  [kg/m^3]
@@ -635,7 +634,7 @@ module micro_calcs_mod
 
     real, dimension(nnzp) :: &
       rcm_tmp,    & ! Liquid water                [kg/kg]
-      T_in_K_tmp, & ! Absolute temperature        [K]
+      thlm_tmp,   & ! Liquid potential temperature[K]
       wm_tmp        ! Vertical velocity           [m/s]
 
     integer, dimension(nnzp) :: n1, n2, zero
@@ -684,23 +683,23 @@ module micro_calcs_mod
       ! Follow M. E. Johnson (1987), p. 56.
       fraction_1(:) = a(:)*R1(:)/max( a(:)*R1(:)+(1.-a(:))*R2(:), epsilon( a ) )
 !     print*, 'fraction_1= ', fraction_1
-      rcm_tmp    = real( rc(:,sample) ) / 1000.
-      T_in_K_tmp = T_in_K
-!     wm_tmp     = real( w(:,sample) )
-      wm_tmp     = wm
+      rcm_tmp  = real( rc(:,sample) ) / 1000. ! Convert from g/kg to kg/kg
+      thlm_tmp = thlm
+      wm_tmp   = real( w(:,sample) )
+!     wm_tmp   = wm
 
       do i = 1, hydromet_dim, 1
-!       if ( i == iirrainm ) then
-!         hydromet_tmp(:,i) = real( rr(:,sample) ) / 1000.
-!       else if ( i == iiNcm ) then
-!         hydromet_tmp(:,i) = 1.e-6 * real( Nc(:,sample) ) / rho(:)
-!       else
+        if ( i == iirrainm ) then
+          hydromet_tmp(:,i) = real( rr(:,sample) ) / 1000. ! Convert from g/kg to kg/kg
+        else if ( i == iiNcm ) then
+          hydromet_tmp(:,i) = 1.e-6 * real( Nc(:,sample) ) / rho(:) ! Convert from #/cc to #/kg
+        else
           hydromet_tmp(:,i) = hydromet(:,i)
-!       end if
+        end if
       end do
 
       call microphys_sub &
-           ( dt, nnzp, .false., T_in_K_tmp, p_in_Pa, exner, rho, pdf_params, &
+           ( dt, nnzp, .false., thlm_tmp, p_in_Pa, exner, rho, pdf_params, &
              wm_tmp, w_std_dev, altitudes, rcm_tmp, rvm, hydromet_tmp, hydromet_mc_est, &
              hydromet_vel_est, rcm_mc_est, rvm_mc_est, thlm_mc_est )
 
