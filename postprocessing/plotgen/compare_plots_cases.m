@@ -1012,9 +1012,6 @@ else
 		'thlm ', nz_curr_zt, t1_curr_zt, t2_curr_zt, les_type, 0 );
 end
 
-if(strcmp(les_type, 'sam'))
-	avg_thlm_les
-end
 
 create_plot(3, 2, 1, 'Liquid Water Potential Temperature, \theta_l', 'thlm    [K]', avg_thlm_les, z_les, nz_les, avg_thlm_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_thlm_1217, z_1217_zt, nz_1217_zt, ...
 		avg_thlm_prev, z_prev_zt, nz_prev_zt, avg_thlm_curr, z_curr_zt, nz_curr_zt, 1);
@@ -1039,7 +1036,7 @@ end
 
 
 if ( strcmp(les_type, 'sam')) 
-	avg_rtm_les = avg_rtm_les / 1000.0
+	avg_rtm_les = avg_rtm_les / 1000.0;
 end
 
 create_plot(3, 2, 2, 'Total Water Mixing Ratio, r_{ t}', 'rtm    [kg/kg]', avg_rtm_les, z_les, nz_les, avg_rtm_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_rtm_1217, z_1217_zt, nz_1217_zt, ...
