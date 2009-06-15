@@ -100,6 +100,9 @@ contains
 
     real :: dCAPE_dz_j, dCAPE_dz_j_minus_1, dCAPE_dz_j_plus_1
 
+    ! Temporary array to store exponential calculations to speed runtime
+    real, dimension(gr%nnzp) :: exp_mu_dzm
+
     ! Minimum value for Lscale that will taper off with height
     real :: lminh
 
@@ -128,6 +131,11 @@ contains
     Lscale_up(1)   = 0.0
     Lscale_down(1) = 0.0
 
+    ! Initialize exp_mu_dzm--sets each exp_mu_dzm value to its corresponding
+    !   exp(-mu/gr%dzm) value. In theory, this saves 11 computations of
+    !   exp(-mu/gr%dzm) used below.
+    ! ~~EIHoppe//20090615
+    exp_mu_dzm(:)  = exp( -mu/gr%dzm(:) )
 
     !!!!! Compute Lscale_up for every vertical level.
 
@@ -180,10 +188,13 @@ contains
 
              ! The ascending parcel is entraining at rate mu.
 
-             thl_par_j = thlm(j) - thlm(j-1)*exp(-mu/gr%dzm(j-1))  &
-                         - ( 1.0 - exp(-mu/gr%dzm(j-1)) )  &
+             ! Calculation changed to use pre-calculated exp(-mu/gr%dzm) values.
+             ! ~~EIHoppe//20090615
+
+             thl_par_j = thlm(j) - thlm(j-1)*exp_mu_dzm(j-1)  &
+                         - ( 1.0 - exp_mu_dzm(j-1))  &
                            * ( (thlm(j) - thlm(j-1)) / (mu/gr%dzm(j-1)) )  &
-                         + thl_par_j_minus_1 * exp(-mu/gr%dzm(j-1))
+                         + thl_par_j_minus_1 * exp_mu_dzm(j-1)
 
           else
 
@@ -222,10 +233,13 @@ contains
 
              ! The ascending parcel is entraining at rate mu.
 
-             rt_par_j = rtm(j) - rtm(j-1)*exp(-mu/gr%dzm(j-1))  &
-                        - ( 1.0 - exp(-mu/gr%dzm(j-1)) )  &
+             ! Calculation changed to use pre-calculated exp(-mu/gr%dzm) values.
+             ! ~~EIHoppe//20090615
+
+             rt_par_j = rtm(j) - rtm(j-1)*exp_mu_dzm(j-1)  &
+                        - ( 1.0 - exp_mu_dzm(j-1))  &
                           * ( (rtm(j) - rtm(j-1)) / (mu/gr%dzm(j-1)) )  &
-                        + rt_par_j_minus_1 * exp(-mu/gr%dzm(j-1))
+                        + rt_par_j_minus_1 * exp_mu_dzm(j-1)
 
           else
 
@@ -448,10 +462,13 @@ contains
 
              ! The descending parcel is entraining at rate mu.
 
-             thl_par_j = thlm(j) - thlm(j+1)*exp(-mu/gr%dzm(j))  &
-                         - ( 1.0 - exp(-mu/gr%dzm(j)) )  &
+             ! Calculation changed to use pre-calculated exp(-mu/gr%dzm) values.
+             ! ~~EIHoppe//20090615
+
+             thl_par_j = thlm(j) - thlm(j+1)*exp_mu_dzm(j)  &
+                         - ( 1.0 - exp_mu_dzm(j))  &
                            * ( (thlm(j) - thlm(j+1)) / (mu/gr%dzm(j)) )  &
-                         + thl_par_j_plus_1 * exp(-mu/gr%dzm(j))
+                         + thl_par_j_plus_1 * exp_mu_dzm(j)
 
           else
 
@@ -500,10 +517,13 @@ contains
 
              ! The descending parcel is entraining at rate mu.
 
-             rt_par_j = rtm(j) - rtm(j+1)*exp(-mu/gr%dzm(j))  &
-                        - ( 1.0 - exp(-mu/gr%dzm(j)) )  &
+             ! Calculation changed to use pre-calculated exp(-mu/gr%dzm) values.
+             ! ~~EIHoppe//20090615
+
+             rt_par_j = rtm(j) - rtm(j+1)*exp_mu_dzm(j)  &
+                        - ( 1.0 - exp_mu_dzm(j) )  &
                           * ( (rtm(j) - rtm(j+1)) / (mu/gr%dzm(j)) )  &
-                        + rt_par_j_plus_1 * exp(-mu/gr%dzm(j))
+                        + rt_par_j_plus_1 * exp_mu_dzm(j)
 
           else
 
