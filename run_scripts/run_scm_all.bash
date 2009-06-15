@@ -103,14 +103,14 @@ fi
 
 EXIT_CODE=( [0]=0 [1]=0 [2]=0 [3]=0 [4]=0 [5]=0 [6]=0 [7]=0 [8]=0 [9]=0 \
 	    [10]=0 [11]=0 [12]=0 [13]=0 [14]=0 [15]=0 [16]=0 [17]=0 [18]=0 \ 
-	    [19]=0 [20]=0 [21]=0 [22]=0 [23]=0 [24]=0 [25]=0 )
+	    [19]=0 [20]=0 [21]=0 [22]=0 [23]=0 [24]=0 [25]=0 [26]=0 )
 
 RUN_CASE=( \
 	arm arm_97 atex bomex clex9_nov02 clex9_oct14 cloud_feedback_s6 \
         cloud_feedback_s11 cloud_feedback_s12 cobra dycoms2_rf01 \
         dycoms2_rf02_do dycoms2_rf02_ds	dycoms2_rf02_nd dycoms2_rf02_so \
-        fire gabls2 gabls3 jun25_altocu lba mpace_a mpace_b nov11_altocu \
-       	rico twp_ice wangara )
+        fire gabls2 gabls3 gabls3_night jun25_altocu lba mpace_a mpace_b \
+	nov11_altocu rico twp_ice wangara )
 
 # Since everyone seems to like to add new cases without adding exit codes,
 # we try and catch that error here...
