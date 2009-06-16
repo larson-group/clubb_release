@@ -51,7 +51,7 @@ module parameters_microphys
 !$omp threadprivate(microphys_start_time)
 
   real, public :: &
-    Ncm_initial ! Initial cloud droplet number concentration
+    Ncm_initial ! Initial cloud droplet number concentration [#/cc]
 
 !$omp threadprivate(Ncm_initial)
 
