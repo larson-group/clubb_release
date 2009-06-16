@@ -218,8 +218,8 @@ ustar = 0.3
 ubar = compute_ubar( um_sfc, vm_sfc )
         
 ! Modification in case lowest model level isn't at 10 m, from ATEX specification
-Cm   = C_m_20 * ((log(20/z0))/(log(z/z0))) * & 
-       ((log(20/z0))/(log(z/z0)))             
+!Cm   = C_m_20 * ((log(20/z0))/(log(z/z0))) * & 
+!       ((log(20/z0))/(log(z/z0)))             
 ! Modification in case lowest model level isn't at 10 m, from ATEX specification
 Ch   = C_h_20 * ((log(20/z0))/(log(z/z0))) * & 
        ((log(20/z0))/(log(z/z0)))          
@@ -229,8 +229,8 @@ Cq   = C_q_20 * ((log(20/z0))/(log(z/z0))) * &
 
 wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm_sfc, sst, exner_sfc )
 wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm, sat_mixrat_liq(psfc,sst) )
-upwp_sfc   = -um_sfc * Cm * ubar  ! m^2 s^-2
-vpwp_sfc   = -vm_sfc * Cm * ubar  ! m^2 s^-2
+!upwp_sfc   = -um_sfc * Cm * ubar  ! m^2 s^-2
+!vpwp_sfc   = -vm_sfc * Cm * ubar  ! m^2 s^-2
 
 ! Compute momentum fluxes
 call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
