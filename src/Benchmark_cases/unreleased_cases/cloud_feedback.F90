@@ -86,9 +86,9 @@ return
 end subroutine cloud_feedback_tndcy
 
 !----------------------------------------------------------------------
-subroutine cloud_feedback_sfclyr( runtype, time, p_in_Pa, rho0, & 
-                                  lowestlevel, thlm_sfc, rtm_sfc, um_sfc, vm_sfc,  &
-                                  exner_sfc, psfc, Tsfc, rcm, & 
+subroutine cloud_feedback_sfclyr( runtype, & 
+                                  thlm_sfc, rtm_sfc, um_sfc, vm_sfc,  &
+                                  exner_sfc, psfc, Tsfc, & 
                                   upwp_sfc, vpwp_sfc, & 
                                   wpthlp_sfc, wprtp_sfc, ustar, & 
                                   wpsclrp_sfc, wpedsclrp_sfc )
@@ -115,29 +115,19 @@ use array_index, only:  &
 use surface_flux, only: &
     compute_ubar, compute_momentum_flux, compute_wprtp_sfc, compute_wpthlp_sfc
 
-!use T_in_K_mod, only: &
-!    thlm2T_in_K ! Procedure
-
 implicit none
 
 intrinsic :: max, sqrt
 
 ! Input Variables
-real(kind=time_precision), intent(in) ::  & 
-  time      ! Current time        [s] 
-
 character(len=50), intent(in) :: runtype ! The case that is being run
 
 real, intent(in) ::  & 
-  p_in_Pa,   & ! Pressure            [Pa] 
-  rho0,      & ! Density at zm=1     [kg/m^3] 
   thlm_sfc,  & ! thlm at (2)         [m/s]
   rtm_sfc,   & ! rtm at (2)          [kg/kg]
   Tsfc,      & ! Temperature         [K]
   psfc,      &
-  rcm,       & ! Cloud water mixing ratio      [kg/kg]
   exner_sfc, & ! Exner function      [-]
-  lowestlevel,   & ! This is z at the lowest above-ground model level.  [m]
   um_sfc,    & ! um at (2)           [m/s]
   vm_sfc       ! vm at (2)           [m/s]
 
@@ -157,55 +147,42 @@ real, intent(out), dimension(edsclr_dim) ::  &
 
 ! Constants
 real, parameter :: & 
-  C_10    = 0.0013, &     ! Drag coefficient, defined by ATEX specification
-!  z0      = 0.00015,   & ! Roughness length, defined by ATEX specification
-  rho_sfc_flux = 1.0
+!  rho_sfc_flux = 1.0, &
+  C_10    = 0.0013      ! Drag coefficient, defined by ATEX specification
 
 ! Internal variables
 real :: & 
   ubar 
-!  T_in_K
-
-!T_in_K = thlm2T_in_K( thlm_sfc, exner_sfc, rcm )
 
 ubar = compute_ubar( um_sfc, vm_sfc )
 
 ! Just set ustar = 0.3
 ustar = 0.3
 
-!--------------------------------------------------------------------------------
-! Old Style
-
-!wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, & 
-!                                 Tsfc, exner_sfc )
-!wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, 0.8 * sat_mixrat_liq( psfc, Tsfc ) )
-
-!call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
-!                            upwp_sfc, vpwp_sfc )
+! Get rid of a compiler warning
+if( runtype == "anything" ) then
+    ustar = 0.3
+end if
 
 !--------------------------------------------------------------------------------
 ! Email way
 ! wprtp = value_from_forcings_file_in_W_m**2 / ( rho_sfc_flux * Lv )
 ! wpthlp = value_from_forcings_file_in_W_m**2 / ( rho_sfc_flux * Cp )
 
-! S11 is not affected much by using the calculated surface fluxes other then cf is lower (with 0.8)
-! S6 crashes when when compute_wpthlp_sfc and compute_wprtp_sfc are used (with 0.8)
-! S6 and S12 crash when the calculated surface fluxes are used to calculate wpthlp (0.8)
-! S6 crashes with calculated surface fluxes (without 0.8)
-
 !lhflx(1) = 0.001 * ubar * rho_sfc_flux * Lv * ( sat_mixrat_liq( psfc, Tsfc ) - & 
 !                                                sat_mixrat_liq( psfc, T_in_K ) * 0.8 )
 !shflx(1) = 0.001 * ubar * rho_sfc_flux * Cp * ( Tsfc - T_in_K )
 
 ! If this is the S6 case, fudge the values of the fluxes using values from the forcings
-if ( runtype == "cloud_feedback_s6" .or. runtype == "cloud_feedback_s6_p2k" ) then
-    wprtp_sfc = lhflx(1) / ( rho_sfc_flux * Lv )
-    wpthlp_sfc = shflx(1) / ( rho_sfc_flux * Cp )
-else
-    wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, sat_mixrat_liq( psfc, Tsfc ) )
-    wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, & 
-                                     Tsfc, exner_sfc )
-end if
+!if ( runtype == "cloud_feedback_s6" .or. runtype == "cloud_feedback_s6_p2k" ) then
+!    wprtp_sfc = lhflx(1) / ( rho_sfc_flux * Lv )
+!    wpthlp_sfc = shflx(1) / ( rho_sfc_flux * Cp )
+!else
+
+wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, sat_mixrat_liq( psfc, Tsfc ) )
+wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, & 
+                                 Tsfc, exner_sfc )
+!end if
 
 call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
                             upwp_sfc, vpwp_sfc )
