@@ -1,0 +1,18 @@
+# Test Configuration File
+
+%CASE = 
+(
+    'name' => 'case_name',
+    'headerText' => 'Test Case',
+    'test' => [ '0', '1', '5' ],
+    'nightly_output' =>
+    {
+        'subText' => '** Uniform, coarse verticle grid spacing of 40 m. **',
+        'subHtml' => 'HTML Tables or whatever can go here'
+    },
+    'additionalOutput' =>
+    {
+        'subText' => 'Any additional text to be added to the sub text on the plots',
+        'subHtml' => 'Any additional html to be added under the header text'
+    }
+)
