@@ -39,7 +39,7 @@ zt_grid_fname = '../input/grid/deep_convection_128lev_27km_zt_grid.grd'
 ! Note:  For this option, zt_grid_fname must be ''.
 zm_grid_fname = ''
 
-day   = 17     ! Day of model start (1 to 31).
+day   = 19     ! Day of model start (1 to 31).
 month = 1     ! Month of model start (1 to 12).
 year  = 2006  ! Year of model start.
 
@@ -47,7 +47,7 @@ rlat = -12.425   ! Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [d
 rlon = 130.891  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees]
 
 time_initial = 10800.0  ! Model start time [seconds since midnight on start date]
-time_final = 2332800.0  ! Model end time [seconds since midnight on start date]
+time_final = 2246400.0  ! Model end time [seconds since midnight on start date]
 time_spinup = 10800.0   ! End of spin-up period [seconds since midnight on start date]
 
 dtmain    = 600.0   ! Model timestep [s]
@@ -61,8 +61,9 @@ sfctype = 1      ! Select surface scheme (cases without specified surface fluxes
                  !       temperature (Tsfc) and assumes over ocean.
 
 Tsfc = 302.15     ! Temperature at model base           [K]
-psfc = 978.9e2   ! Pressure at model base              [Pa]
-fcor = 8.697e-5  ! Coriolis parameter                  [s^-1]
+!psfc = 978.9e2   ! Pressure at model base              [Pa]
+psfc = 1004.4e2   ! Pressure at model base              [Pa]
+fcor = -3.1379e-5  ! Coriolis parameter                  [s^-1]
 T0   = 300.      ! Reference temperature (usually 300) [K]
 
 
