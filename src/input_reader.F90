@@ -88,6 +88,10 @@ module input_reader
 
     integer :: k, j, i
 
+    logical :: isComment
+
+    character(len=200) :: tmpline
+
     real, dimension(ncol) :: tmp
 
     ! Begin Code
@@ -95,7 +99,24 @@ module input_reader
     ! First run through, take names and determine how large the data file is.
     open(unit=iunit, file=trim(filename), status = 'old' )
 
+    isComment = .true.
+
+    ! Skip all the comments at the top of the file
+    do while(isComment)
+      read(iunit,fmt='(A)') tmpline
+      k = index(tmpline, "!")
+      isComment = .false.
+      if(k > 0) then
+        isComment = .true.
+      end if
+    end do
+
+    ! Go back to the line that wasn't a comment.
+    backspace(iunit)
+
     read(iunit, fmt=*) names
+
+    print *, names
 
     nRowO = 0
     do while(.true.)
@@ -111,9 +132,21 @@ module input_reader
       nRowO = nRowO + 1
     end do
 
-    77 rewind(iunit)
+    77 continue
 
-    read(iunit, *) ! Skip the line
+    do i=1, nRowO
+    
+      backspace(iunit)
+  
+      do j=1, nRowI
+    
+        backspace(iunit)
+  
+      end do
+
+    end do
+
+    backspace(iunit)
 
     ! Store the names into the structure and allocate accordingly
     do k =1, nCol
@@ -138,6 +171,7 @@ module input_reader
     end do
 
     close(iunit)
+
 
     ! Avoiding compiler warning
     if(.false.) print *, tmp
