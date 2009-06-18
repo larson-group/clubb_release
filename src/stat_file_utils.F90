@@ -31,9 +31,11 @@ module stat_file_utils
       open_grads_read, get_grads_var,  & ! Procedures
       close_grads_read
 
+#ifdef NETCDF
     use input_netcdf, only: &
       open_netcdf_read, get_netcdf_var, & ! Procedures
       close_netcdf_read
+#endif
 
     use inputfields, only: &
       CLUBB_levels_within_LES_domain, &
@@ -126,7 +128,13 @@ module stat_file_utils
 
     else
 
+#ifdef NETCDF
       call open_netcdf_read( variable_name, filename, faverage, l_error )
+
+#else
+      write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
+      l_error = .true.
+#endif
 
       if ( l_error ) return
 
@@ -164,8 +172,10 @@ module stat_file_utils
         call get_grads_var( faverage, variable_name, t,  & 
                             file_variable(1:file_nz), l_error )
       else
+#ifdef NETCDF
         call get_netcdf_var( faverage, variable_name, t, &
                              file_variable(1:file_nz), l_error )
+#endif
       end if
 
 
@@ -229,8 +239,10 @@ module stat_file_utils
       ! Close the GrADS file
       call close_grads_read( faverage )
     else
+#ifdef NETCDF
       ! Close the netCDF file
       call close_netcdf_read( faverage )
+#endif
     end if
 
     ! Take average over num_timesteps
@@ -354,7 +366,11 @@ module stat_file_utils
 
     use inputfile_class, only: open_grads_read, close_grads_read ! Procedure(s)
 
+    use constants, only: fstderr
+
+#ifdef NETCDF
     use input_netcdf, only: open_netcdf_read, close_netcdf_read ! Procedure(s)
+#endif
 
     implicit none
 
@@ -378,10 +394,14 @@ module stat_file_utils
 
     else
 
+#ifdef NETCDF
       call open_netcdf_read( varname, filename, fz, l_error )
-
+#else
+      write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
+      l_error = .true.
+#endif
       if ( l_error ) then
-        write(0,*) "Error opening "// filename
+        write(fstderr,*) "Error opening "// filename
         stop
       end if
 
@@ -394,7 +414,9 @@ module stat_file_utils
     if ( l_grads_file ) then
       call close_grads_read( fz )
     else
+#ifdef NETCDF
       call close_netcdf_read( fz )
+#endif
     end if
 
     return
@@ -406,7 +428,12 @@ module stat_file_utils
     use stat_file_module, only: stat_file ! Type(s)
 
     use inputfile_class, only: open_grads_read, close_grads_read ! Procedure(s)
+
+    use constants, only: fstderr
+
+#ifdef NETCDF
     use input_netcdf, only: open_netcdf_read, close_netcdf_read ! Procedure(s)
+#endif
 
     implicit none
 
@@ -436,10 +463,14 @@ module stat_file_utils
 
     else
 
+#ifdef NETCDF
       call open_netcdf_read( varname, filename, fz, l_error )
-
+#else
+      write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
+      l_error = .true.
+#endif
       if ( l_error ) then
-        write(0,*) "Error opening "// filename
+        write(fstderr,*) "Error opening "// filename
         stop
       end if
 
@@ -452,7 +483,9 @@ module stat_file_utils
     if ( l_grads_file ) then
       call close_grads_read( fz )
     else
+#ifdef NETCDF
       call close_netcdf_read( fz )
+#endif
     end if
 
     return
