@@ -1145,7 +1145,8 @@ module mono_flux_limiter
       mean_w_down_1st, & ! Mean w (<= w|_ref) from 1st normal distribution [m/s]
       mean_w_down_2nd, & ! Mean w (<= w|_ref) from 2nd normal distribution [m/s]
       mean_w_up_1st, &   ! Mean w (>= w|_ref) from 1st normal distribution [m/s]
-      mean_w_up_2nd      ! Mean w (>= w|_ref) from 2nd normal distribution [m/s]
+      mean_w_up_2nd, &   ! Mean w (>= w|_ref) from 2nd normal distribution [m/s]
+      exp_cache          ! Cache of exponential calculations to reduce runtime
 
     integer :: k  ! Vertical loop index
 
@@ -1186,16 +1187,24 @@ module mono_flux_limiter
 
        else
 
+          ! The exponential calculation is pulled out as it is reused in both
+          ! equations. This should save one calculation of the
+          ! exp( -(w_ref-w1(k))**2 ... etc. part of the formula.
+          ! ~~EIHoppe//20090618
+          exp_cache = exp( -(w_ref-w1(k))**2 / (2.0*sigma_w1**2) ) 
+
           ! The 1st normal has values on both sides of w_ref.
           mean_w_down_1st =  &
              - (sigma_w1/sqrt_2pi)  &
-               * exp( -(w_ref-w1(k))**2 / (2.0*sigma_w1**2) )  &
+               * exp_cache  &
              + w1(k) * 0.5*( 1.0 + erf( (w_ref-w1(k)) / (sqrt_2*sigma_w1) ) )
+!               * exp( -(w_ref-w1(k))**2 / (2.0*sigma_w1**2) )  &
 
           mean_w_up_1st =  &
              + (sigma_w1/sqrt_2pi)  &
-               * exp( -(w_ref-w1(k))**2 / (2.0*sigma_w1**2) )  &
+               * exp_cache  &
              + w1(k) * 0.5*( 1.0 - erf( (w_ref-w1(k)) / (sqrt_2*sigma_w1) ) )
+!               * exp( -(w_ref-w1(k))**2 / (2.0*sigma_w1**2) )  &
 
        endif
 
@@ -1215,16 +1224,24 @@ module mono_flux_limiter
 
        else
 
+          ! The exponential calculation is pulled out as it is reused in both
+          ! equations. This should save one calculation of the
+          ! exp( -(w_ref-w1(k))**2 ... etc. part of the formula.
+          ! ~~EIHoppe//20090618
+          exp_cache = exp( -(w_ref-w2(k))**2 / (2.0*sigma_w2**2) ) 
+
           ! The 2nd normal has values on both sides of w_ref.
           mean_w_down_2nd =  &
              - (sigma_w2/sqrt_2pi)  &
-               * exp( -(w_ref-w2(k))**2 / (2.0*sigma_w2**2) )  &
+               * exp_cache  &
              + w2(k) * 0.5*( 1.0 + erf( (w_ref-w2(k)) / (sqrt_2*sigma_w2) ) )
+!               * exp( -(w_ref-w2(k))**2 / (2.0*sigma_w2**2) )  &
 
           mean_w_up_2nd =  &
              + (sigma_w2/sqrt_2pi)  &
-               * exp( -(w_ref-w2(k))**2 / (2.0*sigma_w2**2) )  &
+               * exp_cache  &
              + w2(k) * 0.5*( 1.0 - erf( (w_ref-w2(k)) / (sqrt_2*sigma_w2) ) )
+!               * exp( -(w_ref-w2(k))**2 / (2.0*sigma_w2**2) )  &
 
        endif
 
