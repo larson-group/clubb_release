@@ -52,16 +52,19 @@ module saturation
     ! Saturation Vapor Pressure, esat, can be found to be approximated
     ! in many different ways.
 
-    !select case ( trim( saturation_formula ) )
-    ! Why are we trimming twice? saturation_formula is already trimmed
-    ! in model_flags.F90, and for whatever reason the trim here seems
-    ! to take a very long time to complete. It may have to do with
-    ! the aggregate of trimming over many iterations.
-    !
-    ! Regardless, as a note for the future, if other approximations
-    ! are added in the future, it will probably require less refactoring
-    ! if just the first six characters of the name are used.
-    ! ~~EIHoppe//20090617
+    !**************************************************************************
+    !                         ***** IMPORTANT *****
+    ! If new saturation_formula's are added with a different string length 
+    ! then this select case must be modified accordingly:
+    ! 
+    ! (1) If you add to the length of saturation_formula, spaces must be 
+    ! added at the end of current cases. E.g. case ( "bolton  " ) for len=8. 
+    ! 
+    ! (2) If you use as name for a saturation_formula with less than 6 
+    ! characters, you must add spaces at the end of the name.  
+    ! E.g. case ( "mine  " ) for len=6.
+    !                         ***** IMPORTANT *****
+    !**************************************************************************
     select case ( saturation_formula )
     case ( "bolton", "Bolton" )
       ! Using the Bolton 1980 approximations for SVP over vapor
