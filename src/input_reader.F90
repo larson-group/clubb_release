@@ -116,8 +116,6 @@ module input_reader
 
     read(iunit, fmt=*) names
 
-    print *, names
-
     nRowO = 0
     do while(.true.)
       read(iunit, *, end=77, err=77) tmp(1), nRowI
