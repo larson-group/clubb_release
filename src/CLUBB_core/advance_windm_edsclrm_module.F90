@@ -75,6 +75,10 @@ module advance_windm_edsclrm_module
         fstderr, &  ! Constant
         eps
 
+    use damping, only: &
+      l_damping, & ! Variable(s)
+      damp_xm ! Procedure(s)
+
     implicit none
 
     ! Input Variables
@@ -281,6 +285,11 @@ module advance_windm_edsclrm_module
     if ( l_uv_nudge ) then
       um(1:gr%nnzp) = real( um(1:gr%nnzp) - ((um(1:gr%nnzp) - um_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
       vm(1:gr%nnzp) = real( vm(1:gr%nnzp) - ((vm(1:gr%nnzp) - vm_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
+    endif
+
+    if ( l_damping ) then
+      um(1:gr%nnzp) = damp_xm( dt, um_ref(1:gr%nnzp), um(1:gr%nnzp) )
+      vm(1:gr%nnzp) = damp_xm( dt, vm_ref(1:gr%nnzp), vm(1:gr%nnzp) )
     endif
 
 
