@@ -15,6 +15,15 @@
 # export OMP_NUM_THREADS=2
 #######################################################################
 
+# Figure out the directory where the script is located
+scriptPath=`dirname $0`
+
+# Store the current directory location so it can be restored
+restoreDir=`pwd`
+
+# Change directories to the one the script is located in
+cd $scriptPath
+
 if [ -z $1 ]; then
 	echo "Usage: "$0" <MODEL CASE> [PARAMETER FILE] [STATS FILE]"
 	exit
@@ -72,3 +81,5 @@ echo "Running" $RUN_CASE
 
 # Remove the namelists
 rm -f 'clubb.in'
+
+cd $restoreDir

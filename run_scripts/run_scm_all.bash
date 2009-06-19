@@ -14,6 +14,15 @@ NIGHTLY=false
 TIMESTEP_TEST=false
 OUTPUT_DIR="/home/`whoami`/nightly_tests/output"
 
+# Figure out the directory where the script is located
+scriptPath=`dirname $0`
+
+# Store the current directory location so it can be restored
+restoreDir=`pwd`
+
+# Change directories to the one the script is located in
+cd $scriptPath
+
 # This function reads all the arguments and sets variables that will be used
 # later in the script.
 set_args()
@@ -259,3 +268,5 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 		echo "${RUN_CASE[$x]}"' failure'
  	fi
 done
+
+cd $restoreDir

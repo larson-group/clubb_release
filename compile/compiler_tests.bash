@@ -11,6 +11,15 @@
 #   ./compiler_tests.bash
 ###############################################################################
 
+# Figure out the directory where the script is located
+scriptPath=`dirname $0`
+
+# Store the current directory location so it can be restored
+restoreDir=`pwd`
+
+# Change directories to the one the script is located in
+cd $scriptPath
+
 # The location to where the output should be placed
 outputFile="./compiler_output"
 
@@ -88,3 +97,5 @@ clean
 compile g95
 
 echo -e "\nDone! View the file 'compiler_output' to see the results."
+
+cd $restoreDir

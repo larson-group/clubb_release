@@ -35,6 +35,15 @@
 # microphysics is not available due to licensing restrictions.
 # ------------------------------------------------------------------------------
 
+# Figure out the directory where the script is located
+scriptPath=`dirname $0`
+
+# Store the current directory location so it can be restored
+restoreDir=`pwd`
+
+# Change directories to the one the script is located in
+cd $scriptPath
+
 if [ -z $1 ]; then
 	# Set using the default config flags
 
@@ -230,7 +239,7 @@ cd $bindir
 $gmake
 # Get the exit status of the gmake command
 exit_status=${?}
-cd $dir
+cd $restoreDir
 
 # Exit returing the result of the make
 exit $exit_status
