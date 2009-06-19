@@ -132,10 +132,10 @@ module gabls3_night
     real, intent(out) :: ustar
 
     real r, x, pii, zody
-    real a, b, c, d, tstar
-    real xm, xh, xsi, xsi1, xsi2, dxsi, fm, fh
+    real a, b, c, d
+    real xm, xh, xsi, xsi1, xsi2, fm, fh
 
-    real psi_h,xlmo
+    real psi_h, xlmo
 
     integer iter
     real gm1, gh1, fm1, fh1
@@ -162,7 +162,6 @@ module gabls3_night
       fm=zody-fm1(xm)
       fh=0.74*(zody-fh1(xh))
       xsi1=r/fh*fm**2
-      dxsi=xsi-xsi1
       xsi=xsi1
 
       xsi=-abs(xsi)
@@ -172,7 +171,6 @@ module gabls3_night
       fm=zody-fm1(xm)
       fh=0.74*(zody-fh1(xh))
       xsi1=r/fh*fm**2
-      dxsi=xsi-xsi1
       xsi=xsi1
 
       xsi=-abs(xsi)
@@ -182,7 +180,6 @@ module gabls3_night
       fm=zody-fm1(xm)
       fh=0.74*(zody-fh1(xh))
       xsi1=r/fh*fm**2
-      dxsi=xsi-xsi1
       xsi=xsi1
 
     else
@@ -215,7 +212,7 @@ module gabls3_night
 !lhf=0.4**2/fm/fh*vel*(qs-qh)
 
     ustar = 0.4/fm*vel
-    tstar = 0.4/fh*(th-ts)
+
     if(xsi.ge.0.) then
       xsi = max(1.e-5,xsi)
     else
