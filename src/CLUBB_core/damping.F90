@@ -1,4 +1,4 @@
-$Id$
+!$Id$
 module damping
 !
 ! This module is used for damping variables in upper altitudes of the grid.
