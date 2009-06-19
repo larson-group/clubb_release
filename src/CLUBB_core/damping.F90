@@ -63,7 +63,7 @@ module damping
 
       do k = gr%nnzp, gr%nnzp-n_damp, -1
 
-        xm_p(k) = xm(k) - (( xm(k) - xm_ref(k) ) / tau(k) ) * dt
+        xm_p(k) = xm(k) - real( ( ( xm(k) - xm_ref(k) ) / tau(k) ) * dt )
   
       end do ! k
 
