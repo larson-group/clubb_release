@@ -1,0 +1,10 @@
+$Id$
+generate_seed.bash: Generates a psuedo random seed that is used by the tuner.
+run_bin_diff_all.bash: Compares the output for all cases specified in run_scm_all.bash in two specified directories.
+run_inputfields.bash: Runs CLUBB with specified prognostic variables from a GrADS file.
+run_jacobian.bash: Runs the CLUBB jacobian program.
+run_scm_all.bash: Runs all of the cases CLUBB is set up to do.
+run_scm.bash: Runs CLUBB for a specified case. The case is specified with the model name.
+rum_scm_collect.bash: Runs a case in CLUBB while using a profiler to collect runtime statistics. The case is specified with the model name.
+run_timestep_tests.bash: Runs all of the cases CLUBB is set up to do. CLUBB is ran several times for each case at different timestep settings.
+run_tuner.bash: Runs the CLUBB tuning program.
