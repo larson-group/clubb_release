@@ -74,7 +74,7 @@ l_t_dependant = .true.
 l_damping = .true.
 
 tau_damp_min = 60.
-tau_dam_max = 1800.
+tau_damp_max = 1800.
 damp_depth = 0.25
 
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
