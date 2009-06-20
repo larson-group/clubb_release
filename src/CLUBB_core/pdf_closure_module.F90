@@ -564,7 +564,12 @@ module pdf_closure_module
     s1 = ( rt1 - rsl1 ) / ( 1. + beta1 * rsl1 )
     s2 = ( rt2 - rsl2 ) / ( 1. + beta2 * rsl2 )
 
-    ! Coefficient for s'
+    ! Coefficients for s'
+    ! For each normal distribution in the sum of two normal distributions,
+    ! s' = crt * rt'  +  cthl * thl';
+    ! therefore, x's' = crt * x'rt'  +  cthl * x'thl'.
+    ! Larson et al. 2001.
+
     crt1  = 1./( 1. + beta1*rsl1)
     crt2  = 1./( 1. + beta2*rsl2)
 
