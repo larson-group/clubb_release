@@ -39,6 +39,9 @@ module lh_sampler_mod
     implicit none
 
     ! Constant Parameters
+    logical, parameter :: &
+      l_sample_out_of_cloud = .true.
+
     double precision, parameter :: &
       Ncm       = 0.065, & ! 65 per cc
       Ncp2_Ncm2 = 0.07     ! 0.07 is for DYCOMS2 RF02 (in cloud)
@@ -163,21 +166,22 @@ module lh_sampler_mod
     !    but we set means, covariance of N, qr to constants.
 
     l_sample_flag = .true.
-    if ( cf < 0.001 ) then
+    if ( .not. l_sample_out_of_cloud .and. cf < 0.001 ) then
       ! In this case there are essentially no cloudy points to sample;
       ! Set sample points to zero.
 
-      !X_u(:,:)    = 0.0
-      !X_nl(:,:)   = 0.0
-      !l_sample_flag = .false.
-
+      X_u(:,:)    = 0.0
+      X_nl(:,:)   = 0.0
+      l_sample_flag = .false.
+    else
       ! Sample non-cloudy grid boxes as well -dschanen 3 June 2009
       R1 = 1.0
       R2 = 1.0
+    end if
 
-    else if ( srt1  == 0. .or. srt2  == 0. .or. & 
-              sthl1 == 0. .or. sthl2 == 0. .or. & 
-              sw1   == 0. .or. sw2   == 0. ) then
+    if ( srt1  == 0. .or. srt2  == 0. .or. & 
+         sthl1 == 0. .or. sthl2 == 0. .or. & 
+         sw1   == 0. .or. sw2   == 0. ) then
 
       ! In this case, Sigma_rtthlw matrix is ill-conditioned;
       !     then matrix operations will fail.
@@ -191,15 +195,13 @@ module lh_sampler_mod
 
 !         print*, 'Covariance matrix of r-thl-w is ill-conditioned'
 
-      !X_u(:,:)    = 0.0
-      !X_nl(:,:)   = 0.0
-      !l_sample_flag = .false.
-      ! Sample non-cloudy grid boxes as well -dschanen 3 June 2009
-      R1 = 1.0
-      R2 = 1.0
+      X_u(:,:)    = 0.0
+      X_nl(:,:)   = 0.0
+      l_sample_flag = .false.
 
-    else
+    end if
 
+    if ( l_sample_flag ) then
       ! Compute PDF parameters for N, rr.
       ! Assume that N, rr obey single-lognormal distributions
 
@@ -719,7 +721,8 @@ module lh_sampler_mod
     ! Local Variables
 
     integer :: j, sample
-    double precision, dimension(n_micro_calls) :: std_normal
+!   double precision, dimension(n_micro_calls) :: std_normal
+    double precision, dimension(d_variables) :: std_normal
     double precision :: fraction_1
 
     ! ---- Begin Code ----
