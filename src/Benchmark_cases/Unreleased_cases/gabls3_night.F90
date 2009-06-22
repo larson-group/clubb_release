@@ -10,7 +10,7 @@ module gabls3_night
 
   public :: gabls3_night_sfclyr
 
-  private :: landflx
+  private :: landflx, psi_h, gm1, gh1,fm1, fh1
 
   private
 
@@ -101,6 +101,59 @@ module gabls3_night
 
     return
   end subroutine gabls3_night_sfclyr
+
+
+  real function psi_h( x, xlmo )
+    implicit none
+    real, intent(in) :: x
+    real, intent(in) :: xlmo
+
+    psi_h = ( -5. * x )/xlmo
+
+  end function psi_h
+
+
+  real function gm1( x )
+
+    implicit none
+
+    real, intent(in) :: x
+
+    gm1 = (1.-15.*x)**0.25
+  end function
+  real function gh1( x )
+
+    implicit none
+
+    real, intent(in) :: x
+
+    gh1=sqrt(1.-9.*x)/0.74
+
+  end function
+
+  real function fm1( x )
+    implicit none
+
+    real, intent(in) :: x
+
+    real :: pii
+
+    pii=acos(-1.)/2.
+
+    fm1 = 2.*alog((1.+x)/2.)+alog((1.+x*x)/2.)-2.*atan(x)+pii
+
+  end function fm1
+  real function fh1( x )
+
+    implicit none
+
+    real, intent(in) :: x
+
+
+    fh1 = 2.*alog((1.+0.74*x)/2.)
+
+  end function fh1
+
   !------------------------------------------------------------------------------------------------
   subroutine landflx( th, ts, qh, qs, uh, vh, h, z0, shf, lhf, &
                       vel, ustar )
@@ -131,22 +184,15 @@ module gabls3_night
     real, intent(out) :: vel
     real, intent(out) :: ustar
 
-    real r, x, pii, zody
+    real r, zody
     real a, b, c, d
     real xm, xh, xsi, xsi1, xsi2, fm, fh
 
-    real psi_h, xlmo
+    real xlmo
 
     integer iter
-    real gm1, gh1, fm1, fh1
 
-    psi_h(x) = ( -5. * x )/xlmo
-    gm1(x)=(1.-15.*x)**0.25
-    gh1(x)=sqrt(1.-9.*x)/0.74
-    fm1(x)=2.*alog((1.+x)/2.)+alog((1.+x*x)/2.)-2.*atan(x)+pii
-    fh1(x)=2.*alog((1.+0.74*x)/2.)
 
-    pii=acos(-1.)/2.
     zody=alog(h/z0)
 
     vel = sqrt(max(0.5,uh**2+vh**2))
@@ -221,9 +267,9 @@ module gabls3_night
     xlmo = h/xsi
 !------ Modification of GABLS3_night
     shf = ( 0.4 * ustar * (ts-th) ) / &
-             ( alog(h/0.25) - psi_h(h) + psi_h(0.25) )
+             ( alog(h/0.25) - psi_h(h, xlmo) + psi_h(0.25, xlmo) )
     lhf = ( 0.4 * ustar * (qs-qh) ) / &
-             ( alog(h/0.25) - psi_h(h) + psi_h(0.25) )
+             ( alog(h/0.25) - psi_h(h, xlmo) + psi_h(0.25, xlmo) )
 !-----------------------------
     return
   end subroutine
