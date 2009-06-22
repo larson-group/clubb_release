@@ -81,7 +81,7 @@ fi
 if [ -e $srcdir/Numerical_recipes ]; then
 	CPPFLAGS="${CPPFLAGS} -DTUNER"
 fi
-if [ -e $srcdir/Benchmark_cases/unreleased_cases ]; then
+if [ -e $srcdir/Benchmark_cases/Unreleased_cases ]; then
 	CPPFLAGS="${CPPFLAGS} -DUNRELEASED_CODE"
 fi
 
@@ -114,7 +114,7 @@ cd $dir
 
 # ------------------------------------------------------------------------------
 #  Determine which restricted files are in the source directory and make a list
-ls $srcdir/Benchmark_cases/unreleased_cases/*.F90 > $dir/file_list/clubb_optional_files
+ls $srcdir/Benchmark_cases/Unreleased_cases/*.F90 > $dir/file_list/clubb_optional_files
 ls $srcdir/CLUBB_core/*.F90 > $dir/file_list/clubb_param_files
 ls $srcdir/Latin_hypercube/*.?90 >> $dir/file_list/clubb_param_files
 ls $srcdir/COAMPS_micro/*.F > $dir/file_list/clubb_coamps_files
@@ -180,7 +180,7 @@ all:	libclubb_param.a libclubb_bugsrad.a clubb_standalone clubb_tuner \
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/*.F90
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/CLUBB_core/*.F90
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/Benchmark_cases/*.F90
-	-perl ../utilities/CLUBBStandardsCheck.pl ../src/Benchmark_cases/unreleased_cases/*.F90
+	-perl ../utilities/CLUBBStandardsCheck.pl ../src/Benchmark_cases/Unreleased_cases/*.F90
 	-perl ../utilities/CLUBBStandardsCheck.pl ../src/Latin_hypercube/*.F90
 
 libclubb_param.a:
