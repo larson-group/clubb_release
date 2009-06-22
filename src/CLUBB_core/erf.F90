@@ -156,7 +156,10 @@ else if ( xabs <= 4.0D+00 ) then
   erfx = ( xnum + c(8) ) / ( xden + d(8) )
   xsq = aint( xabs * 16.0D+00 ) / 16.0D+00
   del = ( xabs - xsq ) * ( xabs + xsq )
-  erfx = exp( - xsq * xsq ) * exp( - del ) * erfx
+  ! xsq * xsq in the exponential was changed to xsq**2.
+  ! This seems to decrease runtime by about a half a percent.
+  ! ~~EIHoppe//20090622
+  erfx = exp( - xsq**2 ) * exp( - del ) * erfx
 
   erfx = ( 0.5D+00 - erfx ) + 0.5D+00
 
