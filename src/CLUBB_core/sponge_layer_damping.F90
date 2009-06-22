@@ -1,41 +1,41 @@
 !$Id$
-module damping
+module sponge_layer_damping
 !
 ! This module is used for damping variables in upper altitudes of the grid.
 !
 !---------------------------------------------------------------------------------------------------
   implicit none
 
-  public :: damp_xm, initialize_tau_damp, finalize_tau_damp
+  public :: sponge_damp_xm, initialize_tau_sponge_damp, finalize_tau_sponge_damp
 
   real, public :: &
-    tau_damp_min, & ! Minimum damping time-scale (at the top)
-    tau_damp_max, & ! maxim damping time-scale (base of damping layer)
-    damp_depth      ! damping depth as a fraction of domain height
+    tau_sponge_damp_min, & ! Minimum damping time-scale (at the top)
+    tau_sponge_damp_max, & ! maxim damping time-scale (base of damping layer)
+    sponge_damp_depth      ! damping depth as a fraction of domain height
 
   logical, public :: &
-    l_damping       ! True if damping is being used
+    l_sponge_damping       ! True if damping is being used
 
 
   real, private, allocatable, dimension(:) :: &
-    tau ! Damping factor
+    tau_sponge_damp ! Damping factor
 
   integer, private :: &
-    n_damp ! Number of levels damped
+    n_sponge_damp ! Number of levels damped
 
   private
 
   contains
 
   !-------------------------------------------------------------------------------------------------
-  function damp_xm( dt, xm_ref, xm ) result( xm_p )
+  function sponge_damp_xm( dt, xm_ref, xm ) result( xm_p )
     !
     !  Description: Damps specified variable. The module must be initialized for
     !  this function to work. Otherwise a stop is issued.
     !
     !-----------------------------------------------------------------------------------------------
 
-  !  "Spange"-layer damping at the domain top region
+    !  "Sponge"-layer damping at the domain top region
 
     use grid_class, only: gr ! Variable(s)
 
@@ -57,29 +57,29 @@ module damping
 
     integer k
 
-    if( allocated( tau ) ) then
+    if( allocated( tau_sponge_damp ) ) then
 
       xm_p = xm
 
-      do k = gr%nnzp, gr%nnzp-n_damp, -1
+      do k = gr%nnzp, gr%nnzp-n_sponge_damp, -1
 
-        xm_p(k) = xm(k) - real( ( ( xm(k) - xm_ref(k) ) / tau(k) ) * dt )
+        xm_p(k) = xm(k) - real( ( ( xm(k) - xm_ref(k) ) / tau_sponge_damp(k) ) * dt )
   
       end do ! k
 
     else
 
-      stop "tau in damping used before initialization"
+      stop "tau_sponge_damp in damping used before initialization"
 
     end if
 
-  end function damp_xm
+  end function sponge_damp_xm
 
   !-------------------------------------------------------------------------------------------------
-  subroutine initialize_tau_damp( dt )
+  subroutine initialize_tau_sponge_damp( dt )
     !
     !  Description:
-    !    Initialize tau used for damping
+    !    Initialize tau_sponge_damp used for damping
     !
     !
     !-----------------------------------------------------------------------------------------------
@@ -94,38 +94,38 @@ module damping
 
     integer k
 
-    allocate(tau(1:gr%nnzp))
+    allocate(tau_sponge_damp(1:gr%nnzp))
 
-    if( tau_damp_min < 2 * dt) then
-      print*,'Error: in damping() tau_damp_min is too small!'
+    if( tau_sponge_damp_min < 2 * dt) then
+      print*,'Error: in damping() tau_sponge_damp_min is too small!'
       stop
     end if
 
     do k=gr%nnzp,1,-1
-      if(gr%zt(gr%nnzp)-gr%zt(k).lt.damp_depth*gr%zt(gr%nnzp)) then
-        n_damp=gr%nnzp-k+1
+      if(gr%zt(gr%nnzp)-gr%zt(k) < sponge_damp_depth*gr%zt(gr%nnzp)) then
+        n_sponge_damp=gr%nnzp-k+1
       endif
     end do
 
-    do k=gr%nnzp,gr%nnzp-n_damp,-1
-      tau(k) = tau_damp_min *(tau_damp_max/tau_damp_min)** &
-                 ((gr%zt(gr%nnzp)-gr%zt(k))/(gr%zt(gr%nnzp)-gr%zt(gr%nnzp-n_damp)))
+    do k=gr%nnzp,gr%nnzp-n_sponge_damp,-1
+      tau_sponge_damp(k) = tau_sponge_damp_min *(tau_sponge_damp_max/tau_sponge_damp_min)** &
+                 ((gr%zt(gr%nnzp)-gr%zt(k))/(gr%zt(gr%nnzp)-gr%zt(gr%nnzp-n_sponge_damp)))
     end do
 
-  end subroutine initialize_tau_damp
+  end subroutine initialize_tau_sponge_damp
 
   !-------------------------------------------------------------------------------------------------
-  subroutine finalize_tau_damp()
+  subroutine finalize_tau_sponge_damp()
     !
     !  Description:
-    !    Frees memory allocated in initialize_tau_damp
+    !    Frees memory allocated in initialize_tau_sponge_damp
     !
     !-----------------------------------------------------------------------------------------------
     implicit none
 
-    deallocate( tau )
+    deallocate( tau_sponge_damp )
 
-  end subroutine finalize_tau_damp
+  end subroutine finalize_tau_sponge_damp
 
 
-end module damping
+end module sponge_layer_damping

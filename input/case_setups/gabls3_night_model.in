@@ -1,5 +1,5 @@
 ! $Id: gabls3_model.in 3455 2009-05-08 20:47:35Z fasching@uwm.edu $
-! Parameter file for GABLS3 case
+! Parameter file for GABLS3 Night case
 
 &model_setting
 
@@ -71,11 +71,11 @@ T0    = 300
 
 l_t_dependant = .true.
 
-l_damping = .true.
+l_sponge_damping = .true.    ! Set to true to activate sponge damping
 
-tau_damp_min = 60.
-tau_damp_max = 1800.
-damp_depth = 0.25
+tau_sponge_damp_min = 60.    ! Minimum damping time-scale (at the top) [s]
+tau_sponge_damp_max = 1800.  ! Maximum damping time-scale (base of sponge damping layer) [s]
+sponge_damp_depth = 0.25     ! Damping depth as a fraction of domain height [-]
 
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 l_soil_veg     = .false. ! Flag for simple surface scheme

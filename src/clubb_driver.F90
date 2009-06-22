@@ -178,12 +178,12 @@ module clubb_driver
       l_t_dependant, & ! Variable(s)
       finalize_t_dependant_input ! Procedure(s)
 
-    use damping, only: &
-      l_damping, & ! Procedure(s)
-      tau_damp_min, &
-      tau_damp_max, &
-      damp_depth,&
-      finalize_tau_damp
+    use sponge_layer_damping, only: &
+      l_sponge_damping, & ! Procedure(s)
+      tau_sponge_damp_min, &
+      tau_sponge_damp_max, &
+      sponge_damp_depth,&
+      finalize_tau_sponge_damp
 
     implicit none
 
@@ -288,7 +288,7 @@ module clubb_driver
       dtmain, dtclosure, & 
       sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge, & 
       forcings_file_path, l_t_dependant, &
-      l_damping, tau_damp_max, tau_damp_min, damp_depth, &
+      l_sponge_damping, tau_sponge_damp_max, tau_sponge_damp_min, sponge_damp_depth, &
       l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, debug_level, & 
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
@@ -338,11 +338,11 @@ module clubb_driver
 
     l_t_dependant = .false.
 
-    l_damping = .false.
+    l_sponge_damping = .false.
 
-    tau_damp_min = 60.
-    tau_damp_max = 1800.
-    damp_depth = 0.25
+    tau_sponge_damp_min = 60.
+    tau_sponge_damp_max = 1800.
+    sponge_damp_depth = 0.25
 
     l_soil_veg     = .false.
     l_tke_aniso    = .false.
@@ -472,10 +472,10 @@ module clubb_driver
 
       print *, "l_t_dependant = ", l_t_dependant
 
-      print *, "l_damping = ", l_damping
-      print *, "tau_damp_min = ", tau_damp_min
-      print *, "tau_damp_max = ", tau_damp_max
-      print *, "damp_depth = ", damp_depth
+      print *, "l_sponge_damping = ", l_sponge_damping
+      print *, "tau_sponge_damp_min = ", tau_sponge_damp_min
+      print *, "tau_sponge_damp_max = ", tau_sponge_damp_max
+      print *, "sponge_damp_depth = ", sponge_damp_depth
 
       print *, "l_soil_veg = " , l_soil_veg
       print *, "l_tke_aniso = ", l_tke_aniso
@@ -743,8 +743,8 @@ module clubb_driver
 !-------------------------------------------------------------------------------
 
     ! Free memory
-    if( l_damping ) then
-      call finalize_tau_damp( )
+    if( l_sponge_damping ) then
+      call finalize_tau_sponge_damp( )
     end if
 
 
@@ -844,9 +844,9 @@ module clubb_driver
 
     use soil_vegetation, only: sfc_soil_T_in_K, deep_soil_T_in_K, veg_T_in_K ! Variable(s)
 
-    use damping, only: &
-    l_damping, &
-    initialize_tau_damp ! Procedure(s0
+    use sponge_layer_damping, only: &
+    l_sponge_damping, &
+    initialize_tau_sponge_damp ! Procedure(s0
 
     use input_names, only: &
     z_name, &
@@ -1090,8 +1090,8 @@ module clubb_driver
     end select
 
     ! Initialize damping
-    if(l_damping) then
-      call initialize_tau_damp( dt )
+    if(l_sponge_damping) then
+      call initialize_tau_sponge_damp( dt )
     end if
 
 

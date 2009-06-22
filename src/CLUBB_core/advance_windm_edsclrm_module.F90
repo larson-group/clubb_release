@@ -75,9 +75,9 @@ module advance_windm_edsclrm_module
         fstderr, &  ! Constant
         eps
 
-    use damping, only: &
-      l_damping, & ! Variable(s)
-      damp_xm ! Procedure(s)
+    use sponge_layer_damping, only: &
+      l_sponge_damping, & ! Variable(s)
+      sponge_damp_xm ! Procedure(s)
 
     implicit none
 
@@ -287,9 +287,9 @@ module advance_windm_edsclrm_module
       vm(1:gr%nnzp) = real( vm(1:gr%nnzp) - ((vm(1:gr%nnzp) - vm_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
     endif
 
-    if ( l_damping ) then
-      um(1:gr%nnzp) = damp_xm( dt, um_ref(1:gr%nnzp), um(1:gr%nnzp) )
-      vm(1:gr%nnzp) = damp_xm( dt, vm_ref(1:gr%nnzp), vm(1:gr%nnzp) )
+    if ( l_sponge_damping ) then
+      um(1:gr%nnzp) = sponge_damp_xm( dt, um_ref(1:gr%nnzp), um(1:gr%nnzp) )
+      vm(1:gr%nnzp) = sponge_damp_xm( dt, vm_ref(1:gr%nnzp), vm(1:gr%nnzp) )
     endif
 
 
