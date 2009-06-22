@@ -33,5 +33,6 @@
 ../src/std_atmosphere_mod.F90
 ../src/input_netcdf.F90
 ../src/input_reader.F90
+../src/input_names.F90
 ../src/inputfields.F90
 ../src/inputgrads.F90

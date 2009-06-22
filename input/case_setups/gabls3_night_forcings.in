@@ -1,4 +1,4 @@
-z[m]           thlm_f[K\s]   rtm_f[kg\kg\s]   um[m\s]   vm[m\s]   um_f[m\s^2]   vm_f[m\s^2]   wm[m\s]   ug[m\s]   vg[m\s]   
+z[m]           thlm_f[K\s]   rtm_f[kg\kg\s]   um_ref[m\s]   vm_ref[m\s]   um_f[m\s^2]   vm_f[m\s^2]   w[m\s]   ug[m\s]   vg[m\s]   
 43200.0        8                                                                                                            
 0.0            0.0           0.0              -999.9    -999.9    0.00          0.00          0.00      -7.80     0.00      
 200.0          -2.50E-005    0.0              -999.9    -999.9    -999.9        -999.9        -999.9    -999.9    -999.9    

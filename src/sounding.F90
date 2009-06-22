@@ -17,15 +17,6 @@ module sounding
   integer, public, parameter :: nmaxsnd = 600
   integer, public, parameter :: sclr_max = 1000
 
-  ! Column identifiers
-  character(len=*), public, parameter :: z_name = 'z[m]'
-  character(len=*), public, parameter :: pressure_name = 'Press[Pa]'
-  character(len=*), public, parameter :: temp_name = 'T[K]'
-  character(len=*), public, parameter :: theta_name = 'thm[K]'
-  character(len=*), public, parameter :: thetal_name = 'thlm[K]'
-  character(len=*), public, parameter :: wm_name = 'w[m\s]'
-  character(len=*), public, parameter :: omega_name = 'omega[Pa\s]'
-
   private ! Default Scope
 
   contains
@@ -65,6 +56,11 @@ module sounding
 
     use error_code, only: &
       clubb_at_least_debug_level ! Function
+
+    use input_names, only: &
+    z_name, &
+    theta_name, &
+    wm_name
 
     implicit none
 
@@ -396,6 +392,14 @@ module sounding
     use input_reader, only: read_one_dim_file, fill_blanks_one_dim_vars, &
                             one_dim_read_var, deallocate_one_dim_vars
 
+
+    use input_names, only: &
+    rt_name, &
+    um_name, &
+    vm_name, &
+    ug_name, &
+    vg_name
+
     implicit none
 
     ! Input Variable(s)
@@ -436,23 +440,23 @@ module sounding
 
     call fill_blanks_one_dim_vars( nCol, retVars )
 
-    call read_z_profile(nCol, retVars, psfc, zm_init, z, p_in_Pa, alt_type )
+    call read_z_profile( nCol, retVars, psfc, zm_init, z, p_in_Pa, alt_type )
 
-    call read_theta_profile(nCol, retVars, theta_type, theta)
+    call read_theta_profile( nCol, retVars, theta_type, theta )
 
-    rt = read_x_profile(nCol, nmaxsnd, 'rt[kg\kg]', retVars)
+    rt = read_x_profile( nCol, nmaxsnd, rt_name, retVars )
 
-    u = read_x_profile(nCol, nmaxsnd, 'u[m\s]', retVars)
+    u = read_x_profile( nCol, nmaxsnd, um_name, retVars )
 
-    v = read_x_profile(nCol, nmaxsnd, 'v[m\s]', retVars)
+    v = read_x_profile( nCol, nmaxsnd, vm_name, retVars )
 
-    ug = read_x_profile(nCol, nmaxsnd, 'ug[m\s]', retVars)
+    ug = read_x_profile( nCol, nmaxsnd, ug_name, retVars )
 
-    vg = read_x_profile(nCol, nmaxsnd, 'vg[m\s]', retVars)
+    vg = read_x_profile( nCol, nmaxsnd, vg_name, retVars )
 
-    call read_subs_profile(nCol, retVars, subs_type, subs)
+    call read_subs_profile( nCol, retVars, subs_type, subs )
 
-    nlevels = size(retVars(1)%values)
+    nlevels = size( retVars(1)%values )
 
     call deallocate_one_dim_vars( nCol, retVars )
 
@@ -471,6 +475,13 @@ module sounding
     use parameters_model, only: sclr_dim
 
     use array_index, only: iisclr_rt, iisclr_thl, iisclr_CO2
+
+    use input_names, only: &
+    CO2_name, &
+    rt_name, &
+    theta_name, &
+    thetal_name, &
+    temperature_name
 
     implicit none
 
@@ -496,15 +507,15 @@ module sounding
 
     do i=1, sclr_dim
       select case(trim(retVars(i)%name))
-      case("CO2[ppmv]")
+      case( CO2_name )
         if( i /= iisclr_CO2 .and. iisclr_CO2 > 0) then
           stop "iisclr_CO2 index does not match column."
         end if
-      case('rt[kg\kg]')
+      case( rt_name )
         if( i /= iisclr_rt .and. iisclr_rt > 0) then
           stop "iisclr_rt index does not match column."
         end if
-      case("thl[K]")
+      case( theta_name, thetal_name, temperature_name )
         if( i /= iisclr_thl .and. iisclr_thl > 0) then
           stop "iisclr_thl index does not match column."
         end if
@@ -530,6 +541,13 @@ module sounding
 
     use array_index, only: iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2
 
+    use input_names, only: &
+    CO2_name, &
+    rt_name, &
+    theta_name, &
+    thetal_name, &
+    temperature_name
+
     implicit none
 
     ! Input Variable(s)
@@ -552,16 +570,18 @@ module sounding
  !   call fill_blanks_one_dim_vars( edsclr_dim, retVars )
 
     do i=1, edsclr_dim
+
       select case(trim(retVars(i)%name))
-      case("CO2[ppmv]")
+
+      case( CO2_name )
         if( i /= iiedsclr_CO2 .and. iiedsclr_CO2 > 0) then
           stop "iisclr_CO2 index does not match column."
         end if
-      case('rt[kg\kg]')
+      case( rt_name )
         if( i /= iiedsclr_rt .and. iiedsclr_rt > 0) then
           stop "iisclr_rt index does not match column."
         end if
-      case("thl[K]")
+      case( theta_name, thetal_name, temperature_name )
         if( i /= iiedsclr_thl .and. iiedsclr_thl > 0) then
           stop "iisclr_thl index does not match column."
         end if
@@ -620,7 +640,8 @@ module sounding
     end do
 
     if( .not. l_found ) then
-      stop ' Profile could not be found. Check your sounding.in file.'
+      print *, target_name,'could not be found. Check your sounding.in file.'
+      stop
     end if
 
   end function read_x_profile
@@ -647,6 +668,14 @@ module sounding
     use parameters_model, only: T0 ! Variable(s)
 
     use hydrostatic_mod, only: inverse_hydrostatic ! Procedure(s)
+
+    use input_names, only: &
+    z_name, &
+    pressure_name, &
+    rt_name, &
+    temperature_name, &
+    thetal_name, &
+    theta_name
 
     implicit none
 
@@ -694,7 +723,7 @@ module sounding
 
         call read_theta_profile(nvar, retVars, theta_type, theta )
 
-        rtm = read_x_profile(nvar, nmaxsnd, 'rt[kg\kg]', retVars)
+        rtm = read_x_profile(nvar, nmaxsnd, rt_name, retVars)
 
         exner(1) = ( psfc/p0 )**kappa
 
@@ -702,7 +731,7 @@ module sounding
           exner(k) = (p_in_Pa(k)/p0) ** kappa  ! zt
         end do
 
-        if( trim( theta_type ) == temp_name ) then
+        if( trim( theta_type ) == temperature_name ) then
            theta = theta / exner
            theta_type = theta_name     
         end if
@@ -758,6 +787,11 @@ module sounding
     !-----------------------------------------------------------------------------------------------
     use input_reader, only: one_dim_read_var
 
+    use input_names, only: &
+    thetal_name, &
+    theta_name, &
+    temperature_name
+
     implicit none
 
     ! Input Variable(s)
@@ -773,17 +807,17 @@ module sounding
 
     if( count( (/ any(retVars%name == theta_name), &
                   any(retVars%name == thetal_name), &
-                  any(retVars%name == temp_name) /) )<= 1) then
+                  any(retVars%name == temperature_name) /) )<= 1) then
       if( any(retVars%name == theta_name))then
         theta_type = theta_name
       elseif( any(retVars%name == thetal_name))then
         theta_type = thetal_name
-      elseif( any(retVars%name == temp_name))then
-        theta_type = temp_name
+      elseif( any(retVars%name == temperature_name))then
+        theta_type = temperature_name
       else
         stop "Could not read theta compatable variable"
       endif
-      theta = read_x_profile(nvar, nmaxsnd,theta_type, retVars)
+      theta = read_x_profile( nvar, nmaxsnd,theta_type, retVars )
 
     end if
   end subroutine read_theta_profile
@@ -797,6 +831,10 @@ module sounding
     !
     !-----------------------------------------------------------------------------------------------
     use input_reader, only: one_dim_read_var
+
+    use input_names, only : &
+    wm_name, &
+    omega_name
 
     implicit none
 

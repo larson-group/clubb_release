@@ -40,10 +40,10 @@ module time_dependant_input
 
 
   logical, public :: l_t_dependant ! Flag used to determine when
-  !                                     time dependant information is read in.
-  !                                     It is suggested that the flag be checked
-  !                                     before using any of the variables stored
-  !                                     in the module.
+  !                                  time dependant information is read in.
+  !                                  It is suggested that the flag be checked
+  !                                  before using any of the variables stored
+  !                                  in the module.
 
 
   ! File path constants
@@ -115,6 +115,14 @@ module time_dependant_input
 
     use sounding, only: read_x_profile
 
+    use input_names, only: &
+    time_name,&
+    thetal_name, &
+    rt_name, &
+    LH_name, &
+    SH_name, &
+    pressure_name
+
     implicit none
 
     ! Constants
@@ -141,27 +149,27 @@ module time_dependant_input
 
     allocate( time_sfc_given( 1:dim_size ) )
 
-    time_sfc_given = read_x_profile( nCols, dim_size, 'Time[s]', retVars )
+    time_sfc_given = read_x_profile( nCols, dim_size, time_name, retVars )
 
     allocate( LH_given( 1:dim_size ) )
 
-    LH_given = read_x_profile( nCols, dim_size, 'LH[W\m^2]', retVars )
+    LH_given = read_x_profile( nCols, dim_size, LH_name, retVars )
 
     allocate( SH_given( 1:dim_size ) )
 
-    SH_given = read_x_profile( nCols, dim_size, 'SH[W\m^2]', retVars )
+    SH_given = read_x_profile( nCols, dim_size, SH_name, retVars )
 
     allocate( thlm_sfc_given( 1:dim_size ) )
 
-    thlm_sfc_given = read_x_profile( nCols, dim_size, 'thlm[K]', retVars )
+    thlm_sfc_given = read_x_profile( nCols, dim_size, thetal_name, retVars )
 
     allocate( rtm_sfc_given( 1:dim_size ) )
 
-    rtm_sfc_given = read_x_profile( nCols, dim_size, 'rtm[kg\kg]', retVars )
+    rtm_sfc_given = read_x_profile( nCols, dim_size, rt_name, retVars )
 
     allocate( psfc_given( 1:dim_size ) )
 
-    psfc_given = read_x_profile( nCols, dim_size, 'Press[Pa]', retVars )
+    psfc_given = read_x_profile( nCols, dim_size, pressure_name, retVars )
 
   end subroutine
 
@@ -175,6 +183,17 @@ module time_dependant_input
 
     use input_reader, only: read_two_dim_file, two_dim_read_var, one_dim_read_var, &
                             fill_blanks_two_dim_vars
+
+    use input_names, only: &
+    thetal_f_name, &
+    rt_f_name, &
+    um_f_name, &
+    vm_f_name, &
+    um_ref_name, &
+    vm_ref_name, &
+    ug_name, &
+    vg_name, &
+    wm_name
 
     implicit none
 
@@ -202,58 +221,59 @@ module time_dependant_input
 
     call read_two_dim_file( iunit, nCols, input_file, retVars, dimension_var )
 
-    call fill_blanks_two_dim_vars( nCols, dimension_var, retVars )
-
     dim_size = size(retVars(1)%values,1)
 
     other_dim_size = size(dimension_var%values)
 
+
+    call fill_blanks_two_dim_vars( nCols, dimension_var, retVars )
+
     allocate( thlm_f_given( grid_size, other_dim_size ) )
 
     thlm_f_given = read_to_grid( nCols, dim_size, other_dim_size, &
-                                 grid_size, grid, retVars, 'thlm_f[K\s]' )
+                                 grid_size, grid, retVars, thetal_f_name )
 
     allocate( rtm_f_given( grid_size, other_dim_size ) )
 
     rtm_f_given = read_to_grid( nCols, dim_size, other_dim_size, &
-                                grid_size, grid, retVars, 'rtm_f[kg\kg\s]' )
+                                grid_size, grid, retVars, rt_f_name )
 
 
     allocate( um_given( grid_size, other_dim_size ) )
 
     um_given = read_to_grid( nCols, dim_size, other_dim_size, &
-                             grid_size, grid, retVars, 'um[m\s]' )
+                             grid_size, grid, retVars, um_ref_name )
 
     allocate( vm_given( grid_size, other_dim_size ) )
 
     vm_given = read_to_grid( nCols, dim_size, other_dim_size, &
-                              grid_size, grid, retVars, 'vm[m\s]' )
+                              grid_size, grid, retVars, vm_ref_name )
 
 
     allocate( um_f_given( grid_size, other_dim_size ) )
 
     um_f_given = read_to_grid( nCols, dim_size, other_dim_size, &
-                               grid_size, grid, retVars, 'um_f[m\s^2]' )
+                               grid_size, grid, retVars, um_f_name )
 
     allocate( vm_f_given( grid_size, other_dim_size ) )
 
     vm_f_given = read_to_grid( nCols, dim_size, other_dim_size, &
-                               grid_size, grid, retVars, 'vm_f[m\s^2]' )
+                               grid_size, grid, retVars, um_f_name )
 
     allocate( wm_given( grid_size, other_dim_size ) )
 
     wm_given = read_to_grid( nCols, dim_size, other_dim_size, &
-                             grid_size, grid, retVars, 'wm[m\s]' )
+                             grid_size, grid, retVars, wm_name )
 
     allocate( ug_given( grid_size, other_dim_size ) )
 
     ug_given = read_to_grid( nCols, dim_size, other_dim_size, &
-                             grid_size, grid, retVars, 'ug[m\s]' )
+                             grid_size, grid, retVars, ug_name )
 
     allocate( vg_given( grid_size, other_dim_size ) )
 
     vg_given = read_to_grid( nCols, dim_size, other_dim_size, &
-                             grid_size, grid, retVars, 'vg[m\s]' )
+                             grid_size, grid, retVars, vg_name )
 
 
     allocate( time_f_given(other_dim_size ) )

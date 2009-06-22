@@ -61,6 +61,11 @@ module input_reader
     !              and time.
     !
     !-----------------------------------------------------------------------------------------------
+
+
+    use input_names, only: &
+      time_name
+
     implicit none
 
     ! Input Variable(s)
@@ -149,14 +154,14 @@ module input_reader
     ! Store the names into the structure and allocate accordingly
     do k =1, nCol
       read_vars(k)%name = names(k)
-      read_vars(k)%dim1_name = "Time[s]"
+      read_vars(k)%dim1_name = time_name
       read_vars(k)%dim2_name = names(1)
 
       allocate( read_vars(k)%values(nRowI, nRowO) )
     end do
 
-    other_dim%name = "Time[s]"
-    other_dim%dim_name = "Time[s]"
+    other_dim%name = time_name
+    other_dim%dim_name = time_name
 
     allocate( other_dim%values(nRowO) )
 
@@ -393,6 +398,10 @@ module input_reader
     integer :: i
     integer :: amt
 
+    logical reversed
+    reversed = .false.
+
+
     ! Begin Code
 
     ! Essentially this code leverages the previously written zlinterp function.
@@ -407,13 +416,21 @@ module input_reader
         temp_var(amt) = var(i)
         temp_grid(amt) = grid(i)
       end if
+      if( i > 1 .and. grid(i)<grid(i-1) ) then
+        reversed = .true.
+      end if
     end do
 
 
     if( amt == 0 ) then
       var_out = default_value
     else if (amt < dim_grid) then
+      if(reversed) then
+        print *, "Made it here"      
+        var_out = zlinterp_fnc(dim_grid, amt, -grid, -temp_grid(1:amt), temp_var(1:amt))
+      else
       var_out = zlinterp_fnc(dim_grid, amt, grid, temp_grid(1:amt), temp_var(1:amt))
+      endif
     else
       var_out = var
     end if

@@ -805,8 +805,7 @@ module clubb_driver
 
     use grid_class, only: zm2zt, zt2zm ! Procedure(s)
 
-    use sounding, only: read_sounding, & ! Procedure(s)
-                        z_name, thetal_name, wm_name, omega_name, temp_name ! Variable(s)
+    use sounding, only: read_sounding ! Procedure(s)
 
     use model_flags, only: &
         l_uv_nudge, & ! Variable(s)
@@ -848,6 +847,13 @@ module clubb_driver
     use damping, only: &
     l_damping, &
     initialize_tau_damp ! Procedure(s0
+
+    use input_names, only: &
+    z_name, &
+    temperature_name, &
+    thetal_name, &
+    wm_name, &
+    omega_name
 
     implicit none
 
@@ -924,7 +930,7 @@ module clubb_driver
     select case( trim( alt_type ) )
     case ( z_name )
 
-      if (theta_type == temp_name ) then
+      if (theta_type == temperature_name ) then
         write(fstderr,*) 'Interpetation of sounding files with z as the independant ', &
         'variable and absolute temperature as the temperature variable has not ', &
         'been implemented. Either specify pressure as the independant variable. or ', &
@@ -993,7 +999,7 @@ module clubb_driver
         exner(k) = (p_in_Pa(k)/p0) ** kappa  ! zt
       end do
 
-      if ( trim( theta_type ) == temp_name ) then
+      if ( trim( theta_type ) == temperature_name ) then
         thlm = thlm / exner
       end if
 
