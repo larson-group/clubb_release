@@ -10,7 +10,7 @@ module latin_hypercube_mod
 
   integer, parameter :: &
     d_variables     = 5,  & ! Number of variables to sample
-    n_micro_call    = 12, & ! Number of calls to microphysics per timestep (normally=2)
+    n_micro_call    = 2, & ! Number of calls to microphysics per timestep (normally=2)
     sequence_length = 1     ! nt_repeat/n_micro_call; number of timesteps before sequence repeats.
 
   ! Number of random samples before sequence of repeats (normally=10)
@@ -152,7 +152,7 @@ module latin_hypercube_mod
       stop
     end if
 
-    do k = 2, nnzp
+    do k = 1, nnzp
       ! Choose which rows of LH sample to feed into closure.
       p_matrix(1:n_micro_call,1:(d_variables+1)) = &
         height_time_matrix(k,n_micro_call*i_rmd+1:n_micro_call*i_rmd+n_micro_call,1:d_variables+1)
@@ -168,9 +168,9 @@ module latin_hypercube_mod
                        X_u(k,:,:), X_nl(k,:,:), l_sample_flag(k) ) ! intent(out)
 
       ! print *, 'latin_hypercube_sampling: got past lh_sampler'
-    end do ! 2..nnzp
+    end do ! 1..nnzp
 
-      ! Perform LH and analytic microphysical calculations
+    ! Perform LH and analytic microphysical calculations
     call micro_calcs( dt, nnzp, n_micro_call, d_variables, X_u, X_nl, & ! intent(in)
                       l_sample_flag, pdf_params, &                  ! intent(in)
                       T_in_K, p_in_Pa, exner, rho, &                ! intent(in)

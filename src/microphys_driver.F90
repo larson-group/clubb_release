@@ -28,6 +28,7 @@ module microphys_driver
     l_cloud_edge_activation,    & ! Activate on cloud edges (Morrison)
     l_fix_pgam,                 & ! Fix pgam (Morrison)
     l_latin_hypercube_sampling, & ! Use Latin Hypercube Sampling (K&K only)
+    l_local_kk,                 & ! Use local formula for K&K
     micro_scheme,               & ! The microphysical scheme in use
     hydromet_list,              & ! Names of the hydrometeor species
     microphys_start_time,       & ! When to start the microphysics [s]
@@ -832,7 +833,7 @@ module microphys_driver
       end if ! l_latin_hypercube_sampling
 
       call KK_microphys & 
-           ( real( dt ), gr%nnzp, .true., thlm, p_in_Pa, exner, rho, pdf_params, &
+           ( real( dt ), gr%nnzp, l_local_kk, .true., thlm, p_in_Pa, exner, rho, pdf_params, &
              wm_zt, wtmp, dzq, rcm, rtm-rcm, hydromet, hydromet_mc, &
              hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 

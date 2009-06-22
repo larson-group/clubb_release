@@ -67,7 +67,7 @@ module KK_microphys_module
   contains
 
   !=============================================================================
-  subroutine KK_microphys( dt, ndim, l_sample, thlm, p_in_Pa, exner, rho, pdf_params, &
+  subroutine KK_microphys( dt, ndim, l_local_kk, l_sample, thlm, p_in_Pa, exner, rho, pdf_params, &
                            wm, w_std_dev, dzq, rcm, rvm, hydromet, hydromet_mc, &
                            hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 
@@ -84,9 +84,6 @@ module KK_microphys_module
     !   Model of Marine Stratocumulus''  Khairoutdinov and Kogan. (2000)
     ! Monthly Weather Review, Volume 128, Issue 1 pp. 229--243
     !-------------------------------------------------------------------
-
-!   use parameters_microphys, only: &
-!       l_latin_hypercube_sampling ! Variable(s)
 
     use grid_class, only: & 
 !       gr,  & ! Variable(s)
@@ -151,7 +148,8 @@ module KK_microphys_module
       ndim ! Points in the vertical     [-]
 
     logical, intent(in) :: &
-      l_sample ! Whether to sample stats (budgets)
+      l_local_kk, & ! Local drizzle for K&K
+      l_sample      ! Whether to sample stats (budgets)
 
     real, dimension(ndim), intent(in) :: &
       thlm,       & ! Temperature                        [K]
@@ -354,7 +352,7 @@ module KK_microphys_module
     do k = 1, ndim, 1
 
       mean_vol_rad(k) &
-      = mean_volume_radius( rrainm(k), Nrm(k), rrp2_rrainm2(k),  & 
+      = mean_volume_radius( l_local_kk, rrainm(k), Nrm(k), rrp2_rrainm2(k),  & 
                             Nrp2_Nrm2(k), corr_rrNr_LL(k) )
 
     enddo
@@ -455,7 +453,7 @@ module KK_microphys_module
       ! equation for rain water mixing ratio, rrainm.
 
       rrainm_cond(k)  & 
-      = cond_evap_rrainm( rrainm(k), Nrm(k), & 
+      = cond_evap_rrainm( l_local_kk, rrainm(k), Nrm(k), & 
                           s1(k), ss1(k), s2(k), ss2(k), & 
                           thl1(k), thl2(k), rc1(k), rc2(k), a(k), & 
                           p_in_Pa(k), exner(k), T_in_K(k), Supsat(k),  & 
@@ -476,7 +474,7 @@ module KK_microphys_module
 !     else
 
       rrainm_auto(k)  & 
-      = autoconv_rrainm( rcm(k), Ncm(k), s1(k), ss1(k),  & 
+      = autoconv_rrainm( l_local_kk, rcm(k), Ncm(k), s1(k), ss1(k),  & 
                          s2(k), ss2(k), a(k), rho(k), & 
                          Ncp2_Ncm2(k), corr_sNc_NL(k) )
 
@@ -484,7 +482,7 @@ module KK_microphys_module
       ! End Vince Larson's addition
 
       rrainm_accr(k)  & 
-      = accretion_rrainm( rcm(k), rrainm(k), s1(k), ss1(k), & 
+      = accretion_rrainm( l_local_kk, rcm(k), rrainm(k), s1(k), ss1(k), & 
                           s2(k), ss2(k), a(k),  & 
                           rrp2_rrainm2(k), corr_srr_NL(k) )
 
@@ -665,7 +663,7 @@ module KK_microphys_module
   !
   !-----------------------------------------------------------------------
 
-  FUNCTION mean_volume_radius( rrainm, Nrm, rrp2_rrainm2,  & 
+  FUNCTION mean_volume_radius( l_local_kk, rrainm, Nrm, rrp2_rrainm2,  & 
                                Nrp2_Nrm2, corr_rrNr_LL )
 
     USE constants, only: & 
@@ -674,12 +672,12 @@ module KK_microphys_module
         rho_lw, & 
         pi
 
-    USE parameters_microphys, only: & 
-        l_local_kk ! Variable(s)
-
     implicit none
 
     ! Input variables.
+    logical, intent(in) :: &
+      l_local_kk ! Use local formula
+
     REAL, INTENT(IN):: rrainm          ! Grid-box average rrainm     [kg kg^-1]
 !        REAL, INTENT(IN):: rrp2         ! Grid-box rr variance     [kg^2 kg^-2]
     REAL, INTENT(IN):: Nrm          ! Grid-box average Nrm     [kg^-1]
@@ -826,7 +824,7 @@ module KK_microphys_module
   !
   !-----------------------------------------------------------------------
 
-  FUNCTION cond_evap_rrainm( rrainm, Nrm, & 
+  FUNCTION cond_evap_rrainm( l_local_kk, rrainm, Nrm, & 
                           s1, ss1, s2, ss2, & 
                           thl1, thl2, rc1, rc2, a, & 
                           p_in_Pa, exner, T_in_K, Supsat,  & 
@@ -845,8 +843,6 @@ module KK_microphys_module
         Rd, & 
         Rv
 
-    USE parameters_microphys, only: & 
-        l_local_kk ! Variable(s)
 
     USE saturation, only:  & 
         sat_mixrat_liq ! Variable(s)
@@ -854,6 +850,9 @@ module KK_microphys_module
     implicit none
 
     ! Input variables.
+    logical, intent(in) :: &
+      l_local_kk ! Use local formula
+
     REAL, INTENT(IN):: rrainm          ! Grid-box average rrainm     [kg kg^-1]
 !        REAL, INTENT(IN):: rrp2         ! Grid-box rr variance     [kg^2 kg^-2]
     REAL, INTENT(IN):: Nrm          ! Grid-box average Nrm     [kg^-1]
@@ -1116,19 +1115,20 @@ module KK_microphys_module
   !
   !-----------------------------------------------------------------------
 
-  FUNCTION autoconv_rrainm( rcm, Ncm, s1, ss1,  & 
+  FUNCTION autoconv_rrainm( l_local_kk, rcm, Ncm, s1, ss1,  & 
                          s2, ss2, a, rho, & 
                          Ncp2_Ncm2, corr_sNc_NL )
 
     USE constants, only: & 
         Nc_tol,  & ! Variable(s)
         rc_tol
-    USE parameters_microphys, only: & 
-        l_local_kk ! Variable(s)
 
     implicit none
 
     ! Input variables.
+    logical, intent(in) :: &
+      l_local_kk ! Use local formula
+
     REAL, INTENT(IN):: rcm         ! Grid-box average rcm     [kg kg^-1]
 !        REAL, INTENT(IN):: rcp2        ! Grid-box rc variance     [kg^2 kg^-2]
     REAL, INTENT(IN):: Ncm         ! Grid-box average Ncm     [kg^-1]
@@ -1292,7 +1292,7 @@ module KK_microphys_module
   !
   !-----------------------------------------------------------------------
 
-  FUNCTION accretion_rrainm( rcm, rrainm, s1, ss1, & 
+  FUNCTION accretion_rrainm( l_local_kk, rcm, rrainm, s1, ss1, & 
                           s2, ss2, a,  & 
                           rrp2_rrainm2, corr_srr_NL )
 
@@ -1300,12 +1300,12 @@ module KK_microphys_module
         rr_tol,  & ! Variable(s)
         rc_tol
 
-    USE parameters_microphys, only: & 
-        l_local_kk ! Variable(s)
-
     implicit none
 
     ! Input variables.
+    logical, intent(in) :: &
+      l_local_kk ! Use local formula
+
     REAL, INTENT(IN):: rcm         ! Grid-box average rcm     [kg kg^-1]
 !        REAL, INTENT(IN):: rcp2        ! Grid-box rc variance     [kg^2 kg^-2]
     REAL, INTENT(IN):: rrainm         ! Grid-box average rrainm     [kg kg^-1]

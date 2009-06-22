@@ -17,7 +17,7 @@ module micro_calcs_mod
   subroutine micro_calcs( dt, nnzp, n_micro_calls, d_variables, X_u, X_nl, & 
                           l_sample_flag, pdf_params, & 
                           thlm, p_in_Pa, exner, rho, &
-                          wm, w_std_dev, altitudes, rcm, rvm, &        
+                          wm, w_std_dev, dzq, rcm, rvm, &        
                           cf, hydromet, &
                           hydromet_mc_est, hydromet_vel_est, &                                   
                           rcm_mc_est, rvm_mc_est, thlm_mc_est, &
@@ -75,9 +75,9 @@ module micro_calcs_mod
       rho           ! Density on thermo. grid  [kg/m^3]
 
     real, dimension(nnzp), intent(in) :: &
-      wm, &        ! Mean w                     [m/s]
-      w_std_dev, & ! Standard deviation of w    [m/s]
-      altitudes    ! Altitudes                  [m]
+      wm, &        ! Mean w                             [m/s]
+      w_std_dev, & ! Standard deviation of w            [m/s]
+      dzq          ! Difference in height per gridbox   [m]
 
     real, dimension(nnzp), intent(in) :: &
       rcm, & ! Liquid water mixing ratio        [kg/kg]
@@ -332,9 +332,10 @@ module micro_calcs_mod
     end do ! level = 2, nnzp
 
     call micro_driver( dt, nnzp, n_micro_calls, d_variables, &
+                       l_sample_flag, &
                        X_nl(:,:,1), X_nl(:,:,3), X_nl(:,:,4), X_nl(:,:,5), X_u, &
                        thlm, p_in_Pa, exner, rho, wm, w_std_dev, &
-                       altitudes, rcm, rvm, pdf_params, hydromet, &
+                       dzq, rcm, rvm, pdf_params, hydromet, &
                        rvm_mc_est, rcm_mc_est, hydromet_mc_est, &
                        hydromet_vel_est, thlm_mc_est, microphys_sub )
 
@@ -529,9 +530,10 @@ module micro_calcs_mod
 
 !-----------------------------------------------------------------------
   subroutine micro_driver( dt, nnzp, n_micro_calls, d_variables, &
+                           l_sample_flag, &
                            rc, w, Nc, rr, X_u, &
                            thlm, p_in_Pa, exner, rho, wm, w_std_dev, &
-                           altitudes, rcm, rvm, pdf_params, hydromet,  &
+                           dzq, rcm, rvm, pdf_params, hydromet,  &
                            rvm_mc_est, rcm_mc_est, hydromet_mc_est, &
                            hydromet_vel_est, thlm_mc_est, microphys_sub )
 ! Description:
@@ -568,6 +570,9 @@ module micro_calcs_mod
       n_micro_calls, & ! Number of calls to microphysics (normally=2)
       d_variables      ! Number of variates (normally=5)
 
+    logical, dimension(nnzp), intent(in) :: &
+      l_sample_flag  ! Whether we are sampling at this level
+
     double precision, dimension(nnzp,n_micro_calls), intent(in) :: &
       rc, & ! n in-cloud values of spec liq water content [kg/kg].
       w,  & ! n in-cloud values of vertical velocity      [m/s]
@@ -586,7 +591,7 @@ module micro_calcs_mod
     real, dimension(nnzp), intent(in) :: &
       wm, &        ! Mean w                     [m/s]
       w_std_dev, & ! Standard deviation of w    [m/s]
-      altitudes    ! Altitudes                  [m]
+      dzq          ! Difference in height per gridbox   [m]
 
     real, dimension(nnzp), intent(in) :: &
       rcm, & ! Liquid water mixing ratio        [kg/kg]
@@ -683,24 +688,52 @@ module micro_calcs_mod
       ! Follow M. E. Johnson (1987), p. 56.
       fraction_1(:) = a(:)*R1(:)/max( a(:)*R1(:)+(1.-a(:))*R2(:), epsilon( a ) )
 !     print*, 'fraction_1= ', fraction_1
-      rcm_tmp  = real( rc(:,sample) ) / 1000. ! Convert from g/kg to kg/kg
+      where ( l_sample_flag .and. rc(:,sample) > 0.0 )
+        rcm_tmp  = real( rc(:,sample) ) / 1000. ! Convert from g/kg to kg/kg
+      else where
+        rcm_tmp = rcm
+      end where
+!     rcm_tmp  = rcm
       thlm_tmp = thlm
-      wm_tmp   = real( w(:,sample) )
+      where ( l_sample_flag ) 
+        wm_tmp = real( w(:,sample) )
+      else where
+        wm_tmp = wm
+      end where
 !     wm_tmp   = wm
 
       do i = 1, hydromet_dim, 1
         if ( i == iirrainm ) then
-          hydromet_tmp(:,i) = real( rr(:,sample) ) / 1000. ! Convert from g/kg to kg/kg
+          where ( l_sample_flag )
+            hydromet_tmp(:,i) = real( rr(:,sample) ) / 1000. ! Convert from g/kg to kg/kg
+          else where
+            hydromet_tmp(:,i) = hydromet(:,i)
+          end where
         else if ( i == iiNcm ) then
-          hydromet_tmp(:,i) = 1.e-6 * real( Nc(:,sample) ) / rho(:) ! Convert from #/cc to #/kg
+          where ( l_sample_flag )
+            hydromet_tmp(:,i) = 1.e6 * real( Nc(:,sample) ) / rho(:) ! Convert from #/cc to #/kg
+          else where
+            hydromet_tmp(:,i) = hydromet(:,i)
+          end where
         else
           hydromet_tmp(:,i) = hydromet(:,i)
         end if
       end do
 
+#ifdef NOTNOT
+      write(*,'(4X,6A12)') "Nc(lh)", "Ncm", "rrain(lh)", &
+                "rrainm", "rc(lh)", "rcm"
+      do k = 1, nnzp, 1
+        write(*,'(i4,6E12.4)') k, Nc(k,sample), 1.e-6*hydromet(i,iiNcm)*rho(k), rr(k,sample), &
+                hydromet(k,iirrainm)*1000., max( rc(k,sample), 0. ), rcm(k)*1000.
+      end do
+      pause
+
+#endif
+
       call microphys_sub &
-           ( dt, nnzp, .false., thlm_tmp, p_in_Pa, exner, rho, pdf_params, &
-             wm_tmp, w_std_dev, altitudes, rcm_tmp, rvm, hydromet_tmp, hydromet_mc_est, &
+           ( dt, nnzp, .true., .false., thlm_tmp, p_in_Pa, exner, rho, pdf_params, &
+             wm_tmp, w_std_dev, dzq, rcm_tmp, rvm, hydromet_tmp, hydromet_mc_est, &
              hydromet_vel_est, rcm_mc_est, rvm_mc_est, thlm_mc_est )
 
       do i = 1, hydromet_dim
@@ -730,13 +763,19 @@ module micro_calcs_mod
       ! Loop to get new sample
     end do ! sample = 1, n_micro_calls
 
+!   write(*,'(6A,6A)') "rr    ", "rrainm"
+!   do k = 1, nnzp, 1
+!     write(*,'(2G20.8)') sum( rr(k,:) ) / dble(n_micro_calls), hydromet(k,iirrainm)
+!   end do
+!   pause
+
 ! Convert sums to averages.
 ! If we have no sample points for a certain plume,
 !    then we estimate the plume liquid water by the
 !    other plume's value.
     l_error = .false.
     do k = 1, nnzp
-      if ( n1(i) == 0 .and. n2(i) == 0 ) then
+      if ( n1(k) == 0 .and. n2(k) == 0 ) then
         l_error = .true.
         write(0,*) 'Error:  no sample points in micro_driver, k =', k
       end if
