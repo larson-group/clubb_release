@@ -25,17 +25,17 @@ For a detailed description of the model code see:
   Method and Model Description'' Golaz, et al. (2002)
   JAS, Vol. 59, pp. 3540--3551.
 
-See also the ./doc/hoc_eqns.pdf file in the svn repository for
+See also the ./doc/hoceqns.pdf file in the svn repository for
 finer details on how the discretization was done.
 
 The single column model executable ("clubb_standalone") runs a particular 
-case (e.g. BOMEX) and outputs statisistical data in either GrADS or 
-netCDF format.
+case (e.g. BOMEX) and outputs statistical data in either GrADS or 
+netCDF format.  GrADS is both a data file format and a plotting program.
+netCDF is another data file format that can be read by the GrADS plotting
+program or by MATLAB.
 
 The tuner code tunes certain parameters in a one-dimensional boundary layer 
 cloud parameterization (``CLUBB''), to best fit large-eddy simulation output.  
-The optimization technique is the downhill-simplex method of Needler and Mead, 
-as implemented in _Numerical Recipes In Fortran 90_ (amoeba.f90).  
 The parameterization is called as a subroutine ( run_clubb() ) with 
 parameter values as input.
 
@@ -44,23 +44,22 @@ or atex) to match; the variables to match (cloud fraction, liquid water, third
 moment of vertical velocity, etc.); the altitude and times over which to match
 these variables; and the parameters to tune (C1, beta, etc.). 
 
-The code is written in ISO Fortran 95 and executed by scripts written for
-GNU Bash. 
+The CLUBB code is written in ISO Fortran 95 and executed by scripts written in
+the GNU Bash scripting language. 
 The mkmf Makefile generating script and some other optional code checking
-scripts are written in Perl.
+scripts are written in the Perl scripting language.
 On the Microsoft Windows platform the CLUBB parameterization could be configured
 and compiled using MSYS or Cygwin with G95, but we have not tested this sort 
 of configuration.
 
-We use the G95 compiler on Intel x64 processors running Redhat Enterprise 5.
-
-G95 <http://www.g95.org/> has been tested on SPARC & x86 Solaris,
+We mainly use the G95 compiler on Intel x64 processors running Redhat 
+Enterprise 5.  G95 <http://www.g95.org/> has been tested on SPARC & x86 Solaris,
 x64 & x86 GNU/Linux.
 
 Sun Fortran 8.x on Solaris SPARC/x86 work, but has not been as rigorously 
 tested as G95.
 
-Using Intel Fortran 9 we have been able to compile on Linux x86/x64 and
+Using Intel Fortran 9, we have been able to compile on Linux x86/x64 and
 Itanium.
 
 HP/Compaq/DEC Fortran on Alpha also appears to work but because future 
@@ -113,9 +112,10 @@ To build, perform the following three steps:
 1. $ cd <CLUBB BASE DIRECTORY>/compile
    (<CLUBB BASE DIRECTORY> is the directory to which you checked out CLUBB.  
     Usually it is called "clubb" or some variant.)
-2. Edit a ./config/<PLATFORM>.bash file and uncomment it the file
-   compile.bash. Depending on your platform you may need to create a new
-   file based on the existing configurations.
+2. Edit a ./config/<PLATFORM>.bash file and uncomment the corresponding 
+   line in the file compile.bash. Depending on your platform you may need 
+   to create a new file based on the existing configurations, and add a new
+   line to compile.bash.
    Note that the variables libdir and bindir determine where
    your executables and libraries will end up, so make sure you set it
    to the correct location (the default is one directory up).
@@ -217,7 +217,8 @@ above.)
 1. cd <CLUBB BASE DIRECTORY>/input/case_setups
 
 2. Edit <CASE NAME>_model.in for each case you wish to run, or just leave 
-   them as is.  Usually you will want to keep these the same.
+   them as is.  This file contains inputs such as model timestep, vertical
+   grid spacing, options for microphysics and radiation schemes, and so forth.  
    See the KK_microphys code for a description of Khairoutdinov and Kogan
    drizzle parameterization.
    See BUGSrad description below for a description of the interactive
@@ -226,13 +227,15 @@ above.)
    considerably.
 
 3. cd <CLUBB BASE DIRECTORY>/input/stats
-   Edit a stats file you would like to use.  A complete list of all computable
+   Edit a stats file you would like to use, if you would like to output to
+   disk a variable that is not currently output.  A complete list of all computable
    statistics is found in all_stats.in.  Note that CLUBB now supports GrADS or
    netCDF, but you can only use the clubb_tuner using GrADS.
 
 4. $ cd <CLUBB BASE DIRECTORY>/input
-   Edit tunable_parameters.in if you wish. The default values have been
-   tested rigorously and will work with all the current cases.
+   Edit tunable_parameters.in if you are an expert and wish to try to optimize 
+   the solution accuracy.  The default values have been tested rigorously and 
+   will work with all the current cases.
 
 5. $ cd <CLUBB BASE DIRECTORY>/run_scripts
    $ ./run_scm.bash <CASE NAME> or
@@ -260,24 +263,19 @@ Output:
 Generated CLUBB GrADS files (in clubb/output):
   bomex_zt.dat, fire_zt.dat, arm_zt.dat, atex_zt.dat, dycoms_zt.dat,
     wangara_zt.dat, <case>_zm, <case>_sfc ...
-  These are the files generated by the hoc subroutine during a model run
-  and compared to the COAMPS LES results.  The last of these generated
-  when tuning will we the optimized results.  Every time the hoc subroutine
-  is called, these are overwritten, so if you want to prevent them
+  These are the output files generated by CLUBB.  Every time CLUBB is run, 
+  these are overwritten, so if you want to prevent them
   from being erased be sure to either copy the .ctl and .dat
   files to another directory or rename them.
   The tuner currently only uses variables in the zt file.
 
-read_grads_hoc.m:  A MATLAB function that reads GrADS data files.
-
-LES GrADS files (only for larsongroup members):
+LES GrADS files (available only to larsongroup members):
   les_data/bomex_coamps_sw.ctl, les_data/wangara_rams.ctl
-  FIRE, BOMEX, ARM & ATEX are our 4 basic ``datasets'', simulated by COAMPS,
-  that we use to match CLUBB data.  Each output file includes an hour of
-  unphysical spinup time.  BOMEX is trade-wind cumulus; FIRE is marine
-  stratocumulus; ARM is continental cumulus; and ATEX is cumulus under
-  stratocumulus.  BOMEX, FIRE, and ATEX are statistically steady-state;
-  ARM varies over the course of a day.
+  FIRE, BOMEX, ARM & ATEX are some basic benchmark ``datasets'', 
+  simulated by COAMPS, that we compare to CLUBB output.  BOMEX is trade-wind 
+  cumulus; FIRE is marine  stratocumulus; ARM is continental cumulus; and 
+  ATEX is cumulus under stratocumulus.  BOMEX, FIRE, and ATEX are statistically 
+  steady-state; ARM varies over the course of a day.
 
 Input:
 -----
@@ -286,7 +284,7 @@ The namelist files:
 
   input/case_setups/bomex_model.in, fire_model.in, arm_model.in & atex_model.in.
   These files specify the standard CLUBB model parameters.  Usually these 
-  do not need to be modified.
+  do not need to be modified unless a new case is being set up.
 
   input/stats/all_stats.in, nobudgets_stats.in, etc.
   These files specify statistics output for each simulation.  See
@@ -387,14 +385,19 @@ directory to run_scripts and execute the run_inputfields.bash script like so:
 - (3.3) Executing a tuning run:
 -----------------------------------------------------------------------
 
+The "tuner" code is used to optimize CLUBB's parameters in order to better match
+output from a 3D large-eddy simulation (LES) model.  The optimization technique 
+is the downhill-simplex method of Needler and Mead, as implemented in 
+_Numerical Recipes In Fortran 90_ (amoeba.f90).  
+
 Do steps 1, 2, & 3 as outlined in the standalone run.
 
 4. Edit input/tuner/error_<CASE NAME>.in or select an existing one. Note that there 
    are two tuning subroutines, specified by tune_type in the error_<CASE NAME>.in 
    /stats/ namelist.  
-   If tune_type = 0, then the amoeba subroutine, a downhill simplex algorithm,
-   will be used.  If runtype is any other value, then amebsa, a variant of 
-   amoeba which uses simulated annealing instead, is used.  A complete 
+   If tune_type = 0, then the amoeba subroutine, which implements the downhill 
+   simplex algorithm, will be used.  If runtype is any other value, then amebsa, 
+   a variant of amoeba which uses simulated annealing instead, is used.  A complete 
    explanation of these minimization algorithms can be found 
    in "Numerical Recipes" by Press et al., .
    Sometimes the variable names in CLUBB's zt and the LES grads files 
@@ -459,6 +462,11 @@ Creates a virtual disk clubb that is 256 megabytes in size.
 -----------------------------------------------------------------------
 - (3.3.2) Executing an ensemble tuning run:
 -----------------------------------------------------------------------
+
+An ensemble tuning run generates a set ("ensemble") of optimal parameter
+values.  This is useful if you want to see the range of parameter values that
+will yield good results.
+
 
 Notes and instructions for the CLUBB ensemble tuner
 ---------------------------------------------------
@@ -606,11 +614,11 @@ Go to the main CLUBB directory and follow these instructions:
 
 8)  Sorting the results:
 
-         The script sortresults.bash will produce output to the screen that
+         The script sortresults.bash will send output to the screen that
          orders the results by value of the cost function, from lowest value
          (= lowest error) to highest value.  The iteration number is listed
          along with the cost function value.  This script also produces a
-         text file called results.txt.  However, this files orders the output
+         text file called results.txt.  However, this file orders the output
          according to iteration number, rather than from best to worst.
 
          Usually, only the top so many values produce good results.  It is
@@ -621,6 +629,9 @@ Go to the main CLUBB directory and follow these instructions:
 -----------------------------------------------------------------------
 - (3.4) Executing a Jacobian analysis:
 -----------------------------------------------------------------------
+
+A Jacobian analysis determines how sensitive the model results are to a change
+in a parameter value.
 
 1. $ cd ../run_scripts
 
