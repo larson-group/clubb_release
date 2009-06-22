@@ -44,7 +44,7 @@ use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
 use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
-use interpolation, only: zlinterp_fnc ! Procedure(s)
+use interpolation, only: plinterp_fnc ! Procedure(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 
@@ -70,10 +70,10 @@ real, intent(out), dimension(gr%nnzp,edsclr_dim) :: &
   edsclrm_forcing ! Passive eddy-scalar forcing [units vary]
 
 ! Horizontal large scale temp. forcing
-thlm_forcing = zlinterp_fnc( gr%nnzp, ndiv, -p_in_Pa, -press, divT ) / exner
+thlm_forcing = plinterp_fnc( gr%nnzp, ndiv, p_in_Pa, press, divT ) / exner
 
 ! Large scale advective moisture tendency
-rtm_forcing = zlinterp_fnc( gr%nnzp, ndiv, -p_in_Pa, -press, divq )
+rtm_forcing = plinterp_fnc( gr%nnzp, ndiv, p_in_Pa, press, divq )
 
 ! Test scalars with thetal and rt if desired
 if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing

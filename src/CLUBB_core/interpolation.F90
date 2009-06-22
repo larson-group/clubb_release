@@ -7,7 +7,7 @@ module interpolation
   private ! Default Scope
 
   public :: lin_int, binary_search, zlinterp_fnc, & 
-    linear_interpolation, factor_interp
+    linear_interpolation, factor_interp, plinterp_fnc
 
   contains
 
@@ -188,6 +188,41 @@ module interpolation
   
   end function binary_search
 
+!-------------------------------------------------------------------------------
+  function plinterp_fnc( dim_out, dim_src, grid_out,  & 
+                       grid_src, var_src )  & 
+  result( var_out )
+! Description:
+!   Do a linear interpolation in the vertical with pressures.  Assumes 
+!   values that are less than lowest source point are zero and above the
+!   highest source point are zero. Also assumes altitude increases linearly.
+!   This function just calls zlinterp_fnc, but negates grid_out and grid_src.
+
+! References:
+!   function LIN_INT from WRF-HOC
+!-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input variables
+    integer, intent(in) :: dim_out, dim_src
+
+    real, dimension(dim_src), intent(in) ::  & 
+      grid_src,  & ! [m]
+      var_src      ! [units vary]
+
+    real, dimension(dim_out), intent(in) :: &
+      grid_out ! [m]
+
+    ! Output variable
+    real, dimension(dim_out) :: &
+      var_out ! [units vary]
+
+    var_out = zlinterp_fnc( dim_out, dim_src, -grid_out, &
+                            -grid_src, var_src )
+
+    return
+end function plinterp_fnc
 !-------------------------------------------------------------------------------
   function zlinterp_fnc( dim_out, dim_src, grid_out,  & 
                        grid_src, var_src )  & 
