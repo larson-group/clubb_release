@@ -425,11 +425,10 @@ module input_reader
     if( amt == 0 ) then
       var_out = default_value
     else if (amt < dim_grid) then
-      if(reversed) then
-        print *, "Made it here"      
+      if( reversed ) then
         var_out = zlinterp_fnc(dim_grid, amt, -grid, -temp_grid(1:amt), temp_var(1:amt))
       else
-      var_out = zlinterp_fnc(dim_grid, amt, grid, temp_grid(1:amt), temp_var(1:amt))
+        var_out = zlinterp_fnc(dim_grid, amt, grid, temp_grid(1:amt), temp_var(1:amt))
       endif
     else
       var_out = var
