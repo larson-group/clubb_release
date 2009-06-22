@@ -805,6 +805,10 @@ _zt = interpolated to the       E.g., wp2_zt is wp2 on the
 - (7.2) Some important variables in CLUBB:
 -------------------------------------------------------------------------
 
+gr      = <grid>    = Main grid class reference for CLUBB      [-]
+gr%nnzp = Number of vertical levels in grid                    [-]
+gr%zm   = Momentum component of grid                           [m]
+gr%zt   = Temperature component of grid                        [m]
 thlm    = <thl>     = Liquid water potential temperature       [K]
 rtm     = <rt>      = Total water mixing ratio                 [kg/kg]
 cf      = Cloud fraction                                       [-]
