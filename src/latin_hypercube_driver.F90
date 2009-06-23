@@ -31,7 +31,8 @@ module latin_hypercube_mod
                rvm_mc_est, thlm_mc_est, microphys_sub )
 
 ! Description:
-!   Do latin hypercube sampling
+!   Call a microphysics scheme or generate a estimate of Kessler autoconversion
+!   using latin hypercube sampling.
 ! References:
 !   None
 !-------------------------------------------------------------------------------
@@ -125,7 +126,7 @@ module latin_hypercube_mod
 
     ! A true/false flag that determines whether the PDF allows us to construct a sample
     logical, dimension(nnzp) :: l_sample_flag 
-
+#ifdef UNRELEASED_CODE
     ! ---- Begin Code ----
 
     if ( .not. allocated( height_time_matrix ) ) then
@@ -188,6 +189,12 @@ module latin_hypercube_mod
     ! print*, 'latin_hypercube_driver: AKm_est=', AKm_est
 
     return
+
+#else
+    stop "This code was not compiled with support for Latin Hypercube sampling"
+
+#endif /* UNRELEASED_CODE */
+
   end subroutine latin_hypercube_driver
 
 end module latin_hypercube_mod
