@@ -724,7 +724,7 @@ module micro_calcs_mod
       write(*,'(4X,6A12)') "Nc(lh)", "Ncm", "rrain(lh)", &
                 "rrainm", "rc(lh)", "rcm"
       do k = 1, nnzp, 1
-        write(*,'(i4,6E12.4)') k, Nc(k,sample), 1.e-6*hydromet(i,iiNcm)*rho(k), rr(k,sample), &
+        write(*,'(i4,6E12.4)') k, Nc(k,sample), 1.e-6*hydromet(k,iiNcm)*rho(k), rr(k,sample), &
                 hydromet(k,iirrainm)*1000., max( rc(k,sample), 0. ), rcm(k)*1000.
       end do
       pause
