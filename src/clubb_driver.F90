@@ -816,13 +816,15 @@ module clubb_driver
 
     use arm_3year, only: arm_3year_init ! Procedure(s)
 
-    use time_dependant_input, only: initialize_t_dependant_input,&
-                                    l_t_dependant
-
     use lba, only: lba_init ! Procedure(s)
 
     use cloud_feedback, only: cloud_feedback_init ! Procedure(s)
 #endif
+
+    use time_dependant_input, only: &
+      initialize_t_dependant_input, & ! Procedure(s)
+      l_t_dependant ! Variable(s)
+
 
     use mpace_a, only: mpace_a_init ! Procedure(s)
 
