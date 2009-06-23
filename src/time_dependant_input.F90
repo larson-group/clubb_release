@@ -258,7 +258,7 @@ module time_dependant_input
     allocate( vm_f_given( grid_size, other_dim_size ) )
 
     vm_f_given = read_to_grid( nCols, dim_size, other_dim_size, &
-                               grid_size, grid, retVars, um_f_name )
+                               grid_size, grid, retVars, vm_f_name )
 
     allocate( wm_given( grid_size, other_dim_size ) )
 
