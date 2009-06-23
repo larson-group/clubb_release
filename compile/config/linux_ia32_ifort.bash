@@ -14,7 +14,7 @@ objdir="$dir/../obj"  # dir for *.o and *.mod files
 libdir="$dir/../lib"  # dir for *.a library files
 srcdir="$dir/../src"  # dir where the source files reside
 
-DEBUG="-g -check bounds -check uninit -vec-report0"
+DEBUG="-g -check bounds -check uninit -no-vec"
 
 # == Warnings ==
 WARNINGS="-warn -warn notruncated_source"
@@ -24,7 +24,7 @@ ARCH="-xW" # This should work on carson/steele (AMD Opteron)
 #ARCH="-xT"# Core2 Duo (overlie)
 
 # == Optimization ==
-OPTIMIZE="-O3"
+OPTIMIZE="-O3 -vec-report0"
 
 # == NetCDF Location ==
 NETCDF="/usr/local/netcdf-intel64"
@@ -66,8 +66,6 @@ RANLIB=ranlib
 # == Shared library processing ==
 SHARED=$FC
 SHAREDFLAGS="-fPIC -shared"
-
-
 
 # Location of 'mkmf' utility
 mkmf=$dir/mkmf
