@@ -120,6 +120,10 @@ wt_array = convert_units.potential_temperature_to_temperature( wpthlp_array, exn
 
 wq_array = wprtp_array ./ (1 + rtm_array);
 
+tdt_lw = radht_LW_array .* 86400 .* exner_array;
+tdt_sw = radht_SW_array .* 86400 .* exner_array;
+tdt_ls = (thlm_f_array - thlm_mc_array) .* 86400 .* exner_array
+qdt_ls = (rtm_f_array - rtm_mc_array) .* 86400
 
 time_out = 1:sizet;
 for i=1:sizet
@@ -137,7 +141,7 @@ full_sfc_z = convert_units.create_time_height_series( sfc_z, sizet );
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Create the new file. By default it is in definition mode.
-ncid = netcdf.create('/home/matlabuser/cloud_feedback_s6_scm_UWM_CLUBB_v1.nc','NC_WRITE');
+ncid = netcdf.create('/home/senkbeir/nc_output/cloud_feedback_s6_scm_UWM_CLUBB_v1.nc','NC_WRITE');
 
 % Define Global Attributes
 
@@ -174,24 +178,24 @@ levsdimid = netcdf.defdim(ncid,'levs', sfc_nz);
 
 tvarid = define_variable( 'time' ,'hours since 2003-07-15 12:00:00', 'h', tdimid, ncid );
 ccvarid = define_variable( 'cldtot', 'total cloud cover', '0 1', tdimid, ncid );
-cldlowvarid = define_variable( 'cldlow', 'low-level cloud amount', '0 1', tdimid, ncid );
-lwpvarid = define_variable( 'tglwp', 'vertically integrated liquid water', 'kg/m^2', tdimid, ncid );
+%cldlowvarid = define_variable( 'cldlow', 'low-level cloud amount', '0 1', tdimid, ncid );
+tglwpvarid = define_variable( 'tglwp', 'vertically integrated liquid water', 'kg/m^2', tdimid, ncid );
 precwvarid = define_variable( 'precw', 'precipitable water', 'kg/m^2', tdimid, ncid );
 tsairvarid = define_variable( 'tsair', 'surface air temperature', 'K', tdimid, ncid );
 psvarid = define_variable( 'ps', 'surface pressure', 'mb', tdimid, ncid );
-preccvarid = define_variable( 'precc', 'convective precipitation', 'mm/day', tdimid, ncid );
-preclvarid = define_variable( 'precl', 'stratiform precipitation', 'mm/day', tdimid, ncid );
+%preccvarid = define_variable( 'precc', 'convective precipitation', 'mm/day', tdimid, ncid );
+%preclvarid = define_variable( 'precl', 'stratiform precipitation', 'mm/day', tdimid, ncid );
 prectvarid = define_variable( 'prect', 'total precipitation', 'mm/day', tdimid, ncid );
 lhflxvarid = define_variable( 'lh', 'surface latent heat flux', 'W/m^2', tdimid, ncid );
 shflxvarid = define_variable( 'sh', 'surface sensible heat flux', 'W/m^2', tdimid, ncid );
-pblhvarid = define_variable( 'pblh', 'PBL height', 'm', tdimid, ncid );
-fsntcvarid = define_variable( 'fsntc', 'TOA SW net downward clear-sky radiation', 'W/m^2', tdimid, ncid );
+%pblhvarid = define_variable( 'pblh', 'PBL height', 'm', tdimid, ncid );
+%fsntcvarid = define_variable( 'fsntc', 'TOA SW net downward clear-sky radiation', 'W/m^2', tdimid, ncid );
 fsntvarid = define_variable( 'fsnt', 'TOA SW net downward total-sky radiation', 'W/m^2', tdimid, ncid );
-flntcvarid = define_variable( 'flntc', 'TOA LW clear-sky upward radiation', 'W/m^2', tdimid, ncid );
+%flntcvarid = define_variable( 'flntc', 'TOA LW clear-sky upward radiation', 'W/m^2', tdimid, ncid );
 flntvarid = define_variable( 'flnt', 'TOA LW total-sky upward radiation', 'W/m^2', tdimid, ncid );
-fsnscvarid = define_variable( 'fsnsc', 'Surface SW net downward clear-sky radiation', 'W/m^2', tdimid, ncid );
+%fsnscvarid = define_variable( 'fsnsc', 'Surface SW net downward clear-sky radiation', 'W/m^2', tdimid, ncid );
 fsnsvarid = define_variable( 'fsns', 'Surface SW net downward total-sky radiation', 'W/m^2', tdimid, ncid );
-flnscvarid = define_variable( 'flnsc', 'Surface LW net upward clear-sky radiation', 'W/m^2', tdimid, ncid );
+%flnscvarid = define_variable( 'flnsc', 'Surface LW net upward clear-sky radiation', 'W/m^2', tdimid, ncid );
 flnsvarid = define_variable( 'flns', 'Surface LW net upward total-sky radiation', 'W/m^2', tdimid, ncid );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -202,26 +206,26 @@ tinkvarid = define_variable( 'T' ,'temperature', 'K', [levfdimid tdimid], ncid )
 qvvarid = define_variable( 'qv' ,'water vapour mixing ratio', 'g/kg', [levfdimid tdimid], ncid );
 qlvarid = define_variable( 'ql' ,'liquid water mixing ratio', 'g/kg', [levfdimid tdimid], ncid );
 cfvarid = define_variable( 'cloud' ,'cloud fraction', '0 1', [levfdimid tdimid], ncid );
-muvarid = define_variable( 'mu' ,'updraft convective mass flux', 'kg m^-2 s^-1', [levfdimid tdimid], ncid );
-mdvarid = define_variable( 'md' ,'downdraft convective mass flux', 'kg m^-2 s^-1', [levfdimid tdimid], ncid );
-tdtturbvarid = define_variable( 'tdt_turb' ,'dT/dt due to PBL-scheme', 'K/day', [levfdimid tdimid], ncid );
-tdtcondvarid = define_variable( 'dt_cond' ,'dT/dt due to large-scale condensation scheme', 'K/day', [levfdimid tdimid], ncid );
-tdtshalvarid = define_variable( 'tdt_shal' ,'dT/dt due to shallow (or total if not separated) convection scheme', 'K/day', [levfdimid tdimid], ncid );
-tdtdeepvarid = define_variable( 'tdt_deep' ,'dT/dt due to deep (or total if not separated) convection scheme', 'K/day', [levfdimid tdimid], ncid );
+%muvarid = define_variable( 'mu' ,'updraft convective mass flux', 'kg m^-2 s^-1', [levfdimid tdimid], ncid );
+%mdvarid = define_variable( 'md' ,'downdraft convective mass flux', 'kg m^-2 s^-1', [levfdimid tdimid], ncid );
+%tdtturbvarid = define_variable( 'tdt_turb' ,'dT/dt due to PBL-scheme', 'K/day', [levfdimid tdimid], ncid );
+%tdtcondvarid = define_variable( 'dt_cond' ,'dT/dt due to large-scale condensation scheme', 'K/day', [levfdimid tdimid], ncid );
+%tdtshalvarid = define_variable( 'tdt_shal' ,'dT/dt due to shallow (or total if not separated) convection scheme', 'K/day', [levfdimid tdimid], ncid );
+%tdtdeepvarid = define_variable( 'tdt_deep' ,'dT/dt due to deep (or total if not separated) convection scheme', 'K/day', [levfdimid tdimid], ncid );
 tdtlwvarid = define_variable( 'tdt_lw' ,'dT/dt due to LW radiation', 'K/day', [levfdimid tdimid], ncid );
 tdtswvarid = define_variable( 'tdt_sw' ,'dT/dt due to SW radiation', 'K/day', [levfdimid tdimid], ncid );
 tdtlsvarid = define_variable( 'tdt_ls' ,'dT/dt due to large-scale forcing', '(g/kg)/day', [levfdimid tdimid], ncid );
-qdtturbvarid = define_variable( 'qdt_turb' ,'dqv/dt due to PBL-scheme', '(g/kg)/day', [levfdimid tdimid], ncid );
-qdtcondvarid = define_variable( 'qdt_cond' ,'dqv/dt due to large-scale condensation scheme', '(g/kg)/day', [levfdimid tdimid], ncid );
-qdtshalvarid = define_variable( 'qdt_shal' ,'dqv/dt due to shallow convection scheme', '(g/kg)/day', [levfdimid tdimid], ncid );
-qdtdeepvarid = define_variable( 'qdt_deep' ,'dqv/dt due to deep convection scheme', '(g/kg)/day', [levfdimid tdimid], ncid );
+%qdtturbvarid = define_variable( 'qdt_turb' ,'dqv/dt due to PBL-scheme', '(g/kg)/day', [levfdimid tdimid], ncid );
+%qdtcondvarid = define_variable( 'qdt_cond' ,'dqv/dt due to large-scale condensation scheme', '(g/kg)/day', [levfdimid tdimid], ncid );
+%qdtshalvarid = define_variable( 'qdt_shal' ,'dqv/dt due to shallow convection scheme', '(g/kg)/day', [levfdimid tdimid], ncid );
+%qdtdeepvarid = define_variable( 'qdt_deep' ,'dqv/dt due to deep convection scheme', '(g/kg)/day', [levfdimid tdimid], ncid );
 qdtlsvarid = define_variable( 'qdt_ls' ,'dqv/dt due to large-scale forcing', '(g/kg)/day', [levfdimid tdimid], ncid );
-wdtturbvarid = define_variable( 'wdt_turb' , 'dql/dt due to PBL-scheme', '(g/kg)/day', [levfdimid tdimid], ncid );
-wdtcondvarid = define_variable( 'wdt_cond' , 'dql/dt due to large-scale condensation scheme (c minus e)', '(g/kg)/day', [levfdimid tdimid], ncid );
-wdtshalvarid = define_variable( 'wdt_shal' , ' dql/dt due to shallow convection scheme', '(g/kg)/day', [levfdimid tdimid], ncid );
-wdtdeepvarid = define_variable( 'wdt_deep' , 'dql/dt due to deep convection scheme', '(g/kg)/day', [levfdimid tdimid], ncid );
-wdtprecvarid = define_variable( 'wdt_prec' , 'dql/dt due to conversion to precipitation', '(g/kg)/day', [levfdimid tdimid], ncid );
-wdtsedivarid = define_variable( 'wdt_sedi' , 'dql/dt due to cloud sedimentation', '(g/kg)/day', [levfdimid tdimid], ncid );
+%wdtturbvarid = define_variable( 'wdt_turb' , 'dql/dt due to PBL-scheme', '(g/kg)/day', [levfdimid tdimid], ncid );
+%wdtcondvarid = define_variable( 'wdt_cond' , 'dql/dt due to large-scale condensation scheme (c minus e)', '(g/kg)/day', [levfdimid tdimid], ncid );
+%wdtshalvarid = define_variable( 'wdt_shal' , ' dql/dt due to shallow convection scheme', '(g/kg)/day', [levfdimid tdimid], ncid );
+%wdtdeepvarid = define_variable( 'wdt_deep' , 'dql/dt due to deep convection scheme', '(g/kg)/day', [levfdimid tdimid], ncid );
+%wdtprecvarid = define_variable( 'wdt_prec' , 'dql/dt due to conversion to precipitation', '(g/kg)/day', [levfdimid tdimid], ncid );
+%wdtsedivarid = define_variable( 'wdt_sedi' , 'dql/dt due to cloud sedimentation', '(g/kg)/day', [levfdimid tdimid], ncid );
 
 netcdf.setFill(ncid,'NC_FILL');
 
@@ -239,24 +243,25 @@ netcdf.endDef(ncid);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 netcdf.putVar( ncid, tvarid, time_out);
 netcdf.putVar( ncid, ccvarid, cc_array(1,:)); % IS THIS RIGHT?
-netcdf.putVar( ncid, lwpvarid, lwp_array);
-%netcdf.putVar( ncid, precwvarid, );
+netcdf.putVar( ncid, tglwpvarid, lwp_array);
+netcdf.putVar( ncid, precwvarid, vwp_array);
 netcdf.putVar( ncid, tsairvarid, T_in_K_array(1,:));
 netcdf.putVar( ncid, psvarid, p_array(1,:));
-%netcdf.putVar( ncid, preccvarid, );
-%netcdf.putVar( ncid, preclvarid, );
 netcdf.putVar( ncid, prectvarid, rain_rate_array);
 netcdf.putVar( ncid, lhflxvarid, lh_array);
 netcdf.putVar( ncid, shflxvarid, sh_array);
+%netcdf.putVar( ncid, fsntvarid, Frad_LW_up_array(1,:));
+netcdf.putVar( ncid, flntvarid, Frad_LW_up_array(1,:));
+%netcdf.putVar( ncid, fsnsvarid, Frad_SW_down_array(1,:));
+netcdf.putVar( ncid, flnsvarid, Frad_LW_up_array(1,:));
+
+%netcdf.putVar( ncid, flnscvarid, );
+%netcdf.putVar( ncid, preccvarid, );
+%netcdf.putVar( ncid, preclvarid, );
+%netcdf.putVar( ncid, fsnscvarid, );
 %netcdf.putVar( ncid, pblhvarid, );
 %netcdf.putVar( ncid, fsntcvarid, );
-%netcdf.putVar( ncid, fsntvarid, );
 %netcdf.putVar( ncid, flntcvarid, );
-%netcdf.putVar( ncid, flntvarid, );
-%netcdf.putVar( ncid, fsnscvarid, );
-netcdf.putVar( ncid, fsnsvarid, Frad_SW_down_array(1,:));
-%netcdf.putVar( ncid, flnscvarid, );
-netcdf.putVar( ncid, flnsvarid, Frad_LW_up_array(1,:));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Hourly-averaged vertical profiles of multi-level fields output
@@ -266,27 +271,27 @@ netcdf.putVar( ncid, tinkvarid, T_in_K_array);
 netcdf.putVar( ncid, qvvarid, rtm_array);
 netcdf.putVar( ncid, qlvarid, rcm_array);
 netcdf.putVar( ncid, cfvarid, cf_array);
+netcdf.putVar( ncid, tdtlwvarid, tdt_lw);
+netcdf.putVar( ncid, tdtswvarid, tdt_sw);
+netcdf.putVar( ncid, tdtlsvarid, tdt_ls);
+netcdf.putVar( ncid, qdtlsvarid, qdt_ls);
+
 %netcdf.putVar( ncid, muvarid, );
 %netcdf.putVar( ncid, mdvarid, );
 %netcdf.putVar( ncid, tdtturbvarid, );
 %netcdf.putVar( ncid, tdtcondvarid, );
 %netcdf.putVar( ncid, tdtshalvarid, );
 %netcdf.putVar( ncid, tdtdeepvarid, );
-%netcdf.putVar( ncid, tdtlwvarid, );
-%netcdf.putVar( ncid, tdtswvarid, );
-%netcdf.putVar( ncid, tdtlsvarid, );
 %netcdf.putVar( ncid, qdtturbvarid, );
 %netcdf.putVar( ncid, qdtcondvarid, );
 %netcdf.putVar( ncid, qdtshalvarid, );
 %netcdf.putVar( ncid, qdtdeepvarid, );
-%netcdf.putVar( ncid, qdtlsvarid, );
 %netcdf.putVar( ncid, wdtturbvarid, );
 %netcdf.putVar( ncid, wdtcondvarid, );
 %netcdf.putVar( ncid, wdtshalvarid, );
 %netcdf.putVar( ncid, wdtdeepvarid, );
 %netcdf.putVar( ncid, wdtprecvarid, );
 %netcdf.putVar( ncid, wdtsedivarid, );
-%netcdf.putVar( ncid, sedimentation, );
 
 % Close file
 netcdf.close(ncid);
