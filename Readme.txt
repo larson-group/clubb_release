@@ -33,9 +33,13 @@ case (e.g. BOMEX) and outputs statistical data in either GrADS or
 netCDF format.  GrADS is both a data file format and a plotting program.
 netCDF is another data file format that can be read by the GrADS plotting
 program or by MATLAB.
+See <http://www.unidata.ucar.edu/software/netcdf/> and 
+<http://www.iges.org/grads/> for a description of these data formats.
+
 
 The tuner code tunes certain parameters in a one-dimensional boundary layer 
 cloud parameterization (``CLUBB''), to best fit large-eddy simulation output.  
+It is not needed to run the single-column or for using CLUBB in a host model.
 The parameterization is called as a subroutine ( run_clubb() ) with 
 parameter values as input.
 
@@ -94,12 +98,15 @@ using SSE or SSE2 is usually the best way to do this.
 
 Requirements:
 A. A Fortran 95 compiler with a complete implementation of the standard.
+   The compile/config directory contains several scripts for 
+   configurations we have tested.
 B. GNU make (we use v3.81).
 C. Perl 5 to run mkmf
 D. LAPACK & BLAS.  These provide the tri and band diagonal matrix solver
    subroutines needed by CLUBB.  Many vendors provide optimized versions of
    these routines, which may be much faster than the reference BLAS.
 E. GNU bash, or an equivalent POSIX compliant shell to use the run scripts.
+   See <http://http://www.gnu.org/software/bash/>.
 
 Optionally:
 F. GrADS for viewing the GrADS output data.
@@ -115,7 +122,10 @@ To build, perform the following three steps:
 2. Edit a ./config/<PLATFORM>.bash file and uncomment the corresponding 
    line in the file compile.bash. Depending on your platform you may need 
    to create a new file based on the existing configurations, and add a new
-   line to compile.bash.
+   line to compile.bash.  Add or uncomment the "source" statement
+   for your <PLATFORM>.bash in the file ./compile/compile.bash, and comment
+   out the other "source" statements with a # character.
+
    Note that the variables libdir and bindir determine where
    your executables and libraries will end up, so make sure you set it
    to the correct location (the default is one directory up).
@@ -338,11 +348,11 @@ perform a new simulation that starts some time in the middle of the original
 simulation, rather than wasting time by starting again from the initial time.  
 The new simulation is then called a "restart" simulation.
 
-1.  Perform the original simulation of case <CASE NAME> and save the GrADS output 
-    files in the <CLUBB BASE DIRECTORY>/output directory.  These data will be 
-    accessed to restart the simulation.
+1.  Perform the original simulation of case <CASE NAME> and save the GrADS 
+    or netCDF output files in the <CLUBB BASE DIRECTORY>/output directory. 
+    These data files will be accessed to restart the simulation.
 
-2.  Create a subdirectory in the CLUBB BASE DIRECTORY called "restart" and 
+2.  Create a subdirectory in the <CLUBB BASE DIRECTORY> called "restart" and 
     move the GrADS output files to that subdirectory.
 
 3.  Edit the following three variables at the end of the flag section of 
@@ -400,9 +410,10 @@ Do steps 1, 2, & 3 as outlined in the standalone run.
    a variant of amoeba which uses simulated annealing instead, is used.  A complete 
    explanation of these minimization algorithms can be found 
    in "Numerical Recipes" by Press et al., .
-   Sometimes the variable names in CLUBB's zt and the LES grads files 
-   will differ.  Currently, it is only possible to tune for variables that 
-   occur in zt grid.
+   Sometimes the variable names in the CLUBB output and the LES output
+   will differ.  Note that when tuning against netCDF data, the file will
+   need to have a .nc extension for the clubb_tuner to correctly identify
+   the file as being in netCDF format.
 
 5. Edit run_tuner.bash to use your namelists
 
@@ -659,55 +670,42 @@ passive scalar in the atmosphere (e.g. carbon dioxide)
 
 By default CLUBB is configured to run without any passive scalars.  To use 
 this option, you must modify the input/case_setups/<CASE NAME>_model.in
-so that sclr_dim is equal to the number of passive scalars and also set 
-ii<SCALAR NAME> to point the index in the array containing the passive scalar.
-The intial sounding can be done at run time in this file, but large scale
-forcing and surface fluxes for these passive scalars must be configured
-in the clubb_driver code and handled at compile time.
+so that sclr_dim is equal to the number of passive scalars.  You will also 
+need to set variable ii<SCALAR NAME> to be the index of the array which 
+contains the passive scalar.  For example, iisclr_CO2 is setup in the COBRA
+case to be the index containing carbon dioxide.  New passive scalars with
+different fluxes and forcings would need to be added to the code.
+The initial sounding can be done at run time in <CASE NAME>_sclr_sounding
+file, but large scale forcing and surface fluxes for these passive scalars 
+must be configured in the clubb_driver code and handled at compile time.
 To output the scalar fields from a CLUBB simulation, be sure to include 
 sclram, sclrap2, etc. your stats file. See input/stats/all_stats.in for a
 complete list (commented out by default).
 
-Currently the code contains eddy-diffusivity scalar code (edsclram, edsclrbm)
-and the more sophisticated high-order scalars (sclram, sclrbm).  Both use two
+Currently the code contains eddy-diffusivity scalar code (edsclr1m, edsclr2m)
+and the more sophisticated high-order scalars (sclr1m, sclr2m).  Both use two
 dimensional arrays, but the code and results for each is separated.
 The high-order scalars require a tolerance, called `sclrtol' to set in the
 namelist file. Generally this value should be larger than machine epsilon.
 
 Initially, the scalar arrays were configured to contain two vertical columns
-containing copies of thl and rt.
+containing copies of thl and rt for testing purposes.
 The code is sufficiently general that an arbitrary number of scalars can be
 added with a small number of modifications.
-The following files must be adjusted to customize the scalars:
-
-stats_variables.F:  Currently this is only configured to generate data for 
-2 elements for each of the sclr arrays.  Using the sclra and sclrb variables
-as a template, it should be possible to add additional variables (sclrc, etc.)
-without any issues.
 
 The Namelists:
 
-Within the existing <CASE NAME>_model.in for each run, a sounding for the scalar variable
-must be added. 
-
-Setting sclrm(:,1) equal to thlm, and sclrm(:,2) equal to rtm in 
-the BOMEX case can be done like so:
-
-&scalar_sounding
-sclr(:,1) = 298.7, 298.7, 299.39375, 302.4, 308.4, 313.675
-sclr(:,2) = 0.01729, 0.01657, 0.01549, 0.01082, 0.00422, 0.00241
-/
-
-This can be appended to the end of the file (in this case model/bomex_model.in),
-and it should follow the number of z-levels et cetera found in the &sounding 
-namelist.
+Within the existing <CASE NAME>_sclr_sounding.in for each run, a sounding for the 
+scalar variable must be added.  See input/case_setups/cobra_sclr_sounding.in
+for an example.
 
 Finally, if you wish to see the results of your calculations, you will need to
-append their names to the vars_zt and var_zm portion of the stats namelist.
-The variables follow the convention of the a=1, and b=2, appended after the
-sclr portion of their name.  For example. the first scalar mean is 'sclram',
-and the second is 'sclrbm'.  These and their forcings are all that occurs in
-the zt file, the rest all occur in the zm file.
+append the names of variabless to the vars_zt and var_zm portion of the 
+&stats namelist.  The file scalars_stats.in has this done already.
+The variables follow the convention of having the index number appended after the
+sclr portion of their name.  For example, the first scalar mean is 'sclr1m',
+and the second is 'sclr2m'.  These and their forcings are all that occurs in
+the zt file, the rest (e.g. variance, flux) all occur in the zm file.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -738,7 +736,7 @@ the zt file, the rest all occur in the zm file.
   The thlm_forcing variable will also have radht added to it.  This is an
   explicit contribution to the thlm calculation.
 
-  Note that for most cases SW and LW components are not calculated 
+  Note that for most simulations SW and LW components are not calculated 
   without using BUGSrad.
 
 ------------------------------------------------------------------------
