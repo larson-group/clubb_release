@@ -67,7 +67,8 @@ module KK_microphys_module
   contains
 
   !=============================================================================
-  subroutine KK_microphys( dt, ndim, l_local_kk, l_sample, thlm, p_in_Pa, exner, rho, pdf_params, &
+  subroutine KK_microphys( dt, ndim, l_sample, l_latin_hypercube, thlm, &
+                           p_in_Pa, exner, rho, pdf_params, &
                            wm, w_std_dev, dzq, rcm, rvm, hydromet, hydromet_mc, &
                            hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 
@@ -148,8 +149,8 @@ module KK_microphys_module
       ndim ! Points in the vertical     [-]
 
     logical, intent(in) :: &
-      l_local_kk, & ! Local drizzle for K&K
-      l_sample      ! Whether to sample stats (budgets)
+      l_sample, &       ! Whether to sample stats (budgets)
+      l_latin_hypercube ! Whether we're using latin hypercube sampling
 
     real, dimension(ndim), intent(in) :: &
       thlm,       & ! Temperature                        [K]
@@ -239,6 +240,8 @@ module KK_microphys_module
       rrainm_src_adj, & ! Total adjustment to rrainm source terms  [(kg/kg)/s]
       Nrm_src_adj       ! Total adjustment to Nrm source terms     [{num/kg)/s]
 
+    logical :: l_local_kk ! Local drizzle for K&K
+
     ! Array indices
     integer :: k
 
@@ -323,6 +326,13 @@ module KK_microphys_module
       corr_sNr_NL  = corr_sNr_NL_below
       corr_sNc_NL  = corr_sNc_NL_below
     end where
+
+    ! Determine whether the use local formulas
+    if ( l_latin_hypercube ) then
+      l_local_kk = .true.
+    else
+      l_local_kk = .false.
+    end if
 
     ! Assign pointers
     thl1 => pdf_params%thl1(:)
