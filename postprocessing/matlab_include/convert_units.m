@@ -53,6 +53,9 @@ classdef convert_units
           end
         end
 	    
+        function exner = pressure_in_hPa_to_exner( p_in_hPa )
+		exner = (p_in_hPa/1000).^(convert_units.R/convert_units.Cp);
+	end
 
         function specific_humidity = total_water_mixing_ratio_to_specific_humidity ...
                 ( total_water_mixing_ratio )
@@ -96,7 +99,22 @@ classdef convert_units
             vertical_movement_in_Pas = -(wm .* convert_units.g0 .* rho);
             
         end
-        
+
+	function vertical_movement_in_ms = w_wind_in_Pas_to_ms(wm, rho)
+        % W_WIND_IN_MS_TO_PAS Converts w_wind from m/s to Pa/s
+        %
+        %   Input(s)
+        %       wm  w           [Pa/s]      
+        %       rho Density     [kg/m^3]
+        %
+        %   Output(s)
+        %       vertical_movement_in_Pas [Pa/s]
+        %
+            
+            vertical_movement_in_ms = -wm ./ (convert_units.g0 .* rho);
+            
+        end
+
         function temperature = potential_temperature_to_temperature( potential_temperature, exner )
         % POTENTIAL_TEMPERATURE_TO_TEMPERATURE Converts potential
         % temperature to temperature using the exner function.
@@ -110,6 +128,39 @@ classdef convert_units
         %
             
             temperature = potential_temperature .* exner;
+            
+        end
+	
+	function potential_temperature = temperature_to_potential_temperature( temperature, exner )
+        % POTENTIAL_TEMPERATURE_TO_TEMPERATURE Converts potential
+        % temperature to temperature using the exner function.
+        %
+        %   Input(s)
+        %       temperature	Temperature 		   [K]
+        %       exner   Exner Function                     [-]
+        %
+        %   Output(s)
+        %       potential_temperature Potential Temperature [K]
+        %
+            
+            potential_temperature = temperature ./ exner;
+            
+        end
+
+	function rho = pressure_to_rho( p_in_Pa, thvm, exner )
+        % PRESSURE_TO_RHO Converts pressure to rho using
+        % the exner function and potential temperature.
+        %
+        %   Input(s)
+        %       p_in_Pa	Pressure 		   	   [Pa]
+	%	thvm 	Potential Temperature		   [K]
+        %       exner   Exner Function                     [-]
+        %
+        %   Output(s)
+        %       rho 	Density				 [Kg/m^3]
+        %
+            
+            rho = p_in_Pa ./ (convert_units.R .* thvm .* exner);
             
         end
 
@@ -144,4 +195,3 @@ classdef convert_units
     end
     
 end
-
