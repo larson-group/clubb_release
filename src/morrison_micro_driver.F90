@@ -265,10 +265,10 @@ module morrison_micro_driver_mod
 
       ! Snow and Rain rates at the bottom of the domain, in mm/day
       call stat_update_var_pt( imorr_rain_rate, 1, &
-        dt * Morr_rain_rate / real( sec_per_day ), sfc )
+        ( Morr_rain_rate / dt ) * real( sec_per_day ), sfc )
 
       call stat_update_var_pt( imorr_snow_rate, 1, &
-        dt * Morr_snow_rate / real(  sec_per_day ), sfc )
+        ( Morr_snow_rate / dt ) * real(  sec_per_day ), sfc )
 
     end if ! l_stats_samp
 
