@@ -40,6 +40,7 @@ module latin_hypercube_mod
     
     use parameters_model, only: hydromet_dim ! Variable
 
+#ifdef UNRELEASED_CODE
     use permute_height_time_mod, only: & 
       permute_height_time ! Procedure
 
@@ -48,6 +49,7 @@ module latin_hypercube_mod
 
     use estimate_lh_micro_mod, only: & 
       estimate_lh_micro ! Procedure
+#endif
 
     use variables_prognostic_module, only: &
       pdf_parameter  ! Type
@@ -71,7 +73,7 @@ module latin_hypercube_mod
     intrinsic :: allocated, mod
 
     ! Interface block
-#include "Latin_hypercube/microphys_interface.inc"
+#include "microphys_interface.inc"
 
     ! Input Variables
     real, intent(in) :: &

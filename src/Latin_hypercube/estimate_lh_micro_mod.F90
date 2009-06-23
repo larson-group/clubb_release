@@ -47,7 +47,7 @@ module estimate_lh_micro_mod
     implicit none
 
     ! External
-#include "microphys_interface.inc"
+#include "../microphys_interface.inc"
 
     ! Input Variables
 
@@ -558,7 +558,7 @@ module estimate_lh_micro_mod
     implicit none
 
     ! External
-#include "microphys_interface.inc"
+#include "../microphys_interface.inc"
 
     intrinsic :: epsilon
 
