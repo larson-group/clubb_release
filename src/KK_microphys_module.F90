@@ -245,6 +245,13 @@ module KK_microphys_module
     ! Array indices
     integer :: k
 
+    ! --- Begin Code ---
+    ! Some dummy assignments to make compiler warnings go away...
+    if ( .false. ) then
+      T_in_K = wm
+      T_in_K = w_std_dev
+    end if
+
     ! IMPORTANT NOTES
     !
     ! The equations for mean volume radius (and therefore sedimentation
