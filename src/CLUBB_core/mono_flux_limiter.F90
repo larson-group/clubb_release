@@ -1146,7 +1146,8 @@ module mono_flux_limiter
       mean_w_down_2nd, & ! Mean w (<= w|_ref) from 2nd normal distribution [m/s]
       mean_w_up_1st, &   ! Mean w (>= w|_ref) from 1st normal distribution [m/s]
       mean_w_up_2nd, &   ! Mean w (>= w|_ref) from 2nd normal distribution [m/s]
-      exp_cache          ! Cache of exponential calculations to reduce runtime
+      exp_cache, & ! Cache of exponential calculations to reduce runtime
+      erf_cache    ! Cache of error function calculations to reduce runtime
 
     integer :: k  ! Vertical loop index
 
@@ -1193,18 +1194,28 @@ module mono_flux_limiter
           ! ~~EIHoppe//20090618
           exp_cache = exp( -(w_ref-w1(k))**2 / (2.0*sigma_w1**2) ) 
 
+          ! Added cache of the error function calculations.
+          ! This should save one calculation of the erf(...) part
+          ! of the formula.
+          ! ~~EIHoppe//20090623
+          erf_cache = erf( (w_ref-w1(k)) / (sqrt_2*sigma_w1) )
+
           ! The 1st normal has values on both sides of w_ref.
           mean_w_down_1st =  &
              - (sigma_w1/sqrt_2pi)  &
-               * exp_cache  &
-             + w1(k) * 0.5*( 1.0 + erf( (w_ref-w1(k)) / (sqrt_2*sigma_w1) ) )
-!               * exp( -(w_ref-w1(k))**2 / (2.0*sigma_w1**2) )  &
+!             * exp( -(w_ref-w1(k))**2 / (2.0*sigma_w1**2) )  &
+             * exp_cache  &
+!             + w1(k) * 0.5*( 1.0 + erf( (w_ref-w1(k)) / (sqrt_2*sigma_w1) ) )
+             + w1(k) * 0.5*( 1.0 + erf_cache)
 
           mean_w_up_1st =  &
              + (sigma_w1/sqrt_2pi)  &
-               * exp_cache  &
-             + w1(k) * 0.5*( 1.0 - erf( (w_ref-w1(k)) / (sqrt_2*sigma_w1) ) )
-!               * exp( -(w_ref-w1(k))**2 / (2.0*sigma_w1**2) )  &
+!             * exp( -(w_ref-w1(k))**2 / (2.0*sigma_w1**2) )  &
+             * exp_cache  &
+!             + w1(k) * 0.5*( 1.0 - erf( (w_ref-w1(k)) / (sqrt_2*sigma_w1) ) )
+             + w1(k) * 0.5*( 1.0 - erf_cache)
+
+          ! /EIHoppe changes
 
        endif
 
@@ -1230,18 +1241,28 @@ module mono_flux_limiter
           ! ~~EIHoppe//20090618
           exp_cache = exp( -(w_ref-w2(k))**2 / (2.0*sigma_w2**2) ) 
 
+          ! Added cache of the error function calculations.
+          ! This should save one calculation of the erf(...) part
+          ! of the formula.
+          ! ~~EIHoppe//20090623
+          erf_cache = erf( (w_ref-w2(k)) / (sqrt_2*sigma_w2) )
+
           ! The 2nd normal has values on both sides of w_ref.
           mean_w_down_2nd =  &
              - (sigma_w2/sqrt_2pi)  &
-               * exp_cache  &
-             + w2(k) * 0.5*( 1.0 + erf( (w_ref-w2(k)) / (sqrt_2*sigma_w2) ) )
-!               * exp( -(w_ref-w2(k))**2 / (2.0*sigma_w2**2) )  &
+!             * exp( -(w_ref-w2(k))**2 / (2.0*sigma_w2**2) )  &
+             * exp_cache  &
+!             + w2(k) * 0.5*( 1.0 + erf( (w_ref-w2(k)) / (sqrt_2*sigma_w2) ) )
+             + w2(k) * 0.5*( 1.0 + erf_cache)
 
           mean_w_up_2nd =  &
              + (sigma_w2/sqrt_2pi)  &
-               * exp_cache  &
-             + w2(k) * 0.5*( 1.0 - erf( (w_ref-w2(k)) / (sqrt_2*sigma_w2) ) )
-!               * exp( -(w_ref-w2(k))**2 / (2.0*sigma_w2**2) )  &
+!             * exp( -(w_ref-w2(k))**2 / (2.0*sigma_w2**2) )  &
+             * exp_cache  &
+!             + w2(k) * 0.5*( 1.0 - erf( (w_ref-w2(k)) / (sqrt_2*sigma_w2) ) )
+             + w2(k) * 0.5*( 1.0 - erf_cache)
+
+          ! /EIHoppe changes
 
        endif
 
