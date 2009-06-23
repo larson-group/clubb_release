@@ -757,14 +757,16 @@ module sounding
 
         case default ! theta_name
           ! Initial profile is non-saturated thlm or any type of theta.
-          theta = theta - Lv/(Cp*exner) * rcm
+          theta(1:nlevels) = theta(1:nlevels) &
+                           - Lv/(Cp*exner(1:nlevels)) * rcm(1:nlevels)
 
         end select
 
         ! Now, compute initial thetav
-
-        thvm = theta + ep1 * T0 * rtm  & 
-                    + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
+        do k = 1, nlevels, 1
+          thvm(k) = theta(k) + ep1 * T0 * rtm(k)  & 
+               + ( Lv/(Cp*exner(k)) - ep2 * T0 ) * rcm(k)
+        end do
 
         call inverse_hydrostatic ( thvm, zm_init, exner, nlevels, &
                                      z )
