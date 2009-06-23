@@ -1,9 +1,9 @@
 !----------------------------------------------------------------------
-! $Id: arm_0003.F90 3363 2009-04-02 21:42:22Z dschanen@uwm.edu $
+! $Id: twp_ice.F90 3363 2009-04-02 21:42:22Z dschanen@uwm.edu $
 module twp_ice
 
 !       Description:
-!       Contains subroutines for the March 2000 IOP ARM case.
+!       Contains subroutines for the Jan. 2006 TWP_ICE case.
 !----------------------------------------------------------------------
 
 implicit none
@@ -174,8 +174,7 @@ intrinsic :: max, sqrt
 
 ! Constants
 real, parameter :: & 
-  C_m_20  = 0.001229,  & ! Drag coefficient, defined by RICO 3D specification
-  C_h_20  = 0.001094,  & ! Drag coefficient, defined by RICO 3D specification
+   C_h_20  = 0.001094,  & ! Drag coefficient, defined by RICO 3D specification
   C_q_20  = 0.001133,  & ! Drag coefficient, defined by RICO 3D specification
   z0      = 0.00015      ! Roughness length, defined by ATEX specification
 
@@ -206,7 +205,6 @@ real, intent(out), dimension(edsclr_dim) ::  &
 ! Internal variables
 real :: & 
   ubar, & ! This is root (u^2 + v^2), per ATEX and RICO spec.
-  Cm,   & ! This is C_m_20 scaled to the height of the lowest model level.
   Ch,   & ! This is C_h_20 scaled to the height of the lowest model level.
   Cq      ! This is C_q_20 scaled to the height of the lowest model level.
 !----------------------------------------------------------------------
