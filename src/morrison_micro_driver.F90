@@ -115,10 +115,10 @@ module morrison_micro_driver_mod
       rcm, & ! Liquid water mixing ratio        [kg/kg]
       rvm    ! Vapor water mixing ratio         [kg/kg]
 
-    real, dimension(ndim,hydromet_dim), intent(in) :: &
+    real, dimension(ndim,hydromet_dim), target, intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
-    real, dimension(ndim,hydromet_dim), intent(inout) :: &
+    real, dimension(ndim,hydromet_dim), target, intent(inout) :: &
       hydromet_mc,   & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel     ! Hydrometeor sedimentation velocity [m/s]
 
@@ -144,15 +144,26 @@ module morrison_micro_driver_mod
       hydromet_sten, & ! Hydrometeor sedimentation tendency [(units vary)/s]
       hydromet_tmp     ! Temporary variable
 
+    real, pointer, dimension(:,:) :: &
+      dummy
+
     real :: Morr_snow_rate, Morr_rain_rate
 
     integer :: i
 
     ! ---- Begin Code ----
+    ! Some dummy assignments to make compiler warnings go away...
+    if ( .false. ) then
+      dummy => hydromet
+      dummy => hydromet_mc
+      dummy => hydromet_vel
+      cf = dummy(:,1)
+    end if
 
     rcm_tmp = rcm
     rvm_tmp = rvm
     T_in_K_mc(:) = 0.0
+
 
 
     ! Determine temperature
