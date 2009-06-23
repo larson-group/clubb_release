@@ -1,10 +1,10 @@
 !$Id$
 
-module micro_calcs_mod
+module estimate_lh_micro_mod
 
   implicit none
 
-  public :: micro_calcs
+  public :: estimate_lh_micro
 
   private :: autoconv_driver, ql_estimate, micro_driver
 
@@ -14,15 +14,16 @@ module micro_calcs_mod
 
 !------------------------------------------------------------------------
 
-  subroutine micro_calcs( dt, nnzp, n_micro_calls, d_variables, X_u, X_nl, & 
-                          l_sample_flag, pdf_params, & 
-                          thlm, p_in_Pa, exner, rho, &
-                          wm, w_std_dev, dzq, rcm, rvm, &        
-                          cf, hydromet, &
-                          hydromet_mc_est, hydromet_vel_est, &                                   
-                          rcm_mc_est, rvm_mc_est, thlm_mc_est, &
-                          AKm_est, AKm, AKstd, AKstd_cld, & 
-                          AKm_rcm, AKm_rcc, rcm_est, microphys_sub )
+  subroutine estimate_lh_micro &
+             ( dt, nnzp, n_micro_calls, d_variables, X_u, X_nl, & 
+               l_sample_flag, pdf_params, & 
+               thlm, p_in_Pa, exner, rho, &
+               wm, w_std_dev, dzq, rcm, rvm, &        
+               cf, hydromet, &
+               hydromet_mc_est, hydromet_vel_est, &
+               rcm_mc_est, rvm_mc_est, thlm_mc_est, &
+               AKm_est, AKm, AKstd, AKstd_cld, & 
+               AKm_rcm, AKm_rcc, rcm_est, microphys_sub )
 ! Description:
 !   This subroutine computes microphysical grid box averages,
 !   given a Latin Hypercube sample.
@@ -340,7 +341,7 @@ module micro_calcs_mod
                        hydromet_vel_est, thlm_mc_est, microphys_sub )
 
     return
-  end subroutine micro_calcs
+  end subroutine estimate_lh_micro
 !-----------------------------------------------------------------------
   subroutine autoconv_driver( n_micro_calls, d_variables, a, R1, R2, ql, &
                              !w, Nc, rr, &
@@ -983,4 +984,4 @@ module micro_calcs_mod
   end subroutine ql_estimate
 !---------------------------------------------------------------
 
-end module micro_calcs_mod
+end module estimate_lh_micro_mod

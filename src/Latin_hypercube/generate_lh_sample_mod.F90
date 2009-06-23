@@ -1,9 +1,9 @@
 !$Id$
-module lh_sampler_mod
+module generate_lh_sample_mod
 
   implicit none
 
-  public :: lh_sampler
+  public :: generate_lh_sample
 
   private :: sample_points, latin_hyper_sample, gaus_mixt_points, & 
              truncate_gaus_mixt, ltqnorm, gaus_condt, & 
@@ -15,10 +15,11 @@ module lh_sampler_mod
   contains
 
 !-------------------------------------------------------------------------------
-  subroutine lh_sampler( n_micro_calls, nt_repeat, d_variables, p_matrix, & 
-                         cf, pdf_params, level, & 
-                         rrainm, & 
-                         X_u, X_nl, l_sample_flag)
+  subroutine generate_lh_sample &
+             ( n_micro_calls, nt_repeat, d_variables, p_matrix, & 
+               cf, pdf_params, level, & 
+               rrainm, & 
+               X_u, X_nl, l_sample_flag )
 ! Description:
 !   This subroutine generates a Latin Hypercube sample.
 
@@ -347,7 +348,7 @@ module lh_sampler_mod
     end if
 
     return
-  end subroutine lh_sampler
+  end subroutine generate_lh_sample
 
 !----------------------------------------------------------------------
 ! Description:
@@ -1269,5 +1270,5 @@ module lh_sampler_mod
   end subroutine st_2_rtthl
 !-------------------------------------------------------------------------------
 
-end module lh_sampler_mod
+end module generate_lh_sample_mod
 
