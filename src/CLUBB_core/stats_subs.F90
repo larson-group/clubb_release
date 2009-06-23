@@ -977,6 +977,7 @@ module stats_subs
         icc, & 
         izb, & 
         ilwp, &
+        ivwp, &
         iswp, &
         iiwp, &
         ithlm_vert_avg, &
@@ -1338,6 +1339,18 @@ module stats_subs
         enddo
 
         call stat_update_var_pt( ilwp, 1, xtmp, sfc )
+
+      endif
+
+      ! Vapor Water Path (Preciptable Water)
+      if ( ivwp > 0 ) then
+
+        xtmp = 0.
+        do i = gr%nnzp-1, 1, -1
+          xtmp = xtmp + rho(i+1) * (rtm(i+1) - rcm(i+1)) / gr%dzt(i+1)
+        enddo
+
+        call stat_update_var_pt( ivwp, 1, xtmp, sfc )
 
       endif
 

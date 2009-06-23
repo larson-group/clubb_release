@@ -36,6 +36,7 @@ use stats_variables, only: &
     ish, & 
     icc, & 
     ilwp, &
+    ivwp, &
     iiwp, &
     iswp, & 
     izb, & 
@@ -94,8 +95,9 @@ ilh             = 0
 ish             = 0
 icc             = 0
 ilwp            = 0
-iiwp            = 0
-iswp            = 0
+ivwp            = 0   ! nielsenb
+iiwp            = 0   ! nielsenb
+iswp            = 0   ! nielsenb
 izb             = 0
 izi             = 0
 irain           = 0   ! Brian
@@ -109,7 +111,7 @@ ithlm_vert_avg  = 0
 irtm_vert_avg   = 0
 ium_vert_avg    = 0
 ivm_vert_avg    = 0
-iwp2_vert_avg   = 0   !nielsenb
+iwp2_vert_avg   = 0   ! nielsenb
 iup2_vert_avg   = 0
 ivp2_vert_avg   = 0
 irtp2_vert_avg  = 0
@@ -188,6 +190,12 @@ do i=1,sfc%nn
     ilwp = k
     call stat_assign(ilwp,"lwp", & 
          "Liquid water path [kg/m^2]","kg/m2",sfc)
+    k = k + 1
+
+  case ('vwp')
+    ivwp = k
+    call stat_assign(ivwp,"vwp", & 
+         "Precipitable water [kg/m^2]","kg/m2",sfc)
     k = k + 1
 
   case ('iwp')

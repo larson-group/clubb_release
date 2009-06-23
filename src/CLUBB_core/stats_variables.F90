@@ -605,8 +605,9 @@ module stats_variables
     ish, & 
     icc, & 
     ilwp, &
-    iiwp, &        !nielsenb
-    iswp, &        !nielsenb
+    ivwp, &        ! nielsenb
+    iiwp, &        ! nielsenb
+    iswp, &        ! nielsenb
     izb, & 
     izi, & 
     irain,    &    ! Brian
