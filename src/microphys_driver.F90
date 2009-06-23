@@ -785,6 +785,31 @@ module microphys_driver
       rvm_mc(:) = 0.0
       thlm_mc(:) = 0.0
 
+      if ( l_latin_hypercube_sampling ) then
+
+        call latin_hypercube_driver &
+             ( real( dt ), iter, gr%nnzp, cf, thlm, p_in_Pa, exner, &
+               rho, pdf_params, wm_zt, wtmp, dzq, rcm, rtm-rcm, &
+               hydromet, hydromet_mc, hydromet_vel, rcm_mc, &
+               rvm_mc, thlm_mc, morrison_micro_driver )
+
+        if ( l_stats_samp ) then
+
+          ! Latin hypercube estimate for cloud water mixing ratio microphysical tendency
+          call stat_update_var( iLH_rcm_mc_est, rcm_mc, zt )
+
+          ! Latin hypercube estimate for vapor water mixing ratio microphysical tendency
+          call stat_update_var( iLH_rvm_mc_est, rvm_mc, zt )
+
+          ! Latin hypercube estimate for rain water mixing ratio microphysical tendency
+          call stat_update_var( iLH_rrainm_mc_est, hydromet_mc(:,iirrainm), zt )
+
+          ! Latin hypercube estimate for rain water number concentration microphysical tendency
+          call stat_update_var( iLH_Nrm_mc_est, hydromet_mc(:,iiNrm), zt )
+
+        end if
+      end if ! l_latin_hypercube_sampling
+
       ! Based on YSU PBL interface to the Morrison scheme WRF driver, the standard dev. of w
       ! will be clipped to be between 0.1 m/s and 4.0 m/s in WRF.  -dschanen 23 Mar 2009
 !     wtmp(:) = max( 0.1, wtmp ) ! Disabled for now
@@ -792,7 +817,7 @@ module microphys_driver
 
 !     wtmp = 0.5 ! %% debug
       call morrison_micro_driver & 
-           ( real( dt ), gr%nnzp, .true., thlm, p_in_Pa, exner, rho, pdf_params, &
+           ( real( dt ), gr%nnzp, .false., .true., thlm, p_in_Pa, exner, rho, pdf_params, &
              wm_zt, wtmp, dzq, rcm, rtm-rcm, hydromet, hydromet_mc, &
              hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
  

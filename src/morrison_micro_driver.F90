@@ -10,7 +10,7 @@ module morrison_micro_driver_mod
   contains
 !-------------------------------------------------------------------------------
   subroutine morrison_micro_driver &
-             ( dt, ndim, l_sample, thlm, p_in_Pa, exner, rho, pdf_params, &
+             ( dt, ndim, l_sample, l_latin_hypercube, thlm, p_in_Pa, exner, rho, pdf_params, &
                wm, w_std_dev, dzq, rcm, rvm, hydromet, hydromet_mc, &
                hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 ! Description:
@@ -93,7 +93,9 @@ module morrison_micro_driver_mod
 
     integer, intent(in) :: ndim ! Points in the Vertical        [-]
 
-    logical, intent(in) :: l_sample ! Whether to accumulate statistics [T/F]
+    logical, intent(in) :: &
+      l_sample,   &     ! Whether to accumulate statistics [T/F]
+      l_latin_hypercube ! Whether we're using latin hypercube sampling
 
     real, dimension(ndim), intent(in) :: &
       thlm,       & ! Liquid potential temperature       [K]
@@ -152,11 +154,16 @@ module morrison_micro_driver_mod
     rvm_tmp = rvm
     T_in_K_mc(:) = 0.0
 
+
     ! Determine temperature
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
 
-    cf(1:ndim) = max( zero_threshold, &
-                      pdf_params%a * pdf_params%R1 + (1.-pdf_params%a) * pdf_params%R2 )
+    if ( .not. l_latin_hypercube ) then
+      cf(1:ndim) = max( zero_threshold, &
+                        pdf_params%a * pdf_params%R1 + (1.-pdf_params%a) * pdf_params%R2 )
+    else
+      cf(1:ndim) = 0.0
+    end if
 
     do i = 1, hydromet_dim, 1
       hydromet_tmp(:,i) = hydromet(:,i)
