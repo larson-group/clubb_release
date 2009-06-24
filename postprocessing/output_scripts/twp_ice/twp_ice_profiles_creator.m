@@ -232,6 +232,7 @@ levsdimid = netcdf.defdim(ncid,'levs', sfc_nz);
 % Full/Half Level Output
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+timevarid = define_variable( 'time' ,'seconds since 2006-07-01 12:00:00', 's', tdimid, ncid );
 hvarid = define_variable( 'h' ,'height', 'm', [levfdimid tdimid], ncid );
 pvarid = define_variable( 'p' ,'pressure', 'Pa', [levfdimid tdimid], ncid );
 tvarid = define_variable( 'T' ,'temperature', 'K', [levfdimid tdimid], ncid );
@@ -265,6 +266,7 @@ netcdf.endDef(ncid);
 % Mean State Output
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+netcdf.putVar( ncid, timevarid, time_out);
 netcdf.putVar(ncid,hvarid,full_z);
 netcdf.putVar(ncid,pvarid,p_in_Pa_array);
 netcdf.putVar(ncid,tvarid,T_in_K_array);

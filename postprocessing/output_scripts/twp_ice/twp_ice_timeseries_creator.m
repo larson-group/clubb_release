@@ -228,6 +228,7 @@ levsdimid = netcdf.defdim(ncid,'levs', sfc_nz);
 % Timeseries Output
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+timevarid = define_variable( 'time' ,'seconds since 2006-07-01 12:00:00', 's', tdimid, ncid );
 fsvarid = define_variable( 'Fs' ,'surface turbulent ﬂux of sensible heat', 'W m^-2', [levsdimid tdimid], ncid );
 fqvarid = define_variable( 'Fq' ,'surface turbulent ﬂux of latent heat', 'W m^-2', [levsdimid tdimid], ncid );
 dTFsw0varid = define_variable( 'dTFsw0' ,'total surface downwelling shortwave radiative ﬂux', 'W m^-2', [levsdimid tdimid], ncid );
@@ -254,6 +255,7 @@ netcdf.endDef(ncid);
 % Mean State Output
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+netcdf.putVar( ncid, timevarid, time_out);
 netcdf.putVar(ncid,fsvarid,sh_array);
 netcdf.putVar(ncid,fqvarid,lh_array);
 netcdf.putVar(ncid,dTFsw0varid,Frad_SW_down_array(1,:));
