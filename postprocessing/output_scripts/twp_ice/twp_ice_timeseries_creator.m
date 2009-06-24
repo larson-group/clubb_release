@@ -128,7 +128,7 @@ wq_array = wprtp_array ./ (1 + rtm_array);
 
 time_out = 1:sizet;
 for i=1:sizet
-    time_out(i) =  i*10.0*60.0;
+    time_out(i) =  i;
 end
 
 full_z  = convert_units.create_time_height_series( z, sizet );
