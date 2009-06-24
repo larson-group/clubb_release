@@ -250,10 +250,10 @@ netcdf.putVar( ncid, psvarid, p_array(1,:));
 netcdf.putVar( ncid, prectvarid, rain_rate_array);
 netcdf.putVar( ncid, lhflxvarid, lh_array);
 netcdf.putVar( ncid, shflxvarid, sh_array);
-%netcdf.putVar( ncid, fsntvarid, Frad_LW_up_array(1,:));
+netcdf.putVar( ncid, fsntvarid, Frad_SW_down_array(1,:));
 netcdf.putVar( ncid, flntvarid, Frad_LW_up_array(1,:));
 %netcdf.putVar( ncid, fsnsvarid, Frad_SW_down_array(1,:));
-netcdf.putVar( ncid, flnsvarid, Frad_LW_up_array(1,:));
+%netcdf.putVar( ncid, flnsvarid, Frad_LW_up_array(1,:));
 
 %netcdf.putVar( ncid, flnscvarid, );
 %netcdf.putVar( ncid, preccvarid, );

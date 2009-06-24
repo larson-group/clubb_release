@@ -3,7 +3,7 @@ package CaseReader;
 # Read a configuration file
 #   The arg can be a relative or full path, or
 #   it can be a file located somewhere in @INC.
-sub ReadCase
+sub readCase
 {
     my $file = $_[0];
 
