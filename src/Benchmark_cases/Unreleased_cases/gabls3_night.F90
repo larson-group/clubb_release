@@ -18,7 +18,7 @@ module gabls3_night
 
   !-----------------------------------------------------------------------
   subroutine gabls3_night_sfclyr( time, um_sfc, vm_sfc,  &
-                            thlm_sfc, rtm_sfc, lowest_level, exner_sfc, & 
+                            thlm_sfc, rtm_sfc, lowest_level, & 
                             upwp_sfc, vpwp_sfc, &
                             wpthlp_sfc, wprtp_sfc, ustar )
     !       Description:
@@ -58,8 +58,7 @@ module gabls3_night
       vm_sfc,       & ! vm at zt(2)            [m/s]
       thlm_sfc,     & ! Theta_l at zt(2)       [K]
       rtm_sfc,      & ! rt at zt(2)            [kg/kg]
-      lowest_level, & ! gr%zt(2)               [m]
-      exner_sfc       ! Exner function         [-]
+      lowest_level    ! gr%zt(2)               [m]
 
     ! Output variables
     real, intent(out) ::  & 
@@ -121,6 +120,7 @@ module gabls3_night
 
     gm1 = (1.-15.*x)**0.25
   end function
+
   real function gh1( x )
 
     implicit none
@@ -143,6 +143,7 @@ module gabls3_night
     fm1 = 2.*alog((1.+x)/2.)+alog((1.+x*x)/2.)-2.*atan(x)+pii
 
   end function fm1
+
   real function fh1( x )
 
     implicit none

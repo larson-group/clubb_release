@@ -2291,15 +2291,15 @@ module clubb_driver
 
 #ifdef UNRELEASED_CODE
     case ( "gabls3" )
-      call gabls3_sfclyr( um(2), vm(2), veg_T_in_K, &             ! Intent(in)
+      call gabls3_sfclyr( um(2), vm(2), veg_T_in_K,             & ! Intent(in)
                           thlm(2), rtm(2), gr%zt(2), exner(1) , & ! Intent(in)
-                          upwp_sfc, vpwp_sfc, &                   ! Intent(out)
-                          wpthlp_sfc, wprtp_sfc, ustar )     ! Intent(out)
-    case ( "gabls3_night" )
-      call gabls3_night_sfclyr( time_current, um(2), vm(2),  &          ! Intent(in)
-                          thlm(2), rtm(2), gr%zt(2), exner(1) , & ! Intent(in)
-                          upwp_sfc, vpwp_sfc, &                   ! Intent(out)
+                          upwp_sfc, vpwp_sfc,                   & ! Intent(out)
                           wpthlp_sfc, wprtp_sfc, ustar )          ! Intent(out)
+    case ( "gabls3_night" )
+      call gabls3_night_sfclyr( time_current, um(2), vm(2),  & ! Intent(in)
+                          thlm(2), rtm(2), gr%zt(2),         & ! Intent(in)
+                          upwp_sfc, vpwp_sfc,                & ! Intent(out)
+                          wpthlp_sfc, wprtp_sfc, ustar )       ! Intent(out)
 
 
     case ( "jun25_altocu" )
