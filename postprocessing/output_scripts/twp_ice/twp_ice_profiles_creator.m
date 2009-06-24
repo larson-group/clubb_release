@@ -122,8 +122,8 @@ ome_array = convert_units.w_wind_in_ms_to_Pas( wm_array, rho_array );
 wt_array = convert_units.potential_temperature_to_temperature( wpthlp_array, exner_array );
 rvm_array = rtm_array - rcm_array;
 rh_array = rtm_array ./ rsat_array;
-q1_array = (thlm_bt_array - (thlm_f_array - thlm_mc_array)) .* exner_array;
-q2_array = rtm_bt_array - (rtm_f_array - rtm_mc_array);
+q1_array = ((thlm_bt_array - (thlm_f_array - thlm_mc_array)) .* exner_array) .* 86400;
+q2_array = (rtm_bt_array - (rtm_f_array - rtm_mc_array)) .* 86400;
 tqsw_array = radht_SW_array .* 86400 .* exner_array;
 tqlw_array = radht_LW_array .* 86400 .* exner_array;
 
