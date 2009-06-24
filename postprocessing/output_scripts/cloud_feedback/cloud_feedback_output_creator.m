@@ -122,8 +122,8 @@ wq_array = wprtp_array ./ (1 + rtm_array);
 
 tdt_lw = radht_LW_array .* 86400 .* exner_array;
 tdt_sw = radht_SW_array .* 86400 .* exner_array;
-tdt_ls = (thlm_f_array - thlm_mc_array) .* 86400 .* exner_array
-qdt_ls = (rtm_f_array - rtm_mc_array) .* 86400
+tdt_ls = (thlm_f_array - thlm_mc_array) .* 86400 .* exner_array;
+qdt_ls = (rtm_f_array - rtm_mc_array) .* 86400;
 
 time_out = 1:sizet;
 for i=1:sizet
@@ -194,9 +194,9 @@ fsntvarid = define_variable( 'fsnt', 'TOA SW net downward total-sky radiation', 
 %flntcvarid = define_variable( 'flntc', 'TOA LW clear-sky upward radiation', 'W/m^2', tdimid, ncid );
 flntvarid = define_variable( 'flnt', 'TOA LW total-sky upward radiation', 'W/m^2', tdimid, ncid );
 %fsnscvarid = define_variable( 'fsnsc', 'Surface SW net downward clear-sky radiation', 'W/m^2', tdimid, ncid );
-fsnsvarid = define_variable( 'fsns', 'Surface SW net downward total-sky radiation', 'W/m^2', tdimid, ncid );
+%fsnsvarid = define_variable( 'fsns', 'Surface SW net downward total-sky radiation', 'W/m^2', tdimid, ncid );
 %flnscvarid = define_variable( 'flnsc', 'Surface LW net upward clear-sky radiation', 'W/m^2', tdimid, ncid );
-flnsvarid = define_variable( 'flns', 'Surface LW net upward total-sky radiation', 'W/m^2', tdimid, ncid );
+%flnsvarid = define_variable( 'flns', 'Surface LW net upward total-sky radiation', 'W/m^2', tdimid, ncid );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Hourly-averaged vertical profiles of multi-level fields as a function of time, X(n_levels, n_hours)
@@ -268,8 +268,8 @@ netcdf.putVar( ncid, flntvarid, Frad_LW_up_array(1,:));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 netcdf.putVar( ncid, pvarid, p_array);
 netcdf.putVar( ncid, tinkvarid, T_in_K_array);
-netcdf.putVar( ncid, qvvarid, rtm_array);
-netcdf.putVar( ncid, qlvarid, rcm_array);
+netcdf.putVar( ncid, qvvarid, rtm_array .* 1000);
+netcdf.putVar( ncid, qlvarid, rcm_array .* 1000);
 netcdf.putVar( ncid, cfvarid, cf_array);
 netcdf.putVar( ncid, tdtlwvarid, tdt_lw);
 netcdf.putVar( ncid, tdtswvarid, tdt_sw);
