@@ -64,7 +64,7 @@ sfctype = 1      ! Select surface scheme (cases without specified surface fluxes
 Tsfc = 300.76       ! (25.6 C) Temperature at model base              [K]
 psfc = 101407.8     ! (1014.1 mb) Pressure at model base              [Pa]
 
-fcor = 0.376e-4     ! Coriolis parameter                  [s^-1]
+fcor = 4.264e-5     ! Coriolis parameter                  [s^-1]
 T0   = 300.         ! Reference temperature (usually 300) [K]
 
 ts_nudge = 7200.    ! Timescale of u/v nudging            [s]
