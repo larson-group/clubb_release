@@ -417,6 +417,35 @@ Try using a command
 like \texttt{grep} if you're uncertain if your variable is a semi-unique string.
 \newline
 
+\item  Do not use magic numbers, i.e. undefined numbers rather than variables.
+Use of magic numbers makes it harder to read the code and to change the value 
+parameters, e.g. grav = 9.8, consistently throughout the code.
+
+This is hard for a non-meteorologist to understand: 
+\begin{verbatim}
+  rtm = rtm * 1000. 
+\end{verbatim}
+
+Instead, do this:
+\begin{verbatim}
+  g_per_kg = 1000.
+  rtm = rtm * g_per_kg
+\end{verbatim}
+
+\item  Do not use magic flags, i.e. undefined input arguments to subroutines or 
+functions.  Instead, define the argument just above the call to the subroutine.
+
+To understand this, you'd need to go to the subroutine: 
+\begin{verbatim}
+  call complex_function( wp2, wp3, .true. ) 
+\end{verbatim}
+
+This is better documented:
+\begin{verbatim}
+  l_enable_damping = .true.
+  call complex_function( wp2, wp3, l_enable_damping )
+\end{verbatim}
+
 \item Do not use the prognostic or diagnostic variable modules anywhere they
 are not used already.  Currently the module \texttt{prognostic\_variables} 
 is used in 
