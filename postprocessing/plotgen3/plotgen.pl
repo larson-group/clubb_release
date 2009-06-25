@@ -6,48 +6,61 @@
 #  
 ###########################################################################
 
-package plotgen;
+package Plotgen;
 
 use strict;
 use CaseReader;
+use OutputWriter;
 use Cwd;
 use Switch;
 
-my $plotgenVersion = 3.0;
+# Argument list
+
+# If running in nightly mode, this value should be set to 1
+my $nightly = 0;
+
+# Specifies to overwrite a directory (Default: false)
+my $overwrite = 0;
+my $dir1 = "";
+my $dir2 = "";
+my $output = "";
+my $plotLes = 0;
+my $plotGolaz = 0;
+my $plotHOC = 0;
+
 my $plotgenDir = cwd;
 
 readArgs();
 
-# Open a new index.html file.
-open(INDEXFILE, ">index.html");
+my $outputIndex = $output . "/index.html";
 
-writeHeader();
+OutputWriter->writeHeader($outputIndex);
 runCases();
-writeFooter();
-
-close(INDEXFILE);
+OutputWriter->writeFooter($outputIndex);
 
 ###############################################################################
 # Runs all of the .case file in the cases folder.
 ###############################################################################
 sub runCases()
 {
+	print("Dir 1: " . $dir1 . "\n");
+	print("Dir 2: " . $dir2 . "\n");
+	print("Output: " . $output . "\n");
+
 	# Loop through each .case file so the case can be plotted
 	my @cases = <cases/*>;
 	foreach my $file (@cases) 
 	{
+		print("File: " . $file . "\n");
 		# Read the case file. If there is an error, exit.
-		if (my $err = CaseReader::readCase($file))
+		if (my $err = CaseReader->readCase($file))
 		{
 	    		print(STDERR $err, "\n");
 	    		exit(1);
 	    	}
 		
 		# Print the case title to the HTML page
-		writeCaseTitle($CASE::CASE{'name'});
-	    	print("Successfully opened: " . $file . "\n");
-	    	print("Plotting case: " . $CASE::CASE{'name'} . "\n");
-	    	print("nightly_output: " . $CASE::CASE{'test'}[2] . "\n");
+		OutputWriter->writeCaseTitle($outputIndex, $CASE::CASE{'headerText'});
 	}
 }
 
@@ -58,6 +71,9 @@ sub readArgs()
 {
 	my $numArgs = $#ARGV + 1;
 
+	# This variable is used for parsing out the folder path variables
+	my $pos = 0;
+
 	if($numArgs == 0)
 	{
 		printHelp();
@@ -67,15 +83,46 @@ sub readArgs()
 	{
 		switch(@ARGV[$argnum])
 		{
-			case "--nightly"
-			{
-				print("Running in nightly mode" . "\n");
-			}
-			else
+			case "--help"
 			{
 				printHelp();
 			}
+			case "--nightly"
+			{
+				$nightly = 1;
+			}
+			case "-r"
+			{
+				$overwrite = 1;
+			}
+			case "--replace"
+			{
+				$overwrite = 1;
+			}
+			else
+			{
+				$pos++;
+
+				if($pos == 1)
+				{
+					$dir1 = @ARGV[$argnum];
+				}
+				elsif($pos == 2)
+				{
+					$output = @ARGV[$argnum];
+				}
+				elsif($pos == 3)
+				{
+					$dir2 = $output;
+					$output = @ARGV[$argnum];
+				}
+			}
 		}
+	}
+	
+	if($pos < 2)
+	{
+		printHelp();
 	}
 }
 
@@ -84,57 +131,7 @@ sub readArgs()
 ###############################################################################
 sub printHelp()
 {
-	print("Plotgen v. " . $plotgenVersion . "\n");
+	print("Plotgen" . "\n");
 	print("Usage: plotgen [ options ... ]" . "\n");
 	exit(0);
-}
-
-###############################################################################
-# Writes a case title to the HTML file
-###############################################################################
-sub writeCaseTitle()
-{
-	my($CASE) = @_;
-	print INDEXFILE <<"EOF";
-	<div align="CENTER">
-		<b><font size="+2">
-		<font color="#0000ff"> $CASE </font> </font></b>
-	</div>
-EOF
-}
-
-###############################################################################
-# Writes the HTML header information
-###############################################################################
-sub writeHeader()
-{
-	print INDEXFILE <<"EOF";
-<html>
-<head>
-	<title>Plotgen $plotgenVersion</title>
-	<div align="CENTER">
-		<h1>Plotgen</h1>
-	</div>
-
-</head>
-<body>
-EOF
-}
-
-###############################################################################
-# Writes the HTML footer information and closes the file.
-###############################################################################
-sub writeFooter()
-{
-	print INDEXFILE <<"EOF";
-	<br /> <br /> <br /> <br />
-	<hr noshade size=5 width=70%>
-	<div align="CENTER">
-		<font size="-2">
-		Copyright (c) 2009 Larson Group. All rights reserved. 
-		</font>
-	</div>
-</body>
-</htlm>
-EOF
 }
