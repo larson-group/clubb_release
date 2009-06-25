@@ -31,6 +31,10 @@ function[] = twp_ice_timeseries_creator(ensembleNumber)
 % Necessary include
 addpath '../../matlab_include/'
 
+%Define any needed constants
+sec_per_day = 86400;
+mm_per_m = 1000;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %   File Input Section
@@ -121,7 +125,7 @@ T_forcing_array = convert_units.thlm_f_to_T_f( thlm_f_array, radht_array, exner_
 ome_array = convert_units.w_wind_in_ms_to_Pas( wm_array, rho_array );
 wt_array = convert_units.potential_temperature_to_temperature( wpthlp_array, exner_array );
 
-ppt_array = rho_zm_array(1,:) .* rain_rate_array ./ (86400 * 1000);
+ppt_array = rho_zm_array(1,:) .* rain_rate_array ./ (sec_per_day * mm_per_m);
 
 wq_array = wprtp_array ./ (1 + rtm_array);
 
