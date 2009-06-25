@@ -66,7 +66,7 @@ sfcfile  = [case_name, '_sfc.ctl'];
 % the same timestep.
 t_start = 1; %This defines the starting timestep
 sizet = ntimesteps; %This defines the end timestep
-t = t_start:sizet;
+t = 1:ntimesteps;
 
 % Read in zt file's variables into MATLAB.
 % Variables will be usable in the form <GrADS Variable Name>_array.
