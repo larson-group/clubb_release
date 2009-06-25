@@ -42,7 +42,7 @@ use stats_variables, only: &
     izb, & 
     izi, & 
     irain, & 
-    ipflux, & 
+    irain_flux, & 
     irrainm_sfc, &
     iwpthlp_sfc, &
     iwprtp_sfc, &
@@ -101,7 +101,7 @@ iswp            = 0   ! nielsenb
 izb             = 0
 izi             = 0
 irain           = 0   ! Brian
-ipflux          = 0   ! Brian
+irain_flux      = 0   ! Brian
 irrainm_sfc     = 0   ! Brian
 iwpthlp_sfc     = 0
 iwprtp_sfc      = 0
@@ -228,18 +228,18 @@ do i=1,sfc%nn
          "Surface rainfall rate [mm/day]","mm/day",sfc)
     k = k + 1
 
-  case ('pflux')         ! Brian
-    ipflux = k
+  case ('rain_flux')         ! Brian
+    irain_flux = k
 
-    call stat_assign(ipflux,"prec_flux", & 
-         "Surface precipitation flux [W/m^2]","W/m^2",sfc)
+    call stat_assign( irain_flux,"rain_flux", & 
+         "Surface rain flux [W/m^2]", "W/m^2", sfc )
     k = k + 1
 
   case ('rrainm_sfc')       ! Brian
     irrainm_sfc = k
 
     call stat_assign(irrainm_sfc,"rrainm_sfc", & 
-         "Surface rain water mixing ratio","kg/kg",sfc)
+         "Surface rain water mixing ratio [kg/kg]","kg/kg",sfc)
     k = k + 1
 
   case ( 'morr_rain_rate' )

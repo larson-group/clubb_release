@@ -557,7 +557,7 @@ module microphys_driver
       irsnowm_mc, & 
       irsnowm_cl, & 
       irain, & 
-      ipflux, & 
+      irain_flux, & 
       irrainm_sfc
 
     use stats_variables, only: & 
@@ -1094,7 +1094,7 @@ module microphys_driver
                 * ( rho(2) / rho_lw ) & 
             * real( sec_per_day * 1000.0 ), sfc )
 
-        call stat_update_var_pt( ipflux, 1, & 
+        call stat_update_var_pt( irain_flux, 1, & 
            ( zt2zm( hydromet(:,iirrainm), 1 )  & 
              * abs( hydromet_vel(1,iirrainm) ) ) * ( rho_zm(1) / rho_lw )  & 
              * rho_lw * Lv, sfc )
