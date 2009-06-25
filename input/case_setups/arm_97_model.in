@@ -59,7 +59,7 @@ T0   = 300.        ! Reference temperature (usually 300) [K]
 
 ts_nudge = 7200.   ! Timescale of u/v nudging            [s]
 
-l_t_dependant = .true. ! Flag for time dependant input
+l_t_dependent = .true. ! Flag for time dependent input
 
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.

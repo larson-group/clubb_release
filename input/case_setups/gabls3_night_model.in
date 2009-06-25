@@ -69,7 +69,7 @@ fcor = 0.000114566338 ! Coriolis parameter                  [s^-1]
 !T0   = 283.15        ! Reference temperature (usually 300) [K]
 T0    = 300
 
-l_t_dependant = .true.
+l_t_dependent = .true.
 
 l_sponge_damping = .false.    ! Set to true to activate sponge damping
 

@@ -35,7 +35,7 @@ module gabls3_night
 
     use surface_flux, only: compute_momentum_flux
 
-    use time_dependant_input, only: l_t_dependant, &
+    use time_dependent_input, only: l_t_dependent, &
                                     time_select, &
                                     time_sfc_given, &
                                     thlm_sfc_given, &
@@ -76,7 +76,7 @@ module gabls3_night
 
     integer :: i1, i2
 
-    if( l_t_dependant  ) then
+    if( l_t_dependent  ) then
 
       call time_select( time, size(time_sfc_given), time_sfc_given, i1, i2 )
 

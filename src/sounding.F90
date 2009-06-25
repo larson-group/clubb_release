@@ -92,7 +92,7 @@ module sounding
 
     character(len=*), intent(out) :: &
       theta_type, &     ! Type of temperature sounding
-      alt_type, &       ! Type of independant coordinate
+      alt_type, &       ! Type of independent coordinate
       subs_type         ! Type of subsidence
 
     ! Optional output variables
@@ -428,7 +428,7 @@ module sounding
 
     character(len=*), intent(out) :: & 
       theta_type, &     ! Type of temperature sounding
-      alt_type, &       ! Type of independant coordinate
+      alt_type, &       ! Type of independent coordinate
       subs_type         ! Type of subsidence
 
     integer, parameter :: nCol = 8

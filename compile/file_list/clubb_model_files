@@ -30,7 +30,7 @@
 ../src/recl.inc
 ../src/soil_vegetation.F90
 ../src/sounding.F90
-../src/time_dependant_input.F90
+../src/time_dependent_input.F90
 ../src/std_atmosphere_mod.F90
 ../src/input_netcdf.F90
 ../src/input_reader.F90

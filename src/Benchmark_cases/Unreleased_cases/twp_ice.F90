@@ -39,7 +39,7 @@ use grid_class, only: zt2zm ! Procedure(s)
 
 use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-use time_dependant_input, only: &
+use time_dependent_input, only: &
   time_select,  &
   time_f_given, &
   thlm_f_given, &
@@ -47,7 +47,7 @@ use time_dependant_input, only: &
   um_given,     &
   vm_given,     &
   wm_given,     &
-  l_t_dependant
+  l_t_dependent
 
 use stats_precision, only: time_precision ! Variable(s)
 
@@ -92,7 +92,7 @@ real :: velocity_omega
 ! Thetal forcing is equal to the LS tendency given here and the
 ! interactive calculation done in BUGSrad
 
-if(l_t_dependant) then
+if(l_t_dependent) then
 
      time_frac = -1.0 ! Default initialization
 

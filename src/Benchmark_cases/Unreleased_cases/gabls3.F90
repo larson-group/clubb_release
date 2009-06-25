@@ -33,7 +33,7 @@ module gabls3
 
     use interpolation, only:factor_interp, lin_int,binary_search ! Procedure(s)
 
-    use time_dependant_input, only: l_t_dependant, &
+    use time_dependent_input, only: l_t_dependent, &
                                     time_select, &
                                     thlm_f_given, &
                                     rtm_f_given,&
@@ -73,7 +73,7 @@ module gabls3
 
     integer :: i1, i2
  
-    if( l_t_dependant ) then
+    if( l_t_dependent ) then
       call time_select( time, size(time_f_given), time_f_given, i1, i2 )
 
       time_frac = real((time - time_f_given(i1)) /  &          ! at the first time a=0;

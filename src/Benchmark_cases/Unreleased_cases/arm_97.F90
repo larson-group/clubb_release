@@ -40,14 +40,14 @@ module arm_97
 
     use interpolation, only: factor_interp ! Procedure(s)
 
-    use time_dependant_input, only: &
+    use time_dependent_input, only: &
       time_select,  &
       time_f_given, &
       thlm_f_given, &
       rtm_f_given,  &
       um_given,     &
       vm_given, &
-      l_t_dependant
+      l_t_dependent
 
 
     implicit none
@@ -73,7 +73,7 @@ module arm_97
 
     real :: time_frac
     integer :: i1, i2
-    if(l_t_dependant ) then
+    if(l_t_dependent ) then
     !-----------------------------------------------------------------------
 
     ! Thetal forcing is equal to the LS tendency given here and the
@@ -150,12 +150,12 @@ module arm_97
     use surface_flux, only: compute_ubar, compute_momentum_flux ! Procedure(s)
     use error_code, only: clubb_debug ! Procedure(s)
 
-    use time_dependant_input, only: &
+    use time_dependent_input, only: &
       time_select, &
       time_sfc_given, &
       LH_given, &
       SH_given, &
-      l_t_dependant
+      l_t_dependent
 
     implicit none
 
@@ -195,7 +195,7 @@ module arm_97
     real :: ubar, bflx, heat_flx, moisture_flx, time_frac
     integer :: i1, i2
     !----------------------------------------------------------------------
-    if( l_t_dependant ) then
+    if( l_t_dependent ) then
     ! Default initialization
     heat_flx = 0.0
     moisture_flx = 0.0

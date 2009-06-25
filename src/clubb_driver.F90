@@ -174,9 +174,9 @@ module clubb_driver
 
     use sounding, only: sclr_max ! Variable(s)
 
-    use time_dependant_input, only: &
-      l_t_dependant, & ! Variable(s)
-      finalize_t_dependant_input ! Procedure(s)
+    use time_dependent_input, only: &
+      l_t_dependent, & ! Variable(s)
+      finalize_t_dependent_input ! Procedure(s)
 
     use sponge_layer_damping, only: &
       l_sponge_damping, & ! Procedure(s)
@@ -287,7 +287,7 @@ module clubb_driver
       time_initial, time_final, time_spinup, & 
       dtmain, dtclosure, & 
       sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge, & 
-      forcings_file_path, l_t_dependant, &
+      forcings_file_path, l_t_dependent, &
       l_sponge_damping, tau_sponge_damp_max, tau_sponge_damp_min, sponge_damp_depth, &
       l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, debug_level, & 
@@ -336,7 +336,7 @@ module clubb_driver
 
     forcings_file_path = ''
 
-    l_t_dependant = .false.
+    l_t_dependent = .false.
 
     l_sponge_damping = .false.
 
@@ -470,7 +470,7 @@ module clubb_driver
 
       print *, "forcings_file_path = ", forcings_file_path
 
-      print *, "l_t_dependant = ", l_t_dependant
+      print *, "l_t_dependent = ", l_t_dependent
 
       print *, "l_sponge_damping = ", l_sponge_damping
       print *, "tau_sponge_damp_min = ", tau_sponge_damp_min
@@ -749,8 +749,8 @@ module clubb_driver
 
 
 
-    if( l_t_dependant ) then
-      call finalize_t_dependant_input()
+    if( l_t_dependent ) then
+      call finalize_t_dependent_input()
     end if
 
     call cleanup_clubb_core( .false. )
@@ -821,9 +821,9 @@ module clubb_driver
     use cloud_feedback, only: cloud_feedback_init ! Procedure(s)
 #endif
 
-    use time_dependant_input, only: &
-      initialize_t_dependant_input, & ! Procedure(s)
-      l_t_dependant ! Variable(s)
+    use time_dependent_input, only: &
+      initialize_t_dependent_input, & ! Procedure(s)
+      l_t_dependent ! Variable(s)
 
 
     use mpace_a, only: mpace_a_init ! Procedure(s)
@@ -933,9 +933,9 @@ module clubb_driver
     case ( z_name )
 
       if (theta_type == temperature_name ) then
-        write(fstderr,*) 'Interpetation of sounding files with z as the independant ', &
+        write(fstderr,*) 'Interpetation of sounding files with z as the independent ', &
         'variable and absolute temperature as the temperature variable has not ', &
-        'been implemented. Either specify pressure as the independant variable. or ', &
+        'been implemented. Either specify pressure as the independent variable. or ', &
         'thm/thlm as the temperature variable'
         stop
       end if
@@ -1100,8 +1100,8 @@ module clubb_driver
 
     ! Initilize Time Dependant Input
 
-    if( l_t_dependant ) then
-      call initialize_t_dependant_input &
+    if( l_t_dependent ) then
+      call initialize_t_dependent_input &
                    ( iunit, runtype, gr%nnzp, gr%zt )
     end if
 
@@ -1521,8 +1521,8 @@ module clubb_driver
 
     use stats_precision, only: time_precision ! Variable(s)
 
-    use time_dependant_input, only: l_t_dependant, & ! Variable(s)
-                                    initialize_t_dependant_input ! Procedure(s)
+    use time_dependent_input, only: l_t_dependent, & ! Variable(s)
+                                    initialize_t_dependent_input ! Procedure(s)
 
     use model_flags, only: &
       l_uv_nudge, & ! Variable(s)
@@ -1740,8 +1740,8 @@ module clubb_driver
 
     end select
 
-    if( l_t_dependant ) then
-      call initialize_t_dependant_input &
+    if( l_t_dependent ) then
+      call initialize_t_dependent_input &
            ( iunit, runtype, gr%nnzp, gr%zt )
     end if
 
