@@ -722,18 +722,25 @@ module estimate_lh_micro_mod
       end do
 
 #ifdef NOTNOT
-      write(*,'(4X,6A12)') "Nc(lh)", "Ncm", "rrain(lh)", &
-                "rrainm", "rc(lh)", "rcm"
+!     write(*,'(4X,6A12)') "Nc(lh)", "Ncm", "rrain(lh)", &
+!               "rrainm", "rc(lh)", "rcm"
+!     do k = 1, nnzp, 1
+!       write(*,'(i4,6G12.4)') k, Nc(k,sample), 1.e-6*hydromet(k,iiNcm)*rho(k), rr(k,sample), &
+!               hydromet(k,iirrainm)*1000., max( rc(k,sample), 0. ), rcm(k)*1000.
+!     end do
+      write(*,'(4X,6A12)') "Nc(lh)", "rrain(lh)", "rc(lh)", "Ncm", "rrainm", "rcm"
       do k = 1, nnzp, 1
-        write(*,'(i4,6E12.4)') k, Nc(k,sample), 1.e-6*hydromet(k,iiNcm)*rho(k), rr(k,sample), &
-                hydromet(k,iirrainm)*1000., max( rc(k,sample), 0. ), rcm(k)*1000.
+        write(*,'(i4,l2,6G12.4)') k, l_sample_flag(k), 1.e-6*hydromet_tmp(k,iiNcm)*rho(k),  &
+                hydromet_tmp(k,iirrainm)*1000., rcm_tmp(k)*1000., &
+                1.e-6*hydromet(k,iiNcm)*rho(k),  &
+                hydromet(k,iirrainm)*1000., rcm(k)*1000.
       end do
       pause
 
 #endif
 
       call microphys_sub &
-           ( dt, nnzp, .true., .false., thlm_tmp, p_in_Pa, exner, rho, pdf_params, &
+           ( dt, nnzp, .false., .true., thlm_tmp, p_in_Pa, exner, rho, pdf_params, &
              wm_tmp, w_std_dev, dzq, rcm_tmp, rvm, hydromet_tmp, hydromet_mc_est, &
              hydromet_vel_est, rcm_mc_est, rvm_mc_est, thlm_mc_est )
 
