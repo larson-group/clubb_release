@@ -79,11 +79,10 @@ module gabls3
       time_frac = real((time - time_f_given(i1)) /  &          ! at the first time a=0;
               (time_f_given(i2) - time_f_given(i1)))             ! at the second time a=1.
 
+
       T_in_K_forcing = factor_interp(time_frac, thlm_f_given(:,i2), thlm_f_given(:,i1))
 
-
       sp_humidity_forcing = factor_interp( time_frac, rtm_f_given(:,i2), rtm_f_given(:,i1))
-
 
       velocity_omega  = factor_interp( time_frac, wm_given(:,i2), wm_given(:,i1))
 
@@ -93,9 +92,17 @@ module gabls3
       ug = factor_interp( time_frac, ug_given(:,i2), ug_given(:,i1) )
       vg = factor_interp( time_frac, vg_given(:,i2), vg_given(:,i1) )
 
+
+      ! Adjusting the winds below the ground so that they follow the trend of
+      ! the two previous points.
+      ug(1) = ug(2) - ( ( (ug(3) - ug(2)) / ( gr%zt(3) - gr%zt(2) ) ) * ( gr%zt(2) - gr%zt(1) ) )
+      vg(1) = vg(2) - ( ( (vg(3) - vg(2)) / ( gr%zt(3) - gr%zt(2) ) ) * ( gr%zt(2) - gr%zt(1) ) )
+
       rtm_forcing = sp_humidity_forcing * ( 1. + rtm )**2
 
-      thlm_forcing = T_in_K_forcing / exner
+
+      thlm_forcing = T_in_K_forcing
+      !thlm_forcing = T_in_K_forcing / exner
 
       wm_zt = -velocity_omega /( rho * grav );
 
