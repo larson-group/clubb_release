@@ -39,7 +39,7 @@ module advance_xm_wpxp_module
   !=============================================================================
   subroutine advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3, & 
                               Kh_zt, tau_zm, Skw_zm, rtpthvp,  & 
-                              rtm_forcing, thlpthvp,  & 
+                              rtm_forcing, thlpthvp, rtm_ref, thlm_ref, & 
                               thlm_forcing, rtp2, thlp2, wp2_zt, & 
                               pdf_params, l_implemented, & 
                               sclrpthvp, sclrm_forcing, sclrp2,  & 
@@ -110,6 +110,9 @@ module advance_xm_wpxp_module
         ithlm_matrix_condt_num, & 
         l_stats_samp
 
+    use sponge_layer_damping, only: &
+      l_sponge_damping, & ! Variable(s)
+      sponge_damp_xm ! Procedure(s)
 
     implicit none
 
@@ -131,6 +134,8 @@ module advance_xm_wpxp_module
       tau_zm,        & ! Time-scale tau on momentum levels        [s]
       Skw_zm,        & ! Skewness of w on momentum levels         [-]
       rtpthvp,       & ! r_t'th_v' (momentum levels)              [(kg/kg) K]
+      rtm_ref,       & ! rtm for nudging
+      thlm_ref,      & ! thlm for nudging
       rtm_forcing,   & ! r_t forcing (thermodynamic levels)       [(kg/kg)/s]
       thlpthvp,      & ! th_l'th_v' (momentum levels)             [K^2]
       thlm_forcing,  & ! th_l forcing (thermodynamic levels)      [K/s]
@@ -633,6 +638,11 @@ module advance_xm_wpxp_module
     !   endif
     !
     !endif
+
+    if ( l_sponge_damping ) then
+      rtm(1:gr%nnzp) = sponge_damp_xm( dt, rtm_ref(1:gr%nnzp), rtm(1:gr%nnzp) )
+      thlm(1:gr%nnzp) = sponge_damp_xm( dt, thlm_ref(1:gr%nnzp), thlm(1:gr%nnzp) )
+    endif
 
     return
 

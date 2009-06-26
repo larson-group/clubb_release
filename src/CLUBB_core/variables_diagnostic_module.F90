@@ -27,6 +27,8 @@ module variables_diagnostic_module
     vg,        & ! v geostrophic wind                    [m/s]
     um_ref,    & ! Initial u wind; Michael Falk,         [m/s]
     vm_ref,    & ! Initial v wind; Michael Falk,         [m/s]
+    thlm_ref,  & ! Initial liquid water potential        [K]
+    rtm_ref,   & ! Initial total water mixing ratio      [kg/kg]
     thvm,      & ! Virtual potential Temperature         [K]
     shear        ! Wind shear production
 
@@ -198,6 +200,8 @@ module variables_diagnostic_module
     allocate( vg(1:nzmax) )              ! v geostrophic wind
     allocate( um_ref(1:nzmax) )          ! Reference u wind for nudging; Michael Falk, 17 Oct 2007
     allocate( vm_ref(1:nzmax) )          ! Reference v wind for nudging; Michael Falk, 17 Oct 2007
+    allocate( thlm_ref(1:nzmax) )        ! Reference liquid water potential for nudging
+    allocate( rtm_ref(1:nzmax) )         ! Reference total water mixing ratio for nudging
     allocate( thvm(1:nzmax) )            ! Virtual potential temperature
 
     allocate( rsat(1:nzmax) )       ! Saturation mixing ratio  ! Brian
@@ -296,6 +300,8 @@ module variables_diagnostic_module
     vg  = 0.0      ! v geostrophic wind
     um_ref   = 0.0 !
     vm_ref   = 0.0 !
+    thlm_ref = 0.0
+    rtm_ref  = 0.0
 
     thvm = 0.0  ! Virtual potential temperature
     rsat  = 0.0  ! Saturation mixing ratio  ! Brian
@@ -402,6 +408,8 @@ module variables_diagnostic_module
     deallocate( vg )        ! v geostrophic wind
     deallocate( um_ref )    ! u initial
     deallocate( vm_ref )    ! v initial
+    deallocate( thlm_ref )
+    deallocate( rtm_ref )
 
     deallocate( thvm )      ! virtual potential temperature
     deallocate( rsat )      ! saturation mixing ratio  ! Brian

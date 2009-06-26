@@ -113,7 +113,7 @@ module clubb_driver
     use variables_diagnostic_module, only: ug, vg, em,  & ! Variable(s)
       tau_zt, thvm, Lscale, Kh_zm, & 
       um_ref, vm_ref, Ncnm, wp2_zt, &
-      hydromet
+      hydromet, thlm_ref, rtm_ref
 
     use variables_prognostic_module, only:  & 
       Tsfc, psfc, SE, LE, thlm, rtm,     & ! Variable(s)
@@ -573,7 +573,7 @@ module clubb_driver
              thlm, rtm, um, vm, ug, vg, wp2, wp2_zt, up2, vp2, rcm,  & ! Intent(inout)
              wm_zt, wm_zm, em, exner, &           ! Intent(inout)
              tau_zt, tau_zm, thvm, p_in_Pa, &     ! Intent(inout)
-             rho, rho_zm, Lscale, &               ! Intent(inout) 
+             rho, rho_zm, Lscale, rtm_ref, thlm_ref, & ! Intent(inout) 
              Kh_zt, Kh_zm, um_ref, vm_ref, &      ! Intent(inout)
              hydromet, Ncnm, &                    ! Intent(inout)
              sclrm, edsclrm )                     ! Intent(out)
@@ -766,7 +766,7 @@ module clubb_driver
                thlm, rtm, um, vm, ug, vg, wp2, wp2_zt, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
                tau_zt, tau_zm, thvm, p_in_Pa, & 
-               rho, rho_zm, Lscale, & 
+               rho, rho_zm, Lscale, rtm_ref, thlm_ref, & 
                Kh_zt, Kh_zm, um_ref, vm_ref, & 
                hydromet, Ncnm, &
                sclrm, edsclrm )
@@ -891,7 +891,9 @@ module clubb_driver
       Lscale,          & ! Mixing length                 [m] 
       Kh_zt, Kh_zm,    & ! Eddy diffusivity              [m^2/s]
       um_ref,          & ! Initial profile of u wind     [m/s]
-      vm_ref             ! Initial profile of v wind     [m/s]
+      vm_ref,          & ! Initial profile of v wind     [m/s]
+      rtm_ref,         & ! Initial profile of rtm        [kg/kg]
+      thlm_ref           ! Initial profile of thlm       [K]
 
     real, dimension(gr%nnzp,hydromet_dim), intent(inout) :: &
       hydromet ! Hydrometeor species    [kg/kg] or [#/kg]
@@ -1474,6 +1476,11 @@ module clubb_driver
     if ( l_uv_nudge ) then
       um_ref = um ! Michael Falk addition for nudging code.  27 Sep/1 Nov 2006
       vm_ref = vm ! ditto
+    end if
+
+    if ( l_sponge_damping ) then
+      thlm_ref = thlm ! Added for nudging code
+      rtm_ref  = rtm
     end if
 
     return

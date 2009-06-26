@@ -122,7 +122,9 @@ module clubb_core
       wpthlp_zt, & 
       wprtp_zt, & 
       rtp2_zt, & 
-      rtpthlp_zt
+      rtpthlp_zt, &
+      rtm_ref, &
+      thlm_ref
 
     use variables_diagnostic_module, only: & 
       wpedsclrp, & 
@@ -647,7 +649,7 @@ module clubb_core
     !----------------------------------------------------------------
     call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3, & ! intent(in)
                           Kh_zt, tau_zm, Skw_zm, rtpthvp,          & ! intent(in)
-                          rtm_forcing, thlpthvp,                   & ! intent(in)
+                          rtm_forcing, thlpthvp, rtm_ref, thlm_ref, & ! intent(in)
                           thlm_forcing, rtp2, thlp2, wp2_zt,       & ! intent(in)
                           pdf_params, l_implemented,               & ! intent(in)
                           sclrpthvp, sclrm_forcing, sclrp2,        & ! intent(in)
