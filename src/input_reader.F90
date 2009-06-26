@@ -416,8 +416,10 @@ module input_reader
         temp_var(amt) = var(i)
         temp_grid(amt) = grid(i)
       end if
-      if( i > 1 .and. grid(i)<grid(i-1) ) then
-        reversed = .true.
+      if ( i > 1 ) then
+        if ( grid(i) < grid(i-1) ) then
+          reversed = .true.
+        end if
       end if
     end do
 
