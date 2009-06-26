@@ -1776,7 +1776,10 @@ module clubb_driver
       hydromet, radht, um_ref,  & ! Variable(s)
       vm_ref, Frad,  Frad_SW_up,  Frad_LW_up, &
       Frad_SW_down, Frad_LW_down, Ncnm, thvm, ustar, & 
-      soil_heat_flux, Kh_zm, ug, vg
+#ifdef UNRELEASED_CODE
+      ug, vg, &
+#endif
+      soil_heat_flux, Kh_zm
 
     use variables_diagnostic_module, only: wpedsclrp ! Passive scalar variables
 
@@ -1786,7 +1789,10 @@ module clubb_driver
       exner, rcm, rho_zm, um, psfc, vm, & 
       upwp_sfc, vpwp_sfc, Tsfc, & 
       wpthlp_sfc, SE, LE, wprtp_sfc, cf, &
-      um_forcing, vm_forcing, pdf_params
+#ifdef UNRELEASED_CODE
+      um_forcing, vm_forcing, &
+#endif
+      pdf_params
 
     use stats_variables, only: &
       ish, & ! Variable(s)
@@ -1932,6 +1938,7 @@ module clubb_driver
     real :: wpthep, amu0
 
     integer :: lin_int_buffer
+    ! This is just to avoid a compiler warning -dschanen 22 Jan 2008
 
 !-----------------------------------------------------------------------
 
@@ -2126,13 +2133,6 @@ module clubb_driver
 
     end select
 
-#ifndef UNRELEASED_CODE
-    ! This is just to avoid a compiler warning -dschanen 22 Jan 2008
-    um_forcing = 0.
-    vm_forcing = 0.
-    ug = 0.
-    vg = 0.
-#endif
 
 
     !----------------------------------------------------------------
