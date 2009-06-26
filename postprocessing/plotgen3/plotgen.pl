@@ -13,6 +13,7 @@ use CaseReader;
 use OutputWriter;
 use Cwd;
 use Switch;
+use Getopt::Std;
 
 # Argument list
 
@@ -21,12 +22,11 @@ my $nightly = 0;
 
 # Specifies to overwrite a directory (Default: false)
 my $overwrite = 0;
-my $dir1 = "";
-my $dir2 = "";
+my @inputDirs;
 my $output = "";
 my $plotLes = 0;
-my $plotGolaz = 0;
-my $plotHOC = 0;
+my $plotBest = 0;
+my $plotDec = 0;
 
 my $plotgenDir = cwd;
 
@@ -43,8 +43,7 @@ OutputWriter->writeFooter($outputIndex);
 ###############################################################################
 sub runCases()
 {
-	print("Dir 1: " . $dir1 . "\n");
-	print("Dir 2: " . $dir2 . "\n");
+	print("Input Dirs: @inputDirs\n");
 	print("Output: " . $output . "\n");
 
 	# Loop through each .case file so the case can be plotted
@@ -70,59 +69,85 @@ sub runCases()
 sub readArgs()
 {
 	my $numArgs = $#ARGV + 1;
-
-	# This variable is used for parsing out the folder path variables
-	my $pos = 0;
+	my $argsSet = 0;
 
 	if($numArgs == 0)
 	{
 		printHelp();
 	}
 
-	foreach my $argnum (0 .. $#ARGV) 
+	my %option = ();
+	getopts("rlbdan?", \%option);
+
+	if ($option{r})
 	{
-		switch(@ARGV[$argnum])
+		$overwrite = 1;
+		$argsSet ++;
+	}
+
+	if ($option{l})
+	{
+		$plotLes = 1;
+		$argsSet ++;
+	}
+
+	if ($option{b})
+	{
+		$plotBest = 1;
+		$argsSet ++;
+	}
+
+	if ($option{d})
+	{
+		$plotDec = 1;
+		$argsSet ++;
+	}
+
+	if ($option{a})
+	{
+		$plotLes = 1;
+		$plotBest = 1;
+		$plotDec = 1;
+		$argsSet ++;
+	}
+
+	if ($option{n})
+	{
+		$nightly = 1;
+		$argsSet ++;
+	}
+
+	if ($option{h})
+	{
+		printHelp();
+	}
+
+	my $currentCount = 0;
+	my $argCount = 0;
+
+	# Parse any additional arguments
+	foreach my $argnum (0 .. $numArgs) 
+	{
+		# If the argument does not start with '-' and if $output was not set
+		if(!(@ARGV[$argnum] =~ m/^-/) && !$output)
 		{
-			case "--help"
+			my $count = $currentCount + $argCount;
+			print("Count: " . $count . "\n");
+			if(($numArgs - 1) - ($currentCount + $argCount) > 1)
 			{
-				printHelp();
-			}
-			case "--nightly"
-			{
-				$nightly = 1;
-			}
-			case "-r"
-			{
-				$overwrite = 1;
-			}
-			case "--replace"
-			{
-				$overwrite = 1;
+				push(@inputDirs, @ARGV[$argnum]);
 			}
 			else
 			{
-				$pos++;
-
-				if($pos == 1)
-				{
-					$dir1 = @ARGV[$argnum];
-				}
-				elsif($pos == 2)
-				{
-					$output = @ARGV[$argnum];
-				}
-				elsif($pos == 3)
-				{
-					$dir2 = $output;
-					$output = @ARGV[$argnum];
-				}
+				$output = @ARGV[$argnum];
 			}
+			
+			$currentCount++;
 		}
-	}
-	
-	if($pos < 2)
-	{
-		printHelp();
+		else
+		{
+			$argCount += length(@ARGV[$argnum]) - 1;
+		}
 	}
 }
 
@@ -131,7 +156,12 @@ sub readArgs()
 ###############################################################################
 sub printHelp()
 {
-	print("Plotgen" . "\n");
-	print("Usage: plotgen [ options ... ]" . "\n");
+	print("Usage: plotgen [OPTION]... INPUT... OUTPUT\n");
+	print("  -r\t\tIf the output folder already exists, replace the contents\n");	
+	print("  -l\t\tPlot LES data for comparison.\n");	
+	print("  -b\t\tPlot Best Ever data for comparison.\n");	
+	print("  -d\t\tPlot December data for comparison.\n");	
+	print("  -a\t\t\n");	
+	print("  -h\t\t\n");
 	exit(0);
 }
