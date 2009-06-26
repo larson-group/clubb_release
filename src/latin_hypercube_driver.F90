@@ -195,6 +195,11 @@ module latin_hypercube_mod
 #else
     stop "This code was not compiled with support for Latin Hypercube sampling"
 
+    ! This is simply to avoid a compiler warning
+    rcm_mc_est  = -999.999
+    rvm_mc_est  = -999.999
+    thlm_mc_est = -999.999
+
 #endif /* UNRELEASED_CODE */
 
   end subroutine latin_hypercube_driver
