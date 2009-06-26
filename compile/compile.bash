@@ -73,6 +73,7 @@ source $CONFIG
 # ------------------------------------------------------------------------------
 # Append preprocessor flags and libraries as needed
 
+
 if [ -e $srcdir/COAMPS_micro ]; then
 	CPPFLAGS="${CPPFLAGS} -DCOAMPS_MICRO"
 	LDFLAGS="${LDFLAGS} -lclubb_coamps"
@@ -165,6 +166,16 @@ $mkmf -t $bindir/mkmf_template -p $bindir/int2txt -m Make.int2txt \
 
 cd $dir
 
+#-------------------------------------------------------------------------------
+# Determine if additional folders need to be checked against the standard
+if [ -e $srcdir/Benchmark_cases/Unreleased_cases ]; then
+	CLUBBStandardsCheck_unreleased_cases="-perl ../utilities/CLUBBStandardsCheck.pl ../src/Benchmark_cases/Unreleased_cases/*.F90"
+fi
+
+if [ -e $srcdir/Latin_hypercube ]; then
+	CLUBBStandardsCheck_latin_hypercube="-perl ../utilities/CLUBBStandardsCheck.pl ../src/Latin_hypercube/*.F90"
+fi
+
 # ------------------------------------------------------------------------------
 # Generate master makefile
 # CLUBB generates libraries.  The dependencies between such libraries must
@@ -180,8 +191,8 @@ all:	libclubb_param.a libclubb_bugsrad.a clubb_standalone clubb_tuner \
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/*.F90
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/CLUBB_core/*.F90
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/Benchmark_cases/*.F90
-	-perl ../utilities/CLUBBStandardsCheck.pl ../src/Benchmark_cases/Unreleased_cases/*.F90
-	-perl ../utilities/CLUBBStandardsCheck.pl ../src/Latin_hypercube/*.F90
+	$CLUBBStandardsCheck_unreleased_cases
+	$CLUBBStandardsCheck_latin_hypercube
 
 libclubb_param.a:
 	cd $objdir; $gmake -f Make.clubb_param
