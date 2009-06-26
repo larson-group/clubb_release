@@ -18,7 +18,7 @@ module generate_lh_sample_mod
   subroutine generate_lh_sample &
              ( n_micro_calls, nt_repeat, d_variables, p_matrix, & 
                cf, pdf_params, level, & 
-               rrainm, & 
+               Ncm, rrainm, & 
                X_u, X_nl, l_sample_flag )
 ! Description:
 !   This subroutine generates a Latin Hypercube sample.
@@ -30,9 +30,11 @@ module generate_lh_sample_mod
 !-------------------------------------------------------------------------------
 
     use constants, only:  &
-        max_mag_correlation, &
-        rr_tol, &
-        Nc_tol
+        max_mag_correlation, &  ! Constant
+        g_per_kg,  &  ! g/kg
+        cm3_per_m3, & ! cm3 per m3
+        rr_tol, &     ! rr tolerance in kg/kg
+        Nc_tol        ! Nc tolerance in #/m^3
 
     use variables_prognostic_module, only:  &
         pdf_parameter  ! type
@@ -43,9 +45,14 @@ module generate_lh_sample_mod
     logical, parameter :: &
       l_sample_out_of_cloud = .true.
 
+    ! Old values
+!   double precision, parameter :: &
+!     Ncm       = 0.065, & ! 65 per cc
+!     Ncp2_Ncm2 = 0.07     ! 0.07 is for DYCOMS2 RF02 (in cloud)
+
+    ! From KK_microphys_module
     double precision, parameter :: &
-      Ncm       = 0.065, & ! 65 per cc
-      Ncp2_Ncm2 = 0.07     ! 0.07 is for DYCOMS2 RF02 (in cloud)
+      Ncp2_Ncm2 = 0.003 ! For DYCOMS2 RF02 (in cloud)     [num/kg]
 
     ! 0.4 is for DYCOMS2 RF02 in cloud, rrp2_rrainm2 = rrp2 divided by rrainm^2
     double precision, parameter :: rrp2_rrainm2 = 0.4
@@ -57,7 +64,9 @@ module generate_lh_sample_mod
       d_variables      ! `d'   Number of variates (normally=5)
 
     ! rrainm  = mean of rr; must have rrainm>0.
-    real, intent(in) :: rrainm ! Rain water mixing ratio [kg/kg]
+    real, intent(in) :: &
+      rrainm , & ! Rain water mixing ratio                [kg/kg]
+      Ncm       ! Cloud droplet number concentration      [#/m^3]
 
     ! Cloud fraction
     real, intent(in) :: cf !  Cloud fraction, 0 <= cf <= 1
@@ -72,7 +81,7 @@ module generate_lh_sample_mod
 
     ! Output Variables
     double precision, intent(out), dimension(n_micro_calls,d_variables+1) :: &
-      X_u ! Sample drawn from uniform distribution
+      X_u ! Sample drawn from uniform distribution from a particular grid level
 
     double precision, intent(out), dimension(n_micro_calls,d_variables) :: &
       X_nl ! Sample that is transformed ultimately to normal-lognormal
@@ -125,8 +134,12 @@ module generate_lh_sample_mod
       srr1, & ! PDF param for width of plume 1     [(g/kg)^2]
       srr2    ! PDF param for width of plume 2.    [(g/kg)^2]
 
+    logical :: l_small_rrainm, l_small_Ncm
+
     ! ---- Begin Code ----
 
+    l_small_rrainm = .false.
+    l_small_Ncm    = .false.
 
 !       Input pdf parameters.
 
@@ -167,17 +180,18 @@ module generate_lh_sample_mod
     !    but we set means, covariance of N, qr to constants.
 
     l_sample_flag = .true.
-    if ( .not. l_sample_out_of_cloud .and. cf < 0.001 ) then
-      ! In this case there are essentially no cloudy points to sample;
-      ! Set sample points to zero.
-
-      X_u(:,:)    = 0.0
-      X_nl(:,:)   = 0.0
-      l_sample_flag = .false.
-    else
+!   if ( .not. l_sample_out_of_cloud .and. cf < 0.001 ) then
+    if ( l_sample_out_of_cloud ) then
       ! Sample non-cloudy grid boxes as well -dschanen 3 June 2009
       R1 = 1.0
       R2 = 1.0
+
+    else if ( cf < 0.001 ) then
+      ! In this case there are essentially no cloudy points to sample;
+      ! Set sample points to zero.
+      X_u(:,:)    = 0.0
+      X_nl(:,:)   = 0.0
+      l_sample_flag = .false.
     end if
 
     if ( srt1  == 0. .or. srt2  == 0. .or. & 
@@ -206,14 +220,15 @@ module generate_lh_sample_mod
       ! Compute PDF parameters for N, rr.
       ! Assume that N, rr obey single-lognormal distributions
 
-      ! N   = droplet number concentration.  [N] = number / mg air
+      ! N   = droplet number concentration.  [N] = number / kg air
       ! Ncm  = mean of N; must have Ncm>0
       ! Ncp2_Ncm2 = variance of N divided by Ncm^2; must have Np2>0.
-      ! N1  = PDF parameter for mean of plume 1. [N1] = (#/mg)
-      ! N2  = PDF parameter for mean of plume 2. [N2] = (#/mg)
-      ! sN1,2 = PDF param for width of plume 1,2. [sN1,2] = (#/mg)**2
+      ! N1  = PDF parameter for mean of plume 1. [N1] = (#/kg)
+      ! N2  = PDF parameter for mean of plume 2. [N2] = (#/kg)
+      ! sN1,2 = PDF param for width of plume 1,2. [sN1,2] = (#/kg)**2
+
       if ( Ncm > Nc_tol ) then
-        N1  = 0.5*log( (Ncm**2) / (1. + Ncp2_Ncm2) )
+        N1  = 0.5*log( (dble(Ncm)**2) / (1. + Ncp2_Ncm2) )
         N2  = N1
         sN1 = log( 1. + Ncp2_Ncm2 )
         sN2 = sN1
@@ -222,6 +237,7 @@ module generate_lh_sample_mod
         N2 = 0.0
         sN1 = 0.0
         sN2 = 0.0
+        l_small_Ncm = .true.
       end if
 
       ! rr = specific rain content. [rr] = g rain / kg air
@@ -230,7 +246,7 @@ module generate_lh_sample_mod
       ! rr2  = PDF parameter for mean of plume 2. [rr2] = (g/kg)
       ! srr1,2 = PDF param for width of plume 1,2. [srr1,2] = (g/kg)**2
       if ( rrainm > rr_tol ) then
-        rr1  = 0.5*log( (dble(rrainm)**2) / (1. + rrp2_rrainm2) )
+        rr1  = 0.5*log( (dble(rrainm*g_per_kg)**2) / (1. + rrp2_rrainm2) )
         rr2  = rr1
         srr1 = log( 1. + rrp2_rrainm2 )
         srr2 = srr1
@@ -239,6 +255,7 @@ module generate_lh_sample_mod
         rr2 = 0.0
         srr1 = 0.0
         srr2 = 0.0
+        l_small_rrainm = .true.
       end if
 
       ! Means of s, t, w, N, rr for Gaussians 1 and 2
@@ -344,6 +361,15 @@ module generate_lh_sample_mod
                           dble( R1 ), dble( R2 ), & 
                           X_u, X_nl )
 
+      ! Kluge for lognormal variables
+      if ( l_small_rrainm ) then
+        X_nl(:,5) = rrainm*g_per_kg
+      end if
+
+      if ( l_small_Ncm ) then
+        X_nl(:,4) = Ncm
+      end if
+
       ! End of overall if-then statement for Latin hypercube code
     end if
 
@@ -423,7 +449,7 @@ module generate_lh_sample_mod
     ! Output Variables
 
     double precision, intent(out), dimension(n_micro_calls,d_variables+1) :: &
-      X_u ! Sample drawn from uniform distribution
+      X_u ! Sample drawn from uniform distribution from particular grid level
 
     double precision, intent(out), dimension(n_micro_calls,d_variables) :: &
       X_nl ! Sample that is transformed ultimately to normal-lognormal
@@ -709,7 +735,7 @@ module generate_lh_sample_mod
       Sigma1, Sigma2 ! dxd dimensional covariance matrices
 
     double precision, intent(in), dimension(n_micro_calls,d_variables+1) :: &
-      X_u ! nxd Latin hypercube sample from uniform distribution
+      X_u ! nxd Latin hypercube sample from uniform distribution from a particular grid level
 
     double precision, intent(in), dimension(n_micro_calls) :: &
      s_pts ! n-dimensional vector giving values of s
@@ -818,7 +844,7 @@ module generate_lh_sample_mod
       Sigma1, Sigma2 ! dxd dimensional covariance matrices
 
     double precision, intent(in), dimension(n_micro_calls,d_variables+1) :: &
-      X_u ! nxd Latin hypercube sample from uniform distribution
+      X_u ! nxd Latin hypercube sample from uniform distribution from a particular grid level
 
     ! Output Variables
 
@@ -1205,7 +1231,8 @@ module generate_lh_sample_mod
       s, t ! n-dimensional column vector of Mellor's s and t, including mean and perturbation
 
     double precision, dimension(n_micro_calls,d_variables+1), intent(in) :: &
-      X_u ! n_micro_calls x d_var+1 Latin hypercube sample from uniform distribution
+      X_u ! n_micro_calls x d_var+1 Latin hypercube sample from uniform distribution 
+    !       from a particular grid level
 
     ! Output variables
 

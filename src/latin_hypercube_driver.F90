@@ -36,7 +36,7 @@ module latin_hypercube_mod
 ! References:
 !   None
 !-------------------------------------------------------------------------------
-    use array_index, only: iirrainm !, iiNcm ! Variables
+    use array_index, only: iirrainm, iiNcm ! Variables
     
     use parameters_model, only: hydromet_dim ! Variable
 
@@ -168,7 +168,7 @@ module latin_hypercube_mod
       call generate_lh_sample &
            ( n_micro_call, nt_repeat, d_variables, p_matrix, & ! intent(in)
              cf(k), pdf_params, k, &                           ! intent(in)
-             hydromet(k,iirrainm), &                           ! intent(in)
+             max( hydromet(k,iiNcm), 1.0 ), hydromet(k,iirrainm), &     ! intent(in)
              X_u(k,:,:), X_nl(k,:,:), l_sample_flag(k) ) ! intent(out)
 
       ! print *, 'latin_hypercube_sampling: got past lh_sampler'

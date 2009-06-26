@@ -460,7 +460,7 @@ module estimate_lh_micro_mod
 !          if ( X_u(sample,d_variables+1) .lt. fraction_1 ) then
 !          print*, '-1+2*int((sample+1)/2)= ', -1+2*int((sample+1)/2)
 !          print*, '-1+2*int((sample+1)/2)= ', int(sample)
-      if ( X_u(1,d_variables+1) < fraction_1 ) then
+      if ( X_u(sample,d_variables+1) < fraction_1 ) then
 ! End of V. Larson fix
 
 ! Use an idealized formula to compute autoconversion
@@ -656,8 +656,10 @@ module estimate_lh_micro_mod
     ! ---- Begin Code ----
 
     a(:)  = dble( pdf_params%a(:) )
-    R1(:) = dble( pdf_params%R1(:) )
-    R2(:) = dble( pdf_params%R2(:) )
+!   R1(:) = dble( pdf_params%R1(:) )
+!   R2(:) = dble( pdf_params%R2(:) )
+    R1(:) = dble( 1.0 )
+    R2(:) = dble( 1.0 )
 
     zero(:) = 0
 
@@ -682,13 +684,14 @@ module estimate_lh_micro_mod
     n1 = 0
     n2 = 0
 
+    ! Choose which mixture fraction we are in.
+    ! Account for cloud fraction.
+    ! Follow M. E. Johnson (1987), p. 56.
+    fraction_1(:) = a(:)*R1(:)/( a(:)*R1(:)+(1.-a(:))*R2(:) )
+!   print*, 'fraction_1= ', fraction_1
+
     do sample = 1, n_micro_calls
 
-      ! Choose which mixture fraction we are in.
-      ! Account for cloud fraction.
-      ! Follow M. E. Johnson (1987), p. 56.
-      fraction_1(:) = a(:)*R1(:)/max( a(:)*R1(:)+(1.-a(:))*R2(:), epsilon( a ) )
-!     print*, 'fraction_1= ', fraction_1
       where ( l_sample_flag .and. rc(:,sample) > 0.0 )
         rcm_tmp  = real( rc(:,sample) ) / 1000. ! Convert from g/kg to kg/kg
       else where
@@ -712,7 +715,7 @@ module estimate_lh_micro_mod
           end where
         else if ( i == iiNcm ) then
           where ( l_sample_flag )
-            hydromet_tmp(:,i) = 1.e6 * real( Nc(:,sample) ) / rho(:) ! Convert from #/cc to #/kg
+            hydromet_tmp(:,i) = real( Nc(:,sample) )
           else where
             hydromet_tmp(:,i) = hydromet(:,i)
           end where
@@ -721,31 +724,14 @@ module estimate_lh_micro_mod
         end if
       end do
 
-#ifdef NOTNOT
-!     write(*,'(4X,6A12)') "Nc(lh)", "Ncm", "rrain(lh)", &
-!               "rrainm", "rc(lh)", "rcm"
-!     do k = 1, nnzp, 1
-!       write(*,'(i4,6G12.4)') k, Nc(k,sample), 1.e-6*hydromet(k,iiNcm)*rho(k), rr(k,sample), &
-!               hydromet(k,iirrainm)*1000., max( rc(k,sample), 0. ), rcm(k)*1000.
-!     end do
-      write(*,'(4X,6A12)') "Nc(lh)", "rrain(lh)", "rc(lh)", "Ncm", "rrainm", "rcm"
-      do k = 1, nnzp, 1
-        write(*,'(i4,l2,6G12.4)') k, l_sample_flag(k), 1.e-6*hydromet_tmp(k,iiNcm)*rho(k),  &
-                hydromet_tmp(k,iirrainm)*1000., rcm_tmp(k)*1000., &
-                1.e-6*hydromet(k,iiNcm)*rho(k),  &
-                hydromet(k,iirrainm)*1000., rcm(k)*1000.
-      end do
-      pause
-
-#endif
-
+      ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
            ( dt, nnzp, .false., .true., thlm_tmp, p_in_Pa, exner, rho, pdf_params, &
              wm_tmp, w_std_dev, dzq, rcm_tmp, rvm, hydromet_tmp, hydromet_mc_est, &
              hydromet_vel_est, rcm_mc_est, rvm_mc_est, thlm_mc_est )
 
       do i = 1, hydromet_dim
-        where ( X_u(1:nnzp,1,d_variables+1) < fraction_1 )
+        where ( X_u(1:nnzp,sample,d_variables+1) < fraction_1 )
           hydromet_vel_est_m1(:,i) = hydromet_vel_est_m1(:,i) + hydromet_vel_est(:,i)
           hydromet_mc_est_m1(:,i) = hydromet_mc_est_m1(:,i) + hydromet_mc_est(:,i)
         else where
@@ -754,7 +740,7 @@ module estimate_lh_micro_mod
         end where
       end do
 
-      where ( X_u(1:nnzp,1,d_variables+1) < fraction_1 )
+      where ( X_u(1:nnzp,sample,d_variables+1) < fraction_1 )
         rcm_mc_est_m1(:) = rcm_mc_est_m1(:) + rcm_mc_est(:)
         rvm_mc_est_m1(:) = rvm_mc_est_m1(:) + rvm_mc_est(:)
         thlm_mc_est_m1(:) = thlm_mc_est_m1(:) + thlm_mc_est(:)
@@ -770,12 +756,6 @@ module estimate_lh_micro_mod
 
       ! Loop to get new sample
     end do ! sample = 1, n_micro_calls
-
-!   write(*,'(6A,6A)') "rr    ", "rrainm"
-!   do k = 1, nnzp, 1
-!     write(*,'(2G20.8)') sum( rr(k,:) ) / dble(n_micro_calls), hydromet(k,iirrainm)
-!   end do
-!   pause
 
 ! Convert sums to averages.
 ! If we have no sample points for a certain plume,
@@ -814,6 +794,33 @@ module estimate_lh_micro_mod
       rcm_mc_est_m2 = rcm_mc_est_m2 / dble( n2 )
       rvm_mc_est_m2 = rvm_mc_est_m2 / dble( n2 )
       thlm_mc_est_m2 = thlm_mc_est_m2 / dble( n2 )
+    end where
+
+    ! Special cases
+    do i = 1, hydromet_dim
+      where ( n1 == zero )
+        hydromet_vel_est_m1(:,i) = hydromet_vel_est_m2(:,i)
+        hydromet_mc_est_m1(:,i) = hydromet_mc_est_m2(:,i)
+      end where
+    end do
+
+    where ( n1 == zero )
+      rcm_mc_est_m1 = rcm_mc_est_m2
+      rvm_mc_est_m1 = rvm_mc_est_m2
+      thlm_mc_est_m1 = thlm_mc_est_m2
+    end where
+
+    do i = 1, hydromet_dim
+      where ( n2 == zero )
+        hydromet_vel_est_m2(:,i) = hydromet_vel_est_m1(:,i)
+        hydromet_mc_est_m2(:,i) = hydromet_mc_est_m1(:,i)
+      end where
+    end do
+
+    where ( n2 == zero )
+      rcm_mc_est_m2 = rcm_mc_est_m1
+      rvm_mc_est_m2 = rvm_mc_est_m1
+      thlm_mc_est_m2 = thlm_mc_est_m1
     end where
 
     ! Grid box average.
