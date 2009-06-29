@@ -95,6 +95,7 @@ module stats_zt
         irtm_ta, & 
         irtm_forcing, & 
         irtm_mc, &
+        irtm_sdmp, &
         ircm_mc, &
         irvm_mc, &
         irtm_mfl, &
@@ -106,6 +107,7 @@ module stats_zt
         ithlm_ta, & 
         ithlm_forcing, & 
         ithlm_mc, &
+        ithlm_sdmp, &
         ithlm_mfl, &
         ithlm_tacl, &
         ithlm_cl, & 
@@ -169,12 +171,14 @@ module stats_zt
         ivm_cf, & 
         ivm_ta, &
         ivm_f, & 
+        ivm_sdmp, &
         ium_bt, & 
         ium_ma, & 
         ium_gf, & 
         ium_cf, & 
         ium_ta, &
-        ium_f
+        ium_f, &
+        ium_sdmp
 
     use stats_variables, only: & 
         ia, & 
@@ -361,6 +365,7 @@ module stats_zt
     irtm_ma       = 0
     irtm_ta       = 0
     irtm_forcing  = 0
+    irtm_sdmp       = 0
     irtm_mc       = 0
     ircm_mc       = 0 ! For the change due to COAMPS/Morrison microphysics
     irvm_mc       = 0 ! "     "
@@ -373,6 +378,7 @@ module stats_zt
     ithlm_ta      = 0
     ithlm_forcing = 0
     ithlm_mc      = 0
+    ithlm_sdmp      = 0
     ithlm_mfl     = 0
     ithlm_tacl    = 0
     ithlm_cl      = 0 ! Josh
@@ -459,6 +465,7 @@ module stats_zt
     ivm_cf = 0
     ivm_ta = 0
     ivm_f  = 0
+    ivm_sdmp = 0
 
     ium_bt = 0
     ium_ma = 0
@@ -466,6 +473,7 @@ module stats_zt
     ium_cf = 0
     ium_ta = 0
     ium_f = 0
+    ium_sdmp = 0
 
     ia            = 0
     iw1           = 0
@@ -989,6 +997,13 @@ module stats_zt
              "rtm clipping", "kg/kg/s", zt)
 
         k = k + 1
+      case ('rtm_sdmp')
+        irtm_sdmp = k
+
+        call stat_assign( irtm_sdmp, "rtm_sdmp", & 
+             "rtm correction due to sponge damping", "kg/kg/s", zt)
+        k = k + 1
+
 
       case ('rtm_pd')
         irtm_pd = k
@@ -1011,6 +1026,14 @@ module stats_zt
         call stat_assign( ithlm_ma, "thlm_ma", & 
              "thlm ma", "K/s", zt)
         k = k + 1
+
+      case ('thlm_sdmp')
+        ithlm_sdmp = k
+
+        call stat_assign( ithlm_sdmp, "thlm_sdmp", & 
+             "thlm correction due to sponge damping", "K/s", zt)
+        k = k + 1
+
 
       case ('thlm_ta')
         ithlm_ta = k
@@ -1592,6 +1615,12 @@ module stats_zt
              "vm forcing", "m/s", zt )
         k = k + 1
 
+      case ('vm_sdmp')
+        ivm_sdmp = k
+        call stat_assign( ivm_sdmp, "vm_sdmp", & 
+             "vm sponge damping", "m/s", zt )
+        k = k + 1
+
       case ('um_bt')
         ium_bt = k
 
@@ -1628,6 +1657,12 @@ module stats_zt
         ium_f = k
         call stat_assign( ium_f, "um_f", & 
              "um forcing", "m/s", zt )
+        k = k + 1
+
+      case ('um_sdmp')
+        ium_sdmp = k
+        call stat_assign( ium_sdmp, "um_sdmp", & 
+             "um sponge damping", "m/s", zt )
         k = k + 1
 
       case ('a')

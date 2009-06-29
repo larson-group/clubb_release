@@ -179,10 +179,12 @@ module clubb_driver
       finalize_t_dependent_input ! Procedure(s)
 
     use sponge_layer_damping, only: &
-      l_sponge_damping, & ! Procedure(s)
-      tau_sponge_damp_min, &
-      tau_sponge_damp_max, &
-      sponge_damp_depth,&
+      thlm_sponge_damp_settings, &
+      rtm_sponge_damp_settings, &
+      uv_sponge_damp_settings, &
+      thlm_sponge_damp_profile, &
+      rtm_sponge_damp_profile, &
+      uv_sponge_damp_profile, &
       finalize_tau_sponge_damp
 
     implicit none
@@ -288,7 +290,7 @@ module clubb_driver
       dtmain, dtclosure, & 
       sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge, & 
       forcings_file_path, l_t_dependent, &
-      l_sponge_damping, tau_sponge_damp_max, tau_sponge_damp_min, sponge_damp_depth, &
+      thlm_sponge_damp_settings, rtm_sponge_damp_settings, uv_sponge_damp_settings, &
       l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, debug_level, & 
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
@@ -338,11 +340,21 @@ module clubb_driver
 
     l_t_dependent = .false.
 
-    l_sponge_damping = .false.
+    thlm_sponge_damp_settings%l_sponge_damping = .false.
+    rtm_sponge_damp_settings%l_sponge_damping = .false.
+    uv_sponge_damp_settings%l_sponge_damping = .false.
 
-    tau_sponge_damp_min = 60.
-    tau_sponge_damp_max = 1800.
-    sponge_damp_depth = 0.25
+    thlm_sponge_damp_settings%tau_sponge_damp_min = 60.
+    thlm_sponge_damp_settings%tau_sponge_damp_max = 1800.
+    thlm_sponge_damp_settings%sponge_damp_depth = 0.25
+
+    rtm_sponge_damp_settings%tau_sponge_damp_min = 60.
+    rtm_sponge_damp_settings%tau_sponge_damp_max = 1800.
+    rtm_sponge_damp_settings%sponge_damp_depth = 0.25
+
+    uv_sponge_damp_settings%tau_sponge_damp_min = 60.
+    uv_sponge_damp_settings%tau_sponge_damp_max = 1800.
+    uv_sponge_damp_settings%sponge_damp_depth = 0.25
 
     l_soil_veg     = .false.
     l_tke_aniso    = .false.
@@ -472,10 +484,35 @@ module clubb_driver
 
       print *, "l_t_dependent = ", l_t_dependent
 
-      print *, "l_sponge_damping = ", l_sponge_damping
-      print *, "tau_sponge_damp_min = ", tau_sponge_damp_min
-      print *, "tau_sponge_damp_max = ", tau_sponge_damp_max
-      print *, "sponge_damp_depth = ", sponge_damp_depth
+      print *, "thlm_sponge_damp_settings%l_sponge_damping = ",  &
+                          thlm_sponge_damp_settings%l_sponge_damping
+      print *, "rtm_sponge_damp_settings%l_sponge_damping = ", &
+                          rtm_sponge_damp_settings%l_sponge_damping
+
+      print *, "uv_sponge_damp_settings%l_sponge_damping = ", &
+                          uv_sponge_damp_settings%l_sponge_damping
+
+      print *, "thlm_sponge_damp_settings%tau_sponge_damp_min = ", &
+                          thlm_sponge_damp_settings%tau_sponge_damp_min
+      print *, "thlm_sponge_damp_settings%tau_sponge_damp_max = ", &
+                          thlm_sponge_damp_settings%tau_sponge_damp_max
+      print *, "thlm_sponge_damp_settings%sponge_damp_depth = ", &
+                          thlm_sponge_damp_settings%sponge_damp_depth
+      print *, "rtm_sponge_damp_settings%tau_sponge_damp_min = ", &
+                          rtm_sponge_damp_settings%tau_sponge_damp_min
+      print *, "rtm_sponge_damp_settings%tau_sponge_damp_max = ", &
+                          rtm_sponge_damp_settings%tau_sponge_damp_max
+
+      print *, "rtm_sponge_damp_settings%sponge_damp_depth = ", &
+                          rtm_sponge_damp_settings%sponge_damp_depth
+
+      print *, "uv_sponge_damp_settings%tau_sponge_damp_min = ", &
+                          uv_sponge_damp_settings%tau_sponge_damp_min
+
+      print *, "uv_sponge_damp_settings%tau_sponge_damp_max = ", &
+                          uv_sponge_damp_settings%tau_sponge_damp_max
+      print *, "uv_sponge_damp_settings%sponge_damp_depth = ", &
+                          uv_sponge_damp_settings%sponge_damp_depth
 
       print *, "l_soil_veg = " , l_soil_veg
       print *, "l_tke_aniso = ", l_tke_aniso
@@ -743,11 +780,17 @@ module clubb_driver
 !-------------------------------------------------------------------------------
 
     ! Free memory
-    if( l_sponge_damping ) then
-      call finalize_tau_sponge_damp( )
+    if( thlm_sponge_damp_settings%l_sponge_damping ) then
+      call finalize_tau_sponge_damp( thlm_sponge_damp_profile )
     end if
 
+    if( rtm_sponge_damp_settings%l_sponge_damping ) then
+      call finalize_tau_sponge_damp( rtm_sponge_damp_profile )
+    end if
 
+    if( uv_sponge_damp_settings%l_sponge_damping ) then
+      call finalize_tau_sponge_damp( uv_sponge_damp_profile )
+    end if
 
     if( l_t_dependent ) then
       call finalize_t_dependent_input()
@@ -847,7 +890,12 @@ module clubb_driver
     use soil_vegetation, only: sfc_soil_T_in_K, deep_soil_T_in_K, veg_T_in_K ! Variable(s)
 
     use sponge_layer_damping, only: &
-    l_sponge_damping, &
+    thlm_sponge_damp_settings, &
+    rtm_sponge_damp_settings, &
+    uv_sponge_damp_settings, &
+    thlm_sponge_damp_profile, &
+    rtm_sponge_damp_profile, &
+    uv_sponge_damp_profile, &
     initialize_tau_sponge_damp ! Procedure(s0
 
     use input_names, only: &
@@ -1070,7 +1118,7 @@ module clubb_driver
 
     ! Initialize imposed w
     select case ( trim( subs_type ) ) ! Perform different operations based off
-    !                                   the sounding file
+      !                                   the sounding file
     case ( wm_name )
       wm_zm = zt2zm( wm_zt )
 
@@ -1078,7 +1126,7 @@ module clubb_driver
       wm_zm(gr%nnzp) = 0.0
     case ( omega_name )
       do k=2,gr%nnzp
-         wm_zt(k) = -wm_zt(k) / ( grav*rho(k) )
+        wm_zt(k) = -wm_zt(k) / ( grav*rho(k) )
       end do
 
       wm_zt(1) = 0.0
@@ -1087,15 +1135,26 @@ module clubb_driver
       wm_zm = zt2zm( wm_zt )
       wm_zm(gr%nnzp) = 0.0
     case default ! This should not happen
-            
+
       wm_zt = 0.0
       wm_zm = 0.0
 
     end select
 
     ! Initialize damping
-    if(l_sponge_damping) then
-      call initialize_tau_sponge_damp( dt )
+    if(thlm_sponge_damp_settings%l_sponge_damping) then
+      call initialize_tau_sponge_damp( dt, thlm_sponge_damp_settings, &
+                                       thlm_sponge_damp_profile )
+    end if
+
+    if(rtm_sponge_damp_settings%l_sponge_damping) then
+      call initialize_tau_sponge_damp( dt, rtm_sponge_damp_settings,&
+                                       rtm_sponge_damp_profile )
+    end if
+
+    if(uv_sponge_damp_settings%l_sponge_damping) then
+      call initialize_tau_sponge_damp( dt, uv_sponge_damp_settings, &
+                                       uv_sponge_damp_profile )
     end if
 
 
@@ -1407,7 +1466,7 @@ module clubb_driver
 
 
     case ( "gabls3_night" )
-      em = 1.0  
+      em = 1.0
     case ( "gabls3" )
       em = 1.0
 
@@ -1473,13 +1532,16 @@ module clubb_driver
                 * sqrt( max( em, emin ) )
 
     ! Moved this to be more general -dschanen July 16 2007
-    if ( l_uv_nudge ) then
+    if ( l_uv_nudge .or. uv_sponge_damp_settings%l_sponge_damping ) then
       um_ref = um ! Michael Falk addition for nudging code.  27 Sep/1 Nov 2006
       vm_ref = vm ! ditto
     end if
 
-    if ( l_sponge_damping ) then
+    if ( thlm_sponge_damp_settings%l_sponge_damping ) then
       thlm_ref = thlm ! Added for nudging code
+    end if
+
+    if ( rtm_sponge_damp_settings%l_sponge_damping ) then
       rtm_ref  = rtm
     end if
 
@@ -1784,9 +1846,9 @@ module clubb_driver
       vm_ref, Frad,  Frad_SW_up,  Frad_LW_up, &
       Frad_SW_down, Frad_LW_down, Ncnm, thvm, ustar, & 
 #ifdef UNRELEASED_CODE
-      ug, vg, &
+    ug, vg, &
 #endif
-      soil_heat_flux, Kh_zm
+    soil_heat_flux, Kh_zm
 
     use variables_diagnostic_module, only: wpedsclrp ! Passive scalar variables
 
@@ -1797,9 +1859,9 @@ module clubb_driver
       upwp_sfc, vpwp_sfc, Tsfc, & 
       wpthlp_sfc, SE, LE, wprtp_sfc, cf, &
 #ifdef UNRELEASED_CODE
-      um_forcing, vm_forcing, &
+    um_forcing, vm_forcing, &
 #endif
-      pdf_params
+    pdf_params
 
     use stats_variables, only: &
       ish, & ! Variable(s)
@@ -2123,7 +2185,7 @@ module clubb_driver
       call twp_ice_tndcy( time_current, rho,            &   ! Intent(in)
                            wm_zt, wm_zm, thlm_forcing,  &   ! Intent(out)
                            rtm_forcing, um_ref, vm_ref, &   ! Intent(out)
-                           sclrm_forcing, edsclrm_forcing ) ! Intent(out)                   
+                           sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 #endif
 
     case ( "wangara" ) ! Wangara dry CBL
@@ -2233,7 +2295,7 @@ module clubb_driver
 
     case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
            "cloud_feedback_s11", "cloud_feedback_s11_p2k", &
-           "cloud_feedback_s12", "cloud_feedback_s12_p2k" ) ! Cloud Feedback cases      
+           "cloud_feedback_s12", "cloud_feedback_s12_p2k" ) ! Cloud Feedback cases
       call cloud_feedback_sfclyr( runtype, & ! Intent(in)
                                   thlm(2), rtm(2), um(2), vm(2), &       ! Intent(in)
                                   exner(1), psfc, Tsfc, &           ! Intent(in)
@@ -2360,7 +2422,7 @@ module clubb_driver
                             psfc, upwp_sfc, vpwp_sfc,  &            ! Intent(out)
                             wpthlp_sfc, wprtp_sfc, ustar, &         ! Intent(out)
                             wpsclrp_sfc, wpedsclrp_sfc )            ! Intent(out)
-                    
+
 #endif
 
     case ( "wangara" )

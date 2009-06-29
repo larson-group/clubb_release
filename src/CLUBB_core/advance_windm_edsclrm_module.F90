@@ -60,6 +60,8 @@ module advance_windm_edsclrm_module
     use stats_variables, only: &
       ivm_bt, & ! Variables
       ium_bt, &
+      ium_sdmp, &
+      ivm_sdmp, &
       iwindm_matrix_condt_num, &
       zt,     &
       l_stats_samp
@@ -76,8 +78,9 @@ module advance_windm_edsclrm_module
         eps
 
     use sponge_layer_damping, only: &
-      l_sponge_damping, & ! Variable(s)
-      sponge_damp_xm ! Procedure(s)
+    uv_sponge_damp_settings, &  
+    uv_sponge_damp_profile, &  
+    sponge_damp_xm ! Procedure(s)
 
     implicit none
 
@@ -254,6 +257,25 @@ module advance_windm_edsclrm_module
     um(1) = um(2)
     vm(1) = vm(2)
 
+
+    if ( uv_sponge_damp_settings%l_sponge_damping ) then
+      if( l_stats_samp ) then
+        call stat_begin_update( ium_sdmp, real( um/dt ), zt )
+        call stat_begin_update( ivm_sdmp, real( vm/dt ), zt )
+      endif
+
+      um(1:gr%nnzp) = sponge_damp_xm( dt, um_ref(1:gr%nnzp), um(1:gr%nnzp), &
+                                      uv_sponge_damp_profile )
+      vm(1:gr%nnzp) = sponge_damp_xm( dt, vm_ref(1:gr%nnzp), vm(1:gr%nnzp), &
+                                      uv_sponge_damp_profile )
+      if( l_stats_samp ) then
+        call stat_end_update( ium_sdmp, real( um/dt ), zt )
+        call stat_end_update( ivm_sdmp, real( vm/dt ), zt )
+      endif
+
+    endif
+
+
     if ( l_stats_samp ) then
 
       ! xm total time tendency (2nd calculation)
@@ -285,11 +307,6 @@ module advance_windm_edsclrm_module
     if ( l_uv_nudge ) then
       um(1:gr%nnzp) = real( um(1:gr%nnzp) - ((um(1:gr%nnzp) - um_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
       vm(1:gr%nnzp) = real( vm(1:gr%nnzp) - ((vm(1:gr%nnzp) - vm_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
-    endif
-
-    if ( l_sponge_damping ) then
-      um(1:gr%nnzp) = sponge_damp_xm( dt, um_ref(1:gr%nnzp), um(1:gr%nnzp) )
-      vm(1:gr%nnzp) = sponge_damp_xm( dt, vm_ref(1:gr%nnzp), vm(1:gr%nnzp) )
     endif
 
 

@@ -151,6 +151,7 @@ module stats_variables
     irtm_ta,       & ! rtm turb. advect. term
     irtm_forcing,  & ! rtm large scale forcing term
     irtm_mc,       & ! rtm change from microphysics
+    irtm_sdmp,     & ! rtm change from sponge damping
     irvm_mc,       & ! rvm change from microphysics
     ircm_mc,       & ! rcm change from microphysics
     irtm_mfl,      & ! rtm change due to monotonic flux limiter
@@ -161,16 +162,17 @@ module stats_variables
     ithlm_ma,      & ! thlm mean advect. term
     ithlm_ta,      & ! thlm turb. advect. term
     ithlm_forcing, & ! thlm large scale forcing term
+    ithlm_sdmp,    & ! thlm change from sponge damping
     ithlm_mc,      & ! thlm change from microphysics
     ithlm_mfl,     & ! thlm change due to monotonic flux limiter
     ithlm_tacl,    & ! thlm correction from turbulent advection (wpthlp) clipping
     ithlm_cl         ! thlm clipping term
 
 !$omp   threadprivate(irtm_bt, irtm_ma, irtm_ta, irtm_forcing, &
-!$omp     irtm_mc, irtm_mfl, irtm_tacl, irtm_cl, irtm_pd, &
+!$omp     irtm_mc, irtm_sdmp, irtm_mfl, irtm_tacl, irtm_cl, irtm_pd, &
 !$omp     irvm_mc, ircm_mc, &
 !$omp     ithlm_bt, ithlm_ma, ithlm_ta, ithlm_forcing, &
-!$omp     ithlm_mc, ithlm_mfl, ithlm_tacl, ithlm_cl)
+!$omp     ithlm_mc, ithlm_sdmp, ithlm_mfl, ithlm_tacl, ithlm_cl)
 
 
   integer, public :: & 
@@ -308,9 +310,10 @@ module stats_variables
      ivm_ta, & 
      ivm_gf, & 
      ivm_cf, &
-     ivm_f
+     ivm_f, &
+     ivm_sdmp
 
-!$omp   threadprivate(ivm_bt, ivm_ma, ivm_ta, ivm_gf, ivm_cf)
+!$omp   threadprivate(ivm_bt, ivm_ma, ivm_ta, ivm_gf, ivm_cf, ivm_sdmp)
 
   integer, public :: & 
      ium_bt, & 
@@ -318,9 +321,10 @@ module stats_variables
      ium_ta, & 
      ium_gf, & 
      ium_cf, & 
-     ium_f
+     ium_f, &
+     ium_sdmp
 
-!$omp   threadprivate(ium_bt, ium_ma, ium_ta, ium_gf, ium_cf)
+!$omp   threadprivate(ium_bt, ium_ma, ium_ta, ium_gf, ium_cf, ium_sdmp)
 
 
   ! PDF parameters

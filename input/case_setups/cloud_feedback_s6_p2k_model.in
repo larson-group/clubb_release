@@ -75,6 +75,27 @@ forcings_file_path = '../input/case_setups/cloud_feedback_s6_p2k_forcings/'
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
 
+! Sponge Damping
+!
+! tau_sponge_damp_min : Minimum damping time-scale ( at the top0 [s]
+! tau_sponge_damp_max : Maximum damping time-scale (base of damping layer) [s]
+! sponge_damp_depth   : damping depth as a fraction of domain height [-]
+!
+thlm_sponge_damp_settings%l_sponge_damping = .false.
+thlm_sponge_damp_settings%tau_sponge_damp_min = 60. 
+thlm_sponge_damp_settings%tau_sponge_damp_max = 1800. 
+thlm_sponge_damp_settings%sponge_damp_depth = 0.25
+
+rtm_sponge_damp_settings%l_sponge_damping = .false.
+rtm_sponge_damp_settings%tau_sponge_damp_min = 60. 
+rtm_sponge_damp_settings%tau_sponge_damp_max = 1800. 
+rtm_sponge_damp_settings%sponge_damp_depth = 0.25
+
+uv_sponge_damp_settings%l_sponge_damping = .false.
+uv_sponge_damp_settings%tau_sponge_damp_min = 60. 
+uv_sponge_damp_settings%tau_sponge_damp_max = 1800. 
+uv_sponge_damp_settings%sponge_damp_depth = 0.25
+
 l_restart      = .false.  ! Flag for whether this is a restart run.
 ! Path (from ../standalone/) and filename of GrADS control files
 ! (without '_zt.ctl' or '_zm.ctl').
