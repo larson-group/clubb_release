@@ -11,7 +11,7 @@ package Plotgen;
 use strict;
 use CaseReader;
 use OutputWriter;
-use Cwd;
+use Cwd 'abs_path';
 use Switch;
 use Getopt::Std;
 
@@ -27,8 +27,6 @@ my $output = "";
 my $plotLes = 0;
 my $plotBest = 0;
 my $plotDec = 0;
-
-my $plotgenDir = cwd;
 
 readArgs();
 
@@ -123,31 +121,50 @@ sub readArgs()
 	}
 
 	my $currentCount = 0;
-	my $argCount = 0;
+
+	# Reset the number of arguments
+	$numArgs = $#ARGV + 1;
 
 	# Parse any additional arguments
 	foreach my $argnum (0 .. $numArgs) 
 	{
+		print(@ARGV[$argnum] . "\n");
 		# If the argument does not start with '-' and if $output was not set
 		if(!(@ARGV[$argnum] =~ m/^-/) && !$output)
 		{
-			my $count = $currentCount + $argCount;
-			print("Count: " . $count . "\n");
-			if(($numArgs - 1) - ($currentCount + $argCount) > 1)
+			if((($numArgs - 1) - $currentCount) > 0)
 			{
-				push(@inputDirs, @ARGV[$argnum]);
+				my $inputDirToAdd = abs_path(@ARGV[$argnum]);
+
+				if(-d $inputDirToAdd)
+				{
+					push(@inputDirs, $inputDirToAdd);
+				}
+				else
+				{
+					print("The input folder: $inputDirToAdd does not exist.\n");
+					exit(1);
+				}
 			}
 			else
 			{
-				$output = @ARGV[$argnum];
+				$output = abs_path(@ARGV[$argnum]);
 			}
 			
 			$currentCount++;
 		}
-		else
-		{
-			$argCount += length(@ARGV[$argnum]) - 1;
-		}
+	}
+
+	# Finally, check to see if the output folder exists. If it does, and
+	# '-r' was not passed in, exit. Otherwise, create it.
+	if(-d $output && $overwrite == 0)
+	{
+		print("Output folder already exists. To overwrite, use the -r option.\n");
+		exit(1);
+	}
+	else
+	{
+		mkdir $output unless -d "$output";
 	}
 }
 
@@ -161,7 +178,8 @@ sub printHelp()
 	print("  -l\t\tPlot LES data for comparison.\n");	
 	print("  -b\t\tPlot Best Ever data for comparison.\n");	
 	print("  -d\t\tPlot December data for comparison.\n");	
-	print("  -a\t\t\n");	
-	print("  -h\t\t\n");
+	print("  -a\t\tSame as -lbd. Plots LES, Best Ever, and December data for comparison.\n");
+	print("  -n\t\tRuns in nightly mode.\n");
+	print("  -h\t\tPrints this help message.\n");
 	exit(0);
 }
