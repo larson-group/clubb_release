@@ -18,7 +18,7 @@ module generate_lh_sample_mod
   subroutine generate_lh_sample &
              ( n_micro_calls, nt_repeat, d_variables, p_matrix, & 
                cf, pdf_params, level, & 
-               Ncm, rrainm, & 
+               Ncm, rrainm, rt, thl, & 
                X_u, X_nl, l_sample_flag )
 ! Description:
 !   This subroutine generates a Latin Hypercube sample.
@@ -80,6 +80,10 @@ module generate_lh_sample_mod
     integer, intent(in) :: level  ! Level info. for PDF parameters.
 
     ! Output Variables
+    double precision, intent(out), dimension(n_micro_calls) :: &
+      rt, & ! Total water mixing ratio          [g/kg]
+      thl   ! Liquid potential temperature      [K]
+
     double precision, intent(out), dimension(n_micro_calls,d_variables+1) :: &
       X_u ! Sample drawn from uniform distribution from a particular grid level
 
@@ -94,9 +98,9 @@ module generate_lh_sample_mod
 
     real :: a
     real :: w1, w2, sw1, sw2
-    !real :: thl1, thl2
+    real :: thl1, thl2
     real :: sthl1, sthl2
-    !real :: rt1, rt2
+    real :: rt1, rt2
     real :: srt1, srt2
     ! sub-plume correlation coefficient between rt, thl
     ! varies between -1 < rrtthl < 1
@@ -141,18 +145,18 @@ module generate_lh_sample_mod
     l_small_rrainm = .false.
     l_small_Ncm    = .false.
 
-!       Input pdf parameters.
+    ! Input pdf parameters.
 
     w1     = pdf_params%w1(level)
     w2     = pdf_params%w2(level)
     sw1    = pdf_params%sw1(level)
     sw2    = pdf_params%sw2(level)
-!   rt1    = pdf_params%rt1(level)
-!   rt2    = pdf_params%rt2(level)
+    rt1    = pdf_params%rt1(level)
+    rt2    = pdf_params%rt2(level)
     srt1   = pdf_params%srt1(level)
     srt2   = pdf_params%srt2(level)
-!   thl1   = pdf_params%thl1(level)
-!   thl2   = pdf_params%thl2(level)
+    thl1   = pdf_params%thl1(level)
+    thl2   = pdf_params%thl2(level)
     sthl1  = pdf_params%sthl1(level)
     sthl2  = pdf_params%sthl2(level)
     a      = pdf_params%a(level)
@@ -352,14 +356,14 @@ module generate_lh_sample_mod
 
       ! Use units of [g/kg] to ameliorate numerical roundoff
       call sample_points( n_micro_calls, nt_repeat, d_variables, p_matrix, dble(a), & 
-  !                    dble(1.e3*rt1), dble(thl1),  & 
-  !                    dble(1.e3*rt2), dble(thl2), & 
+                          dble(1.e3*rt1), dble(thl1),  & 
+                          dble(1.e3*rt2), dble(thl2), & 
                           dble( crt1 ), dble(1.e3*cthl1),  & 
                           dble( crt2 ), dble(1.e3*cthl2), & 
                           dble( mu1 ), dble( mu2 ),  & 
                           Sigma_rtthlw_1, Sigma_rtthlw_2, & 
                           dble( R1 ), dble( R2 ), & 
-                          X_u, X_nl )
+                          rt, thl, X_u, X_nl )
 
       ! Kluge for lognormal variables
       if ( l_small_rrainm ) then
@@ -389,12 +393,12 @@ module generate_lh_sample_mod
 !----------------------------------------------------------------------
 
   subroutine sample_points( n_micro_calls, nt_repeat, d_variables, p_matrix, a, & 
-                          !rt1, thl1, rt2, thl2, & 
+                            rt1, thl1, rt2, thl2, & 
                             crt1, cthl1, crt2, cthl2, & 
                             mu1, mu2,  & 
                             Sigma_rtthlw_1, Sigma_rtthlw_2, & 
                             C1, C2, & 
-                            X_u, X_nl )
+                            rt, thl, X_u, X_nl )
 
     use constants, only:  &
         fstderr  ! Constant(s)
@@ -419,7 +423,7 @@ module generate_lh_sample_mod
 
     !rt1, thl1 = mean of rt, thl for Gaus comp 1
     !rt2, thl2 = mean of rt, thl for Gaus comp 2
-    !double precision, intent(in) :: rt1, thl1, rt2, thl2
+    double precision, intent(in) :: rt1, thl1, rt2, thl2
 
     ! Thermodynamic constants for plumes 1 and 2, units of g/kg
     double precision, intent(in) :: &
@@ -447,6 +451,8 @@ module generate_lh_sample_mod
       C1, C2 ! cloud fraction associated w/ 1st, 2nd mixture component
 
     ! Output Variables
+    ! Total water, theta_l: mean plus perturbations
+    double precision, intent(out), dimension(n_micro_calls) :: rt, thl
 
     double precision, intent(out), dimension(n_micro_calls,d_variables+1) :: &
       X_u ! Sample drawn from uniform distribution from particular grid level
@@ -465,8 +471,6 @@ module generate_lh_sample_mod
     ! Sample of s points that is drawn only from normal distribution
     double precision, dimension(n_micro_calls) :: s_pts
 
-    ! Total water, theta_l: mean plus perturbations
-    ! double precision rt(1:n), thl(1:n)
 
     ! ---- Begin Code ----
 
@@ -500,12 +504,13 @@ module generate_lh_sample_mod
 
 ! Transform s (column 1) and t (column 2) back to rt and thl
 ! This is only needed if you need rt, thl in your microphysics.
-!     call sptp_2_rtpthlp(n,d,a,crt1,cthl1,crt2,cthl2, &
-!                      C1,C2,X_nl(1:n,1),X_nl(1:n,2),X_u,rtp,thlp)
-!     call st_2_rtthl(n,d,a,rt1,thl1,rt2,thl2, &
-!                      crt1,cthl1,crt2,cthl2, &
-!                      C1,C2,mu1(1),mu2(1),X_nl(1:n_micro_calls,1),X_nl(1:n_micro_calls,2),X_u, &
-!                      rt,thl)
+!     call sptp_2_rtpthlp( n_micro_calls, d_variables, a, crt1, cthl1, crt2, cthl2, &
+!                          C1, C2, X_nl(1:n_micro_calls,1), X_nl(1:n_micro_calls,2), &
+!                          X_u, rtp, thlp )
+      call st_2_rtthl( n_micro_calls, d_variables, a, rt1, thl1, rt2, thl2, &
+                       crt1, cthl1, crt2, cthl2, &
+                       C1, C2, mu1(1), mu2(1), X_nl(1:n_micro_calls,1), &
+                       X_nl(1:n_micro_calls,2), X_u, rt, thl )
 
 ! Compute some diagnostics
 !       print*, 'C=', a*C1 + (1-a)*C2

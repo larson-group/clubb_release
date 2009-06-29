@@ -257,10 +257,13 @@ module stats_zt
       ieff_rad_graupel
 
     use stats_variables, only: &
-      iLH_rvm_mc_est, &
-      iLH_rcm_mc_est, &
-      iLH_rrainm_mc_est, &
-      iLH_Nrm_mc_est
+      iLH_rvm_mc, &
+      iLH_rcm_mc, &
+      iLH_thlm_mc, &
+      iLH_rrainm_mc, &
+      iLH_Nrm_mc, &
+      iLH_Vrr, &
+      iLH_VNr
 
     use stats_type, only: & 
         stat_assign ! Procedure
@@ -507,10 +510,13 @@ module stats_zt
     irtp2_zt    = 0
     irtpthlp_zt = 0
 
-    iLH_rcm_mc_est = 0
-    iLH_rvm_mc_est = 0
-    iLH_rrainm_mc_est = 0
-    iLH_Nrm_mc_est = 0
+    iLH_rcm_mc = 0
+    iLH_rvm_mc = 0
+    iLH_rrainm_mc = 0
+    iLH_Nrm_mc = 0
+
+    iLH_Vrr = 0
+    iLH_VNr = 0
 
     allocate( isclrm(1:sclr_dim) )
     allocate( isclrm_f(1:sclr_dim) )
@@ -1874,32 +1880,53 @@ module stats_zt
              "rtpthlp_zt", "(kg K)/kg", zt )
         k = k + 1
 
-      case('LH_rrainm_mc_est')
-        iLH_rrainm_mc_est = k
+      case('LH_rrainm_mc')
+        iLH_rrainm_mc = k
 
-        call stat_assign( iLH_rrainm_mc_est, "LH_rrainm_mc_est", & 
+        call stat_assign( iLH_rrainm_mc, "LH_rrainm_mc", & 
              "Latin hypercube estimate of rrainm_mc", "kg/kg/s", zt )
         k = k + 1
 
-      case('LH_Nrm_mc_est')
-        iLH_Nrm_mc_est = k
+      case('LH_Nrm_mc')
+        iLH_Nrm_mc = k
 
-        call stat_assign( iLH_Nrm_mc_est, "LH_Nrm_mc_est", & 
+        call stat_assign( iLH_Nrm_mc, "LH_Nrm_mc", & 
              "Latin hypercube estimate of Nrm_mc", "kg/kg/s", zt )
         k = k + 1
 
-      case('LH_rcm_mc_est')
-        iLH_rcm_mc_est = k
+      case('LH_rcm_mc')
+        iLH_rcm_mc = k
 
-        call stat_assign( iLH_rcm_mc_est, "LH_rcm_mc_est", & 
+        call stat_assign( iLH_rcm_mc, "LH_rcm_mc", & 
              "Latin hypercube estimate of rcm_mc", "kg/kg/s", zt )
         k = k + 1
 
-      case('LH_rvm_mc_est')
-        iLH_rvm_mc_est = k
+      case('LH_rvm_mc')
+        iLH_rvm_mc = k
 
-        call stat_assign( iLH_rvm_mc_est, "LH_rvm_mc_est", & 
+        call stat_assign( iLH_rvm_mc, "LH_rvm_mc", & 
              "Latin hypercube estimate of rvm_mc", "kg/kg/s", zt )
+        k = k + 1
+
+      case('LH_thlm_mc')
+        iLH_thlm_mc = k
+
+        call stat_assign( iLH_thlm_mc, "LH_thlm_mc", & 
+             "Latin hypercube estimate of thlm_mc", "kg/kg/s", zt )
+        k = k + 1
+
+      case ( 'LH_Vrr' )
+        iLH_Vrr = k
+
+        call stat_assign( iLH_Vrr, "LH_Vrr", & 
+             "Latin hypercube estimate of rrainm sedimentation velocity", "m/s", zt )
+        k = k + 1
+
+      case ( 'LH_VNr' )
+        iLH_VNr = k
+
+        call stat_assign( iLH_VNr, "LH_VNr", & 
+             "Latin hypercube estimate of Nrm sedimentation velocity", "m/s", zt )
         k = k + 1
 
       case default

@@ -112,7 +112,7 @@ module math_utilities
     implicit none
 
     ! External
-    intrinsic :: dble
+    intrinsic :: dble, sum
 
     ! Input Varibles
     integer, intent(in) :: n
@@ -120,19 +120,12 @@ module math_utilities
     double precision, dimension(n), intent(in) :: &
       vector
 
-    ! Local Variables
-    double precision :: sum
-    integer :: j
-
     ! Return type
     double precision :: mean
 
-    sum = 0.d0
-    do j=1, n
-      sum = sum + vector(j)
-    enddo
+    ! ---- Begin Code ----
 
-    mean = sum/ dble( n )
+    mean = sum( vector ) / dble( n )
 
     return
   end function mean

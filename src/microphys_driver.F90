@@ -579,10 +579,15 @@ module microphys_driver
 !     iNgraupelm_mc
 
     use stats_variables, only: & 
-      iLH_rcm_mc_est, &
-      iLH_rvm_mc_est, &
-      iLH_rrainm_mc_est, &
-      iLH_Nrm_mc_est
+      iLH_rcm_mc, &
+      iLH_rvm_mc, &
+      iLH_thlm_mc, &
+      iLH_rrainm_mc, &
+      iLH_Nrm_mc
+
+    use stats_variables, only: & 
+      iLH_Vrr, &
+      iLH_VNr
 
     use stats_variables, only: & 
         zt, &  ! Variables
@@ -796,16 +801,19 @@ module microphys_driver
         if ( l_stats_samp ) then
 
           ! Latin hypercube estimate for cloud water mixing ratio microphysical tendency
-          call stat_update_var( iLH_rcm_mc_est, rcm_mc, zt )
+          call stat_update_var( iLH_rcm_mc, rcm_mc, zt )
 
           ! Latin hypercube estimate for vapor water mixing ratio microphysical tendency
-          call stat_update_var( iLH_rvm_mc_est, rvm_mc, zt )
+          call stat_update_var( iLH_rvm_mc, rvm_mc, zt )
 
           ! Latin hypercube estimate for rain water mixing ratio microphysical tendency
-          call stat_update_var( iLH_rrainm_mc_est, hydromet_mc(:,iirrainm), zt )
+          call stat_update_var( iLH_rrainm_mc, hydromet_mc(:,iirrainm), zt )
 
           ! Latin hypercube estimate for rain water number concentration microphysical tendency
-          call stat_update_var( iLH_Nrm_mc_est, hydromet_mc(:,iiNrm), zt )
+          call stat_update_var( iLH_Nrm_mc, hydromet_mc(:,iiNrm), zt )
+
+          ! Latin hypercube estimate for liquid potential temperature
+          call stat_update_var( iLH_thlm_mc, thlm_mc, zt )
 
         end if
       end if ! l_latin_hypercube_sampling
@@ -843,16 +851,24 @@ module microphys_driver
         if ( l_stats_samp ) then
 
           ! Latin hypercube estimate for cloud water mixing ratio microphysical tendency
-          call stat_update_var( iLH_rcm_mc_est, rcm_mc, zt )
+          call stat_update_var( iLH_rcm_mc, rcm_mc, zt )
 
           ! Latin hypercube estimate for vapor water mixing ratio microphysical tendency
-          call stat_update_var( iLH_rvm_mc_est, rvm_mc, zt )
+          call stat_update_var( iLH_rvm_mc, rvm_mc, zt )
 
           ! Latin hypercube estimate for rain water mixing ratio microphysical tendency
-          call stat_update_var( iLH_rrainm_mc_est, hydromet_mc(:,iirrainm), zt )
+          call stat_update_var( iLH_rrainm_mc, hydromet_mc(:,iirrainm), zt )
 
           ! Latin hypercube estimate for rain water number concentration microphysical tendency
-          call stat_update_var( iLH_Nrm_mc_est, hydromet_mc(:,iiNrm), zt )
+          call stat_update_var( iLH_Nrm_mc, hydromet_mc(:,iiNrm), zt )
+
+          ! Latin hypercube estimate for liquid potential temperature
+          call stat_update_var( iLH_thlm_mc, thlm_mc, zt )
+
+          ! Latin hypercube estimate for sedimentation velocities
+          call stat_update_var( iLH_Vrr, hydromet_vel(:,iirrainm), zt )
+
+          call stat_update_var( iLH_VNr, hydromet_vel(:,iiNrm), zt )
 
         end if
       end if ! l_latin_hypercube_sampling

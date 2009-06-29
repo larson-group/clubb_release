@@ -16,7 +16,7 @@ module estimate_lh_micro_mod
 
   subroutine estimate_lh_micro &
              ( dt, nnzp, n_micro_calls, d_variables, X_u, X_nl, & 
-               l_sample_flag, pdf_params, & 
+               rt, thl, l_sample_flag, pdf_params, & 
                thlm, p_in_Pa, exner, rho, &
                wm, w_std_dev, dzq, rcm, rvm, &        
                cf, hydromet, &
@@ -64,6 +64,9 @@ module estimate_lh_micro_mod
 
     double precision, dimension(nnzp,n_micro_calls,d_variables), intent(in) :: &
       X_nl ! Sample that is transformed ultimately to normal-lognormal
+
+    double precision, dimension(nnzp,n_micro_calls), intent(in) :: &
+      rt, thl ! Total water / Liquid potential temperature      [g/kg] / [K]
 
     ! Flag that determines whether we have a special case (false)
     logical, dimension(nnzp), intent(in) :: l_sample_flag
@@ -333,8 +336,8 @@ module estimate_lh_micro_mod
     end do ! level = 2, nnzp
 
     call micro_driver( dt, nnzp, n_micro_calls, d_variables, &
-                       l_sample_flag, &
-                       X_nl(:,:,1), X_nl(:,:,3), X_nl(:,:,4), X_nl(:,:,5), X_u, &
+                       l_sample_flag, X_nl(:,:,1), rt, thl, &
+                       X_nl(:,:,3), X_nl(:,:,4), X_nl(:,:,5), X_u, &
                        thlm, p_in_Pa, exner, rho, wm, w_std_dev, &
                        dzq, rcm, rvm, pdf_params, hydromet, &
                        rvm_mc_est, rcm_mc_est, hydromet_mc_est, &
@@ -532,7 +535,7 @@ module estimate_lh_micro_mod
 !-----------------------------------------------------------------------
   subroutine micro_driver( dt, nnzp, n_micro_calls, d_variables, &
                            l_sample_flag, &
-                           rc, w, Nc, rr, X_u, &
+                           rc, rt, thl, w, Nc, rr, X_u, &
                            thlm, p_in_Pa, exner, rho, wm, w_std_dev, &
                            dzq, rcm, rvm, pdf_params, hydromet,  &
                            rvm_mc_est, rcm_mc_est, hydromet_mc_est, &
@@ -575,10 +578,12 @@ module estimate_lh_micro_mod
       l_sample_flag  ! Whether we are sampling at this level
 
     double precision, dimension(nnzp,n_micro_calls), intent(in) :: &
-      rc, & ! n in-cloud values of spec liq water content [kg/kg].
-      w,  & ! n in-cloud values of vertical velocity      [m/s]
-      Nc, & ! n in-cloud values of droplet number         [#/mg air]
-      rr    ! n in-cloud values of specific rain content  [kg/kg]
+      rc,  & ! n in-cloud values of spec liq water content       [g/kg]
+      rt,  & ! n in-cloud values of total water mixing ratio     [g/kg]
+      thl, & ! n in-cloud values of total water mixing ratio     [g/kg]
+      w,   & ! n in-cloud values of vertical velocity            [m/s]
+      Nc,  & ! n in-cloud values of droplet number               [#/kg air]
+      rr     ! n in-cloud values of specific rain content        [g/kg]
 
     double precision, dimension(nnzp,n_micro_calls,d_variables+1), intent(in) :: &
       X_u ! N x D+1 Latin hypercube sample from uniform dist
@@ -640,6 +645,7 @@ module estimate_lh_micro_mod
 
     real, dimension(nnzp) :: &
       rcm_tmp,    & ! Liquid water                [kg/kg]
+      rvm_tmp,    & ! Vapor water                 [kg/kg]
       thlm_tmp,   & ! Liquid potential temperature[K]
       wm_tmp        ! Vertical velocity           [m/s]
 
@@ -697,14 +703,16 @@ module estimate_lh_micro_mod
       else where
         rcm_tmp = rcm
       end where
-!     rcm_tmp  = rcm
-      thlm_tmp = thlm
+
       where ( l_sample_flag ) 
         wm_tmp = real( w(:,sample) )
+        rvm_tmp  = real( rt(:,sample) ) / 1000. - rcm_tmp
+        thlm_tmp = real( thl(:,sample) )
       else where
-        wm_tmp = wm
+        wm_tmp   = wm
+        rvm_tmp  = rvm
+        thlm_tmp = thlm
       end where
-!     wm_tmp   = wm
 
       do i = 1, hydromet_dim, 1
         if ( i == iirrainm ) then
@@ -727,7 +735,7 @@ module estimate_lh_micro_mod
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
            ( dt, nnzp, .false., .true., thlm_tmp, p_in_Pa, exner, rho, pdf_params, &
-             wm_tmp, w_std_dev, dzq, rcm_tmp, rvm, hydromet_tmp, hydromet_mc_est, &
+             wm_tmp, w_std_dev, dzq, rcm_tmp, rvm_tmp, hydromet_tmp, hydromet_mc_est, &
              hydromet_vel_est, rcm_mc_est, rvm_mc_est, thlm_mc_est )
 
       do i = 1, hydromet_dim
@@ -756,6 +764,36 @@ module estimate_lh_micro_mod
 
       ! Loop to get new sample
     end do ! sample = 1, n_micro_calls
+
+!   rvm_tmp = 0
+!   do sample = 1, n_micro_calls
+!   do k = 1, nnzp, 1
+!     if ( l_sample_flag(k) ) then
+!       rvm_tmp(k) = rvm_tmp(k) + real( rt(k,sample) ) /1000.
+!     else
+!       rvm_tmp(k) = rvm_tmp(k) + rvm(k) + rcm(k)
+!     end if
+!   end do
+!   end do
+!   do k = 1, nnzp
+!     write(6,'(2G12.4)') rvm_tmp(k) / real( n_micro_calls ), rvm(k)+rcm(k)
+!   end do
+!   pause
+
+!   thlm_tmp = 0
+!   do sample = 1, n_micro_calls
+!   do k = 1, nnzp, 1
+!     if ( l_sample_flag(k) ) then
+!       thlm_tmp(k) = thlm_tmp(k) + real( thl(k,sample) )
+!     else
+!       thlm_tmp(k) = thlm_tmp(k) + thlm(k)
+!     end if
+!   end do
+!   end do
+!   do k = 1, nnzp
+!     write(6,'(2G12.4)') thlm_tmp(k) / real( n_micro_calls ), thlm(k)
+!   end do
+!   pause
 
 ! Convert sums to averages.
 ! If we have no sample points for a certain plume,

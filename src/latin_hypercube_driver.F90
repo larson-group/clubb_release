@@ -122,6 +122,9 @@ module latin_hypercube_mod
     ! Sample that is transformed ultimately to normal-lognormal
     double precision, dimension(nnzp,n_micro_call,d_variables) :: X_nl
 
+    double precision, dimension(nnzp,n_micro_call) :: &
+      rt, thl ! Sample of total water and liquid potential temperature [g/kg],[K]
+
 !   double precision :: Ncm ! Cloud droplet number concentration        [#/cc]
 
     integer :: i_rmd, k
@@ -169,6 +172,7 @@ module latin_hypercube_mod
            ( n_micro_call, nt_repeat, d_variables, p_matrix, & ! intent(in)
              cf(k), pdf_params, k, &                           ! intent(in)
              max( hydromet(k,iiNcm), 1.0 ), hydromet(k,iirrainm), &     ! intent(in)
+             rt(k,:), thl(k,:), &       ! intent(out)
              X_u(k,:,:), X_nl(k,:,:), l_sample_flag(k) ) ! intent(out)
 
       ! print *, 'latin_hypercube_sampling: got past lh_sampler'
@@ -177,7 +181,7 @@ module latin_hypercube_mod
     ! Perform LH and analytic microphysical calculations
     call estimate_lh_micro &
          ( dt, nnzp, n_micro_call, d_variables, X_u, X_nl, & ! intent(in)
-           l_sample_flag, pdf_params, &                  ! intent(in)
+           rt, thl, l_sample_flag, pdf_params, &             ! intent(in)
            T_in_K, p_in_Pa, exner, rho, &                ! intent(in)
            wm, w_std_dev, altitudes, rcm, rvm, &         ! intent(in)
            cf, hydromet, &                               ! intent(in)
