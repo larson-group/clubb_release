@@ -5,14 +5,34 @@
     'name' => 'case_name',
     'headerText' => 'Test Case',
     'test' => [ '0', '1', '5' ],
-    'nightly_output' =>
+    'nightlyOutput' =>
     {
         'subText' => '** Uniform, coarse verticle grid spacing of 40 m. **',
-        'subHtml' => 'HTML Tables or whatever can go here'
+        'subHtml' => '
+<table border="1" cellpadding="3">
+<tbody><tr><td colspan="5" align="CENTER"><b>GABLS 2 Variable Equivalence Table</b></td>
+</tr>
+<tr><td align="CENTER"><b>Label</b></td>
+<td align="CENTER"><b>Actual</b></td>
+</tr>
+<tr><td align="CENTER">thlm</td>
+
+<td align="CENTER">sclram</td>
+</tr>
+<tr><td align="CENTER">rtm</td>
+<td align="CENTER">sclrbm</td>
+</tr>
+<tr><td align="CENTER">thlp2</td>
+<td align="CENTER">sclrap2</td>
+</tr>
+<tr><td align="CENTER">rtp2</td>
+<td align="CENTER">sclrbp2</td>
+
+</tr>
+</tbody></table>'
     },
     'additionalOutput' =>
     {
-        'subText' => 'Any additional text to be added to the sub text on the plots',
-        'subHtml' => 'Any additional html to be added under the header text'
+        'subText' => 'Any additional text to be added to the sub text on the plots'
     }
 )

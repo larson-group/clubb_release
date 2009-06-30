@@ -28,6 +28,46 @@ EOF
 }
 
 ###############################################################################
+# Writes sub text under the header
+###############################################################################
+sub writeSubHeader()
+{
+	shift(@_);
+	my $fh = shift(@_);
+	open(FILE, ">> $fh");
+
+	my($TEXT) = shift;
+
+	print FILE <<"EOF";
+	<div align="CENTER">
+		<b><font size="-1">
+		<font color="#430e9a"> $TEXT </font> </font></b>
+	</div>
+EOF
+	close(FILE);
+
+}
+
+###############################################################################
+# Writes HTML under the case header
+###############################################################################
+sub writeSubHtml()
+{
+	shift(@_);
+	my $fh = shift(@_);
+	open(FILE, ">> $fh");
+
+	my($HTML) = shift;
+
+	print FILE <<"EOF";
+	<div align="CENTER">
+		$HTML
+	</div>
+EOF
+	close(FILE);
+}
+
+###############################################################################
 # Writes the HTML header information
 ###############################################################################
 sub writeHeader()
@@ -69,6 +109,25 @@ sub writeFooter()
 	</div>
 </body>
 </htlm>
+EOF
+	close(FILE);
+}
+
+###############################################################################
+# Inserts an image
+###############################################################################
+sub placeImage()
+{
+	shift(@_);
+	my $fh = shift(@_);
+	open(FILE, ">> $fh");
+
+	my($img) = shift;
+
+	print FILE <<"EOF";
+	<div align="CENTER">
+		<img src="$img" alt="$img" />
+	</div>
 EOF
 	close(FILE);
 }
