@@ -366,6 +366,7 @@ module generate_lh_sample_mod
                           rt, thl, X_u, X_nl )
 
       ! Kluge for lognormal variables
+      ! Use the gridbox mean rather than a sampled value
       if ( l_small_rrainm ) then
         X_nl(:,5) = rrainm*g_per_kg
       end if

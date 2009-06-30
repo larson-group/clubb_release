@@ -23,7 +23,10 @@ module estimate_lh_micro_mod
                hydromet_mc_est, hydromet_vel_est, &
                rcm_mc_est, rvm_mc_est, thlm_mc_est, &
                AKm_est, AKm, AKstd, AKstd_cld, & 
-               AKm_rcm, AKm_rcc, rcm_est, microphys_sub )
+               AKm_rcm, AKm_rcc, rcm_est, &
+               lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &
+               lh_wm, lh_cf, &
+               microphys_sub )
 ! Description:
 !   This subroutine computes microphysical grid box averages,
 !   given a Latin Hypercube sample.
@@ -113,6 +116,16 @@ module estimate_lh_micro_mod
     ! For comparison, estimate kth liquid water using Monte Carlo
     real, dimension(nnzp), intent(out) :: &
       rcm_est ! LH estimate of grid box avg liquid water [kg/kg]
+
+    real, dimension(nnzp,hydromet_dim), intent(out) :: &
+      lh_hydromet ! Average value of the latin hypercube est. of all hydrometeors [units vary]
+
+    real, dimension(nnzp), intent(out) :: &
+      lh_thlm, & ! Average value of the latin hypercube est. of theta_l           [K]
+      lh_rcm,  & ! Average value of the latin hypercube est. of rc                [kg/kg]
+      lh_rvm,  & ! Average value of the latin hypercube est. of rv                [kg/kg]
+      lh_wm,   & ! Average value of the latin hypercube est. of vertical velocity [m/s]
+      lh_cf      ! Average value of the latin hypercube est. of cloud fraction    [%]
 
     ! Local Variables
 
@@ -341,7 +354,10 @@ module estimate_lh_micro_mod
                        thlm, p_in_Pa, exner, rho, wm, w_std_dev, &
                        dzq, rcm, rvm, pdf_params, hydromet, &
                        rvm_mc_est, rcm_mc_est, hydromet_mc_est, &
-                       hydromet_vel_est, thlm_mc_est, microphys_sub )
+                       hydromet_vel_est, thlm_mc_est, &
+                       lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &
+                       lh_wm, lh_cf, &
+                       microphys_sub )
 
     return
   end subroutine estimate_lh_micro
@@ -532,18 +548,22 @@ module estimate_lh_micro_mod
     return
   end subroutine autoconv_driver
 
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
   subroutine micro_driver( dt, nnzp, n_micro_calls, d_variables, &
                            l_sample_flag, &
-                           rc, rt, thl, w, Nc, rr, X_u, &
+                           s_mellor, rt, thl, w, Nc, rr, X_u, &
                            thlm, p_in_Pa, exner, rho, wm, w_std_dev, &
                            dzq, rcm, rvm, pdf_params, hydromet,  &
                            rvm_mc_est, rcm_mc_est, hydromet_mc_est, &
-                           hydromet_vel_est, thlm_mc_est, microphys_sub )
+                           hydromet_vel_est, thlm_mc_est, &
+                           lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &
+                           lh_wm, lh_cf, &
+                           microphys_sub )
 ! Description:
+!   Estimate the tendency of a microphysics scheme via latin hypercube sampling
 ! References:
 !   None
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 
     use constants, only:  &
       fstderr  ! Constant(s)
@@ -565,12 +585,16 @@ module estimate_lh_micro_mod
 
     intrinsic :: epsilon
 
+    ! Constant parameters
+    logical, parameter :: &
+      l_compute_diagnostic_average = .true.
+
     ! Input Variables
     real, intent(in) :: &
       dt ! Model timestep       [s]
 
     integer, intent(in) :: &
-      nnzp, &          ! Number of vertical levels
+      nnzp,          & ! Number of vertical levels
       n_micro_calls, & ! Number of calls to microphysics (normally=2)
       d_variables      ! Number of variates (normally=5)
 
@@ -578,12 +602,12 @@ module estimate_lh_micro_mod
       l_sample_flag  ! Whether we are sampling at this level
 
     double precision, dimension(nnzp,n_micro_calls), intent(in) :: &
-      rc,  & ! n in-cloud values of spec liq water content       [g/kg]
-      rt,  & ! n in-cloud values of total water mixing ratio     [g/kg]
-      thl, & ! n in-cloud values of total water mixing ratio     [g/kg]
-      w,   & ! n in-cloud values of vertical velocity            [m/s]
-      Nc,  & ! n in-cloud values of droplet number               [#/kg air]
-      rr     ! n in-cloud values of specific rain content        [g/kg]
+      s_mellor,  & ! n in-cloud values of 's' (Mellor 1977)            [g/kg]
+      rt,        & ! n in-cloud values of total water mixing ratio     [g/kg]
+      thl,       & ! n in-cloud values of total water mixing ratio     [K]
+      w,         & ! n in-cloud values of vertical velocity            [m/s]
+      Nc,        & ! n in-cloud values of droplet number               [#/kg air]
+      rr           ! n in-cloud values of specific rain content        [g/kg]
 
     double precision, dimension(nnzp,n_micro_calls,d_variables+1), intent(in) :: &
       X_u ! N x D+1 Latin hypercube sample from uniform dist
@@ -595,7 +619,7 @@ module estimate_lh_micro_mod
       rho           ! Density on thermo. grid  [kg/m^3]
 
     real, dimension(nnzp), intent(in) :: &
-      wm, &        ! Mean w                     [m/s]
+      wm,        & ! Mean w                     [m/s]
       w_std_dev, & ! Standard deviation of w    [m/s]
       dzq          ! Difference in height per gridbox   [m]
 
@@ -623,7 +647,17 @@ module estimate_lh_micro_mod
       rvm_mc_est, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc_est   ! LH estimate of time tendency of liquid potential temperature [K/s]
 
+    real, dimension(nnzp,hydromet_dim), intent(out) :: &
+      lh_hydromet ! Average value of the latin hypercube est. of all hydrometeors [units vary]
 
+    real, dimension(nnzp), intent(out) :: &
+      lh_thlm, & ! Average value of the latin hypercube est. of theta_l           [K]
+      lh_rcm,  & ! Average value of the latin hypercube est. of rc                [kg/kg]
+      lh_rvm,  & ! Average value of the latin hypercube est. of rv                [kg/kg]
+      lh_wm,   & ! Average value of the latin hypercube est. of vertical velocity [m/s]
+      lh_cf      ! Average value of the latin hypercube est. of cloud fraction    [%]
+
+    ! Local Variables
     double precision, dimension(nnzp,hydromet_dim) :: &
       hydromet_mc_est_m1,  & ! LH est of hydrometeor time tendency          [(units vary)/s]
       hydromet_mc_est_m2,  & ! LH est of hydrometeor time tendency          [(units vary)/s]
@@ -631,23 +665,22 @@ module estimate_lh_micro_mod
       hydromet_vel_est_m2    ! LH est of hydrometeor sedimentation velocity [m/s]
 
     double precision, dimension(nnzp) :: &
-      rcm_mc_est_m1,       & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
-      rcm_mc_est_m2,       & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
-      rvm_mc_est_m1,       & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
-      rvm_mc_est_m2,       & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
-      thlm_mc_est_m1,      & ! LH est of time tendency of liquid potential temperature [K/s]
-      thlm_mc_est_m2         ! LH est of time tendency of liquid potential temperature [K/s]
+      rcm_mc_est_m1,  & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
+      rcm_mc_est_m2,  & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
+      rvm_mc_est_m1,  & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
+      rvm_mc_est_m2,  & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
+      thlm_mc_est_m1, & ! LH est of time tendency of liquid potential temperature [K/s]
+      thlm_mc_est_m2    ! LH est of time tendency of liquid potential temperature [K/s]
 
-    ! Local Variables
 
     real, dimension(nnzp,hydromet_dim) :: &
       hydromet_tmp ! Hydrometeor species    [units vary]
 
     real, dimension(nnzp) :: &
-      rcm_tmp,    & ! Liquid water                [kg/kg]
-      rvm_tmp,    & ! Vapor water                 [kg/kg]
-      thlm_tmp,   & ! Liquid potential temperature[K]
-      wm_tmp        ! Vertical velocity           [m/s]
+      rc_tmp,    & ! Liquid water                [kg/kg]
+      rv_tmp,    & ! Vapor water                 [kg/kg]
+      thl_tmp,   & ! Liquid potential temperature[K]
+      w_tmp        ! Vertical velocity           [m/s]
 
     integer, dimension(nnzp) :: n1, n2, zero
 
@@ -658,7 +691,6 @@ module estimate_lh_micro_mod
     integer :: i, k, sample
 
     logical :: l_error
-
     ! ---- Begin Code ----
 
     a(:)  = dble( pdf_params%a(:) )
@@ -698,20 +730,24 @@ module estimate_lh_micro_mod
 
     do sample = 1, n_micro_calls
 
-      where ( l_sample_flag .and. rc(:,sample) > 0.0 )
-        rcm_tmp  = real( rc(:,sample) ) / 1000. ! Convert from g/kg to kg/kg
+      where ( l_sample_flag )
+        where( s_mellor(:,sample) > 0.0 )
+          rc_tmp  = real( s_mellor(:,sample) ) / 1000. ! Convert from g/kg to kg/kg
+        else where
+          rc_tmp = 0.0
+        end where
       else where
-        rcm_tmp = rcm
+        rc_tmp = rcm
       end where
 
       where ( l_sample_flag ) 
-        wm_tmp = real( w(:,sample) )
-        rvm_tmp  = real( rt(:,sample) ) / 1000. - rcm_tmp
-        thlm_tmp = real( thl(:,sample) )
+        w_tmp = real( w(:,sample) )
+        rv_tmp  = real( rt(:,sample) ) / 1000. - rc_tmp
+        thl_tmp = real( thl(:,sample) )
       else where
-        wm_tmp   = wm
-        rvm_tmp  = rvm
-        thlm_tmp = thlm
+        w_tmp   = wm
+        rv_tmp  = rvm
+        thl_tmp = thlm
       end where
 
       do i = 1, hydromet_dim, 1
@@ -732,10 +768,33 @@ module estimate_lh_micro_mod
         end if
       end do
 
+      if ( l_compute_diagnostic_average ) then
+        if ( sample == 1 ) then
+          lh_hydromet(:,1:hydromet_dim) = hydromet_tmp(:,1:hydromet_dim)
+          lh_thlm = thl_tmp
+          lh_rcm  = rc_tmp
+          lh_rvm  = rv_tmp
+          lh_wm   = w_tmp
+          where ( l_sample_flag .and. s_mellor(:,sample) > 0 ) 
+            lh_cf = 1.0
+          else where
+            lh_cf = 0.0
+          end where
+        else
+          lh_hydromet(:,1:hydromet_dim) = lh_hydromet(:,1:hydromet_dim) &
+            + hydromet_tmp(:,1:hydromet_dim)
+          lh_thlm = lh_thlm + thl_tmp
+          lh_rcm  = lh_rcm  + rc_tmp
+          lh_rvm  = lh_rvm  + rv_tmp
+          lh_wm   = lh_wm   + w_tmp
+          where ( l_sample_flag .and. s_mellor(:,sample) > 0 ) lh_cf = lh_cf + 1.0
+        end if
+      end if
+
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
-           ( dt, nnzp, .false., .true., thlm_tmp, p_in_Pa, exner, rho, pdf_params, &
-             wm_tmp, w_std_dev, dzq, rcm_tmp, rvm_tmp, hydromet_tmp, hydromet_mc_est, &
+           ( dt, nnzp, .false., .true., thl_tmp, p_in_Pa, exner, rho, pdf_params, &
+             w_tmp, w_std_dev, dzq, rc_tmp, rv_tmp, hydromet_tmp, hydromet_mc_est, &
              hydromet_vel_est, rcm_mc_est, rvm_mc_est, thlm_mc_est )
 
       do i = 1, hydromet_dim
@@ -764,6 +823,15 @@ module estimate_lh_micro_mod
 
       ! Loop to get new sample
     end do ! sample = 1, n_micro_calls
+
+    if ( l_compute_diagnostic_average ) then
+      lh_hydromet(:,1:hydromet_dim) = lh_hydromet(:,1:hydromet_dim) / real( n_micro_calls )
+      lh_thlm = lh_thlm / real( n_micro_calls )
+      lh_rcm  = lh_rcm  / real( n_micro_calls )
+      lh_rvm  = lh_rvm  / real( n_micro_calls )
+      lh_wm   = lh_wm   / real( n_micro_calls )
+      lh_cf   = lh_cf   / real( n_micro_calls )
+    end if
 
 !   rvm_tmp = 0
 !   do sample = 1, n_micro_calls

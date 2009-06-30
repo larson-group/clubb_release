@@ -265,6 +265,17 @@ module stats_zt
       iLH_Vrr, &
       iLH_VNr
 
+    use stats_variables, only: &
+      iLH_rrainm, &
+      iLH_ricem, &
+      iLH_rsnowm, &
+      iLH_rgraupelm, &
+      iLH_thlm, &
+      iLH_rcm, &
+      iLH_rvm, &
+      iLH_wm, &
+      iLH_cf
+
     use stats_type, only: & 
         stat_assign ! Procedure
 
@@ -517,6 +528,17 @@ module stats_zt
 
     iLH_Vrr = 0
     iLH_VNr = 0
+
+    iLH_rrainm = 0
+    iLH_ricem = 0
+    iLH_rsnowm = 0
+    iLH_rgraupelm = 0
+
+    iLH_thlm = 0
+    iLH_rcm = 0
+    iLH_rvm = 0
+    iLH_wm = 0
+    iLH_cf = 0
 
     allocate( isclrm(1:sclr_dim) )
     allocate( isclrm_f(1:sclr_dim) )
@@ -1927,6 +1949,70 @@ module stats_zt
 
         call stat_assign( iLH_VNr, "LH_VNr", & 
              "Latin hypercube estimate of Nrm sedimentation velocity", "m/s", zt )
+        k = k + 1
+
+      case ( 'LH_rrainm' )
+        iLH_rrainm = k
+
+        call stat_assign( iLH_rrainm, "LH_rrainm", & 
+             "Latin hypercube estimate of rrainm", "kg/kg", zt )
+        k = k + 1
+
+      case ( 'LH_ricem' )
+        iLH_ricem = k
+
+        call stat_assign( iLH_ricem, "LH_ricem", & 
+             "Latin hypercube estimate of ricem", "kg/kg", zt )
+        k = k + 1
+
+      case ( 'LH_rsnowm' )
+        iLH_rsnowm = k
+
+        call stat_assign( iLH_rsnowm, "LH_rsnowm", & 
+             "Latin hypercube estimate of rsnowm", "kg/kg", zt )
+        k = k + 1
+
+      case ( 'LH_rgraupelm' )
+        iLH_rgraupelm = k
+
+        call stat_assign( iLH_rgraupelm, "LH_rgraupelm", & 
+             "Latin hypercube estimate of rgraupelm", "kg/kg", zt )
+        k = k + 1
+
+      case ( 'LH_thlm' )
+        iLH_thlm = k
+
+        call stat_assign( iLH_thlm, "LH_thlm", & 
+             "Latin hypercube estimate of thlm", "K", zt )
+        k = k + 1
+
+      case ( 'LH_rcm' )
+        iLH_rcm = k
+
+        call stat_assign( iLH_rcm, "LH_rcm", & 
+             "Latin hypercube estimate of rcm", "kg/kg", zt )
+        k = k + 1
+
+      case ( 'LH_rvm' )
+        iLH_rvm = k
+
+        call stat_assign( iLH_rvm, "LH_rvm", & 
+             "Latin hypercube estimate of rvm", "kg/kg", zt )
+        k = k + 1
+
+      case ( 'LH_wm' )
+        iLH_wm = k
+
+        call stat_assign( iLH_wm, "LH_wm", & 
+             "Latin hypercube estimate of vertical velocity", "m/s", zt )
+        k = k + 1
+
+      case ( 'LH_cf' )
+        iLH_cf = k
+
+        ! Note: count is the udunits compatible unit
+        call stat_assign( iLH_cf, "LH_cf", & 
+             "Latin hypercube estimate of cloud fraction", "count", zt )
         k = k + 1
 
       case default

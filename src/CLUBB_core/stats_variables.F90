@@ -395,8 +395,21 @@ module stats_variables
     iLH_VNr    ! Latin hypercube estimate of Nrm sedimentation velocity  
 !$omp   threadprivate(iLH_Vrr,  iLH_VNr)
 
-!       Indices for statistics in zm file
+  integer, public :: &
+    iLH_rrainm, &
+    iLH_ricem, &
+    iLH_rsnowm, &
+    iLH_rgraupelm, &
+    iLH_thlm, &
+    iLH_rcm, &
+    iLH_rvm, &
+    iLH_wm, &
+    iLH_cf
 
+!$omp threadprivate(iLH_rrainm, iLH_ricem, iLH_rsnowm, iLH_rgraupelm, &
+!$omp   iLH_thlm, iLH_rcm, iLH_rvm, iLH_wm, iLH_cf )
+
+  ! Indices for statistics in zm file
   integer, public :: & 
      iwp2, & 
      irtp2, & 
