@@ -160,16 +160,28 @@ module grid_class
 
   type grid
 
-    integer :: nnzp
+    integer :: nnzp ! Number of points in the grid
     !   Note: Fortran 90/95 prevent an allocatable array from appearing
     !   within a derived type.  However, a pointer can be used in the same
     !   manner as an allocatable array, as we have done here (the grid
     !   pointers are always allocated rather than assigned and nullified
     !   like real pointers).
-    real, pointer, dimension(:) :: zm, zt
-    real, pointer, dimension(:) :: dzm, dzt
-    real, pointer, dimension(:,:) :: weights_zm2zt, & 
-                                     weights_zt2zm
+    real, pointer, dimension(:) :: &
+      zm, ! Momentum grid
+      zt  ! Thermo grid
+    real, pointer, dimension(:) :: &
+      dzm, & ! The inverse spacing between thermodynamic grid
+      !        levels; centered over momentum grid levels.
+      dzt    ! The inverse spacing between momentum grid levels;
+      !        centered over thermodynamic grid levels.
+
+    real, pointer, dimension(:,:) :: weights_zm2zt, & ! These weights are normally used in situations
+    !                                                   where a momentum level variable is being solved for implicitly in an
+    !                                                   equation and needs to be interpolated to the thermodynamic grid levels.
+                                     weights_zt2zm    ! These weights are normally used in situations where a
+    !                                                   thermodynamic level variable is being solved for implicitly in an equation
+    !                                                   and needs to be interpolated to the momentum grid levels.
+
   end type grid
 
   !   The grid is defined here so that it is common throughout the module.

@@ -13,15 +13,14 @@ module stats_subs
 
   contains
 
-!-----------------------------------------------------------------------
+  !-----------------------------------------------------------------------
   subroutine stats_init( iunit, fname_prefix, fdir, l_stats_in, stats_fmt_in, stats_tsamp_in, &
                          stats_tout_in, fnamelist, nnzp, gzt, gzm, & 
                          day, month, year, rlat, rlon, time_current, delt )
-
-
-!     Description: Initializes the statistics saving functionality of
-!     the CLUBB model.
-!-----------------------------------------------------------------------
+    !
+    !     Description: Initializes the statistics saving functionality of
+    !     the CLUBB model.
+    !-----------------------------------------------------------------------
 
     use stats_variables, only: & 
       zt,      & ! Variables
@@ -66,11 +65,11 @@ module stats_subs
       zmscr15, &
       zmscr16, &
       zmscr17, &
-      sfc, & 
+      sfc,     & 
       l_stats, & 
-      stats_tsamp, & 
-      stats_tout, & 
-      l_stats_samp, & 
+      stats_tsamp,   & 
+      stats_tout,    & 
+      l_stats_samp,  & 
       l_stats_first, & 
       l_stats_last, & 
       fname_zt, & 
@@ -577,12 +576,12 @@ module stats_subs
 
     return
   end subroutine stats_init
-!-----------------------------------------------------------------------
+  !-----------------------------------------------------------------------
   subroutine stats_zero( kk, nn, x, n, l_in_update )
 
-!     Description:
-!     Initialize stats to zero
-!-----------------------------------------------------------------------
+    !     Description:
+    !     Initialize stats to zero
+    !-----------------------------------------------------------------------
     use stats_precision, only: & 
         stat_rknd,   & ! Variable(s)
         stat_nknd
@@ -608,12 +607,12 @@ module stats_subs
     return
   end subroutine stats_zero
 
-!-----------------------------------------------------------------------
+  !-----------------------------------------------------------------------
   subroutine stats_avg( kk, nn, x, n )
 
-!     Description:
-!     Compute the average of stats fields
-!-----------------------------------------------------------------------
+    !     Description:
+    !     Compute the average of stats fields
+    !-----------------------------------------------------------------------
     use stats_precision, only: & 
         stat_rknd,   & ! Variable(s)
         stat_nknd
@@ -646,12 +645,12 @@ module stats_subs
     return
   end subroutine stats_avg
 
-!-----------------------------------------------------------------------
+  !-----------------------------------------------------------------------
   subroutine stats_begin_timestep( time_elapsed, delt )
 
-!     Description:
-!     Begin sampling for the current timestep.
-!-----------------------------------------------------------------------
+    !     Description:
+    !     Begin sampling for the current timestep.
+    !-----------------------------------------------------------------------
 
     use stats_variables, only: & 
         l_stats,  & ! Variable(s)
@@ -702,11 +701,13 @@ module stats_subs
 
   end subroutine stats_begin_timestep
 
-!-----------------------------------------------------------------------
+  !-----------------------------------------------------------------------
   subroutine stats_end_timestep( )
 
-!     Description:
-!-----------------------------------------------------------------------
+    !     Description: Called when the stats timestep has ended. This subroutine
+    !     is responsible for calling statistics to be written to the output
+    !     format.
+    !-----------------------------------------------------------------------
 
     use constants, only: &
         fstderr ! Constant(s)
@@ -859,7 +860,7 @@ module stats_subs
     return
   end subroutine stats_end_timestep
 
-!----------------------------------------------------------------------
+  !----------------------------------------------------------------------
   subroutine stats_accumulate & 
                    ( um, vm, upwp, vpwp, up2, vp2, thlm, & 
                      rtm, wprtp, wpthlp, wpthvp, &
@@ -870,11 +871,11 @@ module stats_subs
                      sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
                      wpsclrp, edsclrm, edsclrm_forcing )
 
-! Description:
-! Accumulate those stats variables that are preserved in CLUBB from timestep to
-! timestep, but not those stats that are not, (e.g. budget terms, longwave and
-! shortwave components, etc. )
-!----------------------------------------------------------------------
+    ! Description:
+    ! Accumulate those stats variables that are preserved in CLUBB from timestep to
+    ! timestep, but not those stats that are not, (e.g. budget terms, longwave and
+    ! shortwave components, etc. )
+    !----------------------------------------------------------------------
 
     use stats_variables, only: & 
         zt,      & ! Variables
@@ -1098,7 +1099,7 @@ module stats_subs
 
     implicit none
 
-! Input Variable
+    ! Input Variable
     real, intent(in), dimension(gr%nnzp) :: & 
       um,      & ! u wind                        [m/s]
       vm,      & ! v wind                        [m/s]
@@ -1146,7 +1147,7 @@ module stats_subs
       edsclrm,         & ! Eddy-diff passive scalar      [units vary] 
       edsclrm_forcing    ! Large-scale forcing of edscalar  [units vary]
 
-! Local Variables
+    ! Local Variables
 
     integer :: i, k
 
@@ -1157,7 +1158,7 @@ module stats_subs
       ricem      ! Prisitine ice water mixing ratio          [kg/kg]
 
 
-! Sample fields
+    ! Sample fields
 
     if ( l_stats_samp ) then
 
@@ -1357,13 +1358,13 @@ module stats_subs
       ! Snow Water Path
       if ( iswp > 0 ) then
 
-        ! Calculate rsnowm      
+        ! Calculate rsnowm
         if ( iirsnowm > 0 ) then
           rsnowm = hydromet(1:gr%nnzp,iirsnowm)
         else
           rsnowm = 0.0
         end if
-              
+
         xtmp = 0.
         do i = gr%nnzp-1, 1, -1
           xtmp = xtmp + rho(i+1) * rsnowm(i+1) / gr%dzt(i+1)
@@ -1376,7 +1377,7 @@ module stats_subs
       ! Ice Water Path
       if ( iiwp > 0 ) then
 
-        ! Calculate ricem      
+        ! Calculate ricem
         if ( iiricem > 0 ) then
           ricem = hydromet(1:gr%nnzp,iiricem)
         else
@@ -1448,13 +1449,13 @@ module stats_subs
     return
   end subroutine stats_accumulate
 
-!-----------------------------------------------------------------------
+  !-----------------------------------------------------------------------
   subroutine stats_finalize( )
 
-!     Description:
-!     Close NetCDF files and deallocate scratch space and
-!     stats file structures.
-!-----------------------------------------------------------------------
+    !     Description:
+    !     Close NetCDF files and deallocate scratch space and
+    !     stats file structures.
+    !-----------------------------------------------------------------------
 
     use stats_variables, only: & 
         zt,  & ! Variable(s)
@@ -1506,21 +1507,21 @@ module stats_subs
         zmscr17
 
     use stats_variables, only: & 
-    isclrm, & 
-    isclrm_f, & 
-    iedsclrm, & 
-    iedsclrm_f, & 
-    isclrprtp, & 
-    isclrp2, & 
-    isclrpthvp, & 
-    isclrpthlp, & 
-    isclrprcp, & 
-    iwpsclrp, & 
-    iwp2sclrp, & 
-    iwpsclrp2, & 
-    iwpsclrprtp, & 
-    iwpsclrpthlp, & 
-    iwpedsclrp
+      isclrm, & 
+      isclrm_f, & 
+      iedsclrm, & 
+      iedsclrm_f, & 
+      isclrprtp, & 
+      isclrp2, & 
+      isclrpthvp, & 
+      isclrpthlp, & 
+      isclrprcp, & 
+      iwpsclrp, & 
+      iwp2sclrp, & 
+      iwpsclrp2, & 
+      iwpsclrprtp, & 
+      iwpsclrpthlp, & 
+      iwpedsclrp
 
 #ifdef NETCDF
     use output_netcdf, only:  & 

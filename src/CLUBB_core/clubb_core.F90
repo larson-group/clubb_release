@@ -790,7 +790,11 @@ module clubb_core
                momentum_heights, thermodynamic_heights,  &  ! In
                host_dx, host_dy, & ! In
                err_code ) ! Out
-
+    !
+    !   Description:
+    !     Subroutine to set up the model for execution.
+    !
+    !-------------------------------------------------------------------------
     use grid_class, only: & 
       setup_grid ! Procedure
 
@@ -921,7 +925,6 @@ module clubb_core
          ( l_soil_veg, l_uv_nudge,  & ! intent(in)
            l_tke_aniso, saturation_formula )     ! intent(in)
 
-
     ! Determine the maximum allowable value for Lscale (in meters).
     if ( l_implemented ) then
       Lscale_max = 0.25 * min( host_dx, host_dy )
@@ -981,7 +984,11 @@ module clubb_core
 
   !-----------------------------------------------------------------------
   subroutine cleanup_clubb_core( l_implemented )
-
+    !
+    !  Description:
+    !    Frees memory used by the model itself.
+    !
+    !--------------------------------------------------------------------
     use parameters_model, only: sclrtol ! Variable
 
     use variables_diagnostic_module, only: & 
