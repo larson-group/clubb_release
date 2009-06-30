@@ -51,8 +51,8 @@ time_spinup  = 100000.0  ! End of spin-up period [seconds since midnight on star
 
 !dtmain    = 300.0   ! Model timestep [s]
 !dtclosure = 300.0   ! Closure timestep [s] (must multiply evenly into dtmain).
-dtmain    = 600.0   ! Model timestep [s]
-dtclosure = 600.0   ! Closure timestep [s] (must multiply evenly into dtmain).
+dtmain    = 300.0   ! Model timestep [s]
+dtclosure = 300.0   ! Closure timestep [s] (must multiply evenly into dtmain).
 
 sfctype = 1      ! Select surface scheme (cases without specified surface fluxes).
                  ! 0 ==> fixed surface sensible and latent heat fluxes,
@@ -81,19 +81,19 @@ l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
 ! tau_sponge_damp_max : Maximum damping time-scale (base of damping layer) [s]
 ! sponge_damp_depth   : damping depth as a fraction of domain height [-]
 !
-thlm_sponge_damp_settings%l_sponge_damping = .false.
-thlm_sponge_damp_settings%tau_sponge_damp_min = 60. 
-thlm_sponge_damp_settings%tau_sponge_damp_max = 1800. 
+thlm_sponge_damp_settings%l_sponge_damping = .true.
+thlm_sponge_damp_settings%tau_sponge_damp_min = 10800. 
+thlm_sponge_damp_settings%tau_sponge_damp_max = 86400. 
 thlm_sponge_damp_settings%sponge_damp_depth = 0.25
 
-rtm_sponge_damp_settings%l_sponge_damping = .false.
-rtm_sponge_damp_settings%tau_sponge_damp_min = 60. 
-rtm_sponge_damp_settings%tau_sponge_damp_max = 1800. 
+rtm_sponge_damp_settings%l_sponge_damping = .true.
+rtm_sponge_damp_settings%tau_sponge_damp_min = 10800. 
+rtm_sponge_damp_settings%tau_sponge_damp_max = 86400. 
 rtm_sponge_damp_settings%sponge_damp_depth = 0.25
 
 uv_sponge_damp_settings%l_sponge_damping = .false.
-uv_sponge_damp_settings%tau_sponge_damp_min = 60. 
-uv_sponge_damp_settings%tau_sponge_damp_max = 1800. 
+uv_sponge_damp_settings%tau_sponge_damp_min = 10800. 
+uv_sponge_damp_settings%tau_sponge_damp_max = 86400. 
 uv_sponge_damp_settings%sponge_damp_depth = 0.25
 
 l_restart      = .false.  ! Flag for whether this is a restart run.
@@ -108,7 +108,7 @@ time_restart  = 0.0      ! Time of model restart.
 !        1 => Print lightweight debug messages, e.g. print statements
 !        2 => Print debug messages that require extra testing,
 !                e.g. checks for NaNs and spurious negative values.
-debug_level   = 0
+debug_level   = 2
 
 ! Add scalars that are computed using higher-order closure
 ! 0 to shut off all scalar computations
@@ -134,7 +134,7 @@ iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thet
 
 &microphysics_setting
 ! The schemes are: "khairoutdinov_kogan", "morrison", "coamps", "simplified_ice", "none"  
-micro_scheme = "khairoutdinov_kogan"
+micro_scheme = "morrison"
 !micro_scheme = "none"
 
 /
@@ -154,7 +154,7 @@ sol_const           = 1367.0 ! Solar Constant given in spec [W/m^2]
 
 l_stats       = .true.   ! Flag for statistical output.
 fname_prefix = "cloud_feedback_s11_p2k"    ! Prefix of output filename.
-stats_tsamp  = 600.      ! Frequency of statistical sampling [s]
+stats_tsamp  = 300.      ! Frequency of statistical sampling [s]
                         ! (must multiply evenly into stats_tout).
 stats_tout   = 3600.      ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"  ! Type of statistical output file (GrADS or netCDF).
