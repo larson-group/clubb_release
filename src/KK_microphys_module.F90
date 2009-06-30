@@ -250,6 +250,8 @@ module KK_microphys_module
     if ( .false. ) then
       T_in_K = wm
       T_in_K = w_std_dev
+      T_in_K = dzq
+      T_in_K = rvm
     end if
 
     ! IMPORTANT NOTES
