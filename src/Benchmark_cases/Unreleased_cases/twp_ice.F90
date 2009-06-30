@@ -174,7 +174,7 @@ intrinsic :: max, sqrt
 
 ! Constants
 real, parameter :: & 
-   C_h_20  = 0.001094,  & ! Drag coefficient, defined by RICO 3D specification
+  C_h_20  = 0.001094,  & ! Drag coefficient, defined by RICO 3D specification
   C_q_20  = 0.001133,  & ! Drag coefficient, defined by RICO 3D specification
   z0      = 0.00015      ! Roughness length, defined by ATEX specification
 
