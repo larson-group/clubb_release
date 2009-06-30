@@ -1,0 +1,54 @@
+This folder contains files that were used to generate the setup files for
+the TWP_ICE case.
+
+layer_parse.m - This is a MATLAB script which reads a ARM style forcing file and generates CLUBB compatible sounding.in and forcing.in files.
+
+McC_parse.m - This is a MATLAB script intended to be called by layer_parse.m, it appends a McClatchy profile to the top of the sounding.
+
+
+ARM Forcing Data Format Notes:
+ARM forcing data comes in plaintext files that we need to parse for our use. Each field in the file is pretty well self described in the file. However, how the data itself is stored is not.
+
+Each 'field' is looks like the following example:
+T[Temperature][air_temperature](K){Dry Bias Corrected Soundings}{v2.1}
+  2.9999701e+02  3.0023001e+02  3.0057199e+02  3.0079001e+02  3.0069400e+02
+  3.0045001e+02  3.0032001e+02  3.0031100e+02  3.0034000e+02  3.0041800e+02
+  3.0059000e+02  3.0049701e+02  2.9977701e+02
+  3.0019000e+02  3.0020001e+02  3.0005600e+02  3.0014499e+02  3.0010400e+02
+  2.9961401e+02  2.9900101e+02  2.9881100e+02  2.9897900e+02  2.9920999e+02
+  2.9932700e+02  2.9921799e+02  2.9904300e+02
+  2.9930899e+02  2.9960599e+02  2.9947699e+02  2.9919800e+02  2.9907599e+02
+  2.9888800e+02  2.9842300e+02  2.9808200e+02  2.9834000e+02  2.9907401e+02
+  2.9979800e+02  2.9998599e+02  2.9956100e+02
+
+The data itself is divided in to levels. In the above example, each data block represents the temperature at a single level at every time. So, from the above example, the temperature at the lowest level was 2.9999701e+02 K at the first timestep, and 2.9977701e+02 K at the last timestep.
+
+For the second level, the temperature was 3.0019000e+02 K at the first timestep and 2.9904300e+02 K at the last timestep. This pattern repeats until all temperature values have been provided. A graphical representation of each data block is provided below
+
+Var_Name[Long Name][Description](Unit){Notes}{Notes}
+|\------>Increasing time (Max 5 columns)
+| \
+|  \
+|   \
+|    \
+|   Increasing Time
+|
+|
+Level2-->Increasing time (Max 5 columns)
+| \
+|  \
+|   \
+|    \
+|   Increasing Time
+|
+|
+Level3-->Increasing time (Max 5 columns)
+| \
+|  \
+|   \
+|    \
+|   Increasing Time
+|
+|
+
+Where each level is at a higher altitude than the previous level.
