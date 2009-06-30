@@ -3,3 +3,5 @@ This folder contains files used to make input data for CLUBB.
 sounding_conversion.F90 - This file is a program which converts a sounding namelist into the 'SAM-like' input format.
 
 sclr_sounding_conversion.F90 - This file is a program which reads a *_sounding.in file and makes a default *_sclr_sounding.in and *_edsclr_sounding.in file from it.
+
+twp_ice - This folder contains MATLAB scripts which can read an ARM style forcing and generate CLUBB compatible sounding.in and forcing.in files.
