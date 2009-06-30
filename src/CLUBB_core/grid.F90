@@ -167,20 +167,23 @@ module grid_class
     !   pointers are always allocated rather than assigned and nullified
     !   like real pointers).
     real, pointer, dimension(:) :: &
-      zm, ! Momentum grid
-      zt  ! Thermo grid
+      zm, & ! Momentum grid
+      zt    ! Thermo grid
     real, pointer, dimension(:) :: &
       dzm, & ! The inverse spacing between thermodynamic grid
       !        levels; centered over momentum grid levels.
       dzt    ! The inverse spacing between momentum grid levels;
       !        centered over thermodynamic grid levels.
 
-    real, pointer, dimension(:,:) :: weights_zm2zt, & ! These weights are normally used in situations
-    !                                                   where a momentum level variable is being solved for implicitly in an
-    !                                                   equation and needs to be interpolated to the thermodynamic grid levels.
-                                     weights_zt2zm    ! These weights are normally used in situations where a
-    !                                                   thermodynamic level variable is being solved for implicitly in an equation
-    !                                                   and needs to be interpolated to the momentum grid levels.
+    ! These weights are normally used in situations
+    ! where a momentum level variable is being 
+    ! solved for implicitly in an equation and 
+    ! needs to be interpolated to the thermodynamic grid levels.
+    real, pointer, dimension(:,:) :: weights_zm2zt, & 
+    ! These weights are normally used in situations where a
+    ! thermodynamic level variable is being solved for implicitly in an equation
+    ! and needs to be interpolated to the momentum grid levels.
+                                     weights_zt2zm    
 
   end type grid
 
