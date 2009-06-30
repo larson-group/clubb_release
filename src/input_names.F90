@@ -10,10 +10,12 @@ implicit none
 character(len=*), public, parameter :: &
   z_name = 'z[m]', &
   pressure_name = 'Press[Pa]', &
+  press_mb_name = "Press[mb]", &
   temperature_name = 'T[K]', &
   theta_name = 'thm[K]', &
   thetal_name = 'thlm[K]', &
   rt_name = 'rt[kg\kg]', &
+  sp_humidity_name = "sp_hmdty[kg\kg]",&
   um_name = 'u[m\s]', &
   vm_name = 'v[m\s]', &
   ug_name = 'ug[m\s]', &
@@ -29,8 +31,8 @@ character(len=*), public, parameter :: &
   thetal_f_name = 'thlm_f[K\s]', &
   rt_f_name = 'rtm_f[kg\kg\s]', &
   um_ref_name = 'um_ref[m\s]', &
-  vm_ref_name = 'vm_ref[m\s]'
-
+  vm_ref_name = 'vm_ref[m\s]', &
+  ozone_name = "o3[kg\kg]"
   
 private ! Default Scope
 

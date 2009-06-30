@@ -75,6 +75,11 @@ forcings_file_path = '../input/case_setups/cloud_feedback_s6_forcings/'
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
 
+! Flag indicating if U.S. Std Atmosphere should 
+! be used to extend the grid in radiation.
+! If false, sounding data will be used.
+l_use_default_std_atmosphere = .true. 
+
 ! Sponge Damping
 !
 ! tau_sponge_damp_min : Minimum damping time-scale ( at the top0 [s]
@@ -114,7 +119,7 @@ debug_level   = 2
 ! 0 to shut off all scalar computations
 ! > 0 the specifies the number of columns in <runtype>_sclr_sounding.in 
 !	that will be read in and tracked
-sclr_dim   = 0  ! Total number of scalars
+sclr_dim   = 1  ! Total number of scalars
 
 iisclr_rt  = -1  ! Location in the array to place a scalar like total water
 iisclr_thl = -2 ! Location in the array to place a scalar like thetal

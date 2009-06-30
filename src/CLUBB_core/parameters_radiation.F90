@@ -18,7 +18,7 @@ module parameters_radiation
     sol_const ! Solar constant
 
   integer, public :: &
-    std_atmos_buffer
+    ext_atmos_buffer
 
   ! Albedo values (alvdr is used in the simplifed schemes as well)
   double precision, public :: &
@@ -60,7 +60,7 @@ module parameters_radiation
 
 ! OpenMP directives. These cannot be indented.
 !$omp threadprivate(rad_scheme, sol_const, alvdr, alvdf, alndr, alndf, &
-!$omp   kappa, F0, F1, eff_drop_radius, gc, omega, std_atmos_buffer, Fs_list, &
+!$omp   kappa, F0, F1, eff_drop_radius, gc, omega, ext_atmos_buffer, Fs_list, &
 !$omp   cos_solar_zen_list, l_fix_cos_solar_zen, nparam)
 
   contains
@@ -84,7 +84,7 @@ module parameters_radiation
     namelist /radiation_setting/ &
      rad_scheme, sol_const, alvdr, alvdf, alndr, alndf, &
      kappa, F0, F1, eff_drop_radius, gc, omega, Fs_list, &
-     cos_solar_zen_list, std_atmos_buffer, l_fix_cos_solar_zen, &
+     cos_solar_zen_list, ext_atmos_buffer, l_fix_cos_solar_zen, &
      amu0, slr
 
     ! ---- Begin Code ----
@@ -99,7 +99,7 @@ module parameters_radiation
     alndr = 0.1 ! Near-IR direct surface albedo        [-]
     alndf = 0.1 ! Near-IR diffuse surface albedo       [-]
 
-    std_atmos_buffer = 10
+    ext_atmos_buffer = 10
 
     ! Variables used by both schemes
     alvdr = 0.1 ! Visible direct surface albedo        [-]

@@ -75,6 +75,11 @@ forcings_file_path = '../input/case_setups/cloud_feedback_s12_forcings/'
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
 
+! Flag indicating if U.S. Std Atmosphere should 
+! be used to extend the grid in radiation.
+! If false, sounding data will be used.
+l_use_default_std_atmosphere = .true. 
+
 
 ! Sponge Damping
 !

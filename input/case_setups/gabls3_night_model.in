@@ -74,6 +74,11 @@ l_t_dependent = .true.
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 l_soil_veg     = .false. ! Flag for simple surface scheme
 
+! Flag indicating if U.S. Std Atmosphere should 
+! be used to extend the grid in radiation.
+! If false, sounding data will be used.
+l_use_default_std_atmosphere = .true. 
+
 
 ! Sponge Damping
 !
@@ -146,7 +151,6 @@ rad_scheme = "none",
 ! BUGSrad related settings
 sol_const = 1321.0 ! Solar Constant for July [W/m^2]
 
-std_atmos_buffer = 45
 
 ! Albedo values
 alvdr = 0.23d0    ! Visible direct surface albedo        [-]

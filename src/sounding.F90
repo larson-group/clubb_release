@@ -5,17 +5,16 @@ module sounding
 
   public ::  & 
     read_sounding, & 
-    read_x_profile, &
     read_profile ! Not currently used in CLUBB
 
   private :: read_sounding_file, read_sclr_sounding_file, &
-    read_edsclr_sounding_file, read_z_profile, &
-    read_theta_profile
+    read_edsclr_sounding_file
 
 
   ! Constant parameter
   integer, public, parameter :: nmaxsnd = 600
   integer, public, parameter :: sclr_max = 1000
+  integer, public, parameter :: n_snd_var = 8
 
   private ! Default Scope
 
@@ -24,7 +23,8 @@ module sounding
   subroutine read_sounding( iunit, runtype, psfc, zm_init,& 
                             thlm, theta_type, rtm, um, vm, ugm, vgm, &
                             alt_type, press, subs_type, wm, &
-                            sclrm, edsclrm )
+                            sclrm, edsclrm, sounding_retVars, &
+                            sclr_sounding_retVars )
 
     !       Description:
     !       Subroutine to initialize model variables from a namelist file
@@ -43,8 +43,8 @@ module sounding
         sclr_dim, &! Variable(s)
         edsclr_dim
 
-    use std_atmosphere_mod, only:  & 
-        std_atmosphere ! Procedure(s)
+    use ext_atmosphere_mod, only:  & 
+        ext_atmosphere ! Procedure(s)
 
     use interpolation, only:  & 
         lin_int ! Procedure(s)
@@ -58,9 +58,12 @@ module sounding
       clubb_at_least_debug_level ! Function
 
     use input_names, only: &
-    z_name, &
-    theta_name, &
-    wm_name
+      z_name, &
+      theta_name, &
+      wm_name
+
+    use input_reader, only: &
+      one_dim_read_var
 
     implicit none
 
@@ -95,12 +98,18 @@ module sounding
       alt_type, &       ! Type of independent coordinate
       subs_type         ! Type of subsidence
 
-    ! Optional output variables
+    ! Output variables
     real, intent(out), dimension(gr%nnzp, sclr_dim) ::  & 
       sclrm   ! Passive scalar output      [units vary]
 
     real, intent(out), dimension(gr%nnzp, edsclr_dim) ::  & 
       edsclrm ! Eddy Passive scalar output [units vary]
+
+    type(one_dim_read_var), dimension(n_snd_var), intent(out) :: &
+      sounding_retVars ! Sounding Profile
+
+    type(one_dim_read_var), dimension(sclr_dim), intent(out) :: &
+      sclr_sounding_retVars ! Sclr Sounding Profile
 
     ! Local variables
 
@@ -120,7 +129,7 @@ module sounding
     v,      & ! v wind sounding                        [m/s]
     ug,     & ! u geostrophic wind sounding            [m/s]
     vg,     & ! v geostrophic wind sounding            [m/s]
-    p_in_Pa, &   ! Pressure                               [Pa]
+    p_in_Pa, &   ! Pressure                            [Pa]
     subs      ! Subsidence                             [m/s or Pa/s]
 
     real, dimension(nmaxsnd, sclr_max) ::  & 
@@ -163,7 +172,8 @@ module sounding
       ! Read in SAM-Like <runtype>_sounding.in file
       call read_sounding_file( iunit, runtype, nlevels, psfc, zm_init, & 
                                z, theta, theta_type, rt, u, v, ug, vg, &
-                               alt_type, p_in_Pa, subs_type, subs )
+                               alt_type, p_in_Pa, subs_type, subs, &
+                               sounding_retVars )
     else
       stop 'Cannot open <runtype>_sounding.in file'
       ! sounding namelist is no longer used.
@@ -178,7 +188,8 @@ module sounding
       !                  <runtype>_edsclr_sounding.in
       if( sclr_dim > 0 ) then
         if( sclr_sounding_exists ) then
-          call read_sclr_sounding_file( iunit, runtype, sclr )
+          call read_sclr_sounding_file( iunit, runtype, sclr, &
+          sclr_sounding_retVars )
         else
           stop 'Cannot open <runtype>_sclr_sounding.in file'
         end if
@@ -359,7 +370,7 @@ module sounding
       ! Standard Atmosphere
       ! Joshua Fasching April 2009
       if ( l_std_atmo ) then
-        call std_atmosphere( gr%zt(i), thlm(i), rtm(i), press(i) )
+        call ext_atmosphere( gr%zt(i), thlm(i), rtm(i), press(i) )
 
         um(i) = um(i-1)
         vm(i) = vm(i-1)
@@ -383,22 +394,26 @@ module sounding
   !-------------------------------------------------------------------------------------------------
   subroutine read_sounding_file( iunit, runtype, nlevels, psfc, zm_init, &
                                  z, theta, theta_type, rt, u, v, ug, vg, &
-                                 alt_type, p_in_Pa, subs_type, subs )
+                                 alt_type, p_in_Pa, subs_type, subs, retVars )
     !
     !  Description: This subroutine reads in a <runtype>_sounding.in file and
     !  returns the values contained in that file.
     !
     !-----------------------------------------------------------------------------------------------
-    use input_reader, only: read_one_dim_file, fill_blanks_one_dim_vars, &
-                            one_dim_read_var, deallocate_one_dim_vars
+    use input_reader, only: read_one_dim_file, read_x_profile, fill_blanks_one_dim_vars, &
+                            one_dim_read_var
 
+    use input_interpret, only: &
+     read_z_profile, &
+     read_theta_profile, &
+     read_subs_profile
 
     use input_names, only: &
-    rt_name, &
-    um_name, &
-    vm_name, &
-    ug_name, &
-    vg_name
+      rt_name, &
+      um_name, &
+      vm_name, &
+      ug_name, &
+      vg_name
 
     implicit none
 
@@ -426,62 +441,61 @@ module sounding
     p_in_Pa,& ! Pressure sounding                      [Pa]
     subs      ! Subsidence sounding                    [m/s or Pa/s]
 
+    type(one_dim_read_var), intent(out), dimension(n_snd_var) :: &
+      retVars ! Structure containing sounding profile
+
     character(len=*), intent(out) :: & 
       theta_type, &     ! Type of temperature sounding
       alt_type, &       ! Type of independent coordinate
       subs_type         ! Type of subsidence
 
-    integer, parameter :: nCol = 8
 
-    type(one_dim_read_var), dimension(nCol) :: retVars
 
-    call read_one_dim_file( iunit, nCol, &
+    call read_one_dim_file( iunit, n_snd_var, &
     '../input/case_setups/'//trim(runtype)//'_sounding.in', retVars )
 
-    call fill_blanks_one_dim_vars( nCol, retVars )
+    call fill_blanks_one_dim_vars( n_snd_var, retVars )
 
-    call read_z_profile( nCol, retVars, psfc, zm_init, z, p_in_Pa, alt_type )
+    call read_z_profile( n_snd_var, nmaxsnd, retVars, psfc, zm_init, z, p_in_Pa, alt_type )
 
-    call read_theta_profile( nCol, retVars, theta_type, theta )
+    call read_theta_profile( n_snd_var, nmaxsnd, retVars, theta_type, theta )
 
-    rt = read_x_profile( nCol, nmaxsnd, rt_name, retVars )
+    rt = read_x_profile( n_snd_var, nmaxsnd, rt_name, retVars )
 
-    u = read_x_profile( nCol, nmaxsnd, um_name, retVars )
+    u = read_x_profile( n_snd_var, nmaxsnd, um_name, retVars )
 
-    v = read_x_profile( nCol, nmaxsnd, vm_name, retVars )
+    v = read_x_profile( n_snd_var, nmaxsnd, vm_name, retVars )
 
-    ug = read_x_profile( nCol, nmaxsnd, ug_name, retVars )
+    ug = read_x_profile( n_snd_var, nmaxsnd, ug_name, retVars )
 
-    vg = read_x_profile( nCol, nmaxsnd, vg_name, retVars )
+    vg = read_x_profile( n_snd_var, nmaxsnd, vg_name, retVars )
 
-    call read_subs_profile( nCol, retVars, subs_type, subs )
+    call read_subs_profile( n_snd_var, nmaxsnd, retVars, subs_type, subs )
 
     nlevels = size( retVars(1)%values )
 
-    call deallocate_one_dim_vars( nCol, retVars )
 
   end subroutine read_sounding_file
 
   !-------------------------------------------------------------------------------------------------
-  subroutine read_sclr_sounding_file( iunit, runtype, sclr )
+  subroutine read_sclr_sounding_file( iunit, runtype, sclr, retVars )
     !
     !  Description: This subroutine reads in a <runtype>_sclr_sounding.in file and
     !  returns the values contained in that file.
     !
     !-----------------------------------------------------------------------------------------------
-    use input_reader, only: read_one_dim_file, &
-                            one_dim_read_var, deallocate_one_dim_vars
+    use input_reader, only: read_one_dim_file, one_dim_read_var
 
     use parameters_model, only: sclr_dim
 
     use array_index, only: iisclr_rt, iisclr_thl, iisclr_CO2
 
     use input_names, only: &
-    CO2_name, &
-    rt_name, &
-    theta_name, &
-    thetal_name, &
-    temperature_name
+      CO2_name, &
+      rt_name, &
+      theta_name, &
+      thetal_name, &
+      temperature_name
 
     implicit none
 
@@ -496,7 +510,8 @@ module sounding
     sclr        ! Scalar sounding [?]
 
 
-    type(one_dim_read_var), dimension(sclr_dim) :: retVars
+    type(one_dim_read_var), dimension(sclr_dim), intent(out) :: &
+      retVars ! Structure containing scalar sounding
 
     integer i
 
@@ -523,7 +538,6 @@ module sounding
       sclr(1:size(retVars(i)%values),i) = retVars(i)%values
     end do
 
-    call deallocate_one_dim_vars( sclr_dim, retVars)
 
   end subroutine read_sclr_sounding_file
 
@@ -592,278 +606,6 @@ module sounding
     call deallocate_one_dim_vars( edsclr_dim, retVars )
 
   end subroutine read_edsclr_sounding_file
-
-
-  !-------------------------------------------------------------------------------------------------
-  function read_x_profile( nvar, dim_size, target_name, retVars ) result(x)
-    !
-    !  Description: Searches for the variable specified by target_name in the
-    !  collection of retVars. If the function finds the variable then it returns
-    !  it. If it does not the program using this function will exit gracefully
-    !  with a warning message.
-    !
-    !-----------------------------------------------------------------------------------------------
-    use input_reader, only: one_dim_read_var
-
-    implicit none
-
-
-    ! Input Variable(s)
-    integer, intent(in) :: nvar ! Number of variables in retVars
-
-    integer, intent(in) :: dim_size
-
-
-    character(len=*), intent(in) :: target_name ! Variable that is being
-    !                                             searched for
-
-    type(one_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection
-    !                                                                being searched through
-
-    ! Output Variable(s)
-    real, dimension(dim_size) :: x
-
-    ! Local Variables
-    integer i
-
-    logical l_found
-
-    l_found = .false.
-
-    i = 1
-    do while( i <= nvar .and. .not. l_found)
-      if( retVars(i)%name == target_name ) then
-        l_found = .true.
-        x(1:size(retVars(i)%values)) = retVars(i)%values
-      end if
-      i=i+1
-    end do
-
-    if( .not. l_found ) then
-      print *, target_name,'could not be found. Check your sounding.in file.'
-      stop
-    end if
-
-  end function read_x_profile
-
-!------------------------------------------------------------------------------
-  subroutine read_z_profile(nvar, retVars, psfc, zm_init, z, p_in_Pa, alt_type)
-!
-!  Description: Searches for the variable specified by either 'z[m]' or
-!  'Press[Pa]' in the collection of retVars. If the subroutine finds the
-!  variable indicated by 'z[m]',
-!  then it returns it. If the subroutine finds 'Press[Pa]' then it converts
-!  it to values of altitude in meters.
-!  If it does not find either or finds both the program using this subroutine
-!  will exit gracefully with a warning message.
-!
-!-------------------------------------------------------------------------------
-
-    use input_reader, only: one_dim_read_var ! Procedure(s)
-
-    use constants, only: kappa, p0, Cp, Lv, zero_threshold, ep2, ep1 ! Variable(s)
-
-    use saturation, only: sat_mixrat_liq, sat_rcm ! Procedure(s)
-
-    use parameters_model, only: T0 ! Variable(s)
-
-    use hydrostatic_mod, only: inverse_hydrostatic ! Procedure(s)
-
-    use input_names, only: &
-    z_name, &
-    pressure_name, &
-    rt_name, &
-    temperature_name, &
-    thetal_name, &
-    theta_name
-
-    implicit none
-
-
-    ! Input Variable(s)
-    integer, intent(in) :: nvar ! Number of elements in retVars
-
-    type(one_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection
-    !                                                                being searched
-
-    real, intent(in) :: &
-      psfc, &         ! Pressure at the surface [Pa]
-      zm_init         ! Height at zm(1)         [m]
-
-    ! Output Variable(s)
-
-    real, intent(out), dimension(nmaxsnd) :: z ! Height sounding profile [m]
-
-    real, intent(out), dimension(nmaxsnd) :: p_in_Pa ! Pressure sounding profile [Pa]
-
-    character(len=*), intent(out) :: alt_type ! Indicates where altitudes were
-    !                                           gained from
-
-    intrinsic :: max
-
-    ! Local Variables
-    real, dimension(nmaxsnd) :: exner,thvm, rcm, theta, rtm
-
-    integer :: nlevels, k
-
-    character(len=40) :: theta_type
-
-    if( count( (/ any(retVars%name == z_name), any(retVars%name == pressure_name) /)) <= 1) then
-      if( any(retVars%name == z_name))then
-        alt_type = z_name
-        z = read_x_profile( nvar, nmaxsnd, alt_type, retVars )
-        p_in_Pa = -999.9
-
-      elseif( any(retVars%name == pressure_name))then
-        alt_type = pressure_name
-
-        p_in_Pa = read_x_profile( nvar, nmaxsnd, alt_type, retVars )
-
-        nlevels = size(retVars(1)%values)
-
-        call read_theta_profile(nvar, retVars, theta_type, theta )
-
-        rtm = read_x_profile(nvar, nmaxsnd, rt_name, retVars)
-
-        exner(1) = ( psfc/p0 )**kappa
-
-        do k=2, nlevels
-          exner(k) = (p_in_Pa(k)/p0) ** kappa  ! zt
-        end do
-
-        if( trim( theta_type ) == temperature_name ) then
-           theta = theta / exner
-           theta_type = theta_name     
-        end if
-
-        do k = 1,nlevels
-          rcm(k) = &
-          max( rtm(k) - sat_mixrat_liq( p_in_Pa(k), theta(k) * exner(k) ), &
-            zero_threshold )
-        enddo
-
-        ! Compute initial theta-l
-
-        select case ( trim( theta_type ) )
-        case ( thetal_name )
-          !case ( "dycoms2_rf01", "astex_a209", "nov11_altocu", &
-          !      "clex9_nov02", "clex9_oct14", "dycoms2_rf02" )
-          ! thlm profile that is initially saturated at points.
-          ! thlm profile remains the same as in the input sounding.
-          ! use iterative method to find initial rcm.
-          do k =1, nlevels, 1
-            rcm(k) = sat_rcm( theta(k), rtm(k), p_in_Pa(k), exner(k) )
-          end do
-
-        case default ! theta_name
-          ! Initial profile is non-saturated thlm or any type of theta.
-          theta(1:nlevels) = theta(1:nlevels) &
-                           - Lv/(Cp*exner(1:nlevels)) * rcm(1:nlevels)
-
-        end select
-
-        ! Now, compute initial thetav
-        do k = 1, nlevels, 1
-          thvm(k) = theta(k) + ep1 * T0 * rtm(k)  & 
-               + ( Lv/(Cp*exner(k)) - ep2 * T0 ) * rcm(k)
-        end do
-
-        call inverse_hydrostatic ( thvm, zm_init, exner, nlevels, &
-                                     z )
-      else
-        stop "Could not read theta compatable variable"
-      endif
-
-    end if
-
-  end subroutine read_z_profile
-
-  !-------------------------------------------------------------------------------------------------
-  subroutine read_theta_profile(nvar, retVars, theta_type, theta)
-    !
-    !  Description: Searches for the variable specified by either 'thetal[K]' or 'theta[K]' in the
-    !  collection of retVars. If the function finds the variable then it returns
-    !  it. If it does not the program using this function will exit gracefully
-    !  with a warning message.
-    !
-    !-----------------------------------------------------------------------------------------------
-    use input_reader, only: one_dim_read_var
-
-    use input_names, only: &
-    thetal_name, &
-    theta_name, &
-    temperature_name
-
-    implicit none
-
-    ! Input Variable(s)
-    integer, intent(in) :: nvar ! Number of elements in retVars
-
-    type(one_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection being
-    !                                                                searched through
-
-    character(len=*), intent(out) :: theta_type
-
-    ! Output Variable(s)
-    real, dimension(nmaxsnd), intent(out) :: theta
-
-    if( count( (/ any(retVars%name == theta_name), &
-                  any(retVars%name == thetal_name), &
-                  any(retVars%name == temperature_name) /) )<= 1) then
-      if( any(retVars%name == theta_name))then
-        theta_type = theta_name
-      elseif( any(retVars%name == thetal_name))then
-        theta_type = thetal_name
-      elseif( any(retVars%name == temperature_name))then
-        theta_type = temperature_name
-      else
-        stop "Could not read theta compatable variable"
-      endif
-      theta = read_x_profile( nvar, nmaxsnd,theta_type, retVars )
-
-    end if
-  end subroutine read_theta_profile
-  !-------------------------------------------------------------------------------------------------
-  subroutine read_subs_profile(nvar, retVars, subs_type, subs )
-    !
-    !  Description: Searches for the variable specified by either 'w[m\s]' or 'omega[Pa\s]' in the
-    !  collection of retVars. If the function finds the variable then it returns
-    !  it. If it does not the program using this function will exit gracefully
-    !  with a warning message.
-    !
-    !-----------------------------------------------------------------------------------------------
-    use input_reader, only: one_dim_read_var
-
-    use input_names, only : &
-    wm_name, &
-    omega_name
-
-    implicit none
-
-
-    ! Input Variable(s)
-    integer, intent(in) :: nvar ! Number of elements in retVars
-
-    type(one_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection being
-    !                                                                searched through
-
-    ! Output Variable(s)
-    character(len=*), intent(out) :: subs_type ! Indicates type of subsidence measurement
-
-    real, dimension(nmaxsnd), intent(out) :: subs ! Subsidence profile [m/s or Pa/s]
-
-    if( count( (/ any(retVars%name == wm_name), any(retVars%name == omega_name) /)) <= 1) then
-      if( any(retVars%name == wm_name))then
-        subs_type = wm_name
-      elseif( any(retVars%name == omega_name))then
-        subs_type = omega_name
-      else
-        stop "Could not read vertical velocity compatable variable"
-      endif
-      subs = read_x_profile(nvar, nmaxsnd, subs_type, retVars)
-
-    end if
-  end subroutine read_subs_profile
 
   !------------------------------------------------------------------------
   subroutine read_profile( fname, x )

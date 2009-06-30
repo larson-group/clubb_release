@@ -20,7 +20,8 @@ module input_reader
             fill_blanks_two_dim_vars, &
             deallocate_one_dim_vars, &
             deallocate_two_dim_vars, &
-            read_x_table
+            read_x_table, &
+            read_x_profile
 
   ! Derived type for representing a rank 1 variable that has been read in by one
   ! of the procedures.
@@ -127,7 +128,7 @@ module input_reader
 
       if( nRowI < 1 ) then
         stop "Number of elements must be an integer and greater than zero in two-dim  input file."
-      end if 
+      end if
 
       do k =1, nRowI
         read(iunit, *) tmp
@@ -138,13 +139,13 @@ module input_reader
     77 continue
 
     do i=1, nRowO
-    
+
       backspace(iunit)
-  
+
       do j=1, nRowI
-    
+
         backspace(iunit)
-  
+
       end do
 
     end do
@@ -201,17 +202,17 @@ module input_reader
 
     ! Output Variable(s)
 
-    type (one_dim_read_var), dimension(nCol),intent(out) :: read_vars ! Structured information 
+    type (one_dim_read_var), dimension(nCol),intent(out) :: read_vars ! Structured information
     !                                                                   from the file
 
-    ! Local Variable(s) 
-    character(len=256),dimension(nCol) :: names  
+    ! Local Variable(s)
+    character(len=256),dimension(nCol) :: names
 
     character(len=200) :: tmpline
 
     integer nRow
 
-    integer :: k, j 
+    integer :: k, j
 
     real, dimension(ncol) :: tmp
 
@@ -554,7 +555,7 @@ module input_reader
     do while( i <= nvar .and. .not. l_found)
 
       if( retVars(i)%name == target_name ) then
-  
+
         l_found = .true.
 
         x = retVars(i)%values
@@ -574,5 +575,56 @@ module input_reader
     end if
 
   end function read_x_table
+
+  !-------------------------------------------------------------------------------------------------
+  function read_x_profile( nvar, dim_size, target_name, retVars ) result(x)
+    !
+    !  Description: Searches for the variable specified by target_name in the
+    !  collection of retVars. If the function finds the variable then it returns
+    !  it. If it does not the program using this function will exit gracefully
+    !  with a warning message.
+    !
+    !-----------------------------------------------------------------------------------------------
+
+    implicit none
+
+
+    ! Input Variable(s)
+    integer, intent(in) :: nvar ! Number of variables in retVars
+
+    integer, intent(in) :: dim_size ! Size of the array returned
+
+
+    character(len=*), intent(in) :: target_name ! Variable that is being
+    !                                             searched for
+
+    type(one_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection
+    !                                                                being searched through
+
+    ! Output Variable(s)
+    real, dimension(dim_size) :: x
+
+    ! Local Variables
+    integer i
+
+    logical l_found
+
+    l_found = .false.
+
+    i = 1
+    do while( i <= nvar .and. .not. l_found)
+      if( retVars(i)%name == target_name ) then
+        l_found = .true.
+        x(1:size(retVars(i)%values)) = retVars(i)%values
+      end if
+      i=i+1
+    end do
+
+    if( .not. l_found ) then
+      print *, target_name,'could not be found. Check your sounding.in file.'
+      stop
+    end if
+
+  end function read_x_profile
 !------------------------------------------------------------------------------
 end module input_reader

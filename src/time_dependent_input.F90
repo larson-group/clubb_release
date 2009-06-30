@@ -111,17 +111,15 @@ module time_dependent_input
     !-----------------------------------------------------------------------------
 
     use input_reader, only: read_one_dim_file, one_dim_read_var, &
-                            fill_blanks_one_dim_vars
-
-    use sounding, only: read_x_profile
+                            fill_blanks_one_dim_vars, read_x_profile
 
     use input_names, only: &
-    time_name,&
-    thetal_name, &
-    rt_name, &
-    LH_name, &
-    SH_name, &
-    pressure_name
+      time_name, &
+      thetal_name, &
+      rt_name, &
+      LH_name, &
+      SH_name, &
+      pressure_name
 
     implicit none
 

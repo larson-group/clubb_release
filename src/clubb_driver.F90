@@ -187,6 +187,10 @@ module clubb_driver
       uv_sponge_damp_profile, &
       finalize_tau_sponge_damp
 
+    use ext_atmosphere_mod, only: &
+      l_use_default_std_atmosphere, &
+      finalize_ext_atm
+
     implicit none
 
     ! Because Fortran I/O is not thread safe, we use this here to
@@ -289,7 +293,7 @@ module clubb_driver
       time_initial, time_final, time_spinup, & 
       dtmain, dtclosure, & 
       sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge, & 
-      forcings_file_path, l_t_dependent, &
+      forcings_file_path, l_t_dependent, l_use_default_std_atmosphere, &
       thlm_sponge_damp_settings, rtm_sponge_damp_settings, uv_sponge_damp_settings, &
       l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, debug_level, & 
@@ -339,6 +343,8 @@ module clubb_driver
     forcings_file_path = ''
 
     l_t_dependent = .false.
+
+    l_use_default_std_atmosphere = .true.
 
     thlm_sponge_damp_settings%l_sponge_damping = .false.
     rtm_sponge_damp_settings%l_sponge_damping = .false.
@@ -483,6 +489,8 @@ module clubb_driver
       print *, "forcings_file_path = ", forcings_file_path
 
       print *, "l_t_dependent = ", l_t_dependent
+
+      print *, "l_use_default_std_atmosphere", l_use_default_std_atmosphere
 
       print *, "thlm_sponge_damp_settings%l_sponge_damping = ",  &
                           thlm_sponge_damp_settings%l_sponge_damping
@@ -796,6 +804,8 @@ module clubb_driver
       call finalize_t_dependent_input()
     end if
 
+    call finalize_ext_atm( )
+
     call cleanup_clubb_core( .false. )
 
     call stats_finalize( )
@@ -848,7 +858,7 @@ module clubb_driver
 
     use grid_class, only: zm2zt, zt2zm ! Procedure(s)
 
-    use sounding, only: read_sounding ! Procedure(s)
+    use sounding, only: n_snd_var, read_sounding ! Procedure(s)
 
     use model_flags, only: &
         l_uv_nudge, & ! Variable(s)
@@ -868,6 +878,10 @@ module clubb_driver
       initialize_t_dependent_input, & ! Procedure(s)
       l_t_dependent ! Variable(s)
 
+    use ext_atmosphere_mod, only: &
+      l_use_default_std_atmosphere, &
+      load_ext_std_atm, &
+      convert_snd2ext_atm
 
     use mpace_a, only: mpace_a_init ! Procedure(s)
 
@@ -890,20 +904,23 @@ module clubb_driver
     use soil_vegetation, only: sfc_soil_T_in_K, deep_soil_T_in_K, veg_T_in_K ! Variable(s)
 
     use sponge_layer_damping, only: &
-    thlm_sponge_damp_settings, &
-    rtm_sponge_damp_settings, &
-    uv_sponge_damp_settings, &
-    thlm_sponge_damp_profile, &
-    rtm_sponge_damp_profile, &
-    uv_sponge_damp_profile, &
-    initialize_tau_sponge_damp ! Procedure(s0
+      thlm_sponge_damp_settings, &
+      rtm_sponge_damp_settings, &
+      uv_sponge_damp_settings, &
+      thlm_sponge_damp_profile, &
+      rtm_sponge_damp_profile, &
+      uv_sponge_damp_profile, &
+      initialize_tau_sponge_damp ! Procedure(s0
 
     use input_names, only: &
-    z_name, &
-    temperature_name, &
-    thetal_name, &
-    wm_name, &
-    omega_name
+      z_name, &
+      temperature_name, &
+      thetal_name, &
+      wm_name, &
+      omega_name
+
+    use input_reader, only: &
+      one_dim_read_var
 
     implicit none
 
@@ -964,6 +981,10 @@ module clubb_driver
 
     integer :: k, err_code
 
+    type(one_dim_read_var), dimension(n_snd_var) :: sounding_retVars
+
+    type(one_dim_read_var), dimension(sclr_dim) :: sclr_sounding_retVars
+
     character(len=50) :: &
       theta_type, & ! Type of temperature sounding 
       alt_type,   & ! Type of altitude sounding
@@ -974,10 +995,19 @@ module clubb_driver
 
     ! Read sounding information
 
+    if( l_use_default_std_atmosphere ) then
+      call load_ext_std_atm( iunit )
+    end if
+
     call read_sounding( iunit, runtype, psfc, zm_init, &          ! Intent(in) 
                         thlm, theta_type, rtm, um, vm, ug, vg,  & ! Intent(out)
-                        alt_type, p_in_Pa, subs_type, wm_zt, &
-                        sclrm, edsclrm )                          ! Intent(out)
+                        alt_type, p_in_Pa, subs_type, wm_zt, &    ! Intent(out)
+                        sclrm, edsclrm, sounding_retVars, sclr_sounding_retVars ) ! Intent(out)
+
+    if( .not. l_use_default_std_atmosphere ) then
+      call convert_snd2ext_atm( n_snd_var, psfc, zm_init, sclr_dim, &      ! Intent(in)
+                                sounding_retVars, sclr_sounding_retVars )  ! Intent(in)
+    end if
 
     select case( trim( alt_type ) )
     case ( z_name )
@@ -1612,10 +1642,10 @@ module clubb_driver
     use mpace_a, only: mpace_a_init ! Procedure(s)
 
     use input_reader, only: read_one_dim_file, fill_blanks_one_dim_vars, & ! Procedures
+      read_x_profile, &
       deallocate_one_dim_vars, & 
       one_dim_read_var ! Type
 
-    use sounding, only: read_x_profile ! Procedure(s)
 
     implicit none
     integer, parameter :: nCol = 7
