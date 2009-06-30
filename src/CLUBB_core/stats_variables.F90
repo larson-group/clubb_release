@@ -397,17 +397,28 @@ module stats_variables
 
   integer, public :: &
     iLH_rrainm, &
+    iLH_Nrm, &
     iLH_ricem, &
+    iLH_Nim, &
     iLH_rsnowm, &
+    iLH_Nsnowm, &
     iLH_rgraupelm, &
+    iLH_Ngraupelm, &
     iLH_thlm, &
     iLH_rcm, &
+    iLH_Ncm, &
     iLH_rvm, &
     iLH_wm, &
     iLH_cf
 
-!$omp threadprivate(iLH_rrainm, iLH_ricem, iLH_rsnowm, iLH_rgraupelm, &
-!$omp   iLH_thlm, iLH_rcm, iLH_rvm, iLH_wm, iLH_cf )
+!$omp threadprivate(iLH_rrainm, iLH_ricem, iLH_Nim, iLH_rsnowm, iLH_Nsnowm, &
+!$omp   iLH_rgraupelm, iLH_Ngraupelm, &
+!$omp   iLH_thlm, iLH_rcm, iLH_Ncm, iLH_rvm, iLH_wm, iLH_cf )
+
+  integer, public :: &
+    iLH_wp2_zt
+
+!$omp threadprivate(iLH_wp2_zt)
 
   ! Indices for statistics in zm file
   integer, public :: & 

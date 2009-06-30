@@ -267,13 +267,19 @@ module stats_zt
 
     use stats_variables, only: &
       iLH_rrainm, &
+      iLH_Nrm, &
       iLH_ricem, &
+      iLH_Nim, &
       iLH_rsnowm, &
+      iLH_Nsnowm, &
       iLH_rgraupelm, &
+      iLH_Ngraupelm, &
       iLH_thlm, &
       iLH_rcm, &
+      iLH_Ncm, &
       iLH_rvm, &
       iLH_wm, &
+      iLH_wp2_zt, &
       iLH_cf
 
     use stats_type, only: & 
@@ -288,10 +294,10 @@ module stats_zt
 
     implicit none
 
-! Input Variable
+    ! Input Variable
     character(len= * ), dimension(nvarmax_zt), intent(in) :: vars_zt
 
-! Output Variable	
+    ! Output Variable	
     logical, intent(inout) :: l_error
 
 ! Local Varables
@@ -533,6 +539,11 @@ module stats_zt
     iLH_ricem = 0
     iLH_rsnowm = 0
     iLH_rgraupelm = 0
+
+    iLH_Nrm = 0
+    iLH_Nim = 0
+    iLH_Nsnowm = 0
+    iLH_Ngraupelm = 0
 
     iLH_thlm = 0
     iLH_rcm = 0
@@ -1958,11 +1969,25 @@ module stats_zt
              "Latin hypercube estimate of rrainm", "kg/kg", zt )
         k = k + 1
 
+      case ( 'LH_Nrm' )
+        iLH_Nrm = k
+
+        call stat_assign( iLH_Nrm, "LH_Nrm", & 
+             "Latin hypercube estimate of Nrm", "count/kg", zt )
+        k = k + 1
+
       case ( 'LH_ricem' )
         iLH_ricem = k
 
         call stat_assign( iLH_ricem, "LH_ricem", & 
              "Latin hypercube estimate of ricem", "kg/kg", zt )
+        k = k + 1
+
+      case ( 'LH_Nim' )
+        iLH_Nim = k
+
+        call stat_assign( iLH_Nim, "LH_Nim", & 
+             "Latin hypercube estimate of Nim", "count/kg", zt )
         k = k + 1
 
       case ( 'LH_rsnowm' )
@@ -1972,11 +1997,26 @@ module stats_zt
              "Latin hypercube estimate of rsnowm", "kg/kg", zt )
         k = k + 1
 
+      case ( 'LH_Nsnowm' )
+        iLH_Nsnowm = k
+
+        call stat_assign( iLH_Nsnowm, "LH_Nsnowm", & 
+             "Latin hypercube estimate of Nsnowm", "count/kg", zt )
+        k = k + 1
+
+
       case ( 'LH_rgraupelm' )
         iLH_rgraupelm = k
 
         call stat_assign( iLH_rgraupelm, "LH_rgraupelm", & 
              "Latin hypercube estimate of rgraupelm", "kg/kg", zt )
+        k = k + 1
+
+      case ( 'LH_Ngraupelm' )
+        iLH_Ngraupelm = k
+
+        call stat_assign( iLH_Ngraupelm, "LH_Ngraupelm", & 
+             "Latin hypercube estimate of Ngraupelm", "kg/kg", zt )
         k = k + 1
 
       case ( 'LH_thlm' )
@@ -1992,6 +2032,14 @@ module stats_zt
         call stat_assign( iLH_rcm, "LH_rcm", & 
              "Latin hypercube estimate of rcm", "kg/kg", zt )
         k = k + 1
+
+      case ( 'LH_Ncm' )
+        iLH_Ncm = k
+
+        call stat_assign( iLH_Ncm, "LH_Ncm", & 
+             "Latin hypercube estimate of Ncm", "count/kg", zt )
+        k = k + 1
+
 
       case ( 'LH_rvm' )
         iLH_rvm = k
@@ -2015,6 +2063,12 @@ module stats_zt
              "Latin hypercube estimate of cloud fraction", "count", zt )
         k = k + 1
 
+      case ( 'LH_wp2_zt' )
+        iLH_wp2_zt = k
+        call stat_assign( iLH_wp2_zt, "LH_wp2_zt", & 
+             "Variance of the latin hypercube estimate of w", "m^2/s^2", zt )
+        k = k + 1
+        
       case default
 
         l_found =.false.

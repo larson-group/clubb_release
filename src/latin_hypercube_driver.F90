@@ -26,7 +26,7 @@ module latin_hypercube_mod
 !-------------------------------------------------------------------------------
   subroutine latin_hypercube_driver &
              ( dt, iter, nnzp, cf, T_in_K, p_in_Pa, exner, &
-               rho, pdf_params, wm, w_std_dev, altitudes, rcm, rvm, &
+               rho, pdf_params, wm, w_std_dev, dzq, rcm, rvm, &
                hydromet, hydromet_mc_est, hydromet_vel_est, rcm_mc_est, &
                rvm_mc_est, thlm_mc_est, microphys_sub )
 
@@ -38,10 +38,14 @@ module latin_hypercube_mod
 !-------------------------------------------------------------------------------
     use array_index, only: & 
       iirrainm,    & ! Variables  
-      iiNcm,       & 
       iirsnowm,    &
       iirgraupelm, &
-      iiricem
+      iiricem,     &
+      iiNcm,       & 
+      iiNrm,       & 
+      iiNim,       & 
+      iiNsnowm,    & 
+      iiNgraupelm
 
     use parameters_model, only: hydromet_dim ! Variable
 
@@ -75,13 +79,19 @@ module latin_hypercube_mod
     use stats_variables, only: &
       l_stats_samp, & ! Variables
       iLH_rrainm, &
+      iLH_Nrm, &
       iLH_ricem, &
+      iLH_Nim, &
       iLH_rsnowm, &
+      iLH_Nsnowm, &
       iLH_rgraupelm, &
+      iLH_Ngraupelm, &
       iLH_thlm, &
       iLH_rcm, &
+      iLH_Ncm, &
       iLH_rvm, &
       iLH_wm, &
+      iLH_wp2_zt, &
       iLH_cf, &
       zt
 
@@ -114,7 +124,7 @@ module latin_hypercube_mod
     real, dimension(nnzp), intent(in) :: &
       wm, &        ! Mean w                     [m/s]
       w_std_dev, & ! Standard deviation of w    [m/s]
-      altitudes    ! Altitudes                  [m]
+      dzq          ! Difference in altitudes    [m]
 
     real, dimension(nnzp), intent(in) :: &
       rcm, & ! Liquid water mixing ratio        [kg/kg]
@@ -150,11 +160,12 @@ module latin_hypercube_mod
       lh_hydromet ! Average value of the latin hypercube est. of all hydrometeors [units vary]
 
     real, dimension(nnzp) :: &
-      lh_thlm, & ! Average value of the latin hypercube est. of theta_l           [K]
-      lh_rcm,  & ! Average value of the latin hypercube est. of rc                [kg/kg]
-      lh_rvm,  & ! Average value of the latin hypercube est. of rv                [kg/kg]
-      lh_wm,   & ! Average value of the latin hypercube est. of vertical velocity [m/s]
-      lh_cf      ! Average value of the latin hypercube est. of cloud fraction    [%]
+      lh_thlm,   & ! Average value of the latin hypercube est. of theta_l           [K]
+      lh_rcm,    & ! Average value of the latin hypercube est. of rc                [kg/kg]
+      lh_rvm,    & ! Average value of the latin hypercube est. of rv                [kg/kg]
+      lh_wm,     & ! Average value of the latin hypercube est. of vertical velocity [m/s]
+      lh_wp2_zt, & ! Average value of the variance of the LH est. of vertical velocity [m^2/s^2]
+      lh_cf        ! Average value of the latin hypercube est. of cloud fraction    [%]
 
     ! A true/false flag that determines whether the PDF allows us to construct a sample
     logical, dimension(nnzp) :: l_sample_flag 
@@ -214,14 +225,14 @@ module latin_hypercube_mod
          ( dt, nnzp, n_micro_calls, d_variables, X_u, X_nl, & ! intent(in)
            rt, thl, l_sample_flag, pdf_params, &             ! intent(in)
            T_in_K, p_in_Pa, exner, rho, &                ! intent(in)
-           wm, w_std_dev, altitudes, rcm, rvm, &         ! intent(in)
+           wm, w_std_dev, dzq, rcm, rvm, &         ! intent(in)
            cf, hydromet, &                               ! intent(in)
            hydromet_mc_est, hydromet_vel_est, &          ! intent(in)
            rcm_mc_est, rvm_mc_est, thlm_mc_est, &        ! intent(out)
            AKm_est, AKm, AKstd, AKstd_cld, &             ! intent(out)
            AKm_rcm, AKm_rcc, rcm_est, &                  ! intent(out)
            lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &       ! intent(out)
-           lh_wm, lh_cf, &                               ! intent(out)
+           lh_wm, lh_wp2_zt, lh_cf, &                    ! intent(out)
            microphys_sub )  ! Procedure
 
     ! print*, 'latin_hypercube_driver: AKm=', AKm
@@ -231,20 +242,36 @@ module latin_hypercube_mod
       if ( iirrainm > 0 ) then
         call stat_update_var( iLH_rrainm, lh_hydromet(:,iirrainm), zt )
       end if
+      if ( iiNrm > 0 ) then
+        call stat_update_var( iLH_Nrm, lh_hydromet(:,iiNrm), zt )
+      end if
       if ( iiricem > 0 ) then
         call stat_update_var( iLH_ricem, lh_hydromet(:,iiricem), zt )
+      end if
+      if ( iiNim > 0 ) then
+        call stat_update_var( iLH_Nim, lh_hydromet(:,iiNim), zt )
       end if
       if ( iirsnowm > 0 ) then
         call stat_update_var( iLH_rsnowm, lh_hydromet(:,iirsnowm), zt )
       end if
+      if ( iiNsnowm > 0 ) then
+        call stat_update_var( iLH_Nsnowm, lh_hydromet(:,iiNsnowm), zt )
+      end if
       if ( iirgraupelm > 0 ) then
         call stat_update_var( iLH_rgraupelm, lh_hydromet(:,iirgraupelm), zt )
       end if
+      if ( iiNgraupelm > 0 ) then
+        call stat_update_var( iLH_Ngraupelm, lh_hydromet(:,iiNgraupelm), zt )
+      end if
 
-      call stat_update_var( iLH_thlm, lh_thlm, zt )
       call stat_update_var( iLH_rcm, lh_rcm, zt )
+      if ( iiNcm > 0 ) then
+        call stat_update_var( iLH_Ncm, lh_hydromet(:,iiNcm), zt )
+      end if
+      call stat_update_var( iLH_thlm, lh_thlm, zt )
       call stat_update_var( iLH_rvm, lh_rvm, zt )
       call stat_update_var( iLH_wm, lh_wm, zt )
+      call stat_update_var( iLH_wp2_zt, lh_wp2_zt, zt )
       call stat_update_var( iLH_cf, lh_cf, zt )
     end if ! l_stats_samp
 
