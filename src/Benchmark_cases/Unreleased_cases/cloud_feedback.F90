@@ -175,13 +175,12 @@ end if
 
 ! If this is the S6 case, fudge the values of the fluxes using values from the forcings
 !if ( runtype == "cloud_feedback_s6" .or. runtype == "cloud_feedback_s6_p2k" ) then
-!    wprtp_sfc = lhflx(1) / ( rho_sfc_flux * Lv )
-!    wpthlp_sfc = shflx(1) / ( rho_sfc_flux * Cp )
+    wprtp_sfc = lhflx(1) / ( 1.0 * Lv )
+    wpthlp_sfc = shflx(1) / ( 1.0 * Cp )
 !else
-
-wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, sat_mixrat_liq( psfc, Tsfc ) )
-wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, & 
-                                 Tsfc, exner_sfc )
+!    wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, sat_mixrat_liq( psfc, Tsfc ) )
+!    wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, & 
+!                                     Tsfc, exner_sfc )
 !end if
 
 call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
