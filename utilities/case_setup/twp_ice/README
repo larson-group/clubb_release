@@ -1,9 +1,9 @@
 This folder contains files that were used to generate the setup files for
 the TWP_ICE case.
 
-layer_parse.m - This is a MATLAB script which reads a ARM style forcing file and generates CLUBB compatible sounding.in and forcing.in files.
+convert_arm_input_data.m - This is a MATLAB script which reads a ARM style forcing file and generates CLUBB compatible sounding.in and forcing.in files.
 
-McC_parse.m - This is a MATLAB script intended to be called by layer_parse.m, it appends a McClatchy profile to the top of the sounding.
+parse_McClatchey.m - This is a MATLAB script intended to be called by layer_parse.m, it appends a McClatchy profile to the top of the sounding.
 
 
 ARM Forcing Data Format Notes:

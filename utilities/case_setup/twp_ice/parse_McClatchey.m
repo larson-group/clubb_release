@@ -11,7 +11,7 @@
 %	u		 - value of the u wind (in m/s)
 %	v		 - valaue of the v wind (in m/s)
 
-function McC_parse( caseName, fileName, Psfc, startHeight, u, v )
+function parse_McClatchey( caseName, fileName, Psfc, startHeight, u, v )
 
 %We need the unit conversions file
 addpath('../../../postprocessing/matlab_include/convert_units.m');

@@ -6,7 +6,7 @@
 %	fileName - the name of the file to read
 %	sndgTime - the time the initial sounding should be generated from (in seconds)
 %	Psfc	 - pressure at the surface in mb
-function layer_parse( caseName, fileName, sndgTime, Psfc )
+function convert_arm_input_data( caseName, fileName, sndgTime, Psfc )
 
 seconds_per_day = 86400;
 seconds_per_hour = 3600;
@@ -195,7 +195,7 @@ end
 fclose(fout);	
 
 %Now, append the McClatchy profile
-McC_parse( caseName, 'McCProfiles.dat', Psfc, lev(numLevels), u((numLevels - 1) * fieldLength + 1), v((numLevels - 1) * fieldLength + 1) );
+parse_McClatchey( caseName, 'McCProfiles.dat', Psfc, lev(numLevels), u((numLevels - 1) * fieldLength + 1), v((numLevels - 1) * fieldLength + 1) );
 
 
 %Now we need to create the forcings.in file 
