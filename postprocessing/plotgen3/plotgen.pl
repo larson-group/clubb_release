@@ -46,7 +46,7 @@ sub runCases()
 	print("Output Folder: $output \n");
 
 	# Loop through each .case file so the case can be plotted
-	my @cases = <"cases/*.case">;
+	my @cases = <cases/*.cas*>;
 	foreach my $file (@cases) 
 	{
 		print("File: " . $file . "\n");
@@ -104,7 +104,7 @@ sub runCases()
 	convertEps();
 
 	# Add image file to HTML page
-	OutputWriter->placeImage($outputIndex, "$output/jpg/cloud_feedback_s11_page1.eps.jpg");
+	OutputWriter->placeImage($outputIndex, "jpg/cloud_feedback_s6_page1.eps.jpg");
 }
 
 sub convertEps()
