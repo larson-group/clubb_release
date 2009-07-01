@@ -526,7 +526,7 @@ module microphys_driver
 
     use stats_variables, only: & 
       iVrr,  & ! Variable(s)
-      iVnr, & 
+      iVNr, & 
       iVsnow, & 
       iVice, & 
       iVgraupel, & 
@@ -652,7 +652,7 @@ module microphys_driver
     real, dimension(3,gr%nnzp) :: & 
       lhs ! Left hand side of tridiagonal matrix
 
-    real, dimension(gr%nnzp,hydromet_dim) :: & 
+    real, dimension(gr%nnzp,hydromet_dim) :: &
       hydromet_vel ! Contains vel. of the hydrometeors        [m/s]
     !  Can contain:
     !  Vrr      ! Rain mixing ratio sedimentation velocity     [m/s]
@@ -866,11 +866,12 @@ module microphys_driver
           call stat_update_var( iLH_thlm_mc, thlm_mc, zt )
 
           ! Latin hypercube estimate for sedimentation velocities
-          call stat_update_var( iLH_Vrr, hydromet_vel(:,iirrainm), zt )
+          call stat_update_var( iLH_Vrr, zt2zm( hydromet_vel(:,iirrainm) ), zt )
 
-          call stat_update_var( iLH_VNr, hydromet_vel(:,iiNrm), zt )
+          call stat_update_var( iLH_VNr, zt2zm( hydromet_vel(:,iiNrm) ), zt )
 
         end if
+
       end if ! l_latin_hypercube_sampling
 
       call KK_microphys & 
@@ -878,8 +879,23 @@ module microphys_driver
              wm_zt, wtmp, dzq, rcm, rtm-rcm, hydromet, hydromet_mc, &
              hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 
+      ! Interpolate velocity to the momentum grid
+      ! Note that the interpolation function are written such that we can
+      ! safely have hydromet_vel reference itself here.
+      do i = 1, hydromet_dim
+        hydromet_vel(:,i) = zt2zm( hydromet_vel(:,i) )
+      end do
+      hydromet_vel(gr%nnzp,1:hydromet_dim) = 0.0
+
       rtm_mc = rcm_mc + rvm_mc
- 
+
+      if ( l_stats_samp ) then
+        ! Sedimentation velocity for rrainm
+        call stat_update_var( iVrr, hydromet_vel(:,iirrainm), zm )
+
+        ! Sedimentation velocity for Nrm
+        call stat_update_var( iVNr, hydromet_vel(:,iiNrm), zm )
+      end if
 
     case default
 

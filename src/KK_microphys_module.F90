@@ -67,7 +67,7 @@ module KK_microphys_module
   contains
 
   !=============================================================================
-  subroutine KK_microphys( dt, ndim, l_sample, l_latin_hypercube, thlm, &
+  subroutine KK_microphys( dt, nnzp, l_sample, l_latin_hypercube, thlm, &
                            p_in_Pa, exner, rho, pdf_params, &
                            wm, w_std_dev, dzq, rcm, rvm, hydromet, hydromet_mc, &
                            hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
@@ -85,10 +85,6 @@ module KK_microphys_module
     !   Model of Marine Stratocumulus''  Khairoutdinov and Kogan. (2000)
     ! Monthly Weather Review, Volume 128, Issue 1 pp. 229--243
     !-------------------------------------------------------------------
-
-    use grid_class, only: & 
-!       gr,  & ! Variable(s)
-        zt2zm ! Procedure(s)
 
     use constants, only: & 
         rc_tol,  & ! Variable(s)
@@ -114,7 +110,6 @@ module KK_microphys_module
 
     use stats_variables, only: & 
         zt,   & ! Variable(s)
-        zm, &
         imean_vol_rad_rain, &
         irrainm_cond, &
         irrainm_auto, &
@@ -126,9 +121,7 @@ module KK_microphys_module
         l_stats_samp
 
     use stats_variables, only: & 
-      iVrr,  & ! Variable(s)
-      iVnr, & 
-      irrainm_mc, &
+      irrainm_mc, & ! Variable(s)
       iNrm_mc, &
       irvm_mc, &
       ircm_mc
@@ -146,13 +139,13 @@ module KK_microphys_module
       dt            ! Model time step length             [s]
 
     integer, intent(in) :: &
-      ndim ! Points in the vertical     [-]
+      nnzp ! Points in the vertical     [-]
 
     logical, intent(in) :: &
       l_sample, &       ! Whether to sample stats (budgets)
       l_latin_hypercube ! Whether we're using latin hypercube sampling
 
-    real, dimension(ndim), intent(in) :: &
+    real, dimension(nnzp), intent(in) :: &
       thlm,       & ! Temperature                        [K]
       p_in_Pa,    & ! Pressure                           [Pa]
       exner,      & ! Exner function                     [-]
@@ -161,36 +154,36 @@ module KK_microphys_module
     type(pdf_parameter), intent(in) :: &
       pdf_params ! PDF parameters
 
-    real, dimension(ndim), intent(in) :: &
+    real, dimension(nnzp), intent(in) :: &
       wm, &        ! Mean w                     [m/s]
       w_std_dev, & ! Standard deviation of w    [m/s]
       dzq          ! Difference in heights      [m]
 
-    real, dimension(ndim), intent(in) :: &
+    real, dimension(nnzp), intent(in) :: &
        rcm, & ! Liquid water mixing ratio        [kg/kg]
        rvm    ! Vapor water mixing ratio         [kg/kg]
 
-    real, dimension(ndim,hydromet_dim), target, intent(in) :: &
+    real, dimension(nnzp,hydromet_dim), target, intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
     ! Input / Output Variables
-    real, dimension(ndim,hydromet_dim), target, intent(inout) :: &
+    real, dimension(nnzp,hydromet_dim), target, intent(inout) :: &
       hydromet_mc, & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel   ! Hydrometeor sedimentation velocity [m/s]
 
     ! Latin hypercube variables - Vince Larson 22 May 2005
-!   real, intent(in), dimension(ndim) :: &
+!   real, intent(in), dimension(nnzp) :: &
 !     AKm,   & ! Kessler autoconversion
 !     AKm_est  ! Latin hypercube estimate of Kessler autoconversion
 
     ! Output Variables
-    real, dimension(ndim), intent(out) :: &
+    real, dimension(nnzp), intent(out) :: &
       rcm_mc, & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc, & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]
 
     ! Local variables
-    real, dimension(ndim) :: & 
+    real, dimension(nnzp) :: & 
       rrainm_cond,  & ! Change in rrainm due to condensation     [(kg/kg)/s]
       rrainm_auto,  & ! Change in rrainm due to autoconversion   [(kg/kg)/s]
       rrainm_accr,  & ! Change in rrainm due to accretion        [(kg/kg)/s]
@@ -214,7 +207,7 @@ module KK_microphys_module
       rrainm_mc_tndcy, & ! Rain water microphysical tendency        [(kg/kg)/s]
       Nrm_mc_tndcy       ! Rain drop number conc. micro. tend.      [(num/kg)/s]
 
-    real, dimension(ndim) :: & 
+    real, dimension(nnzp) :: & 
       rrp2_rrainm2, & ! rrp2/rrainm^2            []
       Nrp2_Nrm2,    & ! Nrp2/Nrm^2               []
       Ncp2_Ncm2,    & ! Ncp2/Ncm^2               []
@@ -223,7 +216,7 @@ module KK_microphys_module
       corr_sNr_NL,  & ! Correlation of s and Nr  []
       corr_sNc_NL     ! Correlation of s and Nc  []
 
-    real, dimension(ndim) :: & 
+    real, dimension(nnzp) :: & 
       T_in_K ! Absolute temperature     [K]
 
     real ::  & 
@@ -236,7 +229,7 @@ module KK_microphys_module
       rrainm_auto_ratio, & ! Ratio of rrainm autoconv to overall source term [-]
       total_rc_needed      ! Amount of r_c needed to over the timestep for rain source terms [kg/kg]
 
-    real, dimension(ndim) ::  &
+    real, dimension(nnzp) ::  &
       rrainm_src_adj, & ! Total adjustment to rrainm source terms  [(kg/kg)/s]
       Nrm_src_adj       ! Total adjustment to Nrm source terms     [{num/kg)/s]
 
@@ -368,7 +361,7 @@ module KK_microphys_module
     ! the rain water ratio, the rain droplet concentration,
     ! and the air density.  These values are taken from the previous
     ! timestep.  It is located on thermodynamic levels.
-    do k = 1, ndim, 1
+    do k = 1, nnzp, 1
 
       mean_vol_rad(k) &
       = mean_volume_radius( l_local_kk, rrainm(k), Nrm(k), rrp2_rrainm2(k),  & 
@@ -389,6 +382,9 @@ module KK_microphys_module
     ! It is located on the momentum levels.  This is due to the fact that
     ! momentum levels are where other vertical velocities are stored, such
     ! as the vertical component of wind velocity (w).
+    ! The interpolation of Vrr and VNr to momentum levels is currently handled 
+    ! outside of this subroutine for the purposes of saving compute time when
+    ! using latin hypercube sampling.
     !
     ! Khairoutdinov and Kogan Sedimentation Velocity Calculation.
     ! sedimentation velocity of rain drops (in m/s).
@@ -420,44 +416,45 @@ module KK_microphys_module
     !
     ! This enters into computation in microphys_driver.  Brian Griffin.
 
-    do k = 1, ndim-1, 1
-      ! FIXME: Replace zt2zm with a grid independent interpolation
+    forall ( k = 1:nnzp-1 )
       ! rrainm sedimentation velocity.
-      Vrr(k) = 0.012 * ( 1.0e6 * zt2zm(mean_vol_rad,k) )  -  0.2
+!     Vrr(k) = 0.012 * ( 1.0e6 * zt2zm(mean_vol_rad,k) )  -  0.2
+      Vrr(k) = 0.012 * ( 1.0e6 * mean_vol_rad(k) )  -  0.2
 
       ! Negative meaning a downward velocity now -dschanen 5 Dec 2006
       Vrr(k) = -max( Vrr(k), zero_threshold )
 
       ! Nrm sedimentation velocity.
-      VNr(k) = 0.007 * ( 1.0e6 * zt2zm(mean_vol_rad,k) )  -  0.1
+!     VNr(k) = 0.007 * ( 1.0e6 * zt2zm(mean_vol_rad,k) )  -  0.1
+      VNr(k) = 0.007 * ( 1.0e6 * mean_vol_rad(k) )  -  0.1
 
       ! Negative meaning a downward velocity now -dschanen 5 Dec 2006
       VNr(k) = -max( VNr(k), zero_threshold )
 
-    enddo ! 1..ndim
+    end forall ! 1..nnzp-1
 
     ! The flux of rain water through the model top is 0.
     ! Vrr and VNr are set to 0 at the highest model level.
-    Vrr(ndim) = 0.0
-    VNr(ndim) = 0.0
+    Vrr(nnzp) = 0.0
+    VNr(nnzp) = 0.0
 
     ! Determine temperature
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
 
     ! Find values for other variables.
-    do k = 2, ndim, 1
+    do k = 2, nnzp, 1
 
       ! Saturation mixing ratio
       rsat(k) = sat_mixrat_liq( p_in_Pa(k), T_in_K(k) )
 
-    enddo ! 2..ndim
+    enddo ! 2..nnzp
 
     ! Set the boundary conditions
     rsat(1)      = 0.0
     Supsat(1)    = 0.0
-    Supsat(ndim) = 0.0
+    Supsat(nnzp) = 0.0
 
-    do k = 2, ndim-1, 1
+    do k = 2, nnzp-1, 1
 
       ! Compute supersaturation via s1, s2.
       !     Larson et al 2002, JAS, Vol 59, p 3534.
@@ -593,7 +590,7 @@ module KK_microphys_module
       rcm_mc(k)  = -( rrainm_source ) ! Accretion + Autoconversion
       thlm_mc(k) = ( Lv / ( Cp*exner(k) ) ) * rrainm_mc_tndcy(k)
 
-    enddo ! k=2..ndim-1
+    enddo ! k=2..nnzp-1
 
 
     ! Boundary conditions
@@ -605,8 +602,8 @@ module KK_microphys_module
     rrainm_mc_tndcy(1) = 0.0
     Nrm_mc_tndcy(1) = 0.0
 
-    rrainm_mc_tndcy(ndim) = 0.0
-    Nrm_mc_tndcy(ndim) = 0.0
+    rrainm_mc_tndcy(nnzp) = 0.0
+    Nrm_mc_tndcy(nnzp) = 0.0
 
     ! Contributions to theta_l and rt.  See further comments
     ! about this in the subroutine advance_xm_wpxp.
@@ -614,17 +611,11 @@ module KK_microphys_module
     rcm_mc(1)  = 0.0
     thlm_mc(1) = 0.0
 
-    rcm_mc(ndim)  = 0.0
-    rvm_mc(ndim)  = 0.0
-    thlm_mc(ndim) = 0.0
+    rcm_mc(nnzp)  = 0.0
+    rvm_mc(nnzp)  = 0.0
+    thlm_mc(nnzp) = 0.0
 
     if ( l_sample .and. l_stats_samp ) then
-
-      ! Sedimentation velocity for rrainm
-      call stat_update_var( iVrr, hydromet_vel(:,iirrainm), zm )
-
-      ! Sedimentation velocity for Nrm
-      call stat_update_var( iVNr, hydromet_vel(:,iiNrm), zm )
 
       ! Sum total of rrainm microphysics (auto + accr + cond)
       call stat_update_var( irrainm_mc, hydromet_mc(:,iirrainm), zt )
