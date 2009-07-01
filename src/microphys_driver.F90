@@ -982,9 +982,10 @@ module microphys_driver
                      hydromet(:,i), overevap_rate )
 
               ! Moved from adj_microphys_tndcy
-
-              call stat_update_var_pt( iNrm_cond_adj, k,  & 
+              if( l_stats_samp ) then 
+                 call stat_update_var_pt( iNrm_cond_adj, k,  & 
                                        overevap_rate, zt )
+              endif
             else
               if( l_stats_samp ) then
                 call stat_update_var_pt( iNrm_cond_adj,k, 0.0, zt )
