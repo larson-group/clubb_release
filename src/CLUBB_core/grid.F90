@@ -826,7 +826,7 @@ module grid_class
   end subroutine read_grid_heights
 
   !=============================================================================
-  function interpolated_azm( azt )
+  pure function interpolated_azm( azt )
 
     ! Description:
     ! Function to interpolate a variable located on the thermodynamic grid
