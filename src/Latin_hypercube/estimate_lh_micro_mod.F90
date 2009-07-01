@@ -567,7 +567,8 @@ module estimate_lh_micro_mod
 !-------------------------------------------------------------------------------
 
     use constants, only:  &
-      fstderr  ! Constant(s)
+      fstderr, & ! Constant(s)
+      g_per_kg
 
     use parameters_model, only: &
       hydromet_dim
@@ -603,12 +604,12 @@ module estimate_lh_micro_mod
       l_sample_flag  ! Whether we are sampling at this level
 
     double precision, dimension(nnzp,n_micro_calls), intent(in) :: &
-      s_mellor,  & ! n in-cloud values of 's' (Mellor 1977)            [g/kg]
-      rt,        & ! n in-cloud values of total water mixing ratio     [g/kg]
-      thl,       & ! n in-cloud values of total water mixing ratio     [K]
-      w,         & ! n in-cloud values of vertical velocity            [m/s]
-      Nc,        & ! n in-cloud values of droplet number               [#/kg air]
-      rr           ! n in-cloud values of specific rain content        [g/kg]
+      s_mellor,  & ! n_micro_calls values of 's' (Mellor 1977)            [g/kg]
+      rt,        & ! n_micro_calls values of total water mixing ratio     [g/kg]
+      thl,       & ! n_micro_calls values of liquid potential temperature [K]
+      w,         & ! n_micro_calls values of vertical velocity            [m/s]
+      Nc,        & ! n_micro_calls values of droplet number               [#/kg air]
+      rr           ! n_micro_calls values of specific rain content        [g/kg]
 
     double precision, dimension(nnzp,n_micro_calls,d_variables+1), intent(in) :: &
       X_u ! N x D+1 Latin hypercube sample from uniform dist
@@ -736,7 +737,7 @@ module estimate_lh_micro_mod
 
       where ( l_sample_flag )
         where( s_mellor(:,sample) > 0.0 )
-          rc_tmp  = real( s_mellor(:,sample) ) / 1000. ! Convert from g/kg to kg/kg
+          rc_tmp  = real( s_mellor(:,sample) ) / g_per_kg ! Convert from g/kg to kg/kg
         else where
           rc_tmp = 0.0
         end where
@@ -746,7 +747,7 @@ module estimate_lh_micro_mod
 
       where ( l_sample_flag ) 
         w_tmp(:,sample) = real( w(:,sample) )
-        rv_tmp  = real( rt(:,sample) ) / 1000. - rc_tmp
+        rv_tmp  = real( rt(:,sample) ) / g_per_kg - rc_tmp
         thl_tmp = real( thl(:,sample) )
       else where
         w_tmp(:,sample) = wm
@@ -757,7 +758,7 @@ module estimate_lh_micro_mod
       do i = 1, hydromet_dim, 1
         if ( i == iirrainm ) then
           where ( l_sample_flag )
-            hydromet_tmp(:,i) = real( rr(:,sample) ) / 1000. ! Convert from g/kg to kg/kg
+            hydromet_tmp(:,i) = real( rr(:,sample) ) / g_per_kg ! Convert from g/kg to kg/kg
           else where
             hydromet_tmp(:,i) = hydromet(:,i)
           end where
@@ -829,6 +830,7 @@ module estimate_lh_micro_mod
     end do ! sample = 1, n_micro_calls
 
     if ( l_compute_diagnostic_average ) then
+
       lh_hydromet(:,1:hydromet_dim) = lh_hydromet(:,1:hydromet_dim) / real( n_micro_calls )
       lh_thlm = lh_thlm / real( n_micro_calls )
       lh_rcm  = lh_rcm  / real( n_micro_calls )
@@ -836,6 +838,7 @@ module estimate_lh_micro_mod
       lh_wm   = lh_wm   / real( n_micro_calls )
       lh_cf   = lh_cf   / real( n_micro_calls )
 
+      ! Compute the variance of vertical velocity
       lh_wp2_zt = 0.0
       do sample = 1, n_micro_calls
         lh_wp2_zt = lh_wp2_zt + ( w_tmp(:,sample) - lh_wm )**2
