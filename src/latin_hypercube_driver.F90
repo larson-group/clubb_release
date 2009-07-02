@@ -21,7 +21,7 @@ module latin_hypercube_mod
   subroutine latin_hypercube_driver &
              ( dt, iter, n_micro_calls, nnzp, cf, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm, w_std_dev, dzq, rcm, rvm, &
-               hydromet, hydromet_mc_est, hydromet_vel_est, rcm_mc_est, &
+               hydromet, hydromet_corr, hydromet_mc_est, hydromet_vel_est, rcm_mc_est, &
                rvm_mc_est, thlm_mc_est, microphys_sub )
 
 ! Description:
@@ -128,10 +128,15 @@ module latin_hypercube_mod
     real, dimension(nnzp,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
+    real, dimension(hydromet_dim), intent(in) :: &
+      hydromet_corr ! Correlation for hydrometeor species [-]
+
+    ! Input/Output Variables
     real, dimension(nnzp,hydromet_dim), intent(inout) :: &
       hydromet_mc_est, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
       hydromet_vel_est   ! LH estimate of hydrometeor sedimentation velocity [m/s]
 
+    ! Output Variables
     real, dimension(nnzp), intent(out) :: &
       rcm_mc_est, & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc_est, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
@@ -161,6 +166,9 @@ module latin_hypercube_mod
       lh_wm,     & ! Average value of the latin hypercube est. of vertical velocity [m/s]
       lh_wp2_zt, & ! Average value of the variance of the LH est. of vertical velocity [m^2/s^2]
       lh_cf        ! Average value of the latin hypercube est. of cloud fraction    [%]
+
+    double precision :: &
+      Ncp2_Ncm2, rrp2_rrainm2  ! Correlations from K&K module
 
     ! A true/false flag that determines whether the PDF allows us to construct a sample
     logical, dimension(nnzp) :: l_sample_flag 
@@ -197,6 +205,9 @@ module latin_hypercube_mod
       " no rain water mixing ratio being predicted."
       stop
     end if
+    
+    Ncp2_Ncm2    = dble( hydromet_corr(iiNcm) )
+    rrp2_rrainm2 = dble( hydromet_corr(iirrainm) )
 
     do k = 1, nnzp
       ! Choose which rows of LH sample to feed into closure.
@@ -208,10 +219,11 @@ module latin_hypercube_mod
 
       ! Generate LH sample, represented by X_u and X_nl, for level k
       call generate_lh_sample &
-           ( n_micro_calls, nt_repeat, d_variables, p_matrix, & ! intent(in)
-             cf(k), pdf_params, k, &                           ! intent(in)
-             max( hydromet(k,iiNcm), 1.0 ), hydromet(k,iirrainm), &     ! intent(in)
-             rt(k,:), thl(k,:), &       ! intent(out)
+           ( n_micro_calls, nt_repeat, d_variables, p_matrix, &   ! intent(in)
+             cf(k), pdf_params, k, &                              ! intent(in)
+             max( hydromet(k,iiNcm), 1.0 ), hydromet(k,iirrainm),&! intent(in)
+             Ncp2_Ncm2, rrp2_rrainm2, &                           ! intent(in)
+             rt(k,:), thl(k,:), &                                 ! intent(out)
              X_u(k,:,:), X_nl(k,:,:), l_sample_flag(k) ) ! intent(out)
 
       ! print *, 'latin_hypercube_sampling: got past lh_sampler'

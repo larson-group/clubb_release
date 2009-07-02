@@ -18,7 +18,8 @@ module generate_lh_sample_mod
   subroutine generate_lh_sample &
              ( n_micro_calls, nt_repeat, d_variables, p_matrix, & 
                cf, pdf_params, level, & 
-               Ncm, rrainm, rt, thl, & 
+               Ncm, rrainm, Ncp2_Ncm2, rrp2_rrainm2, &
+               rt, thl, & 
                X_u, X_nl, l_sample_flag )
 ! Description:
 !   This subroutine generates a Latin Hypercube sample.
@@ -45,18 +46,6 @@ module generate_lh_sample_mod
     logical, parameter :: &
       l_sample_out_of_cloud = .true.
 
-    ! Old values
-!   double precision, parameter :: &
-!     Ncm       = 0.065, & ! 65 per cc
-!     Ncp2_Ncm2 = 0.07     ! 0.07 is for DYCOMS2 RF02 (in cloud)
-
-    ! From KK_microphys_module
-    double precision, parameter :: &
-      Ncp2_Ncm2 = 0.003 ! For DYCOMS2 RF02 (in cloud)     [num/kg]
-
-    ! 0.4 is for DYCOMS2 RF02 in cloud, rrp2_rrainm2 = rrp2 divided by rrainm^2
-    double precision, parameter :: rrp2_rrainm2 = 0.4
-
     ! Input Variables
     integer, intent(in) :: &
       n_micro_calls, & ! `n'   Number of calls to microphysics (normally=2)
@@ -78,6 +67,11 @@ module generate_lh_sample_mod
       pdf_params ! PDF parameters output by closure_new [units vary]
 
     integer, intent(in) :: level  ! Level info. for PDF parameters.
+
+    ! From the KK_microphys_module
+    double precision, intent(in) :: &
+      Ncp2_Ncm2, & ! = Ncp2 divied by Ncm^2     [-]
+      rrp2_rrainm2 ! = rrp2 divided by rrainm^2 [-]
 
     ! Output Variables
     double precision, intent(out), dimension(n_micro_calls) :: &

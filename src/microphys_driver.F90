@@ -482,6 +482,10 @@ module microphys_driver
     use KK_microphys_module, only: & 
         KK_microphys ! Procedure(s)
 
+    use KK_microphys_module, only: & 
+      rrp2_rrainm2_cloud, & ! Variable(s)
+      Ncp2_Ncm2_cloud  
+
     use morrison_micro_driver_mod, only: &
       morrison_micro_driver
 
@@ -669,6 +673,9 @@ module microphys_driver
     real, dimension(gr%nnzp,hydromet_dim) :: & 
       hydromet_mc  ! Change in hydrometeors due to microphysics  [units/s]
       
+    real, dimension(hydromet_dim) :: & 
+      hydromet_corr  ! Array for correlations   [-]
+
     real, dimension(gr%nnzp) :: &
       dzq         ! Difference in height levels                   [m]
 
@@ -717,6 +724,11 @@ module microphys_driver
 
     ! Compute difference in height levels
     dzq(1:gr%nnzp) = 1./gr%dzm(1:gr%nnzp)
+
+    ! For latin hypercube sampling
+    hydromet_corr(:) = 0.0 ! Initialize to 0
+    hydromet_corr(iiNcm)    = Ncp2_Ncm2_cloud
+    hydromet_corr(iirrainm) = rrp2_rrainm2_cloud
 
    ! Begin by calling Brian Griffin's implementation of the
    ! Khairoutdinov and Kogan microphysical scheme, 
@@ -794,7 +806,7 @@ module microphys_driver
         call latin_hypercube_driver &
              ( real( dt ), iter, LH_microphys_calls, gr%nnzp, cf, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm_zt, wtmp, dzq, rcm, rtm-rcm, &
-               hydromet, hydromet_mc, hydromet_vel, rcm_mc, &
+               hydromet, hydromet_corr, hydromet_mc, hydromet_vel, rcm_mc, &
                rvm_mc, thlm_mc, morrison_micro_driver )
 
         if ( l_stats_samp ) then
@@ -844,7 +856,7 @@ module microphys_driver
         call latin_hypercube_driver &
              ( real( dt ), iter, LH_microphys_calls, gr%nnzp, cf, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm_zt, wtmp, dzq, rcm, rtm-rcm, &
-               hydromet, hydromet_mc, hydromet_vel, rcm_mc, &
+               hydromet, hydromet_corr, hydromet_mc, hydromet_vel, rcm_mc, &
                rvm_mc, thlm_mc, KK_microphys )
 
         if ( l_stats_samp ) then
@@ -879,7 +891,7 @@ module microphys_driver
              hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 
       ! Interpolate velocity to the momentum grid
-      ! Note that the interpolation function are written such that we can
+      ! Note that the interpolation functions are written such that we can
       ! safely have hydromet_vel reference itself here.
       do i = 1, hydromet_dim
         hydromet_vel(:,i) = zt2zm( hydromet_vel(:,i) )
