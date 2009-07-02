@@ -113,7 +113,7 @@ use array_index, only:  &
     iisclr_thl, iisclr_rt ! Variable(s)
 
 use surface_flux, only: &
-    compute_ubar, compute_momentum_flux, compute_wprtp_sfc, compute_wpthlp_sfc
+    compute_ubar, compute_momentum_flux !, compute_wprtp_sfc, compute_wpthlp_sfc
 
 implicit none
 
@@ -146,9 +146,9 @@ real, intent(out), dimension(edsclr_dim) ::  &
   wpedsclrp_sfc   ! Passive eddy-scalar surface flux [units m/s]
 
 ! Constants
-real, parameter :: & 
+!real, parameter :: & 
 !  rho_sfc_flux = 1.0, &
-  C_10    = 0.0013      ! Drag coefficient, defined by ATEX specification
+!  C_10    = 0.0013      ! Drag coefficient, defined by ATEX specification
 
 ! Internal variables
 real :: & 
@@ -160,7 +160,8 @@ ubar = compute_ubar( um_sfc, vm_sfc )
 ustar = 0.3
 
 ! Get rid of a compiler warning
-if( runtype == "anything" ) then
+if( runtype == "anything" .or. thlm_sfc == 1 .or. rtm_sfc == 1 .or. &
+        exner_sfc == 1 .or. psfc == 1 .or. Tsfc == 1) then
     ustar = 0.3
 end if
 
