@@ -163,10 +163,6 @@ module morrison_micro_driver_mod
       cf = dummy(:,1)
     end if
 
-    rcm_tmp = rcm
-    rvm_tmp = rvm
-    T_in_K_mc(1:nnzp) = 0.0
-
     ! Determine temperature
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
 
@@ -177,9 +173,18 @@ module morrison_micro_driver_mod
       cf(1:nnzp) = 0.0
     end if
 
+    rcm_tmp = rcm
+    rvm_tmp = rvm
+
     do i = 1, hydromet_dim, 1
       hydromet_tmp(1:nnzp,i) = hydromet(1:nnzp,i)
     end do
+
+    ! Initialize tendencies to zero
+    T_in_K_mc(1:nnzp) = 0.0
+    rcm_mc(1:nnzp) = 0.0
+    rvm_mc(1:nnzp) = 0.0
+    hydromet_mc(1:nnzp,:) = 0.0
 
     ! Call the Morrison microphysics
     call M2005MICRO_GRAUPEL &
