@@ -1,20 +1,18 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
-           "http://www.w3.org/TR/REC-html40/loose.dtd">
-<html>
-<meta name="GENERATOR" content="TtH 3.82">
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
- <style type="text/css"> div.p { margin-top: 7pt;}</style>
- <style type="text/css"><!--
- td div.comp { margin-top: -0.6ex; margin-bottom: -1ex;}
- td div.comb { margin-top: -0.6ex; margin-bottom: -.6ex;}
- td div.hrcomp { line-height: 0.9; margin-top: -0.8ex; margin-bottom: -1ex;}
- td div.norm {line-height:normal;}
+<?xml version="1.0"?>
+<!DOCTYPE html    PUBLIC "-//W3C//DTD XHTML 1.1 plus MathML 2.0//EN"
+           "http://www.w3.org/Math/DTD/mathml2/xhtml-math11-f.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta name="GENERATOR" content="TtM 3.85" />
+ <style type="text/css">
+ div.p { margin-top: 7pt; }
  span.roman {font-family: serif; font-style: normal; font-weight: normal;} 
- span.overacc2 {position: relative;  left: .8em; top: -1.2ex;}
- span.overacc1 {position: relative;  left: .6em; top: -1.2ex;} --></style>
+</style>
 
   
-<title> {Standards and Coding Practices for CLUBB}</title>
+<title> {Standards and Coding Practices for CLUBB} </title>
+</head>
+<body>
  
 <h1 align="center"><b>Standards and Coding Practices for CLUBB</b> </h1>
 
@@ -22,7 +20,7 @@
 
 <div class="p"><!----></div>
 The following rules apply only to the parts of CLUBB that we have written.  We try not to modify
-code from external contributors such as BUGSRad, 
+code from external contributors such as BUGSrad, 
 Numerical Recipes, and so forth, because such external code is
 less familiar to us, and we might introduce bugs.  Furthermore, our changes would be lost if
 we were to update to a new version of the external code.
@@ -30,20 +28,25 @@ we were to update to a new version of the external code.
 <div class="p"><!----></div>
 
 <ol type="1">
-<li> All files in the repository should have a standard header with a SVN 
-<tt>$Id$</tt> tag at the top.
+<li> All source code, namelists, and script files in the repository should 
+have a standard header with a SVN <tt>$Id$</tt> tag at the top.  svn will then
+keep track of and list the time that the file was last updated and the name of
+the person who updated it.  
 
 <div class="p"><!----></div>
-When initially checking in a new source file, enter the Id tag as 
-the string <tt>$Id$</tt> on a commented line at the top of the source file
- (SVN will expand this after checking it in).
+When initially checking in (i.e.&nbsp;committing) a new source file, enter the Id tag as 
+the string <tt>$Id$</tt> on a commented out line at the top of the 
+source file. <br />
+E.g. <tt>&nbsp;!&nbsp;$Id$&nbsp;</tt>. <br />
+Then set the svn properties on the file using: <br />
+<tt>svn&nbsp;propset&nbsp;svn:keywords&nbsp;"Id"</tt> <i>file name</i>
 
 <div class="p"><!----></div>
 <br /><br />After checking in the file, something like the following will appear:
 
 <pre>
 !-----------------------------------------------------------------------
-!&nbsp;$Id:&nbsp;hoc_standards.tex,v&nbsp;1.4&nbsp;2008-08-18&nbsp;17:53:48&nbsp;dschanen&nbsp;Exp&nbsp;$
+!&nbsp;$Id:&nbsp;example.F90,v&nbsp;1.1&nbsp;1901-01-01&nbsp;17:53:48&nbsp;username&nbsp;Exp&nbsp;$
 
 
 </pre>
@@ -72,7 +75,7 @@ function&nbsp;xyzzy(&nbsp;etherx,&nbsp;ethery,&nbsp;etherz&nbsp;)
 !-----------------------------------------------------------------------
 
 &nbsp;&nbsp;!&nbsp;Included&nbsp;Modules
-&nbsp;&nbsp;use&nbsp;grid_dimensions,&nbsp;only:&nbsp;ndim
+&nbsp;&nbsp;use&nbsp;grid_dimensions,&nbsp;only:&nbsp;ndim&nbsp;!&nbsp;Variable
 &nbsp;
 &nbsp;&nbsp;implicit&nbsp;none
 
@@ -97,16 +100,16 @@ function&nbsp;xyzzy(&nbsp;etherx,&nbsp;ethery,&nbsp;etherz&nbsp;)
 
 &nbsp;&nbsp;!&nbsp;Input&nbsp;Variables
 &nbsp;&nbsp;complex,&nbsp;dimension(ndim),&nbsp;intent(in)&nbsp;::&nbsp;&amp;
-&nbsp;&nbsp;&nbsp;&nbsp;etherx,&nbsp;&nbsp;!&nbsp;Ether&nbsp;in&nbsp;the&nbsp;x&nbsp;dimension&nbsp;&nbsp;[kg/kg]
-&nbsp;&nbsp;&nbsp;&nbsp;ethery,&nbsp;&nbsp;!&nbsp;Ether&nbsp;in&nbsp;the&nbsp;y&nbsp;dimension&nbsp;&nbsp;[kg/kg]
-&nbsp;&nbsp;&nbsp;&nbsp;etherz&nbsp;&nbsp;&nbsp;!&nbsp;Ether&nbsp;in&nbsp;the&nbsp;z&nbsp;dimension&nbsp;&nbsp;[kg/kg]
+&nbsp;&nbsp;&nbsp;&nbsp;etherx,&nbsp;&nbsp;&amp;&nbsp;!&nbsp;Ether&nbsp;in&nbsp;the&nbsp;x&nbsp;dimension&nbsp;&nbsp;[kg/kg]
+&nbsp;&nbsp;&nbsp;&nbsp;ethery,&nbsp;&nbsp;&amp;&nbsp;!&nbsp;Ether&nbsp;in&nbsp;the&nbsp;y&nbsp;dimension&nbsp;&nbsp;[kg/kg]
+&nbsp;&nbsp;&nbsp;&nbsp;etherz&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;!&nbsp;Ether&nbsp;in&nbsp;the&nbsp;z&nbsp;dimension&nbsp;&nbsp;[kg/kg]
 
 &nbsp;&nbsp;!&nbsp;Output&nbsp;Variables
 &nbsp;&nbsp;complex,&nbsp;dimension(ndim,ndim,ndim)&nbsp;::&nbsp;&amp;
 &nbsp;&nbsp;&nbsp;&nbsp;xyzzy&nbsp;&nbsp;&nbsp;&nbsp;!&nbsp;Ether&nbsp;in&nbsp;the&nbsp;xyyzy&nbsp;dimension&nbsp;&nbsp;[kg/kg]
 
 &nbsp;&nbsp;!&nbsp;Local&nbsp;Variables
-&nbsp;&nbsp;integer&nbsp;::&nbsp;i,&nbsp;j,&nbsp;k
+&nbsp;&nbsp;integer&nbsp;::&nbsp;i,&nbsp;j,&nbsp;k&nbsp;!&nbsp;Loop&nbsp;iterator
 
 !-----------------------------------------------------------------------
 
@@ -137,10 +140,11 @@ Then everyone can use <tt>grep</tt> to search for all code comments you've made.
 <div class="p"><!----></div>
 </li>
 
-<li> Minimize the number of variables or amount of data made available to any 
-subroutine in either 
-passed arguments or <tt>use</tt> statements.  Always specify <tt>intent</tt> 
-attributes on your arguments, and use <tt>intent(in)</tt> 
+<li> Minimize the number of variables and the amount of data that can be 
+modified by subroutines and functions.  This includes variables passed as an 
+argument and those coming from a <tt>use</tt> statement. 
+Always specify the <tt>intent</tt> attributes of arguments, and 
+use <tt>intent(in)</tt> 
 and <tt>intent(out)</tt> rather than <tt>intent(inout)</tt> whenever possible.
 This makes the code more clear to new users by allowing them to trace where a 
 given variable is changed in the code and spot at a glance what are the inputs and
@@ -148,7 +152,7 @@ outputs of each subroutine.  Furthermore,
 this makes it easier for the compiler to optimize, because modern computers can 
 vectorize floating point instructions, thereby providing some 
 parallelization when your calculation does not rely on previous results.
-Note however, than an <tt>intent(out)</tt> variable that is not set in the scope of the subroutine
+Note however, that an <tt>intent(out)</tt> variable that is not set in the scope of the subroutine
 is <em>not defined</em>!  It often preserves the previous value, but it may not.
 When using modules with public variables, limit 
 the number of variables with an <tt>only:</tt> statement.  This makes code 
@@ -489,7 +493,12 @@ There several ways to do this:
 
 <li> Use of a number in the name when the mathematical equations 
 	contain them. 
-	 E.g. <tt>p0</tt> for P<sub>0</sub>.
+	 E.g. <tt>p0</tt> for 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+<mrow>
+<msub><mrow><mi>P</mi></mrow><mrow><mn>0</mn></mrow>
+</msub>
+</mrow></math>.
 <div class="p"><!----></div>
 </li>
 
@@ -507,6 +516,51 @@ like <tt>grep</tt> if you're uncertain if your variable is a semi-unique string.
 
 <div class="p"><!----></div>
 
+<div class="p"><!----></div>
+</li>
+
+<li>  Do not use magic numbers, i.e. undefined numbers rather than variables.
+Use of magic numbers makes it harder to read the code and to change the value 
+parameters, e.g. grav = 9.8, consistently throughout the code.
+
+<div class="p"><!----></div>
+This is hard for a non-meteorologist to understand: 
+
+<pre>
+&nbsp;&nbsp;rtm&nbsp;=&nbsp;rtm&nbsp;*&nbsp;1000.&nbsp;
+
+</pre>
+
+<div class="p"><!----></div>
+Instead, do this:
+
+<pre>
+&nbsp;&nbsp;g_per_kg&nbsp;=&nbsp;1000.
+&nbsp;&nbsp;rtm&nbsp;=&nbsp;rtm&nbsp;*&nbsp;g_per_kg
+
+</pre>
+<div class="p"><!----></div>
+</li>
+
+<li>  Do not use magic flags, i.e. undefined input arguments to subroutines or 
+functions.  Instead, define the argument just above the call to the subroutine.
+
+<div class="p"><!----></div>
+To understand this, you'd need to go to the subroutine: 
+
+<pre>
+&nbsp;&nbsp;call&nbsp;complex_function(&nbsp;wp2,&nbsp;wp3,&nbsp;.true.&nbsp;)&nbsp;
+
+</pre>
+
+<div class="p"><!----></div>
+This is better documented:
+
+<pre>
+&nbsp;&nbsp;l_enable_damping&nbsp;=&nbsp;.true.
+&nbsp;&nbsp;call&nbsp;complex_function(&nbsp;wp2,&nbsp;wp3,&nbsp;l_enable_damping&nbsp;)
+
+</pre>
 <div class="p"><!----></div>
 </li>
 
@@ -602,7 +656,7 @@ E.g.
 <li> Code should not make use of explicit precision variables unless there is 
 an unique reason for it (e.g. writing 4 byte records to disk).  This allows for 
 compile time promotion of reals and doubles on different computer architectures.
-Also, do not use the asterisks notation to specify precision, because
+Also, do not use the asterisks notation to specify precision, because it
 is an extension of the Fortran standard.  E.g.
 
 <pre>
@@ -684,7 +738,7 @@ program&nbsp;HAL&nbsp;!&nbsp;lowercase&nbsp;program
 
 &nbsp;&nbsp;&nbsp;&nbsp;...&nbsp;
 
-&nbsp;&nbsp;if&nbsp;(&nbsp;lTurnOff&nbsp;)&nbsp;then&nbsp;!&nbsp;lowercase&nbsp;if,&nbsp;lowercase&nbsp;then
+&nbsp;&nbsp;if&nbsp;(&nbsp;l_TurnOff&nbsp;)&nbsp;then&nbsp;!&nbsp;lowercase&nbsp;if,&nbsp;lowercase&nbsp;then
 
 &nbsp;&nbsp;&nbsp;&nbsp;write(unit=*,fmt=*)&nbsp;"I&nbsp;know&nbsp;that&nbsp;you&nbsp;and&nbsp;Frank&nbsp;were&nbsp;"&nbsp;&amp;
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//"trying&nbsp;to&nbsp;turn&nbsp;me&nbsp;off&nbsp;Dave."&nbsp;!&nbsp;lowercase&nbsp;write
@@ -751,6 +805,11 @@ extension.  This is due to the a kluge used with <tt>mkmf</tt> that only enables
 compiler warnings when the file is pre-processed Fortran 90 source.
 <div class="p"><!----></div>
 </li>
+
+<li> CLUBB uses the convention that logical variables should have a prefix of <tt>l_</tt>.  For example,
+use <tt>l_cloud_sed</tt> rather than <tt>cloud_sed</tt>
+<div class="p"><!----></div>
+</li>
 </ol>
 
 <div class="p"><!----></div>
@@ -758,6 +817,6 @@ compiler warnings when the file is pre-processed Fortran 90 source.
 <br /><br /><hr /><small>File translated from
 T<sub><font size="-1">E</font></sub>X
 by <a href="http://hutchinson.belmont.ma.us/tth/">
-T<sub><font size="-1">T</font></sub>H</a>,
-version 3.82.<br />On  3 Feb 2009, 11:51.</small>
-</html>
+T<sub><font size="-1">T</font></sub>M</a>,
+version 3.85.<br />On  2 Jul 2009, 12:40.</small>
+</body></html>

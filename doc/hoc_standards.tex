@@ -1,12 +1,12 @@
 %
-% $Id: hoc_standards.tex,v 1.4 2008-08-18 17:53:48 dschanen Exp $
+% Coding standards for the CLUBB code.
 %
 
 \documentclass[letterpaper,12pt]{article}
 \usepackage{amsmath,amssymb,amsfonts}
 %\usepackage{amsfonts}
 
-%% These cannot be interpreted by TTH
+%% These cannot be interpreted by TTM
 \addtolength{\textheight}{2in}\addtolength{\topmargin}{-1in}
 \addtolength{\textwidth}{1.25in} \addtolength{\oddsidemargin}{-.75in}
 \addtolength{\evensidemargin}{-.75in}
@@ -22,7 +22,7 @@
 
 
 The following rules apply only to the parts of CLUBB that we have written.  We try not to modify
-code from external contributors such as BUGSRad, 
+code from external contributors such as BUGSrad, 
 Numerical Recipes, and so forth, because such external code is
 less familiar to us, and we might introduce bugs.  Furthermore, our changes would be lost if
 we were to update to a new version of the external code.
@@ -38,15 +38,17 @@ the person who updated it.
 \newline
 When initially checking in (i.e.~committing) a new source file, enter the Id tag as 
 the string \texttt{\$Id\$} on a commented out line at the top of the 
-source file (SVN will expand this after checking it in).
-E.g. \verb| ! $Id$ |.
+source file. \\
+E.g. \verb| ! $Id$ |. \\
+Then set the svn properties on the file using: \\
+\verb|svn propset svn:keywords "Id"| \textsl{file name}
 
 \bigskip
 
 After checking in the file, something like the following will appear:
 \begin{verbatim}
 !-----------------------------------------------------------------------
-! $Id: hoc_standards.tex,v 1.4 2008-08-18 17:53:48 dschanen Exp $
+! $Id: example.F90,v 1.1 1901-01-01 17:53:48 username Exp $
 
 \end{verbatim}
 
@@ -70,7 +72,7 @@ function xyzzy( etherx, ethery, etherz )
 !-----------------------------------------------------------------------
 
   ! Included Modules
-  use grid_dimensions, only: ndim
+  use grid_dimensions, only: ndim ! Variable
  
   implicit none
 
@@ -95,16 +97,16 @@ function xyzzy( etherx, ethery, etherz )
 
   ! Input Variables
   complex, dimension(ndim), intent(in) :: &
-    etherx,  ! Ether in the x dimension  [kg/kg]
-    ethery,  ! Ether in the y dimension  [kg/kg]
-    etherz   ! Ether in the z dimension  [kg/kg]
+    etherx,  & ! Ether in the x dimension  [kg/kg]
+    ethery,  & ! Ether in the y dimension  [kg/kg]
+    etherz     ! Ether in the z dimension  [kg/kg]
 
   ! Output Variables
   complex, dimension(ndim,ndim,ndim) :: &
     xyzzy    ! Ether in the xyyzy dimension  [kg/kg]
 
   ! Local Variables
-  integer :: i, j, k
+  integer :: i, j, k ! Loop iterator
 
 !-----------------------------------------------------------------------
 
@@ -594,7 +596,7 @@ program HAL ! lowercase program
 
     ... 
 
-  if ( lTurnOff ) then ! lowercase if, lowercase then
+  if ( l_TurnOff ) then ! lowercase if, lowercase then
 
     write(unit=*,fmt=*) "I know that you and Frank were " &
       //"trying to turn me off Dave." ! lowercase write
@@ -648,6 +650,9 @@ real data type conversions.
 \item All files added to the CLUBB code should use a \texttt{.F90} file 
 extension.  This is due to the a kluge used with \texttt{mkmf} that only enables
 compiler warnings when the file is pre-processed Fortran 90 source. 
+
+\item CLUBB uses the convention that logical variables should have a prefix of \verb|l_|.  For example,
+use \verb|l_cloud_sed| rather than \verb|cloud_sed|.
 
 \end{enumerate}
 
