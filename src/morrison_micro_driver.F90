@@ -10,7 +10,7 @@ module morrison_micro_driver_mod
   contains
 !-------------------------------------------------------------------------------
   subroutine morrison_micro_driver &
-             ( dt, ndim, l_sample, l_latin_hypercube, thlm, p_in_Pa, exner, rho, pdf_params, &
+             ( dt, nnzp, l_sample, l_latin_hypercube, thlm, p_in_Pa, exner, rho, pdf_params, &
                wm, w_std_dev, dzq, rcm, rvm, hydromet, hydromet_mc, &
                hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 ! Description:
@@ -91,13 +91,13 @@ module morrison_micro_driver_mod
     ! Input Variables
     real, intent(in) :: dt ! Model timestep        [s]
 
-    integer, intent(in) :: ndim ! Points in the Vertical        [-]
+    integer, intent(in) :: nnzp ! Points in the Vertical        [-]
 
     logical, intent(in) :: &
       l_sample,   &     ! Whether to accumulate statistics [T/F]
       l_latin_hypercube ! Whether we're using latin hypercube sampling
 
-    real, dimension(ndim), intent(in) :: &
+    real, dimension(nnzp), intent(in) :: &
       thlm,       & ! Liquid potential temperature       [K]
       p_in_Pa,    & ! Pressure                           [Pa]
       exner,      & ! Exner function                     [-]
@@ -106,41 +106,44 @@ module morrison_micro_driver_mod
     type(pdf_parameter), intent(in) :: &
       pdf_params ! PDF parameters
 
-    real, dimension(ndim), intent(in) :: &
+    real, dimension(nnzp), intent(in) :: &
       wm, &        ! Mean w                     [m/s]
       w_std_dev, & ! Standard deviation of w    [m/s]
       dzq          ! Difference in heights      [m]
 
-    real, dimension(ndim), intent(in) :: &
+    real, dimension(nnzp), intent(in) :: &
       rcm, & ! Liquid water mixing ratio        [kg/kg]
       rvm    ! Vapor water mixing ratio         [kg/kg]
 
-    real, dimension(ndim,hydromet_dim), target, intent(in) :: &
+    real, dimension(nnzp,hydromet_dim), target, intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
-    real, dimension(ndim,hydromet_dim), target, intent(inout) :: &
+    ! Input/Output Variables
+    real, dimension(nnzp,hydromet_dim), target, intent(inout) :: &
       hydromet_mc,   & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel     ! Hydrometeor sedimentation velocity [m/s]
 
-    real, dimension(ndim), intent(out) :: &
+    ! Output Variables
+    real, dimension(nnzp), intent(out) :: &
       rcm_mc, & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc, & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]
 
-    real, dimension(ndim) :: & 
+    ! Local Variables
+    real, dimension(nnzp) :: & 
       effc, effi, effg, effs, effr ! Effective droplet radii [μ]
 
-    real, dimension(ndim) :: & 
+    real, dimension(nnzp) :: & 
       T_in_K,    & ! Temperature                        [K]
       T_in_K_mc, & ! Temperature tendency               [K/s]
       rcm_tmp,   & ! Temporary array for cloud water mixing ratio  [kg/kg]
       rvm_tmp,   & ! Temporary array for vapor water mixing ratio  [kg/kg]
       rcm_sten     ! Cloud dropet sedimentation tendency           [kg/kg/s]
 
-    real, dimension(ndim) :: & 
+    real, dimension(nnzp) :: & 
       cf  ! Cloud fraction
 
-    real, dimension(ndim,hydromet_dim) :: & 
+    real, dimension(nnzp,hydromet_dim) :: & 
       hydromet_sten, & ! Hydrometeor sedimentation tendency [(units vary)/s]
       hydromet_tmp     ! Temporary variable
 
@@ -162,22 +165,20 @@ module morrison_micro_driver_mod
 
     rcm_tmp = rcm
     rvm_tmp = rvm
-    T_in_K_mc(:) = 0.0
-
-
+    T_in_K_mc(1:nnzp) = 0.0
 
     ! Determine temperature
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
 
     if ( .not. l_latin_hypercube ) then
-      cf(1:ndim) = max( zero_threshold, &
+      cf(1:nnzp) = max( zero_threshold, &
                         pdf_params%a * pdf_params%R1 + (1.-pdf_params%a) * pdf_params%R2 )
     else
-      cf(1:ndim) = 0.0
+      cf(1:nnzp) = 0.0
     end if
 
     do i = 1, hydromet_dim, 1
-      hydromet_tmp(:,i) = hydromet(:,i)
+      hydromet_tmp(1:nnzp,i) = hydromet(1:nnzp,i)
     end do
 
     ! Call the Morrison microphysics
@@ -190,7 +191,7 @@ module morrison_micro_driver_mod
            hydromet_tmp(:,iiNim), hydromet_tmp(:,iiNsnowm), hydromet_tmp(:,iiNrm), &
            T_in_K_mc, rvm_mc, T_in_K, rvm_tmp, P_in_pa, rho, dzq, wm, w_std_dev, &
            Morr_rain_rate, Morr_snow_rate, effc, effi, effs, effr, dt, &
-           1,1, 1,1, 1,ndim, 1,1, 1,1, 1,ndim, &
+           1,1, 1,1, 1,nnzp, 1,1, 1,1, 1,nnzp, &
            hydromet_mc(:,iirgraupelm), hydromet_mc(:,iiNgraupelm), &
            hydromet_tmp(:,iirgraupelm), hydromet_tmp(:,iiNgraupelm), effg, &
            hydromet_sten(:,iirgraupelm), hydromet_sten(:,iirrainm), &

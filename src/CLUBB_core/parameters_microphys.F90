@@ -34,6 +34,10 @@ module parameters_microphys
     l_latin_hypercube_sampling  ! Latin Hypercube Sampling (K&K)
 !$omp threadprivate(l_cloud_edge_activation, l_latin_hypercube_sampling)
 
+  ! Number of latin hypercube samples to call the microphysics with
+  integer, public :: &
+    LH_microphys_calls 
+!$omp threadprivate(LH_microphys_calls)
 
   character(len=50), public :: &
     micro_scheme ! khairoutdinv_kogan, simplified_ice, coamps, etc.

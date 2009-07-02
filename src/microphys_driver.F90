@@ -28,6 +28,7 @@ module microphys_driver
     l_cloud_edge_activation,    & ! Activate on cloud edges (Morrison)
     l_fix_pgam,                 & ! Fix pgam (Morrison)
     l_latin_hypercube_sampling, & ! Use Latin Hypercube Sampling (K&K only)
+    LH_microphys_calls,         & ! Number of latin hypercube samples to call the microphysics with 
     l_local_kk,                 & ! Use local formula for K&K
     micro_scheme,               & ! The microphysical scheme in use
     hydromet_list,              & ! Names of the hydrometeor species
@@ -120,7 +121,7 @@ module microphys_driver
       l_cloud_sed, l_ice_micro, l_graupel, l_hail, &
       l_seifert_beheng, l_predictnc, l_specify_aerosol, l_subgrid_w, &
       l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, &
-      l_latin_hypercube_sampling, &
+      l_latin_hypercube_sampling, LH_microphys_calls, &
       rrp2_rrainm2_cloud, Nrp2_Nrm2_cloud, Ncp2_Ncm2_cloud, &
       corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
       corr_sNc_NL_cloud, rrp2_rrainm2_below, &
@@ -209,10 +210,8 @@ module microphys_driver
     !---------------------------------------------------------------------------
     Ncm_initial = 100. ! #/cm^3 
 
-    !---------------------------------------------------------------------------
-    ! Parameters for Khairoutdinov & Kogan microphysics 
-    !---------------------------------------------------------------------------
     l_latin_hypercube_sampling = .false.
+    LH_microphys_calls = 2
 
     !---------------------------------------------------------------------------
     ! Parameters for all microphysics schemes
@@ -793,7 +792,7 @@ module microphys_driver
       if ( l_latin_hypercube_sampling ) then
 
         call latin_hypercube_driver &
-             ( real( dt ), iter, gr%nnzp, cf, thlm, p_in_Pa, exner, &
+             ( real( dt ), iter, LH_microphys_calls, gr%nnzp, cf, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm_zt, wtmp, dzq, rcm, rtm-rcm, &
                hydromet, hydromet_mc, hydromet_vel, rcm_mc, &
                rvm_mc, thlm_mc, morrison_micro_driver )
@@ -843,7 +842,7 @@ module microphys_driver
       if ( l_latin_hypercube_sampling ) then
 
         call latin_hypercube_driver &
-             ( real( dt ), iter, gr%nnzp, cf, thlm, p_in_Pa, exner, &
+             ( real( dt ), iter, LH_microphys_calls, gr%nnzp, cf, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm_zt, wtmp, dzq, rcm, rtm-rcm, &
                hydromet, hydromet_mc, hydromet_vel, rcm_mc, &
                rvm_mc, thlm_mc, KK_microphys )

@@ -668,11 +668,11 @@ module coamps_micro_driver_mod
         endif
 
         if (sat > 0.0 .or. & 
-            qc3_flip(1,1,k) .ge. pcut .or. & 
-            qr3_flip(1,1,k) .ge. pcut .or. & 
-            qs3_flip(1,1,k) .ge. pcut .or. & 
-            qi3_flip(1,1,k) .ge. pcut .or. & 
-            qg3_flip(1,1,k) .ge. pcut & 
+            qc3_flip(1,1,k) >= pcut .or. & 
+            qr3_flip(1,1,k) >= pcut .or. & 
+            qs3_flip(1,1,k) >= pcut .or. & 
+            qi3_flip(1,1,k) >= pcut .or. & 
+            qg3_flip(1,1,k) >= pcut & 
            ) & 
             then
           nkpts = nkpts+1

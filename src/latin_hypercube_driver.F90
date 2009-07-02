@@ -10,13 +10,7 @@ module latin_hypercube_mod
 
   integer, parameter :: &
     d_variables     = 5, & ! Number of variables to sample
-    n_micro_calls   = 2, & ! Number of calls to microphysics per timestep (normally=2)
     sequence_length = 1     ! nt_repeat/n_micro_call; number of timesteps before sequence repeats.
-
-  ! Number of random samples before sequence of repeats (normally=10)
-  integer, parameter :: &
-    nt_repeat = n_micro_calls * sequence_length 
-
 
   integer, allocatable, dimension(:,:,:) :: & 
     height_time_matrix ! matrix of rand ints
@@ -25,7 +19,7 @@ module latin_hypercube_mod
 
 !-------------------------------------------------------------------------------
   subroutine latin_hypercube_driver &
-             ( dt, iter, nnzp, cf, T_in_K, p_in_Pa, exner, &
+             ( dt, iter, n_micro_calls, nnzp, cf, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm, w_std_dev, dzq, rcm, rvm, &
                hydromet, hydromet_mc_est, hydromet_vel_est, rcm_mc_est, &
                rvm_mc_est, thlm_mc_est, microphys_sub )
@@ -111,15 +105,16 @@ module latin_hypercube_mod
       dt ! Model timestep       [s]
 
     integer, intent(in) :: &
-      iter, & ! Model iteration number
-      nnzp    ! Domain dimension
+      iter,          & ! Model iteration number
+      n_micro_calls, & ! Number of calls to microphysics per timestep (normally=2)
+      nnzp             ! Number of vertical model levels
 
     real, dimension(nnzp), intent(in) :: &
-      cf,         & ! Cloud fraction           [%]
-      T_in_K,     & ! Temperature              [K]
-      p_in_Pa,    & ! Pressure                 [Pa]
-      exner,      & ! Exner function           [-]
-      rho           ! Density on thermo. grid  [kg/m^3]
+      cf,         & ! Cloud fraction               [%]
+      thlm,       & ! Liquid potential temperature [K]
+      p_in_Pa,    & ! Pressure                     [Pa]
+      exner,      & ! Exner function               [-]
+      rho           ! Density on thermo. grid      [kg/m^3]
 
     real, dimension(nnzp), intent(in) :: &
       wm, &        ! Mean w                     [m/s]
@@ -170,10 +165,14 @@ module latin_hypercube_mod
     ! A true/false flag that determines whether the PDF allows us to construct a sample
     logical, dimension(nnzp) :: l_sample_flag 
 
+    ! Number of random samples before sequence of repeats (normally=10)
+    integer :: nt_repeat
+
     integer :: i_rmd, k
 
 #ifdef UNRELEASED_CODE
     ! ---- Begin Code ----
+    nt_repeat = n_micro_calls * sequence_length 
 
     if ( .not. allocated( height_time_matrix ) ) then
       allocate( height_time_matrix(nnzp, nt_repeat, d_variables+1) )
@@ -206,8 +205,6 @@ module latin_hypercube_mod
                            1:d_variables+1)
 
       ! print*, 'latin_hypercube_sampling: got past p_matrix'
-      ! Convert from number/kg of air to number/cc
-      ! Ncm = dble( hydromet(k,iiNcm) * rho(k) / cm3_per_m3 )
 
       ! Generate LH sample, represented by X_u and X_nl, for level k
       call generate_lh_sample &
@@ -224,8 +221,8 @@ module latin_hypercube_mod
     call estimate_lh_micro &
          ( dt, nnzp, n_micro_calls, d_variables, X_u, X_nl, & ! intent(in)
            rt, thl, l_sample_flag, pdf_params, &             ! intent(in)
-           T_in_K, p_in_Pa, exner, rho, &                ! intent(in)
-           wm, w_std_dev, dzq, rcm, rvm, &         ! intent(in)
+           thlm, p_in_Pa, exner, rho, &                ! intent(in)
+           wm, w_std_dev, dzq, rcm, rvm, &               ! intent(in)
            cf, hydromet, &                               ! intent(in)
            hydromet_mc_est, hydromet_vel_est, &          ! intent(in)
            rcm_mc_est, rvm_mc_est, thlm_mc_est, &        ! intent(out)
@@ -239,6 +236,9 @@ module latin_hypercube_mod
     ! print*, 'latin_hypercube_driver: AKm_est=', AKm_est
 
     if ( l_stats_samp ) then
+
+      ! Averages of points being fed into the microphysics
+      ! These are for diagnostic purposes, and are not needed for anything
       if ( iirrainm > 0 ) then
         call stat_update_var( iLH_rrainm, lh_hydromet(:,iirrainm), zt )
       end if
@@ -273,6 +273,7 @@ module latin_hypercube_mod
       call stat_update_var( iLH_wm, lh_wm, zt )
       call stat_update_var( iLH_wp2_zt, lh_wp2_zt, zt )
       call stat_update_var( iLH_cf, lh_cf, zt )
+
     end if ! l_stats_samp
 
     return
