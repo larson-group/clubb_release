@@ -23,6 +23,8 @@
 #
 #		(5) Lines that are longer than a specified size.
 #
+#		(6) Use of deprecated keywords such as .ge.
+#
 #               This perl script assumes that 
 #               the Fortran code compiles!!
 #
@@ -33,6 +35,7 @@ use strict;
 
 # Includes
 use Getopt::Long;
+use Thread;
 
 # Global Variables
 
@@ -122,11 +125,30 @@ our $IdTagRegEx =	qr/^				# Bind to beginning of line
 			!				# Comment Character
 			\s*?				# Zero or More spaces
 			\$Id				# $Id
-			.*?				# Zero or More of any character
+			:?                              # Zero or one colon
+			\s?                             # Zero or one spaces
+			((\w|\.)*)                      # Capture Zero or more alphanumeric characters
+			.*				# Zero or More of any character
 			\$				# Ending Dollar Sign
 			\s*?				# Zero or more spaces
 			$				# Bind to end of line
 			/ix;				# Whole Expression is case insensitve
+
+our $deprecatedRegEx = qr/
+			(
+			\.le\.
+			|
+			\.ge\.
+			|
+			\.lt\.
+			|
+			\.gt\.
+			|
+			\.eq\.
+			|
+			\.ne\.
+			)
+			/ix;
 
 # Captures verbose command switch.
 GetOptions ('v|verbose' => \$verbose);
@@ -141,62 +163,82 @@ else{
 	warn "CLUBBStandardsCheck.pl has begun.\n";
 
 	# Declare Local Variables
+	our $thr;
 	our $file;
-	our @input;
 	
 	# For Every File
 	foreach $file (@ARGV)
 	{
-		# Open the file
-		open FILE, $file or die "Bad Filename";
-	
-		# Store the lines to an array
-		@input = <FILE>;
-
-		# Check for missing implicit nones
-		if( ! &implicitCheck( $verbose, @input ) )
-		{
-			warn "$file\n";	
-		        warn $horizontal;
-
-		}
-
-		# Check for use statements without only
-		if( ! &useCheck( $verbose, @input ) )
-		{
-			warn "$file\n";
-		        warn $horizontal;
-		}
-
-		# Check for default private statements
-		if( ! &privateCheck( $verbose, @input ) )
-		{
-			warn "$file\n";
-			warn $horizontal;
-
-		}
-		
-		# Check for missing $ Id $ tags
-		if( ! &idCheck( $verbose, @input ) )
-		{
-			warn "$file\n";
-			warn $horizontal;
-			
-		}	
-		# Check for long lines
-		if( ! &lineCheck( $verbose, @input ) )
-		{
-			warn "$file\n";
-			warn $horizontal;
-		}
-		# Close File
-		close FILE;
-
-
+		$thr = new Thread \&fileThread, $file, $thr;
 	}
+	
+	while ( my(@list)=threads->list()) {
+		grep { $_->join } @list;
+	};
+
 	warn "CLUBBStandardsCheck.pl has finished.\n";
 }
 #### END MAIN PROGRAM ####
+
+sub fileThread
+{
+	my($file) = shift(@_);
+		
+	my(@input);
+
+	# Open the file
+	open FILE, $file or die "Bad Filename";
+	
+	# Store the lines to an array
+	@input = <FILE>;
+
+	# Check for missing implicit nones
+	if( ! &implicitCheck( $verbose, @input ) )
+	{
+		warn "$file\n";	
+	        warn $horizontal;
+
+	}
+
+	# Check for use statements without only
+	if( ! &useCheck( $verbose, @input ) )
+	{
+		warn "$file\n";
+	        warn $horizontal;
+	}
+
+	# Check for default private statements
+	if( ! &privateCheck( $verbose, @input ) )
+	{
+		warn "$file\n";
+		warn $horizontal;
+	}
+		
+	# Check for missing $ Id $ tags
+	if( ! &idCheck( $verbose, $file, @input ) )
+	{
+		warn "$file\n";
+		warn $horizontal;
+	}
+
+	# Check for use of forbidden keywords
+	if( ! &deprecateCheck( $verbose, @input ) )
+	{
+		warn "$file\n";
+		warn $horizontal;
+	}
+
+	# Check for long lines
+	if( ! &lineCheck( $verbose, @input ) )
+	{
+		warn "$file\n";
+		warn $horizontal;
+	}
+
+	# Close File		
+	close FILE;
+	
+}
 
 #####################################################################
 sub implicitCheck
@@ -448,7 +490,7 @@ sub privateCheck
 ####################################################################
 sub idCheck
 #
-#     &idCheck( $verbose, @input ) 
+#     &idCheck( $verbose, $filepath, @input ) 
 #
 #     Description: This subroutine verifies that an $ Id $ comment 
 #     exists somewhere in the file. 
@@ -458,6 +500,7 @@ sub idCheck
 #     
 #     Arguments:
 #     	Sverbose - Prints verbose messages when true.
+#     	$filepath - Used to determine if the Id tag matches the filename.
 #     	@input   - Lines of a Fortran source file.
 #
 #     Returns
@@ -466,15 +509,22 @@ sub idCheck
 {
 	# Grab first argument
 	my( $verbose ) = shift(@_);
-	
+
+        # Grab the filepath
+	my( $filepath ) = shift(@_);
+
 	# Grab Second argument
 	my( @input ) = @_;
 
 	# Local Variables
-	my( $line, $result );
+	my( $line, $result, @split_path, $filename, $id_filename, @warnings);
 
 	# Default initialization to false
 	$result = 0;
+        
+	# Getting the name of the file
+	@split_path = split(/\//,$filepath);
+	$filename = @split_path[-1];
 
 	# Print if verbose
 	if( $verbose )
@@ -487,7 +537,14 @@ sub idCheck
 	{
 		# If it contains an $ Id $ comment
 		if( $line =~ $IdTagRegEx )
-		{	
+		{
+			# Store the filename from the Id tag
+		        $id_filename = $1;
+		        if( ! ($filename =~ m/$id_filename/) )
+			{
+		           push(@warnings,"$programName CAUTION: \"$filename\" does not match \"$id_filename\" in Id tag.\n");
+			   
+			}	
 			if( $verbose )
 			{
 				print "$programName comment: Id tag found\n$line";
@@ -499,10 +556,16 @@ sub idCheck
 	# If no $ Id $ tags were found
 	if( ! $result )
 	{
-		warn $horizontal;
-		warn "$programName WARNING: Missing \$Id\$ Tag. \$Id\$ check FAILED!\n";
-		warn "Add ! \$Id\$ to top of file.\n"
+		push(@warnings, "$programName WARNING: Missing \$Id\$ Tag. \$Id\$ check FAILED!\n");
+		push(@warnings, "Add ! \$Id\$ to top of file.\n");
 	}
+
+	if($#warnings > -1)
+	{
+		warn $horizontal;
+		warn @warnings;
+		$result = 0;
+        }
 
 	return $result;
 }
@@ -572,3 +635,71 @@ sub lineCheck
 
 	return $result;
 }
+#####################################################################
+sub deprecateCheck
+#
+#     &deprecateCheck( $verbose, @input ) 
+#
+#     Description: This subroutine verifies that there are no deprecated
+#       tokes used in the Fortran source file.
+#
+#     Arguments:
+#     	Sverbose - Prints verbose messages when true.
+#     	@input   - Lines of a Fortran source file.
+#
+#     Returns
+#     	True if no line has deprecated tokens.
+#####################################################################
+{
+	
+	# Grab first argument
+	my( $verbose ) = shift(@_);
+	
+	# Grab Second argument
+	my( @input ) = @_;
+
+	# Local Variables
+	my( $line, $result, $lineNumber, $maxLength, @warnings,@test, $prev, %seen, @unique);
+
+	# The maximum character length a line is allowed to be.
+	$maxLength = 100;
+	
+	# Default initialization
+	$lineNumber = 0;
+
+	$result = 1;
+
+	# For every line of the file
+	for $line (@input)
+	{
+		# Keep track of the line number
+		$lineNumber++;
+                
+		# If the number of characters in the line is greater than the max length.
+		$line =~ m/^([^!]*)!?/;
+		if( @test = $1 =~ m/$deprecatedRegEx/ig )
+		{
+			# Start building the warning message
+			%seen = ();
+
+                        @unique = grep { ! $seen{$_} ++ } @test;
+			push(@warnings,"$programName WARNING: Line has deprecated elements:  @unique .\n");
+			push(@warnings, "$lineNumber : $line");
+
+			$result = 0; # Check Failed!
+		}
+	}
+
+	# Did the check fail?
+	if( ! $result )
+	{
+		push(@warnings, "$programName WARNING: File has deprecated elements.\n");
+		
+		# Show the warning messages	
+		warn $horizontal;
+		warn @warnings;
+	}
+
+	return $result;
+}
+
