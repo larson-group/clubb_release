@@ -304,8 +304,17 @@ module fill_holes
        !        1.0 / dzt(k) is the level thickness for thermodynamic level k.
        vertical_integral = sum( field(1:) / gr%dzt(k_start:k_end) )
 
-       ! Sum of all vertical level thicknesses (from start level to end level).
-       height = sum( 1.0 / gr%dzt(k_start:k_end) )
+       ! Height now calculated by difference between proper grid levels.
+       ! This should both be more accurate in terms of less round-off error,
+       ! and faster in terms of runtime.
+       ! ~~EIHoppe//20090702
+
+       height = gr%zm(k_end) - gr%zm(k_start - 1)
+
+!       ! Sum of all vertical level thicknesses (from start level to end level).
+!       height = sum( 1.0 / gr%dzt(k_start:k_end) )
+
+       ! /EIHoppe change
 
     ! For fields on the zm (momentum level) grid.
     elseif ( field_grid == "zm" ) then
@@ -338,8 +347,18 @@ module fill_holes
        !        1.0 / dzm(k) is the level thickness for momentum level k.
        vertical_integral = sum( field(1:) / gr%dzm(k_start:k_end) )
 
-       ! Sum of all vertical level thicknesses (from start level to end level).
-       height = sum( 1.0 / gr%dzm(k_start:k_end) )
+       ! Height now calculated by difference between proper grid levels.
+       ! This should both be more accurate in terms of less round-off error,
+       ! and faster in terms of runtime.
+       ! Note: The final 1.0/gr%dzm is to avoid array index out-of-bounds
+       ! errors.
+       ! ~~EIHoppe//20090702
+       height = gr%zt(k_end) - gr%zt(k_start) + (1.0 / gr%dzm(k_end))
+
+!       ! Sum of all vertical level thicknesses (from start level to end level).
+!       !height = sum( 1.0 / gr%dzm(k_start:k_end) )
+
+       ! /EIHoppe change
 
     else
 
