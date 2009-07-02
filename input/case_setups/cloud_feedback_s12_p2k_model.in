@@ -119,12 +119,12 @@ debug_level   = 0
 ! 0 to shut off all scalar computations
 ! > 0 the specifies the number of columns in <runtype>_sclr_sounding.in 
 !	that will be read in and tracked
-sclr_dim   = 0  ! Total number of scalars
+sclr_dim   = 1  ! Total number of scalars
 
 iisclr_rt  = -1  ! Location in the array to place a scalar like total water
 iisclr_thl = -2 ! Location in the array to place a scalar like thetal
 
-sclr_tol  = 1.e-2, 1.e-8 ! Tolerances below which we consider scalar to be 0.
+sclr_tol  = 1.e-8 ! Tolerances below which we consider scalar to be 0.
 
 ! Add scalars that are computed using simple eddy diffusivity
 ! 0 to shut off all scalar computations
@@ -150,6 +150,7 @@ l_fix_cos_solar_zen = .true.
 amu0                = 0.606
 slr                 = 0.590
 sol_const           = 1367.0 ! Solar Constant given in spec [W/m^2]
+ext_atmos_buffer    = 10
 !rad_scheme = "none",
 /
 
