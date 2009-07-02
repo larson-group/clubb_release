@@ -542,8 +542,7 @@ sub idCheck
 		        $id_filename = $1;
 		        if( ! ($filename =~ m/$id_filename/) )
 			{
-		           push(@warnings,"$programName CAUTION: \"$filename\" does not match \"$id_filename\" in Id tag.\n");
-			   
+		           push(@warnings,"$programName CAUTION: \"$filename\" does not match \"$id_filename\" in Id tag.\n"); 
 			}	
 			if( $verbose )
 			{
@@ -559,7 +558,8 @@ sub idCheck
 		push(@warnings, "$programName WARNING: Missing \$Id\$ Tag. \$Id\$ check FAILED!\n");
 		push(@warnings, "Add ! \$Id\$ to top of file.\n");
 	}
-
+        
+	# If there are are warning/caution messages then display them.
 	if($#warnings > -1)
 	{
 		warn $horizontal;
@@ -641,7 +641,7 @@ sub deprecateCheck
 #     &deprecateCheck( $verbose, @input ) 
 #
 #     Description: This subroutine verifies that there are no deprecated
-#       tokes used in the Fortran source file.
+#       or tokens used in the Fortran source file.
 #
 #     Arguments:
 #     	Sverbose - Prints verbose messages when true.
@@ -683,7 +683,7 @@ sub deprecateCheck
 			%seen = ();
 
                         @unique = grep { ! $seen{$_} ++ } @test;
-			push(@warnings,"$programName WARNING: Line has deprecated elements:  @unique .\n");
+			push(@warnings,"$programName WARNING: Line has deprecated or forbidden elements:  @unique .\n");
 			push(@warnings, "$lineNumber : $line");
 
 			$result = 0; # Check Failed!
