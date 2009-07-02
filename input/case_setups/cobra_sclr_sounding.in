@@ -1,3 +1,4 @@
+! The levels of the vertical coordinate (z or pressure) are assumed to be the same as those in the corresponding sounding.in file.
 CO2[ppmv]   rt[kg\kg]   thm[K]   
 379.000     3.05E-003   286.1    
 379.053     3.20E-003   285.59   
