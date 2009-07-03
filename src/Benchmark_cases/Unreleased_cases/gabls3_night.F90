@@ -200,7 +200,7 @@ module gabls3_night
     r=9.81/ts*(th*(1+eps*qh)-ts*(1.+eps*qs))*h/vel**2
     iter=0
 
-    if(r.lt.0.) then
+    if( r < 0. ) then
 
       xsi=0.
       iter=iter+1
@@ -260,7 +260,7 @@ module gabls3_night
 
     ustar = 0.4/fm*vel
 
-    if(xsi.ge.0.) then
+    if( xsi >= 0. ) then
       xsi = max(1.e-5,xsi)
     else
       xsi = min(-1.e-5,xsi)
