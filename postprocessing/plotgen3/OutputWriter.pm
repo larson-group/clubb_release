@@ -73,6 +73,19 @@ EOF
 ###############################################################################
 sub writeHeader()
 {
+	
+	(my $sec, my $min, my $hour, my $mday, my $mon, my $year, my$wday,
+	my $yday, my $isdst)=localtime(time);
+#printf "%4d-%02d-%02d %02d:%02d:%02d\n",
+#	$year+1900,$mon+1,$mday,$hour,$min,$sec;
+
+	my $currYear = $year + 1900;
+	my $currMon = $mon + 1;
+	my $currDay = $mday;
+	my $currHour = $hour;
+	my $currMin = $min;
+	my $currSec = $sec;
+
 	shift(@_);
 	my $fh = shift(@_);
 	open(FILE, "> $fh");
@@ -81,9 +94,10 @@ sub writeHeader()
 <html>
 <head>
 	<title>Plotgen</title>
-	<div align="CENTER">
-		<h1><font color="#811212">Plotgen</font></h1>
-	</div>
+	<p><div align="CENTER">
+		<font size="+3" color="#811212">Plotgen</font>
+		<font size="-1"><br/>$currMon/$currDay/$currYear</font></p>
+	</div></p>
 
 </head>
 <body>
