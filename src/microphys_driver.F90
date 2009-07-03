@@ -725,11 +725,6 @@ module microphys_driver
     ! Compute difference in height levels
     dzq(1:gr%nnzp) = 1./gr%dzm(1:gr%nnzp)
 
-    ! For latin hypercube sampling
-    hydromet_corr(:) = 0.0 ! Initialize to 0
-    hydromet_corr(iiNcm)    = Ncp2_Ncm2_cloud
-    hydromet_corr(iirrainm) = rrp2_rrainm2_cloud
-
    ! Begin by calling Brian Griffin's implementation of the
    ! Khairoutdinov and Kogan microphysical scheme, 
    ! the Rutlege and Hobbes scheme from COAMPS, or the Morrison scheme.
@@ -803,6 +798,11 @@ module microphys_driver
 
       if ( l_latin_hypercube_sampling ) then
 
+        ! For latin hypercube sampling
+        hydromet_corr(:) = 0.0 ! Initialize to 0
+        hydromet_corr(iiNcm)    = Ncp2_Ncm2_cloud
+        hydromet_corr(iirrainm) = rrp2_rrainm2_cloud
+
         call latin_hypercube_driver &
              ( real( dt ), iter, LH_microphys_calls, gr%nnzp, cf, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm_zt, wtmp, dzq, rcm, rtm-rcm, &
@@ -852,6 +852,11 @@ module microphys_driver
       thlm_mc(:) = 0.0
 
       if ( l_latin_hypercube_sampling ) then
+
+        ! For latin hypercube sampling
+        hydromet_corr(:) = 0.0 ! Initialize to 0
+        hydromet_corr(iiNcm)    = Ncp2_Ncm2_cloud
+        hydromet_corr(iirrainm) = rrp2_rrainm2_cloud
 
         call latin_hypercube_driver &
              ( real( dt ), iter, LH_microphys_calls, gr%nnzp, cf, thlm, p_in_Pa, exner, &
