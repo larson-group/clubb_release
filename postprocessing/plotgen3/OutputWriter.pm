@@ -19,6 +19,7 @@ sub writeCaseTitle()
 
 	my($CASE) = shift;
 	print FILE <<"EOF";
+	<a name="$CASE"></a>
 	<div align="CENTER">
 		<b><font size="+2">
 		<font color="#0000ff"> $CASE </font> </font></b>
