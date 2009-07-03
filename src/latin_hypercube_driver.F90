@@ -147,11 +147,11 @@ module latin_hypercube_mod
     ! Local variables
     integer :: p_matrix(n_micro_calls,d_variables+1)
 
-    ! Sample drawn from uniform distribution
-    double precision, dimension(nnzp,n_micro_calls,(d_variables+1)) :: X_u
+    double precision, dimension(nnzp,n_micro_calls,(d_variables+1)) :: &
+      X_u_all_levs ! Sample drawn from uniform distribution
 
-    ! Sample that is transformed ultimately to normal-lognormal
-    double precision, dimension(nnzp,n_micro_calls,d_variables) :: X_nl
+    double precision, dimension(nnzp,n_micro_calls,d_variables) :: &
+      X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     double precision, dimension(nnzp,n_micro_calls) :: &
       rt, thl ! Sample of total water and liquid potential temperature [g/kg],[K]
@@ -224,24 +224,25 @@ module latin_hypercube_mod
              max( hydromet(k,iiNcm), 1.0 ), hydromet(k,iirrainm),&! intent(in)
              Ncp2_Ncm2, rrp2_rrainm2, &                           ! intent(in)
              rt(k,:), thl(k,:), &                                 ! intent(out)
-             X_u(k,:,:), X_nl(k,:,:), l_sample_flag(k) ) ! intent(out)
+             X_u_all_levs(k,:,:), X_nl_all_levs(k,:,:), l_sample_flag(k) ) ! intent(out)
 
       ! print *, 'latin_hypercube_sampling: got past lh_sampler'
     end do ! 1..nnzp
 
     ! Perform LH and analytic microphysical calculations
     call estimate_lh_micro &
-         ( dt, nnzp, n_micro_calls, d_variables, X_u, X_nl, & ! intent(in)
-           rt, thl, l_sample_flag, pdf_params, &             ! intent(in)
-           thlm, p_in_Pa, exner, rho, &                ! intent(in)
-           wm, w_std_dev, dzq, rcm, rvm, &               ! intent(in)
-           cf, hydromet, &                               ! intent(in)
-           hydromet_mc_est, hydromet_vel_est, &          ! intent(in)
-           rcm_mc_est, rvm_mc_est, thlm_mc_est, &        ! intent(out)
-           AKm_est, AKm, AKstd, AKstd_cld, &             ! intent(out)
-           AKm_rcm, AKm_rcc, rcm_est, &                  ! intent(out)
-           lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &       ! intent(out)
-           lh_wm, lh_wp2_zt, lh_cf, &                    ! intent(out)
+         ( dt, nnzp, n_micro_calls, d_variables, &  ! intent(in)
+           X_u_all_levs, X_nl_all_levs, &           ! intent(in)
+           rt, thl, l_sample_flag, pdf_params, &    ! intent(in)
+           thlm, p_in_Pa, exner, rho, &             ! intent(in)
+           wm, w_std_dev, dzq, rcm, rvm, &          ! intent(in)
+           cf, hydromet, &                          ! intent(in)
+           hydromet_mc_est, hydromet_vel_est, &     ! intent(in)
+           rcm_mc_est, rvm_mc_est, thlm_mc_est, &   ! intent(out)
+           AKm_est, AKm, AKstd, AKstd_cld, &        ! intent(out)
+           AKm_rcm, AKm_rcc, rcm_est, &             ! intent(out)
+           lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &  ! intent(out)
+           lh_wm, lh_wp2_zt, lh_cf, &               ! intent(out)
            microphys_sub )  ! Procedure
 
     ! print*, 'latin_hypercube_driver: AKm=', AKm

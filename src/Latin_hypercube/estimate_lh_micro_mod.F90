@@ -6,7 +6,7 @@ module estimate_lh_micro_mod
 
   public :: estimate_lh_micro
 
-  private :: autoconv_driver, ql_estimate, micro_driver
+  private :: autoconv_driver, rc_estimate, micro_driver
 
   private ! Default Scope
 
@@ -15,7 +15,8 @@ module estimate_lh_micro_mod
 !------------------------------------------------------------------------
 
   subroutine estimate_lh_micro &
-             ( dt, nnzp, n_micro_calls, d_variables, X_u, X_nl, & 
+             ( dt, nnzp, n_micro_calls, d_variables, &
+               X_u_all_levs, X_nl_all_levs, & 
                rt, thl, l_sample_flag, pdf_params, & 
                thlm, p_in_Pa, exner, rho, &
                wm, w_std_dev, dzq, rcm, rvm, &        
@@ -63,10 +64,10 @@ module estimate_lh_micro_mod
 
     ! Sample drawn from uniform distribution
     double precision, dimension(nnzp,n_micro_calls,d_variables+1), intent(in) :: &
-      X_u ! N x D+1 Latin hypercube sample from uniform dist
+      X_u_all_levs ! N x D+1 Latin hypercube sample from uniform dist
 
     double precision, dimension(nnzp,n_micro_calls,d_variables), intent(in) :: &
-      X_nl ! Sample that is transformed ultimately to normal-lognormal
+      X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     double precision, dimension(nnzp,n_micro_calls), intent(in) :: &
       rt, thl ! Total water / Liquid potential temperature      [g/kg] / [K]
@@ -153,7 +154,7 @@ module estimate_lh_micro_mod
     double precision :: rcm_est_dp
 
     ! Variables needed for exact Kessler autoconversion, AKm
-    real :: q_crit, K_one
+    real :: r_crit, K_one
     real :: sn1_crit, R1_crit, sn2_crit, R2_crit
     real :: AK1, AK2
 
@@ -232,20 +233,22 @@ module estimate_lh_micro_mod
       else
 
         ! Call microphysics, i.e. Kessler autoconversion.
-        ! A_K = (1e-3/s)*(ql-0.5g/kg)*H(ql-0.5g/kg)
+        ! A_K = (1e-3/s)*(rc-0.5g/kg)*H(rc-0.5g/kg)
         call autoconv_driver &
              ( n_micro_calls, d_variables, dble( a ), dble( R1 ), dble( R2 ), &
-               X_nl(level,1:n_micro_calls,1), & !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
-               X_u(level,:,:), AKm_est_dp )
+               X_nl_all_levs(level,1:n_micro_calls,1), & 
+               !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
+               X_u_all_levs(level,:,:), AKm_est_dp )
 
         ! Convert to real number
         AKm_est(level) = real( AKm_est_dp )
 
         ! Compute Monte Carlo estimate of liquid for test purposes.
-        call ql_estimate &
+        call rc_estimate &
              ( n_micro_calls, d_variables, dble( a ), dble( R1 ), &
-               dble( R2 ), X_nl(level,1:n_micro_calls,1), & ! X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
-               X_u(level,:,:), rcm_est_dp )
+               dble( R2 ), X_nl_all_levs(level,1:n_micro_calls,1), & 
+               ! X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
+               X_u_all_levs(level,:,:), rcm_est_dp )
 
         ! Convert to real number
         rcm_est(level) = real( rcm_est_dp )
@@ -261,26 +264,26 @@ module estimate_lh_micro_mod
         !       print*, 'rcm_est=', rcm_est
 
         ! Exact Kessler autoconversion in units of (kg/kg)/s
-        !        q_crit = 0.3e-3
-        !        q_crit = 0.7e-3
-        q_crit   = 0.2e-3
+        !        r_crit = 0.3e-3
+        !        r_crit = 0.7e-3
+        r_crit   = 0.2e-3
         K_one    = 1.e-3
-        sn1_crit = (s1-q_crit)/ss1
+        sn1_crit = (s1-r_crit)/ss1
         R1_crit  = 0.5*(1+erf(sn1_crit/sqrt(2.0)))
-        AK1      = K_one * ( (s1-q_crit)*R1_crit  & 
+        AK1      = K_one * ( (s1-r_crit)*R1_crit  & 
                   + ss1*exp(-0.5*sn1_crit**2)/(sqrt(2*pi)) )
-        sn2_crit = (s2-q_crit)/ss2
+        sn2_crit = (s2-r_crit)/ss2
         R2_crit  = 0.5*(1+erf(sn2_crit/sqrt(2.0)))
-        AK2      = K_one * ( (s2-q_crit)*R2_crit  & 
+        AK2      = K_one * ( (s2-r_crit)*R2_crit  & 
                   + ss2*exp(-0.5*sn2_crit**2)/(sqrt(2*pi)) )
         AKm(level) = a * AK1 + (1-a) * AK2
 
         ! Exact Kessler standard deviation in units of (kg/kg)/s
         ! For some reason, sometimes AK1var, AK2var are negative
-        AK1var   = max( zero_threshold, K_one * (s1-q_crit) * AK1  & 
+        AK1var   = max( zero_threshold, K_one * (s1-r_crit) * AK1  & 
                  + K_one * K_one * (ss1**2) * R1_crit  & 
                  - AK1**2  )
-        AK2var   = max( zero_threshold, K_one * (s2-q_crit) * AK2  & 
+        AK2var   = max( zero_threshold, K_one * (s2-r_crit) * AK2  & 
                  + K_one * K_one * (ss2**2) * R2_crit  & 
                  - AK2**2  )
         ! This formula is for a grid box average:
@@ -296,14 +299,14 @@ module estimate_lh_micro_mod
                         )
 
         ! Kessler autoconversion, using grid box avg liquid, rcm, as input
-        AKm_rcm(level) = K_one * max( zero_threshold, rcm(level)-q_crit )
+        AKm_rcm(level) = K_one * max( zero_threshold, rcm(level)-r_crit )
 
         ! Kessler ac, using within cloud liquid, rcm/cf, as input
         ! We found that for small values of cf this formula
         ! can still produce NaN values and therefore added this 
         ! threshold of 0.001 here. -dschanen 3 June 2009
         if ( cf(level) > 0.001 ) then
-          AKm_rcc(level) = cf(level) * K_one * max( zero_threshold, rcm(level)/cf(level)-q_crit )
+          AKm_rcc(level) = cf(level) * K_one * max( zero_threshold, rcm(level)/cf(level)-r_crit )
         else
           AKm_rcc(level) = zero_threshold
         end if
@@ -326,7 +329,7 @@ module estimate_lh_micro_mod
 
         !------------------------------------------------------------------------
         ! Compute within-cloud vertical velocity, avg over full layer
-        ! This call is a kludge: I feed w values into ql variable
+        ! This call is a kludge: I feed w values into rc variable
         ! in autoconv_driver.
         ! Only works if coeff=expn=1 in autoconversion_driver.
         !------------------------------------------------------------------------
@@ -350,8 +353,9 @@ module estimate_lh_micro_mod
     end do ! level = 2, nnzp
 
     call micro_driver( dt, nnzp, n_micro_calls, d_variables, &
-                       l_sample_flag, X_nl(:,:,1), rt, thl, &
-                       X_nl(:,:,3), X_nl(:,:,4), X_nl(:,:,5), X_u, &
+                       l_sample_flag, X_nl_all_levs(:,:,1), rt, thl, &
+                       X_nl_all_levs(:,:,3), X_nl_all_levs(:,:,4), &
+                       X_nl_all_levs(:,:,5), X_u_all_levs, &
                        thlm, p_in_Pa, exner, rho, wm, w_std_dev, &
                        dzq, rcm, rvm, pdf_params, hydromet, &
                        rvm_mc_est, rcm_mc_est, hydromet_mc_est, &
@@ -363,9 +367,9 @@ module estimate_lh_micro_mod
     return
   end subroutine estimate_lh_micro
 !-----------------------------------------------------------------------
-  subroutine autoconv_driver( n_micro_calls, d_variables, a, R1, R2, ql, &
+  subroutine autoconv_driver( n_micro_calls, d_variables, a, R1, R2, rc, &
                              !w, Nc, rr, &
-                              X_u, ac_m )
+                              X_u_one_lev, ac_m )
 ! Description:
 !   Compute Kessler grid box avg autoconversion (g/kg)/s.
 ! References:
@@ -394,18 +398,18 @@ module estimate_lh_micro_mod
       R1, R2    ! Cloud fraction associated w/ 1st, 2nd mixture component
 
     double precision, dimension(n_micro_calls), intent(in) :: &
-      ql !, & ! n in-cloud values of spec liq water content [g/kg].
+      rc !, & ! n in-cloud values of spec liq water content (when positive) [g/kg].
 !     w,  & ! n in-cloud values of vertical velocity (m/s)
 !     Nc, & ! n in-cloud values of droplet number (#/mg air)
 !     rr    ! n in-cloud values of specific rain content (g/kg)
 
     double precision, dimension(n_micro_calls,d_variables+1), intent(in) :: &
-      X_u ! N x D+1 Latin hypercube sample from uniform dist
+      X_u_one_lev ! N x D+1 Latin hypercube sample from uniform dist
 
     ! Output Variables
 
     ! a scalar representing grid box average autoconversion;
-    ! has same units as ql/s; divide by total cloud fraction to obtain
+    ! has same units as rc; divide by total cloud fraction to obtain
     ! within-cloud autoconversion
     double precision, intent(out) :: &
       ac_m
@@ -415,7 +419,7 @@ module estimate_lh_micro_mod
     integer :: sample
     integer :: n1, n2
     double precision :: ac_m1, ac_m2
-    double precision :: coeff, q_crit
+    double precision :: coeff, r_crit
     ! double precision expn
     double precision :: fraction_1
 
@@ -455,9 +459,9 @@ module estimate_lh_micro_mod
     ! These are for Kessler autoconversion in (g/kg)/s.
     coeff  = 1.d-3
     ! expn   = 1.d0
-    ! q_crit = 0.3d0
-    ! q_crit = 0.7d0
-    q_crit = 0.2d0
+    ! r_crit = 0.3d0
+    ! r_crit = 0.7d0
+    r_crit = 0.2d0
 
     ! Initialize autoconversion in each mixture component
     ac_m1 = 0.d0
@@ -477,26 +481,26 @@ module estimate_lh_micro_mod
 !          print*, 'fraction_1= ', fraction_1
 
 ! V. Larson change to try to fix sampling
-!          if ( X_u(sample,d_variables+1) .lt. fraction_1 ) then
+!          if ( X_u_one_lev(sample,d_variables+1) .lt. fraction_1 ) then
 !          print*, '-1+2*int((sample+1)/2)= ', -1+2*int((sample+1)/2)
 !          print*, '-1+2*int((sample+1)/2)= ', int(sample)
-      if ( X_u(sample,d_variables+1) < fraction_1 ) then
+      if ( X_u_one_lev(sample,d_variables+1) < fraction_1 ) then
 ! End of V. Larson fix
 
 ! Use an idealized formula to compute autoconversion
 !      in mixture comp. 1
-! A_K = (1e-3/s)*(ql-0.5g/kg)*H(ql-0.5g/kg)
+! A_K = (1e-3/s)*(rc-0.5g/kg)*H(rc-0.5g/kg)
 ! This is the first of two lines where
 !      a user must add a new microphysics scheme.
-        ac_m1 = ac_m1 + coeff*max(0.d0,ql(sample)-q_crit)
+        ac_m1 = ac_m1 + coeff*max(0.d0,rc(sample)-r_crit)
         n1 = n1 + 1
       else
 ! Use an idealized formula to compute autoconversion
 !      in mixture comp. 2
-! A_K = (1e-3/s)*(ql-0.5g/kg)*H(ql-0.5g/kg)
+! A_K = (1e-3/s)*(rc-0.5g/kg)*H(rc-0.5g/kg)
 ! This is the second and last line where
 !      a user must add a new microphysics scheme.
-        ac_m2 = ac_m2 + coeff*max(0.d0,ql(sample)-q_crit)
+        ac_m2 = ac_m2 + coeff*max(0.d0,rc(sample)-r_crit)
         n2 = n2 + 1
       end if
 
@@ -552,7 +556,7 @@ module estimate_lh_micro_mod
 !-------------------------------------------------------------------------------
   subroutine micro_driver( dt, nnzp, n_micro_calls, d_variables, &
                            l_sample_flag, &
-                           s_mellor, rt, thl, w, Nc, rr, X_u, &
+                           s_mellor, rt, thl, w, Nc, rr, X_u_all_levs, &
                            thlm, p_in_Pa, exner, rho, wm, w_std_dev, &
                            dzq, rcm, rvm, pdf_params, hydromet,  &
                            rvm_mc_est, rcm_mc_est, hydromet_mc_est, &
@@ -612,7 +616,7 @@ module estimate_lh_micro_mod
       rr           ! n_micro_calls values of specific rain content        [g/kg]
 
     double precision, dimension(nnzp,n_micro_calls,d_variables+1), intent(in) :: &
-      X_u ! N x D+1 Latin hypercube sample from uniform dist
+      X_u_all_levs ! N x D+1 Latin hypercube sample from uniform dist
 
     real, dimension(nnzp), intent(in) :: &
       thlm,       & ! Liquid pot. temperature  [K]
@@ -637,9 +641,6 @@ module estimate_lh_micro_mod
 
     ! Output Variables
 
-    ! a scalar representing grid box average autoconversion;
-    ! has same units as ql/s; divide by total cloud fraction to obtain
-    ! within-cloud autoconversion
     real, dimension(nnzp,hydromet_dim), intent(inout) :: &
       hydromet_mc_est, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
       hydromet_vel_est   ! LH estimate of hydrometeor sedimentation velocity [m/s]
@@ -803,7 +804,7 @@ module estimate_lh_micro_mod
              hydromet_vel_est, rcm_mc_est, rvm_mc_est, thlm_mc_est )
 
       do i = 1, hydromet_dim
-        where ( X_u(1:nnzp,sample,d_variables+1) < fraction_1 )
+        where ( X_u_all_levs(1:nnzp,sample,d_variables+1) < fraction_1 )
           hydromet_vel_est_m1(:,i) = hydromet_vel_est_m1(:,i) + hydromet_vel_est(:,i)
           hydromet_mc_est_m1(:,i) = hydromet_mc_est_m1(:,i) + hydromet_mc_est(:,i)
         else where
@@ -812,7 +813,7 @@ module estimate_lh_micro_mod
         end where
       end do
 
-      where ( X_u(1:nnzp,sample,d_variables+1) < fraction_1 )
+      where ( X_u_all_levs(1:nnzp,sample,d_variables+1) < fraction_1 )
         rcm_mc_est_m1(:) = rcm_mc_est_m1(:) + rcm_mc_est(:)
         rvm_mc_est_m1(:) = rvm_mc_est_m1(:) + rvm_mc_est(:)
         thlm_mc_est_m1(:) = thlm_mc_est_m1(:) + thlm_mc_est(:)
@@ -959,9 +960,9 @@ module estimate_lh_micro_mod
   end subroutine micro_driver
 
 !----------------------------------------------------------------------
-  subroutine ql_estimate( n_micro_calls, d_variables, a, C1, C2, ql, & ! w,   & 
+  subroutine rc_estimate( n_micro_calls, d_variables, a, C1, C2, rc, & ! w,   & 
                          !N_pts, rr, 
-                           X_u, ql_m )
+                           X_u_one_lev, rc_m )
 ! Description:
 !   Compute an Monte Carlo estimate of grid box avg liquid water.
 ! References:
@@ -987,25 +988,25 @@ module estimate_lh_micro_mod
       C1, C2    ! Cloud fraction associated w/ 1st, 2nd mixture component
 
     double precision, dimension(n_micro_calls), intent(in) :: &
-      ql !, & ! n in-cloud values of spec liq water content [g/kg].
+      rc !, & ! n in-cloud values of spec liq water content [g/kg].
 !     w,  & ! n in-cloud values of vertical velocity (m/s)
 !     Npts, & ! n in-cloud values of droplet number (#/mg air)
 !     rr    ! n in-cloud values of specific rain content (g/kg)
 
     double precision, dimension(n_micro_calls,d_variables+1), intent(in) :: &
-      X_u ! N x D+1 Latin hypercube sample from uniform dist
+      X_u_one_lev ! N x D+1 Latin hypercube sample from uniform dist
 
     ! Output Variables
 
     ! A scalar representing grid box avg specific liquid water;
     ! divide by total cloud fraction to obtain within-cloud liquid water
-    double precision, intent(out) :: ql_m
+    double precision, intent(out) :: rc_m
 
     ! Local Variables
 
     integer :: sample
     integer :: n1, n2
-    double precision :: ql_m1, ql_m2
+    double precision :: rc_m1, rc_m2
     double precision :: coeff, expn
     double precision :: fraction_1
 
@@ -1013,17 +1014,17 @@ module estimate_lh_micro_mod
 
     ! Handle some possible errors re: proper ranges of a, C1, C2.
     if ( a > 1.0d0 .or. a < 0.0d0 ) then
-      write(fstderr,*) 'Error in ql_estimate:  ',  &
+      write(fstderr,*) 'Error in rc_estimate:  ',  &
                        'mixture fraction, a, does not lie in [0,1].'
       stop
     end if
     if ( C1 > 1.0d0 .or. C1 < 0.0d0 ) then
-      write(fstderr,*) 'Error in ql_estimate:  ',  &
+      write(fstderr,*) 'Error in rc_estimate:  ',  &
                        'cloud fraction 1, C1, does not lie in [0,1].'
       stop
     end if
     if ( C2 > 1.0d0 .or. C2 < 0.0d0 ) then
-      write(fstderr,*) 'Error in ql_estimate:  ',  &
+      write(fstderr,*) 'Error in rc_estimate:  ',  &
                        'cloud fraction 2, C2, does not lie in [0,1].'
       stop
     end if
@@ -1033,7 +1034,7 @@ module estimate_lh_micro_mod
     ! -dschanen 3 June 2009
 !   if ( a*C1 < 0.001d0 .and. (1-a)*C2 < 0.001d0 ) then
 !     if ( clubb_at_least_debug_level( 1 ) ) then
-!       write(fstderr,*) 'Error in ql_estimate:  ',  &
+!       write(fstderr,*) 'Error in rc_estimate:  ',  &
 !                        'there is no cloud or almost no cloud!'
 !     end if
 !   end if
@@ -1043,8 +1044,8 @@ module estimate_lh_micro_mod
     expn  = 1.d0
 
     ! Initialize liquid in each mixture component
-    ql_m1 = 0.d0
-    ql_m2 = 0.d0
+    rc_m1 = 0.d0
+    rc_m2 = 0.d0
 
     ! Initialize numbers of sample points corresponding
     !    to each mixture component
@@ -1057,15 +1058,15 @@ module estimate_lh_micro_mod
       ! Account for cloud fraction.
       ! Follow M. E. Johnson (1987), p. 56.
       fraction_1 = a*C1/(a*C1+(1-a)*C2)
-      if ( X_u(sample,d_variables+1) < fraction_1 ) then
+      if ( X_u_one_lev(sample,d_variables+1) < fraction_1 ) then
         ! Use an idealized formula to compute liquid
         !      in mixture comp. 1
-        ql_m1 = ql_m1 + coeff*(ql(sample))**expn
+        rc_m1 = rc_m1 + coeff*(rc(sample))**expn
         n1    = n1 + 1
       else
         ! Use an idealized formula to compute liquid
         !      in mixture comp. 2
-        ql_m2 = ql_m2 + coeff*(ql(sample))**expn
+        rc_m2 = rc_m2 + coeff*(rc(sample))**expn
         n2    = n2 + 1
       end if
 
@@ -1075,15 +1076,15 @@ module estimate_lh_micro_mod
 !! Convert sums to averages.
 !! Old code that underestimates if n1 or n2 = 0.
 !   if ( n1 == 0 ) then
-!     ql_m1 = 0.d0
+!     rc_m1 = 0.d0
 !   else
-!     ql_m1 = ql_m1/n1
+!     rc_m1 = rc_m1/n1
 !   end if
 
 !   if ( n2 == 0 ) then
-!     ql_m2 = 0.d0
+!     rc_m2 = 0.d0
 !   else
-!     ql_m2 = ql_m2/n2
+!     rc_m2 = rc_m2/n2
 !   end if
 
 
@@ -1092,30 +1093,30 @@ module estimate_lh_micro_mod
     !    then we estimate the plume liquid water by the
     !    other plume's value.
     if (n1 == 0 .and. n2 == 0) then
-      stop 'Error:  no sample points in ql_estimate'
+      stop 'Error:  no sample points in rc_estimate'
     end if
 
     if ( .not. (n1 == 0) ) then
-      ql_m1 = ql_m1/n1
+      rc_m1 = rc_m1/n1
     end if
 
     if ( .not. (n2 == 0) ) then
-      ql_m2 = ql_m2/n2
+      rc_m2 = rc_m2/n2
     end if
 
     if (n1 == 0) then
-      ql_m1 = ql_m2
+      rc_m1 = rc_m2
     end if
 
     if (n2 == 0) then
-      ql_m2 = ql_m1
+      rc_m2 = rc_m1
     end if
 
     ! Grid box average.
-    ql_m = a*C1*ql_m1 + (1-a)*C2*ql_m2
+    rc_m = a*C1*rc_m1 + (1-a)*C2*rc_m2
 
     return
-  end subroutine ql_estimate
+  end subroutine rc_estimate
 !---------------------------------------------------------------
 
 end module estimate_lh_micro_mod

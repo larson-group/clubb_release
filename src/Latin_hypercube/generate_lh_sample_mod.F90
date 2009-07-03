@@ -7,7 +7,7 @@ module generate_lh_sample_mod
 
   private :: sample_points, latin_hyper_sample, gaus_mixt_points, & 
              truncate_gaus_mixt, ltqnorm, gaus_condt, & 
-             st_2_rtthl
+             st_2_rtthl, log_sqd_normalized
 
 
   private ! Default scope
@@ -18,9 +18,9 @@ module generate_lh_sample_mod
   subroutine generate_lh_sample &
              ( n_micro_calls, nt_repeat, d_variables, p_matrix, & 
                cf, pdf_params, level, & 
-               Ncm, rrainm, Ncp2_Ncm2, rrp2_rrainm2, &
+               Ncm, rrainm, Ncp2_on_Ncm2, rrp2_on_rrainm2, &
                rt, thl, & 
-               X_u, X_nl, l_sample_flag )
+               X_u_one_lev, X_nl_one_lev, l_sample_flag )
 ! Description:
 !   This subroutine generates a Latin Hypercube sample.
 
@@ -70,8 +70,8 @@ module generate_lh_sample_mod
 
     ! From the KK_microphys_module
     double precision, intent(in) :: &
-      Ncp2_Ncm2, & ! = Ncp2 divied by Ncm^2     [-]
-      rrp2_rrainm2 ! = rrp2 divided by rrainm^2 [-]
+      Ncp2_on_Ncm2, & ! = Ncp2 divided by Ncm^2    [-]
+      rrp2_on_rrainm2 ! = rrp2 divided by rrainm^2 [-]
 
     ! Output Variables
     double precision, intent(out), dimension(n_micro_calls) :: &
@@ -79,10 +79,10 @@ module generate_lh_sample_mod
       thl   ! Liquid potential temperature      [K]
 
     double precision, intent(out), dimension(n_micro_calls,d_variables+1) :: &
-      X_u ! Sample drawn from uniform distribution from a particular grid level
+      X_u_one_lev ! Sample drawn from uniform distribution from a particular grid level
 
     double precision, intent(out), dimension(n_micro_calls,d_variables) :: &
-      X_nl ! Sample that is transformed ultimately to normal-lognormal
+      X_nl_one_lev ! Sample that is transformed ultimately to normal-lognormal
 
     ! A true/false flag that determines whether
     ! the PDF allows us to construct a sample
@@ -119,11 +119,11 @@ module generate_lh_sample_mod
       Sigma_rtthlw_2
 
 
-    ! N   = droplet number concentration.  [N] = number / mg air
-    ! N1  = PDF parameter for mean of plume 1. [N1] = (#/mg)
-    ! N2  = PDF parameter for mean of plume 2. [N2] = (#/mg)
-    ! sN1,2 = PDF param for width of plume 1,2. [sN1,2] = (#/mg)**2
-    double precision :: N1, N2, sN1, sN2
+    ! Nc  = droplet number concentration.  [Nc] = number / kg air
+    ! Nc1  = PDF parameter for mean of plume 1. [Nc1] = (#/kg)
+    ! Nc2  = PDF parameter for mean of plume 2. [Nc2] = (#/kg)
+    ! sNc1,2 = PDF param for width of plume 1,2. [sNc1,2] = (#/kg)**2
+    double precision :: Nc1, Nc2, sNc1, sNc2
 
     ! rr = specific rain content. [rr] = g rain / kg air
     double precision :: &
@@ -187,8 +187,8 @@ module generate_lh_sample_mod
     else if ( cf < 0.001 ) then
       ! In this case there are essentially no cloudy points to sample;
       ! Set sample points to zero.
-      X_u(:,:)    = 0.0
-      X_nl(:,:)   = 0.0
+      X_u_one_lev(:,:)    = 0.0
+      X_nl_one_lev(:,:)   = 0.0
       l_sample_flag = .false.
     end if
 
@@ -208,8 +208,8 @@ module generate_lh_sample_mod
 
 !         print*, 'Covariance matrix of r-thl-w is ill-conditioned'
 
-      X_u(:,:)    = 0.0
-      X_nl(:,:)   = 0.0
+      X_u_one_lev(:,:)    = 0.0
+      X_nl_one_lev(:,:)   = 0.0
       l_sample_flag = .false.
 
     end if
@@ -218,47 +218,28 @@ module generate_lh_sample_mod
       ! Compute PDF parameters for N, rr.
       ! Assume that N, rr obey single-lognormal distributions
 
-      ! N   = droplet number concentration.  [N] = number / kg air
+      ! Nc  = droplet number concentration.  [N] = number / kg air
       ! Ncm  = mean of N; must have Ncm>0
-      ! Ncp2_Ncm2 = variance of N divided by Ncm^2; must have Np2>0.
-      ! N1  = PDF parameter for mean of plume 1. [N1] = (#/kg)
-      ! N2  = PDF parameter for mean of plume 2. [N2] = (#/kg)
-      ! sN1,2 = PDF param for width of plume 1,2. [sN1,2] = (#/kg)**2
+      ! Ncp2_on_Ncm2 = variance of N divided by Ncm^2; must have Ncp2>0.
+      ! Nc1  = PDF parameter for mean of plume 1. [Nc1] = (#/kg)
+      ! Nc2  = PDF parameter for mean of plume 2. [Nc2] = (#/kg)
+      ! sNc1,2 = PDF param for width of plume 1,2. [sNc1,2] = (#/kg)**2
 
-      if ( Ncm > Nc_tol ) then
-        N1  = 0.5*log( (dble(Ncm)**2) / (1. + Ncp2_Ncm2) )
-        N2  = N1
-        sN1 = log( 1. + Ncp2_Ncm2 )
-        sN2 = sN1
-      else
-        N1 = 0.0
-        N2 = 0.0
-        sN1 = 0.0
-        sN2 = 0.0
-        l_small_Ncm = .true.
-      end if
+      call log_sqd_normalized( dble( Ncm ), Ncp2_on_Ncm2, dble( Nc_tol ), &
+                               Nc1, Nc2, sNc1, sNc2, l_small_Ncm )
 
       ! rr = specific rain content. [rr] = g rain / kg air
       ! rrainm  = mean of rr; rrp2 = variance of rr, must have rrp2>0.
       ! rr1  = PDF parameter for mean of plume 1. [rr1] = (g/kg)
       ! rr2  = PDF parameter for mean of plume 2. [rr2] = (g/kg)
       ! srr1,2 = PDF param for width of plume 1,2. [srr1,2] = (g/kg)**2
-      if ( rrainm > rr_tol ) then
-        rr1  = 0.5*log( (dble(rrainm*g_per_kg)**2) / (1. + rrp2_rrainm2) )
-        rr2  = rr1
-        srr1 = log( 1. + rrp2_rrainm2 )
-        srr2 = srr1
-      else
-        rr1 = 0.0
-        rr2 = 0.0
-        srr1 = 0.0
-        srr2 = 0.0
-        l_small_rrainm = .true.
-      end if
+
+      call log_sqd_normalized( dble( rrainm*g_per_kg ), rrp2_on_rrainm2, dble( rr_tol*g_per_kg ), &
+                               rr1, rr2, srr1, srr2, l_small_rrainm )
 
       ! Means of s, t, w, N, rr for Gaussians 1 and 2
-      mu1 = (/  dble(1.e3*s1), 0.d0, dble(w1), N1, rr1  /)
-      mu2 = (/  dble(1.e3*s2), 0.d0, dble(w2), N2, rr2  /)
+      mu1 = (/  dble(1.e3*s1), 0.d0, dble(w1), Nc1, rr1  /)
+      mu2 = (/  dble(1.e3*s2), 0.d0, dble(w2), Nc2, rr2  /)
 
       ! An old subroutine, gaus_rotate, couldn't handle large correlations;
       !   I assume the replacement, gaus_condt, has equal trouble.
@@ -299,7 +280,7 @@ module generate_lh_sample_mod
                0.d0, & 
                0.d0, & 
                0.d0, & 
-               sN1,  & 
+               sNc1, & 
                0.d0 & 
                                /)
       Sigma_rtthlw_1(5,1:d_variables) = (/ & 
@@ -331,11 +312,11 @@ module generate_lh_sample_mod
                0.d0         & 
                                /)
       Sigma_rtthlw_2(4,1:d_variables) = (/ & 
-               0.d0,    & 
-               0.d0,    & 
                0.d0, & 
-               sN2,  & 
-               0.d0         & 
+               0.d0, & 
+               0.d0, & 
+               sNc2, & 
+               0.d0  & 
                                /)
       Sigma_rtthlw_2(5,1:d_variables) = (/ & 
                0.d0, & 
@@ -357,16 +338,16 @@ module generate_lh_sample_mod
                           dble( mu1 ), dble( mu2 ),  & 
                           Sigma_rtthlw_1, Sigma_rtthlw_2, & 
                           dble( R1 ), dble( R2 ), & 
-                          rt, thl, X_u, X_nl )
+                          rt, thl, X_u_one_lev, X_nl_one_lev )
 
       ! Kluge for lognormal variables
       ! Use the gridbox mean rather than a sampled value
       if ( l_small_rrainm ) then
-        X_nl(:,5) = rrainm*g_per_kg
+        X_nl_one_lev(:,5) = rrainm*g_per_kg
       end if
 
       if ( l_small_Ncm ) then
-        X_nl(:,4) = Ncm
+        X_nl_one_lev(:,4) = Ncm
       end if
 
       ! End of overall if-then statement for Latin hypercube code
@@ -393,7 +374,7 @@ module generate_lh_sample_mod
                             mu1, mu2,  & 
                             Sigma_rtthlw_1, Sigma_rtthlw_2, & 
                             C1, C2, & 
-                            rt, thl, X_u, X_nl )
+                            rt, thl, X_u_one_lev, X_nl_one_lev )
 
     use constants, only:  &
         fstderr  ! Constant(s)
@@ -433,10 +414,10 @@ module generate_lh_sample_mod
 
     ! Covariance matrices of rt, thl, w for each Gaussian
     ! Columns of Sigma_rtthlw:     1   2   3   4   5
-    !                              rt  thl w   N   rr
+    !                              rt  thl w   Nc  rr
     !
-    ! Columns of Sigma_stw, X_nl:  1   2   3   4   5
-    !                              s   t   w   N   rr
+    ! Columns of Sigma_stw, X_nl_one_lev:  1   2   3   4   5
+    !                                      s   t   w   Nc  rr
     double precision, intent(in), dimension(d_variables,d_variables) :: &
       Sigma_rtthlw_1, &
       Sigma_rtthlw_2
@@ -450,10 +431,10 @@ module generate_lh_sample_mod
     double precision, intent(out), dimension(n_micro_calls) :: rt, thl
 
     double precision, intent(out), dimension(n_micro_calls,d_variables+1) :: &
-      X_u ! Sample drawn from uniform distribution from particular grid level
+      X_u_one_lev ! Sample drawn from uniform distribution from particular grid level
 
     double precision, intent(out), dimension(n_micro_calls,d_variables) :: &
-      X_nl ! Sample that is transformed ultimately to normal-lognormal
+      X_nl_one_lev ! Sample that is transformed ultimately to normal-lognormal
 
 
     ! Local Variables
@@ -475,12 +456,12 @@ module generate_lh_sample_mod
 
     ! Generate Latin hypercube sample, with one extra dimension
     !    for mixture component.
-    call latin_hyper_sample( n_micro_calls, nt_repeat, d_variables+1, p_matrix, X_u )
+    call latin_hyper_sample( n_micro_calls, nt_repeat, d_variables+1, p_matrix, X_u_one_lev )
 
     ! Standard sample for testing purposes when n=2
-    ! X_u(1,1:(d+1)) = ( / 0.0001d0, 0.46711825945881d0, &
+    ! X_u_one_lev(1,1:(d+1)) = ( / 0.0001d0, 0.46711825945881d0, &
     !             0.58015016959859d0, 0.61894015386778d0, 0.1d0, 0.1d0  / )
-    ! X_u(2,1:(d+1)) = ( / 0.999d0, 0.63222458307464d0, &
+    ! X_u_one_lev(2,1:(d+1)) = ( / 0.999d0, 0.63222458307464d0, &
     !             0.43642762850981d0, 0.32291562498749d0, 0.1d0, 0.1d0  / )
 
 
@@ -488,24 +469,25 @@ module generate_lh_sample_mod
     ! Take sample solely from cloud points.
     col = 1
     call truncate_gaus_mixt( n_micro_calls, d_variables, col, a, mu1, mu2, & 
-                             Sigma_stw_1, Sigma_stw_2, C1, C2, X_u, & 
+                             Sigma_stw_1, Sigma_stw_2, C1, C2, X_u_one_lev, & 
                              s_pts )
 
     ! Generate n samples of a d-variate Gaussian mixture
-    ! by transforming Latin hypercube points, X_u.
+    ! by transforming Latin hypercube points, X_u_one_lev.
     call gaus_mixt_points( n_micro_calls, d_variables, a, mu1, mu2,  & 
                            Sigma_stw_1, Sigma_stw_2, & 
-                           C1, C2, X_u, s_pts, X_nl )
+                           C1, C2, X_u_one_lev, s_pts, X_nl_one_lev )
 
 ! Transform s (column 1) and t (column 2) back to rt and thl
 ! This is only needed if you need rt, thl in your microphysics.
-!     call sptp_2_rtpthlp( n_micro_calls, d_variables, a, crt1, cthl1, crt2, cthl2, &
-!                          C1, C2, X_nl(1:n_micro_calls,1), X_nl(1:n_micro_calls,2), &
-!                          X_u, rtp, thlp )
+!     call sptp_2_rtpthlp &
+!          ( n_micro_calls, d_variables, a, crt1, cthl1, crt2, cthl2, &
+!            C1, C2, X_nl_one_lev(1:n_micro_calls,1), X_nl_one_lev(1:n_micro_calls,2), &
+!            X_u_one_lev, rtp, thlp )
       call st_2_rtthl( n_micro_calls, d_variables, a, rt1, thl1, rt2, thl2, &
                        crt1, cthl1, crt2, cthl2, &
-                       C1, C2, mu1(1), mu2(1), X_nl(1:n_micro_calls,1), &
-                       X_nl(1:n_micro_calls,2), X_u, rt, thl )
+                       C1, C2, mu1(1), mu2(1), X_nl_one_lev(1:n_micro_calls,1), &
+                       X_nl_one_lev(1:n_micro_calls,2), X_u_one_lev, rt, thl )
 
 ! Compute some diagnostics
 !       print*, 'C=', a*C1 + (1-a)*C2
@@ -515,8 +497,8 @@ module generate_lh_sample_mod
 
 ! Convert last two variates (columns) (usu N and rr) to lognormal
     if (d_variables > 3) then
-      X_nl(1:n_micro_calls,(d_variables-1):d_variables) &
-        = exp( X_nl(1:n_micro_calls,(d_variables-1):d_variables) )
+      X_nl_one_lev(1:n_micro_calls,(d_variables-1):d_variables) &
+        = exp( X_nl_one_lev(1:n_micro_calls,(d_variables-1):d_variables) )
     else
       if ( clubb_at_least_debug_level( 1 ) ) then
         write(fstderr,*) 'd<4 in sampling_driver:  ',  &
@@ -525,18 +507,18 @@ module generate_lh_sample_mod
     end if
 
 ! Test diagnostics
-!       print*, 'mean X_nl(:,2)=', mean(X_nl(1:n,2),n)
-!       print*, 'mean X_nl(:,3)=', mean(X_nl(1:n,3),n)
-!       print*, 'mean X_nl(:,4)=', mean(X_nl(1:n,4),n)
-!       print*, 'mean X_nl(:,5)=', mean(X_nl(1:n,5),n)
+!       print*, 'mean X_nl_one_lev(:,2)=', mean(X_nl_one_lev(1:n,2),n)
+!       print*, 'mean X_nl_one_lev(:,3)=', mean(X_nl_one_lev(1:n,3),n)
+!       print*, 'mean X_nl_one_lev(:,4)=', mean(X_nl_one_lev(1:n,4),n)
+!       print*, 'mean X_nl_one_lev(:,5)=', mean(X_nl_one_lev(1:n,5),n)
 
-!       print*, 'std X_nl(:,2)=', std(X_nl(1:n,2),n)
-!       print*, 'std X_nl(:,3)=', std(X_nl(1:n,3),n)
-!       print*, 'std X_nl(:,4)=', std(X_nl(1:n,4),n)
-!       print*, 'std X_nl(:,5)=', std(X_nl(1:n,5),n)
+!       print*, 'std X_nl_one_lev(:,2)=', std(X_nl_one_lev(1:n,2),n)
+!       print*, 'std X_nl_one_lev(:,3)=', std(X_nl_one_lev(1:n,3),n)
+!       print*, 'std X_nl_one_lev(:,4)=', std(X_nl_one_lev(1:n,4),n)
+!       print*, 'std X_nl_one_lev(:,5)=', std(X_nl_one_lev(1:n,5),n)
 
-!       print*, 'corrcoef X_nl(:,2:3)=',
-!     .            corrcoef( X_nl(1:n,2), X_nl(1:n,3), n )
+!       print*, 'corrcoef X_nl_one_lev(:,2:3)=',
+!     .            corrcoef( X_nl_one_lev(1:n,2), X_nl_one_lev(1:n,3), n )
 
 
     return
@@ -702,7 +684,7 @@ module generate_lh_sample_mod
 
 !----------------------------------------------------------------------
   subroutine gaus_mixt_points( n_micro_calls, d_variables, a, mu1, mu2, Sigma1, Sigma2, & 
-                               C1, C2, X_u, s_pts, X_gm )
+                               C1, C2, X_u_one_lev, s_pts, X_gm )
 ! Description:
 !   Generates n random samples from a d-dimensional Gaussian-mixture PDF.
 !   Uses Latin hypercube method.
@@ -734,8 +716,9 @@ module generate_lh_sample_mod
     double precision, intent(in), dimension(d_variables,d_variables) :: &
       Sigma1, Sigma2 ! dxd dimensional covariance matrices
 
+    ! Latin hypercube sample from uniform distribution from a particular grid level
     double precision, intent(in), dimension(n_micro_calls,d_variables+1) :: &
-      X_u ! nxd Latin hypercube sample from uniform distribution from a particular grid level
+      X_u_one_lev 
 
     double precision, intent(in), dimension(n_micro_calls) :: &
      s_pts ! n-dimensional vector giving values of s
@@ -783,14 +766,14 @@ module generate_lh_sample_mod
 
       ! From Latin hypercube sample, generate standard normal sample
       do j = 1, d_variables
-        std_normal(j) = ltqnorm( X_u(sample,j) )
+        std_normal(j) = ltqnorm( X_u_one_lev(sample,j) )
       end do
 
       ! Choose which mixture fraction we are in.
       ! Account for cloud fraction.
       ! Follow M. E. Johnson (1987), p. 56.
       fraction_1 = ( a*C1 ) / ( a*C1 + (1-a)*C2 )
-      if ( X_u(sample, d_variables+1) < fraction_1 ) then
+      if ( X_u_one_lev(sample, d_variables+1) < fraction_1 ) then
         call gaus_condt( d_variables, &
                          std_normal, mu1, Sigma1, s_pts(sample), & 
                          X_gm(sample, 1:d_variables) )
@@ -810,7 +793,7 @@ module generate_lh_sample_mod
 
 !-------------------------------------------------------------------------------
   subroutine truncate_gaus_mixt( n_micro_calls, d_variables, col, a, mu1, mu2, & 
-                  Sigma1, Sigma2, C1, C2, X_u, truncated_column )
+                  Sigma1, Sigma2, C1, C2, X_u_one_lev, truncated_column )
 ! Description:
 !   Converts sample points drawn from a uniform distribution
 !    to truncated Gaussian points.
@@ -831,7 +814,7 @@ module generate_lh_sample_mod
     integer, intent(in) :: &
       n_micro_calls, &  ! Number of calls to microphysics (normally=2) 
       d_variables,   &  ! Number of variates (normally=5)
-      col               ! Scalar indicated which column of X_nl to truncate
+      col               ! Scalar indicated which column of X_nl_one_lev to truncate
 
     double precision, intent(in) :: &
       a,    & ! Mixture fraction of Gaussians
@@ -843,8 +826,9 @@ module generate_lh_sample_mod
     double precision, intent(in), dimension(d_variables,d_variables) :: &
       Sigma1, Sigma2 ! dxd dimensional covariance matrices
 
+    ! Latin hypercube sample from uniform distribution from a particular grid level
     double precision, intent(in), dimension(n_micro_calls,d_variables+1) :: &
-      X_u ! nxd Latin hypercube sample from uniform distribution from a particular grid level
+      X_u_one_lev 
 
     ! Output Variables
 
@@ -892,10 +876,10 @@ module generate_lh_sample_mod
       ! Account for cloud fraction.
       ! Follow M. E. Johnson (1987), p. 56.
       fraction_1 = a * C1 / ( a * C1 + (1.d0 - a) *C2 )
-      if ( X_u( sample, d_variables+1 ) < fraction_1 ) then
+      if ( X_u_one_lev( sample, d_variables+1 ) < fraction_1 ) then
         ! Replace first dimension (s) with
         !  sample from cloud (i.e. truncated standard Gaussian)
-        s_std = ltqnorm( X_u( sample, col ) * C1 + (1.d0 - C1) )
+        s_std = ltqnorm( X_u_one_lev( sample, col ) * C1 + (1.d0 - C1) )
         ! Convert to nonstandard normal with mean mu1 and variance Sigma1
         truncated_column(sample) =  & 
                    s_std * sqrt( Sigma1(col,col) ) + mu1(col)
@@ -903,7 +887,7 @@ module generate_lh_sample_mod
 
         ! Replace first dimension (s) with
         !   sample from cloud (i.e. truncated Gaussian)
-        s_std = ltqnorm( X_u( sample, col ) * C2 + (1.d0 - C2) )
+        s_std = ltqnorm( X_u_one_lev( sample, col ) * C2 + (1.d0 - C2) )
 
         ! Convert to nonstandard normal with mean mu2 and variance Sigma2
         truncated_column(sample) =  & 
@@ -1199,7 +1183,7 @@ module generate_lh_sample_mod
 !-----------------------------------------------------------------------
   subroutine st_2_rtthl( n_micro_calls, d_variables, a, rt1, thl1, rt2, thl2, & 
                          crt1, cthl1, crt2, cthl2, & 
-                         C1, C2, s1, s2, s, t, X_u, rt, thl )
+                         C1, C2, s1, s2, s, t, X_u_one_lev, rt, thl )
 
     use constants, only:  &
         fstderr  ! Constant(s)
@@ -1231,7 +1215,7 @@ module generate_lh_sample_mod
       s, t ! n-dimensional column vector of Mellor's s and t, including mean and perturbation
 
     double precision, dimension(n_micro_calls,d_variables+1), intent(in) :: &
-      X_u ! n_micro_calls x d_var+1 Latin hypercube sample from uniform distribution 
+      X_u_one_lev ! n_micro_calls x d_var+1 Latin hypercube sample from uniform distribution 
     !       from a particular grid level
 
     ! Output variables
@@ -1278,7 +1262,7 @@ module generate_lh_sample_mod
       ! Account for cloud fraction.
       ! Follow M. E. Johnson (1987), p. 56.
       fraction_1     = a*C1/(a*C1+(1-a)*C2)
-      if ( X_u(sample,d_variables+1) < fraction_1 ) then
+      if ( X_u_one_lev(sample,d_variables+1) < fraction_1 ) then
         rt(sample)  = rt1 + (0.5d0/crt1)*(s(sample)-s1) +  & 
                            (0.5d0/crt1)*t(sample)
         thl(sample) = thl1 + (-0.5d0/cthl1)*(s(sample)-s1) +  & 
@@ -1296,6 +1280,40 @@ module generate_lh_sample_mod
     return
   end subroutine st_2_rtthl
 !-------------------------------------------------------------------------------
+  subroutine log_sqd_normalized( Xm, Xp2_on_Xm2, X_tol, &
+                                 X1, X2, sX1, sX2, l_small_X )
+
+    implicit none
+
+    double precision, intent(in) :: &
+      Xm,           & ! Mean X          [units vary]
+      Xp2_on_Xm2, & ! X'^2 / X^2      [-]
+      X_tol          ! tolerance on X   [units vary]
+
+    double precision, intent(out) :: &
+      X1, X2,  & ! PDF parameters for mean of plume 1, 2   [units vary]
+      sX1, sX2   ! PDF parameters for width of plume 1, 2  [units vary]
+
+    logical, intent(out) :: &
+      l_small_X
+
+    ! ---- Begin Code ----
+    if ( Xm > X_tol ) then
+      X1 = 0.5 * log( Xm**2 / ( 1. + Xp2_on_Xm2 ) )
+      X2 = X1
+      sX1 = log( 1. + Xp2_on_Xm2 )
+      sX2 = sX1
+      l_small_X = .false.
+    else
+      X1 = 0.0
+      X2 = 0.0
+      sX1 = 0.0
+      sX2 = 0.0
+      l_small_X = .true.
+    end if
+
+    return
+  end subroutine log_sqd_normalized
 
 end module generate_lh_sample_mod
 
