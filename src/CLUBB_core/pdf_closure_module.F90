@@ -568,7 +568,7 @@ module pdf_closure_module
     ! For each normal distribution in the sum of two normal distributions,
     ! s' = crt * rt'  +  cthl * thl';
     ! therefore, x's' = crt * x'rt'  +  cthl * x'thl'.
-    ! Larson et al. 2001.
+    ! Larson et al. May, 2001.
 
     crt1  = 1./( 1. + beta1*rsl1)
     crt2  = 1./( 1. + beta2*rsl2)
