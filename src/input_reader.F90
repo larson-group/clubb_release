@@ -485,7 +485,7 @@ module input_reader
     ! Input Variable(s)
     integer, intent(in) :: num_vars ! Number of elements in one_dim_vars
 
-    type(one_dim_read_var), intent(in) :: other_dim
+    type(one_dim_read_var), intent(inout) :: other_dim
     type(two_dim_read_var), dimension(num_vars), intent(inout):: two_dim_vars ! Read data
     !                                                                        that may have gaps.
 
