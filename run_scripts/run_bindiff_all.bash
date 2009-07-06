@@ -89,7 +89,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
    if [ -e $dir1/"${RUN_CASE[$x]}"'_zt.dat' -a -e $dir2/"${RUN_CASE[$x]}"'_zt.dat' ] ; then
       # Compare the zt GrADS binary data (*_zt.dat) files
-      diffZtDat=$(diff $dir1/"${RUN_CASE[$x]}"'_zt.dat' $dir2/"${RUN_CASE[$x]}"'_zt.dat' 2&>1)
+      diffZtDat=$(diff $dir1/"${RUN_CASE[$x]}"'_zt.dat' $dir2/"${RUN_CASE[$x]}"'_zt.dat')
 
       if [ -n "$diffZtDat" ] ; then
          differences=true
