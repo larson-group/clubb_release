@@ -17,7 +17,7 @@
 # nobudgets_stats.in -- the control and binary data files will be different even
 # though it is the exact same code.
 #
-# This script loops over all cases found in run_standalone-all.bash.  This 
+# This script loops over all cases found in run_scm_all.bash.  This 
 # script is useful for testing if CLUBB code changes made any binary difference 
 # in output results for any case.  For example, simply changing a variable name 
 # in the code or a changing subroutine name shouldn't result in any binary 
@@ -30,10 +30,12 @@
 #
 # Brian Griffin; August 23, 2008.
 #
-# Ryan Senkbeil added if statements to check if files exist before diffing on
+# Ryan Senkbeil added if statements to check if files exist before diffing them
 # July 6, 2009.
 #-------------------------------------------------------------------------------
 
+# If true, differences were detected. This is used to set the exit status
+differences=false
 
 # Loop over all cases that are found in run_standalone-all.bash.
 # Note:  The cases listed in RUN_CASE must always match the cases found in 
@@ -72,37 +74,75 @@ dir2=$2
 # This will loop over all runs in sequence.
 for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
-
    # State which case is being diffed.
    echo 'Diffing '"${RUN_CASE[$x]}"' GrADS control (*.ctl) and binary data (*.dat) files'
 
    if [ -e $dir1/"${RUN_CASE[$x]}"'_zt.ctl' -a -e $dir2/"${RUN_CASE[$x]}"'_zt.ctl' ] ; then
       # Compare the zt GrADS control (*_zt.ctl) files
-      diff $dir1/"${RUN_CASE[$x]}"'_zt.ctl' $dir2/"${RUN_CASE[$x]}"'_zt.ctl'
+      diffZtCtl=$(diff $dir1/"${RUN_CASE[$x]}"'_zt.ctl' $dir2/"${RUN_CASE[$x]}"'_zt.ctl')
+
+      if [ -n "$diffZtCtl" ] ; then
+         differences=true
+	 echo "*** Differences detected in ${RUN_CASE[$x]}_zt.ctl! ***" >&2
+      fi
    fi
 
    if [ -e $dir1/"${RUN_CASE[$x]}"'_zt.dat' -a -e $dir2/"${RUN_CASE[$x]}"'_zt.dat' ] ; then
       # Compare the zt GrADS binary data (*_zt.dat) files
-      diff $dir1/"${RUN_CASE[$x]}"'_zt.dat' $dir2/"${RUN_CASE[$x]}"'_zt.dat'
+      diffZtDat=$(diff $dir1/"${RUN_CASE[$x]}"'_zt.dat' $dir2/"${RUN_CASE[$x]}"'_zt.dat' 2&>1)
+
+      if [ -n "$diffZtDat" ] ; then
+         differences=true
+	 echo "*** Differences detected in ${RUN_CASE[$x]}_zt.dat! ***" >&2
+      fi
    fi
 
    if [ -e $dir1/"${RUN_CASE[$x]}"'_zm.ctl' -a -e $dir2/"${RUN_CASE[$x]}"'_zm.ctl' ] ; then
       # Compare the zm GrADS control (*_zm.ctl) files
-      diff $dir1/"${RUN_CASE[$x]}"'_zm.ctl' $dir2/"${RUN_CASE[$x]}"'_zm.ctl'
+      diffZmCtl=$(diff $dir1/"${RUN_CASE[$x]}"'_zm.ctl' $dir2/"${RUN_CASE[$x]}"'_zm.ctl')
+      
+      if [ -n "$diffZmCtl" ] ; then
+         differences=true
+	 echo "*** Differences detected in ${RUN_CASE[$x]}_zm.ctl! ***" >&2
+      fi
    fi
 
    if [ -e $dir1/"${RUN_CASE[$x]}"'_zm.dat' -a -e $dir2/"${RUN_CASE[$x]}"'_zm.dat' ] ; then
       # Compare the zm GrADS binary data (*_zm.dat) files
-      diff $dir1/"${RUN_CASE[$x]}"'_zm.dat' $dir2/"${RUN_CASE[$x]}"'_zm.dat'
+      diffZmDat=$(diff $dir1/"${RUN_CASE[$x]}"'_zm.dat' $dir2/"${RUN_CASE[$x]}"'_zm.dat')
+
+      if [ -n "$diffZmDat" ] ; then
+         differences=true
+	 echo "*** Differences detected in ${RUN_CASE[$x]}_zm.dat! ***" >&2
+      fi
    fi
 
    if [ -e $dir1/"${RUN_CASE[$x]}"'_sfc.ctl' -a -e $dir2/"${RUN_CASE[$x]}"'_sfc.ctl' ] ; then
       # Compare the sfc GrADS control (*_sfc.ctl) files
-      diff $dir1/"${RUN_CASE[$x]}"'_sfc.ctl' $dir2/"${RUN_CASE[$x]}"'_sfc.ctl'
+      diffSfcCtl=$(diff $dir1/"${RUN_CASE[$x]}"'_sfc.ctl' $dir2/"${RUN_CASE[$x]}"'_sfc.ctl')
+ 
+      if [ -n "$diffSfcCtl" ] ; then
+         differences=true
+	 echo "*** Differences detected in ${RUN_CASE[$x]}_sfc.ctl! ***" >&2
+      fi
    fi
 
    if [ -e $dir1/"${RUN_CASE[$x]}"'_sfc.dat' -a -e $dir2/"${RUN_CASE[$x]}"'_sfc.dat' ] ; then
       # Compare the sfc GrADS binary data (*_sfc.dat) files
-      diff $dir1/"${RUN_CASE[$x]}"'_sfc.dat' $dir2/"${RUN_CASE[$x]}"'_sfc.dat'
+      diffSfcDat=$(diff $dir1/"${RUN_CASE[$x]}"'_sfc.dat' $dir2/"${RUN_CASE[$x]}"'_sfc.dat')
+
+      if [ -n "$diffSfcDat" ] ; then
+         differences=true
+	 echo "*** Differences detected in ${RUN_CASE[$x]}_sfc.dat! ***" >&2
+      fi
    fi
 done
+
+# Determine exit status and exit
+if [ $differences == "true" ] ; then
+   echo -e "\nThere were some differences detected!"
+   exit 1
+else
+   echo -e "\nThere were no differences detected!"
+   exit 0
+fi
