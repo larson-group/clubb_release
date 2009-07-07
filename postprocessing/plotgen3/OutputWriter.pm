@@ -21,8 +21,8 @@ sub writeCaseTitle()
 	print FILE <<"EOF";
 	<a name="$CASE"></a>
 	<div align="CENTER">
-		<b><font size="+2">
-		<font color="#0000ff"> $CASE </font> </font></b>
+		<font size="+2">
+		<font color="#0000ff"> <a href="#$CASE">$CASE</a> </font> </font>
 	</div>
 EOF
 	close(FILE);
@@ -41,12 +41,10 @@ sub writeSubHeader()
 
 	print FILE <<"EOF";
 	<div align="CENTER">
-		<b><font size="-1">
-		<font color="#430e9a"> $TEXT </font> </font></b>
+	        <b><font size="-1" color="#430e9a"> $TEXT </font></b>
 	</div>
 EOF
 	close(FILE);
-
 }
 
 ###############################################################################
@@ -76,8 +74,6 @@ sub writeHeader()
 	
 	(my $sec, my $min, my $hour, my $mday, my $mon, my $year, my$wday,
 	my $yday, my $isdst)=localtime(time);
-#printf "%4d-%02d-%02d %02d:%02d:%02d\n",
-#	$year+1900,$mon+1,$mday,$hour,$min,$sec;
 
 	my $currYear = $year + 1900;
 	my $currMon = $mon + 1;
