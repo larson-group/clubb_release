@@ -133,7 +133,7 @@ T_forcing_array = convert_units.thlm_f_to_T_f( thlm_f_array, radht_array, exner_
 ome_array = convert_units.w_wind_in_ms_to_Pas( wm_array, rho_array );
 wt_array = convert_units.potential_temperature_to_temperature( wpthlp_array, exner_array );
 
-ppt_array = rho_zm_array(1,:) .* rain_rate_array ./ (sec_per_day * mm_per_m);
+ppt_array = rho_zm_array(1,:) .* morr_rain_rate_array ./ (sec_per_day * mm_per_m);
 
 wq_array = wprtp_array ./ (1 + rtm_array);
 
