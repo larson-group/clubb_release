@@ -45,9 +45,11 @@ mm_per_m = 1000;
 
 case_name = 'twp_ice';
 
+clubb_path = ['/home/nielsenb/clubb/'];
+
 % Path of the GrADS input files
-scm_path = ['/home/nielsenb/clubb/output/'];
-output_path = ['/home/nielsenb/clubb/postprocessing/output_scripts/twp_ice/timeseries.CLUBB_p', sprintf('%02d',ensembleNumber), '.nc'];
+scm_path = [clubb_path, 'run_scripts/ensemble_run/output/ensemble', sprintf('%02d',ensembleNumber), '/'];
+output_path = [clubb_path, 'postprocessing/output_scripts/twp_ice/timeseries.CLUBB_p', sprintf('%02d',ensembleNumber), '.nc'];
 
 % zt Grid
 smfile   = [case_name, '_zt.ctl'];
