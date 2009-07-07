@@ -56,7 +56,9 @@ module stats_variables
      ircm, & 
      ium, & 
      ivm, & 
-     iwm_zt, & 
+     iwm_zt, &
+     ium_ref,&
+     ivm_ref, & 
      iug, & 
      ivg, & 
      icf, & 

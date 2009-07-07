@@ -55,9 +55,12 @@ module advance_windm_edsclrm_module
 
     use stats_type, only: &
       stat_begin_update, & ! Subroutines
-      stat_end_update
+      stat_end_update, &
+      stat_update_var
 
     use stats_variables, only: &
+      ium_ref, &
+      ivm_ref, &
       ivm_bt, & ! Variables
       ium_bt, &
       ium_sdmp, &
@@ -78,9 +81,9 @@ module advance_windm_edsclrm_module
         eps
 
     use sponge_layer_damping, only: &
-    uv_sponge_damp_settings, &  
-    uv_sponge_damp_profile, &  
-    sponge_damp_xm ! Procedure(s)
+      uv_sponge_damp_settings, &  
+      uv_sponge_damp_profile, &  
+      sponge_damp_xm ! Procedure(s)
 
     implicit none
 
@@ -308,7 +311,8 @@ module advance_windm_edsclrm_module
       um(1:gr%nnzp) = real( um(1:gr%nnzp) - ((um(1:gr%nnzp) - um_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
       vm(1:gr%nnzp) = real( vm(1:gr%nnzp) - ((vm(1:gr%nnzp) - vm_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
     endif
-
+    call stat_update_var(ium_ref, um_ref, zt)
+    call stat_update_var(ivm_ref, vm_ref, zt)
 
     if ( l_tke_aniso ) then
 

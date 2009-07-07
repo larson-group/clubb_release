@@ -9,7 +9,7 @@
 &statsnl
 
 vars_zt = 
-'thlm', 'thvm', 'rtm', 'rcm', 'um', 'vm', 'wm_zt', 'ug', 'vg',
+'thlm', 'thvm', 'rtm', 'rcm', 'um', 'vm', 'um_ref','vm_ref','wm_zt', 'ug', 'vg',
 'cf', 'p_in_Pa', 'exner', 'Lscale', 'T_in_K',
 'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp',
 'Lscale_up', 'Lscale_down', 'tau_zt', 'Kh_zt', 'wp2thvp', 'wp2rcp', 'wprtpthlp',

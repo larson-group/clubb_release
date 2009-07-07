@@ -33,6 +33,8 @@ module stats_zt
         ium, & 
         ivm, & 
         iwm_zt, & 
+        ium_ref, &
+        ivm_ref, &
         iug, & 
         ivg, & 
         icf, & 
@@ -317,6 +319,8 @@ module stats_zt
     ium           = 0
     ivm           = 0
     iwm_zt        = 0
+    ium_ref       = 0
+    ivm_ref       = 0
     iug           = 0
     ivg           = 0
     icf           = 0
@@ -621,6 +625,16 @@ module stats_zt
         iwm_zt = k
         call stat_assign( iwm_zt, "wm", & 
               "w wind (m/s)", "m/s", zt )
+        k = k + 1
+      case ('um_ref')
+        ium_ref = k
+        call stat_assign( ium_ref, "um_ref", & 
+             "reference u wind (m/s)", "m/s", zt)
+        k = k + 1
+      case ('vm_ref')
+        ivm_ref = k
+        call stat_assign( ivm_ref, "vm_ref", & 
+             "reference v wind (m/s)", "m/s", zt)
         k = k + 1
       case ('ug')
         iug = k
