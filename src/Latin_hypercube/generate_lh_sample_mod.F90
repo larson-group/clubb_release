@@ -9,6 +9,12 @@ module generate_lh_sample_mod
              truncate_gaus_mixt, ltqnorm, gaus_condt, & 
              st_2_rtthl, log_sqd_normalized
 
+  integer, private :: &
+    is_mellor = 1, &
+    it_mellor = 2, &
+    iw  = 3, &
+    iNc = 4, &
+    irr = 5
 
   private ! Default scope
 
@@ -41,6 +47,9 @@ module generate_lh_sample_mod
         pdf_parameter  ! type
 
     implicit none
+
+    ! External
+    intrinsic :: dble
 
     ! Constant Parameters
     logical, parameter :: &
@@ -90,6 +99,9 @@ module generate_lh_sample_mod
 
     ! Local Variables
 
+    logical, dimension(d_variables) :: &
+      l_d_variable_lognormal
+
     real :: a
     real :: w1, w2, sw1, sw2
     real :: thl1, thl2
@@ -118,7 +130,6 @@ module generate_lh_sample_mod
       Sigma_rtthlw_1,  & 
       Sigma_rtthlw_2
 
-
     ! Nc  = droplet number concentration.  [Nc] = number / kg air
     ! Nc1  = PDF parameter for mean of plume 1. [Nc1] = (#/kg)
     ! Nc2  = PDF parameter for mean of plume 2. [Nc2] = (#/kg)
@@ -135,6 +146,9 @@ module generate_lh_sample_mod
     logical :: l_small_rrainm, l_small_Ncm
 
     ! ---- Begin Code ----
+    l_d_variable_lognormal(:) = .false.
+    l_d_variable_lognormal(iNc) = .true.
+    l_d_variable_lognormal(irr) = .true.
 
     l_small_rrainm = .false.
     l_small_Ncm    = .false.
@@ -178,7 +192,6 @@ module generate_lh_sample_mod
     !    but we set means, covariance of N, qr to constants.
 
     l_sample_flag = .true.
-!   if ( .not. l_sample_out_of_cloud .and. cf < 0.001 ) then
     if ( l_sample_out_of_cloud ) then
       ! Sample non-cloudy grid boxes as well -dschanen 3 June 2009
       R1 = 1.0
@@ -190,7 +203,8 @@ module generate_lh_sample_mod
       X_u_one_lev(:,:)    = 0.0
       X_nl_one_lev(:,:)   = 0.0
       l_sample_flag = .false.
-    end if
+
+    end if ! l_sample_out_of_cloud
 
     if ( srt1  == 0. .or. srt2  == 0. .or. & 
          sthl1 == 0. .or. sthl2 == 0. .or. & 
@@ -251,9 +265,9 @@ module generate_lh_sample_mod
       rrtthl_reduced1 = dble(rrtthl_reduced*1.d3*sqrt(srt1*sthl1))
       rrtthl_reduced2 = dble(rrtthl_reduced*1.d3*sqrt(srt2*sthl2))
 
-      ! Covariance (not correlation) matrices of rt-thl-w-N-qr
+      ! Covariance (not correlation) matrices of rt-thl-w-Nc-rr
       !    for Gaussians 1 and 2
-      ! For now, assume no within-plume correlation of w,N,qr with
+      ! For now, assume no within-plume correlation of w,Nc,rr with
       !    any other variables.
       Sigma_rtthlw_1(1,1:d_variables)   = (/  & 
                dble(1.e6*srt1), & 
@@ -326,9 +340,6 @@ module generate_lh_sample_mod
                srr2 & 
                                /)
 
-
-!         print*, 'New call to sample_points -----------------'
-
       ! Use units of [g/kg] to ameliorate numerical roundoff
       call sample_points( n_micro_calls, nt_repeat, d_variables, p_matrix, dble(a), & 
                           dble(1.e3*rt1), dble(thl1),  & 
@@ -338,16 +349,17 @@ module generate_lh_sample_mod
                           dble( mu1 ), dble( mu2 ),  & 
                           Sigma_rtthlw_1, Sigma_rtthlw_2, & 
                           dble( R1 ), dble( R2 ), & 
-                          rt, thl, X_u_one_lev, X_nl_one_lev )
+                          l_d_variable_lognormal, &
+                          rt, thl, X_u_one_lev, X_nl_one_lev ) 
 
       ! Kluge for lognormal variables
       ! Use the gridbox mean rather than a sampled value
       if ( l_small_rrainm ) then
-        X_nl_one_lev(:,5) = rrainm*g_per_kg
+        X_nl_one_lev(:,irr) = rrainm*g_per_kg
       end if
 
       if ( l_small_Ncm ) then
-        X_nl_one_lev(:,4) = Ncm
+        X_nl_one_lev(:,iNc) = Ncm
       end if
 
       ! End of overall if-then statement for Latin hypercube code
@@ -374,13 +386,11 @@ module generate_lh_sample_mod
                             mu1, mu2,  & 
                             Sigma_rtthlw_1, Sigma_rtthlw_2, & 
                             C1, C2, & 
+                            l_d_variable_lognormal, &
                             rt, thl, X_u_one_lev, X_nl_one_lev )
 
     use constants, only:  &
         fstderr  ! Constant(s)
-
-    use error_code, only:  &
-        clubb_at_least_debug_level  ! Procedure(s)
 
     implicit none
 
@@ -426,6 +436,9 @@ module generate_lh_sample_mod
     double precision, intent(in) :: &
       C1, C2 ! cloud fraction associated w/ 1st, 2nd mixture component
 
+    logical, intent(in), dimension(d_variables) :: &
+      l_d_variable_lognormal ! Whether a given element of X_nl is lognormal
+
     ! Output Variables
     ! Total water, theta_l: mean plus perturbations
     double precision, intent(out), dimension(n_micro_calls) :: rt, thl
@@ -438,7 +451,7 @@ module generate_lh_sample_mod
 
 
     ! Local Variables
-    integer :: col
+    integer :: col, sample
 
     ! Covariance matrices for variables s, t, w for comps 1 & 2
     double precision, dimension(d_variables,d_variables) :: &
@@ -446,7 +459,6 @@ module generate_lh_sample_mod
 
     ! Sample of s points that is drawn only from normal distribution
     double precision, dimension(n_micro_calls) :: s_pts
-
 
     ! ---- Begin Code ----
 
@@ -486,8 +498,10 @@ module generate_lh_sample_mod
 !            X_u_one_lev, rtp, thlp )
       call st_2_rtthl( n_micro_calls, d_variables, a, rt1, thl1, rt2, thl2, &
                        crt1, cthl1, crt2, cthl2, &
-                       C1, C2, mu1(1), mu2(1), X_nl_one_lev(1:n_micro_calls,1), &
-                       X_nl_one_lev(1:n_micro_calls,2), X_u_one_lev, rt, thl )
+                       C1, C2, mu1(1), mu2(1), &
+                       X_nl_one_lev(1:n_micro_calls,is_mellor), &
+                       X_nl_one_lev(1:n_micro_calls,it_mellor), &
+                       X_u_one_lev, rt, thl )
 
 ! Compute some diagnostics
 !       print*, 'C=', a*C1 + (1-a)*C2
@@ -495,16 +509,12 @@ module generate_lh_sample_mod
 !       print*, 'thl_anl=',a*thl1+(1-a)*thl2, 'thlm_est=',mean(thl(1:n),n)
 !       print*, 'rtpthlp_coef_est=', corrcoef(rt,thl,n)
 
-! Convert last two variates (columns) (usu N and rr) to lognormal
-    if (d_variables > 3) then
-      X_nl_one_lev(1:n_micro_calls,(d_variables-1):d_variables) &
-        = exp( X_nl_one_lev(1:n_micro_calls,(d_variables-1):d_variables) )
-    else
-      if ( clubb_at_least_debug_level( 1 ) ) then
-        write(fstderr,*) 'd<4 in sampling_driver:  ',  &
-                         'will not convert last two variates to lognormal'
-      end if
-    end if
+    ! Convert lognormal variates (currently Nc and rr) to lognormal
+    forall ( sample = 1:n_micro_calls )
+      where ( l_d_variable_lognormal )
+        X_nl_one_lev(sample,:) = exp( X_nl_one_lev(sample,:) )
+      end where
+    end forall
 
 ! Test diagnostics
 !       print*, 'mean X_nl_one_lev(:,2)=', mean(X_nl_one_lev(1:n,2),n)
@@ -1183,7 +1193,7 @@ module generate_lh_sample_mod
 !-----------------------------------------------------------------------
   subroutine st_2_rtthl( n_micro_calls, d_variables, a, rt1, thl1, rt2, thl2, & 
                          crt1, cthl1, crt2, cthl2, & 
-                         C1, C2, s1, s2, s, t, X_u_one_lev, rt, thl )
+                         C1, C2, s1, s2, s_mellor, t_mellor, X_u_one_lev, rt, thl )
 
     use constants, only:  &
         fstderr  ! Constant(s)
@@ -1211,8 +1221,10 @@ module generate_lh_sample_mod
 
     double precision, intent(in) :: s1, s2
 
+    ! n-dimensional column vector of Mellor's s and t, including mean and perturbation
     double precision, intent(in), dimension(n_micro_calls) :: &
-      s, t ! n-dimensional column vector of Mellor's s and t, including mean and perturbation
+      s_mellor, & 
+      t_mellor 
 
     double precision, dimension(n_micro_calls,d_variables+1), intent(in) :: &
       X_u_one_lev ! n_micro_calls x d_var+1 Latin hypercube sample from uniform distribution 
@@ -1263,15 +1275,15 @@ module generate_lh_sample_mod
       ! Follow M. E. Johnson (1987), p. 56.
       fraction_1     = a*C1/(a*C1+(1-a)*C2)
       if ( X_u_one_lev(sample,d_variables+1) < fraction_1 ) then
-        rt(sample)  = rt1 + (0.5d0/crt1)*(s(sample)-s1) +  & 
-                           (0.5d0/crt1)*t(sample)
-        thl(sample) = thl1 + (-0.5d0/cthl1)*(s(sample)-s1) +  & 
-                           (0.5d0/cthl1)*t(sample)
+        rt(sample)  = rt1 + (0.5d0/crt1)*(s_mellor(sample)-s1) +  & 
+                           (0.5d0/crt1)*t_mellor(sample)
+        thl(sample) = thl1 + (-0.5d0/cthl1)*(s_mellor(sample)-s1) +  & 
+                           (0.5d0/cthl1)*t_mellor(sample)
       else
-        rt(sample)  = rt2 + (0.5d0/crt2)*(s(sample)-s2) +  & 
-                           (0.5d0/crt2)*t(sample)
-        thl(sample) = thl2 + (-0.5d0/cthl2)*(s(sample)-s2) +  & 
-                           (0.5d0/cthl2)*t(sample)
+        rt(sample)  = rt2 + (0.5d0/crt2)*(s_mellor(sample)-s2) +  & 
+                           (0.5d0/crt2)*t_mellor(sample)
+        thl(sample) = thl2 + (-0.5d0/cthl2)*(s_mellor(sample)-s2) +  & 
+                           (0.5d0/cthl2)*t_mellor(sample)
       end if
 
       ! Loop to get new sample
@@ -1282,14 +1294,23 @@ module generate_lh_sample_mod
 !-------------------------------------------------------------------------------
   subroutine log_sqd_normalized( Xm, Xp2_on_Xm2, X_tol, &
                                  X1, X2, sX1, sX2, l_small_X )
-
+! Description:
+!
+! References:
+!   None
+!-------------------------------------------------------------------------------
     implicit none
 
+    ! External
+    intrinsic :: log
+
+    ! Input Variables
     double precision, intent(in) :: &
       Xm,           & ! Mean X          [units vary]
-      Xp2_on_Xm2, & ! X'^2 / X^2      [-]
-      X_tol          ! tolerance on X   [units vary]
+      Xp2_on_Xm2,   & ! X'^2 / X^2      [-]
+      X_tol           ! tolerance on X  [units vary]
 
+    ! Output Variables
     double precision, intent(out) :: &
       X1, X2,  & ! PDF parameters for mean of plume 1, 2   [units vary]
       sX1, sX2   ! PDF parameters for width of plume 1, 2  [units vary]
