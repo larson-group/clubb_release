@@ -3,9 +3,9 @@ module matrix_operations
 
   implicit none
 
-  public :: linear_eqn_solve, band_mult
+  public :: linear_eqn_solve, linear_symm_upper_eqn_solve, band_mult
 
-  private ! Defualt scope
+  private ! Default scope
 
   contains
 
@@ -18,7 +18,11 @@ module matrix_operations
 !-----------------------------------------------------------------------
     implicit none
 
+    ! External
     external :: dgesv   ! LAPACK subroutine
+
+    ! Parameters  
+    integer, parameter :: nrhs = 1
 
     ! Input Variables
     integer, intent(in) :: n
@@ -43,7 +47,7 @@ module matrix_operations
     a_decomp = a
     x = b
 
-    call dgesv( n, 1, a_decomp, n, ipiv, x, n, info )
+    call dgesv( n, nrhs, a_decomp, n, ipiv, x, n, info )
 
     select case( info )
     case( :-1 )
@@ -60,6 +64,70 @@ module matrix_operations
 
     return
   end subroutine linear_eqn_solve
+
+!----------------------------------------------------------------------
+  subroutine linear_symm_upper_eqn_solve( n, a, x, b )
+!   Description:
+!    Solve for A * X = B for a symmetric matrix, using the upper diagonals.
+!   References:
+!     <http://www.netlib.org/lapack/double/dsysv.f> 
+!-----------------------------------------------------------------------
+    implicit none
+
+    ! External
+    external :: dsysv   ! LAPACK subroutine
+
+    ! Parameters  
+    integer, parameter :: nrhs = 1
+
+    ! Input Variables
+    integer, intent(in) :: n
+
+    double precision, dimension(n,n), intent(in) :: a
+
+    double precision, dimension(n), intent(in) :: b
+
+    ! Output Variables
+    double precision, dimension(n), intent(out) :: x
+
+    ! Local Variables
+    double precision, dimension(n,n) :: a_decomp
+
+    double precision, allocatable, dimension(:) :: work
+
+    integer, dimension(n) :: &
+      ipiv ! Pivot indices from the permutation matrix
+
+    integer :: info, work_dim
+
+    ! ---- Begin code ----
+
+    work_dim = n * 128 ! Best guess for an optimal blocksize
+
+    allocate( work(work_dim) )
+
+    a_decomp = a
+    x = b
+
+    call dsysv( 'Upper', n, nrhs, a_decomp, n, ipiv, x, n, work, work_dim, info )
+
+    select case( info )
+    case( :-1 )
+      write(0,*) "linear_symm_upper_eqn_solve" // & 
+        " illegal value for argument ", -info
+      stop
+    case( 0 )
+      ! Success!
+
+    case( 1: )
+      write(0,*) "linear_symm_upper_eqn_solve: singular matrix"
+      stop
+    end select
+
+    deallocate( work )
+
+    return
+  end subroutine linear_symm_upper_eqn_solve
 
 !-----------------------------------------------------------------------
   subroutine band_mult( trans, ndim, mdim, nsup, nsub, yinc, xinc, & 

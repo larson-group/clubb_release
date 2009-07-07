@@ -11,7 +11,9 @@ module generate_lh_sample_mod
 
   integer, private :: &
     is_mellor = 1, &
+    irt       = 1, &
     it_mellor = 2, &
+    ithl      = 2, &
     iw  = 3, &
     iNc = 4, &
     irr = 5
@@ -49,7 +51,7 @@ module generate_lh_sample_mod
     implicit none
 
     ! External
-    intrinsic :: dble
+    intrinsic :: dble, min, max, sqrt
 
     ! Constant Parameters
     logical, parameter :: &
@@ -121,10 +123,11 @@ module generate_lh_sample_mod
     real :: rrtthl_reduced
     double precision :: rrtthl_reduced1, rrtthl_reduced2
 
-    ! Means of s, t, w, N, rr for plumes 1 and 2
+    ! Means of s, t, w, Nc, rr for plumes 1 and 2
     double precision, dimension(d_variables) :: &
       mu1, mu2
-    ! Covariance (not correlation) matrix of rt, thl, w, N, rr
+
+    ! Covariance (not correlation) matrix of rt, thl, w, Nc, rr
     ! for plumes 1 and 2
     double precision, dimension(d_variables,d_variables) :: &
       Sigma_rtthlw_1,  & 
@@ -269,70 +272,70 @@ module generate_lh_sample_mod
       !    for Gaussians 1 and 2
       ! For now, assume no within-plume correlation of w,Nc,rr with
       !    any other variables.
-      Sigma_rtthlw_1(1,1:d_variables)   = (/  & 
+      Sigma_rtthlw_1(irt,1:d_variables)   = (/  & 
                dble(1.e6*srt1), & 
                rrtthl_reduced1, & 
                0.d0, & 
                0.d0, & 
                0.d0 & 
                                  /)
-      Sigma_rtthlw_1(2,1:d_variables) = (/ & 
+      Sigma_rtthlw_1(ithl,1:d_variables) = (/ & 
                rrtthl_reduced1,  & 
                dble(sthl1),   & 
                0.d0, & 
                0.d0, & 
                0.d0 & 
                                /)
-      Sigma_rtthlw_1(3,1:d_variables) = (/ & 
+      Sigma_rtthlw_1(iw,1:d_variables) = (/ & 
                0.d0, & 
                0.d0, & 
                dble(sw1), & 
                0.d0, & 
                0.d0 & 
                                /)
-      Sigma_rtthlw_1(4,1:d_variables) = (/ & 
+      Sigma_rtthlw_1(iNc,1:d_variables) = (/ & 
                0.d0, & 
                0.d0, & 
                0.d0, & 
                sNc1, & 
                0.d0 & 
                                /)
-      Sigma_rtthlw_1(5,1:d_variables) = (/ & 
+      Sigma_rtthlw_1(irr,1:d_variables) = (/ & 
                0.d0, & 
                0.d0, & 
                0.d0, & 
                0.d0, & 
                srr1 & 
                                /)
-      Sigma_rtthlw_2(1,1:d_variables) = (/  & 
+      Sigma_rtthlw_2(irt,1:d_variables) = (/  & 
                dble(1.e6*srt2), & 
                rrtthl_reduced2,  & 
                0.d0, & 
                0.d0, & 
                0.d0  & 
                                /)
-      Sigma_rtthlw_2(2,1:d_variables) = (/ & 
+      Sigma_rtthlw_2(ithl,1:d_variables) = (/ & 
                rrtthl_reduced2,  & 
                dble(sthl2),   & 
                0.d0,  & 
                0.d0,  & 
                0.d0  & 
                                /)
-      Sigma_rtthlw_2(3,1:d_variables) = (/ & 
+      Sigma_rtthlw_2(iw,1:d_variables) = (/ & 
                0.d0,    & 
                0.d0,    & 
                dble(sw2), & 
                0.d0,  & 
                0.d0         & 
                                /)
-      Sigma_rtthlw_2(4,1:d_variables) = (/ & 
+      Sigma_rtthlw_2(iNc,1:d_variables) = (/ & 
                0.d0, & 
                0.d0, & 
                0.d0, & 
                sNc2, & 
                0.d0  & 
                                /)
-      Sigma_rtthlw_2(5,1:d_variables) = (/ & 
+      Sigma_rtthlw_2(irr,1:d_variables) = (/ & 
                0.d0, & 
                0.d0, & 
                0.d0, & 
@@ -941,6 +944,9 @@ module generate_lh_sample_mod
 
     implicit none
 
+    ! External
+
+    intrinsic :: log, sqrt
 
     ! Input Variable(s)
 
@@ -1067,7 +1073,7 @@ module generate_lh_sample_mod
   subroutine gaus_condt( d_variables, std_normal, mu, Sigma, s_pt, & 
                          nonstd_normal )
 
-    use matrix_operations, only: linear_eqn_solve ! Procedure(s)
+    use matrix_operations, only: linear_symm_upper_eqn_solve ! Procedure(s)
 
     implicit none
 
@@ -1153,7 +1159,7 @@ module generate_lh_sample_mod
       ! Compute an intermediate matrix, Sigma_int(1,1:(v-1)),
       !    that is needed several times below.
       ! Solve A * X = B for X, where X here is sigma_int.
-      call linear_eqn_solve &
+      call linear_symm_upper_eqn_solve &
            ( n = v-1, a = Sigma_oneone(1:v-1,1:v-1), b = Sigma_twoone(1,1:v-1), &
              x = Sigma_int(1,1:v-1) )
 
