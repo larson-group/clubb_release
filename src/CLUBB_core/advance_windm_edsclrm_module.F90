@@ -311,8 +311,11 @@ module advance_windm_edsclrm_module
       um(1:gr%nnzp) = real( um(1:gr%nnzp) - ((um(1:gr%nnzp) - um_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
       vm(1:gr%nnzp) = real( vm(1:gr%nnzp) - ((vm(1:gr%nnzp) - vm_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
     endif
-    call stat_update_var(ium_ref, um_ref, zt)
-    call stat_update_var(ivm_ref, vm_ref, zt)
+
+    if( l_stats_samp ) then
+      call stat_update_var(ium_ref, um_ref, zt)
+      call stat_update_var(ivm_ref, vm_ref, zt)
+    end if
 
     if ( l_tke_aniso ) then
 
