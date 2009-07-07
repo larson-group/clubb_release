@@ -252,7 +252,7 @@ module bugsrad_clubb_mod
                        "altitude above the top of the extended atmosphere ",  &
                        "profile."
       write(fstderr,*) "Top of CLUBB model zm grid =", alt(nz), "m."
-      write(fstderr,*) "Top of standard atmosphere profile =",  &
+      write(fstderr,*) "Top of extended atmosphere profile =",  &
                        ext_alt(ext_atmos_dim), "m."
       write(fstderr,*) "Reduce the vertical extent of the CLUBB model grid."
       ! CLUBB zm grid exceeds a 50 km altitude
@@ -269,6 +269,9 @@ module bugsrad_clubb_mod
           write(fstderr,*) "ext_atmos_buffer = ", ext_atmos_buffer
           write(fstderr,*) "j = ", j
           write(fstderr,*) "ext_atmos_dim = ", ext_atmos_dim
+          write(fstderr,*) "ext_alt(j) =", ext_alt(j), "m."
+          write(fstderr,*) "Top of extended atmosphere profile =",  &
+                           ext_alt(ext_atmos_dim), "m."
           write(fstderr,*) "Either reduce the value of ext_atmos_buffer ",  &
                            "or reduce the vertical extent of the CLUBB ",  &
                            "model grid (for zm levels)."
