@@ -16,7 +16,7 @@ optargin = size(varargin,2);
 %This means we can easily figure out the number of lines on the plot by dividing by 8
 numLines = optargin / 9;
 
-%Loop through each line
+%Loop through each line on the plot
 for i=1:numLines
 	filePath = varargin{1 * i};
 	plotType = varargin{2 * i};
@@ -29,13 +29,29 @@ for i=1:numLines
 	lineColor = varargin{9 * i};
 
 	%Determine the type of file being read in
-	extension = DetermineExtension(filePath)
+	extension = DetermineExtension(filePath);
 
 	%Determine the variables that need to be read in
 	varsToRead = ParseVariablesFromExpression(varExpression);
 
 	%Read in the necessary variables
 	for j=1:size(varsToRead,2);
-		varsToRead(j)
+		varString = cell2mat(varsToRead(j));
+		disp(['Reading variable ', varString]);
+
+		if strcmp(extension, 'ctl')
+			variableData = VariableReadGrADS(varsToRead(j), filePath);
+		elseif strcmp(extension, 'nc')
+			variableData = VariableReadNC(varsToRead(j), filePath);
+		end
+
+		%Store the read in values to the proper variable name (ex. variable rtm will be read in to the variable named rtm,
+		%this allows the expression to be used as is).
+		eval([varString, '= variableData;']);
 	end
+
+	%Now evaluate the expression using the read in values,
+	eval(['valueToPlot =', varExpression, ';']);
+
+	%At this point, the value of the expression is contained in valueToPlot
 end
