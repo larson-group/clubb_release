@@ -97,6 +97,7 @@ sub runCases()
 		}
 
 		# TODO: Generate the plots
+		print("Variable:" . $CASE::CASE{'variables'}[0]{'type'} . "\n");
 	}
 
 	

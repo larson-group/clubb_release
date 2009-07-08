@@ -5,6 +5,15 @@
     'name' => 'case_name',
     'headerText' => 'Test Case',
     'test' => [ '0', '1', '5' ],
+    'startTime' => 0,   # [s]
+    'endTime' => 10,    # [s]
+    'startHeight' => 0, # [m]
+    'endHeight' => 100, # [m]
+    'variables' =>
+    [
+       {'type' => 'timeseries or profile', 'name' => 'varname', 'title' => 'title', 'units' => ''},
+       {'type' => 'timeseries or profile', 'name' => 'varname', 'title' => 'title', 'units' => ''}
+    ],
     'nightlyOutput' =>
     {
         'subText' => '** Uniform, coarse verticle grid spacing of 40 m. **',
