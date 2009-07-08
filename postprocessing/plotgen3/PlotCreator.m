@@ -21,11 +21,18 @@ optargin = size(varargin,2);
 numLines = optargin / 7;
 
 %Create a blank plot of the proper type so we have somewhere to draw lines
-if strcmp(plotType, 'profile')
-	%ProfileFunctions.setupPlot ( plotTitle, plotUnits, time, height )
-elseif strcmp(plotType, 'timeseries')
+% Figure Properties for screen display.
+scr_size = get(0,'ScreenSize');
+fig_height = scr_size(4);
+fig_width = (6.5/9.0) * fig_height;
+fig_width = int16(fig_width);
 
-end
+% Open figure to set size.
+figure('Position',[ 0 0 fig_width fig_height ])
+set(gcf, 'PaperPositionMode', 'manual')
+set(gcf, 'PaperUnits', 'inches')
+set(gcf, 'PaperPosition', [ 1.0 1.0 6.5 9.0 ])
+
 
 %Loop through each line on the plot
 for i=1:numLines
@@ -69,5 +76,5 @@ for i=1:numLines
 end
 
 %Output the EPS file
-output_file_name = [ 'output/', caseName, '_', plotNum, '.eps' ];
+output_file_name = [ 'output/', caseName, '_', int2str(plotNum), '.eps' ]
 print( '-depsc2', output_file_name )
