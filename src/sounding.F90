@@ -12,9 +12,10 @@ module sounding
 
 
   ! Constant parameter
-  integer, public, parameter :: nmaxsnd = 600
-  integer, public, parameter :: sclr_max = 1000
-  integer, public, parameter :: n_snd_var = 8
+  integer, public, parameter :: &
+    nmaxsnd   = 600, &
+    sclr_max  = 1000, &
+    n_snd_var = 8
 
   private ! Default Scope
 
@@ -506,8 +507,8 @@ module sounding
     !                                         e.g. bomex
 
     ! Output Variable(s)
-    real, intent(out), dimension(nmaxsnd,sclr_max) :: & 
-    sclr        ! Scalar sounding [?]
+    real, intent(inout), dimension(nmaxsnd,sclr_max) :: & 
+      sclr        ! Scalar sounding [?]
 
 
     type(one_dim_read_var), dimension(sclr_dim), intent(out) :: &
@@ -571,7 +572,7 @@ module sounding
     !                                         e.g. bomex
 
     ! Output Variable(s)
-    real, intent(out), dimension(nmaxsnd,sclr_max) :: & 
+    real, intent(inout), dimension(nmaxsnd,sclr_max) :: & 
     edsclr ! Eddy Scalars [?]
 
     type(one_dim_read_var), dimension(edsclr_dim) :: retVars
