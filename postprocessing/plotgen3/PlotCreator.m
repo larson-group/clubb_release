@@ -18,12 +18,15 @@ numLines = optargin / 8;
 
 %Loop through each line
 for i=1:numLines
-	filePath = varargin{1 * i}
-	plotType = varargin{2 * i}
-	varName = varargin{3 * i}
-	plotTitle = varargin{4 * i}
-	varUnits = varargin{5 * i}
-	lineWidth = varargin{6 * i}
-	lineType = varargin{7 * i}
-	lineColor = varargin{8 * i}
+	filePath = varargin{1 * i};
+	plotType = varargin{2 * i};
+	varExpression = varargin{3 * i};
+	plotTitle = varargin{4 * i};
+	varUnits = varargin{5 * i};
+	lineWidth = varargin{6 * i};
+	lineType = varargin{7 * i};
+	lineColor = varargin{8 * i};
+
+	%Determine the variables that need to be read in
+	varsToRead = ParseVariablesFromExpression(varExpression);
 end
