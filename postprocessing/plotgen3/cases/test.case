@@ -9,10 +9,11 @@
     'endTime' => 10,    # [s]
     'startHeight' => 0, # [m]
     'endHeight' => 100, # [m]
+    'type' => 'timeseries or profile',
     'variables' =>
     [
-       {'type' => 'timeseries or profile', 'name' => 'varname', 'title' => 'title', 'units' => ''},
-       {'type' => 'timeseries or profile', 'name' => 'varname', 'title' => 'title', 'units' => ''}
+       {'file' => '', 'name' => 'varname', 'expression' => 'varexpression', 'title' => 'title', 'units' => '', 'lineWidth' => '', 'lineType' => '', 'lineColor' => ''},
+       {'file' => '', 'name' => 'varname', 'expression' => 'varexpression', 'title' => 'title', 'units' => '', 'lineWidth' => '', 'lineType' => '', 'lineColor' => ''}
     ],
     'nightlyOutput' =>
     {
