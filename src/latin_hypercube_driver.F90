@@ -8,11 +8,17 @@ module latin_hypercube_mod
 
   private ! Default scope
 
-  integer, parameter :: &
-    sequence_length = 1     ! nt_repeat/n_micro_call; number of timesteps before sequence repeats.
+  integer, parameter, private :: &
+    sequence_length = 1 ! nt_repeat/n_micro_call; number of timesteps before sequence repeats.
 
-  integer, allocatable, dimension(:,:,:) :: & 
+  logical, parameter, private :: &
+    l_diagnostic_iter_check = .true.
+
+  integer, allocatable, dimension(:,:,:), private :: & 
     height_time_matrix ! matrix of rand ints
+
+  integer, private :: &
+    prior_iter ! Prior iteration number (for diagnostic purposes)
 
   contains
 
@@ -181,11 +187,31 @@ module latin_hypercube_mod
 
 #ifdef UNRELEASED_CODE
     ! ---- Begin Code ----
+
     nt_repeat = n_micro_calls * sequence_length 
 
     if ( .not. allocated( height_time_matrix ) ) then
+      ! If this is first time latin_hypercube_driver is called, then allocate
+      ! the height_time_matrix and set the prior iteration number for debugging
+      ! purposes.
       allocate( height_time_matrix(nnzp, nt_repeat, d_variables+1) )
-    end if
+
+      prior_iter = iter 
+
+    ! Check for a bug where the iteration number isn't incrementing correctly,
+    ! which will lead to improper sampling.
+    else if ( l_diagnostic_iter_check ) then
+
+      if ( prior_iter /= iter-1 ) then
+        write(fstderr,*) "The iteration number in latin_hypercube_driver is"// &
+        " not incrementing properly."
+
+      else
+        prior_iter = iter
+
+      end if
+
+    end if ! First call to the driver
 
     ! Latin hypercube sample generation
     ! Generate height_time_matrix, an nnzp x nt_repeat x d_variables array of random integers
