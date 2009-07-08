@@ -28,6 +28,9 @@ for i=1:numLines
 	lineType = varargin{8 * i};
 	lineColor = varargin{9 * i};
 
+	%Determine the type of file being read in
+	extension = DetermineExtension(filePath)
+
 	%Determine the variables that need to be read in
 	varsToRead = ParseVariablesFromExpression(varExpression);
 
