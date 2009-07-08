@@ -1,6 +1,7 @@
-function PlotCreator( plotNum, plotType, startTime, endTime, startHeight, endHeight, varargin )
+function PlotCreator( caseName, plotNum, plotType, startTime, endTime, startHeight, endHeight, varargin )
 
 %Display the variables that were passed in (debug output)
+caseName
 plotNum
 plotType
 startTime
@@ -18,7 +19,11 @@ optargin = size(varargin,2);
 numLines = optargin / 8;
 
 %Create a blank plot of the proper type so we have somewhere to draw lines
-%if strcmp(
+if strcmp(plotType, 'profile')
+	
+elseif strcmp(plotType, 'timeseries')
+
+end
 
 %Loop through each line on the plot
 for i=1:numLines
@@ -56,8 +61,12 @@ for i=1:numLines
 
 	%Now evaluate the expression using the read in values,
 	eval(['valueToPlot =', varExpression, ';']);
-	valueToPlot
+	
 	%At this point, the value of the expression is contained in valueToPlot
 
 
 end
+
+%Output the EPS file
+output_file_name = [ 'output/', caseName, '_', plotNum, '.eps' ];
+print( '-depsc2', output_file_name )
