@@ -1,7 +1,9 @@
-function PlotCreator( caseName, plotNum, plotType, startTime, endTime, startHeight, endHeight, varargin )
+function PlotCreator( caseName, plotTitle, plotNum, plotType, startTime, endTime, startHeight, endHeight, plotUnits, varargin )
 
 %Display the variables that were passed in (debug output)
 caseName
+plotTitle
+plotUnits
 plotNum
 plotType
 startTime
@@ -16,11 +18,11 @@ optargin = size(varargin,2);
 %'/PATH/TO/FILE', 'timeseries or profile', 'varname', 'title', 'units', 'lineWidth', 'lineType', 'lineColor'
 
 %This means we can easily figure out the number of lines on the plot by dividing by 8
-numLines = optargin / 8;
+numLines = optargin / 7;
 
 %Create a blank plot of the proper type so we have somewhere to draw lines
 if strcmp(plotType, 'profile')
-	
+	%ProfileFunctions.setupPlot ( plotTitle, plotUnits, time, height )
 elseif strcmp(plotType, 'timeseries')
 
 end
@@ -31,10 +33,9 @@ for i=1:numLines
 	varName = varargin{2 * i};
 	varExpression = varargin{3 * i};
 	plotTitle = varargin{4 * i};
-	varUnits = varargin{5 * i};
-	lineWidth = varargin{6 * i};
-	lineType = varargin{7 * i};
-	lineColor = varargin{8 * i};
+	lineWidth = varargin{5 * i};
+	lineType = varargin{6 * i};
+	lineColor = varargin{7 * i};
 
 	%Determine the type of file being read in
 	extension = DetermineExtension(filePath);
