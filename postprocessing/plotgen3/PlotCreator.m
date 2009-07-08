@@ -36,13 +36,14 @@ for i=1:numLines
 
 	%Read in the necessary variables
 	for j=1:size(varsToRead,2);
+		%We need to convert the variable name to read from a cell array to a string
 		varString = cell2mat(varsToRead(j));
 		disp(['Reading variable ', varString]);
 
 		if strcmp(extension, 'ctl')
-			variableData = VariableReadGrADS(varsToRead(j), filePath);
+			variableData = VariableReadGrADS(varString, filePath);
 		elseif strcmp(extension, 'nc')
-			variableData = VariableReadNC(varsToRead(j), filePath);
+			variableData = VariableReadNC(varString, filePath);
 		end
 
 		%Store the read in values to the proper variable name (ex. variable rtm will be read in to the variable named rtm,
