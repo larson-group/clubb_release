@@ -702,6 +702,8 @@ module microphys_driver
 
     integer :: i, k ! Array index
 
+    integer :: d_variables
+
     integer :: ixrm_cl, ixrm_bt
 
 !-------------------------------------------------------------------------------
@@ -798,13 +800,17 @@ module microphys_driver
 
       if ( l_latin_hypercube_sampling ) then
 
+!       d_variables = 3 + hydromet_dim
+        d_variables = 5
+
         ! For latin hypercube sampling
         hydromet_corr(:) = 0.0 ! Initialize to 0
         hydromet_corr(iiNcm)    = Ncp2_Ncm2_cloud
         hydromet_corr(iirrainm) = rrp2_rrainm2_cloud
 
         call latin_hypercube_driver &
-             ( real( dt ), iter, LH_microphys_calls, gr%nnzp, cf, thlm, p_in_Pa, exner, &
+             ( real( dt ), iter, d_variables, LH_microphys_calls, gr%nnzp, &
+               cf, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm_zt, wtmp, dzq, rcm, rtm-rcm, &
                hydromet, hydromet_corr, hydromet_mc, hydromet_vel, rcm_mc, &
                rvm_mc, thlm_mc, morrison_micro_driver )
@@ -853,13 +859,17 @@ module microphys_driver
 
       if ( l_latin_hypercube_sampling ) then
 
+!       d_variables = 3 + hydromet_dim
+        d_variables = 5
+
         ! For latin hypercube sampling
         hydromet_corr(:) = 0.0 ! Initialize to 0
         hydromet_corr(iiNcm)    = Ncp2_Ncm2_cloud
         hydromet_corr(iirrainm) = rrp2_rrainm2_cloud
 
         call latin_hypercube_driver &
-             ( real( dt ), iter, LH_microphys_calls, gr%nnzp, cf, thlm, p_in_Pa, exner, &
+             ( real( dt ), iter, d_variables, LH_microphys_calls, gr%nnzp, &
+               cf, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm_zt, wtmp, dzq, rcm, rtm-rcm, &
                hydromet, hydromet_corr, hydromet_mc, hydromet_vel, rcm_mc, &
                rvm_mc, thlm_mc, KK_microphys )

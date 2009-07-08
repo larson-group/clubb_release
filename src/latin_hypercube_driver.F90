@@ -9,7 +9,6 @@ module latin_hypercube_mod
   private ! Default scope
 
   integer, parameter :: &
-    d_variables     = 5, & ! Number of variables to sample
     sequence_length = 1     ! nt_repeat/n_micro_call; number of timesteps before sequence repeats.
 
   integer, allocatable, dimension(:,:,:) :: & 
@@ -19,7 +18,8 @@ module latin_hypercube_mod
 
 !-------------------------------------------------------------------------------
   subroutine latin_hypercube_driver &
-             ( dt, iter, n_micro_calls, nnzp, cf, thlm, p_in_Pa, exner, &
+             ( dt, iter, d_variables, n_micro_calls, nnzp, &
+               cf, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm, w_std_dev, dzq, rcm, rvm, &
                hydromet, hydromet_corr, hydromet_mc_est, hydromet_vel_est, rcm_mc_est, &
                rvm_mc_est, thlm_mc_est, microphys_sub )
@@ -106,6 +106,7 @@ module latin_hypercube_mod
 
     integer, intent(in) :: &
       iter,          & ! Model iteration number
+      d_variables,   & ! Number of variables to sample
       n_micro_calls, & ! Number of calls to microphysics per timestep (normally=2)
       nnzp             ! Number of vertical model levels
 
