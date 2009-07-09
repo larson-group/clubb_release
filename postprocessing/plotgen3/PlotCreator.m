@@ -92,6 +92,9 @@ for i=1:numLines
 	if strcmp(plotType, 'profile')
 		lines(i) = ProfileFunctions.addLine(lineName, levels, valueToPlot, lineWidth, lineType, lineColor);
 		legendText(i,1:size(lineName,2)) = lineName;
+		
+		ProfileFunctions.setTitle(plotTitle);
+		ProfileFunctions.setAxisLabels(plotUnits, '[m]'); 
 		ProfileFunctions.addLegend(lines, legendText);
 		ProfileFunctions.setAxis(min(valueToPlot), max(valueToPlot), startHeight, endHeight);
 	elseif strcmp(plotType, 'timeseries')

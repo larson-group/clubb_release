@@ -15,7 +15,22 @@ classdef ProfileFunctions
 			legend( lineCollection, textCollection, 'Location', 'NorthEast' )
 		end
 
-		function setAxis (minVal, maxVal, startHeight, endHeight )
+		function setTitle ( graphTitle )
+			hold off
+		
+			title(graphTitle)
+		end
+
+		function setAxisLabels ( xLabel, yLabel )
+			hold off
+		
+			xlabel(xLabel)
+			ylabel(yLabel)
+		end
+		
+		function setAxis ( minVal, maxVal, startHeight, endHeight )
+			hold off
+		
 			percentage = 95;
 			
 			% Normalize units to a factor of 1.
