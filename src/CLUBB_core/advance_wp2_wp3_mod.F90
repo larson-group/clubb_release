@@ -1914,8 +1914,13 @@ contains
     k_wp3 = 2*k - 1
     k_wp2 = 2*k
 
-    ! The value of w'^2 at the upper boundary will be 0.
-    rhs(k_wp2)   = 0.0
+!    ! The value of w'^2 at the upper boundary will be 0.
+    ! The upper boundary was changed to wtol_sqd--if this is not done,
+    ! fill_holes will try to fill the hole created by this boundary every
+    ! timestep.
+    ! ~~EIHoppe//20090709
+    rhs(k_wp2)   = wtol_sqd
+    ! /EIHoppe change
     ! The value of w'^3 at the upper boundary will be 0.
     rhs(k_wp3)   = 0.0
 

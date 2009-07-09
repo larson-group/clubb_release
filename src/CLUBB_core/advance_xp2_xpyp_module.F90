@@ -452,7 +452,7 @@ contains
     call xp2_xpyp_rhs( "rtpthlp", dt, l_iter, a1, a1_zt, &          ! Intent(in)
                        wp2_zt, wp3, wprtp, wprtp_zt, &              ! Intent(in)
                        wpthlp, wpthlp_zt, rtm, thlm, rtpthlp, &     ! Intent(in)
-                       C2rtthl_1d, tau_zm, 0.0, beta, &             ! Intent(in)
+                       C2rtthl_1d, tau_zm, zero_threshold, beta, &  ! Intent(in)
                        rhs )                                        ! Intent(out)
 
     ! Solve the tridiagonal system
@@ -1335,7 +1335,8 @@ contains
 
     use constants, only:  & 
         grav,   & ! Variable(s)
-        gamma_over_implicit_ts
+        gamma_over_implicit_ts, &
+        wtol_sqd
 
     use stats_precision, only:  & 
         time_precision ! Variable(s)
@@ -1658,8 +1659,15 @@ contains
     !  rhs(1,1) = xap2(1) + 1.0/dt*xap2(1)
     !  rhs(gr%nnzp,1) = 1.0/dt*xap2(gr%nnzp)
     !else
+       ! Changing top boundary condition to wtol_sqd rather than 0.0.
+       ! This should prevent fill_holes_driver from trying to fill
+       ! holes at the top of the domain that are constantly being created
+       ! by the boundary condition.
+       ! ~~EIHoppe//20090707
        rhs(1,1) = xap2(1)
-       rhs(gr%nnzp,1) = 0.0
+       rhs(gr%nnzp,1) = wtol_sqd
+       !rhs(gr%nnzp,1) = 0.0
+       ! /EIHoppe change
     !end if
 
     return
@@ -1945,8 +1953,15 @@ contains
     !  rhs(1,1) = xapxbp(1) + 1.0/dt*xapxbp(1)
     !  rhs(gr%nnzp,1) = 1.0/dt*xapxbp(gr%nnzp)
     !else
+       ! Changing top boundary condition to threshold rather than 0.0.
+       ! This should prevent fill_holes_driver from trying to fill
+       ! holes at the top of the domain that are constantly being created
+       ! by the boundary condition.
+       ! ~~EIHoppe//20090707
        rhs(1,1) = xapxbp(1)
-       rhs(gr%nnzp,1) = 0.0
+       rhs(gr%nnzp,1) = threshold
+       ! rhs(gr%nnzp,1) = 0.0
+       ! /EIHoppe change
     !endif
 
     return
