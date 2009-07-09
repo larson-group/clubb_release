@@ -501,7 +501,7 @@ module clubb_core
       sclr_tmp4(:,i) = zm2zt( sclrpthlp(:,i) )
     end do ! i = 1, sclr_dim
 
-    do k = 2, gr%nnzp, 1
+    do k = 1, gr%nnzp, 1
       call pdf_closure & 
          ( p_in_Pa(k), exner(k), wm_zt(k), wp2_zt(k), wp3(k), sigma_sqd_w_zt(k), & ! intent(in)
            Skw_zt(k), rtm(k), rtp2_zt(k), zm2zt( wprtp, k ),       & ! intent(in)
