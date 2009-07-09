@@ -11,6 +11,9 @@ endTime
 startHeight
 endHeight
 
+%Define a padding
+maxTextLength = 20;
+
 %Figure out the number of optional arguments passed in
 optargin = size(varargin,2);
 
@@ -33,14 +36,17 @@ set(gcf, 'PaperPositionMode', 'manual')
 set(gcf, 'PaperUnits', 'inches')
 set(gcf, 'PaperPosition', [ 1.0 1.0 6.5 9.0 ])
 
+%Preallocate the arrays needed for legend construction
+lines(1:numLines) = 0; %This is the collection where lines are stored
+clear legendText;
 
 %Loop through each line on the plot
 for i=1:numLines
 	filePath = varargin{1 * i};
 	varName = varargin{2 * i};
 	varExpression = varargin{3 * i};
-	plotTitle = varargin{4 * i};
-	lineWidth = varargin{5 * i};
+	lineName = varargin{4 * i};
+	lineWidth = str2num(varargin{5 * i});
 	lineType = varargin{6 * i};
 	lineColor = varargin{7 * i};
 
@@ -57,9 +63,9 @@ for i=1:numLines
 		disp(['Reading variable ', varString]);
 
 		if strcmp(extension, 'ctl')
-			variableData = VariableReadGrADS(filePath, varString, startTime, endTime);
+			[variableData, levels] = VariableReadGrADS(filePath, varString, startTime, endTime);
 		elseif strcmp(extension, 'nc')
-			variableData = VariableReadNC(filePath, varString, startTime, endTime);
+			[variableData, levels] = VariableReadNC(filePath, varString, startTime, endTime);
 		end
 
 		%Store the read in values to the proper variable name (ex. variable rtm will be read in to the variable named rtm,
@@ -70,11 +76,11 @@ for i=1:numLines
 	%Read in time and height
 	%We need to convert the variable name to read from a cell array to a string
 	if strcmp(extension, 'ctl')
-		timeData = VariableReadGrADS(filePath, 'time', startTime, endTime);
-		heightData = VariableReadGrADS(filePath, 'height', startTime, endTime);
+		[timeData, levels] = VariableReadGrADS(filePath, 'time', startTime, endTime);
+		[heightData, levels] = VariableReadGrADS(filePath, 'height', startTime, endTime);
 	elseif strcmp(extension, 'nc')
-		timeData = VariableReadNC(filePath, 'time', startTime, endTime);
-		heightData = VariableReadNC(filePath, 'height', startTime, endTime);
+		[timeData, levels] = VariableReadNC(filePath, 'time', startTime, endTime);
+		[heightData, levels] = VariableReadNC(filePath, 'height', startTime, endTime);
 	end
 
 	%Now evaluate the expression using the read in values,
@@ -82,7 +88,15 @@ for i=1:numLines
 	
 	%At this point, the value of the expression is contained in valueToPlot
 
+	%Add a legend and scale the axis
+	if strcmp(plotType, 'profile')
+		lines(i) = ProfileFunctions.addLine(lineName, levels, valueToPlot, lineWidth, lineType, lineColor);
+		legendText(i,1:size(lineName,2)) = lineName;
+		ProfileFunctions.addLegend(lines, legendText);
+		ProfileFunctions.setAxis(min(valueToPlot), max(valueToPlot), startHeight, endHeight);
+	elseif strcmp(plotType, 'timeseries')
 
+	end
 end
 
 %Output the EPS file

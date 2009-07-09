@@ -1,4 +1,4 @@
-function [varData] = VariableReadGrADS( filePath, variableToRead, startTime, endTime )
+function [varData, levData] = VariableReadGrADS( filePath, variableToRead, startTime, endTime )
 
 %Read in some necessary information about the GRaDS file
 [dataFileName, nz, z, numTimesteps, dt, numVars, listofparams] = header_read_expanded(filePath);
@@ -24,6 +24,7 @@ dataFilePath = filePath(1:lastSlash);
 
 %Set a default value if the passed in variable is not found
 varData(1:nz) = 0;
+levData = 0;
 
 for i = 1:numVars
 	%See if the variable we found is the variable we are interested in
@@ -31,3 +32,5 @@ for i = 1:numVars
 		varData = read_grads_hoc_endian([dataFilePath, dataFileName], 'ieee-le', nz, t_start, t_end, i, numVars);
 	end
 end
+
+levData = z;
