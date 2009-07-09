@@ -1,4 +1,4 @@
-function PlotCreator( caseName, plotTitle, plotNum, plotType, startTime, endTime, startHeight, endHeight, plotUnits, varargin )
+function PlotCreator( caseName, plotTitle, plotNum, plotType, startTime, endTime, startHeight, endHeight, plotUnits, tickCount, varargin )
 
 %Display the variables that were passed in (debug output)
 caseName
@@ -103,5 +103,6 @@ for i=1:numLines
 end
 
 %Output the EPS file
-output_file_name = [ 'output/', caseName, '_', int2str(plotNum), '.eps' ];
+mkdir([ 'output_', int2str(tickCount)]);
+output_file_name = [ 'output_', int2str(tickCount), '/', caseName, '_', int2str(plotNum), '.eps' ];
 print( '-depsc2', output_file_name );
