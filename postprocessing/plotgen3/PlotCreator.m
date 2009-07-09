@@ -57,14 +57,24 @@ for i=1:numLines
 		disp(['Reading variable ', varString]);
 
 		if strcmp(extension, 'ctl')
-			variableData = VariableReadGrADS(varString, filePath);
+			variableData = VariableReadGrADS(filePath, varString, startTime, endTime);
 		elseif strcmp(extension, 'nc')
-			variableData = VariableReadNC(varString, filePath);
+			variableData = VariableReadNC(filePath, varString, startTime, endTime);
 		end
 
 		%Store the read in values to the proper variable name (ex. variable rtm will be read in to the variable named rtm,
 		%this allows the expression to be used as is).
 		eval([varString, '= variableData;']);
+	end
+
+	%Read in time and height
+	%We need to convert the variable name to read from a cell array to a string
+	if strcmp(extension, 'ctl')
+		timeData = VariableReadGrADS(filePath, 'time', startTime, endTime);
+		heightData = VariableReadGrADS(filePath, 'height', startTime, endTime);
+	elseif strcmp(extension, 'nc')
+		timeData = VariableReadNC(filePath, 'time', startTime, endTime);
+		heightData = VariableReadNC(filePath, 'height', startTime, endTime);
 	end
 
 	%Now evaluate the expression using the read in values,
@@ -76,5 +86,5 @@ for i=1:numLines
 end
 
 %Output the EPS file
-output_file_name = [ 'output/', caseName, '_', int2str(plotNum), '.eps' ]
-print( '-depsc2', output_file_name )
+output_file_name = [ 'output/', caseName, '_', int2str(plotNum), '.eps' ];
+print( '-depsc2', output_file_name );
