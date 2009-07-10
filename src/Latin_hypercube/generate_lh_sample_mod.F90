@@ -86,7 +86,7 @@ module generate_lh_sample_mod
 
     ! Output Variables
     double precision, intent(out), dimension(n_micro_calls) :: &
-      rt, & ! Total water mixing ratio          [g/kg]
+      rt, & ! Total water mixing ratio          [kg/kg]
       thl   ! Liquid potential temperature      [K]
 
     double precision, intent(out), dimension(n_micro_calls,d_variables+1) :: &
@@ -141,10 +141,10 @@ module generate_lh_sample_mod
 
     ! rr = specific rain content. [rr] = g rain / kg air
     double precision :: &
-      rr1, &  ! PDF parameter for mean of plume 1. [g/kg]
-      rr2, &  ! PDF parameter for mean of plume 2. [g/kg]
-      srr1, & ! PDF param for width of plume 1     [(g/kg)^2]
-      srr2    ! PDF param for width of plume 2.    [(g/kg)^2]
+      rr1, &  ! PDF parameter for mean of plume 1. [kg/kg]
+      rr2, &  ! PDF parameter for mean of plume 2. [kg/kg]
+      srr1, & ! PDF param for width of plume 1     [(kg/kg)^2]
+      srr2    ! PDF param for width of plume 2.    [(kg/kg)^2]
 
     logical :: l_small_rrainm, l_small_Ncm
 
@@ -190,7 +190,6 @@ module generate_lh_sample_mod
     !   alter two lines in autoconversion_driver.f.
     !-----------------------------------------------------------------------
 
-    ! Use units of [g/kg] to ameliorate numerical roundoff errors.
     ! We prognose rt-thl-w,
     !    but we set means, covariance of N, qr to constants.
 
@@ -247,16 +246,16 @@ module generate_lh_sample_mod
 
       ! rr = specific rain content. [rr] = g rain / kg air
       ! rrainm  = mean of rr; rrp2 = variance of rr, must have rrp2>0.
-      ! rr1  = PDF parameter for mean of plume 1. [rr1] = (g/kg)
-      ! rr2  = PDF parameter for mean of plume 2. [rr2] = (g/kg)
-      ! srr1,2 = PDF param for width of plume 1,2. [srr1,2] = (g/kg)**2
+      ! rr1  = PDF parameter for mean of plume 1. [rr1] = (kg/kg)
+      ! rr2  = PDF parameter for mean of plume 2. [rr2] = (kg/kg)
+      ! srr1,2 = PDF param for width of plume 1,2. [srr1,2] = (kg/kg)**2
 
-      call log_sqd_normalized( dble( rrainm*g_per_kg ), rrp2_on_rrainm2, dble( rr_tol*g_per_kg ), &
+      call log_sqd_normalized( dble( rrainm ), rrp2_on_rrainm2, dble( rr_tol ), &
                                rr1, rr2, srr1, srr2, l_small_rrainm )
 
       ! Means of s, t, w, N, rr for Gaussians 1 and 2
-      mu1 = (/  dble(1.e3*s1), 0.d0, dble(w1), Nc1, rr1  /)
-      mu2 = (/  dble(1.e3*s2), 0.d0, dble(w2), Nc2, rr2  /)
+      mu1 = (/  dble( s1 ), 0.d0, dble(w1), Nc1, rr1  /)
+      mu2 = (/  dble( s2 ), 0.d0, dble(w2), Nc2, rr2  /)
 
       ! An old subroutine, gaus_rotate, couldn't handle large correlations;
       !   I assume the replacement, gaus_condt, has equal trouble.
@@ -264,16 +263,16 @@ module generate_lh_sample_mod
       ! max_mag_correlation = 0.99 in constants.F90
       rrtthl_reduced = min( max_mag_correlation, max( rrtthl, -max_mag_correlation ) )
 
-      ! Within-plume rt-thl correlation terms with rt in g/kg
-      rrtthl_reduced1 = dble(rrtthl_reduced*1.d3*sqrt(srt1*sthl1))
-      rrtthl_reduced2 = dble(rrtthl_reduced*1.d3*sqrt(srt2*sthl2))
+      ! Within-plume rt-thl correlation terms with rt in kg/kg
+      rrtthl_reduced1 = dble(rrtthl_reduced*sqrt( srt1*sthl1 ))
+      rrtthl_reduced2 = dble(rrtthl_reduced*sqrt( srt2*sthl2 ))
 
       ! Covariance (not correlation) matrices of rt-thl-w-Nc-rr
       !    for Gaussians 1 and 2
       ! For now, assume no within-plume correlation of w,Nc,rr with
       !    any other variables.
       Sigma_rtthlw_1(irt,1:d_variables)   = (/  & 
-               dble(1.e6*srt1), & 
+               dble( srt1 ), & 
                rrtthl_reduced1, & 
                0.d0, & 
                0.d0, & 
@@ -281,7 +280,7 @@ module generate_lh_sample_mod
                                  /)
       Sigma_rtthlw_1(ithl,1:d_variables) = (/ & 
                rrtthl_reduced1,  & 
-               dble(sthl1),   & 
+               dble( sthl1 ),   & 
                0.d0, & 
                0.d0, & 
                0.d0 & 
@@ -289,7 +288,7 @@ module generate_lh_sample_mod
       Sigma_rtthlw_1(iw,1:d_variables) = (/ & 
                0.d0, & 
                0.d0, & 
-               dble(sw1), & 
+               dble( sw1 ), & 
                0.d0, & 
                0.d0 & 
                                /)
@@ -308,7 +307,7 @@ module generate_lh_sample_mod
                srr1 & 
                                /)
       Sigma_rtthlw_2(irt,1:d_variables) = (/  & 
-               dble(1.e6*srt2), & 
+               dble( srt2 ), & 
                rrtthl_reduced2,  & 
                0.d0, & 
                0.d0, & 
@@ -316,7 +315,7 @@ module generate_lh_sample_mod
                                /)
       Sigma_rtthlw_2(ithl,1:d_variables) = (/ & 
                rrtthl_reduced2,  & 
-               dble(sthl2),   & 
+               dble( sthl2 ),   & 
                0.d0,  & 
                0.d0,  & 
                0.d0  & 
@@ -324,7 +323,7 @@ module generate_lh_sample_mod
       Sigma_rtthlw_2(iw,1:d_variables) = (/ & 
                0.d0,    & 
                0.d0,    & 
-               dble(sw2), & 
+               dble( sw2 ), & 
                0.d0,  & 
                0.d0         & 
                                /)
@@ -343,12 +342,11 @@ module generate_lh_sample_mod
                srr2 & 
                                /)
 
-      ! Use units of [g/kg] to ameliorate numerical roundoff
-      call sample_points( n_micro_calls, nt_repeat, d_variables, p_matrix, dble(a), & 
-                          dble(1.e3*rt1), dble(thl1),  & 
-                          dble(1.e3*rt2), dble(thl2), & 
-                          dble( crt1 ), dble(1.e3*cthl1),  & 
-                          dble( crt2 ), dble(1.e3*cthl2), & 
+      call sample_points( n_micro_calls, nt_repeat, d_variables, p_matrix, dble( a ), & 
+                          dble( rt1 ), dble( thl1 ),  & 
+                          dble( rt2 ), dble( thl2 ), & 
+                          dble( crt1 ), dble( cthl1 ),  & 
+                          dble( crt2 ), dble( cthl2 ), & 
                           dble( mu1 ), dble( mu2 ),  & 
                           Sigma_rtthlw_1, Sigma_rtthlw_2, & 
                           dble( R1 ), dble( R2 ), & 
@@ -378,7 +376,7 @@ module generate_lh_sample_mod
 !   To be called from pdf_closure of CLUBB.
 
 !   We take samples only from the cloudy part of the grid box.
-!   We use units of g/kg.
+!   We use units of kg/kg.
 ! References:
 !   None
 !----------------------------------------------------------------------
@@ -414,7 +412,7 @@ module generate_lh_sample_mod
     !rt2, thl2 = mean of rt, thl for Gaus comp 2
     double precision, intent(in) :: rt1, thl1, rt2, thl2
 
-    ! Thermodynamic constants for plumes 1 and 2, units of g/kg
+    ! Thermodynamic constants for plumes 1 and 2, units of kg/kg
     double precision, intent(in) :: &
       crt1,  & ! coefficient relating rt, s and t for Gaus comp 1
       cthl1, & ! coeff relating thl, s and t for component 1

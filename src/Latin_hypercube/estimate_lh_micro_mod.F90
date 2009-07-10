@@ -70,7 +70,7 @@ module estimate_lh_micro_mod
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     double precision, dimension(nnzp,n_micro_calls), intent(in) :: &
-      rt, thl ! Total water / Liquid potential temperature      [g/kg] / [K]
+      rt, thl ! Total water / Liquid potential temperature      [kg/kg] / [K]
 
     ! Flag that determines whether we have a special case (false)
     logical, dimension(nnzp), intent(in) :: l_sample_flag
@@ -214,9 +214,8 @@ module estimate_lh_micro_mod
       ! Then we compute Kessler ac analytically.
       !------------------------------------------------------------------------
 
-      ! Use units of [g/kg] to ameliorate numerical roundoff errors.
       ! We prognose rt-thl-w,
-      !    but we set means, covariance of N, qr to constants.
+      !    but we set means, covariance of Nc, rr to constants.
 
       if ( .not. l_sample_flag(level) ) then
 
@@ -233,7 +232,7 @@ module estimate_lh_micro_mod
       else
 
         ! Call microphysics, i.e. Kessler autoconversion.
-        ! A_K = (1e-3/s)*(rc-0.5g/kg)*H(rc-0.5g/kg)
+        ! A_K = (1e-3/s)*(rc-0.5kg/kg)*H(rc-0.5kg/kg)
         call autoconv_driver &
              ( n_micro_calls, d_variables, dble( a ), dble( R1 ), dble( R2 ), &
                X_nl_all_levs(level,1:n_micro_calls,1), & 
@@ -252,10 +251,6 @@ module estimate_lh_micro_mod
 
         ! Convert to real number
         rcm_est(level) = real( rcm_est_dp )
-
-        ! Convert rcm_est back to (kg/kg) and AKm_est back to (kg/kg)/s.
-        rcm_est(level) = 1.0e-3*rcm_est(level)
-        AKm_est(level) = 1.0e-3*AKm_est(level)
 
         ! A test of the scheme:
         ! Compare exact (rcm) and Monte Carlo estimates (rcm_est) of
@@ -371,13 +366,14 @@ module estimate_lh_micro_mod
                              !w, Nc, rr, &
                               X_u_one_lev, ac_m )
 ! Description:
-!   Compute Kessler grid box avg autoconversion (g/kg)/s.
+!   Compute Kessler grid box avg autoconversion (kg/kg)/s.
 ! References:
 !   None
 !-----------------------------------------------------------------------
 
     use constants, only:  &
-      fstderr  ! Constant(s)
+      fstderr, & ! Constant(s)
+      g_per_kg
 
 !   use error_code, only:  &
 !     clubb_at_least_debug_level  ! Procedure(s)
@@ -398,7 +394,7 @@ module estimate_lh_micro_mod
       R1, R2    ! Cloud fraction associated w/ 1st, 2nd mixture component
 
     double precision, dimension(n_micro_calls), intent(in) :: &
-      rc !, & ! n in-cloud values of spec liq water content (when positive) [g/kg].
+      rc !, & ! n in-cloud values of spec liq water content (when positive) [kg/kg].
 !     w,  & ! n in-cloud values of vertical velocity (m/s)
 !     Nc, & ! n in-cloud values of droplet number (#/mg air)
 !     rr    ! n in-cloud values of specific rain content (g/kg)
@@ -456,12 +452,12 @@ module estimate_lh_micro_mod
 !   end if
 
     ! Autoconversion formula prefactor and exponent.
-    ! These are for Kessler autoconversion in (g/kg)/s.
+    ! These are for Kessler autoconversion in (kg/kg)/s.
     coeff  = 1.d-3
     ! expn   = 1.d0
     ! r_crit = 0.3d0
     ! r_crit = 0.7d0
-    r_crit = 0.2d0
+    r_crit = 0.2d0 / g_per_kg
 
     ! Initialize autoconversion in each mixture component
     ac_m1 = 0.d0
@@ -571,8 +567,7 @@ module estimate_lh_micro_mod
 !-------------------------------------------------------------------------------
 
     use constants, only:  &
-      fstderr, & ! Constant(s)
-      g_per_kg
+      fstderr  ! Constant(s)
 
     use parameters_model, only: &
       hydromet_dim
@@ -608,12 +603,12 @@ module estimate_lh_micro_mod
       l_sample_flag  ! Whether we are sampling at this level
 
     double precision, dimension(nnzp,n_micro_calls), intent(in) :: &
-      s_mellor,  & ! n_micro_calls values of 's' (Mellor 1977)            [g/kg]
-      rt,        & ! n_micro_calls values of total water mixing ratio     [g/kg]
+      s_mellor,  & ! n_micro_calls values of 's' (Mellor 1977)            [kg/kg]
+      rt,        & ! n_micro_calls values of total water mixing ratio     [kg/kg]
       thl,       & ! n_micro_calls values of liquid potential temperature [K]
       w,         & ! n_micro_calls values of vertical velocity            [m/s]
       Nc,        & ! n_micro_calls values of droplet number               [#/kg air]
-      rr           ! n_micro_calls values of specific rain content        [g/kg]
+      rr           ! n_micro_calls values of specific rain content        [kg/kg]
 
     double precision, dimension(nnzp,n_micro_calls,d_variables+1), intent(in) :: &
       X_u_all_levs ! N x D+1 Latin hypercube sample from uniform dist
@@ -738,7 +733,7 @@ module estimate_lh_micro_mod
 
       where ( l_sample_flag )
         where( s_mellor(:,sample) > 0.0 )
-          rc_tmp  = real( s_mellor(:,sample) ) / g_per_kg ! Convert from g/kg to kg/kg
+          rc_tmp  = real( s_mellor(:,sample) ) 
         else where
           rc_tmp = 0.0
         end where
@@ -748,7 +743,7 @@ module estimate_lh_micro_mod
 
       where ( l_sample_flag ) 
         w_tmp(:,sample) = real( w(:,sample) )
-        rv_tmp  = real( rt(:,sample) ) / g_per_kg - rc_tmp
+        rv_tmp  = real( rt(:,sample) ) - rc_tmp
         thl_tmp = real( thl(:,sample) )
       else where
         w_tmp(:,sample) = wm
@@ -759,7 +754,7 @@ module estimate_lh_micro_mod
       do i = 1, hydromet_dim, 1
         if ( i == iirrainm ) then
           where ( l_sample_flag )
-            hydromet_tmp(:,i) = real( rr(:,sample) ) / g_per_kg ! Convert from g/kg to kg/kg
+            hydromet_tmp(:,i) = real( rr(:,sample) )
           else where
             hydromet_tmp(:,i) = hydromet(:,i)
           end where
