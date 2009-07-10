@@ -9,11 +9,12 @@
     'endTime' => 10,    # [s]
     'startHeight' => 0, # [m]
     'endHeight' => 100, # [m]
-    'type' => 'timeseries or profile',
+    'type' => 'timeseries',
+    'numVars' => 2,
     'variables' =>
     [
-       {'file' => '', 'name' => 'varname', 'expression' => 'varexpression', 'title' => 'title', 'units' => '', 'lineWidth' => '', 'lineType' => '', 'lineColor' => ''},
-       {'file' => '', 'name' => 'varname', 'expression' => 'varexpression', 'title' => 'title', 'units' => '', 'lineWidth' => '', 'lineType' => '', 'lineColor' => ''}
+       {'file' => '/home/senkbeir', 'name' => 'varname', 'expression' => 'varexpression', 'title' => 'title', 'units' => 'm', 'lineWidth' => '3', 'lineType' => '1', 'lineColor' => 'red'},
+       {'file' => '/home/nielsenb', 'name' => 'varname2', 'expression' => 'varexpression', 'title' => 'title', 'units' => 'm/s', 'lineWidth' => '2', 'lineType' => '3', 'lineColor' => 'blue'}
     ],
     'nightlyOutput' =>
     {

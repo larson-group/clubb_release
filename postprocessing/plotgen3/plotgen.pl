@@ -45,67 +45,103 @@ sub runCases()
 	print("Input Folders: @inputDirs\n");
 	print("Output Folder: $output \n");
 
+	my $plotNumber = 0;
+
 	# Loop through each .case file so the case can be plotted
 	my @cases = <cases/*.cas*>;
 	foreach my $file (@cases) 
 	{
-		print("File: " . $file . "\n");
 		# Read the case file. If there is an error, exit.
 		if (my $err = CaseReader->readCase($file))
 		{
 	    		print(STDERR $err, "\n");
 	    		exit(1);
 	    	}
-		
-		# Print the case title to the HTML page
-		OutputWriter->writeCaseTitle($outputIndex, $CASE::CASE{'headerText'});
-
-		# Print any additional text/html specified
-		if($nightly == 1) # If in nightly mode
-		{
-			my $nightlySubText = $CASE::CASE{'nightlyOutput'}{'subText'};
-			my $nightlySubHtml = $CASE::CASE{'nightlyOutput'}{'subHtml'};
-			
-			# Check to see if there was any additional text specified. If there was,
-			# write it to the HTML file.
-
-			if($nightlySubText)
-			{
-				OutputWriter->writeSubHeader($outputIndex, $nightlySubText);
-			}
-			
-			if($nightlySubHtml)
-			{
-				OutputWriter->writeSubHtml($outputIndex, $nightlySubHtml);
-			}
-		}
-		else # If not in nightly mode
-		{
-			my $subText = $CASE::CASE{'additionalOutput'}{'subText'};
-			my $subHtml = $CASE::CASE{'additionalOutput'}{'subHtml'};
-			
-			if($subText)
-			{
-				OutputWriter->writeSubHeader($outputIndex, $subText);
-			}
-			
-			if($subHtml)
-			{
-				OutputWriter->writeSubHtml($outputIndex, $subHtml);
-			}
-
-		}
-
-		# TODO: Generate the plots
-		print("Variable:" . $CASE::CASE{'variables'}[0]{'type'} . "\n");
-	}
-
 	
-	# Convert the eps files to jpq
-	convertEps();
+		if(dataExists($CASE::CASE{'name'}))
+		{	
+			# Print the case title to the HTML page
+			OutputWriter->writeCaseTitle($outputIndex, $CASE::CASE{'headerText'});
+	
+			# Print any additional text/html specified
+			if($nightly == 1) # If in nightly mode
+			{
+				my $nightlySubText = $CASE::CASE{'nightlyOutput'}{'subText'};
+				my $nightlySubHtml = $CASE::CASE{'nightlyOutput'}{'subHtml'};
+				
+				# Check to see if there was any additional text specified. If there was,
+				# write it to the HTML file.
+	
+				if($nightlySubText)
+				{
+					OutputWriter->writeSubHeader($outputIndex, $nightlySubText);
+				}
+				
+				if($nightlySubHtml)
+				{
+					OutputWriter->writeSubHtml($outputIndex, $nightlySubHtml);
+				}
+			}
+			else # If not in nightly mode
+			{
+				my $subText = $CASE::CASE{'additionalOutput'}{'subText'};
+				my $subHtml = $CASE::CASE{'additionalOutput'}{'subHtml'};
+				
+				if($subText)
+				{
+					OutputWriter->writeSubHeader($outputIndex, $subText);
+				}
+				
+				if($subHtml)
+				{
+					OutputWriter->writeSubHtml($outputIndex, $subHtml);
+				}
+	
+			}
+	
+			# Parse Case information
+			my $caseName =  $CASE::CASE{'name'};
+			my $plotTitle =  $CASE::CASE{'plotTitle'};
+			my $startTime =  $CASE::CASE{'startTime'};
+			my $endTime =  $CASE::CASE{'endTime'};
+			my $startHeight =  $CASE::CASE{'startHeight'};
+			my $endHeight =  $CASE::CASE{'endHeight'};
+			my $units =  $CASE::CASE{'units'};
+			my $type = $CASE::CASE{'type'};
+			my $tickCount = 12344324234532;
 
-	# Add image file to HTML page
-	OutputWriter->placeImage($outputIndex, "jpg/cloud_feedback_s6_page1.eps.jpg");
+			my $matlabArgs = $caseName . " " . $plotTitle . " " . $plotNumber . " " . $type . " " . $startTime . " " . $endTime . " " . $startHeight . " " . $endHeight . " " . $units . " " . $tickCount . " ";
+		
+			# Parse variables from .case file
+			for(my $count = 0; $count < $CASE::CASE{'numVars'}; $count++)
+			{
+				my $file = $CASE::CASE{'variables'}[$count]{'file'};
+				my $name = $CASE::CASE{'variables'}[$count]{'name'};
+				my $expression = $CASE::CASE{'variables'}[$count]{'expression'};
+				my $title = $CASE::CASE{'variables'}[$count]{'title'};
+				my $unit = $CASE::CASE{'variables'}[$count]{'units'};
+				my $lineWidth = $CASE::CASE{'variables'}[$count]{'lineWidth'};
+				my $lineType = $CASE::CASE{'variables'}[$count]{'lineType'};
+				my $lineColor = $CASE::CASE{'variables'}[$count]{'lineColor'};
+
+				$matlabArgs = "$matlabArgs $file $name $expression $title $unit $lineWidth $lineType $lineColor";
+			}
+
+			$plotNumber++;
+
+			print("Matlab args: $matlabArgs \n");
+		}
+		else
+		{
+			print("Not plotting $CASE::CASE{'name'}\n");
+		}
+	
+		# Convert the eps files to jpq
+		convertEps();
+
+		# Add image file to HTML page
+		OutputWriter->placeImage($outputIndex, "jpg/cloud_feedback_s6_page1.eps.jpg");
+	}
 }
 
 sub convertEps()
@@ -117,6 +153,27 @@ sub convertEps()
 		my $filename = basename($eps);
 		system("convert -density 90 $eps $output/jpg/$filename.jpg");
 	}
+}
+
+###############################################################################
+# Checks all input directories to see if one of them contains the current case.
+# Will return true if at least on input folder contains data, otherwise false.
+# #############################################################################
+sub dataExists()
+{
+	my $dataFile = shift(@_);
+	my $retValue = 0;
+	
+	foreach my $currInput (@inputDirs)
+	{
+		my @files = <$currInput/$dataFile*>;
+		if(@files)
+		{
+			$retValue = 1;
+		}
+	}
+
+	return $retValue;
 }
 
 ###############################################################################
@@ -177,12 +234,12 @@ sub readArgs()
 	$numArgs = $#ARGV + 1;
 
 	# Parse any additional arguments
-	foreach my $argnum (0 .. $numArgs) 
+	foreach (@ARGV)
 	{
 		# If the argument does not start with '-' and if $output was not set
-		if(!(@ARGV[$argnum] =~ m/^-/) && !$output)
+		if(!$output)
 		{
-			my $currentDir = abs_path(@ARGV[$argnum]);
+			my $currentDir = abs_path($_);
 
 			if((($numArgs - 1) - $currentCount) > 0)
 			{
@@ -198,8 +255,12 @@ sub readArgs()
 			}
 			else
 			{
+				if($_ =~ m/\/$/)
+				{
+					$currentDir = abs_path(substr($_, 0, length($_) - 1));
+				}
+
 				$output = $currentDir;
-				print($output);
 			}
 			
 			$currentCount++;
