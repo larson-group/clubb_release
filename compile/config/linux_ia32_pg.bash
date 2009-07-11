@@ -25,7 +25,8 @@ ARCH="-tp amd64" # PGF90, amd64
 OPTIMIZE="-O2"
 
 # == NetCDF Location ==
-NETCDF="$HOME/netcdf-3.6.3"
+#NETCDF="$HOME/netcdf-3.6.3"
+NETCDF="/usr/local/netcdf-pgi"
 
 # == LAPACK libraries ==
 # Portland group usually has static versions of these
@@ -34,7 +35,7 @@ LAPACK="-llapack -lblas"
 # == Linking Flags ==
 LDFLAGS="-L$NETCDF/lib -lnetcdf $LAPACK"
 
-FFLAGS="$ARCH $OPTIMIZE"
+FFLAGS="$ARCH $DEBUG"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
