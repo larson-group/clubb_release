@@ -13,8 +13,8 @@
     'numVars' => 2,
     'variables' =>
     [
-       {'file' => '/home/senkbeir', 'name' => 'varname', 'expression' => 'varexpression', 'title' => 'title', 'units' => 'm', 'lineWidth' => '3', 'lineType' => '1', 'lineColor' => 'red'},
-       {'file' => '/home/nielsenb', 'name' => 'varname2', 'expression' => 'varexpression', 'title' => 'title', 'units' => 'm/s', 'lineWidth' => '2', 'lineType' => '3', 'lineColor' => 'blue'}
+       {'name' => 'varname', 'expression' => 'varexpression', 'title' => 'title', 'units' => 'm', 'lineWidth' => '3', 'lineType' => '1', 'lineColor' => 'red'},
+       {'name' => 'varname2', 'expression' => 'varexpression', 'title' => 'title', 'units' => 'm/s', 'lineWidth' => '2', 'lineType' => '3', 'lineColor' => 'blue'}
     ],
     'nightlyOutput' =>
     {

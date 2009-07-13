@@ -9,12 +9,14 @@
 package Plotgen;
 
 use strict;
+
 use CaseReader;
 use OutputWriter;
 use Cwd 'abs_path';
 use Switch;
 use Getopt::Std;
 use File::Basename;
+use Sudo;
 
 # Argument list
 
@@ -98,38 +100,10 @@ sub runCases()
 				}
 	
 			}
-	
-			# Parse Case information
-			my $caseName =  $CASE::CASE{'name'};
-			my $plotTitle =  $CASE::CASE{'plotTitle'};
-			my $startTime =  $CASE::CASE{'startTime'};
-			my $endTime =  $CASE::CASE{'endTime'};
-			my $startHeight =  $CASE::CASE{'startHeight'};
-			my $endHeight =  $CASE::CASE{'endHeight'};
-			my $units =  $CASE::CASE{'units'};
-			my $type = $CASE::CASE{'type'};
-			my $tickCount = 12344324234532;
+			
+			callMatlab($CASE::CASE, $plotNumber);
 
-			my $matlabArgs = $caseName . " " . $plotTitle . " " . $plotNumber . " " . $type . " " . $startTime . " " . $endTime . " " . $startHeight . " " . $endHeight . " " . $units . " " . $tickCount . " ";
-		
-			# Parse variables from .case file
-			for(my $count = 0; $count < $CASE::CASE{'numVars'}; $count++)
-			{
-				my $file = $CASE::CASE{'variables'}[$count]{'file'};
-				my $name = $CASE::CASE{'variables'}[$count]{'name'};
-				my $expression = $CASE::CASE{'variables'}[$count]{'expression'};
-				my $title = $CASE::CASE{'variables'}[$count]{'title'};
-				my $unit = $CASE::CASE{'variables'}[$count]{'units'};
-				my $lineWidth = $CASE::CASE{'variables'}[$count]{'lineWidth'};
-				my $lineType = $CASE::CASE{'variables'}[$count]{'lineType'};
-				my $lineColor = $CASE::CASE{'variables'}[$count]{'lineColor'};
-
-				$matlabArgs = "$matlabArgs $file $name $expression $title $unit $lineWidth $lineType $lineColor";
-			}
-
-			$plotNumber++;
-
-			print("Matlab args: $matlabArgs \n");
+			$plotNumber ++;
 		}
 		else
 		{
@@ -144,6 +118,74 @@ sub runCases()
 	}
 }
 
+###############################################################################
+# Generates the argument list needed for the Matlab part of Plotgen. Also,
+# Matlab is executed using sudo
+# #############################################################################
+sub callMatlab()
+{
+	my $CASE = shift(@_);
+	my $plotNumber = shift(@_);
+
+	# Parse Case information
+	my $caseName =  $CASE::CASE{'name'};
+	my $plotTitle =  $CASE::CASE{'plotTitle'};
+	my $startTime =  $CASE::CASE{'startTime'};
+	my $endTime =  $CASE::CASE{'endTime'};
+	my $startHeight =  $CASE::CASE{'startHeight'};
+	my $endHeight =  $CASE::CASE{'endHeight'};
+	my $units =  $CASE::CASE{'units'};
+	my $type = $CASE::CASE{'type'};
+	my $tickCount = rand(999999999999999);
+
+	my $matlabArgs = "$caseName $plotTitle $plotNumber $type $startTime $endTime $startHeight $endHeight $units $tickCount ";
+
+	# Parse variables from .case file
+	for(my $count = 0; $count < $CASE::CASE{'numVars'}; $count++)
+	{
+		foreach(@inputDirs)
+		{
+			my $file = "$_/$caseName";
+
+			if(allDataFilesExist($file))
+			{
+				my $name = $CASE::CASE{'variables'}[$count]{'name'};
+				my $expression = $CASE::CASE{'variables'}[$count]{'expression'};
+				my $title = $CASE::CASE{'variables'}[$count]{'title'};
+				my $unit = $CASE::CASE{'variables'}[$count]{'units'};
+				my $lineWidth = $CASE::CASE{'variables'}[$count]{'lineWidth'};
+				my $lineType = $CASE::CASE{'variables'}[$count]{'lineType'};
+				my $lineColor = $CASE::CASE{'variables'}[$count]{'lineColor'};
+
+				$matlabArgs = "$matlabArgs $file $name $expression $title $unit $lineWidth $lineType $lineColor";
+			}
+		}
+	}
+
+	print("Matlab args: $matlabArgs \n");
+
+	# Call Matlab
+	my $matlab = Sudo->new(
+		{
+       			sudo         => '/usr/bin/sudo',
+			sudo_args    => '',
+                	username     => 'matlabuser', 
+                	password     => 'lab223matricks',
+                	program      => 'matlab',
+                	program_args => '-nodisplay -nodesktop -r PlotCreator\"($matlabArgs)\"'
+               	});
+
+	my $result = $matlab->sudo_run();
+	if (exists($result->{error}))
+	{
+		print(STDERR $result, "\n");
+		exit(1);
+	}
+}
+
+###############################################################################
+# Converts all EPS files to JPG file
+###############################################################################
 sub convertEps()
 {
 	mkdir "$output/jpg";
@@ -153,6 +195,22 @@ sub convertEps()
 		my $filename = basename($eps);
 		system("convert -density 90 $eps $output/jpg/$filename.jpg");
 	}
+}
+
+###############################################################################
+# Checks the input directory for *_zm.ctl, *_zm.dat, *_zt.ctl and *_zt.dat
+# Will return 1 if all files exist, otherwise 0
+###############################################################################
+sub allDataFilesExist()
+{
+	my $path = shift(@_);
+
+	if(-e "$path" . "_zm.ctl" && -e "$path" . "_zm.dat" && -e "$path" . "_zt.ctl" && -e "$path" . "_zt.dat")
+	{
+		return 1;
+	}
+
+	return 0;
 }
 
 ###############################################################################
