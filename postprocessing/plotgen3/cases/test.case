@@ -13,8 +13,8 @@
     'numVars' => 2,
     'variables' =>
     [
-       {'name' => 'varname', 'expression' => 'varexpression', 'title' => 'title', 'units' => 'm', 'lineWidth' => '3', 'lineType' => '1', 'lineColor' => 'red'},
-       {'name' => 'varname2', 'expression' => 'varexpression', 'title' => 'title', 'units' => 'm/s', 'lineWidth' => '2', 'lineType' => '3', 'lineColor' => 'blue'}
+       {'filename' => 'case_name_zm.ctl', 'name' => 'varname', 'expression' => 'varexpression', 'title' => 'title', 'units' => 'm', 'lineWidth' => '3', 'lineType' => '1', 'lineColor' => 'red'},
+       {'filename' => 'case_name_zt.ctl', 'name' => 'varname2', 'expression' => 'varexpression', 'title' => 'title', 'units' => 'm/s', 'lineWidth' => '2', 'lineType' => '3', 'lineColor' => 'blue'}
     ],
     'nightlyOutput' =>
     {

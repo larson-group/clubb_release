@@ -17,6 +17,12 @@ use Switch;
 use Getopt::Std;
 use File::Basename;
 use Sudo;
+use File::Copy::Recursive qw(fcopy rcopy dircopy fmove rmove dirmove);
+use File::Path;
+
+# Used to create a "random" output directory so multiple runs
+# don't overwrite each other.
+my $randInt = rand(999999999999999);
 
 # Argument list
 
@@ -27,26 +33,50 @@ my $nightly = 0;
 my $overwrite = 0;
 my @inputDirs;
 my $output = "";
+my $outputTemp = "";
 my $plotLes = 0;
 my $plotBest = 0;
 my $plotDec = 0;
 
-readArgs();
+my $outputIndex = "";
 
-my $outputIndex = $output . "/index.html";
+# Do not keep permissions on file copies
+$File::Copy::Recursive::KeepMode = 0;
 
-OutputWriter->writeHeader($outputIndex);
-runCases();
-OutputWriter->writeFooter($outputIndex);
+# Call the entry point to Plotgen
+main();
+
+###############################################################################
+# Plotgen 3 Main subroutine
+###############################################################################
+sub main()
+{
+	readArgs();
+
+	# Ensure that Matlab can write to the temp output folder
+	chmod(0777, $outputTemp);
+
+	print("Input Folders: @inputDirs\n");
+	print("Output Folder: $output \n");
+
+	my $outputIndex = $outputTemp . "/index.html";
+
+	OutputWriter->writeHeader($outputIndex);
+	runCases();
+	OutputWriter->writeFooter($outputIndex);
+
+	# Copy temp. output folder to actual output location and remove the temp. folder
+	dircopy($outputTemp, $output);
+	rmtree($outputTemp);
+
+	exit(0);
+}
 
 ###############################################################################
 # Runs all of the .case file in the cases folder.
 ###############################################################################
 sub runCases()
 {
-	print("Input Folders: @inputDirs\n");
-	print("Output Folder: $output \n");
-
 	my $plotNumber = 0;
 
 	# Loop through each .case file so the case can be plotted
@@ -59,9 +89,9 @@ sub runCases()
 	    		print(STDERR $err, "\n");
 	    		exit(1);
 	    	}
-	
+
 		if(dataExists($CASE::CASE{'name'}))
-		{	
+		{
 			# Print the case title to the HTML page
 			OutputWriter->writeCaseTitle($outputIndex, $CASE::CASE{'headerText'});
 	
@@ -104,17 +134,28 @@ sub runCases()
 			callMatlab($CASE::CASE, $plotNumber);
 
 			$plotNumber ++;
+
+			# Convert the eps files to jpq
+			convertEps($CASE::CASE{'name'});
+
+			# Add image file to HTML page
+			placeImages($CASE::CASE{'name'});
 		}
 		else
 		{
 			print("Not plotting $CASE::CASE{'name'}\n");
 		}
-	
-		# Convert the eps files to jpq
-		convertEps();
+	}
+}
 
-		# Add image file to HTML page
-		OutputWriter->placeImage($outputIndex, "jpg/cloud_feedback_s6_page1.eps.jpg");
+sub placeImages()
+{
+	my $caseName = shift(@_);
+
+	my @imgFiles = <$outputTemp/jpg/$caseName*.jpg>;
+	for(my $x = 0; $x < @imgFiles; $x++)
+	{
+		OutputWriter->placeImage($outputIndex, "$outputTemp/jpg/$caseName" . "_" . "$x.jpg");
 	}
 }
 
@@ -136,18 +177,17 @@ sub callMatlab()
 	my $endHeight =  $CASE::CASE{'endHeight'};
 	my $units =  $CASE::CASE{'units'};
 	my $type = $CASE::CASE{'type'};
-	my $tickCount = rand(999999999999999);
 
-	my $matlabArgs = "$caseName $plotTitle $plotNumber $type $startTime $endTime $startHeight $endHeight $units $tickCount ";
+	my $matlabArgs = "$caseName $plotTitle $plotNumber $type $startTime $endTime $startHeight $endHeight $units $randInt";
 
 	# Parse variables from .case file
 	for(my $count = 0; $count < $CASE::CASE{'numVars'}; $count++)
 	{
 		foreach(@inputDirs)
 		{
-			my $file = "$_/$caseName";
+			my $file = "$_/$CASE::CASE{'variables'}[$count]{'filename'}";
 
-			if(allDataFilesExist($file))
+			if(-e $file)
 			{
 				my $name = $CASE::CASE{'variables'}[$count]{'name'};
 				my $expression = $CASE::CASE{'variables'}[$count]{'expression'};
@@ -162,7 +202,7 @@ sub callMatlab()
 		}
 	}
 
-	print("Matlab args: $matlabArgs \n");
+	print("\nMatlab args: $matlabArgs \n\n");
 
 	# Call Matlab
 	my $matlab = Sudo->new(
@@ -171,7 +211,7 @@ sub callMatlab()
 			sudo_args    => '',
                 	username     => 'matlabuser', 
                 	password     => 'lab223matricks',
-                	program      => 'matlab',
+                	program      => '/usr/local/bin/matlab',
                 	program_args => '-nodisplay -nodesktop -r PlotCreator\"($matlabArgs)\"'
                	});
 
@@ -188,29 +228,13 @@ sub callMatlab()
 ###############################################################################
 sub convertEps()
 {
-	mkdir "$output/jpg";
-	my @epsFiles = <$output/eps/*eps>;
+	mkdir "$outputTemp/jpg";
+	my @epsFiles = <$outputTemp/eps/*eps>;
 	foreach my $eps (@epsFiles)
 	{
 		my $filename = basename($eps);
 		system("convert -density 90 $eps $output/jpg/$filename.jpg");
 	}
-}
-
-###############################################################################
-# Checks the input directory for *_zm.ctl, *_zm.dat, *_zt.ctl and *_zt.dat
-# Will return 1 if all files exist, otherwise 0
-###############################################################################
-sub allDataFilesExist()
-{
-	my $path = shift(@_);
-
-	if(-e "$path" . "_zm.ctl" && -e "$path" . "_zm.dat" && -e "$path" . "_zt.ctl" && -e "$path" . "_zt.dat")
-	{
-		return 1;
-	}
-
-	return 0;
 }
 
 ###############################################################################
@@ -319,6 +343,7 @@ sub readArgs()
 				}
 
 				$output = $currentDir;
+				$outputTemp = "$output" . "_" . "$randInt";
 			}
 			
 			$currentCount++;
@@ -335,6 +360,7 @@ sub readArgs()
 	else
 	{
 		mkdir $output unless -d "$output";
+		mkdir $outputTemp;
 	}
 }
 
