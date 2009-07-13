@@ -59,7 +59,7 @@ sub main()
 	print("Input Folders: @inputDirs\n");
 	print("Output Folder: $output \n");
 
-	my $outputIndex = $outputTemp . "/index.html";
+	$outputIndex = $outputTemp . "/index.html";
 
 	OutputWriter->writeHeader($outputIndex);
 	runCases();
