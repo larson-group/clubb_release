@@ -34,7 +34,7 @@ classdef ProfileFunctions
 			percentage = 95;
 			
 			% Normalize units to a factor of 1.
-			percentage = percentage/100;
+			percentage = percentage / 100;
 			
 			% The variable 'equiv_space' is the pure number of units of the variable 
 			% being graphed to be displayed on either side of the vertical line if 
@@ -56,10 +56,10 @@ classdef ProfileFunctions
    				xmax = xmax + equiv_space;
 			else
    				xdiff = xmax - xmin;
-   				xrange = xdiff/percentage;
+   				xrange = xdiff / percentage;
    				xmedian = ( xmin + xmax ) / 2;
-   				xmin = xmedian - xrange/2;
-   				xmax = xmedian + xrange/2;
+   				xmin = xmedian - xrange / 2;
+   				xmax = xmedian + xrange / 2;
 			end
 		
 			axis([ xmin xmax startHeight endHeight ])

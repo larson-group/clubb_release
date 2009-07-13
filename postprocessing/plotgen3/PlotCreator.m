@@ -73,14 +73,15 @@ for i=1:numLines
 		eval([varString, '= variableData;']);
 	end
 
-	%Read in time and height
-	%We need to convert the variable name to read from a cell array to a string
+	%Create a time array
 	if strcmp(extension, 'ctl')
-		[timeData, levels] = VariableReadGrADS(filePath, 'time', startTime, endTime);
-		[heightData, levels] = VariableReadGrADS(filePath, 'height', startTime, endTime);
+		[dummy, dummy , dummy, t_time_steps, time_step_length, dummy, dummy] = header_read_expanded(filePath);
 	elseif strcmp(extension, 'nc')
-		[timeData, levels] = VariableReadNC(filePath, 'time', startTime, endTime);
-		[heightData, levels] = VariableReadNC(filePath, 'height', startTime, endTime);
+		[dummy, dummy , dummy, t_time_steps, time_step_length, dummy, dummy] = header_read_expanded_netcdf(filePath);
+	end
+
+	for k=1:t_time_steps
+		times = k * time_step_length;
 	end
 
 	%Now evaluate the expression using the read in values,
@@ -98,7 +99,13 @@ for i=1:numLines
 		ProfileFunctions.addLegend(lines, legendText);
 		ProfileFunctions.setAxis(min(valueToPlot), max(valueToPlot), startHeight, endHeight);
 	elseif strcmp(plotType, 'timeseries')
-
+		lines(i) = TimeseriesFunctions.addLine(lineName, times, valueToPlot, lineWidth, lineType, lineColor);
+		legendText(i,1:size(lineName,2)) = lineName;
+		
+		TimeseriesFunctions.setTitle(plotTitle);
+		TimeseriesFunctions.setAxisLabels('[s]', plotUnits); 
+		TimeseriesFunctions.addLegend(lines, legendText);
+		TimeseriesFunctions.setAxis(min(valueToPlot), max(valueToPlot), startTime, endTime);
 	end
 end
 
