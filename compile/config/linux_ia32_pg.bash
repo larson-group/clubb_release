@@ -30,12 +30,13 @@ NETCDF="/usr/local/netcdf-pgi"
 
 # == LAPACK libraries ==
 # Portland group usually has static versions of these
-LAPACK="-llapack -lblas"
+#LAPACK="-llapack -lblas"
+LAPACK="-lacml -lacml_mv"
 
 # == Linking Flags ==
 LDFLAGS="-L$NETCDF/lib -lnetcdf $LAPACK"
 
-FFLAGS="$ARCH $DEBUG"
+FFLAGS="$ARCH $DEBUG -Mbackslash"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
@@ -52,8 +53,6 @@ RANLIB=ranlib
 # == Shared library processing ==
 SHARED=$FC
 SHAREDFLAGS="-KPIC -shared"
-
-
 
 # Location of 'mkmf' utility
 mkmf=$dir/mkmf
