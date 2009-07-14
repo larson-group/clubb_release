@@ -253,9 +253,9 @@ module generate_lh_sample_mod
       ! Compute PDF parameters for Nc, rr.
       ! Assume that Nc, rr obey single-lognormal distributions
 
-      ! Nc  = droplet number concentration.  [N] = number / kg air
+      ! Nc  = droplet number concentration.  [Nc] = number / kg air
       ! Ncm  = mean of N; must have Ncm>0
-      ! Ncp2_on_Ncm2 = variance of N divided by Ncm^2; must have Ncp2>0.
+      ! Ncp2_on_Ncm2 = variance of Nc divided by Ncm^2; must have Ncp2>0.
       ! Nc1  = PDF parameter for mean of plume 1. [Nc1] = (#/kg)
       ! Nc2  = PDF parameter for mean of plume 2. [Nc2] = (#/kg)
       ! sNc1,2 = PDF param for width of plume 1,2. [sNc1,2] = (#/kg)**2
@@ -282,7 +282,7 @@ module generate_lh_sample_mod
       end if
 
       if ( iiLH_Nr > 0 ) then 
-        Nrm = dble( max( hydromet(iiNrm), 1.0 ) )
+        Nrm = dble( hydromet(iiNrm) )
         Nrp2_on_Nrm2 = dble( hydromet_corr(iiNrm,iiNrm) )
 
         call log_sqd_normalized( Nrm, Nrp2_on_Nrm2, dble( Nr_tol ), &
@@ -290,8 +290,6 @@ module generate_lh_sample_mod
       end if
 
       ! Means of s, t, w, Nc, Nr, rr for Gaussians 1 and 2
-!     mu1 = (/  dble( s1 ), 0.d0, dble(w1), Nc1, rr1  /)
-!     mu2 = (/  dble( s2 ), 0.d0, dble(w2), Nc2, rr2  /)
 
       mu1((/iiLH_rt,iiLH_thl,iiLH_w/)) &
         = (/ dble( s1 ), 0.d0, dble( w1 ) /)
