@@ -86,10 +86,10 @@ module microphys_driver
       iiLH_Nc
 
     use KK_microphys_module, only: &
-      rrp2_rrainm2_cloud, Nrp2_Nrm2_cloud, Ncp2_Ncm2_cloud, & ! Variables
+      rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, & ! Variables
       corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
-      corr_sNc_NL_cloud, rrp2_rrainm2_below, &
-      Nrp2_Nrm2_below, Ncp2_Ncm2_below, &
+      corr_sNc_NL_cloud, rrp2_on_rrainm2_below, &
+      Nrp2_on_Nrm2_below, Ncp2_on_Ncm2_below, &
       corr_rrNr_LL_below, corr_srr_NL_below, &
       corr_sNr_NL_below, corr_sNc_NL_below, &
       C_evap, r_0
@@ -139,10 +139,10 @@ module microphys_driver
       l_seifert_beheng, l_predictnc, l_specify_aerosol, l_subgrid_w, &
       l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, &
       l_latin_hypercube_sampling, LH_microphys_calls, LH_sequence_length, &
-      rrp2_rrainm2_cloud, Nrp2_Nrm2_cloud, Ncp2_Ncm2_cloud, &
+      rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, &
       corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
-      corr_sNc_NL_cloud, rrp2_rrainm2_below, &
-      Nrp2_Nrm2_below, Ncp2_Ncm2_below, &
+      corr_sNc_NL_cloud, rrp2_on_rrainm2_below, &
+      Nrp2_on_Nrm2_below, Ncp2_on_Ncm2_below, &
       corr_rrNr_LL_below, corr_srr_NL_below, &
       corr_sNr_NL_below, corr_sNc_NL_below, &
       C_evap, r_0, microphys_start_time, &
@@ -166,17 +166,17 @@ module microphys_driver
     !---------------------------------------------------------------------------
 
     ! Parameters for in-cloud (from SAM RF02 DO).
-    rrp2_rrainm2_cloud = 0.766
-    Nrp2_Nrm2_cloud    = 0.429
-    Ncp2_Ncm2_cloud    = 0.003
+    rrp2_on_rrainm2_cloud = 0.766
+    Nrp2_on_Nrm2_cloud    = 0.429
+    Ncp2_on_Ncm2_cloud    = 0.003
     corr_rrNr_LL_cloud = 0.786
     corr_srr_NL_cloud  = 0.242
     corr_sNr_NL_cloud  = 0.285
     corr_sNc_NL_cloud  = 0.433
     ! Parameters for below-cloud (from SAM RF02 DO).
-    rrp2_rrainm2_below = 8.97
-    Nrp2_Nrm2_below    = 12.03
-    Ncp2_Ncm2_below    = 0.00 ! Not applicable below cloud.
+    rrp2_on_rrainm2_below = 8.97
+    Nrp2_on_Nrm2_below    = 12.03
+    Ncp2_on_Ncm2_below    = 0.00 ! Not applicable below cloud.
     corr_rrNr_LL_below = 0.886
     corr_srr_NL_below  = 0.056
     corr_sNr_NL_below  = 0.015
@@ -526,9 +526,10 @@ module microphys_driver
         KK_microphys ! Procedure(s)
 
     use KK_microphys_module, only: & 
-      rrp2_rrainm2_cloud, & ! Variable(s)
-      Nrp2_Nrm2_cloud, & 
-      Ncp2_Ncm2_cloud  
+      rrp2_on_rrainm2_cloud, & ! Variable(s)
+      Nrp2_on_Nrm2_cloud, & 
+      Ncp2_on_Ncm2_cloud, &
+      corr_rrNr_LL_cloud
 
     use morrison_micro_driver_mod, only: &
       morrison_micro_driver
@@ -849,9 +850,12 @@ module microphys_driver
 
         ! For latin hypercube sampling
         hydromet_corr(:,:) = 0.0 ! Initialize to 0
-        hydromet_corr(iiNcm,iiNcm)       = Ncp2_Ncm2_cloud
-        hydromet_corr(iiNrm,iiNrm)       = Nrp2_Nrm2_cloud
-        hydromet_corr(iirrainm,iirrainm) = rrp2_rrainm2_cloud
+        hydromet_corr(iiNcm,iiNcm)       = Ncp2_on_Ncm2_cloud
+        hydromet_corr(iiNrm,iiNrm)       = Nrp2_on_Nrm2_cloud
+        hydromet_corr(iirrainm,iirrainm) = rrp2_on_rrainm2_cloud
+
+        hydromet_corr(iirrainm,iiNrm)    = corr_rrNr_LL_cloud
+        hydromet_corr(iiNrm,iirrainm)    = corr_rrNr_LL_cloud
 
         call latin_hypercube_driver &
              ( real( dt ), iter, d_variables, LH_microphys_calls, &
@@ -910,9 +914,9 @@ module microphys_driver
 
         ! For latin hypercube sampling
         hydromet_corr(:,:) = 0.0 ! Initialize to 0
-        hydromet_corr(iiNcm,iiNcm)       = Ncp2_Ncm2_cloud
-        hydromet_corr(iiNrm,iiNrm)       = Nrp2_Nrm2_cloud
-        hydromet_corr(iirrainm,iirrainm) = rrp2_rrainm2_cloud
+        hydromet_corr(iiNcm,iiNcm)       = Ncp2_on_Ncm2_cloud
+        hydromet_corr(iiNrm,iiNrm)       = Nrp2_on_Nrm2_cloud
+        hydromet_corr(iirrainm,iirrainm) = rrp2_on_rrainm2_cloud
 
         call latin_hypercube_driver &
              ( real( dt ), iter, d_variables, LH_microphys_calls, &

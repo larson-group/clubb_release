@@ -29,9 +29,9 @@ module KK_microphys_module
 
   ! Parameters for in-cloud (from SAM RF02 DO).
   real, public :: &       ! RF02 value
-    rrp2_rrainm2_cloud, & ! 0.766
-    Nrp2_Nrm2_cloud,    & ! 0.429
-    Ncp2_Ncm2_cloud,    & ! 0.003
+    rrp2_on_rrainm2_cloud, & ! 0.766
+    Nrp2_on_Nrm2_cloud,    & ! 0.429
+    Ncp2_on_Ncm2_cloud,    & ! 0.003
     corr_rrNr_LL_cloud, & ! 0.786
     corr_srr_NL_cloud,  & ! 0.242
     corr_sNr_NL_cloud,  & ! 0.285
@@ -39,9 +39,9 @@ module KK_microphys_module
 
   ! Parameters for below-cloud (from SAM RF02 DO).
   real, public :: &       ! RF02 value
-    rrp2_rrainm2_below, & ! 8.97
-    Nrp2_Nrm2_below,    & ! 12.03
-    Ncp2_Ncm2_below,    & ! 0.00 ! Not applicable below cloud.
+    rrp2_on_rrainm2_below, & ! 8.97
+    Nrp2_on_Nrm2_below,    & ! 12.03
+    Ncp2_on_Ncm2_below,    & ! 0.00 ! Not applicable below cloud.
     corr_rrNr_LL_below, & ! 0.886
     corr_srr_NL_below,  & ! 0.056
     corr_sNr_NL_below,  & ! 0.015
@@ -208,13 +208,13 @@ module KK_microphys_module
       Nrm_mc_tndcy       ! Rain drop number conc. micro. tend.      [(num/kg)/s]
 
     real, dimension(nnzp) :: & 
-      rrp2_rrainm2, & ! rrp2/rrainm^2            []
-      Nrp2_Nrm2,    & ! Nrp2/Nrm^2               []
-      Ncp2_Ncm2,    & ! Ncp2/Ncm^2               []
-      corr_rrNr_LL, & ! Correlation of rr and Nr []
-      corr_srr_NL,  & ! Correlation of s and rr  []
-      corr_sNr_NL,  & ! Correlation of s and Nr  []
-      corr_sNc_NL     ! Correlation of s and Nc  []
+      rrp2_on_rrainm2, & ! rrp2/rrainm^2            [-]
+      Nrp2_on_Nrm2,    & ! Nrp2/Nrm^2               [-]
+      Ncp2_on_Ncm2,    & ! Ncp2/Ncm^2               [-]
+      corr_rrNr_LL,    & ! Correlation of rr and Nr [-]
+      corr_srr_NL,     & ! Correlation of s and rr  [-]
+      corr_sNr_NL,     & ! Correlation of s and Nr  [-]
+      corr_sNc_NL        ! Correlation of s and Nc  [-]
 
     real, dimension(nnzp) :: & 
       T_in_K ! Absolute temperature     [K]
@@ -312,17 +312,17 @@ module KK_microphys_module
     ! If there is cloud at a given vertical level, then the ###_cloud value
     ! is used.  Otherwise, the ###_below value is used.
     where ( rcm >= rc_tol )
-      rrp2_rrainm2 = rrp2_rrainm2_cloud
-      Nrp2_Nrm2    = Nrp2_Nrm2_cloud
-      Ncp2_Ncm2    = Ncp2_Ncm2_cloud
+      rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
+      Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
+      Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
       corr_rrNr_LL = corr_rrNr_LL_cloud
       corr_srr_NL  = corr_srr_NL_cloud
       corr_sNr_NL  = corr_sNr_NL_cloud
       corr_sNc_NL  = corr_sNc_NL_cloud
     else where
-      rrp2_rrainm2 = rrp2_rrainm2_below
-      Nrp2_Nrm2    = Nrp2_Nrm2_below
-      Ncp2_Ncm2    = Ncp2_Ncm2_below
+      rrp2_on_rrainm2 = rrp2_on_rrainm2_below
+      Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
+      Ncp2_on_Ncm2    = Ncp2_on_Ncm2_below
       corr_rrNr_LL = corr_rrNr_LL_below
       corr_srr_NL  = corr_srr_NL_below
       corr_sNr_NL  = corr_sNr_NL_below
@@ -364,8 +364,8 @@ module KK_microphys_module
     do k = 1, nnzp, 1
 
       mean_vol_rad(k) &
-      = mean_volume_radius( l_local_kk, rrainm(k), Nrm(k), rrp2_rrainm2(k),  & 
-                            Nrp2_Nrm2(k), corr_rrNr_LL(k) )
+      = mean_volume_radius( l_local_kk, rrainm(k), Nrm(k), rrp2_on_rrainm2(k),  & 
+                            Nrp2_on_Nrm2(k), corr_rrNr_LL(k) )
 
     enddo
 
@@ -473,7 +473,7 @@ module KK_microphys_module
                           s1(k), ss1(k), s2(k), ss2(k), & 
                           thl1(k), thl2(k), rc1(k), rc2(k), a(k), & 
                           p_in_Pa(k), exner(k), T_in_K(k), Supsat(k),  & 
-                          rrp2_rrainm2(k), Nrp2_Nrm2(k), corr_srr_NL(k), & 
+                          rrp2_on_rrainm2(k), Nrp2_on_Nrm2(k), corr_srr_NL(k), & 
                           corr_sNr_NL(k), corr_rrNr_LL(k) )
 
 
@@ -492,7 +492,7 @@ module KK_microphys_module
       rrainm_auto(k)  & 
       = autoconv_rrainm( l_local_kk, rcm(k), Ncm(k), s1(k), ss1(k),  & 
                          s2(k), ss2(k), a(k), rho(k), & 
-                         Ncp2_Ncm2(k), corr_sNc_NL(k) )
+                         Ncp2_on_Ncm2(k), corr_sNc_NL(k) )
 
 !     endif ! l_latin_hypercube_sampling
       ! End Vince Larson's addition
@@ -500,7 +500,7 @@ module KK_microphys_module
       rrainm_accr(k)  & 
       = accretion_rrainm( l_local_kk, rcm(k), rrainm(k), s1(k), ss1(k), & 
                           s2(k), ss2(k), a(k),  & 
-                          rrp2_rrainm2(k), corr_srr_NL(k) )
+                          rrp2_on_rrainm2(k), corr_srr_NL(k) )
 
       ! Now find the elements that make up the right-hand side of the
       ! equation, rr, for rain drop number concentration, Nrm.
@@ -673,8 +673,8 @@ module KK_microphys_module
   !
   !-----------------------------------------------------------------------
 
-  FUNCTION mean_volume_radius( l_local_kk, rrainm, Nrm, rrp2_rrainm2,  & 
-                               Nrp2_Nrm2, corr_rrNr_LL )
+  FUNCTION mean_volume_radius( l_local_kk, rrainm, Nrm, rrp2_on_rrainm2,  & 
+                               Nrp2_on_Nrm2, corr_rrNr_LL )
 
     USE constants, only: & 
         Nr_tol,  & ! Variable(s)
@@ -684,17 +684,22 @@ module KK_microphys_module
 
     implicit none
 
+    ! External
+    intrinsic :: sqrt
+
     ! Input variables.
     logical, intent(in) :: &
       l_local_kk ! Use local formula
 
-    REAL, INTENT(IN):: rrainm          ! Grid-box average rrainm     [kg kg^-1]
-!        REAL, INTENT(IN):: rrp2         ! Grid-box rr variance     [kg^2 kg^-2]
-    REAL, INTENT(IN):: Nrm          ! Grid-box average Nrm     [kg^-1]
-!        REAL, INTENT(IN):: Nrp2         ! Grid-box Nr variance     [kg^-2]
-    REAL, INTENT(IN):: rrp2_rrainm2    ! rrp2/rrainm^2               []
-    REAL, INTENT(IN):: Nrp2_Nrm2    ! Nrp2/Nrm^2               []
-    REAL, INTENT(IN):: corr_rrNr_LL ! Correlation of rr and Nr []
+    REAL, INTENT(IN) ::  &
+      rrainm, &  ! Grid-box average rrainm  [kg kg^-1]
+!     rrp2       ! Grid-box rr variance     [kg^2 kg^-2]
+      Nrm        ! Grid-box average Nrm     [kg^-1]
+!     Nrp2       ! Grid-box Nr variance     [kg^-2]
+    REAL, INTENT(IN) :: &
+      rrp2_on_rrainm2, & ! rrp2/rrainm^2            [-]
+      Nrp2_on_Nrm2,    & ! Nrp2/Nrm^2               [-]
+      corr_rrNr_LL       ! Correlation of rr and Nr [-]
 
     ! Output variables.
     REAL:: mean_volume_radius       ! [m]
@@ -711,6 +716,7 @@ module KK_microphys_module
     REAL:: corr_rrNr   ! Correlation of rr and Nr              []
 
 !-------------------------------------------------------------------------------
+    ! ---- Begin Code ----
 
     IF ( l_local_kk ) THEN
 
@@ -741,13 +747,13 @@ module KK_microphys_module
 
         ! rr is distributed Lognormally.
         mu_rr = rrainm
-!              sigma_rr = SQRT(rrp2)
-        sigma_rr = rrainm * SQRT(rrp2_rrainm2)
+!       sigma_rr = SQRT(rrp2)
+        sigma_rr = rrainm * SQRT(rrp2_on_rrainm2)
 
         ! Nr is distributed Lognormally.
         mu_Nr = Nrm
-!              sigma_Nr = SQRT(Nrp2)
-        sigma_Nr = Nrm * SQRT(Nrp2_Nrm2)
+!       sigma_Nr = SQRT(Nrp2)
+        sigma_Nr = Nrm * SQRT(Nrp2_on_Nrm2)
 
         ! Correlations.
         corr_rrNr = corr_rrNr_LL
@@ -838,7 +844,7 @@ module KK_microphys_module
                           s1, ss1, s2, ss2, & 
                           thl1, thl2, rc1, rc2, a, & 
                           p_in_Pa, exner, T_in_K, Supsat,  & 
-                          rrp2_rrainm2, Nrp2_Nrm2, corr_srr_NL, & 
+                          rrp2_on_rrainm2, Nrp2_on_Nrm2, corr_srr_NL, & 
                           corr_sNr_NL, corr_rrNr_LL  )
 
     USE constants, only: & 
@@ -863,31 +869,31 @@ module KK_microphys_module
     logical, intent(in) :: &
       l_local_kk ! Use local formula
 
-    REAL, INTENT(IN):: rrainm          ! Grid-box average rrainm     [kg kg^-1]
-!        REAL, INTENT(IN):: rrp2         ! Grid-box rr variance     [kg^2 kg^-2]
-    REAL, INTENT(IN):: Nrm          ! Grid-box average Nrm     [kg^-1]
-!        REAL, INTENT(IN):: Nrp2         ! Grid-box Nr variance     [kg^-2]
-    REAL, INTENT(IN):: s1           ! Plume 1 average s        [kg kg^-1]
-    REAL, INTENT(IN):: ss1          ! Plume 1 sigma s1 (not sigma^2 s1)
-    !                          [kg kg^-1]
-    REAL, INTENT(IN):: s2           ! Plume 2 average s        [kg kg^-1]
-    REAL, INTENT(IN):: ss2          ! Plume 2 sigma s2 (not sigma^2 s2)
-    !                          [kg kg^-1]
-    REAL, INTENT(IN):: thl1         ! Plume 1 average theta-l  [K]
-    REAL, INTENT(IN):: thl2         ! Plume 2 average theta-l  [K]
-    REAL, INTENT(IN):: rc1          ! Plume 1 average rc       [kg kg^-1]
-    REAL, INTENT(IN):: rc2          ! Plume 2 average rc       [kg kg^-1]
-    REAL, INTENT(IN):: a            ! Relative weight of each individual
-    ! Gaussian "plume."        []
-    REAL, INTENT(IN):: p_in_Pa        ! Grid-box average pressure [Pa]
-    REAL, INTENT(IN):: exner        ! Grid-box average exner function [-]
-    REAL, INTENT(IN):: T_in_K         ! Grid-box average Temperature [K]
-    REAL, INTENT(IN):: Supsat       ! Grid-box average Supersaturation []
-    REAL, INTENT(IN):: rrp2_rrainm2    ! rrp2/rrainm^2               []
-    REAL, INTENT(IN):: Nrp2_Nrm2    ! Nrp2/Nrm^2               []
-    REAL, INTENT(IN):: corr_srr_NL  ! Correlation of s and rr  []
-    REAL, INTENT(IN):: corr_sNr_NL  ! Correlation of s and Nr  []
-    REAL, INTENT(IN):: corr_rrNr_LL ! Correlation of rr and Nr []
+    real, intent(in) :: &
+      rrainm,    & ! Grid-box average rrainm           [kg kg^-1]
+!     rrp2,      & ! Grid-box rr variance              [kg^2 kg^-2]
+      Nrm,       & ! Grid-box average Nrm              [kg^-1]
+!     Nrp2,      & ! Grid-box Nr variance              [kg^-2]
+      s1,        & ! Plume 1 average s                 [kg kg^-1]
+      ss1,       & ! Plume 1 sigma s1 (not sigma^2 s1) [kg kg^-1]
+      s2,        & ! Plume 2 average s                 [kg kg^-1]
+      ss2,       & ! Plume 2 sigma s2 (not sigma^2 s2) [kg kg^-1]
+      thl1,      & ! Plume 1 average theta-l           [K]
+      thl2,      & ! Plume 2 average theta-l           [K]
+      rc1,       & ! Plume 1 average rc                [kg kg^-1]
+      rc2,       & ! Plume 2 average rc                [kg kg^-1]
+      a            ! Relative weight of each individual Gaussian "plume." [-]
+
+    real, intent(in) :: &
+      p_in_Pa,        &! Grid-box average pressure        [Pa]
+      exner,          &! Grid-box average exner function  [-]
+      T_in_K,         &! Grid-box average Temperature     [K]
+      Supsat,         &! Grid-box average Supersaturation [-]
+      rrp2_on_rrainm2,&! rrp2/rrainm^2                    [-]
+      Nrp2_on_Nrm2,   &! Nrp2/Nrm^2                       [-]
+      corr_srr_NL,    &! Correlation of s and rr          [-]
+      corr_sNr_NL,    &! Correlation of s and Nr          [-]
+      corr_rrNr_LL     ! Correlation of rr and Nr         [-]
 
     ! Output variables.
     REAL:: cond_evap_rrainm  ! [kg kg^-1 s^-1]
@@ -997,12 +1003,12 @@ module KK_microphys_module
         ! rr is distributed Lognormally.
         mu_rr = rrainm
 !              sigma_rr = SQRT(rrp2)
-        sigma_rr = rrainm * SQRT(rrp2_rrainm2)
+        sigma_rr = rrainm * SQRT(rrp2_on_rrainm2)
 
         ! Nr is distributed Lognormally.
         mu_Nr = Nrm
 !              sigma_Nr = SQRT(Nrp2)
-        sigma_Nr = Nrm * SQRT(Nrp2_Nrm2)
+        sigma_Nr = Nrm * SQRT(Nrp2_on_Nrm2)
 
         ! Correlations.
         corr_srr = corr_srr_NL
@@ -1127,7 +1133,7 @@ module KK_microphys_module
 
   FUNCTION autoconv_rrainm( l_local_kk, rcm, Ncm, s1, ss1,  & 
                          s2, ss2, a, rho, & 
-                         Ncp2_Ncm2, corr_sNc_NL )
+                         Ncp2_on_Ncm2, corr_sNc_NL )
 
     USE constants, only: & 
         Nc_tol,  & ! Variable(s)
@@ -1153,7 +1159,7 @@ module KK_microphys_module
     ! Gaussian "plume."        []
     REAL, INTENT(IN):: rho        ! Grid-box average density (t-level)
     !                          [kg m^-3]
-    REAL, INTENT(IN):: Ncp2_Ncm2   ! Ncp2/Ncm^2               []
+    REAL, INTENT(IN):: Ncp2_on_Ncm2   ! Ncp2/Ncm^2               []
     REAL, INTENT(IN):: corr_sNc_NL ! Correlation of s and Nc  []
 
     ! Output variables.
@@ -1208,8 +1214,8 @@ module KK_microphys_module
 
         ! Nc is distributed Lognormally.
         mu_Nc = Ncm
-!              sigma_Nc = SQRT(Ncp2)
-        sigma_Nc = Ncm * SQRT(Ncp2_Ncm2)
+!       sigma_Nc = SQRT(Ncp2)
+        sigma_Nc = Ncm * SQRT(Ncp2_on_Ncm2)
 
         ! Correlations.
         corr_sNc = corr_sNc_NL
@@ -1304,7 +1310,7 @@ module KK_microphys_module
 
   FUNCTION accretion_rrainm( l_local_kk, rcm, rrainm, s1, ss1, & 
                           s2, ss2, a,  & 
-                          rrp2_rrainm2, corr_srr_NL )
+                          rrp2_on_rrainm2, corr_srr_NL )
 
     USE constants, only: & 
         rr_tol,  & ! Variable(s)
@@ -1317,9 +1323,9 @@ module KK_microphys_module
       l_local_kk ! Use local formula
 
     REAL, INTENT(IN):: rcm         ! Grid-box average rcm     [kg kg^-1]
-!        REAL, INTENT(IN):: rcp2        ! Grid-box rc variance     [kg^2 kg^-2]
+!   REAL, INTENT(IN):: rcp2        ! Grid-box rc variance     [kg^2 kg^-2]
     REAL, INTENT(IN):: rrainm         ! Grid-box average rrainm     [kg kg^-1]
-!        REAL, INTENT(IN):: rrp2        ! Grid-box rr variance     [kg^2 kg^-2]
+!   REAL, INTENT(IN):: rrp2        ! Grid-box rr variance     [kg^2 kg^-2]
     REAL, INTENT(IN):: s1          ! Plume 1 average s        [kg kg^-1]
     REAL, INTENT(IN):: ss1         ! Plume 1 sigma s1 (not sigma^2 s1)
     !                          [kg kg^-1]
@@ -1328,7 +1334,7 @@ module KK_microphys_module
     !                          [kg kg^-1]
     REAL, INTENT(IN):: a           ! Relative weight of each individual
     ! Gaussian "plume."        []
-    REAL, INTENT(IN):: rrp2_rrainm2   ! rrp2/rrainm^2               []
+    REAL, INTENT(IN):: rrp2_on_rrainm2   ! rrp2/rrainm^2               []
     REAL, INTENT(IN):: corr_srr_NL ! Correlation of s and rr  []
 
     ! Output variables.
@@ -1382,8 +1388,8 @@ module KK_microphys_module
 
         ! rr is distributed Lognormally.
         mu_rr = rrainm
-!              sigma_rr = SQRT(rrp2)
-        sigma_rr = rrainm * SQRT(rrp2_rrainm2)
+!       sigma_rr = SQRT(rrp2)
+        sigma_rr = rrainm * SQRT(rrp2_on_rrainm2)
 
         ! Correlations.
         corr_srr = corr_srr_NL
