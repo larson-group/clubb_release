@@ -29,10 +29,12 @@ module endian
   intrinsic :: selected_int_kind, ichar, transfer
 
   ! Parameters
-  integer, parameter :: i4 = 4 ! 4 byte long integer
-  
+  integer, parameter :: &
+    i4  = 4, & ! 4 byte long integer
+    ich = ichar( transfer( 1_i4, "a" ) )
+
   logical, parameter :: &
-    big_endian    = ichar( transfer( 1_i4, "a" ) ) == 0, &
+    big_endian    = ich == 0, &
     little_endian = .not. big_endian
 
   contains
