@@ -29,7 +29,7 @@ levData = 0;
 for i = 1:numVars
 	%See if the variable we found is the variable we are interested in
 	if ( strcmp( strtrim(listofparams(i, :)), variableToRead ) )
-		varData = read_grads_hoc_endian([dataFilePath, dataFileName], 'ieee-le', nz, t_start, t_end, i, numVars);
+		varData = read_netcdf_hoc([dataFilePath, dataFileName], nz, t_start, t_end, i, numVars);
 	end
 end
 
