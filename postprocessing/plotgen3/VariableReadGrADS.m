@@ -19,7 +19,7 @@ elseif ( t_end > numTimesteps )
 end
 
 %Append the data file name to the path of the passed in file
-lastSlash =  max(regexp( filePath, '\/' ));
+lastSlash = max(regexp( filePath, '\/' ));
 dataFilePath = filePath(1:lastSlash);
 
 %Set a default value if the passed in variable is not found

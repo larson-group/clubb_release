@@ -18,10 +18,6 @@ elseif ( t_end > numTimesteps )
 	t_end = numTimesteps;
 end
 
-%Append the data file name to the path of the passed in file
-lastSlash =  max(regexp( filePath, '\/' ));
-dataFilePath = filePath(1:lastSlash);
-
 %Set a default value if the passed in variable is not found
 varData(1:nz) = 0;
 levData = 0;
@@ -29,7 +25,7 @@ levData = 0;
 for i = 1:numVars
 	%See if the variable we found is the variable we are interested in
 	if ( strcmp( strtrim(listofparams(i, :)), variableToRead ) )
-		varData = read_netcdf_hoc([dataFilePath, dataFileName], nz, t_start, t_end, i, numVars);
+		varData = read_netcdf_hoc(filePath, nz, t_start, t_end, i, numVars);
 	end
 end
 
