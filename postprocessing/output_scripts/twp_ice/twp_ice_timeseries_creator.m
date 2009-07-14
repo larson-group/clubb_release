@@ -229,12 +229,12 @@ levsdimid = netcdf.defdim(ncid,'levs', sfc_nz);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 timevarid = define_variable( 'time' ,'hours since 0000Z 20 Jan 2006', 'h', tdimid, ncid );
-fsvarid = define_variable( 'Fs' ,'surface turbulent ﬂux of sensible heat', 'W m^-2', [levsdimid tdimid], ncid );
-fqvarid = define_variable( 'Fq' ,'surface turbulent ﬂux of latent heat', 'W m^-2', [levsdimid tdimid], ncid );
-dTFsw0varid = define_variable( 'dTFsw0' ,'total surface downwelling shortwave radiative ﬂux', 'W m^-2', [levsdimid tdimid], ncid );
-dTFlw0varid = define_variable( 'dTFlw0' ,'total surface downwelling longwave radiative ﬂux', 'W m^-2', [levsdimid tdimid], ncid );
-uTFsw0varid = define_variable( 'uTFsw0' ,'total surface upwelling shortwave radiative ﬂux', 'W m^-2', [levsdimid tdimid], ncid );
-uTFlw0varid = define_variable( 'uTFlw0' ,'total surface upwelling longwave radiative ﬂux', 'W m^-2', [levsdimid tdimid], ncid );
+fsvarid = define_variable( 'Fs' ,'surface turbulent flux of sensible heat', 'W m^-2', [levsdimid tdimid], ncid );
+fqvarid = define_variable( 'Fq' ,'surface turbulent flux of latent heat', 'W m^-2', [levsdimid tdimid], ncid );
+dTFsw0varid = define_variable( 'dTFsw0' ,'total surface downwelling shortwave radiative flux', 'W m^-2', [levsdimid tdimid], ncid );
+dTFlw0varid = define_variable( 'dTFlw0' ,'total surface downwelling longwave radiative flux', 'W m^-2', [levsdimid tdimid], ncid );
+uTFsw0varid = define_variable( 'uTFsw0' ,'total surface upwelling shortwave radiative flux', 'W m^-2', [levsdimid tdimid], ncid );
+uTFlw0varid = define_variable( 'uTFlw0' ,'total surface upwelling longwave radiative flux', 'W m^-2', [levsdimid tdimid], ncid );
 pptvarid = define_variable( 'ppt' ,'surface precipitation', 'kg m^-2 s^-1', [levsdimid tdimid], ncid );
 pwvarid = define_variable( 'PW' ,'preciptable water', 'kg m^-2', [levsdimid tdimid], ncid );
 lwpvarid = define_variable( 'LWP' ,'liquid water path', 'kg m^-2', [levsdimid tdimid], ncid );
