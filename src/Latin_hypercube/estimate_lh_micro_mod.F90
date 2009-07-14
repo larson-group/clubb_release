@@ -348,9 +348,8 @@ module estimate_lh_micro_mod
     end do ! level = 2, nnzp
 
     call micro_driver( dt, nnzp, n_micro_calls, d_variables, &
-                       l_sample_flag, X_nl_all_levs(:,:,1), rt, thl, &
-                       X_nl_all_levs(:,:,3), X_nl_all_levs(:,:,4), &
-                       X_nl_all_levs(:,:,5), X_u_all_levs, &
+                       l_sample_flag, rt, thl, &
+                       X_nl_all_levs, X_u_all_levs, &
                        thlm, p_in_Pa, exner, rho, wm, w_std_dev, &
                        dzq, rcm, rvm, pdf_params, hydromet, &
                        rvm_mc_est, rcm_mc_est, hydromet_mc_est, &
@@ -551,8 +550,8 @@ module estimate_lh_micro_mod
 
 !-------------------------------------------------------------------------------
   subroutine micro_driver( dt, nnzp, n_micro_calls, d_variables, &
-                           l_sample_flag, &
-                           s_mellor, rt, thl, w, Nc, rr, X_u_all_levs, &
+                           l_sample_flag, rt, thl, &
+                           X_nl_all_levs, X_u_all_levs, &
                            thlm, p_in_Pa, exner, rho, wm, w_std_dev, &
                            dzq, rcm, rvm, pdf_params, hydromet,  &
                            rvm_mc_est, rcm_mc_est, hydromet_mc_est, &
@@ -574,7 +573,13 @@ module estimate_lh_micro_mod
 
     use array_index, only: &
       iirrainm, &
-      iiNcm
+      iiNrm, &
+      iiNcm, &
+      iiLH_rrain, &
+      iiLH_Nr, &
+      iiLH_Nc, &
+      iiLH_rt, &
+      iiLH_w
 
     use variables_prognostic_module, only: &
       pdf_parameter
@@ -603,15 +608,14 @@ module estimate_lh_micro_mod
       l_sample_flag  ! Whether we are sampling at this level
 
     double precision, dimension(nnzp,n_micro_calls), intent(in) :: &
-      s_mellor,  & ! n_micro_calls values of 's' (Mellor 1977)            [kg/kg]
-      rt,        & ! n_micro_calls values of total water mixing ratio     [kg/kg]
-      thl,       & ! n_micro_calls values of liquid potential temperature [K]
-      w,         & ! n_micro_calls values of vertical velocity            [m/s]
-      Nc,        & ! n_micro_calls values of droplet number               [#/kg air]
-      rr           ! n_micro_calls values of specific rain content        [kg/kg]
+      rt, & ! n_micro_calls values of total water mixing ratio     [g/kg]
+      thl   ! n_micro_calls values of liquid potential temperature [K]
 
     double precision, dimension(nnzp,n_micro_calls,d_variables+1), intent(in) :: &
       X_u_all_levs ! N x D+1 Latin hypercube sample from uniform dist
+
+    double precision, target, dimension(nnzp,n_micro_calls,d_variables), intent(in) :: &
+      X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     real, dimension(nnzp), intent(in) :: &
       thlm,       & ! Liquid pot. temperature  [K]
@@ -632,7 +636,6 @@ module estimate_lh_micro_mod
 
     real, dimension(nnzp,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
-
 
     ! Output Variables
 
@@ -671,7 +674,6 @@ module estimate_lh_micro_mod
       thlm_mc_est_m1, & ! LH est of time tendency of liquid potential temperature [K/s]
       thlm_mc_est_m2    ! LH est of time tendency of liquid potential temperature [K/s]
 
-
     real, dimension(nnzp,hydromet_dim) :: &
       hydromet_tmp ! Hydrometeor species    [units vary]
 
@@ -684,6 +686,10 @@ module estimate_lh_micro_mod
       w_tmp        ! Vertical velocity           [m/s]
 
     integer, dimension(nnzp) :: n1, n2, zero
+
+    double precision, pointer, dimension(:,:) :: &
+      s_mellor,  & ! n_micro_calls values of 's' (Mellor 1977)      [kg/kg]
+      w            ! n_micro_calls values of vertical velocity      [m/s]
 
     double precision, dimension(nnzp) :: &
       R1, R2, a, &
@@ -699,6 +705,9 @@ module estimate_lh_micro_mod
 !   R2(:) = dble( pdf_params%R2(:) )
     R1(:) = dble( 1.0 )
     R2(:) = dble( 1.0 )
+
+    s_mellor => X_nl_all_levs(:,:,iiLH_rt)
+    w        => X_nl_all_levs(:,:,iiLH_w)
 
     zero(:) = 0
 
@@ -751,20 +760,27 @@ module estimate_lh_micro_mod
         thl_tmp = thlm
       end where
 
+      ! Copy the sample points into the temporary arrays
       do i = 1, hydromet_dim, 1
-        if ( i == iirrainm ) then
+        if ( i == iirrainm .and. iiLH_rrain > 0 ) then
           where ( l_sample_flag )
-            hydromet_tmp(:,i) = real( rr(:,sample) )
+            hydromet_tmp(:,i) = real( X_nl_all_levs(:,sample,iiLH_rrain) )
           else where
             hydromet_tmp(:,i) = hydromet(:,i)
           end where
-        else if ( i == iiNcm ) then
+        else if ( i == iiNcm .and. iiLH_Nc > 0 ) then
           where ( l_sample_flag )
-            hydromet_tmp(:,i) = real( Nc(:,sample) )
+            hydromet_tmp(:,i) = real( X_nl_all_levs(:,sample,iiLH_Nc) )
           else where
             hydromet_tmp(:,i) = hydromet(:,i)
           end where
-        else
+        else if ( i == iiNrm .and. iiLH_Nr > 0 ) then
+          where ( l_sample_flag )
+            hydromet_tmp(:,i) = real( X_nl_all_levs(:,sample,iiLH_Nr) )
+          else where
+            hydromet_tmp(:,i) = hydromet(:,i)
+          end where
+        else ! Use the mean field, rather than a sample point
           hydromet_tmp(:,i) = hydromet(:,i)
         end if
       end do
@@ -776,7 +792,7 @@ module estimate_lh_micro_mod
           lh_rcm  = rc_tmp
           lh_rvm  = rv_tmp
           lh_wm   = w_tmp(:,sample)
-          where ( l_sample_flag .and. s_mellor(:,sample) > 0 ) 
+          where ( l_sample_flag .and. s_mellor(:,sample) > 0. ) 
             lh_cf = 1.0
           else where
             lh_cf = 0.0

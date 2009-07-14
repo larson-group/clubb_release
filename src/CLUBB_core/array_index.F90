@@ -22,6 +22,16 @@ module array_index
   integer, public :: &
     iiNrm, iiNsnowm, iiNim, iiNgraupelm, iiNcm ! [#/kg]
 
+  ! Latin hypercube variables
+  integer, public :: &
+    iiLH_rt, iiLH_thl, iiLH_w
+
+  integer, public :: &
+   iiLH_rrain, iiLH_rsnow, iiLH_rice, iiLH_rgraupel
+
+  integer, public :: &
+   iiLH_Nr, iiLH_Nsnow, iiLH_Ni, iiLH_Ngraupel, iiLH_Nc
+
   ! Scalar quantities
   integer, public :: & 
     iisclr_rt, iisclr_thl, iisclr_CO2, & ! [kg/kg]/[K]/[1e6 mol/mol]

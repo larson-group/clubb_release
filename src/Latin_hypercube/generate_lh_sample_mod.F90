@@ -9,14 +9,6 @@ module generate_lh_sample_mod
              truncate_gaus_mixt, ltqnorm, gaus_condt, & 
              st_2_rtthl, log_sqd_normalized
 
-  integer, private :: &
-    is_mellor = 1, &
-    irt       = 1, &
-    it_mellor = 2, &
-    ithl      = 2, &
-    iw  = 3, &
-    iNc = 4, &
-    irr = 5
 
   private ! Default scope
 
@@ -24,9 +16,9 @@ module generate_lh_sample_mod
 
 !-------------------------------------------------------------------------------
   subroutine generate_lh_sample &
-             ( n_micro_calls, nt_repeat, d_variables, p_matrix, & 
-               cf, pdf_params, level, & 
-               Ncm, rrainm, Ncp2_on_Ncm2, rrp2_on_rrainm2, &
+             ( n_micro_calls, nt_repeat, d_variables, hydromet_dim, & 
+               p_matrix, cf, pdf_params, level, & 
+               hydromet, hydromet_corr, &
                rt, thl, & 
                X_u_one_lev, X_nl_one_lev, l_sample_flag )
 ! Description:
@@ -43,10 +35,22 @@ module generate_lh_sample_mod
         g_per_kg,  &  ! g/kg
         cm3_per_m3, & ! cm3 per m3
         rr_tol, &     ! rr tolerance in kg/kg
-        Nc_tol        ! Nc tolerance in #/m^3
+        Nr_tol, &     ! Nr tolerance in #/kg
+        Nc_tol        ! Nc tolerance in #/kg
 
     use variables_prognostic_module, only:  &
         pdf_parameter  ! type
+
+    use array_index, only: &
+      iiNcm,    & ! Variables
+      iiNrm,    &
+      iirrainm, &
+      iiLH_rrain, &
+      iiLH_Nr, &
+      iiLH_Nc, &
+      iiLH_rt, &
+      iiLH_thl, &
+      iiLH_w
 
     implicit none
 
@@ -61,12 +65,11 @@ module generate_lh_sample_mod
     integer, intent(in) :: &
       n_micro_calls, & ! `n'   Number of calls to microphysics (normally=2)
       nt_repeat,     & ! `n_t' Num. random samples before sequence repeats (normally=10)
-      d_variables      ! `d'   Number of variates (normally=5)
+      d_variables,   & ! `d'   Number of variates (normally=5)
+      hydromet_dim     ! Number of hydrometeor species
 
-    ! rrainm  = mean of rr; must have rrainm>0.
-    real, intent(in) :: &
-      rrainm , & ! Rain water mixing ratio                [kg/kg]
-      Ncm       ! Cloud droplet number concentration      [#/m^3]
+    real, dimension(hydromet_dim), intent(in) :: &
+      hydromet ! Hydrometeor species [units vary]
 
     ! Cloud fraction
     real, intent(in) :: cf !  Cloud fraction, 0 <= cf <= 1
@@ -80,9 +83,8 @@ module generate_lh_sample_mod
     integer, intent(in) :: level  ! Level info. for PDF parameters.
 
     ! From the KK_microphys_module
-    double precision, intent(in) :: &
-      Ncp2_on_Ncm2, & ! = Ncp2 divided by Ncm^2    [-]
-      rrp2_on_rrainm2 ! = rrp2 divided by rrainm^2 [-]
+    real, dimension(hydromet_dim,hydromet_dim), intent(in) :: &
+      hydromet_corr ! Hydrometeor correlations
 
     ! Output Variables
     double precision, intent(out), dimension(n_micro_calls) :: &
@@ -123,7 +125,7 @@ module generate_lh_sample_mod
     real :: rrtthl_reduced
     double precision :: rrtthl_reduced1, rrtthl_reduced2
 
-    ! Means of s, t, w, Nc, rr for plumes 1 and 2
+    ! Means of s, t, w, Nc, Nr, rr for plumes 1 and 2
     double precision, dimension(d_variables) :: &
       mu1, mu2
 
@@ -133,28 +135,43 @@ module generate_lh_sample_mod
       Sigma_rtthlw_1,  & 
       Sigma_rtthlw_2
 
-    ! Nc  = droplet number concentration.  [Nc] = number / kg air
-    ! Nc1  = PDF parameter for mean of plume 1. [Nc1] = (#/kg)
-    ! Nc2  = PDF parameter for mean of plume 2. [Nc2] = (#/kg)
-    ! sNc1,2 = PDF param for width of plume 1,2. [sNc1,2] = (#/kg)**2
-    double precision :: Nc1, Nc2, sNc1, sNc2
+    double precision :: &
+      Ncm,  & ! Cloud droplet number concentration.[number / kg air]
+      Nc1,  & ! PDF parameter for mean of plume 1. [#/kg]
+      Nc2,  & ! PDF parameter for mean of plume 2. [#/kg]
+      sNc1, & ! PDF param for width of plume 1.    [(#/kg)^2]
+      sNc2, & ! PDF param for width of plume 2.    [(#/kg^2]
+      Nrm,  & ! Rain droplet number concentration. [number / kg air]
+      Nr1,  & ! PDF parameter for mean of plume 1. [#/kg]
+      Nr2,  & ! PDF parameter for mean of plume 2. [#/kg]
+      sNr1, & ! PDF param for width of plume 1.    [(#/kg)^2]
+      sNr2    ! PDF param for width of plume 2.    [(#/kg^2]
+
 
     ! rr = specific rain content. [rr] = g rain / kg air
     double precision :: &
+      rrainm, &  ! rain water mixing ratio            [g/kg]
       rr1, &  ! PDF parameter for mean of plume 1. [kg/kg]
       rr2, &  ! PDF parameter for mean of plume 2. [kg/kg]
       srr1, & ! PDF param for width of plume 1     [(kg/kg)^2]
       srr2    ! PDF param for width of plume 2.    [(kg/kg)^2]
 
-    logical :: l_small_rrainm, l_small_Ncm
+    double precision :: &
+      Ncp2_on_Ncm2, & ! = Ncp2 divided by Ncm^2    [-]
+      Nrp2_on_Nrm2, & ! = Nrp2 divided by Nrm^2    [-]
+      rrp2_on_rrainm2 ! = rrp2 divided by rrainm^2 [-]
+
+    logical, dimension(hydromet_dim) :: l_small_lognormal
+
+    integer :: i
 
     ! ---- Begin Code ----
-    l_d_variable_lognormal(:) = .false.
-    l_d_variable_lognormal(iNc) = .true.
-    l_d_variable_lognormal(irr) = .true.
+    ! Determine which variables are a lognormal distribution
+    i = max( iiLH_rt, iiLH_thl, iiLH_w )
+    l_d_variable_lognormal(1:i) = .false. ! The 1st 3 variates
+    l_d_variable_lognormal(i+1:d_variables) = .true.  ! Hydrometeors
 
-    l_small_rrainm = .false.
-    l_small_Ncm    = .false.
+    l_small_lognormal(:) = .false.
 
     ! Input pdf parameters.
 
@@ -191,7 +208,7 @@ module generate_lh_sample_mod
     !-----------------------------------------------------------------------
 
     ! We prognose rt-thl-w,
-    !    but we set means, covariance of N, qr to constants.
+    !    but we set means, covariance of Nc, qr to constants.
 
     l_sample_flag = .true.
     if ( l_sample_out_of_cloud ) then
@@ -231,8 +248,10 @@ module generate_lh_sample_mod
     end if
 
     if ( l_sample_flag ) then
-      ! Compute PDF parameters for N, rr.
-      ! Assume that N, rr obey single-lognormal distributions
+
+
+      ! Compute PDF parameters for Nc, rr.
+      ! Assume that Nc, rr obey single-lognormal distributions
 
       ! Nc  = droplet number concentration.  [N] = number / kg air
       ! Ncm  = mean of N; must have Ncm>0
@@ -241,8 +260,13 @@ module generate_lh_sample_mod
       ! Nc2  = PDF parameter for mean of plume 2. [Nc2] = (#/kg)
       ! sNc1,2 = PDF param for width of plume 1,2. [sNc1,2] = (#/kg)**2
 
-      call log_sqd_normalized( dble( Ncm ), Ncp2_on_Ncm2, dble( Nc_tol ), &
-                               Nc1, Nc2, sNc1, sNc2, l_small_Ncm )
+      if ( iiLH_Nc > 0 ) then 
+        Ncm = dble( hydromet(iiNcm) )
+        Ncp2_on_Ncm2 = dble( hydromet_corr(iiNcm,iiNcm) )
+
+        call log_sqd_normalized( Ncm, Ncp2_on_Ncm2, dble( Nc_tol ), &
+                                 Nc1, Nc2, sNc1, sNc2, l_small_lognormal(iiNcm) )
+      end if
 
       ! rr = specific rain content. [rr] = g rain / kg air
       ! rrainm  = mean of rr; rrp2 = variance of rr, must have rrp2>0.
@@ -250,12 +274,43 @@ module generate_lh_sample_mod
       ! rr2  = PDF parameter for mean of plume 2. [rr2] = (kg/kg)
       ! srr1,2 = PDF param for width of plume 1,2. [srr1,2] = (kg/kg)**2
 
-      call log_sqd_normalized( dble( rrainm ), rrp2_on_rrainm2, dble( rr_tol ), &
-                               rr1, rr2, srr1, srr2, l_small_rrainm )
+      if ( iiLH_rrain > 0 ) then 
+        rrainm = dble( hydromet(iirrainm) )
+        rrp2_on_rrainm2 = dble( hydromet_corr(iirrainm,iirrainm) )
+        call log_sqd_normalized( rrainm, rrp2_on_rrainm2, dble( rr_tol ), &
+                                 rr1, rr2, srr1, srr2, l_small_lognormal(iirrainm) )
+      end if
 
-      ! Means of s, t, w, N, rr for Gaussians 1 and 2
-      mu1 = (/  dble( s1 ), 0.d0, dble(w1), Nc1, rr1  /)
-      mu2 = (/  dble( s2 ), 0.d0, dble(w2), Nc2, rr2  /)
+      if ( iiLH_Nr > 0 ) then 
+        Nrm = dble( max( hydromet(iiNrm), 1.0 ) )
+        Nrp2_on_Nrm2 = dble( hydromet_corr(iiNrm,iiNrm) )
+
+        call log_sqd_normalized( Nrm, Nrp2_on_Nrm2, dble( Nr_tol ), &
+                                 Nr1, Nr2, sNr1, sNr2, l_small_lognormal(iiNcm) )
+      end if
+
+      ! Means of s, t, w, Nc, Nr, rr for Gaussians 1 and 2
+!     mu1 = (/  dble( s1 ), 0.d0, dble(w1), Nc1, rr1  /)
+!     mu2 = (/  dble( s2 ), 0.d0, dble(w2), Nc2, rr2  /)
+
+      mu1((/iiLH_rt,iiLH_thl,iiLH_w/)) &
+        = (/ dble( s1 ), 0.d0, dble( w1 ) /)
+      mu2((/iiLH_rt,iiLH_thl,iiLH_w/)) &
+        = (/ dble( s2 ), 0.d0, dble( w2 ) /)
+
+      if ( iiLH_rrain > 0 ) then
+        mu1(iiLH_rrain) = rr1
+        mu2(iiLH_rrain) = rr2
+      end if
+      if ( iiLH_Nc > 0 ) then
+        mu1(iiLH_Nc) = Nc1
+        mu2(iiLH_Nc) = Nc2
+      end if
+
+      if ( iiLH_Nr > 0 ) then
+        mu1(iiLH_Nr) = Nr1
+        mu2(iiLH_Nr) = Nr2
+      end if
 
       ! An old subroutine, gaus_rotate, couldn't handle large correlations;
       !   I assume the replacement, gaus_condt, has equal trouble.
@@ -269,78 +324,39 @@ module generate_lh_sample_mod
 
       ! Covariance (not correlation) matrices of rt-thl-w-Nc-rr
       !    for Gaussians 1 and 2
-      ! For now, assume no within-plume correlation of w,Nc,rr with
+      ! For now, assume no within-plume correlation of w,Nc,Nr,rr with
       !    any other variables.
-      Sigma_rtthlw_1(irt,1:d_variables)   = (/  & 
-               dble( srt1 ), & 
-               rrtthl_reduced1, & 
-               0.d0, & 
-               0.d0, & 
-               0.d0 & 
-                                 /)
-      Sigma_rtthlw_1(ithl,1:d_variables) = (/ & 
-               rrtthl_reduced1,  & 
-               dble( sthl1 ),   & 
-               0.d0, & 
-               0.d0, & 
-               0.d0 & 
-                               /)
-      Sigma_rtthlw_1(iw,1:d_variables) = (/ & 
-               0.d0, & 
-               0.d0, & 
-               dble( sw1 ), & 
-               0.d0, & 
-               0.d0 & 
-                               /)
-      Sigma_rtthlw_1(iNc,1:d_variables) = (/ & 
-               0.d0, & 
-               0.d0, & 
-               0.d0, & 
-               sNc1, & 
-               0.d0 & 
-                               /)
-      Sigma_rtthlw_1(irr,1:d_variables) = (/ & 
-               0.d0, & 
-               0.d0, & 
-               0.d0, & 
-               0.d0, & 
-               srr1 & 
-                               /)
-      Sigma_rtthlw_2(irt,1:d_variables) = (/  & 
-               dble( srt2 ), & 
-               rrtthl_reduced2,  & 
-               0.d0, & 
-               0.d0, & 
-               0.d0  & 
-                               /)
-      Sigma_rtthlw_2(ithl,1:d_variables) = (/ & 
-               rrtthl_reduced2,  & 
-               dble( sthl2 ),   & 
-               0.d0,  & 
-               0.d0,  & 
-               0.d0  & 
-                               /)
-      Sigma_rtthlw_2(iw,1:d_variables) = (/ & 
-               0.d0,    & 
-               0.d0,    & 
-               dble( sw2 ), & 
-               0.d0,  & 
-               0.d0         & 
-                               /)
-      Sigma_rtthlw_2(iNc,1:d_variables) = (/ & 
-               0.d0, & 
-               0.d0, & 
-               0.d0, & 
-               sNc2, & 
-               0.d0  & 
-                               /)
-      Sigma_rtthlw_2(irr,1:d_variables) = (/ & 
-               0.d0, & 
-               0.d0, & 
-               0.d0, & 
-               0.d0, & 
-               srr2 & 
-                               /)
+
+      ! Sigma_rtthlw_1,2
+      Sigma_rtthlw_1 = 0.d0 ! Start with no correlation, and add matrix elements
+      Sigma_rtthlw_2 = 0.d0
+
+      Sigma_rtthlw_1(iiLH_rt,(/iiLH_rt,iiLH_thl/))  = (/ dble( srt1 ), rrtthl_reduced1 /)
+
+      Sigma_rtthlw_2(iiLH_rt,(/iiLH_rt,iiLH_thl/))  = (/ dble( srt2 ), rrtthl_reduced2 /)
+
+      Sigma_rtthlw_1(iiLH_thl,(/iiLH_rt,iiLH_thl/)) = (/ rrtthl_reduced1, dble( sthl1 ) /)
+
+      Sigma_rtthlw_2(iiLH_thl,(/iiLH_rt,iiLH_thl/)) = (/ rrtthl_reduced2, dble( sthl2 ) /)
+
+      Sigma_rtthlw_1(iiLH_w,iiLH_w) = dble( sw1 )
+
+      Sigma_rtthlw_2(iiLH_w,iiLH_w) = dble( sw2 )
+
+      if ( iiLH_Nc > 0 ) then
+        Sigma_rtthlw_1(iiLH_Nc,iiLH_Nc) = sNc1
+        Sigma_rtthlw_2(iiLH_Nc,iiLH_Nc) = sNc2
+      end if
+
+      if ( iiLH_Nr > 0 ) then
+        Sigma_rtthlw_1(iiLH_Nr,iiLH_Nr) = sNr1
+        Sigma_rtthlw_2(iiLH_Nr,iiLH_Nr) = sNr2
+      end if
+
+      if ( iiLH_rrain > 0 ) then
+        Sigma_rtthlw_1(iiLH_rrain,iiLH_rrain) = srr1
+        Sigma_rtthlw_2(iiLH_rrain,iiLH_rrain) = srr2
+      end if
 
       call sample_points( n_micro_calls, nt_repeat, d_variables, p_matrix, dble( a ), & 
                           dble( rt1 ), dble( thl1 ),  & 
@@ -355,14 +371,17 @@ module generate_lh_sample_mod
 
       ! Kluge for lognormal variables
       ! Use the gridbox mean rather than a sampled value
-      if ( l_small_rrainm ) then
-        X_nl_one_lev(:,irr) = rrainm*g_per_kg
+      if ( l_small_lognormal(iirrainm) ) then
+        X_nl_one_lev(:,iiLH_rrain) = rrainm
       end if
 
-      if ( l_small_Ncm ) then
-        X_nl_one_lev(:,iNc) = Ncm
+      if ( l_small_lognormal(iiNcm) ) then
+        X_nl_one_lev(:,iiLH_Nc) = Ncm
       end if
 
+      if ( iiLH_Nr > 0 .and. l_small_lognormal(iiNrm) ) then
+        X_nl_one_lev(:,iiLH_Nr) = Nrm
+      end if
       ! End of overall if-then statement for Latin hypercube code
     end if
 
@@ -392,6 +411,10 @@ module generate_lh_sample_mod
 
     use constants, only:  &
         fstderr  ! Constant(s)
+
+    use array_index, only: &
+      iiLH_rt, & ! Variable(s)
+      iiLH_thl
 
     implicit none
 
@@ -424,11 +447,11 @@ module generate_lh_sample_mod
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd components
 
     ! Covariance matrices of rt, thl, w for each Gaussian
-    ! Columns of Sigma_rtthlw:     1   2   3   4   5
-    !                              rt  thl w   Nc  rr
+    ! Columns of Sigma_rtthlw:     1   2   3   4   5   6
+    !                              rt  thl w   Nc  Nr  rr
     !
-    ! Columns of Sigma_stw, X_nl_one_lev:  1   2   3   4   5
-    !                                      s   t   w   Nc  rr
+    ! Columns of Sigma_stw, X_nl_one_lev:  1   2   3   4   5   6
+    !                                      s   t   w   Nc  Nr  rr
     double precision, intent(in), dimension(d_variables,d_variables) :: &
       Sigma_rtthlw_1, &
       Sigma_rtthlw_2
@@ -461,12 +484,23 @@ module generate_lh_sample_mod
     ! Sample of s points that is drawn only from normal distribution
     double precision, dimension(n_micro_calls) :: s_pts
 
+    integer :: is_mellor, it_mellor
+!   integer :: i, j
     ! ---- Begin Code ----
+
+    is_mellor = iiLH_rt  ! Mellor's s is at the same index as rt in the Sigma arrays
+    it_mellor = iiLH_thl ! Mellor's t is at the same index as thl "  "
 
     ! Convert each Gaussian from rt-thl-w variables to s-t-w vars.
     call rtpthlp_2_sptp( d_variables, Sigma_rtthlw_1, crt1, cthl1, Sigma_stw_1 )
     call rtpthlp_2_sptp( d_variables, Sigma_rtthlw_2, crt2, cthl2, Sigma_stw_2 )
-
+!   do i = 1, d_variables
+!     do j = 1, d_variables
+!       write(6,'(e10.3)',advance='no') Sigma_rtthlw_1(i,j)
+!     end do
+!     write(6,*) ""
+!   end do
+!   pause
     ! Generate Latin hypercube sample, with one extra dimension
     !    for mixture component.
     call latin_hyper_sample( n_micro_calls, nt_repeat, d_variables+1, p_matrix, X_u_one_lev )
@@ -480,7 +514,7 @@ module generate_lh_sample_mod
 
     ! Let s PDF (1st column) be a truncated Gaussian.
     ! Take sample solely from cloud points.
-    col = 1
+    col = is_mellor
     call truncate_gaus_mixt( n_micro_calls, d_variables, col, a, mu1, mu2, & 
                              Sigma_stw_1, Sigma_stw_2, C1, C2, X_u_one_lev, & 
                              s_pts )
@@ -1332,8 +1366,10 @@ module generate_lh_sample_mod
     else
       X1 = 0.0
       X2 = 0.0
-      sX1 = 0.0
-      sX2 = 0.0
+!     sX1 = 0.0
+!     sX2 = 0.0
+      sX1 = X_tol**2
+      sX2 = X_tol**2
       l_small_X = .true.
     end if
 

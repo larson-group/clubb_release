@@ -99,7 +99,7 @@ module matrix_operations
       ipiv ! Pivot indices from the permutation matrix
 
     integer :: info, work_dim
-
+!   integer :: i, j
     ! ---- Begin code ----
 
     work_dim = n * 128 ! Best guess for an optimal blocksize
@@ -108,6 +108,14 @@ module matrix_operations
 
     a_decomp = a
     x = b
+
+!   do i = 1, n
+!     do j = 1, n
+!       write(6,'(e10.3)',advance='no') a(i,j)
+!     end do
+!     write(6,*) ""
+!   end do
+!   pause
 
     call dsysv( 'Upper', n, nrhs, a_decomp, n, ipiv, x, n, work, work_dim, info )
 

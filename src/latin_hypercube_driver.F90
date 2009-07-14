@@ -8,9 +8,6 @@ module latin_hypercube_mod
 
   private ! Default scope
 
-  integer, parameter, private :: &
-    sequence_length = 1 ! nt_repeat/n_micro_call; number of timesteps before sequence repeats.
-
   logical, parameter, private :: &
     l_diagnostic_iter_check = .true.
 
@@ -24,7 +21,7 @@ module latin_hypercube_mod
 
 !-------------------------------------------------------------------------------
   subroutine latin_hypercube_driver &
-             ( dt, iter, d_variables, n_micro_calls, nnzp, &
+             ( dt, iter, d_variables, n_micro_calls, sequence_length, nnzp, &
                cf, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm, w_std_dev, dzq, rcm, rvm, &
                hydromet, hydromet_corr, hydromet_mc_est, hydromet_vel_est, rcm_mc_est, &
@@ -111,10 +108,11 @@ module latin_hypercube_mod
       dt ! Model timestep       [s]
 
     integer, intent(in) :: &
-      iter,          & ! Model iteration number
-      d_variables,   & ! Number of variables to sample
-      n_micro_calls, & ! Number of calls to microphysics per timestep (normally=2)
-      nnzp             ! Number of vertical model levels
+      iter,            & ! Model iteration number
+      d_variables,     & ! Number of variables to sample
+      n_micro_calls,   & ! Number of calls to microphysics per timestep (normally=2)
+      sequence_length, & ! nt_repeat/n_micro_call; number of timesteps before sequence repeats.
+      nnzp               ! Number of vertical model levels
 
     real, dimension(nnzp), intent(in) :: &
       cf,         & ! Cloud fraction               [%]
@@ -135,7 +133,7 @@ module latin_hypercube_mod
     real, dimension(nnzp,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
-    real, dimension(hydromet_dim), intent(in) :: &
+    real, dimension(hydromet_dim,hydromet_dim), intent(in) :: &
       hydromet_corr ! Correlation for hydrometeor species [-]
 
     ! Input/Output Variables
@@ -173,9 +171,6 @@ module latin_hypercube_mod
       lh_wm,     & ! Average value of the latin hypercube est. of vertical velocity [m/s]
       lh_wp2_zt, & ! Average value of the variance of the LH est. of vertical velocity [m^2/s^2]
       lh_cf        ! Average value of the latin hypercube est. of cloud fraction    [%]
-
-    double precision :: &
-      Ncp2_Ncm2, rrp2_rrainm2  ! Correlations from K&K module
 
     ! A true/false flag that determines whether the PDF allows us to construct a sample
     logical, dimension(nnzp) :: l_sample_flag 
@@ -224,18 +219,11 @@ module latin_hypercube_mod
     ! End Latin hypercube sample generation
 
     ! print*, 'latin_hypercube_driver: i_rmd=', i_rmd
-      !--------------------------------------------------------------
-      ! Latin hypercube sampling
-      !--------------------------------------------------------------
-    if ( iirrainm < 1 ) then
-      write(fstderr,*) "Latin hypercube sampling is enabled, but there is"// &
-      " no rain water mixing ratio being predicted."
-      stop
-    end if
-    
-    Ncp2_Ncm2    = dble( hydromet_corr(iiNcm) )
-    rrp2_rrainm2 = dble( hydromet_corr(iirrainm) )
 
+    !--------------------------------------------------------------
+    ! Latin hypercube sampling
+    !--------------------------------------------------------------
+    
     do k = 1, nnzp
       ! Choose which rows of LH sample to feed into closure.
       p_matrix(1:n_micro_calls,1:(d_variables+1)) = &
@@ -246,11 +234,10 @@ module latin_hypercube_mod
 
       ! Generate LH sample, represented by X_u and X_nl, for level k
       call generate_lh_sample &
-           ( n_micro_calls, nt_repeat, d_variables, p_matrix, &   ! intent(in)
-             cf(k), pdf_params, k, &                              ! intent(in)
-             max( hydromet(k,iiNcm), 1.0 ), hydromet(k,iirrainm),&! intent(in)
-             Ncp2_Ncm2, rrp2_rrainm2, &                           ! intent(in)
-             rt(k,:), thl(k,:), &                                 ! intent(out)
+           ( n_micro_calls, nt_repeat, d_variables, hydromet_dim, &  ! intent(in)
+             p_matrix, cf(k), pdf_params, k, &                       ! intent(in)
+             hydromet(k,:), hydromet_corr(:,:), &                    ! intent(in)
+             rt(k,:), thl(k,:), &                                    ! intent(out)
              X_u_all_levs(k,:,:), X_nl_all_levs(k,:,:), l_sample_flag(k) ) ! intent(out)
 
       ! print *, 'latin_hypercube_sampling: got past lh_sampler'

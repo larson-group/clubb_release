@@ -29,6 +29,7 @@ module microphys_driver
     l_fix_pgam,                 & ! Fix pgam (Morrison)
     l_latin_hypercube_sampling, & ! Use Latin Hypercube Sampling (K&K only)
     LH_microphys_calls,         & ! Number of latin hypercube samples to call the microphysics with 
+    LH_sequence_length,         & ! Number of timesteps before the latin hypercube seq. repeats
     l_local_kk,                 & ! Use local formula for K&K
     micro_scheme,               & ! The microphysical scheme in use
     hydromet_list,              & ! Names of the hydrometeor species
@@ -64,9 +65,25 @@ module microphys_driver
 !   None
 !-------------------------------------------------------------------------------
 
-    use array_index, only:  & 
+    use array_index, only: & 
       iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm, & ! Variables
       iiNcm, iiNsnowm, iiNim, iiNgraupelm
+
+    use array_index, only: &
+      iiLH_rt, & ! Variables
+      iiLH_thl, &
+      iiLH_w
+
+    use array_index, only: &
+      iiLH_rrain, & ! Variables
+      iiLH_rsnow, &
+      iiLH_rice, &
+      iiLH_rgraupel, &
+      iiLH_Nr, &
+      iiLH_Nsnow, &
+      iiLH_Ni, &
+      iiLH_Ngraupel, &
+      iiLH_Nc
 
     use KK_microphys_module, only: &
       rrp2_rrainm2_cloud, Nrp2_Nrm2_cloud, Ncp2_Ncm2_cloud, & ! Variables
@@ -121,7 +138,7 @@ module microphys_driver
       l_cloud_sed, l_ice_micro, l_graupel, l_hail, &
       l_seifert_beheng, l_predictnc, l_specify_aerosol, l_subgrid_w, &
       l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, &
-      l_latin_hypercube_sampling, LH_microphys_calls, &
+      l_latin_hypercube_sampling, LH_microphys_calls, LH_sequence_length, &
       rrp2_rrainm2_cloud, Nrp2_Nrm2_cloud, Ncp2_Ncm2_cloud, &
       corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
       corr_sNc_NL_cloud, rrp2_rrainm2_below, &
@@ -131,6 +148,9 @@ module microphys_driver
       C_evap, r_0, microphys_start_time, &
       Ncm_initial, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
       aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed
+
+    ! Local variables
+    integer :: i
 
     ! ---- Begin Code ----
 
@@ -212,6 +232,7 @@ module microphys_driver
 
     l_latin_hypercube_sampling = .false.
     LH_microphys_calls = 2
+    LH_sequence_length = 1
 
     !---------------------------------------------------------------------------
     ! Parameters for all microphysics schemes
@@ -453,6 +474,28 @@ module microphys_driver
 
     end select
 
+    ! Setup index variables for latin hypercube sampling
+    if ( l_latin_hypercube_sampling ) then
+
+      iiLH_rt  = 1
+      iiLH_thl = 2
+      iiLH_w   = 3
+
+      i = iiLH_w
+
+      call return_LH_index( iiNcm, i, iiLH_Nc )
+      call return_LH_index( iiNrm, i, iiLH_Nr )
+      call return_LH_index( iiNsnowm, i, iiLH_Nsnow )
+      call return_LH_index( iiNim, i, iiLH_Ni )
+      call return_LH_index( iiNgraupelm, i, iiLH_Ngraupel )
+
+      call return_LH_index( iirrainm, i, iiLH_rrain )
+      call return_LH_index( iirsnowm, i, iiLH_rsnow )
+      call return_LH_index( iiricem, i, iiLH_rice )
+      call return_LH_index( iirgraupelm, i, iiLH_rgraupel )
+
+    end if
+
     return
   end subroutine init_microphys
 
@@ -484,6 +527,7 @@ module microphys_driver
 
     use KK_microphys_module, only: & 
       rrp2_rrainm2_cloud, & ! Variable(s)
+      Nrp2_Nrm2_cloud, & 
       Ncp2_Ncm2_cloud  
 
     use morrison_micro_driver_mod, only: &
@@ -673,7 +717,7 @@ module microphys_driver
     real, dimension(gr%nnzp,hydromet_dim) :: & 
       hydromet_mc  ! Change in hydrometeors due to microphysics  [units/s]
       
-    real, dimension(hydromet_dim) :: & 
+    real, dimension(hydromet_dim,hydromet_dim) :: & 
       hydromet_corr  ! Array for correlations   [-]
 
     real, dimension(gr%nnzp) :: &
@@ -800,16 +844,18 @@ module microphys_driver
 
       if ( l_latin_hypercube_sampling ) then
 
-!       d_variables = 3 + hydromet_dim
-        d_variables = 5
+        d_variables = 3 + hydromet_dim
+!       d_variables = 5
 
         ! For latin hypercube sampling
-        hydromet_corr(:) = 0.0 ! Initialize to 0
-        hydromet_corr(iiNcm)    = Ncp2_Ncm2_cloud
-        hydromet_corr(iirrainm) = rrp2_rrainm2_cloud
+        hydromet_corr(:,:) = 0.0 ! Initialize to 0
+        hydromet_corr(iiNcm,iiNcm)       = Ncp2_Ncm2_cloud
+        hydromet_corr(iiNrm,iiNrm)       = Nrp2_Nrm2_cloud
+        hydromet_corr(iirrainm,iirrainm) = rrp2_rrainm2_cloud
 
         call latin_hypercube_driver &
-             ( real( dt ), iter, d_variables, LH_microphys_calls, gr%nnzp, &
+             ( real( dt ), iter, d_variables, LH_microphys_calls, &
+               LH_sequence_length, gr%nnzp, &
                cf, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm_zt, wtmp, dzq, rcm, rtm-rcm, &
                hydromet, hydromet_corr, hydromet_mc, hydromet_vel, rcm_mc, &
@@ -859,16 +905,18 @@ module microphys_driver
 
       if ( l_latin_hypercube_sampling ) then
 
-!       d_variables = 3 + hydromet_dim
-        d_variables = 5
+        d_variables = 3 + hydromet_dim
+!       d_variables = 5
 
         ! For latin hypercube sampling
-        hydromet_corr(:) = 0.0 ! Initialize to 0
-        hydromet_corr(iiNcm)    = Ncp2_Ncm2_cloud
-        hydromet_corr(iirrainm) = rrp2_rrainm2_cloud
+        hydromet_corr(:,:) = 0.0 ! Initialize to 0
+        hydromet_corr(iiNcm,iiNcm)       = Ncp2_Ncm2_cloud
+        hydromet_corr(iiNrm,iiNrm)       = Nrp2_Nrm2_cloud
+        hydromet_corr(iirrainm,iirrainm) = rrp2_rrainm2_cloud
 
         call latin_hypercube_driver &
-             ( real( dt ), iter, d_variables, LH_microphys_calls, gr%nnzp, &
+             ( real( dt ), iter, d_variables, LH_microphys_calls, &
+               LH_sequence_length, gr%nnzp, &
                cf, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm_zt, wtmp, dzq, rcm, rtm-rcm, &
                hydromet, hydromet_corr, hydromet_mc, hydromet_vel, rcm_mc, &
@@ -2241,6 +2289,39 @@ module microphys_driver
       return
     end subroutine adj_microphys_tndcy
 
+!-------------------------------------------------------------------------------
+    subroutine return_LH_index( hydromet_index, LH_count, LH_index )
+! Description:
+!   Set the Latin hypercube variable index if the hydrometeor exists
+! References:
+!   None
+!-------------------------------------------------------------------------------
+
+      implicit none
+
+      ! Input Variables
+      integer, intent(in) :: &
+        hydromet_index
+
+      ! Input/Output Variables
+      integer, intent(inout) :: &
+        LH_count
+
+      ! Output Variables
+      integer, intent(out) :: &
+        LH_index
+
+      ! ---- Begin Code ----
+
+      if ( hydromet_index > 0 ) then
+        LH_count = LH_count + 1
+        LH_index = LH_count
+      else
+        LH_index = -1
+      end if
+
+      return
+    end subroutine return_LH_index
 !===============================================================================
 
   end module microphys_driver
