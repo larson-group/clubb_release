@@ -77,8 +77,6 @@ sub main()
 ###############################################################################
 sub runCases()
 {
-	my $plotNumber = 0;
-
 	# Loop through each .case file so the case can be plotted
 	my @cases = <cases/*.cas*>;
 	foreach my $file (@cases) 
@@ -131,9 +129,7 @@ sub runCases()
 	
 			}
 			
-			callMatlab($CASE::CASE, $plotNumber);
-
-			$plotNumber ++;
+			callMatlab($CASE::CASE);
 
 			# Convert the eps files to jpq
 			convertEps($CASE::CASE{'name'});
@@ -166,60 +162,64 @@ sub placeImages()
 sub callMatlab()
 {
 	my $CASE = shift(@_);
-	my $plotNumber = shift(@_);
 
-	# Parse Case information
+	# Get Common Case information
 	my $caseName =  $CASE::CASE{'name'};
-	my $plotTitle =  $CASE::CASE{'plotTitle'};
 	my $startTime =  $CASE::CASE{'startTime'};
 	my $endTime =  $CASE::CASE{'endTime'};
 	my $startHeight =  $CASE::CASE{'startHeight'};
 	my $endHeight =  $CASE::CASE{'endHeight'};
-	my $units =  $CASE::CASE{'units'};
-	my $type = $CASE::CASE{'type'};
 
-	my $matlabArgs = "$caseName $plotTitle $plotNumber $type $startTime $endTime $startHeight $endHeight $units $randInt";
-
-	# Parse variables from .case file
-	for(my $count = 0; $count < $CASE::CASE{'numVars'}; $count++)
+	# Get plots from .case file
+	for(my $count = 0; $count < $CASE::CASE{'numPlots'}; $count++)
 	{
-		foreach(@inputDirs)
+		my $plotTitle = $CASE::CASE{'plots'}[$count]{'plotTitle'};
+		my $units = $CASE::CASE{'plots'}[$count]{'units'};
+		my $type = $CASE::CASE{'plots'}[$count]{'type'};
+
+		my $matlabArgs = "$caseName, $plotTitle, $count, $type, $startTime, $endTime, $startHeight, $endHeight, $units, $randInt";
+
+#		foreach(@inputDirs)
+		for(my $lineNum = 0; $lineNum < $CASE::CASE{'plots'}[$count]{'numLines'}; $lineNum++)
 		{
-			my $file = "$_/$CASE::CASE{'variables'}[$count]{'filename'}";
-
-			if(-e $file)
+			foreach(@inputDirs)
 			{
-				my $name = $CASE::CASE{'variables'}[$count]{'name'};
-				my $expression = $CASE::CASE{'variables'}[$count]{'expression'};
-				my $title = $CASE::CASE{'variables'}[$count]{'title'};
-				my $unit = $CASE::CASE{'variables'}[$count]{'units'};
-				my $lineWidth = $CASE::CASE{'variables'}[$count]{'lineWidth'};
-				my $lineType = $CASE::CASE{'variables'}[$count]{'lineType'};
-				my $lineColor = $CASE::CASE{'variables'}[$count]{'lineColor'};
+				my $file = "$_/$CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'filename'}";
 
-				$matlabArgs = "$matlabArgs $file $name $expression $title $unit $lineWidth $lineType $lineColor";
+				if(-e $file)
+				{
+					my $name =$CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'name'};
+					my $expression = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'expression'};
+					my $title = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'title'};
+					my $unit = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'units'};
+					my $lineWidth = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'lineWidth'};
+					my $lineType = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'lineType'};
+					my $lineColor = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'lineColor'};
+
+					$matlabArgs = "$matlabArgs, $file, $name, $expression, $title, $unit, $lineWidth, $lineType, $lineColor";
+				}
 			}
 		}
-	}
 
-	print("\nMatlab args: $matlabArgs \n\n");
+		print("\nMatlab args: $matlabArgs \n\n");
 
-	# Call Matlab
-	my $matlab = Sudo->new(
+		# Call Matlab
+		my $matlab = Sudo->new(
+			{
+       				sudo         => '/usr/bin/sudo',
+				sudo_args    => '',
+                		username     => 'matlabuser', 
+	                	password     => 'lab223matricks',
+        	        	program      => '/usr/local/bin/matlab',
+                		program_args => '-nodisplay -nodesktop -r PlotCreator\"($matlabArgs)\"'
+	               	});
+
+		my $result = $matlab->sudo_run();
+		if (exists($result->{error}))
 		{
-       			sudo         => '/usr/bin/sudo',
-			sudo_args    => '',
-                	username     => 'matlabuser', 
-                	password     => 'lab223matricks',
-                	program      => '/usr/local/bin/matlab',
-                	program_args => '-nodisplay -nodesktop -r PlotCreator\"($matlabArgs)\"'
-               	});
-
-	my $result = $matlab->sudo_run();
-	if (exists($result->{error}))
-	{
-		print(STDERR $result, "\n");
-		exit(1);
+			print(STDERR $result, "\n");
+			exit(1);
+		}
 	}
 }
 
