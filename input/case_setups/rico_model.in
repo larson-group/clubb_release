@@ -142,17 +142,17 @@ micro_scheme = "khairoutdinov_kogan"
 !!!!!!! COMMENTS FOR RICO MARINE CUMULUS CASE
 !!!!!!! These are the constants needed to
 !!!!!!! run the RICO case, as I did in my case rico0206, submitted:
-rrp2_rrainm2_cloud = 30.
-Nrp2_Nrm2_cloud = 10.
-Ncp2_Ncm2_cloud = 60.
+rrp2_on_rrainm2_cloud = 30.
+Nrp2_on_Nrm2_cloud = 10.
+Ncp2_on_Ncm2_cloud = 60.
 corr_rrNr_LL_cloud = 0.8
 corr_srr_NL_cloud = 0.25
 corr_sNr_NL_cloud = 0.3
 corr_sNc_NL_cloud = 0.24
 
-rrp2_rrainm2_below = 20.
-Nrp2_Nrm2_below = 2.
-Ncp2_Ncm2_below = 0.
+rrp2_on_rrainm2_below = 20.
+Nrp2_on_Nrm2_below = 2.
+Ncp2_on_Ncm2_below = 0.
 corr_rrNr_LL_below = 0.78
 corr_srr_NL_below = 0.
 corr_sNr_NL_below = 0.
