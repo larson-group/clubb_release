@@ -42,7 +42,7 @@ vars_zt =
 'ricem_mc', 'ricem_cl', 'rgraupelm_bt', 'rgraupelm_ma',
 'rgraupelm_sd', 'rgraupelm_dff', 'rgraupelm_mc', 'rgraupelm_cl',
 'a', 'w1', 'w2', 'sw1', 'sw2', 'thl1', 'thl2', 'sthl1', 'sthl2',
-'rt1', 'rt2', 'srt1', 'srt2', 'rc1', 'rc2', 'rsl1', 'rsl2', 'R1', 'R2',
+'rt1', 'rt2', 'srt1', 'srt2', 'rc1', 'rc2', 'rsl1', 'rsl2', 'cloud_frac1', 'R2',
 's1', 's2', 'ss1', 'ss2', 'rrtthl',
 'wp2_zt', 'thlp2_zt', 'wpthlp_zt', 'wprtp_zt', 'rtp2_zt', 'rtpthlp_zt',
 ! To output a scalar variable result, 

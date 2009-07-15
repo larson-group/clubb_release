@@ -117,7 +117,7 @@ module generate_lh_sample_mod
     real :: rrtthl
 
     real :: s1, s2
-    real :: R1, R2
+    real :: cloud_frac1, R2
     real :: crt1, crt2
     real :: cthl1, cthl2
 
@@ -175,28 +175,28 @@ module generate_lh_sample_mod
 
     ! Input pdf parameters.
 
-    w1     = pdf_params%w1(level)
-    w2     = pdf_params%w2(level)
-    sw1    = pdf_params%sw1(level)
-    sw2    = pdf_params%sw2(level)
-    rt1    = pdf_params%rt1(level)
-    rt2    = pdf_params%rt2(level)
-    srt1   = pdf_params%srt1(level)
-    srt2   = pdf_params%srt2(level)
-    thl1   = pdf_params%thl1(level)
-    thl2   = pdf_params%thl2(level)
-    sthl1  = pdf_params%sthl1(level)
-    sthl2  = pdf_params%sthl2(level)
-    a      = pdf_params%a(level)
-    R1     = pdf_params%R1(level)
-    R2     = pdf_params%R2(level)
-    s1     = pdf_params%s1(level)
-    s2     = pdf_params%s2(level)
-    rrtthl = pdf_params%rrtthl(level)
-    crt1   = pdf_params%crt1(level)
-    crt2   = pdf_params%crt2(level)
-    cthl1  = pdf_params%cthl1(level)
-    cthl2  = pdf_params%cthl2(level)
+    w1          = pdf_params%w1(level)
+    w2          = pdf_params%w2(level)
+    sw1         = pdf_params%sw1(level)
+    sw2         = pdf_params%sw2(level)
+    rt1         = pdf_params%rt1(level)
+    rt2         = pdf_params%rt2(level)
+    srt1        = pdf_params%srt1(level)
+    srt2        = pdf_params%srt2(level)
+    thl1        = pdf_params%thl1(level)
+    thl2        = pdf_params%thl2(level)
+    sthl1       = pdf_params%sthl1(level)
+    sthl2       = pdf_params%sthl2(level)
+    a           = pdf_params%a(level)
+    cloud_frac1 = pdf_params%cloud_frac1(level)
+    R2          = pdf_params%R2(level)
+    s1          = pdf_params%s1(level)
+    s2          = pdf_params%s2(level)
+    rrtthl      = pdf_params%rrtthl(level)
+    crt1        = pdf_params%crt1(level)
+    crt2        = pdf_params%crt2(level)
+    cthl1       = pdf_params%cthl1(level)
+    cthl2       = pdf_params%cthl2(level)
 
     !-----------------------------------------------------------------------
     !
@@ -213,8 +213,8 @@ module generate_lh_sample_mod
     l_sample_flag = .true.
     if ( l_sample_out_of_cloud ) then
       ! Sample non-cloudy grid boxes as well -dschanen 3 June 2009
-      R1 = 1.0
-      R2 = 1.0
+      cloud_frac1 = 1.0
+      R2          = 1.0
 
     else if ( cf < 0.001 ) then
       ! In this case there are essentially no cloudy points to sample;
@@ -363,7 +363,7 @@ module generate_lh_sample_mod
                           dble( crt2 ), dble( cthl2 ), & 
                           dble( mu1 ), dble( mu2 ),  & 
                           Sigma_rtthlw_1, Sigma_rtthlw_2, & 
-                          dble( R1 ), dble( R2 ), & 
+                          dble( cloud_frac1 ), dble( R2 ), & 
                           l_d_variable_lognormal, &
                           rt, thl, X_u_one_lev, X_nl_one_lev ) 
 

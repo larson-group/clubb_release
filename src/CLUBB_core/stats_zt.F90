@@ -200,7 +200,7 @@ module stats_zt
         irc2, & 
         irsl1, & 
         irsl2, & 
-        iR1, & 
+        icloud_frac1, & 
         iR2, & 
         is1, & 
         is2, & 
@@ -516,7 +516,7 @@ module stats_zt
     irc2          = 0
     irsl1         = 0
     irsl2         = 0
-    iR1           = 0
+    icloud_frac1  = 0
     iR2           = 0
     is1           = 0
     is2           = 0
@@ -1837,10 +1837,10 @@ module stats_zt
              "pdf parameter rsl2", "kg/kg", zt )
         k = k + 1
 
-      case ('R1')
-        iR1 = k
-        call stat_assign( iR1, "R1", & 
-             "pdf parameter R1", "count", zt )
+      case ('cloud_frac1')
+        icloud_frac1 = k
+        call stat_assign( icloud_frac1, "cloud_frac1", & 
+             "pdf parameter cloud_frac1", "count", zt )
         k = k + 1
 
       case ('R2')

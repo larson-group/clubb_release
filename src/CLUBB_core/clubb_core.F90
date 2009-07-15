@@ -1209,69 +1209,69 @@ module clubb_core
     ! Continuation of PDF_parameters above (split into two sections of variable
     ! declarations so there are not more than 39 continuation lines of code).
     real, dimension(gr%nnzp) :: &
-      a_zm,         & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
-      a_zt,         & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
-      rc1_zm,       & ! Mean of r_c for 1st normal distribution             [kg/kg]
-      rc1_zt,       & ! Mean of r_c for 1st normal distribution             [kg/kg]
-      rc2_zm,       & ! Mean of r_c for 2nd normal distribution             [kg/kg]
-      rc2_zt,       & ! Mean of r_c for 2nd normal distribution             [kg/kg]
-      rsl1_zm,      & ! Mean of r_sl for 1st normal distribution            [kg/kg]
-      rsl1_zt,      & ! Mean of r_sl for 1st normal distribution            [kg/kg]
-      rsl2_zm,      & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
-      rsl2_zt,      & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
-      R1_zm,        & ! Cloud fraction for 1st normal distribution              [-]
-      R1_zt,        & ! Cloud fraction for 1st normal distribution              [-]
-      R2_zm,        & ! Cloud fraction for 2nd normal distribution              [-]
-      R2_zt,        & ! Cloud fraction for 2nd normal distribution              [-]
-      s1_zm,        & ! Mean of s for 1st normal distribution               [kg/kg]
-      s1_zt,        & ! Mean of s for 1st normal distribution               [kg/kg]
-      s2_zm,        & ! Mean of s for 2nd normal distribution               [kg/kg]
-      s2_zt,        & ! Mean of s for 2nd normal distribution               [kg/kg]
-      ss1_zm,       & ! Standard deviation of s for 1st normal distribution [kg/kg]
-      ss1_zt,       & ! Standard deviation of s for 1st normal distribution [kg/kg]
-      ss2_zm,       & ! Standard deviation of s for 2nd normal distribution [kg/kg]
-      ss2_zt,       & ! Standard deviation of s for 2nd normal distribution [kg/kg]
-      rrtthl_zm,    & ! Within-a-normal correlation of r_t and th_l             [-]
-      rrtthl_zt,    & ! Within-a-normal correlation of r_t and th_l             [-]
-      alpha_thl_zm, & ! Factor relating to normalized variance for th_l         [-]
-      alpha_thl_zt, & ! Factor relating to normalized variance for th_l         [-]
-      alpha_rt_zm,  & ! Factor relating to normalized variance for r_t          [-]
-      alpha_rt_zt     ! Factor relating to normalized variance for r_t          [-]
+      a_zm,           & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
+      a_zt,           & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
+      rc1_zm,         & ! Mean of r_c for 1st normal distribution             [kg/kg]
+      rc1_zt,         & ! Mean of r_c for 1st normal distribution             [kg/kg]
+      rc2_zm,         & ! Mean of r_c for 2nd normal distribution             [kg/kg]
+      rc2_zt,         & ! Mean of r_c for 2nd normal distribution             [kg/kg]
+      rsl1_zm,        & ! Mean of r_sl for 1st normal distribution            [kg/kg]
+      rsl1_zt,        & ! Mean of r_sl for 1st normal distribution            [kg/kg]
+      rsl2_zm,        & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
+      rsl2_zt,        & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
+      cloud_frac1_zm, & ! Cloud fraction for 1st normal distribution              [-]
+      cloud_frac1_zt, & ! Cloud fraction for 1st normal distribution              [-]
+      R2_zm,          & ! Cloud fraction for 2nd normal distribution              [-]
+      R2_zt,          & ! Cloud fraction for 2nd normal distribution              [-]
+      s1_zm,          & ! Mean of s for 1st normal distribution               [kg/kg]
+      s1_zt,          & ! Mean of s for 1st normal distribution               [kg/kg]
+      s2_zm,          & ! Mean of s for 2nd normal distribution               [kg/kg]
+      s2_zt,          & ! Mean of s for 2nd normal distribution               [kg/kg]
+      ss1_zm,         & ! Standard deviation of s for 1st normal distribution [kg/kg]
+      ss1_zt,         & ! Standard deviation of s for 1st normal distribution [kg/kg]
+      ss2_zm,         & ! Standard deviation of s for 2nd normal distribution [kg/kg]
+      ss2_zt,         & ! Standard deviation of s for 2nd normal distribution [kg/kg]
+      rrtthl_zm,      & ! Within-a-normal correlation of r_t and th_l             [-]
+      rrtthl_zt,      & ! Within-a-normal correlation of r_t and th_l             [-]
+      alpha_thl_zm,   & ! Factor relating to normalized variance for th_l         [-]
+      alpha_thl_zt,   & ! Factor relating to normalized variance for th_l         [-]
+      alpha_rt_zm,    & ! Factor relating to normalized variance for r_t          [-]
+      alpha_rt_zt       ! Factor relating to normalized variance for r_t          [-]
 
     !----------------------- Begin Code -----------------------------
 
     ! Store components of pdf_params in the locally declared variables, since
     ! pdf_params may be overwritten if l_call_pdf_closure_twice is true.
-    w1_zt        = pdf_params%w1
-    w2_zt        = pdf_params%w2
-    sw1_zt       = pdf_params%sw1
-    sw2_zt       = pdf_params%sw2
-    rt1_zt       = pdf_params%rt1
-    rt2_zt       = pdf_params%rt2
-    srt1_zt      = pdf_params%srt1
-    srt2_zt      = pdf_params%srt2
-    crt1_zt      = pdf_params%crt1
-    crt2_zt      = pdf_params%crt2
-    cthl1_zt     = pdf_params%cthl1
-    cthl2_zt     = pdf_params%cthl2
-    thl1_zt      = pdf_params%thl1
-    thl2_zt      = pdf_params%thl2
-    sthl1_zt     = pdf_params%sthl1
-    sthl2_zt     = pdf_params%sthl2
-    a_zt         = pdf_params%a
-    rc1_zt       = pdf_params%rc1
-    rc2_zt       = pdf_params%rc2
-    rsl1_zt      = pdf_params%rsl1
-    rsl2_zt      = pdf_params%rsl2
-    R1_zt        = pdf_params%R1
-    R2_zt        = pdf_params%R2
-    s1_zt        = pdf_params%s1
-    s2_zt        = pdf_params%s2
-    ss1_zt       = pdf_params%ss1
-    ss2_zt       = pdf_params%ss2
-    rrtthl_zt    = pdf_params%rrtthl
-    alpha_thl_zt = pdf_params%alpha_thl
-    alpha_rt_zt  = pdf_params%alpha_rt
+    w1_zt          = pdf_params%w1
+    w2_zt          = pdf_params%w2
+    sw1_zt         = pdf_params%sw1
+    sw2_zt         = pdf_params%sw2
+    rt1_zt         = pdf_params%rt1
+    rt2_zt         = pdf_params%rt2
+    srt1_zt        = pdf_params%srt1
+    srt2_zt        = pdf_params%srt2
+    crt1_zt        = pdf_params%crt1
+    crt2_zt        = pdf_params%crt2
+    cthl1_zt       = pdf_params%cthl1
+    cthl2_zt       = pdf_params%cthl2
+    thl1_zt        = pdf_params%thl1
+    thl2_zt        = pdf_params%thl2
+    sthl1_zt       = pdf_params%sthl1
+    sthl2_zt       = pdf_params%sthl2
+    a_zt           = pdf_params%a
+    rc1_zt         = pdf_params%rc1
+    rc2_zt         = pdf_params%rc2
+    rsl1_zt        = pdf_params%rsl1
+    rsl2_zt        = pdf_params%rsl2
+    cloud_frac1_zt = pdf_params%cloud_frac1
+    R2_zt          = pdf_params%R2
+    s1_zt          = pdf_params%s1
+    s2_zt          = pdf_params%s2
+    ss1_zt         = pdf_params%ss1
+    ss2_zt         = pdf_params%ss2
+    rrtthl_zt      = pdf_params%rrtthl
+    alpha_thl_zt   = pdf_params%alpha_thl
+    alpha_rt_zt    = pdf_params%alpha_rt
 
     ! If l_call_pdf_closure_twice is true, use the subroutine pdf_closure to compute
     ! the variables on the momentum grid
@@ -1313,36 +1313,36 @@ module clubb_core
 
       ! Store, in locally declared variables, the pdf_params output 
       ! from the second call to pdf_closure
-      w1_zm        = pdf_params%w1
-      w2_zm        = pdf_params%w2
-      sw1_zm       = pdf_params%sw1
-      sw2_zm       = pdf_params%sw2
-      rt1_zm       = pdf_params%rt1
-      rt2_zm       = pdf_params%rt2
-      srt1_zm      = pdf_params%srt1
-      srt2_zm      = pdf_params%srt2
-      crt1_zm      = pdf_params%crt1
-      crt2_zm      = pdf_params%crt2
-      cthl1_zm     = pdf_params%cthl1
-      cthl2_zm     = pdf_params%cthl2
-      thl1_zm      = pdf_params%thl1
-      thl2_zm      = pdf_params%thl2
-      sthl1_zm     = pdf_params%sthl1
-      sthl2_zm     = pdf_params%sthl2
-      a_zm         = pdf_params%a
-      rc1_zm       = pdf_params%rc1
-      rc2_zm       = pdf_params%rc2
-      rsl1_zm      = pdf_params%rsl1
-      rsl2_zm      = pdf_params%rsl2
-      R1_zm        = pdf_params%R1
-      R2_zm        = pdf_params%R2
-      s1_zm        = pdf_params%s1
-      s2_zm        = pdf_params%s2
-      ss1_zm       = pdf_params%ss1
-      ss2_zm       = pdf_params%ss2
-      rrtthl_zm    = pdf_params%rrtthl
-      alpha_thl_zm = pdf_params%alpha_thl
-      alpha_rt_zm  = pdf_params%alpha_rt
+      w1_zm          = pdf_params%w1
+      w2_zm          = pdf_params%w2
+      sw1_zm         = pdf_params%sw1
+      sw2_zm         = pdf_params%sw2
+      rt1_zm         = pdf_params%rt1
+      rt2_zm         = pdf_params%rt2
+      srt1_zm        = pdf_params%srt1
+      srt2_zm        = pdf_params%srt2
+      crt1_zm        = pdf_params%crt1
+      crt2_zm        = pdf_params%crt2
+      cthl1_zm       = pdf_params%cthl1
+      cthl2_zm       = pdf_params%cthl2
+      thl1_zm        = pdf_params%thl1
+      thl2_zm        = pdf_params%thl2
+      sthl1_zm       = pdf_params%sthl1
+      sthl2_zm       = pdf_params%sthl2
+      a_zm           = pdf_params%a
+      rc1_zm         = pdf_params%rc1
+      rc2_zm         = pdf_params%rc2
+      rsl1_zm        = pdf_params%rsl1
+      rsl2_zm        = pdf_params%rsl2
+      cloud_frac1_zm = pdf_params%cloud_frac1
+      R2_zm          = pdf_params%R2
+      s1_zm          = pdf_params%s1
+      s2_zm          = pdf_params%s2
+      ss1_zm         = pdf_params%ss1
+      ss2_zm         = pdf_params%ss2
+      rrtthl_zm      = pdf_params%rrtthl
+      alpha_thl_zm   = pdf_params%alpha_thl
+      alpha_rt_zm    = pdf_params%alpha_rt
 
     else      
 
@@ -1379,66 +1379,66 @@ module clubb_core
         wp2sclrp_zm(gr%nnzp,i)    = 0.0
       end do ! i = 1, sclr_dim
 
-      w1_zm                 = zt2zm( pdf_params%w1 )
-      w1_zm(gr%nnzp)        = 0.0
-      w2_zm                 = zt2zm( pdf_params%w2 )
-      w2_zm(gr%nnzp)        = 0.0
-      sw1_zm                = zt2zm( pdf_params%sw1 )
-      sw1_zm(gr%nnzp)       = 0.0   
-      sw2_zm                = zt2zm( pdf_params%sw2 )
-      sw2_zm(gr%nnzp)       = 0.0
-      rt1_zm                = zt2zm( pdf_params%rt1 )
-      rt1_zm(gr%nnzp)       = 0.0
-      rt2_zm                = zt2zm( pdf_params%rt2 )
-      rt2_zm(gr%nnzp)       = 0.0
-      srt1_zm               = zt2zm( pdf_params%srt1 )
-      srt1_zm(gr%nnzp)      = 0.0
-      srt2_zm               = zt2zm( pdf_params%srt2 )
-      srt2_zm(gr%nnzp)      = 0.0
-      crt1_zm               = zt2zm( pdf_params%crt1 )
-      crt1_zm(gr%nnzp)      = 0.0
-      crt2_zm               = zt2zm( pdf_params%crt2 )
-      crt2_zm(gr%nnzp)      = 0.0
-      cthl1_zm              = zt2zm( pdf_params%cthl1 )
-      cthl1_zm(gr%nnzp)     = 0.0
-      cthl2_zm              = zt2zm( pdf_params%cthl2 )
-      cthl2_zm(gr%nnzp)     = 0.0
-      thl1_zm               = zt2zm( pdf_params%thl1 )
-      thl1_zm(gr%nnzp)      = 0.0
-      thl2_zm               = zt2zm( pdf_params%thl2 )
-      thl2_zm(gr%nnzp)      = 0.0
-      sthl1_zm              = zt2zm( pdf_params%sthl1 )
-      sthl1_zm(gr%nnzp)     = 0.0
-      sthl2_zm              = zt2zm( pdf_params%sthl2 )
-      sthl2_zm(gr%nnzp)     = 0.0
-      a_zm                  = zt2zm( pdf_params%a )
-      a_zm(gr%nnzp)         = 0.0
-      rc1_zm                = zt2zm( pdf_params%rc1 )
-      rc1_zm(gr%nnzp)       = 0.0
-      rc2_zm                = zt2zm( pdf_params%rc2 )
-      rc2_zm(gr%nnzp)       = 0.0
-      rsl1_zm               = zt2zm( pdf_params%rsl1 )
-      rsl1_zm(gr%nnzp)      = 0.0
-      rsl2_zm               = zt2zm( pdf_params%rsl2 )
-      rsl2_zm(gr%nnzp)      = 0.0
-      R1_zm                 = zt2zm( pdf_params%R1 )
-      R1_zm(gr%nnzp)        = 0.0
-      R2_zm                 = zt2zm( pdf_params%R2 )
-      R2_zm(gr%nnzp)        = 0.0
-      s1_zm                 = zt2zm( pdf_params%s1 )
-      s1_zm(gr%nnzp)        = 0.0
-      s2_zm                 = zt2zm( pdf_params%s2 )
-      s2_zm(gr%nnzp)        = 0.0
-      ss1_zm                = zt2zm( pdf_params%ss1 )
-      ss1_zm(gr%nnzp)       = 0.0
-      ss2_zm                = zt2zm( pdf_params%ss2 )
-      ss2_zm(gr%nnzp)       = 0.0
-      rrtthl_zm             = zt2zm( pdf_params%rrtthl )
-      rrtthl_zm(gr%nnzp)    = 0.0
-      alpha_thl_zm          = zt2zm( pdf_params%alpha_thl )
-      alpha_thl_zm(gr%nnzp) = 0.0
-      alpha_rt_zm           = zt2zm( pdf_params%alpha_rt )
-      alpha_rt_zm(gr%nnzp)  = 0.0
+      w1_zm                   = zt2zm( pdf_params%w1 )
+      w1_zm(gr%nnzp)          = 0.0
+      w2_zm                   = zt2zm( pdf_params%w2 )
+      w2_zm(gr%nnzp)          = 0.0
+      sw1_zm                  = zt2zm( pdf_params%sw1 )
+      sw1_zm(gr%nnzp)         = 0.0   
+      sw2_zm                  = zt2zm( pdf_params%sw2 )
+      sw2_zm(gr%nnzp)         = 0.0
+      rt1_zm                  = zt2zm( pdf_params%rt1 )
+      rt1_zm(gr%nnzp)         = 0.0
+      rt2_zm                  = zt2zm( pdf_params%rt2 )
+      rt2_zm(gr%nnzp)         = 0.0
+      srt1_zm                 = zt2zm( pdf_params%srt1 )
+      srt1_zm(gr%nnzp)        = 0.0
+      srt2_zm                 = zt2zm( pdf_params%srt2 )
+      srt2_zm(gr%nnzp)        = 0.0
+      crt1_zm                 = zt2zm( pdf_params%crt1 )
+      crt1_zm(gr%nnzp)        = 0.0
+      crt2_zm                 = zt2zm( pdf_params%crt2 )
+      crt2_zm(gr%nnzp)        = 0.0
+      cthl1_zm                = zt2zm( pdf_params%cthl1 )
+      cthl1_zm(gr%nnzp)       = 0.0
+      cthl2_zm                = zt2zm( pdf_params%cthl2 )
+      cthl2_zm(gr%nnzp)       = 0.0
+      thl1_zm                 = zt2zm( pdf_params%thl1 )
+      thl1_zm(gr%nnzp)        = 0.0
+      thl2_zm                 = zt2zm( pdf_params%thl2 )
+      thl2_zm(gr%nnzp)        = 0.0
+      sthl1_zm                = zt2zm( pdf_params%sthl1 )
+      sthl1_zm(gr%nnzp)       = 0.0
+      sthl2_zm                = zt2zm( pdf_params%sthl2 )
+      sthl2_zm(gr%nnzp)       = 0.0
+      a_zm                    = zt2zm( pdf_params%a )
+      a_zm(gr%nnzp)           = 0.0
+      rc1_zm                  = zt2zm( pdf_params%rc1 )
+      rc1_zm(gr%nnzp)         = 0.0
+      rc2_zm                  = zt2zm( pdf_params%rc2 )
+      rc2_zm(gr%nnzp)         = 0.0
+      rsl1_zm                 = zt2zm( pdf_params%rsl1 )
+      rsl1_zm(gr%nnzp)        = 0.0
+      rsl2_zm                 = zt2zm( pdf_params%rsl2 )
+      rsl2_zm(gr%nnzp)        = 0.0
+      cloud_frac1_zm          = zt2zm( pdf_params%cloud_frac1 )
+      cloud_frac1_zm(gr%nnzp) = 0.0
+      R2_zm                   = zt2zm( pdf_params%R2 )
+      R2_zm(gr%nnzp)          = 0.0
+      s1_zm                   = zt2zm( pdf_params%s1 )
+      s1_zm(gr%nnzp)          = 0.0
+      s2_zm                   = zt2zm( pdf_params%s2 )
+      s2_zm(gr%nnzp)          = 0.0
+      ss1_zm                  = zt2zm( pdf_params%ss1 )
+      ss1_zm(gr%nnzp)         = 0.0
+      ss2_zm                  = zt2zm( pdf_params%ss2 )
+      ss2_zm(gr%nnzp)         = 0.0
+      rrtthl_zm               = zt2zm( pdf_params%rrtthl )
+      rrtthl_zm(gr%nnzp)      = 0.0
+      alpha_thl_zm            = zt2zm( pdf_params%alpha_thl )
+      alpha_thl_zm(gr%nnzp)   = 0.0
+      alpha_rt_zm             = zt2zm( pdf_params%alpha_rt )
+      alpha_rt_zm(gr%nnzp)    = 0.0
     end if ! l_call_pdf_closure_twice
 
     ! Use the trapezoidal rule to recompute the variables on the zt level
@@ -1459,36 +1459,36 @@ module clubb_core
       wp2sclrp(:,i)    = trapezoid( wp2sclrp(:,i), wp2sclrp_zm(:,i) )
     end do ! i = 1, sclr_dim
 
-    pdf_params%w1        = trapezoid( w1_zt, w1_zm )
-    pdf_params%w2        = trapezoid( w2_zt, w2_zm )
-    pdf_params%sw1       = trapezoid( sw1_zt, sw1_zm )
-    pdf_params%sw2       = trapezoid( sw2_zt, sw2_zm )
-    pdf_params%rt1       = trapezoid( rt1_zt, rt1_zm )
-    pdf_params%rt2       = trapezoid( rt2_zt, rt2_zm )
-    pdf_params%srt1      = trapezoid( srt1_zt, srt1_zm )
-    pdf_params%srt2      = trapezoid( srt2_zt, srt2_zm )
-    pdf_params%crt1      = trapezoid( crt1_zt, crt1_zm )
-    pdf_params%crt2      = trapezoid( crt2_zt, crt2_zm )
-    pdf_params%cthl1     = trapezoid( cthl1_zt, cthl1_zm )
-    pdf_params%cthl2     = trapezoid( cthl2_zt, cthl2_zm )
-    pdf_params%thl1      = trapezoid( thl1_zt, thl1_zm )
-    pdf_params%thl2      = trapezoid( thl2_zt, thl2_zm )
-    pdf_params%sthl1     = trapezoid( sthl1_zt, sthl1_zm )
-    pdf_params%sthl2     = trapezoid( sthl2_zt, sthl2_zm )
-    pdf_params%a         = trapezoid( a_zt, a_zm )
-    pdf_params%rc1       = trapezoid( rc1_zt, rc1_zm )
-    pdf_params%rc2       = trapezoid( rc2_zt, rc2_zm )
-    pdf_params%rsl1      = trapezoid( rsl1_zt, rsl1_zm )
-    pdf_params%rsl2      = trapezoid( rsl2_zt, rsl2_zm )
-    pdf_params%R1        = trapezoid( R1_zt, R1_zm )
-    pdf_params%R2        = trapezoid( R2_zt, R2_zm )
-    pdf_params%s1        = trapezoid( s1_zt, s1_zm )
-    pdf_params%s2        = trapezoid( s2_zt, s2_zm )
-    pdf_params%ss1       = trapezoid( ss1_zt, ss1_zm )
-    pdf_params%ss2       = trapezoid( ss2_zt, ss2_zm )
-    pdf_params%rrtthl    = trapezoid( rrtthl_zt, rrtthl_zm )
-    pdf_params%alpha_thl = trapezoid( alpha_thl_zt, alpha_thl_zm )
-    pdf_params%alpha_rt  = trapezoid( alpha_rt_zt, alpha_rt_zm )
+    pdf_params%w1          = trapezoid( w1_zt, w1_zm )
+    pdf_params%w2          = trapezoid( w2_zt, w2_zm )
+    pdf_params%sw1         = trapezoid( sw1_zt, sw1_zm )
+    pdf_params%sw2         = trapezoid( sw2_zt, sw2_zm )
+    pdf_params%rt1         = trapezoid( rt1_zt, rt1_zm )
+    pdf_params%rt2         = trapezoid( rt2_zt, rt2_zm )
+    pdf_params%srt1        = trapezoid( srt1_zt, srt1_zm )
+    pdf_params%srt2        = trapezoid( srt2_zt, srt2_zm )
+    pdf_params%crt1        = trapezoid( crt1_zt, crt1_zm )
+    pdf_params%crt2        = trapezoid( crt2_zt, crt2_zm )
+    pdf_params%cthl1       = trapezoid( cthl1_zt, cthl1_zm )
+    pdf_params%cthl2       = trapezoid( cthl2_zt, cthl2_zm )
+    pdf_params%thl1        = trapezoid( thl1_zt, thl1_zm )
+    pdf_params%thl2        = trapezoid( thl2_zt, thl2_zm )
+    pdf_params%sthl1       = trapezoid( sthl1_zt, sthl1_zm )
+    pdf_params%sthl2       = trapezoid( sthl2_zt, sthl2_zm )
+    pdf_params%a           = trapezoid( a_zt, a_zm )
+    pdf_params%rc1         = trapezoid( rc1_zt, rc1_zm )
+    pdf_params%rc2         = trapezoid( rc2_zt, rc2_zm )
+    pdf_params%rsl1        = trapezoid( rsl1_zt, rsl1_zm )
+    pdf_params%rsl2        = trapezoid( rsl2_zt, rsl2_zm )
+    pdf_params%cloud_frac1 = trapezoid( cloud_frac1_zt, cloud_frac1_zm )
+    pdf_params%R2          = trapezoid( R2_zt, R2_zm )
+    pdf_params%s1          = trapezoid( s1_zt, s1_zm )
+    pdf_params%s2          = trapezoid( s2_zt, s2_zm )
+    pdf_params%ss1         = trapezoid( ss1_zt, ss1_zm )
+    pdf_params%ss2         = trapezoid( ss2_zt, ss2_zm )
+    pdf_params%rrtthl      = trapezoid( rrtthl_zt, rrtthl_zm )
+    pdf_params%alpha_thl   = trapezoid( alpha_thl_zt, alpha_thl_zm )
+    pdf_params%alpha_rt    = trapezoid( alpha_rt_zt, alpha_rt_zm )
     ! End of trapezoidal rule
 
     return

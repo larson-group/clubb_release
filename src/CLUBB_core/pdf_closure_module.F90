@@ -170,36 +170,36 @@ module pdf_closure_module
 
     ! Variables that are stored in derived data type pdf_params.
     real ::  &
-      w1,        & ! Mean of w for 1st normal distribution                 [m/s]
-      w2,        & ! Mean of w for 2nd normal distribution                 [m/s]
-      sw1,       & ! Variance of w for 1st normal distribution         [m^2/s^2]
-      sw2,       & ! Variance of w for 2nd normal distribution         [m^2/s^2]
-      rt1,       & ! Mean of r_t for 1st normal distribution             [kg/kg]
-      rt2,       & ! Mean of r_t for 2nd normal distribution             [kg/kg]
-      srt1,      & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
-      srt2,      & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
-      crt1,      & ! Coefficient for s'                                      [-]
-      crt2,      & ! Coefficient for s'                                      [-]
-      cthl1,     & ! Coefficient for s'                                    [1/K]
-      cthl2,     & ! Coefficient for s'                                    [1/K]
-      thl1,      & ! Mean of th_l for 1st normal distribution                [K]
-      thl2,      & ! Mean of th_l for 2nd normal distribution                [K]
-      sthl1,     & ! Variance of th_l for 1st normal distribution          [K^2]
-      sthl2,     & ! Variance of th_l for 2nd normal distribution          [K^2]
-      a,         & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
-      rc1,       & ! Mean of r_c for 1st normal distribution             [kg/kg]
-      rc2,       & ! Mean of r_c for 2nd normal distribution             [kg/kg]
-      rsl1,      & ! Mean of r_sl for 1st normal distribution            [kg/kg]
-      rsl2,      & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
-      R1,        & ! Cloud fraction for 1st normal distribution              [-]
-      R2,        & ! Cloud fraction for 2nd normal distribution              [-]
-      s1,        & ! Mean of s for 1st normal distribution               [kg/kg]
-      s2,        & ! Mean of s for 2nd normal distribution               [kg/kg]
-      ss1,       & ! Standard deviation of s for 1st normal distribution [kg/kg]
-      ss2,       & ! Standard deviation of s for 2nd normal distribution [kg/kg]
-      rrtthl,    & ! Within-a-normal (sub-plume) correlation of r_t and th_l [-]
-      alpha_thl, & ! Factor relating to normalized variance for th_l         [-]
-      alpha_rt     ! Factor relating to normalized variance for r_t          [-]
+      w1,          & ! Mean of w for 1st normal distribution                 [m/s]
+      w2,          & ! Mean of w for 2nd normal distribution                 [m/s]
+      sw1,         & ! Variance of w for 1st normal distribution         [m^2/s^2]
+      sw2,         & ! Variance of w for 2nd normal distribution         [m^2/s^2]
+      rt1,         & ! Mean of r_t for 1st normal distribution             [kg/kg]
+      rt2,         & ! Mean of r_t for 2nd normal distribution             [kg/kg]
+      srt1,        & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
+      srt2,        & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
+      crt1,        & ! Coefficient for s'                                      [-]
+      crt2,        & ! Coefficient for s'                                      [-]
+      cthl1,       & ! Coefficient for s'                                    [1/K]
+      cthl2,       & ! Coefficient for s'                                    [1/K]
+      thl1,        & ! Mean of th_l for 1st normal distribution                [K]
+      thl2,        & ! Mean of th_l for 2nd normal distribution                [K]
+      sthl1,       & ! Variance of th_l for 1st normal distribution          [K^2]
+      sthl2,       & ! Variance of th_l for 2nd normal distribution          [K^2]
+      a,           & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
+      rc1,         & ! Mean of r_c for 1st normal distribution             [kg/kg]
+      rc2,         & ! Mean of r_c for 2nd normal distribution             [kg/kg]
+      rsl1,        & ! Mean of r_sl for 1st normal distribution            [kg/kg]
+      rsl2,        & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
+      cloud_frac1, & ! Cloud fraction for 1st normal distribution              [-]
+      R2,          & ! Cloud fraction for 2nd normal distribution              [-]
+      s1,          & ! Mean of s for 1st normal distribution               [kg/kg]
+      s2,          & ! Mean of s for 2nd normal distribution               [kg/kg]
+      ss1,         & ! Standard deviation of s for 1st normal distribution [kg/kg]
+      ss2,         & ! Standard deviation of s for 2nd normal distribution [kg/kg]
+      rrtthl,      & ! Within-a-normal (sub-plume) correlation of r_t and th_l [-]
+      alpha_thl,   & ! Factor relating to normalized variance for th_l         [-]
+      alpha_rt       ! Factor relating to normalized variance for r_t          [-]
 
                    ! Note:  alpha coefficients = 0.5 * ( 1 - correlations^2 ).
                    !        These are used to calculate the scalar widths
@@ -604,15 +604,15 @@ module pdf_closure_module
 
     if ( ss1 > sstol ) then
       zeta1 = s1/ss1
-      R1  = 0.5*( 1. + erf( zeta1/sqrt_2 )  )
-      rc1 = s1*R1+ss1*exp( -0.5*zeta1**2 )/( sqrt_2pi )
+      cloud_frac1  = 0.5*( 1. + erf( zeta1/sqrt_2 )  )
+      rc1          = s1*cloud_frac1+ss1*exp( -0.5*zeta1**2 )/( sqrt_2pi )
     else
       if ( s1 < 0.0 ) then
-        R1  = 0.0
-        rc1 = 0.0
+        cloud_frac1  = 0.0
+        rc1          = 0.0
       else
-        R1  = 1.0
-        rc1 = s1
+        cloud_frac1  = 1.0
+        rc1          = s1
       end if ! s1 < 0
     end if ! ss1 > sstol
 
@@ -641,16 +641,16 @@ module pdf_closure_module
     wpthvp = wpthlp + ep1*T0*wprtp + BD*wprcp
 
     ! Account for subplume correlation in qt-thl
-    thlprcp  = a * ( (thl1-thlm)*rc1 - (cthl1*sthl1)*R1 ) & 
+    thlprcp  = a * ( (thl1-thlm)*rc1 - (cthl1*sthl1)*cloud_frac1 ) & 
              + (1.-a) * ( (thl2-thlm)*rc2 - (cthl2*sthl2)*R2 ) & 
-             + a*rrtthl*crt1*sqrt( srt1*sthl1 )*R1 & 
+             + a*rrtthl*crt1*sqrt( srt1*sthl1 )*cloud_frac1 & 
              + (1.-a)*rrtthl*crt2*sqrt( srt2*sthl2 )*R2
     thlpthvp = thlp2 + ep1*T0*rtpthlp + BD*thlprcp
 
     ! Account for subplume correlation in qt-thl
-    rtprcp = a * ( (rt1-rtm)*rc1 + (crt1*srt1)*R1 ) & 
+    rtprcp = a * ( (rt1-rtm)*rc1 + (crt1*srt1)*cloud_frac1 ) & 
            + (1.-a) * ( (rt2-rtm)*rc2 + (crt2*srt2)*R2 ) & 
-           - a*rrtthl*cthl1*sqrt( srt1*sthl1 )*R1 & 
+           - a*rrtthl*cthl1*sqrt( srt1*sthl1 )*cloud_frac1 & 
            - (1.-a)*rrtthl*cthl2*sqrt( srt2*sthl2 )*R2
 
     rtpthvp  = rtpthlp + ep1*T0*rtp2 + BD*rtprcp
@@ -662,9 +662,9 @@ module pdf_closure_module
       do i=1, sclr_dim
         sclrprcp(i) &
         = a * ( ( sclr1(i)-sclrm(i) ) * rc1 ) + (1.-a) * ( ( sclr2(i)-sclrm(i) ) * rc2 ) & 
-        + a*rsclrrt(i) * crt1  * sqrt( ssclr1(i) * srt1 ) * R1 & 
+        + a*rsclrrt(i) * crt1  * sqrt( ssclr1(i) * srt1 ) * cloud_frac1 & 
         + (1.-a) * rsclrrt(i) * crt2  * sqrt( ssclr2(i) * srt2 ) * R2 & 
-        - a * rsclrthl(i) * cthl1  * sqrt( ssclr1(i) * sthl1 ) * R1 & 
+        - a * rsclrthl(i) * cthl1  * sqrt( ssclr1(i) * sthl1 ) * cloud_frac1 & 
         - (1.-a) * rsclrthl(i) * cthl2  * sqrt( ssclr2(i) * sthl2 ) * R2
 
         sclrpthvp(i) = sclrpthlp(i) + ep1*T0*sclrprtp(i) + BD*sclrprcp(i)
@@ -673,8 +673,8 @@ module pdf_closure_module
 
     ! Compute mean cloud fraction and cloud water
 
-    cf  = a * R1 + (1.-a) * R2
-    rcm = a * rc1 + (1.-a) * rc2
+    cf  = a * cloud_frac1 + (1.-a) * R2
+    rcm = a * rc1         + (1.-a) * rc2
 
     ! Note: Brian added the following lines to ensure that there
     ! are never any negative liquid water values (or any negative
@@ -692,43 +692,43 @@ module pdf_closure_module
     ! This is not needed for closure.  Statistical Analysis only.
     if ( ircp2 > 0 ) then
 
-      rcp2 = a * ( s1*rc1 + R1*ss1**2 ) + ( 1.-a ) * ( s2*rc2 + R2*ss2**2 ) - rcm**2
+      rcp2 = a * ( s1*rc1 + cloud_frac1*ss1**2 ) + ( 1.-a ) * ( s2*rc2 + R2*ss2**2 ) - rcm**2
       rcp2 = max( zero_threshold, rcp2 )
 
     end if
 
 
     ! Save PDF parameters
-    pdf_params%w1(level)        = w1
-    pdf_params%w2(level)        = w2
-    pdf_params%sw1(level)       = sw1
-    pdf_params%sw2(level)       = sw2
-    pdf_params%rt1(level)       = rt1
-    pdf_params%rt2(level)       = rt2
-    pdf_params%srt1(level)      = srt1
-    pdf_params%srt2(level)      = srt2
-    pdf_params%crt1(level)      = crt1
-    pdf_params%crt2(level)      = crt2
-    pdf_params%cthl1(level)     = cthl1
-    pdf_params%cthl2(level)     = cthl2
-    pdf_params%thl1(level)      = thl1
-    pdf_params%thl2(level)      = thl2
-    pdf_params%sthl1(level)     = sthl1
-    pdf_params%sthl2(level)     = sthl2
-    pdf_params%a(level)         = a
-    pdf_params%rc1(level)       = rc1
-    pdf_params%rc2(level)       = rc2
-    pdf_params%rsl1(level)      = rsl1
-    pdf_params%rsl2(level)      = rsl2
-    pdf_params%R1(level)        = R1
-    pdf_params%R2(level)        = R2
-    pdf_params%s1(level)        = s1
-    pdf_params%s2(level)        = s2
-    pdf_params%ss1(level)       = ss1
-    pdf_params%ss2(level)       = ss2
-    pdf_params%rrtthl(level)    = rrtthl
-    pdf_params%alpha_thl(level) = alpha_thl
-    pdf_params%alpha_rt(level)  = alpha_rt
+    pdf_params%w1(level)          = w1
+    pdf_params%w2(level)          = w2
+    pdf_params%sw1(level)         = sw1
+    pdf_params%sw2(level)         = sw2
+    pdf_params%rt1(level)         = rt1
+    pdf_params%rt2(level)         = rt2
+    pdf_params%srt1(level)        = srt1
+    pdf_params%srt2(level)        = srt2
+    pdf_params%crt1(level)        = crt1
+    pdf_params%crt2(level)        = crt2
+    pdf_params%cthl1(level)       = cthl1
+    pdf_params%cthl2(level)       = cthl2
+    pdf_params%thl1(level)        = thl1
+    pdf_params%thl2(level)        = thl2
+    pdf_params%sthl1(level)       = sthl1
+    pdf_params%sthl2(level)       = sthl2
+    pdf_params%a(level)           = a
+    pdf_params%rc1(level)         = rc1
+    pdf_params%rc2(level)         = rc2
+    pdf_params%rsl1(level)        = rsl1
+    pdf_params%rsl2(level)        = rsl2
+    pdf_params%cloud_frac1(level) = cloud_frac1
+    pdf_params%R2(level)          = R2
+    pdf_params%s1(level)          = s1
+    pdf_params%s2(level)          = s2
+    pdf_params%ss1(level)         = ss1
+    pdf_params%ss2(level)         = ss2
+    pdf_params%rrtthl(level)      = rrtthl
+    pdf_params%alpha_thl(level)   = alpha_thl
+    pdf_params%alpha_rt(level)    = alpha_rt
 
 
     if ( clubb_at_least_debug_level( 2 ) ) then 
@@ -815,7 +815,7 @@ module pdf_closure_module
         write(fstderr,*) "pdf_params%rc2 = ", pdf_params%rc2(level)
         write(fstderr,*) "pdf_params%rsl1 = ", pdf_params%rsl1(level)
         write(fstderr,*) "pdf_params%rsl2 = ", pdf_params%rsl2(level)
-        write(fstderr,*) "pdf_params%R1 = ", pdf_params%R1(level)
+        write(fstderr,*) "pdf_params%cloud_frac1 = ", pdf_params%cloud_frac1(level)
         write(fstderr,*) "pdf_params%R2 = ", pdf_params%R2(level)
         write(fstderr,*) "pdf_params%s1 = ", pdf_params%s1(level)
         write(fstderr,*) "pdf_params%s2 = ", pdf_params%s2(level)
