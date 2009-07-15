@@ -1,4 +1,4 @@
-function [varData, levData] = VariableReadGrADS( filePath, variableToRead, startTime, endTime )
+function [varData, levData] = VariableReadGrADS( filePath, variableToRead, startTime, endTime, plotType )
 
 %Read in some necessary information about the GRaDS file
 [dataFileName, nz, z, numTimesteps, dt, numVars, listofparams] = header_read_expanded(filePath);
@@ -29,7 +29,11 @@ levData = 0;
 for i = 1:numVars
 	%See if the variable we found is the variable we are interested in
 	if ( strcmp( strtrim(listofparams(i, :)), variableToRead ) )
-		varData = read_grads_hoc_endian([dataFilePath, dataFileName], 'ieee-le', nz, t_start, t_end, i, numVars);
+		if strcmp(plotType, 'profile')
+			varData = read_grads_hoc_endian([dataFilePath, dataFileName], 'ieee-le', nz, t_start, t_end, i, numVars);
+		elseif strcmp(plotType, 'timeseries')
+			varData = read_grads_hoc_sfc_endian([dataFilePath, dataFileName], 'ieee-le', nz, t_start, t_end, i, numVars);
+		end
 	end
 end
 

@@ -63,9 +63,9 @@ for i=1:numLines
 		disp(['Reading variable ', varString]);
 
 		if strcmp(extension, 'ctl')
-			[variableData, levels] = VariableReadGrADS(filePath, varString, startTime, endTime);
+			[variableData, levels] = VariableReadGrADS(filePath, varString, startTime, endTime, plotType);
 		elseif strcmp(extension, 'nc')
-			[variableData, levels] = VariableReadNC(filePath, varString, startTime, endTime);
+			[variableData, levels] = VariableReadNC(filePath, varString, startTime, endTime, plotType);
 		end
 
 		%Store the read in values to the proper variable name (ex. variable rtm will be read in to the variable named rtm,
