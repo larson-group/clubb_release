@@ -16,24 +16,24 @@ mm_per_m = 1000;
 nz = 128;
 
 t_start = 1;
-t_end = t_start + 120;
+t_end = t_start + 719;
 
-vars_to_plot = ['p     '; 'T     '; 'qv    '; 'ql    '; 'cloud '; 'tdt_lw'; 'tdt_sw'; 'tdt_ls'; 'qdt_ls']
+vars_to_plot = ['cldtot'; 'tglwp '; 'precw '; 'tsair '; 'ps    '; 'prect '; 'lh    '; 'sh    '; 'fsnt  '; 'flnt  ']
 
 for i=1:size(vars_to_plot,1);
-	plot_index = 1;
-
 	minVal = 0;
 	maxVal = 0;
 
 	var_to_plot = strtrim(vars_to_plot(i, 1:size(vars_to_plot,2)))
 
-	sfcfilepath = ['/home/senkbeir/nc_output/', 'cloud_feedback_s6_scm_UWM_CLUBB_v1.nc'];	
+	sfcfilepath = ['/home/senkbeir/nc_output/', 'cloud_feedback_s11_scm_UWM_CLUBB_v1.nc'];	
 
 	if ( exist(sfcfilepath) )
 		sfcfile = netcdf(sfcfilepath,'nowrite');
 
 		file_time = sfcfile{'time'}(:);
+		file_time = file_time ./ 10; % Timestep (output time in minutes)
+		file_time = file_time ./ 60;
 
 		file_var = sfcfile{var_to_plot}(:);
 
@@ -49,15 +49,13 @@ for i=1:size(vars_to_plot,1);
 		if (max(max(file_var)) > maxVal)
 			maxVal = max(max(file_var));
 		end
-
-		plot_index = plot_index + 1;
 	end 
 
 	hold off
 
 	%Determine the unit
 	units = nc_attget( sfcfilepath, var_to_plot, 'unit' );
-
+	
 	ylabel([var_to_plot, ' ', '[', units, ']'])
 	xlabel('Time   [h]')
 	title(['Cloud Feedback ', var_to_plot, ' verification '])
