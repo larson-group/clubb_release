@@ -42,13 +42,13 @@ clear legendText;
 
 %Loop through each line on the plot
 for i=1:numLines
-	filePath = varargin{1 * i};
-	varName = varargin{2 * i};
-	varExpression = varargin{3 * i};
-	lineName = varargin{4 * i};
-	lineWidth = str2num(varargin{5 * i});
-	lineType = varargin{6 * i};
-	lineColor = varargin{7 * i};
+	filePath = varargin{1 + ((i - 1) * 7)};
+	varName = varargin{2 + ((i - 1) * 7)};
+	varExpression = varargin{3 + ((i - 1) * 7)};
+	lineName = varargin{4 + ((i - 1) * 7)};
+	lineWidth = str2num(varargin{5 + ((i - 1) * 7)});
+	lineType = varargin{6 + ((i - 1) * 7)};
+	lineColor = varargin{7 + ((i - 1) * 7)};
 
 	%Determine the type of file being read in
 	extension = DetermineExtension(filePath);
@@ -92,21 +92,25 @@ for i=1:numLines
 	%Add a legend and scale the axis
 	if strcmp(plotType, 'profile')
 		lines(i) = ProfileFunctions.addLine(lineName, levels, valueToPlot, lineWidth, lineType, lineColor);
-		legendText(i,1:size(lineName,2)) = lineName;
-		
-		ProfileFunctions.setTitle(plotTitle);
-		ProfileFunctions.setAxisLabels(plotUnits, '[m]'); 
-		ProfileFunctions.addLegend(lines, legendText);
-		ProfileFunctions.setAxis(min(valueToPlot), max(valueToPlot), startHeight, endHeight);
 	elseif strcmp(plotType, 'timeseries')
 		lines(i) = TimeseriesFunctions.addLine(lineName, times, valueToPlot, lineWidth, lineType, lineColor);
-		legendText(i,1:size(lineName,2)) = lineName;
-		
-		TimeseriesFunctions.setTitle(plotTitle);
-		TimeseriesFunctions.setAxisLabels('[s]', plotUnits); 
-		TimeseriesFunctions.addLegend(lines, legendText);
-		TimeseriesFunctions.setAxis(min(valueToPlot), max(valueToPlot), startTime, endTime);
 	end
+	
+	%Set the text for the legend
+	legendText(i,1:size(lineName,2)) = lineName;
+end
+
+%Add a legend and scale the axis
+if strcmp(plotType, 'profile')	
+	ProfileFunctions.setTitle(plotTitle);
+	ProfileFunctions.setAxisLabels(plotUnits, '[m]'); 
+	ProfileFunctions.addLegend(lines, legendText);
+	ProfileFunctions.setAxis(min(valueToPlot), max(valueToPlot), startHeight, endHeight);
+elseif strcmp(plotType, 'timeseries')		
+	TimeseriesFunctions.setTitle(plotTitle);
+	TimeseriesFunctions.setAxisLabels('[s]', plotUnits); 	
+	TimeseriesFunctions.addLegend(lines, legendText);
+	TimeseriesFunctions.setAxis(min(valueToPlot), max(valueToPlot), startTime, endTime);
 end
 
 %Output the EPS file
