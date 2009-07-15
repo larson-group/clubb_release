@@ -80,8 +80,8 @@ for i=1:numLines
 		[dummy, dummy , dummy, t_time_steps, time_step_length, dummy, dummy] = header_read_expanded_netcdf(filePath);
 	end
 
-	for k=1:t_time_steps
-		times = k * time_step_length;
+	for k=1:(ceil((endTime - startTime) / time_step_length) + 1)
+		times(k) = startTime + ((k - 1) * time_step_length);
 	end
 
 	%Now evaluate the expression using the read in values,
@@ -89,7 +89,7 @@ for i=1:numLines
 	
 	%At this point, the value of the expression is contained in valueToPlot
 
-	%Add a legend and scale the axis
+	%Add a the line to the plot
 	if strcmp(plotType, 'profile')
 		lines(i) = ProfileFunctions.addLine(lineName, levels, valueToPlot, lineWidth, lineType, lineColor);
 	elseif strcmp(plotType, 'timeseries')
@@ -103,12 +103,12 @@ end
 %Add a legend and scale the axis
 if strcmp(plotType, 'profile')	
 	ProfileFunctions.setTitle(plotTitle);
-	ProfileFunctions.setAxisLabels(plotUnits, '[m]'); 
+	ProfileFunctions.setAxisLabels(plotUnits, 'Height [m]'); 
 	ProfileFunctions.addLegend(lines, legendText);
 	ProfileFunctions.setAxis(min(valueToPlot), max(valueToPlot), startHeight, endHeight);
 elseif strcmp(plotType, 'timeseries')		
 	TimeseriesFunctions.setTitle(plotTitle);
-	TimeseriesFunctions.setAxisLabels('[s]', plotUnits); 	
+	TimeseriesFunctions.setAxisLabels('Time [min]', plotUnits); 	
 	TimeseriesFunctions.addLegend(lines, legendText);
 	TimeseriesFunctions.setAxis(min(valueToPlot), max(valueToPlot), startTime, endTime);
 end

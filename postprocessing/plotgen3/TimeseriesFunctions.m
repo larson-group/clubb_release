@@ -51,7 +51,7 @@ classdef TimeseriesFunctions
 			ymin = min(minVal);
 			ymax = max(maxVal);
 			
-			if ( xmax == xmin )
+			if ( ymax == ymin )
    				ymin = ymin - equiv_space;
    				ymax = ymax + equiv_space;
 			else
