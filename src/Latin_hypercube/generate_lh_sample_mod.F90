@@ -117,7 +117,7 @@ module generate_lh_sample_mod
     real :: rrtthl
 
     real :: s1, s2
-    real :: cloud_frac1, R2
+    real :: cloud_frac1, cloud_frac2
     real :: crt1, crt2
     real :: cthl1, cthl2
 
@@ -189,7 +189,7 @@ module generate_lh_sample_mod
     sthl2       = pdf_params%sthl2(level)
     a           = pdf_params%a(level)
     cloud_frac1 = pdf_params%cloud_frac1(level)
-    R2          = pdf_params%R2(level)
+    cloud_frac2 = pdf_params%cloud_frac2(level)
     s1          = pdf_params%s1(level)
     s2          = pdf_params%s2(level)
     rrtthl      = pdf_params%rrtthl(level)
@@ -214,7 +214,7 @@ module generate_lh_sample_mod
     if ( l_sample_out_of_cloud ) then
       ! Sample non-cloudy grid boxes as well -dschanen 3 June 2009
       cloud_frac1 = 1.0
-      R2          = 1.0
+      cloud_frac2 = 1.0
 
     else if ( cf < 0.001 ) then
       ! In this case there are essentially no cloudy points to sample;
@@ -363,7 +363,7 @@ module generate_lh_sample_mod
                           dble( crt2 ), dble( cthl2 ), & 
                           dble( mu1 ), dble( mu2 ),  & 
                           Sigma_rtthlw_1, Sigma_rtthlw_2, & 
-                          dble( cloud_frac1 ), dble( R2 ), & 
+                          dble( cloud_frac1 ), dble( cloud_frac2 ), & 
                           l_d_variable_lognormal, &
                           rt, thl, X_u_one_lev, X_nl_one_lev ) 
 

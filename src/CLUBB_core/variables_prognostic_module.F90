@@ -141,7 +141,7 @@ module variables_prognostic_module
       rsl1,        & ! Mean of r_sl for 1st normal distribution            [kg/kg]
       rsl2,        & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
       cloud_frac1, & ! Cloud fraction for 1st normal distribution              [-]
-      R2,          & ! Cloud fraction for 2nd normal distribution              [-]
+      cloud_frac2, & ! Cloud fraction for 2nd normal distribution              [-]
       s1,          & ! Mean of s for 1st normal distribution               [kg/kg]
       s2,          & ! Mean of s for 2nd normal distribution               [kg/kg]
       ss1,         & ! Standard deviation of s for 1st normal distribution [kg/kg]
@@ -261,7 +261,7 @@ module variables_prognostic_module
               pdf_params%a(1:nzmax),           pdf_params%rrtthl(1:nzmax),  &
               pdf_params%rc1(1:nzmax),         pdf_params%rc2(1:nzmax),  &
               pdf_params%rsl1(1:nzmax),        pdf_params%rsl2(1:nzmax),  &
-              pdf_params%cloud_frac1(1:nzmax), pdf_params%R2(1:nzmax),  &
+              pdf_params%cloud_frac1(1:nzmax), pdf_params%cloud_frac2(1:nzmax),  &
               pdf_params%s1(1:nzmax),          pdf_params%s2(1:nzmax),  &
               pdf_params%ss1(1:nzmax),         pdf_params%ss2(1:nzmax),  &
               pdf_params%alpha_thl(1:nzmax),   pdf_params%alpha_rt(1:nzmax), &
@@ -344,7 +344,7 @@ module variables_prognostic_module
     pdf_params%rsl1        = 0.0
     pdf_params%rsl2        = 0.0
     pdf_params%cloud_frac1 = 0.0
-    pdf_params%R2          = 0.0
+    pdf_params%cloud_frac2 = 0.0
     pdf_params%s1          = 0.0
     pdf_params%s2          = 0.0
     pdf_params%ss1         = 0.0
@@ -448,7 +448,7 @@ module variables_prognostic_module
                 pdf_params%a,           pdf_params%rrtthl,  &
                 pdf_params%rc1,         pdf_params%rc2,  &
                 pdf_params%rsl1,        pdf_params%rsl2,  &
-                pdf_params%cloud_frac1, pdf_params%R2,  &
+                pdf_params%cloud_frac1, pdf_params%cloud_frac2,  &
                 pdf_params%s1,          pdf_params%s2,  &
                 pdf_params%ss1,         pdf_params%ss2,  &
                 pdf_params%alpha_thl,   pdf_params%alpha_rt, &

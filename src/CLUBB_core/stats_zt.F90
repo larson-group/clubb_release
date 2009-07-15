@@ -201,7 +201,7 @@ module stats_zt
         irsl1, & 
         irsl2, & 
         icloud_frac1, & 
-        iR2, & 
+        icloud_frac2, & 
         is1, & 
         is2, & 
         iss1, & 
@@ -517,7 +517,7 @@ module stats_zt
     irsl1         = 0
     irsl2         = 0
     icloud_frac1  = 0
-    iR2           = 0
+    icloud_frac2  = 0
     is1           = 0
     is2           = 0
     iss1          = 0
@@ -1843,11 +1843,11 @@ module stats_zt
              "pdf parameter cloud_frac1", "count", zt )
         k = k + 1
 
-      case ('R2')
-        iR2 = k
+      case ('cloud_frac2')
+        icloud_frac2 = k
 
-        call stat_assign( iR2, "R2", & 
-             "pdf parameter R2", "count", zt )
+        call stat_assign( icloud_frac2, "cloud_frac2", & 
+             "pdf parameter cloud_frac2", "count", zt )
         k = k + 1
 
       case ('s1')

@@ -190,7 +190,7 @@ module numerical_check
     call check_nan( pdf_params%rsl1(k), "pdf_params%rsl1", proc_name, err_code )
     call check_nan( pdf_params%rsl2(k), "pdf_params%rsl2", proc_name, err_code )
     call check_nan( pdf_params%cloud_frac1(k), "pdf_params%cloud_frac1", proc_name, err_code )
-    call check_nan( pdf_params%R2(k), "pdf_params%R2", proc_name, err_code )
+    call check_nan( pdf_params%cloud_frac2(k), "pdf_params%cloud_frac2", proc_name, err_code )
     call check_nan( pdf_params%s1(k), "pdf_params%s1", proc_name, err_code )
     call check_nan( pdf_params%s2(k), "pdf_params%s2", proc_name, err_code )
     call check_nan( pdf_params%ss1(k), "pdf_params%ss1", proc_name, err_code )

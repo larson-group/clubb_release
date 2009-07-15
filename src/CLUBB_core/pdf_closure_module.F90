@@ -192,7 +192,7 @@ module pdf_closure_module
       rsl1,        & ! Mean of r_sl for 1st normal distribution            [kg/kg]
       rsl2,        & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
       cloud_frac1, & ! Cloud fraction for 1st normal distribution              [-]
-      R2,          & ! Cloud fraction for 2nd normal distribution              [-]
+      cloud_frac2, & ! Cloud fraction for 2nd normal distribution              [-]
       s1,          & ! Mean of s for 1st normal distribution               [kg/kg]
       s2,          & ! Mean of s for 2nd normal distribution               [kg/kg]
       ss1,         & ! Standard deviation of s for 1st normal distribution [kg/kg]
@@ -617,16 +617,16 @@ module pdf_closure_module
     end if ! ss1 > sstol
 
     if ( ss2 > sstol ) then
-      zeta2 = s2/ss2
-      R2    = 0.5*( 1. + erf( zeta2/sqrt_2 ) )
-      rc2   = s2*R2+ss2*exp( -0.5*zeta2**2 )/( sqrt_2pi )
+      zeta2       = s2/ss2
+      cloud_frac2 = 0.5*( 1. + erf( zeta2/sqrt_2 ) )
+      rc2         = s2*cloud_frac2+ss2*exp( -0.5*zeta2**2 )/( sqrt_2pi )
     else
       if ( s2 < 0.0 ) then
-        R2  = 0.0
-        rc2 = 0.0
+        cloud_frac2  = 0.0
+        rc2          = 0.0
       else
-        R2  = 1.0
-        rc2 = s2
+        cloud_frac2  = 1.0
+        rc2          = s2
       end if ! s2 < 0
     end if ! ss2 > sstol
 
@@ -642,16 +642,16 @@ module pdf_closure_module
 
     ! Account for subplume correlation in qt-thl
     thlprcp  = a * ( (thl1-thlm)*rc1 - (cthl1*sthl1)*cloud_frac1 ) & 
-             + (1.-a) * ( (thl2-thlm)*rc2 - (cthl2*sthl2)*R2 ) & 
+             + (1.-a) * ( (thl2-thlm)*rc2 - (cthl2*sthl2)*cloud_frac2 ) & 
              + a*rrtthl*crt1*sqrt( srt1*sthl1 )*cloud_frac1 & 
-             + (1.-a)*rrtthl*crt2*sqrt( srt2*sthl2 )*R2
+             + (1.-a)*rrtthl*crt2*sqrt( srt2*sthl2 )*cloud_frac2
     thlpthvp = thlp2 + ep1*T0*rtpthlp + BD*thlprcp
 
     ! Account for subplume correlation in qt-thl
     rtprcp = a * ( (rt1-rtm)*rc1 + (crt1*srt1)*cloud_frac1 ) & 
-           + (1.-a) * ( (rt2-rtm)*rc2 + (crt2*srt2)*R2 ) & 
+           + (1.-a) * ( (rt2-rtm)*rc2 + (crt2*srt2)*cloud_frac2 ) & 
            - a*rrtthl*cthl1*sqrt( srt1*sthl1 )*cloud_frac1 & 
-           - (1.-a)*rrtthl*cthl2*sqrt( srt2*sthl2 )*R2
+           - (1.-a)*rrtthl*cthl2*sqrt( srt2*sthl2 )*cloud_frac2
 
     rtpthvp  = rtpthlp + ep1*T0*rtp2 + BD*rtprcp
 
@@ -663,9 +663,9 @@ module pdf_closure_module
         sclrprcp(i) &
         = a * ( ( sclr1(i)-sclrm(i) ) * rc1 ) + (1.-a) * ( ( sclr2(i)-sclrm(i) ) * rc2 ) & 
         + a*rsclrrt(i) * crt1  * sqrt( ssclr1(i) * srt1 ) * cloud_frac1 & 
-        + (1.-a) * rsclrrt(i) * crt2  * sqrt( ssclr2(i) * srt2 ) * R2 & 
+        + (1.-a) * rsclrrt(i) * crt2  * sqrt( ssclr2(i) * srt2 ) * cloud_frac2 & 
         - a * rsclrthl(i) * cthl1  * sqrt( ssclr1(i) * sthl1 ) * cloud_frac1 & 
-        - (1.-a) * rsclrthl(i) * cthl2  * sqrt( ssclr2(i) * sthl2 ) * R2
+        - (1.-a) * rsclrthl(i) * cthl2  * sqrt( ssclr2(i) * sthl2 ) * cloud_frac2
 
         sclrpthvp(i) = sclrpthlp(i) + ep1*T0*sclrprtp(i) + BD*sclrprcp(i)
       end do ! i=1, sclr_dim
@@ -673,7 +673,7 @@ module pdf_closure_module
 
     ! Compute mean cloud fraction and cloud water
 
-    cf  = a * cloud_frac1 + (1.-a) * R2
+    cf  = a * cloud_frac1 + (1.-a) * cloud_frac2
     rcm = a * rc1         + (1.-a) * rc2
 
     ! Note: Brian added the following lines to ensure that there
@@ -692,7 +692,8 @@ module pdf_closure_module
     ! This is not needed for closure.  Statistical Analysis only.
     if ( ircp2 > 0 ) then
 
-      rcp2 = a * ( s1*rc1 + cloud_frac1*ss1**2 ) + ( 1.-a ) * ( s2*rc2 + R2*ss2**2 ) - rcm**2
+      rcp2 = a * ( s1*rc1 + cloud_frac1*ss1**2 ) + ( 1.-a ) &
+            * ( s2*rc2 + cloud_frac2*ss2**2 ) - rcm**2
       rcp2 = max( zero_threshold, rcp2 )
 
     end if
@@ -721,7 +722,7 @@ module pdf_closure_module
     pdf_params%rsl1(level)        = rsl1
     pdf_params%rsl2(level)        = rsl2
     pdf_params%cloud_frac1(level) = cloud_frac1
-    pdf_params%R2(level)          = R2
+    pdf_params%cloud_frac2(level) = cloud_frac2
     pdf_params%s1(level)          = s1
     pdf_params%s2(level)          = s2
     pdf_params%ss1(level)         = ss1
@@ -816,7 +817,7 @@ module pdf_closure_module
         write(fstderr,*) "pdf_params%rsl1 = ", pdf_params%rsl1(level)
         write(fstderr,*) "pdf_params%rsl2 = ", pdf_params%rsl2(level)
         write(fstderr,*) "pdf_params%cloud_frac1 = ", pdf_params%cloud_frac1(level)
-        write(fstderr,*) "pdf_params%R2 = ", pdf_params%R2(level)
+        write(fstderr,*) "pdf_params%cloud_frac2 = ", pdf_params%cloud_frac2(level)
         write(fstderr,*) "pdf_params%s1 = ", pdf_params%s1(level)
         write(fstderr,*) "pdf_params%s2 = ", pdf_params%s2(level)
         write(fstderr,*) "pdf_params%ss1 = ", pdf_params%ss1(level)

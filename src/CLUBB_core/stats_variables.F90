@@ -349,7 +349,7 @@ module stats_variables
      irsl1, & 
      irsl2, & 
      icloud_frac1, & 
-     iR2, & 
+     icloud_frac2, & 
      is1, & 
      is2, & 
      iss1, & 
@@ -358,7 +358,7 @@ module stats_variables
 
 !$omp   threadprivate(ia, iw1, iw2, isw1, isw2, ithl1, ithl2, isthl1)
 !$omp   threadprivate(isthl2, irt1, irt2, isrt1, isrt2, irc1, irc2)
-!$omp   threadprivate(irsl1, irsl2, icloud_frac1, iR2, is1, is2, iss1, iss2)
+!$omp   threadprivate(irsl1, irsl2, icloud_frac1, icloud_frac2, is1, is2, iss1, iss2)
 !$omp   threadprivate(irrtthl)
 
   integer, public :: & 

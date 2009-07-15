@@ -1221,8 +1221,8 @@ module clubb_core
       rsl2_zt,        & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
       cloud_frac1_zm, & ! Cloud fraction for 1st normal distribution              [-]
       cloud_frac1_zt, & ! Cloud fraction for 1st normal distribution              [-]
-      R2_zm,          & ! Cloud fraction for 2nd normal distribution              [-]
-      R2_zt,          & ! Cloud fraction for 2nd normal distribution              [-]
+      cloud_frac2_zm, & ! Cloud fraction for 2nd normal distribution              [-]
+      cloud_frac2_zt, & ! Cloud fraction for 2nd normal distribution              [-]
       s1_zm,          & ! Mean of s for 1st normal distribution               [kg/kg]
       s1_zt,          & ! Mean of s for 1st normal distribution               [kg/kg]
       s2_zm,          & ! Mean of s for 2nd normal distribution               [kg/kg]
@@ -1264,7 +1264,7 @@ module clubb_core
     rsl1_zt        = pdf_params%rsl1
     rsl2_zt        = pdf_params%rsl2
     cloud_frac1_zt = pdf_params%cloud_frac1
-    R2_zt          = pdf_params%R2
+    cloud_frac2_zt = pdf_params%cloud_frac2
     s1_zt          = pdf_params%s1
     s2_zt          = pdf_params%s2
     ss1_zt         = pdf_params%ss1
@@ -1335,7 +1335,7 @@ module clubb_core
       rsl1_zm        = pdf_params%rsl1
       rsl2_zm        = pdf_params%rsl2
       cloud_frac1_zm = pdf_params%cloud_frac1
-      R2_zm          = pdf_params%R2
+      cloud_frac2_zm = pdf_params%cloud_frac2
       s1_zm          = pdf_params%s1
       s2_zm          = pdf_params%s2
       ss1_zm         = pdf_params%ss1
@@ -1423,8 +1423,8 @@ module clubb_core
       rsl2_zm(gr%nnzp)        = 0.0
       cloud_frac1_zm          = zt2zm( pdf_params%cloud_frac1 )
       cloud_frac1_zm(gr%nnzp) = 0.0
-      R2_zm                   = zt2zm( pdf_params%R2 )
-      R2_zm(gr%nnzp)          = 0.0
+      cloud_frac2_zm          = zt2zm( pdf_params%cloud_frac2 )
+      cloud_frac2_zm(gr%nnzp) = 0.0
       s1_zm                   = zt2zm( pdf_params%s1 )
       s1_zm(gr%nnzp)          = 0.0
       s2_zm                   = zt2zm( pdf_params%s2 )
@@ -1481,7 +1481,7 @@ module clubb_core
     pdf_params%rsl1        = trapezoid( rsl1_zt, rsl1_zm )
     pdf_params%rsl2        = trapezoid( rsl2_zt, rsl2_zm )
     pdf_params%cloud_frac1 = trapezoid( cloud_frac1_zt, cloud_frac1_zm )
-    pdf_params%R2          = trapezoid( R2_zt, R2_zm )
+    pdf_params%cloud_frac2 = trapezoid( cloud_frac2_zt, cloud_frac2_zm )
     pdf_params%s1          = trapezoid( s1_zt, s1_zm )
     pdf_params%s2          = trapezoid( s2_zt, s2_zm )
     pdf_params%ss1         = trapezoid( ss1_zt, ss1_zm )

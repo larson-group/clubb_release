@@ -934,7 +934,7 @@ module stats_subs
         irsl1, & 
         irsl2, & 
         icloud_frac1, & 
-        iR2, & 
+        icloud_frac2, & 
         is1, & 
         is2, & 
         iss1, & 
@@ -1223,7 +1223,7 @@ module stats_subs
       call stat_update_var( irsl1, pdf_params%rsl1, zt )
       call stat_update_var( irsl2, pdf_params%rsl2, zt )
       call stat_update_var( icloud_frac1, pdf_params%cloud_frac1, zt )
-      call stat_update_var( iR2, pdf_params%R2, zt )
+      call stat_update_var( icloud_frac2, pdf_params%cloud_frac2, zt )
       call stat_update_var( is1, pdf_params%s1, zt )
       call stat_update_var( is2, pdf_params%s2, zt )
       call stat_update_var( iss1, pdf_params%ss1, zt )

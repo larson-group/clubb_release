@@ -169,7 +169,7 @@ module morrison_micro_driver_mod
     if ( .not. l_latin_hypercube ) then
       cf(1:nnzp) = max( zero_threshold, &
                         pdf_params%a * pdf_params%cloud_frac1 &
-                        + (1.-pdf_params%a) * pdf_params%R2 )
+                        + (1.-pdf_params%a) * pdf_params%cloud_frac2 )
     else
       cf(1:nnzp) = 0.0
     end if
