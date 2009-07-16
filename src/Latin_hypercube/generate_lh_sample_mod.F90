@@ -369,11 +369,11 @@ module generate_lh_sample_mod
 
       ! Kluge for lognormal variables
       ! Use the gridbox mean rather than a sampled value
-      if ( l_small_lognormal(iirrainm) ) then
+      if ( iiLH_rrain > 0 .and. l_small_lognormal(iirrainm) ) then
         X_nl_one_lev(:,iiLH_rrain) = rrainm
       end if
 
-      if ( l_small_lognormal(iiNcm) ) then
+      if ( iiLH_Nc > 0 .and. l_small_lognormal(iiNcm) ) then
         X_nl_one_lev(:,iiLH_Nc) = Ncm
       end if
 
