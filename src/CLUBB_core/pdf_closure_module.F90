@@ -346,7 +346,7 @@ module pdf_closure_module
 
       ! Vince Larson added a dimensionless factor so that the
       ! width of plumes in theta_l, rt can vary.  
-      ! beta is a constant defined in module constants  
+      ! beta is a constant defined in module parameters_tunable  
       !   Set 0<beta<3.
       ! beta=1.5 recovers Chris Golaz' simplified formula.
       ! 3 Nov 2003
