@@ -12,7 +12,7 @@ private ! Default Scope
 
 public :: cloud_feedback_tndcy, cloud_feedback_sfclyr, cloud_feedback_init
 
-private :: divT, divq, press, ndiv, lhflx, shflx
+private :: divT, divq, press, ndiv
 
 ! Constant Parameters
 integer, parameter :: &  
@@ -86,7 +86,7 @@ return
 end subroutine cloud_feedback_tndcy
 
 !----------------------------------------------------------------------
-subroutine cloud_feedback_sfclyr( runtype, & 
+subroutine cloud_feedback_sfclyr( runtype, sfctype, & 
                                   thlm_sfc, rtm_sfc, um_sfc, vm_sfc,  &
                                   exner_sfc, psfc, Tsfc, & 
                                   upwp_sfc, vpwp_sfc, & 
@@ -113,7 +113,7 @@ use array_index, only:  &
     iisclr_thl, iisclr_rt ! Variable(s)
 
 use surface_flux, only: &
-    compute_ubar, compute_momentum_flux !, compute_wprtp_sfc, compute_wpthlp_sfc
+    compute_ubar, compute_momentum_flux, compute_wprtp_sfc, compute_wpthlp_sfc
 
 implicit none
 
@@ -121,6 +121,8 @@ intrinsic :: max, sqrt
 
 ! Input Variables
 character(len=50), intent(in) :: runtype ! The case that is being run
+
+integer, intent(in) :: sfctype
 
 real, intent(in) ::  & 
   thlm_sfc,  & ! thlm at (2)         [m/s]
@@ -146,9 +148,9 @@ real, intent(out), dimension(edsclr_dim) ::  &
   wpedsclrp_sfc   ! Passive eddy-scalar surface flux [units m/s]
 
 ! Constants
-!real, parameter :: & 
+real, parameter :: & 
 !  rho_sfc_flux = 1.0, &
-!  C_10    = 0.0013      ! Drag coefficient, defined by ATEX specification
+  C_10    = 0.0013      ! Drag coefficient, defined by ATEX specification
 
 ! Internal variables
 real :: & 
@@ -176,8 +178,8 @@ end if
 
 ! If this is the S6 case, fudge the values of the fluxes using values from the forcings
 !if ( runtype == "cloud_feedback_s6" .or. runtype == "cloud_feedback_s6_p2k" ) then
-    wprtp_sfc = lhflx(1) / ( 1.0 * Lv )
-    wpthlp_sfc = shflx(1) / ( 1.0 * Cp )
+!    wprtp_sfc = lhflx(1) / ( 1.0 * Lv )
+!    wpthlp_sfc = shflx(1) / ( 1.0 * Cp )
 !else
 !    wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, sat_mixrat_liq( psfc, Tsfc ) )
 !    wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, & 
@@ -187,12 +189,20 @@ end if
 call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
                             upwp_sfc, vpwp_sfc )
 
-! Let passive scalars be equal to rt and theta_l for now
-if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
-if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
+! 
+if ( sfctype == 1 ) then
+  wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, sat_mixrat_liq( psfc, Tsfc ) )
+  wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, & 
+                                   Tsfc, exner_sfc )
 
-if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
-if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
+  ! Let passive scalars be equal to rt and theta_l for now
+  if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+  if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
+
+  if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
+  if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
+
+end if
 
 return
 end subroutine cloud_feedback_sfclyr
@@ -229,14 +239,6 @@ subroutine cloud_feedback_init( iunit, file_path )
   call file_read_1d( iunit, & 
     file_path//'cloud_feedback_press.dat', & 
     ndiv, per_line, press )
-
-  call file_read_1d( iunit, & 
-    file_path//'cloud_feedback_shflx.dat', & 
-    1, 1, shflx )
-
-  call file_read_1d( iunit, & 
-    file_path//'cloud_feedback_lhflx.dat', & 
-    1, 1, lhflx )
 
   return 
 end subroutine cloud_feedback_init

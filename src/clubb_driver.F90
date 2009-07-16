@@ -2326,12 +2326,23 @@ module clubb_driver
     case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
            "cloud_feedback_s11", "cloud_feedback_s11_p2k", &
            "cloud_feedback_s12", "cloud_feedback_s12_p2k" ) ! Cloud Feedback cases
-      call cloud_feedback_sfclyr( runtype, & ! Intent(in)
-                                  thlm(2), rtm(2), um(2), vm(2), &       ! Intent(in)
-                                  exner(1), psfc, Tsfc, &           ! Intent(in)
-                                  upwp_sfc, vpwp_sfc, &                  ! Intent(out)
-                                  wpthlp_sfc, wprtp_sfc, ustar, &        ! Intent(out)
-                                  wpsclrp_sfc, wpedsclrp_sfc )           ! Intent(out)
+
+           call cloud_feedback_sfclyr( runtype, sfctype, & ! Intent(in)
+                                       thlm(2), rtm(2), um(2), vm(2), &       ! Intent(in)
+                                       exner(1), psfc, Tsfc, &                ! Intent(in)
+                                       upwp_sfc, vpwp_sfc, &                  ! Intent(out)
+                                       wpthlp_sfc, wprtp_sfc, ustar, &        ! Intent(out)
+                                       wpsclrp_sfc, wpedsclrp_sfc )           ! Intent(out)
+
+           ! If the surface type is 0, use fixed fluxes
+           if ( sfctype == 0 ) then
+             wpthlp_sfc = SE
+             wprtp_sfc  = LE
+             if ( iisclr_thl > 0 ) wpsclrp(:,iisclr_thl) = SE
+             if ( iisclr_rt > 0 ) wpsclrp(:,iisclr_rt)   = LE
+             if ( iiedsclr_thl > 0 ) wpedsclrp(:,iiedsclr_thl) = SE
+             if ( iiedsclr_rt > 0 ) wpedsclrp(:,iiedsclr_rt)   = LE
+           end if
 #endif
 
     case ( "dycoms2_rf01" )

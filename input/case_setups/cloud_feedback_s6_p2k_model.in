@@ -54,7 +54,7 @@ time_spinup  = 100000.0  ! End of spin-up period [seconds since midnight on star
 dtmain    = 300.0   ! Model timestep [s]
 dtclosure = 300.0   ! Closure timestep [s] (must multiply evenly into dtmain).
 
-sfctype = 1      ! Select surface scheme (cases without specified surface fluxes).
+sfctype = 0      ! Select surface scheme (cases without specified surface fluxes).
                  ! 0 ==> fixed surface sensible and latent heat fluxes,
                  !       as defined by SE and LE, respectively.
                  ! 1 ==> determine surface sensible and latent heat fluxes
@@ -63,6 +63,8 @@ sfctype = 1      ! Select surface scheme (cases without specified surface fluxes
 
 Tsfc = 300.76       ! (25.6 C) Temperature at model base              [K]
 psfc = 101407.8     ! (1014.1 mb) Pressure at model base              [Pa]
+LE = 0.000047753
+SE = 0.011806494
 
 fcor = 4.264e-5     ! Coriolis parameter                  [s^-1]
 T0   = 300.         ! Reference temperature (usually 300) [K]
@@ -149,8 +151,12 @@ rad_scheme = "bugsrad"
 l_fix_cos_solar_zen = .true.
 amu0                = 0.629
 slr                 = 0.539
-sol_const           = 1367.0 ! Solar Constant given in spec [W/m^2]
+sol_const           = 1321.0 ! Solar Constant given in spec [W/m^2]
 ext_atmos_buffer    = 10
+alvdf = 0.07 ! Visible diffuse surface albedo [-]
+alndr = 0.07 ! Near-IR direct surface albedo [-]
+alndf = 0.07 ! Near-IR diffuse surface albedo [-]
+alvdr = 0.07 ! Visible direct surface albedo [-]
 !rad_scheme = "none",
 /
 
