@@ -65,9 +65,7 @@ sub main()
 	runCases();
 	OutputWriter->writeFooter($outputIndex);
 
-	# Copy temp. output folder to actual output location and remove the temp. folder
-	dircopy($outputTemp, $output);
-	rmtree($outputTemp);
+	cleanup();
 
 	exit(0);
 }
@@ -178,27 +176,39 @@ sub callMatlab()
 		my $type = $CASE::CASE{'plots'}[$count]{'type'};
 
 		my $matlabArgs = "$caseName, $plotTitle, $count, $type, $startTime, $endTime, $startHeight, $endHeight, $units, $randInt";
+		my $tempMatlabArgs = $matlabArgs;
 
-#		foreach(@inputDirs)
 		for(my $lineNum = 0; $lineNum < $CASE::CASE{'plots'}[$count]{'numLines'}; $lineNum++)
 		{
 			foreach(@inputDirs)
 			{
 				my $file = "$_/$CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'filename'}";
-
-				if(-e $file)
+				my $type = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'type'};
+				
+				if(($type eq "les" && $plotLes == 1) || ($type eq "dec17" && $plotDec) || ($type eq "bestEver" && $plotBest) || ($type eq "clubb"))
 				{
-					my $name =$CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'name'};
-					my $expression = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'expression'};
-					my $title = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'title'};
-					my $unit = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'units'};
-					my $lineWidth = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'lineWidth'};
-					my $lineType = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'lineType'};
-					my $lineColor = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'lineColor'};
-
-					$matlabArgs = "$matlabArgs, $file, $name, $expression, $title, $unit, $lineWidth, $lineType, $lineColor";
+					if(-e $file)
+					{
+						my $name = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'name'};
+						my $expression = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'expression'};
+						my $title = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'title'};
+						my $unit = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'units'};
+						my $lineWidth = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'lineWidth'};
+						my $lineStyle = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'lineStype'};
+						my $lineColor = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'lineColor'};
+	
+						$matlabArgs = "$matlabArgs, $file, $name, $expression, $title, $unit, $lineWidth, $lineStyle, $lineColor";
+					}
 				}
 			}
+		}
+
+		# Check to see if there are lines to be plotted:
+		if($matlabArgs eq $tempMatlabArgs)
+		{
+			print(STDERR "No valid data available to plot.\n");
+			cleanup();
+			exit(1);
 		}
 
 		print("\nMatlab args: $matlabArgs \n\n");
@@ -221,6 +231,13 @@ sub callMatlab()
 			exit(1);
 		}
 	}
+}
+
+sub cleanup()
+{
+	# Copy temp. output folder to actual output location and remove the temp. folder
+	dircopy($outputTemp, $output);
+	rmtree($outputTemp);
 }
 
 ###############################################################################

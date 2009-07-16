@@ -1,24 +1,22 @@
-# Test Configuration File
+# Cloud Feedback S6 Case File
 
 %CASE = 
 (
     'name' => 'cloud_feedback_s6',
     'headerText' => 'Cloud Feedback S6',
-    'startTime' => 0,   # [s]
-    'endTime' => 10,    # [s]
+    'startTime' => 0,   # [minutes]
+    'endTime' => 10,    # [minutes]
     'startHeight' => 0, # [m]
     'endHeight' => 100, # [m]
     'numPlots' => 1,
     'plots' =>
     [
-       {'plotTitle' => 'Plot Title', 'units' => 'UNITS', 'type' => 'timeseries or profile', 'numLines' => 5, 'lines' =>
-       [
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'name' => 'varname1', 'expression' => 'varexpression1', 'lineWidth' => '1', 'lineType' => '-', 'lineColor' => '1'},
-          {'filename' => 'cloud_feedback_s6_zm.ctl', 'name' => 'varname2', 'expression' => 'varexpression2', 'lineWidth' => '2', 'lineType' => '--', 'lineColor' => '2'},
-          {'filename' => 'filename3', 'name' => 'varname3', 'expression' => 'varexpression3', 'lineWidth' => '3', 'lineType' => '---', 'lineColor' => '3'},
-          {'filename' => 'filename4', 'name' => 'varname4', 'expression' => 'varexpression4', 'lineWidth' => '4', 'lineType' => '----', 'lineColor' => '4'},
-          {'filename' => 'filename5', 'name' => 'varname5', 'expression' => 'varexpression5', 'lineWidth' => '5', 'lineType' => '-----', 'lineColor' => '5'}
-       ]}
+       {'plotTitle' => 'Plot Title', 'units' => 'UNITS', 'type' => 'timeseries or profile', 'numLines' => 5} #, 'lines' =>
+ #      [
+ #         {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'clubb', 'name' => 'varname1', 'expression' => 'varexpression1', 'lineWidth' => '1', 'lineType' => '-', 'lineColor' => '1'},
+ #         {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'clubb', 'name' => 'varname2', 'expression' => 'varexpression2', 'lineWidth' => '2', 'lineType' => '--', 'lineColor' => '2'},
+ #         {'filename' => 'filename3', 'type' => 'clubb', 'name' => 'varname3', 'expression' => 'varexpression3', 'lineWidth' => '3', 'lineType' => '---', 'lineColor' => '3'},
+ #      ]}
     ],
     'nightlyOutput' =>
     {
