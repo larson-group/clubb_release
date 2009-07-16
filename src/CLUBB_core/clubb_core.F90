@@ -311,7 +311,7 @@ module clubb_core
 
     ! ldgrant June 2009
     logical, parameter :: &
-      l_trapezoid_rule = .true., &     ! Logical flag used to turn the trapezoidal 
+      l_trapezoid_rule = .false., &     ! Logical flag used to turn the trapezoidal 
                                         ! rule on or off.  
 
       l_call_pdf_closure_twice = .true. ! If the trapezoidal rule is used, this logical 
