@@ -23,7 +23,9 @@
 #
 #		(5) Lines that are longer than a specified size.
 #
-#		(6) Use of deprecated keywords such as .ge.
+#		(6) Use of forbidden keywords such as .ge.
+#
+#               (7) Correct names at the end of subprogram blocks ( e.g. end subroutine my_subroutine )
 #
 #               This perl script assumes that 
 #               the Fortran code compiles!!
@@ -72,7 +74,10 @@ our $functionRegEx = 	qr/^				# Bind to beginning of line
                 	\b				# Bind to front of statement
 			function			# Function
 			\b				# Bind to back of statement
+			\s*                             # Zero or more spaces
+			(\w*)                           # Zero or more word characters
 			/ix;				# Whole expression is case insensitive
+
 
 our $subroutineRegEx = 	qr/^				# Bind to beginning of line
 	      		\s*?				# Zero or more spaces before statement
@@ -81,6 +86,8 @@ our $subroutineRegEx = 	qr/^				# Bind to beginning of line
 			\b				# Bind to front of statement
 			subroutine			# Subroutine
 			\b				# Bind to end of statement
+			\s*                             # Zero or more spaces
+			(\w*)                           # Zero or more word characters
 			/ix;				# Whole expression is case insensitive
 
 our $moduleRegEx =	qr/^				# Bind to beginning of line
@@ -89,7 +96,7 @@ our $moduleRegEx =	qr/^				# Bind to beginning of line
 			module				# Module
 			\b				# Bind to end of statement
 			\s+?				# One or more spaces
-			\w+?				# One or more word characters 
+			(\w+?)				# One or more word characters 
 			\s*?				# Zero or more spaces after statement
 			(!.*?)*?			# After statement, accept comments and nothing else
 			$				# Bind to end of line
@@ -100,7 +107,19 @@ our $programRegEx =	qr/^				# Bind to beginning of line
 			\b				# Bind to beginning of statement
 			program				# Program
 			\b				# Bind to end of statement
+			\s*                             # Zero or more spaces
+			(\w*)                           # Zero or more word characters
 			/ix;				# Whole expression is case insensitve
+
+our $endSubProgramRegEx = qr/^
+			  \s*
+			  end
+			  \s*
+			  (program|module|function|subroutine)
+			  \s*
+			  (\w*)
+			  /ix;
+
 
 our $useRegEx =		qr/^				# Bind to beginning of line 
 			\s*?				# Zero or more spaces before statement
@@ -134,7 +153,7 @@ our $IdTagRegEx =	qr/^				# Bind to beginning of line
 			$				# Bind to end of line
 			/ix;				# Whole Expression is case insensitve
 
-our $deprecatedRegEx = qr/
+our $forbiddenRegEx = qr/
 			(
 			\.le\.
 			|
@@ -222,7 +241,7 @@ sub fileThread
 	}
 
 	# Check for use of forbidden keywords
-	if( ! &deprecateCheck( $verbose, @input ) )
+	if( ! &forbiddenCheck( $verbose, @input ) )
 	{
 		warn "$file\n";
 		warn $horizontal;
@@ -234,10 +253,133 @@ sub fileThread
 		warn "$file\n";
 		warn $horizontal;
 	}
+	if( ! &endCheck( $verbose, @input ) )
+	{
+		warn "$file\n";
+		warn $horizontal;
+	}
+
 
 	# Close File		
 	close FILE;
 	
+}
+#####################################################################
+sub endCheck
+#
+#     &endCheck( $verbose, @input ) 
+#
+#     Description: This subroutine verifies that the name in an end statment matches the
+#     		name of the block.
+#    
+#              ( e.g.
+#              		subroutine do_calc()
+#              		end subroutine do_calc ! Passed!
+#
+#              		subroutine do_calc()
+#              		end subroutine         ! Failed!
+#              	)
+#
+#     Arguments:
+#     	Sverbose - Prints verbose messages when true.
+#     	@input   - Lines of a Fortran source file.
+#
+#     Returns
+#     	True if all names at the beginning of a block match their end statment.
+#####################################################################
+{
+	# Grab first argument
+	my( $verbose ) = shift( @_ );
+
+	# Grab second argument
+	my( @input ) = @_;
+
+	# Declare Local Variables
+	my( $line, $result );
+	my( $lastModuleName, $lastProgramName, $lastProcedureName, $endSubProgramType, $endSubProgramName );
+	my( @warnings );
+
+
+	if( $verbose  )
+	{
+		print "----------------End Block Test----------------\n";
+	}
+
+	$result = 1;
+	# Parse every line for a program block or implicit none statements.	
+	foreach $line (@input)
+	{
+		# Is it a function declaration?
+	        if( $line =~ $functionRegEx )		
+		{
+			$lastProcedureName = $2;
+			# Print if verbose
+			if( $verbose )
+			{	
+				print "$programName comment: Found Function $lastProcedureName\n$line";
+			}
+		}
+		# Is it a subroutine declaration?	
+		elsif($line =~ $subroutineRegEx)
+		{	
+			$lastProcedureName = $2;
+			# Print if verbose
+			if( $verbose )
+			{
+				print "$programName comment: Found Subroutine $lastProcedureName\n$line";
+			}
+			
+		}
+		# Is it a module declaration?
+		elsif($line =~ $moduleRegEx)           	
+		{
+			$lastModuleName = $1;	
+			# Print if verbose	
+			if( $verbose )
+			{
+				print "$programName comment: Found Module $lastModuleName\n$line";
+			}
+		}
+		# Is it a program declaration?
+		elsif( $line =~ $programRegEx )
+		{
+			$lastProgramName =  $1;	
+			if( $verbose )
+			{
+				print "$programName comment: Found Program $lastProgramName\n$line";
+			}
+		}
+		elsif( $line =~ $endSubProgramRegEx )
+		{
+			$endSubProgramType = $1;
+			$endSubProgramName = $2;
+			
+			if($endSubProgramType =~ m/(function|subroutine)/i and $lastProcedureName !~ $endSubProgramName)
+			{
+					push( @warnings, "$programName WARNING: Expected $lastProcedureName for end $endSubProgramType. \n" );
+					$result = 0;
+		  	}
+		        elsif( $endSubProgramType =~ m/module/i and $lastModuleName !~ $endSubProgramName )
+			{
+					push(@warnings, "$programName WARNING: Expected $lastModuleName for end $endSubProgramType. \n");
+					$result = 0;
+			}
+		  	elsif( $endSubProgramType =~ m/program/i and $lastProgramName !~ $endSubProgramName )
+			{
+					push(@warnings, "$programName WARNING: Expected $lastProgramName for end $endSubProgramType. \n");
+					$result = 0;
+			}
+		}
+	}
+
+	if( ! $result )
+	{
+	
+		push(@warnings,"$programName WARNING: Endings of either program, module, subroutine, or function blocks to not match the beginning \n");
+		warn $horizontal;
+		warn @warnings;
+	}
+	return $result;
 }
 
 #####################################################################
@@ -316,7 +458,7 @@ sub implicitCheck
 		}
 		# Is it a program declaration?
 		elsif( $line =~ $programRegEx )
-		{	
+		{
 			if( $verbose )
 			{
 				print "$programName comment: Found Program\n$line";
@@ -636,19 +778,19 @@ sub lineCheck
 	return $result;
 }
 #####################################################################
-sub deprecateCheck
+sub forbiddenCheck
 #
-#     &deprecateCheck( $verbose, @input ) 
+#     &forbiddenCheck( $verbose, @input ) 
 #
-#     Description: This subroutine verifies that there are no deprecated
-#       or tokens used in the Fortran source file.
+#     Description: This subroutine verifies that there are no forbidden
+#       tokens used in the Fortran source file.
 #
 #     Arguments:
 #     	Sverbose - Prints verbose messages when true.
 #     	@input   - Lines of a Fortran source file.
 #
 #     Returns
-#     	True if no line has deprecated tokens.
+#     	True if no line has forbidden tokens.
 #####################################################################
 {
 	
@@ -677,13 +819,13 @@ sub deprecateCheck
                 
 		# If the number of characters in the line is greater than the max length.
 		$line =~ m/^([^!]*)!?/;
-		if( @test = $1 =~ m/$deprecatedRegEx/ig )
+		if( @test = $1 =~ m/$forbiddenRegEx/ig )
 		{
 			# Start building the warning message
 			%seen = ();
 
                         @unique = grep { ! $seen{$_} ++ } @test;
-			push(@warnings,"$programName WARNING: Line has deprecated or forbidden elements:  @unique .\n");
+			push(@warnings,"$programName WARNING: Line has forbidden elements:  @unique .\n");
 			push(@warnings, "$lineNumber : $line");
 
 			$result = 0; # Check Failed!
@@ -693,7 +835,7 @@ sub deprecateCheck
 	# Did the check fail?
 	if( ! $result )
 	{
-		push(@warnings, "$programName WARNING: File has deprecated elements.\n");
+		push(@warnings, "$programName WARNING: File has forbidden elements.\n");
 		
 		# Show the warning messages	
 		warn $horizontal;
