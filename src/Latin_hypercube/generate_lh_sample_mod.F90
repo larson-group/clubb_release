@@ -18,7 +18,7 @@ module generate_lh_sample_mod
   subroutine generate_lh_sample &
              ( n_micro_calls, nt_repeat, d_variables, hydromet_dim, & 
                p_matrix, cf, pdf_params, level, & 
-               hydromet, hydromet_corr, &
+               hydromet, correlation_matrix, &
                rt, thl, & 
                X_u_one_lev, X_nl_one_lev, l_sample_flag )
 ! Description:
@@ -30,16 +30,19 @@ module generate_lh_sample_mod
 !     p. 4010--4026, Larson, et al. 2005.
 !-------------------------------------------------------------------------------
 
+    use KK_microphys_module, only: &
+      PDF_TRIVAR_2G_LN_LN
+
     use constants, only:  &
-        max_mag_correlation, &  ! Constant
-        g_per_kg,  &  ! g/kg
-        cm3_per_m3, & ! cm3 per m3
-        rr_tol, &     ! rr tolerance in kg/kg
-        Nr_tol, &     ! Nr tolerance in #/kg
-        Nc_tol        ! Nc tolerance in #/kg
+      max_mag_correlation, &  ! Constant
+      g_per_kg,  &  ! g/kg
+      cm3_per_m3, & ! cm3 per m3
+      rr_tol, &     ! rr tolerance in kg/kg
+      Nr_tol, &     ! Nr tolerance in #/kg
+      Nc_tol        ! Nc tolerance in #/kg
 
     use variables_prognostic_module, only:  &
-        pdf_parameter  ! type
+      pdf_parameter  ! type
 
     use array_index, only: &
       iiNcm,    & ! Variables
@@ -83,8 +86,8 @@ module generate_lh_sample_mod
     integer, intent(in) :: level  ! Level info. for PDF parameters.
 
     ! From the KK_microphys_module
-    real, dimension(hydromet_dim,hydromet_dim), intent(in) :: &
-      hydromet_corr ! Hydrometeor correlations
+    real, dimension(d_variables,d_variables), intent(in) :: &
+      correlation_matrix ! Correlations
 
     ! Output Variables
     double precision, intent(out), dimension(n_micro_calls) :: &
@@ -116,7 +119,7 @@ module generate_lh_sample_mod
     ! varies between -1 < rrtthl < 1
     real :: rrtthl
 
-    real :: s1, s2
+    real :: s1, s2, ss1, ss2
     real :: cloud_frac1, cloud_frac2
     real :: crt1, crt2
     real :: cthl1, cthl2
@@ -147,6 +150,7 @@ module generate_lh_sample_mod
       sNr1, & ! PDF param for width of plume 1.    [(#/kg)^2]
       sNr2    ! PDF param for width of plume 2.    [(#/kg^2]
 
+    real :: corr_srr, corr_sNr, corr_rrNr, srrNr1, srrNr2
 
     ! rr = specific rain content. [rr] = g rain / kg air
     double precision :: &
@@ -192,6 +196,8 @@ module generate_lh_sample_mod
     cloud_frac2 = pdf_params%cloud_frac2(level)
     s1          = pdf_params%s1(level)
     s2          = pdf_params%s2(level)
+    ss1         = pdf_params%ss1(level)
+    ss2         = pdf_params%ss2(level)
     rrtthl      = pdf_params%rrtthl(level)
     crt1        = pdf_params%crt1(level)
     crt2        = pdf_params%crt2(level)
@@ -262,7 +268,7 @@ module generate_lh_sample_mod
 
       if ( iiLH_Nc > 0 ) then 
         Ncm = dble( hydromet(iiNcm) )
-        Ncp2_on_Ncm2 = dble( hydromet_corr(iiNcm,iiNcm) )
+        Ncp2_on_Ncm2 = dble( correlation_matrix(iiLH_Nc,iiLH_Nc) )
 
         call log_sqd_normalized( Ncm, Ncp2_on_Ncm2, dble( Nc_tol ), &
                                  Nc1, Nc2, sNc1, sNc2, l_small_lognormal(iiNcm) )
@@ -276,14 +282,14 @@ module generate_lh_sample_mod
 
       if ( iiLH_rrain > 0 ) then 
         rrainm = dble( hydromet(iirrainm) )
-        rrp2_on_rrainm2 = dble( hydromet_corr(iirrainm,iirrainm) )
+        rrp2_on_rrainm2 = dble( correlation_matrix(iiLH_rrain,iiLH_rrain) )
         call log_sqd_normalized( rrainm, rrp2_on_rrainm2, dble( rr_tol ), &
                                  rr1, rr2, srr1, srr2, l_small_lognormal(iirrainm) )
       end if
 
       if ( iiLH_Nr > 0 ) then 
         Nrm = dble( hydromet(iiNrm) )
-        Nrp2_on_Nrm2 = dble( hydromet_corr(iiNrm,iiNrm) )
+        Nrp2_on_Nrm2 = dble( correlation_matrix(iiLH_Nr,iiLH_Nr) )
 
         call log_sqd_normalized( Nrm, Nrp2_on_Nrm2, dble( Nr_tol ), &
                                  Nr1, Nr2, sNr1, sNr2, l_small_lognormal(iiNcm) )
@@ -356,6 +362,26 @@ module generate_lh_sample_mod
         Sigma_rtthlw_2(iiLH_rrain,iiLH_rrain) = srr2
       end if
 
+      if ( iiLH_rrain > 0 .and. iiLH_Nr > 0 ) then 
+        if ( rrainm > dble( rr_tol ) .and. Nrm > dble( Nr_tol ) ) then
+          corr_srr = correlation_matrix(iiLH_rt,iiLH_rrain)
+          corr_sNr = correlation_matrix(iiLH_rt,iiLH_rrain)
+          corr_rrNr = correlation_matrix(iiLH_rrain,iiLH_Nr)
+          srrNr1 = PDF_TRIVAR_2G_LN_LN( s1, real( rrainm ) , real( Nrm ), &
+                  ss1, real( rrainm * sqrt( rrp2_on_rrainm2 ) ), &
+                  real( Nrm * sqrt( Nrp2_on_Nrm2 ) ), &
+                  corr_srr, corr_sNr, corr_rrNr, 1.0, 1./3., 2./3. )
+          srrNr2 = PDF_TRIVAR_2G_LN_LN( s2, real( rrainm ), real( Nrm ), &
+                  ss2, real( rrainm * sqrt( rrp2_on_rrainm2 ) ), &
+                  real( Nrm * sqrt( Nrp2_on_Nrm2 ) ), &
+                  corr_srr, corr_sNr, corr_rrNr, 1.0, 1./3., 2./3. )
+          Sigma_rtthlw_1(iiLH_rrain,iiLH_Nr) = dble( srrNr1 )
+          Sigma_rtthlw_1(iiLH_Nr,iiLH_rrain) = dble( srrNr1 )
+          Sigma_rtthlw_2(iiLH_rrain,iiLH_Nr) = dble( srrNr2 )
+          Sigma_rtthlw_2(iiLH_Nr,iiLH_rrain) = dble( srrNr2 )
+        end if
+      end if
+
       call sample_points( n_micro_calls, nt_repeat, d_variables, p_matrix, dble( a ), & 
                           dble( rt1 ), dble( thl1 ),  & 
                           dble( rt2 ), dble( thl2 ), & 
@@ -403,7 +429,7 @@ module generate_lh_sample_mod
                             crt1, cthl1, crt2, cthl2, & 
                             mu1, mu2,  & 
                             Sigma_rtthlw_1, Sigma_rtthlw_2, & 
-                            C1, C2, & 
+                            cloud_frac1, cloud_frac2, & 
                             l_d_variable_lognormal, &
                             rt, thl, X_u_one_lev, X_nl_one_lev )
 
@@ -456,7 +482,7 @@ module generate_lh_sample_mod
 
     ! Cloud fractions for components 1 and 2
     double precision, intent(in) :: &
-      C1, C2 ! cloud fraction associated w/ 1st, 2nd mixture component
+      cloud_frac1, cloud_frac2 ! cloud fraction associated w/ 1st, 2nd mixture component
 
     logical, intent(in), dimension(d_variables) :: &
       l_d_variable_lognormal ! Whether a given element of X_nl is lognormal
@@ -514,30 +540,31 @@ module generate_lh_sample_mod
     ! Take sample solely from cloud points.
     col = is_mellor
     call truncate_gaus_mixt( n_micro_calls, d_variables, col, a, mu1, mu2, & 
-                             Sigma_stw_1, Sigma_stw_2, C1, C2, X_u_one_lev, & 
+                             Sigma_stw_1, Sigma_stw_2, cloud_frac1, cloud_frac2, X_u_one_lev, & 
                              s_pts )
 
     ! Generate n samples of a d-variate Gaussian mixture
     ! by transforming Latin hypercube points, X_u_one_lev.
     call gaus_mixt_points( n_micro_calls, d_variables, a, mu1, mu2,  & 
                            Sigma_stw_1, Sigma_stw_2, & 
-                           C1, C2, X_u_one_lev, s_pts, X_nl_one_lev )
+                           cloud_frac1, cloud_frac2, X_u_one_lev, s_pts, X_nl_one_lev )
 
 ! Transform s (column 1) and t (column 2) back to rt and thl
 ! This is only needed if you need rt, thl in your microphysics.
 !     call sptp_2_rtpthlp &
 !          ( n_micro_calls, d_variables, a, crt1, cthl1, crt2, cthl2, &
-!            C1, C2, X_nl_one_lev(1:n_micro_calls,1), X_nl_one_lev(1:n_micro_calls,2), &
+!            cloud_frac1, cloud_frac2, X_nl_one_lev(1:n_micro_calls,1), &
+!            X_nl_one_lev(1:n_micro_calls,2), &
 !            X_u_one_lev, rtp, thlp )
       call st_2_rtthl( n_micro_calls, d_variables, a, rt1, thl1, rt2, thl2, &
                        crt1, cthl1, crt2, cthl2, &
-                       C1, C2, mu1(1), mu2(1), &
+                       cloud_frac1, cloud_frac2, mu1(1), mu2(1), &
                        X_nl_one_lev(1:n_micro_calls,is_mellor), &
                        X_nl_one_lev(1:n_micro_calls,it_mellor), &
                        X_u_one_lev, rt, thl )
 
 ! Compute some diagnostics
-!       print*, 'C=', a*C1 + (1-a)*C2
+!       print*, 'C=', a*cloud_frac1 + (1-a)*cloud_frac2
 !       print*, 'rtm_anl=', a*rt1+(1-a)*rt2, 'rtm_est=', mean(rt(1:n),n)
 !       print*, 'thl_anl=',a*thl1+(1-a)*thl2, 'thlm_est=',mean(thl(1:n),n)
 !       print*, 'rtpthlp_coef_est=', corrcoef(rt,thl,n)
@@ -727,7 +754,7 @@ module generate_lh_sample_mod
 
 !----------------------------------------------------------------------
   subroutine gaus_mixt_points( n_micro_calls, d_variables, a, mu1, mu2, Sigma1, Sigma2, & 
-                               C1, C2, X_u_one_lev, s_pts, X_gm )
+                               cloud_frac1, cloud_frac2, X_u_one_lev, s_pts, X_gm )
 ! Description:
 !   Generates n random samples from a d-dimensional Gaussian-mixture PDF.
 !   Uses Latin hypercube method.
@@ -751,7 +778,7 @@ module generate_lh_sample_mod
 
     double precision, intent(in) :: &
       a,     & ! Mixture fraction of Gaussians
-      C1, C2   ! Cloud fraction associated w/ 1st, 2nd mixture component
+      cloud_frac1, cloud_frac2   ! Cloud fraction associated w/ 1st, 2nd mixture component
 
     double precision, intent(in), dimension(d_variables) :: &
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd Gaussians
@@ -780,25 +807,26 @@ module generate_lh_sample_mod
 
     ! ---- Begin Code ----
 
-    ! Handle some possible errors re: proper ranges of a, C1, C2.
+    ! Handle some possible errors re: proper ranges of a, cloud_frac1,
+    ! cloud_frac2.
     if (a > 1.0d0 .or. a < 0.0d0) then
       write(fstderr,*) 'Error in gaus_mixt_points:  ',  &
                        'mixture fraction, a, does not lie in [0,1].'
       stop
     end if
-    if (C1 > 1.0d0 .or. C1 < 0.0d0) then
+    if (cloud_frac1 > 1.0d0 .or. cloud_frac1 < 0.0d0) then
       write(fstderr,*) 'Error in gaus_mixt_points:  ',  &
-                       'cloud fraction 1, C1, does not lie in [0,1].'
+                       'cloud fraction 1, cloud_frac1, does not lie in [0,1].'
       stop
     end if
-    if (C2 > 1.0d0 .or. C2 < 0.0d0) then
+    if (cloud_frac2 > 1.0d0 .or. cloud_frac2 < 0.0d0) then
       write(fstderr,*) 'Error in gaus_mixt_points:  ',  &
-                       'cloud fraction 2, C2, does not lie in [0,1].'
+                       'cloud fraction 2, cloud_frac2, does not lie in [0,1].'
       stop
     end if
 
     ! Make sure there is some cloud.
-    if (a*C1 < 0.001d0 .and. (1-a)*C2 < 0.001d0) then
+    if (a*cloud_frac1 < 0.001d0 .and. (1-a)*cloud_frac2 < 0.001d0) then
       if ( clubb_at_least_debug_level( 1 ) ) then
         write(fstderr,*) 'Error in gaus_mixt_points:  ',  &
                          'there is no cloud or almost no cloud!'
@@ -815,7 +843,7 @@ module generate_lh_sample_mod
       ! Choose which mixture fraction we are in.
       ! Account for cloud fraction.
       ! Follow M. E. Johnson (1987), p. 56.
-      fraction_1 = ( a*C1 ) / ( a*C1 + (1-a)*C2 )
+      fraction_1 = ( a*cloud_frac1 ) / ( a*cloud_frac1 + (1-a)*cloud_frac2 )
       if ( X_u_one_lev(sample, d_variables+1) < fraction_1 ) then
         call gaus_condt( d_variables, &
                          std_normal, mu1, Sigma1, s_pts(sample), & 
@@ -836,7 +864,7 @@ module generate_lh_sample_mod
 
 !-------------------------------------------------------------------------------
   subroutine truncate_gaus_mixt( n_micro_calls, d_variables, col, a, mu1, mu2, & 
-                  Sigma1, Sigma2, C1, C2, X_u_one_lev, truncated_column )
+                  Sigma1, Sigma2, cloud_frac1, cloud_frac2, X_u_one_lev, truncated_column )
 ! Description:
 !   Converts sample points drawn from a uniform distribution
 !    to truncated Gaussian points.
@@ -861,7 +889,7 @@ module generate_lh_sample_mod
 
     double precision, intent(in) :: &
       a,    & ! Mixture fraction of Gaussians
-      C1, C2  ! Cloud fraction associated w/ 1st, 2nd mixture component
+      cloud_frac1, cloud_frac2  ! Cloud fraction associated w/ 1st, 2nd mixture component
 
     double precision, intent(in), dimension(d_variables) :: &
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd Gaussians
@@ -886,25 +914,26 @@ module generate_lh_sample_mod
 
     ! ---- Begin Code ----
 
-    ! Handle some possible errors re: proper ranges of a, C1, C2.
+    ! Handle some possible errors re: proper ranges of a, cloud_frac1,
+    ! cloud_frac2.
     if ( (a > 1.0d0) .or. (a < 0.0d0) ) then
       write(fstderr,*) 'Error in truncate_gaus_mixt:  ',  &
                        'mixture fraction, a, does not lie in [0,1].'
       stop
     end if
-    if ( (C1 > 1.0d0) .or. (C1 < 0.0d0) ) then
+    if ( (cloud_frac1 > 1.0d0) .or. (cloud_frac1 < 0.0d0) ) then
       write(fstderr,*) 'Error in truncate_gaus_mixt:  ',  &
-                       'cloud fraction 1, C1, does not lie in [0,1].'
+                       'cloud fraction 1, cloud_frac1, does not lie in [0,1].'
       stop
     end if
-    if ( (C2 > 1.0d0) .or. (C2 < 0.0d0) ) then
+    if ( (cloud_frac2 > 1.0d0) .or. (cloud_frac2 < 0.0d0) ) then
       write(fstderr,*) 'Error in truncate_gaus_mixt:  ',  &
-                       'cloud fraction 2, C2, does not lie in [0,1].'
+                       'cloud fraction 2, cloud_frac2, does not lie in [0,1].'
       stop
     end if
 
     ! Make sure there is some cloud.
-    if (a*C1 < 0.001d0 .and. (1-a) * C2 < 0.001d0) then
+    if (a*cloud_frac1 < 0.001d0 .and. (1-a) * cloud_frac2 < 0.001d0) then
       if ( clubb_at_least_debug_level( 1 ) ) then
         write(fstderr,*) 'Error in truncate_gaus_mixt:  ',  &
                          'there is no cloud or almost no cloud!'
@@ -918,11 +947,12 @@ module generate_lh_sample_mod
       ! Choose which mixture fraction we are in.
       ! Account for cloud fraction.
       ! Follow M. E. Johnson (1987), p. 56.
-      fraction_1 = a * C1 / ( a * C1 + (1.d0 - a) *C2 )
+      fraction_1 = a * cloud_frac1 / ( a * cloud_frac1 + (1.d0 - a) *cloud_frac2 )
       if ( X_u_one_lev( sample, d_variables+1 ) < fraction_1 ) then
         ! Replace first dimension (s) with
         !  sample from cloud (i.e. truncated standard Gaussian)
-        s_std = ltqnorm( X_u_one_lev( sample, col ) * C1 + (1.d0 - C1) )
+        s_std = ltqnorm( X_u_one_lev( sample, col ) * cloud_frac1 + (1.d0 - &
+          cloud_frac1) )
         ! Convert to nonstandard normal with mean mu1 and variance Sigma1
         truncated_column(sample) =  & 
                    s_std * sqrt( Sigma1(col,col) ) + mu1(col)
@@ -930,7 +960,8 @@ module generate_lh_sample_mod
 
         ! Replace first dimension (s) with
         !   sample from cloud (i.e. truncated Gaussian)
-        s_std = ltqnorm( X_u_one_lev( sample, col ) * C2 + (1.d0 - C2) )
+        s_std = ltqnorm( X_u_one_lev( sample, col ) * cloud_frac2 + (1.d0 - &
+          cloud_frac2) )
 
         ! Convert to nonstandard normal with mean mu2 and variance Sigma2
         truncated_column(sample) =  & 
@@ -1229,7 +1260,10 @@ module generate_lh_sample_mod
 !-----------------------------------------------------------------------
   subroutine st_2_rtthl( n_micro_calls, d_variables, a, rt1, thl1, rt2, thl2, & 
                          crt1, cthl1, crt2, cthl2, & 
-                         C1, C2, s1, s2, s_mellor, t_mellor, X_u_one_lev, rt, thl )
+                         cloud_frac1, cloud_frac2, s1, s2, &
+                         s_mellor, &
+                         t_mellor, &
+                         X_u_one_lev, rt, thl )
 
     use constants, only:  &
         fstderr  ! Constant(s)
@@ -1253,7 +1287,7 @@ module generate_lh_sample_mod
       cthl1, cthl2   ! Constants from plumes 1 & 2 of thetal
 
     double precision, intent(in) :: &
-      C1, C2 ! Cloud fraction associated with 1st / 2nd mixture component
+      cloud_frac1, cloud_frac2 ! Cloud fraction associated with 1st / 2nd mixture component
 
     double precision, intent(in) :: s1, s2
 
@@ -1278,26 +1312,27 @@ module generate_lh_sample_mod
 
     ! ---- Begin Code ----
 
-    ! Handle some possible errors re: proper ranges of a, C1, C2.
+    ! Handle some possible errors re: proper ranges of a, cloud_frac1,
+    ! cloud_frac2.
 
     if ( a > 1.0d0 .or. a < 0.0d0 ) then
       write(fstderr,*) 'Error in st_2_rtthl:  ',  &
                        'mixture fraction, a, does not lie in [0,1].'
       stop
     end if
-    if ( C1 > 1.0d0 .or. C1 < 0.0d0 ) then
+    if ( cloud_frac1 > 1.0d0 .or. cloud_frac1 < 0.0d0 ) then
       write(fstderr,*) 'Error in st_2_rtthl:  ',  &
-                       'cloud fraction 1, C1, does not lie in [0,1].'
+                       'cloud fraction 1, cloud_frac1, does not lie in [0,1].'
       stop
     end if
-    if ( C2 > 1.0d0 .or. C2 < 0.0d0 ) then
+    if ( cloud_frac2 > 1.0d0 .or. cloud_frac2 < 0.0d0 ) then
       write(fstderr,*) 'Error in st_2_rtthl:  ',  &
-                       'cloud fraction 2, C2, does not lie in [0,1].'
+                       'cloud fraction 2, cloud_frac2, does not lie in [0,1].'
       stop
     end if
 
     ! Make sure there is some cloud.
-    if ( a*C1 < 0.001d0 .and. (1-a)*C2 < 0.001d0 ) then
+    if ( a*cloud_frac1 < 0.001d0 .and. (1-a)*cloud_frac2 < 0.001d0 ) then
       if ( clubb_at_least_debug_level( 1 ) ) then
         write(fstderr,*) 'Error in st_2_rtthl:  ',  &
                          'there is no cloud or almost no cloud!'
@@ -1309,7 +1344,7 @@ module generate_lh_sample_mod
       ! Choose which mixture fraction we are in.
       ! Account for cloud fraction.
       ! Follow M. E. Johnson (1987), p. 56.
-      fraction_1     = a*C1/(a*C1+(1-a)*C2)
+      fraction_1     = a*cloud_frac1/(a*cloud_frac1+(1-a)*cloud_frac2)
       if ( X_u_one_lev(sample,d_variables+1) < fraction_1 ) then
         rt(sample)  = rt1 + (0.5d0/crt1)*(s_mellor(sample)-s1) +  & 
                            (0.5d0/crt1)*t_mellor(sample)

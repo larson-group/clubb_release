@@ -15,12 +15,14 @@ module KK_microphys_module
 
   public :: KK_microphys
 
+  public :: PDF_TRIVAR_2G_LN_LN
+
   private :: mean_volume_radius, cond_evap_rrainm, cond_evap_Nrm, &
     autoconv_rrainm, autoconv_Nrm, accretion_rrainm
 
   private :: G_T_p
 
-  ! private :: PDF_TRIVAR_2G_LN_LN, PDF_BIVAR_2G_LN, PDF_BIVAR_LN_LN
+  private :: PDF_BIVAR_2G_LN, PDF_BIVAR_LN_LN
   private :: Dv_fnc
 
   private ! Set default scope to private
@@ -691,29 +693,30 @@ module KK_microphys_module
     logical, intent(in) :: &
       l_local_kk ! Use local formula
 
-    REAL, INTENT(IN) ::  &
+    real, intent(in) ::  &
       rrainm, &  ! Grid-box average rrainm  [kg kg^-1]
 !     rrp2       ! Grid-box rr variance     [kg^2 kg^-2]
       Nrm        ! Grid-box average Nrm     [kg^-1]
 !     Nrp2       ! Grid-box Nr variance     [kg^-2]
-    REAL, INTENT(IN) :: &
+    real, intent(in) :: &
       rrp2_on_rrainm2, & ! rrp2/rrainm^2            [-]
       Nrp2_on_Nrm2,    & ! Nrp2/Nrm^2               [-]
       corr_rrNr_LL       ! Correlation of rr and Nr [-]
 
     ! Output variables.
-    REAL:: mean_volume_radius       ! [m]
+    real :: mean_volume_radius       ! [m]
 
     ! Exponential terms.
-    REAL:: alpha_exp  ! Exponent of rr
-    REAL:: beta_exp   ! Exponent of Nr
+    real :: alpha_exp  ! Exponent of rr
+    real :: beta_exp   ! Exponent of Nr
 
     ! Original terms.
-    REAL:: mu_rr       ! Grid-box average of rr                [kg kg^-1]
-    REAL:: sigma_rr    ! Grid-box standard deviation of rr     [kg kg^-1]
-    REAL:: mu_Nr       ! Grid-box average of Nr                [kg^-1]
-    REAL:: sigma_Nr    ! Grid-box standard deviation of Nr     [kg^-1]
-    REAL:: corr_rrNr   ! Correlation of rr and Nr              []
+    real :: &
+      mu_rr, &       ! Grid-box average of rr                [kg kg^-1]
+      sigma_rr, & ! Grid-box standard deviation of rr     [kg kg^-1]
+      mu_Nr,    & ! Grid-box average of Nr                [kg^-1]
+      sigma_Nr, & ! Grid-box standard deviation of Nr     [kg^-1]
+      corr_rrNr   ! Correlation of rr and Nr              []
 
 !-------------------------------------------------------------------------------
     ! ---- Begin Code ----
@@ -896,28 +899,30 @@ module KK_microphys_module
       corr_rrNr_LL     ! Correlation of rr and Nr         [-]
 
     ! Output variables.
-    REAL:: cond_evap_rrainm  ! [kg kg^-1 s^-1]
+    real :: cond_evap_rrainm  ! [kg kg^-1 s^-1]
 
     ! Exponential terms.
-    REAL:: alpha_exp  ! Exponent of s
-    REAL:: beta_exp   ! Exponent of rr
-    REAL:: gamma_exp  ! Exponent of Nr
+    real :: &
+      alpha_exp, & ! Exponent of s
+      beta_exp,  & ! Exponent of rr
+      gamma_exp    ! Exponent of Nr
 
     ! Original terms.
-    REAL:: mu_s1       ! Plume 1 average of s               [kg kg^-1]
-    REAL:: sigma_s1    ! Plume 1 standard deviation of s    [kg kg^-1]
-    REAL:: mu_s2       ! Plume 2 average of s               [kg kg^-1]
-    REAL:: sigma_s2    ! Plume 2 standard deviation of s    [kg kg^-1]
-    REAL:: mu_rr       ! Grid-box average of rr             [kg kg^-1]
-    REAL:: sigma_rr    ! Grid-box standard deviation of rr  [kg kg^-1]
-    REAL:: mu_Nr       ! Grid-box average of Nr             [kg^-1]
-    REAL:: sigma_Nr    ! Grid-box standard deviation of Nr  [kg^-1]
-    REAL:: corr_srr    ! Correlation of s and rr            []
-    REAL:: corr_sNr    ! Correlation of s and Nr            []
-    REAL:: corr_rrNr   ! Correlation of rr and Nr           []
+    real :: &
+      mu_s1,    & ! Plume 1 average of s               [kg kg^-1]
+      sigma_s1, & ! Plume 1 standard deviation of s    [kg kg^-1]
+      mu_s2,    & ! Plume 2 average of s               [kg kg^-1]
+      sigma_s2, & ! Plume 2 standard deviation of s    [kg kg^-1]
+      mu_rr,    & ! Grid-box average of rr             [kg kg^-1]
+      sigma_rr, & ! Grid-box standard deviation of rr  [kg kg^-1]
+      mu_Nr,    & ! Grid-box average of Nr             [kg^-1]
+      sigma_Nr, & ! Grid-box standard deviation of Nr  [kg^-1]
+      corr_srr, & ! Correlation of s and rr            [-]
+      corr_sNr, & ! Correlation of s and Nr            [-]
+      corr_rrNr   ! Correlation of rr and Nr           [-]
 
-    REAL:: Tl_1, Tl_2, T_1, T_2, rsl_1, rsl_2, Beta_T1, Beta_T2
-    REAL:: plume_1_constants, plume_2_constants
+    real :: Tl_1, Tl_2, T_1, T_2, rsl_1, rsl_2, Beta_T1, Beta_T2
+    real :: plume_1_constants, plume_2_constants
 
 !-------------------------------------------------------------------------------
 
@@ -1002,12 +1007,12 @@ module KK_microphys_module
 
         ! rr is distributed Lognormally.
         mu_rr = rrainm
-!              sigma_rr = SQRT(rrp2)
+!       sigma_rr = SQRT(rrp2)
         sigma_rr = rrainm * SQRT(rrp2_on_rrainm2)
 
         ! Nr is distributed Lognormally.
         mu_Nr = Nrm
-!              sigma_Nr = SQRT(Nrp2)
+!       sigma_Nr = SQRT(Nrp2)
         sigma_Nr = Nrm * SQRT(Nrp2_on_Nrm2)
 
         ! Correlations.
@@ -1046,7 +1051,7 @@ module KK_microphys_module
 
   FUNCTION cond_evap_Nrm( cond_rrainm, Nrm, rrainm )
 
-    IMPLICIT NONE
+    implicit none
 
     REAL, INTENT(IN):: rrainm      ! [kg kg^-1]
     REAL, INTENT(IN):: Nrm      ! [kg^-1]
@@ -1251,7 +1256,7 @@ module KK_microphys_module
         rho_lw,  & ! Variable(s)
         pi
 
-    IMPLICIT NONE
+    implicit none
 
     REAL, INTENT(IN):: auto_rrainm  ! [kg kg^-1 s^-1]
     REAL:: autoconv_Nrm          ! [kg^-1 s^-1]
@@ -1430,7 +1435,7 @@ module KK_microphys_module
         sat_mixrat_liq ! Procedure(s)
 
 
-    IMPLICIT NONE
+    implicit none
 
 
     ! Here we compute G(T,p) as in KK (17)
@@ -1701,58 +1706,65 @@ module KK_microphys_module
   !-----------------------------------------------------------------------
 
 
-  FUNCTION PDF_TRIVAR_2G_LN_LN ( mu_si, mu_rr, mu_Nr, & 
-                                 sigma_si, sigma_rr, sigma_Nr, & 
-                                 corr_sirr, corr_siNr, corr_rrNr, & 
-                                 alpha_exp, beta_exp, gamma_exp )
+  function PDF_TRIVAR_2G_LN_LN( mu_si, mu_rr, mu_Nr, & 
+                                sigma_si, sigma_rr, sigma_Nr, & 
+                                corr_sirr, corr_siNr, corr_rrNr, & 
+                                alpha_exp, beta_exp, gamma_exp )
 
-    USE constants, only: & 
-        pi ! Variable(s)
+    use constants, only: & 
+      pi ! Variable(s)
 
-    USE parabolic, ONLY:  & 
-        gamma ! Variable(s)
+    use parabolic, only:  & 
+      gamma ! Procedure(s)
 
-    IMPLICIT NONE
+    implicit none
+
+    ! Constant Parameters
+    double precision, parameter :: limit = 10.0d0**308
+
+    real, parameter :: sigs_tol = 10.0**(-18)
 
     ! Input variables.
-    REAL, INTENT(IN):: mu_si     ! Plume (i) average of s
-    REAL, INTENT(IN):: mu_rr     ! Average of rr
-    REAL, INTENT(IN):: mu_Nr     ! Average of Nr
-    REAL, INTENT(IN):: sigma_si  ! Plume (i) standard deviation of s
-    REAL, INTENT(IN):: sigma_rr  ! Standard deviation of rr
-    REAL, INTENT(IN):: sigma_Nr  ! Standard deviation of Nr
-    REAL, INTENT(IN):: corr_sirr ! Intra-Gaussian correlation between s, rr
-    REAL, INTENT(IN):: corr_siNr ! Intra-Gaussian correlation between s, Nr
-    REAL, INTENT(IN):: corr_rrNr ! Intra-Gaussian correlation between rr, Nr
-    REAL, INTENT(IN):: alpha_exp ! Exponent associated with "s" variable.
-    REAL, INTENT(IN):: beta_exp  ! Exponent associated with rr variable.
-    REAL, INTENT(IN):: gamma_exp ! Exponent associated with Nr variable.
+    real, intent(in) :: &
+      mu_si,     & ! Plume (i) average of s
+      mu_rr,     & ! Average of rr                                 [kg/kg]
+      mu_Nr,     & ! Average of Nr                                 [#/kg]
+      sigma_si,  & ! Plume (i) standard deviation of s
+      sigma_rr,  & ! Standard deviation of rr                      [kg/kg]
+      sigma_Nr,  & ! Standard deviation of Nr                      [kg/kg]
+      corr_sirr, & ! Intra-Gaussian correlation between s, rr      [-]
+      corr_siNr, & ! Intra-Gaussian correlation between s, Nr      [-]
+      corr_rrNr, & ! Intra-Gaussian correlation between rr, Nr     [-]
+      alpha_exp, & ! Exponent associated with "s" variable.
+      beta_exp,  & ! Exponent associated with rr variable.
+      gamma_exp    ! Exponent associated with Nr variable.
 
     ! Output variable.
-    REAL:: PDF_TRIVAR_2G_LN_LN
+    real :: PDF_TRIVAR_2G_LN_LN ! Variance
 
     ! Local variables.
 
     ! Variables Gaussianized and Converted.
-    REAL:: mu_siG      ! Plume (i) average of s(G)
-    REAL:: mu_rrG      ! Average of rr(G)
-    REAL:: mu_NrG      ! Average of Nr(G)
-    REAL:: sigma_siG   ! Plume (i) standard deviation of s(G)
-    REAL:: sigma_rrG   ! Standard deviation of rr(G)
-    REAL:: sigma_NrG   ! Standard deviation of Nr(G)
-    REAL:: corr_sirrG  ! Intra-Gaussian correlation between s(G), rr(G)
-    REAL:: corr_siNrG  ! Intra-Gaussian correlation between s(G), Nr(G)
-    REAL:: corr_rrNrG  ! Intra-Gaussian correlation between rr(G), Nr(G)
+    real :: &
+      mu_siG,     & ! Plume (i) average of s(G)
+      mu_rrG,     & ! Average of rr(G)
+      mu_NrG,     & ! Average of Nr(G)
+      sigma_siG,  & ! Plume (i) standard deviation of s(G)
+      sigma_rrG,  & ! Standard deviation of rr(G)
+      sigma_NrG,  & ! Standard deviation of Nr(G)
+      corr_sirrG, & ! Intra-Gaussian correlation between s(G), rr(G)
+      corr_siNrG, & ! Intra-Gaussian correlation between s(G), Nr(G)
+      corr_rrNrG    ! Intra-Gaussian correlation between rr(G), Nr(G)
 
-    DOUBLE PRECISION:: gamma_fnc_input
-    DOUBLE PRECISION:: parab_cyl_fnc_ord
-    DOUBLE PRECISION:: scci
-    DOUBLE PRECISION:: test
-    LOGICAL:: l_use_eq_1
-!        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308.0
-!       Found that above is not valid on most compilers -dschanen
-    DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308
-    REAL, PARAMETER:: sigs_tol = 10.0**(-18)
+    double precision :: &
+      gamma_fnc_input, &
+      parab_cyl_fnc_ord, &
+      scci, &
+      test
+
+    logical :: l_use_eq_1
+
+    ! ----- Begin Code -----
 
     !----- Section #1 ------------------------------------------------------
 
@@ -1822,9 +1834,9 @@ module KK_microphys_module
     ! If sigma_siG = 0, then equation #1 cannot be used.
     ! A tolerance value (a small number) is used instead of zero in order
     ! to prevent numerical errors.
-    IF ( sigma_siG < sigs_tol ) THEN
+    if ( sigma_siG < sigs_tol ) then
       l_use_eq_1 = .false.
-    ELSE
+    else
       ! Input to the parabolic cylinder function.
       scci =  (mu_siG/sigma_siG) & 
             + corr_sirrG*sigma_rrG*beta_exp  & 
@@ -1835,16 +1847,16 @@ module KK_microphys_module
       ! result to large to be represented numerically by the computer.
       test = Dv_fnc( parab_cyl_fnc_ord, scci )
 
-      IF ( test >= 0.0d0 .AND. test < limit ) THEN
+      if ( test >= 0.0d0 .and. test < limit ) then
         l_use_eq_1 = .true.
-      ELSE
+      else
         l_use_eq_1 = .false.
-      ENDIF
+      end if
 
-    ENDIF
+    end if
 
 
-    IF ( l_use_eq_1 ) THEN
+    if ( l_use_eq_1 ) then
 
       ! Case where sigma_siG is not equal to 0 (and sigma_siG is not
       ! sufficiently small enough to cause the parabolic cylinder function
@@ -1871,7 +1883,7 @@ module KK_microphys_module
       * GAMMA( gamma_fnc_input ) & 
       * Dv_fnc( parab_cyl_fnc_ord, scci ))
 
-    ELSEIF ( .not. l_use_eq_1 .AND. mu_siG < 0.0 ) THEN
+    else if ( .not. l_use_eq_1 .and. mu_siG < 0.0 ) then
 
       ! Case where sigma_siG is equal to 0 (or sigma_siG is sufficiently
       ! small enough to cause the parabolic cylinder function to produce a
@@ -1891,8 +1903,8 @@ module KK_microphys_module
                             *sigma_rrG*beta_exp*sigma_NrG*gamma_exp & 
                          ) & 
            )
-    ELSE
-!        ELSEIF ( .not. l_use_eq_1 .AND. mu_siG >=  0.0 ) THEN
+    else
+!   else if ( .not. l_use_eq_1 .AND. mu_siG >=  0.0 ) THEN
 
       ! Case where sigma_siG is equal to 0 (or sigma_siG is sufficiently
       ! small enough to cause the parabolic cylinder function to produce a
@@ -1901,11 +1913,11 @@ module KK_microphys_module
 
       PDF_TRIVAR_2G_LN_LN = 0.0
 
-    ENDIF
+    end if
 
-    RETURN
+    return
 
-  END FUNCTION PDF_TRIVAR_2G_LN_LN
+  end function PDF_TRIVAR_2G_LN_LN
 
 !===============================================================================
   !
@@ -2096,28 +2108,28 @@ module KK_microphys_module
     USE parabolic, ONLY:  & 
         gamma ! Variable(s)
 
-    IMPLICIT NONE
+    implicit none
 
     ! Input variables.
-    REAL, INTENT(IN):: mu_si     ! Plume (i) average of s
-    REAL, INTENT(IN):: mu_xx     ! Average of xx
-    REAL, INTENT(IN):: sigma_si  ! Plume (i) standard deviation of s
-    REAL, INTENT(IN):: sigma_xx  ! Standard deviation of Y2
-    REAL, INTENT(IN):: corr_sixx ! Intra-Gaussian correlation between s, xx
-    REAL, INTENT(IN):: alpha_exp ! Exponent associated with "s" variable.
-    REAL, INTENT(IN):: beta_exp  ! Exponent associated with xx variable.
+    real, INTENT(IN):: mu_si     ! Plume (i) average of s
+    real, INTENT(IN):: mu_xx     ! Average of xx
+    real, INTENT(IN):: sigma_si  ! Plume (i) standard deviation of s
+    real, INTENT(IN):: sigma_xx  ! Standard deviation of Y2
+    real, INTENT(IN):: corr_sixx ! Intra-Gaussian correlation between s, xx
+    real, INTENT(IN):: alpha_exp ! Exponent associated with "s" variable.
+    real, INTENT(IN):: beta_exp  ! Exponent associated with xx variable.
 
     ! Output variable.
-    REAL:: PDF_BIVAR_2G_LN
+    real:: PDF_BIVAR_2G_LN
 
     ! Local variables.
 
     ! Variables Gaussianized and Converted.
-    REAL:: mu_siG      ! Plume (i) average of s(G)
-    REAL:: mu_xxG      ! Average of xx(G)
-    REAL:: sigma_siG   ! Plume (i) standard deviation of s(G)
-    REAL:: sigma_xxG   ! Standard deviation of xx(G)
-    REAL:: corr_sixxG  ! Intra-Gaussian correlation between s(G), xx(G)
+    real:: mu_siG      ! Plume (i) average of s(G)
+    real:: mu_xxG      ! Average of xx(G)
+    real:: sigma_siG   ! Plume (i) standard deviation of s(G)
+    real:: sigma_xxG   ! Standard deviation of xx(G)
+    real:: corr_sixxG  ! Intra-Gaussian correlation between s(G), xx(G)
 
     DOUBLE PRECISION:: gamma_fnc_input
     DOUBLE PRECISION:: parab_cyl_fnc_ord
@@ -2125,7 +2137,7 @@ module KK_microphys_module
     DOUBLE PRECISION:: test
     LOGICAL:: l_use_eq_1
     DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308
-    REAL, PARAMETER:: sigs_tol = 10.0**(-18)
+    real, PARAMETER:: sigs_tol = 10.0**(-18)
 
     sci = 0.0 ! Arbitrary default value
     ! Joshua Fasching June 2008
@@ -2349,28 +2361,28 @@ module KK_microphys_module
     USE constants, only:  & 
         pi ! Variable(s)
 
-    IMPLICIT NONE
+    implicit none
 
     ! Input variables.
-    REAL, INTENT(IN):: mu_rr     ! Average of rr
-    REAL, INTENT(IN):: mu_Nr     ! Average of Nr
-    REAL, INTENT(IN):: sigma_rr  ! Standard deviation of rr
-    REAL, INTENT(IN):: sigma_Nr  ! Standard deviation of Nr
-    REAL, INTENT(IN):: corr_rrNr ! Intra-Gaussian correlation between rr, Nr
-    REAL, INTENT(IN):: alpha_exp ! Exponent associated with rr variable.
-    REAL, INTENT(IN):: beta_exp  ! Exponent associated with Nr variable.
+    real, INTENT(IN):: mu_rr     ! Average of rr
+    real, INTENT(IN):: mu_Nr     ! Average of Nr
+    real, INTENT(IN):: sigma_rr  ! Standard deviation of rr
+    real, INTENT(IN):: sigma_Nr  ! Standard deviation of Nr
+    real, INTENT(IN):: corr_rrNr ! Intra-Gaussian correlation between rr, Nr
+    real, INTENT(IN):: alpha_exp ! Exponent associated with rr variable.
+    real, INTENT(IN):: beta_exp  ! Exponent associated with Nr variable.
 
     ! Output variable.
-    REAL:: PDF_BIVAR_LN_LN
+    real:: PDF_BIVAR_LN_LN
 
     ! Local variables.
 
     ! Variables Gaussianized and Converted.
-    REAL:: mu_rrG      ! Average of rr(G)
-    REAL:: mu_NrG      ! Average of Nr(G)
-    REAL:: sigma_rrG   ! Standard deviation of rr(G)
-    REAL:: sigma_NrG   ! Standard deviation of Nr(G)
-    REAL:: corr_rrNrG  ! Intra-Gaussian correlation between rr(G), X2(G)
+    real:: mu_rrG      ! Average of rr(G)
+    real:: mu_NrG      ! Average of Nr(G)
+    real:: sigma_rrG   ! Standard deviation of rr(G)
+    real:: sigma_NrG   ! Standard deviation of Nr(G)
+    real:: corr_rrNrG  ! Intra-Gaussian correlation between rr(G), X2(G)
 
     !----- Section #1 ------------------------------------------------------
 
@@ -2639,47 +2651,51 @@ module KK_microphys_module
 !        USE constants
 !        USE polpak_gamma, ONLY: gamma
 !
-!        IMPLICIT NONE
-!
+!        implicit none
+
+!        ! Parameters 
+!        double precision, parameter :: limit = 10.0d0**308
+!        real, parameter :: sigX1_tol = 10.0**(-18)
+
 !        ! Input variables.
-!        REAL, INTENT(IN):: muY1i     ! Plume average of Y1
-!        REAL, INTENT(IN):: muY2      ! Average of Y2
-!        REAL, INTENT(IN):: muY3      ! Average of Y3
-!        REAL, INTENT(IN):: sigmaY1i  ! Plume standard deviation of Y1
-!        REAL, INTENT(IN):: sigmaY2   ! Standard deviation of Y2
-!        REAL, INTENT(IN):: sigmaY3   ! Standard deviation of Y3
-!        REAL, INTENT(IN):: corrY1iY2 ! Intra-Gaussian correlation between Y1,Y2
-!        REAL, INTENT(IN):: corrY1iY3 ! Intra-Gaussian correlation between Y1,Y3
-!        REAL, INTENT(IN):: corrY2Y3  ! Intra-Gaussian correlation between Y2,Y3
-!        REAL, INTENT(IN):: alpha_exp ! Exponent associated with Y1 variable.
-!        REAL, INTENT(IN):: beta_exp  ! Exponent associated with Y2 variable.
-!        REAL, INTENT(IN):: gamma_exp ! Exponent associated with Y3 variable.
+!        real, intent(in) :: 
+!          muY1i,     & ! Plume average of Y1
+!          muY2,      & ! Average of Y2
+!          muY3,      & ! Average of Y3
+!          sigmaY1i,  & ! Plume standard deviation of Y1
+!          sigmaY2,   & ! Standard deviation of Y2
+!          sigmaY3,   & ! Standard deviation of Y3
+!          corrY1iY2, & ! Intra-Gaussian correlation between Y1,Y2
+!          corrY1iY3, & ! Intra-Gaussian correlation between Y1,Y3
+!          corrY2Y3,  & ! Intra-Gaussian correlation between Y2,Y3
+!          alpha_exp, & ! Exponent associated with Y1 variable.
+!          beta_exp,  & ! Exponent associated with Y2 variable.
+!          gamma_exp    ! Exponent associated with Y3 variable.
 !
 !        ! Output variable.
-!        REAL:: PDF_TRIVAR_2G_LN_LN
+!        real :: PDF_TRIVAR_2G_LN_LN
 !
 !        ! Local variables.
 !
 !        ! "Y" variables Gaussianized and converted to "X" variables.
-!        REAL:: muX1i     ! Plume average of X1
-!        REAL:: muX2      ! Average of X2
-!        REAL:: muX3      ! Average of X3
-!        REAL:: sigmaX1i  ! Plume standard deviation of X1
-!        REAL:: sigmaX2   ! Standard deviation of X2
-!        REAL:: sigmaX3   ! Standard deviation of X3
-!        REAL:: corrX1iX2 ! Intra-Gaussian correlation between X1,X2
-!        REAL:: corrX1iX3 ! Intra-Gaussian correlation between X1,X3
-!        REAL:: corrX2X3  ! Intra-Gaussian correlation between X2,X3
+!        real :: &
+!          muX1i,     & ! Plume average of X1
+!          muX2,      & ! Average of X2
+!          muX3,      & ! Average of X3
+!          sigmaX1i,  & ! Plume standard deviation of X1
+!          sigmaX2,   & ! Standard deviation of X2
+!          sigmaX3,   & ! Standard deviation of X3
+!          corrX1iX2, & ! Intra-Gaussian correlation between X1,X2
+!          corrX1iX3, & ! Intra-Gaussian correlation between X1,X3
+!          corrX2X3     ! Intra-Gaussian correlation between X2,X3
 !
-!        DOUBLE PRECISION:: gamma_fnc_input
-!        DOUBLE PRECISION:: parab_cyl_fnc_ord
-!        DOUBLE PRECISION:: parab_cyl_fnc_input
-!        DOUBLE PRECISION:: test
-!        LOGICAL:: l_use_eq_1
-!!        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308.0
-!!       Found that above is not valid on most compilers -dschanen
-!        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308
-!        REAL, PARAMETER:: sigX1_tol = 10.0**(-18)
+!        double precision :: &
+!          gamma_fnc_input, &
+!          parab_cyl_fnc_ord, &
+!          parab_cyl_fnc_input, &
+!          test
+
+!        logical :: l_use_eq_1
 !
 !        !----- Section #1 ------------------------------------------------------
 !
@@ -2999,7 +3015,7 @@ module KK_microphys_module
 !        USE constants
 !        USE polpak_gamma, ONLY: gamma
 !
-!        IMPLICIT NONE
+!        implicit none
 !
 !        ! Input variables.
 !        REAL, INTENT(IN):: muY1i     ! Plume average of Y1
@@ -3229,7 +3245,7 @@ module KK_microphys_module
 !
 !        USE constants
 !
-!        IMPLICIT NONE
+!        implicit none
 !
 !        ! Input variables.
 !        REAL, INTENT(IN):: muY1      ! Average of Y1
@@ -3314,7 +3330,7 @@ module KK_microphys_module
 !       Vol. 32, No. 1, March 2006 pp. 102--112
 !===============================================================================
     use parabolic, only:  & 
-        gamma,  & ! Variable(s) 
+        gamma,  & ! Procedure(s) 
         parab
 
     use constants, only:  & 
