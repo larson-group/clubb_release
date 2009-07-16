@@ -35,7 +35,20 @@ time = netcdf.getVar( nc_file, 3 );
 
 t_time_steps = size(time);
 
-time_step_length = (time(2) - time(1))/6.0;
+timeInfo = netcdf.getAtt( nc_file, 3, 'units' );
+
+%Now that we have the text info about the unit for time, see if we can determine
+%a proper dt
+if findstr(timeInfo, 'minutes')
+	dt = 1;
+elseif findstr(timeInfo, 'hours')
+	dt = 60;
+else
+	%Assume one dt is 1 minute
+	dt = 1;
+end
+
+time_step_length = dt;
 
 for i=5:numvars-1
 	[varname,xtype,dimids,natts] = netcdf.inqVar( nc_file , i );
