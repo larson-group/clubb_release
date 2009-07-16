@@ -43,6 +43,8 @@ if findstr(timeInfo, 'minutes')
 	dt = 1;
 elseif findstr(timeInfo, 'hours')
 	dt = 60;
+elseif findstr(timeInfo, 'seconds')
+	dt = 1 / 60;
 else
 	%Assume one dt is 1 minute
 	dt = 1;
