@@ -39,12 +39,12 @@ timeInfo = netcdf.getAtt( nc_file, 3, 'units' );
 
 %Now that we have the text info about the unit for time, see if we can determine
 %a proper dt
-if findstr(timeInfo, 'minutes')
+if findstr(timeInfo, 'seconds')
+	dt = 1 / 60;
+elseif findstr(timeInfo, 'minutes')
 	dt = 1;
 elseif findstr(timeInfo, 'hours')
 	dt = 60;
-elseif findstr(timeInfo, 'seconds')
-	dt = 1 / 60;
 else
 	%Assume one dt is 1 minute
 	dt = 1;
