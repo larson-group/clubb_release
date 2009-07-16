@@ -126,7 +126,7 @@ l_use_default_std_atmosphere = .false.
 
 &radiation_setting
 rad_scheme = "bugsrad",
-ext_atmos_buffer = 10
+radiation_top = 38000. ! Height of profile used for radiation [m]
 /
 
 &stats_setting

@@ -44,9 +44,6 @@ module sounding
         sclr_dim, &! Variable(s)
         edsclr_dim
 
-    use ext_atmosphere_mod, only:  & 
-        ext_atmosphere ! Procedure(s)
-
     use interpolation, only:  & 
         lin_int ! Procedure(s)
 
@@ -138,10 +135,6 @@ module sounding
 
     integer :: i, j, k  ! Loop indices
 
-    ! Is this model being extended by 1976 Standard Atmosphere?
-    logical :: l_std_atmo
-
-    l_std_atmo = .false.
 
     theta_type = theta_name ! Default value
     alt_type = z_name ! Default value
@@ -280,18 +273,16 @@ module sounding
     ! Modified 27 May 2005 -dschanen: eliminated the goto in favor of a do while( )
     do i=2, gr%nnzp
       k=1
-      do while ( z(k) < gr%zt(i) .and. .not. l_std_atmo )
+      do while ( z(k) < gr%zt(i) )
         k=k+1
         if ( k > nlevels ) then
-!              write(fstderr,*) 'STOP Not enough sounding data to ',
-!     .          'initialize grid:'
-!              write(fstderr,'(a,f7.1,/a,f7.1)')
-!     .          '  highest sounding level', z(nlevels),
-!     .          '  should be higher than highest thermodynamic point',
-!     .          gr%zt(gr%nnzp)
-!              stop 'STOP in sounding'
-
-          l_std_atmo = .true.
+              write(fstderr,*) 'STOP Not enough sounding data to ',&
+               'initialize grid:'
+              write(fstderr,'(a,f7.1,/a,f7.1)') &
+               '  highest sounding level', z(nlevels),&
+               '  should be higher than highest thermodynamic point',&
+               gr%zt(gr%nnzp)
+              stop 'STOP in sounding'
           exit
         end if  ! k > nlevels
 
@@ -367,27 +358,7 @@ module sounding
 
       end do ! do while ( z(k) < gr%zt(i) )
 
-      ! If the grid extends beyond the sounding data, use
-      ! Standard Atmosphere
-      ! Joshua Fasching April 2009
-      if ( l_std_atmo ) then
-        call ext_atmosphere( gr%zt(i), thlm(i), rtm(i), press(i) )
-
-        um(i) = um(i-1)
-        vm(i) = vm(i-1)
-        wm(i) = wm(i-1)
-        ugm(i) = um(i)
-        vgm(i) = vm(i)
-
-      end if
-
     end do   ! i=2, gr%nnzp
-
-    if ( l_std_atmo .and.  &
-         clubb_at_least_debug_level( 1 ) ) then
-      write(fstderr,*) "Warning:  1976 Standard Atmosphere "// & 
-                       "was used to complete the grid."
-    endif
 
     return
   end subroutine read_sounding

@@ -187,9 +187,9 @@ module clubb_driver
       uv_sponge_damp_profile, &
       finalize_tau_sponge_damp
 
-    use ext_atmosphere_mod, only: &
+    use extend_atmosphere_mod, only: &
       l_use_default_std_atmosphere, &
-      finalize_ext_atm
+      finalize_extend_atm
 
     implicit none
 
@@ -287,7 +287,7 @@ module clubb_driver
 
     ! Definition of namelists
     namelist /model_setting/  & 
-      runtype, nzmax, grid_type, deltaz, zm_init, & 
+      runtype, nzmax, grid_type, deltaz, zm_init,  & 
       zt_grid_fname, zm_grid_fname,  & 
       day, month, year, rlat, rlon, & 
       time_initial, time_final, time_spinup, & 
@@ -590,15 +590,15 @@ module clubb_driver
     ! Allocate & initialize variables,
     ! setup grid, setup constants, and setup flags
 
-    call setup_clubb_core &                               
-         ( nzmax, T0, ts_nudge, &                         ! Intent(in)
-           hydromet_dim, sclr_dim, &                      ! Intent(in)
-           sclr_tol(1:sclr_dim), edsclr_dim, params, &    ! Intent(in)
-           l_soil_veg, &                                  ! Intent(in)
+    call setup_clubb_core                               &                               
+         ( nzmax, T0, ts_nudge,                         & ! Intent(in)
+           hydromet_dim, sclr_dim,                      & ! Intent(in)
+           sclr_tol(1:sclr_dim), edsclr_dim, params,    & ! Intent(in)
+           l_soil_veg,                                  & ! Intent(in)
            l_uv_nudge, l_tke_aniso, saturation_formula, & ! Intent(in)
-           .false., grid_type, deltaz, zm_init, &         ! Intent(in)
-           momentum_heights, thermodynamic_heights, &     ! Intent(in)
-           dummy_dx, dummy_dy, &                          ! Intent(in)
+           .false., grid_type, deltaz, zm_init,         & ! Intent(in)
+           momentum_heights, thermodynamic_heights,     & ! Intent(in)
+           dummy_dx, dummy_dy,                          & ! Intent(in)
            err_code )                                     ! Intent(out)
 
 
@@ -804,7 +804,7 @@ module clubb_driver
       call finalize_t_dependent_input()
     end if
 
-    call finalize_ext_atm( )
+    call finalize_extend_atm( )
 
     call cleanup_clubb_core( .false. )
 
@@ -878,10 +878,10 @@ module clubb_driver
       initialize_t_dependent_input, & ! Procedure(s)
       l_t_dependent ! Variable(s)
 
-    use ext_atmosphere_mod, only: &
+    use extend_atmosphere_mod, only: &
       l_use_default_std_atmosphere, &
-      load_ext_std_atm, &
-      convert_snd2ext_atm
+      load_extend_std_atm, &
+      convert_snd2extend_atm
 
     use mpace_a, only: mpace_a_init ! Procedure(s)
 
@@ -995,20 +995,26 @@ module clubb_driver
 
     ! Read sounding information
 
-    if( l_use_default_std_atmosphere ) then
-      call load_ext_std_atm( iunit )
-    end if
 
     call read_sounding( iunit, runtype, psfc, zm_init, &          ! Intent(in) 
                         thlm, theta_type, rtm, um, vm, ug, vg,  & ! Intent(out)
                         alt_type, p_in_Pa, subs_type, wm_zt, &    ! Intent(out)
                         sclrm, edsclrm, sounding_retVars, sclr_sounding_retVars ) ! Intent(out)
 
-    if( .not. l_use_default_std_atmosphere ) then
-      call convert_snd2ext_atm( n_snd_var, psfc, zm_init, sclr_dim, &      ! Intent(in)
+
+    ! Prepare extended sounding for radiation
+    if( l_use_default_std_atmosphere ) then
+
+      call load_extend_std_atm( iunit ) ! Intent (in)
+
+    else
+
+      call convert_snd2extend_atm( n_snd_var, psfc, zm_init, sclr_dim, &      ! Intent(in)
                                 sounding_retVars, sclr_sounding_retVars )  ! Intent(in)
     end if
 
+
+    ! Covert sounding input to CLUBB compatible input
     select case( trim( alt_type ) )
     case ( z_name )
 
@@ -1148,13 +1154,15 @@ module clubb_driver
 
     ! Initialize imposed w
     select case ( trim( subs_type ) ) ! Perform different operations based off
-      !                                   the sounding file
+    !                                   the sounding file
     case ( wm_name )
-      wm_zm = zt2zm( wm_zt )
 
+      wm_zm = zt2zm( wm_zt )
       wm_zm(1) = 0.0
       wm_zm(gr%nnzp) = 0.0
+
     case ( omega_name )
+
       do k=2,gr%nnzp
         wm_zt(k) = -wm_zt(k) / ( grav*rho(k) )
       end do
@@ -1164,6 +1172,7 @@ module clubb_driver
 
       wm_zm = zt2zm( wm_zt )
       wm_zm(gr%nnzp) = 0.0
+
     case default ! This should not happen
 
       wm_zt = 0.0
@@ -1172,19 +1181,19 @@ module clubb_driver
     end select
 
     ! Initialize damping
-    if(thlm_sponge_damp_settings%l_sponge_damping) then
-      call initialize_tau_sponge_damp( dt, thlm_sponge_damp_settings, &
-                                       thlm_sponge_damp_profile )
+    if( thlm_sponge_damp_settings%l_sponge_damping ) then
+      call initialize_tau_sponge_damp( dt, thlm_sponge_damp_settings, & ! Intent(in)
+                                       thlm_sponge_damp_profile )       ! Intent(out)
     end if
 
-    if(rtm_sponge_damp_settings%l_sponge_damping) then
-      call initialize_tau_sponge_damp( dt, rtm_sponge_damp_settings,&
-                                       rtm_sponge_damp_profile )
+    if( rtm_sponge_damp_settings%l_sponge_damping ) then
+      call initialize_tau_sponge_damp( dt, rtm_sponge_damp_settings, & ! Intent(in)
+                                       rtm_sponge_damp_profile )       ! Intent(out)
     end if
 
     if(uv_sponge_damp_settings%l_sponge_damping) then
-      call initialize_tau_sponge_damp( dt, uv_sponge_damp_settings, &
-                                       uv_sponge_damp_profile )
+      call initialize_tau_sponge_damp( dt, uv_sponge_damp_settings, &  ! Intent(in)
+                                       uv_sponge_damp_profile )        ! Intent(out)
     end if
 
 
@@ -1921,6 +1930,9 @@ module clubb_driver
     use variables_diagnostic_module, only:  & 
       wp2_zt ! w'^2 interpolated the themo levels [m^2/s^2]
 
+    use extend_atmosphere_mod, only: &
+      determine_extend_atmosphere_bounds ! Procedure(s)
+
     use stats_precision, only: time_precision ! Variable(s)
 
     use numerical_check, only: isnan2d, rad_check ! Procedure(s)
@@ -1931,7 +1943,8 @@ module clubb_driver
       micro_scheme, l_cloud_sed, Ncm_initial  ! Variables
 
     use parameters_radiation, only: &
-      rad_scheme
+      rad_scheme, & ! Variable(s)
+      radiation_top
 
     use soil_vegetation, only: advance_soil_veg, veg_T_in_K
 
@@ -2036,8 +2049,11 @@ module clubb_driver
 
     real :: wpthep, amu0
 
-    integer :: lin_int_buffer
-    ! This is just to avoid a compiler warning -dschanen 22 Jan 2008
+    integer :: &
+      lin_int_buffer, &
+      extend_atmos_top_level, &
+      extend_atmos_bottom_level, & 
+      extend_atmos_range_size
 
 !-----------------------------------------------------------------------
 
@@ -2621,21 +2637,17 @@ module clubb_driver
 
       endif  ! clubb_at_least_debug_level( 2 )
 
-      ! Initially we will set this to a constant for testing purposes
-      ! lin_int_buffer = 20
-
-      ! Use a a new formula that creates and evenly spaced grid
-      ! between the model domain top and the standard atmosphere
-      ! table.  e.g. if the CLUBB model top is 3200m, and the spacing
-      ! between gr%nnzp-1 and gr%nnzp is 40m, then lin_int_buffer is
-      ! 19 and each layer of the buffer is 40m deep. -dschanen 14 May 08
-      lin_int_buffer =  & 
-         max( int( ( 1000.-mod( gr%zm(gr%nnzp), 1000. ) ) & 
-                 * gr%dzm(gr%nnzp) ) - 1, 0 )
-
-      !print *, "lin_int_buffer = ", lin_int_buffer !%% debug
+      call determine_extend_atmosphere_bounds( gr%nnzp, gr%zm, gr%dzm, &    ! Intent(in)
+                                               radiation_top, &             ! Intent(in)
+                                               extend_atmos_bottom_level, & ! Intent(out)
+                                               extend_atmos_top_level, &    ! Intent(out)
+                                               extend_atmos_range_size, &   ! Intent(out)
+                                               lin_int_buffer )             ! Intent(out)
 
       call bugsrad_clubb( gr%zm, gr%nnzp, lin_int_buffer,  & ! In
+                          extend_atmos_range_size,         & ! In 
+                          extend_atmos_bottom_level,       & ! In
+                          extend_atmos_top_level,          & ! In
                           rlat, rlon,                      & ! In
                           day, month, year, time_current,  & ! In
                           thlm, rcm, rtm, rsnowm, ricem,   & ! In

@@ -17,8 +17,10 @@ module parameters_radiation
   double precision, dimension(1), public :: &
     sol_const ! Solar constant
 
-  integer, public :: &
-    ext_atmos_buffer
+  real, public :: &
+    radiation_top ! The top of the atmosphere fed into a radiation scheme.
+    !               The computational grid should be extended to reach this
+    !               altitude.
 
   ! Albedo values (alvdr is used in the simplifed schemes as well)
   double precision, public :: &
@@ -60,7 +62,7 @@ module parameters_radiation
 
 ! OpenMP directives. These cannot be indented.
 !$omp threadprivate(rad_scheme, sol_const, alvdr, alvdf, alndr, alndf, &
-!$omp   kappa, F0, F1, eff_drop_radius, gc, omega, ext_atmos_buffer, Fs_list, &
+!$omp   kappa, F0, F1, eff_drop_radius, gc, omega, radiation_top, Fs_list, &
 !$omp   cos_solar_zen_list, l_fix_cos_solar_zen, nparam)
 
   contains
@@ -84,7 +86,7 @@ module parameters_radiation
     namelist /radiation_setting/ &
      rad_scheme, sol_const, alvdr, alvdf, alndr, alndf, &
      kappa, F0, F1, eff_drop_radius, gc, omega, Fs_list, &
-     cos_solar_zen_list, ext_atmos_buffer, l_fix_cos_solar_zen, &
+     cos_solar_zen_list, radiation_top, l_fix_cos_solar_zen, &
      amu0, slr
 
     ! ---- Begin Code ----
@@ -99,7 +101,9 @@ module parameters_radiation
     alndr = 0.1 ! Near-IR direct surface albedo        [-]
     alndf = 0.1 ! Near-IR diffuse surface albedo       [-]
 
-    ext_atmos_buffer = 10
+    ! 50000m is the top of the U.S. Standard Atmosphere data used
+    ! in CLUBB.
+    radiation_top = 50000.! [m]
 
     ! Variables used by both schemes
     alvdr = 0.1 ! Visible direct surface albedo        [-]

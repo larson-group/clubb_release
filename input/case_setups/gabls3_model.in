@@ -7,7 +7,7 @@
 
 runtype = "gabls3" ! Case name.
 
-nzmax = 250       ! Number of vertical levels.
+nzmax = 250      ! Number of vertical levels.
 
 grid_type = 1     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
@@ -149,7 +149,9 @@ rad_scheme = "bugsrad",
 ! BUGSrad related settings
 sol_const = 1321.0 ! Solar Constant for July [W/m^2]
 
-ext_atmos_buffer = 45
+radiation_top = 30000 ! Height of profile used for radiation [m]
+
+
 
 ! Albedo values
 alvdr = 0.23d0    ! Visible direct surface albedo        [-]

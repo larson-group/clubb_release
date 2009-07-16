@@ -17,6 +17,9 @@ module bugsrad_clubb_mod
 
   subroutine bugsrad_clubb &
              ( alt, nz, lin_int_buffer,        &
+               extend_atmos_range_size,               &
+               extend_atmos_bottom_level,         &
+               extend_atmos_top_level,            &
                lat_in_degrees, lon_in_degrees, &
                day, month, year, time,         &
                thlm, rcm, rtm, rsnwm, rim,     & 
@@ -34,7 +37,7 @@ module bugsrad_clubb_mod
 ! Grid Layout:
 !
 ! /////////////// Layers from U.S. Standard Atmosphere or sounding   ///////////////
-! ///////////////       Dimension: ext_atmos_buffer                  ///////////////
+! ///////////////       Dimension: extend_atmos_range_size                  ///////////////
 !                                  .
 !                                  .
 ! ---------------         Interpolated Layers                        ---------------
@@ -56,9 +59,6 @@ module bugsrad_clubb_mod
 
     use constants, only: fstderr, grav, Cp ! Variable(s)
 
-    use ext_atmosphere_mod, only: ext_atmos_dim, ext_alt, ext_pinmb, & ! Variable(s)
-        ext_T_in_K, ext_sp_hmdty, ext_o3l
-
     use stats_precision, only: time_precision ! Variable(s)
 
     use cos_solar_zen_mod, only: cos_solar_zen ! Procedure(s)
@@ -68,6 +68,9 @@ module bugsrad_clubb_mod
     use error_code, only: clubb_at_least_debug_level ! Procedure(s)
 
     use stats_type, only: stat_update_var ! Procedure(s)
+  
+    use extend_atmosphere_mod, only: extend_atmos_dim, extend_alt, extend_pinmb, & ! Variable(s)
+           extend_T_in_K, extend_sp_hmdty, extend_o3l
 
     use stats_variables, only: zt, zm, l_stats_samp, & ! Variable(s)
       iFrad_SW, iFrad_LW, iradht_SW, iradht_LW, &
@@ -75,7 +78,6 @@ module bugsrad_clubb_mod
       iFrad_SW_down, iFrad_LW_down
 
     use parameters_radiation, only: &
-      ext_atmos_buffer, & ! Variable(s)
       sol_const, &
       alvdr, &
       alvdf, &
@@ -101,9 +103,9 @@ module bugsrad_clubb_mod
       nz,              & ! Vertical extent;  i.e. nnzp in the grid class
       day, month, year   ! Date of model start
 
-    ! Number of levels to interpolate from the bottom of ext_atmos to the top
+    ! Number of levels to interpolate from the bottom of extend_atmos to the top
     ! of the CLUBB profile, hopefully enough to eliminate cooling spikes, etc.
-    integer, intent(in) :: lin_int_buffer
+    integer, intent(in) :: lin_int_buffer, extend_atmos_range_size
 
     real, intent(in), dimension(nz) :: &
       alt,     & ! Altitudes of the model     [m]
@@ -117,6 +119,11 @@ module bugsrad_clubb_mod
       p_in_Pa, & ! Pressure on the t grid     [Pa]
       p_in_Pam,& ! Pressure on the m grid     [Pa]
       exner      ! Exner function             [-]
+
+    
+    integer,intent(in) ::&
+      extend_atmos_bottom_level, &
+      extend_atmos_top_level
 
     ! Input/Output Variables
     real, intent(inout), dimension(nz) :: &
@@ -139,30 +146,30 @@ module bugsrad_clubb_mod
       radht_LW   ! LW heating rate   [K/s]
 
     ! Altered 3 Oct 2005 to be buffer levels higher
-    double precision, dimension(nlen,(nz-1)+lin_int_buffer+ext_atmos_buffer) :: &
+    double precision, dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size) :: &
       T_in_K,& ! Temperature        [K]
       rcil, &  ! Ice mixing ratio    [kg/kg]
       o3l      ! Ozone mixing ratio  [kg/kg]
 
-    double precision, dimension(nlen,(nz-1)+lin_int_buffer+ext_atmos_buffer+1) :: &
+    double precision, dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size+1) :: &
       Frad_uLW, & ! LW upwelling flux         [W/m^2]
       Frad_dLW, & ! LW downwelling flux       [W/m^2]
       Frad_uSW, & ! SW upwelling flux         [W/m^2]
       Frad_dSW    ! SW downwelling flux       [W/m^2]
 
-    double precision, dimension(nlen,(nz-1)+lin_int_buffer+ext_atmos_buffer) :: &
+    double precision, dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size) :: &
       sp_humidity, & ! Specific humidity      [kg/kg]
       pinmb          ! Pressure in millibars  [hPa]
 
     ! Pressure in millibars for layers (calculated as an average of pinmb)
-    double precision, dimension(nlen,(nz-1)+lin_int_buffer+ext_atmos_buffer+1) :: &
+    double precision, dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size+1) :: &
       playerinmb ! [hPa]
 
-    double precision, dimension(nlen,(nz-1)+lin_int_buffer+ext_atmos_buffer) :: &
+    double precision, dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size) :: &
       dpl, &          ! Difference in pressure levels       [hPa]
       rsnwm2, rcm2, cf2 ! Two-dimensional copies of the input parameters
 
-    double precision, dimension(nlen,(nz-1)+lin_int_buffer+ext_atmos_buffer+1) :: &
+    double precision, dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size+1) :: &
       radht_SW2,&! SW Radiative heating rate        [W/m^2]
       radht_LW2  ! LW Radiative heating rate        [W/m^2]
 
@@ -171,12 +178,15 @@ module bugsrad_clubb_mod
     
     double precision :: z1_fact, z2_fact, tmp ! Temp storage
 
-    integer :: i, j, z, z1, z2  ! Loop indices
+    integer :: i, z, z1, z2  ! Loop indices
 
     integer :: buffer ! The sum of the two buffers
-!-------------------------------------------------------------------------------
 
-    buffer = lin_int_buffer + ext_atmos_buffer
+    !character(len=40) :: time_char
+
+    !-------------------------------------------------------------------------------
+
+    buffer = lin_int_buffer + extend_atmos_range_size
 
     ! If l_fix_cos_solar_zen is not set in the model.in, calculate amu0
     ! Otherwise, it was defined in the model.in file
@@ -234,75 +244,51 @@ module bugsrad_clubb_mod
     rcm2(1,1:buffer)   = 0.0d0
     cf2(1,1:buffer)    = 0.0d0
 
-    ! Determine the altitude of the CLUBB model compared to the extended atmospheric
-    ! profile.  Then take the values at altitude j km on the table and use
-    ! ext_atmos_buffer kilometers of it as the top of the profile fed into BUGsrad.
-
-    ! e.g.
-    ! if the CLUBB maximum altitude = 3200 m, then
-    ! the nearest layer above in the ext_atmos arrays is 4000 m, so
-    ! the array used in BUGSrad will be:
-    ! CLUBB layers up to 3200 m (grid spacing determined by model) +
-    ! lin_int_buffer layers between 3200 m and 4000 m (variable grid spacing) +
-    ! ext_atmos_buffer layers from 4000 m to 14000 m  (1 km grid spacing)
-
-    if ( alt(nz) > ext_alt(ext_atmos_dim) ) then
+    if ( alt(nz) > extend_alt(extend_atmos_dim) ) then
 
       write(fstderr,*) "The CLUBB model grid (for zm levels) contains an ",  &
                        "altitude above the top of the extended atmosphere ",  &
                        "profile."
       write(fstderr,*) "Top of CLUBB model zm grid =", alt(nz), "m."
       write(fstderr,*) "Top of extended atmosphere profile =",  &
-                       ext_alt(ext_atmos_dim), "m."
+                       extend_alt(extend_atmos_dim), "m."
       write(fstderr,*) "Reduce the vertical extent of the CLUBB model grid."
       ! CLUBB zm grid exceeds a 50 km altitude
       stop "bugsrad_clubb: cannot handle this altitude"
 
     else
 
-      j = 1 ! initial altitude
-      do while ( ext_alt(j) < alt(nz) )
-        j = j + 1
-        if ( (j + ext_atmos_buffer ) > ext_atmos_dim ) then
-          write(fstderr,*) "The value of j + ext_atmos_buffer exceeds ",  &
-                           "the value of ext_atmos_dim."
-          write(fstderr,*) "ext_atmos_buffer = ", ext_atmos_buffer
-          write(fstderr,*) "j = ", j
-          write(fstderr,*) "ext_atmos_dim = ", ext_atmos_dim
-          write(fstderr,*) "ext_alt(j) =", ext_alt(j), "m."
-          write(fstderr,*) "Top of extended atmosphere profile =",  &
-                           ext_alt(ext_atmos_dim), "m."
-          write(fstderr,*) "Either reduce the value of ext_atmos_buffer ",  &
-                           "or reduce the vertical extent of the CLUBB ",  &
-                           "model grid (for zm levels)."
-          ! The value of j + ext_atmos_buffer exceeds ext_atmos_dim
-          stop "bugsrad_clubb: cannot handle this altitude"
-        end if
-      end do
-
     end if
 
-    ! Add the standard atmospheric profile above the linear interpolation
-    do i = 1, ext_atmos_buffer, 1
-      T_in_K(1,i)       = ext_T_in_K((ext_atmos_buffer+j)-(i-1))
-      sp_humidity(1,i) = ext_sp_hmdty((ext_atmos_buffer+j)-(i-1))
-      o3l(1,i)         = ext_o3l((ext_atmos_buffer+j)-(i-1))
-      pinmb(1,i)       = ext_pinmb((ext_atmos_buffer+j)-(i-1))
-    end do
+    ! Add the extended atmospheric profile above the linear interpolation
+     T_in_K(1,1:extend_atmos_range_size) = &
+                flip( extend_T_in_K( extend_atmos_bottom_level:extend_atmos_top_level), &
+                      extend_atmos_range_size )
 
+     sp_humidity(1,1:extend_atmos_range_size) = &
+                flip( extend_sp_hmdty( extend_atmos_bottom_level:extend_atmos_top_level ), &
+                                       extend_atmos_range_size )
+
+     o3l(1,1:extend_atmos_range_size) = &
+                flip( extend_o3l( extend_atmos_bottom_level:extend_atmos_top_level ), &
+                                  extend_atmos_range_size )
+
+     pinmb(1,1:extend_atmos_range_size) = &
+                flip( extend_pinmb( extend_atmos_bottom_level:extend_atmos_top_level ), &
+                    extend_atmos_range_size )
+    
     ! Do a linear interpolation to produce the levels between the extended
     ! atmospheric levels and the CLUBB levels;
     ! These levels should number the lin_int_buffer parameter
     z1 = buffer + 1
-    z2 = ext_atmos_buffer
-    do z = buffer, ext_atmos_buffer+1, -1
+    z2 = extend_atmos_range_size
+    do z = buffer, extend_atmos_range_size+1, -1
       z1_fact = dble( z2 - z ) / dble( z2 - z1 )
       z2_fact = dble( z - z1 ) / dble( z2 - z1 )
 
       T_in_K(1,z) = z1_fact * T_in_K(1,z1) + z2_fact * T_in_K(1,z2)
 
       sp_humidity(1,z) = z1_fact * sp_humidity(1,z1) + z2_fact * sp_humidity(1,z2)
-
       o3l(1,z) = z1_fact * o3l(1,z1) + z2_fact * o3l(1,z2)
 
       pinmb(1,z) = z1_fact * pinmb(1,z1) + z2_fact * pinmb(1,z2)
@@ -332,17 +318,18 @@ module bugsrad_clubb_mod
     end do
 
     ts(1) = T_in_K(1,(nz-1)+buffer)
-
 !  Write a profile for Kurt's driver program for debugging purposes
-! open(10, file="profile.dat")
-! write(10,'(2i4,a10)') nlen, (nz-1)+buffer, "TROPICAL"
-! do i=1, (nz-1)+buffer
-!   write(10,'(i4,9f12.6)') i, pinmb(1,i), playerinmb(1,i),T_in_K(1,i),         &
-!   sp_humidity(1,i), 100000.0*o3l(1,i), rcm2(1,i), rcil(1,i),cf2(1,i),dpl(1,i)
-! end do
-! write(10,'(a4,a12,3f12.6)') "","", playerinmb(1,nz+buffer), ts(1), amu0(1)
-! close(10)
-! pause
+!  write(time_char ,*) time
+!  time_char =adjustl(time_char)
+ !open(10, file="profile"//trim(time_char)//"dat")
+ !write(10,'(2i4,a10)') nlen, (nz-1)+buffer, "TROPICAL"
+ !do i=1, (nz-1)+buffer
+  ! write(10,'(i4,9f12.6)') i, pinmb(1,i), playerinmb(1,i),T_in_K(1,i),         &
+   !sp_humidity(1,i), 100000.0*o3l(1,i), rcm2(1,i), rcil(1,i),cf2(1,i),dpl(1,i)
+ !end do
+ !write(10,'(a4,a12,3f12.6)') "","", playerinmb(1,nz+buffer), ts(1), amu0
+ !close(10)
+ 
 
 !  print *, "playerinmb = ", playerinmb
 !  print *, "sp_humidity = ", sp_humidity
