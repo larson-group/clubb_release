@@ -23,8 +23,6 @@ integer, parameter :: &
 real, dimension(ndiv) :: divT  ! Horizontal large scale temp. forcing
 real, dimension(ndiv) :: divq  ! Horizontal large scale water vapor forcing
 real, dimension(ndiv) :: press ! Pressure levels
-real, dimension(1)    :: lhflx ! Surface latent heat flux
-real, dimension(1)    :: shflx ! Surface sensible heat flux
 
 contains
 
