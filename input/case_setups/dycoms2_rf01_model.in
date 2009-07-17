@@ -7,6 +7,7 @@
 
 runtype = "dycoms2_rf01" ! Case name.
 
+! For grid_type = 1 nzmax can be any nunber
 nzmax = 132       ! Number of vertical levels.
 
 grid_type = 1     ! Select grid type:
@@ -23,7 +24,9 @@ grid_type = 1     ! Select grid type:
 ! Evenly-spaced grid (grid_type = 1).
 ! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
 deltaz  = 10.0    ! Distance between grid levels on evenly-spaced grid.      [m]
-zm_init = 0.0     ! Altitude of lowest momentum level on evenly-spaced grid. [m]
+zm_init = 0.0 ! Minimum Altitude of lowest momentum level on any grid. [m]
+zm_top = 1310.0 ! Maximum Altitude of highest momentum level on any grid. [m]
+
 
 ! Stretched grid on thermodynamic levels (grid_type = 2).
 ! Path (from ../standalone/) and filename of data file that contains

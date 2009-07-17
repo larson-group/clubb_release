@@ -239,8 +239,8 @@ module grid_class
 
   !=============================================================================
   subroutine setup_grid( nnzp, l_implemented, grid_type,  & 
-                         deltaz, zm_init, momentum_heights,  & 
-                         thermodynamic_heights )
+                         deltaz, zm_init, zm_top, momentum_heights,  & 
+                         thermodynamic_heights, begin_height, end_height )
 
     ! Description:
     ! Grid Constructor
@@ -286,8 +286,9 @@ module grid_class
     ! momentum-level starting altitude as input.
     real, intent(in) ::  & 
       deltaz,   & ! Vertical grid spacing                  [m]
-      zm_init     ! Initial grid altitude (momentum level) [m]
-
+      zm_init,  & ! Initial grid altitude (momentum level) [m]
+      zm_top      ! Maximum grid altitude (momentum level) [m]
+      
     ! If the CLUBB parameterization is implemented in a host model, it needs to
     ! use the host model's momentum level altitudes and thermodynamic level
     ! altitudes.
@@ -301,8 +302,14 @@ module grid_class
       momentum_heights,   & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
+    integer, intent(out) :: &
+      begin_height, &  ! Lower bound for *_heights arrays [-]
+      end_height       ! Upper bound for *_heights arrays [-]
+
     ! Local Variables
-    integer :: ierr ! Allocation stat
+    integer :: ierr, & ! Allocation stat
+               i       ! Loop index
+    
 
     ! ---- Begin Code ----
 
@@ -316,11 +323,121 @@ module grid_class
 
     gr%nnzp = nnzp
 
+    ! Default bounds
+    begin_height = 1
+
+    end_height = gr%nnzp
+
+    !---------------------------------------------------
+    if ( .not. l_implemented ) then
+
+      if( grid_type == 1 ) then
+
+        ! Determine the number of grid points given the spacing 
+        ! to fit within the bounds without going over.
+        gr%nnzp = floor( ( zm_top - zm_init + deltaz ) / deltaz )
+
+      else if( grid_type == 2 ) then! Thermo
+
+        ! Find begin_height (lower bound)
+
+        i = gr%nnzp
+
+        do while( thermodynamic_heights(i) >= zm_init .and. i > 1 )
+
+           i = i - 1
+
+        end do
+
+        if( thermodynamic_heights(i) >= zm_init ) then
+
+          stop "Stretched zt grid cannot fulfill zm_init requirement"
+
+        else
+      
+          begin_height = i
+
+        end if
+        
+        ! Find end_height (upper bound)
+
+        i = gr%nnzp
+
+        do while( thermodynamic_heights(i) > zm_top .and. i > 1 )
+
+          i = i - 1
+
+        end do
+        
+        if( zm_top < thermodynamic_heights(i) ) then
+
+          stop "Stretched zt grid cannot fulfill zm_top requirement"
+
+        else
+
+          end_height = i
+
+          gr%nnzp = size( thermodynamic_heights(begin_height:end_height) )
+
+        end if
+
+      else if( grid_type == 3 ) then ! Momentum
+
+        ! Find begin_height (lower bound)
+
+        i = 1
+
+        do while( momentum_heights(i) < zm_init .and. i < gr%nnzp )
+
+          i = i + 1\
+
+        end do
+
+        if( momentum_heights(i) < zm_init ) then
+
+          stop "Stretched zm grid cannot fulfill zm_init requirement"
+
+        else 
+
+          begin_height = i
+
+        end if
+
+        ! Find end_height (lower bound)
+
+        i = gr%nnzp
+
+        do while( momentum_heights(i) > zm_top .and. i > 1 )
+
+          i = i - 1
+
+        end do
+
+        if( momentum_heights(i) > zm_top ) then
+
+          stop "Stretched zm grid cannot fulfill zm_top requirement"
+
+        else
+
+          end_height = i
+         
+          gr%nnzp = size( momentum_heights(begin_height:end_height) )
+
+        end if
+
+      endif
+
+    end if
+
+
+
+    !---------------------------------------------------
+
     ! Allocate memory for grid levels
-    allocate( gr%zm(1:nnzp), gr%zt(1:nnzp), & 
-              gr%dzm(1:nnzp), gr%dzt(1:nnzp),  & 
-              gr%weights_zm2zt(m_above:m_below,1:nnzp), & 
-              gr%weights_zt2zm(t_above:t_below,1:nnzp), & 
+    allocate( gr%zm(1:gr%nnzp), gr%zt(1:gr%nnzp), & 
+              gr%dzm(1:gr%nnzp), gr%dzt(1:gr%nnzp),  & 
+              gr%weights_zm2zt(m_above:m_below,1:gr%nnzp), & 
+              gr%weights_zt2zm(t_above:t_below,1:gr%nnzp), & 
               stat=ierr )
 
     if ( ierr /= 0 ) then
@@ -332,8 +449,9 @@ module grid_class
     ! interpolation from the momentum/thermodynamic grid
     call setup_grid_heights &
                ( l_implemented, grid_type,  & 
-                 deltaz, zm_init, momentum_heights,  & 
-                 thermodynamic_heights )
+               deltaz, zm_init,  &
+               momentum_heights(begin_height:end_height),  & 
+               thermodynamic_heights(begin_height:end_height) )
     return
 
   end subroutine setup_grid
@@ -377,6 +495,7 @@ module grid_class
     real, intent(in) ::  & 
       deltaz,   & ! Vertical grid spacing                  [m]
       zm_init     ! Initial grid altitude (momentum level) [m]
+      
 
     ! If the CLUBB parameterization is implemented in a host model, it needs to
     ! use the host model's momentum level altitudes and thermodynamic level
@@ -446,7 +565,6 @@ module grid_class
         enddo
         gr%zm(gr%nnzp) = gr%zt(gr%nnzp) +  & 
              0.5 * ( gr%zt(gr%nnzp) - gr%zt(gr%nnzp-1) )
-
 
       elseif ( grid_type == 3 ) then
 

@@ -814,7 +814,7 @@ module clubb_core
                sclrtol_in, edsclr_dim_in, params,  &  ! In
                l_soil_veg, & ! In
                l_uv_nudge, l_tke_aniso, saturation_formula, &  ! In
-               l_implemented, grid_type, deltaz, zm_init, &  ! In
+               l_implemented, grid_type, deltaz, zm_init, zm_top, &  ! In
                momentum_heights, thermodynamic_heights,  &  ! In
                host_dx, host_dy, & ! In
                err_code ) ! Out
@@ -824,7 +824,8 @@ module clubb_core
     !
     !-------------------------------------------------------------------------
     use grid_class, only: & 
-      setup_grid ! Procedure
+      setup_grid, & ! Procedure
+      gr ! Variable(s)
 
     use parameter_indices, only:  & 
       nparams ! Variable(s)
@@ -856,6 +857,10 @@ module clubb_core
 
     ! Grid definition
     integer, intent(in) :: nzmax  ! Vertical grid levels            [#]
+    !                      Only true when used in a host model
+    !                      CLUBB determines what nzmax should be
+    !                      given zm_init and zm_top when
+    !                      running in standalone mode.
 
     ! Flag to see if CLUBB is running on it's own,
     ! or if it's implemented as part of a host model.
@@ -874,10 +879,12 @@ module clubb_core
 
     ! If the CLUBB model is running by itself, and is using an
     ! evenly-spaced grid (grid_type = 1), it needs the vertical
-    ! grid spacing and momentum-level starting altitude as input.
+    ! grid spacing, momentum-level starting altitude, and maximum 
+    ! altitude as input.
     real, intent(in) :: & 
       deltaz,   & ! Change in altitude per level           [m]
-      zm_init     ! Initial grid altitude (momentum level) [m]
+      zm_init,  & ! Initial grid altitude (momentum level) [m]
+      zm_top      ! Maximum grid altitude (momentum level) [m]
 
     ! If the CLUBB parameterization is implemented in a host model,
     ! it needs to use the host model's momentum level altitudes
@@ -928,6 +935,7 @@ module clubb_core
 
     ! Local variables
     real :: Lscale_max
+    integer :: begin_height, end_height
 
     !----- Begin Code -----
 
@@ -946,6 +954,12 @@ module clubb_core
         trim( saturation_formula )
       stop
     end select
+
+    ! Setup grid
+    call setup_grid( nzmax, l_implemented, grid_type,           & ! intent(in)
+                     deltaz, zm_init, zm_top, momentum_heights, & ! intent(in)
+                     thermodynamic_heights,                     & ! intent(in)
+                     begin_height, end_height )                   ! intent(in)
 
     ! Setup flags
 
@@ -968,9 +982,10 @@ module clubb_core
 
     ! Define tunable constant parameters
     call setup_parameters & 
-         ( deltaz, params, nzmax, l_implemented, & ! intent(in)
-           grid_type, momentum_heights, thermodynamic_heights, & ! intent(in)
-           err_code )                                            ! intent(out)
+         ( deltaz, params, gr%nnzp, l_implemented,               & ! intent(in)
+           grid_type, momentum_heights(begin_height:end_height), & ! intent(in)
+           thermodynamic_heights(begin_height:end_height),       & ! intent(in)
+           err_code )                                              ! intent(out)
 
     ! Error Report
     ! Joshua Fasching February 2008
@@ -982,6 +997,7 @@ module clubb_core
 
       write(fstderr,*) "deltaz = ", deltaz
       write(fstderr,*) "zm_init = ", zm_init
+      write(fstderr,*) "zm_top = ", zm_top
       write(fstderr,*) "momentum_heights = ", momentum_heights
       write(fstderr,*) "thermodynamic_heights = ",  & 
         thermodynamic_heights
@@ -994,18 +1010,14 @@ module clubb_core
     end if
 
     if ( .not. l_implemented ) then
-      call setup_prognostic_variables( nzmax )        ! intent(in)
+      call setup_prognostic_variables( gr%nnzp )        ! intent(in)
     end if
 
     ! Both prognostic variables and diagnostic variables need to be
     ! declared, allocated, initialized, and deallocated whether CLUBB
     ! is part of a larger model or not.
-    call setup_diagnostic_variables( nzmax )
+    call setup_diagnostic_variables( gr%nnzp )
 
-    ! Setup grid
-    call setup_grid( nzmax, l_implemented, grid_type,    & ! intent(in)
-                     deltaz, zm_init, momentum_heights,  & ! intent(in)
-                     thermodynamic_heights )               ! intent(in)
 
     return
   end subroutine setup_clubb_core

@@ -7,6 +7,7 @@
 
 runtype = "arm_3year" ! Case name.
 
+! For grid_type = 1 nzmax can be any nunber
 !nzmax = 216       ! Number of vertical levels.
 !nzmax = 80        ! Number of vertical levels.
 nzmax = 128       ! Number of vertical levels.
@@ -25,7 +26,7 @@ grid_type = 1     ! Select grid type:
 ! Evenly-spaced grid (grid_type = 1).
 ! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
 deltaz  = 200.0   ! Distance between grid levels on evenly-spaced grid.      [m]
-zm_init = 0.0     ! Altitude of lowest momentum level on evenly-spaced grid. [m]
+zm_init = 0.0 ! Minimum Altitude of lowest momentum level on any grid. [m]
 
 ! Stretched grid on thermodynamic levels (grid_type = 2).
 ! Path (from ../standalone/) and filename of data file that contains

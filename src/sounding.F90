@@ -226,19 +226,19 @@ module sounding
       write(fstderr,*) 'First level of input sounding must be z=0'
       stop 'STOP in read_sounding'
     else
-      um(1)   = u(1)
-      vm(1)   = v(1)
-      ugm(1)  = ug(1)
-      vgm(1)  = vg(1)
-      thlm(1) = theta(1)
-      rtm(1)  = rt(1)
-      press(1) = p_in_Pa(1)
-      wm(1) = subs(1)
+      um   = u(1)
+      vm   = v(1)
+      ugm  = ug(1)
+      vgm  = vg(1)
+      thlm = theta(1)
+      rtm  = rt(1)
+      press = p_in_Pa(1)
+      wm = subs(1)
       if ( sclr_dim > 0 ) then
-        sclrm(1,1:sclr_dim)   = sclr(1,1:sclr_dim)
+        sclrm(:,1:sclr_dim)   = sclr(:,1:sclr_dim)
       end if
       if ( edsclr_dim > 0 ) then
-        edsclrm(1,1:edsclr_dim) = edsclr(1,1:edsclr_dim)
+        edsclrm(:,1:edsclr_dim) = edsclr(:,1:edsclr_dim)
       end if
     end if
 

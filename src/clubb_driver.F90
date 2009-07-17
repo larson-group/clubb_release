@@ -29,7 +29,8 @@ module clubb_driver
 
   ! Grid definition
   integer, private ::  & 
-    nzmax,     & ! Vertical extent in levels              [#]
+    nzmax,     & ! Vertical extent in levels( relevant for 
+  !                                         grid type 2 and 3 only )  [#]
     grid_type    ! 1 ==> evenly-spaced grid levels
   !                2 ==> stretched (unevenly-spaced) grid entered on
   !                      thermodynamic grid levels; momentum levels
@@ -42,7 +43,8 @@ module clubb_driver
 
   real, private ::  & 
     deltaz,  & ! Change per grid level                 [m]
-    zm_init    ! Initial point on the momentum grid    [m]
+    zm_init, & ! Initial point on the momentum grid    [m]
+    zm_top     ! Maximum point on the momentum grid    [m]
 
 ! Do not indent these omp directives, they must begin in the 2nd column
 !$omp threadprivate(nzmax, grid_type, zm_init, deltaz)
@@ -287,7 +289,7 @@ module clubb_driver
 
     ! Definition of namelists
     namelist /model_setting/  & 
-      runtype, nzmax, grid_type, deltaz, zm_init,  & 
+      runtype, nzmax, grid_type, deltaz, zm_init, zm_top, & 
       zt_grid_fname, zm_grid_fname,  & 
       day, month, year, rlat, rlon, & 
       time_initial, time_final, time_spinup, & 
@@ -314,6 +316,7 @@ module clubb_driver
     grid_type = 1
     deltaz    = 40.
     zm_init   = 0.
+    zm_top    = 1000.
     zt_grid_fname = ''
     zm_grid_fname = ''
 
@@ -460,6 +463,7 @@ module clubb_driver
       print *, "grid_type = ", grid_type
       print *, "deltaz = ", deltaz
       print *, "zm_init = ", zm_init
+      print *, "zm_top = ", zm_top
       print *, "zt_grid_fname = ", zt_grid_fname
       print *, "zm_grid_fname = ", zm_grid_fname
 
@@ -596,9 +600,9 @@ module clubb_driver
            sclr_tol(1:sclr_dim), edsclr_dim, params,    & ! Intent(in)
            l_soil_veg,                                  & ! Intent(in)
            l_uv_nudge, l_tke_aniso, saturation_formula, & ! Intent(in)
-           .false., grid_type, deltaz, zm_init,         & ! Intent(in)
-           momentum_heights, thermodynamic_heights,     & ! Intent(in)
-           dummy_dx, dummy_dy,                          & ! Intent(in)
+           .false., grid_type, deltaz, zm_init, zm_top, & ! Intent(in)
+           momentum_heights, thermodynamic_heights, &     ! Intent(in)
+           dummy_dx, dummy_dy, &                          ! Intent(in)
            err_code )                                     ! Intent(out)
 
 
@@ -1000,7 +1004,6 @@ module clubb_driver
                         thlm, theta_type, rtm, um, vm, ug, vg,  & ! Intent(out)
                         alt_type, p_in_Pa, subs_type, wm_zt, &    ! Intent(out)
                         sclrm, edsclrm, sounding_retVars, sclr_sounding_retVars ) ! Intent(out)
-
 
     ! Prepare extended sounding for radiation
     if( l_use_default_std_atmosphere ) then
@@ -1822,8 +1825,8 @@ module clubb_driver
 
       call fill_blanks_one_dim_vars( nCol, retVars )
 
-      um_ref = read_x_profile(nCol, nzmax, 'u[m\s]', retVars)
-      vm_ref = read_x_profile(nCol, nzmax,'v[m\s]', retVars)
+      um_ref = read_x_profile(nCol, gr%nnzp, 'u[m\s]', retVars)
+      vm_ref = read_x_profile(nCol, gr%nnzp,'v[m\s]', retVars)
 
       call deallocate_one_dim_vars( nCol, retVars )
     end if

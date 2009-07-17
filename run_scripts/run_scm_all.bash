@@ -12,6 +12,8 @@
 
 NIGHTLY=false
 TIMESTEP_TEST=false
+ZT_GRID_TEST=false
+ZM_GRID_TEST=false
 OUTPUT_DIR="/home/`whoami`/nightly_tests/output"
 
 # Figure out the directory where the script is located
@@ -58,6 +60,63 @@ set_args()
                                                   "time step."
                                              shift
                                           fi;;
+	                --zt_grid_test ) ZT_GRID_TEST=true
+			                 if [ "$2" == "" ]; then
+				            echo "Option '--zt_grid_text': The number of levels in the grid" \
+					         "needs to be entered following '--zt_grid_test'."
+					     exit 1
+                                         elif [ -n "$(echo $2 | grep "-")" ]; then
+                                            echo "Option '--zt_grid_test':  the nunber of grid levels"\
+                                                  "needs to follow '--zt_grid_test', not another"\
+                                                  "option."
+						  exit 1
+			                 elif [ "$3" == "" ]; then
+					    echo "Option '--zt_grid_text': The path to the grid file" \
+					         "needs to be entered following '--zt_grid_test'."
+						 exit 1
+                                         elif [ -n "$(echo $3 | grep "-")" ]; then
+                                            echo "Option '--zt_grid_test':  the nunber of grid levels"\
+                                                 "needs to follow '--zt_grid_test', not another"\
+                                                 "option."
+					         exit 1
+					 elif [ $ZM_GRID_TEST == true ]; then
+				            echo "Only --zt_grid_test or --zm_grid_test may be used, not both."
+					    exit 1
+				         else
+			                    test_grid_nz=$2
+				            test_grid_name=$3
+					    test_grid_name=`echo $test_grid_name | sed 's/\//\\\\\//g'`
+					    echo "Running all cases using specified zt grid"
+					    shift
+					 fi;;
+	                --zm_grid_test ) ZM_GRID_TEST=true
+			                 if [ "$2" == "" ]; then
+				            echo "Option '--zm_grid_test': The number of levels in the grid" \
+					         "needs to be entered following '--zm_grid_test'."
+					     exit 1
+                                         elif [ -n "$(echo $2 | grep "-")" ]; then
+                                            echo "Option '--zm_grid_test':  the nunber of grid levels"\
+                                                  "needs to follow '--zm_grid_test', not another"\
+                                                  "option."
+						  exit 1
+			                 elif [ "$3" == "" ]; then
+					    echo "Option '--zm_grid_text': The path to the grid file" \
+					         "needs to be entered following '--zm_grid_test'."
+						 exit 1
+                                         elif [ -n "$(echo $3 | grep "-")" ]; then
+                                            echo "Option '--zm_grid_test':  the nunber of grid levels"\
+                                                 "needs to follow '--zm_grid_test', not another"\
+                                                 "option."
+					         exit 1
+					 elif [ $ZT_GRID_TEST == true ];  then
+				            echo $ZT_GRID_TEST
+				            echo "Only --zt_grid_test or --zm_grid_test may be used, not both."
+					    exit 1
+				         else
+			                    test_grid_nz=$2
+				            test_grid_name=$3
+					    test_grid_name=`echo $test_grid_name | sed 's/\//\\\\\//g'`
+				         fi;;	
 			--help | -h | -? | * ) echo -e "Usage:\n  run_standalone-all.bash [OPTION]..."
 					       echo "Options:"
 					       echo -e "  --nightly\t\t\t\tPerforms the nightly run."
@@ -252,7 +311,22 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
                                     -e 's/l_stats\s*=\s*.*/l_stats = .false./g' >> 'clubb.in'
                 cat $STATS_IN >> 'clubb.in'
                 run_case
-
+	elif [ $ZT_GRID_TEST == true ]; then
+                cat $PARAMS_IN > 'clubb.in'
+                cat $MODEL_IN | sed -e 's/nzmax\s*=\s*.*/nzmax = '$test_grid_nz'/g' \
+                                    -e 's/grid_type\s*=\s*.*/grid_type = 2/g' \
+                                    -e 's/zm_grid_fname\s*=\s*.*/zm_grid_fname = '\'\''/g' \
+                                    -e "s/zt_grid_fname\s*=\s*.*/zt_grid_fname = '$test_grid_name'/g" >> 'clubb.in'
+                cat $STATS_IN >> 'clubb.in'
+                run_case
+	elif [ $ZM_GRID_TEST == true ]; then
+                cat $PARAMS_IN > 'clubb.in'
+                cat $MODEL_IN | sed -e 's/nzmax\s*=\s*.*/nzmax = '$test_grid_nz'/g' \
+                                    -e 's/grid_type\s*=\s*.*/grid_type = 3/g' \
+                                    -e 's/zt_grid_fname\s*=\s*.*/zt_grid_fname = '\'\''/g' \
+                                    -e "s/zm_grid_fname\s*=\s*.*/zm_grid_fname = '$test_grid_name'/g" >> 'clubb.in'
+                cat $STATS_IN >> 'clubb.in'
+                run_case
         else
 
 		cat $PARAMS_IN $MODEL_IN $STATS_IN > 'clubb.in'

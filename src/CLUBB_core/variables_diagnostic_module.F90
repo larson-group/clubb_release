@@ -184,7 +184,7 @@ module variables_diagnostic_module
     implicit none
 
     ! Input Variables
-    integer, intent(in) :: nzmax
+    integer, intent(in) :: nzmax ! Nunber of grid levels [-]
 
     ! Local Variables
     integer :: i

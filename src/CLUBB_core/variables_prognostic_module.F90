@@ -178,7 +178,7 @@ module variables_prognostic_module
 
     implicit none
 
-    integer, intent(in) :: nzmax
+    integer, intent(in) :: nzmax ! Number of grid levels [-]
 
     integer :: i
 
