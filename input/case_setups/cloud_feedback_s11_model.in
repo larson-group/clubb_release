@@ -56,7 +56,7 @@ time_spinup  = 100000.0  ! End of spin-up period [seconds since midnight on star
 dtmain    = 300.0   ! Model timestep [s]
 dtclosure = 300.0   ! Closure timestep [s] (must multiply evenly into dtmain).
 
-sfctype = 0      ! Select surface scheme (cases without specified surface fluxes).
+sfctype = 1      ! Select surface scheme (cases without specified surface fluxes).
                  ! 0 ==> fixed surface sensible and latent heat fluxes,
                  !       as defined by SE and LE, respectively.
                  ! 1 ==> determine surface sensible and latent heat fluxes
@@ -65,8 +65,10 @@ sfctype = 0      ! Select surface scheme (cases without specified surface fluxes
 
 Tsfc = 292.46       ! Temperature at model base           [K]
 psfc = 102078.5     ! Pressure at model base              [Pa]
-LE = 0.000024824 
-SE = 0.010043168
+!LE = 0.000024824 
+!SE = 0.010043168
+LE = 0.000020902 ! Divided above by rho (1.18762)
+SE = 0.00845655  ! Divided above by rho (1.18762)
 
 fcor = 7.728e-5     ! Coriolis parameter                  [s^-1]
 T0   = 300.         ! Reference temperature (usually 300) [K]

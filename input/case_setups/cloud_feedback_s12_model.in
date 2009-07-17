@@ -54,17 +54,20 @@ time_spinup  = 100000.0  ! End of spin-up period [seconds since midnight on star
 dtmain    = 300.0   ! Model timestep [s]
 dtclosure = 300.0   ! Closure timestep [s] (must multiply evenly into dtmain).
 
-sfctype = 0      ! Select surface scheme (cases without specified surface fluxes).
+sfctype = 1      ! Select surface scheme (cases without specified surface fluxes).
                  ! 0 ==> fixed surface sensible and latent heat fluxes,
                  !       as defined by SE and LE, respectively.
                  ! 1 ==> determine surface sensible and latent heat fluxes
                  !       through a bulk formula that uses the given surface
                  !       temperature (Tsfc) and assumes over ocean.
 
-Tsfc = 289.46       ! Temperature at model base              [K]
+!Tsfc = 289.46       ! Temperature at model base              [K]
+Tsfc = 290.96
 psfc = 101864.6     ! Pressure at model base              [Pa]
-LE = 0.000028056
-SE = 0.012407089
+!LE = 0.000028056
+!SE = 0.012407089
+LE = 0.000023509 ! Divided by rho (1.19343)
+SE = 0.01039616  ! Divided by rho (1.19343)
 
 fcor = 8.365e-5     ! Coriolis parameter                  [s^-1]
 T0   = 300.         ! Reference temperature (usually 300) [K]
