@@ -1,4 +1,4 @@
-! $Id: $
+! $Id$
 
 &model_setting
 
@@ -49,8 +49,6 @@ time_initial = 0.0       ! Model start time [seconds since midnight on start dat
 time_final   = 2592000.0 ! Model end time [seconds since midnight on start date]
 time_spinup  = 100000.0  ! End of spin-up period [seconds since midnight on start date]
 
-!dtmain    = 300.0   ! Model timestep [s]
-!dtclosure = 300.0   ! Closure timestep [s] (must multiply evenly into dtmain).
 dtmain    = 300.0   ! Model timestep [s]
 dtclosure = 300.0   ! Closure timestep [s] (must multiply evenly into dtmain).
 
@@ -63,8 +61,15 @@ sfctype = 1      ! Select surface scheme (cases without specified surface fluxes
 
 Tsfc = 298.76       ! (25.6 C) Temperature at model base              [K]
 psfc = 101407.8     ! (1014.1 mb) Pressure at model base              [Pa]
-LE = 0.000036654 ! 106.4823 / (1.16203 * (2.5 * 10^6))
-SE = 0.010160232 ! 11.86163 / (1.16203 * 1004.67)
+
+! LE and SE were given in the case specification as lhflx and shflx in W/m^2. To convert to the correct
+! units, use this formula:
+!    LE = lhflx / (rho_sfc_flux * Lv) [(m/s) * (kg/kg)]
+!    SE = shflx / (rho_sfc_flux * Cp) [(m/s) * K]
+LE = 0.000036654 ! Using rho_sfc_flux = 1.16203 kg/m^3
+SE = 0.010160232 ! Using rho_sfc_flux = 1.16203 kg/m^3
+!LE = 0.000042593 ! Using rho_sfc_flux = 1.0 kg/m^3
+!SE = 0.011806494 ! Using rho_sfc_flux = 1.0 kg/m^3
 
 fcor = 4.264e-5     ! Coriolis parameter                  [s^-1]
 T0   = 300.         ! Reference temperature (usually 300) [K]
@@ -151,12 +156,11 @@ l_fix_cos_solar_zen = .true.
 amu0                = 0.629
 slr                 = 0.539
 sol_const           = 1321.0 ! Solar Constant given in spec [W/m^2]
-radiation_top       = 15000 ! Height of profile used for radiation [m]
+radiation_top       = 20000 ! Height of profile used for radiation [m]
 alvdf = 0.07 ! Visible diffuse surface albedo [-]
-alndr = 0.07 ! Near-IR direct surface albedo [-]
+alndr = 0.07 ! Near-IR direct surface albedo  [-]
 alndf = 0.07 ! Near-IR diffuse surface albedo [-]
-alvdr = 0.07 ! Visible direct surface albedo [-]
-!rad_scheme = "none",
+alvdr = 0.07 ! Visible direct surface albedo  [-]
 /
 
 &stats_setting
@@ -166,7 +170,7 @@ alvdr = 0.07 ! Visible direct surface albedo [-]
 l_stats       = .true.   ! Flag for statistical output.
 fname_prefix = "cloud_feedback_s6"    ! Prefix of output filename.
 stats_tsamp  = 300.      ! Frequency of statistical sampling [s]
-                        ! (must multiply evenly into stats_tout).
-stats_tout   = 3600.      ! Frequency of statistical output.  [s]
-stats_fmt    = "grads"  ! Type of statistical output file (GrADS or netCDF).
+                         ! (must multiply evenly into stats_tout).
+stats_tout   = 3600.     ! Frequency of statistical output.  [s]
+stats_fmt    = "grads"   ! Type of statistical output file (GrADS or netCDF).
 /

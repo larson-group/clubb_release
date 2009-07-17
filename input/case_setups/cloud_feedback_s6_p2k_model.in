@@ -1,4 +1,4 @@
-! $Id: $
+! $Id$
 
 &model_setting
 
@@ -6,7 +6,7 @@
 
 runtype = "cloud_feedback_s6_p2k"   ! Case name.
 
-nzmax =  200       ! Number of vertical levels.  ! For grid_type = 1 (and 3).
+nzmax =  120       ! Number of vertical levels.  ! For grid_type = 1 (and 3).
 !nzmax = 128       ! Number of vertical levels.  ! For grid_type = 2.
 
 grid_type = 1     ! Select grid type:
@@ -49,12 +49,10 @@ time_initial = 0.0       ! Model start time [seconds since midnight on start dat
 time_final   = 2592000.0 ! Model end time [seconds since midnight on start date]
 time_spinup  = 100000.0  ! End of spin-up period [seconds since midnight on start date]
 
-!dtmain    = 300.0   ! Model timestep [s]
-!dtclosure = 300.0   ! Closure timestep [s] (must multiply evenly into dtmain).
 dtmain    = 300.0   ! Model timestep [s]
 dtclosure = 300.0   ! Closure timestep [s] (must multiply evenly into dtmain).
 
-sfctype = 0      ! Select surface scheme (cases without specified surface fluxes).
+sfctype = 1      ! Select surface scheme (cases without specified surface fluxes).
                  ! 0 ==> fixed surface sensible and latent heat fluxes,
                  !       as defined by SE and LE, respectively.
                  ! 1 ==> determine surface sensible and latent heat fluxes
@@ -63,8 +61,15 @@ sfctype = 0      ! Select surface scheme (cases without specified surface fluxes
 
 Tsfc = 300.76       ! (25.6 C) Temperature at model base              [K]
 psfc = 101407.8     ! (1014.1 mb) Pressure at model base              [Pa]
-LE = 0.000047753
-SE = 0.011806494
+
+! LE and SE were given in the case specification as lhflx and shflx in W/m^2. To convert to the correct
+! units, use this formula:
+!    LE = lhflx / (rho_sfc_flux * Lv) [(m/s) * (kg/kg)]
+!    SE = shflx / (rho_sfc_flux * Cp) [(m/s) * K]
+LE = 0.000041414 ! Using rho_sfc_flux = 1.15306 kg/m^3
+SE = 0.010239271 ! Using rho_sfc_flux = 1.15306 kg/m^3
+!LE = 0.000047753 ! Using rho_sfc_flux = 1.0 kg/m^3
+!SE = 0.011806494 ! Using rho_sfc_flux = 1.0 kg/m^3
 
 fcor = 4.264e-5     ! Coriolis parameter                  [s^-1]
 T0   = 300.         ! Reference temperature (usually 300) [K]
@@ -106,7 +111,7 @@ uv_sponge_damp_settings%sponge_damp_depth = 0.25
 l_restart      = .false.  ! Flag for whether this is a restart run.
 ! Path (from ../standalone/) and filename of GrADS control files
 ! (without '_zt.ctl' or '_zm.ctl').
-restart_path_case  = "restart/cloud_feedback_s6"
+restart_path_case  = "restart/cloud_feedback_s6_p2k"
 time_restart  = 0.0      ! Time of model restart.
                          ! [seconds since start time listed in GrADS control file]
 
@@ -142,7 +147,6 @@ iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thet
 &microphysics_setting
 ! The schemes are: "khairoutdinov_kogan", "morrison", "coamps", "simplified_ice", "none"  
 micro_scheme = "morrison"
-!micro_scheme = "none"
 
 /
 
@@ -157,7 +161,6 @@ alvdf = 0.07 ! Visible diffuse surface albedo [-]
 alndr = 0.07 ! Near-IR direct surface albedo [-]
 alndf = 0.07 ! Near-IR diffuse surface albedo [-]
 alvdr = 0.07 ! Visible direct surface albedo [-]
-!rad_scheme = "none",
 /
 
 &stats_setting
@@ -167,7 +170,7 @@ alvdr = 0.07 ! Visible direct surface albedo [-]
 l_stats       = .true.   ! Flag for statistical output.
 fname_prefix = "cloud_feedback_s6_p2k"    ! Prefix of output filename.
 stats_tsamp  = 300.      ! Frequency of statistical sampling [s]
-                        ! (must multiply evenly into stats_tout).
-stats_tout   = 3600.      ! Frequency of statistical output.  [s]
-stats_fmt    = "grads"  ! Type of statistical output file (GrADS or netCDF).
+                         ! (must multiply evenly into stats_tout).
+stats_tout   = 3600.     ! Frequency of statistical output.  [s]
+stats_fmt    = "grads"   ! Type of statistical output file (GrADS or netCDF).
 /
