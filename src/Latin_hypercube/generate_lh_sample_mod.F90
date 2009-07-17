@@ -1195,7 +1195,7 @@ module generate_lh_sample_mod
     ! is N [ mu_two + Sigma_twoone*Inverse(Sigma_oneone)*(x_one-mu_one),
     !    Sigma_twotwo - Sigma_twoone*Inverse(Sigma_oneone)*Sigma_onetwo]
     ! Here 'one' refers to given variables, 'two' refers to values to find.
-    ! Loop over variables t, w, N, rr:
+    ! Loop over all variables other than s_mellor:
     do v=2, d_variables
 
       ! Means
