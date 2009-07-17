@@ -15,7 +15,7 @@ module gabls3
   contains
 
   !----------------------------------------------------------------------
-  subroutine gabls3_tndcy( time, rtm, exner, rho, &
+  subroutine gabls3_tndcy( time, rtm,rho, &
                            wm_zt, wm_zm, thlm_forcing, rtm_forcing,&
                            um_forcing, vm_forcing, ug, vg )
     !       Description:
@@ -51,7 +51,7 @@ module gabls3
 
     real, intent(in), dimension(gr%nnzp) ::  & 
       rtm,  &     ! Total water mixing ratio                        [kg/kg]
-      exner,&     ! Exner Function function = (p/p0 ** kappa)       [-]
+      !exner,&     ! Exner Function function = (p/p0 ** kappa)       [-]
       rho         ! Air density at surface                          [kg/m^3]
 
 

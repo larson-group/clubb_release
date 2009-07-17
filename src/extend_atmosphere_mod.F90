@@ -9,7 +9,7 @@ module extend_atmosphere_mod
   public :: &
     load_extend_std_atm, & 
     convert_snd2extend_atm, &
-    determine_extend_atmosphere_bounds,&
+    determine_extend_atmos_bounds,&
     finalize_extend_atm
 
   ! Size of Extended Atmosphere
@@ -147,7 +147,7 @@ module extend_atmosphere_mod
   end subroutine convert_snd2extend_atm
 
   !------------------------------------------------------------------------------------------------
-  subroutine determine_extend_atmosphere_bounds( grid_size, grid, grid_spacing, radiation_top, &
+  subroutine determine_extend_atmos_bounds( grid_size, grid, grid_spacing, radiation_top, &
                                               extend_atmos_bottom_level, &
                                               extend_atmos_top_level, &
                                               extend_atmos_range_size, &
@@ -236,12 +236,12 @@ module extend_atmosphere_mod
     extend_atmos_top_level = k
     extend_atmos_range_size = k - j + 1
 
-    if (extend_atmos_range_size < 1 ) then
+    if( extend_atmos_range_size < 1 ) then
       stop "radiation top below computational grid"
     end if
 
 
-  end subroutine determine_extend_atmosphere_bounds
+  end subroutine determine_extend_atmos_bounds
 
   !-------------------------------------------------------------------------------------------------
   subroutine load_extend_std_atm ( iunit )

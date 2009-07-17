@@ -119,7 +119,7 @@ module gabls3_night
     real, intent(in) :: x
 
     gm1 = (1.-15.*x)**0.25
-  end function
+  end function gm1
 
   real function gh1( x )
 
@@ -129,7 +129,7 @@ module gabls3_night
 
     gh1=sqrt(1.-9.*x)/0.74
 
-  end function
+  end function gh1
 
   real function fm1( x )
     implicit none
@@ -273,6 +273,6 @@ module gabls3_night
              ( alog(h/0.25) - psi_h(h, xlmo) + psi_h(0.25, xlmo) )
 !-----------------------------
     return
-  end subroutine
+  end subroutine landflx
 
 end module gabls3_night

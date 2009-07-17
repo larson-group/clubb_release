@@ -101,7 +101,7 @@ module time_dependent_input
     call finalize_t_dependent_forcings()
     call finalize_t_dependent_surface()
 
-  end subroutine
+  end subroutine finalize_t_dependent_input
 
   !------------------------------------------------------------------------------
   subroutine initialize_t_dependent_surface( iunit, input_file )
@@ -169,7 +169,7 @@ module time_dependent_input
 
     psfc_given = read_x_profile( nCols, dim_size, pressure_name, retVars )
 
-  end subroutine
+  end subroutine initialize_t_dependent_surface
 
   !-------------------------------------------------------------------------------------
   subroutine initialize_t_dependent_forcings( iunit, input_file, grid_size, grid )

@@ -1931,7 +1931,7 @@ module clubb_driver
       wp2_zt ! w'^2 interpolated the themo levels [m^2/s^2]
 
     use extend_atmosphere_mod, only: &
-      determine_extend_atmosphere_bounds ! Procedure(s)
+      determine_extend_atmos_bounds ! Procedure(s)
 
     use stats_precision, only: time_precision ! Variable(s)
 
@@ -2176,7 +2176,7 @@ module clubb_driver
 
 #ifdef UNRELEASED_CODE
     case ( "gabls3", "gabls3_night" ) ! GABLS 3 case
-      call gabls3_tndcy( time_current, rtm, exner, rho, &                   ! Intent(in)
+      call gabls3_tndcy( time_current, rtm, rho, &                   ! Intent(in)
                          wm_zt, wm_zm, thlm_forcing, rtm_forcing,&          ! Intent(out)
                          um_forcing, vm_forcing, ug, vg )                   ! Intent(out)
 #endif
@@ -2637,7 +2637,7 @@ module clubb_driver
 
       endif  ! clubb_at_least_debug_level( 2 )
 
-      call determine_extend_atmosphere_bounds( gr%nnzp, gr%zm, gr%dzm, &    ! Intent(in)
+      call determine_extend_atmos_bounds( gr%nnzp, gr%zm, gr%dzm, &    ! Intent(in)
                                                radiation_top, &             ! Intent(in)
                                                extend_atmos_bottom_level, & ! Intent(out)
                                                extend_atmos_top_level, &    ! Intent(out)
