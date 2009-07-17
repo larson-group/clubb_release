@@ -133,9 +133,9 @@ module clubb_driver
 
     use numerical_check, only: invalid_model_arrays ! Procedure(s)
 
-    use inputfields, only: compute_timestep, grads_fields_reader ! Procedure(s)
+    use inputfields, only: compute_timestep, stat_fields_reader ! Procedure(s)
 
-    use inputfields, only: datafilet ! Variable(s)
+    use inputfields, only: stat_file_zt
 
     use clubb_core, only: & 
       setup_clubb_core,  & ! Procedure(s) 
@@ -701,10 +701,10 @@ module clubb_driver
       ! If we're doing an inputfields run, get the values for our
       ! model arrays from a GrADS file
       if ( l_input_fields ) then
-        call compute_timestep( iunit, datafilet, .false., time_current, &       ! Intent(in)
+        call compute_timestep( iunit, stat_file_zt, .false., time_current, &    ! Intent(in)
                                itime_nearest )                                  ! Intent(out)
 
-        call grads_fields_reader( max( itime_nearest, 1 ) )                     ! Intent(in)
+        call stat_fields_reader( max( itime_nearest, 1 ) )                     ! Intent(in)
       end if
 
       if ( invalid_model_arrays( ) ) then
@@ -1598,7 +1598,7 @@ module clubb_driver
     !   CLUBB model to a designated point in the submitted GrADS file.
     !-----------------------------------------------------------------------
     use inputfields,only:  & 
-        datafile, input_type, &  ! Variable(s)
+        input_type, &  ! Variable(s)
         input_um, input_vm, input_rtm, input_thlm, & 
         input_wp2, input_wprtp, input_wpthlp,  & 
         input_wp3, input_rtp2, input_thlp2,  & 
@@ -1619,7 +1619,10 @@ module clubb_driver
         input_veg_T_in_K, input_deep_soil_T_in_K, &
         input_sfc_soil_T_in_K
 
-    use inputfields, only: compute_timestep, grads_fields_reader ! Procedure(s)
+    use inputfields, only: &
+      compute_timestep,  & ! Procedure(s)
+      stat_fields_reader, &
+      set_filenames
 
     use grid_class, only: gr ! Variable(s)
 
@@ -1696,7 +1699,6 @@ module clubb_driver
     ! --- Begin Code ---
 
     ! Inform inputfields module
-    datafile = "../"//trim( restart_path_case )
     input_type = "hoc"
     input_um   = .true.
     input_vm   = .true.
@@ -1799,7 +1801,7 @@ module clubb_driver
     input_sigma_sqd_w = .true.
     input_cf  = .true.
     input_sigma_sqd_w_zt = .true.
-
+    call set_filenames( "../"//trim( restart_path_case ) )
     ! Determine the nearest timestep in the GRADS file to the
     ! restart time.
     call compute_timestep &
@@ -1827,8 +1829,8 @@ module clubb_driver
     end if
 
 
-    ! Read data from GrADS files
-    call grads_fields_reader( timestep )                    ! Intent(in)
+    ! Read data from stats files
+    call stat_fields_reader( timestep )  ! Intent(in)
 
     ! Initialize forcing files for specific cases
     select case( trim( runtype ) )

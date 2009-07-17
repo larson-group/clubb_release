@@ -4,7 +4,9 @@ module stat_file_utils
   implicit none
 
   public :: stat_file_average, stat_file_average_interval, &
-    stat_file_num_vertical_levels, stat_file_vertical_levels
+    stat_file_num_vertical_levels, stat_file_vertical_levels, &
+    LES_grid_to_CLUBB_grid, CLUBB_levels_within_LES_domain
+        
 
   private :: l_netcdf_file
 
@@ -37,9 +39,7 @@ module stat_file_utils
       close_netcdf_read
 #endif
 
-    use inputfields, only: &
-      CLUBB_levels_within_LES_domain, &
-      LES_grid_to_CLUBB_grid, &
+    use extrapolation, only: &
       lin_ext_zt_bottom
 
     use interpolation, only: &
@@ -523,4 +523,211 @@ module stat_file_utils
 
     return
   end function l_netcdf_file
+
+!===============================================================================
+  subroutine CLUBB_levels_within_LES_domain( fread_var, CLUBB_grid,  &
+                                             k_lowest_input, k_highest_input )
+
+    ! Description:
+    ! This subroutine finds both the lowest and the highest CLUBB grid levels
+    ! (for either the thermodynamic grid or the momentum grid) that are with the
+    ! domain of the LES grid.
+
+    ! References:
+    !   None
+    !-----------------------------------------------------------------------
+
+
+    use stat_file_module, only:  &
+        stat_file  ! Variable type
+
+    use constants, only:  &
+        fstderr ! Constant
+
+    implicit none
+
+    ! Input Variables.
+    type(stat_file), intent(in) ::  &
+      fread_var  ! Information about LES run.
+
+    real, dimension(:), intent(in) ::  &
+      CLUBB_grid ! Altitude of CLUBB grid levels
+                 ! (either thermodynamic or momentum grid levels)  [m]
+
+    ! Output Variables
+    integer, intent(out) ::  &
+      k_lowest_input,  & ! The lowest CLUBB level that's within the LES domain.
+      k_highest_input    ! The highest CLUBB level that's within the LES domain.
+
+    ! Local Variable
+    integer :: k, kmax  ! Array index
+
+    ! ---- Begin Code ----
+
+    ! Find the lowest CLUBB level that falls within the LES domain.
+    k    = size( CLUBB_grid )
+    kmax = size( CLUBB_grid )
+    do
+      if ( CLUBB_grid(k) < fread_var%z(fread_var%ia) ) then
+
+        if ( k == kmax ) then
+          ! The bottom of the LES domain is above the top of the CLUBB
+          ! domain.
+          write(fstderr,*) "The lowest LES input level is above the top ",  &
+                           "of the CLUBB model domain."
+          stop "Error in CLUBB_levels_within_LES_domain"
+        else
+          ! Level k is the first CLUBB level below the LES domain.  Thus, the
+          ! lowest CLUBB level within the LES domain has the index k + 1.
+          k_lowest_input = k + 1
+          exit
+        endif
+
+      elseif ( k == 1 ) then
+
+        ! The bottom CLUBB level is within the LES domain.
+        k_lowest_input = 1
+        exit
+
+      else   ! k > 1 and k <= kmax; level not yet found.
+
+        ! Increment one more CLUBB vertical level down.
+        k = k - 1
+
+      endif
+    enddo
+
+    ! Find the highest CLUBB level that falls within the LES domain.
+    k = 1
+    do
+      if ( CLUBB_grid(k) > fread_var%z(fread_var%iz) ) then
+
+        if ( k == 1 ) then
+          ! The top of the LES domain is below the bottom of the CLUBB
+          ! domain.
+          write(fstderr,*) "The highest LES input level is below the ",  &
+                           "bottom of the CLUBB model domain."
+          stop "Error in CLUBB_levels_within_LES_domain"
+        else
+          ! Level k is the first CLUBB level above the LES domain.  Thus, the
+          ! highest CLUBB level within the LES domain has the index k - 1.
+          k_highest_input = k - 1
+          exit
+        endif
+
+      elseif ( k == kmax ) then
+
+        ! The top CLUBB level is within the LES domain.
+        k_highest_input = kmax 
+        exit
+
+      else   ! k < kmax and k >= 1; level not yet found.
+
+        ! Increment one more CLUBB vertical level up.
+        k = k + 1
+
+      endif
+    enddo
+
+    return
+  end subroutine CLUBB_levels_within_LES_domain
+
+!===============================================================================
+  pure subroutine LES_grid_to_CLUBB_grid( fread_var, CLUBB_grid, k,  &
+                                     exact_lev_idx, lower_lev_idx,  &
+                                     upper_lev_idx, l_lin_int )
+
+    ! Description:
+    ! Finds the level on the LES grid that is exactly even with the CLUBB
+    ! grid level (either thermodynamic or momentum grid) that is input
+    ! (level k).  Else, it finds the two LES levels that sandwich the CLUBB
+    ! grid level that is input.
+
+    !-----------------------------------------------------------------------
+
+    use stat_file_module, only:  &
+        stat_file  ! Variable type
+
+    implicit none
+
+    ! Input Variables.
+    type(stat_file), intent(in) ::  &
+      fread_var  ! Information about LES run.
+
+    real, dimension(:), intent(in) ::  &
+      CLUBB_grid ! Altitude of CLUBB grid levels
+                 ! (either thermodynamic or momentum grid levels)  [m]
+
+    integer, intent(in) ::  &
+      k  ! Index of CLUBB vertical level that is being compared to.
+
+    ! Output Variables.
+    integer, intent(out) ::  &
+      exact_lev_idx, & ! In case of an exact match, index of LES level that is
+                       ! exactly even with CLUBB level k.
+      lower_lev_idx, & ! In case linear interpolation is needed, index of LES
+                       ! level that is immediately below CLUBB level k.
+      upper_lev_idx    ! In case linear interpolation is needed, index of LES
+                       ! level that is immediately above CLUBB level k.
+
+    logical, intent(out) ::  &
+      l_lin_int  ! Flag that is turned on if linear interpolation is needed.
+
+    ! Local Variable.
+    integer :: j
+
+    ! Initialize the output quantities.
+    exact_lev_idx = 0
+    lower_lev_idx = 0
+    upper_lev_idx = 0
+    l_lin_int     = .false.
+
+    ! Initialize LES vertical grid loop index, j, at the lowest LES grid index,
+    ! which is fread_var%ia.
+    j = fread_var%ia
+
+    do
+
+      if ( fread_var%z(j) == CLUBB_grid(k) ) then
+
+        ! There is an LES level altitude at LES level j that is an exact
+        ! match to the CLUBB level altitude at CLUBB grid level k.
+        exact_lev_idx = j
+        l_lin_int = .false.
+
+      elseif ( fread_var%z(j) < CLUBB_grid(k) ) then
+
+        ! The LES level altitude at LES level j is lower than the CLUBB level
+        ! altitude at CLUBB grid level k.
+        lower_lev_idx = j
+
+      else   ! fread_var%z(j) > CLUBB_grid(k)
+
+        ! The LES level altitude at LES level j is higher than the CLUBB level
+        ! altitude at CLUBB grid level k.
+        upper_lev_idx = j
+
+      endif
+
+      if ( exact_lev_idx > 0 ) exit  ! An exact answer has been found,
+      ! exit the loop.
+
+      if ( upper_lev_idx == lower_lev_idx + 1 ) then
+
+        ! CLUBB level k has been found between two successive LES levels.
+        ! Linear interpolation is needed.  An answer has been found, exit
+        ! the loop.
+        l_lin_int = .true.
+        exit
+
+      endif
+
+      ! An answer has not been found yet, iterate the j index.
+      j = j + 1
+
+    enddo
+
+    return
+  end subroutine LES_grid_to_CLUBB_grid
+
 end module stat_file_utils

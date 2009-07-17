@@ -10,7 +10,7 @@ program clubb_inputfields
 !-----------------------------------------------------------------------
   use clubb_driver, only: run_clubb
 
-  use inputfields, only: datafile, input_type, & ! Variable(s)
+  use inputfields, only: input_type, & ! Variable(s)
     input_um, input_vm, input_rtm, input_thlm, & 
     input_wp2, input_wprtp, input_wpthlp,  & 
     input_wp3, input_rtp2, input_thlp2,  & 
@@ -39,6 +39,7 @@ program clubb_inputfields
   use parameters_tunable, only: read_parameters ! Procedure(s)
 
   use error_code, only: clubb_no_error ! Variable(s)
+
   use error_code, only: fatal_error ! Procedure(s)
 
   implicit none
@@ -53,6 +54,8 @@ program clubb_inputfields
     params  ! Array of the model constants
 
   character(len=50) :: run_file ! Text file with the namelists
+
+  character(len=80) :: datafile
 
   logical :: stdout    ! Whether to print iteration number, etc.
 
@@ -164,7 +167,7 @@ program clubb_inputfields
   err_code = clubb_no_error
 
   ! Setup the GrADS file reader
-  call set_filenames( )
+  call set_filenames( datafile )
 
   ! Run the model
   call run_clubb( params, trim( run_file ), err_code, stdout, .true. )

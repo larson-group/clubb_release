@@ -1,26 +1,20 @@
 !-----------------------------------------------------------------------
 ! $Id$
 
-! Module inputfields
-
-!  This exists because I wanted to keep the grads_reader code
-!  generalized and bypass having to pass the datafile as a parameter,
-!  since there may be situations where the fields are be calculated
-!  analytically or by calling a different model without reading a datafile.
-!  Using a module also saves the trouble of writing an interface definition
-!  within the clubb_inputfields code.
-!===============================================================================
 module inputfields
+!  Description:
+!    This file contains information and subroutines needed for restart
+!    simulations and simulations where the variables are reset at every
+!    timestep, called a "clubb_inputfields" simulation.
+!===============================================================================
 
   implicit none
 
-!----- Run information--------------------------------------------------
-  character(len=80), public :: datafile
+  ! Run information
+  character(len=100), public :: & 
+    stat_file_zt, stat_file_zm, stat_file_sfc
 
-  character(len=100), public ::  & 
-  datafilet, datafilem
-
-  character(3), public      :: input_type
+  character(3), public :: input_type
 
   logical, public :: input_um, input_vm, input_rtm, input_thlm, & 
                      input_wp2, input_wprtp, input_wpthlp,  & 
@@ -43,14 +37,9 @@ module inputfields
                      input_sfc_soil_T_in_K
 
 
-  public  :: grads_fields_reader, &
+  public  :: stat_fields_reader, &
              compute_timestep, &
              set_filenames
-
-  public :: CLUBB_levels_within_LES_domain, &
-             LES_grid_to_CLUBB_grid, &
-             lin_ext_zm_bottom, &
-             lin_ext_zt_bottom
 
   private ! Default Scope
 
@@ -60,40 +49,64 @@ module inputfields
 
 
 !-----------------------------------------------------------------------
-  subroutine set_filenames( )
+  subroutine set_filenames( file_prefix )
+
 ! Description: Set the names of the GrADS files to be used.
 !   Used by clubb_inputfields and clubb_restart.
+! References:
+!   None
 !-----------------------------------------------------------------------
 
     implicit none
 
+    ! Input Variables
+    character(len=*), intent(in) :: &
+      file_prefix
+
+    ! Local Variables
+    logical :: l_grads
+
+    ! ---- Begin Code ----
+
     select case ( input_type )
+
     case ( "les", "rf1" )
-      datafilet = trim( datafile )//"_coamps_sm.ctl"
-      datafilem = trim( datafile )//"_coamps_sw.ctl"
+      stat_file_zt = trim( file_prefix )//"_coamps_sm.ctl"
+      stat_file_zm = trim( file_prefix )//"_coamps_sw.ctl"
+      stat_file_sfc = trim( file_prefix )//"_coamps_sfc.ctl"
+
     case ( "hoc" )
-      datafilet = trim( datafile )//"_zt.ctl"
-      datafilem = trim( datafile )//"_zm.ctl"
+      stat_file_zt = trim( file_prefix )//"_zt.ctl"
+      stat_file_zm = trim( file_prefix )//"_zm.ctl"
+      stat_file_sfc = trim( file_prefix )//"_sfc.ctl"
+
+      inquire(file=stat_file_zt,exist=l_grads)
+
+      if ( .not. l_grads ) then
+        write(6,*) "inputfields: Cannot find GrADS ctl file, assuming netCDF input"
+        stat_file_zt = trim( file_prefix )// "_zt.nc"
+        stat_file_zm = trim( file_prefix )// "_zm.nc"
+        stat_file_sfc = trim( file_prefix )// "_sfc.nc"
+      end if
+
     case default
       write(0,*) "Don't know how to handle input_type = "// & 
         input_type
       stop
     end select
 
+
     return
   end subroutine set_filenames
 !-----------------------------------------------------------------------
 
-
 !-----------------------------------------------------------------------
-  subroutine grads_fields_reader( timestep )
-!       Description:
-!       Reads in variables for the model from GrADS data
+  subroutine stat_fields_reader( timestep )
+! Description:
+!   Reads in variables for the model from statistical data
 
-!       Calls:
-!       subroutine open_grads_read
-!       subroutine get_grads_var
-!       subroutine close_grads_read
+! References:
+!   None
 !-----------------------------------------------------------------------
 
     use variables_prognostic_module, only: & 
@@ -160,6 +173,10 @@ module inputfields
     use stat_file_module, only: & 
         stat_file     ! Type
 
+    use stat_file_utils, only: & 
+       LES_grid_to_CLUBB_grid, & ! Procedure(s)
+       CLUBB_levels_within_LES_domain
+
     use inputfile_class, only: & 
         get_grads_var,  & ! Procedure(s)
         open_grads_read, & 
@@ -167,6 +184,10 @@ module inputfields
 
     use interpolation, only: &
         lin_int ! Procedure(s)
+
+    use extrapolation, only: &
+      lin_ext_zt_bottom, &
+      lin_ext_zm_bottom
 
     use parameters_microphys, only: &
       micro_scheme ! Variable(s)
@@ -222,398 +243,431 @@ module inputfields
 
     integer :: k  ! Array index
 
+    ! ---- Begin Code ----
 
-    select case( input_type )
+    select case ( input_type )
 
     case( "hoc" )
 
-      ! NOTE:  The code is not set up to compensate for grid discrepancies between
-      !        the CLUBB GrADS file that is having its variable values passed in
-      !        and the CLUBB inputfields or restart run that is using those values
-      !        as variable inputs.  Therefore, CLUBB should be set up to match the
-      !        number of grid levels and altitude of each grid level found in the
-      !        CLUBB GrADS zt and zm files.
 
       !  Thermo grid - zt file
-      call open_grads_read( 15, trim( datafile )//"_zt.ctl",  & 
-                            fread_var )
-
 
       ! Initialize l_fatal_error for case ( "hoc" )
       l_fatal_error = .false.
 
-      if ( input_um ) then
-        call get_grads_var( fread_var, "um", timestep, & 
-                      um(1:gr%nnzp), l_read_error )
+      call get_clubb_variable_interpolated &
+           ( input_um, stat_file_zt, "um", gr%nnzp, timestep, &
+             gr%zt, um, l_read_error )
 
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
+      l_fatal_error = l_fatal_error .or. l_read_error
 
-      if ( input_vm ) then
-        call get_grads_var( fread_var, "vm", timestep, & 
-                      vm(1:gr%nnzp), l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
+      call get_clubb_variable_interpolated &
+           ( input_vm, stat_file_zt, "vm", gr%nnzp, timestep, &
+             gr%zt, vm, l_read_error )
 
-      if ( input_rtm ) then
-        call get_grads_var( fread_var, "rtm", timestep, & 
-                      rtm(1:gr%nnzp),  l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
+      l_fatal_error = l_fatal_error .or. l_read_error
 
-      if ( input_thlm ) then
-        call get_grads_var( fread_var, "thlm",  & 
-                      timestep, & 
-                      thlm(1:gr%nnzp),  l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
+      call get_clubb_variable_interpolated &
+           ( input_rtm, stat_file_zt, "rtm", gr%nnzp, timestep, &
+             gr%zt, rtm, l_read_error )
 
-      if ( input_wp3 ) then
-        call get_grads_var( fread_var, "wp3", timestep, & 
-                      wp3(1:gr%nnzp),  l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_tau_zt ) then
-        call get_grads_var( fread_var, "tau_zt", timestep, & 
-                      tau_zt(1:gr%nnzp),  l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+
+      call get_clubb_variable_interpolated &
+           ( input_thlm, stat_file_zt, "thlm", gr%nnzp, timestep, &
+             gr%zt, thlm, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_wp3, stat_file_zt, "wp3", gr%nnzp, timestep, &
+             gr%zt, wp3, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_tau_zt, stat_file_zt, "tau_zt", gr%nnzp, timestep, &
+             gr%zt, tau_zt, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_rrainm, stat_file_zt, "rrainm", gr%nnzp, timestep, & 
+             gr%zt, tmp1(1:gr%nnzp), l_read_error )
       if ( input_rrainm ) then
-        call get_grads_var( fread_var, "rrainm", timestep, & 
-                      hydromet(1:gr%nnzp,iirrainm),  l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
+        hydromet(1:gr%nnzp,iirrainm) = tmp1(1:gr%nnzp)
+      end if
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_rsnowm, stat_file_zt, "rsnowm", gr%nnzp, timestep, & 
+             gr%zt, tmp1(1:gr%nnzp), l_read_error )
       if ( input_rsnowm ) then
-        call get_grads_var( fread_var, "rsnowm", timestep, & 
-                      hydromet(1:gr%nnzp,iirsnowm),  l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
+        hydromet(1:gr%nnzp,iirsnowm) = tmp1(1:gr%nnzp)
+      end if
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_ricem, stat_file_zt, "ricem", gr%nnzp, timestep, & 
+             gr%zt, tmp1(1:gr%nnzp), l_read_error )
       if ( input_ricem ) then
-        call get_grads_var( fread_var, "ricem", timestep, & 
-                      hydromet(1:gr%nnzp,iiricem),  l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
+        hydromet(1:gr%nnzp,iiricem) = tmp1(1:gr%nnzp)
+      end if
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_rgraupelm, stat_file_zt, "rgraupelm", gr%nnzp, timestep, & 
+             gr%zt, tmp1(1:gr%nnzp), l_read_error )
       if ( input_rgraupelm ) then
-        call get_grads_var( fread_var, "rgraupelm", timestep, & 
-                      hydromet(1:gr%nnzp,iirgraupelm),  l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
+        hydromet(1:gr%nnzp,iirgraupelm) = tmp1(1:gr%nnzp)
+      end if
+      l_fatal_error = l_fatal_error .or. l_read_error
 
 !--------------------------------------------------------
 ! Added variables for clubb_restart
-      if ( input_p ) then
-        call get_grads_var( fread_var, "p_in_Pa", timestep, & 
-                      p_in_Pa(1:gr%nnzp),  l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_exner) then
-        call get_grads_var( fread_var , "exner", timestep, & 
-                      exner(1:gr%nnzp),  l_read_error)
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_ug) then
-        call get_grads_var( fread_var , "ug", timestep, & 
-                      ug(1:gr%nnzp),  l_read_error)
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_vg) then
-        call get_grads_var( fread_var , "vg", timestep, & 
-                      vg(1:gr%nnzp),  l_read_error)
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_rcm) then
-        call get_grads_var( fread_var , "rcm", timestep, & 
-                      rcm(1:gr%nnzp),  l_read_error)
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_wm_zt) then
-        call get_grads_var( fread_var , "wm", timestep, & 
-                      wm_zt(1:gr%nnzp),  l_read_error)
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_rho) then
-        call get_grads_var( fread_var , "rho", timestep, & 
-                      rho(1:gr%nnzp), l_read_error)
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_Lscale) then
-        call get_grads_var( fread_var , "Lscale", timestep, & 
-                      Lscale(1:gr%nnzp), l_read_error)
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_Lscale_up) then
-        call get_grads_var( fread_var , "Lscale_up", timestep, & 
-                      Lscale_up(1:gr%nnzp), l_read_error)
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_Lscale_down) then
-        call get_grads_var( fread_var , "Lscale_down", timestep, & 
-                      Lscale_down(1:gr%nnzp), l_read_error)
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_Kh_zt) then
-        call get_grads_var( fread_var , "Kh_zt", timestep, & 
-                      Kh_zt(1:gr%nnzp), l_read_error)
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_thvm) then
-        call get_grads_var( fread_var , "thvm", timestep, & 
-                      thvm(1:gr%nnzp), l_read_error)
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_thlm_forcing ) then
-        call get_grads_var( fread_var , "thlm_f", timestep, & 
-                      thlm_forcing(1:gr%nnzp), l_read_error)
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_rtm_forcing ) then
-        call get_grads_var( fread_var , "rtm_f", timestep, & 
-                      rtm_forcing(1:gr%nnzp), l_read_error)
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_Ncm) then
-        call get_grads_var( fread_var , "Ncm", timestep, & 
-                      hydromet(1:gr%nnzp,iiNcm), l_read_error)
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_Ncnm) then
-        call get_grads_var( fread_var , "Ncnm", timestep, & 
-                      Ncnm(1:gr%nnzp), l_read_error)
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_Nim) then
-        call get_grads_var( fread_var , "Nim", timestep, & 
-                      hydromet(1:gr%nnzp,iiNim), l_read_error)
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_cf) then
-        call get_grads_var( fread_var , "cf", timestep, & 
-                      cf(1:gr%nnzp), l_read_error)
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_Nrm ) then
-        call get_grads_var( fread_var , "Nrm", timestep, & 
-                      hydromet(1:gr%nnzp,iiNrm), l_read_error)
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
+      call get_clubb_variable_interpolated &
+           ( input_p, stat_file_zt, "p_in_Pa", gr%nnzp, timestep, &
+             gr%zt, p_in_Pa, l_read_error )
 
-      if ( input_sigma_sqd_w_zt ) then
-        call get_grads_var( fread_var , "sigma_sqd_w_zt", timestep, & 
-                      sigma_sqd_w_zt(1:gr%nnzp), l_read_error)
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_exner, stat_file_zt, "exner", gr%nnzp, timestep, &
+             gr%zt, exner, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_ug, stat_file_zt, "ug", gr%nnzp, timestep, &
+             gr%zt, ug, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_vg, stat_file_zt, "vg", gr%nnzp, timestep, &
+             gr%zt, vg, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_rcm, stat_file_zt, "rcm", gr%nnzp, timestep, &
+             gr%zt, rcm, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_wm_zt, stat_file_zt, "wm", gr%nnzp, timestep, &
+             gr%zt, wm_zt, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+
+      call get_clubb_variable_interpolated &
+           ( input_rho, stat_file_zt, "rho", gr%nnzp, timestep, &
+             gr%zt, rho, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_Lscale, stat_file_zt, "Lscale", gr%nnzp, timestep, &
+             gr%zt, Lscale, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_Lscale_up, stat_file_zt, "Lscale_up", gr%nnzp, timestep, &
+             gr%zt, Lscale_up, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_Lscale_down, stat_file_zt, "Lscale_down", gr%nnzp, timestep, &
+             gr%zt, Lscale_down, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_Kh_zt, stat_file_zt, "Kh_zt", gr%nnzp, timestep, &
+             gr%zt, Kh_zt, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_thvm, stat_file_zt, "thvm", gr%nnzp, timestep, &
+             gr%zt, thvm, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_thlm_forcing, stat_file_zt, "thlm_f", gr%nnzp, timestep, &
+             gr%zt, thlm_forcing, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_rtm_forcing, stat_file_zt, "rtm_f", gr%nnzp, timestep, &
+             gr%zt, rtm_forcing, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_Ncm, stat_file_zt, "Ncm", gr%nnzp, timestep, &
+             gr%zt, tmp1(1:gr%nnzp), l_read_error )
+      if ( input_Ncm ) then
+        hydromet(iiNcm,1:gr%nnzp) = tmp1(1:gr%nnzp)
+      end if
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_Ncnm, stat_file_zt, "Ncnm", gr%nnzp, timestep, &
+             gr%zt, Ncnm, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_Nim, stat_file_zt, "Nim", gr%nnzp, timestep, &
+             gr%zt, tmp1(1:gr%nnzp), l_read_error )
+      if ( input_Nim ) then
+        hydromet(iiNcm,1:gr%nnzp) = tmp1(1:gr%nnzp)
+      end if
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_cf, stat_file_zt, "cf", gr%nnzp, timestep, &
+             gr%zt, cf, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_Nrm, stat_file_zt, "Nrm", gr%nnzp, timestep, &
+             gr%zt, tmp1(1:gr%nnzp), l_read_error )
+      if ( input_Nrm ) then
+        hydromet(iiNrm,1:gr%nnzp) = tmp1(1:gr%nnzp)
+      end if
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_sigma_sqd_w_zt, stat_file_zt, "sigma_sqd_w_zt", gr%nnzp, timestep, &
+             gr%zt, sigma_sqd_w_zt, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
 
       ! PDF Parameters (needed for K&K microphysics)
-      if ( input_thl1 ) then
-        call get_grads_var( fread_var , "thl1", timestep, & 
-                      pdf_params%thl1(1:gr%nnzp), l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      end if
+      call get_clubb_variable_interpolated &
+           ( input_thl1, stat_file_zt, "thl1", gr%nnzp, timestep, &
+             gr%zt, pdf_params%thl1, l_read_error )
 
-      if ( input_thl2 ) then
-        call get_grads_var( fread_var , "thl2", timestep, & 
-                      pdf_params%thl2(1:gr%nnzp), l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      end if
+      l_fatal_error = l_fatal_error .or. l_read_error
 
-      if ( input_a ) then
-        call get_grads_var( fread_var , "a", timestep, & 
-                      pdf_params%a(1:gr%nnzp), l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      end if
+      call get_clubb_variable_interpolated &
+           ( input_thl2, stat_file_zt, "thl2", gr%nnzp, timestep, &
+             gr%zt, pdf_params%thl2, l_read_error )
 
-      if ( input_s1 ) then
-        call get_grads_var( fread_var , "s1", timestep, & 
-                      pdf_params%s1(1:gr%nnzp), l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      end if
+      l_fatal_error = l_fatal_error .or. l_read_error
 
-      if ( input_s2 ) then
-        call get_grads_var( fread_var , "s2", timestep, & 
-                      pdf_params%s2(1:gr%nnzp), l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      end if
+      call get_clubb_variable_interpolated &
+           ( input_a, stat_file_zt, "a", gr%nnzp, timestep, &
+             gr%zt, pdf_params%a, l_read_error )
 
-      if ( input_ss1 ) then
-        call get_grads_var( fread_var , "ss1", timestep, & 
-                      pdf_params%ss1(1:gr%nnzp), l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      end if
+      l_fatal_error = l_fatal_error .or. l_read_error
 
-      if ( input_ss2 ) then
-        call get_grads_var( fread_var , "ss2", timestep, & 
-                      pdf_params%ss2(1:gr%nnzp), l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      end if
+      call get_clubb_variable_interpolated &
+           ( input_s1, stat_file_zt, "s1", gr%nnzp, timestep, &
+             gr%zt, pdf_params%s1, l_read_error )
 
-      if ( input_rc1 ) then
-        call get_grads_var( fread_var , "rc1", timestep, & 
-                      pdf_params%rc1(1:gr%nnzp), l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      end if
+      l_fatal_error = l_fatal_error .or. l_read_error
 
-      if ( input_rc2 ) then
-        call get_grads_var( fread_var , "rc2", timestep, & 
-                      pdf_params%rc2(1:gr%nnzp), l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      end if
+      call get_clubb_variable_interpolated &
+           ( input_s2, stat_file_zt, "s2", gr%nnzp, timestep, &
+             gr%zt, pdf_params%s2, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_ss1, stat_file_zt, "ss1", gr%nnzp, timestep, &
+             gr%zt, pdf_params%ss1, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_ss2, stat_file_zt, "ss2", gr%nnzp, timestep, &
+             gr%zt, pdf_params%ss2, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_rc1, stat_file_zt, "rc1", gr%nnzp, timestep, &
+             gr%zt, pdf_params%rc1, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_rc2, stat_file_zt, "rc2", gr%nnzp, timestep, &
+             gr%zt, pdf_params%rc2, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
 
 !--------------------------------------------------------
-      call close_grads_read( fread_var )
 
       ! Read in the zm file
-      call open_grads_read( 15, trim(datafile)//"_zm.ctl", & 
-                            fread_var )
 
-      if ( input_wp2 ) then
-        call get_grads_var( fread_var, "wp2", timestep, & 
-                      wp2(1:gr%nnzp),  l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
+      call get_clubb_variable_interpolated &
+           ( input_wp2, stat_file_zm, "wp2", gr%nnzp, timestep, &
+             gr%zm, wp2, l_read_error )
 
-      if ( input_wprtp ) then
-        call get_grads_var( fread_var, "wprtp",  & 
-                      timestep, wprtp(1:gr%nnzp), & 
-                      l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
+      l_fatal_error = l_fatal_error .or. l_read_error
 
-      if ( input_wpthlp ) then
-        call get_grads_var( fread_var, "wpthlp",  & 
-                      timestep,  & 
-                      wpthlp(1:gr%nnzp),  & 
-                      l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
+      call get_clubb_variable_interpolated &
+           ( input_wprtp, stat_file_zm, "wprtp", gr%nnzp, timestep, &
+             gr%zm, wprtp, l_read_error )
 
-      if ( input_wpthvp ) then
-        call get_grads_var( fread_var, "wpthvp",  & 
-                      timestep,  & 
-                      wpthvp(1:gr%nnzp),  & 
-                      l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
+      l_fatal_error = l_fatal_error .or. l_read_error
 
-      if ( input_rtp2 ) then
-        call get_grads_var( fread_var, "rtp2",  & 
-                      timestep, & 
-                      rtp2(1:gr%nnzp), l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
+      call get_clubb_variable_interpolated &
+           ( input_wpthlp, stat_file_zm, "wpthlp", gr%nnzp, timestep, &
+             gr%zm, wpthlp, l_read_error )
 
-      if ( input_thlp2 ) then
-        call get_grads_var( fread_var, "thlp2",  & 
-                      timestep, & 
-                      thlp2(1:gr%nnzp), l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
+      l_fatal_error = l_fatal_error .or. l_read_error
 
-      if ( input_rtpthlp ) then
-        call get_grads_var( fread_var, "rtpthlp",  & 
-                      timestep,  & 
-                      rtpthlp(1:gr%nnzp), & 
-                      l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
+      call get_clubb_variable_interpolated &
+           ( input_wpthvp, stat_file_zm, "wpthvp", gr%nnzp, timestep, &
+             gr%zm, wpthvp, l_read_error )
 
-      if ( input_upwp ) then
-        call get_grads_var( fread_var, "upwp",  & 
-                      timestep, & 
-                      upwp(1:gr%nnzp), l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
+      l_fatal_error = l_fatal_error .or. l_read_error
 
-      if ( input_vpwp ) then
-        call get_grads_var( fread_var, "vpwp",  & 
-                      timestep, & 
-                      vpwp(1:gr%nnzp), l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-!-----------------------------------------------------------
-      if ( input_em ) then
-        call get_grads_var( fread_var, "em", & 
-                      timestep, & 
-                      em(1:gr%nnzp), l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_rho_zm ) then
-        call get_grads_var( fread_var, "rho_zm", & 
-                      timestep, & 
-                      rho_zm(1:gr%nnzp), l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_Kh_zm ) then
-        call get_grads_var( fread_var, "Kh_zm", & 
-                      timestep, & 
-                      Kh_zm(1:gr%nnzp), l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_tau_zm) then
-        call get_grads_var( fread_var, "tau_zm", & 
-                      timestep, & 
-                      tau_zm(1:gr%nnzp), l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_up2) then
-        call get_grads_var( fread_var, "up2", & 
-                      timestep, & 
-                      up2(1:gr%nnzp), l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_vp2) then
-        call get_grads_var( fread_var, "vp2", & 
-                      timestep, & 
-                      vp2(1:gr%nnzp), l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
-      if ( input_sigma_sqd_w ) then
-        call get_grads_var( fread_var, "sigma_sqd_w", & 
-                      timestep, & 
-                      sigma_sqd_w(1:gr%nnzp), l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-      endif
+      call get_clubb_variable_interpolated &
+           ( input_rtp2, stat_file_zm, "rtp2", gr%nnzp, timestep, &
+             gr%zm, rtp2, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_thlp2, stat_file_zm, "thlp2", gr%nnzp, timestep, &
+             gr%zm, thlp2, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_rtpthlp, stat_file_zm, "rtpthlp", gr%nnzp, timestep, &
+             gr%zm, rtpthlp, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_upwp, stat_file_zm, "upwp", gr%nnzp, timestep, &
+             gr%zm, upwp, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_vpwp, stat_file_zm, "vpwp", gr%nnzp, timestep, &
+             gr%zm, vpwp, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
 
 !-----------------------------------------------------------
-      call close_grads_read( fread_var )
+      call get_clubb_variable_interpolated &
+           ( input_em, stat_file_zm, "em", gr%nnzp, timestep, &
+             gr%zm, em, l_read_error )
 
-      call open_grads_read( 15, trim( datafile )//"_sfc.ctl",  & 
-                            fread_var )
+      l_fatal_error = l_fatal_error .or. l_read_error
 
-      if ( input_veg_T_in_K ) then
-        call get_grads_var( fread_var, "veg_T_in_K", & 
-                      timestep, & 
-                      tmp1, l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-        veg_T_in_K = tmp1(1)
-        print *, "Veg T = ", veg_T_in_K
-      endif
-      if ( input_deep_soil_T_in_K ) then
-        call get_grads_var( fread_var, "deep_soil_T_in_", & 
-                      timestep, & 
-                      tmp1, l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-        deep_soil_T_in_K = tmp1(1)
-        print *,"Deep soil = ",deep_soil_T_in_K
-      endif
-      if ( input_sfc_soil_T_in_K ) then
-        call get_grads_var( fread_var, "sfc_soil_T_in_K", & 
-                      timestep, & 
-                      tmp1, l_read_error )
-        l_fatal_error = l_fatal_error .or. l_read_error
-        sfc_soil_T_in_K = tmp1(1)
-        print *,"surface_soil = ", sfc_soil_T_in_K
-      endif
+      call get_clubb_variable_interpolated &
+           ( input_rho_zm, stat_file_zm, "rho_zm", gr%nnzp, timestep, &
+             gr%zm, rho_zm, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_Kh_zm, stat_file_zm, "Kh_zm", gr%nnzp, timestep, &
+             gr%zm, Kh_zm, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_tau_zm, stat_file_zm, "tau_zm", gr%nnzp, timestep, &
+             gr%zm, tau_zm, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_up2, stat_file_zm, "up2", gr%nnzp, timestep, &
+             gr%zm, up2, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_vp2, stat_file_zm, "vp2", gr%nnzp, timestep, &
+             gr%zm, vp2, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_sigma_sqd_w, stat_file_zm, "sigma_sqd_w", gr%nnzp, timestep, &
+             gr%zm, sigma_sqd_w, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
 
 
-      if ( l_fatal_error ) stop "oops, get_grads_var failed in grads_fields_reader"
+!-----------------------------------------------------------
 
-      call close_grads_read( fread_var )
+      call get_clubb_variable_interpolated &
+           ( input_veg_T_in_K, stat_file_sfc, "veg_T_in_K", 1, timestep, &
+             (/0./), tmp1(1), l_read_error )
 
+      l_fatal_error = l_fatal_error .or. l_read_error
+      veg_T_in_K = tmp1(1)
+
+!     if ( input_veg_T_in_K ) then
+!       call get_grads_var( fread_var, "veg_T_in_K", & 
+!                     timestep, & 
+!                     tmp1, l_read_error )
+!       l_fatal_error = l_fatal_error .or. l_read_error
+!       veg_T_in_K = tmp1(1)
+!       print *, "Veg T = ", veg_T_in_K
+!     endif
+      call get_clubb_variable_interpolated &
+           ( input_deep_soil_T_in_K, stat_file_sfc, "deep_soil_T_in_K", 1, timestep, &
+             (/0./), tmp1(1), l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+      deep_soil_T_in_K = tmp1(1)
+
+!     if ( input_deep_soil_T_in_K ) then
+!       call get_grads_var( fread_var, "deep_soil_T_in_", & 
+!                     timestep, & 
+!                     tmp1, l_read_error )
+!       l_fatal_error = l_fatal_error .or. l_read_error
+!       deep_soil_T_in_K = tmp1(1)
+!       print *,"Deep soil = ",deep_soil_T_in_K
+!     endif
+      call get_clubb_variable_interpolated &
+           ( input_sfc_soil_T_in_K, stat_file_sfc, "sfc_soil_T_in_K", 1, timestep, &
+             (/0./), tmp1(1), l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+      sfc_soil_T_in_K = tmp1(1)
+
+!     if ( input_sfc_soil_T_in_K ) then
+!       call get_grads_var( fread_var, "sfc_soil_T_in_K", & 
+!                     timestep, & 
+!                     tmp1, l_read_error )
+!       l_fatal_error = l_fatal_error .or. l_read_error
+!       sfc_soil_T_in_K = tmp1(1)
+!       print *,"surface_soil = ", sfc_soil_T_in_K
+!     endif
+
+
+      if ( l_fatal_error ) stop "oops, get_grads_var failed in stat_fields_reader"
 
     case ( "rf1" )   ! special case for COAMPS DYCOMS-II RF01
 
       ! stats_sm
-      call open_grads_read( 15, trim(datafile)//"_coamps_sm.ctl",  & 
+      call open_grads_read( 15, stat_file_zt,  & 
                             fread_var )
 
       ! Temporarily store LES output in variable array LES_tmp1.
@@ -1024,7 +1078,7 @@ module inputfields
         endif
       endif
 
-      if ( l_fatal_error ) stop "oops, get_grads_var failed in grads_fields_reader"
+      if ( l_fatal_error ) stop "oops, get_grads_var failed in stat_fields_reader"
 
       ! Deallocate temporary storage variable LES_tmp1.
       deallocate( LES_tmp1 )
@@ -1045,7 +1099,7 @@ module inputfields
     case ( "les" )   ! COAMPS LES -- all other cases.
 
       ! stats_sm
-      call open_grads_read( 15, trim(datafile)//"_coamps_sm.ctl",  & 
+      call open_grads_read( 15, stat_file_zt,  & 
                             fread_var )
       l_fatal_error = .false.
 
@@ -2103,7 +2157,7 @@ module inputfields
         l_fatal_error = .true.
       end if
 
-      if ( l_fatal_error ) stop "oops, get_grads_var failed in grads_fields_reader"
+      if ( l_fatal_error ) stop "oops, get_grads_var failed in stat_fields_reader"
 
       ! Deallocate temporary storage variable LES_tmp1.
       deallocate( LES_tmp1 )
@@ -2128,8 +2182,7 @@ module inputfields
     case ( "les", "rf1" )
 
       ! stats_sw
-      call open_grads_read( 15, trim(datafile)//"_coamps_sw.ctl",  & 
-                            fread_var )
+      call open_grads_read( 15, stat_file_zm,  fread_var )
 
       ! Temporarily store LES output in variable array LES_tmp1.
       ! Allocate LES_tmp1 based on lowest and highest vertical indices of LES
@@ -2316,7 +2369,7 @@ module inputfields
         enddo
       endif
 
-      if ( l_fatal_error ) stop "get_grads_var failed for stats_sw in grads_fields_reader"
+      if ( l_fatal_error ) stop "get_grads_var failed for stats_sw in stat_fields_reader"
 
       ! Deallocate temporary storage variable LES_tmp1.
       deallocate( LES_tmp1 )
@@ -2333,278 +2386,7 @@ module inputfields
 
 
     return
-  end subroutine grads_fields_reader
-
-!===============================================================================
-  subroutine CLUBB_levels_within_LES_domain( fread_var, CLUBB_grid,  &
-                                             k_lowest_input, k_highest_input )
-
-    ! Description:
-    ! This subroutine finds both the lowest and the highest CLUBB grid levels
-    ! (for either the thermodynamic grid or the momentum grid) that are with the
-    ! domain of the LES grid.
-
-    ! References:
-    !   None
-    !-----------------------------------------------------------------------
-
-
-    use stat_file_module, only:  &
-        stat_file  ! Variable type
-
-    use constants, only:  &
-        fstderr ! Constant
-
-    implicit none
-
-    ! Input Variables.
-    type(stat_file), intent(in) ::  &
-      fread_var  ! Information about LES run.
-
-    real, dimension(:), intent(in) ::  &
-      CLUBB_grid ! Altitude of CLUBB grid levels
-                 ! (either thermodynamic or momentum grid levels)  [m]
-
-    ! Output Variables
-    integer, intent(out) ::  &
-      k_lowest_input,  & ! The lowest CLUBB level that's within the LES domain.
-      k_highest_input    ! The highest CLUBB level that's within the LES domain.
-
-    ! Local Variable
-    integer :: k, kmax  ! Array index
-
-    ! ---- Begin Code ----
-
-    ! Find the lowest CLUBB level that falls within the LES domain.
-    k    = size( CLUBB_grid )
-    kmax = size( CLUBB_grid )
-    do
-      if ( CLUBB_grid(k) < fread_var%z(fread_var%ia) ) then
-
-        if ( k == kmax ) then
-          ! The bottom of the LES domain is above the top of the CLUBB
-          ! domain.
-          write(fstderr,*) "The lowest LES input level is above the top ",  &
-                           "of the CLUBB model domain."
-          stop "Error in CLUBB_levels_within_LES_domain"
-        else
-          ! Level k is the first CLUBB level below the LES domain.  Thus, the
-          ! lowest CLUBB level within the LES domain has the index k + 1.
-          k_lowest_input = k + 1
-          exit
-        endif
-
-      elseif ( k == 1 ) then
-
-        ! The bottom CLUBB level is within the LES domain.
-        k_lowest_input = 1
-        exit
-
-      else   ! k > 1 and k <= kmax; level not yet found.
-
-        ! Increment one more CLUBB vertical level down.
-        k = k - 1
-
-      endif
-    enddo
-
-    ! Find the highest CLUBB level that falls within the LES domain.
-    k = 1
-    do
-      if ( CLUBB_grid(k) > fread_var%z(fread_var%iz) ) then
-
-        if ( k == 1 ) then
-          ! The top of the LES domain is below the bottom of the CLUBB
-          ! domain.
-          write(fstderr,*) "The highest LES input level is below the ",  &
-                           "bottom of the CLUBB model domain."
-          stop "Error in CLUBB_levels_within_LES_domain"
-        else
-          ! Level k is the first CLUBB level above the LES domain.  Thus, the
-          ! highest CLUBB level within the LES domain has the index k - 1.
-          k_highest_input = k - 1
-          exit
-        endif
-
-      elseif ( k == kmax ) then
-
-        ! The top CLUBB level is within the LES domain.
-        k_highest_input = kmax 
-        exit
-
-      else   ! k < kmax and k >= 1; level not yet found.
-
-        ! Increment one more CLUBB vertical level up.
-        k = k + 1
-
-      endif
-    enddo
-
-    return
-  end subroutine CLUBB_levels_within_LES_domain
-
-!===============================================================================
-  pure subroutine LES_grid_to_CLUBB_grid( fread_var, CLUBB_grid, k,  &
-                                     exact_lev_idx, lower_lev_idx,  &
-                                     upper_lev_idx, l_lin_int )
-
-    ! Description:
-    ! Finds the level on the LES grid that is exactly even with the CLUBB
-    ! grid level (either thermodynamic or momentum grid) that is input
-    ! (level k).  Else, it finds the two LES levels that sandwich the CLUBB
-    ! grid level that is input.
-
-    !-----------------------------------------------------------------------
-
-    use stat_file_module, only:  &
-        stat_file  ! Variable type
-
-    implicit none
-
-    ! Input Variables.
-    type(stat_file), intent(in) ::  &
-      fread_var  ! Information about LES run.
-
-    real, dimension(:), intent(in) ::  &
-      CLUBB_grid ! Altitude of CLUBB grid levels
-                 ! (either thermodynamic or momentum grid levels)  [m]
-
-    integer, intent(in) ::  &
-      k  ! Index of CLUBB vertical level that is being compared to.
-
-    ! Output Variables.
-    integer, intent(out) ::  &
-      exact_lev_idx, & ! In case of an exact match, index of LES level that is
-                       ! exactly even with CLUBB level k.
-      lower_lev_idx, & ! In case linear interpolation is needed, index of LES
-                       ! level that is immediately below CLUBB level k.
-      upper_lev_idx    ! In case linear interpolation is needed, index of LES
-                       ! level that is immediately above CLUBB level k.
-
-    logical, intent(out) ::  &
-      l_lin_int  ! Flag that is turned on if linear interpolation is needed.
-
-    ! Local Variable.
-    integer :: j
-
-    ! Initialize the output quantities.
-    exact_lev_idx = 0
-    lower_lev_idx = 0
-    upper_lev_idx = 0
-    l_lin_int     = .false.
-
-    ! Initialize LES vertical grid loop index, j, at the lowest LES grid index,
-    ! which is fread_var%ia.
-    j = fread_var%ia
-
-    do
-
-      if ( fread_var%z(j) == CLUBB_grid(k) ) then
-
-        ! There is an LES level altitude at LES level j that is an exact
-        ! match to the CLUBB level altitude at CLUBB grid level k.
-        exact_lev_idx = j
-        l_lin_int = .false.
-
-      elseif ( fread_var%z(j) < CLUBB_grid(k) ) then
-
-        ! The LES level altitude at LES level j is lower than the CLUBB level
-        ! altitude at CLUBB grid level k.
-        lower_lev_idx = j
-
-      else   ! fread_var%z(j) > CLUBB_grid(k)
-
-        ! The LES level altitude at LES level j is higher than the CLUBB level
-        ! altitude at CLUBB grid level k.
-        upper_lev_idx = j
-
-      endif
-
-      if ( exact_lev_idx > 0 ) exit  ! An exact answer has been found,
-      ! exit the loop.
-
-      if ( upper_lev_idx == lower_lev_idx + 1 ) then
-
-        ! CLUBB level k has been found between two successive LES levels.
-        ! Linear interpolation is needed.  An answer has been found, exit
-        ! the loop.
-        l_lin_int = .true.
-        exit
-
-      endif
-
-      ! An answer has not been found yet, iterate the j index.
-      j = j + 1
-
-    enddo
-
-    return
-  end subroutine LES_grid_to_CLUBB_grid
-
-!===============================================================================
-  pure function lin_ext_zm_bottom( var_zmp2, var_zmp1,  & 
-                                   zmp2, zmp1, zm )  & 
-  result( var_zm )
-
-    ! Description:
-    ! This function computes the value of a momentum-level variable at a bottom
-    ! grid level by using a linear extension of the values of the variable at
-    ! the two levels immediately above the level where the result value is
-    ! needed.
-
-    !-----------------------------------------------------------------------
-
-    implicit none
-
-
-    ! Input Variables
-    real, intent(in) :: & 
-      var_zmp2,    & ! Momentum level variable at level (k+2)  [units vary]
-      var_zmp1,    & ! Momentum level variable at level (k+1)  [units vary]
-      zmp2,        & ! Altitude at momentum level (k+2)        [m]
-      zmp1,        & ! Altitude at momentum level (k+1)        [m]
-      zm             ! Altitude at momentum level (k)          [m]
-
-    ! Return Variable
-    real :: var_zm   ! Momentum level variable at level (k)    [units vary]
-
-    var_zm = ( ( var_zmp2 - var_zmp1 ) / ( zmp2 - zmp1 ) ) & 
-             * ( zm - zmp1 ) + var_zmp1
-
-    return
-  end function lin_ext_zm_bottom
-
-!===============================================================================
-  pure function lin_ext_zt_bottom( var_ztp2, var_ztp1,  & 
-                                   ztp2, ztp1, zt )  & 
-  result( var_zt )
-
-    ! Description:
-    ! This function computes the value of a thermodynamic-level variable at a
-    ! bottom grid level by using a linear extension of the values of the
-    ! variable at the two levels immediately above the level where the result
-    ! value is needed.
-
-    !-----------------------------------------------------------------------
-
-    implicit none
-
-    ! Input Variables
-    real, intent(in) :: & 
-      var_ztp2,    & ! Thermodynamic level variable at level (k+2)  [units vary]
-      var_ztp1,    & ! Thermodynamic level variable at level (k+1)  [units vary]
-      ztp2,        & ! Altitude at thermodynamic level (k+2)        [m]
-      ztp1,        & ! Altitude at thermodynamic level (k+1)        [m]
-      zt             ! Altitude at thermodynamic level (k)          [m]
-
-    ! Return Variable
-    real :: var_zt   ! Thermodynamic level variable at level (k)    [units vary]
-
-    var_zt = ( ( var_ztp2 - var_ztp1 ) / ( ztp2 - ztp1 ) ) & 
-             * ( zt - ztp1 ) + var_ztp1
-
-    return
-  end function lin_ext_zt_bottom
+  end subroutine stat_fields_reader
 
 !===============================================================================
   subroutine compute_timestep( iunit, filename, l_restart, & 
@@ -2650,6 +2432,8 @@ module inputfields
     type (stat_file) :: fread_var
 
     real(kind=time_precision) :: delta_time   ! In seconds
+
+    ! ---- Begin Code ----
 
     call open_grads_read( iunit, trim( filename ), fread_var )
 
@@ -2710,6 +2494,57 @@ module inputfields
     call close_grads_read( fread_var )
 
   end subroutine compute_timestep
+!===============================================================================
+  subroutine get_clubb_variable_interpolated &
+           ( l_input_var, filename, varname, vardim, timestep, &
+             clubb_heights, variable_interpolated, l_read_error )
+! Description:
+!   Obtain a profile of a CLUBB variable from a GrADS file and interpolate if
+!   needed.
+! References:
+!   None
+!--------------------------------------------------------------------------------
+    use stat_file_utils, only: stat_file_average ! Procedure(s)
+
+    implicit none
+
+    ! Constant parameters
+    integer, parameter :: &
+      npower = 1 ! Power to raise the profile to (not applied)
+
+    logical, intent(in) :: &
+      l_input_var !  Whether to read the variable in
+
+    character(len=*), intent(in) :: &
+      filename, & ! Filename
+      varname     ! Variable name
+
+    integer, intent(in) :: &
+      vardim, & ! Dimension of the profile in CLUBB
+      timestep  ! Timestep to read in
+
+    real, intent(in), dimension(vardim) :: &
+      clubb_heights ! Altitudes         [m]
+
+    real, intent(inout), dimension(vardim) :: &
+      variable_interpolated     ! The variable after interpolation
+
+    logical, intent(out) :: &
+      l_read_error ! Whether there was a read error
+
+    ! ---- Begin Code ----
+
+    if ( l_input_var ) then
+      variable_interpolated = stat_file_average( filename, vardim, timestep, &
+        timestep, clubb_heights, varname, npower, l_read_error )
+
+    else
+      l_read_error = .false.
+
+    end if
+
+    return
+  end subroutine get_clubb_variable_interpolated
 
 !===============================================================================
 
