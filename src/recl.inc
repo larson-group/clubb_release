@@ -15,7 +15,7 @@
 !   byte records.  Note that specifying byterecl on Alpha still 
 !   results in a performance hit, even on newer chips.
 !-------------------------------------------------------------------------------
-#if defined __INTEL_COMPILER >= 800 /* Versions of Intel fortran > 8.0 */
+#if defined __INTEL_COMPILER && __INTEL_COMPILER >= 800 /* Versions of Intel fortran > 8.0 */
 #define F_RECL 1
 #elif defined(__alpha) /* Assume 4 byte word on Alpha processors */
 #define F_RECL 1
