@@ -1740,7 +1740,7 @@ module KK_microphys_module
       gamma_exp    ! Exponent associated with Nr variable.
 
     ! Output variable.
-    real :: PDF_TRIVAR_2G_LN_LN ! Variance
+    real :: PDF_TRIVAR_2G_LN_LN
 
     ! Local variables.
 
