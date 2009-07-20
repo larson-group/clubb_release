@@ -4,19 +4,133 @@
 (
     'name' => 'cloud_feedback_s6',
     'headerText' => 'Cloud Feedback S6',
-    'startTime' => 0,   # [minutes]
-    'endTime' => 10,    # [minutes]
-    'startHeight' => 0, # [m]
-    'endHeight' => 100, # [m]
-    'numPlots' => 1,
+    'startTime' => 41760,   # [minutes]
+    'endTime' => 43200,    # [minutes]
+    'startHeight' => 0.0, # [m]
+    'endHeight' => 6000.0, # [m]
+    'numPlots' => 30,
     'plots' =>
     [
-       {'plotTitle' => 'Plot Title', 'units' => 'UNITS', 'type' => 'timeseries or profile', 'numLines' => 5} #, 'lines' =>
- #      [
- #         {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'clubb', 'name' => 'varname1', 'expression' => 'varexpression1', 'lineWidth' => '1', 'lineType' => '-', 'lineColor' => '1'},
- #         {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'clubb', 'name' => 'varname2', 'expression' => 'varexpression2', 'lineWidth' => '2', 'lineType' => '--', 'lineColor' => '2'},
- #         {'filename' => 'filename3', 'type' => 'clubb', 'name' => 'varname3', 'expression' => 'varexpression3', 'lineWidth' => '3', 'lineType' => '---', 'lineColor' => '3'},
- #      ]}
+       {'plotTitle' => 'Liquid Water Potential Temperature, \theta_l', 'units' => 'K', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm', 'expression' => 'thlm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Total Water Mixing Ration, r_t', 'units' => 'kg/kg', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm', 'expression' => 'rtm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Fraction', 'units' => '%', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'cf', 'expression' => 'cf', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},       
+       {'plotTitle' => 'Cloud Water Mixing Ratio, r_c', 'units' => 'kg/kg', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rcm', 'expression' => 'rcm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of w', 'units' => 'm^2/s^2', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp2', 'expression' => 'wp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Third-order Moment of w', 'units' => 'm^3/s^3', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3', 'expression' => 'wp3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Turbulent Flux of \theta_l', 'units' => 'K m/s', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wpthlp', 'expression' => 'wpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Turbulent Flux of r_t', 'units' => '(kg/kg) m/s', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wprtp', 'expression' => 'wprtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of \theta_l', 'units' => 'K^2', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlp2', 'expression' => 'thlp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of r_t', 'units' => '(kg/kg)^2', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtp2', 'expression' => 'rtp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Covariance of r_t & \theta_l', 'units' => '(kg/kg) K', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtpthlp', 'expression' => 'rtpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Vertical Wind Component, w (subsidence)', 'units' => 'm/s', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wm', 'expression' => 'wm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Zonal Wind Component, u', 'units' => 'm/s', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'um', 'expression' => 'um', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Meridional Wind Component, v', 'units' => 'm/s', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'vm', 'expression' => 'vm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Covariance of u & w', 'units' => 'm^2/s^2', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'upwp', 'expression' => 'upwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Covariance of v & w', 'units' => 'm^s/s^2', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'vpwp', 'expression' => 'm^2/s^2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of u wind', 'units' => 'm^s/s^2', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'up2', 'expression' => 'up2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of v wind', 'units' => 'm^2/s^2', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'vp2', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Rain Water Mixing Ration, r_t', 'units' => 'kg/kg', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rrainm', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Rain Drop Concentration, N_r', 'units' => 'num/m^3', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'Nrm', 'expression' => 'Nrm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Droplet Concentration', 'units' => 'num/m^3', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'Ncm', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Graupel Mixing Ratio', 'units' => 'kg/kg', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm', 'expression' => 'rgraupelm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Ice Mixing Ratio', 'units' => 'kg/kg', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'ricem', 'expression' => 'ricem', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Ice Concentration', 'units' => 'num/m^3', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'Nim', 'expression' => 'Nim', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Snow Mixing Ratio', 'units' => 'kg/kg', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm', 'expression' => 'rsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Snow Number Concentration', 'units' => 'num/m^3', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'Nsnowm', 'expression' => 'Nsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Liquid Water Path', 'units' => 'kg/m^2', 'type' => 'timeseries', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'lwp', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Vertically Averaged wp2', 'units' => 'm^2/s^2', 'type' => 'timeseries', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp2', 'expression' => 'wp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Ice Water Path', 'units' => 'kg/m^2', 'type' => 'timeseries', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'iwp', 'expression' => 'iwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Snow Water Path', 'units' => 'kg/m^2', 'type' => 'timeseries', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'swp', 'expression' => 'swp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]}
     ],
     'nightlyOutput' =>
     {

@@ -15,6 +15,7 @@ sub writeCaseTitle()
 {
 	shift(@_);
 	my $fh = shift(@_);
+
 	open(FILE, ">> $fh");
 
 	my($CASE) = shift;

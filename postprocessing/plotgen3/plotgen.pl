@@ -185,19 +185,18 @@ sub callMatlab()
 				my $file = "$_/$CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'filename'}";
 				my $type = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'type'};
 				
-				if(($type eq "les" && $plotLes == 1) || ($type eq "dec17" && $plotDec) || ($type eq "bestEver" && $plotBest) || ($type eq "clubb"))
+				if(($type eq "les" && $plotLes == 1) || ($type eq "dec17" && $plotDec) || ($type eq "bestEver" && $plotBest) || ($type eq "clubb") || ($type eq "auto"))
 				{
 					if(-e $file)
 					{
 						my $name = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'name'};
 						my $expression = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'expression'};
-						my $title = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'title'};
-						my $unit = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'units'};
+						my $title = "What is this?";
 						my $lineWidth = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'lineWidth'};
-						my $lineStyle = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'lineStype'};
+						my $lineStyle = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'lineType'};
 						my $lineColor = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'lineColor'};
 	
-						$matlabArgs = "$matlabArgs, $file, $name, $expression, $title, $unit, $lineWidth, $lineStyle, $lineColor";
+						$matlabArgs = "$matlabArgs, $file, $name, $expression, $title, $lineWidth, $lineStyle, $lineColor";
 					}
 				}
 			}
