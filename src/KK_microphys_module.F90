@@ -15,14 +15,14 @@ module KK_microphys_module
 
   public :: KK_microphys
 
-  public :: PDF_TRIVAR_2G_LN_LN
+  public :: corr_LN_to_cov_gaus, sigma_LN_to_sigma_gaus
 
   private :: mean_volume_radius, cond_evap_rrainm, cond_evap_Nrm, &
     autoconv_rrainm, autoconv_Nrm, accretion_rrainm
 
   private :: G_T_p
 
-  private :: PDF_BIVAR_2G_LN, PDF_BIVAR_LN_LN
+  private :: PDF_BIVAR_2G_LN, PDF_BIVAR_LN_LN, PDF_TRIVAR_2G_LN_LN
   private :: Dv_fnc
 
   private ! Set default scope to private
@@ -65,6 +65,12 @@ module KK_microphys_module
   !REAL, PARAMETER:: r_0 = 30.0e-6   ! Assumed radius of all new drops; m.
   !                                  ! Khairoutdinov said it was okay!
   ! End Vince Larson's change.
+
+!$omp threadprivate( rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, &
+!$omp   corr_rrNr_LL_cloud, corr_srr_NL_cloud,  corr_sNr_NL_cloud,  corr_sNc_NL_cloud, &
+!$omp   rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, Ncp2_on_Ncm2_below, &
+!$omp   corr_rrNr_LL_below, corr_srr_NL_below, corr_sNr_NL_below, corr_sNc_NL_below, &
+!$omp   C_evap, r_0 )
 
   contains
 
@@ -3376,5 +3382,91 @@ module KK_microphys_module
 
     return
   end function Dv_fnc
+  !-----------------------------------------------------------------------------
+  pure function corr_LN_to_cov_gaus( corr_xy, sigma_x_gaus, sigma_y_gaus ) &
+    result( cov_xy_gaus )
+  ! Description:
+
+  ! References:
+
+  !-----------------------------------------------------------------------------
+
+    implicit none
+
+    ! External
+    intrinsic :: sqrt, exp, log
+
+    ! Input Variables
+    real, intent(in) :: &
+      corr_xy,      & ! Correlation of x and y    [-]
+      sigma_x_gaus, & ! Std dev of first term 'x' [units vary]
+      sigma_y_gaus    ! Std dev second term 'y'   [units vary]
+
+    real :: cov_xy_gaus ! Covariance for a gaussian dist. [units vary]
+
+    ! ---- Begin Code ----
+
+    cov_xy_gaus = log( 1.0 + corr_xy * sqrt( exp( sigma_x_gaus**2 ) - 1.0 ) &
+                                     * sqrt( exp( sigma_y_gaus**2 ) - 1.0 ) &
+                     )
+
+    return
+  end function corr_LN_to_cov_gaus
+
+  !-----------------------------------------------------------------------------
+  pure function mu_LN_to_mu_gaus( mu, sigma ) &
+    result( mu_gaus )
+
+  ! Description:
+  !
+  ! References:
+  ! 
+  !-----------------------------------------------------------------------------
+
+    implicit none
+
+    ! External
+    intrinsic :: log
+
+    ! Input Variables
+    real, intent(in) :: &
+      mu,   & ! Mean field with a lognormal dist. [units vary]
+      sigma   ! Std dev of first term 'x'         [units vary]
+
+    real :: mu_gaus ! Mean field converted to gaussian  [units vary]
+
+    ! ---- Begin Code ----
+    mu_gaus = log( mu * ( 1.0 + ( sigma**2 / mu**2 ) )**(-0.5) )
+
+    return
+  end function mu_LN_to_mu_gaus
+
+  !-----------------------------------------------------------------------------
+  pure function sigma_LN_to_sigma_gaus( sigma, mu ) result( sigma_gaus )
+
+  ! Description:
+  !
+  ! References:
+  ! 
+  !-----------------------------------------------------------------------------
+
+    implicit none
+
+    ! External
+    intrinsic :: sqrt, exp, log
+
+    ! Input Variables
+    real, intent(in) :: &
+      mu,  & ! first term 'x'               [units vary]
+      sigma  ! Std dev of first term 'x'    [units vary]
+
+    real :: sigma_gaus ! Sigma converted to gaussian dist. [units vary]
+
+    ! ---- Begin Code ----
+
+    sigma_gaus = sqrt( log( 1.0 + ( sigma**2 / mu**2 ) ) )
+
+    return
+  end function sigma_LN_to_sigma_gaus
 
 END MODULE KK_microphys_module

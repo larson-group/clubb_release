@@ -551,6 +551,7 @@ module microphys_driver
         Lv,   & ! Constant(s)
         Cp,  & 
         rho_lw,  & 
+        rc_tol, &
         fstderr, & 
         zero_threshold, &
         sec_per_day
@@ -662,7 +663,10 @@ module microphys_driver
     use KK_microphys_module, only: &
       rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, & ! Variables
       corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
-      corr_sNc_NL_cloud  
+      corr_sNc_NL_cloud, &
+      rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, & !Ncp2_on_Ncm2_below, & ! Variables
+      corr_rrNr_LL_below, corr_srr_NL_below, corr_sNr_NL_below, &
+      corr_sNc_NL_below  
 
     implicit none
 
@@ -735,8 +739,8 @@ module microphys_driver
     real, dimension(gr%nnzp,hydromet_dim) :: & 
       hydromet_mc  ! Change in hydrometeors due to microphysics  [units/s]
       
-    real, allocatable, dimension(:,:) :: & 
-      correlation_matrix  ! Array for correlations   [-]
+    real, allocatable, dimension(:,:,:) :: & 
+      correlation_array  ! Array for correlations   [-]
 
     real, dimension(gr%nnzp) :: &
       dzq         ! Difference in height levels                   [m]
@@ -864,20 +868,17 @@ module microphys_driver
 
         d_variables = 3 + hydromet_dim
 
-        allocate( correlation_matrix(d_variables,d_variables) )
+        allocate( correlation_array(gr%nnzp,d_variables,d_variables) )
 
         ! For latin hypercube sampling
-        correlation_matrix(:,:) = 0.0 ! Initialize to 0
-        correlation_matrix(iiLH_Nc,iiLH_Nc)       = Ncp2_on_Ncm2_cloud
-        correlation_matrix(iiLH_Nr,iiLH_Nr)       = Nrp2_on_Nrm2_cloud
-        correlation_matrix(iiLH_rrain,iiLH_rrain) = rrp2_on_rrainm2_cloud
+        correlation_array(:,:,:) = 0.0 ! Initialize to 0
 
         call latin_hypercube_driver &
              ( real( dt ), iter, d_variables, LH_microphys_calls, &
                LH_sequence_length, gr%nnzp, &
                cf, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm_zt, wtmp, dzq, rcm, rtm-rcm, &
-               hydromet, correlation_matrix, hydromet_mc, hydromet_vel, rcm_mc, &
+               hydromet, correlation_array, hydromet_mc, hydromet_vel, rcm_mc, &
                rvm_mc, thlm_mc, morrison_micro_driver )
 
         if ( l_stats_samp ) then
@@ -926,32 +927,53 @@ module microphys_driver
 
         d_variables = 3 + hydromet_dim
 
-        allocate( correlation_matrix(d_variables,d_variables) )
+        allocate( correlation_array(gr%nnzp,d_variables,d_variables) )
 
         ! For latin hypercube sampling
-        correlation_matrix(:,:) = 0.0 ! Initialize to 0
-        correlation_matrix(iiLH_Nc,iiLH_Nc)       = Ncp2_on_Ncm2_cloud
-        correlation_matrix(iiLH_Nr,iiLH_Nr)       = Nrp2_on_Nrm2_cloud
-        correlation_matrix(iiLH_rrain,iiLH_rrain) = rrp2_on_rrainm2_cloud
+        correlation_array(:,:,:) = 0.0 ! Initialize to 0
+        where ( rcm > rc_tol )
+          correlation_array(:,iiLH_Nc,iiLH_Nc)       = Ncp2_on_Ncm2_cloud
+          correlation_array(:,iiLH_Nr,iiLH_Nr)       = Nrp2_on_Nrm2_cloud
+          correlation_array(:,iiLH_rrain,iiLH_rrain) = rrp2_on_rrainm2_cloud
 
-        correlation_matrix(iiLH_rrain,iiLH_Nr)    = corr_rrNr_LL_cloud
-        correlation_matrix(iiLH_Nr,iiLH_rrain)    = corr_rrNr_LL_cloud
+          correlation_array(:,iiLH_rrain,iiLH_Nr)    = corr_rrNr_LL_cloud
+          correlation_array(:,iiLH_Nr,iiLH_rrain)    = corr_rrNr_LL_cloud
 
-        correlation_matrix(iiLH_rrain,iiLH_rt)    = corr_srr_NL_cloud
-        correlation_matrix(iiLH_rt,iiLH_rrain)    = corr_srr_NL_cloud
+          correlation_array(:,iiLH_rrain,iiLH_rt)    = corr_srr_NL_cloud
+          correlation_array(:,iiLH_rt,iiLH_rrain)    = corr_srr_NL_cloud
 
-        correlation_matrix(iiLH_Nr,iiLH_rt)    = corr_sNr_NL_cloud
-        correlation_matrix(iiLH_rt,iiLH_Nr)    = corr_sNr_NL_cloud
+          correlation_array(:,iiLH_Nr,iiLH_rt)    = corr_sNr_NL_cloud
+          correlation_array(:,iiLH_rt,iiLH_Nr)    = corr_sNr_NL_cloud
 
-        correlation_matrix(iiLH_Nc,iiLH_rt)    = corr_sNc_NL_cloud
-        correlation_matrix(iiLH_rt,iiLH_Nc)    = corr_sNc_NL_cloud
+          correlation_array(:,iiLH_Nc,iiLH_rt)    = corr_sNc_NL_cloud
+          correlation_array(:,iiLH_rt,iiLH_Nc)    = corr_sNc_NL_cloud
+        else where
+!         correlation_array(iiLH_Nc,iiLH_Nc)       = Ncp2_on_Ncm2_below
+          ! This is a kluge to prevent a singular matrix in generate_lh_sample
+          correlation_array(:,iiLH_Nc,iiLH_Nc)       = Ncp2_on_Ncm2_cloud
+          correlation_array(:,iiLH_Nr,iiLH_Nr)       = Nrp2_on_Nrm2_below
+          correlation_array(:,iiLH_rrain,iiLH_rrain) = rrp2_on_rrainm2_below
+
+          correlation_array(:,iiLH_rrain,iiLH_Nr)    = corr_rrNr_LL_below
+          correlation_array(:,iiLH_Nr,iiLH_rrain)    = corr_rrNr_LL_below
+
+          correlation_array(:,iiLH_rrain,iiLH_rt)    = corr_srr_NL_below
+          correlation_array(:,iiLH_rt,iiLH_rrain)    = corr_srr_NL_below
+
+          correlation_array(:,iiLH_Nr,iiLH_rt)    = corr_sNr_NL_below
+          correlation_array(:,iiLH_rt,iiLH_Nr)    = corr_sNr_NL_below
+
+          correlation_array(:,iiLH_Nc,iiLH_rt)    = corr_sNc_NL_below
+          correlation_array(:,iiLH_rt,iiLH_Nc)    = corr_sNc_NL_below
+
+        end where
 
         call latin_hypercube_driver &
              ( real( dt ), iter, d_variables, LH_microphys_calls, &
                LH_sequence_length, gr%nnzp, &
                cf, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm_zt, wtmp, dzq, rcm, rtm-rcm, &
-               hydromet, correlation_matrix, hydromet_mc, hydromet_vel, rcm_mc, &
+               hydromet, correlation_array, hydromet_mc, hydromet_vel, rcm_mc, &
                rvm_mc, thlm_mc, KK_microphys )
 
         if ( l_stats_samp ) then

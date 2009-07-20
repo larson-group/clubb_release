@@ -24,7 +24,7 @@ module latin_hypercube_mod
              ( dt, iter, d_variables, n_micro_calls, sequence_length, nnzp, &
                cf, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm, w_std_dev, dzq, rcm, rvm, &
-               hydromet, hydromet_corr, hydromet_mc_est, hydromet_vel_est, rcm_mc_est, &
+               hydromet, correlation_array, hydromet_mc_est, hydromet_vel_est, rcm_mc_est, &
                rvm_mc_est, thlm_mc_est, microphys_sub )
 
 ! Description:
@@ -133,8 +133,8 @@ module latin_hypercube_mod
     real, dimension(nnzp,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
-    real, dimension(hydromet_dim,hydromet_dim), intent(in) :: &
-      hydromet_corr ! Correlation for hydrometeor species [-]
+    real, dimension(nnzp,d_variables,d_variables), intent(in) :: &
+      correlation_array ! Correlation for hydrometeor species [-]
 
     ! Input/Output Variables
     real, dimension(nnzp,hydromet_dim), intent(inout) :: &
@@ -169,7 +169,7 @@ module latin_hypercube_mod
       lh_rcm,    & ! Average value of the latin hypercube est. of rc                [kg/kg]
       lh_rvm,    & ! Average value of the latin hypercube est. of rv                [kg/kg]
       lh_wm,     & ! Average value of the latin hypercube est. of vertical velocity [m/s]
-      lh_wp2_zt, & ! Average value of the variance of the LH est. of vertical velocity [m^2/s^2]
+      lh_wp2_zt, & ! Average value of the variance of the LH est. of vert. vel.     [m^2/s^2]
       lh_cf        ! Average value of the latin hypercube est. of cloud fraction    [%]
 
     ! A true/false flag that determines whether the PDF allows us to construct a sample
@@ -236,7 +236,7 @@ module latin_hypercube_mod
       call generate_lh_sample &
            ( n_micro_calls, nt_repeat, d_variables, hydromet_dim, &  ! intent(in)
              p_matrix, cf(k), pdf_params, k, &                       ! intent(in)
-             hydromet(k,:), hydromet_corr(:,:), &                    ! intent(in)
+             hydromet(k,:), correlation_array(k,:,:), &                  ! intent(in)
              rt(k,:), thl(k,:), &                                    ! intent(out)
              X_u_all_levs(k,:,:), X_nl_all_levs(k,:,:), l_sample_flag(k) ) ! intent(out)
 
