@@ -138,7 +138,7 @@ module stat_file_utils
 
       if ( l_error ) return
 
-    end if
+    end if ! l_grads_file
 
     ! Determine variable size
     file_nz = size( faverage%z ) 
