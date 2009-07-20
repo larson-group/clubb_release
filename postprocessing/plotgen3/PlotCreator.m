@@ -46,7 +46,7 @@ for i=1:numLines
 	varName = varargin{2 + ((i - 1) * 7)};
 	varExpression = varargin{3 + ((i - 1) * 7)};
 	lineName = varargin{4 + ((i - 1) * 7)};
-	lineWidth = str2num(varargin{5 + ((i - 1) * 7)});
+	lineWidth = varargin{5 + ((i - 1) * 7)};
 	lineType = varargin{6 + ((i - 1) * 7)};
 	lineColor = varargin{7 + ((i - 1) * 7)};
 
