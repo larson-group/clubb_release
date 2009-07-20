@@ -313,18 +313,31 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
                 run_case
 	elif [ $ZT_GRID_TEST == true ]; then
                 cat $PARAMS_IN > 'clubb.in'
-                cat $MODEL_IN | sed -e 's/nzmax\s*=\s*.*/nzmax = '$test_grid_nz'/g' \
-                                    -e 's/grid_type\s*=\s*.*/grid_type = 2/g' \
-                                    -e 's/zm_grid_fname\s*=\s*.*/zm_grid_fname = '\'\''/g' \
-                                    -e "s/zt_grid_fname\s*=\s*.*/zt_grid_fname = '$test_grid_name'/g" >> 'clubb.in'
+                cat $MODEL_IN | sed -e 's/^nzmax\s*=\s*.*//g' \
+                                    -e 's/^grid_type\s*=\s*.*//g' \
+                                    -e 's/^zm_grid_fname\s*=\s*.*//g' \
+                                    -e "s/^zt_grid_fname\s*=\s*.*//g" \
+				    -e 's/^\&model_setting/\&model_setting\n \
+				    nzmax = '$test_grid_nz'\n \
+				    zt_grid_fname ='\'$test_grid_name\''\n \
+				    grid_type = 2\n/g' >> 'clubb.in'
+
+	        #echo "nzmax = $test_grid_nz" >> 'clubb.in'
+		#echo "zt_grid_fname ='$test_grid_name'" >> 'clubb.in'
+		#echo "grid_type = 2" >> 'clubb.in'
+
                 cat $STATS_IN >> 'clubb.in'
                 run_case
 	elif [ $ZM_GRID_TEST == true ]; then
                 cat $PARAMS_IN > 'clubb.in'
-                cat $MODEL_IN | sed -e 's/nzmax\s*=\s*.*/nzmax = '$test_grid_nz'/g' \
-                                    -e 's/grid_type\s*=\s*.*/grid_type = 3/g' \
-                                    -e 's/zt_grid_fname\s*=\s*.*/zt_grid_fname = '\'\''/g' \
-                                    -e "s/zm_grid_fname\s*=\s*.*/zm_grid_fname = '$test_grid_name'/g" >> 'clubb.in'
+                cat $MODEL_IN | sed -e 's/nzmax\s*=\s*.*//g' \
+                                    -e 's/grid_type\s*=\s*.*//g' \
+                                    -e 's/zt_grid_fname\s*=\s*.*//g' \
+                                    -e 's/zm_grid_fname\s*=\s*.*//g'
+				    -e 's/^\&model_setting/\&model_setting\n \
+				    nzmax = '$test_grid_nz'\n \
+				    zm_grid_fname ='\'$test_grid_name\''\n \
+				    grid_type = 3\n/g' >> 'clubb.in'
                 cat $STATS_IN >> 'clubb.in'
                 run_case
         else
