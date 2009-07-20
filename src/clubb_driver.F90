@@ -629,9 +629,23 @@ module clubb_driver
 
     else  ! restart
 
-      ! Joshua Fasching March 2008
-      time_current = time_restart + dtmain
-      ! time_current = time_restart
+
+      ! Currently initialize_clubb does more than just read in the initial sounding.
+      ! It also includes other important initializations such as um_ref and vm_ref.
+      ! There for it should be executed prior to a restart. The restart should overwrite
+      ! the initial sounding anyway.
+      call initialize_clubb &
+           ( iunit, trim( forcings_file_path ), psfc, zm_init, & ! Intent(in)
+             thlm, rtm, um, vm, ug, vg, wp2, wp2_zt, up2, vp2, rcm,  & ! Intent(inout)
+             wm_zt, wm_zm, em, exner, &           ! Intent(inout)
+             tau_zt, tau_zm, thvm, p_in_Pa, &     ! Intent(inout)
+             rho, rho_zm, Lscale, rtm_ref, thlm_ref, & ! Intent(inout) 
+             Kh_zt, Kh_zm, um_ref, vm_ref, &      ! Intent(inout)
+             hydromet, Ncnm, &                    ! Intent(inout)
+             sclrm, edsclrm )                     ! Intent(out)
+
+
+      time_current = time_restart
 
       ! Determining what iteration to restart at.
       ! The value is increased by 1 to sychronize with restart data.
@@ -672,9 +686,9 @@ module clubb_driver
     fdir = "../output/" ! Output directory
 
     ! Initialize statistics output
-    call stats_init( iunit, fname_prefix, fdir, l_stats, stats_fmt, stats_tsamp, &! Intent(in)
-                     stats_tout, runfile, gr%nnzp, gr%zt, gr%zm, &              ! Intent(in)
-                     day, month, year, rlat, rlon, time_current, dtmain )       ! Intent(in)
+    call stats_init( iunit, fname_prefix, fdir, l_stats, stats_fmt, stats_tsamp, & ! Intent(in)
+                     stats_tout, runfile, gr%nnzp, gr%zt, gr%zm, &                 ! Intent(in)
+                     day, month, year, rlat, rlon, time_current, dtmain )          ! Intent(in)
 
 
     ! Time integration
@@ -688,7 +702,6 @@ module clubb_driver
 
     do i = iinit, ifinal, 1
 
-
       ! When this time step is over, the time will be time + dtmain
 
       ! We use elapsed time for stats_begin_step
@@ -697,7 +710,7 @@ module clubb_driver
       else
         ! Different elapsed time for restart
         ! Joshua Fasching March 2008
-        call stats_begin_timestep( time_current-time_restart, dtmain )          ! Intent(in)
+        call stats_begin_timestep( time_current-time_restart+dtmain, dtmain )          ! Intent(in)
       end if
 
 
@@ -1635,35 +1648,14 @@ module clubb_driver
 
     use stats_precision, only: time_precision ! Variable(s)
 
-    use time_dependent_input, only: l_t_dependent, & ! Variable(s)
-                                    initialize_t_dependent_input ! Procedure(s)
-
     use model_flags, only: &
-      l_uv_nudge, & ! Variable(s)
-      l_soil_veg
+      l_soil_veg ! Variable(s)
 
     use parameters_microphys, only : &
       micro_scheme, & ! Variable
       l_cloud_sed
 
-#ifdef UNRELEASED_CODE
-    use arm_0003, only: arm_0003_init ! Procedure(s)
-
-    use arm_3year, only: arm_3year_init ! Procedure(s)
-
-    use lba, only: lba_init ! Procedure(s)
-#endif
-
-    use mpace_a, only: mpace_a_init ! Procedure(s)
-
-    use input_reader, only: read_one_dim_file, fill_blanks_one_dim_vars, & ! Procedures
-      read_x_profile, &
-      deallocate_one_dim_vars, & 
-      one_dim_read_var ! Type
-
-
     implicit none
-    integer, parameter :: nCol = 7
 
     ! Input Variables
 
@@ -1697,7 +1689,6 @@ module clubb_driver
     ! Local variables
     integer :: timestep
 
-    type(one_dim_read_var), dimension(nCol) :: retVars
 
     ! --- Begin Code ---
 
@@ -1818,45 +1809,8 @@ module clubb_driver
       stop
     end if
 
-    if ( l_uv_nudge ) then
-
-      call read_one_dim_file( iunit, nCol, &
-          '../input/case_setups/'//trim(runtype)//'_sounding.in', retVars )
-
-      call fill_blanks_one_dim_vars( nCol, retVars )
-
-      um_ref = read_x_profile(nCol, gr%nnzp, 'u[m\s]', retVars)
-      vm_ref = read_x_profile(nCol, gr%nnzp,'v[m\s]', retVars)
-
-      call deallocate_one_dim_vars( nCol, retVars )
-    end if
-
-
     ! Read data from stats files
     call stat_fields_reader( timestep )  ! Intent(in)
-
-    ! Initialize forcing files for specific cases
-    select case( trim( runtype ) )
-#ifdef UNRELEASED_CODE
-    case( "arm_3year" )
-      call arm_3year_init( iunit, forcings_file_path )
-
-    case( "arm_0003" )
-      call arm_0003_init( iunit, forcings_file_path )
-
-    case( "lba" )
-      call lba_init( iunit, forcings_file_path )
-#endif
-
-    case( "mpace_a" )
-      call mpace_a_init( iunit, forcings_file_path )
-
-    end select
-
-    if( l_t_dependent ) then
-      call initialize_t_dependent_input &
-           ( iunit, runtype, gr%nnzp, gr%zt )
-    end if
 
     wm_zm = zt2zm( wm_zt )
 

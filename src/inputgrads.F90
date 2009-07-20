@@ -377,7 +377,7 @@ module inputfile_class
     ! _model.in to restart
     ! Joshua Fasching March 2008
 
-    nrec = (nint(itime/(f%dtwrite/60.))-1)*f%nvar*(f%iz-f%ia+1)  & 
+    nrec = (max(nint(itime/(f%dtwrite/60.)),1)-1)*f%nvar*(f%iz-f%ia+1)  & 
          + (ivar-1)*(f%iz-f%ia+1)
     nrec = nrec + 1
 
