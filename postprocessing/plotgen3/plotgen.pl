@@ -43,6 +43,9 @@ my $outputIndex = "";
 # Do not keep permissions on file copies
 $File::Copy::Recursive::KeepMode = 0;
 
+my $sessionType = $ENV{'DISPLAY'}; 
+$SIG{INT} = "cleanup";
+
 # Call the entry point to Plotgen
 main();
 
@@ -51,6 +54,8 @@ main();
 ###############################################################################
 sub main()
 {
+	$ENV{'DISPLAY'} = '';
+
 	readArgs();
 
 	# Ensure that Matlab can write to the temp output folder
@@ -172,10 +177,10 @@ sub callMatlab()
 	for(my $count = 0; $count < $CASE::CASE{'numPlots'}; $count++)
 	{
 		my $plotTitle = $CASE::CASE{'plots'}[$count]{'plotTitle'};
-		my $units = $CASE::CASE{'plots'}[$count]{'units'};
+		my $units = $CASE::CASE{'plots'}[$count]{'axisLabel'};
 		my $type = $CASE::CASE{'plots'}[$count]{'type'};
 
-		my $matlabArgs = "$caseName, $plotTitle, $count, $type, $startTime, $endTime, $startHeight, $endHeight, $units, $randInt";
+		my $matlabArgs = "\'$caseName\', \'$plotTitle\', $count, \'$type\', $startTime, $endTime, $startHeight, $endHeight, \'$units\', $randInt";
 		my $tempMatlabArgs = $matlabArgs;
 
 		for(my $lineNum = 0; $lineNum < $CASE::CASE{'plots'}[$count]{'numLines'}; $lineNum++)
@@ -191,12 +196,12 @@ sub callMatlab()
 					{
 						my $name = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'name'};
 						my $expression = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'expression'};
-						my $title = "What is this?";
+						my $title = $type;
 						my $lineWidth = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'lineWidth'};
 						my $lineStyle = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'lineType'};
 						my $lineColor = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'lineColor'};
 	
-						$matlabArgs = "$matlabArgs, $file, $name, $expression, $title, $lineWidth, $lineStyle, $lineColor";
+						$matlabArgs = "$matlabArgs, \'$file\', \'$name\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
 					}
 				}
 			}
@@ -210,25 +215,11 @@ sub callMatlab()
 			exit(1);
 		}
 
-		print("\nMatlab args: $matlabArgs \n\n");
+		#print("\nMatlab args: $matlabArgs \n\n");
+		
+		my $args = "echo \"quit\" | sudo -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop -r PlotCreator\"($matlabArgs)\"";
 
-		# Call Matlab
-		my $matlab = Sudo->new(
-			{
-       				sudo         => '/usr/bin/sudo',
-				sudo_args    => '',
-                		username     => 'matlabuser', 
-	                	password     => 'lab223matricks',
-        	        	program      => '/usr/local/bin/matlab',
-                		program_args => '-nodisplay -nodesktop -r PlotCreator\"($matlabArgs)\"'
-	               	});
-
-		my $result = $matlab->sudo_run();
-		if (exists($result->{error}))
-		{
-			print(STDERR $result, "\n");
-			exit(1);
-		}
+		system($args);
 	}
 }
 
@@ -237,6 +228,8 @@ sub cleanup()
 	# Copy temp. output folder to actual output location and remove the temp. folder
 	dircopy($outputTemp, $output);
 	rmtree($outputTemp);
+
+	$ENV{'DISPLAY'} = $sessionType;
 }
 
 ###############################################################################
@@ -245,11 +238,13 @@ sub cleanup()
 sub convertEps()
 {
 	mkdir "$outputTemp/jpg";
-	my @epsFiles = <$outputTemp/eps/*eps>;
+	my @epsFiles = <$outputTemp/*eps>;
 	foreach my $eps (@epsFiles)
 	{
 		my $filename = basename($eps);
-		system("convert -density 90 $eps $output/jpg/$filename.jpg");
+		system("convert -density 90 $eps $outputTemp/jpg/$filename.jpg");
+
+		unlink($eps);
 	}
 }
 
