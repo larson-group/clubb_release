@@ -39,8 +39,8 @@ module stat_file_utils
       close_netcdf_read
 #endif
 
-    use extrapolation, only: &
-      lin_ext_zt_bottom
+!   use extrapolation, only: &
+!     lin_ext_zt_bottom
 
     use interpolation, only: &
       lin_int
