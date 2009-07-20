@@ -415,7 +415,7 @@ module inputfields
            ( input_Ncm, stat_file_zt, "Ncm", gr%nnzp, timestep, &
              gr%zt, tmp1(1:gr%nnzp), l_read_error )
       if ( input_Ncm ) then
-        hydromet(iiNcm,1:gr%nnzp) = tmp1(1:gr%nnzp)
+        hydromet(1:gr%nnzp,iiNcm) = tmp1(1:gr%nnzp)
       end if
 
       l_fatal_error = l_fatal_error .or. l_read_error
@@ -430,7 +430,7 @@ module inputfields
            ( input_Nim, stat_file_zt, "Nim", gr%nnzp, timestep, &
              gr%zt, tmp1(1:gr%nnzp), l_read_error )
       if ( input_Nim ) then
-        hydromet(iiNcm,1:gr%nnzp) = tmp1(1:gr%nnzp)
+        hydromet(1:gr%nnzp, iiNcm) = tmp1(1:gr%nnzp)
       end if
 
       l_fatal_error = l_fatal_error .or. l_read_error
@@ -445,7 +445,7 @@ module inputfields
            ( input_Nrm, stat_file_zt, "Nrm", gr%nnzp, timestep, &
              gr%zt, tmp1(1:gr%nnzp), l_read_error )
       if ( input_Nrm ) then
-        hydromet(iiNrm,1:gr%nnzp) = tmp1(1:gr%nnzp)
+        hydromet(1:gr%nnzp, iiNrm) = tmp1(1:gr%nnzp)
       end if
 
       l_fatal_error = l_fatal_error .or. l_read_error
