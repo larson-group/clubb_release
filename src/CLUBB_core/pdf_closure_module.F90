@@ -227,7 +227,7 @@ module pdf_closure_module
 
     ! Thermodynamic quantity
 
-    real :: BD
+    real :: rc_coef
 
     ! variables for a generalization of Chris Golaz' closure
     ! varies width of plumes in theta_l, rt
@@ -246,7 +246,7 @@ module pdf_closure_module
     end if
 
     ! Compute thermodynamic quantity
-    BD = Lv / (exner*Cp) - ep2 * T0
+    rc_coef = Lv / (exner*Cp) - ep2 * T0
 
     ! If there is no velocity, then use single delta fnc. as pdf
     ! Otherwise width parameters (e.g. sw1, sw2, etc.) are non-zero.
@@ -634,18 +634,18 @@ module pdf_closure_module
     wp2rcp = a * ((w1-wm)**2 + sw1)*rc1 + (1.-a) * ((w2-wm)**2 + sw2)*rc2 & 
            - wp2 * (a*rc1+(1.-a)*rc2)
 
-    wp2thvp = wp2thlp + ep1*T0*wp2rtp + BD*wp2rcp
+    wp2thvp = wp2thlp + ep1*T0*wp2rtp + rc_coef*wp2rcp
 
     wprcp = a * (w1-wm)*rc1 + (1.-a) * (w2-wm)*rc2
 
-    wpthvp = wpthlp + ep1*T0*wprtp + BD*wprcp
+    wpthvp = wpthlp + ep1*T0*wprtp + rc_coef*wprcp
 
     ! Account for subplume correlation in qt-thl
     thlprcp  = a * ( (thl1-thlm)*rc1 - (cthl1*sthl1)*cloud_frac1 ) & 
              + (1.-a) * ( (thl2-thlm)*rc2 - (cthl2*sthl2)*cloud_frac2 ) & 
              + a*rrtthl*crt1*sqrt( srt1*sthl1 )*cloud_frac1 & 
              + (1.-a)*rrtthl*crt2*sqrt( srt2*sthl2 )*cloud_frac2
-    thlpthvp = thlp2 + ep1*T0*rtpthlp + BD*thlprcp
+    thlpthvp = thlp2 + ep1*T0*rtpthlp + rc_coef*thlprcp
 
     ! Account for subplume correlation in qt-thl
     rtprcp = a * ( (rt1-rtm)*rc1 + (crt1*srt1)*cloud_frac1 ) & 
@@ -653,7 +653,7 @@ module pdf_closure_module
            - a*rrtthl*cthl1*sqrt( srt1*sthl1 )*cloud_frac1 & 
            - (1.-a)*rrtthl*cthl2*sqrt( srt2*sthl2 )*cloud_frac2
 
-    rtpthvp  = rtpthlp + ep1*T0*rtp2 + BD*rtprcp
+    rtpthvp  = rtpthlp + ep1*T0*rtp2 + rc_coef*rtprcp
 
     ! Account for subplume correlation between scalar, theta_v.
     ! See Eqs. A13, A8 from Larson et al. (2002) ``Small-scale...''
@@ -667,7 +667,7 @@ module pdf_closure_module
         - a * rsclrthl(i) * cthl1  * sqrt( ssclr1(i) * sthl1 ) * cloud_frac1 & 
         - (1.-a) * rsclrthl(i) * cthl2  * sqrt( ssclr2(i) * sthl2 ) * cloud_frac2
 
-        sclrpthvp(i) = sclrpthlp(i) + ep1*T0*sclrprtp(i) + BD*sclrprcp(i)
+        sclrpthvp(i) = sclrpthlp(i) + ep1*T0*sclrprtp(i) + rc_coef*sclrprcp(i)
       end do ! i=1, sclr_dim
     end if ! l_scalar_calc
 
