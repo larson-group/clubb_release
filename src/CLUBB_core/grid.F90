@@ -389,7 +389,7 @@ module grid_class
 
         do while( momentum_heights(i) < zm_init .and. i < gr%nnzp )
 
-          i = i + 1\
+          i = i + 1
 
         end do
 
