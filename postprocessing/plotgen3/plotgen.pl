@@ -199,18 +199,18 @@ sub callMatlab()
 
 		for(my $lineNum = 0; $lineNum < $CASE::CASE{'plots'}[$count]{'numLines'}; $lineNum++)
 		{
-			foreach(@inputDirs)
+			foreach (@inputDirs)
 			{
 				my $file = "$_/$CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'filename'}";
 				my $type = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'type'};
+				my $name = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'name'};
+				my $expression = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'expression'};
 
 				if($type eq "auto")
 				{
 					if(-e $file)
 					{
-						my $name = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'name'};
-						my $expression = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'expression'};
-						my $title = $file;
+						my $title = basename($_);
 						my $lineWidth = $lineWidths[$lineWidthCounter];
 						my $lineStyle = $lineStyles[$lineStyleCounter];
 						my $lineColor = $lineColors[$lineColorCounter];
@@ -282,13 +282,10 @@ sub callMatlab()
 						}
 					}
 				}
-				
-				if(($type eq "les" && $plotLes == 1) || ($type eq "dec17" && $plotDec) || ($type eq "bestEver" && $plotBest) || ($type eq "clubb"))
+				elsif(($type eq "les" && $plotLes == 1) || ($type eq "dec17" && $plotDec) || ($type eq "bestEver" && $plotBest) || ($type eq "clubb"))
 				{
 					if(-e $file)
 					{
-						my $name = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'name'};
-						my $expression = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'expression'};
 						my $title = $type;
 						my $lineWidth = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'lineWidth'};
 						my $lineStyle = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'lineType'};

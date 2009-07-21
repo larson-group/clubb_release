@@ -4,9 +4,9 @@
 (
     'name' => 'cloud_feedback_s6',
     'headerText' => 'Cloud Feedback S6',
-    'startTime' => 41760,   # [minutes]
+    'startTime' => 41760,  # [minutes]
     'endTime' => 43200,    # [minutes]
-    'startHeight' => 0.0, # [m]
+    'startHeight' => 0.0,  # [m]
     'endHeight' => 6000.0, # [m]
     'numPlots' => 30,
     'plots' =>
@@ -18,6 +18,14 @@
        {'plotTitle' => 'Total Water Mixing Ration, r_t', 'axisLabel' => 'rtm [kg/kg]', 'type' => 'profile', 'numLines' => 1, 'lines' =>
        [
           {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm', 'expression' => 'rtm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp [K m/s]', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wpthlp', 'expression' => 'wpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp [(kg/kg) m/s]', 'type' => 'profile', 'numLines' => 1, 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wprtp', 'expression' => 'wprtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cf [%]', 'type' => 'profile', 'numLines' => 1, 'lines' =>
        [
@@ -34,14 +42,6 @@
        {'plotTitle' => 'Third-order Moment of w', 'axisLabel' => 'wp3 [m^3/s^3]', 'type' => 'profile', 'numLines' => 1, 'lines' =>
        [
           {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3', 'expression' => 'wp3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp [K m/s]', 'type' => 'profile', 'numLines' => 1, 'lines' =>
-       [
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wpthlp', 'expression' => 'wpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp [(kg/kg) m/s]', 'type' => 'profile', 'numLines' => 1, 'lines' =>
-       [
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wprtp', 'expression' => 'wprtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of \theta_l', 'axisLabel' => 'thlp2 [K^2]', 'type' => 'profile', 'numLines' => 1, 'lines' =>
        [
@@ -134,11 +134,12 @@
     ],
     'nightlyOutput' =>
     {
-        'subText' => '** Additional nightly output 1 **',
+        'subText' => '',
         'subHtml' => ''
     },
     'additionalOutput' =>
     {
-        'subText' => 'Additional sub text 1'
+        'subText' => '',
+        'subHtml' => ''
     }
 )
