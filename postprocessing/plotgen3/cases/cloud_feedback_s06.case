@@ -117,19 +117,19 @@
        ]},
        {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'numLines' => 1, 'lines' =>
        [
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'lwp', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_sfc.ctl', 'type' => 'auto', 'name' => 'lwp', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Vertically Averaged wp2', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'timeseries', 'numLines' => 1, 'lines' =>
        [
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp2', 'expression' => 'wp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_sfc.ctl', 'type' => 'auto', 'name' => 'wp2', 'expression' => 'wp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Ice Water Path', 'axisLabel' => 'iwp [kg/m^2]', 'type' => 'timeseries', 'numLines' => 1, 'lines' =>
        [
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'iwp', 'expression' => 'iwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_sfc.ctl', 'type' => 'auto', 'name' => 'iwp', 'expression' => 'iwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Snow Water Path', 'axisLabel' => 'swp [kg/m^2]', 'type' => 'timeseries', 'numLines' => 1, 'lines' =>
        [
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'swp', 'expression' => 'swp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_sfc.ctl', 'type' => 'auto', 'name' => 'swp', 'expression' => 'swp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]}
     ],
     'nightlyOutput' =>

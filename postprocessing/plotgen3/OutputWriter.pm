@@ -137,8 +137,30 @@ sub placeImage()
 	my($img) = shift;
 
 	print FILE <<"EOF";
+		<img width="328" height="312" align="BOTTOM" border="0" src="$img" alt="$img" />
+EOF
+	close(FILE);
+}
+
+sub printDivCenter()
+{
+	shift(@_);
+	my $fh = shift(@_);
+	open(FILE, ">> $fh");
+
+	print FILE <<"EOF";
 	<div align="CENTER">
-		<img src="$img" alt="$img" />
+EOF
+	close(FILE);
+}
+
+sub printCloseDivCenter()
+{
+	shift(@_);
+	my $fh = shift(@_);
+	open(FILE, ">> $fh");
+
+	print FILE <<"EOF";
 	</div>
 EOF
 	close(FILE);

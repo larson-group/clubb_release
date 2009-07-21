@@ -160,11 +160,15 @@ sub placeImages()
 {
 	my $caseName = shift(@_);
 
+	OutputWriter->printDivCenter($outputIndex);
+
 	my @imgFiles = <$outputTemp/jpg/$caseName*.jpg>;
 	for(my $x = 0; $x < @imgFiles; $x++)
 	{
-		OutputWriter->placeImage($outputIndex, "$outputTemp/jpg/$caseName" . "_" . "$x.jpg");
+		OutputWriter->placeImage($outputIndex, "jpg/$caseName" . "_" . "$x.eps.jpg");
 	}
+
+	OutputWriter->printCloseDivCenter($outputIndex);
 }
 
 ###############################################################################
@@ -328,14 +332,14 @@ sub cleanup()
 ###############################################################################
 sub convertEps()
 {
-	mkdir "$outputTemp/jpg";
+	mkdir "$outputTemp/jpg" unless -d "$outputTemp/jpg";
 	my @epsFiles = <$outputTemp/*eps>;
 	foreach my $eps (@epsFiles)
 	{
 		my $filename = basename($eps);
 		system("convert -density 90 $eps $outputTemp/jpg/$filename.jpg");
 
-		#unlink($eps);
+		unlink($eps);
 	}
 }
 
