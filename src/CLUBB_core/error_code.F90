@@ -15,185 +15,197 @@ module error_code
 !       most servere to the output.
 
 !       This code also handles subroutines related to debug_level. See
-!       the 'set_clubb_debug_level' description for more detail.        
+!       the 'set_clubb_debug_level' description for more detail.
 !-----------------------------------------------------------------------
 
-implicit none
+  implicit none
 
-private ! Default Scope
+  private ! Default Scope
 
-public :: & 
-clubb_no_error,  & 
-clubb_var_less_than_zero, & 
-clubb_var_equals_NaN,  & 
-clubb_singular_matrix, & 
-clubb_bad_lapack_arg, & 
-clubb_rtm_level_not_found, & 
-clubb_var_out_of_bounds, & 
-reportError,  & 
-fatal_error, & 
-lapack_error,     & 
-clubb_at_least_debug_level,  & 
-set_clubb_debug_level, & 
-clubb_debug
+  public :: & 
+    clubb_no_error,  & 
+    clubb_var_less_than_zero, & 
+    clubb_var_equals_NaN,  & 
+    clubb_singular_matrix, & 
+    clubb_bad_lapack_arg, & 
+    clubb_rtm_level_not_found, & 
+    clubb_var_out_of_bounds, & 
+    reportError,  & 
+    fatal_error, & 
+    lapack_error,     & 
+    clubb_at_least_debug_level,  & 
+    set_clubb_debug_level, & 
+    clubb_debug
 
-private :: clubb_debug_level
+  private :: clubb_debug_level
 
 ! Model-Wide Debug Level
-integer :: clubb_debug_level   =  0
+  integer :: clubb_debug_level = 0
+
+!$omp threadprivate(clubb_debug_level)
 
 ! Error Code Values
-integer, parameter :: & 
-clubb_no_error                 =  0,  & 
-clubb_var_less_than_zero       =  1, & 
-clubb_var_equals_NaN           =  2, & 
-clubb_singular_matrix          =  3, & 
-clubb_bad_lapack_arg           =  4, & 
-clubb_rtm_level_not_found      =  5, & 
-clubb_var_out_of_bounds        =  6 
-     
-contains
+  integer, parameter :: & 
+    clubb_no_error                 =  0,  & 
+    clubb_var_less_than_zero       =  1, & 
+    clubb_var_equals_NaN           =  2, & 
+    clubb_singular_matrix          =  3, & 
+    clubb_bad_lapack_arg           =  4, & 
+    clubb_rtm_level_not_found      =  5, & 
+    clubb_var_out_of_bounds        =  6
+
+  contains
 
 !-----------------------------------------------
-subroutine reportError( err_code )
+  subroutine reportError( err_code )
 !
 !       Description: Reports meaning of error code to console.
 !
-!-----------------------------------------------        
+!-----------------------------------------------
 
-use constants, only: & 
-    fstderr ! Variable(s)
+    use constants, only: & 
+        fstderr ! Variable(s)
 
-implicit none
+    implicit none
 
 ! Input Variable
-integer, intent(in) :: err_code ! Error Code being examined
+    integer, intent(in) :: err_code ! Error Code being examined
 
-select case ( err_code )
+    select case ( err_code )
 
-case ( clubb_no_error )
-        write(fstderr,*) "No errors reported."
+    case ( clubb_no_error )
+      write(fstderr,*) "No errors reported."
 
-case ( clubb_var_less_than_zero )
-        write(fstderr,*) "Variable in CLUBB is less than zero."
+    case ( clubb_var_less_than_zero )
+      write(fstderr,*) "Variable in CLUBB is less than zero."
 
-case ( clubb_singular_matrix )
-        write(fstderr,*) "Singular Matrix in CLUBB."
+    case ( clubb_singular_matrix )
+      write(fstderr,*) "Singular Matrix in CLUBB."
 
-case ( clubb_var_equals_NaN )
-        write(fstderr,*) "Variable in CLUBB is NaN."
+    case ( clubb_var_equals_NaN )
+      write(fstderr,*) "Variable in CLUBB is NaN."
 
-case ( clubb_bad_lapack_arg )
-        write(fstderr,*)  & 
-            "Argument used in LAPACK procedure is invalid."
-        
-case ( clubb_rtm_level_not_found )
-        write(fstderr,*) "rtm level not found"
-        
-case ( clubb_var_out_of_bounds )
-        write(fstderr,*) "Input variable is out of bounds."
+    case ( clubb_bad_lapack_arg )
+      write(fstderr,*)  & 
+          "Argument used in LAPACK procedure is invalid."
 
-case default
-        write(fstderr,*) "Unknown error: ", err_code
+    case ( clubb_rtm_level_not_found )
+      write(fstderr,*) "rtm level not found"
 
-end select
+    case ( clubb_var_out_of_bounds )
+      write(fstderr,*) "Input variable is out of bounds."
 
-end subroutine reportError
+    case default
+      write(fstderr,*) "Unknown error: ", err_code
+
+    end select
+
+  end subroutine reportError
 !---------------------------------------------------------------------
-logical function lapack_error( err_code )
+  logical function lapack_error( err_code )
 !
-!       Description: Checks to see if the err_code is equal to one
-!       caused by an error encountered using lapack
-!---------------------------------------------------------------------        
-implicit none
+! Description: 
+!   Checks to see if the err_code is equal to one
+!   caused by an error encountered using LAPACK.
+! Reference:
+!   None
+!---------------------------------------------------------------------
+    implicit none
 
-! Input variable
-integer,intent(in) :: err_code ! Error Code being examined
+    ! Input variable
+    integer,intent(in) :: err_code ! Error Code being examined
 
-lapack_error = (err_code == clubb_singular_matrix .or. & 
-    err_code == clubb_bad_lapack_arg ) 
+    lapack_error = (err_code == clubb_singular_matrix .or. & 
+        err_code == clubb_bad_lapack_arg )
+    return
+  end function lapack_error
 
-end function lapack_error
-
-!---------------------------------------------------------------------       
-logical function fatal_error( err_code )
+!---------------------------------------------------------------------
+  logical function fatal_error( err_code )
 !
-!       Description: Checks to see if the err_code is one that usually
-!       causes an exit in other parts of CLUBB.
-!---------------------------------------------------------------------        
-implicit none
+! Description: Checks to see if the err_code is one that usually
+!   causes an exit in other parts of CLUBB.
+! References:
+!   None
+!---------------------------------------------------------------------
+    implicit none
 
-! Input Variable
-integer, intent(in) :: err_code ! Error Code being examined
+    ! Input Variable
+    integer, intent(in) :: err_code ! Error Code being examined
 
-fatal_error = ( err_code == clubb_singular_matrix     .or. & 
-              err_code == clubb_bad_lapack_arg      .or. & 
-              err_code == clubb_var_equals_NaN      .or. & 
-              err_code == clubb_rtm_level_not_found .or. & 
-              err_code == clubb_var_out_of_bounds )
+    fatal_error = ( err_code == clubb_singular_matrix     .or. & 
+                  err_code == clubb_bad_lapack_arg      .or. & 
+                  err_code == clubb_var_equals_NaN      .or. & 
+                  err_code == clubb_rtm_level_not_found .or. & 
+                  err_code == clubb_var_out_of_bounds )
 
-
-end function fatal_error
+    return
+  end function fatal_error
 
 !------------------------------------------------------------------	
-logical function clubb_at_least_debug_level( level )
-!       
-!       Description:
-!       Checks to see if clubb has been set to a specified debug level
+  logical function clubb_at_least_debug_level( level )
+!
+! Description:
+!   Checks to see if clubb has been set to a specified debug level
 !------------------------------------------------------------------
-implicit none
+    implicit none
 
-! Input variable
-integer, intent(in) :: level   ! The debug level being checked against the current setting
+    ! Input variable
+    integer, intent(in) :: level   ! The debug level being checked against the current setting
 
-clubb_at_least_debug_level = ( level <= clubb_debug_level )
+    clubb_at_least_debug_level = ( level <= clubb_debug_level )
 
-end function clubb_at_least_debug_level
+    return
+  end function clubb_at_least_debug_level
 
 !----------------------------------------------------------------------
-subroutine set_clubb_debug_level( level )
+  subroutine set_clubb_debug_level( level )
 !
-!       Description:
-!       Accessor for clubb_debug_level
+!  Description:
+!    Accessor for clubb_debug_level
 !
-!        0 => Print no debug messages to the screen
-!        1 => Print lightweight debug messages, e.g. print statements
-!        2 => Print debug messages that require extra testing,
-!                e.g. checks for NaNs and spurious negative values.
+!   0 => Print no debug messages to the screen
+!   1 => Print lightweight debug messages, e.g. print statements
+!   2 => Print debug messages that require extra testing,
+!        e.g. checks for NaNs and spurious negative values.
+!  References:
+!    None
+!----------------------------------------------------------------------
+    implicit none
+
+    ! Input variable
+    integer, intent(in) :: level ! The debug level being checked against the current setting
+    clubb_debug_level = level
+
+    return
+  end subroutine set_clubb_debug_level
 
 !----------------------------------------------------------------------
-implicit none
-! Input variable
-integer, intent(in) :: level ! The debug level being checked against the current setting 
-clubb_debug_level = level
-
-end subroutine set_clubb_debug_level
-
-!----------------------------------------------------------------------
-subroutine clubb_debug( level, str )
+  subroutine clubb_debug( level, str )
 !
 !       Description:
 !       Prints a message to file unit fstderr if the level is greater
-!       than or equal to the current debug level.        
+!       than or equal to the current debug level.
 !----------------------------------------------------------------------
-use constants, only: & 
-    fstderr ! Variable(s)
+    use constants, only: & 
+        fstderr ! Variable(s)
 
-implicit none
+    implicit none
 
-! Input Variable(s)  
+! Input Variable(s)
 
 ! The message being reported
-character(len=*), intent(in) :: str ! The message being reported
+    character(len=*), intent(in) :: str ! The message being reported
 
 ! The debug level being checked against the current setting
-integer, intent(in) :: level 
+    integer, intent(in) :: level
 
-if (level <= clubb_debug_level) then
-        write(*,*) str
-endif
+    if (level <= clubb_debug_level) then
+      write(*,*) str
+    endif
 
-end subroutine clubb_debug
+    return
+  end subroutine clubb_debug
 
 end module error_code
 !-----------------------------------------------------------------------
