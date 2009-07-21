@@ -15,7 +15,8 @@ module KK_microphys_module
 
   public :: KK_microphys
 
-  public :: corr_LN_to_cov_gaus, sigma_LN_to_sigma_gaus
+  public :: corr_LN_to_cov_gaus, sigma_LN_to_sigma_gaus, &
+    corr_gaus_LN_to_cov_gaus
 
   private :: mean_volume_radius, cond_evap_rrainm, cond_evap_Nrm, &
     autoconv_rrainm, autoconv_Nrm, accretion_rrainm
@@ -3412,6 +3413,34 @@ module KK_microphys_module
 
     return
   end function corr_LN_to_cov_gaus
+  !-----------------------------------------------------------------------------
+  pure function corr_gaus_LN_to_cov_gaus( corr_sy, sigma_s, sigma_y_gaus ) &
+    result( cov_sy_gaus )
+  ! Description:
+
+  ! References:
+
+  !-----------------------------------------------------------------------------
+
+    implicit none
+
+    ! External
+    intrinsic :: sqrt, exp, log
+
+    ! Input Variables
+    real, intent(in) :: &
+      corr_sy,      & ! Correlation of s and y    [-]
+      sigma_s, & ! Std dev of first term (usually Gaussian 's') [units vary]
+      sigma_y_gaus    ! Std dev second term 'y'   [units vary]
+
+    real :: cov_sy_gaus ! Covariance for a gaussian dist. [units vary]
+
+    ! ---- Begin Code ----
+
+    cov_sy_gaus = corr_sy * sigma_s * sqrt( exp( sigma_y_gaus**2 ) - 1.0 )
+
+    return
+  end function corr_gaus_LN_to_cov_gaus
 
   !-----------------------------------------------------------------------------
   pure function mu_LN_to_mu_gaus( mu, sigma ) &
