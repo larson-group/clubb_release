@@ -230,7 +230,10 @@ module extend_atmosphere_mod
         stop
       end if
 
+    else
+      k = j
     end if
+
 
     extend_atmos_bottom_level = j
     extend_atmos_top_level = k
