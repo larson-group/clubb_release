@@ -368,7 +368,7 @@ module generate_lh_sample_mod
       if ( iiLH_rrain > 0 .and. iiLH_Nr > 0 ) then 
         if ( rrainm > dble( rr_tol ) .and. Nrm > dble( Nr_tol ) ) then
 !         corr_srr = correlation_array(iiLH_rt,iiLH_rrain)
-!         corr_sNr = correlation_array(iiLH_rt,iiLH_rrain)
+!         corr_sNr = correlation_array(iiLH_rt,iiLH_Nr)
           corr_rrNr = correlation_array(iiLH_rrain,iiLH_Nr)
           std_dev_rr = real( rr1 ) * sqrt( correlation_array(iiLH_rrain,iiLH_rrain) )
           std_dev_Nr = real( Nr1 ) * sqrt( correlation_array(iiLH_Nr,iiLH_Nr) )
@@ -614,7 +614,7 @@ module generate_lh_sample_mod
 !            X_u_one_lev, rtp, thlp )
       call st_2_rtthl( n_micro_calls, d_variables, a, rt1, thl1, rt2, thl2, &
                        crt1, cthl1, crt2, cthl2, &
-                       cloud_frac1, cloud_frac2, mu1(1), mu2(1), &
+                       cloud_frac1, cloud_frac2, mu1(is_mellor), mu2(is_mellor), &
                        X_nl_one_lev(1:n_micro_calls,is_mellor), &
                        X_nl_one_lev(1:n_micro_calls,it_mellor), &
                        X_u_one_lev, rt, thl )
