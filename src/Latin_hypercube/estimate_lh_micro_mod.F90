@@ -286,12 +286,16 @@ module estimate_lh_micro_mod
                     + (1-a) * ( (AK2-AKm(level))**2 + AK2var ) & 
                     )
         ! This formula is for a within-cloud average:
-        AKstd_cld(level) = sqrt( max( zero_threshold,   & 
-                  (1./cf(level)) * ( a  * ( AK1**2 + AK1var ) & 
-                            + (1-a) * ( AK2**2 + AK2var )  & 
-                            ) & 
-                 - (AKm(level)/cf(level))**2  ) & 
-                        )
+        if ( cf(level) > 0 ) then
+          AKstd_cld(level) = sqrt( max( zero_threshold,   & 
+                    (1./cf(level)) * ( a  * ( AK1**2 + AK1var ) & 
+                              + (1-a) * ( AK2**2 + AK2var )  & 
+                              ) & 
+                   - (AKm(level)/cf(level))**2  ) & 
+                          )
+        else
+          AKstd_cld(level) = zero_threshold
+        end if
 
         ! Kessler autoconversion, using grid box avg liquid, rcm, as input
         AKm_rcm(level) = K_one * max( zero_threshold, rcm(level)-r_crit )
@@ -711,6 +715,9 @@ module estimate_lh_micro_mod
 
     zero(:) = 0
 
+    hydromet_vel_est(:,:) = 0.
+    hydromet_vel_est(:,:) = 0.
+
     ! Initialize microphysical tendencies for each mixture component
     hydromet_mc_est_m1(:,:) = 0.d0
     hydromet_mc_est_m2(:,:) = 0.d0
@@ -1068,7 +1075,7 @@ module estimate_lh_micro_mod
       ! Choose which mixture fraction we are in.
       ! Account for cloud fraction.
       ! Follow M. E. Johnson (1987), p. 56.
-      fraction_1 = a*C1/(a*C1+(1-a)*C2)
+      fraction_1 = a*C1/max( (a*C1+(1-a)*C2), epsilon( a ) )
       if ( X_u_one_lev(sample,d_variables+1) < fraction_1 ) then
         ! Use an idealized formula to compute liquid
         !      in mixture comp. 1
