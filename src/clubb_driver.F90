@@ -667,11 +667,11 @@ module clubb_driver
       iinit = floor( ( time_current - time_initial ) / dtmain ) + 1
 
       call restart_clubb &
-           ( iunit, runfile, trim( forcings_file_path ), & ! Intent(in)
+           ( iunit, runfile,                  &            ! Intent(in)
              restart_path_case, time_restart, &            ! Intent(in)
-             upwp, vpwp, wm_zt, wm_zm,  &                  ! Intent(inout)
-             um_ref, vm_ref, wpthlp, wprtp, &        ! Intent(inout)
-             wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )             ! Intent(out)
+             upwp, vpwp, wm_zt, wm_zm,        &            ! Intent(inout)
+             wpthlp, wprtp,   &                            ! Intent(inout)
+             wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )   ! Intent(out)
 
     end if ! ~l_restart
 
@@ -1604,10 +1604,10 @@ module clubb_driver
   end subroutine initialize_clubb
   !-----------------------------------------------------------------------
   subroutine restart_clubb &
-             ( iunit, runfile, forcings_file_path, &
+             ( iunit, runfile, &
                restart_path_case, time_restart, & 
                upwp, vpwp, wm_zt, wm_zm,  & 
-               um_ref, vm_ref, wpthlp, wprtp, & 
+               wpthlp, wprtp, & 
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )
     ! Description:
     !   Execute the necessary steps for the initialization of the
@@ -1663,7 +1663,6 @@ module clubb_driver
 
     character(len=*), intent(in) ::  & 
       runfile,            & ! Filename for the namelist
-      forcings_file_path, & ! Path to the forcing files
       restart_path_case     ! Path to GrADS data for restart
 
     real(kind=time_precision), intent(in) :: & 
@@ -1674,8 +1673,6 @@ module clubb_driver
       upwp,            & ! u'w'                         [m^2/s^2]
       vpwp,            & ! v'w'                         [m^2/s^2]
       wm_zt, wm_zm,    & ! w wind                       [m/s]
-      um_ref,          & ! Initial profile of u wind    [m/s]
-      vm_ref,          & ! Initial profile of v wind    [m/s]
       wpthlp,          & ! w' th_l'                     [(m K)/s]
       wprtp              ! w' r_t'                      [(kg m)(kg s)]
 
