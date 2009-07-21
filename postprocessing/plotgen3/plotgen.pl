@@ -16,7 +16,6 @@ use Cwd 'abs_path';
 use Switch;
 use Getopt::Std;
 use File::Basename;
-use Sudo;
 use File::Copy::Recursive qw(fcopy rcopy dircopy fmove rmove dirmove);
 use File::Path;
 
@@ -38,11 +37,19 @@ my $plotLes = 0;
 my $plotBest = 0;
 my $plotDec = 0;
 
+# Arrays to cycle through when auto is set for lines
+my @lineStyles = ("-", "--", "-.");
+my @lineColors = ("blue", "green", "red", "cyan", "yellow", "black", "magenta");
+my @lineWidths = (5.5, 5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1);
+
 my $outputIndex = "";
 
 # Do not keep permissions on file copies
 $File::Copy::Recursive::KeepMode = 0;
 
+# This is needed so we can restore the display after plotgen runs.
+# We need to clear this environment variable before running, otherwise
+# matlab will fail.
 my $sessionType = $ENV{'DISPLAY'}; 
 $SIG{INT} = "cleanup";
 
@@ -71,6 +78,8 @@ sub main()
 	OutputWriter->writeFooter($outputIndex);
 
 	cleanup();
+
+	print("\n");
 
 	exit(0);
 }
@@ -176,6 +185,11 @@ sub callMatlab()
 	# Get plots from .case file
 	for(my $count = 0; $count < $CASE::CASE{'numPlots'}; $count++)
 	{
+		# Counters for automatic lines
+		my $lineStyleCounter = 0;
+		my $lineColorCounter = 0;
+		my $lineWidthCounter = 0;
+
 		my $plotTitle = $CASE::CASE{'plots'}[$count]{'plotTitle'};
 		my $units = $CASE::CASE{'plots'}[$count]{'axisLabel'};
 		my $type = $CASE::CASE{'plots'}[$count]{'type'};
@@ -189,8 +203,87 @@ sub callMatlab()
 			{
 				my $file = "$_/$CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'filename'}";
 				my $type = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'type'};
+
+				if($type eq "auto")
+				{
+					if(-e $file)
+					{
+						my $name = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'name'};
+						my $expression = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'expression'};
+						my $title = $file;
+						my $lineWidth = $lineWidths[$lineWidthCounter];
+						my $lineStyle = $lineStyles[$lineStyleCounter];
+						my $lineColor = $lineColors[$lineColorCounter];
+	
+						$matlabArgs = "$matlabArgs, \'$file\', \'$name\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
+
+						# Increment counters
+						if($lineColorCounter + 1 >= @lineColors)
+						{
+							$lineColorCounter = 0;
+	
+							if($lineStyleCounter + 1 >= @lineStyles)
+							{
+								$lineStyleCounter = 0;
+	
+								if($lineWidthCounter + 1 >= @lineWidths)
+								{
+									$lineWidthCounter = 0;
+								}
+								else
+								{
+									$lineWidthCounter ++;
+								}
+							}
+							else
+							{
+								$lineStyleCounter ++;
+
+								if($lineWidthCounter + 1 >= @lineWidths)
+								{
+									$lineWidthCounter = 0;
+								}
+								else
+								{
+									$lineWidthCounter ++;
+								}
+							}
+						}
+						else
+						{
+							$lineColorCounter++;
+
+							if($lineStyleCounter + 1 >= @lineStyles)
+							{
+								$lineStyleCounter = 0;
+	
+								if($lineWidthCounter + 1 >= @lineWidths)
+								{
+									$lineWidthCounter = 0;
+								}
+								else
+								{
+									$lineWidthCounter ++;
+								}
+							}
+							else
+							{
+								$lineStyleCounter ++;
+
+								if($lineWidthCounter + 1 >= @lineWidths)
+								{
+									$lineWidthCounter = 0;
+								}
+								else
+								{
+									$lineWidthCounter ++;
+								}
+							}
+						}
+					}
+				}
 				
-				if(($type eq "les" && $plotLes == 1) || ($type eq "dec17" && $plotDec) || ($type eq "bestEver" && $plotBest) || ($type eq "clubb") || ($type eq "auto"))
+				if(($type eq "les" && $plotLes == 1) || ($type eq "dec17" && $plotDec) || ($type eq "bestEver" && $plotBest) || ($type eq "clubb"))
 				{
 					if(-e $file)
 					{
@@ -218,6 +311,7 @@ sub callMatlab()
 		#print("\nMatlab args: $matlabArgs \n\n");
 		
 		my $args = "echo \"quit\" | sudo -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop -r PlotCreator\"($matlabArgs)\"";
+		print("Call: $args\n\n");
 
 		system($args);
 	}
@@ -244,7 +338,7 @@ sub convertEps()
 		my $filename = basename($eps);
 		system("convert -density 90 $eps $outputTemp/jpg/$filename.jpg");
 
-		unlink($eps);
+		#unlink($eps);
 	}
 }
 
