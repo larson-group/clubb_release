@@ -32,12 +32,14 @@ module generate_lh_sample_mod
 
     use KK_microphys_module, only: &
       corr_LN_to_cov_gaus, & ! Procedure(s)
+      corr_gaus_LN_to_cov_gaus, &
       sigma_LN_to_sigma_gaus
 
     use constants, only:  &
       max_mag_correlation, &  ! Constant
       g_per_kg,  &  ! g/kg
       cm3_per_m3, & ! cm3 per m3
+      sstol,  &     ! s tolerance in kg/kg
       rr_tol, &     ! rr tolerance in kg/kg
       Nr_tol, &     ! Nr tolerance in #/kg
       Nc_tol        ! Nc tolerance in #/kg
@@ -120,7 +122,7 @@ module generate_lh_sample_mod
     ! varies between -1 < rrtthl < 1
     real :: rrtthl
 
-    real :: s1, s2 !, ss1, ss2
+    real :: s1, s2, ss1, ss2
     real :: cloud_frac1, cloud_frac2
     real :: crt1, crt2
     real :: cthl1, cthl2
@@ -151,9 +153,9 @@ module generate_lh_sample_mod
       sNr1, & ! PDF param for width of plume 1.    [(#/kg)^2]
       sNr2    ! PDF param for width of plume 2.    [(#/kg^2]
 
-    real :: corr_rrNr, srrNr1, srrNr2 !, corr_srr, corr_sNr, corr_sNc, &
-!           ssNc1, ssNc2, ssNr1, ssNr2, ssrr1, ssrr2
-    real :: std_dev_rr, std_dev_Nr !, std_dev_Nc
+    real :: corr_rrNr, srrNr1, srrNr2, corr_srr, corr_sNr, corr_sNc, &
+            ssNc1, ssNc2, ssNr1, ssNr2, ssrr1, ssrr2
+    real :: std_dev_rr, std_dev_Nr, std_dev_Nc
 
     ! rr = specific rain content. [rr] = kg rain / kg air
     double precision :: &
@@ -199,8 +201,8 @@ module generate_lh_sample_mod
     cloud_frac2 = pdf_params%cloud_frac2(level)
     s1          = pdf_params%s1(level)
     s2          = pdf_params%s2(level)
-!   ss1         = pdf_params%ss1(level)
-!   ss2         = pdf_params%ss2(level)
+    ss1         = pdf_params%ss1(level)
+    ss2         = pdf_params%ss2(level)
     rrtthl      = pdf_params%rrtthl(level)
     crt1        = pdf_params%crt1(level)
     crt2        = pdf_params%crt2(level)
@@ -335,7 +337,7 @@ module generate_lh_sample_mod
       !    any other variables.
 
       ! Sigma_rtthlw_1,2
-      Sigma_rtthlw_1 = 0.d0 ! Start with no correlation, and add matrix elements
+      Sigma_rtthlw_1 = 0.d0 ! Start with no covariance, and add matrix elements
       Sigma_rtthlw_2 = 0.d0
 
       Sigma_rtthlw_1(iiLH_rt,(/iiLH_rt,iiLH_thl/))  = (/ dble( srt1 ), rrtthl_reduced1 /)
@@ -367,8 +369,8 @@ module generate_lh_sample_mod
 
       if ( iiLH_rrain > 0 .and. iiLH_Nr > 0 ) then 
         if ( rrainm > dble( rr_tol ) .and. Nrm > dble( Nr_tol ) ) then
-!         corr_srr = correlation_array(iiLH_rt,iiLH_rrain)
-!         corr_sNr = correlation_array(iiLH_rt,iiLH_Nr)
+          corr_srr = correlation_array(iiLH_rt,iiLH_rrain)
+          corr_sNr = correlation_array(iiLH_rt,iiLH_Nr)
           corr_rrNr = correlation_array(iiLH_rrain,iiLH_Nr)
           std_dev_rr = real( rr1 ) * sqrt( correlation_array(iiLH_rrain,iiLH_rrain) )
           std_dev_Nr = real( Nr1 ) * sqrt( correlation_array(iiLH_Nr,iiLH_Nr) )
@@ -384,59 +386,72 @@ module generate_lh_sample_mod
           Sigma_rtthlw_1(iiLH_Nr,iiLH_rrain) = dble( srrNr1 )
           Sigma_rtthlw_2(iiLH_rrain,iiLH_Nr) = dble( srrNr2 )
           Sigma_rtthlw_2(iiLH_Nr,iiLH_rrain) = dble( srrNr2 )
+        end if
 
-!         ! Covariance between s and rain number conc.
-!         ssNr1 = corr_LN_to_cov_gaus &
-!                  ( corr_sNr, &
-!                    s1, &
-!                    sigma_LN_to_sigma_gaus( real( std_dev_Nr ), real( Nr1 ) ) )
-!         ! Nr1 = Nr2, but s1 /= s2, so compute ssNr2 here
-!         ssNr2 = corr_LN_to_cov_gaus &
-!                  ( corr_sNr, &
-!                    s2, &
-!                    sigma_LN_to_sigma_gaus( real( std_dev_Nr ), real( Nr2 ) ) )
+        if ( ss1 > sstol .and. Nr1 > dble( Nr_tol ) ) then
+          ! Covariance between s and rain number conc.
+          ssNr1 = corr_gaus_LN_to_cov_gaus &
+                   ( corr_sNr, &
+                     ss1, &
+                     sigma_LN_to_sigma_gaus( real( std_dev_Nr ), real( Nr1 ) ) )
+          Sigma_rtthlw_1(iiLH_rt,iiLH_Nr) = dble( ssNr1 )
+          Sigma_rtthlw_1(iiLH_Nr,iiLH_rt) = dble( ssNr1 )
+        end if
 
-!         Sigma_rtthlw_1(iiLH_rt,iiLH_Nr) = dble( ssNr1 )
-!         Sigma_rtthlw_1(iiLH_Nr,iiLH_rt) = dble( ssNr1 )
-!         Sigma_rtthlw_2(iiLH_rt,iiLH_Nr) = dble( ssNr2 )
-!         Sigma_rtthlw_2(iiLH_Nr,iiLH_rt) = dble( ssNr2 )
+        if ( ss2 > sstol .and. Nr2 > dble( Nr_tol ) ) then
+          ! Nr1 = Nr2, but s1 /= s2, so compute ssNr2 here
+          ssNr2 = corr_gaus_LN_to_cov_gaus &
+                   ( corr_sNr, &
+                     ss2, &
+                     sigma_LN_to_sigma_gaus( real( std_dev_Nr ), real( Nr2 ) ) )
 
-!         ! Covariance between s and rain water mixing ratio
-!         ssrr1 = corr_LN_to_cov_gaus &
-!                  ( corr_srr, &
-!                    s1, &
-!                    sigma_LN_to_sigma_gaus( real( std_dev_rr ), real( rr1 ) ) )
-!         ssrr2 = corr_LN_to_cov_gaus &
-!                  ( corr_srr, &
-!                    s2, &
-!                    sigma_LN_to_sigma_gaus( real( std_dev_rr ), real( rr1 ) ) )
+          Sigma_rtthlw_2(iiLH_rt,iiLH_Nr) = dble( ssNr2 )
+          Sigma_rtthlw_2(iiLH_Nr,iiLH_rt) = dble( ssNr2 )
+        end if
 
-!         Sigma_rtthlw_1(iiLH_rt,iiLH_rrain) = dble( ssrr1 )
-!         Sigma_rtthlw_1(iiLH_rrain,iiLH_rt) = dble( ssrr1 )
-!         Sigma_rtthlw_2(iiLH_rt,iiLH_rrain) = dble( ssrr2 )
-!         Sigma_rtthlw_2(iiLH_rrain,iiLH_rt) = dble( ssrr2 )
+        if ( ss1 > sstol .and. rr1 > dble( rr_tol ) ) then
+          ! Covariance between s and rain water mixing ratio
+
+          ssrr1 = corr_gaus_LN_to_cov_gaus &
+                   ( corr_srr, &
+                     ss1, &
+                     sigma_LN_to_sigma_gaus( real( std_dev_rr ), real( rr1 ) ) )
+          Sigma_rtthlw_1(iiLH_rt,iiLH_rrain) = dble( ssrr1 )
+          Sigma_rtthlw_1(iiLH_rrain,iiLH_rt) = dble( ssrr1 )
+        end if
+
+        if ( ss2 > sstol .and. rr2 > dble( rr_tol ) ) then
+          ssrr2 = corr_gaus_LN_to_cov_gaus &
+                   ( corr_srr, &
+                     ss2, &
+                     sigma_LN_to_sigma_gaus( real( std_dev_rr ), real( rr2 ) ) )
+          Sigma_rtthlw_2(iiLH_rt,iiLH_rrain) = dble( ssrr2 )
+          Sigma_rtthlw_2(iiLH_rrain,iiLH_rt) = dble( ssrr2 )
+        end if
+      end if ! if iiLH_rrain > 0 .and. iiLH_Nr > 0 
+
+      if ( iiLH_Nc > 0 ) then
+        corr_sNc = correlation_array(iiLH_rt,iiLH_Nc)
+        std_dev_Nc = real( Nc1 ) * sqrt( correlation_array(iiLH_Nc,iiLH_Nc) )
+        if ( ss1 > sstol .and. Ncm > dble( Nc_tol ) ) then
+          ! The variable s is already Gaussian
+          ssNc1 = corr_gaus_LN_to_cov_gaus &
+                  ( corr_sNc, &
+                    ss1, &
+                    sigma_LN_to_sigma_gaus( real( std_dev_Nc ), real( Nc1 ) ) )
+          Sigma_rtthlw_1(iiLH_rt,iiLH_Nc) = ssNc1
+          Sigma_rtthlw_1(iiLH_Nc,iiLH_rt) = ssNc1
+        end if
+
+        if ( ss2 > sstol .and. Ncm > dble( Nc_tol ) ) then
+          ssNc2 = corr_gaus_LN_to_cov_gaus &
+                  ( corr_sNc, &
+                    ss2, &
+                    sigma_LN_to_sigma_gaus( real( std_dev_Nc ), real( Nc2 ) ) )
+          Sigma_rtthlw_2(iiLH_rt,iiLH_Nc) = ssNc2
+          Sigma_rtthlw_2(iiLH_Nc,iiLH_rt) = ssNc2
         end if
       end if
-
-!     if ( iiLH_Nc > 0 ) then
-!       if ( Ncm > dble( Nc_tol ) ) then
-!         corr_sNc = correlation_array(iiLH_rt,iiLH_Nc)
-!         std_dev_Nc = real( Nc1 ) * sqrt( correlation_array(iiLH_Nc,iiLH_Nc) )
-!         ! The variable s is already Gaussian
-!         ssNc1 = corr_LN_to_cov_gaus &
-!                 ( corr_sNc, &
-!                   sigma_LN_to_sigma_gaus( real( std_dev_Nc ), real( Nc1 ) ), &
-!                   s1 )
-!         ssNc2 = corr_LN_to_cov_gaus &
-!                 ( corr_sNc, &
-!                   sigma_LN_to_sigma_gaus( real( std_dev_Nc ), real( Nc1 ) ), &
-!                   s2 )
-!         Sigma_rtthlw_1(iiLH_rt,iiLH_Nc) = ssNc1
-!         Sigma_rtthlw_1(iiLH_Nc,iiLH_rt) = ssNc1
-!         Sigma_rtthlw_2(iiLH_rt,iiLH_Nc) = ssNc2
-!         Sigma_rtthlw_2(iiLH_Nc,iiLH_rt) = ssNc2
-!       end if
-!     end if
 
       call sample_points( n_micro_calls, nt_repeat, d_variables, p_matrix, dble( a ), & 
                           dble( rt1 ), dble( thl1 ),  & 
@@ -566,6 +581,7 @@ module generate_lh_sample_mod
 
     integer :: is_mellor, it_mellor
 !   integer :: i, j
+
     ! ---- Begin Code ----
 
     is_mellor = iiLH_rt  ! Mellor's s is at the same index as rt in the Sigma arrays
@@ -1190,8 +1206,11 @@ module generate_lh_sample_mod
   subroutine gaus_condt( d_variables, std_normal, mu, Sigma, s_pt, & 
                          nonstd_normal )
 
-!   use matrix_operations, only: linear_symm_upper_eqn_solve ! Procedure(s)
-    use matrix_operations, only: linear_eqn_solve ! Procedure(s)
+    use matrix_operations, only: linear_symm_upper_eqn_solve ! Procedure(s)
+
+!   use matrix_operations, only: linear_eqn_solve ! Procedure(s)
+
+    use error_code, only: clubb_at_least_debug_level
 
     implicit none
 
@@ -1222,7 +1241,7 @@ module generate_lh_sample_mod
 
     ! Local Variables
 
-    integer :: v
+    integer :: v, j ! Loop iterators
 
     double precision :: mu_two, mu_condt_const
 
@@ -1267,17 +1286,19 @@ module generate_lh_sample_mod
       Sigma_twotwo = Sigma(v,v)
 
       ! Check whether input matrix is symmetric.
-!         do j=1,(v-1)
-!            if ( Sigma_twoone(1,j) .ne. Sigma_onetwo(j,1) ) then
-!              print*,'Error: matrix Sigma not symmetric in gaus_condt.'
-!               print*,'Sigma in gaus_condt=', Sigma
-!            end if
-!         end do
+      if ( clubb_at_least_debug_level( 2 ) ) then
+        do j=1,(v-1)
+          if ( abs( Sigma_twoone(1,j) - Sigma_onetwo(j,1) ) > epsilon( dum ) ) then
+            write(0,*) 'Error: matrix Sigma not symmetric in gaus_condt.'
+            write(0,*) 'Sigma in gaus_condt=', Sigma
+          end if
+        end do
+      end if
 
       ! Compute an intermediate matrix, Sigma_int(1,1:(v-1)),
       !    that is needed several times below.
       ! Solve A * X = B for X, where X here is sigma_int.
-      call linear_eqn_solve &
+      call linear_symm_upper_eqn_solve &
            ( n = v-1, a = Sigma_oneone(1:v-1,1:v-1), b = Sigma_twoone(1,1:v-1), &
              x = Sigma_int(1,1:v-1) )
 
