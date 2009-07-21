@@ -22,12 +22,26 @@ foreach $file (@ARGV){
 	# Close it
 	close FILE;
 
+
+	# Strip out comment lines
+	for $itr ( 0 .. $#filedata ){
+		$tmp = shift(@filedata);
+		if($tmp =~ /^\s*!.*/i){
+			push(@comments,$tmp);
+		}else{
+			push(@filedata,$tmp);
+		}
+			
+	}
+
+
 	# Delimit table by single spaces (Essentially setting up the 2-D array.
 	foreach $line (@filedata){
 		$line =~ s/^\s+//;      # Remove all leading spaces
         	@{$line} = split /\s+/,$line; # Split up line into entries, delimited by spaces
 	}
-        
+
+
 	# Array of the longest element in each column
 	@longest = 0;
         
@@ -55,6 +69,11 @@ foreach $file (@ARGV){
   		}
 	}	
 	
+        # Write out the comments to the file
+	foreach $line (@comments){
+		print FILE $line;
+	}
+
 	# Write out the table to the file
 	foreach $line (@filedata){
 		foreach $entry (@{$line}){
