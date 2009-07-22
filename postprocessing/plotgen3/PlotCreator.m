@@ -24,8 +24,8 @@ optargin = size(varargin,2);
 numLines = optargin / 7;
 
 %Create a blank plot of the proper type so we have somewhere to draw lines
-fig_height = 328;
-fig_width = 312;
+fig_height = 220;
+fig_width = 250;
 
 % Open figure to set size.
 figure('Position',[ 0 0 fig_width fig_height ])
@@ -76,8 +76,8 @@ for i=1:numLines
 
 	%Figure out indicies for start and end height
 	if strcmp(plotType, 'profile')	
-		bottomIndex = 0;
-		topIndex = 0;
+		bottomIndex = 1;
+		topIndex = 1;
 		
 		%Max is used to prevent hangs caused by failed variable reading
 		for j=1:max(size(levels))
@@ -123,6 +123,7 @@ for i=1:numLines
 	end
 
 	%Set the text for the legend
+	lineName = ['\fontsize{6}', lineName];
 	legendText(i,1:size(lineName,2)) = lineName;
 end
 
@@ -142,4 +143,4 @@ end
 %Output the EPS file
 mkdir([ 'output_', int2str(tickCount)]);
 output_file_name = [ 'output_', int2str(tickCount), '/', caseName, '_', int2str(plotNum), '.eps' ];
-print( '-r72', '-depsc2', output_file_name );
+print( '-depsc2', output_file_name );
