@@ -36,6 +36,10 @@ set(gcf, 'PaperPositionMode', 'manual')
 set(gcf, 'PaperUnits', 'inches')
 set(gcf, 'PaperPosition', [ 1.0 1.0 6.5 9.0 ])
 
+%Pre-allocate minimum and maximum values
+minVals(1:numLines) = 0;
+maxVals(1:numLines) = 0;
+
 %Preallocate the arrays needed for legend construction
 lines(1:numLines) = 0; %This is the collection where lines are stored
 clear legendText;
@@ -73,6 +77,22 @@ for i=1:numLines
 		eval([varString, '= variableData;']);
 	end
 
+	%Figure out indicies for start and end height
+	if strcmp(plotType, 'profile')	
+		bottomIndex = 0;
+		topIndex = 0;
+		
+		%Max is used to prevent hangs caused by failed variable reading
+		for j=1:max(size(levels))
+			if levels(j) <= startHeight
+				bottomIndex = j;
+			end
+			if levels(j) <= endHeight
+				topIndex = j;
+			end
+		end
+	end
+
 	%Create a time array
 	if strcmp(extension, 'ctl')
 		[dummy, dummy , dummy, t_time_steps, time_step_length, dummy, dummy] = header_read_expanded(filePath);
@@ -80,8 +100,8 @@ for i=1:numLines
 		[dummy, dummy , dummy, t_time_steps, time_step_length, dummy, dummy] = header_read_expanded_netcdf(filePath);
 	end
 
-	for k=1:(ceil((endTime - startTime) / time_step_length) + 1)
-		times(k) = startTime + ((k - 1) * time_step_length);
+	for j=1:(ceil((endTime - startTime) / time_step_length) + 1)
+		times(j) = startTime + ((j - 1) * time_step_length);
 	end
 
 	%Now evaluate the expression using the read in values,
@@ -96,6 +116,15 @@ for i=1:numLines
 		lines(i) = TimeseriesFunctions.addLine(lineName, times, valueToPlot, lineWidth, lineType, lineColor);
 	end
 	
+	%Store values needed for axis scaling
+	if strcmp(plotType, 'profile')
+		minVals(i) = min(valueToPlot(bottomIndex:topIndex));
+		maxVals(i) = max(valueToPlot(bottomIndex:topIndex));
+	elseif strcmp(plotType, 'timeseries')
+		minVals(i) = min(valueToPlot);
+		maxVals(i) = max(valueToPlot);
+	end
+
 	%Set the text for the legend
 	legendText(i,1:size(lineName,2)) = lineName;
 end
@@ -105,12 +134,12 @@ if strcmp(plotType, 'profile')
 	ProfileFunctions.setTitle(plotTitle);
 	ProfileFunctions.setAxisLabels(plotUnits, 'Height [m]'); 
 	ProfileFunctions.addLegend(lines, legendText);
-	ProfileFunctions.setAxis(min(valueToPlot), max(valueToPlot), startHeight, endHeight);
+	ProfileFunctions.setAxis(min(minVals), max(maxVals), startHeight, endHeight);
 elseif strcmp(plotType, 'timeseries')		
 	TimeseriesFunctions.setTitle(plotTitle);
 	TimeseriesFunctions.setAxisLabels('Time [min]', plotUnits); 	
 	TimeseriesFunctions.addLegend(lines, legendText);
-	TimeseriesFunctions.setAxis(min(valueToPlot), max(valueToPlot), startTime, endTime);
+	TimeseriesFunctions.setAxis(min(minVals), max(maxVals), startTime, endTime);
 end
 
 %Output the EPS file
