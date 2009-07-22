@@ -24,17 +24,14 @@ optargin = size(varargin,2);
 numLines = optargin / 7;
 
 %Create a blank plot of the proper type so we have somewhere to draw lines
-% Figure Properties for screen display.
-scr_size = get(0,'ScreenSize');
-fig_height = scr_size(4);
-fig_width = (6.5/9.0) * fig_height;
-fig_width = int16(fig_width);
+fig_height = 328;
+fig_width = 312;
 
 % Open figure to set size.
 figure('Position',[ 0 0 fig_width fig_height ])
 set(gcf, 'PaperPositionMode', 'manual')
-set(gcf, 'PaperUnits', 'inches')
-set(gcf, 'PaperPosition', [ 1.0 1.0 6.5 9.0 ])
+set(gcf, 'PaperUnits', 'points')
+set(gcf, 'PaperPosition', [ 0.0 0.0 fig_width fig_height ])
 
 %Pre-allocate minimum and maximum values
 minVals(1:numLines) = 0;
