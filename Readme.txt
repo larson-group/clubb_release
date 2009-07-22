@@ -350,7 +350,11 @@ The new simulation is then called a "restart" simulation.
 
 1.  Perform the original simulation of case <CASE NAME> and save the GrADS 
     or netCDF output files in the <CLUBB BASE DIRECTORY>/output directory. 
-    These data files will be accessed to restart the simulation.
+    These data files will be accessed to restart the simulation.  In order
+    to reproduce the original simulation exactly, one must save
+    non-time-averaged output from the original simulation.  That is, 
+    in the _model.in file, one must set stats_tsamp to the same value 
+    as stats_tout for the original simulation.
 
 2.  Create a subdirectory in the <CLUBB BASE DIRECTORY> called "restart" and 
     move the GrADS output files to that subdirectory.
