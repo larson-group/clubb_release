@@ -23,6 +23,8 @@ use File::Path;
 # don't overwrite each other.
 my $randInt = rand(999999999999999);
 
+my $DPI = 75;
+
 # Argument list
 
 # If running in nightly mode, this value should be set to 1
@@ -160,9 +162,12 @@ sub placeImages()
 {
 	my $caseName = shift(@_);
 
+	print("Case Name: $caseName\n");
+
 	OutputWriter->printDivCenter($outputIndex);
 
 	my @imgFiles = <$outputTemp/jpg/$caseName*.jpg>;
+
 	for(my $x = 0; $x < @imgFiles; $x++)
 	{
 		OutputWriter->placeImage($outputIndex, "jpg/$caseName" . "_" . "$x.eps.jpg");
@@ -185,33 +190,55 @@ sub callMatlab()
 	my $endTime =  $CASE::CASE{'endTime'};
 	my $startHeight =  $CASE::CASE{'startHeight'};
 	my $endHeight =  $CASE::CASE{'endHeight'};
+	
+	# Get array of plots from case file
+	my @plots;
+	push(@plots, @{$CASE::CASE{'plots'}});
 
 	# Get plots from .case file
-	for(my $count = 0; $count < $CASE::CASE{'numPlots'}; $count++)
+	for(my $count = 0; $count < @plots; $count++)
 	{
 		# Counters for automatic lines
 		my $lineStyleCounter = 0;
 		my $lineColorCounter = 0;
 		my $lineWidthCounter = 0;
 
-		my $plotTitle = $CASE::CASE{'plots'}[$count]{'plotTitle'};
-		my $units = $CASE::CASE{'plots'}[$count]{'axisLabel'};
-		my $type = $CASE::CASE{'plots'}[$count]{'type'};
+		my $plotTitle = $plots[$count]{'plotTitle'};
+		my $units = $plots[$count]{'axisLabel'};
+		my $type = $plots[$count]{'type'};
 
 		my $matlabArgs = "\'$caseName\', \'$plotTitle\', $count, \'$type\', $startTime, $endTime, $startHeight, $endHeight, \'$units\', $randInt";
 		my $tempMatlabArgs = $matlabArgs;
 
-		for(my $lineNum = 0; $lineNum < $CASE::CASE{'plots'}[$count]{'numLines'}; $lineNum++)
-		{
-			foreach (@inputDirs)
-			{
-				my $file = "$_/$CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'filename'}";
-				my $type = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'type'};
-				my $name = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'name'};
-				my $expression = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'expression'};
+		my @lines;
+		push(@lines, @{$plots[$count]{'lines'}});
 
-				if($type eq "auto")
+		for(my $lineNum = 0; $lineNum < @lines; $lineNum++)
+		{
+			my $name = $lines[$lineNum]{'name'};
+			my $expression = $lines[$lineNum]{'expression'};
+
+			my $type = $lines[$lineNum]{'type'};
+
+			if(($type eq "les" && $plotLes == 1) || ($type eq "dec17" && $plotDec) || ($type eq "bestEver" && $plotBest))
+			{
+				my $file = "$lines[$lineNum]{'filename'}";
+				if(-e $file)
 				{
+					my $title = $type;
+					my $lineWidth = $lines[$lineNum]{'lineWidth'};
+					my $lineStyle = $lines[$lineNum]{'lineType'};
+					my $lineColor = $lines[$lineNum]{'lineColor'};
+	
+					$matlabArgs = "$matlabArgs, \'$file\', \'$name\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
+				}
+			}
+			elsif($type eq "auto")
+			{
+				foreach (@inputDirs)
+				{
+					my $file = "$_/$lines[$lineNum]{'filename'}";
+
 					if(-e $file)
 					{
 						my $title = basename($_);
@@ -286,18 +313,6 @@ sub callMatlab()
 						}
 					}
 				}
-				elsif(($type eq "les" && $plotLes == 1) || ($type eq "dec17" && $plotDec) || ($type eq "bestEver" && $plotBest) || ($type eq "clubb"))
-				{
-					if(-e $file)
-					{
-						my $title = $type;
-						my $lineWidth = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'lineWidth'};
-						my $lineStyle = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'lineType'};
-						my $lineColor = $CASE::CASE{'plots'}[$count]{'lines'}[$lineNum]{'lineColor'};
-	
-						$matlabArgs = "$matlabArgs, \'$file\', \'$name\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
-					}
-				}
 			}
 		}
 
@@ -305,16 +320,16 @@ sub callMatlab()
 		if($matlabArgs eq $tempMatlabArgs)
 		{
 			print(STDERR "No valid data available to plot.\n");
-			cleanup();
-			exit(1);
+#			cleanup();
+#			exit(1);
 		}
-
-		#print("\nMatlab args: $matlabArgs \n\n");
-		
-		my $args = "echo \"quit\" | sudo -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop -r PlotCreator\"($matlabArgs)\"";
-		print("Call: $args\n\n");
-
-		system($args);
+		else
+		{
+			my $args = "echo \"quit\" | sudo -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop -r PlotCreator\"($matlabArgs)\"";
+			print("Call: $args\n\n");
+			
+			system($args);
+		}
 	}
 }
 
@@ -337,7 +352,7 @@ sub convertEps()
 	foreach my $eps (@epsFiles)
 	{
 		my $filename = basename($eps);
-		system("convert -density 90 $eps $outputTemp/jpg/$filename.jpg");
+		system("convert -density $DPI $eps $outputTemp/jpg/$filename.jpg");
 
 		unlink($eps);
 	}
@@ -352,9 +367,9 @@ sub dataExists()
 	my $dataFile = shift(@_);
 	my $retValue = 0;
 	
-	foreach my $currInput (@inputDirs)
+	foreach (@inputDirs)
 	{
-		my @files = <$currInput/$dataFile*>;
+		my @files = <$_/$dataFile*>;
 		if(@files)
 		{
 			$retValue = 1;
