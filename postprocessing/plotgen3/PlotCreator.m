@@ -142,4 +142,4 @@ end
 %Output the EPS file
 mkdir([ 'output_', int2str(tickCount)]);
 output_file_name = [ 'output_', int2str(tickCount), '/', caseName, '_', int2str(plotNum), '.eps' ];
-print( '-depsc2', output_file_name );
+print( '-r72', '-depsc2', output_file_name );
