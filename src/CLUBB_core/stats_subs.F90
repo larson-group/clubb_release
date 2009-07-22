@@ -866,7 +866,8 @@ module stats_subs
                      rtm, wprtp, wpthlp, wpthvp, &
                      wp2, wp3, rtp2, thlp2, rtpthlp, & 
                      p_in_Pa, exner, rho, rho_zm, Kh_zt, & 
-                     wm_zt, sigma_sqd_w, tau_zm, rcm, cf, & 
+                     wm_zt, sigma_sqd_w, tau_zm, rcm, cf, &
+                     cloud_cover, rcm_in_layer, & 
                      pdf_params, &
                      sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
                      wpsclrp, edsclrm, edsclrm_forcing )
@@ -892,7 +893,9 @@ module stats_subs
         iwm_zt, & 
         iug, & 
         ivg, & 
-        icf, & 
+        icf, &
+        icloud_cover, &
+        ircm_in_layer, &
         ip_in_Pa, & 
         iexner, & 
         iLscale, & 
@@ -1129,8 +1132,10 @@ module stats_subs
       tau_zm          ! Dissipation time                         [s]
 
     real, intent(in), dimension(gr%nnzp) :: & 
-      rcm,   & ! Cloud water mixing ratio                [kg/kg]
-      cf       ! Cloud fraction                          [%]
+      rcm,         & ! Cloud water mixing ratio                 [kg/kg]
+      cf,          & ! Cloud fraction                           [%]
+      cloud_cover, & ! Cloud cover                              [%]
+      rcm_in_layer   ! Cloud water mixing ratio in cloud layer  [kg/kg]
 
     type(pdf_parameter), intent(in) :: & 
       pdf_params ! PDF parameters [units vary]
@@ -1176,6 +1181,8 @@ module stats_subs
       call stat_update_var( iug, ug, zt )
       call stat_update_var( ivg, vg, zt )
       call stat_update_var( icf, cf, zt )
+      call stat_update_var( icloud_cover, cloud_cover, zt )
+      call stat_update_var( ircm_in_layer, rcm_in_layer, zt )
       call stat_update_var( ip_in_Pa, p_in_Pa, zt )
       call stat_update_var( iexner, exner, zt )
       call stat_update_var( iLscale, Lscale, zt )

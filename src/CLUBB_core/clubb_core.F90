@@ -323,6 +323,11 @@ module clubb_core
                                         ! (.false.).  Calling pdf_closure twice is more 
                                         ! expensive but produces better results.
 
+    ! ldgrant July 2009
+    real, dimension(gr%nnzp) :: &
+      cloud_cover,  & ! Cloud cover                               [%]
+      rcm_in_layer    ! liquid water mixing ratio in cloud layer  [kg/kg]
+
     !----- Begin Code -----
 
     !----------------------------------------------------------------
@@ -580,7 +585,7 @@ module clubb_core
 
     ! If logical flag is true, use the trapezoidal rule by calling the subroutine
     ! ldgrant June 2009
-    if (l_trapezoid_rule) then
+    if ( l_trapezoid_rule ) then
       call trapezoidal_rule &
          ( l_call_pdf_closure_twice,                    & ! intent(in)
            p_in_Pa, exner, wm_zm, wp2, wp3,             & ! intent(in)
@@ -592,6 +597,12 @@ module clubb_core
            wpsclrprtp, wpsclrp2, wpsclrpthlp,           & ! intent(inout)
            wp2sclrp, pdf_params, err_code )               ! intent(inout)
     end if
+
+    ! Compute variables cloud_cover and rcm_in_layer
+    ! ldgrant July 2009
+    call compute_cloud_cover &
+       ( pdf_params, cf, rcm,        & ! intent(in)
+         cloud_cover, rcm_in_layer )   ! intent(out)
 
     !----------------------------------------------------------------
     ! Compute thvm
@@ -787,6 +798,7 @@ module clubb_core
            wp2, wp3, rtp2, thlp2, rtpthlp,                     & ! intent(in)
            p_in_Pa, exner, rho, rho_zm, Kh_zt,                 & ! intent(in)
            wm_zt, sigma_sqd_w, tau_zm, rcm, cf,                & ! intent(in)
+           cloud_cover, rcm_in_layer,                          & ! intent(in)
            pdf_params,                                         & ! intent(in)
            sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing,  & ! intent(in)
            wpsclrp, edsclrm, edsclrm_forcing )                   ! intent(in)
@@ -1543,6 +1555,132 @@ module clubb_core
 
     return 
   end function trapezoid
+
+  !-----------------------------------------------------------------------
+  subroutine compute_cloud_cover &
+           ( pdf_params, cf, rcm,        & ! intent(in)
+             cloud_cover, rcm_in_layer )   ! intent(out)
+    !
+    ! Description:  Subroutine to compute cloud cover (the amount of sky
+    ! covered by cloud) and rcm in layer (liquid water mixing ratio in
+    ! the portion of the grid box filled by cloud).
+    ! ldgrant July 2009 
+    !---------------------------------------------------------------------
+
+    use constants, only: rc_tol ! Variable
+
+    use grid_class, only: gr ! Variable
+  
+    use variables_prognostic_module, only: &
+      pdf_parameter ! Derived data type
+
+    implicit none
+
+    ! External functions
+    intrinsic :: abs, min, max
+
+    ! Input variables
+    real, dimension(gr%nnzp), intent(in) :: &
+      cf,  & ! Cloud fraction             [%]
+      rcm    ! Liquid water mixing ratio  [kg/kg]
+
+    type (pdf_parameter), intent(in) :: &
+      pdf_params ! PDF Parameters  [units vary]
+
+    ! Output variables
+    real, dimension(gr%nnzp), intent(out) :: &
+      cloud_cover,  & ! Cloud cover                               [%]
+      rcm_in_layer    ! Liquid water mixing ratio in cloud layer  [kg/kg]
+
+    ! Local variables
+    real, dimension(gr%nnzp) :: &
+      s_mean,                & ! Mean of the two Gaussian distributions
+      vert_cloud_frac_upper, & ! Fraction of cloud in top half of grid box
+      vert_cloud_frac_lower, & ! Fraction of cloud in bottom half of grid box
+      vert_cloud_frac          ! Fraction of cloud filling the grid box in the vertical
+
+    integer :: k
+
+    ! ------------ Begin code ---------------
+
+    do k = 1, gr%nnzp
+
+      s_mean(k) = pdf_params%a(k) * pdf_params%s1(k) + &
+                  (1.0-pdf_params%a(k)) * pdf_params%s2(k)
+
+    end do
+
+    do k = 2, gr%nnzp-1, 1
+
+      if ( rcm(k) < rc_tol ) then ! No cloud at this level
+
+        cloud_cover(k)  = cf(k)
+        rcm_in_layer(k) = rcm(k)
+  
+      else if ( ( rcm(k+1) > rc_tol ) .and. ( rcm(k-1) > rc_tol ) ) then
+        ! There is cloud above and below, 
+        !   so assume cloud fills grid box from top to bottom
+  
+        cloud_cover(k) = cf(k)
+        rcm_in_layer(k) = rcm(k)
+
+      else if ( ( rcm(k+1) < rc_tol ) .or. ( rcm(k-1) < rc_tol) ) then 
+        ! Cloud may fail to reach gridbox top or base or both
+
+        if ( s_mean(k+1) < 0 ) then
+
+          vert_cloud_frac_upper(k) = &
+                   ( gr%dzm(k) / gr%dzt(k) ) * &
+                   ( rcm(k) / ( rcm(k) + abs( s_mean(k+1) ) ) ) 
+
+          vert_cloud_frac_upper(k) = min( 0.5, vert_cloud_frac_upper(k) ) 
+
+        else
+
+          vert_cloud_frac_upper(k) = 0.5
+
+        end if
+
+        if ( s_mean(k-1) < 0 ) then
+
+          vert_cloud_frac_lower(k) = &
+                   ( gr%dzm(k-1) / gr%dzt(k) ) * &
+                   ( rcm(k) / ( rcm(k) + abs( s_mean(k-1) ) ) )
+
+          vert_cloud_frac_lower(k) = min( 0.5, vert_cloud_frac_lower(k) )
+
+        else
+
+          vert_cloud_frac_lower(k) = 0.5
+
+        end if
+
+        vert_cloud_frac(k) = &
+          vert_cloud_frac_upper(k) + vert_cloud_frac_lower(k)
+
+        vert_cloud_frac(k) = &
+          max( cf(k), min( 1, vert_cloud_frac(k) ) )
+
+        cloud_cover(k)  = cf(k) / vert_cloud_frac(k)
+        rcm_in_layer(k) = rcm(k) / vert_cloud_frac(k)
+
+      else
+
+        print*, "Error: Should not arrive here in computation of cloud_cover"
+        stop
+
+      end if
+
+    end do ! k = 2, gr%nnzp-1, 1
+
+    cloud_cover(1)       = cf(1)
+    cloud_cover(gr%nnzp) = cf(gr%nnzp)
+
+    rcm_in_layer(1)       = rcm(1)
+    rcm_in_layer(gr%nnzp) = rcm(gr%nnzp)
+
+    return
+  end subroutine compute_cloud_cover
   !-----------------------------------------------------------------------
 
 end module clubb_core
