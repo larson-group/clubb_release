@@ -1627,7 +1627,13 @@ module clubb_core
       else if ( ( rcm(k+1) < rc_tol ) .or. ( rcm(k-1) < rc_tol) ) then 
         ! Cloud may fail to reach gridbox top or base or both
 
-        if ( s_mean(k+1) < 0 ) then
+        ! First let the cloud fill the entire grid box, then overwrite
+        ! vert_cloud_frac_upper(k) and/or vert_cloud_frac_lower(k)
+        ! for a cloud top, cloud base, or one-point cloud.
+        vert_cloud_frac_upper(k) = 0.5
+        vert_cloud_frac_lower(k) = 0.5
+
+        if ( rcm(k+1) < rc_tol ) then ! Cloud top
 
           vert_cloud_frac_upper(k) = &
                    ( gr%dzm(k) / gr%dzt(k) ) * &
@@ -1641,7 +1647,7 @@ module clubb_core
 
         end if
 
-        if ( s_mean(k-1) < 0 ) then
+        if ( rcm(k-1) < rc_tol ) then ! Cloud base
 
           vert_cloud_frac_lower(k) = &
                    ( gr%dzm(k-1) / gr%dzt(k) ) * &
@@ -1659,7 +1665,7 @@ module clubb_core
           vert_cloud_frac_upper(k) + vert_cloud_frac_lower(k)
 
         vert_cloud_frac(k) = &
-          max( cf(k), min( 1, vert_cloud_frac(k) ) )
+          max( cf(k), min( 1.0, vert_cloud_frac(k) ) )
 
         cloud_cover(k)  = cf(k) / vert_cloud_frac(k)
         rcm_in_layer(k) = rcm(k) / vert_cloud_frac(k)
