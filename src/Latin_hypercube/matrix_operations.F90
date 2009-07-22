@@ -3,7 +3,8 @@ module matrix_operations
 
   implicit none
 
-  public :: linear_eqn_solve, linear_symm_upper_eqn_solve, band_mult
+  public :: linear_eqn_solve, linear_symm_upper_eqn_solve, band_mult, &
+    covariance_matrix_2_correlation_matrix
 
   private ! Default scope
 
@@ -199,6 +200,40 @@ module matrix_operations
 
     return
   end subroutine band_mult
+
 !-----------------------------------------------------------------------
+  subroutine covariance_matrix_2_correlation_matrix( ndim, cov, corr )
+
+! Description:
+!   Convert a matrix of covariances in to a matrix of correlations
+! References:
+!   None
+!-----------------------------------------------------------------------
+    implicit none
+
+    ! External
+    intrinsic :: sqrt
+
+    ! Input Variables
+    integer, intent(in) :: ndim
+
+    double precision, dimension(ndim,ndim), intent(in) :: &
+      cov ! Covariance Matrix [units vary]
+
+    ! Output Variables
+    double precision, dimension(ndim,ndim), intent(out) :: & 
+      corr ! Correlation Matrix [-]
+
+    ! Local Variables
+    integer :: i, j
+
+    ! ---- Begin Code ----
+
+    forall( i = 1:ndim, j= 1:ndim )
+      corr(i,j) = cov(i,j) / sqrt( cov(i,i) * cov(j,j) )
+    end forall
+
+    return
+  end subroutine covariance_matrix_2_correlation_matrix
 
 end module matrix_operations
