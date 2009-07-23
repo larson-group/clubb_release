@@ -1,18 +1,18 @@
 #!/usr/bin/perl
 
+package TextFormat; 
 
-# This script formats a table of text such that columns 
-# are properly spaced with all entities aligned in their column.
-#
-# Originally written to help ease the transition to 'SAM-like' input files.
-#
-# Written By: Joshua Fasching
-# April 2009
+use strict;
+
+sub align_table{
 
 
-# For every file
-foreach $file (@ARGV){
-        
+	my($file) = shift(@_);
+
+	my(@filedata, $itr, $tmp, $line, @longest);
+
+	my($col, $rol, @comments, $entry);
+
 	# Open the file
 	open FILE, $file or die "Bad Filename";
 
@@ -85,3 +85,5 @@ foreach $file (@ARGV){
 	# Close the file
 	close FILE;
 }
+
+1;
