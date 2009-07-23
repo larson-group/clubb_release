@@ -2,19 +2,20 @@
 
 package TextFormat; 
 
-use strict;
+#use strict;
 
 sub align_table{
 
+	shift(@_);
 
 	my($file) = shift(@_);
 
 	my(@filedata, $itr, $tmp, $line, @longest);
 
-	my($col, $rol, @comments, $entry);
+	my($col, $row, @comments, $entry);
 
 	# Open the file
-	open FILE, $file or die "Bad Filename";
+	open FILE, $file or die "Bad Filename: $file\n";
 
 	 # Store file contents to memory
 	@filedata = <FILE>;
