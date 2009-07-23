@@ -3,6 +3,7 @@
 %CASE = 
 (
     'name' => 'arm',
+    'enabled' => 'true',
     'headerText' => 'Arm Hour 9',
     'startTime' => 481,  # [minutes]
     'endTime' => 540,    # [minutes]

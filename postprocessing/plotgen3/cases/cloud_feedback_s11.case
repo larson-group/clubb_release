@@ -3,6 +3,7 @@
 %CASE = 
 (
     'name' => 'cloud_feedback_s11',
+    'enabled' => 'true',
     'headerText' => 'Cloud Feedback S11',
     'startTime' => 41760,  # [minutes]
     'endTime' => 43200,    # [minutes]

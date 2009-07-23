@@ -23,7 +23,7 @@ use File::Path;
 # don't overwrite each other.
 my $randInt = rand(999999999999999);
 
-my $DPI = 75;
+my $DPI = 300;
 
 # Argument list
 
@@ -326,7 +326,7 @@ sub callMatlab()
 		else
 		{
 			my $args = "echo \"quit\" | sudo -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop -r PlotCreator\"($matlabArgs)\"";
-			print("Call: $args\n\n");
+#			print("Call: $args\n\n");
 			
 			system($args);
 		}
@@ -352,7 +352,7 @@ sub convertEps()
 	foreach my $eps (@epsFiles)
 	{
 		my $filename = basename($eps);
-		system("convert -density $DPI $eps $outputTemp/jpg/$filename.jpg");
+		system("convert -density $DPI -quality 100 -colorspace RGB $eps $outputTemp/jpg/$filename.jpg");
 
 		unlink($eps);
 	}
