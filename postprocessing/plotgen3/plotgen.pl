@@ -42,7 +42,7 @@ my $plotDec = 0;
 # Arrays to cycle through when auto is set for lines
 my @lineStyles = ("-", "--", "-.");
 my @lineColors = ("blue", "green", "red", "cyan", "yellow", "black", "magenta");
-my @lineWidths = (5.5, 5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1);
+my @lineWidths = (4, 3.5, 3, 2.5, 2, 1.5, 1);
 
 my $outputIndex = "";
 
@@ -320,8 +320,6 @@ sub callMatlab()
 		if($matlabArgs eq $tempMatlabArgs)
 		{
 			print(STDERR "No valid data available to plot.\n");
-#			cleanup();
-#			exit(1);
 		}
 		else
 		{
