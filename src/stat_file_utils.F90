@@ -17,9 +17,9 @@ module stat_file_utils
 !----------------------------------------------------------------------
   function stat_file_average( filename, out_nz, &
                           t1, t2, out_heights, variable_name,  & 
-                          npower, l_error )
+                          npower, l_spec_bound_cond, l_error )
 ! Description:
-!   Average a GrADS file variable over the interval t1 to t2
+!   Average a GrADS or netCDF file variable over the interval t1 to t2
 
 ! References:
 !   None
@@ -71,6 +71,17 @@ module stat_file_utils
 
     integer, intent(in) :: & 
       npower ! Exponent operator, must be 1 or 2
+
+    ! Special boundary condition for when the lowest model level is a ghost point
+    ! comes from a fine vertical resolution run.  E.g.
+    !     Stat file levels    Model levels
+    !           50m                50m
+    !           25m
+    !          -25m
+    !                             -50m
+    ! So we need to set the lowest model level to the -25m value.
+    logical, intent(in) :: &
+      l_spec_bound_cond 
 
     ! Output Variable
     logical, intent(out) :: & 
@@ -203,8 +214,13 @@ module stat_file_utils
 !         interp_variable(k) = lin_ext_zt_bottom( interp_variable(k+4), &
 !           interp_variable(k+1), out_heights(k+2), out_heights(k+1), out_heights(k) )
 
-          ! Set undefined points to NaN
-          interp_variable(k) = transfer( nanbits, interp_variable(k) )
+          ! Set the ghost point if we have a special boundary condition
+          if ( k == 1 .and. l_spec_bound_cond ) then
+            interp_variable(k) = file_variable(1)
+          else
+            ! Set undefined points to NaN
+            interp_variable(k) = transfer( nanbits, interp_variable(k) )
+          end if
         end do
 
         do k = k_highest_input+1, out_nz, 1
@@ -327,7 +343,7 @@ module stat_file_utils
 
     stat_file_average_interval & 
     = stat_file_average & 
-      ( filename, nz, t(1), t(2), out_heights, variable_name, npower, l_error )  & 
+      ( filename, nz, t(1), t(2), out_heights, variable_name, npower, .false., l_error )  & 
       * ( t(2) - t(1) )
 
     divisor = t(2) - t(1)
@@ -337,7 +353,7 @@ module stat_file_utils
     do i=3, tdim, 2
       stat_file_temp = stat_file_average & 
                    ( filename, nz, t(i), t(i+1), out_heights,  & 
-                     variable_name, npower, l_error )
+                     variable_name, npower, .false., l_error )
       stat_file_average_interval  & 
       = stat_file_average_interval + stat_file_temp * ( t(i+1) - t(i) )
       divisor = divisor + ( t(i+1) - t(i) )

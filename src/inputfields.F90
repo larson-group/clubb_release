@@ -2512,6 +2512,7 @@ module inputfields
     integer, parameter :: &
       npower = 1 ! Power to raise the profile to (not applied)
 
+    ! Input Variables
     logical, intent(in) :: &
       l_input_var !  Whether to read the variable in
 
@@ -2532,11 +2533,20 @@ module inputfields
     logical, intent(out) :: &
       l_read_error ! Whether there was a read error
 
+    logical :: l_spec_bound_cond
+    ! Local Variables
+
     ! ---- Begin Code ----
 
     if ( l_input_var ) then
+      if ( clubb_heights(1) < 0.0 ) then
+        l_spec_bound_cond = .true.
+      else
+        l_spec_bound_cond = .false.
+      end if
+
       variable_interpolated = stat_file_average( filename, vardim, timestep, &
-        timestep, clubb_heights, varname, npower, l_read_error )
+        timestep, clubb_heights, varname, npower, l_spec_bound_cond, l_read_error )
 
     else
       l_read_error = .false.
