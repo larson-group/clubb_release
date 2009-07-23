@@ -204,8 +204,8 @@ sub create_forcing_file{
 			$ug = &fetch_val( 'ug', $i, $j );
 			$vg = &fetch_val( 'vg', $i, $j );
 		
-		        $thlm_f = $thlm_f + max(0.0, $vthlm_f);
-		        $rtm_f = $rtm_f + max(0.0, $vrtm_f);
+			$thlm_f = $thlm_f + max(0.0, $vthlm_f);
+			$rtm_f = $rtm_f + max(0.0, $vrtm_f);
 
 			print FILE $variables{'z'}{'data'}[$j]. " " . $thlm_f . " ". $rtm_f . " " . $um_ref . " " . $vm_ref . " " . $um_f .
 				" ". $vm_f . " " . $wm ." ". $ug . " " . $vg . "\n";
@@ -227,7 +227,7 @@ sub fetch_val{
 
 	if( exists $variables{$var}){
 		if($variables{$var}{'dim'} == 1) {
-			$retVar = $variables{$var}{'data'}[$i];
+			$retVar = $variables{$var}{'data'}[$j];
 		} elsif($variables{$var}{'dim'} == 2) {
 			$retVar = $variables{$var}{'data'}[$i][$j];
 		} else {
