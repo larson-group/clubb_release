@@ -102,7 +102,7 @@ sub runCases()
 	    		exit(1);
 	    	}
 
-		if(dataExists($CASE::CASE{'name'}))
+		if(dataExists($CASE::CASE{'name'}) && ($CASE::CASE{'enabled'} ne 'false'))
 		{
 			# Print the case title to the HTML page
 			OutputWriter->writeCaseTitle($outputIndex, $CASE::CASE{'headerText'});
@@ -153,7 +153,7 @@ sub runCases()
 		}
 		else
 		{
-			print("Not plotting $CASE::CASE{'name'}\n");
+			print("Not plotting $CASE::CASE{'headerText'}\n");
 		}
 	}
 }
