@@ -1636,7 +1636,7 @@ module clubb_core
         if ( rcm(k+1) < rc_tol ) then ! Cloud top
 
           vert_cloud_frac_upper(k) = &
-                   ( gr%dzm(k) / gr%dzt(k) ) * &
+                   ( ( 0.5 / gr%dzm(k) ) / ( gr%zm(k) - gr%zt(k) ) ) * &
                    ( rcm(k) / ( rcm(k) + abs( s_mean(k+1) ) ) ) 
 
           vert_cloud_frac_upper(k) = min( 0.5, vert_cloud_frac_upper(k) ) 
@@ -1650,7 +1650,7 @@ module clubb_core
         if ( rcm(k-1) < rc_tol ) then ! Cloud base
 
           vert_cloud_frac_lower(k) = &
-                   ( gr%dzm(k-1) / gr%dzt(k) ) * &
+                   ( ( 0.5 / gr%dzm(k-1) ) / ( gr%zt(k) - gr%zm(k-1) ) ) * &
                    ( rcm(k) / ( rcm(k) + abs( s_mean(k-1) ) ) )
 
           vert_cloud_frac_lower(k) = min( 0.5, vert_cloud_frac_lower(k) )
