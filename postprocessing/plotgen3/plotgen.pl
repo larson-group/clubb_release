@@ -19,6 +19,9 @@ use File::Basename;
 use File::Copy::Recursive qw(fcopy rcopy dircopy fmove rmove dirmove);
 use File::Path;
 
+# Plotgen Version Number
+my $VERSION = 3.0;
+
 # Used to create a "random" output directory so multiple runs
 # don't overwrite each other.
 my $randInt = rand(999999999999999);
@@ -386,11 +389,11 @@ sub readArgs()
 
 	if($numArgs == 0)
 	{
-		printHelp();
+		main::HELP_MESSAGE();
 	}
 
 	my %option = ();
-	getopts("rlbdan?", \%option);
+	getopts("rlbdanh?", \%option);
 
 	if ($option{r})
 	{
@@ -426,7 +429,7 @@ sub readArgs()
 
 	if ($option{h})
 	{
-		printHelp();
+		main::HELP_MESSAGE();
 	}
 
 	my $currentCount = 0;
@@ -469,6 +472,11 @@ sub readArgs()
 		}
 	}
 
+	if(@inputDirs == 0)
+	{
+		main::HELP_MESSAGE();
+	}
+
 	# Finally, check to see if the output folder exists. If it does, and
 	# '-r' was not passed in, exit. Otherwise, create it.
 	if(-d $output && $overwrite == 0)
@@ -486,7 +494,7 @@ sub readArgs()
 ###############################################################################
 # Prints the help message
 ###############################################################################
-sub printHelp()
+sub main::HELP_MESSAGE()
 {
 	print("Usage: plotgen [OPTION]... INPUT... OUTPUT\n");
 	print("  -r\tIf the output folder already exists, replace the contents\n");	
@@ -497,4 +505,12 @@ sub printHelp()
 	print("  -n\tRuns in nightly mode.\n");
 	print("  -h\tPrints this help message.\n");
 	exit(0);
+}
+
+###############################################################################
+# Prints the version number of Plotgen.
+###############################################################################
+sub main::VERSION_MESSAGE()
+{
+	print("Plotgen version $VERSION, Copyright (c) 2009 Larson Group.\n");
 }
