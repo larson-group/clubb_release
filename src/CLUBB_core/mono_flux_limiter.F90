@@ -283,6 +283,7 @@ module mono_flux_limiter
         ithlm_mfl,  &
         imin_thlm_allowable, &
         imax_thlm_allowable, &
+        ithlm_pre_limit, &
         l_stats_samp
 
     implicit none
@@ -376,7 +377,9 @@ module mono_flux_limiter
     if ( l_stats_samp ) then
        call stat_begin_update( iwpxp_mfl, real( wpxp / dt ), zm )
     endif
-
+    if ( l_stats_samp .and. trim( solve_type ) == "thlm" ) then
+       call stat_update_var( ithlm_pre_limit, xm, zt )
+    endif
 
     ! Initialize arrays.
     wpxp_net_adjust = 0.0
@@ -422,6 +425,8 @@ module mono_flux_limiter
        else
           m_adv_term = 0.0
        endif
+
+       !m_adv_term = 0.0
 
        ! Find the value of xm without the contribution from the turbulent
        ! advection term.

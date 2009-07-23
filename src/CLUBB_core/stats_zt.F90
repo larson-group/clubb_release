@@ -117,6 +117,7 @@ module stats_zt
         ithlm_cl, &
         imin_thlm_allowable, &
         imax_thlm_allowable, &
+        ithlm_pre_limit, &
         iwp3_bt, & 
         iwp3_ma, & 
         iwp3_ta, & 
@@ -415,6 +416,7 @@ module stats_zt
 
     imin_thlm_allowable = 0
     imax_thlm_allowable = 0
+    ithlm_pre_limit = 0
 
     iwp3_bt       = 0
     iwp3_ma       = 0
@@ -729,6 +731,12 @@ module stats_zt
         imax_thlm_allowable = k
         call stat_assign( imax_thlm_allowable, "max_thlm_allow", & 
              "Maximum allowable thlm (K)", "K", zt )
+        k = k + 1
+
+      case ('thlm_pre_limit')
+        ithlm_pre_limit = k
+        call stat_assign( ithlm_pre_limit, "thlm_pre_limit", & 
+             "Thlm before flux-limiter (K)", "K", zt )
         k = k + 1
 
       case ('wp3')
