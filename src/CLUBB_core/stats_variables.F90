@@ -172,6 +172,11 @@ module stats_variables
     ithlm_tacl,    & ! thlm correction from turbulent advection (wpthlp) clipping
     ithlm_cl         ! thlm clipping term
 
+  !monatonic flux limiter diagnostic terms
+  integer, public :: &
+    imin_thlm_allowable, &
+    imax_thlm_allowable
+
 !$omp   threadprivate(irtm_bt, irtm_ma, irtm_ta, irtm_forcing, &
 !$omp     irtm_mc, irtm_sdmp, irtm_mfl, irtm_tacl, irtm_cl, irtm_pd, &
 !$omp     irvm_mc, ircm_mc, &

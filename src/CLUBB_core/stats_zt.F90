@@ -114,7 +114,9 @@ module stats_zt
         ithlm_sdmp, &
         ithlm_mfl, &
         ithlm_tacl, &
-        ithlm_cl, & 
+        ithlm_cl, &
+        imin_thlm_allowable, &
+        imax_thlm_allowable, &
         iwp3_bt, & 
         iwp3_ma, & 
         iwp3_ta, & 
@@ -410,6 +412,9 @@ module stats_zt
     ithlm_mfl     = 0
     ithlm_tacl    = 0
     ithlm_cl      = 0 ! Josh
+
+    imin_thlm_allowable = 0
+    imax_thlm_allowable = 0
 
     iwp3_bt       = 0
     iwp3_ma       = 0
@@ -712,6 +717,18 @@ module stats_zt
         ircm_mc = k
         call stat_assign( ircm_mc, "rcm_mc", & 
              "Change in rc due microphysics (not in budget)", "kg/(kg s)", zt )
+        k = k + 1
+
+      case ('min_thlm_allowable')
+        imin_thlm_allowable = k
+        call stat_assign( imin_thlm_allowable, "min_thlm_allow", & 
+             "Minimum allowable thlm (K)", "K", zt )
+        k = k + 1
+
+      case ('max_thlm_allowable')
+        imax_thlm_allowable = k
+        call stat_assign( imax_thlm_allowable, "max_thlm_allow", & 
+             "Maximum allowable thlm (K)", "K", zt )
         k = k + 1
 
       case ('wp3')

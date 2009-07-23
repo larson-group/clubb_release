@@ -281,6 +281,8 @@ module mono_flux_limiter
         irtm_mfl,  &
         iwpthlp_mfl,  &
         ithlm_mfl,  &
+        imin_thlm_allowable, &
+        imax_thlm_allowable, &
         l_stats_samp
 
     implicit none
@@ -510,6 +512,11 @@ module mono_flux_limiter
        endif
 
     enddo
+
+    if ( l_stats_samp .and. trim( solve_type ) == "thlm" ) then
+       call stat_update_var( imin_thlm_allowable, min_x_allowable, zt )
+       call stat_update_var( imax_thlm_allowable, max_x_allowable, zt )
+    endif
 
 
     ! Reset the value of xm to compensate for the change to w'x'.
