@@ -62,7 +62,7 @@ foreach $file (@ARGV){
 	$dimension = 0;
 
 	# Open the file
-	open FILE, $file or die "Bad Filename";
+	open FILE, $file or die "Bad Filename: $file";
 
 	 # Store file contents to memory
 	@filedata = <FILE>;
@@ -78,7 +78,7 @@ foreach $file (@ARGV){
 		print "File is valid.\n";
 
 
-                print "Processing 1 dimensional file as a column"
+                print "Processing 1 dimensional file as a column";
 
 		print "What variable does this file represent?\n";
 
@@ -241,17 +241,17 @@ sub create_surface_file{
         open FILE, ">", $case_path . "_surface.in";
 
 	# Write out header
-        print FILE " Time[s]     LH[W\\m^2]     SH[W\\m^2]     thlm[K]     rt[kg\\kg]     Press[Pa]";
+        print FILE " Time[s]     LH[W\\m^2]     SH[W\\m^2]     thlm[K]     rt[kg\\kg]     Press[Pa]\n";
 
 	# For every time write out the values for each field at that time
-	for $i (0 .. $#{ $variables{'time'}{'data'} } ){
-		$lh = &fetch_val( 'lh', $i );
-		$sh = &fetch_val( 'sh', $i );
-		$thlm = &fetch_val( 'thlm', $i );
-		$rt = &fetch_val( 'rt', $i );
-		$press = &fetch_val( 'press', $i );
+	for $i (0 .. $#{ $variables{ 'time' }{ 'data' } } ){
+		$lh = &fetch_val( 'lh', 0, $i );
+		$sh = &fetch_val( 'sh', 0, $i );
+		$thlm = &fetch_val( 'thlm', 0, $i );
+		$rt = &fetch_val( 'rt', 0, $i );
+		$press = &fetch_val( 'press', 0, $i );
 
-		print FILE $variables{ 'time' }{ 'data' }[$i] ." ". $lh . " " . $sh . " " . $thlm . " " . $rt . " ". $press;
+		print FILE $variables{ 'time' }{ 'data' }[$i] ." ". $lh . " " . $sh . " " . $thlm . " " . $rt . " ". $press . "\n";
 	}
 	
 	close FILE;
@@ -351,6 +351,7 @@ sub fetch_val{
 
 	if( exists $variables{$var}){
 		if($variables{$var}{'dim'} == 1) {
+			
 			$retVar = $variables{$var}{'data'}[$j];
 		} elsif($variables{$var}{'dim'} == 2) {
 			$retVar = $variables{$var}{'data'}[$i][$j];
