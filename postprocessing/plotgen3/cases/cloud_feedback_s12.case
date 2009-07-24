@@ -4,6 +4,7 @@
 (
     'name' => 'cloud_feedback_s12',
     'enabled' => 'true',
+    'type' => 'standard',
     'headerText' => 'Cloud Feedback S12',
     'startTime' => 41760,  # [minutes]
     'endTime' => 43200,    # [minutes]

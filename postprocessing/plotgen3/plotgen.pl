@@ -47,6 +47,11 @@ my @lineStyles = ("-", "--", "-.");
 my @lineColors = ("blue", "green", "red", "cyan", "yellow", "black", "magenta");
 my @lineWidths = (4, 3.5, 3, 2.5, 2, 1.5, 1);
 
+# Counters for automatic lines
+my $lineStyleCounter = 0;
+my $lineColorCounter = 0;
+my $lineWidthCounter = 0;
+
 my $outputIndex = "";
 
 # Do not keep permissions on file copies
@@ -146,13 +151,28 @@ sub runCases()
 	
 			}
 			
-			callMatlab($CASE::CASE);
+			# Check to see if this is a budget plot or standard plot
+			
+			if($CASE::CASE{'type'} eq "budget")
+			{
+				buildMatlabStringBudget($CASE::CASE);
+				
+				# Convert the eps files to jpq
+				convertEps($CASE::CASE{'name'} . "_budget");
 
-			# Convert the eps files to jpq
-			convertEps($CASE::CASE{'name'});
+				# Add image file to HTML page
+				placeImages($CASE::CASE{'name'} . "_budget");
+			}
+			else
+			{
+				buildMatlabStringStd($CASE::CASE);
+				
+				# Convert the eps files to jpq
+				convertEps($CASE::CASE{'name'});
 
-			# Add image file to HTML page
-			placeImages($CASE::CASE{'name'});
+				# Add image file to HTML page
+				placeImages($CASE::CASE{'name'});
+			}
 		}
 		else
 		{
@@ -180,10 +200,87 @@ sub placeImages()
 }
 
 ###############################################################################
-# Generates the argument list needed for the Matlab part of Plotgen. Also,
-# Matlab is executed using sudo
-# #############################################################################
-sub callMatlab()
+# Generates argument lists needed for the Matlab part of Plotgen. This is for
+# budget plots that will plot each input directory on a seperate plot.
+###############################################################################
+sub buildMatlabStringBudget()
+{
+	my $CASE = shift(@_);
+	
+	my $totPlotNum = 0;
+	
+	# Get Common Case information
+	my $caseName =  $CASE::CASE{'name'} . "_budget";
+	my $startTime =  $CASE::CASE{'startTime'};
+	my $endTime =  $CASE::CASE{'endTime'};
+	my $startHeight =  $CASE::CASE{'startHeight'};
+	my $endHeight =  $CASE::CASE{'endHeight'};
+	
+	# Get array of plots from case file
+	my @plots;
+	push(@plots, @{$CASE::CASE{'plots'}});
+
+	my $units = $plots[0]{'axisLabel'};
+	my $type = $plots[0]{'type'};
+	
+	# Loop through each input folder and create a plot for each folder
+	for(my $plotCount = 0; $plotCount < @inputDirs; $plotCount++)
+	{
+		my $plotTitle = basename($inputDirs[$plotCount]);
+		
+		# Loop through each plot in the Case file
+		for(my $plotNum = 0; $plotNum < @plots; $plotNum++)
+		{
+			# Counters for automatic lines
+			$lineStyleCounter = 0;
+			$lineColorCounter = 0;
+			$lineWidthCounter = 0;
+			my $matlabArgs = "\'$caseName\', \'$plotTitle\', $totPlotNum, \'$type\', $startTime, $endTime, $startHeight, $endHeight, \'$units\', $randInt";
+			my $tempMatlabArgs = $matlabArgs;
+		
+			my @lines;
+			push(@lines, @{$plots[$plotNum]{'lines'}});
+			
+			for(my $lineNum = 0; $lineNum < @lines; $lineNum++)
+			{
+				my $file = "$inputDirs[$plotCount]/$lines[$lineNum]{'filename'}";
+				
+				my $name = $lines[$lineNum]{'name'};
+				my $expression = $lines[$lineNum]{'expression'};
+				my $type = $lines[$lineNum]{'type'};
+
+				if(-e $file)
+				{
+					my $lineWidth = $lineWidths[$lineWidthCounter];
+					my $lineStyle = $lineStyles[$lineStyleCounter];
+					my $lineColor = $lineColors[$lineColorCounter];
+							
+					$matlabArgs = "$matlabArgs, \'$file\', \'$name\', \'$expression\', \'$name\', $lineWidth, \'$lineStyle\', \'$lineColor\'";		
+
+					incrementLineTypes();
+				}
+			}
+			
+			# Check to see if there are lines to be plotted:
+			if($matlabArgs eq $tempMatlabArgs)
+			{
+				print(STDERR "No valid data available to plot.\n");
+			}
+			else
+			{
+				executeMatlab($matlabArgs);
+				$totPlotNum ++;
+			}
+		}
+	}
+}
+
+###############################################################################
+# Generates the argument list needed for the Matlab part of Plotgen. This is
+# for standard runs that plots variables from each input folder on the same
+# plot.
+###############################################################################
+sub buildMatlabStringStd()
 {
 	my $CASE = shift(@_);
 
@@ -202,9 +299,9 @@ sub callMatlab()
 	for(my $count = 0; $count < @plots; $count++)
 	{
 		# Counters for automatic lines
-		my $lineStyleCounter = 0;
-		my $lineColorCounter = 0;
-		my $lineWidthCounter = 0;
+		$lineStyleCounter = 0;
+		$lineColorCounter = 0;
+		$lineWidthCounter = 0;
 
 		my $plotTitle = $plots[$count]{'plotTitle'};
 		my $units = $plots[$count]{'axisLabel'};
@@ -245,75 +342,14 @@ sub callMatlab()
 					if(-e $file)
 					{
 						my $title = basename($_);
+						
 						my $lineWidth = $lineWidths[$lineWidthCounter];
 						my $lineStyle = $lineStyles[$lineStyleCounter];
 						my $lineColor = $lineColors[$lineColorCounter];
-	
+						
 						$matlabArgs = "$matlabArgs, \'$file\', \'$name\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
 
-						# Increment counters
-						if($lineColorCounter + 1 >= @lineColors)
-						{
-							$lineColorCounter = 0;
-	
-							if($lineStyleCounter + 1 >= @lineStyles)
-							{
-								$lineStyleCounter = 0;
-	
-								if($lineWidthCounter + 1 >= @lineWidths)
-								{
-									$lineWidthCounter = 0;
-								}
-								else
-								{
-									$lineWidthCounter ++;
-								}
-							}
-							else
-							{
-								$lineStyleCounter ++;
-
-								if($lineWidthCounter + 1 >= @lineWidths)
-								{
-									$lineWidthCounter = 0;
-								}
-								else
-								{
-									$lineWidthCounter ++;
-								}
-							}
-						}
-						else
-						{
-							$lineColorCounter++;
-
-							if($lineStyleCounter + 1 >= @lineStyles)
-							{
-								$lineStyleCounter = 0;
-	
-								if($lineWidthCounter + 1 >= @lineWidths)
-								{
-									$lineWidthCounter = 0;
-								}
-								else
-								{
-									$lineWidthCounter ++;
-								}
-							}
-							else
-							{
-								$lineStyleCounter ++;
-
-								if($lineWidthCounter + 1 >= @lineWidths)
-								{
-									$lineWidthCounter = 0;
-								}
-								else
-								{
-									$lineWidthCounter ++;
-								}
-							}
-						}
+						incrementLineTypes();
 					}
 				}
 			}
@@ -326,10 +362,88 @@ sub callMatlab()
 		}
 		else
 		{
-			my $args = "echo \"quit\" | sudo -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop -r PlotCreator\"($matlabArgs)\"";
-#			print("Call: $args\n\n");
-			
-			system($args);
+			executeMatlab($matlabArgs);	
+		}
+	}
+}
+
+sub executeMatlab()
+{
+	my $matlabArgs = shift(@_);
+
+	my $args = "echo \"quit\" | sudo -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop -r PlotCreator\"($matlabArgs)\"";
+
+	#print("Call: $args\n\n");			
+
+	system($args)
+}
+
+###############################################################################
+# Increments the counters for the automatic line types
+###############################################################################
+sub incrementLineTypes()
+{
+	# Increment counters
+	if($lineColorCounter + 1 >= @lineColors)
+	{
+		$lineColorCounter = 0;
+
+		if($lineStyleCounter + 1 >= @lineStyles)
+		{
+			$lineStyleCounter = 0;
+
+			if($lineWidthCounter + 1 >= @lineWidths)
+			{
+				$lineWidthCounter = 0;
+			}
+			else
+			{
+				$lineWidthCounter ++;
+			}
+		}
+		else
+		{
+			$lineStyleCounter ++;
+
+			if($lineWidthCounter + 1 >= @lineWidths)
+			{
+				$lineWidthCounter = 0;
+			}
+			else
+			{
+				$lineWidthCounter ++;
+			}
+		}
+	}
+	else
+	{
+		$lineColorCounter++;
+
+		if($lineStyleCounter + 1 >= @lineStyles)
+		{
+			$lineStyleCounter = 0;
+	
+			if($lineWidthCounter + 1 >= @lineWidths)
+			{
+				$lineWidthCounter = 0;
+			}
+			else
+			{
+				$lineWidthCounter ++;
+			}
+		}
+		else
+		{
+			$lineStyleCounter ++;
+
+			if($lineWidthCounter + 1 >= @lineWidths)
+			{
+				$lineWidthCounter = 0;
+			}
+			else
+			{
+				$lineWidthCounter ++;
+			}
 		}
 	}
 }
@@ -465,6 +579,7 @@ sub readArgs()
 				}
 
 				$output = $currentDir;
+				#$outputTemp = "/tmp/output" . "_" . "$randInt";
 				$outputTemp = "$output" . "_" . "$randInt";
 			}
 			
@@ -486,7 +601,8 @@ sub readArgs()
 	}
 	else
 	{
-		mkdir $output unless -d "$output";
+		rmtree($output);
+		mkdir $output;
 		mkdir $outputTemp;
 	}
 }

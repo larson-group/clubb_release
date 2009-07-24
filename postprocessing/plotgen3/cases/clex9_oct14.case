@@ -4,6 +4,7 @@
 (
     'name' => 'clex9_oct14',
     'enabled' => 'true',
+    'type' => 'standard',
     'headerText' => 'Clex 9 Oct. 14 Hour 1.5-2.5 (t=90-150 min)',
     'startTime' => 91.0,  # [minutes]
     'endTime' => 150.0,    # [minutes]
