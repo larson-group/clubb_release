@@ -33,7 +33,8 @@ module clubb_core
                thlm, rtm, wprtp, wpthlp, wpthvp, &
                Kh_zt, wp2, wp3, & 
                rtp2, thlp2, rtpthlp, & 
-               sigma_sqd_w, tau_zm, rcm, cf, & 
+               sigma_sqd_w, tau_zm, rcm, cf, &
+               cloud_cover, rcm_in_layer, & 
                sclrm, sclrp2, sclrprtp, sclrpthlp, &
                wpsclrp, edsclrm, pdf_params, &
                err_code ) 
@@ -245,26 +246,28 @@ module clubb_core
     ! Input/Output
     ! These are prognostic or are planned to be in the future
     real, intent(inout), dimension(gr%nnzp) ::  & 
-      um,         & ! u wind.                       [m/s]
-      upwp,       & ! u'w'.                         [m^2/s^2]
-      vm,         & ! v wind.                       [m/s]
-      vpwp,       & ! u'w'.                         [m^2/s^2]
-      up2,        & ! u'^2                          [m^2/s^2]
-      vp2,        & ! v'^2                          [m^2/s^2]
-      rtm,        & ! r_t Total water mixing ratio. [kg/kg]
-      wprtp,      & ! w' r_t'.                      [(m kg)/(s kg)]
-      thlm,       & ! th_l Liquid potential temp.   [K]
-      wpthlp,     & ! w' th_l'.                     [(m K)/s]
-      wpthvp,     & ! w' th_v'.                     [(m K)/s]
-      Kh_zt,      & ! Eddy-diffusivity              [m^2/s]
-      wp2,        & ! w'^2.                         [m^2/s^2]
-      wp3,        & ! w'^3.                         [m^3/s^3]
-      sigma_sqd_w,& ! sigma_sqd_w on moment. grid.           [-]
-      rtp2,       & ! r_t'^2.                       [(kg/kg)^2]
-      thlp2,      & ! th_l'^2.                      [K^2]
-      rtpthlp,    & ! r_t' th_l'.                   [(kg K)/kg]
-      tau_zm,     & ! Tau on moment. grid.          [s]
-      rcm           ! Liquid water mixing ratio.    [kg/kg]
+      um,          & ! u wind.                       [m/s]
+      upwp,        & ! u'w'.                         [m^2/s^2]
+      vm,          & ! v wind.                       [m/s]
+      vpwp,        & ! u'w'.                         [m^2/s^2]
+      up2,         & ! u'^2                          [m^2/s^2]
+      vp2,         & ! v'^2                          [m^2/s^2]
+      rtm,         & ! r_t Total water mixing ratio. [kg/kg]
+      wprtp,       & ! w' r_t'.                      [(m kg)/(s kg)]
+      thlm,        & ! th_l Liquid potential temp.   [K]
+      wpthlp,      & ! w' th_l'.                     [(m K)/s]
+      wpthvp,      & ! w' th_v'.                     [(m K)/s]
+      Kh_zt,       & ! Eddy-diffusivity              [m^2/s]
+      wp2,         & ! w'^2.                         [m^2/s^2]
+      wp3,         & ! w'^3.                         [m^3/s^3]
+      sigma_sqd_w, & ! sigma_sqd_w on moment. grid.           [-]
+      rtp2,        & ! r_t'^2.                       [(kg/kg)^2]
+      thlp2,       & ! th_l'^2.                      [K^2]
+      rtpthlp,     & ! r_t' th_l'.                   [(kg K)/kg]
+      tau_zm,      & ! Tau on moment. grid.          [s]
+      rcm,         & ! Liquid water mixing ratio.    [kg/kg]
+      cloud_cover, & ! Cloud cover                   [%]
+      rcm_in_layer   ! rcm in cloud layer            [kg/kg]
 
     ! Needed for output for host models
     real, intent(inout), dimension(gr%nnzp) ::  & 
@@ -322,11 +325,6 @@ module clubb_core
                                         ! second time (.true.) or by interpolation 
                                         ! (.false.).  Calling pdf_closure twice is more 
                                         ! expensive but produces better results.
-
-    ! ldgrant July 2009
-    real, dimension(gr%nnzp) :: &
-      cloud_cover,  & ! Cloud cover                               [%]
-      rcm_in_layer    ! liquid water mixing ratio in cloud layer  [kg/kg]
 
     !----- Begin Code -----
 
