@@ -252,7 +252,7 @@ module arm_0003
           heat_flx = factor_interp( time_frac, SE(i2), SE(i1) )
 !      moisture_flx = ( 1. - time_frac ) * LE(i1) +  &
 !         time_frac * LE(i2)
-          moisture_flx = factor_interp( time_frac, SE(i2), SE(i1) )
+          moisture_flx = factor_interp( time_frac, LE(i2), LE(i1) )
           i1           = ntimes
         end if
         i1 = i2

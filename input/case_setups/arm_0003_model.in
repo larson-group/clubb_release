@@ -26,7 +26,7 @@ grid_type = 2     ! Select grid type:
 ! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
 deltaz  = 200.0   ! Distance between grid levels on evenly-spaced grid.      [m]
 zm_init = 0.0 ! Minimum Altitude of lowest momentum level on any grid. [m]
-zm_top = 27625.0 ! Maximum Altitude of highest momentum level on any grid. [m]
+zm_top = 21400.0 ! Maximum Altitude of highest momentum level on any grid. [m]
 
 ! Stretched grid on thermodynamic levels (grid_type = 2).
 ! Path (from ../standalone/) and filename of data file that contains
