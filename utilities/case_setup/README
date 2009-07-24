@@ -3,6 +3,11 @@ This folder contains files used to make input data for CLUBB.
 text_table_format.pl - This file is a script that formats a table of text such that all of the columns line up properly. It is useful for tidying
 up input files such as *_sounding.in.
 
+file_reader_to_time_independent_converter.pl - This file is a script that takes forcing files that were formatted for use with the file_functions.F90 file and converts them for use with time_dependent_input.F90.
+
+TextFormat.pm - This is a Perl Module used by both file_reader_to_time_independent_converter.pl and text_table_format.pl. It contains functions
+for formatting plain text files.
+
 sounding_conversion.F90 - This file is a program which converts a sounding namelist into the 'SAM-like' input format.
 
 sclr_sounding_conversion.F90 - This file is a program which reads a *_sounding.in file and makes a default *_sclr_sounding.in and *_edsclr_sounding.in file from it.
