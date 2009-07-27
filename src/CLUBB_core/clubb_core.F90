@@ -34,7 +34,7 @@ module clubb_core
                Kh_zt, wp2, wp3, & 
                rtp2, thlp2, rtpthlp, & 
                sigma_sqd_w, tau_zm, rcm, cf, &
-               cloud_cover, rcm_in_layer, & 
+               rcm_in_layer, cloud_cover, & 
                sclrm, sclrp2, sclrprtp, sclrpthlp, &
                wpsclrp, edsclrm, pdf_params, &
                err_code ) 
@@ -266,8 +266,8 @@ module clubb_core
       rtpthlp,     & ! r_t' th_l'.                   [(kg K)/kg]
       tau_zm,      & ! Tau on moment. grid.          [s]
       rcm,         & ! Liquid water mixing ratio.    [kg/kg]
-      cloud_cover, & ! Cloud cover                   [%]
-      rcm_in_layer   ! rcm in cloud layer            [kg/kg]
+      rcm_in_layer,& ! rcm in cloud layer            [kg/kg]
+      cloud_cover    ! Cloud cover                   [%]
 
     ! Needed for output for host models
     real, intent(inout), dimension(gr%nnzp) ::  & 
@@ -796,7 +796,7 @@ module clubb_core
            wp2, wp3, rtp2, thlp2, rtpthlp,                     & ! intent(in)
            p_in_Pa, exner, rho, rho_zm, Kh_zt,                 & ! intent(in)
            wm_zt, sigma_sqd_w, tau_zm, rcm, cf,                & ! intent(in)
-           cloud_cover, rcm_in_layer,                          & ! intent(in)
+           rcm_in_layer, cloud_cover,                          & ! intent(in)
            pdf_params,                                         & ! intent(in)
            sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing,  & ! intent(in)
            wpsclrp, edsclrm, edsclrm_forcing )                   ! intent(in)

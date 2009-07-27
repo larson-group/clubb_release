@@ -38,8 +38,8 @@ module stats_zt
         iug, & 
         ivg, & 
         icf, &
-        icloud_cover, &
         ircm_in_layer, &
+        icloud_cover, &
         ip_in_Pa, & 
         iexner, & 
         iLscale, & 
@@ -329,8 +329,8 @@ module stats_zt
     iug           = 0
     ivg           = 0
     icf           = 0
-    icloud_cover  = 0
     ircm_in_layer = 0
+    icloud_cover  = 0
     ip_in_Pa      = 0
     iexner        = 0
     iLscale       = 0
@@ -662,15 +662,15 @@ module stats_zt
         call stat_assign( icf, "cf", & 
              "cloud fraction", "count", zt )
         k = k + 1
-      case ('cloud_cover')
-        icloud_cover = k
-        call stat_assign( icloud_cover, "cloud_cover", &
-             "cloud cover", "count", zt )
-        k = k + 1
       case ('rcm_in_layer')
         ircm_in_layer = k
         call stat_assign( ircm_in_layer, "rcm_in_layer", &
              "rcm in cloud layer (kg/kg)", "kg/kg", zt )
+        k = k + 1
+      case ('cloud_cover')
+        icloud_cover = k
+        call stat_assign( icloud_cover, "cloud_cover", &
+             "cloud cover", "count", zt )
         k = k + 1
       case ('p_in_Pa')
         ip_in_Pa = k

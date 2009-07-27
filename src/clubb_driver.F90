@@ -126,7 +126,7 @@ module clubb_driver
       rtm_forcing, um_forcing, vm_forcing, &
       up2, vp2, wp3, rtp2, pdf_params, & 
       thlp2, rtpthlp, sigma_sqd_w, cf, &
-      cloud_cover, rcm_in_layer
+      rcm_in_layer, cloud_cover
 
     use variables_prognostic_module, only:  & 
       sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, & ! Variables
@@ -761,7 +761,7 @@ module clubb_driver
                Kh_zt, wp2, wp3, &                                  ! Intent(inout)
                rtp2, thlp2, rtpthlp, &                             ! Intent(inout)
                sigma_sqd_w, tau_zm, rcm, cf, &                     ! Intent(inout)
-               cloud_cover, rcm_in_layer, &                        ! Intent(inout)
+               rcm_in_layer, cloud_cover, &                        ! Intent(inout)
                sclrm, sclrp2, sclrprtp, sclrpthlp, &               ! Intent(inout)
                wpsclrp, edsclrm, pdf_params, &                     ! Intent(inout)
                err_code )                                          ! Intent(inout)

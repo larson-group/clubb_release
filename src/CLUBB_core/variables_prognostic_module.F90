@@ -73,10 +73,10 @@ module variables_prognostic_module
   real, target, allocatable, dimension(:), public :: & 
     rcm,         & ! Cloud water mixing ratio                 [kg/kg]
     cf,          & ! Cloud fraction                           [%]
-    cloud_cover, & ! Cloud cover                              [%]
-    rcm_in_layer   ! Cloud water mixing ratio in cloud layer  [kg/kg]
+    rcm_in_layer,& ! Cloud water mixing ratio in cloud layer  [kg/kg]
+    cloud_cover    ! Cloud cover                              [%]
 
-!$omp   threadprivate(rcm, cf, cloud_cover, rcm_in_layer)
+!$omp   threadprivate(rcm, cf, rcm_in_layer, cloud_cover)
 
   ! Surface fluxes
   real, public ::  & 
@@ -237,8 +237,8 @@ module variables_prognostic_module
 
     allocate( rcm(1:nzmax) )
     allocate( cf(1:nzmax) )
-    allocate( cloud_cover(1:nzmax) )
     allocate( rcm_in_layer(1:nzmax) )
+    allocate( cloud_cover(1:nzmax) )
 
     ! Passive scalar variables
     ! Note that sclr_dim can be 0
@@ -325,8 +325,8 @@ module variables_prognostic_module
 
     rcm(1:nzmax)          = 0.0
     cf(1:nzmax)           = 0.0
-    cloud_cover(1:nzmax)  = 0.0
     rcm_in_layer(1:nzmax) = 0.0
+    cloud_cover(1:nzmax)  = 0.0
 
     ! Eddy diffusivity
     Kh_zt      = 0.0
@@ -443,8 +443,8 @@ module variables_prognostic_module
 
     deallocate( rcm )
     deallocate( cf )
-    deallocate( cloud_cover )
     deallocate( rcm_in_layer )
+    deallocate( cloud_cover )
 
     ! Variable for pdf closure scheme
     deallocate( pdf_params%w1,          pdf_params%w2,  &

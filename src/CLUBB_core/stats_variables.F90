@@ -62,8 +62,8 @@ module stats_variables
      iug, & 
      ivg, & 
      icf, &
-     icloud_cover, &
      ircm_in_layer, &
+     icloud_cover, &
      ip_in_Pa, & 
      iexner, & 
      iLscale, & 
