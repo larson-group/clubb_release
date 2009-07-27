@@ -174,9 +174,26 @@ module stats_variables
 
   !monatonic flux limiter diagnostic terms
   integer, public :: &
-    imin_thlm_allowable, &
-    imax_thlm_allowable, &
-    ithlm_pre_limit
+    ithlm_mfl_lower_lim, &
+    ithlm_mfl_upper_lim, &
+    iwpthlp_enter_mfl, &
+    iwpthlp_exit_mfl, &
+    iwpthlp_mfl_lower_lim, &
+    iwpthlp_mfl_upper_lim, &
+    irtm_mfl_lower_lim, &
+    irtm_mfl_upper_lim, &
+    iwprtp_enter_mfl, &
+    iwprtp_exit_mfl, &
+    iwprtp_mfl_lower_lim, &
+    iwprtp_mfl_upper_lim, &
+    ithlm_enter_mfl, &
+    ithlm_exit_mfl, &
+    ithlm_old, &
+    ithlm_without_ta, &
+    irtm_enter_mfl, &
+    irtm_exit_mfl, &
+    irtm_old, &
+    irtm_without_ta
 
 !$omp   threadprivate(irtm_bt, irtm_ma, irtm_ta, irtm_forcing, &
 !$omp     irtm_mc, irtm_sdmp, irtm_mfl, irtm_tacl, irtm_cl, irtm_pd, &

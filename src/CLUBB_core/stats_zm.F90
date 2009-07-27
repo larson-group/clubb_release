@@ -157,6 +157,16 @@ module stats_zm
         irtpthlp_dp1, & 
         irtpthlp_dp2, & 
         irtpthlp_cl
+    
+    use stats_variables, only: & 
+        iwpthlp_enter_mfl, &
+        iwpthlp_exit_mfl, &
+        iwpthlp_mfl_lower_lim, &
+        iwpthlp_mfl_upper_lim, &
+        iwprtp_enter_mfl, &
+        iwprtp_exit_mfl, &
+        iwprtp_mfl_lower_lim, &
+        iwprtp_mfl_upper_lim
 
     use stats_variables, only: & 
         isclrprtp, & 
@@ -337,6 +347,16 @@ module stats_zm
     irtpthlp_dp1 = 0
     irtpthlp_dp2 = 0
     irtpthlp_cl  = 0
+
+    !Monatonic flux limiter diagnostic output
+    iwpthlp_mfl_lower_lim = 0
+    iwpthlp_mfl_upper_lim = 0
+    iwpthlp_enter_mfl = 0
+    iwpthlp_exit_mfl = 0
+    iwprtp_mfl_lower_lim = 0
+    iwprtp_mfl_upper_lim = 0
+    iwprtp_enter_mfl = 0
+    iwprtp_exit_mfl = 0
 
     allocate(isclrprtp(1:sclr_dim))
     allocate(isclrp2(1:sclr_dim))
@@ -1136,6 +1156,53 @@ module stats_zm
              "vp2 positive definite adjustment", "m^2/s^2", zm )
         k = k + 1
 
+      case ('wpthlp_enter_mfl')
+        iwpthlp_enter_mfl = k
+        call stat_assign( iwpthlp_enter_mfl, "wpthlp_in_mfl", & 
+             "Wpthlp entering flux limiter ((m K)/s)", "(m K)/s", zm )
+        k = k + 1
+
+      case ('wpthlp_exit_mfl')
+        iwpthlp_exit_mfl = k
+        call stat_assign( iwpthlp_exit_mfl, "wpthlp_out_mfl", & 
+             "Wpthlp exiting flux limiter ((m K)/s)", "(m K)/s", zm )
+        k = k + 1
+
+      case ('wpthlp_mfl_lower_lim')
+        iwpthlp_mfl_lower_lim = k
+        call stat_assign( iwpthlp_mfl_lower_lim, "wpthlp_mfl_min", & 
+             "Minimum allowable wpthlp ((m K)/s)", "(m K)/s", zm )
+        k = k + 1
+
+      case ('wpthlp_mfl_upper_lim')
+        iwpthlp_mfl_upper_lim = k
+        call stat_assign( iwpthlp_mfl_upper_lim, "wpthlp_mfl_max", & 
+             "Maximum allowable wpthlp ((m K)/s)", "(m K)/s", zm )
+        k = k + 1
+
+      case ('wprtp_mfl_lower_lim')
+        iwprtp_mfl_lower_lim = k
+        call stat_assign( iwprtp_mfl_lower_lim, "wprtp_mfl_min", & 
+             "Minimum allowable wprtp ((m kg)/(s kg))", "(m kg)/(s kg)", zm )
+        k = k + 1
+
+      case ('wprtp_mfl_upper_lim')
+        iwprtp_mfl_upper_lim = k
+        call stat_assign( iwprtp_mfl_upper_lim, "wprtp_mfl_max", & 
+             "Maximum allowable wprtp ((m kg)/(s kg))", "(m kg)/(s kg)", zm )
+        k = k + 1
+
+      case ('wprtp_enter_mfl')
+        iwprtp_enter_mfl = k
+        call stat_assign( iwprtp_enter_mfl, "wprtp_in_mfl", & 
+             "Wprtp entering flux limiter ((m kg)/(s kg))", "(m kg)/(s kg)", zm )
+        k = k + 1
+
+      case ('wprtp_exit_mfl')
+        iwprtp_exit_mfl = k
+        call stat_assign( iwprtp_exit_mfl, "wprtp_out_mfl", & 
+             "Wprtp exiting flux limiter ((m kg)/(s kg))", "(m kg)/(s kg)", zm )
+        k = k + 1        
 
       case default
         l_found = .false.

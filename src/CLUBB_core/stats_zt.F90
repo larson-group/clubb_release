@@ -115,9 +115,6 @@ module stats_zt
         ithlm_mfl, &
         ithlm_tacl, &
         ithlm_cl, &
-        imin_thlm_allowable, &
-        imax_thlm_allowable, &
-        ithlm_pre_limit, &
         iwp3_bt, & 
         iwp3_ma, & 
         iwp3_ta, & 
@@ -129,6 +126,21 @@ module stats_zt
         iwp3_dp1, &
         iwp3_4hd, & 
         iwp3_cl
+
+    ! Monotonic flux limiter diagnostic variables    
+    use stats_variables, only: &
+        ithlm_mfl_lower_lim, &
+        ithlm_mfl_upper_lim, &
+        irtm_mfl_lower_lim, &
+        irtm_mfl_upper_lim, &
+        ithlm_enter_mfl, &
+        ithlm_exit_mfl, &
+        ithlm_old, &
+        ithlm_without_ta, &
+        irtm_enter_mfl, &
+        irtm_exit_mfl, &
+        irtm_old, &
+        irtm_without_ta    
 
     use stats_variables, only: & 
         irrainm_bt, & 
@@ -414,9 +426,18 @@ module stats_zt
     ithlm_tacl    = 0
     ithlm_cl      = 0 ! Josh
 
-    imin_thlm_allowable = 0
-    imax_thlm_allowable = 0
-    ithlm_pre_limit = 0
+    ithlm_mfl_lower_lim = 0
+    ithlm_mfl_upper_lim = 0
+    irtm_mfl_lower_lim = 0
+    irtm_mfl_upper_lim = 0
+    ithlm_enter_mfl = 0
+    ithlm_exit_mfl = 0
+    ithlm_old = 0
+    ithlm_without_ta = 0
+    irtm_enter_mfl = 0
+    irtm_exit_mfl = 0
+    irtm_old = 0
+    irtm_without_ta = 0
 
     iwp3_bt       = 0
     iwp3_ma       = 0
@@ -721,23 +742,77 @@ module stats_zt
              "Change in rc due microphysics (not in budget)", "kg/(kg s)", zt )
         k = k + 1
 
-      case ('min_thlm_allowable')
-        imin_thlm_allowable = k
-        call stat_assign( imin_thlm_allowable, "min_thlm_allow", & 
+      case ('thlm_mfl_lower_lim')
+        ithlm_mfl_lower_lim = k
+        call stat_assign( ithlm_mfl_lower_lim, "thlm_mfl_min", & 
              "Minimum allowable thlm (K)", "K", zt )
         k = k + 1
 
-      case ('max_thlm_allowable')
-        imax_thlm_allowable = k
-        call stat_assign( imax_thlm_allowable, "max_thlm_allow", & 
+      case ('thlm_mfl_upper_lim')
+        ithlm_mfl_upper_lim = k
+        call stat_assign( ithlm_mfl_upper_lim, "thlm_mfl_max", & 
              "Maximum allowable thlm (K)", "K", zt )
         k = k + 1
 
-      case ('thlm_pre_limit')
-        ithlm_pre_limit = k
-        call stat_assign( ithlm_pre_limit, "thlm_pre_limit", & 
+      case ('thlm_enter_mfl')
+        ithlm_enter_mfl = k
+        call stat_assign( ithlm_enter_mfl, "thlm_enter_mfl", & 
              "Thlm before flux-limiter (K)", "K", zt )
         k = k + 1
+
+      case ('thlm_exit_mfl')
+        ithlm_exit_mfl = k
+        call stat_assign( ithlm_exit_mfl, "thlm_exit_mfl", & 
+             "Thlm exiting flux-limiter (K)", "K", zt )
+        k = k + 1
+
+      case ('thlm_old')
+        ithlm_old = k
+        call stat_assign( ithlm_old, "thlm_old", & 
+             "Thlm at previous timestep (K)", "K", zt )
+        k = k + 1
+
+      case ('thlm_without_ta')
+        ithlm_without_ta = k
+        call stat_assign( ithlm_without_ta, "thlm_wo_ta", & 
+             "Thlm without turbulent advection contribution (K)", "K", zt )
+        k = k + 1    
+
+      case ('rtm_mfl_lower_lim')
+        irtm_mfl_lower_lim = k
+        call stat_assign( irtm_mfl_lower_lim, "rtm_mfl_min", & 
+             "Minimum allowable rtm (kg/kg)", "kg/kg", zt )
+        k = k + 1
+
+      case ('rtm_mfl_upper_lim')
+        irtm_mfl_upper_lim = k
+        call stat_assign( irtm_mfl_upper_lim, "rtm_mfl_max", & 
+             "Maximum allowable rtm (kg/kg)", "kg/kg", zt )
+        k = k + 1
+
+      case ('rtm_enter_mfl')
+        irtm_enter_mfl = k
+        call stat_assign( irtm_enter_mfl, "rtm_enter_mfl", & 
+             "Rtm before flux-limiter (kg/kg)", "kg/kg", zt )
+        k = k + 1
+
+      case ('rtm_exit_mfl')
+        irtm_exit_mfl = k
+        call stat_assign( irtm_exit_mfl, "rtm_exit_mfl", & 
+             "Rtm exiting flux-limiter (kg/kg)", "kg/kg", zt )
+        k = k + 1
+
+      case ('rtm_old')
+        irtm_old = k
+        call stat_assign( irtm_old, "rtm_old", & 
+             "Rtm at previous timestep (kg/kg)", "kg/kg", zt )
+        k = k + 1
+
+      case ('rtm_without_ta')
+        irtm_without_ta = k
+        call stat_assign( irtm_without_ta, "rtm_wo_ta", & 
+             "Rtm without turbulent advection contribution (kg/kg)", "kg/kg", zt )
+        k = k + 1   
 
       case ('wp3')
         iwp3 = k
