@@ -6,7 +6,7 @@ module estimate_lh_micro_mod
 
   public :: estimate_lh_micro
 
-  private :: autoconv_driver, rc_estimate, micro_driver
+  private :: autoconv_driver, rc_estimate, lh_microphys_driver
 
   private ! Default Scope
 
@@ -21,8 +21,8 @@ module estimate_lh_micro_mod
                thlm, p_in_Pa, exner, rho, &
                wm, w_std_dev, dzq, rcm, rvm, &        
                cf, hydromet, &
-               hydromet_mc_est, hydromet_vel_est, &
-               rcm_mc_est, rvm_mc_est, thlm_mc_est, &
+               lh_hydromet_mc, lh_hydromet_vel, &
+               lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, &
                AKm_est, AKm, AKstd, AKstd_cld, & 
                AKm_rcm, AKm_rcc, rcm_est, &
                lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &
@@ -98,13 +98,13 @@ module estimate_lh_micro_mod
 
     ! Output Variables
     real, dimension(nnzp,hydromet_dim), intent(inout) :: &
-      hydromet_mc_est, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
-      hydromet_vel_est   ! LH estimate of hydrometeor sedimentation velocity [m/s]
+      lh_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
+      lh_hydromet_vel   ! LH estimate of hydrometeor sedimentation velocity [m/s]
 
     real, dimension(nnzp), intent(out) :: &
-      rcm_mc_est, & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
-      rvm_mc_est, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
-      thlm_mc_est   ! LH estimate of time tendency of liquid potential temperature [K/s]
+      lh_rcm_mc, & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
+      lh_rvm_mc, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
+      lh_thlm_mc   ! LH estimate of time tendency of liquid potential temperature [K/s]
 
     real, dimension(nnzp), intent(out) :: &
       AKm_est,   & ! Monte Carlo estimate of Kessler autoconversion [kg/kg/s]
@@ -351,16 +351,16 @@ module estimate_lh_micro_mod
 
     end do ! level = 2, nnzp
 
-    call micro_driver( dt, nnzp, n_micro_calls, d_variables, &
-                       l_sample_flag, rt, thl, &
-                       X_nl_all_levs, X_u_all_levs, &
-                       thlm, p_in_Pa, exner, rho, wm, w_std_dev, &
-                       dzq, rcm, rvm, pdf_params, hydromet, &
-                       rvm_mc_est, rcm_mc_est, hydromet_mc_est, &
-                       hydromet_vel_est, thlm_mc_est, &
-                       lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &
-                       lh_wm, lh_wp2_zt, lh_cf, &
-                       microphys_sub )
+    call lh_microphys_driver( dt, nnzp, n_micro_calls, d_variables, &
+                              l_sample_flag, rt, thl, &
+                              X_nl_all_levs, X_u_all_levs, &
+                              thlm, p_in_Pa, exner, rho, wm, w_std_dev, &
+                              dzq, rcm, rvm, pdf_params, hydromet, &
+                              lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, &
+                              lh_hydromet_vel, lh_thlm_mc, &
+                              lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &
+                              lh_wm, lh_wp2_zt, lh_cf, &
+                              microphys_sub )
 
     return
   end subroutine estimate_lh_micro
@@ -553,16 +553,16 @@ module estimate_lh_micro_mod
   end subroutine autoconv_driver
 
 !-------------------------------------------------------------------------------
-  subroutine micro_driver( dt, nnzp, n_micro_calls, d_variables, &
-                           l_sample_flag, rt, thl, &
-                           X_nl_all_levs, X_u_all_levs, &
-                           thlm, p_in_Pa, exner, rho, wm, w_std_dev, &
-                           dzq, rcm, rvm, pdf_params, hydromet,  &
-                           rvm_mc_est, rcm_mc_est, hydromet_mc_est, &
-                           hydromet_vel_est, thlm_mc_est, &
-                           lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &
-                           lh_wm, lh_wp2_zt, lh_cf, &
-                           microphys_sub )
+  subroutine lh_microphys_driver( dt, nnzp, n_micro_calls, d_variables, &
+                                  l_sample_flag, rt, thl, &
+                                  X_nl_all_levs, X_u_all_levs, &
+                                  thlm, p_in_Pa, exner, rho, wm, w_std_dev, &
+                                  dzq, rcm, rvm, pdf_params, hydromet,  &
+                                  lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, &
+                                  lh_hydromet_vel, lh_thlm_mc, &
+                                  lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &
+                                  lh_wm, lh_wp2_zt, lh_cf, &
+                                  microphys_sub )
 ! Description:
 !   Estimate the tendency of a microphysics scheme via latin hypercube sampling
 ! References:
@@ -644,13 +644,13 @@ module estimate_lh_micro_mod
     ! Output Variables
 
     real, dimension(nnzp,hydromet_dim), intent(inout) :: &
-      hydromet_mc_est, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
-      hydromet_vel_est   ! LH estimate of hydrometeor sedimentation velocity [m/s]
+      lh_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
+      lh_hydromet_vel   ! LH estimate of hydrometeor sedimentation velocity [m/s]
 
     real, dimension(nnzp), intent(out) :: &
-      rcm_mc_est, & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
-      rvm_mc_est, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
-      thlm_mc_est   ! LH estimate of time tendency of liquid potential temperature [K/s]
+      lh_rcm_mc, & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
+      lh_rvm_mc, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
+      lh_thlm_mc   ! LH estimate of time tendency of liquid potential temperature [K/s]
 
     real, dimension(nnzp,hydromet_dim), intent(out) :: &
       lh_hydromet ! Average value of the latin hypercube est. of all hydrometeors [units vary]
@@ -665,18 +665,18 @@ module estimate_lh_micro_mod
 
     ! Local Variables
     double precision, dimension(nnzp,hydromet_dim) :: &
-      hydromet_mc_est_m1,  & ! LH est of hydrometeor time tendency          [(units vary)/s]
-      hydromet_mc_est_m2,  & ! LH est of hydrometeor time tendency          [(units vary)/s]
-      hydromet_vel_est_m1, & ! LH est of hydrometeor sedimentation velocity [m/s]
-      hydromet_vel_est_m2    ! LH est of hydrometeor sedimentation velocity [m/s]
+      lh_hydromet_mc_m1,  & ! LH est of hydrometeor time tendency          [(units vary)/s]
+      lh_hydromet_mc_m2,  & ! LH est of hydrometeor time tendency          [(units vary)/s]
+      lh_hydromet_vel_m1, & ! LH est of hydrometeor sedimentation velocity [m/s]
+      lh_hydromet_vel_m2    ! LH est of hydrometeor sedimentation velocity [m/s]
 
     double precision, dimension(nnzp) :: &
-      rcm_mc_est_m1,  & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
-      rcm_mc_est_m2,  & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
-      rvm_mc_est_m1,  & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
-      rvm_mc_est_m2,  & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
-      thlm_mc_est_m1, & ! LH est of time tendency of liquid potential temperature [K/s]
-      thlm_mc_est_m2    ! LH est of time tendency of liquid potential temperature [K/s]
+      lh_rcm_mc_m1,  & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
+      lh_rcm_mc_m2,  & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
+      lh_rvm_mc_m1,  & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
+      lh_rvm_mc_m2,  & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
+      lh_thlm_mc_m1, & ! LH est of time tendency of liquid potential temperature [K/s]
+      lh_thlm_mc_m2    ! LH est of time tendency of liquid potential temperature [K/s]
 
     real, dimension(nnzp,hydromet_dim) :: &
       hydromet_tmp ! Hydrometeor species    [units vary]
@@ -710,29 +710,29 @@ module estimate_lh_micro_mod
     cloud_frac1(:) = dble( 1.0 )
     cloud_frac2(:) = dble( 1.0 )
 
+    ! Mellor's 's' is at the same index at iiLH_rt (total water mixing ratio)
     s_mellor => X_nl_all_levs(:,:,iiLH_rt)
     w        => X_nl_all_levs(:,:,iiLH_w)
 
     zero(:) = 0
 
-    hydromet_vel_est(:,:) = 0.
-    hydromet_vel_est(:,:) = 0.
+    lh_hydromet_vel(:,:) = 0.
 
     ! Initialize microphysical tendencies for each mixture component
-    hydromet_mc_est_m1(:,:) = 0.d0
-    hydromet_mc_est_m2(:,:) = 0.d0
+    lh_hydromet_mc_m1(:,:) = 0.d0
+    lh_hydromet_mc_m2(:,:) = 0.d0
 
-    hydromet_vel_est_m1(:,:) = 0.d0
-    hydromet_vel_est_m2(:,:) = 0.d0
+    lh_hydromet_vel_m1(:,:) = 0.d0
+    lh_hydromet_vel_m2(:,:) = 0.d0
 
-    rcm_mc_est_m1(:) = 0.d0
-    rcm_mc_est_m2(:) = 0.d0
+    lh_rcm_mc_m1(:) = 0.d0
+    lh_rcm_mc_m2(:) = 0.d0
 
-    rvm_mc_est_m1(:) = 0.d0
-    rvm_mc_est_m2(:) = 0.d0
+    lh_rvm_mc_m1(:) = 0.d0
+    lh_rvm_mc_m2(:) = 0.d0
 
-    thlm_mc_est_m1(:) = 0.d0
-    thlm_mc_est_m2(:) = 0.d0
+    lh_thlm_mc_m1(:) = 0.d0
+    lh_thlm_mc_m2(:) = 0.d0
 
     ! Initialize numbers of sample points corresponding
     !    to each mixture component
@@ -818,29 +818,29 @@ module estimate_lh_micro_mod
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
            ( dt, nnzp, .false., .true., thl_tmp, p_in_Pa, exner, rho, pdf_params, &
-             w_tmp(:,sample), w_std_dev, dzq, rc_tmp, rv_tmp, hydromet_tmp, hydromet_mc_est, &
-             hydromet_vel_est, rcm_mc_est, rvm_mc_est, thlm_mc_est )
+             w_tmp(:,sample), w_std_dev, dzq, rc_tmp, rv_tmp, hydromet_tmp, lh_hydromet_mc, &
+             lh_hydromet_vel, lh_rcm_mc, lh_rvm_mc, lh_thlm_mc )
 
       do i = 1, hydromet_dim
         where ( X_u_all_levs(1:nnzp,sample,d_variables+1) < fraction_1 )
-          hydromet_vel_est_m1(:,i) = hydromet_vel_est_m1(:,i) + hydromet_vel_est(:,i)
-          hydromet_mc_est_m1(:,i) = hydromet_mc_est_m1(:,i) + hydromet_mc_est(:,i)
+          lh_hydromet_vel_m1(:,i) = lh_hydromet_vel_m1(:,i) + lh_hydromet_vel(:,i)
+          lh_hydromet_mc_m1(:,i) = lh_hydromet_mc_m1(:,i) + lh_hydromet_mc(:,i)
         else where
-          hydromet_vel_est_m2(:,i) = hydromet_vel_est_m2(:,i) + hydromet_vel_est(:,i)
-          hydromet_mc_est_m2(:,i) = hydromet_mc_est_m2(:,i) + hydromet_mc_est(:,i)
+          lh_hydromet_vel_m2(:,i) = lh_hydromet_vel_m2(:,i) + lh_hydromet_vel(:,i)
+          lh_hydromet_mc_m2(:,i) = lh_hydromet_mc_m2(:,i) + lh_hydromet_mc(:,i)
         end where
       end do
 
       where ( X_u_all_levs(1:nnzp,sample,d_variables+1) < fraction_1 )
-        rcm_mc_est_m1(:) = rcm_mc_est_m1(:) + rcm_mc_est(:)
-        rvm_mc_est_m1(:) = rvm_mc_est_m1(:) + rvm_mc_est(:)
-        thlm_mc_est_m1(:) = thlm_mc_est_m1(:) + thlm_mc_est(:)
+        lh_rcm_mc_m1(:) = lh_rcm_mc_m1(:) + lh_rcm_mc(:)
+        lh_rvm_mc_m1(:) = lh_rvm_mc_m1(:) + lh_rvm_mc(:)
+        lh_thlm_mc_m1(:) = lh_thlm_mc_m1(:) + lh_thlm_mc(:)
         n1(:) = n1(:) + 1
 
       else where
-        rcm_mc_est_m2(:) = rcm_mc_est_m2(:) + rcm_mc_est(:)
-        rvm_mc_est_m2(:) = rvm_mc_est_m2(:) + rvm_mc_est(:)
-        thlm_mc_est_m2(:) = thlm_mc_est_m2(:) + thlm_mc_est(:)
+        lh_rcm_mc_m2(:) = lh_rcm_mc_m2(:) + lh_rcm_mc(:)
+        lh_rvm_mc_m2(:) = lh_rvm_mc_m2(:) + lh_rvm_mc(:)
+        lh_thlm_mc_m2(:) = lh_thlm_mc_m2(:) + lh_thlm_mc(:)
         n2(:) = n2(:) + 1
 
       end where
@@ -866,116 +866,85 @@ module estimate_lh_micro_mod
 
     end if
 
-!   rvm_tmp = 0
-!   do sample = 1, n_micro_calls
-!   do k = 1, nnzp, 1
-!     if ( l_sample_flag(k) ) then
-!       rvm_tmp(k) = rvm_tmp(k) + real( rt(k,sample) ) /1000.
-!     else
-!       rvm_tmp(k) = rvm_tmp(k) + rvm(k) + rcm(k)
-!     end if
-!   end do
-!   end do
-!   do k = 1, nnzp
-!     write(6,'(2G12.4)') rvm_tmp(k) / real( n_micro_calls ), rvm(k)+rcm(k)
-!   end do
-!   pause
-
-!   thlm_tmp = 0
-!   do sample = 1, n_micro_calls
-!   do k = 1, nnzp, 1
-!     if ( l_sample_flag(k) ) then
-!       thlm_tmp(k) = thlm_tmp(k) + real( thl(k,sample) )
-!     else
-!       thlm_tmp(k) = thlm_tmp(k) + thlm(k)
-!     end if
-!   end do
-!   end do
-!   do k = 1, nnzp
-!     write(6,'(2G12.4)') thlm_tmp(k) / real( n_micro_calls ), thlm(k)
-!   end do
-!   pause
-
-! Convert sums to averages.
-! If we have no sample points for a certain plume,
-!    then we estimate the plume liquid water by the
-!    other plume's value.
+    ! Convert sums to averages.
+    ! If we have no sample points for a certain plume, then we 
+    ! estimate the plume liquid water by the other plume's value.
     l_error = .false.
     do k = 1, nnzp
       if ( n1(k) == 0 .and. n2(k) == 0 ) then
         l_error = .true.
-        write(0,*) 'Error:  no sample points in micro_driver, k =', k
+        write(0,*) 'Error:  no sample points in lh_microphys_driver, k =', k
       end if
     end do
     if ( l_error ) stop
 
     do i = 1, hydromet_dim
       where ( n1 /= zero )
-        hydromet_vel_est_m1(:,i) = hydromet_vel_est_m1(:,i) / dble( n1 )
-        hydromet_mc_est_m1(:,i) = hydromet_mc_est_m1(:,i) / dble( n1 )
+        lh_hydromet_vel_m1(:,i) = lh_hydromet_vel_m1(:,i) / dble( n1 )
+        lh_hydromet_mc_m1(:,i) = lh_hydromet_mc_m1(:,i) / dble( n1 )
       end where
     end do
 
     where ( n1 /= zero )
-      rcm_mc_est_m1 = rcm_mc_est_m1 / dble( n1 )
-      rvm_mc_est_m1 = rvm_mc_est_m1 / dble( n1 )
-      thlm_mc_est_m1 = thlm_mc_est_m1 / dble( n1 )
+      lh_rcm_mc_m1 = lh_rcm_mc_m1 / dble( n1 )
+      lh_rvm_mc_m1 = lh_rvm_mc_m1 / dble( n1 )
+      lh_thlm_mc_m1 = lh_thlm_mc_m1 / dble( n1 )
     end where
 
     do i = 1, hydromet_dim
       where ( n2 /= zero )
-        hydromet_vel_est_m2(:,i) = hydromet_vel_est_m2(:,i) / dble( n2 )
-        hydromet_mc_est_m2(:,i) = hydromet_mc_est_m2(:,i) / dble( n2 )
+        lh_hydromet_vel_m2(:,i) = lh_hydromet_vel_m2(:,i) / dble( n2 )
+        lh_hydromet_mc_m2(:,i) = lh_hydromet_mc_m2(:,i) / dble( n2 )
       end where
     end do
 
     where ( n2 /= zero )
-      rcm_mc_est_m2 = rcm_mc_est_m2 / dble( n2 )
-      rvm_mc_est_m2 = rvm_mc_est_m2 / dble( n2 )
-      thlm_mc_est_m2 = thlm_mc_est_m2 / dble( n2 )
+      lh_rcm_mc_m2 = lh_rcm_mc_m2 / dble( n2 )
+      lh_rvm_mc_m2 = lh_rvm_mc_m2 / dble( n2 )
+      lh_thlm_mc_m2 = lh_thlm_mc_m2 / dble( n2 )
     end where
 
     ! Special cases
     do i = 1, hydromet_dim
       where ( n1 == zero )
-        hydromet_vel_est_m1(:,i) = hydromet_vel_est_m2(:,i)
-        hydromet_mc_est_m1(:,i) = hydromet_mc_est_m2(:,i)
+        lh_hydromet_vel_m1(:,i) = lh_hydromet_vel_m2(:,i)
+        lh_hydromet_mc_m1(:,i) = lh_hydromet_mc_m2(:,i)
       end where
     end do
 
     where ( n1 == zero )
-      rcm_mc_est_m1 = rcm_mc_est_m2
-      rvm_mc_est_m1 = rvm_mc_est_m2
-      thlm_mc_est_m1 = thlm_mc_est_m2
+      lh_rcm_mc_m1 = lh_rcm_mc_m2
+      lh_rvm_mc_m1 = lh_rvm_mc_m2
+      lh_thlm_mc_m1 = lh_thlm_mc_m2
     end where
 
     do i = 1, hydromet_dim
       where ( n2 == zero )
-        hydromet_vel_est_m2(:,i) = hydromet_vel_est_m1(:,i)
-        hydromet_mc_est_m2(:,i) = hydromet_mc_est_m1(:,i)
+        lh_hydromet_vel_m2(:,i) = lh_hydromet_vel_m1(:,i)
+        lh_hydromet_mc_m2(:,i) = lh_hydromet_mc_m1(:,i)
       end where
     end do
 
     where ( n2 == zero )
-      rcm_mc_est_m2 = rcm_mc_est_m1
-      rvm_mc_est_m2 = rvm_mc_est_m1
-      thlm_mc_est_m2 = thlm_mc_est_m1
+      lh_rcm_mc_m2 = lh_rcm_mc_m1
+      lh_rvm_mc_m2 = lh_rvm_mc_m1
+      lh_thlm_mc_m2 = lh_thlm_mc_m1
     end where
 
     ! Grid box average.
     forall( i = 1:hydromet_dim )
-      hydromet_vel_est(:,i) = real( a * cloud_frac1 * hydromet_vel_est_m1(:,i) &
-        + (1.d0-a) * cloud_frac2 * hydromet_vel_est_m2(:,i) )
-      hydromet_mc_est(:,i)  = real( a * cloud_frac1 * hydromet_mc_est_m1(:,i) &
-        + (1.d0-a) * cloud_frac2 * hydromet_mc_est_m2(:,i) )
+      lh_hydromet_vel(:,i) = real( a * cloud_frac1 * lh_hydromet_vel_m1(:,i) &
+        + (1.d0-a) * cloud_frac2 * lh_hydromet_vel_m2(:,i) )
+      lh_hydromet_mc(:,i)  = real( a * cloud_frac1 * lh_hydromet_mc_m1(:,i) &
+        + (1.d0-a) * cloud_frac2 * lh_hydromet_mc_m2(:,i) )
     end forall
 
-    rcm_mc_est = real( a * cloud_frac1 * rcm_mc_est_m1 + (1.d0-a) * cloud_frac2 * rcm_mc_est_m2 )
-    rvm_mc_est = real( a * cloud_frac1 * rvm_mc_est_m1 + (1.d0-a) * cloud_frac2 * rvm_mc_est_m2 )
-    thlm_mc_est = real( a * cloud_frac1 * thlm_mc_est_m1 + (1.d0-a) * cloud_frac2 * thlm_mc_est_m2 )
+    lh_rcm_mc = real( a * cloud_frac1 * lh_rcm_mc_m1 + (1.d0-a) * cloud_frac2 * lh_rcm_mc_m2 )
+    lh_rvm_mc = real( a * cloud_frac1 * lh_rvm_mc_m1 + (1.d0-a) * cloud_frac2 * lh_rvm_mc_m2 )
+    lh_thlm_mc = real( a * cloud_frac1 * lh_thlm_mc_m1 + (1.d0-a) * cloud_frac2 * lh_thlm_mc_m2 )
 
     return
-  end subroutine micro_driver
+  end subroutine lh_microphys_driver
 
 !----------------------------------------------------------------------
   subroutine rc_estimate( n_micro_calls, d_variables, a, C1, C2, rc, & ! w,   & 
