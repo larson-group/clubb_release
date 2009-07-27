@@ -1854,7 +1854,7 @@ module clubb_driver
       wm_zt, wm_zm, rho, rtm, thlm, p_in_Pa, & 
       exner, rcm, rho_zm, um, psfc, vm, & 
       upwp_sfc, vpwp_sfc, Tsfc, & 
-      wpthlp_sfc, SE, LE, wprtp_sfc, cf, &
+      wpthlp_sfc, SE, LE, wprtp_sfc, cf, cloud_cover, &
 #ifdef UNRELEASED_CODE
     um_forcing, vm_forcing, &
 #endif
@@ -2602,19 +2602,19 @@ module clubb_driver
                                                extend_atmos_range_size, &   ! Intent(out)
                                                lin_int_buffer )             ! Intent(out)
 
-      call bugsrad_clubb( gr%zm, gr%nnzp, lin_int_buffer,  & ! In
-                          extend_atmos_range_size,         & ! In 
-                          extend_atmos_bottom_level,       & ! In
-                          extend_atmos_top_level,          & ! In
-                          rlat, rlon,                      & ! In
-                          day, month, year, time_current,  & ! In
-                          thlm, rcm, rtm, rsnowm, ricem,   & ! In
-                          cf, p_in_Pa, zt2zm( p_in_Pa ),   & ! In
-                          exner, rho_zm,                   & ! In
-                          radht, Frad,                     & ! Out
-                          Frad_SW_up, Frad_LW_up,          & ! Out
-                          Frad_SW_down, Frad_LW_down,      & ! Out
-                          thlm_forcing )                     ! In/Out
+      call bugsrad_clubb( gr%zm, gr%nnzp, lin_int_buffer,         & ! In
+                          extend_atmos_range_size,                & ! In 
+                          extend_atmos_bottom_level,              & ! In
+                          extend_atmos_top_level,                 & ! In
+                          rlat, rlon,                             & ! In
+                          day, month, year, time_current,         & ! In
+                          thlm, rcm, rtm, rsnowm, ricem,          & ! In
+                          cloud_cover, p_in_Pa, zt2zm( p_in_Pa ), & ! In
+                          exner, rho_zm,                          & ! In
+                          radht, Frad,                            & ! Out
+                          Frad_SW_up, Frad_LW_up,                 & ! Out
+                          Frad_SW_down, Frad_LW_down,             & ! Out
+                          thlm_forcing )                            ! In/Out
 
       if ( clubb_at_least_debug_level( 2 ) ) then
 
