@@ -414,6 +414,7 @@ module mono_flux_limiter
 
     if ( l_stats_samp ) then
        call stat_begin_update( iwpxp_mfl, real( wpxp / dt ), zm )
+       call stat_begin_update( ixm_mfl, real( xm / dt ), zt )
     endif
     if ( l_stats_samp .and. trim( solve_type ) == "thlm" ) then
        call stat_update_var( ithlm_enter_mfl, xm, zt )
@@ -631,7 +632,7 @@ module mono_flux_limiter
 
        call stat_end_update( iwpxp_mfl, real( wpxp / dt ), zm )
 
-       call stat_update_var( ixm_mfl, dxm_dt_mfl_adjust, zt )
+       call stat_end_update( ixm_mfl, real( xm / dt ), zt )
 
        if ( trim( solve_type ) == "thlm" ) then
           call stat_update_var( ithlm_exit_mfl, xm, zt )
