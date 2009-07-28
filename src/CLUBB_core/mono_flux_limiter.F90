@@ -267,9 +267,6 @@ module mono_flux_limiter
     use constants, only: &
         zero_threshold
 
-    use mean_adv, only: & 
-        term_ma_zt_lhs ! Procedure(s)
-
     use stats_precision, only:  & 
         time_precision ! Variable(s)
 
@@ -373,13 +370,10 @@ module mono_flux_limiter
 
     ! Flag for using a semi-implicit, tridiagonal method to solve for xm(t+1)
     ! if xm(t+1) needs to be changed.
-    logical, parameter :: l_mfl_xm_imp_adj = .false.
-
-    real, dimension(3) :: &
-      tmp  ! Temporary variable storage.
+    logical, parameter :: l_mfl_xm_imp_adj = .true.
 
     integer ::  &
-      k, kp1, km1  ! Array indices
+      k, km1  ! Array indices
 
 !    integer, parameter :: &
 !      num_levs = 10  ! Number of levels above and below level k to look for
@@ -449,7 +443,7 @@ module mono_flux_limiter
     do k = 2, gr%nnzp, 1
 
        km1 = max( k-1, 1 )
-       kp1 = min( k+1, gr%nnzp )
+       !kp1 = min( k+1, gr%nnzp )
 
        ! Standard deviation is the square root of the variance.
        stnd_dev_x = sqrt( xp2_zt(k) )
@@ -462,16 +456,17 @@ module mono_flux_limiter
        ! Calculate the contribution of the mean advection term:
        ! m_adv_term = -wm_zt(k)*d(xm)/dz|_(k).
        ! Note:  mean advection is not applied to xm at level gr%nnzp.
-       if ( .not. l_implemented .and. k < gr%nnzp ) then
-          tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
-          m_adv_term = - tmp(1) * xm(kp1)  &
-                       - tmp(2) * xm(k)  &
-                       - tmp(3) * xm(km1)
-       else
-          m_adv_term = 0.0
-       endif
+       !if ( .not. l_implemented .and. k < gr%nnzp ) then
+       !   tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
+       !   m_adv_term = - tmp(1) * xm(kp1)  &
+       !                - tmp(2) * xm(k)  &
+       !                - tmp(3) * xm(km1)
+       !else
+       !   m_adv_term = 0.0
+       !endif
 
-       !m_adv_term = 0.0
+       ! Shut off to avoid using new, possibly corrupt mean advection term
+       m_adv_term = 0.0
 
        ! Find the value of xm without the contribution from the turbulent
        ! advection term.
