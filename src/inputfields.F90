@@ -32,7 +32,7 @@ module inputfields
                      input_rsnowm, input_ricem, input_rgraupelm, input_Ncnm, input_Nim, & 
                      input_thlm_forcing, input_rtm_forcing, & 
                      input_up2, input_vp2, input_sigma_sqd_w, & 
-                     input_cf, input_sigma_sqd_w_zt, &
+                     input_cloud_frac, input_sigma_sqd_w_zt, &
                      input_veg_T_in_K, input_deep_soil_T_in_K, &
                      input_sfc_soil_T_in_K
 
@@ -133,7 +133,7 @@ module inputfields
         rho_zm, & 
         thlm_forcing, & 
         rtm_forcing, & 
-        cf, & 
+        cloud_frac, & 
         tau_zm, & 
         up2, & 
         vp2, & 
@@ -436,8 +436,8 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_cf, stat_file_zt, "cf", gr%nnzp, timestep, &
-             gr%zt, cf, l_read_error )
+           ( input_cloud_frac, stat_file_zt, "cloud_frac", gr%nnzp, timestep, &
+             gr%zt, cloud_frac, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
@@ -2137,8 +2137,8 @@ module inputfields
         l_fatal_error = .true.
       end if
 
-      if ( input_cf ) then
-        write(fstderr,*) "The variable cf is not setup for input_type = les"
+      if ( input_cloud_frac ) then
+        write(fstderr,*) "The variable cloud_frac is not setup for input_type = les"
         l_fatal_error = .true.
       end if
 

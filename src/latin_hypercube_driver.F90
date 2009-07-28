@@ -22,7 +22,7 @@ module latin_hypercube_mod
 !-------------------------------------------------------------------------------
   subroutine latin_hypercube_driver &
              ( dt, iter, d_variables, n_micro_calls, sequence_length, nnzp, &
-               cf, thlm, p_in_Pa, exner, &
+               cloud_frac, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm, w_std_dev, dzq, rcm, rvm, &
                hydromet, correlation_array, hydromet_mc_est, hydromet_vel_est, rcm_mc_est, &
                rvm_mc_est, thlm_mc_est, microphys_sub )
@@ -89,7 +89,7 @@ module latin_hypercube_mod
       iLH_rvm, &
       iLH_wm, &
       iLH_wp2_zt, &
-      iLH_cf, &
+      iLH_cloud_frac, &
       zt
 
     use stats_type, only: &
@@ -115,7 +115,7 @@ module latin_hypercube_mod
       nnzp               ! Number of vertical model levels
 
     real, dimension(nnzp), intent(in) :: &
-      cf,         & ! Cloud fraction               [%]
+      cloud_frac, & ! Cloud fraction               [%]
       thlm,       & ! Liquid potential temperature [K]
       p_in_Pa,    & ! Pressure                     [Pa]
       exner,      & ! Exner function               [-]
@@ -165,12 +165,12 @@ module latin_hypercube_mod
       lh_hydromet ! Average value of the latin hypercube est. of all hydrometeors [units vary]
 
     real, dimension(nnzp) :: &
-      lh_thlm,   & ! Average value of the latin hypercube est. of theta_l           [K]
-      lh_rcm,    & ! Average value of the latin hypercube est. of rc                [kg/kg]
-      lh_rvm,    & ! Average value of the latin hypercube est. of rv                [kg/kg]
-      lh_wm,     & ! Average value of the latin hypercube est. of vertical velocity [m/s]
-      lh_wp2_zt, & ! Average value of the variance of the LH est. of vert. vel.     [m^2/s^2]
-      lh_cf        ! Average value of the latin hypercube est. of cloud fraction    [%]
+      lh_thlm,    & ! Average value of the latin hypercube est. of theta_l           [K]
+      lh_rcm,     & ! Average value of the latin hypercube est. of rc                [kg/kg]
+      lh_rvm,     & ! Average value of the latin hypercube est. of rv                [kg/kg]
+      lh_wm,      & ! Average value of the latin hypercube est. of vertical velocity [m/s]
+      lh_wp2_zt,  & ! Average value of the variance of the LH est. of vert. vel.     [m^2/s^2]
+      lh_cloud_frac ! Average value of the latin hypercube est. of cloud fraction    [%]
 
     ! A true/false flag that determines whether the PDF allows us to construct a sample
     logical, dimension(nnzp) :: l_sample_flag 
@@ -234,10 +234,10 @@ module latin_hypercube_mod
 
       ! Generate LH sample, represented by X_u and X_nl, for level k
       call generate_lh_sample &
-           ( n_micro_calls, nt_repeat, d_variables, hydromet_dim, &  ! intent(in)
-             p_matrix, cf(k), pdf_params, k, &                       ! intent(in)
-             hydromet(k,:), correlation_array(k,:,:), &                  ! intent(in)
-             rt(k,:), thl(k,:), &                                    ! intent(out)
+           ( n_micro_calls, nt_repeat, d_variables, hydromet_dim, &        ! intent(in)
+             p_matrix, cloud_frac(k), pdf_params, k, &                     ! intent(in)
+             hydromet(k,:), correlation_array(k,:,:), &                    ! intent(in)
+             rt(k,:), thl(k,:), &                                          ! intent(out)
              X_u_all_levs(k,:,:), X_nl_all_levs(k,:,:), l_sample_flag(k) ) ! intent(out)
 
       ! print *, 'latin_hypercube_sampling: got past lh_sampler'
@@ -250,13 +250,13 @@ module latin_hypercube_mod
            rt, thl, l_sample_flag, pdf_params, &    ! intent(in)
            thlm, p_in_Pa, exner, rho, &             ! intent(in)
            wm, w_std_dev, dzq, rcm, rvm, &          ! intent(in)
-           cf, hydromet, &                          ! intent(in)
+           cloud_frac, hydromet, &                  ! intent(in)
            hydromet_mc_est, hydromet_vel_est, &     ! intent(in)
            rcm_mc_est, rvm_mc_est, thlm_mc_est, &   ! intent(out)
            AKm_est, AKm, AKstd, AKstd_cld, &        ! intent(out)
            AKm_rcm, AKm_rcc, rcm_est, &             ! intent(out)
            lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &  ! intent(out)
-           lh_wm, lh_wp2_zt, lh_cf, &               ! intent(out)
+           lh_wm, lh_wp2_zt, lh_cloud_frac, &       ! intent(out)
            microphys_sub )  ! Procedure
 
     ! print*, 'latin_hypercube_driver: AKm=', AKm
@@ -299,7 +299,7 @@ module latin_hypercube_mod
       call stat_update_var( iLH_rvm, lh_rvm, zt )
       call stat_update_var( iLH_wm, lh_wm, zt )
       call stat_update_var( iLH_wp2_zt, lh_wp2_zt, zt )
-      call stat_update_var( iLH_cf, lh_cf, zt )
+      call stat_update_var( iLH_cloud_frac, lh_cloud_frac, zt )
 
     end if ! l_stats_samp
 

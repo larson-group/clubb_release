@@ -37,7 +37,7 @@ module stats_zt
         ivm_ref, &
         iug, & 
         ivg, & 
-        icf, &
+        icloud_frac, & 
         ircm_in_layer, &
         icloud_cover, &
         ip_in_Pa, & 
@@ -299,7 +299,7 @@ module stats_zt
       iLH_rvm, &
       iLH_wm, &
       iLH_wp2_zt, &
-      iLH_cf
+      iLH_cloud_frac
 
     use stats_type, only: & 
         stat_assign ! Procedure
@@ -340,7 +340,7 @@ module stats_zt
     ivm_ref       = 0
     iug           = 0
     ivg           = 0
-    icf           = 0
+    icloud_frac   = 0
     ircm_in_layer = 0
     icloud_cover  = 0
     ip_in_Pa      = 0
@@ -585,7 +585,7 @@ module stats_zt
     iLH_rcm = 0
     iLH_rvm = 0
     iLH_wm = 0
-    iLH_cf = 0
+    iLH_cloud_frac = 0
 
     allocate( isclrm(1:sclr_dim) )
     allocate( isclrm_f(1:sclr_dim) )
@@ -678,9 +678,9 @@ module stats_zt
         call stat_assign( ivg, "vg", & 
              "v geostrophic wind (m/s)", "m/s", zt )
         k = k + 1
-      case ('cf')
-        icf = k
-        call stat_assign( icf, "cf", & 
+      case ('cloud_frac')
+        icloud_frac = k
+        call stat_assign( icloud_frac, "cloud_frac", & 
              "cloud fraction", "count", zt )
         k = k + 1
       case ('rcm_in_layer')
@@ -2183,11 +2183,11 @@ module stats_zt
              "Latin hypercube estimate of vertical velocity", "m/s", zt )
         k = k + 1
 
-      case ( 'LH_cf' )
-        iLH_cf = k
+      case ( 'LH_cloud_frac' )
+        iLH_cloud_frac = k
 
         ! Note: count is the udunits compatible unit
-        call stat_assign( iLH_cf, "LH_cf", & 
+        call stat_assign( iLH_cloud_frac, "LH_cloud_frac", & 
              "Latin hypercube estimate of cloud fraction", "count", zt )
         k = k + 1
 

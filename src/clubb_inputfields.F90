@@ -27,7 +27,7 @@ program clubb_inputfields
     input_rsnowm, input_ricem, input_rgraupelm,  & 
     input_thlm_forcing, input_rtm_forcing, & 
     input_up2, input_vp2, input_sigma_sqd_w, input_Ncm,  & 
-    input_Ncnm, input_Nim, input_cf, input_sigma_sqd_w_zt, &
+    input_Ncnm, input_Nim, input_cloud_frac, input_sigma_sqd_w_zt, &
     input_veg_T_in_K, input_deep_soil_T_in_K, &
     input_sfc_soil_T_in_K 
 
@@ -82,7 +82,7 @@ program clubb_inputfields
     input_rsnowm, input_ricem, input_rgraupelm,  & 
     input_thlm_forcing, input_rtm_forcing, & 
     input_up2, input_vp2, input_sigma_sqd_w, input_Ncm,  & 
-    input_Ncnm, input_Nim, input_cf, input_sigma_sqd_w_zt, &
+    input_Ncnm, input_Nim, input_cloud_frac, input_sigma_sqd_w_zt, &
     input_veg_T_in_K, input_deep_soil_T_in_K, &
     input_sfc_soil_T_in_K
 
@@ -146,7 +146,7 @@ program clubb_inputfields
   input_Ncm = .false.
   input_Ncnm = .false.
   input_Nim = .false.
-  input_cf = .false.
+  input_cloud_frac = .false.
   input_sigma_sqd_w_zt = .false.
   input_veg_T_in_K = .false.
   input_deep_soil_T_in_K = .false.

@@ -73,7 +73,7 @@ module numerical_check
 
 !---------------------------------------------------------------------------
   subroutine pdf_closure_check( wp4, wprtp2, wp2rtp, wpthlp2, & 
-                          wp2thlp, cf, rcm, wpthvp, wp2thvp, & 
+                          wp2thlp, cloud_frac, rcm, wpthvp, wp2thvp, & 
                           rtpthvp, thlpthvp, wprcp, wp2rcp, & 
                           rtprcp, thlprcp, rcp2, wprtpthlp, & 
                           crt1, crt2, cthl1, cthl2, pdf_params, k, &
@@ -110,7 +110,7 @@ module numerical_check
     wp2rtp,          & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
     wpthlp2,         & ! w' th_l'^2            [(m K^2)/s]
     wp2thlp,         & ! w'^2 th_l'            [(m^2 K)/s^2]
-    cf,              & ! Cloud fraction        [%]
+    cloud_frac,      & ! Cloud fraction        [%]
     rcm,             & ! Mean liquid water     [kg/kg]
     wpthvp,          & ! Buoyancy flux         [(K m)/s] 
     wp2thvp,         & ! w'^2 th_v'            [(m^2 K)/s^2]
@@ -154,7 +154,7 @@ module numerical_check
     call check_nan( wp2rtp,"wp2rtp", proc_name, err_code )
     if ( iwpthlp2 > 0 ) call check_nan( wpthlp2,"wpthlp2", proc_name, err_code )
     call check_nan( wp2thlp,"wp2thlp", proc_name, err_code )
-    call check_nan( cf,"cf", proc_name, err_code )
+    call check_nan( cloud_frac,"cloud_frac", proc_name, err_code )
     call check_nan( rcm,"rcm", proc_name, err_code )
     call check_nan( wpthvp, "wpthvp", proc_name, err_code )
     call check_nan( wp2thvp, "wp2thvp", proc_name, err_code )
@@ -223,15 +223,15 @@ module numerical_check
                upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp, & 
                up2, vp2, rtm, wprtp, thlm,  & 
                wpthlp, wp2, wp3, sigma_sqd_w, rtp2, thlp2, & 
-               rtpthlp, tau_zm, rcm, cf, prefix, & 
+               rtpthlp, tau_zm, rcm, cloud_frac, prefix, & 
                wpsclrp_sfc, wpedsclrp_sfc, & 
                sclrm, sclrm_forcing, edsclrm, edsclrm_forcing )
 !
 ! Description: 
 !   This subroutine determines what input variables may have NaN values.
 !   In addition it checks to see if rho_zm, rho, exner, up2, vp2, rtm, thlm,
-!   wp2, sigma_sqd_w, rtp2, thlp2, tau_zm, rcm, Ncm, Ncnm, Nim, hydromet, or cf
-!   have negative values.
+!   wp2, sigma_sqd_w, rtp2, thlp2, tau_zm, rcm, Ncm, Ncnm, Nim, hydromet, or 
+!   cloud_frac have negative values.
 !-------------------------------------------------------------------------------
     use grid_class, only: & 
         gr ! Variable
@@ -285,7 +285,7 @@ module numerical_check
 !    .  Nim      ! Ice crystal number conc.      [num/m^3]
 
     real, intent(in), dimension(gr%nnzp) ::  & 
-    cf ! Cloud fraction.     [%]
+    cloud_frac ! Cloud fraction.     [%]
 
     character(len=*), intent(in) :: prefix ! Location where subroutine is called
 
@@ -358,7 +358,7 @@ module numerical_check
 !        call check_nan( hydromet(:,3),"rsnowm", prefix//proc_name )
 !        call check_nan( hydromet(:,4),"ricem", prefix//proc_name )
 !        call check_nan( hydromet(:,5),"rgraupel", prefix//proc_name )
-    call check_nan( cf,"cf", prefix//proc_name )
+    call check_nan( cloud_frac,"cloud_frac", prefix//proc_name )
 
 
 
@@ -409,7 +409,7 @@ module numerical_check
 !        call check_negative( hydromet(:,4),"ricem", prefix//proc_name )
 !        call check_negative( hydromet(:,5),"rgraupelm",
 !     .          prefix//proc_name )
-    call check_negative( cf, gr%nnzp ,"cf", prefix//proc_name )
+    call check_negative( cloud_frac, gr%nnzp ,"cloud_frac", prefix//proc_name )
 
     return
   end subroutine parameterization_check
@@ -481,7 +481,7 @@ module numerical_check
 
 !-----------------------------------------------------------------------
   subroutine rad_check( thlm, rcm, rtm, ricem,  & 
-                        cf, p_in_Pa, exner, rho_zm )
+                        cloud_frac, p_in_Pa, exner, rho_zm )
 !       Description:
 !       Checks radiation input variables. If they are < 0 it reports
 !       to the console.
@@ -500,7 +500,7 @@ module numerical_check
     rcm,            & ! Liquid Water Mixing Ratio            [Kg/Kg]
     rtm,            & ! Total Water Mixing Ratio             [Kg/Kg]
     ricem,          & ! Ice Water Mixing Ratio               [Kg/Kg]
-    cf,             & ! Cloud Fraction                       [%]
+    cloud_frac,     & ! Cloud Fraction                       [%]
     p_in_Pa,        & ! Pressure                             [Pa]
     exner,          & ! Exner Function                       [-]
     rho_zm           ! Density                              [-]
@@ -518,7 +518,7 @@ module numerical_check
     call check_negative( rtm, gr%nnzp ,"rtm", proc_name )
     call check_negative( rvm, gr%nnzp ,"rvm", proc_name )
     call check_negative( ricem, gr%nnzp ,"ricem", proc_name )
-    call check_negative( cf, gr%nnzp ,"cf", proc_name )
+    call check_negative( cloud_frac, gr%nnzp ,"cloud_frac", proc_name )
     call check_negative( p_in_Pa, gr%nnzp ,"p_in_Pa", proc_name )
     call check_negative( exner, gr%nnzp ,"exner", proc_name )
     call check_negative( rho_zm, gr%nnzp ,"rho_zm", proc_name )

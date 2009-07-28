@@ -159,7 +159,7 @@ module variables_diagnostic_module
     AKstd_cld, & ! Stdev of exact w/in cloud ac        [kg/kg/s]
     rcm_est,   & ! Monte Carlo rcm estimate            [kg/kg]
     AKm_rcm,   & ! Kessler ac based on rcm             [kg/kg/s]
-    AKm_rcc      ! Kessler ac based on rcm/cf          [kg/kg/s]
+    AKm_rcc      ! Kessler ac based on rcm/cloud_frac  [kg/kg/s]
 
 !$omp threadprivate(AKm_est, AKm, AKstd, AKstd_cld, rcm_est, AKm_rcm, &
 !$omp   AKm_rcc)
@@ -272,7 +272,7 @@ module variables_diagnostic_module
     allocate( AKstd_cld(1:nzmax) )  ! St dev of exact w/in cloud Kessler ac
     allocate( rcm_est(1:nzmax) )      ! Monte Carlo rcm estimate
     allocate( AKm_rcm(1:nzmax) )      ! Kessler ac based on rcm
-    allocate( AKm_rcc(1:nzmax) )      ! Kessler ac based on rcm/cf
+    allocate( AKm_rcc(1:nzmax) )      ! Kessler ac based on rcm/cloud_frac
 ! End of variables for Latin hypercube.
 
     ! High-order passive scalars
@@ -368,7 +368,7 @@ module variables_diagnostic_module
     AKstd_cld = 0.0  ! St dev of exact w/in cloud Kessler ac
     rcm_est   = 0.0  ! Monte Carlo rcm estimate
     AKm_rcm   = 0.0  ! Kessler ac based on rcm
-    AKm_rcc   = 0.0  ! Kessler ac based on rcm/cf
+    AKm_rcc   = 0.0  ! Kessler ac based on rcm/cloud_frac
 
     ! Passive scalars
     if ( sclr_dim > 0 ) then
@@ -481,7 +481,7 @@ module variables_diagnostic_module
     deallocate( AKstd_cld ) ! St dev of exact w/in cloud Kessler ac
     deallocate( rcm_est )   ! Monte Carlo rcm estimate
     deallocate( AKm_rcm )   ! Kessler ac based on rcm
-    deallocate( AKm_rcc )   ! Kessler ac based on rcm/cf
+    deallocate( AKm_rcc )   ! Kessler ac based on rcm/cloud_frac
 
     ! Passive scalars
     deallocate( sclrpthvp )

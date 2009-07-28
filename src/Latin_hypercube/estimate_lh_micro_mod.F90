@@ -20,13 +20,13 @@ module estimate_lh_micro_mod
                rt, thl, l_sample_flag, pdf_params, & 
                thlm, p_in_Pa, exner, rho, &
                wm, w_std_dev, dzq, rcm, rvm, &        
-               cf, hydromet, &
+               cloud_frac, hydromet, &
                lh_hydromet_mc, lh_hydromet_vel, &
                lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, &
                AKm_est, AKm, AKstd, AKstd_cld, & 
                AKm_rcm, AKm_rcc, rcm_est, &
                lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &
-               lh_wm, lh_wp2_zt, lh_cf, &
+               lh_wm, lh_wp2_zt, lh_cloud_frac, &
                microphys_sub )
 ! Description:
 !   This subroutine computes microphysical grid box averages,
@@ -76,7 +76,7 @@ module estimate_lh_micro_mod
     logical, dimension(nnzp), intent(in) :: l_sample_flag
 
     real, dimension(nnzp), intent(in) :: &
-      cf,         & ! Cloud fraction           [%]
+      cloud_frac, & ! Cloud fraction           [%]
       thlm,       & ! Liquid pot. temperature  [K]
       p_in_Pa,    & ! Pressure                 [Pa]
       exner,      & ! Exner function           [-]
@@ -122,12 +122,12 @@ module estimate_lh_micro_mod
       lh_hydromet ! Average value of the latin hypercube est. of all hydrometeors [units vary]
 
     real, dimension(nnzp), intent(out) :: &
-      lh_thlm, & ! Average value of the latin hypercube est. of theta_l           [K]
-      lh_rcm,  & ! Average value of the latin hypercube est. of rc                [kg/kg]
-      lh_rvm,  & ! Average value of the latin hypercube est. of rv                [kg/kg]
-      lh_wm,   & ! Average value of the latin hypercube est. of vertical velocity [m/s]
-      lh_wp2_zt, & ! Average value of the variance of the LH est. of vertical velocity [m^2/s^2]
-      lh_cf      ! Average value of the latin hypercube est. of cloud fraction    [%]
+      lh_thlm,      & ! Average value of the latin hypercube est. of theta_l           [K]
+      lh_rcm,       & ! Average value of the latin hypercube est. of rc                [kg/kg]
+      lh_rvm,       & ! Average value of the latin hypercube est. of rv                [kg/kg]
+      lh_wm,        & ! Average value of the latin hypercube est. of vertical velocity [m/s]
+      lh_wp2_zt,    & ! Average value of the variance of the LH est. of vertical velocity [m^2/s^2]
+      lh_cloud_frac   ! Average value of the latin hypercube est. of cloud fraction    [%]
 
     ! Local Variables
 
@@ -145,8 +145,8 @@ module estimate_lh_micro_mod
     real :: cloud_frac1, cloud_frac2
 !   real :: rc1, rc2
 
-    ! Cloud fraction 0<cf<1, mean liquid water mix ratio [kg/kg]
-!   real :: cf, rcm
+    ! Cloud fraction 0<cloud_frac<1, mean liquid water mix ratio [kg/kg]
+!   real :: cloud_frac, rcm
 
     ! Double precision version of Monte Carlo Kessler ac
     double precision :: AKm_est_dp
@@ -203,8 +203,8 @@ module estimate_lh_micro_mod
 
       ! Compute mean cloud fraction and cloud water
 
-!     cf    = a * cloud_frac1 + (1-a) * cloud_frac2
-!     rcm   = a * rc1 + (1-a) * rc2
+!     cloud_frac = a * cloud_frac1 + (1-a) * cloud_frac2
+!     rcm        = a * rc1 + (1-a) * rc2
 
       !------------------------------------------------------------------------
       ! Call Kessler autoconversion microphysics using Latin hypercube sample
@@ -286,12 +286,12 @@ module estimate_lh_micro_mod
                     + (1-a) * ( (AK2-AKm(level))**2 + AK2var ) & 
                     )
         ! This formula is for a within-cloud average:
-        if ( cf(level) > 0 ) then
+        if ( cloud_frac(level) > 0 ) then
           AKstd_cld(level) = sqrt( max( zero_threshold,   & 
-                    (1./cf(level)) * ( a  * ( AK1**2 + AK1var ) & 
+                    (1./cloud_frac(level)) * ( a  * ( AK1**2 + AK1var ) & 
                               + (1-a) * ( AK2**2 + AK2var )  & 
                               ) & 
-                   - (AKm(level)/cf(level))**2  ) & 
+                   - (AKm(level)/cloud_frac(level))**2  ) & 
                           )
         else
           AKstd_cld(level) = zero_threshold
@@ -300,12 +300,13 @@ module estimate_lh_micro_mod
         ! Kessler autoconversion, using grid box avg liquid, rcm, as input
         AKm_rcm(level) = K_one * max( zero_threshold, rcm(level)-r_crit )
 
-        ! Kessler ac, using within cloud liquid, rcm/cf, as input
-        ! We found that for small values of cf this formula
+        ! Kessler ac, using within cloud liquid, rcm/cloud_frac, as input
+        ! We found that for small values of cloud_frac this formula
         ! can still produce NaN values and therefore added this 
         ! threshold of 0.001 here. -dschanen 3 June 2009
-        if ( cf(level) > 0.001 ) then
-          AKm_rcc(level) = cf(level) * K_one * max( zero_threshold, rcm(level)/cf(level)-r_crit )
+        if ( cloud_frac(level) > 0.001 ) then
+          AKm_rcc(level) = cloud_frac(level) * K_one * &
+                           max( zero_threshold, rcm(level)/cloud_frac(level)-r_crit )
         else
           AKm_rcc(level) = zero_threshold
         end if
@@ -359,7 +360,7 @@ module estimate_lh_micro_mod
                               lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, &
                               lh_hydromet_vel, lh_thlm_mc, &
                               lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &
-                              lh_wm, lh_wp2_zt, lh_cf, &
+                              lh_wm, lh_wp2_zt, lh_cloud_frac, &
                               microphys_sub )
 
     return
@@ -561,7 +562,7 @@ module estimate_lh_micro_mod
                                   lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, &
                                   lh_hydromet_vel, lh_thlm_mc, &
                                   lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &
-                                  lh_wm, lh_wp2_zt, lh_cf, &
+                                  lh_wm, lh_wp2_zt, lh_cloud_frac, &
                                   microphys_sub )
 ! Description:
 !   Estimate the tendency of a microphysics scheme via latin hypercube sampling
@@ -656,12 +657,12 @@ module estimate_lh_micro_mod
       lh_hydromet ! Average value of the latin hypercube est. of all hydrometeors [units vary]
 
     real, dimension(nnzp), intent(out) :: &
-      lh_thlm, & ! Average value of the latin hypercube est. of theta_l           [K]
-      lh_rcm,  & ! Average value of the latin hypercube est. of rc                [kg/kg]
-      lh_rvm,  & ! Average value of the latin hypercube est. of rv                [kg/kg]
-      lh_wm,   & ! Average value of the latin hypercube est. of vertical velocity [m/s]
-      lh_wp2_zt, & ! Average value of the variance of the LH est. of vertical velocity [m^2/s^2]
-      lh_cf      ! Average value of the latin hypercube est. of cloud fraction    [%]
+      lh_thlm,    & ! Average value of the latin hypercube est. of theta_l           [K]
+      lh_rcm,     & ! Average value of the latin hypercube est. of rc                [kg/kg]
+      lh_rvm,     & ! Average value of the latin hypercube est. of rv                [kg/kg]
+      lh_wm,      & ! Average value of the latin hypercube est. of vertical velocity [m/s]
+      lh_wp2_zt,  & ! Average value of the variance of the LH est. of vertical velocity [m^2/s^2]
+      lh_cloud_frac ! Average value of the latin hypercube est. of cloud fraction    [%]
 
     ! Local Variables
     double precision, dimension(nnzp,hydromet_dim) :: &
@@ -800,9 +801,9 @@ module estimate_lh_micro_mod
           lh_rvm  = rv_tmp
           lh_wm   = w_tmp(:,sample)
           where ( l_sample_flag .and. s_mellor(:,sample) > 0. ) 
-            lh_cf = 1.0
+            lh_cloud_frac = 1.0
           else where
-            lh_cf = 0.0
+            lh_cloud_frac = 0.0
           end where
         else
           lh_hydromet(:,1:hydromet_dim) = lh_hydromet(:,1:hydromet_dim) &
@@ -811,7 +812,7 @@ module estimate_lh_micro_mod
           lh_rcm  = lh_rcm  + rc_tmp
           lh_rvm  = lh_rvm  + rv_tmp
           lh_wm   = lh_wm   + w_tmp(:,sample)
-          where ( l_sample_flag .and. s_mellor(:,sample) > 0 ) lh_cf = lh_cf + 1.0
+          where ( l_sample_flag .and. s_mellor(:,sample) > 0 ) lh_cloud_frac = lh_cloud_frac + 1.0
         end if
       end if
 
@@ -851,11 +852,11 @@ module estimate_lh_micro_mod
     if ( l_compute_diagnostic_average ) then
 
       lh_hydromet(:,1:hydromet_dim) = lh_hydromet(:,1:hydromet_dim) / real( n_micro_calls )
-      lh_thlm = lh_thlm / real( n_micro_calls )
-      lh_rcm  = lh_rcm  / real( n_micro_calls )
-      lh_rvm  = lh_rvm  / real( n_micro_calls )
-      lh_wm   = lh_wm   / real( n_micro_calls )
-      lh_cf   = lh_cf   / real( n_micro_calls )
+      lh_thlm       = lh_thlm         / real( n_micro_calls )
+      lh_rcm        = lh_rcm          / real( n_micro_calls )
+      lh_rvm        = lh_rvm          / real( n_micro_calls )
+      lh_wm         = lh_wm           / real( n_micro_calls )
+      lh_cloud_frac = lh_cloud_frac   / real( n_micro_calls )
 
       ! Compute the variance of vertical velocity
       lh_wp2_zt = 0.0

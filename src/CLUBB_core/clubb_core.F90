@@ -33,7 +33,7 @@ module clubb_core
                thlm, rtm, wprtp, wpthlp, wpthvp, &
                Kh_zt, wp2, wp3, & 
                rtp2, thlp2, rtpthlp, & 
-               sigma_sqd_w, tau_zm, rcm, cf, &
+               sigma_sqd_w, tau_zm, rcm, cloud_frac, & 
                rcm_in_layer, cloud_cover, & 
                sclrm, sclrp2, sclrprtp, sclrpthlp, &
                wpsclrp, edsclrm, pdf_params, &
@@ -271,7 +271,7 @@ module clubb_core
 
     ! Needed for output for host models
     real, intent(inout), dimension(gr%nnzp) ::  & 
-      cf ! Cloud fraction.     [%]
+      cloud_frac ! Cloud fraction.     [%]
 
     ! Diagnostic, for if some calculation goes amiss.
     integer, intent(inout) :: err_code
@@ -334,13 +334,13 @@ module clubb_core
     if ( clubb_at_least_debug_level( 2 ) ) then
       call parameterization_check & 
            ( thlm_forcing, rtm_forcing, wm_zm, wm_zt, p_in_Pa, rho_zm, & ! intent(in)
-           rho, exner, wpthlp_sfc, wprtp_sfc,                & ! intent(in)
-           upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,           & ! intent(in)
-           up2, vp2, rtm, wprtp, thlm,                       & ! intent(in)
-           wpthlp, wp2, wp3, sigma_sqd_w, rtp2, thlp2,       & ! intent(in)
-           rtpthlp, tau_zm, rcm, cf, "beginning of ",        & ! intent(in)
-           wpsclrp_sfc, wpedsclrp_sfc,                       & ! intent(in)
-           sclrm, sclrm_forcing, edsclrm, edsclrm_forcing )    ! intent(in)
+           rho, exner, wpthlp_sfc, wprtp_sfc,                 & ! intent(in)
+           upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,            & ! intent(in)
+           up2, vp2, rtm, wprtp, thlm,                        & ! intent(in)
+           wpthlp, wp2, wp3, sigma_sqd_w, rtp2, thlp2,        & ! intent(in)
+           rtpthlp, tau_zm, rcm, cloud_frac, "beginning of ", & ! intent(in)
+           wpsclrp_sfc, wpedsclrp_sfc,                        & ! intent(in)
+           sclrm, sclrm_forcing, edsclrm, edsclrm_forcing )     ! intent(in)
     end if
     !-----------------------------------------------------------------------
 
@@ -520,18 +520,18 @@ module clubb_core
     do k = 1, gr%nnzp, 1
       call pdf_closure & 
          ( p_in_Pa(k), exner(k), wm_zt(k), wp2_zt(k), wp3(k), sigma_sqd_w_zt(k), & ! intent(in)
-           Skw_zt(k), rtm(k), rtp2_zt(k), zm2zt( wprtp, k ),       & ! intent(in)
-           thlm(k), thlp2_zt(k), zm2zt( wpthlp, k ),               & ! intent(in)
-           rtpthlp_zt(k), sclrm(k,:), sclr_tmp1(k,:),              & ! intent(in)
-           sclr_tmp3(k,:),sclr_tmp2(k,:), sclr_tmp4(k,:), k,       & ! intent(in)
-           wp4(k), wprtp2(k), wp2rtp(k),                           & ! intent(out)
-           wpthlp2(k), wp2thlp(k), wprtpthlp(k),                   & ! intent(out)
-           cf(k), rcm(k), wpthvp(k), wp2thvp(k), rtpthvp(k),       & ! intent(out)
-           thlpthvp(k), wprcp(k), wp2rcp(k), rtprcp(k), thlprcp(k),& ! intent(out)
-           rcp2(k), pdf_params,                                    & ! intent(out)
-           err_code,                                               & ! intent(out)
-           wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp(k,:),         & ! intent(out)
-           wpsclrpthlp(k,:), sclrprcp(k,:), wp2sclrp(k,:) )          ! intent(out)
+           Skw_zt(k), rtm(k), rtp2_zt(k), zm2zt( wprtp, k ),         & ! intent(in)
+           thlm(k), thlp2_zt(k), zm2zt( wpthlp, k ),                 & ! intent(in)
+           rtpthlp_zt(k), sclrm(k,:), sclr_tmp1(k,:),                & ! intent(in)
+           sclr_tmp3(k,:),sclr_tmp2(k,:), sclr_tmp4(k,:), k,         & ! intent(in)
+           wp4(k), wprtp2(k), wp2rtp(k),                             & ! intent(out)
+           wpthlp2(k), wp2thlp(k), wprtpthlp(k),                     & ! intent(out)
+           cloud_frac(k), rcm(k), wpthvp(k), wp2thvp(k), rtpthvp(k), & ! intent(out)
+           thlpthvp(k), wprcp(k), wp2rcp(k), rtprcp(k), thlprcp(k),  & ! intent(out)
+           rcp2(k), pdf_params,                                      & ! intent(out)
+           err_code,                                                 & ! intent(out)
+           wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp(k,:),           & ! intent(out)
+           wpsclrpthlp(k,:), sclrprcp(k,:), wp2sclrp(k,:) )            ! intent(out)
 
       ! Subroutine may produce NaN values, and if so, exit
       ! gracefully.
@@ -591,7 +591,7 @@ module clubb_core
            wprtp, thlm, thlp2, wpthlp, rtpthlp,         & ! intent(in)
            sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp, & ! intent(in)
            wprtp2, wp2rtp, wpthlp2, wp2thlp,            & ! intent(inout)
-           wprtpthlp, cf, rcm, wp2thvp, wp2rcp,         & ! intent(inout)
+           wprtpthlp, cloud_frac, rcm, wp2thvp, wp2rcp, & ! intent(inout)
            wpsclrprtp, wpsclrp2, wpsclrpthlp,           & ! intent(inout)
            wp2sclrp, pdf_params, err_code )               ! intent(inout)
     end if
@@ -599,8 +599,8 @@ module clubb_core
     ! Compute variables cloud_cover and rcm_in_layer
     ! ldgrant July 2009
     call compute_cloud_cover &
-       ( pdf_params, cf, rcm,        & ! intent(in)
-         cloud_cover, rcm_in_layer )   ! intent(out)
+       ( pdf_params, cloud_frac, rcm, & ! intent(in)
+         cloud_cover, rcm_in_layer )    ! intent(out)
 
     !----------------------------------------------------------------
     ! Compute thvm
@@ -795,7 +795,7 @@ module clubb_core
            rtm, wprtp, wpthlp, wpthvp,                         & ! intent(in) 
            wp2, wp3, rtp2, thlp2, rtpthlp,                     & ! intent(in)
            p_in_Pa, exner, rho, rho_zm, Kh_zt,                 & ! intent(in)
-           wm_zt, sigma_sqd_w, tau_zm, rcm, cf,                & ! intent(in)
+           wm_zt, sigma_sqd_w, tau_zm, rcm, cloud_frac,        & ! intent(in)
            rcm_in_layer, cloud_cover,                          & ! intent(in)
            pdf_params,                                         & ! intent(in)
            sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing,  & ! intent(in)
@@ -809,7 +809,7 @@ module clubb_core
              upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,             & ! intent(in)
              up2, vp2, rtm, wprtp, thlm,                         & ! intent(in)
              wpthlp, wp2, wp3, sigma_sqd_w, rtp2, thlp2,         & ! intent(in)
-             rtpthlp, tau_zm, rcm, cf, "end of ",                & ! intent(in)
+             rtpthlp, tau_zm, rcm, cloud_frac, "end of ",        & ! intent(in)
              wpsclrp_sfc, wpedsclrp_sfc,                         & ! intent(in)
              sclrm, sclrm_forcing, edsclrm, edsclrm_forcing )      ! intent(in)
     end if
@@ -1077,7 +1077,7 @@ module clubb_core
                wprtp, thlm, thlp2, wpthlp, rtpthlp,         & ! intent(in)
                sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp, & ! intent(in)
                wprtp2, wp2rtp, wpthlp2, wp2thlp,            & ! intent(inout)
-               wprtpthlp, cf, rcm, wp2thvp, wp2rcp,         & ! intent(inout)
+               wprtpthlp, cloud_frac, rcm, wp2thvp, wp2rcp, & ! intent(inout)
                wpsclrprtp, wpsclrp2, wpsclrpthlp,           & ! intent(inout)
                wp2sclrp, pdf_params, err_code )               ! intent(inout)
     !
@@ -1145,7 +1145,7 @@ module clubb_core
       wpthlp2,     & ! w'thl'^2                  [m K^2/s]
       wp2thlp,     & ! w'^2 thl'                 [m^2 K/s^2]
       wprtpthlp,   & ! w'rt'thl'                 [m kg K/kg s]
-      cf,          & ! Cloud Fraction            [%]
+      cloud_frac,  & ! Cloud Fraction            [%]
       rcm,         & ! Liquid water mixing ratio [kg/kg]
       wp2thvp,     & ! w'^2 th_v'                [m^2 K/s^2]
       wp2rcp         ! w'^2 rc'                  [m^2 kg/kg s^2]    
@@ -1163,24 +1163,24 @@ module clubb_core
     integer :: i, k
 
     real, dimension(gr%nnzp) :: &
-      wprtp2_zm,    & ! w'rt'^2 on momentum grid                   [m kg^2/kg^2]
-      wp2rtp_zm,    & ! w'^2 rt' on momentum grid                  [m^2 kg/kg]
-      wpthlp2_zm,   & ! w'thl'^2 on momentum grid                  [m K^2/s]
-      wp2thlp_zm,   & ! w'^2 thl' on momentum grid                 [m^2 K/s^2]
-      wprtpthlp_zm, & ! w'rt'thl' on momentum grid                 [m kg K/kg s]
-      cf_zm,        & ! Cloud Fraction on momentum grid            [%]
-      rcm_zm,       & ! Liquid water mixing ratio on momentum grid [kg/kg]
-      wp2thvp_zm,   & ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
-      wp2rcp_zm,    & ! w'^2 rc' on momentum grid                  [m^2 kg/kg s^2]
+      wprtp2_zm,     & ! w'rt'^2 on momentum grid                   [m kg^2/kg^2]
+      wp2rtp_zm,     & ! w'^2 rt' on momentum grid                  [m^2 kg/kg]
+      wpthlp2_zm,    & ! w'thl'^2 on momentum grid                  [m K^2/s]
+      wp2thlp_zm,    & ! w'^2 thl' on momentum grid                 [m^2 K/s^2]
+      wprtpthlp_zm,  & ! w'rt'thl' on momentum grid                 [m kg K/kg s]
+      cloud_frac_zm, & ! Cloud Fraction on momentum grid            [%]
+      rcm_zm,        & ! Liquid water mixing ratio on momentum grid [kg/kg]
+      wp2thvp_zm,    & ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
+      wp2rcp_zm,     & ! w'^2 rc' on momentum grid                  [m^2 kg/kg s^2]
 
-      wp4_zm,       & ! w'^4 on momentum grid          [m^4/s^4]
-      wpthvp_zm,    & ! Buoyancy flux on momentum grid [(K m)/s]
-      rtpthvp_zm,   & ! r_t' th_v' on momentum grid    [(kg K)/kg]
-      thlpthvp_zm,  & ! th_l' th_v' on momentum grid   [K^2]
-      wprcp_zm,     & ! w' r_c' on momentum grid       [(m kg)/(s kg)]
-      rtprcp_zm,    & ! r_t' r_c' on momentum grid     [(kg^2)/(kg^2)]
-      thlprcp_zm,   & ! th_l' r_c' on momentum grid    [(K kg)/kg]
-      rcp2_zm         ! r_c'^2 on momentum grid        [(kg^2)/(kg^2)]
+      wp4_zm,        & ! w'^4 on momentum grid          [m^4/s^4]
+      wpthvp_zm,     & ! Buoyancy flux on momentum grid [(K m)/s]
+      rtpthvp_zm,    & ! r_t' th_v' on momentum grid    [(kg K)/kg]
+      thlpthvp_zm,   & ! th_l' th_v' on momentum grid   [K^2]
+      wprcp_zm,      & ! w' r_c' on momentum grid       [(m kg)/(s kg)]
+      rtprcp_zm,     & ! r_t' r_c' on momentum grid     [(kg^2)/(kg^2)]
+      thlprcp_zm,    & ! th_l' r_c' on momentum grid    [(K kg)/kg]
+      rcp2_zm          ! r_c'^2 on momentum grid        [(kg^2)/(kg^2)]
       
 
     real, dimension(gr%nnzp,sclr_dim) :: & 
@@ -1316,7 +1316,8 @@ module clubb_core
              sclrp2(k,:), sclrprtp(k,:), sclrpthlp(k,:), k,                         & ! intent(in)
              wp4_zm(k), wprtp2_zm(k), wp2rtp_zm(k),                                 & ! intent(out)
              wpthlp2_zm(k), wp2thlp_zm(k), wprtpthlp_zm(k),                         & ! intent(out)
-             cf_zm(k), rcm_zm(k), wpthvp_zm(k), wp2thvp_zm(k), rtpthvp_zm(k),       & ! intent(out)
+             cloud_frac_zm(k), rcm_zm(k), wpthvp_zm(k),                             & ! intent(out)
+               wp2thvp_zm(k), rtpthvp_zm(k),                                        & ! intent(out)
              thlpthvp_zm(k), wprcp_zm(k), wp2rcp_zm(k), rtprcp_zm(k), thlprcp_zm(k),& ! intent(out)
              rcp2_zm(k), pdf_params,                                                & ! intent(out)
              err_code,                                                              & ! intent(out)
@@ -1371,24 +1372,24 @@ module clubb_core
       ! Interpolate thermodynamic variables to the momentum grid.
       ! Since top momentum level is higher than top thermo. level,
       ! set variables at top momentum level to 0.
-      wprtp2_zm             = zt2zm( wprtp2 )
-      wprtp2_zm(gr%nnzp)    = 0.0
-      wp2rtp_zm             = zt2zm( wp2rtp )
-      wp2rtp_zm(gr%nnzp)    = 0.0
-      wpthlp2_zm            = zt2zm( wpthlp2 )
-      wpthlp2_zm(gr%nnzp)   = 0.0
-      wp2thlp_zm            = zt2zm( wp2thlp )
-      wp2thlp_zm(gr%nnzp)   = 0.0
-      wprtpthlp_zm          = zt2zm( wprtpthlp )
-      wprtpthlp_zm(gr%nnzp) = 0.0
-      cf_zm                 = zt2zm( cf )
-      cf_zm(gr%nnzp)        = 0.0
-      rcm_zm                = zt2zm( rcm )
-      rcm_zm(gr%nnzp)       = 0.0
-      wp2thvp_zm            = zt2zm( wp2thvp )
-      wp2thvp_zm(gr%nnzp)   = 0.0
-      wp2rcp_zm             = zt2zm( wp2rcp )
-      wp2rcp_zm(gr%nnzp)    = 0.0
+      wprtp2_zm              = zt2zm( wprtp2 )
+      wprtp2_zm(gr%nnzp)     = 0.0
+      wp2rtp_zm              = zt2zm( wp2rtp )
+      wp2rtp_zm(gr%nnzp)     = 0.0
+      wpthlp2_zm             = zt2zm( wpthlp2 )
+      wpthlp2_zm(gr%nnzp)    = 0.0
+      wp2thlp_zm             = zt2zm( wp2thlp )
+      wp2thlp_zm(gr%nnzp)    = 0.0
+      wprtpthlp_zm           = zt2zm( wprtpthlp )
+      wprtpthlp_zm(gr%nnzp)  = 0.0
+      cloud_frac_zm          = zt2zm( cloud_frac )
+      cloud_frac_zm(gr%nnzp) = 0.0
+      rcm_zm                 = zt2zm( rcm )
+      rcm_zm(gr%nnzp)        = 0.0
+      wp2thvp_zm             = zt2zm( wp2thvp )
+      wp2thvp_zm(gr%nnzp)    = 0.0
+      wp2rcp_zm              = zt2zm( wp2rcp )
+      wp2rcp_zm(gr%nnzp)     = 0.0
 
       do i = 1, sclr_dim
         wpsclrprtp_zm(:,i)        = zt2zm( wpsclrprtp(:,i) )
@@ -1464,15 +1465,15 @@ module clubb_core
     end if ! l_call_pdf_closure_twice
 
     ! Use the trapezoidal rule to recompute the variables on the zt level
-    wprtp2    = trapezoid( wprtp2, wprtp2_zm )
-    wp2rtp    = trapezoid( wp2rtp, wp2rtp_zm )
-    wpthlp2   = trapezoid( wpthlp2, wpthlp2_zm )
-    wp2thlp   = trapezoid( wp2thlp, wp2thlp_zm )
-    wprtpthlp = trapezoid( wprtpthlp, wprtpthlp_zm )
-    cf        = trapezoid( cf, cf_zm )
-    rcm       = trapezoid( rcm, rcm_zm )
-    wp2thvp   = trapezoid( wp2thvp, wp2thvp_zm )
-    wp2rcp    = trapezoid( wp2rcp, wp2rcp_zm ) 
+    wprtp2     = trapezoid( wprtp2, wprtp2_zm )
+    wp2rtp     = trapezoid( wp2rtp, wp2rtp_zm )
+    wpthlp2    = trapezoid( wpthlp2, wpthlp2_zm )
+    wp2thlp    = trapezoid( wp2thlp, wp2thlp_zm )
+    wprtpthlp  = trapezoid( wprtpthlp, wprtpthlp_zm )
+    cloud_frac = trapezoid( cloud_frac, cloud_frac_zm )
+    rcm        = trapezoid( rcm, rcm_zm )
+    wp2thvp    = trapezoid( wp2thvp, wp2thvp_zm )
+    wp2rcp     = trapezoid( wp2rcp, wp2rcp_zm ) 
 
     do i = 1, sclr_dim 
       wpsclrprtp(:,i)  = trapezoid( wpsclrprtp(:,i), wpsclrprtp_zm(:,i) )
@@ -1556,8 +1557,8 @@ module clubb_core
 
   !-----------------------------------------------------------------------
   subroutine compute_cloud_cover &
-           ( pdf_params, cf, rcm,        & ! intent(in)
-             cloud_cover, rcm_in_layer )   ! intent(out)
+           ( pdf_params, cloud_frac, rcm, & ! intent(in)
+             cloud_cover, rcm_in_layer )    ! intent(out)
     !
     ! Description:  Subroutine to compute cloud cover (the amount of sky
     ! covered by cloud) and rcm in layer (liquid water mixing ratio in
@@ -1579,8 +1580,8 @@ module clubb_core
 
     ! Input variables
     real, dimension(gr%nnzp), intent(in) :: &
-      cf,  & ! Cloud fraction             [%]
-      rcm    ! Liquid water mixing ratio  [kg/kg]
+      cloud_frac, & ! Cloud fraction             [%]
+      rcm           ! Liquid water mixing ratio  [kg/kg]
 
     type (pdf_parameter), intent(in) :: &
       pdf_params ! PDF Parameters  [units vary]
@@ -1612,14 +1613,14 @@ module clubb_core
 
       if ( rcm(k) < rc_tol ) then ! No cloud at this level
 
-        cloud_cover(k)  = cf(k)
+        cloud_cover(k)  = cloud_frac(k)
         rcm_in_layer(k) = rcm(k)
   
       else if ( ( rcm(k+1) > rc_tol ) .and. ( rcm(k-1) > rc_tol ) ) then
         ! There is cloud above and below, 
         !   so assume cloud fills grid box from top to bottom
   
-        cloud_cover(k) = cf(k)
+        cloud_cover(k) = cloud_frac(k)
         rcm_in_layer(k) = rcm(k)
 
       else if ( ( rcm(k+1) < rc_tol ) .or. ( rcm(k-1) < rc_tol) ) then 
@@ -1663,9 +1664,9 @@ module clubb_core
           vert_cloud_frac_upper(k) + vert_cloud_frac_lower(k)
 
         vert_cloud_frac(k) = &
-          max( cf(k), min( 1.0, vert_cloud_frac(k) ) )
+          max( cloud_frac(k), min( 1.0, vert_cloud_frac(k) ) )
 
-        cloud_cover(k)  = cf(k) / vert_cloud_frac(k)
+        cloud_cover(k)  = cloud_frac(k) / vert_cloud_frac(k)
         rcm_in_layer(k) = rcm(k) / vert_cloud_frac(k)
 
       else
@@ -1677,8 +1678,8 @@ module clubb_core
 
     end do ! k = 2, gr%nnzp-1, 1
 
-    cloud_cover(1)       = cf(1)
-    cloud_cover(gr%nnzp) = cf(gr%nnzp)
+    cloud_cover(1)       = cloud_frac(1)
+    cloud_cover(gr%nnzp) = cloud_frac(gr%nnzp)
 
     rcm_in_layer(1)       = rcm(1)
     rcm_in_layer(gr%nnzp) = rcm(gr%nnzp)

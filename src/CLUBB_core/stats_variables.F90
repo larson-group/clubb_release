@@ -61,7 +61,7 @@ module stats_variables
      ivm_ref, & 
      iug, & 
      ivg, & 
-     icf, &
+     icloud_frac, &
      ircm_in_layer, &
      icloud_cover, &
      ip_in_Pa, & 
@@ -115,7 +115,7 @@ module stats_variables
 
 
 !$omp   threadprivate(ithlm, ithvm, irtm, ircm, ium, ivm, iwm_zt, iug)
-!$omp   threadprivate(ivg, icf, ip_in_Pa, iexner, iLscale, iwp3, iwpthlp2)
+!$omp   threadprivate(ivg, icloud_frac, ip_in_Pa, iexner, iLscale, iwp3, iwpthlp2)
 !$omp   threadprivate(iwp2thlp, iwprtp2, iwp2rtp, iLscale_up, iLscale_down, itau_zt)
 !$omp   threadprivate(iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, isigma_sqd_w_zt, irho)
 !$omp   threadprivate(iNcm, iNcnm, isnowslope)
@@ -436,11 +436,11 @@ module stats_variables
     iLH_Ncm, &
     iLH_rvm, &
     iLH_wm, &
-    iLH_cf
+    iLH_cloud_frac
 
 !$omp threadprivate(iLH_rrainm, iLH_ricem, iLH_Nim, iLH_rsnowm, iLH_Nsnowm, &
 !$omp   iLH_rgraupelm, iLH_Ngraupelm, &
-!$omp   iLH_thlm, iLH_rcm, iLH_Ncm, iLH_rvm, iLH_wm, iLH_cf )
+!$omp   iLH_thlm, iLH_rcm, iLH_Ncm, iLH_rvm, iLH_wm, iLH_cloud_frac )
 
   integer, public :: &
     iLH_wp2_zt

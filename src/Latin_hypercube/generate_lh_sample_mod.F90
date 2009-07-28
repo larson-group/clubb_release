@@ -17,7 +17,7 @@ module generate_lh_sample_mod
 !-------------------------------------------------------------------------------
   subroutine generate_lh_sample &
              ( n_micro_calls, nt_repeat, d_variables, hydromet_dim, & 
-               p_matrix, cf, pdf_params, level, & 
+               p_matrix, cloud_frac, pdf_params, level, & 
                hydromet, correlation_array, &
                rt, thl, & 
                X_u_one_lev, X_nl_one_lev, l_sample_flag )
@@ -81,7 +81,7 @@ module generate_lh_sample_mod
       hydromet ! Hydrometeor species [units vary]
 
     ! Cloud fraction
-    real, intent(in) :: cf !  Cloud fraction, 0 <= cf <= 1
+    real, intent(in) :: cloud_frac !  Cloud fraction, 0 <= cloud_frac <= 1
 
     integer, intent(in), dimension(n_micro_calls,d_variables+1) :: &
       p_matrix !   N x D random matrix of integers that's fed to closure
@@ -240,7 +240,7 @@ module generate_lh_sample_mod
       cloud_frac1 = 1.0
       cloud_frac2 = 1.0
 
-    else if ( cf < 0.001 ) then
+    else if ( cloud_frac < 0.001 ) then
       ! In this case there are essentially no cloudy points to sample;
       ! Set sample points to zero.
       X_u_one_lev(:,:)    = 0.0

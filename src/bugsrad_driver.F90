@@ -224,10 +224,10 @@ module bugsrad_clubb_mod
     o3l(1,1:(nz-1)) = dble( ( 5.4e-5 / rho_zm(1:(nz-1)) ) * 0.001 )
 
     ! Convert and transpose as needed
-    rcil(1,buffer+1:(nz-1)+buffer)  = flip( dble( rim(2:nz) ), nz-1 )
-    rsnwm2(1,buffer+1:(nz-1)+buffer)= flip( dble( rsnwm(2:nz) ), nz-1 )
-    rcm2(1,buffer+1:(nz-1)+buffer)  = flip( dble( rcm(2:nz) ), nz-1 )
-    cloud_cover2(1,buffer+1:(nz-1)+buffer)   = flip( dble( cloud_cover(2:nz) ), nz-1 )
+    rcil(1,buffer+1:(nz-1)+buffer)         = flip( dble( rim(2:nz) ), nz-1 )
+    rsnwm2(1,buffer+1:(nz-1)+buffer)       = flip( dble( rsnwm(2:nz) ), nz-1 )
+    rcm2(1,buffer+1:(nz-1)+buffer)         = flip( dble( rcm(2:nz) ), nz-1 )
+    cloud_cover2(1,buffer+1:(nz-1)+buffer) = flip( dble( cloud_cover(2:nz) ), nz-1 )
 
     T_in_K(1,buffer+1:(nz-1)+buffer) = flip( T_in_K(1,1:(nz-1)), nz-1 )
 

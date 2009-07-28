@@ -141,7 +141,7 @@ module morrison_micro_driver_mod
       rcm_sten     ! Cloud dropet sedimentation tendency           [kg/kg/s]
 
     real, dimension(nnzp) :: & 
-      cf  ! Cloud fraction
+      cloud_frac  ! Cloud fraction
 
     real, dimension(nnzp,hydromet_dim) :: & 
       hydromet_sten, & ! Hydrometeor sedimentation tendency [(units vary)/s]
@@ -160,18 +160,18 @@ module morrison_micro_driver_mod
       dummy => hydromet
       dummy => hydromet_mc
       dummy => hydromet_vel
-      cf = dummy(:,1)
+      cloud_frac = dummy(:,1)
     end if
 
     ! Determine temperature
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
 
     if ( .not. l_latin_hypercube ) then
-      cf(1:nnzp) = max( zero_threshold, &
+      cloud_frac(1:nnzp) = max( zero_threshold, &
                         pdf_params%a * pdf_params%cloud_frac1 &
                         + (1.-pdf_params%a) * pdf_params%cloud_frac2 )
     else
-      cf(1:nnzp) = 0.0
+      cloud_frac(1:nnzp) = 0.0
     end if
 
     rcm_tmp = rcm
@@ -202,7 +202,7 @@ module morrison_micro_driver_mod
            hydromet_tmp(:,iirgraupelm), hydromet_tmp(:,iiNgraupelm), effg, &
            hydromet_sten(:,iirgraupelm), hydromet_sten(:,iirrainm), &
            hydromet_sten(:,iiricem), hydromet_sten(:,iirsnowm), &
-           rcm_sten, cf )
+           rcm_sten, cloud_frac )
 
     ! Update hydrometeor tendencies
     ! This done because the hydromet_mc arrays that are produced by

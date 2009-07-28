@@ -17,7 +17,7 @@ module pdf_closure_module
                sclrp2, sclrprtp, sclrpthlp, level, & 
                wp4, wprtp2, wp2rtp, & 
                wpthlp2, wp2thlp, wprtpthlp, & 
-               cf, rcm, wpthvp, wp2thvp, rtpthvp,  & 
+               cloud_frac, rcm, wpthvp, wp2thvp, rtpthvp,  & 
                thlpthvp, wprcp, wp2rcp, rtprcp, thlprcp, & 
                rcp2, pdf_params, & 
                err_code, & 
@@ -132,7 +132,7 @@ module pdf_closure_module
       wp2rtp,      & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
       wpthlp2,     & ! w' th_l'^2            [(m K^2)/s]
       wp2thlp,     & ! w'^2 th_l'            [(m^2 K)/s^2]
-      cf,          & ! Cloud fraction        [%]
+      cloud_frac,  & ! Cloud fraction        [%]
       rcm,         & ! Mean liquid water     [kg/kg]
       wpthvp,      & ! Buoyancy flux         [(K m)/s] 
       wp2thvp,     & ! w'^2 th_v'            [(m^2 K)/s^2]
@@ -673,8 +673,8 @@ module pdf_closure_module
 
     ! Compute mean cloud fraction and cloud water
 
-    cf  = a * cloud_frac1 + (1.-a) * cloud_frac2
-    rcm = a * rc1         + (1.-a) * rc2
+    cloud_frac = a * cloud_frac1 + (1.-a) * cloud_frac2
+    rcm        = a * rc1         + (1.-a) * rc2
 
     ! Note: Brian added the following lines to ensure that there
     ! are never any negative liquid water values (or any negative
@@ -685,7 +685,7 @@ module pdf_closure_module
     ! corrected because Brian found a small negative value of
     ! rcm in the first timestep of the FIRE case.
 
-    cf  = max( zero_threshold, cf )
+    cloud_frac  = max( zero_threshold, cloud_frac )
     rcm = max( zero_threshold, rcm )
 
     ! Compute variance of liquid water mixing ratio.
@@ -735,7 +735,7 @@ module pdf_closure_module
     if ( clubb_at_least_debug_level( 2 ) ) then 
       call pdf_closure_check & 
            ( wp4, wprtp2, wp2rtp, wpthlp2, & 
-             wp2thlp, cf, rcm, wpthvp, wp2thvp, & 
+             wp2thlp, cloud_frac, rcm, wpthvp, wp2thvp, & 
              rtpthvp, thlpthvp, wprcp, wp2rcp, & 
              rtprcp, thlprcp, rcp2, wprtpthlp, & 
              crt1, crt2, cthl1, cthl2, pdf_params, level, &
@@ -782,7 +782,7 @@ module pdf_closure_module
         write(fstderr,*) "wprtp2 = ", wprtp2
         write(fstderr,*) "wp2rtp = ", wp2rtp
         write(fstderr,*) "wpthlp2 = ", wpthlp2
-        write(fstderr,*) "cf = ", cf
+        write(fstderr,*) "cloud_frac = ", cloud_frac
         write(fstderr,*) "rcm = ", rcm
         write(fstderr,*) "wpthvp = ", wpthvp
         write(fstderr,*) "wp2thvp = ", wp2thvp

@@ -125,7 +125,7 @@ module clubb_driver
       upwp_sfc, vpwp_sfc, thlm_forcing, & 
       rtm_forcing, um_forcing, vm_forcing, &
       up2, vp2, wp3, rtp2, pdf_params, & 
-      thlp2, rtpthlp, sigma_sqd_w, cf, &
+      thlp2, rtpthlp, sigma_sqd_w, cloud_frac, &
       rcm_in_layer, cloud_cover
 
     use variables_prognostic_module, only:  & 
@@ -760,7 +760,7 @@ module clubb_driver
                thlm, rtm, wprtp, wpthlp, wpthvp, &                 ! Intent(inout)
                Kh_zt, wp2, wp3, &                                  ! Intent(inout)
                rtp2, thlp2, rtpthlp, &                             ! Intent(inout)
-               sigma_sqd_w, tau_zm, rcm, cf, &                     ! Intent(inout)
+               sigma_sqd_w, tau_zm, rcm, cloud_frac, &             ! Intent(inout)
                rcm_in_layer, cloud_cover, &                        ! Intent(inout)
                sclrm, sclrp2, sclrprtp, sclrpthlp, &               ! Intent(inout)
                wpsclrp, edsclrm, pdf_params, &                     ! Intent(inout)
@@ -1626,7 +1626,7 @@ module clubb_driver
         input_rsnowm, input_ricem, input_rgraupelm,  & 
         input_thlm_forcing, input_rtm_forcing, & 
         input_up2, input_vp2, input_sigma_sqd_w, input_Ncm,  & 
-        input_Ncnm, input_Nim, input_cf, input_sigma_sqd_w_zt, &
+        input_Ncnm, input_Nim, input_cloud_frac, input_sigma_sqd_w_zt, &
         input_veg_T_in_K, input_deep_soil_T_in_K, &
         input_sfc_soil_T_in_K
 
@@ -1785,7 +1785,7 @@ module clubb_driver
     input_up2 = .true.
     input_vp2 = .true.
     input_sigma_sqd_w = .true.
-    input_cf  = .true.
+    input_cloud_frac  = .true.
     input_sigma_sqd_w_zt = .true.
     call set_filenames( "../"//trim( restart_path_case ) )
     ! Determine the nearest timestep in the GRADS file to the
@@ -1847,7 +1847,7 @@ module clubb_driver
       wm_zt, wm_zm, rho, rtm, thlm, p_in_Pa, & 
       exner, rcm, rho_zm, um, psfc, vm, & 
       upwp_sfc, vpwp_sfc, Tsfc, & 
-      wpthlp_sfc, SE, LE, wprtp_sfc, cf, cloud_cover, &
+      wpthlp_sfc, SE, LE, wprtp_sfc, cloud_frac, cloud_cover, &
 #ifdef UNRELEASED_CODE
     um_forcing, vm_forcing, &
 #endif
@@ -2477,13 +2477,13 @@ module clubb_driver
     if ( trim( micro_scheme ) /= "none" ) then
 
       call advance_microphys &
-           ( iter, runtype, dt, time_current, &               ! Intent(in)
-             thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cf, & ! Intent(in) 
-             wm_zt, wm_zm, Kh_zm, pdf_params, & ! Intent(in)
-             wp2_zt, &                                        ! Intent(in)
-             Ncnm, hydromet, &                                ! Intent(inout)
-             rtm_forcing, thlm_forcing, &                     ! Intent(inout)
-             err_code )                                       ! Intent(out)
+           ( iter, runtype, dt, time_current, &                         ! Intent(in)
+             thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, & ! Intent(in)
+             wm_zt, wm_zm, Kh_zm, pdf_params, &                         ! Intent(in)
+             wp2_zt, &                                                  ! Intent(in)
+             Ncnm, hydromet, &                                          ! Intent(inout)
+             rtm_forcing, thlm_forcing, &                               ! Intent(inout)
+             err_code )                                                 ! Intent(out)
 
       if ( lapack_error( err_code ) ) return
 
@@ -2542,8 +2542,8 @@ module clubb_driver
           write(fstderr,*) "ricem before BUGSrad is NaN"
         endif
 
-        if ( isnan2d( cf ) ) then
-          write(fstderr,*) "cf before BUGSrad is NaN"
+        if ( isnan2d( cloud_frac ) ) then
+          write(fstderr,*) "cloud_frac before BUGSrad is NaN"
         endif
 
         if ( isnan2d( p_in_Pa ) ) then
@@ -2563,8 +2563,8 @@ module clubb_driver
         endif
 
         ! Check for impossible negative values
-        call rad_check( thlm, rcm, rtm, ricem, &            ! Intent(in)
-                        cf, p_in_Pa, exner, rho_zm )        ! Intent(in)
+        call rad_check( thlm, rcm, rtm, ricem, &             ! Intent(in)
+                        cloud_frac, p_in_Pa, exner, rho_zm ) ! Intent(in)
 
       endif  ! clubb_at_least_debug_level( 2 )
 

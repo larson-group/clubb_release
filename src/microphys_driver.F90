@@ -502,7 +502,7 @@ module microphys_driver
 !-------------------------------------------------------------------------------
   subroutine advance_microphys & 
              ( iter, runtype, dt, time_current,  & 
-               thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cf, & 
+               thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, & 
                wm_zt, wm_zm, Kh_zm, pdf_params, & 
                wp2_zt, &
                Ncnm, hydromet, & 
@@ -684,17 +684,17 @@ module microphys_driver
       time_current ! Current time     [s]
 
     real, dimension(gr%nnzp), intent(in) :: & 
-      thlm,    & ! Liquid potential temp.                 [K]
-      p_in_Pa, & ! Pressure                               [Pa]
-      exner,   & ! Exner function                         [-]
-      rho,     & ! Density on thermo. grid                [kg/m^3]
-      rho_zm,  & ! Density on moment. grid                [kg/m^3]
-      rtm,     & ! Total water mixing ratio               [kg/kg]
-      rcm,     & ! Liquid water mixing ratio              [kg/kg]
-      cf,      & ! Cloud fraction                         [%]
-      wm_zt,   & ! w wind on moment. grid                 [m/s]
-      wm_zm,   & ! w wind on thermo. grid                 [m/s]
-      Kh_zm      ! Kh Eddy diffusivity on momentum grid   [m^2/s]
+      thlm,       & ! Liquid potential temp.                 [K]
+      p_in_Pa,    & ! Pressure                               [Pa]
+      exner,      & ! Exner function                         [-]
+      rho,        & ! Density on thermo. grid                [kg/m^3]
+      rho_zm,     & ! Density on moment. grid                [kg/m^3]
+      rtm,        & ! Total water mixing ratio               [kg/kg]
+      rcm,        & ! Liquid water mixing ratio              [kg/kg]
+      cloud_frac, & ! Cloud fraction                         [%]
+      wm_zt,      & ! w wind on moment. grid                 [m/s]
+      wm_zm,      & ! w wind on thermo. grid                 [m/s]
+      Kh_zm         ! Kh Eddy diffusivity on momentum grid   [m^2/s]
 
     type(pdf_parameter), intent(in) :: & 
       pdf_params     ! PDF parameters
@@ -876,7 +876,7 @@ module microphys_driver
         call latin_hypercube_driver &
              ( real( dt ), iter, d_variables, LH_microphys_calls, &
                LH_sequence_length, gr%nnzp, &
-               cf, thlm, p_in_Pa, exner, &
+               cloud_frac, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm_zt, wtmp, dzq, rcm, rtm-rcm, &
                hydromet, correlation_array, hydromet_mc, hydromet_vel, rcm_mc, &
                rvm_mc, thlm_mc, morrison_micro_driver )
@@ -971,7 +971,7 @@ module microphys_driver
         call latin_hypercube_driver &
              ( real( dt ), iter, d_variables, LH_microphys_calls, &
                LH_sequence_length, gr%nnzp, &
-               cf, thlm, p_in_Pa, exner, &
+               cloud_frac, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm_zt, wtmp, dzq, rcm, rtm-rcm, &
                hydromet, correlation_array, hydromet_mc, hydromet_vel, rcm_mc, &
                rvm_mc, thlm_mc, KK_microphys )

@@ -6,7 +6,7 @@ program jacobian
 
 ! Description:
 !   Generates a matrix based on variation between parameter
-!   constants (C1,C2...etc) and variables (cf,rcm,thlm...etc)
+!   constants (C1,C2...etc) and variables (cloud_frac,rcm,thlm...etc)
 
 ! References:
 !   None
@@ -224,7 +224,7 @@ program jacobian
 
 
   var1zt%name(1:nvarzt) =  & 
-  (/"cf          ", "rcm         ", "rtm         ",  & 
+  (/"cloud_frac  ", "rcm         ", "rtm         ",  & 
     "thlm        ", "um          ", "vm          ", & 
     "wp3         ", "wp3_ta      ", "wp3_tp      ", & 
     "wp3_bp      ", "wp3_cl      ", & 

@@ -72,11 +72,11 @@ module variables_prognostic_module
   ! Cloud water variables
   real, target, allocatable, dimension(:), public :: & 
     rcm,         & ! Cloud water mixing ratio                 [kg/kg]
-    cf,          & ! Cloud fraction                           [%]
+    cloud_frac,  & ! Cloud fraction                           [%]
     rcm_in_layer,& ! Cloud water mixing ratio in cloud layer  [kg/kg]
     cloud_cover    ! Cloud cover                              [%]
 
-!$omp   threadprivate(rcm, cf, rcm_in_layer, cloud_cover)
+!$omp   threadprivate(rcm, cloud_frac, rcm_in_layer, cloud_cover)
 
   ! Surface fluxes
   real, public ::  & 
@@ -236,7 +236,7 @@ module variables_prognostic_module
     ! Cloud water variables
 
     allocate( rcm(1:nzmax) )
-    allocate( cf(1:nzmax) )
+    allocate( cloud_frac(1:nzmax) )
     allocate( rcm_in_layer(1:nzmax) )
     allocate( cloud_cover(1:nzmax) )
 
@@ -324,7 +324,7 @@ module variables_prognostic_module
     ! Cloud water variables
 
     rcm(1:nzmax)          = 0.0
-    cf(1:nzmax)           = 0.0
+    cloud_frac(1:nzmax)   = 0.0
     rcm_in_layer(1:nzmax) = 0.0
     cloud_cover(1:nzmax)  = 0.0
 
@@ -442,7 +442,7 @@ module variables_prognostic_module
     ! Cloud water variables
 
     deallocate( rcm )
-    deallocate( cf )
+    deallocate( cloud_frac )
     deallocate( rcm_in_layer )
     deallocate( cloud_cover )
 

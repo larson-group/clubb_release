@@ -8,7 +8,7 @@ stats_tout  = 60.0
 
 fname_zt = 'dycoms2_rf01_zt',
 vars_zt = 
-'cf', 'rcm',
+'cloud_frac', 'rcm',
 ''
 
 fname_zm = 'dycoms2_rf01_zm',

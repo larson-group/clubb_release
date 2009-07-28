@@ -866,7 +866,7 @@ module stats_subs
                      rtm, wprtp, wpthlp, wpthvp, &
                      wp2, wp3, rtp2, thlp2, rtpthlp, & 
                      p_in_Pa, exner, rho, rho_zm, Kh_zt, & 
-                     wm_zt, sigma_sqd_w, tau_zm, rcm, cf, &
+                     wm_zt, sigma_sqd_w, tau_zm, rcm, cloud_frac, & 
                      rcm_in_layer, cloud_cover, & 
                      pdf_params, &
                      sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
@@ -893,7 +893,7 @@ module stats_subs
         iwm_zt, & 
         iug, & 
         ivg, & 
-        icf, &
+        icloud_frac, & 
         ircm_in_layer, &
         icloud_cover, &
         ip_in_Pa, & 
@@ -1133,7 +1133,7 @@ module stats_subs
 
     real, intent(in), dimension(gr%nnzp) :: & 
       rcm,         & ! Cloud water mixing ratio                 [kg/kg]
-      cf,          & ! Cloud fraction                           [%]
+      cloud_frac,  & ! Cloud fraction                           [%]
       rcm_in_layer,& ! Cloud water mixing ratio in cloud layer  [kg/kg]
       cloud_cover    ! Cloud cover                              [%]
 
@@ -1180,7 +1180,7 @@ module stats_subs
       call stat_update_var( iwm_zt, wm_zt, zt )
       call stat_update_var( iug, ug, zt )
       call stat_update_var( ivg, vg, zt )
-      call stat_update_var( icf, cf, zt )
+      call stat_update_var( icloud_frac, cloud_frac, zt )
       call stat_update_var( ircm_in_layer, rcm_in_layer, zt )
       call stat_update_var( icloud_cover, cloud_cover, zt )
       call stat_update_var( ip_in_Pa, p_in_Pa, zt )
@@ -1312,7 +1312,7 @@ module stats_subs
       ! sfc variables
 
       ! Cloud cover
-      call stat_update_var_pt( icc, 1, maxval( cf(1:gr%nnzp) ), sfc )
+      call stat_update_var_pt( icc, 1, maxval( cloud_frac(1:gr%nnzp) ), sfc )
 
       ! Cloud base
       if ( izb > 0 ) then
