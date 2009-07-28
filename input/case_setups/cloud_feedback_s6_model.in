@@ -89,6 +89,9 @@ l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
 ! If false, sounding data will be used.
 l_use_default_std_atmosphere = .false. 
 
+l_t_dependent = .true.
+
+
 ! Sponge Damping
 !
 ! tau_sponge_damp_min : Minimum damping time-scale ( at the top0 [s]

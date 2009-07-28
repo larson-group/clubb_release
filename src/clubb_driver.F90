@@ -884,13 +884,9 @@ module clubb_driver
         l_tke_aniso
 
 #ifdef UNRELEASED_CODE
-    use arm_0003, only: arm_0003_init ! Procedure(s)
-
-    use arm_3year, only: arm_3year_init ! Procedure(s)
 
     use lba, only: lba_init ! Procedure(s)
 
-    use cloud_feedback, only: cloud_feedback_init ! Procedure(s)
 #endif
 
     use time_dependent_input, only: &
@@ -1220,7 +1216,7 @@ module clubb_driver
 
     if( l_t_dependent ) then
       call initialize_t_dependent_input &
-                   ( iunit, runtype, gr%nnzp, gr%zt )
+                   ( iunit, runtype, gr%nnzp, gr%zt, p_in_Pa )
     end if
 
     ! Initialize TKE and other fields as needed
@@ -1270,13 +1266,11 @@ module clubb_driver
     case ( "arm_0003" )
 
       em = 1.0
-      call arm_0003_init( iunit, forcings_file_path )
 
       ! 3 year ARM case
     case ( "arm_3year" )
 
       em = 1.0
-      call arm_3year_init( iunit, forcings_file_path )
 
       ! June 27 1997 ARM case
     case ( "arm_97" )
@@ -1293,7 +1287,6 @@ module clubb_driver
            "cloud_feedback_s12", "cloud_feedback_s12_p2k" )
 
       em = 1.0
-      call cloud_feedback_init( iunit, forcings_file_path )
 
 #endif
 
@@ -1897,6 +1890,12 @@ module clubb_driver
 
     use microphys_driver, only: advance_microphys ! Procedure(s)
 
+    use time_dependent_input, only: &
+      apply_time_dependent_forcings, &
+      l_t_dependent
+       
+
+
     use parameters_microphys, only: &
       micro_scheme, l_cloud_sed, Ncm_initial  ! Variables
 
@@ -1917,11 +1916,11 @@ module clubb_driver
     use arm, only: arm_tndcy, arm_sfclyr ! Procedure(s)
 
 #ifdef UNRELEASED_CODE
-    use arm_0003, only: arm_0003_tndcy, arm_0003_sfclyr ! Procedure(s)
+    use arm_0003, only: arm_0003_sfclyr ! Procedure(s)
 
-    use arm_3year, only: arm_3year_tndcy, arm_3year_sfclyr ! Procedure(s)
+    use arm_3year, only: arm_3year_sfclyr ! Procedure(s)
 
-    use arm_97, only: arm_97_tndcy, arm_97_sfclyr ! Procedure(s)
+    use arm_97, only: arm_97_sfclyr ! Procedure(s)
 
     use astex, only: astex_tndcy, astex_sfclyr ! Procedure(s)
 #endif
@@ -1952,7 +1951,7 @@ module clubb_driver
     use gabls2, only: gabls2_tndcy, gabls2_sfclyr ! Procedure(s)
 
 #ifdef UNRELEASED_CODE
-    use gabls3, only: gabls3_tndcy, gabls3_sfclyr ! Procedures(s)
+    use gabls3, only: gabls3_sfclyr ! Procedures(s)
 
     use gabls3_night, only: gabls3_night_sfclyr
 
@@ -1960,8 +1959,7 @@ module clubb_driver
 
     use lba, only: lba_tndcy, lba_sfclyr ! Procedure(s)
 
-    use cloud_feedback, only: cloud_feedback_tndcy, &
-                              cloud_feedback_sfclyr ! Procedure(s)
+    use cloud_feedback, only: cloud_feedback_sfclyr ! Procedure(s)
 #endif
 
     use mpace_a, only: mpace_a_tndcy, mpace_a_sfclyr ! Procedure(s)
@@ -1971,7 +1969,7 @@ module clubb_driver
 #ifdef UNRELEASED_CODE
     use nov11, only: nov11_altocu_tndcy ! Procedure(s)
 
-    use twp_ice, only: twp_ice_tndcy, twp_ice_sfclyr ! Procedure(s)
+    use twp_ice, only: twp_ice_sfclyr ! Procedure(s)
 
     use jun25, only: jun25_altocu_tndcy ! Procedure(s)
 #endif
@@ -2042,23 +2040,6 @@ module clubb_driver
                       sclrm_forcing, edsclrm_forcing )    ! Intent(out)
 
 #ifdef UNRELEASED_CODE
-    case ( "arm_0003" ) ! ARM March 2000 case
-      call arm_0003_tndcy( time_current, &                  ! Intent(in)
-                           thlm_forcing,  &                 ! Intent(out)
-                           rtm_forcing, um_ref, vm_ref, &   ! Intent(out)
-                           sclrm_forcing, edsclrm_forcing ) ! Intent(out)
-
-    case ( "arm_3year" ) ! ARM 3 year case
-      call arm_3year_tndcy( time_current, &                  ! Intent(in)
-                            thlm_forcing,  &                 ! Intent(out)
-                            rtm_forcing, um_ref, vm_ref, &   ! Intent(out)
-                            sclrm_forcing, edsclrm_forcing ) ! Intent(out)
-
-    case ( "arm_97" ) ! 27 June 1997 ARM case
-      call arm_97_tndcy( time_current, &                 ! Intent(in)
-                         thlm_forcing,  &                ! Intent(out)
-                         rtm_forcing, um_ref, vm_ref, &  ! Intent(out)
-                         sclrm_forcing, edsclrm_forcing )! Intent(out)
 
     case ( "astex_a209" ) ! ASTEX Sc case for K & K
       call astex_tndcy( wm_zt, wm_zm,  &                ! Intent(out) 
@@ -2093,12 +2074,6 @@ module clubb_driver
                               wm_zt, wm_zm, thlm_forcing, rtm_forcing, &   ! Intent(out)
                               Frad, radht, &                               ! Intent(out)
                               sclrm_forcing, edsclrm_forcing )             ! Intent(out)
-    case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
-           "cloud_feedback_s11", "cloud_feedback_s11_p2k", &
-           "cloud_feedback_s12", "cloud_feedback_s12_p2k" ) ! Cloud Feedback cases
-      call cloud_feedback_tndcy(exner, p_in_Pa, &                     ! Intent(in) 
-                                thlm_forcing, rtm_forcing, &          ! Intent(out)
-                                sclrm_forcing, edsclrm_forcing )      ! Intent(out)
     case ( "cobra" )
       call cobra_tndcy( thlm_forcing, rtm_forcing, &     ! Intent(out)
                         sclrm_forcing, edsclrm_forcing ) ! Intent(out)
@@ -2131,13 +2106,6 @@ module clubb_driver
                          wm_zt, wm_zm, thlm_forcing, &    ! Intent(out)
                          rtm_forcing, radht, &            ! Intent(out)
                          sclrm_forcing, edsclrm_forcing ) ! Intent(out)
-
-#ifdef UNRELEASED_CODE
-    case ( "gabls3", "gabls3_night" ) ! GABLS 3 case
-      call gabls3_tndcy( time_current, rtm, rho, &                   ! Intent(in)
-                         wm_zt, wm_zm, thlm_forcing, rtm_forcing,&          ! Intent(out)
-                         um_forcing, vm_forcing, ug, vg )                   ! Intent(out)
-#endif
 
 #ifdef UNRELEASED_CODE
     case ( "jun25_altocu" ) ! June 25 Altocumulus case.
@@ -2184,12 +2152,6 @@ module clubb_driver
       call rico_tndcy( exner, &                            ! Intent(in)
                        thlm_forcing, rtm_forcing, radht, & ! Intent(out)   
                        sclrm_forcing, edsclrm_forcing )    ! Intent(out)
-
-    case ( "twp_ice" ) ! TWP_ICE case
-      call twp_ice_tndcy( time_current, rho,            &   ! Intent(in)
-                           wm_zt, wm_zm, thlm_forcing,  &   ! Intent(out)
-                           rtm_forcing, um_ref, vm_ref, &   ! Intent(out)
-                           sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 #endif
 
     case ( "wangara" ) ! Wangara dry CBL
@@ -2197,6 +2159,17 @@ module clubb_driver
                           thlm_forcing, rtm_forcing, &      ! Intent(out)
                           sclrm_forcing, edsclrm_forcing )  ! Intent(out)
 
+
+    case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
+           "cloud_feedback_s11", "cloud_feedback_s11_p2k", &
+           "cloud_feedback_s12", "cloud_feedback_s12_p2k", &
+           "gabls3_night", "arm_97", "gabls3", "twp_ice",  &
+           "arm_0003", "arm_3year" )
+      if( l_t_dependent ) then 
+         call apply_time_dependent_forcings( time_current, gr%nnzp, p_in_Pa, rtm, rho, exner, thvm,&
+          thlm_forcing, rtm_forcing, um_ref, vm_ref, um_forcing, vm_forcing, wm_zt, wm_zm, ug, vg, &
+          sclrm_forcing, edsclrm_forcing )
+      end if
     case default
 
       write(unit=fstderr,fmt=*)  & 

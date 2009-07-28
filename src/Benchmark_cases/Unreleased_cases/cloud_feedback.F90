@@ -10,78 +10,9 @@ implicit none
 
 private ! Default Scope
 
-public :: cloud_feedback_tndcy, cloud_feedback_sfclyr, cloud_feedback_init
-
-private :: divT, divq, press, ndiv
-
-! Constant Parameters
-integer, parameter :: &  
-  ndiv = 26,          & ! Number of values in the forcing files
-  per_line = 1          ! Number of values per line in the forcing files
-
-! Forcing arrays
-real, dimension(ndiv) :: divT  ! Horizontal large scale temp. forcing
-real, dimension(ndiv) :: divq  ! Horizontal large scale water vapor forcing
-real, dimension(ndiv) :: press ! Pressure levels
+public :: cloud_feedback_sfclyr
 
 contains
-
-!----------------------------------------------------------------------
-subroutine cloud_feedback_tndcy( exner, p_in_Pa, & 
-                                 thlm_forcing, rtm_forcing, & 
-                                 sclrm_forcing, edsclrm_forcing )
-!       Description:
-!       Sets up the tendency information for the cloud feeback case
-
-!       References:
-!----------------------------------------------------------------------
-
-use grid_class, only: gr !  Variable(s)
-
-use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
-
-use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
-
-use interpolation, only: plinterp_fnc ! Procedure(s)
-
-use stats_precision, only: time_precision ! Variable(s)
-
-use array_index, only:  & 
-    iisclr_thl, iisclr_rt ! Variable(s)
-
-implicit none
-
-! Input
-real, intent(in), dimension(gr%nnzp) :: &
-  exner,        & ! Exner function                [-]
-  p_in_Pa         ! Pressure                      [Pa]
-
-! Output Variables
-real, intent(out), dimension(gr%nnzp) :: & 
-  thlm_forcing, & ! Liquid water potential temperature tendency  [K/s]
-  rtm_forcing     ! Total water mixing ratio tendency            [kg/kg/s]
-
-real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
-  sclrm_forcing ! Passive scalar forcing [units vary]
-
-real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
-  edsclrm_forcing ! Passive eddy-scalar forcing [units vary]
-
-! Horizontal large scale temp. forcing
-thlm_forcing = plinterp_fnc( gr%nnzp, ndiv, p_in_Pa, press, divT ) / exner
-
-! Large scale advective moisture tendency
-rtm_forcing = plinterp_fnc( gr%nnzp, ndiv, p_in_Pa, press, divq )
-
-! Test scalars with thetal and rt if desired
-if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
-if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
-
-if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
-if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
-
-return
-end subroutine cloud_feedback_tndcy
 
 !----------------------------------------------------------------------
 subroutine cloud_feedback_sfclyr( runtype, sfctype, & 
@@ -204,41 +135,5 @@ end if
 
 return
 end subroutine cloud_feedback_sfclyr
-
-!----------------------------------------------------------------
-subroutine cloud_feedback_init( iunit, file_path )
-!
-!       Description:
-!       This subroutine initializes the module by reading in forcing
-!       data used in the tndcy subroutine.
-!----------------------------------------------------------------
-
-  use file_functions, only: file_read_1d ! Procedure(s)
-
-  implicit none
-
-  integer, intent(in) :: iunit ! File unit number
-
-  character(len=*), intent(in) :: &
-    file_path ! Path to the forcing files
-
-  call file_read_1d( iunit, & 
-    file_path//'cloud_feedback_divT.dat', & 
-    ndiv, per_line, divT )
-
-  call file_read_1d( iunit, & 
-    file_path//'cloud_feedback_divq.dat', & 
-    ndiv, per_line, divq )
-
-  call file_read_1d( iunit, & 
-    file_path//'cloud_feedback_press.dat', & 
-    ndiv, per_line, press )
-
-  call file_read_1d( iunit, & 
-    file_path//'cloud_feedback_press.dat', & 
-    ndiv, per_line, press )
-
-  return 
-end subroutine cloud_feedback_init
 
 end module cloud_feedback

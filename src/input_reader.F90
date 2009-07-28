@@ -356,7 +356,8 @@ module input_reader
       ! Interpopate along other dim
       do j=1, dim_size
         two_dim_vars(i)%values(j,:) = linear_fill_blanks( other_dim_size, &
-                                               other_dim%values, two_dim_vars(i)%values(j,:), 0.0 )
+                                               other_dim%values, &
+                                               two_dim_vars(i)%values(j,:), -999.9 )
       end do
 
 

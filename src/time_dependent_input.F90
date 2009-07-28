@@ -6,38 +6,38 @@ module time_dependent_input
 !
 !--------------------------------------------------------------------------------------------------
 
+  use input_reader, only: &
+    two_dim_read_var, &
+    one_dim_read_var
 
   implicit none
 
-  public :: initialize_t_dependent_input, finalize_t_dependent_input, time_select
+  public :: initialize_t_dependent_input, finalize_t_dependent_input, time_select, &
+            apply_time_dependent_forcings
 
   private :: initialize_t_dependent_forcings, &
-             finalize_t_dependent_forcings, & 
-             initialize_t_dependent_surface, &
-             finalize_t_dependent_surface, &
+             finalize_t_dependent_forcings,   & 
+             initialize_t_dependent_surface,  &
+             finalize_t_dependent_surface,    &
              read_to_grid
 
-  ! array(altitude,time)
-  real, public, target, allocatable, dimension(:,:) :: &
-    thlm_f_given, &
-    rtm_f_given, & 
-    um_given, &
-    vm_given, &
-    um_f_given, &
-    vm_f_given, &
-    wm_given, &
-    ug_given, &
-    vg_given
+  integer, parameter :: nCols = 10 ! Number of columns in the input file
 
-  real, public, target, allocatable, dimension(:) :: &
-    time_f_given, &   
-    time_sfc_given, &
-    LH_given, &
-    SH_given, &
+  real, public, target, allocatable, dimension(:) :: & ! Module variables used to describe 
+    time_sfc_given, &                                  ! the surace over time.
+    LH_given,       &
+    SH_given,       &
     thlm_sfc_given, &
-    rtm_sfc_given, &
+    rtm_sfc_given,  &
     psfc_given
 
+
+  type(two_dim_read_var), private, dimension(nCols) :: &
+    t_dependent_forcing_data ! Data structure that defines the change in input
+                             ! files over time
+
+  type(one_dim_read_var), private :: dimension_var ! Data structure that describes other 
+                                                   ! dimension of the two_dim_read_var
 
   logical, public :: l_t_dependent ! Flag used to determine when
   !                                  time dependent information is read in.
@@ -58,7 +58,7 @@ module time_dependent_input
   contains
 
   !-------------------------------------------------------------------------------------------------
-  subroutine initialize_t_dependent_input( iunit, runtype, grid_size, grid )
+  subroutine initialize_t_dependent_input( iunit, runtype, grid_size, grid, p_in_Pa )
     !
     !  Description: This subroutine reads in time dependent information about a
     !  case that is stored inside the module.
@@ -76,10 +76,12 @@ module time_dependent_input
 
     real, dimension(grid_size), intent(in) :: grid ! Model grid
 
+    real, dimension(grid_size), intent(in) :: p_in_Pa ! Pressure[Pa]
+
     ! Begin Code
 
     call initialize_t_dependent_forcings &
-                   ( iunit, input_path//trim(runtype)//forcings_path, grid_size, grid )
+                   ( iunit, input_path//trim(runtype)//forcings_path, grid_size, grid, p_in_Pa )
 
     call initialize_t_dependent_surface &
                    ( iunit, input_path//trim(runtype)//surface_path )
@@ -114,11 +116,11 @@ module time_dependent_input
                             fill_blanks_one_dim_vars, read_x_profile
 
     use input_names, only: &
-      time_name, &
-      thetal_name, &
-      rt_name, &
-      LH_name, &
-      SH_name, &
+      time_name,     &
+      thetal_name,   &
+      rt_name,       &
+      LH_name,       &
+      SH_name,       &
       pressure_name
 
     implicit none
@@ -172,113 +174,85 @@ module time_dependent_input
   end subroutine initialize_t_dependent_surface
 
   !-------------------------------------------------------------------------------------
-  subroutine initialize_t_dependent_forcings( iunit, input_file, grid_size, grid )
+  subroutine initialize_t_dependent_forcings( iunit, input_file, grid_size, grid, p_in_Pa )
     !
     !  Description: This subroutine reads in a file that details time dependent
     !  input values that vary in two dimensions.
     !
     !-------------------------------------------------------------------------------------
 
-    use input_reader, only: read_two_dim_file, two_dim_read_var, one_dim_read_var, &
-                            fill_blanks_two_dim_vars
+    use input_reader, only: read_two_dim_file, two_dim_read_var, fill_blanks_two_dim_vars
 
     use input_names, only: &
-    thetal_f_name, &
-    rt_f_name, &
-    um_f_name, &
-    vm_f_name, &
-    um_ref_name, &
-    vm_ref_name, &
-    ug_name, &
-    vg_name, &
-    wm_name
+      z_name, &
+      pressure_name
 
     implicit none
 
-    integer, parameter :: nCols = 10 ! Number of columns in the input file
 
     ! Input Variable(s)
     integer, intent(in) :: iunit ! File I/O
 
     character(len=*), intent(in) :: input_file ! Path to the input file
 
-    integer, intent(in) :: grid_size ! Size of the model grid
+    integer, intent(in) :: grid_size  ! Size of Model Grid [-]
 
-    real, dimension(grid_size), intent(in) :: grid ! Model grid
+    real, intent(in), dimension(grid_size) :: grid ! Altitudes of Grid [m]
+
+    real, intent(in), dimension(grid_size) :: p_in_Pa ! Pressure [Pa]
 
     ! Local Variables
-    type(two_dim_read_var), dimension(nCols) :: retVars
 
-    type(one_dim_read_var) :: dimension_var
+    integer :: i, n_f_grid_z, n_f_grid_t
 
-    integer dim_size
-
-    integer other_dim_size
+    type(two_dim_read_var), dimension(nCols) :: t_dependent_forcing_data_f_grid
 
     ! Begin Code
 
-    call read_two_dim_file( iunit, nCols, input_file, retVars, dimension_var )
 
-    dim_size = size(retVars(1)%values,1)
+    ! Read in the forcing data from the input file
+    call read_two_dim_file( iunit, nCols, input_file, &
+                            t_dependent_forcing_data_f_grid, dimension_var )
 
-    other_dim_size = size(dimension_var%values)
+    n_f_grid_z = size( t_dependent_forcing_data_f_grid(1)%values, 1 )
 
+    n_f_grid_t = size( dimension_var%values )
 
-    call fill_blanks_two_dim_vars( nCols, dimension_var, retVars )
+    ! Fill in blanks with linear interpolation. Whole profiles of -999.9 will
+    ! remain that way thus marking them blank.
+    call fill_blanks_two_dim_vars( nCols, dimension_var, t_dependent_forcing_data_f_grid )
 
-    allocate( thlm_f_given( grid_size, other_dim_size ) )
+    do i=1, nCols
+      allocate( t_dependent_forcing_data(i)%values(1:grid_size,1:n_f_grid_t) )
+    end do
 
-    thlm_f_given = read_to_grid( nCols, dim_size, other_dim_size, &
-                                 grid_size, grid, retVars, thetal_f_name )
+    select case( t_dependent_forcing_data_f_grid(1)%name )
+    case( z_name )
 
-    allocate( rtm_f_given( grid_size, other_dim_size ) )
+      t_dependent_forcing_data(1)%name = z_name
+      t_dependent_forcing_data(1)%values(:,1:n_f_grid_t) = spread(grid,2,n_f_grid_t)
 
-    rtm_f_given = read_to_grid( nCols, dim_size, other_dim_size, &
-                                grid_size, grid, retVars, rt_f_name )
+    case( pressure_name )
 
+      t_dependent_forcing_data(1)%name = pressure_name
+      t_dependent_forcing_data(1)%values(:,1:n_f_grid_t) = spread(-p_in_Pa, 2, n_f_grid_t )
+      t_dependent_forcing_data_f_grid(1)%values = -t_dependent_forcing_data_f_grid(1)%values
 
-    allocate( um_given( grid_size, other_dim_size ) )
+    case default
+      stop "Incompatible grid type in first element of t_dependent_forcings."
+    end select
 
-    um_given = read_to_grid( nCols, dim_size, other_dim_size, &
-                             grid_size, grid, retVars, um_ref_name )
+    ! Interpolate the time dependent input data to the appropriate grid.
 
-    allocate( vm_given( grid_size, other_dim_size ) )
+    do i=2, nCols
 
-    vm_given = read_to_grid( nCols, dim_size, other_dim_size, &
-                              grid_size, grid, retVars, vm_ref_name )
+      t_dependent_forcing_data(i)%name = t_dependent_forcing_data_f_grid(i)%name
+      t_dependent_forcing_data(i)%values = read_to_grid( nCols, n_f_grid_z, n_f_grid_t, &
+                         grid_size,t_dependent_forcing_data(1)%values(:,1), &
+                         t_dependent_forcing_data_f_grid, t_dependent_forcing_data(i)%name )
 
+    end do
 
-    allocate( um_f_given( grid_size, other_dim_size ) )
-
-    um_f_given = read_to_grid( nCols, dim_size, other_dim_size, &
-                               grid_size, grid, retVars, um_f_name )
-
-    allocate( vm_f_given( grid_size, other_dim_size ) )
-
-    vm_f_given = read_to_grid( nCols, dim_size, other_dim_size, &
-                               grid_size, grid, retVars, vm_f_name )
-
-    allocate( wm_given( grid_size, other_dim_size ) )
-
-    wm_given = read_to_grid( nCols, dim_size, other_dim_size, &
-                             grid_size, grid, retVars, wm_name )
-
-    allocate( ug_given( grid_size, other_dim_size ) )
-
-    ug_given = read_to_grid( nCols, dim_size, other_dim_size, &
-                             grid_size, grid, retVars, ug_name )
-
-    allocate( vg_given( grid_size, other_dim_size ) )
-
-    vg_given = read_to_grid( nCols, dim_size, other_dim_size, &
-                             grid_size, grid, retVars, vg_name )
-
-
-    allocate( time_f_given(other_dim_size ) )
-
-    time_f_given = dimension_var%values
-
-    return
 
   end subroutine initialize_t_dependent_forcings
 
@@ -291,18 +265,13 @@ module time_dependent_input
 
     implicit none
 
+    integer i
+
     ! Begin Code
 
-    deallocate( thlm_f_given )
-    deallocate( rtm_f_given )
-    deallocate( um_given )
-    deallocate( vm_given )
-    deallocate( um_f_given )
-    deallocate( vm_f_given )
-    deallocate( wm_given )
-    deallocate( ug_given )
-    deallocate( vg_given )
-
+    do i=1, nCols
+      deallocate( t_dependent_forcing_data(i)%values )
+    end do
 
   end subroutine finalize_t_dependent_forcings
   !-------------------------------------------------------------------------------------------------
@@ -372,7 +341,231 @@ module time_dependent_input
     end do
 
     return
+
   end function read_to_grid
+
+  !-------------------------------------------------------------------------------------------------
+  subroutine apply_time_dependent_forcings( time, grid_size, p_in_Pa, rtm, rho, exner, thvm, &
+    thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, wm_zt, wm_zm,  ug, vg, &
+    sclrm_forcing, edsclrm_forcing )
+    !
+    !  Description: This subroutine converts the time dependent information stored in
+    !  memory (time_dependent_forcing_data) into the format used by CLUBB.
+    !
+    !-----------------------------------------------------------------------------------------------
+
+    use error_code, only: &
+      clubb_debug ! Procedure(s)
+
+    use constants, only: &
+      grav, & ! Variable(s)
+      sec_per_hr, &
+      pascal_per_mb, &
+      fstderr
+
+    use interpolation, only: &
+      factor_interp ! Procedure(s)
+
+    use input_names, only: &
+      z_name, & ! Variable(s)
+      pressure_name, &
+      temperature_f_name, &
+      rt_f_name,&
+      sp_humidity_f_name, &
+      thetal_f_name, &
+      theta_f_name, &
+      wm_name, &
+      omega_name, &
+      um_ref_name, &
+      vm_ref_name, &
+      um_f_name, &
+      vm_f_name, &
+      ug_name,&
+      vg_name, &
+      omega_mb_hr_name
+
+    use grid_class, only : zt2zm ! Procedure(s)
+
+    use stats_precision, only: time_precision ! Variable(s)
+
+    use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
+
+    use array_index, only: iisclr_rt, iisclr_thl, & ! Variable(s)
+                           iiedsclr_rt, iiedsclr_thl
+
+    implicit none
+
+    ! Input Variable(s)
+
+    real(kind=time_precision), intent(in) :: time ! Model Time [s]
+
+    integer, intent(in) :: grid_size ! Size of the model grid
+
+    real, dimension(grid_size), intent(in) :: &
+      p_in_Pa, & ! Pressure                                   [Pa]
+      exner,   & ! Exner Function                             [-]
+      rho,     & ! Air Density                                [kg/m^3]
+      thvm,    & ! Liquid Water virtual potential temperature [K]
+      rtm        ! Total Water Mixing Ratio                   [kg/kg]
+
+    ! Output Variable(s)
+
+    real, dimension(grid_size), intent(out) :: &
+      thlm_f, & ! Potential Temperature forcing     [K/s]
+      rtm_f,  & ! Total Water Mixing Ration forcing [kg/kg/s]
+      um_ref, & ! um reference                      [m/s]
+      vm_ref, & ! vm reference                      [m/s]
+      um_f,   & ! um tendency                       [m/s/s]
+      vm_f,   & ! vm tendency                       [m/s/s]
+      wm_zt,  & ! subsidence on zt grid             [m/s]
+      wm_zm,  & ! subsidense on zm grid             [m/s]
+      ug,     & ! u geostrophic wind                [m/s]
+      vg        ! v geostrophic wind                [m/s]
+
+    real, dimension( grid_size, sclr_dim ), intent(out) :: &
+      sclrm_forcing ! Scalar forcing [-]
+
+    real, dimension( grid_size, edsclr_dim ), intent(out) :: &
+      edsclrm_forcing ! Edscalar forcing [-]
+
+    ! Local Variable(s)
+    integer :: i, j, i1, i2
+
+    real, dimension(grid_size) :: temp_array
+
+    real time_frac
+
+    ! Begin Code
+
+    time_frac = -1.0 ! Default initialization
+
+    call time_select( time, size(dimension_var%values), dimension_var%values, i1, i2 )
+
+    ! Determine time interpolation factor
+    time_frac =  real( ( time-dimension_var%values(i1) )/ &
+                      ( dimension_var%values(i2) - dimension_var%values(i1) ) )
+
+    if( time_frac == -1.0 ) then
+      call clubb_debug(1,"times are not sorted in forcing")
+    endif
+
+    ! Parse the values in t_dependent_forcing_data for CLUBB compatible forcing
+    ! data.
+    do i=2, nCols
+
+      temp_array = factor_interp( time_frac, t_dependent_forcing_data(i)%values(:,i2), &
+                                         t_dependent_forcing_data(i)%values(:,i1) )
+
+      ! Check to see if temp_array is an actual profile or a dummy profile
+      ! If it is a dummy profile we dont want it to apply itself as it may
+      ! overwrite legitimate information from another source.
+      if( .not. any( temp_array == -999.9 ) ) then
+        select case (t_dependent_forcing_data(i)%name)
+        case(temperature_f_name, theta_f_name, thetal_f_name)
+
+          select case(t_dependent_forcing_data(i)%name)
+          case(temperature_f_name)
+
+            thlm_f = temp_array / exner
+
+          case(theta_f_name)
+
+            thlm_f = temp_array ! I am not sure on the conversion of this
+
+          case(thetal_f_name)
+
+            thlm_f = temp_array
+
+          end select
+
+          if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_f
+          if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_f
+
+        case(rt_f_name, sp_humidity_f_name)
+
+          select case(t_dependent_forcing_data(i)%name)
+          case(sp_humidity_f_name)
+
+            rtm_f = temp_array * ( 1. + rtm )**2
+
+          case(rt_f_name )
+
+            rtm_f = temp_array
+
+          end select
+
+          if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_f
+          if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_f
+
+
+        case(um_ref_name)
+
+          um_ref = temp_array
+
+        case(vm_ref_name)
+
+          vm_ref = temp_array
+
+        case(um_f_name)
+
+          um_f = temp_array
+
+        case(vm_f_name)
+
+          vm_f = temp_array
+
+        case(wm_name, omega_name, omega_mb_hr_name)
+
+          select case(t_dependent_forcing_data(i)%name)
+          case(wm_name)
+
+            wm_zt = temp_array
+
+          case(omega_name)
+
+            do j=2,grid_size
+              wm_zt(j) = - temp_array(j) / (grav * rho(j))
+            end do
+            wm_zt(1) = 0.0
+
+          case(omega_mb_hr_name)
+
+            do j=2,grid_size
+
+              temp_array(j) = temp_array(j) * pascal_per_mb / sec_per_hr
+
+              wm_zt(j) = - temp_array(j) / (grav * rho(j))
+
+            end do
+
+            wm_zt(1) = 0.0
+
+          end select
+
+          wm_zm = zt2zm( wm_zt )
+
+        case(ug_name)
+
+          ug = temp_array
+          ug(1) = ug(2)
+
+        case(vg_name)
+
+          vg = temp_array
+          vg(1) = vg(2)
+
+        case default
+
+          write(fstderr, *) "Incompatable forcing type: "//t_dependent_forcing_data(i)%name
+          stop
+
+        end select
+
+      end if 
+
+    end do ! 1 .. nCols
+
+  end subroutine apply_time_dependent_forcings
 
   !------------------------------------------------------------------------------------------------
   subroutine time_select( time, nvar, time_array, left_time, right_time )

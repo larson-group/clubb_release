@@ -28,6 +28,7 @@ grid_type = 1     ! Select grid type:
 deltaz  = 200.0   ! Distance between grid levels on evenly-spaced grid.      [m]
 zm_init = 0.0 ! Minimum Altitude of lowest momentum level on any grid. [m]
 zm_top  = 25400.0 ! Maximum Altitude of highest momentum level on any grid [m]
+
 ! Stretched grid on thermodynamic levels (grid_type = 2).
 ! Path (from ../standalone/) and filename of data file that contains
 ! thermodynamic level altitudes (in meters).
@@ -76,6 +77,11 @@ T0   = 300.        ! Reference temperature (usually 300) [K]
 ts_nudge = 7200    ! Timescale of u/v nudging            [s]
 
 forcings_file_path = '../input/case_setups/arm_3year_forcings/'
+
+! Flag used to indicate that this case uses
+! a forcings.in and surface.in file for
+! time dependent input
+l_t_dependent  = .true.
 
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.

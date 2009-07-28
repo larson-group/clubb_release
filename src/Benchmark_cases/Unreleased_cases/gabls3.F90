@@ -8,116 +8,11 @@ module gabls3
 
   implicit none
 
-  public :: gabls3_tndcy, gabls3_sfclyr
+  public :: gabls3_sfclyr
 
   private
 
   contains
-
-  !----------------------------------------------------------------------
-  subroutine gabls3_tndcy( time, rtm,rho, &
-                           wm_zt, wm_zm, thlm_forcing, rtm_forcing,&
-                           um_forcing, vm_forcing, ug, vg )
-    !       Description:
-    !       Subroutine to set thetal and total water tendencies for GABLS3 case
-
-    !       References:
-    !       None
-    !----------------------------------------------------------------------
-
-    use grid_class, only: gr, zt2zm ! Variable(s)
-
-    use stats_precision, only: time_precision ! Variable(s)
-
-    use constants, only: Cp, Lv, grav, Rd ! Procedure(s)
-
-    use interpolation, only:factor_interp, lin_int,binary_search ! Procedure(s)
-
-    use time_dependent_input, only: l_t_dependent, &
-                                    time_select, &
-                                    thlm_f_given, &
-                                    rtm_f_given,&
-                                    wm_given,&
-                                    um_f_given,&
-                                    vm_f_given,&
-                                    ug_given,&
-                                    vg_given,&
-                                    time_f_given
-    implicit none
-
-    ! Input Variables
-
-    real(kind=time_precision), intent(in) :: time ! Model time [s]
-
-    real, intent(in), dimension(gr%nnzp) ::  & 
-      rtm,  &     ! Total water mixing ratio                        [kg/kg]
-      !exner,&     ! Exner Function function = (p/p0 ** kappa)       [-]
-      rho         ! Air density at surface                          [kg/m^3]
-
-
-    ! Output Variables
-
-    real, intent(out), dimension(gr%nnzp) ::  & 
-      wm_zt,        &  ! w on the thermodynamic levels                [m/s]
-      wm_zm,        &  ! w on the momentum levels                     [m/s]
-      thlm_forcing, &  ! Liquid water potential temperature tendency  [K/s]
-      rtm_forcing,  &  ! Total water mixing ratio tendency            [kg/kg/s]
-      um_forcing,   &  ! u wind forcing                               [m/s/s]
-      vm_forcing,   &  ! v wind forcing                               [m/s/s]
-      ug,           &  ! u geostrophic wind                           [m/s]
-      vg               ! v geostrophic wind                           [m/s]
-
-    real, dimension(gr%nnzp) :: velocity_omega, T_in_K_forcing, sp_humidity_forcing
-
-    real :: time_frac
-
-    integer :: i1, i2
- 
-    if( l_t_dependent ) then
-      call time_select( time, size(time_f_given), time_f_given, i1, i2 )
-
-      time_frac = real((time - time_f_given(i1)) /  &          ! at the first time a=0;
-              (time_f_given(i2) - time_f_given(i1)))             ! at the second time a=1.
-
-
-      T_in_K_forcing = factor_interp(time_frac, thlm_f_given(:,i2), thlm_f_given(:,i1))
-
-      sp_humidity_forcing = factor_interp( time_frac, rtm_f_given(:,i2), rtm_f_given(:,i1))
-
-      velocity_omega  = factor_interp( time_frac, wm_given(:,i2), wm_given(:,i1))
-
-      um_forcing  = factor_interp( time_frac, um_f_given(:,i2), um_f_given(:,i1) )
-      vm_forcing = factor_interp( time_frac, vm_f_given(:,i2), vm_f_given(:,i1) )
-
-      ug = factor_interp( time_frac, ug_given(:,i2), ug_given(:,i1) )
-      vg = factor_interp( time_frac, vg_given(:,i2), vg_given(:,i1) )
-
-
-      ! Adjusting the winds below the ground so that they follow the trend of
-      ! the two previous points.
-      ug(1) = ug(2) - ( ( (ug(3) - ug(2)) / ( gr%zt(3) - gr%zt(2) ) ) * ( gr%zt(2) - gr%zt(1) ) )
-      vg(1) = vg(2) - ( ( (vg(3) - vg(2)) / ( gr%zt(3) - gr%zt(2) ) ) * ( gr%zt(2) - gr%zt(1) ) )
-
-      rtm_forcing = sp_humidity_forcing * ( 1. + rtm )**2
-
-
-      thlm_forcing = T_in_K_forcing
-      !thlm_forcing = T_in_K_forcing / exner
-
-      wm_zt = -velocity_omega /( rho * grav );
-
-      ! Boundary condition
-      wm_zt(1) = 0.0        ! Below surface
-
-      ! Interpolation
-      wm_zm = zt2zm( wm_zt )
-
-      ! Boundary condition
-      wm_zm(1) = 0.0        ! At surface
-      wm_zm(gr%nnzp) = 0.0  ! Model top
-
-    end if
-  end subroutine gabls3_tndcy
 
   !-----------------------------------------------------------------------
   subroutine gabls3_sfclyr( um_sfc, vm_sfc, veg_t_in_K, &
