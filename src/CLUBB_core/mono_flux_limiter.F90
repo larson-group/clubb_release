@@ -525,9 +525,19 @@ module mono_flux_limiter
 
        if ( wpxp(k) > wpxp_mfl_upper_lim(k) ) then
 
+          ! This block of print statements can be uncommented for debugging.
+          !print *, "k = ", k
           !print *, "wpxp too large (mfl)"
-          !print *, "wpxp upper lim = ", wpxp_mfl_upper_lim
-          !print *, "wpxp = ", wpxp(k)
+          !print *, "xm(t) = ", xm_old(k)
+          !print *, "xm(t+1) entering mfl = ", xm(k)
+          !print *, "xm(t+1) without ta = ", xm_without_ta(k)
+          !print *, "max x allowable = ", max_x_allowable(k)
+          !print *, "min x allowable = ", min_x_allowable(k)
+          !print *, "dzt/dt = ", real( 1.0 / (dt*gr%dzt(k)) )
+          !print *, "xm without ta - min x allow = ", xm_without_ta(k) - min_x_allowable(k)
+          !print *, "wpxp(km1) = ", wpxp(km1)
+          !print *, "wpxp upper lim = ", wpxp_mfl_upper_lim(k)
+          !print *, "wpxp before adjustment = ", wpxp(k)
 
           ! Determine the net amount of adjustment needed for w'x'.
           wpxp_net_adjust(k) = wpxp_mfl_upper_lim(k) - wpxp(k)
@@ -538,9 +548,19 @@ module mono_flux_limiter
 
        elseif ( wpxp(k) < wpxp_mfl_lower_lim(k) ) then
 
+          ! This block of print statements can be uncommented for debugging.
+          !print *, "k = ", k
           !print *, "wpxp too small (mfl)"
-          !print *, "wpxp lower lim = ", wpxp_mfl_lower_lim
-          !print *, "wpxp = ", wpxp(k)
+          !print *, "xm(t) = ", xm_old(k)
+          !print *, "xm(t+1) entering mfl = ", xm(k)
+          !print *, "xm(t+1) without ta = ", xm_without_ta(k)
+          !print *, "max x allowable = ", max_x_allowable(k)
+          !print *, "min x allowable = ", min_x_allowable(k)
+          !print *, "dzt/dt = ", real( 1.0 / (dt*gr%dzt(k)) )
+          !print *, "xm without ta - max x allow = ", xm_without_ta(k) - max_x_allowable(k)
+          !print *, "wpxp(km1) = ", wpxp(km1)
+          !print *, "wpxp lower lim = ", wpxp_mfl_lower_lim(k)
+          !print *, "wpxp before adjustment = ", wpxp(k)
 
           ! Determine the net amount of adjustment needed for w'x'.
           wpxp_net_adjust(k) = wpxp_mfl_lower_lim(k) - wpxp(k)
@@ -549,6 +569,27 @@ module mono_flux_limiter
           ! monotonic flux limiter.
           wpxp(k) = wpxp_mfl_lower_lim(k)
 
+       ! This block of code can be uncommented for debugging.
+       !else
+       !
+       !   ! wpxp(k) is okay.
+       !   if ( wpxp_net_adjust(km1) /= 0.0 ) then
+       !      print *, "k = ", k
+       !      print *, "wpxp is in an acceptable range (mfl)"
+       !      print *, "xm(t) = ", xm_old(k)
+       !      print *, "xm(t+1) entering mfl = ", xm(k)
+       !      print *, "xm(t+1) without ta = ", xm_without_ta(k)
+       !      print *, "max x allowable = ", max_x_allowable(k)
+       !      print *, "min x allowable = ", min_x_allowable(k)
+       !      print *, "dzt/dt = ", real( 1.0 / (dt*gr%dzt(k)) )
+       !      print *, "xm without ta - min x allow = ", xm_without_ta(k) - min_x_allowable(k)
+       !      print *, "xm without ta - max x allow = ", xm_without_ta(k) - max_x_allowable(k)
+       !      print *, "wpxp(km1) = ", wpxp(km1)
+       !      print *, "wpxp upper lim = ", wpxp_mfl_upper_lim(k)
+       !      print *, "wpxp lower lim = ", wpxp_mfl_lower_lim(k)
+       !      print *, "wpxp (stays the same) = ", wpxp(k)
+       !   endif
+       !
        endif
 
     enddo
@@ -607,23 +648,23 @@ module mono_flux_limiter
              dxm_dt_mfl_adjust(k)  &
              = - gr%dzt(k) * ( wpxp_net_adjust(k) - wpxp_net_adjust(km1) )
 
-             !if ( dxm_dt_mfl_adjust(k) /= 0.0 ) then
-             !   print *, "k = ", k, "old xm = ", xm(k)
-             !endif
-
              ! The net change to xm due to the monotonic flux limiter is the
              ! rate of change multiplied by the time step length.  Add the
              ! product to xm to find the new xm resulting from the monotonic
              ! flux limiter.
              xm(k) = real( xm(k) + dxm_dt_mfl_adjust(k) * dt )
 
-             !if ( dxm_dt_mfl_adjust(k) /= 0.0 ) then
-             !   print *, "k = ", k, "new xm = ", xm(k)
-             !endif
-
           enddo
 
+          ! Boundary condition on xm
+          xm(1) = xm(2)
+
        endif  ! l_mfl_xm_imp_adj
+
+       ! This code can be uncommented for debugging.
+       !do k = 1, gr%nnzp, 1
+       !   print *, "k = ", k, "xm(t) = ", xm_old(k), "new xm(t+1) = ", xm(k)
+       !enddo
 
     endif ! any( wpxp_net_adjust(:) /= 0.0 )
 
