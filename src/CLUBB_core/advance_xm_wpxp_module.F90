@@ -409,7 +409,13 @@ module advance_xm_wpxp_module
              rtm_forcing, rttol**2, rttol, rcond, & ! Intent(in)
              low_lev_effect, high_lev_effect, &     ! Intent(in)
              l_implemented, solution(:,1), &        ! Intent(in)
-             rtm, wprtp )                           ! Intent(inout)
+             rtm, wprtp, err_code )                 ! Intent(inout)
+
+      if ( lapack_error( err_code ) ) then
+        write(fstderr,'(a)') "rtm monotonic flux limiter:  tridag failed"
+        deallocate( rhs, solution )
+        return
+      endif
 
       ! Compute the upper and lower limits of w'th_l' at every level,
       ! based on the correlation of w and th_l, such that:
@@ -456,7 +462,13 @@ module advance_xm_wpxp_module
              thlm_forcing, thltol**2, thltol, rcond, & ! Intent(in)
              low_lev_effect, high_lev_effect, &        ! Intent(in)
              l_implemented, solution(:,1),  &          ! Intent(in)
-             thlm, wpthlp )                            ! Intent(inout)
+             thlm, wpthlp, err_code )                  ! Intent(inout)
+
+      if ( lapack_error( err_code ) ) then
+        write(fstderr,'(a)') "thlm monotonic flux limiter:  tridag failed"
+        deallocate( rhs, solution )
+        return
+      endif
 
       ! Solve sclrm / wpsclrp
       ! If sclr_dim is 0, then this loop will execute 0 times.
@@ -498,12 +510,19 @@ module advance_xm_wpxp_module
         endif
 
         call xm_wpxp_clipping_and_stats &
-             ( "scalars", dt, wp2, sclrp2(:,i),  & ! Intent(in)
-               wm_zt, sclrm_forcing(:,i),  &       ! Intent(in)
-               sclrtol(i)**2, sclrtol(i), rcond, & ! Intent(in)
-               low_lev_effect, high_lev_effect, &  ! Intent(in)
-               l_implemented, solution(:,1),  &    ! Intent(in)
-               sclrm(:,i), wpsclrp(:,i) )          ! Intent(inout)
+             ( "scalars", dt, wp2, sclrp2(:,i),  &  ! Intent(in)
+               wm_zt, sclrm_forcing(:,i),  &        ! Intent(in)
+               sclrtol(i)**2, sclrtol(i), rcond, &  ! Intent(in)
+               low_lev_effect, high_lev_effect, &   ! Intent(in)
+               l_implemented, solution(:,1),  &     ! Intent(in)
+               sclrm(:,i), wpsclrp(:,i), err_code ) ! Intent(inout)
+
+        if ( lapack_error( err_code ) ) then
+          write(fstderr,'(a)') "sclrm monotonic flux limiter:  tridag failed"
+          write(fstderr,*) "sclrm integer = ", i
+          deallocate( rhs, solution )
+          return
+        endif
 
       enddo ! passive scalars
 
@@ -563,23 +582,42 @@ module advance_xm_wpxp_module
              rtm_forcing, rttol**2, rttol, rcond, & ! Intent(in)
              low_lev_effect, high_lev_effect, &     ! Intent(in)
              l_implemented, solution(:,1),  &       ! Intent(in)
-             rtm, wprtp )                           ! Intent(inout)
+             rtm, wprtp, err_code )                 ! Intent(inout)
+
+      if ( lapack_error( err_code ) ) then
+        write(fstderr,'(a)') "rtm monotonic flux limiter:  tridag failed"
+        deallocate( rhs, solution )
+        return
+      endif
 
       call xm_wpxp_clipping_and_stats &
            ( "thlm", dt, wp2, thlp2, wm_zt,  &         ! Intent(in)
              thlm_forcing, thltol**2, thltol, rcond, & ! Intent(in)
              low_lev_effect, high_lev_effect, &        ! Intent(in)
              l_implemented, solution(:,2),  &          ! Intent(in)
-             thlm, wpthlp )                            ! Intent(inout)
+             thlm, wpthlp, err_code )                  ! Intent(inout)
+
+      if ( lapack_error( err_code ) ) then
+        write(fstderr,'(a)') "thlm monotonic flux limiter:  tridag failed"
+        deallocate( rhs, solution )
+        return
+      endif
 
       do i = 1, sclr_dim, 1
         call xm_wpxp_clipping_and_stats &
-             ( "scalars", dt, wp2, sclrp2(:,i),  & ! Intent(in)
-               wm_zt, sclrm_forcing(:,i), &        ! Intent(in)
-               sclrtol(i)**2, sclrtol(i), rcond, & ! Intent(in)
-               low_lev_effect, high_lev_effect, &  ! Intent(in)
-               l_implemented, solution(:,2+i),  &  ! Intent(in)
-               sclrm(:,i), wpsclrp(:,i) )          ! Intent(inout)
+             ( "scalars", dt, wp2, sclrp2(:,i),  &  ! Intent(in)
+               wm_zt, sclrm_forcing(:,i), &         ! Intent(in)
+               sclrtol(i)**2, sclrtol(i), rcond, &  ! Intent(in)
+               low_lev_effect, high_lev_effect, &   ! Intent(in)
+               l_implemented, solution(:,2+i),  &   ! Intent(in)
+               sclrm(:,i), wpsclrp(:,i), err_code ) ! Intent(inout)
+
+        if ( lapack_error( err_code ) ) then
+          write(fstderr,'(a)') "sclrm monotonic flux limiter:  tridag failed"
+          write(fstderr,*) "sclrm integer = ", i
+          deallocate( rhs, solution )
+          return
+        endif
 
       enddo ! 1..sclr_dim
 
@@ -1508,7 +1546,7 @@ module advance_xm_wpxp_module
                xm_forcing, xp2_threshold, xm_threshold, rcond,  &
                low_lev_effect, high_lev_effect, &
                l_implemented, solution,  &
-               xm, wpxp )
+               xm, wpxp, err_code )
 
     ! Description:
     ! Clips and computes implicit stats for an artitrary xm and wpxp
@@ -1518,7 +1556,7 @@ module advance_xm_wpxp_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-      gr ! Variable(s)
+        gr ! Variable(s)
 
     use model_flags, only: &
         l_clip_semi_implicit ! Variable(s)
@@ -1541,13 +1579,14 @@ module advance_xm_wpxp_module
         l_clip_turb_adv ! Logical for whether to clip xm when wpxp is clipped
 
     use constants, only: &
-      fstderr ! Standard error i/o unit
+        fstderr ! Standard error i/o unit
 
     use fill_holes, only: &
-      fill_holes_driver ! Procedure
+        fill_holes_driver ! Procedure
 
     use error_code, only: &
-      clubb_at_least_debug_level ! Procedure
+        clubb_at_least_debug_level, & ! Procedure(s)
+        lapack_error
 
     use stats_type, only: & 
         stat_begin_update,  & ! Procedure(s)
@@ -1649,9 +1688,14 @@ module advance_xm_wpxp_module
     real, intent(in), dimension(2*gr%nnzp) :: &
       solution ! The <t+1> value of xm and wpxp   [units vary]
 
+    ! Input/Output Variables
     real, intent(inout), dimension(gr%nnzp) :: & 
       xm, & ! The mean x field  [units vary]
       wpxp  ! The flux of x     [units vary m/s]
+
+    ! Output Variable
+    integer, intent(out) ::  &
+      err_code  ! Returns an error code in the event of a singular matrix
 
     ! Local Variables
     character(len=25) :: & 
@@ -1881,7 +1925,11 @@ module advance_xm_wpxp_module
                                             xp2, wm_zt, xm_forcing,  &
                                             xp2_threshold, l_implemented,  &
                                             low_lev_effect, high_lev_effect, &
-                                            xm, wpxp )
+                                            xm, wpxp, err_code )
+
+       ! Check for errors
+       if ( lapack_error( err_code ) ) return
+
     endif
 
     ! Apply a flux limiting positive definite scheme if the solution

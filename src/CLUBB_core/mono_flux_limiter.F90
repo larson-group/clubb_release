@@ -10,7 +10,11 @@ module mono_flux_limiter
   public :: monotonic_turbulent_flux_limit, &
             calc_turb_adv_range
 
-  private :: mean_vert_vel_up_down
+  private :: mfl_xm_lhs, &
+             mfl_xm_rhs, &
+             mfl_xm_solve, &
+             mean_vert_vel_up_down
+
 
   contains
 
@@ -19,7 +23,7 @@ module mono_flux_limiter
                                              xp2, wm_zt, xm_forcing,  &
                                              xp2_threshold, l_implemented,  &
                                              low_lev_effect, high_lev_effect, &
-                                             xm, wpxp )
+                                             xm, wpxp, err_code )
 
     ! Description:
     ! Limits the value of w'x' and corrects the value of xm if the xm turbulent
@@ -269,6 +273,9 @@ module mono_flux_limiter
     use stats_precision, only:  & 
         time_precision ! Variable(s)
 
+    use error_code, only:  &
+        lapack_error  ! Procedure(s)
+
     use stats_type, only:  &
         stat_begin_update,  & ! Procedure(s)
         stat_end_update,  &
@@ -333,6 +340,10 @@ module mono_flux_limiter
       xm,  &      ! xm at current time step (thermodynamic levels)  [units vary]
       wpxp        ! w'x' (momentum levels)                          [units vary]
 
+    ! Output Variable
+    integer, intent(out) ::  &
+      err_code  ! Returns an error code in the event of a singular matrix
+
     ! Local Variables
     real, dimension(gr%nnzp) :: &
       xp2_zt,   &      ! x'^2 interpolated to thermodynamic levels  [units vary]
@@ -344,7 +355,7 @@ module mono_flux_limiter
       min_x_allowable_lev, & ! Smallest usuable value of x at lev k [units vary]
       max_x_allowable_lev, & ! Largest usuable value of x at lev k  [units vary]
       min_x_allowable, & ! Smallest usuable x within k +/- num_levs [units vary]
-      max_x_allowable, &    ! Largest usuable x within k +/- num_levs  [units vary]
+      max_x_allowable, & ! Largest usuable x within k +/- num_levs  [units vary]
       wpxp_mfl_upper_lim, & ! Upper limit on w'x'(k)                [units vary]
       wpxp_mfl_lower_lim    ! Lower limit on w'x'(k)                [units vary]
 
@@ -353,6 +364,16 @@ module mono_flux_limiter
       stnd_dev_x, & ! Standard deviation of x                       [units vary]
       max_dev,    & ! Determines approximate upper/lower limit of x [units vary]
       m_adv_term    ! Contribution of mean advection to d(xm)/dt    [units vary]
+
+    real, dimension(3,gr%nnzp) ::  &
+      lhs_mfl_xm  ! Left hand side of tridiagonal matrix
+
+    real, dimension(gr%nnzp) ::  &
+      rhs_mfl_xm  ! Right hand side of tridiagonal matrix equation
+
+    ! Flag for using a semi-implicit, tridiagonal method to solve for xm(t+1)
+    ! if xm(t+1) needs to be changed.
+    logical, parameter :: l_mfl_xm_imp_adj = .false.
 
     real, dimension(3) :: &
       tmp  ! Temporary variable storage.
@@ -472,19 +493,9 @@ module mono_flux_limiter
     ! of x at level k.  Then, find the upper and lower limits of w'x'.  Reset
     ! the value of w'x' if it is outside of those limits, and store the amount
     ! of adjustment that was needed to w'x'.
-    ! Note:  The effect of surface heating or cooling is not taken into account
-    !        above, for it is dependent on the value of w'x' at the surface.
-    !        Transfering the surface flux into the xm array depends on the
-    !        derivative between w'x'(1) and w'x'(2).  Thus, w'x' at level 2 is
-    !        not altered in order to avoid artificially altering the surface
-    !        heating or cooling occuring on xm at level 2.  Both w'x' and xm
-    !        may be altered starting at level 3.  Likewise, w'x' at level
-    !        gr%nnzp is set to 0, and xm at level gr%nnzp is set to remain the
-    !        same.  Altering w'x' at level gr%nnzp-1 would force the value of
-    !        xm at level gr%nnzp to be altered.  Thus, the highest level where
-    !        w'x' can be altered is level gr%nnzp-2, and thus the highest level
-    !        where xm can be altered is level gr%nnzp-1.
-    do k = 3, gr%nnzp-2, 1
+    ! The values of w'x' at level 1 and at level gr%nnzp are set values and
+    ! are not altered.
+    do k = 2, gr%nnzp-1, 1
 
        km1 = max( k-1, 1 )
 
@@ -556,42 +567,64 @@ module mono_flux_limiter
     endif
 
 
-    ! Reset the value of xm to compensate for the change to w'x'.
-    ! Note:  The effect of surface heating or cooling is not taken into account
-    !        above, for it is dependent on the value of w'x' at the surface.
-    !        Transfering the surface flux into the xm array depends on the
-    !        derivative between w'x'(1) and w'x'(2).  Thus, w'x' at level 2 is
-    !        not altered in order to avoid artificially altering the surface
-    !        heating or cooling occuring on xm at level 2.  Both w'x' and xm
-    !        may be altered starting at level 3.  Likewise, w'x' at level
-    !        gr%nnzp is set to 0, and xm at level gr%nnzp is set to remain the
-    !        same.  Altering w'x' at level gr%nnzp-1 would force the value of
-    !        xm at level gr%nnzp to be altered.  Thus, the highest level where
-    !        w'x' can be altered is level gr%nnzp-2, and thus the highest level
-    !        where xm can be altered is level gr%nnzp-1.
-    do k = 3, gr%nnzp-1, 1
+    if ( any( wpxp_net_adjust(:) /= 0.0 ) ) then
 
-       km1 = max( k-1, 1 )
+       ! Reset the value of xm to compensate for the change to w'x'.
 
-       ! The rate of change of the adjustment to xm due to the
-       ! monotonic flux limiter.
-       dxm_dt_mfl_adjust(k)  &
-       = - gr%dzt(k) * ( wpxp_net_adjust(k) - wpxp_net_adjust(km1) )
+       if ( l_mfl_xm_imp_adj ) then
 
-       !if ( dxm_dt_mfl_adjust(k) /= 0.0 ) then
-       !   print *, "k = ", k, "old xm = ", xm(k)
-       !endif
+          ! A tridiagonal matrix is used to semi-implicitly re-solve for the
+          ! values of xm at timestep index (t+1).
 
-       ! The net change to xm due to the monotonic flux limiter is the
-       ! rate of change multiplied by the time step length.  Add the product
-       ! to xm to find the new xm resulting from the monotonic flux limiter.
-       xm(k) = real( xm(k) + dxm_dt_mfl_adjust(k) * dt )
+          ! Set up the left-hand side of the tridiagonal matrix equation.
+          call mfl_xm_lhs( dt, wm_zt, l_implemented, &
+                           lhs_mfl_xm )
 
-       !if ( dxm_dt_mfl_adjust(k) /= 0.0 ) then
-       !   print *, "k = ", k, "new xm = ", xm(k)
-       !endif
+          ! Set up the right-hand side of tridiagonal matrix equation.
+          call mfl_xm_rhs( dt, xm_old, wpxp, xm_forcing, &
+                           rhs_mfl_xm )
 
-    enddo
+          ! Solve the tridiagonal matrix equation.
+          call mfl_xm_solve( solve_type, lhs_mfl_xm, rhs_mfl_xm,  &
+                             xm, err_code )
+
+          ! Check for errors
+          if ( lapack_error( err_code ) ) return
+
+       else  ! l_mfl_xm_imp_adj = .false.
+
+          ! An explicit adjustment is made to the values of xm at timestep
+          ! index (t+1), which is based upon the array of the amounts of w'x'
+          ! adjustments.
+
+          do k = 2, gr%nnzp, 1
+
+             km1 = max( k-1, 1 )
+
+             ! The rate of change of the adjustment to xm due to the monotonic
+             ! flux limiter.
+             dxm_dt_mfl_adjust(k)  &
+             = - gr%dzt(k) * ( wpxp_net_adjust(k) - wpxp_net_adjust(km1) )
+
+             !if ( dxm_dt_mfl_adjust(k) /= 0.0 ) then
+             !   print *, "k = ", k, "old xm = ", xm(k)
+             !endif
+
+             ! The net change to xm due to the monotonic flux limiter is the
+             ! rate of change multiplied by the time step length.  Add the
+             ! product to xm to find the new xm resulting from the monotonic
+             ! flux limiter.
+             xm(k) = real( xm(k) + dxm_dt_mfl_adjust(k) * dt )
+
+             !if ( dxm_dt_mfl_adjust(k) /= 0.0 ) then
+             !   print *, "k = ", k, "new xm = ", xm(k)
+             !endif
+
+          enddo
+
+       endif  ! l_mfl_xm_imp_adj
+
+    endif ! any( wpxp_net_adjust(:) /= 0.0 )
 
 
     if ( l_stats_samp ) then
@@ -613,6 +646,256 @@ module mono_flux_limiter
 
     return
   end subroutine monotonic_turbulent_flux_limit
+
+  !=============================================================================
+  subroutine mfl_xm_lhs( dt, wm_zt, l_implemented, &
+                         lhs )
+
+    ! Description:
+    ! This subroutine is part of the process of re-solving for xm at timestep
+    ! index (t+1).  This is done because the original solving process produced
+    ! values outside of what is deemed acceptable by the monotonic flux limiter.
+    ! Unlike the original formulation for advancing xm one timestep, which
+    ! combines w'x' and xm in a band-diagonal solver, this formulation uses a
+    ! tridiagonal solver to solve for only the value of xm(t+1), for w'x'(t+1)
+    ! is known.
+    !
+    ! Subroutine mfl_xm_lhs sets up the left-hand side of the matrix equation.
+
+    use grid_class, only: & 
+        gr  ! Variable(s)
+
+    use mean_adv, only: & 
+        term_ma_zt_lhs ! Procedure(s)
+
+    use stats_precision, only:  & 
+        time_precision ! Variable(s)
+
+    implicit none
+
+    ! Constant parameters
+    integer, parameter :: & 
+      kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
+      k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
+      km1_tdiag = 3       ! Thermodynamic subdiagonal index.
+
+    ! Input Variables
+    real(kind=time_precision), intent(in) ::  &
+      dt     ! Model timestep length                      [s]
+
+    real, dimension(gr%nnzp), intent(in) ::  &
+      wm_zt  ! w wind component on thermodynamic levels   [m/s]
+
+    logical, intent(in) :: &
+      l_implemented   ! Flag for CLUBB being implemented in a larger model.
+
+    ! Output Variables
+    real, dimension(3,gr%nnzp), intent(out) ::  & 
+      lhs    ! Left hand side of tridiagonal matrix
+
+    ! Local Variables
+    integer :: k  ! Array index
+
+    !-----------------------------------------------------------------------
+
+    ! Initialize the left-hand side matrix to 0.
+    lhs = 0.0
+
+    ! Setup LHS of the tridiagonal system
+    do k = 2, gr%nnzp-1, 1
+
+       ! LHS xm mean advection (ma) term.
+       if ( .not. l_implemented ) then
+
+          lhs(kp1_tdiag:km1_tdiag,k) & 
+          = lhs(kp1_tdiag:km1_tdiag,k) &
+          + term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
+
+       else
+
+          lhs(kp1_tdiag:km1_tdiag,k) & 
+          = lhs(kp1_tdiag:km1_tdiag,k) + 0.0
+
+       endif
+
+       ! LHS xm time tendency.
+       lhs(k_tdiag,k) &
+       = real( lhs(k_tdiag,k) + 1.0 / dt )
+
+    enddo
+
+    ! Boundary conditions.
+
+    ! Lower boundary
+    k = 1
+    lhs(:,k)       = 0.0
+    lhs(k_tdiag,k) = 1.0
+
+    ! Upper boundary
+    k = gr%nnzp
+    lhs(:,k)       = 0.0
+    lhs(k_tdiag,k) = 1.0
+
+    return
+  end subroutine mfl_xm_lhs
+
+  !=============================================================================
+  subroutine mfl_xm_rhs( dt, xm_old, wpxp, xm_forcing, &
+                         rhs )
+
+    ! Description:
+    ! This subroutine is part of the process of re-solving for xm at timestep
+    ! index (t+1).  This is done because the original solving process produced
+    ! values outside of what is deemed acceptable by the monotonic flux limiter.
+    ! Unlike the original formulation for advancing xm one timestep, which
+    ! combines w'x' and xm in a band-diagonal solver, this formulation uses a
+    ! tridiagonal solver to solve for only the value of xm(t+1), for w'x'(t+1)
+    ! is known.
+    !
+    ! Subroutine mfl_xm_rhs sets up the right-hand side of the matrix equation.
+
+    use grid_class, only: & 
+        gr  ! Variable(s)
+
+    use stats_precision, only:  & 
+        time_precision ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real(kind=time_precision), intent(in) ::  &
+      dt          ! Model timestep length                           [s]
+
+    real, dimension(gr%nnzp), intent(in) ::  &
+      xm_old,   & ! xm; timestep (t) (thermodynamic levels)         [units vary]
+      wpxp,     & ! w'x'; timestep (t+1); limited (momentum levels) [units vary]
+      xm_forcing  ! xm forcings (thermodynamic levels)              [units vary]
+
+    ! Output Variable
+    real, dimension(gr%nnzp), intent(out) ::  &
+      rhs         ! Right hand side of tridiagonal matrix equation
+
+    ! Local Variables
+    integer :: k, km1  ! Array indices
+
+    !-----------------------------------------------------------------------
+
+    ! Initialize the right-hand side vector to 0.
+    rhs = 0.0
+
+    do k = 2, gr%nnzp-1, 1
+
+       ! Define indices
+       km1 = max( k-1, 1 )
+
+       ! RHS xm time tendency.
+       rhs(k) = real( rhs(k) + xm_old(k) / dt )
+
+       ! RHS xm turbulent advection (ta) term.
+       ! Note:  Normally, the turbulent advection (ta) term is treated
+       !        implicitly when advancing xm one timestep, as both xm and w'x'
+       !        are advanced together from timestep index (t) to timestep
+       !        index (t+1).  However, in this case, both xm and w'x' have
+       !        already been advanced one timestep.  However, w'x'(t+1) has been
+       !        limited after the fact, and therefore it's values at timestep
+       !        index (t+1) are known.  Thus, in re-solving for xm(t+1), the
+       !        derivative of w'x'(t+1) can be placed on the right-hand side of
+       !        the d(xm)/dt equation.
+       rhs(k) &
+       = rhs(k) &
+       - gr%dzt(k) * ( wpxp(k) - wpxp(km1) )
+
+       ! RHS xm forcings.
+       ! Note: xm forcings include the effects of microphysics,
+       !       cloud water sedimentation, radiation, and any
+       !       imposed forcings on xm.
+       rhs(k) = rhs(k) + xm_forcing(k)
+
+    enddo
+
+    ! Boundary conditions
+
+    ! Lower Boundary
+    k = 1
+    ! The value of xm at the lower boundary will remain the same.  However, the
+    ! value of xm at the lower boundary gets overwritten after the matrix is
+    ! solved for the next timestep, such that xm(1) = xm(2).
+    rhs(k) = xm_old(k)
+
+    ! Upper Boundary
+    k = gr%nnzp
+    ! The value of xm at the upper boundary will remain the same.
+    rhs(k) = xm_old(k)
+
+    return
+  end subroutine mfl_xm_rhs
+
+  !=============================================================================
+  subroutine mfl_xm_solve( solve_type, lhs, rhs,  &
+                           xm, err_code )
+
+    ! Description:
+    ! This subroutine is part of the process of re-solving for xm at timestep
+    ! index (t+1).  This is done because the original solving process produced
+    ! values outside of what is deemed acceptable by the monotonic flux limiter.
+    ! Unlike the original formulation for advancing xm one timestep, which
+    ! combines w'x' and xm in a band-diagonal solver, this formulation uses a
+    ! tridiagonal solver to solve for only the value of xm(t+1), for w'x'(t+1)
+    ! is known.
+    !
+    ! Subroutine mfl_xm_solve solves the tridiagonal matrix equation for xm at
+    ! timestep index (t+1).
+
+    use grid_class, only: &
+        gr  ! Variable(s)
+
+    use lapack_wrap, only:  & 
+        tridag_solve  ! Procedure(s)
+
+    use error_code, only:  &
+        lapack_error  ! Procedure(s)
+
+    implicit none
+
+    ! Constant parameters
+    integer, parameter :: & 
+      kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
+      k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
+      km1_tdiag = 3       ! Thermodynamic subdiagonal index.
+
+    ! Input Variables
+    character(len=*), intent(in) ::  & 
+      solve_type  ! Variables being solved for.
+
+    real, dimension(3,gr%nnzp), intent(inout) ::  & 
+      lhs  ! Left hand side of tridiagonal matrix
+
+    real, dimension(gr%nnzp), intent(inout) ::  &
+      rhs  ! Right hand side of tridiagonal matrix equation
+
+    ! Output Variables
+    real, dimension(gr%nnzp), intent(inout) :: &
+      xm   ! Value of variable being solved for at timestep (t+1)   [units vary]
+
+    integer, intent(out) ::  &
+      err_code  ! Returns an error code in the event of a singular matrix
+
+    !-----------------------------------------------------------------------
+
+    ! Solve for xm at timestep index (t+1) using the tridiagonal solver.
+    call tridag_solve & 
+         ( solve_type, gr%nnzp, 1, lhs(kp1_tdiag,:),  &  ! Intent(in)
+           lhs(k_tdiag,:), lhs(km1_tdiag,:), rhs,  &     ! Intent(inout)
+           xm, err_code )                                ! Intent(out)
+
+    ! Check for errors
+    if ( lapack_error( err_code ) ) return
+
+    ! Boundary condition on xm
+    xm(1) = xm(2)
+
+    return
+  end subroutine mfl_xm_solve
 
   !=============================================================================
   subroutine calc_turb_adv_range( dt, pdf_params,  &
