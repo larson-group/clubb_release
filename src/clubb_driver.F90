@@ -2159,7 +2159,7 @@ module clubb_driver
                           thlm_forcing, rtm_forcing, &      ! Intent(out)
                           sclrm_forcing, edsclrm_forcing )  ! Intent(out)
 
-
+#ifdef UNRELEASED_CODE
     case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
            "cloud_feedback_s11", "cloud_feedback_s11_p2k", &
            "cloud_feedback_s12", "cloud_feedback_s12_p2k", &
@@ -2170,6 +2170,8 @@ module clubb_driver
           thlm_forcing, rtm_forcing, um_ref, vm_ref, um_forcing, vm_forcing, wm_zt, wm_zm, ug, vg, &
           sclrm_forcing, edsclrm_forcing )
       end if
+#endif
+
     case default
 
       write(unit=fstderr,fmt=*)  & 
