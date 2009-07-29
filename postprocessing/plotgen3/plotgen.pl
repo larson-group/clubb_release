@@ -99,6 +99,9 @@ sub main()
 ###############################################################################
 sub runCases()
 {
+	# Counter used to place images
+	my $count = 0;
+
 	# Loop through each .case file so the case can be plotted
 	my @cases = <cases/*.cas*>;
 	foreach my $file (@cases) 
@@ -152,16 +155,15 @@ sub runCases()
 			}
 			
 			# Check to see if this is a budget plot or standard plot
-			
 			if($CASE::CASE{'type'} eq "budget")
 			{
-				buildMatlabStringBudget($CASE::CASE);
+				buildMatlabStringBudget($CASE::CASE, $count);
 				
 				# Convert the eps files to jpq
-				convertEps($CASE::CASE{'name'} . "_budget");
+				convertEps($CASE::CASE{'name'} . "_" . $count . "_budget");
 
 				# Add image file to HTML page
-				placeImages($CASE::CASE{'name'} . "_budget");
+				placeImages($CASE::CASE{'name'} . "_" . $count . "_budget");
 			}
 			else
 			{
@@ -173,11 +175,29 @@ sub runCases()
 				# Add image file to HTML page
 				placeImages($CASE::CASE{'name'});
 			}
+
+			$count++;
 		}
 		else
 		{
 			print("Not plotting $CASE::CASE{'headerText'}\n");
 		}
+	}
+}
+
+###############################################################################
+# Converts all EPS files to JPG file
+###############################################################################
+sub convertEps()
+{
+	mkdir "$outputTemp/jpg" unless -d "$outputTemp/jpg";
+	my @epsFiles = <$outputTemp/*eps>;
+	foreach my $eps (@epsFiles)
+	{
+		my $filename = basename($eps);
+		system("convert -density $DPI -quality 100 -colorspace RGB $eps $outputTemp/jpg/$filename.jpg");
+
+		unlink($eps);
 	}
 }
 
@@ -206,11 +226,12 @@ sub placeImages()
 sub buildMatlabStringBudget()
 {
 	my $CASE = shift(@_);
+	my $budgetNum = shift(@_);
 	
 	my $totPlotNum = 0;
 	
 	# Get Common Case information
-	my $caseName =  $CASE::CASE{'name'} . "_budget";
+	my $caseName =  $CASE::CASE{'name'} . "_" . $budgetNum . "_budget";
 	my $startTime =  $CASE::CASE{'startTime'};
 	my $endTime =  $CASE::CASE{'endTime'};
 	my $startHeight =  $CASE::CASE{'startHeight'};
@@ -455,22 +476,6 @@ sub cleanup()
 	rmtree($outputTemp);
 
 	$ENV{'DISPLAY'} = $sessionType;
-}
-
-###############################################################################
-# Converts all EPS files to JPG file
-###############################################################################
-sub convertEps()
-{
-	mkdir "$outputTemp/jpg" unless -d "$outputTemp/jpg";
-	my @epsFiles = <$outputTemp/*eps>;
-	foreach my $eps (@epsFiles)
-	{
-		my $filename = basename($eps);
-		system("convert -density $DPI -quality 100 -colorspace RGB $eps $outputTemp/jpg/$filename.jpg");
-
-		unlink($eps);
-	}
 }
 
 ###############################################################################
