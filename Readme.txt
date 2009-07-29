@@ -726,7 +726,29 @@ the zt file, the rest (e.g. variance, flux) all occur in the zm file.
   When enabled, the analytic computation normally
   used for radiation is disabled.  BUGSrad is enabled in the 
   input/case_setups/<CASE NAME>_model.in file by setting rad_scheme = "bugsrad".
-  Furthermore, you must compile CLUBB with the -Dradoffline preprocessor flag.
+  
+  Some important pre-processor directives for BUGSrad follow:
+
+  -Dradoffline: BUGSrad was originally developed both for use within the CSU GCM
+  (BUGS) and for use as a standalone (single-column) radiative transfer code.
+  This preprocessor flag configures the code to operate as a standalone code,
+  independent of the CSU GCM.  You must compile CLUBB with the -Dradoffline 
+  preprocessor flag.
+
+  -Dnooverlap: Treats clouds as horizontally homogeneous, with no partial
+  cloudiness.  Otherwise, the default overlap assumption is maximum/random.
+
+  -DUSE_BUGSrad_ocast_random:  This is an overlap treatment that should probably 
+  be considered experimental.  It's similar to maximum/random but in testing 
+  CSU that performed, it showed somewhat better agreement (in terms of fluxes) 
+  with realistic clouds.  It's not been extensively tested, though.
+
+  BUGSrad requires input of *within-cloud* liquid water, ice, etc.
+  qcwl is the in-cloud mixing ratio (the same is true for qcil, qril etc.,
+  --- all are the in-cloud values).  This is what the default maximum/random
+  overlap treatment expects.  If cloud overlap is turned off by using 
+  the Dnooverlap flag, these mixing ratios get diluted according to the 
+  layer cloud fraction.
 
   BUGSrad allows the output of the following variables:
 
@@ -769,6 +791,13 @@ the zt file, the rest (e.g. variance, flux) all occur in the zm file.
   H. Morrison, J. A. Curry, and V. I. Khvorostyanov, 2005: A new double-
   moment microphysics scheme for application in cloud and climate models. 
   Part 1: Description. J. Atmos. Sci., 62, 1665–1677. 
+
+  Some useful namelist flags for the Morrison microphysics code:
+
+  doicemicro  = .true.    Calculate ice mixing ratio.
+  dograupel   = .true.    Calculate graupel mixing ratio.
+  dopredictNc = .true.    Prognose droplet number concentration
+                            (rather than specify it with Ncm_initial)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
