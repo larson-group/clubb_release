@@ -3,6 +3,18 @@
 ! Prescribed, time-independent vertical velocity can be entered as velocity (w[m\s]) or pressure velocity (omega[Pa\s] or omega[mb\hr])
 ! In all cases, missing values are denoted by -999.9
 ! The blanks are filled first vertically and then across time. This means that if you have a column that is completely filled with missing values
+! it will be replaced with an interpolation of the values before and after.
+! The format of this file is:
+! [Variable list ...]
+! [Time of Profile] [# of elements in profile]
+! [Vertical Coordinate] [Data ...]
+! [Vertical Coordinate] [Data ...]
+! ...
+! [Time of Profile] [# of elements in profile]
+! [Vertical Coordinate] [Data ...]
+! [Vertical Coordinate] [Data ...]
+! ...
+!
 z[m]        thlm_f[K\s]   rtm_f[kg\kg\s]   um_ref[m\s]   vm_ref[m\s]   um_f[m\s^2]   vm_f[m\s^2]   w[m\s]   ug[m\s]   vg[m\s]   
 63003.0     38                                                                                                                  
 119.44444   -6.7419e-05   -1.5741e-08      -4.596        0.205         -999.9        -999.9        -999.9   -999.9    -999.9    
