@@ -1017,6 +1017,9 @@ module stats_subs
       iAKm_rcm, &
       iAKm_rcc
 
+    use stats_variables, only: &
+      iLH_rcm_avg
+
     use grid_class, only: & 
         gr ! Variable
 
@@ -1069,6 +1072,7 @@ module stats_subs
 
     use variables_diagnostic_module, only: & 
       AKstd, & ! Variable(s)
+      rcm_est, &
       AKstd_cld, &
       AKm_rcm, &
       AKm_rcc
@@ -1204,7 +1208,7 @@ module stats_subs
 
       call stat_update_var( iAKm, AKm, zt )
       call stat_update_var( iAKm_est, AKm_est, zt)
-
+      call stat_update_var( iLH_rcm_avg, rcm_est, zt )
       call stat_update_var( iAKstd, AKstd, zt )
       call stat_update_var( iAKstd_cld, AKstd_cld, zt )
 

@@ -104,16 +104,6 @@ module stats_variables
      iAKm_rcm, & 
      iAKm_rcc
 
-  integer, public :: & 
-     iNrm,       & ! Rain droplet number concentration
-     iNim,       & ! Ice number concentration
-     iNsnowm,    & ! Snow number concentration
-     iNgraupelm    ! Graupel number concentration
-
-  integer, public :: & 
-     iT_in_K      ! Absolute temperature
-
-
 !$omp   threadprivate(ithlm, ithvm, irtm, ircm, ium, ivm, iwm_zt, iug)
 !$omp   threadprivate(ivg, icloud_frac, ip_in_Pa, iexner, iLscale, iwp3, iwpthlp2)
 !$omp   threadprivate(iwp2thlp, iwprtp2, iwp2rtp, iLscale_up, iLscale_down, itau_zt)
@@ -123,9 +113,23 @@ module stats_variables
 !$omp   threadprivate(imean_vol_rad_rain, imean_vol_rad_cloud)
 !$omp   threadprivate(irain_rate, iAKm, iAKm_est)
 !$omp   threadprivate(iradht, iradht_LW, iradht_SW)
-!$omp   threadprivate(iT_in_K)
-!$omp   threadprivate(iNrm, iNim, iNsnowm, iNgraupelm)
 !$omp   threadprivate(iAKstd, iAKstd_cld, iAKm_rcm, iAKm_rcc)
+
+  integer, public :: &
+    iLH_rcm_avg
+
+!$omp threadprivate(iLH_rcm_avg)
+
+  integer, public :: & 
+     iNrm,       & ! Rain droplet number concentration
+     iNim,       & ! Ice number concentration
+     iNsnowm,    & ! Snow number concentration
+     iNgraupelm    ! Graupel number concentration
+!$omp   threadprivate(iNrm, iNim, iNsnowm, iNgraupelm)
+
+  integer, public :: & 
+     iT_in_K      ! Absolute temperature
+!$omp   threadprivate(iT_in_K)
 
   integer, public :: &
     ieff_rad_cloud, &

@@ -285,6 +285,9 @@ module stats_zt
       iLH_VNr
 
     use stats_variables, only: &
+      iLH_rcm_avg
+
+    use stats_variables, only: &
       iLH_rrainm, &
       iLH_Nrm, &
       iLH_ricem, &
@@ -567,6 +570,8 @@ module stats_zt
     iLH_rvm_mc = 0
     iLH_rrainm_mc = 0
     iLH_Nrm_mc = 0
+
+    iLH_rcm_avg = 0
 
     iLH_Vrr = 0
     iLH_VNr = 0
@@ -2088,6 +2093,14 @@ module stats_zt
 
         call stat_assign( iLH_VNr, "LH_VNr", & 
              "Latin hypercube estimate of Nrm sedimentation velocity", "m/s", zt )
+        k = k + 1
+
+      case ( 'LH_rcm_avg' )
+        iLH_rcm_avg = k
+
+        call stat_assign( iLH_rcm_avg, "LH_rcm_avg", & 
+             "Latin hypercube average estimate of rcm", "kg/kg", zt )
+
         k = k + 1
 
       case ( 'LH_rrainm' )
