@@ -1698,14 +1698,14 @@ module microphys_driver
             ztscr03(k) = -tmp(1)
           endif
 
-          if ( ixrm_sd > 0 ) then
+          if ( ixrm_sd > 0 .and. l_sed ) then
             tmp(1:3) = sedimentation( V_hm(k), V_hm(km1), gr%dzt(k), k )
             ztscr04(k) = -tmp(3)
             ztscr05(k) = -tmp(2)
             ztscr06(k) = -tmp(1)
           endif
 
-          if ( ixrm_dff > 0 .and. l_sed ) then
+          if ( ixrm_dff > 0 ) then
             tmp(1:3) & 
             = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
                                 gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
