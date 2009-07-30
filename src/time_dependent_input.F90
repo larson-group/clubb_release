@@ -532,7 +532,7 @@ module time_dependent_input
 
             do j=2,grid_size
 
-              temp_array(j) = temp_array(j) * pascal_per_mb / sec_per_hr
+              temp_array(j) = temp_array(j) * pascal_per_mb / real( sec_per_hr )
 
               wm_zt(j) = - temp_array(j) / (grav * rho(j))
 
