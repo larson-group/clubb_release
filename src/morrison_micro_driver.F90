@@ -11,7 +11,7 @@ module morrison_micro_driver_mod
 !-------------------------------------------------------------------------------
   subroutine morrison_micro_driver &
              ( dt, nnzp, l_sample, l_latin_hypercube, thlm, p_in_Pa, exner, rho, pdf_params, &
-               wm, w_std_dev, dzq, rcm, rvm, hydromet, hydromet_mc, &
+               wm, w_std_dev, dzq, rcm, s_mellor, rvm, hydromet, hydromet_mc, &
                hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 ! Description:
 !   Wrapper for the Morrison microphysics
@@ -112,8 +112,9 @@ module morrison_micro_driver_mod
       dzq          ! Difference in heights      [m]
 
     real, dimension(nnzp), intent(in) :: &
-      rcm, & ! Liquid water mixing ratio        [kg/kg]
-      rvm    ! Vapor water mixing ratio         [kg/kg]
+      rcm,      & ! Liquid water mixing ratio        [kg/kg]
+      s_mellor, & ! The variable 's' from Mellor     [kg/kg]
+      rvm         ! Vapor water mixing ratio         [kg/kg]
 
     real, dimension(nnzp,hydromet_dim), target, intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]

@@ -153,6 +153,9 @@ module estimate_lh_micro_mod
     ! Double precision version of Monte Carlo avg liquid water
     double precision :: rcm_est_dp
 
+    double precision, dimension(n_micro_calls) :: &
+      rcm_sample ! Sample points of rcm         [kg/kg]
+
     ! Variables needed for exact Kessler autoconversion, AKm
     real :: r_crit, K_one
     real :: sn1_crit, cloud_frac1_crit, sn2_crit, cloud_frac2_crit
@@ -194,8 +197,10 @@ module estimate_lh_micro_mod
       a           = pdf_params%a(level)
 !     rc1         = pdf_params%rc1(level)
 !     rc2         = pdf_params%rc2(level)
-      cloud_frac1 = pdf_params%cloud_frac1(level)
-      cloud_frac2 = pdf_params%cloud_frac2(level)
+!     cloud_frac1 = pdf_params%cloud_frac1(level)
+!     cloud_frac2 = pdf_params%cloud_frac2(level)
+      cloud_frac1 = 1.0 ! For in and out of cloud sampling -dschanen 30 Jul 09
+      cloud_frac2 = 1.0 !     "    "
       s1          = pdf_params%s1(level)
       s2          = pdf_params%s2(level)
       ss1         = pdf_params%ss1(level)
@@ -215,101 +220,94 @@ module estimate_lh_micro_mod
       !------------------------------------------------------------------------
 
       ! We prognose rt-thl-w,
-      !    but we set means, covariance of Nc, rr to constants.
+      !    but we set means, covariance of hydromet mixing ratio's and number
+      !    concentrations to constants.
 
       if ( .not. l_sample_flag(level) ) then
-
-        ! In this case, sample points could not be constructed.
-        ! Set autoconversion to zero.
-        AKm_est(level)   = 0.0
-        AKm(level)       = 0.0
-        AKm_rcm(level)   = 0.0
-        AKm_rcc(level)   = 0.0
-        rcm_est(level)   = 0.0
-        AKstd(level)     = 0.0
-        AKstd_cld(level) = 0.0
-
+        rcm_sample(1:n_micro_calls) = dble( rcm(level) )
       else
+        rcm_sample(1:n_micro_calls) = max( X_nl_all_levs(level,1:n_micro_calls,1), 0.d0)
+      end if
 
-        ! Call microphysics, i.e. Kessler autoconversion.
-        ! A_K = (1e-3/s)*(rc-0.5kg/kg)*H(rc-0.5kg/kg)
-        call autoconv_driver &
-             ( n_micro_calls, d_variables, dble( a ), dble( cloud_frac1 ), dble( cloud_frac2 ), &
-               X_nl_all_levs(level,1:n_micro_calls,1), & 
+      ! Call microphysics, i.e. Kessler autoconversion.
+      ! A_K = (1e-3/s)*(rc-0.5kg/kg)*H(rc-0.5kg/kg)
+      call autoconv_driver &
+           ( n_micro_calls, d_variables, dble( a ), dble( cloud_frac1 ), dble( cloud_frac2 ), &
+             rcm_sample, & 
                !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
-               X_u_all_levs(level,:,:), AKm_est_dp )
+             X_u_all_levs(level,:,:), AKm_est_dp )
 
-        ! Convert to real number
-        AKm_est(level) = real( AKm_est_dp )
+      ! Convert to real number
+      AKm_est(level) = real( AKm_est_dp )
 
-        ! Compute Monte Carlo estimate of liquid for test purposes.
-        call rc_estimate &
-             ( n_micro_calls, d_variables, dble( a ), dble( cloud_frac1 ), &
-               dble( cloud_frac2 ), X_nl_all_levs(level,1:n_micro_calls,1), & 
-               ! X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
-               X_u_all_levs(level,:,:), rcm_est_dp )
+      ! Compute Monte Carlo estimate of liquid for test purposes.
+      call rc_estimate &
+           ( n_micro_calls, d_variables, dble( a ), dble( cloud_frac1 ), &
+             dble( cloud_frac2 ), rcm_sample, & 
+             ! X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
+             X_u_all_levs(level,:,:), rcm_est_dp )
 
-        ! Convert to real number
-        rcm_est(level) = real( rcm_est_dp )
+      ! Convert to real number
+      rcm_est(level) = real( rcm_est_dp )
 
-        ! A test of the scheme:
-        ! Compare exact (rcm) and Monte Carlo estimates (rcm_est) of
-        !     specific liq water content, rcm.
-        !      print*, 'rcm=', rcm
-        !       print*, 'rcm_est=', rcm_est
+      ! A test of the scheme:
+      ! Compare exact (rcm) and Monte Carlo estimates (rcm_est) of
+      !     specific liq water content, rcm.
+      !      print*, 'rcm=', rcm
+      !       print*, 'rcm_est=', rcm_est
 
-        ! Exact Kessler autoconversion in units of (kg/kg)/s
-        !        r_crit = 0.3e-3
-        !        r_crit = 0.7e-3
-        r_crit            = 0.2e-3
-        K_one             = 1.e-3
-        sn1_crit          = (s1-r_crit)/ss1
-        cloud_frac1_crit  = 0.5*(1+erf(sn1_crit/sqrt(2.0)))
-        AK1               = K_one * ( (s1-r_crit)*cloud_frac1_crit  & 
-                           + ss1*exp(-0.5*sn1_crit**2)/(sqrt(2*pi)) )
-        sn2_crit          = (s2-r_crit)/ss2
-        cloud_frac2_crit  = 0.5*(1+erf(sn2_crit/sqrt(2.0)))
-        AK2               = K_one * ( (s2-r_crit)*cloud_frac2_crit  & 
-                           + ss2*exp(-0.5*sn2_crit**2)/(sqrt(2*pi)) )
-        AKm(level)        = a * AK1 + (1-a) * AK2
+      ! Exact Kessler autoconversion in units of (kg/kg)/s
+      !        r_crit = 0.3e-3
+      !        r_crit = 0.7e-3
+      r_crit            = 0.2e-3
+      K_one             = 1.e-3
+      sn1_crit          = (s1-r_crit)/ss1
+      cloud_frac1_crit  = 0.5*(1+erf(sn1_crit/sqrt(2.0)))
+      AK1               = K_one * ( (s1-r_crit)*cloud_frac1_crit  & 
+                         + ss1*exp(-0.5*sn1_crit**2)/(sqrt(2*pi)) )
+      sn2_crit          = (s2-r_crit)/ss2
+      cloud_frac2_crit  = 0.5*(1+erf(sn2_crit/sqrt(2.0)))
+      AK2               = K_one * ( (s2-r_crit)*cloud_frac2_crit  & 
+                         + ss2*exp(-0.5*sn2_crit**2)/(sqrt(2*pi)) )
+      AKm(level)        = a * AK1 + (1-a) * AK2
 
-        ! Exact Kessler standard deviation in units of (kg/kg)/s
-        ! For some reason, sometimes AK1var, AK2var are negative
-        AK1var   = max( zero_threshold, K_one * (s1-r_crit) * AK1  & 
-                 + K_one * K_one * (ss1**2) * cloud_frac1_crit  & 
-                 - AK1**2  )
-        AK2var   = max( zero_threshold, K_one * (s2-r_crit) * AK2  & 
-                 + K_one * K_one * (ss2**2) * cloud_frac2_crit  & 
-                 - AK2**2  )
-        ! This formula is for a grid box average:
-        AKstd(level)  = sqrt(    a  * ( (AK1-AKm(level))**2 + AK1var ) & 
-                    + (1-a) * ( (AK2-AKm(level))**2 + AK2var ) & 
-                    )
-        ! This formula is for a within-cloud average:
-        if ( cloud_frac(level) > 0 ) then
-          AKstd_cld(level) = sqrt( max( zero_threshold,   & 
-                    (1./cloud_frac(level)) * ( a  * ( AK1**2 + AK1var ) & 
-                              + (1-a) * ( AK2**2 + AK2var )  & 
-                              ) & 
-                   - (AKm(level)/cloud_frac(level))**2  ) & 
-                          )
-        else
-          AKstd_cld(level) = zero_threshold
-        end if
+      ! Exact Kessler standard deviation in units of (kg/kg)/s
+      ! For some reason, sometimes AK1var, AK2var are negative
+      AK1var   = max( zero_threshold, K_one * (s1-r_crit) * AK1  & 
+               + K_one * K_one * (ss1**2) * cloud_frac1_crit  & 
+               - AK1**2  )
+      AK2var   = max( zero_threshold, K_one * (s2-r_crit) * AK2  & 
+               + K_one * K_one * (ss2**2) * cloud_frac2_crit  & 
+               - AK2**2  )
+      ! This formula is for a grid box average:
+      AKstd(level)  = sqrt(    a  * ( (AK1-AKm(level))**2 + AK1var ) & 
+                  + (1-a) * ( (AK2-AKm(level))**2 + AK2var ) & 
+                  )
+      ! This formula is for a within-cloud average:
+      if ( cloud_frac(level) > 0 ) then
+        AKstd_cld(level) = sqrt( max( zero_threshold,   & 
+                  (1./cloud_frac(level)) * ( a  * ( AK1**2 + AK1var ) & 
+                            + (1-a) * ( AK2**2 + AK2var )  & 
+                            ) & 
+                 - (AKm(level)/cloud_frac(level))**2  ) & 
+                        )
+      else
+        AKstd_cld(level) = zero_threshold
+      end if
 
-        ! Kessler autoconversion, using grid box avg liquid, rcm, as input
-        AKm_rcm(level) = K_one * max( zero_threshold, rcm(level)-r_crit )
+      ! Kessler autoconversion, using grid box avg liquid, rcm, as input
+      AKm_rcm(level) = K_one * max( zero_threshold, rcm(level)-r_crit )
 
-        ! Kessler ac, using within cloud liquid, rcm/cloud_frac, as input
-        ! We found that for small values of cloud_frac this formula
-        ! can still produce NaN values and therefore added this 
-        ! threshold of 0.001 here. -dschanen 3 June 2009
-        if ( cloud_frac(level) > 0.001 ) then
-          AKm_rcc(level) = cloud_frac(level) * K_one * &
-                           max( zero_threshold, rcm(level)/cloud_frac(level)-r_crit )
-        else
-          AKm_rcc(level) = zero_threshold
-        end if
+      ! Kessler ac, using within cloud liquid, rcm/cloud_frac, as input
+      ! We found that for small values of cloud_frac this formula
+      ! can still produce NaN values and therefore added this
+      ! threshold of 0.001 here. -dschanen 3 June 2009
+      if ( cloud_frac(level) > 0.001 ) then
+        AKm_rcc(level) = cloud_frac(level) * K_one * &
+                         max( zero_threshold, rcm(level)/cloud_frac(level)-r_crit )
+      else
+        AKm_rcc(level) = zero_threshold
+      end if
 
 !       print*, 'a=', a
 !       print*, 's1=', s1
@@ -327,28 +325,25 @@ module estimate_lh_micro_mod
 !       print*, 'AKm_rcc =', AKm_rcc
 !       print*, 'AKm_rcm =', AKm_rcm
 
-        !------------------------------------------------------------------------
-        ! Compute within-cloud vertical velocity, avg over full layer
-        ! This call is a kludge: I feed w values into rc variable
-        ! in autoconv_driver.
-        ! Only works if coeff=expn=1 in autoconversion_driver.
-        !------------------------------------------------------------------------
-        !     call autoconv_driver( n, d, a, cloud_frac1, cloud_frac2, X_nl( 1:n, 3 ), &
-        !                           X_nl( 1:n, 3 ), X_nl( 1:n, 4 ), &
-        !                           X_nl(1:n, 5), X_u, AKm2 )
+      !------------------------------------------------------------------------
+      ! Compute within-cloud vertical velocity, avg over full layer
+      ! This call is a kludge: I feed w values into rc variable
+      ! in autoconv_driver.
+      ! Only works if coeff=expn=1 in autoconversion_driver.
+      !------------------------------------------------------------------------
+      !     call autoconv_driver( n, d, a, cloud_frac1, cloud_frac2, X_nl( 1:n, 3 ), &
+      !                           X_nl( 1:n, 3 ), X_nl( 1:n, 4 ), &
+      !                           X_nl(1:n, 5), X_u, AKm2 )
 
-        ! Another test:
-        ! Compute within-cloud vertical velocity, avgd over full domain.
-        !        C_w_cld1 =  cloud_frac1*w1
-        !        C_w_cld2 =  cloud_frac2*w2
-        !        w_cld_avg = a * C_w_cld1 + (1-a) * C_w_cld2
+      ! Another test:
+      ! Compute within-cloud vertical velocity, avgd over full domain.
+      !        C_w_cld1 =  cloud_frac1*w1
+      !        C_w_cld2 =  cloud_frac2*w2
+      !        w_cld_avg = a * C_w_cld1 + (1-a) * C_w_cld2
 
-        ! The following two values should match
-        !       print*, 'w_cld_avg=', w_cld_avg
-        !       print*, 'ac_m2=', ac_m2
-
-        ! End of overall if-then statement for Latin hypercube code
-      end if
+      ! The following two values should match
+      !       print*, 'w_cld_avg=', w_cld_avg
+      !       print*, 'ac_m2=', ac_m2
 
     end do ! level = 2, nnzp
 
@@ -386,6 +381,10 @@ module estimate_lh_micro_mod
 
     ! External
     intrinsic :: epsilon
+
+    ! Constant parameters
+    logical, parameter :: &
+      l_cloud_weighted_averaging = .false.
 
     ! Input Variables
 
@@ -521,32 +520,38 @@ module estimate_lh_micro_mod
 !          ac_m2 = ac_m2/n2
 !       end if
 
-! Convert sums to averages.
-! If we have no sample points for a certain plume,
-!    then we estimate the plume liquid water by the
-!    other plume's value.
     if ( n1 == 0 .and. n2 == 0 ) then
       stop 'Error:  no sample points in autoconv_driver'
     end if
 
-    if ( .not. (n1 == 0) ) then
-      ac_m1 = ac_m1/n1
-    end if
+    if ( l_cloud_weighted_averaging ) then
+       ! Convert sums to averages.
+       ! If we have no sample points for a certain plume,
+       !    then we estimate the plume liquid water by the
+       !    other plume's value.
+      if ( .not. (n1 == 0) ) then
+        ac_m1 = ac_m1/n1
+      end if
 
-    if ( .not. (n2 == 0) ) then
-      ac_m2 = ac_m2/n2
-    end if
+      if ( .not. (n2 == 0) ) then
+        ac_m2 = ac_m2/n2
+      end if
 
-    if ( n1 == 0 ) then
-      ac_m1 = ac_m2
-    end if
+      if ( n1 == 0 ) then
+        ac_m1 = ac_m2
+      end if
 
-    if ( n2 == 0 ) then
-      ac_m2 = ac_m1
-    end if
+      if ( n2 == 0 ) then
+        ac_m2 = ac_m1
+      end if
 
-    ! Grid box average.
-    ac_m = a*cloud_frac1*ac_m1 + (1-a)*cloud_frac2*ac_m2
+      ! Grid box average.
+      ac_m = a*cloud_frac1*ac_m1 + (1-a)*cloud_frac2*ac_m2
+
+    else
+      ac_m = ( ac_m1 + ac_m2 ) / dble( n_micro_calls )
+
+    end if
 
 !   print*, 'autoconv_driver: acm=', ac_m
 
@@ -571,10 +576,15 @@ module estimate_lh_micro_mod
 !-------------------------------------------------------------------------------
 
     use constants, only:  &
-      fstderr  ! Constant(s)
+      fstderr, &  ! Constant(s)
+      rc_tol, &
+      cm3_per_m3
 
     use parameters_model, only: &
       hydromet_dim
+
+    use parameters_microphys, only: &
+      Ncm_initial
 
     use array_index, only: &
       iirrainm, &
@@ -598,7 +608,8 @@ module estimate_lh_micro_mod
 
     ! Constant parameters
     logical, parameter :: &
-      l_compute_diagnostic_average = .true.
+      l_compute_diagnostic_average = .true., &
+      l_cloud_weighted_averaging   = .false.
 
     ! Input Variables
     real, intent(in) :: &
@@ -613,7 +624,7 @@ module estimate_lh_micro_mod
       l_sample_flag  ! Whether we are sampling at this level
 
     double precision, dimension(nnzp,n_micro_calls), intent(in) :: &
-      rt, & ! n_micro_calls values of total water mixing ratio     [g/kg]
+      rt, & ! n_micro_calls values of total water mixing ratio     [kg/kg]
       thl   ! n_micro_calls values of liquid potential temperature [K]
 
     double precision, dimension(nnzp,n_micro_calls,d_variables+1), intent(in) :: &
@@ -697,25 +708,31 @@ module estimate_lh_micro_mod
       w            ! n_micro_calls values of vertical velocity      [m/s]
 
     double precision, dimension(nnzp) :: &
-      cloud_frac1, cloud_frac2, a, &
+      cloud_frac1, cloud_frac2, & ! Cloud fraction for plume 1,2        [-]
+      a, &  ! PDF parameter a
       fraction_1
 
     integer :: i, k, sample
 
     logical :: l_error
+
     ! ---- Begin Code ----
 
     a(:)  = dble( pdf_params%a(:) )
-!   cloud_frac1(:) = dble( pdf_params%cloud_frac1(:) )
-!   cloud_frac2(:) = dble( pdf_params%cloud_frac2(:) )
-    cloud_frac1(:) = dble( 1.0 )
-    cloud_frac2(:) = dble( 1.0 )
+
+    if ( l_cloud_weighted_averaging ) then
+      cloud_frac1(:) = dble( pdf_params%cloud_frac1(:) )
+      cloud_frac2(:) = dble( pdf_params%cloud_frac2(:) )
+      zero(:) = 0
+    else
+      cloud_frac1(:) = dble( 1.0 )
+      cloud_frac2(:) = dble( 1.0 )
+    end if
 
     ! Mellor's 's' is at the same index at iiLH_rt (total water mixing ratio)
     s_mellor => X_nl_all_levs(:,:,iiLH_rt)
     w        => X_nl_all_levs(:,:,iiLH_w)
 
-    zero(:) = 0
 
     lh_hydromet_vel(:,:) = 0.
 
@@ -777,11 +794,13 @@ module estimate_lh_micro_mod
             hydromet_tmp(:,i) = hydromet(:,i)
           end where
         else if ( i == iiNcm .and. iiLH_Nc > 0 ) then
-          where ( l_sample_flag )
-            hydromet_tmp(:,i) = real( X_nl_all_levs(:,sample,iiLH_Nc) )
-          else where
-            hydromet_tmp(:,i) = hydromet(:,i)
-          end where
+          ! Kluge for when we don't have correlations between Nc, other variables
+          hydromet_tmp(:,iiNcm) = Ncm_initial * cm3_per_m3 / rho
+!         where ( l_sample_flag )
+!           hydromet_tmp(:,i) = real( X_nl_all_levs(:,sample,iiLH_Nc) )
+!         else where
+!           hydromet_tmp(:,i) = hydromet(:,i)
+!         end where
         else if ( i == iiNrm .and. iiLH_Nr > 0 ) then
           where ( l_sample_flag )
             hydromet_tmp(:,i) = real( X_nl_all_levs(:,sample,iiLH_Nr) )
@@ -819,7 +838,8 @@ module estimate_lh_micro_mod
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
            ( dt, nnzp, .false., .true., thl_tmp, p_in_Pa, exner, rho, pdf_params, &
-             w_tmp(:,sample), w_std_dev, dzq, rc_tmp, rv_tmp, hydromet_tmp, lh_hydromet_mc, &
+             w_tmp(:,sample), w_std_dev, dzq, rc_tmp, real( s_mellor(:,sample) ), &
+             rv_tmp, hydromet_tmp, lh_hydromet_mc, &
              lh_hydromet_vel, lh_rcm_mc, lh_rvm_mc, lh_thlm_mc )
 
       do i = 1, hydromet_dim
@@ -867,9 +887,6 @@ module estimate_lh_micro_mod
 
     end if
 
-    ! Convert sums to averages.
-    ! If we have no sample points for a certain plume, then we 
-    ! estimate the plume liquid water by the other plume's value.
     l_error = .false.
     do k = 1, nnzp
       if ( n1(k) == 0 .and. n2(k) == 0 ) then
@@ -879,70 +896,89 @@ module estimate_lh_micro_mod
     end do
     if ( l_error ) stop
 
-    do i = 1, hydromet_dim
+    if ( l_cloud_weighted_averaging ) then
+      ! Convert sums to averages.
+      ! If we have no sample points for a certain plume, then we 
+      ! estimate the plume liquid water by the other plume's value.
+      do i = 1, hydromet_dim
+        where ( n1 /= zero )
+          lh_hydromet_vel_m1(:,i) = lh_hydromet_vel_m1(:,i) / dble( n1 )
+          lh_hydromet_mc_m1(:,i) = lh_hydromet_mc_m1(:,i) / dble( n1 )
+        end where
+      end do
+
       where ( n1 /= zero )
-        lh_hydromet_vel_m1(:,i) = lh_hydromet_vel_m1(:,i) / dble( n1 )
-        lh_hydromet_mc_m1(:,i) = lh_hydromet_mc_m1(:,i) / dble( n1 )
+        lh_rcm_mc_m1 = lh_rcm_mc_m1 / dble( n1 )
+        lh_rvm_mc_m1 = lh_rvm_mc_m1 / dble( n1 )
+        lh_thlm_mc_m1 = lh_thlm_mc_m1 / dble( n1 )
       end where
-    end do
 
-    where ( n1 /= zero )
-      lh_rcm_mc_m1 = lh_rcm_mc_m1 / dble( n1 )
-      lh_rvm_mc_m1 = lh_rvm_mc_m1 / dble( n1 )
-      lh_thlm_mc_m1 = lh_thlm_mc_m1 / dble( n1 )
-    end where
+      do i = 1, hydromet_dim
+        where ( n2 /= zero )
+          lh_hydromet_vel_m2(:,i) = lh_hydromet_vel_m2(:,i) / dble( n2 )
+          lh_hydromet_mc_m2(:,i) = lh_hydromet_mc_m2(:,i) / dble( n2 )
+        end where
+      end do
 
-    do i = 1, hydromet_dim
       where ( n2 /= zero )
-        lh_hydromet_vel_m2(:,i) = lh_hydromet_vel_m2(:,i) / dble( n2 )
-        lh_hydromet_mc_m2(:,i) = lh_hydromet_mc_m2(:,i) / dble( n2 )
+        lh_rcm_mc_m2 = lh_rcm_mc_m2 / dble( n2 )
+        lh_rvm_mc_m2 = lh_rvm_mc_m2 / dble( n2 )
+        lh_thlm_mc_m2 = lh_thlm_mc_m2 / dble( n2 )
       end where
-    end do
 
-    where ( n2 /= zero )
-      lh_rcm_mc_m2 = lh_rcm_mc_m2 / dble( n2 )
-      lh_rvm_mc_m2 = lh_rvm_mc_m2 / dble( n2 )
-      lh_thlm_mc_m2 = lh_thlm_mc_m2 / dble( n2 )
-    end where
+      ! Special cases
+      do i = 1, hydromet_dim
+        where ( n1 == zero )
+          lh_hydromet_vel_m1(:,i) = lh_hydromet_vel_m2(:,i)
+          lh_hydromet_mc_m1(:,i) = lh_hydromet_mc_m2(:,i)
+        end where
+      end do
 
-    ! Special cases
-    do i = 1, hydromet_dim
       where ( n1 == zero )
-        lh_hydromet_vel_m1(:,i) = lh_hydromet_vel_m2(:,i)
-        lh_hydromet_mc_m1(:,i) = lh_hydromet_mc_m2(:,i)
+        lh_rcm_mc_m1 = lh_rcm_mc_m2
+        lh_rvm_mc_m1 = lh_rvm_mc_m2
+        lh_thlm_mc_m1 = lh_thlm_mc_m2
       end where
-    end do
 
-    where ( n1 == zero )
-      lh_rcm_mc_m1 = lh_rcm_mc_m2
-      lh_rvm_mc_m1 = lh_rvm_mc_m2
-      lh_thlm_mc_m1 = lh_thlm_mc_m2
-    end where
+      do i = 1, hydromet_dim
+        where ( n2 == zero )
+          lh_hydromet_vel_m2(:,i) = lh_hydromet_vel_m1(:,i)
+          lh_hydromet_mc_m2(:,i) = lh_hydromet_mc_m1(:,i)
+        end where
+      end do
 
-    do i = 1, hydromet_dim
       where ( n2 == zero )
-        lh_hydromet_vel_m2(:,i) = lh_hydromet_vel_m1(:,i)
-        lh_hydromet_mc_m2(:,i) = lh_hydromet_mc_m1(:,i)
+        lh_rcm_mc_m2 = lh_rcm_mc_m1
+        lh_rvm_mc_m2 = lh_rvm_mc_m1
+        lh_thlm_mc_m2 = lh_thlm_mc_m1
       end where
-    end do
 
-    where ( n2 == zero )
-      lh_rcm_mc_m2 = lh_rcm_mc_m1
-      lh_rvm_mc_m2 = lh_rvm_mc_m1
-      lh_thlm_mc_m2 = lh_thlm_mc_m1
-    end where
+      ! Grid box average.
+      forall( i = 1:hydromet_dim )
+        lh_hydromet_vel(:,i) = real( a * cloud_frac1 * lh_hydromet_vel_m1(:,i) &
+          + (1.d0-a) * cloud_frac2 * lh_hydromet_vel_m2(:,i) )
+        lh_hydromet_mc(:,i)  = real( a * cloud_frac1 * lh_hydromet_mc_m1(:,i) &
+          + (1.d0-a) * cloud_frac2 * lh_hydromet_mc_m2(:,i) )
+      end forall
 
-    ! Grid box average.
-    forall( i = 1:hydromet_dim )
-      lh_hydromet_vel(:,i) = real( a * cloud_frac1 * lh_hydromet_vel_m1(:,i) &
-        + (1.d0-a) * cloud_frac2 * lh_hydromet_vel_m2(:,i) )
-      lh_hydromet_mc(:,i)  = real( a * cloud_frac1 * lh_hydromet_mc_m1(:,i) &
-        + (1.d0-a) * cloud_frac2 * lh_hydromet_mc_m2(:,i) )
-    end forall
+      lh_rcm_mc = real( a * cloud_frac1 * lh_rcm_mc_m1 + (1.d0-a) * cloud_frac2 * lh_rcm_mc_m2 )
+      lh_rvm_mc = real( a * cloud_frac1 * lh_rvm_mc_m1 + (1.d0-a) * cloud_frac2 * lh_rvm_mc_m2 )
+      lh_thlm_mc = real( a * cloud_frac1 * lh_thlm_mc_m1 + (1.d0-a) * cloud_frac2 * lh_thlm_mc_m2 )
 
-    lh_rcm_mc = real( a * cloud_frac1 * lh_rcm_mc_m1 + (1.d0-a) * cloud_frac2 * lh_rcm_mc_m2 )
-    lh_rvm_mc = real( a * cloud_frac1 * lh_rvm_mc_m1 + (1.d0-a) * cloud_frac2 * lh_rvm_mc_m2 )
-    lh_thlm_mc = real( a * cloud_frac1 * lh_thlm_mc_m1 + (1.d0-a) * cloud_frac2 * lh_thlm_mc_m2 )
+    else
+
+      ! Grid box average.
+      forall( i = 1:hydromet_dim )
+        lh_hydromet_vel(:,i) = real( lh_hydromet_vel_m1(:,i) + lh_hydromet_vel_m2(:,i) ) &
+           / real( n_micro_calls )
+        lh_hydromet_mc(:,i) = real( lh_hydromet_mc_m1(:,i) + lh_hydromet_mc_m2(:,i) ) &
+           / real( n_micro_calls )
+      end forall
+      lh_rcm_mc = real( lh_rcm_mc_m1 + lh_rcm_mc_m2 ) / real( n_micro_calls )
+      lh_rvm_mc = real( lh_rvm_mc_m1 + lh_rvm_mc_m2 ) / real( n_micro_calls )
+      lh_thlm_mc = real( lh_thlm_mc_m1 + lh_thlm_mc_m2 ) / real( n_micro_calls )
+
+    end if ! l_cloud_weighted_averaging
 
     return
   end subroutine lh_microphys_driver
@@ -965,8 +1001,11 @@ module estimate_lh_micro_mod
 
     implicit none
 
-    ! Input Variables
+    ! Constant parameters
+    logical, parameter :: &
+      l_cloud_weighted_averaging   = .false.
 
+    ! Input Variables
     integer, intent(in) :: &
       n_micro_calls, & ! Number of calls to microphysics (normally=2)
       d_variables      ! Number of variates (normally=5)
@@ -976,10 +1015,10 @@ module estimate_lh_micro_mod
       C1, C2    ! Cloud fraction associated w/ 1st, 2nd mixture component
 
     double precision, dimension(n_micro_calls), intent(in) :: &
-      rc !, & ! n in-cloud values of spec liq water content [g/kg].
+      rc !, & ! n in-cloud values of spec liq water content [kg/kg].
 !     w,  & ! n in-cloud values of vertical velocity (m/s)
-!     Npts, & ! n in-cloud values of droplet number (#/mg air)
-!     rr    ! n in-cloud values of specific rain content (g/kg)
+!     Npts, & ! n in-cloud values of droplet number (#/kg air)
+!     rr    ! n in-cloud values of specific rain content (kg/kg)
 
     double precision, dimension(n_micro_calls,d_variables+1), intent(in) :: &
       X_u_one_lev ! N x D+1 Latin hypercube sample from uniform dist
@@ -1084,24 +1123,29 @@ module estimate_lh_micro_mod
       stop 'Error:  no sample points in rc_estimate'
     end if
 
-    if ( .not. (n1 == 0) ) then
-      rc_m1 = rc_m1/n1
-    end if
+    if ( l_cloud_weighted_averaging ) then
+      if ( .not. (n1 == 0) ) then
+        rc_m1 = rc_m1/n1
+      end if
 
-    if ( .not. (n2 == 0) ) then
-      rc_m2 = rc_m2/n2
-    end if
+     if ( .not. (n2 == 0) ) then
+       rc_m2 = rc_m2/n2
+     end if
 
-    if (n1 == 0) then
-      rc_m1 = rc_m2
-    end if
+      if (n1 == 0) then
+        rc_m1 = rc_m2
+      end if
 
-    if (n2 == 0) then
-      rc_m2 = rc_m1
-    end if
+      if (n2 == 0) then
+        rc_m2 = rc_m1
+      end if
+      ! Grid box average.
+      rc_m = a*C1*rc_m1 + (1.-a)*C2*rc_m2
+
+    end if ! l_cloud_weighted_averaging
 
     ! Grid box average.
-    rc_m = a*C1*rc_m1 + (1-a)*C2*rc_m2
+    rc_m = ( rc_m1 + rc_m2 ) / dble( n_micro_calls )
 
     return
   end subroutine rc_estimate

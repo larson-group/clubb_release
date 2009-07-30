@@ -909,7 +909,7 @@ module microphys_driver
 !     wtmp = 0.5 ! %% debug
       call morrison_micro_driver & 
            ( real( dt ), gr%nnzp, l_stats_samp, .false., thlm, p_in_Pa, exner, rho, pdf_params, &
-             wm_zt, wtmp, dzq, rcm, rtm-rcm, hydromet, hydromet_mc, &
+             wm_zt, wtmp, dzq, rcm, rcm, rtm-rcm, hydromet, hydromet_mc, &
              hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
  
       ! Update total water tendency
@@ -1004,7 +1004,7 @@ module microphys_driver
 
       call KK_microphys & 
            ( real( dt ), gr%nnzp, l_stats_samp, l_local_kk, thlm, p_in_Pa, exner, rho, pdf_params, &
-             wm_zt, wtmp, dzq, rcm, rtm-rcm, hydromet, hydromet_mc, &
+             wm_zt, wtmp, dzq, rcm, rcm, rtm-rcm, hydromet, hydromet_mc, &
              hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 
       ! Interpolate velocity to the momentum grid

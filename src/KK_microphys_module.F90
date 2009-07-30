@@ -78,7 +78,7 @@ module KK_microphys_module
   !=============================================================================
   subroutine KK_microphys( dt, nnzp, l_sample, l_latin_hypercube, thlm, &
                            p_in_Pa, exner, rho, pdf_params, &
-                           wm, w_std_dev, dzq, rcm, rvm, hydromet, hydromet_mc, &
+                           wm, w_std_dev, dzq, rcm, s_mellor, rvm, hydromet, hydromet_mc, &
                            hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 
 
@@ -169,8 +169,9 @@ module KK_microphys_module
       dzq          ! Difference in heights      [m]
 
     real, dimension(nnzp), intent(in) :: &
-       rcm, & ! Liquid water mixing ratio        [kg/kg]
-       rvm    ! Vapor water mixing ratio         [kg/kg]
+      rcm,      & ! Liquid water mixing ratio        [kg/kg]
+      s_mellor, & ! The variable 's' from Mellor     [kg/kg]
+      rvm         ! Vapor water mixing ratio         [kg/kg]
 
     real, dimension(nnzp,hydromet_dim), target, intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
@@ -470,9 +471,13 @@ module KK_microphys_module
       ! This allows a more direct comparison of local, nonlocal formulas.
       Beta_T = (Rd/Rv) * ( Lv/(Rd*T_in_K(k)) )  & 
                * ( Lv/(Cp*T_in_K(k)) )
-
-      Supsat(k) = ( a(k)*s1(k) + (1-a(k))*s2(k) ) & 
-                  *( ( 1.0 + Beta_T*rsat(k) ) / rsat(k) )
+      if ( .not. l_latin_hypercube ) then
+        Supsat(k) = ( a(k)*s1(k) + (1.0-a(k))*s2(k) ) & 
+                    *( ( 1.0 + Beta_T*rsat(k) ) / rsat(k) )
+      else
+        Supsat(k) = ( a(k)*s_mellor(k) + (1.0-a(k))*s_mellor(k) ) & 
+                    *( ( 1.0 + Beta_T*rsat(k) ) / rsat(k) )
+      end if
 
       ! Now find the elements that make up the right-hand side of the
       ! equation for rain water mixing ratio, rrainm.
@@ -513,11 +518,13 @@ module KK_microphys_module
 
       ! Now find the elements that make up the right-hand side of the
       ! equation, rr, for rain drop number concentration, Nrm.
-
       Nrm_cond(k) = cond_evap_Nrm( rrainm_cond(k), Nrm(k), rrainm(k) )
 
       Nrm_auto(k) = autoconv_Nrm( rrainm_auto(k) )
 
+      rrainm_accr(k) = 0.0
+      rrainm_cond(k) = 0.0
+      Nrm_cond = 0.0
       if ( l_sample .and. l_stats_samp ) then
 
         ! Explicit contributions to rrainm.
@@ -1200,7 +1207,6 @@ module KK_microphys_module
 
         autoconv_rrainm = 7.4188E13 * rho**(-1.79)  & 
                           * rcm**2.47 * Ncm**(-1.79)
-
       ELSE
 
         ! If either rcm or Ncm are 0.
