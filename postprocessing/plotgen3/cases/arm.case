@@ -27,9 +27,9 @@
        [
           {'filename' => 'arm_zt.ctl', 'type' => 'auto', 'name' => 'wprtp', 'expression' => 'wprtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cf [%]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cloud\_frac [%]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'arm_zt.ctl', 'type' => 'auto', 'name' => 'cf', 'expression' => 'cf', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'arm_zt.ctl', 'type' => 'auto', 'name' => 'cloud_frac', 'expression' => 'cloud_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},       
        {'plotTitle' => 'Cloud Water Mixing Ratio, r_c', 'axisLabel' => 'rcm [kg/kg]', 'type' => 'profile', 'lines' =>
        [

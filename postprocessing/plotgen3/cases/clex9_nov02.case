@@ -32,10 +32,10 @@
           {'filename' => '/home/matlabuser/plotgen/LES_files/clex9_nov02_coamps_sm.ctl', 'type' => 'les', 'name' => 'wpqtp', 'expression' => 'wpqtp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => 'red'},
           {'filename' => 'clex9_nov02_zm.ctl', 'type' => 'auto', 'name' => 'wprtp', 'expression' => 'wprtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cf [%]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cloud\_frac [%]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/clex9_nov02_coamps_sm.ctl', 'type' => 'les', 'name' => 'cf', 'expression' => 'cf', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => 'red'},
-          {'filename' => 'clex9_nov02_zt.ctl', 'type' => 'auto', 'name' => 'cf', 'expression' => 'cf', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'clex9_nov02_zt.ctl', 'type' => 'auto', 'name' => 'cloud_frac', 'expression' => 'cloud_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},       
        {'plotTitle' => 'Cloud Water Mixing Ratio, r_c', 'axisLabel' => 'rcm [kg/kg]', 'type' => 'profile', 'lines' =>
        [

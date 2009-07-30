@@ -76,7 +76,7 @@ sub main()
 	readArgs();
 
 	# Ensure that Matlab can write to the temp output folder
-	chmod(0777, $outputTemp);
+	my $mode = 0777; chmod $mode, $outputTemp;
 
 	print("Input Folders: @inputDirs\n");
 	print("Output Folder: $output \n");
@@ -585,7 +585,7 @@ sub readArgs()
 
 				$output = $currentDir;
 				#$outputTemp = "/tmp/output" . "_" . "$randInt";
-				$outputTemp = "$output" . "_" . "$randInt";
+				$outputTemp = "output_" . "$randInt";
 			}
 			
 			$currentCount++;
