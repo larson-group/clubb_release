@@ -141,7 +141,7 @@ module morrison_micro_driver_mod
       rcm_sten     ! Cloud dropet sedimentation tendency           [kg/kg/s]
 
     real, dimension(nnzp) :: & 
-      cloud_frac  ! Cloud fraction
+      cloud_frac  ! Cloud fraction   [-]
 
     real, dimension(nnzp,hydromet_dim) :: & 
       hydromet_sten, & ! Hydrometeor sedimentation tendency [(units vary)/s]

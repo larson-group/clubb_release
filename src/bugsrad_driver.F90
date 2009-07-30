@@ -115,7 +115,7 @@ module bugsrad_clubb_mod
       rim,         & ! Ice water mixing ratio     [kg/kg]
       rtm,         & ! Total water mixing ratio   [kg/kg]
       rho_zm,      & ! Density                    [kg/m^3]
-      cloud_cover, & ! Cloud cover                [%]
+      cloud_cover, & ! Cloud cover                [-]
       p_in_Pa,     & ! Pressure on the t grid     [Pa]
       p_in_Pam,    & ! Pressure on the m grid     [Pa]
       exner          ! Exner function             [-]

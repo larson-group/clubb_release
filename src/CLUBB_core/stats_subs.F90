@@ -1133,9 +1133,9 @@ module stats_subs
 
     real, intent(in), dimension(gr%nnzp) :: & 
       rcm,         & ! Cloud water mixing ratio                 [kg/kg]
-      cloud_frac,  & ! Cloud fraction                           [%]
+      cloud_frac,  & ! Cloud fraction                           [-]
       rcm_in_layer,& ! Cloud water mixing ratio in cloud layer  [kg/kg]
-      cloud_cover    ! Cloud cover                              [%]
+      cloud_cover    ! Cloud cover                              [-]
 
     type(pdf_parameter), intent(in) :: & 
       pdf_params ! PDF parameters [units vary]

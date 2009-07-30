@@ -110,7 +110,7 @@ module numerical_check
     wp2rtp,          & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
     wpthlp2,         & ! w' th_l'^2            [(m K^2)/s]
     wp2thlp,         & ! w'^2 th_l'            [(m^2 K)/s^2]
-    cloud_frac,      & ! Cloud fraction        [%]
+    cloud_frac,      & ! Cloud fraction        [-]
     rcm,             & ! Mean liquid water     [kg/kg]
     wpthvp,          & ! Buoyancy flux         [(K m)/s] 
     wp2thvp,         & ! w'^2 th_v'            [(m^2 K)/s^2]
@@ -285,7 +285,7 @@ module numerical_check
 !    .  Nim      ! Ice crystal number conc.      [num/m^3]
 
     real, intent(in), dimension(gr%nnzp) ::  & 
-    cloud_frac ! Cloud fraction.     [%]
+    cloud_frac ! Cloud fraction.     [-]
 
     character(len=*), intent(in) :: prefix ! Location where subroutine is called
 
@@ -500,7 +500,7 @@ module numerical_check
     rcm,            & ! Liquid Water Mixing Ratio            [Kg/Kg]
     rtm,            & ! Total Water Mixing Ratio             [Kg/Kg]
     ricem,          & ! Ice Water Mixing Ratio               [Kg/Kg]
-    cloud_frac,     & ! Cloud Fraction                       [%]
+    cloud_frac,     & ! Cloud Fraction                       [-]
     p_in_Pa,        & ! Pressure                             [Pa]
     exner,          & ! Exner Function                       [-]
     rho_zm           ! Density                              [-]

@@ -73,9 +73,9 @@ module variables_prognostic_module
   ! Cloud water variables
   real, target, allocatable, dimension(:), public :: & 
     rcm,          & ! Cloud water mixing ratio                 [kg/kg]
-    cloud_frac,   & ! Cloud fraction                           [%]
+    cloud_frac,   & ! Cloud fraction                           [-]
     rcm_in_layer, & ! Cloud water mixing ratio in cloud layer  [kg/kg]
-    cloud_cover     ! Cloud cover                              [%]
+    cloud_cover     ! Cloud cover                              [-]
 
 !$omp   threadprivate(rcm, cloud_frac, rcm_in_layer, cloud_cover)
 

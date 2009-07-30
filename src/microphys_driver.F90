@@ -691,7 +691,7 @@ module microphys_driver
       rho_zm,     & ! Density on moment. grid                [kg/m^3]
       rtm,        & ! Total water mixing ratio               [kg/kg]
       rcm,        & ! Liquid water mixing ratio              [kg/kg]
-      cloud_frac, & ! Cloud fraction                         [%]
+      cloud_frac, & ! Cloud fraction                         [-]
       wm_zt,      & ! w wind on moment. grid                 [m/s]
       wm_zm,      & ! w wind on thermo. grid                 [m/s]
       Kh_zm         ! Kh Eddy diffusivity on momentum grid   [m^2/s]

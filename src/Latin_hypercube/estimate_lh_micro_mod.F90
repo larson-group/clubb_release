@@ -76,7 +76,7 @@ module estimate_lh_micro_mod
     logical, dimension(nnzp), intent(in) :: l_sample_flag
 
     real, dimension(nnzp), intent(in) :: &
-      cloud_frac, & ! Cloud fraction           [%]
+      cloud_frac, & ! Cloud fraction           [-]
       thlm,       & ! Liquid pot. temperature  [K]
       p_in_Pa,    & ! Pressure                 [Pa]
       exner,      & ! Exner function           [-]
@@ -127,7 +127,7 @@ module estimate_lh_micro_mod
       lh_rvm,       & ! Average value of the latin hypercube est. of rv                [kg/kg]
       lh_wm,        & ! Average value of the latin hypercube est. of vertical velocity [m/s]
       lh_wp2_zt,    & ! Average value of the variance of the LH est. of vertical velocity [m^2/s^2]
-      lh_cloud_frac   ! Average value of the latin hypercube est. of cloud fraction    [%]
+      lh_cloud_frac   ! Average value of the latin hypercube est. of cloud fraction    [-]
 
     ! Local Variables
 
@@ -662,7 +662,7 @@ module estimate_lh_micro_mod
       lh_rvm,     & ! Average value of the latin hypercube est. of rv                [kg/kg]
       lh_wm,      & ! Average value of the latin hypercube est. of vertical velocity [m/s]
       lh_wp2_zt,  & ! Average value of the variance of the LH est. of vertical velocity [m^2/s^2]
-      lh_cloud_frac ! Average value of the latin hypercube est. of cloud fraction    [%]
+      lh_cloud_frac ! Average value of the latin hypercube est. of cloud fraction    [-]
 
     ! Local Variables
     double precision, dimension(nnzp,hydromet_dim) :: &

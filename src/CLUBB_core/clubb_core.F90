@@ -296,7 +296,7 @@ module clubb_core
     real, intent(inout), dimension(gr%nnzp) ::  & 
       rcm,          & ! cloud water mixing ratio, r_c (thermo. levels)  [kg/kg]
       rcm_in_layer, & ! rcm in cloud layer                              [kg/kg]
-      cloud_cover     ! cloud cover                                     []
+      cloud_cover     ! cloud cover                                     [-]
 
     type(pdf_parameter), intent(inout) :: & 
       pdf_params      ! PDF parameters   [units vary]
@@ -304,7 +304,7 @@ module clubb_core
     ! Variables that need to be output for use in host models
     real, intent(inout), dimension(gr%nnzp) ::  &
       wprcp,      & ! w'r_c' (momentum levels)                [(kg/kg) m/s]
-      cloud_frac    ! cloud fraction (thermodynamic levels)   []
+      cloud_frac    ! cloud fraction (thermodynamic levels)   [-]
 
     !!! Output Variable
     ! Diagnostic, for if some calculation goes amiss.
@@ -1159,7 +1159,7 @@ module clubb_core
       wpthlp2,     & ! w'thl'^2                  [m K^2/s]
       wp2thlp,     & ! w'^2 thl'                 [m^2 K/s^2]
       wprtpthlp,   & ! w'rt'thl'                 [m kg K/kg s]
-      cloud_frac,  & ! Cloud Fraction            [%]
+      cloud_frac,  & ! Cloud Fraction            [-]
       rcm,         & ! Liquid water mixing ratio [kg/kg]
       wp2thvp,     & ! w'^2 th_v'                [m^2 K/s^2]
       wp2rcp         ! w'^2 rc'                  [m^2 kg/kg s^2]    
@@ -1182,7 +1182,7 @@ module clubb_core
       wpthlp2_zm,    & ! w'thl'^2 on momentum grid                  [m K^2/s]
       wp2thlp_zm,    & ! w'^2 thl' on momentum grid                 [m^2 K/s^2]
       wprtpthlp_zm,  & ! w'rt'thl' on momentum grid                 [m kg K/kg s]
-      cloud_frac_zm, & ! Cloud Fraction on momentum grid            [%]
+      cloud_frac_zm, & ! Cloud Fraction on momentum grid            [-]
       rcm_zm,        & ! Liquid water mixing ratio on momentum grid [kg/kg]
       wp2thvp_zm,    & ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
       wp2rcp_zm,     & ! w'^2 rc' on momentum grid                  [m^2 kg/kg s^2]
@@ -1594,7 +1594,7 @@ module clubb_core
 
     ! Input variables
     real, dimension(gr%nnzp), intent(in) :: &
-      cloud_frac, & ! Cloud fraction             [%]
+      cloud_frac, & ! Cloud fraction             [-]
       rcm           ! Liquid water mixing ratio  [kg/kg]
 
     type (pdf_parameter), intent(in) :: &
@@ -1602,7 +1602,7 @@ module clubb_core
 
     ! Output variables
     real, dimension(gr%nnzp), intent(out) :: &
-      cloud_cover,  & ! Cloud cover                               []
+      cloud_cover,  & ! Cloud cover                               [-]
       rcm_in_layer    ! Liquid water mixing ratio in cloud layer  [kg/kg]
 
     ! Local variables

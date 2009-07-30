@@ -132,7 +132,7 @@ module pdf_closure_module
       wp2rtp,      & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
       wpthlp2,     & ! w' th_l'^2            [(m K^2)/s]
       wp2thlp,     & ! w'^2 th_l'            [(m^2 K)/s^2]
-      cloud_frac,  & ! Cloud fraction        [%]
+      cloud_frac,  & ! Cloud fraction        [-]
       rcm,         & ! Mean liquid water     [kg/kg]
       wpthvp,      & ! Buoyancy flux         [(K m)/s] 
       wp2thvp,     & ! w'^2 th_v'            [(m^2 K)/s^2]
