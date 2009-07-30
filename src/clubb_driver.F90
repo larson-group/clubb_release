@@ -121,7 +121,7 @@ module clubb_driver
       Tsfc, psfc, SE, LE, thlm, rtm,     & ! Variable(s)
       um, vm, wp2, rcm, wm_zt, wm_zm, exner, & 
       tau_zm, p_in_Pa, rho_zm, upwp, vpwp, wpthlp, wpthvp, & 
-      Kh_zt, rho, wprtp, wpthlp_sfc, wprtp_sfc, & 
+      wprcp, Kh_zt, rho, wprtp, wpthlp_sfc, wprtp_sfc, & 
       upwp_sfc, vpwp_sfc, thlm_forcing, & 
       rtm_forcing, um_forcing, vm_forcing, &
       up2, vp2, wp3, rtp2, pdf_params, & 
@@ -750,21 +750,21 @@ module clubb_driver
 
       do i1=1, niterlong
         call advance_clubb_core & 
-             ( .false., dt, fcor, &                             ! Intent(in)
-               thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &! Intent(in)
-               sclrm_forcing, edsclrm_forcing, wm_zm, wm_zt, &     ! Intent(in)
-               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &        ! Intent(in)
-               wpsclrp_sfc, wpedsclrp_sfc,  &                      ! Intent(in)
-               p_in_Pa, rho_zm, rho, exner, &                      ! Intent(in)
-               um, vm, upwp, vpwp, up2, vp2, &                     ! Intent(inout)
-               thlm, rtm, wprtp, wpthlp, wpthvp, &                 ! Intent(inout)
-               Kh_zt, wp2, wp3, &                                  ! Intent(inout)
-               rtp2, thlp2, rtpthlp, &                             ! Intent(inout)
-               sigma_sqd_w, tau_zm, rcm, cloud_frac, &             ! Intent(inout)
-               rcm_in_layer, cloud_cover, &                        ! Intent(inout)
-               sclrm, sclrp2, sclrprtp, sclrpthlp, &               ! Intent(inout)
-               wpsclrp, edsclrm, pdf_params, &                     ! Intent(inout)
-               err_code )                                          ! Intent(inout)
+             ( .false., dt, fcor, &                                 ! Intent(in)
+               thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
+               sclrm_forcing, edsclrm_forcing, wm_zm, wm_zt, &      ! Intent(in)
+               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &         ! Intent(in)
+               wpsclrp_sfc, wpedsclrp_sfc,  &                       ! Intent(in)
+               p_in_Pa, rho_zm, rho, exner, &                       ! Intent(in)
+               um, vm, upwp, vpwp, up2, vp2, &                      ! Intent(inout)
+               thlm, rtm, wprtp, wpthlp, wpthvp, &                  ! Intent(inout)
+               wprcp, Kh_zt, wp2, wp3, &                            ! Intent(inout)
+               rtp2, thlp2, rtpthlp, &                              ! Intent(inout)
+               sigma_sqd_w, tau_zm, rcm, cloud_frac, &              ! Intent(inout)
+               rcm_in_layer, cloud_cover, &                         ! Intent(inout)
+               sclrm, sclrp2, sclrprtp, sclrpthlp, &                ! Intent(inout)
+               wpsclrp, edsclrm, pdf_params, &                      ! Intent(inout)
+               err_code )                                           ! Intent(inout)
 
 
         call stats_end_timestep( )

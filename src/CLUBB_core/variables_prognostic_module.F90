@@ -29,9 +29,10 @@ module variables_prognostic_module
     vp2,     & ! v'^2                          [m^2/s^2]
     thlm,    & ! liquid potential temperature  [K]
     rtm,     & ! total water mixing ratio      [kg/kg]
-    wprtp,   & ! w'rt'                         [m kg/s kg]
+    wprtp,   & ! w'rt'                         [(kg/kg) m/s]
     wpthlp,  & ! w'thl'                        [m K/s]
     wpthvp,  & ! w'thv'                        [m K/s]
+    wprcp,   & ! w'rc'                         [(kg/kg) m/s]
     wp2,     & ! w'^2                          [m^2/s^2]
     wp3,     & ! w'^3                          [m^3/s^3]
     rtp2,    & ! rt'^2                         [kg/kg]
@@ -39,8 +40,8 @@ module variables_prognostic_module
     rtpthlp    ! rt'thl'                       [kg/kg K]
 
 !$omp   threadprivate(um, vm, upwp, vpwp, up2, vp2)
-!$omp   threadprivate(thlm, rtm, wprtp, wpthlp, wpthvp, wp2)
-!$omp   threadprivate(wp3, rtp2, thlp2, rtpthlp)
+!$omp   threadprivate(thlm, rtm, wprtp, wpthlp, wpthvp, wprcp)
+!$omp   threadprivate(wp2, wp3, rtp2, thlp2, rtpthlp)
 
   real, target, allocatable, dimension(:), public :: & 
     p_in_Pa,      & ! Pressure (Pa) on thermodynamic points    [Pa]
@@ -71,10 +72,10 @@ module variables_prognostic_module
 
   ! Cloud water variables
   real, target, allocatable, dimension(:), public :: & 
-    rcm,         & ! Cloud water mixing ratio                 [kg/kg]
-    cloud_frac,  & ! Cloud fraction                           [%]
-    rcm_in_layer,& ! Cloud water mixing ratio in cloud layer  [kg/kg]
-    cloud_cover    ! Cloud cover                              [%]
+    rcm,          & ! Cloud water mixing ratio                 [kg/kg]
+    cloud_frac,   & ! Cloud fraction                           [%]
+    rcm_in_layer, & ! Cloud water mixing ratio in cloud layer  [kg/kg]
+    cloud_cover     ! Cloud cover                              [%]
 
 !$omp   threadprivate(rcm, cloud_frac, rcm_in_layer, cloud_cover)
 
@@ -202,6 +203,7 @@ module variables_prognostic_module
     allocate( wprtp(1:nzmax) )     ! w'rt'
     allocate( wpthlp(1:nzmax) )    ! w'thl'
     allocate( wpthvp(1:nzmax) )    ! w'thv'
+    allocate( wprcp(1:nzmax) )     ! w'rc'
     allocate( wp2(1:nzmax) )       ! w'^2
     allocate( wp3(1:nzmax) )       ! w'^3
     allocate( rtp2(1:nzmax) )      ! rt'^2
@@ -293,6 +295,7 @@ module variables_prognostic_module
     wprtp(1:nzmax)   = 0.0         ! w'rt'
     wpthlp(1:nzmax)  = 0.0         ! w'thl'
     wpthvp(1:nzmax)  = 0.0         ! w'thv'
+    wprcp(1:nzmax)   = 0.0         ! w'rc'
     wp3(1:nzmax)     = 0.0         ! w'^3
     rtp2(1:nzmax)    = rttol**2    ! rt'^2
     thlp2(1:nzmax)   = thltol**2   ! thl'^2
@@ -408,7 +411,8 @@ module variables_prognostic_module
     deallocate( rtm )       ! total water mixing ratio
     deallocate( wprtp )     ! w'rt'
     deallocate( wpthlp )    ! w'thl'
-    deallocate( wpthvp )
+    deallocate( wpthvp )    ! w'thv'
+    deallocate( wprcp )     ! w'rc'
     deallocate( wp2 )       ! w'^2
     deallocate( wp3 )       ! w'^3
     deallocate( rtp2 )      ! rt'^2

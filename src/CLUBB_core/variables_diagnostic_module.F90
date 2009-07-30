@@ -55,12 +55,11 @@ module variables_diagnostic_module
 
 ! Second order moments
   real, target, allocatable, dimension(:), public :: & 
-    wprcp,    & ! w'rc'                [m kg/s kg]
     thlprcp,  & ! thl'rc'              [K kg/kg]
     rtprcp,   & ! rt'rc'               [kg^2/kg^2]
     rcp2        ! rc'^2                [kg^2/kg^2]
 
-!$omp threadprivate(wprcp, thlprcp, rtprcp, rcp2)
+!$omp threadprivate(thlprcp, rtprcp, rcp2)
 
 ! Third order moments
   real, target, allocatable, dimension(:), public :: & 
@@ -218,7 +217,6 @@ module variables_diagnostic_module
 
     ! Second order moments
 
-    allocate( wprcp(1:nzmax) )     ! w'rc'
     allocate( thlprcp(1:nzmax) )   ! thl'rc'
     allocate( rtprcp(1:nzmax) )    ! rt'rc'
     allocate( rcp2(1:nzmax) )      ! rc'^2
@@ -318,7 +316,6 @@ module variables_diagnostic_module
     shear = 0.0    ! Wind shear production
 
 ! Second order moments
-    wprcp   = 0.0
     thlprcp = 0.0
     rtprcp  = 0.0
     rcp2    = 0.0
@@ -427,7 +424,6 @@ module variables_diagnostic_module
 
     ! Second order moments
 
-    deallocate( wprcp )     ! w'rc'
     deallocate( thlprcp )   ! thl'rc'
     deallocate( rtprcp )    ! rt'rc'
     deallocate( rcp2 )      ! rc'^2

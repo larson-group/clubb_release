@@ -863,7 +863,7 @@ module stats_subs
   !----------------------------------------------------------------------
   subroutine stats_accumulate & 
                    ( um, vm, upwp, vpwp, up2, vp2, thlm, & 
-                     rtm, wprtp, wpthlp, wpthvp, &
+                     rtm, wprtp, wpthlp, wpthvp, wprcp, &
                      wp2, wp3, rtp2, thlp2, rtpthlp, & 
                      p_in_Pa, exner, rho, rho_zm, Kh_zt, & 
                      wm_zt, sigma_sqd_w, tau_zm, rcm, cloud_frac, & 
@@ -1053,7 +1053,6 @@ module stats_subs
         rtpthvp, & 
         thlpthvp, & 
         Kh_zm, & 
-        wprcp, & 
         thlprcp, & 
         rtprcp, & 
         rcp2, & 
@@ -1112,9 +1111,10 @@ module stats_subs
       vp2,     & ! v'^2                          [m^2/s^2]
       thlm,    & ! liquid potential temperature  [K]
       rtm,     & ! total water mixing ratio      [kg/kg]
-      wprtp,   & ! w'rt'                         [m kg/s kg]
+      wprtp,   & ! w'rt'                         [(kg/kg) m/s]
       wpthlp,  & ! w'thl'                        [m K /s]
       wpthvp,  & ! w'thv'                        [m K /s]
+      wprcp,   & ! w'rc'                         [(kg/kg) m/s]
       wp2,     & ! w'^2                          [m^2/s^2]
       wp3,     & ! w'^3                          [m^3/s^3]
       rtp2,    & ! rt'^2                         [kg/kg]

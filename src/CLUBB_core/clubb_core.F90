@@ -31,13 +31,13 @@ module clubb_core
                p_in_Pa, rho_zm, rho, exner, & 
                um, vm, upwp, vpwp, up2, vp2, & 
                thlm, rtm, wprtp, wpthlp, wpthvp, &
-               Kh_zt, wp2, wp3, & 
+               wprcp, Kh_zt, wp2, wp3, & 
                rtp2, thlp2, rtpthlp, & 
                sigma_sqd_w, tau_zm, rcm, cloud_frac, & 
                rcm_in_layer, cloud_cover, & 
                sclrm, sclrp2, sclrprtp, sclrpthlp, &
                wpsclrp, edsclrm, pdf_params, &
-               err_code ) 
+               err_code )
 
     ! Description:
     !   Subroutine to advance the model one timestep
@@ -96,7 +96,6 @@ module clubb_core
       wp4, & 
       thlpthvp, & 
       rtpthvp, & 
-      wprcp, & 
       rtprcp, & 
       thlprcp, & 
       rcp2, & 
@@ -202,10 +201,10 @@ module clubb_core
 
     implicit none
 
-    ! External
+    !!! External
     intrinsic :: sqrt, min, max, exp, mod
 
-    ! Input Variables
+    !!! Input Variables
     logical, intent(in) ::  & 
       l_implemented ! Is this part of a larger host model (T/F) ?
 
@@ -237,66 +236,81 @@ module clubb_core
       upwp_sfc,     & ! u'w' at surface.          [m^2/s^2]
       vpwp_sfc        ! v'w' at surface.          [m^2/s^2]
 
-    real, intent(in),  dimension(sclr_dim) ::  & 
-      wpsclrp_sfc      ! Scalar flux at surface           [units m/s]
-
-    real, intent(in),  dimension(edsclr_dim) ::  & 
-      wpedsclrp_sfc    ! Eddy-Scalar flux at surface      [units m/s]
-
-    ! Input/Output
-    ! These are prognostic or are planned to be in the future
-    real, intent(inout), dimension(gr%nnzp) ::  & 
-      um,          & ! u wind.                       [m/s]
-      upwp,        & ! u'w'.                         [m^2/s^2]
-      vm,          & ! v wind.                       [m/s]
-      vpwp,        & ! u'w'.                         [m^2/s^2]
-      up2,         & ! u'^2                          [m^2/s^2]
-      vp2,         & ! v'^2                          [m^2/s^2]
-      rtm,         & ! r_t Total water mixing ratio. [kg/kg]
-      wprtp,       & ! w' r_t'.                      [(m kg)/(s kg)]
-      thlm,        & ! th_l Liquid potential temp.   [K]
-      wpthlp,      & ! w' th_l'.                     [(m K)/s]
-      wpthvp,      & ! w' th_v'.                     [(m K)/s]
-      Kh_zt,       & ! Eddy-diffusivity              [m^2/s]
-      wp2,         & ! w'^2.                         [m^2/s^2]
-      wp3,         & ! w'^3.                         [m^3/s^3]
-      sigma_sqd_w, & ! sigma_sqd_w on moment. grid.           [-]
-      rtp2,        & ! r_t'^2.                       [(kg/kg)^2]
-      thlp2,       & ! th_l'^2.                      [K^2]
-      rtpthlp,     & ! r_t' th_l'.                   [(kg K)/kg]
-      tau_zm,      & ! Tau on moment. grid.          [s]
-      rcm,         & ! Liquid water mixing ratio.    [kg/kg]
-      rcm_in_layer,& ! rcm in cloud layer            [kg/kg]
-      cloud_cover    ! Cloud cover                   [%]
-
-    ! Needed for output for host models
-    real, intent(inout), dimension(gr%nnzp) ::  & 
-      cloud_frac ! Cloud fraction.     [%]
-
-    ! Diagnostic, for if some calculation goes amiss.
-    integer, intent(inout) :: err_code
-
     ! Passive scalar variables
-    real, intent(inout), dimension(gr%nnzp,sclr_dim) :: & 
-      sclrm,         & ! Passive scalar mean.           [units vary]
-      sclrp2,        & ! Passive scalar variance.       [{units vary}^2]
-      sclrprtp,      & ! sclr'rt'                       [{units vary}^2]
-      sclrpthlp,     & ! sclr'thl'                      [{units vary}^2]
-      wpsclrp          ! w'sclr'                        [units vary m/s]
-
     real, intent(in), dimension(gr%nnzp,sclr_dim) :: & 
       sclrm_forcing    ! Passive scalar forcing.        [{units vary}/s]
 
-    real, intent(inout), dimension(gr%nnzp,edsclr_dim) :: & 
-      edsclrm          ! Eddy passive scalar mean.      [units vary]
+    real, intent(in),  dimension(sclr_dim) ::  & 
+      wpsclrp_sfc      ! Scalar flux at surface         [{units vary} m/s]
 
+    ! Eddy passive scalar variables
     real, intent(in), dimension(gr%nnzp,edsclr_dim) :: & 
-      edsclrm_forcing    ! Eddy passive scalar forcing. [{units vary}/s]
+      edsclrm_forcing  ! Eddy passive scalar forcing    [{units vary}/s]
+
+    real, intent(in),  dimension(edsclr_dim) ::  & 
+      wpedsclrp_sfc    ! Eddy-Scalar flux at surface    [{units vary} m/s]
+
+    !!! Input/Output Variables
+    ! These are prognostic or are planned to be in the future
+    real, intent(inout), dimension(gr%nnzp) ::  & 
+      um,      & ! u mean wind component (thermodynamic levels)   [m/s]
+      upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
+      vm,      & ! v mean wind component (thermodynamic levels)   [m/s]
+      vpwp,    & ! v'w' (momentum levels)                         [m^2/s^2]
+      up2,     & ! u'^2 (momentum levels)                         [m^2/s^2]
+      vp2,     & ! v'^2 (momentum levels)                         [m^2/s^2]
+      rtm,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
+      wprtp,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
+      thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
+      wpthlp,  & ! w' th_l' (momentum levels)                     [(m/s) K]
+      rtp2,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+      thlp2,   & ! th_l'^2 (momentum levels)                      [K^2]
+      rtpthlp, & ! r_t' th_l' (momentum levels)                   [(kg/kg) K]
+      wp2,     & ! w'^2 (momentum levels)                         [m^2/s^2]
+      wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+
+    ! Passive scalar variables
+    real, intent(inout), dimension(gr%nnzp,sclr_dim) :: & 
+      sclrm,     & ! Passive scalar mean (thermo. levels) [units vary]
+      wpsclrp,   & ! w'sclr' (momentum levels)            [{units vary} m/s]
+      sclrp2,    & ! sclr'^2 (momentum levels)            [{units vary}^2]
+      sclrprtp,  & ! sclr'rt' (momentum levels)           [{units vary} (kg/kg)]
+      sclrpthlp    ! sclr'thl' (momentum levels)          [{units vary} K]
+
+    ! Eddy passive scalar variable
+    real, intent(inout), dimension(gr%nnzp,edsclr_dim) :: & 
+      edsclrm   ! Eddy passive scalar mean (thermo. levels)   [units vary]
+
+    ! Variables that need to be preserved from timestep-to-timestep, for they
+    ! are used in subroutine advance_clubb_core before they are reset again
+    ! in subroutine advance_clubb_core.
+    real, intent(inout), dimension(gr%nnzp) ::  & 
+      wpthvp,      & ! w' th_v' (momentum levels)                 [(m/s) K]
+      Kh_zt,       & ! eddy diffusivity on thermodynamic levels   [m^2/s]
+      sigma_sqd_w, & ! sigma_sqd_w (momentum levels)              [-]
+      tau_zm         ! time scale tau on momentum levels          [s]
+
+    ! Variables that need to be output for use in other parts of the CLUBB
+    ! code, such as microphysics (rcm, pdf_params), forcings (rcm), and/or
+    ! BUGSrad (cloud_cover).
+    real, intent(inout), dimension(gr%nnzp) ::  & 
+      rcm,          & ! cloud water mixing ratio, r_c (thermo. levels)  [kg/kg]
+      rcm_in_layer, & ! rcm in cloud layer                              [kg/kg]
+      cloud_cover     ! cloud cover                                     []
 
     type(pdf_parameter), intent(inout) :: & 
-      pdf_params ! PDF parameters [units vary]
+      pdf_params      ! PDF parameters   [units vary]
 
-    ! Local Variables
+    ! Variables that need to be output for use in host models
+    real, intent(inout), dimension(gr%nnzp) ::  &
+      wprcp,      & ! w'r_c' (momentum levels)                [(kg/kg) m/s]
+      cloud_frac    ! cloud fraction (thermodynamic levels)   []
+
+    !!! Output Variable
+    ! Diagnostic, for if some calculation goes amiss.
+    integer, intent(inout) :: err_code
+
+    !!! Local Variables
     integer :: i, k
 
     real, dimension(gr%nnzp) :: &
@@ -792,7 +806,7 @@ module clubb_core
 
     call stats_accumulate & 
          ( um, vm, upwp, vpwp, up2, vp2, thlm,                 & ! intent(in)
-           rtm, wprtp, wpthlp, wpthvp,                         & ! intent(in) 
+           rtm, wprtp, wpthlp, wpthvp, wprcp,                  & ! intent(in) 
            wp2, wp3, rtp2, thlp2, rtpthlp,                     & ! intent(in)
            p_in_Pa, exner, rho, rho_zm, Kh_zt,                 & ! intent(in)
            wm_zt, sigma_sqd_w, tau_zm, rcm, cloud_frac,        & ! intent(in)
@@ -1588,7 +1602,7 @@ module clubb_core
 
     ! Output variables
     real, dimension(gr%nnzp), intent(out) :: &
-      cloud_cover,  & ! Cloud cover                               [%]
+      cloud_cover,  & ! Cloud cover                               []
       rcm_in_layer    ! Liquid water mixing ratio in cloud layer  [kg/kg]
 
     ! Local variables
