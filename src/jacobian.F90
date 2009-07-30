@@ -79,7 +79,8 @@ program jacobian
   ! 42 must be changed to be equal to nparams
   character(len=12), parameter :: write_format = "(42(e18.10))"
 
-!       character, parameter :: delta   = greek_'Δ' ! Doesn't work
+! character, parameter :: delta   = 'Δ' ! Only works on unicode terminals
+
   character, parameter :: delta   = 'D'
 
 !-----------------------------------------------------------------------
