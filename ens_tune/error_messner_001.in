@@ -1,5 +1,5 @@
 ! Parameter file for subroutine tuner_init in there error module. 
-! All parameters are used by amoeba or amebsa to "tune" hoc.
+! All parameters are used by amoeba or amebsa to "tune" CLUBB.
 
 ! ftol is the degree of accuracy in "tuning" (i.e. the # of digits)
 ! results_stdout print all results of tuning to the terminal if true
@@ -11,15 +11,15 @@
 !   or any other integer for amebsa(downhill simplex with simulated annealing)
 
 ! Setting t_variables:
-! Most variables are named in the same fashion in both HOC and LES, but
+! Most variables are named in the same fashion in both CLUBB and the LES, but
 !   because some are not they must be specified as an ordered pair of strings.
 
 ! Known values of hoc_v and les_v for some variables are listed in the 
 ! following table:
 !  Variables
-!  HOC	 | LES
+!  CLUBB	 | LES
 !  ------------
-!  cf	 | cf
+!  cloud_frac	 | cf
 !  rlm   | qcm
 !  wp3	 | wp3
 !  thlm	 | thlm
@@ -30,26 +30,26 @@
 !
 !  Values of hoc_v and les_v for other variables can be found in the .ctl files.
 !
-!  Key variables for UWM: qcm/rlm, cf, rtm/qtm, thlm, um, vm, wp3
+!  Key variables for UWM: qcm/rlm, cloud_frac, rtm/qtm, thlm, um, vm, wp3
 
 &stats
 ftol              = 1.0
 results_stdout    = .true.
 results_file      = .true.
 stdout_on_invalid = .false.
-t_variables       = "cf", "cf", "rcm", "qcm"
+t_variables       = "cloud_frac", "cf", "rcm", "qcm"
 weight_var_nl     = 0.5, 0.5,
 anneal_temp       = 100.
 anneal_iter       = 100
 tune_type         = 0
 /
 
-! hoc_stats_file is the name of hoc zt data file;  This should be the same as 
-!   fname_zt in the statsnl namelist.
+! clubb_stats_file is the name of clubb stats file;  This should be the same as 
+!   fname_zm  or fname_zm in the statsnl namelist.
 ! les_stats_file is the name of LES grads data file
 ! z_i and z_f are levels to look at when tuning. This does not need
 !   to be 1 to nz if you wish to optimize for particular altitudes.
-!   Note that the first and last z-levels in hoc are not prognosed.
+!   Note that the first and last z-levels in CLUBB are not prognosed.
 ! time_nl is the time interval(s) to tune for, in ordered pair form.
 
 &cases
