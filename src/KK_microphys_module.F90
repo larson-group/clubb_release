@@ -522,9 +522,6 @@ module KK_microphys_module
 
       Nrm_auto(k) = autoconv_Nrm( rrainm_auto(k) )
 
-      rrainm_accr(k) = 0.0
-      rrainm_cond(k) = 0.0
-      Nrm_cond = 0.0
       if ( l_sample .and. l_stats_samp ) then
 
         ! Explicit contributions to rrainm.
