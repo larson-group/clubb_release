@@ -784,20 +784,73 @@ the zt file, the rest (e.g. variance, flux) all occur in the zm file.
 - (5.3) The Morrison microphysics scheme
 ------------------------------------------------------------------------
 
-  Morrison microphysics is a double-moment scheme that can predict mixing
-  ratio's and number concentrations for cloud water, rain, cloud ice,
-  snow, and graupel.  Details of its implementation may be found in:
+Morrison microphysics is a double-moment scheme that can predict mixing
+ratio's and number concentrations for cloud water, rain, cloud ice,
+snow, and graupel.  Details of its implementation may be found in:
 
-  H. Morrison, J. A. Curry, and V. I. Khvorostyanov, 2005: A new double-
-  moment microphysics scheme for application in cloud and climate models. 
-  Part 1: Description. J. Atmos. Sci., 62, 1665–1677. 
+H. Morrison, J. A. Curry, and V. I. Khvorostyanov, 2005: A new double-
+moment microphysics scheme for application in cloud and climate models. 
+Part 1: Description. J. Atmos. Sci., 62, 1665–1677.
 
-  Some useful namelist flags for the Morrison microphysics code:
+You can enable the Morrison scheme by setting micro_scheme = "morrison"
+in the &microphysics_setting namelist.
 
-  doicemicro  = .true.    Calculate ice mixing ratio.
-  dograupel   = .true.    Calculate graupel mixing ratio.
-  dopredictNc = .true.    Prognose droplet number concentration
-                            (rather than specify it with Ncm_initial)
+Some useful &microphysics_setting namelist flags for the 
+Morrison microphysics code:
+
+  Ncm_initial      =  #/cc    Either the initial value of cloud droplet number
+    concentration, or the constant value, depending on l_predictnc.
+
+  l_ice_micro      = .true.   Calculate ice mixing ratio.
+
+  l_graupel        = .true.   Calculate graupel mixing ratio.
+
+  l_hail           = .true.   Dense precipitating ice is hail rather than graupel.
+
+  l_seifert_beheng = .true.   Use Seifert and Beheng (2001) rain scheme,
+    rather than Khairoutdinov and Kogen (2000).
+
+  l_predictnc      = .true.   Prognose droplet number concentration
+    (rather than specify it with Ncm_initial).
+
+  l_specify_aerosol = .true.  Use lognormal aerosol size distribution to
+    derive ccn spectra, rather than power-law.
+
+  l_subgrid_w       = .true.  Use the SGS calculation of the std of w to
+    determine cloud droplet activation.
+
+  l_arctic_nucl     = .true.  Use the MPACE observations rather than the
+    Rasmussen et al., 2002 ice nucleation formula.
+
+  l_cloud_edge_activation = .true. Assume droplet activation at lateral cloud
+    edges due to unresolved entrainment and mixing dominates. 
+
+  l_fix_pgam  = .true.  Fix the value of pgam (exponent of cloud water's gamma
+    dist.) from Martin et al. (1994).
+
+  pgam_fixed  = #  Value to use for a fixed pgam
+
+  aer_n1,n2   = #/cm3  Aerosol concentration
+
+  aer_sig1,sig2 = # Standard deviation of aerosol size distribution
+
+  aer_rm1,rm2   = μ Mean geometric radius 
+
+The budgets for the mixing ratio and number concentrations when using 
+the Morrison microphysics are as follows:
+
+  For rain water mixing ratio and number concentration:
+  rrainm_bt = rrainm_ma + rrainm_dff + rrainm_mc + rrainm_cond_adj
+            + rrainm_src_adj + rrainm_cl
+  Nrm_bt    = Nrm_ma + Nrm_dff + Nrm_mc + Nrm_cond_adj
+            + Nrm_src_adj + Nrm_cl
+
+  All other species should be as follows:
+  xm_bt = xm_ma + xm_dff + xm_mc + xm_cl
+
+  Note that unlike the other two schemes, the Morrison scheme contains its 
+  own sedimentation code.  Therefore, xm_mc includes xm_sd in addition to
+  local processes and clipping.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
