@@ -23,8 +23,8 @@ module estimate_lh_micro_mod
                cloud_frac, hydromet, &
                lh_hydromet_mc, lh_hydromet_vel, &
                lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, &
-               AKm_est, AKm, AKstd, AKstd_cld, & 
-               AKm_rcm, AKm_rcc, rcm_est, &
+               lh_AKm, AKm, AKstd, AKstd_cld, & 
+               AKm_rcm, AKm_rcc, lh_rcm_avg, &
                lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &
                lh_wm, lh_wp2_zt, lh_cloud_frac, &
                microphys_sub )
@@ -107,7 +107,7 @@ module estimate_lh_micro_mod
       lh_thlm_mc   ! LH estimate of time tendency of liquid potential temperature [K/s]
 
     real, dimension(nnzp), intent(out) :: &
-      AKm_est,   & ! Monte Carlo estimate of Kessler autoconversion [kg/kg/s]
+      lh_AKm,   & ! Monte Carlo estimate of Kessler autoconversion [kg/kg/s]
       AKm,       & ! Exact Kessler autoconversion, AKm,             [kg/kg/s]
       AKstd,     & ! Exact standard deviation of gba Kessler        [kg/kg/s]
       AKstd_cld, & ! Exact w/in cloud std of gba Kessler            [kg/kg/s]
@@ -116,7 +116,7 @@ module estimate_lh_micro_mod
 
     ! For comparison, estimate kth liquid water using Monte Carlo
     real, dimension(nnzp), intent(out) :: &
-      rcm_est ! LH estimate of grid box avg liquid water [kg/kg]
+      lh_rcm_avg ! LH estimate of grid box avg liquid water [kg/kg]
 
     real, dimension(nnzp,hydromet_dim), intent(out) :: &
       lh_hydromet ! Average value of the latin hypercube est. of all hydrometeors [units vary]
@@ -149,9 +149,9 @@ module estimate_lh_micro_mod
 !   real :: cloud_frac, rcm
 
     ! Double precision version of Monte Carlo Kessler ac
-    double precision :: AKm_est_dp
+    double precision :: lh_AKm_dp
     ! Double precision version of Monte Carlo avg liquid water
-    double precision :: rcm_est_dp
+    double precision :: lh_rcm_avg_dp
 
     double precision, dimension(n_micro_calls) :: &
       rcm_sample ! Sample points of rcm         [kg/kg]
@@ -171,11 +171,11 @@ module estimate_lh_micro_mod
     ! ---- Begin Code ----
 
     ! Boundary condition
-    AKm_est(1)   = 0.0
+    lh_AKm(1)   = 0.0
     AKm(1)       = 0.0
     AKm_rcm(1)   = 0.0
     AKm_rcc(1)   = 0.0
-    rcm_est(1)   = 0.0
+    lh_rcm_avg(1)   = 0.0
     AKstd(1)     = 0.0
     AKstd_cld(1) = 0.0
 
@@ -235,26 +235,26 @@ module estimate_lh_micro_mod
            ( n_micro_calls, d_variables, dble( a ), dble( cloud_frac1 ), dble( cloud_frac2 ), &
              rcm_sample, & 
                !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
-             X_u_all_levs(level,:,:), AKm_est_dp )
+             X_u_all_levs(level,:,:), lh_AKm_dp )
 
       ! Convert to real number
-      AKm_est(level) = real( AKm_est_dp )
+      lh_AKm(level) = real( lh_AKm_dp )
 
       ! Compute Monte Carlo estimate of liquid for test purposes.
       call rc_estimate &
            ( n_micro_calls, d_variables, dble( a ), dble( cloud_frac1 ), &
              dble( cloud_frac2 ), rcm_sample, & 
              ! X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
-             X_u_all_levs(level,:,:), rcm_est_dp )
+             X_u_all_levs(level,:,:), lh_rcm_avg_dp )
 
       ! Convert to real number
-      rcm_est(level) = real( rcm_est_dp )
+      lh_rcm_avg(level) = real( lh_rcm_avg_dp )
 
       ! A test of the scheme:
-      ! Compare exact (rcm) and Monte Carlo estimates (rcm_est) of
+      ! Compare exact (rcm) and Monte Carlo estimates (lh_rcm_avg) of
       !     specific liq water content, rcm.
       !      print*, 'rcm=', rcm
-      !       print*, 'rcm_est=', rcm_est
+      !       print*, 'lh_rcm_avg=', lh_rcm_avg
 
       ! Exact Kessler autoconversion in units of (kg/kg)/s
       !        r_crit = 0.3e-3
@@ -315,7 +315,7 @@ module estimate_lh_micro_mod
 !       print*, 'ss1=', ss1
 !       print*, 'ss2=', ss2
 !       print*, 'AKm =', AKm(level)
-!       print*, 'AKm_est (estimate) =', AKm_est(level)
+!       print*, 'lh_AKm (estimate) =', lh_AKm(level)
 !       print*, 'AK1=', AK1
 !       print*, 'AK2=', AK2
 !       print*, 'AK1var=', AK1var

@@ -65,13 +65,13 @@ module latin_hypercube_mod
       cm3_per_m3
 
     use variables_diagnostic_module, only: & 
-      AKm_est,  & 
+      lh_AKm,  & 
       AKm, & 
       AKstd, & 
       AKstd_cld, & 
       AKm_rcm, & 
       AKm_rcc, & 
-      rcm_est
+      lh_rcm_avg
 
     use stats_variables, only: &
       l_stats_samp, & ! Variables
@@ -253,14 +253,14 @@ module latin_hypercube_mod
            cloud_frac, hydromet, &                  ! intent(in)
            hydromet_mc_est, hydromet_vel_est, &     ! intent(in)
            rcm_mc_est, rvm_mc_est, thlm_mc_est, &   ! intent(out)
-           AKm_est, AKm, AKstd, AKstd_cld, &        ! intent(out)
-           AKm_rcm, AKm_rcc, rcm_est, &             ! intent(out)
+           lh_AKm, AKm, AKstd, AKstd_cld, &        ! intent(out)
+           AKm_rcm, AKm_rcc, lh_rcm_avg, &          ! intent(out)
            lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &  ! intent(out)
            lh_wm, lh_wp2_zt, lh_cloud_frac, &       ! intent(out)
            microphys_sub )  ! Procedure
 
     ! print*, 'latin_hypercube_driver: AKm=', AKm
-    ! print*, 'latin_hypercube_driver: AKm_est=', AKm_est
+    ! print*, 'latin_hypercube_driver: lh_AKm=', lh_AKm
 
     if ( l_stats_samp ) then
 

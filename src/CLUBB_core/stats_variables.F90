@@ -93,7 +93,7 @@ module stats_variables
      imean_vol_rad_cloud,  & ! COAMPS only. dschanen 6 Dec 2006
      irain_rate,      & ! Brian
      iAKm,            & ! analytic Kessler.  Vince Larson 22 May 2005 
-     iAKm_est,        & ! LH Kessler.  Vince Larson  22 May 2005
+     iLH_AKm,        & ! LH Kessler.  Vince Larson  22 May 2005
      iradht,          & ! Radiative heating.
      iradht_LW,       & !   "           "   Long-wave component
      iradht_SW          !   "           "   Short-wave component
@@ -111,7 +111,7 @@ module stats_variables
 !$omp   threadprivate(iNcm, iNcnm, isnowslope)
 !$omp   threadprivate(ised_rcm, irsat, irrainm)
 !$omp   threadprivate(imean_vol_rad_rain, imean_vol_rad_cloud)
-!$omp   threadprivate(irain_rate, iAKm, iAKm_est)
+!$omp   threadprivate(irain_rate, iAKm, iLH_AKm)
 !$omp   threadprivate(iradht, iradht_LW, iradht_SW)
 !$omp   threadprivate(iAKstd, iAKstd_cld, iAKm_rcm, iAKm_rcc)
 

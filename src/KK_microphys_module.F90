@@ -184,7 +184,7 @@ module KK_microphys_module
     ! Latin hypercube variables - Vince Larson 22 May 2005
 !   real, intent(in), dimension(nnzp) :: &
 !     AKm,   & ! Kessler autoconversion
-!     AKm_est  ! Latin hypercube estimate of Kessler autoconversion
+!     lh_AKm  ! Latin hypercube estimate of Kessler autoconversion
 
     ! Output Variables
     real, dimension(nnzp), intent(out) :: &
@@ -498,7 +498,7 @@ module KK_microphys_module
       ! -dschanen 3 June 2009
 !     if ( l_latin_hypercube_sampling ) then
 
-      !rrainm_auto(k) = AKm_est(k)
+      !rrainm_auto(k) = lh_AKm(k)
       !rrainm_auto(k) = AKm(k)
 
 !     else

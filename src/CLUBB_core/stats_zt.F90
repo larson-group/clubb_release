@@ -68,7 +68,7 @@ module stats_zt
         iNrm, & 
         irain_rate, & 
         iAKm, & 
-        iAKm_est, & 
+        iLH_AKm, & 
         iAKstd, & 
         iAKstd_cld, & 
         iAKm_rcm, & 
@@ -372,7 +372,7 @@ module stats_zt
     irrainm       = 0  ! Brian
     irain_rate    = 0  ! Brian
     iAKm          = 0  ! analytic Kessler.  Vince Larson 22 May 2005
-    iAKm_est      = 0  ! LH Kessler.  Vince Larson 22 May 2005
+    iLH_AKm      = 0  ! LH Kessler.  Vince Larson 22 May 2005
     iAKstd        = 0
     iAKstd_cld    = 0
     iAKm_rcm      = 0
@@ -1044,10 +1044,10 @@ module stats_zt
              "Analytic Kessler ac kg/kg", "kg/kg/s", zt )
         k = k + 1
 
-      case ( 'AKm_est' )       ! Vince Larson 22 May 2005
-        iAKm_est = k
+      case ( 'LH_AKm' )       ! Vince Larson 22 May 2005
+        iLH_AKm = k
 
-        call stat_assign( iAKm_est, "AKm_est", & 
+        call stat_assign( iLH_AKm, "LH_AKm", & 
              "LH Kessler estimate kg/kg/s", "kg/kg/s", zt )
         k = k + 1
 

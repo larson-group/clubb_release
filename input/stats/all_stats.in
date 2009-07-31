@@ -17,7 +17,7 @@ vars_zt =
 'Ncm', 'Ncnm', 'Nim', 'snowslope', 'Nsnowm', 'sed_rcm', 'rsat',
 'rrainm', 'Nrm', 'mean_vol_rad_rain', 'mean_vol_rad_cloud',
 'eff_rad_cloud', 'eff_rad_ice', 'eff_rad_snow', 'eff_rad_rain', 'eff_rad_graupel',
-'rain_rate', 'AKm', 'AKm_est', 'AKstd', 'AKstd_cld', 'AKm_rcm', 'AKm_rcc',
+'rain_rate', 'AKm', 'LH_AKm', 'AKstd', 'AKstd_cld', 'AKm_rcm', 'AKm_rcc',
 'LH_rvm_mc', 'LH_rcm_mc', 'LH_thlm_mc', 'LH_rrainm_mc', 'LH_Nrm_mc',
 'LH_Vrr', 'LH_VNr', 'LH_rrainm', 'LH_ricem', 'LH_rsnowm', 'LH_rgraupelm',
 'LH_thlm', 'LH_rcm', 'LH_rvm', 'LH_wm', 'LH_wp2_zt', 'LH_cloud_frac',

@@ -915,7 +915,7 @@ module stats_subs
         irho, & 
         irsat, & 
         iAKm, & 
-        iAKm_est, & 
+        iLH_AKm, & 
         iradht
 
     use stats_variables, only: & 
@@ -1041,8 +1041,8 @@ module stats_subs
         wprtpthlp, & 
         sigma_sqd_w_zt, & 
         rsat, & 
-        Akm, & 
-        Akm_est, & 
+        AKm, & 
+        lh_AKm, & 
         radht
 
     use variables_diagnostic_module, only: & 
@@ -1072,7 +1072,7 @@ module stats_subs
 
     use variables_diagnostic_module, only: & 
       AKstd, & ! Variable(s)
-      rcm_est, &
+      lh_rcm_avg, &
       AKstd_cld, &
       AKm_rcm, &
       AKm_rcc
@@ -1207,8 +1207,8 @@ module stats_subs
       call stat_update_var( irsat, rsat, zt )
 
       call stat_update_var( iAKm, AKm, zt )
-      call stat_update_var( iAKm_est, AKm_est, zt)
-      call stat_update_var( iLH_rcm_avg, rcm_est, zt )
+      call stat_update_var( iLH_AKm, lh_AKm, zt)
+      call stat_update_var( iLH_rcm_avg, lh_rcm_avg, zt )
       call stat_update_var( iAKstd, AKstd, zt )
       call stat_update_var( iAKstd_cld, AKstd_cld, zt )
 

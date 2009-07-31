@@ -152,15 +152,15 @@ module variables_diagnostic_module
 
 ! Latin Hypercube arrays.  Vince Larson 22 May 2005
   real, target, allocatable, dimension(:), public :: & 
-    AKm_est,   & ! Kessler ac estimate                 [kg/kg/s]
+    lh_AKm,   & ! Kessler ac estimate                 [kg/kg/s]
     AKm,       & ! Exact Kessler ac                    [kg/kg/s]
     AKstd,     & ! St dev of exact Kessler ac          [kg/kg/s]
     AKstd_cld, & ! Stdev of exact w/in cloud ac        [kg/kg/s]
-    rcm_est,   & ! Monte Carlo rcm estimate            [kg/kg]
+    lh_rcm_avg,   & ! Monte Carlo rcm estimate            [kg/kg]
     AKm_rcm,   & ! Kessler ac based on rcm             [kg/kg/s]
     AKm_rcc      ! Kessler ac based on rcm/cloud_frac  [kg/kg/s]
 
-!$omp threadprivate(AKm_est, AKm, AKstd, AKstd_cld, rcm_est, AKm_rcm, &
+!$omp threadprivate(lh_AKm, AKm, AKstd, AKstd_cld, lh_rcm_avg, AKm_rcm, &
 !$omp   AKm_rcc)
 
   contains
@@ -264,11 +264,11 @@ module variables_diagnostic_module
 
 
 ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
-    allocate( AKm_est(1:nzmax) )    ! Kessler ac estimate
+    allocate( lh_AKm(1:nzmax) )    ! Kessler ac estimate
     allocate( AKm(1:nzmax) )        ! Exact Kessler ac
     allocate( AKstd(1:nzmax) )      ! St dev of exact Kessler ac
     allocate( AKstd_cld(1:nzmax) )  ! St dev of exact w/in cloud Kessler ac
-    allocate( rcm_est(1:nzmax) )      ! Monte Carlo rcm estimate
+    allocate( lh_rcm_avg(1:nzmax) )      ! Monte Carlo rcm estimate
     allocate( AKm_rcm(1:nzmax) )      ! Kessler ac based on rcm
     allocate( AKm_rcc(1:nzmax) )      ! Kessler ac based on rcm/cloud_frac
 ! End of variables for Latin hypercube.
@@ -359,11 +359,11 @@ module variables_diagnostic_module
 
 
     ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
-    AKm_est   = 0.0  ! Kessler ac estimate
+    lh_AKm   = 0.0  ! Kessler ac estimate
     AKm       = 0.0  ! Exact Kessler ac
     AKstd     = 0.0  ! St dev of exact Kessler ac
     AKstd_cld = 0.0  ! St dev of exact w/in cloud Kessler ac
-    rcm_est   = 0.0  ! Monte Carlo rcm estimate
+    lh_rcm_avg   = 0.0  ! Monte Carlo rcm estimate
     AKm_rcm   = 0.0  ! Kessler ac based on rcm
     AKm_rcc   = 0.0  ! Kessler ac based on rcm/cloud_frac
 
@@ -471,11 +471,11 @@ module variables_diagnostic_module
     deallocate( rtpthlp_zt ) ! rt'th_l' on t
 
     ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
-    deallocate( AKm_est )   ! Kessler ac estimate
+    deallocate( lh_AKm )   ! Kessler ac estimate
     deallocate( AKm )       ! Exact Kessler ac
     deallocate( AKstd )     ! St dev of exact Kessler ac
     deallocate( AKstd_cld ) ! St dev of exact w/in cloud Kessler ac
-    deallocate( rcm_est )   ! Monte Carlo rcm estimate
+    deallocate( lh_rcm_avg )   ! Monte Carlo rcm estimate
     deallocate( AKm_rcm )   ! Kessler ac based on rcm
     deallocate( AKm_rcc )   ! Kessler ac based on rcm/cloud_frac
 
