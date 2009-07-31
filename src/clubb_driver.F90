@@ -456,6 +456,21 @@ module clubb_driver
 #else
       print *, "-DUNRELEASED_CODE disabled"
 #endif
+#ifdef nooverlap
+      print *, "-Dnooverlap enabled"
+#else
+      print *, "-Dnooverlap disabled"
+#endif
+#ifdef radoffline
+      print *, "-Draoffline enabled"
+#else
+      print *, "-Dradoffline disabled"
+#endif
+#ifdef USE_BUGSrad_ocast_random
+      print *, "-DUSE_BUGSrad_ocast_random enabled"
+#else
+      print *, "-DUSE_BUGSrad_ocast_random disabled"
+#endif
 
       ! Pick some default values for model_setting
       print *, "&model_setting:"
