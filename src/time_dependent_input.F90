@@ -345,7 +345,7 @@ module time_dependent_input
   end function read_to_grid
 
   !-------------------------------------------------------------------------------------------------
-  subroutine apply_time_dependent_forcings( time, grid_size, p_in_Pa, rtm, rho, exner, thvm, &
+  subroutine apply_time_dependent_forcings( time, grid_size, rtm, rho, exner,  &
     thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, wm_zt, wm_zm,  ug, vg, &
     sclrm_forcing, edsclrm_forcing )
     !
@@ -402,10 +402,8 @@ module time_dependent_input
     integer, intent(in) :: grid_size ! Size of the model grid
 
     real, dimension(grid_size), intent(in) :: &
-      p_in_Pa, & ! Pressure                                   [Pa]
       exner,   & ! Exner Function                             [-]
       rho,     & ! Air Density                                [kg/m^3]
-      thvm,    & ! Liquid Water virtual potential temperature [K]
       rtm        ! Total Water Mixing Ratio                   [kg/kg]
 
     ! Output Variable(s)

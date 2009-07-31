@@ -2181,7 +2181,7 @@ module clubb_driver
            "gabls3_night", "arm_97", "gabls3", "twp_ice",  &
            "arm_0003", "arm_3year" )
       if( l_t_dependent ) then 
-         call apply_time_dependent_forcings( time_current, gr%nnzp, p_in_Pa, rtm, rho, exner, thvm,&
+         call apply_time_dependent_forcings( time_current, gr%nnzp, rtm, rho, exner,&
           thlm_forcing, rtm_forcing, um_ref, vm_ref, um_forcing, vm_forcing, wm_zt, wm_zm, ug, vg, &
           sclrm_forcing, edsclrm_forcing )
       end if
