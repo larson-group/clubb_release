@@ -122,6 +122,10 @@ set_args()
 					       echo -e "  --nightly\t\t\t\tPerforms the nightly run."
 					       echo -e "  --timestep_test  time_step_length\tRuns all"\
                                                           "cases at the specified time step length (sec)."
+				               echo -e "  --zt_grid_test num_levels path_to_grid\tRuns all cases"\
+					                  " using the specified grid and number of levels."
+				               echo -e "  --zm_grid_test num_levels path_to_grid\tRuns all cases"\
+					                  " using the specified grid and number of levels."
 					       echo -e "  -h, --help\t\t\t\tShows help (this)."
 			                       exit 1;;
 		esac
