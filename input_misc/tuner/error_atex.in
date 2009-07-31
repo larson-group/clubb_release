@@ -19,7 +19,7 @@
 !  Variables
 !  CLUBB | COAMPS-LES
 !  ------------
-!  cf	 | cf
+!  cloud_frac	 | cf
 !  rcm   | qcm
 !  wp3	 | wp3
 !  thlm	 | thlm
@@ -28,7 +28,7 @@
 !  vm    | vm
 !  wp2zt | wp2
 !
-!  Values of hoc_v and les_v for other variables can be found in the .ctl files.
+!  Values of CLUBB_v and les_v for other variables can be found in the .ctl files.
 !
 !  Key variables for UWM: qcm/rcm, cf, rtm/qtm, thlm, um, vm, wp3
 
@@ -37,19 +37,19 @@ ftol              = 1.0
 l_results_stdout    = .TRUE.
 l_results_file      = .TRUE.
 l_stdout_on_invalid = .TRUE.
-t_variables       = "cf", "cf"
+t_variables       = "cloud_frac", "cf"
 weight_var_nl     = 1.0
 anneal_temp       = 100.
 anneal_iter       = 100
 tune_type         = 0
 /
 
-! hoc_stats_file is the name of hoc zt data file;  This should be the same as 
-!   fname_zt in the statsnl namelist.
+! clubb_stats_file is the name of clubb stats file;  This should be the same as 
+!   fname_zm  or fname_zm in the statsnl namelist.
 ! les_stats_file is the name of LES grads data file
 ! z_i and z_f are levels to look at when tuning. This does not need
 !   to be 1 to nz if you wish to optimize for particular altitudes.
-!   Note that the first and last z-levels in hoc are not prognosed.
+!   Note that the first and last z-levels in CLUBB are not prognosed.
 ! time_nl is the time interval(s) to tune for, in ordered pair form.
 
 &cases
