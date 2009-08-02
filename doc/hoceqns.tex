@@ -278,7 +278,10 @@ In the second case, the horizontal wind variance terms are determined as in
 = & \underbrace{ - \bar{w}\ptlder{\overline{u^{'2}}}{z} }_{ma}
     \underbrace{ - \ptlder{\overline{w'u^{'2}}}{z} }_{ta}
     \underbrace{ - \left(1 - C_{5} \right) 2\overline{u'w'}\ptlder{\bar{u}}{z} }_{tp}
-    \underbrace{ - \frac{2}{3} \epsilon }_{pr1}
+    \underbrace{ - \frac{2}{3} 
+%\epsilon 
+                  C_{14} \frac{\bar{e}}{\tau}
+               }_{pr1}
     \underbrace{ + \frac{2}{3} C_{5}
       \left(
         \frac{g}{\theta_0} \overline{w'\theta'_v} 
@@ -303,7 +306,10 @@ In the second case, the horizontal wind variance terms are determined as in
 = & \underbrace{ - \bar{w}\ptlder{\overline{v^{'2}}}{z} }_{ma}
     \underbrace{ - \ptlder{\overline{w'v^{'2}}}{z} }_{ta}
     \underbrace{ - \left(1 - C_{5} \right) 2\overline{v'w'}\ptlder{\bar{v}}{z} }_{tp}
-    \underbrace{ - \frac{2}{3} \epsilon }_{pr1}
+    \underbrace{ - \frac{2}{3} 
+%\epsilon 
+                  C_{14} \frac{\bar{e}}{\tau}
+               }_{pr1}
     \underbrace{ + \frac{2}{3} C_{5}
       \left(
         \frac{g}{\theta_0} \overline{w'\theta'_v} 
@@ -320,10 +326,10 @@ In the second case, the horizontal wind variance terms are determined as in
 \end{equation}
 %
 
-Where, $\epsilon$, the dissipation of $\bar{e}$, is defined in CLUBB as:
-\begin{equation}
-\epsilon = C_{14} \frac{\bar{e}}{\tau}
-\end{equation}
+%Where, $\epsilon$, the dissipation of $\bar{e}$, is defined in CLUBB as:
+%\begin{equation}
+%\epsilon = C_{14} \frac{\bar{e}}{\tau}
+%\end{equation}
 
 The time scale $\tau$ is:
 %
@@ -363,17 +369,17 @@ given by:
 %
 \begin{equation}
 \label{eq_Km}
-K_m = c_K \, L \, \overline{e}^{\, 1/2}
+K_m = c_K \, L \, \overline{e}^{\, 1/2} .
 \end{equation}
 %
-with $c_K = c_{\mu}^{\, 1/4} = 0.548$ as in \citet{duynkerke1987a}.
+$c_K = c_{\mu}^{\, 1/4} = 0.548$ in \citet{duynkerke1987a}, but CLUBB reduces the value to better fit LES output.
 
-The eddy diffusivity coefficient $K_w$ is
-%
-\begin{equation}
-\label{eq_Kw}
-K_w = 0.22 \, L \, \overline{e}^{\, 1/2}.
-\end{equation}
+%The eddy diffusivity coefficient $K_w$ is
+%%
+%\begin{equation}
+%\label{eq_Kw}
+%K_w = 0.22 \, L \, \overline{e}^{\, 1/2}.
+%\end{equation}
 
 The eddy diffusivity coefficients in Equation~(\ref{eq_wp2}) through 
 Equation~(\ref{eq_wp3}) and in Equations (\ref{eq_up2}) and (\ref{eq_vp2}) 
@@ -402,13 +408,13 @@ and $\overline{w'\theta_l'}^{\, 2}$ for Equation~(\ref{eq_wpthlp}); and
 $\eta$ is $\overline{u^{'2}}^{\, 2}$ for Equation~(\ref{eq_up2}) and 
 $\overline{v^{'2}}^{\, 2}$ for Equation~(\ref{eq_vp2}).
 %
-The specific values of the constants $C_i$ and $\nu_i$
-are as follows: $C_1 = 2.5$; $C_2 = 1.0$; $C_4 = 5.2$; $C_5 = 0.3$;
-$C_6 = 6.0$; $C_7 = 0.1$; $C_8 = 3.0$; $C_{11} = 0.75$; $C_{14} = 1.0$;
-$\nu_1 = \nu_8 = \nu_9 = 20 \hbox{ (m$^2$/s)}$;
-and $\nu_2 = \nu_6 = 5 \hbox{ (m$^2$/s)}$.  In addition, the specific 
-values of the constants $c_{Ki}$ are as follows:  $c_{K1} = 0$; 
-$c_{K2} = 0$; $c_{K6} = 0$; $c_{K8} = 0.5$; $c_{K9} = 0$; and $c_{Ksqd} = 10$.
+%The specific values of the constants $C_i$ and $\nu_i$
+%are as follows: $C_1 = 2.5$; $C_2 = 1.0$; $C_4 = 5.2$; $C_5 = 0.3$;
+%$C_6 = 6.0$; $C_7 = 0.1$; $C_8 = 3.0$; $C_{11} = 0.75$; $C_{14} = 1.0$;
+%$\nu_1 = \nu_8 = \nu_9 = 20 \hbox{ (m$^2$/s)}$;
+%and $\nu_2 = \nu_6 = 5 \hbox{ (m$^2$/s)}$.  In addition, the specific 
+%values of the constants $c_{Ki}$ are as follows:  $c_{K1} = 0$; 
+%$c_{K2} = 0$; $c_{K6} = 0$; $c_{K8} = 0.5$; $c_{K9} = 0$; and $c_{Ksqd} = 10$.
 
 \section{PDF closure}
 
