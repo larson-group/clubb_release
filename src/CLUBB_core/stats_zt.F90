@@ -302,6 +302,7 @@ module stats_zt
       iLH_rvm, &
       iLH_wm, &
       iLH_wp2_zt, &
+      iLH_Ncp2_zt, &
       iLH_cloud_frac
 
     use stats_type, only: & 
@@ -2209,7 +2210,13 @@ module stats_zt
         call stat_assign( iLH_wp2_zt, "LH_wp2_zt", & 
              "Variance of the latin hypercube estimate of w", "m^2/s^2", zt )
         k = k + 1
-        
+
+      case ( 'LH_Ncp2_zt' )
+        iLH_Ncp2_zt = k
+        call stat_assign( iLH_Ncp2_zt, "LH_Ncp2_zt", & 
+             "Variance of the latin hypercube estimate of Nc", "#^2/kg^2", zt )
+        k = k + 1
+
       case default
 
         l_found =.false.

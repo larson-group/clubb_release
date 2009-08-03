@@ -447,9 +447,9 @@ module stats_variables
 !$omp   iLH_thlm, iLH_rcm, iLH_Ncm, iLH_rvm, iLH_wm, iLH_cloud_frac )
 
   integer, public :: &
-    iLH_wp2_zt
+    iLH_wp2_zt, iLH_Ncp2_zt
 
-!$omp threadprivate(iLH_wp2_zt)
+!$omp threadprivate(iLH_wp2_zt,iLH_Ncp2_zt)
 
   ! Indices for statistics in zm file
   integer, public :: & 
