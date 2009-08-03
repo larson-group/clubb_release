@@ -4,7 +4,7 @@ module matrix_operations
   implicit none
 
   public :: linear_eqn_solve, linear_symm_upper_eqn_solve, band_mult, &
-    covariance_matrix_2_correlation_matrix
+    covar_matrix_2_corr_matrix
 
   private ! Default scope
 
@@ -202,7 +202,7 @@ module matrix_operations
   end subroutine band_mult
 
 !-----------------------------------------------------------------------
-  subroutine covariance_matrix_2_correlation_matrix( ndim, cov, corr )
+  subroutine covar_matrix_2_corr_matrix( ndim, cov, corr )
 
 ! Description:
 !   Convert a matrix of covariances in to a matrix of correlations
@@ -234,6 +234,6 @@ module matrix_operations
     end forall
 
     return
-  end subroutine covariance_matrix_2_correlation_matrix
+  end subroutine covar_matrix_2_corr_matrix
 
 end module matrix_operations

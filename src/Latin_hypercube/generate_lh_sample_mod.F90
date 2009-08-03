@@ -59,7 +59,7 @@ module generate_lh_sample_mod
       iiLH_w
 
     use matrix_operations, only: &
-      covariance_matrix_2_correlation_matrix ! Procedure(s)
+      covar_matrix_2_corr_matrix ! Procedure(s)
 
     implicit none
 
@@ -392,8 +392,8 @@ module generate_lh_sample_mod
 
       ! Determine the correlation of s and t for the purposes of approximating
       ! the correlation of t and the other samples
-      call covariance_matrix_2_correlation_matrix( 2, Sigma_stw_1(1:2,1:2), corr_st_mellor_1 )
-      call covariance_matrix_2_correlation_matrix( 2, Sigma_stw_2(1:2,1:2), corr_st_mellor_2 )
+      call covar_matrix_2_corr_matrix( 2, Sigma_stw_1(1:2,1:2), corr_st_mellor_1 )
+      call covar_matrix_2_corr_matrix( 2, Sigma_stw_2(1:2,1:2), corr_st_mellor_2 )
 
       st1 = sqrt( real( Sigma_stw_1(iiLH_tmellor,iiLH_tmellor) ) ) ! Standard dev of t (1st plume)
       st2 = sqrt( real( Sigma_stw_2(iiLH_tmellor,iiLH_tmellor) ) ) ! Standard dev of t (2nd plume)
@@ -637,7 +637,7 @@ module generate_lh_sample_mod
       iiLH_thl
 
     use matrix_operations, only: &
-      covariance_matrix_2_correlation_matrix ! Procedure(s)
+      covar_matrix_2_corr_matrix ! Procedure(s)
 
     use error_code, only:  &
       clubb_at_least_debug_level  ! Procedure(s)
@@ -714,8 +714,8 @@ module generate_lh_sample_mod
     iiLH_tmellor = iiLH_thl ! Mellor's t is at the same index as thl "  "
 
     if ( clubb_at_least_debug_level( 2 ) ) then
-      call covariance_matrix_2_correlation_matrix( d_variables, Sigma_stw_1, Sigma_stw_1_corr )
-      call covariance_matrix_2_correlation_matrix( d_variables, Sigma_stw_2, Sigma_stw_2_corr )
+      call covar_matrix_2_corr_matrix( d_variables, Sigma_stw_1, Sigma_stw_1_corr )
+      call covar_matrix_2_corr_matrix( d_variables, Sigma_stw_2, Sigma_stw_2_corr )
       if ( any( Sigma_stw_1_corr > 1.0 ) .or. any( Sigma_stw_2_corr < -1.0 ) ) then
         write(0,*) "Sigma_stw_1 has a correlation > 1 or < -1"
       end if
