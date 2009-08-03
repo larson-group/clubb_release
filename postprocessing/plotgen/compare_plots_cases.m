@@ -155,6 +155,14 @@ global z_prev_zt
 global nz_prev_zt
 global z_curr_zt
 global nz_curr_zt
+global z_cgbe_zm
+global nz_cgbe_zm
+global z_1217_zm
+global nz_1217_zm
+global z_prev_zm
+global nz_prev_zm
+global z_curr_zm
+global nz_curr_zm
 global les_color
 global les_width
 global cgbe_color
@@ -1079,8 +1087,8 @@ create_plot(3, 2, 4, 'Cloud Water Mixing Ratio, r_c', 'rcm    [kg/kg]', avg_rcm_
 		numvars_prev_zm, 'wp2 ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, numvars_curr_zm, ...
 		'wp2 ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
-create_plot(3, 2, 5, 'Variance of w', 'wp2    [m^2/s^2]', avg_wp2_les, z_les, nz_les, avg_wp2_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_wp2_1217, z_1217_zt, nz_1217_zt, ...
-		avg_wp2_prev, z_prev_zt, nz_prev_zt, avg_wp2_curr, z_curr_zt, nz_curr_zt, 0);
+create_plot(3, 2, 5, 'Variance of w', 'wp2    [m^2/s^2]', avg_wp2_les, z_les, nz_les, avg_wp2_cgbe, z_cgbe_zm, nz_cgbe_zm, avg_wp2_1217, z_1217_zm, nz_1217_zm, ...
+		avg_wp2_prev, z_prev_zm, nz_prev_zm, avg_wp2_curr, z_curr_zm, nz_curr_zm, 0);
 
 %--------------------------------------------------------------------------
 
@@ -1111,8 +1119,8 @@ set(gcf, 'PaperPosition', [ 1.0 1.0 6.5 9.0 ])
 		numvars_prev_zm, 'wpthlp ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, numvars_curr_zm, ...
 		'wpthlp ', nz_curr_zt, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
-create_plot(3, 2, 1, 'Turbulent Flux of \theta_l', 'wpthlp    [K m/s]', avg_wpthlp_les, z_les, nz_les, avg_wpthlp_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_wpthlp_1217, z_1217_zt, nz_1217_zt, ...
-		avg_wpthlp_prev, z_prev_zt, nz_prev_zt, avg_wpthlp_curr, z_curr_zt, nz_curr_zt, 0);
+create_plot(3, 2, 1, 'Turbulent Flux of \theta_l', 'wpthlp    [K m/s]', avg_wpthlp_les, z_les, nz_les, avg_wpthlp_cgbe, z_cgbe_zm, nz_cgbe_zm, avg_wpthlp_1217, z_1217_zm, nz_1217_zm, ...
+		avg_wpthlp_prev, z_prev_zm, nz_prev_zm, avg_wpthlp_curr, z_curr_zm, nz_curr_zm, 0);
 
 %--------------------------------------------------------------------------
 
@@ -1123,8 +1131,8 @@ create_plot(3, 2, 1, 'Turbulent Flux of \theta_l', 'wpthlp    [K m/s]', avg_wpth
 		numvars_prev_zm, 'wprtp ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, numvars_curr_zm, ...
 		'wprtp ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
-create_plot(3, 2, 2, 'Turbulent Flux of r_{ t}', 'wprtp    [(kg/kg) m/s]', avg_wprtp_les, z_les, nz_les, avg_wprtp_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_wprtp_1217, z_1217_zt, nz_1217_zt, ...
-		avg_wprtp_prev, z_prev_zt, nz_prev_zt, avg_wprtp_curr, z_curr_zt, nz_curr_zt, 0);
+create_plot(3, 2, 2, 'Turbulent Flux of r_{ t}', 'wprtp    [(kg/kg) m/s]', avg_wprtp_les, z_les, nz_les, avg_wprtp_cgbe, z_cgbe_zm, nz_cgbe_zm, avg_wprtp_1217, z_1217_zm, nz_1217_zm, ...
+		avg_wprtp_prev, z_prev_zm, nz_prev_zm, avg_wprtp_curr, z_curr_zm, nz_curr_zm, 0);
 
 %--------------------------------------------------------------------------
 
@@ -1144,8 +1152,8 @@ else
 		'thlp2 ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
 end
 
-create_plot(3, 2, 3, 'Variance of \theta_l', 'thlp2    [K^2]', avg_thlp2_les, z_les, nz_les, avg_thlp2_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_thlp2_1217, z_1217_zt, nz_1217_zt, ...
-		avg_thlp2_prev, z_prev_zt, nz_prev_zt, avg_thlp2_curr, z_curr_zt, nz_curr_zt, 0);
+create_plot(3, 2, 3, 'Variance of \theta_l', 'thlp2    [K^2]', avg_thlp2_les, z_les, nz_les, avg_thlp2_cgbe, z_cgbe_zm, nz_cgbe_zm, avg_thlp2_1217, z_1217_zm, nz_1217_zm, ...
+		avg_thlp2_prev, z_prev_zm, nz_prev_zm, avg_thlp2_curr, z_curr_zm, nz_curr_zm, 0);
 
 %--------------------------------------------------------------------------
 
@@ -1164,8 +1172,8 @@ else
 		numvars_prev_zm, 'rtp2 ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, numvars_curr_zm, ...
 		'rtp2 ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
 end
-create_plot(3, 2, 4, 'Variance of r_t', 'rtp2    [(kg/kg)^2]', avg_rtp2_les, z_les, nz_les, avg_rtp2_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_rtp2_1217, z_1217_zt, nz_1217_zt, ...
-		avg_rtp2_prev, z_prev_zt, nz_prev_zt, avg_rtp2_curr, z_curr_zt, nz_curr_zt, 0);
+create_plot(3, 2, 4, 'Variance of r_t', 'rtp2    [(kg/kg)^2]', avg_rtp2_les, z_les, nz_les, avg_rtp2_cgbe, z_cgbe_zm, nz_cgbe_zm, avg_rtp2_1217, z_1217_zm, nz_1217_zm, ...
+		avg_rtp2_prev, z_prev_zm, nz_prev_zm, avg_rtp2_curr, z_curr_zm, nz_curr_zm, 0);
 
 %--------------------------------------------------------------------------
 
@@ -1176,8 +1184,8 @@ create_plot(3, 2, 4, 'Variance of r_t', 'rtp2    [(kg/kg)^2]', avg_rtp2_les, z_l
 		numvars_prev_zm, 'rtpthlp ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, numvars_curr_zm, ...
 		'rtpthlp ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
-create_plot(3, 2, 5, 'Covariance of r_t & \theta_l', 'rtpthlp    [(kg/kg) K]', avg_rtpthlp_les, z_les, nz_les, avg_rtpthlp_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_rtpthlp_1217, z_1217_zt, nz_1217_zt, ...
-		avg_rtpthlp_prev, z_prev_zt, nz_prev_zt, avg_rtpthlp_curr, z_curr_zt, nz_curr_zt, 1);
+create_plot(3, 2, 5, 'Covariance of r_t & \theta_l', 'rtpthlp    [(kg/kg) K]', avg_rtpthlp_les, z_les, nz_les, avg_rtpthlp_cgbe, z_cgbe_zm, nz_cgbe_zm, avg_rtpthlp_1217, z_1217_zm, nz_1217_zm, ...
+		avg_rtpthlp_prev, z_prev_zm, nz_prev_zm, avg_rtpthlp_curr, z_curr_zm, nz_curr_zm, 1);
 
 %--------------------------------------------------------------------------
 
@@ -1233,11 +1241,11 @@ create_plot(3, 2, 2, 'Meridional Wind Component, v', 'vm    [m/s]', avg_vm_les, 
 		'upwp ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 1 );
 
 if ( les_grph_upwp == 1 )
-	create_plot(3, 2, 3, 'Covariance of u & w', 'upwp    [m^2/s^2]', avg_upwp_les, z_les, nz_les, avg_upwp_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_upwp_1217, z_1217_zt, nz_1217_zt, ...
-	avg_upwp_prev, z_prev_zt, nz_prev_zt, avg_upwp_curr, z_curr_zt, nz_curr_zt, 0);
+	create_plot(3, 2, 3, 'Covariance of u & w', 'upwp    [m^2/s^2]', avg_upwp_les, z_les, nz_les, avg_upwp_cgbe, z_cgbe_zm, nz_cgbe_zm, avg_upwp_1217, z_1217_zm, nz_1217_zm, ...
+	avg_upwp_prev, z_prev_zm, nz_prev_zm, avg_upwp_curr, z_curr_zm, nz_curr_zm, 0);
 elseif ( les_grph_upwp == 2 )
-	create_plot(3, 2, 3, 'Covariance of u & w', 'upwp    [m^2/s^2]', avg_upwp_les, z_les2, nz_les2, avg_upwp_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_upwp_1217, z_1217_zt, nz_1217_zt, ...
-       	avg_upwp_prev, z_prev_zt, nz_prev_zt, avg_upwp_curr, z_curr_zt, nz_curr_zt, 0);
+	create_plot(3, 2, 3, 'Covariance of u & w', 'upwp    [m^2/s^2]', avg_upwp_les, z_les2, nz_les2, avg_upwp_cgbe, z_cgbe_zm, nz_cgbe_zm, avg_upwp_1217, z_1217_zm, nz_1217_zm, ...
+       	avg_upwp_prev, z_prev_zm, nz_prev_zm, avg_upwp_curr, z_curr_zm, nz_curr_zm, 0);
 end
 
 %--------------------------------------------------------------------------
@@ -1250,11 +1258,11 @@ end
 		'vpwp ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 1 );
 
 if ( les_grph_vpwp == 1 )
-	create_plot(3, 2, 4, 'Covariance of v & w', 'vpwp    [m^2/s^2]', avg_vpwp_les, z_les, nz_les, avg_vpwp_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_vpwp_1217, z_1217_zt, nz_1217_zt, ...
-       	avg_vpwp_prev, z_prev_zt, nz_prev_zt, avg_vpwp_curr, z_curr_zt, nz_curr_zt, 0);
+	create_plot(3, 2, 4, 'Covariance of v & w', 'vpwp    [m^2/s^2]', avg_vpwp_les, z_les, nz_les, avg_vpwp_cgbe, z_cgbe_zm, nz_cgbe_zm, avg_vpwp_1217, z_1217_zm, nz_1217_zm, ...
+       	avg_vpwp_prev, z_prev_zm, nz_prev_zm, avg_vpwp_curr, z_curr_zm, nz_curr_zm, 0);
 elseif ( les_grph_vpwp == 2 )
-	create_plot(3, 2, 4, 'Covariance of v & w', 'vpwp    [m^2/s^2]', avg_vpwp_les, z_les2, nz_les2, avg_vpwp_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_vpwp_1217, z_1217_zt, nz_1217_zt, ...
-	avg_vpwp_prev, z_prev_zt, nz_prev_zt, avg_vpwp_curr, z_curr_zt, nz_curr_zt, 0);
+	create_plot(3, 2, 4, 'Covariance of v & w', 'vpwp    [m^2/s^2]', avg_vpwp_les, z_les2, nz_les2, avg_vpwp_cgbe, z_cgbe_zm, nz_cgbe_zm, avg_vpwp_1217, z_1217_zm, nz_1217_zm, ...
+	avg_vpwp_prev, z_prev_zm, nz_prev_zm, avg_vpwp_curr, z_curr_zm, nz_curr_zm, 0);
 end
   
 %--------------------------------------------------------------------------
@@ -1266,8 +1274,8 @@ end
 		numvars_prev_zm, 'up2 ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, numvars_curr_zm, ...
 		'up2 ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
-create_plot(3, 2, 5, 'Variance of u wind', 'up2    [m^2/s^2]', avg_up2_les, z_les, nz_les, avg_up2_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_up2_1217, z_1217_zt, nz_1217_zt, ...
-		avg_up2_prev, z_prev_zt, nz_prev_zt, avg_up2_curr, z_curr_zt, nz_curr_zt, 0);
+create_plot(3, 2, 5, 'Variance of u wind', 'up2    [m^2/s^2]', avg_up2_les, z_les, nz_les, avg_up2_cgbe, z_cgbe_zm, nz_cgbe_zm, avg_up2_1217, z_1217_zm, nz_1217_zm, ...
+		avg_up2_prev, z_prev_zm, nz_prev_zm, avg_up2_curr, z_curr_zm, nz_curr_zm, 0);
 
 %--------------------------------------------------------------------------
 
@@ -1278,8 +1286,8 @@ create_plot(3, 2, 5, 'Variance of u wind', 'up2    [m^2/s^2]', avg_up2_les, z_le
 		numvars_prev_zm, 'vp2 ', nz_prev_zm, t1_prev_zm, t2_prev_zm, filename_curr_zm, listofparams_curr_zm, numvars_curr_zm, ...
 		'vp2 ', nz_curr_zm, t1_curr_zm, t2_curr_zm, les_type, 0 );
 
-create_plot(3, 2, 6, 'Variance of v wind', 'vp2    [m^2/s^2]', avg_vp2_les, z_les, nz_les, avg_vp2_cgbe, z_cgbe_zt, nz_cgbe_zt, avg_vp2_1217, z_1217_zt, nz_1217_zt, ...
-		avg_vp2_prev, z_prev_zt, nz_prev_zt, avg_vp2_curr, z_curr_zt, nz_curr_zt, 0);
+create_plot(3, 2, 6, 'Variance of v wind', 'vp2    [m^2/s^2]', avg_vp2_les, z_les, nz_les, avg_vp2_cgbe, z_cgbe_zm, nz_cgbe_zm, avg_vp2_1217, z_1217_zm, nz_1217_zm, ...
+		avg_vp2_prev, z_prev_zm, nz_prev_zm, avg_vp2_curr, z_curr_zm, nz_curr_zm, 0);
 
 %--------------------------------------------------------------------------
 
