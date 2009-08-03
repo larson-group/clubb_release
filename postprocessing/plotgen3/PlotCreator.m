@@ -51,6 +51,10 @@ for i=1:numLines
 	lineType = varargin{6 + ((i - 1) * 7)};
 	lineColor = varargin{7 + ((i - 1) * 7)};
 
+	%If the color is passed in as one of the MATLAB defined strings, we need to
+	%convert it to its corresponding RGB array
+	lineColor = ParseColorFromExpression(lineColor);
+
 	%Determine the type of file being read in
 	extension = DetermineExtension(filePath);
 
