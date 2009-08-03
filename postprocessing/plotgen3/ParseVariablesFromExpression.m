@@ -1,6 +1,6 @@
 function [variables] = ParseVariablesFromExpression( expression )
 
-varsToCheck =  regexp( expression, '[A-Za-z0-9_]*', 'match' );
+varsToCheck = regexp( expression, '[A-Za-z0-9_]*', 'match' );
 
 variables = [];
 
