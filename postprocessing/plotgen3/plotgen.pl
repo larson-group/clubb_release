@@ -19,6 +19,10 @@ use File::Basename;
 use File::Copy::Recursive qw(fcopy rcopy dircopy fmove rmove dirmove);
 use File::Path;
 
+# The location of MATLAB. External users probably will not need the 
+# sudo -u matlabuser part.
+my $MATLAB = "sudo -u matlabuser /usr/local/bin/matlab";
+
 # Plotgen Version Number
 my $VERSION = 3.0;
 
@@ -392,7 +396,7 @@ sub executeMatlab()
 {
 	my $matlabArgs = shift(@_);
 
-	my $args = "echo \"quit\" | sudo -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop -r PlotCreator\"($matlabArgs)\"";
+	my $args = "echo \"quit\" | $MATLAB -nodisplay -nodesktop -r PlotCreator\"($matlabArgs)\"";
 
 	#print("Call: $args\n\n");			
 
