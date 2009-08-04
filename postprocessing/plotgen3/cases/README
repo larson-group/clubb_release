@@ -22,3 +22,11 @@ it for you.
 
 Some cases are unique, so you may need to modify the case files for your
 current situation. The template files are still a good starting point.
+
+Once you are satisfied with the results, commit your new case file. 
+You SHOULD ONLY have to create a .case file, and NOT modify any
+of the plotgen code. Once your change has been committed, contact
+your local system administrator (messneradmin@uwm.edu) and ask them
+to create a new RPM for you so your changes can be seen when anyone
+executes plotgen (and in the nightly tests). For faster results, you
+may want to bring them cookies/cup cakes with your request.
