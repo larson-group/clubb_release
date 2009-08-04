@@ -46,10 +46,12 @@ my $plotLes = 0;
 my $plotBest = 0;
 my $plotDec = 0;
 
+# Custom Color Definitions for "CLUBB_current" and "CLUBB_previous"
+my $lt_blue = "[ 0.00, 0.63, 1.00 ]";
+my $orange = "[ 0.94, 0.50, 0.16 ]";
 # Arrays to cycle through when auto is set for lines
 my @lineStyles = ("--", "-", "-.");
-# The first two colors are the same as the previous version of Plotgen (orange and light blue) for CLUBB_current and CLUBB_previous.
-my @lineColors = ("[ 0.94, 0.50, 0.16 ]", "[ 0.00, 0.63, 1.00 ]", "green", "red", "blue", "cyan", "yellow", "black", "magenta");
+my @lineColors = ($orange, $lt_blue, "green", "red", "blue", "cyan", "yellow", "magenta");
 my @lineWidths = (4, 3, 2.5, 2, 1.5, 1);
 
 # Counters for automatic lines
