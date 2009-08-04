@@ -382,15 +382,22 @@ set some of the prognosed variables to the data set's values at each timestep.
 E.g. If desired, the horizontal winds (variables um and vm in the code)
 could be fixed to the COAMPS-LES value at each timestep, while the other
 fields will evolve as in the standard single-column run.
+
 Currently, the only LES data the code works with comes from COAMPS.
+
 The relevant namelist files are in <CLUBB BASE DIRECTORY>/input_misc/inputfields, 
 and new cases could be added using the existing cases as a template.
 
 To execute an inputfields run, you need to set the 'datafile' variable in the
-setfields to the location of the GrADS files, and set 'input_'<varname> to
+namelist to the location of the data files, and set 'input_'<varname> to
 .true. for those fields for which you want to use a fixed value from
-the GrADS dataset at the beginning of each timestep.  Then, change your 
-directory to run_scripts and execute the run_inputfields.bash script like so:
+the GrADS dataset at the beginning of each timestep.
+
+You will need to set 'input_type' to the type of run you are using for input
+("hoc" or "les").
+
+Then, change your directory to run_scripts and execute the run_inputfields.bash
+script like so:
 
   ./run_inputfields.bash <CASE NAME>
 
