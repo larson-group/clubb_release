@@ -20,8 +20,8 @@ DEBUG="-g -traceback -check bounds -check uninit -no-vec"
 WARNINGS="-warn -warn notruncated_source"
 
 # == Machine specific options ==
-ARCH="-xW" # This should work on carson/steele (AMD Opteron)
-#ARCH="-xT"# Core2 Duo (overlie)
+ARCH="-msse2 -fp-model precise" # This should work on carson/steele (AMD Opteron)
+#ARCH="-mssse3 -fp-model precise"# Core2 Duo (overlie)
 
 # == Optimization ==
 OPTIMIZE="-O3 -vec-report0"
@@ -30,8 +30,8 @@ OPTIMIZE="-O3 -vec-report0"
 NETCDF="/usr/local/netcdf-intel64"
 
 # == LAPACK libraries ==
-# Intel Math Kernel Library (v11)
-MKLPATH="/opt/intel/Compiler/11.0/081/mkl/lib/em64t"
+# Intel Math Kernel Library (v11.1)
+MKLPATH="/opt/intel/Compiler/11.1/046/mkl/lib/em64t"
 # Intel Math Kernel Library (v10)
 #MKLPATH=/opt/intel/mkl/10.0.5.025/lib/em64t 
 LAPACK="-L$MKLPATH -Wl,-rpath,$MKLPATH -lmkl_intel_lp64 -lmkl_sequential -lmkl_lapack -lmkl_core -lguide -lpthread"
