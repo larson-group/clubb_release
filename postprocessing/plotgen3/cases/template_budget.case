@@ -1,0 +1,43 @@
+# Budget Template Case File
+
+%CASE = 
+(
+    'name' => 'case_name',
+    'enabled' => 'true',
+    'type' => 'budget',
+    'headerText' => 'Budget Header Text',
+    'startTime' => 0,  # [minutes]
+    'endTime' => 0,    # [minutes]
+    'startHeight' => 0.0,  # [m]
+    'endHeight' => 0.0, # [m]
+    'plots' =>
+    [
+       {'plotTitle' => 'wprtp budget', 'axisLabel' => 'wprtp budget [(m kg)/(s^2 kg)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'case_name_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_bt', 'expression' => 'wprtp_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'case_name_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_ma', 'expression' => 'wprtp_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'case_name_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_ta', 'expression' => 'wprtp_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'case_name_zm.ctl', 'type' => 'autp', 'name' => 'wprtp\_tp', 'expression' => 'wprtp_tp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'case_name_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_ac', 'expression' => 'wprtp_ac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'case_name_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_bp', 'expression' => 'wprtp_bp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'case_name_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_pr1', 'expression' => 'wprtp_pr1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'case_name_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_pr2', 'expression' => 'wprtp_pr2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'case_name_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_pr3', 'expression' => 'wprtp_pr3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'case_name_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_dp1', 'expression' => 'wprtp_dp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'case_name_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_mfl', 'expression' => 'wprtp_mfl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'case_name_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_cl', 'expression' => 'wprtp_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'case_name_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_sicl', 'expression' => 'wprtp_sicl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'case_name_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_pd', 'expression' => 'wprtp_pd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]}
+    ],
+    'nightlyOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    },
+    'additionalOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    }
+)
