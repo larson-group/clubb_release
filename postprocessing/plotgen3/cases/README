@@ -1,0 +1,24 @@
+Plotgen 3.0 Case Implementation Readme:
+=======================================
+
+This is the folder where cases are described. Each case should have its
+own case file. For your convenience, there are two template case files to
+hopefully make it easier for you to implement a new case.
+
+Follow these steps when implementing a new case:
+
+1. To implement a new case without LES, Best Ever, and 12/17 data, copy 
+template_simple.case to <YOUR CASE NAME>.case. If you are implementing a 
+case with LES, Best Ever and 12/17 data, copy template_all.case to 
+<YOUR CASE NAME>.case.
+
+2. Open your newly created case file. You can do a find and replace for
+all occurrences of case_name to whatever your case name is. For example, 
+for cloud_feedback_s12, you would replace all occurrences of case_name
+with cloud_feedback_s12 (or whatever you type after run_scm.bash).
+
+3. Test your changes. If you have data, plotgen should automatically plot
+it for you. 
+
+Some cases are unique, so you may need to modify the case files for your
+current situation. The template files are still a good starting point.
