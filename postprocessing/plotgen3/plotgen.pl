@@ -28,7 +28,7 @@ my $VERSION = 3.0;
 
 # Used to create a "random" output directory so multiple runs
 # don't overwrite each other.
-my $randInt = rand(999999999999999);
+my $randInt = int(rand(999999999999999)) + 1;
 
 my $DPI = 300;
 
@@ -47,9 +47,10 @@ my $plotBest = 0;
 my $plotDec = 0;
 
 # Arrays to cycle through when auto is set for lines
-my @lineStyles = ("-", "--", "-.");
-my @lineColors = ("blue", "green", "red", "cyan", "yellow", "black", "magenta");
-my @lineWidths = (4, 3.5, 3, 2.5, 2, 1.5, 1);
+my @lineStyles = ("--", "-", "-.");
+# The first two colors are the same as the previous version of Plotgen (orange and light blue) for CLUBB_current and CLUBB_previous.
+my @lineColors = ("[ 0.94, 0.50, 0.16 ]", "[ 0.00, 0.63, 1.00 ]", "green", "red", "blue", "cyan", "yellow", "black", "magenta");
+my @lineWidths = (4, 3, 2.5, 2, 1.5, 1);
 
 # Counters for automatic lines
 my $lineStyleCounter = 0;
