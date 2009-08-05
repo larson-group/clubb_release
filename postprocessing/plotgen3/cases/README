@@ -8,9 +8,9 @@ hopefully make it easier for you to implement a new case.
 Follow these steps when implementing a new case:
 
 1. To implement a new case without LES, Best Ever, and 12/17 data, copy 
-template_simple.case to <YOUR CASE NAME>.case. If you are implementing a 
-case with LES, Best Ever and 12/17 data, copy template_all.case to 
-<YOUR CASE NAME>.case. If you want to plot budgets, copy template_budged.case
+templates/template_simple.case to <YOUR CASE NAME>.case. If you are implementing a 
+case with LES, Best Ever and 12/17 data, copy templates/template_all.case to 
+<YOUR CASE NAME>.case. If you want to plot budgets, copy templates/template_budget.case
 to <YOUR CASE NAME>_budget.case.
 
 2. Open your newly created case file. You can do a find and replace for
