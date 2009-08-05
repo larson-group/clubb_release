@@ -698,7 +698,7 @@ module estimate_lh_micro_mod
       lh_thlm_mc_m1, & ! LH est of time tendency of liquid potential temperature [K/s]
       lh_thlm_mc_m2    ! LH est of time tendency of liquid potential temperature [K/s]
 
-    real, dimension(nnzp,hydromet_dim) :: &
+    real, dimension(nnzp,hydromet_dim,n_micro_calls) :: &
       hydromet_tmp ! Hydrometeor species    [units vary]
 
     real, dimension(nnzp) :: &
@@ -797,32 +797,32 @@ module estimate_lh_micro_mod
       do i = 1, hydromet_dim, 1
         if ( i == iirrainm .and. iiLH_rrain > 0 ) then
           where ( l_sample_flag )
-            hydromet_tmp(:,i) = real( X_nl_all_levs(:,sample,iiLH_rrain) )
+            hydromet_tmp(:,i,sample) = real( X_nl_all_levs(:,sample,iiLH_rrain) )
           else where
-            hydromet_tmp(:,i) = hydromet(:,i)
+            hydromet_tmp(:,i,sample) = hydromet(:,i)
           end where
         else if ( i == iiNcm .and. iiLH_Nc > 0 ) then
           ! Kluge for when we don't have correlations between Nc, other variables
 !         hydromet_tmp(:,iiNcm) = Ncm_initial * cm3_per_m3 / rho
           where ( l_sample_flag )
-            hydromet_tmp(:,i) = real( X_nl_all_levs(:,sample,iiLH_Nc) )
+            hydromet_tmp(:,i,sample) = real( X_nl_all_levs(:,sample,iiLH_Nc) )
           else where
-            hydromet_tmp(:,i) = hydromet(:,i)
+            hydromet_tmp(:,i,sample) = hydromet(:,i)
           end where
         else if ( i == iiNrm .and. iiLH_Nr > 0 ) then
           where ( l_sample_flag )
-            hydromet_tmp(:,i) = real( X_nl_all_levs(:,sample,iiLH_Nr) )
+            hydromet_tmp(:,i,sample) = real( X_nl_all_levs(:,sample,iiLH_Nr) )
           else where
-            hydromet_tmp(:,i) = hydromet(:,i)
+            hydromet_tmp(:,i,sample) = hydromet(:,i)
           end where
         else ! Use the mean field, rather than a sample point
-          hydromet_tmp(:,i) = hydromet(:,i)
+          hydromet_tmp(:,i,sample) = hydromet(:,i)
         end if
       end do
 
       if ( l_compute_diagnostic_average ) then
         if ( sample == 1 ) then
-          lh_hydromet(:,1:hydromet_dim) = hydromet_tmp(:,1:hydromet_dim)
+          lh_hydromet(:,1:hydromet_dim) = hydromet_tmp(:,1:hydromet_dim,sample)
           lh_thlm = thl_tmp
           lh_rcm  = rc_tmp(:,sample)
           lh_rvm  = rv_tmp
@@ -834,7 +834,7 @@ module estimate_lh_micro_mod
           end where
         else
           lh_hydromet(:,1:hydromet_dim) = lh_hydromet(:,1:hydromet_dim) &
-            + hydromet_tmp(:,1:hydromet_dim)
+            + hydromet_tmp(:,1:hydromet_dim,sample)
           lh_thlm = lh_thlm + thl_tmp
           lh_rcm  = lh_rcm  + rc_tmp(:,sample)
           lh_rvm  = lh_rvm  + rv_tmp
@@ -847,7 +847,7 @@ module estimate_lh_micro_mod
       call microphys_sub &
            ( dt, nnzp, .false., .true., thl_tmp, p_in_Pa, exner, rho, pdf_params, &
              w_tmp(:,sample), w_std_dev, dzq, rc_tmp(:,sample), real( s_mellor(:,sample) ), &
-             rv_tmp, hydromet_tmp, lh_hydromet_mc, &
+             rv_tmp, hydromet_tmp(:,:,sample), lh_hydromet_mc, &
              lh_hydromet_vel, lh_rcm_mc, lh_rvm_mc, lh_thlm_mc )
 
       do i = 1, hydromet_dim
@@ -893,9 +893,9 @@ module estimate_lh_micro_mod
       lh_rcp2_zt = compute_variance( nnzp, n_micro_calls, rc_tmp, lh_rcm )
 
       ! Compute the variance of cloud droplet number concentration
-      if ( iiLH_Nc > 0 ) then
-        lh_Ncp2_zt = compute_variance( nnzp, n_micro_calls, real( X_nl_all_levs(:,:,iiLH_Nc) ), &
-                                       lh_wm )
+      if ( iiNcm > 0 ) then
+        lh_Ncp2_zt = compute_variance( nnzp, n_micro_calls, hydromet_tmp(:,iiNcm,:), &
+                                       lh_hydromet(:,iiNcm) )
       end if
 
     end if ! l_compute_diagnostic_average
