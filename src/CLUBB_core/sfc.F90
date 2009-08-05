@@ -236,8 +236,8 @@ module surface_var
       ! Compute estimate for surface second order moments
 
       wp2_sfc     =  a * uf**2
-      up2_sfc     =  a * uf**2  ! From Andre, et al. 1978
-      vp2_sfc     =  a * uf**2  ! "  "
+      up2_sfc     =  2.0 * a * uf**2  ! From Andre, et al. 1978
+      vp2_sfc     =  2.0 * a * uf**2  ! "  "
       ! Vince Larson changed to make correlations between [-1,1]  31 Jan 2008
 !       thlp2_sfc   = 0.1 * a * ( wpthlp_sfc / uf )**2
 !       rtp2_sfc    = 0.4 * a * ( wprtp_sfc / uf )**2
