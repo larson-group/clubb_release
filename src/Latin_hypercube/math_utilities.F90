@@ -130,7 +130,7 @@ module math_utilities
     return
   end function mean
 !-----------------------------------------------------------------------
-  function compute_variance( n_pts, n_samples, x_sample, x_mean ) result( variance )
+  pure function compute_variance( n_pts, n_samples, x_sample, x_mean ) result( variance )
 
 ! Description:
 !   Compute variance of a set of sample points
@@ -140,19 +140,22 @@ module math_utilities
 !-----------------------------------------------------------------------
     implicit none
 
+    ! Input Variables
     integer, intent(in) :: &
       n_pts, &   ! Number of data points in the mean / variance
       n_samples  ! Number of sample points compute the variance of
 
-    real,dimension(n_pts,n_samples) :: &
+    real,dimension(n_pts,n_samples), intent(in) :: &
       x_sample ! Collection of sample points
 
-    real,dimension(n_pts) :: &
+    real,dimension(n_pts), intent(in) :: &
       x_mean  ! Mean sample points
 
+    ! Output Variable
     real,dimension(n_pts) :: &
       variance ! Variance of x
 
+    ! Local Variable(s)
     integer :: sample ! Loop iterator
 
     ! ---- Begin Code ----
