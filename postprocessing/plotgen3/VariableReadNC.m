@@ -30,6 +30,8 @@ for i = 1:numVars
 		elseif strcmp(plotType, 'timeseries')
 			varData = read_netcdf_hoc_timeseries(filePath, nz, t_start, t_end, i, numVars);
 		end
+
+		break;
 	end
 end
 

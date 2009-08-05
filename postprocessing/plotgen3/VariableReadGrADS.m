@@ -58,6 +58,8 @@ for i = 1:numVars
 			end
 
 		end
+
+		break;
 	end
 end
 
