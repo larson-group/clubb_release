@@ -90,6 +90,7 @@ module latin_hypercube_mod
       iLH_wm, &
       iLH_wp2_zt, &
       iLH_Ncp2_zt, &
+      iLH_rcp2_zt, &
       iLH_cloud_frac, &
       zt
 
@@ -171,6 +172,7 @@ module latin_hypercube_mod
       lh_rvm,     & ! Average value of the latin hypercube est. of rv                [kg/kg]
       lh_wm,      & ! Average value of the latin hypercube est. of vertical velocity [m/s]
       lh_wp2_zt,  & ! Average value of the variance of the LH est. of vert. vel.     [m^2/s^2]
+      lh_rcp2_zt, & ! Average value of the variance of the LH est. of rc.            [(kg/kg)^2]
       lh_Ncp2_zt, & ! Average value of the variance of the LH est. of Nc.            [#^2/kg^2]
       lh_cloud_frac ! Average value of the latin hypercube est. of cloud fraction    [-]
 
@@ -258,7 +260,7 @@ module latin_hypercube_mod
            lh_AKm, AKm, AKstd, AKstd_cld, &        ! intent(out)
            AKm_rcm, AKm_rcc, lh_rcm_avg, &          ! intent(out)
            lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &  ! intent(out)
-           lh_wm, lh_Ncp2_zt, lh_wp2_zt, lh_cloud_frac, &  ! intent(out)
+           lh_wm, lh_Ncp2_zt, lh_rcp2_zt, lh_wp2_zt, lh_cloud_frac, &  ! intent(out)
            microphys_sub )  ! Procedure
 
     ! print*, 'latin_hypercube_driver: AKm=', AKm
@@ -302,6 +304,7 @@ module latin_hypercube_mod
       call stat_update_var( iLH_wm, lh_wm, zt )
       call stat_update_var( iLH_wp2_zt, lh_wp2_zt, zt )
       call stat_update_var( iLH_Ncp2_zt, lh_Ncp2_zt, zt )
+      call stat_update_var( iLH_rcp2_zt, lh_rcp2_zt, zt )
       call stat_update_var( iLH_cloud_frac, lh_cloud_frac, zt )
 
     end if ! l_stats_samp

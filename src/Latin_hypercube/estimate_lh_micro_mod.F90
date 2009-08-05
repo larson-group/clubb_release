@@ -26,7 +26,7 @@ module estimate_lh_micro_mod
                lh_AKm, AKm, AKstd, AKstd_cld, & 
                AKm_rcm, AKm_rcc, lh_rcm_avg, &
                lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &
-               lh_wm, lh_Ncp2_zt, lh_wp2_zt, lh_cloud_frac, &
+               lh_wm, lh_Ncp2_zt, lh_rcp2_zt, lh_wp2_zt, lh_cloud_frac, &
                microphys_sub )
 ! Description:
 !   This subroutine computes microphysical grid box averages,
@@ -128,6 +128,7 @@ module estimate_lh_micro_mod
       lh_rvm,       & ! Average value of the latin hypercube est. of rv                [kg/kg]
       lh_wm,        & ! Average value of the latin hypercube est. of vertical velocity [m/s]
       lh_wp2_zt,    & ! Average value of the variance of the LH est. of vertical velocity [m^2/s^2]
+      lh_rcp2_zt,   & ! Average value of the variance of the LH est. of rc             [(kg/kg)^2]
       lh_Ncp2_zt,   & ! Average value of the variance of the LH est. of Nc             [#^2/kg^2]
       lh_cloud_frac   ! Average value of the latin hypercube est. of cloud fraction    [-]
 
@@ -357,7 +358,7 @@ module estimate_lh_micro_mod
                               lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, &
                               lh_hydromet_vel, lh_thlm_mc, &
                               lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &
-                              lh_wm, lh_Ncp2_zt, lh_wp2_zt, lh_cloud_frac, &
+                              lh_wm, lh_Ncp2_zt, lh_rcp2_zt, lh_wp2_zt, lh_cloud_frac, &
                               microphys_sub )
 
     return
@@ -569,7 +570,7 @@ module estimate_lh_micro_mod
                                   lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, &
                                   lh_hydromet_vel, lh_thlm_mc, &
                                   lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &
-                                  lh_wm, lh_Ncp2_zt, lh_wp2_zt, lh_cloud_frac, &
+                                  lh_wm, lh_Ncp2_zt, lh_rcp2_zt, lh_wp2_zt, lh_cloud_frac, &
                                   microphys_sub )
 ! Description:
 !   Estimate the tendency of a microphysics scheme via latin hypercube sampling
@@ -585,8 +586,8 @@ module estimate_lh_micro_mod
     use parameters_model, only: &
       hydromet_dim
 
-    use parameters_microphys, only: &
-      Ncm_initial
+!   use parameters_microphys, only: &
+!     Ncm_initial
 
     use array_index, only: &
       iirrainm, &
@@ -597,6 +598,9 @@ module estimate_lh_micro_mod
       iiLH_Nc, &
       iiLH_rt, &
       iiLH_w
+
+    use math_utilities, only: &
+      compute_variance
 
     use variables_prognostic_module, only: &
       pdf_parameter
@@ -675,6 +679,7 @@ module estimate_lh_micro_mod
       lh_rvm,     & ! Average value of the latin hypercube est. of rv                [kg/kg]
       lh_wm,      & ! Average value of the latin hypercube est. of vertical velocity [m/s]
       lh_wp2_zt,  & ! Average value of the variance of the LH est. of vertical vel.  [m^2/s^2]
+      lh_rcp2_zt, & ! Average value of the variance of the LH est. of rc             [kg^2/kg^2]
       lh_Ncp2_zt, & ! Average value of the variance of the LH est. of Nc             [#^2/kg^2]
       lh_cloud_frac ! Average value of the latin hypercube est. of cloud fraction    [-]
 
@@ -697,11 +702,11 @@ module estimate_lh_micro_mod
       hydromet_tmp ! Hydrometeor species    [units vary]
 
     real, dimension(nnzp) :: &
-      rc_tmp,    & ! Liquid water                [kg/kg]
       rv_tmp,    & ! Vapor water                 [kg/kg]
       thl_tmp      ! Liquid potential temperature[K]
 
     real, dimension(nnzp,n_micro_calls) :: &
+      rc_tmp,    & ! Liquid water                [kg/kg]
       w_tmp        ! Vertical velocity           [m/s]
 
     integer, dimension(nnzp) :: n1, n2, zero
@@ -770,17 +775,17 @@ module estimate_lh_micro_mod
 
       where ( l_sample_flag )
         where( s_mellor(:,sample) > 0.0 )
-          rc_tmp  = real( s_mellor(:,sample) ) 
+          rc_tmp(:,sample)  = real( s_mellor(:,sample) ) 
         else where
-          rc_tmp = 0.0
+          rc_tmp(:,sample)= 0.0
         end where
       else where
-        rc_tmp = rcm
+        rc_tmp(:,sample) = rcm
       end where
 
       where ( l_sample_flag ) 
         w_tmp(:,sample) = real( w(:,sample) )
-        rv_tmp  = real( rt(:,sample) ) - rc_tmp
+        rv_tmp  = real( rt(:,sample) ) - rc_tmp(:,sample)
         thl_tmp = real( thl(:,sample) )
       else where
         w_tmp(:,sample) = wm
@@ -819,7 +824,7 @@ module estimate_lh_micro_mod
         if ( sample == 1 ) then
           lh_hydromet(:,1:hydromet_dim) = hydromet_tmp(:,1:hydromet_dim)
           lh_thlm = thl_tmp
-          lh_rcm  = rc_tmp
+          lh_rcm  = rc_tmp(:,sample)
           lh_rvm  = rv_tmp
           lh_wm   = w_tmp(:,sample)
           where ( l_sample_flag .and. s_mellor(:,sample) > 0. ) 
@@ -831,7 +836,7 @@ module estimate_lh_micro_mod
           lh_hydromet(:,1:hydromet_dim) = lh_hydromet(:,1:hydromet_dim) &
             + hydromet_tmp(:,1:hydromet_dim)
           lh_thlm = lh_thlm + thl_tmp
-          lh_rcm  = lh_rcm  + rc_tmp
+          lh_rcm  = lh_rcm  + rc_tmp(:,sample)
           lh_rvm  = lh_rvm  + rv_tmp
           lh_wm   = lh_wm   + w_tmp(:,sample)
           where ( l_sample_flag .and. s_mellor(:,sample) > 0 ) lh_cloud_frac = lh_cloud_frac + 1.0
@@ -841,7 +846,7 @@ module estimate_lh_micro_mod
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
            ( dt, nnzp, .false., .true., thl_tmp, p_in_Pa, exner, rho, pdf_params, &
-             w_tmp(:,sample), w_std_dev, dzq, rc_tmp, real( s_mellor(:,sample) ), &
+             w_tmp(:,sample), w_std_dev, dzq, rc_tmp(:,sample), real( s_mellor(:,sample) ), &
              rv_tmp, hydromet_tmp, lh_hydromet_mc, &
              lh_hydromet_vel, lh_rcm_mc, lh_rvm_mc, lh_thlm_mc )
 
@@ -882,21 +887,18 @@ module estimate_lh_micro_mod
       lh_cloud_frac = lh_cloud_frac   / real( n_micro_calls )
 
       ! Compute the variance of vertical velocity
-      lh_wp2_zt = 0.0
-      do sample = 1, n_micro_calls
-        lh_wp2_zt = lh_wp2_zt + ( w_tmp(:,sample) - lh_wm )**2
-      end do
-      lh_wp2_zt = lh_wp2_zt / real( n_micro_calls )
+      lh_wp2_zt = compute_variance( nnzp, n_micro_calls, w_tmp, lh_wm )
+
+      ! Compute the variance of cloud water mixing ratio
+      lh_rcp2_zt = compute_variance( nnzp, n_micro_calls, rc_tmp, lh_rcm )
 
       ! Compute the variance of cloud droplet number concentration
-      lh_Ncp2_zt = 0.0
-      do sample = 1, n_micro_calls
-        lh_Ncp2_zt = lh_Ncp2_zt &
-          + ( real( X_nl_all_levs(:,sample,iiLH_Nc) ) - lh_hydromet(:,iiNcm) )**2
-      end do
-      lh_Ncp2_zt = lh_Ncp2_zt / real( n_micro_calls )
+      if ( iiLH_Nc > 0 ) then
+        lh_Ncp2_zt = compute_variance( nnzp, n_micro_calls, real( X_nl_all_levs(:,:,iiLH_Nc) ), &
+                                       lh_wm )
+      end if
 
-    end if
+    end if ! l_compute_diagnostic_average
 
     l_error = .false.
     do k = 1, nnzp

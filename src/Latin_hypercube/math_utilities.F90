@@ -5,7 +5,7 @@ module math_utilities
 !-----------------------------------------------------------------------
   implicit none
 
-  public :: corrcoef, std, cov, mean
+  public :: corrcoef, std, cov, mean, compute_variance
 
   private
 
@@ -130,4 +130,42 @@ module math_utilities
     return
   end function mean
 !-----------------------------------------------------------------------
+  function compute_variance( n_pts, n_samples, x_sample, x_mean ) result( variance )
+
+! Description:
+!   Compute variance of a set of sample points
+
+! References:
+!   None
+!-----------------------------------------------------------------------
+    implicit none
+
+    integer, intent(in) :: &
+      n_pts, &   ! Number of data points in the mean / variance
+      n_samples  ! Number of sample points compute the variance of
+
+    real,dimension(n_pts,n_samples) :: &
+      x_sample ! Collection of sample points
+
+    real,dimension(n_pts) :: &
+      x_mean  ! Mean sample points
+
+    real,dimension(n_pts) :: &
+      variance ! Variance of x
+
+    integer :: sample ! Loop iterator
+
+    ! ---- Begin Code ----
+
+    variance(1:n_pts) = 0.0
+
+    do sample=1, n_samples
+      variance(1:n_pts) = variance(1:n_pts) + ( x_sample(1:n_pts,sample) - x_mean(1:n_pts) )**2
+    end do
+
+    variance(1:n_pts) = variance(1:n_pts) / real( n_samples )
+
+    return
+  end function compute_variance
+
 end module math_utilities
