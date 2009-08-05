@@ -435,7 +435,6 @@ module mono_flux_limiter
     ! instabilities in the x'^2 profile.
     xp2_zt = min( xp2_zt, max_xp2 )
 
-    
     ! Find the maximum and minimum usuable values of variable x at each
     ! vertical level.  Start from level 2, which is the first level above
     ! the ground (or above the model surface).  This computation needs to be
@@ -484,6 +483,11 @@ module mono_flux_limiter
 
     enddo
 
+    ! Boundary condition on xm_without_ta    
+    k = 1
+    xm_without_ta(k) = xm(k)
+    min_x_allowable_lev(k) = min_x_allowable_lev(k+1)
+    max_x_allowable_lev(k) = max_x_allowable_lev(k+1)
 
     ! Find the maximum and minimum usuable values of x that can effect the value
     ! of x at level k.  Then, find the upper and lower limits of w'x'.  Reset
