@@ -664,7 +664,7 @@ module microphys_driver
       rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, & ! Variables
       corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
       corr_sNc_NL_cloud, &
-      rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, & !Ncp2_on_Ncm2_below, & ! Variables
+      rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, Ncp2_on_Ncm2_below, & ! Variables
       corr_rrNr_LL_below, corr_srr_NL_below, corr_sNr_NL_below, &
       corr_sNc_NL_below  
 
@@ -948,9 +948,9 @@ module microphys_driver
           correlation_array(:,iiLH_Nc,iiLH_rt)    = corr_sNc_NL_cloud
           correlation_array(:,iiLH_rt,iiLH_Nc)    = corr_sNc_NL_cloud
         else where
-!         correlation_array(iiLH_Nc,iiLH_Nc)       = Ncp2_on_Ncm2_below
           ! This is a kluge to prevent a singular matrix in generate_lh_sample
-          correlation_array(:,iiLH_Nc,iiLH_Nc)       = Ncp2_on_Ncm2_cloud
+          correlation_array(:,iiLH_Nc,iiLH_Nc)       = max( Ncp2_on_Ncm2_below, epsilon( Ncp2_on_Ncm2_below ) )
+!         correlation_array(:,iiLH_Nc,iiLH_Nc)       = Ncp2_on_Ncm2_cloud
           correlation_array(:,iiLH_Nr,iiLH_Nr)       = Nrp2_on_Nrm2_below
           correlation_array(:,iiLH_rrain,iiLH_rrain) = rrp2_on_rrainm2_below
 
