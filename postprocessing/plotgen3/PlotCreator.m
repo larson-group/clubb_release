@@ -86,6 +86,13 @@ for i=1:numLines
 		eval([varString, '= variableData;']);
 	end
 
+	%Create a time array
+	if strcmp(extension, 'ctl')
+		[dummy, dummy , dummy, t_time_steps, time_step_length, dummy, dummy] = header_read_expanded(filePath);
+	elseif strcmp(extension, 'nc')
+		[dummy, dummy , dummy, t_time_steps, time_step_length, dummy, dummy] = header_read_expanded_netcdf(filePath);
+	end
+
 	%Figure out indicies for start and end height
 	if strcmp(plotType, 'profile')	
 		bottomIndex = 1;
@@ -100,13 +107,10 @@ for i=1:numLines
 				topIndex = j;
 			end
 		end
-	end
-
-	%Create a time array
-	if strcmp(extension, 'ctl')
-		[dummy, dummy , dummy, t_time_steps, time_step_length, dummy, dummy] = header_read_expanded(filePath);
-	elseif strcmp(extension, 'nc')
-		[dummy, dummy , dummy, t_time_steps, time_step_length, dummy, dummy] = header_read_expanded_netcdf(filePath);
+	elseif strcmp(plotType, 'timeseries')
+		%For timeseries, we want the start and end time indexes	
+		t_start_index = ceil(startTime / time_step_length);
+		t_end_index = ceil(endTime / time_step_length);
 	end
 
 	%Do not continue if the end time is past the end of the data
@@ -128,8 +132,6 @@ for i=1:numLines
 	if strcmp(plotType, 'profile')
 		lines(i) = ProfileFunctions.addLine(lineName, levels, valueToPlot, lineWidth, lineType, lineColor);
 	elseif strcmp(plotType, 'timeseries')
-		t_start_index = ceil(startTime / time_step_length);
-		t_end_index = ceil(endTime / time_step_length);
 		lines(i) = TimeseriesFunctions.addLine(lineName, times, valueToPlot(t_start_index:t_end_index), lineWidth, lineType, lineColor);
 	end
 	
@@ -138,8 +140,8 @@ for i=1:numLines
 		minVals(i) = min(valueToPlot(bottomIndex:topIndex));
 		maxVals(i) = max(valueToPlot(bottomIndex:topIndex));
 	elseif strcmp(plotType, 'timeseries')
-		minVals(i) = min(valueToPlot);
-		maxVals(i) = max(valueToPlot);
+		minVals(i) = min(valueToPlot(t_start_index:t_end_index));
+		maxVals(i) = max(valueToPlot(t_start_index:t_end_index));
 	end
 
 	%Set the text for the legend
