@@ -48,7 +48,7 @@ module microphys_driver
   private :: sedimentation
 
   ! Variables
-  logical, private, allocatable, dimension(:) :: hydromet_sed ! Whether to sediment variables
+  logical, private, allocatable, dimension(:) :: l_hydromet_sed ! Whether to sediment variables
 
   private ! Default Scope
 
@@ -345,18 +345,18 @@ module microphys_driver
         stop "Fatal error."
       end if
 
-      allocate( hydromet_sed(hydromet_dim) )
+      allocate( l_hydromet_sed(hydromet_dim) )
       ! Sedimentation is handled within the Morrison microphysics
-      hydromet_sed(iiNrm) = .false.
-      hydromet_sed(iiNim) = .false.
-      hydromet_sed(iiNcm) = .false.
-      hydromet_sed(iiNgraupelm) = .false.
-      hydromet_sed(iiNsnowm) = .false.
+      l_hydromet_sed(iiNrm) = .false.
+      l_hydromet_sed(iiNim) = .false.
+      l_hydromet_sed(iiNcm) = .false.
+      l_hydromet_sed(iiNgraupelm) = .false.
+      l_hydromet_sed(iiNsnowm) = .false.
 
-      hydromet_sed(iirrainm)    = .false.
-      hydromet_sed(iirsnowm)    = .false.
-      hydromet_sed(iiricem)     = .false.
-      hydromet_sed(iirgraupelm) = .false.
+      l_hydromet_sed(iirrainm)    = .false.
+      l_hydromet_sed(iirsnowm)    = .false.
+      l_hydromet_sed(iiricem)     = .false.
+      l_hydromet_sed(iirgraupelm) = .false.
 
       ! Convert from μ to m as in SAM
       aer_rm1 = 1.e-6*aer_rm1 
@@ -383,7 +383,7 @@ module microphys_driver
 
       hydromet_dim = 7
 
-      allocate( hydromet_sed(hydromet_dim) )
+      allocate( l_hydromet_sed(hydromet_dim) )
 
       allocate( hydromet_list(hydromet_dim) )
 
@@ -396,14 +396,14 @@ module microphys_driver
       hydromet_list(iiNcm)       = "Ncm"
       hydromet_list(iiNim)       = "Nim"
 
-      hydromet_sed(iiNrm) = .true.
-      hydromet_sed(iiNim) = .false.
-      hydromet_sed(iiNcm) = .false.
+      l_hydromet_sed(iiNrm) = .true.
+      l_hydromet_sed(iiNim) = .false.
+      l_hydromet_sed(iiNcm) = .false.
 
-      hydromet_sed(iirrainm)    = .true.
-      hydromet_sed(iirsnowm)    = .true.
-      hydromet_sed(iiricem)     = .true.
-      hydromet_sed(iirgraupelm) = .true.
+      l_hydromet_sed(iirrainm)    = .true.
+      l_hydromet_sed(iirsnowm)    = .true.
+      l_hydromet_sed(iiricem)     = .true.
+      l_hydromet_sed(iirgraupelm) = .true.
 
     case ( "khairoutdinov_kogan" )
       iirrainm    = 1
@@ -419,7 +419,7 @@ module microphys_driver
 
       hydromet_dim = 3
 
-      allocate( hydromet_sed(hydromet_dim) )
+      allocate( l_hydromet_sed(hydromet_dim) )
 
       allocate( hydromet_list(hydromet_dim) )
 
@@ -427,9 +427,9 @@ module microphys_driver
       hydromet_list(iiNrm) = "Nrm"
       hydromet_list(iiNcm) = "Ncm"
 
-      hydromet_sed(iirrainm) = .true.
-      hydromet_sed(iiNrm)    = .true.
-      hydromet_sed(iiNcm)    = .false.
+      l_hydromet_sed(iirrainm) = .true.
+      l_hydromet_sed(iiNrm)    = .true.
+      l_hydromet_sed(iiNcm)    = .false.
 
     case ( "simplified_ice" )
       iirrainm    = -1
@@ -450,7 +450,7 @@ module microphys_driver
         iiNcm       = 1
         hydromet_dim = 1
 
-        allocate( hydromet_sed(hydromet_dim) )
+        allocate( l_hydromet_sed(hydromet_dim) )
         allocate( hydromet_list(hydromet_dim) )
         hydromet_list(iiNcm) = "Ncm"
       else
@@ -936,35 +936,35 @@ module microphys_driver
           correlation_array(:,iiLH_Nr,iiLH_Nr)       = Nrp2_on_Nrm2_cloud
           correlation_array(:,iiLH_rrain,iiLH_rrain) = rrp2_on_rrainm2_cloud
 
-          correlation_array(:,iiLH_rrain,iiLH_Nr)    = corr_rrNr_LL_cloud
-          correlation_array(:,iiLH_Nr,iiLH_rrain)    = corr_rrNr_LL_cloud
+          correlation_array(:,iiLH_rrain,iiLH_Nr) = corr_rrNr_LL_cloud
+          correlation_array(:,iiLH_Nr,iiLH_rrain) = corr_rrNr_LL_cloud
 
-          correlation_array(:,iiLH_rrain,iiLH_rt)    = corr_srr_NL_cloud
-          correlation_array(:,iiLH_rt,iiLH_rrain)    = corr_srr_NL_cloud
+          correlation_array(:,iiLH_rrain,iiLH_rt) = corr_srr_NL_cloud
+          correlation_array(:,iiLH_rt,iiLH_rrain) = corr_srr_NL_cloud
 
-          correlation_array(:,iiLH_Nr,iiLH_rt)    = corr_sNr_NL_cloud
-          correlation_array(:,iiLH_rt,iiLH_Nr)    = corr_sNr_NL_cloud
+          correlation_array(:,iiLH_Nr,iiLH_rt) = corr_sNr_NL_cloud
+          correlation_array(:,iiLH_rt,iiLH_Nr) = corr_sNr_NL_cloud
 
-          correlation_array(:,iiLH_Nc,iiLH_rt)    = corr_sNc_NL_cloud
-          correlation_array(:,iiLH_rt,iiLH_Nc)    = corr_sNc_NL_cloud
+          correlation_array(:,iiLH_Nc,iiLH_rt) = corr_sNc_NL_cloud
+          correlation_array(:,iiLH_rt,iiLH_Nc) = corr_sNc_NL_cloud
         else where
           ! This is a kluge to prevent a singular matrix in generate_lh_sample
-          correlation_array(:,iiLH_Nc,iiLH_Nc)       = max( Ncp2_on_Ncm2_below, epsilon( Ncp2_on_Ncm2_below ) )
-!         correlation_array(:,iiLH_Nc,iiLH_Nc)       = Ncp2_on_Ncm2_cloud
+          correlation_array(:,iiLH_Nc,iiLH_Nc) = &
+            max( Ncp2_on_Ncm2_below, epsilon( Ncp2_on_Ncm2_below ) )
           correlation_array(:,iiLH_Nr,iiLH_Nr)       = Nrp2_on_Nrm2_below
           correlation_array(:,iiLH_rrain,iiLH_rrain) = rrp2_on_rrainm2_below
 
-          correlation_array(:,iiLH_rrain,iiLH_Nr)    = corr_rrNr_LL_below
-          correlation_array(:,iiLH_Nr,iiLH_rrain)    = corr_rrNr_LL_below
+          correlation_array(:,iiLH_rrain,iiLH_Nr) = corr_rrNr_LL_below
+          correlation_array(:,iiLH_Nr,iiLH_rrain) = corr_rrNr_LL_below
 
-          correlation_array(:,iiLH_rrain,iiLH_rt)    = corr_srr_NL_below
-          correlation_array(:,iiLH_rt,iiLH_rrain)    = corr_srr_NL_below
+          correlation_array(:,iiLH_rrain,iiLH_rt) = corr_srr_NL_below
+          correlation_array(:,iiLH_rt,iiLH_rrain) = corr_srr_NL_below
 
-          correlation_array(:,iiLH_Nr,iiLH_rt)    = corr_sNr_NL_below
-          correlation_array(:,iiLH_rt,iiLH_Nr)    = corr_sNr_NL_below
+          correlation_array(:,iiLH_Nr,iiLH_rt) = corr_sNr_NL_below
+          correlation_array(:,iiLH_rt,iiLH_Nr) = corr_sNr_NL_below
 
-          correlation_array(:,iiLH_Nc,iiLH_rt)    = corr_sNc_NL_below
-          correlation_array(:,iiLH_rt,iiLH_Nc)    = corr_sNc_NL_below
+          correlation_array(:,iiLH_Nc,iiLH_rt) = corr_sNc_NL_below
+          correlation_array(:,iiLH_rt,iiLH_Nc) = corr_sNc_NL_below
 
         end where
 
@@ -1069,11 +1069,11 @@ module microphys_driver
 
 
         call microphys_lhs & 
-             ( trim( hydromet_list(i) ), hydromet_sed(i), dt, Kr, nu_r, wm_zt, & 
+             ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, Kr, nu_r, wm_zt, & 
                hydromet_vel(:,i), lhs )
 
         call microphys_solve & 
-             ( trim( hydromet_list(i) ), hydromet_sed(i), dt, lhs, hydromet_mc(:,i),  & 
+             ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, lhs, hydromet_mc(:,i),  & 
                hydromet(:,i), err_code )
 
         if ( i == iirrainm ) then
