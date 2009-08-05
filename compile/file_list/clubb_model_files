@@ -12,9 +12,9 @@
 ../src/Benchmark_cases/mpace_a.F90
 ../src/Benchmark_cases/mpace_b.F90
 ../src/Benchmark_cases/rad_lwsw.F90
+../src/Benchmark_cases/spec_hum_to_mixing_ratio.F90
 ../src/Benchmark_cases/surface_flux.F90
 ../src/Benchmark_cases/wangara.F90
-../src/Benchmark_cases/surface_flux.F90
 ../src/clubb_driver.F90
 ../src/bugsrad_driver.F90
 ../src/coamps_micro_driver.F90
