@@ -36,14 +36,15 @@ module estimate_lh_micro_mod
 !------------------------------------------------------------------------
 
     use constants, only:  &
-        pi,  & ! Variables(s)
-        zero_threshold
+      pi,  & ! Variables(s)
+      sstol, &
+      zero_threshold
 
     use anl_erf, only:  &
-        erf ! Procedure(s)
+      erf ! Procedure(s)
 
     use variables_prognostic_module, only:  &
-        pdf_parameter  ! type
+      pdf_parameter  ! type
 
     use parameters_model, only: &
       hydromet_dim
@@ -262,11 +263,11 @@ module estimate_lh_micro_mod
       !        r_crit = 0.7e-3
       r_crit            = 0.2e-3
       K_one             = 1.e-3
-      sn1_crit          = (s1-r_crit)/ss1
+      sn1_crit          = (s1-r_crit)/max( ss1, sstol )
       cloud_frac1_crit  = 0.5*(1+erf(sn1_crit/sqrt(2.0)))
       AK1               = K_one * ( (s1-r_crit)*cloud_frac1_crit  & 
                          + ss1*exp(-0.5*sn1_crit**2)/(sqrt(2*pi)) )
-      sn2_crit          = (s2-r_crit)/ss2
+      sn2_crit          = (s2-r_crit)/max( ss2, sstol )
       cloud_frac2_crit  = 0.5*(1+erf(sn2_crit/sqrt(2.0)))
       AK2               = K_one * ( (s2-r_crit)*cloud_frac2_crit  & 
                          + ss2*exp(-0.5*sn2_crit**2)/(sqrt(2*pi)) )
@@ -797,12 +798,12 @@ module estimate_lh_micro_mod
           end where
         else if ( i == iiNcm .and. iiLH_Nc > 0 ) then
           ! Kluge for when we don't have correlations between Nc, other variables
-          hydromet_tmp(:,iiNcm) = Ncm_initial * cm3_per_m3 / rho
-!         where ( l_sample_flag )
-!           hydromet_tmp(:,i) = real( X_nl_all_levs(:,sample,iiLH_Nc) )
-!         else where
-!           hydromet_tmp(:,i) = hydromet(:,i)
-!         end where
+!         hydromet_tmp(:,iiNcm) = Ncm_initial * cm3_per_m3 / rho
+          where ( l_sample_flag )
+            hydromet_tmp(:,i) = real( X_nl_all_levs(:,sample,iiLH_Nc) )
+          else where
+            hydromet_tmp(:,i) = hydromet(:,i)
+          end where
         else if ( i == iiNrm .and. iiLH_Nr > 0 ) then
           where ( l_sample_flag )
             hydromet_tmp(:,i) = real( X_nl_all_levs(:,sample,iiLH_Nr) )

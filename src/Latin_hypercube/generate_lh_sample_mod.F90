@@ -576,7 +576,6 @@ module generate_lh_sample_mod
 !       end if
 
 !     end if ! iiLH_Nc > 0 
-
       call sample_points( n_micro_calls, nt_repeat, d_variables, p_matrix, dble( a ), & 
                           dble( rt1 ), dble( thl1 ), & 
                           dble( rt2 ), dble( thl2 ), & 
@@ -695,7 +694,6 @@ module generate_lh_sample_mod
     double precision, intent(out), dimension(n_micro_calls,d_variables) :: &
       X_nl_one_lev ! Sample that is transformed ultimately to normal-lognormal
 
-
     ! Local Variables
     integer :: col, sample
 
@@ -714,15 +712,18 @@ module generate_lh_sample_mod
     iiLH_tmellor = iiLH_thl ! Mellor's t is at the same index as thl "  "
 
     if ( clubb_at_least_debug_level( 2 ) ) then
+
       call covar_matrix_2_corr_matrix( d_variables, Sigma_stw_1, Sigma_stw_1_corr )
       call covar_matrix_2_corr_matrix( d_variables, Sigma_stw_2, Sigma_stw_2_corr )
+
       if ( any( Sigma_stw_1_corr > 1.0 ) .or. any( Sigma_stw_2_corr < -1.0 ) ) then
-        write(0,*) "Sigma_stw_1 has a correlation > 1 or < -1"
+        write(fstderr,*) "Sigma_stw_1 has a correlation > 1 or < -1"
       end if
       if ( any( Sigma_stw_1_corr > 1.0 ) .or. any( Sigma_stw_1_corr < -1.0 ) ) then
-        write(0,*) "Sigma_stw_2 has a correlation > 1 or < -1"
+        write(fstderr,*) "Sigma_stw_2 has a correlation > 1 or < -1"
       end if
-    end if
+
+    end if ! clubb_at_least_debug_level( 2 )
 
     ! Generate Latin hypercube sample, with one extra dimension
     !    for mixture component.
@@ -1595,19 +1596,15 @@ module generate_lh_sample_mod
       l_small_X
 
     ! ---- Begin Code ----
+    sX1 = log( 1. + Xp2_on_Xm2 )
+    sX2 = sX1
     if ( Xm > X_tol ) then
       X1 = 0.5 * log( Xm**2 / ( 1. + Xp2_on_Xm2 ) )
       X2 = X1
-      sX1 = log( 1. + Xp2_on_Xm2 )
-      sX2 = sX1
       l_small_X = .false.
     else
-      X1 = 0.0
-      X2 = 0.0
-!     sX1 = 0.0
-!     sX2 = 0.0
-      sX1 = X_tol**2
-      sX2 = X_tol**2
+      X1 = 0.5 * log( X_tol**2 / ( 1. + Xp2_on_Xm2 ) )
+      X2 = X1
       l_small_X = .true.
     end if
 
