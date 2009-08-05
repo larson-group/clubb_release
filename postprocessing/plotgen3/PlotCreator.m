@@ -11,6 +11,13 @@ endTime
 startHeight
 endHeight
 
+%Quick sanity check
+if startTime == endTime
+	disp(['ERROR: Start time and end time are the same, nothing to plot.']);
+	return;
+end
+
+
 %Define a padding
 maxTextLength = 20;
 
@@ -102,7 +109,13 @@ for i=1:numLines
 		[dummy, dummy , dummy, t_time_steps, time_step_length, dummy, dummy] = header_read_expanded_netcdf(filePath);
 	end
 
-	for j=1:(ceil((endTime - startTime) / time_step_length) + 1)
+	%Do not continue if the end time is past the end of the data
+	if endTime > (t_time_steps * time_step_length)
+		disp(['ERROR: End time of plot greater than end time of data']);
+		return;
+	end
+
+	for j=1:ceil((endTime - startTime) / time_step_length) + 1
 		times(j) = startTime + ((j - 1) * time_step_length);
 	end
 
@@ -115,7 +128,9 @@ for i=1:numLines
 	if strcmp(plotType, 'profile')
 		lines(i) = ProfileFunctions.addLine(lineName, levels, valueToPlot, lineWidth, lineType, lineColor);
 	elseif strcmp(plotType, 'timeseries')
-		lines(i) = TimeseriesFunctions.addLine(lineName, times, valueToPlot, lineWidth, lineType, lineColor);
+		t_start_index = ceil(startTime / time_step_length);
+		t_end_index = ceil(endTime / time_step_length);
+		lines(i) = TimeseriesFunctions.addLine(lineName, times, valueToPlot(t_start_index:t_end_index), lineWidth, lineType, lineColor);
 	end
 	
 	%Store values needed for axis scaling
