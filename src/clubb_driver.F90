@@ -2071,9 +2071,9 @@ module clubb_driver
                        sclrm_forcing, edsclrm_forcing )! Intent(out)
 
     case ( "bomex" ) ! BOMEX Cu case
-      call bomex_tndcy( radht, &                        ! Intent(out)
-                        thlm_forcing, rtm_forcing, &    ! Intent(out)
-                        sclrm_forcing, edsclrm_forcing )! Intent(out)
+      call bomex_tndcy( rtm, radht, &                    ! Intent(out)
+                        thlm_forcing, rtm_forcing, &     ! Intent(out)
+                        sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
 #ifdef UNRELEASED_CODE
     case ( "clex9_nov02" ) ! CLEX-9: Nov. 02 Altocumulus case.
@@ -2260,7 +2260,7 @@ module clubb_driver
                         wpsclrp_sfc, wpedsclrp_sfc )      ! Intent(out)
 
     case ( "bomex" )
-      call bomex_sfclyr( um(2), vm(2), &                            ! Intent(in) 
+      call bomex_sfclyr( um(2), vm(2), rtm(2),  &                   ! Intent(in) 
                          upwp_sfc, vpwp_sfc, &                      ! Intent(out)
                          wpthlp_sfc, wprtp_sfc, ustar, &            ! Intent(out)
                          wpsclrp_sfc, wpedsclrp_sfc )               ! Intent(out)
