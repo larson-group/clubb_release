@@ -19,5 +19,5 @@ elseif (strcmp(colorString, 'k') || strcmp(colorString, 'black'))
 else
 	%Assume the passed in string is a color array and determine
 	%the proper values
-	color = eval([colorString]);	
+	color = eval(colorString);	
 end

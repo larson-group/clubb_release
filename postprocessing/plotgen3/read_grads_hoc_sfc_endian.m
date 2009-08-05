@@ -15,7 +15,8 @@ function avg_field = read_grads_hoc_sfc_endian(filename,MachineFormat,nz,t1,t2,v
 % open GrADS file
 fid = fopen(filename,'r',MachineFormat);
 
-num_timesteps = (t2-t1) + 1;
+%Preallocate array for speed
+avg_field(t1:t2) = 0.0;
 
 % Read in and average profiles over all timesteps
 for t=t1:t2

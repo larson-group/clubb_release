@@ -22,7 +22,6 @@ z = 0;
 
 fid = fopen(file_header, 'rt');
 mline = [];
-y = 0;
 i = 1;
 % While your not at the end of file, will advance line by line through the file.
 % Searches keywords to extract needed values from the string using if statements.

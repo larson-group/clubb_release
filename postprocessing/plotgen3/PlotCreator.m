@@ -13,13 +13,9 @@ endHeight
 
 %Quick sanity check
 if startTime == endTime
-	disp(['ERROR: Start time and end time are the same, nothing to plot.']);
+	disp('ERROR: Start time and end time are the same, nothing to plot.');
 	return;
 end
-
-
-%Define a padding
-maxTextLength = 20;
 
 %Figure out the number of optional arguments passed in
 optargin = size(varargin,2);
@@ -75,9 +71,9 @@ for i=1:numLines
 		varString = cell2mat(varsToRead(j));
 		disp(['Reading variable ', varString]);
 
-		if strcmp(extension, 'ctl')
+		if strcmp(extension, '.ctl')
 			[variableData, levels] = VariableReadGrADS(filePath, varString, startTime, endTime, plotType);
-		elseif strcmp(extension, 'nc')
+		elseif strcmp(extension, '.nc')
 			[variableData, levels] = VariableReadNC(filePath, varString, startTime, endTime, plotType);
 		end
 
@@ -87,9 +83,9 @@ for i=1:numLines
 	end
 
 	%Load timestep information
-	if strcmp(extension, 'ctl')
+	if strcmp(extension, '.ctl')
 		[dummy, dummy , dummy, t_time_steps, time_step_length, dummy, dummy] = header_read_expanded(filePath);
-	elseif strcmp(extension, 'nc')
+	elseif strcmp(extension, '.nc')
 		[dummy, dummy , dummy, t_time_steps, time_step_length, dummy, dummy] = header_read_expanded_netcdf(filePath);
 	end
 
@@ -108,7 +104,7 @@ for i=1:numLines
 
 	%Do not continue if the end time is past the end of the data
 	if endTime > (t_time_steps * time_step_length)
-		disp(['ERROR: End time of plot greater than end time of data']);
+		disp('ERROR: End time of plot greater than end time of data');
 		return;
 	end
 

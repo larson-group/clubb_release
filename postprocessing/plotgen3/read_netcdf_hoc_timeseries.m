@@ -1,5 +1,5 @@
 
-function avg_field = read_netcdf_hoc(filename,nz,t1,t2,varnum,numvars)
+function avg_field = read_netcdf_hoc_timeseries(filename,nz,t1,t2,varnum,numvars)
 
 % Reads and time-averages profiles from 3D NETCDF *.nc files.
 % thlm = read_netcdf_hoc('tune/arm_zt.dat',110,1,1,1,28)
@@ -14,7 +14,8 @@ fid = netcdf.open(filename,'NC_NOWRITE');
 
 varnum = varnum+4;
 
-num_timesteps = (t2-t1) + 1;
+%Preallocate arrays for speed
+avg_field(t1:t2) = 0.0;
 
 % Read in and average profiles over all timesteps
 for t=t1:t2

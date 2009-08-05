@@ -14,6 +14,8 @@ while feof(fid) == 0
 	if findstr(tline, 'OPTIONS');
 		[remainder_1,tline] = strtok(tline);
 		endianness = strtrim(strrep(tline,' ^',''));
+
+		break;
 	end  
 end
 fclose(fid);

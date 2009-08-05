@@ -18,10 +18,7 @@ function [filename, nz, z, t_time_steps, time_step_length, numvars, listofparams
 %         numvars          --    The total number of variables
 %         listofparams     --    The names of all the variables, in vector form
 
-remain = file_header;
-while( size( remain ) > 0 )
-      [filename, remain] = strtok(remain,'/');
-end
+[dummy, filename, dummy, dummy] = fileparts(file_header);
 
 nc_file = netcdf.open(file_header, 'NC_NOWRITE');
 
