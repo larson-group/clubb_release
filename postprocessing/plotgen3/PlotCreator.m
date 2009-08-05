@@ -86,7 +86,7 @@ for i=1:numLines
 		eval([varString, '= variableData;']);
 	end
 
-	%Create a time array
+	%Load timestep information
 	if strcmp(extension, 'ctl')
 		[dummy, dummy , dummy, t_time_steps, time_step_length, dummy, dummy] = header_read_expanded(filePath);
 	elseif strcmp(extension, 'nc')
@@ -95,32 +95,21 @@ for i=1:numLines
 
 	%Figure out indicies for start and end height
 	if strcmp(plotType, 'profile')	
-		bottomIndex = 1;
-		topIndex = 1;
-		
-		%Max is used to prevent hangs caused by failed variable reading
-		for j=1:max(size(levels))
-			if levels(j) <= startHeight
-				bottomIndex = j;
-			end
-			if levels(j) <= endHeight
-				topIndex = j;
-			end
-		end
+		bottomIndex = find(levels >= startHeight, 1, 'first');
+		topIndex = find(levels <= endHeight, 1, 'last');
 	elseif strcmp(plotType, 'timeseries')
 		%For timeseries, we want the start and end time indexes	
 		t_start_index = ceil(startTime / time_step_length);
 		t_end_index = ceil(endTime / time_step_length);
+
+		%Create a time array
+		times = startTime:time_step_length:endTime;
 	end
 
 	%Do not continue if the end time is past the end of the data
 	if endTime > (t_time_steps * time_step_length)
 		disp(['ERROR: End time of plot greater than end time of data']);
 		return;
-	end
-
-	for j=1:ceil((endTime - startTime) / time_step_length) + 1
-		times(j) = startTime + ((j - 1) * time_step_length);
 	end
 
 	%Now evaluate the expression using the read in values,
