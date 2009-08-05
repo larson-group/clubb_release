@@ -20,7 +20,7 @@ vars_zt =
 'rain_rate', 'AKm', 'LH_AKm', 'AKstd', 'AKstd_cld', 'AKm_rcm', 'AKm_rcc',
 'LH_rvm_mc', 'LH_rcm_mc', 'LH_thlm_mc', 'LH_rrainm_mc', 'LH_Nrm_mc',
 'LH_Vrr', 'LH_VNr', 'LH_rrainm', 'LH_ricem', 'LH_rsnowm', 'LH_rgraupelm',
-'LH_thlm', 'LH_rcm', 'LH_rvm', 'LH_wm', 'LH_wp2_zt', 'LH_cloud_frac',
+'LH_thlm', 'LH_rcm', 'LH_rvm', 'LH_wm', 'LH_Ncp2_zt', 'LH_wp2_zt', 'LH_cloud_frac',
 'LH_Nrm', 'LH_Nim', 'LH_Ncm', 'LH_Ngraupelm', 'LH_Nsnowm', 'LH_rcm_avg',
 'rsnowm', 'ricem', 'rgraupelm',
 'diam', 'mass_ice_cryst', 'rcm_icedfs', 'u_T_cm',
