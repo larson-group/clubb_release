@@ -41,7 +41,6 @@ dataFilePath = filePath(1:lastSlash);
 
 %Set a default value if the passed in variable is not found
 varData(1:nz) = 0;
-levData = 0;
 
 for i = 1:numVars
 	%See if the variable we found is the variable we are interested in
