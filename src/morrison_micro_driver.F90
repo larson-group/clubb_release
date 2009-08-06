@@ -162,6 +162,7 @@ module morrison_micro_driver_mod
       dummy => hydromet_mc
       dummy => hydromet_vel
       cloud_frac = dummy(:,1)
+      cloud_frac = s_mellor
     end if
 
     ! Determine temperature
