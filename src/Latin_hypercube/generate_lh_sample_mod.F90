@@ -5,7 +5,7 @@ module generate_lh_sample_mod
 
   public :: generate_lh_sample
 
-  private :: sample_points, latin_hyper_sample, gaus_mixt_points, & 
+  private :: sample_points, generate_uniform_sample, gaus_mixt_points, & 
              truncate_gaus_mixt, ltqnorm, gaus_condt, & 
              st_2_rtthl, log_sqd_normalized
 
@@ -727,7 +727,7 @@ module generate_lh_sample_mod
 
     ! Generate Latin hypercube sample, with one extra dimension
     !    for mixture component.
-    call latin_hyper_sample( n_micro_calls, nt_repeat, d_variables+1, p_matrix, X_u_one_lev )
+    call generate_uniform_sample( n_micro_calls, nt_repeat, d_variables+1, p_matrix, X_u_one_lev )
 
     ! Standard sample for testing purposes when n=2
     ! X_u_one_lev(1,1:(d+1)) = ( / 0.0001d0, 0.46711825945881d0, &
@@ -892,7 +892,7 @@ module generate_lh_sample_mod
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-  subroutine latin_hyper_sample( n_micro_calls, nt_repeat, dp1, p_matrix, X)
+  subroutine generate_uniform_sample( n_micro_calls, nt_repeat, dp1, p_matrix, X_u_one_lev )
 
 ! Description:
 !   Generates a matrix X that contains a Latin Hypercube sample.
@@ -920,7 +920,7 @@ module generate_lh_sample_mod
     ! Output Variables
 
     double precision, intent(out), dimension(n_micro_calls,dp1) :: &
-      X ! n by dp1 matrix, X, each row of which is a dp1-dimensional sample
+      X_u_one_lev ! n by dp1 matrix, X, each row of which is a dp1-dimensional sample
 
     ! Local Variables
 
@@ -941,7 +941,7 @@ module generate_lh_sample_mod
     do j = 1,n_micro_calls
       do k = 1,dp1
         call genrand_real3( rand ) ! genrand_real3's range is (0,1)
-        X(j,k) = (1.0d0/nt_repeat)*(p_matrix(j,k) + rand )
+        X_u_one_lev(j,k) = (1.0d0/nt_repeat)*(p_matrix(j,k) + rand )
       end do
     end do
 
@@ -950,7 +950,7 @@ module generate_lh_sample_mod
 !        print*, 'X(:,1)= ', X(:,:)
 
     return
-  end subroutine latin_hyper_sample
+  end subroutine generate_uniform_sample
 
 !----------------------------------------------------------------------
   subroutine gaus_mixt_points( n_micro_calls, d_variables, a, mu1, mu2, Sigma1, Sigma2, & 
