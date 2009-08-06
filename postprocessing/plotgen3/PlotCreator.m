@@ -1,15 +1,15 @@
 function PlotCreator( caseName, plotTitle, plotNum, plotType, startTime, endTime, startHeight, endHeight, plotUnits, tickCount, varargin )
 
 %Display the variables that were passed in (debug output)
-caseName
-plotTitle
-plotUnits
-plotNum
-plotType
-startTime
-endTime
-startHeight
-endHeight
+disp(['Case Name: ', caseName]);
+disp(['Plot Title: ', plotTitle]);
+disp(['Units: ', plotUnits]);
+disp(['Plot Number: ', int2str(plotNum)]);
+disp(['Plot Type: ', plotType]);
+disp(['Start Time: ', int2str(startTime), ' min.']);
+disp(['End Time: ', int2str(endTime), ' min.']);
+disp(['Start Height: ', int2str(startHeight), ' m']);
+disp(['End Height: ', int2str(endHeight), ' m']);
 
 %Quick sanity check
 if startTime == endTime
