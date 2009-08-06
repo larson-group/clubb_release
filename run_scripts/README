@@ -20,6 +20,13 @@ run_jacobian.bash:
 run_scm_all.bash: 
   Runs all of the cases CLUBB is set up to do.
 
+  NOTE: Optionally, you can specify a manual grid for the runs. This is done
+  with the command line options --zm_grid_test and --zt_grid_test.
+  These options are used by first specifying the number of grid levels, then
+  the desired grid file.
+  For example, to use a 30-level coarse grid specified on the zt points:
+  ./run_scm_all.bash --zt_grid_test 30 ../input/grid/coarse_30lev_32km_zt_grid.grd
+
 run_scm.bash: 
   Runs CLUBB for a specified case. The case is specified with the model name.
 
