@@ -76,7 +76,7 @@ module KK_microphys_module
   contains
 
   !=============================================================================
-  subroutine KK_microphys( dt, nnzp, l_sample, l_latin_hypercube, thlm, &
+  subroutine KK_microphys( dt, nnzp, l_stats_samp, l_latin_hypercube, thlm, &
                            p_in_Pa, exner, rho, pdf_params, &
                            wm, w_std_dev, dzq, rcm, s_mellor, rvm, hydromet, hydromet_mc, &
                            hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
@@ -126,8 +126,7 @@ module KK_microphys_module
         irrainm_src_adj, &
         iNrm_cond, &
         iNrm_auto, &
-        iNrm_src_adj, &
-        l_stats_samp
+        iNrm_src_adj
 
     use stats_variables, only: & 
       irrainm_mc, & ! Variable(s)
@@ -151,7 +150,7 @@ module KK_microphys_module
       nnzp ! Points in the vertical     [-]
 
     logical, intent(in) :: &
-      l_sample, &       ! Whether to sample stats (budgets)
+      l_stats_samp, &       ! Whether to sample stats (budgets)
       l_latin_hypercube ! Whether we're using latin hypercube sampling
 
     real, dimension(nnzp), intent(in) :: &
@@ -381,8 +380,7 @@ module KK_microphys_module
 
 
     ! Save mean volume radius for stats purposes
-    ! Note: added l_sample for latin hypercube sampling -dschanen
-    if ( l_sample .and. l_stats_samp ) then
+    if ( l_stats_samp ) then
       call stat_update_var( imean_vol_rad_rain, mean_vol_rad, zt )
     endif
 
@@ -471,13 +469,8 @@ module KK_microphys_module
       ! This allows a more direct comparison of local, nonlocal formulas.
       Beta_T = (Rd/Rv) * ( Lv/(Rd*T_in_K(k)) )  & 
                * ( Lv/(Cp*T_in_K(k)) )
-      if ( .not. l_latin_hypercube ) then
-        Supsat(k) = ( a(k)*s1(k) + (1.0-a(k))*s2(k) ) & 
-                    *( ( 1.0 + Beta_T*rsat(k) ) / rsat(k) )
-      else
-        Supsat(k) = ( a(k)*s_mellor(k) + (1.0-a(k))*s_mellor(k) ) & 
-                    *( ( 1.0 + Beta_T*rsat(k) ) / rsat(k) )
-      end if
+
+      Supsat(k) = s_mellor(k) * ( ( 1.0 + Beta_T*rsat(k) ) / rsat(k) )
 
       ! Now find the elements that make up the right-hand side of the
       ! equation for rain water mixing ratio, rrainm.
@@ -522,7 +515,7 @@ module KK_microphys_module
 
       Nrm_auto(k) = autoconv_Nrm( rrainm_auto(k) )
 
-      if ( l_sample .and. l_stats_samp ) then
+      if ( l_stats_samp ) then
 
         ! Explicit contributions to rrainm.
         call stat_update_var_pt( irrainm_cond, k, rrainm_cond(k), zt )
@@ -536,7 +529,7 @@ module KK_microphys_module
 
         call stat_update_var_pt( iNrm_auto, k, Nrm_auto(k), zt )
 
-      endif ! l_stats_samp and l_sample
+      endif ! l_stats_samp
 
       rrainm_source = rrainm_auto(k) + rrainm_accr(k)
 
@@ -586,13 +579,13 @@ module KK_microphys_module
 
       endif
 
-      if ( l_sample .and. l_stats_samp ) then
+      if ( l_stats_samp ) then
 
         call stat_update_var_pt( irrainm_src_adj, k, rrainm_src_adj(k), zt )
 
         call stat_update_var_pt( iNrm_src_adj, k, Nrm_src_adj(k), zt )
 
-      endif ! l_stats_samp and l_sample
+      endif ! l_stats_samp 
 
       rrainm_mc_tndcy(k) = rrainm_cond(k) + rrainm_source
 
@@ -628,7 +621,7 @@ module KK_microphys_module
     rvm_mc(nnzp)  = 0.0
     thlm_mc(nnzp) = 0.0
 
-    if ( l_sample .and. l_stats_samp ) then
+    if ( l_stats_samp ) then
 
       ! Sum total of rrainm microphysics (auto + accr + cond)
       call stat_update_var( irrainm_mc, hydromet_mc(:,iirrainm), zt )

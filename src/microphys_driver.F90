@@ -764,7 +764,8 @@ module microphys_driver
     real :: overevap_rate ! Absolute value of negative evap. rate.
 
     real, dimension(gr%nnzp) :: &
-      wtmp   ! Standard dev. of w       [m/s]
+      wtmp,    & ! Standard dev. of w                   [m/s]
+      s_mellor   ! The variable 's' in Mellor (1977)    [kg/kg]
 
     integer :: i, k ! Array index
 
@@ -785,7 +786,8 @@ module microphys_driver
       Kr(k) = c_Krrainm * Kh_zm(k)
     end do
 
-    ! Determine temperature in K for the microphysics
+    ! Determine 's' from Mellor (1977)
+    s_mellor(:) = pdf_params%a(:) * pdf_params%s1(:) + 1.0-pdf_params%a(:)*pdf_params%s2(:)
 
     ! Compute standard deviation of vertical velocity in the grid column
     wtmp(:) = sqrt( wp2_zt(:) )
@@ -909,7 +911,7 @@ module microphys_driver
 !     wtmp = 0.5 ! %% debug
       call morrison_micro_driver & 
            ( real( dt ), gr%nnzp, l_stats_samp, .false., thlm, p_in_Pa, exner, rho, pdf_params, &
-             wm_zt, wtmp, dzq, rcm, rcm, rtm-rcm, hydromet, hydromet_mc, &
+             wm_zt, wtmp, dzq, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
              hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
  
       ! Update total water tendency
@@ -1004,7 +1006,7 @@ module microphys_driver
 
       call KK_microphys & 
            ( real( dt ), gr%nnzp, l_stats_samp, l_local_kk, thlm, p_in_Pa, exner, rho, pdf_params, &
-             wm_zt, wtmp, dzq, rcm, rcm, rtm-rcm, hydromet, hydromet_mc, &
+             wm_zt, wtmp, dzq, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
              hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 
       ! Interpolate velocity to the momentum grid

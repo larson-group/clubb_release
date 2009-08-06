@@ -451,9 +451,12 @@ module stats_variables
     iLH_Nrp2_zt, &
     iLH_Ncp2_zt, &
     iLH_rcp2_zt, &
+    iLH_rtp2_zt, &
+    iLH_thlp2_zt, &
     iLH_rrainp2_zt
 
-!$omp threadprivate(iLH_wp2_zt,iLH_Nrp2_zt,iLH_Ncp2_zt,iLH_rcp2_zt,iLH_rrainp2)
+!$omp threadprivate(iLH_wp2_zt,iLH_Nrp2_zt,iLH_Ncp2_zt,iLH_rcp2_zt,iLH_rtp2_zt, &
+!$omp               iLH_thlp2_zt,iLH_rrainp2_zt)
 
   ! Indices for statistics in zm file
   integer, public :: & 

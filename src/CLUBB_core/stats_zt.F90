@@ -303,6 +303,8 @@ module stats_zt
       iLH_wm, &
       iLH_wp2_zt, &
       iLH_rcp2_zt, &
+      iLH_rtp2_zt, &
+      iLH_thlp2_zt, &
       iLH_rrainp2_zt, &
       iLH_Nrp2_zt, &
       iLH_Ncp2_zt, &
@@ -595,6 +597,14 @@ module stats_zt
     iLH_rvm = 0
     iLH_wm = 0
     iLH_cloud_frac = 0
+
+    iLH_wp2_zt = 0
+    iLH_rcp2_zt = 0  
+    iLH_rtp2_zt = 0
+    iLH_thlp2_zt = 0
+    iLH_rrainp2_zt = 0
+    iLH_Nrp2_zt = 0
+    iLH_Ncp2_zt = 0
 
     allocate( isclrm(1:sclr_dim) )
     allocate( isclrm_f(1:sclr_dim) )
@@ -2230,6 +2240,18 @@ module stats_zt
         iLH_rcp2_zt = k
         call stat_assign( iLH_rcp2_zt, "LH_rcp2_zt", & 
              "Variance of the latin hypercube estimate of rc", "kg^2/kg^2", zt )
+        k = k + 1
+
+      case ( 'LH_rtp2_zt' )
+        iLH_rtp2_zt = k
+        call stat_assign( iLH_rtp2_zt, "LH_rtp2_zt", & 
+             "Variance of the latin hypercube estimate of rt", "kg^2/kg^2", zt )
+        k = k + 1
+
+      case ( 'LH_thlp2_zt' )
+        iLH_thlp2_zt = k
+        call stat_assign( iLH_thlp2_zt, "LH_thlp2_zt", & 
+             "Variance of the latin hypercube estimate of thl", "K^2", zt )
         k = k + 1
 
       case ( 'LH_rrainp2_zt' )
