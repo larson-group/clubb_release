@@ -717,6 +717,8 @@ module clubb_core
 
     ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
     ! This code won't work unless rtm >= 0 !!!
+    ! We do not clip rcm_in_layer because rcm_in_layer only influences
+    ! radiation, and we do not want to bother recomputing it.  6 Aug 2009
     do k = 1, gr%nnzp
       if ( rtm(k) < rcm(k) ) then
 
