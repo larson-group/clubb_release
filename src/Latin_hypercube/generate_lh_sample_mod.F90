@@ -252,8 +252,9 @@ module generate_lh_sample_mod
     else if ( cloud_frac < 0.001 ) then
       ! In this case there are essentially no cloudy points to sample;
       ! Set sample points to zero.
-      X_u_one_lev(:,:)    = 0.0
-      X_nl_one_lev(:,:)   = 0.0
+!     X_u_one_lev(:,:)    = 0.0
+!     X_nl_one_lev(:,:)   = 0.0
+      X_nl_one_lev(:,:)   = -999.0
       l_sample_flag = .false.
 
     end if ! l_sample_out_of_cloud
@@ -274,11 +275,22 @@ module generate_lh_sample_mod
 
 !         print*, 'Covariance matrix of r-thl-w is ill-conditioned'
 
-      X_u_one_lev(:,:)    = 0.0
-      X_nl_one_lev(:,:)   = 0.0
+!     X_u_one_lev(:,:)    = 0.0
+!     X_nl_one_lev(:,:)   = 0.0
+      X_nl_one_lev(:,:)   = -999.0
       l_sample_flag = .false.
 
     end if
+
+    ! Generate Latin hypercube sample, with one extra dimension
+    !    for mixture component.
+    call generate_uniform_sample( n_micro_calls, nt_repeat, d_variables+1, p_matrix, X_u_one_lev )
+
+    ! Standard sample for testing purposes when n=2
+    ! X_u_one_lev(1,1:(d+1)) = ( / 0.0001d0, 0.46711825945881d0, &
+    !             0.58015016959859d0, 0.61894015386778d0, 0.1d0, 0.1d0  / )
+    ! X_u_one_lev(2,1:(d+1)) = ( / 0.999d0, 0.63222458307464d0, &
+    !             0.43642762850981d0, 0.32291562498749d0, 0.1d0, 0.1d0  / )
 
     if ( l_sample_flag ) then
 
@@ -287,8 +299,9 @@ module generate_lh_sample_mod
       ! Assume that Nc, rr obey single-lognormal distributions
 
       ! Nc  = droplet number concentration.  [Nc] = number / kg air
-      ! Ncm  = mean of Nc; must have Ncm>0
-      ! Ncp2_on_Ncm2 = variance of Nc divided by Ncm^2; must have Ncp2>0.
+      ! Ncm  = mean of Nc
+      ! Ncp2_on_Ncm2 = variance of Nc divided by Ncm^2
+      !  We must have a Ncp2_on_Ncm2 >= machine epsilon
       ! Nc1  = PDF parameter for mean of plume 1. [Nc1] = (#/kg)
       ! Nc2  = PDF parameter for mean of plume 2. [Nc2] = (#/kg)
       ! sNc1,2 = PDF param for width of plume 1,2. [sNc1,2] = (#/kg)**2
@@ -688,7 +701,7 @@ module generate_lh_sample_mod
     ! Total water, theta_l: mean plus perturbations
     double precision, intent(out), dimension(n_micro_calls) :: rt, thl
 
-    double precision, intent(out), dimension(n_micro_calls,d_variables+1) :: &
+    double precision, intent(in), dimension(n_micro_calls,d_variables+1) :: &
       X_u_one_lev ! Sample drawn from uniform distribution from particular grid level
 
     double precision, intent(out), dimension(n_micro_calls,d_variables) :: &
@@ -725,29 +738,19 @@ module generate_lh_sample_mod
 
     end if ! clubb_at_least_debug_level( 2 )
 
-    ! Generate Latin hypercube sample, with one extra dimension
-    !    for mixture component.
-    call generate_uniform_sample( n_micro_calls, nt_repeat, d_variables+1, p_matrix, X_u_one_lev )
-
-    ! Standard sample for testing purposes when n=2
-    ! X_u_one_lev(1,1:(d+1)) = ( / 0.0001d0, 0.46711825945881d0, &
-    !             0.58015016959859d0, 0.61894015386778d0, 0.1d0, 0.1d0  / )
-    ! X_u_one_lev(2,1:(d+1)) = ( / 0.999d0, 0.63222458307464d0, &
-    !             0.43642762850981d0, 0.32291562498749d0, 0.1d0, 0.1d0  / )
-
-
     ! Let s PDF (1st column) be a truncated Gaussian.
     ! Take sample solely from cloud points.
     col = iiLH_smellor
-    call truncate_gaus_mixt( n_micro_calls, d_variables, col, a, mu1, mu2, & 
-                             Sigma_stw_1, Sigma_stw_2, cloud_frac1, cloud_frac2, X_u_one_lev, & 
-                             s_pts )
+    call truncate_gaus_mixt( n_micro_calls, d_variables, col, a, mu1, mu2, &  ! In
+                             Sigma_stw_1, Sigma_stw_2, cloud_frac1, cloud_frac2, X_u_one_lev, & ! In
+                             s_pts ) ! Out
 
     ! Generate n samples of a d-variate Gaussian mixture
     ! by transforming Latin hypercube points, X_u_one_lev.
-    call gaus_mixt_points( n_micro_calls, d_variables, a, mu1, mu2,  & 
-                           Sigma_stw_1, Sigma_stw_2, & 
-                           cloud_frac1, cloud_frac2, X_u_one_lev, s_pts, X_nl_one_lev )
+    call gaus_mixt_points( n_micro_calls, d_variables, a, mu1, mu2, &  ! In
+                           Sigma_stw_1, Sigma_stw_2, & ! In
+                           cloud_frac1, cloud_frac2, X_u_one_lev, s_pts, & ! In
+                           X_nl_one_lev ) ! Out
 
 ! Transform s (column 1) and t (column 2) back to rt and thl
 ! This is only needed if you need rt, thl in your microphysics.
@@ -756,12 +759,13 @@ module generate_lh_sample_mod
 !            cloud_frac1, cloud_frac2, X_nl_one_lev(1:n_micro_calls,1), &
 !            X_nl_one_lev(1:n_micro_calls,2), &
 !            X_u_one_lev, rtp, thlp )
-      call st_2_rtthl( n_micro_calls, d_variables, a, rt1, thl1, rt2, thl2, &
-                       crt1, cthl1, crt2, cthl2, &
-                       cloud_frac1, cloud_frac2, mu1(iiLH_smellor), mu2(iiLH_smellor), &
-                       X_nl_one_lev(1:n_micro_calls,iiLH_smellor), &
-                       X_nl_one_lev(1:n_micro_calls,iiLH_tmellor), &
-                       X_u_one_lev, rt, thl )
+      call st_2_rtthl( n_micro_calls, d_variables, a, rt1, thl1, rt2, thl2, & ! In
+                       crt1, cthl1, crt2, cthl2, & ! In
+                       cloud_frac1, cloud_frac2, mu1(iiLH_smellor), mu2(iiLH_smellor), & ! In
+                       X_nl_one_lev(1:n_micro_calls,iiLH_smellor), & ! In
+                       X_nl_one_lev(1:n_micro_calls,iiLH_tmellor), & ! In
+                       X_u_one_lev, & ! In
+                       rt, thl ) ! Out
 
 ! Compute some diagnostics
 !       print*, 'C=', a*cloud_frac1 + (1-a)*cloud_frac2
