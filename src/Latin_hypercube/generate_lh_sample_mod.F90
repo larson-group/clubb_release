@@ -589,7 +589,7 @@ module generate_lh_sample_mod
 !       end if
 
 !     end if ! iiLH_Nc > 0 
-      call sample_points( n_micro_calls, nt_repeat, d_variables, p_matrix, dble( a ), & 
+      call sample_points( n_micro_calls, d_variables, dble( a ), & 
                           dble( rt1 ), dble( thl1 ), & 
                           dble( rt2 ), dble( thl2 ), & 
                           dble( crt1 ), dble( cthl1 ), & 
@@ -620,7 +620,7 @@ module generate_lh_sample_mod
   end subroutine generate_lh_sample
 
 !---------------------------------------------------------------------------------------------------
-  subroutine sample_points( n_micro_calls, nt_repeat, d_variables, p_matrix, a, & 
+  subroutine sample_points( n_micro_calls, d_variables, a, & 
                             rt1, thl1, rt2, thl2, & 
                             crt1, cthl1, crt2, cthl2, & 
                             mu1, mu2,  & 
@@ -660,11 +660,7 @@ module generate_lh_sample_mod
 
     integer, intent(in) :: &
       n_micro_calls, & ! `n'   Number of calls to microphysics (normally=2)
-      nt_repeat,     & ! `n_t' Num. random samples before sequence repeats (normally=10)
       d_variables      ! Number of variates (normally=5)
-
-    integer, intent(in), dimension(n_micro_calls,d_variables+1) :: &
-      p_matrix ! N x D+1 matrix of random integers.
 
     ! Weight of 1st Gaussian, 0 <= a <= 1
     double precision, intent(in) :: a
