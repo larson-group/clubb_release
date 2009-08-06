@@ -26,7 +26,8 @@ module estimate_lh_micro_mod
                lh_AKm, AKm, AKstd, AKstd_cld, & 
                AKm_rcm, AKm_rcc, lh_rcm_avg, &
                lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &
-               lh_wm, lh_Ncp2_zt, lh_rcp2_zt, lh_wp2_zt, lh_cloud_frac, &
+               lh_wm, lh_Ncp2_zt, lh_Nrp2_zt, lh_rrainp2_zt, lh_rcp2_zt, lh_wp2_zt, &
+               lh_cloud_frac, &
                microphys_sub )
 ! Description:
 !   This subroutine computes microphysical grid box averages,
@@ -129,6 +130,8 @@ module estimate_lh_micro_mod
       lh_wm,        & ! Average value of the latin hypercube est. of vertical velocity [m/s]
       lh_wp2_zt,    & ! Average value of the variance of the LH est. of vertical velocity [m^2/s^2]
       lh_rcp2_zt,   & ! Average value of the variance of the LH est. of rc             [(kg/kg)^2]
+      lh_rrainp2_zt,& ! Average value of the variance of the LH est. of rrain          [(kg/kg)^2]
+      lh_Nrp2_zt,   & ! Average value of the variance of the LH est. of Nr             [#^2/kg^2]
       lh_Ncp2_zt,   & ! Average value of the variance of the LH est. of Nc             [#^2/kg^2]
       lh_cloud_frac   ! Average value of the latin hypercube est. of cloud fraction    [-]
 
@@ -358,7 +361,8 @@ module estimate_lh_micro_mod
                               lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, &
                               lh_hydromet_vel, lh_thlm_mc, &
                               lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &
-                              lh_wm, lh_Ncp2_zt, lh_rcp2_zt, lh_wp2_zt, lh_cloud_frac, &
+                              lh_wm, lh_Ncp2_zt, lh_Nrp2_zt, lh_rrainp2_zt, lh_rcp2_zt, lh_wp2_zt, &
+                              lh_cloud_frac, &
                               microphys_sub )
 
     return
@@ -570,7 +574,8 @@ module estimate_lh_micro_mod
                                   lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, &
                                   lh_hydromet_vel, lh_thlm_mc, &
                                   lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &
-                                  lh_wm, lh_Ncp2_zt, lh_rcp2_zt, lh_wp2_zt, lh_cloud_frac, &
+                                  lh_wm, lh_Ncp2_zt, lh_Nrp2_zt, lh_rrainp2_zt, lh_rcp2_zt, lh_wp2_zt, &
+                                  lh_cloud_frac, &
                                   microphys_sub )
 ! Description:
 !   Estimate the tendency of a microphysics scheme via latin hypercube sampling
@@ -674,14 +679,16 @@ module estimate_lh_micro_mod
       lh_hydromet ! Average value of the latin hypercube est. of all hydrometeors [units vary]
 
     real, dimension(nnzp), intent(out) :: &
-      lh_thlm,    & ! Average value of the latin hypercube est. of theta_l           [K]
-      lh_rcm,     & ! Average value of the latin hypercube est. of rc                [kg/kg]
-      lh_rvm,     & ! Average value of the latin hypercube est. of rv                [kg/kg]
-      lh_wm,      & ! Average value of the latin hypercube est. of vertical velocity [m/s]
-      lh_wp2_zt,  & ! Average value of the variance of the LH est. of vertical vel.  [m^2/s^2]
-      lh_rcp2_zt, & ! Average value of the variance of the LH est. of rc             [kg^2/kg^2]
-      lh_Ncp2_zt, & ! Average value of the variance of the LH est. of Nc             [#^2/kg^2]
-      lh_cloud_frac ! Average value of the latin hypercube est. of cloud fraction    [-]
+      lh_thlm,       & ! Average value of the latin hypercube est. of theta_l           [K]
+      lh_rcm,        & ! Average value of the latin hypercube est. of rc                [kg/kg]
+      lh_rvm,        & ! Average value of the latin hypercube est. of rv                [kg/kg]
+      lh_wm,         & ! Average value of the latin hypercube est. of vertical velocity [m/s]
+      lh_wp2_zt,     & ! Average value of the variance of the LH est. of vertical vel.  [m^2/s^2]
+      lh_rcp2_zt,    & ! Average value of the variance of the LH est. of rc             [kg^2/kg^2]
+      lh_rrainp2_zt, & ! Average value of the variance of the LH est. of rrain          [kg^2/kg^2]
+      lh_Nrp2_zt,    & ! Average value of the variance of the LH est. of Nr             [#^2/kg^2]
+      lh_Ncp2_zt,    & ! Average value of the variance of the LH est. of Nc             [#^2/kg^2]
+      lh_cloud_frac    ! Average value of the latin hypercube est. of cloud fraction    [-]
 
     ! Local Variables
     double precision, dimension(nnzp,hydromet_dim) :: &
@@ -892,10 +899,22 @@ module estimate_lh_micro_mod
       ! Compute the variance of cloud water mixing ratio
       lh_rcp2_zt = compute_variance( nnzp, n_micro_calls, rc_tmp, lh_rcm )
 
+      ! Compute the variance of rain water mixing ratio
+      if ( iirrainm > 0 ) then
+        lh_rrainp2_zt = compute_variance( nnzp, n_micro_calls, hydromet_tmp(:,iirrainm,:), &
+                                          lh_hydromet(:,iirrainm) )
+      end if
+
       ! Compute the variance of cloud droplet number concentration
       if ( iiNcm > 0 ) then
         lh_Ncp2_zt = compute_variance( nnzp, n_micro_calls, hydromet_tmp(:,iiNcm,:), &
                                        lh_hydromet(:,iiNcm) )
+      end if
+
+      ! Compute the variance of rain droplet number concentration
+      if ( iiNrm > 0 ) then
+        lh_Nrp2_zt = compute_variance( nnzp, n_micro_calls, hydromet_tmp(:,iiNrm,:), &
+                                       lh_hydromet(:,iiNrm) )
       end if
 
     end if ! l_compute_diagnostic_average

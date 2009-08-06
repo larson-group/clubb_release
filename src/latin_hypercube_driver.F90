@@ -89,7 +89,9 @@ module latin_hypercube_mod
       iLH_rvm, &
       iLH_wm, &
       iLH_wp2_zt, &
+      iLH_Nrp2_zt, &
       iLH_Ncp2_zt, &
+      iLH_rrainp2_zt, &
       iLH_rcp2_zt, &
       iLH_cloud_frac, &
       zt
@@ -161,20 +163,22 @@ module latin_hypercube_mod
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     double precision, dimension(nnzp,n_micro_calls) :: &
-      rt, thl ! Sample of total water and liquid potential temperature [g/kg],[K]
+      rt, thl ! Sample of total water and liquid potential temperature [kg/kg],[K]
 
     real, dimension(nnzp,hydromet_dim) :: &
       lh_hydromet ! Average value of the latin hypercube est. of all hydrometeors [units vary]
 
     real, dimension(nnzp) :: &
-      lh_thlm,    & ! Average value of the latin hypercube est. of theta_l           [K]
-      lh_rcm,     & ! Average value of the latin hypercube est. of rc                [kg/kg]
-      lh_rvm,     & ! Average value of the latin hypercube est. of rv                [kg/kg]
-      lh_wm,      & ! Average value of the latin hypercube est. of vertical velocity [m/s]
-      lh_wp2_zt,  & ! Average value of the variance of the LH est. of vert. vel.     [m^2/s^2]
-      lh_rcp2_zt, & ! Average value of the variance of the LH est. of rc.            [(kg/kg)^2]
-      lh_Ncp2_zt, & ! Average value of the variance of the LH est. of Nc.            [#^2/kg^2]
-      lh_cloud_frac ! Average value of the latin hypercube est. of cloud fraction    [-]
+      lh_thlm,       & ! Average value of the latin hypercube est. of theta_l           [K]
+      lh_rcm,        & ! Average value of the latin hypercube est. of rc                [kg/kg]
+      lh_rvm,        & ! Average value of the latin hypercube est. of rv                [kg/kg]
+      lh_wm,         & ! Average value of the latin hypercube est. of vertical velocity [m/s]
+      lh_wp2_zt,     & ! Average value of the variance of the LH est. of vert. vel.     [m^2/s^2]
+      lh_rrainp2_zt, & ! Average value of the variance of the LH est. of rrain.         [(kg/kg)^2]
+      lh_rcp2_zt,    & ! Average value of the variance of the LH est. of rc.            [(kg/kg)^2]
+      lh_Nrp2_zt,    & ! Average value of the variance of the LH est. of Nr.            [#^2/kg^2]
+      lh_Ncp2_zt,    & ! Average value of the variance of the LH est. of Nc.            [#^2/kg^2]
+      lh_cloud_frac    ! Average value of the latin hypercube est. of cloud fraction    [-]
 
     ! A true/false flag that determines whether the PDF allows us to construct a sample
     logical, dimension(nnzp) :: l_sample_flag 
@@ -257,10 +261,11 @@ module latin_hypercube_mod
            cloud_frac, hydromet, &                  ! intent(in)
            hydromet_mc_est, hydromet_vel_est, &     ! intent(in)
            rcm_mc_est, rvm_mc_est, thlm_mc_est, &   ! intent(out)
-           lh_AKm, AKm, AKstd, AKstd_cld, &        ! intent(out)
+           lh_AKm, AKm, AKstd, AKstd_cld, &         ! intent(out)
            AKm_rcm, AKm_rcc, lh_rcm_avg, &          ! intent(out)
            lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &  ! intent(out)
-           lh_wm, lh_Ncp2_zt, lh_rcp2_zt, lh_wp2_zt, lh_cloud_frac, &  ! intent(out)
+           lh_wm, lh_Ncp2_zt, lh_Nrp2_zt, lh_rrainp2_zt, lh_rcp2_zt, lh_wp2_zt, &  ! intent(out)
+           lh_cloud_frac, & ! intent(out)
            microphys_sub )  ! Procedure
 
     ! print*, 'latin_hypercube_driver: AKm=', AKm
@@ -304,7 +309,9 @@ module latin_hypercube_mod
       call stat_update_var( iLH_wm, lh_wm, zt )
       call stat_update_var( iLH_wp2_zt, lh_wp2_zt, zt )
       call stat_update_var( iLH_Ncp2_zt, lh_Ncp2_zt, zt )
+      call stat_update_var( iLH_Nrp2_zt, lh_Nrp2_zt, zt )
       call stat_update_var( iLH_rcp2_zt, lh_rcp2_zt, zt )
+      call stat_update_var( iLH_rrainp2_zt, lh_rrainp2_zt, zt )
       call stat_update_var( iLH_cloud_frac, lh_cloud_frac, zt )
 
     end if ! l_stats_samp

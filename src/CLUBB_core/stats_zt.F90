@@ -303,6 +303,8 @@ module stats_zt
       iLH_wm, &
       iLH_wp2_zt, &
       iLH_rcp2_zt, &
+      iLH_rrainp2_zt, &
+      iLH_Nrp2_zt, &
       iLH_Ncp2_zt, &
       iLH_cloud_frac
 
@@ -2215,14 +2217,27 @@ module stats_zt
       case ( 'LH_Ncp2_zt' )
         iLH_Ncp2_zt = k
         call stat_assign( iLH_Ncp2_zt, "LH_Ncp2_zt", & 
-             "Variance of the latin hypercube estimate of Nc", "#^2/kg^2", zt )
+             "Variance of the latin hypercube estimate of Nc", "count^2/kg^2", zt )
+        k = k + 1
+
+      case ( 'LH_Nrp2_zt' )
+        iLH_Nrp2_zt = k
+        call stat_assign( iLH_Nrp2_zt, "LH_Nrp2_zt", & 
+             "Variance of the latin hypercube estimate of Nr", "count^2/kg^2", zt )
         k = k + 1
 
       case ( 'LH_rcp2_zt' )
         iLH_rcp2_zt = k
         call stat_assign( iLH_rcp2_zt, "LH_rcp2_zt", & 
-             "Variance of the latin hypercube estimate of rc", "#^2/kg^2", zt )
+             "Variance of the latin hypercube estimate of rc", "kg^2/kg^2", zt )
         k = k + 1
+
+      case ( 'LH_rrainp2_zt' )
+        iLH_rrainp2_zt = k
+        call stat_assign( iLH_rrainp2_zt, "LH_rrainp2_zt", & 
+             "Variance of the latin hypercube estimate of rrain", "kg^2/kg^2", zt )
+        k = k + 1
+
 
       case default
 
