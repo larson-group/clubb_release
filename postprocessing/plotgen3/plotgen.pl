@@ -21,7 +21,7 @@ use File::Path;
 
 # The location of MATLAB. External users probably will not need the 
 # sudo -u matlabuser part.
-my $MATLAB = "sudo -u matlabuser /usr/local/bin/matlab";
+my $MATLAB = "sudo -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop";
 
 # Plotgen Version Number
 my $VERSION = 3.0;
@@ -61,6 +61,8 @@ my $lineWidthCounter = 0;
 
 my $outputIndex = "";
 
+my $plotCount = 0;
+
 # Do not keep permissions on file copies
 $File::Copy::Recursive::KeepMode = 0;
 
@@ -69,7 +71,11 @@ $File::Copy::Recursive::KeepMode = 0;
 # matlab will fail.
 my $sessionType = $ENV{'DISPLAY'}; 
 $SIG{INT} = "cleanup";
+$SIG{CHLD} = "IGNORE";
 
+# Fork to create the Matlab pipe
+#do
+#{
 # Call the entry point to Plotgen
 main();
 
@@ -78,8 +84,6 @@ main();
 ###############################################################################
 sub main()
 {
-	$ENV{'DISPLAY'} = '';
-
 	readArgs();
 
 	# Ensure that Matlab can write to the temp output folder
@@ -90,15 +94,41 @@ sub main()
 
 	$outputIndex = $outputTemp . "/index.html";
 
-	OutputWriter->writeHeader($outputIndex);
-	runCases();
-	OutputWriter->writeFooter($outputIndex);
+	my $pid = fork();
 
-	cleanup();
+	if($pid == 0) # Child
+	{
+		$ENV{'DISPLAY'} = '';
 
-	print("\n");
+		system("mkfifo matlab_pipe");
+		system("$MATLAB <> matlab_pipe");
 
-	exit(0);
+		# Convert the eps files to jpq
+		convertEps();
+
+		OutputWriter->writeFooter($outputIndex);
+	
+		cleanup();
+	
+		print("\r\n");
+
+		exit(0);
+	}
+	else # Parent
+	{
+		# Give matlab a chance to start
+		sleep(5);
+
+		OutputWriter->writeHeader($outputIndex);
+		runCases();
+
+		# Quit matlab
+		system("echo quit > matlab_pipe");
+		system("rm matlab_pipe");
+
+		print("\n");
+		exit(0);
+	}
 }
 
 ###############################################################################
@@ -176,11 +206,8 @@ sub runCases()
 			{
 				buildMatlabStringStd($CASE::CASE);
 				
-				# Convert the eps files to jpq
-				convertEps($CASE::CASE{'name'});
-
 				# Add image file to HTML page
-				placeImages($CASE::CASE{'name'});
+				placeImages($CASE::CASE{'name'}, $plotCount);
 			}
 
 			$count++;
@@ -197,6 +224,7 @@ sub runCases()
 ###############################################################################
 sub convertEps()
 {
+	print("\nConverting images...\n");
 	mkdir "$outputTemp/jpg" unless -d "$outputTemp/jpg";
 	my @epsFiles = <$outputTemp/*eps>;
 	foreach my $eps (@epsFiles)
@@ -211,14 +239,11 @@ sub convertEps()
 sub placeImages()
 {
 	my $caseName = shift(@_);
-
-	print("Case Name: $caseName\n");
+	my $numImages = shift(@_);
 
 	OutputWriter->printDivCenter($outputIndex);
 
-	my @imgFiles = <$outputTemp/jpg/$caseName*.jpg>;
-
-	for(my $x = 0; $x < @imgFiles; $x++)
+	for(my $x = 0; $x < $numImages; $x++)
 	{
 		OutputWriter->placeImage($outputIndex, "jpg/$caseName" . "_" . "$x.eps.jpg");
 	}
@@ -312,6 +337,8 @@ sub buildMatlabStringStd()
 {
 	my $CASE = shift(@_);
 
+	$plotCount = 0;
+	
 	# Get Common Case information
 	my $caseName =  $CASE::CASE{'name'};
 	my $startTime =  $CASE::CASE{'startTime'};
@@ -390,6 +417,7 @@ sub buildMatlabStringStd()
 		}
 		else
 		{
+			$plotCount++;
 			executeMatlab($matlabArgs);	
 		}
 	}
@@ -399,11 +427,10 @@ sub executeMatlab()
 {
 	my $matlabArgs = shift(@_);
 
-	my $args = "echo \"quit\" | $MATLAB -nodisplay -nodesktop -r PlotCreator\"($matlabArgs)\"";
+	#my $args = "echo \"quit\" | $MATLAB -nodisplay -nodesktop -r PlotCreator\"($matlabArgs)\"";
+	my $args = "PlotCreator\"($matlabArgs)\"";
 
-	#print("Call: $args\n\n");			
-
-	system($args)
+	system("echo $args > matlab_pipe");
 }
 
 ###############################################################################
@@ -591,8 +618,7 @@ sub readArgs()
 				}
 
 				$output = $currentDir;
-				#$outputTemp = "/tmp/output" . "_" . "$randInt";
-				$outputTemp = "output_" . "$randInt";
+				$outputTemp = "/tmp/output" . "_" . "$randInt";
 			}
 			
 			$currentCount++;

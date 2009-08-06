@@ -147,6 +147,6 @@ elseif strcmp(plotType, 'timeseries')
 end
 
 %Output the EPS file
-mkdir([ 'output_', int2str(tickCount)]);
-output_file_name = [ 'output_', int2str(tickCount), '/', caseName, '_', int2str(plotNum), '.eps' ];
+%mkdir([ '/tmp/', 'output_', int2str(tickCount)]);
+output_file_name = [ '/tmp/', 'output_', int2str(tickCount), '/', caseName, '_', int2str(plotNum), '.eps' ];
 print( '-depsc2', output_file_name );
