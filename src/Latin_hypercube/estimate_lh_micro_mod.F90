@@ -621,12 +621,14 @@ module estimate_lh_micro_mod
     ! External
 #include "../microphys_interface.inc"
 
-    intrinsic :: epsilon
+    intrinsic :: real, dble
 
     ! Constant parameters
     logical, parameter :: &
       l_compute_diagnostic_average = .true., &
-      l_cloud_weighted_averaging   = .false.
+      l_cloud_weighted_averaging   = .false., &
+      l_stats_samp                 = .false., &
+      l_latin_hypercube            = .true.
 
     ! Input Variables
     real, intent(in) :: &
@@ -757,7 +759,6 @@ module estimate_lh_micro_mod
     s_mellor => X_nl_all_levs(:,:,iiLH_rt)
     w        => X_nl_all_levs(:,:,iiLH_w)
 
-
     lh_hydromet_vel(:,:) = 0.
 
     ! Initialize microphysical tendencies for each mixture component
@@ -866,10 +867,11 @@ module estimate_lh_micro_mod
 
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
-           ( dt, nnzp, .false., .true., thl_tmp(:,sample), p_in_Pa, exner, rho, pdf_params, &
-             w_tmp(:,sample), w_std_dev, dzq, rc_tmp(:,sample), s_mellor_tmp, &
-             rv_tmp(:,sample), hydromet_tmp(:,:,sample), lh_hydromet_mc, &
-             lh_hydromet_vel, lh_rcm_mc, lh_rvm_mc, lh_thlm_mc )
+           ( dt, nnzp, l_stats_samp, l_latin_hypercube, thl_tmp(:,sample), & ! In
+             p_in_Pa, exner, rho, pdf_params, & ! In
+             w_tmp(:,sample), w_std_dev, dzq, rc_tmp(:,sample), s_mellor_tmp, & ! In 
+             rv_tmp(:,sample), hydromet_tmp(:,:,sample),  & ! In
+             lh_hydromet_mc, lh_hydromet_vel, lh_rcm_mc, lh_rvm_mc, lh_thlm_mc ) ! Out
 
       do i = 1, hydromet_dim
         where ( X_u_all_levs(1:nnzp,sample,d_variables+1) < fraction_1 )
@@ -1017,7 +1019,7 @@ module estimate_lh_micro_mod
       lh_rvm_mc = real( a * cloud_frac1 * lh_rvm_mc_m1 + (1.d0-a) * cloud_frac2 * lh_rvm_mc_m2 )
       lh_thlm_mc = real( a * cloud_frac1 * lh_thlm_mc_m1 + (1.d0-a) * cloud_frac2 * lh_thlm_mc_m2 )
 
-    else
+    else ! Standard averaging
 
       ! Grid box average.
       forall( i = 1:hydromet_dim )
