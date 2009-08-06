@@ -283,7 +283,7 @@ sub buildMatlabStringBudget()
 					my $lineStyle = $lineStyles[$lineStyleCounter];
 					my $lineColor = $lineColors[$lineColorCounter];
 							
-					$matlabArgs = "$matlabArgs, \'$file\', \'$name\', \'$expression\', \'$name\', $lineWidth, \'$lineStyle\', \'$lineColor\'";		
+					$matlabArgs = "$matlabArgs, \'$file\', \'$expression\', \'$name\', $lineWidth, \'$lineStyle\', \'$lineColor\'";		
 
 					incrementLineTypes();
 				}
@@ -358,7 +358,7 @@ sub buildMatlabStringStd()
 					my $lineStyle = $lines[$lineNum]{'lineType'};
 					my $lineColor = $lines[$lineNum]{'lineColor'};
 	
-					$matlabArgs = "$matlabArgs, \'$file\', \'$name\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
+					$matlabArgs = "$matlabArgs, \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
 				}
 			}
 			elsif($type eq "auto")
@@ -375,7 +375,7 @@ sub buildMatlabStringStd()
 						my $lineStyle = $lineStyles[$lineStyleCounter];
 						my $lineColor = $lineColors[$lineColorCounter];
 						
-						$matlabArgs = "$matlabArgs, \'$file\', \'$name\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
+						$matlabArgs = "$matlabArgs, \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
 
 						incrementLineTypes();
 					}
