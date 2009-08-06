@@ -147,7 +147,7 @@ do i=1,sfc%nn
     iustar = k
 
     call stat_assign(iustar,"ustar", & 
-         "ustar [m/s]","m/s",sfc)
+         "Friction velocity [m/s]","m/s",sfc)
     k = k + 1
   case ('veg_T_in_K')
     iveg_T_in_K = k
@@ -159,7 +159,7 @@ do i=1,sfc%nn
     isfc_soil_T_in_K = k
 
     call stat_assign(isfc_soil_T_in_K,"sfc_soil_T_in_K", & 
-         "Surface Temperature [K]","K",sfc)
+         "Surface soil temperature [K]","K",sfc)
     k = k + 1
   case ('deep_soil_T_in_K')
     ideep_soil_T_in_K = k
@@ -183,7 +183,7 @@ do i=1,sfc%nn
   case ('cc')
     icc = k
     call stat_assign(icc,"cc", & 
-         "Cloud cover","count",sfc)
+         "Cloud cover [count]","count",sfc)
     k = k + 1
 
   case ('lwp')
@@ -195,7 +195,7 @@ do i=1,sfc%nn
   case ('vwp')
     ivwp = k
     call stat_assign(ivwp,"vwp", & 
-         "Precipitable water [kg/m^2]","kg/m2",sfc)
+         "Vapor water path [kg/m^2]","kg/m2",sfc)
     k = k + 1
 
   case ('iwp')
@@ -213,13 +213,13 @@ do i=1,sfc%nn
   case ('zb')
     izb = k
     call stat_assign(izb,"zb", & 
-         "Cloud base altitude","m",sfc)
+         "Cloud base altitude [m]","m",sfc)
     k = k + 1
 
   case ('zi')
     izi = k
     call stat_assign(izi,"zi", & 
-         "Inversion altitude","m",sfc)
+         "Inversion altitude [m]","m",sfc)
     k = k + 1
 
   case ('rain')          ! Brian
@@ -245,69 +245,69 @@ do i=1,sfc%nn
   case ( 'morr_rain_rate' )
     imorr_rain_rate = k
     call stat_assign( imorr_rain_rate, "morr_rain_rate", & 
-         "Total precip fallout rate [mm/day]","mm/day", sfc )
+         "Total precip fallout rate from Morrison scheme [mm/day]","mm/day", sfc )
     k = k + 1
 
   case ( 'morr_snow_rate' )
     imorr_snow_rate = k
     call stat_assign( imorr_snow_rate, "morr_snow_rate", & 
-         "Snow+Ice+Gruapel fallout rate [mm/day]","mm/day", sfc )
+         "Snow+Ice+Graupel fallout rate from Morrison scheme [mm/day]","mm/day", sfc )
     k = k + 1
 
   case ('wpthlp_sfc')
     iwpthlp_sfc = k
 
     call stat_assign(iwpthlp_sfc,"wpthlp_sfc", &
-         "wpthlp surface flux","K m/s",sfc)
+         "wpthlp surface flux [K m/s]","K m/s",sfc)
     k = k + 1
 
   case ('wprtp_sfc')
     iwprtp_sfc = k
 
     call stat_assign(iwprtp_sfc,"wprtp_sfc", &
-         "wprtp surface flux","(kg/kg) m/s",sfc)
+         "wprtp surface flux [kg/kg]","(kg/kg) m/s",sfc)
     k = k + 1
 
   case ('upwp_sfc')
     iupwp_sfc = k
 
     call stat_assign(iupwp_sfc,"upwp_sfc", &
-         "upwp surface flux","m^2/s^2",sfc)
+         "upwp surface flux [m^2/s^2]","m^2/s^2",sfc)
     k = k + 1
 
   case ('vpwp_sfc')
     ivpwp_sfc = k
 
     call stat_assign(ivpwp_sfc,"vpwp_sfc", &
-         "vpwp surface flux","m^2/s^2",sfc)
+         "vpwp surface flux [m^2/s^2]","m^2/s^2",sfc)
     k = k + 1
 
   case ('thlm_vert_avg')
     ithlm_vert_avg = k
 
     call stat_assign(ithlm_vert_avg,"thlm_vert_avg", &
-         "Vertical average of thlm","K",sfc)
+         "Vertical average of thlm [K]","K",sfc)
     k = k + 1
 
   case ('rtm_vert_avg')
     irtm_vert_avg = k
 
     call stat_assign(irtm_vert_avg,"rtm_vert_avg", &
-         "Vertical average of rtm","kg/kg",sfc)
+         "Vertical average of rtm [kg/kg]","kg/kg",sfc)
     k = k + 1
 
   case ('um_vert_avg')
     ium_vert_avg = k
 
     call stat_assign(ium_vert_avg,"um_vert_avg", &
-         "Vertical average of um","m/s",sfc)
+         "Vertical average of um [m/s]","m/s",sfc)
     k = k + 1
 
   case ('vm_vert_avg')
     ivm_vert_avg = k
 
     call stat_assign(ivm_vert_avg,"vm_vert_avg", &
-         "Vertical average of vm","m/s",sfc)
+         "Vertical average of vm [m/s]","m/s",sfc)
     k = k + 1
 
   case ('wp2_vert_avg')
@@ -348,13 +348,13 @@ do i=1,sfc%nn
   case ('wp23_matrix_condt_num')
     iwp23_matrix_condt_num = k
     call stat_assign(iwp23_matrix_condt_num,"wp23_matrix_condt_num", & 
-         "Estimate of the condition number for wp2/3","count",sfc)
+         "Estimate of the condition number for wp2/3 [count]","count",sfc)
     k = k + 1
 
   case ('thlm_matrix_condt_num')
     ithlm_matrix_condt_num = k
     call stat_assign(ithlm_matrix_condt_num,"thlm_matrix_condt_num", & 
-         "Estimate of the condition number for thlm/wpthlp", & 
+         "Estimate of the condition number for thlm/wpthlp [count]", & 
          "count",sfc)
     k = k + 1
 
@@ -362,7 +362,7 @@ do i=1,sfc%nn
     irtm_matrix_condt_num = k
 
     call stat_assign(irtm_matrix_condt_num,"rtm_matrix_condt_num", & 
-         "Estimate of the condition number for rtm/wprtp", & 
+         "Estimate of the condition number for rtm/wprtp [count]", & 
          "count",sfc)
     k = k + 1
 
@@ -370,34 +370,34 @@ do i=1,sfc%nn
     ithlp2_matrix_condt_num = k
 
     call stat_assign(ithlp2_matrix_condt_num,"thlp2_matrix_condt_num", & 
-         "Estimate of the condition number for thlp2", & 
+         "Estimate of the condition number for thlp2 [count]", & 
          "count",sfc)
     k = k + 1
 
   case ('rtp2_matrix_condt_num')
     irtp2_matrix_condt_num = k
     call stat_assign(irtp2_matrix_condt_num,"rtp2_matrix_condt_num", & 
-         "Estimate of the condition number for rtp2", & 
+         "Estimate of the condition number for rtp2 [count]", & 
          "count",sfc)
     k = k + 1
 
   case ('rtpthlp_matrix_condt_num')
     irtpthlp_matrix_condt_num = k
      call stat_assign(irtpthlp_matrix_condt_num,"rtpthlp_matrix_condt_num", & 
-         "Estimate of the condition number for rtpthlp", & 
+         "Estimate of the condition number for rtpthlp [count]", & 
          "count",sfc)
     k = k + 1
 
   case ('up2_vp2_matrix_condt_num')
     iup2_vp2_matrix_condt_num = k
     call stat_assign(iup2_vp2_matrix_condt_num,"up2_vp2_matrix_condt_num", & 
-         "Estimate of the condition number for up2/vp2","count",sfc)
+         "Estimate of the condition number for up2/vp2 [count]","count",sfc)
     k = k + 1
 
   case ('windm_matrix_condt_num')
     iwindm_matrix_condt_num = k  
     call stat_assign(iwindm_matrix_condt_num,"windm_matrix_condt_num", & 
-         "Estimate of the condition number for the mean wind","count",sfc)
+         "Estimate of the condition number for the mean wind [count]","count",sfc)
 
     k = k + 1
 
