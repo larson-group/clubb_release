@@ -2,7 +2,7 @@ classdef ProfileFunctions
     
 	methods(Static)
  	
-		function addedLine = addLine ( label, height, data, lineWidth, lineType, lineColor, lineCollection )
+		function addedLine = addLine ( height, data, lineWidth, lineType, lineColor )
 			%Adds a line to the created plot
 			addedLine = plot(data, height, lineType, 'Color', lineColor, 'LineWidth', lineWidth);
 

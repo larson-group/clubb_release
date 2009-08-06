@@ -49,7 +49,7 @@ clear legendText;
 for i=1:numLines
 	filePath = varargin{1 + ((i - 1) * argsPerLine)};
 	varExpression = varargin{2 + ((i - 1) * argsPerLine)};
-	lineName = varargin{3 + ((i - 1) * argsPerLine)};
+	lineName = ['\fontsize{6}', varargin{3 + ((i - 1) * argsPerLine)}]; %Font size is set here as well
 	lineWidth = varargin{4 + ((i - 1) * argsPerLine)};
 	lineType = varargin{5 + ((i - 1) * argsPerLine)};
 	lineColor = varargin{6 + ((i - 1) * argsPerLine)};
@@ -114,9 +114,9 @@ for i=1:numLines
 
 	%Add a the line to the plot
 	if strcmp(plotType, 'profile')
-		lines(i) = ProfileFunctions.addLine(lineName, levels, valueToPlot, lineWidth, lineType, lineColor);
+		lines(i) = ProfileFunctions.addLine( levels, valueToPlot, lineWidth, lineType, lineColor);
 	elseif strcmp(plotType, 'timeseries')
-		lines(i) = TimeseriesFunctions.addLine(lineName, times, valueToPlot(t_start_index:t_end_index), lineWidth, lineType, lineColor);
+		lines(i) = TimeseriesFunctions.addLine( times, valueToPlot(t_start_index:t_end_index), lineWidth, lineType, lineColor);
 	end
 	
 	%Store values needed for axis scaling
@@ -129,7 +129,6 @@ for i=1:numLines
 	end
 
 	%Set the text for the legend
-	lineName = ['\fontsize{6}', lineName];
 	legendText(i,1:size(lineName,2)) = lineName;
 end
 

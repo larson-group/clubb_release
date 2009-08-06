@@ -2,7 +2,7 @@ classdef TimeseriesFunctions
     
 	methods(Static)
  	
-		function addedLine = addLine ( label, time, data, lineWidth, lineType, lineColor, lineCollection )
+		function addedLine = addLine ( time, data, lineWidth, lineType, lineColor )
 			%Adds a line to the created plot
 			addedLine = plot(time, data, lineType, 'Color', lineColor, 'LineWidth', lineWidth);
 
