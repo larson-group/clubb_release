@@ -24,7 +24,7 @@ optargin = size(varargin,2);
 %'/PATH/TO/FILE', 'timeseries or profile', 'varname', 'title', 'units', 'lineWidth', 'lineType', 'lineColor'
 
 %This means we can easily figure out the number of lines on the plot by dividing by the number of arguments per line
-argsPerLine = 7;
+argsPerLine = 6;
 numLines = optargin / argsPerLine;
 
 %Create a blank plot of the proper type so we have somewhere to draw lines
@@ -48,12 +48,11 @@ clear legendText;
 %Loop through each line on the plot
 for i=1:numLines
 	filePath = varargin{1 + ((i - 1) * argsPerLine)};
-	varName = varargin{2 + ((i - 1) * argsPerLine)};
-	varExpression = varargin{3 + ((i - 1) * argsPerLine)};
-	lineName = varargin{4 + ((i - 1) * argsPerLine)};
-	lineWidth = varargin{5 + ((i - 1) * argsPerLine)};
-	lineType = varargin{6 + ((i - 1) * argsPerLine)};
-	lineColor = varargin{7 + ((i - 1) * argsPerLine)};
+	varExpression = varargin{2 + ((i - 1) * argsPerLine)};
+	lineName = varargin{3 + ((i - 1) * argsPerLine)};
+	lineWidth = varargin{4 + ((i - 1) * argsPerLine)};
+	lineType = varargin{5 + ((i - 1) * argsPerLine)};
+	lineColor = varargin{6 + ((i - 1) * argsPerLine)};
 
 	%If the color is passed in as one of the MATLAB defined strings, we need to
 	%convert it to its corresponding RGB array
