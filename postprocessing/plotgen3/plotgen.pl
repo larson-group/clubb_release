@@ -73,10 +73,6 @@ my $sessionType = $ENV{'DISPLAY'};
 $SIG{INT} = "cleanup";
 $SIG{CHLD} = "IGNORE";
 
-# Fork to create the Matlab pipe
-#do
-#{
-# Call the entry point to Plotgen
 main();
 
 ###############################################################################
@@ -94,6 +90,7 @@ sub main()
 
 	$outputIndex = $outputTemp . "/index.html";
 
+	# Fork to make MATLAB faster
 	my $pid = fork();
 
 	if($pid == 0) # Child
@@ -110,7 +107,8 @@ sub main()
 	
 		cleanup();
 	
-		print("\r\n");
+		print("Done! To display the plots, open: \n$output/index.html \nin your web browser.\n\n");
+		print("Hit [Enter] to continue.");
 
 		exit(0);
 	}
@@ -214,7 +212,7 @@ sub runCases()
 		}
 		else
 		{
-			print("Not plotting $CASE::CASE{'headerText'}\n");
+			#print("Not plotting $CASE::CASE{'headerText'}\n");
 		}
 	}
 }
@@ -413,7 +411,7 @@ sub buildMatlabStringStd()
 		# Check to see if there are lines to be plotted:
 		if($matlabArgs eq $tempMatlabArgs)
 		{
-			print(STDERR "No valid data available to plot.\n");
+			#print(STDERR "No valid data available to plot.\n");
 		}
 		else
 		{
