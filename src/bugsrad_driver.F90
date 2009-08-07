@@ -16,18 +16,18 @@ module bugsrad_clubb_mod
   contains
 
   subroutine bugsrad_clubb &
-             ( alt, nz, lin_int_buffer,        &
-               extend_atmos_range_size,        &
-               extend_atmos_bottom_level,      &
-               extend_atmos_top_level,         &
-               lat_in_degrees, lon_in_degrees, &
-               day, month, year, time,         &
-               thlm, rcm, rtm, rsnwm, rim,     & 
-               cloud_cover, p_in_Pa, p_in_Pam, &
-               exner, rho_zm,                  &
-               radht, Frad,                    &
-               Frad_SW_up, Frad_LW_up,         &
-               Frad_SW_down, Frad_LW_down,     &
+             ( alt, nz, lin_int_buffer,             &
+               extend_atmos_range_size,             &
+               extend_atmos_bottom_level,           &
+               extend_atmos_top_level,              &
+               lat_in_degrees, lon_in_degrees,      &
+               day, month, year, time,              &
+               thlm, rcm_in_cloud, rtm, rsnwm, rim, & 
+               cloud_frac, p_in_Pa, p_in_Pam,       &
+               exner, rho_zm,                       &
+               radht, Frad,                         &
+               Frad_SW_up, Frad_LW_up,              &
+               Frad_SW_down, Frad_LW_down,          &
                thlm_forcing )
 
 ! Description:
@@ -108,17 +108,17 @@ module bugsrad_clubb_mod
     integer, intent(in) :: lin_int_buffer, extend_atmos_range_size
 
     real, intent(in), dimension(nz) :: &
-      alt,         & ! Altitudes of the model     [m]
-      thlm,        & ! Liquid potential temp.     [K]
-      rcm,         & ! Liquid water mixing ratio  [kg/kg]
-      rsnwm,       & ! Snow water mixing ratio    [kg/kg]
-      rim,         & ! Ice water mixing ratio     [kg/kg]
-      rtm,         & ! Total water mixing ratio   [kg/kg]
-      rho_zm,      & ! Density                    [kg/m^3]
-      cloud_cover, & ! Cloud cover                [-]
-      p_in_Pa,     & ! Pressure on the t grid     [Pa]
-      p_in_Pam,    & ! Pressure on the m grid     [Pa]
-      exner          ! Exner function             [-]
+      alt,          & ! Altitudes of the model              [m]
+      thlm,         & ! Liquid potential temp.              [K]
+      rcm_in_cloud, & ! Liquid water mixing ratio in cloud  [kg/kg]
+      rsnwm,        & ! Snow water mixing ratio             [kg/kg]
+      rim,          & ! Ice water mixing ratio              [kg/kg]
+      rtm,          & ! Total water mixing ratio            [kg/kg]
+      rho_zm,       & ! Density                             [kg/m^3]
+      cloud_frac,   & ! Cloud fraction                      [-]
+      p_in_Pa,      & ! Pressure on the t grid              [Pa]
+      p_in_Pam,     & ! Pressure on the m grid              [Pa]
+      exner           ! Exner function                      [-]
 
     
     integer,intent(in) ::&
@@ -166,8 +166,8 @@ module bugsrad_clubb_mod
       playerinmb ! [hPa]
 
     double precision, dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size) :: &
-      dpl, &                     ! Difference in pressure levels       [hPa]
-      rsnwm2, rcm2, cloud_cover2 ! Two-dimensional copies of the input parameters
+      dpl, &                             ! Difference in pressure levels       [hPa]
+      rsnwm2, rcm_in_cloud2, cloud_frac2 ! Two-dimensional copies of the input parameters
 
     double precision, dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size+1) :: &
       radht_SW2,&! SW Radiative heating rate        [W/m^2]
@@ -202,18 +202,18 @@ module bugsrad_clubb_mod
 
     ! Convert theta_l to temperature
 
-    T_in_K(1,1:(nz-1)) = thlm2T_in_K( thlm(2:nz), exner(2:nz), rcm(2:nz) )
+    T_in_K(1,1:(nz-1)) = thlm2T_in_K( thlm(2:nz), exner(2:nz), rcm_in_cloud(2:nz) )
 
     ! Derive Specific humidity from rc & rt.
     do z = 2, nz
-      if ( rtm(z) < rcm(z) ) then
+      if ( rtm(z) < rcm_in_cloud(z) ) then
         sp_humidity(1,z-1) = 0.0d0
         if ( clubb_at_least_debug_level(1) ) then
           write(fstderr,*) "rvm < 0 at ", z, " before BUGSrad, specific humidity set to 0."
         endif
       else
         sp_humidity(1,z-1) &
-          = dble( rtm(z) - rcm(z) ) / dble( 1.0+rtm(z) )
+          = dble( rtm(z) - rcm_in_cloud(z) ) / dble( 1.0+rtm(z) )
       end if
     end do
 
@@ -224,10 +224,10 @@ module bugsrad_clubb_mod
     o3l(1,1:(nz-1)) = dble( ( 5.4e-5 / rho_zm(1:(nz-1)) ) * 0.001 )
 
     ! Convert and transpose as needed
-    rcil(1,buffer+1:(nz-1)+buffer)         = flip( dble( rim(2:nz) ), nz-1 )
-    rsnwm2(1,buffer+1:(nz-1)+buffer)       = flip( dble( rsnwm(2:nz) ), nz-1 )
-    rcm2(1,buffer+1:(nz-1)+buffer)         = flip( dble( rcm(2:nz) ), nz-1 )
-    cloud_cover2(1,buffer+1:(nz-1)+buffer) = flip( dble( cloud_cover(2:nz) ), nz-1 )
+    rcil(1,buffer+1:(nz-1)+buffer)          = flip( dble( rim(2:nz) ), nz-1 )
+    rsnwm2(1,buffer+1:(nz-1)+buffer)        = flip( dble( rsnwm(2:nz) ), nz-1 )
+    rcm_in_cloud2(1,buffer+1:(nz-1)+buffer) = flip( dble( rcm_in_cloud(2:nz) ), nz-1 )
+    cloud_frac2(1,buffer+1:(nz-1)+buffer)   = flip( dble( cloud_frac(2:nz) ), nz-1 )
 
     T_in_K(1,buffer+1:(nz-1)+buffer) = flip( T_in_K(1,1:(nz-1)), nz-1 )
 
@@ -239,10 +239,10 @@ module bugsrad_clubb_mod
     o3l(1,buffer+1:(nz-1)+buffer) = flip( o3l(1,1:(nz-1)), nz-1 )
 
     ! Assume these are all zero above the CLUBB profile
-    rsnwm2(1,1:buffer)       = 0.0d0
-    rcil(1,1:buffer)         = 0.0d0
-    rcm2(1,1:buffer)         = 0.0d0
-    cloud_cover2(1,1:buffer) = 0.0d0
+    rsnwm2(1,1:buffer)        = 0.0d0
+    rcil(1,1:buffer)          = 0.0d0
+    rcm_in_cloud2(1,1:buffer) = 0.0d0
+    cloud_frac2(1,1:buffer)   = 0.0d0
 
     if ( alt(nz) > extend_alt(extend_atmos_dim) ) then
 
@@ -325,7 +325,7 @@ module bugsrad_clubb_mod
  !write(10,'(2i4,a10)') nlen, (nz-1)+buffer, "TROPICAL"
  !do i=1, (nz-1)+buffer
   ! write(10,'(i4,9f12.6)') i, pinmb(1,i), playerinmb(1,i),T_in_K(1,i),         &
-   !sp_humidity(1,i), 100000.0*o3l(1,i), rcm2(1,i), rcil(1,i),cloud_cover2(1,i),dpl(1,i)
+   !sp_humidity(1,i), 100000.0*o3l(1,i), rcm_in_cloud2(1,i), rcil(1,i),cloud_frac2(1,i),dpl(1,i)
  !end do
  !write(10,'(a4,a12,3f12.6)') "","", playerinmb(1,nz+buffer), ts(1), amu0
  !close(10)
@@ -336,12 +336,12 @@ module bugsrad_clubb_mod
 
     call bugs_rad( nlen, slen, (nz-1)+buffer, playerinmb,          &
                    pinmb, dpl, T_in_K, sp_humidity,                &
-                   rcm2, rcil, rsnwm2, o3l,               &
+                   rcm_in_cloud2, rcil, rsnwm2, o3l,               &
                    ts, amu0, slr, alvdf,                           &
                    alndf, alvdr, alndr, sol_const,                 &
                    dble( grav ), dble( Cp ), radht_SW2, radht_LW2, &
                    Frad_dSW, Frad_uSW, Frad_dLW, Frad_uLW,         &
-                   cloud_cover2 )
+                   cloud_frac2 )
 
     ! Michael pointed out that this was a temperature tendency, not a theta_l
     ! tendency.  The 2nd line should fix both.  -dschanen 28 July 2006
