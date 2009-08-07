@@ -1782,25 +1782,15 @@ module KK_microphys_module
 
     ! rr is a Lognormal.  It is converted to rr(G), which is a Gaussian.
     ! rr(G) = ln rr
-    mu_rrG = LOG(  mu_rr * (  1.0  & 
-                            + ( (sigma_rr**2.0) / (mu_rr**2.0) )  & 
-                           )**(-1.0/2.0) & 
-                )
-    sigma_rrG = SQRT( LOG(  1.0  & 
-                          + ( (sigma_rr**2.0) / (mu_rr**2.0) ) & 
-                         ) & 
-                    )
+    mu_rrG = mu_LN_to_mu_gaus( mu_rr, sigma_rr )
+
+    sigma_rrG = sigma_LN_to_sigma_gaus( sigma_rr, mu_rr )
 
     ! Nr is a Lognormal.  It is converted to Nr(G), which is a Gaussian.
     ! Nr(G) = ln Nr
-    mu_NrG = LOG(  mu_Nr * (  1.0  & 
-                            + ( (sigma_Nr**2.0) / (mu_Nr**2.0) )  & 
-                           )**(-1.0/2.0) & 
-                )
-    sigma_NrG = SQRT( LOG(  1.0 & 
-                          + ( (sigma_Nr**2.0) / (mu_Nr**2.0) ) & 
-                         ) & 
-                    )
+    mu_NrG = mu_LN_to_mu_gaus( mu_Nr, sigma_Nr )
+
+    sigma_NrG = sigma_LN_to_sigma_gaus( sigma_Nr, mu_Nr )
 
     !!! Intra-Gaussian correlations.
 
@@ -1808,18 +1798,19 @@ module KK_microphys_module
     ! It must be converted to corr_sirrG, which is a correlation between
     ! two Gaussians.
     corr_sirrG = corr_sirr & 
-                     * SQRT( EXP(sigma_rrG**2.0) - 1.0 ) / sigma_rrG
+                     * SQRT( EXP( sigma_rrG**2 ) - 1.0 ) / sigma_rrG
+
     ! corr_siNr is a correlation between a Gaussian and a Log-normal.
     ! It must be converted to corr_siNrG, which is a correlation between
     ! two Gaussians.
     corr_siNrG = corr_siNr & 
-                     * SQRT( EXP(sigma_NrG**2.0) - 1.0 ) / sigma_NrG
+                     * SQRT( EXP( sigma_NrG**2 ) - 1.0 ) / sigma_NrG
+
     ! corr_rrNr is a correlation between two Log-normals.  It must be
     ! converted to corr_rrNrG, which is a correlation between two Gaussians.
-    corr_rrNrG = LOG( 1.0 + corr_rrNr & 
-                               * SQRT( EXP(sigma_rrG**2.0) - 1.0 ) & 
-                               * SQRT( EXP(sigma_NrG**2.0) - 1.0 ) & 
-                    ) / ( sigma_rrG * sigma_NrG )
+
+    corr_rrNrG = corr_LN_to_cov_gaus( corr_rrNr, sigma_rrG, sigma_NrG ) &
+               / ( sigma_rrG * sigma_NrG )
 
     !----- Section #2 ------------------------------------------------------
 
@@ -3425,9 +3416,9 @@ module KK_microphys_module
 
     ! Input Variables
     real, intent(in) :: &
-      corr_sy,      & ! Correlation of s and y    [-]
-      sigma_s, & ! Std dev of first term (usually Gaussian 's') [units vary]
-      sigma_y_gaus    ! Std dev second term 'y'   [units vary]
+      corr_sy,     & ! Correlation of s and y    [-]
+      sigma_s,     & ! Std dev of first term (usually Gaussian 's') [units vary]
+      sigma_y_gaus   ! Std dev second term 'y'   [units vary]
 
     real :: cov_sy_gaus ! Covariance for a gaussian dist. [units vary]
 
