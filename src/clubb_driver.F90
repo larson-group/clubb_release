@@ -249,11 +249,6 @@ module clubb_driver
       l_tke_aniso       ! For anisotropic turbulent kinetic energy,
                         ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 
-    logical, parameter :: &
-      l_write_to_file = .true. ! If true, will write case information to a file
-    character(len=50), parameter :: &
-      case_info_file = "../output/run_info.txt" ! The file to output case information to
-
     character(len=6) :: &
       saturation_formula ! "bolton" approx. or "flatau" approx.
 
@@ -292,6 +287,11 @@ module clubb_driver
       edsclr_dim         ! Number of passive scalars            [#]
 
     integer :: itime_nearest ! Used for and inputfields run [s]
+
+    logical, parameter :: &
+      l_write_to_file = .true. ! If true, will write case information to a file
+    character(len=150) :: &
+      case_info_file ! The filename for case info
 
     ! Definition of namelists
     namelist /model_setting/  & 
@@ -412,6 +412,9 @@ module clubb_driver
     read(unit=iunit, nml=model_setting)
     read(unit=iunit, nml=stats_setting)
     close(unit=iunit)
+
+    case_info_file = &
+      "../output/" // trim( fname_prefix ) // "_setup.txt" ! The filename for case setup
 
     ! Sanity check on passive scalars
     ! When adding new 'ii' scalar indices, add them to this list.
