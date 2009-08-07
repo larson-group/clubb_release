@@ -27,6 +27,9 @@ run_scm_all.bash:
   For example, to use a 30-level coarse grid specified on the zt points:
   ./run_scm_all.bash --zt_grid_test 30 ../input/grid/coarse_30lev_32km_zt_grid.grd
 
+  To specify a custom stats file, use the --stats option. For example, to use
+  the nightly stats, ./run_scm_all.bash --stats ../input/stats/nightly_stats.in
+
 run_scm.bash: 
   Runs CLUBB for a specified case. The case is specified with the model name.
 

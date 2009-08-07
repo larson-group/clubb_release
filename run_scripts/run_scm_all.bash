@@ -14,6 +14,7 @@ NIGHTLY=false
 TIMESTEP_TEST=false
 ZT_GRID_TEST=false
 ZM_GRID_TEST=false
+CUSTOM_STATS=false
 OUTPUT_DIR="/home/`whoami`/nightly_tests/output"
 
 # Figure out the directory where the script is located
@@ -116,7 +117,20 @@ set_args()
 			                    test_grid_nz=$2
 				            test_grid_name=$3
 					    test_grid_name=`echo $test_grid_name | sed 's/\//\\\\\//g'`
-				         fi;;	
+				         fi;;
+			--stats ) CUSTOM_STATS=true
+	       			  if [ "$2" == "" ]; then
+			  	  	echo "Option '--stats': The stats file to be used needs to be " \
+		                             "entered following '--stats'."
+		                        exit 1
+                                  elif [ -n "$(echo $2 | grep "-")" ]; then
+					  echo "Option '--stats':  The stats file to be used needs to be "\
+                                             "entered following '--stats', not another option"\
+					  exit 1
+			         else
+					  CUSTOM_STATS_FILE=$2
+				 fi;;
+
 			--help | -h | -? | * ) echo -e "Usage:\n  run_standalone-all.bash [OPTION]..."
 					       echo "Options:"
 					       echo -e "  --nightly\t\t\t\tPerforms the nightly run."
@@ -223,14 +237,22 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 			#STATS_IN='../stats/nobudgets_stats.in'
 		fi
 	else
-		STATS_IN='../input/stats/nobudgets_stats.in'
+		if [ $CUSTOM_STATS == true ] ; then
+			STATS_IN=$CUSTOM_STATS_FILE
+		else
+			STATS_IN='../input/stats/nobudgets_stats.in'
+		fi
+	fi
+
+	if [ ! -e $STATS_IN ] ; then
+		echo $STATS_IN " does not exist"
+		exit 1
 	fi
 
 	if [ ! -e $PARAMS_IN ] ; then
 		echo $PARAMS_IN " does not exist"
 		exit 1
 	fi
-
 
 	if [ $NIGHTLY == true ] ; then
 		cat $PARAMS_IN > 'clubb.in'
