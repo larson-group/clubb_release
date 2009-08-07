@@ -18,7 +18,7 @@ program clubb_standalone
 
   use parameters_tunable, only: read_parameters ! Procedure(s)
 
-  use parameters_tunable, only: params_list ! Variable(s)
+  use output_writer, only: write_output ! Procedure(s)
 
   implicit none
 
@@ -42,24 +42,12 @@ program clubb_standalone
   ! Internal variables
   integer :: err_code 
 
-  integer :: i ! Loop iterator
-
 !-----------------------------------------------------------------------
 
   ! --- Begin Code ---
 
   ! Read in model parameter values
   call read_parameters( iunit, namelist_filename, params )
-
-  ! If standard output (stdout) is selected, print the list of
-  ! parameters that are being used to the screen before the run.
-  if ( l_stdout ) then
-    write(unit=*,fmt='(4x,A9,5x,11x,A5)') "Parameter", "Value"
-    write(unit=*,fmt='(4x,A9,5x,11x,A5)') "---------", "-----"
-    do i = 1, nparams, 1
-       write(unit=*,fmt='(A18,F27.20)') params_list(i) // " = ", params(i)
-    end do
-  end if
 
   ! Initialize status of run 
   err_code = clubb_no_error

@@ -140,6 +140,8 @@ module clubb_driver
 
     use inputfields, only: stat_file_zt
 
+    use parameters_tunable, only: params_list ! Variable(s)
+
     use clubb_core, only: & 
       setup_clubb_core,  & ! Procedure(s) 
       cleanup_clubb_core, & 
@@ -277,7 +279,7 @@ module clubb_driver
     ! Dummy dx and dy horizontal grid spacing.
     real :: dummy_dx, dummy_dy  ! [m]
 
-    integer :: i, i1 ! Internal Loop Variables
+    integer :: i, i1, j ! Internal Loop Variables
     integer :: iinit ! initial iteration
 
     integer ::  & 
@@ -441,7 +443,15 @@ module clubb_driver
     ! Printing Model Inputs
     if ( clubb_at_least_debug_level( 1 ) ) then
 
-      open(unit=iunit, file=case_info_file, status='replace', action='write')
+      if( l_write_to_file ) open(unit=iunit, file=case_info_file, status='replace', action='write')
+
+      ! If standard output (stdout) is selected, print the list of
+      ! parameters that are being used to the screen before the run.
+      call write_output( "Parameter          Value", .true., iunit, '(4x,A24)')
+      call write_output( "---------          -----", .true., iunit, '(4x,A24)')
+      do j = 1, nparams, 1
+        call write_output(params_list(j) // " = ", params(j), .true., iunit, '(A18,F27.20)')
+      end do
 
       call write_output( "--------------------------------------------------", &
         l_write_to_file, iunit )
@@ -592,7 +602,7 @@ module clubb_driver
       call write_output( "l_gamma_Skw = ", l_gamma_Skw, l_write_to_file, iunit)
       call write_output( "l_byteswap_io = ", l_byteswap_io, l_write_to_file, iunit )
 
-      call write_output( "Constant tolerances[units]", l_write_to_file, iunit )
+      call write_output( "Constant tolerances [units]", l_write_to_file, iunit )
       call write_output( "rttol [kg/kg] = ", rttol, l_write_to_file, iunit )
       call write_output( "thltol [K] = ", thltol, l_write_to_file, iunit )
       call write_output( "wtol [m/s] = ", wtol, l_write_to_file, iunit )
@@ -600,7 +610,7 @@ module clubb_driver
       call write_output( "--------------------------------------------------", &
         l_write_to_file, iunit )
 
-      close(unit=iunit);
+      if( l_write_to_file) close(unit=iunit);
 
     end if ! clubb_at_least_debug_level(1)
 
