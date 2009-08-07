@@ -1645,6 +1645,9 @@ module advance_windm_edsclrm_module
                - rhs_diff(3) * xm(km1) &
                - rhs_diff(2) * xm(k)
 
+    ! RHS forcing term at the upper boundary.
+    rhs(k) = rhs(k) + xm_tndcy(k)
+
     ! RHS time tendency term at the upper boundary.
     rhs(k) = real( rhs(k) + ( 1.0 / dt ) * xm(k) )
 
