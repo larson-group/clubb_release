@@ -113,28 +113,45 @@ module generate_lh_sample_mod
     ! Local Variables
 
     logical, dimension(d_variables) :: &
-      l_d_variable_lognormal
+      l_d_variable_lognormal ! Whether a given variable in X_nl has a lognormal dist.
 
-    real :: a
-    real :: w1, w2, sw1, sw2
-    real :: thl1, thl2
-    real :: sthl1, sthl2
-    real :: rt1, rt2
-    real :: srt1, srt2
+    real :: &
+      a,        & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
+      w1,       & ! Mean of w for 1st normal distribution                 [m/s]
+      w2,       & ! Mean of w for 2nd normal distribution                 [m/s]
+      sw1,      & ! Variance of w for 1st normal distribution         [m^2/s^2]
+      sw2,      & ! Variance of w for 2nd normal distribution         [m^2/s^2]
+      thl1,     & ! Mean of th_l for 1st normal distribution                [K]
+      thl2,     & ! Mean of th_l for 2nd normal distribution                [K]
+      sthl1,    & ! Variance of th_l for 1st normal distribution          [K^2]
+      sthl2,    & ! Variance of th_l for 2nd normal distribution          [K^2]
+      rt1,      & ! Mean of r_t for 1st normal distribution             [kg/kg]
+      rt2,      & ! Mean of r_t for 2nd normal distribution             [kg/kg]
+      srt1,     & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
+      srt2,     & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
+      s1,       & ! Mean of s for 1st normal distribution               [kg/kg]
+      s2,       & ! Mean of s for 2nd normal distribution               [kg/kg]
+      stdev_s1, & ! Standard deviation of s for 1st normal distribution [kg/kg]
+      stdev_s2, & ! Standard deviation of s for 2nd normal distribution [kg/kg]
+      crt1,     & ! Coefficient for s'                                      [-]
+      crt2,     & ! Coefficient for s'                                      [-]
+      cthl1,    & ! Coefficient for s'                                    [1/K]
+      cthl2       ! Coefficient for s'                                    [1/K]
+
+    real :: &
+      cloud_frac1, & ! Cloud fraction for 1st normal distribution              [-]
+      cloud_frac2    ! Cloud fraction for 2nd normal distribution              [-]
+
     ! sub-plume correlation coefficient between rt, thl
     ! varies between -1 < rrtthl < 1
     real :: rrtthl
 
-    real :: s1, s2, ss1, ss2
-    real :: cloud_frac1, cloud_frac2
-    real :: crt1, crt2
-    real :: cthl1, cthl2
-
     ! Clip the magnitude of the correlation between rt and thl
     real :: rrtthl_reduced
+
     double precision :: rrtthl_reduced1, rrtthl_reduced2
 
-    ! Means of s, t, w, Nc, Nr, rr for plumes 1 and 2
+    ! Means of s, t, w, & hydrometeors for plumes 1 and 2
     double precision, dimension(d_variables) :: &
       mu1, mu2
 
@@ -167,17 +184,17 @@ module generate_lh_sample_mod
     real :: corr_tNr, corr_trr, strr1, strr2, stNr2, stNr1
 
 !   real :: & 
-!     std_dev_Nc, & ! Standard deviation of Nc   [#/kg]
+!     stdev_Nc, & ! Standard deviation of Nc   [#/kg]
 !     corr_tNc, & ! Correlation between t and Nc [-]
 !     corr_sNc, & ! Correlation between s and Nc [-]
 !     stNc1,    & ! Covariance of t and Nc1      []
 !     stNc2,    & ! Covariance of t and Nc2      []
-!     ssNc1,    & ! Covariance of s and Nc1      [kg^2/kg^2]
-!     ssNc2       ! Covariance of s and Nc2      [kg^2/kg^2]
+!     stdev_sNc1,    & ! Covariance of s and Nc1      [kg^2/kg^2]
+!     stdev_sNc2       ! Covariance of s and Nc2      [kg^2/kg^2]
 
     double precision, dimension(2,2) :: corr_st_mellor_1, corr_st_mellor_2
 
-    real :: std_dev_rr, std_dev_Nr, st1, st2
+    real :: stdev_rr, stdev_Nr, stdev_t1, stdev_t2
 
     ! rr = specific rain content. [rr] = kg rain / kg air
     double precision :: &
@@ -223,8 +240,8 @@ module generate_lh_sample_mod
     cloud_frac2 = pdf_params%cloud_frac2(level)
     s1          = pdf_params%s1(level)
     s2          = pdf_params%s2(level)
-    ss1         = pdf_params%ss1(level)
-    ss2         = pdf_params%ss2(level)
+    stdev_s1    = pdf_params%ss1(level)
+    stdev_s2    = pdf_params%ss2(level)
     rrtthl      = pdf_params%rrtthl(level)
     crt1        = pdf_params%crt1(level)
     crt2        = pdf_params%crt2(level)
@@ -408,8 +425,8 @@ module generate_lh_sample_mod
       call covar_matrix_2_corr_matrix( 2, Sigma_stw_1(1:2,1:2), corr_st_mellor_1 )
       call covar_matrix_2_corr_matrix( 2, Sigma_stw_2(1:2,1:2), corr_st_mellor_2 )
 
-      st1 = sqrt( real( Sigma_stw_1(iiLH_tmellor,iiLH_tmellor) ) ) ! Standard dev of t (1st plume)
-      st2 = sqrt( real( Sigma_stw_2(iiLH_tmellor,iiLH_tmellor) ) ) ! Standard dev of t (2nd plume)
+      stdev_t1 = sqrt( real( Sigma_stw_1(iiLH_tmellor,iiLH_tmellor) ) ) ! Std dev of t (1st plume)
+      stdev_t2 = sqrt( real( Sigma_stw_2(iiLH_tmellor,iiLH_tmellor) ) ) ! Std dev of t (2nd plume)
 
       if ( iiLH_Nc > 0 ) then
         Sigma_stw_1(iiLH_Nc,iiLH_Nc) = sNc1
@@ -428,8 +445,8 @@ module generate_lh_sample_mod
 
       if ( iiLH_rrain > 0 .and. iiLH_Nr > 0 ) then 
         ! Compute standard deviation of Nr & rrain
-        std_dev_rr = real( rrainm ) * sqrt( correlation_array(iiLH_rrain,iiLH_rrain) )
-        std_dev_Nr = real( Nrm ) * sqrt( correlation_array(iiLH_Nr,iiLH_Nr) )
+        stdev_rr = real( rrainm ) * sqrt( correlation_array(iiLH_rrain,iiLH_rrain) )
+        stdev_Nr = real( Nrm ) * sqrt( correlation_array(iiLH_Nr,iiLH_Nr) )
 
         if ( rrainm > dble( rr_tol ) .and. Nrm > dble( Nr_tol ) ) then
 
@@ -438,8 +455,8 @@ module generate_lh_sample_mod
           ! Covariance between rain water mixing ratio rain number concentration
           srrNr1 = corr_LN_to_cov_gaus &
                    ( corr_rrNr, &
-                     sigma_LN_to_sigma_gaus( real( std_dev_rr ), real( rrainm ) ), &
-                     sigma_LN_to_sigma_gaus( real( std_dev_Nr ), real( Nrm ) ) )
+                     sigma_LN_to_sigma_gaus( real( stdev_rr ), real( rrainm ) ), &
+                     sigma_LN_to_sigma_gaus( real( stdev_Nr ), real( Nrm ) ) )
           srrNr2 = srrNr1
 
           Sigma_stw_1(iiLH_rrain,iiLH_Nr) = dble( srrNr1 )
@@ -449,14 +466,14 @@ module generate_lh_sample_mod
         end if
 
         ! Covariances involving s and Nr & rr
-        if ( ss1 > sstol .and. Nrm > dble( Nr_tol ) ) then
+        if ( stdev_s1 > sstol .and. Nrm > dble( Nr_tol ) ) then
           corr_sNr = correlation_array(iiLH_smellor,iiLH_Nr)
 
           ! Covariance between s and rain number conc.
           ssNr1 = corr_gaus_LN_to_cov_gaus &
                    ( corr_sNr, &
-                     ss1, &
-                     sigma_LN_to_sigma_gaus( real( std_dev_Nr ), real( Nrm ) ) )
+                     stdev_s1, &
+                     sigma_LN_to_sigma_gaus( real( stdev_Nr ), real( Nrm ) ) )
 
           Sigma_stw_1(iiLH_smellor,iiLH_Nr) = dble( ssNr1 )
           Sigma_stw_1(iiLH_Nr,iiLH_smellor) = dble( ssNr1 )
@@ -465,19 +482,19 @@ module generate_lh_sample_mod
           corr_tNr = corr_sNr * real( corr_st_mellor_1(iiLH_smellor,iiLH_tmellor) )
           stNr1 = corr_gaus_LN_to_cov_gaus &
                    ( corr_tNr, &
-                     st1, &
-                     sigma_LN_to_sigma_gaus( real( std_dev_Nr ), real( Nrm ) ) )
+                     stdev_t1, &
+                     sigma_LN_to_sigma_gaus( real( stdev_Nr ), real( Nrm ) ) )
 
           Sigma_stw_1(iiLH_tmellor,iiLH_Nr) = dble( stNr1 )
           Sigma_stw_1(iiLH_Nr,iiLH_tmellor) = dble( stNr1 )
         end if
 
-        if ( ss2 > sstol .and. Nrm > dble( Nr_tol ) ) then
+        if ( stdev_s2 > sstol .and. Nrm > dble( Nr_tol ) ) then
 
           ssNr2 = corr_gaus_LN_to_cov_gaus &
                    ( corr_sNr, &
-                     ss2, &
-                     sigma_LN_to_sigma_gaus( real( std_dev_Nr ), real( Nrm ) ) )
+                     stdev_s2, &
+                     sigma_LN_to_sigma_gaus( real( stdev_Nr ), real( Nrm ) ) )
 
           Sigma_stw_2(iiLH_smellor,iiLH_Nr) = dble( ssNr2 )
           Sigma_stw_2(iiLH_Nr,iiLH_smellor) = dble( ssNr2 )
@@ -486,22 +503,22 @@ module generate_lh_sample_mod
           corr_tNr = corr_sNr * real( corr_st_mellor_2(iiLH_smellor,iiLH_tmellor) )
           stNr2 = corr_gaus_LN_to_cov_gaus &
                    ( corr_tNr, &
-                     st2, &
-                     sigma_LN_to_sigma_gaus( real( std_dev_Nr ), real( Nrm ) ) )
+                     stdev_t2, &
+                     sigma_LN_to_sigma_gaus( real( stdev_Nr ), real( Nrm ) ) )
 
           Sigma_stw_2(iiLH_tmellor,iiLH_Nr) = dble( stNr2 )
           Sigma_stw_2(iiLH_Nr,iiLH_tmellor) = dble( stNr2 )
         end if
 
-        if ( ss1 > sstol .and. rrainm > dble( rr_tol ) ) then
+        if ( stdev_s1 > sstol .and. rrainm > dble( rr_tol ) ) then
 
           corr_srr = correlation_array(iiLH_smellor,iiLH_rrain)
 
           ! Covariance between s and rain water mixing ratio
           ssrr1 = corr_gaus_LN_to_cov_gaus &
                    ( corr_srr, &
-                     ss1, &
-                     sigma_LN_to_sigma_gaus( real( std_dev_rr ), real( rrainm ) ) )
+                     stdev_s1, &
+                     sigma_LN_to_sigma_gaus( real( stdev_rr ), real( rrainm ) ) )
 
           Sigma_stw_1(iiLH_smellor,iiLH_rrain) = dble( ssrr1 )
           Sigma_stw_1(iiLH_rrain,iiLH_smellor) = dble( ssrr1 )
@@ -510,19 +527,19 @@ module generate_lh_sample_mod
           corr_trr = corr_srr * real( corr_st_mellor_1(iiLH_smellor,iiLH_tmellor) )
           strr1 = corr_gaus_LN_to_cov_gaus &
                    ( corr_trr, &
-                     st1, &
-                     sigma_LN_to_sigma_gaus( real( std_dev_rr ), real( rrainm ) ) )
+                     stdev_t1, &
+                     sigma_LN_to_sigma_gaus( real( stdev_rr ), real( rrainm ) ) )
 
           Sigma_stw_1(iiLH_tmellor,iiLH_rrain) = dble( strr1 )
           Sigma_stw_1(iiLH_rrain,iiLH_tmellor) = dble( strr1 )
         end if
 
-        if ( ss2 > sstol .and. rrainm > dble( rr_tol ) ) then
+        if ( stdev_s2 > sstol .and. rrainm > dble( rr_tol ) ) then
 
           ssrr2 = corr_gaus_LN_to_cov_gaus &
                    ( corr_srr, &
-                     ss2, &
-                     sigma_LN_to_sigma_gaus( real( std_dev_rr ), real( rrainm ) ) )
+                     stdev_s2, &
+                     sigma_LN_to_sigma_gaus( real( stdev_rr ), real( rrainm ) ) )
 
           Sigma_stw_2(iiLH_smellor,iiLH_rrain) = dble( ssrr2 )
           Sigma_stw_2(iiLH_rrain,iiLH_smellor) = dble( ssrr2 )
@@ -531,8 +548,8 @@ module generate_lh_sample_mod
           corr_trr = corr_srr * real( corr_st_mellor_2(iiLH_smellor,iiLH_tmellor) )
           strr2 = corr_gaus_LN_to_cov_gaus &
                    ( corr_trr, &
-                     st2, &
-                     sigma_LN_to_sigma_gaus( real( std_dev_rr ), real( rrainm ) ) )
+                     stdev_t2, &
+                     sigma_LN_to_sigma_gaus( real( stdev_rr ), real( rrainm ) ) )
 
           Sigma_stw_2(iiLH_tmellor,iiLH_rrain) = dble( strr2 )
           Sigma_stw_2(iiLH_rrain,iiLH_tmellor) = dble( strr2 )
@@ -543,45 +560,45 @@ module generate_lh_sample_mod
 
         ! Covariances involving s and Nc (currently disabled)
 !       corr_sNc = correlation_array(iiLH_smellor,iiLH_Nc)
-!       std_dev_Nc = real( Ncm ) * sqrt( correlation_array(iiLH_Nc,iiLH_Nc) )
+!       stdev_Nc = real( Ncm ) * sqrt( correlation_array(iiLH_Nc,iiLH_Nc) )
 
-!       if ( ss1 > sstol .and. Ncm > dble( Nc_tol ) ) then
+!       if ( stdev_s1 > sstol .and. Ncm > dble( Nc_tol ) ) then
 !         ! The variable s is already Gaussian
-!         ssNc1 = corr_gaus_LN_to_cov_gaus &
+!         stdev_sNc1 = corr_gaus_LN_to_cov_gaus &
 !                 ( corr_sNc, &
-!                   ss1, &
-!                   sigma_LN_to_sigma_gaus( real( std_dev_Nc ), real( Ncm ) ) )
+!                   stdev_s1, &
+!                   sigma_LN_to_sigma_gaus( real( stdev_Nc ), real( Ncm ) ) )
 
-!         Sigma_stw_1(iiLH_smellor,iiLH_Nc) = dble( ssNc1 )
-!         Sigma_stw_1(iiLH_Nc,iiLH_smellor) = dble( ssNc1 )
+!         Sigma_stw_1(iiLH_smellor,iiLH_Nc) = dble( stdev_sNc1 )
+!         Sigma_stw_1(iiLH_Nc,iiLH_smellor) = dble( stdev_sNc1 )
 
 !         ! Approximate the correlation of t and Nc
 !         corr_tNc = corr_sNc * real( corr_st_mellor_1(iiLH_smellor,iiLH_tmellor) )
 !         stNc1 = corr_gaus_LN_to_cov_gaus &
 !                  ( corr_tNc, &
-!                    st1, &
-!                    sigma_LN_to_sigma_gaus( real( std_dev_Nc ), real( Ncm ) ) )
+!                    stdev_t1, &
+!                    sigma_LN_to_sigma_gaus( real( stdev_Nc ), real( Ncm ) ) )
 
 !         Sigma_stw_1(iiLH_tmellor,iiLH_Nc) = dble( stNc1 )
 !         Sigma_stw_1(iiLH_Nc,iiLH_tmellor) = dble( stNc1 )
 
 !       end if
 
-!       if ( ss2 > sstol .and. Ncm > dble( Nc_tol ) ) then
-!         ssNc2 = corr_gaus_LN_to_cov_gaus &
+!       if ( stdev_s2 > sstol .and. Ncm > dble( Nc_tol ) ) then
+!         stdev_sNc2 = corr_gaus_LN_to_cov_gaus &
 !                 ( corr_sNc, &
-!                   ss2, &
-!                   sigma_LN_to_sigma_gaus( real( std_dev_Nc ), real( Ncm ) ) )
+!                   stdev_s2, &
+!                   sigma_LN_to_sigma_gaus( real( stdev_Nc ), real( Ncm ) ) )
 
-!         Sigma_stw_2(iiLH_smellor,iiLH_Nc) = dble( ssNc2 )
-!         Sigma_stw_2(iiLH_Nc,iiLH_smellor) = dble( ssNc2 )
+!         Sigma_stw_2(iiLH_smellor,iiLH_Nc) = dble( stdev_sNc2 )
+!         Sigma_stw_2(iiLH_Nc,iiLH_smellor) = dble( stdev_sNc2 )
 
 !         ! Approximate the correlation of t and Nc
 !         corr_tNc = corr_sNc * real( corr_st_mellor_1(iiLH_smellor,iiLH_tmellor) )
 !         stNc2 = corr_gaus_LN_to_cov_gaus &
 !                  ( corr_tNc, &
-!                    st2, &
-!                    sigma_LN_to_sigma_gaus( real( std_dev_Nc ), real( Ncm ) ) )
+!                    stdev_t2, &
+!                    sigma_LN_to_sigma_gaus( real( stdev_Nc ), real( Ncm ) ) )
 
 !         Sigma_stw_2(iiLH_tmellor,iiLH_Nc) = dble( stNc2 )
 !         Sigma_stw_2(iiLH_Nc,iiLH_tmellor) = dble( stNc2 )
