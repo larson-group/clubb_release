@@ -800,7 +800,8 @@ module estimate_lh_micro_mod
         end where
 
       else where ! Use the grid box mean
-        s_mellor_tmp(:) = pdf_params%a(:) * pdf_params%s1(:) + 1.0-pdf_params%a(:)*pdf_params%s2(:)
+        s_mellor_tmp(:) = pdf_params%a(:) * pdf_params%s1(:) &
+                        + (1.0-pdf_params%a(:))*pdf_params%s2(:)
         rc_tmp(:,sample) = rcm
 
       end where
