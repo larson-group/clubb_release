@@ -17,7 +17,7 @@ module generate_lh_sample_mod
 !-------------------------------------------------------------------------------
   subroutine generate_lh_sample &
              ( n_micro_calls, nt_repeat, d_variables, hydromet_dim, & 
-               p_matrix, cloud_frac, pdf_params, level, & 
+               p_matrix, wm, cloud_frac, rtm, thlm, pdf_params, level, & 
                hydromet, correlation_array, &
                LH_rt, LH_thl, & 
                X_u_one_lev, X_nl_one_lev, l_sample_flag )
@@ -80,8 +80,12 @@ module generate_lh_sample_mod
     real, dimension(hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species [units vary]
 
-    ! Cloud fraction
-    real, intent(in) :: cloud_frac !  Cloud fraction, 0 <= cloud_frac <= 1
+
+    real, intent(in) :: &
+      cloud_frac, & ! Cloud fraction, 0 <= cloud_frac <= 1
+      wm,         & ! Vertical velocity                   [m/s]
+      rtm,        & ! Mean total water mixing ratio       [kg/kg]
+      thlm          ! Mean liquid potential temperature   [K]
 
     integer, intent(in), dimension(n_micro_calls,d_variables+1) :: &
       p_matrix !   N x D random matrix of integers that's fed to closure

@@ -24,8 +24,8 @@ module latin_hypercube_mod
              ( dt, iter, d_variables, n_micro_calls, sequence_length, nnzp, &
                cloud_frac, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm, w_std_dev, dzq, rcm, rvm, &
-               hydromet, correlation_array, hydromet_mc_est, hydromet_vel_est, rcm_mc_est, &
-               rvm_mc_est, thlm_mc_est, microphys_sub )
+               hydromet, correlation_array, LH_hydromet_mc, LH_hydromet_vel, LH_rcm_mc, &
+               LH_rvm_mc, LH_thlm_mc, microphys_sub )
 
 ! Description:
 !   Call a microphysics scheme or generate a estimate of Kessler autoconversion
@@ -144,14 +144,14 @@ module latin_hypercube_mod
 
     ! Input/Output Variables
     real, dimension(nnzp,hydromet_dim), intent(inout) :: &
-      hydromet_mc_est, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
-      hydromet_vel_est   ! LH estimate of hydrometeor sedimentation velocity [m/s]
+      LH_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
+      LH_hydromet_vel   ! LH estimate of hydrometeor sedimentation velocity [m/s]
 
     ! Output Variables
     real, dimension(nnzp), intent(out) :: &
-      rcm_mc_est, & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
-      rvm_mc_est, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
-      thlm_mc_est   ! LH estimate of time tendency of liquid potential temperature [K/s]
+      LH_rcm_mc, & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
+      LH_rvm_mc, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
+      LH_thlm_mc   ! LH estimate of time tendency of liquid potential temperature [K/s]
 
     type(pdf_parameter), intent(in) :: pdf_params
 
@@ -165,7 +165,7 @@ module latin_hypercube_mod
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     double precision, dimension(nnzp,n_micro_calls) :: &
-      rt, thl ! Sample of total water and liquid potential temperature [kg/kg],[K]
+      LH_rt, LH_thl ! Sample of total water and liquid potential temperature [kg/kg],[K]
 
     real, dimension(nnzp,hydromet_dim) :: &
       lh_hydromet ! Average value of the latin hypercube est. of all hydrometeors [units vary]
@@ -247,9 +247,9 @@ module latin_hypercube_mod
       ! Generate LH sample, represented by X_u and X_nl, for level k
       call generate_lh_sample &
            ( n_micro_calls, nt_repeat, d_variables, hydromet_dim, &        ! intent(in)
-             p_matrix, cloud_frac(k), pdf_params, k, &                     ! intent(in)
+             p_matrix, cloud_frac(k), wm(k), rcm(k)+rvm(k), thlm(k), pdf_params, k, & ! intent(in)
              hydromet(k,:), correlation_array(k,:,:), &                    ! intent(in)
-             rt(k,:), thl(k,:), &                                          ! intent(out)
+             LH_rt(k,:), LH_thl(k,:), &                                    ! intent(out)
              X_u_all_levs(k,:,:), X_nl_all_levs(k,:,:), l_sample_flag(k) ) ! intent(out)
 
       ! print *, 'latin_hypercube_sampling: got past lh_sampler'
@@ -259,12 +259,12 @@ module latin_hypercube_mod
     call estimate_lh_micro &
          ( dt, nnzp, n_micro_calls, d_variables, &  ! intent(in)
            X_u_all_levs, X_nl_all_levs, &           ! intent(in)
-           rt, thl, l_sample_flag, pdf_params, &    ! intent(in)
+           LH_rt, LH_thl, l_sample_flag, pdf_params, & ! intent(in)
            thlm, p_in_Pa, exner, rho, &             ! intent(in)
            wm, w_std_dev, dzq, rcm, rvm, &          ! intent(in)
            cloud_frac, hydromet, &                  ! intent(in)
-           hydromet_mc_est, hydromet_vel_est, &     ! intent(in)
-           rcm_mc_est, rvm_mc_est, thlm_mc_est, &   ! intent(out)
+           LH_hydromet_mc, LH_hydromet_vel, &     ! intent(in)
+           LH_rcm_mc, LH_rvm_mc, LH_thlm_mc, &   ! intent(out)
            lh_AKm, AKm, AKstd, AKstd_cld, &         ! intent(out)
            AKm_rcm, AKm_rcc, lh_rcm_avg, &          ! intent(out)
            lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &  ! intent(out)
@@ -329,9 +329,9 @@ module latin_hypercube_mod
     stop "This code was not compiled with support for Latin Hypercube sampling"
 
     ! This is simply to avoid a compiler warning
-    rcm_mc_est  = -999.999
-    rvm_mc_est  = -999.999
-    thlm_mc_est = -999.999
+    LH_rcm_mc  = -999.999
+    LH_rvm_mc  = -999.999
+    LH_thlm_mc = -999.999
 
 #endif /* UNRELEASED_CODE */
 
