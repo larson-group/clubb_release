@@ -19,7 +19,7 @@ module generate_lh_sample_mod
              ( n_micro_calls, nt_repeat, d_variables, hydromet_dim, & 
                p_matrix, cloud_frac, pdf_params, level, & 
                hydromet, correlation_array, &
-               rt, thl, & 
+               LH_rt, LH_thl, & 
                X_u_one_lev, X_nl_one_lev, l_sample_flag )
 ! Description:
 !   This subroutine generates a Latin Hypercube sample.
@@ -97,8 +97,8 @@ module generate_lh_sample_mod
 
     ! Output Variables
     double precision, intent(out), dimension(n_micro_calls) :: &
-      rt, & ! Total water mixing ratio          [kg/kg]
-      thl   ! Liquid potential temperature      [K]
+      LH_rt, & ! Total water mixing ratio          [kg/kg]
+      LH_thl   ! Liquid potential temperature      [K]
 
     double precision, intent(out), dimension(n_micro_calls,d_variables+1) :: &
       X_u_one_lev ! Sample drawn from uniform distribution from a particular grid level
@@ -189,8 +189,8 @@ module generate_lh_sample_mod
 !     corr_sNc, & ! Correlation between s and Nc [-]
 !     stNc1,    & ! Covariance of t and Nc1      []
 !     stNc2,    & ! Covariance of t and Nc2      []
-!     stdev_sNc1,    & ! Covariance of s and Nc1      [kg^2/kg^2]
-!     stdev_sNc2       ! Covariance of s and Nc2      [kg^2/kg^2]
+!     ssNc1,    & ! Covariance of s and Nc1      [kg^2/kg^2]
+!     ssNc2       ! Covariance of s and Nc2      [kg^2/kg^2]
 
     double precision, dimension(2,2) :: corr_st_mellor_1, corr_st_mellor_2
 
@@ -249,16 +249,11 @@ module generate_lh_sample_mod
     cthl2       = pdf_params%cthl2(level)
 
     !---------------------------------------------------------------------------
-    !
-    ! Call Latin Hypercube sampler to compute microphysics.
-    !    V. Larson Mar 2004.
-    ! This acts as an interface between the boundary layer scheme
-    !   and the microphysics.  To add a call to a microphysics scheme,
-    !   alter two lines in autoconversion_driver.f.
+    ! Generate a set of sample points for an microphysics scheme
     !---------------------------------------------------------------------------
 
     ! We prognose rt-thl-w,
-    !    but we set means, covariance of Nc, rrain to constants.
+    !    but we set means, covariance of hydrometeors (e.g. rrain, Nc) to constants.
 
     l_sample_flag = .true.
     if ( l_sample_out_of_cloud ) then
@@ -615,7 +610,7 @@ module generate_lh_sample_mod
                           Sigma_stw_1, Sigma_stw_2, & 
                           dble( cloud_frac1 ), dble( cloud_frac2 ), & 
                           l_d_variable_lognormal, &
-                          rt, thl, X_u_one_lev, X_nl_one_lev ) 
+                          LH_rt, LH_thl, X_u_one_lev, X_nl_one_lev ) 
 
       ! Kluge for lognormal variables
       ! Use the gridbox mean rather than a sampled value
@@ -644,7 +639,7 @@ module generate_lh_sample_mod
                             Sigma_stw_1, Sigma_stw_2, & 
                             cloud_frac1, cloud_frac2, & 
                             l_d_variable_lognormal, &
-                            rt, thl, X_u_one_lev, X_nl_one_lev )
+                            LH_rt, LH_thl, X_u_one_lev, X_nl_one_lev )
 
 ! Description:
 !   Generates n random samples from a d-dim Gaussian-mixture PDF.
@@ -712,7 +707,7 @@ module generate_lh_sample_mod
 
     ! Output Variables
     ! Total water, theta_l: mean plus perturbations
-    double precision, intent(out), dimension(n_micro_calls) :: rt, thl
+    double precision, intent(out), dimension(n_micro_calls) :: LH_rt, LH_thl
 
     double precision, intent(in), dimension(n_micro_calls,d_variables+1) :: &
       X_u_one_lev ! Sample drawn from uniform distribution from particular grid level
@@ -778,7 +773,7 @@ module generate_lh_sample_mod
                        X_nl_one_lev(1:n_micro_calls,iiLH_smellor), & ! In
                        X_nl_one_lev(1:n_micro_calls,iiLH_tmellor), & ! In
                        X_u_one_lev, & ! In
-                       rt, thl ) ! Out
+                       LH_rt, LH_thl ) ! Out
 
 ! Compute some diagnostics
 !       print*, 'C=', a*cloud_frac1 + (1-a)*cloud_frac2
@@ -1486,7 +1481,7 @@ module generate_lh_sample_mod
                          cloud_frac1, cloud_frac2, s1, s2, &
                          s_mellor, &
                          t_mellor, &
-                         X_u_one_lev, rt, thl )
+                         X_u_one_lev, LH_rt, LH_thl )
 
     use constants, only:  &
         fstderr  ! Constant(s)
@@ -1526,7 +1521,7 @@ module generate_lh_sample_mod
     ! Output variables
 
     double precision, dimension(n_micro_calls), intent(out) :: &
-      rt, thl ! n-dimensional column vectors of rt and thl, including mean and perturbation
+      LH_rt, LH_thl ! n-dimensional column vectors of rt and thl, including mean and perturbation
 
     ! Local
 
@@ -1569,14 +1564,14 @@ module generate_lh_sample_mod
       ! Follow M. E. Johnson (1987), p. 56.
       fraction_1     = a*cloud_frac1/(a*cloud_frac1+(1-a)*cloud_frac2)
       if ( X_u_one_lev(sample,d_variables+1) < fraction_1 ) then
-        rt(sample)  = rt1 + (0.5d0/crt1)*(s_mellor(sample)-s1) +  & 
+        LH_rt(sample)  = rt1 + (0.5d0/crt1)*(s_mellor(sample)-s1) +  & 
                            (0.5d0/crt1)*t_mellor(sample)
-        thl(sample) = thl1 + (-0.5d0/cthl1)*(s_mellor(sample)-s1) +  & 
+        LH_thl(sample) = thl1 + (-0.5d0/cthl1)*(s_mellor(sample)-s1) +  & 
                            (0.5d0/cthl1)*t_mellor(sample)
       else
-        rt(sample)  = rt2 + (0.5d0/crt2)*(s_mellor(sample)-s2) +  & 
+        LH_rt(sample)  = rt2 + (0.5d0/crt2)*(s_mellor(sample)-s2) +  & 
                            (0.5d0/crt2)*t_mellor(sample)
-        thl(sample) = thl2 + (-0.5d0/cthl2)*(s_mellor(sample)-s2) +  & 
+        LH_thl(sample) = thl2 + (-0.5d0/cthl2)*(s_mellor(sample)-s2) +  & 
                            (0.5d0/cthl2)*t_mellor(sample)
       end if
 
