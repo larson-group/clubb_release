@@ -93,8 +93,8 @@ module gabls3_night
                     wpthlp_sfc, wprtp_sfc, ubar, ustar )                           ! Intent(out)
 
       ! Compute momentum fluxes
-      call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
-                                  upwp_sfc, vpwp_sfc )
+      call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, & ! Intent(in)
+                                  upwp_sfc, vpwp_sfc )           ! Intent(out)
 
     end if
 
@@ -156,8 +156,8 @@ module gabls3_night
   end function fh1
 
   !------------------------------------------------------------------------------------------------
-  subroutine landflx( th, ts, qh, qs, uh, vh, h, z0, shf, lhf, &
-                      vel, ustar )
+  subroutine landflx( th, ts, qh, qs, uh, vh, h, z0, &
+                      shf, lhf, vel, ustar )
     !
     !  Description: landflx.F90 from SAM 6.7.5
     !
@@ -169,14 +169,14 @@ module gabls3_night
 
     ! Input:
 
-    real, intent(in) :: th   ! pot. temperature at height h
-    real, intent(in) :: ts   ! pot. Temperature at z0
-    real, intent(in) ::  qh   ! vapor at height h
-    real, intent(in) ::  qs   ! vapor at z0
-    real, intent(in) ::  uh   ! zonal wind at height h
-    real, intent(in) ::  vh   ! merid wind at height h
-    real, intent(in) ::  h    ! height h
-    real, intent(in) ::  z0   ! friction height
+    real, intent(in) :: th ! pot. temperature at height h [K]
+    real, intent(in) :: ts ! pot. temperature at z0       [K]
+    real, intent(in) :: qh ! vapor at height h            [kg/kg]
+    real, intent(in) :: qs ! vapor at z0                  [kg/kg]
+    real, intent(in) :: uh ! zonal wind speed at height h [m/s]
+    real, intent(in) :: vh ! merid wind speed at height h [m/s]
+    real, intent(in) :: h  ! height h                     [m]
+    real, intent(in) :: z0 ! friction height              [m]
 
     ! Output:
 
