@@ -8,7 +8,7 @@ module output_writer
 
   implicit none
 
-  public :: write_output
+  public :: write_output, write_date
 
   private ! Default to private
 
@@ -174,5 +174,35 @@ module output_writer
       endif
     end if
   end subroutine write_output_logical
+
+  !----------------------------------------------------------------------
+  subroutine write_date( l_write_to_file, iunit )
+    ! Description:
+    !   Outputs the current date and time in this format:
+    !     YYYY/MM/DD HH:MM:SS
+    ! References:
+    !   None
+    !----------------------------------------------------------------------
+
+    implicit none
+
+    logical, intent(in) :: l_write_to_file   ! Whether or not to write to a file
+    integer, intent(in) :: iunit             ! The file to write to
+    character(len=8)    :: current_date      ! Current date string (ccyymmdd)
+    character(len=10)   :: current_time      ! Current time string (hhmmss.sss)
+
+    call date_and_time( current_date, current_time )
+
+    write(unit=*, fmt="(A4,A1,4(A2,A1),A2)") &
+      current_date(1:4), "/", current_date(5:6), "/", current_date(7:8), " ", &
+      current_time(1:2), ":", current_time(3:4), ":", current_time(5:6)
+ 
+    if( l_write_to_file ) then
+      write(unit=iunit, fmt="(A4,A1,4(A2,A1),A2)") &
+        current_date(1:4), "/", current_date(5:6), "/", current_date(7:8), " ", &
+        current_time(1:2), ":", current_time(3:4), ":", current_time(5:6)
+    endif
+
+  end subroutine write_date
 
 end module output_writer

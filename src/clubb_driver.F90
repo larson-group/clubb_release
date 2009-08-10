@@ -10,7 +10,7 @@ module clubb_driver
 !-----------------------------------------------------------------------
 
   use stats_precision, only: time_precision ! Variable(s)
-  use output_writer, only: write_output
+  use output_writer, only: write_output, write_date
 
   implicit none
 
@@ -445,12 +445,15 @@ module clubb_driver
 
       if( l_write_to_file ) open(unit=iunit, file=case_info_file, status='replace', action='write')
 
-      ! If standard output (stdout) is selected, print the list of
-      ! parameters that are being used to the screen before the run.
-      call write_output( "Parameter          Value", .true., iunit, '(4x,A24)')
-      call write_output( "---------          -----", .true., iunit, '(4x,A24)')
+      ! Print the date and time
+      call write_date( l_write_to_file, iunit )
+
+      ! Print the list of parameters that are being used before the run.
+      call write_output( "Parameter          Value", l_write_to_file, iunit, '(4x,A24)')
+      call write_output( "---------          -----", l_write_to_file, iunit, '(4x,A24)')
       do j = 1, nparams, 1
-        call write_output(params_list(j) // " = ", params(j), .true., iunit, '(A18,F27.20)')
+        call write_output(params_list(j) // " = ", params(j), & 
+          l_write_to_file, iunit, '(A18,F27.20)')
       end do
 
       call write_output( "--------------------------------------------------", &
