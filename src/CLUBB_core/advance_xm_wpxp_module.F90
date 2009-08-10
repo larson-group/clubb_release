@@ -860,7 +860,6 @@ module advance_xm_wpxp_module
     ! Local Variables
 
     ! Indices
-    !integer :: km1
     integer :: k, kp1
     integer :: k_xm, k_wpxp
 
@@ -874,11 +873,8 @@ module advance_xm_wpxp_module
 
       ! Define indices
 
-      !km1 = max( k-1, 1 )
-      kp1 = min( k+1, gr%nnzp )
-
-      k_xm   = 2*k - 1
-      k_wpxp = 2*k
+      k_xm = 2*k - 1
+      ! k_wpxp is 2*k
 
 
       !!!!!***** xm *****!!!!!
@@ -945,6 +941,22 @@ module advance_xm_wpxp_module
         endif
 
       endif
+
+    enddo ! xm loop: 2..gr%nnzp-1
+
+
+    ! The wpxp loop runs between k = 2 and k = gr%nnzp-1.  The value of wpxp
+    ! is set to specified values at both the lowest level, k = 1, and the
+    ! highest level, k = gr%nnzp.
+
+    do k = 2, gr%nnzp-1, 1
+
+      ! Define indices
+
+      kp1 = min( k+1, gr%nnzp )
+
+      ! k_xm is 2*k - 1
+      k_wpxp = 2*k
 
 
       !!!!!***** w'x' *****!!!!!
@@ -1106,8 +1118,7 @@ module advance_xm_wpxp_module
 
       endif
 
-
-    enddo ! 2..gr%nnzp-1
+    enddo ! wpxp loop: 2..gr%nnzp-1
 
 
     ! Boundary conditions
@@ -1289,11 +1300,8 @@ module advance_xm_wpxp_module
 
       ! Define indices
 
-      km1 = max( k-1, 1 )
-      kp1 = min( k+1, gr%nnzp )
-
       k_xm   = 2*k - 1
-      k_wpxp = 2*k
+      ! k_wpxp is 2*k
 
 
       !!!!!***** xm *****!!!!!
@@ -1318,6 +1326,23 @@ module advance_xm_wpxp_module
         call stat_update_var_pt( ixm_f, k, xm_forcing(k), zt )
 
       endif ! l_stats_samp
+
+    enddo ! xm loop: 2..gr%nnzp-1
+
+
+    ! The wpxp loop runs between k = 2 and k = gr%nnzp-1.  The value of wpxp
+    ! is set to specified values at both the lowest level, k = 1, and the
+    ! highest level, k = gr%nnzp.
+
+    do k = 2, gr%nnzp-1, 1
+
+      ! Define indices
+
+      km1 = max( k-1, 1 )
+      kp1 = min( k+1, gr%nnzp )
+
+      ! k_xm is 2*k - 1
+      k_wpxp = 2*k
 
 
       !!!!!***** w'x' *****!!!!!
@@ -1446,7 +1471,7 @@ module advance_xm_wpxp_module
 
       endif ! l_stats_samp
 
-    enddo ! k=2..gr%nnzp-1
+    enddo ! wpxp loop: 2..gr%nnzp-1
 
 
     ! Boundary conditions.
