@@ -700,7 +700,7 @@ module clubb_core
     !----------------------------------------------------------------
     call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3, & ! intent(in)
                           Kh_zt, tau_zm, Skw_zm, rtpthvp,          & ! intent(in)
-                          rtm_forcing, thlpthvp, rtm_ref, thlm_ref, & ! intent(in)
+                          rtm_forcing, thlpthvp, rtm_ref, thlm_ref,& ! intent(in)
                           thlm_forcing, rtp2, thlp2, wp2_zt,       & ! intent(in)
                           pdf_params, l_implemented,               & ! intent(in)
                           sclrpthvp, sclrm_forcing, sclrp2,        & ! intent(in)
@@ -772,11 +772,12 @@ module clubb_core
     ! Advance um, vm, and edsclrm one time step
     !----------------------------------------------------------------
 
-    call advance_windm_edsclrm( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref,  & ! In
-                                wp2, up2, vp2, um_forcing, vm_forcing, edsclrm_forcing, & ! In
-                                upwp_sfc, vpwp_sfc, wpedsclrp_sfc, fcor,  &  !  In
-                                l_implemented, um, vm, edsclrm, &
-                                upwp, vpwp, wpedsclrp, err_code )
+    call advance_windm_edsclrm( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref, & ! Intent(in)
+                                wp2, up2, vp2, um_forcing, vm_forcing,    & ! Intent(in)
+                                edsclrm_forcing, upwp_sfc, vpwp_sfc,      & ! Intent(in)
+                                wpedsclrp_sfc, fcor, l_implemented,       & ! Intent(in)
+                                um, vm, edsclrm,                          & ! Intent(inout)
+                                upwp, vpwp, wpedsclrp, err_code )           ! Intent(out)	
 
     ! Wrapped LAPACK procedures may report errors, and if so, exit
     ! gracefully.

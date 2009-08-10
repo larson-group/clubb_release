@@ -20,9 +20,10 @@ module advance_windm_edsclrm_module
   !=============================================================================
   subroutine advance_windm_edsclrm &
              ( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref, &
-               wp2, up2, vp2, um_forcing, vm_forcing, edsclrm_forcing, &
-               upwp_sfc, vpwp_sfc, wpedsclrp_sfc, fcor,  &
-               l_implemented, um, vm, edsclrm, &
+               wp2, up2, vp2, um_forcing, vm_forcing, &
+               edsclrm_forcing, upwp_sfc, vpwp_sfc, &
+               wpedsclrp_sfc, fcor, l_implemented, &
+               um, vm, edsclrm, &
                upwp, vpwp, wpedsclrp, err_code )
     ! Description:
     ! Solves for both mean horizontal wind components, um and vm, and for the
