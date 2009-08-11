@@ -205,7 +205,7 @@ fileName = [caseName '_forcings.in'];
 fout = fopen(fileName,'w');
 
 %Print out the header row
-fprintf(fout,'z[m]     thlm_f[K\\s]     rtm_f[kg\\kg\\s]     um_ref[m\\s]     vm_ref[m\\s]     um_f[m\\s^2]     vm_f[m\\s^2]     w[m\\s]     ug[m\\s]     vg[m\\s]\n');
+fprintf(fout,'z[m]     thlm_f[K\\s]     rtm_f[kg\\kg\\s]     um_ref[m\\s]     vm_ref[m\\s]     um_f[m\\s^2]     vm_f[m\\s^2]     omega[mb\\hr]     ug[m\\s]     vg[m\\s]\n');
 
 %Now populate the columns
 for i = 1:fieldLength,
