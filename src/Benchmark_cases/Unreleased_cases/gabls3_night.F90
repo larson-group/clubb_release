@@ -10,7 +10,7 @@ module gabls3_night
 
   public :: gabls3_night_sfclyr
 
-  private :: landflx, psi_h, gm1, gh1,fm1, fh1
+  private :: landflx, psi_h, gm1, gh1, fm1, fh1
 
   private
 
@@ -24,64 +24,68 @@ module gabls3_night
     !       Description:
     !       This subroutine computes surface fluxes of horizontal momentum,
     !       heat and moisture according to GCSS ATEX specifications
-
+    !
     !       References:
-
+    !
     !----------------------------------------------------------------------
 
     use constants, only: kappa, grav, Rd, Cp, p0, Lv ! Variable(s)
 
     use stats_precision, only: time_precision ! Variable(s)
 
-    use surface_flux, only: compute_momentum_flux
+    use surface_flux, only: compute_momentum_flux ! Procedure(s)
 
-    use time_dependent_input, only: l_t_dependent, &
-                                    time_select, &
+    use time_dependent_input, only: l_t_dependent,  & ! Variable(s)
                                     time_sfc_given, &
                                     thlm_sfc_given, &
-                                    rtm_sfc_given
+                                    rtm_sfc_given,  &
+                                    time_select       ! Procedure(s)
 
-    use interpolation, only: factor_interp
+    use interpolation, only: factor_interp ! Procedure(s)
 
     implicit none
 
     ! Constants
     real, parameter ::  & 
-      z0 = 0.15
+      z0 = 0.15 ! Roughness length  [m]
 
     ! Input variables
-
     real(kind=time_precision), intent(in) :: time ! Model time [s]
 
     real, intent(in) ::  & 
-      um_sfc,       & ! um at zt(2)            [m/s]
-      vm_sfc,       & ! vm at zt(2)            [m/s]
-      thlm_sfc,     & ! Theta_l at zt(2)       [K]
-      rtm_sfc,      & ! rt at zt(2)            [kg/kg]
-      lowest_level    ! gr%zt(2)               [m]
+      um_sfc,       & ! um at zt(2)                     [m/s]
+      vm_sfc,       & ! vm at zt(2)                     [m/s]
+      thlm_sfc,     & ! Theta_l at zt(2)                [K]
+      rtm_sfc,      & ! rt at zt(2)                     [kg/kg]
+      lowest_level    ! gr%zt(2), height of the lowest
+                      ! above-ground gridpoint          [m]
 
     ! Output variables
     real, intent(out) ::  & 
-      upwp_sfc,    & ! u'w' at surface           [m^2/s^2]
-      vpwp_sfc,    & ! v'w' at surface           [m^2/s^2]
-      ustar          ! surface friction velocity [m/s]
+      upwp_sfc,    & ! turbulent upward flux of u-momentum  [m^2/s^2]
+      vpwp_sfc,    & ! turbulent upward flux of v-momentum  [m^2/s^2]
+      ustar          ! surface friction velocity            [m/s]
 
-    real, intent(inout):: &
+    real, intent(out):: &
       wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
       wprtp_sfc      ! w'rt' surface flux        [(m kg)/(kg s)]
 
     ! Local Variables
-    real :: ubar, qs, ts
-    real :: time_frac
+    real :: &
+      ubar, & ! Average surface wind speed [m/s]
+      qs,   & ! Vapor at height z0
+      ts      ! Potential temp. at height z0
+
+    real :: time_frac ! time interpolation factor
 
     integer :: i1, i2
 
-    if( l_t_dependent  ) then
+    if( l_t_dependent ) then
 
       call time_select( time, size(time_sfc_given), time_sfc_given, i1, i2 )
 
-      time_frac = real((time - time_sfc_given(i1)) /  &          ! at the first time a=0;
-            (time_sfc_given(i2) - time_sfc_given(i1)))             ! at the second time a=1.
+      time_frac = real( (time - time_sfc_given(i1)) /  &  ! at the first time, time_frac=0;
+            (time_sfc_given(i2) - time_sfc_given(i1)) )   ! at the second time, time_frac=1.
 
 
       ts = factor_interp( time_frac, thlm_sfc_given(i2), thlm_sfc_given(i1) )
@@ -96,12 +100,12 @@ module gabls3_night
       call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, & ! Intent(in)
                                   upwp_sfc, vpwp_sfc )           ! Intent(out)
 
-    end if
+    end if ! l_t_dependent
 
     return
   end subroutine gabls3_night_sfclyr
 
-
+  !-----------------------------------------------------------------------------------------------
   real function psi_h( x, xlmo )
     implicit none
     real, intent(in) :: x
@@ -111,7 +115,7 @@ module gabls3_night
 
   end function psi_h
 
-
+  !-----------------------------------------------------------------------------------------------
   real function gm1( x )
 
     implicit none
@@ -121,6 +125,7 @@ module gabls3_night
     gm1 = (1.-15.*x)**0.25
   end function gm1
 
+  !-----------------------------------------------------------------------------------------------
   real function gh1( x )
 
     implicit none
@@ -131,6 +136,7 @@ module gabls3_night
 
   end function gh1
 
+  !-----------------------------------------------------------------------------------------------
   real function fm1( x )
     implicit none
 
@@ -144,6 +150,7 @@ module gabls3_night
 
   end function fm1
 
+  !-----------------------------------------------------------------------------------------------
   real function fh1( x )
 
     implicit none

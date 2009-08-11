@@ -42,9 +42,9 @@ function [] = find_grads_differences( ctl_file, t1, t2, tol )
 addpath '../matlab_include/'
 
 % The three directories containing three different ctlfile file sets.
-path1  = ['/home/faschinj/projects/experimental/clubb/New/'];
-path2  = ['/home/faschinj/projects/experimental/clubb/Old/'];
-path3  = ['/home/faschinj/projects/experimental/clubb/Old/'];
+path1  = ['/home/ldgrant/clubb/output/'];
+path2  = ['/home/ldgrant/clubb/output/'];
+path3  = ['/home/ldgrant/clubb_clean/output/'];
 
 % Read information from .ctl files
 [filename1,nz1,z1,ntimesteps1,numvars1,list_vars1] = header_read([path1,ctl_file]);
