@@ -120,7 +120,7 @@ sub writeFooter()
 		</font>
 	</div>
 </body>
-</htlm>
+</html>
 EOF
 	close(FILE);
 }

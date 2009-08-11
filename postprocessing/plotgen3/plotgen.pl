@@ -114,9 +114,6 @@ sub main()
 	}
 	else # Parent
 	{
-		# Give matlab a chance to start
-		sleep(5);
-
 		OutputWriter->writeHeader($outputIndex);
 		runCases();
 
@@ -373,12 +370,26 @@ sub buildMatlabStringStd()
 
 			my $type = $lines[$lineNum]{'type'};
 
-			if(($type eq "les" && $plotLes == 1) || ($type eq "dec17" && $plotDec) || ($type eq "bestEver" && $plotBest))
+			if(($type eq "les" && $plotLes == 1) || ($type eq "dec17" && $plotDec) || ($type eq "bestever" && $plotBest))
 			{
 				my $file = "$lines[$lineNum]{'filename'}";
 				if(-e $file)
 				{
-					my $title = $type;
+					my $title;
+
+					if($type eq "les")
+					{
+						$title = "LES";
+					}
+					elsif($type eq "dec17")
+					{
+						$title = "HOC 12/17/2005";
+					}
+					elsif($type eq "bestever")
+					{
+						$title = "HOC \"best-ever\"";
+					}
+
 					my $lineWidth = $lines[$lineNum]{'lineWidth'};
 					my $lineStyle = $lines[$lineNum]{'lineType'};
 					my $lineColor = $lines[$lineNum]{'lineColor'};
@@ -427,6 +438,8 @@ sub executeMatlab()
 
 	#my $args = "echo \"quit\" | $MATLAB -nodisplay -nodesktop -r PlotCreator\"($matlabArgs)\"";
 	my $args = "PlotCreator\"($matlabArgs)\"";
+
+	#print $args;
 
 	system("echo $args > matlab_pipe");
 }
