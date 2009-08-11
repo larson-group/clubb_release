@@ -193,9 +193,6 @@
        ]},
        {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/arm_coamps_coamps_sm.ctl', 'type' => 'les', 'name' => 'lwp', 'expression' => 'lwp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/arm_zm.ctl', 'type' => 'bestever', 'name' => 'thlm', 'expression' => 'thlm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/HOC_20051217/arm_zm.ctl', 'type' => 'dec17', 'name' => 'thlm', 'expression' => 'thlm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'arm_sfc.ctl', 'type' => 'auto', 'name' => 'lwp', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Vertically Averaged wp2', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'timeseries', 'lines' =>

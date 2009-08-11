@@ -143,7 +143,6 @@
        ]},
        {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/clex9_oct14_coamps_sm.ctl', 'type' => 'les', 'name' => 'lwp', 'expression' => 'lwp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => 'red'},
           {'filename' => 'clex9_oct14_sfc.ctl', 'type' => 'auto', 'name' => 'lwp', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Vertically Averaged wp2', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'timeseries', 'lines' =>
