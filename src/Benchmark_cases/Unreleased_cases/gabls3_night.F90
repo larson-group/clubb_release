@@ -170,7 +170,7 @@ module gabls3_night
     !
     !----------------------------------------------------------------------------------------------
 
-    use constants, only: eps
+    use constants, only: ep1
 
     implicit none
 
@@ -204,7 +204,7 @@ module gabls3_night
     zody=alog(h/z0)
 
     vel = sqrt(max(0.5,uh**2+vh**2))
-    r=9.81/ts*(th*(1+eps*qh)-ts*(1.+eps*qs))*h/vel**2
+    r=9.81/ts*(th*(1+ep1*qh)-ts*(1.+ep1*qs))*h/vel**2
     iter=0
 
     if( r < 0. ) then
