@@ -30,7 +30,9 @@ my $VERSION = 3.0;
 # don't overwrite each other.
 my $randInt = int(rand(999999999999999)) + 1;
 
+# Image Conversion Settings
 my $DPI = 300;
+my $QUALITY = 100;
 
 # Argument list
 
@@ -225,7 +227,7 @@ sub convertEps()
 	foreach my $eps (@epsFiles)
 	{
 		my $filename = basename($eps);
-		system("convert -density $DPI -quality 100 -colorspace RGB $eps $outputTemp/jpg/$filename.jpg");
+		system("convert -density $DPI -quality $QUALITY -colorspace RGB $eps $outputTemp/jpg/$filename.jpg");
 
 		unlink($eps);
 	}
