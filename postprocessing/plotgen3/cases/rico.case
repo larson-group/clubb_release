@@ -1,0 +1,171 @@
+# RICO Case File
+
+%CASE = 
+(
+    'name' => 'rico',
+    'enabled' => 'true',
+    'type' => 'standard',
+    'headerText' => ' RICO Hour 22-24 ',
+    'startTime' => 1261.0,  # [minutes]
+    'endTime' => 1440.0,    # [minutes]
+    'startHeight' => 0.0,  # [m]
+    'endHeight' => 3500.0, # [m]
+    'plots' =>
+    [
+       {'plotTitle' => 'Liquid Water Potential Temperature, \theta_l', 'axisLabel' => 'thlm [K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'thlm', 'expression' => 'thlm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'thlm', 'expression' => 'thlm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Total Water Mixing Ratio, r_t', 'axisLabel' => 'rtm [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'qtm', 'expression' => 'qtm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'rtm', 'expression' => 'rtm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp [K m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'wpthlp', 'expression' => 'wpthlp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'wpthlp', 'expression' => 'wpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'wpqtp', 'expression' => 'wpqtp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'wprtp', 'expression' => 'wprtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cloud\_frac [%]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'cf', 'expression' => 'cf', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'cloud_frac', 'expression' => 'cloud_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},       
+       {'plotTitle' => 'Cloud Water Mixing Ratio, r_c', 'axisLabel' => 'rcm [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'qcm', 'expression' => 'qcm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'rcm', 'expression' => 'rcm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of w', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'wp2', 'expression' => 'wp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'wp2', 'expression' => 'wp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Third-order Moment of w', 'axisLabel' => 'wp3 [m^3/s^3]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'wp3', 'expression' => 'wp3', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'wp3', 'expression' => 'wp3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of \theta_l', 'axisLabel' => 'thlp2 [K^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'thlp2', 'expression' => 'thlp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'thlp2', 'expression' => 'thlp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of r_t', 'axisLabel' => 'rtp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'qtp2', 'expression' => 'qtp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'rtp2', 'expression' => 'rtp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Covariance of r_t & \theta_l', 'axisLabel' => 'rtpthlp [(kg/kg) K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'qtpthlp', 'expression' => 'qtpthlp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'rtpthlp', 'expression' => 'rtpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Vertical Wind Component, w (subsidence)', 'axisLabel' => 'wm [m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'wlsm', 'expression' => 'wlsm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'wm', 'expression' => 'wm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Zonal Wind Component, u', 'axisLabel' => 'um [m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'um', 'expression' => 'um', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'um', 'expression' => 'um', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Meridional Wind Component, v', 'axisLabel' => 'vm [m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'vm', 'expression' => 'vm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'vm', 'expression' => 'vm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Covariance of u & w', 'axisLabel' => 'upwp [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sw.ctl', 'type' => 'les', 'name' => 'wpup', 'expression' => 'wpup', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'upwp', 'expression' => 'upwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Covariance of v & w', 'axisLabel' => 'vpwp [m^s/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sw.ctl', 'type' => 'les', 'name' => 'wpvp', 'expression' => 'wpvp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'vpwp', 'expression' => 'vpwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of u wind', 'axisLabel' => 'up2 [m^s/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'up2', 'expression' => 'up2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'up2', 'expression' => 'up2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of v wind', 'axisLabel' => 'vp2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'vp2', 'expression' => 'vp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'vp2', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Rain Water Mixing Ratio, r_t', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'qrm', 'expression' => 'qrm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'rrainm', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/m^3]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'nrm', 'expression' => 'nrm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'Nrm', 'expression' => 'Nrm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Droplet Concentration', 'axisLabel' => 'Ncm [num/m^3]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'ncm', 'expression' => 'ncm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'Ncm', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgraupelm [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'qgm', 'expression' => 'qgm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm', 'expression' => 'rgraupelm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'ricem [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'qim', 'expression' => 'qim', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'ricem', 'expression' => 'ricem', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Ice Concentration', 'axisLabel' => 'Nim [num/m^3]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'nim', 'expression' => 'nim', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'Nim', 'expression' => 'Nim', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Snow Mixing Ratio', 'axisLabel' => 'rsnowm [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'qsm', 'expression' => 'qsm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm', 'expression' => 'rsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsnowm [num/m^3]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'Nsnowm', 'expression' => 'Nsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'lines' =>
+       [
+          {'filename' => 'rico_sfc.ctl', 'type' => 'auto', 'name' => 'lwp', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Vertically Averaged wp2', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'timeseries', 'lines' =>
+       [
+          {'filename' => 'rico_sfc.ctl', 'type' => 'auto', 'name' => 'wp2_vert_avg', 'expression' => 'wp2_vert_avg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Ice Water Path', 'axisLabel' => 'iwp [kg/m^2]', 'type' => 'timeseries', 'lines' =>
+       [
+          {'filename' => 'rico_sfc.ctl', 'type' => 'auto', 'name' => 'iwp', 'expression' => 'iwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Snow Water Path', 'axisLabel' => 'swp [kg/m^2]', 'type' => 'timeseries', 'lines' =>
+       [
+          {'filename' => 'rico_sfc.ctl', 'type' => 'auto', 'name' => 'swp', 'expression' => 'swp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]}
+    ],
+    'nightlyOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    },
+    'additionalOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    }
+)

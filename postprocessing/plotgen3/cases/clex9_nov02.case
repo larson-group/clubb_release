@@ -17,7 +17,7 @@
           {'filename' => '/home/matlabuser/plotgen/LES_files/clex9_nov02_coamps_sm.ctl', 'type' => 'les', 'name' => 'thlm', 'expression' => 'thlm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => 'red'},
           {'filename' => 'clex9_nov02_zt.ctl', 'type' => 'auto', 'name' => 'thlm', 'expression' => 'thlm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Total Water Mixing Ration, r_t', 'axisLabel' => 'rtm [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Total Water Mixing Ratio, r_t', 'axisLabel' => 'rtm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/clex9_nov02_coamps_sm.ctl', 'type' => 'les', 'name' => 'qtm', 'expression' => 'qtm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => 'red'},
           {'filename' => 'clex9_nov02_zt.ctl', 'type' => 'auto', 'name' => 'rtm', 'expression' => 'rtm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -102,7 +102,7 @@
           {'filename' => '/home/matlabuser/plotgen/LES_files/clex9_nov02_coamps_sm.ctl', 'type' => 'les', 'name' => 'vp2', 'expression' => 'vp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => 'red'},
           {'filename' => 'clex9_nov02_zm.ctl', 'type' => 'auto', 'name' => 'vp2', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Rain Water Mixing Ration, r_t', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Rain Water Mixing Ratio, r_t', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/clex9_nov02_coamps_sm.ctl', 'type' => 'les', 'name' => 'qrm', 'expression' => 'qrm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => 'red'},
           {'filename' => 'clex9_nov02_zt.ctl', 'type' => 'auto', 'name' => 'rrainm', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
