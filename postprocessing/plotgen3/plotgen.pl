@@ -536,8 +536,20 @@ sub dataExists()
 	
 	foreach (@inputDirs)
 	{
-		my @files = <$_/$dataFile*>;
-		if(@files)
+		# Define File names that are valid
+		my $zm = $dataFile . "_zm";
+		my $zt = $dataFile . "_zt";
+		my $sfc = $dataFile . "_sfc";
+		my $nc = $dataFile . ".nc";
+
+		# See if files exist in the current input folder. If it does not,
+		# these arrays will be size 0.
+		my @zm_files = <$_/$zm*>;
+		my @zt_files = <$_/$zt*>;
+		my @sfc_files = <$_/$sfc*>;
+		my @nc_files = <$_/$nc*>;
+
+		if((@zm_files && @zt_files && @sfc_files) || @nc_files)
 		{
 			$retValue = 1;
 		}
