@@ -31,8 +31,17 @@ my $VERSION = 3.0;
 my $randInt = int(rand(999999999999999)) + 1;
 
 # Image Conversion Settings
+# The minDpi and minQuality is the lowest values that will
+# be used when converting images. With these settings, 1 case
+# is about 516K.
+my $minDpi = 120;
+my $minQuality = 50;
 my $DPI = 300;
 my $QUALITY = 100;
+
+# Field to hold the total number of cases plotted. This will
+# be used when automatically specifying image quality.
+my $caseCount = 0;
 
 # Argument list
 
@@ -47,6 +56,10 @@ my $outputTemp = "";
 my $plotLes = 0;
 my $plotBest = 0;
 my $plotDec = 0;
+
+# Specifies high quality images. If this is true, keep
+# image quality at default.
+my $highQuality = 0;
 
 # Custom Color Definitions for "CLUBB_current" and "CLUBB_previous"
 my $lt_blue = "[ 0.00, 0.63, 1.00 ]";
@@ -149,6 +162,8 @@ sub runCases()
 
 		if(dataExists($CASE::CASE{'name'}) && ($CASE::CASE{'enabled'} ne 'false'))
 		{
+			$caseCount ++;
+
 			# Print the case title to the HTML page
 			OutputWriter->writeCaseTitle($outputIndex, $CASE::CASE{'headerText'});
 	
@@ -221,6 +236,32 @@ sub runCases()
 ###############################################################################
 sub convertEps()
 {
+	# Set the image scale if -q was not passed in
+	if($highQuality = 0)
+	{
+		# Let's just hard code these for now
+		if($caseCount > 10 && $caseCount < 15)
+		{
+			$DPI = 240;
+			$QUALITY = 90;
+		}
+		elsif($caseCount >= 15 && $caseCount < 20)
+		{
+			$DPI = 200;
+			$QUALITY = 80;
+		}
+		elsif($caseCount >= 20 && $caseCount < 25)
+		{
+			$DPI = 150;
+			$QUALITY = 70;
+		}
+		else
+		{
+			$DPI = $minDpi;
+			$QUALITY = $minQuality;
+		}
+	}
+
 	print("\nConverting images...\n");
 	mkdir "$outputTemp/jpg" unless -d "$outputTemp/jpg";
 	my @epsFiles = <$outputTemp/*eps>;
@@ -540,7 +581,7 @@ sub dataExists()
 		my $zm = $dataFile . "_zm";
 		my $zt = $dataFile . "_zt";
 		my $sfc = $dataFile . "_sfc";
-		my $nc = $dataFile . ".nc";
+		my $nc = $dataFile . "*.nc";
 
 		# See if files exist in the current input folder. If it does not,
 		# these arrays will be size 0.
@@ -603,6 +644,11 @@ sub readArgs()
 	if ($option{n})
 	{
 		$nightly = 1;
+	}
+
+	if ($option{q})
+	{
+		$highQuality = 1;
 	}
 
 	if ($option{h})
@@ -682,6 +728,7 @@ sub main::HELP_MESSAGE()
 	print("  -d\tPlot December data for comparison.\n");	
 	print("  -a\tSame as -lbd. Plots LES, Best Ever, and December data for comparison.\n");
 	print("  -n\tRuns in nightly mode.\n");
+	print("  -q\tOutputs high quality images (does not auto scale)\n");
 	print("  -h\tPrints this help message.\n");
 	exit(0);
 }
