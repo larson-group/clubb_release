@@ -11,10 +11,11 @@ addpath '/home/senkbeir/netcdf_toolbox/netcdf_toolbox/netcdf/ncutility/' -end
 %set(gca, 'ColorOrder', [0 0 1; 0 0.6 0; 1 0 0],'LineStyleOrder',{'-','--','o'},'NextPlot','ReplaceChildren');
 set(gca, 'LineStyleOrder',{'-','--'},'NextPlot','ReplaceChildren');
 
+curr_case = 's6';
 sec_per_hour = 3600;
 mm_per_m = 1000;
-nz = 120;
-domain_top = 6000;
+nz = 41;
+domain_top = 5950;
 
 t_start = 1;
 t_end = t_start + 719;
@@ -29,12 +30,12 @@ for i=1:size(vars_to_plot,1);
 
 	var_to_plot = strtrim(vars_to_plot(i, 1:size(vars_to_plot,2)))
 
-	profilefilepath = ['/home/senkbeir/nc_output/', 'cloud_feedback_s11_scm_UWM_CLUBB_v1.nc'];
+	profilefilepath = ['/home/senkbeir/nc_output/', 'cloud_feedback_', curr_case, '_scm_UWM_CLUBB_v1.nc'];
 
 	if ( exist(profilefilepath) )
 		profilefile = netcdf(profilefilepath,'nowrite');
 		file_time = profilefile{'time'}(:);
-		file_time = file_time ./ 10; % Timestep (output time in minutes)
+		file_time = file_time ./ 5; % Timestep (output time in minutes)
 		file_time = file_time ./ 60;
 		
 		file_var = profilefile{var_to_plot}(:);
@@ -98,6 +99,6 @@ for i=1:size(vars_to_plot,1);
 	axis([ xmin xmax min(min(file_height)) max(max(file_height)) ])
 
 	%PDF
-	output_file_name = [ '/home/matlabuser/cloud_feedback/cloud_feedback_', var_to_plot, '_verify.pdf' ];
+	output_file_name = [ '/home/matlabuser/cloud_feedback/cloud_feedback_', curr_case, '_', var_to_plot, '_verify.pdf' ];
 	print( '-dpdf', '-append', output_file_name )
 end	

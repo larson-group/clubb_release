@@ -40,7 +40,7 @@ addpath '../../matlab_include/'
 % Source files of the GABLS3 case
 
 % Path of the GrADS input files
-scm_path = ['/home/senkbeir/clubb/output/'];
+scm_path = ['/home/senkbeir/Cloud_Feedback/clubb/output/'];
 
 % zt Grid
 smfile   = 'cloud_feedback_s6_zt.ctl';
@@ -270,7 +270,7 @@ netcdf.putVar( ncid, pvarid, p_array);
 netcdf.putVar( ncid, tinkvarid, T_in_K_array);
 netcdf.putVar( ncid, qvvarid, rtm_array .* 1000);
 netcdf.putVar( ncid, qlvarid, rcm_array .* 1000);
-netcdf.putVar( ncid, cfvarid, cf_array);
+netcdf.putVar( ncid, cfvarid, cloud_frac_array);
 netcdf.putVar( ncid, tdtlwvarid, tdt_lw);
 netcdf.putVar( ncid, tdtswvarid, tdt_sw);
 netcdf.putVar( ncid, tdtlsvarid, tdt_ls);
