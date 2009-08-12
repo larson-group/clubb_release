@@ -869,7 +869,12 @@ module advance_xm_wpxp_module
     ! Initialize the left-hand side matrix to 0.
     lhs = 0.0
 
-    do k = 2, gr%nnzp-1, 1
+
+    ! The xm loop runs between k = 2 and k = gr%nnzp.  The value of xm at
+    ! level k = 1, which is below the model surface, is simply set equal to the
+    ! value of xm at level k = 2 after the solve has been completed.
+
+    do k = 2, gr%nnzp, 1
 
       ! Define indices
 
@@ -942,7 +947,7 @@ module advance_xm_wpxp_module
 
       endif
 
-    enddo ! xm loop: 2..gr%nnzp-1
+    enddo ! xm loop: 2..gr%nnzp
 
 
     ! The wpxp loop runs between k = 2 and k = gr%nnzp-1.  The value of wpxp
@@ -1123,20 +1128,22 @@ module advance_xm_wpxp_module
 
     ! Boundary conditions
 
-    ! Both the mean (xm) and the turbulent flux (wpxp) use fixed-point
-    ! boundary conditions.  Therefore, anything set in the above loop
+    ! The turbulent flux (wpxp) use fixed-point boundary conditions at both the
+    ! upper and lower boundaries.  Therefore, anything set in the wpxp loop
     ! at both the upper and lower boundaries would be overwritten here.
-    ! However, the above loop does not extend to the boundary levels.
-    ! An array with a value of 1 at the main diagonal on the left-hand
-    ! side and with values of 0 at all other diagonals on the left-hand
-    ! side will preserve the right-hand side value at that level.
+    ! However, the wpxp loop does not extend to the boundary levels.  An array
+    ! with a value of 1 at the main diagonal on the left-hand side and with
+    ! values of 0 at all other diagonals on the left-hand side will preserve the
+    ! right-hand side value at that level.  The value of xm at level k = 1,
+    ! which is below the model surface, is preserved and then overwritten to
+    ! match the new value of xm at level k = 2.
     !
-    !   xm(1)  wpxp(1) ... xm(nz) wpxp(nz)
-    ! [  0.0     0.0         0.0     0.0  ]
-    ! [  0.0     0.0         0.0     0.0  ]
-    ! [  1.0     1.0   ...   1.0     1.0  ]
-    ! [  0.0     0.0         0.0     0.0  ]
-    ! [  0.0     0.0         0.0     0.0  ]
+    !   xm(1)  wpxp(1) ... wpxp(nz)
+    ! [  0.0     0.0         0.0    ]
+    ! [  0.0     0.0         0.0    ]
+    ! [  1.0     1.0   ...   1.0    ]
+    ! [  0.0     0.0         0.0    ]
+    ! [  0.0     0.0         0.0    ]
 
     ! Lower boundary
     k      = 1
@@ -1152,12 +1159,9 @@ module advance_xm_wpxp_module
 
     ! Upper boundary
     k      = gr%nnzp
-    k_xm   = 2*k - 1
+    !k_xm is 2*k - 1
     k_wpxp = 2*k
 
-    ! xm
-    lhs(:,k_xm)           = 0.0
-    lhs(t_k_tdiag,k_xm)   = 1.0
     ! w'x'
     lhs(:,k_wpxp)         = 0.0
     lhs(m_k_mdiag,k_wpxp) = 1.0
@@ -1296,7 +1300,12 @@ module advance_xm_wpxp_module
     ! Initialize the right-hand side vector to 0.
     rhs = 0.0
 
-    do k = 2, gr%nnzp-1, 1
+
+    ! The xm loop runs between k = 2 and k = gr%nnzp.  The value of xm at
+    ! level k = 1, which is below the model surface, is simply set equal to the
+    ! value of xm at level k = 2 after the solve has been completed.
+
+    do k = 2, gr%nnzp, 1
 
       ! Define indices
 
@@ -1327,7 +1336,7 @@ module advance_xm_wpxp_module
 
       endif ! l_stats_samp
 
-    enddo ! xm loop: 2..gr%nnzp-1
+    enddo ! xm loop: 2..gr%nnzp
 
 
     ! The wpxp loop runs between k = 2 and k = gr%nnzp-1.  The value of wpxp
@@ -1474,15 +1483,17 @@ module advance_xm_wpxp_module
     enddo ! wpxp loop: 2..gr%nnzp-1
 
 
-    ! Boundary conditions.
+    ! Boundary conditions
 
-    ! Both the mean (xm) and the turbulent flux (wpxp) use fixed-point
-    ! boundary conditions.  Therefore, anything set in the above loop
+    ! The turbulent flux (wpxp) use fixed-point boundary conditions at both the
+    ! upper and lower boundaries.  Therefore, anything set in the wpxp loop
     ! at both the upper and lower boundaries would be overwritten here.
-    ! However, the above loop does not extend to the boundary levels.
-    ! An array with a value of 1 at the main diagonal on the left-hand
-    ! side and with values of 0 at all other diagonals on the left-hand
-    ! side will preserve the right-hand side value at that level.
+    ! However, the wpxp loop does not extend to the boundary levels.  An array
+    ! with a value of 1 at the main diagonal on the left-hand side and with
+    ! values of 0 at all other diagonals on the left-hand side will preserve the
+    ! right-hand side value at that level.  The value of xm at level k = 1,
+    ! which is below the model surface, is preserved and then overwritten to
+    ! match the new value of xm at level k = 2.
 
     ! Lower boundary
     k      = 1
@@ -1500,10 +1511,8 @@ module advance_xm_wpxp_module
 
     ! Upper boundary
     k      = gr%nnzp
-    k_xm   = 2*k - 1
+    !k_xm is 2*k - 1
     k_wpxp = 2*k
-    ! The value of xm at the upper boundary will remain the same.
-    rhs(k_xm)   = xm(k)
     ! The value of w'x' at the upper boundary will be 0.
     rhs(k_wpxp) = 0.0
 

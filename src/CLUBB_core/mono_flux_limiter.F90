@@ -742,8 +742,13 @@ module mono_flux_limiter
     ! Initialize the left-hand side matrix to 0.
     lhs = 0.0
 
+
+    ! The xm loop runs between k = 2 and k = gr%nnzp.  The value of xm at
+    ! level k = 1, which is below the model surface, is simply set equal to the
+    ! value of xm at level k = 2 after the solve has been completed.
+
     ! Setup LHS of the tridiagonal system
-    do k = 2, gr%nnzp-1, 1
+    do k = 2, gr%nnzp, 1
 
        ! LHS xm mean advection (ma) term.
        if ( .not. l_implemented ) then
@@ -763,17 +768,12 @@ module mono_flux_limiter
        lhs(k_tdiag,k) &
        = real( lhs(k_tdiag,k) + 1.0 / dt )
 
-    enddo
+    enddo ! xm loop: 2..gr%nnzp
 
     ! Boundary conditions.
 
     ! Lower boundary
     k = 1
-    lhs(:,k)       = 0.0
-    lhs(k_tdiag,k) = 1.0
-
-    ! Upper boundary
-    k = gr%nnzp
     lhs(:,k)       = 0.0
     lhs(k_tdiag,k) = 1.0
 
@@ -824,7 +824,12 @@ module mono_flux_limiter
     ! Initialize the right-hand side vector to 0.
     rhs = 0.0
 
-    do k = 2, gr%nnzp-1, 1
+
+    ! The xm loop runs between k = 2 and k = gr%nnzp.  The value of xm at
+    ! level k = 1, which is below the model surface, is simply set equal to the
+    ! value of xm at level k = 2 after the solve has been completed.
+
+    do k = 2, gr%nnzp, 1
 
        ! Define indices
        km1 = max( k-1, 1 )
@@ -852,7 +857,7 @@ module mono_flux_limiter
        !       imposed forcings on xm.
        rhs(k) = rhs(k) + xm_forcing(k)
 
-    enddo
+    enddo ! xm loop: 2..gr%nnzp
 
     ! Boundary conditions
 
@@ -861,11 +866,6 @@ module mono_flux_limiter
     ! The value of xm at the lower boundary will remain the same.  However, the
     ! value of xm at the lower boundary gets overwritten after the matrix is
     ! solved for the next timestep, such that xm(1) = xm(2).
-    rhs(k) = xm_old(k)
-
-    ! Upper Boundary
-    k = gr%nnzp
-    ! The value of xm at the upper boundary will remain the same.
     rhs(k) = xm_old(k)
 
     return
