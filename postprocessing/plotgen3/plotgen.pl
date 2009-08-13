@@ -260,7 +260,7 @@ sub convertEps()
 			$DPI = 150;
 			$QUALITY = 70;
 		}
-		else
+		elsif(@epsFiles >= 735)
 		{
 			$DPI = $minDpi;
 			$QUALITY = $minQuality;
@@ -447,7 +447,7 @@ sub buildMatlabStringStd()
 					}
 				}
 			}
-			else
+			elsif(($type eq "les" && $plotLes == 1) || ($type eq "dec17" && $plotDec) || ($type eq "bestever" && $plotBest))
 			{
 				my $file = "$lines[$lineNum]{'filename'}";
 				if(-e $file)
