@@ -123,7 +123,7 @@ wq_array = wprtp_array ./ (1 + rtm_array);
 tdt_lw = radht_LW_array .* 86400 .* exner_array;
 tdt_sw = radht_SW_array .* 86400 .* exner_array;
 tdt_ls = (thlm_f_array - thlm_mc_array) .* 86400 .* exner_array;
-qdt_ls = (rtm_f_array - rtm_mc_array) .* 86400;
+qdt_ls = (rtm_f_array - rtm_mc_array) .* 86400 * 1000; % kg kg^{-1} s^{-1} * 86400 (s/day) * 1000 (g/kg)
 
 time_out = 1:sizet;
 for i=1:sizet
@@ -150,11 +150,11 @@ ncid = netcdf.create('/home/senkbeir/nc_output/cloud_feedback_s6_scm_UWM_CLUBB_v
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  
 % % contact person
-netcdf.putAtt(ncid,netcdf.getConstant('NC_GLOBAL'),'contact_person','Ryan Senkbeil (senkbeil@uwm.edu)');
+netcdf.putAtt(ncid,netcdf.getConstant('NC_GLOBAL'),'contact_person','Vince Larson (vlarson@uwm.edu) and Ryan Senkbeil (senkbeil@uwm.edu)');
  
 % % Type of model where the SCM is derived from (climate model, mesoscale
 % weather prediction model, regional model) ?
-netcdf.putAtt(ncid,netcdf.getConstant('NC_GLOBAL'),'type_of_model_where_the_SCM_is_derived_from','Standalone SCM');
+%netcdf.putAtt(ncid,netcdf.getConstant('NC_GLOBAL'),'type_of_model_where_the_SCM_is_derived_from','Standalone SCM');
 
 % Define dimensions
 
@@ -214,7 +214,7 @@ cfvarid = define_variable( 'cloud' ,'cloud fraction', '0 1', [levfdimid tdimid],
 %tdtdeepvarid = define_variable( 'tdt_deep' ,'dT/dt due to deep (or total if not separated) convection scheme', 'K/day', [levfdimid tdimid], ncid );
 tdtlwvarid = define_variable( 'tdt_lw' ,'dT/dt due to LW radiation', 'K/day', [levfdimid tdimid], ncid );
 tdtswvarid = define_variable( 'tdt_sw' ,'dT/dt due to SW radiation', 'K/day', [levfdimid tdimid], ncid );
-tdtlsvarid = define_variable( 'tdt_ls' ,'dT/dt due to large-scale forcing', '(g/kg)/day', [levfdimid tdimid], ncid );
+tdtlsvarid = define_variable( 'tdt_ls' ,'dT/dt due to large-scale forcing', 'K/day', [levfdimid tdimid], ncid );
 %qdtturbvarid = define_variable( 'qdt_turb' ,'dqv/dt due to PBL-scheme', '(g/kg)/day', [levfdimid tdimid], ncid );
 %qdtcondvarid = define_variable( 'qdt_cond' ,'dqv/dt due to large-scale condensation scheme', '(g/kg)/day', [levfdimid tdimid], ncid );
 %qdtshalvarid = define_variable( 'qdt_shal' ,'dqv/dt due to shallow convection scheme', '(g/kg)/day', [levfdimid tdimid], ncid );
@@ -242,7 +242,7 @@ netcdf.endDef(ncid);
 % Hourly-averaged single-level fields output
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 netcdf.putVar( ncid, tvarid, time_out);
-netcdf.putVar( ncid, ccvarid, cc_array(1,:)); % IS THIS RIGHT?
+netcdf.putVar( ncid, ccvarid, cc_array(1,:));
 netcdf.putVar( ncid, tglwpvarid, lwp_array);
 netcdf.putVar( ncid, precwvarid, vwp_array);
 netcdf.putVar( ncid, tsairvarid, T_in_K_array(1,:));
@@ -268,7 +268,7 @@ netcdf.putVar( ncid, flntvarid, Frad_LW_up_array(1,:));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 netcdf.putVar( ncid, pvarid, p_array);
 netcdf.putVar( ncid, tinkvarid, T_in_K_array);
-netcdf.putVar( ncid, qvvarid, rtm_array .* 1000);
+netcdf.putVar( ncid, qvvarid, (rtm_array - rcm_array) .* 1000);
 netcdf.putVar( ncid, qlvarid, rcm_array .* 1000);
 netcdf.putVar( ncid, cfvarid, cloud_frac_array);
 netcdf.putVar( ncid, tdtlwvarid, tdt_lw);

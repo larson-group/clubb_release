@@ -11,7 +11,7 @@ addpath '/home/senkbeir/netcdf_toolbox/netcdf_toolbox/netcdf/ncutility/' -end
 %set(gca, 'ColorOrder', [0 0 1; 0 0.6 0; 1 0 0],'LineStyleOrder',{'-','--','o'},'NextPlot','ReplaceChildren');
 set(gca, 'LineStyleOrder',{'-','--'},'NextPlot','ReplaceChildren');
 
-curr_case = 's6';
+curr_case = 's12_p2k';
 sec_per_hour = 3600;
 mm_per_m = 1000;
 nz = 41;

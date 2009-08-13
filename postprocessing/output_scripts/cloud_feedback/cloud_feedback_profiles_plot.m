@@ -11,7 +11,7 @@ addpath '/home/senkbeir/netcdf_toolbox/netcdf_toolbox/netcdf/ncutility/' -end
 %set(gca, 'ColorOrder', [0 0 1; 0 0.6 0; 1 0 0],'LineStyleOrder',{'-','--','o'},'NextPlot','ReplaceChildren');
 set(gca, 'LineStyleOrder',{'-','--'},'NextPlot','ReplaceChildren');
 
-curr_case = 's6';
+curr_case = 's12_p2k';
 sec_per_hour = 3600;
 mm_per_m = 1000;
 nz = 41;
@@ -20,7 +20,7 @@ domain_top = 5950;
 t_start = 1;
 t_end = t_start + 719;
 
-vars_to_plot = ['cloud '; 'tdt_lw'; 'tdt_sw'; 'tdt_ls'; 'qdt_ls' ]
+vars_to_plot = [ 'T     '; 'ql    '; 'qv    '; 'cloud '; 'tdt_lw'; 'tdt_sw'; 'tdt_ls'; 'qdt_ls' ]
 
 for i=1:size(vars_to_plot,1);
 	plot_index = 1;
@@ -74,7 +74,7 @@ for i=1:size(vars_to_plot,1);
 
 	xlabel([var_to_plot, ' [', units, ']']); 
 	ylabel('Height    [m]')
-	title(['Cloud Feedback ', var_to_plot, ' verification'])
+	title(['Cloud Feedback ', curr_case, ' ', var_to_plot, ' verification'])
 	grid
 
 	%Scale the axis
