@@ -33,7 +33,7 @@ my $randInt = int(rand(999999999999999)) + 1;
 # Image Conversion Settings
 # The minDpi and minQuality is the lowest values that will
 # be used when converting images. With these settings, 1 case
-# is about 516K.
+# is about 476K.
 my $minDpi = 120;
 my $minQuality = 50;
 my $DPI = 300;
@@ -60,6 +60,9 @@ my $plotDec = 0;
 # Specifies high quality images. If this is true, keep
 # image quality at default.
 my $highQuality = 0;
+
+# Whether or not to delete the EPS images. Default (0) is to delete them.
+my $keepEps = 0;
 
 # Custom Color Definitions for "CLUBB_current" and "CLUBB_previous"
 my $lt_blue = "[ 0.00, 0.63, 1.00 ]";
@@ -162,8 +165,6 @@ sub runCases()
 
 		if(dataExists($CASE::CASE{'name'}) && ($CASE::CASE{'enabled'} ne 'false'))
 		{
-			$caseCount ++;
-
 			# Print the case title to the HTML page
 			OutputWriter->writeCaseTitle($outputIndex, $CASE::CASE{'headerText'});
 	
@@ -236,21 +237,25 @@ sub runCases()
 ###############################################################################
 sub convertEps()
 {
+	print("\nConverting images...\n");
+	mkdir "$outputTemp/jpg" unless -d "$outputTemp/jpg";
+	my @epsFiles = <$outputTemp/*eps>;
+
 	# Set the image scale if -q was not passed in
-	if($highQuality = 0)
+	if($highQuality eq 0)
 	{
 		# Let's just hard code these for now
-		if($caseCount > 10 && $caseCount < 15)
+		if(@epsFiles > 300 && @epsFiles < 445)
 		{
 			$DPI = 240;
 			$QUALITY = 90;
 		}
-		elsif($caseCount >= 15 && $caseCount < 20)
+		elsif(@epsFiles >= 445 && @epsFiles < 590)
 		{
 			$DPI = 200;
 			$QUALITY = 80;
 		}
-		elsif($caseCount >= 20 && $caseCount < 25)
+		elsif(@epsFiles >= 590 && @epsFiles < 735)
 		{
 			$DPI = 150;
 			$QUALITY = 70;
@@ -260,17 +265,17 @@ sub convertEps()
 			$DPI = $minDpi;
 			$QUALITY = $minQuality;
 		}
-	}
+	}	
 
-	print("\nConverting images...\n");
-	mkdir "$outputTemp/jpg" unless -d "$outputTemp/jpg";
-	my @epsFiles = <$outputTemp/*eps>;
 	foreach my $eps (@epsFiles)
 	{
 		my $filename = basename($eps);
 		system("convert -density $DPI -quality $QUALITY -colorspace RGB $eps $outputTemp/jpg/$filename.jpg");
-
-		unlink($eps);
+		
+		if($keepEps eq 0)
+		{
+			unlink($eps);
+		}
 	}
 }
 
@@ -413,34 +418,7 @@ sub buildMatlabStringStd()
 
 			my $type = $lines[$lineNum]{'type'};
 
-			if(($type eq "les" && $plotLes == 1) || ($type eq "dec17" && $plotDec) || ($type eq "bestever" && $plotBest))
-			{
-				my $file = "$lines[$lineNum]{'filename'}";
-				if(-e $file)
-				{
-					my $title;
-
-					if($type eq "les")
-					{
-						$title = "LES";
-					}
-					elsif($type eq "dec17")
-					{
-						$title = "HOC 12/17/2005";
-					}
-					elsif($type eq "bestever")
-					{
-						$title = "HOC \"best-ever\"";
-					}
-
-					my $lineWidth = $lines[$lineNum]{'lineWidth'};
-					my $lineStyle = $lines[$lineNum]{'lineType'};
-					my $lineColor = $lines[$lineNum]{'lineColor'};
-	
-					$matlabArgs = "$matlabArgs, \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
-				}
-			}
-			elsif($type eq "auto")
+			if($type eq "auto")
 			{
 				foreach (@inputDirs)
 				{
@@ -448,7 +426,16 @@ sub buildMatlabStringStd()
 
 					if(-e $file)
 					{
-						my $title = basename($_);
+						my $title;
+
+						if($name eq "auto")
+						{
+							$title = basename($_);
+						}
+						else
+						{
+							$title = $name;
+						}
 						
 						my $lineWidth = $lineWidths[$lineWidthCounter];
 						my $lineStyle = $lineStyles[$lineStyleCounter];
@@ -459,6 +446,20 @@ sub buildMatlabStringStd()
 						incrementLineTypes();
 					}
 				}
+			}
+			else
+			{
+				my $file = "$lines[$lineNum]{'filename'}";
+				if(-e $file)
+				{
+					my $title = $name;
+
+					my $lineWidth = $lines[$lineNum]{'lineWidth'};
+					my $lineStyle = $lines[$lineNum]{'lineType'};
+					my $lineColor = $lines[$lineNum]{'lineColor'};
+	
+					$matlabArgs = "$matlabArgs, \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
+				}				
 			}
 		}
 
@@ -612,7 +613,7 @@ sub readArgs()
 	}
 
 	my %option = ();
-	getopts("rlbdanh?", \%option);
+	getopts("rlbdanqeh?", \%option);
 
 	if ($option{r})
 	{
@@ -650,6 +651,12 @@ sub readArgs()
 	{
 		$highQuality = 1;
 	}
+
+	if ($option{e})
+	{
+		$keepEps = 1;
+	}
+
 
 	if ($option{h})
 	{
@@ -728,7 +735,8 @@ sub main::HELP_MESSAGE()
 	print("  -d\tPlot December data for comparison.\n");	
 	print("  -a\tSame as -lbd. Plots LES, Best Ever, and December data for comparison.\n");
 	print("  -n\tRuns in nightly mode.\n");
-	print("  -q\tOutputs high quality images (does not auto scale)\n");
+	print("  -q\tOutputs high quality images (does not auto scale).\n");
+	print("  -e\tDoes not delete EPS images after conversion.\n");
 	print("  -h\tPrints this help message.\n");
 	exit(0);
 }
