@@ -1,0 +1,40 @@
+%CASE = 
+(
+    'name' => 'gabls2',
+    'enabled' => 'true',
+    'type' => 'standard',
+    'headerText' => 'Gabls 2 Hour 36 Nightly',
+    'startTime' => 2101.0,  # [minutes]
+    'endTime' => 2160.0,    # [minutes]
+    'startHeight' => 0.0,  # [m]
+    'endHeight' => 2500.0, # [m]
+    'plots' =>
+    [
+       {'plotTitle' => 'Passive Scalar 1', 'axisLabel' => 'sclr1m', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'gabls2_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'sclr1m', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Passive scalar 2', 'axisLabel' => 'sclr2m', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'gabls2_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'sclr2m', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'scalar(1)\'^2', 'axisLabel' => 'sclr2p2', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'gabls2_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'sclr1p2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'scalar(1)\'^2', 'axisLabel' => 'sclr2p2', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'gabls2_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'sclr2p2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]}
+    ],
+    'nightlyOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    },
+    'additionalOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    }
+)

@@ -152,82 +152,96 @@ sub runCases()
 	# Counter used to place images
 	my $count = 0;
 
-	# Loop through each .case file so the case can be plotted
 	my @cases = <cases/*.cas*>;
+
+	print("\n\n\nCases: @cases\n\n\n");
+
+	# Loop through each .case file so the case can be plotted	
 	foreach my $file (@cases) 
 	{
-		# Read the case file. If there is an error, exit.
-		if (my $err = CaseReader->readCase($file))
+		# The first part of this if statement will run all case files
+		# if the nightly flag was passed in. The second part will only
+		# run the case file if the nightly flag was not passed in and
+		# the filename does not contain _nightly. 
+		# We need to do this because we have special condition case files.
+		# For example, gabls2 plots special variables at night. Therefore,
+		# there is a special gabls2_nightly.case file that only includes 
+		# those plots. 
+		if($nightly == 1 || ($nightly == 0 && $file !~ m/_nightly/))
 		{
-	    		print(STDERR $err, "\n");
-	    		exit(1);
-	    	}
-
-		if(dataExists($CASE::CASE{'name'}) && ($CASE::CASE{'enabled'} ne 'false'))
-		{
-			# Print the case title to the HTML page
-			OutputWriter->writeCaseTitle($outputIndex, $CASE::CASE{'headerText'});
-	
-			# Print any additional text/html specified
-			if($nightly == 1) # If in nightly mode
+			# Read the case file. If there is an error, exit.
+			if (my $err = CaseReader->readCase($file))
 			{
-				my $nightlySubText = $CASE::CASE{'nightlyOutput'}{'subText'};
-				my $nightlySubHtml = $CASE::CASE{'nightlyOutput'}{'subHtml'};
-				
-				# Check to see if there was any additional text specified. If there was,
-				# write it to the HTML file.
+		    		print(STDERR $err, "\n");
+		    		exit(1);
+		    	}
 	
-				if($nightlySubText)
-				{
-					OutputWriter->writeSubHeader($outputIndex, $nightlySubText);
-				}
-				
-				if($nightlySubHtml)
-				{
-					OutputWriter->writeSubHtml($outputIndex, $nightlySubHtml);
-				}
-			}
-			else # If not in nightly mode
+			if(dataExists($CASE::CASE{'name'}) && ($CASE::CASE{'enabled'} ne 'false'))
 			{
-				my $subText = $CASE::CASE{'additionalOutput'}{'subText'};
-				my $subHtml = $CASE::CASE{'additionalOutput'}{'subHtml'};
-				
-				if($subText)
+				# Print the case title to the HTML page
+				OutputWriter->writeCaseTitle($outputIndex, $CASE::CASE{'headerText'});
+		
+				# Print any additional text/html specified
+				if($nightly == 1) # If in nightly mode
 				{
-					OutputWriter->writeSubHeader($outputIndex, $subText);
+					my $nightlySubText = $CASE::CASE{'nightlyOutput'}{'subText'};
+					my $nightlySubHtml = $CASE::CASE{'nightlyOutput'}{'subHtml'};
+					
+					# Check to see if there was any additional text specified. If there was,
+					# write it to the HTML file.
+		
+					if($nightlySubText)
+					{
+						OutputWriter->writeSubHeader($outputIndex, $nightlySubText);
+					}
+					
+					if($nightlySubHtml)
+					{
+						OutputWriter->writeSubHtml($outputIndex, $nightlySubHtml);
+					}
+				}
+				else # If not in nightly mode
+				{
+					my $subText = $CASE::CASE{'additionalOutput'}{'subText'};
+					my $subHtml = $CASE::CASE{'additionalOutput'}{'subHtml'};
+					
+					if($subText)
+					{
+						OutputWriter->writeSubHeader($outputIndex, $subText);
+					}
+					
+					if($subHtml)
+					{
+						OutputWriter->writeSubHtml($outputIndex, $subHtml);
+					}
+		
 				}
 				
-				if($subHtml)
+				# Check to see if this is a budget plot or standard plot
+				if($CASE::CASE{'type'} eq "budget")
 				{
-					OutputWriter->writeSubHtml($outputIndex, $subHtml);
+					buildMatlabStringBudget($CASE::CASE, $count);
+					
+					# Convert the eps files to jpq
+					convertEps($CASE::CASE{'name'} . "_" . $count . "_budget");
+	
+					# Add image file to HTML page
+					placeImages($CASE::CASE{'name'} . "_" . $count . "_budget");
+				}
+				else
+				{
+					buildMatlabStringStd($CASE::CASE);
+					
+					# Add image file to HTML page
+					placeImages($CASE::CASE{'name'}, $plotCount);
 				}
 	
-			}
-			
-			# Check to see if this is a budget plot or standard plot
-			if($CASE::CASE{'type'} eq "budget")
-			{
-				buildMatlabStringBudget($CASE::CASE, $count);
-				
-				# Convert the eps files to jpq
-				convertEps($CASE::CASE{'name'} . "_" . $count . "_budget");
-
-				# Add image file to HTML page
-				placeImages($CASE::CASE{'name'} . "_" . $count . "_budget");
+				$count++;
 			}
 			else
 			{
-				buildMatlabStringStd($CASE::CASE);
-				
-				# Add image file to HTML page
-				placeImages($CASE::CASE{'name'}, $plotCount);
+				#print("Not plotting $CASE::CASE{'headerText'}\n");
 			}
-
-			$count++;
-		}
-		else
-		{
-			#print("Not plotting $CASE::CASE{'headerText'}\n");
 		}
 	}
 }
