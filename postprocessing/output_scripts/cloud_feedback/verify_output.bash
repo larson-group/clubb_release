@@ -14,14 +14,14 @@ gen_output()
 
 
 # Configure the file to run the S6 case
-vim -E -s cloud_feedback_profiles_plot <<-EOF
-	:%s/curr_case\s*=\s*\'[a-zA-Z0-9]*\'/curr_case = \'s6\'/
+vim -E -s cloud_feedback_profiles_plot.m <<-EOF
+	:%s/curr_case\s*=\s*\'[a-zA-Z0-9_]*\'/curr_case = \'s6\'/
 	:update
 	:quit
 EOF
 
-vim -E -s cloud_feedback_timeseries_plot <<-EOF
-	:%s/curr_case\s*=\s*\'[a-zA-Z0-9]*\'/curr_case = \'s6\'/
+vim -E -s cloud_feedback_timeseries_plot.m <<-EOF
+	:%s/curr_case\s*=\s*\'[a-zA-Z0-9_]*\'/curr_case = \'s6\'/
 	:update
 	:quit
 EOF
@@ -29,14 +29,14 @@ EOF
 gen_output
 
 # Configure the file to run the S6_p2k case
-vim -E -s cloud_feedback_profiles_plot <<-EOF
-	:%s/curr_case\s*=\s*\'[a-zA-Z0-9]*\'/curr_case = \'s6_p2k\'/
+vim -E -s cloud_feedback_profiles_plot.m <<-EOF
+	:%s/curr_case\s*=\s*\'[a-zA-Z0-9_]*\'/curr_case = \'s6_p2k\'/
 	:update
 	:quit
 EOF
 
-vim -E -s cloud_feedback_timeseries_plot <<-EOF
-	:%s/curr_case\s*=\s*\'[a-zA-Z0-9]*\'/curr_case = \'s6_p2k\'/
+vim -E -s cloud_feedback_timeseries_plot.m <<-EOF
+	:%s/curr_case\s*=\s*\'[a-zA-Z0-9_]*\'/curr_case = \'s6_p2k\'/
 	:update
 	:quit
 EOF
@@ -44,14 +44,14 @@ EOF
 gen_output
 
 # Configure the file to run the S11 case
-vim -E -s cloud_feedback_profiles_plot <<-EOF
-	:%s/curr_case\s*=\s*\'[a-zA-Z0-9]*\'/curr_case = \'s11\'/
+vim -E -s cloud_feedback_profiles_plot.m <<-EOF
+	:%s/curr_case\s*=\s*\'[a-zA-Z0-9_]*\'/curr_case = \'s11\'/
 	:update
 	:quit
 EOF
 
-vim -E -s cloud_feedback_timeseries_plot <<-EOF
-	:%s/curr_case\s*=\s*\'[a-zA-Z0-9]*\'/curr_case = \'s11\'/
+vim -E -s cloud_feedback_timeseries_plot.m <<-EOF
+	:%s/curr_case\s*=\s*\'[a-zA-Z0-9_]*\'/curr_case = \'s11\'/
 	:update
 	:quit
 EOF
@@ -59,14 +59,14 @@ EOF
 gen_output
 
 # Configure the file to run the S11_p2k case
-vim -E -s cloud_feedback_profiles_plot <<-EOF
-	:%s/curr_case\s*=\s*\'[a-zA-Z0-9]*\'/curr_case = \'s11_p2k\'/
+vim -E -s cloud_feedback_profiles_plot.m <<-EOF
+	:%s/curr_case\s*=\s*\'[a-zA-Z0-9_]*\'/curr_case = \'s11_p2k\'/
 	:update
 	:quit
 EOF
 
-vim -E -s cloud_feedback_timeseries_plot <<-EOF
-	:%s/curr_case\s*=\s*\'[a-zA-Z0-9]*\'/curr_case = \'s11_p2k\'/
+vim -E -s cloud_feedback_timeseries_plot.m <<-EOF
+	:%s/curr_case\s*=\s*\'[a-zA-Z0-9_]*\'/curr_case = \'s11_p2k\'/
 	:update
 	:quit
 EOF
@@ -74,14 +74,14 @@ EOF
 gen_output
 
 # Configure the file to run the S12 case
-vim -E -s cloud_feedback_profiles_plot <<-EOF
-	:%s/curr_case\s*=\s*\'[a-zA-Z0-9]*\'/curr_case = \'s12\'/
+vim -E -s cloud_feedback_profiles_plot.m <<-EOF
+	:%s/curr_case\s*=\s*\'[a-zA-Z0-9_]*\'/curr_case = \'s12\'/
 	:update
 	:quit
 EOF
 
-vim -E -s cloud_feedback_timeseries_plot <<-EOF
-	:%s/curr_case\s*=\s*\'[a-zA-Z0-9]*\'/curr_case = \'s12\'/
+vim -E -s cloud_feedback_timeseries_plot.m <<-EOF
+	:%s/curr_case\s*=\s*\'[a-zA-Z0-9_]*\'/curr_case = \'s12\'/
 	:update
 	:quit
 EOF
@@ -89,14 +89,16 @@ EOF
 gen_output
 
 # Configure the file to run the S12_p2k case
-vim -E -s cloud_feedback_profiles_plot <<-EOF
-	:%s/curr_case\s*=\s*\'[a-zA-Z0-9]*\'/curr_case = \'s12_p2k\'/
+vim -E -s cloud_feedback_profiles_plot.m <<-EOF
+	:%s/curr_case\s*=\s*\'[a-zA-Z0-9_]*\'/curr_case = \'s12_p2k\'/
 	:update
 	:quit
 EOF
 
-vim -E -s cloud_feedback_timeseries_plot <<-EOF
-	:%s/curr_case\s*=\s*\'[a-zA-Z0-9]*\'/curr_case = \'s12_p2k\'/
+vim -E -s cloud_feedback_timeseries_plot.m <<-EOF
+	:%s/curr_case\s*=\s*\'[a-zA-Z0-9_]*\'/curr_case = \'s12_p2k\'/
 	:update
 	:quit
 EOF
+
+gen_output
