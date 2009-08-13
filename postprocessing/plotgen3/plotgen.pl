@@ -279,6 +279,9 @@ sub convertEps()
 	}
 }
 
+###############################################################################
+# Places the jpg images on the HTML page
+###############################################################################
 sub placeImages()
 {
 	my $caseName = shift(@_);
@@ -615,50 +618,50 @@ sub readArgs()
 	my %option = ();
 	getopts("rlbdanqeh?", \%option);
 
-	if ($option{r})
+	if ($option{r}) # Option to replace data if it already exists
 	{
 		$overwrite = 1;
 	}
 
-	if ($option{l})
+	if ($option{l}) # Option to plot LES data
 	{
 		$plotLes = 1;
 	}
 
-	if ($option{b})
+	if ($option{b}) # Option to plot Chris Golaz Best Ever Data
 	{
 		$plotBest = 1;
 	}
 
-	if ($option{d})
+	if ($option{d}) # Option to plot HOC Dec. 17
 	{
 		$plotDec = 1;
 	}
 
-	if ($option{a})
+	if ($option{a}) # Plot LES, CGBE, and HOC Dec. 17
 	{
 		$plotLes = 1;
 		$plotBest = 1;
 		$plotDec = 1;
 	}
 
-	if ($option{n})
+	if ($option{n}) # Run in nightly mode
 	{
 		$nightly = 1;
 	}
 
-	if ($option{q})
+	if ($option{q}) # Force high quality images
 	{
 		$highQuality = 1;
 	}
 
-	if ($option{e})
+	if ($option{e}) # Keep EPS files
 	{
 		$keepEps = 1;
 	}
 
 
-	if ($option{h})
+	if ($option{h}) # Print the help message
 	{
 		main::HELP_MESSAGE();
 	}
