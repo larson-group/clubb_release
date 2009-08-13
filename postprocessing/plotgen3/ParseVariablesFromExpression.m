@@ -3,7 +3,7 @@ function [variables] = ParseVariablesFromExpression( expression )
 varsToCheck = regexp( expression, '[A-Za-z0-9_]*', 'match' );
 
 %We need to preallocate arrays for speed
-%variables = cell(1,size(varsToCheck,2));
+variables(1,size(varsToCheck,2)) = cell(1);
 
 varsFound = 0;
 
@@ -25,4 +25,4 @@ for i=1:size(varsToCheck,2)
 	end
 end
 
-%variables = variables(1,varsFound); %remove excess elements
+variables = variables(1:varsFound); %remove excess elements
