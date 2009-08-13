@@ -578,7 +578,8 @@ module input_reader
   end function read_x_table
 
   !-------------------------------------------------------------------------------------------------
-  function read_x_profile( nvar, dim_size, target_name, retVars ) result(x)
+  function read_x_profile( nvar, dim_size, target_name, retVars, &
+                           input_file ) result(x)
     !
     !  Description: Searches for the variable specified by target_name in the
     !  collection of retVars. If the function finds the variable then it returns
@@ -602,6 +603,8 @@ module input_reader
     type(one_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection
     !                                                                being searched through
 
+    character(len=*), optional, intent(in) :: input_file
+
     ! Output Variable(s)
     real, dimension(dim_size) :: x
 
@@ -622,9 +625,15 @@ module input_reader
     end do
 
     if( .not. l_found ) then
-      print *, target_name,'could not be found. Check your sounding.in file.'
+      ! Usually, retVars is read from the sounding.in file, but if not,
+      ! print the filename to make debugging easier.
+      if( present( input_file ) ) then
+        print *, target_name, ' could not be found. Check the file ', input_file
+      else
+        print *, target_name, ' could not be found. Check your sounding.in file.'
+      end if ! present( input_file )
       stop
-    end if
+    end if ! .not. l_found
 
   end function read_x_profile
 !------------------------------------------------------------------------------

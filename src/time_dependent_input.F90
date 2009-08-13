@@ -24,7 +24,7 @@ module time_dependent_input
   integer, parameter :: nCols = 10 ! Number of columns in the input file
 
   real, public, target, allocatable, dimension(:) :: & ! Module variables used to describe 
-    time_sfc_given, &                                  ! the surace over time.
+    time_sfc_given, &                                  ! the surface over time.
     LH_given,       &
     SH_given,       &
     thlm_sfc_given, &
@@ -147,29 +147,35 @@ module time_dependent_input
 
     dim_size = size( retVars(1)%values )
 
-    allocate( time_sfc_given( 1:dim_size ) )
+    allocate( time_sfc_given(1:dim_size) )
 
-    time_sfc_given = read_x_profile( nCols, dim_size, time_name, retVars )
+    time_sfc_given = read_x_profile( nCols, dim_size, time_name, retVars, &
+                                     input_file )
 
-    allocate( LH_given( 1:dim_size ) )
+    allocate( LH_given(1:dim_size) )
 
-    LH_given = read_x_profile( nCols, dim_size, LH_name, retVars )
+    LH_given = read_x_profile( nCols, dim_size, LH_name, retVars, &
+                               input_file )
 
-    allocate( SH_given( 1:dim_size ) )
+    allocate( SH_given(1:dim_size) )
 
-    SH_given = read_x_profile( nCols, dim_size, SH_name, retVars )
+    SH_given = read_x_profile( nCols, dim_size, SH_name, retVars, &
+                               input_file )
 
-    allocate( thlm_sfc_given( 1:dim_size ) )
+    allocate( thlm_sfc_given(1:dim_size) )
 
-    thlm_sfc_given = read_x_profile( nCols, dim_size, thetal_name, retVars )
+    thlm_sfc_given = read_x_profile( nCols, dim_size, thetal_name, retVars, &
+                                     input_file )
 
-    allocate( rtm_sfc_given( 1:dim_size ) )
+    allocate( rtm_sfc_given(1:dim_size) )
 
-    rtm_sfc_given = read_x_profile( nCols, dim_size, rt_name, retVars )
+    rtm_sfc_given = read_x_profile( nCols, dim_size, rt_name, retVars, &
+                                    input_file )
 
-    allocate( psfc_given( 1:dim_size ) )
+    allocate( psfc_given(1:dim_size) )
 
-    psfc_given = read_x_profile( nCols, dim_size, pressure_name, retVars )
+    psfc_given = read_x_profile( nCols, dim_size, pressure_name, retVars, &
+                                 input_file )
 
   end subroutine initialize_t_dependent_surface
 

@@ -283,12 +283,13 @@ module extend_atmosphere_mod
     ! Local Variable(s)
     type(one_dim_read_var), dimension(nCol) :: retVars
 
+    character(len=*), parameter :: atm_input_file = "../input/std_atmosphere/atmosphere.in"
+
     ! -- Begin Code --
 
     extend_atmos_dim = std_atmos_dim
 
-    call read_one_dim_file( iunit, nCol, &
-      "../input/std_atmosphere/atmosphere.in", retVars )
+    call read_one_dim_file( iunit, nCol, atm_input_file, retVars )
 
     ! initializing memory
 
@@ -298,15 +299,20 @@ module extend_atmosphere_mod
     allocate( extend_pinmb(1:extend_atmos_dim) )
     allocate( extend_o3l(1:extend_atmos_dim) )
 
-    extend_alt = read_x_profile( nCol, extend_atmos_dim, z_name, retVars  )
+    extend_alt = read_x_profile( nCol, extend_atmos_dim, z_name, retVars, &
+                                 atm_input_file )
 
-    extend_T_in_K = read_x_profile( nCol, extend_atmos_dim, temperature_name, retVars )
+    extend_T_in_K = read_x_profile( nCol, extend_atmos_dim, temperature_name, retVars, &
+                                    atm_input_file )
 
-    extend_sp_hmdty = read_x_profile( nCol, extend_atmos_dim, sp_humidity_name, retVars )
+    extend_sp_hmdty = read_x_profile( nCol, extend_atmos_dim, sp_humidity_name, retVars, &
+                                      atm_input_file )
 
-    extend_pinmb = read_x_profile( nCol, extend_atmos_dim, press_mb_name, retVars )
+    extend_pinmb = read_x_profile( nCol, extend_atmos_dim, press_mb_name, retVars, &
+                                   atm_input_file )
 
-    extend_o3l = read_x_profile( nCol, extend_atmos_dim, ozone_name, retVars )
+    extend_o3l = read_x_profile( nCol, extend_atmos_dim, ozone_name, retVars, &
+                                 atm_input_file )
 
   end subroutine load_extend_std_atm
   !-------------------------------------------------------------------------------------------------
