@@ -12,6 +12,9 @@ function avg_field = read_netcdf_hoc(filename,nz,t1,t2,varnum,numvars)
 % open NETCDF file
 fid = netcdf.open(filename,'NC_NOWRITE');
 
+%Ensure the file will be closed no matter what happens
+cleanupHandler = onCleanup(@()netcdf.close(fid));
+
 varnum = varnum+4;
 
 num_timesteps = (t2-t1) + 1;
@@ -27,5 +30,5 @@ avg_field = avg_field/num_timesteps;
 
 
 % close NETCDF file
-netcdf.close(fid);
+%netcdf.close(fid);
 end

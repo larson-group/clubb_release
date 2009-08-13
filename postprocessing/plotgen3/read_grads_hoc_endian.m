@@ -15,6 +15,9 @@ function avg_field = read_grads_hoc_endian(filename,MachineFormat,nz,t1,t2,varnu
 % open GrADS file
 fid = fopen(filename,'r',MachineFormat);
 
+%Ensure the file will be closed no matter what happens
+cleanupHandler = onCleanup(@()fclose(fid));
+
 num_timesteps = (t2-t1) + 1;
 
 % Read in and average profiles over all timesteps
@@ -30,4 +33,4 @@ avg_field = avg_field/num_timesteps;
 
 
 % close GrADS file
-status = fclose(fid);
+%status = fclose(fid);

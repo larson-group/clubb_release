@@ -22,6 +22,9 @@ function [filename, nz, z, t_time_steps, time_step_length, numvars, listofparams
 
 nc_file = netcdf.open(file_header, 'NC_NOWRITE');
 
+%Ensure the file will be closed no matter what happens
+cleanupHandler = onCleanup(@()netcdf.close(nc_file));
+
 [ndims,numvars,ngatts,unlimdimid] = netcdf.inq(nc_file);
 
 z = netcdf.getVar( nc_file, 2 );

@@ -21,6 +21,10 @@ function [filename,nz,z,t_time_steps,time_step_length,numvars,listofparams] ...
 z = 0;
 
 fid = fopen(file_header, 'rt');
+
+%Ensure the file will be closed no matter what happens
+cleanupHandler = onCleanup(@()fclose(fid));
+
 mline = [];
 i = 1;
 % While your not at the end of file, will advance line by line through the file.
@@ -118,7 +122,7 @@ if (parsevars == 1)
 
 end
 
-fclose(fid);
+%fclose(fid);
 
 
 % --CKB--

@@ -149,3 +149,10 @@ end
 %mkdir([ '/tmp/', 'output_', int2str(tickCount)]);
 output_file_name = [ '/tmp/', 'output_', int2str(tickCount), '/', caseName, '_', int2str(plotNum), '.eps' ];
 print( '-depsc2', output_file_name );
+
+%Fix for MATLAB 2008b
+%MATLAB has a leaky object implementation so we
+%need to clear
+clear;
+clear classes;
+%End fix for MATLAB 2008b

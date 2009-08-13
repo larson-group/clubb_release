@@ -15,6 +15,9 @@ function avg_field = read_grads_hoc_sfc_endian(filename,MachineFormat,nz,t1,t2,v
 % open GrADS file
 fid = fopen(filename,'r',MachineFormat);
 
+%Ensure the file will be closed no matter what happens
+cleanupHandler = onCleanup(@()fclose(fid));
+
 %Preallocate array for speed
 avg_field(t1:t2) = 0.0;
 
@@ -28,4 +31,4 @@ for t=t1:t2
 end
 
 % close GrADS file
-status = fclose(fid);
+%status = fclose(fid);

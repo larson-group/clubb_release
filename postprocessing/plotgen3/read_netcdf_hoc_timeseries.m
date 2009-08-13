@@ -12,6 +12,9 @@ function avg_field = read_netcdf_hoc_timeseries(filename,nz,t1,t2,varnum,numvars
 % open NETCDF file
 fid = netcdf.open(filename,'NC_NOWRITE');
 
+%Ensure the file will be closed no matter what happens
+cleanupHandler = onCleanup(@()netcdf.close(fid));
+
 varnum = varnum+4;
 
 %Preallocate arrays for speed
@@ -25,5 +28,5 @@ for t=t1:t2
 end
 
 % close NETCDF file
-netcdf.close(fid);
+%netcdf.close(fid);
 end
