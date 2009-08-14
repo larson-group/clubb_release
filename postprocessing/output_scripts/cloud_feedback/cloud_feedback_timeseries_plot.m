@@ -33,8 +33,8 @@ for i=1:size(vars_to_plot,1);
 		sfcfile = netcdf(sfcfilepath,'nowrite');
 
 		file_time = sfcfile{'time'}(:);
-		file_time = file_time ./ 5; % Timestep (output time in minutes)
-		file_time = file_time ./ 60;
+		%file_time = file_time ./ 5; % Timestep (output time in minutes)
+		%file_time = file_time ./ 60;
 
 		file_var = sfcfile{var_to_plot}(:);
 

@@ -35,8 +35,8 @@ for i=1:size(vars_to_plot,1);
 	if ( exist(profilefilepath) )
 		profilefile = netcdf(profilefilepath,'nowrite');
 		file_time = profilefile{'time'}(:);
-		file_time = file_time ./ 5; % Timestep (output time in minutes)
-		file_time = file_time ./ 60;
+		%file_time = file_time ./ 5; % Timestep (output time in minutes)
+		%file_time = file_time ./ 60;
 		
 		file_var = profilefile{var_to_plot}(:);
 
