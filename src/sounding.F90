@@ -65,6 +65,8 @@ module sounding
 
     implicit none
 
+    ! External
+    intrinsic :: trim, exp
 
     ! Constant parameter
     integer, parameter :: nmaxsnd = 600
@@ -114,9 +116,10 @@ module sounding
     ! Input variables from namelist
     integer :: nlevels  ! Levels in the input sounding
 
-    logical :: sounding_exists = .false.
-    logical :: sclr_sounding_exists = .false.
-    logical :: edsclr_sounding_exists = .false.
+    logical :: &
+      l_sounding_exists        = .false., &
+      l_sclr_sounding_exists   = .false., &
+      l_edsclr_sounding_exists = .false.
 
 
     real, dimension(nmaxsnd) :: & 
@@ -142,27 +145,27 @@ module sounding
 
     ! Determine which files exist ahead of time to allow for a graceful exit if
     ! one is missing.
-    inquire(file="../input/case_setups/"//trim(runtype)//"_sounding.in", exist=sounding_exists)
+    inquire(file="../input/case_setups/"//trim( runtype )//"_sounding.in", exist=l_sounding_exists)
 
-    inquire(file="../input/case_setups/"//trim(runtype)//"_sclr_sounding.in", &
-      exist=sclr_sounding_exists)
+    inquire(file="../input/case_setups/"//trim( runtype )//"_sclr_sounding.in", &
+      exist=l_sclr_sounding_exists)
 
-    inquire(file="../input/case_setups/"//trim(runtype)//"_edsclr_sounding.in", &
-      exist=edsclr_sounding_exists)
+    inquire(file="../input/case_setups/"//trim( runtype )//"_edsclr_sounding.in", &
+      exist=l_edsclr_sounding_exists)
 
     !---------------------------------------------------------------------------------------------
     ! Status Message
     if( clubb_at_least_debug_level(1) ) then
-      print *, "Path to sounding: ", trim(runtype)//'_sounding.in'
-      print *, "File exists? ", sounding_exists
-      print *, "Path to sclr_sounding: ", trim(runtype)//'_sclr_sounding.in'
-      print *, "File exists? ", sclr_sounding_exists
-      print *, "Path to sounding: ", trim(runtype)//'_edsclr_sounding.in'
-      print *, "File exists? ", edsclr_sounding_exists
+      print *, "Path to sounding: ", trim( runtype )//'_sounding.in'
+      print *, "File exists? ", l_sounding_exists
+      print *, "Path to sclr_sounding: ", trim( runtype )//'_sclr_sounding.in'
+      print *, "File exists? ", l_sclr_sounding_exists
+      print *, "Path to sounding: ", trim( runtype )//'_edsclr_sounding.in'
+      print *, "File exists? ", l_edsclr_sounding_exists
     end if
     !----------------------------------------------------------------------------------------------
 
-    if( sounding_exists ) then
+    if( l_sounding_exists ) then
       ! Read in SAM-Like <runtype>_sounding.in file
       call read_sounding_file( iunit, runtype, nlevels, psfc, zm_init, & 
                                z, theta, theta_type, rt, u, v, ug, vg, &
@@ -181,7 +184,7 @@ module sounding
       ! Read in SAM-Like <runtype>_sclr_sounding.in and
       !                  <runtype>_edsclr_sounding.in
       if( sclr_dim > 0 ) then
-        if( sclr_sounding_exists ) then
+        if( l_sclr_sounding_exists ) then
           call read_sclr_sounding_file( iunit, runtype, sclr, &
           sclr_sounding_retVars )
         else
@@ -189,7 +192,7 @@ module sounding
         end if
       end if
       if( edsclr_dim > 0 ) then
-        if( edsclr_sounding_exists  ) then
+        if( l_edsclr_sounding_exists  ) then
           call read_edsclr_sounding_file( iunit, runtype, edsclr )
         else
           stop 'Cannot open <runtype>_edsclr_sounding.in file'
@@ -235,10 +238,10 @@ module sounding
       press = p_in_Pa(1)
       wm = subs(1)
       if ( sclr_dim > 0 ) then
-        sclrm(:,1:sclr_dim)   = sclr(:,1:sclr_dim)
+        sclrm(1,1:sclr_dim)   = sclr(1,1:sclr_dim)
       end if
       if ( edsclr_dim > 0 ) then
-        edsclrm(:,1:edsclr_dim) = edsclr(:,1:edsclr_dim)
+        edsclrm(1,1:edsclr_dim) = edsclr(1,1:edsclr_dim)
       end if
     end if
 
@@ -424,7 +427,7 @@ module sounding
 
 
     call read_one_dim_file( iunit, n_snd_var, &
-    '../input/case_setups/'//trim(runtype)//'_sounding.in', retVars )
+    '../input/case_setups/'//trim( runtype )//'_sounding.in', retVars )
 
     call fill_blanks_one_dim_vars( n_snd_var, retVars )
 
@@ -488,21 +491,21 @@ module sounding
     integer i
 
     call read_one_dim_file( iunit, sclr_dim, &
-    '../input/case_setups/'//trim(runtype)//'_sclr_sounding.in', retVars )
+    '../input/case_setups/'//trim( runtype )//'_sclr_sounding.in', retVars )
 
 !    call fill_blanks_one_dim_vars( sclr_dim, retVars )
 
     do i=1, sclr_dim
-      select case(trim(retVars(i)%name))
+      select case ( trim( retVars(i)%name ) )
       case( CO2_name )
         if( i /= iisclr_CO2 .and. iisclr_CO2 > 0) then
           stop "iisclr_CO2 index does not match column."
         end if
-      case( rt_name )
+      case ( rt_name )
         if( i /= iisclr_rt .and. iisclr_rt > 0) then
           stop "iisclr_rt index does not match column."
         end if
-      case( theta_name, thetal_name, temperature_name )
+      case ( theta_name, thetal_name, temperature_name )
         if( i /= iisclr_thl .and. iisclr_thl > 0) then
           stop "iisclr_thl index does not match column."
         end if
@@ -536,6 +539,9 @@ module sounding
 
     implicit none
 
+    ! External
+    intrinsic :: size, trim
+
     ! Input Variable(s)
     integer, intent(in) :: iunit ! I/O unit
 
@@ -551,13 +557,13 @@ module sounding
     integer i
 
     call read_one_dim_file( iunit, edsclr_dim, &
-    '../input/case_setups/'//trim(runtype)//'_edsclr_sounding.in', retVars )
+    '../input/case_setups/'//trim( runtype )//'_edsclr_sounding.in', retVars )
 
  !   call fill_blanks_one_dim_vars( edsclr_dim, retVars )
 
     do i=1, edsclr_dim
 
-      select case(trim(retVars(i)%name))
+      select case ( trim( retVars(i)%name ) )
 
       case( CO2_name )
         if( i /= iiedsclr_CO2 .and. iiedsclr_CO2 > 0) then
@@ -572,7 +578,7 @@ module sounding
           stop "iisclr_thl index does not match column."
         end if
       end select
-      edsclr(1:size(retVars(i)%values),i) = retVars(i)%values
+      edsclr(1:size( retVars(i)%values ),i) = retVars(i)%values
     end do
 
     call deallocate_one_dim_vars( edsclr_dim, retVars )
@@ -597,15 +603,16 @@ module sounding
 
     implicit none
 
-    ! Constant Parameter
+    ! External
+    intrinsic :: trim
 
+    ! Constant Parameter
     integer, parameter :: nmaxsnd = 200
 
     ! Input Variables
     character(len=*), intent(in) :: fname
 
-    ! Output
-
+    ! Output Variable
     real, dimension(gr%nnzp), intent(out) :: x
 
     ! Local variables
@@ -616,14 +623,16 @@ module sounding
 
     real, dimension(nmaxsnd) :: z, var
 
-    namelist /profile/ nlevels, z, var
-
     ! Loop indices
     integer :: i,k
 
+    namelist /profile/ nlevels, z, var
+
+    ! ---- Begin Code ----
+
     ! Read sounding namelist
 
-    open(10, file = trim(fname), status = 'old' )
+    open(10, file = trim( fname ), status = 'old' )
     read(10, nml = profile )
     close(10)
 
