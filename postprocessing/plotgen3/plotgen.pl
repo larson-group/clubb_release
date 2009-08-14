@@ -1,9 +1,9 @@
 #!/usr/bin/perl
-
 ###########################################################################
 # Plotgen v3.0
 #
-#  
+# Documentation is available here:
+# http://larson-group.com/twiki/bin/view.pl/Documentation/CarsonDoc/Plotgen3
 ###########################################################################
 
 package Plotgen;
@@ -95,6 +95,8 @@ main();
 
 ###############################################################################
 # Plotgen 3 Main subroutine
+# Arguments:
+#   None.
 ###############################################################################
 sub main()
 {
@@ -145,6 +147,8 @@ sub main()
 
 ###############################################################################
 # Runs all of the .case file in the cases folder.
+# Arguments:
+#   None.
 ###############################################################################
 sub runCases()
 {
@@ -248,6 +252,8 @@ sub runCases()
 
 ###############################################################################
 # Converts all EPS files to JPG file
+# Arguments:
+#   None.
 ###############################################################################
 sub convertEps()
 {
@@ -328,6 +334,11 @@ sub placeImages()
 ###############################################################################
 # Generates argument lists needed for the Matlab part of Plotgen. This is for
 # budget plots that will plot each input directory on a seperate plot.
+# Arguments:
+#   buildMatlabStringBudget(Hash CASE, int budgetNumber)
+#     - CASE: The case file
+#     - budgetNumber: The current budget number. This is incremented after each
+#                     budget is plotted.
 ###############################################################################
 sub buildMatlabStringBudget()
 {
@@ -392,7 +403,7 @@ sub buildMatlabStringBudget()
             # Check to see if there are lines to be plotted:
             if($matlabArgs eq $tempMatlabArgs)
             {
-                print(STDERR "No valid data available to plot.\n");
+                #print(STDERR "No valid data available to plot.\n");
             }
             else
             {
@@ -526,6 +537,12 @@ sub buildMatlabStringStd()
     }
 }
 
+###############################################################################
+# Executes the PlotCreator.
+# Arguments:
+#   executeMatlab(String matlabArgs)
+#     - matlabArgs: The arguments to be passed to the plot creator
+###############################################################################
 sub executeMatlab()
 {
     my $matlabArgs = shift(@_);
@@ -539,7 +556,9 @@ sub executeMatlab()
 }
 
 ###############################################################################
-# Increments the counters for the automatic line types
+# Changes to the next line style, width, and color.
+# Arguments:
+#   None.
 ###############################################################################
 sub incrementLineTypes()
 {
@@ -608,6 +627,11 @@ sub incrementLineTypes()
     }
 }
 
+###############################################################################
+# Does necessary cleanup code.
+# Arguments:
+#   None.
+###############################################################################
 sub cleanup()
 {
     # Copy temp. output folder to actual output location and remove the temp. folder
@@ -623,7 +647,10 @@ sub cleanup()
 ###############################################################################
 # Checks all input directories to see if one of them contains the current case.
 # Will return true if at least on input folder contains data, otherwise false.
-# #############################################################################
+# Arguments:
+#   dataExists(Hash CASE)
+#     - CASE: The case file to check
+###############################################################################
 sub dataExists()
 {
     my $CASE = shift(@_);
@@ -667,6 +694,8 @@ sub dataExists()
 
 ###############################################################################
 # Reads any arguments passed in.
+# Arguments:
+#   None.
 ###############################################################################
 sub readArgs()
 {
@@ -768,6 +797,7 @@ sub readArgs()
         }
     }
 
+    # If there were no input directories passed in, print the help and exit
     if(@inputDirs == 0)
     {
         main::HELP_MESSAGE();
@@ -790,6 +820,8 @@ sub readArgs()
 
 ###############################################################################
 # Prints the help message
+# Arguments:
+#   None.
 ###############################################################################
 sub main::HELP_MESSAGE()
 {
@@ -808,6 +840,8 @@ sub main::HELP_MESSAGE()
 
 ###############################################################################
 # Prints the version number of Plotgen.
+# Arguments:
+#   None.
 ###############################################################################
 sub main::VERSION_MESSAGE()
 {
