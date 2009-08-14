@@ -2137,12 +2137,12 @@ module clubb_driver
                                sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
     case ( "dycoms2_rf02" ) ! DYCOMS2 RF02 case
-      call dycoms2_rf02_tndcy( rho, &          ! Intent(in)
-                               rho_zm, rtm, rcm, exner, &                  ! Intent(in)
-                               err_code, &                                 ! Intent(inout)
-                               thlm_forcing, rtm_forcing, &                ! Intent(out) 
-                               Frad, radht, &                              ! Intent(out)
-                               sclrm_forcing, edsclrm_forcing )            ! Intent(out)
+      call dycoms2_rf02_tndcy( rho,                     &          ! Intent(in)
+                               rho_zm, rtm, rcm, exner,  &         ! Intent(in)
+                               err_code, wm_zt, wm_zm,   &         ! Intent(inout)
+                               thlm_forcing, rtm_forcing, &        ! Intent(out) 
+                               Frad, radht, &                      ! Intent(out)
+                               sclrm_forcing, edsclrm_forcing )    ! Intent(out)
 
     case ( "fire" ) ! FIRE Sc case
       call fire_tndcy( rho, rcm, exner,  &                ! Intent(in)

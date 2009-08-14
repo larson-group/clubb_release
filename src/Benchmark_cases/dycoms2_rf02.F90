@@ -17,7 +17,7 @@ module dycoms2_rf02
   !----------------------------------------------------------------------
   subroutine dycoms2_rf02_tndcy( rho, & 
                                  rho_zm, rtm, rcm, exner,  & 
-                                 err_code, &
+                                 err_code, wm_zt, wm_zm,    &
                                  thlm_forcing, rtm_forcing,  & 
                                  Frad, radht, sclrm_forcing, &
                                  edsclrm_forcing )
@@ -70,13 +70,17 @@ module dycoms2_rf02
     ! Input Variables
 
     real, intent(in), dimension(gr%nnzp) :: & 
-      rho,    & ! Density on thermo. grid        [kg/m^3] 
-      rho_zm, & ! Density on moment. grid        [kg/m^3]
+      rho,    & ! Density on thermodynamic grid  [kg/m^3] 
+      rho_zm, & ! Density on momentum grid       [kg/m^3]
       rtm,    & ! Total water mixing ratio       [kg/kg]
       rcm,    & ! Cloud water mixing ratio       [kg/kg]
       exner     ! Exner function.                [-]
 
     ! Input/Output Variables
+    real, dimension(gr%nnzp), intent(inout) :: &
+      wm_zt, & ! W wind component at thermodynamic levels   [m/s]
+      wm_zm    ! W wind component at momentum levels        [m/s]
+
     integer, intent(inout) :: err_code
 
     ! Output Variables
@@ -128,12 +132,10 @@ module dycoms2_rf02
         err_code = clubb_rtm_level_not_found
         return
       end if
-!  z_i = ( (gr%zt(k)-gr%zt(k-1))/(rtm(k)-rtm(k-1)) ) &
-!      * (8.0e-3-rtm(k-1)) + gr%zt(k-1)
 
       z_i = lin_int( 8.0e-3, rtm(k), rtm(k-1), gr%zt(k), gr%zt(k-1) )
-!         Compute the Heaviside step function for z - z_i.
 
+      ! Compute the Heaviside step function for z - z_i.
       do k = 1, gr%nnzp, 1
         if ( gr%zm(k) - z_i  <  0.0 ) then
           Heaviside(k) = 0.0
@@ -177,6 +179,7 @@ module dycoms2_rf02
       thlm_forcing(1:gr%nnzp) = radht(1:gr%nnzp)
 
     else
+
       ! Compute heating rate elsewhere
       radht(1:gr%nnzp)        = 0.0
       thlm_forcing(1:gr%nnzp) = 0.0
@@ -186,6 +189,15 @@ module dycoms2_rf02
     ! Enter the final rtm tendency
 
     rtm_forcing(1:gr%nnzp) = 0.0
+
+    ! Imposed large-scale subsidence at the uppermost level.
+    ! CLUBB used a "one-sided" derivative method to compute mean advection at
+    ! the uppermost thermodynamic level.  In order to avoid bringing in large
+    ! amounts of various quantities from above the top of the domain, set wm_zt
+    ! to 0 at level gr%nnzp.  To stay consistent, set wm_zm to 0 at level
+    ! gr%nnzp.
+    wm_zt(gr%nnzp) = 0.0
+    wm_zm(gr%nnzp) = 0.0
 
     ! Update surface statistics
     if ( l_stats_samp ) then
