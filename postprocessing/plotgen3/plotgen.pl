@@ -173,7 +173,7 @@ sub runCases()
                     exit(1);
             }
     
-            if(dataExists($CASE::CASE{'name'}) && ($CASE::CASE{'enabled'} ne 'false'))
+            if(dataExists($CASE::CASE) && ($CASE::CASE{'enabled'} ne 'false'))
             {
                 # Print the case title to the HTML page
                 OutputWriter->writeCaseTitle($outputIndex, $CASE::CASE{'headerText'});
@@ -627,31 +627,43 @@ sub cleanup()
 # #############################################################################
 sub dataExists()
 {
-    my $dataFile = shift(@_);
-    my $retValue = 0;
+    my $CASE = shift(@_);
     
-    foreach (@inputDirs)
+   # We need to figure out if any of the input directories contain
+   # data to plot. I am assuming that input directories are of type
+   # "auto" for now. If the type is auto, look in each input directory
+   # to see if some data exists and return 1. 
+    
+    # Get array of plots from case file
+    my @plots;
+    push(@plots, @{$CASE::CASE{'plots'}});
+
+    for(my $count = 0; $count < @plots; $count++)
     {
-        # Define File names that are valid
-        my $zm = $dataFile . "_zm";
-        my $zt = $dataFile . "_zt";
-        my $sfc = $dataFile . "_sfc";
-        my $nc = $dataFile . "*.nc";
-
-        # See if files exist in the current input folder. If it does not,
-        # these arrays will be size 0.
-        my @zm_files = <$_/$zm*>;
-        my @zt_files = <$_/$zt*>;
-        my @sfc_files = <$_/$sfc*>;
-        my @nc_files = <$_/$nc*>;
-
-        if((@zm_files && @zt_files && @sfc_files) || @nc_files)
+        my @lines;
+        push(@lines, @{$plots[$count]{'lines'}});
+        
+        for(my $lineNum = 0; $lineNum < @lines; $lineNum++)
         {
-            $retValue = 1;
+            my $lineType = $lines[$lineNum]{'type'};
+            my $filename = $lines[$lineNum]{'filename'};
+
+            if($lineType eq 'auto')
+            {
+                foreach(@inputDirs)
+                {
+                    my @inputFiles = <$_/$filename*>;
+
+                    if(@inputFiles)
+                    {
+                        return 1;
+                    }
+                }
+            }
         }
     }
 
-    return $retValue;
+    return 0;
 }
 
 ###############################################################################
