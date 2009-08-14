@@ -1,12 +1,38 @@
-cloud_feedback_output_creator.m: The file responsible for changing GrADS output
+Submissions:
+------------
+14 Aug 2009: Submitted results created with SVN revision r3995 and updated
+nu6 in input/tunable_parameters.in to 10.
+
+How to generate and verify data:
+--------------------------------
+To generate data, edit cloud_feedback_output_creator.m and change the paths
+to the CLUBB data. Then run create_output.bash:
+  $ ./create_output.bash
+
+To verify the plots and create pdfs:
+  $ mkdir /home/matlabuser/cloud_feedback/
+  $ chmod 777 /home/matlabuser/cloud_feedback/
+  $ ./verify_output.bash
+
+The pdf files will be placed in /home/matlabuser/cloud_feedback.
+
+Description of Files:
+---------------------
+cloud_feedback_output_creator.m: The file is responsible for changing GrADS output
 from CLUBB for cloud_feedback into the netCDF file requested in the case 
 specification. It requires header_read.m and read_grads_clubb_endian.m in order 
 to read GrADS data. It uses MATLAB R2008b's built in netCDF functions in 
 order to write out the file.
 
-netcdf_cloud_feedback_reader.m: The file that reads the netCDF file created 
-by cloud_feedback_output_creator.m. It was used to verify the proper 
-operation of cloud_feedback_output_creator.m.
-
 create_output.bash: The script that runs cloud_feedback_output_creator.m for
 all of the cloud_feedback cases (S6, S6_p2k, S11, S11_p2k, S12, and S12_p2k).
+
+cloud_feedback_timeseries_plot.m: This file creates pdfs of the timeseries plots
+so the netCDF files can be verified.
+
+cloud_feedback_profiles_plot.m: This file creates pdfs of the profiles plots
+so the netCDF files can be verified.
+
+verify_output.bash: This script edits cloud_feedback_timeseries_plot.m and
+cloud_feedback_profiles_plot.m for each of the 6 cases and creates pdfs of
+the plots.
