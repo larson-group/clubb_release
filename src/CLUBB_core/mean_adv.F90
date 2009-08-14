@@ -61,15 +61,15 @@ module mean_adv
     ! thermodynamic level.  The derivative is multiplied by wm_zt at the central
     ! thermodynamic level to get the desired result.
     !
-    ! -----var_ztp1-------------------------------------------- t(k+1)
+    ! -----var_zt(kp1)----------------------------------------- t(k+1)
     !
-    ! ================var_zt(interp)=========================== m(k)
+    ! =================var_zt(interp)========================== m(k)
     !
-    ! -----var_zt---------------------d(var_zt)/dz-----wm_zt--- t(k)
+    ! -----var_zt(k)------------------d(var_zt)/dz-----wm_zt--- t(k)
     !
-    ! ================var_zt(interp)=========================== m(k-1)
+    ! =================var_zt(interp)========================== m(k-1)
     !
-    ! -----var_ztm1-------------------------------------------- t(k-1)
+    ! -----var_zt(km1)----------------------------------------- t(k-1)
     !
     ! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1) correspond
     ! with altitudes zt(k+1), zm(k), zt(k), zm(k-1), and zt(k-1), respectively.
@@ -100,13 +100,59 @@ module mean_adv
     ! For the following diagram, k = gr%nnzp, which is the uppermost level of
     ! the model:
     !
-    ! ================var_zt(extend)=========================== m(k)   model top
+    ! =================var_zt(extend)========================== m(k)   Boundary
     !
-    ! -----var_zt---------------------d(var_zt)/dz-----wm_zt--- t(k)
+    ! -----var_zt(k)------------------d(var_zt)/dz-----wm_zt--- t(k)
     !
-    ! ================var_zt(interp)=========================== m(k-1)
+    ! =================var_zt(interp)========================== m(k-1)
     !
-    ! -----var_ztm1-------------------------------------------- t(k-1)
+    ! -----var_zt(km1)----------------------------------------- t(k-1)
+    !
+    !
+    ! Method 2:  Zero derivative method:
+    !            the derivative d(var_zt)/dz over the model top is set to 0.
+    !
+    ! This method corresponds with the "zero-flux" boundary condition option
+    ! for eddy diffusion, where d(var_zt)/dz is set to 0 across the upper
+    ! boundary.
+    !
+    ! In order to discretize the upper boundary condition, consider a new level
+    ! outside the model (thermodynamic level gr%nnzp+1) just above the upper
+    ! boundary level (thermodynamic level gr%nnzp).  The value of var_zt at the
+    ! level just outside the model is defined to be the same as the value of
+    ! var_zt at thermodynamic level gr%nnzp.  Therefore, the value of
+    ! d(var_zt)/dz between the level just outside the model and the uppermost
+    ! thermodynamic level is 0, staying consistent with the zero-flux boundary
+    ! condition option for the eddy diffusion portion of the code.  Therefore,
+    ! the value of var_zt at momentum level gr%nnzp, which is the upper boundary
+    ! of the model, would be the same as the value of var_zt at the uppermost
+    ! thermodynamic level.
+    !
+    ! The values of var_zt are found on the thermodynamic levels, as are the
+    ! values of wm_zt (mean vertical velocity on the thermodynamic levels).  The
+    ! variable var_zt is interpolated to momentum level gr%nnzp-1, based on
+    ! the values of var_zt at thermodynamic levels gr%nnzp and gr%nnzp-1.  The
+    ! value of var_zt at momentum level gr%nnzp is set equal to the value of
+    ! var_zt at thermodynamic level gr%nnzp, as described above.  The derivative
+    ! of the set and interpolated values, d(var_zt)/dz, is taken over the
+    ! central thermodynamic level.  The derivative is multiplied by wm_zt at the
+    ! central thermodynamic level to get the desired result.
+    !
+    ! For the following diagram, k = gr%nnzp, which is the uppermost level of
+    ! the model:
+    !
+    ! --[var_zt(kp1) = var_zt(k)]----(level outside model)----- t(k+1)
+    !
+    ! ==[var_zt(top) = var_zt(k)]===[d(var_zt)/dz|_(top) = 0]== m(k)   Boundary
+    !
+    ! -----var_zt(k)------------------d(var_zt)/dz-----wm_zt--- t(k)
+    !
+    ! =================var_zt(interp)========================== m(k-1)
+    !
+    ! -----var_zt(km1)----------------------------------------- t(k-1)
+    !
+    ! where (top) stands for the grid index of momentum level k = gr%nnzp, which
+    ! is the upper boundary of the model.
 
     ! References:
     !   None
@@ -130,7 +176,7 @@ module mean_adv
     ! Input Variables
     real, intent(in) :: & 
       wm_zt,   & ! wm_zt(k)                        [m/s]
-      dzt        ! Inverse of grid spacing (k)   [1/m]
+      dzt        ! Inverse of grid spacing (k)     [1/m]
 
     integer, intent(in) :: & 
       level ! Central thermodynamic level (on which calculation occurs).
@@ -139,6 +185,9 @@ module mean_adv
     real, dimension(3) :: lhs
 
     ! Local Variables
+    logical, parameter ::  &
+      l_ub_const_deriv = .true.  ! Flag to use the "one-sided" upper boundary.
+
     integer :: & 
       mk,    & ! Momentum level directly above central thermodynamic level.
       mkm1     ! Momentum level directly below central thermodynamic level.
@@ -154,6 +203,8 @@ module mean_adv
     if ( level == 1 ) then
 
       ! k = 1 (bottom level); lower boundary level.
+      ! Thermodynamic level k = 1 is below the model bottom, so all effects
+      ! are shut off.
 
       ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
       lhs(kp1_tdiag) & 
@@ -189,25 +240,49 @@ module mean_adv
     elseif ( level == gr%nnzp ) then
 
       ! k = gr%nnzp (top level); upper boundary level.
-      ! Special discretization for constant derivative method (or
-      ! "one-sided" derivative method).
 
-      ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-      lhs(kp1_tdiag) & 
-      = 0.0
+      if ( l_ub_const_deriv ) then
 
-      ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-      lhs(k_tdiag) & 
-      = + wm_zt * dzt * (   gr%weights_zt2zm(t_above,mk) &
-                          - gr%weights_zt2zm(t_above,mkm1)   )
+         ! Special discretization for constant derivative method (or "one-sided"
+         ! derivative method).
 
-      ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-      lhs(km1_tdiag) & 
-      = + wm_zt * dzt * (   gr%weights_zt2zm(t_below,mk) &
-                          - gr%weights_zt2zm(t_below,mkm1)   )
+         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+         lhs(kp1_tdiag) & 
+         = 0.0
+
+         ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+         lhs(k_tdiag) & 
+         = + wm_zt * dzt * (   gr%weights_zt2zm(t_above,mk) &
+                             - gr%weights_zt2zm(t_above,mkm1)   )
+
+         ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+         lhs(km1_tdiag) & 
+         = + wm_zt * dzt * (   gr%weights_zt2zm(t_below,mk) &
+                             - gr%weights_zt2zm(t_below,mkm1)   )
+
+      else
+
+         ! Special discretization for zero derivative method, where the
+         ! derivative d(var_zt)/dz over the model top is set to 0, in order to
+         ! stay consistent with the zero-flux boundary condition option in the
+         ! eddy diffusion code.
+
+         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+         lhs(kp1_tdiag) & 
+         = 0.0
+
+         ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+         lhs(k_tdiag) & 
+         = + wm_zt * dzt * ( 1.0 - gr%weights_zt2zm(t_above,mkm1) )
+
+         ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+         lhs(km1_tdiag) & 
+         = - wm_zt * dzt * gr%weights_zt2zm(t_below,mkm1)
+
+      endif
 
 
-    endif
+    endif ! level = gr%nnzp
 
 
     return
@@ -335,7 +410,7 @@ module mean_adv
       ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
       lhs(k_mdiag) & 
       = + wm_zm * dzm * (   gr%weights_zm2zt(m_below,tkp1) & 
-                        - gr%weights_zm2zt(m_above,tk)  )
+                          - gr%weights_zm2zt(m_above,tk)  )
 
       ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
       lhs(km1_mdiag) & 
