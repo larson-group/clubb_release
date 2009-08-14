@@ -98,50 +98,50 @@ main();
 ###############################################################################
 sub main()
 {
-	readArgs();
+    readArgs();
 
-	# Ensure that Matlab can write to the temp output folder
-	my $mode = 0777; chmod $mode, $outputTemp;
+    # Ensure that Matlab can write to the temp output folder
+    my $mode = 0777; chmod $mode, $outputTemp;
 
-	print("Input Folders: @inputDirs\n");
-	print("Output Folder: $output \n");
+    print("Input Folders: @inputDirs\n");
+    print("Output Folder: $output \n");
 
-	$outputIndex = $outputTemp . "/index.html";
+    $outputIndex = $outputTemp . "/index.html";
 
-	# Fork to make MATLAB faster
-	my $pid = fork();
+    # Fork to make MATLAB faster
+    my $pid = fork();
 
-	if($pid == 0) # Child
-	{
-		$ENV{'DISPLAY'} = '';
+    if($pid == 0) # Child
+    {
+        $ENV{'DISPLAY'} = '';
 
-		system("mkfifo matlab_pipe");
-		system("$MATLAB <> matlab_pipe");
+        system("mkfifo matlab_pipe");
+        system("$MATLAB <> matlab_pipe");
 
-		# Convert the eps files to jpq
-		convertEps();
+        # Convert the eps files to jpq
+        convertEps();
 
-		OutputWriter->writeFooter($outputIndex);
-	
-		cleanup();
-	
-		print("Done! To display the plots, open: \n$output/index.html \nin your web browser.\n\n");
-		print("Hit [Enter] to continue.");
+        OutputWriter->writeFooter($outputIndex);
+    
+        cleanup();
+    
+        print("Done! To display the plots, open: \n$output/index.html \nin your web browser.\n\n");
+        print("Hit [Enter] to continue.");
 
-		exit(0);
-	}
-	else # Parent
-	{
-		OutputWriter->writeHeader($outputIndex);
-		runCases();
+        exit(0);
+    }
+    else # Parent
+    {
+        OutputWriter->writeHeader($outputIndex);
+        runCases();
 
-		# Quit matlab
-		system("echo quit > matlab_pipe");
-		system("rm matlab_pipe");
+        # Quit matlab
+        system("echo quit > matlab_pipe");
+        system("rm matlab_pipe");
 
-		print("\n");
-		exit(0);
-	}
+        print("\n");
+        exit(0);
+    }
 }
 
 ###############################################################################
@@ -149,101 +149,105 @@ sub main()
 ###############################################################################
 sub runCases()
 {
-	# Counter used to place images
-	my $count = 0;
+    # Counter used to place images
+    my $count = 0;
 
-	my @cases = <cases/*.cas*>;
+    my @cases = <cases/*.cas*>;
 
-	print("\n\n\nCases: @cases\n\n\n");
+    # Loop through each .case file so the case can be plotted    
+    foreach my $file (@cases) 
+    {
+        # The first part of this if statement will run all case files
+        # if the nightly flag was passed in. The second part will only
+        # run the case file if the nightly flag was not passed in and
+        # the filename does not contain _nightly. 
+        # We need to do this because we have special condition case files.
+        # For example, gabls2 plots special variables at night. Therefore,
+        # there is a special gabls2_nightly.case file that only includes 
+        # those plots. 
+        if($nightly == 1 || ($nightly == 0 && $file !~ m/_nightly/))
+        {
+            # Read the case file. If there is an error, exit.
+            if (my $err = CaseReader->readCase($file))
+            {
+                    print(STDERR $err, "\n");
+                    exit(1);
+            }
+    
+            if(dataExists($CASE::CASE{'name'}) && ($CASE::CASE{'enabled'} ne 'false'))
+            {
+                # Print the case title to the HTML page
+                OutputWriter->writeCaseTitle($outputIndex, $CASE::CASE{'headerText'});
+        
+                # Print any additional text/html specified
+                if($nightly == 1) # If in nightly mode
+                {
+                    my $nightlySubText = $CASE::CASE{'nightlyOutput'}{'subText'};
+                    my $nightlySubHtml = $CASE::CASE{'nightlyOutput'}{'subHtml'};
+                    
+                    # Check to see if there was any additional text specified. If there was,
+                    # write it to the HTML file.
+                    if($nightlySubText)
+                    {
+                        OutputWriter->writeSubHeader($outputIndex, $nightlySubText);
+                    }
+                    
+                    if($nightlySubHtml)
+                    {
+                        OutputWriter->writeSubHtml($outputIndex, $nightlySubHtml);
+                    }
+                }
+                else # If not in nightly mode
+                {
+                    my $subText = $CASE::CASE{'additionalOutput'}{'subText'};
+                    my $subHtml = $CASE::CASE{'additionalOutput'}{'subHtml'};
+                    
+                    if($subText)
+                    {
+                        OutputWriter->writeSubHeader($outputIndex, $subText);
+                    }
+                    
+                    if($subHtml)
+                    {
+                        OutputWriter->writeSubHtml($outputIndex, $subHtml);
+                    }
+        
+                }
+                
+                # Check to see if this is a budget plot or standard plot
+                if($CASE::CASE{'type'} eq "budget")
+                {
+                    buildMatlabStringBudget($CASE::CASE, $count);
+                    
+                    # Convert the eps files to jpq
+                    convertEps($CASE::CASE{'name'} . "_" . $count . "_budget");
+    
+                    # Add image file to HTML page
+                    placeImages($CASE::CASE{'name'} . "_" . $count . "_budget");
+                }
+                else
+                {
+                    my $nightlyCase = 0;
 
-	# Loop through each .case file so the case can be plotted	
-	foreach my $file (@cases) 
-	{
-		# The first part of this if statement will run all case files
-		# if the nightly flag was passed in. The second part will only
-		# run the case file if the nightly flag was not passed in and
-		# the filename does not contain _nightly. 
-		# We need to do this because we have special condition case files.
-		# For example, gabls2 plots special variables at night. Therefore,
-		# there is a special gabls2_nightly.case file that only includes 
-		# those plots. 
-		if($nightly == 1 || ($nightly == 0 && $file !~ m/_nightly/))
-		{
-			# Read the case file. If there is an error, exit.
-			if (my $err = CaseReader->readCase($file))
-			{
-		    		print(STDERR $err, "\n");
-		    		exit(1);
-		    	}
-	
-			if(dataExists($CASE::CASE{'name'}) && ($CASE::CASE{'enabled'} ne 'false'))
-			{
-				# Print the case title to the HTML page
-				OutputWriter->writeCaseTitle($outputIndex, $CASE::CASE{'headerText'});
-		
-				# Print any additional text/html specified
-				if($nightly == 1) # If in nightly mode
-				{
-					my $nightlySubText = $CASE::CASE{'nightlyOutput'}{'subText'};
-					my $nightlySubHtml = $CASE::CASE{'nightlyOutput'}{'subHtml'};
-					
-					# Check to see if there was any additional text specified. If there was,
-					# write it to the HTML file.
-		
-					if($nightlySubText)
-					{
-						OutputWriter->writeSubHeader($outputIndex, $nightlySubText);
-					}
-					
-					if($nightlySubHtml)
-					{
-						OutputWriter->writeSubHtml($outputIndex, $nightlySubHtml);
-					}
-				}
-				else # If not in nightly mode
-				{
-					my $subText = $CASE::CASE{'additionalOutput'}{'subText'};
-					my $subHtml = $CASE::CASE{'additionalOutput'}{'subHtml'};
-					
-					if($subText)
-					{
-						OutputWriter->writeSubHeader($outputIndex, $subText);
-					}
-					
-					if($subHtml)
-					{
-						OutputWriter->writeSubHtml($outputIndex, $subHtml);
-					}
-		
-				}
-				
-				# Check to see if this is a budget plot or standard plot
-				if($CASE::CASE{'type'} eq "budget")
-				{
-					buildMatlabStringBudget($CASE::CASE, $count);
-					
-					# Convert the eps files to jpq
-					convertEps($CASE::CASE{'name'} . "_" . $count . "_budget");
-	
-					# Add image file to HTML page
-					placeImages($CASE::CASE{'name'} . "_" . $count . "_budget");
-				}
-				else
-				{
-					buildMatlabStringStd($CASE::CASE);
-					
-					# Add image file to HTML page
-					placeImages($CASE::CASE{'name'}, $plotCount);
-				}
-	
-				$count++;
-			}
-			else
-			{
-				#print("Not plotting $CASE::CASE{'headerText'}\n");
-			}
-		}
-	}
+                    if($nightly == 1 && $file =~ m/_nightly/)
+                    {
+                        $nightlyCase = 1;
+                    }
+                   
+                    buildMatlabStringStd($CASE::CASE, $nightlyCase);
+                    
+                    # Add image file to HTML page
+                    placeImages($CASE::CASE{'name'}, $plotCount, $nightlyCase);
+                }
+    
+                $count++;
+            }
+            else
+            {
+                #print("Not plotting $CASE::CASE{'headerText'}\n");
+            }
+        }
+    }
 }
 
 ###############################################################################
@@ -251,64 +255,78 @@ sub runCases()
 ###############################################################################
 sub convertEps()
 {
-	print("\nConverting images...\n");
-	mkdir "$outputTemp/jpg" unless -d "$outputTemp/jpg";
-	my @epsFiles = <$outputTemp/*eps>;
+    print("\nConverting images...\n");
+    mkdir "$outputTemp/jpg" unless -d "$outputTemp/jpg";
+    my @epsFiles = <$outputTemp/*eps>;
 
-	# Set the image scale if -q was not passed in
-	if($highQuality eq 0)
-	{
-		# Let's just hard code these for now
-		if(@epsFiles > 300 && @epsFiles < 445)
-		{
-			$DPI = 240;
-			$QUALITY = 90;
-		}
-		elsif(@epsFiles >= 445 && @epsFiles < 590)
-		{
-			$DPI = 200;
-			$QUALITY = 80;
-		}
-		elsif(@epsFiles >= 590 && @epsFiles < 735)
-		{
-			$DPI = 150;
-			$QUALITY = 70;
-		}
-		elsif(@epsFiles >= 735)
-		{
-			$DPI = $minDpi;
-			$QUALITY = $minQuality;
-		}
-	}	
+    # Set the image scale if -q was not passed in
+    if($highQuality eq 0)
+    {
+        # Let's just hard code these for now
+        if(@epsFiles > 300 && @epsFiles < 445)
+        {
+            $DPI = 240;
+            $QUALITY = 90;
+        }
+        elsif(@epsFiles >= 445 && @epsFiles < 590)
+        {
+            $DPI = 200;
+            $QUALITY = 80;
+        }
+        elsif(@epsFiles >= 590 && @epsFiles < 735)
+        {
+            $DPI = 150;
+            $QUALITY = 70;
+        }
+        elsif(@epsFiles >= 735)
+        {
+            $DPI = $minDpi;
+            $QUALITY = $minQuality;
+        }
+    }    
 
-	foreach my $eps (@epsFiles)
-	{
-		my $filename = basename($eps);
-		system("convert -density $DPI -quality $QUALITY -colorspace RGB $eps $outputTemp/jpg/$filename.jpg");
-		
-		if($keepEps eq 0)
-		{
-			unlink($eps);
-		}
-	}
+    foreach my $eps (@epsFiles)
+    {
+        my $filename = basename($eps);
+        system("convert -density $DPI -quality $QUALITY -colorspace RGB $eps $outputTemp/jpg/$filename.jpg");
+        
+        if($keepEps eq 0)
+        {
+            unlink($eps);
+        }
+    }
 }
 
 ###############################################################################
 # Places the jpg images on the HTML page
+# Arguments:
+#   placeImages(String caseName, int numImages, boolean nightlyCaseFile)
+#     - caseName: The case name to plot images for
+#     - numImages: The number of images for the case
+#     - nightlyCaseFile: If the case file ends in _nightly.case, this should be
+#                        1, otherwise 0.
 ###############################################################################
 sub placeImages()
 {
-	my $caseName = shift(@_);
-	my $numImages = shift(@_);
+    my $caseName = shift(@_);
+    my $numImages = shift(@_);
+    my $nightlyCaseFile = shift(@_);
 
-	OutputWriter->printDivCenter($outputIndex);
+    OutputWriter->printDivCenter($outputIndex);
 
-	for(my $x = 0; $x < $numImages; $x++)
-	{
-		OutputWriter->placeImage($outputIndex, "jpg/$caseName" . "_" . "$x.eps.jpg");
-	}
+    for(my $x = 0; $x < $numImages; $x++)
+    {
+        if($nightlyCaseFile == 1)
+        {
+            OutputWriter->placeImage($outputIndex, "jpg/$caseName" . "_nightly_" . "$x.eps.jpg");
+        }
+        else
+        {
+            OutputWriter->placeImage($outputIndex, "jpg/$caseName" . "_" . "$x.eps.jpg");
+        }
+    }
 
-	OutputWriter->printCloseDivCenter($outputIndex);
+    OutputWriter->printCloseDivCenter($outputIndex);
 }
 
 ###############################################################################
@@ -317,192 +335,209 @@ sub placeImages()
 ###############################################################################
 sub buildMatlabStringBudget()
 {
-	my $CASE = shift(@_);
-	my $budgetNum = shift(@_);
-	
-	my $totPlotNum = 0;
-	
-	# Get Common Case information
-	my $caseName =  $CASE::CASE{'name'} . "_" . $budgetNum . "_budget";
-	my $startTime =  $CASE::CASE{'startTime'};
-	my $endTime =  $CASE::CASE{'endTime'};
-	my $startHeight =  $CASE::CASE{'startHeight'};
-	my $endHeight =  $CASE::CASE{'endHeight'};
-	
-	# Get array of plots from case file
-	my @plots;
-	push(@plots, @{$CASE::CASE{'plots'}});
+    my $CASE = shift(@_);
+    my $budgetNum = shift(@_);
+    
+    my $totPlotNum = 0;
+    
+    # Get Common Case information
+    my $caseName =  $CASE::CASE{'name'} . "_" . $budgetNum . "_budget";
+    my $startTime =  $CASE::CASE{'startTime'};
+    my $endTime =  $CASE::CASE{'endTime'};
+    my $startHeight =  $CASE::CASE{'startHeight'};
+    my $endHeight =  $CASE::CASE{'endHeight'};
+    
+    # Get array of plots from case file
+    my @plots;
+    push(@plots, @{$CASE::CASE{'plots'}});
 
-	my $units = $plots[0]{'axisLabel'};
-	my $type = $plots[0]{'type'};
-	
-	# Loop through each input folder and create a plot for each folder
-	for(my $plotCount = 0; $plotCount < @inputDirs; $plotCount++)
-	{
-		my $plotTitle = basename($inputDirs[$plotCount]);
-		
-		# Loop through each plot in the Case file
-		for(my $plotNum = 0; $plotNum < @plots; $plotNum++)
-		{
-			# Counters for automatic lines
-			$lineStyleCounter = 0;
-			$lineColorCounter = 0;
-			$lineWidthCounter = 0;
-			my $matlabArgs = "\'$caseName\', \'$plotTitle\', $totPlotNum, \'$type\', $startTime, $endTime, $startHeight, $endHeight, \'$units\', $randInt";
-			my $tempMatlabArgs = $matlabArgs;
-		
-			my @lines;
-			push(@lines, @{$plots[$plotNum]{'lines'}});
-			
-			for(my $lineNum = 0; $lineNum < @lines; $lineNum++)
-			{
-				my $file = "$inputDirs[$plotCount]/$lines[$lineNum]{'filename'}";
-				
-				my $name = $lines[$lineNum]{'name'};
-				my $expression = $lines[$lineNum]{'expression'};
-				my $type = $lines[$lineNum]{'type'};
+    my $units = $plots[0]{'axisLabel'};
+    my $type = $plots[0]{'type'};
+    
+    # Loop through each input folder and create a plot for each folder
+    for(my $plotCount = 0; $plotCount < @inputDirs; $plotCount++)
+    {
+        my $plotTitle = basename($inputDirs[$plotCount]);
+        
+        # Loop through each plot in the Case file
+        for(my $plotNum = 0; $plotNum < @plots; $plotNum++)
+        {
+            # Counters for automatic lines
+            $lineStyleCounter = 0;
+            $lineColorCounter = 0;
+            $lineWidthCounter = 0;
+            my $matlabArgs = "\'$caseName\', \'$plotTitle\', $totPlotNum, \'$type\', $startTime, $endTime, $startHeight, $endHeight, \'$units\', $randInt";
+            my $tempMatlabArgs = $matlabArgs;
+        
+            my @lines;
+            push(@lines, @{$plots[$plotNum]{'lines'}});
+            
+            for(my $lineNum = 0; $lineNum < @lines; $lineNum++)
+            {
+                my $file = "$inputDirs[$plotCount]/$lines[$lineNum]{'filename'}";
+                
+                my $name = $lines[$lineNum]{'name'};
+                my $expression = $lines[$lineNum]{'expression'};
+                my $type = $lines[$lineNum]{'type'};
 
-				if(-e $file)
-				{
-					my $lineWidth = $lineWidths[$lineWidthCounter];
-					my $lineStyle = $lineStyles[$lineStyleCounter];
-					my $lineColor = $lineColors[$lineColorCounter];
-							
-					$matlabArgs = "$matlabArgs, \'$file\', \'$expression\', \'$name\', $lineWidth, \'$lineStyle\', \'$lineColor\'";		
+                if(-e $file)
+                {
+                    my $lineWidth = $lineWidths[$lineWidthCounter];
+                    my $lineStyle = $lineStyles[$lineStyleCounter];
+                    my $lineColor = $lineColors[$lineColorCounter];
+                            
+                    $matlabArgs = "$matlabArgs, \'$file\', \'$expression\', \'$name\', $lineWidth, \'$lineStyle\', \'$lineColor\'";        
 
-					incrementLineTypes();
-				}
-			}
-			
-			# Check to see if there are lines to be plotted:
-			if($matlabArgs eq $tempMatlabArgs)
-			{
-				print(STDERR "No valid data available to plot.\n");
-			}
-			else
-			{
-				executeMatlab($matlabArgs);
-				$totPlotNum ++;
-			}
-		}
-	}
+                    incrementLineTypes();
+                }
+            }
+            
+            # Check to see if there are lines to be plotted:
+            if($matlabArgs eq $tempMatlabArgs)
+            {
+                print(STDERR "No valid data available to plot.\n");
+            }
+            else
+            {
+                executeMatlab($matlabArgs);
+                $totPlotNum ++;
+            }
+        }
+    }
 }
 
 ###############################################################################
 # Generates the argument list needed for the Matlab part of Plotgen. This is
 # for standard runs that plots variables from each input folder on the same
 # plot.
+#
+# Arguments:
+#   buildMatlabStringStd(Hash case, boolean nightlyCaseFile)
+#     - case: The case file hash
+#     - nightlyCaseFile: If the case file ends in _nightly.case, this should be
+#                        1, otherwise 0.
 ###############################################################################
 sub buildMatlabStringStd()
 {
-	my $CASE = shift(@_);
+    my $CASE = shift(@_);
+    my $nightlyCaseFile = shift(@_);
 
-	$plotCount = 0;
-	
-	# Get Common Case information
-	my $caseName =  $CASE::CASE{'name'};
-	my $startTime =  $CASE::CASE{'startTime'};
-	my $endTime =  $CASE::CASE{'endTime'};
-	my $startHeight =  $CASE::CASE{'startHeight'};
-	my $endHeight =  $CASE::CASE{'endHeight'};
-	
-	# Get array of plots from case file
-	my @plots;
-	push(@plots, @{$CASE::CASE{'plots'}});
+    $plotCount = 0;
+    
+    # Get Common Case information
+    my $caseName;
 
-	# Get plots from .case file
-	for(my $count = 0; $count < @plots; $count++)
-	{
-		# Counters for automatic lines
-		$lineStyleCounter = 0;
-		$lineColorCounter = 0;
-		$lineWidthCounter = 0;
+    # Modify the case name if this is a nightly case
+    if($nightlyCaseFile == 1)
+    {
+        $caseName =  $CASE::CASE{'name'} . "_nightly";
+    }
+    else
+    {
+        $caseName = $CASE::CASE{'name'};
+    }
+    my $startTime =  $CASE::CASE{'startTime'};
+    my $endTime =  $CASE::CASE{'endTime'};
+    my $startHeight =  $CASE::CASE{'startHeight'};
+    my $endHeight =  $CASE::CASE{'endHeight'};
+    
+    # Get array of plots from case file
+    my @plots;
+    push(@plots, @{$CASE::CASE{'plots'}});
 
-		my $plotTitle = $plots[$count]{'plotTitle'};
-		my $units = $plots[$count]{'axisLabel'};
-		my $type = $plots[$count]{'type'};
+    # Get plots from .case file
+    for(my $count = 0; $count < @plots; $count++)
+    {
+        # Counters for automatic lines
+        $lineStyleCounter = 0;
+        $lineColorCounter = 0;
+        $lineWidthCounter = 0;
 
-		my $matlabArgs = "\'$caseName\', \'$plotTitle\', $count, \'$type\', $startTime, $endTime, $startHeight, $endHeight, \'$units\', $randInt";
-		my $tempMatlabArgs = $matlabArgs;
+        my $plotTitle = $plots[$count]{'plotTitle'};
+        my $units = $plots[$count]{'axisLabel'};
+        my $type = $plots[$count]{'type'};
 
-		my @lines;
-		push(@lines, @{$plots[$count]{'lines'}});
+        my $matlabArgs = "\'$caseName\', \'$plotTitle\', $count, \'$type\', $startTime, $endTime, $startHeight, $endHeight, \'$units\', $randInt";
+        my $tempMatlabArgs = $matlabArgs;
 
-		for(my $lineNum = 0; $lineNum < @lines; $lineNum++)
-		{
-			my $name = $lines[$lineNum]{'name'};
-			my $expression = $lines[$lineNum]{'expression'};
+        my @lines;
+        push(@lines, @{$plots[$count]{'lines'}});
 
-			my $type = $lines[$lineNum]{'type'};
+        for(my $lineNum = 0; $lineNum < @lines; $lineNum++)
+        {
+            my $name = $lines[$lineNum]{'name'};
+            my $expression = $lines[$lineNum]{'expression'};
 
-			if($type eq "auto")
-			{
-				foreach (@inputDirs)
-				{
-					my $file = "$_/$lines[$lineNum]{'filename'}";
+            my $type = $lines[$lineNum]{'type'};
 
-					if(-e $file)
-					{
-						my $title;
+            if($type eq "auto")
+            {
+                foreach (@inputDirs)
+                {
+                    my $file = "$_/$lines[$lineNum]{'filename'}";
 
-						if($name eq "auto")
-						{
-							$title = basename($_);
-						}
-						else
-						{
-							$title = $name;
-						}
-						
-						my $lineWidth = $lineWidths[$lineWidthCounter];
-						my $lineStyle = $lineStyles[$lineStyleCounter];
-						my $lineColor = $lineColors[$lineColorCounter];
-						
-						$matlabArgs = "$matlabArgs, \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
+                    if(-e $file)
+                    {
+                        my $title;
 
-						incrementLineTypes();
-					}
-				}
-			}
-			elsif(($type eq "les" && $plotLes == 1) || ($type eq "dec17" && $plotDec) || ($type eq "bestever" && $plotBest))
-			{
-				my $file = "$lines[$lineNum]{'filename'}";
-				if(-e $file)
-				{
-					my $title = $name;
+                        if($name eq "auto")
+                        {
+                            $title = basename($_);
+                        }
+                        else
+                        {
+                            $title = $name;
+                        }
+                        
+                        my $lineWidth = $lineWidths[$lineWidthCounter];
+                        my $lineStyle = $lineStyles[$lineStyleCounter];
+                        my $lineColor = $lineColors[$lineColorCounter];
+                        
+                        $matlabArgs = "$matlabArgs, \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
 
-					my $lineWidth = $lines[$lineNum]{'lineWidth'};
-					my $lineStyle = $lines[$lineNum]{'lineType'};
-					my $lineColor = $lines[$lineNum]{'lineColor'};
-	
-					$matlabArgs = "$matlabArgs, \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
-				}				
-			}
-		}
+                        incrementLineTypes();
+                    }
+                }
+            }
+            elsif(($type eq "les" && $plotLes == 1) || ($type eq "dec17" && $plotDec) || ($type eq "bestever" && $plotBest))
+            {
+                my $file = "$lines[$lineNum]{'filename'}";
+                if(-e $file)
+                {
+                    my $title = $name;
 
-		# Check to see if there are lines to be plotted:
-		if($matlabArgs eq $tempMatlabArgs)
-		{
-			#print(STDERR "No valid data available to plot.\n");
-		}
-		else
-		{
-			$plotCount++;
-			executeMatlab($matlabArgs);	
-		}
-	}
+                    my $lineWidth = $lines[$lineNum]{'lineWidth'};
+                    my $lineStyle = $lines[$lineNum]{'lineType'};
+                    my $lineColor = $lines[$lineNum]{'lineColor'};
+    
+                    $matlabArgs = "$matlabArgs, \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
+                }                
+            }
+        }
+
+        # Check to see if there are lines to be plotted:
+        if($matlabArgs eq $tempMatlabArgs)
+        {
+            #print(STDERR "No valid data available to plot.\n");
+        }
+        else
+        {
+            $plotCount++;
+            executeMatlab($matlabArgs);    
+        }
+    }
 }
 
 sub executeMatlab()
 {
-	my $matlabArgs = shift(@_);
+    my $matlabArgs = shift(@_);
 
-	#my $args = "echo \"quit\" | $MATLAB -nodisplay -nodesktop -r PlotCreator\"($matlabArgs)\"";
-	my $args = "PlotCreator\"($matlabArgs)\"";
+    #my $args = "echo \"quit\" | $MATLAB -nodisplay -nodesktop -r PlotCreator\"($matlabArgs)\"";
+    my $args = "PlotCreator\"($matlabArgs)\"";
 
-	#print $args;
+    #print $args;
 
-	system("echo $args > matlab_pipe");
+    system("echo $args > matlab_pipe");
 }
 
 ###############################################################################
@@ -510,78 +545,78 @@ sub executeMatlab()
 ###############################################################################
 sub incrementLineTypes()
 {
-	# Increment counters
-	if($lineColorCounter + 1 >= @lineColors)
-	{
-		$lineColorCounter = 0;
+    # Increment counters
+    if($lineColorCounter + 1 >= @lineColors)
+    {
+        $lineColorCounter = 0;
 
-		if($lineStyleCounter + 1 >= @lineStyles)
-		{
-			$lineStyleCounter = 0;
+        if($lineStyleCounter + 1 >= @lineStyles)
+        {
+            $lineStyleCounter = 0;
 
-			if($lineWidthCounter + 1 >= @lineWidths)
-			{
-				$lineWidthCounter = 0;
-			}
-			else
-			{
-				$lineWidthCounter ++;
-			}
-		}
-		else
-		{
-			$lineStyleCounter ++;
+            if($lineWidthCounter + 1 >= @lineWidths)
+            {
+                $lineWidthCounter = 0;
+            }
+            else
+            {
+                $lineWidthCounter ++;
+            }
+        }
+        else
+        {
+            $lineStyleCounter ++;
 
-			if($lineWidthCounter + 1 >= @lineWidths)
-			{
-				$lineWidthCounter = 0;
-			}
-			else
-			{
-				$lineWidthCounter ++;
-			}
-		}
-	}
-	else
-	{
-		$lineColorCounter++;
+            if($lineWidthCounter + 1 >= @lineWidths)
+            {
+                $lineWidthCounter = 0;
+            }
+            else
+            {
+                $lineWidthCounter ++;
+            }
+        }
+    }
+    else
+    {
+        $lineColorCounter++;
 
-		if($lineStyleCounter + 1 >= @lineStyles)
-		{
-			$lineStyleCounter = 0;
-	
-			if($lineWidthCounter + 1 >= @lineWidths)
-			{
-				$lineWidthCounter = 0;
-			}
-			else
-			{
-				$lineWidthCounter ++;
-			}
-		}
-		else
-		{
-			$lineStyleCounter ++;
+        if($lineStyleCounter + 1 >= @lineStyles)
+        {
+            $lineStyleCounter = 0;
+    
+            if($lineWidthCounter + 1 >= @lineWidths)
+            {
+                $lineWidthCounter = 0;
+            }
+            else
+            {
+                $lineWidthCounter ++;
+            }
+        }
+        else
+        {
+            $lineStyleCounter ++;
 
-			if($lineWidthCounter + 1 >= @lineWidths)
-			{
-				$lineWidthCounter = 0;
-			}
-			else
-			{
-				$lineWidthCounter ++;
-			}
-		}
-	}
+            if($lineWidthCounter + 1 >= @lineWidths)
+            {
+                $lineWidthCounter = 0;
+            }
+            else
+            {
+                $lineWidthCounter ++;
+            }
+        }
+    }
 }
 
 sub cleanup()
 {
-	# Copy temp. output folder to actual output location and remove the temp. folder
-	dircopy($outputTemp, $output);
-	rmtree($outputTemp);
+    # Copy temp. output folder to actual output location and remove the temp. folder
+    dircopy($outputTemp, $output);
+    rmtree($outputTemp);
 
-	$ENV{'DISPLAY'} = $sessionType;
+    $ENV{'DISPLAY'} = $sessionType;
 }
 
 ###############################################################################
@@ -590,31 +625,31 @@ sub cleanup()
 # #############################################################################
 sub dataExists()
 {
-	my $dataFile = shift(@_);
-	my $retValue = 0;
-	
-	foreach (@inputDirs)
-	{
-		# Define File names that are valid
-		my $zm = $dataFile . "_zm";
-		my $zt = $dataFile . "_zt";
-		my $sfc = $dataFile . "_sfc";
-		my $nc = $dataFile . "*.nc";
+    my $dataFile = shift(@_);
+    my $retValue = 0;
+    
+    foreach (@inputDirs)
+    {
+        # Define File names that are valid
+        my $zm = $dataFile . "_zm";
+        my $zt = $dataFile . "_zt";
+        my $sfc = $dataFile . "_sfc";
+        my $nc = $dataFile . "*.nc";
 
-		# See if files exist in the current input folder. If it does not,
-		# these arrays will be size 0.
-		my @zm_files = <$_/$zm*>;
-		my @zt_files = <$_/$zt*>;
-		my @sfc_files = <$_/$sfc*>;
-		my @nc_files = <$_/$nc*>;
+        # See if files exist in the current input folder. If it does not,
+        # these arrays will be size 0.
+        my @zm_files = <$_/$zm*>;
+        my @zt_files = <$_/$zt*>;
+        my @sfc_files = <$_/$sfc*>;
+        my @nc_files = <$_/$nc*>;
 
-		if((@zm_files && @zt_files && @sfc_files) || @nc_files)
-		{
-			$retValue = 1;
-		}
-	}
+        if((@zm_files && @zt_files && @sfc_files) || @nc_files)
+        {
+            $retValue = 1;
+        }
+    }
 
-	return $retValue;
+    return $retValue;
 }
 
 ###############################################################################
@@ -622,122 +657,122 @@ sub dataExists()
 ###############################################################################
 sub readArgs()
 {
-	my $numArgs = $#ARGV + 1;
+    my $numArgs = $#ARGV + 1;
 
-	if($numArgs == 0)
-	{
-		main::HELP_MESSAGE();
-	}
+    if($numArgs == 0)
+    {
+        main::HELP_MESSAGE();
+    }
 
-	my %option = ();
-	getopts("rlbdanqeh?", \%option);
+    my %option = ();
+    getopts("rlbdanqeh?", \%option);
 
-	if ($option{r}) # Option to replace data if it already exists
-	{
-		$overwrite = 1;
-	}
+    if ($option{r}) # Option to replace data if it already exists
+    {
+        $overwrite = 1;
+    }
 
-	if ($option{l}) # Option to plot LES data
-	{
-		$plotLes = 1;
-	}
+    if ($option{l}) # Option to plot LES data
+    {
+        $plotLes = 1;
+    }
 
-	if ($option{b}) # Option to plot Chris Golaz Best Ever Data
-	{
-		$plotBest = 1;
-	}
+    if ($option{b}) # Option to plot Chris Golaz Best Ever Data
+    {
+        $plotBest = 1;
+    }
 
-	if ($option{d}) # Option to plot HOC Dec. 17
-	{
-		$plotDec = 1;
-	}
+    if ($option{d}) # Option to plot HOC Dec. 17
+    {
+        $plotDec = 1;
+    }
 
-	if ($option{a}) # Plot LES, CGBE, and HOC Dec. 17
-	{
-		$plotLes = 1;
-		$plotBest = 1;
-		$plotDec = 1;
-	}
+    if ($option{a}) # Plot LES, CGBE, and HOC Dec. 17
+    {
+        $plotLes = 1;
+        $plotBest = 1;
+        $plotDec = 1;
+    }
 
-	if ($option{n}) # Run in nightly mode
-	{
-		$nightly = 1;
-	}
+    if ($option{n}) # Run in nightly mode
+    {
+        $nightly = 1;
+    }
 
-	if ($option{q}) # Force high quality images
-	{
-		$highQuality = 1;
-	}
+    if ($option{q}) # Force high quality images
+    {
+        $highQuality = 1;
+    }
 
-	if ($option{e}) # Keep EPS files
-	{
-		$keepEps = 1;
-	}
+    if ($option{e}) # Keep EPS files
+    {
+        $keepEps = 1;
+    }
 
 
-	if ($option{h}) # Print the help message
-	{
-		main::HELP_MESSAGE();
-	}
+    if ($option{h}) # Print the help message
+    {
+        main::HELP_MESSAGE();
+    }
 
-	my $currentCount = 0;
+    my $currentCount = 0;
 
-	# Reset the number of arguments
-	$numArgs = $#ARGV + 1;
+    # Reset the number of arguments
+    $numArgs = $#ARGV + 1;
 
-	# Parse any additional arguments
-	foreach (@ARGV)
-	{
-		# If the argument does not start with '-' and if $output was not set
-		if(!$output)
-		{
-			my $currentDir = abs_path($_);
+    # Parse any additional arguments
+    foreach (@ARGV)
+    {
+        # If the argument does not start with '-' and if $output was not set
+        if(!$output)
+        {
+            my $currentDir = abs_path($_);
 
-			if((($numArgs - 1) - $currentCount) > 0)
-			{
-				if(-d $currentDir)
-				{
-					push(@inputDirs, $currentDir);
-				}
-				else
-				{
-					print("The input folder: $currentDir does not exist.\n");
-					exit(1);
-				}
-			}
-			else
-			{
-				if($_ =~ m/\/$/)
-				{
-					$currentDir = abs_path(substr($_, 0, length($_) - 1));
-				}
+            if((($numArgs - 1) - $currentCount) > 0)
+            {
+                if(-d $currentDir)
+                {
+                    push(@inputDirs, $currentDir);
+                }
+                else
+                {
+                    print("The input folder: $currentDir does not exist.\n");
+                    exit(1);
+                }
+            }
+            else
+            {
+                if($_ =~ m/\/$/)
+                {
+                    $currentDir = abs_path(substr($_, 0, length($_) - 1));
+                }
 
-				$output = $currentDir;
-				$outputTemp = "/tmp/output" . "_" . "$randInt";
-			}
-			
-			$currentCount++;
-		}
-	}
+                $output = $currentDir;
+                $outputTemp = "/tmp/output" . "_" . "$randInt";
+            }
+            
+            $currentCount++;
+        }
+    }
 
-	if(@inputDirs == 0)
-	{
-		main::HELP_MESSAGE();
-	}
+    if(@inputDirs == 0)
+    {
+        main::HELP_MESSAGE();
+    }
 
-	# Finally, check to see if the output folder exists. If it does, and
-	# '-r' was not passed in, exit. Otherwise, create it.
-	if(-d $output && $overwrite == 0)
-	{
-		print("Output folder already exists. To overwrite, use the -r option.\n");
-		exit(1);
-	}
-	else
-	{
-		rmtree($output);
-		mkdir $output;
-		mkdir $outputTemp;
-	}
+    # Finally, check to see if the output folder exists. If it does, and
+    # '-r' was not passed in, exit. Otherwise, create it.
+    if(-d $output && $overwrite == 0)
+    {
+        print("Output folder already exists. To overwrite, use the -r option.\n");
+        exit(1);
+    }
+    else
+    {
+        rmtree($output);
+        mkdir $output;
+        mkdir $outputTemp;
+    }
 }
 
 ###############################################################################
@@ -745,17 +780,17 @@ sub readArgs()
 ###############################################################################
 sub main::HELP_MESSAGE()
 {
-	print("Usage: plotgen [OPTION]... INPUT... OUTPUT\n");
-	print("  -r\tIf the output folder already exists, replace the contents\n");	
-	print("  -l\tPlot LES data for comparison.\n");	
-	print("  -b\tPlot Best Ever data for comparison.\n");	
-	print("  -d\tPlot December data for comparison.\n");	
-	print("  -a\tSame as -lbd. Plots LES, Best Ever, and December data for comparison.\n");
-	print("  -n\tRuns in nightly mode.\n");
-	print("  -q\tOutputs high quality images (does not auto scale).\n");
-	print("  -e\tDoes not delete EPS images after conversion.\n");
-	print("  -h\tPrints this help message.\n");
-	exit(0);
+    print("Usage: plotgen [OPTION]... INPUT... OUTPUT\n");
+    print("  -r\tIf the output folder already exists, replace the contents\n");    
+    print("  -l\tPlot LES data for comparison.\n");    
+    print("  -b\tPlot Best Ever data for comparison.\n");    
+    print("  -d\tPlot December data for comparison.\n");    
+    print("  -a\tSame as -lbd. Plots LES, Best Ever, and December data for comparison.\n");
+    print("  -n\tRuns in nightly mode.\n");
+    print("  -q\tOutputs high quality images (does not auto scale).\n");
+    print("  -e\tDoes not delete EPS images after conversion.\n");
+    print("  -h\tPrints this help message.\n");
+    exit(0);
 }
 
 ###############################################################################
@@ -763,5 +798,5 @@ sub main::HELP_MESSAGE()
 ###############################################################################
 sub main::VERSION_MESSAGE()
 {
-	print("Plotgen version $VERSION, Copyright (c) 2009 Larson Group.\n");
+    print("Plotgen version $VERSION, Copyright (c) 2009 Larson Group.\n");
 }
