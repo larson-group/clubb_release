@@ -1058,15 +1058,24 @@ module advance_windm_edsclrm_module
 
     enddo
 
-    ! Upper boundary condition:
+
+    ! Upper boundary conditions
+    k   = gr%nnzp
+    km1 = max( k-1, 1 )
+
+    ! xm mean advection
+    ! xm term ma is completely implicit; call stat_update_var_pt.
+    call stat_update_var_pt( ixm_ma, k, &
+           ztscr01(k) * xm(km1) &
+         + ztscr02(k) * xm(k), zt )
+
     ! xm turbulent transport (implicit component)
     ! xm term ta has both implicit and explicit components;
     ! call stat_end_update_pt.
-    k   = gr%nnzp
-    km1 = max( k-1, 1 )
     call stat_end_update_pt( ixm_ta, k, &
            ztscr04(k) * xm(km1) &
          + ztscr05(k) * xm(k), zt )
+
 
     return
   end subroutine windm_edsclrm_implicit_stats
