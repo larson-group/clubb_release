@@ -414,7 +414,7 @@ module time_dependent_input
 
     ! Output Variable(s)
 
-    real, dimension(grid_size), intent(out) :: &
+    real, dimension(grid_size), intent(inout) :: &
       thlm_f, & ! Potential Temperature forcing     [K/s]
       rtm_f,  & ! Total Water Mixing Ration forcing [kg/kg/s]
       um_ref, & ! um reference                      [m/s]
@@ -426,10 +426,10 @@ module time_dependent_input
       ug,     & ! u geostrophic wind                [m/s]
       vg        ! v geostrophic wind                [m/s]
 
-    real, dimension( grid_size, sclr_dim ), intent(out) :: &
+    real, dimension(grid_size, sclr_dim), intent(inout) :: &
       sclrm_forcing ! Scalar forcing [-]
 
-    real, dimension( grid_size, edsclr_dim ), intent(out) :: &
+    real, dimension(grid_size, edsclr_dim), intent(inout) :: &
       edsclrm_forcing ! Edscalar forcing [-]
 
     ! Local Variable(s)
