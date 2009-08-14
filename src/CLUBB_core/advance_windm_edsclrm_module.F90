@@ -1291,7 +1291,7 @@ module advance_windm_edsclrm_module
     ! Initialize the LHS array.
     lhs = 0.0
 
-    do k = 2, gr%nnzp-1, 1
+    do k = 2, gr%nnzp, 1
 
       ! Define index
       km1 = max( k-1, 1 )
@@ -1365,7 +1365,7 @@ module advance_windm_edsclrm_module
 
       endif  ! l_stats_samp
 
-    enddo ! k = 2 .. gr%nnzp-1
+    enddo ! k = 2 .. gr%nnzp
 
 
     ! Boundary Conditions
@@ -1408,42 +1408,6 @@ module advance_windm_edsclrm_module
       endif ! l_stats_samp
 
     endif ! l_imp_sfc_momentum_flux
-
-    ! Upper Boundary
-
-    ! A zero-flux boundary condition is used at the upper boundary, meaning that
-    ! xm is not allowed to exit the model through the upper boundary.  This
-    ! boundary condition is invoked by calling diffusion_zt_lhs at the uppermost
-    ! level.
-    k   = gr%nnzp
-    km1 = max( k-1, 1 )
-
-    ! LHS turbulent advection term (solved as an eddy-diffusion term) at the
-    ! upper boundary.
-    lhs(kp1_tdiag:km1_tdiag,k)  &
-    = lhs(kp1_tdiag:km1_tdiag,k)  &
-    + 0.5  &
-    * diffusion_zt_lhs( Kh_zm(k), Kh_zm(km1), 0.0,  & 
-                        gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
-
-    ! LHS time tendency term at the upper boundary.
-    lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
-
-    if ( l_stats_samp ) then
-
-      ! Statistics:  implicit contributions for um or vm.
-
-      if ( ium_ta + ivm_ta > 0 ) then
-        tmp(1:3)  &
-        = 0.5  &
-        * diffusion_zt_lhs( Kh_zm(k), Kh_zm(km1), 0.0,  &
-                            gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
-        ztscr04(k) = -tmp(3)
-        ztscr05(k) = -tmp(2)
-        ztscr06(k) = -tmp(1)
-      endif
-
-    endif  ! l_stats_samp
 
 
     return
