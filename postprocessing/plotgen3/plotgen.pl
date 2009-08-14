@@ -135,9 +135,8 @@ sub main()
         OutputWriter->writeHeader($outputIndex);
         runCases();
 
-        # Quit matlab
+        # Quit MATLAB
         system("echo quit > matlab_pipe");
-        system("rm matlab_pipe");
 
         print("\n");
         exit(0);
@@ -615,6 +614,9 @@ sub cleanup()
     # Copy temp. output folder to actual output location and remove the temp. folder
     dircopy($outputTemp, $output);
     rmtree($outputTemp);
+
+    # Remove matlab pipe
+    system("rm matlab_pipe");
 
     $ENV{'DISPLAY'} = $sessionType;
 }
