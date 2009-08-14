@@ -153,6 +153,19 @@ module mean_adv
     !
     ! where (top) stands for the grid index of momentum level k = gr%nnzp, which
     ! is the upper boundary of the model.
+    !
+    ! This method of boundary discretization is also similar to the method
+    ! currently employed at the lower boundary for most thermodynamic-level
+    ! variables.  Since thermodynamic level k = 1 is below the model bottom,
+    ! mean advection is not applied.  Thus, thermodynamic level k = 2 becomes
+    ! the lower boundary level.  Now, the mean advection term at thermodynamic
+    ! level 2 takes into account var_zt from levels 1, 2, and 3.  However, in
+    ! most cases, the value of var_zt(1) is set equal to var_zt(2) after the
+    ! matrix of equations has been solved.  Therefore, the derivative,
+    ! d(var_zt)/dz, over the model bottom (momentum level k = 1) becomes 0.
+    ! Thus, the method of setting d(var_zt)/dz to 0 over the model top keeps
+    ! the way the upper and lower boundaries are handled consistent with each
+    ! other.
 
     ! References:
     !   None
@@ -323,15 +336,15 @@ module mean_adv
     ! derivative is multiplied by wm_zm at the central momentum level to get the
     ! desired result.
     !
-    ! =====var_zmp1============================================ m(k+1)
+    ! =====var_zm(kp1)========================================= m(k+1)
     !
-    ! ----------------var_zm(interp)--------------------------- t(k+1)
+    ! -----------------var_zm(interp)-------------------------- t(k+1)
     !
-    ! =====var_zm=====================d(var_zm)/dz=====wm_zm=== m(k)
+    ! =====var_zm(k)==================d(var_zm)/dz=====wm_zm=== m(k)
     !
-    ! ----------------var_zm(interp)--------------------------- t(k)
+    ! -----------------var_zm(interp)-------------------------- t(k)
     !
-    ! =====var_zmm1============================================ m(k-1)
+    ! =====var_zm(km1)========================================= m(k-1)
     !
     ! The vertical indices m(k+1), t(k+1), m(k), t(k), and m(k-1) correspond
     ! with altitudes zm(k+1), zt(k+1), zm(k), zt(k), and zm(k-1), respectively.
