@@ -1834,7 +1834,6 @@ module advance_xm_wpxp_module
 
     if ( l_stats_samp ) then
 
-
       ! xm total time tendency ( 1st calculation)
       call stat_begin_update( ixm_bt, real( xm /dt ), zt )
 
@@ -1853,6 +1852,7 @@ module advance_xm_wpxp_module
 
     end if ! l_stats_samp
 
+
     ! Copy result into output arrays
 
     do k=1, gr%nnzp, 1
@@ -1867,21 +1867,25 @@ module advance_xm_wpxp_module
 
     end do ! k=1..gr%nnzp
 
-    ! Boundary condition on xm
-
-    !xm(1) = 2. * xm(2) - xm(3)
-    !xm(gr%nnzp) = 2. * xm(gr%nnzp-1) - xm(gr%nnzp-2)
+    ! Lower boundary condition on xm
     xm(1) = xm(2)
-    !xm(gr%nnzp) = xm(gr%nnzp-1)
+
 
     if ( l_stats_samp ) then
+
 
       if ( ixm_matrix_condt_num > 0 ) then
         ! Est. of the condition number of the mean/flux LHS matrix
         call stat_update_var_pt( ixm_matrix_condt_num, 1, 1.0 / rcond, sfc )
       end if
 
-      do k = 2, gr%nnzp-1
+
+      ! The xm loop runs between k = 2 and k = gr%nnzp.  The value of xm at
+      ! level k = 1, which is below the model surface, is simply set equal to
+      ! the value of xm at level k = 2 after the solve has been completed.
+      ! Thus, the statistical code will run from levels 2 through gr%nnzp.
+
+      do k = 2, gr%nnzp
 
         km1 = max( k-1, 1 )
         kp1 = min( k+1, gr%nnzp )
@@ -1898,6 +1902,19 @@ module advance_xm_wpxp_module
         call stat_update_var_pt( ixm_ta, k, & 
             ztscr04(k) * wpxp(km1) & 
           + ztscr05(k) * wpxp(k), zt )
+
+      enddo ! xm loop: 2..gr%nnzp
+
+
+      ! The wpxp loop runs between k = 2 and k = gr%nnzp-1.  The value of wpxp
+      ! is set to specified values at both the lowest level, k = 1, and the
+      ! highest level, k = gr%nnzp.  Thus, the statistical code will run from
+      ! levels 2 through gr%nnzp-1.
+
+      do k = 2, gr%nnzp-1
+
+        km1 = max( k-1, 1 )
+        kp1 = min( k+1, gr%nnzp )
 
         ! Finalize implicit contributions for wpxp
 
@@ -1949,9 +1966,11 @@ module advance_xm_wpxp_module
               zmscr15(k) * wpxp(k), zm )
         endif
 
-      enddo ! 1..gr%nnzp
+      enddo ! wpxp loop: 2..gr%nnzp-1
+
 
     endif ! l_stats_samp
+
 
     ! Apply a monotonic turbulent flux limiter to xm/w'x'.
     if ( l_mono_flux_lim ) then
@@ -1993,7 +2012,6 @@ module advance_xm_wpxp_module
       call stat_begin_update( ixm_cl, real( xm / dt ), & ! Intent(in)
                               zt )                       ! Intent(inout)
     end if
-
 
     if ( any( xm < xm_threshold ) .and. l_hole_fill ) then
 
