@@ -218,11 +218,8 @@ sub runCases()
                 {
                     buildMatlabStringBudget($CASE::CASE, $count);
                     
-                    # Convert the eps files to jpq
-                    convertEps($CASE::CASE{'name'} . "_" . $count . "_budget");
-    
                     # Add image file to HTML page
-                    placeImages($CASE::CASE{'name'} . "_" . $count . "_budget");
+                    placeImages($CASE::CASE{'name'} . "_" . $count . "_budget", $plotCount, 0);
                 }
                 else
                 {
@@ -334,6 +331,7 @@ sub placeImages()
 ###############################################################################
 sub buildMatlabStringBudget()
 {
+    $plotCount = 0;
     my $CASE = shift(@_);
     my $budgetNum = shift(@_);
     
@@ -354,7 +352,7 @@ sub buildMatlabStringBudget()
     my $type = $plots[0]{'type'};
     
     # Loop through each input folder and create a plot for each folder
-    for(my $plotCount = 0; $plotCount < @inputDirs; $plotCount++)
+    for(my $bgtPlotCount = 0; $bgtPlotCount < @inputDirs; $bgtPlotCount++)
     {
         my $plotTitle = basename($inputDirs[$plotCount]);
         
@@ -373,7 +371,7 @@ sub buildMatlabStringBudget()
             
             for(my $lineNum = 0; $lineNum < @lines; $lineNum++)
             {
-                my $file = "$inputDirs[$plotCount]/$lines[$lineNum]{'filename'}";
+                my $file = "$inputDirs[$bgtPlotCount]/$lines[$lineNum]{'filename'}";
                 
                 my $name = $lines[$lineNum]{'name'};
                 my $expression = $lines[$lineNum]{'expression'};
@@ -400,6 +398,7 @@ sub buildMatlabStringBudget()
             {
                 executeMatlab($matlabArgs);
                 $totPlotNum ++;
+                $plotCount++;
             }
         }
     }
@@ -797,8 +796,8 @@ sub main::HELP_MESSAGE()
     print("Usage: plotgen [OPTION]... INPUT... OUTPUT\n");
     print("  -r\tIf the output folder already exists, replace the contents\n");    
     print("  -l\tPlot LES data for comparison.\n");    
-    print("  -b\tPlot Best Ever data for comparison.\n");    
-    print("  -d\tPlot December data for comparison.\n");    
+    print("  -b\tPlot HOC Best Ever data for comparison.\n");    
+    print("  -d\tPlot HOC 12/17/2005 data for comparison.\n");    
     print("  -a\tSame as -lbd. Plots LES, Best Ever, and December data for comparison.\n");
     print("  -n\tRuns in nightly mode.\n");
     print("  -q\tOutputs high quality images (does not auto scale).\n");
