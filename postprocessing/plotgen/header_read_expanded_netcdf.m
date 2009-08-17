@@ -35,7 +35,7 @@ time = netcdf.getVar( nc_file, 3 );
 
 t_time_steps = size(time);
 
-time_step_length = (time(2) - time(1))/6.0;
+time_step_length = (time(2) - time(1));
 
 for i=5:numvars-1
 	[varname,xtype,dimids,natts] = netcdf.inqVar( nc_file , i );
