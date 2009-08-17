@@ -10,7 +10,7 @@ module morrison_micro_driver_mod
   contains
 !-------------------------------------------------------------------------------
   subroutine morrison_micro_driver &
-             ( dt, nnzp, l_sample, l_latin_hypercube, thlm, p_in_Pa, exner, rho, pdf_params, &
+             ( dt, nnzp, l_stats_samp, l_latin_hypercube, thlm, p_in_Pa, exner, rho, pdf_params, &
                wm, w_std_dev, dzq, rcm, s_mellor, rvm, hydromet, hydromet_mc, &
                hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 ! Description:
@@ -29,8 +29,7 @@ module morrison_micro_driver_mod
 
     use stats_variables, only: &
       zt,  & ! Variables
-      sfc, &
-      l_stats_samp
+      sfc
 
     use stats_variables, only: & 
       irsnowm_sd, & ! Variables
@@ -63,11 +62,6 @@ module morrison_micro_driver_mod
       iNim_mc, &
       iNsnowm_mc
 
-    use stats_variables, only: & 
-      zt, &  ! Variables
-      sfc, & 
-      l_stats_samp
-
     use stats_type, only:  & 
         stat_update_var, stat_update_var_pt  ! Procedure(s)
 
@@ -94,7 +88,7 @@ module morrison_micro_driver_mod
     integer, intent(in) :: nnzp ! Points in the Vertical        [-]
 
     logical, intent(in) :: &
-      l_sample,   &     ! Whether to accumulate statistics [T/F]
+      l_stats_samp,   & ! Whether to accumulate statistics [T/F]
       l_latin_hypercube ! Whether we're using latin hypercube sampling
 
     real, dimension(nnzp), intent(in) :: &
@@ -219,7 +213,7 @@ module morrison_micro_driver_mod
     ! Sedimentation is handled within the Morrison microphysics
     hydromet_vel(:,:) = 0.0
 
-    if ( l_sample .and. l_stats_samp ) then
+    if ( l_stats_samp ) then
 
       ! -------- Total tendency from the Morrison microphysics --------
       ! (Includes sedimentation, but not diffusion or mean advection)
