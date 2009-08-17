@@ -18,8 +18,6 @@ program clubb_standalone
 
   use parameters_tunable, only: read_parameters ! Procedure(s)
 
-  use output_writer, only: write_output ! Procedure(s)
-
   implicit none
 
   ! External
