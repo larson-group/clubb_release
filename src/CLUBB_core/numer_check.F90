@@ -489,13 +489,14 @@ module numerical_check
 
     use constants, only:  & 
         fstderr ! Variable
+
     use grid_class, only: & 
         gr ! Variable
 
     implicit none
 
     !Input/Output variables
-    real, dimension(gr%nnzp), intent(inout) :: & 
+    real, dimension(gr%nnzp), intent(in) :: & 
     thlm,           & ! Liquid Water Potential Temperature   [K/s]
     rcm,            & ! Liquid Water Mixing Ratio            [Kg/Kg]
     rtm,            & ! Total Water Mixing Ratio             [Kg/Kg]
