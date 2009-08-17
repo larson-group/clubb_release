@@ -1,26 +1,26 @@
 !-----------------------------------------------------------------------
 ! $Id$
 
-module output_writer
+module text_writer
 
 ! Description: Outputs information to the screen and optionally to a file
 !-----------------------------------------------------------------------
 
   implicit none
 
-  public :: write_output, write_date
+  public :: write_text, write_date
 
   private ! Default to private
 
-  interface write_output
-    module procedure write_output_text, write_output_real, write_output_real_array, &
-      write_output_integer, write_output_logical
+  interface write_text
+    module procedure write_string, write_real, write_real_array, &
+      write_integer, write_logical
   end interface
 
   contains
 
   !----------------------------------------------------------------------
-  subroutine write_output_text( text, l_write_to_file, iunit, disp_format )
+  subroutine write_string( text, l_write_to_file, iunit, disp_format )
     ! Description:
     !   Outputs a string
     ! References:
@@ -48,10 +48,10 @@ module output_writer
       endif
     end if
 
-  end subroutine write_output_text
+  end subroutine write_string
 
   !----------------------------------------------------------------------
-  subroutine write_output_real( text, value, l_write_to_file, iunit, disp_format )
+  subroutine write_real( text, value, l_write_to_file, iunit, disp_format )
     ! Description:
     !   Outputs a string and a real
     ! References:
@@ -80,10 +80,10 @@ module output_writer
       endif
     end if
 
-  end subroutine write_output_real
+  end subroutine write_real
 
   !----------------------------------------------------------------------
-  subroutine write_output_real_array( text, value, l_write_to_file, iunit, disp_format )
+  subroutine write_real_array( text, value, l_write_to_file, iunit, disp_format )
     ! Description:
     !   Outputs a string and a real array
     ! References:
@@ -111,10 +111,10 @@ module output_writer
         write(iunit, *) text, value
       endif
     end if
-  end subroutine write_output_real_array
+  end subroutine write_real_array
 
   !----------------------------------------------------------------------
-  subroutine write_output_integer( text, value, l_write_to_file, iunit, disp_format )
+  subroutine write_integer( text, value, l_write_to_file, iunit, disp_format )
     ! Description:
     !   Outputs a string and an integer
     ! References:
@@ -142,10 +142,10 @@ module output_writer
         write(iunit, *) text, value
       endif
     end if
-  end subroutine write_output_integer
+  end subroutine write_integer
 
   !----------------------------------------------------------------------
-  subroutine write_output_logical( text, value, l_write_to_file, iunit, disp_format )
+  subroutine write_logical( text, value, l_write_to_file, iunit, disp_format )
     ! Description:
     !   Outputs a string an a logical
     ! References:
@@ -173,7 +173,7 @@ module output_writer
         write(iunit, *) text, value
       endif
     end if
-  end subroutine write_output_logical
+  end subroutine write_logical
 
   !----------------------------------------------------------------------
   subroutine write_date( l_write_to_file, iunit )
@@ -205,4 +205,4 @@ module output_writer
 
   end subroutine write_date
 
-end module output_writer
+end module text_writer

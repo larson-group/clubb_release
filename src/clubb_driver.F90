@@ -10,7 +10,7 @@ module clubb_driver
 !-----------------------------------------------------------------------
 
   use stats_precision, only: time_precision ! Variable(s)
-  use output_writer, only: write_output, write_date
+  use text_writer, only: write_text, write_date
 
   implicit none
 
@@ -449,168 +449,168 @@ module clubb_driver
       call write_date( l_write_to_file, iunit )
 
       ! Print the list of parameters that are being used before the run.
-      call write_output( "Parameter          Value", l_write_to_file, iunit, '(4x,A24)')
-      call write_output( "---------          -----", l_write_to_file, iunit, '(4x,A24)')
+      call write_text( "Parameter          Value", l_write_to_file, iunit, '(4x,A24)')
+      call write_text( "---------          -----", l_write_to_file, iunit, '(4x,A24)')
       do j = 1, nparams, 1
-        call write_output(params_list(j) // " = ", params(j), & 
+        call write_text(params_list(j) // " = ", params(j), & 
           l_write_to_file, iunit, '(A18,F27.20)')
       end do
 
-      call write_output( "--------------------------------------------------", &
+      call write_text( "--------------------------------------------------", &
         l_write_to_file, iunit )
-      call write_output( "Model Settings", l_write_to_file, iunit)
-      call write_output( "--------------------------------------------------", &
+      call write_text( "Model Settings", l_write_to_file, iunit)
+      call write_text( "--------------------------------------------------", &
         l_write_to_file, iunit )
-      call write_output( "Preprocessing directives:", l_write_to_file, iunit )
+      call write_text( "Preprocessing directives:", l_write_to_file, iunit )
 #ifdef NETCDF
-      call write_output( "-DNETCDF enabled", l_write_to_file, iunit )
+      call write_text( "-DNETCDF enabled", l_write_to_file, iunit )
 #else
-      call write_output( "-DNETCDF disabled", l_write_to_file, iunit )
+      call write_text( "-DNETCDF disabled", l_write_to_file, iunit )
 #endif
 #ifdef COAMPS_MICRO
-      call write_output( "-DCOAMPS_MICRO enabled", l_write_to_file, iunit )
+      call write_text( "-DCOAMPS_MICRO enabled", l_write_to_file, iunit )
 #else
-      call write_output( "-DCOAMPS_MICRO disabled", l_write_to_file, iunit )
+      call write_text( "-DCOAMPS_MICRO disabled", l_write_to_file, iunit )
 #endif
 #ifdef TUNER
-      call write_output( "-DTUNER enabled", l_write_to_file, iunit )
+      call write_text( "-DTUNER enabled", l_write_to_file, iunit )
 #else
-      call write_output( "-DTUNER disabled", l_write_to_file, iunit )
+      call write_text( "-DTUNER disabled", l_write_to_file, iunit )
 #endif
 #ifdef UNRELEASED_CODE
-      call write_output( "-DUNRELEASED_CODE enabled", l_write_to_file, iunit )
+      call write_text( "-DUNRELEASED_CODE enabled", l_write_to_file, iunit )
 #else
-      call write_output( "-DUNRELEASED_CODE disabled", l_write_to_file, iunit )
+      call write_text( "-DUNRELEASED_CODE disabled", l_write_to_file, iunit )
 #endif
 #ifdef nooverlap
-      call write_output( "-Dnooverlap enabled", l_write_to_file, iunit )
+      call write_text( "-Dnooverlap enabled", l_write_to_file, iunit )
 #else
-      call write_output( "-Dnooverlap disabled", l_write_to_file, iunit )
+      call write_text( "-Dnooverlap disabled", l_write_to_file, iunit )
 #endif
 #ifdef radoffline
-      call write_output( "-Draoffline enabled", l_write_to_file, iunit )
+      call write_text( "-Draoffline enabled", l_write_to_file, iunit )
 #else
-      call write_output( "-Dradoffline disabled", l_write_to_file, iunit )
+      call write_text( "-Dradoffline disabled", l_write_to_file, iunit )
 #endif
 #ifdef USE_BUGSrad_ocast_random
-      call write_output( "-DUSE_BUGSrad_ocast_random enabled", l_write_to_file, iuni t )
+      call write_text( "-DUSE_BUGSrad_ocast_random enabled", l_write_to_file, iuni t )
 #else
-      call write_output( "-DUSE_BUGSrad_ocast_random disabled", l_write_to_file, iunit )
+      call write_text( "-DUSE_BUGSrad_ocast_random disabled", l_write_to_file, iunit )
 #endif
 
       ! Pick some default values for model_setting
-      call write_output( "&model_setting:", l_write_to_file, iunit )
-      call write_output( "runtype = " // runtype, l_write_to_file, iunit )
-      call write_output( "nzmax = ", nzmax, l_write_to_file, iunit )
-      call write_output( "grid_type = ", grid_type, l_write_to_file, iunit )
-      call write_output( "deltaz = ", deltaz, l_write_to_file, iunit )
-      call write_output( "zm_init = ", zm_init, l_write_to_file, iunit )
-      call write_output( "zm_top = ", zm_top, l_write_to_file, iunit )
-      call write_output( "zt_grid_fname = " // zt_grid_fname, l_write_to_file, iunit )
-      call write_output( "zm_grid_fname = " // zm_grid_fname, l_write_to_file, iunit )
+      call write_text( "&model_setting:", l_write_to_file, iunit )
+      call write_text( "runtype = " // runtype, l_write_to_file, iunit )
+      call write_text( "nzmax = ", nzmax, l_write_to_file, iunit )
+      call write_text( "grid_type = ", grid_type, l_write_to_file, iunit )
+      call write_text( "deltaz = ", deltaz, l_write_to_file, iunit )
+      call write_text( "zm_init = ", zm_init, l_write_to_file, iunit )
+      call write_text( "zm_top = ", zm_top, l_write_to_file, iunit )
+      call write_text( "zt_grid_fname = " // zt_grid_fname, l_write_to_file, iunit )
+      call write_text( "zm_grid_fname = " // zm_grid_fname, l_write_to_file, iunit )
 
-      call write_output( "day = ", day, l_write_to_file, iunit )
-      call write_output( "month = ", month, l_write_to_file, iunit )
-      call write_output( "year = ", year, l_write_to_file, iunit )
+      call write_text( "day = ", day, l_write_to_file, iunit )
+      call write_text( "month = ", month, l_write_to_file, iunit )
+      call write_text( "year = ", year, l_write_to_file, iunit )
 
-      call write_output( "rlat = ", rlat, l_write_to_file, iunit )
-      call write_output( "rlon = ", rlon, l_write_to_file, iunit )
+      call write_text( "rlat = ", rlat, l_write_to_file, iunit )
+      call write_text( "rlon = ", rlon, l_write_to_file, iunit )
 
-      call write_output( "time_initial = ", real( time_initial ), l_write_to_file, iunit )
-      call write_output( "time_final = ", real( time_final ), l_write_to_file, iunit )
-      call write_output( "time_spinup = ", real( time_spinup ), l_write_to_file, iunit )
+      call write_text( "time_initial = ", real( time_initial ), l_write_to_file, iunit )
+      call write_text( "time_final = ", real( time_final ), l_write_to_file, iunit )
+      call write_text( "time_spinup = ", real( time_spinup ), l_write_to_file, iunit )
 
-      call write_output( "dtmain = ", real( dtmain ), l_write_to_file, iunit )
-      call write_output( "dtclosure = ", real( dtclosure ), l_write_to_file, iunit )
+      call write_text( "dtmain = ", real( dtmain ), l_write_to_file, iunit )
+      call write_text( "dtclosure = ", real( dtclosure ), l_write_to_file, iunit )
 
-      call write_output( "sfctype = ", sfctype, l_write_to_file, iunit )
-      call write_output( "tsfc = ", tsfc, l_write_to_file, iunit )
-      call write_output( "psfc = ", psfc, l_write_to_file, iunit )
-      call write_output( "SE = ", SE, l_write_to_file, iunit )
-      call write_output( "LE = ", LE, l_write_to_file, iunit )
-      call write_output( "fcor = ", fcor, l_write_to_file, iunit )
-      call write_output( "T0 = ", T0, l_write_to_file, iunit )
-      call write_output( "ts_nudge = ", ts_nudge, l_write_to_file, iunit )
+      call write_text( "sfctype = ", sfctype, l_write_to_file, iunit )
+      call write_text( "tsfc = ", tsfc, l_write_to_file, iunit )
+      call write_text( "psfc = ", psfc, l_write_to_file, iunit )
+      call write_text( "SE = ", SE, l_write_to_file, iunit )
+      call write_text( "LE = ", LE, l_write_to_file, iunit )
+      call write_text( "fcor = ", fcor, l_write_to_file, iunit )
+      call write_text( "T0 = ", T0, l_write_to_file, iunit )
+      call write_text( "ts_nudge = ", ts_nudge, l_write_to_file, iunit )
 
-      call write_output( "forcings_file_path = " // forcings_file_path, l_write_to_file, iunit )
+      call write_text( "forcings_file_path = " // forcings_file_path, l_write_to_file, iunit )
 
-      call write_output( "l_t_dependent = ", l_t_dependent, l_write_to_file, iunit )
+      call write_text( "l_t_dependent = ", l_t_dependent, l_write_to_file, iunit )
 
-      call write_output( "l_use_default_std_atmosphere = ", l_use_default_std_atmosphere, &
+      call write_text( "l_use_default_std_atmosphere = ", l_use_default_std_atmosphere, &
         l_write_to_file, iunit )
 
-      call write_output( "thlm_sponge_damp_settings%l_sponge_damping = ", & 
+      call write_text( "thlm_sponge_damp_settings%l_sponge_damping = ", & 
         thlm_sponge_damp_settings%l_sponge_damping, l_write_to_file, iunit )
-      call write_output( "rtm_sponge_damp_settings%l_sponge_damping = ", &
+      call write_text( "rtm_sponge_damp_settings%l_sponge_damping = ", &
         rtm_sponge_damp_settings%l_sponge_damping, l_write_to_file, iunit )
 
-      call write_output( "uv_sponge_damp_settings%l_sponge_damping = ", &
+      call write_text( "uv_sponge_damp_settings%l_sponge_damping = ", &
         uv_sponge_damp_settings%l_sponge_damping, l_write_to_file, iunit )
 
-      call write_output( "thlm_sponge_damp_settings%tau_sponge_damp_min = ", &
+      call write_text( "thlm_sponge_damp_settings%tau_sponge_damp_min = ", &
         thlm_sponge_damp_settings%tau_sponge_damp_min, l_write_to_file, iunit )
                           
-      call write_output( "thlm_sponge_damp_settings%tau_sponge_damp_max = ", &
+      call write_text( "thlm_sponge_damp_settings%tau_sponge_damp_max = ", &
         thlm_sponge_damp_settings%tau_sponge_damp_max, l_write_to_file, iunit )
                           
-      call write_output( "thlm_sponge_damp_settings%sponge_damp_depth = ", &
+      call write_text( "thlm_sponge_damp_settings%sponge_damp_depth = ", &
         thlm_sponge_damp_settings%sponge_damp_depth, l_write_to_file, iunit )
                           
-      call write_output( "rtm_sponge_damp_settings%tau_sponge_damp_min = ", &
+      call write_text( "rtm_sponge_damp_settings%tau_sponge_damp_min = ", &
         rtm_sponge_damp_settings%tau_sponge_damp_min, l_write_to_file, iunit )
                           
-      call write_output( "rtm_sponge_damp_settings%tau_sponge_damp_max = ", &
+      call write_text( "rtm_sponge_damp_settings%tau_sponge_damp_max = ", &
         rtm_sponge_damp_settings%tau_sponge_damp_max, l_write_to_file, iunit )
 
-      call write_output( "rtm_sponge_damp_settings%sponge_damp_depth = ", &
+      call write_text( "rtm_sponge_damp_settings%sponge_damp_depth = ", &
         rtm_sponge_damp_settings%sponge_damp_depth, l_write_to_file, iunit )
 
-      call write_output( "uv_sponge_damp_settings%tau_sponge_damp_min = ", &
+      call write_text( "uv_sponge_damp_settings%tau_sponge_damp_min = ", &
         uv_sponge_damp_settings%tau_sponge_damp_min, l_write_to_file, iunit )
 
-      call write_output( "uv_sponge_damp_settings%tau_sponge_damp_max = ", &
+      call write_text( "uv_sponge_damp_settings%tau_sponge_damp_max = ", &
         uv_sponge_damp_settings%tau_sponge_damp_max, l_write_to_file, iunit )
                           
-      call write_output( "uv_sponge_damp_settings%sponge_damp_depth = ", &
+      call write_text( "uv_sponge_damp_settings%sponge_damp_depth = ", &
         uv_sponge_damp_settings%sponge_damp_depth, l_write_to_file, iunit )
 
-      call write_output( "l_soil_veg = ", l_soil_veg, l_write_to_file, iunit )
-      call write_output( "l_tke_aniso = ", l_tke_aniso, l_write_to_file, iunit )
-      call write_output( "l_uv_nudge = ", l_uv_nudge, l_write_to_file, iunit )
-      call write_output( "l_restart = ", l_restart, l_write_to_file, iunit )
-      call write_output( "restart_path_case = " // restart_path_case, l_write_to_file, iunit )
-      call write_output( "time_restart = ", real( time_restart ), l_write_to_file, iunit )
-      call write_output( "debug_level = ", debug_level, l_write_to_file, iunit )
+      call write_text( "l_soil_veg = ", l_soil_veg, l_write_to_file, iunit )
+      call write_text( "l_tke_aniso = ", l_tke_aniso, l_write_to_file, iunit )
+      call write_text( "l_uv_nudge = ", l_uv_nudge, l_write_to_file, iunit )
+      call write_text( "l_restart = ", l_restart, l_write_to_file, iunit )
+      call write_text( "restart_path_case = " // restart_path_case, l_write_to_file, iunit )
+      call write_text( "time_restart = ", real( time_restart ), l_write_to_file, iunit )
+      call write_text( "debug_level = ", debug_level, l_write_to_file, iunit )
 
-      call write_output( "sclr_dim = ", sclr_dim, l_write_to_file, iunit )
-      call write_output( "edsclr_dim = ", edsclr_dim, l_write_to_file, iunit )
-      call write_output( "iisclr_thl = ", iisclr_thl, l_write_to_file, iunit )
-      call write_output( "iisclr_rt = ", iisclr_rt, l_write_to_file, iunit )
-      call write_output( "iisclr_CO2 = ", iisclr_CO2, l_write_to_file, iunit )
+      call write_text( "sclr_dim = ", sclr_dim, l_write_to_file, iunit )
+      call write_text( "edsclr_dim = ", edsclr_dim, l_write_to_file, iunit )
+      call write_text( "iisclr_thl = ", iisclr_thl, l_write_to_file, iunit )
+      call write_text( "iisclr_rt = ", iisclr_rt, l_write_to_file, iunit )
+      call write_text( "iisclr_CO2 = ", iisclr_CO2, l_write_to_file, iunit )
 
-      call write_output( "sclr_tol = ", sclr_tol(1:sclr_dim), l_write_to_file, iunit )
+      call write_text( "sclr_tol = ", sclr_tol(1:sclr_dim), l_write_to_file, iunit )
 
       ! Pick some default values for stats_setting
-      call write_output( "&stats_setting:", l_write_to_file, iunit )
-      call write_output( "l_stats = ", l_stats, l_write_to_file, iunit )
-      call write_output( "fname_prefix = " // fname_prefix, l_write_to_file, iunit )
-      call write_output( "stats_fmt = " // stats_fmt, l_write_to_file, iunit)
-      call write_output( "stats_tsamp = ", real( stats_tsamp ), l_write_to_file, iunit )
-      call write_output( "stats_tout = ", real( stats_tout ), l_write_to_file, iunit )
+      call write_text( "&stats_setting:", l_write_to_file, iunit )
+      call write_text( "l_stats = ", l_stats, l_write_to_file, iunit )
+      call write_text( "fname_prefix = " // fname_prefix, l_write_to_file, iunit )
+      call write_text( "stats_fmt = " // stats_fmt, l_write_to_file, iunit)
+      call write_text( "stats_tsamp = ", real( stats_tsamp ), l_write_to_file, iunit )
+      call write_text( "stats_tout = ", real( stats_tout ), l_write_to_file, iunit )
 
-      call write_output( "Constant flags:", l_write_to_file, iunit )
-      call write_output( "l_pos_def = ", l_pos_def, l_write_to_file, iunit )
-      call write_output( "l_hole_fill = ", l_hole_fill, l_write_to_file, iunit )
-      call write_output( "l_single_C2_Skw = ", l_single_C2_Skw, l_write_to_file, iunit )
-      call write_output( "l_gamma_Skw = ", l_gamma_Skw, l_write_to_file, iunit)
-      call write_output( "l_byteswap_io = ", l_byteswap_io, l_write_to_file, iunit )
+      call write_text( "Constant flags:", l_write_to_file, iunit )
+      call write_text( "l_pos_def = ", l_pos_def, l_write_to_file, iunit )
+      call write_text( "l_hole_fill = ", l_hole_fill, l_write_to_file, iunit )
+      call write_text( "l_single_C2_Skw = ", l_single_C2_Skw, l_write_to_file, iunit )
+      call write_text( "l_gamma_Skw = ", l_gamma_Skw, l_write_to_file, iunit)
+      call write_text( "l_byteswap_io = ", l_byteswap_io, l_write_to_file, iunit )
 
-      call write_output( "Constant tolerances [units]", l_write_to_file, iunit )
-      call write_output( "rttol [kg/kg] = ", rttol, l_write_to_file, iunit )
-      call write_output( "thltol [K] = ", thltol, l_write_to_file, iunit )
-      call write_output( "wtol [m/s] = ", wtol, l_write_to_file, iunit )
+      call write_text( "Constant tolerances [units]", l_write_to_file, iunit )
+      call write_text( "rttol [kg/kg] = ", rttol, l_write_to_file, iunit )
+      call write_text( "thltol [K] = ", thltol, l_write_to_file, iunit )
+      call write_text( "wtol [m/s] = ", wtol, l_write_to_file, iunit )
 
-      call write_output( "--------------------------------------------------", &
+      call write_text( "--------------------------------------------------", &
         l_write_to_file, iunit )
 
       if( l_write_to_file) close(unit=iunit);
