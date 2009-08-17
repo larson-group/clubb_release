@@ -142,15 +142,9 @@ sub main()
         # Quit MATLAB
         system("echo quit > $matlabPipe");
 
-        # Wait until the pipe is removed before quitting.
-        # This fixes the problem where the user is brought
-        # back to the terminal early.
-        while(-e $matlabPipe)
-        {
-            sleep(1);
-        }
+        # Wait for the Child Process to exit
+        wait;
 
-        print("\n");
         exit(0);
     }
 }
@@ -563,11 +557,6 @@ sub executeMatlab()
     #print $args;
 
     system("echo $args > matlab_pipe");
-
-    if($plotCount % 5 == 0)
-    {
-        system("echo pack > matlab_pipe");
-    }
 }
 
 ###############################################################################
