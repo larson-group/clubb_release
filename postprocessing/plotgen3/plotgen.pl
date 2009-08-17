@@ -23,6 +23,9 @@ use File::Path;
 # sudo -u matlabuser part.
 my $MATLAB = "sudo -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop";
 
+# The pipe name used to communicate with MATLAB
+my $matlabPipe = "matlab_pipe";
+
 # Plotgen Version Number
 my $VERSION = 3.0;
 
@@ -117,8 +120,8 @@ sub main()
     {
         $ENV{'DISPLAY'} = '';
 
-        system("mkfifo matlab_pipe");
-        system("$MATLAB <> matlab_pipe");
+        system("mkfifo $matlabPipe");
+        system("$MATLAB <> $matlabPipe");
 
         # Convert the eps files to jpq
         convertEps();
@@ -127,8 +130,7 @@ sub main()
     
         cleanup();
     
-        print("Done! To display the plots, open: \n$output/index.html \nin your web browser.\n\n");
-        print("Hit [Enter] to continue.");
+        print("Done! To display the plots, open: \n$output/index.html \nin your web browser.\n");
 
         exit(0);
     }
@@ -138,7 +140,15 @@ sub main()
         runCases();
 
         # Quit MATLAB
-        system("echo quit > matlab_pipe");
+        system("echo quit > $matlabPipe");
+
+        # Wait until the pipe is removed before quitting.
+        # This fixes the problem where the user is brought
+        # back to the terminal early.
+        while(-e $matlabPipe)
+        {
+            # Do nothing.
+        }
 
         print("\n");
         exit(0);
