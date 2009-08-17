@@ -802,6 +802,9 @@ module clubb_driver
       ! Add microphysical tendencies to the forcings
       rtm_forcing(:)  = rtm_forcing(:)  + rtm_mc(:)
 
+      ! This is a kluge added because the _tndcy subroutines will sometimes
+      ! compute radht from an analytic formula and add it to thlm_forcing before
+      ! we reach this point in the clubb_driver. -dschanen 17 Aug 2009
       if ( trim( rad_scheme ) == "bugsrad" ) then
         thlm_forcing(:) = thlm_forcing(:) + thlm_mc(:) + radht(:)
       else
@@ -844,12 +847,18 @@ module clubb_driver
 
         ! Advance a microphysics scheme
         call advance_clubb_microphys &
-             ( i, dt, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, &
-               rtm, rcm, wm_zt, wm_zm, &
-               Kh_zm, wp2_zt, pdf_params, Ncnm, hydromet, rtm_mc, &
-               thlm_mc, err_code )
+             ( i, dt, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! In
+               rtm, rcm, wm_zt, wm_zm, & ! In
+               Kh_zm, wp2_zt, pdf_params, & ! In
+               Ncnm, hydromet, & ! In/Out
+               rtm_mc, thlm_mc, err_code ) ! Out
 
-        ! Advance a radiation scheme
+         ! Advance a radiation scheme
+         ! With this call ordering, snow and ice water mixing ratio will be
+         ! updated by the microphysics, but thlm and rtm will not.  This
+         ! somewhat inconsistent, but we would need to move the call to
+         ! radiation before the call the microphysics to change this.
+         ! -dschanen 17 Aug 2009
          call advance_clubb_radiation &
               ( rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! In
                 rtm, rcm, hydromet, & ! In
