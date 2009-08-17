@@ -84,8 +84,10 @@ for i=1:numLines
 	%Load timestep information
 	if strcmp(extension, '.ctl')
 		[dummy, dummy , dummy, t_time_steps, time_step_length, dummy, dummy] = header_read_expanded(filePath);
+		%clear('header_read_expanded');
 	elseif strcmp(extension, '.nc')
 		[dummy, dummy , dummy, t_time_steps, time_step_length, dummy, dummy] = header_read_expanded_netcdf(filePath);
+		%clear('header_read_expanded_netcdf');
 	end
 
 	%Figure out indicies for start and end height
@@ -149,10 +151,3 @@ end
 %mkdir([ '/tmp/', 'output_', int2str(tickCount)]);
 output_file_name = [ '/tmp/', 'output_', int2str(tickCount), '/', caseName, '_', int2str(plotNum), '.eps' ];
 print( '-depsc2', output_file_name );
-
-%Fix for MATLAB 2008b
-%MATLAB has a leaky object implementation so we
-%need to clear
-clear;
-clear classes;
-%End fix for MATLAB 2008b
