@@ -22,13 +22,12 @@ module bugsrad_clubb_mod
                extend_atmos_top_level,              &
                lat_in_degrees, lon_in_degrees,      &
                day, month, year, time,              &
-               thlm, rcm_in_cloud, rtm, rsnowm, rim,& 
+               thlm, rcm, rtm, rsnowm, rim,& 
                cloud_frac, p_in_Pa, p_in_Pam,       &
                exner, rho_zm,                       &
                radht, Frad,                         &
                Frad_SW_up, Frad_LW_up,              &
-               Frad_SW_down, Frad_LW_down,          &
-               thlm_forcing )
+               Frad_SW_down, Frad_LW_down )          
 
 ! Description:
 !   Does the necessary operations to interface the CLUBB model with
@@ -110,7 +109,7 @@ module bugsrad_clubb_mod
     real, intent(in), dimension(nz) :: &
       alt,          & ! Altitudes of the model              [m]
       thlm,         & ! Liquid potential temp.              [K]
-      rcm_in_cloud, & ! Liquid water mixing ratio in cloud  [kg/kg]
+      rcm,          & ! Liquid water mixing ratio           [kg/kg]
       rsnowm,       & ! Snow water mixing ratio             [kg/kg]
       rim,          & ! Ice water mixing ratio              [kg/kg]
       rtm,          & ! Total water mixing ratio            [kg/kg]
@@ -124,10 +123,6 @@ module bugsrad_clubb_mod
     integer,intent(in) ::&
       extend_atmos_bottom_level, &
       extend_atmos_top_level
-
-    ! Input/Output Variables
-    real, intent(inout), dimension(nz) :: &
-      thlm_forcing ! Theta_l LS tendency [K/s]
 
     ! Output Variables
     real, intent(out), dimension(nz) :: &
@@ -144,6 +139,9 @@ module bugsrad_clubb_mod
       Frad_LW, & ! LW radiative flux [W/m^2]
       radht_SW,& ! SW heating rate   [K/s]
       radht_LW   ! LW heating rate   [K/s]
+
+    real, dimension(nz) :: &
+      rcm_in_cloud  ! Liquid water mixing ratio in cloud  [kg/kg]
 
     ! Altered 3 Oct 2005 to be buffer levels higher
     double precision, dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size) :: &
@@ -199,21 +197,23 @@ module bugsrad_clubb_mod
 
     playerinmb(1,1:nz) = dble( p_in_Pam / 100.0 ) ! m grid in CLUBB
 
+    ! Determine rcm in cloud
+    rcm_in_cloud = rcm / max( cloud_frac, 0.01 )
 
     ! Convert theta_l to temperature
 
-    T_in_K(1,1:(nz-1)) = thlm2T_in_K( thlm(2:nz), exner(2:nz), rcm_in_cloud(2:nz) )
+    T_in_K(1,1:(nz-1)) = thlm2T_in_K( thlm(2:nz), exner(2:nz), rcm(2:nz) )
 
     ! Derive Specific humidity from rc & rt.
     do z = 2, nz
-      if ( rtm(z) < rcm_in_cloud(z) ) then
+      if ( rtm(z) < rcm(z) ) then
         sp_humidity(1,z-1) = 0.0d0
         if ( clubb_at_least_debug_level(1) ) then
           write(fstderr,*) "rvm < 0 at ", z, " before BUGSrad, specific humidity set to 0."
         endif
       else
         sp_humidity(1,z-1) &
-          = dble( rtm(z) - rcm_in_cloud(z) ) / dble( 1.0+rtm(z) )
+          = dble( rtm(z) - rcm(z) ) / dble( 1.0+rtm(z) )
       end if
     end do
 
@@ -372,8 +372,6 @@ module bugsrad_clubb_mod
     Frad_LW(1:nz) = Frad_LW_up - Frad_LW_down
 
     Frad(1:nz) = Frad_SW(1:nz) + Frad_LW(1:nz)
-
-    thlm_forcing(1:nz) = thlm_forcing(1:nz) + radht(1:nz)
 
     if ( l_stats_samp ) then
 

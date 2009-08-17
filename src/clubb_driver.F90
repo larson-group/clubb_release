@@ -108,14 +108,16 @@ module clubb_driver
 
     use grid_class, only: gr ! Variable(s)
 
-    use grid_class, only: read_grid_heights ! Procedure(s)
+    use grid_class, only: read_grid_heights, zm2zt ! Procedure(s)
 
     use parameter_indices, only: nparams ! Variable(s)
 
     use variables_diagnostic_module, only: ug, vg, em,  & ! Variable(s)
       tau_zt, thvm, Lscale, Kh_zm, & 
       um_ref, vm_ref, Ncnm, wp2_zt, &
-      hydromet, thlm_ref, rtm_ref
+      hydromet, thlm_ref, rtm_ref, &
+      Frad, radht, Frad_SW_up, &
+      Frad_LW_up, Frad_SW_down, Frad_LW_down
 
     use variables_prognostic_module, only:  & 
       Tsfc, psfc, SE, LE, thlm, rtm,     & ! Variable(s)
@@ -148,7 +150,7 @@ module clubb_driver
       advance_clubb_core
 
     use constants, only: fstdout, fstderr, & ! Variable(s)
-      rttol, thltol, wtol
+      rttol, thltol, wtol, wtol_sqd
 
     use error_code, only: clubb_var_out_of_bounds,  & ! Variable(s)
       clubb_var_equals_NaN, & 
@@ -196,6 +198,8 @@ module clubb_driver
       l_use_default_std_atmosphere, &
       finalize_extend_atm
 
+    use parameters_radiation, only: rad_scheme  ! Variable(s)
+
     implicit none
 
     ! Because Fortran I/O is not thread safe, we use this here to
@@ -242,7 +246,6 @@ module clubb_driver
 
     real(kind=time_precision) :: & 
       time_restart    ! Time of model restart run     [s]
-
 
     logical ::  & 
       l_soil_veg,     & ! Flag for simple surface scheme
@@ -294,6 +297,10 @@ module clubb_driver
       l_write_to_file = .true. ! If true, will write case information to a file
     character(len=150) :: &
       case_info_file ! The filename for case info
+
+    real, allocatable, dimension(:) :: &
+      rtm_mc, & ! Tendency of total water due to microphysics      [kg/kg/s]
+      thlm_mc   ! Tendecy of liquid pot. temp. due to microphysics [K/s]
 
     ! Definition of namelists
     namelist /model_setting/  & 
@@ -663,6 +670,13 @@ module clubb_driver
     ! Deallocate stretched grid altitude arrays
     deallocate( momentum_heights, thermodynamic_heights )
 
+    ! Allocate rtm_mc, thlm_mc
+    allocate( rtm_mc(gr%nnzp), thlm_mc(gr%nnzp) )
+
+    ! Initialize to 0.0
+    rtm_mc  = 0.0
+    thlm_mc = 0.0
+
     if ( .not. l_restart ) then
 
       time_current = time_initial
@@ -670,7 +684,7 @@ module clubb_driver
 
       call initialize_clubb &
            ( iunit, trim( forcings_file_path ), psfc, zm_init, & ! Intent(in)
-             thlm, rtm, um, vm, ug, vg, wp2, wp2_zt, up2, vp2, rcm,  & ! Intent(inout)
+             thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,  & ! Intent(inout)
              wm_zt, wm_zm, em, exner, &           ! Intent(inout)
              tau_zt, tau_zm, thvm, p_in_Pa, &     ! Intent(inout)
              rho, rho_zm, Lscale, rtm_ref, thlm_ref, & ! Intent(inout) 
@@ -687,7 +701,7 @@ module clubb_driver
       ! the initial sounding anyway.
       call initialize_clubb &
            ( iunit, trim( forcings_file_path ), psfc, zm_init, & ! Intent(in)
-             thlm, rtm, um, vm, ug, vg, wp2, wp2_zt, up2, vp2, rcm,  & ! Intent(inout)
+             thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,  & ! Intent(inout)
              wm_zt, wm_zm, em, exner, &           ! Intent(inout)
              tau_zt, tau_zm, thvm, p_in_Pa, &     ! Intent(inout)
              rho, rho_zm, Lscale, rtm_ref, thlm_ref, & ! Intent(inout) 
@@ -756,18 +770,18 @@ module clubb_driver
       ! When this time step is over, the time will be time + dtmain
 
       ! We use elapsed time for stats_begin_step
-      if (.not. l_restart) then
-        call stats_begin_timestep( time_current-time_initial+dtmain, dtmain )   ! Intent(in)
+      if ( .not. l_restart ) then
+        call stats_begin_timestep( time_current-time_initial+dtmain, dtmain ) ! Intent(in)
       else
         ! Different elapsed time for restart
         ! Joshua Fasching March 2008
-        call stats_begin_timestep( time_current-time_restart+dtmain, dtmain )          ! Intent(in)
+        call stats_begin_timestep( time_current-time_restart+dtmain, dtmain ) ! Intent(in)
       end if
 
 
 
       ! If we're doing an inputfields run, get the values for our
-      ! model arrays from a GrADS file
+      ! model arrays from a netCDF or GrADS file
       if ( l_input_fields ) then
         call compute_timestep( iunit, stat_file_zt, .false., time_current, &    ! Intent(in)
                                itime_nearest )                                  ! Intent(out)
@@ -780,10 +794,19 @@ module clubb_driver
         exit ! Leave the main loop
       end if
 
-      call advance_clubb_forcings( i, dtmain, & ! Intent(in)
-                                  err_code )    ! Intent(out)
+      call advance_clubb_forcings( dtmain, &  ! Intent(in)
+                                   err_code ) ! Intent(inout)
 
       if ( err_code == clubb_rtm_level_not_found ) exit
+
+      ! Add microphysical tendencies to the forcings
+      rtm_forcing(:)  = rtm_forcing(:)  + rtm_mc(:)
+
+      if ( trim( rad_scheme ) == "bugsrad" ) then
+        thlm_forcing(:) = thlm_forcing(:) + thlm_mc(:) + radht(:)
+      else
+        thlm_forcing(:) = thlm_forcing(:) + thlm_mc(:)
+      end if
 
       ! Compute number of iterations for closure loop
       if ( time_current > time_spinup ) then
@@ -799,6 +822,7 @@ module clubb_driver
 !-------------------------------------------------------------------------------
 
       do i1=1, niterlong
+        ! Call the parameterization one timestep
         call advance_clubb_core & 
              ( .false., dt, fcor, &                                 ! Intent(in)
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
@@ -816,9 +840,23 @@ module clubb_driver
                wpsclrp, edsclrm, pdf_params, &                      ! Intent(inout)
                err_code )                                           ! Intent(inout)
 
+        wp2_zt = max( zm2zt( wp2 ), wtol_sqd ) ! Positive definite quantity
+
+        ! Advance a microphysics scheme
+        call advance_clubb_microphys &
+             ( i, dt, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, &
+               rtm, rcm, wm_zt, wm_zm, &
+               Kh_zm, wp2_zt, pdf_params, Ncnm, hydromet, rtm_mc, &
+               thlm_mc, err_code )
+
+        ! Advance a radiation scheme
+         call advance_clubb_radiation &
+              ( rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! In
+                rtm, rcm, hydromet, & ! In
+                radht, Frad, Frad_SW_up, Frad_LW_up, & ! Out
+                Frad_SW_down, Frad_LW_down ) ! Out
 
         call stats_end_timestep( )
-
 
         ! Set Time
         ! Advance time here, not in advance_clubb_core,
@@ -885,7 +923,7 @@ module clubb_driver
   !-----------------------------------------------------------------------
   subroutine initialize_clubb &
              ( iunit, forcings_file_path, psfc, zm_init, &
-               thlm, rtm, um, vm, ug, vg, wp2, wp2_zt, up2, vp2, rcm, &
+               thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
                tau_zt, tau_zm, thvm, p_in_Pa, & 
                rho, rho_zm, Lscale, rtm_ref, thlm_ref, & 
@@ -1007,7 +1045,7 @@ module clubb_driver
       vm,              & ! v wind                        [m/s]
       ug,              & ! u geostrophic wind            [m/s] 
       vg,              & ! u geostrophic wind            [m/s] 
-      wp2, wp2_zt,     & ! w'^2                          [m^2/s^2]
+      wp2,             & ! w'^2                          [m^2/s^2]
       up2,             & ! u'^2                          [m^2/s^2]
       vp2,             & ! v'^2                          [m^2/s^2]
       rcm,             & ! Cloud water mixing ratio      [kg/kg]
@@ -1059,8 +1097,6 @@ module clubb_driver
     err_code = clubb_no_error
 
     ! Read sounding information
-
-
     call read_sounding( iunit, runtype, psfc, zm_init, &          ! Intent(in) 
                         thlm, theta_type, rtm, um, vm, ug, vg,  & ! Intent(out)
                         alt_type, p_in_Pa, subs_type, wm_zt, &    ! Intent(out)
@@ -1598,8 +1634,6 @@ module clubb_driver
 
     endif
 
-    wp2_zt = zm2zt( wp2 )
-
     ! Compute mixing length
     call compute_length( thvm, thlm, rtm, rcm, & ! Intent(in)
                          em, p_in_Pa, exner,   & ! Intent(in)    
@@ -1865,7 +1899,7 @@ module clubb_driver
   end subroutine restart_clubb
 
   !----------------------------------------------------------------------
-  subroutine advance_clubb_forcings( iter, dt, err_code )
+  subroutine advance_clubb_forcings( dt, err_code )
 
     ! Description:
     !   Calculate tendency and surface variables
@@ -1882,13 +1916,13 @@ module clubb_driver
     use grid_class, only: zt2zm, zm2zt ! Procedure(s)
 
     use variables_diagnostic_module, only: &
-      hydromet, radht, um_ref,  & ! Variable(s)
-      vm_ref, Frad,  Frad_SW_up,  Frad_LW_up, &
-      Frad_SW_down, Frad_LW_down, Ncnm, thvm, ustar, & 
+      radht, um_ref,  & ! Variable(s)
+      vm_ref, Frad,  Frad_SW_up,  &
+      Frad_SW_down, Frad_LW_down, thvm, ustar, & 
 #ifdef UNRELEASED_CODE
     ug, vg, &
 #endif
-    soil_heat_flux, Kh_zm
+    soil_heat_flux
 
     use variables_diagnostic_module, only: wpedsclrp ! Passive scalar variables
 
@@ -1897,11 +1931,11 @@ module clubb_driver
       wm_zt, wm_zm, rho, rtm, thlm, p_in_Pa, & 
       exner, rcm, rho_zm, um, psfc, vm, & 
       upwp_sfc, vpwp_sfc, Tsfc, & 
-      wpthlp_sfc, SE, LE, wprtp_sfc, cloud_frac, &
+      wpthlp_sfc, wprtp_sfc, &
 #ifdef UNRELEASED_CODE
-    um_forcing, vm_forcing, &
+      um_forcing, vm_forcing, &
 #endif
-    pdf_params
+      SE, LE
 
     use stats_variables, only: &
       ish, & ! Variable(s)
@@ -1928,39 +1962,17 @@ module clubb_driver
       wpsclrp_sfc,  &
       wpedsclrp_sfc
 
-    use variables_diagnostic_module, only:  & 
-      wp2_zt ! w'^2 interpolated the themo levels [m^2/s^2]
-
-    use extend_atmosphere_mod, only: &
-      determine_extend_atmos_bounds ! Procedure(s)
-
     use stats_precision, only: time_precision ! Variable(s)
-
-    use numerical_check, only: isnan2d, rad_check ! Procedure(s)
-
-    use microphys_driver, only: advance_microphys ! Procedure(s)
 
     use time_dependent_input, only: &
       apply_time_dependent_forcings, &
       l_t_dependent
        
-
-
-    use parameters_microphys, only: &
-      micro_scheme, l_cloud_sed, Ncm_initial  ! Variables
-
-    use parameters_radiation, only: &
-      rad_scheme, & ! Variable(s)
-      radiation_top
-
     use soil_vegetation, only: advance_soil_veg, veg_T_in_K
 
-    use error_code, only: lapack_error,  & ! Procedure(s)
-                          clubb_at_least_debug_level
-
     use array_index, only: & 
-      iirsnowm, iiricem, iiNcm, & 
-      iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl
+      iisclr_rt, iisclr_thl, &  ! Variable(s)
+      iiedsclr_rt, iiedsclr_thl
 
     ! Case specific modules
     use arm, only: arm_tndcy, arm_sfclyr ! Procedure(s)
@@ -1993,8 +2005,6 @@ module clubb_driver
     use dycoms2_rf02, only:  & 
         dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr ! Procedure(s)
 
-    use cloud_sed_mod, only: cloud_drop_sed ! Procedure(s)
-
     use fire, only: fire_tndcy, sfc_momentum_fluxes, & 
                     sfc_thermo_fluxes ! Procedure(s)
 
@@ -2026,17 +2036,13 @@ module clubb_driver
 
     use wangara, only: wangara_tndcy, wangara_sfclyr ! Procedure(s)
 
-#ifdef radoffline
-    use bugsrad_clubb_mod, only: bugsrad_clubb ! Procedure(s)
-#endif
     use cos_solar_zen_mod, only: cos_solar_zen ! Function
 
+    use parameters_radiation, only: rad_scheme  ! Variable(s)
 
     implicit none
 
     ! Input Variables
-    integer, intent(in) :: iter ! Model iteration number
-
     real(kind=time_precision), intent(in) :: & 
       dt         ! Model timestep                            [s]
 
@@ -2045,21 +2051,14 @@ module clubb_driver
       err_code
 
     ! Local Variables
-    real, dimension(gr%nnzp) ::  & 
-      rsnowm,  & ! Snow mixing ratio                         [kg/kg]
-      ricem      ! Prisitine ice water mixing ratio          [kg/kg]
 
     real ::  &
       um_sfc, &  ! um interpolated to momentum level 1 (sfc) [m/s]
       vm_sfc     ! vm interpolated to momentum level 1 (sfc) [m/s]
 
-    real :: wpthep, amu0
-
-    integer :: &
-      lin_int_buffer, &
-      extend_atmos_top_level, &
-      extend_atmos_bottom_level, & 
-      extend_atmos_range_size
+    real :: &
+      wpthep, & ! w'theta_e'                            [m K/s]
+      amu0      ! Cosine of the solar zenith angle      [-]
 
 !-----------------------------------------------------------------------
 
@@ -2215,7 +2214,7 @@ module clubb_driver
            "cloud_feedback_s12", "cloud_feedback_s12_p2k", &
            "gabls3_night", "arm_97", "gabls3", "twp_ice",  &
            "arm_0003", "arm_3year" )
-      if( l_t_dependent ) then 
+      if ( l_t_dependent ) then 
          call apply_time_dependent_forcings( time_current, gr%nnzp, rtm, rho, exner,&
           thlm_forcing, rtm_forcing, um_ref, vm_ref, um_forcing, vm_forcing, wm_zt, wm_zm, ug, vg, &
           sclrm_forcing, edsclrm_forcing )
@@ -2489,6 +2488,121 @@ module clubb_driver
                              Frad_LW_down(1), wpthep, soil_heat_flux )
     end if
 
+    ! Store values of surface fluxes for statistics
+    if ( l_stats_samp ) then
+
+      call stat_update_var_pt( ish, 1, wpthlp_sfc*rho_zm(1)*Cp,& ! intent(in)
+                               sfc )                             ! intent(inout)
+
+      call stat_update_var_pt( ilh, 1, wprtp_sfc*rho_zm(1)*Lv, & ! intent(in)
+                               sfc )                             ! intent(inout)
+
+      call stat_update_var_pt( iwpthlp_sfc, 1, wpthlp_sfc, & ! intent(in)
+                               sfc )                         ! intent(inout)
+
+      call stat_update_var_pt( iwprtp_sfc, 1, wprtp_sfc, & ! intent(in)
+                               sfc )                       ! intent(inout)
+
+      call stat_update_var_pt( iupwp_sfc, 1, upwp_sfc, & ! intent(in)
+                               sfc )                     ! intent(inout)
+
+      call stat_update_var_pt( ivpwp_sfc, 1, vpwp_sfc, & ! intent(in)
+                               sfc )                     ! intent(inout)
+
+      call stat_update_var_pt( iustar, 1, ustar,  & ! intent(in)
+                               sfc )                ! intent(inout)
+
+      call stat_update_var_pt( isoil_heat_flux, 1, soil_heat_flux, & ! intent(in)
+                               sfc )           ! intent(inout)
+    endif
+
+
+    return
+  end subroutine advance_clubb_forcings
+
+!-------------------------------------------------------------------------------
+  subroutine advance_clubb_microphys &
+             ( iter, dt, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, &
+               rtm, rcm, wm_zt, wm_zm, &
+               Kh_zm, wp2_zt, pdf_params, Ncnm, hydromet, rtm_mc, &
+               thlm_mc, err_code )
+! Description:
+!   Advance a microphysics scheme
+! References:
+!   None
+!-------------------------------------------------------------------------------
+
+    use parameters_microphys, only: &
+      micro_scheme, l_cloud_sed, Ncm_initial  ! Variables
+
+    use constants, only: & 
+      rc_tol, fstderr, cm3_per_m3 ! Variable(s)
+
+    use stats_precision, only: time_precision ! Variable(s)
+
+    use microphys_driver, only: advance_microphys ! Procedure(s)
+
+    use cloud_sed_mod, only: cloud_drop_sed ! Procedure(s)
+
+    use parameters_model, only: hydromet_dim ! Variable(s)
+
+    use variables_prognostic_module, only: &
+      pdf_parameter ! Type
+
+    use error_code, only: lapack_error  ! Procedure(s)
+
+    use grid_class, only: &
+      gr ! Instance of a type
+
+    use array_index, only: & 
+      iiNcm
+
+    implicit none
+
+    ! External
+    intrinsic :: trim
+
+    ! Input Variables
+    integer, intent(in) :: &
+      iter ! Model iteration number
+
+    real(kind=time_precision), intent(in) :: & 
+      dt ! Model timestep                            [s]
+
+    real, dimension(gr%nnzp), intent(in) :: &
+      rho,        & ! Density on thermo. grid                           [kg/m^3] 
+      rho_zm,     & ! Density on moment. grid                           [kg/m^3]
+      p_in_Pa,    & ! Pressure.                                         [Pa] 
+      exner,      & ! Exner function.                                   [-]
+      cloud_frac, & ! Cloud fraction (thermodynamic levels)             [-]
+      thlm,       & ! Liquid potential temperature                      [K]
+      rtm,        & ! Total water mixing ratio, r_t (thermo. levels)    [kg/kg]
+      rcm,        & ! Cloud water mixing ratio, r_c (thermo. levels)    [kg/kg]
+      wm_zt,      & ! wm on thermo. grid.                               [m/s]
+      wm_zm,      & ! wm on moment. grid.                               [m/s]
+      Kh_zm,      & ! Eddy-diffusivity on momentum levels               [m^2/s]
+      wp2_zt        ! w'^2 interpolated the thermo levels               [m^2/s^2]
+
+    type(pdf_parameter), intent(in) :: & 
+      pdf_params      ! PDF parameters   [units vary]
+
+    ! Input/Output Variables
+    real, dimension(gr%nnzp), intent(inout) :: &
+      Ncnm ! Cloud nuclei number concentration (COAMPS microphyics)     [#/kg]
+
+    real, dimension(gr%nnzp,hydromet_dim), intent(inout) :: &
+      hydromet ! Hydrometeor species    [units vary]
+
+    real, dimension(gr%nnzp), intent(inout) :: &
+      thlm_mc,   & ! theta_l microphysical tendency [K/s]
+      rtm_mc       ! r_t microphysical tendency     [(kg/kg)/s]
+
+    integer, intent(inout) :: & 
+      err_code
+
+    ! ---- Begin Code ----
+    rtm_mc  = 0.0
+    thlm_mc = 0.0
 
     !----------------------------------------------------------------
     ! Compute Microphysics
@@ -2534,7 +2648,7 @@ module clubb_driver
              wm_zt, wm_zm, Kh_zm, pdf_params, &                         ! Intent(in)
              wp2_zt, &                                                  ! Intent(in)
              Ncnm, hydromet, &                                          ! Intent(inout)
-             rtm_forcing, thlm_forcing, &                               ! Intent(inout)
+             rtm_mc, thlm_mc, &                                         ! Intent(inout)
              err_code )                                                 ! Intent(out)
 
       if ( lapack_error( err_code ) ) return
@@ -2544,9 +2658,90 @@ module clubb_driver
     if ( l_cloud_sed ) then
 
       call cloud_drop_sed( rcm, hydromet(:,iiNcm), rho_zm, rho, exner, & ! Intent(in)
-                           rtm_forcing, thlm_forcing )              ! Intent(out)
+                           rtm_mc, thlm_mc )              ! Intent(out)
 
     end if
+
+    return
+  end subroutine advance_clubb_microphys
+
+!-------------------------------------------------------------------------------
+  subroutine advance_clubb_radiation &
+             ( rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, &
+               rtm, rcm, hydromet, radht, Frad, Frad_SW_up, Frad_LW_up, &
+               Frad_SW_down, Frad_LW_down )
+! Description:
+!   Compute a radiation tendency
+! References:
+!   None
+!-------------------------------------------------------------------------------
+
+    use constants, only: fstderr  ! Constant(s)
+
+    use numerical_check, only: isnan2d, rad_check ! Procedure(s)
+
+    use parameters_radiation, only: &
+      rad_scheme, & ! Variable(s)
+      radiation_top
+
+    use error_code, only: & 
+      clubb_at_least_debug_level ! Procedure(s)
+
+    use extend_atmosphere_mod, only: &
+      determine_extend_atmos_bounds  ! Procedure(s)
+
+    use parameters_model, only: hydromet_dim ! Variable(s)
+
+    use array_index, only: iirsnowm, iiricem ! Variable(s)
+
+    use grid_class, only: gr ! Instance of a type
+
+    use grid_class, only: zt2zm ! Procedure
+
+#ifdef radoffline
+    use bugsrad_clubb_mod, only: bugsrad_clubb ! Procedure(s)
+#endif
+    implicit none
+
+    ! External
+    intrinsic :: trim
+
+    ! Input Variables
+    real, dimension(gr%nnzp), intent(in) :: &
+      rho,        & ! Density on thermo. grid                           [kg/m^3] 
+      rho_zm,     & ! Density on moment. grid                           [kg/m^3]
+      p_in_Pa,    & ! Pressure.                                         [Pa] 
+      exner,      & ! Exner function.                                   [-]
+      cloud_frac, & ! Cloud fraction (thermodynamic levels)             [-]
+      thlm,       & ! Liquid potential temperature                      [K]
+      rtm,        & ! Total water mixing ratio, r_t (thermo. levels)    [kg/kg]
+      rcm           ! Cloud water mixing ratio, r_c (thermo. levels)    [kg/kg]
+
+    real, dimension(gr%nnzp,hydromet_dim), intent(in) :: &
+      hydromet ! Hydrometeor species    [units vary]
+
+    ! Input/Output Variables
+    real, dimension(gr%nnzp), intent(inout) :: &
+      radht ! Radiative heating rate                   [K/s]
+
+    ! Output Variables
+    real, dimension(gr%nnzp), intent(out) :: &
+      Frad,         & ! Total radiative flux                   [W/m^2]
+      Frad_SW_up,   & ! Short-wave upwelling radiative flux    [W/m^2]
+      Frad_LW_up,   & ! Long-wave upwelling radiative flux     [W/m^2]
+      Frad_SW_down, & ! Short-wave upwelling radiative flux    [W/m^2]
+      Frad_LW_down    ! Long-wave upwelling radiative flux     [W/m^2]
+
+    ! Local Variables
+    real, dimension(gr%nnzp) ::  & 
+      rsnowm,  & ! Snow mixing ratio                         [kg/kg]
+      ricem      ! Prisitine ice water mixing ratio          [kg/kg]
+
+    integer :: &
+      lin_int_buffer, &
+      extend_atmos_top_level, &
+      extend_atmos_bottom_level, & 
+      extend_atmos_range_size
 
     !----------------------------------------------------------------
     ! BUGSrad Radiation
@@ -2610,22 +2805,18 @@ module clubb_driver
           write(fstderr,*) "rho_zm before BUGSrad is NaN"
         endif
 
-        if ( isnan2d( thlm_forcing ) ) then
-          write(fstderr,*) "thlm_forcing before BUGSrad is NaN"
-        endif
-
         ! Check for impossible negative values
         call rad_check( thlm, rcm, rtm, ricem, &             ! Intent(in)
                         cloud_frac, p_in_Pa, exner, rho_zm ) ! Intent(in)
 
       endif  ! clubb_at_least_debug_level( 2 )
 
-      call determine_extend_atmos_bounds( gr%nnzp, gr%zm, gr%dzm,         & ! Intent(in)
-                                               radiation_top,             & ! Intent(in)
-                                               extend_atmos_bottom_level, & ! Intent(out)
-                                               extend_atmos_top_level,    & ! Intent(out)
-                                               extend_atmos_range_size,   & ! Intent(out)
-                                               lin_int_buffer )             ! Intent(out)
+      call determine_extend_atmos_bounds( gr%nnzp, gr%zm, gr%dzm,    & ! Intent(in)
+                                          radiation_top,             & ! Intent(in)
+                                          extend_atmos_bottom_level, & ! Intent(out)
+                                          extend_atmos_top_level,    & ! Intent(out)
+                                          extend_atmos_range_size,   & ! Intent(out)
+                                          lin_int_buffer )             ! Intent(out)
 
       call bugsrad_clubb( gr%zm, gr%nnzp, lin_int_buffer,                          & ! In
                           extend_atmos_range_size,                                 & ! In 
@@ -2633,20 +2824,14 @@ module clubb_driver
                           extend_atmos_top_level,                                  & ! In
                           rlat, rlon,                                              & ! In
                           day, month, year, time_current,                          & ! In
-                          thlm, rcm / max( cloud_frac, 0.01 ), rtm, rsnowm, ricem, & ! In
+                          thlm, rcm, rtm, rsnowm, ricem,                           & ! In
                           cloud_frac, p_in_Pa, zt2zm( p_in_Pa ),                   & ! In
                           exner, rho_zm,                                           & ! In
                           radht, Frad,                                             & ! Out
                           Frad_SW_up, Frad_LW_up,                                  & ! Out
-                          Frad_SW_down, Frad_LW_down,                              & ! Out
-                          thlm_forcing )                                             ! In/Out
+                          Frad_SW_down, Frad_LW_down )                               ! Out
 
       if ( clubb_at_least_debug_level( 2 ) ) then
-
-        if ( isnan2d( thlm_forcing ) ) then
-          write(fstderr,*) "thlm_forcing after BUGSrad is NaN"
-          !write(fstderr,*) thlm_forcing
-        endif
 
         if ( isnan2d( Frad ) ) then
           write(fstderr,*) "Frad after BUGSrad is NaN"
@@ -2667,38 +2852,6 @@ module clubb_driver
 #endif /*radoffline*/
 
     end if ! BUGSrad radiation scheme
-
-
-! Store values of surface fluxes for statistics
-    if ( l_stats_samp ) then
-
-      call stat_update_var_pt( ish, 1, wpthlp_sfc*rho_zm(1)*Cp,& ! intent(in)
-                               sfc )                             ! intent(inout)
-
-      call stat_update_var_pt( ilh, 1, wprtp_sfc*rho_zm(1)*Lv, & ! intent(in)
-                               sfc )                             ! intent(inout)
-
-      call stat_update_var_pt( iwpthlp_sfc, 1, wpthlp_sfc, & ! intent(in)
-                               sfc )                         ! intent(inout)
-
-      call stat_update_var_pt( iwprtp_sfc, 1, wprtp_sfc, & ! intent(in)
-                               sfc )                       ! intent(inout)
-
-      call stat_update_var_pt( iupwp_sfc, 1, upwp_sfc, & ! intent(in)
-                               sfc )                     ! intent(inout)
-
-      call stat_update_var_pt( ivpwp_sfc, 1, vpwp_sfc, & ! intent(in)
-                               sfc )                     ! intent(inout)
-
-      call stat_update_var_pt( iustar, 1, ustar,  & ! intent(in)
-                               sfc )                ! intent(inout)
-
-      call stat_update_var_pt( isoil_heat_flux, 1, soil_heat_flux, & ! intent(in)
-                               sfc )           ! intent(inout)
-    endif
-
-
-    return
-  end subroutine advance_clubb_forcings
+  end subroutine advance_clubb_radiation
 
 end module clubb_driver
