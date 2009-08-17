@@ -147,7 +147,7 @@ sub main()
         # back to the terminal early.
         while(-e $matlabPipe)
         {
-            # Do nothing.
+            sleep(1);
         }
 
         print("\n");
@@ -563,6 +563,11 @@ sub executeMatlab()
     #print $args;
 
     system("echo $args > matlab_pipe");
+
+    if($plotCount % 5 == 0)
+    {
+        system("echo pack > matlab_pipe");
+    }
 }
 
 ###############################################################################
