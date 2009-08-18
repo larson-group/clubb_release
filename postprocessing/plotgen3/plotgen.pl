@@ -498,6 +498,7 @@ sub buildMatlabStringStd()
                         if($name eq "auto")
                         {
                             $title = basename($_);
+                            $title =~ s/_/\\_/g;
                         }
                         else
                         {
