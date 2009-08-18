@@ -36,17 +36,8 @@ my $VERSION = 3.0;
 # don't overwrite each other.
 my $randInt = int(rand(999999999999999)) + 1;
 
-# Image Conversion Settings
-# The minDpi and minQuality is the lowest values that will
-# be used when converting images. With these settings, 1 case
-# is about 476K.
-my $minDpi = 120;
-my $minQuality = 50;
 my $DPI = 300;
 my $QUALITY = 100;
-
-my $imageHeight = 220;
-my $imageWidth = 250;
 
 # Field to hold the total number of cases plotted. This will
 # be used when automatically specifying image quality.
@@ -137,9 +128,6 @@ sub main()
 
         print("\nPlease wait while remaining images are converted...\n");
 
-        # Convert remaining the eps files to jpq
-        convertEps();
-
         OutputWriter->writeFooter($outputIndex);
     
         cleanup();
@@ -167,6 +155,9 @@ sub main()
 
                 sleep(1);
             }
+
+            # See if any images were left out
+            convertEps();
         }
         else # Main thread
         {
@@ -295,45 +286,24 @@ sub runCases()
 ###############################################################################
 # Converts all EPS files to JPG file
 # Arguments:
-#   convertEps(Array epsFiles)
-#     - eps files to convert to jpg
+#   None.
 ###############################################################################
 sub convertEps()
 {
-    #print("\nConverting images...\n");
     mkdir "$outputTemp/jpg" unless -d "$outputTemp/jpg";
     my @epsFiles = <$outputTemp/*eps>;
 
     # Set the image scale if -q was not passed in
     if($highQuality eq 0)
     {
-        # Let's just hard code these for now
-        if(@epsFiles > 300 && @epsFiles < 445)
-        {
-            $DPI = 240;
-            $QUALITY = 90;
-        }
-        elsif(@epsFiles >= 445 && @epsFiles < 590)
-        {
-            $DPI = 200;
-            $QUALITY = 80;
-        }
-        elsif(@epsFiles >= 590 && @epsFiles < 735)
-        {
-            $DPI = 150;
-            $QUALITY = 70;
-        }
-        elsif(@epsFiles >= 735)
-        {
-            $DPI = $minDpi;
-            $QUALITY = $minQuality;
-        }
+        $DPI = 120;
+        $QUALITY = 70;
     }    
 
     foreach my $eps (@epsFiles)
     {
         my $filename = basename($eps);
-        system("convert -density $DPI -quality $QUALITY -colorspace RGB $eps $outputTemp/jpg/$filename.jpg");
+        system("convert -size 328x312 -density $DPI -quality $QUALITY -colorspace RGB $eps $outputTemp/jpg/$filename.jpg");
         
         if($keepEps eq 0)
         {
