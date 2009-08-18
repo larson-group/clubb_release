@@ -152,14 +152,6 @@ sub main()
     {
         OutputWriter->writeHeader($outputIndex);
 
-	#Because MATLAB leaks memory, we need to set figure size here
-	#my $formatString = "'figure(\'Position\',[ 0 0 $imageWidth $imageHeight ])'";
-	#system("bash", "-c", "echo 'figure(\'Position\',[ 0 0 $imageWidth $imageHeight ])' > $matlabPipe");
-	#system("bash", "-c", "echo $formatString");
-	#system("echo -e set(gcf, \'PaperPositionMode\', \'manual\') > $matlabPipe");
-	#system("echo -e set(gcf, \'PaperUnits\', \'points\') > $matlabPipe");
-	#system("echo -e set(gcf, \'PaperPosition\', [ 0.0 0.0 $imageWidth $imageHeight ]) > $matlabPipe");
-
         system("touch $imageConversionLock");
         
         # Now fork to create images in the background. This should hopefully
