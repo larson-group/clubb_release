@@ -28,14 +28,14 @@ argsPerLine = 6;
 numLines = optargin / argsPerLine;
 
 %Create a blank plot of the proper type so we have somewhere to draw lines
-fig_height = 220;
-fig_width = 250;
+%fig_height = 220;
+%fig_width = 250;
 
 % Open figure to set size.
-figure('Position',[ 0 0 fig_width fig_height ])
-set(gcf, 'PaperPositionMode', 'manual')
-set(gcf, 'PaperUnits', 'points')
-set(gcf, 'PaperPosition', [ 0.0 0.0 fig_width fig_height ])
+%figure('Position',[ 0 0 fig_width fig_height ])
+%set(gcf, 'PaperPositionMode', 'manual')
+%set(gcf, 'PaperUnits', 'points')
+%set(gcf, 'PaperPosition', [ 0.0 0.0 fig_width fig_height ])
 
 %Pre-allocate minimum and maximum values
 minVals(1:numLines) = 0;

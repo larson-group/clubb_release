@@ -45,6 +45,9 @@ my $minQuality = 50;
 my $DPI = 300;
 my $QUALITY = 100;
 
+my $imageHeight = 220;
+my $imageWidth = 250;
+
 # Field to hold the total number of cases plotted. This will
 # be used when automatically specifying image quality.
 my $caseCount = 0;
@@ -147,6 +150,16 @@ sub main()
     }
     else # Parent
     {
+        OutputWriter->writeHeader($outputIndex);
+
+	#Because MATLAB leaks memory, we need to set figure size here
+	#my $formatString = "'figure(\'Position\',[ 0 0 $imageWidth $imageHeight ])'";
+	#system("bash", "-c", "echo 'figure(\'Position\',[ 0 0 $imageWidth $imageHeight ])' > $matlabPipe");
+	#system("bash", "-c", "echo $formatString");
+	#system("echo -e set(gcf, \'PaperPositionMode\', \'manual\') > $matlabPipe");
+	#system("echo -e set(gcf, \'PaperUnits\', \'points\') > $matlabPipe");
+	#system("echo -e set(gcf, \'PaperPosition\', [ 0.0 0.0 $imageWidth $imageHeight ]) > $matlabPipe");
+
         system("touch $imageConversionLock");
         
         # Now fork to create images in the background. This should hopefully
