@@ -26,6 +26,9 @@ my $MATLAB = "sudo -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop";
 # The pipe name used to communicate with MATLAB
 my $matlabPipe;
 
+# The lock file used for image conversion
+my $imageConversionLock;
+
 # Plotgen Version Number
 my $VERSION = 3.0;
 
@@ -107,6 +110,8 @@ sub main()
 
     $matlabPipe = "matlab_pipe_$randInt";
 
+    $imageConversionLock = "$outputTemp/.lock";
+
     # Ensure that Matlab can write to the temp output folder
     my $mode = 0777; chmod $mode, $outputTemp;
 
@@ -125,7 +130,11 @@ sub main()
         system("mkfifo $matlabPipe");
         system("$MATLAB <> $matlabPipe");
 
-        # Convert the eps files to jpq
+        system("rm $imageConversionLock");
+
+        print("\nPlease wait while remaining images are converted...\n");
+
+        # Convert remaining the eps files to jpq
         convertEps();
 
         OutputWriter->writeFooter($outputIndex);
@@ -138,13 +147,35 @@ sub main()
     }
     else # Parent
     {
-        OutputWriter->writeHeader($outputIndex);
-        runCases();
+        system("touch $imageConversionLock");
+        
+        # Now fork to create images in the background. This should hopefully
+        # speed things up a little
+        my $convertPid = fork();
 
-        # Quit MATLAB
-        system("echo quit > $matlabPipe");
+        if($convertPid == 0) # Image Conversion Child
+        {
+            # While the lock file exists, convert eps images
+            while(-e "$imageConversionLock")
+            {
+                convertEps();
 
-        # Wait for the Child Process to exit
+                sleep(1);
+            }
+        }
+        else # Main thread
+        {
+            OutputWriter->writeHeader($outputIndex);
+            runCases();
+
+            # Quit MATLAB
+            system("echo quit > $matlabPipe");
+          
+            # Wait for image conversion process to exit
+            wait;
+        }
+
+        # Wait for the MATLAB child process to exit
         wait;
 
         exit(0);
@@ -259,11 +290,12 @@ sub runCases()
 ###############################################################################
 # Converts all EPS files to JPG file
 # Arguments:
-#   None.
+#   convertEps(Array epsFiles)
+#     - eps files to convert to jpg
 ###############################################################################
 sub convertEps()
 {
-    print("\nConverting images...\n");
+    #print("\nConverting images...\n");
     mkdir "$outputTemp/jpg" unless -d "$outputTemp/jpg";
     my @epsFiles = <$outputTemp/*eps>;
 
