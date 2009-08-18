@@ -24,7 +24,7 @@ use File::Path;
 my $MATLAB = "sudo -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop";
 
 # The pipe name used to communicate with MATLAB
-my $matlabPipe = "matlab_pipe";
+my $matlabPipe;
 
 # Plotgen Version Number
 my $VERSION = 3.0;
@@ -104,6 +104,8 @@ main();
 sub main()
 {
     readArgs();
+
+    $matlabPipe = "matlab_pipe_$randInt";
 
     # Ensure that Matlab can write to the temp output folder
     my $mode = 0777; chmod $mode, $outputTemp;
@@ -556,7 +558,7 @@ sub executeMatlab()
 
     #print $args;
 
-    system("echo $args > matlab_pipe");
+    system("echo $args > $matlabPipe");
 }
 
 ###############################################################################
@@ -643,7 +645,7 @@ sub cleanup()
     rmtree($outputTemp);
 
     # Remove matlab pipe
-    system("rm matlab_pipe");
+    system("rm $matlabPipe");
 
     $ENV{'DISPLAY'} = $sessionType;
 }
