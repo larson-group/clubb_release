@@ -126,9 +126,19 @@ sub main()
 
         system("rm $imageConversionLock");
 
-        convertEps();
+        print("\nPlease wait while the remaining images are converted...\n");
 
-        print("\nPlease wait while remaining images are converted...\n");
+        # Wait until all images are converted
+        my @epsFiles = <$outputTemp/*eps>;
+        my $arraySize = @epsFiles;
+
+        # Block this thread from moving on until there are no more eps files
+        while($arraySize != 0)
+        {
+            @epsFiles = <$outputTemp/*eps>;
+            $arraySize = @epsFiles;
+            sleep(1);
+        }
 
         OutputWriter->writeFooter($outputIndex);
     
