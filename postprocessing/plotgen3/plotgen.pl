@@ -70,7 +70,7 @@ my $orange = "[ 0.94, 0.50, 0.16 ]";
 # Arrays to cycle through when auto is set for lines
 my @lineStyles = ("--", "-", "-.");
 my @lineColors = ($orange, $lt_blue, "green", "red", "blue", "cyan", "yellow", "magenta");
-my @lineWidths = (4, 3, 2.5, 2, 1.5, 1);
+my @lineWidths = (4.5, 3, 2.5, 2, 1.5, 1);
 
 # Counters for automatic lines
 my $lineStyleCounter = 0;
@@ -112,7 +112,7 @@ sub main()
     print("Input Folders: @inputDirs\n");
     print("Output Folder: $output \n");
 
-    $outputIndex = $outputTemp . "/index.html";
+    $outputIndex = "$outputTemp/index.html";
 
     # Fork to make MATLAB faster
     my $pid = fork();
@@ -125,6 +125,8 @@ sub main()
         system("$MATLAB <> $matlabPipe");
 
         system("rm $imageConversionLock");
+
+        convertEps();
 
         print("\nPlease wait while remaining images are converted...\n");
 
@@ -140,24 +142,15 @@ sub main()
     {
         OutputWriter->writeHeader($outputIndex);
 
-        system("touch $imageConversionLock");
-        
         # Now fork to create images in the background. This should hopefully
         # speed things up a little
         my $convertPid = fork();
 
         if($convertPid == 0) # Image Conversion Child
         {
-            # While the lock file exists, convert eps images
-            while(-e "$imageConversionLock")
-            {
-                convertEps();
-
-                sleep(1);
-            }
-
-            # See if any images were left out
+            system("touch $imageConversionLock");
             convertEps();
+            exit(0);
         }
         else # Main thread
         {
@@ -291,24 +284,34 @@ sub runCases()
 sub convertEps()
 {
     mkdir "$outputTemp/jpg" unless -d "$outputTemp/jpg";
+    
     my @epsFiles = <$outputTemp/*eps>;
+    my $arraySize = @epsFiles;
 
-    # Set the image scale if -q was not passed in
-    if($highQuality eq 0)
+    if($arraySize != 0 || -e "$imageConversionLock")
     {
-        $DPI = 120;
-        $QUALITY = 70;
-    }    
-
-    foreach my $eps (@epsFiles)
-    {
-        my $filename = basename($eps);
-        system("convert -size 328x312 -density $DPI -quality $QUALITY -colorspace RGB $eps $outputTemp/jpg/$filename.jpg");
-        
-        if($keepEps eq 0)
+        # Set the image scale if -q was not passed in
+        if($highQuality eq 0)
         {
-            unlink($eps);
+            $DPI = 120;
+            $QUALITY = 80;
+        }    
+
+        foreach my $eps (@epsFiles)
+        {
+            my $filename = basename($eps);
+            system("convert -size 328x312 -density $DPI -quality $QUALITY -colorspace RGB $eps $outputTemp/jpg/$filename.jpg");
+        
+            if($keepEps eq 0)
+            {
+                unlink($eps);
+            }
         }
+       
+        sleep(1);
+        # Call convert again. If the doesn't exist anymore, and there are no more .eps files,
+        # this will be the last time the subroutine is called.
+        convertEps();
     }
 }
 
