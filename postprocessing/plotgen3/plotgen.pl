@@ -70,7 +70,7 @@ my $orange = "[ 0.94, 0.50, 0.16 ]";
 # Arrays to cycle through when auto is set for lines
 my @lineStyles = ("--", "-", "-.");
 my @lineColors = ($orange, $lt_blue, "green", "red", "blue", "cyan", "yellow", "magenta");
-my @lineWidths = (4.5, 3, 2.5, 2, 1.5, 1);
+my @lineWidths = (5, 3, 2.5, 2, 1.5, 1);
 
 # Counters for automatic lines
 my $lineStyleCounter = 0;
@@ -226,12 +226,12 @@ sub runCases()
                     
                     # Check to see if there was any additional text specified. If there was,
                     # write it to the HTML file.
-                    if($nightlySubText)
+                    if($nightlySubText ne "")
                     {
                         OutputWriter->writeSubHeader($outputIndex, $nightlySubText);
                     }
                     
-                    if($nightlySubHtml)
+                    if($nightlySubHtml ne "")
                     {
                         OutputWriter->writeSubHtml($outputIndex, $nightlySubHtml);
                     }
@@ -241,12 +241,12 @@ sub runCases()
                     my $subText = $CASE::CASE{'additionalOutput'}{'subText'};
                     my $subHtml = $CASE::CASE{'additionalOutput'}{'subHtml'};
                     
-                    if($subText)
+                    if($subText ne "")
                     {
                         OutputWriter->writeSubHeader($outputIndex, $subText);
                     }
                     
-                    if($subHtml)
+                    if($subHtml ne "")
                     {
                         OutputWriter->writeSubHtml($outputIndex, $subHtml);
                     }
@@ -400,6 +400,23 @@ sub buildMatlabStringBudget()
             $lineStyleCounter = 0;
             $lineColorCounter = 0;
             $lineWidthCounter = 0;
+
+            # Check to see if start and end time was specified for the specific plot. This is usually done for timeseries plots. If it isn't
+            # use case defined times.
+            my $startTimeOverride = $plots[$plotNum]{'startTime'};
+            my $endTimeOverride = $plots[$plotNum]{'endTime'};
+
+            if($startTimeOverride)
+            {
+                $startTime = $startTimeOverride;
+            }
+
+            if($endTimeOverride)
+            {
+                $endTime = $endTimeOverride;
+            }
+
+
             my $matlabArgs = "\'$caseName\', \'$plotTitle\', $totPlotNum, \'$type\', $startTime, $endTime, $startHeight, $endHeight, \'$units\', $randInt";
             my $tempMatlabArgs = $matlabArgs;
         
@@ -492,6 +509,21 @@ sub buildMatlabStringStd()
         my $units = $plots[$count]{'axisLabel'};
         my $type = $plots[$count]{'type'};
 
+        # Check to see if start and end time was specified for the specific plot. This is usually done for timeseries plots. If it isn't
+        # use case defined times.
+        my $startTimeOverride = $plots[$count]{'startTime'};
+        my $endTimeOverride = $plots[$count]{'endTime'};
+
+        if($startTimeOverride ne "")
+        {
+            $startTime = $startTimeOverride;
+        }
+
+        if($endTimeOverride ne "")
+        {
+            $endTime = $endTimeOverride;
+        }
+
         my $matlabArgs = "\'$caseName\', \'$plotTitle\', $count, \'$type\', $startTime, $endTime, $startHeight, $endHeight, \'$units\', $randInt";
         my $tempMatlabArgs = $matlabArgs;
 
@@ -502,7 +534,6 @@ sub buildMatlabStringStd()
         {
             my $name = $lines[$lineNum]{'name'};
             my $expression = $lines[$lineNum]{'expression'};
-
             my $type = $lines[$lineNum]{'type'};
 
             if($type eq "auto")
@@ -682,10 +713,10 @@ sub dataExists()
 {
     my $CASE = shift(@_);
     
-   # We need to figure out if any of the input directories contain
-   # data to plot. I am assuming that input directories are of type
-   # "auto" for now. If the type is auto, look in each input directory
-   # to see if some data exists and return 1. 
+    # We need to figure out if any of the input directories contain
+    # data to plot. I am assuming that input directories are of type
+    # "auto" for now. If the type is auto, look in each input directory
+    # to see if some data exists and return 1. 
     
     # Get array of plots from case file
     my @plots;
