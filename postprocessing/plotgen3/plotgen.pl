@@ -48,6 +48,13 @@ my $caseCount = 0;
 # If running in nightly mode, this value should be set to 1
 my $nightly = 0;
 
+# Which mode to run in. Default to plotgen (CLUBB). This will specify 
+# what directory to look for .case files in. 
+# Valid modes: 
+#   plotgen
+#   splotgen 
+my $plotgenMode = "plotgen";
+
 # Specifies to overwrite a directory (Default: false)
 my $overwrite = 0;
 my @inputDirs;
@@ -201,6 +208,25 @@ sub main()
 }
 
 ###############################################################################
+# Returns the path to where case files should be looked for in.
+# Arguments:
+#   None.
+###############################################################################
+sub getCasePath()
+{
+    my $casePath = "cases";
+
+    if($plotgenMode eq "plotgen")
+    {
+        return "$casePath/clubb";
+    }
+    elsif($plotgenMode eq "splotgen")
+    {
+        return "$casePath/sam_clubb";
+    }
+}
+
+###############################################################################
 # Runs all of the .case file in the cases folder.
 # Arguments:
 #   None.
@@ -210,7 +236,10 @@ sub runCases()
     # Counter used to place images
     my $count = 0;
 
-    my @cases = <cases/*.cas*>;
+    # Get the path to look for case files in
+    my $casePath = getCasePath();
+
+    my @cases = <$casePath/*.cas*>;
 
     # Loop through each .case file so the case can be plotted    
     foreach my $file (@cases) 
@@ -793,7 +822,7 @@ sub readArgs()
     }
 
     my %option = ();
-    my $result = getopts("rlbdanqeh?", \%option);
+    my $result = getopts("rlbdanqehcs?", \%option);
 
     # A 1 will be returned from getopts if there weren't any
     # invalid options passed in.
@@ -844,6 +873,15 @@ sub readArgs()
         $keepEps = 1;
     }
 
+    if($option{s})
+    {
+        $plotgenMode = "splotgen";
+    }
+
+    if($option{c})
+    {
+        $plotgenMode = "plotgen";
+    }
 
     if ($option{h}) # Print the help message
     {
@@ -919,6 +957,8 @@ sub readArgs()
 sub main::HELP_MESSAGE()
 {
     print("Usage: plotgen [OPTION]... INPUT... OUTPUT\n");
+    print("  -c\tPlot CLUBB cases [DEFAULT] (equiv to plotgen)\n");
+    print("  -s\tPlot SAM_CLUBB cases (equiv to splotgen)\n");
     print("  -r\tIf the output folder already exists, replace the contents\n");    
     print("  -l\tPlot LES data for comparison.\n");    
     print("  -b\tPlot HOC Best Ever data for comparison.\n");    
