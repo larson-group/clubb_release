@@ -69,6 +69,8 @@ for i=1:size(vars_to_plot,1);
 			end
 
 			plot_index = plot_index + 1;
+
+			close(profilefile);
 		end 
 	end
 
@@ -108,6 +110,8 @@ for i=1:size(vars_to_plot,1);
 		end
 
 		hold all
+
+		close(profilefile);
 	end 
 
 	hold off
@@ -142,4 +146,5 @@ for i=1:size(vars_to_plot,1);
 	%PDF
 	output_file_name = [ 'twp_ice_', var_to_plot, '_verify.pdf' ];
 	print( '-dpdf', '-append', output_file_name )
+	close;
 end	
