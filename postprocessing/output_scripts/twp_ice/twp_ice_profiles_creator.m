@@ -277,7 +277,7 @@ netcdf.putVar(ncid,rhvarid,rh_array);
 netcdf.putVar(ncid,qcvarid,rcm_array);
 netcdf.putVar(ncid,qivarid,ricem_array);
 netcdf.putVar(ncid,qrvarid,rrainm_array);
-netcdf.putVar(ncid,cfvarid,cf_array);
+netcdf.putVar(ncid,cfvarid,cloud_frac_array);
 netcdf.putVar(ncid,q1varid,q1_array);
 netcdf.putVar(ncid,q2varid,q2_array);
 netcdf.putVar(ncid,tqswvarid,tqsw_array);
