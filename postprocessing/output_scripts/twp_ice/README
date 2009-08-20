@@ -11,3 +11,6 @@ twp_ice_profiles_plot.m is a MATLAB script that loops through each variable in t
 twp_ice_timeseries_plot.m is a MATLAB script that loops through each variable in the submission timeseries NetCDF files and outputs a plot of the entire timeseries to a PDF file. Each ensemble member's timeseries is overplotted. An example output file name would be twp_ice_LWP_verify.pdf for the combined plot of every ensemble's liquid water path.
 
 verify_output.bash is a driver for twp_ice_output_plot.m. It essentially saves you from having to remember sudo syntax.
+
+
+NOTE: Both twp_ice_profiles_creator.m and twp_ice_timeseries_creator.m have a variable called t_start defined near the beginning of the script. This allows you to set the starting timestep that will make it in to the submission ready NetCDF file. For the TWP_ICE ensemble as specified by Laura Davies, t_start should be defined as 22. For the best estimate, t_start should be set to 70.
