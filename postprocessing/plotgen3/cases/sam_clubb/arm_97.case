@@ -1,0 +1,33 @@
+# Template Case File
+
+%CASE = 
+(
+    'name' => 'ARM9707',
+    'enabled' => 'true',
+    'type' => 'standard',
+    'headerText' => 'ARM 97 Hours 72-93 ',
+    'startTime' => 4320.0,  # [minutes]
+    'endTime' => 5580.0,    # [minutes]
+    'startHeight' => 0.0,  # [m]
+    'endHeight' => 18000.0, # [m]
+    'plots' =>
+    [
+       {'plotTitle' => 'Liquid Water Potential Temperature, \theta_l', 'axisLabel' => 'thetal [K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thetal', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thetal', 'lineWidth' => 'auo', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thetal', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+    ],
+    'nightlyOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    },
+    'additionalOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    }
+)
