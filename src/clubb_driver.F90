@@ -182,7 +182,8 @@ module clubb_driver
     use sounding, only: sclr_max ! Variable(s)
 
     use time_dependent_input, only: &
-      l_t_dependent, & ! Variable(s)
+      l_t_dependent,   & ! Variable(s)
+      l_feed_xpwp_sfc, &
       finalize_t_dependent_input ! Procedure(s)
 
     use sponge_layer_damping, only: &
@@ -310,7 +311,7 @@ module clubb_driver
       time_initial, time_final, time_spinup, & 
       dtmain, dtclosure, & 
       sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge, & 
-      forcings_file_path, l_t_dependent, l_use_default_std_atmosphere, &
+      forcings_file_path, l_t_dependent, l_feed_xpwp_sfc, l_use_default_std_atmosphere, &
       thlm_sponge_damp_settings, rtm_sponge_damp_settings, uv_sponge_damp_settings, &
       l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, debug_level, & 
@@ -360,7 +361,8 @@ module clubb_driver
 
     forcings_file_path = ''
 
-    l_t_dependent = .false.
+    l_t_dependent   = .false.
+    l_feed_xpwp_sfc = .false.
 
     l_use_default_std_atmosphere = .true.
 
@@ -542,6 +544,7 @@ module clubb_driver
       call write_text( "forcings_file_path = " // forcings_file_path, l_write_to_file, iunit )
 
       call write_text( "l_t_dependent = ", l_t_dependent, l_write_to_file, iunit )
+      call write_text( "l_feed_xpwp_sfc = ", l_feed_xpwp_sfc, l_write_to_file, iunit )
 
       call write_text( "l_use_default_std_atmosphere = ", l_use_default_std_atmosphere, &
         l_write_to_file, iunit )

@@ -64,6 +64,10 @@ module input_names
     LH_name = 'LH[W\m^2]', &
     SH_name = 'SH[W\m^2]'
 
+  character(len=*), public, parameter :: &
+    upwp_sfc_name = 'upwp_sfc[(m\s)^2]', &
+    vpwp_sfc_name = 'vpwp_sfc[(m\s)^2]'
+
   private ! Default Scope
 
 end module input_names

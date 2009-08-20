@@ -29,7 +29,9 @@ module time_dependent_input
     SH_given,       &
     thlm_sfc_given, &
     rtm_sfc_given,  &
-    psfc_given
+    psfc_given,     &
+    upwp_sfc_given, &
+    vpwp_sfc_given
 
 
   type(two_dim_read_var), private, dimension(nCols) :: &
@@ -44,6 +46,9 @@ module time_dependent_input
   !                                  It is suggested that the flag be checked
   !                                  before using any of the variables stored
   !                                  in the module.
+
+  logical, public :: l_feed_xpwp_sfc ! Flag used to determine whether or not to read 
+                                     ! in the surface momentum fluxes, upwp_sfc and vpwp_sfc.
 
 
   ! File path constants
@@ -121,12 +126,11 @@ module time_dependent_input
       rt_name,       &
       LH_name,       &
       SH_name,       &
-      pressure_name
+      pressure_name, &
+      upwp_sfc_name, &
+      vpwp_sfc_name
 
     implicit none
-
-    ! Constants
-    integer, parameter :: nCols = 6
 
     ! Input Variable(s)
     integer, intent(in) :: iunit ! File I/O unit
@@ -135,18 +139,38 @@ module time_dependent_input
 
     ! Local Variable(s)
 
-    type(one_dim_read_var), dimension(nCols) :: retVars
+    type(one_dim_read_var), allocatable, dimension(:) :: &
+      retVars ! retVars stores the name of a variable (e.g. pressure),
+              ! the name of the dimension the variable varies along (e.g. time), and
+              ! the time-dependent values of the variable to be input into CLUBB.
 
-    integer dim_size
+    integer ::  &
+      dim_size, & ! Number of time-dependent values of a variable to be input into CLUBB 
+      nCols       ! Number of variables with time-dependent input data
 
-    ! Begin Code
 
+    ! ----------------- Begin Code --------------------
+
+    ! Allow the ability to read in values of upwp_sfc and vpwp_sfc 
+    ! currently, this is only used for case gabls3_night
+    if ( l_feed_xpwp_sfc ) then
+      nCols = 8
+    else
+      nCols = 6
+    endif
+
+    allocate( retVars(1:nCols) )
+
+    ! Read the surface.in file and store the necessary input information in retVars
     call read_one_dim_file( iunit, nCols, input_file, retVars )
 
+    ! Fill blank values stored as -999.9 using linear interpolation
     call fill_blanks_one_dim_vars( nCols, retVars )
 
+    ! dim_size is the number of values input for a particular variable
     dim_size = size( retVars(1)%values )
 
+    ! Store the data read from the file in each [variable]_sfc_given
     allocate( time_sfc_given(1:dim_size) )
 
     time_sfc_given = read_x_profile( nCols, dim_size, time_name, retVars, &
@@ -176,6 +200,21 @@ module time_dependent_input
 
     psfc_given = read_x_profile( nCols, dim_size, pressure_name, retVars, &
                                  input_file )
+
+    ! upwp_sfc and vpwp_sfc are currently only fed into CLUBB for case "gabls3_night"
+    if ( l_feed_xpwp_sfc ) then
+
+      allocate( upwp_sfc_given(1:dim_size) )
+
+      upwp_sfc_given = read_x_profile( nCols, dim_size, upwp_sfc_name, retVars, &
+                                       input_file )
+
+      allocate( vpwp_sfc_given(1:dim_size) )
+
+      vpwp_sfc_given = read_x_profile( nCols, dim_size, vpwp_sfc_name, retVars, &
+                                       input_file )
+
+    end if ! l_feed_xpwp_sfc
 
   end subroutine initialize_t_dependent_surface
 
@@ -298,6 +337,8 @@ module time_dependent_input
     deallocate( thlm_sfc_given )
     deallocate( rtm_sfc_given )
     deallocate( psfc_given )
+    if ( allocated( upwp_sfc_given ) ) deallocate( upwp_sfc_given )
+    if ( allocated( vpwp_sfc_given ) ) deallocate( vpwp_sfc_given )
 
   end subroutine finalize_t_dependent_surface
 
