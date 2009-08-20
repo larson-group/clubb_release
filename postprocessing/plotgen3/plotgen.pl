@@ -130,14 +130,33 @@ sub main()
 
         # Wait until all images are converted
         my @epsFiles = <$outputTemp/*eps>;
-        my $arraySize = @epsFiles;
+        my @jpgFiles = <$outputTemp/jpg/*jpg>;
+        my $arraySizeEps = @epsFiles;
+        my $arraySizeJpg = @jpgFiles;
 
-        # Block this thread from moving on until there are no more eps files
-        while($arraySize != 0)
+        if($keepEps == 0)
         {
-            @epsFiles = <$outputTemp/*eps>;
-            $arraySize = @epsFiles;
-            sleep(1);
+            # Block this thread from moving on until there are no more eps files
+            while($arraySizeEps != 0)
+            {
+                @epsFiles = <$outputTemp/*eps>;
+                $arraySizeEps = @epsFiles;
+                sleep(1);
+            }
+        }
+        else
+        {
+            # Block this thread from moving on until the number of JPGs equal the
+            # numper of EPS files.
+            while($arraySizeEps != $arraySizeJpg)
+            {
+                @epsFiles = <$outputTemp/*eps>;
+                @jpgFiles = <$outputTemp/jpg/*jpg>;
+                $arraySizeEps = @epsFiles;
+                $arraySizeJpg = @jpgFiles;
+
+                sleep(1);
+            }
         }
 
         OutputWriter->writeFooter($outputIndex);
@@ -296,12 +315,20 @@ sub convertEps()
     mkdir "$outputTemp/jpg" unless -d "$outputTemp/jpg";
     
     my @epsFiles = <$outputTemp/*eps>;
-    my $arraySize = @epsFiles;
+    my @jpgFiles = <$outputTemp/jpg/*jpg>;
+    my $arraySizeEps = @epsFiles;
+    my $arraySizeJpg = @jpgFiles;
 
-    if($arraySize != 0 || -e "$imageConversionLock")
+    # TODO: Make this logic simpler
+    # This will keep calling convertEps() if the image conversion lock exists OR:
+    #   If -e was not passed in:
+    #       Until there are no more eps files left
+    #   If -e was passed in:
+    #       Until the number of eps files equals the number of jpg files       
+    if(($keepEps == 0 && $arraySizeEps != 0) || ($keepEps == 1 && ($arraySizeEps != $arraySizeJpg)) || -e "$imageConversionLock")
     {
         # Set the image scale if -q was not passed in
-        if($highQuality eq 0)
+        if($highQuality == 0)
         {
             $DPI = 120;
             $QUALITY = 80;
@@ -310,15 +337,16 @@ sub convertEps()
         foreach my $eps (@epsFiles)
         {
             my $filename = basename($eps);
-            system("convert -size 328x312 -density $DPI -quality $QUALITY -colorspace RGB $eps $outputTemp/jpg/$filename.jpg");
+            system("convert -density $DPI -quality $QUALITY -colorspace RGB $eps $outputTemp/jpg/$filename.jpg");
         
-            if($keepEps eq 0)
+            if($keepEps == 0)
             {
                 unlink($eps);
             }
         }
        
         sleep(1);
+
         # Call convert again. If the doesn't exist anymore, and there are no more .eps files,
         # this will be the last time the subroutine is called.
         convertEps();
