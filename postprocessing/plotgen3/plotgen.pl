@@ -765,7 +765,14 @@ sub readArgs()
     }
 
     my %option = ();
-    getopts("rlbdanqeh?", \%option);
+    my $result = getopts("rlbdanqeh?", \%option);
+
+    # A 1 will be returned from getopts if there weren't any
+    # invalid options passed in.
+    if($result != 1)
+    {
+        main::HELP_MESSAGE();
+    }
 
     if ($option{r}) # Option to replace data if it already exists
     {
