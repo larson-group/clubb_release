@@ -35,22 +35,24 @@ time = netcdf.getVar( nc_file, 3 );
 
 t_time_steps = size(time);
 
+dt = time(t_time_steps) - time(t_time_steps - 1);
+
 timeInfo = netcdf.getAtt( nc_file, 3, 'units' );
 
 %Now that we have the text info about the unit for time, see if we can determine
 %a proper dt
 if findstr(timeInfo, 'seconds')
-	dt = 1 / 60;
+	dt = (1 / 60) * dt;
 elseif findstr(timeInfo, 'minutes')
-	dt = 1;
+	dt = 1 * dt;
 elseif findstr(timeInfo, 'hours')
-	dt = 60;
+	dt = 60 * dt;
 else
 	%Assume one dt is 1 minute
-	dt = 1;
+	dt = 1 * dt;
 end
 
-time_step_length = dt;
+time_step_length = dt * dt;
 
 for i=5:numvars-1
 	[varname,xtype,dimids,natts] = netcdf.inqVar( nc_file , i );
