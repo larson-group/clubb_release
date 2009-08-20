@@ -35,14 +35,14 @@ module gabls3_night
 
     use surface_flux, only: compute_momentum_flux ! Procedure(s)
 
-    use time_dependent_input, only: l_t_dependent,   & ! Variable(s)
-                                    l_feed_xpwp_sfc, &
-                                    time_sfc_given,  &
-                                    thlm_sfc_given,  &
-                                    rtm_sfc_given,   &
-                                    upwp_sfc_given,  &
-                                    vpwp_sfc_given,  &
-                                    time_select        ! Procedure(s)
+    use time_dependent_input, only: l_t_dependent,    & ! Variable(s)
+                                    l_input_xpwp_sfc, &
+                                    time_sfc_given,   &
+                                    thlm_sfc_given,   &
+                                    rtm_sfc_given,    &
+                                    upwp_sfc_given,   &
+                                    vpwp_sfc_given,   &
+                                    time_select         ! Procedure(s)
 
     use interpolation, only: factor_interp ! Procedure(s)
 
@@ -99,7 +99,7 @@ module gabls3_night
       call landflx( thlm_sfc, ts, rtm_sfc, qs, um_sfc, vm_sfc, lowest_level, z0, & ! Intent(in)
                     wpthlp_sfc, wprtp_sfc, ubar, ustar )                           ! Intent(out)
 
-      if ( l_feed_xpwp_sfc ) then
+      if ( l_input_xpwp_sfc ) then
         ! Feed in momentum fluxes
         upwp_sfc = factor_interp( time_frac, upwp_sfc_given(i2), upwp_sfc_given(i1) )
         vpwp_sfc = factor_interp( time_frac, vpwp_sfc_given(i2), vpwp_sfc_given(i1) )
@@ -108,7 +108,7 @@ module gabls3_night
         ! Compute momentum fluxes
         call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, & ! Intent(in)
                                     upwp_sfc, vpwp_sfc )           ! Intent(out)
-      end if ! l_feed_xpwp_sfc
+      end if ! l_input_xpwp_sfc
 
     end if ! l_t_dependent
 

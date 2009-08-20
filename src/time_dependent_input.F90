@@ -47,8 +47,8 @@ module time_dependent_input
   !                                  before using any of the variables stored
   !                                  in the module.
 
-  logical, public :: l_feed_xpwp_sfc ! Flag used to determine whether or not to read 
-                                     ! in the surface momentum fluxes, upwp_sfc and vpwp_sfc.
+  logical, public :: l_input_xpwp_sfc ! Flag used to determine whether or not to read 
+                                      ! in the surface momentum fluxes, upwp_sfc and vpwp_sfc.
 
 
   ! File path constants
@@ -153,7 +153,7 @@ module time_dependent_input
 
     ! Allow the ability to read in values of upwp_sfc and vpwp_sfc 
     ! currently, this is only used for case gabls3_night
-    if ( l_feed_xpwp_sfc ) then
+    if ( l_input_xpwp_sfc ) then
       nCols = 8
     else
       nCols = 6
@@ -202,7 +202,7 @@ module time_dependent_input
                                  input_file )
 
     ! upwp_sfc and vpwp_sfc are currently only fed into CLUBB for case "gabls3_night"
-    if ( l_feed_xpwp_sfc ) then
+    if ( l_input_xpwp_sfc ) then
 
       allocate( upwp_sfc_given(1:dim_size) )
 
@@ -214,7 +214,7 @@ module time_dependent_input
       vpwp_sfc_given = read_x_profile( nCols, dim_size, vpwp_sfc_name, retVars, &
                                        input_file )
 
-    end if ! l_feed_xpwp_sfc
+    end if ! l_input_xpwp_sfc
 
   end subroutine initialize_t_dependent_surface
 
