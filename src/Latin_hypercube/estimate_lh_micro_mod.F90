@@ -17,7 +17,7 @@ module estimate_lh_micro_mod
   subroutine estimate_lh_micro &
              ( dt, nnzp, n_micro_calls, d_variables, &
                X_u_all_levs, X_nl_all_levs, & 
-               rt, thl, l_sample_flag, pdf_params, & 
+               LH_rt, LH_thl, pdf_params, & 
                thlm, p_in_Pa, exner, rho, &
                wm, w_std_dev, dzq, rcm, rvm, &        
                cloud_frac, hydromet, &
@@ -73,10 +73,7 @@ module estimate_lh_micro_mod
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     double precision, dimension(nnzp,n_micro_calls), intent(in) :: &
-      rt, thl ! Total water / Liquid potential temperature      [kg/kg] / [K]
-
-    ! Flag that determines whether we have a special case (false)
-    logical, dimension(nnzp), intent(in) :: l_sample_flag
+      LH_rt, LH_thl ! Total water / Liquid potential temperature      [kg/kg] / [K]
 
     real, dimension(nnzp), intent(in) :: &
       cloud_frac, & ! Cloud fraction           [-]
@@ -180,13 +177,13 @@ module estimate_lh_micro_mod
     ! ---- Begin Code ----
 
     ! Boundary condition
-    lh_AKm(1)   = 0.0
-    AKm(1)       = 0.0
-    AKm_rcm(1)   = 0.0
-    AKm_rcc(1)   = 0.0
-    lh_rcm_avg(1)   = 0.0
-    AKstd(1)     = 0.0
-    AKstd_cld(1) = 0.0
+    lh_AKm(1)     = 0.0
+    AKm(1)        = 0.0
+    AKm_rcm(1)    = 0.0
+    AKm_rcc(1)    = 0.0
+    lh_rcm_avg(1) = 0.0
+    AKstd(1)      = 0.0
+    AKstd_cld(1)  = 0.0
 
     do level = 2, nnzp, 1
       ! Extract PDF parameters
@@ -232,11 +229,7 @@ module estimate_lh_micro_mod
       !    but we set means, covariance of hydromet mixing ratio's and number
       !    concentrations to constants.
 
-      if ( .not. l_sample_flag(level) ) then
-        rcm_sample(1:n_micro_calls) = dble( rcm(level) )
-      else
-        rcm_sample(1:n_micro_calls) = max( X_nl_all_levs(level,1:n_micro_calls,1), 0.d0)
-      end if
+      rcm_sample(1:n_micro_calls) = max( X_nl_all_levs(level,1:n_micro_calls,1), 0.d0)
 
       ! Call microphysics, i.e. Kessler autoconversion.
       ! A_K = (1e-3/s)*(rc-0.5kg/kg)*H(rc-0.5kg/kg)
@@ -357,7 +350,7 @@ module estimate_lh_micro_mod
     end do ! level = 2, nnzp
 
     call lh_microphys_driver( dt, nnzp, n_micro_calls, d_variables, &
-                              l_sample_flag, rt, thl, &
+                              LH_rt, LH_thl, &
                               X_nl_all_levs, X_u_all_levs, &
                               thlm, p_in_Pa, exner, rho, wm, w_std_dev, &
                               dzq, rcm, rvm, pdf_params, hydromet, &
@@ -572,7 +565,7 @@ module estimate_lh_micro_mod
 !-------------------------------------------------------------------------------
   subroutine lh_microphys_driver &
              ( dt, nnzp, n_micro_calls, d_variables, &
-               l_sample_flag, rt, thl, &
+               LH_rt, LH_thl, &
                X_nl_all_levs, X_u_all_levs, &
                thlm, p_in_Pa, exner, rho, wm, w_std_dev, &
                dzq, rcm, rvm, pdf_params, hydromet,  &
@@ -639,12 +632,9 @@ module estimate_lh_micro_mod
       n_micro_calls, & ! Number of calls to microphysics (normally=2)
       d_variables      ! Number of variates (normally=5)
 
-    logical, dimension(nnzp), intent(in) :: &
-      l_sample_flag  ! Whether we are sampling at this level
-
     double precision, dimension(nnzp,n_micro_calls), intent(in) :: &
-      rt, & ! n_micro_calls values of total water mixing ratio     [kg/kg]
-      thl   ! n_micro_calls values of liquid potential temperature [K]
+      LH_rt, & ! n_micro_calls values of total water mixing ratio     [kg/kg]
+      LH_thl   ! n_micro_calls values of liquid potential temperature [K]
 
     double precision, dimension(nnzp,n_micro_calls,d_variables+1), intent(in) :: &
       X_u_all_levs ! N x D+1 Latin hypercube sample from uniform dist
@@ -790,56 +780,34 @@ module estimate_lh_micro_mod
 
     do sample = 1, n_micro_calls
 
-      where ( l_sample_flag )
-        s_mellor_tmp(:)   = real( s_mellor(:,sample) ) 
+      s_mellor_tmp(:) = real( s_mellor(:,sample) ) 
 
-        where( s_mellor(:,sample) > 0.0 )
-          rc_tmp(:,sample)  = real( s_mellor(:,sample) ) 
-        else where
-          rc_tmp(:,sample)= 0.0
-        end where
-
-      else where ! Use the grid box mean
-        s_mellor_tmp(:) = pdf_params%a(:) * pdf_params%s1(:) &
-                        + (1.0-pdf_params%a(:))*pdf_params%s2(:)
-        rc_tmp(:,sample) = rcm
-
+      where( s_mellor(:,sample) > 0.0 )
+        rc_tmp(:,sample) = real( s_mellor(:,sample) ) 
+      else where
+        rc_tmp(:,sample)= 0.0
       end where
 
-      where ( l_sample_flag ) 
-        w_tmp(:,sample)   = real( w(:,sample) )
-        rv_tmp(:,sample)  = real( rt(:,sample) ) - rc_tmp(:,sample)
-        thl_tmp(:,sample) = real( thl(:,sample) )
-      else where ! Use the grid box mean
-        w_tmp(:,sample)   = wm
-        rv_tmp(:,sample)  = rvm
-        thl_tmp(:,sample) = thlm
-      end where
+      w_tmp(:,sample)   = real( w(:,sample) )
+      rv_tmp(:,sample)  = real( LH_rt(:,sample) ) - rc_tmp(:,sample)
+      thl_tmp(:,sample) = real( LH_thl(:,sample) )
 
       ! Copy the sample points into the temporary arrays
       do i = 1, hydromet_dim, 1
         if ( i == iirrainm .and. iiLH_rrain > 0 ) then
-          where ( l_sample_flag )
-            hydromet_tmp(:,i,sample) = real( X_nl_all_levs(:,sample,iiLH_rrain) )
-          else where
-            hydromet_tmp(:,i,sample) = hydromet(:,i)
-          end where
+          hydromet_tmp(:,i,sample) = real( X_nl_all_levs(:,sample,iiLH_rrain) )
+
         else if ( i == iiNcm .and. iiLH_Nc > 0 ) then
           ! Kluge for when we don't have correlations between Nc, other variables
 !         hydromet_tmp(:,iiNcm) = Ncm_initial * cm3_per_m3 / rho
-          where ( l_sample_flag )
-            hydromet_tmp(:,i,sample) = real( X_nl_all_levs(:,sample,iiLH_Nc) )
-          else where
-            hydromet_tmp(:,i,sample) = hydromet(:,i)
-          end where
+          hydromet_tmp(:,i,sample) = real( X_nl_all_levs(:,sample,iiLH_Nc) )
+
         else if ( i == iiNrm .and. iiLH_Nr > 0 ) then
-          where ( l_sample_flag )
-            hydromet_tmp(:,i,sample) = real( X_nl_all_levs(:,sample,iiLH_Nr) )
-          else where
-            hydromet_tmp(:,i,sample) = hydromet(:,i)
-          end where
+          hydromet_tmp(:,i,sample) = real( X_nl_all_levs(:,sample,iiLH_Nr) )
+
         else ! Use the mean field, rather than a sample point
           hydromet_tmp(:,i,sample) = hydromet(:,i)
+
         end if
       end do
 
@@ -850,7 +818,7 @@ module estimate_lh_micro_mod
           lh_rcm  = rc_tmp(:,sample)
           lh_rvm  = rv_tmp(:,sample)
           lh_wm   = w_tmp(:,sample)
-          where ( l_sample_flag .and. s_mellor(:,sample) > 0. ) 
+          where ( s_mellor(:,sample) > 0. ) 
             lh_cloud_frac = 1.0
           else where
             lh_cloud_frac = 0.0
@@ -862,7 +830,7 @@ module estimate_lh_micro_mod
           lh_rcm  = lh_rcm  + rc_tmp(:,sample)
           lh_rvm  = lh_rvm  + rv_tmp(:,sample)
           lh_wm   = lh_wm   + w_tmp(:,sample)
-          where ( l_sample_flag .and. s_mellor(:,sample) > 0. ) lh_cloud_frac = lh_cloud_frac + 1.0
+          where ( s_mellor(:,sample) > 0. ) lh_cloud_frac = lh_cloud_frac + 1.0
         end if
       end if
 
@@ -946,7 +914,7 @@ module estimate_lh_micro_mod
     do k = 1, nnzp
       if ( n1(k) == 0 .and. n2(k) == 0 ) then
         l_error = .true.
-        write(0,*) 'Error:  no sample points in lh_microphys_driver, k =', k
+        write(fstderr,*) 'Error:  no sample points in lh_microphys_driver, k =', k
       end if
     end do
     if ( l_error ) stop

@@ -184,9 +184,6 @@ module latin_hypercube_mod
       lh_Ncp2_zt,    & ! Average value of the variance of the LH est. of Nc.            [#^2/kg^2]
       lh_cloud_frac    ! Average value of the latin hypercube est. of cloud fraction    [-]
 
-    ! A true/false flag that determines whether the PDF allows us to construct a sample
-    logical, dimension(nnzp) :: l_sample_flag 
-
     ! Number of random samples before sequence of repeats (normally=10)
     integer :: nt_repeat
 
@@ -250,7 +247,7 @@ module latin_hypercube_mod
              p_matrix, cloud_frac(k), wm(k), rcm(k)+rvm(k), thlm(k), pdf_params, k, & ! intent(in)
              hydromet(k,:), correlation_array(k,:,:), &                    ! intent(in)
              LH_rt(k,:), LH_thl(k,:), &                                    ! intent(out)
-             X_u_all_levs(k,:,:), X_nl_all_levs(k,:,:), l_sample_flag(k) ) ! intent(out)
+             X_u_all_levs(k,:,:), X_nl_all_levs(k,:,:) )                   ! intent(out)
 
       ! print *, 'latin_hypercube_sampling: got past lh_sampler'
     end do ! 1..nnzp
@@ -259,12 +256,12 @@ module latin_hypercube_mod
     call estimate_lh_micro &
          ( dt, nnzp, n_micro_calls, d_variables, &  ! intent(in)
            X_u_all_levs, X_nl_all_levs, &           ! intent(in)
-           LH_rt, LH_thl, l_sample_flag, pdf_params, & ! intent(in)
+           LH_rt, LH_thl, pdf_params, &             ! intent(in)
            thlm, p_in_Pa, exner, rho, &             ! intent(in)
            wm, w_std_dev, dzq, rcm, rvm, &          ! intent(in)
            cloud_frac, hydromet, &                  ! intent(in)
-           LH_hydromet_mc, LH_hydromet_vel, &     ! intent(in)
-           LH_rcm_mc, LH_rvm_mc, LH_thlm_mc, &   ! intent(out)
+           LH_hydromet_mc, LH_hydromet_vel, &       ! intent(in)
+           LH_rcm_mc, LH_rvm_mc, LH_thlm_mc, &      ! intent(out)
            lh_AKm, AKm, AKstd, AKstd_cld, &         ! intent(out)
            AKm_rcm, AKm_rcc, lh_rcm_avg, &          ! intent(out)
            lh_hydromet, lh_thlm, lh_rcm, lh_rvm, &  ! intent(out)
