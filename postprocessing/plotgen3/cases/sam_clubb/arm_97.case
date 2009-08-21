@@ -19,6 +19,132 @@
           {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'THETAL', 'lineWidth' => 'auo', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'THETAL', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'Total Water Mixing Ratio, r_t', 'axisLabel' => 'rtm / qt [g/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtm * 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'QT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'QT', 'lineWidth' => 'auo', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'QT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cf / cld [%]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'cloud_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'CLD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'CLD', 'lineWidth' => 'auo', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'CLD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Water Mixing Ration, r_c', 'axisLabel' => 'rcm / qcl [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rcm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'RCM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'RCM', 'lineWidth' => 'auo', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'RCM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of w', 'axisLabel' => 'wp2 / w2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'W2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'W2', 'lineWidth' => 'auo', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'W2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Third-order Moment of w', 'axisLabel' => 'wp3 / w3 [m^3/s^3]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'W3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'W3', 'lineWidth' => 'auo', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'W3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp / thflux(s) [K m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '((TLFLUX + TLFLUXS) ./ (RHO * CP)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '((TLFLUX + TLFLUXS) ./ (RHO * CP)) + WPTHLP', 'lineWidth' => 'auo', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '((TLFLUX + TLFLUXS) ./ (RHO * CP)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp / qtflux(s) [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(QTFLUX ./ (RHO * LCOND)) + WPRTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(QTFLUX ./ (RHO * LCOND)) + WPRTP', 'lineWidth' => 'auo', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(QTFLUX ./ (RHO * LCOND)) + WPRTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of \theta_l', 'axisLabel' => 'thlp2 / tl2 [K^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'TL2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'TL2', 'lineWidth' => 'auo', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'TL2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of r_t', 'axisLabel' => 'rtp2 / qtp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'QT2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'QT2', 'lineWidth' => 'auo', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'QT2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Covariance of r_t & \theta_l', 'axisLabel' => 'rtpthlp [(kg/kg) K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'RTPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'RTPTHLP', 'lineWidth' => 'auo', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'RTPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Vertical Wind Component, w (subsidence)', 'axisLabel' => 'wobs [m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wobs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WOBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WOBS', 'lineWidth' => 'auo', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WOBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Zonal Wind Component, u', 'axisLabel' => 'um / u [m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'um', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'U', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'U', 'lineWidth' => 'auo', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'U', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Meridonal Wind Component, v', 'axisLabel' => 'vm / v [m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'V', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'V', 'lineWidth' => 'auo', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'V', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Covariance of u & w', 'axisLabel' => 'upwp / uw [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'upwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UW', 'lineWidth' => 'auo', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Covariance of v & w', 'axisLabel' => 'vpwp / vw [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vpwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'VW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'VW', 'lineWidth' => 'auo', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'VW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of u wind', 'axisLabel' => 'up2 / u2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'up2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'U2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'U2', 'lineWidth' => 'auo', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'U2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of v wind', 'axisLabel' => 'vp2 / v2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'V2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'V2', 'lineWidth' => 'auo', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'V2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'qpl [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qpl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'QPL', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'QPL', 'lineWidth' => 'auo', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'QPL', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]}
     ],
     'nightlyOutput' =>
     {

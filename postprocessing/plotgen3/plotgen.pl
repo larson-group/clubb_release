@@ -83,7 +83,7 @@ my $darkGreen = "[ 0.00, 0.40, 0.00 ]";
 # Arrays to cycle through when auto is set for lines
 my @lineStyles = ("--", "-", "-.");
 my @lineColors = ($orange, $lt_blue, "green", "red", "blue", "cyan", $purple, $peach, $goldenRod, $grey, $darkGreen, "yellow", "magenta");
-my @lineWidths = (5, 3.5, 3, 2.5, 2, 1.5, 1, 0.5);
+my @lineWidths = (5, 4, 3.5, 3, 2.5, 2, 1.5, 1);
 
 # Counters for automatic lines
 my $lineStyleCounter = 0;
