@@ -529,15 +529,16 @@ module clubb_core
       sclr_tmp2(:,i) = zm2zt( sclrprtp(:,i) )
       sclr_tmp3(:,i) = max( zm2zt( sclrp2(:,i) ), zero_threshold ) ! Pos. def. quantity
       sclr_tmp4(:,i) = zm2zt( sclrpthlp(:,i) )
-    end do ! i = 1, sclr_dim
+    enddo ! i = 1, sclr_dim
 
     do k = 1, gr%nnzp, 1
       call pdf_closure & 
-         ( p_in_Pa(k), exner(k), wm_zt(k), wp2_zt(k), wp3(k), sigma_sqd_w_zt(k), & ! intent(in)
-           Skw_zt(k), rtm(k), rtp2_zt(k), zm2zt( wprtp, k ),         & ! intent(in)
-           thlm(k), thlp2_zt(k), zm2zt( wpthlp, k ),                 & ! intent(in)
-           rtpthlp_zt(k), sclrm(k,:), sclr_tmp1(k,:),                & ! intent(in)
-           sclr_tmp3(k,:),sclr_tmp2(k,:), sclr_tmp4(k,:), k,         & ! intent(in)
+         ( p_in_Pa(k), exner(k), wm_zt(k), wp2_zt(k), wp3(k),        & ! intent(in)
+           sigma_sqd_w_zt(k), Skw_zt(k), rtm(k), rtp2_zt(k),         & ! intent(in)
+           zm2zt( wprtp, k ), thlm(k), thlp2_zt(k),                  & ! intent(in)
+           zm2zt( wpthlp, k ), rtpthlp_zt(k), sclrm(k,:),            & ! intent(in)
+           sclr_tmp1(k,:), sclr_tmp3(k,:), sclr_tmp2(k,:),           & ! intent(in)
+           sclr_tmp4(k,:), k,                                        & ! intent(in)
            wp4(k), wprtp2(k), wp2rtp(k),                             & ! intent(out)
            wpthlp2(k), wp2thlp(k), wprtpthlp(k),                     & ! intent(out)
            cloud_frac(k), rcm(k), wpthvp(k), wp2thvp(k), rtpthvp(k), & ! intent(out)
@@ -556,7 +557,7 @@ module clubb_core
         return
       end if
 
-    end do ! k = 2, gr%nnzp-1
+    enddo ! k = 1, gr%nnzp
 
     ! Interpolate momentum variables back to momentum grid.
     ! Since top momentum level is higher than top thermo level,
