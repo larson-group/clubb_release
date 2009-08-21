@@ -74,10 +74,16 @@ my $keepEps = 0;
 # Custom Color Definitions for "CLUBB_current" and "CLUBB_previous"
 my $lt_blue = "[ 0.00, 0.63, 1.00 ]";
 my $orange = "[ 0.94, 0.50, 0.16 ]";
+# Custom Colors (taken from splotgen)
+my $goldenRod = "[ 0.80, 0.80, 0.10 ]";
+my $grey = "[ 0.40, 0.40, 0.40 ]";
+my $purple = "[ 0.50, 0., 0.50 ]";
+my $peach = "[ 1.00, 0.90, 0.40 ]";
+my $darkGreen = "[ 0.00, 0.40, 0.00 ]";
 # Arrays to cycle through when auto is set for lines
 my @lineStyles = ("--", "-", "-.");
-my @lineColors = ($orange, $lt_blue, "green", "red", "blue", "cyan", "yellow", "magenta");
-my @lineWidths = (5, 3, 2.5, 2, 1.5, 1);
+my @lineColors = ($orange, $lt_blue, "green", "red", "blue", "cyan", $purple, $peach, $goldenRod, $grey, $darkGreen, "yellow", "magenta");
+my @lineWidths = (5, 3.5, 3, 2.5, 2, 1.5, 1, 0.5);
 
 # Counters for automatic lines
 my $lineStyleCounter = 0;
@@ -366,7 +372,7 @@ sub convertEps()
         foreach my $eps (@epsFiles)
         {
             my $filename = basename($eps);
-            system("convert -density $DPI -quality $QUALITY -colorspace RGB $eps $outputTemp/jpg/$filename.jpg");
+            system("convert -density $DPI -quality $QUALITY -colorspace RGB -trim $eps $outputTemp/jpg/$filename.jpg");
         
             if($keepEps == 0)
             {
