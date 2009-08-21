@@ -40,7 +40,7 @@ addpath '../../matlab_include/'
 % Source files of the GABLS3 case
 
 % Path of the GrADS input files
-scm_path = ['/home/senkbeir/Cloud_Feedback/clubb/output/'];
+scm_path = ['/home/senkbeir/clubb/output/'];
 
 % zt Grid
 smfile   = 'cloud_feedback_s6_zt.ctl';
@@ -141,7 +141,7 @@ full_sfc_z = convert_units.create_time_height_series( sfc_z, sizet );
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Create the new file. By default it is in definition mode.
-ncid = netcdf.create('/home/senkbeir/nc_output/cloud_feedback_s6_scm_UWM_CLUBB_v1.nc','NC_WRITE');
+ncid = netcdf.create('/home/senkbeir/nc_output/cloud_feedback_s6_scm_UWM_CLUBB_v2.nc','NC_WRITE');
 
 % Define Global Attributes
 
@@ -189,13 +189,13 @@ prectvarid = define_variable( 'prect', 'total precipitation', 'mm/day', tdimid, 
 lhflxvarid = define_variable( 'lh', 'surface latent heat flux', 'W/m^2', tdimid, ncid );
 shflxvarid = define_variable( 'sh', 'surface sensible heat flux', 'W/m^2', tdimid, ncid );
 %pblhvarid = define_variable( 'pblh', 'PBL height', 'm', tdimid, ncid );
-%fsntcvarid = define_variable( 'fsntc', 'TOA SW net downward clear-sky radiation', 'W/m^2', tdimid, ncid );
+fsntcvarid = define_variable( 'fsntc', 'TOA SW net downward clear-sky radiation', 'W/m^2', tdimid, ncid );
 fsntvarid = define_variable( 'fsnt', 'TOA SW net downward total-sky radiation', 'W/m^2', tdimid, ncid );
-%flntcvarid = define_variable( 'flntc', 'TOA LW clear-sky upward radiation', 'W/m^2', tdimid, ncid );
+flntcvarid = define_variable( 'flntc', 'TOA LW clear-sky upward radiation', 'W/m^2', tdimid, ncid );
 flntvarid = define_variable( 'flnt', 'TOA LW total-sky upward radiation', 'W/m^2', tdimid, ncid );
-%fsnscvarid = define_variable( 'fsnsc', 'Surface SW net downward clear-sky radiation', 'W/m^2', tdimid, ncid );
+fsnscvarid = define_variable( 'fsnsc', 'Surface SW net downward clear-sky radiation', 'W/m^2', tdimid, ncid );
 %fsnsvarid = define_variable( 'fsns', 'Surface SW net downward total-sky radiation', 'W/m^2', tdimid, ncid );
-%flnscvarid = define_variable( 'flnsc', 'Surface LW net upward clear-sky radiation', 'W/m^2', tdimid, ncid );
+flnscvarid = define_variable( 'flnsc', 'Surface LW net upward clear-sky radiation', 'W/m^2', tdimid, ncid );
 %flnsvarid = define_variable( 'flns', 'Surface LW net upward total-sky radiation', 'W/m^2', tdimid, ncid );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -250,18 +250,18 @@ netcdf.putVar( ncid, psvarid, p_array(1,:));
 netcdf.putVar( ncid, prectvarid, rain_rate_array);
 netcdf.putVar( ncid, lhflxvarid, lh_array);
 netcdf.putVar( ncid, shflxvarid, sh_array);
-netcdf.putVar( ncid, fsntvarid, Frad_SW_down_array(1,:));
-netcdf.putVar( ncid, flntvarid, Frad_LW_up_array(1,:));
+netcdf.putVar( ncid, fsntvarid, Frad_SW_down_array(1,:) - Frad_SW_up_array(1,:));
+netcdf.putVar( ncid, flntvarid, Frad_LW_up_array(1,:)  - Frad_LW_down_array(1,:));
 %netcdf.putVar( ncid, fsnsvarid, Frad_SW_down_array(1,:));
 %netcdf.putVar( ncid, flnsvarid, Frad_LW_up_array(1,:));
 
-%netcdf.putVar( ncid, flnscvarid, );
+netcdf.putVar( ncid, flnscvarid, fulwcl_array(end,:) - fdlwcl_array(end,:));
 %netcdf.putVar( ncid, preccvarid, );
 %netcdf.putVar( ncid, preclvarid, );
-%netcdf.putVar( ncid, fsnscvarid, );
+netcdf.putVar( ncid, fsnscvarid, fdswcl_array(end,:));
 %netcdf.putVar( ncid, pblhvarid, );
-%netcdf.putVar( ncid, fsntcvarid, );
-%netcdf.putVar( ncid, flntcvarid, );
+netcdf.putVar( ncid, fsntcvarid, fdswcl_array(1,:) - fuswcl_array(1,:));
+netcdf.putVar( ncid, flntcvarid, fulwcl_array(1,:) - fdlwcl_array(1,:));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Hourly-averaged vertical profiles of multi-level fields output

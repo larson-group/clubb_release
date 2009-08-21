@@ -19,7 +19,7 @@ nz = 41;
 t_start = 1;
 t_end = t_start + 719;
 
-vars_to_plot = ['cldtot'; 'tglwp '; 'precw '; 'tsair '; 'ps    '; 'prect '; 'lh    '; 'sh    '; 'fsnt  '; 'flnt  ']
+vars_to_plot = ['cldtot'; 'tglwp '; 'precw '; 'tsair '; 'ps    '; 'prect '; 'lh    '; 'sh    '; 'fsnt  '; 'flnt  '; 'flntc '; 'fsntc '; 'fsnsc '; 'flnsc ']
 
 for i=1:size(vars_to_plot,1);
 	minVal = 0;
@@ -27,7 +27,7 @@ for i=1:size(vars_to_plot,1);
 
 	var_to_plot = strtrim(vars_to_plot(i, 1:size(vars_to_plot,2)))
 
-	sfcfilepath = ['/home/senkbeir/nc_output/', 'cloud_feedback_', curr_case, '_scm_UWM_CLUBB_v1.nc'];	
+	sfcfilepath = ['/home/senkbeir/nc_output/', 'cloud_feedback_', curr_case, '_scm_UWM_CLUBB_v2.nc'];	
 
 	if ( exist(sfcfilepath) )
 		sfcfile = netcdf(sfcfilepath,'nowrite');

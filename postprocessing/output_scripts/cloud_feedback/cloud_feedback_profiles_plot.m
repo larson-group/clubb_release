@@ -30,7 +30,7 @@ for i=1:size(vars_to_plot,1);
 
 	var_to_plot = strtrim(vars_to_plot(i, 1:size(vars_to_plot,2)))
 
-	profilefilepath = ['/home/senkbeir/nc_output/', 'cloud_feedback_', curr_case, '_scm_UWM_CLUBB_v1.nc'];
+	profilefilepath = ['/home/senkbeir/nc_output/', 'cloud_feedback_', curr_case, '_scm_UWM_CLUBB_v2.nc'];
 
 	if ( exist(profilefilepath) )
 		profilefile = netcdf(profilefilepath,'nowrite');
