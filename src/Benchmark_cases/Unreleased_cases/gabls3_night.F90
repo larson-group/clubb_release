@@ -119,7 +119,7 @@ module gabls3_night
   real function psi_h( x, xlmo )
     implicit none
     real, intent(in) :: x
-    real, intent(in) :: xlmo
+    real, intent(in) :: xlmo ! Monin-Obukhov length [m]
 
     psi_h = ( -5. * x )/xlmo
 
@@ -206,7 +206,7 @@ module gabls3_night
     real a, b, c, d
     real xm, xh, xsi, xsi1, xsi2, fm, fh
 
-    real xlmo
+    real xlmo ! Monin-Obukhov length [m]
 
     integer iter
 
