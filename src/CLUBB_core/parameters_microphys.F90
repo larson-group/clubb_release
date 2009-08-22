@@ -59,7 +59,9 @@ module parameters_microphys
 
 !$omp threadprivate(Ncm_initial)
 
-  logical, parameter, public :: &
+  ! Logical l_local_kk may be reset in KK_microphys_module if Latin hypercube
+  ! sampling is being used.
+  logical, public :: &
     l_local_kk = .false.  ! Local drizzle for Khairoutdinov & Kogan microphysics
 
 

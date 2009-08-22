@@ -1006,7 +1006,8 @@ module microphys_driver
       end if ! l_latin_hypercube_sampling
 
       call KK_microphys & 
-           ( real( dt ), gr%nnzp, l_stats_samp, l_local_kk, thlm, p_in_Pa, exner, rho, pdf_params, &
+           ( real( dt ), gr%nnzp, l_stats_samp, l_latin_hypercube_sampling, thlm,  &
+             p_in_Pa, exner, rho, pdf_params, &
              wm_zt, wtmp, dzq, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
              hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 

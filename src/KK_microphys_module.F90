@@ -140,6 +140,9 @@ module KK_microphys_module
 
     use parameters_model, only: hydromet_dim
 
+    use parameters_microphys, only: &
+        l_local_kk  ! Flag for using local version of KK microphysics.
+
     implicit none
 
     ! Input Variables
@@ -242,8 +245,6 @@ module KK_microphys_module
       rrainm_src_adj, & ! Total adjustment to rrainm source terms  [(kg/kg)/s]
       Nrm_src_adj       ! Total adjustment to Nrm source terms     [{num/kg)/s]
 
-    logical :: l_local_kk ! Local drizzle for K&K
-
     ! Array indices
     integer :: k
 
@@ -339,11 +340,16 @@ module KK_microphys_module
     end where
 
     ! Determine whether the use local formulas
+    ! The flag l_local_kk is set in module parameters_microphys.  If it is set
+    ! to .true., the local version of KK microphysics is used.  Otherwise, the
+    ! upscaled version of KK microphysics is used.  The code should be set to
+    ! the upscaled version by default.
+    ! If l_latin_hypercube is specified, then this code will overwrite whatever
+    ! is specified in module parameters_microphys.  Otherwise, the value of
+    ! l_local_kk will remain unchanged.
     if ( l_latin_hypercube ) then
       l_local_kk = .true.
-    else
-      l_local_kk = .false.
-    end if
+    endif
 
     ! Assign pointers
     thl1 => pdf_params%thl1(:)
