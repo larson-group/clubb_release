@@ -10,7 +10,8 @@ module morrison_micro_driver_mod
   contains
 !-------------------------------------------------------------------------------
   subroutine morrison_micro_driver &
-             ( dt, nnzp, l_stats_samp, l_latin_hypercube, thlm, p_in_Pa, exner, rho, pdf_params, &
+             ( dt, nnzp, l_stats_samp, l_local_kk, l_latin_hypercube, &
+               thlm, p_in_Pa, exner, rho, pdf_params, &
                wm, w_std_dev, dzq, rcm, s_mellor, rvm, hydromet, hydromet_mc, &
                hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 ! Description:
@@ -88,8 +89,9 @@ module morrison_micro_driver_mod
     integer, intent(in) :: nnzp ! Points in the Vertical        [-]
 
     logical, intent(in) :: &
-      l_stats_samp,   & ! Whether to accumulate statistics [T/F]
-      l_latin_hypercube ! Whether we're using latin hypercube sampling
+      l_stats_samp,     & ! Whether to accumulate statistics [T/F]
+      l_local_kk,       & ! Whether we're using the local formulas
+      l_latin_hypercube   ! Whether we're using latin hypercube sampling
 
     real, dimension(nnzp), intent(in) :: &
       thlm,       & ! Liquid potential temperature       [K]
@@ -157,6 +159,7 @@ module morrison_micro_driver_mod
       dummy => hydromet_vel
       cloud_frac = dummy(:,1)
       cloud_frac = s_mellor
+      if ( l_local_kk ) stop
     end if
 
     ! Determine temperature

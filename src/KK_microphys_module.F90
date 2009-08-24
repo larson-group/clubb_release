@@ -76,8 +76,8 @@ module KK_microphys_module
   contains
 
   !=============================================================================
-  subroutine KK_microphys( dt, nnzp, l_stats_samp, l_latin_hypercube, thlm, &
-                           p_in_Pa, exner, rho, pdf_params, &
+  subroutine KK_microphys( dt, nnzp, l_stats_samp, l_local_kk, l_latin_hypercube, &
+                           thlm, p_in_Pa, exner, rho, pdf_params, &
                            wm, w_std_dev, dzq, rcm, s_mellor, rvm, hydromet, hydromet_mc, &
                            hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 
@@ -140,9 +140,6 @@ module KK_microphys_module
 
     use parameters_model, only: hydromet_dim
 
-    use parameters_microphys, only: &
-        l_local_kk  ! Flag for using local version of KK microphysics.
-
     implicit none
 
     ! Input Variables
@@ -153,7 +150,8 @@ module KK_microphys_module
       nnzp ! Points in the vertical     [-]
 
     logical, intent(in) :: &
-      l_stats_samp, &       ! Whether to sample stats (budgets)
+      l_stats_samp, &   ! Whether to sample stats (budgets)
+      l_local_kk,   &   ! Whether we're using the local formulas
       l_latin_hypercube ! Whether we're using latin hypercube sampling
 
     real, dimension(nnzp), intent(in) :: &
@@ -255,6 +253,7 @@ module KK_microphys_module
       T_in_K = w_std_dev
       T_in_K = dzq
       T_in_K = rvm
+      if ( l_latin_hypercube ) stop
     end if
 
     ! IMPORTANT NOTES
@@ -338,18 +337,6 @@ module KK_microphys_module
       corr_sNr_NL  = corr_sNr_NL_below
       corr_sNc_NL  = corr_sNc_NL_below
     end where
-
-    ! Determine whether the use local formulas
-    ! The flag l_local_kk is set in module parameters_microphys.  If it is set
-    ! to .true., the local version of KK microphysics is used.  Otherwise, the
-    ! upscaled version of KK microphysics is used.  The code should be set to
-    ! the upscaled version by default.
-    ! If l_latin_hypercube is specified, then this code will overwrite whatever
-    ! is specified in module parameters_microphys.  Otherwise, the value of
-    ! l_local_kk will remain unchanged.
-    if ( l_latin_hypercube ) then
-      l_local_kk = .true.
-    endif
 
     ! Assign pointers
     thl1 => pdf_params%thl1(:)
@@ -488,7 +475,6 @@ module KK_microphys_module
                           p_in_Pa(k), exner(k), T_in_K(k), Supsat(k),  & 
                           rrp2_on_rrainm2(k), Nrp2_on_Nrm2(k), corr_srr_NL(k), & 
                           corr_sNr_NL(k), corr_rrNr_LL(k) )
-
 
       ! Vince Larson added option to call LH sampled Kessler autoconversion.
       ! 22 May 2005

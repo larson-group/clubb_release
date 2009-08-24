@@ -621,6 +621,7 @@ module estimate_lh_micro_mod
       l_compute_diagnostic_average = .true., &
       l_cloud_weighted_averaging   = .false., &
       l_stats_samp                 = .false., &
+      l_local_kk                   = .true., &
       l_latin_hypercube            = .true.
 
     ! Input Variables
@@ -836,8 +837,8 @@ module estimate_lh_micro_mod
 
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
-           ( dt, nnzp, l_stats_samp, l_latin_hypercube, thl_tmp(:,sample), & ! In
-             p_in_Pa, exner, rho, pdf_params, & ! In
+           ( dt, nnzp, l_stats_samp, l_local_kk, l_latin_hypercube, & ! In
+             thl_tmp(:,sample), p_in_Pa, exner, rho, pdf_params, & ! In
              w_tmp(:,sample), w_std_dev, dzq, rc_tmp(:,sample), s_mellor_tmp, & ! In 
              rv_tmp(:,sample), hydromet_tmp(:,:,sample),  & ! In
              lh_hydromet_mc, lh_hydromet_vel, lh_rcm_mc, lh_rvm_mc, lh_thlm_mc ) ! Out

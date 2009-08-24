@@ -138,7 +138,7 @@ module microphys_driver
       l_cloud_sed, l_ice_micro, l_graupel, l_hail, &
       l_seifert_beheng, l_predictnc, l_specify_aerosol, l_subgrid_w, &
       l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, &
-      l_latin_hypercube_sampling, LH_microphys_calls, LH_sequence_length, &
+      l_latin_hypercube_sampling, l_local_kk, LH_microphys_calls, LH_sequence_length, &
       rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, &
       corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
       corr_sNc_NL_cloud, rrp2_on_rrainm2_below, &
@@ -231,6 +231,7 @@ module microphys_driver
     Ncm_initial = 100. ! #/cm^3 
 
     l_latin_hypercube_sampling = .false.
+    l_local_kk = .false.
     LH_microphys_calls = 2
     LH_sequence_length = 1
 
@@ -911,7 +912,8 @@ module microphys_driver
 
 !     wtmp = 0.5 ! %% debug
       call morrison_micro_driver & 
-           ( real( dt ), gr%nnzp, l_stats_samp, .false., thlm, p_in_Pa, exner, rho, pdf_params, &
+           ( real( dt ), gr%nnzp, l_stats_samp, .false., .false., &
+             thlm, p_in_Pa, exner, rho, pdf_params, &
              wm_zt, wtmp, dzq, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
              hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
  
@@ -1006,8 +1008,8 @@ module microphys_driver
       end if ! l_latin_hypercube_sampling
 
       call KK_microphys & 
-           ( real( dt ), gr%nnzp, l_stats_samp, l_latin_hypercube_sampling, thlm,  &
-             p_in_Pa, exner, rho, pdf_params, &
+           ( real( dt ), gr%nnzp, l_stats_samp, l_local_kk, .false., &
+             thlm, p_in_Pa, exner, rho, pdf_params, &
              wm_zt, wtmp, dzq, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
              hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 

@@ -30,9 +30,11 @@ module parameters_microphys
 !$omp   l_arctic_nucl, l_fix_pgam)
 
   logical, public :: & 
-    l_cloud_edge_activation,  & ! Activate on cloud edges (Morrison)
-    l_latin_hypercube_sampling  ! Latin Hypercube Sampling (K&K)
-!$omp threadprivate(l_cloud_edge_activation, l_latin_hypercube_sampling)
+    l_cloud_edge_activation,    & ! Activate on cloud edges (Morrison)
+    l_latin_hypercube_sampling, & ! Latin Hypercube Sampling (K&K)
+    l_local_kk                    ! Local drizzle for Khairoutdinov & Kogan microphysics
+
+!$omp threadprivate(l_cloud_edge_activation, l_latin_hypercube_sampling, l_local_kk)
 
   integer, public :: &
     LH_microphys_calls, & ! Number of latin hypercube samples to call the microphysics with
@@ -58,11 +60,6 @@ module parameters_microphys
     Ncm_initial ! Initial cloud droplet number concentration [#/cc]
 
 !$omp threadprivate(Ncm_initial)
-
-  ! Logical l_local_kk may be reset in KK_microphys_module if Latin hypercube
-  ! sampling is being used.
-  logical, public :: &
-    l_local_kk = .false.  ! Local drizzle for Khairoutdinov & Kogan microphysics
 
 
   private ! Default Scope
