@@ -229,7 +229,7 @@ module dycoms2_rf01
       upwp_sfc,    & ! u' w' at the surface              [m^2/s^2]
       vpwp_sfc,    & ! v' w' at the surface              [m^2/s^2]
       wpthlp_sfc,  & ! w' thl' at the surface            [m K/s]
-      wprtp_sfc,   & ! w' rt'  at the surface            [m kg/kg]
+      wprtp_sfc,   & ! w' rt'  at the surface            [m kg/(kg s)]
       ustar          ! surface friction velocity         [m/s]
 
     real,  dimension(sclr_dim), intent(out) ::  & 

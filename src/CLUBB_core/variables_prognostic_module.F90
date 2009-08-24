@@ -82,7 +82,7 @@ module variables_prognostic_module
   ! Surface fluxes
   real, public ::  & 
     wpthlp_sfc,        & ! w'thl'      [m K/s]
-    wprtp_sfc,         & ! w'rt'       [m kg/kg s]
+    wprtp_sfc,         & ! w'rt'       [m kg/(kg s)]
     upwp_sfc, vpwp_sfc   ! u'w' & v'w' [m^2/s^2]
 
 !$omp   threadprivate(wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc)
