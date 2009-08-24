@@ -608,15 +608,19 @@ sub buildMatlabStringStd()
                     if(-e $file)
                     {
                         my $title;
+                        my $folderName = basename($_);
+                        $folderName =~ s/_/\\_/g; # Replace all '_' with '\_' for MATLAB
 
                         if($name eq "auto")
                         {
-                            $title = basename($_);
-                            $title =~ s/_/\\_/g;
+                            $title = $folderName;
                         }
                         else
                         {
                             $title = $name;
+
+                            # Replace any '{0}' with the folder name
+                            $title =~ s/\{0\}/$folderName/;
                         }
                         
                         my $lineWidth = $lineWidths[$lineWidthCounter];
