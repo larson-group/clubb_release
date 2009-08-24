@@ -7,10 +7,12 @@ hopefully make it easier for you to implement a new case.
 
 Follow these steps when implementing a new case:
 
+CLUBB:
+======
 1. To implement a new case without LES, Best Ever, and 12/17 data, copy 
 templates/template_simple.case to <YOUR CASE NAME>.case. If you are implementing a 
-case with LES, Best Ever and 12/17 data, copy templates/template_all.case to 
-<YOUR CASE NAME>.case. If you want to plot budgets, copy templates/template_budget.case
+case with LES, Best Ever and 12/17 data, copy clubb/templates/template_all.case to 
+<YOUR CASE NAME>.case. If you want to plot budgets, copy clubb/templates/template_budget.case
 to <YOUR CASE NAME>_budget.case.
 
 2. Open your newly created case file. You can do a find and replace for
@@ -20,6 +22,21 @@ with cloud_feedback_s12 (or whatever you type after run_scm.bash).
 
 3. Test your changes. If you have data, plotgen should automatically plot
 it for you. 
+
+
+SAM-CLUBB:
+==========
+1. To implement a new case for SAM-CLUBB, follow step 1 from above,
+but instead of using clubb/templates, use sam_clubb/templates. 
+
+2. Open your newly created case file. You will need to do a find and replace all
+for two variables: SAM_CASE_NAME is the SAM_CLUBB data files (for example, ARM9707),
+and CLUBB_CASE_NAME which is the CLUBB file (for example, arm_97_zt.ctl).
+
+3. Test your changes. If you have data, plotgen should automatically plot
+it for you.
+
+
 
 Some cases are unique, so you may need to modify the case files for your
 current situation. The template files are still a good starting point.
