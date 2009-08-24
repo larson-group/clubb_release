@@ -3,7 +3,7 @@
 ! number and type of arguments as this does.
 interface
   subroutine microphys_sub( dt, nnzp, l_stats_sample, l_local_kk, l_latin_hypercube, &
-	                    thlm, p_in_Pa, exner, rho, pdf_params, &
+                            thlm, p_in_Pa, exner, rho, pdf_params, &
                             wm, w_std_dev, dzq, rcm, s_mellor, rvm, hydromet, hydromet_mc, &
                             hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 
