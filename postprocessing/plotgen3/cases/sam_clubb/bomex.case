@@ -14,7 +14,7 @@
     [
        {'plotTitle' => 'Liquid Water Potential Temperature, \theta_l', 'axisLabel' => 'thetal [K]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'bomex_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'THETAL', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x1x80_100m_40m_LES.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'THETAL', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'THETAL', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -22,7 +22,7 @@
        ]},
        {'plotTitle' => 'Total Water Mixing Ratio, r_t', 'axisLabel' => 'rtm / qt [g/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'bomex_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtm * 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtm * 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QT', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x1x80_100m_40m_LES.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'QT', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'QT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -30,7 +30,7 @@
        ]},
        {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cf / cld [%]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'bomex_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'cloud_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'cloud_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'CLD * 100', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x1x80_100m_40m_LES.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'CLD * 100', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'CF * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -38,7 +38,7 @@
        ]},
        {'plotTitle' => 'Cloud Water Mixing Ration, r_c', 'axisLabel' => 'rcm / qcl [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'bomex_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rcm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rcm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QCL / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x1x80_100m_40m_LES.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'QCL / 1000', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'RCM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -46,7 +46,7 @@
        ]},
        {'plotTitle' => 'Variance of w', 'axisLabel' => 'wp2 / w2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'bomex_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'W2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x1x80_100m_40m_LES.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'W2', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'WP2 + W2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -54,7 +54,7 @@
        ]},
        {'plotTitle' => 'Third-order Moment of w', 'axisLabel' => 'wp3 / w3 [m^3/s^3]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'bomex_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'W3', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x1x80_100m_40m_LES.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'W3', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'WP3 + W3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -62,7 +62,7 @@
        ]},
        {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp / thflux(s) [K m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'bomex_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(TLFLUX + TLFLUXS) ./ (RHO * 1004)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x1x80_100m_40m_LES.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => '(TLFLUX + TLFLUXS) ./ (RHO * 1004)', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '((TLFLUX + TLFLUXS) ./ (RHO * 1004)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -70,7 +70,7 @@
        ]},
        {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp / qtflux(s) [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'bomex_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(QTFLUXS + QTFLUX) ./ (RHO * 2.5104e+6)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x1x80_100m_40m_LES.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => '(QTFLUXS + QTFLUX) ./ (RHO * 2.5104e+6)', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '(QTFLUX ./ (RHO * 2.5104e+6)) + WPRTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -78,7 +78,7 @@
        ]},
        {'plotTitle' => 'Variance of \theta_l', 'axisLabel' => 'thlp2 / tl2 [K^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'bomex_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'TL2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x1x80_100m_40m_LES.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'TL2', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'TL2 + THLP2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -86,7 +86,7 @@
        ]},
        {'plotTitle' => 'Variance of r_t', 'axisLabel' => 'rtp2 / qtp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'bomex_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QT2 / 1e+6', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x1x80_100m_40m_LES.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'QT2 / 1e+6', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '(QT2 / 1e+6) + RTP2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -94,13 +94,13 @@
        ]},
        {'plotTitle' => 'Covariance of r_t & \theta_l', 'axisLabel' => 'rtpthlp [(kg/kg) K]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'bomex_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'RTPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'BOMEX_4x1x80_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'RTPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
        {'plotTitle' => 'Vertical Wind Component, w (subsidence)', 'axisLabel' => 'wobs [m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'bomex_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wobs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wobs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'WOBS', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x1x80_100m_40m_LES.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'WOBS', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'WOBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -108,7 +108,7 @@
        ]},
        {'plotTitle' => 'Zonal Wind Component, u', 'axisLabel' => 'um / u [m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'bomex_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'um', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'um', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'U', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x1x80_100m_40m_LES.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'U', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'UM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -116,7 +116,7 @@
        ]},
        {'plotTitle' => 'Meridonal Wind Component, v', 'axisLabel' => 'vm / v [m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'bomex_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'V', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x1x80_100m_40m_LES.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'V', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'VM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -124,7 +124,7 @@
        ]},
        {'plotTitle' => 'Covariance of u & w', 'axisLabel' => 'upwp / uw [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'bomex_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'upwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'upwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'UW', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x1x80_100m_40m_LES.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'UW', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'UWSB + UPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -132,7 +132,7 @@
        ]},
        {'plotTitle' => 'Covariance of v & w', 'axisLabel' => 'vpwp / vw [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'bomex_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vpwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vpwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'VW', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x1x80_100m_40m_LES.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'VW', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'VPWP + VWSB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -140,7 +140,7 @@
        ]},
        {'plotTitle' => 'Variance of u wind', 'axisLabel' => 'up2 / u2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'bomex_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'up2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'up2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'U2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x1x80_100m_40m_LES.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'U2', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'UP2 + U2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -148,7 +148,7 @@
        ]},
        {'plotTitle' => 'Variance of v wind', 'axisLabel' => 'vp2 / v2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'bomex_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'V2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x1x80_100m_40m_LES.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'V2', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'VP2 + V2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -156,7 +156,7 @@
        ]},
        {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'qpl [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'bomex_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qpl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qpl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QPL', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x1x80_100m_40m_LES.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'QPL', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'QPL', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
