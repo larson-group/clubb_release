@@ -8,10 +8,11 @@ vars_zt =
 
 vars_zm =
 'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp',
-'upwp', 'vpwp', 'up2', 'vp2',
+'upwp', 'vpwp', 'up2', 'vp2', 'wpthvp',
 ''
 
 vars_sfc =
 'wp2_vert_avg', 'lwp', 'swp', 'iwp',
+'rain', 'morr_rain_rate',
 ''
 /
