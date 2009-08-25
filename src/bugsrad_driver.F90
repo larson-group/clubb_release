@@ -36,7 +36,7 @@ module bugsrad_clubb_mod
 ! Grid Layout:
 !
 ! /////////////// Layers from U.S. Standard Atmosphere or sounding   ///////////////
-! ///////////////       Dimension: extend_atmos_range_size                  ///////////////
+! ///////////////       Dimension: extend_atmos_range_size           ///////////////
 !                                  .
 !                                  .
 ! ---------------         Interpolated Layers                        ---------------
