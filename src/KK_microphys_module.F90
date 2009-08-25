@@ -359,6 +359,10 @@ module KK_microphys_module
     VNr => hydromet_vel(:,iiNrm)
     Nrm_mc_tndcy => hydromet_mc(:,iiNrm)
 
+    ! This is set to zero, but the cloud_drop_sed subroutine can sediment
+    ! cloud water
+    hydromet_vel(:,iiNcm) = 0.0 
+
     ! Find the drop mean volume radius.  It is calculated using
     ! the rain water ratio, the rain droplet concentration,
     ! and the air density.  These values are taken from the previous

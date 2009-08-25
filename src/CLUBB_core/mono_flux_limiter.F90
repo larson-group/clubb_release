@@ -593,6 +593,19 @@ module mono_flux_limiter
 
     enddo
 
+    ! Boundary conditions
+    min_x_allowable(1) = 0.
+    max_x_allowable(1) = 0.
+
+    min_x_allowable(gr%nnzp) = 0.
+    max_x_allowable(gr%nnzp) = 0.
+
+    wpxp_mfl_lower_lim(1) = 0.
+    wpxp_mfl_upper_lim(1) = 0.
+
+    wpxp_mfl_lower_lim(gr%nnzp) = 0.
+    wpxp_mfl_upper_lim(gr%nnzp) = 0.
+
     if ( l_stats_samp .and. trim( solve_type ) == "thlm" ) then
        call stat_update_var( ithlm_without_ta, xm_without_ta, zt )
        call stat_update_var( ithlm_mfl_lower_lim, min_x_allowable, zt )
