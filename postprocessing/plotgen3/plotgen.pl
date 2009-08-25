@@ -8,11 +8,23 @@
 
 package Plotgen;
 
+# This is only needed when installing globally to ensure additional perl 
+# modules can be found.
+BEGIN
+{
+    # Only do this if plotgen was executed from a path other than the plotgen directory
+    if($0 ne "./plotgen.pl")
+    {
+        push @INC,"/home/matlabuser/plotgen";
+    }
+}
+
 use strict;
 
 use CaseReader;
 use OutputWriter;
 use Cwd 'abs_path';
+use Cwd;
 use Switch;
 use Getopt::Std;
 use File::Basename;
@@ -919,7 +931,7 @@ sub readArgs()
                 }
                 else
                 {
-                    print("The input folder: $currentDir does not exist.\n");
+                    print("The input folder $currentDir does not exist.\n");
                     exit(1);
                 }
             }
@@ -956,6 +968,20 @@ sub readArgs()
         rmtree($output);
         mkdir $output;
         mkdir $outputTemp;
+
+        # The following was added to allow us to install plotgen globally.
+        # This will follow the symlink to the actual plotgen.pl script.
+        my $plotgenDirectory = readlink($0);
+
+        print("$plotgenDirectory\n");
+
+        if($plotgenDirectory ne "")
+        {
+            $plotgenDirectory = dirname(abs_path($plotgenDirectory));
+            
+            # In case we aren't already in the directory that plotgen.pl is, goto it.
+            chdir($plotgenDirectory);
+        }
     }
 }
 
