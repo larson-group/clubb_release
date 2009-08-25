@@ -152,7 +152,7 @@ module time_dependent_input
     ! ----------------- Begin Code --------------------
 
     ! Allow the ability to read in values of upwp_sfc and vpwp_sfc 
-    ! currently, this is only used for case gabls3_night
+    ! Currently (Aug. 2009), this is only used for case gabls3_night
     if ( l_input_xpwp_sfc ) then
       nCols = 8
     else
@@ -201,7 +201,7 @@ module time_dependent_input
     psfc_given = read_x_profile( nCols, dim_size, pressure_name, retVars, &
                                  input_file )
 
-    ! upwp_sfc and vpwp_sfc are currently only fed into CLUBB for case "gabls3_night"
+    ! upwp_sfc and vpwp_sfc are currently (Aug. 2009) only fed into CLUBB for case "gabls3_night"
     if ( l_input_xpwp_sfc ) then
 
       allocate( upwp_sfc_given(1:dim_size) )
