@@ -536,12 +536,12 @@ module output_grads
   else if ( f%ia < f%iz ) then
     write(unit=f%iounit,fmt='(a,i5,a)')  & 
       'ZDEF', abs(f%iz-f%ia)+1,' LEVELS '
-    write(unit=f%iounit,fmt='(8f8.1)')  & 
+    write(unit=f%iounit,fmt='(8f8.2)')  & 
       (f%z(i-f%ia+1),i=f%ia,f%iz)
   else
     write(unit=f%iounit,fmt='(a,i5,a)')  & 
       'ZDEF',abs(f%iz-f%ia)+1,' LEVELS '
-    write(f%iounit,'(8f8.1)') (f%z(f%ia-i+1),i=f%ia,f%iz,-1)
+    write(f%iounit,'(8f8.2)') (f%z(f%ia-i+1),i=f%ia,f%iz,-1)
   end if
 
   call format_date(f%day,f%month,f%year,f%time,date)
