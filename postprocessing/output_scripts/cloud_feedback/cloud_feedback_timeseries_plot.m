@@ -19,7 +19,7 @@ nz = 41;
 t_start = 1;
 t_end = t_start + 719;
 
-vars_to_plot = ['cldtot'; 'tglwp '; 'precw '; 'tsair '; 'ps    '; 'prect '; 'lh    '; 'sh    '; 'fsnt  '; 'flnt  '; 'flntc '; 'fsntc '; 'fsnsc '; 'flnsc ']
+vars_to_plot = ['cldtot'; 'tglwp '; 'precw '; 'tsair '; 'ps    '; 'prect '; 'lh    '; 'sh    '; 'fsns  '; 'flns  '; 'fsnt  '; 'flnt  '; 'flntc '; 'fsntc '; 'fsnsc '; 'flnsc ']
 
 for i=1:size(vars_to_plot,1);
 	minVal = 0;

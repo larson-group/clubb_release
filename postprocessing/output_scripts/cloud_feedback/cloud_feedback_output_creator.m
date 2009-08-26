@@ -194,9 +194,9 @@ fsntvarid = define_variable( 'fsnt', 'TOA SW net downward total-sky radiation', 
 flntcvarid = define_variable( 'flntc', 'TOA LW clear-sky upward radiation', 'W/m^2', tdimid, ncid );
 flntvarid = define_variable( 'flnt', 'TOA LW total-sky upward radiation', 'W/m^2', tdimid, ncid );
 fsnscvarid = define_variable( 'fsnsc', 'Surface SW net downward clear-sky radiation', 'W/m^2', tdimid, ncid );
-%fsnsvarid = define_variable( 'fsns', 'Surface SW net downward total-sky radiation', 'W/m^2', tdimid, ncid );
+fsnsvarid = define_variable( 'fsns', 'Surface SW net downward total-sky radiation', 'W/m^2', tdimid, ncid );
 flnscvarid = define_variable( 'flnsc', 'Surface LW net upward clear-sky radiation', 'W/m^2', tdimid, ncid );
-%flnsvarid = define_variable( 'flns', 'Surface LW net upward total-sky radiation', 'W/m^2', tdimid, ncid );
+flnsvarid = define_variable( 'flns', 'Surface LW net upward total-sky radiation', 'W/m^2', tdimid, ncid );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Hourly-averaged vertical profiles of multi-level fields as a function of time, X(n_levels, n_hours)
@@ -250,10 +250,10 @@ netcdf.putVar( ncid, psvarid, p_array(1,:));
 netcdf.putVar( ncid, prectvarid, rain_rate_array);
 netcdf.putVar( ncid, lhflxvarid, lh_array);
 netcdf.putVar( ncid, shflxvarid, sh_array);
-netcdf.putVar( ncid, fsntvarid, Frad_SW_down_array(1,:) - Frad_SW_up_array(1,:));
-netcdf.putVar( ncid, flntvarid, Frad_LW_up_array(1,:)  - Frad_LW_down_array(1,:));
-%netcdf.putVar( ncid, fsnsvarid, Frad_SW_down_array(1,:));
-%netcdf.putVar( ncid, flnsvarid, Frad_LW_up_array(1,:));
+netcdf.putVar( ncid, fsntvarid, Frad_SW_down_array(w_nz,:) - Frad_SW_up_array(w_nz,:));
+netcdf.putVar( ncid, flntvarid, Frad_LW_up_array(w_nz,:)  - Frad_LW_down_array(w_nz,:));
+netcdf.putVar( ncid, fsnsvarid, Frad_SW_down_array(1,:) - Frad_SW_up_array(1,:));
+netcdf.putVar( ncid, flnsvarid, Frad_LW_up_array(1,:) - Frad_LW_down_array(1,:));
 
 netcdf.putVar( ncid, flnscvarid, fulwcl_array(end,:) - fdlwcl_array(end,:));
 %netcdf.putVar( ncid, preccvarid, );
