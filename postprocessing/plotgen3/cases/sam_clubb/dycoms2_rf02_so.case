@@ -100,7 +100,7 @@
        ]},
        {'plotTitle' => 'Vertical Wind Component, w (subsidence)', 'axisLabel' => 'wobs [m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf02_so_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wobs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_so_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'WOBS', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'WOBS', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'WOBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -156,7 +156,7 @@
        ]},
        {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'qpl [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf02_so_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qpl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_so_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QPL', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'QPL', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'QPL', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},

@@ -694,7 +694,7 @@ sub executeMatlab()
     #my $args = "echo \"quit\" | $MATLAB -nodisplay -nodesktop -r PlotCreator\"($matlabArgs)\"";
     my $args = "PlotCreator\"($matlabArgs)\"";
 
-    #print $args;
+    #print("\n$args\n\n");
 
     system("echo $args > $matlabPipe");
 }
