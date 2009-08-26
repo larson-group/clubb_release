@@ -94,7 +94,7 @@ my $peach = "[ 1.00, 0.90, 0.40 ]";
 my $darkGreen = "[ 0.00, 0.40, 0.00 ]";
 # Arrays to cycle through when auto is set for lines
 my @lineStyles = ("--", "-", "-.");
-my @lineColors = ($lt_blue, $orange, "green", "red", "blue", "cyan", $purple, $peach, $goldenRod, $grey, $darkGreen, "yellow", "magenta");
+my @lineColors = ($orange, $lt_blue, "green", "red", "blue", "cyan", $purple, $peach, $goldenRod, $grey, $darkGreen, "yellow", "magenta");
 my @lineWidths = (6, 4, 3.5, 3, 2.5, 2, 1.5, 1);
 
 # Counters for automatic lines
