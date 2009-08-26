@@ -81,7 +81,9 @@ ts_nudge = 7200.    ! Timescale of u/v nudging            [s]
 forcings_file_path = '../input/case_setups/cloud_feedback_s6_p2k_forcings/'
 !forcings_file_path = ''
 
-l_t_dependent = .true.
+l_t_dependent = .true. ! Flag used to indicate that this case uses 
+                       ! a forcings.in and surface.in file for
+                       ! time dependent input.
 
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.

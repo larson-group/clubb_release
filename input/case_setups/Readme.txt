@@ -95,6 +95,10 @@ l_t_dependent | logical
   Flag used to indicate that this case uses a forcings.in and surface.in file for
   time dependent input.
 
+l_input_xpwp_sfc | logical
+  Flag used to determine whether or not to read in the surface momentum
+  fluxes, upwp_sfc and vpwp_sfc
+
 l_tke_aniso | logical
   Flag for anisotropic tke.
 

@@ -89,7 +89,9 @@ l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
 ! If false, sounding data will be used.
 l_use_default_std_atmosphere = .false. 
 
-l_t_dependent = .true.
+l_t_dependent = .true. ! Flag used to indicate that this case uses 
+                       ! a forcings.in and surface.in file for
+                       ! time dependent input.
 
 
 ! Sponge Damping
