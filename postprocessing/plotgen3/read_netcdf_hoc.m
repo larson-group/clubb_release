@@ -15,8 +15,6 @@ fid = netcdf.open(filename,'NC_NOWRITE');
 %Ensure the file will be closed no matter what happens
 cleanupHandler = onCleanup(@()netcdf.close(fid));
 
-%varnum = varnum+4;
-
 num_timesteps = (t2-t1) + 1;
 
 % Read in and average profiles over all timesteps
