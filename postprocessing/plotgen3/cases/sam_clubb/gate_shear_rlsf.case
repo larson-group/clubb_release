@@ -5,7 +5,7 @@
     'name' => 'GATE_shear_rlsf',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => ' GATE Shear RLSF Hours 10-12 ',
+    'headerText' => 'GATE Shear RLSF Hours 10-12',
     'startTime' => 540.0,  # [minutes]
     'endTime' => 720.0,    # [minutes]
     'startHeight' => 0.0,   # [m]

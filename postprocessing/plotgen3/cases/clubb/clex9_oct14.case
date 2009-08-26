@@ -34,8 +34,8 @@
        ]},
        {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cloud\_frac [%]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/clex9_oct14_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'cf', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => 'red'},
-          {'filename' => 'clex9_oct14_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'cloud_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => '/home/matlabuser/plotgen/LES_files/clex9_oct14_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'cf* 100', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => 'red'},
+          {'filename' => 'clex9_oct14_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'cloud_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},       
        {'plotTitle' => 'Cloud Water Mixing Ratio, r_c', 'axisLabel' => 'rcm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
