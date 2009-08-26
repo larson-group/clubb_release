@@ -18,8 +18,8 @@ module estimate_lh_micro_mod
              ( dt, nnzp, n_micro_calls, d_variables, &
                X_u_all_levs, X_nl_all_levs, & 
                LH_rt, LH_thl, pdf_params, & 
-               thlm, p_in_Pa, exner, rho, &
-               wm, w_std_dev, dzq, rcm, rvm, &        
+               p_in_Pa, exner, rho, &
+               rcm, w_std_dev, dzq, &        
                cloud_frac, hydromet, &
                lh_hydromet_mc, lh_hydromet_vel, &
                lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, &
@@ -77,19 +77,14 @@ module estimate_lh_micro_mod
 
     real, dimension(nnzp), intent(in) :: &
       cloud_frac, & ! Cloud fraction           [-]
-      thlm,       & ! Liquid pot. temperature  [K]
       p_in_Pa,    & ! Pressure                 [Pa]
       exner,      & ! Exner function           [-]
       rho           ! Density on thermo. grid  [kg/m^3]
 
     real, dimension(nnzp), intent(in) :: &
-      wm, &        ! Mean w                             [m/s]
-      w_std_dev, & ! Standard deviation of w            [m/s]
-      dzq          ! Difference in height per gridbox   [m]
-
-    real, dimension(nnzp), intent(in) :: &
-      rcm, & ! Liquid water mixing ratio        [kg/kg]
-      rvm    ! Vapor water mixing ratio         [kg/kg]
+      rcm,       & ! Liquid water mixing ratio                [kg/kg]
+      w_std_dev, & ! Standard deviation of vertical velocity  [m/s]
+      dzq          ! Difference in height per gridbox         [m]
 
     type(pdf_parameter), intent(in) :: pdf_params
 
@@ -126,7 +121,7 @@ module estimate_lh_micro_mod
       lh_rcm,       & ! Average value of the latin hypercube est. of rc                [kg/kg]
       lh_rvm,       & ! Average value of the latin hypercube est. of rv                [kg/kg]
       lh_wm,        & ! Average value of the latin hypercube est. of vertical velocity [m/s]
-      lh_wp2_zt,    & ! Average value of the variance of the LH est. of vertical velocity [m^2/s^2]
+      lh_wp2_zt,    & ! Average value of the variance of the LH est. of vertical vel.  [m^2/s^2]
       lh_rcp2_zt,   & ! Average value of the variance of the LH est. of rc             [(kg/kg)^2]
       lh_rtp2_zt,   & ! Average value of the variance of the LH est. of rt             [kg^2/kg^2]
       lh_thlp2_zt,  & ! Average value of the variance of the LH est. of thetal         [K^2]
@@ -352,8 +347,8 @@ module estimate_lh_micro_mod
     call lh_microphys_driver( dt, nnzp, n_micro_calls, d_variables, &
                               LH_rt, LH_thl, &
                               X_nl_all_levs, X_u_all_levs, &
-                              thlm, p_in_Pa, exner, rho, wm, w_std_dev, &
-                              dzq, rcm, rvm, pdf_params, hydromet, &
+                              p_in_Pa, exner, rho, w_std_dev, &
+                              dzq, pdf_params, hydromet, &
                               lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, &
                               lh_hydromet_vel, lh_thlm_mc, &
                               lh_hydromet, lh_thlm, lh_rcm, lh_rvm, lh_wm, &
@@ -567,8 +562,8 @@ module estimate_lh_micro_mod
              ( dt, nnzp, n_micro_calls, d_variables, &
                LH_rt, LH_thl, &
                X_nl_all_levs, X_u_all_levs, &
-               thlm, p_in_Pa, exner, rho, wm, w_std_dev, &
-               dzq, rcm, rvm, pdf_params, hydromet,  &
+               p_in_Pa, exner, rho, w_std_dev, &
+               dzq, pdf_params, hydromet,  &
                lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, &
                lh_hydromet_vel, lh_thlm_mc, &
                lh_hydromet, lh_thlm, lh_rcm, lh_rvm, lh_wm, &
@@ -644,19 +639,13 @@ module estimate_lh_micro_mod
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     real, dimension(nnzp), intent(in) :: &
-      thlm,       & ! Liquid pot. temperature  [K]
       p_in_Pa,    & ! Pressure                 [Pa]
       exner,      & ! Exner function           [-]
       rho           ! Density on thermo. grid  [kg/m^3]
 
     real, dimension(nnzp), intent(in) :: &
-      wm,        & ! Mean w                     [m/s]
       w_std_dev, & ! Standard deviation of w    [m/s]
       dzq          ! Difference in height per gridbox   [m]
-
-    real, dimension(nnzp), intent(in) :: &
-      rcm, & ! Liquid water mixing ratio        [kg/kg]
-      rvm    ! Vapor water mixing ratio         [kg/kg]
 
     type(pdf_parameter), intent(in) :: pdf_params
 

@@ -864,7 +864,7 @@ module clubb_driver
          ! radiation before the call the microphysics to change this.
          ! -dschanen 17 Aug 2009
          call advance_clubb_radiation &
-              ( rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! In
+              ( rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! In
                 rtm, rcm, hydromet, & ! In
                 radht, Frad, Frad_SW_up, Frad_LW_up, & ! Out
                 Frad_SW_down, Frad_LW_down ) ! Out
@@ -2680,7 +2680,7 @@ module clubb_driver
 
 !-------------------------------------------------------------------------------
   subroutine advance_clubb_radiation &
-             ( rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, &
+             ( rho_zm, p_in_Pa, exner, cloud_frac, thlm, &
                rtm, rcm, hydromet, radht, Frad, Frad_SW_up, Frad_LW_up, &
                Frad_SW_down, Frad_LW_down )
 ! Description:
@@ -2721,14 +2721,13 @@ module clubb_driver
 
     ! Input Variables
     real, dimension(gr%nnzp), intent(in) :: &
-      rho,        & ! Density on thermo. grid                           [kg/m^3] 
-      rho_zm,     & ! Density on moment. grid                           [kg/m^3]
-      p_in_Pa,    & ! Pressure.                                         [Pa] 
-      exner,      & ! Exner function.                                   [-]
-      cloud_frac, & ! Cloud fraction (thermodynamic levels)             [-]
-      thlm,       & ! Liquid potential temperature                      [K]
-      rtm,        & ! Total water mixing ratio, r_t (thermo. levels)    [kg/kg]
-      rcm           ! Cloud water mixing ratio, r_c (thermo. levels)    [kg/kg]
+      rho_zm,     & ! Density on moment. grid                          [kg/m^3]
+      p_in_Pa,    & ! Pressure.                                        [Pa] 
+      exner,      & ! Exner function.                                  [-]
+      cloud_frac, & ! Cloud fraction (thermodynamic levels)            [-]
+      thlm,       & ! Liquid potential temperature                     [K]
+      rtm,        & ! Total water mixing ratio, r_t (thermo. levels)   [kg/kg]
+      rcm           ! Cloud water mixing ratio, r_c (thermo. levels)   [kg/kg]
 
     real, dimension(gr%nnzp,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
