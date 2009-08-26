@@ -68,7 +68,7 @@ EOF
 }
 
 ###############################################################################
-# Writes the HTML header information
+# Writes the HTML header information for CLUBB
 ###############################################################################
 sub writeHeader()
 {
@@ -85,14 +85,16 @@ sub writeHeader()
 
 	shift(@_);
 	my $fh = shift(@_);
+    my $mode = shift(@_);
+
 	open(FILE, "> $fh");
 
 	print FILE <<"EOF";
 <html>
 <head>
-	<title>Plotgen</title>
+	<title>$mode</title>
 	<p><div align="CENTER">
-		<font size="+3" color="#811212">Plotgen</font>
+		<font size="+3" color="#811212">$mode</font>
 		<font size="-1"><br/>$currMon/$currDay/$currYear</font></p>
 	</div></p>
 
@@ -100,6 +102,86 @@ sub writeHeader()
 <body>
 EOF
 	close(FILE);
+}
+
+###############################################################################
+# Writes the SAM_CLUBB Variable Equivalence Table
+###############################################################################
+sub writeSamSubHeader()
+{
+    shift(@_);
+    my $fh = shift(@_);
+
+    OutputWriter->writeSubHeader($fh, "2D SAM_CLUBB runs use a 64-km horizontal domain and a 10-s timestep, with CLUBB called every 6th SAM timestep. All SAM_CLUBB runs except LBA use Morrison microphysics. CLUBB standalone runs use a 10-s timestep and the Morrison microphysics.");
+    OutputWriter->writeSubHeader($fh, "When two variables are listed, the first variable is the SAM-CLUBB variable and the second is the SAM-Standalone variable.");
+     
+    my $text = <<HTML;
+    <br />
+    <DIV ALIGN="CENTER"><TABLE CELLPADDING=3 BORDER="1">
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=11><B>Variable Equivalence Table</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER"><B>CLUBB</B></TD>
+        <TD ALIGN="CENTER"><B>SAM CLUBB</B></TD>
+        <TD ALIGN="CENTER"><B>SAM Standalone</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">wpthlp</TD>
+        <TD ALIGN="CENTER">wpthlp+tlflux+tlfluxs</TD>
+        <TD ALIGN="CENTER">tlflux+tlfluxs</TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">wprtp</TD>
+        <TD ALIGN="CENTER">wprtp+qtflux</TD>
+        <TD ALIGN="CENTER">qtflux+qtfluxs</TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">thlp2</TD>
+        <TD ALIGN="CENTER">thlp2+tl2</TD>
+        <TD ALIGN="CENTER">tl2</TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">rtp2</TD>
+        <TD ALIGN="CENTER">rtp2 + qt2</TD>
+        <TD ALIGN="CENTER">qt2</TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">upwp</TD>
+        <TD ALIGN="CENTER">upwp + uwsb</TD>
+        <TD ALIGN="CENTER">uw</TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">vpwp</TD>
+        <TD ALIGN="CENTER">vpwp + vwsb</TD>
+        <TD ALIGN="CENTER">vw</TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">up2</TD>
+        <TD ALIGN="CENTER">up2 + u2</TD>
+        <TD ALIGN="CENTER">u2</TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">vp2</TD>
+        <TD ALIGN="CENTER">vp2 + v2</TD>
+        <TD ALIGN="CENTER">v2</TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">wp2</TD>
+        <TD ALIGN="CENTER">wp2 + w2</TD>
+        <TD ALIGN="CENTER">w2</TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">wp3</TD>
+        <TD ALIGN="CENTER">wp3 + w3</TD>
+        <TD ALIGN="CENTER">w3</TD>
+    </TR>
+</TABLE>
+<br />
+</DIV>
+HTML
+    
+    OutputWriter->writeSubHtml($fh, $text);
 }
 
 ###############################################################################

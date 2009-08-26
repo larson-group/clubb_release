@@ -194,8 +194,6 @@ sub main()
     }
     else # Parent
     {
-        OutputWriter->writeHeader($outputIndex);
-
         # Now fork to create images in the background. This should hopefully
         # speed things up a little
         my $convertPid = fork();
@@ -208,7 +206,16 @@ sub main()
         }
         else # Main thread
         {
-            OutputWriter->writeHeader($outputIndex);
+            if($plotgenMode eq "splotgen")
+            {
+                OutputWriter->writeHeader($outputIndex, "Splotgen");                
+                OutputWriter->writeSamSubHeader($outputIndex);
+            }
+            else
+            {
+                OutputWriter->writeHeader($outputIndex, "Plotgen");
+            }
+    
             runCases();
 
             # Quit MATLAB
