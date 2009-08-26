@@ -1609,7 +1609,7 @@ module generate_lh_sample_mod
 
     ! ---- Begin Code ----
 
-    if ( Xm > X_tol ) then
+    if ( Xm >= X_tol ) then
       sX1 = log( 1. + Xp2_on_Xm2 )
       sX2 = sX1
       X1 = 0.5 * log( Xm**2 / ( 1. + Xp2_on_Xm2 ) )
@@ -1617,7 +1617,7 @@ module generate_lh_sample_mod
     else
       sX1 = log( 1. + epsilon( Xp2_on_Xm2 ) )
       sX2 = sX1
-      X1 = 0.5 * log( X_tol**2 / ( 1. + epsilon( Xp2_on_Xm2 ) ) )
+      X1 = 0.5 * log( ( X_tol * 0.999 )**2 / ( 1. + epsilon( Xp2_on_Xm2 ) ) )
       X2 = X1
     end if
 
