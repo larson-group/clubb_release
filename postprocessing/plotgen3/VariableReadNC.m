@@ -3,6 +3,12 @@ function [varData, levData] = VariableReadNC( filePath, variableToRead, startTim
 %Read in some necessary information about the GRaDS file
 [dataFileName, nz, z, numTimesteps, dt, numVars, listofparams] = header_read_expanded_netcdf(filePath);
 
+% open NETCDF file
+fid = netcdf.open(filePath,'NC_NOWRITE');
+
+%Ensure the file will be closed no matter what happens
+cleanupHandler = onCleanup(@()netcdf.close(fid));
+
 %Calculate start and end timesteps, correct if they are invalid
 t_start = ceil(startTime / dt);
 if ( t_start < 1 )
@@ -21,17 +27,12 @@ end
 %Set a default value if the passed in variable is not found
 varData(1:nz) = 0;
 
-for i = 1:numVars
-	%See if the variable we found is the variable we are interested in
-	if ( strcmp( strtrim(listofparams(i, :)), variableToRead ) )
-		if strcmp(plotType, 'profile')
-			varData = read_netcdf_hoc(filePath, nz, t_start, t_end, i, numVars);
-		elseif strcmp(plotType, 'timeseries')
-			varData = read_netcdf_hoc_timeseries(filePath, nz, t_start, t_end, i, numVars);
-		end
-
-		break;
-	end
+varNum = netcdf.inqVarID(fid, variableToRead);
+	
+if strcmp(plotType, 'profile')
+	varData = read_netcdf_hoc(filePath, nz, t_start, t_end, varNum, numVars);
+elseif strcmp(plotType, 'timeseries')
+	varData = read_netcdf_hoc_timeseries(filePath, nz, t_start, t_end, varNum, numVars);
 end
 
 levData = z;
