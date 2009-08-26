@@ -253,7 +253,6 @@ module KK_microphys_module
       T_in_K = w_std_dev
       T_in_K = dzq
       T_in_K = rvm
-      if ( l_latin_hypercube ) stop
     end if
 
     ! IMPORTANT NOTES
@@ -374,7 +373,6 @@ module KK_microphys_module
                             Nrp2_on_Nrm2(k), corr_rrNr_LL(k) )
 
     enddo
-
 
     ! Save mean volume radius for stats purposes
     if ( l_stats_samp ) then
@@ -540,7 +538,7 @@ module KK_microphys_module
       ! must be adjusted.
       total_rc_needed = real( rrainm_source * dt )
 
-      if ( total_rc_needed > rcm(k) ) then
+      if ( .not. l_local_kk .and. total_rc_needed > rcm(k) ) then
 
         ! The maximum allowable rate of the source terms is rcm/dt.
         rrainm_src_max = real( rcm(k) / dt )
@@ -1048,28 +1046,42 @@ module KK_microphys_module
   END FUNCTION cond_evap_rrainm
 
 !===============================================================================
+  function cond_evap_Nrm( cond_rrainm, Nrm, rrainm )
+! Description:
+!   Compute the tendency of Nrm due to condensation and evaporation
 
-  FUNCTION cond_evap_Nrm( cond_rrainm, Nrm, rrainm )
+! References:
+!   None
+!-------------------------------------------------------------------------------
+    use constants, only: &
+      rr_tol, & ! Constants
+      Nr_tol
 
     implicit none
 
-    REAL, INTENT(IN):: rrainm      ! [kg kg^-1]
-    REAL, INTENT(IN):: Nrm      ! [kg^-1]
-    REAL, INTENT(IN):: cond_rrainm ! [kg kg^-1 s^-1]
-    REAL:: cond_evap_Nrm        ! [kg^-1 s^-1]
+    ! Input Variables
+    real, intent(in) :: &
+      rrainm,      & ! Rain water mixing ratio                [kg kg^-1]
+      Nrm,         & ! Rain water number concentration        [kg^-1]
+      cond_rrainm    ! Tendency of rrainm due to cond./evap.  [kg kg^-1 s^-1]
 
-    IF (rrainm > 0.0 .AND. Nrm > 0.0) THEN
+    ! Output Variable
+    real :: cond_evap_Nrm ! Tendency of Nrm due to cond./evap. [kg^-1 s^-1]
+
+    ! ---- Begin Code ----
+
+    if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
 
       cond_evap_Nrm = ( Nrm / rrainm ) * cond_rrainm
 
-    ELSE
+    else
 
       cond_evap_Nrm = 0.0
 
-    ENDIF
+    end if
 
-    RETURN
-  END FUNCTION cond_evap_Nrm
+    return
+  end function cond_evap_Nrm
 
 !===============================================================================
   !
@@ -1151,9 +1163,9 @@ module KK_microphys_module
       l_local_kk ! Use local formula
 
     REAL, INTENT(IN):: rcm         ! Grid-box average rcm     [kg kg^-1]
-!        REAL, INTENT(IN):: rcp2        ! Grid-box rc variance     [kg^2 kg^-2]
+!   REAL, INTENT(IN):: rcp2        ! Grid-box rc variance     [kg^2 kg^-2]
     REAL, INTENT(IN):: Ncm         ! Grid-box average Ncm     [kg^-1]
-!        REAL, INTENT(IN):: Ncp2        ! Grid-box Nc variance     [kg^-2]
+!   REAL, INTENT(IN):: Ncp2        ! Grid-box Nc variance     [kg^-2]
     REAL, INTENT(IN):: s1          ! Plume 1 average s        [kg kg^-1]
     REAL, INTENT(IN):: ss1         ! Plume 1 sigma s1 (not sigma^2 s1)
     !                          [kg kg^-1]
@@ -1185,14 +1197,15 @@ module KK_microphys_module
 
 !-------------------------------------------------------------------------------
 
+    ! ---- Begin Code -----
+
     IF ( l_local_kk ) THEN
 
       ! Tolerance values are used instead of 0 in order to prevent
       ! numerical error.
       IF ( rcm > rc_tol .AND. Ncm > Nc_tol ) THEN
 
-        autoconv_rrainm = 7.4188E13 * rho**(-1.79)  & 
-                          * rcm**2.47 * Ncm**(-1.79)
+        autoconv_rrainm = 7.4188E13 * rcm**2.47 * (rho * Ncm )**(-1.79)
       ELSE
 
         ! If either rcm or Ncm are 0.
