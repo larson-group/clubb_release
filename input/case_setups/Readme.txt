@@ -5,7 +5,9 @@ INPUT/CASE_SETUPS DIRECTORY OVERVIEW
 
 The <CASE NAME>_model.in files contain the following namelists:
 
+--------------------------------------------------------------------------------
 1. &model_setting:
+--------------------------------------------------------------------------------
 
   Name        | Data type  
 ------------------------------------------
@@ -79,7 +81,7 @@ psfc | real, default precision
 SE | real, default precision
   Fixed surface sensible heat flux  [K m/s].
 
-LE ! real, default precision
+LE | real, default precision
   Fixed surface latent heat flux [kg/kg m/s].
 
 fcor | real, default precision
@@ -170,13 +172,126 @@ iiedsclr_thl | integer
 iiedsclr_CO2 | integer
   Location in the edsclr arrays to place a scalar for CO2.
 
+--------------------------------------------------------------------------------
 2. &microphys_setting:
+--------------------------------------------------------------------------------
 
   Name        | Data type  
 ------------------------------------------
-TODO
+micro_scheme | character
+  The microphysics scheme to use.  Either khairoutdinov_kogan, coamps,
+  morrison, or none
 
+l_cloud_sed | logical
+  Cloud water sedimentation (K&K or no microphysics)
+
+l_ice_micro | logical
+  Compute ice (COAMPS / Morrison)
+
+l_graupel | logical
+  Compute graupel (COAMPS / Morrison)
+
+l_hail | logical
+  See module_mp_graupel for a description (Morrison)
+
+l_seifert_beheng | logical
+  Use Seifert and Beheng (2001) warm drizzle (Morrison)
+
+l_predictnc | logical
+  Predict cloud droplet number conc (Morrison)
+
+l_specify_aerosol | logical
+  Specify aerosol (Morrison)
+
+l_subgrid_w | logical
+  Use subgrid-scale w for cloud droplet activation (Morrison)
+
+l_arctic_nucl | logical
+  Use MPACE observations (Morrison)
+
+l_cloud_edge_activation | logical
+  Activate on cloud edges (Morrison)
+
+l_fix_pgam | logical
+  Fix pgam (Morrison)
+
+l_latin_hypercube_sampling | logical
+  Use latin sypercube sampling (K&K).
+
+LH_microphys_calls | integer
+  Number of latin hypercube samples to call the microphysics with (K&K).
+
+LH_sequence_length | integer
+  Number of timesteps before the latin hypercube seq. repeats (K&K).
+
+l_local_kk | logical
+  Use the local formulas for K&K, rather than the analytic formulas.
+
+microphys_start_time | real, minimum 12 digits of precision
+  Model time to start calling the microphysics scheme [s]
+
+Ncm_initial 
+  Initial value for Ncm in cc/m^3 (K&K, l_cloud_sed, Morrison)
+
+rrp2_on_rrainm2_cloud | real, default precision
+rrp2_on_rrainm2_below | real, default precision
+  Variance of rain water mixing ratio divided by the mean squared (K&K).
+
+Nrp2_on_Nrm2_cloud | real, default precision
+Nrp2_on_Nrm2_below | real, default precision
+  Variance of rain water num. conc. divided by the mean squared (K&K).
+
+Ncp2_on_Ncm2_cloud | real, default precision
+Ncp2_on_Ncm2_below | real, default precision
+  Variance of cloud water num. conc. divided by the mean squared (K&K).
+
+corr_rrNr_LL_cloud | real, default precision
+corr_rrNr_LL_below | real, default precision
+  Correlation between rain water mixing ratio and number conc. (K&K)
+
+corr_srr_NL_cloud | real, default precision
+corr_srr_NL_below | real, default precision
+  Correlation between rain water mixing ratio and 's' in Mellor (K&K).
+
+corr_sNr_NL_cloud | real, default precision
+corr_sNr_NL_below | real, default precision
+  Correlation between rain water num. conc. ratio and 's' in Mellor (K&K).
+
+corr_sNc_NL_cloud | real, default precision
+corr_sNc_NL_below | real, default precision
+  Correlation between cloud droplet number conc. and 's' in Mellor (K&K).
+
+C_evap | real, default precision
+  Khairoutdinov and Kogan (2000) ratio of drizzle drop mean geometric radius to
+  mean volume radius (K&K)
+
+r_0 | real, default precision
+  Assumed radius of all new drops (K&K) [m].
+
+ccnconst | real, default precision
+  Parameter for powerlaw CCN (Morrison) [#/cc].
+
+ccnexpnt | real, default precision
+  Exponent for powerlaw CCN (Morrison).
+
+aer_rm1 | real, default precision 
+aer_rm2 | real, default precision
+  Mean geometric radius (Morrison) [μ].
+
+aer_n1 | real, default precision
+aer_n2 | real, default precision
+  Aerosol concentration (Morrison) [#/cc].
+
+aer_sig1 | real, default precision
+aer_sig2 | real, default precision
+  Standard deviation of size distribution (Morrison) [-]
+
+pgam_fixed | real, default precision
+  Value for fixed pgam (Morrison).
+
+--------------------------------------------------------------------------------
 3. &radiation_setting:
+--------------------------------------------------------------------------------
 
   Name        | Data type  
 ------------------------------------------
@@ -227,7 +342,9 @@ amu0 | double precision
 eff_drop_radius | real, default precision
   Effective droplet radius  [m].
 
+--------------------------------------------------------------------------------
 4. &stats_setting
+--------------------------------------------------------------------------------
 
   Name        | Data type  
 ------------------------------------------
@@ -248,6 +365,7 @@ stats_fmt | character
   Either "grads" or "netcdf".
 
 Other files in the case_setups directory:
+====================================
 
 <Case Name>_sounding.in
   Sounding information for initial CLUBB fields.
