@@ -535,7 +535,7 @@ module output_netcdf
         l_error = .true.
       endif
 
-      stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%indx, "title",  & 
+      stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%indx, "long_name",  & 
                 trim( ncf%var(i)%description ) )
       if ( stat(i) /= NF90_NOERR ) then
         write(fstderr,*) "Error in description", & 
