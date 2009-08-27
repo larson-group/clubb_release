@@ -5,7 +5,7 @@
     'name' => 'cobra',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'COBRA Hour 5',
+    'headerText' => 'COBRA Minutes 241-300',
     'startTime' => 241,  # [minutes]
     'endTime' => 300,    # [minutes]
     'startHeight' => 0.0,  # [m]

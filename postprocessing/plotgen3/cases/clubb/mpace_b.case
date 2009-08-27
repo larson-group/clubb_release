@@ -5,7 +5,7 @@
     'name' => 'mpace_b',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'MPACE B Hours 10-12',
+    'headerText' => 'MPACE B Minutes 541-720',
     'startTime' => 541.0,  # [minutes]
     'endTime' => 720.0,    # [minutes]
     'startHeight' => 0.0,  # [m]

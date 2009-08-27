@@ -5,7 +5,7 @@
     'name' => 'arm',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'Arm Hour 9',
+    'headerText' => 'Arm Hour Minutes 481-541',
     'startTime' => 481.0,  # [minutes]
     'endTime' => 541.0,    # [minutes]
     'startHeight' => 0.0,  # [m]

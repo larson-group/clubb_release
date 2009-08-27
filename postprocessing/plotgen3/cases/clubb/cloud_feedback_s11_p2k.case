@@ -5,7 +5,7 @@
     'name' => 'cloud_feedback_s11_p2k',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'Cloud Feedback S11 P2K',
+    'headerText' => 'Cloud Feedback S11 P2K Minutes 41760-43200',
     'startTime' => 41760,  # [minutes]
     'endTime' => 43200,    # [minutes]
     'startHeight' => 0.0,  # [m]

@@ -5,7 +5,7 @@
     'name' => 'clex9_nov02',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'Clex 9 Nov. 02 Hour 1.5-2.5 (t=90-150 min)',
+    'headerText' => 'Clex 9 Nov. 02 Minutes 91-150',
     'startTime' => 91.0,  # [minutes]
     'endTime' => 150.0,    # [minutes]
     'startHeight' => 3072.0,  # [m]

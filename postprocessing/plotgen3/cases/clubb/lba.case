@@ -5,7 +5,7 @@
     'name' => 'lba',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'LBA Hour 6',
+    'headerText' => 'LBA Minutes 301-360',
     'startTime' => 301,  # [minutes]
     'endTime' => 360,    # [minutes]
     'startHeight' => 0.0,  # [m]

@@ -5,7 +5,7 @@
     'name' => 'bomex',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'Bomex Hours 4-6',
+    'headerText' => 'Bomex Minutes 181-360',
     'startTime' => 181.0,  # [minutes]
     'endTime' => 360.0,    # [minutes]
     'startHeight' => 0.0,  # [m]

@@ -5,7 +5,7 @@
     'name' => 'gabls2',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'Gabls 2 Hour 36',
+    'headerText' => 'Gabls 2 Minutes 2101-2160',
     'startTime' => 2101.0,  # [minutes]
     'endTime' => 2160.0,    # [minutes]
     'startHeight' => 0.0,  # [m]

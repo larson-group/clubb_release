@@ -5,7 +5,7 @@
     'name' => 'gabls3_night',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'GABLS 3 Night Hours 7-8',
+    'headerText' => 'GABLS 3 Night 421-480',
     'startTime' => 421.0,  # [minutes]
     'endTime' => 480.0,    # [minutes]
     'startHeight' => 0.0,  # [m]

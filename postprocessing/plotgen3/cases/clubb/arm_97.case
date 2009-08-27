@@ -5,7 +5,7 @@
     'name' => 'arm_97',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'ARM 97 Hours 72-93',
+    'headerText' => 'ARM 97 Minutes 4321-5580',
     'startTime' => 4321.0,  # [minutes]
     'endTime' => 5580.0,    # [minutes]
     'startHeight' => 0.0,  # [m]

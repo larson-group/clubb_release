@@ -5,7 +5,7 @@
     'name' => 'atex',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'ATEX Hour 8',
+    'headerText' => 'ATEX Minutes 421-480',
     'startTime' => 421.0,  # [minutes]
     'endTime' => 480.0,    # [minutes]
     'startHeight' => 0.0,  # [m]

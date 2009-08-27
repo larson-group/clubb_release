@@ -5,7 +5,7 @@
     'name' => 'wangara',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'Wangara Hour 4 ',
+    'headerText' => 'Wangara Minutes 181-240',
     'startTime' => 181.0,  # [minutes]
     'endTime' => 240.0,    # [minutes]
     'startHeight' => 0.0,  # [m]

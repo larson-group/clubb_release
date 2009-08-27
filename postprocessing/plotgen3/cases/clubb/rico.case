@@ -5,7 +5,7 @@
     'name' => 'rico',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'RICO Hour 22-24 ',
+    'headerText' => 'RICO Minutes 1261-1440',
     'startTime' => 1261.0,  # [minutes]
     'endTime' => 1440.0,    # [minutes]
     'startHeight' => 0.0,  # [m]

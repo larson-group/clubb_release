@@ -5,8 +5,8 @@
     'name' => 'mpace_a',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => ' MPACE A Hours 70-72',
-    'startTime' => 4140.0,  # [minutes]
+    'headerText' => ' MPACE A Minutes 4141-4320',
+    'startTime' => 4141.0,  # [minutes]
     'endTime' => 4320.0,    # [minutes]
     'startHeight' => 0.0,  # [m]
     'endHeight' => 10000.0, # [m]

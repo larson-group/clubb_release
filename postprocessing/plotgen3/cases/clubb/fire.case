@@ -5,7 +5,7 @@
     'name' => 'fire',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'Fire Hour 2',
+    'headerText' => 'Fire Minutes 61-120',
     'startTime' => 61.0,  # [minutes]
     'endTime' => 120.0,    # [minutes]
     'startHeight' => 0.0,  # [m]

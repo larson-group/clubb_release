@@ -5,7 +5,7 @@
     'name' => 'nov11_altocu',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'November 11 Altocumulus Hour 2',
+    'headerText' => 'November 11 Altocumulus Minutes 61-120',
     'startTime' => 61.0,  # [minutes]
     'endTime' => 120.0,    # [minutes]
     'startHeight' => 4150.0,  # [m]

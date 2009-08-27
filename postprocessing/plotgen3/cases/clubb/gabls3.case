@@ -5,8 +5,8 @@
     'name' => 'gabls3',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'GABLS 3 Hours 19-20',
-    'startTime' => 1080,  # [minutes]
+    'headerText' => 'GABLS 3 Minutes 1080-1200',
+    'startTime' => 1081,  # [minutes]
     'endTime' => 1200,    # [minutes]
     'startHeight' => 0.0,  # [m]
     'endHeight' => 4970.0, # [m]
