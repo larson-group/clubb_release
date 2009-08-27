@@ -412,9 +412,9 @@ _Numerical Recipes In Fortran 90_ (amoeba.f90).
 
 Do steps 1, 2, & 3 as outlined in the standalone run.
 
-4. Edit input/tuner/error_<CASE NAME>.in or select an existing one. Note that there 
-   are two tuning subroutines, specified by tune_type in the error_<CASE NAME>.in 
-   /stats/ namelist.  
+4. Edit input_misc/tuner/error_<CASE NAME>.in or select an existing one. Note that
+   there are two tuning subroutines, specified by tune_type in the 
+   error_<CASE NAME>.in /stats/ namelist.  
    If tune_type = 0, then the amoeba subroutine, which implements the downhill 
    simplex algorithm, will be used.  If runtype is any other value, then amebsa, 
    a variant of amoeba which uses simulated annealing instead, is used.  A complete 

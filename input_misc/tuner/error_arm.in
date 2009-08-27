@@ -5,7 +5,7 @@
 ! l_results_stdout print all results of tuning to the terminal if true
 ! l_results_file will generate a new error.in based on the new constants if true
 ! anneal_temp and anneal_iter are only used in amebsa runs;  they determine
-!  the starting temperature for the algoritm, and number of times the
+!  the starting temperature for the algorithm, and number of times the
 !  subroutine is called, respectively.
 ! tune_type is either 0 for amoeba(downhill simplex method with random restart)
 !   or any other integer for amebsa(downhill simplex with simulated annealing)
