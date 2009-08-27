@@ -23,7 +23,7 @@ module stat_file_module
      real(kind=stat_rknd), dimension(:), pointer :: ptr 
 
      character(len = 30) :: name        ! Variable name
-     character(len = 50) :: description ! Variable description
+     character(len = 100) :: description ! Variable description
      character(len = 20) :: units       ! Variable units
 
      integer :: indx ! NetCDF module Id for var / GrADS index
