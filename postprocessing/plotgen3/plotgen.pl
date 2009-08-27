@@ -1006,7 +1006,7 @@ sub main::HELP_MESSAGE()
     print("  -l\tPlot LES data for comparison.\n");    
     print("  -b\tPlot HOC Best Ever data for comparison.\n");    
     print("  -d\tPlot HOC 12/17/2005 data for comparison.\n");    
-    print("  -a\tSame as -lbd. Plots LES, Best Ever, and December data for comparison.\n");
+    print("  -a\tSame as -lbd. Plots LES, Best Ever, and 12/17/2005 data for comparison.\n");
     print("  -n\tRuns in nightly mode.\n");
     print("  -q\tOutputs high quality images (does not auto scale).\n");
     print("  -e\tDoes not delete EPS images after conversion.\n");
