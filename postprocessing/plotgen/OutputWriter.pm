@@ -148,13 +148,13 @@ sub writeSamSubHeader()
     </TR>
     <TR>
         <TD ALIGN="CENTER">upwp</TD>
-        <TD ALIGN="CENTER">upwp + uwsb</TD>
-        <TD ALIGN="CENTER">uw</TD>
+        <TD ALIGN="CENTER">uw + upwp + uwsb</TD>
+        <TD ALIGN="CENTER">uw + uwsb</TD>
     </TR>
     <TR>
         <TD ALIGN="CENTER">vpwp</TD>
-        <TD ALIGN="CENTER">vpwp + vwsb</TD>
-        <TD ALIGN="CENTER">vw</TD>
+        <TD ALIGN="CENTER">vw + vpwp + vwsb</TD>
+        <TD ALIGN="CENTER">vw + vwsb</TD>
     </TR>
     <TR>
         <TD ALIGN="CENTER">up2</TD>

@@ -113,16 +113,16 @@
        {'plotTitle' => 'Covariance of u & w', 'axisLabel' => 'upwp / uw [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'arm_97_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'upwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'UWSB + UPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'UWSB + UPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'UWSB + UPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'UW + UWSB + UPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'UW + UWSB + UPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'UW + UWSB + UPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of v & w', 'axisLabel' => 'vpwp / vw [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'arm_97_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vpwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'VPWP + VWSB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'VPWP + VWSB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'VPWP + VWSB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'VW + VPWP + VWSB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'VW + VPWP + VWSB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'VW + VPWP + VWSB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of u wind', 'axisLabel' => 'up2 / u2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
