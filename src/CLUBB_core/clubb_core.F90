@@ -23,7 +23,7 @@ module clubb_core
 
   !-----------------------------------------------------------------------
   subroutine advance_clubb_core & 
-             ( l_implemented, dt, fcor, & 
+             ( l_implemented, dt, fcor, sfc_elevation, & 
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & 
                sclrm_forcing, edsclrm_forcing, wm_zm, wm_zt, &
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
@@ -213,32 +213,33 @@ module clubb_core
     ! dt for time dependent calculations.  The old dt is noted in
     ! each section of the code -dschanen 20 April 2006
     real(kind=time_precision), intent(in) ::  & 
-      dt            ! Current timestep size    [s]
+      dt                ! Current timestep duration    [s]
 
     real, intent(in) ::  & 
-      fcor          ! Coriolis forcing         [s^-1]
+      fcor,  &          ! Coriolis forcing             [s^-1]
+      sfc_elevation     ! Elevation of ground level    [m AMSL]
 
     real, intent(in), dimension(gr%nnzp) ::  & 
-      thlm_forcing,   & ! theta_l forcing.        [K/s]
-      rtm_forcing,    & ! r_t forcing.            [(kg/kg)/s]
-      um_forcing,     & ! u wind forcing          [m/s/s]
-      vm_forcing,     & ! v wind forcing          [m/s/s]
-      wm_zm,          & ! wm on moment. grid.     [m/s]
-      wm_zt,          & ! wm on thermo. grid.     [m/s]
-      p_in_Pa,        & ! Pressure.               [Pa] 
-      rho_zm,         & ! Density on moment. grid [kg/m^3]
-      rho,            & ! Density on thermo. grid [kg/m^3] 
-      exner             ! Exner function.         [-]
+      thlm_forcing,   & ! theta_l forcing (thermodynamic levels)    [K/s]
+      rtm_forcing,    & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
+      um_forcing,     & ! u wind forcing (thermodynamic levels)     [m/s/s]
+      vm_forcing,     & ! v wind forcing (thermodynamic levels)     [m/s/s]
+      wm_zm,          & ! w mean wind component on momentum levels  [m/s]
+      wm_zt,          & ! w mean wind component on thermo. levels   [m/s]
+      p_in_Pa,        & ! Air pressure (thermodynamic levels)       [Pa]
+      rho_zm,         & ! Air density on momentum levels            [kg/m^3]
+      rho,            & ! Air density on thermodynamic levels       [kg/m^3]
+      exner             ! Exner function (thermodynamic levels)     [-]
 
     real, intent(in) ::  & 
-      wpthlp_sfc,   & ! w' theta_l' at surface.   [(m K)/s]
-      wprtp_sfc,    & ! w' r_t' at surface.       [(kg m)/( kg s)]
-      upwp_sfc,     & ! u'w' at surface.          [m^2/s^2]
-      vpwp_sfc        ! v'w' at surface.          [m^2/s^2]
+      wpthlp_sfc,   & ! w' theta_l' at surface   [(m K)/s]
+      wprtp_sfc,    & ! w' r_t' at surface       [(kg m)/( kg s)]
+      upwp_sfc,     & ! u'w' at surface          [m^2/s^2]
+      vpwp_sfc        ! v'w' at surface          [m^2/s^2]
 
     ! Passive scalar variables
     real, intent(in), dimension(gr%nnzp,sclr_dim) :: & 
-      sclrm_forcing    ! Passive scalar forcing.        [{units vary}/s]
+      sclrm_forcing    ! Passive scalar forcing         [{units vary}/s]
 
     real, intent(in),  dimension(sclr_dim) ::  & 
       wpsclrp_sfc      ! Scalar flux at surface         [{units vary} m/s]
@@ -396,7 +397,7 @@ module clubb_core
 
 !      Surface effects should not be included with any case where the lowest
 !      level is not the ground level.  Brian Griffin.  December 22, 2005.
-    IF ( gr%zm(1) == 0.0 ) THEN
+    IF ( gr%zm(1) == sfc_elevation ) THEN
       call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),   & ! intent(in)
                     wpsclrp(1,1:sclr_dim),                   & ! intent(in)
                     wp2(1), up2(1), vp2(1),                  & ! intent(out)
@@ -741,10 +742,11 @@ module clubb_core
     !----------------------------------------------------------------
 
     call advance_wp2_wp3 &
-         ( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp,  & ! intent(in)
-           um, vm, upwp, vpwp, up2, vp2, Kh_zm, Kh_zt,      & ! intent(in)
-           tau_zm, tau_zt, Skw_zm, Skw_zt, pdf_params%a,    & ! intent(in)
-           wp2_zt, wp2, wp3, err_code )                       ! intent(inout)
+         ( dt, sfc_elevation, sigma_sqd_w, wm_zm,      & ! intent(in)
+           wm_zt, wpthvp, wp2thvp, um, vm, upwp, vpwp, & ! intent(in)
+           up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt,     & ! intent(in)
+           Skw_zm, Skw_zt, wp2_zt, pdf_params%a,       & ! intent(in)
+           wp2, wp3, err_code                          ) ! intent(inout)
 
     ! Wrapped LAPACK procedures may report errors, and if so, exit
     ! gracefully.

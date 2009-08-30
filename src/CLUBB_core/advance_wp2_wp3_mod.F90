@@ -30,10 +30,11 @@ module advance_wp2_wp3_module
 contains
 
   !=============================================================================
-  subroutine advance_wp2_wp3( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp,  & 
-                              um, vm, upwp, vpwp, up2, vp2, Kh_zm, Kh_zt, & 
-                              tau_zm, tau_zt, Skw_zm, Skw_zt, a, & 
-                              wp2_zt, wp2, wp3, err_code )
+  subroutine advance_wp2_wp3( dt, sfc_elevation, sigma_sqd_w, wm_zm,      &
+                              wm_zt, wpthvp, wp2thvp, um, vm, upwp, vpwp, &
+                              up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt,     &
+                              Skw_zm, Skw_zt, wp2_zt, a,                  &
+                              wp2, wp3, err_code                          )
 
     ! Description:
     ! Advance w'^2 and w'^3 one timestep.
@@ -86,6 +87,9 @@ contains
     ! Input Variables
     real(kind=time_precision), intent(in) ::  & 
       dt             ! Model timestep                           [s]
+
+    real, intent(in) ::  &
+      sfc_elevation  ! Elevation of ground level                [m AMSL]
 
     real, intent(in), dimension(gr%nnzp) ::  & 
       sigma_sqd_w, & ! sigma_sqd_w on momentum levels           [-]
@@ -278,11 +282,11 @@ contains
     endif
 
     ! Solve semi-implicitly
-    call wp23_solve( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp, & ! Intent(in)
-                     um, vm, upwp, vpwp, up2, vp2, Kw1, &              ! Intent(in)
-                     Kw8, Skw_zt, tau_zm, tauw3t, C1_Skw_fnc, &        ! Intent(in)
-                     C11_Skw_fnc, wp3_zm, nsub, nsup, &                ! Intent(in)
-                     wp2, wp3, err_code )                              ! Intent(inout)
+    call wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, &  ! Intent(in)
+                     wpthvp, wp2thvp, um, vm, upwp, vpwp, up2, vp2, & ! Intent(in)
+                     Kw1, Kw8, Skw_zt, tau_zm, tauw3t, C1_Skw_fnc, &  ! Intent(in)
+                     C11_Skw_fnc, wp3_zm, nsub, nsup, &               ! Intent(in)
+                     wp2, wp3, err_code )                             ! Intent(inout)
 
 !       Error output
 !       Joshua Fasching Feb 2008
@@ -294,6 +298,7 @@ contains
       write(fstderr,*) "Intent(in)"
 
       write(fstderr,*) "dt = ", dt
+      write(fstderr,*) "sfc_elevation = ", sfc_elevation
       write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
       write(fstderr,*) "wm_zm = ", wm_zm
       write(fstderr,*) "wm_zt = ", wm_zt
@@ -326,9 +331,9 @@ contains
   end subroutine advance_wp2_wp3
 
   !=============================================================================
-  subroutine wp23_solve( dt, sigma_sqd_w, wm_zm, wm_zt, wpthvp, wp2thvp, & 
-                         um, vm, upwp, vpwp, up2, vp2, Kw1, & 
-                         Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, & 
+  subroutine wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, &
+                         wpthvp, wp2thvp, um, vm, upwp, vpwp, up2, vp2, &
+                         Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                          C11_Skw_fnc, wp3_zm, nsub, nsup, &
                          wp2, wp3, err_code )
 
@@ -455,6 +460,9 @@ contains
     ! Input Variables
     real(kind=time_precision), intent(in) ::  & 
       dt              ! Timestep                                  [s]
+
+    real, intent(in) ::  &
+      sfc_elevation   ! Elevation of ground level                 [m AMSL]
 
     real, intent(in), dimension(gr%nnzp) ::  & 
       sigma_sqd_w,  & ! sigma_sqd_w on momentum levels            [-]
@@ -773,7 +781,7 @@ contains
     wp2_zt = max( zm2zt( wp2 ), wtol_sqd )   ! Positive definite quantity
 
     ! Clip w'^3 by limiting skewness.
-    call clip_skewness( dt, wp2_zt, wp3 )
+    call clip_skewness( dt, sfc_elevation, wp2_zt, wp3 )
 
 
     if (l_stats_samp) then

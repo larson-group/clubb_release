@@ -625,7 +625,7 @@ module clip_explicit
   end subroutine clip_variance
 
   !=============================================================================
-  subroutine clip_skewness( dt, wp2_zt, wp3 )
+  subroutine clip_skewness( dt, sfc_elevation, wp2_zt, wp3 )
 
     ! Description:
     ! Clipping the value of w'^3 based on the skewness of w, Sk_w.
@@ -638,11 +638,11 @@ module clip_explicit
     ! limit.  The values of the limits depend on whether the level altitude is
     ! within 100 meters of the surface.
     !
-    ! For altitudes within 100 meters of the surface:
+    ! For altitudes less than or equal to 100 meters above ground level (AGL):
     !
     ! -0.2*sqrt(2) <= Sk_w <= 0.2*sqrt(2);
     !
-    ! while for all other altitudes:
+    ! while for all altitudes greater than 100 meters AGL:
     !
     ! -4.5 <= Sk_w <= 4.5.
     !
@@ -690,6 +690,9 @@ module clip_explicit
     real(kind=time_precision), intent(in) :: & 
       dt               ! Model timestep; used here for STATS        [s]
 
+    real, intent(in) ::  &
+      sfc_elevation    ! Elevation of ground level                  [m AMSL]
+
     real, dimension(gr%nnzp), intent(in) :: &
       wp2_zt           ! w'^2 interpolated to thermodyamic levels   [m^2/s^2]
 
@@ -731,7 +734,7 @@ module clip_explicit
     wp2_zt_cubed(1:gr%nnzp) = wp2_zt(1:gr%nnzp)**3
 
     do k = 1, gr%nnzp, 1
-      if ( gr%zt(k) <= 100.0 ) then ! Clip for 100 m. above ground.
+      if ( gr%zt(k) - sfc_elevation <= 100.0 ) then ! Clip for 100 m. AGL.
 !       wp3_upper_lim(k) =  0.2 * sqrt_2 * wp2_zt(k)**(3.0/2.0)
 !       wp3_lower_lim(k) = -0.2 * sqrt_2 * wp2_zt(k)**(3.0/2.0)
         wp3_lim_sqd(k) = 0.08 * wp2_zt_cubed(k) ! Where 0.08 == (sqrt(2)*0.2)**2

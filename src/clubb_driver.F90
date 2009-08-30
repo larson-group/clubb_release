@@ -67,6 +67,11 @@ module clubb_driver
 
 !$omp threadprivate(rlat, rlon)
 
+  real, private ::  &
+    sfc_elevation  ! Elevation of ground level  [m AMSL]
+
+!$omp threadprivate(sfc_elevation)
+
   character(len=50), private ::  & 
     runtype ! String identifying the model case; e.g. bomex
 
@@ -307,7 +312,7 @@ module clubb_driver
     namelist /model_setting/  & 
       runtype, nzmax, grid_type, deltaz, zm_init, zm_top, & 
       zt_grid_fname, zm_grid_fname,  & 
-      day, month, year, rlat, rlon, & 
+      day, month, year, rlat, rlon, sfc_elevation, & 
       time_initial, time_final, time_spinup, & 
       dtmain, dtclosure, & 
       sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge, & 
@@ -343,6 +348,8 @@ module clubb_driver
 
     rlat = 0.
     rlon = 0.
+
+    sfc_elevation = 0.
 
     time_initial = 0.
     time_final   = 3600.
@@ -525,6 +532,8 @@ module clubb_driver
 
       call write_text( "rlat = ", rlat, l_write_to_file, iunit )
       call write_text( "rlon = ", rlon, l_write_to_file, iunit )
+
+      call write_text( "sfc_elevation = ", sfc_elevation, l_write_to_file, iunit )
 
       call write_text( "time_initial = ", real( time_initial ), l_write_to_file, iunit )
       call write_text( "time_final = ", real( time_final ), l_write_to_file, iunit )
@@ -831,7 +840,7 @@ module clubb_driver
       do i1=1, niterlong
         ! Call the parameterization one timestep
         call advance_clubb_core & 
-             ( .false., dt, fcor, &                                 ! Intent(in)
+             ( .false., dt, fcor, sfc_elevation, &                  ! Intent(in)
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
                sclrm_forcing, edsclrm_forcing, wm_zm, wm_zt, &      ! Intent(in)
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &         ! Intent(in)
