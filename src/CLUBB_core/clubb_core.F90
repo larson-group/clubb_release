@@ -846,7 +846,7 @@ module clubb_core
                l_uv_nudge, l_tke_aniso, saturation_formula, &  ! In
                l_implemented, grid_type, deltaz, zm_init, zm_top, &  ! In
                momentum_heights, thermodynamic_heights,  &  ! In
-               host_dx, host_dy, & ! In
+               host_dx, host_dy, sfc_elevation, & ! In
                err_code ) ! Out
     !
     !   Description:
@@ -891,6 +891,9 @@ module clubb_core
     !                      CLUBB determines what nzmax should be
     !                      given zm_init and zm_top when
     !                      running in standalone mode.
+
+    real, intent(in) ::  &
+      sfc_elevation  ! Elevation of ground level    [m AMSL]
 
     ! Flag to see if CLUBB is running on it's own,
     ! or if it's implemented as part of a host model.
@@ -986,10 +989,10 @@ module clubb_core
     end select
 
     ! Setup grid
-    call setup_grid( nzmax, l_implemented, grid_type,           & ! intent(in)
-                     deltaz, zm_init, zm_top, momentum_heights, & ! intent(in)
-                     thermodynamic_heights,                     & ! intent(in)
-                     begin_height, end_height )                   ! intent(in)
+    call setup_grid( nzmax, sfc_elevation, l_implemented,     & ! intent(in)
+                     grid_type, deltaz, zm_init, zm_top,      & ! intent(in)
+                     momentum_heights, thermodynamic_heights, & ! intent(in)
+                     begin_height, end_height                 ) ! intent(out)
 
     ! Setup flags
 

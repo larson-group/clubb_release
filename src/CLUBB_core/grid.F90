@@ -238,9 +238,10 @@ module grid_class
   contains
 
   !=============================================================================
-  subroutine setup_grid( nnzp, l_implemented, grid_type,  & 
-                         deltaz, zm_init, zm_top, momentum_heights,  & 
-                         thermodynamic_heights, begin_height, end_height )
+  subroutine setup_grid( nnzp, sfc_elevation, l_implemented,      &
+                         grid_type, deltaz, zm_init, zm_top,      &
+                         momentum_heights, thermodynamic_heights, &
+                         begin_height, end_height                 )
 
     ! Description:
     ! Grid Constructor
@@ -267,6 +268,9 @@ module grid_class
     ! Input Variables
     integer, intent(in) ::  & 
       nnzp     ! Number of vertical levels in grid      [#]
+
+    real, intent(in) ::  &
+      sfc_elevation  ! Elevation of ground level    [m AMSL]
 
     ! Flag to see if CLUBB is running on it's own,
     ! or if it's implemented as part of a host model.
@@ -425,11 +429,9 @@ module grid_class
 
         end if
 
-      endif
+      endif ! grid_type
 
-    end if
-
-
+    endif ! l_implemented
 
     !---------------------------------------------------
 
@@ -449,9 +451,20 @@ module grid_class
     ! interpolation from the momentum/thermodynamic grid
     call setup_grid_heights &
                ( l_implemented, grid_type,  & 
-               deltaz, zm_init,  &
-               momentum_heights(begin_height:end_height),  & 
-               thermodynamic_heights(begin_height:end_height) )
+                 deltaz, zm_init,  &
+                 momentum_heights(begin_height:end_height),  & 
+                 thermodynamic_heights(begin_height:end_height) )
+
+    if ( sfc_elevation > gr%zm(1) ) then
+       write(fstderr,*) "The altitude of the lowest momentum level, "        &
+                        // "gr%zm(1), must be at or above the altitude of "  &
+                        // "the surface, sfc_elevation.  The lowest model "  &
+                        // "momentum level cannot be below the surface."
+       write(fstderr,*) "Altitude of lowest momentum level =", gr%zm(1)
+       write(fstderr,*) "Altitude of the surface =", sfc_elevation
+       stop "Fatal error."
+    endif
+
     return
 
   end subroutine setup_grid
@@ -1067,6 +1080,8 @@ module grid_class
     ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
+    ! For all levels k < gr%nnzp:
+    !
     ! factor = ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ).
     !
     ! One of the important uses of this function is in situations where the
@@ -1128,6 +1143,24 @@ module grid_class
     ! gr%weights_zt2zm(t_below,mkm1), which can be read as "grid weight in a
     ! zt2zm interpolation of the thermodynamic level below momentum level (k-1)
     ! (on momentum level (k-1))".
+    !
+    !
+    ! Special condition for uppermost grid level, k = gr%nnzp:
+    !
+    ! The uppermost momentum grid level is above the uppermost thermodynamic
+    ! grid level.  Thus, a linear extension is used at this level.
+    !
+    ! For level k = gr%nnzp:
+    !
+    ! factor = ( zm(k) - zt(k-1) ) / ( zt(k) - zt(k-1) ).
+    !
+    ! Due to the fact that a linear extension is being used, the value of factor
+    ! will be greater than 1.  The weight of thermodynamic level k = gr%nnzp on
+    ! momentum level k = gr%nnzp equals the value of factor.  The weight of
+    ! thermodynamic level k = gr%nnzp-1 on momentum level k = gr%nnzp equals
+    ! 1 - factor, which is less than 0.  However, the sum of the two weights
+    ! equals 1.
+    !
     !
     ! Brian Griffin; September 12, 2008.
     !
@@ -1297,6 +1330,8 @@ module grid_class
     ! zm(k), zt(k), and zm(k-1), respectively.  The letter "t" is used for
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
+    ! For all levels k > 1:
+    !
     ! factor = ( zt(k) - zm(k-1) ) / ( zm(k) - zm(k-1) ).
     !
     ! One of the important uses of this function is in situations where the
@@ -1358,6 +1393,28 @@ module grid_class
     ! gr%weights_zm2zt(m_below,tk), which can be read as "grid weight in a zm2zt
     ! interpolation of the momentum level below thermodynamic level (k) (on
     ! thermodynamic level (k))".
+    !
+    !
+    ! Special condition for lowermost grid level, k = 1:
+    !
+    ! The lowermost thermodynamic grid level is below the lowermost momentum
+    ! grid level.  Thus, a linear extension is used at this level.  It should
+    ! be noted that the thermodynamic level k = 1 is considered to be below the
+    ! model lower boundary, which is defined to be at momentum level k = 1.
+    ! Thus, the values of most variables at thermodynamic level k = 1 are not
+    ! often needed or referenced.
+    !
+    ! For level k = 1:
+    !
+    ! factor = ( zt(k) - zm(k) ) / ( zm(k+1) - zm(k) ).
+    !
+    ! Due to the fact that a linear extension is being used, the value of factor
+    ! will be less than 0.  The weight of the upper momentum level, which is
+    ! momentum level k = 2, on thermodynamic level k = 1 equals the value of
+    ! factor.  The weight of the lower momentum level, which is momentum level
+    ! k = 1, on thermodynamic level k = 1 equals 1 - factor, which is greater
+    ! than 1.  However, the sum of the weights equals 1.
+    !
     !
     ! Brian Griffin; September 12, 2008.
     !

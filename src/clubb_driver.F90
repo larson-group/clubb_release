@@ -672,8 +672,8 @@ module clubb_driver
            l_soil_veg,                                  & ! Intent(in)
            l_uv_nudge, l_tke_aniso, saturation_formula, & ! Intent(in)
            .false., grid_type, deltaz, zm_init, zm_top, & ! Intent(in)
-           momentum_heights, thermodynamic_heights, &     ! Intent(in)
-           dummy_dx, dummy_dy, &                          ! Intent(in)
+           momentum_heights, thermodynamic_heights,     & ! Intent(in)
+           dummy_dx, dummy_dy, sfc_elevation,           & ! Intent(in)
            err_code )                                     ! Intent(out)
 
 
