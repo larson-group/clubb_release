@@ -3366,7 +3366,7 @@ module KK_microphys_module
     if ( argument <= 0.0d0 ) then
       call parab( -order-0.5, -argument, scaling, uaxx, vaxx, ierr )
       Dv_fnc = vaxx(1) / ( (1.0d0/pi_dp) * gamma( -order ) ) & 
-             - sin( pi_dp * ( -order ) ) * uaxx(1)
+             - sin( pi_dp * ( -order-0.5 ) ) * uaxx(1)
     else
       call parab( -order-0.5, argument, scaling, uaxx, vaxx, ierr )
       Dv_fnc = uaxx(1)
