@@ -23,7 +23,7 @@ module sponge_layer_damping
   end type sponge_damp_settings
 
   type sponge_damp_profile
-    real, allocatable, dimension(:) :: &
+    real, pointer, dimension(:) :: &
       tau_sponge_damp ! Damping factor
 
     integer :: &
@@ -80,7 +80,7 @@ module sponge_layer_damping
 
     integer k
 
-    if( allocated( damping_profile%tau_sponge_damp ) ) then
+    if( associated( damping_profile%tau_sponge_damp ) ) then
 
       xm_p = xm
 
