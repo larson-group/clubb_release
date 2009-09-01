@@ -392,6 +392,8 @@ module error
 
     use numerical_check, only: isnan2d ! Procedure(s)
 
+    use constants, only: fstderr ! Constant(s)
+
     implicit none
 
     ! External
@@ -580,7 +582,10 @@ module error
         ! Verify that the domain that we're tuning CLUBB over is fully defined in
         ! the LES data.  If not, some points will be NaN
         if ( isnan2d( les_zl(z_i(c_run):z_f(c_run)) ) ) then
-          stop "The tuning domain exceeds the size of the LES data, or the LES data is NaN"
+          write(fstderr,*) "The tuning domain exceeds the size of the LES data, "// &
+            "or the LES data is NaN"
+          write(fstderr,*) trim( les_v(i) )//" = ", les_zl(z_i(c_run):z_f(c_run))
+          stop "Fatal error"
         end if
 
         ! Read in CLUBB grads data for one variable, averaged
@@ -631,7 +636,8 @@ module error
 
       end do ! i=1..v_total
 
-      deallocate( clubb_zl, clubb2_zl, les_zl )
+      ! De-allocate the arrays for reading in the GrADS plot data
+      deallocate( clubb_zl, clubb2_zl, les_zl, clubb_grid_heights )
 
     end do     ! end of do c_run=1, c_total
 !----------------------------------------------------------------------
