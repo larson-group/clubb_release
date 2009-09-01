@@ -697,13 +697,13 @@ module clubb_driver
 
       call initialize_clubb &
            ( iunit, trim( forcings_file_path ), psfc, zm_init, & ! Intent(in)
-             thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,  & ! Intent(inout)
-             wm_zt, wm_zm, em, exner, &           ! Intent(inout)
-             tau_zt, tau_zm, thvm, p_in_Pa, &     ! Intent(inout)
-             rho, rho_zm, Lscale, rtm_ref, thlm_ref, & ! Intent(inout) 
-             Kh_zt, Kh_zm, um_ref, vm_ref, &      ! Intent(inout)
-             hydromet, Ncnm, &                    ! Intent(inout)
-             sclrm, edsclrm )                     ! Intent(out)
+             thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,    & ! Intent(inout)
+             wm_zt, wm_zm, em, exner,                          & ! Intent(inout)
+             tau_zt, tau_zm, thvm, p_in_Pa,                    & ! Intent(inout)
+             rho, rho_zm, Lscale, rtm_ref, thlm_ref,           & ! Intent(inout) 
+             Kh_zt, Kh_zm, um_ref, vm_ref,                     & ! Intent(inout)
+             hydromet, Ncnm,                                   & ! Intent(inout)
+             sclrm, edsclrm )                                    ! Intent(out)
 
     else  ! restart
 
@@ -714,13 +714,13 @@ module clubb_driver
       ! the initial sounding anyway.
       call initialize_clubb &
            ( iunit, trim( forcings_file_path ), psfc, zm_init, & ! Intent(in)
-             thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,  & ! Intent(inout)
-             wm_zt, wm_zm, em, exner, &           ! Intent(inout)
-             tau_zt, tau_zm, thvm, p_in_Pa, &     ! Intent(inout)
-             rho, rho_zm, Lscale, rtm_ref, thlm_ref, & ! Intent(inout) 
-             Kh_zt, Kh_zm, um_ref, vm_ref, &      ! Intent(inout)
-             hydromet, Ncnm, &                    ! Intent(inout)
-             sclrm, edsclrm )                     ! Intent(out)
+             thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,    & ! Intent(inout)
+             wm_zt, wm_zm, em, exner,                          & ! Intent(inout)
+             tau_zt, tau_zm, thvm, p_in_Pa,                    & ! Intent(inout)
+             rho, rho_zm, Lscale, rtm_ref, thlm_ref,           & ! Intent(inout) 
+             Kh_zt, Kh_zm, um_ref, vm_ref,                     & ! Intent(inout)
+             hydromet, Ncnm,                                   & ! Intent(inout)
+             sclrm, edsclrm )                                    ! Intent(out)
 
 
       time_current = time_restart
@@ -860,11 +860,11 @@ module clubb_driver
 
         ! Advance a microphysics scheme
         call advance_clubb_microphys &
-             ( i, dt, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! In
-               rtm, rcm, wm_zt, wm_zm, & ! In
-               Kh_zm, wp2_zt, pdf_params, & ! In
-               Ncnm, hydromet, & ! In/Out
-               rtm_mc, thlm_mc, err_code ) ! Out
+             ( i, dt, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! Intent(in)
+               rtm, rcm, wm_zt, wm_zm,                               & ! Intent(in)
+               Kh_zm, wp2_zt, pdf_params,                            & ! Intent(in)
+               Ncnm, hydromet,                                       & ! Intent(inout)
+               rtm_mc, thlm_mc, err_code )                             ! Intent(out)
 
          ! Advance a radiation scheme
          ! With this call ordering, snow and ice water mixing ratio will be
@@ -873,10 +873,10 @@ module clubb_driver
          ! radiation before the call the microphysics to change this.
          ! -dschanen 17 Aug 2009
          call advance_clubb_radiation &
-              ( rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! In
-                rtm, rcm, hydromet, & ! In
-                radht, Frad, Frad_SW_up, Frad_LW_up, & ! Out
-                Frad_SW_down, Frad_LW_down ) ! Out
+              ( rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! Intent(in)
+                rtm, rcm, hydromet,                       & ! Intent(in)
+                radht, Frad, Frad_SW_up, Frad_LW_up,      & ! Intent(out)
+                Frad_SW_down, Frad_LW_down )                ! Intent(out)
 
         call stats_end_timestep( )
 
@@ -1131,8 +1131,8 @@ module clubb_driver
 
     else
 
-      call convert_snd2extend_atm( n_snd_var, psfc, zm_init, sclr_dim, &      ! Intent(in)
-                                sounding_retVars, sclr_sounding_retVars )  ! Intent(in)
+      call convert_snd2extend_atm( n_snd_var, psfc, zm_init, sclr_dim,    & ! Intent(in)
+                                sounding_retVars, sclr_sounding_retVars )   ! Intent(in)
     end if
 
 
@@ -2839,18 +2839,18 @@ module clubb_driver
                                           extend_atmos_range_size,   & ! Intent(out)
                                           lin_int_buffer )             ! Intent(out)
 
-      call bugsrad_clubb( gr%zm, gr%nnzp, lin_int_buffer,                          & ! In
-                          extend_atmos_range_size,                                 & ! In 
-                          extend_atmos_bottom_level,                               & ! In
-                          extend_atmos_top_level,                                  & ! In
-                          rlat, rlon,                                              & ! In
-                          day, month, year, time_current,                          & ! In
-                          thlm, rcm, rtm, rsnowm, ricem,                           & ! In
-                          cloud_frac, p_in_Pa, zt2zm( p_in_Pa ),                   & ! In
-                          exner, rho_zm,                                           & ! In
-                          radht, Frad,                                             & ! Out
-                          Frad_SW_up, Frad_LW_up,                                  & ! Out
-                          Frad_SW_down, Frad_LW_down )                               ! Out
+      call bugsrad_clubb( gr%zm, gr%nnzp, lin_int_buffer,        & ! Intent(in)
+                          extend_atmos_range_size,               & ! Intent(in)
+                          extend_atmos_bottom_level,             & ! Intent(in)
+                          extend_atmos_top_level,                & ! Intent(in)
+                          rlat, rlon,                            & ! Intent(in)
+                          day, month, year, time_current,        & ! Intent(in)
+                          thlm, rcm, rtm, rsnowm, ricem,         & ! Intent(in)
+                          cloud_frac, p_in_Pa, zt2zm( p_in_Pa ), & ! Intent(in)
+                          exner, rho_zm,                         & ! Intent(in)
+                          radht, Frad,                           & ! Intent(out)
+                          Frad_SW_up, Frad_LW_up,                & ! Intent(out)
+                          Frad_SW_down, Frad_LW_down )             ! Intent(out)
 
       if ( clubb_at_least_debug_level( 2 ) ) then
 

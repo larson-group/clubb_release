@@ -349,13 +349,13 @@ module clubb_core
     if ( clubb_at_least_debug_level( 2 ) ) then
       call parameterization_check & 
            ( thlm_forcing, rtm_forcing, wm_zm, wm_zt, p_in_Pa, rho_zm, & ! intent(in)
-           rho, exner, wpthlp_sfc, wprtp_sfc,                 & ! intent(in)
-           upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,            & ! intent(in)
-           up2, vp2, rtm, wprtp, thlm,                        & ! intent(in)
-           wpthlp, wp2, wp3, sigma_sqd_w, rtp2, thlp2,        & ! intent(in)
-           rtpthlp, tau_zm, rcm, cloud_frac, "beginning of ", & ! intent(in)
-           wpsclrp_sfc, wpedsclrp_sfc,                        & ! intent(in)
-           sclrm, sclrm_forcing, edsclrm, edsclrm_forcing )     ! intent(in)
+           rho, exner, wpthlp_sfc, wprtp_sfc,                          & ! intent(in)
+           upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,                     & ! intent(in)
+           up2, vp2, rtm, wprtp, thlm,                                 & ! intent(in)
+           wpthlp, wp2, wp3, sigma_sqd_w, rtp2, thlp2,                 & ! intent(in)
+           rtpthlp, tau_zm, rcm, cloud_frac, "beginning of ",          & ! intent(in)
+           wpsclrp_sfc, wpedsclrp_sfc,                                 & ! intent(in)
+           sclrm, sclrm_forcing, edsclrm, edsclrm_forcing )              ! intent(in)
     end if
     !-----------------------------------------------------------------------
 
@@ -461,7 +461,7 @@ module clubb_core
                            sclrp2, sclrprtp, sclrpthlp  )   ! intent(out)
 
     ! Iterpolate variances to the zt grid (statistics and closure)
-    thlp2_zt   = max( zm2zt( thlp2 ), thltol**2 )  ! Positive def. quantity
+    thlp2_zt   = max( zm2zt( thlp2 ), thltol**2 ) ! Positive def. quantity
     rtp2_zt    = max( zm2zt( rtp2 ), rttol**2 )   ! Positive def. quantity
     rtpthlp_zt = zm2zt( rtpthlp )
 
@@ -483,10 +483,10 @@ module clubb_core
     upwp_cl_num    = 1 ! First instance of u'w' clipping.
     vpwp_cl_num    = 1 ! First instance of v'w' clipping.
 
-    call clip_covariances_denom( dt, rtp2, thlp2, up2, vp2, wp2, &
-                                 sclrp2, wprtp_cl_num, wpthlp_cl_num, &
-                                 wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, &
-                                 wprtp, wpthlp, upwp, vpwp, wpsclrp )
+    call clip_covariances_denom( dt, rtp2, thlp2, up2, vp2, wp2,           & ! intent(in)
+                                 sclrp2, wprtp_cl_num, wpthlp_cl_num,      & ! intent(in)
+                                 wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, & ! intent(in)
+                                 wprtp, wpthlp, upwp, vpwp, wpsclrp )        ! intent(inout)
 
 
     ! The right hand side of this conjunction is only for reducing cpu time,
@@ -765,10 +765,10 @@ module clubb_core
     upwp_cl_num    = 2 ! Second instance of u'w' clipping.
     vpwp_cl_num    = 2 ! Second instance of v'w' clipping.
 
-    call clip_covariances_denom( dt, rtp2, thlp2, up2, vp2, wp2, &
-                                 sclrp2, wprtp_cl_num, wpthlp_cl_num, &
-                                 wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, &
-                                 wprtp, wpthlp, upwp, vpwp, wpsclrp )
+    call clip_covariances_denom( dt, rtp2, thlp2, up2, vp2, wp2,           & ! intent(in)
+                                 sclrp2, wprtp_cl_num, wpthlp_cl_num,      & ! intent(in)
+                                 wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, & ! intent(in)
+                                 wprtp, wpthlp, upwp, vpwp, wpsclrp )        ! intent(inout)
 
 
     !----------------------------------------------------------------
