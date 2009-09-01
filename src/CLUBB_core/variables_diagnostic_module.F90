@@ -99,8 +99,8 @@ module variables_diagnostic_module
 !$omp threadprivate(Lscale, Lscale_up, Lscale_down)
 
   real, target, allocatable, dimension(:), public :: & 
-    em,   & ! em               [m^2/s^2]
-    tau_zt  ! Dissipation time [s]
+    em,   & ! Turbulent Kinetic Energy (TKE)  [m^2/s^2]
+    tau_zt  ! Dissipation time                [s]
 
 !$omp threadprivate(em, tau_zt)
 
