@@ -1,21 +1,13 @@
 ! $Id: dycoms2_rf01_stats_tune.in,v 1.1 2007-03-29 22:54:15 dschanen Exp $
 &statsnl
 
-lstats = t
-stats_fmt = 'grads'
-stats_tsamp = 60.0
-stats_tout  = 60.0
-
-fname_zt = 'dycoms2_rf01_zt',
 vars_zt = 
 'cloud_frac', 'rcm',
 ''
 
-fname_zm = 'dycoms2_rf01_zm',
 vars_zm = 
 ''
 
-fname_sfc = 'dycoms2_rf01_sfc',
 vars_sfc = 
 ''
 
