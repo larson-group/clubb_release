@@ -1,7 +1,8 @@
 ! Parameter file for subroutine tuner_init in there error module. 
 ! All parameters are used by amoeba or amebsa to "tune" CLUBB.
 
-! ftol is the degree of accuracy in "tuning" (i.e. the # of digits)
+! ftol is the degree of accuracy in "tuning" (i.e. the # of digits).
+!   Decreasing ftol results in a tighter criterion of convergence.
 ! l_results_stdout print all results of tuning to the terminal if true
 ! l_results_file will generate a new error.in based on the new constants if true
 ! anneal_temp and anneal_iter are only used in amebsa runs;  they determine
