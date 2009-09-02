@@ -84,6 +84,14 @@ if [ ! -e "$ERROR_IN" ] ; then
 	exit 1
 fi
 
+# The random seed file
+RAND_SEED=../input_misc/tuner/rand_seed.dat
+
+if [ ! -e "$RAND_SEED" ] ; then
+	echo $RAND_SEED " does not exist"
+	exit 1
+fi
+
 if [ $RUN_TYPE = 'single' ] ; then # Single Case.
 
    # The <CASE>_model.in file.
@@ -145,6 +153,9 @@ fi
 # Copy error_*.in file to error.in
 cat $ERROR_IN > 'error.in'
 
+# Copy random seed
+cp $RAND_SEED .
+
 #######################################################################
 #
 # State which case is being tuned
@@ -192,4 +203,4 @@ elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
 
 fi
 
-rm -f 'clubb.in'
+rm -f 'clubb.in' 'rand_seed.dat'
