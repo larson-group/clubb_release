@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 ###########################################################################
-# Plotgen v3.0
+# Plotgen v3.1
 #
 # Documentation is available here:
 # http://larson-group.com/twiki/bin/view.pl/Documentation/CarsonDoc/Plotgen3
@@ -42,7 +42,7 @@ my $matlabPipe;
 my $imageConversionLock;
 
 # Plotgen Version Number
-my $VERSION = 3.0;
+my $VERSION = 3.1;
 
 # Used to create a "random" output directory so multiple runs
 # don't overwrite each other.
