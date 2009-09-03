@@ -93,9 +93,9 @@ my $purple = "[ 0.50, 0., 0.50 ]";
 my $peach = "[ 1.00, 0.90, 0.40 ]";
 my $darkGreen = "[ 0.00, 0.40, 0.00 ]";
 # Arrays to cycle through when auto is set for lines
-my @lineStyles = ("--", "-", "-.");
-my @lineColors = ($orange, $lt_blue, $purple, $darkGreen, "green", "red", "blue", "cyan", $peach, $goldenRod, $grey, "yellow", "magenta");
-my @lineWidths = (6, 4, 3.5, 3, 2.5, 2, 1.5, 1);
+my @lineStyles = ("--", "-", "-.", "-");
+my @lineColors = ($orange, $lt_blue, $purple, "blue", $peach, $grey, $goldenRod, $darkGreen, "cyan", "yellow", "magenta", "green", "red");
+my @lineWidths = (6, 4, 3, 2);
 
 # Counters for automatic lines
 my $lineStyleCounter = 0;
@@ -373,7 +373,6 @@ sub convertEps()
     my $arraySizeEps = @epsFiles;
     my $arraySizeJpg = @jpgFiles;
 
-    # TODO: Make this logic simpler
     # This will keep calling convertEps() if the image conversion lock exists OR:
     #   If -e was not passed in:
     #       Until there are no more eps files left
@@ -391,11 +390,27 @@ sub convertEps()
         foreach my $eps (@epsFiles)
         {
             my $filename = basename($eps);
-            system("convert -density $DPI -quality $QUALITY -colorspace RGB -trim $eps $outputTemp/jpg/$filename.jpg");
-        
-            if($keepEps == 0)
+
+            if(! -e "$outputTemp/jpg/$filename.jpg")
             {
-                unlink($eps);
+                # First convert the image to png and trim all white space
+                system("convert -density $DPI -colorspace RGB -trim $eps $outputTemp/jpg/$filename.png");
+        
+                    # Then convert (and scale if not in high quality mode) to jpg
+                if($highQuality == 0)
+                {
+                    system("convert -geometry 324x312\\! -quality $QUALITY $outputTemp/jpg/$filename.png $outputTemp/jpg/$filename.jpg");
+                }
+                else
+                {
+                    system("convert -quality $QUALITY $outputTemp/jpg/$filename.png $outputTemp/jpg/$filename.jpg"); 
+                }
+        
+                unlink("$outputTemp/jpg/$filename.png");
+                if($keepEps == 0)
+                {
+                    unlink($eps);
+                }
             }
         }
        

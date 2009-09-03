@@ -112,14 +112,14 @@
        ]},
        {'plotTitle' => 'Covariance of u & w', 'axisLabel' => 'upwp [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/atex_coamps_sw.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wpup', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/LES_files/atex_coamps_sw.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wpup + wpup_sgs', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/atex_zm.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'upwp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/atex_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'upwp', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'atex_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'upwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of v & w', 'axisLabel' => 'vpwp [m^s/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/atex_coamps_sw.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wpvp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/LES_files/atex_coamps_sw.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wpvp + wpvp_sgs', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/atex_zm.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'vpwp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/atex_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'vpwp', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'atex_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vpwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}

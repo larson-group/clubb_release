@@ -84,12 +84,12 @@
        ]},
        {'plotTitle' => 'Covariance of u & w', 'axisLabel' => 'upwp [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/jun25_altocu_qc3_coamps_sw.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wpup', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => 'red'},
+          {'filename' => '/home/matlabuser/plotgen/LES_files/jun25_altocu_qc3_coamps_sw.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wpup + wpup_sgs', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => 'red'},
           {'filename' => 'jun25_altocu_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'upwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of v & w', 'axisLabel' => 'vpwp [m^s/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/jun25_altocu_qc3_coamps_sw.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wpvp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => 'red'},
+          {'filename' => '/home/matlabuser/plotgen/LES_files/jun25_altocu_qc3_coamps_sw.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wpvp + wpvp_sgs', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => 'red'},
           {'filename' => 'jun25_altocu_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vpwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of u wind', 'axisLabel' => 'up2 [m^s/s^2]', 'type' => 'profile', 'lines' =>

@@ -218,8 +218,11 @@ sub placeImage()
 
 	my($img) = shift;
 
+    my $imgWidth = 324;
+    my $imgHeight = 312;
+
 	print FILE <<"EOF";
-		<img width="328" height="312" align="BOTTOM" border="0" style="padding: 5px;" src="$img" alt="$img" />
+		<img width="$imgWidth" height="$imgHeight" align="BOTTOM" border="0" style="padding: 5px;" src="$img" alt="$img" />
 EOF
 	close(FILE);
 }
