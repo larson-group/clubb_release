@@ -24,7 +24,7 @@ fi
 
 INPUTFIELDS_IN='../input_misc/inputfields/'$RUN_CASE'_inputfields.in'
 MODEL_IN='../input/case_setups/'$RUN_CASE'_model.in'
-STATS_IN='../input/stats/nobudgets_stats.in'
+STATS_IN='../input/stats/all_stats.in'
 PARAMS_IN='../input/tunable_parameters.in'
 
 if [ ! -e "$INPUTFIELDS_IN" ] ; then

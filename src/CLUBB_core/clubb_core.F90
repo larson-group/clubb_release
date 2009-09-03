@@ -189,15 +189,20 @@ module clubb_core
       stats_accumulate ! Procedure
 
     use stats_type, only: & 
-      stat_update_var_pt ! Procedure(s)
+      stat_update_var_pt, & ! Procedure(s)
+      stat_update_var
 
     use stats_variables, only: &
-      ishear,     & ! Variables
-      ircp2,      &
-      iwp4,       &
-      irsat,      &
-      iwprtp_zt,  &
-      iwpthlp_zt
+      ishear,        & ! Variables
+      ircp2,         &
+      iwp4,          &
+      irsat,         &
+      irvm,          &
+      irel_humidity, &
+      iwprtp_zt,     &
+      iwpthlp_zt,    &
+      l_stats_samp,  &
+      zt
 
     implicit none
 
@@ -612,6 +617,15 @@ module clubb_core
            wp2sclrp, pdf_params, err_code )               ! intent(inout)
     end if
 
+    ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
+    ! This code won't work unless rtm >= 0 !!!
+    ! We do not clip rcm_in_layer because rcm_in_layer only influences
+    ! radiation, and we do not want to bother recomputing it.
+    ! Code is duplicated from below to ensure that relative humidity
+    ! is calculated properly.  3 Sep 2009
+    call clip_rcm(rtm, 'rtm < rcm after pdf_closure', & ! intent (in)
+                  rcm)                                  ! intent (inout)
+
     ! Compute variables cloud_cover and rcm_in_layer
     ! ldgrant July 2009
     call compute_cloud_cover &
@@ -697,6 +711,15 @@ module clubb_core
       rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) )
     end if
 
+
+    if ( l_stats_samp ) then
+      call stat_update_var( irvm, rtm - rcm, zt )
+
+      ! Output relative humidity (q/q∗ where q∗ is the saturation mixing ratio over liquid)
+      call stat_update_var( irel_humidity, (rtm - rcm) / rsat, zt)
+    end if
+
+
     !----------------------------------------------------------------
     ! Advance rtm/wprtp and thlm/wpthlp one time step
     !----------------------------------------------------------------
@@ -721,20 +744,8 @@ module clubb_core
     ! This code won't work unless rtm >= 0 !!!
     ! We do not clip rcm_in_layer because rcm_in_layer only influences
     ! radiation, and we do not want to bother recomputing it.  6 Aug 2009
-    do k = 1, gr%nnzp
-      if ( rtm(k) < rcm(k) ) then
-
-        if ( clubb_at_least_debug_level( 1 ) ) then
-          write(fstderr,*) 'rtm < rcm in advance_xm_wpxp at k=', k, '.', & 
-            '  Clipping rcm.'
-
-        end if ! clubb_at_least_debug_level(1)
-
-        rcm(k) = max( zero_threshold, rtm(k) - eps )
-
-      end if ! rtm(k) < rcm(k)
-
-    end do ! k=1..gr%nnzp
+    call clip_rcm(rtm, 'rtm < rcm in advance_xm_wpxp', & ! intent(in)
+                  rcm)                                   ! intent(inout)
 
 
     !----------------------------------------------------------------
@@ -1709,6 +1720,68 @@ module clubb_core
 
     return
   end subroutine compute_cloud_cover
+  !-----------------------------------------------------------------------
+
+  !-----------------------------------------------------------------------
+  subroutine clip_rcm &
+           ( rtm, message, & ! intent(in)
+             rcm )    ! intent(inout)
+    !
+    ! Description:  Subroutine to compute cloud cover (the amount of sky
+    ! covered by cloud) and rcm in layer (liquid water mixing ratio in
+    ! the portion of the grid box filled by cloud).
+    ! ldgrant July 2009 
+    !---------------------------------------------------------------------
+
+
+    use grid_class, only: gr ! Variable
+    
+    use error_code, only :  & 
+      clubb_at_least_debug_level ! Procedure(s)
+
+    use constants, only: & 
+      fstderr, & ! Variable(s)
+      zero_threshold
+
+    implicit none
+
+    ! External functions
+    intrinsic :: max
+
+    ! Input variables
+    real, dimension(gr%nnzp), intent(in) :: &
+      rtm           ! Cloud fraction             [-]
+
+    character(len= * ), intent(in) :: message  
+
+    real, dimension(gr%nnzp), intent(inout) :: &
+      rcm           ! Liquid water mixing ratio  [kg/kg]
+
+    integer :: k
+
+    ! ------------ Begin code ---------------
+
+    ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
+    ! This code won't work unless rtm >= 0 !!!
+    ! We do not clip rcm_in_layer because rcm_in_layer only influences
+    ! radiation, and we do not want to bother recomputing it.  6 Aug 2009
+    do k = 1, gr%nnzp
+      if ( rtm(k) < rcm(k) ) then
+
+        if ( clubb_at_least_debug_level( 1 ) ) then
+          write(fstderr,*) message, ' at k=', k, '.', & 
+            '  Clipping rcm.'
+
+        end if ! clubb_at_least_debug_level(1)
+
+        rcm(k) = max( zero_threshold, rtm(k) - epsilon(rtm(k)) )
+
+      end if ! rtm(k) < rcm(k)
+
+    end do ! k=1..gr%nnzp
+
+    return
+  end subroutine clip_rcm
   !-----------------------------------------------------------------------
 
 end module clubb_core

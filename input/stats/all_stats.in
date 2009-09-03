@@ -9,9 +9,9 @@
 &statsnl
 
 vars_zt = 
-'thlm', 'thvm', 'rtm', 'rcm', 'um', 'vm', 'um_ref','vm_ref','wm_zt', 'ug', 'vg',
+'thlm', 'thvm', 'rtm', 'rcm', 'rvm', 'um', 'vm', 'um_ref','vm_ref','wm_zt', 'ug', 'vg',
 'cloud_frac', 'cloud_cover', 'rcm_in_layer', 'p_in_Pa', 'exner', 'Lscale', 'T_in_K',
-'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp',
+'rel_humidity','wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp',
 'Lscale_up', 'Lscale_down', 'tau_zt', 'Kh_zt', 'wp2thvp', 'wp2rcp', 'wprtpthlp',
 'sigma_sqd_w_zt', 'rho', 'radht', 'radht_LW', 'radht_SW',
 'Ncm', 'Ncnm', 'Nim', 'snowslope', 'Nsnowm', 'sed_rcm', 'rsat',

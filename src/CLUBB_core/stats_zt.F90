@@ -29,7 +29,8 @@ module stats_zt
         iT_in_K, & 
         ithvm, & 
         irtm, & 
-        ircm, & 
+        ircm, &
+        irvm, & 
         ium, & 
         ivm, & 
         iwm_zt, & 
@@ -58,6 +59,7 @@ module stats_zt
         isigma_sqd_w_zt
 
     use stats_variables, only: & 
+        irel_humidity, &
         irho, & 
         iNcm, & 
         iNcnm, & 
@@ -342,6 +344,7 @@ module stats_zt
     ithvm         = 0
     irtm          = 0
     ircm          = 0
+    irvm          = 0
     ium           = 0
     ivm           = 0
     iwm_zt        = 0
@@ -369,6 +372,7 @@ module stats_zt
     iwprtpthlp    = 0
     isigma_sqd_w_zt = 0
     irho          = 0
+    irel_humidity = 0
     iNcm          = 0  ! Brian
     iNcnm         = 0
     iNim          = 0
@@ -662,6 +666,16 @@ module stats_zt
         call stat_assign( ircm, "rcm", & 
               "Cloud water mixing ratio [kg/kg]", "kg/kg", zt )
         k = k + 1
+      case ('rvm')
+        irvm = k
+        call stat_assign( irvm, "rvm", & 
+              "Vapor water mixing ratio [kg/kg]", "kg/kg", zt )
+        k = k + 1
+      case ('rel_humidity')
+        irel_humidity = k
+        call stat_assign( irel_humidity, "rel_humidity", & 
+              "Relative humidity [%]", "%", zt )
+        k = k + 1         
       case ('um')
         ium = k
         call stat_assign( ium, "um", & 
