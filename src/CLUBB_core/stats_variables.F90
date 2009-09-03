@@ -104,8 +104,9 @@ module stats_variables
      iAKm_rcm, & 
      iAKm_rcc
 
-!$omp   threadprivate(ithlm, ithvm, irtm, ircm, ircm_in_layer, ium, ivm, iwm_zt, iug)
-!$omp   threadprivate(ivg, icloud_frac, icloud_cover, ip_in_Pa, iexner, iLscale, iwp3, iwpthlp2)
+!$omp   threadprivate(ithlm, ithvm, irtm, ircm, ircm_in_layer, ium, ivm, ium_ref)
+!$omp   threadprivate(ivm_ref, iwm_zt, iug, ivg, icloud_frac, ircm_in_layer)
+!$omp   threadprivate(icloud_cover, ip_in_Pa, iexner, iLscale, iwp3, iwpthlp2)
 !$omp   threadprivate(iwp2thlp, iwprtp2, iwp2rtp, iLscale_up, iLscale_down, itau_zt)
 !$omp   threadprivate(iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, isigma_sqd_w_zt, irho)
 !$omp   threadprivate(iNcm, iNcnm, isnowslope)
@@ -138,6 +139,8 @@ module stats_variables
     ieff_rad_rain, &
     ieff_rad_graupel
 
+!$omp   threadprivate(ieff_rad_cloud, ieff_rad_ice, ieff_rad_snow) 
+!$omp   threadprivate(ieff_rad_rain, ieff_rad_graupel)
 
   integer, public :: & 
     irsnowm, & 
@@ -176,6 +179,12 @@ module stats_variables
     ithlm_tacl,    & ! thlm correction from turbulent advection (wpthlp) clipping
     ithlm_cl         ! thlm clipping term
 
+!$omp   threadprivate(irtm_bt, irtm_ma, irtm_ta, irtm_forcing, &
+!$omp     irtm_mc, irtm_sdmp, irtm_mfl, irtm_tacl, irtm_cl, irtm_pd, &
+!$omp     irvm_mc, ircm_mc, &
+!$omp     ithlm_bt, ithlm_ma, ithlm_ta, ithlm_forcing, &
+!$omp     ithlm_mc, ithlm_sdmp, ithlm_mfl, ithlm_tacl, ithlm_cl)
+
   !monatonic flux limiter diagnostic terms
   integer, public :: &
     ithlm_mfl_lower_lim, &
@@ -199,12 +208,12 @@ module stats_variables
     irtm_old, &
     irtm_without_ta
 
-!$omp   threadprivate(irtm_bt, irtm_ma, irtm_ta, irtm_forcing, &
-!$omp     irtm_mc, irtm_sdmp, irtm_mfl, irtm_tacl, irtm_cl, irtm_pd, &
-!$omp     irvm_mc, ircm_mc, &
-!$omp     ithlm_bt, ithlm_ma, ithlm_ta, ithlm_forcing, &
-!$omp     ithlm_mc, ithlm_sdmp, ithlm_mfl, ithlm_tacl, ithlm_cl)
-
+!$omp   threadprivate(ithlm_mfl_lower_lim, ithlm_mfl_upper_lim, iwpthlp_enter_mfl)
+!$omp   threadprivate(iwpthlp_exit_mfl, iwpthlp_mfl_lower_lim, iwpthlp_mfl_upper_lim)
+!$omp   threadprivate(irtm_mfl_lower_lim, irtm_mfl_upper_lim, iwprtp_enter_mfl)
+!$omp   threadprivate(iwprtp_exit_mfl, iwprtp_mfl_lower_lim, iwprtp_mfl_upper_lim)
+!$omp   threadprivate(ithlm_enter_mfl, ithlm_exit_mfl, ithlm_old, ithlm_without_ta)
+!$omp   threadprivate(irtm_enter_mfl, irtm_exit_mfl, irtm_old, irtm_without_ta)
 
   integer, public :: & 
      iwp3_bt, & 
@@ -344,7 +353,7 @@ module stats_variables
      ivm_f, &
      ivm_sdmp
 
-!$omp   threadprivate(ivm_bt, ivm_ma, ivm_ta, ivm_gf, ivm_cf, ivm_sdmp)
+!$omp   threadprivate(ivm_bt, ivm_ma, ivm_ta, ivm_gf, ivm_cf, ivm_f, ivm_sdmp)
 
   integer, public :: & 
      ium_bt, & 
@@ -355,7 +364,7 @@ module stats_variables
      ium_f, &
      ium_sdmp
 
-!$omp   threadprivate(ium_bt, ium_ma, ium_ta, ium_gf, ium_cf, ium_sdmp)
+!$omp   threadprivate(ium_bt, ium_ma, ium_ta, ium_gf, ium_cf, ium_f, ium_sdmp)
 
 
   ! PDF parameters
@@ -398,7 +407,7 @@ module stats_variables
      irtp2_zt, & 
      irtpthlp_zt
 
-!$omp   threadprivate(iwp2_zt, ithlp2_zt, iwpthlp_zt, irtp2_zt, irtpthlp_zt)
+!$omp   threadprivate(iwp2_zt, ithlp2_zt, iwpthlp_zt, iwprtp_zt, irtp2_zt, irtpthlp_zt)
 
   integer, target, allocatable, dimension(:), public :: & 
     isclrm,    & ! Passive scalar mean (1)
@@ -442,7 +451,7 @@ module stats_variables
     iLH_wm, &
     iLH_cloud_frac
 
-!$omp threadprivate(iLH_rrainm, iLH_ricem, iLH_Nim, iLH_rsnowm, iLH_Nsnowm, &
+!$omp threadprivate(iLH_rrainm, iLH_Nrm, iLH_ricem, iLH_Nim, iLH_rsnowm, iLH_Nsnowm, &
 !$omp   iLH_rgraupelm, iLH_Ngraupelm, &
 !$omp   iLH_thlm, iLH_rcm, iLH_Ncm, iLH_rvm, iLH_wm, iLH_cloud_frac )
 
@@ -455,8 +464,8 @@ module stats_variables
     iLH_thlp2_zt, &
     iLH_rrainp2_zt
 
-!$omp threadprivate(iLH_wp2_zt,iLH_Nrp2_zt,iLH_Ncp2_zt,iLH_rcp2_zt,iLH_rtp2_zt, &
-!$omp               iLH_thlp2_zt,iLH_rrainp2_zt)
+!$omp threadprivate(iLH_wp2_zt, iLH_Nrp2_zt, iLH_Ncp2_zt, iLH_rcp2_zt, iLH_rtp2_zt, &
+!$omp               iLH_thlp2_zt, iLH_rrainp2_zt)
 
   ! Indices for statistics in zm file
   integer, public :: & 
@@ -499,7 +508,7 @@ module stats_variables
 !$omp   threadprivate(iwprcp, ithlprcp, irtprcp, ircp2, iupwp, ivpwp)
 !$omp   threadprivate(irho_zm, isigma_sqd_w, iem, ishear, iFrad, iFrad_LW)
 !$omp   threadprivate(iFrad_SW, iFrad_SW_up, iFrad_SW_down)
-!$omp   threadprivate(iFrad_LW_up,iFrad_LW_down,iFprec, iFcsed)
+!$omp   threadprivate(iFrad_LW_up, iFrad_LW_down, iFprec, iFcsed)
 
   ! Sedimentation velocities
   integer, public :: & 
@@ -662,8 +671,14 @@ module stats_variables
     iwpsclrprtp,         & ! w'sclr'(1)rt'   / w'rt'^2
     iwpsclrpthlp           ! w'sclr'(1)th_l' / w'rt'th_l'
 
+!$omp   threadprivate(isclrprtp, isclrp2, isclrpthvp, isclrpthlp) 
+!$omp   threadprivate(isclrprcp, iwpsclrp, iwp2sclrp, iwpsclrp2)
+!$omp   threadprivate(iwpsclrprtp, iwpsclrpthlp)
+
   integer, target, allocatable, dimension(:), public :: & 
      iwpedsclrp ! eddy sclr'(1)w'
+
+!$omp   threadprivate(iwpedsclrp)     
 
   ! Indices for statistics in sfc file
 
@@ -715,7 +730,7 @@ module stats_variables
 
 
 !$omp threadprivate(iustar, isoil_heat_flux, iveg_T_in_K, isfc_soil_T_in_K, ideep_soil_T_in_K, &
-!$omp   ilh, ish, icc, ilwp, izb, izi, &
+!$omp   ilh, ish, icc, ilwp, ivwp, iiwp, iswp, izb, izi, &
 !$omp   irain, irain_flux, irrainm_sfc, &
 !$omp   iwpthlp_sfc, iwprtp_sfc, iupwp_sfc, ivpwp_sfc, &
 !$omp   ithlm_vert_avg, irtm_vert_avg, ium_vert_avg, ivm_vert_avg, &
