@@ -344,7 +344,24 @@ module clubb_core
                                         ! rule by calling the subroutine pdf_closure a 
                                         ! second time (.true.) or by interpolation 
                                         ! (.false.).  Calling pdf_closure twice is more 
-                                        ! expensive but produces better results.
+                                        ! expensive but produces better results with the
+                                        ! trapezoidal rule.
+
+    ! These local variables are declared because they originally belong on the momentum 
+    ! grid levels, but pdf_closure outputs them on the thermodynamic grid levels.
+    real, dimension(gr%nnzp) :: &
+      wp4_zt,      & ! w'^4 (on thermo. grid)           [m^4/s^4] 
+      wpthvp_zt,   & ! Buoyancy flux (on thermo. grid)  [(K m)/s]
+      rtpthvp_zt,  & ! r_t' th_v' (on thermo. grid)     [(kg K)/kg]
+      thlpthvp_zt, & ! th_l' th_v' (on thermo. grid)    [K^2]
+      wprcp_zt,    & ! w' r_c' (on thermo. grid)        [(m kg)/(s kg)] 
+      rtprcp_zt,   & ! r_t' r_c' (on thermo. grid)      [(kg^2)/(kg^2)] 
+      thlprcp_zt,  & ! th_l' r_c' (on thermo. grid)     [(K kg)/kg] 
+      rcp2_zt        ! r_c'^2 (on thermo. grid)         [(kg^2)/(kg^2)] 
+
+    real, dimension(gr%nnzp, sclr_dim) :: &       
+      sclrpthvp_zt, & ! sclr'th_v' (on thermo. grid) 
+      sclrprcp_zt     ! sclr'rc' (on thermo. grid)
 
     !----- Begin Code -----
 
@@ -535,24 +552,26 @@ module clubb_core
       sclr_tmp2(:,i) = zm2zt( sclrprtp(:,i) )
       sclr_tmp3(:,i) = max( zm2zt( sclrp2(:,i) ), zero_threshold ) ! Pos. def. quantity
       sclr_tmp4(:,i) = zm2zt( sclrpthlp(:,i) )
-    enddo ! i = 1, sclr_dim
+    end do ! i = 1, sclr_dim, 1
 
     do k = 1, gr%nnzp, 1
       call pdf_closure & 
-         ( p_in_Pa(k), exner(k), wm_zt(k), wp2_zt(k), wp3(k),        & ! intent(in)
-           sigma_sqd_w_zt(k), Skw_zt(k), rtm(k), rtp2_zt(k),         & ! intent(in)
-           zm2zt( wprtp, k ), thlm(k), thlp2_zt(k),                  & ! intent(in)
-           zm2zt( wpthlp, k ), rtpthlp_zt(k), sclrm(k,:),            & ! intent(in)
-           sclr_tmp1(k,:), sclr_tmp3(k,:), sclr_tmp2(k,:),           & ! intent(in)
-           sclr_tmp4(k,:), k,                                        & ! intent(in)
-           wp4(k), wprtp2(k), wp2rtp(k),                             & ! intent(out)
-           wpthlp2(k), wp2thlp(k), wprtpthlp(k),                     & ! intent(out)
-           cloud_frac(k), rcm(k), wpthvp(k), wp2thvp(k), rtpthvp(k), & ! intent(out)
-           thlpthvp(k), wprcp(k), wp2rcp(k), rtprcp(k), thlprcp(k),  & ! intent(out)
-           rcp2(k), pdf_params,                                      & ! intent(out)
-           err_code,                                                 & ! intent(out)
-           wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp(k,:),           & ! intent(out)
-           wpsclrpthlp(k,:), sclrprcp(k,:), wp2sclrp(k,:) )            ! intent(out)
+         ( p_in_Pa(k), exner(k), wm_zt(k),                     & ! intent(in)
+           wp2_zt(k), wp3(k), sigma_sqd_w_zt(k),               & ! intent(in)
+           Skw_zt(k), rtm(k), rtp2_zt(k),                      & ! intent(in)
+           zm2zt( wprtp, k ), thlm(k), thlp2_zt(k),            & ! intent(in)
+           zm2zt( wpthlp, k ), rtpthlp_zt(k), sclrm(k,:),      & ! intent(in)
+           sclr_tmp1(k,:), sclr_tmp3(k,:), sclr_tmp2(k,:),     & ! intent(in)
+           sclr_tmp4(k,:), k,                                  & ! intent(in)
+           wp4_zt(k), wprtp2(k), wp2rtp(k),                    & ! intent(out)
+           wpthlp2(k), wp2thlp(k), wprtpthlp(k),               & ! intent(out)
+           cloud_frac(k), rcm(k), wpthvp_zt(k),                & ! intent(out)
+           wp2thvp(k), rtpthvp_zt(k), thlpthvp_zt(k),          & ! intent(out)
+           wprcp_zt(k), wp2rcp(k), rtprcp_zt(k),               & ! intent(out)
+           thlprcp_zt(k), rcp2_zt(k), pdf_params,              & ! intent(out)
+           err_code,                                           & ! intent(out)
+           wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp_zt(k,:),  & ! intent(out)
+           wpsclrpthlp(k,:), sclrprcp_zt(k,:), wp2sclrp(k,:) )   ! intent(out)
 
       ! Subroutine may produce NaN values, and if so, exit
       ! gracefully.
@@ -563,46 +582,9 @@ module clubb_core
         return
       end if
 
-    enddo ! k = 1, gr%nnzp
+    end do ! k = 1, gr%nnzp, 1
 
-    ! Interpolate momentum variables back to momentum grid.
-    ! Since top momentum level is higher than top thermo level,
-    ! Set variables at top momentum level to 0.
-
-    ! Only do this for wp4 and rcp2 if we're saving stats, since they are not
-    ! used elsewhere in the parameterization 
-    if ( iwp4 > 0 ) then
-      wp4 = max( zt2zm( wp4 ), zero_threshold )  ! Pos. def. quantity
-      wp4(gr%nnzp)  = 0.0
-    end if
-
-    if ( ircp2 > 0 ) then
-      rcp2 = max( zt2zm( rcp2 ), zero_threshold )  ! Pos. def. quantity
-      rcp2(gr%nnzp) = 0.0
-    end if
-
-    wpthvp            = zt2zm( wpthvp )
-    wpthvp(gr%nnzp)   = 0.0
-    thlpthvp          = zt2zm( thlpthvp )
-    thlpthvp(gr%nnzp) = 0.0
-    rtpthvp           = zt2zm( rtpthvp )
-    rtpthvp(gr%nnzp)  = 0.0
-    wprcp             = zt2zm( wprcp )
-    wprcp(gr%nnzp)    = 0.0
-    rtprcp            = zt2zm( rtprcp )
-    rtprcp(gr%nnzp)   = 0.0
-    thlprcp           = zt2zm( thlprcp )
-    thlprcp(gr%nnzp)  = 0.0
-
-    ! Interpolate passive scalars back onto the m grid
-    do i = 1, sclr_dim
-      sclrpthvp(:,i)       = zt2zm( sclrpthvp(:,i) )
-      sclrpthvp(gr%nnzp,i) = 0.0
-      sclrprcp(:,i)        = zt2zm( sclrprcp(:,i) )
-      sclrprcp(gr%nnzp,i)  = 0.0
-    end do ! i=1, sclr_dim
-
-    ! If logical flag is true, use the trapezoidal rule by calling the subroutine
+    ! If logical flag is true, use the trapezoidal rule by calling the subroutine.
     ! ldgrant June 2009
     if ( l_trapezoid_rule ) then
       call trapezoidal_rule &
@@ -614,8 +596,54 @@ module clubb_core
            wprtp2, wp2rtp, wpthlp2, wp2thlp,            & ! intent(inout)
            wprtpthlp, cloud_frac, rcm, wp2thvp, wp2rcp, & ! intent(inout)
            wpsclrprtp, wpsclrp2, wpsclrpthlp,           & ! intent(inout)
-           wp2sclrp, pdf_params, err_code )               ! intent(inout)
+           wp2sclrp, pdf_params, err_code,              & ! intent(inout)
+           wp4, wpthvp, rtpthvp, thlpthvp, wprcp,       & ! intent(out)
+           rtprcp, thlprcp, rcp2, sclrpthvp, sclrprcp )   ! intent(out)
     end if
+
+    if ( ( .not. l_trapezoid_rule) .or. ( .not. l_call_pdf_closure_twice ) ) then
+
+      ! Interpolate momentum variables back to momentum grid.
+      ! Since top momentum level is higher than top thermo level,
+      ! Set variables at top momentum level to 0.
+
+      ! Only do this for wp4 and rcp2 if we're saving stats, since they are not
+      ! used elsewhere in the parameterization 
+      if ( iwp4 > 0 ) then
+        wp4 = max( zt2zm( wp4_zt ), zero_threshold )  ! Pos. def. quantity
+        wp4(gr%nnzp)  = 0.0
+      end if
+
+      if ( ircp2 > 0 ) then
+        rcp2 = max( zt2zm( rcp2_zt ), zero_threshold )  ! Pos. def. quantity
+        rcp2(gr%nnzp) = 0.0
+      end if
+
+      wpthvp            = zt2zm( wpthvp_zt )
+      wpthvp(gr%nnzp)   = 0.0
+      thlpthvp          = zt2zm( thlpthvp_zt )
+      thlpthvp(gr%nnzp) = 0.0
+      rtpthvp           = zt2zm( rtpthvp_zt )
+      rtpthvp(gr%nnzp)  = 0.0
+      wprcp             = zt2zm( wprcp_zt )
+      wprcp(gr%nnzp)    = 0.0
+      rtprcp            = zt2zm( rtprcp_zt )
+      rtprcp(gr%nnzp)   = 0.0
+      thlprcp           = zt2zm( thlprcp_zt )
+      thlprcp(gr%nnzp)  = 0.0
+
+      ! Interpolate passive scalars back onto the m grid
+      do i = 1, sclr_dim
+        sclrpthvp(:,i)       = zt2zm( sclrpthvp_zt(:,i) )
+        sclrpthvp(gr%nnzp,i) = 0.0
+        sclrprcp(:,i)        = zt2zm( sclrprcp_zt(:,i) )
+        sclrprcp(gr%nnzp,i)  = 0.0
+      end do ! i=1, sclr_dim
+
+    end if ! ( .not. l_trapezoid_rule) .or. ( .not. l_call_pdf_closure_twice )
+           ! else both are true, the momentum variables will have been output
+           ! from the second call to pdf_closure in subroutine trapezoid, and
+           ! interpolation is not needed.
 
     ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
     ! This code won't work unless rtm >= 0 !!!
@@ -626,8 +654,9 @@ module clubb_core
     call clip_rcm(rtm, 'rtm < rcm after pdf_closure', & ! intent (in)
                   rcm)                                  ! intent (inout)
 
-    ! Compute variables cloud_cover and rcm_in_layer
-    ! ldgrant July 2009
+    ! Compute variables cloud_cover and rcm_in_layer.
+    ! Code added July 2009
+    ! ldgrant
     call compute_cloud_cover &
        ( pdf_params, cloud_frac, rcm, & ! intent(in)
          cloud_cover, rcm_in_layer )    ! intent(out)
@@ -1113,7 +1142,9 @@ module clubb_core
                wprtp2, wp2rtp, wpthlp2, wp2thlp,            & ! intent(inout)
                wprtpthlp, cloud_frac, rcm, wp2thvp, wp2rcp, & ! intent(inout)
                wpsclrprtp, wpsclrp2, wpsclrpthlp,           & ! intent(inout)
-               wp2sclrp, pdf_params, err_code )               ! intent(inout)
+               wp2sclrp, pdf_params, err_code,              & ! intent(inout)
+               wp4, wpthvp, rtpthvp, thlpthvp, wprcp,       & ! intent(out)
+               rtprcp, thlprcp, rcp2, sclrpthvp, sclrprcp )   ! intent(out)
     !
     ! Description:  This subroutine takes the output variables on the thermo.
     ! grid and either interpolates them to the momentum grid or calls the 
@@ -1193,6 +1224,21 @@ module clubb_core
     type (pdf_parameter), intent(inout) :: &
       pdf_params ! PDF parameters [units vary]
 
+    ! Output variables
+    real, dimension(gr%nnzp), intent(out) :: &
+      wp4,        & ! w'^4 (on momentum grid)           [m^4/s^4]
+      wpthvp,     & ! Buoyancy flux (on momentum grid)  [(K m)/s]
+      rtpthvp,    & ! r_t' th_v' (on momentum grid)     [(kg K)/kg]
+      thlpthvp,   & ! th_l' th_v' (on momentum grid)    [K^2]
+      wprcp,      & ! w' r_c' (on momentum grid)        [(m kg)/(s kg)]
+      rtprcp,     & ! r_t' r_c' (on momentum grid)      [(kg^2)/(kg^2)]
+      thlprcp,    & ! th_l' r_c' (on momentum grid)     [(K kg)/kg]
+      rcp2          ! r_c'^2 (on momentum grid)         [(kg^2)/(kg^2)]
+
+    real, dimension(gr%nnzp, sclr_dim), intent(out) :: &
+      sclrpthvp,   & ! sclr'th_v' (on momentum grid)
+      sclrprcp       ! sclr'rc' (on momentum grid)
+
     ! Local variables
     integer :: i, k
 
@@ -1205,27 +1251,15 @@ module clubb_core
       cloud_frac_zm, & ! Cloud Fraction on momentum grid            [-]
       rcm_zm,        & ! Liquid water mixing ratio on momentum grid [kg/kg]
       wp2thvp_zm,    & ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
-      wp2rcp_zm,     & ! w'^2 rc' on momentum grid                  [m^2 kg/kg s^2]
-
-      wp4_zm,        & ! w'^4 on momentum grid          [m^4/s^4]
-      wpthvp_zm,     & ! Buoyancy flux on momentum grid [(K m)/s]
-      rtpthvp_zm,    & ! r_t' th_v' on momentum grid    [(kg K)/kg]
-      thlpthvp_zm,   & ! th_l' th_v' on momentum grid   [K^2]
-      wprcp_zm,      & ! w' r_c' on momentum grid       [(m kg)/(s kg)]
-      rtprcp_zm,     & ! r_t' r_c' on momentum grid     [(kg^2)/(kg^2)]
-      thlprcp_zm,    & ! th_l' r_c' on momentum grid    [(K kg)/kg]
-      rcp2_zm          ! r_c'^2 on momentum grid        [(kg^2)/(kg^2)]
-      
+      wp2rcp_zm        ! w'^2 rc' on momentum grid                  [m^2 kg/kg s^2]      
 
     real, dimension(gr%nnzp,sclr_dim) :: & 
       wpsclrprtp_zm,  & ! w'sclr'rt' on momentum grid 
       wpsclrp2_zm,    & ! w'sclr'^2 on momentum grid 
       wpsclrpthlp_zm, & ! w'sclr'thl' on momentum grid 
       wp2sclrp_zm,    & ! w'^2 sclr' on momentum grid
+      sclrm_zm          ! Passive scalar mean on momentum grid
 
-      sclrm_zm,       & ! Passive scalar mean on momentum grid
-      sclrpthvp_zm,   & ! sclr'th_v' on momentum grid
-      sclrprcp_zm       ! sclr'rc' on momentum grid
 
     ! Components of PDF_parameters on the momentum grid (_zm) and on the thermo. grid (_zt)
     real, dimension(gr%nnzp) :: &
@@ -1342,21 +1376,22 @@ module clubb_core
       ! in the trapezoid rule
       do k = 1, gr%nnzp, 1
         call pdf_closure & 
-           ( zt2zm( p_in_Pa, k ), zt2zm( exner, k ), wm_zm(k),                      & ! intent(in)
-               wp2(k), zt2zm( wp3, k ), sigma_sqd_w(k),                             & ! intent(in)
-             Skw_zm(k), zt2zm( rtm, k ), rtp2(k), wprtp(k),                         & ! intent(in)
-             zt2zm( thlm, k ), thlp2(k), wpthlp(k),                                 & ! intent(in)
-             rtpthlp(k), sclrm_zm(k,:), wpsclrp(k,:),                               & ! intent(in)
-             sclrp2(k,:), sclrprtp(k,:), sclrpthlp(k,:), k,                         & ! intent(in)
-             wp4_zm(k), wprtp2_zm(k), wp2rtp_zm(k),                                 & ! intent(out)
-             wpthlp2_zm(k), wp2thlp_zm(k), wprtpthlp_zm(k),                         & ! intent(out)
-             cloud_frac_zm(k), rcm_zm(k), wpthvp_zm(k),                             & ! intent(out)
-               wp2thvp_zm(k), rtpthvp_zm(k),                                        & ! intent(out)
-             thlpthvp_zm(k), wprcp_zm(k), wp2rcp_zm(k), rtprcp_zm(k), thlprcp_zm(k),& ! intent(out)
-             rcp2_zm(k), pdf_params,                                                & ! intent(out)
-             err_code,                                                              & ! intent(out)
-             wpsclrprtp_zm(k,:), wpsclrp2_zm(k,:), sclrpthvp_zm(k,:),               & ! intent(out)
-             wpsclrpthlp_zm(k,:), sclrprcp_zm(k,:), wp2sclrp_zm(k,:) )                ! intent(out)
+           ( zt2zm( p_in_Pa, k ), zt2zm( exner, k ), wm_zm(k),      & ! intent(in)
+             wp2(k), zt2zm( wp3, k ), sigma_sqd_w(k),               & ! intent(in)
+             Skw_zm(k), zt2zm( rtm, k ), rtp2(k),                   & ! intent(in)
+             wprtp(k), zt2zm( thlm, k ), thlp2(k),                  & ! intent(in)
+             wpthlp(k), rtpthlp(k), sclrm_zm(k,:),                  & ! intent(in)
+             wpsclrp(k,:), sclrp2(k,:), sclrprtp(k,:),              & ! intent(in)
+             sclrpthlp(k,:), k,                                     & ! intent(in)
+             wp4(k), wprtp2_zm(k), wp2rtp_zm(k),                    & ! intent(out)
+             wpthlp2_zm(k), wp2thlp_zm(k), wprtpthlp_zm(k),         & ! intent(out)
+             cloud_frac_zm(k), rcm_zm(k), wpthvp(k),                & ! intent(out)
+             wp2thvp_zm(k), rtpthvp(k), thlpthvp(k),                & ! intent(out)
+             wprcp(k), wp2rcp_zm(k), rtprcp(k),                     & ! intent(out)
+             thlprcp(k), rcp2(k), pdf_params,                       & ! intent(out)
+             err_code,                                              & ! intent(out)
+             wpsclrprtp_zm(k,:), wpsclrp2_zm(k,:), sclrpthvp(k,:),  & ! intent(out)
+             wpsclrpthlp_zm(k,:), sclrprcp(k,:), wp2sclrp_zm(k,:) )   ! intent(out)
 
         ! Subroutine may produce NaN values, and if so, exit
         ! gracefully.
@@ -1597,7 +1632,8 @@ module clubb_core
     ! Description:  Subroutine to compute cloud cover (the amount of sky
     ! covered by cloud) and rcm in layer (liquid water mixing ratio in
     ! the portion of the grid box filled by cloud).
-    ! ldgrant July 2009 
+    ! Code added July 2009 
+    ! ldgrant
     !---------------------------------------------------------------------
 
     use constants, only: rc_tol ! Variable
