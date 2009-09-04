@@ -1727,10 +1727,10 @@ module clubb_core
            ( rtm, message, & ! intent(in)
              rcm )    ! intent(inout)
     !
-    ! Description:  Subroutine to compute cloud cover (the amount of sky
-    ! covered by cloud) and rcm in layer (liquid water mixing ratio in
-    ! the portion of the grid box filled by cloud).
-    ! ldgrant July 2009 
+    ! Description:  Subroutine that reduces cloud water (rcm) whenever
+    ! it exceeds total water (rtm = vapor + liquid).  
+    ! This avoids negative values of rvm = water vapor mixing ratio.
+    ! However, it will not ensure that rcm <= rtm if rtm <= 0.
     !---------------------------------------------------------------------
 
 
@@ -1750,12 +1750,12 @@ module clubb_core
 
     ! Input variables
     real, dimension(gr%nnzp), intent(in) :: &
-      rtm           ! Cloud fraction             [-]
+      rtm           ! Total water mixing ratio             [kg/kg]
 
     character(len= * ), intent(in) :: message  
 
     real, dimension(gr%nnzp), intent(inout) :: &
-      rcm           ! Liquid water mixing ratio  [kg/kg]
+      rcm           ! Cloud water mixing ratio  [kg/kg]
 
     integer :: k
 

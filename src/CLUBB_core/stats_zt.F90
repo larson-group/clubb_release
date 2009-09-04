@@ -674,7 +674,7 @@ module stats_zt
       case ('rel_humidity')
         irel_humidity = k
         call stat_assign( irel_humidity, "rel_humidity", & 
-              "Relative humidity [%]", "%", zt )
+              "Relative humidity w.r.t. liquid (range [0,1]) [-]", "[-]", zt )
         k = k + 1         
       case ('um')
         ium = k
