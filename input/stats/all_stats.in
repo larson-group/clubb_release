@@ -11,7 +11,7 @@
 vars_zt = 
 'thlm', 'thvm', 'rtm', 'rcm', 'rvm', 'um', 'vm', 'um_ref','vm_ref','wm_zt', 'ug', 'vg',
 'cloud_frac', 'cloud_cover', 'rcm_in_layer', 'p_in_Pa', 'exner', 'Lscale', 'T_in_K',
-'rel_humidity','wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp',
+'rel_humidity', 'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp',
 'Lscale_up', 'Lscale_down', 'tau_zt', 'Kh_zt', 'wp2thvp', 'wp2rcp', 'wprtpthlp',
 'sigma_sqd_w_zt', 'rho', 'radht', 'radht_LW', 'radht_SW',
 'Ncm', 'Ncnm', 'Nim', 'snowslope', 'Nsnowm', 'sed_rcm', 'rsat',
@@ -51,6 +51,7 @@ vars_zt =
 'rt1', 'rt2', 'srt1', 'srt2', 'rc1', 'rc2', 'rsl1', 'rsl2', 'cloud_frac1', 'cloud_frac2',
 's1', 's2', 'ss1', 'ss2', 'rrtthl',
 'wp2_zt', 'thlp2_zt', 'wpthlp_zt', 'wprtp_zt', 'rtp2_zt', 'rtpthlp_zt',
+'up2_zt', 'vp2_zt', 'upwp_zt', 'vpwp_zt',
 ! To output a scalar variable result, 
 ! follow the form <sclr_type> + <column_number> + <variable_type>
 !
