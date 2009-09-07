@@ -1121,7 +1121,7 @@ module stats_subs
       wprcp,   & ! w'rc'                         [(kg/kg) m/s]
       wp2,     & ! w'^2                          [m^2/s^2]
       wp3,     & ! w'^3                          [m^3/s^3]
-      rtp2,    & ! rt'^2                         [kg/kg]
+      rtp2,    & ! rt'^2                         [(kg/kg)^2]
       thlp2,   & ! thl'^2                        [K^2]
       rtpthlp    ! rt'thl'                       [kg/kg K]
 

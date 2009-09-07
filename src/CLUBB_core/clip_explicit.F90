@@ -69,7 +69,7 @@ module clip_explicit
       dt ! Timestep [s]
 
     real, dimension(gr%nnzp), intent(in) :: &
-      rtp2,  & ! r_t'^2         [kg/kg]
+      rtp2,  & ! r_t'^2         [(kg/kg)^2]
       thlp2, & ! theta_l'^2     [K^2]
       up2,   & ! u'^2           [m^2/s^2]
       vp2,   & ! v'^2           [m^2/s^2]

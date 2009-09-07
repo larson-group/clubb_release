@@ -86,8 +86,8 @@ module surface_var
       up2_sfc,     & ! u'^2                              [m^2/s^2]
       vp2_sfc,     & ! u'^2                              [m^2/s^2]
       thlp2_sfc,   & ! thetal variance                   [K^2]
-      rtp2_sfc,    & ! rt variance                       [kg/kg]
-      rtpthlp_sfc    ! thetal rt covariance              [kg K]
+      rtp2_sfc,    & ! rt variance                       [(kg/kg)^2]
+      rtpthlp_sfc    ! thetal rt covariance              [kg K/kg]
 
     integer, intent(out) :: & 
       err_code
