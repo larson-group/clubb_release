@@ -231,7 +231,11 @@ module stats_zt
         iwpthlp_zt, & 
         iwprtp_zt, & 
         irtp2_zt, & 
-        irtpthlp_zt
+        irtpthlp_zt, &
+        iup2_zt, &
+        ivp2_zt, &
+        iupwp_zt, &
+        ivpwp_zt
 
     use stats_variables, only: & 
         zt, & 
@@ -575,6 +579,10 @@ module stats_zt
     iwprtp_zt   = 0
     irtp2_zt    = 0
     irtpthlp_zt = 0
+    iup2_zt     = 0
+    ivp2_zt     = 0
+    iupwp_zt    = 0
+    ivpwp_zt    = 0
 
     iLH_rcm_mc = 0
     iLH_rvm_mc = 0
@@ -2076,6 +2084,30 @@ module stats_zt
 
         call stat_assign( irtpthlp_zt, "rtpthlp_zt", & 
              "rt'thl' interpolated to thermodynamic levels [(kg K)/kg]", "(kg K)/kg", zt )
+        k = k + 1
+
+      case ('up2_zt')
+        iup2_zt = k
+        call stat_assign( iup2_zt, "up2_zt", & 
+             "u'^2 interpolated to thermodynamic levels [m^2/s^2]", "m^2/s^2", zt )
+        k = k + 1
+
+      case ('vp2_zt')
+        ivp2_zt = k
+        call stat_assign( ivp2_zt, "vp2_zt", & 
+             "v'^2 interpolated to thermodynamic levels [m^2/s^2]", "m^2/s^2", zt )
+        k = k + 1
+
+      case ('upwp_zt')
+        iupwp_zt = k
+        call stat_assign( iupwp_zt, "upwp_zt", & 
+             "u'w' interpolated to thermodynamic levels [m^2/s^2]", "m^2/s^2", zt )
+        k = k + 1
+
+      case ('vpwp_zt')
+        ivpwp_zt = k
+        call stat_assign( ivpwp_zt, "vpwp_zt", & 
+             "v'w' interpolated to thermodynamic levels [m^2/s^2]", "m^2/s^2", zt )
         k = k + 1
 
       case('LH_rrainm_mc')

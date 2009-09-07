@@ -139,15 +139,20 @@ module variables_diagnostic_module
 ! Interpolated variables for tuning
 !
   real, target, allocatable, dimension(:), public :: & 
-    wp2_zt,     & ! w'^2 on thermo. grid
-    thlp2_zt,   & ! thl'^2 on thermo. grid
-    wpthlp_zt,  & ! w'thl' on thermo. grid
-    wprtp_zt,   & ! w'rt' on thermo. grid
-    rtp2_zt,    & ! rt'^2 on therm. grid
-    rtpthlp_zt    ! rt'thl' on thermo. grid
+    wp2_zt,     & ! w'^2 on thermo. grid     [m^2/s^2]
+    thlp2_zt,   & ! thl'^2 on thermo. grid   [K^2]
+    wpthlp_zt,  & ! w'thl' on thermo. grid   [m K/s]
+    wprtp_zt,   & ! w'rt' on thermo. grid    [m kg/(kg s)]
+    rtp2_zt,    & ! rt'^2 on therm. grid     [(kg/kg)^2]
+    rtpthlp_zt, & ! rt'thl' on thermo. grid  [kg K/kg]
+    up2_zt,     & ! u'^2 on thermo. grid     [m^2/s^2]
+    vp2_zt,     & ! v'^2 on thermo. grid     [m^2/s^2]
+    upwp_zt,    & ! u'w' on thermo. grid     [m^2/s^2]
+    vpwp_zt       ! v'w' on thermo. grid     [m^2/s^2]
 
 !$omp threadprivate(wp2_zt, thlp2_zt, wpthlp_zt, wprtp_zt, &
-!$omp   rtp2_zt, rtpthlp_zt)
+!$omp   rtp2_zt, rtpthlp_zt, &
+!$omp   up2_zt, vp2_zt, upwp_zt, vpwp_zt)
 
 
 ! Latin Hypercube arrays.  Vince Larson 22 May 2005
@@ -257,6 +262,10 @@ module variables_diagnostic_module
     allocate( wprtp_zt(1:nzmax) )   ! w'rt' on thermo. grid
     allocate( rtp2_zt(1:nzmax) )    ! rt'^2 on thermo. grid
     allocate( rtpthlp_zt(1:nzmax) ) ! rt'thl' on thermo. grid
+    allocate( up2_zt(1:nzmax) )     ! u'^2 on thermo. grid
+    allocate( vp2_zt(1:nzmax) )     ! v'^2 on thermo. grid
+    allocate( upwp_zt(1:nzmax) )    ! u'w' on thermo. grid
+    allocate( vpwp_zt(1:nzmax) )    ! v'w' on thermo. grid
 
 
     allocate( Ncnm(1:nzmax) )
@@ -463,12 +472,16 @@ module variables_diagnostic_module
 
 
     ! Interpolated variables for tuning
-    deallocate( wp2_zt )     ! w'^2 on t
-    deallocate( thlp2_zt )   ! th_l'^2 on t
-    deallocate( wpthlp_zt )  ! w'th_l' on t
-    deallocate( wprtp_zt )   ! w'rt' on t
-    deallocate( rtp2_zt )    ! rt'^2 on t
-    deallocate( rtpthlp_zt ) ! rt'th_l' on t
+    deallocate( wp2_zt )     ! w'^2 on thermo. grid
+    deallocate( thlp2_zt )   ! th_l'^2 on thermo. grid
+    deallocate( wpthlp_zt )  ! w'th_l' on thermo. grid
+    deallocate( wprtp_zt )   ! w'rt' on thermo. grid
+    deallocate( rtp2_zt )    ! rt'^2 on thermo. grid
+    deallocate( rtpthlp_zt ) ! rt'th_l' on thermo. grid
+    deallocate( up2_zt )     ! u'^2 on thermo. grid
+    deallocate( vp2_zt )     ! v'^2 on thermo. grid
+    deallocate( upwp_zt )    ! u'w' on thermo. grid
+    deallocate( vpwp_zt )    ! v'w' on thermo. grid
 
     ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
     deallocate( lh_AKm )   ! Kessler ac estimate

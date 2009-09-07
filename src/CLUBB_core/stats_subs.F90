@@ -950,7 +950,11 @@ module stats_subs
         iwpthlp_zt, & 
         iwprtp_zt, & 
         irtp2_zt, & 
-        irtpthlp_zt, & 
+        irtpthlp_zt, &
+        iup2_zt, &
+        ivp2_zt, &
+        iupwp_zt, &
+        ivpwp_zt, & 
         iwp2, & 
         irtp2, & 
         ithlp2, & 
@@ -1051,7 +1055,11 @@ module stats_subs
         wpthlp_zt, & 
         wprtp_zt, & 
         rtp2_zt, & 
-        rtpthlp_zt, & 
+        rtpthlp_zt, &
+        up2_zt, &
+        vp2_zt, &
+        upwp_zt, &
+        vpwp_zt, & 
         wp4, & 
         rtpthvp, & 
         thlpthvp, & 
@@ -1246,6 +1254,10 @@ module stats_subs
       call stat_update_var( iwprtp_zt, wprtp_zt, zt )
       call stat_update_var( irtp2_zt, rtp2_zt, zt )
       call stat_update_var( irtpthlp_zt, rtpthlp_zt, zt )
+      call stat_update_var( iup2_zt, up2_zt, zt )
+      call stat_update_var( ivp2_zt, vp2_zt, zt )
+      call stat_update_var( iupwp_zt, upwp_zt, zt )
+      call stat_update_var( ivpwp_zt, vpwp_zt, zt )
 
       if (sclr_dim > 0 ) then
         do i=1, sclr_dim

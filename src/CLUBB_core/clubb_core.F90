@@ -116,13 +116,19 @@ module clubb_core
       vg, & 
       ug, & 
       um_ref, & 
-      vm_ref, & 
+      vm_ref
+
+    use variables_diagnostic_module, only: &
       wp2_zt, & 
       thlp2_zt, & 
       wpthlp_zt, & 
       wprtp_zt, & 
       rtp2_zt, & 
       rtpthlp_zt, &
+      up2_zt, &
+      vp2_zt, &
+      upwp_zt, &
+      vpwp_zt, &
       rtm_ref, &
       thlm_ref
 
@@ -199,8 +205,12 @@ module clubb_core
       irsat,         &
       irvm,          &
       irel_humidity, &
-      iwprtp_zt,     &
       iwpthlp_zt,    &
+      iwprtp_zt,     &
+      iup2_zt,       &
+      ivp2_zt,       &
+      iupwp_zt,      &
+      ivpwp_zt,      &
       l_stats_samp,  &
       zt
 
@@ -842,12 +852,28 @@ module clubb_core
     !#############            ACCUMULATE STATISTICS            #############
     !#######################################################################
 
-    if ( iwprtp_zt > 0 ) then
+    if ( iwpthlp_zt > 0 ) then
       wpthlp_zt  = zm2zt( wpthlp )
     end if
 
-    if ( iwpthlp_zt > 0 ) then
+    if ( iwprtp_zt > 0 ) then
       wprtp_zt   = zm2zt( wprtp )
+    end if
+
+    if ( iup2_zt > 0 ) then
+      up2_zt = max( zm2zt( up2 ), wtol_sqd )
+    end if
+
+    if (ivp2_zt > 0 ) then
+      vp2_zt = max( zm2zt( vp2 ), wtol_sqd )
+    end if
+
+    if (iupwp_zt > 0 ) then
+      upwp_zt = zm2zt( upwp )
+    end if
+
+    if (ivpwp_zt > 0 ) then
+      vpwp_zt = zm2zt( vpwp )
     end if
 
     call stats_accumulate & 
