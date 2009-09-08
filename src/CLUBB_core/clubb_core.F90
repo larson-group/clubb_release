@@ -453,7 +453,7 @@ module clubb_core
 !      level is not the ground level.  Brian Griffin.  December 22, 2005.
     IF ( gr%zm(1) == sfc_elevation ) THEN
       call sfc_var( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & ! intent(in)
-                    wpsclrp_sfc(1:sclr_dim),                   & ! intent(in)
+                    wpsclrp_sfc,                               & ! intent(in)
                     wp2(1), up2(1), vp2(1),                    & ! intent(out)
                     thlp2(1), rtp2(1), rtpthlp(1), err_code,   & ! intent(out)
                     sclrp2(1,1:sclr_dim),                      & ! intent(out)
