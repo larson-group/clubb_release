@@ -134,9 +134,9 @@ T_forcing_array = convert_units.thlm_f_to_T_f( thlm_f_array, radht_array, exner_
 ome_array = convert_units.w_wind_in_ms_to_Pas( wm_array, rho_array );
 wt_array = convert_units.potential_temperature_to_temperature( wpthlp_array, exner_array );
 rvm_array = rtm_array - rcm_array;
-rh_array = rvm_array ./ rsat_array;
-q1_array = ((thlm_bt_array - (thlm_f_array - thlm_mc_array)) .* exner_array) .* sec_per_day;
-q2_array = (rtm_bt_array - (rtm_f_array - rtm_mc_array)) .* (Lv / Cp) .* sec_per_day;
+rh_array = rel_humidity;
+q1_array = ((thlm_bt_array - (thlm_f_array - thlm_mc_array) + thlm_ma) .* exner_array) .* sec_per_day;
+q2_array = (rtm_bt_array - (rtm_f_array - rtm_mc_array) + rtm_ma) .* (Lv / Cp) .* sec_per_day;
 tqsw_array = radht_SW_array .* sec_per_day .* exner_array;
 tqlw_array = radht_LW_array .* sec_per_day .* exner_array;
 

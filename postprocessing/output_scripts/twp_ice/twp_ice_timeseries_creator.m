@@ -137,6 +137,7 @@ ppt_array = rho_zm_array(1,:) .* morr_rain_rate_array ./ (sec_per_day * mm_per_m
 
 wq_array = wprtp_array ./ (1 + rtm_array);
 
+icewaterpath_array = iwp_array + swp_array;
 
 time_out = 1:(sizet - t_start + 1);
 for i=1:(sizet - t_start + 1)
@@ -265,7 +266,7 @@ netcdf.putVar(ncid,uTFlw0varid,Frad_LW_up_array(1,:));
 netcdf.putVar(ncid,pptvarid,ppt_array);
 netcdf.putVar(ncid,pwvarid,vwp_array);
 netcdf.putVar(ncid,lwpvarid,lwp_array);
-netcdf.putVar(ncid,iwpvarid,iwp_array);
+netcdf.putVar(ncid,iwpvarid,icewaterpath_array);
 
 % Close file
 netcdf.close(ncid);
