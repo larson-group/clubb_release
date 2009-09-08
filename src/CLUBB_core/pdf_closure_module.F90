@@ -212,8 +212,8 @@ module pdf_closure_module
     ! Passive scalar local variables
 
     real, dimension(sclr_dim) ::  & 
-      sclr1, sclr2,  & 
-      ssclr1, ssclr2, & 
+      sclr1, sclr2,  &
+      varnce_sclr1, varnce_sclr2, & 
       alpha_sclr,  & 
       rsclrthl, rsclrrt
 !     sclr1_n, sclr2_n,
@@ -274,13 +274,13 @@ module pdf_closure_module
 
       if ( l_scalar_calc ) then
         do i = 1, sclr_dim, 1
-          sclr1(i)      = sclrm(i)
-          sclr2(i)      = sclrm(i)
-          ssclr1(i)     = 0.0
-          ssclr2(i)     = 0.0
-          alpha_sclr(i) = 0.5
-          rsclrrt(i)    = 0.0
-          rsclrthl(i)   = 0.0
+          sclr1(i)        = sclrm(i)
+          sclr2(i)        = sclrm(i)
+          varnce_sclr1(i) = 0.0
+          varnce_sclr2(i) = 0.0
+          alpha_sclr(i)   = 0.5
+          rsclrrt(i)      = 0.0
+          rsclrthl(i)     = 0.0
         end do ! 1..sclr_dim
       end if
 
@@ -409,10 +409,13 @@ module pdf_closure_module
       if ( l_scalar_calc ) then
         do i = 1, sclr_dim
           if ( sclrp2(i) <= sclrtol(i)**2 ) then
-            sclr1(i)      = sclrm(i)
-            sclr2(i)      = sclrm(i)
-            ssclr1(i)     = 0.0
-            ssclr2(i)     = 0.0
+            ! Set plume sclr for plume 1,2 to the mean
+            sclr1(i)= sclrm(i)
+            sclr2(i)= sclrm(i)
+            ! Set the variance to zero
+            varnce_sclr1(i) = 0.0
+            varnce_sclr2(i) = 0.0
+
             alpha_sclr(i) = 0.5
           else
 !           sclr1_n(i) = - ( wpsclrp(i) / (sqrt( wp2 ) &
@@ -432,8 +435,8 @@ module pdf_closure_module
 
             ! Vince Larson multiplied original expressions by width_factor_1,2
             !  to generalize scalar skewnesses.  05 Nov 03
-            ssclr1(i) = ( alpha_sclr(i) / a * sclrp2(i) ) * width_factor_1
-            ssclr2(i) = ( alpha_sclr(i) / (1.-a) * sclrp2(i) ) * width_factor_2
+            varnce_sclr1(i) = ( alpha_sclr(i) / a * sclrp2(i) ) * width_factor_1
+            varnce_sclr2(i) = ( alpha_sclr(i) / (1.-a) * sclrp2(i) ) * width_factor_2
           end if ! sclrp2(i) <= sclrtol(i)**2
         end do ! i=1, sclr_dim
       end if ! l_scalar_calc
@@ -457,12 +460,12 @@ module pdf_closure_module
       ! Sub-plume correlation, rsclrthl, between passive scalar and theta_l.
       if ( l_scalar_calc ) then
         do i=1, sclr_dim
-          if ( ssclr1(i)*varnce_thl1 > 0. .and. ssclr2(i)*varnce_thl2 > 0. ) then
+          if ( varnce_sclr1(i)*varnce_thl1 > 0. .and. varnce_sclr2(i)*varnce_thl2 > 0. ) then
             rsclrthl(i) = ( sclrpthlp(i)  & 
             - a * ( sclr1(i)-sclrm(i) ) * ( thl1-thlm ) & 
             - (1.-a) * ( sclr2(i)-sclrm(i) ) * ( thl2-thlm ) ) & 
-                / ( a*sqrt( ssclr1(i)*varnce_thl1 )  & 
-                         + (1.-a)*sqrt( ssclr2(i)*varnce_thl2 ) )
+                / ( a*sqrt( varnce_sclr1(i)*varnce_thl1 )  & 
+                         + (1.-a)*sqrt( varnce_sclr2(i)*varnce_thl2 ) )
             if ( rsclrthl(i) < -1.0 ) then
               rsclrthl(i) = -1.0
             end if
@@ -476,10 +479,10 @@ module pdf_closure_module
           ! Sub-plume correlation, rsclrrt, between passive scalar
           !   and total water.
 
-          if ( ssclr1(i)*varnce_rt1 > 0 .and. ssclr2(i)*varnce_rt2 > 0 ) then
+          if ( varnce_sclr1(i)*varnce_rt1 > 0 .and. varnce_sclr2(i)*varnce_rt2 > 0 ) then
             rsclrrt(i) = ( sclrprtp(i) - a * ( sclr1(i)-sclrm(i) ) * ( rt1-rtm )&
                          - (1.-a) * ( sclr2(i)-sclrm(i) ) * ( rt2-rtm ) ) & 
-             / ( a*sqrt( ssclr1(i)*varnce_rt1 ) + (1.-a)*sqrt( ssclr2(i)*varnce_rt2 ) )
+             / ( a*sqrt( varnce_sclr1(i)*varnce_rt1 ) + (1.-a)*sqrt( varnce_sclr2(i)*varnce_rt2 ) )
             if ( rsclrrt(i) < -1.0 ) then
               rsclrrt(i) = -1.0
             end if
@@ -531,18 +534,19 @@ module pdf_closure_module
         wp2sclrp(i)  = a * ( (w1-wm)**2+varnce_w1 )*( sclr1(i)-sclrm(i) ) & 
                      + (1.-a) * ( (w2-wm)**2+varnce_w2 ) * ( sclr2(i)-sclrm(i) )
 
-        wpsclrp2(i) = a * ( w1-wm ) * ( (sclr1(i)-sclrm(i))**2 + ssclr1(i) )  & 
-                    + (1.-a) * ( w2-wm ) * ( (sclr2(i)-sclrm(i))**2 + ssclr2(i) )
+        wpsclrp2(i) = a * ( w1-wm ) * ( (sclr1(i)-sclrm(i))**2 + varnce_sclr1(i) )  & 
+                    + (1.-a) * ( w2-wm ) * ( (sclr2(i)-sclrm(i))**2 + varnce_sclr2(i) )
 
         wpsclrprtp(i) = a * ( w1-wm ) * ( ( rt1-rtm )*( sclr1(i)-sclrm(i) )  & 
-          + rsclrrt(i)*sqrt( varnce_rt1*ssclr1(i) ) ) &
+          + rsclrrt(i)*sqrt( varnce_rt1*varnce_sclr1(i) ) ) &
           + ( 1.-a )*( w2-wm ) *  &
-            ( ( rt2-rtm )*( sclr2(i)-sclrm(i) ) + rsclrrt(i)*sqrt( varnce_rt2*ssclr2(i) ) )
+            ( ( rt2-rtm )*( sclr2(i)-sclrm(i) ) + rsclrrt(i)*sqrt( varnce_rt2*varnce_sclr2(i) ) )
 
         wpsclrpthlp(i) = a * ( w1-wm ) * ( ( sclr1(i)-sclrm(i) )*( thl1-thlm )  & 
-          + rsclrthl(i)*sqrt( ssclr1(i)*varnce_thl1 ) ) & 
+          + rsclrthl(i)*sqrt( varnce_sclr1(i)*varnce_thl1 ) ) & 
           + ( 1.-a ) * ( w2-wm ) * &
-            ( ( sclr2(i)-sclrm(i) )*( thl2-thlm ) + rsclrthl(i)*sqrt( ssclr2(i)*varnce_thl2 ) )
+            ( ( sclr2(i)-sclrm(i) )*( thl2-thlm ) &
+              + rsclrthl(i)*sqrt( varnce_sclr2(i)*varnce_thl2 ) )
 
       end do ! i=1, sclr_dim
     end if ! l_scalar_calc
@@ -665,10 +669,10 @@ module pdf_closure_module
       do i=1, sclr_dim
         sclrprcp(i) &
         = a * ( ( sclr1(i)-sclrm(i) ) * rc1 ) + (1.-a) * ( ( sclr2(i)-sclrm(i) ) * rc2 ) & 
-        + a*rsclrrt(i) * crt1  * sqrt( ssclr1(i) * varnce_rt1 ) * cloud_frac1 & 
-        + (1.-a) * rsclrrt(i) * crt2  * sqrt( ssclr2(i) * varnce_rt2 ) * cloud_frac2 & 
-        - a * rsclrthl(i) * cthl1  * sqrt( ssclr1(i) * varnce_thl1 ) * cloud_frac1 & 
-        - (1.-a) * rsclrthl(i) * cthl2  * sqrt( ssclr2(i) * varnce_thl2 ) * cloud_frac2
+        + a*rsclrrt(i) * crt1  * sqrt( varnce_sclr1(i) * varnce_rt1 ) * cloud_frac1 & 
+        + (1.-a) * rsclrrt(i) * crt2  * sqrt( varnce_sclr2(i) * varnce_rt2 ) * cloud_frac2 & 
+        - a * rsclrthl(i) * cthl1  * sqrt( varnce_sclr1(i) * varnce_thl1 ) * cloud_frac1 & 
+        - (1.-a) * rsclrthl(i) * cthl2  * sqrt( varnce_sclr2(i) * varnce_thl2 ) * cloud_frac2
 
         sclrpthvp(i) = sclrpthlp(i) + ep1*T0*sclrprtp(i) + rc_coef*sclrprcp(i)
       end do ! i=1, sclr_dim
