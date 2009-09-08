@@ -217,6 +217,10 @@ module clubb_driver
     ! External
     intrinsic :: mod, real, int, trim, floor, max
 
+    ! Constant Parameters
+    logical, parameter :: &
+      l_host_applies_sfc_fluxes = .false.
+
     ! Input Variables
     logical, intent(in) ::  & 
       l_stdout,        & ! Whether to print output per timestep
@@ -665,11 +669,11 @@ module clubb_driver
     ! Allocate & initialize variables,
     ! setup grid, setup constants, and setup flags
 
-    call setup_clubb_core                               &                               
+    call setup_clubb_core                               &
          ( nzmax, T0, ts_nudge,                         & ! Intent(in)
            hydromet_dim, sclr_dim,                      & ! Intent(in)
            sclr_tol(1:sclr_dim), edsclr_dim, params,    & ! Intent(in)
-           l_soil_veg,                                  & ! Intent(in)
+           l_soil_veg, l_host_applies_sfc_fluxes,       & ! Intent(in)
            l_uv_nudge, l_tke_aniso, saturation_formula, & ! Intent(in)
            .false., grid_type, deltaz, zm_init, zm_top, & ! Intent(in)
            momentum_heights, thermodynamic_heights,     & ! Intent(in)

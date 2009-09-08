@@ -72,13 +72,14 @@ module clubb_core
       c_K    
 
     use parameters_model, only: &
-      T0, &
+      T0, & ! Variable(s)
       sclr_dim, &
       edsclr_dim
 
     use model_flags, only: & 
-      l_tke_aniso, & 
-      l_gamma_Skw
+      l_tke_aniso, &  ! Variable(s)
+      l_gamma_Skw, &
+      l_host_applies_sfc_fluxes
 
     use grid_class, only: & 
       gr,  & ! Variable(s)
@@ -219,6 +220,22 @@ module clubb_core
     !!! External
     intrinsic :: sqrt, min, max, exp, mod
 
+    ! Constant Parameters
+    ! ldgrant June 2009
+    logical, parameter :: &
+      l_trapezoid_rule = .false., &     ! Logical flag used to turn the trapezoidal 
+                                        ! rule on or off.  
+
+      l_call_pdf_closure_twice = .true. ! If the trapezoidal rule is used, this logical 
+                                        ! flag determines if the variables originally
+                                        ! on the thermodynamic grid will be brought
+                                        ! to the momentum grid for use with the trapezoidal
+                                        ! rule by calling the subroutine pdf_closure a 
+                                        ! second time (.true.) or by interpolation 
+                                        ! (.false.).  Calling pdf_closure twice is more 
+                                        ! expensive but produces better results with the
+                                        ! trapezoidal rule.
+
     !!! Input Variables
     logical, intent(in) ::  & 
       l_implemented ! Is this part of a larger host model (T/F) ?
@@ -342,22 +359,6 @@ module clubb_core
       upwp_cl_num,    & ! Instance of u'w' clipping (1st or 2nd).
       vpwp_cl_num       ! Instance of v'w' clipping (1st or 2nd).
 
-    ! ldgrant June 2009
-    logical, parameter :: &
-      l_trapezoid_rule = .false., &     ! Logical flag used to turn the trapezoidal 
-                                        ! rule on or off.  
-
-      l_call_pdf_closure_twice = .true. ! If the trapezoidal rule is used, this logical 
-                                        ! flag determines if the variables originally
-                                        ! on the thermodynamic grid will be brought
-                                        ! to the momentum grid for use with the trapezoidal
-                                        ! rule by calling the subroutine pdf_closure a 
-                                        ! second time (.true.) or by interpolation 
-                                        ! (.false.).  Calling pdf_closure twice is more 
-                                        ! expensive but produces better results with the
-                                        ! trapezoidal rule.
-
-    ! These local variables are declared because they originally belong on the momentum 
     ! grid levels, but pdf_closure outputs them on the thermodynamic grid levels.
     real, dimension(gr%nnzp) :: &
       wp4_zt,      & ! w'^4 (on thermo. grid)           [m^4/s^4] 
@@ -392,18 +393,39 @@ module clubb_core
     !-----------------------------------------------------------------------
 
     ! SET SURFACE VALUES OF FLUXES (BROUGHT IN)
-    wpthlp(1) = wpthlp_sfc
-    wprtp(1)  = wprtp_sfc
-    upwp(1)   = upwp_sfc
-    vpwp(1)   = vpwp_sfc
+    ! We only do this for host models that do not apply the flux 
+    ! elsewhere in the code (e.g. WRF).  In other cases the _sfc variables will
+    ! only be used to compute the variance at the surface. -dschanen 8 Sept 2009
+    if ( .not. l_host_applies_sfc_fluxes ) then
+      wpthlp(1) = wpthlp_sfc
+      wprtp(1)  = wprtp_sfc
+      upwp(1)   = upwp_sfc
+      vpwp(1)   = vpwp_sfc
 
-    ! Set fluxes for passive scalars (if enabled)
-    if ( sclr_dim > 0 ) then
-      wpsclrp(1,1:sclr_dim)   = wpsclrp_sfc(1:sclr_dim)
-    end if
+      ! Set fluxes for passive scalars (if enabled)
+      if ( sclr_dim > 0 ) then
+        wpsclrp(1,1:sclr_dim)   = wpsclrp_sfc(1:sclr_dim)
+      end if
 
-    if ( edsclr_dim > 0 ) then
-      wpedsclrp(1,1:edsclr_dim) = wpedsclrp_sfc(1:edsclr_dim)
+      if ( edsclr_dim > 0 ) then
+        wpedsclrp(1,1:edsclr_dim) = wpedsclrp_sfc(1:edsclr_dim)
+      end if
+
+    else
+      wpthlp(1) = 0.0
+      wprtp(1)  = 0.0
+      upwp(1)   = 0.0
+      vpwp(1)   = 0.0
+
+      ! Set fluxes for passive scalars (if enabled)
+      if ( sclr_dim > 0 ) then
+        wpsclrp(1,1:sclr_dim) = 0.0
+      end if
+
+      if ( edsclr_dim > 0 ) then
+        wpedsclrp(1,1:edsclr_dim) = 0.0
+      end if
+
     end if
 
     !----------------------------------------------------------------
@@ -430,13 +452,13 @@ module clubb_core
 !      Surface effects should not be included with any case where the lowest
 !      level is not the ground level.  Brian Griffin.  December 22, 2005.
     IF ( gr%zm(1) == sfc_elevation ) THEN
-      call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),   & ! intent(in)
-                    wpsclrp(1,1:sclr_dim),                   & ! intent(in)
-                    wp2(1), up2(1), vp2(1),                  & ! intent(out)
-                    thlp2(1), rtp2(1), rtpthlp(1), err_code, & ! intent(out)
-                    sclrp2(1,1:sclr_dim),                    & ! intent(out)
-                    sclrprtp(1,1:sclr_dim),                  & ! intent(out) 
-                    sclrpthlp(1,1:sclr_dim) )                  ! intent(out)
+      call sfc_var( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & ! intent(in)
+                    wpsclrp_sfc(1:sclr_dim),                   & ! intent(in)
+                    wp2(1), up2(1), vp2(1),                    & ! intent(out)
+                    thlp2(1), rtp2(1), rtpthlp(1), err_code,   & ! intent(out)
+                    sclrp2(1,1:sclr_dim),                      & ! intent(out)
+                    sclrprtp(1,1:sclr_dim),                    & ! intent(out) 
+                    sclrpthlp(1,1:sclr_dim) )                    ! intent(out)
       ! Subroutine may produce NaN values, and if so, exit
       ! gracefully.
       ! Joshua Fasching March 2008
@@ -661,8 +683,8 @@ module clubb_core
     ! radiation, and we do not want to bother recomputing it.
     ! Code is duplicated from below to ensure that relative humidity
     ! is calculated properly.  3 Sep 2009
-    call clip_rcm(rtm, 'rtm < rcm after pdf_closure', & ! intent (in)
-                  rcm)                                  ! intent (inout)
+    call clip_rcm( rtm, 'rtm < rcm after pdf_closure', & ! intent (in)
+                   rcm )                                 ! intent (inout)
 
     ! Compute variables cloud_cover and rcm_in_layer.
     ! Code added July 2009
@@ -783,8 +805,8 @@ module clubb_core
     ! This code won't work unless rtm >= 0 !!!
     ! We do not clip rcm_in_layer because rcm_in_layer only influences
     ! radiation, and we do not want to bother recomputing it.  6 Aug 2009
-    call clip_rcm(rtm, 'rtm < rcm in advance_xm_wpxp', & ! intent(in)
-                  rcm)                                   ! intent(inout)
+    call clip_rcm( rtm, 'rtm < rcm in advance_xm_wpxp', & ! intent(in)
+                   rcm )                                  ! intent(inout)
 
 
     !----------------------------------------------------------------
@@ -908,7 +930,7 @@ module clubb_core
              ( nzmax, T0_in, ts_nudge_in, & ! In
                hydromet_dim_in, sclr_dim_in, & ! In
                sclrtol_in, edsclr_dim_in, params,  &  ! In
-               l_soil_veg, & ! In
+               l_soil_veg, l_host_applies_sfc_fluxes, & ! In
                l_uv_nudge, l_tke_aniso, saturation_formula, &  ! In
                l_implemented, grid_type, deltaz, zm_init, zm_top, &  ! In
                momentum_heights, thermodynamic_heights,  &  ! In
@@ -1025,6 +1047,9 @@ module clubb_core
       l_tke_aniso       ! For anisotropic turbulent kinetic energy,
                         !   i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 
+    logical, intent(in) :: & 
+      l_host_applies_sfc_fluxes
+
     character(len=*), intent(in) :: &
       saturation_formula ! "bolton" approx. or "flatau" approx.
 
@@ -1061,10 +1086,9 @@ module clubb_core
                      begin_height, end_height                 ) ! intent(out)
 
     ! Setup flags
-
     call setup_model_flags & 
-         ( l_soil_veg, l_uv_nudge,  & ! intent(in)
-           l_tke_aniso, saturation_formula )     ! intent(in)
+         ( l_soil_veg, l_host_applies_sfc_fluxes, & ! intent(in)
+           l_uv_nudge, l_tke_aniso, saturation_formula )  ! intent(in)
 
     ! Determine the maximum allowable value for Lscale (in meters).
     if ( l_implemented ) then
@@ -1109,10 +1133,10 @@ module clubb_core
     end if
 
     if ( .not. l_implemented ) then
-      call setup_prognostic_variables( gr%nnzp )        ! intent(in)
+      call setup_prognostic_variables( gr%nnzp ) ! intent(in)
     end if
 
-    ! Both prognostic variables and diagnostic variables need to be
+    ! The diagnostic variables need to be
     ! declared, allocated, initialized, and deallocated whether CLUBB
     ! is part of a larger model or not.
     call setup_diagnostic_variables( gr%nnzp )
@@ -1147,7 +1171,7 @@ module clubb_core
       call cleanup_prognostic_variables( )
     end if
 
-    ! Both prognostic variables and diagnostic variables need to be
+    ! The diagnostic variables need to be
     ! declared, allocated, initialized, and deallocated whether CLUBB
     ! is part of a larger model or not.
     call cleanup_diagnostic_variables( )

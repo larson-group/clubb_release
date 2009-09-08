@@ -41,17 +41,24 @@ module model_flags
     l_soil_veg,      & ! Simple surface scheme - Joshua Fasching
     l_tke_aniso        ! For anisotropic turbulent kinetic energy,
                        !   i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
-   character(len=6), public :: &
-     saturation_formula ! "bolton" approx. or "flatau" approx.
+
+  ! Use to determine whether a host model has already applied the surface flux,
+  ! to avoid double counting.
+  logical, public :: &
+    l_host_applies_sfc_fluxes 
+
+  character(len=6), public :: &
+    saturation_formula ! "bolton" approx. or "flatau" approx.
 
 ! OpenMP directives. These cannot be indented.
-!$omp threadprivate(l_uv_nudge, l_tke_aniso, saturation_formula)
+!$omp threadprivate(l_uv_nudge, l_tke_aniso, l_host_applies_sfc_fluxes, &
+!$omp   saturation_formula)
 
   contains
 
 !===============================================================================
   subroutine setup_model_flags & 
-             ( l_soil_veg_in, & 
+             ( l_soil_veg_in, l_host_applies_sfc_fluxes_in, & 
                l_uv_nudge_in, l_tke_aniso_in, saturation_formula_in )
 
 ! Description:
@@ -71,6 +78,7 @@ module model_flags
     ! Input Variables
     logical, intent(in) ::  & 
       l_soil_veg_in, & 
+      l_host_applies_sfc_fluxes_in, &
       l_uv_nudge_in, & 
       l_tke_aniso_in
 
@@ -83,6 +91,8 @@ module model_flags
     l_soil_veg     = l_soil_veg_in
     l_uv_nudge     = l_uv_nudge_in
     l_tke_aniso    = l_tke_aniso_in
+
+    l_host_applies_sfc_fluxes = l_host_applies_sfc_fluxes_in
 
     ! String
     saturation_formula = trim( saturation_formula_in )
