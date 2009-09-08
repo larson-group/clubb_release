@@ -27,7 +27,7 @@ module inputfields
                      input_Kh_zt, input_Kh_zm, input_tau_zm, input_tau_zt, & 
                      input_wpthvp, &
                      input_thl1, input_thl2, input_a, input_s1, input_s2, &
-                     input_ss1, input_ss2, input_rc1, input_rc2, &
+                     input_stdev_s1, input_stdev_s2, input_rc1, input_rc2, &
                      input_thvm, input_rrainm, input_Nrm,  input_Ncm,  & 
                      input_rsnowm, input_ricem, input_rgraupelm, input_Ncnm, input_Nim, & 
                      input_thlm_forcing, input_rtm_forcing, & 
@@ -488,14 +488,14 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_ss1, stat_file_zt, "ss1", gr%nnzp, timestep, &
-             gr%zt, pdf_params%ss1, l_read_error )
+           ( input_stdev_s1, stat_file_zt, "stdev_s1", gr%nnzp, timestep, &
+             gr%zt, pdf_params%stdev_s1, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_ss2, stat_file_zt, "ss2", gr%nnzp, timestep, &
-             gr%zt, pdf_params%ss2, l_read_error )
+           ( input_stdev_s2, stat_file_zt, "stdev_s2", gr%nnzp, timestep, &
+             gr%zt, pdf_params%stdev_s2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
@@ -1777,13 +1777,13 @@ module inputfields
         l_fatal_error = .true.
       end if
 
-      if ( input_ss1 ) then
-        write(fstderr,*) "The variable ss1 is not setup for input_type = les"
+      if ( input_stdev_s1 ) then
+        write(fstderr,*) "The variable stdev_s1 is not setup for input_type = les"
         l_fatal_error = .true.
       end if
 
-      if ( input_ss2 ) then
-        write(fstderr,*) "The variable ss2 is not setup for input_type = les"
+      if ( input_stdev_s2 ) then
+        write(fstderr,*) "The variable stdev_s2 is not setup for input_type = les"
         l_fatal_error = .true.
       end if
 

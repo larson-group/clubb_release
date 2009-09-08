@@ -122,27 +122,27 @@ module generate_lh_sample_mod
       l_d_variable_lognormal ! Whether a given variable in X_nl has a lognormal dist.
 
     real :: &
-      a,        & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
-      w1,       & ! Mean of w for 1st normal distribution                 [m/s]
-      w2,       & ! Mean of w for 2nd normal distribution                 [m/s]
-      sw1,      & ! Variance of w for 1st normal distribution         [m^2/s^2]
-      sw2,      & ! Variance of w for 2nd normal distribution         [m^2/s^2]
-      thl1,     & ! Mean of th_l for 1st normal distribution                [K]
-      thl2,     & ! Mean of th_l for 2nd normal distribution                [K]
-      sthl1,    & ! Variance of th_l for 1st normal distribution          [K^2]
-      sthl2,    & ! Variance of th_l for 2nd normal distribution          [K^2]
-      rt1,      & ! Mean of r_t for 1st normal distribution             [kg/kg]
-      rt2,      & ! Mean of r_t for 2nd normal distribution             [kg/kg]
-      srt1,     & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
-      srt2,     & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
-      s1,       & ! Mean of s for 1st normal distribution               [kg/kg]
-      s2,       & ! Mean of s for 2nd normal distribution               [kg/kg]
-      stdev_s1, & ! Standard deviation of s for 1st normal distribution [kg/kg]
-      stdev_s2, & ! Standard deviation of s for 2nd normal distribution [kg/kg]
-      crt1,     & ! Coefficient for s'                                      [-]
-      crt2,     & ! Coefficient for s'                                      [-]
-      cthl1,    & ! Coefficient for s'                                    [1/K]
-      cthl2       ! Coefficient for s'                                    [1/K]
+      a,           & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
+      w1,          & ! Mean of w for 1st normal distribution                 [m/s]
+      w2,          & ! Mean of w for 2nd normal distribution                 [m/s]
+      varnce_w1,   & ! Variance of w for 1st normal distribution         [m^2/s^2]
+      varnce_w2,   & ! Variance of w for 2nd normal distribution         [m^2/s^2]
+      thl1,        & ! Mean of th_l for 1st normal distribution                [K]
+      thl2,        & ! Mean of th_l for 2nd normal distribution                [K]
+      varnce_thl1, & ! Variance of th_l for 1st normal distribution          [K^2]
+      varnce_thl2, & ! Variance of th_l for 2nd normal distribution          [K^2]
+      rt1,         & ! Mean of r_t for 1st normal distribution             [kg/kg]
+      rt2,         & ! Mean of r_t for 2nd normal distribution             [kg/kg]
+      varnce_rt1,  & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
+      varnce_rt2,  & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
+      s1,          & ! Mean of s for 1st normal distribution               [kg/kg]
+      s2,          & ! Mean of s for 2nd normal distribution               [kg/kg]
+      stdev_s1,    & ! Standard deviation of s for 1st normal distribution [kg/kg]
+      stdev_s2,    & ! Standard deviation of s for 2nd normal distribution [kg/kg]
+      crt1,        & ! Coefficient for s'                                      [-]
+      crt2,        & ! Coefficient for s'                                      [-]
+      cthl1,       & ! Coefficient for s'                                    [1/K]
+      cthl2          ! Coefficient for s'                                    [1/K]
 
     real :: &
       cloud_frac1, & ! Cloud fraction for 1st normal distribution              [-]
@@ -225,50 +225,63 @@ module generate_lh_sample_mod
 
     ! Input pdf parameters.
 
-    if ( pdf_params%sw1(level) > wtol_sqd .and. pdf_params%sw2(level) > wtol_sqd ) then
-      sw1 = pdf_params%sw1(level)
-      sw2 = pdf_params%sw2(level)
+    if ( pdf_params%varnce_w1(level) > wtol_sqd ) then
+      varnce_w1 = pdf_params%varnce_w1(level)
       w1 = pdf_params%w1(level)
+    else
+      varnce_w1 = wtol_sqd
+      w1 = wm
+    end if
+    if ( pdf_params%varnce_w2(level) > wtol_sqd ) then
+      varnce_w2 = pdf_params%varnce_w2(level)
       w2 = pdf_params%w2(level)
     else
-      sw1 = wtol_sqd
-      sw2 = sw1
-      w1 = wm
+      varnce_w2 = wtol_sqd
       w2 = wm
     end if
-    if ( pdf_params%srt1(level) > rttol**2 .and. pdf_params%srt2(level) > rttol**2 ) then
-      srt1 = pdf_params%srt1(level)
-      srt2 = pdf_params%srt2(level)
+    if ( pdf_params%varnce_rt1(level) > rttol**2 ) then
+      varnce_rt1 = pdf_params%varnce_rt1(level)
       rt1 = pdf_params%rt1(level)
+    else
+      varnce_rt1 = rttol**2
+      rt1 = rtm
+    end if
+    if ( pdf_params%varnce_rt2(level) > rttol**2 ) then
+      varnce_rt2 = pdf_params%varnce_rt2(level)
       rt2 = pdf_params%rt2(level)
     else
-      srt1 = rttol**2
-      srt2 = srt1
-      rt1 = rtm
+      varnce_rt2 = rttol**2
       rt2 = rtm
     end if
-    if ( pdf_params%sthl1(level) > thltol**2 .and. pdf_params%sthl2(level) > thltol**2 ) then
-      sthl1 = pdf_params%sthl1(level)
-      sthl2 = pdf_params%sthl2(level)
+    if ( pdf_params%varnce_thl1(level) > thltol**2 ) then 
+      varnce_thl1 = pdf_params%varnce_thl1(level)
       thl1  = pdf_params%thl1(level)
+    else
+      varnce_thl1 = thltol**2
+      thl1  = thlm
+    end if
+    if ( pdf_params%varnce_thl2(level) > thltol**2 ) then
+      varnce_thl2 = pdf_params%varnce_thl2(level)
       thl2  = pdf_params%thl2(level)
     else
-      sthl1 = thltol**2
-      sthl2 = sthl1
-      thl1  = thlm
+      varnce_thl2 = thltol**2
       thl2  = thlm
     end if
-    if ( pdf_params%ss1(level) > LH_stdev_s_tol .and. pdf_params%ss1(level) > LH_stdev_s_tol ) then
-      stdev_s1 = pdf_params%ss1(level)
-      stdev_s2 = pdf_params%ss2(level)
+    if ( pdf_params%stdev_s1(level) > LH_stdev_s_tol ) then
+      stdev_s1 = pdf_params%stdev_s1(level)
       s1       = pdf_params%s1(level)
-      s2       = pdf_params%s2(level)
     else
       stdev_s1 = LH_stdev_s_tol ! Use a larger value than sstol, for reasons of numerical stability
-      stdev_s2 = stdev_s1
       s1       = pdf_params%s1(level) * pdf_params%a(level) &
                + (1.0-pdf_params%a(level)) * pdf_params%s2(level)
-      s2       = s1
+    end if
+    if ( pdf_params%stdev_s2(level) > LH_stdev_s_tol ) then
+      stdev_s2 = pdf_params%stdev_s2(level)
+      s2       = pdf_params%s2(level)
+    else
+      stdev_s2 = LH_stdev_s_tol ! Use a larger value than sstol, as above.
+      s2       = pdf_params%s1(level) * pdf_params%a(level) &
+               + (1.0-pdf_params%a(level)) * pdf_params%s2(level)
     end if
 
     crt1 = pdf_params%crt1(level)
@@ -387,8 +400,8 @@ module generate_lh_sample_mod
       rrtthl_reduced = min( max_mag_correlation, max( rrtthl, -max_mag_correlation ) )
 
       ! Within-plume rt-thl correlation terms with rt in kg/kg
-      rrtthl_reduced1 = dble( rrtthl_reduced*sqrt( srt1*sthl1 ) )
-      rrtthl_reduced2 = dble( rrtthl_reduced*sqrt( srt2*sthl2 ) )
+      rrtthl_reduced1 = dble( rrtthl_reduced*sqrt( varnce_rt1*varnce_thl1 ) )
+      rrtthl_reduced2 = dble( rrtthl_reduced*sqrt( varnce_rt2*varnce_thl2 ) )
 
       ! Covariance (not correlation) matrices of rt-thl-w
       !    for Gaussians 1 and 2
@@ -403,17 +416,17 @@ module generate_lh_sample_mod
       Sigma_stw_1 = 0.d0 ! Start with no covariance, and add matrix elements
       Sigma_stw_2 = 0.d0
 
-      Sigma_rtthlw_1(iiLH_rt,(/iiLH_rt,iiLH_thl/))  = (/ dble( srt1 ), rrtthl_reduced1 /)
+      Sigma_rtthlw_1(iiLH_rt,(/iiLH_rt,iiLH_thl/))  = (/ dble( varnce_rt1 ), rrtthl_reduced1 /)
 
-      Sigma_rtthlw_2(iiLH_rt,(/iiLH_rt,iiLH_thl/))  = (/ dble( srt2 ), rrtthl_reduced2 /)
+      Sigma_rtthlw_2(iiLH_rt,(/iiLH_rt,iiLH_thl/))  = (/ dble( varnce_rt2 ), rrtthl_reduced2 /)
 
-      Sigma_rtthlw_1(iiLH_thl,(/iiLH_rt,iiLH_thl/)) = (/ rrtthl_reduced1, dble( sthl1 ) /)
+      Sigma_rtthlw_1(iiLH_thl,(/iiLH_rt,iiLH_thl/)) = (/ rrtthl_reduced1, dble( varnce_thl1 ) /)
 
-      Sigma_rtthlw_2(iiLH_thl,(/iiLH_rt,iiLH_thl/)) = (/ rrtthl_reduced2, dble( sthl2 ) /)
+      Sigma_rtthlw_2(iiLH_thl,(/iiLH_rt,iiLH_thl/)) = (/ rrtthl_reduced2, dble( varnce_thl2 ) /)
 
-      Sigma_rtthlw_1(iiLH_w,iiLH_w) = dble( sw1 )
+      Sigma_rtthlw_1(iiLH_w,iiLH_w) = dble( varnce_w1 )
 
-      Sigma_rtthlw_2(iiLH_w,iiLH_w) = dble( sw2 )
+      Sigma_rtthlw_2(iiLH_w,iiLH_w) = dble( varnce_w2 )
 
       ! Convert each Gaussian from rt-thl-w variables to s-t-w vars.
       call rtpthlp_2_sptp( 3, Sigma_rtthlw_1(1:3,1:3), dble( crt1 ), dble( cthl1 ), & ! In

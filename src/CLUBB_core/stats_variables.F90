@@ -374,16 +374,16 @@ module stats_variables
      ia, & 
      iw1, & 
      iw2, & 
-     isw1, & 
-     isw2, & 
+     ivarnce_w1, & 
+     ivarnce_w2, & 
      ithl1, & 
      ithl2, & 
-     isthl1, & 
-     isthl2, & 
+     ivarnce_thl1, & 
+     ivarnce_thl2, & 
      irt1, & 
      irt2, & 
-     isrt1, & 
-     isrt2, & 
+     ivarnce_rt1, & 
+     ivarnce_rt2, & 
      irc1, & 
      irc2, & 
      irsl1, & 
@@ -392,14 +392,14 @@ module stats_variables
      icloud_frac2, & 
      is1, & 
      is2, & 
-     iss1, & 
-     iss2, & 
+     istdev_s1, & 
+     istdev_s2, & 
      irrtthl
 
-!$omp   threadprivate(ia, iw1, iw2, isw1, isw2, ithl1, ithl2, isthl1)
-!$omp   threadprivate(isthl2, irt1, irt2, isrt1, isrt2, irc1, irc2)
-!$omp   threadprivate(irsl1, irsl2, icloud_frac1, icloud_frac2, is1, is2, iss1, iss2)
-!$omp   threadprivate(irrtthl)
+!$omp   threadprivate(ia, iw1, iw2, ivarnce_w1, ivarnce_w2, ithl1, ithl2, ivarnce_thl1, &
+!$omp     ivarnce_thl2, irt1, irt2, ivarnce_rt1, ivarnce_rt2, irc1, irc2, &
+!$omp     irsl1, irsl2, icloud_frac1, icloud_frac2, is1, is2, istdev_s1, istdev_s2, &
+!$omp     irrtthl)
 
   integer, public :: & 
      iwp2_zt, & 

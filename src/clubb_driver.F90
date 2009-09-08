@@ -1731,7 +1731,7 @@ module clubb_driver
         input_Kh_zt, input_Kh_zm, input_tau_zm, input_tau_zt, & 
         input_wpthvp, &
         input_thl1, input_thl2, input_a, input_s1, input_s2, &
-        input_ss1, input_ss2, input_rc1, input_rc2, &
+        input_stdev_s1, input_stdev_s2, input_rc1, input_rc2, &
         input_thvm, input_rrainm,input_Nrm,  & 
         input_rsnowm, input_ricem, input_rgraupelm,  & 
         input_thlm_forcing, input_rtm_forcing, & 
@@ -1824,8 +1824,8 @@ module clubb_driver
     input_a    = .true.
     input_s1   = .true.
     input_s2   = .true.
-    input_ss1  = .true.
-    input_ss2  = .true.
+    input_stdev_s1  = .true.
+    input_stdev_s2  = .true.
     input_rc1  = .true.
     input_rc2  = .true.
 

@@ -922,16 +922,16 @@ module stats_subs
         ia, & 
         iw1, & 
         iw2, & 
-        isw1, & 
-        isw2, & 
+        ivarnce_w1, & 
+        ivarnce_w2, & 
         ithl1, & 
         ithl2, & 
-        isthl1, & 
-        isthl2, & 
+        ivarnce_thl1, & 
+        ivarnce_thl2, & 
         irt1, & 
         irt2, & 
-        isrt1, & 
-        isrt2, & 
+        ivarnce_rt1, & 
+        ivarnce_rt2, & 
         irc1, & 
         irc2, & 
         irsl1, & 
@@ -940,8 +940,8 @@ module stats_subs
         icloud_frac2, & 
         is1, & 
         is2, & 
-        iss1, & 
-        iss2, & 
+        istdev_s1, & 
+        istdev_s2, & 
         irrtthl
 
     use stats_variables, only: & 
@@ -1227,16 +1227,16 @@ module stats_subs
       call stat_update_var( ia, pdf_params%a, zt )
       call stat_update_var( iw1, pdf_params%w1, zt )
       call stat_update_var( iw2, pdf_params%w2, zt )
-      call stat_update_var( isw1, pdf_params%sw1, zt )
-      call stat_update_var( isw2, pdf_params%sw2, zt )
+      call stat_update_var( ivarnce_w1, pdf_params%varnce_w1, zt )
+      call stat_update_var( ivarnce_w2, pdf_params%varnce_w2, zt )
       call stat_update_var( ithl1, pdf_params%thl1, zt )
       call stat_update_var( ithl2, pdf_params%thl2, zt )
-      call stat_update_var( isthl1, pdf_params%sthl1, zt )
-      call stat_update_var( isthl2, pdf_params%sthl2, zt )
+      call stat_update_var( ivarnce_thl1, pdf_params%varnce_thl1, zt )
+      call stat_update_var( ivarnce_thl2, pdf_params%varnce_thl2, zt )
       call stat_update_var( irt1, pdf_params%rt1, zt )
       call stat_update_var( irt2, pdf_params%rt2, zt )
-      call stat_update_var( isrt1, pdf_params%srt1, zt )
-      call stat_update_var( isrt2, pdf_params%srt2, zt )
+      call stat_update_var( ivarnce_rt1, pdf_params%varnce_rt1, zt )
+      call stat_update_var( ivarnce_rt2, pdf_params%varnce_rt2, zt )
       call stat_update_var( irc1, pdf_params%rc1, zt )
       call stat_update_var( irc2, pdf_params%rc2, zt )
       call stat_update_var( irsl1, pdf_params%rsl1, zt )
@@ -1245,8 +1245,8 @@ module stats_subs
       call stat_update_var( icloud_frac2, pdf_params%cloud_frac2, zt )
       call stat_update_var( is1, pdf_params%s1, zt )
       call stat_update_var( is2, pdf_params%s2, zt )
-      call stat_update_var( iss1, pdf_params%ss1, zt )
-      call stat_update_var( iss2, pdf_params%ss2, zt )
+      call stat_update_var( istdev_s1, pdf_params%stdev_s1, zt )
+      call stat_update_var( istdev_s2, pdf_params%stdev_s2, zt )
       call stat_update_var( irrtthl, pdf_params%rrtthl, zt )
       call stat_update_var( iwp2_zt, wp2_zt, zt )
       call stat_update_var( ithlp2_zt, thlp2_zt, zt )

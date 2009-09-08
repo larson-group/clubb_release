@@ -175,20 +175,20 @@ module pdf_closure_module
     real ::  &
       w1,          & ! Mean of w for 1st normal distribution                 [m/s]
       w2,          & ! Mean of w for 2nd normal distribution                 [m/s]
-      sw1,         & ! Variance of w for 1st normal distribution         [m^2/s^2]
-      sw2,         & ! Variance of w for 2nd normal distribution         [m^2/s^2]
+      varnce_w1,   & ! Variance of w for 1st normal distribution         [m^2/s^2]
+      varnce_w2,   & ! Variance of w for 2nd normal distribution         [m^2/s^2]
       rt1,         & ! Mean of r_t for 1st normal distribution             [kg/kg]
       rt2,         & ! Mean of r_t for 2nd normal distribution             [kg/kg]
-      srt1,        & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
-      srt2,        & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
+      varnce_rt1,  & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
+      varnce_rt2,  & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
       crt1,        & ! Coefficient for s'                                      [-]
       crt2,        & ! Coefficient for s'                                      [-]
       cthl1,       & ! Coefficient for s'                                    [1/K]
       cthl2,       & ! Coefficient for s'                                    [1/K]
       thl1,        & ! Mean of th_l for 1st normal distribution                [K]
       thl2,        & ! Mean of th_l for 2nd normal distribution                [K]
-      sthl1,       & ! Variance of th_l for 1st normal distribution          [K^2]
-      sthl2,       & ! Variance of th_l for 2nd normal distribution          [K^2]
+      varnce_thl1, & ! Variance of th_l for 1st normal distribution          [K^2]
+      varnce_thl2, & ! Variance of th_l for 2nd normal distribution          [K^2]
       a,           & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
       rc1,         & ! Mean of r_c for 1st normal distribution             [kg/kg]
       rc2,         & ! Mean of r_c for 2nd normal distribution             [kg/kg]
@@ -198,15 +198,15 @@ module pdf_closure_module
       cloud_frac2, & ! Cloud fraction for 2nd normal distribution              [-]
       s1,          & ! Mean of s for 1st normal distribution               [kg/kg]
       s2,          & ! Mean of s for 2nd normal distribution               [kg/kg]
-      ss1,         & ! Standard deviation of s for 1st normal distribution [kg/kg]
-      ss2,         & ! Standard deviation of s for 2nd normal distribution [kg/kg]
+      stdev_s1,    & ! Standard deviation of s for 1st normal distribution [kg/kg]
+      stdev_s2,    & ! Standard deviation of s for 2nd normal distribution [kg/kg]
       rrtthl,      & ! Within-a-normal (sub-plume) correlation of r_t and th_l [-]
       alpha_thl,   & ! Factor relating to normalized variance for th_l         [-]
       alpha_rt       ! Factor relating to normalized variance for r_t          [-]
 
                    ! Note:  alpha coefficients = 0.5 * ( 1 - correlations^2 ).
                    !        These are used to calculate the scalar widths
-                   !        sthl1, sthl2, srt1, and srt2 as in Eq. (34) of
+                   !        varnce_thl1, varnce_thl2, varnce_rt1, and varnce_rt2 as in Eq. (34) of
                    !        Larson and Golaz (2005)
 
     ! Passive scalar local variables
@@ -252,24 +252,24 @@ module pdf_closure_module
     rc_coef = Lv / (exner*Cp) - ep2 * T0
 
     ! If there is no velocity, then use single delta fnc. as pdf
-    ! Otherwise width parameters (e.g. sw1, sw2, etc.) are non-zero.
+    ! Otherwise width parameters (e.g. varnce_w1, varnce_w2, etc.) are non-zero.
     if ( wp2 <= wtol_sqd )  then
 
       a         = 0.5
       w1        = wm
       w2        = wm
-      sw1       = 0.
-      sw2       = 0.
+      varnce_w1 = 0.
+      varnce_w2 = 0.
       rt1       = rtm
       rt2       = rtm
       alpha_rt  = 0.5
-      srt1      = 0.
-      srt2      = 0.
+      varnce_rt1      = 0.
+      varnce_rt2      = 0.
       thl1      = thlm
       thl2      = thlm
       alpha_thl = 0.5
-      sthl1     = 0.
-      sthl2     = 0.
+      varnce_thl1     = 0.
+      varnce_thl2     = 0.
       rrtthl    = 0.
 
       if ( l_scalar_calc ) then
@@ -324,11 +324,11 @@ module pdf_closure_module
       ! The mean of w for Gaussian "plume" 2 is w2.
       w2   = wm + sqrt_wp2*w2_n
 
-      ! The variance of w for Gaussian "plume" 1 for sw1.
-      sw1  = sigma_sqd_w*wp2
-      ! The variance of w for Gaussian "plume" 2 for sw2.
+      ! The variance of w for Gaussian "plume" 1 for varnce_w1.
+      varnce_w1  = sigma_sqd_w*wp2
+      ! The variance of w for Gaussian "plume" 2 for varnce_w2.
       ! The variance in both Gaussian "plumes" is defined to be the same.
-      sw2  = sigma_sqd_w*wp2
+      varnce_w2  = sigma_sqd_w*wp2
 
 
       ! The normalized variance for thl, rt, and sclr for "plume" 1 is:
@@ -360,8 +360,8 @@ module pdf_closure_module
       if ( thlp2 <= thltol**2 ) then
         thl1      = thlm
         thl2      = thlm
-        sthl1     = 0.0
-        sthl2     = 0.0
+        varnce_thl1     = 0.0
+        varnce_thl2     = 0.0
         alpha_thl = 0.5
       else
 !       thl1_n = - (wpthlp/(sqrt( wp2 )*sqrt( thlp2 )))/w2_n
@@ -376,16 +376,16 @@ module pdf_closure_module
 
         ! Vince Larson multiplied original expressions by width_factor_1,2
         !   to generalize scalar skewnesses.  05 Nov 03
-        sthl1 = ( alpha_thl / a * thlp2 ) * width_factor_1
-        sthl2 = ( alpha_thl / (1.-a) * thlp2 ) * width_factor_2
+        varnce_thl1 = ( alpha_thl / a * thlp2 ) * width_factor_1
+        varnce_thl2 = ( alpha_thl / (1.-a) * thlp2 ) * width_factor_2
 
       end if ! thlp2 <= thltol**2
 
       if ( rtp2 <= rttol**2 ) then
         rt1      = rtm
         rt2      = rtm
-        srt1     = 0.0
-        srt2     = 0.0
+        varnce_rt1     = 0.0
+        varnce_rt2     = 0.0
         alpha_rt = 0.5
       else
 !       rt1_n = -( wprtp / ( sqrt( wp2 )*sqrt( rtp2 ) ) ) / w2_n
@@ -400,8 +400,8 @@ module pdf_closure_module
 
       ! Vince Larson multiplied original expressions by width_factor_1,2
       !   to generalize scalar skewnesses.  05 Nov 03
-        srt1 = ( alpha_rt / a * rtp2 ) * width_factor_1
-        srt2 = ( alpha_rt / (1.-a) * rtp2 ) * width_factor_2
+        varnce_rt1 = ( alpha_rt / a * rtp2 ) * width_factor_1
+        varnce_rt2 = ( alpha_rt / (1.-a) * rtp2 ) * width_factor_2
 
       end if ! rtp2 <= rttol**2 
 
@@ -440,10 +440,10 @@ module pdf_closure_module
 
       ! We include sub-plume correlation with coeff rrtthl.
 
-      if ( srt1*sthl1 > 0 .and. srt2*sthl2 > 0) then
+      if ( varnce_rt1*varnce_thl1 > 0 .and. varnce_rt2*varnce_thl2 > 0) then
         rrtthl = ( rtpthlp - a * ( rt1-rtm ) * ( thl1-thlm ) & 
                    - (1.-a) * ( rt2-rtm ) * ( thl2-thlm ) ) & 
-                / ( a*sqrt( srt1*sthl1 ) + (1.-a)*sqrt( srt2*sthl2 ) )
+                / ( a*sqrt( varnce_rt1*varnce_thl1 ) + (1.-a)*sqrt( varnce_rt2*varnce_thl2 ) )
         if ( rrtthl < -1.0 ) then
           rrtthl = -1.0
         end if
@@ -452,17 +452,17 @@ module pdf_closure_module
         end if
       else
         rrtthl = 0.0
-      end if ! srt1*sthl1 > 0 .and. srt2*sthl2 > 0
+      end if ! varnce_rt1*varnce_thl1 > 0 .and. varnce_rt2*varnce_thl2 > 0
 
       ! Sub-plume correlation, rsclrthl, between passive scalar and theta_l.
       if ( l_scalar_calc ) then
         do i=1, sclr_dim
-          if ( ssclr1(i)*sthl1 > 0. .and. ssclr2(i)*sthl2 > 0. ) then
+          if ( ssclr1(i)*varnce_thl1 > 0. .and. ssclr2(i)*varnce_thl2 > 0. ) then
             rsclrthl(i) = ( sclrpthlp(i)  & 
             - a * ( sclr1(i)-sclrm(i) ) * ( thl1-thlm ) & 
             - (1.-a) * ( sclr2(i)-sclrm(i) ) * ( thl2-thlm ) ) & 
-                / ( a*sqrt( ssclr1(i)*sthl1 )  & 
-                         + (1.-a)*sqrt( ssclr2(i)*sthl2 ) )
+                / ( a*sqrt( ssclr1(i)*varnce_thl1 )  & 
+                         + (1.-a)*sqrt( ssclr2(i)*varnce_thl2 ) )
             if ( rsclrthl(i) < -1.0 ) then
               rsclrthl(i) = -1.0
             end if
@@ -476,10 +476,10 @@ module pdf_closure_module
           ! Sub-plume correlation, rsclrrt, between passive scalar
           !   and total water.
 
-          if ( ssclr1(i)*srt1 > 0 .and. ssclr2(i)*srt2 > 0 ) then
+          if ( ssclr1(i)*varnce_rt1 > 0 .and. ssclr2(i)*varnce_rt2 > 0 ) then
             rsclrrt(i) = ( sclrprtp(i) - a * ( sclr1(i)-sclrm(i) ) * ( rt1-rtm )&
                          - (1.-a) * ( sclr2(i)-sclrm(i) ) * ( rt2-rtm ) ) & 
-             / ( a*sqrt( ssclr1(i)*srt1 ) + (1.-a)*sqrt( ssclr2(i)*srt2 ) )
+             / ( a*sqrt( ssclr1(i)*varnce_rt1 ) + (1.-a)*sqrt( ssclr2(i)*varnce_rt2 ) )
             if ( rsclrrt(i) < -1.0 ) then
               rsclrrt(i) = -1.0
             end if
@@ -495,54 +495,54 @@ module pdf_closure_module
     end if  ! Widths non-zero
 
     ! Compute higher order moments (these are interactive)
-    wp2rtp  = a * ( (w1-wm)**2+sw1 ) * ( rt1-rtm ) & 
-            + (1.-a) * ( (w2-wm)**2+sw2 ) * ( rt2-rtm )
+    wp2rtp  = a * ( (w1-wm)**2+varnce_w1 ) * ( rt1-rtm ) & 
+            + (1.-a) * ( (w2-wm)**2+varnce_w2 ) * ( rt2-rtm )
 
-    wp2thlp = a * ( (w1-wm)**2+sw1 ) * ( thl1-thlm ) & 
-            + (1.-a) * ( (w2-wm)**2+sw2 ) * ( thl2-thlm )
+    wp2thlp = a * ( (w1-wm)**2+varnce_w1 ) * ( thl1-thlm ) & 
+            + (1.-a) * ( (w2-wm)**2+varnce_w2 ) * ( thl2-thlm )
 
     ! Compute higher order moments (these are non-interactive diagnostics)
     if ( iwp4 > 0 ) then
-      wp4 = a * ( 3.*sw1**2 + 6.*((w1-wm)**2)*sw1 + (w1-wm)**4 ) & 
-          + (1.-a) * ( 3.*sw2**2 + 6.*((w2-wm)**2)*sw2 + (w2-wm)**4 )
+      wp4 = a * ( 3.*varnce_w1**2 + 6.*((w1-wm)**2)*varnce_w1 + (w1-wm)**4 ) & 
+          + (1.-a) * ( 3.*varnce_w2**2 + 6.*((w2-wm)**2)*varnce_w2 + (w2-wm)**4 )
     end if
 
     if ( iwprtp2 > 0 ) then
-      wprtp2  = a * ( w1-wm )*( (rt1-rtm)**2 + srt1 )  & 
-              + (1.-a) * ( w2-wm )*( (rt2-rtm)**2 + srt2)
+      wprtp2  = a * ( w1-wm )*( (rt1-rtm)**2 + varnce_rt1 )  & 
+              + (1.-a) * ( w2-wm )*( (rt2-rtm)**2 + varnce_rt2)
     end if
 
     if ( iwpthlp2 > 0 ) then
-      wpthlp2 = a * ( w1-wm )*( (thl1-thlm)**2 + sthl1 )  & 
-              + (1.-a) * ( w2-wm )*( (thl2-thlm)**2+sthl2 )
+      wpthlp2 = a * ( w1-wm )*( (thl1-thlm)**2 + varnce_thl1 )  & 
+              + (1.-a) * ( w2-wm )*( (thl2-thlm)**2+varnce_thl2 )
     end if
 
     if ( iwprtpthlp > 0 ) then
       wprtpthlp = a * ( w1-wm )*( (rt1-rtm)*(thl1-thlm)  & 
-                + rrtthl*sqrt( srt1*sthl1 ) ) & 
+                + rrtthl*sqrt( varnce_rt1*varnce_thl1 ) ) & 
                 + ( 1.-a ) * ( w2-wm )*( (rt2-rtm)*(thl2-thlm) & 
-                + rrtthl*sqrt( srt2*sthl2 ) )
+                + rrtthl*sqrt( varnce_rt2*varnce_thl2 ) )
     end if
 
     ! Scalar Addition to higher order moments
     if ( l_scalar_calc ) then
       do i=1, sclr_dim
 
-        wp2sclrp(i)  = a * ( (w1-wm)**2+sw1 )*( sclr1(i)-sclrm(i) ) & 
-                     + (1.-a) * ( (w2-wm)**2+sw2 ) * ( sclr2(i)-sclrm(i) )
+        wp2sclrp(i)  = a * ( (w1-wm)**2+varnce_w1 )*( sclr1(i)-sclrm(i) ) & 
+                     + (1.-a) * ( (w2-wm)**2+varnce_w2 ) * ( sclr2(i)-sclrm(i) )
 
         wpsclrp2(i) = a * ( w1-wm ) * ( (sclr1(i)-sclrm(i))**2 + ssclr1(i) )  & 
                     + (1.-a) * ( w2-wm ) * ( (sclr2(i)-sclrm(i))**2 + ssclr2(i) )
 
         wpsclrprtp(i) = a * ( w1-wm ) * ( ( rt1-rtm )*( sclr1(i)-sclrm(i) )  & 
-          + rsclrrt(i)*sqrt( srt1*ssclr1(i) ) ) &
+          + rsclrrt(i)*sqrt( varnce_rt1*ssclr1(i) ) ) &
           + ( 1.-a )*( w2-wm ) *  &
-            ( ( rt2-rtm )*( sclr2(i)-sclrm(i) ) + rsclrrt(i)*sqrt( srt2*ssclr2(i) ) )
+            ( ( rt2-rtm )*( sclr2(i)-sclrm(i) ) + rsclrrt(i)*sqrt( varnce_rt2*ssclr2(i) ) )
 
         wpsclrpthlp(i) = a * ( w1-wm ) * ( ( sclr1(i)-sclrm(i) )*( thl1-thlm )  & 
-          + rsclrthl(i)*sqrt( ssclr1(i)*sthl1 ) ) & 
+          + rsclrthl(i)*sqrt( ssclr1(i)*varnce_thl1 ) ) & 
           + ( 1.-a ) * ( w2-wm ) * &
-            ( ( sclr2(i)-sclrm(i) )*( thl2-thlm ) + rsclrthl(i)*sqrt( ssclr2(i)*sthl2 ) )
+            ( ( sclr2(i)-sclrm(i) )*( thl2-thlm ) + rsclrthl(i)*sqrt( ssclr2(i)*varnce_thl2 ) )
 
       end do ! i=1, sclr_dim
     end if ! l_scalar_calc
@@ -584,31 +584,31 @@ module pdf_closure_module
     ! Standard deviation of s
     ! include subplume correlation of qt, thl
     ! Because of round-off error, 
-    ! ss1 (and probably ss2) can become negative when rrtthl=1
+    ! stdev_s1 (and probably stdev_s2) can become negative when rrtthl=1
     ! One could also write this as a squared term
     ! plus a postive correction; this might be a neater format
 
-    ss1 = sqrt( max( zero_threshold, ( srt1*crt1**2 + sthl1*cthl1**2  &
-        - 2.0*rrtthl*crt1*sqrt( srt1*sthl1 )*cthl1 )  & 
+    stdev_s1 = sqrt( max( zero_threshold, ( varnce_rt1*crt1**2 + varnce_thl1*cthl1**2  &
+        - 2.0*rrtthl*crt1*sqrt( varnce_rt1*varnce_thl1 )*cthl1 )  & 
                ) &  ! max
           ) ! sqrt
-    ss2 = sqrt( max( zero_threshold, ( srt2*crt2**2 + sthl2*cthl2**2 & 
-        - 2.0*rrtthl*crt2*sqrt( srt2*sthl2 )*cthl2 )  & 
+    stdev_s2 = sqrt( max( zero_threshold, ( varnce_rt2*crt2**2 + varnce_thl2*cthl2**2 & 
+        - 2.0*rrtthl*crt2*sqrt( varnce_rt2*varnce_thl2 )*cthl2 )  & 
                )  &  ! max
           ) ! sqrt
 
-!   ss1 = sqrt( (sqrt(srt1)*crt1 - sqrt(sthl1)*cthl1)**2 &
-!                + (1.-rrtthl)*2.*crt1*sqrt(srt1)*cthl1*sqrt(sthl1)  )
-!   ss2 = sqrt( (sqrt(srt2)*crt2 - sqrt(sthl2)*cthl2)**2 &
-!                + (1.-rrtthl)*2.*crt2*sqrt(srt2)*cthl2*sqrt(sthl2)  )
+!   stdev_s1 = sqrt( (sqrt(varnce_rt1)*crt1 - sqrt(varnce_thl1)*cthl1)**2 &
+!                + (1.-rrtthl)*2.*crt1*sqrt(varnce_rt1)*cthl1*sqrt(varnce_thl1)  )
+!   stdev_s2 = sqrt( (sqrt(varnce_rt2)*crt2 - sqrt(varnce_thl2)*cthl2)**2 &
+!                + (1.-rrtthl)*2.*crt2*sqrt(varnce_rt2)*cthl2*sqrt(varnce_thl2)  )
 
 
     ! We need to introduce a threshold value for the variance of s
 
-    if ( ss1 > sstol ) then
-      zeta1 = s1/ss1
+    if ( stdev_s1 > sstol ) then
+      zeta1 = s1/stdev_s1
       cloud_frac1  = 0.5*( 1. + erf( zeta1/sqrt_2 )  )
-      rc1          = s1*cloud_frac1+ss1*exp( -0.5*zeta1**2 )/( sqrt_2pi )
+      rc1          = s1*cloud_frac1+stdev_s1*exp( -0.5*zeta1**2 )/( sqrt_2pi )
     else
       if ( s1 < 0.0 ) then
         cloud_frac1  = 0.0
@@ -617,12 +617,12 @@ module pdf_closure_module
         cloud_frac1  = 1.0
         rc1          = s1
       end if ! s1 < 0
-    end if ! ss1 > sstol
+    end if ! stdev_s1 > sstol
 
-    if ( ss2 > sstol ) then
-      zeta2       = s2/ss2
+    if ( stdev_s2 > sstol ) then
+      zeta2       = s2/stdev_s2
       cloud_frac2 = 0.5*( 1. + erf( zeta2/sqrt_2 ) )
-      rc2         = s2*cloud_frac2+ss2*exp( -0.5*zeta2**2 )/( sqrt_2pi )
+      rc2         = s2*cloud_frac2+stdev_s2*exp( -0.5*zeta2**2 )/( sqrt_2pi )
     else
       if ( s2 < 0.0 ) then
         cloud_frac2  = 0.0
@@ -631,10 +631,10 @@ module pdf_closure_module
         cloud_frac2  = 1.0
         rc2          = s2
       end if ! s2 < 0
-    end if ! ss2 > sstol
+    end if ! stdev_s2 > sstol
 
     ! Compute moments that depend on theta_v
-    wp2rcp = a * ((w1-wm)**2 + sw1)*rc1 + (1.-a) * ((w2-wm)**2 + sw2)*rc2 & 
+    wp2rcp = a * ((w1-wm)**2 + varnce_w1)*rc1 + (1.-a) * ((w2-wm)**2 + varnce_w2)*rc2 & 
            - wp2 * (a*rc1+(1.-a)*rc2)
 
     wp2thvp = wp2thlp + ep1*T0*wp2rtp + rc_coef*wp2rcp
@@ -644,17 +644,17 @@ module pdf_closure_module
     wpthvp = wpthlp + ep1*T0*wprtp + rc_coef*wprcp
 
     ! Account for subplume correlation in qt-thl
-    thlprcp  = a * ( (thl1-thlm)*rc1 - (cthl1*sthl1)*cloud_frac1 ) & 
-             + (1.-a) * ( (thl2-thlm)*rc2 - (cthl2*sthl2)*cloud_frac2 ) & 
-             + a*rrtthl*crt1*sqrt( srt1*sthl1 )*cloud_frac1 & 
-             + (1.-a)*rrtthl*crt2*sqrt( srt2*sthl2 )*cloud_frac2
+    thlprcp  = a * ( (thl1-thlm)*rc1 - (cthl1*varnce_thl1)*cloud_frac1 ) & 
+             + (1.-a) * ( (thl2-thlm)*rc2 - (cthl2*varnce_thl2)*cloud_frac2 ) & 
+             + a*rrtthl*crt1*sqrt( varnce_rt1*varnce_thl1 )*cloud_frac1 & 
+             + (1.-a)*rrtthl*crt2*sqrt( varnce_rt2*varnce_thl2 )*cloud_frac2
     thlpthvp = thlp2 + ep1*T0*rtpthlp + rc_coef*thlprcp
 
     ! Account for subplume correlation in qt-thl
-    rtprcp = a * ( (rt1-rtm)*rc1 + (crt1*srt1)*cloud_frac1 ) & 
-           + (1.-a) * ( (rt2-rtm)*rc2 + (crt2*srt2)*cloud_frac2 ) & 
-           - a*rrtthl*cthl1*sqrt( srt1*sthl1 )*cloud_frac1 & 
-           - (1.-a)*rrtthl*cthl2*sqrt( srt2*sthl2 )*cloud_frac2
+    rtprcp = a * ( (rt1-rtm)*rc1 + (crt1*varnce_rt1)*cloud_frac1 ) & 
+           + (1.-a) * ( (rt2-rtm)*rc2 + (crt2*varnce_rt2)*cloud_frac2 ) & 
+           - a*rrtthl*cthl1*sqrt( varnce_rt1*varnce_thl1 )*cloud_frac1 & 
+           - (1.-a)*rrtthl*cthl2*sqrt( varnce_rt2*varnce_thl2 )*cloud_frac2
 
     rtpthvp  = rtpthlp + ep1*T0*rtp2 + rc_coef*rtprcp
 
@@ -665,10 +665,10 @@ module pdf_closure_module
       do i=1, sclr_dim
         sclrprcp(i) &
         = a * ( ( sclr1(i)-sclrm(i) ) * rc1 ) + (1.-a) * ( ( sclr2(i)-sclrm(i) ) * rc2 ) & 
-        + a*rsclrrt(i) * crt1  * sqrt( ssclr1(i) * srt1 ) * cloud_frac1 & 
-        + (1.-a) * rsclrrt(i) * crt2  * sqrt( ssclr2(i) * srt2 ) * cloud_frac2 & 
-        - a * rsclrthl(i) * cthl1  * sqrt( ssclr1(i) * sthl1 ) * cloud_frac1 & 
-        - (1.-a) * rsclrthl(i) * cthl2  * sqrt( ssclr2(i) * sthl2 ) * cloud_frac2
+        + a*rsclrrt(i) * crt1  * sqrt( ssclr1(i) * varnce_rt1 ) * cloud_frac1 & 
+        + (1.-a) * rsclrrt(i) * crt2  * sqrt( ssclr2(i) * varnce_rt2 ) * cloud_frac2 & 
+        - a * rsclrthl(i) * cthl1  * sqrt( ssclr1(i) * varnce_thl1 ) * cloud_frac1 & 
+        - (1.-a) * rsclrthl(i) * cthl2  * sqrt( ssclr2(i) * varnce_thl2 ) * cloud_frac2
 
         sclrpthvp(i) = sclrpthlp(i) + ep1*T0*sclrprtp(i) + rc_coef*sclrprcp(i)
       end do ! i=1, sclr_dim
@@ -695,8 +695,8 @@ module pdf_closure_module
     ! This is not needed for closure.  Statistical Analysis only.
     if ( ircp2 > 0 ) then
 
-      rcp2 = a * ( s1*rc1 + cloud_frac1*ss1**2 ) + ( 1.-a ) &
-            * ( s2*rc2 + cloud_frac2*ss2**2 ) - rcm**2
+      rcp2 = a * ( s1*rc1 + cloud_frac1*stdev_s1**2 ) + ( 1.-a ) &
+            * ( s2*rc2 + cloud_frac2*stdev_s2**2 ) - rcm**2
       rcp2 = max( zero_threshold, rcp2 )
 
     end if
@@ -705,20 +705,20 @@ module pdf_closure_module
     ! Save PDF parameters
     pdf_params%w1(level)          = w1
     pdf_params%w2(level)          = w2
-    pdf_params%sw1(level)         = sw1
-    pdf_params%sw2(level)         = sw2
+    pdf_params%varnce_w1(level)   = varnce_w1
+    pdf_params%varnce_w2(level)   = varnce_w2
     pdf_params%rt1(level)         = rt1
     pdf_params%rt2(level)         = rt2
-    pdf_params%srt1(level)        = srt1
-    pdf_params%srt2(level)        = srt2
+    pdf_params%varnce_rt1(level)  = varnce_rt1
+    pdf_params%varnce_rt2(level)        = varnce_rt2
     pdf_params%crt1(level)        = crt1
     pdf_params%crt2(level)        = crt2
     pdf_params%cthl1(level)       = cthl1
     pdf_params%cthl2(level)       = cthl2
     pdf_params%thl1(level)        = thl1
     pdf_params%thl2(level)        = thl2
-    pdf_params%sthl1(level)       = sthl1
-    pdf_params%sthl2(level)       = sthl2
+    pdf_params%varnce_thl1(level) = varnce_thl1
+    pdf_params%varnce_thl2(level) = varnce_thl2
     pdf_params%a(level)           = a
     pdf_params%rc1(level)         = rc1
     pdf_params%rc2(level)         = rc2
@@ -728,8 +728,8 @@ module pdf_closure_module
     pdf_params%cloud_frac2(level) = cloud_frac2
     pdf_params%s1(level)          = s1
     pdf_params%s2(level)          = s2
-    pdf_params%ss1(level)         = ss1
-    pdf_params%ss2(level)         = ss2
+    pdf_params%stdev_s1(level)         = stdev_s1
+    pdf_params%stdev_s2(level)         = stdev_s2
     pdf_params%rrtthl(level)      = rrtthl
     pdf_params%alpha_thl(level)   = alpha_thl
     pdf_params%alpha_rt(level)    = alpha_rt
@@ -803,16 +803,16 @@ module pdf_closure_module
         write(fstderr,*) "cthl2 = ", cthl2
         write(fstderr,*) "pdf_params%w1 = ", pdf_params%w1(level)
         write(fstderr,*) "pdf_params%w2 = ", pdf_params%w2(level)
-        write(fstderr,*) "pdf_params%sw1 = ", pdf_params%sw1(level)
-        write(fstderr,*) "pdf_params%sw2 = ", pdf_params%sw2(level)
+        write(fstderr,*) "pdf_params%varnce_w1 = ", pdf_params%varnce_w1(level)
+        write(fstderr,*) "pdf_params%varnce_w2 = ", pdf_params%varnce_w2(level)
         write(fstderr,*) "pdf_params%rt1 = ", pdf_params%rt1(level)
         write(fstderr,*) "pdf_params%rt2 = ", pdf_params%rt2(level)
-        write(fstderr,*) "pdf_params%srt1 = ", pdf_params%srt1(level)
-        write(fstderr,*) "pdf_params%srt2 = ", pdf_params%srt2(level)
+        write(fstderr,*) "pdf_params%varnce_rt1 = ", pdf_params%varnce_rt1(level)
+        write(fstderr,*) "pdf_params%varnce_rt2 = ", pdf_params%varnce_rt2(level)
         write(fstderr,*) "pdf_params%thl1 = ", pdf_params%thl1(level)
         write(fstderr,*) "pdf_params%thl2 = ", pdf_params%thl2(level)
-        write(fstderr,*) "pdf_params%sthl1 = ", pdf_params%sthl1(level)
-        write(fstderr,*) "pdf_params%sthl2 = ", pdf_params%sthl2(level)
+        write(fstderr,*) "pdf_params%varnce_thl1 = ", pdf_params%varnce_thl1(level)
+        write(fstderr,*) "pdf_params%varnce_thl2 = ", pdf_params%varnce_thl2(level)
         write(fstderr,*) "pdf_params%a = ", pdf_params%a(level)
         write(fstderr,*) "pdf_params%rrtthl = ", pdf_params%rrtthl(level)
         write(fstderr,*) "pdf_params%rc1 = ", pdf_params%rc1(level)
@@ -823,8 +823,8 @@ module pdf_closure_module
         write(fstderr,*) "pdf_params%cloud_frac2 = ", pdf_params%cloud_frac2(level)
         write(fstderr,*) "pdf_params%s1 = ", pdf_params%s1(level)
         write(fstderr,*) "pdf_params%s2 = ", pdf_params%s2(level)
-        write(fstderr,*) "pdf_params%ss1 = ", pdf_params%ss1(level)
-        write(fstderr,*) "pdf_params%ss2 = ", pdf_params%ss2(level)
+        write(fstderr,*) "pdf_params%stdev_s1 = ", pdf_params%stdev_s1(level)
+        write(fstderr,*) "pdf_params%stdev_s2 = ", pdf_params%stdev_s2(level)
         write(fstderr,*) "pdf_params%alpha_thl = ", pdf_params%alpha_thl(level)
         write(fstderr,*) "pdf_params%alpha_rt = ", pdf_params%alpha_rt(level)
 

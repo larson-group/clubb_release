@@ -1524,8 +1524,8 @@ module mono_flux_limiter
     real, dimension(gr%nnzp) :: &
       w1,  & ! Mean of w for 1st normal distribution               [m/s]
       w2,  & ! Mean of w for 2nd normal distribution               [m/s]
-      sw1, & ! Variance of w for 1st normal distribution           [m^2/s^2]
-      sw2, & ! Variance of w for 2nd normal distribution           [m^2/s^2]
+      varnce_w1, & ! Variance of w for 1st normal distribution           [m^2/s^2]
+      varnce_w2, & ! Variance of w for 2nd normal distribution           [m^2/s^2]
       a      ! Weight of 1st normal distribution (Sk_w dependent)  [-]
 
     real :: &
@@ -1546,8 +1546,8 @@ module mono_flux_limiter
     ! to momentum levels.
     w1  = zt2zm( pdf_params%w1 )
     w2  = zt2zm( pdf_params%w2 )
-    sw1 = zt2zm( pdf_params%sw1 )
-    sw2 = zt2zm( pdf_params%sw2 )
+    varnce_w1 = zt2zm( pdf_params%varnce_w1 )
+    varnce_w2 = zt2zm( pdf_params%varnce_w2 )
     a   = zt2zm( pdf_params%a )
 
 
@@ -1556,10 +1556,10 @@ module mono_flux_limiter
     do k = 2, gr%nnzp-1, 1
 
        ! Standard deviation of w for the 1st normal distribution.
-       sigma_w1 = sqrt( sw1(k) )
+       sigma_w1 = sqrt( varnce_w1(k) )
 
        ! Standard deviation of w for the 2nd normal distribution.
-       sigma_w2 = sqrt( sw2(k) )
+       sigma_w2 = sqrt( varnce_w2(k) )
 
 
        ! Contributions from the 1st normal distribution.

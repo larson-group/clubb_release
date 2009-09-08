@@ -142,7 +142,7 @@ module estimate_lh_micro_mod
 !   real :: thl1, thl2, sthl1, sthl2
 !   real :: rt1,rt2
 !   real :: srt1, srt2
-    real :: ss1, ss2, s1, s2
+    real :: stdev_s1, stdev_s2, s1, s2
     real :: cloud_frac1, cloud_frac2
 !   real :: rc1, rc2
 
@@ -204,8 +204,8 @@ module estimate_lh_micro_mod
       cloud_frac2 = 1.0 !     "    "
       s1          = pdf_params%s1(level)
       s2          = pdf_params%s2(level)
-      ss1         = pdf_params%ss1(level)
-      ss2         = pdf_params%ss2(level)
+      stdev_s1    = pdf_params%stdev_s1(level)
+      stdev_s2    = pdf_params%stdev_s2(level)
 
       ! Compute mean cloud fraction and cloud water
 
@@ -258,23 +258,23 @@ module estimate_lh_micro_mod
       !        r_crit = 0.7e-3
       r_crit            = 0.2e-3
       K_one             = 1.e-3
-      sn1_crit          = (s1-r_crit)/max( ss1, sstol )
+      sn1_crit          = (s1-r_crit)/max( stdev_s1, sstol )
       cloud_frac1_crit  = 0.5*(1+erf(sn1_crit/sqrt(2.0)))
       AK1               = K_one * ( (s1-r_crit)*cloud_frac1_crit  & 
-                         + ss1*exp(-0.5*sn1_crit**2)/(sqrt(2*pi)) )
-      sn2_crit          = (s2-r_crit)/max( ss2, sstol )
+                         + stdev_s1*exp(-0.5*sn1_crit**2)/(sqrt(2*pi)) )
+      sn2_crit          = (s2-r_crit)/max( stdev_s2, sstol )
       cloud_frac2_crit  = 0.5*(1+erf(sn2_crit/sqrt(2.0)))
       AK2               = K_one * ( (s2-r_crit)*cloud_frac2_crit  & 
-                         + ss2*exp(-0.5*sn2_crit**2)/(sqrt(2*pi)) )
+                         + stdev_s2*exp(-0.5*sn2_crit**2)/(sqrt(2*pi)) )
       AKm(level)        = a * AK1 + (1-a) * AK2
 
       ! Exact Kessler standard deviation in units of (kg/kg)/s
       ! For some reason, sometimes AK1var, AK2var are negative
       AK1var   = max( zero_threshold, K_one * (s1-r_crit) * AK1  & 
-               + K_one * K_one * (ss1**2) * cloud_frac1_crit  & 
+               + K_one * K_one * (stdev_s1**2) * cloud_frac1_crit  & 
                - AK1**2  )
       AK2var   = max( zero_threshold, K_one * (s2-r_crit) * AK2  & 
-               + K_one * K_one * (ss2**2) * cloud_frac2_crit  & 
+               + K_one * K_one * (stdev_s2**2) * cloud_frac2_crit  & 
                - AK2**2  )
       ! This formula is for a grid box average:
       AKstd(level)  = sqrt(    a  * ( (AK1-AKm(level))**2 + AK1var ) & 
@@ -309,8 +309,8 @@ module estimate_lh_micro_mod
 !       print*, 'a=', a
 !       print*, 's1=', s1
 !       print*, 's2=', s2
-!       print*, 'ss1=', ss1
-!       print*, 'ss2=', ss2
+!       print*, 'stdev_s1=', stdev_s1
+!       print*, 'stdev_s2=', stdev_s2
 !       print*, 'AKm =', AKm(level)
 !       print*, 'lh_AKm (estimate) =', lh_AKm(level)
 !       print*, 'AK1=', AK1

@@ -210,7 +210,8 @@ module KK_microphys_module
       thl1, thl2,      & ! PDF parameters thl1 &thl2          [K]
       a,               & ! PDF parameter a                    [-]
       s1, s2,          & ! PDF parameters s1 & s2             [kg/kg]
-      ss1, ss2,        & ! PDF parameters ss1 & ss2           [kg/kg]
+      stdev_s1,        & ! Standard deviation of s1           [kg/kg]
+      stdev_s2,        & ! Standard deviation of s2           [kg/kg]
       rc1, rc2,        & ! PDF parameters rc1 & rc2           [kg/kg]
       Vrr,             & ! Mean sedimentation velocity of rrainm    [m/s]    
       VNr,             & ! Mean sedimentation velocity of Nrm       [m/s]
@@ -345,8 +346,8 @@ module KK_microphys_module
     rc2  => pdf_params%rc2(:)
     s1   => pdf_params%s1(:)
     s2   => pdf_params%s2(:)
-    ss1  => pdf_params%ss1(:)
-    ss2  => pdf_params%ss2(:)
+    stdev_s1  => pdf_params%stdev_s1(:)
+    stdev_s2  => pdf_params%stdev_s2(:)
 
     Ncm => hydromet(:,iiNcm)
 
@@ -472,7 +473,7 @@ module KK_microphys_module
 
       rrainm_cond(k)  & 
       = cond_evap_rrainm( l_local_kk, rrainm(k), Nrm(k), & 
-                          s1(k), ss1(k), s2(k), ss2(k), & 
+                          s1(k), stdev_s1(k), s2(k), stdev_s2(k), & 
                           thl1(k), thl2(k), rc1(k), rc2(k), a(k), & 
                           p_in_Pa(k), exner(k), T_in_K(k), Supsat(k),  & 
                           rrp2_on_rrainm2(k), Nrp2_on_Nrm2(k), corr_srr_NL(k), & 
@@ -491,16 +492,16 @@ module KK_microphys_module
 !     else
 
       rrainm_auto(k)  & 
-      = autoconv_rrainm( l_local_kk, rcm(k), Ncm(k), s1(k), ss1(k),  & 
-                         s2(k), ss2(k), a(k), rho(k), & 
+      = autoconv_rrainm( l_local_kk, rcm(k), Ncm(k), s1(k), stdev_s1(k),  & 
+                         s2(k), stdev_s2(k), a(k), rho(k), & 
                          Ncp2_on_Ncm2(k), corr_sNc_NL(k) )
 
 !     endif ! l_latin_hypercube_sampling
       ! End Vince Larson's addition
 
       rrainm_accr(k)  & 
-      = accretion_rrainm( l_local_kk, rcm(k), rrainm(k), s1(k), ss1(k), & 
-                          s2(k), ss2(k), a(k),  & 
+      = accretion_rrainm( l_local_kk, rcm(k), rrainm(k), s1(k), stdev_s1(k), & 
+                          s2(k), stdev_s2(k), a(k),  & 
                           rrp2_on_rrainm2(k), corr_srr_NL(k) )
 
       ! Now find the elements that make up the right-hand side of the
@@ -842,7 +843,7 @@ module KK_microphys_module
   !-----------------------------------------------------------------------
 
   FUNCTION cond_evap_rrainm( l_local_kk, rrainm, Nrm, & 
-                          s1, ss1, s2, ss2, & 
+                          s1, stdev_s1, s2, stdev_s2, & 
                           thl1, thl2, rc1, rc2, a, & 
                           p_in_Pa, exner, T_in_K, Supsat,  & 
                           rrp2_on_rrainm2, Nrp2_on_Nrm2, corr_srr_NL, & 
@@ -876,9 +877,9 @@ module KK_microphys_module
       Nrm,       & ! Grid-box average Nrm              [kg^-1]
 !     Nrp2,      & ! Grid-box Nr variance              [kg^-2]
       s1,        & ! Plume 1 average s                 [kg kg^-1]
-      ss1,       & ! Plume 1 sigma s1 (not sigma^2 s1) [kg kg^-1]
+      stdev_s1,       & ! Plume 1 sigma s1 (not sigma^2 s1) [kg kg^-1]
       s2,        & ! Plume 2 average s                 [kg kg^-1]
-      ss2,       & ! Plume 2 sigma s2 (not sigma^2 s2) [kg kg^-1]
+      stdev_s2,       & ! Plume 2 sigma s2 (not sigma^2 s2) [kg kg^-1]
       thl1,      & ! Plume 1 average theta-l           [K]
       thl2,      & ! Plume 2 average theta-l           [K]
       rc1,       & ! Plume 1 average rc                [kg kg^-1]
@@ -999,9 +1000,9 @@ module KK_microphys_module
 
         ! "s" is a truncated double Gaussian.
         mu_s1 = s1
-        sigma_s1 = ss1
+        sigma_s1 = stdev_s1
         mu_s2 = s2
-        sigma_s2 = ss2
+        sigma_s2 = stdev_s2
 
         ! rr is distributed Lognormally.
         mu_rr = rrainm
@@ -1148,8 +1149,8 @@ module KK_microphys_module
   !
   !-----------------------------------------------------------------------
 
-  FUNCTION autoconv_rrainm( l_local_kk, rcm, Ncm, s1, ss1,  & 
-                         s2, ss2, a, rho, & 
+  FUNCTION autoconv_rrainm( l_local_kk, rcm, Ncm, s1, stdev_s1,  & 
+                         s2, stdev_s2, a, rho, & 
                          Ncp2_on_Ncm2, corr_sNc_NL )
 
     USE constants, only: & 
@@ -1167,10 +1168,10 @@ module KK_microphys_module
     REAL, INTENT(IN):: Ncm         ! Grid-box average Ncm     [kg^-1]
 !   REAL, INTENT(IN):: Ncp2        ! Grid-box Nc variance     [kg^-2]
     REAL, INTENT(IN):: s1          ! Plume 1 average s        [kg kg^-1]
-    REAL, INTENT(IN):: ss1         ! Plume 1 sigma s1 (not sigma^2 s1)
+    REAL, INTENT(IN):: stdev_s1    ! Plume 1 sigma s1 (not sigma^2 s1)
     !                          [kg kg^-1]
     REAL, INTENT(IN):: s2          ! Plume 2 average s        [kg kg^-1]
-    REAL, INTENT(IN):: ss2         ! Plume 2 sigma s2 (not sigma^2 s2)
+    REAL, INTENT(IN):: stdev_s2    ! Plume 2 sigma s2 (not sigma^2 s2)
     !                          [kg kg^-1]
     REAL, INTENT(IN):: a           ! Relative weight of each individual
     ! Gaussian "plume."        []
@@ -1225,9 +1226,9 @@ module KK_microphys_module
 
         ! "s" is a truncated double Gaussian.
         mu_s1 = s1
-        sigma_s1 = ss1
+        sigma_s1 = stdev_s1
         mu_s2 = s2
-        sigma_s2 = ss2
+        sigma_s2 = stdev_s2
 
         ! Nc is distributed Lognormally.
         mu_Nc = Ncm
@@ -1325,8 +1326,8 @@ module KK_microphys_module
   !
   !-----------------------------------------------------------------------
 
-  FUNCTION accretion_rrainm( l_local_kk, rcm, rrainm, s1, ss1, & 
-                          s2, ss2, a,  & 
+  FUNCTION accretion_rrainm( l_local_kk, rcm, rrainm, s1, stdev_s1, & 
+                          s2, stdev_s2, a,  & 
                           rrp2_on_rrainm2, corr_srr_NL )
 
     USE constants, only: & 
@@ -1344,10 +1345,10 @@ module KK_microphys_module
     REAL, INTENT(IN):: rrainm         ! Grid-box average rrainm     [kg kg^-1]
 !   REAL, INTENT(IN):: rrp2        ! Grid-box rr variance     [kg^2 kg^-2]
     REAL, INTENT(IN):: s1          ! Plume 1 average s        [kg kg^-1]
-    REAL, INTENT(IN):: ss1         ! Plume 1 sigma s1 (not sigma^2 s1)
+    REAL, INTENT(IN):: stdev_s1    ! Plume 1 sigma s1 (not sigma^2 s1)
     !                          [kg kg^-1]
     REAL, INTENT(IN):: s2          ! Plume 2 average s        [kg kg^-1]
-    REAL, INTENT(IN):: ss2         ! Plume 2 sigma s2 (not sigma^2 s2)
+    REAL, INTENT(IN):: stdev_s2         ! Plume 2 sigma s2 (not sigma^2 s2)
     !                          [kg kg^-1]
     REAL, INTENT(IN):: a           ! Relative weight of each individual
     ! Gaussian "plume."        []
@@ -1399,9 +1400,9 @@ module KK_microphys_module
 
         ! "s" is a truncated double Gaussian.
         mu_s1 = s1
-        sigma_s1 = ss1
+        sigma_s1 = stdev_s1
         mu_s2 = s2
-        sigma_s2 = ss2
+        sigma_s2 = stdev_s2
 
         ! rr is distributed Lognormally.
         mu_rr = rrainm

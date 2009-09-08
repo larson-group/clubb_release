@@ -205,16 +205,16 @@ module stats_zt
         ia, & 
         iw1, & 
         iw2, & 
-        isw1, & 
-        isw2, & 
+        ivarnce_w1, & 
+        ivarnce_w2, & 
         ithl1, & 
         ithl2, & 
-        isthl1, & 
-        isthl2, & 
+        ivarnce_thl1, & 
+        ivarnce_thl2, & 
         irt1, & 
         irt2, & 
-        isrt1, & 
-        isrt2, & 
+        ivarnce_rt1, & 
+        ivarnce_rt2, & 
         irc1, & 
         irc2, & 
         irsl1, & 
@@ -223,8 +223,8 @@ module stats_zt
         icloud_frac2, & 
         is1, & 
         is2, & 
-        iss1, & 
-        iss2, & 
+        istdev_s1, & 
+        istdev_s2, & 
         irrtthl, & 
         iwp2_zt, & 
         ithlp2_zt, & 
@@ -425,7 +425,7 @@ module stats_zt
     irtm_ma       = 0
     irtm_ta       = 0
     irtm_forcing  = 0
-    irtm_sdmp       = 0
+    irtm_sdmp     = 0
     irtm_mc       = 0
     ircm_mc       = 0 ! For the change due to COAMPS/Morrison microphysics
     irvm_mc       = 0 ! "     "
@@ -438,7 +438,7 @@ module stats_zt
     ithlm_ta      = 0
     ithlm_forcing = 0
     ithlm_mc      = 0
-    ithlm_sdmp      = 0
+    ithlm_sdmp    = 0
     ithlm_mfl     = 0
     ithlm_tacl    = 0
     ithlm_cl      = 0 ! Josh
@@ -551,16 +551,16 @@ module stats_zt
     ia            = 0
     iw1           = 0
     iw2           = 0
-    isw1          = 0
-    isw2          = 0
+    ivarnce_w1    = 0
+    ivarnce_w2    = 0
     ithl1         = 0
     ithl2         = 0
-    isthl1        = 0
-    isthl2        = 0
+    ivarnce_thl1  = 0
+    ivarnce_thl2  = 0
     irt1          = 0
     irt2          = 0
-    isrt1         = 0
-    isrt2         = 0
+    ivarnce_rt1   = 0
+    ivarnce_rt2   = 0
     irc1          = 0
     irc2          = 0
     irsl1         = 0
@@ -569,8 +569,8 @@ module stats_zt
     icloud_frac2  = 0
     is1           = 0
     is2           = 0
-    iss1          = 0
-    iss2          = 0
+    istdev_s1     = 0
+    istdev_s2     = 0
     irrtthl       = 0
 
     iwp2_zt     = 0
@@ -1897,17 +1897,17 @@ module stats_zt
              "pdf paramete: mean w of component 2 [m/s]", "m/s", zt )
         k = k + 1
 
-      case ('sw1')
-        isw1 = k
-        call stat_assign( isw1, "sw1", & 
+      case ('varnce_w1')
+        ivarnce_w1 = k
+        call stat_assign( ivarnce_w1, "varnce_w1", & 
              "pdf parameter: w variance of component 1 [m^2/s^2]", "m^2/s^2", zt )
 
         k = k + 1
 
-      case ('sw2')
-        isw2 = k
+      case ('varnce_w2')
+        ivarnce_w2 = k
 
-        call stat_assign( isw2, "sw2", & 
+        call stat_assign( ivarnce_w2, "varnce_w2", & 
              "pdf parameter: w variance of component 2 [m^2/s^2]", "m^2/s^2", zt )
         k = k + 1
 
@@ -1926,17 +1926,17 @@ module stats_zt
              "pdf parameter: mean thl of component 2 [K]", "K", zt )
         k = k + 1
 
-      case ('sthl1')
-        isthl1 = k
+      case ('varnce_thl1')
+        ivarnce_thl1 = k
 
-        call stat_assign( isthl1, "sthl1", & 
+        call stat_assign( ivarnce_thl1, "varnce_thl1", & 
              "pdf parameter: thl variance of component 1 [K^2]", "K^2", zt )
 
         k = k + 1
 
-      case ('sthl2')
-        isthl2 = k
-        call stat_assign( isthl2, "sthl2", & 
+      case ('varnce_thl2')
+        ivarnce_thl2 = k
+        call stat_assign( ivarnce_thl2, "varnce_thl2", & 
              "pdf parameter: thl variance of component 2 [K^2]", "K^2", zt )
 
         k = k + 1
@@ -1955,16 +1955,16 @@ module stats_zt
              "pdf parameter: mean rt of component 2 [kg/kg]", "kg/kg", zt )
         k = k + 1
 
-      case ('srt1')
-        isrt1 = k
-        call stat_assign( isrt1, "srt1", & 
+      case ('varnce_rt1')
+        ivarnce_rt1 = k
+        call stat_assign( ivarnce_rt1, "varnce_rt1", & 
              "pdf parameter: rt variance of component 1 [(kg^2)/(kg^2)]", "(kg^2)/(kg^2)", zt )
         k = k + 1
 
-      case ('srt2')
-        isrt2 = k
+      case ('varnce_rt2')
+        ivarnce_rt2 = k
 
-        call stat_assign( isrt2, "srt2", & 
+        call stat_assign( ivarnce_rt2, "varnce_rt2", & 
              "pdf parameter: rt variance of component 2 [(kg^2)/(kg^2)]", "(kg^2)/(kg^2)", zt )
         k = k + 1
 
@@ -2023,17 +2023,17 @@ module stats_zt
              "pdf parameter: Mellor's s (extended liq) for component 2 [kg/kg]", "kg/kg", zt )
         k = k + 1
 
-      case ('ss1')
-        iss1 = k
+      case ('stdev_s1')
+        istdev_s1 = k
 
-        call stat_assign( iss1, "ss1", & 
+        call stat_assign( istdev_s1, "stdev_s1", & 
              "pdf parameter: Std dev of s1 [kg/kg]", "kg/kg", zt )
         k = k + 1
 
-      case ('ss2')
-        iss2 = k
+      case ('stdev_s2')
+        istdev_s2 = k
 
-        call stat_assign( iss2, "ss2", & 
+        call stat_assign( istdev_s2, "stdev_s2", & 
              "pdf parameter: Std dev of s2 [kg/kg]", "kg/kg", zt )
         k = k + 1
 

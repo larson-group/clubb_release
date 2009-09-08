@@ -22,7 +22,7 @@ program clubb_inputfields
     input_Kh_zt, input_Kh_zm, input_tau_zm, input_tau_zt, & 
     input_wpthvp, &
     input_thl1, input_thl2, input_a, input_s1, input_s2, &
-    input_ss1, input_ss2, input_rc1, input_rc2, &
+    input_stdev_s1, input_stdev_s2, input_rc1, input_rc2, &
     input_thvm, input_rrainm,input_Nrm,  & 
     input_rsnowm, input_ricem, input_rgraupelm,  & 
     input_thlm_forcing, input_rtm_forcing, & 
@@ -77,7 +77,7 @@ program clubb_inputfields
     input_Kh_zt, input_Kh_zm, input_tau_zm, input_tau_zt, & 
     input_wpthvp, &
     input_thl1, input_thl2, input_a, input_s1, input_s2, &
-    input_ss1, input_ss2, input_rc1, input_rc2, &
+    input_stdev_s1, input_stdev_s2, input_rc1, input_rc2, &
     input_thvm, input_rrainm,input_Nrm,  & 
     input_rsnowm, input_ricem, input_rgraupelm,  & 
     input_thlm_forcing, input_rtm_forcing, & 
@@ -128,8 +128,8 @@ program clubb_inputfields
   input_a = .false.
   input_s1 = .false.
   input_s2 = .false.
-  input_ss1 = .false.
-  input_ss2 = .false.
+  input_stdev_s1 = .false.
+  input_stdev_s2 = .false.
   input_rc1 = .false.
   input_rc2 = .false.
   input_thvm = .false.

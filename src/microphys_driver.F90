@@ -1300,8 +1300,8 @@ module microphys_driver
         write(fstderr,*) "pdf_params%rc2 = ", pdf_params%rc2
         write(fstderr,*) "pdf_params%s1 = ", pdf_params%s1
         write(fstderr,*) "pdf_params%s2 = ", pdf_params%s2
-        write(fstderr,*) "pdf_params%ss1 = ", pdf_params%ss1
-        write(fstderr,*) "pdf_params%ss2 = ", pdf_params%ss2
+        write(fstderr,*) "pdf_params%stdev_s1 = ", pdf_params%stdev_s1
+        write(fstderr,*) "pdf_params%stdev_s2 = ", pdf_params%stdev_s2
 
         write(fstderr,*) "Intent(inout)"
 
