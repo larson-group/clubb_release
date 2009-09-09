@@ -18,6 +18,5 @@ do
 
 	cd $returnDir
 
-	mv "$clubbDir"/postprocessing/output_scripts/twp_ice/*.nc output/"$folderName"
-	cp output/"$folderName"/*.nc submission
+	mv "$clubbDir"/postprocessing/output_scripts/twp_ice/*.nc submission
 done
