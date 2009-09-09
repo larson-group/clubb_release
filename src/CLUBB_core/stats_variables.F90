@@ -106,7 +106,7 @@ module stats_variables
      iAKm_rcm, & 
      iAKm_rcc
 
-!$omp   threadprivate(ithlm, ithvm, irtm, ircm, irvm, ircm_in_layer, ium, ivm, ium_ref)
+!$omp   threadprivate(ithlm, ithvm, irtm, ircm, irvm, ium, ivm, ium_ref)
 !$omp   threadprivate(ivm_ref, iwm_zt, iug, ivg, icloud_frac, ircm_in_layer)
 !$omp   threadprivate(icloud_cover, ip_in_Pa, iexner, iLscale, iwp3, iwpthlp2)
 !$omp   threadprivate(iwp2thlp, iwprtp2, iwp2rtp, iLscale_up, iLscale_down, itau_zt)
