@@ -425,9 +425,19 @@ Do steps 1, 2, & 3 as outlined in the standalone run.
    need to have a .nc extension for the clubb_tuner to correctly identify
    the file as being in netCDF format.
 
-5. Edit run_tuner.bash to use your namelists
+5. You may also wish to set the debug_level to 0 in the file
+   input/case_setups/<CASE_NAME>_model.in to speed up tuning, 
+   and stats_tout to 60.0.
 
-6. ./run_tuner.bash
+6. Edit run_tuner.bash to use your namelists.  Note that run_tuner.bash uses
+   a customized stats file for tuning and a (possibly different) stats file 
+   to run CLUBB with the optimized parameters.  The stats file used while 
+   tuning is input/stats/tuning_stats.in and contains only the names of the 
+   variables being tuned for; this speeds up the tuning process.  Therefore,
+   you must also edit tuning_stats.in to match the variables being tuned for
+   in the error_<CASE_NAME>.in file.
+
+7. ./run_tuner.bash
 
 -----------------------------------------------------------------------
 - (3.3.1) Creating a RAM disk (optional)
