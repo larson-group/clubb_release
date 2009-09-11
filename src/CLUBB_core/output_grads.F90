@@ -76,7 +76,7 @@ module output_grads
   month,         & ! Month of Year at Model start   [mm]
   year             ! Year at Model Start            [yyyy]
 
-  real, intent(IN) :: rlat, rlon ! Latitude and Longitude [Degrees N/E]
+  real, dimension(1), intent(in) :: rlat, rlon ! Latitude and Longitude [Degrees N/E]
 
   real(kind=time_precision), intent(IN) ::  & 
   time,          & ! Time since Model start          [s]
@@ -114,6 +114,8 @@ module output_grads
   f%day   = day
   f%month = month
   f%year  = year
+
+  allocate( f%rlat(1), f%rlon(1) )
 
   f%rlat  = rlat
   f%rlon  = rlon
@@ -576,8 +578,8 @@ module output_grads
   subroutine format_date( day_in, month_in, year_in,  & 
                          time_in, date )
 !
-!         Description: This subroutine formats the current
-!         time of the model to a date usable as GrADS output.
+! Description: This subroutine formats the current
+!   time of the model to a date usable as GrADS output.
 !
 !---------------------------------------------------------          
   use stats_precision, only:  & 
@@ -632,6 +634,5 @@ module output_grads
   return
   end subroutine format_date
 
- 
 end module output_grads
 !------------------------------------------------------------------------

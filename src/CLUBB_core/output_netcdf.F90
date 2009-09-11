@@ -20,7 +20,7 @@ module output_netcdf
 
   contains
 !-----------------------------------------------------------------------
-  subroutine open_netcdf( unit, fdir, fname, ia, iz, zgrid,  & 
+  subroutine open_netcdf( nlat, nlon, fdir, fname, ia, iz, zgrid,  & 
                           day, month, year, rlat, rlon, & 
                           time, dtwrite, nvar, ncf )
 
@@ -43,24 +43,26 @@ module output_netcdf
       time_precision ! Variable(s)
 
     use constants, only:  & 
-        fstderr ! Variable(s)
+      fstderr ! Variable(s)
 
     implicit none
 
     ! Input Variables
     character(len=*), intent(in) ::  & 
-     fdir,   & ! Directory name of file
-     fname     ! File name
+      fdir,   & ! Directory name of file
+      fname     ! File name
 
     integer, intent(in) ::  & 
-     unit,              & ! Ignored; here for compatibility with GrADS writing
-     day, month, year,  & ! Time
-     ia, iz,            & ! First and last grid point?
-     nvar                 ! Number of variables
+      nlat, nlon,       & ! Number of points in the X and Y
+      day, month, year, & ! Time
+      ia, iz,           & ! First and last grid point
+      nvar                ! Number of variables
 
-    real, intent(in) ::  & 
-     rlat,   & ! Latitude                        [degrees_E]
-     rlon      ! Longitude                       [degrees_N]
+    real, dimension(nlat), intent(in) ::  & 
+      rlat ! Latitudes   [degrees_E]
+
+    real, dimension(nlon), intent(in) ::  & 
+      rlon ! Longitudes  [degrees_N]
 
     real(kind=time_precision), intent(in) :: & 
      dtwrite ! Time between write intervals   [s]
@@ -69,7 +71,7 @@ module output_netcdf
      time   ! Current time                    [s]
 
     real, dimension(:), intent(in) ::  & 
-     zgrid  ! The model grid                  [m]
+      zgrid  ! The model grid                  [m]
 
     ! Input/output Variables
     type (stat_file), intent(inout) :: ncf
@@ -78,8 +80,7 @@ module output_netcdf
     integer :: stat  ! Error status
     integer :: k     ! Array index
    
-    ! Make the compiler warning about unused variables go away
-    if ( .false. ) k = unit 
+    ! ---- Begin Code ----
 
     ! Initialization for NetCDF
     ncf%l_defined = .false.
@@ -92,14 +93,14 @@ module output_netcdf
     ncf%day    = day
     ncf%month  = month
     ncf%year   = year
-    ncf%rlat   = rlat
-    ncf%rlon   = rlon
+    ncf%nlat   = nlat
+    ncf%nlon   = nlon
     ncf%time   = time
 
     ncf%dtwrite = dtwrite
     ncf%nvar    = nvar
 
-   ! From open_grads.
+    ! From open_grads.
     ! This probably for the case of a reversed grid as in COAMPS
     if ( ia <= iz ) then
       do k=1,iz-ia+1
@@ -110,6 +111,11 @@ module output_netcdf
         ncf%z(k) = zgrid(ia-k+1)
       end do
     end if
+
+    allocate( ncf%rlat(1:nlat), ncf%rlon(1:nlon) )
+
+    ncf%rlat = rlat
+    ncf%rlon = rlon
 
     ! Create NetCDF dataset: enter define mode
     stat = nf90_create( path = trim( fdir )//trim( fname )//'.nc',  & 
@@ -122,11 +128,10 @@ module output_netcdf
       stop
     end if
 
-    call define_netcdf( ncf%iounit, ncf%iz, ncf%day, ncf%month, ncf%year, ncf%time, &
-                        ncf%LatDimId, ncf%LongDimId, ncf%AltDimId, ncf%TimeDimId, & 
-                        ncf%LatVarId, ncf%LongVarId, ncf%AltVarId, ncf%TimeVarId )
-
-
+    call define_netcdf( ncf%iounit, ncf%nlat, ncf%nlon, ncf%iz, & ! In
+                        ncf%day, ncf%month, ncf%year, ncf%time, & ! In 
+                        ncf%LatDimId, ncf%LongDimId, ncf%AltDimId, ncf%TimeDimId, &  ! Out
+                        ncf%LatVarId, ncf%LongVarId, ncf%AltVarId, ncf%TimeVarId ) ! Out
 
     return
   end subroutine open_netcdf
@@ -166,7 +171,7 @@ module output_netcdf
       call first_write( ncf ) ! finalize the variable definitions
       call write_grid( ncf )  ! define lat., long., and grid
       ncf%l_defined = .true.
-    endif
+    end if
 
     allocate( stat( ncf%nvar ) )
 
@@ -210,7 +215,8 @@ module output_netcdf
   end subroutine write_netcdf
 
 !-----------------------------------------------------------------------
-  subroutine define_netcdf( ncid, iz, day, month, year, time, & 
+  subroutine define_netcdf( ncid, nlat, nlon, iz, &
+                            day, month, year, time, & 
                             LatDimId, LongDimId, AltDimId, TimeDimId, & 
                             LatVarId, LongVarId, AltVarId, TimeVarId )
 
@@ -240,10 +246,9 @@ module output_netcdf
 
     implicit none
 
-    ! Constant parameters
-    integer, parameter ::  & 
-      nlat  = 1,   & ! Number of points in the N/S direction
-      nlong = 1      ! Number of points in the E/W direction
+    integer, intent(in) ::  & 
+      nlat,   & ! Number of points in the N/S direction
+      nlon      ! Number of points in the E/W direction
 
     ! Input Variables
     integer, intent(in) ::  & 
@@ -269,34 +274,34 @@ module output_netcdf
     ! ---- Begin Code ----
 
     ! Define the dimensions for the variables
-    stat = nf90_def_dim( ncid, "longitude", nlong, LongDimId )
+    stat = nf90_def_dim( ncid, "longitude", nlon, LongDimId )
 
     if ( stat /= NF90_NOERR ) then
       write(fstderr,*) "Error defining longitude: ", & 
         trim( nf90_strerror( stat ) )
       stop
-    endif
+    end if
 
     stat =  nf90_def_dim( ncid, "latitude", nlat, LatDimId )
     if ( stat /= NF90_NOERR ) then
       write(fstderr,*) "Error defining latitude: ", & 
         trim( nf90_strerror( stat ) )
       stop
-    endif
+    end if
 
     stat = nf90_def_dim( ncid, "altitude", iz, AltDimId )
     if ( stat /= NF90_NOERR ) then
       write(fstderr,*) "Error defining altitude: ", & 
       trim( nf90_strerror( stat ) )
       stop
-    endif
+    end if
 
     stat =  nf90_def_dim( ncid, "time", NF90_UNLIMITED, TimeDimId )
     if ( stat /= NF90_NOERR ) then
-      write(fstderr,*) "Error defining time", & 
+      write(fstderr,*) "Error defining time: ", & 
         trim( nf90_strerror( stat ) )
       stop
-    endif
+    end if
 
     ! Define the initial variables for the dimensions
     stat = nf90_def_var( ncid, "longitude", NF90_FLOAT, & 
@@ -319,7 +324,7 @@ module output_netcdf
     if ( stat /= NF90_NOERR ) then
       write(fstderr,*) "Error defining time: ", trim( nf90_strerror( stat ) )
       stop
-    endif
+    end if
 
     call format_date( day, month, year, time, TimeUnits )
 
@@ -327,19 +332,19 @@ module output_netcdf
     if ( stat /= NF90_NOERR ) then
       write(fstderr,*) "Error defining time: ", trim( nf90_strerror( stat ) )
       stop
-    endif
+    end if
 
     stat = nf90_put_att( ncid, TimeVarId, "ipositive", 1 )
     if ( stat /= NF90_NOERR ) then
       write(fstderr,*) "Error defining time: ", trim( nf90_strerror( stat ) )
       stop
-    endif
+    end if
 
     stat = nf90_put_att( ncid, TimeVarId, "calendar_type", "Gregorian" )
     if ( stat /= NF90_NOERR ) then
       write(fstderr,*) "Error defining time", trim( nf90_strerror( stat ) )
       stop
-    endif
+    end if
 
     ! Define Location
     ! X & Y coordinates
@@ -391,10 +396,10 @@ module output_netcdf
 
     implicit none
 
-! Input/Output Variables
+    ! Input/Output Variables
     type (stat_file), intent(inout) :: ncf
 
-! Local Variables
+    ! Local Variables
     integer :: stat
 
     stat = nf90_close( ncf%iounit )
@@ -402,7 +407,7 @@ module output_netcdf
       write(fstderr,*) "Error closing file "//  & 
         trim( ncf%fname )//": ", trim( nf90_strerror( stat ) )
       stop
-    endif
+    end if
 
     return
   end subroutine close_netcdf
@@ -525,7 +530,7 @@ module output_netcdf
         write(fstderr,*) "Error defining variable ",  & 
           ncf%var(i)%name //": ", trim( nf90_strerror( stat(i) ) )
         l_error = .true.
-      endif
+      end if
 
       stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%indx, & 
                 "valid_range", var_range(1:2) )
@@ -533,7 +538,7 @@ module output_netcdf
         write(fstderr,*) "Error defining valid range", & 
           trim( nf90_strerror( stat(i) ) )
         l_error = .true.
-      endif
+      end if
 
       stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%indx, "long_name",  & 
                 trim( ncf%var(i)%description ) )
@@ -541,7 +546,7 @@ module output_netcdf
         write(fstderr,*) "Error in description", & 
           trim( nf90_strerror( stat(i) ) )
         l_error = .true.
-      endif
+      end if
 
       stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%indx, "units",  & 
                 trim( ncf%var(i)%units ) )
@@ -549,7 +554,7 @@ module output_netcdf
         write(fstderr,*) "Error in units", & 
           trim( nf90_strerror( stat(i) ) )
         l_error = .true.
-      endif
+      end if
     end do
 
     if ( l_error ) stop "Error in definition"
@@ -641,7 +646,7 @@ module output_netcdf
       write(fstderr,*) "Error finalizing definitions", & 
         trim( nf90_strerror( stat(1) ) )
       stop
-    endif
+    end if
 
     deallocate( stat )
 
@@ -681,7 +686,7 @@ module output_netcdf
       write(fstderr,*) "Error entering grid: ",  & 
         trim( nf90_strerror( stat ) )
       stop
-    endif
+    end if
 
     stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%LongVarId,  & 
                          values=ncf%rlon )
@@ -689,7 +694,7 @@ module output_netcdf
       write(fstderr,*) "Error entering longitude: ",  & 
         trim( nf90_strerror( stat ) )
       stop
-    endif
+    end if
 
     stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%LatVarId,  & 
                          values=ncf%rlat )
@@ -697,7 +702,7 @@ module output_netcdf
       write(fstderr,*) "Error entering latitude: ",  & 
         trim( nf90_strerror( stat ) )
       stop
-    endif
+    end if
 
     return
   end subroutine write_grid
@@ -724,7 +729,10 @@ module output_netcdf
 
     implicit none
 
-! Input Variables
+    ! External
+    intrinsic :: floor, int, mod, nint
+
+    ! Input Variables
     integer, intent(in) ::  & 
       day_in,           & ! Day of Month at Model Start   [dd]
       month_in,         & ! Month of Year at Model Start  [mm]
@@ -732,11 +740,12 @@ module output_netcdf
 
     real(kind=time_precision), intent(in) :: time_in ! Start time [s]
 
-! Output Variables
+    ! Output Variables
     character(len=35), intent(out) :: date
 
     integer::  & 
-    iday, imonth, iyear  ! Integer for day, month and year.
+      iday, imonth, iyear  ! Integer for day, month and year.
+
     real(kind=time_precision) :: st_time ! Start time [s]
 
     call compute_current_date( day_in, month_in,  & 
@@ -750,15 +759,15 @@ module output_netcdf
     date = "minutes since YYYY-MM-DD HH:MM:00.0"
 !      date = "seconds since YYYY-MM-DD HH:MM:00.0"
     write(date(15:18),'(i4.4)') iyear
-!      write(date(19),'(a1)') '-'
+!   write(date(19),'(a1)') '-'
     write(date(20:21),'(i2.2)') imonth
-!      write(date(22),'(a1)') '-'
+!   write(date(22),'(a1)') '-'
     write(date(23:24),'(i2.2)') iday
-!      write(date(25),'(a1)') ' '
-    write(date(26:27),'(i2.2)') floor(st_time/3600)
-!      write(date(28),'(a1)') ":"
-    write(date(29:30),'(i2.2)') int( mod(nint(st_time),3600) / 60 )
-!      write(date(30:35),'(a5)') ":00.0"
+!   write(date(25),'(a1)') ' '
+    write(date(26:27),'(i2.2)') floor( st_time / 3600 )
+!   write(date(28),'(a1)') ":"
+    write(date(29:30),'(i2.2)') int( mod( nint( st_time ),3600 ) / 60 )
+!   write(date(30:35),'(a5)') ":00.0"
 
     return
   end subroutine format_date
@@ -774,6 +783,8 @@ module output_netcdf
     implicit none
 
     logical, intent(in) :: l_input
+
+    ! ---- Begin Code ----
 
     if ( l_input ) then
       lchar = 'T'

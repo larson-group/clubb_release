@@ -44,7 +44,6 @@ module stat_file_module
      integer :: iounit  ! This number is used internally by the 
                         ! NetCDF module to track the data set, or by 
                         ! GrADS to track the actual file unit.
-                                   
      integer :: &
        nrecord, & ! Number of records written
        ntimes     ! Number of times written
@@ -53,15 +52,16 @@ module stat_file_module
        l_defined,  &  ! Whether nf90_enddef() has been called
        l_byte_swapped ! Is this a file in the opposite byte ordering?
 
-    ! NetCDF datafile dimensions indices
+     ! NetCDF datafile dimensions indices
      integer ::  & 
        LatDimId, LongDimId, AltDimId, TimeDimId, & 
        LatVarId, LongVarId, AltVarId, TimeVarId
 
-
      ! Grid information
 
      integer :: ia, iz  ! Vertical extent
+
+     integer :: nlat, nlon ! The number of points in the X and Y
 
      real, dimension(:), pointer ::  & 
        z ! Height of vertical levels [m]
@@ -70,7 +70,7 @@ module stat_file_module
 
      integer :: day, month, year ! Date of starting time
 
-     real :: & 
+     real, dimension(:), pointer :: & 
        rlat, & ! Latitude                   [Degrees N]
        rlon    ! Longitude                  [Degrees E]
 

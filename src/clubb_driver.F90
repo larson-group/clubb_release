@@ -770,7 +770,7 @@ module clubb_driver
     ! Initialize statistics output
     call stats_init( iunit, fname_prefix, fdir, l_stats, stats_fmt, stats_tsamp, & ! Intent(in)
                      stats_tout, runfile, gr%nnzp, gr%zt, gr%zm, &                 ! Intent(in)
-                     day, month, year, rlat, rlon, time_current, dtmain )          ! Intent(in)
+                     day, month, year, (/rlat/), (/rlon/), time_current, dtmain )  ! Intent(in)
 
 
     ! Time integration

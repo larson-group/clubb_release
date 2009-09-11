@@ -136,7 +136,7 @@ module stats_subs
 
     integer, intent(in) :: day, month, year  ! Time of year
 
-    real, intent(in) ::  & 
+    real, dimension(1), intent(in) ::  & 
       rlat, rlon   ! Latitude and Longitude             [Degrees N/E]
 
     real(kind=time_precision), intent(in) ::  & 
@@ -381,15 +381,14 @@ module stats_subs
                        1, zt%kk, zt%z, & 
                        day, month, year, rlat, rlon, & 
                        time_current+stats_tout, stats_tout, & 
-                       zt%nn,zt%f )
+                       zt%nn, zt%f )
 
     else ! Open NetCDF file
 #ifdef NETCDF
-      call open_netcdf( iunit, fdir, fname,  & 
-                        1, zt%kk, zt%z, & 
-                        day, month, year, rlat, rlon, & 
-                        time_current+stats_tout, stats_tout, & 
-                        zt%nn, zt%f )
+      call open_netcdf( 1, 1, fdir, fname, 1, zt%kk, zt%z, &  ! In
+                        day, month, year, rlat, rlon, &  ! In
+                        time_current+stats_tout, stats_tout, zt%nn, &  ! In
+                        zt%f ) ! InOut
 #else
       stop "netCDF support was not compiled into this build."
 #endif
@@ -484,11 +483,10 @@ module stats_subs
 
     else ! Open NetCDF file
 #ifdef NETCDF
-      call open_netcdf( iunit, fdir, fname,  & 
-                        1, zm%kk, zm%z, & 
-                        day, month, year, rlat, rlon, & 
-                        time_current+stats_tout, stats_tout, & 
-                        zm%nn, zm%f )
+      call open_netcdf( 1, 1, fdir, fname, 1, zm%kk, zm%z, &  ! In
+                        day, month, year, rlat, rlon, &  ! In
+                        time_current+stats_tout, stats_tout, zm%nn, &  ! In
+                        zm%f ) ! InOut
 
 #else
       stop "netCDF support was not compiled into this build."
@@ -543,11 +541,10 @@ module stats_subs
 
     else ! Open NetCDF files
 #ifdef NETCDF
-      call open_netcdf( iunit, fdir, fname,  & 
-                        1, sfc%kk, sfc%z, & 
-                        day, month, year, rlat, rlon, & 
-                        time_current+stats_tout, stats_tout, & 
-                        sfc%nn, sfc%f )
+      call open_netcdf( 1, 1, fdir, fname, 1, sfc%kk, sfc%z, &  ! In
+                        day, month, year, rlat, rlon, &  ! In
+                        time_current+stats_tout, stats_tout, sfc%nn, &  ! In
+                        sfc%f ) ! InOut
 
 #else
       stop "netCDF support was not compiled into this build."
@@ -1575,6 +1572,8 @@ module stats_subs
 
       deallocate( zt%f%var )
       deallocate( zt%f%z )
+      deallocate( zt%f%rlat )
+      deallocate( zt%f%rlon )
 
       deallocate ( ztscr01 )
       deallocate ( ztscr02 )
