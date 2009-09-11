@@ -156,10 +156,10 @@ module output_netcdf
 
     implicit none
 
-! Input
+    ! Input
     type (stat_file), intent(inout) :: ncf    ! The file
 
-! Local Variables
+    ! Local Variables
     integer, dimension(:), allocatable :: stat ! Error status
     real(kind=8), dimension(1) :: time         ! Time          [s]
 
@@ -193,9 +193,9 @@ module output_netcdf
 ! Work around for a performance issue on pgf90
       stat(i)  & 
       = nf90_put_var( ncid=ncf%iounit, varid=ncf%var(i)%indx,  & 
-                      values=ncf%var(i)%ptr(ncf%ia:ncf%iz),  & 
+                      values=ncf%var(i)%ptr(:,:,ncf%ia:ncf%iz),  & 
                       start=(/1,1,1,ncf%ntimes/), & 
-                      count=(/1,1,ncf%iz,1/) )
+                      count=(/ncf%nlat,ncf%nlon,ncf%iz,1/) )
     end do ! i=1..nvar
 
     if ( any (stat /= NF90_NOERR ) ) then

@@ -318,9 +318,9 @@ module stats_subs
     allocate( zt%z( zt%kk ) )
     zt%z = gzt
 
-    allocate( zt%x( zt%kk, zt%nn ) )
-    allocate( zt%n( zt%kk, zt%nn ) )
-    allocate( zt%l_in_update( zt%kk, zt%nn ) )
+    allocate( zt%x( 1, 1, zt%kk, zt%nn ) )
+    allocate( zt%n( 1, 1, zt%kk, zt%nn ) )
+    allocate( zt%l_in_update( 1, 1, zt%kk, zt%nn ) )
     call stats_zero( zt%kk, zt%nn, zt%x, zt%n, zt%l_in_update )
 
     allocate( zt%f%var( zt%nn ) )
@@ -423,9 +423,9 @@ module stats_subs
     allocate( zm%z( zm%kk ) )
     zm%z = gzm
 
-    allocate( zm%x( zm%kk, zm%nn ) )
-    allocate( zm%n( zm%kk, zm%nn ) )
-    allocate( zm%l_in_update( zm%kk, zm%nn ) )
+    allocate( zm%x( 1, 1, zm%kk, zm%nn ) )
+    allocate( zm%n( 1, 1, zm%kk, zm%nn ) )
+    allocate( zm%l_in_update( 1, 1, zm%kk, zm%nn ) )
 
     call stats_zero( zm%kk, zm%nn, zm%x, zm%n, zm%l_in_update )
 
@@ -519,9 +519,9 @@ module stats_subs
     allocate( sfc%z( sfc%kk ) )
     sfc%z = gzm(1)
 
-    allocate( sfc%x( sfc%kk, sfc%nn ) )
-    allocate( sfc%n( sfc%kk, sfc%nn ) )
-    allocate( sfc%l_in_update( sfc%kk, sfc%nn ) )
+    allocate( sfc%x( 1, 1, sfc%kk, sfc%nn ) )
+    allocate( sfc%n( 1, 1, sfc%kk, sfc%nn ) )
+    allocate( sfc%l_in_update( 1, 1, sfc%kk, sfc%nn ) )
 
     call stats_zero( sfc%kk, sfc%nn, sfc%x, sfc%n, sfc%l_in_update )
 
@@ -589,16 +589,16 @@ module stats_subs
     integer, intent(in) :: kk, nn
 
     ! Output
-    real(kind=stat_rknd), dimension(kk,nn), intent(out)    :: x
-    integer(kind=stat_nknd), dimension(kk,nn), intent(out) :: n
-    logical, dimension(kk,nn), intent(out) :: l_in_update
+    real(kind=stat_rknd), dimension(1,1,kk,nn), intent(out)    :: x
+    integer(kind=stat_nknd), dimension(1,1,kk,nn), intent(out) :: n
+    logical, dimension(1,1,kk,nn), intent(out) :: l_in_update
 
     ! Zero out arrays
 
     if ( nn > 0 ) then
-      x(:,:) = 0.0
-      n(:,:) = 0
-      l_in_update(:,:) = .false.
+      x(:,:,:,:) = 0.0
+      n(:,:,:,:) = 0
+      l_in_update(:,:,:,:) = .false.
     end if
 
     return
@@ -618,10 +618,10 @@ module stats_subs
 
     ! Input
     integer, intent(in) :: nn, kk
-    integer(kind=stat_nknd), dimension(kk,nn), intent(in) :: n
+    integer(kind=stat_nknd), dimension(1,1,kk,nn), intent(in) :: n
 
     ! Output
-    real(kind=stat_rknd), dimension(kk,nn), intent(inout)  :: x
+    real(kind=stat_rknd), dimension(1,1,kk,nn), intent(inout)  :: x
 
     ! Internal
 
@@ -632,8 +632,8 @@ module stats_subs
     do m=1,nn
       do k=1,kk
 
-        if ( n(k,m) > 0 ) then
-          x(k,m) = x(k,m) / n(k,m)
+        if ( n(1,1,k,m) > 0 ) then
+          x(1,1,k,m) = x(1,1,k,m) / real( n(1,1,k,m) )
         end if
 
       end do
@@ -656,6 +656,7 @@ module stats_subs
         l_stats_last, & 
         stats_tsamp, & 
         stats_tout
+
     use stats_precision, only: & 
         time_precision ! Variable(s)
 
@@ -752,8 +753,8 @@ module stats_subs
     do i = 1, zt%nn
       do k = 1, zt%kk
 
-        if ( zt%n(k,i) /= 0 .and.  &
-             zt%n(k,i) /= floor(stats_tout/stats_tsamp) ) then
+        if ( zt%n(1,1,k,i) /= 0 .and.  &
+             zt%n(1,1,k,i) /= floor(stats_tout/stats_tsamp) ) then
 
           l_error = .true.  ! This will stop the run
 
@@ -763,7 +764,7 @@ module stats_subs
             write(fstderr,*) 'Possible sampling error for variable ',  &
                              trim(zt%f%var(i)%name), ' in zt ',  &
                              'at k = ', k,  &
-                             '; zt%n(',k,',',i,') = ', zt%n(k,i)
+                             '; zt%n(',k,',',i,') = ', zt%n(1,1,k,i)
           endif
 
         endif
@@ -776,8 +777,8 @@ module stats_subs
     do i = 1, zm%nn
       do k = 1, zm%kk
 
-        if ( zm%n(k,i) /= 0 .and.  &
-             zm%n(k,i) /= floor(stats_tout/stats_tsamp) ) then
+        if ( zm%n(1,1,k,i) /= 0 .and.  &
+             zm%n(1,1,k,i) /= floor(stats_tout/stats_tsamp) ) then
 
           l_error = .true.  ! This will stop the run
 
@@ -787,7 +788,7 @@ module stats_subs
             write(fstderr,*) 'Possible sampling error for variable ',  &
                              trim(zm%f%var(i)%name), ' in zm ',  &
                              'at k = ', k,  &
-                             '; zm%n(',k,',',i,') = ', zm%n(k,i)
+                             '; zm%n(',k,',',i,') = ', zm%n(1,1,k,i)
           endif
 
         endif
@@ -800,8 +801,8 @@ module stats_subs
     do i = 1, sfc%nn
       do k = 1, sfc%kk
 
-        if ( sfc%n(k,i) /= 0 .and.  &
-             sfc%n(k,i) /= floor(stats_tout/stats_tsamp) ) then
+        if ( sfc%n(1,1,k,i) /= 0 .and.  &
+             sfc%n(1,1,k,i) /= floor(stats_tout/stats_tsamp) ) then
 
           l_error = .true.  ! This will stop the run
 
@@ -811,7 +812,7 @@ module stats_subs
             write(fstderr,*) 'Possible sampling error for variable ',  &
                              trim(sfc%f%var(i)%name), ' in sfc ',  &
                              'at k = ', k,  &
-                             '; sfc%n(',k,',',i,') = ', sfc%n(k,i)
+                             '; sfc%n(',k,',',i,') = ', sfc%n(1,1,k,i)
           endif
 
         endif

@@ -55,6 +55,11 @@ module latin_hypercube_mod
 
     use estimate_lh_micro_mod, only: & 
       estimate_lh_micro ! Procedure
+
+!   use output_2D_samples, only: &
+!     open_2D_samples_file, & ! Procedures
+!     output_2D_samples_file !, &
+!     close_2D_samples_file
 #endif
 
     use variables_prognostic_module, only: &

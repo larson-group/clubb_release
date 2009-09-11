@@ -44,12 +44,12 @@ module stats_type
 
     ! Array to store sampled fields
 
-    real(kind=stat_rknd), pointer, dimension(:,:) :: x
+    real(kind=stat_rknd), pointer, dimension(:,:,:,:) :: x
 
-    integer(kind=stat_nknd), pointer, dimension(:,:) :: n
+    integer(kind=stat_nknd), pointer, dimension(:,:,:,:) :: n
     
     ! Tracks if a field is in the process of an update
-    logical, pointer, dimension(:,:) :: l_in_update
+    logical, pointer, dimension(:,:,:,:) :: l_in_update
 
     ! Data for GrADS / netCDF output
 
@@ -81,7 +81,7 @@ module stats_type
     ! Which grid the variable is located on (zt, zm, or sfc )
     type(stats), intent(out) :: grid_kind
 
-    grid_kind%f%var(var_index)%ptr => grid_kind%x(:,var_index)
+    grid_kind%f%var(var_index)%ptr => grid_kind%x(:,:,:,var_index)
     grid_kind%f%var(var_index)%name = var_name
     grid_kind%f%var(var_index)%description = var_description
     grid_kind%f%var(var_index)%units = var_units
@@ -134,10 +134,10 @@ module stats_type
       grid_kind ! Which grid the variable is located on (zt, zm, or sfc )
 
     if ( var_index > 0 ) then
-       grid_kind%x(:,var_index) =  & 
-            grid_kind%x(:,var_index) + value
-       grid_kind%n(:,var_index) =  & 
-            grid_kind%n(:,var_index) + 1
+       grid_kind%x(1,1,:,var_index) =  & 
+            grid_kind%x(1,1,:,var_index) + value
+       grid_kind%n(1,1,:,var_index) =  & 
+            grid_kind%n(1,1,:,var_index) + 1
     endif
 
   end subroutine stat_update_var
@@ -169,9 +169,9 @@ module stats_type
   
     if ( var_index > 0 ) then
 
-       grid_kind%x( grid_level, var_index ) = grid_kind%x( grid_level, var_index ) + value
+       grid_kind%x(1,1,grid_level,var_index) = grid_kind%x(1,1,grid_level,var_index) + value
 
-       grid_kind%n( grid_level, var_index ) = grid_kind%n( grid_level, var_index ) + 1
+       grid_kind%n(1,1,grid_level,var_index) = grid_kind%n(1,1,grid_level,var_index) + 1
 
     endif
 
@@ -274,13 +274,12 @@ module stats_type
   
     if ( var_index > 0 ) then  ! Are we storing this variable?
 
-       if ( .not. grid_kind%l_in_update( grid_level, var_index ) ) & 
-          then ! Can we begin an update?  
+       if ( .not. grid_kind%l_in_update(1,1,grid_level,var_index) ) then ! Can we begin an update?
 
-          grid_kind%x(grid_level, var_index) =  & 
-                  grid_kind%x(grid_level, var_index) - value
+          grid_kind%x(1,1,grid_level, var_index) =  & 
+                  grid_kind%x(1,1,grid_level, var_index) - value
 
-          grid_kind%l_in_update(grid_level, var_index) = .true.  ! Start Record
+          grid_kind%l_in_update(1,1,grid_level, var_index) = .true.  ! Start Record
 
        else
 
@@ -387,12 +386,12 @@ module stats_type
 
     if ( var_index > 0 ) then ! Are we storing this variable?
            
-       if ( grid_kind%l_in_update(grid_level, var_index) ) then ! Can we end an update? 
+       if ( grid_kind%l_in_update(1,1,grid_level,var_index) ) then ! Can we end an update? 
                
           call stat_update_var_pt & 
                    ( var_index, grid_level, value, grid_kind ) 
         
-          grid_kind%l_in_update( grid_level, var_index ) = .false. ! End Record
+          grid_kind%l_in_update(1,1,grid_level,var_index) = .false. ! End Record
 
        else
 
@@ -477,8 +476,8 @@ module stats_type
   
     if ( var_index > 0 ) then 
 
-       grid_kind%x( grid_level, var_index )  & 
-          = grid_kind%x( grid_level, var_index ) + value
+       grid_kind%x(1,1,grid_level,var_index )  & 
+          = grid_kind%x(1,1,grid_level,var_index ) + value
 
     endif
   

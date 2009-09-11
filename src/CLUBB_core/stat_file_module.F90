@@ -20,7 +20,7 @@ module stat_file_module
 
    type variable
      ! Pointer to the array
-     real(kind=stat_rknd), dimension(:), pointer :: ptr 
+     real(kind=stat_rknd), dimension(:,:,:), pointer :: ptr 
 
      character(len = 30) :: name        ! Variable name
      character(len = 100) :: description ! Variable description
