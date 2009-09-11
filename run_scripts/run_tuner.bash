@@ -104,7 +104,7 @@ if [ $RUN_TYPE = 'single' ] ; then # Single Case.
    # The <STATS>_model.in file.
    # One stats file for tuning, another for the optimal result.
    # They may be the same file, if you wish.
-   STATS_TUNE_IN=$STATS_DIR'nobudgets_stats.in'
+   STATS_TUNE_IN=$STATS_DIR'tuning_stats.in'
    if [ ! -e "$STATS_TUNE_IN" ] ; then
 	   echo $STATS_TUNE_IN " does not exist"
 	   exit 1
