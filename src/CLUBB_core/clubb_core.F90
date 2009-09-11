@@ -1736,7 +1736,7 @@ module clubb_core
         cloud_cover(k)  = cloud_frac(k)
         rcm_in_layer(k) = rcm(k)
   
-      else if ( ( rcm(k+1) > rc_tol ) .and. ( rcm(k-1) > rc_tol ) ) then
+      else if ( ( rcm(k+1) >= rc_tol ) .and. ( rcm(k-1) >= rc_tol ) ) then
         ! There is cloud above and below, 
         !   so assume cloud fills grid box from top to bottom
   
