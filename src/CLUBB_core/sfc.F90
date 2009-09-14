@@ -12,7 +12,7 @@ module surface_var
 
 !=============================================================================
   subroutine sfc_var( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & 
-                      wpsclrp_sfc,  & 
+                      um_sfc, vm_sfc, wpsclrp_sfc,  & 
                       wp2_sfc, up2_sfc, vp2_sfc, & 
                       thlp2_sfc, rtp2_sfc, rtpthlp_sfc, err_code, & 
                       sclrp2_sfc, & 
@@ -32,6 +32,7 @@ module surface_var
 
     use constants, only: & 
       grav,  & ! Variable(s)
+      eps,   &
       fstderr
 
     use parameters_model, only: & 
@@ -74,7 +75,9 @@ module surface_var
       upwp_sfc,     & ! Surface u momentum flux   [m^2/s^2]
       vpwp_sfc,     & ! Surface v momentum flux   [m^2/s^2]
       wpthlp_sfc,   & ! Surface thetal flux       [K m/s]
-      wprtp_sfc       ! Surface moisture flux     [kg/kg m/s]
+      wprtp_sfc,    & ! Surface moisture flux     [kg/kg m/s]
+      um_sfc,       & ! Surface u wind component  [m/s]
+      vm_sfc          ! Surface v wind component  [m/s]
 
     ! Input (Optional)
     real, intent(in), dimension(sclr_dim) ::  & 
@@ -84,7 +87,7 @@ module surface_var
     real, intent(out) ::  & 
       wp2_sfc,     & ! Vertical velocity variance        [m^2/s^2]
       up2_sfc,     & ! u'^2                              [m^2/s^2]
-      vp2_sfc,     & ! u'^2                              [m^2/s^2]
+      vp2_sfc,     & ! v'^2                              [m^2/s^2]
       thlp2_sfc,   & ! thetal variance                   [K^2]
       rtp2_sfc,    & ! rt variance                       [(kg/kg)^2]
       rtpthlp_sfc    ! thetal rt covariance              [kg K/kg]
@@ -103,6 +106,12 @@ module surface_var
     real :: uf
 
     ! Variables for Andre et al., 1978 parameterization.
+    real :: &
+      um_sfc_sqd, & ! Surface value of <u>^2                           [m^2/s^2]
+      vm_sfc_sqd, & ! Surface value of <v>^2                           [m^2/s^2]
+      usp2_sfc,   & ! u_s (vector oriented w/ mean sfc. wind) variance [m^2/s^2]
+      vsp2_sfc      ! v_s (vector perpen. to mean sfc. wind) variance  [m^2/s^2]
+
     real :: ustar
     real :: Lngth
     real :: zeta
@@ -114,6 +123,11 @@ module surface_var
 
     IF ( l_andre_1978 ) THEN
 
+      ! Calculate <u>^2 and <v>^2.
+      um_sfc_sqd = um_sfc**2
+      vm_sfc_sqd = vm_sfc**2
+
+      ! Calculate surface friction velocity, u*.
       ustar = MAX( ( upwp_sfc**2 + vpwp_sfc**2 )**(1.0/4.0), ufmin )
 
       ! Find Monin-Obukhov Length (Andre et al., 1978, p. 1866).
@@ -160,18 +174,40 @@ module surface_var
       ! Calculate wstar following Andre et al., 1978, p. 1866.
       wstar = ( (1.0/T0) * grav * wpthlp_sfc * z )**(1.0/3.0)
 
-      ! Andre et al, 1978, Eq. 29.
+      ! Andre et al., 1978, Eq. 29.
+      ! Andre et al. (1978) defines horizontal wind surface variances in terms
+      ! of orientation with the mean surface wind.  The vector u_s is the wind
+      ! vector oriented with the mean surface wind.  The vector v_s is the wind
+      ! vector oriented perpendicular to the mean surface wind.  Thus, <u_s> is
+      ! equal to the mean surface wind (both in speed and direction), and <v_s>
+      ! is 0.  Equation 29 gives the formula for the variance of u_s, which is
+      ! <u_s'^2> (usp2_sfc in the code), and the formula for the variance of
+      ! v_s, which is <v_s'^2> (vsp2_sfc in the code).
       IF ( wpthlp_sfc > 0.0 ) THEN
-        !up2_sfc = 4.0 * ustar**2 + 0.3 * wstar**2
-        !vp2_sfc = 1.75 * ustar**2 + 0.3 * wstar**2
-        up2_sfc = 1.75 * ustar**2 + 0.3 * wstar**2
-        vp2_sfc = 1.75 * ustar**2 + 0.3 * wstar**2
+        usp2_sfc = 4.0 * ustar**2 + 0.3 * wstar**2
+        vsp2_sfc = 1.75 * ustar**2 + 0.3 * wstar**2
       ELSE
-        !up2_sfc = 4.0 * ustar**2
-        !vp2_sfc = 1.75 * ustar**2
-        up2_sfc = 1.75 * ustar**2
-        vp2_sfc = 1.75 * ustar**2
+        usp2_sfc = 4.0 * ustar**2
+        vsp2_sfc = 1.75 * ustar**2
       ENDIF
+
+      ! Variance of u, <u'^2>, at the surface can be found from <u_s'^2>,
+      ! <v_s'^2>, and mean winds (at the surface) <u> and <v>, such that:
+      !    <u'^2>|_sfc = <u_s'^2> * [ <u>^2 / ( <u>^2 + <v>^2 ) ]
+      !                  + <v_s'^2> * [ <v>^2 / ( <u>^2 + <v>^2 ) ];
+      ! where <u>^2 + <v>^2 /= 0.
+      up2_sfc  &
+         = usp2_sfc * ( um_sfc_sqd / max( um_sfc_sqd + vm_sfc_sqd , eps ) )  &
+           + vsp2_sfc * ( vm_sfc_sqd / max( um_sfc_sqd + vm_sfc_sqd , eps ) )
+
+      ! Variance of v, <v'^2>, at the surface can be found from <u_s'^2>,
+      ! <v_s'^2>, and mean winds (at the surface) <u> and <v>, such that:
+      !    <v'^2>|_sfc = <v_s'^2> * [ <u>^2 / ( <u>^2 + <v>^2 ) ]
+      !                  + <u_s'^2> * [ <v>^2 / ( <u>^2 + <v>^2 ) ];
+      ! where <u>^2 + <v>^2 /= 0.
+      vp2_sfc  &
+         = vsp2_sfc * ( um_sfc_sqd / max( um_sfc_sqd + vm_sfc_sqd , eps ) )  &
+           + usp2_sfc * ( vm_sfc_sqd / max( um_sfc_sqd + vm_sfc_sqd , eps ) )
 
       ! Passive scalars
       IF ( sclr_dim > 0 ) THEN
