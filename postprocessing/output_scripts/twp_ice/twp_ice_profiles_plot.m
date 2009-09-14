@@ -42,6 +42,17 @@ for i=1:size(vars_to_plot,1);
 			file_var = profilefile{var_to_plot}(:);
 			file_height = profilefile{'h'}(:);
 
+			%Make sure RH is between 0 and 1
+			if (strcmp('RH', var_to_plot))
+				if (any(file_var(:) < 0.0))
+					disp(['Invalid RH in ensemble member ', sprintf('%02d',j), '!']);
+				end
+
+				if (any(file_var(:) > 1.0))
+					disp(['Invalid RH in ensemble member ', sprintf('%02d',j), '!']);
+				end
+			end
+
 			%Average
 			var_avg = zeros(1, nz);
 			for t=t_start:t_end
@@ -87,6 +98,17 @@ for i=1:size(vars_to_plot,1);
 
 		file_var = profilefile{var_to_plot}(:);
 		file_height = profilefile{'h'}(:);
+
+		%Make sure RH is between 0 and 1
+		if (strcmp('RH', var_to_plot))
+			if (any(file_var(:) < 0.0))
+				disp('Invalid RH in best estimate!');
+			end
+
+			if (any(file_var(:) > 1.0))
+				disp('Invalid RH in best estimate!');
+			end
+		end
 
 		%Average
 		var_avg = zeros(1, nz);
