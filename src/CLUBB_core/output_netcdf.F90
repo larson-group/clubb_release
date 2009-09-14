@@ -195,7 +195,8 @@ module output_netcdf
       = nf90_put_var( ncid=ncf%iounit, varid=ncf%var(i)%indx,  & 
                       values=ncf%var(i)%ptr(:,:,ncf%ia:ncf%iz),  & 
                       start=(/1,1,1,ncf%ntimes/), & 
-                      count=(/ncf%nlat,ncf%nlon,ncf%iz,1/) )
+                      count=(/ncf%nlon,ncf%nlat,ncf%iz,1/) )
+
     end do ! i=1..nvar
 
     if ( any (stat /= NF90_NOERR ) ) then
@@ -304,12 +305,15 @@ module output_netcdf
     end if
 
     ! Define the initial variables for the dimensions
+    ! Longitude = deg_E = X
     stat = nf90_def_var( ncid, "longitude", NF90_FLOAT, & 
                          (/LongDimId/), LongVarId )
 
+    ! Latitude = deg_N = Y
     stat = nf90_def_var( ncid, "latitude", NF90_FLOAT, & 
                          (/LatDimId/), LatVarId )
 
+    ! Altitude = meters above the surfac3 = Z
     stat = nf90_def_var( ncid, "altitude", NF90_FLOAT, & 
                         (/AltDimId/), AltVarId )
 
@@ -511,9 +515,9 @@ module output_netcdf
 !   dimensions are all in the opposite order of this in the file.
 !   -dschanen
 
-    var_dim(1) = ncf%LongDimId
-    var_dim(2) = ncf%LatDimId
-    var_dim(3) = ncf%AltDimId
+    var_dim(1) = ncf%LongDimId ! X
+    var_dim(2) = ncf%LatDimId  ! Y
+    var_dim(3) = ncf%AltDimId  ! Z
     var_dim(4) = ncf%TimeDimId ! The NF90_UNLIMITED dimension
 
     allocate( stat( ncf%nvar ) )
@@ -521,9 +525,9 @@ module output_netcdf
     l_error = .false.
 
     do i = 1, ncf%nvar, 1
-!        stat(i) = nf90_def_var( ncf%iounit, trim( ncf%var(i)%name ),
-!    .             NF90_FLOAT, (/ncf%TimeDimId, ncf%AltDimId,
-!    .             ncf%LatDimId, ncf%LongDimId/), ncf%var(i)%indx )
+!     stat(i) = nf90_def_var( ncf%iounit, trim( ncf%var(i)%name ), &
+!                  NF90_FLOAT, (/ncf%TimeDimId, ncf%AltDimId, &
+!                  ncf%LatDimId, ncf%LongDimId/), ncf%var(i)%indx )
       stat(i) = nf90_def_var( ncf%iounit, trim( ncf%var(i)%name ), & 
                 NF90_FLOAT, var_dim(:), ncf%var(i)%indx )
       if ( stat(i) /= NF90_NOERR ) then
@@ -757,7 +761,7 @@ module output_netcdf
 
 !      date(1:14) = "minutes since "
     date = "minutes since YYYY-MM-DD HH:MM:00.0"
-!      date = "seconds since YYYY-MM-DD HH:MM:00.0"
+!   date = "seconds since YYYY-MM-DD HH:MM:00.0"
     write(date(15:18),'(i4.4)') iyear
 !   write(date(19),'(a1)') '-'
     write(date(20:21),'(i2.2)') imonth

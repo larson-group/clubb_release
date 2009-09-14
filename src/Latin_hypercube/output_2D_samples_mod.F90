@@ -14,6 +14,7 @@ module output_2D_samples_mod
   contains
 !-------------------------------------------------------------------------------
   subroutine open_2D_samples_file( nnzp, n_micro_calls, d_variables, &
+                                   fname_prefix, fdir, &
                                    time, dtwrite, zgrid, variable_names, &
                                    variable_descriptions, variable_units )
 ! Description:
@@ -39,6 +40,10 @@ module output_2D_samples_mod
       n_micro_calls, & ! Number of calls to the microphysics
       d_variables      ! Number variates being sampled
 
+    character(len=*), intent(in) :: &
+      fdir,      & ! Output directory
+      fname_prefix ! Prefix for the netCDF output
+
     character(len=*), intent(in), dimension(d_variables) :: &
       variable_names,        & ! Names of the variables to be used in the 2D netCDF file
       variable_descriptions, & ! Description of the variables in the 2D file
@@ -58,12 +63,11 @@ module output_2D_samples_mod
 
     real, dimension(1) :: rlon
 
-    character(len=32) :: fdir, fname
+    character(len=100) :: fname
     integer :: i
 
     ! ---- Begin Code ----
-    fdir = "./"
-    fname = "LH_sample_points_2D.nc"
+    fname = trim( fname_prefix )//"_LH_sample_points_2D"
 
     ! We need to set this like a latitude to trick GrADS and allow of viewing of
     ! the sample points with the GrADS application and sdfopen.
@@ -75,7 +79,7 @@ module output_2D_samples_mod
     allocate( sample_file%z( nnzp ) )
 
     forall( i=1:n_micro_calls )
-      rlat(i) = real( i ) ! Use made up arbitrary values for degrees east
+      rlat(i) = real( i ) ! Use made up arbitrary values for degrees north
     end forall
 
     rlon = 1.0 ! Also made up
@@ -145,6 +149,7 @@ module output_2D_samples_mod
 !   None
 !-------------------------------------------------------------------------------
     use output_netcdf, only: close_netcdf ! Procedure
+
     implicit none
 
     call close_netcdf( sample_file )

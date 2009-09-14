@@ -4,12 +4,13 @@ module latin_hypercube_mod
 
   implicit none
    
-  public :: latin_hypercube_driver
+  public :: latin_hypercube_driver, latin_hypercube_2D_output
 
   private ! Default scope
 
   logical, parameter, private :: &
-    l_diagnostic_iter_check = .true.
+    l_diagnostic_iter_check = .true., &
+    l_output_2D_samples = .true.
 
   integer, allocatable, dimension(:,:,:), private :: & 
     height_time_matrix ! matrix of rand ints
@@ -56,10 +57,8 @@ module latin_hypercube_mod
     use estimate_lh_micro_mod, only: & 
       estimate_lh_micro ! Procedure
 
-!   use output_2D_samples, only: &
-!     open_2D_samples_file, & ! Procedures
-!     output_2D_samples_file !, &
-!     close_2D_samples_file
+    use output_2D_samples_mod, only: &
+      output_2D_samples_file ! Procedure(s)
 #endif
 
     use variables_prognostic_module, only: &
@@ -257,6 +256,11 @@ module latin_hypercube_mod
       ! print *, 'latin_hypercube_sampling: got past lh_sampler'
     end do ! 1..nnzp
 
+    if ( l_output_2D_samples ) then
+      call output_2D_samples_file( nnzp, n_micro_calls, d_variables, &
+                                   X_nl_all_levs )
+    end if
+
     ! Perform LH and analytic microphysical calculations
     call estimate_lh_micro &
          ( dt, nnzp, n_micro_calls, d_variables, &  ! intent(in)
@@ -338,5 +342,103 @@ module latin_hypercube_mod
 #endif /* UNRELEASED_CODE */
 
   end subroutine latin_hypercube_driver
+
+!-------------------------------------------------------------------------------
+  subroutine latin_hypercube_2D_output &
+             ( fname_prefix, fdir, stats_tout, nnzp, &
+               zt, time_initial )
+!-------------------------------------------------------------------------------
+
+    use array_index, only: &
+      iiLH_rrain, & ! Variables
+      iiLH_Nr, &
+      iiLH_Nc
+
+    use parameters_model, only: &
+      hydromet_dim
+
+    use parameters_microphys, only: &
+      LH_microphys_calls
+
+    use stats_precision, only: &
+      time_precision ! Constant
+
+    use output_2D_samples_mod, only: &
+      open_2D_samples_file ! Procedure
+
+    implicit none
+
+    ! Input Variables
+    character(len=*), intent(in) :: &
+      fname_prefix, & ! Prefix for file name
+      fdir            ! Directory for output
+
+    real(kind=time_precision), intent(in) :: &
+      stats_tout, & ! Frequency to write to disk        [s]
+      time_initial  ! Initial time                      [s]
+
+    integer, intent(in) :: &
+      nnzp ! Number of vertical levels 
+
+    real, dimension(nnzp), intent(in) :: &
+      zt ! Altitudes [m]
+
+    ! Local Variables
+    character(len=100), allocatable, dimension(:) :: &
+      variable_names, variable_descriptions, variable_units
+
+    integer :: i
+
+    ! ---- Begin Code ----
+
+    if ( .not. l_output_2D_samples ) return
+
+    allocate( variable_names(hydromet_dim+3), variable_descriptions(hydromet_dim+3), &
+              variable_units(hydromet_dim+3) )
+
+    variable_names(1)        = "s_mellor"
+    variable_descriptions(1) = "The variable 's' from Mellor 1977"
+    variable_units(1)        = "kg/kg"
+
+    variable_names(2)        = "t_mellor"
+    variable_descriptions(2) = "The variable 't' from Mellor 1977"
+    variable_units(2)        = "kg/kg"
+
+    variable_names(3)        = "w"
+    variable_descriptions(3) = "Vertical velocity"
+    variable_units(3)        = "m/s"
+
+    i = 3
+
+    if ( iiLH_Nr > 0 ) then
+      i = i + 1
+      variable_names(i)        = "Nr"
+      variable_descriptions(i) = "Rain droplet number concentration"
+      variable_units(i)        = "count/kg"
+    end if
+    if ( iiLH_Nc > 0 ) then
+      i = i + 1
+      variable_names(i)        = "Nc"
+      variable_descriptions(i) = "Cloud droplet number concentration"
+      variable_units(i)        = "count/kg"
+    end if
+    if ( iiLH_rrain > 0 ) then
+      i = i + 1
+      variable_names(i)        = "rrain"
+      variable_descriptions(i) = "Rain water mixing ratio"
+      variable_units(i)        = "kg/kg"
+    end if
+
+#ifdef UNRELEASED_CODE
+    call open_2D_samples_file( nnzp, LH_microphys_calls, hydromet_dim+3, &
+                               fname_prefix, fdir, &
+                               time_initial, stats_tout, zt, variable_names, &
+                               variable_descriptions, variable_units )
+    return
+#else
+    stop "This code was not compiled with support for Latin Hypercube sampling"
+#endif 
+
+  end subroutine latin_hypercube_2D_output
 
 end module latin_hypercube_mod

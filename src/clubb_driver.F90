@@ -1,4 +1,4 @@
-!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------*/
 ! $Id$
 
 module clubb_driver
@@ -205,6 +205,17 @@ module clubb_driver
       finalize_extend_atm
 
     use parameters_radiation, only: rad_scheme  ! Variable(s)
+
+    use output_2D_samples_mod, only: &
+      close_2D_samples_file ! Procedure
+
+    use parameters_microphys, only: &
+      l_latin_hypercube_sampling ! Varible
+
+#ifdef UNRELEASED_CODE
+    use latin_hypercube_mod, only: &
+      latin_hypercube_2D_output
+#endif
 
     implicit none
 
@@ -772,6 +783,13 @@ module clubb_driver
                      stats_tout, runfile, gr%nnzp, gr%zt, gr%zm, &                 ! Intent(in)
                      day, month, year, (/rlat/), (/rlon/), time_current, dtmain )  ! Intent(in)
 
+#ifdef UNRELEASED_CODE
+    if ( l_latin_hypercube_sampling ) then
+      call latin_hypercube_2D_output &
+           ( fname_prefix, fdir, stats_tout, gr%nnzp, &
+             gr%zt, time_initial  )
+    end if
+#endif /*UNRELEASED_CODE*/
 
     ! Time integration
     ! Call advance_clubb_core once per each statistics output time
@@ -942,6 +960,12 @@ module clubb_driver
     call cleanup_clubb_core( .false. )
 
     call stats_finalize( )
+
+#ifdef UNRELEASED_CODE
+    if ( l_latin_hypercube_sampling ) then
+       call close_2D_samples_file( )
+    end if
+#endif
 
     return
   end subroutine run_clubb
