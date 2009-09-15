@@ -258,7 +258,7 @@ module latin_hypercube_mod
 
     if ( l_output_2D_samples ) then
       call output_2D_samples_file( nnzp, n_micro_calls, d_variables, &
-                                   X_nl_all_levs )
+                                   X_nl_all_levs, LH_rt, LH_thl )
     end if
 
     ! Perform LH and analytic microphysical calculations
@@ -395,8 +395,8 @@ module latin_hypercube_mod
 
     if ( .not. l_output_2D_samples ) return
 
-    allocate( variable_names(hydromet_dim+3), variable_descriptions(hydromet_dim+3), &
-              variable_units(hydromet_dim+3) )
+    allocate( variable_names(hydromet_dim+5), variable_descriptions(hydromet_dim+5), &
+              variable_units(hydromet_dim+5) )
 
     variable_names(1)        = "s_mellor"
     variable_descriptions(1) = "The variable 's' from Mellor 1977"
@@ -410,29 +410,39 @@ module latin_hypercube_mod
     variable_descriptions(3) = "Vertical velocity"
     variable_units(3)        = "m/s"
 
-    i = 3
+    i = 3 ! Use i to determine the position of rt, thl in the output
 
     if ( iiLH_Nr > 0 ) then
       i = i + 1
-      variable_names(i)        = "Nr"
-      variable_descriptions(i) = "Rain droplet number concentration"
-      variable_units(i)        = "count/kg"
+      variable_names(iiLH_Nr)        = "Nr"
+      variable_descriptions(iiLH_Nr) = "Rain droplet number concentration"
+      variable_units(iiLH_Nr)        = "count/kg"
     end if
     if ( iiLH_Nc > 0 ) then
       i = i + 1
-      variable_names(i)        = "Nc"
-      variable_descriptions(i) = "Cloud droplet number concentration"
-      variable_units(i)        = "count/kg"
+      variable_names(iiLH_Nc)        = "Nc"
+      variable_descriptions(iiLH_Nc) = "Cloud droplet number concentration"
+      variable_units(iiLH_Nc)        = "count/kg"
     end if
     if ( iiLH_rrain > 0 ) then
       i = i + 1
-      variable_names(i)        = "rrain"
-      variable_descriptions(i) = "Rain water mixing ratio"
-      variable_units(i)        = "kg/kg"
+      variable_names(iiLH_rrain)        = "rrain"
+      variable_descriptions(iiLH_rrain) = "Rain water mixing ratio"
+      variable_units(iiLH_rrain)        = "kg/kg"
     end if
 
+    i = i + 1
+    variable_names(i)        = "rt"
+    variable_descriptions(i) = "Total water mixing ratio"
+    variable_units(i)        = "kg/kg"
+
+    i = i + 1
+    variable_names(i)        = "thl"
+    variable_descriptions(i) = "Liquid potential temperature"
+    variable_units(i)        = "K"
+
 #ifdef UNRELEASED_CODE
-    call open_2D_samples_file( nnzp, LH_microphys_calls, hydromet_dim+3, &
+    call open_2D_samples_file( nnzp, LH_microphys_calls, hydromet_dim+5, &
                                fname_prefix, fdir, &
                                time_initial, stats_tout, zt, variable_names, &
                                variable_descriptions, variable_units )
