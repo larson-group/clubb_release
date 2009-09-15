@@ -206,15 +206,15 @@ module clubb_driver
 
     use parameters_radiation, only: rad_scheme  ! Variable(s)
 
-    use output_2D_samples_mod, only: &
-      close_2D_samples_file ! Procedure
-
     use parameters_microphys, only: &
       l_latin_hypercube_sampling ! Varible
 
 #ifdef UNRELEASED_CODE
+    use output_2D_samples_mod, only: &
+      close_2D_samples_file ! Procedure
+
     use latin_hypercube_mod, only: &
-      latin_hypercube_2D_output
+      latin_hypercube_2D_output ! Procedure
 #endif
 
     implicit none
