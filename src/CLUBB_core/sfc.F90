@@ -55,6 +55,10 @@ module surface_var
     intrinsic :: sqrt, max
 
     ! Constant Parameters
+
+    ! Logical for Andre et al., 1978 parameterization.
+    logical, parameter :: l_andre_1978 = .false.
+
     real, parameter ::  & 
       a = 1.8, & 
       z = 1.0, & 
@@ -79,7 +83,6 @@ module surface_var
       um_sfc,       & ! Surface u wind component  [m/s]
       vm_sfc          ! Surface v wind component  [m/s]
 
-    ! Input (Optional)
     real, intent(in), dimension(sclr_dim) ::  & 
       wpsclrp_sfc ! Passive scalar flux       [units m/s]
 
@@ -95,7 +98,6 @@ module surface_var
     integer, intent(out) :: & 
       err_code
 
-    ! Output Variables (Optional)
     real, intent(out), dimension(sclr_dim) ::  & 
       sclrp2_sfc,    & ! Passive scalar variance                 [units^2]
       sclrprtp_sfc,  & ! Passive scalar r_t covariance           [units kg/kg]
@@ -118,8 +120,7 @@ module surface_var
 
     integer :: i ! Loop index
 
-    ! Logical for Andre et al., 1978 parameterization.
-    logical, parameter :: l_andre_1978 = .false.
+    ! ---- Begin Code ----
 
     IF ( l_andre_1978 ) THEN
 
