@@ -363,8 +363,10 @@ module latin_hypercube_mod
     use stats_precision, only: &
       time_precision ! Constant
 
+#ifdef UNRELEASED_CODE
     use output_2D_samples_mod, only: &
       open_2D_samples_file ! Procedure
+#endif /*UNRELEASED_CODE*/
 
     implicit none
 
