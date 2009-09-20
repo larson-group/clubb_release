@@ -17,8 +17,14 @@ module stats_zt
 !-----------------------------------------------------------------------
   subroutine stats_init_zt( vars_zt, l_error )
 
-!     Description:
-!     Initializes array indices for zt
+! Description:
+!   Initializes array indices for zt
+
+! Note:
+!   All code that is within subroutine stats_init_zt, including variable
+!   allocation code, is not called if l_stats is false.  This subroutine is
+!   called only when l_stats is true.
+
 !-----------------------------------------------------------------------
 
     use constants, only:  &

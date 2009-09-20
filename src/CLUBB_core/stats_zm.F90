@@ -18,6 +18,12 @@ module stats_zm
 
 ! Description:
 !   Initializes array indices for zm
+
+! Note:
+!   All code that is within subroutine stats_init_zm, including variable
+!   allocation code, is not called if l_stats is false.  This subroutine is
+!   called only when l_stats is true.
+
 !-----------------------------------------------------------------------
 
     use constants, only: &
