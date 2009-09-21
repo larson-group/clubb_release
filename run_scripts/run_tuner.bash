@@ -104,6 +104,9 @@ if [ $RUN_TYPE = 'single' ] ; then # Single Case.
    # The <STATS>_model.in file.
    # One stats file for tuning, another for the optimal result.
    # They may be the same file, if you wish.
+   # Note: if STATS_TUNE_IN = tuning_stats.in, the variables listed
+   #   there should match the variables being tuned for in 
+   #   the error_<RUN_CASE>.in file.
    STATS_TUNE_IN=$STATS_DIR'tuning_stats.in'
    if [ ! -e "$STATS_TUNE_IN" ] ; then
 	   echo $STATS_TUNE_IN " does not exist"
@@ -166,6 +169,7 @@ cp $RAND_SEED .
 #../bin/clubb_tuner 2>&1 | tee 'tuner_'$RUN_CASE'_'$DATE'.log'
 #
 # Run tuner, don't keep a log
+# Note: Tuner code has option to save results to a file or not
  ../bin/clubb_tuner 
 
 # Remove the temporary error.in file and the *_hoc.in file(s).
