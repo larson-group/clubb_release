@@ -16,8 +16,11 @@ module error
 !   calculates the average difference between the two over all z-levels.
 
 !   subroutine output_results_stdout :
-!   Prints the results of tuning to the terminal, or
-!   to a logfile with redirection(done outside the program in scripting)
+!   Prints the results of tuning to the terminal
+
+!   subroutine output_results_to_file :
+!   Saves the results of tuning in a file specified by
+!   tuning_run_results_<CURRENT_DATE>_<CURRENT_TIME>.in
 
 !   subroutine output_nml_tuner :
 !   Generates the error.in file using the current constants.
@@ -62,9 +65,22 @@ module error
     v_total     ! Total number of variables to tune over
 
   logical, public :: & 
-    l_results_stdout, & 
-    l_results_file, & 
+    l_results_stdout, & ! Whether to print tuning results to the terminal
+    l_results_file,   & ! Whether to generate a new error.in based on 
+                        ! the new tuning constants
     l_stdout_on_invalid
+
+  logical, parameter, public :: &
+    l_save_tuning_run = .true. 
+      ! If true, writes the results of the tuning run to a file
+
+  character(len=50), public :: &
+    tuning_filename ! File where results of tuning run are
+                    ! written if l_save_tuning_run = .true.
+
+  integer, parameter, public :: &
+    file_unit = 15   ! File unit number connected with tuning_filename
+
 
   character(len=10), dimension(:), allocatable, private ::  & 
     hoc_v,  & ! Variables in CLUBB GrADS files
@@ -121,7 +137,7 @@ module error
     rand_vect ! A vector of random reals for initializing the x array
 
   public :: tuner_init, min_les_clubb_diff, output_results_stdout, & 
-    output_nml_standalone, output_nml_tuner
+    output_results_to_file, output_nml_standalone, output_nml_tuner
 
   private ! Default Scope
 
@@ -193,8 +209,8 @@ module error
     ! Namelists read from error.in
     namelist /stats/  & 
       ftol, tune_type, anneal_temp, anneal_iter, & 
-      l_results_stdout, l_results_file, l_stdout_on_invalid, t_variables, & 
-      weight_var_nl
+      l_results_stdout, l_results_file, l_stdout_on_invalid, &
+      t_variables, weight_var_nl
 
     namelist /cases/  & 
       les_stats_file_nl, hoc_stats_file_nl, & 
@@ -361,6 +377,13 @@ module error
 
     write(unit=fstdout,fmt=*) "cost_fnc_vector:"
     write(unit=fstdout,fmt='(6e12.5)') cost_fnc_vector
+    if( l_save_tuning_run ) then
+      open(unit=file_unit, file=tuning_filename, action='write', position='append')
+      write(file_unit,*) "cost_fnc_vector:"
+      write(unit=file_unit,fmt='(6e12.5)') cost_fnc_vector
+      close(unit=file_unit)
+    end if ! l_save_tuning_run
+
 
     return
   end subroutine tuner_init
@@ -470,6 +493,21 @@ module error
 
     end if
 
+    if( l_save_tuning_run .and. ( modulo(iter,10) == 0 ) .and. iter /= 0 ) then
+      open(unit=file_unit, file=tuning_filename, action='write', position='append')
+
+      write(unit=file_unit,fmt='(A12,I10)') "Iteration: ", iter
+      write(unit=file_unit,fmt='(A12)') "Parameters: "
+
+      do i = 1, ndim, 1
+        j = params_index(i)
+        write(unit=file_unit,fmt='(A18,F27.20)') params_list(j)//" = ", & 
+          param_vals_vector(i)
+      end do      
+
+      close(unit=file_unit)
+    end if ! l_save_tuning_run .and. modulo(iter,10) == 0 .and. iter /= 0
+
     allocate( err_sums(c_total, v_total) )
 
     ! Initialize
@@ -509,6 +547,12 @@ module error
 #ifndef _OPENMP 
       ! Write a message about which case we're calling if OpenMP is not enabled
       write(6,'(a)') "Calling CLUBB with case "//trim( run_file(c_run) )
+      if( l_save_tuning_run ) then
+        open(unit=file_unit, file=tuning_filename, action='write', position='append')
+        write(file_unit,'(a)') "Calling CLUBB with case "//trim( run_file(c_run) )
+        close(unit=file_unit)
+      end if ! l_save_tuning_run
+      
 #endif
 
       ! Run the CLUBB model with parameters as input
@@ -674,6 +718,11 @@ module error
     deallocate( err_sums )
 
     write(*,'(a,f12.5)') "Cost function= ", min_les_clubb_diff
+    if( l_save_tuning_run ) then
+      open(unit=file_unit, file=tuning_filename, action='write', position='append')
+      write(file_unit,'(a,f12.5)') "Cost function= ", min_les_clubb_diff
+      close(unit=file_unit)
+    end if ! l_save_tuning_run
 
     return
   end function min_les_clubb_diff
@@ -720,7 +769,53 @@ module error
 
     return
   end subroutine output_results_stdout
+  !----------------------------------------------------------------------
+  subroutine output_results_to_file( file_unit )
+
+! Description:
+!   Outputs the results of a tuning run to a file
+!   The file has already been opened and connected with integer file_unit
+
+! References:
+!   None
+!----------------------------------------------------------------------
+
+    use parameters_tunable, only: params_list ! Variable(s)
+
+    implicit none
+
+    ! Input variables
+    integer, intent(in) :: file_unit ! Number for use with file
+
+    ! Local variables
+    integer :: i ! Loop iterator
+
+    if ( tune_type == 0 ) then
+      write(unit=file_unit,fmt=*) "Number of iterations:",  iter
+    end if ! tune_type == 0
+
+    write(unit=file_unit,fmt='(4x,A9,5x,10x,A7,10x,10x,A7)') & 
+        "Parameter", "Initial", "Optimal"
+
+    do i = 1, ndim, 1
+      write(unit=file_unit,fmt='(A18,2F27.20)')  & 
+        params_list(params_index(i))//" = ",  & 
+        params(params_index(i)), param_vals_matrix(1,i)
+    end do
+
+    write(unit=file_unit,fmt='(A20)') "Initial cost: "
+    write(unit=file_unit,fmt='(F15.6)') init_err
+    write(unit=file_unit,fmt='(A20)') "Optimal cost: "
+    ! The $$ is here to make it easy to find with grep
+    write(unit=file_unit,fmt='(A3,F15.6)') "$$ ", min_err
+
+    write(unit=file_unit,fmt=*) "Approx. percent increase in accuracy:",  & 
+      ((init_err - min_err) / init_err*100.0), "%"
+
+    return
+  end subroutine output_results_to_file
   !-----------------------------------------------------------------------
+
   subroutine output_nml_tuner( results_f, param_vals_vector )
 
 ! Description:
