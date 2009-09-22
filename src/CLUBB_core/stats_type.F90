@@ -116,8 +116,6 @@ module stats_type
     ! explicit terms, the explicit contribution is sent into stat_update_var_pt
     ! once it has been calculated.
     !---------------------------------------------------------------------            
-
-    use grid_class, only: gr ! Variable(s)
    
     implicit none
 
@@ -125,13 +123,16 @@ module stats_type
 
     integer, intent(in) ::  & 
       var_index ! The index at which the variable is stored  []
-            
-    real, dimension(gr%nnzp), intent(in) :: & 
-      value ! Value of field being added to the statistic    [Units Vary]
 
     ! Input/Output Variable(s)
     type(stats), intent(inout) ::  & 
-      grid_kind ! Which grid the variable is located on (zt, zm, or sfc )
+      grid_kind ! Which grid the variable is located on (zt, zm, rad, or sfc )
+
+    ! Input Variable(s) NOTE: Due to the implicit none above, these must
+    ! be declared below to allow the use of grid_kind
+
+    real, dimension(grid_kind%kk), intent(in) :: & 
+      value ! Value of field being added to the statistic    [Units Vary]  
 
     if ( var_index > 0 ) then
        grid_kind%x(1,1,:,var_index) =  & 
@@ -165,7 +166,7 @@ module stats_type
 
     ! Input/Output Variable(s)
     type(stats), intent(inout) ::  & 
-      grid_kind ! Which grid the variable is located on (zt, zm, or sfc).
+      grid_kind ! Which grid the variable is located on (zt, zm, rad, or sfc).
   
     if ( var_index > 0 ) then
 
@@ -226,7 +227,7 @@ module stats_type
 
     ! Input/Output Variable(s)
     type(stats), intent(inout) ::  & 
-      grid_kind ! Which grid the variable is located on (zt, zm, or sfc).
+      grid_kind ! Which grid the variable is located on (zt, zm, rad, or sfc).
 
     integer :: i
 
@@ -267,7 +268,7 @@ module stats_type
 
     ! Input/Output Variable(s)
     type(stats), intent(inout) ::  & 
-      grid_kind ! Which grid the variable is located on (zt, zm, or sfc).
+      grid_kind ! Which grid the variable is located on (zt, zm, rad, or sfc).
 
     ! Local Variable
     character(len=3) :: char_index
@@ -342,7 +343,7 @@ module stats_type
 
     ! Input/Output Variable(s)
     type(stats), intent(inout) ::  & 
-      grid_kind ! Which grid the variable is located on (zt, zm, or sfc).
+      grid_kind ! Which grid the variable is located on (zt, zm, rad, or sfc).
 
     integer :: i 
            
@@ -382,7 +383,7 @@ module stats_type
 
     ! Input/Output Variable(s)
     type(stats), intent(inout) ::  & 
-      grid_kind ! Which grid the variable is located on (zt, zm, or sfc).
+      grid_kind ! Which grid the variable is located on (zt, zm, rad, or sfc).
 
     if ( var_index > 0 ) then ! Are we storing this variable?
            
@@ -432,7 +433,7 @@ module stats_type
 
     ! Input/Output Variable(s)
     type(stats), intent(inout) ::  & 
-      grid_kind ! Which grid the variable is located on (zt, zm, or sfc).
+      grid_kind ! Which grid the variable is located on (zt, zm, rad, or sfc).
 
     integer :: i
 
@@ -472,7 +473,7 @@ module stats_type
    
     ! Input/Output Variable(s)
     type(stats), intent(inout) ::  & 
-      grid_kind ! Which grid the variable is located on (zt, zm, or sfc).
+      grid_kind ! Which grid the variable is located on (zt, zm, rad, or sfc).
   
     if ( var_index > 0 ) then 
 

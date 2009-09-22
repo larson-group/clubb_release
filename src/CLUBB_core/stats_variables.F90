@@ -43,6 +43,7 @@ module stats_variables
   character(len=200), public ::  & 
   fname_zt,  & ! Name of the stats file for thermodynamic grid fields
   fname_zm,  & ! Name of the stats file for momentum grid fields
+  fname_rad, & ! Name of the stats file for the radiation grid fields
   fname_sfc    ! Name of the stats file for surface only fields
 
 !$omp   threadprivate(fname_zt, fname_zm, fname_sfc)
@@ -685,7 +686,28 @@ module stats_variables
   integer, target, allocatable, dimension(:), public :: & 
      iwpedsclrp ! eddy sclr'(1)w'
 
-!$omp   threadprivate(iwpedsclrp)     
+!$omp   threadprivate(iwpedsclrp)
+  ! Indices for statistics in rad file
+  integer, public :: &
+    iT_in_K_rad, &
+    ircil_rad, &
+    io3l_rad, &
+    irsnowm_rad, &
+    ircm_in_cloud_rad, &
+    icloud_frac_rad, & 
+    iradht_rad, &
+    iradht_LW_rad, &
+    iradht_SW_rad, &
+    iFrad_LW_rad, &
+    iFrad_SW_rad, &
+    iFrad_SW_up_rad, &
+    iFrad_LW_up_rad, &
+    iFrad_SW_down_rad, &
+    iFrad_LW_down_rad
+
+!$omp threadprivate(iradht_rad, iradht_LW_rad, iradht_SW_rad)
+!$omp threadprivate(iFrad_LW_rad, iFrad_SW_rad, iFrad_SW_up_rad)
+!$omp threadprivate(iFrad_LW_up_rad, iFrad_SW_down_rad, iFrad_LW_down_rad)
 
   ! Indices for statistics in sfc file
 
@@ -751,6 +773,7 @@ module stats_variables
 
   type (stats), target, public :: zt,   & ! zt grid
                                   zm,   & ! zm grid
+                                  rad,  & ! rad grid
                                   sfc     ! sfc
 
 !$omp   threadprivate(zt, zm, sfc)
@@ -783,6 +806,17 @@ module stats_variables
 !$omp   threadprivate(zmscr11, zmscr12, zmscr13, zmscr14, zmscr15)
 !$omp   threadprivate(zmscr16, zmscr17)
 
+  real, allocatable, public :: radscr01(:), radscr02(:), radscr03(:), &
+                               radscr04(:), radscr05(:), radscr06(:), & 
+                               radscr07(:), radscr08(:), radscr09(:), & 
+                               radscr10(:), radscr11(:), radscr12(:), & 
+                               radscr13(:), radscr14(:), radscr15(:), &
+                               radscr16(:), radscr17(:)
+
+!$omp   threadprivate(radscr01, radscr02, radscr03, radscr04, radscr05)
+!$omp   threadprivate(radscr06, radscr07, radscr08, radscr09, radscr10)
+!$omp   threadprivate(radscr11, radscr12, radscr13, radscr14, radscr15)
+!$omp   threadprivate(radscr16, radscr17)
 
 end module stats_variables
 

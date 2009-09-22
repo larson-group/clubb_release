@@ -15,6 +15,12 @@ module extend_atmosphere_mod
   ! Size of Extended Atmosphere
   integer, public :: extend_atmos_dim
 
+  ! Total Atmosphere Size (grid + buffer + extended atmosphere)
+  integer, public :: total_atmos_dim
+
+  ! Altitude of complete atmosphere in meters
+  real, public, target, allocatable, dimension(:) :: complete_alt
+
   ! Flag to signal the use of the U.S. Standard Atmosphere Profile, 1976
   logical, public :: l_use_default_std_atmosphere
 
@@ -195,6 +201,8 @@ module extend_atmosphere_mod
 
     ! Local Variable(s)
     integer :: k, j
+    integer :: extended_alt_index
+    double precision :: grid_top, extend_bottom
 
     ! -- Begin Code --
 
@@ -243,6 +251,30 @@ module extend_atmosphere_mod
       stop "radiation top below computational grid"
     end if
 
+    ! Set the total atmosphere size dimension
+    total_atmos_dim = grid_size + lin_int_buffer_size + extend_atmos_range_size
+    grid_top =  grid(grid_size) !Altitude at top of normal grid
+    extend_bottom = extend_alt(extend_atmos_bottom_level) !Altitude at bottom of
+                                                          !extended atmos
+    
+    allocate( complete_alt(1:total_atmos_dim) )
+
+    ! Build the total atmosphere grid
+    do j=1, total_atmos_dim
+      if (j <= grid_size) then
+        complete_alt(j) = grid(j)
+      elseif(j > grid_size .and. j <= (grid_size + lin_int_buffer_size)) then 
+        !Interpolate between the top of the computational grid and the bottom
+        !of the extended altitude
+        complete_alt(j) = real(grid_top + ((extend_bottom - grid_top) / lin_int_buffer_size) * &
+                          (j - grid_size))
+
+      else
+        ! Figure out where we are in the extended altitude grid
+        extended_alt_index = extend_atmos_dim - (total_atmos_dim - j)
+        complete_alt(j) = real(extend_alt(extended_alt_index))
+      endif 
+    end do
 
   end subroutine determine_extend_atmos_bounds
 
@@ -312,7 +344,7 @@ module extend_atmosphere_mod
                                    atm_input_file )
 
     extend_o3l = read_x_profile( nCol, extend_atmos_dim, ozone_name, retVars, &
-                                 atm_input_file )
+                                 atm_input_file )                           
 
   end subroutine load_extend_std_atm
   !-------------------------------------------------------------------------------------------------
@@ -334,6 +366,7 @@ module extend_atmosphere_mod
     deallocate( extend_sp_hmdty )
     deallocate( extend_pinmb )
     deallocate( extend_o3l )
+    deallocate( complete_alt )
 
   end subroutine finalize_extend_atm
 end module extend_atmosphere_mod

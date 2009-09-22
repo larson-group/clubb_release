@@ -97,6 +97,12 @@ vars_zm =
 !'wpedsclr1p', 'wpedsclr2p',
 ''
 
+vars_rad =
+'T_in_K_rad', 'rcil_rad', 'o3l_rad', 'rsnowm_rad', 'rcm_in_cloud_rad',
+'cloud_frac_rad', 'radht_rad', 'Frad_SW_rad', 'Frad_LW_rad', 'radht_SW_rad',
+'radht_LW_rad', 'Frad_SW_up_rad', 'Frad_LW_up_rad', 'Frad_SW_down_rad', 'Frad_LW_down_rad',
+''
+
 vars_sfc = 
 'ustar', 'soil_heat_flux', 'veg_T_in_K', 'sfc_soil_T_in_K', 'deep_soil_T_in_K', 'lh', 'sh', 'cc', 'lwp', 'vwp',
 'swp', 'iwp', 'zb', 'zi', 'rain', 'rain_flux', 'rrainm_sfc', 'wpthlp_sfc', 'wprtp_sfc', 'upwp_sfc', 'vpwp_sfc',

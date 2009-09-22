@@ -1,4 +1,4 @@
-!-----------------------------------------------------------------------*/
+!-----------------------------------------------------------------------
 ! $Id$
 
 module clubb_driver
@@ -41,6 +41,18 @@ module clubb_driver
   !                      halfway between momentum levels (style
   !                      of WRF stretched grid).
 
+  ! Radiation variables
+  integer, private ::  & 
+    extend_atmos_bottom_level, & ! Bottom level of the extended atmosphere
+    extend_atmos_top_level,    & ! Top level of the extended atmosphere
+    extend_atmos_range_size,   & ! The number of levels in the extended
+                                 ! atmosphere
+    lin_int_buffer               ! The number of interpolated levels between
+                                 ! the computational grid and the extended
+                                 ! atmosphere
+!$omp threadprivate(extend_atmos_bottom_level, extend_atmos_top_level)
+!$omp threadprivate(extend_atmos_range_size, lin_int_buffer)
+  
   real, private ::  & 
     deltaz,  & ! Change per grid level                 [m]
     zm_init, & ! Initial point on the momentum grid    [m]
@@ -201,6 +213,8 @@ module clubb_driver
       finalize_tau_sponge_damp
 
     use extend_atmosphere_mod, only: &
+      total_atmos_dim, &
+      complete_alt, &
       l_use_default_std_atmosphere, &
       finalize_extend_atm
 
@@ -779,9 +793,11 @@ module clubb_driver
     fdir = "../output/" ! Output directory
 
     ! Initialize statistics output
-    call stats_init( iunit, fname_prefix, fdir, l_stats, stats_fmt, stats_tsamp, & ! Intent(in)
-                     stats_tout, runfile, gr%nnzp, gr%zt, gr%zm, &                 ! Intent(in)
-                     day, month, year, (/rlat/), (/rlon/), time_current, dtmain )  ! Intent(in)
+    call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
+                     stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
+                     gr%nnzp, gr%zt, gr%zm, total_atmos_dim, & ! Intent(in)
+                     complete_alt, day, month, year, & ! Intent(in)
+                     (/rlat/), (/rlon/), time_current, dtmain ) ! Intent(in)
 
 #ifdef UNRELEASED_CODE
     if ( l_latin_hypercube_sampling ) then
@@ -1011,6 +1027,8 @@ module clubb_driver
       Ncm_initial,     & ! Variable(s)
       micro_scheme
 
+    use parameters_radiation, only: radiation_top ! Variable(s)
+
     use grid_class, only: gr ! Variable(s)
 
     use grid_class, only: zm2zt, zt2zm ! Procedure(s)
@@ -1032,9 +1050,10 @@ module clubb_driver
       l_t_dependent ! Variable(s)
 
     use extend_atmosphere_mod, only: &
-      l_use_default_std_atmosphere, &
+      l_use_default_std_atmosphere, & ! Procedure(s)
       load_extend_std_atm, &
-      convert_snd2extend_atm
+      convert_snd2extend_atm, &
+      determine_extend_atmos_bounds
 
     use mpace_a, only: mpace_a_init ! Procedure(s)
 
@@ -1163,6 +1182,12 @@ module clubb_driver
                                 sounding_retVars, sclr_sounding_retVars )   ! Intent(in)
     end if
 
+    call determine_extend_atmos_bounds( gr%nnzp, gr%zm, gr%dzm,    & ! Intent(in)
+                                        radiation_top,             & ! Intent(in)
+                                        extend_atmos_bottom_level, & ! Intent(out)
+                                        extend_atmos_top_level,    & ! Intent(out)
+                                        extend_atmos_range_size,   & ! Intent(out)
+                                        lin_int_buffer )             ! Intent(out)
 
     ! Covert sounding input to CLUBB compatible input
     select case( trim( alt_type ) )
@@ -2730,15 +2755,10 @@ module clubb_driver
 
     use numerical_check, only: isnan2d, rad_check ! Procedure(s)
 
-    use parameters_radiation, only: &
-      rad_scheme, & ! Variable(s)
-      radiation_top
+    use parameters_radiation, only: rad_scheme ! Variable(s)
 
     use error_code, only: & 
       clubb_at_least_debug_level ! Procedure(s)
-
-    use extend_atmosphere_mod, only: &
-      determine_extend_atmos_bounds  ! Procedure(s)
 
     use parameters_model, only: hydromet_dim ! Variable(s)
 
@@ -2786,11 +2806,6 @@ module clubb_driver
       rsnowm,  & ! Snow mixing ratio                         [kg/kg]
       ricem      ! Prisitine ice water mixing ratio          [kg/kg]
 
-    integer :: &
-      lin_int_buffer, &
-      extend_atmos_top_level, &
-      extend_atmos_bottom_level, & 
-      extend_atmos_range_size
 
     !----------------------------------------------------------------
     ! BUGSrad Radiation
@@ -2859,13 +2874,6 @@ module clubb_driver
                         cloud_frac, p_in_Pa, exner, rho_zm ) ! Intent(in)
 
       endif  ! clubb_at_least_debug_level( 2 )
-
-      call determine_extend_atmos_bounds( gr%nnzp, gr%zm, gr%dzm,    & ! Intent(in)
-                                          radiation_top,             & ! Intent(in)
-                                          extend_atmos_bottom_level, & ! Intent(out)
-                                          extend_atmos_top_level,    & ! Intent(out)
-                                          extend_atmos_range_size,   & ! Intent(out)
-                                          lin_int_buffer )             ! Intent(out)
 
       call bugsrad_clubb( gr%zm, gr%nnzp, lin_int_buffer,        & ! Intent(in)
                           extend_atmos_range_size,               & ! Intent(in)
