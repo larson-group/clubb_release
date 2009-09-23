@@ -1,0 +1,37 @@
+! Declare any cases that should be run with run_scm_all.bash and 
+! run_bindiff_all.bash. Any blank lines and lines starting with '!' will
+! be ignored.
+
+arm
+atex
+bomex
+dycoms2_rf01
+dycoms2_rf02_do
+dycoms2_rf02_ds
+dycoms2_rf02_nd
+dycoms2_rf02_so
+fire
+gabls2
+mpace_a
+mpace_b
+wangara
+
+! The following are unreleased cases. External users should comment these
+! lines out before running run_scm_all.bash and run_bindiff_all.bash
+!arm97
+!clex9_nov02
+!clex9_oct14
+!cloud_feedback_s6
+!cloud_feedback_s6_p2k
+!cloud_feedback_s11
+!cloud_feedback_s11_p2k
+!cloud_feedback_s12
+!cloud_feedback_s12_p2k
+!cobra
+!gabls3
+!gabls3_night
+!jun25_altocu
+!lba
+!nov11_altocu
+!rico
+!twp_ice

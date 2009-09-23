@@ -1,22 +1,25 @@
 #!/bin/bash
-#######################################################################
+###############################################################################
 # $Id: run_standalone.bash,v 1.29 2008-04-17 00:02:03 dschanen Exp $
 #
-# Description:
-# Script to run the standalone CLUBB program.  
-# Tested with GNU Bash v2 & 3.  Might work with Ksh.
-#
-#######################################################################
-# Useful variable on multiprocessor machines with OpenMP capable 
-# Fortran, uncomment and set to use.  
-# The hoc_standalone program is not parallel, but many LAPACK/BLAS 
-# libraries are.
+# Desciption:
+#   Script to run the standalone CLUBB program.
+#   Tested with GNU Bash v2 &3. Might work with Ksh.
+###############################################################################
+
+# Useful variable on multiprocessor machines with OpenMP capable Fortran.
+# Uncomment and set to use. The clubb_standalone program is not parallel,
+# but many LAPACK/BLAS libraries are.
 #
 # export OMP_NUM_THREADS=2
-#######################################################################
 
-ZT_GRID_TEST=false
-ZM_GRID_TEST=false
+# Fields for parameters passed in
+NIGHTLY=false
+TIMESTEP_TEST=false
+ZT_GRID=false
+ZM_GRID=false
+OUTPUT_DIR="/home/`whoami`/nightly_tests/output"
+NAMELISTS="clubb.in"
 
 # Figure out the directory where the script is located
 scriptPath=`dirname $0`
@@ -27,164 +30,292 @@ restoreDir=`pwd`
 # Change directories to the one the script is located in
 cd $scriptPath
 
-if [ -z $1 ]; then
-	echo "Usage: "$0" [--zm_grid_test OR --zt_grid_test grid_levels grid_file]" \
-			" <MODEL CASE> [PARAMETER FILE] [STATS FILE]"
-	exit
-else
-	# Loop through to pull out options passed into the run.
-	# This is done as a loop to facilitate additional options later on,
-	# if necessary.
-	while [ -n "$(echo $1 | grep "-")" ]; do
-		case $1 in
-			--zt_grid_test ) ZT_GRID_TEST=true
-				if [ "$2" == "" ]; then
-					echo "Option '--zt_grid_test': The number of levels in the grid" \
-					"needs to be entered following '--zt_grid_test'."
-					exit 1
-				elif [ -n "$(echo $2 | grep "-")" ]; then
-					echo "Option '--zt_grid_test': The number of grid levels" \
-					"needs to follow '--zt_grid_test', not another option."
-					exit 1
-				elif [ "$3" == "" ]; then
-					echo "Option '--zt_grid_test': The path to the grid file" \
-					"needs to be entered following '--zt_grid_test'."
-					exit 1
-				elif [ -n "$(echo $3 | grep "-")" ]; then
-					echo "Option '--zt_grid_test': The path to the grid file" \
-					"needs to be entered following '--zt_grid_test'," \
-					"not another option."
-					exit 1
-				elif [ $ZM_GRID_TEST == true ]; then
-					echo "Only --zt_grid_test or --zm_grid_test may be used, not both."
-					exit 1
-				else
-					test_grid_nz=$2
-					test_grid_name=$3
-					test_grid_name=`echo $test_grid_name | sed 's/\//\\\\\//g'`
-					echo "Running case using specified zt grid."
-					shift
-					shift
-				fi;;
+run_case()
+{
+    # Enable G95 runtime option that sets uninitialized memory to a NaN value
+    G95_MEM_INIT="NAN"
+    export G95_MEM_INIT
 
-			--zm_grid_test ) ZM_GRID_TEST=true
-				if [ "$2" == "" ]; then
-					echo "Option '--zm_grid_test': The number of levels in the grid" \
-					"needs to be entered following '--zm_grid_test'."
-					exit 1
-				elif [ -n "$(echo $2 | grep "-")" ]; then
-					echo "Option '--zm_grid_test': The number of grid levels" \
-					"needs to follow '--zm_grid_test', not another option."
-					exit 1
-				elif [ "$3" == "" ]; then
-					echo "Option '--zm_grid_test': The path to the grid file" \
-					"needs to be entered following '--zm_grid_test'."
-					exit 1
-				elif [ -n "$(echo $3 | grep "-")" ]; then
-					echo "Option '--zm_grid_test': The path to the grid file" \
-					"needs to be entered following '--zm_grid_test'," \
-					"not another option."
-					exit 1
-				elif [ $ZT_GRID_TEST == true ]; then
-					echo "Only --zt_grid_test or --zm_grid_test may be used, not both."
-					exit 1
-				else
-					test_grid_nz=$2
-					test_grid_name=$3
-					test_grid_name=`echo $test_grid_name | sed 's/\//\\\\\//g'`
-					echo "Running case using specified zm grid."
-					shift
-					shift
-				fi;;
-			esac
-		# Shift moves the parameters up one. Example: $2 -> $1, etc.
-		# This is so we only have to check $1 for every iteration.
-		shift
-	done
+    echo "Running $run_case"
 
-	MODEL_FILE='../input/case_setups/'$1'_model.in'
-	RUN_CASE=$1
+    # Run the CLUBB model
+    ../bin/clubb_standalone
 
-	if [ -z $2 ]; then
-		PARAMS_FILE="../input/tunable_parameters.in"
-	else
-		PARAMS_FILE=$2
-	fi
+    RESULT=$?
 
-	if [ -z $3 ]; then
-		STATS_FILE="../input/stats/all_stats.in"
-	else
-		STATS_FILE=$3
-	fi
+    # Remove the namelists
+    rm -f $NAMELISTS
+}
+
+# Note that we use `"$@"' to let each command-line parameter expand to a 
+# separate word. The quotes around `$@' are essential!
+# We need TEMP as the `eval set --' would nuke the return value of getopt.
+TEMP=`getopt -o z:m:l:t:s:p:nh --long zt_grid:,zm_grid:,levels:,timestep_test:,stats:,parameter_file:,nightly,help \
+     -n 'run_scm.bash' -- "$@"`
+
+if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
+
+# Note the quotes around `$TEMP': they are essential!
+eval set -- "$TEMP"
+
+while true ; do
+	case "$1" in
+		-z|--zt_grid) # Set the zt grid
+            ZT_GRID=true
+            grid_path=$2
+            
+            # Make sure the file exists
+            if [ ! -f $grid_path ];
+            then
+                echo "The grid file specified could not be found!"
+                exit 1;
+            else
+                grid_path=`echo $grid_path | sed 's/\//\\\\\//g'`
+            fi
+
+            shift 2 ;;
+		-m|--zm_grid) # Set the zm grid
+            ZM_GRID=true
+            grid_path=$2
+
+            if [ ! -f $grid_path ];
+            then
+                echo "The grid file specified could not be found!"
+                exit 1;
+            else
+                grid_path=`echo $grid_path | sed 's/\//\\\\\//g'`
+            fi
+
+            shift 2 ;;
+        -l|--levels) # Set the number of levels. This is used with the grids specified with -t and -m
+            grid_nz=$2
+
+            # Check to make sure this is an integer
+            if [ $grid_nz -ne $grid_nz 2> /dev/null ];
+            then
+                echo "The number of levels specified are invalid!"
+                exit 1;
+            fi
+            shift 2 ;;
+        -t|--timestep_test)
+            TIMESTEP_TEST=true
+            test_ts=$2
+
+            # Check to make sure this is an integer
+            if [ $test_ts -ne $test_ts 2> /dev/null ];
+            then
+                echo "The timestep specified is invalid!"
+                exit 1;
+            fi
+
+            shift 2 ;;
+        -s|--stats) 
+            stats_file=$2
+
+            if [ ! -f $stats_file ];
+            then
+                echo "The stats file does not exist!"
+                exit 1;
+            fi
+
+            shift 2 ;;
+        -p|--parameter_file) # Set the parameter file
+            parameter_file=$1
+
+            if [ ! -f $parameter_file ]
+            then
+                echo "The parameter file does not exist!"
+                exit 1;
+            fi
+
+            shift ;;
+        -n|--nightly) 
+            NIGHTLY=true
+
+            shift;;
+        -h|--help) # Print the help message
+            echo -e "Usage: run_scm.bash [OPTION]... case_name"
+            echo -e "\t-z, --zt_grid=FILE\t\tThe path to the zt grid file"
+            echo -e "\t-m, --zm_grid=FILE\t\tThe path to the zm grid file"
+            echo -e "\t-l, --levels=NUM\t\tThe number of levels"
+            echo -e "\t-t, --timestep_test=LENGTH\tRun the case at specified timestep"
+            echo -e "\t-s, --stats=FILE\t\tSpecify the stats file to use"
+            echo -e "\t-p, --parameter_file\t\tSet the parameter file to use"
+            echo -e "\t-h, --help\t\t\tPrints this help message"
+
+            exit 1 ;;
+		--) shift ; break ;;
+		*) echo "Something bad happened!" ; exit 1 ;;
+	esac
+done
+
+# Make sure we are only doing either zt grid tests or zm grid tests
+if [ $ZT_GRID == true ] && [ $ZM_GRID == true ];
+then
+    echo "Cannot specify both a ZT grid and a ZM grid."
+    exit 1
 fi
-#######################################################################
-# Enable G95 Runtime option that sets uninitialized 
-# memory to a NaN value
-#######################################################################
-G95_MEM_INIT="NAN"
-export G95_MEM_INIT
 
-#######################################################################
-# Check for necessary namelists.  If files exist, then
-# copy them over to the general input files.
-#######################################################################
-
-if [ ! -e "$MODEL_FILE" ]; then
-	echo "$MODEL_FILE does not exist"
-	exit 1
+# Make sure that the number of grid levels was specified
+if [ $ZT_GRID == true ] || [ $ZM_GRID == true ];
+then
+    if [ -z $grid_nz ];
+    then
+        echo "You must specify the number of levels."
+        exit 1
+    fi
 fi
 
-if [ ! -e "$PARAMS_FILE" ]; then
-	echo "$PARAMS_FILE does not exist"
-	exit 1
+model_file='../input/case_setups/'${!#}'_model.in'
+run_case=${!#}
+
+# Check to see if the model file exists
+if [ ! -e "$model_file" ];
+then
+    echo "$model_file does not exist"
+    exit 1
 fi
 
-if [ ! -e "$STATS_FILE" ]; then
-	echo "$STATS_FILE does not exist"
-	exit 1
+# Set defaults if they were not passed in
+if [ -z $parameter_file ];
+then
+    parameter_file="../input/tunable_parameters.in"
 fi
 
-##########################################################################
-# Set up the namelists for the CLUBB model.
-# If we are using the --zt_grid_test or --zm_grid_test options,
-# we need to modify the input files according to the options passed in.
-##########################################################################
+if [ -z $stats_file ];
+then
+    stats_file="../input/stats/all_stats.in"
+fi
 
-if [ $ZT_GRID_TEST == true ]; then
-	cat $PARAMS_FILE > 'clubb.in'
-	cat $MODEL_FILE | sed -e 's/^nzmax\s*=\s*.*//g' \
+if [ $NIGHTLY == true ]; 
+then
+    if [ "$run_case" = gabls2 ]; 
+    then
+        #gabls2 uses scalars
+        stats_file='../input/stats/nightly_stats_scalars.in'
+    else
+        stats_file='../input/stats/nightly_stats.in'
+        #stats_file='../stats/nobudgets_stats.in' 
+    fi
+fi
+
+if [ $NIGHTLY == true ]; 
+then
+    cat $parameter_file > $NAMELISTS
+    # This is needed because the model file now contains stats_tout
+    # Here we replace the repository version of stats_tout with an hour output
+    # The regular expression use here matches:
+    # 'stats_tout' (0 or > whitespaces) '=' (0 or > whitespaces) (0 or > characters)
+    # and replaces it with 'stats_tout = 3600.'
+    cat $model_file | sed 's/stats_tout\s*=\s*.*/stats_tout = 3600\./g' >> $NAMELISTS
+    cat $stats_file >> $NAMELISTS
+    run_case
+
+    # Move the ZT and ZM files out of the way
+    if [ "$RESULT" != 0 ]; then
+        rm "../output/$run_case"_zt.ctl
+        rm "../output/$run_case"_zt.dat
+        rm "../output/$run_case"_zm.ctl
+        rm "../output/$run_case"_zm.dat
+        rm "../output/$run_case"_sfc.ctl
+        rm "../output/$run_case"_sfc.dat
+    else
+        mv "../output/$run_case"_zt.ctl "$OUTPUT_DIR"/CLUBB_current/
+        mv "../output/$run_case"_zt.dat "$OUTPUT_DIR"/CLUBB_current/
+        mv "../output/$run_case"_zm.ctl "$OUTPUT_DIR"/CLUBB_current/
+        mv "../output/$run_case"_zm.dat "$OUTPUT_DIR"/CLUBB_current/
+        case $run_case in
+            # We only run TWP_ICE and Cloud Feedback once so we want to keep the SFC files
+            twp_ice | cloud_feedback* )
+                mv "../output/$run_case"_sfc.ctl "$OUTPUT_DIR"/CLUBB_current/
+                mv "../output/$run_case"_sfc.dat "$OUTPUT_DIR"/CLUBB_current/
+                ;;
+            * )
+                rm "../output/$run_case"_sfc.ctl
+                rm "../output/$run_case"_sfc.dat
+                ;;
+        esac
+    fi
+		
+    # Run again with a finer output time interval
+    # Note, we do not run TWP_ICE and Cloud Feedback a second time
+    case $run_case in 
+        twp_ice | cloud_feedback* )
+            ;;
+        * )
+            cat $parameter_file > $NAMELISTS
+            cat $model_file | sed 's/stats_tout\s*=\s*.*/stats_tout = 60\./g' >> $NAMELISTS
+            cat $stats_file >> $NAMELISTS
+	
+            run_case
+	
+            #Now move the SFC file
+            if [ "$RESULT" != 0 ]; then
+                rm "../output/$run_case"_zt.ctl
+                rm "../output/$run_case"_zt.dat
+                rm "../output/$run_case"_zm.ctl
+                rm "../output/$run_case"_zm.dat
+                rm "../output/$run_case"_sfc.ctl
+                rm "../output/$run_case"_sfc.dat
+            else
+                rm "../output/$run_case"_zt.ctl
+                rm "../output/$run_case"_zt.dat
+                rm "../output/$run_case"_zm.ctl
+                rm "../output/$run_case"_zm.dat
+                mv "../output/$run_case"_sfc.ctl "$OUTPUT_DIR"/CLUBB_current/
+                mv "../output/$run_case"_sfc.dat "$OUTPUT_DIR"/CLUBB_current/
+            fi
+            ;;
+    esac
+elif [ $TIMESTEP_TEST == true ]; 
+then
+    # Set the model timestep for all cases (and the stats output timestep
+    # unless l_stats is overwritten to .false.) to timestep test_ts.
+    cat $parameter_file > $NAMELISTS
+    # Use this version if statistical output is desired.
+    #cat $MODEL_IN | sed -e 's/dtmain\s*=\s*.*/dtmain = '$test_ts'/g' \
+    #                    -e 's/dtclosure\s*=\s*.*/dtclosure = '$test_ts'/g' \
+    #                    -e 's/stats_tsamp\s*=\s*.*/stats_tsamp = '$test_ts'/g' \
+    #                    -e 's/stats_tout\s*=\s*.*/stats_tout = '$test_ts'/g' >> $NAMELISTS
+    # Use this version if statistical output is not desired.
+    cat $model_file | sed -e 's/dtmain\s*=\s*.*/dtmain = '$test_ts'/g' \
+                        -e 's/dtclosure\s*=\s*.*/dtclosure = '$test_ts'/g' \
+                        -e 's/l_stats\s*=\s*.*/l_stats = .false./g' >> $NAMELISTS
+    cat $stats_file >> $NAMELISTS
+
+    run_case
+elif [ $ZT_GRID == true ];
+then
+    cat $parameter_file > $NAMELISTS
+    cat $model_file | sed -e 's/^nzmax\s*=\s*.*//g' \
 		-e 's/^grid_type\s*=\s*.*//g' \
 		-e 's/^zm_grid_fname\s*=\s*.*//g' \
 		-e "s/^zt_grid_fname\s*=\s*.*//g" \
 		-e 's/^\&model_setting/\&model_setting\n \
-		nzmax = '$test_grid_nz'\n \
-		zt_grid_fname ='\'$test_grid_name\''\n \
-		grid_type = 2\n/g' >> 'clubb.in'
-	cat $STATS_FILE >> 'clubb.in'
-elif [ $ZM_GRID_TEST == true ]; then
-	cat $PARAMS_FILE > 'clubb.in'
-	cat $MODEL_FILE | sed -e 's/nzmax\s*=\s*.*//g' \
-		-e 's/grid_type\s*=\s*.*//g' \
-		-e 's/zt_grid_fname\s*=\s*.*//g' \
-		-e 's/zm_grid_fname\s*=\s*.*//g'
-		-e 's/^\&model_setting/\&model_setting\n \
-		nzmax = '$test_grid_nz'\n \
-		zm_grid_fname ='\'$test_grid_name\''\n \
-		grid_type = 3\n/g' >> 'clubb.in'
-	cat $STATS_FILE >> 'clubb.in'
+		nzmax = '$grid_nz'\n \
+		zt_grid_fname ='\'$grid_path\''\n \
+		grid_type = 2\n/g' >> $NAMELISTS
+    cat $stats_file >> $NAMELISTS
+
+    run_case
+elif [ $ZM_GRID == true ];
+then
+    cat $parameter_file > $NAMELISTS
+    cat $model_file | sed -e 's/nzmax\s*=\s*.*//g' \
+        -e 's/grid_type\s*=\s*.*//g' \
+        -e 's/zt_grid_fname\s*=\s*.*//g' \
+        -e 's/zm_grid_fname\s*=\s*.*//g'
+        -e 's/^\&model_setting/\&model_setting\n \
+        nzmax = '$grid_nz'\n \
+        zm_grid_fname ='\'$grid_path\''\n \
+        grid_type = 3\n/g' >> $NAMELISTS
+    cat $stats_file >> $NAMELISTS
+
+    run_case
 else
-	cat $PARAMS_FILE $MODEL_FILE $STATS_FILE > 'clubb.in'
+    cat $parameter_file $model_file $stats_file > $NAMELISTS
+
+    run_case
 fi
-
-#######################################################################
-# State which case is being run
-#######################################################################
-echo "Running" $RUN_CASE
-
-# Run the CLUBB model
-../bin/clubb_standalone 
-
-# Remove the namelists
-rm -f 'clubb.in'
 
 cd $restoreDir
