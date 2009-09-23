@@ -1,4 +1,5 @@
 #!/bin/bash
+# $Id$
 # Usage:
 #  Create a new rand_seed.dat 
 #  Used by hoc_tuner to randomize initial simplex, called x_array.
