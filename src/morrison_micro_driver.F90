@@ -51,9 +51,7 @@ module morrison_micro_driver_mod
       imorr_snow_rate
 
     use stats_variables, only: & 
-      irvm_mc, & ! Variables
-      ircm_mc, &
-      irrainm_mc, &
+      irrainm_mc, & ! Variables
       irsnowm_mc, &
       iricem_mc, &
       irgraupelm_mc, &
@@ -222,12 +220,6 @@ module morrison_micro_driver_mod
       ! (Includes sedimentation, but not diffusion or mean advection)
 
       ! --- Mixing ratios ---
-
-      ! Sum total of cloud water microphysics
-      call stat_update_var( ircm_mc, (rcm_tmp - rcm) / real( dt ), zt )
-
-      ! Sum total of vapor microphysics
-      call stat_update_var( irvm_mc, (rvm_tmp - rvm) / real( dt ), zt )
 
       ! Sum total of rrainm microphysics
       call stat_update_var( irrainm_mc, hydromet_mc(:,iirrainm), zt )

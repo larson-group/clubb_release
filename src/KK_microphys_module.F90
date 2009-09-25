@@ -130,9 +130,7 @@ module KK_microphys_module
 
     use stats_variables, only: & 
       irrainm_mc, & ! Variable(s)
-      iNrm_mc, &
-      irvm_mc, &
-      ircm_mc
+      iNrm_mc
 
     use array_index, only: iirrainm, iiNcm, iiNrm
 
@@ -623,12 +621,6 @@ module KK_microphys_module
 
       ! Sum total of Nrm microphysics (auto + cond)
       call stat_update_var( iNrm_mc, hydromet_mc(:,iiNrm), zt )
-
-      ! Sum total of cloud water microphysics
-      call stat_update_var( irvm_mc, rvm_mc, zt )
-
-      ! Sum total of vapor microphysics
-      call stat_update_var( ircm_mc, rcm_mc, zt )
 
     end if ! l_stats_samp
 

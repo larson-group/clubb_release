@@ -190,11 +190,22 @@ module clubb_driver
       l_pos_def, l_hole_fill, & ! Constants
       l_single_C2_Skw, l_gamma_Skw, l_byteswap_io
 
-    use stats_variables, only: l_stats_last ! Variable(s
+    use stats_variables, only: l_stats_last, l_stats_samp ! Variable(s)
+
+    use stats_variables, only: zt ! Type
+
+    use stats_variables, only: &
+      irtm_mc, & ! Variables
+      irvm_mc, &
+      ircm_mc, &
+      ithlm_mc
 
     use stats_subs, only:  & 
       stats_begin_timestep, stats_end_timestep,  & ! Procedure(s)
       stats_finalize, stats_init
+
+    use stats_type, only: &
+      stat_update_var ! Procedure
 
     use sounding, only: sclr_max ! Variable(s)
 
@@ -221,7 +232,7 @@ module clubb_driver
     use parameters_radiation, only: rad_scheme  ! Variable(s)
 
     use parameters_microphys, only: &
-      l_latin_hypercube_sampling ! Varible
+      l_latin_hypercube_sampling ! Variable
 
 #ifdef UNRELEASED_CODE
     use latin_hypercube_mod, only: &
@@ -332,7 +343,8 @@ module clubb_driver
       case_info_file ! The filename for case info
 
     real, allocatable, dimension(:) :: &
-      rtm_mc, & ! Tendency of total water due to microphysics      [kg/kg/s]
+      rcm_mc, & ! Tendency of liquid water due to microphysics     [kg/kg/s]
+      rvm_mc, & ! Tendency of vapor water due to microphysics      [kg/kg/s]
       thlm_mc   ! Tendecy of liquid pot. temp. due to microphysics [K/s]
 
     ! Definition of namelists
@@ -710,11 +722,12 @@ module clubb_driver
     ! Deallocate stretched grid altitude arrays
     deallocate( momentum_heights, thermodynamic_heights )
 
-    ! Allocate rtm_mc, thlm_mc
-    allocate( rtm_mc(gr%nnzp), thlm_mc(gr%nnzp) )
+    ! Allocate rvm_mc, rcm_mc, thlm_mc
+    allocate( rvm_mc(gr%nnzp), rcm_mc(gr%nnzp), thlm_mc(gr%nnzp) )
 
     ! Initialize to 0.0
-    rtm_mc  = 0.0
+    rvm_mc  = 0.0
+    rcm_mc  = 0.0
     thlm_mc = 0.0
 
     if ( .not. l_restart ) then
@@ -848,8 +861,16 @@ module clubb_driver
 
       if ( err_code == clubb_rtm_level_not_found ) exit
 
+      if ( l_stats_samp ) then
+        ! Total microphysical tendency of vapor and cloud water mixing ratios
+        call stat_update_var( irvm_mc, rvm_mc, zt ) ! kg/kg/s
+        call stat_update_var( ircm_mc, rcm_mc, zt ) ! kg/kg/s
+        call stat_update_var( irtm_mc, rvm_mc+rcm_mc, zt ) ! kg/kg/s
+        call stat_update_var( ithlm_mc, thlm_mc, zt ) ! K/s
+      end if 
+
       ! Add microphysical tendencies to the forcings
-      rtm_forcing(:)  = rtm_forcing(:)  + rtm_mc(:)
+      rtm_forcing(:) = rtm_forcing(:) + rcm_mc(:) + rvm_mc(:)
 
       ! This is a kluge added because the _tndcy subroutines will sometimes
       ! compute radht from an analytic formula and add it to thlm_forcing before
@@ -900,7 +921,7 @@ module clubb_driver
                rtm, rcm, wm_zt, wm_zm,                               & ! Intent(in)
                Kh_zm, wp2_zt, pdf_params,                            & ! Intent(in)
                Ncnm, hydromet,                                       & ! Intent(inout)
-               rtm_mc, thlm_mc, err_code )                             ! Intent(out)
+               rvm_mc, rcm_mc, thlm_mc, err_code )                     ! Intent(out)
 
          ! Advance a radiation scheme
          ! With this call ordering, snow and ice water mixing ratio will be
@@ -2597,7 +2618,7 @@ module clubb_driver
   subroutine advance_clubb_microphys &
              ( iter, dt, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, &
                rtm, rcm, wm_zt, wm_zm, &
-               Kh_zm, wp2_zt, pdf_params, Ncnm, hydromet, rtm_mc, &
+               Kh_zm, wp2_zt, pdf_params, Ncnm, hydromet, rvm_mc, rcm_mc, &
                thlm_mc, err_code )
 ! Description:
 !   Advance a microphysics scheme
@@ -2668,13 +2689,15 @@ module clubb_driver
 
     real, dimension(gr%nnzp), intent(inout) :: &
       thlm_mc,   & ! theta_l microphysical tendency [K/s]
-      rtm_mc       ! r_t microphysical tendency     [(kg/kg)/s]
+      rcm_mc,    & ! r_c microphysical tendency     [(kg/kg)/s]
+      rvm_mc       ! r_v microphysical tendency     [(kg/kg)/s]
 
     integer, intent(inout) :: & 
       err_code
 
     ! ---- Begin Code ----
-    rtm_mc  = 0.0
+    rcm_mc  = 0.0
+    rvm_mc  = 0.0
     thlm_mc = 0.0
 
     !----------------------------------------------------------------
@@ -2721,7 +2744,7 @@ module clubb_driver
              wm_zt, wm_zm, Kh_zm, pdf_params, &                         ! Intent(in)
              wp2_zt, &                                                  ! Intent(in)
              Ncnm, hydromet, &                                          ! Intent(inout)
-             rtm_mc, thlm_mc, &                                         ! Intent(inout)
+             rvm_mc, rcm_mc, thlm_mc, &                                 ! Intent(inout)
              err_code )                                                 ! Intent(out)
 
       if ( lapack_error( err_code ) ) return
@@ -2731,7 +2754,7 @@ module clubb_driver
     if ( l_cloud_sed ) then
 
       call cloud_drop_sed( rcm, hydromet(:,iiNcm), rho_zm, rho, exner, & ! Intent(in)
-                           rtm_mc, thlm_mc )              ! Intent(out)
+                           rcm_mc, thlm_mc )              ! Intent(inout)
 
     end if
 

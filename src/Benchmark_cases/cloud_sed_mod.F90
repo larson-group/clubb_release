@@ -11,7 +11,7 @@ private ! Default Scope
 contains
 !----------------------------------------------------------------------
 subroutine cloud_drop_sed( rcm, Ncm, rho_zm, rho, exner, & 
-                           rtm_mc, thlm_mc )
+                           rcm_mc, thlm_mc )
 
 !       Description:
 !       Account for cloud droplet sedimentation in cases like DYCOMS II RF 02
@@ -55,7 +55,7 @@ real, intent(in), dimension(gr%nnzp) :: &
 
 ! Input/Output Variables
 real, intent(inout), dimension(gr%nnzp) ::  & 
-  rtm_mc, & ! r_t change due to microphysics     [kg/kg)/s] 
+  rcm_mc, & ! r_t change due to microphysics     [kg/kg)/s] 
   thlm_mc   ! thlm change due to microphysics    [K/s] 
 
 ! Local Variables
@@ -180,7 +180,7 @@ end if
 ! + thlm/rtm_microphysics -- cloud water sedimentation.
 ! Code addition by Brian for cloud water sedimentation.
 
-rtm_mc  = rtm_mc + sed_rcm
+rcm_mc  = rcm_mc + sed_rcm
 thlm_mc = thlm_mc - ( Lv / (Cp*exner) ) * sed_rcm
 
 return

@@ -507,7 +507,7 @@ module microphys_driver
                wm_zt, wm_zm, Kh_zm, pdf_params, & 
                wp2_zt, &
                Ncnm, hydromet, & 
-               rtm_forcing, thlm_forcing, &
+               rvm_mc, rcm_mc, thlm_mc, &
                err_code )
 
 ! Description:
@@ -592,8 +592,6 @@ module microphys_driver
       iVsnow, & 
       iVice, & 
       iVgraupel, & 
-      ithlm_mc, & 
-      irtm_mc, & 
       irain_rate, & 
       iFprec, & 
       irrainm_bt, & 
@@ -713,8 +711,9 @@ module microphys_driver
       hydromet      ! Array of rain, prist. ice, graupel, etc. [units vary]
 
     real, dimension(gr%nnzp), intent(inout) :: & 
-      rtm_forcing,  & ! Imposed contributions to total water        [kg/kg/s]
-      thlm_forcing    ! Imposed contributions to liquid potential temp. [K/s]
+      rcm_mc,  & ! Microphysics contributions to liquid water           [kg/kg/s]
+      rvm_mc,  & ! Microphysics contributions to vapor water            [kg/kg/s]
+      thlm_mc    ! Microphysics contributions to liquid potential temp. [K/s]
 
     integer, intent(out) :: err_code ! Exit code returned from subroutine
 
@@ -730,12 +729,6 @@ module microphys_driver
     !  Vice     ! Ice mixing ratio sedimentation velocity      [m/s]
     !  Vsnow    ! Snow mixing ratio sedimentation velocity     [m/s]
     !  Vgraupel ! Graupel mixing ratio sedimentation velocity  [m/s]
-
-    real, dimension(gr%nnzp) :: & 
-      rtm_mc,   & ! Change in total water due to microphysics   [kg/kg/s]
-      rvm_mc,   & ! Change in vapor water due to microphysics   [kg/kg/s]
-      rcm_mc,   & ! Change in liquid water due to microphysics  [kg/kg/s]
-      thlm_mc     ! Change in liquid potential temperature due to microphysics [K/s]
 
     real, dimension(gr%nnzp,hydromet_dim) :: & 
       hydromet_mc  ! Change in hydrometeors due to microphysics  [units/s]
@@ -821,7 +814,7 @@ module microphys_driver
              hydromet_mc(:,iiricem), hydromet_mc(:,iirrainm), & 
              hydromet_mc(:,iirgraupelm), hydromet_mc(:,iirsnowm), & 
              hydromet_mc(:,iiNrm), & 
-             rtm_mc, thlm_mc )
+             rvm_mc, rcm_mc, thlm_mc )
 
       if ( l_stats_samp ) then
 
@@ -916,9 +909,6 @@ module microphys_driver
              thlm, p_in_Pa, exner, rho, pdf_params, &
              wm_zt, wtmp, dzq, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
              hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
- 
-      ! Update total water tendency
-      rtm_mc = rcm_mc + rvm_mc
  
     case ( "khairoutdinov_kogan" )
 
@@ -1021,8 +1011,6 @@ module microphys_driver
       end do
       hydromet_vel(gr%nnzp,1:hydromet_dim) = 0.0
 
-      rtm_mc = rcm_mc + rvm_mc
-
       if ( l_stats_samp ) then
         ! Sedimentation velocity for rrainm
         call stat_update_var( iVrr, hydromet_vel(:,iirrainm), zm )
@@ -1095,7 +1083,7 @@ module microphys_driver
 
               ! overevap_rate is defined as positive.
               ! It is a correction factor.
-              rtm_mc(k)  = rtm_mc(k) - overevap_rate
+              rcm_mc(k)  = rcm_mc(k) - overevap_rate
 
               thlm_mc(k) = thlm_mc(k) + ( Lv / ( Cp*exner(k) ) ) * overevap_rate
 
@@ -1174,7 +1162,7 @@ module microphys_driver
 
       ! Call the ice diffusion scheme
       if ( trim( micro_scheme ) == "simplified_ice" ) then
-        call ice_dfsn( dt, thlm, rcm, exner, p_in_Pa, rho, rtm_mc, thlm_mc )
+        call ice_dfsn( dt, thlm, rcm, exner, p_in_Pa, rho, rcm_mc, thlm_mc )
       end if
 
       if ( l_stats_samp ) then
@@ -1219,16 +1207,7 @@ module microphys_driver
           call stat_update_var( iNgraupelm, hydromet(:,iiNgraupelm), zt )
         end if
 
-        call stat_update_var( ithlm_mc, thlm_mc(:), zt )
-
-        call stat_update_var( irtm_mc, rtm_mc(:), zt )
-
       end if
-
-      ! Add microphysical tendencies to large-scale and radiative tendencies
-      rtm_forcing  = rtm_forcing + rtm_mc
-      thlm_forcing = thlm_forcing + thlm_mc
-
 
       if ( l_stats_samp .and. iirrainm > 0 ) then
         ! Rainfall rate (mm/day) should be defined on thermodynamic
@@ -1308,7 +1287,8 @@ module microphys_driver
         write(fstderr,*) "Ncnm = ", Ncnm
         write(fstderr,*) "hydromet = ", hydromet
         write(fstderr,*) "Intent(out)"
-        write(fstderr,*) "rtm_mc = ", rtm_mc
+        write(fstderr,*) "rcm_mc = ", rcm_mc
+        write(fstderr,*) "rvm_mc = ", rvm_mc
         write(fstderr,*) "thlm_mc = ", thlm_mc
 
       end if

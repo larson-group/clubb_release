@@ -21,7 +21,7 @@ module coamps_micro_driver_mod
            cond, Vsnow, Vice, Vrr, VNr, Vgraupel, & 
            ritend, rrtend, rgtend,  & 
            rsnowtend, nrmtend, & 
-           rttend, thlmtend )
+           rvm_mc, rcm_mc, thlm_mc )
 
 !    Description:
 !      Subroutine to compute ice, as it is done in NRL's COAMPS
@@ -49,7 +49,7 @@ module coamps_micro_driver_mod
     use grid_class, only: zt2zm ! Procedure(s)
     use grid_class, only: gr ! Variable(s)
 
-    use stats_type, only: stat_update_var_pt, stat_update_var ! Procedure(s)
+    use stats_type, only: stat_update_var_pt ! Procedure(s)
 
     use stats_variables, only: zt, l_stats_samp,  & ! Variable(s)
         imean_vol_rad_rain, & 
@@ -57,10 +57,8 @@ module coamps_micro_driver_mod
 ! Addition by Adam Smith, 24 April 2008
 ! Adding snow particle number concentration and snowslope
        isnowslope, & 
-       iNsnowm, &
+       iNsnowm
 ! End of ajsmith4's addition
-       irvm_mc, & ! Budgets for vapor and cloud water
-       ircm_mc
 
     use parameters_microphys, only: l_graupel, l_ice_micro ! Variable(s)
 
@@ -193,9 +191,10 @@ module coamps_micro_driver_mod
       rrtend,     & ! d(rr)/dt                   [kg/kg/s]
       rgtend,     & ! d(rg)/dt                   [kg/kg/s]
       rsnowtend,  & ! d(rsnow)/dt                [kg/kg/s]
-      rttend,     & ! d(rt)/dt                   [kg/kg/s]
-      thlmtend,   & ! d(thlm)/dt                 [K/s]
-      nrmtend    ! d(Nrm)/dt                  [count/kg/s]
+      rvm_mc,     & ! d(rv)/dt                   [kg/kg/s]
+      rcm_mc,     & ! d(rc)/dt                   [kg/kg/s]
+      thlm_mc,    & ! d(thlm)/dt                 [K/s]
+      nrmtend       ! d(Nrm)/dt                  [count/kg/s]
 
     real, dimension(gr%nnzp), intent(out) :: & 
       Vrr,      & ! Rain mixing ratio fall speed   [m/s]
@@ -245,10 +244,6 @@ module coamps_micro_driver_mod
       qg3_flip, & 
       qs3_flip
 ! eMFc
-
-    real, dimension(gr%nnzp) :: & 
-      rvtend,  & ! d(rv)/dt                   [kg/kg/s]
-      rctend     ! d(rc)/dt                   [kg/kg/s]
 
     real :: & 
       gmbov2, & 
@@ -876,10 +871,9 @@ module coamps_micro_driver_mod
         nrmtend(k+1)   = ( (nr3(1,1,k)*cm3_per_m3)/rho(k+1) - Nrm(k+1) )  & 
                          / deltf ! Conversion factor
         rsnowtend(k+1) = ( qs3(1,1,k) - rsnowm(k+1) ) / deltf
-        rvtend(k+1)    = ((qv3(1,1,k) - rvm(k+1)) / deltf)
-        rctend(k+1)    = ((qc3(1,1,k) - rcm(k+1)) / deltf)
-        rttend(k+1)    = rvtend(k+1) + rctend(k+1)
-        thlmtend(k+1)  & 
+        rvm_mc(k+1)    = ((qv3(1,1,k) - rvm(k+1)) / deltf)
+        rcm_mc(k+1)    = ((qc3(1,1,k) - rcm(k+1)) / deltf)
+        thlm_mc(k+1)  & 
         = ( ( th3(1,1,k) - (Lv / (Cp * exbm(1,1,k)) * qc3(1,1,k) ) ) & 
             - thlm(k+1) ) / deltf
       end do ! k=1..kk
@@ -889,10 +883,9 @@ module coamps_micro_driver_mod
       ritend(1)    = 0.0
       nrmtend(1)   = 0.0
       rsnowtend(1) = 0.0
-      rctend(1)    = 0.0
-      rvtend(1)    = 0.0
-      rttend(1)    = 0.0
-      thlmtend(1)  = 0.0
+      rcm_mc(1)    = 0.0
+      rvm_mc(1)    = 0.0
+      thlm_mc(1)   = 0.0
 
       if ( l_stats_samp ) then
         ! Mean volume radius of rain and cloud droplets
@@ -903,9 +896,6 @@ module coamps_micro_driver_mod
                rvc(1,1,k-1) / 100.0, zt )
         end do
 
-        ! Total microphysical tendency of vapor and cloud water mixing ratios
-        call stat_update_var( irvm_mc, rvtend, zt ) ! kg/kg/s
-        call stat_update_var( ircm_mc, rctend, zt ) ! kg/kg/s
 
 ! Addition by Adam Smith, 24 April 2008
 ! Adding calculation for snow particle number concentration
@@ -930,8 +920,9 @@ module coamps_micro_driver_mod
       rrtend = 0
       rgtend = 0
       rsnowtend = 0
-      rttend = 0
-      thlmtend = 0
+      rvm_mc = 0
+      rcm_mc = 0
+      thlm_mc = 0
       nrmtend = 0
       Vrr = 0
       VNr = 0
