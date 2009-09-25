@@ -107,9 +107,9 @@ module constants
   ! 1.0 x 10^-7 kg/kg.  Brian; February 10, 2007.
   real, parameter :: & 
     rc_tol = 1.0E-7,  & ! [kg/kg]
-    Nc_tol = 1.0E-18, & ! [#/kg]
-    rr_tol = 1.0E-18, & ! [kg/kg]
-    Nr_tol = 1.0E-18    ! [#/kg]
+    Nc_tol = 1.0E-10, & ! [#/kg]
+    rr_tol = 1.0E-10, & ! [kg/kg]
+    Nr_tol = 1.0E-10    ! [#/kg]
 
   ! Minimum value for em (turbulence kinetic energy)
   ! If anisotropic TKE is enabled, em = (1/2) * ( up2 + vp2 + wp2 );

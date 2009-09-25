@@ -4,13 +4,14 @@ module latin_hypercube_mod
 
   implicit none
    
-  public :: latin_hypercube_driver, latin_hypercube_2D_output
+  public :: latin_hypercube_driver, latin_hypercube_2D_output, &
+    latin_hypercube_2D_close
 
   private ! Default scope
 
   logical, parameter, private :: &
     l_diagnostic_iter_check = .true., &
-    l_output_2D_samples = .true.
+    l_output_2D_samples = .false.
 
   integer, allocatable, dimension(:,:,:), private :: & 
     height_time_matrix ! matrix of rand ints
@@ -452,5 +453,27 @@ module latin_hypercube_mod
 #endif 
 
   end subroutine latin_hypercube_2D_output
+
+!-------------------------------------------------------------------------------
+  subroutine latin_hypercube_2D_close
+! Description:
+!   Close a 2D sample file 
+
+! References:
+!   None
+!-------------------------------------------------------------------------------
+    use output_2D_samples_mod, only: &
+      close_2D_samples_file ! Procedure
+
+    implicit none
+
+    ! ---- Begin Code ----
+
+    if ( l_output_2D_samples ) then
+      call close_2D_samples_file( )
+    end if
+
+    return
+  end subroutine latin_hypercube_2D_close
 
 end module latin_hypercube_mod
