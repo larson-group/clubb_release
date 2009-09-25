@@ -539,7 +539,7 @@ module KK_microphys_module
       ! must be adjusted.
       total_rc_needed = real( rrainm_source * dt )
 
-      if ( .not. l_local_kk .and. total_rc_needed > rcm(k) ) then
+      if ( total_rc_needed > rcm(k) ) then
 
         ! The maximum allowable rate of the source terms is rcm/dt.
         rrainm_src_max = real( rcm(k) / dt )
