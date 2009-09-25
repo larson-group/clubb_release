@@ -15,12 +15,8 @@ module error
 !   Calls run_clubb, reads in les & CLUBB results from GRADS files, and
 !   calculates the average difference between the two over all z-levels.
 
-!   subroutine output_results_stdout :
-!   Prints the results of tuning to the terminal
-
-!   subroutine output_results_to_file :
-!   Saves the results of tuning in a file specified by
-!   tuning_run_results_<CURRENT_DATE>_<CURRENT_TIME>.in
+!   subroutine write_results :
+!   Prints the results of tuning to the terminal or to a file.
 
 !   subroutine output_nml_tuner :
 !   Generates the error.in file using the current constants.
@@ -136,8 +132,8 @@ module error
   real, allocatable, dimension(:), private ::  & 
     rand_vect ! A vector of random reals for initializing the x array
 
-  public :: tuner_init, min_les_clubb_diff, output_results_stdout, & 
-    output_results_to_file, output_nml_standalone, output_nml_tuner
+  public :: tuner_init, min_les_clubb_diff, write_results, & 
+    output_nml_standalone, output_nml_tuner
 
   private ! Default Scope
 
@@ -157,6 +153,8 @@ module error
     use constants, only: fstdout, fstderr ! Variable(s)
 
     use error_code, only: fatal_error ! Procedure(s)
+
+    use text_writer, only: write_text ! Subroutine(s)
 
     implicit none
 
@@ -375,15 +373,11 @@ module error
            min_les_clubb_diff( param_vals_matrix(i,1:ndim) )
     end do
 
-    write(unit=fstdout,fmt=*) "cost_fnc_vector:"
-    write(unit=fstdout,fmt='(6e12.5)') cost_fnc_vector
-    if( l_save_tuning_run ) then
-      open(unit=file_unit, file=tuning_filename, action='write', position='append')
-      write(file_unit,*) "cost_fnc_vector:"
-      write(unit=file_unit,fmt='(6e12.5)') cost_fnc_vector
-      close(unit=file_unit)
-    end if ! l_save_tuning_run
-
+    if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+      action="write", position='append')
+    call write_text( "cost_fnc_vector:", l_save_tuning_run, file_unit )
+    call write_text( '', cost_fnc_vector, l_save_tuning_run, file_unit, '(a,6e12.5)' )
+    if( l_save_tuning_run ) close(unit=file_unit)
 
     return
   end subroutine tuner_init
@@ -414,6 +408,8 @@ module error
     use error_code, only: fatal_error ! Procedure(s)
 
     use numerical_check, only: isnan2d ! Procedure(s)
+
+    use text_writer, only: write_text ! Subroutine(s)
 
     use constants, only: fstderr ! Constant(s)
 
@@ -493,6 +489,7 @@ module error
 
     end if
 
+    ! Do the same as above if the tuning run is being saved to a file
     if( l_save_tuning_run .and. ( modulo(iter,10) == 0 ) .and. iter /= 0 ) then
       open(unit=file_unit, file=tuning_filename, action='write', position='append')
 
@@ -546,12 +543,11 @@ module error
 
 #ifndef _OPENMP 
       ! Write a message about which case we're calling if OpenMP is not enabled
-      write(6,'(a)') "Calling CLUBB with case "//trim( run_file(c_run) )
-      if( l_save_tuning_run ) then
-        open(unit=file_unit, file=tuning_filename, action='write', position='append')
-        write(file_unit,'(a)') "Calling CLUBB with case "//trim( run_file(c_run) )
-        close(unit=file_unit)
-      end if ! l_save_tuning_run
+      if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+        action='write', position='append')
+      call write_text( "Calling CLUBB with case "//trim( run_file(c_run) ), &
+        l_save_tuning_run, file_unit )
+      if( l_save_tuning_run ) close(unit=file_unit)
       
 #endif
 
@@ -717,64 +713,22 @@ module error
 
     deallocate( err_sums )
 
-    write(*,'(a,f12.5)') "Cost function= ", min_les_clubb_diff
-    if( l_save_tuning_run ) then
-      open(unit=file_unit, file=tuning_filename, action='write', position='append')
-      write(file_unit,'(a,f12.5)') "Cost function= ", min_les_clubb_diff
-      close(unit=file_unit)
-    end if ! l_save_tuning_run
+    if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+      action='write', position='append')
+    call write_text( "Cost function= ", min_les_clubb_diff, l_save_tuning_run, &
+      file_unit, '(a, f12.5)' )
+    if( l_save_tuning_run ) close(unit=file_unit)
 
     return
   end function min_les_clubb_diff
 
   !----------------------------------------------------------------------
-  subroutine output_results_stdout( )
+  subroutine write_results( iunit )
 
 ! Description:
-!   Outputs the results of a tuning run to the terminal
-
-! References:
-!   None
-!----------------------------------------------------------------------
-
-    use parameters_tunable, only: params_list ! Variable(s)
-
-    use constants, only: fstdout ! Variable(s)
-
-    implicit none
-
-    ! Local variables
-
-    integer :: i ! Loop iterator
-
-    if ( tune_type == 0 ) print *, "Number of iterations:",  iter
-
-    write(unit=*,fmt='(4x,A9,5x,10x,A7,10x,10x,A7)') & 
-        "Parameter", "Initial", "Optimal"
-
-    do i = 1, ndim, 1
-      write(unit=*,fmt='(A18,2F27.20)')  & 
-        params_list(params_index(i))//" = ",  & 
-        params(params_index(i)), param_vals_matrix(1,i)
-    end do
-
-    write(fstdout,fmt='(A20)') "Initial cost: "
-    write(fstdout,fmt='(F15.6)') init_err
-    write(fstdout,fmt='(A20)') "Optimal cost: "
-    ! The $$ is here to make it easy to find with grep
-    write(fstdout,fmt='(A3,F15.6)') "$$ ", min_err
-
-    write(unit=*,fmt=*) "Approx. percent increase in accuracy:",  & 
-      ((init_err - min_err) / init_err*100.0), "%"
-
-    return
-  end subroutine output_results_stdout
-  !----------------------------------------------------------------------
-  subroutine output_results_to_file( file_unit )
-
-! Description:
-!   Outputs the results of a tuning run to a file
-!   The file has already been opened and connected with integer file_unit
+!   Outputs the results of a tuning run to the terminal if iunit = fstdout
+!   or to a file which has already been opened and connected with
+!   integer iunit.
 
 ! References:
 !   None
@@ -785,35 +739,36 @@ module error
     implicit none
 
     ! Input variables
-    integer, intent(in) :: file_unit ! Number for use with file
+    integer, intent(in) :: iunit ! = fstdout for printing to the terminal
+                                 ! or = a number connected with a file
 
     ! Local variables
     integer :: i ! Loop iterator
 
     if ( tune_type == 0 ) then
-      write(unit=file_unit,fmt=*) "Number of iterations:",  iter
+      write(unit=iunit,fmt=*) "Number of iterations:",  iter
     end if ! tune_type == 0
 
-    write(unit=file_unit,fmt='(4x,A9,5x,10x,A7,10x,10x,A7)') & 
+    write(unit=iunit,fmt='(4x,A9,5x,10x,A7,10x,10x,A7)') & 
         "Parameter", "Initial", "Optimal"
 
     do i = 1, ndim, 1
-      write(unit=file_unit,fmt='(A18,2F27.20)')  & 
+      write(unit=iunit,fmt='(A18,2F27.20)')  & 
         params_list(params_index(i))//" = ",  & 
         params(params_index(i)), param_vals_matrix(1,i)
     end do
 
-    write(unit=file_unit,fmt='(A20)') "Initial cost: "
-    write(unit=file_unit,fmt='(F15.6)') init_err
-    write(unit=file_unit,fmt='(A20)') "Optimal cost: "
+    write(unit=iunit,fmt='(A20)') "Initial cost: "
+    write(unit=iunit,fmt='(F15.6)') init_err
+    write(unit=iunit,fmt='(A20)') "Optimal cost: "
     ! The $$ is here to make it easy to find with grep
-    write(unit=file_unit,fmt='(A3,F15.6)') "$$ ", min_err
+    write(unit=iunit,fmt='(A3,F15.6)') "$$ ", min_err
 
-    write(unit=file_unit,fmt=*) "Approx. percent increase in accuracy:",  & 
+    write(unit=iunit,fmt=*) "Approx. percent increase in accuracy:",  & 
       ((init_err - min_err) / init_err*100.0), "%"
 
     return
-  end subroutine output_results_to_file
+  end subroutine write_results
   !-----------------------------------------------------------------------
 
   subroutine output_nml_tuner( results_f, param_vals_vector )

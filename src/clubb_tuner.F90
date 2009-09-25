@@ -39,8 +39,7 @@ program clubb_tuner
 !----------------------------------------------------------------------
 use error, only:  & 
   tuner_init, min_les_clubb_diff,                & ! Subroutines 
-  output_results_stdout,                         & ! Subroutine
-  output_results_to_file,                        & ! Subroutine
+  write_results,                                 & ! Subroutine
   output_nml_standalone, output_nml_tuner,       & ! Subroutines
   param_vals_matrix,                             & ! Variable
   l_results_stdout, l_save_tuning_run,           & ! Variables
@@ -48,7 +47,10 @@ use error, only:  &
   tuning_filename, file_unit                       ! Variable
 
 use constants, only: & 
- fstdout ! Variables
+  fstdout ! Variable
+
+use text_writer, only: &
+  write_text ! Subroutine
 
 implicit none
 
@@ -84,16 +86,16 @@ do
   end if
 
   ! Print to stdout if specified
-  if ( l_results_stdout ) call output_results_stdout( )
+  if ( l_results_stdout ) call write_results( fstdout )
 
+  ! Save results in file if specified
   if ( l_save_tuning_run ) then
     open(unit=file_unit, file=tuning_filename, action="write", position="append")
-    call output_results_to_file( file_unit )
+    call write_results( file_unit )
   end if ! l_save_tuning_run
 
   ! Query to see if we should exit the loop
-  write(fstdout,*) "Run Complete."
-  if( l_save_tuning_run ) write(file_unit,*) "Run Complete."
+  call write_text( "Run Complete.", l_save_tuning_run, file_unit )
 
   write(unit=fstdout,fmt='(A)', advance='no')  & 
     "Re-run with new parameters?(y/n) "
@@ -108,15 +110,13 @@ do
     exit 
   end if
  
-  write(fstdout,*) "Current ftol= ", ftol 
-  if( l_save_tuning_run ) then
-    open(unit=file_unit, file=tuning_filename, action="write", position="append")
-    write(file_unit,*) "Current ftol= ", ftol
-  end if ! l_save_tuning_run
+  if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+    action="write", position="append")
+  call write_text( "Current ftol= ", ftol, l_save_tuning_run, file_unit )
 
   write(fstdout,fmt='(A)', advance='no') "Enter new ftol=   "
   read(*,*) ftol
-  if( l_save_tuning_run ) write(file_unit,*), "Enter new ftol=   ", ftol
+  if( l_save_tuning_run ) write(file_unit,*) "Enter new ftol=   ", ftol
   if( l_save_tuning_run ) close(unit=file_unit)
 
   call tuner_init( l_read_files=.false. )
@@ -128,12 +128,10 @@ end do ! user_response /= 'y', 'Y' or 'yes'
 if ( l_results_file ) then 
 
   ! Tuner namelist
-  print *, "Generating new error.in file..."
-  if( l_save_tuning_run ) then
-    open(unit=file_unit, file=tuning_filename, action="write", position="append")
-    write(file_unit,*) "Generating new error.in file..."
-    close(unit=file_unit)
-  end if ! l_save_tuning_run
+  if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+    action="write", position="append")
+  call write_text( "Generating new error.in file...", l_save_tuning_run, file_unit )
+  if( l_save_tuning_run ) close(unit=file_unit)
 
   results_f = "../input/error_"//current_date//'_' & 
     //current_time(1:4)//".in" 
@@ -142,36 +140,29 @@ if ( l_results_file ) then
   ! The first column of param_vals_matrix is the optimized result, which
   ! is swapped in by amoeba.
   call output_nml_tuner( results_f, param_vals_matrix(1,1:ndim) )
-  print *, "New filename is: ", results_f
-  if( l_save_tuning_run ) then
-    open(unit=file_unit, file=tuning_filename, action="write", position="append")
-    write(file_unit,*) "New filename is: ", results_f
-  end if ! l_save_tuning_run
+  if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+    action="write", position="append")
+  call write_text( "New filename is: "//results_f, l_save_tuning_run, file_unit )
 
   ! Parameters namelist
-  print *, "Generating new tunable_parameters.in file..."
-  if( l_save_tuning_run ) then
-    write(file_unit,*) "Generating new tunable_parameters.in file..."
-    close(unit=file_unit)
-  end if ! l_save_tuning_run
+  call write_text( "Generating new tunable_parameters.in file...", l_save_tuning_run, file_unit )
+  if( l_save_tuning_run ) close(unit=file_unit)
 
   results_f = "../input/tunable_parameters_"//current_date//'_' & 
     //current_time(1:4)//".in" 
 
   call output_nml_standalone( results_f,  & 
                               param_vals_matrix(1,1:ndim) )
-  print *, "New filename is: ", results_f
-  if( l_save_tuning_run ) then
-    open(unit=file_unit, file=tuning_filename, action="write", position="append")
-    write(file_unit,*) "New filename is: ", results_f
-    close(unit=file_unit)
-  end if ! l_save_tuning_run
+  if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+    action="write", position="append")
+  call write_text( "New filename is: "//results_f, l_save_tuning_run, file_unit )
+  if( l_save_tuning_run ) close(unit=file_unit)
 
 end if
 
 if ( l_save_tuning_run ) then
-  print*, "***The tuning results have been saved in the file: ", &
-    tuning_filename
+  print*, "***The tuning results have been saved in the file: "
+  print*, "  "//tuning_filename
 end if ! l_save_tuning_run
 
 ! Exit Program
