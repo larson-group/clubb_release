@@ -29,25 +29,32 @@ module text_writer
 
     implicit none
 
+    ! External
+    intrinsic :: present, trim
+
+    ! Input Variable(s)
     character(len = *), intent(in) :: text ! The text to write/display
     logical, intent(in) :: l_write_to_file ! Whether or not to write to a file
     integer, intent(in) :: iunit           ! The file to write to
     character(len = *), optional, intent(in) :: disp_format ! The way to format the text
 
-    if( present( disp_format ) ) then
+    ! ---- Begin Code ----
+
+    if ( present( disp_format ) ) then
       write(unit=*, fmt=disp_format) trim( text )
     else
       print *, trim( text )
-    endif
+    end if
 
-    if( l_write_to_file ) then
-      if( present( disp_format ) ) then
+    if ( l_write_to_file ) then
+      if ( present( disp_format ) ) then
         write(unit=iunit, fmt=disp_format) trim( text )
       else
         write(iunit, *) trim( text )
-      endif
+      end if
     end if
 
+    return
   end subroutine write_string
 
   !----------------------------------------------------------------------
@@ -60,26 +67,33 @@ module text_writer
 
     implicit none
 
+    ! External
+    intrinsic :: present
+
+    ! Input Variable(s)
     character(len = *), intent(in) :: text ! The text to write/display
     real, intent(in) :: value              ! The value to write/display
     logical, intent(in) :: l_write_to_file ! Whether or not to write to a file
     integer, intent(in) :: iunit           ! The file to write to
     character(len = *), optional, intent(in) :: disp_format ! The way to format the text
 
+    ! ---- Begin Code ----
+
     if( present( disp_format ) ) then
       write(unit=*, fmt=disp_format) text, value
     else
       print *, text, value
-    endif
+    end if
 
     if( l_write_to_file ) then
       if( present( disp_format ) ) then
         write(unit=iunit, fmt=disp_format) text, value
       else
         write(iunit, *) text, value
-      endif
+      end if
     end if
 
+    return
   end subroutine write_real
 
   !----------------------------------------------------------------------
@@ -92,25 +106,33 @@ module text_writer
 
     implicit none
 
+    ! External
+    intrinsic :: present
+
+    ! Input Variable(s)
     character(len = *), intent(in) :: text  ! The text to write/display
     real, dimension(:), intent(in) :: value ! The value to write/display
     logical, intent(in) :: l_write_to_file  ! Whether or not to write to a file
     integer, intent(in) :: iunit            ! The file to write to
     character(len = *), optional, intent(in) :: disp_format ! The way to format the text
 
+    ! ---- Begin Code ----
+
     if( present( disp_format ) ) then
       write(unit=*, fmt=disp_format) text, value
     else
       print *, text, value
-    endif
+    end if
 
     if( l_write_to_file ) then
       if( present( disp_format ) ) then
         write(unit=iunit, fmt=disp_format) text, value
       else
         write(iunit, *) text, value
-      endif
+      end if
     end if
+
+    return
   end subroutine write_real_array
 
   !----------------------------------------------------------------------
@@ -133,15 +155,17 @@ module text_writer
       write(unit=*, fmt=disp_format) text, value
     else
       print *, text, value
-    endif
+    end if
 
     if( l_write_to_file ) then
       if( present( disp_format ) ) then
         write(unit=iunit, fmt=disp_format) text, value
       else
         write(iunit, *) text, value
-      endif
+      end if
     end if
+
+    return
   end subroutine write_integer
 
   !----------------------------------------------------------------------
@@ -164,15 +188,17 @@ module text_writer
       write(unit=*, fmt=disp_format) text, value
     else
       print *, text, value
-    endif
+    end if
 
     if( l_write_to_file ) then
       if( present( disp_format ) ) then
         write(unit=iunit, fmt=disp_format) text, value
       else
         write(iunit, *) text, value
-      endif
+      end if
     end if
+
+    return
   end subroutine write_logical
 
   !----------------------------------------------------------------------
@@ -201,8 +227,9 @@ module text_writer
       write(unit=iunit, fmt="(A4,A1,4(A2,A1),A2)") &
         current_date(1:4), "/", current_date(5:6), "/", current_date(7:8), " ", &
         current_time(1:2), ":", current_time(3:4), ":", current_time(5:6)
-    endif
+    end if
 
+    return
   end subroutine write_date
 
 end module text_writer
