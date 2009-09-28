@@ -662,9 +662,9 @@ sub buildMatlabStringStd()
                         my $lineColor = $lineColors[$lineColorCounter];
                         
                         $matlabArgs = "$matlabArgs, \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
-
-                        incrementLineTypes();
                     }
+
+                    incrementLineTypes();
                 }
             }
             elsif(($type eq "les" && $plotLes == 1) || ($type eq "dec17" && $plotDec) || ($type eq "bestever" && $plotBest))
