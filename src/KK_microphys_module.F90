@@ -614,16 +614,6 @@ module KK_microphys_module
     rvm_mc(nnzp)  = 0.0
     thlm_mc(nnzp) = 0.0
 
-    if ( l_stats_samp ) then
-
-      ! Sum total of rrainm microphysics (auto + accr + cond)
-      call stat_update_var( irrainm_mc, hydromet_mc(:,iirrainm), zt )
-
-      ! Sum total of Nrm microphysics (auto + cond)
-      call stat_update_var( iNrm_mc, hydromet_mc(:,iiNrm), zt )
-
-    end if ! l_stats_samp
-
     return
   end subroutine KK_microphys
 

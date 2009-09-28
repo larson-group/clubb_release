@@ -621,8 +621,18 @@ module microphys_driver
       irrainm_sfc
 
     use stats_variables, only: & 
+      iNim_bt, &
+      iNim_cl, &
+      iNim_mc, &
+      iNsnowm_bt, &
+      iNsnowm_cl, &
+      iNsnowm_mc, &
+      iNgraupelm_bt, &
+      iNgraupelm_cl, &
+      iNgraupelm_mc, &
       iNcm_bt, & 
-      iNcm_cl
+      iNcm_cl, &
+      iNcm_mc
 
     use stats_variables, only: & 
       iNcm, & 
@@ -630,13 +640,6 @@ module microphys_driver
       iNrm, & 
       iNsnowm, &
       iNgraupelm
-
-!   use stats_variables, only: & 
-!     iNim_mc, & 
-!     iNcm_mc, & 
-!     iNrm_mc, & 
-!     iNsnowm_mc, &
-!     iNgraupelm_mc
 
     use stats_variables, only: & 
       iLH_rcm_mc, &
@@ -765,7 +768,7 @@ module microphys_driver
 
     integer :: d_variables
 
-    integer :: ixrm_cl, ixrm_bt
+    integer :: ixrm_cl, ixrm_bt, ixrm_mc
 
 !-------------------------------------------------------------------------------
 
@@ -833,24 +836,6 @@ module microphys_driver
         ! Sedimentation velocity for graupel
         call stat_update_var( iVgraupel,  & 
                               hydromet_vel(:,iirgraupelm), zm )
-
-        ! Sum total of rrainm microphysics
-        call stat_update_var( irrainm_mc, hydromet_mc(:,iirrainm), zt )
-
-        ! Sum total of Nrm microphysics
-        call stat_update_var( iNrm_mc, hydromet_mc(:,iiNrm), zt )
-
-        ! Sum total of pristine ice microphysics
-        call stat_update_var( iricem_mc, hydromet_mc(:,iiricem), zt )
-
-        ! Sum total of graupel microphysics
-        call stat_update_var( irgraupelm_mc, & 
-                              hydromet_mc(:,iirgraupelm), zt )
-
-        ! Sum total of snow microphysical processeses
-        call stat_update_var( irsnowm_mc,  & 
-                              hydromet_mc(:,iirsnowm), zt )
-
       end if ! l_stats_samp
 
     case ( "morrison" )
@@ -1031,33 +1016,58 @@ module microphys_driver
 
       do i = 1, hydromet_dim
 
-        select case( trim( hydromet_list(i) ) )
-        case( "rrainm" )
+        select case ( trim( hydromet_list(i) ) )
+        case ( "rrainm" )
           ixrm_bt = irrainm_bt
           ixrm_cl = irrainm_cl
-        case( "Nrm" )
-          ixrm_bt = iNrm_bt
-          ixrm_cl = iNrm_cl
-        case( "Ncm" )
-          ixrm_bt = iNcm_bt
-          ixrm_cl = iNcm_cl
-        case( "ricem" )
+          ixrm_mc = irrainm_mc
+        case ( "ricem" )
           ixrm_bt = iricem_bt
           ixrm_cl = iricem_cl
-        case( "rsnowm" )
+          ixrm_mc = iricem_mc
+        case ( "rsnowm" )
           ixrm_bt = irsnowm_bt
           ixrm_cl = irsnowm_cl
-        case( "rgraupelm" )
+          ixrm_mc = irsnowm_mc
+        case ( "rgraupelm" )
           ixrm_bt = irgraupelm_bt
           ixrm_cl = irgraupelm_cl
+          ixrm_mc = irgraupelm_mc
+        case ( "Nrm" )
+          ixrm_bt = iNrm_bt
+          ixrm_cl = iNrm_cl
+          ixrm_mc = iNrm_mc
+        case ( "Nim" )
+          ixrm_bt = iNim_bt
+          ixrm_cl = iNim_cl
+          ixrm_mc = iNim_mc
+        case ( "Nsnowm" )
+          ixrm_bt = iNsnowm_bt
+          ixrm_cl = iNsnowm_cl
+          ixrm_mc = iNsnowm_mc
+        case ( "Ngraupelm" )
+          ixrm_bt = iNgraupelm_bt
+          ixrm_cl = iNgraupelm_cl
+          ixrm_mc = iNgraupelm_mc
+        case ( "Ncm" )
+          ixrm_bt = iNcm_bt
+          ixrm_cl = iNcm_cl
+          ixrm_mc = iNcm_mc
         case default
           ixrm_bt = 0
           ixrm_cl = 0
+          ixrm_mc = 0
         end select
 
         if ( l_stats_samp ) then
-          call stat_begin_update & 
-             ( ixrm_bt, real(hydromet(:,i) / dt), zt )
+
+          ! Update explicit contributions to the hydrometeor species
+          call stat_update_var( ixrm_mc, hydromet_mc(:,i), zt )
+
+          ! Save prior value of the hydrometeors for determining total time
+          ! tendency
+          call stat_begin_update( ixrm_bt, real( hydromet(:,i) / dt ), zt )
+
         end if
 
 

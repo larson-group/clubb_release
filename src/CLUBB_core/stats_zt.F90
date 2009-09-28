@@ -10,7 +10,7 @@ module stats_zt
   public :: stats_init_zt
 
 ! Constant parameters
-  integer, parameter, public :: nvarmax_zt = 250 ! Maximum variables allowed
+  integer, parameter, public :: nvarmax_zt = 300 ! Maximum variables allowed
 
   contains
 

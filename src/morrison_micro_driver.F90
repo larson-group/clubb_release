@@ -216,40 +216,6 @@ module morrison_micro_driver_mod
 
     if ( l_stats_samp ) then
 
-      ! -------- Total tendency from the Morrison microphysics --------
-      ! (Includes sedimentation, but not diffusion or mean advection)
-
-      ! --- Mixing ratios ---
-
-      ! Sum total of rrainm microphysics
-      call stat_update_var( irrainm_mc, hydromet_mc(:,iirrainm), zt )
-
-      ! Sum total of snow microphysics
-      call stat_update_var( irsnowm_mc, hydromet_mc(:,iirsnowm), zt )
-
-      ! Sum total of ice microphysics
-      call stat_update_var( iricem_mc, hydromet_mc(:,iiricem), zt )
-
-      ! Sum total of graupel microphysics
-      call stat_update_var( irgraupelm_mc, hydromet_mc(:,iirgraupelm), zt )
-
-      ! --- Number concentrations ---
-
-      ! Sum total of cloud droplet number concentration microphysics
-      call stat_update_var( iNcm_mc, hydromet_mc(:,iiNcm), zt )
-
-      ! Sum total of rain droplet number concentration microphysics
-      call stat_update_var( iNrm_mc, hydromet_mc(:,iiNrm), zt )
-
-      ! Sum total of snow microphysical processeses
-      call stat_update_var( iNsnowm_mc,  hydromet_mc(:,iiNsnowm), zt )
-
-      ! Sum total of ice number concentration microphysics
-      call stat_update_var( iNim_mc, hydromet_mc(:,iiNim), zt )
-
-      ! Sum total of graupel number concentration microphysics
-      call stat_update_var( iNgraupelm_mc, hydromet_mc(:,iiNgraupelm), zt )
-
       ! -------- Sedimentation tendency from Morrison microphysics --------
 
       ! --- Mixing ratios ---
