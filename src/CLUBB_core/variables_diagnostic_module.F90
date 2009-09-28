@@ -9,6 +9,9 @@ module variables_diagnostic_module
 ! thermodynamic and momentum grid and they have different levels
 !-----------------------------------------------------------------------
 
+  use variables_prognostic_module, only: &
+    pdf_parameter ! derived type
+
   implicit none
 
   private ! Set default scope
@@ -42,6 +45,11 @@ module variables_diagnostic_module
     rsat ! Saturation mixing ratio  ! Brian
 
 !$omp threadprivate(rsat)
+
+  type(pdf_parameter), target, public :: &
+    pdf_params_zm ! pdf_params on momentum levels  [units vary]
+
+!$omp threadprivate(pdf_params_zm)
 
   real, target, allocatable, dimension(:), public :: & 
     Frad,         & ! Radiative flux (momentum point)   [W/m^2]
@@ -220,6 +228,24 @@ module variables_diagnostic_module
 
     allocate( shear(1:nzmax) )     ! wind shear production
 
+    ! pdf_params on momentum levels
+    allocate( pdf_params_zm%w1(1:nzmax),          pdf_params_zm%w2(1:nzmax),  &
+              pdf_params_zm%varnce_w1(1:nzmax),   pdf_params_zm%varnce_w2(1:nzmax),  &
+              pdf_params_zm%rt1(1:nzmax),         pdf_params_zm%rt2(1:nzmax),  &
+              pdf_params_zm%varnce_rt1(1:nzmax),  pdf_params_zm%varnce_rt2(1:nzmax),  &
+              pdf_params_zm%thl1(1:nzmax),        pdf_params_zm%thl2(1:nzmax),  &
+              pdf_params_zm%varnce_thl1(1:nzmax), pdf_params_zm%varnce_thl2(1:nzmax),  &
+              pdf_params_zm%a(1:nzmax),           pdf_params_zm%rrtthl(1:nzmax),  &
+              pdf_params_zm%rc1(1:nzmax),         pdf_params_zm%rc2(1:nzmax),  &
+              pdf_params_zm%rsl1(1:nzmax),        pdf_params_zm%rsl2(1:nzmax),  &
+              pdf_params_zm%cloud_frac1(1:nzmax), pdf_params_zm%cloud_frac2(1:nzmax),  &
+              pdf_params_zm%s1(1:nzmax),          pdf_params_zm%s2(1:nzmax),  &
+              pdf_params_zm%stdev_s1(1:nzmax),    pdf_params_zm%stdev_s2(1:nzmax),  &
+              pdf_params_zm%alpha_thl(1:nzmax),   pdf_params_zm%alpha_rt(1:nzmax), &
+              pdf_params_zm%crt1(1:nzmax),        pdf_params_zm%crt2(1:nzmax), &
+              pdf_params_zm%cthl1(1:nzmax),       pdf_params_zm%cthl2(1:nzmax) )
+
+
     ! Second order moments
 
     allocate( thlprcp(1:nzmax) )   ! thl'rc'
@@ -323,6 +349,39 @@ module variables_diagnostic_module
 
 
     shear = 0.0    ! Wind shear production
+
+    ! pdf_params on momentum levels
+    pdf_params_zm%w1          = 0.0
+    pdf_params_zm%w2          = 0.0
+    pdf_params_zm%varnce_w1   = 0.0
+    pdf_params_zm%varnce_w2   = 0.0
+    pdf_params_zm%rt1         = 0.0
+    pdf_params_zm%rt2         = 0.0
+    pdf_params_zm%varnce_rt1  = 0.0
+    pdf_params_zm%varnce_rt2  = 0.0
+    pdf_params_zm%thl1        = 0.0
+    pdf_params_zm%thl2        = 0.0
+    pdf_params_zm%varnce_thl1 = 0.0
+    pdf_params_zm%varnce_thl2 = 0.0
+    pdf_params_zm%a           = 0.0
+    pdf_params_zm%rc1         = 0.0
+    pdf_params_zm%rc2         = 0.0
+    pdf_params_zm%rsl1        = 0.0
+    pdf_params_zm%rsl2        = 0.0
+    pdf_params_zm%cloud_frac1 = 0.0
+    pdf_params_zm%cloud_frac2 = 0.0
+    pdf_params_zm%s1          = 0.0
+    pdf_params_zm%s2          = 0.0
+    pdf_params_zm%stdev_s1    = 0.0
+    pdf_params_zm%stdev_s2    = 0.0
+    pdf_params_zm%rrtthl      = 0.0
+    pdf_params_zm%alpha_thl   = 0.0
+    pdf_params_zm%alpha_rt    = 0.0
+    pdf_params_zm%crt1        = 0.0
+    pdf_params_zm%crt2        = 0.0
+    pdf_params_zm%cthl1       = 0.0
+    pdf_params_zm%cthl2       = 0.0
+
 
 ! Second order moments
     thlprcp = 0.0
@@ -430,6 +489,22 @@ module variables_diagnostic_module
     deallocate( radht )     ! SW + LW heating rate
 
     deallocate( shear )     ! wind shear production
+
+    deallocate( pdf_params_zm%w1,          pdf_params_zm%w2,  &
+                pdf_params_zm%varnce_w1,   pdf_params_zm%varnce_w2,  &
+                pdf_params_zm%rt1,         pdf_params_zm%rt2,  &
+                pdf_params_zm%varnce_rt1,  pdf_params_zm%varnce_rt2,  &
+                pdf_params_zm%thl1,        pdf_params_zm%thl2,  &
+                pdf_params_zm%varnce_thl1, pdf_params_zm%varnce_thl2,  &
+                pdf_params_zm%a,           pdf_params_zm%rrtthl,  &
+                pdf_params_zm%rc1,         pdf_params_zm%rc2,  &
+                pdf_params_zm%rsl1,        pdf_params_zm%rsl2,  &
+                pdf_params_zm%cloud_frac1, pdf_params_zm%cloud_frac2,  &
+                pdf_params_zm%s1,          pdf_params_zm%s2,  &
+                pdf_params_zm%stdev_s1,    pdf_params_zm%stdev_s2,  &
+                pdf_params_zm%alpha_thl,   pdf_params_zm%alpha_rt, &
+                pdf_params_zm%crt1,        pdf_params_zm%crt2, &
+                pdf_params_zm%cthl1,       pdf_params_zm%cthl2 )
 
     ! Second order moments
 

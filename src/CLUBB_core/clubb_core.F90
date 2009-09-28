@@ -101,7 +101,8 @@ module clubb_core
       thlprcp, & 
       rcp2, & 
       rsat, & 
-      shear, & 
+      shear, &
+      pdf_params_zm, & 
       wprtp2, & 
       wp2rtp, & 
       wpthlp2, & 
@@ -223,18 +224,16 @@ module clubb_core
     ! Constant Parameters
     ! ldgrant June 2009
     logical, parameter :: &
-      l_trapezoid_rule = .false., &     ! Logical flag used to turn the trapezoidal 
-                                        ! rule on or off.  
+      l_trapezoid_rule = .false., &      ! Logical flag used to turn the trapezoidal 
+                                         ! rule on or off.  
 
-      l_call_pdf_closure_twice = .true. ! If the trapezoidal rule is used, this logical 
-                                        ! flag determines if the variables originally
-                                        ! on the thermodynamic grid will be brought
-                                        ! to the momentum grid for use with the trapezoidal
-                                        ! rule by calling the subroutine pdf_closure a 
-                                        ! second time (.true.) or by interpolation 
-                                        ! (.false.).  Calling pdf_closure twice is more 
-                                        ! expensive but produces better results with the
-                                        ! trapezoidal rule.
+      l_call_pdf_closure_twice = .false. ! This logical flag determines whether or not to
+                                         ! call subroutine pdf_closure twice or not.  If true,
+                                         ! pdf_closure is called first on thermodynamic levels
+                                         ! and then on momentum levels so each variable is 
+                                         ! computed on it's native level.  If false, pdf_closure
+                                         ! is called on thermodynamic levels, and outputs which
+                                         ! belong on momentum levels are interpolated back.
 
     !!! Input Variables
     logical, intent(in) ::  & 
@@ -349,8 +348,12 @@ module clubb_core
     real, dimension(gr%nnzp) :: &
       tmp1, gamma_Skw_fnc
 
+    ! For pdf_closure
     real, dimension(gr%nnzp,sclr_dim) :: & 
-      sclr_tmp1, sclr_tmp2, sclr_tmp3, sclr_tmp4 ! for PDF closure
+      wpsclrp_zt,  & ! w' sclr' on thermo. levels
+      sclrp2_zt,   & ! sclr'^2 on thermo. levels
+      sclrprtp_zt, & ! sclr' r_t' on thermo. levels
+      sclrpthlp_zt   ! sclr' th_l' on thermo. levels
 
     integer :: &
       wprtp_cl_num,   & ! Instance of w'r_t' clipping (1st or 3rd).
@@ -359,6 +362,7 @@ module clubb_core
       upwp_cl_num,    & ! Instance of u'w' clipping (1st or 2nd).
       vpwp_cl_num       ! Instance of v'w' clipping (1st or 2nd).
 
+    ! These local variables are declared because they originally belong on the momentum 
     ! grid levels, but pdf_closure outputs them on the thermodynamic grid levels.
     real, dimension(gr%nnzp) :: &
       wp4_zt,      & ! w'^4 (on thermo. grid)           [m^4/s^4] 
@@ -373,6 +377,24 @@ module clubb_core
     real, dimension(gr%nnzp, sclr_dim) :: &       
       sclrpthvp_zt, & ! sclr'th_v' (on thermo. grid) 
       sclrprcp_zt     ! sclr'rc' (on thermo. grid)
+
+    real, dimension(gr%nnzp) :: &
+      wprtp2_zm,     & ! w'rt'^2 on momentum grid                   [m kg^2/kg^2]
+      wp2rtp_zm,     & ! w'^2 rt' on momentum grid                  [m^2 kg/kg]
+      wpthlp2_zm,    & ! w'thl'^2 on momentum grid                  [m K^2/s]
+      wp2thlp_zm,    & ! w'^2 thl' on momentum grid                 [m^2 K/s^2]
+      wprtpthlp_zm,  & ! w'rt'thl' on momentum grid                 [m kg K/kg s]
+      cloud_frac_zm, & ! Cloud Fraction on momentum grid            [-]
+      rcm_zm,        & ! Liquid water mixing ratio on momentum grid [kg/kg]
+      wp2thvp_zm,    & ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
+      wp2rcp_zm        ! w'^2 rc' on momentum grid                  [m^2 kg/kg s^2] 
+
+    real, dimension(gr%nnzp,sclr_dim) :: & 
+      wpsclrprtp_zm,  & ! w'sclr'rt' on momentum grid 
+      wpsclrp2_zm,    & ! w'sclr'^2 on momentum grid 
+      wpsclrpthlp_zm, & ! w'sclr'thl' on momentum grid 
+      wp2sclrp_zm,    & ! w'^2 sclr' on momentum grid
+      sclrm_zm          ! Passive scalar mean on momentum grid
 
     !----- Begin Code -----
 
@@ -451,7 +473,7 @@ module clubb_core
 
 !      Surface effects should not be included with any case where the lowest
 !      level is not the ground level.  Brian Griffin.  December 22, 2005.
-    IF ( gr%zm(1) == sfc_elevation ) THEN
+    if ( gr%zm(1) == sfc_elevation ) then
       call sfc_var( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & ! intent(in)
                     um(2), vm(2), wpsclrp_sfc,                 & ! intent(in)
                     wp2(1), up2(1), vp2(1),                    & ! intent(out)
@@ -464,7 +486,7 @@ module clubb_core
       ! Joshua Fasching March 2008
       if( err_code == clubb_var_equals_NaN ) return
 
-    ELSE
+    else
       ! Variances for cases where the lowest level is not at the surface.
       ! Eliminate surface effects on lowest level variances.
       wp2(1)     = wtol_sqd
@@ -474,12 +496,12 @@ module clubb_core
       rtp2(1)    = 0.0
       rtpthlp(1) = 0.0
 
-      DO i = 1, sclr_dim, 1
+      do i = 1, sclr_dim, 1
         sclrp2(1,i)    = 0.0
         sclrprtp(1,i)  = 0.0
         sclrpthlp(1,i) = 0.0
-      END DO
-    END IF
+      end do
+    end if
 
 
     !----------------------------------------------------------------
@@ -580,11 +602,12 @@ module clubb_core
 
     ! Put passive scalar input on the t grid for the PDF
     do i = 1, sclr_dim, 1
-      sclr_tmp1(:,i) = zm2zt( wpsclrp(:,i) )
-      sclr_tmp2(:,i) = zm2zt( sclrprtp(:,i) )
-      sclr_tmp3(:,i) = max( zm2zt( sclrp2(:,i) ), zero_threshold ) ! Pos. def. quantity
-      sclr_tmp4(:,i) = zm2zt( sclrpthlp(:,i) )
+      wpsclrp_zt(:,i)   = zm2zt( wpsclrp(:,i) )
+      sclrp2_zt(:,i)    = max( zm2zt( sclrp2(:,i) ), zero_threshold ) ! Pos. def. quantity
+      sclrprtp_zt(:,i)  = zm2zt( sclrprtp(:,i) )
+      sclrpthlp_zt(:,i) = zm2zt( sclrpthlp(:,i) )
     end do ! i = 1, sclr_dim, 1
+
 
     do k = 1, gr%nnzp, 1
       call pdf_closure & 
@@ -593,8 +616,8 @@ module clubb_core
            Skw_zt(k), rtm(k), rtp2_zt(k),                      & ! intent(in)
            zm2zt( wprtp, k ), thlm(k), thlp2_zt(k),            & ! intent(in)
            zm2zt( wpthlp, k ), rtpthlp_zt(k), sclrm(k,:),      & ! intent(in)
-           sclr_tmp1(k,:), sclr_tmp3(k,:), sclr_tmp2(k,:),     & ! intent(in)
-           sclr_tmp4(k,:), k,                                  & ! intent(in)
+           wpsclrp_zt(k,:), sclrp2_zt(k,:), sclrprtp_zt(k,:),  & ! intent(in)
+           sclrpthlp_zt(k,:), k,                               & ! intent(in)
            wp4_zt(k), wprtp2(k), wp2rtp(k),                    & ! intent(out)
            wpthlp2(k), wp2thlp(k), wprtpthlp(k),               & ! intent(out)
            cloud_frac(k), rcm(k), wpthvp_zt(k),                & ! intent(out)
@@ -616,26 +639,52 @@ module clubb_core
 
     end do ! k = 1, gr%nnzp, 1
 
-    ! If logical flag is true, use the trapezoidal rule by calling the subroutine.
-    ! ldgrant June 2009
-    if ( l_trapezoid_rule ) then
-      call trapezoidal_rule &
-         ( l_call_pdf_closure_twice,                    & ! intent(in)
-           p_in_Pa, exner, wm_zm, wp2, wp3,             & ! intent(in)
-           sigma_sqd_w, Skw_zm, rtm, rtp2,              & ! intent(in)
-           wprtp, thlm, thlp2, wpthlp, rtpthlp,         & ! intent(in)
-           sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp, & ! intent(in)
-           wprtp2, wp2rtp, wpthlp2, wp2thlp,            & ! intent(inout)
-           wprtpthlp, cloud_frac, rcm, wp2thvp, wp2rcp, & ! intent(inout)
-           wpsclrprtp, wpsclrp2, wpsclrpthlp,           & ! intent(inout)
-           wp2sclrp, pdf_params, err_code,              & ! intent(inout)
-           wp4, wpthvp, rtpthvp, thlpthvp, wprcp,       & ! intent(out)
-           rtprcp, thlprcp, rcp2, sclrpthvp, sclrprcp )   ! intent(out)
-    end if
 
-    if ( ( .not. l_trapezoid_rule) .or. ( .not. l_call_pdf_closure_twice ) ) then
+    if ( l_call_pdf_closure_twice ) then
+      ! Call pdf_closure a second time on momentum levels, to
+      ! output (rather than interpolate) the variables which 
+      ! belong on the momentum levels.
 
-      ! Interpolate momentum variables back to momentum grid.
+      ! Interpolate sclrm to the momentum level for use in 
+      ! the second call to pdf_closure
+      do i = 1, sclr_dim
+        sclrm_zm(:,i) = zt2zm( sclrm(:,i) )
+      end do ! i = 1, sclr_dim
+
+      ! Call pdf_closure to output the variables which belong on the momentum grid.
+      do k = 1, gr%nnzp, 1
+        call pdf_closure & 
+           ( zt2zm( p_in_Pa, k ), zt2zm( exner, k ), wm_zm(k),      & ! intent(in)
+             wp2(k), zt2zm( wp3, k ), sigma_sqd_w(k),               & ! intent(in)
+             Skw_zm(k), zt2zm( rtm, k ), rtp2(k),                   & ! intent(in)
+             wprtp(k), zt2zm( thlm, k ), thlp2(k),                  & ! intent(in)
+             wpthlp(k), rtpthlp(k), sclrm_zm(k,:),                  & ! intent(in)
+             wpsclrp(k,:), sclrp2(k,:), sclrprtp(k,:),              & ! intent(in)
+             sclrpthlp(k,:), k,                                     & ! intent(in)
+             wp4(k), wprtp2_zm(k), wp2rtp_zm(k),                    & ! intent(out)
+             wpthlp2_zm(k), wp2thlp_zm(k), wprtpthlp_zm(k),         & ! intent(out)
+             cloud_frac_zm(k), rcm_zm(k), wpthvp(k),                & ! intent(out)
+             wp2thvp_zm(k), rtpthvp(k), thlpthvp(k),                & ! intent(out)
+             wprcp(k), wp2rcp_zm(k), rtprcp(k),                     & ! intent(out)
+             thlprcp(k), rcp2(k), pdf_params_zm,                    & ! intent(out)
+             err_code,                                              & ! intent(out)
+             wpsclrprtp_zm(k,:), wpsclrp2_zm(k,:), sclrpthvp(k,:),  & ! intent(out)
+             wpsclrpthlp_zm(k,:), sclrprcp(k,:), wp2sclrp_zm(k,:) )   ! intent(out)
+
+        ! Subroutine may produce NaN values, and if so, exit
+        ! gracefully.
+        ! Joshua Fasching March 2008
+
+        if ( err_code == clubb_var_equals_NaN ) then
+          write(fstderr,*) "At grid level = ",k
+          return
+        end if
+      end do ! k = 1, gr%nnzp, 1
+
+    else ! l_call_pdf_closure_twice is false
+
+      ! Interpolate momentum variables output from the first call to
+      ! pdf_closure back to momentum grid.
       ! Since top momentum level is higher than top thermo level,
       ! Set variables at top momentum level to 0.
 
@@ -672,10 +721,23 @@ module clubb_core
         sclrprcp(gr%nnzp,i)  = 0.0
       end do ! i=1, sclr_dim
 
-    end if ! ( .not. l_trapezoid_rule) .or. ( .not. l_call_pdf_closure_twice )
-           ! else both are true, the momentum variables will have been output
-           ! from the second call to pdf_closure in subroutine trapezoid, and
-           ! interpolation is not needed.
+    end if ! l_call_pdf_closure_twice
+
+    ! If logical flag is true, use the trapezoidal rule by calling the subroutine.
+    ! ldgrant June 2009
+    if ( l_trapezoid_rule ) then
+      call trapezoidal_rule &
+         ( l_call_pdf_closure_twice,                    & ! intent(in)
+           wprtp2, wp2rtp, wpthlp2, wp2thlp,            & ! intent(inout)
+           wprtpthlp, cloud_frac, rcm, wp2thvp, wp2rcp, & ! intent(inout)
+           wpsclrprtp, wpsclrp2, wpsclrpthlp,           & ! intent(inout)
+           wp2sclrp, pdf_params,                        & ! intent(inout)
+           wprtp2_zm, wp2rtp_zm, wpthlp2_zm,            & ! intent(inout)
+           wp2thlp_zm, wprtpthlp_zm, cloud_frac_zm,     & ! intent(inout)
+           rcm_zm, wp2thvp_zm, wp2rcp_zm,               & ! intent(inout)
+           wpsclrprtp_zm, wpsclrp2_zm, wpsclrpthlp_zm,  & ! intent(inout)
+           wp2sclrp_zm, pdf_params_zm )                   ! intent(inout)
+    end if
 
     ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
     ! This code won't work unless rtm >= 0 !!!
@@ -687,8 +749,7 @@ module clubb_core
                    rcm )                                 ! intent (inout)
 
     ! Compute variables cloud_cover and rcm_in_layer.
-    ! Code added July 2009
-    ! ldgrant
+    ! Added July 2009
     call compute_cloud_cover &
        ( pdf_params, cloud_frac, rcm, & ! intent(in)
          cloud_cover, rcm_in_layer )    ! intent(out)
@@ -1185,24 +1246,32 @@ module clubb_core
   !-----------------------------------------------------------------------
   subroutine trapezoidal_rule &
              ( l_call_pdf_closure_twice,                    & ! intent(in)
-               p_in_Pa, exner, wm_zm, wp2, wp3,             & ! intent(in)
-               sigma_sqd_w, Skw_zm, rtm, rtp2,              & ! intent(in)
-               wprtp, thlm, thlp2, wpthlp, rtpthlp,         & ! intent(in)
-               sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp, & ! intent(in)
                wprtp2, wp2rtp, wpthlp2, wp2thlp,            & ! intent(inout)
                wprtpthlp, cloud_frac, rcm, wp2thvp, wp2rcp, & ! intent(inout)
                wpsclrprtp, wpsclrp2, wpsclrpthlp,           & ! intent(inout)
-               wp2sclrp, pdf_params, err_code,              & ! intent(inout)
-               wp4, wpthvp, rtpthvp, thlpthvp, wprcp,       & ! intent(out)
-               rtprcp, thlprcp, rcp2, sclrpthvp, sclrprcp )   ! intent(out)
+               wp2sclrp, pdf_params,                        & ! intent(inout)
+               wprtp2_zm, wp2rtp_zm, wpthlp2_zm,            & ! intent(inout)
+               wp2thlp_zm, wprtpthlp_zm, cloud_frac_zm,     & ! intent(inout)
+               rcm_zm, wp2thvp_zm, wp2rcp_zm,               & ! intent(inout)
+               wpsclrprtp_zm, wpsclrp2_zm, wpsclrpthlp_zm,  & ! intent(inout)
+               wp2sclrp_zm, pdf_params_zm )                   ! intent(inout)
     !
     ! Description:  This subroutine takes the output variables on the thermo.
-    ! grid and either interpolates them to the momentum grid or calls the 
-    ! subroutine pdf_closure a second time, determined by the variable 
-    ! l_call_pdf_closure_twice.  It then calls the function trapezoid to 
-    ! recompute the variables on the thermo. grid.
+    ! grid and either: interpolates them to the momentum grid, or uses the 
+    ! values output from the second call to pdf_closure on momentum levels if  
+    ! l_call_pdf_closure_twice is true.  It then calls the function trapezoid  
+    ! to recompute the variables on the thermo. grid.
     ! ldgrant June 2009
+    !
+    ! Note:  The argument variables in the last 5 lines of the subroutine
+    ! (wprtp2_zm through pdf_params_zm) are declared intent(inout) because
+    ! if l_call_pdf_closure_twice is true, these variables will already have
+    ! values from pdf_closure on momentum levels and will not be altered in
+    ! this subroutine.  However, if l_call_pdf_closure_twice is false, these
+    ! variables will not have values yet and will be interpolated to 
+    ! momentum levels in this subroutine.
     !-----------------------------------------------------------------------
+
     use grid_class, only: &
       gr, & ! Variable
       zt2zm ! Procedure
@@ -1213,47 +1282,13 @@ module clubb_core
     use variables_prognostic_module, only: &
       pdf_parameter ! Derived data type
 
-    use pdf_closure_module, only:  & 
-      ! Procedure 
-      pdf_closure     ! Prob. density function
-
-    use constants, only:  & 
-      fstderr  ! Variable(s)
-
-    use error_code, only :  & 
-      clubb_var_equals_NaN ! Variable(s)
-
     implicit none
 
     ! Input variables
     logical, intent(in) :: l_call_pdf_closure_twice
 
-    real, dimension(gr%nnzp), intent(in) :: &
-      p_in_Pa,     & ! Pressure                       [Pa]
-      exner,       & ! Exner function.                [-]
-      wm_zm,       & ! mean w on momentum levels      [m/s]
-      wp2,         & ! w'^2                           [m^2/s^2]
-      wp3,         & ! w'^3                           [m^3/s^3]
-      sigma_sqd_w, & ! Width of individual w plumes   [-]
-      Skw_zm,      & ! Skewness of w on momentum grid [-]
-      rtm,         & ! Total water mixing ratio       [kg/kg]
-      rtp2,        & ! rt'^2                          [kg^2/kg^2]
-      wprtp,       & ! w' r_t'                        [(kg m)(kg s)]
-      thlm,        & ! Mean th_l                      [K]
-      thlp2,       & ! th_l'^2                        [K^2]
-      wpthlp,      & ! w' th_l'                       [(m K)/s]
-      rtpthlp        ! r_t' th_l'                     [(K kg)/kg]
-
-    real, dimension(gr%nnzp, sclr_dim), intent(in) :: &
-      sclrm,       & ! Mean passive scalar        [units vary]
-      wpsclrp,     & ! w' sclr'                   [units vary]
-      sclrp2,      & ! sclr'^2                    [units vary]
-      sclrprtp,    & ! sclr' r_t'                 [units vary]
-      sclrpthlp      ! sclr' th_l'                [units vary]
-
     ! Input/Output variables
-    integer, intent(inout) :: err_code ! Are the outputs usable numbers?
-
+    ! Thermodynamic level variables output from the first call to pdf_closure
     real, dimension(gr%nnzp), intent(inout) :: &
       wprtp2,      & ! w'rt'^2                   [m kg^2/kg^2]
       wp2rtp,      & ! w'^2 rt'                  [m^2 kg/kg]
@@ -1274,25 +1309,10 @@ module clubb_core
     type (pdf_parameter), intent(inout) :: &
       pdf_params ! PDF parameters [units vary]
 
-    ! Output variables
-    real, dimension(gr%nnzp), intent(out) :: &
-      wp4,        & ! w'^4 (on momentum grid)           [m^4/s^4]
-      wpthvp,     & ! Buoyancy flux (on momentum grid)  [(K m)/s]
-      rtpthvp,    & ! r_t' th_v' (on momentum grid)     [(kg K)/kg]
-      thlpthvp,   & ! th_l' th_v' (on momentum grid)    [K^2]
-      wprcp,      & ! w' r_c' (on momentum grid)        [(m kg)/(s kg)]
-      rtprcp,     & ! r_t' r_c' (on momentum grid)      [(kg^2)/(kg^2)]
-      thlprcp,    & ! th_l' r_c' (on momentum grid)     [(K kg)/kg]
-      rcp2          ! r_c'^2 (on momentum grid)         [(kg^2)/(kg^2)]
-
-    real, dimension(gr%nnzp, sclr_dim), intent(out) :: &
-      sclrpthvp,   & ! sclr'th_v' (on momentum grid)
-      sclrprcp       ! sclr'rc' (on momentum grid)
-
-    ! Local variables
-    integer :: i, k
-
-    real, dimension(gr%nnzp) :: &
+    ! Thermo. level variables brought to momentum levels either by
+    ! interpolation (in subroutine trapezoidal_rule) or by
+    ! the second call to pdf_closure (in subroutine advance_clubb_core)
+    real, dimension(gr%nnzp), intent(inout) :: &
       wprtp2_zm,     & ! w'rt'^2 on momentum grid                   [m kg^2/kg^2]
       wp2rtp_zm,     & ! w'^2 rt' on momentum grid                  [m^2 kg/kg]
       wpthlp2_zm,    & ! w'thl'^2 on momentum grid                  [m K^2/s]
@@ -1301,53 +1321,55 @@ module clubb_core
       cloud_frac_zm, & ! Cloud Fraction on momentum grid            [-]
       rcm_zm,        & ! Liquid water mixing ratio on momentum grid [kg/kg]
       wp2thvp_zm,    & ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
-      wp2rcp_zm        ! w'^2 rc' on momentum grid                  [m^2 kg/kg s^2]      
+      wp2rcp_zm        ! w'^2 rc' on momentum grid                  [m^2 kg/kg s^2]
 
-    real, dimension(gr%nnzp,sclr_dim) :: & 
+    real, dimension(gr%nnzp,sclr_dim), intent(inout) :: & 
       wpsclrprtp_zm,  & ! w'sclr'rt' on momentum grid 
       wpsclrp2_zm,    & ! w'sclr'^2 on momentum grid 
       wpsclrpthlp_zm, & ! w'sclr'thl' on momentum grid 
-      wp2sclrp_zm,    & ! w'^2 sclr' on momentum grid
-      sclrm_zm          ! Passive scalar mean on momentum grid
+      wp2sclrp_zm       ! w'^2 sclr' on momentum grid
 
+    type (pdf_parameter), intent(inout) :: &
+      pdf_params_zm ! PDF parameters on momentum grid [units vary]
+
+    ! Local variables
+    integer :: i
 
     ! Components of PDF_parameters on the momentum grid (_zm) and on the thermo. grid (_zt)
     real, dimension(gr%nnzp) :: &
-      w1_zt,        & ! Mean of w for 1st normal distribution                 [m/s]
-      w1_zm,        & ! Mean of w for 1st normal distribution                 [m/s]
-      w2_zm,        & ! Mean of w for 2nd normal distribution                 [m/s]
-      w2_zt,        & ! Mean of w for 2nd normal distribution                 [m/s]
-      varnce_w1_zm, & ! Variance of w for 1st normal distribution         [m^2/s^2]
-      varnce_w1_zt, & ! Variance of w for 1st normal distribution         [m^2/s^2]
-      varnce_w2_zm, & ! Variance of w for 2nd normal distribution         [m^2/s^2]
-      varnce_w2_zt, & ! Variance of w for 2nd normal distribution         [m^2/s^2]
-      rt1_zm,       & ! Mean of r_t for 1st normal distribution             [kg/kg]
-      rt1_zt,       & ! Mean of r_t for 1st normal distribution             [kg/kg]
-      rt2_zm,       & ! Mean of r_t for 2nd normal distribution             [kg/kg]
-      rt2_zt,       & ! Mean of r_t for 2nd normal distribution             [kg/kg]
-      varnce_rt1_zm,& ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
-      varnce_rt1_zt,& ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
-      varnce_rt2_zm,      & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
-      varnce_rt2_zt,      & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
-      crt1_zm,      & ! Coefficient for s'                                      [-]
-      crt1_zt,      & ! Coefficient for s'                                      [-]
-      crt2_zm,      & ! Coefficient for s'                                      [-]
-      crt2_zt,      & ! Coefficient for s'                                      [-]
-      cthl1_zm,     & ! Coefficient for s'                                    [1/K]
-      cthl1_zt,     & ! Coefficient for s'                                    [1/K]
-      cthl2_zm,     & ! Coefficient for s'                                    [1/K]
-      cthl2_zt,     & ! Coefficient for s'                                    [1/K]
-      thl1_zm,      & ! Mean of th_l for 1st normal distribution                [K]
-      thl1_zt,      & ! Mean of th_l for 1st normal distribution                [K]
-      thl2_zm,      & ! Mean of th_l for 2nd normal distribution                [K]
-      thl2_zt,      & ! Mean of th_l for 2nd normal distribution                [K]
+      w1_zt,          & ! Mean of w for 1st normal distribution                 [m/s]
+      w1_zm,          & ! Mean of w for 1st normal distribution                 [m/s]
+      w2_zm,          & ! Mean of w for 2nd normal distribution                 [m/s]
+      w2_zt,          & ! Mean of w for 2nd normal distribution                 [m/s]
+      varnce_w1_zm,   & ! Variance of w for 1st normal distribution         [m^2/s^2]
+      varnce_w1_zt,   & ! Variance of w for 1st normal distribution         [m^2/s^2]
+      varnce_w2_zm,   & ! Variance of w for 2nd normal distribution         [m^2/s^2]
+      varnce_w2_zt,   & ! Variance of w for 2nd normal distribution         [m^2/s^2]
+      rt1_zm,         & ! Mean of r_t for 1st normal distribution             [kg/kg]
+      rt1_zt,         & ! Mean of r_t for 1st normal distribution             [kg/kg]
+      rt2_zm,         & ! Mean of r_t for 2nd normal distribution             [kg/kg]
+      rt2_zt,         & ! Mean of r_t for 2nd normal distribution             [kg/kg]
+      varnce_rt1_zm,  & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
+      varnce_rt1_zt,  & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
+      varnce_rt2_zm,  & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
+      varnce_rt2_zt,  & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
+      crt1_zm,        & ! Coefficient for s'                                      [-]
+      crt1_zt,        & ! Coefficient for s'                                      [-]
+      crt2_zm,        & ! Coefficient for s'                                      [-]
+      crt2_zt,        & ! Coefficient for s'                                      [-]
+      cthl1_zm,       & ! Coefficient for s'                                    [1/K]
+      cthl1_zt,       & ! Coefficient for s'                                    [1/K]
+      cthl2_zm,       & ! Coefficient for s'                                    [1/K]
+      cthl2_zt,       & ! Coefficient for s'                                    [1/K]
+      thl1_zm,        & ! Mean of th_l for 1st normal distribution                [K]
+      thl1_zt,        & ! Mean of th_l for 1st normal distribution                [K]
+      thl2_zm,        & ! Mean of th_l for 2nd normal distribution                [K]
+      thl2_zt,        & ! Mean of th_l for 2nd normal distribution                [K]
       varnce_thl1_zm, & ! Variance of th_l for 1st normal distribution          [K^2]
       varnce_thl1_zt, & ! Variance of th_l for 1st normal distribution          [K^2]
       varnce_thl2_zm, & ! Variance of th_l for 2nd normal distribution          [K^2]
       varnce_thl2_zt    ! Variance of th_l for 2nd normal distribution          [K^2]
 
-    ! Continuation of PDF_parameters above (split into two sections of variable
-    ! declarations so there are not more than 39 continuation lines of code).
     real, dimension(gr%nnzp) :: &
       a_zm,           & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
       a_zt,           & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
@@ -1380,8 +1402,7 @@ module clubb_core
 
     !----------------------- Begin Code -----------------------------
 
-    ! Store components of pdf_params in the locally declared variables, since
-    ! pdf_params may be overwritten if l_call_pdf_closure_twice is true.
+    ! Store components of pdf_params in the locally declared variables
     w1_zt          = pdf_params%w1
     w2_zt          = pdf_params%w2
     varnce_w1_zt   = pdf_params%varnce_w1
@@ -1413,78 +1434,43 @@ module clubb_core
     alpha_thl_zt   = pdf_params%alpha_thl
     alpha_rt_zt    = pdf_params%alpha_rt
 
-    ! If l_call_pdf_closure_twice is true, use the subroutine pdf_closure to compute
-    ! the variables on the momentum grid
-    if (l_call_pdf_closure_twice) then
-
-      ! Interpolate sclrm to the momentum level for use in pdf_closure
-      do i = 1, sclr_dim
-        sclrm_zm(:,i) = zt2zm( sclrm(:,i) )
-      end do ! i = 1, sclr_dim
-
-      ! Call pdf_closure to compute the variables on the momentum grid for use
-      ! in the trapezoid rule
-      do k = 1, gr%nnzp, 1
-        call pdf_closure & 
-           ( zt2zm( p_in_Pa, k ), zt2zm( exner, k ), wm_zm(k),      & ! intent(in)
-             wp2(k), zt2zm( wp3, k ), sigma_sqd_w(k),               & ! intent(in)
-             Skw_zm(k), zt2zm( rtm, k ), rtp2(k),                   & ! intent(in)
-             wprtp(k), zt2zm( thlm, k ), thlp2(k),                  & ! intent(in)
-             wpthlp(k), rtpthlp(k), sclrm_zm(k,:),                  & ! intent(in)
-             wpsclrp(k,:), sclrp2(k,:), sclrprtp(k,:),              & ! intent(in)
-             sclrpthlp(k,:), k,                                     & ! intent(in)
-             wp4(k), wprtp2_zm(k), wp2rtp_zm(k),                    & ! intent(out)
-             wpthlp2_zm(k), wp2thlp_zm(k), wprtpthlp_zm(k),         & ! intent(out)
-             cloud_frac_zm(k), rcm_zm(k), wpthvp(k),                & ! intent(out)
-             wp2thvp_zm(k), rtpthvp(k), thlpthvp(k),                & ! intent(out)
-             wprcp(k), wp2rcp_zm(k), rtprcp(k),                     & ! intent(out)
-             thlprcp(k), rcp2(k), pdf_params,                       & ! intent(out)
-             err_code,                                              & ! intent(out)
-             wpsclrprtp_zm(k,:), wpsclrp2_zm(k,:), sclrpthvp(k,:),  & ! intent(out)
-             wpsclrpthlp_zm(k,:), sclrprcp(k,:), wp2sclrp_zm(k,:) )   ! intent(out)
-
-        ! Subroutine may produce NaN values, and if so, exit
-        ! gracefully.
-        ! Joshua Fasching March 2008
-
-        if ( err_code == clubb_var_equals_NaN ) then
-          write(fstderr,*) "At grid level = ",k
-          return
-        end if
-      end do ! k = 2, gr%nnzp-1
+    ! If l_call_pdf_closure_twice is true, the _zm variables already have
+    ! values from the second call to pdf_closure in advance_clubb_core.
+    ! If it is false, the variables are interpolated to the _zm levels.
+    if ( l_call_pdf_closure_twice ) then
 
       ! Store, in locally declared variables, the pdf_params output 
       ! from the second call to pdf_closure
-      w1_zm          = pdf_params%w1
-      w2_zm          = pdf_params%w2
-      varnce_w1_zm   = pdf_params%varnce_w1
-      varnce_w2_zm   = pdf_params%varnce_w2
-      rt1_zm         = pdf_params%rt1
-      rt2_zm         = pdf_params%rt2
-      varnce_rt1_zm  = pdf_params%varnce_rt1
-      varnce_rt2_zm  = pdf_params%varnce_rt2
-      crt1_zm        = pdf_params%crt1
-      crt2_zm        = pdf_params%crt2
-      cthl1_zm       = pdf_params%cthl1
-      cthl2_zm       = pdf_params%cthl2
-      thl1_zm        = pdf_params%thl1
-      thl2_zm        = pdf_params%thl2
-      varnce_thl1_zm = pdf_params%varnce_thl1
-      varnce_thl2_zm = pdf_params%varnce_thl2
-      a_zm           = pdf_params%a
-      rc1_zm         = pdf_params%rc1
-      rc2_zm         = pdf_params%rc2
-      rsl1_zm        = pdf_params%rsl1
-      rsl2_zm        = pdf_params%rsl2
-      cloud_frac1_zm = pdf_params%cloud_frac1
-      cloud_frac2_zm = pdf_params%cloud_frac2
-      s1_zm          = pdf_params%s1
-      s2_zm          = pdf_params%s2
-      stdev_s1_zm    = pdf_params%stdev_s1
-      stdev_s2_zm    = pdf_params%stdev_s2
-      rrtthl_zm      = pdf_params%rrtthl
-      alpha_thl_zm   = pdf_params%alpha_thl
-      alpha_rt_zm    = pdf_params%alpha_rt
+      w1_zm          = pdf_params_zm%w1
+      w2_zm          = pdf_params_zm%w2
+      varnce_w1_zm   = pdf_params_zm%varnce_w1
+      varnce_w2_zm   = pdf_params_zm%varnce_w2
+      rt1_zm         = pdf_params_zm%rt1
+      rt2_zm         = pdf_params_zm%rt2
+      varnce_rt1_zm  = pdf_params_zm%varnce_rt1
+      varnce_rt2_zm  = pdf_params_zm%varnce_rt2
+      crt1_zm        = pdf_params_zm%crt1
+      crt2_zm        = pdf_params_zm%crt2
+      cthl1_zm       = pdf_params_zm%cthl1
+      cthl2_zm       = pdf_params_zm%cthl2
+      thl1_zm        = pdf_params_zm%thl1
+      thl2_zm        = pdf_params_zm%thl2
+      varnce_thl1_zm = pdf_params_zm%varnce_thl1
+      varnce_thl2_zm = pdf_params_zm%varnce_thl2
+      a_zm           = pdf_params_zm%a
+      rc1_zm         = pdf_params_zm%rc1
+      rc2_zm         = pdf_params_zm%rc2
+      rsl1_zm        = pdf_params_zm%rsl1
+      rsl2_zm        = pdf_params_zm%rsl2
+      cloud_frac1_zm = pdf_params_zm%cloud_frac1
+      cloud_frac2_zm = pdf_params_zm%cloud_frac2
+      s1_zm          = pdf_params_zm%s1
+      s2_zm          = pdf_params_zm%s2
+      stdev_s1_zm    = pdf_params_zm%stdev_s1
+      stdev_s2_zm    = pdf_params_zm%stdev_s2
+      rrtthl_zm      = pdf_params_zm%rrtthl
+      alpha_thl_zm   = pdf_params_zm%alpha_thl
+      alpha_rt_zm    = pdf_params_zm%alpha_rt
 
     else      
 
@@ -1682,8 +1668,7 @@ module clubb_core
     ! Description:  Subroutine to compute cloud cover (the amount of sky
     ! covered by cloud) and rcm in layer (liquid water mixing ratio in
     ! the portion of the grid box filled by cloud).
-    ! Code added July 2009 
-    ! ldgrant
+    ! Added July 2009
     !---------------------------------------------------------------------
 
     use constants, only: rc_tol ! Variable
@@ -1704,7 +1689,7 @@ module clubb_core
       rcm           ! Liquid water mixing ratio  [kg/kg]
 
     type (pdf_parameter), intent(in) :: &
-      pdf_params ! PDF Parameters  [units vary]
+      pdf_params    ! PDF Parameters  [units vary]
 
     ! Output variables
     real, dimension(gr%nnzp), intent(out) :: &
@@ -1854,7 +1839,7 @@ module clubb_core
     do k = 1, gr%nnzp
       if ( rtm(k) < rcm(k) ) then
 
-        if ( clubb_at_least_debug_level( 1 ) ) then
+        if ( clubb_at_least_debug_level(1) ) then
           write(fstderr,*) message, ' at k=', k, '.', & 
             '  Clipping rcm.'
 
