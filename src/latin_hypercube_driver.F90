@@ -462,15 +462,19 @@ module latin_hypercube_mod
 ! References:
 !   None
 !-------------------------------------------------------------------------------
+#ifdef UNRELEASED_CODE
     use output_2D_samples_mod, only: &
       close_2D_samples_file ! Procedure
+#endif 
 
     implicit none
 
     ! ---- Begin Code ----
 
     if ( l_output_2D_samples ) then
+#ifdef UNRELEASED_CODE
       call close_2D_samples_file( )
+#endif 
     end if
 
     return
