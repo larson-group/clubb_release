@@ -36,7 +36,7 @@
           {'filename' => 'SAM_CASE_NAME_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'CLD_FRAC * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'SAM_CASE_NAME_4x1x80_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'CLD_FRAC * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Cloud Water Mixing Ration, r_c', 'axisLabel' => 'rcm / qcl [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Cloud Water Mixing Ratio, r_c', 'axisLabel' => 'rcm / qcl [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'CLUBB_CASE_NAME_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rcm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/SAM_CASE_NAME/SAM_CASE_NAME_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QCL / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
