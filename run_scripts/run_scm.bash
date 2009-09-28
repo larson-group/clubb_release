@@ -37,7 +37,7 @@ run_case()
     export G95_MEM_INIT
 
     echo "Running $run_case"
-
+    
     # Run the CLUBB model
     ../bin/clubb_standalone
 

@@ -92,16 +92,17 @@ fi
 # This will loop over all runs in sequence 
 for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); 
 do
-    if [ $NIGHTLY == true ] ; then
-        RESULT=`./run_scm.bash $OPTIONS ${RUN_CASE[$x]} 2>&1`
-        echo -e "$RESULT"
+    echo -e "Running ${RUN_CASE[$x]}"
+    RESULT=`./run_scm.bash $OPTIONS ${RUN_CASE[$x]} 2>&1`
 
-        RESULT=`echo "$RESULT" | grep 'normal'`
-        if [ -z "$RESULT" ]; then
-            EXIT_CODES[$x]=-1
-        fi
-    else
-        ./run_scm.bash $OPTIONS ${RUN_CASE[$x]}
+    if [ $NIGHTLY == true ] ; then
+        echo -e "$RESULT"
+    fi
+
+    RESULT=`echo "$RESULT" | grep 'normally'`
+
+    if [ -z "$RESULT" ]; then
+        EXIT_CODES[$x]=-1
     fi
 done
 

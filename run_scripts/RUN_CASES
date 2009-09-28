@@ -19,7 +19,7 @@ wangara
 
 ! The following are unreleased cases. External users should comment these
 ! lines out before running run_scm_all.bash and run_bindiff_all.bash
-arm97
+arm_97
 clex9_nov02
 clex9_oct14
 cloud_feedback_s6

@@ -20,5 +20,6 @@ TEST_TIMESTEP[5]=2700.0  # 45 minute time step.
 TEST_TIMESTEP[6]=3600.0  # 60 minute (one hour) time step.
 
 for (( x=0; x < "${#TEST_TIMESTEP[@]}"; x++ )); do
+    echo -e "\nRunning all cases at a(n) "${TEST_TIMESTEP[$x]}" second time step."
    ./run_scm_all.bash --timestep_test ${TEST_TIMESTEP[$x]}
 done
