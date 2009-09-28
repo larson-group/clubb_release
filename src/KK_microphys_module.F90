@@ -128,10 +128,6 @@ module KK_microphys_module
         iNrm_auto, &
         iNrm_src_adj
 
-    use stats_variables, only: & 
-      irrainm_mc, & ! Variable(s)
-      iNrm_mc
-
     use array_index, only: iirrainm, iiNcm, iiNrm
 
     use variables_prognostic_module, only: pdf_parameter

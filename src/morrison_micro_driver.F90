@@ -50,17 +50,6 @@ module morrison_micro_driver_mod
       imorr_rain_rate, & ! Variables
       imorr_snow_rate
 
-    use stats_variables, only: & 
-      irrainm_mc, & ! Variables
-      irsnowm_mc, &
-      iricem_mc, &
-      irgraupelm_mc, &
-      iNcm_mc, &
-      iNrm_mc, &
-      iNgraupelm_mc, &
-      iNim_mc, &
-      iNsnowm_mc
-
     use stats_type, only:  & 
         stat_update_var, stat_update_var_pt  ! Procedure(s)
 
