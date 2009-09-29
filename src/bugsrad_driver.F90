@@ -411,16 +411,22 @@ module bugsrad_clubb_mod
 
       call stat_update_var( iradht_SW_rad, real(radht_SW_2d(1,:)), rad )
 
+      ! Note: Variable will be output on zt grid
       call stat_update_var( iFrad_SW_rad, real(Frad_uSW(1,:) - Frad_dSW(1,:)), rad )
 
+      ! Note: Variable will be output on zt grid
       call stat_update_var( iFrad_LW_rad, real(Frad_uLW(1,:) - Frad_dLW(1,:)), rad )
 
+      ! Note: Variable will be output on zt grid
       call stat_update_var( iFrad_SW_up_rad, real(Frad_uSW(1,:)), rad )
 
+      ! Note: Variable will be output on zt grid
       call stat_update_var( iFrad_LW_up_rad, real(Frad_uLW(1,:)), rad )
 
+      ! Note: Variable will be output on zt grid
       call stat_update_var( iFrad_SW_down_rad, real(Frad_dSW(1,:)), rad )
 
+      ! Note: Variable will be output on zt grid
       call stat_update_var( iFrad_LW_down_rad, real(Frad_dLW(1,:)), rad )
 
     end if ! lstats_samp

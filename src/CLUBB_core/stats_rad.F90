@@ -152,42 +152,42 @@ module stats_rad
         iFrad_LW_rad = k
 
         call stat_assign( iFrad_LW_rad, "Frad_LW_rad", & 
-             "Net long-wave radiative flux [W/m^2]", "W/m^2", rad )
+             "Net long-wave radiative flux (from zm grid) [W/m^2]", "W/m^2", rad )
         k = k + 1
 
       case ('Frad_SW_rad')
         iFrad_SW_rad = k
 
         call stat_assign( iFrad_SW_rad, "Frad_SW_rad", & 
-             "Net short-wave radiative flux [W/m^2]", "W/m^2", rad )
+             "Net short-wave radiative flux (from zm grid) [W/m^2]", "W/m^2", rad )
         k = k + 1
 
       case ('Frad_SW_up_rad')
         iFrad_SW_up_rad = k
 
         call stat_assign( iFrad_SW_up_rad, "Frad_SW_up_rad", & 
-             "Short-wave upwelling radiative flux [W/m^2]", "W/m^2", rad )
+             "Short-wave upwelling radiative flux (from zm grid) [W/m^2]", "W/m^2", rad )
         k = k + 1
 
       case ('Frad_LW_up_rad')
         iFrad_LW_up_rad = k
 
         call stat_assign( iFrad_LW_up_rad, "Frad_LW_up_rad", & 
-             "Long-wave upwelling radiative flux [W/m^2]", "W/m^2", rad )
+             "Long-wave upwelling radiative flux (from zm grid) [W/m^2]", "W/m^2", rad )
         k = k + 1
 
       case ('Frad_SW_down_rad')
         iFrad_SW_down_rad = k
 
         call stat_assign( iFrad_SW_down_rad, "Frad_SW_down_rad", & 
-             "Short-wave downwelling radiative flux [W/m^2]", "W/m^2", rad )
+             "Short-wave downwelling radiative flux (from zm grid) [W/m^2]", "W/m^2", rad )
         k = k + 1
 
       case ('Frad_LW_down_rad')
         iFrad_LW_down_rad = k
 
         call stat_assign( iFrad_LW_down_rad, "Frad_LW_down_rad", & 
-             "Long-wave downwelling radiative flux [W/m^2]", "W/m^2", rad )
+             "Long-wave downwelling radiative flux (from zm grid) [W/m^2]", "W/m^2", rad )
         k = k + 1        
         
       case default
