@@ -764,6 +764,8 @@ module microphys_driver
       wtmp,    & ! Standard dev. of w                   [m/s]
       s_mellor   ! The variable 's' in Mellor (1977)    [kg/kg]
 
+    real :: max_velocity ! Maximum sedimentation velocity [m/s]
+
     integer :: i, k ! Array index
 
     integer :: d_variables
@@ -804,6 +806,8 @@ module microphys_driver
 
       ! Initialize tendencies to zero
       hydromet_mc(:,:) = 0.0
+
+      hydromet_vel(:,:) = 0.0
 
       call coamps_micro_driver & 
            ( runtype, time_current, dt, & 
@@ -1021,42 +1025,85 @@ module microphys_driver
           ixrm_bt = irrainm_bt
           ixrm_cl = irrainm_cl
           ixrm_mc = irrainm_mc
+
+          max_velocity = -9.1 ! m/s
+
         case ( "ricem" )
           ixrm_bt = iricem_bt
           ixrm_cl = iricem_cl
           ixrm_mc = iricem_mc
+
+          max_velocity = -1.2 ! m/s
+
         case ( "rsnowm" )
           ixrm_bt = irsnowm_bt
           ixrm_cl = irsnowm_cl
           ixrm_mc = irsnowm_mc
+
+          ! Morrison limit
+!         max_velocity = -1.2 ! m/s 
+          ! Made up limit.  The literature suggests that it is quite possible
+          ! that snow flake might achieve a terminal velocity of 2 m/s, and this
+          ! happens in the COAMPS microphysics -dschanen 29 Sept 2009
+          max_velocity = -2.0 ! m/s
+
         case ( "rgraupelm" )
           ixrm_bt = irgraupelm_bt
           ixrm_cl = irgraupelm_cl
           ixrm_mc = irgraupelm_mc
+
+          max_velocity = -20. ! m/s
+
         case ( "Nrm" )
           ixrm_bt = iNrm_bt
           ixrm_cl = iNrm_cl
           ixrm_mc = iNrm_mc
+
+          max_velocity = -9.1 ! m/s
+
         case ( "Nim" )
           ixrm_bt = iNim_bt
           ixrm_cl = iNim_cl
           ixrm_mc = iNim_mc
+
+          max_velocity = -1.2 ! m/s
+
         case ( "Nsnowm" )
           ixrm_bt = iNsnowm_bt
           ixrm_cl = iNsnowm_cl
           ixrm_mc = iNsnowm_mc
+
+          ! Morrison limit
+!         max_velocity = -1.2 ! m/s 
+          ! Made up limit.  The literature suggests that it is quite possible
+          ! that snow flake might achieve a terminal velocity of 2 m/s, and this
+          ! happens in the COAMPS microphysics -dschanen 29 Sept 2009
+          max_velocity = -2.0 ! m/s
+
         case ( "Ngraupelm" )
           ixrm_bt = iNgraupelm_bt
           ixrm_cl = iNgraupelm_cl
           ixrm_mc = iNgraupelm_mc
+
+          max_velocity = -20. ! m/s
+
         case ( "Ncm" )
           ixrm_bt = iNcm_bt
           ixrm_cl = iNcm_cl
           ixrm_mc = iNcm_mc
+
+          ! Use the rain water limit, since Morrison has no explicit limit on
+          ! cloud water.  Presumably these numbers are never large.
+          ! -dschanen 28 Sept 2009
+          max_velocity = -9.1 ! m/s
+
         case default
           ixrm_bt = 0
           ixrm_cl = 0
           ixrm_mc = 0
+
+          max_velocity = -9.1 ! m/s
+
         end select
 
         if ( l_stats_samp ) then
@@ -1070,8 +1117,20 @@ module microphys_driver
 
         end if
 
+        ! Set realistic limits on sedimentation velocities, following the
+        ! numbers in the Morrison microphysics.
 
+        do k = 1, gr%nnzp
+          if ( clubb_at_least_debug_level( 1 ) ) then 
+            if ( hydromet_vel(k,i) < max_velocity )  then
+              write(fstderr,*) trim( hydromet_list(i) )// &
+                " velocity at k = ", k, " = ", hydromet_vel(k,i), "m/s"
+            end if
+          end if
+          hydromet_vel(k,i) = max( hydromet_vel(k,i), max_velocity )
+        end do
 
+        ! Add implicit terms to the LHS matrix
         call microphys_lhs & 
              ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, Kr, nu_r, wm_zt, & 
                hydromet_vel(:,i), lhs )
