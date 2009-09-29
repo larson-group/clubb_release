@@ -357,6 +357,7 @@ module clubb_driver
       sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge, & 
       forcings_file_path, l_t_dependent, l_input_xpwp_sfc, &
       l_use_default_std_atmosphere, &
+      saturation_formula, &
       thlm_sponge_damp_settings, rtm_sponge_damp_settings, uv_sponge_damp_settings, &
       l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, debug_level, & 
@@ -549,7 +550,7 @@ module clubb_driver
       call write_text( "-Dradoffline disabled", l_write_to_file, iunit )
 #endif
 #ifdef USE_BUGSrad_ocast_random
-      call write_text( "-DUSE_BUGSrad_ocast_random enabled", l_write_to_file, iuni t )
+      call write_text( "-DUSE_BUGSrad_ocast_random enabled", l_write_to_file, iunit )
 #else
       call write_text( "-DUSE_BUGSrad_ocast_random disabled", l_write_to_file, iunit )
 #endif
@@ -596,6 +597,9 @@ module clubb_driver
       call write_text( "l_input_xpwp_sfc = ", l_input_xpwp_sfc, l_write_to_file, iunit )
 
       call write_text( "l_use_default_std_atmosphere = ", l_use_default_std_atmosphere, &
+        l_write_to_file, iunit )
+
+      call write_text( "saturation_formula = " // saturation_formula, &
         l_write_to_file, iunit )
 
       call write_text( "thlm_sponge_damp_settings%l_sponge_damping = ", & 

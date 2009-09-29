@@ -70,6 +70,9 @@ psfc = 1004.4e2   ! Pressure at model base              [Pa]
 fcor = -3.1379e-5  ! Coriolis parameter                  [s^-1]
 T0   = 300.      ! Reference temperature (usually 300) [K]
 
+! Select saturation formula (flatau or bolton)
+! flatau is default
+saturation_formula = "flatau"
 
 ts_nudge = 7200  ! Timescale of u/v nudging            [s]
 
