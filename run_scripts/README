@@ -30,6 +30,12 @@ run_scm_all.bash:
   To specify a custom stats file, use the --stats option. For example, to use
   the nightly stats, ./run_scm_all.bash --stats ../input/stats/nightly_stats.in
 
+RUN_CASES:
+  The file RUN_CASES lists all the cases to be run with run_bindiff_all.bash 
+and run_scm_all.bash. This makes it easier for external users to run CLUBB 
+since they can comment out cases.  It also makes it easier for UWM to add a 
+new case.
+
 run_scm.bash: 
   Runs CLUBB for a specified case. The case is specified with the model name.
 
