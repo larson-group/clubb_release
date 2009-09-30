@@ -137,7 +137,10 @@ sub main()
     print("Input Folders: @inputDirs\n");
     print("Output Folder: $output \n");
 
-    $outputIndex = "$outputTemp/index.html";
+    $outputIndex = "$outputTemp/plots.html";
+
+    OutputWriter->writeNavPageStart("$outputTemp/navigation.html");
+    OutputWriter->writeIndex("$outputTemp/index.html");
 
     # Fork to make MATLAB faster
     my $pid = fork();
@@ -290,6 +293,7 @@ sub runCases()
             {
                 # Print the case title to the HTML page
                 OutputWriter->writeCaseTitle($outputIndex, $CASE::CASE{'headerText'});
+                OutputWriter->writeNavPageCase("$outputTemp/navigation.html", $CASE::CASE{'name'}, $CASE::CASE{'headerText'});
         
                 # Print any additional text/html specified
                 if($nightly == 1) # If in nightly mode
@@ -357,6 +361,8 @@ sub runCases()
             }
         }
     }
+
+    OutputWriter->writeNavPageClose("$outputTemp/navigation.html");
 }
 
 ###############################################################################
@@ -395,15 +401,15 @@ sub convertEps()
             {
                 # First convert the image to png and trim all white space
                 system("convert -density $DPI -colorspace RGB -trim $eps $outputTemp/jpg/$filename.png");
-        
-                    # Then convert (and scale if not in high quality mode) to jpg
+
+                # Then convert (and scale if not in high quality mode) to jpg
                 if($highQuality == 0)
                 {
                     system("convert -geometry 324x312\\! -quality $QUALITY $outputTemp/jpg/$filename.png $outputTemp/jpg/$filename.jpg");
                 }
                 else
                 {
-                    system("convert -quality $QUALITY $outputTemp/jpg/$filename.png $outputTemp/jpg/$filename.jpg"); 
+                    system("convert -quality $QUALITY $outputTemp/jpg/$filename.png $outputTemp/jpg/$filename.jpg");
                 }
         
                 unlink("$outputTemp/jpg/$filename.png");

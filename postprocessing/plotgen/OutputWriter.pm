@@ -8,6 +8,58 @@ use warnings;
 
 our $VERSION = '1.00';
 
+sub writeNavPageStart()
+{
+    shift(@_);
+    my $fh = shift(@_);
+
+    open(FILE, "> $fh");
+    print FILE <<"EOF";
+    <html>
+        <h4>Cases:</h4>
+EOF
+}
+
+sub writeNavPageCase()
+{
+    shift(@_);
+    my $fh = shift(@_);
+    my $case = shift(@_);
+    my $link = shift(@_);
+
+    open(FILE, ">> $fh");
+    print FILE <<"EOF";
+        <a href="plots.html#$link" target="plots">$case</a><br/>
+EOF
+}
+
+sub writeNavPageClose()
+{
+    shift(@_);
+    my $fh = shift(@_);
+
+    open(FILE, ">> $fh");
+    print FILE <<"EOF";
+    </html>
+EOF
+}
+
+sub writeIndex()
+{
+    shift(@_);
+    my $fh = shift(@_);
+
+    open(FILE, "> $fh");
+    print FILE <<"EOF";
+    <html>
+        <frameset cols="100,*">
+            <frame src="navigation.html" frameborder="0" noresize name="nav">
+            <frame src="plots.html" frameborder="0" name="plots">
+        </frameset>
+    </html>
+EOF
+}
+
 ###############################################################################
 # Writes a case title to the HTML file
 ###############################################################################
