@@ -103,6 +103,8 @@ my $lineColorCounter = 0;
 my $lineWidthCounter = 0;
 
 my $outputIndex = "";
+my $navigationPage = "navigation.html";
+my $indexPage = "index.html";
 
 my $plotCount = 0;
 
@@ -139,7 +141,7 @@ sub main()
 
     $outputIndex = "$outputTemp/plots.html";
 
-    OutputWriter->writeNavPageStart("$outputTemp/navigation.html");
+    OutputWriter->writeNavPageStart("$outputTemp/$navigationPage");
     OutputWriter->writeIndex("$outputTemp/index.html");
 
     # Fork to make MATLAB faster
@@ -293,7 +295,7 @@ sub runCases()
             {
                 # Print the case title to the HTML page
                 OutputWriter->writeCaseTitle($outputIndex, $CASE::CASE{'headerText'});
-                OutputWriter->writeNavPageCase("$outputTemp/navigation.html", $CASE::CASE{'name'}, $CASE::CASE{'headerText'});
+                OutputWriter->writeNavPageCase("$outputTemp/$navigationPage", $CASE::CASE{'name'}, $CASE::CASE{'headerText'});
         
                 # Print any additional text/html specified
                 if($nightly == 1) # If in nightly mode

@@ -8,6 +8,10 @@ use warnings;
 
 our $VERSION = '1.00';
 
+###############################################################################
+# Writes the beginning of the navigation page HTML. This should be called 
+# before the cases are written to the navigation page.
+###############################################################################
 sub writeNavPageStart()
 {
     shift(@_);
@@ -20,6 +24,9 @@ sub writeNavPageStart()
 EOF
 }
 
+###############################################################################
+# Writes a case to the navigation page
+###############################################################################
 sub writeNavPageCase()
 {
     shift(@_);
@@ -33,6 +40,10 @@ sub writeNavPageCase()
 EOF
 }
 
+###############################################################################
+# Writes HTML to the end of the navigation page. This should be called after
+# all cases were added.
+###############################################################################
 sub writeNavPageClose()
 {
     shift(@_);
@@ -44,6 +55,9 @@ sub writeNavPageClose()
 EOF
 }
 
+###############################################################################
+# Writes the index page that contains the two frames.
+###############################################################################
 sub writeIndex()
 {
     shift(@_);
