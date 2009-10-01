@@ -58,7 +58,7 @@ module pdf_closure_module
       wtol_sqd,      & ! Tolerance for w'^2                  [m^2/s^2]
       rttol,         & ! Tolerance for r_t                   [kg/kg]
       thltol,        & ! Tolerance for th_l                  [K]
-      sstol,         & ! Tolerance for pdf parameter         [kg/kg]
+      s_mellor_tol,  & ! Tolerance for pdf parameter s       [kg/kg]
       fstderr,       &
       zero_threshold  
 
@@ -609,7 +609,7 @@ module pdf_closure_module
 
     ! We need to introduce a threshold value for the variance of s
 
-    if ( stdev_s1 > sstol ) then
+    if ( stdev_s1 > s_mellor_tol ) then
       zeta1 = s1/stdev_s1
       cloud_frac1  = 0.5*( 1. + erf( zeta1/sqrt_2 )  )
       rc1          = s1*cloud_frac1+stdev_s1*exp( -0.5*zeta1**2 )/( sqrt_2pi )
@@ -621,9 +621,9 @@ module pdf_closure_module
         cloud_frac1  = 1.0
         rc1          = s1
       end if ! s1 < 0
-    end if ! stdev_s1 > sstol
+    end if ! stdev_s1 > s_mellor_tol
 
-    if ( stdev_s2 > sstol ) then
+    if ( stdev_s2 > s_mellor_tol ) then
       zeta2       = s2/stdev_s2
       cloud_frac2 = 0.5*( 1. + erf( zeta2/sqrt_2 ) )
       rc2         = s2*cloud_frac2+stdev_s2*exp( -0.5*zeta2**2 )/( sqrt_2pi )
@@ -635,7 +635,7 @@ module pdf_closure_module
         cloud_frac2  = 1.0
         rc2          = s2
       end if ! s2 < 0
-    end if ! stdev_s2 > sstol
+    end if ! stdev_s2 > s_mellor_tol
 
     ! Compute moments that depend on theta_v
     wp2rcp = a * ((w1-wm)**2 + varnce_w1)*rc1 + (1.-a) * ((w2-wm)**2 + varnce_w2)*rc2 & 

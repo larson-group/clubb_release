@@ -37,7 +37,7 @@ module generate_lh_sample_mod
 
     use constants, only:  &
       max_mag_correlation, &  ! Constant
-!     sstol,  &     ! s tolerance in kg/kg
+!     s_mellor_tol,  &  ! s tolerance in kg/kg
       rttol, &      ! rt tolerance in kg/kg
       thltol, &     ! thetal tolerance in K
       wtol_sqd, &   ! w^2 tolerance in m^2/s^2
@@ -271,7 +271,8 @@ module generate_lh_sample_mod
       stdev_s1 = pdf_params%stdev_s1(level)
       s1       = pdf_params%s1(level)
     else
-      stdev_s1 = LH_stdev_s_tol ! Use a larger value than sstol, for reasons of numerical stability
+      ! Use a larger value than s_mellor_tol, for reasons of numerical stability
+      stdev_s1 = LH_stdev_s_tol
       s1       = pdf_params%s1(level) * pdf_params%a(level) &
                + (1.0-pdf_params%a(level)) * pdf_params%s2(level)
     end if
@@ -279,7 +280,8 @@ module generate_lh_sample_mod
       stdev_s2 = pdf_params%stdev_s2(level)
       s2       = pdf_params%s2(level)
     else
-      stdev_s2 = LH_stdev_s_tol ! Use a larger value than sstol, as above.
+      ! Use a larger value than s_mellor_tol, as above.
+      stdev_s2 = LH_stdev_s_tol
       s2       = pdf_params%s1(level) * pdf_params%a(level) &
                + (1.0-pdf_params%a(level)) * pdf_params%s2(level)
     end if

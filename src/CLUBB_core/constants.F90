@@ -18,7 +18,7 @@ module constants
   public :: fstderr, fstdin, fstdout, pi_dp, pi, sqrt_2pi, sqrt_2, &
             Cp, Lv, Ls, Lf, Rd, Rv, ep, ep1, ep2, &
             kappa, grav, p0, vonk, rho_lw, &
-            wtol, thltol, rttol, sstol, & 
+            wtol, thltol, rttol, s_mellor_tol, & 
             wtol_sqd, rc_tol, Nc_tol, rr_tol, Nr_tol, emin, &
             eps, zero_threshold, max_mag_correlation, sec_per_day, &
             sec_per_hr, sec_per_min, g_per_kg, T_freeze_K, &
@@ -85,7 +85,7 @@ module constants
     wtol    = 2.e-2,  & ! [m/s]
     thltol  = 1.e-2,  & ! [K]
     rttol   = 1.e-8,  & ! [kg/kg]
-    sstol   = 1.e-8     ! [kg/kg]
+    s_mellor_tol   = 1.e-8     ! [kg/kg]
 
   ! The tolerance for w'^2 is the square of the tolerance for w.
   real, parameter :: &

@@ -39,7 +39,7 @@ module estimate_lh_micro_mod
 
     use constants, only:  &
       pi,  & ! Variables(s)
-      sstol, &
+      s_mellor_tol, &
       zero_threshold
 
     use anl_erf, only:  &
@@ -258,11 +258,11 @@ module estimate_lh_micro_mod
       !        r_crit = 0.7e-3
       r_crit            = 0.2e-3
       K_one             = 1.e-3
-      sn1_crit          = (s1-r_crit)/max( stdev_s1, sstol )
+      sn1_crit          = (s1-r_crit)/max( stdev_s1, s_mellor_tol )
       cloud_frac1_crit  = 0.5*(1+erf(sn1_crit/sqrt(2.0)))
       AK1               = K_one * ( (s1-r_crit)*cloud_frac1_crit  & 
                          + stdev_s1*exp(-0.5*sn1_crit**2)/(sqrt(2*pi)) )
-      sn2_crit          = (s2-r_crit)/max( stdev_s2, sstol )
+      sn2_crit          = (s2-r_crit)/max( stdev_s2, s_mellor_tol )
       cloud_frac2_crit  = 0.5*(1+erf(sn2_crit/sqrt(2.0)))
       AK2               = K_one * ( (s2-r_crit)*cloud_frac2_crit  & 
                          + stdev_s2*exp(-0.5*sn2_crit**2)/(sqrt(2*pi)) )
