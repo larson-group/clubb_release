@@ -61,6 +61,8 @@ module clubb_core
       Lv, & 
       ep1, & 
       eps, &
+      p0, &
+      kappa, &
       fstderr, &
       zero_threshold
 
@@ -354,6 +356,10 @@ module clubb_core
       sclrp2_zt,   & ! sclr'^2 on thermo. levels
       sclrprtp_zt, & ! sclr' r_t' on thermo. levels
       sclrpthlp_zt   ! sclr' th_l' on thermo. levels
+
+    real, dimension(gr%nnzp) :: &
+      p_in_Pa_zm, &  ! Pressure interpolated to momentum levels  [Pa]
+      exner_zm       ! Exner interpolated to momentum levels     [-]
 
     integer :: &
       wprtp_cl_num,   & ! Instance of w'r_t' clipping (1st or 3rd).
@@ -651,10 +657,21 @@ module clubb_core
         sclrm_zm(:,i) = zt2zm( sclrm(:,i) )
       end do ! i = 1, sclr_dim
 
+      ! Interpolate pressure, p_in_Pa, to momentum levels.
+      ! The pressure at thermodynamic level k = 1 has been set to be the surface
+      ! (or model lower boundary) pressure.  Since the surface (or model lower
+      ! boundary) is located at momentum level k = 1, the pressure there is
+      ! psfc, which is p_in_Pa(1).  Thus, p_in_Pa_zm(1) = p_in_Pa(1).
+      p_in_Pa_zm(:) = zt2zm( p_in_Pa )
+      p_in_Pa_zm(1) = P_in_Pa(1)
+
+      ! Set exner at momentum levels, exner_zm, based on p_in_Pa_zm.
+      exner_zm(:) = (p_in_Pa(:)/p0)**kappa
+
       ! Call pdf_closure to output the variables which belong on the momentum grid.
       do k = 1, gr%nnzp, 1
         call pdf_closure & 
-           ( zt2zm( p_in_Pa, k ), zt2zm( exner, k ), wm_zm(k),      & ! intent(in)
+           ( p_in_Pa_zm(k), exner_zm(k), wm_zm(k),                  & ! intent(in)
              wp2(k), zt2zm( wp3, k ), sigma_sqd_w(k),               & ! intent(in)
              Skw_zm(k), zt2zm( rtm, k ), rtp2(k),                   & ! intent(in)
              wprtp(k), zt2zm( thlm, k ), thlp2(k),                  & ! intent(in)

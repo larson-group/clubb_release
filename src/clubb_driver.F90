@@ -1280,6 +1280,16 @@ module clubb_driver
 
     case default ! ('Press[Pa]')
 
+      ! Set the pressure at the lowest thermodynamic level (k=1), which is below
+      ! the model lower boundary, to psfc, which is the pressure at the model
+      ! lower boundary (or surface), which is located at momentum level 1.
+      ! This is consistent with what is done in subroutine hydrostatic, which is
+      ! called when the sounding is given in terms of altitude rather than
+      ! pressure.  This is also a good way for the code to keep track of the
+      ! surface pressure.
+      p_in_Pa(1) = psfc
+
+      ! Set the value of exner.
       exner(1) = ( psfc/p0 )**kappa
       do k=2, gr%nnzp
         exner(k) = (p_in_Pa(k)/p0) ** kappa  ! zt
