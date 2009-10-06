@@ -218,24 +218,30 @@ module extend_atmosphere_mod
       j= j+1
     end do
 
-    j=j+1
+    ! j=j+1
 
     if(extend_alt(j) < grid(grid_size)) then
       stop "Extended atmosphere is below the top of the computational grid"
     end if
 
+    if( extend_alt(extend_atmos_dim) < radiation_top   ) then
+      write(fstderr,*) "Atmosphere cannot be extended because extension data does ", &
+                         "not reach radiation_top"
+      stop
+    end if
+
     k=1
 
-    if( j /= extend_atmos_dim ) then
+    if( j <= extend_atmos_dim ) then
 
       do while( extend_alt(k) < radiation_top .and. k < extend_atmos_dim )
         k= k+1
       end do
 
-      if( extend_alt(k) < radiation_top   ) then
-        write(fstderr,*) "Atmosphere cannot be extended because extension data does ", &
-                         "not reach radiation_top"
-        stop
+      ! It is possible we could be above the specified radiation top, check
+      ! and roll back if neccessary
+      if( extend_alt(k) > radiation_top) then
+        k= k-1
       end if
 
     else
@@ -260,6 +266,7 @@ module extend_atmosphere_mod
     allocate( complete_alt(1:total_atmos_dim) )
 
     ! Build the total atmosphere grid
+    extended_alt_index = extend_atmos_bottom_level
     do j=1, total_atmos_dim
       if (j <= grid_size) then
         complete_alt(j) = grid(j)
@@ -268,11 +275,10 @@ module extend_atmosphere_mod
         !of the extended altitude
         complete_alt(j) = real(grid_top + ((extend_bottom - grid_top) / lin_int_buffer_size) * &
                           (j - grid_size))
-
-      else
-        ! Figure out where we are in the extended altitude grid
-        extended_alt_index = extend_atmos_dim - (total_atmos_dim - j)
+      else    
         complete_alt(j) = real(extend_alt(extended_alt_index))
+        ! Keep track of where we are in the extended atmosphere
+        extended_alt_index = extended_alt_index + 1
       endif 
     end do
 
