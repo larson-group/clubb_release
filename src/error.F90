@@ -746,7 +746,7 @@ module error
     integer :: i ! Loop iterator
 
     if ( tune_type == 0 ) then
-      write(unit=iunit,fmt=*) "Number of iterations:",  iter
+      write(unit=iunit,fmt=*) "Number of iterations past initialization:",  iter
     end if ! tune_type == 0
 
     write(unit=iunit,fmt='(4x,A9,5x,10x,A7,10x,10x,A7)') & 
