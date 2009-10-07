@@ -66,8 +66,8 @@ sub writeIndex()
     open(FILE, "> $fh");
     print FILE <<"EOF";
     <html>
-        <frameset cols="100,*">
-            <frame src="navigation.html" frameborder="0" noresize name="nav">
+        <frameset cols="180,*">
+            <frame src="navigation.html" frameborder="0" name="nav">
             <frame src="plots.html" frameborder="0" name="plots">
         </frameset>
     </html>
@@ -194,13 +194,13 @@ sub writeSamSubHeader()
     </TR>
     <TR>
         <TD ALIGN="CENTER">wpthlp</TD>
-        <TD ALIGN="CENTER">wpthlp+tlflux+tlfluxs</TD>
-        <TD ALIGN="CENTER">tlflux+tlfluxs</TD>
+        <TD ALIGN="CENTER">wpthlp+tlflux</TD>
+        <TD ALIGN="CENTER">tlflux</TD>
     </TR>
     <TR>
         <TD ALIGN="CENTER">wprtp</TD>
         <TD ALIGN="CENTER">wprtp+qtflux</TD>
-        <TD ALIGN="CENTER">qtflux+qtfluxs</TD>
+        <TD ALIGN="CENTER">qtflux</TD>
     </TR>
     <TR>
         <TD ALIGN="CENTER">thlp2</TD>
@@ -214,13 +214,13 @@ sub writeSamSubHeader()
     </TR>
     <TR>
         <TD ALIGN="CENTER">upwp</TD>
-        <TD ALIGN="CENTER">uw + upwp + uwsb</TD>
-        <TD ALIGN="CENTER">uw + uwsb</TD>
+        <TD ALIGN="CENTER">uw + upwp</TD>
+        <TD ALIGN="CENTER">uw</TD>
     </TR>
     <TR>
         <TD ALIGN="CENTER">vpwp</TD>
-        <TD ALIGN="CENTER">vw + vpwp + vwsb</TD>
-        <TD ALIGN="CENTER">vw + vwsb</TD>
+        <TD ALIGN="CENTER">vw + vpwp</TD>
+        <TD ALIGN="CENTER">vw</TD>
     </TR>
     <TR>
         <TD ALIGN="CENTER">up2</TD>

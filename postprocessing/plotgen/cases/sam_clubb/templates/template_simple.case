@@ -57,9 +57,9 @@
        {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp / thflux(s) [K m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'CLUBB_CASE_NAME_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'SAM_CASE_NAME_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '((TLFLUX + TLFLUXS) ./ (RHO * 1004)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'SAM_CASE_NAME_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => '((TLFLUX + TLFLUXS) ./ (RHO * 1004)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'SAM_CASE_NAME_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => '((TLFLUX + TLFLUXS) ./ (RHO * 1004)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'SAM_CASE_NAME_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '((TLFLUX) ./ (RHO * 1004)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'SAM_CASE_NAME_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => '((TLFLUX) ./ (RHO * 1004)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'SAM_CASE_NAME_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => '((TLFLUX) ./ (RHO * 1004)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp / qtflux(s) [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
        [
@@ -113,16 +113,16 @@
        {'plotTitle' => 'Covariance of u & w', 'axisLabel' => 'upwp / uw [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'CLUBB_CASE_NAME_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'upwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'SAM_CASE_NAME_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'UWSB + UPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'SAM_CASE_NAME_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'UWSB + UPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'SAM_CASE_NAME_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'UWSB + UPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'SAM_CASE_NAME_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'UPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'SAM_CASE_NAME_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'UPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'SAM_CASE_NAME_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'UPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of v & w', 'axisLabel' => 'vpwp / vw [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'CLUBB_CASE_NAME_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vpwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'SAM_CASE_NAME_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'VPWP + VWSB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'SAM_CASE_NAME_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'VPWP + VWSB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'SAM_CASE_NAME_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'VPWP + VWSB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'SAM_CASE_NAME_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'VPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'SAM_CASE_NAME_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'VPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'SAM_CASE_NAME_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'VPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of u wind', 'axisLabel' => 'up2 / u2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
