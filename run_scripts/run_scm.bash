@@ -120,7 +120,7 @@ while true ; do
 
             shift 2 ;;
         -p|--parameter_file) # Set the parameter file
-            parameter_file=$1
+            parameter_file=$2
 
             if [ ! -f $parameter_file ]
             then
@@ -128,7 +128,7 @@ while true ; do
                 exit 1;
             fi
 
-            shift ;;
+            shift 2 ;;
         -n|--nightly) 
             NIGHTLY=true
 
