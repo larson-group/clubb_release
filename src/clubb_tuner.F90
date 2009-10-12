@@ -63,8 +63,10 @@ character(len=1)  :: user_response ! Simple Y/N query
 
 !----------------- Begin Code -------------------
 
+! Determine date and time to be used with file names
 call date_and_time( current_date, current_time )
 
+! Create file to save tuning results if specified
 if ( l_save_tuning_run ) then
   ! File where tuning run results are written
   tuning_filename = "../input/tuning_run_results_"// &
@@ -100,6 +102,7 @@ do
   write(unit=fstdout,fmt='(A)', advance='no')  & 
     "Re-run with new parameters?(y/n) "
   read(*,*) user_response
+  ! Save tuning results in file if specified
   if( l_save_tuning_run ) then
     write(file_unit,*) "Re-run with new parameters?(y/n) ", user_response
     close(unit=file_unit)
@@ -109,13 +112,15 @@ do
        trim( user_response ) /= "Y"   ) then
     exit 
   end if
- 
+
+  ! Save tuning results in file if specified
   if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
     action="write", position="append")
   call write_text( "Current ftol= ", ftol, l_save_tuning_run, file_unit )
 
   write(fstdout,fmt='(A)', advance='no') "Enter new ftol=   "
   read(*,*) ftol
+  ! Save tuning results in file if specified
   if( l_save_tuning_run ) write(file_unit,*) "Enter new ftol=   ", ftol
   if( l_save_tuning_run ) close(unit=file_unit)
 
@@ -128,6 +133,7 @@ end do ! user_response /= 'y', 'Y' or 'yes'
 if ( l_results_file ) then 
 
   ! Tuner namelist
+  ! Save tuning results in file if specified
   if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
     action="write", position="append")
   call write_text( "Generating new error.in file...", l_save_tuning_run, file_unit )
@@ -140,6 +146,7 @@ if ( l_results_file ) then
   ! The first column of param_vals_matrix is the optimized result, which
   ! is swapped in by amoeba.
   call output_nml_tuner( results_f, param_vals_matrix(1,1:ndim) )
+  ! Save tuning results in file if specified
   if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
     action="write", position="append")
   call write_text( "New filename is: "//results_f, l_save_tuning_run, file_unit )
@@ -153,6 +160,7 @@ if ( l_results_file ) then
 
   call output_nml_standalone( results_f,  & 
                               param_vals_matrix(1,1:ndim) )
+  ! Save tuning results in file if specified
   if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
     action="write", position="append")
   call write_text( "New filename is: "//results_f, l_save_tuning_run, file_unit )
@@ -160,6 +168,7 @@ if ( l_results_file ) then
 
 end if
 
+! Print message if tuning results were saved in a file
 if ( l_save_tuning_run ) then
   print*, "***The tuning results have been saved in the file: "
   print*, "  "//tuning_filename

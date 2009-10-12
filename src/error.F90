@@ -373,6 +373,7 @@ module error
            min_les_clubb_diff( param_vals_matrix(i,1:ndim) )
     end do
 
+    ! Save tuning results in file if specified
     if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
       action="write", position='append')
     call write_text( "cost_fnc_vector:", l_save_tuning_run, file_unit )
@@ -543,6 +544,7 @@ module error
 
 #ifndef _OPENMP 
       ! Write a message about which case we're calling if OpenMP is not enabled
+      ! Save tuning results in file if specified
       if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
         action='write', position='append')
       call write_text( "Calling CLUBB with case "//trim( run_file(c_run) ), &
@@ -713,6 +715,7 @@ module error
 
     deallocate( err_sums )
 
+    ! Save tuning results in file if specified
     if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
       action='write', position='append')
     call write_text( "Cost function= ", min_les_clubb_diff, l_save_tuning_run, &
