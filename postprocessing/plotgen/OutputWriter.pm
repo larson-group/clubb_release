@@ -66,6 +66,7 @@ sub writeIndex()
     open(FILE, "> $fh");
     print FILE <<"EOF";
     <html>
+        <title>Plotgen</title>
         <frameset cols="180,*">
             <frame src="navigation.html" frameborder="0" name="nav">
             <frame src="plots.html" frameborder="0" name="plots">
