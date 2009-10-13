@@ -138,6 +138,10 @@ module clip_explicit
         ! wprtp total time tendency (effect of clipping)
         call stat_begin_update( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
                                 zm )                              ! intent(inout)
+      elseif ( wprtp_cl_num == 2 ) then
+        ! wprtp total time tendency (effect of clipping)
+        call stat_modify( iwprtp_bt, real( -wprtp / dt ),  & ! intent(in)
+                          zm )                               ! intent(inout)
       elseif ( wprtp_cl_num == 3 ) then
         ! wprtp total time tendency (effect of clipping)
         call stat_modify( iwprtp_bt, real( -wprtp / dt ),  & ! intent(in)
@@ -148,6 +152,9 @@ module clip_explicit
     ! Used within subroutine clip_covariance.
     if ( wprtp_cl_num == 1 ) then
       l_first_clip_ts = .true.
+      l_last_clip_ts  = .false.
+    elseif ( wprtp_cl_num == 2 ) then
+      l_first_clip_ts = .false.
       l_last_clip_ts  = .false.
     elseif ( wprtp_cl_num == 3 ) then
       l_first_clip_ts = .false.
@@ -161,6 +168,10 @@ module clip_explicit
 
     if ( l_stats_samp ) then
       if ( wprtp_cl_num == 1 ) then
+        ! wprtp total time tendency (effect of clipping)
+        call stat_modify( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
+                          zm )                              ! intent(inout)
+      elseif ( wprtp_cl_num == 2 ) then
         ! wprtp total time tendency (effect of clipping)
         call stat_modify( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
                           zm )                              ! intent(inout)
@@ -197,6 +208,10 @@ module clip_explicit
         ! wpthlp total time tendency (effect of clipping)
         call stat_begin_update( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
                                 zm )                                ! intent(inout)
+      elseif ( wpthlp_cl_num == 2 ) then
+        ! wpthlp total time tendency (effect of clipping)
+        call stat_modify( iwpthlp_bt, real( -wpthlp / dt ),  & ! intent(in)
+                          zm )                                 ! intent(inout)
       elseif ( wpthlp_cl_num == 3 ) then
         ! wpthlp total time tendency (effect of clipping)
         call stat_modify( iwpthlp_bt, real( -wpthlp / dt ),  & ! intent(in)
@@ -207,6 +222,9 @@ module clip_explicit
     ! Used within subroutine clip_covariance.
     if ( wpthlp_cl_num == 1 ) then
       l_first_clip_ts = .true.
+      l_last_clip_ts  = .false.
+    elseif ( wpthlp_cl_num == 2 ) then
+      l_first_clip_ts = .false.
       l_last_clip_ts  = .false.
     elseif ( wpthlp_cl_num == 3 ) then
       l_first_clip_ts = .false.
@@ -221,6 +239,10 @@ module clip_explicit
 
     if ( l_stats_samp ) then
       if ( wpthlp_cl_num == 1 ) then
+        ! wpthlp total time tendency (effect of clipping)
+        call stat_modify( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
+                          zm )                                ! intent(inout)
+      elseif ( wpthlp_cl_num == 2 ) then
         ! wpthlp total time tendency (effect of clipping)
         call stat_modify( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
                           zm )                                ! intent(inout)
@@ -254,6 +276,9 @@ module clip_explicit
     ! Used within subroutine clip_covariance.
     if ( wpsclrp_cl_num == 1 ) then
       l_first_clip_ts = .true.
+      l_last_clip_ts  = .false.
+    elseif ( wpsclrp_cl_num == 2 ) then
+      l_first_clip_ts = .false.
       l_last_clip_ts  = .false.
     elseif ( wpsclrp_cl_num == 3 ) then
       l_first_clip_ts = .false.
@@ -294,6 +319,9 @@ module clip_explicit
     elseif ( upwp_cl_num == 2 ) then
       l_first_clip_ts = .false.
       l_last_clip_ts  = .false.
+    elseif ( upwp_cl_num == 3 ) then
+      l_first_clip_ts = .false.
+      l_last_clip_ts  = .true.
     endif
 
     ! Clip u'w'
@@ -336,6 +364,9 @@ module clip_explicit
     elseif ( vpwp_cl_num == 2 ) then
       l_first_clip_ts = .false.
       l_last_clip_ts  = .false.
+    elseif ( vpwp_cl_num == 3 ) then
+      l_first_clip_ts = .false.
+      l_last_clip_ts  = .true.
     endif
 
     if ( l_tke_aniso ) then
