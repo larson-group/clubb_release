@@ -201,15 +201,11 @@ module extend_atmosphere_mod
 
     ! Local Variable(s)
     integer :: k, j
+    double precision :: dz10, dz_model, dz
     integer :: extended_alt_index
-    double precision :: grid_top, extend_bottom
+    double precision :: grid_top, extend_bottom, buffer_size
 
     ! -- Begin Code --
-
-    ! Determine the linint buffer
-    lin_int_buffer_size = max( int( ( 1000.-mod( grid(grid_size), 1000. ) ) &
-                  *  grid_spacing(grid_size) ) -1  , 0 )
-
 
     ! Determine the bounds to use for the extended atmosphere
 
@@ -217,8 +213,6 @@ module extend_atmosphere_mod
     do while( extend_alt(j) < grid(grid_size) .and. j < extend_atmos_dim )
       j= j+1
     end do
-
-    ! j=j+1
 
     if(extend_alt(j) < grid(grid_size)) then
       stop "Extended atmosphere is below the top of the computational grid"
@@ -257,11 +251,23 @@ module extend_atmosphere_mod
       stop "radiation top below computational grid"
     end if
 
-    ! Set the total atmosphere size dimension
-    total_atmos_dim = grid_size + lin_int_buffer_size + extend_atmos_range_size
+    ! Get the altitudes for a couple of key points so we can calculate a buffer
+    ! size
     grid_top =  grid(grid_size) !Altitude at top of normal grid
     extend_bottom = extend_alt(extend_atmos_bottom_level) !Altitude at bottom of
                                                           !extended atmos
+    
+    ! Determine the spacing of the lin_int_buffer, it should have no more than
+    ! 10 levels.
+    dz10 = (extend_bottom - grid_top) / 10
+    dz_model = (extend_bottom - grid_top) * grid_spacing(grid_size)
+    dz = max(dz10, dz_model)
+    ! Calculate the size of the lin_int_buffer
+    buffer_size = (extend_bottom - grid_top) / dz
+    lin_int_buffer_size = int(buffer_size)
+
+    ! Calculate the dimension of the entire atmosphere
+    total_atmos_dim = grid_size + lin_int_buffer_size + extend_atmos_range_size
     
     allocate( complete_alt(1:total_atmos_dim) )
 
@@ -273,7 +279,8 @@ module extend_atmosphere_mod
       elseif(j > grid_size .and. j <= (grid_size + lin_int_buffer_size)) then 
         !Interpolate between the top of the computational grid and the bottom
         !of the extended altitude
-        complete_alt(j) = real(grid_top + ((extend_bottom - grid_top) / lin_int_buffer_size) * &
+        complete_alt(j) = real(grid_top + ((extend_bottom - grid_top) / & 
+                          (lin_int_buffer_size + 1)) * &
                           (j - grid_size))
       else    
         complete_alt(j) = real(extend_alt(extended_alt_index))
