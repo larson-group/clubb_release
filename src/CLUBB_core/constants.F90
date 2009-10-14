@@ -15,7 +15,7 @@ module constants
 
   implicit none
  
-  public :: fstderr, fstdin, fstdout, pi_dp, pi, sqrt_2pi, sqrt_2, &
+  public :: fstderr, fstdin, fstdout, pi_dp, pi, sqrt_2pi, sqrt_2, var_length, &
             Cp, Lv, Ls, Lf, Rd, Rv, ep, ep1, ep2, &
             kappa, grav, p0, vonk, rho_lw, &
             wtol, thltol, rttol, s_mellor_tol, & 
@@ -30,7 +30,7 @@ module constants
 
   ! Fortran file unit I/O constants
   integer, parameter ::  & 
-    fstderr = 0, fstdin = 5, fstdout = 6
+    fstderr = 0, fstdin = 5, fstdout = 6, var_length = 30
 
   ! Mathematical Constants
   double precision, parameter ::  & 

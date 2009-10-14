@@ -26,7 +26,8 @@ module inputfile_class
 
   use constants, only:  & 
     fstdout,  & ! Variable(s) 
-    fstderr
+    fstderr,  &
+    var_length
 
   use stats_precision, only:  & 
     time_precision ! Variable(s)
@@ -49,7 +50,7 @@ module inputfile_class
   ! Structure to hold description of a variable
   type variable
     integer :: index
-    character(len=15) :: name ! variable name
+    character(len=var_length) :: name ! variable name
   end type variable
 
   ! Structure to hold description of a GrADS input file

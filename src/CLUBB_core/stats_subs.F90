@@ -113,7 +113,7 @@ module stats_subs
       clubb_at_least_debug_level ! Function
 
     use constants, only: &
-      fstdout, fstderr ! Constants
+      fstdout, fstderr, var_length ! Constants
 
     implicit none
 
@@ -164,16 +164,16 @@ module stats_subs
 
     character(len=10) :: stats_fmt  ! File storage convention
 
-    character(len=30), dimension(nvarmax_zt) ::  & 
+    character(len=var_length), dimension(nvarmax_zt) ::  & 
       vars_zt  ! Variables on the thermodynamic levels
 
-    character(len=30), dimension(nvarmax_zm) ::  & 
+    character(len=var_length), dimension(nvarmax_zm) ::  & 
       vars_zm  ! Variables on the momentum levels
 
-    character(len=30), dimension(nvarmax_rad) ::  & 
+    character(len=var_length), dimension(nvarmax_rad) ::  & 
       vars_rad  ! Variables on the radiation levels
 
-    character(len=30), dimension(nvarmax_sfc) ::  &
+    character(len=var_length), dimension(nvarmax_sfc) ::  &
       vars_sfc ! Variables at the model surface
 
     namelist /statsnl/ & 
