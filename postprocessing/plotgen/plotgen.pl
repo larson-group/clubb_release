@@ -489,9 +489,6 @@ sub buildMatlabStringBudget()
     # Get array of plots from case file
     my @plots;
     push(@plots, @{$CASE::CASE{'plots'}});
-
-    my $units = $plots[0]{'axisLabel'};
-    my $type = $plots[0]{'type'};
     
     # Loop through each input folder and create a plot for each folder
     for(my $bgtPlotCount = 0; $bgtPlotCount < @inputDirs; $bgtPlotCount++)
@@ -501,6 +498,10 @@ sub buildMatlabStringBudget()
         # Loop through each plot in the Case file
         for(my $plotNum = 0; $plotNum < @plots; $plotNum++)
         {
+
+	    my $units = $plots[$plotNum]{'axisLabel'};
+	    my $type = $plots[$plotNum]{'type'};
+
             # Counters for automatic lines
             $lineStyleCounter = 0;
             $lineColorCounter = 0;
