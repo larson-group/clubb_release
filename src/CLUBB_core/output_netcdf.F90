@@ -82,6 +82,13 @@ module output_netcdf
    
     ! ---- Begin Code ----
 
+    ncf%nvar    = nvar
+
+    ! If there is no data to write, then return
+    if ( ncf%nvar == 0 ) then
+      return
+    end if
+
     ! Initialization for NetCDF
     ncf%l_defined = .false.
 
@@ -98,7 +105,6 @@ module output_netcdf
     ncf%time   = time
 
     ncf%dtwrite = dtwrite
-    ncf%nvar    = nvar
 
     ! From open_grads.
     ! This probably for the case of a reversed grid as in COAMPS
@@ -165,6 +171,13 @@ module output_netcdf
 
     integer :: i ! Array index
 
+    ! ---- Begin Code ----
+
+    ! If there is no data to write, then return
+    if ( ncf%nvar == 0 ) then
+      return
+    end if
+
     ncf%ntimes = ncf%ntimes + 1
 
     if ( .not. ncf%l_defined ) then
@@ -185,12 +198,6 @@ module output_netcdf
     end if
 
     do i = 1, ncf%nvar, 1
-!        provide values for the variables
-!        stat(i) = nf90_put_var( ncid=ncf%iounit, varid=ncf%var(i)%indx,
-!    .          values=reshape( ncf%var(i)%ptr(ncf%ia:ncf%iz),
-!    .                          (/1, 1, ncf%iz, 1/ ) ) ,
-!    .          start=(/1,1,1,ncf%ntimes/) )
-! Work around for a performance issue on pgf90
       stat(i)  & 
       = nf90_put_var( ncid=ncf%iounit, varid=ncf%var(i)%indx,  & 
                       values=ncf%var(i)%ptr(:,:,ncf%ia:ncf%iz),  & 
@@ -390,6 +397,7 @@ module output_netcdf
 
     use stat_file_module, only: & 
         stat_file ! Type
+
     use netcdf, only: & 
         NF90_NOERR,  & ! Variable
         nf90_close,  & ! Procedure(s)
@@ -405,6 +413,13 @@ module output_netcdf
 
     ! Local Variables
     integer :: stat
+
+    ! ---- Begin Code ----
+
+    ! If there is no data to write, then return
+    if ( ncf%nvar == 0 ) then
+      return
+    end if
 
     stat = nf90_close( ncf%iounit )
     if ( stat /= NF90_NOERR ) then
