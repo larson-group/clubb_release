@@ -493,7 +493,7 @@ sub buildMatlabStringBudget()
     # Loop through each input folder and create a plot for each folder
     for(my $bgtPlotCount = 0; $bgtPlotCount < @inputDirs; $bgtPlotCount++)
     {
-        my $plotTitle = basename($inputDirs[$plotCount]);
+        my $plotTitle = basename($inputDirs[$bgtPlotCount]);
         
         # Loop through each plot in the Case file
         for(my $plotNum = 0; $plotNum < @plots; $plotNum++)
