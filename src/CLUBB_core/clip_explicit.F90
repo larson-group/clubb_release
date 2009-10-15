@@ -509,6 +509,8 @@ module clip_explicit
     ! code does not need to be invoked at the lower boundary.  Likewise, the
     ! value of x'y' is set at the upper boundary, so the covariance clipping
     ! code does not need to be invoked at the upper boundary.
+    ! Note that if clipping were applied at the lower boundary, momentum will
+    ! not be conserved, therefore it should never be added.
     do k = 2, gr%nnzp-1, 1
 
       ! Clipping for xpyp at an upper limit corresponding with a correlation
@@ -533,7 +535,7 @@ module clip_explicit
 
       endif
 
-    enddo
+    enddo ! k = 2..gr%nnzp
 
     ! Since there is no covariance clipping at the upper or lower boundaries,
     ! the change in x'y' due to covariance clipping at those levels is 0.
