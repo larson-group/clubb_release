@@ -21,8 +21,8 @@ module advance_windm_edsclrm_module
   subroutine advance_windm_edsclrm &
              ( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref, &
                wp2, up2, vp2, um_forcing, vm_forcing, &
-               edsclrm_forcing, upwp_sfc, vpwp_sfc, &
-               wpedsclrp_sfc, fcor, l_implemented, &
+               edsclrm_forcing, &
+               fcor, l_implemented, &
                um, vm, edsclrm, &
                upwp, vpwp, wpedsclrp, err_code )
     ! Description:
@@ -109,11 +109,7 @@ module advance_windm_edsclrm_module
       edsclrm_forcing  ! Eddy scalar large-scale forcing             [{units vary}/s]
 
     real, intent(in) ::  &
-      upwp_sfc,    & ! u'w' at the surface (momentum level 1)        [m^2/s^2]
-      vpwp_sfc,    & ! v'w' at the surface (momentum level 1)        [m^2/s^2]
       fcor           ! Coriolis parameter                            [s^-1]
-    real, dimension(edsclr_dim), intent(in) :: &
-      wpedsclrp_sfc  ! w'edsclr' at the surface (momentum level 1)    [units vary]
 
     logical, intent(in) ::  &
       l_implemented  ! Flag for CLUBB being implemented in a larger model.
@@ -128,7 +124,7 @@ module advance_windm_edsclrm_module
       edsclrm        ! Mean eddy scalar quantity                     [units vary]
 
     ! Output Variables
-    real, dimension(gr%nnzp), intent(out) ::  &
+    real, dimension(gr%nnzp), intent(inout) ::  &
       upwp,        & ! u'w' (momentum levels)                        [m^2/s^2]
       vpwp           ! v'w' (momentum levels)                        [m^2/s^2]
 
@@ -196,24 +192,24 @@ module advance_windm_edsclrm_module
     ! Compute wind speed (use threshold "eps" to prevent divide-by-zero error).
     wind_speed = max( sqrt( um**2 + vm**2 ), eps )
     ! Compute u_star_sqd according to the definition of u_star.
-    u_star_sqd = sqrt( upwp_sfc**2 + vpwp_sfc**2 )
+    u_star_sqd = sqrt( upwp(1)**2 + vpwp(1)**2 )
 
     ! Compute the explicit portion of the um equation.
     ! Build the right-hand side vector.
     rhs(1:gr%nnzp,1) = windm_edsclrm_rhs( "um", dt, Kh_zm, um, um_tndcy,  &   ! in
-                                          l_imp_sfc_momentum_flux, upwp_sfc ) ! in
+                                          l_imp_sfc_momentum_flux, upwp(1) ) ! in
 
     ! Compute the explicit portion of the vm equation.
     ! Build the right-hand side vector.
     rhs(1:gr%nnzp,2) = windm_edsclrm_rhs( "vm", dt, Kh_zm, vm, vm_tndcy,  &   ! in
-                                          l_imp_sfc_momentum_flux, vpwp_sfc ) ! in
+                                          l_imp_sfc_momentum_flux, vpwp(1) ) ! in
 
 
     ! Store momentum flux (explicit component)
 
     ! The surface flux, x'w'(1) = x'w'|_sfc, is set elsewhere in the model.
-    upwp(1) = upwp_sfc
-    vpwp(1) = vpwp_sfc
+!   upwp(1) = upwp_sfc
+!   vpwp(1) = vpwp_sfc
 
     ! Solve for x'w' at all intermediate model levels.
     ! A Crank-Nicholson timestep is used.
@@ -385,14 +381,14 @@ module advance_windm_edsclrm_module
       do i = 1, edsclr_dim
         rhs(1:gr%nnzp,i)  &
         = windm_edsclrm_rhs( "scalars", dt, Kh_zm, edsclrm(:,i), edsclrm_forcing,  & ! in
-                             l_imp_sfc_momentum_flux, wpedsclrp_sfc(i) )     ! in
+                             l_imp_sfc_momentum_flux, wpedsclrp(1,i) )     ! in
       enddo
 
 
       ! Store momentum flux (explicit component)
 
       ! The surface flux, x'w'(1) = x'w'|_sfc, is set elsewhere in the model.
-      wpedsclrp(1,1:edsclr_dim) =  wpedsclrp_sfc(1:edsclr_dim)
+!     wpedsclrp(1,1:edsclr_dim) =  wpedsclrp_sfc(1:edsclr_dim)
 
       ! Solve for x'w' at all intermediate model levels.
       ! A Crank-Nicholson timestep is used.
@@ -470,8 +466,6 @@ module advance_windm_edsclrm_module
       write(fstderr,*) "wp2 = ", wp2
       write(fstderr,*) "up2 = ", up2
       write(fstderr,*) "vp2 = ", vp2
-      write(fstderr,*) "upwp_sfc = ", upwp_sfc
-      write(fstderr,*) "vpwp_sfc = ", vpwp_sfc
       write(fstderr,*) "fcor = ", fcor
       write(fstderr,*) "l_implemented = ", l_implemented
 
@@ -481,11 +475,12 @@ module advance_windm_edsclrm_module
       write(fstderr,*) "vm = ", vm
       write(fstderr,*) "edsclrm = ", edsclrm
 
-      write(fstderr,*) "Intent(out)"
-
       write(fstderr,*) "upwp = ", upwp
       write(fstderr,*) "vpwp = ", vpwp
       write(fstderr,*) "wpedsclrp = ", wpedsclrp
+
+      write(fstderr,*) "Intent(out)"
+
 
       return
 
