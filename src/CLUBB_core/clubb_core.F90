@@ -359,7 +359,8 @@ module clubb_core
 
     real, dimension(gr%nnzp) :: &
       p_in_Pa_zm, &  ! Pressure interpolated to momentum levels  [Pa]
-      exner_zm       ! Exner interpolated to momentum levels     [-]
+      exner_zm,   &  ! Exner interpolated to momentum levels     [-]
+      wp3_zm         ! w'^3 interpolated to momentum levels      [m^3/s^3]
 
     integer :: &
       wprtp_cl_num,   & ! Instance of w'r_t' clipping (1st or 3rd).
@@ -425,6 +426,7 @@ module clubb_core
     ! elsewhere in the code (e.g. WRF).  In other cases the _sfc variables will
     ! only be used to compute the variance at the surface. -dschanen 8 Sept 2009
     if ( .not. l_host_applies_sfc_fluxes ) then
+
       wpthlp(1) = wpthlp_sfc
       wprtp(1)  = wprtp_sfc
       upwp(1)   = upwp_sfc
@@ -440,6 +442,7 @@ module clubb_core
       end if
 
     else
+
       wpthlp(1) = 0.0
       wprtp(1)  = 0.0
       upwp(1)   = 0.0
@@ -455,6 +458,48 @@ module clubb_core
       end if
 
     end if
+
+    ! The right hand side of this conjunction is only for reducing cpu time,
+    ! since the more complicated formula is mathematically equivalent
+    if ( l_gamma_Skw .and. ( gamma_coef /= gamma_coefb ) ) then
+      !----------------------------------------------------------------
+      ! Compute gamma as a function of Skw  - 14 April 06 dschanen
+      !----------------------------------------------------------------
+
+      gamma_Skw_fnc = gamma_coefb + (gamma_coef-gamma_coefb) &
+            *exp( -(1.0/2.0) * (Skw_zm/gamma_coefc)**2 )
+
+    else
+
+      gamma_Skw_fnc = gamma_coef
+
+    end if
+
+    !----------------------------------------------------------------
+    ! Compute sigma_sqd_w with new formula from Vince
+    !----------------------------------------------------------------
+
+    sigma_sqd_w = gamma_Skw_fnc * &
+      ( 1.0 - min( &
+                  max( ( wpthlp / ( sqrt( wp2 * thlp2 )  &
+                      + 0.01 * wtol * thltol ) )**2, &
+                       ( wprtp / ( sqrt( wp2 * rtp2 )  &
+                      + 0.01 * wtol * rttol ) )**2 &
+                     ), & ! max
+             1.0 ) & ! min
+       )
+
+    sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )  ! Pos. def. quantity
+
+    !----------------------------------------------------------------
+    ! Interpolate wp2 & wp3, and then compute Skw for m & t grid
+    !----------------------------------------------------------------
+
+    wp2_zt = max( zm2zt( wp2 ), wtol_sqd ) ! Positive definite quantity
+    wp3_zm = zt2zm( wp3 )
+
+    Skw_zt(1:gr%nnzp) = Skw_func( wp2_zt(1:gr%nnzp), wp3(1:gr%nnzp) )
+    Skw_zm(1:gr%nnzp) = Skw_func( wp2(1:gr%nnzp), wp3_zm(1:gr%nnzp) )
 
     !----------------------------------------------------------------
     ! Set Surface variances
@@ -511,15 +556,6 @@ module clubb_core
 
 
     !----------------------------------------------------------------
-    ! Interpolate wp2 & wp3, and then compute Skw for m & t grid
-    !----------------------------------------------------------------
-
-    wp2_zt = max( zm2zt( wp2 ), wtol_sqd ) ! Positive definite quantity
-
-    Skw_zt(1:gr%nnzp) = Skw_func( wp2_zt(1:gr%nnzp), wp3(1:gr%nnzp) )
-    Skw_zm(1:gr%nnzp) = zt2zm( Skw_zt(1:gr%nnzp) ) 
-
-    !----------------------------------------------------------------
     ! Diagnose variances
     !----------------------------------------------------------------
 
@@ -570,37 +606,6 @@ module clubb_core
                                  wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, & ! intent(in)
                                  wprtp, wpthlp, upwp, vpwp, wpsclrp )        ! intent(inout)
 
-
-    ! The right hand side of this conjunction is only for reducing cpu time,
-    ! since the more complicated formula is mathematically equivalent
-    if ( l_gamma_Skw .and. ( gamma_coef /= gamma_coefb ) ) then
-      !----------------------------------------------------------------
-      ! Compute gamma as a function of Skw  - 14 April 06 dschanen
-      !----------------------------------------------------------------
-
-      gamma_Skw_fnc = gamma_coefb + (gamma_coef-gamma_coefb) & 
-            *exp( -(1.0/2.0) * (Skw_zm/gamma_coefc)**2 )
-
-    else
-      gamma_Skw_fnc = gamma_coef
-
-    end if
-
-    !----------------------------------------------------------------
-    ! Compute sigma_sqd_w with new formula from Vince
-    !----------------------------------------------------------------
-
-    sigma_sqd_w = gamma_Skw_fnc * &
-      ( 1.0 - min( & 
-                  max( ( wpthlp / ( sqrt( wp2 * thlp2 )  & 
-                      + 0.01 * wtol * thltol ) )**2, & 
-                       ( wprtp / ( sqrt( wp2 * rtp2 )  & 
-                      + 0.01 * wtol * rttol ) )**2 &
-                     ), & ! max  
-             1.0 ) & ! min 
-       )
-
-    sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )  ! Pos. def. quantity
 
     !----------------------------------------------------------------
     ! Call closure scheme
