@@ -2,95 +2,94 @@
 !----------------------------------------------------------------------
 module atex_cloud_rad
 
-implicit none
+  implicit none
 
-public :: cloud_rad
+  public :: cloud_rad
 
-private ! Default Scope
+  private ! Default Scope
 
-contains
+  contains
 !----------------------------------------------------------------------
-subroutine cloud_rad( rho, rcm, exner, Frad, radht,  & 
-                      thlm_forcing )
-!       Description:
-!       Subroutine to compute cloud IR radiation using a simple scheme
-!       based on LWP
+  subroutine cloud_rad( rho, rcm, exner, Frad, radht,  & 
+                        thlm_forcing )
+! Description:
+!   Subroutine to compute cloud IR radiation using a simple scheme
+!   based on LWP
 
-!       References:
+! References:
+!   None
 
-!       Notes:
-!       Based on GCSS ATEX intercomparison case
+! Notes:
+!  Based on GCSS ATEX intercomparison case
 !----------------------------------------------------------------------
 
-use grid_class, only: gr ! Variable(s)
+    use grid_class, only: gr ! Variable(s)
 
-use grid_class, only: ddzm ! Procedure(s)
+    use grid_class, only: ddzm ! Procedure(s)
 
-use constants, only: Cp ! Variable(s)
+    use constants, only: Cp ! Variable(s)
 
-use parameters_radiation, only: F0, kappa
+    use parameters_radiation, only: F0, kappa
 
-implicit none
+    implicit none
 
-! External
-intrinsic :: exp
+    ! External
+    intrinsic :: exp
 
-! Constant parameters
-!real, parameter :: F0 = 74., ktemp = 130.
+    ! Input Variables
+    real, dimension(gr%nnzp), intent(in) ::  & 
+      rho,  & ! Density (thermo point)          [kg/m^3]
+      rcm,  & ! Liquid water mixing ratio       [kg/kg]
+      exner   ! Exner function                  [-]
 
-! Input Variables
-real, dimension(gr%nnzp), intent(in) ::  & 
-  rho,  & ! Density (thermo point)          [kg/m^3]
-  rcm,   & ! Liquid water mixing ratio       [kg/kg]
-  exner ! Exner function                  [-]
+    ! Output Variables
+    real, dimension(gr%nnzp), intent(out) ::  & 
+      Frad, & ! IR radiative flux               [W/m^2]
+      radht   ! Radiative heating rate          [K/s]
 
-! Output Variables
-real, dimension(gr%nnzp), intent(out) ::  & 
-  Frad,  & ! IR radiative flux               [W/m^2]
-  radht ! Radiative heating rate          [K/s]
+    real, dimension(gr%nnzp), intent(inout) ::  & 
+      thlm_forcing ! Radht + LS      [K/s]
 
-real, dimension(gr%nnzp), intent(inout) ::  & 
-  thlm_forcing ! Radht + LS      [K/s]
+    ! Local Variables
+    real, dimension(1:gr%nnzp) :: LWP        ! Liquid Water Path
 
-! Local Variables
-real, dimension(1:gr%nnzp) :: LWP        ! Liquid Water Path
+    integer :: k
 
-integer :: k
+    ! ---- Begin Code ----
 
+    ! Compute liquid water path from top of the model
+    ! We define liquid water path on momentum levels
+    LWP(gr%nnzp) = 0.
 
-! Compute liquid water path from top of the model
-! We define liquid water path on momentum levels
-LWP(gr%nnzp) = 0.
+    do k = gr%nnzp-1, 1, -1
 
-do k = gr%nnzp-1, 1, -1
+      LWP(k) = LWP(k+1) + rho(k+1) * rcm(k+1) / gr%dzt(k+1)
 
-  LWP(k) = LWP(k+1) + rho(k+1) * rcm(k+1) / gr%dzt(k+1)
+    end do ! k=gr%nnzp..1
 
-end do ! k=gr%nnzp..1
+    ! Compute IR radiative flux
 
-! Compute IR radiative flux
+    do k = 1, gr%nnzp, 1
 
-do k = 1, gr%nnzp, 1
+      Frad(k) = F0 * EXP( -kappa * 1.0 * LWP(k) )
 
-  Frad(k) = F0 * EXP( -kappa * 1.0 * LWP(k) )
+    end do
 
-end do
+    ! Compute IR heating rate
 
-! Compute IR heating rate
+    radht(1:gr%nnzp) & 
+    = ( -1.0/(Cp*rho(1:gr%nnzp) ) * ddzm( Frad(1:gr%nnzp) )  & 
+      * 1.0 / exner(1:gr%nnzp) )
 
-radht(1:gr%nnzp) & 
-= ( -1.0/(Cp*rho(1:gr%nnzp) ) * ddzm( Frad(1:gr%nnzp) )  & 
-  * 1.0 / exner(1:gr%nnzp) )
+    radht(1)       = 0.
+    radht(gr%nnzp) = 0.
 
-radht(1)       = 0.
-radht(gr%nnzp) = 0.
+    ! Note that for ATEX after 90 minutes, advect and clear air
+    ! radiation must be added in from atex_tndcy
+    thlm_forcing(1:gr%nnzp)  & 
+    = thlm_forcing(1:gr%nnzp) + radht(1:gr%nnzp)
 
-! Note that for ATEX after 90 minutes, advect and clear air
-! radiation must be added in from atex_tndcy
-thlm_forcing(1:gr%nnzp)  & 
-= thlm_forcing(1:gr%nnzp) + radht(1:gr%nnzp)
-
-return
-end subroutine cloud_rad
+    return
+  end subroutine cloud_rad
 
 end module atex_cloud_rad
