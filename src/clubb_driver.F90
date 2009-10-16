@@ -115,7 +115,7 @@ module clubb_driver
 
   !-----------------------------------------------------------------------
   subroutine run_clubb & 
-             ( params, runfile, err_code, l_stdout, l_input_fields )
+             ( params, runfile, err_code, l_stdout )
     ! Description:
     !   Subprogram to integrate the pde equations for pdf closure.
 
@@ -155,7 +155,8 @@ module clubb_driver
 
     use numerical_check, only: invalid_model_arrays ! Procedure(s)
 
-    use inputfields, only: compute_timestep, stat_fields_reader ! Procedure(s)
+    use inputfields, only: &
+      inputfields_init, compute_timestep, stat_fields_reader ! Procedure(s)
 
     use inputfields, only: stat_file_zt
 
@@ -257,8 +258,7 @@ module clubb_driver
 
     ! Input Variables
     logical, intent(in) ::  & 
-      l_stdout,        & ! Whether to print output per timestep
-      l_input_fields    ! Whether to set model variables from a file
+      l_stdout   ! Whether to print output per timestep
 
     real, intent(in), dimension(nparams) ::  & 
       params  ! Model parameters, C1, nu2, etc.
@@ -295,6 +295,7 @@ module clubb_driver
       l_soil_veg,     & ! Flag for simple surface scheme
       l_uv_nudge,     & ! Whether to adjust the winds within the timestep
       l_restart,      & ! Flag for restarting from GrADS file
+      l_input_fields, & ! Whether to set model variables from a file
       l_tke_aniso       ! For anisotropic turbulent kinetic energy,
                         ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 
@@ -360,7 +361,7 @@ module clubb_driver
       saturation_formula, &
       thlm_sponge_damp_settings, rtm_sponge_damp_settings, uv_sponge_damp_settings, &
       l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
-      time_restart, debug_level, & 
+      time_restart, l_input_fields, debug_level, & 
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
       edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2
 
@@ -434,6 +435,7 @@ module clubb_driver
     l_tke_aniso    = .false.
     l_uv_nudge     = .false.
     l_restart      = .false.
+    l_input_fields  = .false.
     restart_path_case = "none"
     time_restart  = 0.
     debug_level   = 2
@@ -641,6 +643,7 @@ module clubb_driver
       call write_text( "l_tke_aniso = ", l_tke_aniso, l_write_to_file, iunit )
       call write_text( "l_uv_nudge = ", l_uv_nudge, l_write_to_file, iunit )
       call write_text( "l_restart = ", l_restart, l_write_to_file, iunit )
+      call write_text( "l_input_fields = ", l_input_fields, l_write_to_file, iunit )
       call write_text( "restart_path_case = " // restart_path_case, l_write_to_file, iunit )
       call write_text( "time_restart = ", real( time_restart ), l_write_to_file, iunit )
       call write_text( "debug_level = ", debug_level, l_write_to_file, iunit )
@@ -703,7 +706,13 @@ module clubb_driver
     call init_microphys( iunit, runfile, & ! Intent(in)
                          hydromet_dim )    ! Intent(out)
 
+    ! Setup radiation parameters
     call init_radiation( iunit, runfile ) ! Intent(in)
+
+    ! Setup filenames and variables to set for setfields, if enabled
+    if ( l_input_fields ) then
+      call inputfields_init( iunit, runfile ) ! Intent(in)
+    end if
 
     ! Allocate & initialize variables,
     ! setup grid, setup constants, and setup flags
@@ -843,8 +852,6 @@ module clubb_driver
         ! Joshua Fasching March 2008
         call stats_begin_timestep( time_current-time_restart+dtmain, dtmain ) ! Intent(in)
       end if
-
-
 
       ! If we're doing an inputfields run, get the values for our
       ! model arrays from a netCDF or GrADS file

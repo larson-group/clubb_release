@@ -30,8 +30,7 @@ program clubb_standalone
     namelist_filename = "clubb.in"  ! Text file with the namelists
 
   logical, parameter :: &
-    l_stdout       = .true., &
-    l_input_fields = .false.
+    l_stdout = .true.
 
   ! Run information
   real, dimension(nparams) :: & 
@@ -51,7 +50,7 @@ program clubb_standalone
   err_code = clubb_no_error
 
   ! Run the model
-  call run_clubb( params, namelist_filename, err_code, l_stdout, l_input_fields )
+  call run_clubb( params, namelist_filename, err_code, l_stdout )
 
   if ( fatal_error( err_code ) ) then
     stop "Model wasn't valid, check your parameters and timestep"

@@ -134,7 +134,7 @@ iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thet
 &microphysics_setting
 l_cloud_sed  = .false.  ! Flag for cloud water sedimentation.
 ! The schemes are: "khairoutdinov_kogan", "morrison", "coamps", "simplified_ice", "none"  
-micro_scheme = "khairoutdinov_kogan"
+micro_scheme = "morrison"
 Ncm_initial  = 55. ! #/cm3
 /
 

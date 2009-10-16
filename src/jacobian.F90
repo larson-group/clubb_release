@@ -167,8 +167,7 @@ program jacobian
   end do
 
   call run_clubb  & 
-       ( clubb_params%value(:), 'jacobian.in', err_code,  & 
-        .false., .false. )
+       ( clubb_params%value(:), 'jacobian.in', err_code, .false. )
 
   if ( fatal_error(err_code) ) then
     stop "The initial set of parameters caused a fatal error."
@@ -265,8 +264,7 @@ program jacobian
     clubb_params%value(i) = clubb_params%value(i) * delta_factor
 
     call run_clubb & 
-      ( clubb_params%value(:), 'jacobian.in', err_code, & 
-         .false., .false. )
+      ( clubb_params%value(:), 'jacobian.in', err_code, .false. )
 
     ! Print a period so the user knows something is happening
     write(unit=fstdout, fmt='(a1)', advance='no') "."

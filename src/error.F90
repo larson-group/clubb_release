@@ -556,8 +556,7 @@ module error
       ! Run the CLUBB model with parameters as input
 
       call run_clubb & 
-           ( params_local, run_file(c_run), run_stat(c_run),  & 
-             .false., .false. )
+           ( params_local, run_file(c_run), run_stat(c_run), .false. )
 
     end do ! 1..c_run
 !$omp end parallel do

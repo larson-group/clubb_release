@@ -39,6 +39,7 @@ module inputfields
 
   public  :: stat_fields_reader, &
              compute_timestep, &
+             inputfields_init, &
              set_filenames
 
   private ! Default Scope
@@ -2555,6 +2556,129 @@ module inputfields
 
     return
   end subroutine get_clubb_variable_interpolated
+
+!-------------------------------------------------------------------------------
+  subroutine inputfields_init( iunit, namelist_filename )
+
+! Description:
+!   This subroutine reads in a namelist to determine which variables are to be 
+!   read in, etc.
+
+! References:
+!   None
+!-------------------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    character(len=*), intent(in) :: &
+      namelist_filename
+
+    integer, intent(in) :: iunit
+
+    ! Local variables
+    character(len=98) :: datafile
+
+    ! Namelist definitions
+    namelist /setfields/ datafile, input_type, & 
+      input_um, input_vm, input_rtm, input_thlm, & 
+      input_wp2, input_wprtp, input_wpthlp,  & 
+      input_wp3, input_rtp2, input_thlp2,  & 
+      input_rtpthlp, input_upwp, input_vpwp, & 
+      input_ug, input_vg, input_rcm,  & 
+      input_wm_zt, input_exner, input_em, & 
+      input_p, input_rho, input_rho_zm, & 
+      input_Lscale, input_Lscale_up, input_Lscale_down, & 
+      input_Kh_zt, input_Kh_zm, input_tau_zm, input_tau_zt, & 
+      input_wpthvp, &
+      input_thl1, input_thl2, input_a, input_s1, input_s2, &
+      input_stdev_s1, input_stdev_s2, input_rc1, input_rc2, &
+      input_thvm, input_rrainm,input_Nrm,  & 
+      input_rsnowm, input_ricem, input_rgraupelm,  & 
+      input_thlm_forcing, input_rtm_forcing, & 
+      input_up2, input_vp2, input_sigma_sqd_w, input_Ncm,  & 
+      input_Ncnm, input_Nim, input_cloud_frac, input_sigma_sqd_w_zt, &
+      input_veg_T_in_K, input_deep_soil_T_in_K, &
+      input_sfc_soil_T_in_K
+
+    ! --- Begin Code ---
+
+    ! Pick some initial values
+    datafile = ''
+    input_type = 'hoc'
+
+    input_um = .false.
+    input_vm = .false.
+    input_rtm = .false.
+    input_thlm  = .false.
+    input_wp2 = .false.
+    input_wprtp = .false.
+    input_wpthlp = .false.
+    input_wp3 = .false.
+    input_rtp2 = .false.
+    input_thlp2 = .false.
+    input_rtpthlp = .false.
+    input_upwp = .false.
+    input_vpwp = .false.
+    input_ug = .false.
+    input_vg = .false.
+    input_rcm = .false.
+    input_wm_zt = .false.
+    input_exner = .false.
+    input_em = .false.
+    input_p = .false.
+    input_rho = .false.
+    input_Lscale = .false.
+    input_Lscale_up = .false.
+    input_Lscale_down = .false.
+    input_Kh_zt = .false.
+    input_Kh_zm = .false.
+    input_tau_zm = .false.
+    input_tau_zt = .false.
+    input_wpthvp = .false.
+    input_thl1 = .false.
+    input_thl2 = .false.
+    input_a = .false.
+    input_s1 = .false.
+    input_s2 = .false.
+    input_stdev_s1 = .false.
+    input_stdev_s2 = .false.
+    input_rc1 = .false.
+    input_rc2 = .false.
+    input_thvm = .false.
+    input_rrainm = .false.
+    input_Nrm = .false.
+    input_rsnowm = .false.
+    input_ricem = .false.
+    input_rgraupelm = .false.
+    input_thlm_forcing = .false.
+    input_rtm_forcing = .false.
+    input_up2 = .false.
+    input_vp2 = .false.
+    input_sigma_sqd_w = .false.
+    input_Ncm = .false.
+    input_Ncnm = .false.
+    input_Nim = .false.
+    input_cloud_frac = .false.
+    input_sigma_sqd_w_zt = .false.
+    input_veg_T_in_K = .false.
+    input_deep_soil_T_in_K = .false.
+    input_sfc_soil_T_in_K  = .false.
+
+    print *, namelist_filename
+    ! Read in our namelist
+    open(unit=iunit, file=namelist_filename, status='old', action='read')
+
+    read(unit=iunit, nml=setfields)
+
+    close(unit=iunit)
+
+    ! Setup the GrADS file reader
+    call set_filenames( datafile )
+
+    return
+  end subroutine inputfields_init
+!-----------------------------------------------------------------------
 
 !===============================================================================
 

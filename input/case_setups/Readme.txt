@@ -133,6 +133,12 @@ restart_path_case | character
 time_restart | real, minimum of 12 digits of precision
   Time of model restart.  [seconds since start time in stat file]
 
+l_input_fields | logical
+  Flag for whether this is an inputfields simulation, i.e.  we will set the
+  certain fields at the beginning of each timestep based on netCDF or GrADS
+  data in a stats file for the purposes of diagnosing structural problems
+  within the clubb equations.
+
 debug_level | integer
   0 => Print no debug messages to the screen
   1 => Print lightweight debug messages, e.g. print statements
@@ -378,3 +384,23 @@ Other files in the case_setups directory:
 
 <Case Name>_surface.in
   Surface flux information.
+
+--------------------------------------------------------------------------------
+5. &setfields
+--------------------------------------------------------------------------------
+Name | Data type
+------------------------------------------
+
+datafile | character
+  Beginning of the name of the file.  The assumed end of the filename is then
+  appended based on whether the data is from CLUBB or COAMPS-LES,
+  i.e. _zt, _zm, or _coamps_sm, _coamps_sw.
+
+input_type | character
+  Either 'les' or 'hoc' depending whether the data is from CLUBB or
+  COAMPS-LES.
+
+input_<varname> |logical
+  Whether the use the values of the given field will be reset based on data at
+  each timestep in the simulation.
+

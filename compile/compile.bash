@@ -5,7 +5,6 @@
 # Compilation script for CLUBB. It generates:
 #  - libraries: libclubb_bugsrad.a, libclubb_param.a, libclubb_coamps.a
 #  - executables: clubb_standalone clubb_tuner jacobian int2txt
-#      clubb_inputfields
 #
 # Sub-makefiles for each target are automatically generated using the 
 # 'mkmf' utility. Dependencies among source files are sorted out by 'mkmf'. 
@@ -19,9 +18,8 @@
 # - file_list/bugsrad_files : files needed for libclubb_bugsrad.a
 # - file_list/param_files : files needed for libclubb_param.a
 # - file_list/model_files : files needed for clubb_standalone, clubb_tuner, 
-#                           clubb_inputfields, and jacobian
+#                           and jacobian
 # - file_list/clubb_standalone_files : files needed for clubb_standalone
-# - file_list/clubb_inputfields_files : files needed for clubb_inputfields
 # - file_list/clubb_tuner_files : files needed for clubb_tuner
 # - file_list/jacobian_files : files needed for jacobian
 # - file_list/int2txt_files : files needed for int2txt
@@ -148,10 +146,6 @@ $mkmf -t $bindir/mkmf_template -p $bindir/clubb_standalone \
   $dir/file_list/clubb_standalone_files $dir/file_list/clubb_optional_files \
   $dir/file_list/clubb_model_files
 
-$mkmf -t $bindir/mkmf_template -p $bindir/clubb_inputfields \
-  -m Make.clubb_inputfields -c "${WARNINGS}" $dir/file_list/clubb_inputfields_files \
-  $dir/file_list/clubb_optional_files $dir/file_list/clubb_model_files
-
 $mkmf -t $bindir/mkmf_template -p $bindir/clubb_tuner \
   -m Make.clubb_tuner -c "${WARNINGS}" $dir/file_list/clubb_tuner_files \
   $dir/file_list/clubb_optional_files $dir/file_list/clubb_model_files \
@@ -187,7 +181,7 @@ cat > Makefile << EOF
 # Edit 'compile.bash' to customize.
 
 all:	libclubb_param.a libclubb_bugsrad.a clubb_standalone clubb_tuner \
-	jacobian clubb_inputfields int2txt
+	jacobian int2txt
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/*.F90
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/CLUBB_core/*.F90
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/Benchmark_cases/*.F90
@@ -214,10 +208,6 @@ clubb_tuner: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a
 	-rm -f $bindir/clubb_tuner
 	cd $objdir; $gmake -f Make.clubb_tuner
 
-clubb_inputfields: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a
-	-rm -f $bindir/clubb_inputfields
-	cd $objdir; $gmake -f Make.clubb_inputfields
-
 jacobian: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a
 	-rm -f $bindir/jacobian
 	cd $objdir; $gmake -f Make.jacobian
@@ -233,7 +223,6 @@ distclean:
 	-rm -f $objdir/*.o $objdir/*.mod $objdir/Make.* \
         $libdir/lib* \
         $bindir/clubb_standalone \
-        $bindir/clubb_inputfields \
         $bindir/clubb_tuner \
         $bindir/int2txt \
         $bindir/jacobian \
