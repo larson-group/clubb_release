@@ -260,7 +260,7 @@ module extend_atmosphere_mod
     ! Determine the spacing of the lin_int_buffer, it should have no more than
     ! 10 levels.
     dz10 = (extend_bottom - grid_top) / 10
-    dz_model = (extend_bottom - grid_top) * grid_spacing(grid_size)
+    dz_model = grid_spacing(grid_size)
     dz = max(dz10, dz_model)
     ! Calculate the size of the lin_int_buffer
     buffer_size = (extend_bottom - grid_top) / dz
