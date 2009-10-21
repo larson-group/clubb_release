@@ -5,11 +5,8 @@ module stat_file_utils
 
   public :: stat_file_average, stat_file_average_interval, &
     stat_file_num_vertical_levels, stat_file_vertical_levels, &
-    LES_grid_to_CLUBB_grid, CLUBB_levels_within_LES_domain
+    LES_grid_to_CLUBB_grid, CLUBB_levels_within_LES_domain, l_netcdf_file
         
-
-  private :: l_netcdf_file
-
   private ! Default Scope
 
   contains
@@ -130,8 +127,8 @@ module stat_file_utils
     stat_file_average = 0.0
 
     ! Determine file type
-    l_grads_file = .not. l_netcdf_file( filename )  
-
+    l_grads_file = .not. l_netcdf_file( filename ) 
+    
     ! Open GraDS file
     if ( l_grads_file ) then
 

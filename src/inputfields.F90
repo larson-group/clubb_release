@@ -250,7 +250,6 @@ module inputfields
 
     case( "hoc" )
 
-
       !  Thermo grid - zt file
 
       ! Initialize l_fatal_error for case ( "hoc" )
@@ -2401,6 +2400,9 @@ module inputfields
     use stat_file_module, only: & 
         stat_file     ! Type
 
+    use stat_file_utils, only: &
+        l_netcdf_file
+
     use inputfile_class, only: &
         open_grads_read,  & ! Procedure(s)
         close_grads_read
@@ -2410,6 +2412,10 @@ module inputfields
 
     use stats_precision, only:  & 
         time_precision
+
+#ifdef NETCDF
+    use input_netcdf, only: open_netcdf_read, close_netcdf_read ! Procedure(s)
+#endif
 
     implicit none
 
@@ -2434,9 +2440,23 @@ module inputfields
 
     real(kind=time_precision) :: delta_time   ! In seconds
 
+    logical :: l_grads_file, l_error
+
     ! ---- Begin Code ----
 
-    call open_grads_read( iunit, trim( filename ), fread_var )
+    l_grads_file = .not. l_netcdf_file( filename )
+
+    if ( l_grads_file ) then
+      ! Read in the control file
+      call open_grads_read( iunit, trim( filename ), fread_var )
+    
+    else
+#ifdef NETCDF
+      call open_netcdf_read( 'thlm', trim( filename ), fread_var, l_error )
+#else
+      write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
+#endif
+    endif
 
     ! (restart time) - (initial time)
     delta_time = time - (fread_var%time - fread_var%dtwrite)
@@ -2492,7 +2512,13 @@ module inputfields
                      (fread_var%dtwrite/sec_per_min) ) - 1
     end if ! l_restart
 
-    call close_grads_read( fread_var )
+    if ( l_grads_file ) then
+      call close_grads_read( fread_var )
+    else
+#ifdef NETCDF
+      call close_netcdf_read( fread_var )
+#endif
+    end if
 
   end subroutine compute_timestep
 !===============================================================================

@@ -4,8 +4,10 @@
 module input_netcdf
 #ifdef NETCDF
   use constants, only:  & 
-    fstdout,  & ! Variable(s) 
-    fstderr
+    fstdout,    & ! Variable(s) 
+    fstderr,    &
+    sec_per_hr, &
+    sec_per_min 
 
   implicit none
 
@@ -25,6 +27,7 @@ module input_netcdf
     use netcdf, only: &
       nf90_inq_varid, & ! Function(s)
       nf90_get_var, &
+      nf90_get_att, &
       nf90_inquire_variable, &
       nf90_open, &
       nf90_strerror, &
@@ -37,7 +40,10 @@ module input_netcdf
       NF90_FLOAT, &
       NF90_MAX_NAME
 
-    use stat_file_module, only: stat_file
+    use stat_file_module, only: stat_file ! Type
+
+    use stats_precision, only: &
+      time_precision
 
     implicit none
 
@@ -57,8 +63,16 @@ module input_netcdf
     integer :: i, ierr, itmp, varid, xtype
 
     integer :: xdim, ydim, ndims
+    
+    real :: hours, minutes, seconds, multiplier
 
-    character(len=NF90_MAX_NAME) :: zname, dim_name
+    integer :: length
+    
+    real, dimension(2) :: write_times
+
+    character(len=80) :: time
+
+    character(len=NF90_MAX_NAME) :: zname, time_name, dim_name
 
     integer, dimension(NF90_MAX_VAR_DIMS) :: dimIds
 
@@ -121,6 +135,7 @@ module input_netcdf
       case ( "T", "t", "time" )
         ncf%ntimes = itmp
         ncf%TimeDimId = dimIds(i)
+        time_name = dim_name
       case default
         l_error = .true.
         return
@@ -137,28 +152,70 @@ module input_netcdf
       
 
     if ( .not. l_error ) then
+
+      ! Allocate altitudes
       allocate( ncf%z(ncf%iz) )
 
+      ! Determine the altitudes
       ierr = nf90_inq_varid( ncid=ncf%iounit, name=trim( zname ), varid=ncf%AltVarId )
       if ( ierr /= NF90_NOERR ) then
         write(fstderr,*) nf90_strerror( ierr )
         l_error = .true.
       end if
 
-      ierr = nf90_inquire_variable( ncid=ncf%iounit, varid=ncf%AltVarId, ndims=itmp )
+!     ierr = nf90_inquire_variable( ncid=ncf%iounit, varid=ncf%AltVarId, & ! In
+!                                   ndims=itmp ) ! Out
 
       if ( ierr /= NF90_NOERR ) then
         write(fstderr,*) nf90_strerror( ierr )
         l_error = .true.
       end if
 
-      ierr = nf90_get_var( ncid=ncf%iounit, varid=ncf%AltVarId, start=(/1/), &
-                           count=(/ncf%iz/), values=ncf%z(:) )
+      ierr = nf90_get_var( ncid=ncf%iounit, varid=ncf%AltVarId, & ! In
+                           start=(/1/), count=(/ncf%iz/), & ! In
+                           values=ncf%z(:) ) ! Out
 
       if ( ierr /= NF90_NOERR ) then
         write(fstderr,*) nf90_strerror( ierr )
         l_error = .true.
       end if
+
+      ierr = nf90_inq_varid( ncid=ncf%iounit, name=trim( time_name ), varid=ncf%TimeVarId )
+      if ( ierr /= NF90_NOERR ) then
+        write(fstderr,*) nf90_strerror( ierr )
+        l_error = .true.
+      end if
+
+!     ierr = nf90_inquire_variable( ncid=ncf%iounit, varid=ncf%TimeVarId, & ! In
+!                                   ndims=itmp ) ! Out
+
+      ierr = nf90_get_att( ncid=ncf%iounit, varid=ncf%TimeVarId, name="units", & ! In
+                           values=time ) ! Out
+
+      time = trim ( time )
+      length = len ( trim ( time ) )
+      read(time( length-10:length-8 ), *) hours
+      read(time( length-6:length-5 ), *) minutes
+      read(time( length-3:length - 2 ), *) seconds
+      ncf%time =  (hours * sec_per_hr) + (minutes * sec_per_min) + seconds
+
+      ! Figure out what units Time is in so dtwrite can be set correctly
+      select case ( time( 1:index ( time, ' ' ) ) )
+      case ( "hours" )
+        multiplier = sec_per_hr
+      case ( "minutes" )
+        multiplier = sec_per_min
+      case ( "seconds" )
+        multiplier = 1.
+      case default
+        l_error = .true.
+        return
+      end select
+
+      ierr = nf90_get_var( ncid=ncf%iounit, varid=ncf%TimeVarId, & ! In
+                           start=(/1/), count=(/2/), & ! In
+                           values=write_times ) ! Out
+      ncf%dtwrite = real( (write_times(2) - write_times(1)) * multiplier, kind=time_precision )
 
     end if
 

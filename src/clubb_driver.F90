@@ -1827,7 +1827,7 @@ module clubb_driver
         input_up2, input_vp2, input_sigma_sqd_w, input_Ncm,  & 
         input_Ncnm, input_Nim, input_cloud_frac, input_sigma_sqd_w_zt, &
         input_veg_T_in_K, input_deep_soil_T_in_K, &
-        input_sfc_soil_T_in_K
+        input_sfc_soil_T_in_K, stat_file_zt
 
     use inputfields, only: &
       compute_timestep,  & ! Procedure(s)
@@ -1990,7 +1990,7 @@ module clubb_driver
     ! Determine the nearest timestep in the GRADS file to the
     ! restart time.
     call compute_timestep &
-      ( iunit, "../"//trim( restart_path_case )//"_zt.ctl", .true., time_restart, &! Intent(in)
+      ( iunit, stat_file_zt, .true., time_restart, &! Intent(in)
         timestep )                                                                 ! Intent(out)
 
     ! Sanity check for input time_restart
