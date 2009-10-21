@@ -102,7 +102,7 @@
           {'filename' => '/home/matlabuser/plotgen/LES_files/jun25_altocu_qc3_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'vp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => 'red'},
           {'filename' => 'jun25_altocu_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Rain Water Mixing Ratio, r_t', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/jun25_altocu_qc3_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qrm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => 'red'},
           {'filename' => 'jun25_altocu_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}

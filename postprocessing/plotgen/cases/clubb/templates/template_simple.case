@@ -84,7 +84,7 @@
        [
           {'filename' => 'case_name_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Rain Water Mixing Ratio, r_t', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'case_name_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},

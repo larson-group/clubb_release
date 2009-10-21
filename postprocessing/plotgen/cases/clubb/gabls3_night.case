@@ -100,7 +100,7 @@
           {'filename' => '/home/matlabuser/plotgen/LES_files/gabls3_night.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'V2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'gabls3_night_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Rain Water Mixing Ratio, r_t', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'gabls3_night_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
