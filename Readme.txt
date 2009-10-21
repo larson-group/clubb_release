@@ -373,33 +373,40 @@ The new simulation is then called a "restart" simulation.
     ./run_scm.bash <CASE NAME>
 
 -----------------------------------------------------------------------
-- (3.2) Executing a clubb_inputfields run:
+- (3.2) Executing a single-column run with fields input from LES:
 -----------------------------------------------------------------------
 
-One supported mode of running clubb is to use GrADS data from either a
+One supported mode of running clubb is to use GrADS or netCDF data from either a
 prior CLUBB run or a horizontally averaged set of data from an LES to
 set some of the prognosed variables to the data set's values at each timestep.
 E.g. If desired, the horizontal winds (variables um and vm in the code)
 could be fixed to the COAMPS-LES value at each timestep, while the other
 fields will evolve as in the standard single-column run.
 
-Currently, the only LES data the code works with comes from COAMPS.
+Currently, we have only tested the code with GrADS data from COAMPS-LES
+and netCDF data from SAM-LES.  Data from CLUBB also appears to work, but
+should result in similar results not using input_fields and so is less useful.
 
-The relevant namelist files are in <CLUBB BASE DIRECTORY>/input_misc/inputfields, 
-and new cases could be added using the existing cases as a template.
+The relevant namelist files are in the input/<Model Case>_model.in files.  The
+variable l_input_fields enabled the code when true, and then a separate
+namelist called &setfields is used to control which variables are read in.
 
-To execute an inputfields run, you need to set the 'datafile' variable in the
-namelist to the location of the data files, and set 'input_'<varname> to
+To execute an input fields run, you need to set the 'datafile' variable in the
+setfields namelist to the location of the data files, and set 'input_'<varname> to
 .true. for those fields for which you want to use a fixed value from
-the GrADS dataset at the beginning of each timestep.
+the LES dataset at the beginning of each timestep.
 
 You will need to set 'input_type' to the type of run you are using for input
-("hoc" or "les").
+to "hoc", "les", or "rf1".  The last option is a special case for COAMPS-LES
+DYCOMS II RF01, which lacks both bottom data points with the standard CLUBB
+grid.
 
-Then, change your directory to run_scripts and execute the run_inputfields.bash
-script like so:
+Then, change your directory to run_scripts and execute the run_scm.bash
+as you would usually.
 
-  ./run_inputfields.bash <CASE NAME>
+Note the input fields code will also work for tuning runs, if the tuner is
+configured to use a <Case Name>_model.in with the input fields options
+enabled.
 
 -----------------------------------------------------------------------
 - (3.3) Executing a tuning run:
