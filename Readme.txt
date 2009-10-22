@@ -434,7 +434,9 @@ Do steps 1, 2, & 3 as outlined in the standalone run.
 
 5. You may also wish to set the debug_level to 0 in the file
    input/case_setups/<CASE_NAME>_model.in to speed up tuning, 
-   and stats_tout to 60.0.
+   and stats_tout to 60.0.  The tuner also supports setting l_input_fields
+   to .true. for for the purposes of `fixing' variables such as um or vm for
+   the purposes of isolating model errors.
 
 6. Edit run_tuner.bash to use your namelists.  Note that run_tuner.bash uses
    a customized stats file for tuning and a (possibly different) stats file 
