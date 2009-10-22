@@ -356,6 +356,7 @@ contains
 
     use model_flags, only:  & 
         l_tke_aniso,  & ! Variable(s)
+        l_hyper_dfsn, &
         l_hole_fill
 
     use stats_precision, only:  & 
@@ -674,12 +675,14 @@ contains
            zmscr11(k) * wp2(k), zm )
 
         ! w'^2 term 4hd is completely implicit; call stat_update_var_pt.
-        call stat_update_var_pt( iwp2_4hd, k, &
-           zmscr13(k) * wp2(km2) &
-         + zmscr14(k) * wp2(km1) &
-         + zmscr15(k) * wp2(k) &
-         + zmscr16(k) * wp2(kp1) &
-         + zmscr17(k) * wp2(kp2), zm )
+        if ( l_hyper_dfsn ) then
+           call stat_update_var_pt( iwp2_4hd, k, &
+              zmscr13(k) * wp2(km2) &
+            + zmscr14(k) * wp2(km1) &
+            + zmscr15(k) * wp2(k) &
+            + zmscr16(k) * wp2(kp1) &
+            + zmscr17(k) * wp2(kp2), zm )
+        endif
       enddo
 
       ! Finalize implicit contributions for wp3
@@ -743,12 +746,14 @@ contains
            ztscr16(k) * wp3(k), zt )
 
         ! w'^3 term 4hd is completely implicit; call stat_update_var_pt.
-        call stat_update_var_pt( iwp3_4hd, k, &
-           ztscr17(k) * wp3(km2) &
-         + ztscr18(k) * wp3(km1) &
-         + ztscr19(k) * wp3(k) &
-         + ztscr20(k) * wp3(kp1) &
-         + ztscr21(k) * wp3(kp2), zt )
+        if ( l_hyper_dfsn ) then
+           call stat_update_var_pt( iwp3_4hd, k, &
+              ztscr17(k) * wp3(km2) &
+            + ztscr18(k) * wp3(km1) &
+            + ztscr19(k) * wp3(k) &
+            + ztscr20(k) * wp3(kp1) &
+            + ztscr21(k) * wp3(kp2), zt )
+        endif
       enddo
 
     endif ! l_stats_samp
