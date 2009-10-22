@@ -3,11 +3,12 @@ module simple_rad_mod
 
   implicit none
 
-  public :: simple_rad
+  public :: simple_rad, simple_rad_bomex
 
   private :: liq_water_path
 
   private
+
   contains
 
 !-------------------------------------------------------------------------------
@@ -155,6 +156,48 @@ module simple_rad_mod
 
     return
   end subroutine simple_rad
+
+!-------------------------------------------------------------------------------
+  subroutine simple_rad_bomex( radht )
+! Description:
+!   Compute radiation as per the GCSS BOMEX specification.
+! References:
+!   <http://www.knmi.nl/~siebesma/gcss/bomexcomp.init.html>
+!-------------------------------------------------------------------------------
+    use grid_class, only: gr ! Type
+
+    implicit none
+
+    ! Output Variables
+    real, intent(out), dimension(gr%nnzp) :: & 
+      radht  ! Radiative heating rate [K/s]
+
+    ! Local Variables
+    integer :: k
+
+    ! ---- Begin Code ----
+
+    ! Radiative theta-l tendency
+    do k = 2, gr%nnzp
+
+      if ( gr%zt(k) >= 0. .and. gr%zt(k) < 1500. ) then
+        radht(k) = -2.315e-5
+      else if ( gr%zt(k) >= 1500. .and. gr%zt(k) < 2500. ) then
+        radht(k) & 
+          = - 2.315e-5  & 
+            + 2.315e-5  & 
+              * ( gr%zt(k) - 1500. ) / ( 2500. - 1500. )
+      else
+        radht(k) = 0.
+      end if
+
+    end do ! k=2..gr%nnzp
+
+    ! Boundary condition
+    radht(1) = 0.0
+
+    return
+  end subroutine simple_rad_bomex
 !-------------------------------------------------------------------------------
   pure function liq_water_path( nnzp, rho, rcm, dzt )
 
@@ -182,7 +225,7 @@ module simple_rad_mod
 
     ! ---- Begin Code ----
 
-    liq_water_path(1) = 0.0
+    liq_water_path(nnzp) = 0.0
 
     ! Liquid water path is defined on the intermediate model levels between the
     ! rcm and rho levels (i.e. the momentum levels in CLUBB).
