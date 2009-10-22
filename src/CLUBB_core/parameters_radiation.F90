@@ -53,6 +53,9 @@ module parameters_radiation
   logical, public :: &
     l_fix_cos_solar_zen
 
+  logical, public :: &
+    l_heaviside ! Use DYCOMS II RF02 heaviside step function
+
   integer, public :: &
     nparam
 
@@ -63,7 +66,7 @@ module parameters_radiation
 ! OpenMP directives. These cannot be indented.
 !$omp threadprivate(rad_scheme, sol_const, alvdr, alvdf, alndr, alndf, &
 !$omp   kappa, F0, F1, eff_drop_radius, gc, omega, radiation_top, Fs_list, &
-!$omp   cos_solar_zen_list, l_fix_cos_solar_zen, nparam)
+!$omp   l_heaviside, cos_solar_zen_list, l_fix_cos_solar_zen, nparam)
 
   contains
 
@@ -87,7 +90,7 @@ module parameters_radiation
      rad_scheme, sol_const, alvdr, alvdf, alndr, alndf, &
      kappa, F0, F1, eff_drop_radius, gc, omega, Fs_list, &
      cos_solar_zen_list, radiation_top, l_fix_cos_solar_zen, &
-     amu0, slr
+     amu0, slr, l_heaviside
 
     ! ---- Begin Code ----
 
@@ -117,6 +120,8 @@ module parameters_radiation
 
     slr  = 1.0d0  ! Fraction of daylight
     amu0 = -999.0 ! Calculated value of cosine of the solar zenith angle
+
+    l_heaviside = .false. ! For the heaviside step function
 
     ! Parameters for fixing the value of cosine of the solar zenith angle
     l_fix_cos_solar_zen = .false.
