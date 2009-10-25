@@ -671,13 +671,13 @@ module clubb_core
       p_in_Pa_zm(1) = P_in_Pa(1)
 
       ! Set exner at momentum levels, exner_zm, based on p_in_Pa_zm.
-      exner_zm(:) = (p_in_Pa(:)/p0)**kappa
+      exner_zm(:) = (p_in_Pa_zm(:)/p0)**kappa
 
       ! Call pdf_closure to output the variables which belong on the momentum grid.
       do k = 1, gr%nnzp, 1
         call pdf_closure & 
            ( p_in_Pa_zm(k), exner_zm(k), wm_zm(k),                  & ! intent(in)
-             wp2(k), zt2zm( wp3, k ), sigma_sqd_w(k),               & ! intent(in)
+             wp2(k), wp3_zm(k), sigma_sqd_w(k),                     & ! intent(in)
              Skw_zm(k), zt2zm( rtm, k ), rtp2(k),                   & ! intent(in)
              wprtp(k), zt2zm( thlm, k ), thlp2(k),                  & ! intent(in)
              wpthlp(k), rtpthlp(k), sclrm_zm(k,:),                  & ! intent(in)
@@ -900,8 +900,8 @@ module clubb_core
          ( dt, sfc_elevation, sigma_sqd_w, wm_zm,      & ! intent(in)
            wm_zt, wpthvp, wp2thvp, um, vm, upwp, vpwp, & ! intent(in)
            up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt,     & ! intent(in)
-           Skw_zm, Skw_zt, wp2_zt, pdf_params%a,       & ! intent(in)
-           wp2, wp3, err_code                          ) ! intent(inout)
+           Skw_zm, Skw_zt, wp3_zm, pdf_params%a,       & ! intent(in)
+           wp2, wp3, wp2_zt, err_code                  ) ! intent(inout)
 
     ! Wrapped LAPACK procedures may report errors, and if so, exit
     ! gracefully.

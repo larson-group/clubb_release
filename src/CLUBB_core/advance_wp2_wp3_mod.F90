@@ -33,8 +33,8 @@ contains
   subroutine advance_wp2_wp3( dt, sfc_elevation, sigma_sqd_w, wm_zm,      &
                               wm_zt, wpthvp, wp2thvp, um, vm, upwp, vpwp, &
                               up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt,     &
-                              Skw_zm, Skw_zt, wp2_zt, a,                  &
-                              wp2, wp3, err_code                          )
+                              Skw_zm, Skw_zt, wp3_zm, a,                  &
+                              wp2, wp3, wp2_zt, err_code                  )
 
     ! Description:
     ! Advance w'^2 and w'^3 one timestep.
@@ -109,13 +109,16 @@ contains
       tau_zt,      & ! Time-scale tau on thermodynamic levels   [s]
       Skw_zm,      & ! Skewness of w on momentum levels         [-]
       Skw_zt,      & ! Skewness of w on thermodynamic levels    [-]
-      wp2_zt,      & ! w'^2 interpolated to thermodyamic levels [m^2/s^2]
+      wp3_zm,      & ! w'^3 interpolated to momentum levels     [m^3/s^3]
       a              ! Weight of 1st normal distribution        [-]
 
     ! Input/Output
     real, dimension(gr%nnzp), intent(inout) ::  & 
       wp2,  & ! w'^2 (momentum levels)                          [m^2/s^2]
       wp3     ! w'^3 (thermodynamic levels)                     [m^3/s^3]
+
+    real, dimension(gr%nnzp), intent(inout) ::  &
+      wp2_zt  ! w'^2 interpolated to thermodyamic levels          [m^2/s^2]
 
     integer, intent(inout) :: err_code ! Diagnostic
 
@@ -131,7 +134,6 @@ contains
     !        are used to help determine the coefficients of eddy
     !        diffusivity for wp2 and wp3, respectively.
     real, dimension(gr%nnzp) :: & 
-      wp3_zm,          & ! w'^3 interpolated to momentum levels     [m^3/s^3]
       wp2_zt_sqd_3pt,  & ! (w'^2)^2; averaged over 3 points         [m^4/s^4]
       wp3_zm_sqd_3pt     ! (w'^3)^2; averaged over 3 points         [m^6/s^6]
 
@@ -200,14 +202,6 @@ contains
 
     !C11_Skw_fnc = C11
     !C1_Skw_fnc = C1
-
-
-    ! Interpolate w'^3 from thermodynamic levels to momentum levels.
-    ! This will be used for the w'^3 turbulent advection (ta) and
-    ! turbulent production (tp) combined term.
-    ! This is also used for extra diffusion based on a three-point
-    ! average of (w'^3)^2.
-    wp3_zm = zt2zm( wp3 )
 
 
     ! Define the Coefficent of Eddy Diffusivity for the wp2 and wp3.
@@ -286,7 +280,7 @@ contains
                      wpthvp, wp2thvp, um, vm, upwp, vpwp, up2, vp2, & ! Intent(in)
                      Kw1, Kw8, Skw_zt, tau_zm, tauw3t, C1_Skw_fnc, &  ! Intent(in)
                      C11_Skw_fnc, wp3_zm, nsub, nsup, &               ! Intent(in)
-                     wp2, wp3, err_code )                             ! Intent(inout)
+                     wp2, wp3, wp2_zt, err_code )                     ! Intent(inout)
 
 !       Error output
 !       Joshua Fasching Feb 2008
@@ -335,7 +329,7 @@ contains
                          wpthvp, wp2thvp, um, vm, upwp, vpwp, up2, vp2, &
                          Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                          C11_Skw_fnc, wp3_zm, nsub, nsup, &
-                         wp2, wp3, err_code )
+                         wp2, wp3, wp2_zt, err_code )
 
     ! Description:
     ! Decompose, and back substitute the matrix for wp2/wp3
@@ -495,6 +489,9 @@ contains
       wp2,  & ! w'^2 (momentum levels)                            [m^2/s^2]
       wp3     ! w'^3 (thermodynamic levels)                       [m^3/s^3]
 
+    real, dimension(gr%nnzp), intent(inout) ::  &
+      wp2_zt  ! w'^2 interpolated to thermodyamic levels          [m^2/s^2]
+
     integer, intent(inout) :: err_code ! Have any errors occured?
 
     ! Local Variables
@@ -514,8 +511,7 @@ contains
 
     real, dimension(gr%nnzp) ::  & 
       a1_zt,  & ! a_1 interpolated to thermodynamic levels        [-]
-      a3_zt,  & ! a_3 interpolated to thermodynamic levels        [-]
-      wp2_zt    ! w'^2 interpolated to thermodyamic levels        [m^2/s^2]
+      a3_zt     ! a_3 interpolated to thermodynamic levels        [-]
 
 !      real, dimension(gr%nnzp) ::  &
 !        wp2_n ! w'^2 at the previous timestep           [m^2/s^2]
