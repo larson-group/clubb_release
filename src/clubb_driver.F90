@@ -816,12 +816,23 @@ module clubb_driver
 
     fdir = "../output/" ! Output directory
 
-    ! Initialize statistics output
-    call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
-                     stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
-                     gr%nnzp, gr%zt, gr%zm, total_atmos_dim, & ! Intent(in)
-                     complete_alt, day, month, year, & ! Intent(in)
-                     (/rlat/), (/rlon/), time_current, dtmain ) ! Intent(in)
+    ! This is a kludge added because the grid used by BUGSrad does
+    ! not include CLUBB's ghost point. -nielsenb 20 Oct 2009
+    if ( trim( rad_scheme ) == "bugsrad" ) then
+        ! Initialize statistics output
+        call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
+                         stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
+                         gr%nnzp, gr%zt, gr%zm, total_atmos_dim - 1, & ! Intent(in)
+                         complete_alt(2:total_atmos_dim - 1), day, month, year, & ! Intent(in)
+                         (/rlat/), (/rlon/), time_current, dtmain ) ! Intent(in)
+    else
+        ! Initialize statistics output
+        call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
+                         stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
+                         gr%nnzp, gr%zt, gr%zm, total_atmos_dim, & ! Intent(in)
+                         complete_alt, day, month, year, & ! Intent(in)
+                         (/rlat/), (/rlon/), time_current, dtmain ) ! Intent(in)
+    end if
 
 #ifdef UNRELEASED_CODE
     if ( l_latin_hypercube_sampling ) then
