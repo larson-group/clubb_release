@@ -167,7 +167,7 @@ stats_fmt    = "grads"         ! Type of statistical output file (GrADS or netCD
 ! You will not need to modify these if l_input_fields is false.
 &setfields
 datafile      = "../les_data/dycoms2_rf01"
-input_type    = "rf1"
+input_type    = "coamps_les"
 input_um = .true 
 input_vm = .true.
 input_rtm = .true. 

@@ -14,7 +14,7 @@ module inputfields
   character(len=100), public :: & 
     stat_file_zt, stat_file_zm, stat_file_sfc
 
-  character(3), public :: input_type
+  character(len=10), public :: input_type
 
   logical, public :: input_um, input_vm, input_rtm, input_thlm, & 
                      input_wp2, input_wprtp, input_wpthlp,  & 
@@ -36,7 +36,14 @@ module inputfields
                      input_veg_T_in_K, input_deep_soil_T_in_K, &
                      input_sfc_soil_T_in_K
 
+  integer, parameter, private :: &
+    coamps_input_type = 1, &
+    clubb_input_type =  2
 
+  integer, private :: &
+    stats_input_type
+
+  ! Procedures
   public  :: stat_fields_reader, &
              compute_timestep, &
              inputfields_init, &
@@ -58,7 +65,12 @@ module inputfields
 !   None
 !-----------------------------------------------------------------------
 
+    use constants, only: fstderr, fstdout ! Constants
+
     implicit none
+
+    ! External
+    intrinsic :: trim
 
     ! Input Variables
     character(len=*), intent(in) :: &
@@ -69,33 +81,39 @@ module inputfields
 
     ! ---- Begin Code ----
 
-    select case ( input_type )
+    stats_input_type = -1
 
-    case ( "les", "rf1" )
+    select case ( trim( input_type ) )
+
+    case ( "coamps_les", "COAMPS_LES", "coamps" )
       stat_file_zt = trim( file_prefix )//"_coamps_sm.ctl"
       stat_file_zm = trim( file_prefix )//"_coamps_sw.ctl"
       stat_file_sfc = trim( file_prefix )//"_coamps_sfc.ctl"
 
-    case ( "hoc" )
+      stats_input_type = coamps_input_type
+
+    case ( "clubb_scm", "CLUBB_SCM", "clubb" )
       stat_file_zt = trim( file_prefix )//"_zt.ctl"
       stat_file_zm = trim( file_prefix )//"_zm.ctl"
       stat_file_sfc = trim( file_prefix )//"_sfc.ctl"
 
+      stats_input_type = clubb_input_type
+
       inquire(file=stat_file_zt,exist=l_grads)
 
       if ( .not. l_grads ) then
-        write(6,*) "inputfields: Cannot find GrADS ctl file, assuming netCDF input"
+        write(fstdout,*) "inputfields: Cannot find GrADS ctl file, assuming netCDF input"
         stat_file_zt = trim( file_prefix )// "_zt.nc"
         stat_file_zm = trim( file_prefix )// "_zm.nc"
         stat_file_sfc = trim( file_prefix )// "_sfc.nc"
       end if
 
     case default
-      write(0,*) "Don't know how to handle input_type = "// & 
+      write(fstderr,*) "Don't know how to handle input_type = "// & 
         input_type
       stop
-    end select
 
+    end select
 
     return
   end subroutine set_filenames
@@ -246,13 +264,13 @@ module inputfields
 
     ! ---- Begin Code ----
 
-    select case ( input_type )
+    select case ( stats_input_type )
 
-    case( "hoc" )
+    case ( clubb_input_type )
 
       !  Thermo grid - zt file
 
-      ! Initialize l_fatal_error for case ( "hoc" )
+      ! Initialize l_fatal_error for case clubb_input_type
       l_fatal_error = .false.
 
       call get_clubb_variable_interpolated &
@@ -664,439 +682,7 @@ module inputfields
 
       if ( l_fatal_error ) stop "oops, get_grads_var failed in stat_fields_reader"
 
-    case ( "rf1" )   ! special case for COAMPS DYCOMS-II RF01
-
-      ! stats_sm
-      call open_grads_read( 15, stat_file_zt,  & 
-                            fread_var )
-
-      ! Temporarily store LES output in variable array LES_tmp1.
-      ! Allocate LES_tmp1 based on lowest and highest vertical indices of LES
-      ! output.
-      allocate( LES_tmp1(fread_var%ia:fread_var%iz) )
-
-      ! Find the lowest and highest indices of CLUBB thermodynamic levels that
-      ! fall within the domain of the LES output.
-      call CLUBB_levels_within_LES_domain( fread_var, gr%zt,  &
-                                           k_lowest_zt_input, k_highest_zt_input )
-
-      allocate( exact_lev_idx_zt(k_lowest_zt_input:k_highest_zt_input) )
-      allocate( lower_lev_idx_zt(k_lowest_zt_input:k_highest_zt_input) )
-      allocate( upper_lev_idx_zt(k_lowest_zt_input:k_highest_zt_input) )
-      allocate( l_lin_int_zt(k_lowest_zt_input:k_highest_zt_input) )
-
-      ! For all CLUBB thermodynamic levels, k, that are within the LES domain,
-      ! find either the index of the LES level that exactly matches the altitude
-      ! of the CLUBB level, or find the two indices of the LES levels that are on
-      ! either side of the CLUBB level.
-      do k = k_lowest_zt_input, k_highest_zt_input, 1
-        ! CLUBB vertical level k is found at an altitude that is within the
-        ! domain of the LES output.
-        call LES_grid_to_CLUBB_grid( fread_var, gr%zt, k,  &
-                                     exact_lev_idx_zt(k), lower_lev_idx_zt(k),  &
-                                     upper_lev_idx_zt(k), l_lin_int_zt(k) )
-      enddo
-
-      ! Find the lowest and highest indices of CLUBB momentum levels that fall
-      ! within the domain of the LES output.
-      call CLUBB_levels_within_LES_domain( fread_var, gr%zm,  &
-                                           k_lowest_zm_input, k_highest_zm_input )
-
-      allocate( exact_lev_idx_zm(k_lowest_zm_input:k_highest_zm_input) )
-      allocate( lower_lev_idx_zm(k_lowest_zm_input:k_highest_zm_input) )
-      allocate( upper_lev_idx_zm(k_lowest_zm_input:k_highest_zm_input) )
-      allocate( l_lin_int_zm(k_lowest_zm_input:k_highest_zm_input) )
-
-      ! For all CLUBB momentum levels, k, that are within the LES domain, find
-      ! either the index of the LES level that exactly matches the altitude of the
-      ! CLUBB level, or find the two indices of the LES levels that are on either
-      ! side of the CLUBB level.
-      do k = k_lowest_zm_input, k_highest_zm_input, 1
-        ! CLUBB vertical level k is found at an altitude that is within the
-        ! domain of the LES output.
-        call LES_grid_to_CLUBB_grid( fread_var, gr%zm, k,  &
-                                     exact_lev_idx_zm(k), lower_lev_idx_zm(k),  &
-                                     upper_lev_idx_zm(k), l_lin_int_zm(k) )
-      enddo
-
-
-      ! Initialize l_fatal_error for case ( "rf1" )
-      l_fatal_error = .false.
-
-      if ( input_um ) then
-        call get_grads_var( fread_var, "um", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of um from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            um(k) = lin_int( gr%zt(k),  &
-                             fread_var%z(upper_lev_idx_zt(k)),  &
-                             fread_var%z(lower_lev_idx_zt(k)),  &
-                             LES_tmp1(upper_lev_idx_zt(k)),  &
-                             LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            um(k) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
-        ! When this is a standard scenario, where CLUBB thermodynamic level 3 is
-        ! the first thermodynamic level at or above the lowest LES level, use the
-        ! values of um at thermodynamic levels 4 and 3 to find the value at
-        ! thermodynamic level 2 through the use of a linear extension.  Then, use
-        ! the values of um at thermodynamic levels 3 and 2 to find the value at
-        ! thermodynamic level 1 through the use of a linear extension.
-        if ( k_lowest_zt_input == 3 ) then
-          um(2)  & 
-          = lin_ext_zt_bottom( um(4), um(3), & 
-                               gr%zt(4), gr%zt(3), gr%zt(2) )
-          um(1)  & 
-          = lin_ext_zt_bottom( um(3), um(2), & 
-                               gr%zt(3), gr%zt(2), gr%zt(1) )
-        endif
-      endif
-
-      if ( input_vm ) then
-        call get_grads_var( fread_var, "vm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of vm from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            vm(k) = lin_int( gr%zt(k),  &
-                             fread_var%z(upper_lev_idx_zt(k)),  &
-                             fread_var%z(lower_lev_idx_zt(k)),  &
-                             LES_tmp1(upper_lev_idx_zt(k)),  &
-                             LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            vm(k) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
-        ! When this is a standard scenario, where CLUBB thermodynamic level 3 is
-        ! the first thermodynamic level at or above the lowest LES level, use the
-        ! values of vm at thermodynamic levels 4 and 3 to find the value at
-        ! thermodynamic level 2 through the use of a linear extension.  Then, use
-        ! the values of vm at thermodynamic levels 3 and 2 to find the value at
-        ! thermodynamic level 1 through the use of a linear extension.
-        if ( k_lowest_zt_input == 3 ) then
-          vm(2)  & 
-          = lin_ext_zt_bottom( vm(4), vm(3), & 
-                               gr%zt(4), gr%zt(3), gr%zt(2) )
-          vm(1)  & 
-          = lin_ext_zt_bottom( vm(3), vm(2), & 
-                               gr%zt(3), gr%zt(2), gr%zt(1) )
-        endif
-      endif
-
-      if ( input_rtm) then
-        call get_grads_var( fread_var, "qtm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of rtm from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            rtm(k) = lin_int( gr%zt(k),  &
-                              fread_var%z(upper_lev_idx_zt(k)),  &
-                              fread_var%z(lower_lev_idx_zt(k)),  &
-                              LES_tmp1(upper_lev_idx_zt(k)),  &
-                              LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            rtm(k) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
-        ! When this is a standard scenario, where CLUBB thermodynamic level 3 is
-        ! the first thermodynamic level at or above the lowest LES level, set the
-        ! values of rtm at thermodynamic levels 2 and 1 to the value at
-        ! thermodynamic level 3.
-        if ( k_lowest_zt_input == 3 ) then
-          rtm(1:2) = rtm(3)
-        endif
-      endif
-
-      if ( input_thlm) then
-        call get_grads_var( fread_var, "thlm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of thlm from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            thlm(k) = lin_int( gr%zt(k),  &
-                               fread_var%z(upper_lev_idx_zt(k)),  &
-                               fread_var%z(lower_lev_idx_zt(k)),  &
-                               LES_tmp1(upper_lev_idx_zt(k)),  &
-                               LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            thlm(k) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
-        ! When this is a standard scenario, where CLUBB thermodynamic level 3 is
-        ! the first thermodynamic level at or above the lowest LES level, set the
-        ! values of thlm at thermodynamic levels 2 and 1 to the value at
-        ! thermodynamic level 3.
-        if ( k_lowest_zt_input == 3 ) then
-          thlm(1:2) = thlm(3)
-        endif
-      endif
-
-      if ( input_wp3) then
-        call get_grads_var( fread_var, "wp3", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of wp3 from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            wp3(k) = lin_int( gr%zt(k),  &
-                              fread_var%z(upper_lev_idx_zt(k)),  &
-                              fread_var%z(lower_lev_idx_zt(k)),  &
-                              LES_tmp1(upper_lev_idx_zt(k)),  &
-                              LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            wp3(k) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
-        ! When this is a standard scenario, where CLUBB thermodynamic level 3 is
-        ! the first thermodynamic level at or above the lowest LES level, set the
-        ! values of wp3 at thermodynamic levels 2 and 1 to 0.
-        if ( k_lowest_zt_input == 3 ) then
-          wp3(1:2) = 0.
-        endif
-      endif
-
-      if ( input_wprtp) then
-        call get_grads_var( fread_var, "wpqtp", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of wprtp from the LES GrADS file.
-        do k = k_lowest_zm_input, k_highest_zm_input, 1
-          if ( l_lin_int_zm(k) ) then
-            ! CLUBB momentum level k is found at an altitude that is between two
-            ! LES levels.  Linear interpolation is required.
-            wprtp(k) = lin_int( gr%zm(k),  &
-                                fread_var%z(upper_lev_idx_zm(k)),  &
-                                fread_var%z(lower_lev_idx_zm(k)),  &
-                                LES_tmp1(upper_lev_idx_zm(k)),  &
-                                LES_tmp1(lower_lev_idx_zm(k)) )
-          else
-            ! CLUBB momentum level k is found at an altitude that is an exact
-            ! match with an LES level altitude.
-            wprtp(k) = LES_tmp1(exact_lev_idx_zm(k))
-          endif
-        enddo
-        ! When this is a standard scenario, where CLUBB momentum level 3 is the
-        ! first momentum level above the lowest LES level, use the values of
-        ! wprtp at momentum levels 4 and 3 to find the value at momentum level 2
-        ! through the use of a linear extension.  Then, use the values of wprtp
-        ! at momentum levels 3 and 2 to find the value at momentum level 1 through
-        ! the use of a linear extension.  It should be pointed out that the
-        ! boundary flux is usually solved in LES or CLUBB via a subroutine
-        ! like sfc_var.
-        if ( k_lowest_zm_input == 3 ) then
-          wprtp(2)  & 
-          = lin_ext_zm_bottom( wprtp(4), wprtp(3), & 
-                               gr%zm(4), gr%zm(3), gr%zm(2) )
-          wprtp(1)  & 
-          = lin_ext_zm_bottom( wprtp(3), wprtp(2), & 
-                               gr%zm(3), gr%zm(2), gr%zm(1) )
-        endif
-      endif
-
-      if ( input_wpthlp) then
-        call get_grads_var( fread_var, "wpthlp", timestep,  &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of wpthlp from the LES GrADS file.
-        do k = k_lowest_zm_input, k_highest_zm_input, 1
-          if ( l_lin_int_zm(k) ) then
-            ! CLUBB momentum level k is found at an altitude that is between two
-            ! LES levels.  Linear interpolation is required.
-            wpthlp(k) = lin_int( gr%zm(k),  &
-                                 fread_var%z(upper_lev_idx_zm(k)),  &
-                                 fread_var%z(lower_lev_idx_zm(k)),  &
-                                 LES_tmp1(upper_lev_idx_zm(k)),  &
-                                 LES_tmp1(lower_lev_idx_zm(k)) )
-          else
-            ! CLUBB momentum level k is found at an altitude that is an exact
-            ! match with an LES level altitude.
-            wpthlp(k) = LES_tmp1(exact_lev_idx_zm(k))
-          endif
-        enddo
-        ! When this is a standard scenario, where CLUBB momentum level 3 is the
-        ! first momentum level above the lowest LES level, use the values of
-        ! wpthlp at momentum levels 4 and 3 to find the value at momentum level 2
-        ! through the use of a linear extension.  Then, use the values of wpthlp
-        ! at momentum levels 3 and 2 to find the value at momentum level 1 through
-        ! the use of a linear extension.  It should be pointed out that the
-        ! boundary flux is usually solved in LES or CLUBB via a subroutine
-        ! like sfc_var.
-        if ( k_lowest_zm_input == 3 ) then
-          wpthlp(2)  & 
-          = lin_ext_zm_bottom( wpthlp(4), wpthlp(3), & 
-                               gr%zm(4), gr%zm(3), gr%zm(2) )
-          wpthlp(1)  & 
-          = lin_ext_zm_bottom( wpthlp(3), wpthlp(2), & 
-                               gr%zm(3), gr%zm(2), gr%zm(1) )
-        endif
-      endif
-
-      if ( input_rtp2) then
-        call get_grads_var( fread_var, "qtp2", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of rtp2 from the LES GrADS file.
-        do k = k_lowest_zm_input, k_highest_zm_input, 1
-          if ( l_lin_int_zm(k) ) then
-            ! CLUBB momentum level k is found at an altitude that is between two
-            ! LES levels.  Linear interpolation is required.
-            rtp2(k) = lin_int( gr%zm(k),  &
-                               fread_var%z(upper_lev_idx_zm(k)),  &
-                               fread_var%z(lower_lev_idx_zm(k)),  &
-                               LES_tmp1(upper_lev_idx_zm(k)),  &
-                               LES_tmp1(lower_lev_idx_zm(k)) )
-          else
-            ! CLUBB momentum level k is found at an altitude that is an exact
-            ! match with an LES level altitude.
-            rtp2(k) = LES_tmp1(exact_lev_idx_zm(k))
-          endif
-        enddo
-        ! When this is a standard scenario, where CLUBB momentum level 3 is the
-        ! first momentum level above the lowest LES level, set the values of rtp2
-        ! at momentum levels 1 and 2 to the value at momentum level 3.
-        ! Using a linear extension here resulted in negatives.
-        if ( k_lowest_zm_input == 3 ) then
-          rtp2(1:2) = rtp2(3)
-        endif
-        if ( any ( rtp2(1:gr%nnzp) < rttol**2 ) ) then
-          do k=1, gr%nnzp
-            rtp2(k) = max(rtp2(k), rttol**2)
-          enddo
-        endif
-      endif
-
-      if ( input_thlp2 ) then
-        call get_grads_var( fread_var, "thlp2", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of thlp2 from the LES GrADS file.
-        do k = k_lowest_zm_input, k_highest_zm_input, 1
-          if ( l_lin_int_zm(k) ) then
-            ! CLUBB momentum level k is found at an altitude that is between two
-            ! LES levels.  Linear interpolation is required.
-            thlp2(k) = lin_int( gr%zm(k),  &
-                                fread_var%z(upper_lev_idx_zm(k)),  &
-                                fread_var%z(lower_lev_idx_zm(k)),  &
-                                LES_tmp1(upper_lev_idx_zm(k)),  &
-                                LES_tmp1(lower_lev_idx_zm(k)) )
-          else
-            ! CLUBB momentum level k is found at an altitude that is an exact
-            ! match with an LES level altitude.
-            thlp2(k) = LES_tmp1(exact_lev_idx_zm(k))
-          endif
-        enddo
-        ! When this is a standard scenario, where CLUBB momentum level 3 is the
-        ! first momentum level above the lowest LES level, set the values of thlp2
-        ! at momentum levels 1 and 2 to the value at momentum level 3.
-        ! Using a linear extension here resulted in negatives.
-        if ( k_lowest_zm_input == 3 ) then
-          thlp2(1:2) = thlp2(3)
-        endif
-      endif
-
-      if ( input_rtpthlp) then
-        call get_grads_var( fread_var, "qtpthlp", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of rtpthlp from the LES GrADS file.
-        do k = k_lowest_zm_input, k_highest_zm_input, 1
-          if ( l_lin_int_zm(k) ) then
-            ! CLUBB momentum level k is found at an altitude that is between two
-            ! LES levels.  Linear interpolation is required.
-            rtpthlp(k) = lin_int( gr%zm(k),  &
-                                  fread_var%z(upper_lev_idx_zm(k)),  &
-                                  fread_var%z(lower_lev_idx_zm(k)),  &
-                                  LES_tmp1(upper_lev_idx_zm(k)),  &
-                                  LES_tmp1(lower_lev_idx_zm(k)) )
-          else
-            ! CLUBB momentum level k is found at an altitude that is an exact
-            ! match with an LES level altitude.
-            rtpthlp(k) = LES_tmp1(exact_lev_idx_zm(k))
-          endif
-        enddo
-        ! When this is a standard scenario, where CLUBB momentum level 3 is the
-        ! first momentum level above the lowest LES level, use the values of
-        ! rtpthlp at momentum levels 4 and 3 to find the value at momentum level 2
-        ! through the use of a linear extension.  Then, use the values of rtpthlp
-        ! at momentum levels 3 and 2 to find the value at momentum level 1 through
-        ! the use of a linear extension.  It should be pointed out that the
-        ! boundary flux is usually solved in LES or CLUBB via a subroutine
-        ! like sfc_var.
-        if ( k_lowest_zm_input == 3 ) then
-          rtpthlp(2)  & 
-          = lin_ext_zm_bottom( rtpthlp(4), rtpthlp(3), & 
-                               gr%zm(4), gr%zm(3), gr%zm(2) )
-          rtpthlp(1)  & 
-          = lin_ext_zm_bottom( rtpthlp(3), rtpthlp(2), & 
-                               gr%zm(3), gr%zm(2), gr%zm(1) )
-        endif
-      endif
-
-      if ( l_fatal_error ) stop "oops, get_grads_var failed in stat_fields_reader"
-
-      ! Deallocate temporary storage variable LES_tmp1.
-      deallocate( LES_tmp1 )
-
-      deallocate( exact_lev_idx_zt )
-      deallocate( lower_lev_idx_zt )
-      deallocate( upper_lev_idx_zt )
-      deallocate( l_lin_int_zt )
-
-      deallocate( exact_lev_idx_zm )
-      deallocate( lower_lev_idx_zm )
-      deallocate( upper_lev_idx_zm )
-      deallocate( l_lin_int_zm )
-
-      call close_grads_read( fread_var )
-
-
-    case ( "les" )   ! COAMPS LES -- all other cases.
+    case ( coamps_input_type ) ! COAMPS LES stats data
 
       ! stats_sm
       call open_grads_read( 15, stat_file_zt,  & 
@@ -1497,12 +1083,14 @@ module inputfields
 
       ! upwp/vpwp in stats_sw
       if ( input_ug ) then
-        write(fstderr,*) "The variable ug is not setup for input_type = les"
+        write(fstderr,*) "The variable ug is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
       if ( input_vg ) then
-        write(fstderr,*) "The variable vg is not setup for input_type = les"
+        write(fstderr,*) "The variable vg is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
@@ -1681,17 +1269,20 @@ module inputfields
       ! rho_zm is in stats_sw
 
       if ( input_Lscale ) then
-        write(fstderr,*) "The variable Lscale is not setup for input_type = les"
+        write(fstderr,*) "The variable Lscale is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       endif
 
       if ( input_Lscale_up ) then
-        write(fstderr,*) "The variable Lscale_up is not setup for input_type = les"
+        write(fstderr,*) "The variable Lscale_up is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
       if ( input_Lscale_down ) then
-        write(fstderr,*) "The variable Lscale_down is not setup for input_type = les"
+        write(fstderr,*) "The variable Lscale_down is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
@@ -1717,17 +1308,20 @@ module inputfields
       endif
 
       if ( input_Kh_zm ) then
-        write(fstderr,*) "The variable Kh_zm is not setup for input_type = les"
+        write(fstderr,*) "The variable Kh_zm is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
       if ( input_tau_zt ) then
-        write(fstderr,*) "The variable tau_zt is not setup for input_type = les"
+        write(fstderr,*) "The variable tau_zt is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
       if ( input_tau_zm ) then
-        write(fstderr,*) "The variable tau_zm is not setup for input_type = les"
+        write(fstderr,*) "The variable tau_zm is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
@@ -1753,47 +1347,56 @@ module inputfields
       endif
 
       if ( input_thl1 ) then
-        write(fstderr,*) "The variable thl1 is not setup for input_type = les"
+        write(fstderr,*) "The variable thl1 is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
       if ( input_thl2 ) then
-        write(fstderr,*) "The variable thl2 is not setup for input_type = les"
+        write(fstderr,*) "The variable thl2 is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
       if ( input_a ) then
-        write(fstderr,*) "The variable a is not setup for input_type = les"
+        write(fstderr,*) "The variable a is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
       if ( input_s1 ) then
-        write(fstderr,*) "The variable s1 is not setup for input_type = les"
+        write(fstderr,*) "The variable s1 is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
       if ( input_s2 ) then
-        write(fstderr,*) "The variable s2 is not setup for input_type = les"
+        write(fstderr,*) "The variable s2 is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
       if ( input_stdev_s1 ) then
-        write(fstderr,*) "The variable stdev_s1 is not setup for input_type = les"
+        write(fstderr,*) "The variable stdev_s1 is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
       if ( input_stdev_s2 ) then
-        write(fstderr,*) "The variable stdev_s2 is not setup for input_type = les"
+        write(fstderr,*) "The variable stdev_s2 is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
       if ( input_rc1 ) then
-        write(fstderr,*) "The variable rc1 is not setup for input_type = les"
+        write(fstderr,*) "The variable rc1 is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
       if ( input_rc2 ) then
-        write(fstderr,*) "The variable rc2 is not setup for input_type = les"
+        write(fstderr,*) "The variable rc2 is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
@@ -2063,12 +1666,14 @@ module inputfields
       endif
 
       if ( input_thlm_forcing ) then
-        write(fstderr,*) "The variable thlm_forcing is not setup for input_type = les"
+        write(fstderr,*) "The variable thlm_forcing is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
       if ( input_rtm_forcing ) then
-        write(fstderr,*) "The variable rtm_forcing is not setup for input_type = les"
+        write(fstderr,*) "The variable rtm_forcing is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
@@ -2128,32 +1733,38 @@ module inputfields
       endif
 
       if ( input_sigma_sqd_w ) then
-        write(fstderr,*) "The variable sigma_sqd_w is not setup for input_type = les"
+        write(fstderr,*) "The variable sigma_sqd_w is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
       if ( input_sigma_sqd_w_zt ) then
-        write(fstderr,*) "The variable sigma_sqd_w_zt is not setup for input_type = les"
+        write(fstderr,*) "The variable sigma_sqd_w_zt is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
       if ( input_cloud_frac ) then
-        write(fstderr,*) "The variable cloud_frac is not setup for input_type = les"
+        write(fstderr,*) "The variable cloud_frac is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
       if ( input_veg_T_in_K ) then
-        write(fstderr,*) "The variable veg_T_in_K is not setup for input_type = les"
+        write(fstderr,*) "The variable veg_T_in_K is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
       if ( input_deep_soil_T_in_K ) then
-        write(fstderr,*) "The variable deep_soil_T_in_K is not setup for input_type = les"
+        write(fstderr,*) "The variable deep_soil_T_in_K is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
       if ( input_sfc_soil_T_in_K ) then
-        write(fstderr,*) "The variable sfc_soil_T_in_K is not setup for input_type = les"
+        write(fstderr,*) "The variable sfc_soil_T_in_K is not setup for input_type" &
+          //trim( input_type )
         l_fatal_error = .true.
       end if
 
@@ -2176,10 +1787,9 @@ module inputfields
 
     end select
 
+    select case ( stats_input_type )
 
-    select case ( input_type )
-
-    case ( "les", "rf1" )
+    case ( coamps_input_type )
 
       ! stats_sw
       call open_grads_read( 15, stat_file_zm,  fread_var )
@@ -2212,8 +1822,7 @@ module inputfields
       enddo
 
 
-      ! Note:  l_fatal_error has already been initialized for both case ( "les" ) and
-      !        case ( "rf1" ).
+      ! Note:  l_fatal_error has already been initialized
 
       ! Note:  wpup_sgs and wpvp_sgs must be added to make the u'w' and v'w' terms
       !        as they are in CLUBB.
@@ -2381,9 +1990,7 @@ module inputfields
 
       call close_grads_read( fread_var )
 
-
     end select
-
 
     return
   end subroutine stat_fields_reader
