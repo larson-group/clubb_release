@@ -1844,10 +1844,10 @@ module advance_xm_wpxp_module
       ! advance_xm_wpxp_module.F90, rather than being entirely contained in
       ! advance_xm_wpxp_module.F90.
       !!  wpxp total time tendency (1st calculation)
-      !call stat_begin_update( iwpxp_bt, real( wpxp / dt ), zm )
+      call stat_begin_update( iwpxp_bt, real( wpxp / dt ), zm )
 
       ! wpxp total time tendency (1st calculation in advance_xm_wpxp_module.F90)
-      call stat_modify( iwpxp_bt, real( -wpxp / dt ), zm )
+      !call stat_modify( iwpxp_bt, real( -wpxp / dt ), zm )
       ! Brian Griffin; July 5, 2008.
 
     end if ! l_stats_samp
@@ -2053,7 +2053,7 @@ module advance_xm_wpxp_module
     ! from each other, clipping for w'x' has to be done three times
     ! (three times each for w'r_t', w'th_l', and w'sclr').  This is
     ! the second instance of w'x' clipping.
-    call clip_covariance( solve_type_cl, .false.,  & 
+    call clip_covariance( solve_type_cl, .true.,  & 
                           .false., dt, wp2, xp2,  & 
                           wpxp, wpxp_chnge )
 

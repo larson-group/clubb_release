@@ -491,9 +491,10 @@ module clubb_core
 
     sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )  ! Pos. def. quantity
 
-    !----------------------------------------------------------------
-    ! Interpolate wp2 & wp3, and then compute Skw for m & t grid
-    !----------------------------------------------------------------
+    !---------------------------------------------------------------------------
+    ! Interpolate wp2, thlp2, rtp2, and rtpthlp to thermodynamic levels,
+    ! interpolate wp3 to momentum levels, and then compute Skw for m & t grid
+    !---------------------------------------------------------------------------
 
     wp2_zt = max( zm2zt( wp2 ), wtol_sqd ) ! Positive definite quantity
     wp3_zm = zt2zm( wp3 )
@@ -501,110 +502,10 @@ module clubb_core
     Skw_zt(1:gr%nnzp) = Skw_func( wp2_zt(1:gr%nnzp), wp3(1:gr%nnzp) )
     Skw_zm(1:gr%nnzp) = Skw_func( wp2(1:gr%nnzp), wp3_zm(1:gr%nnzp) )
 
-    !----------------------------------------------------------------
-    ! Set Surface variances
-    !----------------------------------------------------------------
-
-!      Surface variances should be set here, before the call to advance_xp2_xpyp.
-!      The reasons that surface variances can be set here are because the
-!      only variables that are the input into surface variances are the
-!      surface values of wpthlp, wprtp, upwp, and vpwp.  The surface values
-!      of all those variables are set in the surface forcings section of the
-!      GCSS cases listed in the main timestep above.  Even if they weren't
-!      set there, the updates to wpthlp, wprtp, upwp, and vpwp are at the
-!      end of the closure loop, right before the code loops back around to
-!      this point at the top of the closure loop.
-!      Surface variances need to be set here for two reasons.  One reason is
-!      that the values of rtp2, thlp2, and rtpthlp at the surface will be
-!      used to find the diffusional term and the mean advection term in each
-!      predictive equation for those respective terms.  The other reason is
-!      that if the correct surface variances are not set here and advance_xp2_xpyp
-!      outputs it's own value for them, it will results in a faulty value for
-!      sigma_sqd_w at the surface.  Brian Griffin.  December 18, 2005.
-
-!      Surface effects should not be included with any case where the lowest
-!      level is not the ground level.  Brian Griffin.  December 22, 2005.
-    if ( gr%zm(1) == sfc_elevation ) then
-      call sfc_var( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & ! intent(in)
-                    um(2), vm(2), wpsclrp_sfc,                 & ! intent(in)
-                    wp2(1), up2(1), vp2(1),                    & ! intent(out)
-                    thlp2(1), rtp2(1), rtpthlp(1), err_code,   & ! intent(out)
-                    sclrp2(1,1:sclr_dim),                      & ! intent(out)
-                    sclrprtp(1,1:sclr_dim),                    & ! intent(out) 
-                    sclrpthlp(1,1:sclr_dim) )                    ! intent(out)
-      ! Subroutine may produce NaN values, and if so, exit
-      ! gracefully.
-      ! Joshua Fasching March 2008
-      if( err_code == clubb_var_equals_NaN ) return
-
-    else
-      ! Variances for cases where the lowest level is not at the surface.
-      ! Eliminate surface effects on lowest level variances.
-      wp2(1)     = wtol_sqd
-      up2(1)     = wtol_sqd
-      vp2(1)     = wtol_sqd
-      thlp2(1)   = 0.0
-      rtp2(1)    = 0.0
-      rtpthlp(1) = 0.0
-
-      do i = 1, sclr_dim, 1
-        sclrp2(1,i)    = 0.0
-        sclrprtp(1,i)  = 0.0
-        sclrpthlp(1,i) = 0.0
-      end do
-    end if
-
-
-    !----------------------------------------------------------------
-    ! Diagnose variances
-    !----------------------------------------------------------------
-
-    ! We also found that certain cases require a time tendency to run
-    ! at shorter timesteps.
-    ! This requires us to store in memory sigma_sqd_w and tau_zm between timesteps.
-
-    ! We found that if we call advance_xp2_xpyp first, we can use a longer timestep.
-    call advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp,     & ! intent(in)
-                           thlm, wpthlp, wpthvp, um, vm,  & ! intent(in)
-                           wp2, wp2_zt, wp3, upwp, vpwp,  & ! intent(in)
-                           sigma_sqd_w, Skw_zm, Kh_zt,    & ! intent(in)
- ! Vince Larson used prognostic timestepping of variances 
- !    in order to increase numerical stability.  17 Jul 2007
- !                          .false., dt,                   & ! intent(in)
-                           .true., dt,                    & ! intent(in)
-                           sclrm, wpsclrp,                & ! intent(in) 
-                           rtp2, thlp2, rtpthlp,          & ! intent(inout)
-                           up2, vp2,                      & ! intent(inout)
-                           err_code,                      & ! intent(out)
-                           sclrp2, sclrprtp, sclrpthlp  )   ! intent(out)
-
     ! Iterpolate variances to the zt grid (statistics and closure)
     thlp2_zt   = max( zm2zt( thlp2 ), thltol**2 ) ! Positive def. quantity
     rtp2_zt    = max( zm2zt( rtp2 ), rttol**2 )   ! Positive def. quantity
     rtpthlp_zt = zm2zt( rtpthlp )
-
-    ! Check stability
-    ! Changed from a logical flag to an integer indicating nature of
-    ! error.
-    ! Joshua Fasching March 2008
-    if ( lapack_error( err_code ) ) return
-
-
-    !----------------------------------------------------------------
-    ! Covariance clipping for wprtp, wpthlp, wpsclrp, upwp, and vpwp
-    ! after subroutine advance_xp2_xpyp updated xp2.
-    !----------------------------------------------------------------
-
-    wprtp_cl_num   = 1 ! First instance of w'r_t' clipping.
-    wpthlp_cl_num  = 1 ! First instance of w'th_l' clipping.
-    wpsclrp_cl_num = 1 ! First instance of w'sclr' clipping.
-    upwp_cl_num    = 1 ! First instance of u'w' clipping.
-    vpwp_cl_num    = 1 ! First instance of v'w' clipping.
-
-    call clip_covariances_denom( dt, rtp2, thlp2, up2, vp2, wp2,           & ! intent(in)
-                                 sclrp2, wprtp_cl_num, wpthlp_cl_num,      & ! intent(in)
-                                 wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, & ! intent(in)
-                                 wprtp, wpthlp, upwp, vpwp, wpsclrp )        ! intent(inout)
 
 
     !----------------------------------------------------------------
@@ -845,6 +746,49 @@ module clubb_core
     Kh_zm = c_K * max( zt2zm( Lscale ), zero_threshold )  & 
                 * sqrt( max( em, emin ) )
 
+    !----------------------------------------------------------------
+    ! Set Surface variances
+    !----------------------------------------------------------------
+
+    ! Surface variances should be set here, before the call to either
+    ! advance_xp2_xpyp or advance_wp2_wp3.
+    ! Surface effects should not be included with any case where the lowest
+    ! level is not the ground level.  Brian Griffin.  December 22, 2005.
+    if ( gr%zm(1) == sfc_elevation ) then
+
+      call sfc_var( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & ! intent(in)
+                    um(2), vm(2), wpsclrp_sfc,                 & ! intent(in)
+                    wp2(1), up2(1), vp2(1),                    & ! intent(out)
+                    thlp2(1), rtp2(1), rtpthlp(1), err_code,   & ! intent(out)
+                    sclrp2(1,1:sclr_dim),                      & ! intent(out)
+                    sclrprtp(1,1:sclr_dim),                    & ! intent(out) 
+                    sclrpthlp(1,1:sclr_dim) )                    ! intent(out)
+
+      ! Subroutine may produce NaN values, and if so, exit
+      ! gracefully.
+      ! Joshua Fasching March 2008
+      if( err_code == clubb_var_equals_NaN ) return
+
+    else
+
+      ! Variances for cases where the lowest level is not at the surface.
+      ! Eliminate surface effects on lowest level variances.
+      wp2(1)     = wtol_sqd
+      up2(1)     = wtol_sqd
+      vp2(1)     = wtol_sqd
+      thlp2(1)   = thltol**2
+      rtp2(1)    = rttol**2
+      rtpthlp(1) = 0.0
+
+      do i = 1, sclr_dim, 1
+        sclrp2(1,i)    = 0.0
+        sclrprtp(1,i)  = 0.0
+        sclrpthlp(1,i) = 0.0
+      end do
+
+    endif
+
+
     !#######################################################################
     !############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
     !#######################################################################
@@ -867,6 +811,7 @@ module clubb_core
     !----------------------------------------------------------------
     ! Advance rtm/wprtp and thlm/wpthlp one time step
     !----------------------------------------------------------------
+
     call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3, & ! intent(in)
                           Kh_zt, tau_zm, Skw_zm, rtpthvp,          & ! intent(in)
                           rtm_forcing, thlpthvp, rtm_ref, thlm_ref,& ! intent(in)
@@ -890,6 +835,53 @@ module clubb_core
     ! radiation, and we do not want to bother recomputing it.  6 Aug 2009
     call clip_rcm( rtm, 'rtm < rcm in advance_xm_wpxp', & ! intent(in)
                    rcm )                                  ! intent(inout)
+
+
+    !----------------------------------------------------------------
+    ! Diagnose variances
+    !----------------------------------------------------------------
+
+    ! We also found that certain cases require a time tendency to run
+    ! at shorter timesteps.
+    ! This requires us to store in memory sigma_sqd_w and tau_zm between timesteps.
+
+    ! We found that if we call advance_xp2_xpyp first, we can use a longer timestep.
+    call advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp,     & ! intent(in)
+                           thlm, wpthlp, wpthvp, um, vm,  & ! intent(in)
+                           wp2, wp2_zt, wp3, upwp, vpwp,  & ! intent(in)
+                           sigma_sqd_w, Skw_zm, Kh_zt,    & ! intent(in)
+ ! Vince Larson used prognostic timestepping of variances 
+ !    in order to increase numerical stability.  17 Jul 2007
+ !                          .false., dt,                   & ! intent(in)
+                           .true., dt,                    & ! intent(in)
+                           sclrm, wpsclrp,                & ! intent(in) 
+                           rtp2, thlp2, rtpthlp,          & ! intent(inout)
+                           up2, vp2,                      & ! intent(inout)
+                           err_code,                      & ! intent(out)
+                           sclrp2, sclrprtp, sclrpthlp  )   ! intent(out)
+
+    ! Check stability
+    ! Changed from a logical flag to an integer indicating nature of
+    ! error.
+    ! Joshua Fasching March 2008
+    if ( lapack_error( err_code ) ) return
+
+
+    !----------------------------------------------------------------
+    ! Covariance clipping for wprtp, wpthlp, wpsclrp, upwp, and vpwp
+    ! after subroutine advance_xp2_xpyp updated xp2.
+    !----------------------------------------------------------------
+
+    wprtp_cl_num   = 2 ! Second instance of w'r_t' clipping.
+    wpthlp_cl_num  = 2 ! Second instance of w'th_l' clipping.
+    wpsclrp_cl_num = 2 ! Second instance of w'sclr' clipping.
+    upwp_cl_num    = 1 ! First instance of u'w' clipping.
+    vpwp_cl_num    = 1 ! First instance of v'w' clipping.
+
+    call clip_covariances_denom( dt, rtp2, thlp2, up2, vp2, wp2,           & ! intent(in)
+                                 sclrp2, wprtp_cl_num, wpthlp_cl_num,      & ! intent(in)
+                                 wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, & ! intent(in)
+                                 wprtp, wpthlp, upwp, vpwp, wpsclrp )        ! intent(inout)
 
 
     !----------------------------------------------------------------
