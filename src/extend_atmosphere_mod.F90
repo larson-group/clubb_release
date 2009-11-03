@@ -21,6 +21,9 @@ module extend_atmosphere_mod
   ! Altitude of complete atmosphere in meters
   real, public, target, allocatable, dimension(:) :: complete_alt
 
+  ! Altitude of complete momentum grid in meters
+  real, public, target, allocatable, dimension(:) :: complete_momentum
+
   ! Flag to signal the use of the U.S. Standard Atmosphere Profile, 1976
   logical, public :: l_use_default_std_atmosphere
 
@@ -153,7 +156,9 @@ module extend_atmosphere_mod
   end subroutine convert_snd2extend_atm
 
   !------------------------------------------------------------------------------------------------
-  subroutine determine_extend_atmos_bounds( grid_size, grid, grid_spacing, radiation_top, &
+  subroutine determine_extend_atmos_bounds( grid_size, zt_grid, &
+                                              zm_grid, zm_grid_spacing, & 
+                                              radiation_top, &
                                               extend_atmos_bottom_level, &
                                               extend_atmos_top_level, &
                                               extend_atmos_range_size, &
@@ -182,10 +187,12 @@ module extend_atmosphere_mod
     ! Input Variable(s)
     integer, intent(in) :: grid_size ! Size of the model grid  [-]
 
-    real, dimension(grid_size), intent(in) :: grid ! Model grid [m]
+    real, dimension(grid_size), intent(in) :: zt_grid ! Model grid [m]
+
+    real, dimension(grid_size), intent(in) :: zm_grid ! Model grid [m]
 
     real, dimension(grid_size), intent(in) :: &
-      grid_spacing ! Inverse spacing between grid levels [m]
+      zm_grid_spacing ! Inverse spacing between grid levels [m]
 
     real, intent(in) :: radiation_top ! Maximum height to extend to [m]
 
@@ -200,21 +207,20 @@ module extend_atmosphere_mod
       lin_int_buffer_size          ! Size of linear interpolation buffer [-]
 
     ! Local Variable(s)
-    integer :: k, j
-    double precision :: dz10, dz_model, dz
-    integer :: extended_alt_index
-    double precision :: grid_top, extend_bottom, buffer_size
+    integer :: k, j, i
+    double precision :: dz10, dz_model, dz_extension, dz
+    double precision :: zm_grid_top, extend_bottom, buffer_size
 
     ! -- Begin Code --
 
     ! Determine the bounds to use for the extended atmosphere
 
     j=1
-    do while( extend_alt(j) < grid(grid_size) .and. j < extend_atmos_dim )
+    do while( extend_alt(j) < zm_grid(grid_size) .and. j < extend_atmos_dim )
       j= j+1
     end do
 
-    if(extend_alt(j) < grid(grid_size)) then
+    if(extend_alt(j) < zm_grid(grid_size)) then
       stop "Extended atmosphere is below the top of the computational grid"
     end if
 
@@ -253,39 +259,59 @@ module extend_atmosphere_mod
 
     ! Get the altitudes for a couple of key points so we can calculate a buffer
     ! size
-    grid_top =  grid(grid_size) !Altitude at top of normal grid
+    zm_grid_top =  zm_grid(grid_size) !Altitude at top of normal grid
     extend_bottom = extend_alt(extend_atmos_bottom_level) !Altitude at bottom of
                                                           !extended atmos
     
     ! Determine the spacing of the lin_int_buffer, it should have no more than
     ! 10 levels.
-    dz10 = (extend_bottom - grid_top) / 10
-    dz_model = grid_spacing(grid_size)
+    dz10 = (extend_bottom - zm_grid_top) / 10
+    dz_model = zm_grid_spacing(grid_size)
     dz = max(dz10, dz_model)
     ! Calculate the size of the lin_int_buffer
-    buffer_size = (extend_bottom - grid_top) / dz
+    buffer_size = (extend_bottom - zm_grid_top) / dz
     lin_int_buffer_size = int(buffer_size)
 
     ! Calculate the dimension of the entire atmosphere
     total_atmos_dim = grid_size + lin_int_buffer_size + extend_atmos_range_size
+
+    ! Build the complete momentum grid
+    ! The extended momentum grid contains one level above the
+    ! extended thermodynamic grid.
+    allocate( complete_momentum(1:total_atmos_dim + 1) )
+
+    i = 0 !The number of extension levels used
+    do j=1, total_atmos_dim + 1
+      if (j <= grid_size) then
+        complete_momentum(j) = zm_grid(j)
+      elseif(j > grid_size .and. j <= (grid_size + lin_int_buffer_size)) then 
+        !Interpolate between the top of the computational grid and the bottom
+        !of the extended altitude
+        complete_momentum(j) = real(zm_grid_top + ((extend_bottom - zm_grid_top) / & 
+                          (lin_int_buffer_size + 1)) * &
+                          (j - grid_size))
+      elseif(i < extend_atmos_range_size) then
+        !Take values from the extended atmosphere    
+        complete_momentum(j) = real(extend_alt(extend_atmos_bottom_level + i))
+        ! Keep track of where we are in the extended atmosphere
+        i = i + 1
+      else
+        !We should only get here for the absolute topmost point, which is a
+        !linear extension
+        dz_extension = complete_momentum(j-1) - complete_momentum(j-2)
+        complete_momentum(j) = real(complete_momentum(j-1) + dz_extension)
+      endif 
+    end do
     
     allocate( complete_alt(1:total_atmos_dim) )
 
     ! Build the total atmosphere grid
-    extended_alt_index = extend_atmos_bottom_level
     do j=1, total_atmos_dim
       if (j <= grid_size) then
-        complete_alt(j) = grid(j)
-      elseif(j > grid_size .and. j <= (grid_size + lin_int_buffer_size)) then 
-        !Interpolate between the top of the computational grid and the bottom
-        !of the extended altitude
-        complete_alt(j) = real(grid_top + ((extend_bottom - grid_top) / & 
-                          (lin_int_buffer_size + 1)) * &
-                          (j - grid_size))
+        complete_alt(j) = zt_grid(j)
       else    
-        complete_alt(j) = real(extend_alt(extended_alt_index))
-        ! Keep track of where we are in the extended atmosphere
-        extended_alt_index = extended_alt_index + 1
+        !Linear extension above zt_grid so points are between momentum levels
+        complete_alt(j) = (complete_momentum(j) + complete_momentum(j+1)) / 2
       endif 
     end do
 
@@ -380,6 +406,7 @@ module extend_atmosphere_mod
     deallocate( extend_pinmb )
     deallocate( extend_o3l )
     deallocate( complete_alt )
+    deallocate( complete_momentum )
 
   end subroutine finalize_extend_atm
 end module extend_atmosphere_mod

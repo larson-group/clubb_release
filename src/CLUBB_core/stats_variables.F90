@@ -43,10 +43,11 @@ module stats_variables
   character(len=200), public ::  & 
   fname_zt,  & ! Name of the stats file for thermodynamic grid fields
   fname_zm,  & ! Name of the stats file for momentum grid fields
-  fname_rad, & ! Name of the stats file for the radiation grid fields
+  fname_rad_zt, & ! Name of the stats file for the zt radiation grid fields
+  fname_rad_zm, & ! Name of the stats file for the zm radiation grid fields
   fname_sfc    ! Name of the stats file for surface only fields
 
-!$omp   threadprivate(fname_zt, fname_zm, fname_sfc)
+!$omp   threadprivate(fname_zt, fname_zm, fname_rad_zt, fname_rad_zm, fname_sfc)
 
 !       Indices for statistics in zt file
 
@@ -687,7 +688,7 @@ module stats_variables
      iwpedsclrp ! eddy sclr'(1)w'
 
 !$omp   threadprivate(iwpedsclrp)
-  ! Indices for statistics in rad file
+  ! Indices for statistics in rad_zt file
   integer, public :: &
     iT_in_K_rad, &
     ircil_rad, &
@@ -697,7 +698,14 @@ module stats_variables
     icloud_frac_rad, & 
     iradht_rad, &
     iradht_LW_rad, &
-    iradht_SW_rad, &
+    iradht_SW_rad
+
+!$omp threadprivate(iT_in_K_rad, ircil_rad, io3l_rad)
+!$omp threadprivate(irsnowm_rad, ircm_in_cloud_rad, icloud_frac_rad)
+!$omp threadprivate(iradht_rad, iradht_LW_rad, iradht_SW_rad)
+
+  ! Indices for statistics in rad_zm file
+  integer, public :: &
     iFrad_LW_rad, &
     iFrad_SW_rad, &
     iFrad_SW_up_rad, &
@@ -705,7 +713,6 @@ module stats_variables
     iFrad_SW_down_rad, &
     iFrad_LW_down_rad
 
-!$omp threadprivate(iradht_rad, iradht_LW_rad, iradht_SW_rad)
 !$omp threadprivate(iFrad_LW_rad, iFrad_SW_rad, iFrad_SW_up_rad)
 !$omp threadprivate(iFrad_LW_up_rad, iFrad_SW_down_rad, iFrad_LW_down_rad)
 
@@ -771,12 +778,13 @@ module stats_variables
 
   ! Variables that contains all the statistics
 
-  type (stats), target, public :: zt,   & ! zt grid
-                                  zm,   & ! zm grid
-                                  rad,  & ! rad grid
-                                  sfc     ! sfc
+  type (stats), target, public :: zt,   &    ! zt grid
+                                  zm,   &    ! zm grid
+                                  rad_zt,  & ! rad_zt grid
+                                  rad_zm,  & ! rad_zm grid
+                                  sfc        ! sfc
 
-!$omp   threadprivate(zt, zm, sfc)
+!$omp   threadprivate(zt, zm, rad_zt, rad_zm, sfc)
 
   ! Scratch space
 

@@ -125,7 +125,7 @@ module clubb_driver
 
     use grid_class, only: gr ! Variable(s)
 
-    use grid_class, only: read_grid_heights, zm2zt ! Procedure(s)
+    use grid_class, only: read_grid_heights, zt2zm, zm2zt ! Procedure(s)
 
     use parameter_indices, only: nparams ! Variable(s)
 
@@ -227,6 +227,7 @@ module clubb_driver
     use extend_atmosphere_mod, only: &
       total_atmos_dim, &
       complete_alt, &
+      complete_momentum, &
       l_use_default_std_atmosphere, &
       finalize_extend_atm
 
@@ -823,14 +824,17 @@ module clubb_driver
         call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
                          stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
                          gr%nnzp, gr%zt, gr%zm, total_atmos_dim - 1, & ! Intent(in)
-                         complete_alt(2:total_atmos_dim - 1), day, month, year, & ! Intent(in)
+                         complete_alt(2:total_atmos_dim), total_atmos_dim, & ! Intent(in)
+                         complete_momentum(2:total_atmos_dim + 1), & ! Intent(in)
+                         day, month, year, & ! Intent(in)
                          (/rlat/), (/rlon/), time_current, dtmain ) ! Intent(in)
     else
         ! Initialize statistics output
         call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
                          stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
                          gr%nnzp, gr%zt, gr%zm, total_atmos_dim, & ! Intent(in)
-                         complete_alt, day, month, year, & ! Intent(in)
+                         complete_alt, total_atmos_dim + 1, complete_momentum, & ! Intent(in)
+                         day, month, year, & ! Intent(in)
                          (/rlat/), (/rlon/), time_current, dtmain ) ! Intent(in)
     end if
 
@@ -1223,7 +1227,8 @@ module clubb_driver
                                 sounding_retVars, sclr_sounding_retVars )   ! Intent(in)
     end if
 
-    call determine_extend_atmos_bounds( gr%nnzp, gr%zm, gr%dzm,    & ! Intent(in)
+    call determine_extend_atmos_bounds( gr%nnzp, gr%zt,            & ! Intent(in)
+                                        gr%zm, gr%dzm,             & ! Intent(in)
                                         radiation_top,             & ! Intent(in)
                                         extend_atmos_bottom_level, & ! Intent(out)
                                         extend_atmos_top_level,    & ! Intent(out)
