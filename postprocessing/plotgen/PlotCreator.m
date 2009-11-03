@@ -138,13 +138,13 @@ end
 if strcmp(plotType, 'profile')	
 	ProfileFunctions.setTitle(plotTitle);
 	ProfileFunctions.setAxisLabels(plotUnits, 'Height [m]'); 
-	ProfileFunctions.addLegend(lines, legendText);
 	ProfileFunctions.setAxis(min(minVals), max(maxVals), startHeight, endHeight);
+	ProfileFunctions.addLegend(lines, legendText);
 elseif strcmp(plotType, 'timeseries')		
 	TimeseriesFunctions.setTitle(plotTitle);
 	TimeseriesFunctions.setAxisLabels('Time [min]', plotUnits); 	
-	TimeseriesFunctions.addLegend(lines, legendText);
 	TimeseriesFunctions.setAxis(min(minVals), max(maxVals), startTime, endTime);
+	TimeseriesFunctions.addLegend(lines, legendText);
 end
 
 %Output the EPS file
