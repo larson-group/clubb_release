@@ -100,10 +100,13 @@ vars_zm =
 !'wpedsclr1p', 'wpedsclr2p',
 ''
 
-vars_rad =
+vars_rad_zt =
 'T_in_K_rad', 'rcil_rad', 'o3l_rad', 'rsnowm_rad', 'rcm_in_cloud_rad',
-'cloud_frac_rad', 'radht_rad', 'Frad_SW_rad', 'Frad_LW_rad', 'radht_SW_rad',
-'radht_LW_rad', 'Frad_SW_up_rad', 'Frad_LW_up_rad', 'Frad_SW_down_rad', 'Frad_LW_down_rad',
+'cloud_frac_rad', 'radht_rad', 'radht_SW_rad', 'radht_LW_rad',
+''
+
+vars_rad_zm =
+'Frad_SW_rad', 'Frad_LW_rad', 'Frad_SW_up_rad', 'Frad_LW_up_rad', 'Frad_SW_down_rad', 'Frad_LW_down_rad',
 ''
 
 vars_sfc = 
