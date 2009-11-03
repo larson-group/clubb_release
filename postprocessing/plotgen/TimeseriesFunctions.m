@@ -12,7 +12,7 @@ classdef TimeseriesFunctions
 		function addLegend ( lineCollection, textCollection )
 			hold off
 
-			legend( lineCollection, textCollection, 'Location', 'NorthEast' )
+			legend( lineCollection, textCollection, 'Location', 'Best' )
 		end
 
 		function setTitle ( graphTitle )
