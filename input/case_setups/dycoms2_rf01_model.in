@@ -168,7 +168,7 @@ stats_fmt    = "grads"         ! Type of statistical output file (GrADS or netCD
 &setfields
 datafile      = "../les_data/dycoms2_rf01"
 input_type    = "coamps_les"
-input_um = .true 
+input_um = .true. 
 input_vm = .true.
 input_rtm = .true. 
 input_thlm = .true.

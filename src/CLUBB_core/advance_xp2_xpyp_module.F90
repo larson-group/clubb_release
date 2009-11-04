@@ -811,7 +811,7 @@ contains
                            Cn, nu, beta, lhs )
 
     ! Description:
-    ! Compute LHS tridiagonal matrix for a variance or coveriance term
+    ! Compute LHS tridiagonal matrix for a variance or covariance term
 
     ! References:
     ! None
