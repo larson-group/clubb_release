@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 ###########################################################################
-# Plotgen v3.1
+# Plotgen v3.9
 #
 # Documentation is available here:
 # http://larson-group.com/twiki/bin/view.pl/Documentation/CarsonDoc/Plotgen3
@@ -42,7 +42,7 @@ my $matlabPipe;
 my $imageConversionLock;
 
 # Plotgen Version Number
-my $VERSION = 3.1;
+my $VERSION = 3.9;
 
 # Used to create a "random" output directory so multiple runs
 # don't overwrite each other.
@@ -54,8 +54,6 @@ my $QUALITY = 100;
 # Field to hold the total number of cases plotted. This will
 # be used when automatically specifying image quality.
 my $caseCount = 0;
-
-# Argument list
 
 # If running in nightly mode, this value should be set to 1
 my $nightly = 0;
@@ -117,6 +115,8 @@ $File::Copy::Recursive::KeepMode = 0;
 my $sessionType = $ENV{'DISPLAY'}; 
 $SIG{INT} = "cleanup";
 $SIG{CHLD} = "IGNORE";
+
+my @casesExecuted;
 
 main();
 
@@ -290,9 +290,22 @@ sub runCases()
                     print(STDERR $err, "\n");
                     exit(1);
             }
-    
-            if(dataExists($CASE::CASE) && ($CASE::CASE{'enabled'} ne 'false'))
+
+            # Check to see if case was plotted already. This fixes the infinite loop problem
+            # when converting images. If the case was already plotted, do not do it again.
+            my $runCase = 'true';
+            foreach my $chkCase (@casesExecuted)
             {
+                if($chkCase eq  $CASE::CASE{'name'})
+                {
+                    $runCase = 'false';
+                }
+            }
+    
+            if(dataExists($CASE::CASE) && ($CASE::CASE{'enabled'} ne 'false') && $runCase eq 'true')
+            {
+                push(@casesExecuted, $CASE::CASE{'name'});
+
                 # Print the case title to the HTML page
                 OutputWriter->writeCaseTitle($outputIndex, $CASE::CASE{'headerText'});
                 OutputWriter->writeNavPageCase("$outputTemp/$navigationPage", $CASE::CASE{'name'}, $CASE::CASE{'headerText'});

@@ -1,6 +1,6 @@
 package CaseReader;
 
-# Read a configuration file
+# Read a case file
 #   The arg can be a relative or full path, or
 #   it can be a file located somewhere in @INC.
 sub readCase
@@ -9,11 +9,10 @@ sub readCase
 	my $file = shift(@_);
 
 	our $err;
-
 	{   # Put config data into a separate namespace
 		package CASE;
 
-		# Process the contents of the config file
+		# Process the contents of the case file
 		my $rc = do($file);
 
 		# Check for errors
