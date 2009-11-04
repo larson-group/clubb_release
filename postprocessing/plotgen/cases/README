@@ -47,4 +47,7 @@ of the plotgen code. Once your change has been committed, contact
 your local system administrator (messneradmin@uwm.edu) and ask them
 to create a new RPM for you so your changes can be seen when anyone
 executes plotgen (and in the nightly tests). For faster results, you
-may want to bring them cookies/cup cakes with your request.
+may want to bring them cookies/cup cakes with your request. Information
+on creating the Plotgen RPM can be found here:
+
+http://larson-group.com/twiki/bin/view.pl/Documentation/CarsonDoc/PlotgenRpm
