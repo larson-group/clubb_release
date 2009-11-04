@@ -284,25 +284,28 @@ sub runCases()
         # those plots. 
         if($nightly == 1 || ($nightly == 0 && $file !~ m/_nightly/))
         {
-            # Read the case file. If there is an error, exit.
+            #print("Case file: $file\n");
+            my $runCase = 'true';
+            # Read the case file. If there is an error, display it and continue without plotting it.
             if (my $err = CaseReader->readCase($file))
             {
                     print(STDERR $err, "\n");
-                    exit(1);
-            }
-
-            # Check to see if case was plotted already. This fixes the infinite loop problem
-            # when converting images. If the case was already plotted, do not do it again.
-            my $runCase = 'true';
-            foreach my $chkCase (@casesExecuted)
-            {
-                if($chkCase eq  $CASE::CASE{'name'})
-                {
                     $runCase = 'false';
+            }
+            else
+            {
+                # Check to see if case was plotted already. This fixes the infinite loop problem
+                # when converting images. If the case was already plotted, do not do it again.
+                foreach my $chkCase (@casesExecuted)
+                {
+                    if($chkCase eq  $CASE::CASE{'name'})
+                    {
+                        $runCase = 'false';
+                    }
                 }
             }
     
-            if(dataExists($CASE::CASE) && ($CASE::CASE{'enabled'} ne 'false') && $runCase eq 'true')
+            if($runCase eq 'true' && dataExists($CASE::CASE) && ($CASE::CASE{'enabled'} ne 'false'))
             {
                 push(@casesExecuted, $CASE::CASE{'name'});
 

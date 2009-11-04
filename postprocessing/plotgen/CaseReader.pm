@@ -8,8 +8,9 @@ sub readCase
 	shift(@_);
 	my $file = shift(@_);
 
-	our $err;
-	{   # Put config data into a separate namespace
+	our $err = undef;
+	{   
+        # Put case data into a separate namespace
 		package CASE;
 
 		# Process the contents of the case file
@@ -18,15 +19,15 @@ sub readCase
 		# Check for errors
 		if ($@) 
 		{
-			$::err = "ERROR: Failure compiling '$file' - $@";
+			$err = "ERROR: Failure compiling '$file' - $@";
 		} 
 		elsif (! defined($rc))
 		{
-			$::err = "ERROR: Failure reading '$file' - $!";
+			$err = "ERROR: Failure reading '$file' - $!";
 		}
 		elsif (! $rc) 
 		{
-			$::err = "ERROR: Failure processing '$file'";
+			$err = "ERROR: Failure processing '$file'";
 		}
 	}
 
