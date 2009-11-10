@@ -311,7 +311,7 @@ module extend_atmosphere_mod
         complete_alt(j) = zt_grid(j)
       else    
         !Linear extension above zt_grid so points are between momentum levels
-        complete_alt(j) = (complete_momentum(j) + complete_momentum(j+1)) / 2
+        complete_alt(j) = (complete_momentum(j - 1) + complete_momentum(j)) / 2
       endif 
     end do
 
