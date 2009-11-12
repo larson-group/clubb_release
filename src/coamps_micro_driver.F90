@@ -175,12 +175,12 @@ module coamps_micro_driver_mod
       rrainm,     & ! Rain water mixing ratio    [kg/kg]
       rgraupelm,  & ! Graupel water mixing ratio [kg/kg]
       rsnowm,     & ! Snow water mixing ratio    [kg/kg]
-      Nrm        ! Number of rain drops       [count/kg]
+      Nrm           ! Number of rain drops       [count/kg]
 
     real, dimension(gr%nnzp), intent(inout) :: & 
       Ncm,        & ! Number of cloud droplets   [count/kg]
       Ncnm,       & ! Number of cloud nuclei     [count/m^3]
-      Nim           ! Number of ice crystals     [count/m^3]
+      Nim           ! Number of ice crystals     [count/kg]
 
     real, dimension(1,1,gr%nnzp-1), intent(inout) :: &
       cond ! condensation/evaporation of liquid water
@@ -210,7 +210,7 @@ module coamps_micro_driver_mod
 
 ! Addition by Adam Smith, 24 April 2008
 ! Adding snow particle number concentration
-    real, dimension(gr%nnzp) :: Nsnowm
+    real, dimension(gr%nnzp) :: Nsnowm ! [count/kg]
 ! End of ajsmith4's addition
 
 ! Variables on the w grid
@@ -417,7 +417,7 @@ module coamps_micro_driver_mod
 ! These variables activate rain/drizzle in the COAMPS
 ! micro scheme.  Set these variables to .TRUE. if you need these
 ! hydrometeors in your simulations.
-    ldrizzle = .FALSE.
+    ldrizzle = .false.
 
 ! Whether to produce ice in COAMPS.
 ! According to Jerry Schmidt of NRL,
@@ -507,10 +507,9 @@ module coamps_micro_driver_mod
     rvm = rtm - rcm
 
     if ( any( rvm < 0. ) ) then
-!        write(fstderr,*) "in COAMPS (R) micro driver rvm < 0"
       call clubb_debug(1, 'in COAMPS (R) micro driver rvm < 0')
       where ( rvm < 0. ) rvm = 0.
-      end if
+    end if
 
       thm(1:kk+1) = thlm(1:kk+1) & 
                   + ( Lv /( Cp * exner(1:kk+1) )* rcm(1:kk+1) )
@@ -568,16 +567,15 @@ module coamps_micro_driver_mod
         p3(1,1,k)   = 0.0
 
         ! Convert from MKS units as needed
-        ! Nrm and Ncm, which are in kg^-1, need to be multiplied by rho
-        ! to be in units of m^-3, and then converted to cm^-3.
-        ! Brian.  Sept. 8, 2007.
-!        nc3(1,1,k)  = Ncm(k+1) * 1.e-6
-!        nr3(1,1,k)  = Nrm(k+1) * 1.e-6
-        nc3(1,1,k)  = ( Ncm(k+1) * rho(k+1) ) * 1.e-6
-        nr3(1,1,k)  = ( Nrm(k+1) * rho(k+1) ) * 1.e-6
-        ncn3(1,1,k) = Ncnm(k+1) * 1.e-6
+        ! Nrm, Ncm, Ncnm are in kg^-1, and need to coverted to 1e-6 * kg^-1. 
+        ! They will be converted to #/cc within adjtq if ldrizzle is true, 
+        ! or ignored if ldrizzle is false.
+        nc3(1,1,k)  = Ncm(k+1) / cm3_per_m3
+        nr3(1,1,k)  = Nrm(k+1) / cm3_per_m3
+        ncn3(1,1,k) = Ncnm(k+1) / cm3_per_m3
 
-        ni3(1,1,k)  = Nim(k+1)
+        ! Nim is in #/m^3 within adjtq (See conice.F).
+        ni3(1,1,k)  = Nim(k+1) * rho(k+1)
 
       end do
 
@@ -817,12 +815,12 @@ module coamps_micro_driver_mod
 ! Transfer back to CLUBB arrays
       do k=1, kk, 1
         ! Convert to MKS as needed
-        ! nc3, in cm^-3, needs to be converted to m^-3, and then divided by
-        ! rho so that Ncm is in kg^-1.  Brian.  Sept. 8, 2007
-!        Ncm(k+1)  = nc3(1,1,k) * 1.e6
-        Ncm(k+1)  = ( nc3(1,1,k) * 1.e6 ) / rho(k+1)
-        Ncnm(k+1) = ncn3(1,1,k) * 1.e6
-        Nim(k+1)  = ni3(1,1,k)
+        ! ncn3 & nc3 are in cm^-3, and need to be converted to m^-3
+        Ncm(k+1)  = nc3(1,1,k) * cm3_per_m3
+        Ncnm(k+1) = ncn3(1,1,k) * cm3_per_m3
+
+        ! Convert ice number concentration to #/kg
+        Nim(k+1)  = ni3(1,1,k) / rho(k+1)
       end do ! k=1..kk+1
 
 !-------------------------------------------------
@@ -843,6 +841,8 @@ module coamps_micro_driver_mod
 !-------------------------------------------------
 ! End of ajsmith4's addition
 !-------------------------------------------------
+     ! Convert to #/kg for comparison to Morrison -dschanen 12 Nov 2009
+     Nsnowm = Nsnowm / rho
 
 ! Linear extrapolation for the ghost point of fall speeds
       fallr(1,1,1) = .5 * ( fallr(1,1,2) + fallr(1,1,3) )
@@ -863,13 +863,7 @@ module coamps_micro_driver_mod
         rrtend(k+1)    = ( qr3(1,1,k) - rrainm(k+1) ) / deltf
         rgtend(k+1)    = ( qg3(1,1,k) - rgraupelm(k+1) ) / deltf
         ritend(k+1)    = ( qi3(1,1,k) - ricem(k+1) ) / deltf
-        ! Nrm is now in kg^-1, so nr3(1,1,k)*1.e6 needs to be divided by rho
-        ! in order to be in the same units as Nrm.  This will cause nrmtend to
-        ! have units of kg^-1 s^-1, which is what we want.
-        ! Brian.  Sept. 8, 2007.
-        !nrmtend(k+1)   = ( nr3(1,1,k)*1.e6 - Nrm(k+1) ) / deltf ! Conversion factor
-        nrmtend(k+1)   = ( (nr3(1,1,k)*cm3_per_m3)/rho(k+1) - Nrm(k+1) )  & 
-                         / deltf ! Conversion factor
+        nrmtend(k+1)   = ( (nr3(1,1,k)*cm3_per_m3) - Nrm(k+1) ) / deltf ! Conversion factor
         rsnowtend(k+1) = ( qs3(1,1,k) - rsnowm(k+1) ) / deltf
         rvm_mc(k+1)    = ((qv3(1,1,k) - rvm(k+1)) / deltf)
         rcm_mc(k+1)    = ((qc3(1,1,k) - rcm(k+1)) / deltf)

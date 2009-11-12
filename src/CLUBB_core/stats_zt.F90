@@ -957,15 +957,15 @@ module stats_zt
       case ('Ncnm')
         iNcnm = k
         call stat_assign( iNcnm, "Ncnm", & 
-             "Cloud nuclei number concentration [num/m^3]", & 
-             "num/m^3", zt )
+             "Cloud nuclei number concentration [num/kg]", & 
+             "num/kg", zt )
         k = k + 1
 
       case ('Nim')           ! Brian
         iNim = k
         call stat_assign( iNim, "Nim", & 
-             "Ice crystal number concentration [num/m^3]", & 
-             "num/m^3", zt )
+             "Ice crystal number concentration [num/kg]", & 
+             "num/kg", zt )
         k = k + 1
 
       case ('snowslope')     ! Adam Smith, 22 April 2008
@@ -978,15 +978,15 @@ module stats_zt
       case ('Nsnowm')        ! Adam Smith, 22 April 2008
         iNsnowm = k
         call stat_assign( iNsnowm, "Nsnowm", & 
-             "Snow particle number concentration [num/m^3]", & 
-             "num/m^3", zt )
+             "Snow particle number concentration [num/kg]", & 
+             "num/kg", zt )
         k = k + 1
 
       case ('Ngraupelm')        ! Adam Smith, 22 April 2008
         iNgraupelm = k
         call stat_assign( iNgraupelm, "Ngraupelm", & 
-             "Graupel number concentration  [num/m^3]", & 
-             "num/m^3", zt )
+             "Graupel number concentration  [num/kg]", & 
+             "num/kg", zt )
 
       case ('sed_rcm')       ! Brian
         ised_rcm = k
