@@ -88,11 +88,11 @@
        [
           {'filename' => 'cloud_feedback_s6_p2k_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/m^3]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'cloud_feedback_s6_p2k_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nrm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Cloud Droplet Concentration', 'axisLabel' => 'Ncm [num/m^3]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Cloud Droplet Concentration', 'axisLabel' => 'Ncm [num/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'cloud_feedback_s6_p2k_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
@@ -104,7 +104,7 @@
        [
           {'filename' => 'cloud_feedback_s6_p2k_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ricem', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Cloud Ice Concentration', 'axisLabel' => 'Nim [num/m^3]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Cloud Ice Concentration', 'axisLabel' => 'Nim [num/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'cloud_feedback_s6_p2k_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'nim', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
@@ -112,7 +112,7 @@
        [
           {'filename' => 'cloud_feedback_s6_p2k_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsnowm [num/m^3]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsnowm [num/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'cloud_feedback_s6_p2k_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'nsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
