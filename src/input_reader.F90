@@ -514,8 +514,7 @@ module input_reader
 
     end if
 
-
-
+    return
   end subroutine deallocate_two_dim_vars
   !-------------------------------------------------------------------------------------------------
   function read_x_table( nvar, xdim, ydim, target_name, retVars ) result(x)
