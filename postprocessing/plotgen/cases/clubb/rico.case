@@ -109,13 +109,13 @@
        ]},
        {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'nrm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => '( nrm ./ 1.0e-6 ) ./ dn0', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nrm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Droplet Concentration', 'axisLabel' => 'Ncm [num/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'ncm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
-          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => '( ncm ./ 1.0e-6 ) ./ dn0', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm .* cloud_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgraupelm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
@@ -143,6 +143,7 @@
        ]},
        {'plotTitle' => 'Buoyancy flux ', 'axisLabel' => 'wpthvp [K m/s]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wpthvp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
