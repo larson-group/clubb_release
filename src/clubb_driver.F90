@@ -1900,7 +1900,7 @@ module clubb_driver
     ! --- Begin Code ---
 
     ! Inform inputfields module
-    input_type = "hoc"
+    input_type = "clubb"
     input_um   = .true.
     input_vm   = .true.
     input_rtm  = .true.

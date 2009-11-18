@@ -2238,7 +2238,7 @@ module inputfields
 
     ! Pick some initial values
     datafile = ''
-    input_type = 'hoc'
+    input_type = 'clubb'
 
     input_um = .false.
     input_vm = .false.
