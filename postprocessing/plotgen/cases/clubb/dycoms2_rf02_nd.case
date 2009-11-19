@@ -155,8 +155,8 @@
        {'plotTitle' => 'Cloud Droplet Concentration', 'axisLabel' => 'Ncm [num/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_nd_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => '( ncm ./ 1.0e-6 ) ./ dn0', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_nd_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'Ncm .* cloud_frac', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_nd_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'Ncm .* cloud_frac', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_nd_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'Ncm .* cf', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_nd_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'Ncm .* cf', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm .* cloud_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgraupelm [kg/kg]', 'type' => 'profile', 'lines' =>
