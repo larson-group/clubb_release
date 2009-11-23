@@ -774,7 +774,7 @@ module stats_zm
         iwprtp_pr2 = k
 
         call stat_assign(iwprtp_pr2,"wprtp_pr2", & 
-             "wprtp pressure term 2 [(m kg)/(s^2 kg)]","v",zm)
+             "wprtp pressure term 2 [(m kg)/(s^2 kg)]","(m kg)/(s^2 kg)",zm)
         k = k + 1
 
       case ('wprtp_pr3')
@@ -908,43 +908,43 @@ module stats_zm
       case ('rtp2_bt')
         irtp2_bt = k
         call stat_assign(irtp2_bt,"rtp2_bt", & 
-             "rtp2 time tendency [kg/(kg s)]","kg/(kg s)",zm)
+             "rtp2 time tendency [(kg^2)/(kg^2 s)]","(kg^2)/(kg^2 s)",zm)
         k = k + 1
       case ('rtp2_ma')
         irtp2_ma = k
         call stat_assign(irtp2_ma,"rtp2_ma", & 
-             "rtp2 mean advection [kg/(kg s)]","kg/(kg s)",zm)
+             "rtp2 mean advection [(kg^2)/(kg^2 s)]","(kg^2)/(kg^2 s)",zm)
         k = k + 1
       case ('rtp2_ta')
         irtp2_ta = k
         call stat_assign(irtp2_ta,"rtp2_ta", & 
-             "rtp2 turbulent advection [kg/(kg s)]","kg/(kg s)",zm)
+             "rtp2 turbulent advection [(kg^2)/(kg^2 s)]","(kg^2)/(kg^2 s)",zm)
         k = k + 1
       case ('rtp2_tp')
         irtp2_tp = k
         call stat_assign(irtp2_tp,"rtp2_tp", & 
-             "rtp2 turbulent production [kg/(kg s)]","kg/(kg s)",zm)
+             "rtp2 turbulent production [(kg^2)/(kg^2 s)]","(kg^2)/(kg^2 s)",zm)
         k = k + 1
       case ('rtp2_dp1')
         irtp2_dp1 = k
         call stat_assign(irtp2_dp1,"rtp2_dp1", & 
-             "rtp2 dissipation term 1 [kg/(kg s)]","kg/(kg s)",zm)
+             "rtp2 dissipation term 1 [(kg^2)/(kg^2 s)]","(kg^2)/(kg^2 s)",zm)
         k = k + 1
       case ('rtp2_dp2')
         irtp2_dp2 = k
         call stat_assign(irtp2_dp2,"rtp2_dp2", & 
-             "rtp2 dissipation term 2 [kg/(kg s)]","kg/(kg s)",zm)
+             "rtp2 dissipation term 2 [(kg^2)/(kg^2 s)]","(kg^2)/(kg^2 s)",zm)
         k = k + 1
       case ('rtp2_cl')
         irtp2_cl = k
         call stat_assign(irtp2_cl,"rtp2_cl", & 
-             "rtp2 clipping term [kg/(kg s)]","kg/(kg s)",zm)
+             "rtp2 clipping term [(kg^2)/(kg^2 s)]","(kg^2)/(kg^2 s)",zm)
         k = k + 1
 
       case ('rtp2_pd')
         irtp2_pd = k
         call stat_assign( irtp2_pd, "rtp2_pd", & 
-             "rtp2 positive definite adjustment [kg/(kg s)]", "kg/(kg s)", zm )
+             "rtp2 positive definite adjustment [(kg^2)/(kg^2 s)]", "(kg^2)/(kg^2 s)", zm )
         k = k + 1
 
       case ('thlp2_bt')
@@ -1045,121 +1045,121 @@ module stats_zm
       case ('up2_bt')
         iup2_bt = k
         call stat_assign(iup2_bt,"up2_bt", & 
-             "up2 time tendency [m^2/s^2]","m^2/s^2",zm)
+             "up2 time tendency [m^2/s^3]","m^2/s^3",zm)
         k = k + 1
 
       case ('up2_ma')
         iup2_ma = k
         call stat_assign(iup2_ma,"up2_ma", & 
-             "up2 mean advection [m^2/s^2]","m^2/s^2",zm)
+             "up2 mean advection [m^2/s^3]","m^2/s^3",zm)
         k = k + 1
 
       case ('up2_ta')
         iup2_ta = k
         call stat_assign(iup2_ta,"up2_ta", & 
-             "up2 turbulent advection [m^2/s^2]","m^2/s^2",zm)
+             "up2 turbulent advection [m^2/s^3]","m^2/s^3",zm)
         k = k + 1
 
       case ('up2_tp')
         iup2_tp = k
         call stat_assign(iup2_tp,"up2_tp", & 
-             "up2 turbulent production [m^2/s^2]","m^2/s^2",zm)
+             "up2 turbulent production [m^2/s^3]","m^2/s^3",zm)
         k = k + 1
 
       case ('up2_dp1')
         iup2_dp1 = k
         call stat_assign(iup2_dp1,"up2_dp1", & 
-             "up2 dissipation term 1 [m^2/s^2]","m^2/s^2",zm)
+             "up2 dissipation term 1 [m^2/s^3]","m^2/s^3",zm)
         k = k + 1
 
       case ('up2_dp2')
         iup2_dp2 = k
         call stat_assign(iup2_dp2,"up2_dp2", & 
-             "up2 dissipation term 2 [m^2/s^2]","m^2/s^2",zm)
+             "up2 dissipation term 2 [m^2/s^3]","m^2/s^3",zm)
         k = k + 1
 
       case ('up2_pr1')
         iup2_pr1 = k
         call stat_assign(iup2_pr1,"up2_pr1", & 
-             "up2 pressure term 1 [m^2/s^2]","m^2/s^2",zm)
+             "up2 pressure term 1 [m^2/s^3]","m^2/s^3",zm)
         k = k + 1
 
       case ('up2_pr2')
         iup2_pr2 = k
         call stat_assign(iup2_pr2,"up2_pr2", & 
-             "up2 pressure term 2 [m^2/s^2]","m^2/s^2",zm)
+             "up2 pressure term 2 [m^2/s^3]","m^2/s^3",zm)
         k = k + 1
 
       case ('up2_cl')
         iup2_cl = k
         call stat_assign(iup2_cl,"up2_cl", & 
-             "up2 clipping [m^2/s^2]","m^2/s^2",zm)
+             "up2 clipping [m^2/s^3]","m^2/s^3",zm)
         k = k + 1
 
       case ('up2_pd')
         iup2_pd = k
         call stat_assign( iup2_pd, "up2_pd", & 
-             "up2 positive definite adjustment [m^2/s^2]", "m^2/s^2", zm )
+             "up2 positive definite adjustment [m^2/s^3]", "m^2/s^3", zm )
         k = k + 1
 
       case ('vp2_bt')
         ivp2_bt = k
         call stat_assign(ivp2_bt,"vp2_bt", & 
-             "vp2 time tendency [m^2/s^2]","m^2/s^2",zm)
+             "vp2 time tendency [m^2/s^3]","m^2/s^3",zm)
         k = k + 1
 
       case ('vp2_ma')
         ivp2_ma = k
         call stat_assign(ivp2_ma,"vp2_ma", & 
-             "vp2 mean advection [m^2/s^2]","m^2/s^2",zm)
+             "vp2 mean advection [m^2/s^3]","m^2/s^3",zm)
         k = k + 1
 
       case ('vp2_ta')
         ivp2_ta = k
         call stat_assign(ivp2_ta,"vp2_ta", & 
-             "vp2 turbulent advection [m^2/s^2]","m^2/s^2",zm)
+             "vp2 turbulent advection [m^2/s^3]","m^2/s^3",zm)
         k = k + 1
 
       case ('vp2_tp')
         ivp2_tp = k
         call stat_assign(ivp2_tp,"vp2_tp", & 
-             "vp2 turbulent production [m^2/s^2]","m^2/s^2",zm)
+             "vp2 turbulent production [m^2/s^3]","m^2/s^3",zm)
         k = k + 1
 
       case ('vp2_dp1')
         ivp2_dp1 = k
         call stat_assign(ivp2_dp1,"vp2_dp1", & 
-             "vp2 dissipation term 1 [m^2/s^2]","m^2/s^2",zm)
+             "vp2 dissipation term 1 [m^2/s^3]","m^2/s^3",zm)
         k = k + 1
 
       case ('vp2_dp2')
         ivp2_dp2 = k
         call stat_assign(ivp2_dp2,"vp2_dp2", & 
-             "vp2 dissipation term 2 [m^2/s^2]","m^2/s^2",zm)
+             "vp2 dissipation term 2 [m^2/s^3]","m^2/s^3",zm)
         k = k + 1
 
       case ('vp2_pr1')
         ivp2_pr1 = k
         call stat_assign(ivp2_pr1,"vp2_pr1", & 
-             "vp2 pressure term 1 [m^2/s^2]","m^2/s^2",zm)
+             "vp2 pressure term 1 [m^2/s^3]","m^2/s^3",zm)
         k = k + 1
 
       case ('vp2_pr2')
         ivp2_pr2 = k
         call stat_assign(ivp2_pr2,"vp2_pr2", & 
-             "vp2 pressure term 2 [m^2/s^2]","m^2/s^2",zm)
+             "vp2 pressure term 2 [m^2/s^3]","m^2/s^3",zm)
         k = k + 1
 
       case ('vp2_cl')
         ivp2_cl = k
         call stat_assign(ivp2_cl,"vp2_cl", & 
-             "vp2 clipping [m^2/s^2]","m^2/s^2",zm)
+             "vp2 clipping [m^2/s^3]","m^2/s^3",zm)
         k = k + 1
 
       case ('vp2_pd')
         ivp2_pd = k
         call stat_assign( ivp2_pd, "vp2_pd", & 
-             "vp2 positive definite adjustment [m^2/s^2]", "m^2/s^2", zm )
+             "vp2 positive definite adjustment [m^2/s^3]", "m^2/s^3", zm )
         k = k + 1
 
       case ('wpthlp_enter_mfl')
