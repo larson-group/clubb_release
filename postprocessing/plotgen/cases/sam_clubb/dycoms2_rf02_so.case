@@ -71,10 +71,10 @@
        {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp / qtflux(s) [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'dycoms2_rf02_so_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(QVFLXS + QCFLXS + QTFLUX) ./ (RHO * 2.5104e+6)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => '(QVFLXS + QCFLXS + QTFLUX) ./ (RHO * 2.5104e+6)', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
-          {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '((QVFLXS + QCFLXS + QTFLUX) ./ (RHO * 2.5104e+6)) + WPRTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => '((QVFLXS + QCFLXS + QTFLUX) ./ (RHO * 2.5104e+6)) + WPRTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QTFLUX ./ (RHO * 2.5104e+6)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'QTFLUX ./ (RHO * 2.5104e+6)', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
+          {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'QTFLUX ./ (RHO * 2.5104e+6) + WPRTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'QTFLUX ./ (RHO * 2.5104e+6) + WPRTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of \theta_l', 'axisLabel' => 'thlp2 / tl2 [K^2]', 'type' => 'profile', 'lines' =>
        [
