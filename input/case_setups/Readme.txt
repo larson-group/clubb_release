@@ -139,6 +139,13 @@ l_input_fields | logical
   data in a stats file for the purposes of diagnosing structural problems
   within the clubb equations.
 
+  Nota bene:  The GrADS data files cannot have a time increment less than 1mn.
+  Therefore, when a file is output in CLUBB with a stats_tout of less than
+  60, the code will simply round up, which will not work for using the
+  resulting GrADS data file generated for an inputfields simulation.
+  Therefore, when l_input_fields is true, always use GrADS data output
+  at 1mn increments or greater.
+
 debug_level | integer
   0 => Print no debug messages to the screen
   1 => Print lightweight debug messages, e.g. print statements
@@ -397,7 +404,7 @@ datafile | character
   i.e. _zt, _zm, or _coamps_sm, _coamps_sw.
 
 input_type | character
-  Either 'les' or 'hoc' depending whether the data is from CLUBB or
+  Either 'coamps_les' or 'clubb' depending whether the data is from CLUBB or
   COAMPS-LES.
 
 input_<varname> |logical

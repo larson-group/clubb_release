@@ -396,10 +396,15 @@ setfields namelist to the location of the data files, and set 'input_'<varname> 
 .true. for those fields for which you want to use a fixed value from
 the LES dataset at the beginning of each timestep.
 
+Nota bene:  The GrADS data files cannot have a time increment less than 1mn.
+Therefore, when a file is output in CLUBB with a stats_tout of less than
+60, the code will simply round up, which will not work for using the
+resulting GrADS data file generated for an inputfields simulation.
+Therefore, when l_input_fields is true, always use GrADS data output
+at 1mn increments or greater.
+
 You will need to set 'input_type' to the type of run you are using for input
-to "hoc", "les", or "rf1".  The last option is a special case for COAMPS-LES
-DYCOMS II RF01, which lacks both bottom data points with the standard CLUBB
-grid.
+to "clubb" or "coamps_les".
 
 Then, change your directory to run_scripts and execute the run_scm.bash
 as you would usually.
