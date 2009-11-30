@@ -1,6 +1,6 @@
 function [varData, levData] = VariableReadNC( filePath, variableToRead, startTime, endTime, plotType )
 
-%Read in some necessary information about the GRaDS file
+%Read in some necessary information about the NETCDF file
 [dataFileName, nz, z, numTimesteps, dt, numVars, listofparams] = header_read_expanded_netcdf(filePath);
 
 % open NETCDF file
