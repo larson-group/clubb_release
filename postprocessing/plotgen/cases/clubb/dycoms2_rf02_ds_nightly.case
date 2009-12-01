@@ -1,13 +1,13 @@
-# DYCOMS II RF02 DS Case File
+# DYCOMS II RF02 DS Nightly Case File used to plot the restart run nightly test
 
 %CASE = 
 (
-    'name' => 'dycoms2_rf02_ds',
+    'name' => 'dycoms2_rf02_ds_nightly',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'DYCOMS II RF02 DS Minutes 301-360',
-    'startTime' => 301.0,  # [minutes]
-    'endTime' => 360.0,    # [minutes]
+    'headerText' => 'DYCOMS II RF02 DS Minutes 301-360 Restart Run',
+    'startTime' => 1.0,  # [minutes]
+    'endTime' => 240.0,    # [minutes]
     'startHeight' => 0.0,  # [m]
     'endHeight' => 1200.0, # [m]
     'plots' =>
@@ -17,208 +17,208 @@
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'thlm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'thlm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'thlm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Total Water Mixing Ratio, r_t', 'axisLabel' => 'rtm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qtm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'rtm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rtm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp [K m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wpthlp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zm.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'wpthlp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'wpthlp', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wpqtp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zm.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'wprtp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'wprtp', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cloud\_frac [%]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'cf* 100', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'cf* 100', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'cf* 100', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'cloud_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'cloud_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},       
        {'plotTitle' => 'Cloud Water Mixing Ratio, r_c', 'axisLabel' => 'rcm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qcm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'rcm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rcm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rcm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rcm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of w', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zm.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'wp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'wp2', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Third-order Moment of w', 'axisLabel' => 'wp3 [m^3/s^3]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wp3', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'wp3', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'wp3', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of \theta_l', 'axisLabel' => 'thlp2 [K^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'thlp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zm.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'thlp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'thlp2', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of r_t', 'axisLabel' => 'rtp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qtp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zm.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'rtp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rtp2', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of r_t & \theta_l', 'axisLabel' => 'rtpthlp [(kg/kg) K]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qtpthlp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zm.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'rtpthlp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rtpthlp', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Vertical Wind Component, w (subsidence)', 'axisLabel' => 'wm [m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wlsm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zm.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'wm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'wm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Zonal Wind Component, u', 'axisLabel' => 'um [m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'um', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'um', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'um', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'um', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'um', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Meridional Wind Component, v', 'axisLabel' => 'vm [m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'vm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'vm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'vm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of u & w', 'axisLabel' => 'upwp [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wpup + wpup_sgs', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zm.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'upwp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'upwp', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'upwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'upwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of v & w', 'axisLabel' => 'vpwp [m^s/s^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wpvp + wpvp_sgs', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zm.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'vpwp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'vpwp', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vpwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vpwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of u wind', 'axisLabel' => 'up2 [m^s/s^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'up2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zm.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'up2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'up2', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'up2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'up2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of v wind', 'axisLabel' => 'vp2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'vp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zm.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'vp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'vp2', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qrm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'rrainm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rrainm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => '( nrm ./ 1.0e-6 ) ./ dn0', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'Nrm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'Nrm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nrm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nrm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Droplet Concentration', 'axisLabel' => 'Ncm [num/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => '( ncm ./ 1.0e-6 ) ./ dn0', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'Ncm .* cf', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'Ncm .* cf', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm .* cloud_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm .* cloud_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgraupelm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qgm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'rgraupelm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rgraupelm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rgraupelm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rgraupelm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'ricem [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qim', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'ricem', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'ricem', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ricem', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ricem', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Ice Concentration', 'axisLabel' => 'Nim [num/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'nim', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'Nim', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'Nim', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nim', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nim', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Snow Mixing Ratio', 'axisLabel' => 'rsnowm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qsm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'rsnowm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_ds_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rsnowm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsnowm [num/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf02_ds_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Buoyancy flux ', 'axisLabel' => 'wpthvp [K m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf02_ds_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf02_ds_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rain_rate', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rain_rate', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Vertically Averaged wp2', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf02_ds_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2_vert_avg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2_vert_avg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Ice Water Path', 'axisLabel' => 'iwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf02_ds_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'iwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'iwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Snow Water Path', 'axisLabel' => 'swp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf02_ds_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'swp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'swp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]}
     ],
     'nightlyOutput' =>
     {
-        'subText' => '',
+        'subText' => '** Generated by doing a restart run after 7200 seconds. Note: t = 0 corresponds to start time of the restart run, not the original run. **',
         'subHtml' => ''
     },
     'additionalOutput' =>
