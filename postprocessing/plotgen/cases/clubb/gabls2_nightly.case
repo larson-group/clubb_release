@@ -1,6 +1,6 @@
 %CASE = 
 (
-    'name' => 'gabls2',
+    'name' => 'gabls2_nightly',
     'enabled' => 'true',
     'type' => 'standard',
     'headerText' => 'Gabls 2 Minutes 2101-2160 Nightly',
