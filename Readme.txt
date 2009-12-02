@@ -237,9 +237,10 @@ above.)
 
 3. cd <CLUBB BASE DIRECTORY>/input/stats
    Edit a stats file you would like to use, if you would like to output to
-   disk a variable that is not currently output.  A complete list of all computable
-   statistics is found in all_stats.in.  Note that CLUBB now supports GrADS or
-   netCDF, but you can only use the clubb_tuner using GrADS.
+   disk a variable that is not currently output.  A complete list of all 
+   computable statistics is found in all_stats.in.  Note that CLUBB now 
+   supports GrADS or netCDF output, but you can only use the clubb_tuner 
+   using GrADS, due to some issues with buffered I/O.
 
 4. $ cd <CLUBB BASE DIRECTORY>/input
    Edit tunable_parameters.in if you are an expert and wish to try to optimize 
@@ -248,7 +249,7 @@ above.)
 
 5. $ cd <CLUBB BASE DIRECTORY>/run_scripts
    $ ./run_scm.bash <CASE NAME> or
-   $ ./run_scm.bash <CASE NAME> [PARAMETER FILE] [STATS FILE]
+   $ ./run_scm.bash <CASE NAME> -p <PARAMETER FILE> -s <STATS FILE>
 
    Where the parameter file and stats file are optional arguments. The default
    is all_stats.in and tunable_parameters.in.
@@ -276,9 +277,8 @@ Generated CLUBB GrADS files (in clubb/output):
   these are overwritten, so if you want to prevent them
   from being erased be sure to either copy the .ctl and .dat
   files to another directory or rename them.
-  The tuner currently only uses variables in the zt file.
 
-LES GrADS files (available only to larsongroup members):
+LES GrADS files (available only to larson group members):
   les_data/bomex_coamps_sw.ctl, les_data/wangara_rams.ctl
   FIRE, BOMEX, ARM & ATEX are some basic benchmark ``datasets'', 
   simulated by COAMPS, that we compare to CLUBB output.  BOMEX is trade-wind 
@@ -468,7 +468,7 @@ Generally:
 
 1. Create and mount RAM disk on "output"
 
-1. Run tuner
+2. Run tuner
 
 Linux Example
 Note that you will need ram disk support compiled into your kernel, which is
@@ -713,7 +713,7 @@ The initial sounding can be done at run time in <CASE NAME>_sclr_sounding
 file, but large scale forcing and surface fluxes for these passive scalars 
 must be configured in the clubb_driver code and handled at compile time.
 To output the scalar fields from a CLUBB simulation, be sure to include 
-sclram, sclrap2, etc. your stats file. See input/stats/all_stats.in for a
+sclr1m, sclr1p2, etc. your stats file. See input/stats/all_stats.in for a
 complete list (commented out by default).
 
 Currently the code contains eddy-diffusivity scalar code (edsclr1m, edsclr2m)
@@ -729,17 +729,20 @@ added with a small number of modifications.
 
 The Namelists:
 
-Within the existing <CASE NAME>_sclr_sounding.in for each run, a sounding for the 
-scalar variable must be added.  See input/case_setups/cobra_sclr_sounding.in
+Within the existing <CASE NAME>_sclr_sounding.in for each run, a sounding for 
+the scalar variable must be added.  See input/case_setups/cobra_sclr_sounding.in
 for an example.
 
 Finally, if you wish to see the results of your calculations, you will need to
 append the names of variabless to the vars_zt and var_zm portion of the 
 &stats namelist.  The file scalars_stats.in has this done already.
-The variables follow the convention of having the index number appended after the
-sclr portion of their name.  For example, the first scalar mean is 'sclr1m',
+The variables follow the convention of having the index number appended after 
+the sclr portion of their name.  For example, the first scalar mean is 'sclr1m',
 and the second is 'sclr2m'.  These and their forcings are all that occurs in
 the zt file, the rest (e.g. variance, flux) all occur in the zm file.
+
+Note that the scalars can be used in a host model as well.  See SAM-CLUBB for
+an example of how to do this.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -769,7 +772,7 @@ the zt file, the rest (e.g. variance, flux) all occur in the zm file.
   -Dnooverlap: Treats clouds as horizontally homogeneous, with no partial
   cloudiness.  Otherwise, the default overlap assumption is maximum/random.
 
-  -DUSE_BUGSrad_ocast_random:  This is an overlap treatment that should probably 
+  -DUSE_BUGSrad_ocast_random:  This is an overlap treatment that should probably
   be considered experimental.  It's similar to maximum/random but in testing 
   CSU that performed, it showed somewhat better agreement (in terms of fluxes) 
   with realistic clouds.  It's not been extensively tested, though.
@@ -836,7 +839,8 @@ Morrison microphysics code:
 
   l_graupel        = .true.   Calculate graupel mixing ratio.
 
-  l_hail           = .true.   Dense precipitating ice is hail rather than graupel.
+  l_hail           = .true.   Dense precipitating ice is hail rather than 
+    graupel.
 
   l_seifert_beheng = .true.   Use Seifert and Beheng (2001) rain scheme,
     rather than Khairoutdinov and Kogen (2000).
@@ -894,8 +898,8 @@ the Morrison microphysics are as follows:
 ------------------------------------------------------------------------
 
 If you have changes that you'd like to see included in the repository version
-of CLUBB, please feel free to contribute them.  We'll gladly review your changes 
-and consider them for inclusion.  
+of CLUBB, please feel free to contribute them.  We'll gladly review your 
+changes and consider them for inclusion.  
 
 To contribute the changes, type 'svn update' to merge the latest repository
 version of CLUBB with your local version, and then create a file containing 
