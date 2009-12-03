@@ -531,10 +531,10 @@ module output_grads
 
   write(unit=f%iounit,fmt='(a)') 'DSET ^'//trim(f%fname)//'.dat'
   write(unit=f%iounit,fmt='(a,e11.5)') 'UNDEF ',undef
-  write(unit=f%iounit,fmt='(a)') 'XDEF    1 LINEAR 0. 1.'
-  write(unit=f%iounit,fmt='(a)') 'YDEF    1 LINEAR 0. 1.'
+  write(unit=f%iounit,fmt='(a,f8.3,a)') 'XDEF    1 LINEAR ', f%rlon, ' 1.'
+  write(unit=f%iounit,fmt='(a,f8.3,a)') 'YDEF    1 LINEAR ', f%rlat, ' 1.'
   if ( f%ia == f%iz ) then
-    write(unit=f%iounit,fmt='(a,i5,a)') 'ZDEF    1 LINEAR 0. 1.'
+    write(unit=f%iounit,fmt='(a)') 'ZDEF    1 LEVELS 0.'
   else if ( f%ia < f%iz ) then
     write(unit=f%iounit,fmt='(a,i5,a)')  & 
       'ZDEF', abs(f%iz-f%ia)+1,' LEVELS '
