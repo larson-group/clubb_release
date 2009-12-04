@@ -10,7 +10,7 @@ vars_zt =
 'sigma_sqd_w_zt', 'rho', 'radht', 'radht_LW', 'radht_SW',
 'Ncm', 'Ncnm', 'Nim', 'snowslope', 'Nsnowm', 'sed_rcm', 'rsat',
 'rrainm', 'Nrm', 'mean_vol_rad_rain', 'mean_vol_rad_cloud',
-'rain_rate', 'AKm', 'AKm_est', 'rsnowm', 'ricem', 'rgraupelm',
+'rain_rate', 'rsnowm', 'ricem', 'rgraupelm',
 'diam', 'mass_ice_cryst', 'rcm_icedfs', 'u_T_cm',
 'rtm_bt', 'rtm_ma', 'rtm_ta', 'rtm_mfl', 'rtm_tacl', 'rtm_cl',
 'rtm_forcing', 'rtm_mc', 'rtm_pd',
@@ -76,7 +76,7 @@ vars_zm =
 
 vars_sfc = 
 'ustar', 'veg_T_in_K', 'sfc_soil_T_in_K', 'deep_soil_T_in_K', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi',
-'rain', 'pflux', 'rrainm_sfc', 'wpthlp_sfc', 'wprtp_sfc', 'upwp_sfc', 'vpwp_sfc',
+'rain', 'rrainm_sfc', 'wpthlp_sfc', 'wprtp_sfc', 'upwp_sfc', 'vpwp_sfc',
 'thlm_vert_avg', 'rtm_vert_avg', 'um_vert_avg', 'vm_vert_avg',
 'wp2_vert_avg', 'up2_vert_avg', 'vp2_vert_avg', 'rtp2_vert_avg', 'thlp2_vert_avg',
 !'wp23_matrix_condt_num', 'rtm_matrix_condt_num', 'thlm_matrix_condt_num', 
