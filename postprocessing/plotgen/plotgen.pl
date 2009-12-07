@@ -114,7 +114,15 @@ $File::Copy::Recursive::KeepMode = 0;
 # matlab will fail.
 my $sessionType = $ENV{'DISPLAY'}; 
 $SIG{INT} = "cleanup";
-$SIG{CHLD} = "IGNORE";
+
+# This might be needed to allow plotgen to run child processes. So far, it works without it.
+#sub REAPER {
+#    my $waitedpid = wait;
+#    # loathe SysV: it makes us not only reinstate
+#    # the handler, but place it after the wait
+#    $SIG{CHLD} = \&REAPER;
+#}
+#$SIG{CHLD} = \&REAPER;
 
 my @casesExecuted;
 
@@ -731,7 +739,6 @@ sub executeMatlab()
 {
     my $matlabArgs = shift(@_);
 
-    #my $args = "echo \"quit\" | $MATLAB -nodisplay -nodesktop -r PlotCreator\"($matlabArgs)\"";
     my $args = "PlotCreator\"($matlabArgs)\"";
 
     #print("\n$args\n\n");

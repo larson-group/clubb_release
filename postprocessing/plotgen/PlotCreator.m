@@ -1,19 +1,19 @@
 function PlotCreator( caseName, plotTitle, plotNum, plotType, startTime, endTime, startHeight, endHeight, plotUnits, tickCount, varargin )
 
 %Display the variables that were passed in (debug output)
-disp(['Case Name: ', caseName]);
-disp(['Plot Title: ', plotTitle]);
-disp(['Units: ', plotUnits]);
-disp(['Plot Number: ', int2str(plotNum)]);
-disp(['Plot Type: ', plotType]);
-disp(['Start Time: ', int2str(startTime), ' min.']);
-disp(['End Time: ', int2str(endTime), ' min.']);
-disp(['Start Height: ', int2str(startHeight), ' m']);
-disp(['End Height: ', int2str(endHeight), ' m']);
+unix(['./console_output.pl' ' "Case Name: ' caseName '"']);
+unix(['./console_output.pl' ' "Plot Title: ' plotTitle '"']);
+unix(['./console_output.pl' ' "Units: ' plotUnits '"']);
+unix(['./console_output.pl' ' "Plot Number: ' int2str(plotNum) '"']);
+unix(['./console_output.pl' ' "Plot Type: ' plotType '"']);
+unix(['./console_output.pl' ' "Start Time: ' int2str(startTime) ' min.' '"']);
+unix(['./console_output.pl' ' "End Time: ' int2str(endTime) ' min.' '"']);
+unix(['./console_output.pl' ' "Start Height: ' int2str(startHeight) ' m' '"']);
+unix(['./console_output.pl' ' "End Height: ' int2str(endHeight) ' m' '"']);
 
 %Quick sanity check
 if startTime == endTime
-	disp('ERROR: Start time and end time are the same, nothing to plot.');
+    unix(['./console_output.pl ' '-s ' '"Start time and end time are the same, nothing to plot."']);
 	return;
 end
 
@@ -68,7 +68,7 @@ for i=1:numLines
 	for j=1:size(varsToRead,2);
 		%We need to convert the variable name to read from a cell array to a string
 		varString = cell2mat(varsToRead(j));
-		disp(['Reading variable ', varString]);
+        unix(['./console_output.pl' ' "Reading variable ' varString '"']);
 
 		if strcmp(extension, '.ctl')
 			[variableData, levels] = VariableReadGrADS(filePath, varString, startTime, endTime, plotType);
@@ -105,7 +105,7 @@ for i=1:numLines
 
 	%Do not continue if the end time is past the end of the data
 	if endTime > (t_time_steps * time_step_length)
-		disp('ERROR: End time of plot greater than end time of data');
+        unix(['./console_output.pl ' '-s ' '"ERROR: End time of plot greater than end time of data"']);
 		return;
 	end
 
