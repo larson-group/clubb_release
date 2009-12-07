@@ -1,19 +1,19 @@
 function PlotCreator( caseName, plotTitle, plotNum, plotType, startTime, endTime, startHeight, endHeight, plotUnits, tickCount, varargin )
 
 %Display the variables that were passed in (debug output)
-unix(['./console_output.pl' ' "Case Name: ' caseName '"']);
-unix(['./console_output.pl' ' "Plot Title: ' plotTitle '"']);
-unix(['./console_output.pl' ' "Units: ' plotUnits '"']);
-unix(['./console_output.pl' ' "Plot Number: ' int2str(plotNum) '"']);
-unix(['./console_output.pl' ' "Plot Type: ' plotType '"']);
-unix(['./console_output.pl' ' "Start Time: ' int2str(startTime) ' min.' '"']);
-unix(['./console_output.pl' ' "End Time: ' int2str(endTime) ' min.' '"']);
-unix(['./console_output.pl' ' "Start Height: ' int2str(startHeight) ' m' '"']);
-unix(['./console_output.pl' ' "End Height: ' int2str(endHeight) ' m' '"']);
+ConsoleOutput.message(['Case Name: ' caseName]);
+ConsoleOutput.message(['Plot Title: ' plotTitle]);
+ConsoleOutput.message(['Units: ' plotUnits]);
+ConsoleOutput.message(['Plot Number: ' int2str(plotNum)]);
+ConsoleOutput.message(['Plot Type: ' plotType]);
+ConsoleOutput.message(['Start Time: ' int2str(startTime) ' min.']);
+ConsoleOutput.message(['End Time: ' int2str(endTime) ' min.']);
+ConsoleOutput.message(['Start Height: ' int2str(endTime) ' m']);
+ConsoleOutput.message(['End Height: ' int2str(endHeight) ' m']);
 
 %Quick sanity check
 if startTime == endTime
-    unix(['./console_output.pl ' '-s ' '"Start time and end time are the same, nothing to plot."']);
+    ConsoleOutput.severe('Start time and end time are the same, nothing to plot.');
 	return;
 end
 
@@ -68,7 +68,7 @@ for i=1:numLines
 	for j=1:size(varsToRead,2);
 		%We need to convert the variable name to read from a cell array to a string
 		varString = cell2mat(varsToRead(j));
-        unix(['./console_output.pl' ' "Reading variable ' varString '"']);
+        ConsoleOutput.message(['Reading variable ' varString]);
 
 		if strcmp(extension, '.ctl')
 			[variableData, levels] = VariableReadGrADS(filePath, varString, startTime, endTime, plotType);
@@ -105,7 +105,7 @@ for i=1:numLines
 
 	%Do not continue if the end time is past the end of the data
 	if endTime > (t_time_steps * time_step_length)
-        unix(['./console_output.pl ' '-s ' '"ERROR: End time of plot greater than end time of data"']);
+        ConsoleOutput.severe('ERROR: End time of plot greater than end time of data');
 		return;
 	end
 
