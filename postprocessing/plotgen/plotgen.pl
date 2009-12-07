@@ -20,7 +20,6 @@ BEGIN
 }
 
 use strict;
-
 use CaseReader;
 use OutputWriter;
 use Cwd 'abs_path';
@@ -105,6 +104,8 @@ my $navigationPage = "navigation.html";
 my $indexPage = "index.html";
 
 my $plotCount = 0;
+
+my $consoleOutput = "./console_output.pl";
 
 # Do not keep permissions on file copies
 $File::Copy::Recursive::KeepMode = 0;
@@ -297,8 +298,9 @@ sub runCases()
             # Read the case file. If there is an error, display it and continue without plotting it.
             if (my $err = CaseReader->readCase($file))
             {
-                    print(STDERR $err, "\n");
-                    $runCase = 'false';
+
+                system("$consoleOutput -w $err");
+                $runCase = 'false';
             }
             else
             {
@@ -1014,7 +1016,7 @@ sub readArgs()
     # '-r' was not passed in, exit. Otherwise, create it.
     if(-d $output && $overwrite == 0)
     {
-        print("Output folder already exists. To overwrite, use the -r option.\n");
+        system("$consoleOutput -s \"Output folder already exists. To overwrite, use the -r option.\"");
         exit(1);
     }
     else
