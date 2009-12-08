@@ -103,6 +103,10 @@ module twp_ice
     call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
                                 upwp_sfc, vpwp_sfc )
 
+    ! Avoid uninitialized memory
+    wpsclrp_sfc(:)   = 0
+    wpedsclrp_sfc(:) = 0
+
     ! Let passive scalars be equal to rt and theta_l for testing
     if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
     if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
