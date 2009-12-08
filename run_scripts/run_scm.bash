@@ -213,26 +213,26 @@ then
 
     # Move the ZT and ZM files out of the way
     if [ "$RESULT" != 0 ]; then
-        rm "../output/$run_case"*_zt.ctl
-        rm "../output/$run_case"*_zt.dat
-        rm "../output/$run_case"*_zm.ctl
-        rm "../output/$run_case"*_zm.dat
-        rm "../output/$run_case"*_sfc.ctl
-        rm "../output/$run_case"*_sfc.dat
+        rm "../output/$run_case"_zt.ctl
+        rm "../output/$run_case"_zt.dat
+        rm "../output/$run_case"_zm.ctl
+        rm "../output/$run_case"_zm.dat
+        rm "../output/$run_case"_sfc.ctl
+        rm "../output/$run_case"_sfc.dat
     else
-        mv "../output/$run_case"*_zt.ctl "$OUTPUT_DIR"/CLUBB_current/
-        mv "../output/$run_case"*_zt.dat "$OUTPUT_DIR"/CLUBB_current/
-        mv "../output/$run_case"*_zm.ctl "$OUTPUT_DIR"/CLUBB_current/
-        mv "../output/$run_case"*_zm.dat "$OUTPUT_DIR"/CLUBB_current/
+        mv "../output/$run_case"_zt.ctl "$OUTPUT_DIR"/CLUBB_current/
+        mv "../output/$run_case"_zt.dat "$OUTPUT_DIR"/CLUBB_current/
+        mv "../output/$run_case"_zm.ctl "$OUTPUT_DIR"/CLUBB_current/
+        mv "../output/$run_case"_zm.dat "$OUTPUT_DIR"/CLUBB_current/
         case $run_case in
             # We only run TWP_ICE and Cloud Feedback once so we want to keep the SFC files
             twp_ice | cloud_feedback* )
-                mv "../output/$run_case"*_sfc.ctl "$OUTPUT_DIR"/CLUBB_current/
-                mv "../output/$run_case"*_sfc.dat "$OUTPUT_DIR"/CLUBB_current/
+                mv "../output/$run_case"_sfc.ctl "$OUTPUT_DIR"/CLUBB_current/
+                mv "../output/$run_case"_sfc.dat "$OUTPUT_DIR"/CLUBB_current/
                 ;;
             * )
-                rm "../output/$run_case"*_sfc.ctl
-                rm "../output/$run_case"*_sfc.dat
+                rm "../output/$run_case"_sfc.ctl
+                rm "../output/$run_case"_sfc.dat
                 ;;
         esac
     fi
@@ -251,19 +251,19 @@ then
 	
             #Now move the SFC file
             if [ "$RESULT" != 0 ]; then
-                rm "../output/$run_case"*_zt.ctl
-                rm "../output/$run_case"*_zt.dat
-                rm "../output/$run_case"*_zm.ctl
-                rm "../output/$run_case"*_zm.dat
-                rm "../output/$run_case"*_sfc.ctl
-                rm "../output/$run_case"*_sfc.dat
+                rm "../output/$run_case"_zt.ctl
+                rm "../output/$run_case"_zt.dat
+                rm "../output/$run_case"_zm.ctl
+                rm "../output/$run_case"_zm.dat
+                rm "../output/$run_case"_sfc.ctl
+                rm "../output/$run_case"_sfc.dat
             else
-                rm "../output/$run_case"*_zt.ctl
-                rm "../output/$run_case"*_zt.dat
-                rm "../output/$run_case"*_zm.ctl
-                rm "../output/$run_case"*_zm.dat
-                mv "../output/$run_case"*_sfc.ctl "$OUTPUT_DIR"/CLUBB_current/
-                mv "../output/$run_case"*_sfc.dat "$OUTPUT_DIR"/CLUBB_current/
+                rm "../output/$run_case"_zt.ctl
+                rm "../output/$run_case"_zt.dat
+                rm "../output/$run_case"_zm.ctl
+                rm "../output/$run_case"_zm.dat
+                mv "../output/$run_case"_sfc.ctl "$OUTPUT_DIR"/CLUBB_current/
+                mv "../output/$run_case"_sfc.dat "$OUTPUT_DIR"/CLUBB_current/
             fi
             ;;
     esac
