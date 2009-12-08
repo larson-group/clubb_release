@@ -60,6 +60,7 @@ module stats_variables
      ium, & 
      ivm, & 
      iwm_zt, &
+     iwm_zm, &
      ium_ref,&
      ivm_ref, & 
      iug, & 
@@ -109,7 +110,7 @@ module stats_variables
      iAKm_rcc
 
 !$omp   threadprivate(ithlm, ithvm, irtm, ircm, irvm, ium, ivm, ium_ref)
-!$omp   threadprivate(ivm_ref, iwm_zt, iug, ivg, icloud_frac, ircm_in_layer)
+!$omp   threadprivate(ivm_ref, iwm_zt, iwm_zm, iug, ivg, icloud_frac, ircm_in_layer)
 !$omp   threadprivate(icloud_cover, ip_in_Pa, iexner, iLscale, iwp3, iwpthlp2)
 !$omp   threadprivate(iwp2thlp, iwprtp2, iwp2rtp, iLscale_up, iLscale_down, itau_zt)
 !$omp   threadprivate(iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, isigma_sqd_w_zt, irho)

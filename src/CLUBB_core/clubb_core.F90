@@ -978,7 +978,7 @@ module clubb_core
            rtm, wprtp, wpthlp, wpthvp, wprcp,                  & ! intent(in) 
            wp2, wp3, rtp2, thlp2, rtpthlp,                     & ! intent(in)
            p_in_Pa, exner, rho, rho_zm, Kh_zt,                 & ! intent(in)
-           wm_zt, sigma_sqd_w, tau_zm, rcm, cloud_frac,        & ! intent(in)
+           wm_zt, wm_zm, sigma_sqd_w, tau_zm, rcm, cloud_frac, & ! intent(in)
            rcm_in_layer, cloud_cover,                          & ! intent(in)
            pdf_params,                                         & ! intent(in)
            sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing,  & ! intent(in)

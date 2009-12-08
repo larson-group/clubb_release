@@ -165,7 +165,7 @@ module stats_zm
         irtpthlp_cl
     
     use stats_variables, only: & 
-        iwpthlp_enter_mfl, &
+        iwpthlp_enter_mfl, & ! Variable(s)
         iwpthlp_exit_mfl, &
         iwpthlp_mfl_lower_lim, &
         iwpthlp_mfl_upper_lim, &
@@ -173,6 +173,9 @@ module stats_zm
         iwprtp_exit_mfl, &
         iwprtp_mfl_lower_lim, &
         iwprtp_mfl_upper_lim
+
+    use stats_variables, only: & 
+      iwm_zm ! Variable
 
     use stats_variables, only: & 
         isclrprtp, & 
@@ -1208,6 +1211,12 @@ module stats_zm
         iwprtp_exit_mfl = k
         call stat_assign( iwprtp_exit_mfl, "wprtp_out_mfl", & 
              "Wprtp exiting flux limiter [(m kg)/(s kg)]", "(m kg)/(s kg)", zm )
+        k = k + 1        
+
+      case ('wm_zm')
+        iwm_zm = k
+        call stat_assign( iwm_zm, "wm_zm", & 
+             "Vertical (w) wind [m/s]", "m/s", zm )
         k = k + 1        
 
       case default

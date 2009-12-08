@@ -1166,7 +1166,7 @@ module stats_subs
                      rtm, wprtp, wpthlp, wpthvp, wprcp, &
                      wp2, wp3, rtp2, thlp2, rtpthlp, & 
                      p_in_Pa, exner, rho, rho_zm, Kh_zt, & 
-                     wm_zt, sigma_sqd_w, tau_zm, rcm, cloud_frac, & 
+                     wm_zt, wm_zm, sigma_sqd_w, tau_zm, rcm, cloud_frac, & 
                      rcm_in_layer, cloud_cover, & 
                      pdf_params, &
                      sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
@@ -1191,6 +1191,7 @@ module stats_subs
         ium, & 
         ivm, & 
         iwm_zt, & 
+        iwm_zm, & 
         iug, & 
         ivg, & 
         icloud_frac, & 
@@ -1440,6 +1441,7 @@ module stats_subs
       rho_zm,       & ! Density                                  [kg/m^3]
       Kh_zt,        & ! Eddy diffusivity                         [m^2/s]
       wm_zt,        & ! w on thermodynamic levels                [m/s]
+      wm_zm,        & ! w on momentum levels                     [m/s]
       sigma_sqd_w,  & ! PDF width paramter                       [-]
       tau_zm          ! Dissipation time                         [s]
 
@@ -1490,6 +1492,7 @@ module stats_subs
       call stat_update_var( ium, um, zt )
       call stat_update_var( ivm, vm, zt )
       call stat_update_var( iwm_zt, wm_zt, zt )
+      call stat_update_var( iwm_zm, wm_zm, zm )
       call stat_update_var( iug, ug, zt )
       call stat_update_var( ivg, vg, zt )
       call stat_update_var( icloud_frac, cloud_frac, zt )
@@ -1600,9 +1603,6 @@ module stats_subs
       call stat_update_var( iem, em, zm )
       call stat_update_var( ishear, shear, zm )
       call stat_update_var( iFrad, Frad, zm )
-!   if ( l_cloud_sed ) then
-!      call stat_update_var( iFcsed, Fcsed, zm )
-!   endif
 
       if ( sclr_dim > 0 ) then
         do i=1, sclr_dim
