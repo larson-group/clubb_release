@@ -299,7 +299,7 @@ sub runCases()
             if (my $err = CaseReader->readCase($file))
             {
 
-                system("$consoleOutput -w $err");
+                system("$consoleOutput -w \"$err\"");
                 $runCase = 'false';
             }
             else
