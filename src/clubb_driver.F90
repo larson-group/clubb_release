@@ -191,8 +191,8 @@ module clubb_driver
       l_pos_def, l_hole_fill, & ! Constants
       l_single_C2_Skw, l_gamma_Skw, l_byteswap_io
 
-    use stats_variables, only: l_stats_last, l_stats_samp ! Variable(s)
-
+    use stats_variables, only: l_stats_last, l_stats_samp, & ! Variable(s)
+      l_output_rad_files
     use stats_variables, only: zt ! Type
 
     use stats_variables, only: &
@@ -231,7 +231,7 @@ module clubb_driver
       l_use_default_std_atmosphere, &
       finalize_extend_atm
 
-    use parameters_radiation, only: rad_scheme  ! Variable(s)
+    use parameters_radiation, only: rad_scheme, l_bugsrad ! Variable(s)
 
     use parameters_microphys, only: &
       l_latin_hypercube_sampling ! Variable
@@ -817,9 +817,18 @@ module clubb_driver
 
     fdir = "../output/" ! Output directory
 
+    if ( trim( rad_scheme ) == "bugsrad" ) then
+        l_bugsrad = .true.
+    else
+        l_bugsrad = .false.
+    end if
+
+    ! Only output radiation files if using a radiation scheme
+    l_output_rad_files = l_bugsrad
+
     ! This is a kludge added because the grid used by BUGSrad does
     ! not include CLUBB's ghost point. -nielsenb 20 Oct 2009
-    if ( trim( rad_scheme ) == "bugsrad" ) then
+    if ( l_bugsrad ) then
         ! Initialize statistics output
         call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
                          stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
@@ -828,7 +837,7 @@ module clubb_driver
                          complete_momentum(2:total_atmos_dim + 1), & ! Intent(in)
                          day, month, year, & ! Intent(in)
                          (/rlat/), (/rlon/), time_current, dtmain ) ! Intent(in)
-    else
+    else  
         ! Initialize statistics output
         call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
                          stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
@@ -901,7 +910,7 @@ module clubb_driver
       ! This is a kluge added because the _tndcy subroutines will sometimes
       ! compute radht from an analytic formula and add it to thlm_forcing before
       ! we reach this point in the clubb_driver. -dschanen 17 Aug 2009
-      if ( trim( rad_scheme ) == "bugsrad" ) then
+      if ( l_bugsrad ) then
         thlm_forcing(:) = thlm_forcing(:) + thlm_mc(:) + radht(:)
       else
         thlm_forcing(:) = thlm_forcing(:) + thlm_mc(:)

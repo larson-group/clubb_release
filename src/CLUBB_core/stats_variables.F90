@@ -28,6 +28,7 @@ module stats_variables
 
   logical, public ::  & 
     l_stats,  & ! Main flag to turn statistics on/off
+    l_output_rad_files, & ! Flag to turn off radiation statistics output
     l_netcdf, & ! Output to NetCDF format
     l_grads     ! Output to GrADS format
 

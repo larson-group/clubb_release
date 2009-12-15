@@ -70,7 +70,8 @@ module stats_subs
       rad_zt,  &
       rad_zm,  &
       sfc,     & 
-      l_stats, & 
+      l_stats, &
+      l_output_rad_files, & 
       stats_tsamp,   & 
       stats_tout,    & 
       l_stats_samp,  & 
@@ -270,19 +271,21 @@ module stats_subs
         i = i + 1
       end do
 
-      write(fstdout,*) "vars_rad_zt = "
-      i = 1
-      do while ( vars_rad_zt(i) /= '' )
-        write(fstdout,*) vars_rad_zt(i)
-        i = i + 1
-      end do
+      if (l_output_rad_files) then
+        write(fstdout,*) "vars_rad_zt = "
+        i = 1
+        do while ( vars_rad_zt(i) /= '' )
+          write(fstdout,*) vars_rad_zt(i)
+          i = i + 1
+        end do
 
-      write(fstdout,*) "vars_rad_zm = "
-      i = 1
-      do while ( vars_rad_zm(i) /= '' )
-        write(fstdout,*) vars_rad_zm(i)
-        i = i + 1
-      end do
+        write(fstdout,*) "vars_rad_zm = "
+        i = 1
+        do while ( vars_rad_zm(i) /= '' )
+          write(fstdout,*) vars_rad_zm(i)
+          i = i + 1
+        end do
+      end if ! l_output_rad_files
 
       write(fstdout,*) "vars_sfc = "
       i = 1
@@ -547,197 +550,201 @@ module stats_subs
 
     ! Initialize rad_zt (radiation points)
 
-    i = 1
-    do while ( ichar(vars_rad_zt(i)(1:1)) /= 0  & 
-               .and. len_trim(vars_rad_zt(i)) /= 0 & 
-               .and. i <= nvarmax_rad_zt )
-      i = i + 1
-    end do
-    ntot = i - 1
-    if ( ntot == nvarmax_rad_zt ) then
-      write(fstderr,*) "There are more statistical variables listed in ",  &
-                       "vars_rad_zt than allowed for by nvarmax_rad_zt."
-      write(fstderr,*) "Check the number of variables listed for vars_rad_zt ",  &
-                       "in the stats namelist, or change nvarmax_rad_zt."
-      write(fstderr,*) "nvarmax_rad_zt = ", nvarmax_rad_zt
-      stop "stats_init:  number of rad_zt statistical variables exceeds limit"
-    endif
+    if (l_output_rad_files) then
+    
+      i = 1
+      do while ( ichar(vars_rad_zt(i)(1:1)) /= 0  & 
+                 .and. len_trim(vars_rad_zt(i)) /= 0 & 
+                 .and. i <= nvarmax_rad_zt )
+        i = i + 1
+      end do
+      ntot = i - 1
+      if ( ntot == nvarmax_rad_zt ) then
+        write(fstderr,*) "There are more statistical variables listed in ",  &
+                         "vars_rad_zt than allowed for by nvarmax_rad_zt."
+        write(fstderr,*) "Check the number of variables listed for vars_rad_zt ",  &
+                         "in the stats namelist, or change nvarmax_rad_zt."
+        write(fstderr,*) "nvarmax_rad_zt = ", nvarmax_rad_zt
+        stop "stats_init:  number of rad_zt statistical variables exceeds limit"
+      endif
 
-    rad_zt%nn = ntot
-    rad_zt%kk = nnrad_zt
+      rad_zt%nn = ntot
+      rad_zt%kk = nnrad_zt
 
-    allocate( rad_zt%z( rad_zt%kk ) )
-    rad_zt%z = grad_zt
+      allocate( rad_zt%z( rad_zt%kk ) )
+      rad_zt%z = grad_zt
 
-    allocate( rad_zt%x( 1, 1, rad_zt%kk, rad_zt%nn ) )
-    allocate( rad_zt%n( 1, 1, rad_zt%kk, rad_zt%nn ) )
-    allocate( rad_zt%l_in_update( 1, 1, rad_zt%kk, rad_zt%nn ) )
+      allocate( rad_zt%x( 1, 1, rad_zt%kk, rad_zt%nn ) )
+      allocate( rad_zt%n( 1, 1, rad_zt%kk, rad_zt%nn ) )
+      allocate( rad_zt%l_in_update( 1, 1, rad_zt%kk, rad_zt%nn ) )
 
-    call stats_zero( rad_zt%kk, rad_zt%nn, rad_zt%x, rad_zt%n, rad_zt%l_in_update )
+      call stats_zero( rad_zt%kk, rad_zt%nn, rad_zt%x, rad_zt%n, rad_zt%l_in_update )
 
-    allocate( rad_zt%f%var( rad_zt%nn ) )
-    allocate( rad_zt%f%z( rad_zt%kk ) )
+      allocate( rad_zt%f%var( rad_zt%nn ) )
+      allocate( rad_zt%f%z( rad_zt%kk ) )
 
-    ! Allocate scratch space
+      ! Allocate scratch space
 
-    !allocate( radscr01(rad%kk) )
-    !allocate( radscr02(rad%kk) )
-    !allocate( radscr03(rad%kk) )
-    !allocate( radscr04(rad%kk) )
-    !allocate( radscr05(rad%kk) )
-    !allocate( radscr06(rad%kk) )
-    !allocate( radscr07(rad%kk) )
-    !allocate( radscr08(rad%kk) )
-    !allocate( radscr09(rad%kk) )
-    !allocate( radscr10(rad%kk) )
-    !allocate( radscr11(rad%kk) )
-    !allocate( radscr12(rad%kk) )
-    !allocate( radscr13(rad%kk) )
-    !allocate( radscr14(rad%kk) )
-    !allocate( radscr15(rad%kk) )
-    !allocate( radscr16(rad%kk) )
-    !allocate( radscr17(rad%kk) )
+      !allocate( radscr01(rad%kk) )
+      !allocate( radscr02(rad%kk) )
+      !allocate( radscr03(rad%kk) )
+      !allocate( radscr04(rad%kk) )
+      !allocate( radscr05(rad%kk) )
+      !allocate( radscr06(rad%kk) )
+      !allocate( radscr07(rad%kk) )
+      !allocate( radscr08(rad%kk) )
+      !allocate( radscr09(rad%kk) )
+      !allocate( radscr10(rad%kk) )
+      !allocate( radscr11(rad%kk) )
+      !allocate( radscr12(rad%kk) )
+      !allocate( radscr13(rad%kk) )
+      !allocate( radscr14(rad%kk) )
+      !allocate( radscr15(rad%kk) )
+      !allocate( radscr16(rad%kk) )
+      !allocate( radscr17(rad%kk) )
 
-    !radscr01 = 0.0
-    !radscr02 = 0.0
-    !radscr03 = 0.0
-    !radscr04 = 0.0
-    !radscr05 = 0.0
-    !radscr06 = 0.0
-    !radscr07 = 0.0
-    !radscr08 = 0.0
-    !radscr09 = 0.0
-    !radscr10 = 0.0
-    !radscr11 = 0.0
-    !radscr12 = 0.0
-    !radscr13 = 0.0
-    !radscr14 = 0.0
-    !radscr15 = 0.0
-    !radscr16 = 0.0
-    !radscr17 = 0.0
+      !radscr01 = 0.0
+      !radscr02 = 0.0
+      !radscr03 = 0.0
+      !radscr04 = 0.0
+      !radscr05 = 0.0
+      !radscr06 = 0.0
+      !radscr07 = 0.0
+      !radscr08 = 0.0
+      !radscr09 = 0.0
+      !radscr10 = 0.0
+      !radscr11 = 0.0
+      !radscr12 = 0.0
+      !radscr13 = 0.0
+      !radscr14 = 0.0
+      !radscr15 = 0.0
+      !radscr16 = 0.0
+      !radscr17 = 0.0
 
 
-    fname = trim( fname_rad_zt )
-    if ( l_grads ) then
+      fname = trim( fname_rad_zt )
+      if ( l_grads ) then
 
-      ! Open GrADS files
-      call open_grads( iunit, fdir, fname,  & 
-                       1, rad_zt%kk, rad_zt%z, & 
-                       day, month, year, rlat, rlon, & 
-                       time_current+stats_tout, stats_tout, & 
-                       rad_zt%nn, rad_zt%f )
+        ! Open GrADS files
+        call open_grads( iunit, fdir, fname,  & 
+                         1, rad_zt%kk, rad_zt%z, & 
+                         day, month, year, rlat, rlon, & 
+                         time_current+stats_tout, stats_tout, & 
+                         rad_zt%nn, rad_zt%f )
 
-    else ! Open NetCDF file
+      else ! Open NetCDF file
 #ifdef NETCDF
-      call open_netcdf( 1, 1, fdir, fname,  & 
-                        1, rad_zt%kk, rad_zt%z, & 
-                        day, month, year, rlat, rlon, & 
-                        time_current+stats_tout, stats_tout, & 
-                        rad_zt%nn, rad_zt%f )
+        call open_netcdf( 1, 1, fdir, fname,  & 
+                          1, rad_zt%kk, rad_zt%z, & 
+                          day, month, year, rlat, rlon, & 
+                          time_current+stats_tout, stats_tout, & 
+                          rad_zt%nn, rad_zt%f )
 
 #else
-      stop "netCDF support was not compiled into this build."
+        stop "netCDF support was not compiled into this build."
 #endif
-    end if
+      end if
 
-    call stats_init_rad_zt( vars_rad_zt, l_error )
+      call stats_init_rad_zt( vars_rad_zt, l_error )
 
-    ! Initialize rad_zm (radiation points)
+      ! Initialize rad_zm (radiation points)
 
-    i = 1
-    do while ( ichar(vars_rad_zm(i)(1:1)) /= 0  & 
-               .and. len_trim(vars_rad_zm(i)) /= 0 & 
-               .and. i <= nvarmax_rad_zm )
-      i = i + 1
-    end do
-    ntot = i - 1
-    if ( ntot == nvarmax_rad_zm ) then
-      write(fstderr,*) "There are more statistical variables listed in ",  &
-                       "vars_rad_zm than allowed for by nvarmax_rad_zm."
-      write(fstderr,*) "Check the number of variables listed for vars_rad_zm ",  &
-                       "in the stats namelist, or change nvarmax_rad_zm."
-      write(fstderr,*) "nvarmax_rad_zm = ", nvarmax_rad_zm
-      stop "stats_init:  number of rad_zm statistical variables exceeds limit"
-    endif
+      i = 1
+      do while ( ichar(vars_rad_zm(i)(1:1)) /= 0  & 
+                 .and. len_trim(vars_rad_zm(i)) /= 0 & 
+                 .and. i <= nvarmax_rad_zm )
+        i = i + 1
+      end do
+      ntot = i - 1
+      if ( ntot == nvarmax_rad_zm ) then
+        write(fstderr,*) "There are more statistical variables listed in ",  &
+                         "vars_rad_zm than allowed for by nvarmax_rad_zm."
+        write(fstderr,*) "Check the number of variables listed for vars_rad_zm ",  &
+                         "in the stats namelist, or change nvarmax_rad_zm."
+        write(fstderr,*) "nvarmax_rad_zm = ", nvarmax_rad_zm
+        stop "stats_init:  number of rad_zm statistical variables exceeds limit"
+      endif
 
-    rad_zm%nn = ntot
-    rad_zm%kk = nnrad_zm
+      rad_zm%nn = ntot
+      rad_zm%kk = nnrad_zm
 
-    allocate( rad_zm%z( rad_zm%kk ) )
-    rad_zm%z = grad_zm
+      allocate( rad_zm%z( rad_zm%kk ) )
+      rad_zm%z = grad_zm
 
-    allocate( rad_zm%x( 1, 1, rad_zm%kk, rad_zm%nn ) )
-    allocate( rad_zm%n( 1, 1, rad_zm%kk, rad_zm%nn ) )
-    allocate( rad_zm%l_in_update( 1, 1, rad_zm%kk, rad_zm%nn ) )
+      allocate( rad_zm%x( 1, 1, rad_zm%kk, rad_zm%nn ) )
+      allocate( rad_zm%n( 1, 1, rad_zm%kk, rad_zm%nn ) )
+      allocate( rad_zm%l_in_update( 1, 1, rad_zm%kk, rad_zm%nn ) )
 
-    call stats_zero( rad_zm%kk, rad_zm%nn, rad_zm%x, rad_zm%n, rad_zm%l_in_update )
+      call stats_zero( rad_zm%kk, rad_zm%nn, rad_zm%x, rad_zm%n, rad_zm%l_in_update )
 
-    allocate( rad_zm%f%var( rad_zm%nn ) )
-    allocate( rad_zm%f%z( rad_zm%kk ) )
+      allocate( rad_zm%f%var( rad_zm%nn ) )
+      allocate( rad_zm%f%z( rad_zm%kk ) )
 
-    ! Allocate scratch space
+      ! Allocate scratch space
 
-    !allocate( radscr01(rad%kk) )
-    !allocate( radscr02(rad%kk) )
-    !allocate( radscr03(rad%kk) )
-    !allocate( radscr04(rad%kk) )
-    !allocate( radscr05(rad%kk) )
-    !allocate( radscr06(rad%kk) )
-    !allocate( radscr07(rad%kk) )
-    !allocate( radscr08(rad%kk) )
-    !allocate( radscr09(rad%kk) )
-    !allocate( radscr10(rad%kk) )
-    !allocate( radscr11(rad%kk) )
-    !allocate( radscr12(rad%kk) )
-    !allocate( radscr13(rad%kk) )
-    !allocate( radscr14(rad%kk) )
-    !allocate( radscr15(rad%kk) )
-    !allocate( radscr16(rad%kk) )
-    !allocate( radscr17(rad%kk) )
+      !allocate( radscr01(rad%kk) )
+      !allocate( radscr02(rad%kk) )
+      !allocate( radscr03(rad%kk) )
+      !allocate( radscr04(rad%kk) )
+      !allocate( radscr05(rad%kk) )
+      !allocate( radscr06(rad%kk) )
+      !allocate( radscr07(rad%kk) )
+      !allocate( radscr08(rad%kk) )
+      !allocate( radscr09(rad%kk) )
+      !allocate( radscr10(rad%kk) )
+      !allocate( radscr11(rad%kk) )
+      !allocate( radscr12(rad%kk) )
+      !allocate( radscr13(rad%kk) )
+      !allocate( radscr14(rad%kk) )
+      !allocate( radscr15(rad%kk) )
+      !allocate( radscr16(rad%kk) )
+      !allocate( radscr17(rad%kk) )
 
-    !radscr01 = 0.0
-    !radscr02 = 0.0
-    !radscr03 = 0.0
-    !radscr04 = 0.0
-    !radscr05 = 0.0
-    !radscr06 = 0.0
-    !radscr07 = 0.0
-    !radscr08 = 0.0
-    !radscr09 = 0.0
-    !radscr10 = 0.0
-    !radscr11 = 0.0
-    !radscr12 = 0.0
-    !radscr13 = 0.0
-    !radscr14 = 0.0
-    !radscr15 = 0.0
-    !radscr16 = 0.0
-    !radscr17 = 0.0
+      !radscr01 = 0.0
+      !radscr02 = 0.0
+      !radscr03 = 0.0
+      !radscr04 = 0.0
+      !radscr05 = 0.0
+      !radscr06 = 0.0
+      !radscr07 = 0.0
+      !radscr08 = 0.0
+      !radscr09 = 0.0
+      !radscr10 = 0.0
+      !radscr11 = 0.0
+      !radscr12 = 0.0
+      !radscr13 = 0.0
+      !radscr14 = 0.0
+      !radscr15 = 0.0
+      !radscr16 = 0.0
+      !radscr17 = 0.0
 
 
-    fname = trim( fname_rad_zm )
-    if ( l_grads ) then
+      fname = trim( fname_rad_zm )
+      if ( l_grads ) then
 
-      ! Open GrADS files
-      call open_grads( iunit, fdir, fname,  & 
-                       1, rad_zm%kk, rad_zm%z, & 
-                       day, month, year, rlat, rlon, & 
-                       time_current+stats_tout, stats_tout, & 
-                       rad_zm%nn, rad_zm%f )
+        ! Open GrADS files
+        call open_grads( iunit, fdir, fname,  & 
+                         1, rad_zm%kk, rad_zm%z, & 
+                         day, month, year, rlat, rlon, & 
+                         time_current+stats_tout, stats_tout, & 
+                         rad_zm%nn, rad_zm%f )
 
-    else ! Open NetCDF file
+      else ! Open NetCDF file
 #ifdef NETCDF
-      call open_netcdf( 1, 1, fdir, fname,  & 
-                        1, rad_zm%kk, rad_zm%z, & 
-                        day, month, year, rlat, rlon, & 
-                        time_current+stats_tout, stats_tout, & 
-                        rad_zm%nn, rad_zm%f )
+        call open_netcdf( 1, 1, fdir, fname,  & 
+                          1, rad_zm%kk, rad_zm%z, & 
+                          day, month, year, rlat, rlon, & 
+                          time_current+stats_tout, stats_tout, & 
+                          rad_zm%nn, rad_zm%f )
 
 #else
-      stop "netCDF support was not compiled into this build."
+        stop "netCDF support was not compiled into this build."
 #endif
-    end if
+      end if
 
-    call stats_init_rad_zm( vars_rad_zm, l_error )
+      call stats_init_rad_zm( vars_rad_zm, l_error )
+    end if ! l_output_rad_files
+
 
     ! Initialize sfc (surface point)
 
@@ -962,7 +969,8 @@ module stats_subs
         sfc, & 
         l_stats_last, & 
         stats_tsamp, & 
-        stats_tout, & 
+        stats_tout, &
+        l_output_rad_files, & 
         l_grads
 
     use stats_precision, only: & 
@@ -1042,54 +1050,56 @@ module stats_subs
       enddo
     enddo
 
-    ! Check number of sampling points for each variable in the zm statistics
-    ! at each vertical level.
-    do i = 1, rad_zt%nn
-      do k = 1, rad_zt%kk
+    if (l_output_rad_files) then
+      ! Check number of sampling points for each variable in the rad statistics
+      ! at each vertical level.
+      do i = 1, rad_zt%nn
+        do k = 1, rad_zt%kk
 
-        if ( rad_zt%n(1,1,k,i) /= 0 .and.  &
-             rad_zt%n(1,1,k,i) /= floor(stats_tout/stats_tsamp) ) then
+          if ( rad_zt%n(1,1,k,i) /= 0 .and.  &
+               rad_zt%n(1,1,k,i) /= floor(stats_tout/stats_tsamp) ) then
 
-          l_error = .true.  ! This will stop the run
+            l_error = .true.  ! This will stop the run
 
-          if ( clubb_at_least_debug_level( 1 ) ) then
-            ! Made error message more descriptive
-            ! Joshua Fasching July 2008
-            write(fstderr,*) 'Possible sampling error for variable ',  &
-                             trim(rad_zt%f%var(i)%name), ' in rad_zt ',  &
-                             'at k = ', k,  &
-                             '; rad_zt%n(',k,',',i,') = ', rad_zt%n(1,1,k,i)
+            if ( clubb_at_least_debug_level( 1 ) ) then
+              ! Made error message more descriptive
+              ! Joshua Fasching July 2008
+              write(fstderr,*) 'Possible sampling error for variable ',  &
+                               trim(rad_zt%f%var(i)%name), ' in rad_zt ',  &
+                               'at k = ', k,  &
+                               '; rad_zt%n(',k,',',i,') = ', rad_zt%n(1,1,k,i)
+            endif
+
           endif
 
-        endif
-
+        enddo
       enddo
-    enddo
     
-    ! Check number of sampling points for each variable in the zm statistics
-    ! at each vertical level.
-    do i = 1, rad_zm%nn
-      do k = 1, rad_zm%kk
+      ! Check number of sampling points for each variable in the zm statistics
+      ! at each vertical level.
+      do i = 1, rad_zm%nn
+        do k = 1, rad_zm%kk
 
-        if ( rad_zm%n(1,1,k,i) /= 0 .and.  &
-             rad_zm%n(1,1,k,i) /= floor(stats_tout/stats_tsamp) ) then
+          if ( rad_zm%n(1,1,k,i) /= 0 .and.  &
+               rad_zm%n(1,1,k,i) /= floor(stats_tout/stats_tsamp) ) then
 
-          l_error = .true.  ! This will stop the run
+            l_error = .true.  ! This will stop the run
 
-          if ( clubb_at_least_debug_level( 1 ) ) then
-            ! Made error message more descriptive
-            ! Joshua Fasching July 2008
-            write(fstderr,*) 'Possible sampling error for variable ',  &
-                             trim(rad_zm%f%var(i)%name), ' in rad_zm ',  &
-                             'at k = ', k,  &
-                             '; rad_zm%n(',k,',',i,') = ', rad_zm%n(1,1,k,i)
+            if ( clubb_at_least_debug_level( 1 ) ) then
+              ! Made error message more descriptive
+              ! Joshua Fasching July 2008
+              write(fstderr,*) 'Possible sampling error for variable ',  &
+                               trim(rad_zm%f%var(i)%name), ' in rad_zm ',  &
+                               'at k = ', k,  &
+                               '; rad_zm%n(',k,',',i,') = ', rad_zm%n(1,1,k,i)
+            endif
+
           endif
 
-        endif
-
+        enddo
       enddo
-    enddo
-    
+    end if ! l_output_rad_files
+
     ! Check number of sampling points for each variable in the zm statistics
     ! at each vertical level.
     do i = 1, sfc%nn
@@ -1126,23 +1136,29 @@ module stats_subs
 
     call stats_avg( zt%kk, zt%nn, zt%x, zt%n )
     call stats_avg( zm%kk, zm%nn, zm%x, zm%n )
-    call stats_avg( rad_zt%kk, rad_zt%nn, rad_zt%x, rad_zt%n )
-    call stats_avg( rad_zm%kk, rad_zm%nn, rad_zm%x, rad_zm%n )
+    if (l_output_rad_files) then
+      call stats_avg( rad_zt%kk, rad_zt%nn, rad_zt%x, rad_zt%n )
+      call stats_avg( rad_zm%kk, rad_zm%nn, rad_zm%x, rad_zm%n )
+    end if
     call stats_avg( sfc%kk, sfc%nn, sfc%x, sfc%n )
 
     ! Write to file
     if ( l_grads ) then
       call write_grads( zt%f  )
       call write_grads( zm%f  )
-      call write_grads( rad_zt%f  )
-      call write_grads( rad_zm%f  )
+      if (l_output_rad_files) then
+        call write_grads( rad_zt%f  )
+        call write_grads( rad_zm%f  )
+      end if
       call write_grads( sfc%f  )
     else ! l_netcdf
 #ifdef NETCDF
       call write_netcdf( zt%f  )
       call write_netcdf( zm%f  )
-      call write_netcdf( rad_zt%f  )
-      call write_netcdf( rad_zm%f  )
+      if (l_output_rad_files) then
+        call write_netcdf( rad_zt%f  )
+        call write_netcdf( rad_zm%f  )
+      end if  
       call write_netcdf( sfc%f  )
 #else
       stop "This program was not compiled with netCDF support"
@@ -1152,8 +1168,10 @@ module stats_subs
     ! Reset sample fields
     call stats_zero( zt%kk, zt%nn, zt%x, zt%n, zt%l_in_update )
     call stats_zero( zm%kk, zm%nn, zm%x, zm%n, zm%l_in_update )
-    call stats_zero( rad_zt%kk, rad_zt%nn, rad_zt%x, rad_zt%n, rad_zt%l_in_update )
-    call stats_zero( rad_zm%kk, rad_zm%nn, rad_zm%x, rad_zm%n, rad_zm%l_in_update )
+    if (l_output_rad_files) then
+      call stats_zero( rad_zt%kk, rad_zt%nn, rad_zt%x, rad_zt%n, rad_zt%l_in_update )
+      call stats_zero( rad_zm%kk, rad_zm%nn, rad_zm%x, rad_zm%n, rad_zm%l_in_update )
+    end if
     call stats_zero( sfc%kk, sfc%nn, sfc%x, sfc%n, sfc%l_in_update )
 
 
@@ -1787,7 +1805,8 @@ module stats_subs
         rad_zm, & 
         sfc, & 
         l_netcdf, & 
-        l_stats
+        l_stats, &
+        l_output_rad_files
 
     use stats_variables, only: & 
         ztscr01, &  ! Variable(s)
@@ -1951,43 +1970,45 @@ module stats_subs
       deallocate ( zmscr16 )
       deallocate ( zmscr17 )
 
-      ! De-allocate all rad_zt variables
-      deallocate( rad_zt%z )
+      if (l_output_rad_files) then
+        ! De-allocate all rad_zt variables
+        deallocate( rad_zt%z )
 
-      deallocate( rad_zt%x )
-      deallocate( rad_zt%n )
+        deallocate( rad_zt%x )
+        deallocate( rad_zt%n )
 
-      deallocate( rad_zt%f%var )
-      deallocate( rad_zt%f%z )
-      deallocate( rad_zt%l_in_update )
+        deallocate( rad_zt%f%var )
+        deallocate( rad_zt%f%z )
+        deallocate( rad_zt%l_in_update )
 
-      ! De-allocate all rad_zm variables
-      deallocate( rad_zm%z )
+        ! De-allocate all rad_zm variables
+        deallocate( rad_zm%z )
 
-      deallocate( rad_zm%x )
-      deallocate( rad_zm%n )
+        deallocate( rad_zm%x )
+        deallocate( rad_zm%n )
 
-      deallocate( rad_zm%f%var )
-      deallocate( rad_zm%f%z )
-      deallocate( rad_zm%l_in_update )
+        deallocate( rad_zm%f%var )
+        deallocate( rad_zm%f%z )
+        deallocate( rad_zm%l_in_update )
 
-      !deallocate ( radscr01 )
-      !deallocate ( radscr02 )
-      !deallocate ( radscr03 )
-      !deallocate ( radscr04 )
-      !deallocate ( radscr05 )
-      !deallocate ( radscr06 )
-      !deallocate ( radscr07 )
-      !deallocate ( radscr08 )
-      !deallocate ( radscr09 )
-      !deallocate ( radscr10 )
-      !deallocate ( radscr11 )
-      !deallocate ( radscr12 )
-      !deallocate ( radscr13 )
-      !deallocate ( radscr14 )
-      !deallocate ( radscr15 )
-      !deallocate ( radscr16 )
-      !deallocate ( radscr17 )
+        !deallocate ( radscr01 )
+        !deallocate ( radscr02 )
+        !deallocate ( radscr03 )
+        !deallocate ( radscr04 )
+        !deallocate ( radscr05 )
+        !deallocate ( radscr06 )
+        !deallocate ( radscr07 )
+        !deallocate ( radscr08 )
+        !deallocate ( radscr09 )
+        !deallocate ( radscr10 )
+        !deallocate ( radscr11 )
+        !deallocate ( radscr12 )
+        !deallocate ( radscr13 )
+        !deallocate ( radscr14 )
+        !deallocate ( radscr15 )
+        !deallocate ( radscr16 )
+        !deallocate ( radscr17 )
+      end if ! l_output_rad_files
 
       ! De-allocate all sfc variables
       deallocate( sfc%z )
