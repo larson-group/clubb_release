@@ -13,214 +13,132 @@
     'plots' =>
     [
        {'plotTitle' => 'Liquid Water Potential Temperature, \theta_l', 'axisLabel' => 'thlm [K]', 'type' => 'profile', 'lines' =>
-       [ 
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'thlm', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Total Water Mixing Ratio, r_t', 'axisLabel' => 'rtm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'rtm', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp [K m/s]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zm.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'wpthlp', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zm.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'wprtp', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cloud\_frac [%]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'cloud_frac * 100', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'cloud_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'cloud_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},       
        {'plotTitle' => 'Cloud Water Mixing Ratio, r_c', 'axisLabel' => 'rcm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'rcm', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rcm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rcm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of w', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zm.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'wp2', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Third-order Moment of w', 'axisLabel' => 'wp3 [m^3/s^3]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'wp3', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of \theta_l', 'axisLabel' => 'thlp2 [K^2]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zm.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'thlp2', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of r_t', 'axisLabel' => 'rtp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zm.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'rtp2', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of r_t & \theta_l', 'axisLabel' => 'rtpthlp [(kg/kg) K]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zm.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'rtpthlp', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Vertical Wind Component, w (subsidence)', 'axisLabel' => 'wm [m/s]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'wm', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Zonal Wind Component, u', 'axisLabel' => 'um [m/s]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'um', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'um', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'um', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Meridional Wind Component, v', 'axisLabel' => 'vm [m/s]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'vm', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of u & w', 'axisLabel' => 'upwp [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zm.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'upwp', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'upwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'upwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of v & w', 'axisLabel' => 'vpwp [m^s/s^2]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zm.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'vpwp', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vpwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vpwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of u wind', 'axisLabel' => 'up2 [m^s/s^2]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zm.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'up2', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'up2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'up2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of v wind', 'axisLabel' => 'vp2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zm.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'vp2', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'rrainm', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'Nrm', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nrm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nrm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Droplet Concentration', 'axisLabel' => 'Ncm [num/kg]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'Ncm', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgraupelm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'rgraupelm', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rgraupelm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rgraupelm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'ricem [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'ricem', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ricem', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ricem', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Ice Concentration', 'axisLabel' => 'Nim [num/kg]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'Nim', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nim', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'nim', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Snow Mixing Ratio', 'axisLabel' => 'rsnowm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'rsnowm', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsnowm [num/kg]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'Nsnowm', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'nsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Buoyancy flux ', 'axisLabel' => 'wpthvp [K m/s]', 'type' => 'profile', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_zm.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'wpthvp', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Temperature ', 'axisLabel' => 'T\_in\_K\_rad [K]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_rad_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'T_in_K_rad', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_rad_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'T_in_K_rad', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Ice mixing ratio ', 'axisLabel' => 'rcil\_rad [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Total precip fallout rate from Morrison scheme', 'axisLabel' => 'morr\_rain\_rate [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_rad_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'rcil_rad', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_rad_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rcil_rad', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'morr_rain_rate', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Ozone mixing ratio ', 'axisLabel' => 'o3l\_rad [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Vertically Averaged wp2', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_rad_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'o3l_rad', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_rad_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'o3l_rad', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2_vert_avg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Snow water mixing ratio ', 'axisLabel' => 'rsnowm\_rad [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Cloud Ice Water Path', 'axisLabel' => 'iwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_rad_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'rsnowm_rad', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_rad_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rsnowm_rad', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'iwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'rcm in cloud layer ', 'axisLabel' => 'rcm\_in\_cloud\_rad [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Snow Water Path', 'axisLabel' => 'swp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_rad_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'rcm_in_cloud_rad', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_rad_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rcm_in_cloud_ra', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Cloud fraction (between 0 and 1) ', 'axisLabel' => 'cloud\_frac\_rad [-]', 'type' => 'profile', 'lines' =>
-       [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_rad_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'cloud_frac_rad', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_rad_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'cloud_frac_rad', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Total radiative heating rate ', 'axisLabel' => 'radht\_rad [K/s]', 'type' => 'profile', 'lines' =>
-       [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_rad_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'radht_rad', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_rad_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'radht_rad', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Short-wave radiative heating rate ', 'axisLabel' => 'radht\_LW\_rad [K/s]', 'type' => 'profile', 'lines' =>
-       [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_rad_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'radht_LW_rad', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_rad_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'radht_LW_rad', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Long-wave radiative heating rate ', 'axisLabel' => 'radht\_SW\_rad [K/s]', 'type' => 'profile', 'lines' =>
-       [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_rad_zt.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'radht_SW_rad ', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_rad_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'radht_SW_rad ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Net short-wave radiative flux ', 'axisLabel' => 'Frad\_SW\_rad [W/m^2]', 'type' => 'profile', 'lines' =>
-       [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_rad_zm.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'Frad_SW_rad', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_rad_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Frad_SW_rad', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Net long-wave radiative flux ', 'axisLabel' => 'Frad\_LW\_rad [W/m^2]', 'type' => 'profile', 'lines' =>
-       [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_rad_zm.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'Frad_LW_rad', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_rad_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Frad_LW_rad', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Short-wave upwelling radiative flux ', 'axisLabel' => 'Frad\_SW\_up\_rad [W/m^2]', 'type' => 'profile', 'lines' =>
-       [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_rad_zm.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'Frad_SW_up_rad', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_rad_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Frad_SW_up_rad', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Long-wave upwelling radiative flux ', 'axisLabel' => 'Frad\_LW\_up\_rad [W/m^2]', 'type' => 'profile', 'lines' =>
-       [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_rad_zm.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'Frad_LW_up_rad', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_rad_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Frad_LW_up_rad', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Short-wave downwelling radiative flux ', 'axisLabel' => 'Frad\_SW\_down\_rad [W/m^2]', 'type' => 'profile', 'lines' =>
-       [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_rad_zm.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'Frad_SW_down_rad', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_rad_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Frad_SW_down_ra', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Long-wave downwelling radiative flux ', 'axisLabel' => 'Frad\_LW\_down\_rad [W/m^2]', 'type' => 'profile', 'lines' =>
-       [
-	  {'filename' => '/home/nielsenb/clubb/postprocessing/plotgen/radtest/cloud_feedback_s6_rad_zm.nc', 'type' => 'les', 'name' => 'nc', 'expression' => 'Frad_LW_down_rad', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => 'blue'},
-	  {'filename' => 'cloud_feedback_s6_rad_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Frad_LW_down_ra', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'swp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]}
     ],
     'nightlyOutput' =>
