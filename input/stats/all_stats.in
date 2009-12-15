@@ -3,8 +3,8 @@
 ! can be output to GrADS, as found in src/CLUBB_core/stats_variables.F90
 ! This file, as well as the statistical files for all the other cases, needs
 ! to be updated every time a new statistical parameter is added.
-! Note that the passive scalars are commented out because the model is not 
-! compiled with support for them by default, and the condition numbers are 
+! Note that the passive scalars are commented out because not all cases have a
+! sounding configured to use them, and the estimates of condition numbers are
 ! commented out because they are computationally expensive.
 &statsnl
 
@@ -14,7 +14,7 @@ vars_zt =
 'rel_humidity', 'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp',
 'Lscale_up', 'Lscale_down', 'tau_zt', 'Kh_zt', 'wp2thvp', 'wp2rcp', 'wprtpthlp',
 'sigma_sqd_w_zt', 'rho', 'radht', 'radht_LW', 'radht_SW',
-'Ncm', 'Ncnm', 'Nim', 'snowslope', 'Nsnowm', 'sed_rcm', 'rsat',
+'Ncm', 'Ncnm', 'Nim', 'snowslope', 'Nsnowm', 'Ngraupelm', 'sed_rcm', 'rsat',
 'rrainm', 'Nrm', 'mean_vol_rad_rain', 'mean_vol_rad_cloud',
 'eff_rad_cloud', 'eff_rad_ice', 'eff_rad_snow', 'eff_rad_rain', 'eff_rad_graupel',
 'rain_rate', 'AKm', 'LH_AKm', 'AKstd', 'AKstd_cld', 'AKm_rcm', 'AKm_rcc',

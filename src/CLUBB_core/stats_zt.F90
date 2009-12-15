@@ -982,11 +982,12 @@ module stats_zt
              "num/kg", zt )
         k = k + 1
 
-      case ('Ngraupelm')        ! Adam Smith, 22 April 2008
+      case ('Ngraupelm')
         iNgraupelm = k
         call stat_assign( iNgraupelm, "Ngraupelm", & 
              "Graupel number concentration  [num/kg]", & 
              "num/kg", zt )
+        k = k + 1
 
       case ('sed_rcm')       ! Brian
         ised_rcm = k
