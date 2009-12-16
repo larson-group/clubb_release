@@ -357,6 +357,16 @@ module clubb_core
       sclrprtp_zt, & ! sclr' r_t' on thermo. levels
       sclrpthlp_zt   ! sclr' th_l' on thermo. levels
 
+    ! These anelastic variables will be defined here temporarily until the
+    ! anelastic code is complete, at which time these variables will be defined
+    ! along with the other rho variables, and will be set in clubb_driver.F90.
+    ! Brian; 12/16/09.
+    real, dimension(gr%nnzp) :: &
+      rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
+      invrs_rho_ds_zm, & ! Inv. dry, static density @ moment. levs. [m^3/kg]
+      invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
+
     real, dimension(gr%nnzp) :: &
       p_in_Pa_zm, &  ! Pressure interpolated to momentum levels  [Pa]
       exner_zm,   &  ! Exner interpolated to momentum levels     [-]
@@ -420,6 +430,20 @@ module clubb_core
            sclrm, sclrm_forcing, edsclrm, edsclrm_forcing )              ! intent(in)
     end if
     !-----------------------------------------------------------------------
+
+    ! These anelastic variables will be defined here temporarily until the
+    ! anelastic code is complete, at which time these variables will be defined
+    ! along with the other rho variables, and will be set in clubb_driver.F90.
+    ! Brian; 12/16/09.
+    ! Anelastic
+    !rho_ds_zm = rho_zm
+    !rho_ds_zt = rho
+    ! Boussinesq
+    rho_ds_zm = 1.0
+    rho_ds_zt = 1.0
+    ! Set inverse rho_ds_zm and rho_ds_zt.
+    invrs_rho_ds_zm = 1.0/rho_ds_zm
+    invrs_rho_ds_zt = 1.0/rho_ds_zt
 
     ! SET SURFACE VALUES OF FLUXES (BROUGHT IN)
     ! We only do this for host models that do not apply the flux 
@@ -812,15 +836,16 @@ module clubb_core
     ! Advance rtm/wprtp and thlm/wpthlp one time step
     !----------------------------------------------------------------
 
-    call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3, & ! intent(in)
-                          Kh_zt, tau_zm, Skw_zm, rtpthvp,          & ! intent(in)
-                          rtm_forcing, thlpthvp, rtm_ref, thlm_ref,& ! intent(in)
-                          thlm_forcing, rtp2, thlp2, wp2_zt,       & ! intent(in)
-                          pdf_params, l_implemented,               & ! intent(in)
-                          sclrpthvp, sclrm_forcing, sclrp2,        & ! intent(in)
-                          rtm, wprtp, thlm, wpthlp,                & ! intent(inout)
-                          err_code,                                & ! intent(inout)
-                          sclrm, wpsclrp )                           ! intent(inout)
+    call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3,  & ! intent(in)
+                          Kh_zt, tau_zm, Skw_zm, rtpthvp,           & ! intent(in)
+                          rtm_forcing, thlpthvp, rtm_ref, thlm_ref, & ! intent(in)
+                          thlm_forcing, rho_ds_zm, rho_ds_zt,       & ! intent(in)
+                          invrs_rho_ds_zm, invrs_rho_ds_zt, rtp2,   & ! intent(in)
+                          thlp2, wp2_zt, pdf_params, l_implemented, & ! intent(in)
+                          sclrpthvp, sclrm_forcing, sclrp2,         & ! intent(in)
+                          rtm, wprtp, thlm, wpthlp,                 & ! intent(inout)
+                          err_code,                                 & ! intent(inout)
+                          sclrm, wpsclrp )                            ! intent(inout)
 
     ! Wrapped LAPACK procedures may report errors, and if so, exit
     ! gracefully.
