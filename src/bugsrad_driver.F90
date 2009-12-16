@@ -170,7 +170,7 @@ module bugsrad_clubb_mod
       dpl, &                                  ! Difference in pressure levels       [hPa]
       rsnowm_2d, rcm_in_cloud_2d, cloud_frac_2d ! Two-dimensional copies of the input parameters
 
-    double precision, dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size+1) :: &
+    double precision, dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size) :: &
       radht_SW_2d, & ! SW Radiative heating rate        [W/m^2]
       radht_LW_2d    ! LW Radiative heating rate        [W/m^2]
 
@@ -349,10 +349,10 @@ module bugsrad_clubb_mod
 
     ! Michael pointed out that this was a temperature tendency, not a theta_l
     ! tendency.  The 2nd line should fix both.  -dschanen 28 July 2006
-    radht_SW(2:nz) = real( flip( radht_SW_2d(1,buffer+1:nz+buffer), nz-1 ) ) &
+    radht_SW(2:nz) = real( flip( radht_SW_2d(1,buffer+1:(nz-1)+buffer), nz-1 ) ) &
                      * ( 1.0 / exner(2:nz) )
 
-    radht_LW(2:nz) = real( flip( radht_LW_2d(1,buffer+1:nz+buffer), nz-1 ) ) &
+    radht_LW(2:nz) = real( flip( radht_LW_2d(1,buffer+1:(nz-1)+buffer), nz-1 ) ) &
                      * ( 1.0 / exner(2:nz) )
 
     ! No radiative heating below ground
