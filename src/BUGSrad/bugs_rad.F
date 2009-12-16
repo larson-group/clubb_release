@@ -491,6 +491,7 @@
       acld_loc(:,:)= acld(1:len,1:nlm)
 #endif
 
+      acldmx(1:len) = 0.0 ! Un-initialized memory -dschanen 15 Dec 2009
       do l = 1, nlm
          acldmx(1:len) = max(acldmx(1:len),acld_loc(1:len,l))
       enddo
