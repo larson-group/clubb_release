@@ -832,8 +832,8 @@ in the &microphysics_setting namelist.
 Some useful &microphysics_setting namelist flags for the 
 Morrison microphysics code:
 
-  Ncm_initial      =  #/cc    Either the initial value of cloud droplet number
-    concentration, or the constant value, depending on l_predictnc.
+-----------------------------|--------------------------------------------------
+Logical flag                 |  If true then:
 
   l_ice_micro      = .true.   Calculate ice mixing ratio.
 
@@ -862,6 +862,12 @@ Morrison microphysics code:
 
   l_fix_pgam  = .true.  Fix the value of pgam (exponent of cloud water's gamma
     dist.) from Martin et al. (1994).
+-----------------------------|--------------------------------------------------
+
+  Other parameters:
+
+  Ncm_initial      =  #/cc    Either the initial value of cloud droplet number
+    concentration, or the constant value, depending on l_predictnc.
 
   pgam_fixed  = #  Value to use for a fixed pgam
 
