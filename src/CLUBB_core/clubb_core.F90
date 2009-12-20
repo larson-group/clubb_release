@@ -914,11 +914,12 @@ module clubb_core
     !----------------------------------------------------------------
 
     call advance_wp2_wp3 &
-         ( dt, sfc_elevation, sigma_sqd_w, wm_zm,      & ! intent(in)
-           wm_zt, wpthvp, wp2thvp, um, vm, upwp, vpwp, & ! intent(in)
-           up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt,     & ! intent(in)
-           Skw_zm, Skw_zt, wp3_zm, pdf_params%a,       & ! intent(in)
-           wp2, wp3, wp2_zt, err_code                  ) ! intent(inout)
+         ( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt,  & ! intent(in)
+           wpthvp, wp2thvp, um, vm, upwp, vpwp, up2, vp2, & ! intent(in)
+           Kh_zm, Kh_zt, tau_zm, tau_zt, Skw_zm, Skw_zt,  & ! intent(in)
+           rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,         & ! intent(in)
+           invrs_rho_ds_zt, wp3_zm, pdf_params%a,         & ! intent(in)
+           wp2, wp3, wp2_zt, err_code                     ) ! intent(inout)
 
     ! Wrapped LAPACK procedures may report errors, and if so, exit
     ! gracefully.

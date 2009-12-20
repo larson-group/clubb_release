@@ -15,7 +15,8 @@ module constants
 
   implicit none
  
-  public :: fstderr, fstdin, fstdout, pi_dp, pi, sqrt_2pi, sqrt_2, var_length, &
+  public :: fstderr, fstdin, fstdout, var_length, &
+            pi_dp, pi, sqrt_2pi, sqrt_2, three_halves, &
             Cp, Lv, Ls, Lf, Rd, Rv, ep, ep1, ep2, &
             kappa, grav, p0, vonk, rho_lw, &
             wtol, thltol, rttol, s_mellor_tol, & 
@@ -42,6 +43,9 @@ module constants
   real, parameter :: &
     sqrt_2pi = 2.5066282746310005024, &  ! sqrt(2*pi)
     sqrt_2   = 1.4142135623730950488     ! sqrt(2)
+
+  real, parameter :: &
+    three_halves = 3.0/2.0   ! 3/2
 
   ! Physical constants
   real, parameter ::  & 
