@@ -2428,26 +2428,44 @@ contains
     !
     ! The d(w'^3)/dt equation contains a turbulent advection term:
     !
-    ! - d(w'^4)/dz;
+    ! - (1/rho_ds) * d( rho_ds * w'^4 )/dz;
     !
     ! and a turbulent production term:
     !
-    ! + 3 w'^2 d(w'^2)/dz.
+    ! + 3 * ( w'^2 / rho_ds ) * d( rho_ds * w'^2 )/dz.
     !
     ! A substitution is made in order to close the turbulent advection term, 
     ! such that:
     !
-    ! w'^4 = (a_3 + 3/2) * (w'^2)^2  +  a_1 * ( (w'^3)^2 / w'^2 );
+    ! w'^4 = coef_sig_sqd_w * (w'^2)^2  +  a_1 * ( (w'^3)^2 / w'^2 );
     !
-    ! where a_1 and a_3 are variables that are both functions of sigma_sqd_w.  
+    ! where both a_1 and coef_sig_sqd_w are variables that are functions of
+    ! sigma_sqd_w, such that: 
+    !
+    ! coef_sig_sqd_w = 3*(sigma_sqd_w)^2 + 6*(1 - sigma_sqd_w)*sigma_sqd_w
+    !                  + (1 - sigma_sqd_w)^2; and
+    !
+    ! a_1 = 1 / (1 - sigma_sqd_w).
+    !
+    ! Since the turbulent advection and turbulent production terms are being
+    ! combined, a further substitution is made, such that:
+    !
+    ! a_3 = coef_sig_sqd_w - 3;
+    !
+    ! and thus:
+    !
+    ! w'^4 = (a_3 + 3) * (w'^2)^2  +  a_1 * ( (w'^3)^2 / w'^2 ).
+    !
     ! The turbulent production term is rewritten as:
     !
-    ! + 3 w'^2 d(w'^2)/dz = + (3/2) d( (w'^2)^2 )/dz.
+    ! + 3 * ( w'^2 / rho_ds ) * d[ rho_ds * w'^2 ]/dz
+    ! = + (3/rho_ds) * d[ rho_ds * (w'^2)^2 ]/dz - (3/2) * d[ (w'^2)^2 ]/dz.
     !
     ! The turbulent advection and turbulent production terms are combined as:
     !
-    ! - d [ a_3 * (w'^2)^2 ] / dz
-    !    - d [ a_1 * ( (w'^3)^2 / w'^2 ) ] / dz.
+    ! - (1/rho_ds) * d [ rho_ds * a_3 * (w'^2)^2 ] / dz
+    ! - (1/rho_ds) * d [ rho_ds * a_1 * ( (w'^3)^2 / w'^2 ) ] / dz
+    ! - (3/2) * d [ (w'^2)^2 ] / dz.
     !
     ! The (w'^2)^2 and (w'^3)^2 terms are both linearized, such that:
     !
@@ -2457,11 +2475,13 @@ contains
     ! which produces implicit and explicit portions of these terms.  The 
     ! implicit portion of these terms is:
     !
-    ! - d [ a_3 * 2 * w'^2(t) * w'^2(t+1) ] / dz
-    !    - d [ a_1 * ( 2 * w'^3(t) * w'^3(t+1) ) / w'^2(t) ] / dz.
+    ! - (1/rho_ds) * d [ rho_ds * a_3 * 2 * w'^2(t) * w'^2(t+1) ] / dz
+    ! - (1/rho_ds) * d [ rho_ds * a_1 
+    !                    * ( 2 * w'^3(t) * w'^3(t+1) ) / w'^2(t) ] / dz
+    ! - (3/2) * d [ 2 * w'^2(t) * w'^2(t+1) ] /dz.
     !
     ! Note:  When the term is brought over to the left-hand side, the sign is
-    !        reversed and the leading "-" in front of both d[ ] / dz terms is
+    !        reversed and the leading "-" in front of all d[ ] / dz terms is
     !        changed to a "+".
     !
     ! Timestep index (t) stands for the index of the current timestep, while
@@ -2471,28 +2491,34 @@ contains
     ! The implicit portion of these terms is discretized as follows:
     !
     ! The values of w'^3 are found on the thermodynamic levels, while the values
-    ! of w'^2, a_1, and a_3 are found on the momentum levels.  The variable w'^3
+    ! of w'^2, a_1, and a_3 are found on the momentum levels.  Additionally, the
+    ! values of rho_ds_zm are found on the momentum levels, and the values of
+    ! invrs_rho_ds_zt are found on the thermodynamic levels.  The variable w'^3
     ! is interpolated to the intermediate momentum levels.  The values of the
-    ! mathematical expressions (called F and G here) within the dF/dz and dG/dz
-    ! terms are computed on the momentum levels.  Then, the derivatives (d/dz) 
-    ! of the expressions (F and G) are taken over the central thermodynamic 
-    ! level, yielding the desired result.  In this function, the values of F 
-    ! and G are as follows:
+    ! mathematical expressions (called F, G, and H here) within the dF/dz,
+    ! dG/dz, and dH/dz terms are computed on the momentum levels.  Then, the
+    ! derivatives (d/dz) of the expressions (F, G, and H) are taken over the
+    ! central thermodynamic level, where dF/dz and dG/dz are multiplied by
+    ! invrs_rho_ds_zt, and where dH/dz is multiplied by 3/2.  This yields the
+    ! desired results.  In this function, the values of F, G, and H are as
+    ! follows:
     !
-    ! F = a_3(t) * 2 * w'^2(t) * w'^2(t+1); and
+    ! F = rho_ds_zm * a_3(t) * 2 * w'^2(t) * w'^2(t+1);
     !
-    ! G = a_1(t) * ( 2 * w'^3(t) * w'^3(t+1) ) / w'^2(t).
+    ! G = rho_ds_zm * a_1(t) * ( 2 * w'^3(t) * w'^3(t+1) ) / w'^2(t); and
+    !
+    ! H = 2 * w'^2(t) * w'^2(t+1).
     !
     !
-    ! ----------------------wp3p1------------------------------ t(k+1)
+    ! ------------------------------------------------wp3p1-------------- t(k+1)
     !
-    ! ===a3====wp2====a1=========wp3(interp)=================== m(k)
+    ! ===a3====wp2====rho_ds_zm====a1======================wp3(interp)=== m(k)
     !
-    ! ----------------------wp3----------------dF/dz---dG/dz--- t(k)
+    ! ---dH/dz---dF/dz----invrs_rho_ds_zt----dG/dz----wp3---------------- t(k)
     !
-    ! ===a3m1==wp2m1==a1m1=======wp3(interp)=================== m(k-1)
+    ! ===a3m1==wp2m1==rho_ds_zmm1==a1m1====================wp3(interp)=== m(k-1)
     !
-    ! ----------------------wp3m1------------------------------ t(k-1)
+    ! ------------------------------------------------wp3m1-------------- t(k-1)
     !
     ! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1) correspond 
     ! with altitudes zt(k+1), zm(k), zt(k), zm(k-1), and zt(k-1), respectively. 
@@ -2801,26 +2827,44 @@ contains
     !
     ! The d(w'^3)/dt equation contains a turbulent advection term:
     !
-    ! - d(w'^4)/dz;
+    ! - (1/rho_ds) * d( rho_ds * w'^4 )/dz;
     !
     ! and a turbulent production term:
     !
-    ! + 3 w'^2 d(w'^2)/dz.
+    ! + 3 * ( w'^2 / rho_ds ) * d( rho_ds * w'^2 )/dz.
     !
     ! A substitution is made in order to close the turbulent advection term, 
     ! such that:
     !
-    ! w'^4 = (a_3 + 3/2) * (w'^2)^2  +  a_1 * ( (w'^3)^2 / w'^2 );
+    ! w'^4 = coef_sig_sqd_w * (w'^2)^2  +  a_1 * ( (w'^3)^2 / w'^2 );
     !
-    ! where a_1 and a_3 are variables that are both functions of sigma_sqd_w.  
+    ! where both a_1 and coef_sig_sqd_w are variables that are functions of
+    ! sigma_sqd_w, such that: 
+    !
+    ! coef_sig_sqd_w = 3*(sigma_sqd_w)^2 + 6*(1 - sigma_sqd_w)*sigma_sqd_w
+    !                  + (1 - sigma_sqd_w)^2; and
+    !
+    ! a_1 = 1 / (1 - sigma_sqd_w).
+    !
+    ! Since the turbulent advection and turbulent production terms are being
+    ! combined, a further substitution is made, such that:
+    !
+    ! a_3 = coef_sig_sqd_w - 3;
+    !
+    ! and thus:
+    !
+    ! w'^4 = (a_3 + 3) * (w'^2)^2  +  a_1 * ( (w'^3)^2 / w'^2 ).
+    !
     ! The turbulent production term is rewritten as:
     !
-    ! + 3 w'^2 d(w'^2)/dz = + (3/2) d( (w'^2)^2 )/dz.
+    ! + 3 * ( w'^2 / rho_ds ) * d[ rho_ds * w'^2 ]/dz
+    ! = + (3/rho_ds) * d[ rho_ds * (w'^2)^2 ]/dz - (3/2) * d[ (w'^2)^2 ]/dz.
     !
     ! The turbulent advection and turbulent production terms are combined as:
     !
-    ! - d [ a_3 * (w'^2)^2 ] / dz
-    !    - d [ a_1 * ( (w'^3)^2 / w'^2 ) ] / dz.
+    ! - (1/rho_ds) * d [ rho_ds * a_3 * (w'^2)^2 ] / dz
+    ! - (1/rho_ds) * d [ rho_ds * a_1 * ( (w'^3)^2 / w'^2 ) ] / dz
+    ! - (3/2) * d [ (w'^2)^2 ] / dz.
     !
     ! The (w'^2)^2 and (w'^3)^2 terms are both linearized, such that:
     !
@@ -2830,8 +2874,9 @@ contains
     ! which produces implicit and explicit portions of these terms.  The 
     ! explicit portion of these terms is:
     !
-    ! + d [ a_3 * ( w'^2(t) )^2 ] / dz
-    !    + d [ a_1 * ( w'^3(t) )^2 / w'^2(t) ] / dz.
+    ! + (1/rho_ds) * d [ rho_ds * a_3 * ( w'^2(t) )^2 ] / dz
+    ! + (1/rho_ds) * d [ rho_ds * a_1 * ( w'^3(t) )^2 / w'^2(t) ] / dz
+    ! + (3/2) * d [ ( w'^2(t) )^2 ] / dz.
     !
     ! Timestep index (t) stands for the index of the current timestep, while
     ! timestep index (t+1) stands for the index of the next timestep, which is 
@@ -2840,28 +2885,34 @@ contains
     ! The explicit portion of these terms is discretized as follows:
     !
     ! The values of w'^3 are found on the thermodynamic levels, while the values
-    ! of w'^2, a_1, and a_3 are found on the momentum levels.  The variable w'^3
+    ! of w'^2, a_1, and a_3 are found on the momentum levels.  Additionally, the
+    ! values of rho_ds_zm are found on the momentum levels, and the values of
+    ! invrs_rho_ds_zt are found on the thermodynamic levels.  The variable w'^3
     ! is interpolated to the intermediate momentum levels.  The values of the
-    ! mathematical expressions (called F and G here) within the dF/dz and dG/dz
-    ! terms are computed on the momentum levels.  Then, the derivatives (d/dz) 
-    ! of the expressions (F and G) are taken over the central thermodynamic 
-    ! level, yielding the desired result.  In this function, the values of F 
-    ! and G are as follows:
+    ! mathematical expressions (called F, G, and H here) within the dF/dz,
+    ! dG/dz, and dH/dz terms are computed on the momentum levels.  Then, the
+    ! derivatives (d/dz) of the expressions (F, G, and H) are taken over the
+    ! central thermodynamic level, where dF/dz and dG/dz are multiplied by
+    ! invrs_rho_ds_zt, and where dH/dz is multiplied by 3/2.  This yields the
+    ! desired results.  In this function, the values of F, G, and H are as
+    ! follows:
     !
-    ! F = a_3(t) * ( w'^2(t) )^2; and
+    ! F = rho_ds_zm * a_3(t) * ( w'^2(t) )^2;
     !
-    ! G = a_1(t) * ( w'^3(t) )^2 / w'^2(t).
+    ! G = rho_ds_zm * a_1(t) * ( w'^3(t) )^2 / w'^2(t); and
+    !
+    ! H = ( w'^2(t) )^2.
     !
     !
-    ! ----------------------wp3p1------------------------------ t(k+1)
+    ! ------------------------------------------------wp3p1-------------- t(k+1)
     !
-    ! ===a3====wp2====a1=========wp3(interp)=================== m(k)
+    ! ===a3====wp2====rho_ds_zm====a1======================wp3(interp)=== m(k)
     !
-    ! ----------------------wp3----------------dF/dz---dG/dz--- t(k)
+    ! ---dH/dz---dF/dz----invrs_rho_ds_zt----dG/dz----wp3---------------- t(k)
     !
-    ! ===a3m1==wp2m1==a1m1=======wp3(interp)=================== m(k-1)
+    ! ===a3m1==wp2m1==rho_ds_zmm1==a1m1====================wp3(interp)=== m(k-1)
     !
-    ! ----------------------wp3m1------------------------------ t(k-1)
+    ! ------------------------------------------------wp3m1-------------- t(k-1)
     !
     ! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1) correspond 
     ! with altitudes zt(k+1), zm(k), zt(k), zm(k-1), and zt(k-1), respectively.
