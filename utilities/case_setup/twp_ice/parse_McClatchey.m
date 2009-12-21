@@ -55,7 +55,8 @@ fclose(fid);
 height = geoPot;
 
 %To convert omega to velocity, we need rho, to get rho, we need exner
-exner = convert_units.pressure_in_hPa_to_exner(lev);
+%Note, pressure must be converted from Pa to hPa
+exner = convert_units.pressure_in_hPa_to_exner(lev / 100);
 %We also need potential temperature
 theta = convert_units.temperature_to_potential_temperature(T, exner);
 
