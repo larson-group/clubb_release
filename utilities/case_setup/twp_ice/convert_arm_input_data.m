@@ -195,7 +195,7 @@ end
 fclose(fout);	
 
 %Now, append the McClatchy profile
-parse_McClatchey( caseName, 'McCProfiles.dat', Psfc, lev(numLevels), u((numLevels - 1) * fieldLength + 1), v((numLevels - 1) * fieldLength + 1) );
+parse_McClatchey( caseName, 'McCProfiles.dat', Psfc, lev(numLevels) * 100, u((numLevels - 1) * fieldLength + 1), v((numLevels - 1) * fieldLength + 1) );
 
 
 %Now we need to create the forcings.in file 
