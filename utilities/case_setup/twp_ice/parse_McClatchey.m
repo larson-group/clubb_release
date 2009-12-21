@@ -7,7 +7,7 @@
 %	caseName 	 - the name of the case files are being made for
 %	fileName 	 - the name of the file to read
 %	Psfc	 	 - pressure at the surface in mb
-%	startHeight	 - the height at which to start using the McClatchy profile (in m)
+%	startHeight	 - the pressure level at which to start using the McClatchy profile (in Pa)
 %	u		 - value of the u wind (in m/s)
 %	v		 - valaue of the v wind (in m/s)
 
