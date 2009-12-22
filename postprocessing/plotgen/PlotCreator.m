@@ -8,7 +8,7 @@ ConsoleOutput.message(['Plot Number: ' int2str(plotNum)]);
 ConsoleOutput.message(['Plot Type: ' plotType]);
 ConsoleOutput.message(['Start Time: ' int2str(startTime) ' min.']);
 ConsoleOutput.message(['End Time: ' int2str(endTime) ' min.']);
-ConsoleOutput.message(['Start Height: ' int2str(endTime) ' m']);
+ConsoleOutput.message(['Start Height: ' int2str(startHeight) ' m']);
 ConsoleOutput.message(['End Height: ' int2str(endHeight) ' m']);
 
 %Quick sanity check
