@@ -222,8 +222,13 @@ sub main()
         {
             if($plotgenMode eq "splotgen")
             {
-                OutputWriter->writeHeader($outputIndex, "Splotgen");                
-                OutputWriter->writeSamSubHeader($outputIndex);
+                OutputWriter->writeHeader($outputIndex, "Splotgen");
+                
+                # Only print the SAM_CLUBB Equiv. table if in nightly mode.
+                if($nightly == 1)
+                {
+                    OutputWriter->writeSamSubHeader($outputIndex);
+                }
             }
             else
             {
