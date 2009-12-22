@@ -32,10 +32,11 @@ contains
   subroutine advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp, & 
                                thlm, wpthlp, wpthvp, um, vm, & 
                                wp2, wp2_zt, wp3, upwp, vpwp, &
-                               sigma_sqd_w, Skw_zm, Kh_zt, & 
+                               sigma_sqd_w, Skw_zm, Kh_zt, &
+                               rho_ds_zt, invrs_rho_ds_zm, &
                                l_iter, dt, & 
                                sclrm, wpsclrp, & 
-                               rtp2, thlp2, rtpthlp, & 
+                               rtp2, thlp2, rtpthlp, &
                                up2, vp2,  & 
                                err_code, & 
                                sclrp2, sclrprtp, sclrpthlp )
@@ -126,23 +127,25 @@ contains
 
     ! Input variables
     real, intent(in), dimension(gr%nnzp) ::  & 
-      tau_zm,      & ! Tau on momentum grid                          [s]
-      wm_zm,       & ! w wind on m                                   [m/s]
-      rtm,         & ! Total water mixing ratio                      [kg/kg]
-      wprtp,       & ! w' r_t'                                       [(m kg)/(s kg)]
-      thlm,        & ! Liquid potential temp.                        [K]
-      wpthlp,      & ! w' th_l'                                      [(m K)/s]
-      wpthvp,      & ! w' th_v'                                      [(m K)/s]
-      um,          & ! u wind                                        [m/s]
-      vm,          & ! v wind                                        [m/s]
-      wp2,         & ! w'^2                                          [m^2/s^2]
-      wp3,         & ! w'^3                                          [m^3/s^3]
-      upwp,        & ! u'w'                                          [m^2/s^2]
-      vpwp,        & ! v'w'                                          [m^2/s^2]
-      sigma_sqd_w, & ! sigma_sqd_w on momentum grid                  [-]
-      Skw_zm,      & ! Skw on moment. grid                           [-]
-      Kh_zt,       & ! Eddy diffusivity on t-lev.                    [m^2/s]
-      wp2_zt         ! w'^2 interpolated to thermodynamic levels     [m^2/s^2]
+      tau_zm,          & ! Time-scale tau on momentum levels     [s]
+      wm_zm,           & ! w-wind component on momentum levels   [m/s]
+      rtm,             & ! Total water mixing ratio (t-levs)     [kg/kg]
+      wprtp,           & ! w' r_t' (momentum levels)             [(m/s)(kg/kg)]
+      thlm,            & ! Liquid potential temp. (t-levs)       [K]
+      wpthlp,          & ! w' th_l' (momentum levels)            [(m K)/s]
+      wpthvp,          & ! w' th_v' (momentum levels)            [(m K)/s]
+      um,              & ! u wind (thermodynamic levels)         [m/s]
+      vm,              & ! v wind (thermodynamic levels)         [m/s]
+      wp2,             & ! w'^2 (momentum levels)                [m^2/s^2]
+      wp3,             & ! w'^3 (thermodynamic levels)           [m^3/s^3]
+      upwp,            & ! u'w' (momentum levels)                [m^2/s^2]
+      vpwp,            & ! v'w' (momentum levels)                [m^2/s^2]
+      sigma_sqd_w,     & ! sigma_sqd_w (momentum levels)         [-]
+      Skw_zm,          & ! Skewness of w on momentum levels      [-]
+      Kh_zt,           & ! Eddy diffusivity on thermo. levels    [m^2/s]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels [kg/m^3]
+      invrs_rho_ds_zm, & ! Inv. dry, static density @ mom. levs. [m^3/kg]
+      wp2_zt             ! w'^2 interpolated to thermo. levels   [m^2/s^2]
 
     logical, intent(in) :: l_iter ! Whether variances are prognostic
 
@@ -396,6 +399,7 @@ contains
     ! Implicit contributions to term rtp2
     call xp2_xpyp_lhs( dt, l_iter, wp2_zt, wp3,  &             ! Intent(in)
                        a1, a1_zt, tau_zm, wm_zm, Kw2_rtp2, &   ! Intent(in)
+                       rho_ds_zt, invrs_rho_ds_zm,   &         ! Intent(in)
                        C2rt_1d, nu2, beta,           &         ! Intent(in)
                        lhs )                                   ! Intent(out)
 
@@ -403,6 +407,7 @@ contains
     call xp2_xpyp_rhs( "rtp2", dt, l_iter, a1, a1_zt, &     ! Intent(in)
                        wp2_zt, wp3, wprtp, wprtp_zt, &      ! Intent(in)
                        wprtp, wprtp_zt, rtm, rtm, rtp2, &   ! Intent(in)
+                       rho_ds_zt, invrs_rho_ds_zm, &        ! Intent(in)
                        C2rt_1d, tau_zm, rttol**2, beta, &   ! Intent(in)
                        rhs )                                ! Intent(out)
 
@@ -420,6 +425,7 @@ contains
     ! Implicit contributions to term thlp2
     call xp2_xpyp_lhs( dt, l_iter, wp2_zt, wp3,  &                  ! Intent(in)
                        a1, a1_zt, tau_zm, wm_zm, Kw2_thlp2,  &      ! Intent(in)
+                       rho_ds_zt, invrs_rho_ds_zm,    &             ! Intent(in)
                        C2thl_1d, nu2, beta,           &             ! Intent(in)
                        lhs )                                        ! Intent(out)
 
@@ -427,6 +433,7 @@ contains
     call xp2_xpyp_rhs( "thlp2", dt, l_iter, a1, a1_zt, &            ! Intent(in)
                        wp2_zt, wp3, wpthlp, wpthlp_zt, &            ! Intent(in)
                        wpthlp, wpthlp_zt, thlm, thlm, thlp2, &      ! Intent(in)
+                       rho_ds_zt, invrs_rho_ds_zm, &                ! Intent(in)
                        C2thl_1d, tau_zm, thltol**2, beta, &         ! Intent(in)
                        rhs )                                        ! Intent(out)
 
@@ -445,6 +452,7 @@ contains
     ! Implicit contributions to term rtpthlp
     call xp2_xpyp_lhs( dt, l_iter, wp2_zt, wp3,  &                  ! Intent(in)
                        a1, a1_zt, tau_zm, wm_zm, Kw2_rtpthlp,  &    ! Intent(in)
+                       rho_ds_zt, invrs_rho_ds_zm,      &           ! Intent(in)
                        C2rtthl_1d, nu2, beta,           &           ! Intent(in)
                        lhs )                                        ! Intent(out)
 
@@ -452,6 +460,7 @@ contains
     call xp2_xpyp_rhs( "rtpthlp", dt, l_iter, a1, a1_zt, &          ! Intent(in)
                        wp2_zt, wp3, wprtp, wprtp_zt, &              ! Intent(in)
                        wpthlp, wpthlp_zt, rtm, thlm, rtpthlp, &     ! Intent(in)
+                       rho_ds_zt, invrs_rho_ds_zm, &                ! Intent(in)
                        C2rtthl_1d, tau_zm, zero_threshold, beta, &  ! Intent(in)
                        rhs )                                        ! Intent(out)
 
@@ -470,6 +479,7 @@ contains
     ! Implicit contributions to term up2/vp2
     call xp2_xpyp_lhs( dt, l_iter, wp2_zt, wp3,  &             ! Intent(in)
                        a1, a1_zt, tau_zm, wm_zm, Kw9,  &       ! Intent(in)
+                       rho_ds_zt, invrs_rho_ds_zm,     &       ! Intent(in)
                        C4_C14_1d, nu9, beta,           &       ! Intent(in)
                        lhs )                                   ! Intent(out)
 
@@ -477,14 +487,16 @@ contains
     call xp2_xpyp_uv_rhs( "up2", dt, l_iter, a1, a1_zt, wp2, &      ! Intent(in)
                           wp2_zt, wp3, wpthvp, C4_C14_1d, tau_zm, & ! Intent(in)
                           um, vm, upwp, upwp_zt, vpwp, vpwp_zt, &   ! Intent(in)
-                          up2, vp2, C4, C5, C14, T0, beta, &        ! Intent(in)
+                          up2, vp2, rho_ds_zt, invrs_rho_ds_zm, &   ! Intent(in)
+                          C4, C5, C14, T0, beta, &                  ! Intent(in)
                           uv_rhs(:,1) )                             ! Intent(out)
 
     ! Explicit contributions to vp2
     call xp2_xpyp_uv_rhs( "vp2", dt, l_iter, a1, a1_zt, wp2, &      ! Intent(in)
                           wp2_zt, wp3, wpthvp, C4_C14_1d, tau_zm, & ! Intent(in)
                           vm, um, vpwp, vpwp_zt, upwp, upwp_zt, &   ! Intent(in)
-                          vp2, up2, C4, C5, C14, T0, beta, &        ! Intent(in)
+                          vp2, up2, rho_ds_zt, invrs_rho_ds_zm, &   ! Intent(in)
+                          C4, C5, C14, T0, beta, &                  ! Intent(in)
                           uv_rhs(:,2) )                             ! Intent(out)
 
     ! Solve the tridiagonal system
@@ -598,6 +610,7 @@ contains
 
       call xp2_xpyp_lhs( dt, l_iter, wp2_zt, wp3,  &        ! Intent(in) 
                          a1, a1_zt, tau_zm, wm_zm, Kw2,  &  ! Intent(in)
+                         rho_ds_zt, invrs_rho_ds_zm,     &  ! Intent(in)
                          C2sclr_1d, nu2, beta,           &  ! Intent(in)
                          lhs )                              ! Intent(out)
 
@@ -617,6 +630,7 @@ contains
                            wp2_zt, wp3, wpsclrp(:,i),  &             ! Intent(in)
                            wpsclrp_zt, wpsclrp(:,i), wpsclrp_zt,  &  ! Intent(in)
                            sclrm(:,i), sclrm(:,i), sclrp2(:,i), &    ! Intent(in)
+                           rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)
                            C2sclr_1d, tau_zm, sclrtol(i)**2, beta, & ! Intent(in)
                            sclr_rhs(:,i) )                           ! Intent(out)
 
@@ -631,12 +645,13 @@ contains
           threshold = 0.0
         end if
 
-        call xp2_xpyp_rhs( "sclrprtp", dt, l_iter, a1, a1_zt, &        ! Intent(in)
-                           wp2_zt, wp3, wpsclrp(:,i),  &               ! Intent(in)
-                           wpsclrp_zt, wprtp, wprtp_zt, sclrm(:,i),  & ! Intent(in)
-                           rtm, sclrprtp(:,i), C2sclr_1d, tau_zm, &    ! Intent(in)     
-                           threshold, beta, &                          ! Intent(in)
-                           sclr_rhs(:,i+sclr_dim) )                    ! Intent(out)
+        call xp2_xpyp_rhs( "sclrprtp", dt, l_iter, a1, a1_zt, &  ! Intent(in)
+                           wp2_zt, wp3, wpsclrp(:,i),  &         ! Intent(in)
+                           wpsclrp_zt, wprtp, wprtp_zt,  &       ! Intent(in)
+                           sclrm(:,i), rtm, sclrprtp(:,i),  &    ! Intent(in)
+                           rho_ds_zt, invrs_rho_ds_zm, &         ! Intent(in)
+                           C2sclr_1d, tau_zm, threshold, beta, & ! Intent(in)
+                           sclr_rhs(:,i+sclr_dim) )              ! Intent(out)
 
 
         !!!!!***** sclr'th_l' *****!!!!!
@@ -653,6 +668,7 @@ contains
                            wp2_zt, wp3, wpsclrp(:,i),  &         ! Intent(in)
                            wpsclrp_zt, wpthlp, wpthlp_zt,  &     ! Intent(in)
                            sclrm(:,i), thlm, sclrpthlp(:,i), &   ! Intent(in)
+                           rho_ds_zt, invrs_rho_ds_zm, &         ! Intent(in)
                            C2sclr_1d, tau_zm, threshold, beta, & ! Intent(in)
                            sclr_rhs(:,i+2*sclr_dim) )            ! Intent(out)
       end do ! 1..sclr_dim
@@ -808,6 +824,7 @@ contains
   !=============================================================================
   subroutine xp2_xpyp_lhs( dt, l_iter, wp2_zt, wp3,  & 
                            a1, a1_zt, tau_zm, wm_zm, Kw,  &
+                           rho_ds_zt, invrs_rho_ds_zm,  &
                            Cn, nu, beta, lhs )
 
     ! Description:
@@ -873,21 +890,23 @@ contains
       km1_mdiag = 3    ! Momentum subdiagonal index.
 
     real(kind=time_precision), intent(in) :: & 
-      dt        ! Timestep length                                [s]
+      dt                 ! Timestep length                             [s]
 
     logical, intent(in) :: & 
       l_iter  ! Whether the variances are prognostic
 
     ! Input Variables
     real, dimension(gr%nnzp), intent(in) :: & 
-      wp2_zt,  & ! w'^2 interpolated to thermodynamic levels      [m^2/s^2]
-      wp3,     & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
-      a1,      & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
-      a1_zt,   & ! a_1 interpolated to thermodynamic levels       [-]
-      tau_zm,  & ! Time-scale tau on momentum levels              [s]
-      wm_zm,   & ! w wind component on momentum levels            [m/s]
-      Kw,      & ! Coefficient of eddy diffusivity (all vars.)    [m^2/s]
-      Cn         ! Coefficient C_n                                [-]
+      wp2_zt,          & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
+      wp3,             & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
+      a1,              & ! sigma_sqd_w term a_1 (momentum levels)      [-]
+      a1_zt,           & ! a_1 interpolated to thermodynamic levels    [-]
+      tau_zm,          & ! Time-scale tau on momentum levels           [s]
+      wm_zm,           & ! w wind component on momentum levels         [m/s]
+      Kw,              & ! Coefficient of eddy diffusivity (all vars.) [m^2/s]
+      rho_ds_zt,       & ! Dry, static density on thermodynamic levels [kg/m^3]
+      invrs_rho_ds_zm, & ! Inv. dry, static density on momentum levs.  [m^3/kg]
+      Cn                 ! Coefficient C_n                             [-]
 
     real, intent(in) :: & 
       nu,      & ! Background constant coef. of eddy diff.        [-]
@@ -939,6 +958,7 @@ contains
       = lhs(kp1_mdiag:km1_mdiag,k)  &
       + gamma_over_implicit_ts  &
       * term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+                     rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
                      a1_zt(kp1), a1(k), a1_zt(k), gr%dzm(k), beta, k )
 
       ! LHS dissipation term 1 (dp1)
@@ -1000,6 +1020,7 @@ contains
           tmp(1:3)  &
           = gamma_over_implicit_ts  &
           * term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+                         rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
                          a1_zt(kp1), a1(k), a1_zt(k), gr%dzm(k), beta, k )
           zmscr05(k) = -tmp(3)
           zmscr06(k) = -tmp(2)
@@ -1322,8 +1343,9 @@ contains
   !=============================================================================
   subroutine xp2_xpyp_uv_rhs( solve_type, dt, l_iter, a1, a1_zt, wp2, &
                               wp2_zt, wp3, wpthvp, C4_C14_1d, tau_zm,  & 
-                              xam, xbm, wpxap, wpxap_zt, wpxbp, wpxbp_zt, &
-                              xap2, xbp2, C4, C5, C14, T0, beta, &
+                              xam, xbm, wpxap, wpxap_zt, wpxbp, wpxbp_zt,  &
+                              xap2, xbp2, rho_ds_zt, invrs_rho_ds_zm, &
+                              C4, C5, C14, T0, beta, &
                               rhs )
 
     ! Description:
@@ -1368,35 +1390,37 @@ contains
     character(len=*), intent(in) :: solve_type
 
     real(kind=time_precision), intent(in) :: & 
-      dt           ! Model timestep                                 [s]
+      dt                 ! Model timestep                              [s]
 
     logical, intent(in) :: & 
       l_iter  ! Whether x is prognostic (T/F)
 
     real, dimension(gr%nnzp), intent(in) :: & 
-      a1,        & ! sigma_sqd_w-related term a_1 (momentum levels) [-]
-      a1_zt,     & ! a_1 interpolated to thermodynamic levels       [-]
-      wp2,       & ! w'^2 (momentum levels)                         [m^2/s^2]
-      wp2_zt,    & ! w'^2 interpolated to thermodynamic levels      [m^2/s^2]
-      wp3,       & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
-      wpthvp,    & ! w'th_v' (momentum levels)                      [K m/s]
-      C4_C14_1d, & ! Combination of model parameters C_4 and C_14   [-]
-      tau_zm,    & ! Time-scale tau on momentum levels              [s]
-      xam,       & ! x_am (thermodynamic levels)                    [m/s]
-      xbm,       & ! x_bm (thermodynamic levels)                    [m/s]
-      wpxap,     & ! w'x_a' (momentum levels)                       [m^2/s^2]
-      wpxap_zt,  & ! w'x_a' interpolated to thermodynamic levels    [m^2/s^2]
-      wpxbp,     & ! w'x_b' (momentum levels)                       [m^2/s^2]
-      wpxbp_zt,  & ! w'x_b' interpolated to thermodynamic levels    [m^2/s^2]
-      xap2,      & ! x_a'^2 (momentum levels)                       [m^2/s^2]
-      xbp2         ! x_b'^2 (momentum levels)                       [m^2/s^2]
+      a1,              & ! sigma_sqd_w term a_1 (momentum levels)      [-]
+      a1_zt,           & ! a_1 interpolated to thermodynamic levels    [-]
+      wp2,             & ! w'^2 (momentum levels)                      [m^2/s^2]
+      wp2_zt,          & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
+      wp3,             & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
+      wpthvp,          & ! w'th_v' (momentum levels)                   [K m/s]
+      C4_C14_1d,       & ! Combination of model params. C_4 and C_14   [-]
+      tau_zm,          & ! Time-scale tau on momentum levels           [s]
+      xam,             & ! x_am (thermodynamic levels)                 [m/s]
+      xbm,             & ! x_bm (thermodynamic levels)                 [m/s]
+      wpxap,           & ! w'x_a' (momentum levels)                    [m^2/s^2]
+      wpxap_zt,        & ! w'x_a' interpolated to thermodynamic levels [m^2/s^2]
+      wpxbp,           & ! w'x_b' (momentum levels)                    [m^2/s^2]
+      wpxbp_zt,        & ! w'x_b' interpolated to thermodynamic levels [m^2/s^2]
+      xap2,            & ! x_a'^2 (momentum levels)                    [m^2/s^2]
+      xbp2,            & ! x_b'^2 (momentum levels)                    [m^2/s^2]
+      rho_ds_zt,       & ! Dry, static density on thermodynamic levels [kg/m^3]
+      invrs_rho_ds_zm    ! Inv. dry, static density on momentum levs.  [m^3/kg]
 
     real, intent(in) :: & 
-      C4,        & ! Model parameter C_4                            [-]
-      C5,        & ! Model parameter C_5                            [-]
-      C14,       & ! Model parameter C_{14}                         [-]
-      T0,        & ! Reference temperature                          [K]
-      beta         ! Model parameter beta                           [-]
+      C4,              & ! Model parameter C_4                         [-]
+      C5,              & ! Model parameter C_5                         [-]
+      C14,             & ! Model parameter C_{14}                      [-]
+      T0,              & ! Reference temperature                       [K]
+      beta               ! Model parameter beta                        [-]
 
     ! Output Variable
     real, dimension(gr%nnzp,1), intent(out) :: & 
@@ -1460,8 +1484,9 @@ contains
       ! RHS turbulent advection (ta) term.
       rhs(k,1)  & 
       = rhs(k,1)  & 
-      + term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &
-                     a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
+      + term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+                     rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
+                     a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k),  &
                      wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta )
 
       ! RHS contribution from "over-implicit" weighted time step
@@ -1482,6 +1507,7 @@ contains
       !        numerically stable.
       lhs_fnc_output(1:3)  &
       = term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+                     rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
                      a1_zt(kp1), a1(k), a1_zt(k), gr%dzm(k), beta, k )
       rhs(k,1)  &
       = rhs(k,1)  &
@@ -1533,6 +1559,7 @@ contains
         ! subtracts the value sent in, reverse the sign on term_ta_rhs.
         call stat_begin_update_pt( ixapxbp_ta, k, &                 ! Intent(in) 
         -term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &   ! Intent(in)
+                      rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k), &
                       a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
                       wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ), &
                                    zm )                             ! Intent(inout)
@@ -1543,6 +1570,7 @@ contains
         !        advection (ta) term).
         lhs_fnc_output(1:3)  &
         = term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+                       rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
                        a1_zt(kp1), a1(k), a1_zt(k), gr%dzm(k), beta, k )
         call stat_modify_pt( ixapxbp_ta, k,  &          ! Intent(in)
               + ( 1.0 - gamma_over_implicit_ts )  &     ! Intent(in)
@@ -1676,7 +1704,8 @@ contains
   !=============================================================================
   subroutine xp2_xpyp_rhs( solve_type, dt, l_iter, a1, a1_zt, &
                            wp2_zt, wp3, wpxap, wpxap_zt, & 
-                           wpxbp, wpxbp_zt, xam, xbm, xapxbp, & 
+                           wpxbp, wpxbp_zt, xam, xbm, xapxbp, &
+                           rho_ds_zt, invrs_rho_ds_zm, & 
                            Cn, tau_zm, threshold, beta, & 
                            rhs )
 
@@ -1719,30 +1748,33 @@ contains
     character(len=*), intent(in) :: solve_type
 
     real(kind=time_precision), intent(in) :: & 
-      dt          ! Model timestep                                  [s]
+      dt                 ! Model timestep                              [s]
 
     logical, intent(in) :: & 
       l_iter   ! Whether x is prognostic (T/F)
 
     real, dimension(gr%nnzp), intent(in) :: & 
-      a1,       & ! sigma_sqd_w-related term a_1 (momentum levels)  [-]
-      a1_zt,    & ! a_1 interpolated to thermodynamic levels        [-]
-      wp2_zt,   & ! w'^2 interpolated to thermodynamic levels       [m^2/s^2]
-      wp3,      & ! w'^3 (thermodynamic levels)                     [m^3/s^3]
-      wpxap,    & ! w'x_a' (momentum levels)                        [m/s {x_am units}]
-      wpxap_zt, & ! w'x_a' interpolated to thermodynamic levels     [m/s {x_am units}]
-      wpxbp,    & ! w'x_b' (momentum levels)                        [m/s {x_bm units}]
-      wpxbp_zt, & ! w'x_b' interpolated to thermodynamic levels     [m/s {x_bm units}]
-      xam,      & ! x_am (thermodynamic levels)                     [{x_am units}]
-      xbm,      & ! x_bm (thermodynamic levels)                     [{x_bm units}]
-      xapxbp,   & ! x_a'x_b' (momentum levels)                      [{x_am units}*{x_bm units}]
-      tau_zm,   & ! Time-scale tau on momentum levels               [s]
-      Cn          ! Coefficient C_n                                 [-]
+      a1,              & ! sigma_sqd_w term a_1 (momentum levels)      [-]
+      a1_zt,           & ! a_1 interpolated to thermodynamic levels    [-]
+      wp2_zt,          & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
+      wp3,             & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
+      wpxap,           & ! w'x_a' (momentum levels)                    [m/s {x_am units}]
+      wpxap_zt,        & ! w'x_a' interpolated to thermodynamic levels [m/s {x_am units}]
+      wpxbp,           & ! w'x_b' (momentum levels)                    [m/s {x_bm units}]
+      wpxbp_zt,        & ! w'x_b' interpolated to thermodynamic levels [m/s {x_bm units}]
+      xam,             & ! x_am (thermodynamic levels)                 [{x_am units}]
+      xbm,             & ! x_bm (thermodynamic levels)                 [{x_bm units}]
+      xapxbp,          & ! x_a'x_b' (momentum levels)                  [{x_am units}
+                         !                                              *{x_bm units}]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels       [kg/m^3]
+      invrs_rho_ds_zm, & ! Inv. dry, static density on momentum levs.  [m^3/kg]
+      tau_zm,          & ! Time-scale tau on momentum levels           [s]
+      Cn                 ! Coefficient C_n                             [-]
 
     real, intent(in) :: &
-      threshold, & ! Smallest allowable magnitude value for x_a'x_b' [{x_am units}
-               !                                                    *{x_bm units}] 
-      beta         ! Model parameter beta                            [-]
+      threshold,       & ! Smallest allowable mag. value for x_a'x_b'  [{x_am units}
+                         !                                              *{x_bm units}]
+      beta               ! Model parameter beta                        [-]
 
     ! Output Variable
     real, dimension(gr%nnzp,1), intent(out) :: & 
@@ -1810,8 +1842,9 @@ contains
       ! RHS turbulent advection (ta) term.
       rhs(k,1)  & 
       = rhs(k,1)  & 
-      + term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &
-                     a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
+      + term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+                     rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
+                     a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k),  &
                      wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta )
 
       ! RHS contribution from "over-implicit" weighted time step
@@ -1832,6 +1865,7 @@ contains
       !        numerically stable.
       lhs_fnc_output(1:3)  &
       = term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+                     rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
                      a1_zt(kp1), a1(k), a1_zt(k), gr%dzm(k), beta, k )
       rhs(k,1)  &
       = rhs(k,1)  &
@@ -1875,6 +1909,7 @@ contains
         ! subtracts the value sent in, reverse the sign on term_ta_rhs.
         call stat_begin_update_pt( ixapxbp_ta, k, &                ! Intent(in) 
         -term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &  ! Intent(in)
+                      rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k), &
                       a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
                       wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ), &
                                    zm )                            ! Intent(inout)
@@ -1885,6 +1920,7 @@ contains
         !        advection (ta) term).
         lhs_fnc_output(1:3)  &
         = term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+                       rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
                        a1_zt(kp1), a1(k), a1_zt(k), gr%dzm(k), beta, k )
         call stat_modify_pt( ixapxbp_ta, k,  &            ! Intent(in)
               + ( 1.0 - gamma_over_implicit_ts )  &       ! Intent(in)
@@ -1968,8 +2004,9 @@ contains
   end subroutine xp2_xpyp_rhs
 
   !=============================================================================
-  pure function term_ta_lhs( wp3p1, wp3, wp2_ztp1, wp2_zt, &
-                             a1_ztp1, a1, a1_zt, dzm, beta, level ) & 
+  pure function term_ta_lhs( wp3p1, wp3, wp2_ztp1, wp2_zt,  &
+                             rho_ds_ztp1, rho_ds_zt, invrs_rho_ds_zm,  &
+                             a1_ztp1, a1, a1_zt, dzm, beta, level )  & 
   result( lhs )
 
     ! Description:
@@ -2081,15 +2118,18 @@ contains
 
     ! Input Variables
     real, intent(in) :: & 
-      wp3p1,    & ! w'^3(k+1)                                      [m^3/s^3]
-      wp3,      & ! w'^3(k)                                        [m^3/s^3]
-      wp2_ztp1, & ! w'^2 interpolated to thermodynamic level (k+1) [m^2/s^2]
-      wp2_zt,   & ! w'^2 interpolated to thermodynamic level (k)   [m^2/s^2]
-      a1_ztp1,  & ! a_1 interpolated to thermodynamic level (k+1)  [-]
-      a1,       & ! a_1(k)                                         [-]
-      a1_zt,    & ! a_1 interpolated to thermodynamic level (k)    [-]
-      dzm,      & ! Inverse of grid spacing                        [1/m]
-      beta        ! Model parameter                                [-]
+      wp3p1,           & ! w'^3(k+1)                                   [m^3/s^3]
+      wp3,             & ! w'^3(k)                                     [m^3/s^3]
+      wp2_ztp1,        & ! w'^2 interpolated to thermo. level (k+1)    [m^2/s^2]
+      wp2_zt,          & ! w'^2 interpolated to thermo. level (k)      [m^2/s^2]
+      rho_ds_ztp1,     & ! Dry, static density at thermo. level (k+1)  [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density at thermo. level (k)    [kg/m^3]
+      invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum lev (k) [m^3/kg]
+      a1_ztp1,         & ! a_1 interpolated to thermo. level (k+1)     [-]
+      a1,              & ! a_1(k)                                      [-]
+      a1_zt,           & ! a_1 interpolated to thermo. level (k)       [-]
+      dzm,             & ! Inverse of grid spacing                     [1/m]
+      beta               ! Model parameter                             [-]
 
     integer, intent(in) :: & 
       level ! Central momentum level (on which calculation occurs).
@@ -2119,52 +2159,74 @@ contains
 
        ! Momentum superdiagonal: [ x xapxbp(k+1,<t+1>) ]
        lhs(kp1_mdiag)  &
-       = + (1.0/3.0) * beta * dzm  &
-           * a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  &
-           * gr%weights_zm2zt(m_above,tkp1)
+       = + (1.0/3.0) * beta  &
+           * invrs_rho_ds_zm  &
+             * dzm  &
+               * rho_ds_ztp1 * a1_ztp1  &
+               * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  &
+               * gr%weights_zm2zt(m_above,tkp1)
 
        ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
        lhs(k_mdiag)  &
-       = + (1.0/3.0) * beta * dzm  &
-           * (   a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  &
-                 * gr%weights_zm2zt(m_below,tkp1)  &
-               - a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) )  &
-                 * gr%weights_zm2zt(m_above,tk)  &
-             )
+       = + (1.0/3.0) * beta  &
+           * invrs_rho_ds_zm  &
+             * dzm  &
+               * (   rho_ds_ztp1 * a1_ztp1  &
+                     * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  &
+                     * gr%weights_zm2zt(m_below,tkp1)  &
+                   - rho_ds_zt * a1_zt  &
+                     * ( wp3 / max( wp2_zt, wtol_sqd ) )  &
+                     * gr%weights_zm2zt(m_above,tk)  &
+                 )
 
        ! Momentum subdiagonal: [ x xapxbp(k-1,<t+1>) ]
        lhs(km1_mdiag)  &
-       = - (1.0/3.0) * beta * dzm  &
-           * a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) )  &
-           * gr%weights_zm2zt(m_below,tk)
+       = - (1.0/3.0) * beta  &
+           * invrs_rho_ds_zm  &
+             * dzm  &
+               * rho_ds_zt * a1_zt  &
+               * ( wp3 / max( wp2_zt, wtol_sqd ) )  &
+               * gr%weights_zm2zt(m_below,tk)
 
     else
 
        ! Brian tried a new discretization for the turbulent advection term, for
        ! which the implicit portion of the term is:
-       ! - d [ a_1 * (1/3)*beta * ( w'^3 / w'^2 ) * x_a'x_b' ] / dz.  In order
-       ! to help stabilize x_a'x_b', a_1 has been pulled outside the derivative.
+       !  - (1/rho_ds)
+       !    * d [ rho_ds * a_1 * (1/3)*beta * ( w'^3 / w'^2 ) * x_a'x_b' ] / dz.
+       ! In order to help stabilize x_a'x_b', a_1 has been pulled outside the
+       ! derivative.
 
        ! Momentum superdiagonal: [ x xapxbp(k+1,<t+1>) ]
        lhs(kp1_mdiag)  & 
-       = + (1.0/3.0) * beta * a1 * dzm & 
-           * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  & 
-           * gr%weights_zm2zt(m_above,tkp1)
+       = + (1.0/3.0) * beta  &
+           * invrs_rho_ds_zm * a1  &
+             * dzm  &
+               * rho_ds_ztp1  &
+               * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  & 
+               * gr%weights_zm2zt(m_above,tkp1)
 
        ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
        lhs(k_mdiag)  & 
-       = + (1.0/3.0) * beta * a1 * dzm & 
-           * (   ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  & 
-                 * gr%weights_zm2zt(m_below,tkp1) & 
-               - ( wp3 / max( wp2_zt, wtol_sqd ) ) & 
-                 * gr%weights_zm2zt(m_above,tk) & 
-             )
+       = + (1.0/3.0) * beta  &
+           * invrs_rho_ds_zm * a1  &
+             * dzm  &
+               * (   rho_ds_ztp1  &
+                     * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  &
+                     * gr%weights_zm2zt(m_below,tkp1)  &
+                   - rho_ds_zt  &
+                     * ( wp3 / max( wp2_zt, wtol_sqd ) )  &
+                     * gr%weights_zm2zt(m_above,tk)  &
+                 )
 
        ! Momentum subdiagonal: [ x xapxbp(k-1,<t+1>) ]
        lhs(km1_mdiag)  & 
-       = - (1.0/3.0) * beta * a1 * dzm & 
-           * ( wp3 / max( wp2_zt, wtol_sqd ) ) & 
-           * gr%weights_zm2zt(m_below,tk)
+       = - (1.0/3.0) * beta  &
+           * invrs_rho_ds_zm * a1  &
+             * dzm  &
+               * rho_ds_zt  &
+               * ( wp3 / max( wp2_zt, wtol_sqd ) )  &
+               * gr%weights_zm2zt(m_below,tk)
 
        ! End of Brian's a1 change.  14 Feb 2008.
 
@@ -2175,9 +2237,10 @@ contains
   end function term_ta_lhs
 
   !=============================================================================
-  pure function term_ta_rhs( wp3p1, wp3, wp2_ztp1, wp2_zt, &
-                             a1_ztp1, a1, a1_zt, wpxbp_ztp1, wpxbp_zt, &
-                             wpxap_ztp1, wpxap_zt, dzm, beta ) &
+  pure function term_ta_rhs( wp3p1, wp3, wp2_ztp1, wp2_zt,  &
+                             rho_ds_ztp1, rho_ds_zt, invrs_rho_ds_zm,  &
+                             a1_ztp1, a1, a1_zt, wpxbp_ztp1, wpxbp_zt,  &
+                             wpxap_ztp1, wpxap_zt, dzm, beta )  &
   result( rhs )
 
     ! Description:
@@ -2269,19 +2332,22 @@ contains
 
     ! Input variables
     real, intent(in) :: & 
-      wp3p1,      & ! w'^3(k+1)                                  [m^3/s^3]
-      wp3,        & ! w'^3(k)                                    [m^3/s^3]
-      wp2_ztp1,   & ! w'^2 interpolated to thermo. level (k+1)   [m^2/s^2]
-      wp2_zt,     & ! w'^2 interpolated to thermo. level (k)     [m^2/s^2]
-      a1_ztp1,    & ! a_1 interpolated to thermo. level (k+1)    [-]
-      a1,         & ! a_1(k)                                     [-]
-      a1_zt,      & ! a_1 interpolated to thermo. level (k)      [-]
-      wpxbp_ztp1, & ! w'x_b' interpolated to thermo. level (k+1) [m/s {x_bm units}]
-      wpxbp_zt,   & ! w'x_b' interpolated to thermo. level (k)   [m/s {x_bm units}]
-      wpxap_ztp1, & ! w'x_a' interpolated to thermo. level (k+1) [m/s {x_am units}]
-      wpxap_zt,   & ! w'x_a' interpolated to thermo. level (k)   [m/s {x_am units}]
-      dzm,        & ! Inverse of grid spacing                    [1/m]
-      beta          ! Model parameter                            [-]
+      wp3p1,           & ! w'^3(k+1)                                  [m^3/s^3]
+      wp3,             & ! w'^3(k)                                    [m^3/s^3]
+      wp2_ztp1,        & ! w'^2 interpolated to thermo. level (k+1)   [m^2/s^2]
+      wp2_zt,          & ! w'^2 interpolated to thermo. level (k)     [m^2/s^2]
+      rho_ds_ztp1,     & ! Dry, static density at thermo. level (k+1) [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density at thermo. level (k)   [kg/m^3]
+      invrs_rho_ds_zm, & ! Inv. dry, static density @ mome. lev (k)   [m^3/kg]
+      a1_ztp1,         & ! a_1 interpolated to thermo. level (k+1)    [-]
+      a1,              & ! a_1(k)                                     [-]
+      a1_zt,           & ! a_1 interpolated to thermo. level (k)      [-]
+      wpxbp_ztp1,      & ! w'x_b' interpolated to thermo. level (k+1) [m/s {x_bm units}]
+      wpxbp_zt,        & ! w'x_b' interpolated to thermo. level (k)   [m/s {x_bm units}]
+      wpxap_ztp1,      & ! w'x_a' interpolated to thermo. level (k+1) [m/s {x_am units}]
+      wpxap_zt,        & ! w'x_a' interpolated to thermo. level (k)   [m/s {x_am units}]
+      dzm,             & ! Inverse of grid spacing                    [1/m]
+      beta               ! Model parameter                            [-]
 
     ! Return Variable
     real :: rhs
@@ -2293,30 +2359,39 @@ contains
        ! with the model equations found in the documentation and the description
        ! listed above.
 
-       rhs & 
-       = - ( 1.0 - (1.0/3.0) * beta ) * dzm &
-           * (   a1_ztp1**2 * wpxap_ztp1 * wpxbp_ztp1 &
-                 * ( wp3p1 / max( wp2_ztp1, wtol_sqd )**2 ) &
-               - a1_zt**2 * wpxap_zt * wpxbp_zt &
-                 * ( wp3 / max( wp2_zt, wtol_sqd )**2 ) &
-             )
+       rhs  &
+       = - ( 1.0 - (1.0/3.0) * beta )  &
+           * invrs_rho_ds_zm  &
+             * dzm  &
+               * (   rho_ds_ztp1 * a1_ztp1**2  &
+                     * ( wp3p1 / max( wp2_ztp1, wtol_sqd )**2 )  &
+                     * wpxap_ztp1 * wpxbp_ztp1  &
+                   - rho_ds_zt * a1_zt**2  &
+                     * ( wp3 / max( wp2_zt, wtol_sqd )**2 )  &
+                     * wpxap_zt * wpxbp_zt  &
+                 )
 
     else
 
        ! Brian tried a new discretization for the turbulent advection term, for
        ! which the explicit portion of the term is:
-       ! - d [ (a_1)^2 * (1-(1/3)*beta) * ( w'^3 / (w'^2)^2 )
-       !       * w'x_a' * w'x_b' ] / dz.
+       !  - (1/rho_ds)
+       !    * d [ rho_ds * (a_1)^2 * (1-(1/3)*beta) * ( w'^3 / (w'^2)^2 )
+       !          * w'x_a' * w'x_b' ] / dz.
        ! In order to help stabilize x_a'x_b', (a_1)^2 has been pulled outside
        ! the derivative.
 
        rhs & 
-       = - ( 1.0 - (1.0/3.0) * beta ) * a1**2 * dzm & 
-           * (   wpxap_ztp1 * wpxbp_ztp1 & 
-                 * ( wp3p1 / max( wp2_ztp1, wtol_sqd )**2 ) & 
-               - wpxap_zt * wpxbp_zt & 
-                 * ( wp3 / max( wp2_zt, wtol_sqd )**2 ) & 
-             )
+       = - ( 1.0 - (1.0/3.0) * beta )  &
+           * invrs_rho_ds_zm * a1**2  &
+             * dzm  &
+               * (   rho_ds_ztp1  &
+                     * ( wp3p1 / max( wp2_ztp1, wtol_sqd )**2 )  &
+                     * wpxap_ztp1 * wpxbp_ztp1  &
+                   - rho_ds_zt  &
+                     * ( wp3 / max( wp2_zt, wtol_sqd )**2 )  &
+                     * wpxap_zt * wpxbp_zt  &
+                 )
 
        ! End of Brian's a1 change.  14 Feb 2008.
 
