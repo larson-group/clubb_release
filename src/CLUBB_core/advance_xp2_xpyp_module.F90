@@ -1977,32 +1977,36 @@ contains
     !
     ! The d(x_a'x_b')/dt equation contains a turbulent advection term:
     !
-    ! - d(w'x_a'x_b')/dz.
+    ! - (1/rho_ds) * d( rho_ds * w'x_a'x_b' )/dz.
     !
     ! A substitution is made in order to close the turbulent advection term,
     ! such that:
     !
     ! w'x_a'x_b' = (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
-    !                 + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
-    !                   * w'x_a' * w'x_b';
+    !              + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
+    !                * w'x_a' * w'x_b';
     !
     ! where a_1 is a variable that is a function of sigma_sqd_w.  The turbulent
     ! advection term is rewritten as:
     !
-    ! - d [ (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
-    !          + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
-    !            * w'x_a' * w'x_b' ]
-    !   / dz;
+    ! - (1/rho_ds) 
+    !   * d [ rho_ds * { (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
+    !                    + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
+    !                      * w'x_a' * w'x_b' } ]
+    !     / dz;
     !
     ! which produces an implicit and an explicit portion of this term.  The
     ! implicit portion of this term is:
     !
-    ! - d [ (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'(t+1) ] / dz.
+    ! - (1/rho_ds) 
+    !   * d [ rho_ds * (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'(t+1) ]
+    !     / dz.
     !
     ! Since (1/3)*beta is a constant, it can be pulled outside of the
     ! derivative.  The implicit portion of this term becomes:
     !
-    ! - (1/3)*beta * d [ a_1 * ( w'^3 / w'^2 ) * x_a'x_b'(t+1) ] / dz.
+    ! - (1/3)*beta/rho_ds 
+    !   * d [ rho_ds * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'(t+1) ] / dz.
     !
     ! Note:  When the term is brought over to the left-hand side, the sign
     !        is reversed and the leading "-" in front of the term is changed
@@ -2016,27 +2020,30 @@ contains
     !
     ! The values of x_a'x_b' are found on the momentum levels, as are the values
     ! of w'^2 and a_1.  The values of w'^3 are found on the thermodynamic
-    ! levels.  The variables x_a'x_b', w'^2, and a_1 are each interpolated to
-    ! the intermediate thermodynamic levels.  The values of the mathematical
-    ! expression (called F here) within the dF/dz term are computed on the
-    ! thermodynamic levels.  Then the derivative (d/dz) of the expression (F) is
-    ! taken over the central momentum level, yielding the desired result.  In
-    ! this function, the values of F are as follows:
+    ! levels.  Additionally, the values of rho_ds_zt are found on the
+    ! thermodynamic levels, and the values of invrs_rho_ds_zm are found on the
+    ! momentum levels.  The variables x_a'x_b', w'^2, and a_1 are each
+    ! interpolated to the intermediate thermodynamic levels.  The values of the
+    ! mathematical expression (called F here) within the dF/dz term are computed
+    ! on the thermodynamic levels.  Then the derivative (d/dz) of the
+    ! expression (F) is taken over the central momentum level, where it is
+    ! multiplied by (1/3)*beta and by invrs_rho_ds_zm, yielding the desired
+    ! result.  In this function, the values of F are as follows:
     !
-    ! F = a_1(t) * ( w'^3(t) / w'^2(t) ) * x_a'x_b'(t+1);
+    ! F = rho_ds_zt * a_1(t) * ( w'^3(t) / w'^2(t) ) * x_a'x_b'(t+1);
     !
     ! where the timestep index (t) stands for the index of the current timestep.
     !
     !
-    ! ==a1p1========wp2p1========xapxbpp1====================== m(k+1)
+    ! ==a1p1========wp2p1========xapxbpp1================================ m(k+1)
     !
-    ! ----a1(interp)---wp2(interp)---xapxbp(interp)---wp3p1---- t(k+1)
+    ! ----a1(interp)--wp2(interp)--xapxbp(interp)--wp3p1---rho_ds_ztp1--- t(k+1)
     !
-    ! ==a1==========wp2==========xapxbp=================dF/dz== m(k)
+    ! ==a1==========wp2==========xapxbp=======dF/dz====invrs_rho_ds_zm=== m(k)
     !
-    ! ----a1(interp)---wp2(interp)---xapxbp(interp)---wp3------ t(k)
+    ! ----a1(interp)--wp2(interp)--xapxbp(interp)--wp3-----rho_ds_zt----- t(k)
     !
-    ! ==a1m1========wp2m1========xapxbpm1====================== m(k-1)
+    ! ==a1m1========wp2m1========xapxbpm1================================ m(k-1)
     !
     ! The vertical indices m(k+1), t(k+1), m(k), t(k), and m(k-1) correspond
     ! with altitudes zm(k+1), zt(k+1), zm(k), zt(k), and zm(k-1), respectively.
@@ -2178,61 +2185,66 @@ contains
     !
     ! The d(x_a'x_b')/dt equation contains a turbulent advection term:
     !
-    ! - d(w'x_a'x_b')/dz.
+    ! - (1/rho_ds) * d( rho_ds * w'x_a'x_b' )/dz.
     !
     ! A substitution is made in order to close the turbulent advection term,
     ! such that:
     !
     ! w'x_a'x_b' = (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
-    !                 + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
-    !                   * w'x_a' * w'x_b';
+    !              + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
+    !                * w'x_a' * w'x_b';
     !
     ! where a_1 is a variable that is a function of sigma_sqd_w.  The turbulent
     ! advection term is rewritten as:
     !
-    ! - d [ (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
-    !          + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
-    !            * w'x_a' * w'x_b' ]
-    !   / dz;
+    ! - (1/rho_ds) 
+    !   * d [ rho_ds * { (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
+    !                    + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
+    !                      * w'x_a' * w'x_b' } ]
+    !     / dz;
     !
     ! which produces an implicit and an explicit portion of this term.  The
     ! explicit portion of this term is:
     !
-    ! - d [ (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
-    !       * w'x_a' * w'x_b' ] / dz.
+    ! - (1/rho_ds) 
+    !   * d [ rho_ds * (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
+    !         * w'x_a' * w'x_b' ] / dz.
     !
     ! Since (1-(1/3)*beta) is a constant, it can be pulled outside of the
     ! derivative.  The explicit portion of this term becomes:
     !
-    ! - (1-(1/3)*beta) * d [ (a_1)^2 * ( w'^3 / (w'^2)^2 )
-    !                        * w'x_a' * w'x_b' ] / dz.
+    ! - (1-(1/3)*beta)/rho_ds
+    !   * d [ rho_ds * (a_1)^2 * ( w'^3 / (w'^2)^2 ) * w'x_a' * w'x_b' ] / dz.
     !
     ! The explicit portion of this term is discretized as follows:
     !
     ! The values of w'x_a', w'x_b', w'^2, and a_1 are found on the momentum
-    ! levels.  The values of w'^3 are found on the thermodynamic levels.  The
-    ! variables w'x_a', w'x_b', w'^2, and a_1 are each interpolated to the
-    ! intermediate thermodynamic levels.  The values of the mathematical
+    ! levels.  The values of w'^3 are found on the thermodynamic levels.
+    ! Additionally, the values of rho_ds_zt are found on the thermodynamic
+    ! levels, and the values of invrs_rho_ds_zm are found on the momentum
+    ! levels.  The variables w'x_a', w'x_b', w'^2, and a_1 are each interpolated
+    ! to the intermediate thermodynamic levels.  The values of the mathematical
     ! expression (called F here) within the dF/dz term are computed on the
     ! thermodynamic levels.  Then the derivative (d/dz) of the expression (F) is
-    ! taken over the central momentum level, yielding the desired result.  In
+    ! taken over the central momentum level, where it is multiplied by
+    ! (1-(1/3)*beta), and by invrs_rho_ds_zm, yielding the desired result.  In
     ! this function, the values of F are as follows:
     !
-    ! F = ( a_1(t) )^2 * ( w'^3(t) / ( w'^2(t) )^2 )
+    ! F = rho_ds_zt * ( a_1(t) )^2 * ( w'^3(t) / ( w'^2(t) )^2 )
     !     * w'x_a'(t) * w'x_b'(t);
     !
     ! where the timestep index (t) stands for the index of the current timestep.
     !
     !
-    ! =a1p1=======wp2p1=======wpxapp1=======wpxbpp1============ m(k+1)
+    ! =a1p1=======wp2p1=======wpxapp1=======wpxbpp1========================= m(k+1)
     !
-    ! -a1(interp)-wp2(interp)-wpxap(interp)-wpxbp(interp)-wp3p1 t(k+1)
+    ! -a1(interp)-wp2(interp)-wpxap(interp)-wpxbp(interp)-wp3p1-rho_ds_ztp1- t(k+1)
     !
-    ! =a1=========wp2=========wpxap=========wpxbp====dF/dz===== m(k)
+    ! =a1=========wp2=========wpxap=========wpxbp===dF/dz===invrs_rho_ds_zm= m(k)
     !
-    ! -a1(interp)-wp2(interp)-wpxap(interp)-wpxbp(interp)-wp3-- t(k)
+    ! -a1(interp)-wp2(interp)-wpxap(interp)-wpxbp(interp)-wp3---rho_ds_zt--- t(k)
     !
-    ! =a1m1=======wp2m1=======wpxapm1=======wpxbpm1============ m(k-1)
+    ! =a1m1=======wp2m1=======wpxapm1=======wpxbpm1========================= m(k-1)
     !
     ! The vertical indices m(k+1), t(k+1), m(k), t(k), and m(k-1) correspond
     ! with altitudes zm(k+1), zt(k+1), zm(k), zt(k), and zm(k-1), respectively.
