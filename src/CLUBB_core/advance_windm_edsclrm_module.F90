@@ -25,6 +25,7 @@ module advance_windm_edsclrm_module
                fcor, l_implemented, &
                um, vm, edsclrm, &
                upwp, vpwp, wpedsclrp, err_code )
+
     ! Description:
     ! Solves for both mean horizontal wind components, um and vm, and for the
     ! eddy-scalars (passive scalars that don't use the high-order closure).
@@ -501,7 +502,8 @@ module advance_windm_edsclrm_module
     !
     ! The rate of change of an eddy-scalar quantity, xm, is:
     !
-    ! d(xm)/dt = - w * d(xm)/dz - d(x'w')/dz + xm_forcings.
+    ! d(xm)/dt = - w * d(xm)/dz - (1/rho_ds) * d( rho_ds * x'w' )/dz 
+    !            + xm_forcings.
     !
     !
     ! The Turbulent Advection Term
@@ -509,7 +511,7 @@ module advance_windm_edsclrm_module
     !
     ! The above equation contains a turbulent advection term:
     !
-    ! - d(x'w')/dz;
+    ! - (1/rho_ds) * d( rho_ds * x'w' )/dz;
     !
     ! where the momentum flux, x'w', is closed using a down gradient approach:
     !
@@ -517,28 +519,34 @@ module advance_windm_edsclrm_module
     !
     ! The turbulent advection term becomes:
     !
-    ! + d [ K_zm * d(xm)/dz ] / dz;
+    ! + (1/rho_ds) * d [ rho_ds * K_zm * d(xm)/dz ] / dz;
     !
-    ! which is the same as an eddy-diffusion term.  Thus, the turbulent
-    ! advection term is treated and solved in the same way that an
-    ! eddy-diffusion term would be solved.  The term is discretized as follows:
+    ! which is the same as a standard eddy-diffusion term (if "rho_ds * K_zm" in
+    ! the term above is substituted for "K_zm" in a standard eddy-diffusion
+    ! term, and if the standard eddy-diffusion term is multiplied by
+    ! "1/rho_ds").  Thus, the turbulent advection term is treated and solved in
+    ! the same way that a standard eddy-diffusion term would be solved.  The
+    ! term is discretized as follows:
     !
     ! The values of xm are found on the thermodynamic levels, while the values
-    ! of K_zm are found on the momentum levels.  The derivatives (d/dz) of xm
-    ! are taken over the intermediate momentum levels.  At the intermediate
-    ! momentum levels, d(xm)/dz is multiplied by K_zm.  Then, the derivative of
-    ! the whole mathematical expression is taken over the central thermodynamic
-    ! level, which yields the desired result.
+    ! of K_zm are found on the momentum levels.  Additionally, the values of
+    ! rho_ds_zm are found on the momentum levels, and the values of
+    ! invrs_rho_ds_zt are found on the thermodynamic levels.  The
+    ! derivatives (d/dz) of xm are taken over the intermediate momentum levels.
+    ! At the intermediate momentum levels, d(xm)/dz is multiplied by K_zm and by
+    ! rho_ds_zm.  Then, the derivative of the whole mathematical expression is
+    ! taken over the central thermodynamic level, where it is multiplied by
+    ! invrs_rho_ds_zt, which yields the desired result.
     !
-    ! ---xm(kp1)----------------------------------------------- t(k+1)
+    ! ---xm(kp1)----------------------------------------------------- t(k+1)
     !
-    ! =============d(xm)/dz===K_zm(k)========================== m(k)
+    ! ===========d(xm)/dz===K_zm(k)=====rho_ds_zm(k)================= m(k)
     !
-    ! ---xm(k)---------------------------d[K_zm*d(xm)/dz]/dz--- t(k)
+    ! ---xm(k)---invrs_rho_ds_zt---d[rho_ds_zm*K_zm*d(xm)/dz]/dz----- t(k)
     !
-    ! =============d(xm)/dz===K_zm(km1)======================== m(k-1)
+    ! ===========d(xm)/dz===K_zm(km1)===rho_ds_zm(km1)=============== m(k-1)
     !
-    ! ---xm(km1)----------------------------------------------- t(k-1)
+    ! ---xm(km1)----------------------------------------------------- t(k-1)
     !
     ! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1) correspond
     ! with altitudes zt(k+1), zm(k), zt(k), zm(k-1), and zt(k-1), respectively.
@@ -552,15 +560,22 @@ module advance_windm_edsclrm_module
     ! The vertically discretized form of the turbulent advection term (treated
     ! as an eddy diffusion term) is written out as:
     !
-    ! + dzt(k) * [   K_zm(k) * dzm(k) * ( xm(k+1) - xm(k) )
-    !              - K_zm(k-1) * dzm(k-1) * ( xm(k) - xm(k-1) ) ].
+    ! + invrs_rho_ds_zt(k)
+    !   * dzt(k)
+    !     * [   rho_ds_zm(k) * K_zm(k) * dzm(k) * ( xm(k+1) - xm(k) )
+    !         - rho_ds_zm(k-1) * K_zm(k-1) * dzm(k-1) * ( xm(k) - xm(k-1) ) ].
     !
     ! For this equation, a Crank-Nicholson (semi-implicit) diffusion scheme is
-    ! used to solve the d [ K_zm * d(xm)/dz ] / dz eddy-diffusion term.  The
-    ! discretized implicit portion of the term is written out as:
+    ! used to solve the (1/rho_ds) * d [ rho_ds * K_zm * d(xm)/dz ] / dz
+    ! eddy-diffusion term.  The discretized implicit portion of the term is
+    ! written out as:
     !
-    ! +(1/2)*dzt(k)*[  K_zm(k) * dzm(k) * ( xm(k+1,<t+1>) - xm(k,<t+1>) )
-    !                - K_zm(k-1) * dzm(k-1) * ( xm(k,<t+1>) - xm(k-1,<t+1>) ) ].
+    ! + (1/2) * invrs_rho_ds_zt(k)
+    !   * dzt(k)
+    !     * [   rho_ds_zm(k) * K_zm(k)
+    !           * dzm(k) * ( xm(k+1,<t+1>) - xm(k,<t+1>) )
+    !         - rho_ds_zm(k-1) * K_zm(k-1)
+    !           * dzm(k-1) * ( xm(k,<t+1>) - xm(k-1,<t+1>) ) ].
     !
     ! Note:  When the implicit term is brought over to the left-hand side,
     !        the sign is reversed and the leading "+" in front of the term
@@ -568,8 +583,12 @@ module advance_windm_edsclrm_module
     !
     ! The discretized explicit portion of the term is written out as:
     !
-    ! + (1/2)*dzt(k)*[  K_zm(k) * dzm(k) * ( xm(k+1,<t>) - xm(k,<t>) )
-    !                 - K_zm(k-1) * dzm(k-1) * ( xm(k,<t>) - xm(k-1,<t>) ) ].
+    ! + (1/2) * invrs_rho_ds_zt(k)
+    !   * dzt(k)
+    !     * [   rho_ds_zm(k) * K_zm(k)
+    !           * dzm(k) * ( xm(k+1,<t>) - xm(k,<t>) )
+    !         - rho_ds_zm(k-1) * K_zm(k-1)
+    !           * dzm(k-1) * ( xm(k,<t>) - xm(k-1,<t>) ) ].
     !
     ! Timestep index (t) stands for the index of the current timestep, while
     ! timestep index (t+1) stands for the index of the next timestep, which is
@@ -594,7 +613,7 @@ module advance_windm_edsclrm_module
     !    The x'w' surface flux is applied to the d(xm)/dt equation through the
     !    turbulent advection term, which is:
     !
-    !    - d(x'w')/dz.
+    !    - (1/rho_ds) * d( rho_ds * x'w' )/dz.
     !
     !    At most vertical levels, a substitution can be made for x'w', such
     !    that:
@@ -608,32 +627,50 @@ module advance_windm_edsclrm_module
     !    The lower boundary condition, which in this case needs to be applied to
     !    the d(xm)/dt equation at level 2, is discretized as follows:
     !
-    !    ---xm(3)------------------------------------------------ t(3)
+    !    --xm(3)------------------------------------------------------- t(3)
     !
-    !    =============[x'w'(2) = -K_zm(2)*d(xm)/dz]============== m(2)
+    !    ========[x'w'(2) = -K_zm(2)*d(xm)/dz]===rho_ds_zm(2)========== m(2)
     !
-    !    ---xm(2)--------------------------d[K_zm*d(xm)/dz]/dz--- t(2)
+    !    --xm(2)---invrs_rho_ds_zt(2)---d[rho_ds_zm*K_zm*d(xm)/dz]/dz-- t(2)
     !
-    !    =============[x'w'|_sfc]================================ m(1) (surface)
+    !    ========[x'w'|_sfc]=====================rho_ds_zm(1)========== m(1) sfc
     !
-    !    ---xm(1)-------(below surface; not applicable)---------- t(1)
+    !    --xm(1)-------(below surface; not applicable)----------------- t(1)
+    !
+    !    where "sfc" is the level of the model surface or lower boundary.
     !
     !    The vertically discretized form of the turbulent advection term
     !    (treated as an eddy diffusion term), with the explicit surface flux,
     !    x'w'|_sfc, in place, is written out as:
     !
-    !    + dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3) - xm(2) ) + x'w'|_sfc ];
+    !    - invrs_rho_ds_zt(2)
+    !      * dzt(2) * [ rho_ds_zm(2) * x'w'(2) - rho_ds_zm(1) * x'w'|_sfc ];
     !
     !    which can be re-written as:
     !
-    !    + dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3) - xm(2) ) ]
-    !       + dzt(2) * x'w'|_sfc.
+    !    + invrs_rho_ds_zt(2)
+    !      * dzt(2)
+    !        * [   rho_ds_zm(2) * K_zm(2) * dzm(2) * ( xm(3) - xm(2) )
+    !            + rho_ds_zm(1) * x'w'|_sfc ];
+    !
+    !    which can be re-written again as:
+    !
+    !    + invrs_rho_ds_zt(2)
+    !      * dzt(2)
+    !        * rho_ds_zm(2) * K_zm(2) * dzm(2) * ( xm(3) - xm(2) )
+    !    + invrs_rho_ds_zt(2)
+    !      * dzt(2)
+    !        * rho_ds_zm(1) * x'w'|_sfc.
     !
     !    For this equation, a Crank-Nicholson (semi-implicit) diffusion scheme
-    !    is used to solve the d [ K_zm * d(xm)/dz ] / dz eddy-diffusion term.
-    !    The discretized implicit portion of the term is written out as:
+    !    is used to solve the (1/rho_ds) * d [ rho_ds * K_zm * d(xm)/dz ] / dz
+    !    eddy-diffusion term.  The discretized implicit portion of the term is
+    !    written out as:
     !
-    !    + (1/2)*dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3,<t+1>) - xm(2,<t+1>) ) ].
+    !    + (1/2) * invrs_rho_ds_zt(2)
+    !      * dzt(2)
+    !        * [ rho_ds_zm(2) * K_zm(2)
+    !            * dzm(2) * ( xm(3,<t+1>) - xm(2,<t+1>) ) ].
     !
     !    Note:  When the implicit term is brought over to the left-hand side,
     !           the sign is reversed and the leading "+" in front of the term
@@ -641,8 +678,13 @@ module advance_windm_edsclrm_module
     !
     !    The discretized explicit portion of the term is written out as:
     !
-    !    + (1/2)*dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3,<t>) - xm(2,<t>) ) ]
-    !       + dzt(2) * x'w'|_sfc.
+    !    + (1/2) * invrs_rho_ds_zt(2)
+    !      * dzt(2)
+    !        * [ rho_ds_zm(2) * K_zm(2)
+    !            * dzm(2) * ( xm(3,<t>) - xm(2,<t>) ) ]
+    !    + invrs_rho_ds_zt(2)
+    !      * dzt(2)
+    !        * rho_ds_zm(1) * x'w'|_sfc.
     !
     !    Note:  The x'w'|_sfc portion of the term written above has been pulled
     !           away from the rest of the explicit form written above because
@@ -658,7 +700,7 @@ module advance_windm_edsclrm_module
     !    The x'w' surface flux is applied to the d(xm)/dt equation through the
     !    turbulent advection term, which is:
     !
-    !    - d(x'w')/dz.
+    !    - (1/rho_ds) * d( rho_ds * x'w' )/dz.
     !
     !    At most vertical levels, a substitution can be made for x'w', such
     !    that:
@@ -671,10 +713,11 @@ module advance_windm_edsclrm_module
     !
     !    x'w'|_sfc = - [ u_star^2 / sqrt( um^2 + vm^2 ) ] * xm;
     !
-    !    where x'w'|_sfc and xm are either u'w'|_sfc and um or v'w'|_sfc and vm
-    !    (um and vm are located at the first thermodynamic level above the
-    !    surface, which is thermodynamic level 2), sqrt( um^2 + vm^2 ) is the
-    !    wind speed (also at thermodynamic level 2), and u_star is defined as:
+    !    where x'w'|_sfc and xm are either u'w'|_sfc and um, respectively, or
+    !    v'w'|_sfc and vm, respectively (um and vm are located at the first
+    !    thermodynamic level above the surface, which is thermodynamic level 2),
+    !    sqrt( um^2 + vm^2 ) is the wind speed (also at thermodynamic level 2),
+    !    and u_star is defined as:
     !
     !    u_star = ( u'w'|_sfc^2 + v'w'|_sfc^2 )^(1/4);
     !
@@ -698,34 +741,56 @@ module advance_windm_edsclrm_module
     !    boundary condition, which in this case needs to be applied to the
     !    d(xm)/dt equation at level 2, is discretized as follows:
     !
-    !    ---xm(3)------------------------------------------------ t(3)
+    !    --xm(3)------------------------------------------------------- t(3)
     !
-    !    =========[x'w'(2) = -K_zm(2)*d(xm)/dz]================== m(2)
+    !    ===[x'w'(2) = -K_zm(2)*d(xm)/dz]=================rho_ds_zm(2)= m(2)
     !
-    !    ---xm(2)--------------------------d[K_zm*d(xm)/dz]/dz--- t(2)
+    !    --xm(2)---invrs_rho_ds_zt(2)---d[rho_ds_zm*K_zm*d(xm)/dz]/dz-- t(2)
     !
-    !    =========[x'w'|_sfc = -[u_star^2/sqrt(um^2+vm^2)]*xm]=== m(1) (surface)
+    !    ===[x'w'|_sfc = -[u_star^2/sqrt(um^2+vm^2)]*xm]==rho_ds_zm(1)= m(1) sfc
     !
-    !    ---xm(1)-------(below surface; not applicable)---------- t(1)
+    !    --xm(1)-------(below surface; not applicable)----------------- t(1)
+    !
+    !    where "sfc" is the level of the model surface or lower boundary.
     !
     !    The vertically discretized form of the turbulent advection term
     !    (treated as an eddy diffusion term), with the implicit surface momentum
     !    flux in place, is written out as:
     !
-    !    + dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3) - xm(2) )
-    !                  - [ u_star^2 / sqrt( um(2)^2 + vm(2)^2 ) ] * xm(2) ];
+    !    - invrs_rho_ds_zt(2)
+    !      * dzt(2) * [ rho_ds_zm(2) * x'w'(2) - rho_ds_zm(1) * x'w'|_sfc ];
     !
     !    which can be re-written as:
     !
-    !    + dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3) - xm(2) ) ]
-    !    - dzt(2) * [ u_star^2 / sqrt( um(2)^2 + vm(2)^2 ) ] * xm(2).
+    !    - invrs_rho_ds_zt(2)
+    !      * dzt(2)
+    !        * [   rho_ds_zm(2)
+    !              * { - K_zm(2) * dzm(2) * ( xm(3) - xm(2) ) }
+    !            - rho_ds_zm(1)
+    !              * { - [ u_star^2 / sqrt( um(2)^2 + vm(2)^2 ) ] * xm(2) } ];
+    !
+    !    which can be re-written as:
+    !
+    !    + invrs_rho_ds_zt(2)
+    !      * dzt(2)
+    !        * rho_ds_zm(2) * K_zm(2) * dzm(2) * ( xm(3) - xm(2) )
+    !    - invrs_rho_ds_zt(2)
+    !      * dzt(2)
+    !        * rho_ds_zm(1) * [ u_star^2 / sqrt( um(2)^2 + vm(2)^2 ) ] * xm(2).
     !
     !    For this equation, a Crank-Nicholson (semi-implicit) diffusion scheme
-    !    is used to solve the d [ K_zm * d(xm)/dz ] / dz eddy-diffusion term.
-    !    The discretized implicit portion of the term is written out as:
+    !    is used to solve the (1/rho_ds) * d [ rho_ds * K_zm * d(xm)/dz ] / dz
+    !    eddy-diffusion term.  The discretized implicit portion of the term is
+    !    written out as:
     !
-    !    + (1/2)*dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3,<t+1>) - xm(2,<t+1>) ) ]
-    !    - dzt(2) * [u_star^2/sqrt( um(2,<t>)^2 + vm(2,<t>)^2 )] * xm(2,<t+1>).
+    !    + (1/2) * invrs_rho_ds_zt(2)
+    !      * dzt(2)
+    !        * [ rho_ds_zm(2) * K_zm(2)
+    !            * dzm(2) * ( xm(3,<t+1>) - xm(2,<t+1>) ) ]
+    !    - invrs_rho_ds_zt(2)
+    !      * dzt(2)
+    !        * rho_ds_zm(1) 
+    !        * [u_star^2/sqrt( um(2,<t>)^2 + vm(2,<t>)^2 )] * xm(2,<t+1>).
     !
     !    Note:  When the implicit term is brought over to the left-hand side,
     !           the signs are reversed and the leading "+" in front of the first
@@ -740,7 +805,10 @@ module advance_windm_edsclrm_module
     !
     !    The discretized explicit portion of the term is written out as:
     !
-    !    + (1/2)*dzt(2) * [ K_zm(2) * dzm(2) * ( xm(3,<t>) - xm(2,<t>) ) ].
+    !    + (1/2) * invrs_rho_ds_zt(2)
+    !      * dzt(2)
+    !        * [ rho_ds_zm(2) * K_zm(2)
+    !            * dzm(2) * ( xm(3,<t>) - xm(2,<t>) ) ].
     !
     !    Timestep index (t) stands for the index of the current timestep, while
     !    timestep index (t+1) stands for the index of the next timestep, which
@@ -761,8 +829,8 @@ module advance_windm_edsclrm_module
     ! condition needs to be applied.  Thus, an adjuster will have to be used at
     ! level 2 to call diffusion_zt_lhs with level 1 as the input level (the last
     ! variable being passed in during the function call).  However, the other
-    ! variables passed in (K_zm, gr%dzt, and gr%dzm variables) will have to be
-    ! passed in as solving for level 2.
+    ! variables passed in (rho_ds_zm*K_zm, gr%dzt, and gr%dzm variables) will
+    ! have to be passed in as solving for level 2.
     !
     ! The value of xm(1) is located below the model surface and does not effect
     ! the rest of the model.  Since xm can be either a horizontal wind component
@@ -779,27 +847,30 @@ module advance_windm_edsclrm_module
     ! either zero or not used, the column totals for each column in the
     ! left-hand side matrix (for the turbulent advection term) should be equal
     ! to 0.  Otherwise, the column total for the second column will be equal to
-    ! the surface flux.   When the generalized explicit surface flux is either
-    ! zero or not used, the column total for the right-hand side vector (for the
-    ! turbulent advection term) should be equal to 0.  Otherwise, the column
-    ! total for the right-hand side vector (for the turbulent advection term)
-    ! should be equal to the surface flux.  This ensures that the total amount
-    ! of quantity xm over the entire vertical domain is only changed by the
-    ! surface flux (neglecting any forcing terms).  The total amount of change
-    ! is equal to the surface flux.
+    ! rho_ds_zm(1) * x'w'|_sfc<t+1>.   When the generalized explicit surface
+    ! flux is either zero or not used, the column total for the right-hand side
+    ! vector (for the turbulent advection term) should be equal to 0.
+    ! Otherwise, the column total for the right-hand side vector (for the
+    ! turbulent advection term) will be equal to rho_ds_zm(1) * x'w'|_sfc<t>.
+    ! This ensures that the total amount of quantity xm over the entire vertical
+    ! domain is only changed by the surface flux (neglecting any forcing terms).
+    ! The total amount of change is equal to rho_ds_zm(1) * x'w'|_sfc.
     !
     ! To see that this conservation law is satisfied by the left-hand side
     ! matrix, compute the turbulent advection (treated as eddy diffusion) of xm,
-    ! neglecting any implicit momentum surface flux, and integrate vertically.
-    ! In discretized matrix notation (where "i" stands for the matrix column
-    ! and "j" stands for the matrix row):
+    ! neglecting any implicit momentum surface flux, multiply by rho_ds_zt, and
+    ! integrate vertically.  In discretized matrix notation (where "i" stands
+    ! for the matrix column and "j" stands for the matrix row):
     !
-    !  0 = Sum_j Sum_i ( 1/dzt )_i ( 0.5 * dzt * (K_zm*dzm) )_ij (xm<t+1>)_j.
+    !  0 = Sum_j Sum_i
+    !       (rho_ds_zt)_i ( 1/dzt )_i
+    !       ( 0.5 * (1/rho_ds_zt) * dzt * (rho_ds_zm*K_zm*dzm) )_ij (xm<t+1>)_j.
     !
-    ! The left-hand side matrix, ( 0.5 * dzt * (K_zm*dzm) )_ij, is partially
-    ! written below.  The sum over i in the above equation removes dzt
-    ! everywhere from the matrix below.  The sum over j leaves the column totals
-    ! that are desired, which are 0.
+    ! The left-hand side matrix,
+    ! ( 0.5 * (1/rho_ds_zt) * dzt * (rho_ds_zm*K_zm*dzm) )_ij, is partially
+    ! written below.  The sum over i in the above equation removes (1/rho_ds_zt)
+    ! and dzt everywhere from the matrix below.  The sum over j leaves the
+    ! column totals that are desired, which are 0.
     !
     ! Left-hand side matrix contributions from the turbulent advection term
     ! (treated as an eddy-diffusion term using a Crank-Nicholson timestep);
@@ -808,18 +879,32 @@ module advance_windm_edsclrm_module
     !     ------------------------------------------------------------------------------->
     !k=1 |  0             0                        0                          0
     !    |
-    !k=2 |  0   +0.5*dzt(k)*           -0.5*dzt(k)*                           0
+    !k=2 |  0   +0.5*                  -0.5*                                  0
+    !    |        (1/rho_ds_zt(k))*      (1/rho_ds_zt(k))*
+    !    |        dzt(k)*                dzt(k)*
+    !    |        rho_ds_zm(k)*          rho_ds_zm(k)*
     !    |        K_zm(k)*dzm(k)         K_zm(k)*dzm(k)
     !    |
-    !k=3 |  0   -0.5*dzt(k)*           +0.5*dzt(k)*               -0.5*dzt(k)*
-    !    |        K_zm(k-1)*dzm(k-1)     [ K_zm(k)*dzm(k)           K_zm(k)*dzm(k)
-    !    |                                +K_zm(k-1)*dzm(k-1) ]
+    !k=3 |  0   -0.5*                  +0.5*                      -0.5*
+    !    |        (1/rho_ds_zt(k))*      (1/rho_ds_zt(k))*          (1/rho_ds_zt(k))*
+    !    |        dzt(k)*                dzt(k)*                    dzt(k)*
+    !    |        rho_ds_zm(k-1)*        [ rho_ds_zm(k)*            rho_ds_zm(k)*
+    !    |        K_zm(k-1)*dzm(k-1)       K_zm(k)*dzm(k)           K_zm(k)*dzm(k)
+    !    |                                +rho_ds_zm(k-1)*
+    !    |                                 K_zm(k-1)*dzm(k-1) ]
     !    |
-    !k=4 |  0             0            -0.5*dzt(k)*               +0.5*dzt(k)*
-    !    |                               K_zm(k-1)*dzm(k-1)         [ K_zm(k)*dzm(k)
-    !    |                                                           +K_zm(k-1)*dzm(k-1) ]
+    !k=4 |  0             0            -0.5*                      +0.5*
+    !    |                               (1/rho_ds_zt(k))*          (1/rho_ds_zt(k))*
+    !    |                               dzt(k)*                    dzt(k)*
+    !    |                               rho_ds_zm(k-1)*            [ rho_ds_zm(k)*
+    !    |                               K_zm(k-1)*dzm(k-1)           K_zm(k)*dzm(k)
+    !    |                                                           +rho_ds_zm(k-1)*
+    !    |                                                            K_zm(k-1)*dzm(k-1) ]
     !    |
-    !k=5 |  0             0                        0              -0.5*dzt(k)*
+    !k=5 |  0             0                        0              -0.5*
+    !    |                                                          (1/rho_ds_zt(k))*
+    !    |                                                          dzt(k)*
+    !    |                                                          rho_ds_zm(k-1)*
     !    |                                                          K_zm(k-1)*dzm(k-1)
     !   \ /
     !
@@ -827,21 +912,22 @@ module advance_windm_edsclrm_module
     !        superdiagonal terms from level 5 are not shown on this diagram.
     !
     ! Note:  If an implicit momentum surface flux is used, an additional term,
-    !        + dzt(2) * [ u_star^2 / sqrt( um(2,<t>)^2 + vm(2,<t>)^2 ) ], is
-    !        added to row 2 (k=2), column 2.
+    !        + (1/rho_ds_zt(2)) * dzt(2) * rho_ds_zm(1)
+    !          * [ u_star^2 / sqrt( um(2,<t>)^2 + vm(2,<t>)^2 ) ], is added to
+    !        row 2 (k=2), column 2.
     !
     ! To see that the above conservation law is satisfied by the right-hand side
     ! vector, compute the turbulent advection (treated as eddy diffusion) of xm,
-    ! neglecting any generalized explicit surface flux, and integrate
-    ! vertically.  In discretized matrix notation (where "i" stands for the
-    ! matrix column and "j" stands for the matrix row):
+    ! neglecting any generalized explicit surface flux, multiply by rho_ds_zt,
+    ! and integrate vertically.  In discretized matrix notation (where "i"
+    ! stands for the matrix column and "j" stands for the matrix row):
     !
-    !  0 = Sum_j Sum_i ( 1/dzt )_i ( rhs_vector )_j.
+    !  0 = Sum_j Sum_i (rho_ds_zt)_i ( 1/dzt )_i ( rhs_vector )_j.
     !
     ! The right-hand side vector, ( rhs_vector )_j, is partially written below.
-    ! The sum over i in the above equation removes dzt everywhere from the
-    ! vector below.  The sum over j leaves the column total that is desired,
-    ! which is 0.
+    ! The sum over i in the above equation removes (1/rho_ds_zt) and dzt
+    ! everywhere from the vector below.  The sum over j leaves the column total
+    ! that is desired, which is 0.
     !
     ! Right-hand side vector contributions from the turbulent advection term
     ! (treated as an eddy-diffusion term using a Crank-Nicholson timestep);
@@ -851,31 +937,36 @@ module advance_windm_edsclrm_module
     !k=1 |                      0                     |
     !    |                                            |
     !    |                                            |
-    !k=2 | +0.5*dzt(k)*                               |
-    !    |       [ K_zm(k)*dzm(k)*                    |
-    !    |                  (xm(k+1,<t>)-xm(k,<t>)) ] |
+    !k=2 | +0.5*(1/rho_ds_zt(k))*                     |
+    !    |      dzt(k)*                               |
+    !    |       [ rho_ds_zm(k)*K_zm(k)*              |
+    !    |         dzm(k)*(xm(k+1,<t>)-xm(k,<t>)) ]   |
     !    |                                            |
-    !k=3 | +0.5*dzt(k)*                               |
-    !    |       [ K_zm(k)*dzm(k)*                    |
-    !    |                  (xm(k+1,<t>)-xm(k,<t>))   |
-    !    |        -K_zm(k-1)*dzm(k-1)*                |
-    !    |                  (xm(k,<t>)-xm(k-1,<t>)) ] |
+    !k=3 | +0.5*(1/rho_ds_zt(k))*                     |
+    !    |      dzt(k)*                               |
+    !    |       [ rho_ds_zm(k)*K_zm(k)*              |
+    !    |         dzm(k)*(xm(k+1,<t>)-xm(k,<t>))     |
+    !    |        -rho_ds_zm(k-1)*K_zm(k-1)*          |
+    !    |         dzm(k-1)*(xm(k,<t>)-xm(k-1,<t>)) ] |
     !    |                                            |
-    !k=4 | +0.5*dzt(k)*                               |
-    !    |       [ K_zm(k)*dzm(k)*                    |
-    !    |                  (xm(k+1,<t>)-xm(k,<t>))   |
-    !    |        -K_zm(k-1)*dzm(k-1)*                |
-    !    |                  (xm(k,<t>)-xm(k-1,<t>)) ] |
+    !k=4 | +0.5*(1/rho_ds_zt(k))*                     |
+    !    |      dzt(k)*                               |
+    !    |       [ rho_ds_zm(k)*K_zm(k)*              |
+    !    |         dzm(k)*(xm(k+1,<t>)-xm(k,<t>))     |
+    !    |        -rho_ds_zm(k-1)*K_zm(k-1)*          |
+    !    |         dzm(k-1)*(xm(k,<t>)-xm(k-1,<t>)) ] |
     !    |                                            |
-    !k=5 | +0.5*dzt(k)*                               |
-    !    |       [ K_zm(k)*dzm(k)*                    |
-    !    |                  (xm(k+1,<t>)-xm(k,<t>))   |
-    !    |        -K_zm(k-1)*dzm(k-1)*                |
-    !    |                  (xm(k,<t>)-xm(k-1,<t>)) ] |
+    !k=5 | +0.5*(1/rho_ds_zt(k))*                     |
+    !    |      dzt(k)*                               |
+    !    |       [ rho_ds_zm(k)*K_zm(k)*              |
+    !    |         dzm(k)*(xm(k+1,<t>)-xm(k,<t>))     |
+    !    |        -rho_ds_zm(k-1)*K_zm(k-1)*          |
+    !    |         dzm(k-1)*(xm(k,<t>)-xm(k-1,<t>)) ] |
     !   \ /                                          \ /
     !
     ! Note:  If a generalized explicit surface flux is used, an additional term,
-    !        + dzt(2) * x'w'|_sfc, is added to row 2 (k=2).
+    !        + (1/rho_ds_zt(2)) * dzt(2) * rho_ds_zm(1) * x'w'|_sfc, is added to
+    !        row 2 (k=2).
     !
     ! Note:  Only the contributions by the turbulent advection term are shown
     !        for both the left-hand side matrix and the right-hand side vector.
