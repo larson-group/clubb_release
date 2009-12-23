@@ -952,6 +952,7 @@ module clubb_core
     call advance_windm_edsclrm( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref, & ! Intent(in)
                                 wp2, up2, vp2, um_forcing, vm_forcing,    & ! Intent(in)
                                 edsclrm_forcing,                          & ! Intent(in)
+                                rho_ds_zm, invrs_rho_ds_zt,               & ! Intent(in)
                                 fcor, l_implemented,                      & ! Intent(in)
                                 um, vm, edsclrm,                          & ! Intent(inout)
                                 upwp, vpwp, wpedsclrp, err_code )           ! Intent(out)	

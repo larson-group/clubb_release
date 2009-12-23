@@ -95,13 +95,15 @@ module mono_flux_limiter
     !
     ! The equation for change in the mean field, xm, over time is:
     !
-    ! d(xm)/dt = -w*d(xm)/dz - d(w'x')/dz + xm_forcing;
+    ! d(xm)/dt = -w*d(xm)/dz - (1/rho_ds) * d( rho_ds * w'x' )/dz + xm_forcing;
     !
-    ! where w*d(xm)/dz is the mean advection component, d(w'x')/dz is the
-    ! turbulent advection component, and xm_forcing is the xm forcing component.
-    ! The d(xm)/dt time tendency component is discretized as:
+    ! where w*d(xm)/dz is the mean advection component,
+    ! (1/rho_ds) * d( rho_ds * w'x' )/dz is the turbulent advection component,
+    ! and xm_forcing is the xm forcing component.  The d(xm)/dt time tendency
+    ! component is discretized as:
     !
-    ! xm(k,<t+1>)/dt = xm(k,<t>)/dt - w*d(xm)/dz - d(w'x')/dz + xm_forcing.
+    ! xm(k,<t+1>)/dt = xm(k,<t>)/dt - w*d(xm)/dz 
+    !                  - (1/rho_ds) * d( rho_ds * w'x' )/dz + xm_forcing.
     !
     ! The value of xm after it has been advanced to timestep (t+1) must be in an
     ! appropriate range based on the values of xm at timestep (t), the amount of
@@ -144,77 +146,86 @@ module mono_flux_limiter
     ! step can be taken into consideration.  However, only three levels will be
     ! considered in this example for the sake of simplicity.
     !
+    ! The inequality will be written in more simple terms:
+    !
+    ! xm_lower_lim_allowable(k) <= xm(k,<t+1>) <= xm_upper_lim_allowable(k).
+    !
     ! The inequality can now be related to the turbulent flux, w'x'(k,<t+1>),
     ! through a substitution that is made for xm(k,<t+1>), such that:
     !
     ! xm(k,<t+1>) = xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
-    !               - dt*d(w'x')/dz|_(k).
+    !               - dt * (1/rho_ds) * d( rho_ds * w'x' )/dz|_(k).
     !
     ! The inequality becomes:
     !
-    ! MIN{ xm(k-1,<t>) + dt*xm_forcing(k-1) - dt*wm_zt(k-1)*d(xm)/dz|_(k-1)
-    !         - x_max_dev_low(k-1,<t>),
-    !      xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
-    !         - x_max_dev_low(k,<t>), 
-    !      xm(k+1,<t>) + dt*xm_forcing(k+1) - dt*wm_zt(k+1)*d(xm)/dz|_(k+1)
-    !         - x_max_dev_low(k+1,<t>) }
-    ! <= xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
-    !    - dt*d(w'x')/dz|_(k) <=
-    ! MAX{ xm(k-1,<t>) + dt*xm_forcing(k-1) - dt*wm_zt(k-1)*d(xm)/dz|_(k-1)
-    !         + x_max_dev_high(k-1,<t>), 
-    !      xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
-    !         + x_max_dev_high(k,<t>), 
-    !      xm(k+1,<t>) + dt*xm_forcing(k+1) - dt*wm_zt(k+1)*d(xm)/dz|_(k+1)
-    !         + x_max_dev_high(k+1,<t>) };
+    ! xm_lower_lim_allowable(k)
+    ! <=
+    !    xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
+    !    - dt * (1/rho_ds) * d( rho_ds * w'x' )/dz|_(k)
+    ! <=
+    ! xm_upper_lim_allowable(k).
     !
     ! The inequality is rearranged, and the turbulent advection term,
     ! d(w'x')/dz, is discretized:
     !
+    ! xm_lower_lim_allowable(k)
     ! - [ xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k) ]
-    ! + MIN{ xm(k-1,<t>) + dt*xm_forcing(k-1) - dt*wm_zt(k-1)*d(xm)/dz|_(k-1)
-    !           - x_max_dev_low(k-1,<t>),
-    !        xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
-    !           - x_max_dev_low(k,<t>), 
-    !        xm(k+1,<t>) + dt*xm_forcing(k+1) - dt*wm_zt(k+1)*d(xm)/dz|_(k+1)
-    !           - x_max_dev_low(k+1,<t>) }
-    ! <= - dt*dzt(k)*[ w'x'(k,<t+1>) - w'x'(k-1,<t+1>) ] <=
-    ! - [ xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k) ]
-    ! + MAX{ xm(k-1,<t>) + dt*xm_forcing(k-1) - dt*wm_zt(k-1)*d(xm)/dz|_(k-1)
-    !           + x_max_dev_high(k-1,<t>), 
-    !        xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
-    !           + x_max_dev_high(k,<t>), 
-    !        xm(k+1,<t>) + dt*xm_forcing(k+1) - dt*wm_zt(k+1)*d(xm)/dz|_(k+1)
-    !           + x_max_dev_high(k+1,<t>) };
+    ! <=
+    !    - dt * (1/rho_ds_zt(k))
+    !           * dzt(k)
+    !             * [   rho_ds_zm(k) * w'x'(k,<t+1>)
+    !                 - rho_ds_zm(k-1) * w'x'(k-1,<t+1>) ]
+    ! <=
+    ! xm_upper_lim_allowable(k)
+    ! - [ xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k) ];
     !
     ! where dzt(k) = 1 / ( zm(k) - zm(k-1) ).
     !
+    ! Multiplying the inequality by -rho_ds_zt(k)/(dz*dzt(k)):
+    !
+    ! rho_ds_zt(k)/(dz*dzt(k))
+    ! * [ xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
+    !     - xm_lower_lim_allowable(k) ]
+    ! >=
+    !    rho_ds_zm(k) * w'x'(k,<t+1>) - rho_ds_zm(k-1) * w'x'(k-1,<t+1>)
+    ! >=
+    ! rho_ds_zt(k)/(dz*dzt(k))
+    ! * [ xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
+    !     - xm_upper_lim_allowable(k) ].
+    !
+    ! Note:  The inequality symbols have been flipped due to multiplication
+    !        involving a (-) sign.
+    !
+    ! Adding rho_ds_zm(k-1) * w'x'(k-1,<t+1>) to the inequality:
+    !
+    ! rho_ds_zt(k)/(dz*dzt(k))
+    ! * [ xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
+    !     - xm_lower_lim_allowable(k) ]
+    ! + rho_ds_zm(k-1) * w'x'(k-1,<t+1>)
+    ! >= rho_ds_zm(k) * w'x'(k,<t+1>) >=
+    ! rho_ds_zt(k)/(dz*dzt(k))
+    ! * [ xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k) 
+    !     - xm_upper_lim_allowable(k) ]
+    ! + rho_ds_zm(k-1) * w'x'(k-1,<t+1>).
+    !
     ! The inequality is then rearranged to be based around w'x'(k,<t+1>):
     !
-    ! 1/(dt*dzt(k)) 
-    ! * [ xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
-    !    - MIN{ xm(k-1,<t>) + dt*xm_forcing(k-1) - dt*wm_zt(k-1)*d(xm)/dz|_(k-1)
-    !              - x_max_dev_low(k-1,<t>),
-    !           xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
-    !              - x_max_dev_low(k,<t>), 
-    !           xm(k+1,<t>) + dt*xm_forcing(k+1) - dt*wm_zt(k+1)*d(xm)/dz|_(k+1)
-    !              - x_max_dev_low(k+1,<t>) } ]
-    ! + w'x'(k-1,<t+1>)
-    !    >=   w'x'(k,<t+1>)   >=
-    ! 1/(dt*dzt(k))
-    ! * [ xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k) 
-    !    + MAX{ xm(k-1,<t>) + dt*xm_forcing(k-1) - dt*wm_zt(k-1)*d(xm)/dz|_(k-1)
-    !              + x_max_dev_high(k-1,<t>), 
-    !           xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
-    !              + x_max_dev_high(k,<t>), 
-    !           xm(k+1,<t>) + dt*xm_forcing(k+1) - dt*wm_zt(k+1)*d(xm)/dz|_(k+1)
-    !              + x_max_dev_high(k+1,<t>) }
-    ! + w'x'(k-1,<t+1>).
-    !
-    ! Note:  The inequality symbols have been flipped due to division involving
-    !        a (-) sign.
+    ! (1/rho_ds_zm(k))
+    ! * [ rho_ds_zt(k)/(dt*dzt(k)) 
+    !     * { xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
+    !         - xm_lower_lim_allowable(k) }
+    !     + rho_ds_zm(k-1) * w'x'(k-1,<t+1>) ]
+    ! >=   w'x'(k,<t+1>)   >=
+    ! (1/rho_ds_zm(k))
+    ! * [ rho_ds_zt(k)/(dt*dzt(k))
+    !     * { xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k) 
+    !         - xm_upper_lim_allowable(k) }
+    !     + rho_ds_zm(k-1) * w'x'(k-1,<t+1>) ].
     !
     ! The values of w'x' are found on the momentum levels, while the values of
-    ! xm are found on the thermodynamic levels.  The inequality is applied to
+    ! xm are found on the thermodynamic levels.  Additionally, the values of
+    ! rho_ds_zm are found on the momentum levels, and the values of rho_ds_zt
+    ! are found on the thermodynamic levels.  The inequality is applied to
     ! w'x'(k,<t+1>) from vertical levels 2 through the second-highest level
     ! (gr%nnzp-1).  The value of w'x' at level 1 is a set surface (or lowest
     ! level) flux.  The value of w'x' at the highest level is also a set value,
