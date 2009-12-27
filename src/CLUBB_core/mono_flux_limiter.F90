@@ -19,9 +19,11 @@ module mono_flux_limiter
   contains
 
   !=============================================================================
-  subroutine monotonic_turbulent_flux_limit( solve_type, dt, xm_old,  &
-                                             xp2, wm_zt, xm_forcing,  &
-                                             xp2_threshold, l_implemented,  &
+  subroutine monotonic_turbulent_flux_limit( solve_type, dt, xm_old, &
+                                             xp2, wm_zt, xm_forcing, &
+                                             rho_ds_zm, rho_ds_zt, &
+                                             invrs_rho_ds_zm, invrs_rho_ds_zt, &
+                                             xp2_threshold, l_implemented, &
                                              low_lev_effect, high_lev_effect, &
                                              xm, wpxp, err_code )
 
@@ -328,10 +330,14 @@ module mono_flux_limiter
       dt          ! Model timestep length                           [s]
 
     real, dimension(gr%nnzp), intent(in) ::  &
-      xm_old,   & ! xm at previous time step (thermodynamic levels) [units vary]
-      xp2,      & ! x'^2 (momentum levels)                          [units vary]
-      wm_zt,    & ! w wind component on thermodynamic levels        [m/s]
-      xm_forcing  ! xm forcings (thermodynamic levels)              [units vary]
+      xm_old,          & ! xm at previous time step (thermo. levs.) [units vary]
+      xp2,             & ! x'^2 (momentum levels)                   [units vary]
+      wm_zt,           & ! w wind component on thermodynamic levels [m/s]
+      xm_forcing,      & ! xm forcings (thermodynamic levels)       [units vary]
+      rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
+      invrs_rho_ds_zm, & ! Inv. dry, static density @ moment. levs. [m^3/kg]
+      invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
     real, intent(in) ::  &
       xp2_threshold   ! Lower limit of x'^2                         [units vary]
@@ -523,15 +529,17 @@ module mono_flux_limiter
 
        ! Find the upper limit for w'x' for a monotonic turbulent flux.
        wpxp_mfl_upper_lim(k)  &
-       = real( ( 1.0 / (dt*gr%dzt(k)) )  &
-               * ( xm_without_ta(k) - min_x_allowable(k) )  &
-               + wpxp(km1) )
+       = real( invrs_rho_ds_zm(k)  &
+                  * (   ( rho_ds_zt(k) / (dt*gr%dzt(k)) )  &
+                        * ( xm_without_ta(k) - min_x_allowable(k) )  &
+                      + rho_ds_zm(km1) * wpxp(km1)  )           )
 
        ! Find the lower limit for w'x' for a monotonic turbulent flux.
        wpxp_mfl_lower_lim(k)  &
-       = real( ( 1.0 / (dt*gr%dzt(k)) )  &
-               * ( xm_without_ta(k) - max_x_allowable(k) )  &
-               + wpxp(km1) )
+       = real( invrs_rho_ds_zm(k)  &
+                  * (   ( rho_ds_zt(k) / (dt*gr%dzt(k)) )  &
+                        * ( xm_without_ta(k) - max_x_allowable(k) )  &
+                      + rho_ds_zm(km1) * wpxp(km1)  )           )
 
        if ( wpxp(k) > wpxp_mfl_upper_lim(k) ) then
 
@@ -543,9 +551,15 @@ module mono_flux_limiter
           !print *, "xm(t+1) without ta = ", xm_without_ta(k)
           !print *, "max x allowable = ", max_x_allowable(k)
           !print *, "min x allowable = ", min_x_allowable(k)
-          !print *, "dzt/dt = ", real( 1.0 / (dt*gr%dzt(k)) )
-          !print *, "xm without ta - min x allow = ", xm_without_ta(k) - min_x_allowable(k)
+          !print *, "1/rho_ds_zm(k) = ", invrs_rho_ds_zm(k)
+          !print *, "rho_ds_zt(k) = ", rho_ds_zt(k)
+          !print *, "rho_ds_zt(k)*(delta_zt/dt) = ",  &
+          !             real( rho_ds_zt(k) / (dt*gr%dzt(k)) )
+          !print *, "xm without ta - min x allow = ",  &
+          !             xm_without_ta(k) - min_x_allowable(k)
+          !print *, "rho_ds_zm(km1) = ", rho_ds_zm(km1)
           !print *, "wpxp(km1) = ", wpxp(km1)
+          !print *, "rho_ds_zm(km1) * wpxp(km1) = ", rho_ds_zm(km1) * wpxp(km1)
           !print *, "wpxp upper lim = ", wpxp_mfl_upper_lim(k)
           !print *, "wpxp before adjustment = ", wpxp(k)
 
@@ -566,9 +580,15 @@ module mono_flux_limiter
           !print *, "xm(t+1) without ta = ", xm_without_ta(k)
           !print *, "max x allowable = ", max_x_allowable(k)
           !print *, "min x allowable = ", min_x_allowable(k)
-          !print *, "dzt/dt = ", real( 1.0 / (dt*gr%dzt(k)) )
-          !print *, "xm without ta - max x allow = ", xm_without_ta(k) - max_x_allowable(k)
+          !print *, "1/rho_ds_zm(k) = ", invrs_rho_ds_zm(k)
+          !print *, "rho_ds_zt(k) = ", rho_ds_zt(k)
+          !print *, "rho_ds_zt(k)*(delta_zt/dt) = ",  &
+          !             real( rho_ds_zt(k) / (dt*gr%dzt(k)) )
+          !print *, "xm without ta - max x allow = ",  &
+          !             xm_without_ta(k) - max_x_allowable(k)
+          !print *, "rho_ds_zm(km1) = ", rho_ds_zm(km1)
           !print *, "wpxp(km1) = ", wpxp(km1)
+          !print *, "rho_ds_zm(km1) * wpxp(km1) = ", rho_ds_zm(km1) * wpxp(km1)
           !print *, "wpxp lower lim = ", wpxp_mfl_lower_lim(k)
           !print *, "wpxp before adjustment = ", wpxp(k)
 
@@ -591,10 +611,18 @@ module mono_flux_limiter
        !      print *, "xm(t+1) without ta = ", xm_without_ta(k)
        !      print *, "max x allowable = ", max_x_allowable(k)
        !      print *, "min x allowable = ", min_x_allowable(k)
-       !      print *, "dzt/dt = ", real( 1.0 / (dt*gr%dzt(k)) )
-       !      print *, "xm without ta - min x allow = ", xm_without_ta(k) - min_x_allowable(k)
-       !      print *, "xm without ta - max x allow = ", xm_without_ta(k) - max_x_allowable(k)
+       !      print *, "1/rho_ds_zm(k) = ", invrs_rho_ds_zm(k)
+       !      print *, "rho_ds_zt(k) = ", rho_ds_zt(k)
+       !      print *, "rho_ds_zt(k)*(delta_zt/dt) = ",  &
+       !                   real( rho_ds_zt(k) / (dt*gr%dzt(k)) )
+       !      print *, "xm without ta - min x allow = ",  &
+       !                   xm_without_ta(k) - min_x_allowable(k)
+       !      print *, "xm without ta - max x allow = ",  &
+       !                   xm_without_ta(k) - max_x_allowable(k)
+       !      print *, "rho_ds_zm(km1) = ", rho_ds_zm(km1)
        !      print *, "wpxp(km1) = ", wpxp(km1)
+       !      print *, "rho_ds_zm(km1) * wpxp(km1) = ",  &
+       !                   rho_ds_zm(km1) * wpxp(km1)
        !      print *, "wpxp upper lim = ", wpxp_mfl_upper_lim(k)
        !      print *, "wpxp lower lim = ", wpxp_mfl_lower_lim(k)
        !      print *, "wpxp (stays the same) = ", wpxp(k)
@@ -647,6 +675,7 @@ module mono_flux_limiter
 
           ! Set up the right-hand side of tridiagonal matrix equation.
           call mfl_xm_rhs( dt, xm_old, wpxp, xm_forcing, &
+                           rho_ds_zm, invrs_rho_ds_zt, &
                            rhs_mfl_xm )
 
           ! Solve the tridiagonal matrix equation.
@@ -669,7 +698,10 @@ module mono_flux_limiter
              ! The rate of change of the adjustment to xm due to the monotonic
              ! flux limiter.
              dxm_dt_mfl_adjust(k)  &
-             = - gr%dzt(k) * ( wpxp_net_adjust(k) - wpxp_net_adjust(km1) )
+             = - invrs_rho_ds_zt(k)  &
+                 * gr%dzt(k)  &
+                   * (   rho_ds_zm(k) * wpxp_net_adjust(k)  &
+                       - rho_ds_zm(km1) * wpxp_net_adjust(km1) )
 
              ! The net change to xm due to the monotonic flux limiter is the
              ! rate of change multiplied by the time step length.  Add the
@@ -806,6 +838,7 @@ module mono_flux_limiter
 
   !=============================================================================
   subroutine mfl_xm_rhs( dt, xm_old, wpxp, xm_forcing, &
+                         rho_ds_zm, invrs_rho_ds_zt, &
                          rhs )
 
     ! Description:
@@ -829,12 +862,14 @@ module mono_flux_limiter
 
     ! Input Variables
     real(kind=time_precision), intent(in) ::  &
-      dt          ! Model timestep length                           [s]
+      dt                 ! Model timestep length                    [s]
 
     real, dimension(gr%nnzp), intent(in) ::  &
-      xm_old,   & ! xm; timestep (t) (thermodynamic levels)         [units vary]
-      wpxp,     & ! w'x'; timestep (t+1); limited (momentum levels) [units vary]
-      xm_forcing  ! xm forcings (thermodynamic levels)              [units vary]
+      xm_old,          & ! xm; timestep (t) (thermodynamic levels)  [units vary]
+      wpxp,            & ! w'x'; timestep (t+1); limited (m-levs.)  [units vary]
+      xm_forcing,      & ! xm forcings (thermodynamic levels)       [units vary]
+      rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
+      invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
     ! Output Variable
     real, dimension(gr%nnzp), intent(out) ::  &
@@ -873,7 +908,8 @@ module mono_flux_limiter
        !        the d(xm)/dt equation.
        rhs(k) &
        = rhs(k) &
-       - gr%dzt(k) * ( wpxp(k) - wpxp(km1) )
+       - invrs_rho_ds_zt(k)  &
+         * gr%dzt(k) * ( rho_ds_zm(k) * wpxp(k) - rho_ds_zm(km1) * wpxp(km1) )
 
        ! RHS xm forcings.
        ! Note: xm forcings include the effects of microphysics,

@@ -414,7 +414,9 @@ module advance_xm_wpxp_module
 
       call xm_wpxp_clipping_and_stats &
            ( "rtm", dt, wp2, rtp2, wm_zt,  &        ! Intent(in)
-             rtm_forcing, rttol**2, rttol, rcond, & ! Intent(in)
+             rtm_forcing, rho_ds_zm, rho_ds_zt, &   ! Intent(in)
+             invrs_rho_ds_zm, invrs_rho_ds_zt, &    ! Intent(in)
+             rttol**2, rttol, rcond, &              ! Intent(in)
              low_lev_effect, high_lev_effect, &     ! Intent(in)
              l_implemented, solution(:,1), &        ! Intent(in)
              rtm, wprtp, err_code )                 ! Intent(inout)
@@ -469,11 +471,13 @@ module advance_xm_wpxp_module
       endif
 
       call xm_wpxp_clipping_and_stats &
-           ( "thlm", dt, wp2, thlp2, wm_zt,  &         ! Intent(in)
-             thlm_forcing, thltol**2, thltol, rcond, & ! Intent(in)
-             low_lev_effect, high_lev_effect, &        ! Intent(in)
-             l_implemented, solution(:,1),  &          ! Intent(in)
-             thlm, wpthlp, err_code )                  ! Intent(inout)
+           ( "thlm", dt, wp2, thlp2, wm_zt,  &      ! Intent(in)
+             thlm_forcing, rho_ds_zm, rho_ds_zt, &  ! Intent(in)
+             invrs_rho_ds_zm, invrs_rho_ds_zt, &    ! Intent(in)
+             thltol**2, thltol, rcond, &            ! Intent(in)
+             low_lev_effect, high_lev_effect, &     ! Intent(in)
+             l_implemented, solution(:,1),  &       ! Intent(in)
+             thlm, wpthlp, err_code )               ! Intent(inout)
 
       if ( lapack_error( err_code ) ) then
         write(fstderr,'(a)') "thlm monotonic flux limiter:  tridag failed"
@@ -526,6 +530,8 @@ module advance_xm_wpxp_module
         call xm_wpxp_clipping_and_stats &
              ( "scalars", dt, wp2, sclrp2(:,i),  &  ! Intent(in)
                wm_zt, sclrm_forcing(:,i),  &        ! Intent(in)
+               rho_ds_zm, rho_ds_zt, &              ! Intent(in)
+               invrs_rho_ds_zm, invrs_rho_ds_zt, &  ! Intent(in)
                sclrtol(i)**2, sclrtol(i), rcond, &  ! Intent(in)
                low_lev_effect, high_lev_effect, &   ! Intent(in)
                l_implemented, solution(:,1),  &     ! Intent(in)
@@ -598,7 +604,9 @@ module advance_xm_wpxp_module
 
       call xm_wpxp_clipping_and_stats &
            ( "rtm", dt, wp2, rtp2, wm_zt,  &        ! Intent(in)
-             rtm_forcing, rttol**2, rttol, rcond, & ! Intent(in)
+             rtm_forcing, rho_ds_zm, rho_ds_zt, &   ! Intent(in)
+             invrs_rho_ds_zm, invrs_rho_ds_zt, &    ! Intent(in)
+             rttol**2, rttol, rcond, &              ! Intent(in)
              low_lev_effect, high_lev_effect, &     ! Intent(in)
              l_implemented, solution(:,1),  &       ! Intent(in)
              rtm, wprtp, err_code )                 ! Intent(inout)
@@ -610,11 +618,13 @@ module advance_xm_wpxp_module
       endif
 
       call xm_wpxp_clipping_and_stats &
-           ( "thlm", dt, wp2, thlp2, wm_zt,  &         ! Intent(in)
-             thlm_forcing, thltol**2, thltol, rcond, & ! Intent(in)
-             low_lev_effect, high_lev_effect, &        ! Intent(in)
-             l_implemented, solution(:,2),  &          ! Intent(in)
-             thlm, wpthlp, err_code )                  ! Intent(inout)
+           ( "thlm", dt, wp2, thlp2, wm_zt,  &      ! Intent(in)
+             thlm_forcing, rho_ds_zm, rho_ds_zt, &  ! Intent(in)
+             invrs_rho_ds_zm, invrs_rho_ds_zt, &    ! Intent(in)
+             thltol**2, thltol, rcond, &            ! Intent(in)
+             low_lev_effect, high_lev_effect, &     ! Intent(in)
+             l_implemented, solution(:,2),  &       ! Intent(in)
+             thlm, wpthlp, err_code )               ! Intent(inout)
 
       if ( lapack_error( err_code ) ) then
         write(fstderr,'(a)') "thlm monotonic flux limiter:  tridag failed"
@@ -626,6 +636,8 @@ module advance_xm_wpxp_module
         call xm_wpxp_clipping_and_stats &
              ( "scalars", dt, wp2, sclrp2(:,i),  &  ! Intent(in)
                wm_zt, sclrm_forcing(:,i), &         ! Intent(in)
+               rho_ds_zm, rho_ds_zt, &              ! Intent(in)
+               invrs_rho_ds_zm, invrs_rho_ds_zt, &  ! Intent(in)
                sclrtol(i)**2, sclrtol(i), rcond, &  ! Intent(in)
                low_lev_effect, high_lev_effect, &   ! Intent(in)
                l_implemented, solution(:,2+i),  &   ! Intent(in)
@@ -1616,10 +1628,12 @@ module advance_xm_wpxp_module
 
 !===============================================================================
   subroutine xm_wpxp_clipping_and_stats &
-             ( solve_type, dt, wp2, xp2, wm_zt,  &
-               xm_forcing, xp2_threshold, xm_threshold, rcond,  &
+             ( solve_type, dt, wp2, xp2, wm_zt, &
+               xm_forcing, rho_ds_zm, rho_ds_zt, &
+               invrs_rho_ds_zm, invrs_rho_ds_zt, &
+               xp2_threshold, xm_threshold, rcond, &
                low_lev_effect, high_lev_effect, &
-               l_implemented, solution,  &
+               l_implemented, solution, &
                xm, wpxp, err_code )
 
     ! Description:
@@ -1738,10 +1752,14 @@ module advance_xm_wpxp_module
       dt  ! Timestep   [s]
 
     real, intent(in), dimension(gr%nnzp) ::  & 
-      wp2,       & ! w'^2 (momentum levels)                       [m^2/s^2]
-      xp2,       & ! x'^2 (momentum levels)                       [{xm units}^2]
-      wm_zt,     & ! w wind component on thermodynamic levels     [m/s]
-      xm_forcing   ! xm forcings (thermodynamic levels)           [units vary]
+      wp2,             & ! w'^2 (momentum levels)                   [m^2/s^2]
+      xp2,             & ! x'^2 (momentum levels)                   [{xm units}^2]
+      wm_zt,           & ! w wind component on thermodynamic levels [m/s]
+      xm_forcing,      & ! xm forcings (thermodynamic levels)       [units vary]
+      rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
+      invrs_rho_ds_zm, & ! Inv. dry, static density @ moment. levs. [m^3/kg]
+      invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
     real, intent(in) :: &
       xp2_threshold, & ! Minimum allowable value of x'^2   [units vary]
@@ -2014,9 +2032,11 @@ module advance_xm_wpxp_module
 
     ! Apply a monotonic turbulent flux limiter to xm/w'x'.
     if ( l_mono_flux_lim ) then
-       call monotonic_turbulent_flux_limit( solve_type, dt, xm_n,  &
-                                            xp2, wm_zt, xm_forcing,  &
-                                            xp2_threshold, l_implemented,  &
+       call monotonic_turbulent_flux_limit( solve_type, dt, xm_n, &
+                                            xp2, wm_zt, xm_forcing, &
+                                            rho_ds_zm, rho_ds_zt, &
+                                            invrs_rho_ds_zm, invrs_rho_ds_zt, &
+                                            xp2_threshold, l_implemented, &
                                             low_lev_effect, high_lev_effect, &
                                             xm, wpxp, err_code )
 
