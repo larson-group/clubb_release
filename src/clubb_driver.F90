@@ -138,12 +138,13 @@ module clubb_driver
 
     use variables_prognostic_module, only:  & 
       Tsfc, psfc, SE, LE, thlm, rtm,     & ! Variable(s)
-      um, vm, wp2, rcm, wm_zt, wm_zm, exner, & 
-      tau_zm, p_in_Pa, rho_zm, upwp, vpwp, wpthlp, wpthvp, & 
-      wprcp, Kh_zt, rho, wprtp, wpthlp_sfc, wprtp_sfc, & 
-      upwp_sfc, vpwp_sfc, thlm_forcing, & 
+      um, vm, wp2, rcm, wm_zt, wm_zm, exner, &
+      tau_zm, p_in_Pa, rho_zm, upwp, vpwp, wpthlp, wpthvp, &
+      wprcp, Kh_zt, rho, wprtp, wpthlp_sfc, wprtp_sfc, &
+      upwp_sfc, vpwp_sfc, rho_ds_zm, rho_ds_zt, &
+      invrs_rho_ds_zm, invrs_rho_ds_zt, thlm_forcing, &
       rtm_forcing, um_forcing, vm_forcing, &
-      up2, vp2, wp3, rtp2, pdf_params, & 
+      up2, vp2, wp3, rtp2, pdf_params, &
       thlp2, rtpthlp, sigma_sqd_w, cloud_frac, &
       rcm_in_layer, cloud_cover
 
@@ -754,7 +755,9 @@ module clubb_driver
              thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,    & ! Intent(inout)
              wm_zt, wm_zm, em, exner,                          & ! Intent(inout)
              tau_zt, tau_zm, thvm, p_in_Pa,                    & ! Intent(inout)
-             rho, rho_zm, Lscale, rtm_ref, thlm_ref,           & ! Intent(inout) 
+             rho, rho_zm, rho_ds_zm, rho_ds_zt,                & ! Intent(inout)
+             invrs_rho_ds_zm, invrs_rho_ds_zt,                 & ! Intent(inout)
+             Lscale, rtm_ref, thlm_ref,                        & ! Intent(inout) 
              Kh_zt, Kh_zm, um_ref, vm_ref,                     & ! Intent(inout)
              hydromet, Ncnm,                                   & ! Intent(inout)
              sclrm, edsclrm )                                    ! Intent(out)
@@ -771,7 +774,9 @@ module clubb_driver
              thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,    & ! Intent(inout)
              wm_zt, wm_zm, em, exner,                          & ! Intent(inout)
              tau_zt, tau_zm, thvm, p_in_Pa,                    & ! Intent(inout)
-             rho, rho_zm, Lscale, rtm_ref, thlm_ref,           & ! Intent(inout) 
+             rho, rho_zm, rho_ds_zm, rho_ds_zt,                & ! Intent(inout)
+             invrs_rho_ds_zm, invrs_rho_ds_zt,                 & ! Intent(inout)
+             Lscale, rtm_ref, thlm_ref,                        & ! Intent(inout) 
              Kh_zt, Kh_zm, um_ref, vm_ref,                     & ! Intent(inout)
              hydromet, Ncnm,                                   & ! Intent(inout)
              sclrm, edsclrm )                                    ! Intent(out)
@@ -1045,9 +1050,11 @@ module clubb_driver
              ( iunit, forcings_file_path, psfc, zm_init, &
                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
-               tau_zt, tau_zm, thvm, p_in_Pa, & 
-               rho, rho_zm, Lscale, rtm_ref, thlm_ref, & 
-               Kh_zt, Kh_zm, um_ref, vm_ref, & 
+               tau_zt, tau_zm, thvm, p_in_Pa, &
+               rho, rho_zm, rho_ds_zm, rho_ds_zt, &
+               invrs_rho_ds_zm, invrs_rho_ds_zt, &
+               Lscale, rtm_ref, thlm_ref, &
+               Kh_zt, Kh_zm, um_ref, vm_ref, &
                hydromet, Ncnm, &
                sclrm, edsclrm )
     ! Description:
@@ -1141,6 +1148,7 @@ module clubb_driver
     use input_names, only: &
       z_name, &
       temperature_name, &
+      theta_name, &
       thetal_name, &
       wm_name, &
       omega_name
@@ -1162,29 +1170,33 @@ module clubb_driver
 
     ! Output
     real, dimension(gr%nnzp), intent(inout) ::  & 
-      thlm,            & ! Theta l mean                  [K] 
-      rtm,             & ! Total water mixing ratio      [kg/kg]
-      um,              & ! u wind                        [m/s]
-      vm,              & ! v wind                        [m/s]
-      ug,              & ! u geostrophic wind            [m/s] 
-      vg,              & ! u geostrophic wind            [m/s] 
-      wp2,             & ! w'^2                          [m^2/s^2]
-      up2,             & ! u'^2                          [m^2/s^2]
-      vp2,             & ! v'^2                          [m^2/s^2]
-      rcm,             & ! Cloud water mixing ratio      [kg/kg]
-      wm_zt, wm_zm,    & ! w wind                        [m/s]
-      em,              & ! Turbulence kinetic energy     [m^2/s^2]
-      exner,           & ! Exner function                [-] 
-      tau_zm, tau_zt,  & ! Dissipation time              [s]
-      thvm,            & ! Virtual potential temperature [K]
-      p_in_Pa,         & ! Pressure                      [Pa]
-      rho, rho_zm,     & ! Density                       [kg/m^3]
-      Lscale,          & ! Mixing length                 [m] 
-      Kh_zt, Kh_zm,    & ! Eddy diffusivity              [m^2/s]
-      um_ref,          & ! Initial profile of u wind     [m/s]
-      vm_ref,          & ! Initial profile of v wind     [m/s]
-      rtm_ref,         & ! Initial profile of rtm        [kg/kg]
-      thlm_ref           ! Initial profile of thlm       [K]
+      thlm,            & ! Theta_l mean                        [K] 
+      rtm,             & ! Total water mixing ratio            [kg/kg]
+      um,              & ! u wind                              [m/s]
+      vm,              & ! v wind                              [m/s]
+      ug,              & ! u geostrophic wind                  [m/s] 
+      vg,              & ! u geostrophic wind                  [m/s] 
+      wp2,             & ! w'^2                                [m^2/s^2]
+      up2,             & ! u'^2                                [m^2/s^2]
+      vp2,             & ! v'^2                                [m^2/s^2]
+      rcm,             & ! Cloud water mixing ratio            [kg/kg]
+      wm_zt, wm_zm,    & ! w wind                              [m/s]
+      em,              & ! Turbulence kinetic energy           [m^2/s^2]
+      exner,           & ! Exner function                      [-] 
+      tau_zm, tau_zt,  & ! Dissipation time                    [s]
+      thvm,            & ! Virtual potential temperature       [K]
+      p_in_Pa,         & ! Pressure                            [Pa]
+      rho, rho_zm,     & ! Density                             [kg/m^3]
+      rho_ds_zm,       & ! Dry, static density (moment. levs.) [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density (thermo. levs.) [kg/m^3]
+      invrs_rho_ds_zm, & ! Inv. dry, static density (m-levs.)  [m^3/kg]
+      invrs_rho_ds_zt, & ! Inv. dry, static density (t-levs.)  [m^3/kg]
+      Lscale,          & ! Mixing length                       [m] 
+      Kh_zt, Kh_zm,    & ! Eddy diffusivity                    [m^2/s]
+      um_ref,          & ! Initial profile of u wind           [m/s]
+      vm_ref,          & ! Initial profile of v wind           [m/s]
+      rtm_ref,         & ! Initial profile of rtm              [kg/kg]
+      thlm_ref           ! Initial profile of thlm             [K]
 
     real, dimension(gr%nnzp,hydromet_dim), intent(inout) :: &
       hydromet ! Hydrometeor species    [kg/kg] or [#/kg]
@@ -1201,6 +1213,8 @@ module clubb_driver
 
     ! Local Variables
     real, dimension(gr%nnzp) :: tmp1
+
+    real, dimension(gr%nnzp) :: thm ! Potential temperature (thermo. levels) [K]
 
     real :: cloud_top_height ! [m]
     real :: emax
@@ -1248,65 +1262,114 @@ module clubb_driver
     select case( trim( alt_type ) )
     case ( z_name )
 
-      if (theta_type == temperature_name ) then
+      ! Sounding is listed in terms of height coordinates.
+
+      if ( theta_type == temperature_name ) then
         write(fstderr,*) 'Interpetation of sounding files with z as the independent ', &
         'variable and absolute temperature as the temperature variable has not ', &
-        'been implemented. Either specify pressure as the independent variable. or ', &
-        'thm/thlm as the temperature variable'
+        'been implemented.  Either specify pressure as the independent variable or ', &
+        'thm/thlm as the temperature variable.'
         stop
-      end if
+      endif
 
-      ! At this point, thlm actually contains theta (except for DYCOMS).
-      ! We need to compute liquid water content, and initilialize thlm properly
+      ! At this point, thlm may actually contain either theta or theta-l.
 
-      ! First, compute approximate pressure using theta
+      ! Compute approximate pressure, exner, and density using theta.
       call hydrostatic( thlm, psfc, &                         ! Intent(in)
                         p_in_Pa, exner, rho, rho_zm )         ! Intent(out)
 
-      ! Second, use this pressure to compute liquid water
-      ! from excess saturation
+      select case( trim( theta_type ) )
+      case ( theta_name )
 
-      do k = 1,gr%nnzp
-        rcm(k) = &
-           max( rtm(k) - sat_mixrat_liq( p_in_Pa(k), thlm(k) * exner(k) ), &
-                zero_threshold )
-      enddo
+         ! The value of variable thlm that was just used to call subroutine
+         ! hydrostatic is actually thm.
 
-      ! Compute initial theta-l
+         ! Thus, the values of rho and rho_zm that were just calculated are
+         ! dry (they do not take into account water vapor or cloud water).
+         ! These are the values of dry, static, base-state density that are
+         ! needed for the anelastic equation set.
+         rho_ds_zt(:) = rho(:)
+         rho_ds_zm(:) = rho_zm(:)
 
-      select case ( trim( theta_type ) )
-        !select case ( trim( runtype ) )
+         ! This pressure is used to compute mean cloud water mixing ratio from
+         ! excess saturation.  Since thm is currently stored in the thlm
+         ! profile, thlm(k) * exner(k) is actually thm(k) * exner(k) = T(k).
+         do k = 1, gr%nnzp
+            rcm(k)  &
+            = max( rtm(k) - sat_mixrat_liq( p_in_Pa(k), thlm(k) * exner(k) ), &
+                   zero_threshold )
+         enddo
+
+         ! Compute initial theta_l based on the theta profile (currently stored
+         ! in variable thlm) and cloud water mixing ratio (rcm), such that:
+         !  theta_l = theta - [Lv/(Cp*exner)]*rcm.
+         do k = 1, gr%nnzp
+            thlm(k) = thlm(k) - Lv/(Cp*exner(k)) * rcm(k)
+         enddo
+
+         ! Testing of passive scalars
+         if ( iisclr_thl > 0 ) then
+            sclrm(:,iisclr_thl) = thlm
+         endif
+         if ( iiedsclr_thl > 0 ) then
+            edsclrm(:,iiedsclr_thl) = thlm
+         endif
+
       case ( thetal_name )
-        !case ( "dycoms2_rf01", "astex_a209", "nov11_altocu", &
-        !      "clex9_nov02", "clex9_oct14", "dycoms2_rf02" )
-        ! thlm profile that is initially saturated at points.
-        ! thlm profile remains the same as in the input sounding.
-        ! use iterative method to find initial rcm.
-        do k =1, gr%nnzp, 1
-          rcm(k) = sat_rcm( thlm(k), rtm(k), p_in_Pa(k), exner(k) )
-        end do
 
-      case default ! ('theta[K]')
-        ! Initial profile is non-saturated thlm or any type of theta.
-        thlm = thlm - Lv/(Cp*exner) * rcm
+         ! The value of variable thlm that was just used to call subroutine
+         ! hydrostatic is indeed thlm.
 
-        ! Testing of passive scalars
-        if ( iisclr_thl > 0 ) then
-          sclrm(:,iisclr_thl) = thlm
-        end if
-        if ( iiedsclr_thl > 0 ) then
-          edsclrm(:,iiedsclr_thl) = thlm
-        end if
+         ! Find theta based on the given profile of theta_l.  If the profile
+         ! is unsaturated, then theta = theta_l.  If this initial profile is
+         ! saturated at any level, then initial r_c must be determined using an
+         ! iterative method involving theta_l, r_t, pressure, and exner.  Once
+         ! initial r_c is found, initial theta can be found, such that:
+         !  theta = theta_l + [Lv/(Cp*exner)]*rcm.
+
+         ! Find mean cloud water mixing ratio.
+         do k =1, gr%nnzp, 1
+            rcm(k) = sat_rcm( thlm(k), rtm(k), p_in_Pa(k), exner(k) )
+         enddo
+
+         ! Compute initial theta.
+         do k = 1, gr%nnzp
+            thm(k) = thlm(k) + Lv/(Cp*exner(k)) * rcm(k)
+         enddo
+
+         ! Call hydrostatic using thm as input in order to obtain dry values
+         ! of the density variables.
+         call hydrostatic( thm, psfc, &                         ! Intent(in)
+                           p_in_Pa, exner, rho, rho_zm )        ! Intent(out)
+
+         ! The values of rho and rho_zm that were just calculated are dry (they
+         ! do not take into account water vapor or cloud water).  These are the
+         ! values of dry, static, base-state density that are needed for the
+         ! anelastic equation set.
+         rho_ds_zt(:) = rho(:)
+         rho_ds_zm(:) = rho_zm(:)
+
+         ! Testing of passive scalars
+         if ( iisclr_thl > 0 ) then
+            sclrm(:,iisclr_thl) = thlm
+         endif
+         if ( iiedsclr_thl > 0 ) then
+            edsclrm(:,iiedsclr_thl) = thlm
+         endif
+
+      case default
+
+         write(fstderr,*) "Invalid theta_type: ", theta_type
+         stop
 
       end select
 
       ! Now, compute initial thetav
-
       thvm = thlm + ep1 * T0 * rtm  & 
                   + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
 
-      ! Recompute more accurate initial exner function and pressure using thvm
-
+      ! Recompute more accurate initial exner function and pressure using thvm,
+      ! which includes the effects of water vapor and cloud water.
       call hydrostatic( thvm, psfc, &                    ! Intent(in)
                         p_in_Pa, exner, rho, rho_zm )    ! Intent(out)
 

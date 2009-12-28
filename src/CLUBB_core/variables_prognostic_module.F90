@@ -44,17 +44,22 @@ module variables_prognostic_module
 !$omp   threadprivate(wp2, wp3, rtp2, thlp2, rtpthlp)
 
   real, target, allocatable, dimension(:), public :: & 
-    p_in_Pa,      & ! Pressure (Pa) on thermodynamic points    [Pa]
-    exner,        & ! Exner function = ( p / p0 ) ** kappa     [-]
-    Kh_zt,        & ! Eddy diffusivity: zt grid                [m^2/s]
-    rho,          & ! Density                                  [kg/m^3]
-    rho_zm,       & ! Density                                  [kg/m^3]
-    thlm_forcing, & ! thlm large-scale forcing                 [K/s]
-    rtm_forcing,  & ! rtm large-scale forcing                  [kg/kg/s]
-    um_forcing,   & ! u wind forcing                           [m/s/s] 
-    vm_forcing      ! v wind forcing                           [m/s/s]
+    p_in_Pa,         & ! Pressure (Pa) (thermodynamic levels)          [Pa]
+    exner,           & ! Exner function = ( p / p0 ) ** kappa          [-]
+    Kh_zt,           & ! Eddy diffusivity coefficient on thermo. levs. [m^2/s]
+    rho,             & ! Density (thermodynamic levels)                [kg/m^3]
+    rho_zm,          & ! Density on momentum levels                    [kg/m^3]
+    rho_ds_zm,       & ! Dry, static density (momentum levels)         [kg/m^3]
+    rho_ds_zt,       & ! Dry, static density (thermodynamic levels)    [kg/m^3]
+    invrs_rho_ds_zm, & ! Inverse dry, static density (momentum levs.)  [m^3/kg]
+    invrs_rho_ds_zt, & ! Inverse dry, static density (thermo. levs.)   [m^3/kg]
+    thlm_forcing,    & ! thlm large-scale forcing                      [K/s]
+    rtm_forcing,     & ! rtm large-scale forcing                       [kg/kg/s]
+    um_forcing,      & ! u wind forcing                                [m/s/s] 
+    vm_forcing         ! v wind forcing                                [m/s/s]
 
-!$omp   threadprivate(p_in_Pa, exner, Kh_zt, rho, rho_zm, thlm_forcing, &
+!$omp   threadprivate(p_in_Pa, exner, Kh_zt, rho, rho_zm, rho_ds_zm, &
+!$omp     rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, thlm_forcing, &
 !$omp     rtm_forcing, um_forcing, vm_forcing)
 
   ! Imposed large scale w
@@ -210,15 +215,19 @@ module variables_prognostic_module
     allocate( thlp2(1:nzmax) )     ! thl'^2
     allocate( rtpthlp(1:nzmax) )   ! rt'thlp'
 
-    allocate( p_in_Pa(1:nzmax) )   ! pressure (pascals)
-    allocate( exner(1:nzmax) )     ! exner function
-    allocate( rho(1:nzmax) )       ! density: t points
-    allocate( rho_zm(1:nzmax) )    ! density: m points
+    allocate( p_in_Pa(1:nzmax) )         ! pressure (pascals)
+    allocate( exner(1:nzmax) )           ! exner function
+    allocate( rho(1:nzmax) )             ! density: t points
+    allocate( rho_zm(1:nzmax) )          ! density: m points
+    allocate( rho_ds_zm(1:nzmax) )       ! dry, static density: m-levs
+    allocate( rho_ds_zt(1:nzmax) )       ! dry, static density: t-levs
+    allocate( invrs_rho_ds_zm(1:nzmax) ) ! inv. dry, static density: m-levs
+    allocate( invrs_rho_ds_zt(1:nzmax) ) ! inv. dry, static density: t-levs
 
-    allocate( thlm_forcing(1:nzmax) ) ! thlm ls forcing
-    allocate( rtm_forcing(1:nzmax) )  ! rtm ls forcing
-    allocate( um_forcing(1:nzmax) )   ! u forcing
-    allocate( vm_forcing(1:nzmax) )   ! v forcing
+    allocate( thlm_forcing(1:nzmax) )    ! thlm ls forcing
+    allocate( rtm_forcing(1:nzmax) )     ! rtm ls forcing
+    allocate( um_forcing(1:nzmax) )      ! u forcing
+    allocate( vm_forcing(1:nzmax) )      ! v forcing
 
     allocate( Kh_zt(1:nzmax) ) ! Eddy diffusivity
 
@@ -301,10 +310,14 @@ module variables_prognostic_module
     thlp2(1:nzmax)   = thltol**2   ! thl'^2
     rtpthlp(1:nzmax) = 0.0         ! rt'thl'
 
-    p_in_Pa(1:nzmax)= 0.0   ! pressure (Pa)
-    exner(1:nzmax) = 0.0    ! exner
-    rho(1:nzmax)  = 0.0     ! density on thermo. levels
-    rho_zm(1:nzmax)  = 0.0  ! density on moment. levels
+    p_in_Pa(1:nzmax)= 0.0           ! pressure (Pa)
+    exner(1:nzmax) = 0.0            ! exner
+    rho(1:nzmax)  = 0.0             ! density on thermo. levels
+    rho_zm(1:nzmax)  = 0.0          ! density on moment. levels
+    rho_ds_zm(1:nzmax) = 0.0        ! dry, static density: m-levs
+    rho_ds_zt(1:nzmax) = 0.0        ! dry, static density: t-levs
+    invrs_rho_ds_zm(1:nzmax) = 0.0  ! inv. dry, static density: m-levs
+    invrs_rho_ds_zt(1:nzmax) = 0.0  ! inv. dry, static density: t-levs
 
     thlm_forcing(1:nzmax) = 0.0     ! thlm large-scale forcing
     rtm_forcing(1:nzmax)  = 0.0     ! rtm large-scale forcing
@@ -419,11 +432,15 @@ module variables_prognostic_module
     deallocate( thlp2 )     ! thl'^2
     deallocate( rtpthlp )   ! rt'thl'
 
-    deallocate( p_in_Pa )   ! pressure
-    deallocate( exner )     ! exner
-    deallocate( Kh_zt )     ! Eddy diffusivity
-    deallocate( rho )       ! density: t points
-    deallocate( rho_zm )    ! density: m points
+    deallocate( p_in_Pa )         ! pressure
+    deallocate( exner )           ! exner
+    deallocate( Kh_zt )           ! Eddy diffusivity
+    deallocate( rho )             ! density: t points
+    deallocate( rho_zm )          ! density: m points
+    deallocate( rho_ds_zm )       ! dry, static density: m-levs
+    deallocate( rho_ds_zt )       ! dry, static density: t-levs
+    deallocate( invrs_rho_ds_zm ) ! inv. dry, static density: m-levs
+    deallocate( invrs_rho_ds_zt ) ! inv. dry, static density: t-levs
 
     deallocate( thlm_forcing )
     deallocate( rtm_forcing )
