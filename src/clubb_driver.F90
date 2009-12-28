@@ -810,6 +810,12 @@ module clubb_driver
              wpthlp, wprtp,   &                            ! Intent(inout)
              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )   ! Intent(out)
 
+      ! Calculate invrs_rho_ds_zm and invrs_rho_ds_zt from the values of
+      ! rho_ds_zm and rho_ds_zt, respectively, which were read in from the input
+      ! file during the call to subroutine restart_clubb.
+      invrs_rho_ds_zm = 1.0/rho_ds_zm
+      invrs_rho_ds_zt = 1.0/rho_ds_zt
+
     end if ! ~l_restart
 
 
@@ -1903,7 +1909,8 @@ module clubb_driver
         input_rtpthlp, input_upwp, input_vpwp, & 
         input_ug, input_vg, input_rcm,  & 
         input_wm_zt, input_exner, input_em, & 
-        input_p, input_rho, input_rho_zm, & 
+        input_p, input_rho, input_rho_zm, &
+        input_rho_ds_zm, input_rho_ds_zt, &
         input_Lscale, input_Lscale_up, input_Lscale_down, & 
         input_Kh_zt, input_Kh_zm, input_tau_zm, input_tau_zt, & 
         input_wpthvp, &
@@ -1987,6 +1994,8 @@ module clubb_driver
     input_p = .true.
     input_rho = .true.
     input_rho_zm = .true.
+    input_rho_ds_zm = .true.
+    input_rho_ds_zt = .true.
     input_Lscale = .true.
     input_Lscale_up = .true.
     input_Lscale_down = .true.

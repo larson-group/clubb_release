@@ -23,6 +23,7 @@ module inputfields
                      input_ug, input_vg, input_rcm,  & 
                      input_wm_zt, input_exner, input_em, & 
                      input_p, input_rho, input_rho_zm, & 
+                     input_rho_ds_zm, input_rho_ds_zt, &
                      input_Lscale, input_Lscale_up, input_Lscale_down, & 
                      input_Kh_zt, input_Kh_zm, input_tau_zm, input_tau_zt, & 
                      input_wpthvp, &
@@ -150,6 +151,8 @@ module inputfields
         wm_zt, & 
         rho, & 
         rho_zm, & 
+        rho_ds_zm, &
+        rho_ds_zt, &
         thlm_forcing, & 
         rtm_forcing, & 
         cloud_frac, & 
@@ -388,6 +391,12 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
+           ( input_rho_ds_zt, stat_file_zt, "rho_ds_zt", gr%nnzp, timestep, &
+             gr%zt, rho_ds_zt, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
            ( input_Lscale, stat_file_zt, "Lscale", gr%nnzp, timestep, &
              gr%zt, Lscale, l_read_error )
 
@@ -597,6 +606,12 @@ module inputfields
       call get_clubb_variable_interpolated &
            ( input_rho_zm, stat_file_zm, "rho_zm", gr%nnzp, timestep, &
              gr%zm, rho_zm, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_rho_ds_zm, stat_file_zm, "rho_ds_zm", gr%nnzp, timestep, &
+             gr%zm, rho_ds_zm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
