@@ -49,6 +49,7 @@ module stats_zt
         icloud_cover, &
         ip_in_Pa, & 
         iexner, & 
+        irho_ds_zt, &
         iLscale, & 
         iwp3, & 
         iwpthlp2, & 
@@ -349,57 +350,58 @@ module stats_zt
 
 ! Default initialization for array indices for zt
 
-    ithlm         = 0
-    iT_in_K       = 0
-    ithvm         = 0
-    irtm          = 0
-    ircm          = 0
-    irvm          = 0
-    ium           = 0
-    ivm           = 0
-    iwm_zt        = 0
-    ium_ref       = 0
-    ivm_ref       = 0
-    iug           = 0
-    ivg           = 0
-    icloud_frac   = 0
-    ircm_in_layer = 0
-    icloud_cover  = 0
-    ip_in_Pa      = 0
-    iexner        = 0
-    iLscale       = 0
-    iwp3          = 0
-    iwpthlp2      = 0
-    iwp2thlp      = 0
-    iwprtp2       = 0
-    iwp2rtp       = 0
-    iLscale_up    = 0
-    iLscale_down  = 0
-    itau_zt       = 0
-    iKh_zt        = 0
-    iwp2thvp      = 0
-    iwp2rcp       = 0
-    iwprtpthlp    = 0
+    ithlm           = 0
+    iT_in_K         = 0
+    ithvm           = 0
+    irtm            = 0
+    ircm            = 0
+    irvm            = 0
+    ium             = 0
+    ivm             = 0
+    iwm_zt          = 0
+    ium_ref         = 0
+    ivm_ref         = 0
+    iug             = 0
+    ivg             = 0
+    icloud_frac     = 0
+    ircm_in_layer   = 0
+    icloud_cover    = 0
+    ip_in_Pa        = 0
+    iexner          = 0
+    irho_ds_zt      = 0
+    iLscale         = 0
+    iwp3            = 0
+    iwpthlp2        = 0
+    iwp2thlp        = 0
+    iwprtp2         = 0
+    iwp2rtp         = 0
+    iLscale_up      = 0
+    iLscale_down    = 0
+    itau_zt         = 0
+    iKh_zt          = 0
+    iwp2thvp        = 0
+    iwp2rcp         = 0
+    iwprtpthlp      = 0
     isigma_sqd_w_zt = 0
-    irho          = 0
-    irel_humidity = 0
-    iNcm          = 0  ! Brian
-    iNcnm         = 0
-    iNim          = 0
-    isnowslope    = 0  ! Adam Smith, 22 April 2008
-    ised_rcm      = 0  ! Brian
-    irsat         = 0  ! Brian
-    irrainm       = 0  ! Brian
-    irain_rate    = 0  ! Brian
-    iAKm          = 0  ! analytic Kessler.  Vince Larson 22 May 2005
-    iLH_AKm      = 0  ! LH Kessler.  Vince Larson 22 May 2005
-    iAKstd        = 0
-    iAKstd_cld    = 0
-    iAKm_rcm      = 0
-    iAKm_rcc      = 0
-    iradht        = 0
-    iradht_LW     = 0
-    iradht_SW     = 0
+    irho            = 0
+    irel_humidity   = 0
+    iNcm            = 0  ! Brian
+    iNcnm           = 0
+    iNim            = 0
+    isnowslope      = 0  ! Adam Smith, 22 April 2008
+    ised_rcm        = 0  ! Brian
+    irsat           = 0  ! Brian
+    irrainm         = 0  ! Brian
+    irain_rate      = 0  ! Brian
+    iAKm            = 0  ! analytic Kessler.  Vince Larson 22 May 2005
+    iLH_AKm         = 0  ! LH Kessler.  Vince Larson 22 May 2005
+    iAKstd          = 0
+    iAKstd_cld      = 0
+    iAKm_rcm        = 0
+    iAKm_rcc        = 0
+    iradht          = 0
+    iradht_LW       = 0
+    iradht_SW       = 0
 
 ! Number concentrations
     iNsnowm    = 0  ! Adam Smith, 22 April 2008
@@ -750,6 +752,11 @@ module stats_zt
         call stat_assign( iexner, "exner", & 
              "Exner function = (p/p0)**(rd/cp) [-]", "count", zt )
         k = k + 1
+      case ('rho_ds_zt')
+        irho_ds_zt = k
+        call stat_assign( irho_ds_zt, "rho_ds_zt", &
+             "Dry, static, base-state density [kg/m^3]", "kg m^{-3}", zt )
+        k = k + 1
       case ('Lscale')
         iLscale = k
         call stat_assign( iLscale, "Lscale", & 
@@ -944,7 +951,7 @@ module stats_zt
       case ('rho')
         irho = k
         call stat_assign( irho, "rho", & 
-             "Air density [kg/m^3]", "kg/m^3", zt )
+             "Air density [kg/m^3]", "kg m^{-3}", zt )
         k = k + 1
 
       case ('Ncm')           ! Brian

@@ -50,7 +50,8 @@ module stats_zm
           iupwp, & 
           ivpwp, & 
           irho_zm, & 
-          isigma_sqd_w, & 
+          isigma_sqd_w, &
+          irho_ds_zm, &
           iem, & 
           ishear, &
           imean_w_up, &
@@ -219,26 +220,27 @@ module stats_zm
 
 !     Default initialization for array indices for zm
 
-    iwp2      = 0
-    irtp2     = 0
-    ithlp2    = 0
-    irtpthlp  = 0
-    iwprtp    = 0
-    iwpthlp   = 0
-    iwp4      = 0
-    iwpthvp   = 0
-    irtpthvp  = 0
-    ithlpthvp = 0
-    itau_zm   = 0
-    iKh_zm    = 0
-    iwprcp    = 0
-    ithlprcp  = 0
-    irtprcp   = 0
-    ircp2     = 0
-    iupwp     = 0
-    ivpwp     = 0
-    irho_zm   = 0
+    iwp2          = 0
+    irtp2         = 0
+    ithlp2        = 0
+    irtpthlp      = 0
+    iwprtp        = 0
+    iwpthlp       = 0
+    iwp4          = 0
+    iwpthvp       = 0
+    irtpthvp      = 0
+    ithlpthvp     = 0
+    itau_zm       = 0
+    iKh_zm        = 0
+    iwprcp        = 0
+    ithlprcp      = 0
+    irtprcp       = 0
+    ircp2         = 0
+    iupwp         = 0
+    ivpwp         = 0
+    irho_zm       = 0
     isigma_sqd_w  = 0
+    irho_ds_zm    = 0
     iem           = 0
     ishear        = 0  ! Brian
     imean_w_up    = 0
@@ -515,12 +517,17 @@ module stats_zm
       case ('rho_zm')
         irho_zm = k
         call stat_assign(irho_zm,"rho_zm", & 
-             "Density on momentum levels [kg/m^3]","kg/m^3",zm)
+             "Density on momentum levels [kg/m^3]","kg m^{-3}",zm)
         k = k + 1
       case ('sigma_sqd_w')
         isigma_sqd_w = k
         call stat_assign(isigma_sqd_w,"sigma_sqd_w", & 
              "Width of indiv Gaussians in w [-]","-",zm)
+        k = k + 1
+      case ('rho_ds_zm')
+        irho_ds_zm = k
+        call stat_assign(irho_ds_zm,"rho_ds_zm", &
+             "Dry, static, base-state density [kg/m^3]","kg m^{-3}",zm)
         k = k + 1
       case ('em')
         iem = k

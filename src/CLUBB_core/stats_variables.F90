@@ -71,6 +71,7 @@ module stats_variables
      icloud_cover, &
      ip_in_Pa, & 
      iexner, & 
+     irho_ds_zt, &
      iLscale, & 
      iwp3, & 
      iwpthlp2, & 
@@ -112,10 +113,10 @@ module stats_variables
 
 !$omp   threadprivate(ithlm, ithvm, irtm, ircm, irvm, ium, ivm, ium_ref)
 !$omp   threadprivate(ivm_ref, iwm_zt, iwm_zm, iug, ivg, icloud_frac, ircm_in_layer)
-!$omp   threadprivate(icloud_cover, ip_in_Pa, iexner, iLscale, iwp3, iwpthlp2)
-!$omp   threadprivate(iwp2thlp, iwprtp2, iwp2rtp, iLscale_up, iLscale_down, itau_zt)
-!$omp   threadprivate(iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, isigma_sqd_w_zt, irho)
-!$omp   threadprivate(irel_humidity, iNcm, iNcnm, isnowslope)
+!$omp   threadprivate(icloud_cover, ip_in_Pa, iexner, irho_ds_zt, iLscale, iwp3)
+!$omp   threadprivate(iwpthlp2, iwp2thlp, iwprtp2, iwp2rtp, iLscale_up, iLscale_down)
+!$omp   threadprivate(itau_zt, iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, isigma_sqd_w_zt)
+!$omp   threadprivate(irho, irel_humidity, iNcm, iNcnm, isnowslope)
 !$omp   threadprivate(ised_rcm, irsat, irrainm)
 !$omp   threadprivate(imean_vol_rad_rain, imean_vol_rad_cloud)
 !$omp   threadprivate(irain_rate, iAKm, iLH_AKm)
@@ -499,7 +500,8 @@ module stats_variables
      iupwp, & 
      ivpwp, & 
      irho_zm, & 
-     isigma_sqd_w, & 
+     isigma_sqd_w, &
+     irho_ds_zm, &
      iem, & 
      ishear,     & ! Brian
      imean_w_up, &
@@ -517,8 +519,8 @@ module stats_variables
 !$omp   threadprivate(iwp2, irtp2, ithlp2, irtpthlp, iwprtp, iwpthlp)
 !$omp   threadprivate(iwp4, iwpthvp, irtpthvp, ithlpthvp, itau_zm, iKh_zm)
 !$omp   threadprivate(iwprcp, ithlprcp, irtprcp, ircp2, iupwp, ivpwp)
-!$omp   threadprivate(irho_zm, isigma_sqd_w, iem, ishear, iFrad, iFrad_LW)
-!$omp   threadprivate(iFrad_SW, iFrad_SW_up, iFrad_SW_down)
+!$omp   threadprivate(irho_zm, isigma_sqd_w, irho_ds_zm, iem, ishear)
+!$omp   threadprivate(iFrad, iFrad_LW, iFrad_SW, iFrad_SW_up, iFrad_SW_down)
 !$omp   threadprivate(iFrad_LW_up, iFrad_LW_down, iFprec, iFcsed)
 
   ! Sedimentation velocities
