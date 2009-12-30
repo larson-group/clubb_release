@@ -71,6 +71,8 @@ subroutine gases  ( ncol ,   nlm ,    ib ,    ig   &
    real (kind=dbl_kind), dimension(ncol,nlm):: &
     fkg , fkga , fkgb , pq &
    ,tg1 ,  tg2 ,  tg3
+
+   integer :: i ! Added by dschanen UWM for bug fix.
      
 !-----------------------------------------------------------------------
 
@@ -181,11 +183,13 @@ subroutine gases  ( ncol ,   nlm ,    ib ,    ig   &
       ! (800-670 cm^-1):  overlapping absorption by H2O and CO2
       ! using approach two of Fu(1991).
 
-      where (pp .ge. 63.1)
-         pq = rmix
-      elsewhere
-        pq = 0._dbl_kind
-      end where
+      forall (i=1:ncol) ! Forall added by Dave Schanen UWM for a bug fix
+         where (pp(i,:) .ge. 63.1)
+            pq(i,:) = rmix(i,:)
+         else where
+            pq(i,:) = 0._dbl_kind
+         end where
+      end forall
 
       call qk(ncol,nlm,c14hca(:,:,ig),tt,fkga,pkd,ip1,ip2)
       call qk(ncol,nlm,c14hcb(:,:,ig),tt,fkgb,pkd,ip1,ip2)
@@ -198,11 +202,14 @@ subroutine gases  ( ncol ,   nlm ,    ib ,    ig   &
       ! (670-540 cm^-1):  overlapping absorption by H2O and CO2
       ! using approach two of Fu(1991).
 
-      where (pp .ge. 63.1)
-         pq = rmix
-      elsewhere
-        pq = 0._dbl_kind
-      end where
+      forall (i=1:ncol) ! Forall added by Dave Schanen UWM for a bug fix
+         where (pp(i,:) .ge. 63.1)
+            pq(i,:) = rmix(i,:)
+         else where
+            pq(i,:) = 0._dbl_kind
+         end where
+      end forall
+
       call qk(ncol,nlm,c15hca(:,:,ig),tt,fkga,pkd,ip1,ip2)
       call qk(ncol,nlm,c15hcb(:,:,ig),tt,fkgb,pkd,ip1,ip2)
       
