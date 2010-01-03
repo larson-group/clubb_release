@@ -1,4 +1,3 @@
-!------------------------------------------------------------------------
 !-----------------------------------------------------------------------
 ! $Id$
 !===============================================================================
@@ -10,18 +9,37 @@ module hydrostatic_mod
 
   public :: hydrostatic, inverse_hydrostatic
 
-  private :: calc_exner_const_theta, &
-             calc_exner_linear_theta
+  private :: calc_exner_const_th_var, &
+             calc_exner_linear_th_var
 
   contains
 
 !===============================================================================
-  subroutine hydrostatic( thvm, psfc, &
+  subroutine hydrostatic( th_var, psfc, &
                           p_in_Pa, exner, rho, rho_zm )
-    !       Description:
-    !       Subprogram to integrate hydrostatic equation
 
-    !       References:
+    ! Description:
+    ! This subroutine integrates the hydrostatic equation of the form:
+    !
+    ! d(exner)/dz = - grav / ( Cp * th_var );
+    !
+    ! where th_var can be either virtual potential temperature (thvm), which
+    ! is used to calculate total exner, pressure, and density, or potential
+    ! temperature (thm), which is used to calculate dry, static, base-state
+    ! exner, pressure, and density.
+    !
+    ! Sometimes, this subroutine is called with liquid water potential
+    ! temperature (thlm) as the th_var.  This allows for a calculation of
+    ! approximate pressure and exner, which allows initial cloud water mixing
+    ! ratio (rcm) to be solved through an iterative method.  Then, thm is
+    ! calculated from thlm and rcm.  Then, this subroutine is called again with
+    ! thm as th_var in order to calculate dry, static, base-state variables.
+    !
+    ! After dry, static, base-state values have been determined, this subroutine
+    ! is called with thvm as th_var in order to determined the total (moist)
+    ! values of exner, pressure, and density.
+
+    ! References:
     !
     !------------------------------------------------------------------------
 
@@ -36,151 +54,123 @@ module hydrostatic_mod
         zm2zt,  & ! Procedure(s)
         zt2zm
 
-
     implicit none
 
     ! Input Variables
-    real, intent(in) :: psfc ! Pressure at the surface      [Pa]
+    real, intent(in) :: &
+      psfc    ! Pressure at the surface                     [Pa]
 
     real, intent(in), dimension(gr%nnzp) ::  & 
-      thvm  ! Virtual potential temperature   [K]
+      th_var  ! Theta variable:  virtual potential temperature 
+              !                  or potential temperature   [K]
 
     ! Output Variables
     real, intent(out), dimension(gr%nnzp) ::  & 
-      p_in_Pa,  & ! Pressure                       [Pa]
-      exner,    & ! Exner function                 [-]
-      rho,      & ! Density on thermo. points      [kg/m^3]
-      rho_zm      ! Density on moment. points      [kg/m^3]
+      p_in_Pa,  & ! Pressure (thermodynamic levels)         [Pa]
+      exner,    & ! Exner function (thermodynamic levels)   [-]
+      rho,      & ! Density (thermodynamic levels)          [kg/m^3]
+      rho_zm      ! Density on momentum levels              [kg/m^3]
 
     !  Local Variables
-
-    ! Variables for test code for new formulation of integrating over the
-    ! hydrostatic equation.  Brian; 12/28/2009.
     real, dimension(gr%nnzp) ::  &
-      thvm_zm,    & ! Theta_v interpolated to momentum levels           [K]
-      exner_zm,   & ! Exner function computed on momentum levels        [-]
-      p_in_Pa_zm    ! Pressure computed on momentum levels              [Pa]
+      th_var_zm,  & ! Theta varariable interpolated to momentum levels  [K]
+      exner_zm,   & ! Exner function on momentum levels                 [-]
+      p_in_Pa_zm    ! Pressure on momentum levels                       [Pa]
 
     real :: &
-      dthv_dz       ! Constant d(theta_v)/dz between successive levels  [K/m]
-    ! Brian.
+      dth_var_dz    ! Constant d(th_var_v)/dz between successive levels [K/m]
 
     integer :: k
 
-    ! Integrate hydrostatic equation: we first compute Exner function
-    ! on the momentum grid
+    ! Interpolate th_var from thermodynamic to momentum levels.  Linear
+    ! interpolation is used, except for the uppermost momentum level, where a
+    ! linear extension is used.  Since th_var is considered to either be
+    ! constant or vary linearly over the depth of a grid level, this
+    ! interpolation is consistent with the rest of this code.
+    th_var_zm = zt2zm( th_var )
 
+    ! Exner is defined on thermodynamic grid levels except for the value at
+    ! index 1.  Since thermodynamic level 1 is below the surface, it is
+    ! disregarded, and the value of exner(1) corresponds to surface value, which
+    ! is actually at momentum level 1.
     exner(1) = ( psfc/p0 )**kappa
-    do k = 2, gr%nnzp
-       exner(k) &
-       = calc_exner_const_theta( thvm(k), gr%zm(k), gr%zm(k-1), exner(k-1) )
+    exner_zm(1) = ( psfc/p0 )**kappa
+
+    ! Consider the value of exner at thermodynamic level (2) to be based on
+    ! a constant th_var between thermodynamic level (2) and momentum level (1),
+    ! which is the surface or model lower boundary.  Since thlm(1) is set equal
+    ! to thlm(2), the values of th_var are considered to be basically constant
+    ! near the ground.
+    exner(2) &
+    = calc_exner_const_th_var( th_var(2), gr%zt(2), gr%zm(1), exner(1) )
+
+    ! Given the value of exner at thermodynamic level k-1, and considering
+    ! th_var to vary linearly between its values at thermodynamic levels k
+    ! and k-1, the value of exner can be found at thermodynamic level k,
+    ! as well as at intermediate momentum level k-1.
+    do k = 3, gr%nnzp
+
+       dth_var_dz = gr%dzm(k-1) * ( th_var(k) - th_var(k-1) )
+
+       if ( dth_var_dz /= 0.0 ) then
+
+          exner(k) &
+          = calc_exner_linear_th_var( th_var(k-1), dth_var_dz, &
+                                      gr%zt(k-1), gr%zt(k), exner(k-1) )
+
+          exner_zm(k-1) &
+          = calc_exner_linear_th_var( th_var(k-1), dth_var_dz, &
+                                      gr%zt(k-1), gr%zm(k-1), exner(k-1) )
+
+       else ! dth_var_dz = 0
+
+          exner(k) &
+          = calc_exner_const_th_var &
+               ( th_var(k), gr%zt(k), gr%zt(k-1), exner(k-1) )
+
+          exner_zm(k-1) &
+          = calc_exner_const_th_var &
+               ( th_var(k), gr%zm(k-1), gr%zt(k-1), exner(k-1) )
+
+       endif
+
+    enddo ! k = 3, gr%nnzp
+
+    ! Find the value of exner_zm at momentum level gr%nnzp by using a linear
+    ! extension of th_var from the two thermodynamic level immediately below
+    ! momentum level gr%nnzp.
+    dth_var_dz = ( th_var_zm(gr%nnzp) - th_var(gr%nnzp) ) &
+                 / ( gr%zm(gr%nnzp) - gr%zt(gr%nnzp) )
+
+    if ( dth_var_dz /= 0.0 ) then
+
+       exner_zm(gr%nnzp) &
+       = calc_exner_linear_th_var &
+            ( th_var(gr%nnzp), dth_var_dz, &
+              gr%zt(gr%nnzp), gr%zm(gr%nnzp), exner(gr%nnzp) )
+
+    else ! dth_var_dz = 0
+
+       exner_zm(gr%nnzp) &
+       = calc_exner_const_th_var &
+            ( th_var(gr%nnzp), gr%zm(gr%nnzp), gr%zt(gr%nnzp), exner(gr%nnzp) )
+
+    endif
+
+    ! Calculate pressure based on the values of exner.
+
+    do k = 1, gr%nnzp
+       p_in_Pa(k) = p0 * exner(k)**( 1./kappa )
+       p_in_Pa_zm(k) = p0 * exner_zm(k)**( 1./kappa )
     enddo
 
-    ! Now interpolate Exner to the thermodynamic grid points
+    ! Calculate density based on pressure, exner, and th_var.
 
-    exner = zm2zt( exner )
+    do k = 1, gr%nnzp
+       rho(k) = p_in_Pa(k) / ( Rd * th_var(k) * exner(k) )
+       rho_zm(k) = p_in_Pa_zm(k) / ( Rd * th_var_zm(k) * exner_zm(k) )
+    enddo
 
-    ! Exner is defined on the thermodynamic grid point except for the first
-    ! element which corresponds to surface value
-
-    ! Note: kappa = Rd / Cp
-
-    exner(1) = ( psfc/p0 )**kappa
-
-    ! Compute pressure on thermodynamic points
-
-    do k=1,gr%nnzp
-      p_in_Pa(k) = p0 * exner(k)**( 1./kappa )
-    end do
-
-    ! Compute density on thermodynamic grid
-
-    do k=1,gr%nnzp
-      rho(k) = p_in_Pa(k) / ( Rd * thvm(k) * exner(k) )
-    end do
-
-    ! Interpolate density back to momentum grid
-
-    rho_zm = max( zt2zm( rho ), zero_threshold )   ! Positive definite quantity
-    rho_zm(1) = p_in_Pa(1) / ( Rd * thvm(1) * exner(1) )
-
-!    ! Test code for new formulation of integrating over the hydrostatic
-!    ! equation.  Brian; 12/28/2009.
-!    thvm_zm = zt2zm( thvm )
-!
-!    exner(1) = ( psfc/p0 )**kappa
-!    exner_zm(1) = ( psfc/p0 )**kappa
-!
-!    ! Consider the value of exner at thermodynamic level (2) to be based on
-!    ! a constant theta between thermodynamic level (2) and momentum level (1),
-!    ! which is the surface or model lower boundary.  Since thlm(1) is set equal
-!    ! to thlm(2), the values of theta are considered to be basically constant
-!    ! near the ground.
-!    exner(2) &
-!    = calc_exner_const_theta( thvm(2), gr%zt(2), gr%zm(1), exner(1) )
-!
-!    ! Given the value of exner at thermodynamic level k-1, and considering
-!    ! theta to vary linearly between its values at thermodynamic levels k
-!    ! and k-1, the value of exner can be found at thermodynamic level k,
-!    ! as well as at intermediate momentum level k-1.
-!    do k = 3, gr%nnzp
-!
-!       dthv_dz = gr%dzm(k-1) * ( thvm(k) - thvm(k-1) )
-!
-!       if ( dthv_dz /= 0.0 ) then
-!
-!          exner(k) &
-!          = calc_exner_linear_theta( thvm(k-1), dthv_dz, &
-!                                     gr%zt(k-1), gr%zt(k), exner(k-1) )
-!
-!          exner_zm(k-1) &
-!          = calc_exner_linear_theta( thvm(k-1), dthv_dz, &
-!                                     gr%zt(k-1), gr%zm(k-1), exner(k-1) )
-!
-!       else ! dthv_dz = 0
-!
-!          exner(k) &
-!          = calc_exner_const_theta &
-!               ( thvm(k), gr%zt(k), gr%zt(k-1), exner(k-1) )
-!
-!          exner_zm(k-1) &
-!          = calc_exner_const_theta &
-!               ( thvm(k), gr%zm(k-1), gr%zt(k-1), exner(k-1) )
-!
-!       endif
-!
-!    enddo ! k = 3, gr%nnzp
-!
-!    ! Find the value of exner_zm at momentum level gr%nnzp by using a linear
-!    ! extension of theta from the two thermodynamic level immediately below
-!    ! momentum level gr%nnzp.
-!    dthv_dz = ( thvm_zm(gr%nnzp) - thvm(gr%nnzp) ) &
-!              / ( gr%zm(gr%nnzp) - gr%zt(gr%nnzp) )
-!
-!    if ( dthv_dz /= 0.0 ) then
-!
-!       exner_zm(gr%nnzp) &
-!       = calc_exner_linear_theta &
-!            ( thvm(gr%nnzp), dthv_dz, &
-!              gr%zt(gr%nnzp), gr%zm(gr%nnzp), exner(gr%nnzp) )
-!
-!    else ! dthv_dz = 0
-!
-!       exner_zm(gr%nnzp) &
-!       = calc_exner_const_theta &
-!            ( thvm(gr%nnzp), gr%zm(gr%nnzp), gr%zt(gr%nnzp), exner(gr%nnzp) )
-!
-!    endif
-!
-!    do k = 1, gr%nnzp
-!       p_in_Pa(k) = p0 * exner(k)**( 1./kappa )
-!       p_in_Pa_zm(k) = p0 * exner_zm(k)**( 1./kappa )
-!    enddo
-!
-!    do k = 1, gr%nnzp
-!       rho(k) = p_in_Pa(k) / ( Rd * thvm(k) * exner(k) )
-!       rho_zm(k) = p_in_Pa_zm(k) / ( Rd * thvm_zm(k) * exner_zm(k) )
-!    enddo
 
     return
   end subroutine hydrostatic
@@ -247,30 +237,31 @@ module hydrostatic_mod
   end subroutine inverse_hydrostatic
 
 !===============================================================================
-  pure function calc_exner_const_theta( theta, z_2, z_1, exner_1 ) &
+  pure function calc_exner_const_th_var( th_var, z_2, z_1, exner_1 ) &
   result( exner_2 )
 
     ! Description:
     ! This function solves for exner at a level, given exner at another level,
-    ! the altitudes of both levels, and a constant theta over the depth of the
+    ! the altitudes of both levels, and a constant th_var over the depth of the
     ! level.
     !
     ! The derivative of exner is given by the following equation:
     !
-    ! d(exner)/dz = - grav / (Cp * theta).
+    ! d(exner)/dz = - grav / (Cp * th_var).
     !
     ! This equation is integrated to solve for exner, such that:
     !
-    ! INT(exner_1:exner_2) d(exner) = - ( grav / Cp ) INT(z_1:z_2) (1/theta) dz.
+    ! INT(exner_1:exner_2) d(exner) 
+    ! = - ( grav / Cp ) INT(z_1:z_2) (1/th_var) dz.
     !
-    ! Since theta is considered to be a constant over the depth of the layer
+    ! Since th_var is considered to be a constant over the depth of the layer
     ! between z_1 and z_2, the equation can be written as:
     !
-    ! INT(exner_1:exner_2) d(exner) = - grav / ( Cp * theta ) INT(z_1:z_2) dz.
+    ! INT(exner_1:exner_2) d(exner) = - grav / ( Cp * th_var ) INT(z_1:z_2) dz.
     !
     ! Solving the integral:
     !
-    ! exner_2 = exner_1 - [ grav / ( Cp * theta ) ] * ( z_2 - z_1 ).
+    ! exner_2 = exner_1 - [ grav / ( Cp * th_var ) ] * ( z_2 - z_1 ).
 
     ! References:
     !-------------------------------------------------------------------
@@ -283,58 +274,65 @@ module hydrostatic_mod
 
     ! Input Variables
     real, intent(in) :: &
-      theta,   & ! Constant value of theta over the layer  [K]
-      z_2,     & ! Altitude at the top of the layer        [m]
-      z_1,     & ! Altitude at the bottom of the layer     [m]
-      exner_1    ! Exner at the bottom of the layer        [-]
+      th_var,  & ! Constant value of th_var over the layer  [K]
+      z_2,     & ! Altitude at the top of the layer         [m]
+      z_1,     & ! Altitude at the bottom of the layer      [m]
+      exner_1    ! Exner at the bottom of the layer         [-]
 
     ! Return Variable
-    real :: exner_2  ! Exner at the top of the layer       [-]
+    real :: exner_2  ! Exner at the top of the layer        [-]
 
     ! Calculate exner at top of the layer.
-    exner_2 = exner_1 - ( grav / ( Cp * theta ) ) * ( z_2 - z_1 )
+    exner_2 = exner_1 - ( grav / ( Cp * th_var ) ) * ( z_2 - z_1 )
 
     return
-  end function calc_exner_const_theta
+  end function calc_exner_const_th_var
 
 !===============================================================================
-  pure function calc_exner_linear_theta( theta_k, dtheta_dz, &
-                                         z_k, z_2, exner_k  ) &
+  pure function calc_exner_linear_th_var( th_var_km1, dth_var_dz, &
+                                          z_km1, z_2, exner_km1  ) &
   result( exner_2 )
 
     ! Description:
     ! This function solves for exner at a level, given exner at another level,
-    ! the altitudes of both levels, and a value of theta that is considered to
+    ! the altitudes of both levels, and a value of th_var that is considered to
     ! vary linearly over the depth of the level.
     !
     ! The derivative of exner is given by the following equation:
     !
-    ! d(exner)/dz = - grav / (Cp * theta).
+    ! d(exner)/dz = - grav / (Cp * th_var).
     !
     ! This equation is integrated to solve for exner, such that:
     !
-    ! INT(exner_1:exner_2) d(exner) = - ( grav / Cp ) INT(z_1:z_2) (1/theta) dz.
+    ! INT(exner_1:exner_2) d(exner)
+    ! = - ( grav / Cp ) INT(z_1:z_2) (1/th_var) dz.
     !
-    ! The value of theta is considered to vary linearly over the depth of the
-    ! level (resulting in a constant d(theta)/dz over the depth of the level).
-    ! The entire level must be encompassed between two levels with two known
-    ! values of theta.  The value of theta at the upper level (z_up) is called
-    ! theta_up, and the value of theta at the lower level (z_low) is called
-    ! theta_low.  Again, the values of theta at all interior altitudes,
-    ! z_low <= z <= z_up, behave linearly between theta_low and theta_up, such
-    ! that:
+    ! The value of th_var is considered to vary linearly over the depth of the
+    ! level (resulting in a constant d(th_var)/dz over the depth of the level).
+    ! The entire level between z_1 and z_2 must be encompassed between two
+    ! levels with two known values of th_var.  The value of th_var at the upper
+    ! level (z_up) is called th_var_up, and the value of th_var at the lower
+    ! level (z_low) is called th_var_low.  Again, the values of th_var at all
+    ! interior altitudes, z_low <= z_1 < z <= z_2 <= z_up, behave linearly
+    ! between th_var_low and th_var_up, such that:
     !
-    ! theta(z) = [ ( theta_up - theta_low ) / ( z_up - z_low ) ] * ( z - z_low)
-    !            + theta_low
-    !          = [ d(theta)/dz ] * ( z - z_low ) + theta_low
-    !          = C_a*z + C_b;
+    ! th_var(z)
+    ! = [ ( th_var_up - th_var_low ) / ( z_up - z_low ) ] * ( z - z_low)
+    !   + th_var_low
+    ! = [ d(th_var)/dz ] * ( z - z_low ) + th_var_low
+    ! = C_a*z + C_b;
     !
     ! where:
     !
-    ! C_a = ( theta_up - theta_low ) / ( z_up - z_low )
-    !     = d(theta)/dz; and
-    ! C_b = theta_low - [ ( theta_up - theta_low ) / ( z_up - z_low ) ] * z_low
-    !     = theta_low - [ d(theta)/dz ] * z_low.
+    ! C_a 
+    ! = ( th_var_up - th_var_low ) / ( z_up - z_low )
+    ! = d(th_var)/dz;
+    !
+    ! and:
+    !
+    ! C_b
+    ! = th_var_low - [ ( th_var_up - th_var_low ) / ( z_up - z_low ) ] * z_low
+    ! = th_var_low - [ d(th_var)/dz ] * z_low.
     !
     ! The integral becomes:
     !
@@ -356,64 +354,65 @@ module hydrostatic_mod
     !
     ! exner_2 
     ! = exner_1 
-    !   - ( grav / Cp ) * ( 1 / {d(theta)/dz} )
-    !     * ln [   ( {d(theta)/dz}*z_2 + theta_low - {d(theta)/dz}*z_low )
-    !            / ( {d(theta)/dz}*z_1 + theta_low - {d(theta)/dz}*z_low ) ].
+    !   - ( grav / Cp ) * ( 1 / {d(th_var)/dz} )
+    !     * ln [   ( {d(th_var)/dz}*z_2 + th_var_low - {d(th_var)/dz}*z_low )
+    !            / ( {d(th_var)/dz}*z_1 + th_var_low - {d(th_var)/dz}*z_low ) ].
     !
     ! This equation is used to calculate exner_2 using exner_1, which is at the
-    ! same level as z_1.  Furthermore, theta_low and z_low are taken from the
+    ! same level as z_1.  Furthermore, th_var_low and z_low are taken from the
     ! same level as z_1 and exner_1.  Thus, z_1 = z_low.  Therefore:
     !
     ! exner_2 
-    ! = exner_1 
-    !   - ( grav / Cp ) * ( 1 / {d(theta)/dz} )
-    !     * ln [ ( theta_low + {d(theta)/dz} * ( z_2 - z_low ) ) / theta_low ].
+    ! = exner_low
+    !   - ( grav / Cp ) * ( 1 / {d(th_var)/dz} )
+    !     * ln [ ( th_var_low + {d(th_var)/dz}*(z_2-z_low) ) / th_var_low ].
     !
-    ! Considering either a thermodynamic or sounding level k as the low level
-    ! in the integration, and that theta varies linearly between level k and
-    ! level k+1:
+    ! Considering either a thermodynamic or sounding level k-1 as the low level
+    ! in the integration, and that th_var varies linearly between level k-1 and
+    ! level k:
     !
     ! exner_2
-    ! = exner(k)
-    !   - ( grav / Cp ) * ( 1 / {d(theta)/dz} )
-    !     * ln [ ( theta(k) + {d(theta)/dz} * ( z_2 - z(k) ) ) / theta(k) ];
+    ! = exner(k-1)
+    !   - ( grav / Cp ) * ( 1 / {d(th_var)/dz} )
+    !     * ln [ ( th_var(k-1) + {d(th_var)/dz}*(z_2-z(k-1)) ) / th_var(k-1) ];
     !
     ! where:
     !
-    ! d(theta)/dz = ( theta(k+1) - theta(k) ) / ( z(k+1) - z(k) );
+    ! d(th_var)/dz = ( th_var(k) - th_var(k-1) ) / ( z(k) - z(k-1) );
     !
-    ! and where z(k) < z_2 <= z(k+1); and {d(theta)/dz} /= 0.  If the value of
-    ! {d(theta)/dz} is 0, then theta is considered to be a constant over the
+    ! and where z(k-1) < z_2 <= z(k); and {d(th_var)/dz} /= 0.  If the value of
+    ! {d(th_var)/dz} is 0, then th_var is considered to be a constant over the
     ! depth of the level.  The appropriate equation is found in pure function
-    ! calc_exner_const_theta.
+    ! calc_exner_const_th_var.
 
     ! References:
     !-------------------------------------------------------------------
 
     use constants, only: &
-        grav,  & ! Gravitational acceleration                  [m/s^2]
-        Cp       ! Specific heat of dry air at const. pressure [J/(kg*K)]
+        grav,  & ! Gravitational acceleration                   [m/s^2]
+        Cp       ! Specific heat of dry air at const. pressure  [J/(kg*K)]
 
     implicit none
 
     ! Input Variables
     real, intent(in) :: &
-      theta_k,   & ! Value of theta at level k                     [K]
-      dtheta_dz, & ! Constant d(theta)/dz between levels k and k+1 [K/m]
-      z_k,       & ! Altitude at level k                           [m]
-      z_2,       & ! Altitude at the top of the layer              [m]
-      exner_k      ! Exner at level k                              [-]
+      th_var_km1, & ! Value of th_var at level k-1                    [K]
+      dth_var_dz, & ! Constant d(th_var)/dz between levels k-1 and k  [K/m]
+      z_km1,      & ! Altitude at level k-1                           [m]
+      z_2,        & ! Altitude at the top of the layer                [m]
+      exner_km1     ! Exner at level k-1                              [-]
 
     ! Return Variable
     real :: exner_2 ! Exner at the top of the layer                [-]
 
     ! Calculate exner at the top of the layer.
-    exner_2 = exner_k &
-              - ( grav / Cp ) * ( 1.0 / dtheta_dz ) &
-                * log(  ( theta_k + dtheta_dz * ( z_2 - z_k ) )  /  theta_k  )
+    exner_2  &
+    = exner_km1 &
+      - ( grav / Cp ) * ( 1.0 / dth_var_dz )  &
+        * log(  ( th_var_km1 + dth_var_dz * ( z_2 - z_km1 ) )  /  th_var_km1  )
 
     return
-  end function calc_exner_linear_theta
+  end function calc_exner_linear_th_var
 
 !===============================================================================
 
