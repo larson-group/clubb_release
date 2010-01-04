@@ -319,3 +319,5 @@ else
 fi
 
 cd $restoreDir
+
+exit $RESULT

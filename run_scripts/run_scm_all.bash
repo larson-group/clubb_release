@@ -99,16 +99,27 @@ do
         echo -e "$RESULT"
     fi
 
-    RESULT=`echo "$RESULT" | grep 'normally'`
+    RESULT_STATUS=`echo "$RESULT" | grep 'normally'`
 
-    if [ -z "$RESULT" ]; then
+    if [ -z "$RESULT_STATUS" ]; then
         EXIT_CODES[$x]=-1
+       
+        # If there was an error, and this is not running in nightly mode,
+        # it will not be displayed. So, display the error here.
+        if [ $NIGHTLY != true ] ; then
+            echo -e "$RESULT"
+        fi
     fi
 done
+
+EXIT_STATUS=0
 
 # Print the results and copy files for a nightly run
 for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 	if [ "${EXIT_CODES[$x]}" != 0 ]; then
 		echo "${RUN_CASE[$x]}"' failure'
+        EXIT_STATUS=1
  	fi
 done
+
+exit $EXIT_STATUS
