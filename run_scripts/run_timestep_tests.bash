@@ -20,8 +20,6 @@ restoreDir=`pwd`
 # Change directories to the one the script is located in
 cd $scriptPath
 
-EXIT_STATUS=0
-
 TEST_TIMESTEP[0]=300.0   # 5 minute time step.
 TEST_TIMESTEP[1]=600.0   # 10 minute time step.
 TEST_TIMESTEP[2]=900.0   # 15 minute time step.
@@ -33,9 +31,6 @@ TEST_TIMESTEP[6]=3600.0  # 60 minute (one hour) time step.
 for (( x=0; x < "${#TEST_TIMESTEP[@]}"; x++ )); do
     echo -e "\nRunning all cases at a(n) "${TEST_TIMESTEP[$x]}" second time step."
    ./run_scm_all.bash --timestep_test ${TEST_TIMESTEP[$x]}
-
-   EXIT_STATUS=$?
 done
 
 cd $restoreDir
-exit $EXIT_STATUS
