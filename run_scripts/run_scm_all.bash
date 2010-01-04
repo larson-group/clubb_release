@@ -106,9 +106,9 @@ do
        
         # If there was an error, and this is not running in nightly mode,
         # it will not be displayed. So, display the error here.
-        if [ $NIGHTLY != true ] ; then
-            echo -e "$RESULT"
-        fi
+#        if [ $NIGHTLY != true ] ; then
+#            echo -e "$RESULT"
+#        fi
     fi
 done
 
