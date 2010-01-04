@@ -22,7 +22,9 @@ module output_2D_samples_mod
 ! References:
 !   None
 !-------------------------------------------------------------------------------
+#ifdef NETCDF
     use output_netcdf, only: open_netcdf ! Procedure(s)
+#endif
 
     use stats_precision, only: time_precision ! Constant(s)
 
@@ -67,6 +69,7 @@ module output_2D_samples_mod
     integer :: i
 
     ! ---- Begin Code ----
+
     fname = trim( fname_prefix )//"_LH_sample_points_2D"
 
     ! We need to set this like a latitude to trick GrADS and allow of viewing of
@@ -90,9 +93,13 @@ module output_2D_samples_mod
       sample_file%var(i)%units = trim( variable_units(i) )
     end forall
 
+#ifdef NETCDF
     call open_netcdf( nlat, nlon, fdir, fname, 1, nnzp, zgrid, &
                       day, month, year, rlat, rlon, &
                       time, dtwrite, n_2D_variables, sample_file )
+#else
+    stop "This version of CLUBB was not compiled for netCDF output"
+#endif
 
     return
   end subroutine open_2D_samples_file
@@ -105,8 +112,9 @@ module output_2D_samples_mod
 ! References:
 !   None
 !-------------------------------------------------------------------------------
-
+#ifdef NETCDF
     use output_netcdf, only: write_netcdf ! Procedure(s)
+#endif
 
     use stats_precision, only: stat_rknd ! Constant(s)
 
@@ -126,6 +134,8 @@ module output_2D_samples_mod
       LH_thl   ! Sample of liquid potential temperature         [K]
 
     integer :: i, j
+
+    ! ---- Begin Code ----
 
     do j = 1, d_variables+2
       allocate( sample_file%var(j)%ptr(n_micro_calls,1,nnzp) )
@@ -148,7 +158,11 @@ module output_2D_samples_mod
       sample_file%var(j)%ptr(i,1,1:nnzp) = LH_thl(1:nnzp,i)
     end do
 
+#ifdef NETCDF
     call write_netcdf( sample_file )
+#else
+    stop "This version of CLUBB was not compiled for netCDF output"
+#endif
 
     do j = 1, d_variables+2
       deallocate( sample_file%var(j)%ptr )
@@ -164,11 +178,17 @@ module output_2D_samples_mod
 ! References:
 !   None
 !-------------------------------------------------------------------------------
+#ifdef NETCDF
     use output_netcdf, only: close_netcdf ! Procedure
+#endif
 
     implicit none
 
+#ifdef NETCDF
     call close_netcdf( sample_file )
+#else
+    stop "This version of CLUBB was not compiled for netCDF output"
+#endif
 
     deallocate( sample_file%rlat, sample_file%rlon )
     deallocate( sample_file%var)

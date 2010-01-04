@@ -2076,7 +2076,7 @@ module inputfields
 #ifdef NETCDF
       call open_netcdf_read( 'thlm', trim( filename ), fread_var, l_error )
 #else
-      write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
+      write(0,*) "This version of CLUBB was not compiled with netCDF support"
 #endif
     endif
 
