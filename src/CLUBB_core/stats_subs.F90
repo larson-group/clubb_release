@@ -1228,11 +1228,13 @@ module stats_subs
         iLscale_up, & 
         iLscale_down, & 
         itau_zt, & 
-        iKh_zt, & 
+        iKh_zt
+
+    use stats_variables, only: & 
         iwp2thvp, & 
         iwp2rcp, & 
         iwprtpthlp, & 
-        isigma_sqd_w_zt,          & 
+        isigma_sqd_w_zt, & 
         irho, & 
         irsat, & 
         iAKm, & 
