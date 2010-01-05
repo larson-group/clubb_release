@@ -28,7 +28,7 @@ NETCDF="/usr/local/netcdf-open64"
 
 # == LAPACK libraries ==
 #LAPACK="-llapack -lblas"
-ACML_PATH="/opt/open64/lib/acml4.3.0/open64_64/lib"
+ACML_PATH="/opt/acml4.3.0/open64_64/lib"
 LAPACK="-L$ACML_PATH -Wl,-rpath $ACML_PATH -lacml -lacml_mv"
 
 # == Linking Flags ==
