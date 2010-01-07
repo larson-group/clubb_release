@@ -955,7 +955,8 @@ module clubb_core
                                 rho_ds_zm, invrs_rho_ds_zt,               & ! Intent(in)
                                 fcor, l_implemented,                      & ! Intent(in)
                                 um, vm, edsclrm,                          & ! Intent(inout)
-                                upwp, vpwp, wpedsclrp, err_code )           ! Intent(out)	
+                                upwp, vpwp, wpedsclrp,                    & ! Intent(inout)	
+                                err_code ) ! Intent(out)
 
     ! Wrapped LAPACK procedures may report errors, and if so, exit
     ! gracefully.

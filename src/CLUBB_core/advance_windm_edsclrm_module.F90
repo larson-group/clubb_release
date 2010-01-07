@@ -133,7 +133,7 @@ module advance_windm_edsclrm_module
       vpwp           ! v'w' (momentum levels)                        [m^2/s^2]
 
     ! Output Variable for eddy-scalars
-    real, dimension(gr%nnzp,edsclr_dim), intent(out) ::  &
+    real, dimension(gr%nnzp,edsclr_dim), intent(inout) ::  &
       wpedsclrp      ! w'edsclr' (momentum levels)                   [units vary]
 
     integer, intent(out) :: &
