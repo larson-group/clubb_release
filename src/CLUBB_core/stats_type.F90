@@ -134,11 +134,15 @@ module stats_type
     real, dimension(grid_kind%kk), intent(in) :: & 
       value ! Value of field being added to the statistic    [Units Vary]  
 
+    integer :: k
+
     if ( var_index > 0 ) then
-       grid_kind%x(1,1,:,var_index) =  & 
-            grid_kind%x(1,1,:,var_index) + value
-       grid_kind%n(1,1,:,var_index) =  & 
-            grid_kind%n(1,1,:,var_index) + 1
+       do k = 1, grid_kind%kk
+         grid_kind%x(1,1,k,var_index) =  & 
+              grid_kind%x(1,1,k,var_index) + value(k)
+         grid_kind%n(1,1,k,var_index) =  & 
+              grid_kind%n(1,1,k,var_index) + 1
+       end do
     endif
 
   end subroutine stat_update_var
