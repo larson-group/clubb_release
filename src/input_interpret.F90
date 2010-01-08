@@ -24,24 +24,37 @@ module input_interpret
     !
     !-------------------------------------------------------------------------------
 
-    use input_reader, only: read_x_profile, & ! Prodedure(s)
-      one_dim_read_var ! Type
+    use input_reader, only: &
+        read_x_profile, & ! Prodedure(s)
+        one_dim_read_var  ! Type
 
-    use constants, only: kappa, p0, Cp, Lv, zero_threshold, ep2, ep1 ! Variable(s)
+    use constants, only: &
+        kappa, & ! Constant(s)
+        p0, &
+        Cp, &
+        Lv, &
+        zero_threshold, &
+        ep2, &
+        ep1, &
+        fstderr
 
-    use saturation, only: sat_mixrat_liq, sat_rcm ! Procedure(s)
+    use saturation, only: &
+        sat_mixrat_liq, & ! Procedure(s)
+        sat_rcm
 
-    use parameters_model, only: T0 ! Variable(s)
+    use parameters_model, only: &
+        T0 ! Variable(s)
 
-    use hydrostatic_mod, only: inverse_hydrostatic ! Procedure(s)
+    use hydrostatic_mod, only: &
+        inverse_hydrostatic ! Procedure(s)
 
     use input_names, only: &
-      z_name, &
-      pressure_name, &
-      rt_name, &
-      temperature_name, &
-      thetal_name, &
-      theta_name
+        z_name, & ! Variable(s)
+        pressure_name, &
+        rt_name, &
+        temperature_name, &
+        thetal_name, &
+        theta_name
 
     implicit none
 
@@ -75,71 +88,131 @@ module input_interpret
 
     character(len=40) :: theta_type
 
-    if( count( (/ any(retVars%name == z_name), any(retVars%name == pressure_name) /)) <= 1) then
-      if( any(retVars%name == z_name))then
+
+    if( count( (/ any(retVars%name == z_name),  &
+                  any(retVars%name == pressure_name) /) ) <= 1) then
+
+      if( any(retVars%name == z_name) ) then
+
+        ! The input sounding is given in terms of altitude.
         alt_type = z_name
+
+        ! Obtain the value of altitude at each sounding level.
         z = read_x_profile( nvar, nsize, alt_type, retVars )
+
+        ! Set the pressure at the sounding levels to the "fill value".
         p_in_Pa = -999.9
 
-      elseif( any(retVars%name == pressure_name))then
+
+      elseif( any(retVars%name == pressure_name) ) then
+
+        ! The input sounding is given in terms of pressure.
         alt_type = pressure_name
 
+        ! Obtain the value of total pressure at each pressure sounding level.
         p_in_Pa = read_x_profile( nvar, nsize, alt_type, retVars )
 
         nlevels = size(retVars(1)%values)
 
+        ! Obtain the value of theta_type (theta, theta_l, or temperature) at
+        ! each pressure sounding level.
         call read_theta_profile(nvar, nsize, retVars, theta_type, theta )
 
+        ! Obtain the value of total water mixing ratio at each pressure sounding
+        ! level. 
         rtm = read_x_profile(nvar, nsize, rt_name, retVars)
 
+        ! Calculate exner from pressure.
         do k = 1, nlevels
-          exner(k) = (p_in_Pa(k)/p0) ** kappa  ! zt
-        end do
-
-        if( trim( theta_type ) == temperature_name ) then
-          theta = theta / exner
-          theta_type = theta_name
-        end if
-
-        do k = 1,nlevels
-          rcm(k) = &
-          max( rtm(k) - sat_mixrat_liq( p_in_Pa(k), theta(k) * exner(k) ), &
-            zero_threshold )
+          exner(k) = ( p_in_Pa(k) / p0 )**kappa
         enddo
 
-        ! Compute initial theta-l
 
         select case ( trim( theta_type ) )
-        case ( thetal_name )
-          !case ( "dycoms2_rf01", "astex_a209", "nov11_altocu", &
-          !      "clex9_nov02", "clex9_oct14", "dycoms2_rf02" )
-          ! thlm profile that is initially saturated at points.
-          ! thlm profile remains the same as in the input sounding.
-          ! use iterative method to find initial rcm.
-          do k =1, nlevels, 1
-            rcm(k) = sat_rcm( theta(k), rtm(k), p_in_Pa(k), exner(k) )
-          end do
 
-        case default ! theta_name
-          ! Initial profile is non-saturated thlm or any type of theta.
-          theta(1:nlevels) = theta(1:nlevels) &
-                           - Lv/(Cp*exner(1:nlevels)) * rcm(1:nlevels)
+        case ( temperature_name )
+
+           ! The variable "theta" actually contains temperature (in Kelvin) at
+           ! this point.
+
+           ! Determine initial cloud water mixing ratio at sounding levels
+           ! based on temperature and rtm.  Again, "theta(k)" is actually
+           ! "temperature(k)" at this point in the code.
+           do k = 1, nlevels
+              rcm(k) = &
+                max( rtm(k) - sat_mixrat_liq( p_in_Pa(k), theta(k) ), &
+                     zero_threshold )
+           enddo
+
+           ! Convert temperature to potential temperature, theta.
+           theta = theta / exner
+
+           ! Calculate theta_l from theta and cloud water mixing ratio, such
+           ! that:  theta_l = theta - [Lv/(Cp*exner)]*rcm.
+           theta(1:nlevels) = theta(1:nlevels) &
+                              - Lv/(Cp*exner(1:nlevels)) * rcm(1:nlevels)
+
+
+        case ( theta_name )
+
+           ! This variable "theta" does indeed contain potential temperature.
+
+           ! Determine initial cloud water mixing ratio at sounding levels
+           ! based on potential temperature, exner, and rtm.
+           do k = 1,nlevels
+              rcm(k) = &
+                max( rtm(k) - sat_mixrat_liq( p_in_Pa(k), theta(k)*exner(k) ), &
+                     zero_threshold )
+           enddo
+
+           ! Calculate theta_l from theta and cloud water mixing ratio, such
+           ! that:  theta_l = theta - [Lv/(Cp*exner)]*rcm.
+           theta(1:nlevels) = theta(1:nlevels) &
+                              - Lv/(Cp*exner(1:nlevels)) * rcm(1:nlevels)
+
+
+        case ( thetal_name )
+
+           ! The variable "theta" actually contains liquid water potential
+           ! temperature, theta_l, at this point.
+
+           ! Determine initial cloud water mixing ratio.  If the profile is
+           ! unsaturated, then theta = theta_l.  If the profile is saturated at
+           ! any level, then cloud water mixing ratio must be determined using
+           ! an iterative method involving theta_l, total water mixing ratio,
+           ! pressure, and exner.
+           do k =1, nlevels, 1
+              rcm(k) = sat_rcm( theta(k), rtm(k), p_in_Pa(k), exner(k) )
+           enddo
+
+        case default
+
+           write(fstderr,*) "Invalid theta_type: ", theta_type
+           stop
 
         end select
 
-        ! Now, compute initial thetav
+        ! Now, the variable "theta" contains liquid water potential temperature,
+        ! theta_l.  Compute initial theta_v based on theta_l, total water mixing
+        ! ratio, exner, and cloud water mixing ratio.
         do k = 1, nlevels, 1
-          thvm(k) = theta(k) + ep1 * T0 * rtm(k)  & 
-               + ( Lv/(Cp*exner(k)) - ep2 * T0 ) * rcm(k)
-        end do
+           thvm(k) = theta(k) + ep1 * T0 * rtm(k)  & 
+                              + ( Lv/(Cp*exner(k)) - ep2 * T0 ) * rcm(k)
+        enddo
 
+        ! Find the altitudes, z, of the pressure sounding levels.
         call inverse_hydrostatic ( psfc, zm_init, nlevels, thvm, exner, &
                                    z )
-      else
-        stop "Could not read theta compatable variable"
-      endif
 
-    end if
+
+      else
+
+         stop "Could not read sounding vertical-coordinate variable"
+
+
+      endif ! z_ name or pressure_name
+
+    endif
 
   end subroutine read_z_profile
   !-------------------------------------------------------------------------------------------------

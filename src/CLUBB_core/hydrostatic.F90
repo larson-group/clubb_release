@@ -178,7 +178,7 @@ module hydrostatic_mod
   end subroutine hydrostatic
 
 !===============================================================================
-  subroutine inverse_hydrostatic( psfc, zm_init, nVar, thvm, exner, &
+  subroutine inverse_hydrostatic( psfc, zm_init, nlevels, thvm, exner, &
                                   z )
 
     ! Description:
@@ -204,23 +204,23 @@ module hydrostatic_mod
       zm_init    ! Altitude at the surface      [m]
 
     integer, intent(in) ::  &
-      nVar     ! Number of points in the profile [-]
+      nlevels  ! Number of levels in the sounding [-]
 
-    real, intent(in), dimension(nVar) ::  & 
+    real, intent(in), dimension(nlevels) ::  & 
       thvm,  & ! Virtual potential temperature   [K]
       exner    ! Exner function                  [-]
 
     ! Output Variables
-    real, intent(out), dimension(nVar) ::  & 
+    real, intent(out), dimension(nlevels) ::  & 
       z        ! Height                    [m]
 
     !  Local Variables
     integer :: k
 
-    real, dimension(nVar) ::  &
+    real, dimension(nlevels) ::  &
       ref_z_snd  ! Altitude minus altitude of the lowest sounding level  [m]
 
-    real, dimension(nVar) ::  &
+    real, dimension(nlevels) ::  &
       exner_reverse_array  ! Array of exner snd. values in reverse order [-]
 
     real ::  &
@@ -236,6 +236,9 @@ module hydrostatic_mod
       high_idx
 
 
+    ! Variable ref_z_sfc is initialized to 0.0 to avoid a compiler warning.
+    ref_z_sfc = 0.0
+
     ! The variable ref_z_snd is the altitude of each sounding level compared to
     ! the altitude of the lowest sounding level.  Thus, the value of ref_z_snd
     ! at sounding level 1 is 0.  The lowest sounding level may or may not be
@@ -243,7 +246,7 @@ module hydrostatic_mod
     ! the actual altitude above ground.
     ref_z_snd(1) = 0.0
 
-    do k = 2, nVar
+    do k = 2, nlevels
 
        ! The value of thvm is given at two successive sounding levels.  For
        ! purposes of achieving a quality estimate of altitude at each pressure
@@ -275,7 +278,7 @@ module hydrostatic_mod
     ! Find the value of exner_sfc compared to the values of exner in the exner
     ! sounding profile.
 
-    if ( exner_sfc < exner(nVar) ) then
+    if ( exner_sfc < exner(nlevels) ) then
 
        ! Since the values of exner decrease monotonically with height (and thus
        ! with sounding level), the value of exner_sfc is less than all the
@@ -306,7 +309,7 @@ module hydrostatic_mod
        = calc_z_linear_th_var( thvm(1), dthvm_dexner, &
                                exner(1), exner_sfc, ref_z_snd(1) )
 
-    else  ! exner(nVar) < exner_sfc < exner(1)
+    else  ! exner(nlevels) < exner_sfc < exner(1)
 
        ! Since the values of exner decrease monotonically with height (and thus
        ! with sounding level), the value of exner_sfc is between two values of
@@ -321,23 +324,23 @@ module hydrostatic_mod
        ! value to greatest value.  Since exner decreases with altitude (and
        ! vertical level), the array that is sent to function binary_search must
        ! be the exact reverse of exner.
-       ! Thus, exner(1) becomes exner_reverse_array(nVar), exner(nVar) becomes
-       ! exner_reverse_array(1), etc.
-       do k = 1, nVar, 1
-          exner_reverse_array(k) = exner(nVar-k+1)
+       ! Thus, exner(1) becomes exner_reverse_array(nlevels), exner(nlevels)
+       ! becomes exner_reverse_array(1), etc.
+       do k = 1, nlevels, 1
+          exner_reverse_array(k) = exner(nlevels-k+1)
        enddo
        ! The output from the binary search yields the first value in the
        ! exner_reverse_array that is greater than or equal to exner_sfc.  Thus,
        ! in regards to the regular exner array, this is the reverse index of
        ! the lower sounding level for exner_sfc.  For example, if exner_sfc
        ! is found between exner(1) and exner(2), the binary search for exner_sfc
-       ! in regards to exner_reverse_index will return a value of nVar.  Once,
-       ! the actual lower level index is calculated, the result will be 1.
-       rev_low_idx = binary_search( nVar, exner_reverse_array, exner_sfc )
+       ! in regards to exner_reverse_index will return a value of nlevels.
+       ! Once the actual lower level index is calculated, the result will be 1.
+       rev_low_idx = binary_search( nlevels, exner_reverse_array, exner_sfc )
 
        ! Find the lower level index for the regular exner profile from the
        ! lower level index for the reverse exner profile.
-       low_idx = nVar - rev_low_idx + 1
+       low_idx = nlevels - rev_low_idx + 1
 
        ! Find the index of the upper level.
        high_idx = low_idx + 1
@@ -359,7 +362,7 @@ module hydrostatic_mod
 
     ! Calculate the sounding altitude profile based
     ! on z_snd_bottom and ref_z_snd.
-    do k = 1, nVar, 1
+    do k = 1, nlevels, 1
        z(k) = z_snd_bottom + ref_z_snd(k)
     enddo
 
