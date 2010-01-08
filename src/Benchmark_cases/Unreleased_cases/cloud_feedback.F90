@@ -15,11 +15,12 @@ public :: cloud_feedback_sfclyr
 contains
 
 !----------------------------------------------------------------------
-subroutine cloud_feedback_sfclyr( runtype, sfctype, & 
-                                  thlm_sfc, rtm_sfc, um_sfc, vm_sfc,  &
-                                  exner_sfc, psfc, Tsfc, & 
-                                  upwp_sfc, vpwp_sfc, & 
-                                  wpthlp_sfc, wprtp_sfc, ustar, & 
+subroutine cloud_feedback_sfclyr( runtype, sfctype, &
+                                  thlm_sfc, rtm_sfc, &
+                                  um_sfc, vm_sfc, &
+                                  psfc, Tsfc, &
+                                  upwp_sfc, vpwp_sfc, &
+                                  wpthlp_sfc, wprtp_sfc, ustar, &
                                   wpsclrp_sfc, wpedsclrp_sfc )
 
 !       Description:
@@ -28,7 +29,7 @@ subroutine cloud_feedback_sfclyr( runtype, sfctype, &
 !       References:
 !----------------------------------------------------------------------
 
-use constants, only: pi, grav, Lv, Cp ! Variable(s)
+use constants, only: pi, grav, Lv, Cp, p0, kappa ! Variable(s)
 
 use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
@@ -57,8 +58,7 @@ real, intent(in) ::  &
   thlm_sfc,  & ! thlm at (2)         [m/s]
   rtm_sfc,   & ! rtm at (2)          [kg/kg]
   Tsfc,      & ! Temperature         [K]
-  psfc,      &
-  exner_sfc, & ! Exner function      [-]
+  psfc,      & ! Surface pressure    [Pa]
   um_sfc,    & ! um at (2)           [m/s]
   vm_sfc       ! vm at (2)           [m/s]
 
@@ -82,8 +82,15 @@ real, parameter :: &
   C_10    = 0.0013      ! Drag coefficient, defined by ATEX specification
 
 ! Internal variables
+real :: &
+  exner_sfc ! Value of exner at the surface [-]
+
 real :: & 
   ubar 
+
+
+! Calculate exner_sfc based on psfc.
+exner_sfc = ( psfc / p0 )**kappa
 
 ubar = compute_ubar( um_sfc, vm_sfc )
 
