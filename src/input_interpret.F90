@@ -92,9 +92,7 @@ module input_interpret
 
         rtm = read_x_profile(nvar, nsize, rt_name, retVars)
 
-        exner(1) = ( psfc/p0 )**kappa
-
-        do k=2, nlevels
+        do k = 1, nlevels
           exner(k) = (p_in_Pa(k)/p0) ** kappa  ! zt
         end do
 
@@ -135,8 +133,8 @@ module input_interpret
                + ( Lv/(Cp*exner(k)) - ep2 * T0 ) * rcm(k)
         end do
 
-        call inverse_hydrostatic ( thvm, zm_init, exner, nlevels, &
-                                     z )
+        call inverse_hydrostatic ( psfc, zm_init, nlevels, thvm, exner, &
+                                   z )
       else
         stop "Could not read theta compatable variable"
       endif
