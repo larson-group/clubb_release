@@ -4,7 +4,7 @@
 ! If vertical velocity is time dependent, insert missing values throughout column.
 ! In all cases, missing values are denoted by -999.9
 Press[Pa]	T[K]		rt[kg\kg]	u[m\s]		v[m\s]		ug[m\s]		vg[m\s]		omega[Pa\s]
-100.0E3		289.7E0		934.7E-5	239.4E-2	-921.5E-2	239.4E-2	-921.5E-2	000.0E-2
+101864.6	289.7E0		934.7E-5	239.4E-2	-921.5E-2	239.4E-2	-921.5E-2	000.0E-2
 989.9E2		289.8E0		987.4E-5	244.3E-2	-976.4E-2	244.3E-2	-976.4E-2	619.8E-5
 948.1E2		290.3E0		320.4E-5	140.8E-2	-108.3E-1	140.8E-2	-108.3E-1	314.1E-4
 884.3E2		291.1E0		360.4E-5	113.3E-2	-747.9E-2	113.3E-2	-747.9E-2	652.2E-4
