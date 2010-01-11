@@ -24,8 +24,8 @@ module sounding
   subroutine read_sounding( iunit, runtype, psfc, zm_init,& 
                             thlm, theta_type, rtm, um, vm, ugm, vgm, &
                             alt_type, press, subs_type, wm, &
-                            sclrm, edsclrm, sounding_retVars, &
-                            sclr_sounding_retVars )
+                            rtm_sfc, thlm_sfc, sclrm, edsclrm, &
+                            sounding_retVars, sclr_sounding_retVars )
 
     !       Description:
     !       Subroutine to initialize model variables from a namelist file
@@ -45,7 +45,8 @@ module sounding
         edsclr_dim
 
     use interpolation, only:  & 
-        lin_int ! Procedure(s)
+        lin_int, & ! Procedure(s)
+        binary_search
 
     use array_index, only: & 
         iisclr_rt, &  ! Variable
@@ -84,21 +85,24 @@ module sounding
 
     ! Output variables
     real, intent(out), dimension(gr%nnzp) ::  & 
-    thlm,  & ! Liquid potential temperature    [K]
-    rtm,   & ! Total water mixing ratio        [kg/kg]
-    um,    & ! u wind                          [m/s]
-    vm,    & ! v wind                          [m/s]
-    ugm,   & ! u geostrophic wind              [m/s]
-    vgm,   & ! v geostrophic wind              [m/s]
-    press, & ! Pressure                        [Pa]
-    wm       ! Subsidence                      [m/s or Pa/s]
+      thlm,  & ! Liquid water potential temperature    [K]
+      rtm,   & ! Total water mixing ratio              [kg/kg]
+      um,    & ! u wind component                      [m/s]
+      vm,    & ! v wind component                      [m/s]
+      ugm,   & ! u geostrophic wind component          [m/s]
+      vgm,   & ! v geostrophic wind component          [m/s]
+      press, & ! Pressure                              [Pa]
+      wm       ! Subsidence                            [m/s or Pa/s]
+
+    real, intent(out) ::  &
+      rtm_sfc,  & ! Initial surface rtm                [kg/kg]
+      thlm_sfc    ! Initial surface thlm               [K]
 
     character(len=*), intent(out) :: &
       theta_type, &     ! Type of temperature sounding
       alt_type, &       ! Type of independent coordinate
       subs_type         ! Type of subsidence
 
-    ! Output variables
     real, intent(out), dimension(gr%nnzp, sclr_dim) ::  & 
       sclrm   ! Passive scalar output      [units vary]
 
@@ -121,22 +125,23 @@ module sounding
       l_sclr_sounding_exists   = .false., &
       l_edsclr_sounding_exists = .false.
 
-
     real, dimension(nmaxsnd) :: & 
-    z,      & ! Altitude                               [m]
-    theta,  & ! Liquid potential temperature sounding  [K]
-    rt,     & ! Total water mixing ratio sounding      [kg/kg]
-    u,      & ! u wind sounding                        [m/s] 
-    v,      & ! v wind sounding                        [m/s]
-    ug,     & ! u geostrophic wind sounding            [m/s]
-    vg,     & ! v geostrophic wind sounding            [m/s]
-    p_in_Pa, &   ! Pressure                            [Pa]
-    subs      ! Subsidence                             [m/s or Pa/s]
+      z,       & ! Altitude                               [m]
+      theta,   & ! Liquid potential temperature sounding  [K]
+      rt,      & ! Total water mixing ratio sounding      [kg/kg]
+      u,       & ! u wind sounding                        [m/s] 
+      v,       & ! v wind sounding                        [m/s]
+      ug,      & ! u geostrophic wind sounding            [m/s]
+      vg,      & ! v geostrophic wind sounding            [m/s]
+      p_in_Pa, & ! Pressure                               [Pa]
+      subs       ! Vertical velocity sounding             [m/s or Pa/s]
 
     real, dimension(nmaxsnd, sclr_max) ::  & 
-    sclr, edsclr ! Passive scalar input sounding    [units vary]
+      sclr, edsclr ! Passive scalar input sounding    [units vary]
 
     integer :: i, j, k  ! Loop indices
+
+    integer :: idx  ! Result of binary search -- sounding level index.
 
 
     theta_type = theta_name ! Default value
@@ -362,6 +367,43 @@ module sounding
       end do ! do while ( z(k) < gr%zt(i) )
 
     end do   ! i=2, gr%nnzp
+
+
+    ! The sounding will be initialized to thermodynamic grid levels successfully
+    ! as long as the thermodynamic level 2 (at altitude gr%zt(2)) is at or above
+    ! the lowest sounding level (z(1)).  However, it is advantageous to know the
+    ! initial surface values of a few variables, as long as the sounding extends
+    ! to the surface, which is found at momentum level 1 (at altitude gr%zm(1)).
+    if ( gr%zm(1) < z(1) ) then
+
+       ! The surface (or model lower boundary) is below the lowest sounding
+       ! level.  Initialize the values of rtm_sfc and thlm_sfc to negative
+       ! values that will be overwritten later.
+       rtm_sfc  = -999.0
+       thlm_sfc = -999.0
+
+    else ! gr%zm(1) >= z(1)
+
+       ! The surface (or model lower boundary) is above the lowest sounding
+       ! level.  Use linear interpolation to find the values of rtm_sfc and
+       ! thlm_sfc.
+
+       ! Perform a binary search to find the two sounding levels that the
+       ! surface (gr%zm(1)) is found between.  The value returned (idx) is the
+       ! index of the closest value greater than or equal to gr%zm(1).
+       idx = binary_search( nlevels, z, gr%zm(1) )
+
+       ! The surface is found between sounding levels idx and idx-1.  Find the
+       ! value of rtm_sfc.
+       rtm_sfc = lin_int( gr%zm(1), z(idx), z(idx-1), rt(idx), rt(idx-1) )
+
+       ! The surface is found between sounding levels idx and idx-1.  Find the
+       ! value of thlm_sfc.
+       thlm_sfc &
+          = lin_int( gr%zm(1), z(idx), z(idx-1), theta(idx), theta(idx-1) )
+
+    endif
+
 
     return
   end subroutine read_sounding
