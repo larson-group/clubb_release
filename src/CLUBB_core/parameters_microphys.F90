@@ -23,11 +23,12 @@ module parameters_microphys
     l_specify_aerosol, & ! Specify aerosol (Morrison)
     l_subgrid_w,       & ! Use subgrid w (Morrison)
     l_arctic_nucl,     & ! Use MPACE observations (Morrison)
-    l_fix_pgam           ! Fix pgam (Morrison)
+    l_fix_pgam,        & ! Fix pgam (Morrison)
+    l_in_cloud_Nc_diff   ! Use in cloud values of Nc for diffusion
 
 !$omp threadprivate(l_cloud_sed, l_ice_micro, l_graupel, l_hail, &
 !$omp   l_seifert_beheng, l_predictnc, l_specify_aerosol, l_subgrid_w, &
-!$omp   l_arctic_nucl, l_fix_pgam)
+!$omp   l_arctic_nucl, l_fix_pgam, l_in_cloud_Nc_diff)
 
   logical, public :: & 
     l_cloud_edge_activation,    & ! Activate on cloud edges (Morrison)

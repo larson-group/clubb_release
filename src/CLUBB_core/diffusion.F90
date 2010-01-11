@@ -3,20 +3,20 @@
 module diffusion
 
   ! Description:
-  ! Module diffusion computes the eddy diffusion terms for all of the 
+  ! Module diffusion computes the eddy diffusion terms for all of the
   ! time-tendency (prognostic) equations in the CLUBB parameterization.  Most of
-  ! the eddy diffusion terms are solved for completely implicitly, and therefore 
-  ! become part of the left-hand side of their respective equations.  However, 
-  ! wp2 and wp3 have an option to use a Crank-Nicholson eddy diffusion scheme, 
+  ! the eddy diffusion terms are solved for completely implicitly, and therefore
+  ! become part of the left-hand side of their respective equations.  However,
+  ! wp2 and wp3 have an option to use a Crank-Nicholson eddy diffusion scheme,
   ! which has both implicit and explicit components.
   !
   ! Function diffusion_zt_lhs handles the eddy diffusion terms for the variables
-  ! located at thermodynamic grid levels.  These variables are:  wp3 and all 
+  ! located at thermodynamic grid levels.  These variables are:  wp3 and all
   ! hydrometeor species.  The variables um and vm also use the Crank-Nicholson
   ! eddy-diffusion scheme for their turbulent advection term.
   !
-  ! Function diffusion_zm_lhs handles the eddy diffusion terms for the variables 
-  ! located at momentum grid levels.  The variables are:  wprtp, wpthlp, wp2, 
+  ! Function diffusion_zm_lhs handles the eddy diffusion terms for the variables
+  ! located at momentum grid levels.  The variables are:  wprtp, wpthlp, wp2,
   ! rtp2, thlp2, rtpthlp, up2, vp2, wpsclrp, sclrprtp, sclrpthlp, and sclrp2.
 
   implicit none
@@ -24,9 +24,10 @@ module diffusion
   private ! Default Scope
 
   public :: diffusion_zt_lhs, & 
-            diffusion_zm_lhs
+    diffusion_cloud_frac_zt_lhs, & 
+    diffusion_zm_lhs
 
-contains
+  contains
 
   !=============================================================================
   pure function diffusion_zt_lhs( K_zm, K_zmm1, nu,  & 
@@ -61,7 +62,7 @@ contains
     !        the  sign is reversed and the leading "+" in front of the term
     !        is changed to a "-".
     !
-    ! Timestep index (t) stands for the index of the current timestep, while 
+    ! Timestep index (t) stands for the index of the current timestep, while
     ! timestep index (t+1) stands for the index of the next timestep, which is
     ! being advanced to in solving the d(var_zt)/dt equation.
     !
@@ -161,7 +162,7 @@ contains
     !    var_zt stays the same over the course of the timestep at the lower
     !    boundary, as well as at the upper boundary.
     !
-    !    In order to discretize the boundary conditions for equations requiring 
+    !    In order to discretize the boundary conditions for equations requiring
     !    fixed-point boundary conditions, either:
     !    a) in the parent subroutine or function (that calls this function),
     !       loop over all vertical levels from the second-lowest to the
@@ -203,7 +204,7 @@ contains
     !     ----------------------------------------------------------------------------------------->
     !k=1 | +dzt(k)*                    -dzt(k)*                                  0
     !    |   (K_zm(k)+nu)*dzm(k)         (K_zm(k)+nu)*dzm(k)
-    !    | 
+    !    |
     !k=2 | -dzt(k)*                    +dzt(k)*                        -dzt(k)*
     !    |   (K_zm(k-1)+nu)*dzm(k-1)     [ (K_zm(k)+nu)*dzm(k)           (K_zm(k)+nu)*dzm(k)
     !    |                                +(K_zm(k-1)+nu)*dzm(k-1) ]
@@ -225,8 +226,8 @@ contains
     !        shown.  However, for the purposes of the var_zt eddy diffusion
     !        term, those extra row and column values are all 0, and the
     !        conservation properties of the matrix aren't effected.
-    !              
-    ! If fixed-point boundary conditions are used, the matrix entries at 
+    !
+    ! If fixed-point boundary conditions are used, the matrix entries at
     ! level 1 (k=1) read:  1   0   0; which means that conservative differencing
     ! is not in play.  The total amount of var_zt over the entire vertical
     ! domain is not being conserved, as amounts of var_zt may be fluxed out
@@ -267,51 +268,156 @@ contains
 
     if ( level == 1 ) then
 
-       ! k = 1 (bottom level); lower boundary level.
-       ! Only relevant if zero-flux boundary conditions are used.
+      ! k = 1 (bottom level); lower boundary level.
+      ! Only relevant if zero-flux boundary conditions are used.
 
-       ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-       lhs(kp1_tdiag) = - dzt * (K_zm+nu) * dzm
+      ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+      lhs(kp1_tdiag) = - dzt * (K_zm+nu) * dzm
 
-       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-       lhs(k_tdiag)   = + dzt * (K_zm+nu) * dzm
+      ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+      lhs(k_tdiag)   = + dzt * (K_zm+nu) * dzm
 
-       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-       lhs(km1_tdiag) = 0.0
+      ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+      lhs(km1_tdiag) = 0.0
 
 
     elseif ( level > 1 .and. level < gr%nnzp ) then
 
-       ! Most of the interior model; normal conditions.
+      ! Most of the interior model; normal conditions.
 
-       ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-       lhs(kp1_tdiag) = - dzt * (K_zm+nu) * dzm
+      ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+      lhs(kp1_tdiag) = - dzt * (K_zm+nu) * dzm
 
-       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-       lhs(k_tdiag)   = + dzt * ( (K_zm+nu)*dzm + (K_zmm1+nu)*dzmm1 )
+      ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+      lhs(k_tdiag)   = + dzt * ( (K_zm+nu)*dzm + (K_zmm1+nu)*dzmm1 )
 
-       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-       lhs(km1_tdiag) = - dzt * (K_zmm1+nu) * dzmm1
-
+      ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+      lhs(km1_tdiag) = - dzt * (K_zmm1+nu) * dzmm1
 
     elseif ( level == gr%nnzp ) then
 
-       ! k = gr%nnzp (top level); upper boundary level.
-       ! Only relevant if zero-flux boundary conditions are used.
+      ! k = gr%nnzp (top level); upper boundary level.
+      ! Only relevant if zero-flux boundary conditions are used.
 
-       ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-       lhs(kp1_tdiag) = 0.0
+      ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+      lhs(kp1_tdiag) = 0.0
 
-       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-       lhs(k_tdiag)   = + dzt * (K_zmm1+nu) * dzmm1
+      ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+      lhs(k_tdiag)   = + dzt * (K_zmm1+nu) * dzmm1
 
-       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-       lhs(km1_tdiag) = - dzt * (K_zmm1+nu) * dzmm1
+      ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+      lhs(km1_tdiag) = - dzt * (K_zmm1+nu) * dzmm1
 
 
     endif
 
   end function diffusion_zt_lhs
+
+  !=============================================================================
+  pure function diffusion_cloud_frac_zt_lhs &
+                ( K_zm, K_zmm1, cloud_frac_zt, cloud_frac_ztm1, &
+                  cloud_frac_ztp1, cloud_frac_zm, &
+                  cloud_frac_zmp1, cloud_frac_zmm1, &
+                  nu, dzmm1, dzm, dzt, level ) &
+  result( lhs )
+  ! Description:
+  !   This function adds a weight of cloud fraction to the existing diffusion
+  !   function for number concentration variables (e.g. cloud droplet number
+  !   concentration).
+  ! References:
+  !   This algorithm uses equations derived from Guo, et al. 2009.
+  !-----------------------------------------------------------------------------
+
+   use grid_class, only: & 
+        gr ! Variable(s)
+
+    implicit none
+
+    ! Constant parameters
+    integer, parameter :: & 
+      kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
+      k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
+      km1_tdiag = 3       ! Thermodynamic subdiagonal index.
+
+    ! Input Variables
+    real, intent(in) ::  & 
+      K_zm,           & ! Coefficient of eddy diffusivity at momentum level (k)   [m^2/s]
+      K_zmm1,         & ! Coefficient of eddy diffusivity at momentum level (k-1) [m^2/s]
+      cloud_frac_zt,  & ! Cloud fraction at the thermodynamic level (k)           [-]
+      cloud_frac_ztm1,& ! Cloud fraction at the thermodynamic level (k-1)         [-]
+      cloud_frac_ztp1,& ! Cloud fraction at the thermodynamic level (k+1)         [-]
+      cloud_frac_zm,  & ! Cloud fraction at the momentum level (k)                [-]
+      cloud_frac_zmp1,& ! Cloud fraction at the momentum level (k+1)              [-]
+      cloud_frac_zmm1,& ! Cloud fraction at the momentum level (k-1)              [-]
+      nu,             & ! Background constant coefficient of eddy diffusivity     [m^2/s]
+      dzt,            & ! Inverse of grid spacing over thermodynamic level (k)    [1/m]
+      dzm,            & ! Inverse of grid spacing over momentum level (k)         [1/m]
+      dzmm1             ! Inverse of grid spacing over momentum level (k-1)       [1/m]
+
+    integer, intent(in) ::  & 
+      level     ! Thermodynamic level where calculation occurs.           [-]
+
+    ! Return Variable
+    real, dimension(3) :: lhs
+
+    if ( level == 1 ) then
+
+      ! k = 1 (bottom level); lower boundary level.
+      ! Only relevant if zero-flux boundary conditions are used.
+
+      ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+!     lhs(kp1_tdiag) = - dzt * (K_zm+nu) * ( cloud_frac_zm / cloud_frac_ztp1 ) * dzm
+      lhs(kp1_tdiag) = - dzt * (K_zm * ( cloud_frac_zm / cloud_frac_ztp1 ) + nu) * dzm
+
+      ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+!     lhs(k_tdiag)   = + dzt * (K_zm+nu) * ( cloud_frac_zm / cloud_frac_ztp1 ) * dzm
+      lhs(k_tdiag)   = + dzt * (K_zm * ( cloud_frac_zm / cloud_frac_ztp1 ) + nu) * dzm
+
+      ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+      lhs(km1_tdiag) = 0.0
+
+
+    else if ( level > 1 .and. level < gr%nnzp ) then
+
+      ! Most of the interior model; normal conditions.
+
+      ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+!     lhs(kp1_tdiag) = - dzt * (K_zm+nu) * ( cloud_frac_zmp1 / cloud_frac_ztp1 ) * dzm
+      lhs(kp1_tdiag) = - dzt * (K_zm * ( cloud_frac_zmp1 / cloud_frac_ztp1 ) + nu ) * dzm
+
+      ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+!     lhs(k_tdiag)   = + dzt * ( ((K_zm+nu)*cloud_frac_zm)*dzm &
+!                                  + ((K_zmm1+nu)*cloud_frac_zmm1)*dzmm1 ) &
+!                      / cloud_frac_zt
+      lhs(k_tdiag)   = + dzt * ( nu + &
+                                      ( ( (K_zm*cloud_frac_zm)*dzm + (K_zmm1*cloud_frac_zmm1)*dzmm1 ) &
+                                           / cloud_frac_zt &
+                                      ) &
+                               )
+
+      ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+!     lhs(km1_tdiag) = - dzt * (K_zmm1+nu) * ( cloud_frac_zmm1 / cloud_frac_ztm1 ) * dzmm1
+      lhs(km1_tdiag) = - dzt * (K_zmm1 * ( cloud_frac_zmm1 / cloud_frac_ztm1 ) + nu ) * dzmm1
+
+    else if ( level == gr%nnzp ) then
+
+      ! k = gr%nnzp (top level); upper boundary level.
+      ! Only relevant if zero-flux boundary conditions are used.
+
+      ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+      lhs(kp1_tdiag) = 0.0
+
+      ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+      lhs(k_tdiag)   = + dzt * (K_zmm1+nu) * ( cloud_frac_zmm1 / cloud_frac_ztm1 ) * dzmm1
+
+      ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+      lhs(km1_tdiag) = - dzt * (K_zmm1+nu) * ( cloud_frac_zmm1 / cloud_frac_ztm1 ) * dzmm1
+
+
+    end if
+
+    return
+  end function diffusion_cloud_frac_zt_lhs
 
   !=============================================================================
   pure function diffusion_zm_lhs( K_zt, K_ztp1, nu,  & 
@@ -346,7 +452,7 @@ contains
     !        the sign is reversed and the leading "+" in front of the term
     !        is changed to a "-".
     !
-    ! Timestep index (t) stands for the index of the current timestep, while 
+    ! Timestep index (t) stands for the index of the current timestep, while
     ! timestep index (t+1) stands for the index of the next timestep, which is
     ! being advanced to in solving the d(var_zm)/dt equation.
     !
@@ -380,7 +486,7 @@ contains
     !
     ! Note:  This function only computes the general implicit form:
     !        + d [ ( K_zt + nu ) * d( var_zm(t+1) )/dz ] / dz.
-    !        For a Crank-Nicholson scheme, the left-hand side result of this 
+    !        For a Crank-Nicholson scheme, the left-hand side result of this
     !        function will have to be multiplied by (1/2).  For a
     !        Crank-Nicholson scheme, the right-hand side (explicit) component
     !        needs to be computed by multiplying the left-hand side results by
@@ -446,7 +552,7 @@ contains
     !    var_zm stays the same over the course of the timestep at the lower
     !    boundary, as well as at the upper boundary.
     !
-    !    In order to discretize the boundary conditions for equations requiring 
+    !    In order to discretize the boundary conditions for equations requiring
     !    fixed-point boundary conditions, either:
     !    a) in the parent subroutine or function (that calls this function),
     !       loop over all vertical levels from the second-lowest to the
@@ -482,13 +588,13 @@ contains
     ! everywhere from the matrix below.  The sum over j leaves the column totals
     ! that are desired.
     !
-    ! Left-hand side matrix contributions from eddy diffusion term; first four 
+    ! Left-hand side matrix contributions from eddy diffusion term; first four
     ! vertical levels:
     !
     !     ------------------------------------------------------------------------------------->
     !k=1 | +dzm(k)*                    -dzm(k)*                                  0
     !    |   (K_zt(k+1)+nu)*dzt(k+1)     (K_zt(k+1)+nu)*dzt(k+1)
-    !    |          
+    !    |
     !k=2 | -dzm(k)*                    +dzm(k)*                      -dzm(k)*
     !    |   (K_zt(k)+nu)*dzt(k)         [ (K_zt(k+1)+nu)*dzt(k+1)     (K_zt(k+1)+nu)*dzt(k+1)
     !    |                                +(K_zt(k)+nu)*dzt(k) ]
@@ -510,8 +616,8 @@ contains
     !        shown.  However, for the purposes of the var_zm eddy diffusion
     !        term, those extra row and column values are all 0, and the
     !        conservation properties of the matrix aren't effected.
-    !              
-    ! If fixed-point boundary conditions are used, the matrix entries at 
+    !
+    ! If fixed-point boundary conditions are used, the matrix entries at
     ! level 1 (k=1) read:  1   0   0; which means that conservative differencing
     ! is not in play.  The total amount of var_zm over the entire vertical
     ! domain is not being conserved, as amounts of var_zm may be fluxed out
@@ -552,46 +658,46 @@ contains
 
     if ( level == 1 ) then
 
-       ! k = 1; lower boundery level at surface.
-       ! Only relevant if zero-flux boundary conditions are used.
+      ! k = 1; lower boundery level at surface.
+      ! Only relevant if zero-flux boundary conditions are used.
 
-       ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
-       lhs(kp1_mdiag) = - dzm * (K_ztp1+nu) * dztp1
+      ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
+      lhs(kp1_mdiag) = - dzm * (K_ztp1+nu) * dztp1
 
-       ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-       lhs(k_mdiag)   = + dzm * (K_ztp1+nu) * dztp1
+      ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+      lhs(k_mdiag)   = + dzm * (K_ztp1+nu) * dztp1
 
-       ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
-       lhs(km1_mdiag) = 0.0
+      ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
+      lhs(km1_mdiag) = 0.0
 
 
     elseif ( level > 1 .and. level < gr%nnzp ) then
 
-       ! Most of the interior model; normal conditions.
+      ! Most of the interior model; normal conditions.
 
-       ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
-       lhs(kp1_mdiag) = - dzm * (K_ztp1+nu) * dztp1
+      ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
+      lhs(kp1_mdiag) = - dzm * (K_ztp1+nu) * dztp1
 
-       ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-       lhs(k_mdiag)   = + dzm * ( (K_ztp1+nu)*dztp1 + (K_zt+nu)*dzt )
+      ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+      lhs(k_mdiag)   = + dzm * ( (K_ztp1+nu)*dztp1 + (K_zt+nu)*dzt )
 
-       ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
-       lhs(km1_mdiag) = - dzm * (K_zt+nu) * dzt
+      ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
+      lhs(km1_mdiag) = - dzm * (K_zt+nu) * dzt
 
 
     elseif ( level == gr%nnzp ) then
 
-       ! k = gr%nnzp (top level); upper boundary level.
-       ! Only relevant if zero-flux boundary conditions are used.
+      ! k = gr%nnzp (top level); upper boundary level.
+      ! Only relevant if zero-flux boundary conditions are used.
 
-       ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
-       lhs(kp1_mdiag) = 0.0
+      ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
+      lhs(kp1_mdiag) = 0.0
 
-       ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-       lhs(k_mdiag)   = + dzm * (K_zt+nu) * dzt
+      ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+      lhs(k_mdiag)   = + dzm * (K_zt+nu) * dzt
 
-       ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
-       lhs(km1_mdiag) = - dzm * (K_zt+nu) * dzt
+      ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
+      lhs(km1_mdiag) = - dzm * (K_zt+nu) * dzt
 
 
     endif

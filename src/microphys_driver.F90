@@ -16,6 +16,7 @@ module microphys_driver
 ! Mon. Wea. Rev., 128, 229-243, 2000. 
 !-------------------------------------------------------------------------------
   use parameters_microphys, only: &
+    l_in_cloud_Nc_diff,         & ! Use in cloud values of Nc for diffusion
     l_cloud_sed,                & ! Cloud water sedimentation (K&K or no microphysics)
     l_ice_micro,                & ! Compute ice (COAMPS / Morrison)
     l_graupel,                  & ! Compute graupel (Morrison)
@@ -137,7 +138,7 @@ module microphys_driver
       micro_scheme, l_cloud_sed, &
       l_cloud_sed, l_ice_micro, l_graupel, l_hail, &
       l_seifert_beheng, l_predictnc, l_specify_aerosol, l_subgrid_w, &
-      l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, &
+      l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, l_in_cloud_Nc_diff, &
       l_latin_hypercube_sampling, l_local_kk, LH_microphys_calls, LH_sequence_length, &
       rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, &
       corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
@@ -239,6 +240,8 @@ module microphys_driver
     ! Parameters for all microphysics schemes
     !---------------------------------------------------------------------------
     microphys_start_time = 0.0 ! [s]
+
+    l_in_cloud_Nc_diff = .false. ! Don't use in cloud values of Nc for diffusion
 
     open(unit=iunit, file=namelist_file, status='old',action='read')
     read(iunit, nml=microphysics_setting)
@@ -1132,7 +1135,7 @@ module microphys_driver
 
         ! Add implicit terms to the LHS matrix
         call microphys_lhs & 
-             ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, Kr, nu_r, wm_zt, & 
+             ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, Kr, cloud_frac, nu_r, wm_zt, & 
                hydromet_vel(:,i), lhs )
 
         call microphys_solve & 
@@ -1370,8 +1373,10 @@ module microphys_driver
                                 xrm_tndcy, xrm, err_code )
 
 ! Description:
+!   Solve the tridiagonal system for hydrometeor variable.
 
 ! References:
+!  None
 !-----------------------------------------------------------------------
 
       use grid_class, only: & 
@@ -1578,26 +1583,30 @@ module microphys_driver
 
 !===============================================================================
     subroutine microphys_lhs & 
-               ( solve_type, l_sed, dt, Kr, nu, wm_zt, V_hm, lhs )
+               ( solve_type, l_sed, dt, Kr, cloud_frac, nu, wm_zt, V_hm, lhs )
 
 ! Description:
-! Setup the matrix of implicit contributions to a term.
-! Includes the effects of sedimentation, diffusion, and advection.
+!   Setup the matrix of implicit contributions to a term.
+!   Can include the effects of sedimentation, diffusion, and advection.
+!   The Morrison microphysics has an explicit sedimentation code, which is
+!   handled elsewhere.
 !
 ! Notes:
-! Setup for tridiagonal system and boundary conditions should be the same as
-! the original rain subroutine code.
-!-----------------------------------------------------------------------
+!   Setup for tridiagonal system and boundary conditions should be the same as
+!   the original rain subroutine code.
+!-------------------------------------------------------------------------------
 
       use grid_class, only:  & 
-          gr,  & ! Variable(s)
-          zm2zt ! Procedure(s)
+          gr,    & ! Variable(s)
+          zm2zt, & ! Procedure(s)
+          zt2zm    ! Procedure(s)
 
       use stats_precision, only:  & 
           time_precision ! Variable(s)
 
       use diffusion, only:  & 
-          diffusion_zt_lhs ! Procedure(s)
+          diffusion_zt_lhs, & ! Procedure(s)
+          diffusion_cloud_frac_zt_lhs
 
       use mean_adv, only:  & 
           term_ma_zt_lhs ! Procedure(s)
@@ -1639,6 +1648,9 @@ module microphys_driver
         k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
         km1_tdiag = 3       ! Thermodynamic subdiagonal index.
 
+      real, parameter :: &
+        cloud_frac_thresh = 1.e-3 ! Minimum threshold on cloud fraction
+
       ! Input Variables
       character(len=*), intent(in) :: &
         solve_type  ! Description of which hydrometeor is being solved for.
@@ -1653,9 +1665,10 @@ module microphys_driver
         nu       ! Background diffusion coefficient                         [m^2/s]
 
       real, intent(in), dimension(gr%nnzp) ::  & 
-        wm_zt, & ! w wind component on thermodynamic levels                 [m/s]
-        V_hm,  & ! Sedimentation velocity of hydrometeor (momentum levels)  [m/s]
-        Kr       ! Eddy diffusivity for hydrometeor on momentum levels      [m^2/s]
+        cloud_frac, & ! Cloud fraction                                          [-]
+        wm_zt,      & ! w wind component on thermodynamic levels                [m/s]
+        V_hm,       & ! Sedimentation velocity of hydrometeor (momentum levels) [m/s]
+        Kr            ! Eddy diffusivity for hydrometeor on momentum levels     [m^2/s]
 
       real, intent(out), dimension(3,gr%nnzp) :: & 
         lhs      ! Left hand side of tridiagonal matrix.
@@ -1663,11 +1676,14 @@ module microphys_driver
       ! Local Variables
       real, dimension(3) :: tmp
 
+      real, dimension(gr%nnzp) :: & 
+        cloud_frac_zt, & ! Cloud fraction on thermodynamic levels  [-]
+        cloud_frac_zm    ! Cloud fraction on momentum levels       [-]
+
       ! Array indices
       integer :: k, km1
 
       !integer kp1
-
 
       integer :: & 
         ixrm_ma,  & ! Mean advection budget stats toggle
@@ -1677,23 +1693,23 @@ module microphys_driver
       ! ----- Begin Code -----
 
       select case( solve_type )
-      case( "rrainm" )
+      case ( "rrainm" )
         ixrm_ma  = irrainm_ma
         ixrm_sd  = irrainm_sd
         ixrm_dff = irrainm_dff
-      case( "Nrm" )
+      case ( "Nrm" )
         ixrm_ma  = iNrm_ma
         ixrm_sd  = iNrm_sd
         ixrm_dff = iNrm_dff
-      case( "ricem" )
+      case ( "ricem" )
         ixrm_ma  = iricem_ma
         ixrm_sd  = iricem_sd
         ixrm_dff = iricem_dff
-      case( "rsnowm" )
+      case ( "rsnowm" )
         ixrm_ma  = irsnowm_ma
         ixrm_sd  = irsnowm_sd
         ixrm_dff = irsnowm_dff
-      case( "rgraupelm" )
+      case ( "rgraupelm" )
         ixrm_ma  = irgraupelm_ma
         ixrm_sd  = irgraupelm_sd
         ixrm_dff = irgraupelm_dff
@@ -1703,6 +1719,14 @@ module microphys_driver
         ixrm_dff = 0
       end select
 
+      ! Determine cloud fraction for diffusion of Ncm
+      if ( solve_type == "Ncm".and. l_in_cloud_Nc_diff ) then
+        ! Impose a threshold on cloud fract to avoid a divide by 0.
+        cloud_frac_zt = max( cloud_frac, cloud_frac_thresh )
+!       cloud_frac_zt = 1.0 ! %% Debug
+        ! Don't impose a threshold on cloud_frac_zm in the numerator.
+        cloud_frac_zm = zt2zm( cloud_frac )
+      end if
 
       ! Reset LHS Matrix for current timestep.
       lhs = 0.0
@@ -1722,10 +1746,20 @@ module microphys_driver
         ! All diagonals
 
         ! LHS eddy-diffusion term.
-        lhs(kp1_tdiag:km1_tdiag,k) & 
-        = lhs(kp1_tdiag:km1_tdiag,k) & 
-        + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
+        if ( solve_type == "Ncm" .and. l_in_cloud_Nc_diff ) then
+          lhs(kp1_tdiag:km1_tdiag,k) & 
+          = lhs(kp1_tdiag:km1_tdiag,k) & 
+          + diffusion_cloud_frac_zt_lhs &
+            ( Kr(k), Kr(km1), cloud_frac_zt(k), cloud_frac_zt(k-1), &
+              cloud_frac_zt(k+1), cloud_frac_zm(k), &
+              cloud_frac_zm(k+1), cloud_frac_zm(k-1), &
+              nu, gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+        else ! All other cases
+          lhs(kp1_tdiag:km1_tdiag,k) & 
+          = lhs(kp1_tdiag:km1_tdiag,k) & 
+          + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
                             gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+        end if
 
         ! LHS mean advection term.
         lhs(kp1_tdiag:km1_tdiag,k) & 
@@ -1740,7 +1774,7 @@ module microphys_driver
           lhs(kp1_tdiag:km1_tdiag,k) & 
           = lhs(kp1_tdiag:km1_tdiag,k) & 
           + sedimentation( V_hm(k), V_hm(km1), gr%dzt(k), k )
-        endif
+        end if
 
         if ( l_stats_samp ) then
 
@@ -1751,14 +1785,14 @@ module microphys_driver
             ztscr01(k) = -tmp(3)
             ztscr02(k) = -tmp(2)
             ztscr03(k) = -tmp(1)
-          endif
+          end if
 
           if ( ixrm_sd > 0 .and. l_sed ) then
             tmp(1:3) = sedimentation( V_hm(k), V_hm(km1), gr%dzt(k), k )
             ztscr04(k) = -tmp(3)
             ztscr05(k) = -tmp(2)
             ztscr06(k) = -tmp(1)
-          endif
+          end if
 
           if ( ixrm_dff > 0 ) then
             tmp(1:3) & 
@@ -1767,11 +1801,11 @@ module microphys_driver
             ztscr07(k) = -tmp(3)
             ztscr08(k) = -tmp(2)
             ztscr09(k) = -tmp(1)
-          endif
+          end if
 
-        endif ! l_stats_samp
+        end if ! l_stats_samp
 
-      enddo ! 2..gr%nnzp-1
+      end do ! 2..gr%nnzp-1
 
 
       ! Boundary Conditions
@@ -1812,9 +1846,9 @@ module microphys_driver
           ztscr07(k) = -tmp(3)
           ztscr08(k) = -tmp(2)
           ztscr09(k) = -tmp(1)
-        endif
+        end if
 
-      endif  ! l_stats_samp
+      end if  ! l_stats_samp
 
 
       ! Upper Boundary
@@ -1841,10 +1875,9 @@ module microphys_driver
           ztscr07(k) = -tmp(3)
           ztscr08(k) = -tmp(2)
           ztscr09(k) = -tmp(1)
-        endif
+        end if
 
-      endif  ! l_stats_samp
-
+      end if  ! l_stats_samp
 
       return
     end subroutine microphys_lhs
