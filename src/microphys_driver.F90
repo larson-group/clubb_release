@@ -1794,7 +1794,18 @@ module microphys_driver
             ztscr06(k) = -tmp(1)
           end if
 
-          if ( ixrm_dff > 0 ) then
+          if ( solve_type == "Ncm" .and. l_in_cloud_Nc_diff .and. ixrm_dff > 0 ) then
+            tmp(1:3) &
+            = diffusion_cloud_frac_zt_lhs &
+              ( Kr(k), Kr(km1), cloud_frac_zt(k), cloud_frac_zt(k-1), &
+                cloud_frac_zt(k+1), cloud_frac_zm(k), &
+                cloud_frac_zm(k+1), cloud_frac_zm(k-1), &
+                nu, gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+            ztscr07(k) = -tmp(3)
+            ztscr08(k) = -tmp(2)
+            ztscr09(k) = -tmp(1)
+
+          else if ( ixrm_dff > 0 ) then
             tmp(1:3) & 
             = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
                                 gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )

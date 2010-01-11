@@ -390,7 +390,7 @@ module diffusion
 !                                  + ((K_zmm1+nu)*cloud_frac_zmm1)*dzmm1 ) &
 !                      / cloud_frac_zt
       lhs(k_tdiag)   = + dzt * ( nu + &
-                                      ( ( (K_zm*cloud_frac_zm)*dzm + (K_zmm1*cloud_frac_zmm1)*dzmm1 ) &
+                                      ( ((K_zm*cloud_frac_zm)*dzm + (K_zmm1*cloud_frac_zmm1)*dzmm1)&
                                            / cloud_frac_zt &
                                       ) &
                                )
