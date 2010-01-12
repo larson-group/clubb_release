@@ -1,10 +1,10 @@
 !-------------------------------------------------------------------------------
 ! $Id$
-module bugsrad_clubb_mod
+module bugsrad_driver
 
   implicit none
 
-  public :: bugsrad_clubb
+  public :: compute_bugsrad_radiation
 
   ! Constant parameters
   integer, private, parameter :: &
@@ -15,7 +15,7 @@ module bugsrad_clubb_mod
 
   contains
 
-  subroutine bugsrad_clubb &
+  subroutine compute_bugsrad_radiation &
              ( alt, nz, lin_int_buffer,             &
                extend_atmos_range_size,             &
                extend_atmos_bottom_level,           &
@@ -257,7 +257,7 @@ module bugsrad_clubb_mod
                        extend_alt(extend_atmos_dim), "m."
       write(fstderr,*) "Reduce the vertical extent of the CLUBB model grid."
       ! CLUBB zm grid exceeds a 50 km altitude
-      stop "bugsrad_clubb: cannot handle this altitude"
+      stop "compute_bugsrad_radiation: cannot handle this altitude"
 
     else
 
@@ -394,7 +394,7 @@ module bugsrad_clubb_mod
 
       call stat_update_var( iFrad_LW_down, Frad_LW_down, zm )
 
-      if (l_output_rad_files) then
+      if ( l_output_rad_files ) then
         call stat_update_var( iT_in_K_rad, real(T_in_K(1,:)), rad_zt )
 
         call stat_update_var( ircil_rad, real(rcil(1,:)), rad_zt )
@@ -429,7 +429,7 @@ module bugsrad_clubb_mod
     end if ! lstats_samp
 
     return
-  end subroutine bugsrad_clubb
+  end subroutine compute_bugsrad_radiation
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -464,4 +464,4 @@ module bugsrad_clubb_mod
   end function flip
 !-------------------------------------------------------------------------------
 
-end module bugsrad_clubb_mod
+end module bugsrad_driver

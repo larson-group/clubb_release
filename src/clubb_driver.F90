@@ -961,6 +961,9 @@ module clubb_driver
 
         wp2_zt = max( zm2zt( wp2 ), wtol_sqd ) ! Positive definite quantity
 
+        ! End statistics timestep
+        call stats_end_timestep( )
+
         ! Advance a microphysics scheme
         call advance_clubb_microphys &
              ( i, dt, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! Intent(in)
@@ -969,19 +972,17 @@ module clubb_driver
                Ncnm, hydromet,                                       & ! Intent(inout)
                rvm_mc, rcm_mc, thlm_mc, err_code )                     ! Intent(out)
 
-         ! Advance a radiation scheme
-         ! With this call ordering, snow and ice water mixing ratio will be
-         ! updated by the microphysics, but thlm and rtm will not.  This
-         ! somewhat inconsistent, but we would need to move the call to
-         ! radiation before the call the microphysics to change this.
-         ! -dschanen 17 Aug 2009
-         call advance_clubb_radiation &
-              ( rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! Intent(in)
-                rtm, rcm, hydromet,                       & ! Intent(in)
-                radht, Frad, Frad_SW_up, Frad_LW_up,      & ! Intent(out)
-                Frad_SW_down, Frad_LW_down )                ! Intent(out)
-
-        call stats_end_timestep( )
+        ! Advance a radiation scheme
+        ! With this call ordering, snow and ice water mixing ratio will be
+        ! updated by the microphysics, but thlm and rtm will not.  This
+        ! somewhat inconsistent, but we would need to move the call to
+        ! radiation before the call the microphysics to change this.
+        ! -dschanen 17 Aug 2009
+        call advance_clubb_radiation &
+             ( rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! Intent(in)
+               rtm, rcm, hydromet,                       & ! Intent(in)
+               radht, Frad, Frad_SW_up, Frad_LW_up,      & ! Intent(out)
+               Frad_SW_down, Frad_LW_down )                ! Intent(out)
 
         ! Set Time
         ! Advance time here, not in advance_clubb_core,
@@ -3156,7 +3157,7 @@ module clubb_driver
     use grid_class, only: zt2zm ! Procedure
 
 #ifdef radoffline
-    use bugsrad_clubb_mod, only: bugsrad_clubb ! Procedure(s)
+    use bugsrad_driver, only: compute_bugsrad_radiation ! Procedure(s)
 #endif
     implicit none
 
@@ -3262,18 +3263,19 @@ module clubb_driver
 
       endif  ! clubb_at_least_debug_level( 2 )
 
-      call bugsrad_clubb( gr%zm, gr%nnzp, lin_int_buffer,        & ! Intent(in)
-                          extend_atmos_range_size,               & ! Intent(in)
-                          extend_atmos_bottom_level,             & ! Intent(in)
-                          extend_atmos_top_level,                & ! Intent(in)
-                          rlat, rlon,                            & ! Intent(in)
-                          day, month, year, time_current,        & ! Intent(in)
-                          thlm, rcm, rtm, rsnowm, ricem,         & ! Intent(in)
-                          cloud_frac, p_in_Pa, zt2zm( p_in_Pa ), & ! Intent(in)
-                          exner, rho_zm,                         & ! Intent(in)
-                          radht, Frad,                           & ! Intent(out)
-                          Frad_SW_up, Frad_LW_up,                & ! Intent(out)
-                          Frad_SW_down, Frad_LW_down )             ! Intent(out)
+      call compute_bugsrad_radiation &
+           ( gr%zm, gr%nnzp, lin_int_buffer,        & ! Intent(in)
+             extend_atmos_range_size,               & ! Intent(in)
+             extend_atmos_bottom_level,             & ! Intent(in)
+             extend_atmos_top_level,                & ! Intent(in)
+             rlat, rlon,                            & ! Intent(in)
+             day, month, year, time_current,        & ! Intent(in)
+             thlm, rcm, rtm, rsnowm, ricem,         & ! Intent(in)
+             cloud_frac, p_in_Pa, zt2zm( p_in_Pa ), & ! Intent(in)
+             exner, rho_zm,                         & ! Intent(in)
+             radht, Frad,                           & ! Intent(out)
+             Frad_SW_up, Frad_LW_up,                & ! Intent(out)
+             Frad_SW_down, Frad_LW_down )             ! Intent(out)
 
       if ( clubb_at_least_debug_level( 2 ) ) then
 
