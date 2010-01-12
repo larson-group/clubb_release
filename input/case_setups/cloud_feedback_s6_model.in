@@ -7,10 +7,10 @@
 runtype = "cloud_feedback_s6"   ! Case name.
 
 ! For grid_type = 1 nzmax can be any nunber
-nzmax =  120       ! Number of vertical levels.  ! For grid_type = 3.
-!nzmax = 128       ! Number of vertical levels.  ! For grid_type = 2.
+!nzmax =  120       ! Number of vertical levels.  ! For grid_type = 3.
+nzmax = 128       ! Number of vertical levels.  ! For grid_type = 2.
 
-grid_type = 1     ! Select grid type:
+grid_type = 2     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
                   ! 2 ==> stretched (unevenly-spaced) grid
                   !       entered on thermodynamic grid levels;
@@ -31,8 +31,8 @@ zm_top = 5950.0 ! Maximum Altitude of highest momentum level on any grid. [m]
 ! Path (from ../run_scripts/) and filename of data file that contains
 ! thermodynamic level altitudes (in meters).
 ! Note:  For this option, zm_grid_fname must be ''.
-!zt_grid_fname = '../input/grid/deep_convection_128lev_27km_zt_grid.grd'
-zt_grid_fname = ''
+zt_grid_fname = '../input/grid/deep_convection_128lev_27km_zt_grid.grd'
+!zt_grid_fname = ''
 
 ! Stretched grid on momentum levels (grid_type = 3).
 ! Path (from ../run_scripts/) and filename to data file that contains
