@@ -389,7 +389,7 @@ module diffusion
 !     lhs(k_tdiag)   = + dzt * ( ((K_zm+nu)*cloud_frac_zm)*dzm &
 !                                  + ((K_zmm1+nu)*cloud_frac_zmm1)*dzmm1 ) &
 !                      / cloud_frac_zt
-      lhs(k_tdiag)   = + dzt * ( nu + &
+      lhs(k_tdiag)   = + dzt * ( nu*(dzm+dzmm1) + &
                                       ( ((K_zm*cloud_frac_zm)*dzm + (K_zmm1*cloud_frac_zmm1)*dzmm1)&
                                            / cloud_frac_zt &
                                       ) &
@@ -408,10 +408,12 @@ module diffusion
       lhs(kp1_tdiag) = 0.0
 
       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-      lhs(k_tdiag)   = + dzt * (K_zmm1+nu) * ( cloud_frac_zmm1 / cloud_frac_ztm1 ) * dzmm1
+!     lhs(k_tdiag)   = + dzt * (K_zmm1+nu) * ( cloud_frac_zmm1 / cloud_frac_ztm1 ) * dzmm1
+      lhs(k_tdiag)   = + dzt * (K_zmm1 * ( cloud_frac_zmm1 / cloud_frac_ztm1 ) + nu) * dzmm1
 
       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-      lhs(km1_tdiag) = - dzt * (K_zmm1+nu) * ( cloud_frac_zmm1 / cloud_frac_ztm1 ) * dzmm1
+!     lhs(km1_tdiag) = - dzt * (K_zmm1+nu) * ( cloud_frac_zmm1 / cloud_frac_ztm1 ) * dzmm1
+      lhs(km1_tdiag) = - dzt * (K_zmm1 * ( cloud_frac_zmm1 / cloud_frac_ztm1 ) + nu) * dzmm1
 
 
     end if
