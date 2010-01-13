@@ -961,9 +961,6 @@ module clubb_driver
 
         wp2_zt = max( zm2zt( wp2 ), wtol_sqd ) ! Positive definite quantity
 
-        ! End statistics timestep
-        call stats_end_timestep( )
-
         ! Advance a microphysics scheme
         call advance_clubb_microphys &
              ( i, dt, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! Intent(in)
@@ -983,6 +980,9 @@ module clubb_driver
                rtm, rcm, hydromet,                       & ! Intent(in)
                radht, Frad, Frad_SW_up, Frad_LW_up,      & ! Intent(out)
                Frad_SW_down, Frad_LW_down )                ! Intent(out)
+
+        ! End statistics timestep
+        call stats_end_timestep( )
 
         ! Set Time
         ! Advance time here, not in advance_clubb_core,
