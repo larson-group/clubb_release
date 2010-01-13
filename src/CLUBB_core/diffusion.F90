@@ -323,17 +323,24 @@ module diffusion
   ! Description:
   !   This function adds a weight of cloud fraction to the existing diffusion
   !   function for number concentration variables (e.g. cloud droplet number
-  !   concentration).
+  !   concentration).  This code should be considered experimental and may
+  !   contain bugs.
   ! References:
   !   This algorithm uses equations derived from Guo, et al. 2009.
   !-----------------------------------------------------------------------------
 
    use grid_class, only: & 
-        gr ! Variable(s)
+     gr ! Variable(s)
 
     implicit none
 
+    ! External
+    intrinsic :: min
+
     ! Constant parameters
+    real, parameter :: &
+      cf_ratio = 10. ! Maximum cloud-fraction coefficient applied to Kh_zm
+
     integer, parameter :: & 
       kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
       k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
@@ -360,6 +367,8 @@ module diffusion
     ! Return Variable
     real, dimension(3) :: lhs
 
+    ! ---- Begin Code ----
+
     if ( level == 1 ) then
 
       ! k = 1 (bottom level); lower boundary level.
@@ -367,11 +376,11 @@ module diffusion
 
       ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
 !     lhs(kp1_tdiag) = - dzt * (K_zm+nu) * ( cloud_frac_zm / cloud_frac_ztp1 ) * dzm
-      lhs(kp1_tdiag) = - dzt * (K_zm * ( cloud_frac_zm / cloud_frac_ztp1 ) + nu) * dzm
+      lhs(kp1_tdiag) = - dzt * (K_zm * min( cloud_frac_zm / cloud_frac_ztp1, cf_ratio ) + nu) * dzm
 
       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
 !     lhs(k_tdiag)   = + dzt * (K_zm+nu) * ( cloud_frac_zm / cloud_frac_ztp1 ) * dzm
-      lhs(k_tdiag)   = + dzt * (K_zm * ( cloud_frac_zm / cloud_frac_ztp1 ) + nu) * dzm
+      lhs(k_tdiag)   = + dzt * (K_zm * min( cloud_frac_zm / cloud_frac_ztp1, cf_ratio ) + nu) * dzm
 
       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
       lhs(km1_tdiag) = 0.0
@@ -382,22 +391,29 @@ module diffusion
       ! Most of the interior model; normal conditions.
 
       ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-!     lhs(kp1_tdiag) = - dzt * (K_zm+nu) * ( cloud_frac_zmp1 / cloud_frac_ztp1 ) * dzm
-      lhs(kp1_tdiag) = - dzt * (K_zm * ( cloud_frac_zmp1 / cloud_frac_ztp1 ) + nu ) * dzm
+!     lhs(kp1_tdiag) = - dzt * (K_zm+nu) * ( cloud_frac_zm / cloud_frac_ztp1 ) * dzm
+!     lhs(kp1_tdiag) = - dzt * (K_zm * ( cloud_frac_zm / cloud_frac_ztp1 ) + nu ) * dzm
+      lhs(kp1_tdiag) = - dzt * (K_zm * min( cloud_frac_zm / cloud_frac_ztp1, cf_ratio ) + nu ) * dzm
 
       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
 !     lhs(k_tdiag)   = + dzt * ( ((K_zm+nu)*cloud_frac_zm)*dzm &
 !                                  + ((K_zmm1+nu)*cloud_frac_zmm1)*dzmm1 ) &
 !                      / cloud_frac_zt
+!     lhs(k_tdiag)   = + dzt * ( nu*(dzm+dzmm1) + &
+!                                     ( ((K_zm*cloud_frac_zm)*dzm + (K_zmm1*cloud_frac_zmm1)*dzmm1)&
+!                                          / cloud_frac_zt &
+!                                     ) &
+!                              )
       lhs(k_tdiag)   = + dzt * ( nu*(dzm+dzmm1) + &
-                                      ( ((K_zm*cloud_frac_zm)*dzm + (K_zmm1*cloud_frac_zmm1)*dzmm1)&
-                                           / cloud_frac_zt &
-                                      ) &
+                                 (   K_zm*dzm*min( cloud_frac_zm / cloud_frac_zt, cf_ratio ) &
+                                   + K_zmm1*dzmm1*min( cloud_frac_zmm1 / cloud_frac_zt, cf_ratio ) &
+                                 ) &
                                )
 
       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
 !     lhs(km1_tdiag) = - dzt * (K_zmm1+nu) * ( cloud_frac_zmm1 / cloud_frac_ztm1 ) * dzmm1
-      lhs(km1_tdiag) = - dzt * (K_zmm1 * ( cloud_frac_zmm1 / cloud_frac_ztm1 ) + nu ) * dzmm1
+      lhs(km1_tdiag) = - dzt * &
+        (K_zmm1 * min( cloud_frac_zmm1 / cloud_frac_ztm1, cf_ratio ) + nu ) * dzmm1
 
     else if ( level == gr%nnzp ) then
 
@@ -409,11 +425,13 @@ module diffusion
 
       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
 !     lhs(k_tdiag)   = + dzt * (K_zmm1+nu) * ( cloud_frac_zmm1 / cloud_frac_ztm1 ) * dzmm1
-      lhs(k_tdiag)   = + dzt * (K_zmm1 * ( cloud_frac_zmm1 / cloud_frac_ztm1 ) + nu) * dzmm1
+      lhs(k_tdiag)   = + dzt * &
+        (K_zmm1 * min( cloud_frac_zmm1 / cloud_frac_ztm1, cf_ratio ) + nu) * dzmm1
 
       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
 !     lhs(km1_tdiag) = - dzt * (K_zmm1+nu) * ( cloud_frac_zmm1 / cloud_frac_ztm1 ) * dzmm1
-      lhs(km1_tdiag) = - dzt * (K_zmm1 * ( cloud_frac_zmm1 / cloud_frac_ztm1 ) + nu) * dzmm1
+      lhs(km1_tdiag) = - dzt * &
+        (K_zmm1 * min( cloud_frac_zmm1 / cloud_frac_ztm1, cf_ratio ) + nu) * dzmm1
 
 
     end if
