@@ -837,12 +837,13 @@ module coamps_micro_driver_mod
         else
           Nsnowm(k+1) = snzero / snowslope(1,1,k)
         end if
+        ! Convert to #/kg for comparison to Morrison -dschanen 12 Nov 2009
+        Nsnowm(k+1) = Nsnowm(k+1) / rho(k+1)
       end do
+
 !-------------------------------------------------
 ! End of ajsmith4's addition
 !-------------------------------------------------
-     ! Convert to #/kg for comparison to Morrison -dschanen 12 Nov 2009
-     Nsnowm = Nsnowm / rho
 
 ! Linear extrapolation for the ghost point of fall speeds
       fallr(1,1,1) = .5 * ( fallr(1,1,2) + fallr(1,1,3) )
