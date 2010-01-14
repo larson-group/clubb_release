@@ -15,8 +15,9 @@ module clubb_driver
   implicit none
 
   ! Setup run_clubb() as the sole external interface
-  private ::  & 
-    initialize_clubb, & 
+  private ::  &
+    initialize_clubb, &
+    initialize_clubb_variables, &
     advance_clubb_forcings, & 
     restart_clubb
 
@@ -1072,21 +1073,16 @@ module clubb_driver
     !-----------------------------------------------------------------------
 
     use constants, only:  & 
-      Cp,  &  ! Variable(s)
-      Lv,  &
-      ep2,  &
-      ep1,  &
       emin,  &
       grav, &
       zero_threshold, &
-      cm3_per_m3, kappa, p0, Rd
+      cm3_per_m3
 
     use parameters_tunable, only:  & 
       taumax,  &  ! Variable(s)
       c_K
 
     use parameters_model, only:  & 
-      T0,  &  ! Variable(s)
       sclr_dim, &
       edsclr_dim, &
       hydromet_dim
@@ -1132,15 +1128,10 @@ module clubb_driver
     use constants, only: fstderr ! Variables(s)
 
     use array_index, only: &
-      iisclr_thl, iiedsclr_thl, & ! Variable(s)
-      iiNcm
+        iiNcm ! Variable(s)
 
     ! Joshua Fasching
     ! March 2008
-    use saturation, only: sat_mixrat_liq, sat_rcm ! Procedure(s)
-
-    use hydrostatic_mod, only: hydrostatic ! Procedure(s)
-
     use soil_vegetation, only: sfc_soil_T_in_K, deep_soil_T_in_K, veg_T_in_K ! Variable(s)
 
     use sponge_layer_damping, only: &
@@ -1153,11 +1144,6 @@ module clubb_driver
       initialize_tau_sponge_damp ! Procedure(s0
 
     use input_names, only: &
-      z_name, &
-      pressure_name, &
-      temperature_name, &
-      theta_name, &
-      thetal_name, &
       wm_name, &
       omega_name
 
@@ -1222,19 +1208,7 @@ module clubb_driver
     ! Local Variables
     real, dimension(gr%nnzp) :: tmp1
 
-    real, dimension(gr%nnzp) ::  &
-      thm,        & ! Potential temperature (thermo. levels)    [K]
-      p_dry,      & ! Dry air pressure (thermodynamic levels)   [Pa]
-      exner_dry,  & ! Exner of dry air (thermodynamic levels)   [-]
-      rho_dry,    & ! Dry air density (thermodynamic levels)    [kg/m^3]
-      rho_dry_zm, & ! Dry air density on momentum levels        [kg/m^3]
-      p_in_Pa_zm, & ! Pressure interpolated to momentum levels  [Pa]
-      exner_zm,   & ! Exner on momentum levels                  [-]
-      thvm_zm       ! Theta_v interpolated to momentum levels   [K]
-
     real ::  &
-      pd_sfc,           & ! Dry surface pressure                   [Pa]
-      rv_sfc,           & ! Surface water vapor mixing ratio       [kg/kg]
       rtm_sfc,          & ! Surface total water mixing ratio       [kg/kg]
       thlm_sfc,         & ! Surface liq. water potential temp.     [K]
       cloud_top_height, & ! Cloud top altitude in initial profile  [m]
@@ -1281,414 +1255,15 @@ module clubb_driver
                                         lin_int_buffer )             ! Intent(out)
 
 
-
     ! Covert sounding input to CLUBB compatible input
-    select case( trim( alt_type ) )
-
-    case ( z_name )
-
-      ! Sounding is listed in terms of height coordinates.
-
-      if ( theta_type == temperature_name ) then
-
-        write(fstderr,*) 'Interpetation of sounding files with z as the independent ', &
-        'variable and absolute temperature as the temperature variable has not ', &
-        'been implemented.  Either specify pressure as the independent variable or ', &
-        'thm/thlm as the temperature variable.'
-        stop
-
-      endif
-
-      ! At this point, thlm may actually contain either theta or theta-l.
-
-      ! The value of rtm at the surface is output from the sounding, as long as
-      ! the initial sounding extends to the model surface (at gr%zm(1)).
-      if ( rtm_sfc < 0.0 ) then
-         ! The sounding doesn't extend to the surface, so rtm_sfc is set to a
-         ! negative number.  Use rtm(1) as rv_sfc.
-         rv_sfc = rtm(1)
-      else ! rtm_sfc >= 0.0
-         ! The sounding does extend to the surface, so rtm_sfc is the initial
-         ! value of total water mixing ratio at the surface.
-         rv_sfc = rtm_sfc
-      endif
-
-      ! Calculate dry surface pressure from surface pressure and surface water
-      ! vapor mixing ratio, such that p_d = p / [ 1 + (R_v/R_d)*r_v ].
-      pd_sfc = psfc / ( 1.0 + ep2 * rv_sfc )
-
-      ! Compute approximate dry pressure, dry exner, and dry density using
-      ! theta and dry surface pressure.
-      call hydrostatic( thlm, pd_sfc, &                         ! Intent(in)
-                        p_dry, exner_dry, rho_dry, rho_dry_zm ) ! Intent(out)
-
-
-      select case( trim( theta_type ) )
-
-      case ( theta_name )
-
-         ! The value of variable thlm that was just used to call subroutine
-         ! hydrostatic is actually thm.
-
-         ! Thus, the values of rho_dry and rho_dry_zm that were just calculated
-         ! are dry (they do not take into account water vapor or cloud water).
-         ! These are the values of dry, static, base-state density that are
-         ! needed for the anelastic equation set.
-         rho_ds_zt = rho_dry
-         rho_ds_zm = rho_dry_zm
-
-         ! Pressure is used in computing mean cloud water mixing ratio from
-         ! excess saturation.  Since thm is currently stored in the thlm
-         ! profile, thlm(k) * exner(k) is actually thm(k) * exner(k) = T(k).
-         ! However, exner needs to be total exner rather than dry exner.
-         do k = 1, gr%nnzp
-
-            ! Calculate total pressure, p_in_Pa, using dry pressure and water
-            ! vapor mixing ratio.  Since only total water mixing ratio is
-            ! available, and cloud water mixing ratio is not known, use total
-            ! water mixing ratio to estimate total pressure.
-            p_in_Pa(k) = p_dry(k) * ( 1.0 + ep2 * rtm(k) )
-
-            ! Calculate exner from total pressure.
-            exner(k) = ( p_in_Pa(k) / p0 )**kappa
-
-            ! Calculate cloud water mixing ratio based on total water mixing
-            ! ratio and saturation mixing ratio, which based total pressure
-            ! and temperature (theta * exner).
-            rcm(k) &
-              = max( rtm(k) &
-                      - sat_mixrat_liq( p_in_Pa(k), thlm(k) * exner(k) ), &
-                     zero_threshold )
-
-         enddo
-
-         ! Compute initial theta_l based on the theta profile (currently stored
-         ! in variable thlm) and cloud water mixing ratio (rcm), such that:
-         !  theta_l = theta - [Lv/(Cp*exner)]*rcm.
-         do k = 1, gr%nnzp
-            thlm(k) = thlm(k) - Lv/(Cp*exner(k)) * rcm(k)
-         enddo
-
-         ! Testing of passive scalars
-         if ( iisclr_thl > 0 ) then
-            sclrm(:,iisclr_thl) = thlm
-         endif
-         if ( iiedsclr_thl > 0 ) then
-            edsclrm(:,iiedsclr_thl) = thlm
-         endif
-
-
-      case ( thetal_name )
-
-         ! The value of variable thlm that was just used to call subroutine
-         ! hydrostatic is indeed thlm.
-
-         ! Find theta based on the given profile of theta_l.  If the profile
-         ! is unsaturated, then theta = theta_l.  If this initial profile is
-         ! saturated at any level, then initial r_c must be determined using an
-         ! iterative method involving theta_l, r_t, pressure, and exner.  Once
-         ! initial r_c is found, initial theta can be found, such that:
-         !  theta = theta_l + [Lv/(Cp*exner)]*rcm.
-
-         ! Find mean cloud water mixing ratio.  Pressure is used in computing
-         ! mean cloud water mixing ratio from excess saturation.  Since thm is
-         ! currently stored in the thlm profile, thlm(k) * exner(k) is actually
-         ! thm(k) * exner(k) = T(k).  However, exner needs to be total exner
-         ! rather than dry exner.
-         do k = 1, gr%nnzp, 1
-
-            ! Calculate total pressure, p_in_Pa, using dry pressure and water
-            ! vapor mixing ratio.  Since only total water mixing ratio is
-            ! available, and cloud water mixing ratio is not known, use total
-            ! water mixing ratio to estimate total pressure.
-            p_in_Pa(k) = p_dry(k) * ( 1.0 + ep2 * rtm(k) )
-
-            ! Calculate exner from total pressure.
-            exner(k) = ( p_in_Pa(k) / p0 )**kappa
-
-            ! Compute cloud water mixing ratio using an iterative method.
-            rcm(k) = sat_rcm( thlm(k), rtm(k), p_in_Pa(k), exner(k) )
-
-         enddo
-
-         ! Compute initial theta.
-         do k = 1, gr%nnzp, 1
-            thm(k) = thlm(k) + Lv/(Cp*exner(k)) * rcm(k)
-         enddo
-
-         ! Call hydrostatic using thm as input in order to obtain dry values
-         ! of the density variables.
-         call hydrostatic( thm, pd_sfc, &                          ! Intent(in)
-                           p_dry, exner_dry, rho_dry, rho_dry_zm ) ! Intent(out)
-
-         ! The values of rho_dry and rho_dry_zm that were just calculated are
-         ! dry (they do not take into account water vapor or cloud water).
-         ! These are the values of dry, static, base-state density that are
-         ! needed for the anelastic equation set.
-         rho_ds_zt = rho_dry
-         rho_ds_zm = rho_dry_zm
-
-
-         ! Testing of passive scalars
-         if ( iisclr_thl > 0 ) then
-            sclrm(:,iisclr_thl) = thlm
-         endif
-         if ( iiedsclr_thl > 0 ) then
-            edsclrm(:,iiedsclr_thl) = thlm
-         endif
-
-
-      case default
-
-         write(fstderr,*) "Invalid theta_type: ", theta_type
-         stop
-
-
-      end select
-
-      ! Now, compute initial theta_v, given initial th_l, rtm, rcm, and exner.
-      thvm = thlm + ep1 * T0 * rtm  & 
-                  + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
-
-      ! Recompute more accurate initial exner function, pressure, and density
-      ! using thvm, which includes the effects of water vapor and cloud water.
-      call hydrostatic( thvm, psfc, &                    ! Intent(in)
-                        p_in_Pa, exner, rho, rho_zm )    ! Intent(out)
-
-
-
-    case( pressure_name )
-
-      ! Sounding is listed in terms of pressure coordinates.
-
-      ! Set the pressure at the lowest thermodynamic level (k=1), which is below
-      ! the model lower boundary, to psfc, which is the pressure at the model
-      ! lower boundary (or surface), which is located at momentum level 1.
-      ! This is consistent with what is done in subroutine hydrostatic, which is
-      ! called when the sounding is given in terms of altitude rather than
-      ! pressure.  This is also a good way for the code to keep track of the
-      ! surface pressure.
-      p_in_Pa(1) = psfc
-
-      ! Set the value of exner.
-      exner(1) = ( psfc/p0 )**kappa
-      do k = 2, gr%nnzp, 1
-         exner(k) = ( p_in_Pa(k) / p0 )**kappa
-      enddo
-
-
-      select case ( trim( theta_type ) )
- 
-      case( temperature_name )
-
-         ! The variable "thlm" actually contains temperature (in Kelvin) at this
-         ! point.
-
-         ! Calculate initial cloud water mixing ratio from total water mixing
-         ! ratio and saturation mixing ratio, which is calculated from
-         ! temperature and pressure.
-         do k = 1, gr%nnzp, 1
-            rcm(k) = max( rtm(k) - sat_mixrat_liq( p_in_Pa(k), thlm(k) ), &
-                          zero_threshold )
-         enddo
-
-         ! Calculate initial potential temperature from temperature and exner.
-         ! Again, the variable "thlm" actually contains temperature at this
-         ! point.
-         do k = 1, gr%nnzp, 1
-            thm(k) = thlm(k) / exner(k)
-         enddo
-
-         ! Compute initial theta_l based on the theta profile, exner, and cloud
-         ! water mixing ratio (rcm), such that:
-         !  theta_l = theta - [Lv/(Cp*exner)]*rcm.
-         do k = 1, gr%nnzp, 1
-            thlm(k) = thm(k) - Lv/(Cp*exner(k)) * rcm(k)
-         enddo
-
-         ! Testing of passive scalars
-         if ( iisclr_thl > 0 ) then
-            sclrm(:,iisclr_thl) = thlm
-         endif
-         if ( iiedsclr_thl > 0 ) then
-            edsclrm(:,iiedsclr_thl) = thlm
-         endif
-
-
-      case( theta_name )
-
-         ! The variable "thlm" actually contains potential temperature (theta)
-         ! at this point.
-         thm = thlm
-
-         ! Calculate initial cloud water mixing ratio from total water mixing
-         ! ratio and saturation mixing ratio, which is calculated from pressure
-         ! and temperature (thm * exner).
-         do k = 1, gr%nnzp, 1
-            rcm(k) &
-              = max( rtm(k) - sat_mixrat_liq( p_in_Pa(k), thm(k) * exner(k) ), &
-                     zero_threshold )
-         enddo
-
-         ! Compute initial theta_l based on the theta profile, exner, and cloud
-         ! water mixing ratio (rcm), such that:
-         !  theta_l = theta - [Lv/(Cp*exner)]*rcm.
-         do k = 1, gr%nnzp, 1
-            thlm(k) = thm(k) - Lv/(Cp*exner(k)) * rcm(k)
-         enddo
-
-         ! Testing of passive scalars
-         if ( iisclr_thl > 0 ) then
-            sclrm(:,iisclr_thl) = thlm
-         endif
-         if ( iiedsclr_thl > 0 ) then
-            edsclrm(:,iiedsclr_thl) = thlm
-         endif
-
-
-      case ( thetal_name )
-
-         ! The variable "thlm" does indeed contain liquid water potential
-         ! temperature (theta_l) at this point.
-
-         ! Find theta based on the given profile of theta_l.  If the profile
-         ! is unsaturated, then theta = theta_l.  If this initial profile is
-         ! saturated at any level, then initial r_c must be determined using an
-         ! iterative method involving theta_l, r_t, pressure, and exner.  Once
-         ! initial r_c is found, initial theta can be found, such that:
-         !  theta = theta_l + [Lv/(Cp*exner)]*rcm.
-
-         ! Compute initial cloud water mixing ratio using an iterative method.
-         do k = 1, gr%nnzp, 1
-            rcm(k) = sat_rcm( thlm(k), rtm(k), p_in_Pa(k), exner(k) )
-         enddo
-
-         ! Compute initial theta.
-         do k = 1, gr%nnzp, 1
-            thm(k) = thlm(k) + Lv/(Cp*exner(k)) * rcm(k)
-         enddo
-
-         ! Testing of passive scalars
-         if ( iisclr_thl > 0 ) then
-            sclrm(:,iisclr_thl) = thlm
-         endif
-         if ( iiedsclr_thl > 0 ) then
-            edsclrm(:,iiedsclr_thl) = thlm
-         endif
-
-
-      case default
-
-         write(fstderr,*) "Invalid theta_type: ", theta_type
-         stop
-
-
-      end select
-
-
-      ! Now, compute initial theta_v, given initial th_l, rtm, rcm, and exner.
-      thvm = thlm + ep1 * T0 * rtm  &
-                  + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
-
-      ! Compute total density (moisture included) using pressure, exner, and
-      ! thvm.
-      do k = 1, gr%nnzp, 1
-         rho(k) = p_in_Pa(k) / ( Rd * thvm(k) * exner(k) )
-      enddo
-
-      ! Calculate total density on momentum grid levels.
-
-      ! Since total pressure is given at sounding levels and linearly
-      ! interpolated onto model thermodynamic grid levels, total pressure at
-      ! model momentum levels will also be found by linear interpolation.
-      p_in_Pa_zm = zt2zm( p_in_Pa )
-
-      ! Since momentum level 1 is at the surface (or at the model lower
-      ! boundary), the pressure is the surface pressure.
-      p_in_Pa_zm(1) = psfc
-
-      ! Calculate exner at momentum levels from pressure at momentum levels.
-      exner_zm = ( p_in_Pa_zm / p0 )**kappa
-
-      ! Interpolate thvm to momentum levels.
-      thvm_zm = zt2zm( thvm )
-
-      ! Compute total density (moisture included) using pressure, exner, and
-      ! thvm.
-      do k = 1, gr%nnzp, 1
-         rho_zm(k) = p_in_Pa_zm(k) / ( Rd * thvm_zm(k) * exner_zm(k) )
-      enddo
-
-
-      !!! Calculate dry, static base-state density for the anelastic equation
-      !!! set.  Calculate dry density from theta, dry pressure and dry exner.
-
-      ! Calculate dry density on thermodynamic levels
-
-      do k = 1, gr%nnzp, 1
-
-         ! Calculate dry pressure from total pressure and water vapor mixing
-         ! ratio, such that:  p_d = p / [ 1 + (R_v/R_d)*r_v ].
-         p_dry(k) = p_in_Pa(k) / ( 1.0 + ep2 * ( rtm(k) - rcm(k) ) ) 
-
-         ! Calculate dry exner from dry pressure.
-         exner_dry(k) = ( p_dry(k) / p0 )**kappa
-
-      enddo
-
-      ! Compute dry density using dry pressure, dry exner, and theta.
-      do k = 1, gr%nnzp, 1
-        rho_dry(k) = p_dry(k) / ( Rd * thm(k) * exner_dry(k) )
-      enddo
-
-      ! Calculate dry density on momentum levels
-
-      do k = 1, gr%nnzp, 1
-
-         ! Calculate dry pressure on momentum levels from total pressure (on
-         ! momentum levels) and water vapor mixing ratio (interpolated to
-         ! momentum levels), such that:  p_d = p / [ 1 + (R_v/R_d)*r_v ].
-         p_dry(k) = p_in_Pa_zm(k) &
-                    / ( 1.0 + ep2 * max( zt2zm( rtm - rcm, k ), &
-                                         zero_threshold ) )
-
-         ! Calculate dry exner on momentum levels from dry pressure on momentum
-         ! levels.
-         exner_dry(k) = ( p_dry(k) / p0 )**kappa
-
-      enddo
-
-      ! Compute dry density on momentum levels using dry pressure on momentum
-      ! levels, dry exner on momentum levels, and theta interpolated to momentum
-      ! levels.
-      do k = 1, gr%nnzp, 1
-        rho_dry_zm(k) = p_dry(k) / ( Rd * zt2zm( thm, k ) * exner_dry(k) )
-      enddo
-
-      ! The values of rho_dry and rho_dry_zm that were just calculated are dry
-      ! (they do not take into account water vapor or cloud water).  These are
-      ! the values of dry, static, base-state density that are needed for the
-      ! anelastic equation set.
-      rho_ds_zt = rho_dry
-      rho_ds_zm = rho_dry_zm
-
-
-
-    case default
-
-      stop "Invalid sounding vertical-coordinate variable"
-
-
-
-    end select ! either 'z[m]' or 'Press[Pa]'
-
-
-
-    ! Set the values of inverse, dry, static, base-state density.
-    invrs_rho_ds_zm = 1.0 / rho_ds_zm
-    invrs_rho_ds_zt = 1.0 / rho_ds_zt
-
-
+    call initialize_clubb_variables( alt_type, theta_type,         & ! Intent(in)
+                                     psfc, rtm_sfc, thlm_sfc, rtm, & ! Intent(in)
+                                     thlm, p_in_Pa,                & ! Intent(inout)
+                                     exner, rho, rho_zm,           & ! Intent(out)
+                                     rcm, thvm, rho_ds_zm,         & ! Intent(out)
+                                     rho_ds_zt, invrs_rho_ds_zm,   & ! Intent(out)
+                                     invrs_rho_ds_zt, sclrm,       & ! Intent(out)
+                                     edsclrm )                       ! Intent(out)
 
 
     ! Determine initial value cloud droplet number concentration for the
@@ -2138,6 +1713,598 @@ module clubb_driver
 
     return
   end subroutine initialize_clubb
+  !-----------------------------------------------------------------------
+  subroutine initialize_clubb_variables( alt_type, theta_type, &
+                                         psfc, rtm_sfc, thlm_sfc, rtm, &
+                                         thlm, p_in_Pa, &
+                                         exner, rho, rho_zm, &
+                                         rcm, thvm, rho_ds_zm, &
+                                         rho_ds_zt, invrs_rho_ds_zm, &
+                                         invrs_rho_ds_zt, sclrm, &
+                                         edsclrm )
+
+    ! Description:
+    ! Given inital sounding data (already interpolated onto model thermodynamic
+    ! levels) for rtm, thlm (which can be temperature, theta, or theta_l at this
+    ! point), and pressure (in the case that the sounding is given in pressure
+    ! coordinates), as well as surface data on surface pressure, rtm at the
+    ! surface, and thlm (temp., theta, or theta_l) at the surface, calculate
+    ! many initial profiles of variables used in CLUBB.  Pressure is calculated
+    ! (in the case that the sounding is given in altitude coordinates), as well
+    ! as exner and density.  Initial rcm, theta, and theta_l are calculated.
+    ! Additionally, the dry profiles (dry densities) for the anelastic equation
+    ! set are calculated.
+
+    use grid_class, only: &
+        gr, & ! Variable(s)
+        zt2zm ! Procedure(s)
+
+    use constants, only:  & ! Constant(s)
+        Rd,    & ! Gas constant for dry air          [J/(kg K)]
+        Cp,    & ! Specific heat of dry air          [J/(kg K)]
+        Lv,    & ! Latent heat of vaporization       [J/kg]
+        ep2,   & ! R_v/R_d                           [-]
+        ep1,   & ! [ 1 - (R_d/R_v) ] / (R_d/R_v)     [-]
+        kappa, & ! R_d/C_p                           [-]
+        p0,    & ! Reference pressure of 10^5 Pa     [Pa]
+        zero_threshold, & ! A threshold value of 0   [units vary]
+        fstderr    ! Output to error output stream
+
+    use parameters_model, only:  & 
+        T0,  &  ! Variable(s)
+        sclr_dim, &
+        edsclr_dim
+
+    use input_names, only: &
+        z_name, & ! Variable(s)
+        pressure_name, &
+        temperature_name, &
+        theta_name, &
+        thetal_name
+
+    use hydrostatic_mod, only: &
+        hydrostatic ! Procedure(s)
+
+    use saturation, only: &
+        sat_mixrat_liq, & ! Procedure(s)
+        sat_rcm
+
+    use array_index, only: &
+         iisclr_thl, & ! Variable(s)
+         iiedsclr_thl
+
+    implicit none
+
+    ! Input Variables
+    character(len=*), intent(in) :: &
+      alt_type,   & ! Type of altitude sounding (altitude or pressure)
+      theta_type    ! Type of temperature sounding (temp., theta, or theta_l)
+
+    real, intent(in) ::  &
+      psfc,     & ! Surface pressure                              [Pa]
+      rtm_sfc,  & ! Surface total water mixing ratio              [kg/kg]
+      thlm_sfc    ! Surface liquid water potential temperature    [K]
+
+    real, dimension(gr%nnzp), intent(in) ::  &
+      rtm    ! Total water mixing ratio (thermodynamic levels)    [kg/kg]
+
+    ! Input/Output Variables
+    real, dimension(gr%nnzp), intent(inout) ::  &
+      thlm,    & ! Liquid water potential temperature (thermo. levs.)  [K] 
+      p_in_Pa    ! Pressure (thermodynamic levels)                     [Pa]
+
+    ! Output Variables
+    real, dimension(gr%nnzp), intent(out) ::  &
+      exner,           & ! Exner function (thermodynamic levels)     [-] 
+      rho,             & ! Density (thermodynamic levels)            [kg/m^3]
+      rho_zm,          & ! Density on momentum levels                [kg/m^3]
+      rcm,             & ! Cloud water mixing ratio (thermo. levs.)  [kg/kg]
+      thvm,            & ! Virtual potential temp. (thermo. levs.)   [K]
+      rho_ds_zm,       & ! Dry, static density (momentum levels)     [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density (thermodynamic levs.) [kg/m^3]
+      invrs_rho_ds_zm, & ! Inverse dry, static density (m-levs.)     [m^3/kg]
+      invrs_rho_ds_zt    ! Inverse dry, static density (t-levs.)     [m^3/kg]
+
+    real, dimension(gr%nnzp,sclr_dim), intent(out) ::  & 
+      sclrm      ! Standard passive scalar           [units vary]
+
+    real, dimension(gr%nnzp,edsclr_dim), intent(out) ::  & 
+      edsclrm    ! Eddy diffusivity passive scalar   [units vary]
+
+    ! Local Variables
+    real ::  &
+      pd_sfc, & ! Dry surface pressure                [Pa]
+      rv_sfc    ! Surface water vapor mixing ratio    [kg/kg]
+
+    real, dimension(gr%nnzp) ::  &
+      thm,        & ! Potential temperature (thermodynamic levels)   [K]
+      th_dry,     & ! Dry potential temperature (thermo. levels)     [K]
+      p_dry,      & ! Dry air pressure (thermodynamic levels)        [Pa]
+      exner_dry,  & ! Exner of dry air (thermodynamic levels)        [-]
+      rho_dry,    & ! Dry air density (thermodynamic levels)         [kg/m^3]
+      rho_dry_zm, & ! Dry air density on momentum levels             [kg/m^3]
+      p_in_Pa_zm, & ! Pressure interpolated to momentum levels       [Pa]
+      exner_zm,   & ! Exner on momentum levels                       [-]
+      thvm_zm       ! Theta_v interpolated to momentum levels        [K]
+
+    integer :: k   ! Array index
+
+
+    select case( trim( alt_type ) )
+
+    case ( z_name )
+
+      ! Sounding is listed in terms of height coordinates.
+
+      if ( theta_type == temperature_name ) then
+
+        write(fstderr,*) 'Interpetation of sounding files with z as the independent ', &
+        'variable and absolute temperature as the temperature variable has not ', &
+        'been implemented.  Either specify pressure as the independent variable or ', &
+        'thm/thlm as the temperature variable.'
+        stop
+
+      endif
+
+      ! At this point, thlm may actually contain either theta or theta-l.
+
+      ! The value of rtm at the surface is output from the sounding, as long as
+      ! the initial sounding extends to the model surface (at gr%zm(1)).
+      if ( rtm_sfc < 0.0 ) then
+         ! The sounding doesn't extend to the surface, so rtm_sfc is set to a
+         ! negative number.  Use rtm(1) as rv_sfc.
+         rv_sfc = rtm(1)
+      else ! rtm_sfc >= 0.0
+         ! The sounding does extend to the surface, so rtm_sfc is the initial
+         ! value of total water mixing ratio at the surface.
+         rv_sfc = rtm_sfc
+      endif
+
+      ! Calculate dry surface pressure from surface pressure and surface water
+      ! vapor mixing ratio, such that p_d = p / [ 1 + (R_v/R_d)*r_v ].
+      pd_sfc = psfc / ( 1.0 + ep2 * rv_sfc )
+
+      ! Calculate dry potential temperature, theta_d, which is defined as:
+      !
+      ! theta_d = T / exner_d;
+      !
+      ! where exner_d = ( p_d / p0 )^(R_d/C_p).
+      !
+      ! Since theta = T / exner; theta_d * exner_d = theta * exner.  Thus,
+      ! theta_d = theta * ( exner / exner_d ).  Furthermore, exner can be
+      ! written in terms of exner_d, such that:
+      !
+      ! exner = exner_d * [ 1 + (R_v/R_d)*r_v ]^(R_d/C_p).
+      !
+      ! Thus, the equation for theta_d becomes:
+      !
+      ! theta_d = theta * [ 1 + (R_v/R_d)*r_v ]^(R_d/C_p).
+      !
+      ! As stated, variable "thlm" may contain either theta or theta_l at this
+      ! point.  If the variable used is theta_l, it is close enough to be used
+      ! as an approximation.  Likewise, water vapor mixing ratio is needed, but
+      ! only total water mixing ratio is available.  Thus, use total water
+      ! mixing ratio in place of water vapor mixing ratio.
+      do k = 1, gr%nnzp, 1
+         th_dry(k) = thlm(k) * ( 1.0 + ep2 * rtm(k) )**kappa
+      enddo
+
+      ! Compute approximate dry pressure, dry exner, and dry density using
+      ! theta and dry surface pressure.
+      call hydrostatic( th_dry, pd_sfc, &                       ! Intent(in)
+                        p_dry, exner_dry, rho_dry, rho_dry_zm ) ! Intent(out)
+
+
+      select case( trim( theta_type ) )
+
+      case ( theta_name )
+
+         ! The value of variable thlm that was just used to call subroutine
+         ! hydrostatic is actually thm.
+
+         ! Thus, the values of rho_dry and rho_dry_zm that were just calculated
+         ! are dry (they do not take into account water vapor or cloud water).
+         ! These are the values of dry, static, base-state density that are
+         ! needed for the anelastic equation set.
+         rho_ds_zt = rho_dry
+         rho_ds_zm = rho_dry_zm
+
+         ! Pressure is used in computing mean cloud water mixing ratio from
+         ! excess saturation.  Since thm is currently stored in the thlm
+         ! profile, thlm(k) * exner(k) is actually thm(k) * exner(k) = T(k).
+         ! However, exner needs to be total exner rather than dry exner.
+         do k = 1, gr%nnzp
+
+            ! Calculate total pressure, p_in_Pa, using dry pressure and water
+            ! vapor mixing ratio.  Since only total water mixing ratio is
+            ! available, and cloud water mixing ratio is not known, use total
+            ! water mixing ratio to estimate total pressure.
+            p_in_Pa(k) = p_dry(k) * ( 1.0 + ep2 * rtm(k) )
+
+            ! Calculate exner from total pressure.
+            exner(k) = ( p_in_Pa(k) / p0 )**kappa
+
+            ! Calculate cloud water mixing ratio based on total water mixing
+            ! ratio and saturation mixing ratio, which based total pressure
+            ! and temperature, which can be written as theta * exner, but also
+            ! can be written as theta_d * exner_d.
+            rcm(k) &
+              = max( rtm(k) &
+                      - sat_mixrat_liq( p_in_Pa(k), th_dry(k)*exner_dry(k) ), &
+                     zero_threshold )
+
+         enddo
+
+         ! Recompute dry potential temperature more accurately based on water
+         ! vapor mixing ratio rather than total water mixing ratio.  This is
+         ! necessary because it is used for the anelastic set of equations.
+         do k = 1, gr%nnzp, 1
+            th_dry(k) = thlm(k) * ( 1.0 + ep2 * ( rtm(k) - rcm(k) ) )**kappa
+         enddo
+
+         ! Compute initial theta_l based on the theta profile (currently stored
+         ! in variable thlm) and cloud water mixing ratio (rcm), such that:
+         !  theta_l = theta - [Lv/(Cp*exner)]*rcm.
+         do k = 1, gr%nnzp
+            thlm(k) = thlm(k) - Lv/(Cp*exner(k)) * rcm(k)
+         enddo
+
+         ! Testing of passive scalars
+         if ( iisclr_thl > 0 ) then
+            sclrm(:,iisclr_thl) = thlm
+         endif
+         if ( iiedsclr_thl > 0 ) then
+            edsclrm(:,iiedsclr_thl) = thlm
+         endif
+
+
+      case ( thetal_name )
+
+         ! The value of variable thlm that was just used to call subroutine
+         ! hydrostatic is indeed thlm.
+
+         ! Find theta based on the given profile of theta_l.  If the profile
+         ! is unsaturated, then theta = theta_l.  If this initial profile is
+         ! saturated at any level, then initial r_c must be determined using an
+         ! iterative method involving theta_l, r_t, pressure, and exner.  Once
+         ! initial r_c is found, initial theta can be found, such that:
+         !  theta = theta_l + [Lv/(Cp*exner)]*rcm.
+
+         ! Find mean cloud water mixing ratio.  Pressure is used in computing
+         ! mean cloud water mixing ratio from excess saturation.  If there is
+         ! liquid water present, thlm /= thm.  However, theta_l is close enough
+         ! to theta to be used in an approximation.  Find temperature (actually
+         ! liquid water temperature) from thlm(k) * exner(k).  This can also be
+         ! found by thetal_d * exner_d.
+         do k = 1, gr%nnzp, 1
+
+            ! Calculate total pressure, p_in_Pa, using dry pressure and water
+            ! vapor mixing ratio.  Since only total water mixing ratio is
+            ! available, and cloud water mixing ratio is not known, use total
+            ! water mixing ratio to estimate total pressure.
+            p_in_Pa(k) = p_dry(k) * ( 1.0 + ep2 * rtm(k) )
+
+            ! Calculate exner from total pressure.
+            exner(k) = ( p_in_Pa(k) / p0 )**kappa
+
+            ! Compute cloud water mixing ratio using an iterative method.
+            rcm(k) = sat_rcm( thlm(k), rtm(k), p_in_Pa(k), exner(k) )
+
+         enddo
+
+         ! Compute initial theta.
+         do k = 1, gr%nnzp, 1
+            thm(k) = thlm(k) + Lv/(Cp*exner(k)) * rcm(k)
+         enddo
+
+         ! Recompute dry potential temperature more accurately based on water
+         ! vapor mixing ratio rather than total water mixing ratio.  This is
+         ! necessary because it is used for the anelastic set of equations.
+         ! This is also necessary to obtain more accurate values of dry density.
+         do k = 1, gr%nnzp, 1
+            th_dry(k) = thm(k) * ( 1.0 + ep2 * ( rtm(k) - rcm(k) ) )**kappa
+         enddo
+
+         ! Call hydrostatic using thm as input in order to obtain dry values
+         ! of the density variables.
+         call hydrostatic( th_dry, pd_sfc, &                       ! Intent(in)
+                           p_dry, exner_dry, rho_dry, rho_dry_zm ) ! Intent(out)
+
+         ! The values of rho_dry and rho_dry_zm that were just calculated are
+         ! dry (they do not take into account water vapor or cloud water).
+         ! These are the values of dry, static, base-state density that are
+         ! needed for the anelastic equation set.
+         rho_ds_zt = rho_dry
+         rho_ds_zm = rho_dry_zm
+
+
+         ! Testing of passive scalars
+         if ( iisclr_thl > 0 ) then
+            sclrm(:,iisclr_thl) = thlm
+         endif
+         if ( iiedsclr_thl > 0 ) then
+            edsclrm(:,iiedsclr_thl) = thlm
+         endif
+
+
+      case default
+
+         write(fstderr,*) "Invalid theta_type: ", theta_type
+         stop
+
+
+      end select
+
+      ! Now, compute initial theta_v, given initial th_l, rtm, rcm, and exner.
+      thvm = thlm + ep1 * T0 * rtm  & 
+                  + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
+
+      ! Recompute more accurate initial exner function, pressure, and density
+      ! using thvm, which includes the effects of water vapor and cloud water.
+      call hydrostatic( thvm, psfc, &                    ! Intent(in)
+                        p_in_Pa, exner, rho, rho_zm )    ! Intent(out)
+
+
+
+    case( pressure_name )
+
+      ! Sounding is listed in terms of pressure coordinates.
+
+      ! Set the pressure at the lowest thermodynamic level (k=1), which is below
+      ! the model lower boundary, to psfc, which is the pressure at the model
+      ! lower boundary (or surface), which is located at momentum level 1.
+      ! This is consistent with what is done in subroutine hydrostatic, which is
+      ! called when the sounding is given in terms of altitude rather than
+      ! pressure.  This is also a good way for the code to keep track of the
+      ! surface pressure.
+      p_in_Pa(1) = psfc
+
+      ! Set the value of exner.
+      exner(1) = ( psfc/p0 )**kappa
+      do k = 2, gr%nnzp, 1
+         exner(k) = ( p_in_Pa(k) / p0 )**kappa
+      enddo
+
+
+      select case ( trim( theta_type ) )
+ 
+      case( temperature_name )
+
+         ! The variable "thlm" actually contains temperature (in Kelvin) at this
+         ! point.
+
+         ! Calculate initial cloud water mixing ratio from total water mixing
+         ! ratio and saturation mixing ratio, which is calculated from
+         ! temperature and pressure.
+         do k = 1, gr%nnzp, 1
+            rcm(k) = max( rtm(k) - sat_mixrat_liq( p_in_Pa(k), thlm(k) ), &
+                          zero_threshold )
+         enddo
+
+         ! Calculate initial potential temperature from temperature and exner.
+         ! Again, the variable "thlm" actually contains temperature at this
+         ! point.
+         do k = 1, gr%nnzp, 1
+            thm(k) = thlm(k) / exner(k)
+         enddo
+
+         ! Compute initial theta_l based on the theta profile, exner, and cloud
+         ! water mixing ratio (rcm), such that:
+         !  theta_l = theta - [Lv/(Cp*exner)]*rcm.
+         do k = 1, gr%nnzp, 1
+            thlm(k) = thm(k) - Lv/(Cp*exner(k)) * rcm(k)
+         enddo
+
+         ! Testing of passive scalars
+         if ( iisclr_thl > 0 ) then
+            sclrm(:,iisclr_thl) = thlm
+         endif
+         if ( iiedsclr_thl > 0 ) then
+            edsclrm(:,iiedsclr_thl) = thlm
+         endif
+
+
+      case( theta_name )
+
+         ! The variable "thlm" actually contains potential temperature (theta)
+         ! at this point.
+         thm = thlm
+
+         ! Calculate initial cloud water mixing ratio from total water mixing
+         ! ratio and saturation mixing ratio, which is calculated from pressure
+         ! and temperature (thm * exner).
+         do k = 1, gr%nnzp, 1
+            rcm(k) &
+              = max( rtm(k) - sat_mixrat_liq( p_in_Pa(k), thm(k) * exner(k) ), &
+                     zero_threshold )
+         enddo
+
+         ! Compute initial theta_l based on the theta profile, exner, and cloud
+         ! water mixing ratio (rcm), such that:
+         !  theta_l = theta - [Lv/(Cp*exner)]*rcm.
+         do k = 1, gr%nnzp, 1
+            thlm(k) = thm(k) - Lv/(Cp*exner(k)) * rcm(k)
+         enddo
+
+         ! Testing of passive scalars
+         if ( iisclr_thl > 0 ) then
+            sclrm(:,iisclr_thl) = thlm
+         endif
+         if ( iiedsclr_thl > 0 ) then
+            edsclrm(:,iiedsclr_thl) = thlm
+         endif
+
+
+      case ( thetal_name )
+
+         ! The variable "thlm" does indeed contain liquid water potential
+         ! temperature (theta_l) at this point.
+
+         ! Find theta based on the given profile of theta_l.  If the profile
+         ! is unsaturated, then theta = theta_l.  If this initial profile is
+         ! saturated at any level, then initial r_c must be determined using an
+         ! iterative method involving theta_l, r_t, pressure, and exner.  Once
+         ! initial r_c is found, initial theta can be found, such that:
+         !  theta = theta_l + [Lv/(Cp*exner)]*rcm.
+
+         ! Compute initial cloud water mixing ratio using an iterative method.
+         do k = 1, gr%nnzp, 1
+            rcm(k) = sat_rcm( thlm(k), rtm(k), p_in_Pa(k), exner(k) )
+         enddo
+
+         ! Compute initial theta.
+         do k = 1, gr%nnzp, 1
+            thm(k) = thlm(k) + Lv/(Cp*exner(k)) * rcm(k)
+         enddo
+
+         ! Testing of passive scalars
+         if ( iisclr_thl > 0 ) then
+            sclrm(:,iisclr_thl) = thlm
+         endif
+         if ( iiedsclr_thl > 0 ) then
+            edsclrm(:,iiedsclr_thl) = thlm
+         endif
+
+
+      case default
+
+         write(fstderr,*) "Invalid theta_type: ", theta_type
+         stop
+
+
+      end select
+
+
+      ! Now, compute initial theta_v, given initial th_l, rtm, rcm, and exner.
+      thvm = thlm + ep1 * T0 * rtm  &
+                  + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
+
+      ! Compute total density (moisture included) using pressure, exner, and
+      ! thvm.
+      do k = 1, gr%nnzp, 1
+         rho(k) = p_in_Pa(k) / ( Rd * thvm(k) * exner(k) )
+      enddo
+
+      ! Calculate total density on momentum grid levels.
+
+      ! Since total pressure is given at sounding levels and linearly
+      ! interpolated onto model thermodynamic grid levels, total pressure at
+      ! model momentum levels will also be found by linear interpolation.
+      p_in_Pa_zm = zt2zm( p_in_Pa )
+
+      ! Since momentum level 1 is at the surface (or at the model lower
+      ! boundary), the pressure is the surface pressure.
+      p_in_Pa_zm(1) = psfc
+
+      ! Calculate exner at momentum levels from pressure at momentum levels.
+      exner_zm = ( p_in_Pa_zm / p0 )**kappa
+
+      ! Interpolate thvm to momentum levels.
+      thvm_zm = zt2zm( thvm )
+
+      ! Compute total density (moisture included) using pressure, exner, and
+      ! thvm.
+      do k = 1, gr%nnzp, 1
+         rho_zm(k) = p_in_Pa_zm(k) / ( Rd * thvm_zm(k) * exner_zm(k) )
+      enddo
+
+
+      !!! Calculate dry, static base-state density for the anelastic equation
+      !!! set.  Calculate dry density from theta, dry pressure and dry exner.
+
+      ! Calculate dry density on thermodynamic levels
+
+      do k = 1, gr%nnzp, 1
+
+         ! Calculate dry pressure from total pressure and water vapor mixing
+         ! ratio, such that:  p_d = p / [ 1 + (R_v/R_d)*r_v ].
+         p_dry(k) = p_in_Pa(k) / ( 1.0 + ep2 * ( rtm(k) - rcm(k) ) ) 
+
+         ! Calculate dry exner from dry pressure.
+         exner_dry(k) = ( p_dry(k) / p0 )**kappa
+
+      enddo
+
+      ! Calculate dry potential temperature, theta_d, which is defined as:
+      !
+      ! theta_d = T / exner_d;
+      !
+      ! where exner_d = ( p_d / p0 )^(R_d/C_p).
+      !
+      ! Since theta = T / exner; theta_d * exner_d = theta * exner.  Thus,
+      ! theta_d = theta * ( exner / exner_d ).  Furthermore, exner can be
+      ! written in terms of exner_d, such that:
+      !
+      ! exner = exner_d * [ 1 + (R_v/R_d)*r_v ]^(R_d/C_p).
+      !
+      ! Thus, the equation for theta_d becomes:
+      !
+      ! theta_d = theta * [ 1 + (R_v/R_d)*r_v ]^(R_d/C_p).
+      do k = 1, gr%nnzp, 1
+         th_dry(k) = thm(k) * ( 1.0 + ep2 * ( rtm(k) - rcm(k) ) )**kappa
+      enddo
+
+      ! Compute dry density using dry pressure, dry exner, and theta_d.
+      do k = 1, gr%nnzp, 1
+         rho_dry(k) = p_dry(k) / ( Rd * th_dry(k) * exner_dry(k) )
+      enddo
+
+      ! Calculate dry density on momentum levels
+
+      do k = 1, gr%nnzp, 1
+
+         ! Calculate dry pressure on momentum levels from total pressure (on
+         ! momentum levels) and water vapor mixing ratio (interpolated to
+         ! momentum levels), such that:  p_d = p / [ 1 + (R_v/R_d)*r_v ].
+         p_dry(k) = p_in_Pa_zm(k) &
+                    / ( 1.0 + ep2 * max( zt2zm( rtm - rcm, k ), &
+                                         zero_threshold ) )
+
+         ! Calculate dry exner on momentum levels from dry pressure on momentum
+         ! levels.
+         exner_dry(k) = ( p_dry(k) / p0 )**kappa
+
+      enddo
+
+      ! Calculate theta_d on momentum levels by interpolating theta and water
+      ! vapor mixing ratio to momentum levels.
+      do k = 1, gr%nnzp, 1
+         th_dry(k) = zt2zm( thm, k ) &
+                     * ( 1.0 + ep2 * max( zt2zm( rtm - rcm, k ), &
+                                          zero_threshold ) )**kappa
+      enddo
+
+      ! Compute dry density on momentum levels using dry pressure on momentum
+      ! levels, dry exner on momentum levels, and theta_d interpolated to
+      ! momentum levels.
+      do k = 1, gr%nnzp, 1
+         rho_dry_zm(k) = p_dry(k) / ( Rd * th_dry(k) * exner_dry(k) )
+      enddo
+
+      ! The values of rho_dry and rho_dry_zm that were just calculated are dry
+      ! (they do not take into account water vapor or cloud water).  These are
+      ! the values of dry, static, base-state density that are needed for the
+      ! anelastic equation set.
+      rho_ds_zt = rho_dry
+      rho_ds_zm = rho_dry_zm
+
+
+
+    case default
+
+      stop "Invalid sounding vertical-coordinate variable"
+
+
+
+    end select ! either 'z[m]' or 'Press[Pa]'
+
+
+    ! Set the values of inverse, dry, static, base-state density.
+    invrs_rho_ds_zm = 1.0 / rho_ds_zm
+    invrs_rho_ds_zt = 1.0 / rho_ds_zt
+
+
+  end subroutine initialize_clubb_variables
   !-----------------------------------------------------------------------
   subroutine restart_clubb &
              ( iunit, runfile, &
