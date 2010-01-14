@@ -1263,7 +1263,6 @@ module clubb_driver
                                      invrs_rho_ds_zt, sclrm,       & ! Intent(out)
                                      edsclrm )                       ! Intent(out)
 
-
     ! Determine initial value cloud droplet number concentration for the
     ! Morrison microphysics
     select case ( trim( micro_scheme ) )
@@ -1803,11 +1802,11 @@ module clubb_driver
       invrs_rho_ds_zm, & ! Inverse dry, static density (m-levs.)     [m^3/kg]
       invrs_rho_ds_zt    ! Inverse dry, static density (t-levs.)     [m^3/kg]
 
-    real, dimension(gr%nnzp,sclr_dim), intent(out) ::  & 
-      sclrm      ! Standard passive scalar           [units vary]
+    real, dimension(gr%nnzp,sclr_dim), intent(inout) ::  & 
+      sclrm  ! Standard passive scalar           [units vary]
 
-    real, dimension(gr%nnzp,edsclr_dim), intent(out) ::  & 
-      edsclrm    ! Eddy diffusivity passive scalar   [units vary]
+    real, dimension(gr%nnzp,edsclr_dim), intent(inout) ::  & 
+      edsclrm ! Eddy-diffusivity passive scalar   [units vary]
 
     ! Local Variables
     real ::  &
@@ -2301,7 +2300,7 @@ module clubb_driver
     invrs_rho_ds_zm = 1.0 / rho_ds_zm
     invrs_rho_ds_zt = 1.0 / rho_ds_zt
 
-
+    return
   end subroutine initialize_clubb_variables
   !-----------------------------------------------------------------------
   subroutine restart_clubb &
