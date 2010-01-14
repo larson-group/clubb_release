@@ -145,7 +145,7 @@ module input_interpret
            enddo
 
            ! Convert temperature to potential temperature, theta.
-           theta = theta / exner
+           theta(1:nlevels) = theta(1:nlevels) / exner(1:nlevels)
 
            ! Calculate theta_l from theta and cloud water mixing ratio, such
            ! that:  theta_l = theta - [Lv/(Cp*exner)]*rcm.
