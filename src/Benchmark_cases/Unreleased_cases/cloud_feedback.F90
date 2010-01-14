@@ -131,14 +131,18 @@ if ( sfctype == 1 ) then
   wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, & 
                                    Tsfc, exner_sfc )
 
-  ! Let passive scalars be equal to rt and theta_l for now
-  if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
-  if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
-
-  if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
-  if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
-
 end if
+
+wpsclrp_sfc(:)   = 0.0 ! Initialize flux to 0 
+wpedsclrp_sfc(:) = 0.0 ! Initialize flux to 0 
+
+! Set passive scalars be equal to rt and theta_l when checking the scalar code
+if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
+
+if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
+if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
+
 
 return
 end subroutine cloud_feedback_sfclyr
