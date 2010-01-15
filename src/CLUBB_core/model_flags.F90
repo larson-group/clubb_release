@@ -42,6 +42,11 @@ module model_flags
     l_tke_aniso        ! For anisotropic turbulent kinetic energy,
                        !   i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 
+  logical, parameter, public :: &
+    l_use_boussinesq = .true.  ! Flag to use the Boussinesq form of the
+                               ! predictive equations.  The predictive
+                               ! equations are anelastic by default.
+
   ! Use to determine whether a host model has already applied the surface flux,
   ! to avoid double counting.
   logical, public :: &

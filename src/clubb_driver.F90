@@ -145,8 +145,9 @@ module clubb_driver
       tau_zm, p_in_Pa, rho_zm, upwp, vpwp, wpthlp, wpthvp, &
       wprcp, Kh_zt, rho, wprtp, wpthlp_sfc, wprtp_sfc, &
       upwp_sfc, vpwp_sfc, rho_ds_zm, rho_ds_zt, &
-      invrs_rho_ds_zm, invrs_rho_ds_zt, thlm_forcing, &
-      rtm_forcing, um_forcing, vm_forcing, &
+      invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, &
+      thv_ds_zt, thlm_forcing, rtm_forcing, &
+      um_forcing, vm_forcing, &
       up2, vp2, wp3, rtp2, pdf_params, &
       thlp2, rtpthlp, sigma_sqd_w, cloud_frac, &
       rcm_in_layer, cloud_cover
@@ -760,7 +761,8 @@ module clubb_driver
              tau_zt, tau_zm, thvm, p_in_Pa,                    & ! Intent(inout)
              rho, rho_zm, rho_ds_zm, rho_ds_zt,                & ! Intent(inout)
              invrs_rho_ds_zm, invrs_rho_ds_zt,                 & ! Intent(inout)
-             Lscale, rtm_ref, thlm_ref,                        & ! Intent(inout) 
+             thv_ds_zm, thv_ds_zt, Lscale,                     & ! Intent(inout)
+             rtm_ref, thlm_ref,                                & ! Intent(inout) 
              Kh_zt, Kh_zm, um_ref, vm_ref,                     & ! Intent(inout)
              hydromet, Ncnm,                                   & ! Intent(inout)
              sclrm, edsclrm )                                    ! Intent(out)
@@ -779,7 +781,8 @@ module clubb_driver
              tau_zt, tau_zm, thvm, p_in_Pa,                    & ! Intent(inout)
              rho, rho_zm, rho_ds_zm, rho_ds_zt,                & ! Intent(inout)
              invrs_rho_ds_zm, invrs_rho_ds_zt,                 & ! Intent(inout)
-             Lscale, rtm_ref, thlm_ref,                        & ! Intent(inout) 
+             thv_ds_zm, thv_ds_zt, Lscale,                     & ! Intent(inout)
+             rtm_ref, thlm_ref,                                & ! Intent(inout) 
              Kh_zt, Kh_zm, um_ref, vm_ref,                     & ! Intent(inout)
              hydromet, Ncnm,                                   & ! Intent(inout)
              sclrm, edsclrm )                                    ! Intent(out)
@@ -1059,7 +1062,8 @@ module clubb_driver
                tau_zt, tau_zm, thvm, p_in_Pa, &
                rho, rho_zm, rho_ds_zm, rho_ds_zt, &
                invrs_rho_ds_zm, invrs_rho_ds_zt, &
-               Lscale, rtm_ref, thlm_ref, &
+               thv_ds_zm, thv_ds_zt, Lscale, &
+               rtm_ref, thlm_ref, &
                Kh_zt, Kh_zm, um_ref, vm_ref, &
                hydromet, Ncnm, &
                sclrm, edsclrm )
@@ -1183,6 +1187,8 @@ module clubb_driver
       rho_ds_zt,       & ! Dry, static density (thermo. levs.) [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density (m-levs.)  [m^3/kg]
       invrs_rho_ds_zt, & ! Inv. dry, static density (t-levs.)  [m^3/kg]
+      thv_ds_zm,       & ! Dry, base-state theta_v (m-levs.)   [K]
+      thv_ds_zt,       & ! Dry, base-state theta_v (t-levs.)   [K]
       Lscale,          & ! Mixing length                       [m] 
       Kh_zt, Kh_zm,    & ! Eddy diffusivity                    [m^2/s]
       um_ref,          & ! Initial profile of u wind           [m/s]
@@ -1260,8 +1266,8 @@ module clubb_driver
                                      exner, rho, rho_zm,           & ! Intent(out)
                                      rcm, thvm, rho_ds_zm,         & ! Intent(out)
                                      rho_ds_zt, invrs_rho_ds_zm,   & ! Intent(out)
-                                     invrs_rho_ds_zt, sclrm,       & ! Intent(out)
-                                     edsclrm )                       ! Intent(out)
+                                     invrs_rho_ds_zt, thv_ds_zm,   & ! Intent(out)
+                                     thv_ds_zt, sclrm, edsclrm )     ! Intent(out)
 
     ! Determine initial value cloud droplet number concentration for the
     ! Morrison microphysics
@@ -1717,8 +1723,8 @@ module clubb_driver
                                          exner, rho, rho_zm, &
                                          rcm, thvm, rho_ds_zm, &
                                          rho_ds_zt, invrs_rho_ds_zm, &
-                                         invrs_rho_ds_zt, sclrm, &
-                                         edsclrm )
+                                         invrs_rho_ds_zt, thv_ds_zm, &
+                                         thv_ds_zt, sclrm, edsclrm )
 
     ! Description:
     ! Given inital sounding data (already interpolated onto model thermodynamic
@@ -1729,8 +1735,8 @@ module clubb_driver
     ! many initial profiles of variables used in CLUBB.  Pressure is calculated
     ! (in the case that the sounding is given in altitude coordinates), as well
     ! as exner and density.  Initial rcm, theta, and theta_l are calculated.
-    ! Additionally, the dry profiles (dry densities) for the anelastic equation
-    ! set are calculated.
+    ! Additionally, the dry profiles (dry densities and dry, base-state theta_v)
+    ! for the anelastic equation set are calculated.
 
     use grid_class, only: &
         gr, & ! Variable(s)
@@ -1752,6 +1758,9 @@ module clubb_driver
         sclr_dim, &
         edsclr_dim
 
+    use model_flags, only:  &
+        l_use_boussinesq
+
     use input_names, only: &
         z_name, & ! Variable(s)
         pressure_name, &
@@ -1767,8 +1776,8 @@ module clubb_driver
         sat_rcm
 
     use array_index, only: &
-         iisclr_thl, & ! Variable(s)
-         iiedsclr_thl
+        iisclr_thl, & ! Variable(s)
+        iiedsclr_thl
 
     implicit none
 
@@ -1800,7 +1809,9 @@ module clubb_driver
       rho_ds_zm,       & ! Dry, static density (momentum levels)     [kg/m^3]
       rho_ds_zt,       & ! Dry, static density (thermodynamic levs.) [kg/m^3]
       invrs_rho_ds_zm, & ! Inverse dry, static density (m-levs.)     [m^3/kg]
-      invrs_rho_ds_zt    ! Inverse dry, static density (t-levs.)     [m^3/kg]
+      invrs_rho_ds_zt, & ! Inverse dry, static density (t-levs.)     [m^3/kg]
+      thv_ds_zm,       & ! Dry, base-state theta_v (momentum levels) [K]
+      thv_ds_zt          ! Dry, base-state theta_v (thermo. levels)  [K]
 
     real, dimension(gr%nnzp,sclr_dim), intent(inout) ::  & 
       sclrm  ! Standard passive scalar           [units vary]
@@ -1814,15 +1825,18 @@ module clubb_driver
       rv_sfc    ! Surface water vapor mixing ratio    [kg/kg]
 
     real, dimension(gr%nnzp) ::  &
-      thm,        & ! Potential temperature (thermodynamic levels)   [K]
-      th_dry,     & ! Dry potential temperature (thermo. levels)     [K]
-      p_dry,      & ! Dry air pressure (thermodynamic levels)        [Pa]
-      exner_dry,  & ! Exner of dry air (thermodynamic levels)        [-]
-      rho_dry,    & ! Dry air density (thermodynamic levels)         [kg/m^3]
-      rho_dry_zm, & ! Dry air density on momentum levels             [kg/m^3]
-      p_in_Pa_zm, & ! Pressure interpolated to momentum levels       [Pa]
-      exner_zm,   & ! Exner on momentum levels                       [-]
-      thvm_zm       ! Theta_v interpolated to momentum levels        [K]
+      thm,          & ! Potential temperature (thermodynamic levels)   [K]
+      th_dry,       & ! Dry potential temperature (thermo. levels)     [K]
+      p_dry,        & ! Dry air pressure (thermodynamic levels)        [Pa]
+      exner_dry,    & ! Exner of dry air (thermodynamic levels)        [-]
+      rho_dry,      & ! Dry air density (thermodynamic levels)         [kg/m^3]
+      rho_dry_zm,   & ! Dry air density on momentum levels             [kg/m^3]
+      p_in_Pa_zm,   & ! Pressure interpolated to momentum levels       [Pa]
+      exner_zm,     & ! Exner on momentum levels                       [-]
+      th_dry_zm,    & ! Dry potential temperature on momentum levels   [K]
+      p_dry_zm,     & ! Dry air pressure on momentum levels            [Pa]
+      exner_dry_zm, & ! Exner of dry air on momentum levels            [-]
+      thvm_zm         ! Theta_v interpolated to momentum levels        [K]
 
     integer :: k   ! Array index
 
@@ -1896,8 +1910,9 @@ module clubb_driver
 
       case ( theta_name )
 
-        ! The value of variable thlm that was just used to call subroutine
-        ! hydrostatic is actually thm.
+        ! The variable "thlm" actually contains potential temperature (theta)
+        ! at this point.
+        thm = thlm
 
         ! Thus, the values of rho_dry and rho_dry_zm that were just calculated
         ! are dry (they do not take into account water vapor or cloud water).
@@ -1936,8 +1951,24 @@ module clubb_driver
         ! vapor mixing ratio rather than total water mixing ratio.  This is
         ! necessary because it is used for the anelastic set of equations.
         do k = 1, gr%nnzp, 1
-          th_dry(k) = thlm(k) * ( 1.0 + ep2 * ( rtm(k) - rcm(k) ) )**kappa
+          th_dry(k) = thm(k) * ( 1.0 + ep2 * ( rtm(k) - rcm(k) ) )**kappa
         enddo
+
+        ! The value of theta_d on momentum levels is also needed for the
+        ! anelastic set of equations.  Calculate theta_d on momentum levels by
+        ! interpolating theta and water vapor mixing ratio to momentum levels.
+        do k = 1, gr%nnzp, 1
+          th_dry_zm(k) = zt2zm( thm, k ) &
+                         * ( 1.0 + ep2 * max( zt2zm( rtm - rcm, k ), &
+                                              zero_threshold ) )**kappa
+        enddo
+
+        ! Since theta_d does not include water in any phase, the value of dry,
+        ! static, base-state theta is the same as the values of both dry,
+        ! static, base-state theta_l and dry, static, base-state theta_v.  Thus,
+        ! for use with the anelastic equation set, thv_ds = thl_ds = theta_ds.
+        thv_ds_zt = th_dry
+        thv_ds_zm = th_dry_zm
 
         ! Compute initial theta_l based on the theta profile (currently stored
         ! in variable thlm) and cloud water mixing ratio (rcm), such that:
@@ -2001,6 +2032,22 @@ module clubb_driver
         do k = 1, gr%nnzp, 1
           th_dry(k) = thm(k) * ( 1.0 + ep2 * ( rtm(k) - rcm(k) ) )**kappa
         enddo
+
+        ! The value of theta_d on momentum levels is also needed for the
+        ! anelastic set of equations.  Calculate theta_d on momentum levels by
+        ! interpolating theta and water vapor mixing ratio to momentum levels.
+        do k = 1, gr%nnzp, 1
+          th_dry_zm(k) = zt2zm( thm, k ) &
+                         * ( 1.0 + ep2 * max( zt2zm( rtm - rcm, k ), &
+                                              zero_threshold ) )**kappa
+        enddo
+
+        ! Since theta_d does not include water in any phase, the value of dry,
+        ! static, base-state theta is the same as the values of both dry,
+        ! static, base-state theta_l and dry, static, base-state theta_v.  Thus,
+        ! for use with the anelastic equation set, thv_ds = thl_ds = theta_ds.
+        thv_ds_zt = th_dry
+        thv_ds_zm = th_dry_zm
 
         ! Call hydrostatic using thm as input in order to obtain dry values
         ! of the density variables.
@@ -2253,29 +2300,29 @@ module clubb_driver
         ! Calculate dry pressure on momentum levels from total pressure (on
         ! momentum levels) and water vapor mixing ratio (interpolated to
         ! momentum levels), such that:  p_d = p / [ 1 + (R_v/R_d)*r_v ].
-        p_dry(k) = p_in_Pa_zm(k) &
-                   / ( 1.0 + ep2 * max( zt2zm( rtm - rcm, k ), &
-                                        zero_threshold ) )
+        p_dry_zm(k) = p_in_Pa_zm(k) &
+                      / ( 1.0 + ep2 * max( zt2zm( rtm - rcm, k ), &
+                                           zero_threshold ) )
 
         ! Calculate dry exner on momentum levels from dry pressure on momentum
         ! levels.
-        exner_dry(k) = ( p_dry(k) / p0 )**kappa
+        exner_dry_zm(k) = ( p_dry_zm(k) / p0 )**kappa
 
       enddo
 
       ! Calculate theta_d on momentum levels by interpolating theta and water
       ! vapor mixing ratio to momentum levels.
       do k = 1, gr%nnzp, 1
-        th_dry(k) = zt2zm( thm, k ) &
-                    * ( 1.0 + ep2 * max( zt2zm( rtm - rcm, k ), &
-                                         zero_threshold ) )**kappa
+        th_dry_zm(k) = zt2zm( thm, k ) &
+                       * ( 1.0 + ep2 * max( zt2zm( rtm - rcm, k ), &
+                                            zero_threshold ) )**kappa
       enddo
 
       ! Compute dry density on momentum levels using dry pressure on momentum
       ! levels, dry exner on momentum levels, and theta_d interpolated to
       ! momentum levels.
       do k = 1, gr%nnzp, 1
-        rho_dry_zm(k) = p_dry(k) / ( Rd * th_dry(k) * exner_dry(k) )
+        rho_dry_zm(k) = p_dry_zm(k) / ( Rd * th_dry_zm(k) * exner_dry_zm(k) )
       enddo
 
       ! The values of rho_dry and rho_dry_zm that were just calculated are dry
@@ -2284,6 +2331,13 @@ module clubb_driver
       ! anelastic equation set.
       rho_ds_zt = rho_dry
       rho_ds_zm = rho_dry_zm
+
+      ! Since theta_d does not include water in any phase, the value of dry,
+      ! static, base-state theta is the same as the values of both dry, static,
+      ! base-state theta_l and dry, static, base-state theta_v.  Thus, for use
+      ! with the anelastic equation set, thv_ds = thl_ds = theta_ds.
+      thv_ds_zt = th_dry
+      thv_ds_zm = th_dry_zm
 
 
 
@@ -2296,9 +2350,24 @@ module clubb_driver
     end select ! either 'z[m]' or 'Press[Pa]'
 
 
+    ! At this point, the values of the dry, static, base-state variables
+    ! rho_ds_zt, rho_ds_zm, thv_ds_zt, and thv_ds_zm have been calculated.
+
+    ! The CLUBB code is set up to be an anelastic code.  If use of the
+    ! Boussinesq approximation is desired, rather than the anelastic
+    ! approximation, reset the values of rho_ds_zt and rho_ds_zm to 1.  Also,
+    ! reset the values of thv_ds_zt and thv_ds_zm to reference temperature T0.
+    if ( l_use_boussinesq ) then
+       rho_ds_zt = 1.0
+       rho_ds_zm = 1.0
+       thv_ds_zt = T0
+       thv_ds_zm = T0
+    endif ! otherwise, the code remains anelastic.
+
     ! Set the values of inverse, dry, static, base-state density.
     invrs_rho_ds_zm = 1.0 / rho_ds_zm
     invrs_rho_ds_zt = 1.0 / rho_ds_zt
+
 
     return
   end subroutine initialize_clubb_variables

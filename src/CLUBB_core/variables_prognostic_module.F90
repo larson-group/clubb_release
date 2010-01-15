@@ -53,14 +53,16 @@ module variables_prognostic_module
     rho_ds_zt,       & ! Dry, static density (thermodynamic levels)    [kg/m^3]
     invrs_rho_ds_zm, & ! Inverse dry, static density (momentum levs.)  [m^3/kg]
     invrs_rho_ds_zt, & ! Inverse dry, static density (thermo. levs.)   [m^3/kg]
+    thv_ds_zm,       & ! Dry, base-state theta_v (momentum levels)     [K]
+    thv_ds_zt,       & ! Dry, base-state theta_v (thermodynamic levs.) [K]
     thlm_forcing,    & ! thlm large-scale forcing                      [K/s]
     rtm_forcing,     & ! rtm large-scale forcing                       [kg/kg/s]
     um_forcing,      & ! u wind forcing                                [m/s/s] 
     vm_forcing         ! v wind forcing                                [m/s/s]
 
 !$omp   threadprivate(p_in_Pa, exner, Kh_zt, rho, rho_zm, rho_ds_zm, &
-!$omp     rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, thlm_forcing, &
-!$omp     rtm_forcing, um_forcing, vm_forcing)
+!$omp     rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, &
+!$omp     thv_ds_zt, thlm_forcing, rtm_forcing, um_forcing, vm_forcing)
 
   ! Imposed large scale w
   real, target, allocatable, dimension(:), public :: & 
@@ -223,6 +225,8 @@ module variables_prognostic_module
     allocate( rho_ds_zt(1:nzmax) )       ! dry, static density: t-levs
     allocate( invrs_rho_ds_zm(1:nzmax) ) ! inv. dry, static density: m-levs
     allocate( invrs_rho_ds_zt(1:nzmax) ) ! inv. dry, static density: t-levs
+    allocate( thv_ds_zm(1:nzmax) )       ! dry, base-state theta_v: m-levs
+    allocate( thv_ds_zt(1:nzmax) )       ! dry, base-state theta_v: t-levs
 
     allocate( thlm_forcing(1:nzmax) )    ! thlm ls forcing
     allocate( rtm_forcing(1:nzmax) )     ! rtm ls forcing
@@ -318,6 +322,8 @@ module variables_prognostic_module
     rho_ds_zt(1:nzmax) = 0.0        ! dry, static density: t-levs
     invrs_rho_ds_zm(1:nzmax) = 0.0  ! inv. dry, static density: m-levs
     invrs_rho_ds_zt(1:nzmax) = 0.0  ! inv. dry, static density: t-levs
+    thv_ds_zm(1:nzmax) = 0.0        ! dry, base-state theta_v: m-levs
+    thv_ds_zt(1:nzmax) = 0.0        ! dry, base-state theta_v: t-levs
 
     thlm_forcing(1:nzmax) = 0.0     ! thlm large-scale forcing
     rtm_forcing(1:nzmax)  = 0.0     ! rtm large-scale forcing
@@ -441,6 +447,8 @@ module variables_prognostic_module
     deallocate( rho_ds_zt )       ! dry, static density: t-levs
     deallocate( invrs_rho_ds_zm ) ! inv. dry, static density: m-levs
     deallocate( invrs_rho_ds_zt ) ! inv. dry, static density: t-levs
+    deallocate( thv_ds_zm )       ! dry, base-state theta_v: m-levs
+    deallocate( thv_ds_zt )       ! dry, base-state theta_v: t-levs
 
     deallocate( thlm_forcing )
     deallocate( rtm_forcing )
