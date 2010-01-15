@@ -61,13 +61,18 @@ if (abs(bflx) > 1.e-6) then
     lmo   = -ustar**3 / ( vonk * bflx )
     zeta  = z/lmo
     if (zeta > 0.) then
-      ustar =  vonk*wnd  /(lnz + am*zeta)
+      if ( zeta > 1.e10 ) then ! -dschanen UWM for large zeta
+        ustar = 1e-10
+        exit
+      else
+        ustar =  vonk*wnd  /(lnz + am*zeta)
+      end if
     else
       x     = sqrt( sqrt( 1.0 - bm*zeta ) )
       psi1  = 2.*log( 1.0+x ) + log( 1.0+x*x ) - 2.*atan( x ) + c1
       ustar = wnd*vonk/(lnz - psi1)
     end if
-  end do
+  end do ! 1..4
 end if
 
 diag_ustar = ustar
