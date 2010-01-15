@@ -50,6 +50,7 @@ module stats_zt
         ip_in_Pa, & 
         iexner, & 
         irho_ds_zt, &
+        ithv_ds_zt, &
         iLscale, & 
         iwp3, & 
         iwpthlp2, & 
@@ -369,6 +370,7 @@ module stats_zt
     ip_in_Pa        = 0
     iexner          = 0
     irho_ds_zt      = 0
+    ithv_ds_zt      = 0
     iLscale         = 0
     iwp3            = 0
     iwpthlp2        = 0
@@ -756,6 +758,11 @@ module stats_zt
         irho_ds_zt = k
         call stat_assign( irho_ds_zt, "rho_ds_zt", &
              "Dry, static, base-state density [kg/m^3]", "kg m^{-3}", zt )
+        k = k + 1
+      case ('thv_ds_zt')
+        ithv_ds_zt = k
+        call stat_assign( ithv_ds_zt, "thv_ds_zt", &
+             "Dry, base-state theta_v [K]", "K", zt )
         k = k + 1
       case ('Lscale')
         iLscale = k

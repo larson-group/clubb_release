@@ -52,6 +52,7 @@ module stats_zm
           irho_zm, & 
           isigma_sqd_w, &
           irho_ds_zm, &
+          ithv_ds_zm, &
           iem, & 
           ishear, &
           imean_w_up, &
@@ -241,6 +242,7 @@ module stats_zm
     irho_zm       = 0
     isigma_sqd_w  = 0
     irho_ds_zm    = 0
+    ithv_ds_zm    = 0
     iem           = 0
     ishear        = 0  ! Brian
     imean_w_up    = 0
@@ -528,6 +530,11 @@ module stats_zm
         irho_ds_zm = k
         call stat_assign(irho_ds_zm,"rho_ds_zm", &
              "Dry, static, base-state density [kg/m^3]","kg m^{-3}",zm)
+        k = k + 1
+      case ('thv_ds_zm')
+        ithv_ds_zm = k
+        call stat_assign(ithv_ds_zm,"thv_ds_zm", &
+             "Dry, base-state theta_v [K]","K",zm)
         k = k + 1
       case ('em')
         iem = k

@@ -1184,9 +1184,9 @@ module stats_subs
                      rtm, wprtp, wpthlp, wpthvp, wprcp, &
                      wp2, wp3, rtp2, thlp2, rtpthlp, &
                      p_in_Pa, exner, rho, rho_zm, rho_ds_zm, &
-                     rho_ds_zt, Kh_zt, wm_zt, wm_zm, &
-                     sigma_sqd_w, tau_zm, rcm, cloud_frac, &
-                     rcm_in_layer, cloud_cover, &
+                     rho_ds_zt, thv_ds_zm, thv_ds_zt, Kh_zt, &
+                     wm_zt, wm_zm, sigma_sqd_w, tau_zm, rcm, &
+                     cloud_frac, rcm_in_layer, cloud_cover, &
                      pdf_params, &
                      sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
                      wpsclrp, edsclrm, edsclrm_forcing )
@@ -1219,6 +1219,7 @@ module stats_subs
         ip_in_Pa, & 
         iexner, & 
         irho_ds_zt, &
+        ithv_ds_zt, &
         iLscale, & 
         iwp3, & 
         iwpthlp2, & 
@@ -1301,6 +1302,7 @@ module stats_subs
         irho_zm, & 
         isigma_sqd_w, &
         irho_ds_zm, &
+        ithv_ds_zm, &
         iem
 
     use stats_variables, only: & 
@@ -1464,6 +1466,8 @@ module stats_subs
       rho_zm,       & ! Density                                  [kg/m^3]
       rho_ds_zm,    & ! Dry, static density (momentum levels)    [kg/m^3]
       rho_ds_zt,    & ! Dry, static density (thermo. levs.)      [kg/m^3]
+      thv_ds_zm,    & ! Dry, base-state theta_v (momentum levs.) [K]
+      thv_ds_zt,    & ! Dry, base-state theta_v (thermo. levs.)  [K]
       Kh_zt,        & ! Eddy diffusivity                         [m^2/s]
       wm_zt,        & ! w on thermodynamic levels                [m/s]
       wm_zm,        & ! w on momentum levels                     [m/s]
@@ -1526,6 +1530,7 @@ module stats_subs
       call stat_update_var( ip_in_Pa, p_in_Pa, zt )
       call stat_update_var( iexner, exner, zt )
       call stat_update_var( irho_ds_zt, rho_ds_zt, zt )
+      call stat_update_var( ithv_ds_zt, thv_ds_zt, zt )
       call stat_update_var( iLscale, Lscale, zt )
       call stat_update_var( iwp3, wp3, zt )
       call stat_update_var( iwpthlp2, wpthlp2, zt )
@@ -1627,6 +1632,7 @@ module stats_subs
       call stat_update_var( irho_zm, rho_zm, zm )
       call stat_update_var( isigma_sqd_w, sigma_sqd_w, zm )
       call stat_update_var( irho_ds_zm, rho_ds_zm, zm )
+      call stat_update_var( ithv_ds_zm, thv_ds_zm, zm )
       call stat_update_var( iem, em, zm )
       call stat_update_var( ishear, shear, zm )
       call stat_update_var( iFrad, Frad, zm )

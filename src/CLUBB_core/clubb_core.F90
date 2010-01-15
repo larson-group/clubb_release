@@ -362,10 +362,12 @@ module clubb_core
     ! along with the other rho variables, and will be set in clubb_driver.F90.
     ! Brian; 12/16/09.
     real, dimension(gr%nnzp) :: &
-      rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
-      rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
-      invrs_rho_ds_zm, & ! Inv. dry, static density @ moment. levs. [m^3/kg]
-      invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
+      rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
+      invrs_rho_ds_zm, & ! Inv. dry, static density @ moment. levs.  [m^3/kg]
+      invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
+      thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
+      thv_ds_zt          ! Dry, base-state theta_v on thermo. levs.  [K]
 
     real, dimension(gr%nnzp) :: &
       p_in_Pa_zm, &  ! Pressure interpolated to momentum levels  [Pa]
@@ -438,9 +440,13 @@ module clubb_core
     ! Anelastic
     !rho_ds_zm = rho_zm
     !rho_ds_zt = rho
+    !thv_ds_zm = T0
+    !thv_ds_zt = T0
     ! Boussinesq
     rho_ds_zm = 1.0
     rho_ds_zt = 1.0
+    thv_ds_zm = T0
+    thv_ds_zt = T0
     ! Set inverse rho_ds_zm and rho_ds_zt.
     invrs_rho_ds_zm = 1.0/rho_ds_zm
     invrs_rho_ds_zt = 1.0/rho_ds_zt
@@ -1007,9 +1013,9 @@ module clubb_core
            rtm, wprtp, wpthlp, wpthvp, wprcp,                  & ! intent(in) 
            wp2, wp3, rtp2, thlp2, rtpthlp,                     & ! intent(in)
            p_in_Pa, exner, rho, rho_zm, rho_ds_zm,             & ! intent(in)
-           rho_ds_zt, Kh_zt, wm_zt, wm_zm,                     & ! intent(in)
-           sigma_sqd_w, tau_zm, rcm, cloud_frac,               & ! intent(in)
-           rcm_in_layer, cloud_cover,                          & ! intent(in)
+           rho_ds_zt, thv_ds_zm, thv_ds_zt, Kh_zt,             & ! intent(in)
+           wm_zt, wm_zm, sigma_sqd_w, tau_zm, rcm,             & ! intent(in)
+           cloud_frac, rcm_in_layer, cloud_cover,              & ! intent(in)
            pdf_params,                                         & ! intent(in)
            sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing,  & ! intent(in)
            wpsclrp, edsclrm, edsclrm_forcing )                   ! intent(in)
