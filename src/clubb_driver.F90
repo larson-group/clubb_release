@@ -1881,7 +1881,14 @@ module clubb_driver
       !
       ! where exner_d = ( p_d / p0 )^(R_d/C_p).
       !
-      ! Since theta = T / exner; theta_d * exner_d = theta * exner.  Thus,
+      ! Also note that standard potential temperature, theta:
+      !
+      ! theta = T / exner;
+      !
+      ! where exner = ( p / p0 )^(R_d/C_p).
+      !
+      ! Therefore, since both equations can be written in terms of temperature,
+      ! T:  theta_d * exner_d = theta * exner.  Thus, theta_d can be written as:
       ! theta_d = theta * ( exner / exner_d ).  Furthermore, exner can be
       ! written in terms of exner_d, such that:
       !
@@ -1890,6 +1897,15 @@ module clubb_driver
       ! Thus, the equation for theta_d becomes:
       !
       ! theta_d = theta * [ 1 + (R_v/R_d)*r_v ]^(R_d/C_p).
+      !
+      ! In other words, there is a given mass of air that has temperature, T,
+      ! pressure, p, a dry component of pressure, p_d, density rho, and a dry
+      ! component of density, rho_d.  Pressure (or total pressure, which is
+      ! dry air pressure plus water vapor pressure) is used to determine total
+      ! exner.  Dividing temperature by exner yields theta.  Likewise, dry
+      ! pressure is used to determine dry exner.  Diving temperature by dry
+      ! exner yields dry theta, which differs by actual theta by a small
+      ! amount, which is given by the equations above.
       !
       ! As stated, variable "thlm" may contain either theta or theta_l at this
       ! point.  If the variable used is theta_l, it is close enough to be used
@@ -2275,7 +2291,14 @@ module clubb_driver
       !
       ! where exner_d = ( p_d / p0 )^(R_d/C_p).
       !
-      ! Since theta = T / exner; theta_d * exner_d = theta * exner.  Thus,
+      ! Also note that standard potential temperature, theta:
+      !
+      ! theta = T / exner;
+      !
+      ! where exner = ( p / p0 )^(R_d/C_p).
+      !
+      ! Therefore, since both equations can be written in terms of temperature,
+      ! T:  theta_d * exner_d = theta * exner.  Thus, theta_d can be written as:
       ! theta_d = theta * ( exner / exner_d ).  Furthermore, exner can be
       ! written in terms of exner_d, such that:
       !
@@ -2284,6 +2307,15 @@ module clubb_driver
       ! Thus, the equation for theta_d becomes:
       !
       ! theta_d = theta * [ 1 + (R_v/R_d)*r_v ]^(R_d/C_p).
+      !
+      ! In other words, there is a given mass of air that has temperature, T,
+      ! pressure, p, a dry component of pressure, p_d, density rho, and a dry
+      ! component of density, rho_d.  Pressure (or total pressure, which is
+      ! dry air pressure plus water vapor pressure) is used to determine total
+      ! exner.  Dividing temperature by exner yields theta.  Likewise, dry
+      ! pressure is used to determine dry exner.  Diving temperature by dry
+      ! exner yields dry theta, which differs by actual theta by a small
+      ! amount, which is given by the equations above.
       do k = 1, gr%nnzp, 1
         th_dry(k) = thm(k) * ( 1.0 + ep2 * ( rtm(k) - rcm(k) ) )**kappa
       enddo
