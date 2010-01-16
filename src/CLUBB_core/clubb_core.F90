@@ -982,16 +982,16 @@ module clubb_core
     end if
 
     call stats_accumulate & 
-         ( um, vm, upwp, vpwp, up2, vp2, thlm,                 & ! intent(in)
-           rtm, wprtp, wpthlp, wpthvp, wprcp,                  & ! intent(in) 
-           wp2, wp3, rtp2, thlp2, rtpthlp,                     & ! intent(in)
-           p_in_Pa, exner, rho, rho_zm, rho_ds_zm,             & ! intent(in)
-           rho_ds_zt, thv_ds_zm, thv_ds_zt, Kh_zt,             & ! intent(in)
-           wm_zt, wm_zm, sigma_sqd_w, tau_zm, rcm,             & ! intent(in)
-           cloud_frac, rcm_in_layer, cloud_cover,              & ! intent(in)
-           pdf_params,                                         & ! intent(in)
-           sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing,  & ! intent(in)
-           wpsclrp, edsclrm, edsclrm_forcing )                   ! intent(in)
+         ( um, vm, upwp, vpwp, up2, vp2,                      & ! intent(in)
+           thlm, rtm, wprtp, wpthlp,                          & ! intent(in)
+           wp2, wp3, rtp2, thlp2, rtpthlp,                    & ! intent(in)
+           p_in_Pa, exner, rho, rho_zm,                       & ! intent(in)
+           rho_ds_zm, rho_ds_zt, thv_ds_zm,                   & ! intent(in)
+           thv_ds_zt, wm_zt, wm_zm, rcm, wprcp,               & ! intent(in)
+           cloud_frac, rcm_in_layer, cloud_cover,             & ! intent(in)
+           pdf_params,                                        & ! intent(in)
+           sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, & ! intent(in)
+           wpsclrp, edsclrm, edsclrm_forcing                  ) ! intent(in)
 
 
     if ( clubb_at_least_debug_level( 2 ) ) then

@@ -1180,12 +1180,12 @@ module stats_subs
 
   !----------------------------------------------------------------------
   subroutine stats_accumulate & 
-                   ( um, vm, upwp, vpwp, up2, vp2, thlm, &
-                     rtm, wprtp, wpthlp, wpthvp, wprcp, &
+                   ( um, vm, upwp, vpwp, up2, vp2, &
+                     thlm, rtm, wprtp, wpthlp, &
                      wp2, wp3, rtp2, thlp2, rtpthlp, &
-                     p_in_Pa, exner, rho, rho_zm, rho_ds_zm, &
-                     rho_ds_zt, thv_ds_zm, thv_ds_zt, Kh_zt, &
-                     wm_zt, wm_zm, sigma_sqd_w, tau_zm, rcm, &
+                     p_in_Pa, exner, rho, rho_zm, &
+                     rho_ds_zm, rho_ds_zt, thv_ds_zm, &
+                     thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, &
                      cloud_frac, rcm_in_layer, cloud_cover, &
                      pdf_params, &
                      sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
@@ -1365,7 +1365,8 @@ module stats_subs
         wp2rtp, & 
         Lscale_up, & 
         Lscale_down, & 
-        tau_zt, & 
+        tau_zt, &
+        Kh_zt, & 
         wp2thvp, & 
         wp2rcp, & 
         wprtpthlp, & 
@@ -1386,9 +1387,12 @@ module stats_subs
         vp2_zt, &
         upwp_zt, &
         vpwp_zt, & 
+        sigma_sqd_w, &
         wp4, & 
         rtpthvp, & 
         thlpthvp, & 
+        wpthvp, &
+        tau_zm, &
         Kh_zm, & 
         thlprcp, & 
         rtprcp, & 
@@ -1451,8 +1455,6 @@ module stats_subs
       rtm,     & ! total water mixing ratio      [kg/kg]
       wprtp,   & ! w'rt'                         [(kg/kg) m/s]
       wpthlp,  & ! w'thl'                        [m K /s]
-      wpthvp,  & ! w'thv'                        [m K /s]
-      wprcp,   & ! w'rc'                         [(kg/kg) m/s]
       wp2,     & ! w'^2                          [m^2/s^2]
       wp3,     & ! w'^3                          [m^3/s^3]
       rtp2,    & ! rt'^2                         [(kg/kg)^2]
@@ -1468,14 +1470,12 @@ module stats_subs
       rho_ds_zt,    & ! Dry, static density (thermo. levs.)      [kg/m^3]
       thv_ds_zm,    & ! Dry, base-state theta_v (momentum levs.) [K]
       thv_ds_zt,    & ! Dry, base-state theta_v (thermo. levs.)  [K]
-      Kh_zt,        & ! Eddy diffusivity                         [m^2/s]
       wm_zt,        & ! w on thermodynamic levels                [m/s]
-      wm_zm,        & ! w on momentum levels                     [m/s]
-      sigma_sqd_w,  & ! PDF width paramter                       [-]
-      tau_zm          ! Dissipation time                         [s]
+      wm_zm           ! w on momentum levels                     [m/s]
 
     real, intent(in), dimension(gr%nnzp) :: & 
       rcm,         & ! Cloud water mixing ratio                 [kg/kg]
+      wprcp,       & ! w'rc'                                    [(kg/kg) m/s]
       cloud_frac,  & ! Cloud fraction                           [-]
       rcm_in_layer,& ! Cloud water mixing ratio in cloud layer  [kg/kg]
       cloud_cover    ! Cloud cover                              [-]
