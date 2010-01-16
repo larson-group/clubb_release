@@ -2424,6 +2424,7 @@ module clubb_driver
         input_wm_zt, input_exner, input_em, & 
         input_p, input_rho, input_rho_zm, &
         input_rho_ds_zm, input_rho_ds_zt, &
+        input_thv_ds_zm, input_thv_ds_zt, &
         input_Lscale, input_Lscale_up, input_Lscale_down, & 
         input_Kh_zt, input_Kh_zm, input_tau_zm, input_tau_zt, & 
         input_wpthvp, &
@@ -2509,6 +2510,8 @@ module clubb_driver
     input_rho_zm = .true.
     input_rho_ds_zm = .true.
     input_rho_ds_zt = .true.
+    input_thv_ds_zm = .true.
+    input_thv_ds_zt = .true.
     input_Lscale = .true.
     input_Lscale_up = .true.
     input_Lscale_down = .true.
