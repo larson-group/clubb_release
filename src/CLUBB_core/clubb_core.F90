@@ -22,18 +22,19 @@ module clubb_core
   contains
 
   !-----------------------------------------------------------------------
-  subroutine advance_clubb_core & 
-             ( l_implemented, dt, fcor, sfc_elevation, & 
-               thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & 
+  subroutine advance_clubb_core &
+             ( l_implemented, dt, fcor, sfc_elevation, &
+               thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &
                sclrm_forcing, edsclrm_forcing, wm_zm, wm_zt, &
-               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
+               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &
                wpsclrp_sfc, wpedsclrp_sfc, &
-               p_in_Pa, rho_zm, rho, exner, & 
-               um, vm, upwp, vpwp, up2, vp2, & 
-               thlm, rtm, wprtp, wpthlp, wpthvp, &
-               wprcp, Kh_zt, wp2, wp3, & 
-               rtp2, thlp2, rtpthlp, & 
-               sigma_sqd_w, tau_zm, rcm, cloud_frac, & 
+               p_in_Pa, rho_zm, rho, exner, &
+               rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &
+               um, vm, upwp, vpwp, up2, vp2, &
+               thlm, rtm, wprtp, wpthlp, &
+               wp2, wp3, rtp2, thlp2, rtpthlp, &
+               rcm, wprcp, cloud_frac, & 
                rcm_in_layer, cloud_cover, & 
                sclrm, sclrp2, sclrprtp, sclrpthlp, &
                wpsclrp, edsclrm, pdf_params, &
@@ -92,34 +93,38 @@ module clubb_core
     use numerical_check, only: & 
       parameterization_check ! Procedure(s)
 
-    use variables_diagnostic_module, only: & 
-      Skw_zt,  & ! Varible(s)
-      Skw_zm, & 
-      sigma_sqd_w_zt, & 
-      wp4, & 
-      thlpthvp, & 
-      rtpthvp, & 
-      rtprcp, & 
-      thlprcp, & 
-      rcp2, & 
-      rsat, & 
+    use variables_diagnostic_module, only: &
+      Skw_zt,  & ! Variable(s)
+      Skw_zm, &
+      sigma_sqd_w, &
+      sigma_sqd_w_zt, &
+      wp4, &
+      thlpthvp, &
+      rtpthvp, &
+      rtprcp, &
+      thlprcp, &
+      rcp2, &
+      rsat, &
       shear, &
-      pdf_params_zm, & 
-      wprtp2, & 
-      wp2rtp, & 
-      wpthlp2, & 
-      wp2thlp, & 
-      wprtpthlp, & 
-      wp2thvp, & 
-      wp2rcp, & 
+      pdf_params_zm, &
+      wprtp2, &
+      wp2rtp, &
+      wpthlp2, &
+      wp2thlp, &
+      wprtpthlp, &
+      wpthvp, &
+      wp2thvp, &
+      wp2rcp, &
       thvm, & 
       em, & 
-      Lscale, & 
-      tau_zt, & 
-      Kh_zm, & 
-      vg, & 
-      ug, & 
-      um_ref, & 
+      Lscale, &
+      tau_zm, &
+      tau_zt, &
+      Kh_zm, &
+      Kh_zt, &
+      vg, &
+      ug, &
+      um_ref, &
       vm_ref
 
     use variables_diagnostic_module, only: &
@@ -253,16 +258,22 @@ module clubb_core
       sfc_elevation     ! Elevation of ground level    [m AMSL]
 
     real, intent(in), dimension(gr%nnzp) ::  & 
-      thlm_forcing,   & ! theta_l forcing (thermodynamic levels)    [K/s]
-      rtm_forcing,    & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
-      um_forcing,     & ! u wind forcing (thermodynamic levels)     [m/s/s]
-      vm_forcing,     & ! v wind forcing (thermodynamic levels)     [m/s/s]
-      wm_zm,          & ! w mean wind component on momentum levels  [m/s]
-      wm_zt,          & ! w mean wind component on thermo. levels   [m/s]
-      p_in_Pa,        & ! Air pressure (thermodynamic levels)       [Pa]
-      rho_zm,         & ! Air density on momentum levels            [kg/m^3]
-      rho,            & ! Air density on thermodynamic levels       [kg/m^3]
-      exner             ! Exner function (thermodynamic levels)     [-]
+      thlm_forcing,    & ! theta_l forcing (thermodynamic levels)    [K/s]
+      rtm_forcing,     & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
+      um_forcing,      & ! u wind forcing (thermodynamic levels)     [m/s/s]
+      vm_forcing,      & ! v wind forcing (thermodynamic levels)     [m/s/s]
+      wm_zm,           & ! w mean wind component on momentum levels  [m/s]
+      wm_zt,           & ! w mean wind component on thermo. levels   [m/s]
+      p_in_Pa,         & ! Air pressure (thermodynamic levels)       [Pa]
+      rho_zm,          & ! Air density on momentum levels            [kg/m^3]
+      rho,             & ! Air density on thermodynamic levels       [kg/m^3]
+      exner,           & ! Exner function (thermodynamic levels)     [-]
+      rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
+      invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
+      invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
+      thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
+      thv_ds_zt          ! Dry, base-state theta_v on thermo. levs.  [K]
 
     real, intent(in) ::  & 
       wpthlp_sfc,   & ! w' theta_l' at surface   [(m K)/s]
@@ -315,15 +326,6 @@ module clubb_core
     real, intent(inout), dimension(gr%nnzp,edsclr_dim) :: & 
       edsclrm   ! Eddy passive scalar mean (thermo. levels)   [units vary]
 
-    ! Variables that need to be preserved from timestep-to-timestep, for they
-    ! are used in subroutine advance_clubb_core before they are reset again
-    ! in subroutine advance_clubb_core.
-    real, intent(inout), dimension(gr%nnzp) ::  & 
-      wpthvp,      & ! w' th_v' (momentum levels)                 [(m/s) K]
-      Kh_zt,       & ! eddy diffusivity on thermodynamic levels   [m^2/s]
-      sigma_sqd_w, & ! sigma_sqd_w (momentum levels)              [-]
-      tau_zm         ! time scale tau on momentum levels          [s]
-
     ! Variables that need to be output for use in other parts of the CLUBB
     ! code, such as microphysics (rcm, pdf_params), forcings (rcm), and/or
     ! BUGSrad (cloud_cover).
@@ -356,18 +358,6 @@ module clubb_core
       sclrp2_zt,   & ! sclr'^2 on thermo. levels
       sclrprtp_zt, & ! sclr' r_t' on thermo. levels
       sclrpthlp_zt   ! sclr' th_l' on thermo. levels
-
-    ! These anelastic variables will be defined here temporarily until the
-    ! anelastic code is complete, at which time these variables will be defined
-    ! along with the other rho variables, and will be set in clubb_driver.F90.
-    ! Brian; 12/16/09.
-    real, dimension(gr%nnzp) :: &
-      rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
-      rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
-      invrs_rho_ds_zm, & ! Inv. dry, static density @ moment. levs.  [m^3/kg]
-      invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
-      thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
-      thv_ds_zt          ! Dry, base-state theta_v on thermo. levs.  [K]
 
     real, dimension(gr%nnzp) :: &
       p_in_Pa_zm, &  ! Pressure interpolated to momentum levels  [Pa]
@@ -432,24 +422,6 @@ module clubb_core
            sclrm, sclrm_forcing, edsclrm, edsclrm_forcing )              ! intent(in)
     end if
     !-----------------------------------------------------------------------
-
-    ! These anelastic variables will be defined here temporarily until the
-    ! anelastic code is complete, at which time these variables will be defined
-    ! along with the other rho variables, and will be set in clubb_driver.F90.
-    ! Brian; 12/16/09.
-    ! Anelastic
-    !rho_ds_zm = rho_zm
-    !rho_ds_zt = rho
-    !thv_ds_zm = T0
-    !thv_ds_zt = T0
-    ! Boussinesq
-    rho_ds_zm = 1.0
-    rho_ds_zt = 1.0
-    thv_ds_zm = T0
-    thv_ds_zt = T0
-    ! Set inverse rho_ds_zm and rho_ds_zt.
-    invrs_rho_ds_zm = 1.0/rho_ds_zm
-    invrs_rho_ds_zt = 1.0/rho_ds_zt
 
     ! SET SURFACE VALUES OF FLUXES (BROUGHT IN)
     ! We only do this for host models that do not apply the flux 

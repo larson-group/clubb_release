@@ -139,13 +139,11 @@ module inputfields
         wp3, & 
         wprtp, & 
         wpthlp, & 
-        wpthvp, & 
         rtp2, & 
         thlp2, & 
         rtpthlp, & 
         upwp, & 
         vpwp, & 
-        Kh_zt, & 
         p_in_Pa, & 
         exner, & 
         rcm, & 
@@ -159,13 +157,12 @@ module inputfields
         thlm_forcing, & 
         rtm_forcing, & 
         cloud_frac, & 
-        tau_zm, & 
         up2, & 
-        vp2, & 
-        sigma_sqd_w
+        vp2 
 
     use variables_diagnostic_module, only: & 
         hydromet,  & ! Variable(s)
+        tau_zm, &
         tau_zt, & 
         ug, & 
         vg, & 
@@ -173,8 +170,11 @@ module inputfields
         Lscale_up, & 
         Lscale_down, & 
         Kh_zm, & 
-        thvm, & 
+        Kh_zt, &
+        thvm, &
+        wpthvp, &
         Ncnm, & 
+        sigma_sqd_w, &
         sigma_sqd_w_zt, & 
         em
 

@@ -133,7 +133,7 @@ module clubb_driver
     use parameter_indices, only: nparams ! Variable(s)
 
     use variables_diagnostic_module, only: ug, vg, em,  & ! Variable(s)
-      tau_zt, thvm, Lscale, Kh_zm, & 
+      tau_zm, tau_zt, thvm, Lscale, Kh_zm, Kh_zt, &
       um_ref, vm_ref, Ncnm, wp2_zt, &
       hydromet, thlm_ref, rtm_ref, &
       Frad, radht, Frad_SW_up, &
@@ -142,14 +142,14 @@ module clubb_driver
     use variables_prognostic_module, only:  & 
       Tsfc, psfc, SE, LE, thlm, rtm,     & ! Variable(s)
       um, vm, wp2, rcm, wm_zt, wm_zm, exner, &
-      tau_zm, p_in_Pa, rho_zm, upwp, vpwp, wpthlp, wpthvp, &
-      wprcp, Kh_zt, rho, wprtp, wpthlp_sfc, wprtp_sfc, &
+      p_in_Pa, rho_zm, upwp, vpwp, wpthlp, &
+      wprcp, rho, wprtp, wpthlp_sfc, wprtp_sfc, &
       upwp_sfc, vpwp_sfc, rho_ds_zm, rho_ds_zt, &
       invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, &
       thv_ds_zt, thlm_forcing, rtm_forcing, &
       um_forcing, vm_forcing, &
       up2, vp2, wp3, rtp2, pdf_params, &
-      thlp2, rtpthlp, sigma_sqd_w, cloud_frac, &
+      thlp2, rtpthlp, cloud_frac, &
       rcm_in_layer, cloud_cover
 
     use variables_prognostic_module, only:  & 
@@ -951,11 +951,12 @@ module clubb_driver
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &         ! Intent(in)
                wpsclrp_sfc, wpedsclrp_sfc,  &                       ! Intent(in)
                p_in_Pa, rho_zm, rho, exner, &                       ! Intent(in)
+               rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)
+               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &             ! Intent(in)
                um, vm, upwp, vpwp, up2, vp2, &                      ! Intent(inout)
-               thlm, rtm, wprtp, wpthlp, wpthvp, &                  ! Intent(inout)
-               wprcp, Kh_zt, wp2, wp3, &                            ! Intent(inout)
-               rtp2, thlp2, rtpthlp, &                              ! Intent(inout)
-               sigma_sqd_w, tau_zm, rcm, cloud_frac, &              ! Intent(inout)
+               thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
+               wp2, wp3, rtp2, thlp2, rtpthlp, &                    ! Intent(inout)
+               rcm, wprcp, cloud_frac, &                            ! Intent(inout)
                rcm_in_layer, cloud_cover, &                         ! Intent(inout)
                sclrm, sclrp2, sclrprtp, sclrpthlp, &                ! Intent(inout)
                wpsclrp, edsclrm, pdf_params, &                      ! Intent(inout)

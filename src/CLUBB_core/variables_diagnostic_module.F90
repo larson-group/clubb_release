@@ -22,24 +22,25 @@ module variables_diagnostic_module
 
 ! Diagnostic variables
 
-  real, target, allocatable, dimension(:), public :: & 
-    sigma_sqd_w_zt,     & ! PDF width parameter: t point          [-]
-    Skw_zm,    & ! Skw on moment. grid                   [-]
-    Skw_zt,    & ! Skw on thermo. grid                   [-]
-    ug,        & ! u geostrophic wind                    [m/s]
-    vg,        & ! v geostrophic wind                    [m/s]
-    um_ref,    & ! Initial u wind; Michael Falk,         [m/s]
-    vm_ref,    & ! Initial v wind; Michael Falk,         [m/s]
-    thlm_ref,  & ! Initial liquid water potential        [K]
-    rtm_ref,   & ! Initial total water mixing ratio      [kg/kg]
-    thvm,      & ! Virtual potential Temperature         [K]
-    shear        ! Wind shear production
+  real, target, allocatable, dimension(:), public :: &
+    sigma_sqd_w,    & ! PDF width parameter (momentum levels)        [-]
+    sigma_sqd_w_zt, & ! PDF width parameter interpolated to t-levs.  [-]
+    Skw_zm,         & ! Skewness of w on momentum levels             [-]
+    Skw_zt,         & ! Skewness of w on thermodynamic levels        [-]
+    ug,             & ! u geostrophic wind                           [m/s]
+    vg,             & ! v geostrophic wind                           [m/s]
+    um_ref,         & ! Initial u wind; Michael Falk                 [m/s]
+    vm_ref,         & ! Initial v wind; Michael Falk                 [m/s]
+    thlm_ref,       & ! Initial liquid water potential temperature   [K]
+    rtm_ref,        & ! Initial total water mixing ratio             [kg/kg]
+    thvm,           & ! Virtual potential temperature                [K]
+    shear             ! Wind shear production
 
 !!! Important Note !!!
 ! Do not indent the omp comments, they need to be in the first 4 columns
 !!! End Important Note !!!
-!$omp threadprivate(sigma_sqd_w_zt, Skw_zm, Skw_zt, ug, vg, &
-!$omp   thvm, shear, um_ref, vm_ref)
+!$omp threadprivate(sigma_sqd_w, sigma_sqd_w_zt, Skw_zm, Skw_zt, ug, vg, &
+!$omp   um_ref, vm_ref, thlm_ref, rtm_ref, thvm, shear )
 
   real, target, allocatable, dimension(:), public :: & 
     rsat ! Saturation mixing ratio  ! Brian
@@ -89,16 +90,18 @@ module variables_diagnostic_module
 
 ! Buoyancy related moments
   real, target, allocatable, dimension(:), public :: & 
-    rtpthvp,  & ! rt' thv'     [kg K/kg]
-    thlpthvp, & ! thl'thv'     [K^2] 
-    wp2thvp     ! w'^2 thv'    [m^2 K/s^2]
+    rtpthvp,  & ! rt'thv'     [K kg/kg]
+    thlpthvp, & ! thl'thv'    [K^2]
+    wpthvp,   & ! w'thv'      [K m/s]
+    wp2thvp     ! w'^2thv'    [K m^2/s^2]
 
-!$omp threadprivate(rtpthvp, thlpthvp, wp2thvp)
+!$omp threadprivate(rtpthvp, thlpthvp, wpthvp, wp2thvp)
 
-  real, target, allocatable, dimension(:), public :: & 
-    Kh_zm     ! Eddy diffusivity: zm grid        [m^2/s]
+  real, target, allocatable, dimension(:), public :: &
+    Kh_zt, & ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
+    Kh_zm    ! Eddy diffusivity coefficient on momentum levels        [m^2/s]
 
-!$omp threadprivate(Kh_zm)
+!$omp threadprivate(Kh_zt, Kh_zm)
 
 ! Mixing lengths
   real, target, allocatable, dimension(:), public :: & 
@@ -107,10 +110,11 @@ module variables_diagnostic_module
 !$omp threadprivate(Lscale, Lscale_up, Lscale_down)
 
   real, target, allocatable, dimension(:), public :: & 
-    em,   & ! Turbulent Kinetic Energy (TKE)  [m^2/s^2]
-    tau_zt  ! Dissipation time                [s]
+    em,     & ! Turbulent Kinetic Energy (TKE)                        [m^2/s^2]
+    tau_zm, & ! Eddy dissipation time scale on momentum levels        [s]
+    tau_zt    ! Eddy dissipation time scale on thermodynamic levels   [s]
 
-!$omp threadprivate(em, tau_zt)
+!$omp threadprivate(em, tau_zm, tau_zt)
 
 ! hydrometeors variable array
   real, allocatable, dimension(:,:), public :: hydromet
@@ -205,16 +209,17 @@ module variables_diagnostic_module
 
     ! Diagnostic variables
 
-    allocate( sigma_sqd_w_zt(1:nzmax) )  ! PDF width parameter: t point
-    allocate( Skw_zm(1:nzmax) )          ! Skw
-    allocate( Skw_zt(1:nzmax) )          ! Skw
-    allocate( ug(1:nzmax) )              ! u geostrophic wind
-    allocate( vg(1:nzmax) )              ! v geostrophic wind
-    allocate( um_ref(1:nzmax) )          ! Reference u wind for nudging; Michael Falk, 17 Oct 2007
-    allocate( vm_ref(1:nzmax) )          ! Reference v wind for nudging; Michael Falk, 17 Oct 2007
-    allocate( thlm_ref(1:nzmax) )        ! Reference liquid water potential for nudging
-    allocate( rtm_ref(1:nzmax) )         ! Reference total water mixing ratio for nudging
-    allocate( thvm(1:nzmax) )            ! Virtual potential temperature
+    allocate( sigma_sqd_w(1:nzmax) )    ! PDF width parameter (momentum levels)
+    allocate( sigma_sqd_w_zt(1:nzmax) ) ! PDF width parameter interp. to t-levs.
+    allocate( Skw_zm(1:nzmax) )         ! Skewness of w on momentum levels
+    allocate( Skw_zt(1:nzmax) )         ! Skewness of w on thermodynamic levels
+    allocate( ug(1:nzmax) )             ! u geostrophic wind
+    allocate( vg(1:nzmax) )             ! v geostrophic wind
+    allocate( um_ref(1:nzmax) )         ! Reference u wind for nudging; Michael Falk, 17 Oct 2007
+    allocate( vm_ref(1:nzmax) )         ! Reference v wind for nudging; Michael Falk, 17 Oct 2007
+    allocate( thlm_ref(1:nzmax) )       ! Reference liquid water potential for nudging
+    allocate( rtm_ref(1:nzmax) )        ! Reference total water mixing ratio for nudging
+    allocate( thvm(1:nzmax) )           ! Virtual potential temperature
 
     allocate( rsat(1:nzmax) )       ! Saturation mixing ratio  ! Brian
 
@@ -267,18 +272,21 @@ module variables_diagnostic_module
 
     ! Buoyancy related moments
 
-    allocate( rtpthvp(1:nzmax) )
-    allocate( thlpthvp(1:nzmax) )
-    allocate( wp2thvp(1:nzmax) )
+    allocate( rtpthvp(1:nzmax) )  ! rt'thv'
+    allocate( thlpthvp(1:nzmax) ) ! thl'thv'
+    allocate( wpthvp(1:nzmax) )   ! w'thv'
+    allocate( wp2thvp(1:nzmax) )  ! w'^2thv'
 
-    allocate( Kh_zm(1:nzmax) )
+    allocate( Kh_zt(1:nzmax) )  ! Eddy diffusivity coefficient: thermo. levels
+    allocate( Kh_zm(1:nzmax) )  ! Eddy diffusivity coefficient: momentum levels
 
     allocate( em(1:nzmax) )
     allocate( Lscale(1:nzmax) )
     allocate( Lscale_up(1:nzmax) )
     allocate( Lscale_down(1:nzmax) )
-    allocate( tau_zt(1:nzmax) )
-!   allocate( tau_zm(1:nzmax) )
+    
+    allocate( tau_zm(1:nzmax) ) ! Eddy dissipation time scale: momentum levels
+    allocate( tau_zt(1:nzmax) ) ! Eddy dissipation time scale: thermo. levels
 
 
 ! Tuning Variables
@@ -324,17 +332,16 @@ module variables_diagnostic_module
 
 ! Diagnostic variables
 
-    sigma_sqd_w_zt = 0.0      ! PDF width parameter: t point
-
-    Skw_zm = 0.0
-    Skw_zt = 0.0
-
-    ug  = 0.0      ! u geostrophic wind
-    vg  = 0.0      ! v geostrophic wind
-    um_ref   = 0.0 !
-    vm_ref   = 0.0 !
-    thlm_ref = 0.0
-    rtm_ref  = 0.0
+    sigma_sqd_w    = 0.0 ! PDF width parameter (momentum levels)
+    sigma_sqd_w_zt = 0.0 ! PDF width parameter interp. to t-levs.
+    Skw_zm         = 0.0 ! Skewness of w on momentum levels
+    Skw_zt         = 0.0 ! Skewness of w on thermodynamic levels
+    ug             = 0.0 ! u geostrophic wind
+    vg             = 0.0 ! v geostrophic wind
+    um_ref         = 0.0
+    vm_ref         = 0.0
+    thlm_ref       = 0.0
+    rtm_ref        = 0.0
 
     thvm = 0.0  ! Virtual potential temperature
     rsat  = 0.0  ! Saturation mixing ratio  ! Brian
@@ -400,12 +407,14 @@ module variables_diagnostic_module
     wp4 = 0.0
 
     ! Buoyancy related moments
-    rtpthvp  = 0.0
-    thlpthvp = 0.0
-    wp2thvp  = 0.0
+    rtpthvp  = 0.0 ! rt'thv'
+    thlpthvp = 0.0 ! thl'thv'
+    wpthvp   = 0.0 ! w'thv'
+    wp2thvp  = 0.0 ! w'^2thv'
 
     ! Eddy diffusivity
-    Kh_zm      = 0.0
+    Kh_zt = 0.0  ! Eddy diffusivity coefficient: thermo. levels
+    Kh_zm = 0.0  ! Eddy diffusivity coefficient: momentum levels
 
     ! TKE
     em       = emin
@@ -416,7 +425,8 @@ module variables_diagnostic_module
     Lscale_down    = 0.0
 
     ! Dissipation time
-    tau_zt     = 0.0
+    tau_zm = 0.0 ! Eddy dissipation time scale: momentum levels
+    tau_zt = 0.0 ! Eddy dissipation time scale: thermo. levels
 
     ! Hydrometer types
     Ncnm(1:nzmax) = 0.0 ! Cloud nuclei number concentration (COAMPS)
@@ -466,13 +476,14 @@ module variables_diagnostic_module
 
     ! --- Deallocate ---
 
-    deallocate( sigma_sqd_w_zt )       ! PDF width parameter: t point
-    deallocate( Skw_zm )
-    deallocate( Skw_zt )
-    deallocate( ug )        ! u geostrophic wind
-    deallocate( vg )        ! v geostrophic wind
-    deallocate( um_ref )    ! u initial
-    deallocate( vm_ref )    ! v initial
+    deallocate( sigma_sqd_w )    ! PDF width parameter (momentum levels)
+    deallocate( sigma_sqd_w_zt ) ! PDF width parameter interp. to t-levs.
+    deallocate( Skw_zm )         ! Skewness of w on momentum levels
+    deallocate( Skw_zt )         ! Skewness of w on thermodynamic levels
+    deallocate( ug )             ! u geostrophic wind
+    deallocate( vg )             ! v geostrophic wind
+    deallocate( um_ref )         ! u initial
+    deallocate( vm_ref )         ! v initial
     deallocate( thlm_ref )
     deallocate( rtm_ref )
 
@@ -527,17 +538,20 @@ module variables_diagnostic_module
 
     ! Buoyancy related moments
 
-    deallocate( rtpthvp )
-    deallocate( thlpthvp )
-    deallocate( wp2thvp )
+    deallocate( rtpthvp )  ! rt'thv'
+    deallocate( thlpthvp ) ! thl'thv'
+    deallocate( wpthvp )   ! w'thv'
+    deallocate( wp2thvp )  ! w'^2thv'
 
-    deallocate( Kh_zm )
+    deallocate( Kh_zt )  ! Eddy diffusivity coefficient: thermo. levels
+    deallocate( Kh_zm )  ! Eddy diffusivity coefficient: momentum levels
 
     deallocate( em )
     deallocate( Lscale )
     deallocate( Lscale_up )
     deallocate( Lscale_down )
-    deallocate( tau_zt )
+    deallocate( tau_zm ) ! Eddy dissipation time scale: momentum levels
+    deallocate( tau_zt ) ! Eddy dissipation time scale: thermo. levels
 
     ! Cloud water variables
 

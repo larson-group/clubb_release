@@ -31,7 +31,6 @@ module variables_prognostic_module
     rtm,     & ! total water mixing ratio      [kg/kg]
     wprtp,   & ! w'rt'                         [(kg/kg) m/s]
     wpthlp,  & ! w'thl'                        [m K/s]
-    wpthvp,  & ! w'thv'                        [m K/s]
     wprcp,   & ! w'rc'                         [(kg/kg) m/s]
     wp2,     & ! w'^2                          [m^2/s^2]
     wp3,     & ! w'^3                          [m^3/s^3]
@@ -40,13 +39,12 @@ module variables_prognostic_module
     rtpthlp    ! rt'thl'                       [kg/kg K]
 
 !$omp   threadprivate(um, vm, upwp, vpwp, up2, vp2)
-!$omp   threadprivate(thlm, rtm, wprtp, wpthlp, wpthvp, wprcp)
+!$omp   threadprivate(thlm, rtm, wprtp, wpthlp, wprcp)
 !$omp   threadprivate(wp2, wp3, rtp2, thlp2, rtpthlp)
 
   real, target, allocatable, dimension(:), public :: & 
     p_in_Pa,         & ! Pressure (Pa) (thermodynamic levels)          [Pa]
     exner,           & ! Exner function = ( p / p0 ) ** kappa          [-]
-    Kh_zt,           & ! Eddy diffusivity coefficient on thermo. levs. [m^2/s]
     rho,             & ! Density (thermodynamic levels)                [kg/m^3]
     rho_zm,          & ! Density on momentum levels                    [kg/m^3]
     rho_ds_zm,       & ! Dry, static density (momentum levels)         [kg/m^3]
@@ -60,7 +58,7 @@ module variables_prognostic_module
     um_forcing,      & ! u wind forcing                                [m/s/s] 
     vm_forcing         ! v wind forcing                                [m/s/s]
 
-!$omp   threadprivate(p_in_Pa, exner, Kh_zt, rho, rho_zm, rho_ds_zm, &
+!$omp   threadprivate(p_in_Pa, exner, rho, rho_zm, rho_ds_zm, &
 !$omp     rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, &
 !$omp     thv_ds_zt, thlm_forcing, rtm_forcing, um_forcing, vm_forcing)
 
@@ -69,13 +67,7 @@ module variables_prognostic_module
     wm_zm, & ! w on momentum levels              [m/s]
     wm_zt    ! w on thermodynamic levels         [m/s]
 
-  ! PDF width parameter: momentum levels
-  real, target, allocatable, dimension(:), public :: sigma_sqd_w  ! [-]
-
-  ! Mixing Lengths
-  real, target, allocatable, dimension(:), public :: tau_zm ! [s]
-
-!$omp   threadprivate(wm_zm, wm_zt, sigma_sqd_w, tau_zm)
+!$omp   threadprivate(wm_zm, wm_zt)
 
   ! Cloud water variables
   real, target, allocatable, dimension(:), public :: & 
@@ -209,7 +201,6 @@ module variables_prognostic_module
     allocate( rtm(1:nzmax) )       ! total water mixing ratio
     allocate( wprtp(1:nzmax) )     ! w'rt'
     allocate( wpthlp(1:nzmax) )    ! w'thl'
-    allocate( wpthvp(1:nzmax) )    ! w'thv'
     allocate( wprcp(1:nzmax) )     ! w'rc'
     allocate( wp2(1:nzmax) )       ! w'^2
     allocate( wp3(1:nzmax) )       ! w'^3
@@ -233,20 +224,10 @@ module variables_prognostic_module
     allocate( um_forcing(1:nzmax) )      ! u forcing
     allocate( vm_forcing(1:nzmax) )      ! v forcing
 
-    allocate( Kh_zt(1:nzmax) ) ! Eddy diffusivity
-
     ! Imposed large scale w
 
     allocate( wm_zm(1:nzmax) )       ! momentum levels
     allocate( wm_zt(1:nzmax) )       ! thermodynamic levels
-
-    ! PDF width parameter: momentum levels
-
-    allocate( sigma_sqd_w(1:nzmax) )
-
-    ! Mixing lengths
-
-    allocate( tau_zm(1:nzmax) )
 
     ! Cloud water variables
 
@@ -307,7 +288,6 @@ module variables_prognostic_module
     rtm(1:nzmax)     = 0.0         ! total water mixing ratio
     wprtp(1:nzmax)   = 0.0         ! w'rt'
     wpthlp(1:nzmax)  = 0.0         ! w'thl'
-    wpthvp(1:nzmax)  = 0.0         ! w'thv'
     wprcp(1:nzmax)   = 0.0         ! w'rc'
     wp3(1:nzmax)     = 0.0         ! w'^3
     rtp2(1:nzmax)    = rttol**2    ! rt'^2
@@ -335,23 +315,12 @@ module variables_prognostic_module
     wm_zm(1:nzmax) = 0.0      ! Momentum levels
     wm_zt(1:nzmax) = 0.0      ! Thermodynamic levels
 
-    ! PDF width parameter: momentum levels
-
-    sigma_sqd_w(1:nzmax)  = 0.0
-
-    ! Mixing lengths
-
-    tau_zm(1:nzmax) = 0.0
-
     ! Cloud water variables
 
     rcm(1:nzmax)          = 0.0
     cloud_frac(1:nzmax)   = 0.0
     rcm_in_layer(1:nzmax) = 0.0
     cloud_cover(1:nzmax)  = 0.0
-
-    ! Eddy diffusivity
-    Kh_zt      = 0.0
 
     ! Variables for PDF closure scheme
     pdf_params%w1          = 0.0
@@ -430,7 +399,6 @@ module variables_prognostic_module
     deallocate( rtm )       ! total water mixing ratio
     deallocate( wprtp )     ! w'rt'
     deallocate( wpthlp )    ! w'thl'
-    deallocate( wpthvp )    ! w'thv'
     deallocate( wprcp )     ! w'rc'
     deallocate( wp2 )       ! w'^2
     deallocate( wp3 )       ! w'^3
@@ -440,7 +408,6 @@ module variables_prognostic_module
 
     deallocate( p_in_Pa )         ! pressure
     deallocate( exner )           ! exner
-    deallocate( Kh_zt )           ! Eddy diffusivity
     deallocate( rho )             ! density: t points
     deallocate( rho_zm )          ! density: m points
     deallocate( rho_ds_zm )       ! dry, static density: m-levs
@@ -459,14 +426,6 @@ module variables_prognostic_module
 
     deallocate( wm_zm )     ! momentum levels
     deallocate( wm_zt )     ! thermodynamic levels
-
-    ! PDF width parameter
-
-    deallocate( sigma_sqd_w )
-
-    ! Mixing lengths
-
-    deallocate( tau_zm )
 
     ! Cloud water variables
 
