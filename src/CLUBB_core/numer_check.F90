@@ -218,14 +218,19 @@ module numerical_check
 
 !-------------------------------------------------------------------------------
   subroutine parameterization_check & 
-             ( thlm_forcing, rtm_forcing, wm_zm, wm_zt, p_in_Pa, rho_zm,  & 
-               rho, exner, wpthlp_sfc, wprtp_sfc,  & 
-               upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp, & 
-               up2, vp2, rtm, wprtp, thlm,  & 
-               wpthlp, wp2, wp3, sigma_sqd_w, rtp2, thlp2, & 
-               rtpthlp, tau_zm, rcm, cloud_frac, prefix, & 
+             ( thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &
+               wm_zm, wm_zt, p_in_Pa, rho_zm, rho, exner, &
+               rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &
+               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &
+               um, upwp, vm, vpwp, up2, vp2, &
+               rtm, wprtp, thlm, wpthlp, &
+               wp2, wp3, rtp2, thlp2, rtpthlp, &
+               rcm, wprcp, cloud_frac, &
+               rcm_in_layer, cloud_cover, prefix, &
                wpsclrp_sfc, wpedsclrp_sfc, & 
-               sclrm, sclrm_forcing, edsclrm, edsclrm_forcing )
+               sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp, &
+               sclrm_forcing, edsclrm, edsclrm_forcing )
 !
 ! Description: 
 !   This subroutine determines what input variables may have NaN values.
@@ -233,6 +238,7 @@ module numerical_check
 !   wp2, sigma_sqd_w, rtp2, thlp2, tau_zm, rcm, Ncm, Ncnm, Nim, hydromet, or 
 !   cloud_frac have negative values.
 !-------------------------------------------------------------------------------
+
     use grid_class, only: & 
         gr ! Variable
 
@@ -245,72 +251,80 @@ module numerical_check
     ! Input variables
 
     real, intent(in), dimension(gr%nnzp) ::  & 
-    thlm_forcing,   & ! theta_l forcing.        [K/s]
-    rtm_forcing,    & ! r_t forcing.            [(kg/kg)/s] 
-    wm_zm,          & ! wm on moment. grid.     [m/s]
-    wm_zt,          & ! wm on thermo. grid.     [m/s]
-    p_in_Pa,        & ! Pressure.               [Pa] 
-    rho_zm,         & ! Density on moment. grid [kg/m^3]
-    rho,            & ! Density on thermo. grid [kg/m^3] 
-    exner             ! Exner function.         [-]
+      thlm_forcing,    & ! theta_l forcing (thermodynamic levels)    [K/s]
+      rtm_forcing,     & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
+      um_forcing,      & ! u wind forcing (thermodynamic levels)     [m/s/s]
+      vm_forcing,      & ! v wind forcing (thermodynamic levels)     [m/s/s]
+      wm_zm,           & ! w mean wind component on momentum levels  [m/s]
+      wm_zt,           & ! w mean wind component on thermo. levels   [m/s]
+      p_in_Pa,         & ! Air pressure (thermodynamic levels)       [Pa]
+      rho_zm,          & ! Air density on momentum levels            [kg/m^3]
+      rho,             & ! Air density on thermodynamic levels       [kg/m^3]
+      exner,           & ! Exner function (thermodynamic levels)     [-]
+      rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
+      invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
+      invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
+      thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
+      thv_ds_zt          ! Dry, base-state theta_v on thermo. levs.  [K]
 
     real, intent(in) ::  & 
-    wpthlp_sfc,   & ! w' theta_l' at surface.   [(m K)/s]
-    wprtp_sfc,    & ! w' r_t' at surface.       [(kg m)/( kg s)]
-    upwp_sfc,     & ! u'w' at surface.          [m^2/s^2]
-    vpwp_sfc        ! v'w' at surface.          [m^2/s^2]
+      wpthlp_sfc,   & ! w' theta_l' at surface.   [(m K)/s]
+      wprtp_sfc,    & ! w' r_t' at surface.       [(kg m)/( kg s)]
+      upwp_sfc,     & ! u'w' at surface.          [m^2/s^2]
+      vpwp_sfc        ! v'w' at surface.          [m^2/s^2]
 
     ! These are prognostic or are planned to be in the future
     real, intent(in), dimension(gr%nnzp) ::  & 
-    um,          & ! u wind.                       [m/s]
-    upwp,        & ! u'w'.                         [m^2/s^2]
-    vm,          & ! v wind.                       [m/s]
-    vpwp,        & ! u'w'.                         [m^2/s^2]
-    up2,         & ! u'^2                          [m^2/s^2]
-    vp2,         & ! v'^2                          [m^2/s^2]
-    rtm,         & ! r_t Total water mixing ratio. [kg/kg]
-    wprtp,       & ! w' r_t'.                      [(m kg)/(s kg)]
-    thlm,        & ! th_l Liquid potential temp.   [K]
-    wpthlp,      & ! w' th_l'.                     [(m K)/s]
-    wp2,         & ! w'^2.                         [m^2/s^2]
-    wp3,         & ! w'^3.                         [m^3/s^3]
-    sigma_sqd_w, & ! sigma_sqd_w on moment. grid.  [-]
-    rtp2,        & ! r_t'^2.                       [(kg/kg)^2]
-    thlp2,       & ! th_l'^2.                      [K^2]
-    rtpthlp,     & ! r_t' th_l'.                   [(kg K)/kg]
-    tau_zm,      & ! Tau on moment. grid.          [s]
-    rcm            ! Liquid water mixing ratio.    [kg/kg]
-!    .  Ncm,     ! Cloud droplet number conc.    [num/kg]
-!    .  Ncnm,    ! Cloud nuclei number conc.     [num/m^3]
-!    .  Nim      ! Ice crystal number conc.      [num/m^3]
+      um,      & ! u mean wind component (thermodynamic levels)   [m/s]
+      upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
+      vm,      & ! v mean wind component (thermodynamic levels)   [m/s]
+      vpwp,    & ! v'w' (momentum levels)                         [m^2/s^2]
+      up2,     & ! u'^2 (momentum levels)                         [m^2/s^2]
+      vp2,     & ! v'^2 (momentum levels)                         [m^2/s^2]
+      rtm,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
+      wprtp,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
+      thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
+      wpthlp,  & ! w' th_l' (momentum levels)                     [(m/s) K]
+      rtp2,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+      thlp2,   & ! th_l'^2 (momentum levels)                      [K^2]
+      rtpthlp, & ! r_t' th_l' (momentum levels)                   [(kg/kg) K]
+      wp2,     & ! w'^2 (momentum levels)                         [m^2/s^2]
+      wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
 
     real, intent(in), dimension(gr%nnzp) ::  & 
-    cloud_frac ! Cloud fraction.     [-]
+      rcm,          & ! cloud water mixing ratio (thermo. levels)  [kg/kg]
+      wprcp,        & ! w'r_c' (momentum levels)                   [(kg/kg) m/s]
+      cloud_frac,   & ! cloud fraction (thermodynamic levels)      [-]
+      rcm_in_layer, & ! rcm in cloud layer                         [kg/kg]
+      cloud_cover     ! cloud cover                                [-]
 
     character(len=*), intent(in) :: prefix ! Location where subroutine is called
 
-    ! Input Variables
     real, intent(in), dimension(sclr_dim) :: & 
-    wpsclrp_sfc    ! Scalar flux at surface [units m/s]
+      wpsclrp_sfc    ! Scalar flux at surface [units m/s]
 
     real, intent(in), dimension(edsclr_dim) :: & 
-    wpedsclrp_sfc ! Eddy-Scalar flux at surface      [units m/s]
+      wpedsclrp_sfc ! Eddy-Scalar flux at surface      [units m/s]
 
-    ! Input/Output Variables
     real, intent(in),dimension(gr%nnzp,sclr_dim) :: & 
-    sclrm,           & ! Passive scalar mean.      [units vary]
-    sclrm_forcing      ! Passive scalar forcing.   [units / s]
+      sclrm,         & ! Passive scalar mean      [units vary]
+      wpsclrp,       & ! w'sclr'                  [units vary]
+      sclrp2,        & ! sclr'^2                  [units vary]
+      sclrprtp,      & ! sclr'rt'                 [units vary]
+      sclrpthlp,     & ! sclr'thl'                [units vary]
+      sclrm_forcing    ! Passive scalar forcing   [units / s]
 
     real, intent(in),dimension(gr%nnzp,edsclr_dim) :: & 
-    edsclrm,        &  !Eddy passive scalar mean.    [units vary]
-    edsclrm_forcing   ! Eddy passive scalar forcing. [units / s]
+      edsclrm,         & ! Eddy passive scalar mean    [units vary]
+      edsclrm_forcing    ! Eddy passive scalar forcing [units / s]
 
     ! Local Variables
 
     ! Name of the procedure using parameterization_check
 
     character(len=25), parameter ::  & 
-    proc_name = "parameterization_timestep"
+      proc_name = "parameterization_timestep"
 
     integer :: i
 
@@ -320,14 +334,22 @@ module numerical_check
 
     call check_nan( thlm_forcing, "thlm_forcing", prefix//proc_name)
     call check_nan( rtm_forcing,"rtm_forcing", prefix//proc_name )
-!        call check_nan( rtm_mc, "rtm_mc", prefix//proc_name )
-!        call check_nan( thlm_mc, "thlm_mc", prefix//proc_name )
+    call check_nan( um_forcing,"um_forcing", prefix//proc_name )
+    call check_nan( vm_forcing,"vm_forcing", prefix//proc_name )
+
     call check_nan( wm_zm,"wm_zm", prefix//proc_name )
     call check_nan( wm_zt,"wm_zt", prefix//proc_name )
     call check_nan( p_in_Pa,"p_in_Pa", prefix//proc_name )
     call check_nan( rho_zm,"rho_zm", prefix//proc_name )
     call check_nan( rho,"rho", prefix//proc_name )
     call check_nan( exner,"exner", prefix//proc_name )
+    call check_nan( rho_ds_zm,"rho_ds_zm", prefix//proc_name )
+    call check_nan( rho_ds_zt,"rho_ds_zt", prefix//proc_name )
+    call check_nan( invrs_rho_ds_zm,"invrs_rho_ds_zm", prefix//proc_name )
+    call check_nan( invrs_rho_ds_zt,"invrs_rho_ds_zt", prefix//proc_name )
+    call check_nan( thv_ds_zm,"thv_ds_zm", prefix//proc_name )
+    call check_nan( thv_ds_zt,"thv_ds_zt", prefix//proc_name )
+
     call check_nan( um,"um", prefix//proc_name )
     call check_nan( upwp,"upwp", prefix//proc_name )
     call check_nan( vm,"vm", prefix//proc_name )
@@ -340,46 +362,49 @@ module numerical_check
     call check_nan( wpthlp,"wpthlp", prefix//proc_name )
     call check_nan( wp2,"wp2", prefix//proc_name )
     call check_nan( wp3,"wp3", prefix//proc_name )
-    call check_nan( sigma_sqd_w,"sigma_sqd_w", prefix//proc_name )
     call check_nan( rtp2,"rtp2", prefix//proc_name )
     call check_nan( thlp2,"thlp2", prefix//proc_name )
     call check_nan( rtpthlp, "rtpthlp", prefix//proc_name )
-    call check_nan( tau_zm,"tau_zm", prefix//proc_name )
+
     call check_nan( wpthlp_sfc, "wpthlp_sfc", prefix//proc_name )
     call check_nan( wprtp_sfc, "wprtp_sfc", prefix//proc_name )
     call check_nan( upwp_sfc, "upwp_sfc", prefix//proc_name )
     call check_nan( vpwp_sfc, "vpwp_sfc", prefix//proc_name )
-!        call check_nan( rcm,"rcm", prefix//proc_name )
-!        call check_nan( Ncm,"Ncm", prefix//proc_name )
-!        call check_nan( Ncnm,"Ncnm", prefix//proc_name )
-!        call check_nan( Nim,"Nim", prefix//proc_name )
-!        call check_nan( hydromet(:,1),"rrainm", prefix//proc_name )
-!        call check_nan( hydromet(:,2),"Nrm", prefix//proc_name )
-!        call check_nan( hydromet(:,3),"rsnowm", prefix//proc_name )
-!        call check_nan( hydromet(:,4),"ricem", prefix//proc_name )
-!        call check_nan( hydromet(:,5),"rgraupel", prefix//proc_name )
-    call check_nan( cloud_frac,"cloud_frac", prefix//proc_name )
 
+    call check_nan( rcm,"rcm", prefix//proc_name )
+    call check_nan( wprcp,"wprcp", prefix//proc_name )
+    call check_nan( cloud_frac,"cloud_frac", prefix//proc_name )
+    call check_nan( rcm_in_layer,"rcm_in_layer", prefix//proc_name )
+    call check_nan( cloud_cover,"cloud_cover", prefix//proc_name )
 
 
     do i = 1, sclr_dim
+
+      call check_nan( sclrm_forcing(:,i),"sclrm_forcing",  & 
+                      prefix//proc_name )
 
       call check_nan( wpsclrp_sfc(i),"wpsclrp_sfc",  & 
                       prefix//proc_name )
 
       call check_nan( sclrm(:,i),"sclrm", prefix//proc_name )
-      call check_nan( sclrm_forcing(:,i),"sclrm_forcing",  & 
-                      prefix//proc_name )
+      call check_nan( wpsclrp(:,i),"wpsclrp", prefix//proc_name )
+      call check_nan( sclrp2(:,i),"sclrp2", prefix//proc_name )
+      call check_nan( sclrprtp(:,i),"sclrprtp", prefix//proc_name )
+      call check_nan( sclrpthlp(:,i),"sclrpthlp", prefix//proc_name )
 
     end do
 
+
     do i = 1, edsclr_dim
-      call check_nan( edsclrm(:,i),"edsclrm", prefix//proc_name )
+
       call check_nan( edsclrm_forcing(:,i),"edsclrm_forcing", prefix//proc_name )
+
       call check_nan( wpedsclrp_sfc(i),"wpedsclrp_sfc",  & 
                       prefix//proc_name )
 
-    end do
+      call check_nan( edsclrm(:,i),"edsclrm", prefix//proc_name )
+
+    enddo
 
 !---------------------------------------------------------------------
 
@@ -389,27 +414,28 @@ module numerical_check
     call check_negative( p_in_Pa, gr%nnzp ,"p_in_Pa", prefix//proc_name )
     call check_negative( rho, gr%nnzp ,"rho", prefix//proc_name )
     call check_negative( rho_zm, gr%nnzp ,"rho_zm", prefix//proc_name )
-    call check_negative(exner, gr%nnzp ,"exner", prefix//proc_name )
+    call check_negative( exner, gr%nnzp ,"exner", prefix//proc_name )
+    call check_negative( rho_ds_zm, gr%nnzp ,"rho_ds_zm", prefix//proc_name )
+    call check_negative( rho_ds_zt, gr%nnzp ,"rho_ds_zt", prefix//proc_name )
+    call check_negative( invrs_rho_ds_zm, gr%nnzp ,"invrs_rho_ds_zm", &
+                         prefix//proc_name )
+    call check_negative( invrs_rho_ds_zt, gr%nnzp ,"invrs_rho_ds_zt", &
+                         prefix//proc_name )
+    call check_negative( thv_ds_zm, gr%nnzp ,"thv_ds_zm", prefix//proc_name )
+    call check_negative( thv_ds_zt, gr%nnzp ,"thv_ds_zt", prefix//proc_name )
     call check_negative( up2, gr%nnzp ,"up2", prefix//proc_name )
     call check_negative( vp2, gr%nnzp ,"vp2", prefix//proc_name )
     call check_negative( wp2, gr%nnzp ,"wp2", prefix//proc_name )
     call check_negative( rtm, gr%nnzp ,"rtm", prefix//proc_name )
     call check_negative( thlm, gr%nnzp ,"thlm", prefix//proc_name )
-    call check_negative( sigma_sqd_w, gr%nnzp ,"sigma_sqd_w", prefix//proc_name )
     call check_negative( rtp2, gr%nnzp ,"rtp2", prefix//proc_name )
-    call check_negative(thlp2, gr%nnzp ,"thlp2", prefix//proc_name )
-    call check_negative( tau_zm, gr%nnzp ,"tau_zm", prefix//proc_name )
+    call check_negative( thlp2, gr%nnzp ,"thlp2", prefix//proc_name )
     call check_negative( rcm, gr%nnzp ,"rcm", prefix//proc_name )
-!        call check_negative( Ncm,"Ncm", prefix//proc_name )
-!        call check_negative( Ncnm,"Ncnm", prefix//proc_name )
-!        call check_negative( Nim,"Nim", prefix//proc_name )
-!        call check_negative( hydromet(:,1),"rrainm", prefix//proc_name )
-!        call check_negative( hydromet(:,2),"Nrm", prefix//proc_name )
-!        call check_negative( hydromet(:,3),"rsnowm", prefix//proc_name )
-!        call check_negative( hydromet(:,4),"ricem", prefix//proc_name )
-!        call check_negative( hydromet(:,5),"rgraupelm",
-!     .          prefix//proc_name )
     call check_negative( cloud_frac, gr%nnzp ,"cloud_frac", prefix//proc_name )
+    call check_negative( rcm_in_layer, gr%nnzp ,"rcm_in_layer", &
+                         prefix//proc_name )
+    call check_negative( cloud_cover, gr%nnzp ,"cloud_cover", &
+                         prefix//proc_name )
 
     return
   end subroutine parameterization_check

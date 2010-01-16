@@ -412,15 +412,20 @@ module clubb_core
     !----------------------------------------------------------------
     if ( clubb_at_least_debug_level( 2 ) ) then
       call parameterization_check & 
-           ( thlm_forcing, rtm_forcing, wm_zm, wm_zt, p_in_Pa, rho_zm, & ! intent(in)
-           rho, exner, wpthlp_sfc, wprtp_sfc,                          & ! intent(in)
-           upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,                     & ! intent(in)
-           up2, vp2, rtm, wprtp, thlm,                                 & ! intent(in)
-           wpthlp, wp2, wp3, sigma_sqd_w, rtp2, thlp2,                 & ! intent(in)
-           rtpthlp, tau_zm, rcm, cloud_frac, "beginning of ",          & ! intent(in)
-           wpsclrp_sfc, wpedsclrp_sfc,                                 & ! intent(in)
-           sclrm, sclrm_forcing, edsclrm, edsclrm_forcing )              ! intent(in)
-    end if
+           ( thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! intent(in)
+             wm_zm, wm_zt, p_in_Pa, rho_zm, rho, exner,         & ! intent(in)
+             rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,             & ! intent(in)
+             invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt,             & ! intent(in)
+             wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,         & ! intent(in)
+             um, upwp, vm, vpwp, up2, vp2,                      & ! intent(in)
+             rtm, wprtp, thlm, wpthlp,                          & ! intent(in)
+             wp2, wp3, rtp2, thlp2, rtpthlp,                    & ! intent(in)
+             rcm, wprcp, cloud_frac,                            & ! intent(in)
+             rcm_in_layer, cloud_cover, "beginning of ",        & ! intent(in)
+             wpsclrp_sfc, wpedsclrp_sfc,                        & ! intent(in)
+             sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp,       & ! intent(in)
+             sclrm_forcing, edsclrm, edsclrm_forcing            ) ! intent(in)
+    endif
     !-----------------------------------------------------------------------
 
     ! SET SURFACE VALUES OF FLUXES (BROUGHT IN)
@@ -996,15 +1001,20 @@ module clubb_core
 
     if ( clubb_at_least_debug_level( 2 ) ) then
       call parameterization_check & 
-           ( thlm_forcing, rtm_forcing, wm_zm, wm_zt, p_in_Pa, rho_zm, & ! intent(in)
-             rho, exner, wpthlp_sfc, wprtp_sfc,                  & ! intent(in)
-             upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,             & ! intent(in)
-             up2, vp2, rtm, wprtp, thlm,                         & ! intent(in)
-             wpthlp, wp2, wp3, sigma_sqd_w, rtp2, thlp2,         & ! intent(in)
-             rtpthlp, tau_zm, rcm, cloud_frac, "end of ",        & ! intent(in)
-             wpsclrp_sfc, wpedsclrp_sfc,                         & ! intent(in)
-             sclrm, sclrm_forcing, edsclrm, edsclrm_forcing )      ! intent(in)
-    end if
+           ( thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! intent(in)
+             wm_zm, wm_zt, p_in_Pa, rho_zm, rho, exner,         & ! intent(in)
+             rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,             & ! intent(in)
+             invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt,             & ! intent(in)
+             wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,         & ! intent(in)
+             um, upwp, vm, vpwp, up2, vp2,                      & ! intent(in)
+             rtm, wprtp, thlm, wpthlp,                          & ! intent(in)
+             wp2, wp3, rtp2, thlp2, rtpthlp,                    & ! intent(in)
+             rcm, wprcp, cloud_frac,                            & ! intent(in)
+             rcm_in_layer, cloud_cover, "end of ",              & ! intent(in)
+             wpsclrp_sfc, wpedsclrp_sfc,                        & ! intent(in)
+             sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp,       & ! intent(in)
+             sclrm_forcing, edsclrm, edsclrm_forcing            ) ! intent(in)
+    endif
 
     return
   end subroutine advance_clubb_core
