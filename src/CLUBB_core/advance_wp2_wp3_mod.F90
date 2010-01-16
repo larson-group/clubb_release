@@ -30,12 +30,13 @@ module advance_wp2_wp3_module
 contains
 
   !=============================================================================
-  subroutine advance_wp2_wp3( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt,  &
-                              wpthvp, wp2thvp, um, vm, upwp, vpwp, up2, vp2, &
-                              Kh_zm, Kh_zt, tau_zm, tau_zt, Skw_zm, Skw_zt,  &
-                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,         &
-                              invrs_rho_ds_zt, wp3_zm, a,                    &
-                              wp2, wp3, wp2_zt, err_code                     )
+  subroutine advance_wp2_wp3( dt, sfc_elevation, sigma_sqd_w, wm_zm, &
+                              wm_zt, wpthvp, wp2thvp, um, vm, upwp, vpwp, &
+                              up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt, &
+                              Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt, &
+                              invrs_rho_ds_zm, invrs_rho_ds_zt, &
+                              thv_ds_zm, thv_ds_zt, wp3_zm, a, &
+                              wp2, wp3, wp2_zt, err_code )
 
     ! Description:
     ! Advance w'^2 and w'^3 one timestep.
@@ -114,6 +115,8 @@ contains
       rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
       invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
+      thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
+      thv_ds_zt,       & ! Dry, base-state theta_v on thermo. levs.  [K]
       wp3_zm,          & ! w'^3 interpolated to momentum levels      [m^3/s^3]
       a                  ! Weight of 1st normal distribution         [-]
 
@@ -281,12 +284,13 @@ contains
     endif
 
     ! Solve semi-implicitly
-    call wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt,       & ! Intent(in)
-                     wpthvp, wp2thvp, um, vm, upwp, vpwp, up2, vp2,      & ! Intent(in)
-                     Kw1, Kw8, Skw_zt, tau_zm, tauw3t, C1_Skw_fnc,       & ! Intent(in)
-                     C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, & ! Intent(in)
-                     invrs_rho_ds_zt, wp3_zm, nsub, nsup,                & ! Intent(in)
-                     wp2, wp3, wp2_zt, err_code                          ) ! Intent(inout)
+    call wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm,         & ! Intent(in)
+                     wm_zt, wpthvp, wp2thvp, um, vm, upwp, vpwp,    & ! Intent(in)
+                     up2, vp2, Kw1, Kw8, Skw_zt, tau_zm, tauw3t,    & ! Intent(in)
+                     C1_Skw_fnc, C11_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! Intent(in)
+                     invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm,   & ! Intent(in)
+                     thv_ds_zt, wp3_zm, nsub, nsup,                 & ! Intent(in)
+                     wp2, wp3, wp2_zt, err_code                     ) ! Intent(inout)
 
 !       Error output
 !       Joshua Fasching Feb 2008
@@ -331,11 +335,12 @@ contains
   end subroutine advance_wp2_wp3
 
   !=============================================================================
-  subroutine wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, &
-                         wpthvp, wp2thvp, um, vm, upwp, vpwp, up2, vp2, &
-                         Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
-                         C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
-                         invrs_rho_ds_zt, wp3_zm, nsub, nsup, &
+  subroutine wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm, &
+                         wm_zt, wpthvp, wp2thvp, um, vm, upwp, vpwp, &
+                         up2, vp2, Kw1, Kw8, Skw_zt, tau1m, tauw3t, &
+                         C1_Skw_fnc, C11_Skw_fnc, rho_ds_zm, rho_ds_zt, &
+                         invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, &
+                         thv_ds_zt, wp3_zm, nsub, nsup, &
                          wp2, wp3, wp2_zt, err_code )
 
     ! Description:
@@ -489,6 +494,8 @@ contains
       rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
       invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
+      thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
+      thv_ds_zt,       & ! Dry, base-state theta_v on thermo. levs.  [K]
       wp3_zm             ! w'^3 interpolated to momentum levels      [m^3/s^3]
 
     integer, intent(in) :: &
@@ -584,7 +591,8 @@ contains
                    upwp, vpwp, up2, vp2, Kw1, Kw8,  & 
                    Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                    C11_Skw_fnc, rho_ds_zm, invrs_rho_ds_zt, &
-                   l_crank_nich_diff, rhs )
+                   thv_ds_zm, thv_ds_zt, l_crank_nich_diff, &
+                   rhs )
 
     ! Solve the system of equations for w'^2 and w'^3.
     if ( l_stats_samp .and. iwp23_matrix_condt_num > 0 ) then
@@ -1464,7 +1472,8 @@ contains
                        upwp, vpwp, up2, vp2, Kw1, Kw8,  & 
                        Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                        C11_Skw_fnc, rho_ds_zm, invrs_rho_ds_zt, &
-                       l_crank_nich_diff, rhs )
+                       thv_ds_zm, thv_ds_zt, l_crank_nich_diff, &
+                       rhs )
 
     ! Description:
     ! Compute RHS vector for w'^2 and w'^3.
@@ -1543,7 +1552,9 @@ contains
       C1_Skw_fnc,      & ! C_1 parameter with Sk_w applied           [-]
       C11_Skw_fnc,     & ! C_11 parameter with Sk_w applied          [-]
       rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
-      invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
+      invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
+      thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
+      thv_ds_zt          ! Dry, base-state theta_v on thermo. levs.  [K]
 
     logical, intent(in) :: & 
       l_crank_nich_diff   ! Turns on/off Crank-Nicholson diffusion.
@@ -1596,13 +1607,13 @@ contains
       ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
       rhs(k_wp2) & 
       = rhs(k_wp2) & 
-      + wp2_terms_bp_pr2_rhs( C5, wpthvp(k) )
+      + wp2_terms_bp_pr2_rhs( C5, thv_ds_zm(k), wpthvp(k) )
 
       ! RHS pressure term 3 (pr3).
       rhs(k_wp2) & 
       = rhs(k_wp2) & 
-      + wp2_term_pr3_rhs( C5, wpthvp(k), upwp(k), um(kp1), um(k), & 
-                          vpwp(k), vm(kp1), vm(k), gr%dzm(k) )
+      + wp2_term_pr3_rhs( C5, thv_ds_zm(k), wpthvp(k), upwp(k), um(kp1), &
+                          um(k), vpwp(k), vm(kp1), vm(k), gr%dzm(k) )
 
       ! RHS dissipation term 1 (dp1).
       rhs(k_wp2) &
@@ -1681,7 +1692,7 @@ contains
         ! Note:  To find the contribution of w'^2 term bp, substitute 0 for the
         !        C_5 input to function wp2_terms_bp_pr2_rhs.
         call stat_update_var_pt( iwp2_bp, k, & 
-          wp2_terms_bp_pr2_rhs( 0.0, wpthvp(k) ), zm )
+          wp2_terms_bp_pr2_rhs( 0.0, thv_ds_zm(k), wpthvp(k) ), zm )
 
         ! w'^2 term pr1 has both implicit and explicit components; call
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
@@ -1708,7 +1719,7 @@ contains
         ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
         !        C_5 input to function wp2_terms_bp_pr2_rhs.
         call stat_begin_update_pt( iwp2_pr2, k, & 
-          -wp2_terms_bp_pr2_rhs( (1.0+C5), wpthvp(k) ), zm )
+          -wp2_terms_bp_pr2_rhs( (1.0+C5), thv_ds_zm(k), wpthvp(k) ), zm )
 
         ! w'^2 term dp1 has both implicit and explicit components; call
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
@@ -1728,8 +1739,8 @@ contains
 
         ! w'^2 term pr3 is completely explicit; call stat_update_var_pt.
         call stat_update_var_pt( iwp2_pr3, k, & 
-          wp2_term_pr3_rhs( C5, wpthvp(k), upwp(k), um(kp1), um(k), & 
-                            vpwp(k), vm(kp1), vm(k), gr%dzm(k) ), &
+          wp2_term_pr3_rhs( C5, thv_ds_zm(k), wpthvp(k), upwp(k), um(kp1), &
+                            um(k), vpwp(k), vm(kp1), vm(k), gr%dzm(k) ), &
                                  zm )
 
       endif
@@ -1792,7 +1803,7 @@ contains
       ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
       rhs(k_wp3) & 
       = rhs(k_wp3) & 
-      + wp3_terms_bp_pr2_rhs( C11_Skw_fnc(k), wp2thvp(k) )
+      + wp3_terms_bp_pr2_rhs( C11_Skw_fnc(k), thv_ds_zt(k), wp2thvp(k) )
 
       ! RHS pressure term 1 (pr1).
       rhs(k_wp3) & 
@@ -1905,7 +1916,7 @@ contains
         ! Note:  To find the contribution of w'^3 term bp, substitute 0 for the
         !        C_11 skewness function input to function wp3_terms_bp_pr2_rhs.
         call stat_update_var_pt( iwp3_bp, k, & 
-          wp3_terms_bp_pr2_rhs( 0.0, wp2thvp(k) ), zt )
+          wp3_terms_bp_pr2_rhs( 0.0, thv_ds_zt(k), wp2thvp(k) ), zt )
 
         ! w'^3 term pr2 has both implicit and explicit components; call
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
@@ -1913,7 +1924,8 @@ contains
         ! Note:  To find the contribution of w'^3 term pr2, add 1 to the
         !        C_11 skewness function input to function wp3_terms_bp_pr2_rhs.
         call stat_begin_update_pt( iwp3_pr2, k, & 
-          -wp3_terms_bp_pr2_rhs( (1.0+C11_Skw_fnc(k)), wp2thvp(k) ), & 
+          -wp3_terms_bp_pr2_rhs( (1.0+C11_Skw_fnc(k)), thv_ds_zt(k), &
+                                 wp2thvp(k) ), & 
                                    zt )
 
         ! w'^3 term pr1 has both implicit and explicit components; call 
@@ -2255,7 +2267,7 @@ contains
   end function wp2_term_pr1_lhs
 
   !=============================================================================
-  pure function wp2_terms_bp_pr2_rhs( C5, wpthvp ) & 
+  pure function wp2_terms_bp_pr2_rhs( C5, thv_ds_zm, wpthvp ) & 
   result( rhs )
 
     ! Description:
@@ -2264,18 +2276,18 @@ contains
     !
     ! The d(w'^2)/dt equation contains a buoyancy production term:
     !
-    ! + 2 (g/th_0) w'th_v';
+    ! + 2 (g/thv_ds) w'th_v';
     !
     ! and pressure term 2:
     !
-    ! - C_5 ( -2 w'^2 dw/dz + 2 (g/th_0) w'th_v' ).
+    ! - C_5 ( -2 w'^2 dw/dz + 2 (g/thv_ds) w'th_v' ).
     !
     ! The w'^2 buoyancy production term is completely explicit, while w'^2 
     ! pressure term 2 has both implicit and explicit components.  The buoyancy 
     ! production term and the explicit portion of pressure term 2 are combined 
     ! and solved together as:
     !
-    ! + ( 1 - C_5 ) ( 2 (g/th_0) w'th_v' ).
+    ! + ( 1 - C_5 ) ( 2 (g/thv_ds) w'th_v' ).
 
     ! References:
     !-----------------------------------------------------------------------
@@ -2284,22 +2296,19 @@ contains
     ! Variable(s)        
         grav ! Gravitational acceleration [m/s^2]
 
-    use parameters_model, only: & 
-    ! Variable(s) 
-        T0  ! Reference temperature      [K]
-
     implicit none
 
     ! Input Variables
     real, intent(in) :: & 
-      C5,    & ! Model parameter C_5 [-]
-      wpthvp   ! w'th_v'(k)          [K m/s]
+      C5,        & ! Model parameter C_5                             [-]
+      thv_ds_zm, & ! Dry, base-state theta_v at momentum level (k)   [K]
+      wpthvp       ! w'th_v'(k)                                      [K m/s]
 
     ! Return Variable
     real :: rhs
 
     rhs & 
-    = + ( 1.0 - C5 ) * 2.0 * ( grav / T0 ) * wpthvp
+    = + ( 1.0 - C5 ) * 2.0 * ( grav / thv_ds_zm ) * wpthvp
 
     return
   end function wp2_terms_bp_pr2_rhs
@@ -2349,8 +2358,8 @@ contains
   end function wp2_term_dp1_rhs
 
   !=============================================================================
-  pure function wp2_term_pr3_rhs( C5, wpthvp, upwp, ump1, um, & 
-                                  vpwp, vmp1, vm, dzm ) & 
+  pure function wp2_term_pr3_rhs( C5, thv_ds_zm, wpthvp, upwp, ump1, &
+                                  um, vpwp, vmp1, vm, dzm ) &
   result( rhs )
 
     ! Description:
@@ -2358,22 +2367,23 @@ contains
     !
     ! The d(w'^2)/dt equation contains pressure term 3:
     !
-    ! + (2/3) C_5 [ (g/th_0) w'th_v' - u'w' du/dz - v'w' dv/dz ].
+    ! + (2/3) C_5 [ (g/thv_ds) w'th_v' - u'w' du/dz - v'w' dv/dz ].
     !
     ! This term is solved for completely explicitly and is discretized as 
     ! follows:
     !
     ! The values of w'th_v', u'w', and v'w' are found on the momentum levels,
-    ! whereas the values of um and vm are found on the thermodynamic levels.  
-    ! The derivatives of both um and vm are taken over the intermediate 
-    ! (central) momentum level.  All the remaining mathematical operations take 
+    ! whereas the values of um and vm are found on the thermodynamic levels.
+    ! Additionally, the values of thv_ds_zm are found on the momentum levels.
+    ! The derivatives of both um and vm are taken over the intermediate
+    ! (central) momentum level.  All the remaining mathematical operations take
     ! place at the central momentum level, yielding the desired result.
     !
-    ! ------ump1------------vmp1------------------------------- t(k+1)
+    ! -----ump1------------vmp1-------------------------------------- t(k+1)
     !
-    ! =upwp======d(um)/dz========d(vm)/dz===vpwp=====wpthvp==== m(k)
+    ! =upwp====d(um)/dz========d(vm)/dz==vpwp===thv_ds_zm==wpthvp==== m(k)
     !
-    ! ------um--------------vm--------------------------------- t(k)
+    ! -----um--------------vm---------------------------------------- t(k)
     !
     ! The vertical indices t(k+1), m(k), and t(k) correspond with altitudes 
     ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for 
@@ -2384,27 +2394,23 @@ contains
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants, only: & 
-    ! Variables 
+    use constants, only: & ! Variables 
         grav ! Gravitational acceleration [m/s^2]
-
-    use parameters_model, only: & 
-    ! Variables 
-        T0  ! Reference temperature      [K]
 
     implicit none
 
     ! Input Variables
     real, intent(in) :: & 
-      C5,      & ! Model parameter C_5           [-]
-      wpthvp,  & ! w'th_v'(k)                    [K m/s]
-      upwp,    & ! u'w'(k)                       [m^2/s^2]
-      ump1,    & ! um(k+1)                       [m/s]
-      um,      & ! um(k)                         [m/s]
-      vpwp,    & ! v'w'(k)                       [m^2/s^2]
-      vmp1,    & ! vm(k+1)                       [m/s]
-      vm,      & ! vm(k)                         [m/s]
-      dzm        ! Inverse of grid spacing (k)   [1/m]
+      C5,        & ! Model parameter C_5                            [-]
+      thv_ds_zm, & ! Dry, base-state theta_v at momentum level (k)  [K]
+      wpthvp,    & ! w'th_v'(k)                                     [K m/s]
+      upwp,      & ! u'w'(k)                                        [m^2/s^2]
+      ump1,      & ! um(k+1)                                        [m/s]
+      um,        & ! um(k)                                          [m/s]
+      vpwp,      & ! v'w'(k)                                        [m^2/s^2]
+      vmp1,      & ! vm(k+1)                                        [m/s]
+      vm,        & ! vm(k)                                          [m/s]
+      dzm          ! Inverse of grid spacing (k)                    [1/m]
 
     ! Return Variable
     real :: rhs
@@ -2413,13 +2419,13 @@ contains
     ! Michael Falk, 2 August 2007
     ! Use the following code for standard mixing, with c_k=0.548:
     = + (2.0/3.0) * C5 & 
-                  * ( ( grav / T0 ) * wpthvp & 
+                  * ( ( grav / thv_ds_zm ) * wpthvp & 
                       - upwp * dzm * ( ump1 - um ) & 
                       - vpwp * dzm * ( vmp1 - vm ) & 
                     )
      ! Use the following code for alternate mixing, with c_k=0.1 or 0.2
 !    = + (2.0/3.0) * C5 &
-!                  * ( ( grav / T0 ) * wpthvp &
+!                  * ( ( grav / thv_ds_zm ) * wpthvp &
 !                      - 0. * upwp * dzm * ( ump1 - um ) &
 !                      - 0. * vpwp * dzm * ( vmp1 - vm ) &
 !                    )
@@ -3123,7 +3129,7 @@ contains
   end function wp3_terms_ta_tp_rhs
 
   !=============================================================================
-  pure function wp3_terms_bp_pr2_rhs( C11_Skw_fnc, wp2thvp ) & 
+  pure function wp3_terms_bp_pr2_rhs( C11_Skw_fnc, thv_ds_zt, wp2thvp ) & 
   result( rhs )
 
     ! Description:
@@ -3132,41 +3138,38 @@ contains
     !
     ! The d(w'^3)/dt equation contains a buoyancy production term:
     !
-    ! + 3 (g/th_0) w'^2th_v';
+    ! + 3 (g/thv_ds) w'^2th_v';
     !
     ! and pressure term 2:
     !
-    ! - C_11 ( -3 w'^3 dw/dz + 3 (g/th_0) w'^2th_v' ).
+    ! - C_11 ( -3 w'^3 dw/dz + 3 (g/thv_ds) w'^2th_v' ).
     !
     ! The w'^3 buoyancy production term is completely explicit, while w'^3 
     ! pressure term 2 has both implicit and explicit components.  The buoyancy 
     ! production term and the explicit portion of pressure term 2 are combined 
     ! and solved together as:
     !
-    ! + ( 1 - C_ll ) ( 3 (g/th_0) w'^2th_v' ).
+    ! + ( 1 - C_ll ) ( 3 (g/thv_ds) w'^2th_v' ).
 
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants, only: & 
-    ! Variable(s) 
+    use constants, only: & ! Variable(s) 
         grav ! Gravitational acceleration [m/s^2]
-    use parameters_model, only:  & 
-    ! Variable(s)
-        T0  ! Reference temperature      [K]
 
     implicit none
 
     ! Input Variables
     real, intent(in) :: & 
-      C11_Skw_fnc,  & ! C_11 parameter with Sk_w applied (k)   [-]
-      wp2thvp         ! w'^2th_v'(k)                           [K m^2/s^2]
+      C11_Skw_fnc, & ! C_11 parameter with Sk_w applied (k)        [-]
+      thv_ds_zt,   & ! Dry, base-state theta_v at thermo. lev. (k) [K]
+      wp2thvp        ! w'^2th_v'(k)                                [K m^2/s^2]
 
     ! Return Variable
     real :: rhs
 
     rhs & 
-    = + ( 1.0 - C11_Skw_fnc ) * 3.0 * ( grav/T0 ) * wp2thvp
+    = + ( 1.0 - C11_Skw_fnc ) * 3.0 * ( grav / thv_ds_zt ) * wp2thvp
 
     return
   end function wp3_terms_bp_pr2_rhs

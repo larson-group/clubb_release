@@ -842,16 +842,16 @@ module clubb_core
     ! Advance rtm/wprtp and thlm/wpthlp one time step
     !----------------------------------------------------------------
 
-    call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3,  & ! intent(in)
-                          Kh_zt, tau_zm, Skw_zm, rtpthvp,           & ! intent(in)
-                          rtm_forcing, thlpthvp, rtm_ref, thlm_ref, & ! intent(in)
-                          thlm_forcing, rho_ds_zm, rho_ds_zt,       & ! intent(in)
-                          invrs_rho_ds_zm, invrs_rho_ds_zt, rtp2,   & ! intent(in)
-                          thlp2, wp2_zt, pdf_params, l_implemented, & ! intent(in)
-                          sclrpthvp, sclrm_forcing, sclrp2,         & ! intent(in)
-                          rtm, wprtp, thlm, wpthlp,                 & ! intent(inout)
-                          err_code,                                 & ! intent(inout)
-                          sclrm, wpsclrp )                            ! intent(inout)
+    call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3,     & ! intent(in)
+                          Kh_zt, tau_zm, Skw_zm, rtpthvp, rtm_forcing, & ! intent(in)
+                          thlpthvp, rtm_ref, thlm_ref, thlm_forcing,   & ! intent(in)
+                          rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,       & ! intent(in)
+                          invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2,     & ! intent(in)
+                          wp2_zt, pdf_params, l_implemented,           & ! intent(in)
+                          sclrpthvp, sclrm_forcing, sclrp2,            & ! intent(in)
+                          rtm, wprtp, thlm, wpthlp,                    & ! intent(inout)
+                          err_code,                                    & ! intent(inout)
+                          sclrm, wpsclrp                               ) ! intent(inout)
 
     ! Wrapped LAPACK procedures may report errors, and if so, exit
     ! gracefully.
@@ -884,13 +884,13 @@ module clubb_core
                            rho_ds_zt, invrs_rho_ds_zm,    & ! intent(in)
  ! Vince Larson used prognostic timestepping of variances 
  !    in order to increase numerical stability.  17 Jul 2007
- !                          .false., dt,                   & ! intent(in)
-                           .true., dt,                    & ! intent(in)
+ !                          thv_ds_zm, .false., dt,        & ! intent(in)
+                           thv_ds_zm, .true., dt,         & ! intent(in)
                            sclrm, wpsclrp,                & ! intent(in) 
                            rtp2, thlp2, rtpthlp,          & ! intent(inout)
                            up2, vp2,                      & ! intent(inout)
                            err_code,                      & ! intent(out)
-                           sclrp2, sclrprtp, sclrpthlp  )   ! intent(out)
+                           sclrp2, sclrprtp, sclrpthlp    ) ! intent(out)
 
     ! Check stability
     ! Changed from a logical flag to an integer indicating nature of
@@ -921,12 +921,13 @@ module clubb_core
     !----------------------------------------------------------------
 
     call advance_wp2_wp3 &
-         ( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt,  & ! intent(in)
-           wpthvp, wp2thvp, um, vm, upwp, vpwp, up2, vp2, & ! intent(in)
-           Kh_zm, Kh_zt, tau_zm, tau_zt, Skw_zm, Skw_zt,  & ! intent(in)
-           rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,         & ! intent(in)
-           invrs_rho_ds_zt, wp3_zm, pdf_params%a,         & ! intent(in)
-           wp2, wp3, wp2_zt, err_code                     ) ! intent(inout)
+         ( dt, sfc_elevation, sigma_sqd_w, wm_zm,      & ! intent(in)
+           wm_zt, wpthvp, wp2thvp, um, vm, upwp, vpwp, & ! intent(in)
+           up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt,     & ! intent(in)
+           Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt,       & ! intent(in)
+           invrs_rho_ds_zm, invrs_rho_ds_zt,           & ! intent(in)
+           thv_ds_zm, thv_ds_zt, wp3_zm, pdf_params%a, & ! intent(in)
+           wp2, wp3, wp2_zt, err_code                  ) ! intent(inout)
 
     ! Wrapped LAPACK procedures may report errors, and if so, exit
     ! gracefully.

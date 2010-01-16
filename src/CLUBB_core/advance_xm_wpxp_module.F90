@@ -37,15 +37,15 @@ module advance_xm_wpxp_module
   contains
 
   !=============================================================================
-  subroutine advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3,  &
-                              Kh_zt, tau_zm, Skw_zm, rtpthvp,  &
-                              rtm_forcing, thlpthvp, rtm_ref, thlm_ref,  &
-                              thlm_forcing, rho_ds_zm, rho_ds_zt,  &
-                              invrs_rho_ds_zm, invrs_rho_ds_zt, rtp2,  &
-                              thlp2, wp2_zt, pdf_params, l_implemented,  &
-                              sclrpthvp, sclrm_forcing, sclrp2,  &
-                              rtm, wprtp, thlm, wpthlp,  &
-                              err_code,  &
+  subroutine advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3, &
+                              Kh_zt, tau_zm, Skw_zm, rtpthvp, rtm_forcing, &
+                              thlpthvp, rtm_ref, thlm_ref, thlm_forcing, &
+                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                              invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2, &
+                              wp2_zt, pdf_params, l_implemented, &
+                              sclrpthvp, sclrm_forcing, sclrp2, &
+                              rtm, wprtp, thlm, wpthlp, &
+                              err_code, &
                               sclrm, wpsclrp )
 
     ! Description:
@@ -155,6 +155,7 @@ module advance_xm_wpxp_module
       rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density @ moment. levs. [m^3/kg]
       invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs. [m^3/kg]
+      thv_ds_zm,       & ! Dry, base-state theta_v on moment. levs. [K]
       ! Added for clipping by Vince Larson 29 Sep 2007
       rtp2,            & ! r_t'^2 (momentum levels)                 [(kg/kg)^2]
       thlp2              ! th_l'^2 (momentum levels)                [K^2]
@@ -392,7 +393,7 @@ module advance_xm_wpxp_module
       call xm_wpxp_rhs( "rtm", .true., dt, rtm, wprtp, rtm_forcing, &        ! Intent(in)
                         C7_Skw_fnc, rtpthvp, C6rt_Skw_fnc, tau_zm, wp2_zt, & ! Intent(in)
                         a1_zt, wp3, rho_ds_zt, invrs_rho_ds_zm, &            ! Intent(in)
-                        wpxp_upper_lim, wpxp_lower_lim, &                    ! Intent(in)
+                        thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &         ! Intent(in)
                         rhs(:,1) )                                           ! Intent(out)
 
       ! Solve r_t / w'r_t'
@@ -450,7 +451,7 @@ module advance_xm_wpxp_module
       call xm_wpxp_rhs( "thlm", .true., dt, thlm, wpthlp, thlm_forcing, &      ! Intent(in)
                         C7_Skw_fnc, thlpthvp, C6thl_Skw_fnc, tau_zm, wp2_zt, & ! Intent(in)
                         a1_zt, wp3, rho_ds_zt, invrs_rho_ds_zm, &              ! Intent(in)
-                        wpxp_upper_lim, wpxp_lower_lim, &                      ! Intent(in)
+                        thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &           ! Intent(in)
                         rhs(:,1) )                                             ! Intent(out)
 
       ! Solve for th_l / w'th_l'
@@ -513,7 +514,7 @@ module advance_xm_wpxp_module
                           sclrm_forcing(:,i), C7_Skw_fnc, sclrpthvp(:,i), &  ! Intent(in)
                           C6rt_Skw_fnc, tau_zm, wp2_zt, a1_zt, wp3, &        ! Intent(in)
                           rho_ds_zt, invrs_rho_ds_zm, &                      ! Intent(in)
-                          wpxp_upper_lim, wpxp_lower_lim, &                  ! Intent(in)
+                          thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &       ! Intent(in)
                           rhs(:,1) )                                         ! Intent(out)
 
         ! Solve for sclrm / w'sclr'
@@ -565,7 +566,7 @@ module advance_xm_wpxp_module
       call xm_wpxp_rhs( "rtm", .true., dt, rtm, wprtp, rtm_forcing, &        ! Intent(in)
                         C7_Skw_fnc, rtpthvp, C6rt_Skw_fnc, tau_zm, wp2_zt, & ! Intent(in)
                         a1_zt, wp3, rho_ds_zt, invrs_rho_ds_zm, &            ! Intent(in)
-                        wpxp_upper_lim, wpxp_lower_lim, &                    ! Intent(in)
+                        thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &         ! Intent(in)
                         rhs(:,1) )                                           ! Intent(out)
 
       ! Compute the explicit portion of the th_l and w'th_l' equations.
@@ -573,7 +574,7 @@ module advance_xm_wpxp_module
       call xm_wpxp_rhs( "thlm", .true., dt, thlm, wpthlp, thlm_forcing, &      ! Intent(in)
                         C7_Skw_fnc, thlpthvp, C6thl_Skw_fnc, tau_zm, wp2_zt, & ! Intent(in)
                         a1_zt, wp3, rho_ds_zt, invrs_rho_ds_zm, &              ! Intent(in)
-                        wpxp_upper_lim, wpxp_lower_lim, &                      ! Intent(in)
+                        thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &           ! Intent(in)
                         rhs(:,2) )                                             ! Intent(out)
 
       do i = 1, sclr_dim, 1
@@ -581,7 +582,7 @@ module advance_xm_wpxp_module
                           sclrm_forcing(:,i), C7_Skw_fnc, sclrpthvp(:,i), &  ! Intent(in)
                           C6rt_Skw_fnc, tau_zm, wp2_zt, a1_zt, wp3, &        ! Intent(in)
                           rho_ds_zt, invrs_rho_ds_zm, &                      ! Intent(in)
-                          wpxp_upper_lim, wpxp_lower_lim, &                  ! Intent(in)
+                          thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &       ! Intent(in)
                           rhs(:,2+i) )                                       ! Intent(out)
       enddo
 
@@ -1219,7 +1220,7 @@ module advance_xm_wpxp_module
   subroutine xm_wpxp_rhs( solve_type, l_iter, dt, xm, wpxp, xm_forcing, & 
                           C7_Skw_fnc, xpthvp, C6x_Skw_fnc, tau_zm, wp2_zt, &
                           a1_zt, wp3, rho_ds_zt, invrs_rho_ds_zm, &
-                          wpxp_upper_lim, wpxp_lower_lim, &
+                          thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &
                           rhs )
     ! Description:
     ! Compute RHS vector for xm and w'x'.
@@ -1290,6 +1291,7 @@ module advance_xm_wpxp_module
       wp3,             & ! w'^3 (thermodynamic levels)               [m^3/s^3]
       rho_ds_zt,       & ! Dry, static density on thermo.  levels    [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density @ moment. levs.  [m^3/kg]
+      thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
       wpxp_upper_lim,  & ! Keeps correlations from becoming > 1.     [units vary]
       wpxp_lower_lim     ! Keeps correlations from becoming < -1.    [units vary]
 
@@ -1409,7 +1411,7 @@ module advance_xm_wpxp_module
       ! RHS buoyancy production (bp) term and pressure term 3 (pr3).
       rhs(k_wpxp) & 
       = rhs(k_wpxp) & 
-      + wpxp_terms_bp_pr3_rhs( C7_Skw_fnc(k), xpthvp(k) )
+      + wpxp_terms_bp_pr3_rhs( C7_Skw_fnc(k), thv_ds_zm(k), xpthvp(k) )
 
       ! RHS time tendency.
       if ( l_iter ) rhs(k_wpxp) =  & 
@@ -1475,13 +1477,15 @@ module advance_xm_wpxp_module
         ! Note:  To find the contribution of w'x' term bp, substitute 0 for the
         !        C_7 skewness function input to function wpxp_terms_bp_pr3_rhs.
         call stat_update_var_pt( iwpxp_bp, k, & 
-            wpxp_terms_bp_pr3_rhs( 0.0, xpthvp(k) ), zm )
+            wpxp_terms_bp_pr3_rhs( 0.0, thv_ds_zm(k), xpthvp(k) ), zm )
 
         ! w'x' term pr3 is completely explicit; call stat_update_var_pt.
         ! Note:  To find the contribution of w'x' term pr3, add 1 to the
         !        C_7 skewness function input to function wpxp_terms_bp_pr2_rhs.
         call stat_update_var_pt( iwpxp_pr3, k, & 
-            wpxp_terms_bp_pr3_rhs( (1.0+C7_Skw_fnc(k)),xpthvp(k)), zm)
+            wpxp_terms_bp_pr3_rhs( (1.0+C7_Skw_fnc(k)), thv_ds_zm(k), &
+                                   xpthvp(k) ), &
+                                 zm )
 
         ! w'x' term sicl has both implicit and explicit components; call
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
@@ -2596,7 +2600,7 @@ module advance_xm_wpxp_module
   end function wpxp_term_pr1_lhs
 
   !=============================================================================
-  pure function wpxp_terms_bp_pr3_rhs( C7_Skw_fnc, xpthvp ) & 
+  pure function wpxp_terms_bp_pr3_rhs( C7_Skw_fnc, thv_ds_zm, xpthvp ) &
   result( rhs )
 
     ! Description:
@@ -2605,40 +2609,37 @@ module advance_xm_wpxp_module
     !
     ! The d(w'x')/dt equation contains a buoyancy production term:
     !
-    ! + (g/th_0) x'th_v';
+    ! + (g/thv_ds) x'th_v';
     !
     ! and pressure term 3:
     !
-    ! - C_7 (g/th_0) x'th_v'.
+    ! - C_7 (g/thv_ds) x'th_v'.
     !
     ! Both the w'x' buoyancy production term and pressure term 3 are completely
     ! explicit.  The buoyancy production term and pressure term 3 are combined
     ! and solved together as:
     !
-    ! + ( 1 - C_7 ) * (g/th_0) * x'th_v'.
+    ! + ( 1 - C_7 ) * (g/thv_ds) * x'th_v'.
 
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants, only: & 
-    ! Variable(s) 
+    use constants, only: & ! Variable(s) 
         grav ! Gravitational acceleration [m/s^2]
-    use parameters_model, only: & 
-    ! Variable(s) 
-        T0  ! Reference temperature      [K]
 
     implicit none
 
     ! Input Variables
     real, intent(in) :: & 
-      C7_Skw_fnc,  & ! C_7 parameter with Sk_w applied (k)   [-]
-      xpthvp         ! x'th_v'(k)                            [K {xm units}]
+      C7_Skw_fnc,  & ! C_7 parameter with Sk_w applied (k)      [-]
+      thv_ds_zm,   & ! Dry, base-state theta_v on mom. lev. (k) [K]
+      xpthvp         ! x'th_v'(k)                               [K {xm units}]
 
     ! Return Variable
     real :: rhs
 
     rhs & 
-    = grav/T0 * ( 1.0 - C7_Skw_fnc ) * xpthvp
+    = ( grav / thv_ds_zm ) * ( 1.0 - C7_Skw_fnc ) * xpthvp
 
     return
   end function wpxp_terms_bp_pr3_rhs

@@ -34,7 +34,7 @@ contains
                                wp2, wp2_zt, wp3, upwp, vpwp, &
                                sigma_sqd_w, Skw_zm, Kh_zt, &
                                rho_ds_zt, invrs_rho_ds_zm, &
-                               l_iter, dt, & 
+                               thv_ds_zm, l_iter, dt, &
                                sclrm, wpsclrp, & 
                                rtp2, thlp2, rtpthlp, &
                                up2, vp2,  & 
@@ -86,8 +86,7 @@ contains
       C2c
 
     use parameters_model, only: &
-      T0,       & ! Variables
-      sclr_dim, &
+      sclr_dim, & ! Variable(s)
       sclrtol    
 
     use grid_class, only: & 
@@ -145,6 +144,7 @@ contains
       Kh_zt,           & ! Eddy diffusivity on thermo. levels    [m^2/s]
       rho_ds_zt,       & ! Dry, static density on thermo. levels [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density @ mom. levs. [m^3/kg]
+      thv_ds_zm,       & ! Dry, base-state theta_v on mom. levs. [K]
       wp2_zt             ! w'^2 interpolated to thermo. levels   [m^2/s^2]
 
     logical, intent(in) :: l_iter ! Whether variances are prognostic
@@ -488,7 +488,7 @@ contains
                           wp2_zt, wp3, wpthvp, C4_C14_1d, tau_zm, & ! Intent(in)
                           um, vm, upwp, upwp_zt, vpwp, vpwp_zt, &   ! Intent(in)
                           up2, vp2, rho_ds_zt, invrs_rho_ds_zm, &   ! Intent(in)
-                          C4, C5, C14, T0, beta, &                  ! Intent(in)
+                          thv_ds_zm, C4, C5, C14, beta, &           ! Intent(in)
                           uv_rhs(:,1) )                             ! Intent(out)
 
     ! Explicit contributions to vp2
@@ -496,7 +496,7 @@ contains
                           wp2_zt, wp3, wpthvp, C4_C14_1d, tau_zm, & ! Intent(in)
                           vm, um, vpwp, vpwp_zt, upwp, upwp_zt, &   ! Intent(in)
                           vp2, up2, rho_ds_zt, invrs_rho_ds_zm, &   ! Intent(in)
-                          C4, C5, C14, T0, beta, &                  ! Intent(in)
+                          thv_ds_zm, C4, C5, C14, beta, &           ! Intent(in)
                           uv_rhs(:,2) )                             ! Intent(out)
 
     ! Solve the tridiagonal system
@@ -1345,7 +1345,7 @@ contains
                               wp2_zt, wp3, wpthvp, C4_C14_1d, tau_zm,  & 
                               xam, xbm, wpxap, wpxap_zt, wpxbp, wpxbp_zt,  &
                               xap2, xbp2, rho_ds_zt, invrs_rho_ds_zm, &
-                              C4, C5, C14, T0, beta, &
+                              thv_ds_zm, C4, C5, C14, beta, &
                               rhs )
 
     ! Description:
@@ -1356,7 +1356,6 @@ contains
         gr ! Variable(s)
 
     use constants, only:  & 
-        grav,   & ! Variable(s)
         gamma_over_implicit_ts, &
         wtol_sqd
 
@@ -1413,13 +1412,13 @@ contains
       xap2,            & ! x_a'^2 (momentum levels)                    [m^2/s^2]
       xbp2,            & ! x_b'^2 (momentum levels)                    [m^2/s^2]
       rho_ds_zt,       & ! Dry, static density on thermodynamic levels [kg/m^3]
-      invrs_rho_ds_zm    ! Inv. dry, static density on momentum levs.  [m^3/kg]
+      invrs_rho_ds_zm, & ! Inv. dry, static density on momentum levs.  [m^3/kg]
+      thv_ds_zm          ! Dry, base-state theta_v on momentum levels  [K]
 
     real, intent(in) :: & 
       C4,              & ! Model parameter C_4                         [-]
       C5,              & ! Model parameter C_5                         [-]
       C14,             & ! Model parameter C_{14}                      [-]
-      T0,              & ! Reference temperature                       [K]
       beta               ! Model parameter beta                        [-]
 
     ! Output Variable
@@ -1542,7 +1541,7 @@ contains
       ! RHS pressure term 2 (pr2).
       rhs(k,1)  &
       = rhs(k,1)  &
-      + term_pr2( C5, grav, T0, wpthvp(k), wpxap(k), wpxbp(k), & 
+      + term_pr2( C5, thv_ds_zm(k), wpthvp(k), wpxap(k), wpxbp(k), &
                   xam(kp1), xam(k), xbm(kp1), xbm(k), gr%dzm(k) )
 
       ! RHS time tendency.
@@ -1660,8 +1659,8 @@ contains
 
         ! x'y' term pr2 is completely explicit; call stat_update_var_pt.
         call stat_update_var_pt( ixapxbp_pr2, k, &                          ! Intent(in)
-              term_pr2( C5, grav, T0, wpthvp(k), wpxap(k), wpxbp(k),  &     ! Intent(in)
-                        xam(kp1), xam(k), xbm(kp1), xbm(k), gr%dzm(k) ), &  
+              term_pr2( C5, thv_ds_zm(k), wpthvp(k), wpxap(k), wpxbp(k), &  ! Intent(in)
+                        xam(kp1), xam(k), xbm(kp1), xbm(k), gr%dzm(k) ), &
                                  zm )                                       ! Intent(inout)
 
         ! x'y' term tp is completely explicit; call stat_update_var_pt.
@@ -2691,8 +2690,8 @@ contains
   end function term_pr1
 
   !=============================================================================
-  pure function term_pr2( C5, grav, T0, wpthvp, upwp, vpwp,  & 
-                          ump1, um, vmp1, vm, dzm )  & 
+  pure function term_pr2( C5, thv_ds_zm, wpthvp, upwp, vpwp,  &
+                          ump1, um, vmp1, vm, dzm )  &
   result( rhs )
 
     ! Description:
@@ -2705,22 +2704,23 @@ contains
     !
     ! The d(u'^2)/dt equation contains pressure term 2:
     !
-    ! + (2/3) C_5 [ (g/th_0) w'th_v' - u'w' du/dz - v'w' dv/dz ].
+    ! + (2/3) C_5 [ (g/thv_ds) w'th_v' - u'w' du/dz - v'w' dv/dz ].
     !
     ! This term is solved for completely explicitly and is discretized as
     ! follows:
     !
     ! The values of w'th_v', u'w', and v'w' are found on the momentum levels,
     ! whereas the values of um and vm are found on the thermodynamic levels.
+    ! Additionally, the values of thv_ds_zm are found on the momentum levels.
     ! The derivatives of both um and vm are taken over the intermediate
     ! (central) momentum level.  All the remaining mathematical operations take
     ! place at the central momentum level, yielding the desired result.
     !
-    ! -------ump1------------vmp1------------------------------ t(k+1)
+    ! -----ump1------------vmp1-------------------------------------- t(k+1)
     !
-    ! ==upwp======d(um)/dz========d(vm)/dz===vpwp=====wpthvp=== m(k)
+    ! =upwp====d(um)/dz========d(vm)/dz==vpwp===thv_ds_zm==wpthvp==== m(k)
     !
-    ! -------um--------------vm-------------------------------- t(k)
+    ! -----um--------------vm---------------------------------------- t(k)
     !
     ! The vertical indices t(k+1), m(k), and t(k) correspond with altitudes
     ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for
@@ -2731,30 +2731,33 @@ contains
     ! References:
     !-----------------------------------------------------------------------
 
+    use constants, only: & ! Variables 
+        grav ! Gravitational acceleration [m/s^2]
+
     implicit none
 
     ! Input Variables
     real, intent(in) :: & 
-      C5,     & ! Model parameter C_5             [-]
-      grav,   & ! Gravitational acceleration      [m/s^2]
-      T0,     & ! Reference temperature           [K]
-      wpthvp, & ! w'th_v'(k)                      [m/K/s]
-      upwp,   & ! u'w'(k)                         [m^2/s^2]
-      vpwp,   & ! v'w'(k)                         [m^2/s^2]
-      ump1,   & ! um(k+1)                         [m/s]
-      um,     & ! um(k)                           [m/s]
-      vmp1,   & ! vm(k+1)                         [m/s]
-      vm,     & ! vm(k)                           [m/s]
-      dzm       ! Inverse of the grid spacing (k) [1/m]
+      C5,        & ! Model parameter C_5                            [-]
+      thv_ds_zm, & ! Dry, base-state theta_v at momentum level (k)  [K]
+      wpthvp,    & ! w'th_v'(k)                                     [m/K/s]
+      upwp,      & ! u'w'(k)                                        [m^2/s^2]
+      vpwp,      & ! v'w'(k)                                        [m^2/s^2]
+      ump1,      & ! um(k+1)                                        [m/s]
+      um,        & ! um(k)                                          [m/s]
+      vmp1,      & ! vm(k+1)                                        [m/s]
+      vm,        & ! vm(k)                                          [m/s]
+      dzm          ! Inverse of the grid spacing (k)                [1/m]
 
     ! Return Variable
     real :: rhs
 
     ! As applied to w'2
     rhs = + (2.0/3.0) * C5 & 
-            * ( ( grav / T0 ) * wpthvp & 
-                -upwp * dzm * ( ump1 - um ) & 
-                -vpwp * dzm * ( vmp1 - vm ) )
+                      * ( ( grav / thv_ds_zm ) * wpthvp &
+                          - upwp * dzm * ( ump1 - um ) &
+                          - vpwp * dzm * ( vmp1 - vm ) &
+                        )
 
     return
   end function term_pr2
