@@ -13,10 +13,6 @@ module parameters_radiation
   character(len=10), public :: & 
     rad_scheme  ! Either BUGSrad, or simplified
 
-  ! For BUGSrad
-  logical, public :: &
-    l_bugsrad ! Logical flag for BUGSrad
-
   double precision, dimension(1), public :: &
     sol_const ! Solar constant
 
