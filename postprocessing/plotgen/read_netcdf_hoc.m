@@ -26,7 +26,4 @@ for t=t1:t2
 end
 avg_field = avg_field/num_timesteps;
 
-
-% close NETCDF file
-%netcdf.close(fid);
 end

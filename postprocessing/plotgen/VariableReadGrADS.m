@@ -9,7 +9,7 @@ fid = fopen(filePath, 'rt');
 %Ensure the file will be closed no matter the outcome
 cleanupHandler = onCleanup(@()fclose(fid));
 
-% While your not at the end of file, will advance line by line through the file.
+% While not at the end of file, will advance line by line through the file.
 % Searches keywords to extract needed values from the string using if statements.
 %  Once the correct string is found, it chops it down to extract the specific value.
 while feof(fid) == 0
@@ -22,7 +22,6 @@ while feof(fid) == 0
 		break;
 	end  
 end
-%fclose(fid);
 
 %Calculate start and end timesteps, correct if they are invalid
 t_start = ceil(startTime / dt);

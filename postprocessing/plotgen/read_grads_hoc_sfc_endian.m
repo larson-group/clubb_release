@@ -29,6 +29,3 @@ for t=t1:t2
    field = fread(fid,nz,'float32');
    avg_field(t) = field;
 end
-
-% close GrADS file
-%status = fclose(fid);

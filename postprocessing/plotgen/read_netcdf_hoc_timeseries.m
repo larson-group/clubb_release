@@ -27,6 +27,4 @@ for t=t1:t2
    avg_field(t) = new_field;
 end
 
-% close NETCDF file
-%netcdf.close(fid);
 end

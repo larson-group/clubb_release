@@ -31,8 +31,4 @@ for t=t1:t2
 end
 avg_field = avg_field/num_timesteps;
 
-
-% close GrADS file
-%status = fclose(fid);
-
 end
