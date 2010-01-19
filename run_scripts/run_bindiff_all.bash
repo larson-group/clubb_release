@@ -35,6 +35,15 @@
 # July 6, 2009.
 #-------------------------------------------------------------------------------
 
+# Figure out the directory where the script is located
+scriptPath=`dirname $0`
+
+# Store the current directory location so it can be restored
+restoreDir=`pwd`
+
+# Change directories to the one the script is located in
+cd $scriptPath
+
 # If true, differences were detected. This is used to set the exit status
 differences=false
 
@@ -147,3 +156,5 @@ else
     echo -e "\nThere were no differences detected!"
     exit 0
 fi
+
+cd $restoreDir
