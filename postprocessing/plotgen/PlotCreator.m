@@ -68,7 +68,7 @@ for i=1:numLines
 	for j=1:size(varsToRead,2);
 		%We need to convert the variable name to read from a cell array to a string
 		varString = cell2mat(varsToRead(j));
-        ConsoleOutput.message(['Reading variable ' varString]);
+        	ConsoleOutput.message(['Reading variable ' varString]);
 
 		if strcmp(extension, '.ctl')
 			[variableData, levels] = VariableReadGrADS(filePath, varString, startTime, endTime, plotType);
@@ -105,7 +105,7 @@ for i=1:numLines
 
 	%Do not continue if the end time is past the end of the data
 	if endTime > (t_time_steps * time_step_length)
-        ConsoleOutput.severe('ERROR: End time of plot greater than end time of data');
+        	ConsoleOutput.severe('ERROR: End time of plot greater than end time of data');
 		return;
 	end
 
