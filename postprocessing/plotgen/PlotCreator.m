@@ -84,10 +84,8 @@ for i=1:numLines
 	%Load timestep information
 	if strcmp(extension, '.ctl')
 		[dummy, dummy , dummy, t_time_steps, time_step_length, dummy, dummy] = header_read_expanded(filePath);
-		%clear('header_read_expanded');
 	elseif strcmp(extension, '.nc')
 		[dummy, dummy , dummy, t_time_steps, time_step_length, dummy, dummy] = header_read_expanded_netcdf(filePath);
-		%clear('header_read_expanded_netcdf');
 	end
 
 	%Figure out indicies for start and end height
