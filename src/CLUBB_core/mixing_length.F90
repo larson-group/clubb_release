@@ -11,9 +11,10 @@ public :: compute_length
 contains
 
   !=============================================================================
-  subroutine compute_length( thvm, thlm, rtm, rcm, em, p_in_Pa, exner, & 
+  subroutine compute_length( thvm, thlm, rtm, rcm, em, &
+                             p_in_Pa, exner, thv_ds, &
                              err_code, &
-                             Lscale ) 
+                             Lscale )
     ! Description:
     ! Larson's 5th moist, nonlocal length scale
 
@@ -45,8 +46,7 @@ contains
         lmin    ! Minimum value for Lscale                         [m]
 
     use parameters_model, only:  & 
-        Lscale_max,    & ! Maximum value for Lscale                   [m]
-        T0               ! Reference temperature                      [K]
+        Lscale_max    ! Maximum value for Lscale                   [m]
 
     use grid_class, only:  & 
         gr,  & ! Variable(s)
@@ -84,7 +84,9 @@ contains
       rcm,     & ! Cloud water mixing ratio on themodynamic level [kg/kg]
       em,      & ! em = 3/2 * w'^2; on momentum level             [m^2/s^2]
       exner,   & ! Exner function on thermodynamic level          [-]
-      p_in_Pa    ! Pressure on thermodynamic level                [Pa]
+      p_in_Pa, & ! Pressure on thermodynamic level                [Pa]
+      thv_ds     ! Dry, base-state theta_v on thermodynamic level [K]
+                 ! Note:  thv_ds used as a reference theta_l here
 
     ! Output Variables
     integer, intent(inout) :: & 
@@ -264,8 +266,8 @@ contains
           rc_par_j = max( s_par_j, zero_threshold )
 
           ! theta_v of entraining parcel at grid level j.
-          thv_par_j = thl_par_j + ep1 * T0 * rt_par_j  & 
-                      + ( Lv / (exner(j)*cp) - ep2 * T0 ) * rc_par_j
+          thv_par_j = thl_par_j + ep1 * thv_ds(j) * rt_par_j  &
+                      + ( Lv / (exner(j)*cp) - ep2 * thv_ds(j) ) * rc_par_j
 
           ! Lscale_up and CAPE increment.
           !
@@ -548,8 +550,8 @@ contains
           rc_par_j = max( s_par_j, zero_threshold )
 
           ! theta_v of the entraining parcel at grid level j.
-          thv_par_j = thl_par_j + ep1 * T0 * rt_par_j & 
-                      + ( Lv / (exner(j)*cp) - ep2 * T0 ) * rc_par_j
+          thv_par_j = thl_par_j + ep1 * thv_ds(j) * rt_par_j &
+                      + ( Lv / (exner(j)*cp) - ep2 * thv_ds(j) ) * rc_par_j
 
           ! Lscale_down and CAPE increment.
           !
@@ -740,6 +742,7 @@ contains
           write(fstderr,*) "em = ", em
           write(fstderr,*) "exner = ", exner
           write(fstderr,*) "p_in_Pa = ", p_in_Pa
+          write(fstderr,*) "thv_ds = ", thv_ds
            
           write(fstderr,*) "Intent(out)"
 

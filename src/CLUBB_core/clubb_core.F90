@@ -75,8 +75,7 @@ module clubb_core
       c_K    
 
     use parameters_model, only: &
-      T0, & ! Variable(s)
-      sclr_dim, &
+      sclr_dim, & ! Variable(s)
       edsclr_dim
 
     use model_flags, only: & 
@@ -530,7 +529,7 @@ module clubb_core
 
     do k = 1, gr%nnzp, 1
       call pdf_closure & 
-         ( p_in_Pa(k), exner(k), wm_zt(k),                     & ! intent(in)
+         ( p_in_Pa(k), exner(k), thv_ds_zt(k), wm_zt(k),       & ! intent(in)
            wp2_zt(k), wp3(k), sigma_sqd_w_zt(k),               & ! intent(in)
            Skw_zt(k), rtm(k), rtp2_zt(k),                      & ! intent(in)
            zm2zt( wprtp, k ), thlm(k), thlp2_zt(k),            & ! intent(in)
@@ -584,7 +583,7 @@ module clubb_core
       ! Call pdf_closure to output the variables which belong on the momentum grid.
       do k = 1, gr%nnzp, 1
         call pdf_closure & 
-           ( p_in_Pa_zm(k), exner_zm(k), wm_zm(k),                  & ! intent(in)
+           ( p_in_Pa_zm(k), exner_zm(k), thv_ds_zm(k), wm_zm(k),    & ! intent(in)
              wp2(k), wp3_zm(k), sigma_sqd_w(k),                     & ! intent(in)
              Skw_zm(k), zt2zm( rtm, k ), rtp2(k),                   & ! intent(in)
              wprtp(k), zt2zm( thlm, k ), thlp2(k),                  & ! intent(in)
@@ -688,7 +687,8 @@ module clubb_core
     ! Compute thvm
     !----------------------------------------------------------------
 
-    thvm = thlm + ep1 * T0 * rtm + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
+    thvm = thlm + ep1 * thv_ds_zt * rtm &
+                + ( Lv/(Cp*exner) - ep2 * thv_ds_zt ) * rcm
 
     !----------------------------------------------------------------
     ! Compute tke (turbulent kinetic energy)
@@ -705,9 +705,10 @@ module clubb_core
     ! Compute mixing length
     !----------------------------------------------------------------
 
-    call compute_length( thvm, thlm, rtm, rcm, em, p_in_Pa, exner, &    ! intent(in)
-                         err_code, &                                    ! intent(inout)
-                         Lscale )                                       ! intent(out)
+    call compute_length( thvm, thlm, rtm, rcm, em, &  ! intent(in)
+                         p_in_Pa, exner, thv_ds_zt, & ! intent(in)
+                         err_code, &                  ! intent(inout)
+                         Lscale )                     ! intent(out)
 
     ! Subroutine may produce NaN values, and if so, exit
     ! gracefully.

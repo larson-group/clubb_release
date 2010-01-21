@@ -1671,10 +1671,10 @@ module clubb_driver
     endif
 
     ! Compute mixing length
-    call compute_length( thvm, thlm, rtm, rcm, & ! Intent(in)
-                         em, p_in_Pa, exner,   & ! Intent(in)    
-                         err_code,             & ! Intent(inout)
-                         Lscale )                ! Intent(out)
+    call compute_length( thvm, thlm, rtm, rcm, em,   & ! Intent(in)
+                         p_in_Pa, exner, thv_ds_zt,  & ! Intent(in)    
+                         err_code,                   & ! Intent(inout)
+                         Lscale )                      ! Intent(out)
 
     ! Dissipation time
     tmp1 = sqrt( max( emin, zm2zt( em ) ) )
@@ -2096,9 +2096,57 @@ module clubb_driver
 
       end select
 
-      ! Now, compute initial theta_v, given initial th_l, rtm, rcm, and exner.
-      thvm = thlm + ep1 * T0 * rtm  & 
-                  + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
+      ! Now, compute initial thvm, given initial thm, rtm, and rcm.
+      !
+      ! The exact form of the equaton for theta_v (with only water vapor
+      ! included) is:
+      !
+      ! theta_v = theta * [ ( 1 + (R_v/R_d)*r_v ) / ( 1 + r_v ) ];
+      !
+      ! which can be rearranged as:
+      !
+      ! theta_v = theta * [ 1 + { (R_v/R_d) - 1 } * { r_v / ( 1 + r_v ) } ].
+      !
+      ! The exact form of the equation for theta_v (including water vapor and
+      ! cloud water) is:
+      !
+      ! theta_v = theta * [ ( 1 + (R_v/R_d)*r_v ) / ( 1 + r_v + r_c ) ];
+      !
+      ! which can be rearranged as:
+      !
+      ! theta_v = theta * [ 1 + { (R_v/R_d) - 1 } * { r_v / ( 1 + r_v + r_c ) }
+      !                     - { r_c / ( 1 + r_v + r_c ) } ].
+      !
+      ! This version is written with r_t = r_v + r_c, such that:
+      !
+      ! theta_v = theta * [ 1 + { (R_v/R_d) - 1 }
+      !                         * { ( r_t - r_c ) / ( 1 + r_t ) }
+      !                     - { r_c / ( 1 + r_t ) } ].
+      !
+      ! To use theta_l instead of theta, simply substitute the following for
+      ! theta in the above expression:  theta_l + {L_v/(C_p*exner)} * r_c.
+      !
+      ! The CLUBB code generally uses an approximated and linearized version of
+      ! the above equation (in order to calculate thv' terms -- such as w'thv',
+      ! etc.) for theta_v throughout the model code, such that:
+      !
+      ! theta_v = theta_l + { (R_v/R_d) - 1 } * thv_ds * r_t
+      !                   + [ {L_v/(C_p*exner)} - (R_v/R_d) * thv_ds ] * r_c;
+      !
+      ! where thv_ds is used as a reference value to approximate theta_l.
+      ! However, since only the mean value of theta_v (thvm) is desired in this
+      ! subroutine, and since an accurate calculation is desired due to the fact
+      ! that model pressure, exner, and density rely on this calculation of
+      ! thvm, the exact version is used in this subroutine.
+      do k = 1, gr%nnzp, 1
+         thvm(k) &
+         = thm(k) &
+           * ( 1.0 &
+               + ep1 * ( max( rtm(k) - rcm(k), zero_threshold ) &
+                             / ( 1.0 + rtm(k) ) ) &
+               - ( rcm(k) / ( 1.0 + rtm(k) ) ) &
+             )
+      enddo
 
       ! Recompute more accurate initial exner function, pressure, and density
       ! using thvm, which includes the effects of water vapor and cloud water.
@@ -2236,9 +2284,57 @@ module clubb_driver
       end select
 
 
-      ! Now, compute initial theta_v, given initial th_l, rtm, rcm, and exner.
-      thvm = thlm + ep1 * T0 * rtm  &
-                  + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
+      ! Now, compute initial thvm, given initial thm, rtm, and rcm.
+      !
+      ! The exact form of the equaton for theta_v (with only water vapor
+      ! included) is:
+      !
+      ! theta_v = theta * [ ( 1 + (R_v/R_d)*r_v ) / ( 1 + r_v ) ];
+      !
+      ! which can be rearranged as:
+      !
+      ! theta_v = theta * [ 1 + { (R_v/R_d) - 1 } * { r_v / ( 1 + r_v ) } ].
+      !
+      ! The exact form of the equation for theta_v (including water vapor and
+      ! cloud water) is:
+      !
+      ! theta_v = theta * [ ( 1 + (R_v/R_d)*r_v ) / ( 1 + r_v + r_c ) ];
+      !
+      ! which can be rearranged as:
+      !
+      ! theta_v = theta * [ 1 + { (R_v/R_d) - 1 } * { r_v / ( 1 + r_v + r_c ) }
+      !                     - { r_c / ( 1 + r_v + r_c ) } ].
+      !
+      ! This version is written with r_t = r_v + r_c, such that:
+      !
+      ! theta_v = theta * [ 1 + { (R_v/R_d) - 1 }
+      !                         * { ( r_t - r_c ) / ( 1 + r_t ) }
+      !                     - { r_c / ( 1 + r_t ) } ].
+      !
+      ! To use theta_l instead of theta, simply substitute the following for
+      ! theta in the above expression:  theta_l + {L_v/(C_p*exner)} * r_c.
+      !
+      ! The CLUBB code generally uses an approximated and linearized version of
+      ! the above equation (in order to calculate thv' terms -- such as w'thv',
+      ! etc.) for theta_v throughout the model code, such that:
+      !
+      ! theta_v = theta_l + { (R_v/R_d) - 1 } * thv_ds * r_t
+      !                   + [ {L_v/(C_p*exner)} - (R_v/R_d) * thv_ds ] * r_c;
+      !
+      ! where thv_ds is used as a reference value to approximate theta_l.
+      ! However, since only the mean value of theta_v (thvm) is desired in this
+      ! subroutine, and since an accurate calculation is desired due to the fact
+      ! that model pressure, exner, and density rely on this calculation of
+      ! thvm, the exact version is used in this subroutine.
+      do k = 1, gr%nnzp, 1
+         thvm(k) &
+         = thm(k) &
+           * ( 1.0 &
+               + ep1 * ( max( rtm(k) - rcm(k), zero_threshold ) &
+                             / ( 1.0 + rtm(k) ) ) &
+               - ( rcm(k) / ( 1.0 + rtm(k) ) ) &
+             )
+      enddo
 
       ! Compute total density (moisture included) using pressure, exner, and
       ! thvm.

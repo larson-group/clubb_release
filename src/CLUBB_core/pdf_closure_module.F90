@@ -10,7 +10,7 @@ module pdf_closure_module
   contains 
 !------------------------------------------------------------------------
   subroutine pdf_closure &
-             ( p_in_Pa, exner, wm,               &
+             ( p_in_Pa, exner, thv_ds, wm,       &
                wp2, wp3, sigma_sqd_w,            &
                Skw, rtm, rtp2,                   &
                wprtp, thlm, thlp2,               &
@@ -65,8 +65,7 @@ module pdf_closure_module
     use parameters_model, only: &
       sclrtol,   & ! Array of passive scalar tolerances  [units vary]
       sclr_dim,  & ! Number of passive scalar variables
-      a_max_mag, & ! Maximum values for PDF parameter 'a'
-      T0           ! Reference temperature         [K]
+      a_max_mag    ! Maximum values for PDF parameter 'a'
 
     use parameters_tunable, only: & 
       beta  ! Variable(s)
@@ -102,20 +101,21 @@ module pdf_closure_module
 
     ! Input Variables
     real, intent(in) ::  & 
-      p_in_Pa,     & ! Pressure.                     [Pa] 
-      exner,       & ! Exner function.               [-]
-      wm,          & ! mean w                        [m/s] 
-      wp2,         & ! w'^2                          [m^2/s^2] 
-      wp3,         & ! w'^3                          [m^3/s^3]
-      sigma_sqd_w, & ! Width of individual w plumes  [-]
-      Skw,         & ! Skewness of w                 [-]
-      rtm,         & ! Total water mixing ratio      [kg/kg]
-      rtp2,        & ! rt'^2                         [kg^2/kg^2]
-      wprtp,       & ! w' r_t'                       [(kg m)(kg s)]
-      thlm,        & ! Mean th_l                     [K]
-      thlp2,       & ! th_l'^2                       [K^2]
-      wpthlp,      & ! w' th_l'                      [(m K)/s]
-      rtpthlp        ! r_t' th_l'                    [(K kg)/kg]
+      p_in_Pa,     & ! Pressure                                   [Pa]
+      exner,       & ! Exner function                             [-]
+      thv_ds,      & ! Dry, base-state theta_v (ref. th_l here)   [K]
+      wm,          & ! mean w-wind component (vertical velocity)  [m/s] 
+      wp2,         & ! w'^2                                       [m^2/s^2] 
+      wp3,         & ! w'^3                                       [m^3/s^3]
+      sigma_sqd_w, & ! Width of individual w plumes               [-]
+      Skw,         & ! Skewness of w                              [-]
+      rtm,         & ! Mean total water mixing ratio              [kg/kg]
+      rtp2,        & ! r_t'^2                                     [(kg/kg)^2]
+      wprtp,       & ! w'r_t'                                     [(kg/kg)(m/s)]
+      thlm,        & ! Mean liquid water potential temperature    [K]
+      thlp2,       & ! th_l'^2                                    [K^2]
+      wpthlp,      & ! w'th_l'                                    [K(m/s)]
+      rtpthlp        ! r_t'th_l'                                  [K(kg/kg)]
 
     real, dimension(sclr_dim), intent(in) ::  & 
       sclrm,       & ! Mean passive scalar        [units vary]
@@ -247,9 +247,6 @@ module pdf_closure_module
     else
       l_scalar_calc = .false.
     end if
-
-    ! Compute thermodynamic quantity
-    rc_coef = Lv / (exner*Cp) - ep2 * T0
 
     ! If there is no velocity, then use single delta fnc. as pdf
     ! Otherwise width parameters (e.g. varnce_w1, varnce_w2, etc.) are non-zero.
@@ -638,21 +635,37 @@ module pdf_closure_module
     end if ! stdev_s2 > s_mellor_tol
 
     ! Compute moments that depend on theta_v
+    !
+    ! The moments that depend on th_v' are calculated based on an approximated
+    ! and linearized form of the theta_v equation:
+    !
+    ! theta_v = theta_l + { (R_v/R_d) - 1 } * thv_ds * r_t
+    !                   + [ {L_v/(C_p*exner)} - (R_v/R_d) * thv_ds ] * r_c;
+    !
+    ! and therefore:
+    !
+    ! th_v' = th_l' + { (R_v/R_d) - 1 } * thv_ds * r_t'
+    !               + [ {L_v/(C_p*exner)} - (R_v/R_d) * thv_ds ] * r_c';
+    !
+    ! where thv_ds is used as a reference value to approximate theta_l.
+
+    rc_coef = Lv / (exner*Cp) - ep2 * thv_ds
+
     wp2rcp = a * ((w1-wm)**2 + varnce_w1)*rc1 + (1.-a) * ((w2-wm)**2 + varnce_w2)*rc2 & 
            - wp2 * (a*rc1+(1.-a)*rc2)
 
-    wp2thvp = wp2thlp + ep1*T0*wp2rtp + rc_coef*wp2rcp
+    wp2thvp = wp2thlp + ep1*thv_ds*wp2rtp + rc_coef*wp2rcp
 
     wprcp = a * (w1-wm)*rc1 + (1.-a) * (w2-wm)*rc2
 
-    wpthvp = wpthlp + ep1*T0*wprtp + rc_coef*wprcp
+    wpthvp = wpthlp + ep1*thv_ds*wprtp + rc_coef*wprcp
 
     ! Account for subplume correlation in qt-thl
     thlprcp  = a * ( (thl1-thlm)*rc1 - (cthl1*varnce_thl1)*cloud_frac1 ) & 
              + (1.-a) * ( (thl2-thlm)*rc2 - (cthl2*varnce_thl2)*cloud_frac2 ) & 
              + a*rrtthl*crt1*sqrt( varnce_rt1*varnce_thl1 )*cloud_frac1 & 
              + (1.-a)*rrtthl*crt2*sqrt( varnce_rt2*varnce_thl2 )*cloud_frac2
-    thlpthvp = thlp2 + ep1*T0*rtpthlp + rc_coef*thlprcp
+    thlpthvp = thlp2 + ep1*thv_ds*rtpthlp + rc_coef*thlprcp
 
     ! Account for subplume correlation in qt-thl
     rtprcp = a * ( (rt1-rtm)*rc1 + (crt1*varnce_rt1)*cloud_frac1 ) & 
@@ -660,7 +673,7 @@ module pdf_closure_module
            - a*rrtthl*cthl1*sqrt( varnce_rt1*varnce_thl1 )*cloud_frac1 & 
            - (1.-a)*rrtthl*cthl2*sqrt( varnce_rt2*varnce_thl2 )*cloud_frac2
 
-    rtpthvp  = rtpthlp + ep1*T0*rtp2 + rc_coef*rtprcp
+    rtpthvp  = rtpthlp + ep1*thv_ds*rtp2 + rc_coef*rtprcp
 
     ! Account for subplume correlation between scalar, theta_v.
     ! See Eqs. A13, A8 from Larson et al. (2002) ``Small-scale...''
@@ -674,7 +687,7 @@ module pdf_closure_module
         - a * rsclrthl(i) * cthl1  * sqrt( varnce_sclr1(i) * varnce_thl1 ) * cloud_frac1 & 
         - (1.-a) * rsclrthl(i) * cthl2  * sqrt( varnce_sclr2(i) * varnce_thl2 ) * cloud_frac2
 
-        sclrpthvp(i) = sclrpthlp(i) + ep1*T0*sclrprtp(i) + rc_coef*sclrprcp(i)
+        sclrpthvp(i) = sclrpthlp(i) + ep1*thv_ds*sclrprtp(i) + rc_coef*sclrprcp(i)
       end do ! i=1, sclr_dim
     end if ! l_scalar_calc
 
@@ -761,6 +774,7 @@ module pdf_closure_module
             
         write(fstderr,*) "p_in_Pa = ", p_in_Pa 
         write(fstderr,*) "exner = ", exner
+        write(fstderr,*) "thv_ds = ", thv_ds
         write(fstderr,*) "wm = ", wm 
         write(fstderr,*) "wp2 = ", wp2 
         write(fstderr,*) "wp3 = ", wp3
