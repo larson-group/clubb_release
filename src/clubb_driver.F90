@@ -1919,8 +1919,10 @@ module clubb_driver
 
       ! Compute approximate dry pressure, dry exner, and dry density using
       ! theta and dry surface pressure.
-      call hydrostatic( th_dry, pd_sfc, &                       ! Intent(in)
-                        p_dry, exner_dry, rho_dry, rho_dry_zm ) ! Intent(out)
+      call hydrostatic( th_dry, pd_sfc,          & ! Intent(in)
+                        p_dry, p_dry_zm,         & ! Intent(out)
+                        exner_dry, exner_dry_zm, & ! Intent(out)
+                        rho_dry, rho_dry_zm      ) ! Intent(out)
 
 
       select case( trim( theta_type ) )
@@ -2068,8 +2070,10 @@ module clubb_driver
 
         ! Call hydrostatic using thm as input in order to obtain dry values
         ! of the density variables.
-        call hydrostatic( th_dry, pd_sfc, &                       ! Intent(in)
-                          p_dry, exner_dry, rho_dry, rho_dry_zm ) ! Intent(out)
+        call hydrostatic( th_dry, pd_sfc,          & ! Intent(in)
+                          p_dry, p_dry_zm,         & ! Intent(out)
+                          exner_dry, exner_dry_zm, & ! Intent(out)
+                          rho_dry, rho_dry_zm      ) ! Intent(out)
 
         ! The values of rho_dry and rho_dry_zm that were just calculated are
         ! dry (they do not take into account water vapor or cloud water).
@@ -2150,8 +2154,10 @@ module clubb_driver
 
       ! Recompute more accurate initial exner function, pressure, and density
       ! using thvm, which includes the effects of water vapor and cloud water.
-      call hydrostatic( thvm, psfc, &                    ! Intent(in)
-                        p_in_Pa, exner, rho, rho_zm )    ! Intent(out)
+      call hydrostatic( thvm, psfc,          & ! Intent(in)
+                        p_in_Pa, p_in_Pa_zm, & ! Intent(out)
+                        exner, exner_zm,     & ! Intent(out)
+                        rho, rho_zm          ) ! Intent(out)
 
 
 
