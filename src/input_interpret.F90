@@ -34,16 +34,12 @@ module input_interpret
         Cp, &
         Lv, &
         zero_threshold, &
-        ep2, &
         ep1, &
         fstderr
 
     use saturation, only: &
         sat_mixrat_liq, & ! Procedure(s)
         sat_rcm
-
-    use parameters_model, only: &
-        T0 ! Variable(s)
 
     use hydrostatic_mod, only: &
         inverse_hydrostatic ! Procedure(s)
@@ -147,11 +143,6 @@ module input_interpret
            ! Convert temperature to potential temperature, theta.
            theta(1:nlevels) = theta(1:nlevels) / exner(1:nlevels)
 
-           ! Calculate theta_l from theta and cloud water mixing ratio, such
-           ! that:  theta_l = theta - [Lv/(Cp*exner)]*rcm.
-           theta(1:nlevels) = theta(1:nlevels) &
-                              - Lv/(Cp*exner(1:nlevels)) * rcm(1:nlevels)
-
 
         case ( theta_name )
 
@@ -164,11 +155,6 @@ module input_interpret
                 max( rtm(k) - sat_mixrat_liq( p_in_Pa(k), theta(k)*exner(k) ), &
                      zero_threshold )
            enddo
-
-           ! Calculate theta_l from theta and cloud water mixing ratio, such
-           ! that:  theta_l = theta - [Lv/(Cp*exner)]*rcm.
-           theta(1:nlevels) = theta(1:nlevels) &
-                              - Lv/(Cp*exner(1:nlevels)) * rcm(1:nlevels)
 
 
         case ( thetal_name )
@@ -185,19 +171,71 @@ module input_interpret
               rcm(k) = sat_rcm( theta(k), rtm(k), p_in_Pa(k), exner(k) )
            enddo
 
+           ! Calculate theta from theta_l and cloud water mixing ratio, such
+           ! that:  theta = theta_l + [Lv/(Cp*exner)]*rcm.
+           theta(1:nlevels) = theta(1:nlevels) &
+                              + Lv/(Cp*exner(1:nlevels)) * rcm(1:nlevels)
+
+
         case default
 
            write(fstderr,*) "Invalid theta_type: ", theta_type
            stop
 
+
         end select
 
-        ! Now, the variable "theta" contains liquid water potential temperature,
-        ! theta_l.  Compute initial theta_v based on theta_l, total water mixing
-        ! ratio, exner, and cloud water mixing ratio.
+
+        ! Now, the variable "theta" contains potential temperature, theta.
+        ! Compute initial theta_v based on theta, total water mixing ratio, and
+        ! cloud water mixing ratio.
+        !
+        ! theta_v = theta * [ ( 1 + (R_v/R_d)*r_v ) / ( 1 + r_v ) ];
+        !
+        ! which can be rearranged as:
+        !
+        ! theta_v = theta * [ 1 + { (R_v/R_d) - 1 } * { r_v / ( 1 + r_v ) } ].
+        !
+        ! The exact form of the equation for theta_v (including water vapor and
+        ! cloud water) is:
+        !
+        ! theta_v = theta * [ ( 1 + (R_v/R_d)*r_v ) / ( 1 + r_v + r_c ) ];
+        !
+        ! which can be rearranged as:
+        !
+        ! theta_v = theta * [ 1 + { (R_v/R_d) - 1 } 
+        !                         * { r_v / ( 1 + r_v + r_c ) }
+        !                     - { r_c / ( 1 + r_v + r_c ) } ].
+        !
+        ! This version is written with r_t = r_v + r_c, such that:
+        !
+        ! theta_v = theta * [ 1 + { (R_v/R_d) - 1 }
+        !                         * { ( r_t - r_c ) / ( 1 + r_t ) }
+        !                     - { r_c / ( 1 + r_t ) } ].
+        !
+        ! To use theta_l instead of theta, simply substitute the following for
+        ! theta in the above expression:  theta_l + {L_v/(C_p*exner)} * r_c.
+        !
+        ! The CLUBB code generally uses an approximated and linearized version
+        ! of the above equation (in order to calculate thv' terms -- such as
+        ! w'thv', etc.) for theta_v throughout the model code, such that:
+        !
+        ! theta_v = theta_l + { (R_v/R_d) - 1 } * thv_ds * r_t
+        !                   + [ {L_v/(C_p*exner)} - (R_v/R_d) * thv_ds ] * r_c;
+        !
+        ! where thv_ds is used as a reference value to approximate theta_l.
+        ! However, since only the mean value of theta_v (thvm) is desired in
+        ! this subroutine, and since an accurate calculation is desired due to
+        ! the fact that the model initial sounding depends on this calculation
+        ! of thvm, the exact version is used in this subroutine.
         do k = 1, nlevels, 1
-           thvm(k) = theta(k) + ep1 * T0 * rtm(k)  & 
-                              + ( Lv/(Cp*exner(k)) - ep2 * T0 ) * rcm(k)
+           thvm(k) &
+           = theta(k) &
+             * ( 1.0 &
+                 + ep1 * ( max( rtm(k) - rcm(k), zero_threshold ) &
+                               / ( 1.0 + rtm(k) ) ) &
+                 - ( rcm(k) / ( 1.0 + rtm(k) ) ) &
+               )
         enddo
 
         ! Find the altitudes, z, of the pressure sounding levels.
