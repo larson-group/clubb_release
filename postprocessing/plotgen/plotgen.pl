@@ -8,6 +8,7 @@
 
 package Plotgen;
 
+my $dirPrefix = "";
 # This is only needed when installing globally to ensure additional perl 
 # modules can be found.
 BEGIN
@@ -17,6 +18,12 @@ BEGIN
     {
         push @INC,"/home/matlabuser/plotgen";
     }
+}
+
+# Add the path to the plotgen directory for executing external scripts
+if($0 ne "./plotgen.pl")
+{
+    $dirPrefix = "/home/matlabuser/plotgen/";
 }
 
 use strict;
@@ -105,7 +112,7 @@ my $indexPage = "index.html";
 
 my $plotCount = 0;
 
-my $consoleOutput = "./console_output.pl";
+my $consoleOutput = "$dirPrefix./console_output.pl";
 
 # Do not keep permissions on file copies
 $File::Copy::Recursive::KeepMode = 0;
