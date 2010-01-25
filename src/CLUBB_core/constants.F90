@@ -19,7 +19,7 @@ module constants
             pi_dp, pi, sqrt_2pi, sqrt_2, three_halves, &
             Cp, Lv, Ls, Lf, Rd, Rv, ep, ep1, ep2, &
             kappa, grav, p0, vonk, rho_lw, &
-            wtol, thltol, rttol, s_mellor_tol, & 
+            wtol, thltol, rttol, s_mellor_tol, thltol_mfl, rttol_mfl, & 
             wtol_sqd, rc_tol, Nc_tol, rr_tol, Nr_tol, emin, &
             eps, zero_threshold, max_mag_correlation, sec_per_day, &
             sec_per_hr, sec_per_min, g_per_kg, T_freeze_K, &
@@ -91,6 +91,15 @@ module constants
     rttol   = 1.e-8,  & ! [kg/kg]
     s_mellor_tol   = 1.e-8     ! [kg/kg]
 
+  ! Tolerances for use by the monatonic flux limiter.
+  ! rttol_mfl is larger than rttol. rttol is extremely small
+  ! (1e-8) to prevent spurious cloud formation aloft in LBA.
+  ! rttol_mfl is larger (1e-4) to prevent the mfl from
+  ! depositing moisture at the top of the domain.
+  real, parameter :: &
+    thltol_mfl = 1.e-2, & ! [K]
+    rttol_mfl = 1.e-4     ! [kg/kg]
+      
   ! The tolerance for w'^2 is the square of the tolerance for w.
   real, parameter :: &
     wtol_sqd = wtol**2 ! [m^2/s^2]

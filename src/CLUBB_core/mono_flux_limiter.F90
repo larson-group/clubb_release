@@ -278,7 +278,9 @@ module mono_flux_limiter
         zm2zt  ! Procedure(s)
 
     use constants, only: &
-        zero_threshold
+        zero_threshold, &
+        thltol_mfl, &
+        rttol_mfl
 
     use stats_precision, only:  & 
         time_precision ! Variable(s)
@@ -406,6 +408,7 @@ module mono_flux_limiter
 
     ! Default Initialization required due to G95 compiler warning
     max_xp2 = 0.0
+    max_dev = 0.0
 
     select case( trim( solve_type ) )
     case ( "rtm" )  ! rtm/wprtp
@@ -467,7 +470,16 @@ module mono_flux_limiter
        ! Most values are found within +/- 2 standard deviations from the mean.
        ! Use +/- 2 standard deviations from the mean as the maximum/minimum
        ! values.
-       max_dev = 2.0*stnd_dev_x
+       ! max_dev = 2.0*stnd_dev_x
+       if ( l_stats_samp .and. trim( solve_type ) == "thlm" ) then
+          max_dev = max(2.0 * stnd_dev_x, thltol_mfl)
+       elseif ( l_stats_samp .and. trim( solve_type ) == "rtm" ) then
+          ! rttol_mfl is larger than rttol. rttol is extremely small
+          ! (1e-8) to prevent spurious cloud formation aloft in LBA.
+          ! rttol_mfl is larger (1e-4) to prevent the mfl from
+          ! depositing moisture at the top of the domain. 
+          max_dev = max(2.0 * stnd_dev_x, rttol_mfl)
+       endif
 
        ! Calculate the contribution of the mean advection term:
        ! m_adv_term = -wm_zt(k)*d(xm)/dz|_(k).
