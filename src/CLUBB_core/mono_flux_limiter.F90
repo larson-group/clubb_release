@@ -479,6 +479,9 @@ module mono_flux_limiter
           ! rttol_mfl is larger (1e-4) to prevent the mfl from
           ! depositing moisture at the top of the domain. 
           max_dev = max(2.0 * stnd_dev_x, rttol_mfl)
+       else
+          !kludge until sclrtol code is ready
+          max_dev = 2.0*stnd_dev_x
        endif
 
        ! Calculate the contribution of the mean advection term:
