@@ -406,38 +406,40 @@ module mono_flux_limiter
       iwpxp_mfl,  &
       ixm_mfl
 
+    ! ---- Begin Code ----
+
     ! Default Initialization required due to G95 compiler warning
     max_xp2 = 0.0
     max_dev = 0.0
 
     select case( trim( solve_type ) )
     case ( "rtm" )  ! rtm/wprtp
-       iwpxp_mfl = iwprtp_mfl
-       ixm_mfl   = irtm_mfl
-       max_xp2   = 5.0e-6
+      iwpxp_mfl = iwprtp_mfl
+      ixm_mfl   = irtm_mfl
+      max_xp2   = 5.0e-6
     case ( "thlm" ) ! thlm/wpthlp
-       iwpxp_mfl = iwpthlp_mfl
-       ixm_mfl   = ithlm_mfl
-       max_xp2   = 5.0
+      iwpxp_mfl = iwpthlp_mfl
+      ixm_mfl   = ithlm_mfl
+      max_xp2   = 5.0
     case default    ! passive scalars are involved
-       iwpxp_mfl = 0.0
-       ixm_mfl   = 0.0
-       max_xp2   = 5.0
+      iwpxp_mfl = 0.0
+      ixm_mfl   = 0.0
+      max_xp2   = 5.0
     end select
 
 
     if ( l_stats_samp ) then
-       call stat_begin_update( iwpxp_mfl, real( wpxp / dt ), zm )
-       call stat_begin_update( ixm_mfl, real( xm / dt ), zt )
+      call stat_begin_update( iwpxp_mfl, real( wpxp / dt ), zm )
+      call stat_begin_update( ixm_mfl, real( xm / dt ), zt )
     endif
     if ( l_stats_samp .and. trim( solve_type ) == "thlm" ) then
-       call stat_update_var( ithlm_enter_mfl, xm, zt )
-       call stat_update_var( ithlm_old, xm_old, zt )
-       call stat_update_var( iwpthlp_enter_mfl, xm, zm )
+      call stat_update_var( ithlm_enter_mfl, xm, zt )
+      call stat_update_var( ithlm_old, xm_old, zt )
+      call stat_update_var( iwpthlp_enter_mfl, xm, zm )
     elseif ( l_stats_samp .and. trim( solve_type ) == "rtm" ) then
-       call stat_update_var( irtm_enter_mfl, xm, zt )
-       call stat_update_var( irtm_old, xm_old, zt )
-       call stat_update_var( iwprtp_enter_mfl, xm, zm )
+      call stat_update_var( irtm_enter_mfl, xm, zt )
+      call stat_update_var( irtm_old, xm_old, zt )
+      call stat_update_var( iwprtp_enter_mfl, xm, zm )
     endif
 
     ! Initialize arrays.
@@ -471,18 +473,22 @@ module mono_flux_limiter
        ! Use +/- 2 standard deviations from the mean as the maximum/minimum
        ! values.
        ! max_dev = 2.0*stnd_dev_x
-       if ( l_stats_samp .and. trim( solve_type ) == "thlm" ) then
-          max_dev = max(2.0 * stnd_dev_x, thltol_mfl)
-       elseif ( l_stats_samp .and. trim( solve_type ) == "rtm" ) then
-          ! rttol_mfl is larger than rttol. rttol is extremely small
-          ! (1e-8) to prevent spurious cloud formation aloft in LBA.
-          ! rttol_mfl is larger (1e-4) to prevent the mfl from
-          ! depositing moisture at the top of the domain. 
-          max_dev = max(2.0 * stnd_dev_x, rttol_mfl)
-       else
-          !kludge until sclrtol code is ready
-          max_dev = 2.0*stnd_dev_x
-       endif
+       select case ( trim( solve_type ) )
+       case ( "thlm" )
+         max_dev = max( 2.0 * stnd_dev_x, thltol_mfl )
+
+       case ( "rtm" )
+         ! rttol_mfl is larger than rttol. rttol is extremely small
+         ! (1e-8) to prevent spurious cloud formation aloft in LBA.
+         ! rttol_mfl is larger (1e-4) to prevent the mfl from
+         ! depositing moisture at the top of the domain. 
+         max_dev = max( 2.0 * stnd_dev_x, rttol_mfl )
+
+       case default ! Passive scalars
+         !kludge until sclrtol code is ready
+         max_dev = max( 2.0 * stnd_dev_x, 0.0 )
+
+       end select
 
        ! Calculate the contribution of the mean advection term:
        ! m_adv_term = -wm_zt(k)*d(xm)/dz|_(k).
