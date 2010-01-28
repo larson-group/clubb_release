@@ -57,7 +57,7 @@
 \ptlder{\bar{u}}{t} 
 = \underbrace{ - \bar{w}\ptlder{\bar{u}}{z} }_{ma}
   \underbrace{ - f (v_g - \bar{v}) }_{cf/gf}
-  \underbrace{ - \ptlder{}{z}\overline{u'w'} }_{ta} 
+  \underbrace{ - \inverse{\rho_{s}}\ptlder{\rho_{s}\overline{u'w'}}{z} }_{ta} 
 \end{equation}
 %
 \begin{equation}
@@ -65,14 +65,14 @@
 \ptlder{\bar{v}}{t} 
 = \underbrace{ - \bar{w}\ptlder{\bar{v}}{z} }_{ma}
   \underbrace{ + f (u_g - \bar{u}) }_{cf/gf}
-  \underbrace{ - \ptlder{}{z}\overline{v'w'} }_{ta}
+  \underbrace{ - \inverse{\rho_{s}}\ptlder{\rho_{s}\overline{v'w'}}{z} }_{ta}
 \end{equation}
 %
 \begin{equation}
 \label{eq_rtm}
 \ptlder{\bar{r}_t}{t}
 = \underbrace{ - \bar{w}\ptlder{\bar{r}_t}{z} }_{ma}
-  \underbrace{ - \ptlder{}{z}\overline{w'r'_t} }_{ta}
+  \underbrace{ - \inverse{\rho_{s}}\ptlder{\rho_{s}\overline{w'r'_t}}{z} }_{ta}
   + \left. \ptlder{\bar{r}_t}{t} \right|_{\rm{ls}}
 \end{equation}
 %
@@ -80,7 +80,7 @@
 \label{eq_thlm}
 \ptlder{\bar{\theta}_l}{t} 
 = \underbrace{ - \bar{w}\ptlder{\bar{\theta}_l}{z} }_{ma}
-  \underbrace{ - \ptlder{}{z}\overline{w'\theta'_l} }_{ta} 
+  \underbrace{ - \inverse{\rho_{s}}\ptlder{\rho_{s}\overline{w'\theta'_l}}{z} }_{ta} 
   + \bar{R}   
   + \left. \ptlder{\bar{\theta}_l}{t} \right|_{\rm{ls}}
 \end{equation}
@@ -90,18 +90,18 @@
 \begin{split}
 \ptlder{\overline{w^{'2}}}{t} 
 =& \underbrace{ - \bar{w}\ptlder{\overline{w^{'2}}}{z} }_{ma}
-   \underbrace{ - \ptlder{\overline{w^{'3}}}{z} }_{ta}
+   \underbrace{ - \inverse{\rho_{s}}\ptlder{\rho_{s}\overline{w^{'3}}}{z} }_{ta}
    \underbrace{ - 2\overline{w^{'2}}\ptlder{\bar{w}}{z} }_{ac}
-   \underbrace{ + \frac{2g}{\theta_0} \overline{w'\theta'_v} }_{bp}
+   \underbrace{ + \frac{2g}{\theta_{vs}} \overline{w'\theta'_v} }_{bp}
    \underbrace{ - \frac{C_4}{\tau} \left( \overline{w^{'2}} -\frac{2}{3}\bar{e} \right) }_{pr1} \\
  & \underbrace{ - C_5 
      \left(
        - 2\overline{w^{'2}}\ptlder{\bar{w}}{z}
-       + \frac{2g}{\theta_0} \overline{w'\theta'_v}
+       + \frac{2g}{\theta_{vs}} \overline{w'\theta'_v}
      \right) }_{pr2}
    \underbrace{ + \frac{2}{3} C_5
      \left(
-       \frac{g}{\theta_0} \overline{w'\theta'_v} 
+       \frac{g}{\theta_{vs}} \overline{w'\theta'_v} 
        - \overline{u'w'}\ptlder{\bar{u}}{z} 
        - \overline{v'w'}\ptlder{\bar{v}}{z} 
      \right) }_{pr3} \\
@@ -120,7 +120,7 @@
 \begin{split}
 \ptlder{\overline{r_t^{'2}}}{t}
 =& \underbrace{ - \bar{w}\ptlder{\overline{r^{'2}_t}}{z} }_{ma}
-   \underbrace{ - \ptlder{\overline{w'r_t^{'2}}}{z} }_{ta}
+   \underbrace{ - \inverse{\rho_{s}}\ptlder{\rho_{s}\overline{w'r_t^{'2}}}{z} }_{ta}
    \underbrace{ - 2\overline{w'r'_t}\ptlder{\bar{r}_t}{z} }_{tp}
    \underbrace{ - \dfrac{C_2}{\tau} \left(   \overline{r_t^{'2}} 
                               - \left. r_t \right|_{\rm{tol}}^{2} \right) }_{dp1} \\
@@ -137,7 +137,7 @@
 \begin{split}
 \ptlder{\overline{\theta_l^{'2}}}{t}
 =& \underbrace{ - \bar{w}\ptlder{\overline{\theta^{'2}_l}}{z} }_{ma}
-   \underbrace{ - \ptlder{\overline{w'\theta_l^{'2}}}{z} }_{ta}
+   \underbrace{ - \inverse{\rho_{s}}\ptlder{\rho_{s}\overline{w'\theta_l^{'2}}}{z} }_{ta}
    \underbrace{ - 2\overline{w'\theta'_l}\ptlder{\bar{\theta}_l}{z} }_{tp}
    \underbrace{ - \dfrac{C_2}{\tau} \left(   \overline{\theta_l^{'2}} 
                               - \left. \theta_l \right|_{\rm{tol}}^{2} \right) }_{dp1} \\
@@ -151,16 +151,18 @@
 %
 \begin{equation}
 \label{eq_rtpthlp}
+\begin{split}
 \ptlder{\overline{r'_t\theta'_l}}{t}
-= \underbrace{ - \bar{w}\ptlder{\overline{r'_t\theta'_l}}{z} }_{ma}
-  \underbrace{ - \ptlder{\overline{w'r'_t\theta'_l}}{z} }_{ta}
-  \underbrace{ - \overline{w'r'_t}\ptlder{\bar{\theta}_l}{z} }_{tp1}
-  \underbrace{ - \overline{w'\theta'_l}\ptlder{\bar{r}_t}{z} }_{tp2}
-  \underbrace{ - \dfrac{C_2}{\tau} \overline{r_t' \theta_l'} }_{dp1}
-  \underbrace{ + \ptlder{}{z} \left[ \left( K_{w2} + \nu_2 \right)
-                        \ptlder{}{z} \overline{r_t' \theta_l'} 
-                 \right] }_{dp2}
-  + \left. \ptlder{\overline{q'_t\theta'_l}}{t} \right|_{\rm{cl}}
+= & \underbrace{ - \bar{w}\ptlder{\overline{r'_t\theta'_l}}{z} }_{ma}
+    \underbrace{ - \inverse{\rho_{s}}\ptlder{\rho_{s}\overline{w'r'_t\theta'_l}}{z} }_{ta}
+    \underbrace{ - \overline{w'r'_t}\ptlder{\bar{\theta}_l}{z} }_{tp1}
+    \underbrace{ - \overline{w'\theta'_l}\ptlder{\bar{r}_t}{z} }_{tp2}
+    \underbrace{ - \dfrac{C_2}{\tau} \overline{r_t' \theta_l'} }_{dp1} \\
+    & \underbrace{ + \ptlder{}{z} \left[ \left( K_{w2} + \nu_2 \right)
+                            \ptlder{}{z} \overline{r_t' \theta_l'} 
+                     \right] }_{dp2}
+    + \left. \ptlder{\overline{r'_t\theta'_l}}{t} \right|_{\rm{cl}}
+\end{split}
 \end{equation}
 %
 \begin{equation}
@@ -168,13 +170,13 @@
 \begin{split}
 \ptlder{\overline{w'r'_t}}{t} 
 = & \underbrace{ - \bar{w}\ptlder{\overline{w'r'_t}}{z} }_{ma}
-    \underbrace{ - \ptlder{\overline{w^{'2}r'_t}}{z} }_{ta}
+    \underbrace{ - \inverse{\rho_{s}}\ptlder{\rho_{s}\overline{w^{'2}r'_t}}{z} }_{ta}
     \underbrace{ - \overline{w^{'2}}\ptlder{\bar{r}_t}{z} }_{tp}
     \underbrace{ - \overline{w'r'_t}\ptlder{\bar{w}}{z} }_{ac}
-    \underbrace{ + \frac{g}{\theta_0} \overline{r'_t\theta'_v} }_{bp}
+    \underbrace{ + \frac{g}{\theta_{vs}} \overline{r'_t\theta'_v} }_{bp}
     \underbrace{ - \frac{C_6}{\tau}\overline{w'r'_t} }_{pr1} \\
   & \underbrace{ + C_7 \overline{w'r'_t}\ptlder{\bar{w}}{z} }_{pr2}
-    \underbrace{ - C_7 \frac{g}{\theta_0} \overline{r'_t\theta'_v} }_{pr3}
+    \underbrace{ - C_7 \frac{g}{\theta_{vs}} \overline{r'_t\theta'_v} }_{pr3}
     \underbrace{ + \ptlder{}{z} \left[ \left( K_{w6} + \nu_6 \right)
                           \ptlder{}{z} \overline{w'r'_t} 
                    \right] }_{dp1}
@@ -188,13 +190,13 @@
 \begin{split}
 \ptlder{\overline{w'\theta'_l}}{t}
 = & \underbrace{ - \bar{w}\ptlder{\overline{w'\theta'_l}}{z} }_{ma}	
-    \underbrace{ - \ptlder{\overline{w^{'2}\theta'_l}}{z} }_{ta}
+    \underbrace{ - \inverse{\rho_{s}}\ptlder{\rho_{s}\overline{w^{'2}\theta'_l}}{z} }_{ta}
     \underbrace{ - \overline{w^{'2}}\ptlder{\bar{\theta}_l}{z} }_{tp}
     \underbrace{ - \overline{w'\theta'_l}\ptlder{\bar{w}}{z} }_{ac}
-    \underbrace{ + \frac{g}{\theta_0} \overline{\theta'_l\theta'_v} }_{bp}
+    \underbrace{ + \frac{g}{\theta_{vs}} \overline{\theta'_l\theta'_v} }_{bp}
     \underbrace{ - \frac{C_6}{\tau}\overline{w'\theta'_l} }_{pr1} \\
   & \underbrace{ + C_7 \overline{w'\theta'_l}\ptlder{\bar{w}}{z} }_{pr2}
-    \underbrace{ - C_7 \frac{g}{\theta_0} \overline{\theta'_l\theta'_v} }_{pr3}
+    \underbrace{ - C_7 \frac{g}{\theta_{vs}} \overline{\theta'_l\theta'_v} }_{pr3}
     \underbrace{ + \ptlder{}{z} \left[ \left( K_{w6} + \nu_6 \right)
                           \ptlder{}{z} \overline{w'\theta'_l} 
                    \right] }_{dp1}
@@ -208,14 +210,14 @@
 \begin{split}
 \ptlder{\overline{w^{'3}}}{t}
 = & \underbrace{ - \bar{w}\ptlder{\overline{w^{'3}}}{z} }_{ma}
-    \underbrace{ - \ptlder{\overline{w^{'4}}}{z} }_{ta}
-    \underbrace{ + 3\overline{w^{'2}}\ptlder{\overline{w^{'2}}}{z} }_{tp}
+    \underbrace{ - \inverse{\rho_{s}}\ptlder{\rho_{s}\overline{w^{'4}}}{z} }_{ta}
+    \underbrace{ + 3\frac{\overline{w^{'2}}}{\rho_{s}}\ptlder{\rho_{s}\overline{w^{'2}}}{z} }_{tp}
     \underbrace{ - 3\overline{w^{'3}}\ptlder{\bar{w}}{z} }_{ac}
-    \underbrace{ + \frac{3g}{\theta_0} \overline{w^{'2}\theta'_v} }_{bp}
+    \underbrace{ + \frac{3g}{\theta_{vs}} \overline{w^{'2}\theta'_v} }_{bp}
     \underbrace{ - \frac{C_8}{\tau}\left( C_{8b} \, Skw^4 + 1 \right) \overline{w^{'3}} }_{pr1}\\
   & \underbrace{ - C_{11} \left(
                  - 3 \overline{w^{'3}}\ptlder{\bar{w}}{z}
-                 + \frac{3g}{\theta_0} \overline{w^{'2}\theta'_v}
+                 + \frac{3g}{\theta_{vs}} \overline{w^{'2}\theta'_v}
              \right) }_{pr2}
     \underbrace{ + \ptlder{}{z} \left[ \left( K_{w8} + \nu_8 \right)
                           \ptlder{}{z} \overline{w^{'3}} 
@@ -224,24 +226,24 @@
 \end{split}
 \end{equation}
 %
-$\bar{R}$ is the radiative heating rate, 
-$f$ the Coriolis parameter and $u_g$, $v_g$ the geostrophic winds.
-$\left. \ptlder{\bar{r}_t}{t} \right|_{\rm ls}$ and 
-$\left. \ptlder{\bar{\theta}_l}{t} \right|_{\rm ls}$ are
-large-scale moisture and temperature forcings.
-$g$ is the gravity, $\rho_0$ and $\theta_0$ the reference
-density and potential temperature.
-$\left. w \right|_{\rm{tol}}^{2}$ is the minimum threshold value
-for $\overline{w^{'2}}$; 
-$\left. r_t \right|_{\rm{tol}}^{2}$ is the minimum threshold value
-for $\overline{r_t^{'2}}$; and 
-$\left. \theta_l \right|_{\rm{tol}}^{2}$ is the minimum threshold value
-for $\overline{\theta_l^{'2}}$.
-The subscript $\left.\right|_{\rm{pd}}$ stands for the rate of change due to the
-positive-definite hole-filling scheme; the subscript $\left.\right|_{\rm{sicl}}$
-stands for the rate of change due to the semi-implicit clipping scheme; and the 
-subscript $\left.\right|_{\rm{cl}}$ stands for the rate of change due to 
-completely explicit clipping.
+where $\bar{R}$ is the radiative heating rate, $f$ the Coriolis parameter, and
+$u_g$ and $v_g$ the geostrophic winds.  Furthermore,
+$\left. \ptlder{\bar{r}_t}{t} \right|_{\rm ls}$ and
+$\left. \ptlder{\bar{\theta}_l}{t} \right|_{\rm ls}$ are large-scale moisture
+and temperature forcings, respectively, and $g$ is the gravity.   The set of
+equations is an anelastic set of equations, where $\rho_{s}$ is the dry, static,
+base-state density, which only changes with respect to altitude; and where
+$\theta_{vs}$ is the dry, base-state $\theta_{v}$, which also only changes with
+respect to altitude.  Threshold values of the variances are established, such that
+$\left. w \right|_{\rm{tol}}^{2}$ is the minimum threshold value for
+$\overline{w^{'2}}$;  $\left. r_t \right|_{\rm{tol}}^{2}$ is the minimum
+threshold value for $\overline{r_t^{'2}}$; and 
+$\left. \theta_l \right|_{\rm{tol}}^{2}$ is the minimum threshold value for
+$\overline{\theta_l^{'2}}$.  The subscript $\left.\right|_{\rm{pd}}$ stands for
+the rate of change due to the positive-definite hole-filling scheme; the
+subscript $\left.\right|_{\rm{sicl}}$ stands for the rate of change due to the
+semi-implicit clipping scheme; and the subscript $\left.\right|_{\rm{cl}}$
+stands for the rate of change due to completely explicit clipping.
 
 If the model does not predict any higher-order moments of the
 horizontal winds, we assume that the turbulence kinetic energy, $\bar{e}$,
@@ -276,20 +278,20 @@ In the second case, the horizontal wind variance terms are determined as in
 \label{eq_up2}
 \ptlder{\overline{u^{'2}}}{t}
 = & \underbrace{ - \bar{w}\ptlder{\overline{u^{'2}}}{z} }_{ma}
-    \underbrace{ - \ptlder{\overline{w'u^{'2}}}{z} }_{ta}
+    \underbrace{ - \inverse{\rho_{s}}\ptlder{\rho_{s}\overline{w'u^{'2}}}{z} }_{ta}
     \underbrace{ - \left(1 - C_{5} \right) 2\overline{u'w'}\ptlder{\bar{u}}{z} }_{tp}
     \underbrace{ - \frac{2}{3} 
 %\epsilon 
                   C_{14} \frac{\bar{e}}{\tau}
-               }_{pr1}
-    \underbrace{ + \frac{2}{3} C_{5}
+               }_{pr1} \\
+    & \underbrace{ + \frac{2}{3} C_{5}
       \left(
-        \frac{g}{\theta_0} \overline{w'\theta'_v} 
+        \frac{g}{\theta_{vs}} \overline{w'\theta'_v} 
         - \overline{u'w'}\ptlder{\bar{u}}{z} 
         - \overline{v'w'}\ptlder{\bar{v}}{z} 
-      \right) }_{pr2} \\
-  & \underbrace{ - \dfrac{C_4}{\tau} \left( \overline{u^{'2}} - \frac{2}{3} \bar{e} \right) }_{dp1}
-    + \underbrace{ \ptlder{}{z} \left[ \left( K_{w9} + \nu_9 \right)
+      \right) }_{pr2}
+    \underbrace{ - \dfrac{C_4}{\tau} \left( \overline{u^{'2}} - \frac{2}{3} \bar{e} \right) }_{dp1} \\
+    & + \underbrace{ \ptlder{}{z} \left[ \left( K_{w9} + \nu_9 \right)
                           \ptlder{}{z} \overline{u^{'2}} 
                    \right] }_{dp2}
     + \left. \ptlder{\overline{u^{'2}}}{t} \right|_{\rm{pd}}
@@ -304,20 +306,20 @@ In the second case, the horizontal wind variance terms are determined as in
 \label{eq_vp2}
 \ptlder{\overline{v^{'2}}}{t}
 = & \underbrace{ - \bar{w}\ptlder{\overline{v^{'2}}}{z} }_{ma}
-    \underbrace{ - \ptlder{\overline{w'v^{'2}}}{z} }_{ta}
+    \underbrace{ - \inverse{\rho_{s}}\ptlder{\rho_{s}\overline{w'v^{'2}}}{z} }_{ta}
     \underbrace{ - \left(1 - C_{5} \right) 2\overline{v'w'}\ptlder{\bar{v}}{z} }_{tp}
     \underbrace{ - \frac{2}{3} 
 %\epsilon 
                   C_{14} \frac{\bar{e}}{\tau}
-               }_{pr1}
-    \underbrace{ + \frac{2}{3} C_{5}
+               }_{pr1} \\
+    & \underbrace{ + \frac{2}{3} C_{5}
       \left(
-        \frac{g}{\theta_0} \overline{w'\theta'_v} 
+        \frac{g}{\theta_{vs}} \overline{w'\theta'_v} 
         - \overline{u'w'}\ptlder{\bar{u}}{z} 
         - \overline{v'w'}\ptlder{\bar{v}}{z} 
-      \right) }_{pr2} \\
-  & \underbrace{ - \dfrac{C_4}{\tau} \left( \overline{v^{'2}} - \frac{2}{3} \bar{e} \right) }_{dp1}
-    + \underbrace{ \ptlder{}{z} \left[ \left( K_{w9} + \nu_9 \right)
+      \right) }_{pr2}
+     \underbrace{ - \dfrac{C_4}{\tau} \left( \overline{v^{'2}} - \frac{2}{3} \bar{e} \right) }_{dp1} \\
+    & + \underbrace{ \ptlder{}{z} \left[ \left( K_{w9} + \nu_9 \right)
                           \ptlder{}{z} \overline{v^{'2}} 
                    \right] }_{dp2}
     + \left. \ptlder{\overline{v^{'2}}}{t} \right|_{\rm{pd}}
@@ -466,7 +468,7 @@ a_2 = \frac{1}{ (1-\tilde{\sigma}_w^2)^2 }
 a_3 = 3 \tilde{\sigma}_w^4 
       + 6 ( 1 - \tilde{\sigma}_w^2 ) \tilde{\sigma}_w^2
       + ( 1 - \tilde{\sigma}_w^2 )^2 
-      -\frac{3}{2}
+      - 3
 \end{equation}
 %
 The turbulence moment $\overline{w'^4}$ is given by (LG40):
