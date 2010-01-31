@@ -2088,7 +2088,9 @@ module advance_xm_wpxp_module
         end do
       end if
 
-      call fill_holes_driver( 2, xm_threshold, "zt", xm )
+      call fill_holes_driver( 2, xm_threshold, "zt", &
+                              rho_ds_zt, rho_ds_zm, &
+                              xm )
 
     end if !  any( xm < xm_threshold ) .and. l_hole_fill
 

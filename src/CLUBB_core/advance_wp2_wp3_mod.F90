@@ -784,7 +784,9 @@ contains
     if ( l_hole_fill .and. any( wp2 < wtol_sqd ) ) then
 
       ! Use a simple hole filling algorithm
-      call fill_holes_driver( 2, wtol_sqd, "zm", wp2 )
+      call fill_holes_driver( 2, wtol_sqd, "zm", &
+                              rho_ds_zt, rho_ds_zm, &
+                              wp2 )
 
     endif ! wp2
 

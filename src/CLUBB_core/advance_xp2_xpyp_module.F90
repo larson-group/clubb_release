@@ -33,8 +33,9 @@ contains
                                thlm, wpthlp, wpthvp, um, vm, & 
                                wp2, wp2_zt, wp3, upwp, vpwp, &
                                sigma_sqd_w, Skw_zm, Kh_zt, &
-                               rho_ds_zt, invrs_rho_ds_zm, &
-                               thv_ds_zm, l_iter, dt, &
+                               rho_ds_zm, rho_ds_zt, &
+                               invrs_rho_ds_zm, thv_ds_zm, &
+                               l_iter, dt, &
                                sclrm, wpsclrp, & 
                                rtp2, thlp2, rtpthlp, &
                                up2, vp2,  & 
@@ -142,6 +143,7 @@ contains
       sigma_sqd_w,     & ! sigma_sqd_w (momentum levels)         [-]
       Skw_zm,          & ! Skewness of w on momentum levels      [-]
       Kh_zt,           & ! Eddy diffusivity on thermo. levels    [m^2/s]
+      rho_ds_zm,       & ! Dry, static density on momentum levs. [kg/m^3]
       rho_ds_zt,       & ! Dry, static density on thermo. levels [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density @ mom. levs. [m^3/kg]
       thv_ds_zm,       & ! Dry, base-state theta_v on mom. levs. [K]
@@ -516,12 +518,16 @@ contains
     ! Apply the positive definite scheme to variances
     if ( l_hole_fill ) then
       call pos_definite_variances( "rtp2", dt, rttol**2, &   ! Intent(in)
+                                   rho_ds_zm, rho_ds_zt, &   ! Intent(in)
                                    rtp2 )                    ! Intent(inout)
       call pos_definite_variances( "thlp2", dt, thltol**2, & ! Intent(in)
+                                   rho_ds_zm, rho_ds_zt, &   ! Intent(in)
                                    thlp2 )                   ! Intent(inout)
       call pos_definite_variances( "up2", dt, wtol_sqd, &    ! Intent(in)
+                                   rho_ds_zm, rho_ds_zt, &   ! Intent(in)
                                    up2 )                     ! Intent(inout)
       call pos_definite_variances( "vp2", dt, wtol_sqd, &    ! Intent(in)
+                                   rho_ds_zm, rho_ds_zt, &   ! Intent(in)
                                    vp2 )                     ! Intent(inout)
     endif
 
@@ -690,16 +696,19 @@ contains
       if ( l_hole_fill ) then
         do i = 1, sclr_dim, 1
           call pos_definite_variances( "sclrp2", dt, sclrtol(i)**2, & ! Intent(in)
-                                       sclrp2(:,i) )               ! Intent(inout)
+                                       rho_ds_zm, rho_ds_zt, &        ! Intent(in)
+                                       sclrp2(:,i) )                  ! Intent(inout)
           if ( i == iisclr_rt ) then 
              ! Here again, we do this kluge here to make sclr'rt' == rt'^2
             call pos_definite_variances( "sclrprtp", dt, sclrtol(i)**2, & ! Intent(in)
-                                         sclrprtp(:,i) )               ! Intent(inout)
+                                         rho_ds_zm, rho_ds_zt, &          ! Intent(in)
+                                         sclrprtp(:,i) )                  ! Intent(inout)
           end if
           if ( i == iisclr_thl ) then
             ! As with sclr'rt' above, but for sclr'thl'
             call pos_definite_variances( "sclrpthlp", dt, sclrtol(i)**2, & ! Intent(in)
-                                         sclrpthlp(:,i) )               ! Intent(inout)
+                                         rho_ds_zm, rho_ds_zt, &           ! Intent(in)
+                                         sclrpthlp(:,i) )                  ! Intent(inout)
           end if
         enddo
       endif
@@ -2763,7 +2772,8 @@ contains
   end function term_pr2
 
   !=============================================================================
-  subroutine pos_definite_variances( solve_type, dt, tolerance, & 
+  subroutine pos_definite_variances( solve_type, dt, tolerance, &
+                                     rho_ds_zm, rho_ds_zt, &
                                      xp2_np1 )
 
     ! Description:
@@ -2789,11 +2799,16 @@ contains
     ! Input variables
     character(len=*), intent(in) :: & 
       solve_type
+
     real(kind=time_precision), intent(in) :: & 
       dt        ! Model timestep              [s]
 
     real, intent(in) :: & 
       tolerance ! Threshold for xp2_np1       [units vary]
+
+    real, dimension(gr%nnzp), intent(in) :: &
+      rho_ds_zm, & ! Dry, static density on momentum levels         [kg/m^3]
+      rho_ds_zt    ! Dry, static density on thermodynamic levels    [kg/m^3]
 
     ! Input/Output variables
     real, intent(inout), dimension(gr%nnzp) ::  & 
@@ -2828,8 +2843,9 @@ contains
       ! Call the hole-filling scheme.
       ! The first pass-through should draw from only two levels on either side
       ! of the hole.
-      call fill_holes_driver( 2, tolerance, "zm", & ! Intent(in) 
-                              xp2_np1 )             ! Intent(inout)
+      call fill_holes_driver( 2, tolerance, "zm",   & ! Intent(in) 
+                              rho_ds_zt, rho_ds_zm, & ! Intent(in)
+                              xp2_np1 )               ! Intent(inout)
 
     endif
 

@@ -850,20 +850,20 @@ module clubb_core
     ! Diagnose variances
     !----------------------------------------------------------------
 
-    ! We also found that certain cases require a time tendency to run
+    ! We found that certain cases require a time tendency to run
     ! at shorter timesteps.
-    ! This requires us to store in memory sigma_sqd_w and tau_zm between timesteps.
 
     ! We found that if we call advance_xp2_xpyp first, we can use a longer timestep.
     call advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp,     & ! intent(in)
                            thlm, wpthlp, wpthvp, um, vm,  & ! intent(in)
                            wp2, wp2_zt, wp3, upwp, vpwp,  & ! intent(in)
                            sigma_sqd_w, Skw_zm, Kh_zt,    & ! intent(in)
-                           rho_ds_zt, invrs_rho_ds_zm,    & ! intent(in)
+                           rho_ds_zm, rho_ds_zt,          & ! intent(in)
+                           invrs_rho_ds_zm, thv_ds_zm,    & ! intent(in)
  ! Vince Larson used prognostic timestepping of variances 
  !    in order to increase numerical stability.  17 Jul 2007
- !                          thv_ds_zm, .false., dt,        & ! intent(in)
-                           thv_ds_zm, .true., dt,         & ! intent(in)
+ !                          .false., dt,                   & ! intent(in)
+                           .true., dt,                    & ! intent(in)
                            sclrm, wpsclrp,                & ! intent(in) 
                            rtp2, thlp2, rtpthlp,          & ! intent(inout)
                            up2, vp2,                      & ! intent(inout)

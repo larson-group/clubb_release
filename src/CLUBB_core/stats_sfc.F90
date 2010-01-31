@@ -285,64 +285,68 @@ do i=1,sfc%nn
   case ('thlm_vert_avg')
     ithlm_vert_avg = k
 
-    call stat_assign(ithlm_vert_avg,"thlm_vert_avg", &
-         "Vertical average of thlm [K]","K",sfc)
+    call stat_assign( ithlm_vert_avg, "thlm_vert_avg", &
+         "Vertical average (density-weighted) of thlm [K]", "K", sfc )
     k = k + 1
 
   case ('rtm_vert_avg')
     irtm_vert_avg = k
 
-    call stat_assign(irtm_vert_avg,"rtm_vert_avg", &
-         "Vertical average of rtm [kg/kg]","kg/kg",sfc)
+    call stat_assign( irtm_vert_avg, "rtm_vert_avg", &
+         "Vertical average (density-weighted) of rtm [kg/kg]", "kg/kg", sfc )
     k = k + 1
 
   case ('um_vert_avg')
     ium_vert_avg = k
 
-    call stat_assign(ium_vert_avg,"um_vert_avg", &
-         "Vertical average of um [m/s]","m/s",sfc)
+    call stat_assign( ium_vert_avg, "um_vert_avg", &
+         "Vertical average (density-weighted) of um [m/s]", "m/s", sfc )
     k = k + 1
 
   case ('vm_vert_avg')
     ivm_vert_avg = k
 
-    call stat_assign(ivm_vert_avg,"vm_vert_avg", &
-         "Vertical average of vm [m/s]","m/s",sfc)
+    call stat_assign( ivm_vert_avg, "vm_vert_avg", &
+         "Vertical average (density-weighted) of vm [m/s]", "m/s", sfc )
     k = k + 1
 
   case ('wp2_vert_avg')
     iwp2_vert_avg = k
 
-    call stat_assign(iwp2_vert_avg,"wp2_vert_avg", &
-         "Vertical average of wp2 [m^2/s^2]","m^2/s^2",sfc)
+    call stat_assign( iwp2_vert_avg, "wp2_vert_avg", &
+         "Vertical average (density-weighted) of wp2 [m^2/s^2]", "m^2/s^2", &
+                      sfc )
     k = k + 1
 
   case ('up2_vert_avg')
     iup2_vert_avg = k
 
-    call stat_assign(iup2_vert_avg,"up2_vert_avg", &
-         "Vertical average of up2 [m^2/s^2]","m^2/s^2",sfc)
+    call stat_assign( iup2_vert_avg, "up2_vert_avg", &
+         "Vertical average (density-weighted) of up2 [m^2/s^2]", "m^2/s^2", &
+                      sfc )
     k = k + 1
 
   case ('vp2_vert_avg')
     ivp2_vert_avg = k
 
-    call stat_assign(ivp2_vert_avg,"vp2_vert_avg", &
-         "Vertical average of vp2 [m^2/s^2]","m^2/s^2",sfc)
+    call stat_assign( ivp2_vert_avg, "vp2_vert_avg", &
+         "Vertical average (density-weighted) of vp2 [m^2/s^2]", "m^2/s^2", &
+                      sfc )
     k = k + 1
 
   case ('rtp2_vert_avg')
     irtp2_vert_avg = k
 
-    call stat_assign(irtp2_vert_avg,"rtp2_vert_avg", &
-         "Vertical average of rtp2 [kg^2/kg^2]","kg^2/kg^2",sfc)
+    call stat_assign( irtp2_vert_avg, "rtp2_vert_avg", &
+         "Vertical average (density-weighted) of rtp2 [kg^2/kg^2]", &
+                      "kg^2/kg^2", sfc )
     k = k + 1
 
   case ('thlp2_vert_avg')
     ithlp2_vert_avg = k
 
-    call stat_assign(ithlp2_vert_avg,"thlp2_vert_avg", &
-         "Vertical average of thlp2 [K^2]","K^2",sfc)
+    call stat_assign( ithlp2_vert_avg, "thlp2_vert_avg", &
+         "Vertical average (density-weighted) of thlp2 [K^2]", "K^2", sfc )
     k = k + 1
 
   case ('wp23_matrix_condt_num')
