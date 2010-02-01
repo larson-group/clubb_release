@@ -3641,6 +3641,12 @@ module clubb_driver
       stop "Cannot call BUGSrad with these compile options."
 
 #endif /*radoffline*/
+    else
+      Frad = 0.
+      Frad_SW_up = 0.
+      Frad_LW_up = 0.
+      Frad_SW_down = 0.
+      Frad_LW_down = 0.
 
     end if ! BUGSrad radiation scheme
 
