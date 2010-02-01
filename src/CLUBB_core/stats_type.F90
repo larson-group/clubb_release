@@ -79,7 +79,7 @@ module stats_type
     ! Output Variable
 
     ! Which grid the variable is located on (zt, zm, or sfc )
-    type(stats), intent(out) :: grid_kind
+    type(stats), intent(inout) :: grid_kind
 
     grid_kind%f%var(var_index)%ptr => grid_kind%x(:,:,:,var_index)
     grid_kind%f%var(var_index)%name = var_name
