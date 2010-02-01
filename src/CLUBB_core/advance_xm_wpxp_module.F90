@@ -79,6 +79,8 @@ module advance_xm_wpxp_module
         fstderr, &  ! Constant
         rttol, &
         thltol, &
+        thltol_mfl, &
+        rttol_mfl, &
         max_mag_correlation, &
         zero_threshold
 
@@ -420,7 +422,7 @@ module advance_xm_wpxp_module
              rttol**2, rttol, rcond, &              ! Intent(in)
              low_lev_effect, high_lev_effect, &     ! Intent(in)
              l_implemented, solution(:,1), &        ! Intent(in)
-             rtm, wprtp, err_code )                 ! Intent(inout)
+             rtm, rttol_mfl, wprtp, err_code )      ! Intent(inout)
 
       if ( lapack_error( err_code ) ) then
         write(fstderr,'(a)') "rtm monotonic flux limiter:  tridag failed"
@@ -478,7 +480,7 @@ module advance_xm_wpxp_module
              thltol**2, thltol, rcond, &            ! Intent(in)
              low_lev_effect, high_lev_effect, &     ! Intent(in)
              l_implemented, solution(:,1),  &       ! Intent(in)
-             thlm, wpthlp, err_code )               ! Intent(inout)
+             thlm, thltol_mfl, wpthlp, err_code )   ! Intent(inout)
 
       if ( lapack_error( err_code ) ) then
         write(fstderr,'(a)') "thlm monotonic flux limiter:  tridag failed"
@@ -536,7 +538,7 @@ module advance_xm_wpxp_module
                sclrtol(i)**2, sclrtol(i), rcond, &  ! Intent(in)
                low_lev_effect, high_lev_effect, &   ! Intent(in)
                l_implemented, solution(:,1),  &     ! Intent(in)
-               sclrm(:,i), wpsclrp(:,i), err_code ) ! Intent(inout)
+               sclrm(:,i), sclrtol(i), wpsclrp(:,i), err_code ) ! Intent(inout)
 
         if ( lapack_error( err_code ) ) then
           write(fstderr,'(a)') "sclrm monotonic flux limiter:  tridag failed"
@@ -610,7 +612,7 @@ module advance_xm_wpxp_module
              rttol**2, rttol, rcond, &              ! Intent(in)
              low_lev_effect, high_lev_effect, &     ! Intent(in)
              l_implemented, solution(:,1),  &       ! Intent(in)
-             rtm, wprtp, err_code )                 ! Intent(inout)
+             rtm, rttol_mfl, wprtp, err_code )      ! Intent(inout)
 
       if ( lapack_error( err_code ) ) then
         write(fstderr,'(a)') "rtm monotonic flux limiter:  tridag failed"
@@ -625,7 +627,7 @@ module advance_xm_wpxp_module
              thltol**2, thltol, rcond, &            ! Intent(in)
              low_lev_effect, high_lev_effect, &     ! Intent(in)
              l_implemented, solution(:,2),  &       ! Intent(in)
-             thlm, wpthlp, err_code )               ! Intent(inout)
+             thlm, thltol_mfl, wpthlp, err_code )   ! Intent(inout)
 
       if ( lapack_error( err_code ) ) then
         write(fstderr,'(a)') "thlm monotonic flux limiter:  tridag failed"
@@ -642,7 +644,7 @@ module advance_xm_wpxp_module
                sclrtol(i)**2, sclrtol(i), rcond, &  ! Intent(in)
                low_lev_effect, high_lev_effect, &   ! Intent(in)
                l_implemented, solution(:,2+i),  &   ! Intent(in)
-               sclrm(:,i), wpsclrp(:,i), err_code ) ! Intent(inout)
+               sclrm(:,i), sclrtol(i), wpsclrp(:,i), err_code ) ! Intent(inout)
 
         if ( lapack_error( err_code ) ) then
           write(fstderr,'(a)') "sclrm monotonic flux limiter:  tridag failed"
@@ -1638,7 +1640,7 @@ module advance_xm_wpxp_module
                xp2_threshold, xm_threshold, rcond, &
                low_lev_effect, high_lev_effect, &
                l_implemented, solution, &
-               xm, wpxp, err_code )
+               xm, xm_tol, wpxp, err_code )
 
     ! Description:
     ! Clips and computes implicit stats for an artitrary xm and wpxp
@@ -1768,6 +1770,7 @@ module advance_xm_wpxp_module
     real, intent(in) :: &
       xp2_threshold, & ! Minimum allowable value of x'^2   [units vary]
       xm_threshold,  & ! Minimum allowable value of xm     [units vary]
+      xm_tol,        & ! Minimum allowable deviation of xm [units vary]
       rcond ! Reciprocal of the estimated condition number (from computing A^-1)
 
     ! Variables used as part of the monotonic turbulent advection scheme.
@@ -1786,8 +1789,8 @@ module advance_xm_wpxp_module
 
     ! Input/Output Variables
     real, intent(inout), dimension(gr%nnzp) :: & 
-      xm, & ! The mean x field  [units vary]
-      wpxp  ! The flux of x     [units vary m/s]
+      xm, &     ! The mean x field  [units vary]
+      wpxp      ! The flux of x     [units vary m/s]
 
     ! Output Variable
     integer, intent(out) ::  &
@@ -2042,7 +2045,7 @@ module advance_xm_wpxp_module
                                             invrs_rho_ds_zm, invrs_rho_ds_zt, &
                                             xp2_threshold, l_implemented, &
                                             low_lev_effect, high_lev_effect, &
-                                            xm, wpxp, err_code )
+                                            xm, xm_tol, wpxp, err_code )
 
        ! Check for errors
        if ( lapack_error( err_code ) ) return
