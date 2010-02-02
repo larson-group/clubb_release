@@ -13,7 +13,7 @@ seconds_per_hour = 3600;
 g_per_kg = 1000;
 
 %We need the unit conversions file
-addpath('../../../postprocessing/matlab_include/convert_units.m');
+%addpath('../../../postprocessing/matlab_include/convert_units.m');
 
 %Open the file for reading only
 fid = fopen(fileName,'r'); %Open the forcing file read only
@@ -133,11 +133,11 @@ for i = 1:numFields,
 		omega = varData;
 	end
 
-	if strcmp('dTdt', varName)
+	if strcmp('T_adv_h', varName)
 		dTdt = varData;
 	end
 
-	if strcmp('dqdt', varName)
+	if strcmp('q_adv_h', varName)
 		dqdt = varData;
 	end
 	%End variable storage
@@ -212,11 +212,14 @@ for i = 1:fieldLength,
 	%Output the variable
 	timeVal = i * dt;
 	%Output the header for this data block
-	fprintf(fout,'%f     %i\n', timeVal, numLevels);
+	if timeVal > sndgTime
+		
+		fprintf(fout,'%f     %i\n', timeVal - sndgTime, numLevels);
 
-	for j = 0:(numLevels - 1),
-		index = i + (j * fieldLength);
-		fprintf(fout,'%f     %E     %E     %f     %f     %f     %f     %f     %f     %f\n', height(j + 1), dTdt(index), dqdt(index), u(index), v(index), -999.9, -999.9, omega(index), -999.9, -999.9);
+		for j = 0:(numLevels - 1),
+			index = i + (j * fieldLength);
+			fprintf(fout,'%f     %E     %E     %f     %f     %f     %f     %f     %f     %f\n', height(j + 1), dTdt(index), dqdt(index), u(index), v(index), -999.9, -999.9, omega(index), -999.9, -999.9);
+		end
 	end	
 end
 
