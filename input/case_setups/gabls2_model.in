@@ -106,6 +106,8 @@ restart_path_case  = "restart/gabls2"
 time_restart  = 0.0      ! Time of model restart.
                          ! [seconds since start time listed in GrADS control file]
 
+l_input_fields = .false.,
+
 ! Select debug level:
 !        0 => Print no debug messages to the screen
 !        1 => Print lightweight debug messages, e.g. print statements
@@ -163,4 +165,67 @@ stats_tout   = 600.      ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"   ! Type of statistical output file (GrADS or netCDF).
 /
 
-
+! Inputfields Settings
+! You will not need to modify these if l_input_fields is false.
+&setfields
+datafile      = "../les_data/gabls2"
+input_type    = "coamps_les"
+input_um = .true. 
+input_vm = .true.
+input_rtm = .true. 
+input_thlm = .true.
+input_wp2 = .true.
+input_wprtp = .true.
+input_wpthlp = .true.
+input_wp3 = .true.
+input_rtp2 = .true.
+input_thlp2 = .true.
+input_rtpthlp = .true.
+input_upwp = .true.
+input_vpwp = .true.
+input_ug = .false.
+input_vg = .false.
+input_rcm = .true.
+input_wm_zt = .true.
+input_exner = .true.
+input_em = .true.
+input_p = .true.
+input_rho = .true.
+input_rho_zm = .true.
+input_Lscale = .false.
+input_Lscale_up = .false.
+input_Lscale_down = .false.
+input_Kh_zt = .true.
+input_Kh_zm = .false.
+input_tau_zm = .false.
+input_tau_zt = .false.
+input_wpthvp = .true.
+input_thl1 = .false.
+input_thl2 = .false.
+input_a = .false.
+input_s1 = .false.
+input_s2 = .false.
+input_stdev_s1 = .false.
+input_stdev_s2 = .false.
+input_rc1 = .false.
+input_rc2 = .false.
+input_thvm = .true.
+input_rrainm = .false.
+input_Nrm = .false.
+input_Ncm = .false.
+input_rsnowm = .false.
+input_ricem = .false.
+input_rgraupelm = .false.
+input_Ncnm = .false.
+input_Nim = .false.
+input_thlm_forcing = .false.
+input_rtm_forcing = .false.
+input_up2 = .true.
+input_vp2 = .true.
+input_sigma_sqd_w = .false.
+input_cloud_frac = .false.
+input_sigma_sqd_w_zt = .false.
+input_veg_T_in_K = .false.
+input_deep_soil_T_in_K = .false.
+input_sfc_soil_T_in_K = .false.
+/
