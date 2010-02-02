@@ -76,14 +76,6 @@ module hydrostatic_mod
     !
     ! The resulting value of exner is used to calculate pressure.  Then, the
     ! values of pressure, exner, and theta_v can be used to calculate density.
-    !
-    ! For the first run through the initialization code, this subroutine is
-    ! called with potential temperature (theta) or liquid water potential
-    ! temperature (theta_l) sent in for theta_v.  This allows for a calculation
-    ! of approximate pressure and exner, which allows initial cloud water mixing
-    ! ratio (r_c) to be calculated.  Then, this subroutine is called a second
-    ! time with theta_v in order to calculate a more accurate pressure, exner,
-    ! and density.
 
     ! References:
     !

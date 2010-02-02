@@ -1877,9 +1877,43 @@ module clubb_driver
 
       ! At this point, thlm may actually contain either theta or theta-l.
 
-      ! Compute approximate pressure, exner, and density using theta or theta_l
-      ! rather than theta_v.
-      call hydrostatic( thlm, psfc,          & ! Intent(in)
+      ! Calculate approximate thvm, given initial thm/thlm and rtm.
+      !
+      ! The exact form of the equaton for theta_v (with only water vapor
+      ! included) is:
+      !
+      ! theta_v = theta * [ ( 1 + (R_v/R_d)*r_v ) / ( 1 + r_v ) ];
+      !
+      ! which can be rearranged as:
+      !
+      ! theta_v = theta * [ 1 + { (R_v/R_d) - 1 } * { r_v / ( 1 + r_v ) } ].
+      !
+      ! This can be approximated by using r_t instead of r_v.  The value of
+      ! initial thvm (including water vapor and cloud water) will be
+      ! recalculated more accurately once the value of initial r_c has been
+      ! computed.
+      !
+      ! As stated above, thlm may actually contain either theta or theta-l at
+      ! this point.  The equation above is based on theta.  If the variable
+      ! 'thlm' actually does contain theta-l at this point, then that is
+      ! another source of inaccuracy in the thvm approximation.  However, theta
+      ! cannot be found from theta-l until r_c has been computed.  That being
+      ! said, calling subroutine hydrostatic with an approximate thvm, rather
+      ! than thm/thlm, will allow for a better calculation of exner, pressure,
+      ! and density in subroutine hydrostatic.  While exner, pressure, and
+      ! density are all recalculated more accurately later, in the second call
+      ! to subroutine hydrostatic -- after a more accurate thvm has been
+      ! calculated -- it is still important to obtain the best values for
+      ! pressure and exner from the first call to subroutine hydrostatic.  This
+      ! is important to allow the ensuing computation of initial r_c is done as
+      ! accurately as possible.
+      do k = 1, gr%nnzp, 1
+         thvm(k) = thlm(k) * ( 1.0 + ep1 * ( rtm(k) / ( 1.0 + rtm(k) ) ) )
+      enddo
+
+      ! Compute approximate pressure, exner, and density using an approximate
+      ! value of theta_v.
+      call hydrostatic( thvm, psfc,          & ! Intent(in)
                         p_in_Pa, p_in_Pa_zm, & ! Intent(out)
                         exner, exner_zm,     & ! Intent(out)
                         rho, rho_zm          ) ! Intent(out)
