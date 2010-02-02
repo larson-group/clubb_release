@@ -1919,8 +1919,13 @@
         acofn=acofn+acof; bcofn=bcofn+bcof
         acofdn=acofdn+acofd; bcofdn=bcofdn+bcofd
       ENDDO
-    err1=abs(acofn/y1); err2=abs(bcofn/y2)
-    err1p=abs(acofdn/y1p); err2p=abs(bcofdn/y2p)
+    ! We found that when the a = -2.5 and x = 0 that this could cause a
+    ! divide by zero.  -Dave Schanen UW Milwaukee 2 Feb 2010
+!   err1=abs(acofn/y1); err2=abs(bcofn/y2)
+!   err1p=abs(acofdn/y1p); err2p=abs(bcofdn/y2p)
+    ! Replacement code:
+      err1=abs(acofn/max(y1, eps)); err2=abs(bcofn/max(y2, eps))
+      err1p=abs(acofdn/max(y1p, eps)); err2p=abs(bcofdn/max(y2p, eps))
     ENDDO
     IF ((mode==1).AND.(a>0)) THEN
       t=x/(2.0_r8*sqrt(a))

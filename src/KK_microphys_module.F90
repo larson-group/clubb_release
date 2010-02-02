@@ -1827,12 +1827,7 @@ module KK_microphys_module
       ! Test to see whether the value of sigma_siG is sufficiently small
       ! enough to cause the parabolic cylinder function to produce a
       ! result to large to be represented numerically by the computer.
-
-      if ( scci == 0. ) then ! Added to prevent a floating point exception
-        test = limit
-      else
-        test = Dv_fnc( parab_cyl_fnc_ord, scci )
-      end if
+      test = Dv_fnc( parab_cyl_fnc_ord, scci )
 
       if ( test >= 0.0d0 .and. test < limit ) then
         l_use_eq_1 = .true.
