@@ -805,6 +805,11 @@ contains
       write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
       write(fstderr,*) "Skw_zm = ", Skw_zm
       write(fstderr,*) "Kh_zt = ", Kh_zt
+      write(fstderr,*) "rho_ds_zm = ", rho_ds_zm
+      write(fstderr,*) "rho_ds_zt = ", rho_ds_zt
+      write(fstderr,*) "invrs_rho_ds_zm = ", invrs_rho_ds_zm
+      write(fstderr,*) "thv_ds_zm = ", thv_ds_zm
+      write(fstderr,*) "wp2_zt = ", wp2_zt
 
       do i = 1, sclr_dim
         write(fstderr,*) "sclrm = ", i, sclrm(:,i)
@@ -1053,20 +1058,14 @@ contains
     ! Boundary Conditions
     ! These are set so that the sfc_var value of the variances and covariances
     ! can be used at the lowest boundary and the values of those variables can
-    ! be set to 0 at the top boundary.  Fixed-point boundary conditions are used
-    ! for both the variances and the covariances.
+    ! be set to their respective threshold minimum values at the top boundary.
+    ! Fixed-point boundary conditions are used for both the variances and the
+    ! covariances.
     lhs(:,1) = 0.0
     lhs(:,gr%nnzp) = 0.0
 
     lhs(k_mdiag,1) = 1.0
     lhs(k_mdiag,gr%nnzp) = 1.0
-
-    ! This boundary condition was changed by dschanen on 24 April 2007
-    ! When we run prognostically we want to preserve the surface value.
-    !if ( l_iter ) then
-    !  lhs(k_mdiag,1) = 1.0/dt
-    !  lhs(k_mdiag,1) = 1.0/dt
-    !endif
 
     return
   end subroutine xp2_xpyp_lhs
@@ -1685,26 +1684,15 @@ contains
 
 
     ! Boundary Conditions
-    ! These are set so that the sfc_var value of up2 or vp2 can be used at the
-    ! lowest boundary and the values of those variables can be set to 0 at the
-    ! top boundary.  Fixed-point boundary conditions are used for the variances.
+    ! These are set so that the sfc_var value of u'^2 or v'^2 can be used at the
+    ! lowest boundary and the values of those variables can be set to their
+    ! respective threshold minimum values at the top boundary.  Fixed-point
+    ! boundary conditions are used for the variances.
 
-    ! This boundary condition was changed by dschanen on 24 April 2007
-    ! When we run prognostically we want to preserve the surface value.
-    !if ( l_iter ) then
-    !  rhs(1,1) = xap2(1) + 1.0/dt*xap2(1)
-    !  rhs(gr%nnzp,1) = 1.0/dt*xap2(gr%nnzp)
-    !else
-       ! Changing top boundary condition to wtol_sqd rather than 0.0.
-       ! This should prevent fill_holes_driver from trying to fill
-       ! holes at the top of the domain that are constantly being created
-       ! by the boundary condition.
-       ! ~~EIHoppe//20090707
-       rhs(1,1) = xap2(1)
-       rhs(gr%nnzp,1) = wtol_sqd
-       !rhs(gr%nnzp,1) = 0.0
-       ! /EIHoppe change
-    !end if
+    rhs(1,1) = xap2(1)
+    ! The value of u'^2 or v'^2 at the upper boundary will be set to the
+    ! threshold minimum value of wtol_sqd.
+    rhs(gr%nnzp,1) = wtol_sqd
 
     return
   end subroutine xp2_xpyp_uv_rhs
@@ -1987,26 +1975,15 @@ contains
     ! Boundary Conditions
     ! These are set so that the sfc_var value of rtp2, thlp2, or rtpthlp (or
     ! sclrp2, sclrprtp, or sclrpthlp) can be used at the lowest boundary and the
-    ! values of those variables can be set to 0 at the top boundary.
+    ! values of those variables can be set to their respective threshold minimum
+    ! values (which is 0 in the case of the covariances) at the top boundary.
     ! Fixed-point boundary conditions are used for both the variances and the
     ! covariances.
 
-    ! This boundary condition was changed by dschanen on 24 April 2007
-    ! When we run prognostically we want to preserve the surface value.
-    !if ( .false. ) then
-    !  rhs(1,1) = xapxbp(1) + 1.0/dt*xapxbp(1)
-    !  rhs(gr%nnzp,1) = 1.0/dt*xapxbp(gr%nnzp)
-    !else
-       ! Changing top boundary condition to threshold rather than 0.0.
-       ! This should prevent fill_holes_driver from trying to fill
-       ! holes at the top of the domain that are constantly being created
-       ! by the boundary condition.
-       ! ~~EIHoppe//20090707
-       rhs(1,1) = xapxbp(1)
-       rhs(gr%nnzp,1) = threshold
-       ! rhs(gr%nnzp,1) = 0.0
-       ! /EIHoppe change
-    !endif
+    rhs(1,1) = xapxbp(1)
+    ! The value of the field at the upper boundary will be set to it's threshold
+    ! minimum value, as contained in the variable 'threshold'.
+    rhs(gr%nnzp,1) = threshold
 
     return
   end subroutine xp2_xpyp_rhs
