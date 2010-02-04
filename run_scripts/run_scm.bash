@@ -189,10 +189,15 @@ fi
 
 if [ $NIGHTLY == true ]; 
 then
+#    if [ "$run_case" = gabls2 || "$run_case" = cobra ]; 
     if [ "$run_case" = gabls2 ]; 
     then
-        #gabls2 uses scalars
+        # GABLS2 uses scalars
         stats_file='../input/stats/nightly_stats_scalars.in'
+    elif [ "$run_case" = cobra ]; 
+        then
+           # Cobra uses scalars
+           stats_file='../input/stats/nightly_stats_scalars.in'
     else
         stats_file='../input/stats/nightly_stats.in'
         #stats_file='../stats/nobudgets_stats.in' 

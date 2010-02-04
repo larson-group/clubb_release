@@ -84,6 +84,10 @@
        [
           {'filename' => 'cobra_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'Carbon Dioxide, CO_2', 'axisLabel' => 'sclr1m [ppmv]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'cobra_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'sclr1m', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
        {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'cobra_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
