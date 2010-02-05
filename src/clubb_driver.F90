@@ -188,7 +188,7 @@ module clubb_driver
     use array_index, only: iisclr_rt, iisclr_thl, iisclr_CO2, & ! Variables
       iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2
 
-    use microphys_driver, only: init_microphys ! Subroutine
+    use microphys_driver, only: init_microphys, cleanup_microphys ! Subroutines
 
     use parameters_radiation, only: init_radiation ! Subroutine
 
@@ -1043,6 +1043,8 @@ module clubb_driver
     call finalize_extend_atm( )
 
     call cleanup_clubb_core( .false. )
+
+    call cleanup_microphys( )
 
     call stats_finalize( )
 

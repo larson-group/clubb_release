@@ -40,7 +40,7 @@ module microphys_driver
   implicit none
 
   ! Subroutines
-  public :: advance_microphys, init_microphys
+  public :: advance_microphys, init_microphys, cleanup_microphys
 
   private :: microphys_lhs, microphys_solve
   private :: adj_microphys_tndcy
@@ -2475,6 +2475,24 @@ module microphys_driver
 
       return
     end subroutine return_LH_index
+!===============================================================================
+
+    subroutine cleanup_microphys( )
+! Description:
+!   De-allocate arrays used by the microphysics
+! References:
+!   None
+!-------------------------------------------------------------------------------
+
+      implicit none
+
+      ! ---- Begin Code ----
+
+      deallocate( hydromet_list )
+      deallocate( l_hydromet_sed )
+
+      return
+    end subroutine cleanup_microphys
 !===============================================================================
 
   end module microphys_driver
