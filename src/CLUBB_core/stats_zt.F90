@@ -210,7 +210,7 @@ module stats_zt
         ium_sdmp
 
     use stats_variables, only: & 
-        ia, & 
+        imixt_frac, & 
         iw1, & 
         iw2, & 
         ivarnce_w1, & 
@@ -558,7 +558,7 @@ module stats_zt
     ium_f = 0
     ium_sdmp = 0
 
-    ia            = 0
+    imixt_frac    = 0
     iw1           = 0
     iw2           = 0
     ivarnce_w1    = 0
@@ -1898,9 +1898,9 @@ module stats_zt
              "um sponge damping [m s^{-2}]", "m s^{-2}", zt )
         k = k + 1
 
-      case ('a')
-        ia = k
-        call stat_assign( ia, "a", & 
+      case ('mixt_frac')
+        imixt_frac = k
+        call stat_assign( imixt_frac, "mixt_frac", & 
              "pdf parameter: mixture fraction [count]", "count", zt )
         k = k + 1
 

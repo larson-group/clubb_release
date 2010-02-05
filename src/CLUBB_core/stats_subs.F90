@@ -1243,7 +1243,7 @@ module stats_subs
         iradht
 
     use stats_variables, only: & 
-        ia, & 
+        imixt_frac, & 
         iw1, & 
         iw2, & 
         ivarnce_w1, & 
@@ -1558,7 +1558,7 @@ module stats_subs
       call stat_update_var( iAKm_rcc, AKm_rcc, zt )
 
       call stat_update_var( iradht, radht, zt )
-      call stat_update_var( ia, pdf_params%a, zt )
+      call stat_update_var( imixt_frac, pdf_params%mixt_frac, zt )
       call stat_update_var( iw1, pdf_params%w1, zt )
       call stat_update_var( iw2, pdf_params%w2, zt )
       call stat_update_var( ivarnce_w1, pdf_params%varnce_w1, zt )

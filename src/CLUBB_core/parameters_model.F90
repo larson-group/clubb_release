@@ -21,10 +21,10 @@ module parameters_model
 
 !$omp threadprivate(Lscale_max)
 
-  ! Maximum magnitude of PDF parameter `a'. 
-  real, public :: a_max_mag
+  ! Maximum magnitude of PDF parameter 'mixt_frac'. 
+  real, public :: mixt_frac_max_mag
 
-!$omp threadprivate(a_max_mag)
+!$omp threadprivate(mixt_frac_max_mag)
 
   ! Model parameters and constraints setup in the namelists
   real, public ::  & 
@@ -89,7 +89,7 @@ module parameters_model
     ! Formula from subroutine pdf_closure, where sigma_sqd_w = 0.4 and Skw =
     ! Skw_max_mag in this formula.  Note that this is constant, but can't appear
     ! with a Fortran parameter attribute, so we define it here. 
-    a_max_mag = 1.0 &
+    mixt_frac_max_mag = 1.0 &
       - ( 0.5 * ( 1.0 - Skw_max_mag / sqrt( 4.0 * ( 1.0 - 0.4 )**3 + Skw_max_mag_sqd ) ) )
 
     Lscale_max = Lscale_max_in

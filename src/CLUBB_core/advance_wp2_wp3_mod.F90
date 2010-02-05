@@ -35,7 +35,7 @@ contains
                               up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt, &
                               Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt, &
                               invrs_rho_ds_zm, invrs_rho_ds_zt, &
-                              thv_ds_zm, thv_ds_zt, wp3_zm, a, &
+                              thv_ds_zm, thv_ds_zt, wp3_zm, mixt_frac, &
                               wp2, wp3, wp2_zt, err_code )
 
     ! Description:
@@ -118,7 +118,7 @@ contains
       thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
       thv_ds_zt,       & ! Dry, base-state theta_v on thermo. levs.  [K]
       wp3_zm,          & ! w'^3 interpolated to momentum levels      [m^3/s^3]
-      a                  ! Weight of 1st normal distribution         [-]
+      mixt_frac          ! Weight of 1st normal distribution         [-]
 
     ! Input/Output
     real, dimension(gr%nnzp), intent(inout) ::  & 
@@ -168,11 +168,11 @@ contains
 !        tauw3t = tau_zt
 !     .           / ( 1.
 !     .                   + 3.0 * max(
-!     .                     min(1.-(a-0.01)/(0.05-0.01)
+!     .                     min(1.-(mixt_frac-0.01)/(0.05-0.01)
 !     .                         ,1.)
 !     .                         ,0.)
 !     .                   + 3.0 * max(
-!     .                     min(1.-(a-0.99)/(0.95-0.99)
+!     .                     min(1.-(mixt_frac-0.99)/(0.95-0.99)
 !     .                         ,1.)
 !     .                         ,0.)
 !     .              )
@@ -320,7 +320,7 @@ contains
       write(fstderr,*) "tau_zt = ", tau_zt
       write(fstderr,*) "Skw_zm = ", Skw_zm
       write(fstderr,*) "Skw_zt = ", Skw_zt
-      write(fstderr,*) "a = ", a
+      write(fstderr,*) "mixt_frac = ", mixt_frac
       write(fstderr,*) "wp2zt = ", wp2_zt
 
       write(fstderr,*) "Intent(in/out)"
@@ -524,8 +524,8 @@ contains
       solut ! Solution to band diagonal system.
 
     real, dimension(gr%nnzp) ::  & 
-      a1,  & ! a_1 (momentum levels); See eqn. 24 in `Equations for HOC' [-]
-      a3     ! a_3 (momentum levels); See eqn. 26 in `Equations for HOC' [-]
+      a1,  & ! a_1 (momentum levels); See eqn. 23 in `Equations for HOC' [-]
+      a3     ! a_3 (momentum levels); See eqn. 25 in `Equations for HOC' [-]
 
     real, dimension(gr%nnzp) ::  & 
       a1_zt,  & ! a_1 interpolated to thermodynamic levels        [-]
@@ -969,7 +969,7 @@ contains
       wm_zt,           & ! w wind component on thermodynamic levels   [m/s]
       a1,              & ! sigma_sqd_w term a_1 (momentum levels)     [-]
       a1_zt,           & ! a_1 interpolated to thermodynamic levels   [-]
-      a3,              & ! sigma_sqd_w term a_1 (momentum levels)     [-]
+      a3,              & ! sigma_sqd_w term a_3 (momentum levels)     [-]
       a3_zt,           & ! a_3 interpolated to thermodynamic levels   [-]
       Kw1,             & ! Coefficient of eddy diffusivity for w'^2   [m^2/s]
       Kw8,             & ! Coefficient of eddy diffusivity for w'^3   [m^2/s]
@@ -1536,7 +1536,7 @@ contains
       wp3_zm,          & ! w'^3 interpolated to momentum levels      [m^3/s^3]
       a1,              & ! sigma_sqd_w term a_1 (momentum levels)    [-]
       a1_zt,           & ! a_1 interpolated to thermodynamic levels  [-]
-      a3,              & ! sigma_sqd_w term a_1 (momentum levels)    [-]
+      a3,              & ! sigma_sqd_w term a_3 (momentum levels)    [-]
       a3_zt,           & ! a_3 interpolated to thermodynamic levels  [-]
       wpthvp,          & ! w'th_v' (momentum levels)                 [K m/s]
       wp2thvp,         & ! w'^2th_v' (thermodynamic levels)          [K m^2/s^2]

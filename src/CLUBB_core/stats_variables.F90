@@ -377,7 +377,7 @@ module stats_variables
 
   ! PDF parameters
   integer, public :: & 
-     ia, & 
+     imixt_frac, & 
      iw1, & 
      iw2, & 
      ivarnce_w1, & 
@@ -402,7 +402,7 @@ module stats_variables
      istdev_s2, & 
      irrtthl
 
-!$omp   threadprivate(ia, iw1, iw2, ivarnce_w1, ivarnce_w2, ithl1, ithl2, ivarnce_thl1, &
+!$omp   threadprivate(imixt_frac, iw1, iw2, ivarnce_w1, ivarnce_w2, ithl1, ithl2, ivarnce_thl1, &
 !$omp     ivarnce_thl2, irt1, irt2, ivarnce_rt1, ivarnce_rt2, irc1, irc2, &
 !$omp     irsl1, irsl2, icloud_frac1, icloud_frac2, is1, is2, istdev_s1, istdev_s2, &
 !$omp     irrtthl)

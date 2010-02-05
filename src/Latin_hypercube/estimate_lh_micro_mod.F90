@@ -102,7 +102,7 @@ module estimate_lh_micro_mod
       lh_thlm_mc   ! LH estimate of time tendency of liquid potential temperature [K/s]
 
     real, dimension(nnzp), intent(out) :: &
-      lh_AKm,   & ! Monte Carlo estimate of Kessler autoconversion [kg/kg/s]
+      lh_AKm,    & ! Monte Carlo estimate of Kessler autoconversion [kg/kg/s]
       AKm,       & ! Exact Kessler autoconversion, AKm,             [kg/kg/s]
       AKstd,     & ! Exact standard deviation of gba Kessler        [kg/kg/s]
       AKstd_cld, & ! Exact w/in cloud std of gba Kessler            [kg/kg/s]
@@ -136,7 +136,7 @@ module estimate_lh_micro_mod
     integer :: level
 
     ! PDF parameters
-    real :: a
+    real :: mixt_frac
 !   real :: w1, w2
 !   real :: sw1, sw2
 !   real :: thl1, thl2, sthl1, sthl2
@@ -195,7 +195,7 @@ module estimate_lh_micro_mod
       !thl2       = pdf_params%thl2(level)
       !sthl1      = pdf_params%sthl1(level)
       !sthl2      = pdf_params%sthl2(level)
-      a           = pdf_params%a(level)
+      mixt_frac   = pdf_params%mixt_frac(level)
 !     rc1         = pdf_params%rc1(level)
 !     rc2         = pdf_params%rc2(level)
 !     cloud_frac1 = pdf_params%cloud_frac1(level)
@@ -209,8 +209,8 @@ module estimate_lh_micro_mod
 
       ! Compute mean cloud fraction and cloud water
 
-!     cloud_frac = a * cloud_frac1 + (1-a) * cloud_frac2
-!     rcm        = a * rc1 + (1-a) * rc2
+!     cloud_frac = mixt_frac * cloud_frac1 + (1-mixt_frac) * cloud_frac2
+!     rcm        = mixt_frac * rc1 + (1-mixt_frac) * rc2
 
       !------------------------------------------------------------------------
       ! Call Kessler autoconversion microphysics using Latin hypercube sample
@@ -229,7 +229,8 @@ module estimate_lh_micro_mod
       ! Call microphysics, i.e. Kessler autoconversion.
       ! A_K = (1e-3/s)*(rc-0.5kg/kg)*H(rc-0.5kg/kg)
       call autoconv_driver &
-           ( n_micro_calls, d_variables, dble( a ), dble( cloud_frac1 ), dble( cloud_frac2 ), &
+           ( n_micro_calls, d_variables, dble( mixt_frac ), &
+             dble( cloud_frac1 ), dble( cloud_frac2 ), &
              rcm_sample, & 
                !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
              X_u_all_levs(level,:,:), lh_AKm_dp )
@@ -239,7 +240,7 @@ module estimate_lh_micro_mod
 
       ! Compute Monte Carlo estimate of liquid for test purposes.
       call rc_estimate &
-           ( n_micro_calls, d_variables, dble( a ), dble( cloud_frac1 ), &
+           ( n_micro_calls, d_variables, dble( mixt_frac ), dble( cloud_frac1 ), &
              dble( cloud_frac2 ), rcm_sample, & 
              ! X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
              X_u_all_levs(level,:,:), lh_rcm_avg_dp )
@@ -266,7 +267,7 @@ module estimate_lh_micro_mod
       cloud_frac2_crit  = 0.5*(1+erf(sn2_crit/sqrt(2.0)))
       AK2               = K_one * ( (s2-r_crit)*cloud_frac2_crit  & 
                          + stdev_s2*exp(-0.5*sn2_crit**2)/(sqrt(2*pi)) )
-      AKm(level)        = a * AK1 + (1-a) * AK2
+      AKm(level)        = mixt_frac * AK1 + (1-mixt_frac) * AK2
 
       ! Exact Kessler standard deviation in units of (kg/kg)/s
       ! For some reason, sometimes AK1var, AK2var are negative
@@ -277,14 +278,14 @@ module estimate_lh_micro_mod
                + K_one * K_one * (stdev_s2**2) * cloud_frac2_crit  & 
                - AK2**2  )
       ! This formula is for a grid box average:
-      AKstd(level)  = sqrt(    a  * ( (AK1-AKm(level))**2 + AK1var ) & 
-                  + (1-a) * ( (AK2-AKm(level))**2 + AK2var ) & 
+      AKstd(level)  = sqrt( mixt_frac * ( (AK1-AKm(level))**2 + AK1var ) & 
+                  + (1-mixt_frac) * ( (AK2-AKm(level))**2 + AK2var ) & 
                   )
       ! This formula is for a within-cloud average:
       if ( cloud_frac(level) > 0 ) then
         AKstd_cld(level) = sqrt( max( zero_threshold,   & 
-                  (1./cloud_frac(level)) * ( a  * ( AK1**2 + AK1var ) & 
-                            + (1-a) * ( AK2**2 + AK2var )  & 
+                  (1./cloud_frac(level)) * ( mixt_frac * ( AK1**2 + AK1var ) & 
+                            + (1-mixt_frac) * ( AK2**2 + AK2var )  & 
                             ) & 
                  - (AKm(level)/cloud_frac(level))**2  ) & 
                         )
@@ -306,7 +307,7 @@ module estimate_lh_micro_mod
         AKm_rcc(level) = zero_threshold
       end if
 
-!       print*, 'a=', a
+!       print*, 'mixt_frac=', mixt_frac
 !       print*, 's1=', s1
 !       print*, 's2=', s2
 !       print*, 'stdev_s1=', stdev_s1
@@ -328,7 +329,8 @@ module estimate_lh_micro_mod
       ! in autoconv_driver.
       ! Only works if coeff=expn=1 in autoconversion_driver.
       !------------------------------------------------------------------------
-      !     call autoconv_driver( n, d, a, cloud_frac1, cloud_frac2, X_nl( 1:n, 3 ), &
+      !     call autoconv_driver( n, d, mixt_frac, &
+      !                           cloud_frac1, cloud_frac2, X_nl( 1:n, 3 ), &
       !                           X_nl( 1:n, 3 ), X_nl( 1:n, 4 ), &
       !                           X_nl(1:n, 5), X_u, AKm2 )
 
@@ -336,7 +338,7 @@ module estimate_lh_micro_mod
       ! Compute within-cloud vertical velocity, avgd over full domain.
       !        C_w_cld1 =  cloud_frac1*w1
       !        C_w_cld2 =  cloud_frac2*w2
-      !        w_cld_avg = a * C_w_cld1 + (1-a) * C_w_cld2
+      !        w_cld_avg = mixt_frac * C_w_cld1 + (1-mixt_frac) * C_w_cld2
 
       ! The following two values should match
       !       print*, 'w_cld_avg=', w_cld_avg
@@ -360,7 +362,8 @@ module estimate_lh_micro_mod
     return
   end subroutine estimate_lh_micro
 !-----------------------------------------------------------------------
-  subroutine autoconv_driver( n_micro_calls, d_variables, a, cloud_frac1, cloud_frac2, rc, &
+  subroutine autoconv_driver( n_micro_calls, d_variables, mixt_frac, &
+                              cloud_frac1, cloud_frac2, rc, &
                              !w, Nc, rr, &
                               X_u_one_lev, ac_m )
 ! Description:
@@ -392,7 +395,7 @@ module estimate_lh_micro_mod
       d_variables      ! Number of variates (normally=5)
 
     double precision, intent(in) :: &
-      a,                       & ! Mixture fraction of Gaussians
+      mixt_frac,               & ! Mixture fraction of Gaussians
       cloud_frac1, cloud_frac2   ! Cloud fraction associated w/ 1st, 2nd mixture component
 
     double precision, dimension(n_micro_calls), intent(in) :: &
@@ -423,11 +426,11 @@ module estimate_lh_micro_mod
 
     ! ---- Begin Code ----
 
-    ! Handle some possible errors re: proper ranges of a, cloud_frac1, cloud_frac2.
-    if ( a > 1.0d0 .or. a < 0.0d0 ) then
+    ! Handle some possible errors re: proper ranges of mixt_frac, cloud_frac1, cloud_frac2.
+    if ( mixt_frac > 1.0d0 .or. mixt_frac < 0.0d0 ) then
       write(fstderr,*) 'Error in autoconv_driver:  ',  &
-                       'mixture fraction, a, does not lie in [0,1].'
-      write(fstderr,*) 'a = ', a
+                       'mixture fraction, mixt_frac, does not lie in [0,1].'
+      write(fstderr,*) 'mixt_frac = ', mixt_frac
       stop
     end if
     if ( cloud_frac1 > 1.0d0 .or. cloud_frac1 < 0.0d0 ) then
@@ -446,7 +449,7 @@ module estimate_lh_micro_mod
     ! Make sure there is some cloud.
     ! Disable this for now, so we can loop over the whole domain.
     ! -dschanen 3 June 2009
-!   if ( a*cloud_frac1 < 0.001d0 .and. (1-a)*cloud_frac2 < 0.001d0 ) then
+!   if ( mixt_frac*cloud_frac1 < 0.001d0 .and. (1-mixt_frac)*cloud_frac2 < 0.001d0 ) then
 !     if ( clubb_at_least_debug_level( 1 ) ) then
 !       write(fstderr,*) 'Error in autoconv_driver:  ',  &
 !                        'there is no cloud or almost no cloud!'
@@ -475,7 +478,8 @@ module estimate_lh_micro_mod
       ! Choose which mixture fraction we are in.
       ! Account for cloud fraction.
       ! Follow M. E. Johnson (1987), p. 56.
-      fraction_1 = a*cloud_frac1/max( a*cloud_frac1+(1-a)*cloud_frac2, epsilon( a ) )
+      fraction_1 = mixt_frac*cloud_frac1 / &
+                     max( mixt_frac*cloud_frac1+(1-mixt_frac)*cloud_frac2, epsilon( mixt_frac ) )
 !          print*, 'fraction_1= ', fraction_1
 
 ! V. Larson change to try to fix sampling
@@ -545,7 +549,7 @@ module estimate_lh_micro_mod
       end if
 
       ! Grid box average.
-      ac_m = a*cloud_frac1*ac_m1 + (1-a)*cloud_frac2*ac_m2
+      ac_m = mixt_frac*cloud_frac1*ac_m1 + (1-mixt_frac)*cloud_frac2*ac_m2
 
     else
       ac_m = ( ac_m1 + ac_m2 ) / dble( n_micro_calls )
@@ -715,7 +719,7 @@ module estimate_lh_micro_mod
 
     double precision, dimension(nnzp) :: &
       cloud_frac1, cloud_frac2, & ! Cloud fraction for plume 1,2        [-]
-      a, &  ! PDF parameter a
+      mixt_frac, &  ! PDF parameter mixt_frac
       fraction_1
 
     integer :: i, k, sample
@@ -724,7 +728,7 @@ module estimate_lh_micro_mod
 
     ! ---- Begin Code ----
 
-    a(:)  = dble( pdf_params%a(:) )
+    mixt_frac(:)  = dble( pdf_params%mixt_frac(:) )
 
     if ( l_cloud_weighted_averaging ) then
       cloud_frac1(:) = dble( pdf_params%cloud_frac1(:) )
@@ -765,7 +769,8 @@ module estimate_lh_micro_mod
     ! Choose which mixture fraction we are in.
     ! Account for cloud fraction.
     ! Follow M. E. Johnson (1987), p. 56.
-    fraction_1(:) = a(:)*cloud_frac1(:)/( a(:)*cloud_frac1(:)+(1.-a(:))*cloud_frac2(:) )
+    fraction_1(:) = mixt_frac(:)*cloud_frac1(:) / &
+                    ( mixt_frac(:)*cloud_frac1(:)+(1.-mixt_frac(:))*cloud_frac2(:) )
 !   print*, 'fraction_1= ', fraction_1
 
     do sample = 1, n_micro_calls
@@ -968,15 +973,18 @@ module estimate_lh_micro_mod
 
       ! Grid box average.
       forall( i = 1:hydromet_dim )
-        lh_hydromet_vel(:,i) = real( a * cloud_frac1 * lh_hydromet_vel_m1(:,i) &
-          + (1.d0-a) * cloud_frac2 * lh_hydromet_vel_m2(:,i) )
-        lh_hydromet_mc(:,i)  = real( a * cloud_frac1 * lh_hydromet_mc_m1(:,i) &
-          + (1.d0-a) * cloud_frac2 * lh_hydromet_mc_m2(:,i) )
+        lh_hydromet_vel(:,i) = real( mixt_frac * cloud_frac1 * lh_hydromet_vel_m1(:,i) &
+          + (1.d0-mixt_frac) * cloud_frac2 * lh_hydromet_vel_m2(:,i) )
+        lh_hydromet_mc(:,i)  = real( mixt_frac * cloud_frac1 * lh_hydromet_mc_m1(:,i) &
+          + (1.d0-mixt_frac) * cloud_frac2 * lh_hydromet_mc_m2(:,i) )
       end forall
 
-      lh_rcm_mc = real( a * cloud_frac1 * lh_rcm_mc_m1 + (1.d0-a) * cloud_frac2 * lh_rcm_mc_m2 )
-      lh_rvm_mc = real( a * cloud_frac1 * lh_rvm_mc_m1 + (1.d0-a) * cloud_frac2 * lh_rvm_mc_m2 )
-      lh_thlm_mc = real( a * cloud_frac1 * lh_thlm_mc_m1 + (1.d0-a) * cloud_frac2 * lh_thlm_mc_m2 )
+      lh_rcm_mc = real( mixt_frac * cloud_frac1 * lh_rcm_mc_m1 + &
+                        (1.d0-mixt_frac) * cloud_frac2 * lh_rcm_mc_m2 )
+      lh_rvm_mc = real( mixt_frac * cloud_frac1 * lh_rvm_mc_m1 + &
+                        (1.d0-mixt_frac) * cloud_frac2 * lh_rvm_mc_m2 )
+      lh_thlm_mc = real( mixt_frac * cloud_frac1 * lh_thlm_mc_m1 + &
+                         (1.d0-mixt_frac) * cloud_frac2 * lh_thlm_mc_m2 )
 
     else ! Standard averaging
 
@@ -997,7 +1005,7 @@ module estimate_lh_micro_mod
   end subroutine lh_microphys_driver
 
 !----------------------------------------------------------------------
-  subroutine rc_estimate( n_micro_calls, d_variables, a, C1, C2, rc, & ! w,   & 
+  subroutine rc_estimate( n_micro_calls, d_variables, mixt_frac, C1, C2, rc, & ! w,   & 
                          !N_pts, rr, 
                            X_u_one_lev, rc_m )
 ! Description:
@@ -1024,8 +1032,8 @@ module estimate_lh_micro_mod
       d_variables      ! Number of variates (normally=5)
 
     double precision, intent(in) :: &
-      a,      & ! Mixture fraction of Gaussians
-      C1, C2    ! Cloud fraction associated w/ 1st, 2nd mixture component
+      mixt_frac, & ! Mixture fraction of Gaussians
+      C1, C2       ! Cloud fraction associated w/ 1st, 2nd mixture component
 
     double precision, dimension(n_micro_calls), intent(in) :: &
       rc !, & ! n in-cloud values of spec liq water content [kg/kg].
@@ -1052,10 +1060,10 @@ module estimate_lh_micro_mod
 
     ! ---- Begin Code ----
 
-    ! Handle some possible errors re: proper ranges of a, C1, C2.
-    if ( a > 1.0d0 .or. a < 0.0d0 ) then
+    ! Handle some possible errors re: proper ranges of mixt_frac, C1, C2.
+    if ( mixt_frac > 1.0d0 .or. mixt_frac < 0.0d0 ) then
       write(fstderr,*) 'Error in rc_estimate:  ',  &
-                       'mixture fraction, a, does not lie in [0,1].'
+                       'mixture fraction, mixt_frac, does not lie in [0,1].'
       stop
     end if
     if ( C1 > 1.0d0 .or. C1 < 0.0d0 ) then
@@ -1072,7 +1080,7 @@ module estimate_lh_micro_mod
     ! Make sure there is some cloud.
     ! Disable this for now, so we can loop over the whole domain.
     ! -dschanen 3 June 2009
-!   if ( a*C1 < 0.001d0 .and. (1-a)*C2 < 0.001d0 ) then
+!   if ( mixt_frac*C1 < 0.001d0 .and. (1-mixt_frac)*C2 < 0.001d0 ) then
 !     if ( clubb_at_least_debug_level( 1 ) ) then
 !       write(fstderr,*) 'Error in rc_estimate:  ',  &
 !                        'there is no cloud or almost no cloud!'
@@ -1097,7 +1105,7 @@ module estimate_lh_micro_mod
       ! Choose which mixture fraction we are in.
       ! Account for cloud fraction.
       ! Follow M. E. Johnson (1987), p. 56.
-      fraction_1 = a*C1/max( (a*C1+(1-a)*C2), epsilon( a ) )
+      fraction_1 = mixt_frac*C1/max( (mixt_frac*C1+(1-mixt_frac)*C2), epsilon( mixt_frac ) )
       if ( X_u_one_lev(sample,d_variables+1) < fraction_1 ) then
         ! Use an idealized formula to compute liquid
         !      in mixture comp. 1
@@ -1153,7 +1161,7 @@ module estimate_lh_micro_mod
         rc_m2 = rc_m1
       end if
       ! Grid box average.
-      rc_m = a*C1*rc_m1 + (1.-a)*C2*rc_m2
+      rc_m = mixt_frac*C1*rc_m1 + (1.-mixt_frac)*C2*rc_m2
 
     end if ! l_cloud_weighted_averaging
 

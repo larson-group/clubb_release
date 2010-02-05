@@ -2536,7 +2536,7 @@ module clubb_driver
         input_Lscale, input_Lscale_up, input_Lscale_down, & 
         input_Kh_zt, input_Kh_zm, input_tau_zm, input_tau_zt, & 
         input_wpthvp, &
-        input_thl1, input_thl2, input_a, input_s1, input_s2, &
+        input_thl1, input_thl2, input_mixt_frac, input_s1, input_s2, &
         input_stdev_s1, input_stdev_s2, input_rc1, input_rc2, &
         input_thvm, input_rrainm,input_Nrm,  & 
         input_rsnowm, input_ricem, input_rgraupelm,  & 
@@ -2631,7 +2631,7 @@ module clubb_driver
     input_wpthvp = .true.
     input_thl1 = .true.
     input_thl2 = .true.
-    input_a    = .true.
+    input_mixt_frac = .true.
     input_s1   = .true.
     input_s2   = .true.
     input_stdev_s1  = .true.

@@ -240,7 +240,7 @@ module variables_diagnostic_module
               pdf_params_zm%varnce_rt1(1:nzmax),  pdf_params_zm%varnce_rt2(1:nzmax),  &
               pdf_params_zm%thl1(1:nzmax),        pdf_params_zm%thl2(1:nzmax),  &
               pdf_params_zm%varnce_thl1(1:nzmax), pdf_params_zm%varnce_thl2(1:nzmax),  &
-              pdf_params_zm%a(1:nzmax),           pdf_params_zm%rrtthl(1:nzmax),  &
+              pdf_params_zm%mixt_frac(1:nzmax),   pdf_params_zm%rrtthl(1:nzmax),  &
               pdf_params_zm%rc1(1:nzmax),         pdf_params_zm%rc2(1:nzmax),  &
               pdf_params_zm%rsl1(1:nzmax),        pdf_params_zm%rsl2(1:nzmax),  &
               pdf_params_zm%cloud_frac1(1:nzmax), pdf_params_zm%cloud_frac2(1:nzmax),  &
@@ -370,7 +370,7 @@ module variables_diagnostic_module
     pdf_params_zm%thl2        = 0.0
     pdf_params_zm%varnce_thl1 = 0.0
     pdf_params_zm%varnce_thl2 = 0.0
-    pdf_params_zm%a           = 0.0
+    pdf_params_zm%mixt_frac   = 0.0
     pdf_params_zm%rc1         = 0.0
     pdf_params_zm%rc2         = 0.0
     pdf_params_zm%rsl1        = 0.0
@@ -507,7 +507,7 @@ module variables_diagnostic_module
                 pdf_params_zm%varnce_rt1,  pdf_params_zm%varnce_rt2,  &
                 pdf_params_zm%thl1,        pdf_params_zm%thl2,  &
                 pdf_params_zm%varnce_thl1, pdf_params_zm%varnce_thl2,  &
-                pdf_params_zm%a,           pdf_params_zm%rrtthl,  &
+                pdf_params_zm%mixt_frac,   pdf_params_zm%rrtthl,  &
                 pdf_params_zm%rc1,         pdf_params_zm%rc2,  &
                 pdf_params_zm%rsl1,        pdf_params_zm%rsl2,  &
                 pdf_params_zm%cloud_frac1, pdf_params_zm%cloud_frac2,  &

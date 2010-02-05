@@ -50,7 +50,7 @@ vars_zt =
 'Nsnowm_bt', 'Nsnowm_mc', 'Nsnowm_dff', 'Nsnowm_ma', 'Nsnowm_sd', 'Nsnowm_cl', 
 'Nim_bt', 'Nim_mc', 'Nim_dff', 'Nim_ma', 'Nim_sd', 'Nim_cl', 
 'Ngraupelm_bt', 'Ngraupelm_mc', 'Ngraupelm_dff', 'Ngraupelm_ma', 'Ngraupelm_sd', 'Ngraupelm_cl', 
-'a', 'w1', 'w2', 'varnce_w1', 'varnce_w2', 'thl1', 'thl2', 'varnce_thl1', 'varnce_thl2',
+'mixt_frac', 'w1', 'w2', 'varnce_w1', 'varnce_w2', 'thl1', 'thl2', 'varnce_thl1', 'varnce_thl2',
 'rt1', 'rt2', 'varnce_rt1', 'varnce_rt2', 'rc1', 'rc2', 'rsl1', 'rsl2', 
 'cloud_frac1', 'cloud_frac2',
 's1', 's2', 'stdev_s1', 'stdev_s2', 'rrtthl',

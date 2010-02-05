@@ -202,7 +202,7 @@ module KK_microphys_module
       rrainm,          & ! Rain water mixing ratio            [kg/kg]
       Nrm,             & ! Rain drop number conc.             [number/kg]
       thl1, thl2,      & ! PDF parameters thl1 &thl2          [K]
-      a,               & ! PDF parameter a                    [-]
+      mixt_frac,       & ! PDF parameter mixt_frac            [-]
       s1, s2,          & ! PDF parameters s1 & s2             [kg/kg]
       stdev_s1,        & ! Standard deviation of s1           [kg/kg]
       stdev_s2,        & ! Standard deviation of s2           [kg/kg]
@@ -333,13 +333,13 @@ module KK_microphys_module
     end where
 
     ! Assign pointers
-    thl1 => pdf_params%thl1(:)
-    thl2 => pdf_params%thl2(:)
-    a    => pdf_params%a(:)
-    rc1  => pdf_params%rc1(:)
-    rc2  => pdf_params%rc2(:)
-    s1   => pdf_params%s1(:)
-    s2   => pdf_params%s2(:)
+    thl1      => pdf_params%thl1(:)
+    thl2      => pdf_params%thl2(:)
+    mixt_frac => pdf_params%mixt_frac(:)
+    rc1       => pdf_params%rc1(:)
+    rc2       => pdf_params%rc2(:)
+    s1        => pdf_params%s1(:)
+    s2        => pdf_params%s2(:)
     stdev_s1  => pdf_params%stdev_s1(:)
     stdev_s2  => pdf_params%stdev_s2(:)
 
@@ -468,7 +468,7 @@ module KK_microphys_module
       rrainm_cond(k)  & 
       = cond_evap_rrainm( l_local_kk, rrainm(k), Nrm(k), & 
                           s1(k), stdev_s1(k), s2(k), stdev_s2(k), & 
-                          thl1(k), thl2(k), rc1(k), rc2(k), a(k), & 
+                          thl1(k), thl2(k), rc1(k), rc2(k), mixt_frac(k), & 
                           p_in_Pa(k), exner(k), T_in_K(k), Supsat(k),  & 
                           rrp2_on_rrainm2(k), Nrp2_on_Nrm2(k), corr_srr_NL(k), & 
                           corr_sNr_NL(k), corr_rrNr_LL(k) )
@@ -487,7 +487,7 @@ module KK_microphys_module
 
       rrainm_auto(k)  & 
       = autoconv_rrainm( l_local_kk, rcm(k), Ncm(k), s1(k), stdev_s1(k),  & 
-                         s2(k), stdev_s2(k), a(k), rho(k), & 
+                         s2(k), stdev_s2(k), mixt_frac(k), rho(k), & 
                          Ncp2_on_Ncm2(k), corr_sNc_NL(k) )
 
 !     endif ! l_latin_hypercube_sampling
@@ -495,7 +495,7 @@ module KK_microphys_module
 
       rrainm_accr(k)  & 
       = accretion_rrainm( l_local_kk, rcm(k), rrainm(k), s1(k), stdev_s1(k), & 
-                          s2(k), stdev_s2(k), a(k),  & 
+                          s2(k), stdev_s2(k), mixt_frac(k),  & 
                           rrp2_on_rrainm2(k), corr_srr_NL(k) )
 
       ! Now find the elements that make up the right-hand side of the
@@ -822,7 +822,7 @@ module KK_microphys_module
 
   FUNCTION cond_evap_rrainm( l_local_kk, rrainm, Nrm, & 
                           s1, stdev_s1, s2, stdev_s2, & 
-                          thl1, thl2, rc1, rc2, a, & 
+                          thl1, thl2, rc1, rc2, mixt_frac, & 
                           p_in_Pa, exner, T_in_K, Supsat,  & 
                           rrp2_on_rrainm2, Nrp2_on_Nrm2, corr_srr_NL, & 
                           corr_sNr_NL, corr_rrNr_LL  )
@@ -855,14 +855,14 @@ module KK_microphys_module
       Nrm,       & ! Grid-box average Nrm              [kg^-1]
 !     Nrp2,      & ! Grid-box Nr variance              [kg^-2]
       s1,        & ! Plume 1 average s                 [kg kg^-1]
-      stdev_s1,       & ! Plume 1 sigma s1 (not sigma^2 s1) [kg kg^-1]
+      stdev_s1,  & ! Plume 1 sigma s1 (not sigma^2 s1) [kg kg^-1]
       s2,        & ! Plume 2 average s                 [kg kg^-1]
-      stdev_s2,       & ! Plume 2 sigma s2 (not sigma^2 s2) [kg kg^-1]
+      stdev_s2,  & ! Plume 2 sigma s2 (not sigma^2 s2) [kg kg^-1]
       thl1,      & ! Plume 1 average theta-l           [K]
       thl2,      & ! Plume 2 average theta-l           [K]
       rc1,       & ! Plume 1 average rc                [kg kg^-1]
       rc2,       & ! Plume 2 average rc                [kg kg^-1]
-      a            ! Relative weight of each individual Gaussian "plume." [-]
+      mixt_frac    ! Relative weight of each individual Gaussian "plume." [-]
 
     real, intent(in) :: &
       p_in_Pa,        &! Grid-box average pressure        [Pa]
@@ -999,13 +999,13 @@ module KK_microphys_module
 
 
         cond_evap_rrainm =  & 
-         ( a ) * plume_1_constants & 
+         ( mixt_frac ) * plume_1_constants & 
          * PDF_TRIVAR_2G_LN_LN ( mu_s1, mu_rr, mu_Nr, & 
                                  sigma_s1, sigma_rr, sigma_Nr, & 
                                  corr_srr, corr_sNr, corr_rrNr, & 
                                  alpha_exp, beta_exp, gamma_exp ) & 
         + & 
-         (1-a) * plume_2_constants & 
+         (1-mixt_frac) * plume_2_constants & 
          * PDF_TRIVAR_2G_LN_LN ( mu_s2, mu_rr, mu_Nr, & 
                                  sigma_s2, sigma_rr, sigma_Nr, & 
                                  corr_srr, corr_sNr, corr_rrNr, & 
@@ -1128,7 +1128,7 @@ module KK_microphys_module
   !-----------------------------------------------------------------------
 
   FUNCTION autoconv_rrainm( l_local_kk, rcm, Ncm, s1, stdev_s1,  & 
-                         s2, stdev_s2, a, rho, & 
+                         s2, stdev_s2, mixt_frac, rho, & 
                          Ncp2_on_Ncm2, corr_sNc_NL )
 
     USE constants, only: & 
@@ -1151,7 +1151,7 @@ module KK_microphys_module
     REAL, INTENT(IN):: s2          ! Plume 2 average s        [kg kg^-1]
     REAL, INTENT(IN):: stdev_s2    ! Plume 2 sigma s2 (not sigma^2 s2)
     !                          [kg kg^-1]
-    REAL, INTENT(IN):: a           ! Relative weight of each individual
+    REAL, INTENT(IN):: mixt_frac   ! Relative weight of each individual
     ! Gaussian "plume."        []
     REAL, INTENT(IN):: rho        ! Grid-box average density (t-level)
     !                          [kg m^-3]
@@ -1218,10 +1218,10 @@ module KK_microphys_module
 
 
         autoconv_rrainm = 7.4188E13 * rho**(-1.79) * ( & 
-             ( a )  & 
+             ( mixt_frac )  & 
            * PDF_BIVAR_2G_LN ( mu_s1, mu_Nc, sigma_s1, sigma_Nc, & 
                                corr_sNc, alpha_exp, beta_exp ) & 
-         +   (1-a) & 
+         +   (1-mixt_frac) & 
            * PDF_BIVAR_2G_LN ( mu_s2, mu_Nc, sigma_s2, sigma_Nc, & 
                                corr_sNc, alpha_exp, beta_exp ) & 
                                                    )
@@ -1305,7 +1305,7 @@ module KK_microphys_module
   !-----------------------------------------------------------------------
 
   FUNCTION accretion_rrainm( l_local_kk, rcm, rrainm, s1, stdev_s1, & 
-                          s2, stdev_s2, a,  & 
+                          s2, stdev_s2, mixt_frac,  & 
                           rrp2_on_rrainm2, corr_srr_NL )
 
     USE constants, only: & 
@@ -1328,7 +1328,7 @@ module KK_microphys_module
     REAL, INTENT(IN):: s2          ! Plume 2 average s        [kg kg^-1]
     REAL, INTENT(IN):: stdev_s2         ! Plume 2 sigma s2 (not sigma^2 s2)
     !                          [kg kg^-1]
-    REAL, INTENT(IN):: a           ! Relative weight of each individual
+    REAL, INTENT(IN):: mixt_frac        ! Relative weight of each individual
     ! Gaussian "plume."        []
     REAL, INTENT(IN):: rrp2_on_rrainm2   ! rrp2/rrainm^2               []
     REAL, INTENT(IN):: corr_srr_NL ! Correlation of s and rr  []
@@ -1392,10 +1392,10 @@ module KK_microphys_module
 
 
         accretion_rrainm = 67.0 * ( & 
-             ( a )  & 
+             ( mixt_frac )  & 
            * PDF_BIVAR_2G_LN ( mu_s1, mu_rr, sigma_s1, sigma_rr, & 
                                corr_srr, alpha_exp, beta_exp ) & 
-         +   (1-a) & 
+         +   (1-mixt_frac) & 
            * PDF_BIVAR_2G_LN ( mu_s2, mu_rr, sigma_s2, sigma_rr, & 
                                corr_srr, alpha_exp, beta_exp ) & 
                                )
@@ -1501,10 +1501,10 @@ module KK_microphys_module
   ! INT(-inf:0) INT(-inf:inf) INT(-inf:inf)
   !             X1^alpha exp( beta*X2 + gamma*X3 ) P(X1,X2,X3) dX3 dX2 dX1
   !
-  ! since X1 is a double Gaussian, P(X1,X2,X3) =  ( a ) P_1(X1,X2,X3)
-  !                                             + (1-a) P_2(X1,X2,X3)
+  ! since X1 is a double Gaussian, P(X1,X2,X3) =  ( mixt_frac ) P_1(X1,X2,X3)
+  !                                             + (1-mixt_frac) P_2(X1,X2,X3)
   !
-  ! where "a" is a constant and is the relative weight of each individual
+  ! where "mixt_frac" is a constant and is the relative weight of each individual
   ! Gaussian "plume".
   !
   ! P_1(X1,X2,X3) and P_2(X1,X2,X3) are simply the equation for a
@@ -1932,10 +1932,10 @@ module KK_microphys_module
   ! INT(0:inf) INT(-inf:inf)
   !             X1^alpha exp( beta*X2 ) P(X1,X2) dX2 dX1
   !
-  ! since X1 is a double Gaussian, P(X1,X2) =  ( a ) P_1(X1,X2)
-  !                                          + (1-a) P_2(X1,X2)
+  ! since X1 is a double Gaussian, P(X1,X2) =  ( mixt_frac ) P_1(X1,X2)
+  !                                          + (1-mixt_frac) P_2(X1,X2)
   !
-  ! where "a" is a constant and is the relative weight of each individual
+  ! where "mixt_frac" is a constant and is the relative weight of each individual
   ! Gaussian "plume".
   !
   ! P_1(X1,X2) and P_2(X1,X2) are simply the equation for a
@@ -2450,10 +2450,10 @@ module KK_microphys_module
 !        ! INT(-inf:0) INT(-inf:inf) INT(-inf:inf)
 !        !             X1^alpha exp( beta*X2 + gamma*X3 ) P(X1,X2,X3) dX3 dX2 dX1
 !        !
-!        ! since X1 is a double Gaussian, P(X1,X2,X3) =  ( a ) P_1(X1,X2,X3)
-!        !                                             + (1-a) P_2(X1,X2,X3)
+!        ! since X1 is a double Gaussian, P(X1,X2,X3) =  ( mixt_frac ) P_1(X1,X2,X3)
+!        !                                             + (1-mixt_frac) P_2(X1,X2,X3)
 !        !
-!        ! where "a" is a constant and is the relative weight of each individual
+!        ! where "mixt_frac" is a constant and is the relative weight of each individual
 !        ! Gaussian "plume".
 !        !
 !        ! P_1(X1,X2,X3) and P_2(X1,X2,X3) are simply the equation for a
@@ -3083,7 +3083,7 @@ module KK_microphys_module
 !
 !           ! Test to see whether the value of sigmaX1i is sufficiently small
 !           ! enough to cause the parabolic cylinder function to produce a
-!           ! result to large to be represented numerically by the computer.
+!           ! result too large to be represented numerically by the computer.
 !           test = Dv_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
 !
 !           IF ( test >= 0.0d0 .AND. test < limit ) THEN

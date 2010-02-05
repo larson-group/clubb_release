@@ -28,7 +28,7 @@ module inputfields
                      input_Lscale, input_Lscale_up, input_Lscale_down, & 
                      input_Kh_zt, input_Kh_zm, input_tau_zm, input_tau_zt, & 
                      input_wpthvp, &
-                     input_thl1, input_thl2, input_a, input_s1, input_s2, &
+                     input_thl1, input_thl2, input_mixt_frac, input_s1, input_s2, &
                      input_stdev_s1, input_stdev_s2, input_rc1, input_rc2, &
                      input_thvm, input_rrainm, input_Nrm,  input_Ncm,  & 
                      input_rsnowm, input_ricem, input_rgraupelm, input_Ncnm, input_Nim, & 
@@ -506,8 +506,8 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_a, stat_file_zt, "a", gr%nnzp, timestep, &
-             gr%zt, pdf_params%a, l_read_error )
+           ( input_mixt_frac, stat_file_zt, "mixt_frac", gr%nnzp, timestep, &
+             gr%zt, pdf_params%mixt_frac, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
@@ -1388,8 +1388,8 @@ module inputfields
         l_fatal_error = .true.
       end if
 
-      if ( input_a ) then
-        write(fstderr,*) "The variable a is not setup for input_type" &
+      if ( input_mixt_frac ) then
+        write(fstderr,*) "The variable mixt_frac is not setup for input_type" &
           //trim( input_type )
         l_fatal_error = .true.
       end if
@@ -2254,7 +2254,7 @@ module inputfields
       input_Lscale, input_Lscale_up, input_Lscale_down, & 
       input_Kh_zt, input_Kh_zm, input_tau_zm, input_tau_zt, & 
       input_wpthvp, &
-      input_thl1, input_thl2, input_a, input_s1, input_s2, &
+      input_thl1, input_thl2, input_mixt_frac, input_s1, input_s2, &
       input_stdev_s1, input_stdev_s2, input_rc1, input_rc2, &
       input_thvm, input_rrainm,input_Nrm,  & 
       input_rsnowm, input_ricem, input_rgraupelm,  & 
@@ -2301,7 +2301,7 @@ module inputfields
     input_wpthvp = .false.
     input_thl1 = .false.
     input_thl2 = .false.
-    input_a = .false.
+    input_mixt_frac = .false.
     input_s1 = .false.
     input_s2 = .false.
     input_stdev_s1 = .false.

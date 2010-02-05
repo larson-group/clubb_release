@@ -183,7 +183,7 @@ module numerical_check
     call check_nan( pdf_params%thl2(k), "pdf_params%thl2", proc_name, err_code )
     call check_nan( pdf_params%varnce_thl1(k), "pdf_params%varnce_thl1", proc_name, err_code )
     call check_nan( pdf_params%varnce_thl2(k), "pdf_params%varnce_thl2", proc_name, err_code )
-    call check_nan( pdf_params%a(k), "pdf_params%a", proc_name, err_code )
+    call check_nan( pdf_params%mixt_frac(k), "pdf_params%mixt_frac", proc_name, err_code )
     call check_nan( pdf_params%rrtthl(k), "pdf_params%rrtthl", proc_name, err_code )
     call check_nan( pdf_params%rc1(k), "pdf_params%rc1", proc_name, err_code )
     call check_nan( pdf_params%rc2(k), "pdf_params%rc2", proc_name, err_code )

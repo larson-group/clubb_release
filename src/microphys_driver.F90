@@ -789,8 +789,8 @@ module microphys_driver
     end do
 
     ! Determine 's' from Mellor (1977)
-    s_mellor(:) = pdf_params%a(:) * pdf_params%s1(:) &
-                + (1.0-pdf_params%a(:)) * pdf_params%s2(:)
+    s_mellor(:) = pdf_params%mixt_frac(:) * pdf_params%s1(:) &
+                + (1.0-pdf_params%mixt_frac(:)) * pdf_params%s2(:)
 
     ! Compute standard deviation of vertical velocity in the grid column
     wtmp(:) = sqrt( wp2_zt(:) )
@@ -1346,7 +1346,7 @@ module microphys_driver
         write(fstderr,*) "Kh_zm = ", Kh_zm
         write(fstderr,*) "pdf_params%thl1 = ", pdf_params%thl1
         write(fstderr,*) "pdf_params%thl2 = ", pdf_params%thl2
-        write(fstderr,*) "pdf_params%a = ", pdf_params%a
+        write(fstderr,*) "pdf_params%mixt_frac = ", pdf_params%mixt_frac
         write(fstderr,*) "pdf_params%rc1 = ", pdf_params%rc1
         write(fstderr,*) "pdf_params%rc2 = ", pdf_params%rc2
         write(fstderr,*) "pdf_params%s1 = ", pdf_params%s1

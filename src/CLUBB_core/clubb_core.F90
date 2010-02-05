@@ -899,13 +899,13 @@ module clubb_core
     !----------------------------------------------------------------
 
     call advance_wp2_wp3 &
-         ( dt, sfc_elevation, sigma_sqd_w, wm_zm,      & ! intent(in)
-           wm_zt, wpthvp, wp2thvp, um, vm, upwp, vpwp, & ! intent(in)
-           up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt,     & ! intent(in)
-           Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt,       & ! intent(in)
-           invrs_rho_ds_zm, invrs_rho_ds_zt,           & ! intent(in)
-           thv_ds_zm, thv_ds_zt, wp3_zm, pdf_params%a, & ! intent(in)
-           wp2, wp3, wp2_zt, err_code                  ) ! intent(inout)
+         ( dt, sfc_elevation, sigma_sqd_w, wm_zm,              & ! intent(in)
+           wm_zt, wpthvp, wp2thvp, um, vm, upwp, vpwp,         & ! intent(in)
+           up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt,             & ! intent(in)
+           Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt,               & ! intent(in)
+           invrs_rho_ds_zm, invrs_rho_ds_zt,                   & ! intent(in)
+           thv_ds_zm, thv_ds_zt, wp3_zm, pdf_params%mixt_frac, & ! intent(in)
+           wp2, wp3, wp2_zt, err_code                          ) ! intent(inout)
 
     ! Wrapped LAPACK procedures may report errors, and if so, exit
     ! gracefully.
@@ -1405,8 +1405,8 @@ module clubb_core
       varnce_thl2_zt    ! Variance of th_l for 2nd normal distribution          [K^2]
 
     real, dimension(gr%nnzp) :: &
-      a_zm,           & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
-      a_zt,           & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
+      mixt_frac_zm,   & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
+      mixt_frac_zt,   & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
       rc1_zm,         & ! Mean of r_c for 1st normal distribution             [kg/kg]
       rc1_zt,         & ! Mean of r_c for 1st normal distribution             [kg/kg]
       rc2_zm,         & ! Mean of r_c for 2nd normal distribution             [kg/kg]
@@ -1453,7 +1453,7 @@ module clubb_core
     thl2_zt        = pdf_params%thl2
     varnce_thl1_zt = pdf_params%varnce_thl1
     varnce_thl2_zt = pdf_params%varnce_thl2
-    a_zt           = pdf_params%a
+    mixt_frac_zt   = pdf_params%mixt_frac
     rc1_zt         = pdf_params%rc1
     rc2_zt         = pdf_params%rc2
     rsl1_zt        = pdf_params%rsl1
@@ -1491,7 +1491,7 @@ module clubb_core
       thl2_zm        = pdf_params_zm%thl2
       varnce_thl1_zm = pdf_params_zm%varnce_thl1
       varnce_thl2_zm = pdf_params_zm%varnce_thl2
-      a_zm           = pdf_params_zm%a
+      mixt_frac_zm   = pdf_params_zm%mixt_frac
       rc1_zm         = pdf_params_zm%rc1
       rc2_zm         = pdf_params_zm%rc2
       rsl1_zm        = pdf_params_zm%rsl1
@@ -1573,8 +1573,8 @@ module clubb_core
       varnce_thl1_zm(gr%nnzp) = 0.0
       varnce_thl2_zm          = zt2zm( pdf_params%varnce_thl2 )
       varnce_thl2_zm(gr%nnzp) = 0.0
-      a_zm                    = zt2zm( pdf_params%a )
-      a_zm(gr%nnzp)           = 0.0
+      mixt_frac_zm            = zt2zm( pdf_params%mixt_frac )
+      mixt_frac_zm(gr%nnzp)   = 0.0
       rc1_zm                  = zt2zm( pdf_params%rc1 )
       rc1_zm(gr%nnzp)         = 0.0
       rc2_zm                  = zt2zm( pdf_params%rc2 )
@@ -1637,7 +1637,7 @@ module clubb_core
     pdf_params%thl2        = trapezoid( thl2_zt, thl2_zm )
     pdf_params%varnce_thl1 = trapezoid( varnce_thl1_zt, varnce_thl1_zm )
     pdf_params%varnce_thl2 = trapezoid( varnce_thl2_zt, varnce_thl2_zm )
-    pdf_params%a           = trapezoid( a_zt, a_zm )
+    pdf_params%mixt_frac   = trapezoid( mixt_frac_zt, mixt_frac_zm )
     pdf_params%rc1         = trapezoid( rc1_zt, rc1_zm )
     pdf_params%rc2         = trapezoid( rc2_zt, rc2_zm )
     pdf_params%rsl1        = trapezoid( rsl1_zt, rsl1_zm )
@@ -1743,8 +1743,8 @@ module clubb_core
 
     do k = 1, gr%nnzp
 
-      s_mean(k) = pdf_params%a(k) * pdf_params%s1(k) + &
-                  (1.0-pdf_params%a(k)) * pdf_params%s2(k)
+      s_mean(k) =      pdf_params%mixt_frac(k)  * pdf_params%s1(k) + &
+                  (1.0-pdf_params%mixt_frac(k)) * pdf_params%s2(k)
 
     end do
 

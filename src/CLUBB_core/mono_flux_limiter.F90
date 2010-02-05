@@ -1390,9 +1390,9 @@ module mono_flux_limiter
     !
     ! The probability density function (PDF) for w, P(w), is:
     !
-    ! P(w) = a*P(w1) + (1-a)*P(w2);
+    ! P(w) = mixt_frac*P(w1) + (1-mixt_frac)*P(w2);
     !
-    ! where "a" is the weight of the 1st normal distribution, and P(w1) and
+    ! where "mixt_frac" is the weight of the 1st normal distribution, and P(w1) and
     ! P(w2) are the equations for the 1st and 2nd normal distributions,
     ! respectively:
     !
@@ -1424,8 +1424,8 @@ module mono_flux_limiter
     ! -inf <= w <= w|_ref, such that:
     !
     ! <w|_(-inf:w|_ref)> = INT(-inf:w|_ref) w P(w) dw.
-    !                    = a * INT(-inf:w|_ref) w1 P(w1) dw1
-    !                      + (1-a) * INT(-inf:w|_ref) w2 P(w2) dw2.
+    !                    = mixt_frac * INT(-inf:w|_ref) w1 P(w1) dw1
+    !                      + (1-mixt_frac) * INT(-inf:w|_ref) w2 P(w2) dw2.
     !
     ! For each normal distribution in the mixture of normal distribution, i
     ! (where "i" can be 1 or 2):
@@ -1441,13 +1441,13 @@ module mono_flux_limiter
     ! The mean of all values of w <= w|_ref is:
     !
     ! <w|_(-inf:w|_ref)> =
-    ! a * { - ( sigma_w1 / sqrt(2*PI) ) 
-    !         * EXP[ -(w|_ref-mu_w1)^2 / (2*sigma_w1^2) ]
-    !       + mu_w1 * (1/2)
+    ! mixt_frac * { - ( sigma_w1 / sqrt(2*PI) ) 
+    !                 * EXP[ -(w|_ref-mu_w1)^2 / (2*sigma_w1^2) ]
+    !               + mu_w1 * (1/2)
     !                 *[1 + erf( (w|_ref-mu_w1) / (sqrt(2)*sigma_w1) )] }
-    ! + (1-a) * { - ( sigma_w2 / sqrt(2*PI) ) 
-    !               * EXP[ -(w|_ref-mu_w2)^2 / (2*sigma_w2^2) ]
-    !             + mu_w2 * (1/2)
+    ! + (1-mixt_frac) * { - ( sigma_w2 / sqrt(2*PI) ) 
+    !                       * EXP[ -(w|_ref-mu_w2)^2 / (2*sigma_w2^2) ]
+    !                     + mu_w2 * (1/2)
     !                       *[1 + erf( (w|_ref-mu_w2) / (sqrt(2)*sigma_w2) )] }.
     !
     ! Average Positive Vertical Velocity
@@ -1458,8 +1458,8 @@ module mono_flux_limiter
     ! w|_ref <= w <= inf, such that:
     !
     ! <w|_(w|_ref:inf)> = INT(w|_ref:inf) w P(w) dw.
-    !                   = a * INT(w|_ref:inf) w1 P(w1) dw1
-    !                     + (1-a) * INT(w|_ref:inf) w2 P(w2) dw2.
+    !                   = mixt_frac * INT(w|_ref:inf) w1 P(w1) dw1
+    !                     + (1-mixt_frac) * INT(w|_ref:inf) w2 P(w2) dw2.
     !
     ! For each normal distribution in the mixture of normal distribution, i
     ! (where "i" can be 1 or 2):
@@ -1475,13 +1475,13 @@ module mono_flux_limiter
     ! The mean of all values of w >= w|_ref is:
     !
     ! <w|_(w|_ref:inf)> =
-    ! a * {   ( sigma_w1 / sqrt(2*PI) ) 
-    !         * EXP[ -(w|_ref-mu_w1)^2 / (2*sigma_w1^2) ]
-    !       + mu_w1 * (1/2)
+    ! mixt_frac * {   ( sigma_w1 / sqrt(2*PI) ) 
+    !                * EXP[ -(w|_ref-mu_w1)^2 / (2*sigma_w1^2) ]
+    !               + mu_w1 * (1/2)
     !                 *[1 - erf( (w|_ref-mu_w1) / (sqrt(2)*sigma_w1) )] }
-    ! + (1-a) * {   ( sigma_w2 / sqrt(2*PI) ) 
-    !               * EXP[ -(w|_ref-mu_w2)^2 / (2*sigma_w2^2) ]
-    !             + mu_w2 * (1/2)
+    ! + (1-mixt_frac) * {   ( sigma_w2 / sqrt(2*PI) ) 
+    !                      * EXP[ -(w|_ref-mu_w2)^2 / (2*sigma_w2^2) ]
+    !                     + mu_w2 * (1/2)
     !                       *[1 - erf( (w|_ref-mu_w2) / (sqrt(2)*sigma_w2) )] }.
     !
     ! Special Limitations:
@@ -1577,7 +1577,7 @@ module mono_flux_limiter
       w2,  & ! Mean of w for 2nd normal distribution               [m/s]
       varnce_w1, & ! Variance of w for 1st normal distribution           [m^2/s^2]
       varnce_w2, & ! Variance of w for 2nd normal distribution           [m^2/s^2]
-      a      ! Weight of 1st normal distribution (Sk_w dependent)  [-]
+      mixt_frac    ! Weight of 1st normal distribution (Sk_w dependent)  [-]
 
     real :: &
       sigma_w1, & ! Standard deviation of w for 1st normal distribution    [m/s]
@@ -1599,7 +1599,7 @@ module mono_flux_limiter
     w2  = zt2zm( pdf_params%w2 )
     varnce_w1 = zt2zm( pdf_params%varnce_w1 )
     varnce_w2 = zt2zm( pdf_params%varnce_w2 )
-    a   = zt2zm( pdf_params%a )
+    mixt_frac = zt2zm( pdf_params%mixt_frac )
 
 
     ! Loop over momentum levels from 2 to gr%nnzp-1.  Levels 1 and gr%nnzp
@@ -1707,12 +1707,12 @@ module mono_flux_limiter
        endif
 
        ! Overall mean of downwards w.
-       mean_w_down(k) = a(k) * mean_w_down_1st  &
-                        + ( 1.0 - a(k) ) * mean_w_down_2nd
+       mean_w_down(k) = mixt_frac(k) * mean_w_down_1st  &
+                        + ( 1.0 - mixt_frac(k) ) * mean_w_down_2nd
 
        ! Overall mean of upwards w.
-       mean_w_up(k) = a(k) * mean_w_up_1st  &
-                      + ( 1.0 - a(k) ) * mean_w_up_2nd
+       mean_w_up(k) = mixt_frac(k) * mean_w_up_1st  &
+                      + ( 1.0 - mixt_frac(k) ) * mean_w_up_2nd
 
        if ( l_stats_samp ) then
 

@@ -137,7 +137,7 @@ module variables_prognostic_module
       thl2,        & ! Mean of th_l for 2nd normal distribution                [K]
       varnce_thl1, & ! Variance of th_l for 1st normal distribution          [K^2]
       varnce_thl2, & ! Variance of th_l for 2nd normal distribution          [K^2]
-      a,           & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
+      mixt_frac,   & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
       rc1,         & ! Mean of r_c for 1st normal distribution             [kg/kg]
       rc2,         & ! Mean of r_c for 2nd normal distribution             [kg/kg]
       rsl1,        & ! Mean of r_sl for 1st normal distribution            [kg/kg]
@@ -258,7 +258,7 @@ module variables_prognostic_module
               pdf_params%varnce_rt1(1:nzmax),  pdf_params%varnce_rt2(1:nzmax),  &
               pdf_params%thl1(1:nzmax),        pdf_params%thl2(1:nzmax),  &
               pdf_params%varnce_thl1(1:nzmax), pdf_params%varnce_thl2(1:nzmax),  &
-              pdf_params%a(1:nzmax),           pdf_params%rrtthl(1:nzmax),  &
+              pdf_params%mixt_frac(1:nzmax),   pdf_params%rrtthl(1:nzmax),  &
               pdf_params%rc1(1:nzmax),         pdf_params%rc2(1:nzmax),  &
               pdf_params%rsl1(1:nzmax),        pdf_params%rsl2(1:nzmax),  &
               pdf_params%cloud_frac1(1:nzmax), pdf_params%cloud_frac2(1:nzmax),  &
@@ -335,7 +335,7 @@ module variables_prognostic_module
     pdf_params%thl2        = 0.0
     pdf_params%varnce_thl1 = 0.0
     pdf_params%varnce_thl2 = 0.0
-    pdf_params%a           = 0.0
+    pdf_params%mixt_frac   = 0.0
     pdf_params%rc1         = 0.0
     pdf_params%rc2         = 0.0
     pdf_params%rsl1        = 0.0
@@ -441,7 +441,7 @@ module variables_prognostic_module
                 pdf_params%varnce_rt1,  pdf_params%varnce_rt2,  &
                 pdf_params%thl1,        pdf_params%thl2,  &
                 pdf_params%varnce_thl1, pdf_params%varnce_thl2,  &
-                pdf_params%a,           pdf_params%rrtthl,  &
+                pdf_params%mixt_frac,   pdf_params%rrtthl,  &
                 pdf_params%rc1,         pdf_params%rc2,  &
                 pdf_params%rsl1,        pdf_params%rsl2,  &
                 pdf_params%cloud_frac1, pdf_params%cloud_frac2,  &

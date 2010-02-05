@@ -690,7 +690,7 @@ module advance_xm_wpxp_module
     !   write(fstderr,*) "pdf_params%w2 = ", pdf_params%w2
     !   write(fstderr,*) "pdf_params%sw1 = ", pdf_params%sw1
     !   write(fstderr,*) "pdf_params%sw2 = ", pdf_params%sw2
-    !   write(fstderr,*) "pdf_params%a = ", pdf_params%a
+    !   write(fstderr,*) "pdf_params%mixt_frac = ", pdf_params%mixt_frac
     !   write(fstderr,*) "l_implemented = ", l_implemented
     !
     !   if ( present( sclrpthvp ) ) then
