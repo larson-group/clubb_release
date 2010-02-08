@@ -533,7 +533,7 @@ module KK_microphys_module
       ! must be adjusted.
       total_rc_needed = real( rrainm_source * dt )
 
-      if ( total_rc_needed > rcm(k) ) then
+      if ( total_rc_needed > rcm(k) .and. .not. l_latin_hypercube ) then
 
         ! The maximum allowable rate of the source terms is rcm/dt.
         rrainm_src_max = real( rcm(k) / dt )
