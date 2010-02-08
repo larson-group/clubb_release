@@ -2520,17 +2520,17 @@ module microphys_driver
       !   None
       !-------------------------------------------------------------------------
 
-      use parameters_model, only:  & 
-          hydromet_dim ! Parameter
-
       implicit none
 
       ! ---- Begin Code ----
 
-      if ( hydromet_dim > 0 ) then
-         deallocate( hydromet_list )
-         deallocate( l_hydromet_sed )
-      endif
+      if ( allocated( hydromet_list ) ) then
+        deallocate( hydromet_list )
+      end if
+
+      if ( allocated( l_hydromet_sed ) ) then
+        deallocate( l_hydromet_sed )
+      end if
 
       return
     end subroutine cleanup_microphys
