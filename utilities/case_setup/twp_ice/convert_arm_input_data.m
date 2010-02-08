@@ -156,7 +156,7 @@ exnerRot = rot90(exner);
 T_initial = [];
 for j = 0:(numLevels - 1),
 	%Output the variable
-	index = (j * fieldLength) + 1;
+	index = (j * fieldLength) + tIndex;
 	T_initial = [T_initial, T(index)];
 end
 theta = convert_units.temperature_to_potential_temperature(T_initial, exnerRot);
