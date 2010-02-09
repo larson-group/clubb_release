@@ -28,6 +28,8 @@ module KK_microphys_module
 
   private ! Set default scope to private
 
+  logical, parameter :: l_src_adj_enabled = .true.
+
   ! Statistical rain parameters        .
 
   ! Parameters for in-cloud (from SAM RF02 DO).
@@ -533,7 +535,7 @@ module KK_microphys_module
       ! must be adjusted.
       total_rc_needed = real( rrainm_source * dt )
 
-      if ( total_rc_needed > rcm(k) .and. .not. l_latin_hypercube ) then
+      if ( total_rc_needed > rcm(k) .and. l_src_adj_enabled ) then
 
         ! The maximum allowable rate of the source terms is rcm/dt.
         rrainm_src_max = real( rcm(k) / dt )
