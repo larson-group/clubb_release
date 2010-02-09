@@ -135,12 +135,12 @@ elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
            # The <STATS>_model.in file.
            # One stats file for tuning, another for the optimal result
            # They may be the same file, if you wish.
-           STATS_TUNE_IN=$STATS_DIR$EACH_CASE'_stats.in'
+           STATS_TUNE_IN=$STATS_DIR'tuning_stats.in'
            if [ ! -e "$STATS_TUNE_IN" ] ; then
 	           echo $STATS_TUNE_IN " does not exist"
 	           exit 1
            fi
-           STATS_OPT_IN=$STATS_DIR$EACH_CASE'_stats.in'
+           STATS_OPT_IN=$STATS_DIR'all_stats.in'
            if [ ! -e "$STATS_OPT_IN" ] ; then
 	           echo $STATS_OPT_IN " does not exist"
 	           exit 1
@@ -196,7 +196,6 @@ elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
 
    for EACH_CASE in "${MODEL_MULT[@]}"; do
            MODEL_IN=$MODEL_DIR$EACH_CASE'_model.in'
-           STATS_OPT_IN=$STATS_DIR$EACH_CASE'_stats.in'
            # Concatenate *_model.in and *_stats.in into hoc.in
            # Note:  The <CASE>_hoc.in file is not used because
            #        when the tuner writes standalone_<DATE>.in,
