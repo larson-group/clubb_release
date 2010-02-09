@@ -1509,10 +1509,9 @@ module advance_xm_wpxp_module
         if( l_upwind_differencing ) then ! Use upwind differencint
           lhs_fnc_output(1:3)  &
           = wpxp_term_ta_lhs_upwind( wp2(k), wp2(km1), wp2(kp1),        & 
-                                           a1_zt(kp1), a1_zt(k),             &
-                                           a1(k), a1(kp1), a1(km1), & 
-                                           wp3(kp1), wp3(k), wp3(km1),        &
-                                           gr%dzt(k), gr%dzt(kp1), k )
+                                           a1(k), a1(kp1), a1(km1),     & 
+                                           wp3(kp1), wp3(k), wp3(km1),  &
+                                           gr%dzt(k), gr%dzt(kp1) )
           call stat_update_var_pt( iwpxp_ta, k, &
                   ( 1.0 - 0 * gamma_over_implicit_ts )  &
                 * ( - lhs_fnc_output(1) * wpxp(kp1)  &
@@ -2436,10 +2435,9 @@ module advance_xm_wpxp_module
 
       !=============================================================================
   pure function wpxp_term_ta_lhs_upwind( wp2, wp2_m1, wp2_p1,                & 
-                                         a1_zt_p1, a1_zt,                    &
                                          a1_zm, a1_zm_p1, a1_zm_m1,          & 
                                          wp3_zm_p1, wp3_zm, wp3_zm_m1,       &
-                                         dzt, dztkp1, level )                & 
+                                         dzt, dztkp1 )                & 
   result( lhs )
 
     ! Description:
@@ -2461,21 +2459,16 @@ module advance_xm_wpxp_module
     ! Input Variables
     real, intent(in) :: & 
       wp2,         & ! w'^2(k)                                        [m^2/s^2]
-      wp2_m1,      &
-      wp2_p1,      &
-      a1_zt_p1,    & ! a_1 interpolated to thermodynamic level (k+1)  [-]
-      a1_zt,       & ! a_1 interpolated to thermodynamic level (k)    [-]
-      a1_zm,       &
-      a1_zm_p1,    &
-      a1_zm_m1,    &
+      wp2_m1,      & ! w'^2(k-1)                                      [m^2/s^2]
+      wp2_p1,      & ! w'^2(k+1)                                      [m^2/s^2]
+      a1_zm,       & ! a_1(k) on momentum levels                      [-] 
+      a1_zm_p1,    & ! a_1(k+1) on momentum levels                    [-]
+      a1_zm_m1,    & ! a_1(k-1) on momentum levels                    [-]
       wp3_zm_p1,   & ! w'^3(k+1)                                      [m^3/s^3]
       wp3_zm,      & ! w'^3(k)                                        [m^3/s^3]
-      wp3_zm_m1,   &
+      wp3_zm_m1,   & ! w'^3(k-1)                                      [m^3/s^3]
       dzt,         & ! Inverse of grid spacing (k)                    [1/m]
       dztkp1         ! Inverse of grid spacing (k+1)                  [1/m]
-
-    integer, intent(in) :: & 
-      level ! Central momentum level (on which calculation occurs).
 
     ! Return Variable
     real, dimension(3) :: lhs
