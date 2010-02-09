@@ -520,14 +520,14 @@ module output_grads
   end if
 
   ! Write file header
-  if ( ( big_endian .and. .not. l_byteswap_io ) &
-    .or. ( little_endian .and. l_byteswap_io ) ) then
-    write(unit=f%iounit,fmt='(a)') 'OPTIONS BIG_ENDIAN'
+! if ( ( big_endian .and. .not. l_byteswap_io ) &
+!   .or. ( little_endian .and. l_byteswap_io ) ) then
+!   write(unit=f%iounit,fmt='(a)') 'OPTIONS BIG_ENDIAN'
 
-  else
+! else
     write(unit=f%iounit,fmt='(a)') 'OPTIONS LITTLE_ENDIAN'
 
-  end if 
+! end if 
 
   write(unit=f%iounit,fmt='(a)') 'DSET ^'//trim(f%fname)//'.dat'
   write(unit=f%iounit,fmt='(a,e11.5)') 'UNDEF ',undef

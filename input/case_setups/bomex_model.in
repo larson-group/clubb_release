@@ -131,7 +131,7 @@ iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thet
 /
 
 &radiation_setting
-rad_scheme = "simplified",
+rad_scheme = "simplified_bomex",
 /
 
 &microphysics_setting

@@ -29,6 +29,7 @@
 ../src/Parabolic_constants.f90
 ../src/Parabolic.f90
 ../src/recl.inc
+../src/simple_rad_mod.F90
 ../src/soil_vegetation.F90
 ../src/sounding.F90
 ../src/stat_file_utils.F90

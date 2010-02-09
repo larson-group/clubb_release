@@ -20,8 +20,7 @@ module bugsrad_driver
                extend_atmos_range_size,             &
                extend_atmos_bottom_level,           &
                extend_atmos_top_level,              &
-               lat_in_degrees, lon_in_degrees,      &
-               day, month, year, time,              &
+               amu0, &
                thlm, rcm, rtm, rsnowm, rim,& 
                cloud_frac, p_in_Pa, p_in_Pam,       &
                exner, rho_zm,                       &
@@ -60,8 +59,6 @@ module bugsrad_driver
 
     use stats_precision, only: time_precision ! Variable(s)
 
-    use cos_solar_zen_mod, only: cos_solar_zen ! Procedure(s)
-
     use T_in_K_mod, only: thlm2T_in_K ! Procedure(s)
 
     use error_code, only: clubb_at_least_debug_level ! Procedure(s)
@@ -85,25 +82,18 @@ module bugsrad_driver
       alvdf, &
       alndr, &
       alndf, &
-      amu0,  &
-      slr,   &
-      l_fix_cos_solar_zen
+      slr
 
     implicit none
 
     intrinsic :: dble, real
 
     ! Input Variables
-    real, intent(in) :: &
-      lat_in_degrees,&! Latitude   [Degrees North]
-      lon_in_degrees  ! Longitude  [Degrees East]
-
-    real(kind=time_precision), intent(in) :: &
-      time ! Model time [s]
+    double precision, intent(in) :: &
+      amu0  ! Cosine of the solar zenith angle  [-]
 
     integer, intent(in) :: &
-      nz,              & ! Vertical extent;  i.e. nnzp in the grid class
-      day, month, year   ! Date of model start
+      nz ! Vertical extent;  i.e. nnzp in the grid class
 
     ! Number of levels to interpolate from the bottom of extend_atmos to the top
     ! of the CLUBB profile, hopefully enough to eliminate cooling spikes, etc.
@@ -188,12 +178,6 @@ module bugsrad_driver
     !-------------------------------------------------------------------------------
 
     buffer = lin_int_buffer + extend_atmos_range_size
-
-    ! If l_fix_cos_solar_zen is not set in the model.in, calculate amu0
-    ! Otherwise, it was defined in the model.in file
-    if ( .not. l_fix_cos_solar_zen ) then
-      amu0 =  cos_solar_zen( day, month, year, time, lat_in_degrees, lon_in_degrees ) 
-    end if
 
     ! Convert to millibars
     pinmb(1,1:(nz-1))  = dble( p_in_Pa(2:nz) / 100.0 ) ! t grid in CLUBB

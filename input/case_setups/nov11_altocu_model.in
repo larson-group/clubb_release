@@ -143,10 +143,10 @@ alvdr = 0.1,   ! Visible direct surface albedo        		[-]
 gc    = 0.86,  ! Asymmetry parameter, "g" in Duynkerke          [-]
 omega = 0.9965, ! Single-scattering albedo                      [-] 
 ! Cosine of the solar zenith angle	[-]
-cos_solar_zen_list = 0.0, 1.0,
+cos_solar_zen_values = 0.0, 1.0,
 ! The incident of incoming SW insolation at cloud top the
 ! direction of the incoming beam (not the vertical)   [W/m^2]
-Fs_list = 1212.75, 1212.75,
+Fs_values = 1212.75, 1212.75,
 l_fix_cos_solar_zen = .true.
 /
 

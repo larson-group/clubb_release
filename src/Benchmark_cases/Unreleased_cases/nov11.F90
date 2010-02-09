@@ -64,7 +64,7 @@ module nov11
     use cos_solar_zen_mod, only: cos_solar_zen
 
     use parameters_radiation, only: &
-      F0, F1, Fs_list, cos_solar_zen_list, alvdr, kappa, omega, gc, &
+      F0, F1, Fs_values, cos_solar_zen_values, alvdr, kappa, omega, gc, &
       eff_drop_radius, rad_scheme, l_fix_cos_solar_zen, nparam
 
     implicit none
@@ -283,8 +283,8 @@ module nov11
 !   Fslist(1) = 1212.75
 !   Fslist(2) = 1212.75
 
-    call linear_interpolation( nparam, cos_solar_zen_list(1:nparam), &
-                               Fs_list(1:nparam), xi_abs, Fs0 )
+    call linear_interpolation( nparam, cos_solar_zen_values(1:nparam), &
+                               Fs_values(1:nparam), xi_abs, Fs0 )
 
 
 !-----------------------------------------------------------------------

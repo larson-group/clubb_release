@@ -10,8 +10,8 @@ module parameters_radiation
 !-------------------------------------------------------------------------------
   implicit none
 
-  character(len=10), public :: & 
-    rad_scheme  ! Either BUGSrad, or simplified
+  character(len=20), public :: & 
+    rad_scheme  ! Either BUGSrad, simplified, or simplied_bomex
 
   double precision, dimension(1), public :: &
     sol_const ! Solar constant
@@ -42,18 +42,18 @@ module parameters_radiation
     omega ! Single-scattering albedo                        [-] 
 
   double precision, public :: &
-    amu0, & ! Calculated value of cosine of the solar zenith angle
     slr     ! Fraction of daylight
 
   real, public, dimension(20) :: &
-    Fs_list, &          ! List of Fs0 values for simplified radiation
-    cos_solar_zen_list  ! List of cosine of the solar zenith angle values
+    Fs_values, &           ! List of Fs0 values for simplified radiation
+    cos_solar_zen_times, & ! List of cosine of the solar zenith angle times
+    cos_solar_zen_values   ! List of cosine of the solar zenith angle values
 
   logical, public :: &
-    l_fix_cos_solar_zen
+    l_fix_cos_solar_zen, l_sw_radiation
 
   logical, public :: &
-    l_heaviside ! Use DYCOMS II RF02 heaviside step function
+    l_rad_above_cloud ! Use DYCOMS II RF02 heaviside step function
 
   integer, public :: &
     nparam
@@ -64,8 +64,9 @@ module parameters_radiation
 
 ! OpenMP directives. These cannot be indented.
 !$omp threadprivate(rad_scheme, sol_const, alvdr, alvdf, alndr, alndf, &
-!$omp   kappa, F0, F1, eff_drop_radius, gc, omega, radiation_top, Fs_list, &
-!$omp   l_heaviside, cos_solar_zen_list, l_fix_cos_solar_zen, nparam)
+!$omp   kappa, F0, F1, eff_drop_radius, gc, omega, radiation_top, Fs_values, &
+!$omp   l_rad_above_cloud, cos_solar_zen_list, l_fix_cos_solar_zen, nparam, &
+!$omp   l_sw_raditiation)
 
   contains
 
@@ -87,9 +88,10 @@ module parameters_radiation
 
     namelist /radiation_setting/ &
      rad_scheme, sol_const, alvdr, alvdf, alndr, alndf, &
-     kappa, F0, F1, eff_drop_radius, gc, omega, Fs_list, &
-     cos_solar_zen_list, radiation_top, l_fix_cos_solar_zen, &
-     amu0, slr, l_heaviside
+     kappa, F0, F1, eff_drop_radius, gc, omega, Fs_values, &
+     cos_solar_zen_values, cos_solar_zen_times, &
+     radiation_top, l_fix_cos_solar_zen, l_sw_radiation, &
+     slr, l_rad_above_cloud
 
     ! ---- Begin Code ----
 
@@ -118,19 +120,19 @@ module parameters_radiation
     omega = 0.9965 ! Single-scattering albedo                        [-]
 
     slr  = 1.0d0  ! Fraction of daylight
-    amu0 = -999.0 ! Calculated value of cosine of the solar zenith angle
 
-    l_heaviside = .false. ! For the heaviside step function
+    l_rad_above_cloud = .false. ! For the heaviside step function
+    l_sw_radiation = .false. ! Set to true to enable shortwave radiation
 
     ! Parameters for fixing the value of cosine of the solar zenith angle
     l_fix_cos_solar_zen = .false.
 
     ! The incident of incoming SW insolation at cloud top the
     ! direction of the incoming beam (not the vertical)   [W/m^2]
-    Fs_list(:) = 0.0 
+    Fs_values(:) = 0.0 
 
-    ! Cosine of the solar zenith angle [-]
-    cos_solar_zen_list(:) = -999.0
+    cos_solar_zen_values(:) = -999.0 ! Cosine of the solar zenith angle [-]
+    cos_solar_zen_times(:)  = -999.0 ! Simulation times corresponding to above [s]
 
     eff_drop_radius = 1.e-5 ! Effective droplet radius [m]
 
@@ -139,8 +141,8 @@ module parameters_radiation
     read(iunit, nml=radiation_setting)
     close(unit=iunit)
 
-    do k = 1, size( cos_solar_zen_list )
-      if ( cos_solar_zen_list(k) == -999. ) then
+    do k = 1, size( cos_solar_zen_values )
+      if ( cos_solar_zen_values(k) == -999. ) then
         exit
       else
         nparam = k

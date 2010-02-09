@@ -310,7 +310,7 @@ pgam_fixed | real, default precision
 ------------------------------------------
 
 rad_scheme | character
-  Currently only "bugsrad" or "simplified".
+  Currently only "bugsrad", "simplified", or "simplified_bomex".
 
 sol_const | double precision
   The solar constant [W/m^2].
@@ -349,11 +349,26 @@ omega |  real, default precision
 slr | double precision
   Fraction of daylight (usually 1.0)  [-].
 
-amu0 | double precision
-  Cosine of the solar zenith angle [-].
-
 eff_drop_radius | real, default precision
   Effective droplet radius  [m].
+
+cos_solar_zen_values | real, 20 element array, default precision
+  Cosine of the solar zenith angle for l_fix_cos_solar_zen = T [-].
+
+cos_solar_zen_times | real, 20 element array, default precision
+  Times corresponding to the cosine of the solar zenith angle [s].
+
+Fs_values | real, 20 element array, default precision
+  The incident of incoming SW insolation at cloud top the
+  direction of the incoming beam (not the vertical)   [W/m^2]
+
+l_fix_cos_solar_zen | logical
+  Fix the value of the cosine of the solar zenith angle rather than compute 
+  it from the latitude, longitude and current time.
+
+l_sw_radiation | logical
+  Whether to compute shortwave radiation.
+
 
 --------------------------------------------------------------------------------
 4. &stats_setting

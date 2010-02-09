@@ -923,7 +923,7 @@ module clubb_driver
       ! This is a kluge added because the _tndcy subroutines will sometimes
       ! compute radht from an analytic formula and add it to thlm_forcing before
       ! we reach this point in the clubb_driver. -dschanen 17 Aug 2009
-      if ( trim( rad_scheme ) == "bugsrad" ) then
+      if ( trim( rad_scheme ) == "bugsrad" .or. trim( rad_scheme ) == "simplified_bomex" ) then
         thlm_forcing(:) = thlm_forcing(:) + thlm_mc(:) + radht(:)
       else
         thlm_forcing(:) = thlm_forcing(:) + thlm_mc(:)
@@ -979,7 +979,7 @@ module clubb_driver
         ! radiation before the call the microphysics to change this.
         ! -dschanen 17 Aug 2009
         call advance_clubb_radiation &
-             ( rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! Intent(in)
+             ( rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! Intent(in)
                rtm, rcm, hydromet,                       & ! Intent(in)
                radht, Frad, Frad_SW_up, Frad_LW_up,      & ! Intent(out)
                Frad_SW_down, Frad_LW_down )                ! Intent(out)
@@ -2943,7 +2943,7 @@ module clubb_driver
                        sclrm_forcing, edsclrm_forcing )! Intent(out)
 
     case ( "bomex" ) ! BOMEX Cu case
-      call bomex_tndcy( rtm, radht, &                    ! Intent(out)
+      call bomex_tndcy( rtm, &                    ! Intent(in)
                         thlm_forcing, rtm_forcing, &     ! Intent(out)
                         sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
@@ -3508,7 +3508,7 @@ module clubb_driver
 
 !-------------------------------------------------------------------------------
   subroutine advance_clubb_radiation &
-             ( rho_zm, p_in_Pa, exner, cloud_frac, thlm, &
+             ( rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, &
                rtm, rcm, hydromet, radht, Frad, Frad_SW_up, Frad_LW_up, &
                Frad_SW_down, Frad_LW_down )
 ! Description:
@@ -3519,11 +3519,24 @@ module clubb_driver
 !   this subroutine.
 !-------------------------------------------------------------------------------
 
-    use constants, only: fstderr  ! Constant(s)
+    use constants, only: fstderr, zero_threshold  ! Constant(s)
 
     use numerical_check, only: isnan2d, rad_check ! Procedure(s)
 
-    use parameters_radiation, only: rad_scheme ! Variable(s)
+    use parameters_radiation, only: &
+      rad_scheme, & ! Variable(s)
+      nparam, &
+      l_fix_cos_solar_zen, &
+      l_sw_radiation, &
+!     Fs_values, &
+      cos_solar_zen_values, &
+      cos_solar_zen_times
+     
+    use cos_solar_zen_mod, only: cos_solar_zen ! Procedure(s)
+
+    use simple_rad_mod, only: &
+!     simple_rad, simple_rad_bomex
+      simple_rad_bomex
 
     use error_code, only: & 
       clubb_at_least_debug_level ! Procedure(s)
@@ -3536,6 +3549,9 @@ module clubb_driver
 
     use grid_class, only: zt2zm ! Procedure
 
+!   use interpolation, only: binary_search, linear_interpolation ! Procdure(s)
+    use interpolation, only: binary_search ! Procdure(s)
+
 #ifdef radoffline
     use bugsrad_driver, only: compute_bugsrad_radiation ! Procedure(s)
 #endif
@@ -3546,6 +3562,7 @@ module clubb_driver
 
     ! Input Variables
     real, dimension(gr%nnzp), intent(in) :: &
+      rho,        & ! Density on thermo. grid                          [kg/m^3]
       rho_zm,     & ! Density on moment. grid                          [kg/m^3]
       p_in_Pa,    & ! Pressure.                                        [Pa] 
       exner,      & ! Exner function.                                  [-]
@@ -3574,14 +3591,53 @@ module clubb_driver
       rsnowm,  & ! Snow mixing ratio                         [kg/kg]
       ricem      ! Prisitine ice water mixing ratio          [kg/kg]
 
+!   real :: Fs0
+
+    double precision :: amu0 
+
+    integer :: i !, err_code
+
     ! ---- Begin Code ----
 
-    !----------------------------------------------------------------
-    ! BUGSrad Radiation
-    !----------------------------------------------------------------
+    ! Initialize all outputs to 0.
+    Frad = 0.
+    Frad_SW_up = 0.
+    Frad_LW_up = 0.
+    Frad_SW_down = 0.
+    Frad_LW_down = 0.
 
-    if ( trim( rad_scheme ) == "bugsrad" ) then
+    ! If l_fix_cos_solar_zen is not set in the model.in, calculate amu0
+    ! Otherwise, it was defined in cos_solar_zen_list file
+    if ( l_sw_radiation ) then
+      if ( l_fix_cos_solar_zen ) then
+        if ( nparam > 1 ) then
+          ! Find the closest time value greater than or equal to time_current
+          i = binary_search( nparam, cos_solar_zen_times(1:nparam), real( time_current ) )
+        else
+          i = 1
+        end if
+        if ( i /= -1 ) then
+          amu0 = cos_solar_zen_values(i)
+        else
+          write(fstderr,*) "Time not found in cos_solar_zen_times"
+          stop "Critical error."
+        end if
 
+      else ! Compute using the formula
+        amu0 = cos_solar_zen( day, month, year, time_current, rlat, rlon ) 
+
+      end if ! l_fix_cos_solar_zen
+    else
+      amu0 = 0.0 ! This should disable shortwave radiation
+
+    end if ! l_sw_radiation
+
+    select case ( trim( rad_scheme ) )
+
+    case ( "bugsrad" )
+      !----------------------------------------------------------------
+      ! BUGSrad Radiation
+      !----------------------------------------------------------------
 #ifdef radoffline /*This directive is needed for BUGSrad to work with CLUBB.*/
 
       ! Copy snow and ice
@@ -3649,8 +3705,7 @@ module clubb_driver
              extend_atmos_range_size,               & ! Intent(in)
              extend_atmos_bottom_level,             & ! Intent(in)
              extend_atmos_top_level,                & ! Intent(in)
-             rlat, rlon,                            & ! Intent(in)
-             day, month, year, time_current,        & ! Intent(in)
+             amu0,                                  & ! Intent(in)
              thlm, rcm, rtm, rsnowm, ricem,         & ! Intent(in)
              cloud_frac, p_in_Pa, zt2zm( p_in_Pa ), & ! Intent(in)
              exner, rho_zm,                         & ! Intent(in)
@@ -3677,14 +3732,39 @@ module clubb_driver
       stop "Cannot call BUGSrad with these compile options."
 
 #endif /*radoffline*/
-    else
-      Frad = 0.
-      Frad_SW_up = 0.
-      Frad_LW_up = 0.
-      Frad_SW_down = 0.
-      Frad_LW_down = 0.
 
-    end if ! BUGSrad radiation scheme
+    case ( "simplified" )
+      !   Currently disabled, and handled in the tndcy subroutines
+      !----------------------------------------------------------------
+      ! Simplified radiation
+      !----------------------------------------------------------------
+
+!     if ( l_sw_radiation ) then
+!       ! The sunray_sw code cannot handle negative values of cosine, so clip this here
+!       amu0 = max( amu0, zero_threshold ) 
+!       call linear_interpolation( nparam, cos_solar_zen_values(1:nparam), &
+!                                  Fs_values(1:nparam), real( amu0 ), Fs0 )
+!       call sunray_sw( rcm(gr%nnzp:1:-1), rho(gr%nnzp:1:-1), amu0, 
+!     end if
+
+!     call simple_rad( rho, rho_zm, rtm, rcm, exner, & ! In
+!                      err_code, & ! Inout
+!                      Frad, radht ) ! Out
+
+    case ( "simplified_bomex" )
+      !----------------------------------------------------------------
+      ! GCSS BOMEX specifiction radiation
+      !----------------------------------------------------------------
+
+      call simple_rad_bomex( radht ) ! Out
+
+    case ( "none" )
+
+    case default
+
+      stop "Unknown rad_scheme"
+
+    end select ! Radiation scheme
 
     return
   end subroutine advance_clubb_radiation

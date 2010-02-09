@@ -38,7 +38,7 @@ module simple_rad_mod
     use parameters_radiation, only: &
       F0,  & ! Variable(s)
       F1,  &
-      l_heaviside, &
+      l_rad_above_cloud, &
       kappa
 
     implicit none
@@ -93,7 +93,7 @@ module simple_rad_mod
 
     end do 
 
-    if ( l_heaviside ) then
+    if ( l_rad_above_cloud ) then
       ! Find the height of the isotherm rtm = 8.0 g/kg.
 
       k = 2
@@ -139,7 +139,7 @@ module simple_rad_mod
 
       end if
 
-    end if ! l_heaviside
+    end if ! l_rad_above_cloud
 
     ! Compute the radiative heating rate.
     ! The radiative heating rate is defined on thermodynamic levels.
@@ -230,7 +230,7 @@ module simple_rad_mod
     ! Liquid water path is defined on the intermediate model levels between the
     ! rcm and rho levels (i.e. the momentum levels in CLUBB).
     do k = nnzp-1, 1, -1
-       liq_water_path(k) = liq_water_path(k+1) + rho(k+1) / dzt(k+1)
+       liq_water_path(k) = liq_water_path(k+1) + rcm(k+1)*rho(k+1) / dzt(k+1)
     end do ! k = nnzp..1
 
     return

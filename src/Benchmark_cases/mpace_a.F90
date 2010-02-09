@@ -81,7 +81,7 @@
                              iFrad_SW, zt, zm, l_stats_samp
 
   use parameters_radiation, only: &
-    F0, F1, Fs_list, alvdr, kappa, omega, gc, eff_drop_radius, rad_scheme
+    F0, F1, Fs_values, alvdr, kappa, omega, gc, eff_drop_radius, rad_scheme
     
 
   implicit none
@@ -327,7 +327,8 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
                    Frad_out, Frad_LW_out, Frad_SW_out, & 
                    radhtk, radht_LW_out, radht_SW_out, & 
                    gr%nnzp-1, l_center, & 
-                   xi_abs, F0, F1, kappa, eff_drop_radius, real( alvdr ), gc, Fs_list(1), omega, & 
+                   xi_abs, F0, F1, kappa, &
+                   eff_drop_radius, real( alvdr ), gc, Fs_values(1), omega, & 
                    l_sw_on, l_lw_on )
 
     do k = 2, gr%nnzp-1

@@ -60,7 +60,7 @@
                  iFrad_SW, iFrad_LW
 
   use parameters_radiation, only: &
-    F0, F1, Fs_list, cos_solar_zen_list, alvdr, kappa, omega, gc, &
+    F0, F1, Fs_values, cos_solar_zen_values, alvdr, kappa, omega, gc, &
     eff_drop_radius, rad_scheme, nparam
  
 
@@ -304,8 +304,8 @@ end if
 !call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
 
 
-    call linear_interpolation( nparam, cos_solar_zen_list(1:nparam), &
-                               Fs_list(1:nparam), xi_abs, Fs0 )
+    call linear_interpolation( nparam, cos_solar_zen_values(1:nparam), &
+                               Fs_values(1:nparam), xi_abs, Fs0 )
 
 !-----------------------------------------------------------------------
 !

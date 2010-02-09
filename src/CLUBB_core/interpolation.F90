@@ -340,8 +340,10 @@ end function plinterp_fnc
       xlist,  & ! List of x-values (independent variable)
       tlist     ! List of t-values (dependent variable)
 
+    real, intent(in) ::  & 
+      xvalue  ! x-value at which to interpolate
+
     real, intent(inout) ::  & 
-      xvalue,  & ! x-value at which to interpolate
       tvalue  ! t-value solved by interpolation
 
     ! Local variables

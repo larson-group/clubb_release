@@ -144,6 +144,7 @@ l_graupel = .true.
 
 &radiation_setting
 rad_scheme = "bugsrad",
+l_sw_radiation = .true.
 /
 
 &stats_setting

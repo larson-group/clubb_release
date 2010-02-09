@@ -152,6 +152,7 @@ micro_scheme = "none"
 
 &radiation_setting
 rad_scheme = "bugsrad",
+l_sw_radiation = .true.
 
 ! BUGSrad related settings
 sol_const = 1321.0 ! Solar Constant for July [W/m^2]

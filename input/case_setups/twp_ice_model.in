@@ -134,6 +134,7 @@ micro_scheme = "morrison"
 
 &radiation_setting
 rad_scheme = "bugsrad",
+l_sw_radiation = .true.
 radiation_top = 38000. ! Height of profile used for radiation [m]
 /
 

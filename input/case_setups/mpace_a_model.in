@@ -156,7 +156,7 @@ eff_drop_radius = 1.0e-5, ! Effective droplet radius		[m]
 alvdr = 0.1,   ! Visible direct surface albedo        		[-]
 gc    = 0.86,  ! Asymmetry parameter, "g" in Duynkerke          [-]
 omega = 0.9965,! Single-scattering albedo                       [-] 
-Fs_list = 1212.75,
+Fs_values = 1212.75,
 /
 
 &stats_setting

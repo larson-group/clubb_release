@@ -161,7 +161,9 @@ micro_scheme = "morrison"
 &radiation_setting
 rad_scheme = "bugsrad"
 l_fix_cos_solar_zen = .true.
-amu0                = 0.629
+l_sw_radiation = .true.
+cos_solar_zen_values= 0.629
+cos_solar_zen_times = 2592001. ! Use the same value all simulation
 slr                 = 0.539
 sol_const           = 1321.0 ! Solar Constant given in spec [W/m^2]
 radiation_top       = 30000 ! Height of profile used for radiation [m]
