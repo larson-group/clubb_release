@@ -2,7 +2,7 @@ $Id$
 
 ************************************************************************
 *                           Copyright Notice
-*                         This code is (C) 2006-2009 
+*                         This code is (C) 2006-2010 
 *         Jean-Christophe Golaz, Vincent E. Larson, Brian M. Griffin, 
 *            David P. Schanen, Adam J. Smith, and Michael J. Falk.
 *
@@ -104,7 +104,10 @@ B. GNU make (we use v3.81).
 C. Perl 5 to run mkmf
 D. LAPACK & BLAS.  These provide the tri and band diagonal matrix solver
    subroutines needed by CLUBB.  Many vendors provide optimized versions of
-   these routines, which may be much faster than the reference BLAS.
+   these routines, which may be much faster than the reference BLAS.  To be
+   safe, we recommend you use a LAPACK and BLAS library compiled with the 
+   same compiler you compile the CLUBB code with (E.g. don't compile LAPACK
+   with GNU Fortran and CLUBB with Portland Group's Fortran)
 E. GNU bash, or an equivalent POSIX compliant shell to use the run scripts.
    See <http://http://www.gnu.org/software/bash/>.
 
@@ -384,17 +387,17 @@ E.g. If desired, the horizontal winds (variables um and vm in the code)
 could be fixed to the COAMPS-LES value at each timestep, while the other
 fields will evolve as in the standard single-column run.
 
-Currently, we have only tested the code with GrADS data from COAMPS-LES
-and netCDF data from SAM-LES.  Data from CLUBB also appears to work, but
-should result in similar results not using input_fields and so is less useful.
+Currently, we have only tested the code with GrADS data from COAMPS-LES.  Data 
+from CLUBB also works, but should result in similar results to not 
+using input_fields and so is less useful.
 
 The relevant namelist files are in the input/<Model Case>_model.in files.  The
 variable l_input_fields enabled the code when true, and then a separate
 namelist called &setfields is used to control which variables are read in.
 
 To execute an input fields run, you need to set the 'datafile' variable in the
-setfields namelist to the location of the data files, and set 'input_'<varname> to
-.true. for those fields for which you want to use a fixed value from
+setfields namelist to the location of the data files, and set 'input_'<varname>
+to .true. for those fields for which you want to use a fixed value from
 the LES dataset at the beginning of each timestep.
 
 Nota bene:  The GrADS data files cannot have a time increment less than 1mn.
