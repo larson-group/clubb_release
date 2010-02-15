@@ -14,24 +14,28 @@ module constants
       time_precision ! Variable(s)
 
   implicit none
- 
+
   public :: fstderr, fstdin, fstdout, var_length, &
-            pi_dp, pi, sqrt_2pi, sqrt_2, three_halves, &
-            Cp, Lv, Ls, Lf, Rd, Rv, ep, ep1, ep2, &
-            kappa, grav, p0, vonk, rho_lw, &
-            wtol, thltol, rttol, s_mellor_tol, thltol_mfl, rttol_mfl, & 
-            wtol_sqd, rc_tol, Nc_tol, rr_tol, Nr_tol, emin, &
-            eps, zero_threshold, max_mag_correlation, sec_per_day, &
-            sec_per_hr, sec_per_min, g_per_kg, T_freeze_K, &
-            Skw_max_mag, Skw_max_mag_sqd, stefan_boltzmann, &
-            cm3_per_m3, pascal_per_mb,  &
-            gamma_over_implicit_ts
+    pi_dp, pi, sqrt_2pi, sqrt_2, three_halves, &
+    Cp, Lv, Ls, Lf, Rd, Rv, ep, ep1, ep2, &
+    kappa, grav, p0, vonk, rho_lw, &
+    wtol, thltol, rttol, s_mellor_tol, thltol_mfl, rttol_mfl, & 
+    wtol_sqd, rc_tol, Nc_tol, rr_tol, Nr_tol, emin, &
+    eps, zero_threshold, max_mag_correlation, sec_per_day, &
+    sec_per_hr, sec_per_min, g_per_kg, T_freeze_K, &
+    Skw_max_mag, Skw_max_mag_sqd, stefan_boltzmann, &
+    cm3_per_m3, pascal_per_mb,  &
+    gamma_over_implicit_ts
 
   private ! Default scope
 
   ! Fortran file unit I/O constants
   integer, parameter ::  & 
-    fstderr = 0, fstdin = 5, fstdout = 6, var_length = 30
+    fstderr = 0, fstdin = 5, fstdout = 6
+
+  ! Maximum variable name length in CLUBB GrADS or netCDF output
+  integer, parameter ::  & 
+    var_length = 30
 
   ! Mathematical Constants
   double precision, parameter ::  & 
@@ -79,7 +83,7 @@ module constants
     p0   = 1.0e5   ! Reference pressure             [Pa]
 
   ! Von Karman's constant
-  ! Constant of the logarithmic wind profile in the surface layer 
+  ! Constant of the logarithmic wind profile in the surface layer
   real, parameter :: & 
     vonk   = 0.4,    & ! Accepted value is 0.40 (+/-) 0.01      [-]
     rho_lw = 1000.0    ! Density of liquid water                [kg/m^3]
@@ -99,7 +103,7 @@ module constants
   real, parameter :: &
     thltol_mfl = 1.e-2, & ! [K]
     rttol_mfl = 1.e-4     ! [kg/kg]
-      
+
   ! The tolerance for w'^2 is the square of the tolerance for w.
   real, parameter :: &
     wtol_sqd = wtol**2 ! [m^2/s^2]
@@ -116,7 +120,7 @@ module constants
   ! they insure that those values squared won't be less then 10^-38, which is
   ! the lowest number that can be numerically represented.  However, the
   ! tolerance value for rc doubles as the lowest mixing ratio there can be to
-  ! still officially have a cloud at that level.  This is figured to be about 
+  ! still officially have a cloud at that level.  This is figured to be about
   ! 1.0 x 10^-7 kg/kg.  Brian; February 10, 2007.
   real, parameter :: & 
     rc_tol = 1.0E-7,  & ! [kg/kg]
@@ -138,7 +142,7 @@ module constants
     zero_threshold = 0.0 ! Defining a threshold to be 0.
 
   ! The maximum absolute value (or magnitude) that a correlation is allowed to
-  ! have.  Statistically, a correlation is not allowed to be less than -1 or 
+  ! have.  Statistically, a correlation is not allowed to be less than -1 or
   ! greater than 1, so the maximum magnitude would be 1.
   real, parameter :: &
     max_mag_correlation = 0.99
