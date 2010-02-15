@@ -277,8 +277,9 @@ module mono_flux_limiter
         gr,  & ! Variable(s)
         zm2zt  ! Procedure(s)
 
-    use constants, only: &
-        zero_threshold
+    use constants, only: &    
+        zero_threshold, &
+        fstderr
 
     use stats_precision, only:  & 
         time_precision ! Variable(s)
@@ -361,10 +362,11 @@ module mono_flux_limiter
 
     ! Local Variables
     real, dimension(gr%nnzp) :: &
-      xp2_zt,   &      ! x'^2 interpolated to thermodynamic levels  [units vary]
-      xm_without_ta, & ! Value of xm without turb. adv. contrib.    [units vary]
-      wpxp_net_adjust, & ! Net amount of adjustment needed on w'x'  [units vary]
-      dxm_dt_mfl_adjust  ! Rate of change of adjustment to xm       [units vary]
+      xp2_zt,          &      ! x'^2 interpolated to thermodynamic levels  [units vary]
+      xm_enter_mfl,    &      ! xm as it enters the MFL                    [units vary]
+      xm_without_ta,   &      ! Value of xm without turb. adv. contrib.    [units vary]
+      wpxp_net_adjust, &      ! Net amount of adjustment needed on w'x'    [units vary]      
+      dxm_dt_mfl_adjust       ! Rate of change of adjustment to xm         [units vary]
 
     real, dimension(gr%nnzp) :: &
       min_x_allowable_lev, & ! Smallest usuable value of x at lev k [units vary]
@@ -375,10 +377,13 @@ module mono_flux_limiter
       wpxp_mfl_lower_lim    ! Lower limit on w'x'(k)                [units vary]
 
     real ::  &
-      max_xp2,    & ! Maximum allowable x'^2                        [units vary]
-      stnd_dev_x, & ! Standard deviation of x                       [units vary]
-      max_dev,    & ! Determines approximate upper/lower limit of x [units vary]
-      m_adv_term    ! Contribution of mean advection to d(xm)/dt    [units vary]
+      max_xp2,             & ! Maximum allowable x'^2                        [units vary]
+      stnd_dev_x,          & ! Standard deviation of x                       [units vary]
+      max_dev,             & ! Determines approximate upper/lower limit of x [units vary]
+      m_adv_term,          & ! Contribution of mean advection to d(xm)/dt    [units vary]
+      xm_density_weighted, &  ! Density weighted xm at domain top    [units vary]
+      xm_adj_coef,         & ! Coeffecient to eliminate spikes at domain top [units vary]
+      dz                     ! zm grid spacing at top of domain              [m]
 
     real, dimension(3,gr%nnzp) ::  &
       lhs_mfl_xm  ! Left hand side of tridiagonal matrix
@@ -441,6 +446,9 @@ module mono_flux_limiter
     ! Initialize arrays.
     wpxp_net_adjust = 0.0
     dxm_dt_mfl_adjust = 0.0
+
+    ! Store the value of xm as it enters the mfl
+    xm_enter_mfl = xm
 
     ! Interpolate x'^2 to thermodynamic levels.
     xp2_zt = max( zm2zt( xp2 ), xp2_threshold )
@@ -724,6 +732,31 @@ module mono_flux_limiter
        !do k = 1, gr%nnzp, 1
        !   print *, "k = ", k, "xm(t) = ", xm_old(k), "new xm(t+1) = ", xm(k)
        !enddo
+
+       !Ensure there are no spikes at the top of the domain
+       if (abs((xm(gr%nnzp) - xm_enter_mfl(gr%nnzp))) > xm_tol) then
+          dz = gr%dzm(gr%nnzp)
+
+          xm_density_weighted = rho_ds_zt(gr%nnzp) &
+                                * (xm(gr%nnzp) - xm_enter_mfl(gr%nnzp)) &
+                                * dz
+
+          xm_adj_coef = xm_density_weighted / &
+                        sum(xm(2:gr%nnzp - 1) + rho_ds_zt(2:gr%nnzp - 1) &
+                             / gr%dzt(2:gr%nnzp - 1))
+
+          !xm_adj_coef can not be smaller than -1
+          if (xm_adj_coef < -0.99) then
+             write(fstderr,*) "xm_adj_coef in mfl less than -0.99, mx_adj_coef set to -0.99"
+             xm_adj_coef = -0.99
+          endif
+
+          !Apply the adjustment
+          xm = xm * (1 + xm_adj_coef)
+
+          !Remove the spike at the top of the domain
+          xm(gr%nnzp) = xm_enter_mfl(gr%nnzp)
+       endif
 
     endif ! any( wpxp_net_adjust(:) /= 0.0 )
 
