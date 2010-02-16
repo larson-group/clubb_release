@@ -40,7 +40,7 @@ addpath '../../matlab_include/'
 % Source files of the GABLS3 case
 
 % Path of the GrADS input files
-scm_path = ['/home/senkbeir/clubb/output/'];
+scm_path = ['/home/senkbeir/output/'];
 
 % zt Grid
 smfile   = 'cloud_feedback_s6_zt.ctl';
@@ -50,6 +50,12 @@ swfile   = 'cloud_feedback_s6_zm.ctl';
 
 % sfc Grid
 sfcfile  = 'cloud_feedback_s6_sfc.ctl';
+
+% rad zt Grid
+radztfile = 'cloud_feedback_s6_rad_zt.ctl';
+
+% rad zm Grid
+radzmfile = 'cloud_feedback_s6_rad_zm.ctl';
 
 % Reading the header from zt file
 [filename,nz,z,ntimesteps,numvars,list_vars] = header_read([scm_path,smfile]);
@@ -89,6 +95,38 @@ for i=1:w_numvars
      disp(i);
 end
 
+% Reading the header from rad zm file
+[rm_filename,rm_nz,rm_z,rm_ntimesteps,rm_numvars,rm_list_vars] = header_read([scm_path,radzmfile]);
+ 
+% Read in rad file's variables into MATLAB.
+% Variables will be usable in the form <GrADS Variable Name>_array
+for i=1:rm_numvars
+     for timestep = 1:sizet
+         stringtoeval = [rm_list_vars(i,:), ' = read_grads_clubb_endian([scm_path,rm_filename],''ieee-le'',rm_nz,t(timestep),t(timestep),i,rm_numvars);'];
+         eval(stringtoeval)
+         str = rm_list_vars(i,:)
+         arraydata(1:rm_nz,timestep) = eval([str,'(1:rm_nz)']);
+         eval([strtrim(str),'_array = arraydata;']);
+     end
+     disp(i);
+end
+
+% Reading the header from rad file
+[rt_filename,rt_nz,rt_z,rt_ntimesteps,rt_numvars,rt_list_vars] = header_read([scm_path,radztfile]);
+
+% Read in rad file's variables into MATLAB.
+% Variables will be usable in the form <GrADS Variable Name>_array
+for i=1:rt_numvars
+     for timestep = 1:sizet
+         stringtoeval = [rt_list_vars(i,:), ' = read_grads_clubb_endian([scm_path,rt_filename],''ieee-le'',rt_nz,t(timestep),t(timestep),i,rt_numvars);'];
+         eval(stringtoeval)
+         str = rt_list_vars(i,:);
+         arraydata(1:rt_nz,timestep) = eval([str,'(1:rt_nz)']);
+         eval([strtrim(str),'_array = arraydata;']);
+     end
+     disp(i);
+end
+
 % Reading the header from the sfc file
 [sfc_filename,sfc_nz,sfc_z,sfc_ntimesteps,sfc_numvars,sfc_list_vars] = header_read([scm_path,sfcfile]);
  
@@ -122,8 +160,32 @@ wq_array = wprtp_array ./ (1 + rtm_array);
 
 tdt_lw = radht_LW_array .* 86400 .* exner_array;
 tdt_sw = radht_SW_array .* 86400 .* exner_array;
-tdt_ls = (thlm_f_array - thlm_mc_array) .* 86400 .* exner_array;
-qdt_ls = (rtm_f_array - rtm_mc_array) .* 86400 * 1000; % kg kg^{-1} s^{-1} * 86400 (s/day) * 1000 (g/kg)
+% tdt_ls and qdt_ls were changed to be what Minghua wants
+
+% Calculate wm_zt .* d(T_in_k)/dz
+for i=2:nz-1
+    wmzt_d_t_in_k(i,:) = wm_array(i,:) .* (T_in_K_array(i+1,:) - T_in_K_array(i-1,:)) / z(i+1) - z(i-1);
+end
+
+% Boundary Conditions
+wmzt_d_t_in_k(1,:) = wm_array(1,:) .* (T_in_K_array(2,:) - T_in_K_array(1,:)) / (z(2) - z(1));
+wmzt_d_t_in_k(nz,:) = wm_array(nz,:) .* ( T_in_K_array(nz,:) - T_in_K_array(nz-1,:) ) / ( z(nz) - z(nz-1) );
+
+% Calculate wm_zt .* d(rvm)/dz
+for i=2:nz-1
+    wmzt_d_rvm(i,:) = wm_array(i,:) .* (rvm_array(i+1,:) - rvm_array(i-1,:)) / (z(i+1) - z(i-1));
+end
+
+% Boundary Conditions
+wmzt_d_rvm(1,:) = wm_array(1,:) .* (rvm_array(2,:) - rvm_array(1,:)) / (z(2) - z(1));
+wmzt_d_rvm(nz,:) = wm_array(nz,:) .* ( rvm_array(nz,:) - rvm_array(nz-1,:) ) / ( z(nz) - z(nz-1) );
+
+tdt_ls = ( thlm_f_array - thlm_mc_array - radht_array + wmzt_d_t_in_k ) .* 86400 .* exner_array;
+qdt_ls = ( rtm_f_array - rtm_mc_array + wmzt_d_rvm ) .* 86400 * 1000; % kg kg^{-1} s^{-1} * 86400 (s/day) * 1000 (g/kg)
+
+% old tdt_ls and qdt_ls that were used for submissions 1 and 2
+%tdt_ls = (thlm_f_array - thlm_mc_array) .* 86400 .* exner_array;
+%qdt_ls = (rtm_f_array - rtm_mc_array) .* 86400 * 1000; % kg kg^{-1} s^{-1} * 86400 (s/day) * 1000 (g/kg)
 
 time_out = 1:sizet;
 for i=1:sizet
@@ -250,18 +312,25 @@ netcdf.putVar( ncid, psvarid, p_array(1,:));
 netcdf.putVar( ncid, prectvarid, rain_rate_array);
 netcdf.putVar( ncid, lhflxvarid, lh_array);
 netcdf.putVar( ncid, shflxvarid, sh_array);
-netcdf.putVar( ncid, fsntvarid, Frad_SW_down_array(w_nz,:) - Frad_SW_up_array(w_nz,:));
-netcdf.putVar( ncid, flntvarid, Frad_LW_up_array(w_nz,:)  - Frad_LW_down_array(w_nz,:));
-netcdf.putVar( ncid, fsnsvarid, Frad_SW_down_array(1,:) - Frad_SW_up_array(1,:));
-netcdf.putVar( ncid, flnsvarid, Frad_LW_up_array(1,:) - Frad_LW_down_array(1,:));
 
+netcdf.putVar( ncid, fsntvarid, Frad_SW_down_ra_array(rm_nz,:) - Frad_SW_up_rad_array(rm_nz,:));
+netcdf.putVar( ncid, flntvarid, Frad_LW_up_rad_array(rm_nz,:)  - Frad_LW_down_ra_array(rm_nz,:));
+netcdf.putVar( ncid, fsnsvarid, Frad_SW_down_ra_array(1,:) - Frad_SW_up_rad_array(1,:));
+netcdf.putVar( ncid, flnsvarid, Frad_LW_up_rad_array(1,:) - Frad_LW_down_ra_array(1,:));
+
+% The following is not TOA. Used for submissions 1 and 2
+%netcdf.putVar( ncid, fsntvarid, Frad_SW_down_array(w_nz,:) - Frad_SW_up_array(w_nz,:));
+%netcdf.putVar( ncid, flntvarid, Frad_LW_up_array(w_nz,:)  - Frad_LW_down_array(w_nz,:));
+
+% Output directly by BugsRad. This code is not in the repository, but instead in condella:/home/senkbeir/Archives
 netcdf.putVar( ncid, flnscvarid, fulwcl_array(end,:) - fdlwcl_array(end,:));
-%netcdf.putVar( ncid, preccvarid, );
-%netcdf.putVar( ncid, preclvarid, );
 netcdf.putVar( ncid, fsnscvarid, fdswcl_array(end,:));
-%netcdf.putVar( ncid, pblhvarid, );
 netcdf.putVar( ncid, fsntcvarid, fdswcl_array(1,:) - fuswcl_array(1,:));
 netcdf.putVar( ncid, flntcvarid, fulwcl_array(1,:) - fdlwcl_array(1,:));
+
+%netcdf.putVar( ncid, preccvarid, );
+%netcdf.putVar( ncid, preclvarid, );
+%netcdf.putVar( ncid, pblhvarid, );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Hourly-averaged vertical profiles of multi-level fields output
