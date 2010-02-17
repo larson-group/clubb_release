@@ -63,11 +63,14 @@ module extend_atmosphere_mod
 
     use input_interpret, only: read_theta_profile, read_z_profile ! Procedure(s)
 
-    use constants, only: kappa, p0 ! Variable(s)
+    use constants, only: kappa, p0, fstderr ! Constant(s)
 
     use input_names, only: z_name, temperature_name, ozone_name, rt_name ! Variable(s)
 
     implicit none
+
+    ! External
+    intrinsic :: size
 
     ! Input Variable(s)
 
@@ -89,26 +92,37 @@ module extend_atmosphere_mod
 
     real,  dimension(:), allocatable :: alt, theta, p_in_Pa, exner
 
-    integer i
+    integer :: i, sclr_sounding_dim
 
     character(len=20) :: alt_type, theta_type
 
     ! -- Begin Code --
 
+    ! Determine the size of the extended atmosphere buffer
     extend_atmos_dim = size( sounding_profiles(1)%values )
+    sclr_sounding_dim = size( sclr_sounding_profiles(1)%values )
 
-    ! initializing memory
-    allocate( extend_alt(1:extend_atmos_dim) )
-    allocate( extend_T_in_K(1:extend_atmos_dim) )
-    allocate( extend_sp_hmdty(1:extend_atmos_dim) )
-    allocate( extend_pinmb(1:extend_atmos_dim) )
-    allocate( extend_o3l(1:extend_atmos_dim) )
+    ! Check for an error condition
+    if ( extend_atmos_dim /= sclr_sounding_dim ) then
+      write(fstderr,*) "Fatal error in convert_snd2extend_atm."
+      write(fstderr,*) "This code assumes the scalar sounding will be the same size"
+      write(fstderr,*) "as the main sounding data."
+      write(fstderr,*) "standard sounding dimension: ", extend_atmos_dim
+      write(fstderr,*) "scalar sounding dimension: ", sclr_sounding_dim
+      stop 
+    end if
 
-    allocate( alt(1:extend_atmos_dim) )
-    allocate( theta(1:extend_atmos_dim)  )
-    allocate( p_in_Pa(1:extend_atmos_dim) )
-    allocate( exner(1:extend_atmos_dim) )
+    ! Allocate variables
+    allocate( extend_alt(extend_atmos_dim) )
+    allocate( extend_T_in_K(extend_atmos_dim) )
+    allocate( extend_sp_hmdty(extend_atmos_dim) )
+    allocate( extend_pinmb(extend_atmos_dim) )
+    allocate( extend_o3l(extend_atmos_dim) )
 
+    allocate( alt(extend_atmos_dim) )
+    allocate( theta(extend_atmos_dim)  )
+    allocate( p_in_Pa(extend_atmos_dim) )
+    allocate( exner(extend_atmos_dim) )
 
     ! Either convert to pressure or from pressure
 
@@ -117,7 +131,8 @@ module extend_atmosphere_mod
 
     extend_alt = alt
 
-    if( alt_type == z_name ) then
+    if ( alt_type == z_name ) then
+      write(fstderr,*) "Fatal error in convert_snd2extend_atm."
       stop "Feature not implemented"
     end if
 
@@ -145,7 +160,7 @@ module extend_atmosphere_mod
 
     ! Read in ozone
     extend_o3l = read_x_profile( n_sclr_var, extend_atmos_dim, ozone_name, &
-                              sclr_sounding_profiles )
+                                 sclr_sounding_profiles )
 
     ! Free Memory
     deallocate( alt )
@@ -153,6 +168,7 @@ module extend_atmosphere_mod
     deallocate( p_in_Pa )
     deallocate( exner )
 
+    return
   end subroutine convert_snd2extend_atm
 
   !------------------------------------------------------------------------------------------------
