@@ -737,7 +737,7 @@ module mono_flux_limiter
        !enddo
 
        !Ensure there are no spikes at the top of the domain
-       if (abs((xm(gr%nnzp) - xm_enter_mfl(gr%nnzp))) > xm_tol) then
+       if (abs((xm(gr%nnzp) - xm_enter_mfl(gr%nnzp))) > 10 * xm_tol) then
           dz = gr%zm(gr%nnzp) - gr%zm(gr%nnzp - 1)
 
           xm_density_weighted = rho_ds_zt(gr%nnzp) &
