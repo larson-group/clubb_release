@@ -230,16 +230,21 @@ module clubb_core
     ! Constant Parameters
     ! ldgrant June 2009
     logical, parameter :: &
-      l_trapezoid_rule = .false., &      ! Logical flag used to turn the trapezoidal 
-                                         ! rule on or off.  
+      l_trapezoidal_rule_zt = .false., & ! If true, the trapezoidal rule is called for
+                                         ! the thermodynamic-level variables output 
+                                         ! from pdf_closure.  
+
+      l_trapezoidal_rule_zm = .false., & ! If true, the trapezoidal rule is called for
+                                         ! three momentum-level variables - wpthvp,
+                                         ! thlpthvp, and rtpthvp - output from pdf_closure.
 
       l_call_pdf_closure_twice = .false. ! This logical flag determines whether or not to
-                                         ! call subroutine pdf_closure twice or not.  If true,
+                                         ! call subroutine pdf_closure twice.  If true,
                                          ! pdf_closure is called first on thermodynamic levels
-                                         ! and then on momentum levels so each variable is 
-                                         ! computed on it's native level.  If false, pdf_closure
-                                         ! is called on thermodynamic levels, and outputs which
-                                         ! belong on momentum levels are interpolated back.
+                                         ! and then on momentum levels so that each variable is 
+                                         ! computed on its native level.  If false, pdf_closure
+                                         ! is only called on thermodynamic levels, and variables
+                                         ! which belong on momentum levels are interpolated.
 
     !!! Input Variables
     logical, intent(in) ::  & 
@@ -652,10 +657,11 @@ module clubb_core
 
     end if ! l_call_pdf_closure_twice
 
-    ! If logical flag is true, use the trapezoidal rule by calling the subroutine.
+    ! If l_trapezoidal_rule_zt is true, call trapezoidal_rule_zt for
+    ! thermodynamic-level variables output from pdf_closure.
     ! ldgrant June 2009
-    if ( l_trapezoid_rule ) then
-      call trapezoidal_rule &
+    if ( l_trapezoidal_rule_zt ) then
+      call trapezoidal_rule_zt &
          ( l_call_pdf_closure_twice,                    & ! intent(in)
            wprtp2, wp2rtp, wpthlp2, wp2thlp,            & ! intent(inout)
            wprtpthlp, cloud_frac, rcm, wp2thvp, wp2rcp, & ! intent(inout)
@@ -666,7 +672,16 @@ module clubb_core
            rcm_zm, wp2thvp_zm, wp2rcp_zm,               & ! intent(inout)
            wpsclrprtp_zm, wpsclrp2_zm, wpsclrpthlp_zm,  & ! intent(inout)
            wp2sclrp_zm, pdf_params_zm )                   ! intent(inout)
-    end if
+    end if ! l_trapezoidal_rule_zt
+
+    ! If l_trapezoidal_rule_zm is true, call trapezoidal_rule_zm for
+    ! the important momentum-level variabes output from pdf_closure.
+    ! ldgrant Feb. 2010
+    if ( l_trapezoidal_rule_zm ) then
+      call trapezoidal_rule_zm &
+         ( wpthvp_zt, thlpthvp_zt, rtpthvp_zt, & ! intent(in)
+           wpthvp, thlpthvp, rtpthvp )           ! intent(inout)
+    end if ! l_trapezoidal_rule_zm
 
     ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
     ! This code won't work unless rtm >= 0 !!!
@@ -1278,7 +1293,7 @@ module clubb_core
   end subroutine cleanup_clubb_core
 
   !-----------------------------------------------------------------------
-  subroutine trapezoidal_rule &
+  subroutine trapezoidal_rule_zt &
              ( l_call_pdf_closure_twice,                    & ! intent(in)
                wprtp2, wp2rtp, wpthlp2, wp2thlp,            & ! intent(inout)
                wprtpthlp, cloud_frac, rcm, wp2thvp, wp2rcp, & ! intent(inout)
@@ -1293,8 +1308,8 @@ module clubb_core
     ! Description:  This subroutine takes the output variables on the thermo.
     ! grid and either: interpolates them to the momentum grid, or uses the 
     ! values output from the second call to pdf_closure on momentum levels if  
-    ! l_call_pdf_closure_twice is true.  It then calls the function trapezoid  
-    ! to recompute the variables on the thermo. grid.
+    ! l_call_pdf_closure_twice is true.  It then calls the function   
+    ! trapezoid_zt to recompute the variables on the thermo. grid.
     ! ldgrant June 2009
     !
     ! Note:  The argument variables in the last 5 lines of the subroutine
@@ -1344,7 +1359,7 @@ module clubb_core
       pdf_params ! PDF parameters [units vary]
 
     ! Thermo. level variables brought to momentum levels either by
-    ! interpolation (in subroutine trapezoidal_rule) or by
+    ! interpolation (in subroutine trapezoidal_rule_zt) or by
     ! the second call to pdf_closure (in subroutine advance_clubb_core)
     real, dimension(gr%nnzp), intent(inout) :: &
       wprtp2_zm,     & ! w'rt'^2 on momentum grid                   [m kg^2/kg^2]
@@ -1604,60 +1619,105 @@ module clubb_core
     end if ! l_call_pdf_closure_twice
 
     ! Use the trapezoidal rule to recompute the variables on the zt level
-    wprtp2     = trapezoid( wprtp2, wprtp2_zm )
-    wp2rtp     = trapezoid( wp2rtp, wp2rtp_zm )
-    wpthlp2    = trapezoid( wpthlp2, wpthlp2_zm )
-    wp2thlp    = trapezoid( wp2thlp, wp2thlp_zm )
-    wprtpthlp  = trapezoid( wprtpthlp, wprtpthlp_zm )
-    cloud_frac = trapezoid( cloud_frac, cloud_frac_zm )
-    rcm        = trapezoid( rcm, rcm_zm )
-    wp2thvp    = trapezoid( wp2thvp, wp2thvp_zm )
-    wp2rcp     = trapezoid( wp2rcp, wp2rcp_zm ) 
+    wprtp2     = trapezoid_zt( wprtp2, wprtp2_zm )
+    wp2rtp     = trapezoid_zt( wp2rtp, wp2rtp_zm )
+    wpthlp2    = trapezoid_zt( wpthlp2, wpthlp2_zm )
+    wp2thlp    = trapezoid_zt( wp2thlp, wp2thlp_zm )
+    wprtpthlp  = trapezoid_zt( wprtpthlp, wprtpthlp_zm )
+    cloud_frac = trapezoid_zt( cloud_frac, cloud_frac_zm )
+    rcm        = trapezoid_zt( rcm, rcm_zm )
+    wp2thvp    = trapezoid_zt( wp2thvp, wp2thvp_zm )
+    wp2rcp     = trapezoid_zt( wp2rcp, wp2rcp_zm ) 
 
     do i = 1, sclr_dim 
-      wpsclrprtp(:,i)  = trapezoid( wpsclrprtp(:,i), wpsclrprtp_zm(:,i) )
-      wpsclrp2(:,i)    = trapezoid( wpsclrp2(:,i), wpsclrp2_zm(:,i) )
-      wpsclrpthlp(:,i) = trapezoid( wpsclrpthlp(:,i), wpsclrpthlp_zm(:,i) )
-      wp2sclrp(:,i)    = trapezoid( wp2sclrp(:,i), wp2sclrp_zm(:,i) )
+      wpsclrprtp(:,i)  = trapezoid_zt( wpsclrprtp(:,i), wpsclrprtp_zm(:,i) )
+      wpsclrp2(:,i)    = trapezoid_zt( wpsclrp2(:,i), wpsclrp2_zm(:,i) )
+      wpsclrpthlp(:,i) = trapezoid_zt( wpsclrpthlp(:,i), wpsclrpthlp_zm(:,i) )
+      wp2sclrp(:,i)    = trapezoid_zt( wp2sclrp(:,i), wp2sclrp_zm(:,i) )
     end do ! i = 1, sclr_dim
 
-    pdf_params%w1          = trapezoid( w1_zt, w1_zm )
-    pdf_params%w2          = trapezoid( w2_zt, w2_zm )
-    pdf_params%varnce_w1   = trapezoid( varnce_w1_zt, varnce_w1_zm )
-    pdf_params%varnce_w2   = trapezoid( varnce_w2_zt, varnce_w2_zm )
-    pdf_params%rt1         = trapezoid( rt1_zt, rt1_zm )
-    pdf_params%rt2         = trapezoid( rt2_zt, rt2_zm )
-    pdf_params%varnce_rt1  = trapezoid( varnce_rt1_zt, varnce_rt1_zm )
-    pdf_params%varnce_rt2  = trapezoid( varnce_rt2_zt, varnce_rt2_zm )
-    pdf_params%crt1        = trapezoid( crt1_zt, crt1_zm )
-    pdf_params%crt2        = trapezoid( crt2_zt, crt2_zm )
-    pdf_params%cthl1       = trapezoid( cthl1_zt, cthl1_zm )
-    pdf_params%cthl2       = trapezoid( cthl2_zt, cthl2_zm )
-    pdf_params%thl1        = trapezoid( thl1_zt, thl1_zm )
-    pdf_params%thl2        = trapezoid( thl2_zt, thl2_zm )
-    pdf_params%varnce_thl1 = trapezoid( varnce_thl1_zt, varnce_thl1_zm )
-    pdf_params%varnce_thl2 = trapezoid( varnce_thl2_zt, varnce_thl2_zm )
-    pdf_params%mixt_frac   = trapezoid( mixt_frac_zt, mixt_frac_zm )
-    pdf_params%rc1         = trapezoid( rc1_zt, rc1_zm )
-    pdf_params%rc2         = trapezoid( rc2_zt, rc2_zm )
-    pdf_params%rsl1        = trapezoid( rsl1_zt, rsl1_zm )
-    pdf_params%rsl2        = trapezoid( rsl2_zt, rsl2_zm )
-    pdf_params%cloud_frac1 = trapezoid( cloud_frac1_zt, cloud_frac1_zm )
-    pdf_params%cloud_frac2 = trapezoid( cloud_frac2_zt, cloud_frac2_zm )
-    pdf_params%s1          = trapezoid( s1_zt, s1_zm )
-    pdf_params%s2          = trapezoid( s2_zt, s2_zm )
-    pdf_params%stdev_s1    = trapezoid( stdev_s1_zt, stdev_s1_zm )
-    pdf_params%stdev_s2    = trapezoid( stdev_s2_zt, stdev_s2_zm )
-    pdf_params%rrtthl      = trapezoid( rrtthl_zt, rrtthl_zm )
-    pdf_params%alpha_thl   = trapezoid( alpha_thl_zt, alpha_thl_zm )
-    pdf_params%alpha_rt    = trapezoid( alpha_rt_zt, alpha_rt_zm )
+    pdf_params%w1          = trapezoid_zt( w1_zt, w1_zm )
+    pdf_params%w2          = trapezoid_zt( w2_zt, w2_zm )
+    pdf_params%varnce_w1   = trapezoid_zt( varnce_w1_zt, varnce_w1_zm )
+    pdf_params%varnce_w2   = trapezoid_zt( varnce_w2_zt, varnce_w2_zm )
+    pdf_params%rt1         = trapezoid_zt( rt1_zt, rt1_zm )
+    pdf_params%rt2         = trapezoid_zt( rt2_zt, rt2_zm )
+    pdf_params%varnce_rt1  = trapezoid_zt( varnce_rt1_zt, varnce_rt1_zm )
+    pdf_params%varnce_rt2  = trapezoid_zt( varnce_rt2_zt, varnce_rt2_zm )
+    pdf_params%crt1        = trapezoid_zt( crt1_zt, crt1_zm )
+    pdf_params%crt2        = trapezoid_zt( crt2_zt, crt2_zm )
+    pdf_params%cthl1       = trapezoid_zt( cthl1_zt, cthl1_zm )
+    pdf_params%cthl2       = trapezoid_zt( cthl2_zt, cthl2_zm )
+    pdf_params%thl1        = trapezoid_zt( thl1_zt, thl1_zm )
+    pdf_params%thl2        = trapezoid_zt( thl2_zt, thl2_zm )
+    pdf_params%varnce_thl1 = trapezoid_zt( varnce_thl1_zt, varnce_thl1_zm )
+    pdf_params%varnce_thl2 = trapezoid_zt( varnce_thl2_zt, varnce_thl2_zm )
+    pdf_params%mixt_frac   = trapezoid_zt( mixt_frac_zt, mixt_frac_zm )
+    pdf_params%rc1         = trapezoid_zt( rc1_zt, rc1_zm )
+    pdf_params%rc2         = trapezoid_zt( rc2_zt, rc2_zm )
+    pdf_params%rsl1        = trapezoid_zt( rsl1_zt, rsl1_zm )
+    pdf_params%rsl2        = trapezoid_zt( rsl2_zt, rsl2_zm )
+    pdf_params%cloud_frac1 = trapezoid_zt( cloud_frac1_zt, cloud_frac1_zm )
+    pdf_params%cloud_frac2 = trapezoid_zt( cloud_frac2_zt, cloud_frac2_zm )
+    pdf_params%s1          = trapezoid_zt( s1_zt, s1_zm )
+    pdf_params%s2          = trapezoid_zt( s2_zt, s2_zm )
+    pdf_params%stdev_s1    = trapezoid_zt( stdev_s1_zt, stdev_s1_zm )
+    pdf_params%stdev_s2    = trapezoid_zt( stdev_s2_zt, stdev_s2_zm )
+    pdf_params%rrtthl      = trapezoid_zt( rrtthl_zt, rrtthl_zm )
+    pdf_params%alpha_thl   = trapezoid_zt( alpha_thl_zt, alpha_thl_zm )
+    pdf_params%alpha_rt    = trapezoid_zt( alpha_rt_zt, alpha_rt_zm )
     ! End of trapezoidal rule
 
     return
-  end subroutine trapezoidal_rule
+  end subroutine trapezoidal_rule_zt
 
   !-----------------------------------------------------------------------
-  pure function trapezoid( variable_zt, variable_zm )
+  subroutine trapezoidal_rule_zm &
+             ( wpthvp_zt, thlpthvp_zt, rtpthvp_zt, & ! intent(in)
+               wpthvp, thlpthvp, rtpthvp )           ! intent(inout)
+    !
+    ! Description:  This subroutine recomputes three variables on the 
+    ! momentum grid from pdf_closure -- wpthvp, thlpthvp, and 
+    ! rtpthvp -- by calling the function trapezoid_zm.  Only these three
+    ! variables are used in this subroutine because they are the only
+    ! pdf_closure momentum variables used elsewhere in CLUBB.
+    ! 
+    ! The _zt variables are output from the first call to pdf_closure.
+    ! The _zm variables are either output from the second call to pdf_closure
+    ! if l_call_pdf_closure_twice is true, or are interpolated to their
+    ! home momentum levels if l_call_pdf_closure_twice is false.
+    ! This is done before the call to this subroutine.  
+    ! ldgrant Feb. 2010
+    !-----------------------------------------------------------------------
+
+    use grid_class, only: gr ! Variable
+
+    implicit none
+
+    ! Input variables
+    real, dimension(gr%nnzp), intent(in) :: &
+      wpthvp_zt,   & ! Buoyancy flux (on thermo. grid)  [(K m)/s]
+      thlpthvp_zt, & ! th_l' th_v' (on thermo. grid)    [K^2]
+      rtpthvp_zt     ! r_t' th_v' (on thermo. grid)     [(kg K)/kg]
+
+    ! Input/Output variables
+    real, dimension(gr%nnzp), intent(inout) :: &
+      wpthvp,   & ! Buoyancy flux   [(K m)/s]
+      thlpthvp, & ! th_l' th_v'     [K^2]
+      rtpthvp     ! r_t' th_v'      [(kg K)/kg]
+
+    !----------------------- Begin Code -----------------------------
+
+    ! Use the trapezoidal rule to recompute the variables on the zm level
+    wpthvp     = trapezoid_zm( wpthvp, wpthvp_zt )
+    thlpthvp   = trapezoid_zm( thlpthvp, thlpthvp_zt )
+    rtpthvp    = trapezoid_zm( rtpthvp, rtpthvp_zt )
+
+    return
+  end subroutine trapezoidal_rule_zm
+
+  !-----------------------------------------------------------------------
+  pure function trapezoid_zt( variable_zt, variable_zm )
     !
     ! Description: Function which uses the trapezoidal rule from calculus
     ! to recompute the values for the variables on the thermo. grid which
@@ -1671,28 +1731,73 @@ module clubb_core
 
     ! Input Variables
     real, dimension(gr%nnzp), intent(in) :: &
-      variable_zt, &
-      variable_zm
+      variable_zt, & ! Variable on the zt grid
+      variable_zm    ! Variable on the zm grid
 
     ! Result
-    real, dimension(gr%nnzp) :: trapezoid
+    real, dimension(gr%nnzp) :: trapezoid_zt
 
     ! Local Variable
-    integer :: k
+    integer :: k ! Loop index
  
     !------------ Begin Code --------------
 
-    trapezoid(1) = variable_zt(1)
+    ! Boundary condition: trapezoidal rule not valid at zt level 1
+    trapezoid_zt(1) = variable_zt(1)
 
     do k = 2, gr%nnzp
-      trapezoid(k) =  0.5 * ( variable_zm(k) + variable_zt(k) ) &
-                          * ( gr%zm(k) - gr%zt(k) ) * gr%dzt(k) &
-                    + 0.5 * ( variable_zt(k) + variable_zm(k-1) ) &
-                          * ( gr%zt(k) - gr%zm(k-1) ) * gr%dzt(k)
+      ! Trapezoidal rule from calculus
+      trapezoid_zt(k) =  0.5 * ( variable_zm(k) + variable_zt(k) ) &
+                             * ( gr%zm(k) - gr%zt(k) ) * gr%dzt(k) &
+                       + 0.5 * ( variable_zt(k) + variable_zm(k-1) ) &
+                             * ( gr%zt(k) - gr%zm(k-1) ) * gr%dzt(k)
     end do ! k = 2, gr%nnzp
 
     return 
-  end function trapezoid
+  end function trapezoid_zt
+
+  !-----------------------------------------------------------------------
+  pure function trapezoid_zm( variable_zm, variable_zt )
+    !
+    ! Description: Function which uses the trapezoidal rule from calculus
+    ! to recompute the values for the important variables on the momentum
+    ! grid which are output from pdf_closure in module clubb_core.
+    ! These momentum variables only include wpthvp, thlpthvp, and rtpthvp.
+    ! ldgrant Feb. 2010
+    !--------------------------------------------------------------------
+
+    use grid_class, only: gr ! Variable
+
+    implicit none
+
+    ! Input Variables
+    real, dimension(gr%nnzp), intent(in) :: &
+      variable_zm, & ! Variable on the zm grid
+      variable_zt    ! Variable on the zt grid
+
+    ! Result
+    real, dimension(gr%nnzp) :: trapezoid_zm
+
+    ! Local Variable
+    integer :: k ! Loop index
+ 
+    !------------ Begin Code --------------
+
+    ! Boundary conditions: trapezoidal rule not valid at top zm level, nnzp.
+    ! Trapezoidal rule also not used at zm level 1.
+    trapezoid_zm(1)       = variable_zm(1)
+    trapezoid_zm(gr%nnzp) = variable_zm(gr%nnzp)
+
+    do k = 2, gr%nnzp-1
+      ! Trapezoidal rule from calculus
+      trapezoid_zm(k) =  0.5 * ( variable_zt(k+1) + variable_zm(k) ) &
+                             * ( gr%zt(k+1) - gr%zm(k) ) * gr%dzm(k) &
+                       + 0.5 * ( variable_zm(k) + variable_zt(k) ) &
+                             * ( gr%zm(k) - gr%zt(k) ) * gr%dzm(k)
+    end do ! k = 2, gr%nnzp-1
+
+    return 
+  end function trapezoid_zm
 
   !-----------------------------------------------------------------------
   subroutine compute_cloud_cover &
