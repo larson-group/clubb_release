@@ -1,5 +1,5 @@
 ! $Id$
-! Parameter file for GCSS ARM 0003 deep convective case
+! Parameter file for the TWP_ICE case
 
 &model_setting
 
@@ -41,7 +41,7 @@ zt_grid_fname = '../input/grid/deep_convection_128lev_27km_zt_grid.grd'
 ! Note:  For this option, zt_grid_fname must be ''.
 zm_grid_fname = ''
 
-day   = 17     ! Day of model start (1 to 31).
+day   = 19     ! Day of model start (1 to 31).
 month = 1     ! Month of model start (1 to 12).
 year  = 2006  ! Year of model start.
 
@@ -51,7 +51,7 @@ rlon = 130.891  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) 
 sfc_elevation = 0.0     ! Elevation of ground level [meters above mean sea level]
 
 time_initial = 10800.0  ! Model start time [seconds since midnight on start date]
-time_final = 2332800.0  ! Model end time [seconds since midnight on start date]
+time_final = 2160000.0  ! Model end time [seconds since midnight on start date]
 time_spinup = 10800.0   ! End of spin-up period [seconds since midnight on start date]
 
 dtmain    = 300.0   ! Model timestep [s]

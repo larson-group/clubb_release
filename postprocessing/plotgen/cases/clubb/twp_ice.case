@@ -5,9 +5,9 @@
     'name' => 'twp_ice',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'TWP ICE Minutes 34201-35640',
-    'startTime' => 34201,  # [minutes]
-    'endTime' => 35640,    # [minutes]
+    'headerText' => 'TWP ICE Minutes 31321-32760',
+    'startTime' => 31321,  # [minutes]
+    'endTime' => 32760,    # [minutes]
     'startHeight' => 0.0,  # [m]
     'endHeight' => 16000.0, # [m]
     'plots' =>
