@@ -1982,7 +1982,7 @@ contains
 
     ! The value of w'^2 at the lower boundary will remain the same.
     ! When the lower boundary is at the surface, the surface value of
-    ! w'^2 is set in subroutine sfc_var (sfc.F).
+    ! w'^2 is set in subroutine surface_varnce (surface_varnce_module.F).
     rhs(k_wp2)   = wp2(k)
     ! The value of w'^3 at the lower boundary will be 0.
     rhs(k_wp3)   = 0.0

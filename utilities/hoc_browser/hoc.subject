@@ -23,7 +23,7 @@ physics;probability density function;pdf_closure_new
 
 boundary layer;surface;sfc_momentum_fluxes
 boundary layer;surface;sfc_thermo_fluxes
-boundary layer;surface;sfc_var
+boundary layer;surface;surface_varnce
 
 radiation;analytic;cloud_rad
 radiation;analytic;rad_lwsw 

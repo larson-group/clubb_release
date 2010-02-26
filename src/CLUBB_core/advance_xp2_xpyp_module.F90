@@ -1056,7 +1056,7 @@ contains
 
 
     ! Boundary Conditions
-    ! These are set so that the sfc_var value of the variances and covariances
+    ! These are set so that the surface_varnce value of the variances and covariances
     ! can be used at the lowest boundary and the values of those variables can
     ! be set to their respective threshold minimum values at the top boundary.
     ! Fixed-point boundary conditions are used for both the variances and the
@@ -1684,10 +1684,10 @@ contains
 
 
     ! Boundary Conditions
-    ! These are set so that the sfc_var value of u'^2 or v'^2 can be used at the
-    ! lowest boundary and the values of those variables can be set to their
-    ! respective threshold minimum values at the top boundary.  Fixed-point
-    ! boundary conditions are used for the variances.
+    ! These are set so that the surface_varnce value of u'^2 or v'^2 can be 
+    ! used at the lowest boundary and the values of those variables can be
+    ! set to their respective threshold minimum values at the top boundary.
+    ! Fixed-point boundary conditions are used for the variances.
 
     rhs(1,1) = xap2(1)
     ! The value of u'^2 or v'^2 at the upper boundary will be set to the
@@ -1973,8 +1973,8 @@ contains
 
 
     ! Boundary Conditions
-    ! These are set so that the sfc_var value of rtp2, thlp2, or rtpthlp (or
-    ! sclrp2, sclrprtp, or sclrpthlp) can be used at the lowest boundary and the
+    ! These are set so that the surface_varnce value of rtp2, thlp2, or rtpthlp
+    ! (or sclrp2, sclrprtp, or sclrpthlp) can be used at the lowest boundary and the
     ! values of those variables can be set to their respective threshold minimum
     ! values (which is 0 in the case of the covariances) at the top boundary.
     ! Fixed-point boundary conditions are used for both the variances and the

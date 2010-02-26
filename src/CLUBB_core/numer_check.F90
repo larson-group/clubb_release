@@ -20,7 +20,7 @@ module numerical_check
 
   public :: invalid_model_arrays, isnan2d,  & 
             rad_check, parameterization_check, & 
-            sfc_var_check, pdf_closure_check, & 
+            surface_varnce_check, pdf_closure_check, & 
             length_check, isnan
 
   private :: check_negative, check_nan
@@ -441,12 +441,12 @@ module numerical_check
   end subroutine parameterization_check
 
 !-----------------------------------------------------------------------
-  subroutine sfc_var_check( wp2_sfc, up2_sfc, vp2_sfc, thlp2_sfc, & 
+  subroutine surface_varnce_check( wp2_sfc, up2_sfc, vp2_sfc, thlp2_sfc, & 
            rtp2_sfc, rtpthlp_sfc, err_code, & 
            sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc )
 !
 !       Description:This subroutine determines if any of the output
-!       variables for the sfc_var subroutine carry values that
+!       variables for the surface_varnce subroutine carry values that
 !       are nans.
 !
 !       Joshua Fasching February 2008
@@ -480,7 +480,7 @@ module numerical_check
     ! Local Variables
 
     ! Name of the subroutine calling the check
-    character(len=7),parameter :: proc_name = "sfc_var"
+    character(len=7),parameter :: proc_name = "surface_varnce"
 !-----------------------------------------------------------------------
 
     call check_nan( wp2_sfc, "wp2_sfc", proc_name, err_code)
@@ -503,7 +503,7 @@ module numerical_check
     end if
 
     return
-  end subroutine sfc_var_check
+  end subroutine surface_varnce_check
 
 !-----------------------------------------------------------------------
   subroutine rad_check( thlm, rcm, rtm, ricem,  & 

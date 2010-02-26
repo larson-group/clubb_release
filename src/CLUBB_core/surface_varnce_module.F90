@@ -1,23 +1,23 @@
 ! $Id$
 !===============================================================================
-module surface_var
+module surface_varnce_module
 
   implicit none
 
   private ! Default to private
 
-  public :: sfc_var
+  public :: surface_varnce
 
   contains
 
 !=============================================================================
-  subroutine sfc_var( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & 
-                      um_sfc, vm_sfc, wpsclrp_sfc,  & 
-                      wp2_sfc, up2_sfc, vp2_sfc, & 
-                      thlp2_sfc, rtp2_sfc, rtpthlp_sfc, err_code, & 
-                      sclrp2_sfc, & 
-                      sclrprtp_sfc,  & 
-                      sclrpthlp_sfc )
+  subroutine surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & 
+                             um_sfc, vm_sfc, wpsclrp_sfc,  & 
+                             wp2_sfc, up2_sfc, vp2_sfc, & 
+                             thlp2_sfc, rtp2_sfc, rtpthlp_sfc, err_code, & 
+                             sclrp2_sfc, & 
+                             sclrprtp_sfc,  & 
+                             sclrpthlp_sfc )
 
 ! Description:
 !   This subroutine computes estimate of the surface thermodynamic
@@ -39,7 +39,7 @@ module surface_var
       sclr_dim  ! Variable(s)
 
     use numerical_check, only: & 
-      sfc_var_check ! Procedure
+      surface_varnce_check ! Procedure
 
     use error_code, only:  & 
       clubb_var_equals_NaN,  & ! Variable(s)
@@ -338,16 +338,16 @@ module surface_var
 
     if ( clubb_at_least_debug_level( 2 ) ) then
 
-      call sfc_var_check( wp2_sfc, up2_sfc, vp2_sfc,  & 
-                          thlp2_sfc, rtp2_sfc, rtpthlp_sfc, & 
-                          err_code, & 
-                          sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc )
+      call surface_varnce_check( wp2_sfc, up2_sfc, vp2_sfc,  & 
+                                 thlp2_sfc, rtp2_sfc, rtpthlp_sfc, & 
+                                 err_code, & 
+                                 sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc )
 
 !       Error reporting
 !       Joshua Fasching February 2008
       if ( err_code == clubb_var_equals_NaN ) then
 
-        write(fstderr,*) "Error in sfc_var"
+        write(fstderr,*) "Error in surface_varnce"
         write(fstderr,*) "Intent(in)"
 
         write(fstderr,*) "upwp_sfc = ", upwp_sfc
@@ -380,8 +380,8 @@ module surface_var
 
     return
 
-  end subroutine sfc_var
+  end subroutine surface_varnce
 
 !===============================================================================
 
-end module surface_var
+end module surface_varnce_module

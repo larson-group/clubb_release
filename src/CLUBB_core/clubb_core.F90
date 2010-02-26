@@ -160,8 +160,8 @@ module clubb_core
       ! Variable(s) 
       advance_xp2_xpyp     ! Computes variance terms
 
-    use surface_var, only:  & 
-      sfc_var ! Procedure
+    use surface_varnce_module, only:  & 
+      surface_varnce ! Procedure
 
     use pdf_closure_module, only:  & 
       ! Procedure 
@@ -779,13 +779,13 @@ module clubb_core
     ! level is not the ground level.  Brian Griffin.  December 22, 2005.
     if ( gr%zm(1) == sfc_elevation ) then
 
-      call sfc_var( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & ! intent(in)
-                    um(2), vm(2), wpsclrp_sfc,                 & ! intent(in)
-                    wp2(1), up2(1), vp2(1),                    & ! intent(out)
-                    thlp2(1), rtp2(1), rtpthlp(1), err_code,   & ! intent(out)
-                    sclrp2(1,1:sclr_dim),                      & ! intent(out)
-                    sclrprtp(1,1:sclr_dim),                    & ! intent(out) 
-                    sclrpthlp(1,1:sclr_dim) )                    ! intent(out)
+      call surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & ! intent(in)
+                           um(2), vm(2), wpsclrp_sfc,                 & ! intent(in)
+                           wp2(1), up2(1), vp2(1),                    & ! intent(out)
+                           thlp2(1), rtp2(1), rtpthlp(1), err_code,   & ! intent(out)
+                           sclrp2(1,1:sclr_dim),                      & ! intent(out)
+                           sclrprtp(1,1:sclr_dim),                    & ! intent(out) 
+                           sclrpthlp(1,1:sclr_dim) )                    ! intent(out)
 
       ! Subroutine may produce NaN values, and if so, exit
       ! gracefully.

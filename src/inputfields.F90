@@ -961,7 +961,7 @@ module inputfields
         ! wprtp at momentum levels 3 and 2 to find the value at momentum level 1
         ! through the use of a linear extension.  It should be pointed out that
         ! the boundary flux is usually solved in LES or CLUBB via a subroutine
-        ! like sfc_var.
+        ! like surface_varnce.
         if ( k_lowest_zm_input == 2 ) then
           wprtp(1)  & 
           = lin_ext_zm_bottom( wprtp(3), wprtp(2), & 
@@ -996,7 +996,7 @@ module inputfields
         ! wpthlp at momentum levels 3 and 2 to find the value at momentum level 1
         ! through the use of a linear extension.  It should be pointed out that
         ! the boundary flux is usually solved in LES or CLUBB via a subroutine
-        ! like sfc_var.
+        ! like surface_varnce.
         if ( k_lowest_zm_input == 2 ) then
           wpthlp(1)  & 
           = lin_ext_zm_bottom( wpthlp(3), wpthlp(2), & 
@@ -1103,7 +1103,7 @@ module inputfields
         ! rtpthlp at momentum levels 3 and 2 to find the value at momentum level 1
         ! through the use of a linear extension.  It should be pointed out that
         ! the boundary flux is usually solved in LES or CLUBB via a subroutine
-        ! like sfc_var.
+        ! like surface_varnce.
         if ( k_lowest_zm_input == 2 ) then
           rtpthlp(1)  & 
           = lin_ext_zm_bottom( rtpthlp(3), rtpthlp(2), & 
