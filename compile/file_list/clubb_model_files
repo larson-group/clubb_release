@@ -3,7 +3,7 @@
 ../src/Benchmark_cases/atex.F90
 ../src/Benchmark_cases/bomex.F90
 ../src/Benchmark_cases/cloud_rad.F90
-../src/Benchmark_cases/cloud_sed_mod.F90
+../src/Benchmark_cases/cloud_sed_module.F90
 ../src/Benchmark_cases/diag_ustar.F90
 ../src/Benchmark_cases/dycoms2_rf01.F90
 ../src/Benchmark_cases/dycoms2_rf02.F90
@@ -19,7 +19,7 @@
 ../src/bugsrad_driver.F90
 ../src/coamps_micro_driver.F90
 ../src/cos_solar_zen.F90
-../src/ice_dfsn_mod.F90
+../src/ice_dfsn_module.F90
 ../src/KK_microphys_module.F90
 ../src/latin_hypercube_driver.F90
 ../src/morrison_micro_driver.F90
@@ -29,12 +29,12 @@
 ../src/Parabolic_constants.f90
 ../src/Parabolic.f90
 ../src/recl.inc
-../src/simple_rad_mod.F90
+../src/simple_rad_module.F90
 ../src/soil_vegetation.F90
 ../src/sounding.F90
 ../src/stat_file_utils.F90
 ../src/time_dependent_input.F90
-../src/extend_atmosphere_mod.F90
+../src/extend_atmosphere_module.F90
 ../src/input_netcdf.F90
 ../src/input_reader.F90
 ../src/input_names.F90
