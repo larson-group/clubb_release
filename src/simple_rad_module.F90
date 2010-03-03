@@ -1,5 +1,5 @@
 ! $Id$
-module simple_rad_mod
+module simple_rad_module
 
   implicit none
 
@@ -103,7 +103,7 @@ module simple_rad_mod
       if ( k == gr%nnzp+1 .or. k == 2 ) then
         write(fstderr,*) "Identification of 8.0 g/kg level failed"
         write(fstderr,*) "Subroutine: simple_rad. " & 
-          // "File: simple_rad_mod.F90"
+          // "File: simple_rad_module.F90"
         write(fstderr,*) "k = ", k
         write(fstderr,*) "rtm(k) = ", rtm(k)
         err_code = clubb_rtm_level_not_found
@@ -236,4 +236,4 @@ module simple_rad_mod
     return
   end function liq_water_path
 
-end module simple_rad_mod
+end module simple_rad_module

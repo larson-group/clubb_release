@@ -195,7 +195,7 @@ module clubb_core
     use clip_explicit, only: & 
       clip_covariances_denom ! Procedure(s)
 
-    use T_in_K_mod, only: &
+    use T_in_K_module, only: &
       ! Read values from namelist
       thlm2T_in_K ! Procedure
 

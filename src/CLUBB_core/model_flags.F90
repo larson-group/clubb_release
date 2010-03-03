@@ -28,7 +28,7 @@ module model_flags
     l_standard_term_ta = .false.    ! Use the standard discretization for the
   ! turbulent advection terms.  Setting to
   ! .false. means that a_1 and a_3 are pulled
-  ! outside of the derivative in advance_wp2_wp3_mod.F90
+  ! outside of the derivative in advance_wp2_wp3_module.F90
   ! and in advance_xp2_xpyp_module.F90.
 
   logical, parameter, public :: & 

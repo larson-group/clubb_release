@@ -1,6 +1,6 @@
 ! $Id$
 
-module ice_dfsn_mod
+module ice_dfsn_module
 
   implicit none
 
@@ -69,7 +69,7 @@ module ice_dfsn_mod
     USE saturation, only:  & 
         sat_mixrat_liq ! Procedure(s)
 
-    use T_in_K_mod, only: thlm2T_in_K ! Procedure(s)
+    use T_in_K_module, only: thlm2T_in_K ! Procedure(s)
 
     use stats_type, only: & 
         stat_update_var
@@ -186,7 +186,7 @@ module ice_dfsn_mod
 
       ! Check whether we're in cloud and below freezing.
       ! Note:  A value of 1.0E-5 kg/kg is used as a threshold value
-      ! for rcm because the HOC model shows a small amount of liquid
+      ! for rcm because the CLUBB model shows a small amount of liquid
       ! water all the way to the model top, which messes with the
       ! ice diffusion calculations.
       IF ( rcm(k) >= 1.0E-5 .AND. T_in_K(k) < T_freeze_K ) THEN
@@ -344,4 +344,4 @@ module ice_dfsn_mod
     RETURN
   END FUNCTION Diff_denom
 
-end module ice_dfsn_mod
+end module ice_dfsn_module

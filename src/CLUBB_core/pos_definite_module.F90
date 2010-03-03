@@ -1,5 +1,5 @@
 !$Id$
-module pos_definite_mod
+module pos_definite_module
 
   implicit none
 
@@ -231,4 +231,4 @@ module pos_definite_mod
   return
   end subroutine pos_definite_adj
 
-  end module pos_definite_mod
+  end module pos_definite_module

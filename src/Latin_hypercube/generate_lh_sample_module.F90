@@ -1,5 +1,5 @@
 !$Id$
-module generate_lh_sample_mod
+module generate_lh_sample_module
 
   implicit none
 
@@ -1642,5 +1642,5 @@ module generate_lh_sample_mod
     return
   end subroutine log_sqd_normalized
   
-end module generate_lh_sample_mod
+end module generate_lh_sample_module
 

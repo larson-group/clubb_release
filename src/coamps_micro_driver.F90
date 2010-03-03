@@ -62,7 +62,7 @@ module coamps_micro_driver_mod
 
     use parameters_microphys, only: l_graupel, l_ice_micro ! Variable(s)
 
-    use T_in_K_mod, only: thlm2T_in_K ! Procedure(s)
+    use T_in_K_module, only: thlm2T_in_K ! Procedure(s)
 
     implicit none
 

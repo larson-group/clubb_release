@@ -229,7 +229,7 @@ module clubb_driver
       uv_sponge_damp_profile, &
       finalize_tau_sponge_damp
 
-    use extend_atmosphere_mod, only: &
+    use extend_atmosphere_module, only: &
       total_atmos_dim, &
       complete_alt, &
       complete_momentum, &
@@ -1118,7 +1118,7 @@ module clubb_driver
       initialize_t_dependent_input, & ! Procedure(s)
       l_t_dependent ! Variable(s)
 
-    use extend_atmosphere_mod, only: &
+    use extend_atmosphere_module, only: &
       l_use_default_std_atmosphere, & ! Procedure(s)
       load_extend_std_atm, &
       convert_snd2extend_atm, &
@@ -3381,7 +3381,7 @@ module clubb_driver
 
     use microphys_driver, only: advance_microphys ! Procedure(s)
 
-    use cloud_sed_mod, only: cloud_drop_sed ! Procedure(s)
+    use cloud_sed_module, only: cloud_drop_sed ! Procedure(s)
 
     use parameters_model, only: hydromet_dim ! Variable(s)
 
@@ -3534,7 +3534,7 @@ module clubb_driver
      
     use cos_solar_zen_mod, only: cos_solar_zen ! Procedure(s)
 
-    use simple_rad_mod, only: &
+    use simple_rad_module, only: &
 !     simple_rad, simple_rad_bomex
       simple_rad_bomex
 

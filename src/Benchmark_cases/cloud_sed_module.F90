@@ -1,6 +1,6 @@
 !----------------------------------------------------------------------
 !$Id$
-module cloud_sed_mod
+module cloud_sed_module
 
 implicit none
 
@@ -186,4 +186,4 @@ thlm_mc = thlm_mc - ( Lv / (Cp*exner) ) * sed_rcm
 return
 end subroutine cloud_drop_sed
 
-end module cloud_sed_mod
+end module cloud_sed_module

@@ -542,7 +542,7 @@ module microphys_driver
     use latin_hypercube_mod, only: &
       latin_hypercube_driver ! Procedure
 
-    use ice_dfsn_mod, only: & 
+    use ice_dfsn_module, only: & 
         ice_dfsn ! Procedure(s)
 
     use parameters_tunable, only: & 

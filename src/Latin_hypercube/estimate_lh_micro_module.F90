@@ -1,6 +1,6 @@
 !$Id$
 
-module estimate_lh_micro_mod
+module estimate_lh_micro_module
 
   implicit none
 
@@ -1172,4 +1172,4 @@ module estimate_lh_micro_mod
   end subroutine rc_estimate
 !---------------------------------------------------------------
 
-end module estimate_lh_micro_mod
+end module estimate_lh_micro_module

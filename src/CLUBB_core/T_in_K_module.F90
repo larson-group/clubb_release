@@ -1,6 +1,6 @@
 ! $Id$ 
 
-module T_in_K_mod
+module T_in_K_module
 
   implicit none
 
@@ -77,4 +77,4 @@ module T_in_K_mod
   end function T_in_K2thlm
 !-------------------------------------------------------------------------------
 
-end module T_in_K_mod
+end module T_in_K_module

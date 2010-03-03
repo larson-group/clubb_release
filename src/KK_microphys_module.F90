@@ -111,7 +111,7 @@ module KK_microphys_module
     use saturation, only: & 
         sat_mixrat_liq ! Procedure(s)
 
-    use T_in_K_mod, only: thlm2T_in_K ! Procedure(s)
+    use T_in_K_module, only: thlm2T_in_K ! Procedure(s)
 
     use stats_precision, only: &
         time_precision ! Variable(s)

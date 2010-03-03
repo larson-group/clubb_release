@@ -1681,7 +1681,7 @@ module advance_xm_wpxp_module
     use mono_flux_limiter, only: &
         monotonic_turbulent_flux_limit ! Procedure(s)
 
-    use pos_definite_mod, only:  & 
+    use pos_definite_module, only:  & 
         pos_definite_adj ! Procedure(s)
 
     use clip_explicit, only: & 
@@ -2387,7 +2387,7 @@ module advance_xm_wpxp_module
     ! Note:  The w'x' turbulent advection term, which is
     !        - (1/rho_ds) * d [ rho_ds * a_1 * ( w'^3 / w'^2 ) * w'x' ] / dz,
     !        still keeps the a_1 term inside the derivative, unlike the w'^3
-    !        equation (found in advance_wp2_wp3_mod.F90) and the equations for
+    !        equation (found in advance_wp2_wp3_module.F90) and the equations for
     !        r_t'^2, th_l'^2, r_t'th_l', u'^2, v'^2, sclr'r_t', sclr'th_l', and
     !        sclr'^2 (found in advance_xp2_xpyp_module.F90).  Brian.
 

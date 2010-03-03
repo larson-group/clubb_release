@@ -1,5 +1,5 @@
 ! $Id$
-module output_2D_samples_mod
+module output_2D_samples_module
 
   use stat_file_module, only : stat_file ! Type
 
@@ -197,4 +197,4 @@ module output_2D_samples_mod
     return
   end subroutine close_2D_samples_file
 
-end module output_2D_samples_mod
+end module output_2D_samples_module

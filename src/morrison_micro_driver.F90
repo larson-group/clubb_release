@@ -53,7 +53,7 @@ module morrison_micro_driver_mod
     use stats_type, only:  & 
         stat_update_var, stat_update_var_pt  ! Procedure(s)
 
-    use T_in_K_mod, only: &
+    use T_in_K_module, only: &
       T_in_K2thlm, & ! Procedure(s)
       thlm2T_in_K
 

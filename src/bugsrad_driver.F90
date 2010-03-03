@@ -59,14 +59,15 @@ module bugsrad_driver
 
     use stats_precision, only: time_precision ! Variable(s)
 
-    use T_in_K_mod, only: thlm2T_in_K ! Procedure(s)
+    use T_in_K_module, only: thlm2T_in_K ! Procedure(s)
 
     use error_code, only: clubb_at_least_debug_level ! Procedure(s)
 
     use stats_type, only: stat_update_var ! Procedure(s)
   
-    use extend_atmosphere_mod, only: extend_atmos_dim, extend_alt, extend_pinmb, & ! Variable(s)
-           extend_T_in_K, extend_sp_hmdty, extend_o3l
+    use extend_atmosphere_module, only: &
+      extend_atmos_dim, extend_alt, extend_pinmb, & ! Variable(s)
+      extend_T_in_K, extend_sp_hmdty, extend_o3l
 
     use stats_variables, only: zt, zm, rad_zt, rad_zm, l_stats_samp, & ! Variable(s)
       iT_in_K_rad, ircil_rad, io3l_rad, irsnowm_rad, ircm_in_cloud_rad, &

@@ -52,13 +52,13 @@ module latin_hypercube_mod
     use permute_height_time_mod, only: & 
       permute_height_time ! Procedure
 
-    use generate_lh_sample_mod, only: & 
+    use generate_lh_sample_module, only: & 
       generate_lh_sample ! Procedure
 
-    use estimate_lh_micro_mod, only: & 
+    use estimate_lh_micro_module, only: & 
       estimate_lh_micro ! Procedure
 
-    use output_2D_samples_mod, only: &
+    use output_2D_samples_module, only: &
       output_2D_samples_file ! Procedure(s)
 #endif
 
@@ -365,7 +365,7 @@ module latin_hypercube_mod
       time_precision ! Constant
 
 #ifdef UNRELEASED_CODE
-    use output_2D_samples_mod, only: &
+    use output_2D_samples_module, only: &
       open_2D_samples_file ! Procedure
 #endif /*UNRELEASED_CODE*/
 
@@ -463,7 +463,7 @@ module latin_hypercube_mod
 !   None
 !-------------------------------------------------------------------------------
 #ifdef UNRELEASED_CODE
-    use output_2D_samples_mod, only: &
+    use output_2D_samples_module, only: &
       close_2D_samples_file ! Procedure
 #endif 
 

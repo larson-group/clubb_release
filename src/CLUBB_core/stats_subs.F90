@@ -1418,7 +1418,7 @@ module stats_subs
     use variables_prognostic_module, only: & 
       pdf_parameter ! Type
 
-    use T_in_K_mod, only: & 
+    use T_in_K_module, only: & 
         thlm2T_in_K ! Procedure
 
     use constants, only: & 

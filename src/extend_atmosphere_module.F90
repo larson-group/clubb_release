@@ -1,6 +1,6 @@
 !----------------------------------------------------------------------------
 ! $Id$
-module extend_atmosphere_mod
+module extend_atmosphere_module
 
   implicit none
 
@@ -425,4 +425,4 @@ module extend_atmosphere_mod
     deallocate( complete_momentum )
 
   end subroutine finalize_extend_atm
-end module extend_atmosphere_mod
+end module extend_atmosphere_module
