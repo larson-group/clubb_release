@@ -87,7 +87,7 @@ while true ; do
             fi
 
             shift 2 ;;
-        -l|--levels) # Set the number of levels. This is used with the grids specified with -t and -m
+        -l|--levels) # Set the number of levels. This is used with the grids specified with -z and -m
             grid_nz=$2
 
             # Check to make sure this is an integer
@@ -306,14 +306,14 @@ then
 elif [ $ZM_GRID == true ];
 then
     cat $parameter_file > $NAMELISTS
-    cat $model_file | sed -e 's/nzmax\s*=\s*.*//g' \
-        -e 's/grid_type\s*=\s*.*//g' \
-        -e 's/zt_grid_fname\s*=\s*.*//g' \
-        -e 's/zm_grid_fname\s*=\s*.*//g'
-        -e 's/^\&model_setting/\&model_setting\n \
-        nzmax = '$grid_nz'\n \
-        zm_grid_fname ='\'$grid_path\''\n \
-        grid_type = 3\n/g' >> $NAMELISTS
+    cat $model_file | sed -e 's/^nzmax\s*=\s*.*//g' \
+        	-e 's/^grid_type\s*=\s*.*//g' \
+        	-e 's/^zt_grid_fname\s*=\s*.*//g' \
+        	-e 's/^zm_grid_fname\s*=\s*.*//g' \
+        	-e 's/^\&model_setting/\&model_setting\n \
+        	nzmax = '$grid_nz'\n \
+        	zm_grid_fname ='\'$grid_path\''\n \
+        	grid_type = 3\n/g' >> $NAMELISTS
     cat $stats_file >> $NAMELISTS
 
     run_case
