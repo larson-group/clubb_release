@@ -187,7 +187,7 @@ fprintf(fout,'Press[Pa]	        thm[K]     rt[kg\\kg]      u[m\\s]       v[m\\s]
 for j = 0:(numLevels - 1),
 	%Output the variable
 	index = (j * fieldLength) + tIndex;
-	fprintf(fout,'%f    	%f   %E      %f    %f    %f    %f    %f', lev(j + 1) * 100, theta(j+1), (q(index) / 1000), u(index), v(index), omega(index) * 100 / 3600 , u(index), v(index));
+	fprintf(fout,'%f    	%f   %E      %f    %f    %f    %f    %f', lev(j + 1) * 100, theta(j+1), (q(index) / 1000), u(index), v(index), omega(index) * 100 / seconds_per_hour, u(index), v(index));
 	fprintf(fout,'\n');
 end
 
