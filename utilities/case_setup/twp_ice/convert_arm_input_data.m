@@ -11,6 +11,7 @@ function convert_arm_input_data( caseName, fileName, sndgTime, Psfc )
 seconds_per_day = 86400;
 seconds_per_hour = 3600;
 g_per_kg = 1000;
+hPa_per_Pa = 100;
 
 %We need the unit conversions file
 %addpath('../../../postprocessing/matlab_include/convert_units.m');
@@ -187,7 +188,7 @@ fprintf(fout,'Press[Pa]	        thm[K]     rt[kg\\kg]      u[m\\s]       v[m\\s]
 for j = 0:(numLevels - 1),
 	%Output the variable
 	index = (j * fieldLength) + tIndex;
-	fprintf(fout,'%f    	%f   %E      %f    %f    %f    %f    %f', lev(j + 1) * 100, theta(j+1), (q(index) / 1000), u(index), v(index), omega(index) * 100 / seconds_per_hour, u(index), v(index));
+	fprintf(fout,'%f    	%f   %E      %f    %f    %f    %f    %f', lev(j + 1) * hPa_per_Pa, theta(j+1), (q(index) / g_per_kg), u(index), v(index), omega(index) * hPa_per_Pa / seconds_per_hour, u(index), v(index));
 	fprintf(fout,'\n');
 end
 
@@ -195,7 +196,7 @@ end
 fclose(fout);	
 
 %Now, append the McClatchy profile
-parse_McClatchey( caseName, 'McCProfiles.dat', Psfc, lev(numLevels) * 100, u((numLevels - 1) * fieldLength + 1), v((numLevels - 1) * fieldLength + 1) );
+parse_McClatchey( caseName, 'McCProfiles.dat', Psfc, lev(numLevels) * hPa_per_Pa, u((numLevels - 1) * fieldLength + 1), v((numLevels - 1) * fieldLength + 1) );
 
 
 %Now we need to create the forcings.in file 
