@@ -606,16 +606,17 @@ module generate_lh_sample_module
 
 !     end if ! iiLH_Nc > 0 
 
-      call sample_points( n_micro_calls, d_variables, dble( mixt_frac ), & 
-                          dble( rt1 ), dble( thl1 ), & 
-                          dble( rt2 ), dble( thl2 ), & 
-                          dble( crt1 ), dble( cthl1 ), & 
-                          dble( crt2 ), dble( cthl2 ), & 
-                          mu1, mu2, & 
-                          Sigma_stw_1, Sigma_stw_2, & 
-                          dble( cloud_frac1 ), dble( cloud_frac2 ), & 
-                          l_d_variable_lognormal, &
-                          LH_rt, LH_thl, X_u_one_lev, X_nl_one_lev ) 
+      call sample_points( n_micro_calls, d_variables, dble( mixt_frac ), &  ! In
+                          dble( rt1 ), dble( thl1 ), &  ! In
+                          dble( rt2 ), dble( thl2 ), &  ! In
+                          dble( crt1 ), dble( cthl1 ), &  ! In
+                          dble( crt2 ), dble( cthl2 ), &  ! In
+                          mu1, mu2, &  ! In
+                          dble( cloud_frac1 ), dble( cloud_frac2 ), & ! In 
+                          l_d_variable_lognormal, & ! In
+                          X_u_one_lev, & ! In
+                          Sigma_stw_1, Sigma_stw_2, & ! In/Out
+                          LH_rt, LH_thl, X_nl_one_lev ) ! Out
 
       ! End of overall if-then statement for Latin hypercube code
     end if
@@ -628,10 +629,11 @@ module generate_lh_sample_module
                             rt1, thl1, rt2, thl2, & 
                             crt1, cthl1, crt2, cthl2, & 
                             mu1, mu2,  & 
-                            Sigma_stw_1, Sigma_stw_2, & 
                             cloud_frac1, cloud_frac2, & 
                             l_d_variable_lognormal, &
-                            LH_rt, LH_thl, X_u_one_lev, X_nl_one_lev )
+                            X_u_one_lev, &
+                            Sigma_stw_1, Sigma_stw_2, & 
+                            LH_rt, LH_thl, X_nl_one_lev )
 
 ! Description:
 !   Generates n random samples from a d-dim Gaussian-mixture PDF.
@@ -661,7 +663,6 @@ module generate_lh_sample_module
     implicit none
 
     ! Input variables
-
     integer, intent(in) :: &
       n_micro_calls, & ! `n'   Number of calls to microphysics (normally=2)
       d_variables      ! Number of variates (normally=5)
@@ -684,12 +685,6 @@ module generate_lh_sample_module
     double precision, intent(in), dimension(d_variables) :: &
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd components
 
-    ! Columns of Sigma_stw, X_nl_one_lev:  1   2   3   4 ... d_variables
-    !                                      s   t   w   hydrometeors
-    double precision, intent(inout), dimension(d_variables,d_variables) :: &
-      Sigma_stw_1, &
-      Sigma_stw_2
-
     ! Cloud fractions for components 1 and 2
     double precision, intent(in) :: &
       cloud_frac1, cloud_frac2 ! cloud fraction associated w/ 1st, 2nd mixture component
@@ -697,12 +692,19 @@ module generate_lh_sample_module
     logical, intent(in), dimension(d_variables) :: &
       l_d_variable_lognormal ! Whether a given element of X_nl is lognormal
 
+    double precision, intent(in), dimension(n_micro_calls,d_variables+1) :: &
+      X_u_one_lev ! Sample drawn from uniform distribution from particular grid level
+
+    ! Columns of Sigma_stw, X_nl_one_lev:  1   2   3   4 ... d_variables
+    !                                      s   t   w   hydrometeors
+    double precision, intent(inout), dimension(d_variables,d_variables) :: &
+      Sigma_stw_1, &
+      Sigma_stw_2
+
     ! Output Variables
     ! Total water, theta_l: mean plus perturbations
     double precision, intent(out), dimension(n_micro_calls) :: LH_rt, LH_thl
 
-    double precision, intent(in), dimension(n_micro_calls,d_variables+1) :: &
-      X_u_one_lev ! Sample drawn from uniform distribution from particular grid level
 
     double precision, intent(out), dimension(n_micro_calls,d_variables) :: &
       X_nl_one_lev ! Sample that is transformed ultimately to normal-lognormal
