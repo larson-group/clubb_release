@@ -3,9 +3,9 @@ module generate_lh_sample_module
 
   implicit none
 
-  public :: generate_lh_sample
+  public :: generate_lh_sample, generate_uniform_sample
 
-  private :: sample_points, generate_uniform_sample, gaus_mixt_points, & 
+  private :: sample_points, gaus_mixt_points, & 
              truncate_gaus_mixt, ltqnorm, gaus_condt, & 
              st_2_rtthl, log_sqd_normalized
 
@@ -18,9 +18,8 @@ module generate_lh_sample_module
   subroutine generate_lh_sample &
              ( n_micro_calls, nt_repeat, d_variables, hydromet_dim, & 
                p_matrix, cloud_frac, wm, rtm, thlm, pdf_params, level, & 
-               hydromet, correlation_array, &
-               LH_rt, LH_thl, & 
-               X_u_one_lev, X_nl_one_lev )
+               hydromet, correlation_array, X_u_one_lev, &
+               LH_rt, LH_thl, X_nl_one_lev )
 ! Description:
 !   This subroutine generates a Latin Hypercube sample.
 
@@ -101,13 +100,13 @@ module generate_lh_sample_module
     real, dimension(d_variables,d_variables), intent(in) :: &
       correlation_array ! Correlations for sampled variables    [-]
 
+    double precision, intent(in), dimension(n_micro_calls,d_variables+1) :: &
+      X_u_one_lev ! Sample drawn from uniform distribution from a particular grid level
+
     ! Output Variables
     double precision, intent(out), dimension(n_micro_calls) :: &
       LH_rt, & ! Total water mixing ratio          [kg/kg]
       LH_thl   ! Liquid potential temperature      [K]
-
-    double precision, intent(out), dimension(n_micro_calls,d_variables+1) :: &
-      X_u_one_lev ! Sample drawn from uniform distribution from a particular grid level
 
     double precision, intent(out), dimension(n_micro_calls,d_variables) :: &
       X_nl_one_lev ! Sample that is transformed ultimately to normal-lognormal
@@ -318,11 +317,6 @@ module generate_lh_sample_module
       l_sample_flag = .false.
 
     end if ! l_sample_out_of_cloud
-
-
-    ! Generate Latin hypercube sample, with one extra dimension
-    !    for mixture component.
-    call generate_uniform_sample( n_micro_calls, nt_repeat, d_variables+1, p_matrix, X_u_one_lev )
 
     ! Standard sample for testing purposes when n=2
     ! X_u_one_lev(1,1:(d+1)) = ( / 0.0001d0, 0.46711825945881d0, &
@@ -1069,12 +1063,12 @@ module generate_lh_sample_module
                    ( mixt_frac*cloud_frac1 + (1-mixt_frac)*cloud_frac2 )
       if ( X_u_one_lev(sample, d_variables+1) < fraction_1 ) then
         call gaus_condt( d_variables, &
-                         std_normal, mu1, Sigma1, s_pts(sample), & 
-                         X_gm(sample, 1:d_variables) )
+                         std_normal, mu1, Sigma1, s_pts(sample), &  ! In
+                         X_gm(sample, 1:d_variables) ) ! Out
       else
         call gaus_condt( d_variables, &
-                         std_normal, mu2, Sigma2, s_pts(sample), & 
-                         X_gm(sample, 1:d_variables) )
+                         std_normal, mu2, Sigma2, s_pts(sample), &  ! In
+                         X_gm(sample, 1:d_variables) ) ! Out
       end if
 
       ! Loop to get new sample

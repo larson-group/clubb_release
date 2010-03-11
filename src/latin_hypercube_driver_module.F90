@@ -53,7 +53,7 @@ module latin_hypercube_mod
       permute_height_time ! Procedure
 
     use generate_lh_sample_module, only: & 
-      generate_lh_sample ! Procedure
+      generate_lh_sample, generate_uniform_sample ! Procedure
 
     use estimate_lh_micro_module, only: & 
       estimate_lh_micro ! Procedure
@@ -246,13 +246,20 @@ module latin_hypercube_mod
 
       ! print*, 'latin_hypercube_sampling: got past p_matrix'
 
+      ! Generate the uniform distribution using the Mersenne twister (not
+      ! currently setup to re-seed).
+      !  X_u has one extra dimension for the mixture component.
+      call generate_uniform_sample( n_micro_calls, nt_repeat, d_variables+1, p_matrix, & ! In
+                                    X_u_all_levs(k,:,:) ) ! Out
+    end do ! 1..nnzp
+
+    do k = 1, nnzp
       ! Generate LH sample, represented by X_u and X_nl, for level k
       call generate_lh_sample &
-           ( n_micro_calls, nt_repeat, d_variables, hydromet_dim, &        ! intent(in)
-             p_matrix, cloud_frac(k), wm(k), rcm(k)+rvm(k), thlm(k), pdf_params, k, & ! intent(in)
-             hydromet(k,:), correlation_array(k,:,:), &                    ! intent(in)
-             LH_rt(k,:), LH_thl(k,:), &                                    ! intent(out)
-             X_u_all_levs(k,:,:), X_nl_all_levs(k,:,:) )                   ! intent(out)
+           ( n_micro_calls, nt_repeat, d_variables, hydromet_dim, &        ! In
+             p_matrix, cloud_frac(k), wm(k), rcm(k)+rvm(k), thlm(k), pdf_params, k, & ! In
+             hydromet(k,:), correlation_array(k,:,:), X_u_all_levs(k,:,:), &  !  In
+             LH_rt(k,:), LH_thl(k,:), X_nl_all_levs(k,:,:) ) ! Out
 
       ! print *, 'latin_hypercube_sampling: got past lh_sampler'
     end do ! 1..nnzp
