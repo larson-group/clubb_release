@@ -338,7 +338,7 @@ module clubb_core
       rcm_in_layer, & ! rcm in cloud layer                              [kg/kg]
       cloud_cover     ! cloud cover                                     [-]
 
-    type(pdf_parameter), intent(inout) :: & 
+    type(pdf_parameter), intent(out) :: & 
       pdf_params      ! PDF parameters   [units vary]
 
     ! Variables that need to be output for use in host models
