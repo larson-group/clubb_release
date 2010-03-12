@@ -1,6 +1,6 @@
 ! $Id$
 !-----------------------------------------------------------------------
-module rad_lwsw_mod
+module rad_lwsw_module
 
   implicit none
 
@@ -677,4 +677,4 @@ module rad_lwsw_mod
     return
   end subroutine sunray_sw
 
-end module rad_lwsw_mod
+end module rad_lwsw_module

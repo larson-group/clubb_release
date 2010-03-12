@@ -49,7 +49,7 @@ module nov11
 
     use interpolation, only: linear_interpolation ! Procedure(s)
 
-    use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
+    use rad_lwsw_module, only: rad_lwsw ! Procedure(s)
 
     use error_code, only: clubb_at_least_debug_level ! Procedure(s)
 
@@ -61,7 +61,7 @@ module nov11
     use stats_variables, only: iFrad_SW, l_stats_samp,  & ! Variable(s)
                    iFrad_LW, zt, zm, iradht_LW, iradht_SW
 
-    use cos_solar_zen_mod, only: cos_solar_zen
+    use cos_solar_zen_module, only: cos_solar_zen
 
     use parameters_radiation, only: &
       F0, F1, Fs_values, cos_solar_zen_values, alvdr, kappa, omega, gc, &

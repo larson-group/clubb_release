@@ -536,10 +536,10 @@ module microphys_driver
       Ncp2_on_Ncm2_cloud, &
       corr_rrNr_LL_cloud
 
-    use morrison_micro_driver_mod, only: &
+    use morrison_micro_driver_module, only: &
       morrison_micro_driver
 
-    use latin_hypercube_mod, only: &
+    use latin_hypercube_driver_module, only: &
       latin_hypercube_driver ! Procedure
 
     use ice_dfsn_module, only: & 
@@ -568,7 +568,7 @@ module microphys_driver
         lapack_error, & ! Procedure
         clubb_at_least_debug_level
 
-    use coamps_micro_driver_mod, only:  & 
+    use coamps_micro_driver_module, only:  & 
         coamps_micro_driver ! Procedure
 
     use variables_prognostic_module, only:  &

@@ -34,7 +34,7 @@ module arm_3year
 
     use stats_precision, only: time_precision ! Variable(s)
 
-    use diag_ustar_mod, only: diag_ustar ! Variable(s)
+    use diag_ustar_module, only: diag_ustar ! Variable(s)
 
     use interpolation, only: factor_interp ! Procedure(s)
 

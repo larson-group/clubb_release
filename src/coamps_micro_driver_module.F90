@@ -1,6 +1,6 @@
 !----------------------------------------------------------------------
 ! $Id$
-module coamps_micro_driver_mod
+module coamps_micro_driver_module
 
 ! This module wraps the adjtq subroutine so that it may be used by
 ! CLUBB
@@ -930,4 +930,4 @@ module coamps_micro_driver_mod
       return
     end subroutine coamps_micro_driver
 
-  end module coamps_micro_driver_mod
+  end module coamps_micro_driver_module

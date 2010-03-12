@@ -153,7 +153,7 @@ module lba
 
     use stats_precision, only: time_precision ! Variable(s)
 
-    use diag_ustar_mod, only: diag_ustar ! Variable(s)
+    use diag_ustar_module, only: diag_ustar ! Variable(s)
 
     use array_index, only:  & 
         iisclr_thl, iisclr_rt ! Variable(s)

@@ -1,6 +1,6 @@
 ! $Id$
 !-------------------------------------------------------------------------------
-module latin_hypercube_mod
+module latin_hypercube_driver_module
 
   implicit none
    
@@ -51,7 +51,7 @@ module latin_hypercube_mod
     use parameters_model, only: hydromet_dim ! Variable
 
 #ifdef UNRELEASED_CODE
-    use permute_height_time_mod, only: & 
+    use permute_height_time_module, only: & 
       permute_height_time ! Procedure
 
     use generate_lh_sample_module, only: & 
@@ -517,4 +517,4 @@ module latin_hypercube_mod
     return
   end subroutine latin_hypercube_2D_close
 
-end module latin_hypercube_mod
+end module latin_hypercube_driver_module

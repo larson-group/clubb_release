@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
 ! $Id$
 !===============================================================================
-module hydrostatic_mod
+module hydrostatic_module
 
   implicit none
 
@@ -728,4 +728,4 @@ module hydrostatic_mod
 
 !===============================================================================
 
-end module hydrostatic_mod
+end module hydrostatic_module

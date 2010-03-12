@@ -173,7 +173,7 @@ use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 
-use diag_ustar_mod, only: diag_ustar ! Variable(s)
+use diag_ustar_module, only: diag_ustar ! Variable(s)
 
 use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 

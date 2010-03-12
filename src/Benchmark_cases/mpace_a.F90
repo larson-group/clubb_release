@@ -69,7 +69,7 @@
 
   use stats_precision, only: time_precision ! Variable(s)
 
-  use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
+  use rad_lwsw_module, only: rad_lwsw ! Procedure(s)
 
   use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 

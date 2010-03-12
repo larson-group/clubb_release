@@ -1,6 +1,6 @@
 ! $Id$
 !-----------------------------------------------------------------------
-module cos_solar_zen_mod
+module cos_solar_zen_module
 
   implicit none
 
@@ -146,4 +146,4 @@ module cos_solar_zen_mod
 
   end function cos_solar_zen
 
-end module cos_solar_zen_mod
+end module cos_solar_zen_module

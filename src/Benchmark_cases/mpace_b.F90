@@ -41,7 +41,7 @@ use grid_class, only: zt2zm ! Procedure(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 
-use rad_lwsw_mod, only: rad_lwsw ! Variable(s)
+use rad_lwsw_module, only: rad_lwsw ! Variable(s)
 
 use array_index, only: iiedsclr_rt, iiedsclr_thl, iisclr_rt, iisclr_thl ! Variable(s)
 

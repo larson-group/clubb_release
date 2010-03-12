@@ -242,7 +242,7 @@ module clubb_driver
       l_latin_hypercube_sampling ! Variable
 
 #ifdef UNRELEASED_CODE
-    use latin_hypercube_mod, only: &
+    use latin_hypercube_driver_module, only: &
       latin_hypercube_2D_output, & ! Procedure(s)
       latin_hypercube_2D_close
 #endif
@@ -1771,7 +1771,7 @@ module clubb_driver
         theta_name, &
         thetal_name
 
-    use hydrostatic_mod, only: &
+    use hydrostatic_module, only: &
         hydrostatic ! Procedure(s)
 
     use saturation, only: &
@@ -2874,7 +2874,7 @@ module clubb_driver
 
     use wangara, only: wangara_tndcy, wangara_sfclyr ! Procedure(s)
 
-    use cos_solar_zen_mod, only: cos_solar_zen ! Function
+    use cos_solar_zen_module, only: cos_solar_zen ! Function
 
     use parameters_radiation, only: rad_scheme  ! Variable(s)
 
@@ -3532,7 +3532,7 @@ module clubb_driver
       cos_solar_zen_values, &
       cos_solar_zen_times
      
-    use cos_solar_zen_mod, only: cos_solar_zen ! Procedure(s)
+    use cos_solar_zen_module, only: cos_solar_zen ! Procedure(s)
 
     use simple_rad_module, only: &
 !     simple_rad, simple_rad_bomex

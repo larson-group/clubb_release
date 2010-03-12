@@ -41,7 +41,7 @@ module input_interpret
         sat_mixrat_liq, & ! Procedure(s)
         sat_rcm
 
-    use hydrostatic_mod, only: &
+    use hydrostatic_module, only: &
         inverse_hydrostatic ! Procedure(s)
 
     use input_names, only: &

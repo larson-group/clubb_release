@@ -1,5 +1,5 @@
 !$Id$
-module permute_height_time_mod
+module permute_height_time_module
 
   implicit none
 
@@ -162,4 +162,4 @@ module permute_height_time_mod
   end subroutine rand_permute
 !------------------------------------------------------------------------
 
-end module permute_height_time_mod
+end module permute_height_time_module

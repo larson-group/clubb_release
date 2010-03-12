@@ -135,7 +135,7 @@ module gabls2
 
     use stats_precision, only: time_precision ! Variable(s)
 
-    use diag_ustar_mod, only: diag_ustar ! Variable(s)
+    use diag_ustar_module, only: diag_ustar ! Variable(s)
 
     use array_index, only: iiedsclr_rt, iiedsclr_thl, iisclr_rt, iisclr_thl ! Variable(s)
 

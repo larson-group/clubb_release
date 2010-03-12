@@ -29,7 +29,7 @@ module gabls3
 
     use constants, only: kappa, grav, Rd, Cp, p0, Lv ! Variable(s)
 
-    use diag_ustar_mod, only: diag_ustar ! Procedure(s)
+    use diag_ustar_module, only: diag_ustar ! Procedure(s)
 
     use stats_precision, only: time_precision ! Variable(s)
 

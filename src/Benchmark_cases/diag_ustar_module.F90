@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
 !$Id$
 
-module diag_ustar_mod
+module diag_ustar_module
 
 implicit none
 
@@ -80,4 +80,4 @@ diag_ustar = ustar
 return
 end function diag_ustar
 
-end module diag_ustar_mod
+end module diag_ustar_module
