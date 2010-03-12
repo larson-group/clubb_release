@@ -9,9 +9,11 @@ module latin_hypercube_mod
 
   private ! Default scope
 
+  ! Constant Parameters
   logical, parameter, private :: &
     l_diagnostic_iter_check = .true., &
-    l_output_2D_samples = .false.
+    l_output_2D_samples = .false., &
+    l_lh_vert_overlap = .false.
 
   integer, allocatable, dimension(:,:,:), private :: & 
     height_time_matrix ! matrix of rand ints
@@ -192,7 +194,9 @@ module latin_hypercube_mod
     ! Number of random samples before sequence of repeats (normally=10)
     integer :: nt_repeat
 
-    integer :: i_rmd, k
+    integer :: i_rmd, k, k_lh_start, j
+
+    integer, dimension(1) :: tmp_loc
 
 #ifdef UNRELEASED_CODE
     ! ---- Begin Code ----
@@ -251,18 +255,44 @@ module latin_hypercube_mod
       !  X_u has one extra dimension for the mixture component.
       call generate_uniform_sample( n_micro_calls, nt_repeat, d_variables+1, p_matrix, & ! In
                                     X_u_all_levs(k,:,:) ) ! Out
+
     end do ! 1..nnzp
 
-    do k = 1, nnzp
+    ! For a 100 level fixed grid, this looks to be about the middle of the cloud for RICO
+!   k_lh_start = 50 
+    tmp_loc    = maxloc( rcm )
+    k_lh_start = tmp_loc(1) ! Attempt using the maximal value of rcm
+
+    if ( l_lh_vert_overlap ) then
+      do k = 1, nnzp
+        do j = 1, n_micro_calls
+          ! Overwrite 2 elements for maximal overlap
+          X_u_all_levs(k,j,1) =  X_u_all_levs(k_lh_start,j,1) ! s_mellor
+          X_u_all_levs(k,j,d_variables+1) = X_u_all_levs(k_lh_start,j,d_variables+1) ! Mixture comp.
+          ! Use this line to have all variates maximally correlated
+!         X_u_all_levs(k,j,:) = X_u_all_levs(k_lh_start,j,:) 
+        end do ! 1..nnzp
+      end do
+    end if ! Otherwise, assume random overlap
+
+    ! Upwards loop
+    do k = k_lh_start, nnzp, 1
       ! Generate LH sample, represented by X_u and X_nl, for level k
       call generate_lh_sample &
-           ( n_micro_calls, nt_repeat, d_variables, hydromet_dim, &        ! In
-             p_matrix, cloud_frac(k), wm(k), rcm(k)+rvm(k), thlm(k), pdf_params, k, & ! In
+           ( n_micro_calls, d_variables, hydromet_dim, &        ! In
+             cloud_frac(k), wm(k), rcm(k)+rvm(k), thlm(k), pdf_params, k, & ! In
+             hydromet(k,:), correlation_array(k,:,:), X_u_all_levs(k,:,:), & ! In
+             LH_rt(k,:), LH_thl(k,:), X_nl_all_levs(k,:,:) ) ! Out
+    end do ! k = k_lh_start..nnzp
+
+    ! Downwards loop
+    do k = k_lh_start-1, 1, -1
+      call generate_lh_sample &
+           ( n_micro_calls, d_variables, hydromet_dim, &        ! In
+             cloud_frac(k), wm(k), rcm(k)+rvm(k), thlm(k), pdf_params, k, & ! In
              hydromet(k,:), correlation_array(k,:,:), X_u_all_levs(k,:,:), &  !  In
              LH_rt(k,:), LH_thl(k,:), X_nl_all_levs(k,:,:) ) ! Out
-
-      ! print *, 'latin_hypercube_sampling: got past lh_sampler'
-    end do ! 1..nnzp
+    end do ! k_lh_start-1..1
 
     if ( l_output_2D_samples ) then
       call output_2D_samples_file( nnzp, n_micro_calls, d_variables, &

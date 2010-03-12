@@ -16,8 +16,8 @@ module generate_lh_sample_module
 
 !-------------------------------------------------------------------------------
   subroutine generate_lh_sample &
-             ( n_micro_calls, nt_repeat, d_variables, hydromet_dim, & 
-               p_matrix, cloud_frac, wm, rtm, thlm, pdf_params, level, & 
+             ( n_micro_calls, d_variables, hydromet_dim, & 
+               cloud_frac, wm, rtm, thlm, pdf_params, level, & 
                hydromet, correlation_array, X_u_one_lev, &
                LH_rt, LH_thl, X_nl_one_lev )
 ! Description:
@@ -73,23 +73,18 @@ module generate_lh_sample_module
 
     ! Input Variables
     integer, intent(in) :: &
-      n_micro_calls, & ! `n'   Number of calls to microphysics (normally=2)
-      nt_repeat,     & ! `n_t' Num. random samples before sequence repeats (normally=10)
-      d_variables,   & ! `d'   Number of variates (normally=5)
+      n_micro_calls, & ! `n' Number of calls to microphysics (normally=2)
+      d_variables,   & ! `d' Number of variates (normally 3 + microphysics specific variables)
       hydromet_dim     ! Number of hydrometeor species
 
     real, dimension(hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species [units vary]
-
 
     real, intent(in) :: &
       cloud_frac, & ! Cloud fraction, 0 <= cloud_frac <= 1
       wm,         & ! Vertical velocity                   [m/s]
       rtm,        & ! Mean total water mixing ratio       [kg/kg]
       thlm          ! Mean liquid potential temperature   [K]
-
-    integer, intent(in), dimension(n_micro_calls,d_variables+1) :: &
-      p_matrix !   N x D random matrix of integers that's fed to closure
 
     type(pdf_parameter), intent(in) :: &
       pdf_params ! PDF parameters output by closure_new [units vary]
