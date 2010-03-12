@@ -65,6 +65,11 @@ time_final | real, minimum of 12 digits of precision
 
 time_spinup | real, minimum of 12 digits of precision
   End of spin-up period [seconds since midnight on start date].
+  In some cases, e.g. clex9_oct14, microphysics or other code
+  is shut off during the spinup period, e.g. the first hour
+  of simulation.  However, in most cases, the spinup period
+  is not treated specially, and therefore we can set
+  time_spinup to some time greater than time_final.
 
 dtmain | real, minimum of 12 digits of precision 
   Model timestep [s].
@@ -124,7 +129,8 @@ rtm/thlm/um/vm_sponge_damp_settings%sponge_damp_depth   | real, default precisio
    damping depth as a fraction of domain height [-].
 
 l_restart | logical 
-  Flag for whether this is a restart run.
+  Flag for whether this is a restart run.  A restart run continues
+  an earlier run by reading in data saved to disk by the earlier run.
 
 restart_path_case | character 
   Path (from ../run_scripts/) and filename of GrADS/netCDF files 
