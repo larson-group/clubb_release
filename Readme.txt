@@ -347,9 +347,11 @@ format using a plotting program such as GrADS (http://www.iges.org/grads/).
 -----------------------------------------------------------------------
 
 After a long simulation has been performed, it is sometimes convenient to 
-perform a new simulation that starts some time in the middle of the original 
+perform a new simulation that starts some time at the middle or end of the original 
 simulation, rather than wasting time by starting again from the initial time.  
-The new simulation is then called a "restart" simulation.
+The new simulation is then called a "restart" simulation.  The restart
+simulation is initialized using data saved to disk by the original
+simulation at the restart time.
 
 1.  Perform the original simulation of case <CASE NAME> and save the GrADS 
     or netCDF output files in the <CLUBB BASE DIRECTORY>/output directory. 
