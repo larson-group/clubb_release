@@ -58,13 +58,13 @@ rlon | real, default precision
   Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees].
 
 time_initial | real, minimum of 12 digits of precision
-  Model start time [seconds since midnight on start date].
+  Model start time [seconds since midnight UTC on start date].
 
 time_final | real, minimum of 12 digits of precision
-  Model end time [seconds since midnight on start date].
+  Model end time [seconds since midnight UTC on start date].
 
 time_spinup | real, minimum of 12 digits of precision
-  End of spin-up period [seconds since midnight on start date].
+  End of spin-up period [seconds since midnight UTC on start date].
   In some cases, e.g. clex9_oct14, microphysics or other code
   is shut off during the spinup period, e.g. the first hour
   of simulation.  However, in most cases, the spinup period
@@ -104,7 +104,7 @@ l_t_dependent | logical
 
 l_input_xpwp_sfc | logical
   Flag used to determine whether or not to read in the surface momentum
-  fluxes, upwp_sfc and vpwp_sfc
+  fluxes upwp_sfc and vpwp_sfc.
 
 l_tke_aniso | logical
   Flag for anisotropic tke.
