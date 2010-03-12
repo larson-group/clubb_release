@@ -2,7 +2,7 @@
 ../src/Benchmark_cases/arm.F90
 ../src/Benchmark_cases/atex.F90
 ../src/Benchmark_cases/bomex.F90
-../src/Benchmark_cases/cloud_rad.F90
+../src/Benchmark_cases/cloud_rad_module.F90
 ../src/Benchmark_cases/cloud_sed_module.F90
 ../src/Benchmark_cases/diag_ustar_module.F90
 ../src/Benchmark_cases/dycoms2_rf01.F90
@@ -40,4 +40,4 @@
 ../src/input_names.F90
 ../src/input_interpret.F90
 ../src/inputfields.F90
-../src/inputgrads.F90
+../src/input_grads.F90
