@@ -1,3 +1,10 @@
+Introduction:
+-------------
+The files in this directory create and test netCDF files for submission
+to the CGILS (cloud_feedback) CFMIP-GCSS intercomparison.  
+The CGILS intercomparison actually involves 6 separate cases (s6, s6_p2k, etc.),
+and these scripts output a separate .nc file for each case.
+
 Submissions:
 ------------
 14 Aug 2009: Submitted results created with SVN revision r3995 and updated
@@ -6,7 +13,12 @@ nu6 in input/tunable_parameters.in to 10.
 How to generate and verify data:
 --------------------------------
 To generate data, edit cloud_feedback_output_creator.m and change the paths
-to the CLUBB data. Then run create_output.bash:
+to the CLUBB data.  Make sure that the output directory (i.e. the directory 
+to which netcdf.create writes) is writable by matlabuser, using a command such as
+
+  $ chmod 777 [name_of_output_directory]
+
+Then run create_output.bash:
   $ ./create_output.bash
 
 To verify the plots and create pdfs:
