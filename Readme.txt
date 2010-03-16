@@ -224,7 +224,8 @@ by CLUBB in a host model.  These include:
   production simulations, since it appears to have a high OpenMP overhead 
   when solving the matrices in CLUBB.
 
-3. Sub-cycle the CLUBB code so that CLUBB is being called at a 60 or 120
+3. If the host model's timestep is less than a minute, then sub-cycle 
+  the CLUBB code so that CLUBB is being called at a 60 or 120
   second timestep rather than the host model timestep.  The CLUBB code 
   uses a semi-implicit discretization, and should not require a small timestep.
 
