@@ -9,9 +9,10 @@ $Id$
 *         The distribution of this code and derived works thereof 
 *                      should include this notice.
 *
-*         Portions of this code derived from other sources (ACM TOMS,
-*         Numerical Recipes, etc.) are the property of their respective
-*         authors as noted and also subject to copyright.
+*         Portions of this code derived from other sources (Hugh Morrison,
+*         ACM TOMS, Numerical Recipes, et cetera) are the intellectual
+*         property of their respective authors as noted and also subject 
+*         to copyright.
 ************************************************************************
 
 
@@ -193,6 +194,58 @@ to the CLUBB modules.  You can reference that with a line
 such as the following:
 
 -I/home/griffinb/clubb/obj
+
+-----------------------------------------------------------------------
+- (1.2.1) Performance in a host model:
+-----------------------------------------------------------------------
+There are several key points to reducing the portion of runtime spent
+by CLUBB in a host model.  These include:
+
+1. Using a fast compiler with flags that work well for your computer.
+  On UWM's machines, the Intel Fortran and Sun Studio compilers performed
+  much better than g95.  Consult the documentation provided by the compiler
+  vendor, and try to use options that optimize to your particular processor 
+  and cache.  Generally, we recommend against using options that reduce 
+  the precision of calculations, since they may negatively impact the 
+  accuracy of your results.
+
+2. Choose a fast implementation of the Basic Linear Algebra Subroutines 
+  (abbreviated BLAS).  This is more crucial for CLUBB than for other models
+  because CLUBB uses large matrix inversions. 
+  For the LAPACK and BLAS libraries it is best to use AMD Core Math Library,
+  Intel Math Kernel Library, or ATLAS BLAS rather than the "reference" BLAS 
+  that typically comes with GNU/Linux systems, because the former will greatly 
+  improve the CLUBB code's runtime.
+  Typically we've seen better performance with the AMD Core Math Library
+  using AMD processors and the Intel MKL using Intel processors.
+  The ATLAS version of BLAS has been carefully configured to work well with 
+  both after being tuned at compile time to your specific setup.
+  It is probably best to avoid the current Sun Performance Library for 
+  production simulations, since it appears to have a high OpenMP overhead 
+  when solving the matrices in CLUBB.
+
+3. Sub-cycle the CLUBB code so that CLUBB is being called at a 60 or 120
+  second timestep rather than the host model timestep.  The CLUBB code 
+  uses a semi-implicit discretization, and should not require a small timestep.
+
+4. In some implementations of CLUBB in a host model, we have enabled the CLUBB
+  statistics code for a particular horizontal grid column (e.g. output the
+  first column of the third row on the domain).  This is meant to be used
+  for diagnostic purposes and should be disabled (l_stats = .false.) when
+  the model is used for production runs.
+
+5. Host models should call set_clubb_debug_level at initialization.  For
+  production simulations, use an argument of 0 rather than 1 or 2.  This 
+  disables warning messages and associated diagnostics, and will help speed 
+  up the model.
+
+6. When determining runtime occupied by CLUBB, keep in mind that the
+  percent time spent in the CLUBB code will be proportional to other processes
+  that are computed within the host model.  For example, in SAM-CLUBB the 
+  percentage of runtime spent in the CLUBB code will be far less if there 
+  large number of microphysical fields or tracers since the host model will 
+  need to advect, diffuse, and apply other processes to each of them. The
+  total time in CLUBB should be the same regardless of these other processes.
 
 -----------------------------------------------------------------------
 - (1.3) Making clean (for re-compiling from scratch)  
