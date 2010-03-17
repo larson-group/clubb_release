@@ -38,7 +38,7 @@ use grid_class, only: gr ! Variable(s)
 
 use grid_class, only: zt2zm ! Procedure(s)
 
-use atex_cloud_rad, only: cloud_rad ! Procedure(s)
+use cloud_rad_module, only: cloud_rad ! Procedure(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 

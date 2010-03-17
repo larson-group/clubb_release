@@ -1,6 +1,6 @@
 ! $Id$
 !----------------------------------------------------------------------
-module atex_cloud_rad
+module cloud_rad_module
 
   implicit none
 
@@ -92,4 +92,4 @@ module atex_cloud_rad
     return
   end subroutine cloud_rad
 
-end module atex_cloud_rad
+end module cloud_rad_module

@@ -28,7 +28,7 @@ we were to update to a new version of the external code.
 <div class="p"><!----></div>
 
 <ol type="1">
-<li> All source code, namelists, and script files in the repository should 
+<li> All source code in the repository should 
 have a standard header with a SVN <tt>$Id$</tt> tag at the top.  svn will then
 keep track of and list the time that the file was last updated and the name of
 the person who updated it.  
@@ -567,7 +567,7 @@ This is better documented:
 <li> Do not use the prognostic or diagnostic variable modules anywhere they
 are not used already.  Currently the module <tt>prognostic_variables</tt> 
 is used in 
-<tt>numer_check</tt> and <tt>clubb_driver</tt>, while 
+<tt>numerical_check</tt> and <tt>clubb_driver</tt>, while 
 <tt>diagnostic_variables</tt> is used in <tt>clubb_driver</tt>, 
 <tt>clubb_core</tt>, 
 and <tt>stats_subs</tt>. Global variables like these make debugging 
@@ -807,7 +807,7 @@ compiler warnings when the file is pre-processed Fortran 90 source.
 </li>
 
 <li> CLUBB uses the convention that logical variables should have a prefix of <tt>l_</tt>.  For example,
-use <tt>l_cloud_sed</tt> rather than <tt>cloud_sed</tt>
+use <tt>l_cloud_sed</tt> rather than <tt>cloud_sed</tt>.
 <div class="p"><!----></div>
 </li>
 </ol>
@@ -818,5 +818,5 @@ use <tt>l_cloud_sed</tt> rather than <tt>cloud_sed</tt>
 T<sub><font size="-1">E</font></sub>X
 by <a href="http://hutchinson.belmont.ma.us/tth/">
 T<sub><font size="-1">T</font></sub>M</a>,
-version 3.85.<br />On  2 Jul 2009, 12:40.</small>
+version 3.85.<br />On 12 Mar 2010, 16:59.</small>
 </body></html>

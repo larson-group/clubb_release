@@ -1,14 +1,11 @@
 !-----------------------------------------------------------------------
 ! $Id$
 
-module inputfile_class
+module input_grads
 
 !       Description:
 !       This module contains structure and subroutine definitions to
 !       open a GrADS data file a read it.
-!
-!       The structure (inputgrads) contains all necessary information
-!       about the file to read a specific variable at  specific time.
 !
 !       Chris Golaz, 9/12/2000
 
@@ -52,8 +49,6 @@ module inputfile_class
     integer :: index
     character(len=var_length) :: name ! variable name
   end type variable
-
-  ! Structure to hold description of a GrADS input file
 
   contains
 
@@ -357,7 +352,7 @@ module inputfile_class
 !     write(*,*) 'get_4byte_var: i > f%nvar'
 !     write(*,*) 'i = ',i
 !     write(*,*) 'f%nvar = ',f%nvar
-      write(fstderr,*) "inputgrads get_4byte_var: "//trim( varname ), " variable not found."
+      write(fstderr,*) "input_grads get_4byte_var: "//trim( varname ), " variable not found."
       return
     end if
 
@@ -460,4 +455,4 @@ module inputfile_class
     return
   end subroutine close_grads_read
 
-end module inputfile_class
+end module input_grads

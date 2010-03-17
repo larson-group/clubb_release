@@ -26,7 +26,7 @@ module stat_file_utils
 
     use stat_file_module, only: stat_file ! Type(s)
 
-    use inputfile_class, only: &
+    use input_grads, only: &
       open_grads_read, get_grads_var,  & ! Procedures
       close_grads_read
 
@@ -377,7 +377,7 @@ module stat_file_utils
 
     use stat_file_module, only: stat_file ! Type(s)
 
-    use inputfile_class, only: open_grads_read, close_grads_read ! Procedure(s)
+    use input_grads, only: open_grads_read, close_grads_read ! Procedure(s)
 
     use constants, only: fstderr
 
@@ -440,7 +440,7 @@ module stat_file_utils
 
     use stat_file_module, only: stat_file ! Type(s)
 
-    use inputfile_class, only: open_grads_read, close_grads_read ! Procedure(s)
+    use input_grads, only: open_grads_read, close_grads_read ! Procedure(s)
 
     use constants, only: fstderr
 

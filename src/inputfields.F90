@@ -202,7 +202,7 @@ module inputfields
        LES_grid_to_CLUBB_grid, & ! Procedure(s)
        CLUBB_levels_within_LES_domain
 
-    use inputfile_class, only: & 
+    use input_grads, only: & 
         get_grads_var,  & ! Procedure(s)
         open_grads_read, & 
         close_grads_read
@@ -2040,7 +2040,7 @@ module inputfields
     use stat_file_utils, only: &
         l_netcdf_file
 
-    use inputfile_class, only: &
+    use input_grads, only: &
         open_grads_read,  & ! Procedure(s)
         close_grads_read
 
