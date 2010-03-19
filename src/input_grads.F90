@@ -15,7 +15,7 @@ module input_grads
 !       * Overloaded subroutine get_grads_var to allow for 8 byte real output.
 !       * Added preprocesing for RECL
 !-----------------------------------------------------------------------
-#include "recl.inc"
+#include "CLUBB_core/recl.inc"
   use endian, only: & 
     little_endian, & ! Variable(s)
     big_endian, & 

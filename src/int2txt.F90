@@ -9,7 +9,7 @@ program int2txt
 ! Notes:  Not very useful on machines without a /dev/random, 
 !   though any 34 bytes of pseudo-random seed data would suffice.
 !-----------------------------------------------------------------------
-#include "recl.inc"
+#include "CLUBB_core/recl.inc"
 
 #ifdef AbsoftUNIXFortran
   use unix_library, only: iargc, getarg
