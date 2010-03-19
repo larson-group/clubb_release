@@ -34,7 +34,7 @@ module input_grads
   private ! Default Scope
 
   public :: get_grads_var, open_grads_read,  & 
-            close_grads_read, variable
+            close_grads_read
 
 
 ! Overloaded interface for get_grads_var.  All GrADS files are assumed
@@ -43,12 +43,6 @@ module input_grads
   interface get_grads_var
     module procedure get_4byte_var, get_8byte_var
   end interface
-
-  ! Structure to hold description of a variable
-  type variable
-    integer :: index
-    character(len=var_length) :: name ! variable name
-  end type variable
 
   contains
 
