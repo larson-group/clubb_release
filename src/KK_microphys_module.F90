@@ -196,8 +196,7 @@ module KK_microphys_module
       Nrm_cond,     & ! Change in Nrm due to condensation        [(num/kg)/s]
       Nrm_auto,     & ! Change in Nrm due to autoconversion      [(num/kg)/s]
       mean_vol_rad, & ! Mean volume radius                       [m]
-      Supsat,       & ! Supersaturation                          [-]
-      rsat            ! Saturation mixing ratio                  [kg/kg]
+      Supsat          ! Supersaturation                          [-]
 
     real, pointer, dimension(:) :: & 
       Ncm,             & ! Cloud droplet number conc.         [number/kg]
@@ -224,10 +223,12 @@ module KK_microphys_module
       corr_sNc_NL        ! Correlation of s and Nc  [-]
 
     real, dimension(nnzp) :: & 
-      T_in_K ! Absolute temperature     [K]
+      T_in_K,  & ! Absolute temperature             [K]
+      T_liq_m    ! Mean liquid water temperature    [K]
 
     real ::  & 
-      Beta_T          ! Beta_T                   [kg/kg]
+      r_sl,    & ! r_s(T_l,p)             [kg/kg]
+      Beta_Tl    ! Beta(T_l)              [-]
 
     real ::  &
       rrainm_source,     & ! Total source term rate for rrainm     [(kg/kg)/s]
@@ -441,16 +442,12 @@ module KK_microphys_module
     ! Determine temperature
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
 
-    ! Find values for other variables.
-    do k = 2, nnzp, 1
-
-      ! Saturation mixing ratio
-      rsat(k) = sat_mixrat_liq( p_in_Pa(k), T_in_K(k) )
-
-    enddo ! 2..nnzp
+    ! Calculate the mean liquid water temperature, T_l.
+    !
+    ! T_l = T - (Lv/Cp)*r_c = theta_l * exner.
+    T_liq_m = thlm * exner
 
     ! Set the boundary conditions
-    rsat(1)      = 0.0
     Supsat(1)    = 0.0
     Supsat(nnzp) = 0.0
 
@@ -458,11 +455,16 @@ module KK_microphys_module
 
       ! Compute supersaturation via s1, s2.
       !     Larson et al 2002, JAS, Vol 59, p 3534.
-      ! This allows a more direct comparison of local, nonlocal formulas.
-      Beta_T = (Rd/Rv) * ( Lv/(Rd*T_in_K(k)) )  & 
-               * ( Lv/(Cp*T_in_K(k)) )
+      ! This allows a more direct comparison of local, upscaled formulas.
 
-      Supsat(k) = s_mellor(k) * ( ( 1.0 + Beta_T*rsat(k) ) / rsat(k) )
+      ! Saturation mixing ratio (based on liquid water temperature and
+      ! pressure), r_sl = r_s(T_l,p).
+      r_sl = sat_mixrat_liq( p_in_Pa(k), T_liq_m(k) )
+
+      ! Beta(T_l).
+      Beta_Tl = (Rd/Rv) * ( Lv / (Rd*T_liq_m(k)) ) * ( Lv / (Cp*T_liq_m(k)) )
+
+      Supsat(k) = s_mellor(k) * ( ( 1.0 + Beta_Tl*r_sl ) / r_sl )
 
       ! Now find the elements that make up the right-hand side of the
       ! equation for rain water mixing ratio, rrainm.
