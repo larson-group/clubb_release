@@ -174,6 +174,8 @@ module bugsrad_driver
 
     integer :: buffer ! The sum of the two buffers
 
+    integer :: rad_zt_dim, rad_zm_dim ! Dimensions of the radiation grid
+
     !character(len=40) :: time_char
 
     !-------------------------------------------------------------------------------
@@ -380,35 +382,46 @@ module bugsrad_driver
       call stat_update_var( iFrad_LW_down, Frad_LW_down, zm )
 
       if ( l_output_rad_files ) then
-        call stat_update_var( iT_in_K_rad, real(T_in_K(1,:)), rad_zt )
+        
+        rad_zt_dim = (nz-1)+lin_int_buffer+extend_atmos_range_size
+        rad_zm_dim = (nz-1)+lin_int_buffer+extend_atmos_range_size+1
 
-        call stat_update_var( ircil_rad, real(rcil(1,:)), rad_zt )
+        call stat_update_var( iT_in_K_rad, real( flip(T_in_K(1,:), rad_zt_dim) ), rad_zt )
 
-        call stat_update_var( io3l_rad, real(o3l(1,:)), rad_zt )
+        call stat_update_var( ircil_rad, real( flip(rcil(1,:), rad_zt_dim) ), rad_zt )
 
-        call stat_update_var( irsnowm_rad, real(rsnowm_2d(1,:)), rad_zt )
+        call stat_update_var( io3l_rad, real( flip(o3l(1,:), rad_zt_dim) ), rad_zt )
 
-        call stat_update_var( ircm_in_cloud_rad, real(rcm_in_cloud_2d(1,:)), rad_zt )
+        call stat_update_var( irsnowm_rad, real( flip(rsnowm_2d(1,:), rad_zt_dim) ), rad_zt )
 
-        call stat_update_var( icloud_frac_rad, real(cloud_frac_2d(1,:)), rad_zt )
+        call stat_update_var( ircm_in_cloud_rad, real( flip(rcm_in_cloud_2d(1,:), rad_zt_dim) ), &
+                              rad_zt )
 
-        call stat_update_var( iradht_rad, real(radht_SW_2d(1,:) + radht_LW_2d(1,:)), rad_zt )
+        call stat_update_var( icloud_frac_rad, real( flip(cloud_frac_2d(1,:), rad_zt_dim) ), &
+                              rad_zt )
 
-        call stat_update_var( iradht_LW_rad, real(radht_LW_2d(1,:)), rad_zt )
+        call stat_update_var( iradht_rad, &
+                              real(flip((radht_SW_2d(1,:) + radht_LW_2d(1,:)), rad_zt_dim) ), & 
+                              rad_zt )
 
-        call stat_update_var( iradht_SW_rad, real(radht_SW_2d(1,:)), rad_zt )
+        call stat_update_var( iradht_LW_rad, real( flip(radht_LW_2d(1,:), rad_zt_dim) ), rad_zt )
 
-        call stat_update_var( iFrad_SW_rad, real(Frad_uSW(1,:) - Frad_dSW(1,:)), rad_zm )
+        call stat_update_var( iradht_SW_rad, real( flip(radht_SW_2d(1,:), rad_zt_dim) ), rad_zt )
 
-        call stat_update_var( iFrad_LW_rad, real(Frad_uLW(1,:) - Frad_dLW(1,:)), rad_zm )
+        call stat_update_var( iFrad_SW_rad, &
+                              real( flip((Frad_uSW(1,:) - Frad_dSW(1,:)), rad_zm_dim) ), rad_zm )
 
-        call stat_update_var( iFrad_SW_up_rad, real(Frad_uSW(1,:)), rad_zm )
+        call stat_update_var( iFrad_LW_rad, & 
+                              real( flip((Frad_uLW(1,:) - Frad_dLW(1,:)), rad_zm_dim) ), rad_zm )
 
-        call stat_update_var( iFrad_LW_up_rad, real(Frad_uLW(1,:)), rad_zm )
+        call stat_update_var( iFrad_SW_up_rad, real( flip(Frad_uSW(1,:), rad_zm_dim) ), rad_zm )
 
-        call stat_update_var( iFrad_SW_down_rad, real(Frad_dSW(1,:)), rad_zm )
+        call stat_update_var( iFrad_LW_up_rad, real( flip(Frad_uLW(1,:), rad_zm_dim) ), rad_zm )
 
-        call stat_update_var( iFrad_LW_down_rad, real(Frad_dLW(1,:)), rad_zm )
+        call stat_update_var( iFrad_SW_down_rad, real( flip(Frad_dSW(1,:), rad_zm_dim) ), rad_zm )
+
+        call stat_update_var( iFrad_LW_down_rad, real( flip(Frad_dLW(1,:), rad_zm_dim) ), rad_zm )
+      
       end if ! l_output_rad_files
 
     end if ! lstats_samp
