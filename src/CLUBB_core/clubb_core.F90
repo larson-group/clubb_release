@@ -809,7 +809,7 @@ module clubb_core
         sclrpthlp(1,i) = 0.0
       end do
 
-    endif
+    end if ! gr%zm(1) == sfc_elevation
 
 
     !#######################################################################
@@ -875,6 +875,7 @@ module clubb_core
                            sigma_sqd_w, Skw_zm, Kh_zt,    & ! intent(in)
                            rho_ds_zm, rho_ds_zt,          & ! intent(in)
                            invrs_rho_ds_zm, thv_ds_zm,    & ! intent(in)
+                           Lscale,                        & ! intent(in)
  ! Vince Larson used prognostic timestepping of variances 
  !    in order to increase numerical stability.  17 Jul 2007
  !                          .false., dt,                   & ! intent(in)
