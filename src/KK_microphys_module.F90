@@ -111,8 +111,6 @@ module KK_microphys_module
     use saturation, only: & 
         sat_mixrat_liq ! Procedure(s)
 
-    use T_in_K_module, only: thlm2T_in_K ! Procedure(s)
-
     use stats_precision, only: &
         time_precision ! Variable(s)
 
@@ -207,7 +205,6 @@ module KK_microphys_module
       s1, s2,          & ! PDF parameters s1 & s2             [kg/kg]
       stdev_s1,        & ! Standard deviation of s1           [kg/kg]
       stdev_s2,        & ! Standard deviation of s2           [kg/kg]
-      rc1, rc2,        & ! PDF parameters rc1 & rc2           [kg/kg]
       Vrr,             & ! Mean sedimentation velocity of rrainm    [m/s]    
       VNr,             & ! Mean sedimentation velocity of Nrm       [m/s]
       rrainm_mc_tndcy, & ! Rain water microphysical tendency        [(kg/kg)/s]
@@ -223,8 +220,7 @@ module KK_microphys_module
       corr_sNc_NL        ! Correlation of s and Nc  [-]
 
     real, dimension(nnzp) :: & 
-      T_in_K,  & ! Absolute temperature             [K]
-      T_liq_m    ! Mean liquid water temperature    [K]
+      T_liq_in_K         ! Mean liquid water temperature    [K]
 
     real ::  & 
       r_sl,    & ! r_s(T_l,p)             [kg/kg]
@@ -245,13 +241,6 @@ module KK_microphys_module
     integer :: k
 
     ! --- Begin Code ---
-    ! Some dummy assignments to make compiler warnings go away...
-    if ( .false. ) then
-      T_in_K = wm
-      T_in_K = w_std_dev
-      T_in_K = dzq
-      T_in_K = rvm
-    end if
 
     ! IMPORTANT NOTES
     !
@@ -339,8 +328,6 @@ module KK_microphys_module
     thl1      => pdf_params%thl1(:)
     thl2      => pdf_params%thl2(:)
     mixt_frac => pdf_params%mixt_frac(:)
-    rc1       => pdf_params%rc1(:)
-    rc2       => pdf_params%rc2(:)
     s1        => pdf_params%s1(:)
     s2        => pdf_params%s2(:)
     stdev_s1  => pdf_params%stdev_s1(:)
@@ -439,13 +426,10 @@ module KK_microphys_module
     Vrr(nnzp) = 0.0
     VNr(nnzp) = 0.0
 
-    ! Determine temperature
-    T_in_K = thlm2T_in_K( thlm, exner, rcm )
-
     ! Calculate the mean liquid water temperature, T_l.
     !
     ! T_l = T - (Lv/Cp)*r_c = theta_l * exner.
-    T_liq_m = thlm * exner
+    T_liq_in_K = thlm * exner
 
     ! Set the boundary conditions
     Supsat(1)    = 0.0
@@ -459,10 +443,11 @@ module KK_microphys_module
 
       ! Saturation mixing ratio (based on liquid water temperature and
       ! pressure), r_sl = r_s(T_l,p).
-      r_sl = sat_mixrat_liq( p_in_Pa(k), T_liq_m(k) )
+      r_sl = sat_mixrat_liq( p_in_Pa(k), T_liq_in_K(k) )
 
       ! Beta(T_l).
-      Beta_Tl = (Rd/Rv) * ( Lv / (Rd*T_liq_m(k)) ) * ( Lv / (Cp*T_liq_m(k)) )
+      Beta_Tl = (Rd/Rv) * ( Lv / (Rd*T_liq_in_K(k)) ) &
+                        * ( Lv / (Cp*T_liq_in_K(k)) )
 
       Supsat(k) = s_mellor(k) * ( ( 1.0 + Beta_Tl*r_sl ) / r_sl )
 
@@ -470,12 +455,12 @@ module KK_microphys_module
       ! equation for rain water mixing ratio, rrainm.
 
       rrainm_cond(k)  & 
-      = cond_evap_rrainm( l_local_kk, rrainm(k), Nrm(k), & 
-                          s1(k), stdev_s1(k), s2(k), stdev_s2(k), & 
-                          thl1(k), thl2(k), rc1(k), rc2(k), mixt_frac(k), & 
-                          p_in_Pa(k), exner(k), T_in_K(k), Supsat(k),  & 
-                          rrp2_on_rrainm2(k), Nrp2_on_Nrm2(k), corr_srr_NL(k), & 
-                          corr_sNr_NL(k), corr_rrNr_LL(k) )
+      = cond_evap_rrainm( l_local_kk, rrainm(k), Nrm(k), &
+                          s1(k), stdev_s1(k), s2(k), stdev_s2(k), &
+                          thl1(k), thl2(k), mixt_frac(k), & 
+                          p_in_Pa(k), exner(k), T_liq_in_K(k), &
+                          Supsat(k), rrp2_on_rrainm2(k), Nrp2_on_Nrm2(k), &
+                          corr_srr_NL(k), corr_sNr_NL(k), corr_rrNr_LL(k) )
 
       ! Vince Larson added option to call LH sampled Kessler autoconversion.
       ! 22 May 2005
@@ -778,7 +763,7 @@ module KK_microphys_module
   !
   ! where S = (e/esat) - 1
   !
-  ! since S = [ ( 1 + Beta_T * rs ) / rs ] * s
+  ! since S = [ ( 1 + Beta_Tl * rsl ) / rsl ] * s
   !
   ! (where s is the extended liquid water specific humidity),
   !
@@ -786,13 +771,13 @@ module KK_microphys_module
   !
   ! (drr/dt)cond =
   !    3 * Cevap * G(T,p) * [(4*PI*rho_lw)/(3*rho)]^(2/3)
-  !      * rr^(1/3) * NrV^(2/3) * [ ( 1 + Beta_T * rs ) / rs ] * s
+  !      * rr^(1/3) * NrV^(2/3) * [ ( 1 + Beta_Tl * rsl ) / rsl ] * s
   !
   ! This turns into:
   !
   ! (drr/dt)cond =
   !    3 * Cevap * G(T,p) * [(4*PI*rho_lw)/(3*rho)]^(2/3)
-  !      * [ ( 1 + Beta_T * rs ) / rs ]
+  !      * [ ( 1 + Beta_Tl * rsl ) / rsl ]
   !      * s^alpha * rr^beta * NrV^gamma
   !
   ! where alpha = 1.0, beta = 1/3, and gamma = 2/3
@@ -801,7 +786,7 @@ module KK_microphys_module
   !
   ! (drr/dt)cond =
   !    3 * Cevap * G(T,p) * [(4*PI*rho_lw)/(3*rho)]^(2/3)
-  !      * [ ( 1 + Beta_T * rs ) / rs ]
+  !      * [ ( 1 + Beta_Tl * rsl ) / rsl ]
   !      * Y1^alpha * Y2^beta * Y3^gamma
   !
   ! Y1 is used for s.  It is distributed as a double Gaussian with a
@@ -824,12 +809,12 @@ module KK_microphys_module
   !
   !-----------------------------------------------------------------------
 
-  FUNCTION cond_evap_rrainm( l_local_kk, rrainm, Nrm, & 
-                          s1, stdev_s1, s2, stdev_s2, & 
-                          thl1, thl2, rc1, rc2, mixt_frac, & 
-                          p_in_Pa, exner, T_in_K, Supsat,  & 
-                          rrp2_on_rrainm2, Nrp2_on_Nrm2, corr_srr_NL, & 
-                          corr_sNr_NL, corr_rrNr_LL  )
+  FUNCTION cond_evap_rrainm( l_local_kk, rrainm, Nrm, &
+                             s1, stdev_s1, s2, stdev_s2, &
+                             thl1, thl2, mixt_frac, & 
+                             p_in_Pa, exner, T_liq_in_K, &
+                             Supsat, rrp2_on_rrainm2, Nrp2_on_Nrm2, &
+                             corr_srr_NL, corr_sNr_NL, corr_rrNr_LL )
 
     USE constants, only: & 
         Nr_tol,  & ! Variable(s)
@@ -854,30 +839,28 @@ module KK_microphys_module
       l_local_kk ! Use local formula
 
     real, intent(in) :: &
-      rrainm,    & ! Grid-box average rrainm           [kg kg^-1]
-!     rrp2,      & ! Grid-box rr variance              [kg^2 kg^-2]
-      Nrm,       & ! Grid-box average Nrm              [kg^-1]
-!     Nrp2,      & ! Grid-box Nr variance              [kg^-2]
-      s1,        & ! Plume 1 average s                 [kg kg^-1]
-      stdev_s1,  & ! Plume 1 sigma s1 (not sigma^2 s1) [kg kg^-1]
-      s2,        & ! Plume 2 average s                 [kg kg^-1]
-      stdev_s2,  & ! Plume 2 sigma s2 (not sigma^2 s2) [kg kg^-1]
-      thl1,      & ! Plume 1 average theta-l           [K]
-      thl2,      & ! Plume 2 average theta-l           [K]
-      rc1,       & ! Plume 1 average rc                [kg kg^-1]
-      rc2,       & ! Plume 2 average rc                [kg kg^-1]
-      mixt_frac    ! Relative weight of each individual Gaussian "plume." [-]
+      rrainm,    & ! Grid-box average rrainm                    [kg kg^-1]
+!     rrp2,      & ! Grid-box rr variance                       [kg^2 kg^-2]
+      Nrm,       & ! Grid-box average Nrm                       [kg^-1]
+!     Nrp2,      & ! Grid-box Nr variance                       [kg^-2]
+      s1,        & ! Plume 1 average s                          [kg kg^-1]
+      stdev_s1,  & ! Plume 1 sigma s1 (not sigma^2 s1)          [kg kg^-1]
+      s2,        & ! Plume 2 average s                          [kg kg^-1]
+      stdev_s2,  & ! Plume 2 sigma s2 (not sigma^2 s2)          [kg kg^-1]
+      thl1,      & ! Plume 1 average theta-l                    [K]
+      thl2,      & ! Plume 2 average theta-l                    [K]
+      mixt_frac    ! Relative weight of each Gaussian "plume."  [-]
 
     real, intent(in) :: &
-      p_in_Pa,        &! Grid-box average pressure        [Pa]
-      exner,          &! Grid-box average exner function  [-]
-      T_in_K,         &! Grid-box average Temperature     [K]
-      Supsat,         &! Grid-box average Supersaturation [-]
-      rrp2_on_rrainm2,&! rrp2/rrainm^2                    [-]
-      Nrp2_on_Nrm2,   &! Nrp2/Nrm^2                       [-]
-      corr_srr_NL,    &! Correlation of s and rr          [-]
-      corr_sNr_NL,    &! Correlation of s and Nr          [-]
-      corr_rrNr_LL     ! Correlation of rr and Nr         [-]
+      p_in_Pa,         & ! Grid-box average pressure                   [Pa]
+      exner,           & ! Grid-box average exner function             [-]
+      T_liq_in_K,      & ! Grid-box average liquid water temperature   [K]
+      Supsat,          & ! Grid-box average Supersaturation            [-]
+      rrp2_on_rrainm2, & ! rrp2/rrainm^2                               [-]
+      Nrp2_on_Nrm2,    & ! Nrp2/Nrm^2                                  [-]
+      corr_srr_NL,     & ! Correlation of s and rr                     [-]
+      corr_sNr_NL,     & ! Correlation of s and Nr                     [-]
+      corr_rrNr_LL       ! Correlation of rr and Nr                    [-]
 
     ! Output variables.
     real :: cond_evap_rrainm  ! [kg kg^-1 s^-1]
@@ -902,7 +885,14 @@ module KK_microphys_module
       corr_sNr, & ! Correlation of s and Nr            [-]
       corr_rrNr   ! Correlation of rr and Nr           [-]
 
-    real :: Tl_1, Tl_2, T_1, T_2, rsl_1, rsl_2, Beta_T1, Beta_T2
+    real :: &
+      Tl_1,     & ! Mean liquid water temperature, "plume" 1             [K]
+      Tl_2,     & ! Mean liquid water temperature, "plume" 2             [K]
+      rsl_1,    & ! Mean saturation mixing ratio, r_s(T_l,p), "plume" 1  [kg/kg]
+      rsl_2,    & ! Mean saturation mixing ratio, r_s(T_l,p), "plume" 2  [kg/kg]
+      Beta_Tl1, & ! Coefficient Beta(T_l), "plume" 1                     [-]
+      Beta_Tl2    ! Coefficient Beta(T_l), "plume" 2                     [-]
+
     real :: plume_1_constants, plume_2_constants
 
 !-------------------------------------------------------------------------------
@@ -917,7 +907,7 @@ module KK_microphys_module
           ! The air is not saturated, therefore evaporation can take place.
 
           cond_evap_rrainm = & 
-           3.0 * C_evap * G_T_p( T_in_K, p_in_Pa ) & 
+           3.0 * C_evap * G_T_p( T_liq_in_K, p_in_Pa ) & 
                * ( ( (4.0/3.0)*pi*rho_lw )**(2.0/3.0) ) & 
                * (rrainm**(1.0/3.0)) * (Nrm**(2.0/3.0)) * Supsat
 
@@ -946,34 +936,28 @@ module KK_microphys_module
         !!! Define plume constants for each plume
 
         ! Gaussian "plume" 1
-        Tl_1 = thl1 * exner !((p_in_Pa/p0)**kappa)
-
-        T_1 = Tl_1 + (Lv/Cp)*rc1
+        Tl_1 = thl1 * exner
 
         rsl_1 = sat_mixrat_liq(p_in_Pa, Tl_1)
 
-        Beta_T1 = (Rd/Rv) * ( Lv/(Rd*Tl_1) )  & 
-                          * ( Lv/(Cp*Tl_1) )
+        Beta_Tl1 = (Rd/Rv) * ( Lv/(Rd*Tl_1) ) * ( Lv/(Cp*Tl_1) )
 
         plume_1_constants =  & 
-           3.0 * C_evap * G_T_p( T_1, p_in_Pa ) & 
+           3.0 * C_evap * G_T_p( Tl_1, p_in_Pa ) & 
                * ( ( (4.0/3.0)*pi*rho_lw )**(2.0/3.0) ) & 
-               * ( (1.0 + Beta_T1*rsl_1) / rsl_1 )
+               * ( (1.0 + Beta_Tl1*rsl_1) / rsl_1 )
 
         ! Gaussian "plume" 2
-        Tl_2 = thl2 * exner !((p_in_Pa/p0)**kappa)
-
-        T_2 = Tl_2 + (Lv/Cp)*rc2
+        Tl_2 = thl2 * exner
 
         rsl_2 = sat_mixrat_liq(p_in_Pa, Tl_2)
 
-        Beta_T2 = (Rd/Rv) * ( Lv/(Rd*Tl_2) )  & 
-                          * ( Lv/(Cp*Tl_2) )
+        Beta_Tl2 = (Rd/Rv) * ( Lv/(Rd*Tl_2) ) * ( Lv/(Cp*Tl_2) )
 
         plume_2_constants =  & 
-           3.0 * C_evap * G_T_p( T_2, p_in_Pa ) & 
+           3.0 * C_evap * G_T_p( Tl_2, p_in_Pa ) & 
                * ( ( (4.0/3.0)*pi*rho_lw )**(2.0/3.0) ) & 
-               * ( (1.0 + Beta_T2*rsl_2) / rsl_2 )
+               * ( (1.0 + Beta_Tl2*rsl_2) / rsl_2 )
 
         ! Exponents on s, rr, and Nr, respectively.
         alpha_exp = 1.0
