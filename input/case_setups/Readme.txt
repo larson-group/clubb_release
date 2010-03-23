@@ -235,7 +235,14 @@ l_fix_pgam | logical
   Fix pgam (Morrison)
 
 l_latin_hypercube_sampling | logical
-  Use latin sypercube sampling (K&K).
+  Use latin hypercube sampling (K&K).
+
+l_lh_vert_overlap | logical
+  Use maximum overlap assumption for s_mellor latin (K&K).
+
+l_lh_cloud_weighted_sampling | logical
+  Pick points in and out of cloud latin hypercube sampling (K&K).  Note that
+  LH_microphys_calls must be an even number to enable this.
 
 LH_microphys_calls | integer
   Number of latin hypercube samples to call the microphysics with (K&K).
