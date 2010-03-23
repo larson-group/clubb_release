@@ -3,7 +3,7 @@
 module latin_hypercube_driver_module
 
   implicit none
-   
+
   public :: latin_hypercube_driver, latin_hypercube_2D_output, &
     latin_hypercube_2D_close
 
@@ -11,9 +11,8 @@ module latin_hypercube_driver_module
 
   ! Constant Parameters
   logical, parameter, private :: &
-    l_diagnostic_iter_check = .true., &
-    l_output_2D_samples = .false., &
-    l_lh_vert_overlap = .false.
+    l_diagnostic_iter_check      = .true., & ! Check for a problem in iteration
+    l_output_2D_samples          = .false.   ! Output a 2D netCDF file of samples
 
   integer, allocatable, dimension(:,:,:), private :: & 
     height_time_matrix ! matrix of rand ints
@@ -55,10 +54,13 @@ module latin_hypercube_driver_module
       permute_height_time ! Procedure
 
     use generate_lh_sample_module, only: & 
-      generate_lh_sample, generate_uniform_sample ! Procedure
+      generate_lh_sample, & ! Procedure
+      generate_uniform_sample, &
+      choose_permuted_random
 
     use estimate_lh_micro_module, only: & 
-      estimate_lh_micro ! Procedure
+      estimate_lh_micro, & ! Procedure
+      k_lh_start ! Variable
 
     use output_2D_samples_module, only: &
       output_2D_samples_file ! Procedure(s)
@@ -108,13 +110,32 @@ module latin_hypercube_driver_module
     use stats_type, only: &
       stat_update_var ! Procedure(s)
 
+    use mt95, only: genrand_real3 ! Constant
+
+    use mt95, only: genrand_real ! Procedure
+
+    use parameters_microphys, only: &
+      l_lh_vert_overlap, &  ! Variables
+      LH_sample_point_weights, &
+      l_lh_cloud_weighted_sampling
+
+    use error_code, only: &
+      clubb_at_least_debug_level ! Procedure
+
     implicit none
 
     ! External
-    intrinsic :: allocated, mod
+    intrinsic :: allocated, mod, maxloc
 
     ! Interface block
 #include "./microphys_interface.inc"
+
+    ! Parameter Constants
+    real, parameter :: &
+      cloud_frac_thresh = 0.01 ! Threshold for sampling preferentially within cloud
+
+    integer, parameter :: &
+      clear = 1, cloudy = 2 ! For sampling preferentially within cloud
 
     ! Input Variables
     real, intent(in) :: &
@@ -191,17 +212,30 @@ module latin_hypercube_driver_module
       lh_Ncp2_zt,    & ! Average value of the variance of the LH est. of Nc.            [#^2/kg^2]
       lh_cloud_frac    ! Average value of the latin hypercube est. of cloud fraction    [-]
 
+    real :: lh_start_cloud_frac ! Cloud fraction at k_lh_start [-]
+
+    real :: cloud_frac_n ! The cloud fraction from the 1st or 2nd Gaussian
+
+    real :: tmp_weight
+
+    real(kind=genrand_real) :: rand ! Random number
+
+    double precision :: X_u_dp1_element, X_u_s_mellor_element
+
     ! Number of random samples before sequence of repeats (normally=10)
     integer :: nt_repeat
 
-    integer :: i_rmd, k, k_lh_start, j
+    integer :: i_rmd, k, i, sample, clear_or_cloudy
+
+    ! Maximum iterations searching for the cloudy/clear part of the gridbox
+    integer :: itermax
 
     integer, dimension(1) :: tmp_loc
 
 #ifdef UNRELEASED_CODE
     ! ---- Begin Code ----
 
-    nt_repeat = n_micro_calls * sequence_length 
+    nt_repeat = n_micro_calls * sequence_length
 
     if ( .not. allocated( height_time_matrix ) ) then
       ! If this is first time latin_hypercube_driver is called, then allocate
@@ -209,10 +243,10 @@ module latin_hypercube_driver_module
       ! purposes.
       allocate( height_time_matrix(nnzp, nt_repeat, d_variables+1) )
 
-      prior_iter = iter 
+      prior_iter = iter
 
-    ! Check for a bug where the iteration number isn't incrementing correctly,
-    ! which will lead to improper sampling.
+      ! Check for a bug where the iteration number isn't incrementing correctly,
+      ! which will lead to improper sampling.
     else if ( l_diagnostic_iter_check ) then
 
       if ( prior_iter /= iter-1 ) then
@@ -225,6 +259,12 @@ module latin_hypercube_driver_module
       end if
 
     end if ! First call to the driver
+
+    ! Sanity check for l_lh_cloud_weighted_sampling
+    if ( l_lh_cloud_weighted_sampling .and. mod( n_micro_calls, 2 ) /= 0 ) then
+      write(fstderr,*) "Cloud weighted sampling requires micro calls to be divisible by 2."
+      stop "Fatal error."
+    end if
 
     ! Latin hypercube sample generation
     ! Generate height_time_matrix, an nnzp x nt_repeat x d_variables array of random integers
@@ -241,7 +281,7 @@ module latin_hypercube_driver_module
     !--------------------------------------------------------------
     ! Latin hypercube sampling
     !--------------------------------------------------------------
-    
+
     do k = 1, nnzp
       ! Choose which rows of LH sample to feed into closure.
       p_matrix(1:n_micro_calls,1:(d_variables+1)) = &
@@ -251,7 +291,7 @@ module latin_hypercube_driver_module
       ! print*, 'latin_hypercube_sampling: got past p_matrix'
 
       ! Generate the uniform distribution using the Mersenne twister (not
-      ! currently setup to re-seed).
+      ! currently configured to re-seed).
       !  X_u has one extra dimension for the mixture component.
       call generate_uniform_sample( n_micro_calls, nt_repeat, d_variables+1, p_matrix, & ! In
                                     X_u_all_levs(k,:,:) ) ! Out
@@ -259,21 +299,123 @@ module latin_hypercube_driver_module
     end do ! 1..nnzp
 
     ! For a 100 level fixed grid, this looks to be about the middle of the cloud for RICO
-!   k_lh_start = 50 
+!   k_lh_start = 50
     tmp_loc    = maxloc( rcm )
-    k_lh_start = tmp_loc(1) ! Attempt using the maximal value of rcm
+    k_lh_start = tmp_loc(1) ! Attempt using the maximal value of rcm for now
+
+    if ( l_lh_cloud_weighted_sampling ) then
+      ! Determine cloud fraction at k_lh_start
+      lh_start_cloud_frac = &
+        pdf_params%mixt_frac(k_lh_start) * pdf_params%cloud_frac1(k_lh_start) &
+        + (1.0-pdf_params%mixt_frac(k_lh_start)) * pdf_params%cloud_frac2(k_lh_start)
+    end if
 
     if ( l_lh_vert_overlap ) then
-      do k = 1, nnzp
-        do j = 1, n_micro_calls
-          ! Overwrite 2 elements for maximal overlap
-          X_u_all_levs(k,j,1) =  X_u_all_levs(k_lh_start,j,1) ! s_mellor
-          X_u_all_levs(k,j,d_variables+1) = X_u_all_levs(k_lh_start,j,d_variables+1) ! Mixture comp.
-          ! Use this line to have all variates maximally correlated
-!         X_u_all_levs(k,j,:) = X_u_all_levs(k_lh_start,j,:) 
+
+      do sample = 1, n_micro_calls
+
+        ! Get the uniform sample of d+1 (telling us if we're in component 1 or
+        ! component 2), and the uniform sample for s_mellor
+        X_u_dp1_element      = X_u_all_levs(k_lh_start,sample,d_variables+1)
+        X_u_s_mellor_element = X_u_all_levs(k_lh_start,sample,1)
+
+        if ( l_lh_cloud_weighted_sampling ) then
+
+          ! Maximum iterations searching for the cloudy/clear part of the gridbox
+          ! This should't appear in a parameter statement because it's set based on
+          ! a floating-point calculation, and apparently that's not ISO Fortran
+          itermax = int( 100. / cloud_frac_thresh )
+
+          ! Save the cloud fraction as a weight for averaging preferentially
+          ! within cloud
+          if ( lh_start_cloud_frac >= 0.5 .or. lh_start_cloud_frac <= cloud_frac_thresh ) then
+            LH_sample_point_weights(sample)  = 1.0
+            ! There's no cloud or cloud fraction is >= 50%, so we do nothing
+
+          else ! If we're in a partly cloud gridbox then we continue to the code below
+
+            ! Ensure the odd columns are cloudy and the even columns are clear when
+            ! we're using l_lh_cloud_weighted_sampling
+            if ( mod( sample, 2 ) == 0 ) then
+              clear_or_cloudy = clear
+              LH_sample_point_weights(sample) = 2. * ( 1.0 - lh_start_cloud_frac )
+            else
+              clear_or_cloudy = cloudy
+              LH_sample_point_weights(sample) = 2. * lh_start_cloud_frac
+            end if
+
+            ! Here we use the rejection method to find a value in either the
+            ! clear or cloudy part of the grid box
+            do i = 1, itermax
+              if ( X_u_dp1_element < pdf_params%mixt_frac(k_lh_start) ) then
+                ! Component 1
+                cloud_frac_n = pdf_params%cloud_frac1(k_lh_start)
+              else
+                ! Component 2
+                cloud_frac_n = pdf_params%cloud_frac2(k_lh_start)
+              end if
+
+              if ( X_u_s_mellor_element >= (1.-cloud_frac_n) .and. clear_or_cloudy == cloudy ) then
+                ! If we're looking for the cloudy part of the grid box, then exit this loop
+                exit
+              else if ( X_u_s_mellor_element < (1.-cloud_frac_n) & 
+                        .and. clear_or_cloudy == clear ) then
+                ! If we're looking for the clear part of the grid box, then exit this loop
+                exit
+              else
+                ! To prevent infinite loops we have this check here.
+                ! Theoretically some seed might result in never picking the
+                ! point we want after many iterations, but it's highly unlikely
+                ! given that our current itermax is 100 / cloud_frac_thresh.
+                ! -dschanen 19 March 2010
+                if ( i == itermax ) then
+                  write(fstderr,*) "Maximum iteration reached in latin_hypercube driver."
+                  stop "Fatal error"
+                else
+                  ! Find some new test values within the interval (0,1)
+                  call genrand_real3( rand )
+                  X_u_dp1_element      = dble( rand )
+                  call genrand_real3( rand )
+                  X_u_s_mellor_element = dble( rand )
+                end if
+              end if ! Looking for a clear or cloudy point
+
+            end do ! Loop until we either find what we want or reach itermax
+
+          end if ! Cloud fraction is between cloud_frac_thresh and 50%
+
+        end if ! l_lh_cloud_weighted_sampling
+
+        do k = 1, nnzp
+
+          ! Use this line to have all variates maximally correlated.  This
+          ! probably isn't a good idea for dealing with all cloud types.
+!         X_u_all_levs(k,sample,:) = X_u_all_levs(k_lh_start,sample,:)
+
+          ! Overwrite 2 elements for maximal overlap and cloud
+          ! weighted sampling (if it's enabled).
+          X_u_all_levs(k,sample,1) =  X_u_s_mellor_element ! s_mellor
+          X_u_all_levs(k,sample,d_variables+1) = X_u_dp1_element ! Mixture comp.
+
         end do ! 1..nnzp
+
+      end do ! 1..n_micro_calls
+
+    end if ! Maximum overlap
+
+    ! Check that the weights sum to 1.0
+    if ( l_lh_cloud_weighted_sampling .and. clubb_at_least_debug_level( 2 ) ) then
+      tmp_weight = 0.0
+      do sample = 1, n_micro_calls
+        tmp_weight = tmp_weight + LH_sample_point_weights(sample)
       end do
-    end if ! Otherwise, assume random overlap
+      tmp_weight = tmp_weight / real( n_micro_calls ) 
+
+      if ( tmp_weight /= 1.0 ) then
+        write(0,*) "Error in cloud weighted sampling code ", "tmp_weight = ", tmp_weight
+        stop
+      end if
+    end if
 
     ! Upwards loop
     do k = k_lh_start, nnzp, 1
@@ -418,7 +560,7 @@ module latin_hypercube_driver_module
       time_initial  ! Initial time                      [s]
 
     integer, intent(in) :: &
-      nnzp ! Number of vertical levels 
+      nnzp ! Number of vertical levels
 
     real, dimension(nnzp), intent(in) :: &
       zt ! Altitudes [m]
@@ -487,14 +629,14 @@ module latin_hypercube_driver_module
     return
 #else
     stop "This code was not compiled with support for Latin Hypercube sampling"
-#endif 
+#endif
 
   end subroutine latin_hypercube_2D_output
 
 !-------------------------------------------------------------------------------
   subroutine latin_hypercube_2D_close
 ! Description:
-!   Close a 2D sample file 
+!   Close a 2D sample file
 
 ! References:
 !   None
@@ -502,7 +644,7 @@ module latin_hypercube_driver_module
 #ifdef UNRELEASED_CODE
     use output_2D_samples_module, only: &
       close_2D_samples_file ! Procedure
-#endif 
+#endif
 
     implicit none
 
@@ -511,7 +653,7 @@ module latin_hypercube_driver_module
     if ( l_output_2D_samples ) then
 #ifdef UNRELEASED_CODE
       call close_2D_samples_file( )
-#endif 
+#endif
     end if
 
     return

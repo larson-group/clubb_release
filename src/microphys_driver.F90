@@ -17,26 +17,31 @@ module microphys_driver
   !-----------------------------------------------------------------------------
 
   use parameters_microphys, only: &
-    l_in_cloud_Nc_diff,         & ! Use in cloud values of Nc for diffusion
-    l_cloud_sed,                & ! Cloud water sedimentation (K&K or no microphysics)
-    l_ice_micro,                & ! Compute ice (COAMPS / Morrison)
-    l_graupel,                  & ! Compute graupel (Morrison)
-    l_hail,                     & ! See module_mp_graupel for a description
-    l_seifert_beheng,           & ! Use Seifert and Beheng (2001) warm drizzle (Morrison)
-    l_predictnc,                & ! Predict cloud droplet number conc (Morrison)
-    l_specify_aerosol,          & ! Specify aerosol (Morrison)
-    l_subgrid_w,                & ! Use subgrid w  (Morrison)
-    l_arctic_nucl,              & ! Use MPACE observations (Morrison)
-    l_cloud_edge_activation,    & ! Activate on cloud edges (Morrison)
-    l_fix_pgam,                 & ! Fix pgam (Morrison)
-    l_latin_hypercube_sampling, & ! Use Latin Hypercube Sampling (K&K only)
-    LH_microphys_calls,         & ! Number of latin hypercube samples to call the microphysics with 
-    LH_sequence_length,         & ! Number of timesteps before the latin hypercube seq. repeats
-    l_local_kk,                 & ! Use local formula for K&K
-    micro_scheme,               & ! The microphysical scheme in use
-    hydromet_list,              & ! Names of the hydrometeor species
-    microphys_start_time,       & ! When to start the microphysics [s]
-    Ncm_initial                   ! Initial value for Ncm (K&K, l_cloud_sed, Morrison)
+    l_in_cloud_Nc_diff,           & ! Use in cloud values of Nc for diffusion
+    l_cloud_sed,                  & ! Cloud water sedimentation (K&K or no microphysics)
+    l_ice_micro,                  & ! Compute ice (COAMPS / Morrison)
+    l_graupel,                    & ! Compute graupel (Morrison)
+    l_hail,                       & ! See module_mp_graupel for a description
+    l_seifert_beheng,             & ! Use Seifert and Beheng (2001) warm drizzle (Morrison)
+    l_predictnc,                  & ! Predict cloud droplet number conc (Morrison)
+    l_specify_aerosol,            & ! Specify aerosol (Morrison)
+    l_subgrid_w,                  & ! Use subgrid w  (Morrison)
+    l_arctic_nucl,                & ! Use MPACE observations (Morrison)
+    l_cloud_edge_activation,      & ! Activate on cloud edges (Morrison)
+    l_fix_pgam,                   & ! Fix pgam (Morrison)
+    l_latin_hypercube_sampling,   & ! Use Latin Hypercube Sampling (K&K only)
+    l_lh_vert_overlap,            & ! Assume maximum overlap for s_mellor (Latin Hypercube)
+    l_lh_cloud_weighted_sampling, & ! Sample preferentially within cloud (Latin Hypercube)
+    LH_microphys_calls,           & ! # of latin hypercube samples to call the microphysics with 
+    LH_sequence_length,           & ! Number of timesteps before the latin hypercube seq. repeats
+    l_local_kk,                   & ! Use local formula for K&K
+    micro_scheme,                 & ! The microphysical scheme in use
+    hydromet_list,                & ! Names of the hydrometeor species
+    microphys_start_time,         & ! When to start the microphysics [s]
+    Ncm_initial                    ! Initial value for Ncm (K&K, l_cloud_sed, Morrison)
+
+  use parameters_microphys, only: &
+    LH_sample_point_weights ! Weights for the averaging of LH sample points
 
   implicit none
 
@@ -141,6 +146,7 @@ module microphys_driver
       l_seifert_beheng, l_predictnc, l_specify_aerosol, l_subgrid_w, &
       l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, l_in_cloud_Nc_diff, &
       l_latin_hypercube_sampling, l_local_kk, LH_microphys_calls, LH_sequence_length, &
+      l_lh_cloud_weighted_sampling, l_lh_vert_overlap, &
       rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, &
       corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
       corr_sNc_NL_cloud, rrp2_on_rrainm2_below, &
@@ -233,6 +239,8 @@ module microphys_driver
     Ncm_initial = 100. ! #/cm^3 
 
     l_latin_hypercube_sampling = .false.
+    l_lh_cloud_weighted_sampling = .false.
+    l_lh_vert_overlap = .false.
     l_local_kk = .false.
     LH_microphys_calls = 2
     LH_sequence_length = 1
@@ -498,6 +506,8 @@ module microphys_driver
       call return_LH_index( iirsnowm, i, iiLH_rsnow )
       call return_LH_index( iiricem, i, iiLH_rice )
       call return_LH_index( iirgraupelm, i, iiLH_rgraupel )
+
+      allocate( LH_sample_point_weights(LH_microphys_calls) )
 
     end if
 
@@ -2520,6 +2530,9 @@ module microphys_driver
       !   None
       !-------------------------------------------------------------------------
 
+      use parameters_microphys, only: &
+        LH_sample_point_weights ! Variables
+
       implicit none
 
       ! ---- Begin Code ----
@@ -2530,6 +2543,10 @@ module microphys_driver
 
       if ( allocated( l_hydromet_sed ) ) then
         deallocate( l_hydromet_sed )
+      end if
+
+      if ( allocated( LH_sample_point_weights ) ) then
+        deallocate( LH_sample_point_weights )
       end if
 
       return

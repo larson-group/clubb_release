@@ -12,7 +12,7 @@ module saturation
 
   public   :: sat_mixrat_liq, sat_mixrat_ice, sat_rcm
 
-  private  :: sat_vapor_press_liq_flatau, sat_vapor_press_liq_bolton
+  public  :: sat_vapor_press_liq_flatau, sat_vapor_press_liq_bolton
   private  :: sat_vapor_press_ice_flatau, sat_vapor_press_ice_bolton
 
   contains

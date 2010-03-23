@@ -3,7 +3,7 @@ module generate_lh_sample_module
 
   implicit none
 
-  public :: generate_lh_sample, generate_uniform_sample
+  public :: generate_lh_sample, generate_uniform_sample, choose_permuted_random
 
   private :: sample_points, gaus_mixt_points, & 
              truncate_gaus_mixt, ltqnorm, gaus_condt, & 
@@ -915,10 +915,6 @@ module generate_lh_sample_module
 !      a chapter from SIGGRAPH 2003
 !-------------------------------------------------------------------------------
 
-    use mt95, only: genrand_real3 ! Procedure(s)
-
-    use mt95, only: genrand_real ! Constants
-
     implicit none
 
     ! Input Variables
@@ -937,8 +933,6 @@ module generate_lh_sample_module
 
     ! Local Variables
 
-    real(kind=genrand_real) :: rand ! Random float with a range of (0,1)
-
     integer :: j, k
 
     ! ---- Begin Code ----
@@ -953,8 +947,7 @@ module generate_lh_sample_module
     ! Choose values of sample using permuted vector and random number generator
     do j = 1,n_micro_calls
       do k = 1,dp1
-        call genrand_real3( rand ) ! genrand_real3's range is (0,1)
-        X_u_one_lev(j,k) = (1.0d0/nt_repeat)*(p_matrix(j,k) + rand )
+        X_u_one_lev(j,k) = choose_permuted_random( nt_repeat, p_matrix(j,k) )
       end do
     end do
 
@@ -964,6 +957,30 @@ module generate_lh_sample_module
 
     return
   end subroutine generate_uniform_sample
+
+!----------------------------------------------------------------------
+  double precision function choose_permuted_random( nt_repeat, p_matrix_element )
+
+    use mt95, only: genrand_real3 ! Procedure(s)
+
+    use mt95, only: genrand_real ! Constants
+
+    implicit none
+
+    integer, intent(in) :: & 
+      nt_repeat,        & ! Number of samples before the sequence repeats
+      p_matrix_element    ! Permuted integer
+
+    real(kind=genrand_real) :: rand ! Random float with a range of (0,1)
+
+    ! ---- Begin Code ----
+
+    call genrand_real3( rand ) ! genrand_real3's range is (0,1)
+
+    choose_permuted_random = (1.0d0/nt_repeat)*(p_matrix_element + rand )
+
+    return
+  end function choose_permuted_random
 
 !----------------------------------------------------------------------
   subroutine gaus_mixt_points( n_micro_calls, d_variables, mixt_frac, mu1, mu2, Sigma1, Sigma2, &

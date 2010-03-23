@@ -159,6 +159,26 @@ module parameters_tunable
 
     implicit none
 
+    ! Constant Parameters
+
+    ! Flag for adjusting the values of the constant background eddy diffusivity
+    ! coefficients based on the average vertical grid spacing.  If this flag is
+    ! turned off, the values of the various nu coefficients will remain as they
+    ! are declared in the tunable_parameters.in file.
+    logical, parameter :: l_adj_low_res_nu = .true.
+
+    ! The size of the average vertical grid spacing that serves as a threshold
+    ! for when to increase the size of the background eddy diffusivity
+    ! coefficients (nus) by a certain factor above what the background
+    ! coefficients are specified to be in tunable_parameters.in.  At any average
+    ! grid spacing at or below this value, the values of the background
+    ! diffusivities remain the same.  However, at any average vertical grid
+    ! spacing above this value, the values of the background eddy diffusivities
+    ! are increased.  Traditionally, the threshold grid spacing has been set to
+    ! 40.0 meters.  This is only relevant if l_adj_low_res_nu is turned on.
+    real, parameter :: grid_spacing_thresh = 40.0  ! grid spacing threshold  [m]
+
+    ! Input Variables
     real, intent(in) ::  & 
       deltaz  ! Change per height level        [m]
 
@@ -202,23 +222,6 @@ module parameters_tunable
 
     ! Local Variables
     real :: avg_deltaz  ! Average grid box height   [m]
-
-    ! Flag for adjusting the values of the constant background eddy diffusivity
-    ! coefficients based on the average vertical grid spacing.  If this flag is
-    ! turned off, the values of the various nu coefficients will remain as they
-    ! are declared in the tunable_parameters.in file.
-    logical, parameter :: l_adj_low_res_nu = .true.
-
-    ! The size of the average vertical grid spacing that serves as a threshold
-    ! for when to increase the size of the background eddy diffusivity
-    ! coefficients (nus) by a certain factor above what the background
-    ! coefficients are specified to be in tunable_parameters.in.  At any average
-    ! grid spacing at or below this value, the values of the background
-    ! diffusivities remain the same.  However, at any average vertical grid
-    ! spacing above this value, the values of the background eddy diffusivities
-    ! are increased.  Traditionally, the threshold grid spacing has been set to
-    ! 40.0 meters.  This is only relevant if l_adj_low_res_nu is turned on.
-    real, parameter :: grid_spacing_thresh = 40.0  ! grid spacing threshold  [m]
 
     ! The factor by which to multiply the coefficients of background eddy
     ! diffusivity if the grid spacing threshold is exceeded and l_adj_low_res_nu
@@ -280,14 +283,14 @@ module parameters_tunable
 
         if ( avg_deltaz > grid_spacing_thresh ) then
 
-           mult_factor = 1.0 + 1.5 * log( avg_deltaz / grid_spacing_thresh )
+          mult_factor = 1.0 + 1.5 * log( avg_deltaz / grid_spacing_thresh )
 
-           nu1  =  nu1 * mult_factor
-           nu2  =  nu2 * mult_factor
-           nu6  =  nu6 * mult_factor
-           nu8  =  nu8 * mult_factor
-           nu9  =  nu9 * mult_factor
-           nu_r =  nu_r * mult_factor
+          nu1  =  nu1 * mult_factor
+          nu2  =  nu2 * mult_factor
+          nu6  =  nu6 * mult_factor
+          nu8  =  nu8 * mult_factor
+          nu9  =  nu9 * mult_factor
+          nu_r =  nu_r * mult_factor
 
         endif
 
@@ -314,14 +317,14 @@ module parameters_tunable
 
           if ( deltaz > grid_spacing_thresh ) then
 
-             mult_factor = 1.0 + 1.5 * log( deltaz / grid_spacing_thresh )
+            mult_factor = 1.0 + 1.5 * log( deltaz / grid_spacing_thresh )
 
-             nu1  =  nu1 * mult_factor
-             nu2  =  nu2 * mult_factor
-             nu6  =  nu6 * mult_factor
-             nu8  =  nu8 * mult_factor
-             nu9  =  nu9 * mult_factor
-             nu_r =  nu_r * mult_factor
+            nu1  =  nu1 * mult_factor
+            nu2  =  nu2 * mult_factor
+            nu6  =  nu6 * mult_factor
+            nu8  =  nu8 * mult_factor
+            nu9  =  nu9 * mult_factor
+            nu_r =  nu_r * mult_factor
 
           endif
 
@@ -352,14 +355,14 @@ module parameters_tunable
 
           if ( avg_deltaz > grid_spacing_thresh ) then
 
-             mult_factor = 1.0 + 1.5 * log( avg_deltaz / grid_spacing_thresh )
+            mult_factor = 1.0 + 1.5 * log( avg_deltaz / grid_spacing_thresh )
 
-             nu1  =  nu1 * mult_factor
-             nu2  =  nu2 * mult_factor
-             nu6  =  nu6 * mult_factor
-             nu8  =  nu8 * mult_factor
-             nu9  =  nu9 * mult_factor
-             nu_r =  nu_r * mult_factor
+            nu1  =  nu1 * mult_factor
+            nu2  =  nu2 * mult_factor
+            nu6  =  nu6 * mult_factor
+            nu8  =  nu8 * mult_factor
+            nu9  =  nu9 * mult_factor
+            nu_r =  nu_r * mult_factor
 
           endif
 
@@ -390,14 +393,14 @@ module parameters_tunable
 
           if ( avg_deltaz > grid_spacing_thresh ) then
 
-             mult_factor = 1.0 + 1.5 * log( avg_deltaz / grid_spacing_thresh )
+            mult_factor = 1.0 + 1.5 * log( avg_deltaz / grid_spacing_thresh )
 
-             nu1  =  nu1 * mult_factor
-             nu2  =  nu2 * mult_factor
-             nu6  =  nu6 * mult_factor
-             nu8  =  nu8 * mult_factor
-             nu9  =  nu9 * mult_factor
-             nu_r =  nu_r * mult_factor
+            nu1  =  nu1 * mult_factor
+            nu2  =  nu2 * mult_factor
+            nu6  =  nu6 * mult_factor
+            nu8  =  nu8 * mult_factor
+            nu9  =  nu9 * mult_factor
+            nu_r =  nu_r * mult_factor
 
           endif
 

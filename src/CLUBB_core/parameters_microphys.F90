@@ -32,10 +32,24 @@ module parameters_microphys
 
   logical, public :: & 
     l_cloud_edge_activation,    & ! Activate on cloud edges (Morrison)
-    l_latin_hypercube_sampling, & ! Latin Hypercube Sampling (K&K)
     l_local_kk                    ! Local drizzle for Khairoutdinov & Kogan microphysics
 
-!$omp threadprivate(l_cloud_edge_activation, l_latin_hypercube_sampling, l_local_kk)
+!$omp threadprivate(l_cloud_edge_activation, l_local_kk)
+
+  ! Flags for the Latin Hypercube sampling code (currently configured to run
+  ! in diagnostic mode)
+  logical, public :: & 
+    l_latin_hypercube_sampling, &   ! Latin Hypercube Sampling (K&K)
+    l_lh_cloud_weighted_sampling, & ! Limit noise by sampling in-cloud
+    l_lh_vert_overlap               ! Assume maximum overlap for s_mellor
+
+!$omp threadprivate(l_latin_hypercube_sampling, l_lh_cloud_weighted_sampling, &
+!$omp   l_lh_vert_overlap)
+
+  real, allocatable, dimension(:), public :: &
+    LH_sample_point_weights
+
+!$omp threadprivate(LH_sample_point_weights)
 
   integer, public :: &
     LH_microphys_calls, & ! Number of latin hypercube samples to call the microphysics with
