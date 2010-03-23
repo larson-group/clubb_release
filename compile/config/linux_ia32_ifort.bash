@@ -14,7 +14,7 @@ objdir="$dir/../obj"  # dir for *.o and *.mod files
 libdir="$dir/../lib"  # dir for *.a library files
 srcdir="$dir/../src"  # dir where the source files reside
 
-DEBUG="-g -traceback -check bounds -check uninit -no-vec"
+DEBUG="-g -traceback -check bounds -check uninit"
 
 # == Warnings ==
 WARNINGS="-warn -warn notruncated_source"
@@ -31,7 +31,7 @@ NETCDF="/usr/local/netcdf-intel64"
 
 # == LAPACK libraries ==
 # Intel Math Kernel Library (v11.1)
-MKLPATH="/opt/intel/Compiler/11.1/046/mkl/lib/em64t"
+MKLPATH="/opt/intel/Compiler/11.1/064/mkl/lib/em64t"
 # Intel Math Kernel Library (v10)
 #MKLPATH=/opt/intel/mkl/10.0.5.025/lib/em64t 
 LAPACK="-L$MKLPATH -Wl,-rpath,$MKLPATH -lmkl_intel_lp64 -lmkl_sequential -lmkl_lapack -lmkl_core -lguide -lpthread"
