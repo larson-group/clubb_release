@@ -874,10 +874,10 @@ module estimate_lh_micro_module
           ! and the mean if we're doing cloud weighted sampling
           lh_hydromet(:,1:hydromet_dim) = lh_hydromet(:,1:hydromet_dim) &
             + hydromet_all_points(:,1:hydromet_dim,sample) * LH_sample_point_weights(sample)
-          lh_thlm = thl_all_points(:,sample) * LH_sample_point_weights(sample)
-          lh_rcm  = rc_all_points(:,sample) * LH_sample_point_weights(sample)
-          lh_rvm  = rv_all_points(:,sample) * LH_sample_point_weights(sample)
-          lh_wm   = w_all_points(:,sample) * LH_sample_point_weights(sample)
+          lh_thlm = lh_thlm + thl_all_points(:,sample) * LH_sample_point_weights(sample)
+          lh_rcm  = lh_rcm + rc_all_points(:,sample) * LH_sample_point_weights(sample)
+          lh_rvm  = lh_rvm + rv_all_points(:,sample) * LH_sample_point_weights(sample)
+          lh_wm   = lh_wm + w_all_points(:,sample) * LH_sample_point_weights(sample)
         else
           ! Add this sample point to a running total with no weighting
           lh_hydromet(:,1:hydromet_dim) = lh_hydromet(:,1:hydromet_dim) &
@@ -1048,10 +1048,10 @@ module estimate_lh_micro_module
 
       ! Grid box average.
       forall( i = 1:hydromet_dim )
-      lh_hydromet_vel(:,i) = real( mixt_frac * cloud_frac1 * lh_hydromet_vel_m1(:,i) &
-        + (1.d0-mixt_frac) * cloud_frac2 * lh_hydromet_vel_m2(:,i) )
-      lh_hydromet_mc(:,i)  = real( mixt_frac * cloud_frac1 * lh_hydromet_mc_m1(:,i) &
-        + (1.d0-mixt_frac) * cloud_frac2 * lh_hydromet_mc_m2(:,i) )
+        lh_hydromet_vel(:,i) = real( mixt_frac * cloud_frac1 * lh_hydromet_vel_m1(:,i) &
+          + (1.d0-mixt_frac) * cloud_frac2 * lh_hydromet_vel_m2(:,i) )
+        lh_hydromet_mc(:,i)  = real( mixt_frac * cloud_frac1 * lh_hydromet_mc_m1(:,i) &
+          + (1.d0-mixt_frac) * cloud_frac2 * lh_hydromet_mc_m2(:,i) )
       end forall
 
       lh_rcm_mc = real( mixt_frac * cloud_frac1 * lh_rcm_mc_m1 + &
