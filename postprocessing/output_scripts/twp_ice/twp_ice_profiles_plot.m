@@ -122,6 +122,9 @@ for i=1:size(vars_to_plot,1);
 		axis_label =  'best estimate';
 		legend_text(plot_index,1:length(axis_label)) = axis_label;
 
+		%Determine the unit
+		units = nc_attget( profilefilepath, var_to_plot, 'unit' );
+
 		%Retain values for axis scaling
 		if (min(min(var_avg)) < minVal)
 			minVal = min(min(var_avg));

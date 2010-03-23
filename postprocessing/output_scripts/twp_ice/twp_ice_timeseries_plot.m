@@ -87,6 +87,9 @@ for i=1:size(vars_to_plot,1);
 
 		hold all
 
+		%Determine the unit
+		units = nc_attget( sfcfilepath, var_to_plot, 'unit' );
+
 		%Retain values for axis scaling
 		if (min(min(file_var)) < minVal)
 			minVal = min(min(file_var));
