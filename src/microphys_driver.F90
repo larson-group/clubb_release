@@ -487,6 +487,13 @@ module microphys_driver
 
     end select
 
+    ! Sanity check
+    if ( l_lh_cloud_weighted_sampling .and. .not.  l_lh_vert_overlap ) then
+      write(fstderr,*) "Error in init_microphys: "// &
+        "l_lh_cloud_weighted_sampling requires l_lh_vert_overlap."
+      stop
+    end if
+
     ! Setup index variables for latin hypercube sampling
     if ( l_latin_hypercube_sampling ) then
 
