@@ -116,7 +116,8 @@ Optionally:
 F. GrADS for viewing the GrADS output data.
 G. netCDF >= v3.5.1;  We have not tested our code with anything older.
    If you do not use netCDF, you must remove -DNETCDF from the preprocessor
-   flags, found in the compile/config/<platform>.bash file.
+   flags, found in the compile/config/<platform>.bash file, and
+   remove -lnetcdf from the LDFLAGS.
 H. MATLAB or NCAR graphics for viewing the netCDF output data.
 
 To build, perform the following three steps:
@@ -153,12 +154,17 @@ other versions of make.
 You do not need to build all the components if you have implemented CLUBB
 in a large-scale weather or climate model and want to run the combined
 model, rather than running CLUBB in standalone (single-column) mode 
-as described above.
+as described above. 
 
 Requirements:
-A., B., C., & D. as above.
+A., B., C., D., & E. as above.
 
 Build:
+
+There are two basic ways to doing this:
+-----------------------------------------------------------------------
+- Method 1: Build libclubb_param.a and link it to the host model
+-----------------------------------------------------------------------
 Do 1, 2, & 3 as above.  Important Note: The host model, CLUBB, and ancillary 
 programs such as netCDF and MPI need to be compiled using the same version 
 of Fortran and with the same compiler flags.  Not using the same compiler and 
@@ -194,6 +200,26 @@ to the CLUBB modules.  You can reference that with a line
 such as the following:
 
 -I/home/griffinb/clubb/obj
+
+-----------------------------------------------------------------------
+- Method 2: Use a host model's make to compile CLUBB 
+-----------------------------------------------------------------------
+We've used svn externals to put the CLUBB_core directory into the SAM host
+model, and compile CLUBB using the SAM's Build script.  Other host models
+that utilize B. Eaton's mkDepends and mkSrcFiles could be similarly
+configured.  The basic method is to put the src/CLUBB_core directory into
+the search path used by mkSrcfiles and mkDepends. These will create the
+list of files to be used and then CLUBB should compile without a problem.
+This tends to be the less complicated solution and allows you to make
+changes to the CLUBB parameterization with just one compile step.
+There are 3 key caveats when this method however:
+1. The netCDF library still needs to be linked in if -DNETCDF is defined
+for compiling CLUBB's source files.  If the host model itself uses the 
+netCDF library, this shouldn't require any modifications to the linking.
+2. The LAPACK and BLAS libraries still need to be linked into the host
+model application.
+3. The CLUBB model has files with a .F90 extension in addition to .f90;
+You may need to modify mkSrcfiles if it's not searching for those.
 
 -----------------------------------------------------------------------
 - (1.2.1) Performance in a host model:
