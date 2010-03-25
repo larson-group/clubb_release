@@ -110,10 +110,6 @@ module latin_hypercube_driver_module
     use stats_type, only: &
       stat_update_var ! Procedure(s)
 
-    use mt95, only: genrand_real3 ! Constant
-
-    use mt95, only: genrand_real ! Procedure
-
     use parameters_microphys, only: &
       l_lh_vert_overlap, &  ! Variables
       LH_sample_point_weights, &
@@ -133,9 +129,6 @@ module latin_hypercube_driver_module
     ! Parameter Constants
     real, parameter :: &
       cloud_frac_thresh = 0.01 ! Threshold for sampling preferentially within cloud
-
-    integer, parameter :: &
-      clear = 1, cloudy = 2 ! For sampling preferentially within cloud
 
     ! Input Variables
     real, intent(in) :: &
@@ -214,21 +207,14 @@ module latin_hypercube_driver_module
 
     real :: lh_start_cloud_frac ! Cloud fraction at k_lh_start [-]
 
-    real :: cloud_frac_n ! The cloud fraction from the 1st or 2nd Gaussian
-
     real :: tmp_weight
-
-    real(kind=genrand_real) :: rand ! Random number
 
     double precision :: X_u_dp1_element, X_u_s_mellor_element
 
     ! Number of random samples before sequence of repeats (normally=10)
     integer :: nt_repeat
 
-    integer :: i_rmd, k, i, sample, clear_or_cloudy
-
-    ! Maximum iterations searching for the cloudy/clear part of the gridbox
-    integer :: itermax
+    integer :: i_rmd, k, sample
 
     integer, dimension(1) :: tmp_loc
 
@@ -321,11 +307,6 @@ module latin_hypercube_driver_module
 
         if ( l_lh_cloud_weighted_sampling ) then
 
-          ! Maximum iterations searching for the cloudy/clear part of the gridbox
-          ! This should't appear in a parameter statement because it's set based on
-          ! a floating-point calculation, and apparently that's not ISO Fortran
-          itermax = int( 100. / cloud_frac_thresh )
-
           ! Save the cloud fraction as a weight for averaging preferentially
           ! within cloud
           if ( lh_start_cloud_frac >= 0.5 .or. lh_start_cloud_frac <= cloud_frac_thresh ) then
@@ -334,54 +315,12 @@ module latin_hypercube_driver_module
 
           else ! If we're in a partly cloud gridbox then we continue to the code below
 
-            ! Ensure the odd columns are cloudy and the even columns are clear when
-            ! we're using l_lh_cloud_weighted_sampling
-            if ( mod( sample, 2 ) == 0 ) then
-              clear_or_cloudy = clear
-              LH_sample_point_weights(sample) = 2. * ( 1.0 - lh_start_cloud_frac )
-            else
-              clear_or_cloudy = cloudy
-              LH_sample_point_weights(sample) = 2. * lh_start_cloud_frac
-            end if
-
-            ! Here we use the rejection method to find a value in either the
-            ! clear or cloudy part of the grid box
-            do i = 1, itermax
-              if ( in_mixt_frac_1( X_u_dp1_element,  &
-                                   dble( pdf_params%mixt_frac(k_lh_start) ) ) ) then
-                ! Component 1
-                cloud_frac_n = pdf_params%cloud_frac1(k_lh_start)
-              else
-                ! Component 2
-                cloud_frac_n = pdf_params%cloud_frac2(k_lh_start)
-              end if
-
-              if ( X_u_s_mellor_element >= (1.-cloud_frac_n) .and. clear_or_cloudy == cloudy ) then
-                ! If we're looking for the cloudy part of the grid box, then exit this loop
-                exit
-              else if ( X_u_s_mellor_element < (1.-cloud_frac_n) & 
-                        .and. clear_or_cloudy == clear ) then
-                ! If we're looking for the clear part of the grid box, then exit this loop
-                exit
-              else
-                ! To prevent infinite loops we have this check here.
-                ! Theoretically some seed might result in never picking the
-                ! point we want after many iterations, but it's highly unlikely
-                ! given that our current itermax is 100 / cloud_frac_thresh.
-                ! -dschanen 19 March 2010
-                if ( i == itermax ) then
-                  write(fstderr,*) "Maximum iteration reached in latin_hypercube driver."
-                  stop "Fatal error"
-                else
-                  ! Find some new test values within the interval (0,1)
-                  call genrand_real3( rand )
-                  X_u_dp1_element      = dble( rand )
-                  call genrand_real3( rand )
-                  X_u_s_mellor_element = dble( rand )
-                end if
-              end if ! Looking for a clear or cloudy point
-
-            end do ! Loop until we either find what we want or reach itermax
+            call choose_clear_or_cloudy_points &
+                 ( sample, lh_start_cloud_frac, pdf_params%cloud_frac1(k_lh_start), & ! In
+                   pdf_params%cloud_frac2(k_lh_start), pdf_params%mixt_frac(k_lh_start), & !In
+                   cloud_frac_thresh, & ! In
+                   X_u_dp1_element, X_u_s_mellor_element, & ! In/out
+                   LH_sample_point_weights(sample) ) ! Out
 
           end if ! Cloud fraction is between cloud_frac_thresh and 50%
 
@@ -410,7 +349,7 @@ module latin_hypercube_driver_module
       do sample = 1, n_micro_calls
         tmp_weight = tmp_weight + LH_sample_point_weights(sample)
       end do
-      tmp_weight = tmp_weight / real( n_micro_calls ) 
+      tmp_weight = tmp_weight / real( n_micro_calls )
 
       if ( tmp_weight /= 1.0 ) then
         write(0,*) "Error in cloud weighted sampling code ", "tmp_weight = ", tmp_weight
@@ -659,5 +598,124 @@ module latin_hypercube_driver_module
 
     return
   end subroutine latin_hypercube_2D_close
+
+!-------------------------------------------------------------------------------
+  subroutine choose_clear_or_cloudy_points &
+             ( sample, lh_start_cloud_frac, cloud_frac1, &
+              cloud_frac2, mixt_frac, cloud_frac_thresh, &
+              X_u_dp1_element, X_u_s_mellor_element, &
+              LH_sample_point_weight )
+
+! Description:
+!
+! References:
+!   None
+!-------------------------------------------------------------------------------
+    use mt95, only: genrand_real3 ! Constant
+
+    use mt95, only: genrand_real ! Procedure
+
+    use generate_lh_sample_module, only: & 
+      in_mixt_frac_1 ! Procedure
+
+    use constants, only: &
+      fstderr ! Constant
+
+    implicit none
+
+    ! External
+    intrinsic :: int, mod, dble
+
+    ! Parameter Constants
+    integer, parameter :: &
+      clear = 1, cloudy = 2 ! For sampling preferentially within cloud
+
+    ! Input Variables
+    integer, intent(in) :: &
+      sample ! Sample point number
+
+    real, intent(in) :: &
+      lh_start_cloud_frac, & ! Cloud fraction at k_lh_start                           [-]
+      cloud_frac1, &         ! Cloud fraction associated with mixture component 1     [-]
+      cloud_frac2, &         ! Cloud fraction associated with mixture component 2     [-]
+      mixt_frac, &           ! Mixture fraction                                       [-]
+      cloud_frac_thresh      ! Minimum threshold for cloud fraction                   [-]
+
+    ! Input/Output Variables
+    double precision, intent(inout) :: &
+      X_u_dp1_element, X_u_s_mellor_element ! Elements from X_u (uniform dist.)
+
+    ! Output Variables
+    real, intent(out) :: &
+      LH_sample_point_weight ! Weight for this sample point
+
+    ! Local Variables
+    real :: cloud_frac_n
+
+    real(kind=genrand_real) :: rand ! Random number
+
+    ! Maximum iterations searching for the cloudy/clear part of the gridbox
+    integer :: itermax
+
+    integer :: clear_or_cloudy, i
+
+    ! ---- Begin code ----
+
+    ! Maximum iterations searching for the cloudy/clear part of the gridbox
+    ! This should't appear in a parameter statement because it's set based on
+    ! a floating-point calculation, and apparently that's not ISO Fortran
+    itermax = int( 100. / cloud_frac_thresh )
+
+    ! Ensure the odd columns are cloudy and the even columns are clear when
+    ! we're using l_lh_cloud_weighted_sampling
+    if ( mod( sample, 2 ) == 0 ) then
+      clear_or_cloudy = clear
+      LH_sample_point_weight = 2. * ( 1.0 - lh_start_cloud_frac )
+    else
+      clear_or_cloudy = cloudy
+      LH_sample_point_weight = 2. * lh_start_cloud_frac
+    end if
+
+    ! Here we use the rejection method to find a value in either the
+    ! clear or cloudy part of the grid box
+    do i = 1, itermax
+
+      if ( in_mixt_frac_1( X_u_dp1_element, dble( mixt_frac ) ) ) then
+        ! Component 1
+        cloud_frac_n = cloud_frac1
+      else
+        ! Component 2
+        cloud_frac_n = cloud_frac2
+      end if
+
+      if ( X_u_s_mellor_element >= (1.-cloud_frac_n) .and. clear_or_cloudy == cloudy ) then
+        ! If we're looking for the cloudy part of the grid box, then exit this loop
+        exit
+      else if ( X_u_s_mellor_element < (1.-cloud_frac_n) & 
+                .and. clear_or_cloudy == clear ) then
+        ! If we're looking for the clear part of the grid box, then exit this loop
+        exit
+      else
+        ! To prevent infinite loops we have this check here.
+        ! Theoretically some seed might result in never picking the
+        ! point we want after many iterations, but it's highly unlikely
+        ! given that our current itermax is 100 / cloud_frac_thresh.
+        ! -dschanen 19 March 2010
+        if ( i == itermax ) then
+          write(fstderr,*) "Maximum iteration reached in latin_hypercube driver."
+          stop "Fatal error"
+        else
+          ! Find some new test values within the interval (0,1)
+          call genrand_real3( rand )
+          X_u_dp1_element      = dble( rand )
+          call genrand_real3( rand )
+          X_u_s_mellor_element = dble( rand )
+        end if
+      end if ! Looking for a clear or cloudy point
+
+    end do ! Loop until we either find what we want or reach itermax
+
+    return
+  end subroutine choose_clear_or_cloudy_points
 
 end module latin_hypercube_driver_module
