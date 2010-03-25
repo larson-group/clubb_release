@@ -216,6 +216,8 @@ module latin_hypercube_driver_module
 
     integer :: i_rmd, k, sample
 
+    logical :: l_cloudy_sample ! Whether we're sampling cloudy or clear air
+
     integer, dimension(1) :: tmp_loc
 
 #ifdef UNRELEASED_CODE
@@ -315,12 +317,21 @@ module latin_hypercube_driver_module
 
           else ! If we're in a partly cloud gridbox then we continue to the code below
 
-            call choose_clear_or_cloudy_points &
-                 ( sample, lh_start_cloud_frac, pdf_params%cloud_frac1(k_lh_start), & ! In
+            ! Ensure the odd columns are cloudy and the even columns are clear when
+            ! we're using l_lh_cloud_weighted_sampling
+            if ( mod( sample, 2 ) == 0 ) then
+              l_cloudy_sample = .false.
+              LH_sample_point_weights(sample) = 2. * ( 1.0 - lh_start_cloud_frac )
+            else
+              l_cloudy_sample = .true.
+              LH_sample_point_weights(sample) = 2. * lh_start_cloud_frac
+            end if
+
+            call choose_X_u_reject &
+                 ( l_cloudy_sample, pdf_params%cloud_frac1(k_lh_start), & ! In
                    pdf_params%cloud_frac2(k_lh_start), pdf_params%mixt_frac(k_lh_start), & !In
                    cloud_frac_thresh, & ! In
-                   X_u_dp1_element, X_u_s_mellor_element, & ! In/out
-                   LH_sample_point_weights(sample) ) ! Out
+                   X_u_dp1_element, X_u_s_mellor_element ) ! In/out
 
           end if ! Cloud fraction is between cloud_frac_thresh and 50%
 
@@ -600,13 +611,13 @@ module latin_hypercube_driver_module
   end subroutine latin_hypercube_2D_close
 
 !-------------------------------------------------------------------------------
-  subroutine choose_clear_or_cloudy_points &
-             ( sample, lh_start_cloud_frac, cloud_frac1, &
+  subroutine choose_X_u_reject &
+             ( l_cloudy_sample, cloud_frac1, &
               cloud_frac2, mixt_frac, cloud_frac_thresh, &
-              X_u_dp1_element, X_u_s_mellor_element, &
-              LH_sample_point_weight )
+              X_u_dp1_element, X_u_s_mellor_element )
 
 ! Description:
+!   Find a clear or cloudy point for sampling using the rejection method.
 !
 ! References:
 !   None
@@ -626,30 +637,21 @@ module latin_hypercube_driver_module
     implicit none
 
     ! External
-    intrinsic :: int, mod, dble
-
-    ! Parameter Constants
-    integer, parameter :: &
-      clear = 1, cloudy = 2 ! For sampling preferentially within cloud
+    intrinsic :: int, dble
 
     ! Input Variables
-    integer, intent(in) :: &
-      sample ! Sample point number
+    logical, intent(in) :: &
+      l_cloudy_sample ! Whether his is a cloudy or clear air sample point
 
     real, intent(in) :: &
-      lh_start_cloud_frac, & ! Cloud fraction at k_lh_start                           [-]
-      cloud_frac1, &         ! Cloud fraction associated with mixture component 1     [-]
-      cloud_frac2, &         ! Cloud fraction associated with mixture component 2     [-]
-      mixt_frac, &           ! Mixture fraction                                       [-]
-      cloud_frac_thresh      ! Minimum threshold for cloud fraction                   [-]
+      cloud_frac1, &    ! Cloud fraction associated with mixture component 1     [-]
+      cloud_frac2, &    ! Cloud fraction associated with mixture component 2     [-]
+      mixt_frac, &      ! Mixture fraction                                       [-]
+      cloud_frac_thresh ! Minimum threshold for cloud fraction                   [-]
 
     ! Input/Output Variables
     double precision, intent(inout) :: &
       X_u_dp1_element, X_u_s_mellor_element ! Elements from X_u (uniform dist.)
-
-    ! Output Variables
-    real, intent(out) :: &
-      LH_sample_point_weight ! Weight for this sample point
 
     ! Local Variables
     real :: cloud_frac_n
@@ -659,7 +661,7 @@ module latin_hypercube_driver_module
     ! Maximum iterations searching for the cloudy/clear part of the gridbox
     integer :: itermax
 
-    integer :: clear_or_cloudy, i
+    integer :: i
 
 #ifdef UNRELEASED_CODE
     ! ---- Begin code ----
@@ -668,16 +670,6 @@ module latin_hypercube_driver_module
     ! This should't appear in a parameter statement because it's set based on
     ! a floating-point calculation, and apparently that's not ISO Fortran
     itermax = int( 100. / cloud_frac_thresh )
-
-    ! Ensure the odd columns are cloudy and the even columns are clear when
-    ! we're using l_lh_cloud_weighted_sampling
-    if ( mod( sample, 2 ) == 0 ) then
-      clear_or_cloudy = clear
-      LH_sample_point_weight = 2. * ( 1.0 - lh_start_cloud_frac )
-    else
-      clear_or_cloudy = cloudy
-      LH_sample_point_weight = 2. * lh_start_cloud_frac
-    end if
 
     ! Here we use the rejection method to find a value in either the
     ! clear or cloudy part of the grid box
@@ -691,11 +683,11 @@ module latin_hypercube_driver_module
         cloud_frac_n = cloud_frac2
       end if
 
-      if ( X_u_s_mellor_element >= (1.-cloud_frac_n) .and. clear_or_cloudy == cloudy ) then
+      if ( X_u_s_mellor_element >= (1.-cloud_frac_n) .and. l_cloudy_sample ) then
         ! If we're looking for the cloudy part of the grid box, then exit this loop
         exit
       else if ( X_u_s_mellor_element < (1.-cloud_frac_n) & 
-                .and. clear_or_cloudy == clear ) then
+                .and. .not. l_cloudy_sample ) then
         ! If we're looking for the clear part of the grid box, then exit this loop
         exit
       else
@@ -721,6 +713,6 @@ module latin_hypercube_driver_module
 #endif
 
     return
-  end subroutine choose_clear_or_cloudy_points
+  end subroutine choose_X_u_reject
 
 end module latin_hypercube_driver_module
