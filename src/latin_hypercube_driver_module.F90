@@ -615,8 +615,10 @@ module latin_hypercube_driver_module
 
     use mt95, only: genrand_real ! Procedure
 
+#ifdef UNRELEASED_CODE
     use generate_lh_sample_module, only: & 
       in_mixt_frac_1 ! Procedure
+#endif
 
     use constants, only: &
       fstderr ! Constant
@@ -659,6 +661,7 @@ module latin_hypercube_driver_module
 
     integer :: clear_or_cloudy, i
 
+#ifdef UNRELEASED_CODE
     ! ---- Begin code ----
 
     ! Maximum iterations searching for the cloudy/clear part of the gridbox
@@ -714,6 +717,8 @@ module latin_hypercube_driver_module
       end if ! Looking for a clear or cloudy point
 
     end do ! Loop until we either find what we want or reach itermax
+
+#endif
 
     return
   end subroutine choose_clear_or_cloudy_points
