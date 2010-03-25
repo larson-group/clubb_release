@@ -4,10 +4,28 @@
 module clubb_core
 
 ! Description:
-!   The module containing the `core' of the CLUBB model.
-
+!   The module containing the `core' of the CLUBB parameterization.
+!   A host model implementing CLUBB should only require this subroutine
+!   and the functions and subroutines it calls.
+!
 ! References:
-!   None
+!  ``A PDF-Based Model for Boundary Layer Clouds. Part I:
+!    Method and Model Description'' Golaz, et al. (2002)
+!    JAS, Vol. 59, pp. 3540--3551.
+!
+!                         Copyright Notice:
+!
+!   This code and the source code it references are (C) 2006-2010 
+!   Jean-Christophe Golaz, Vincent E. Larson, Brian M. Griffin, 
+!   David P. Schanen, Adam J. Smith, and Michael J. Falk.
+!
+!   The distribution of this code and derived works thereof 
+!                   should include this notice.
+!
+!   Portions of this code derived from other sources (Hugh Morrison,
+!   ACM TOMS, Numerical Recipes, et cetera) are the intellectual
+!   property of their respective authors as noted and also subject 
+!   to copyright.
 !-----------------------------------------------------------------------
 
   implicit none
@@ -1957,7 +1975,7 @@ module clubb_core
     implicit none
 
     ! External functions
-    intrinsic :: max
+    intrinsic :: max, epsilon
 
     ! Input variables
     real, dimension(gr%nnzp), intent(in) :: &
@@ -1985,7 +2003,7 @@ module clubb_core
 
         end if ! clubb_at_least_debug_level(1)
 
-        rcm(k) = max( zero_threshold, rtm(k) - epsilon(rtm(k)) )
+        rcm(k) = max( zero_threshold, rtm(k) - epsilon( rtm(k) ) )
 
       end if ! rtm(k) < rcm(k)
 
