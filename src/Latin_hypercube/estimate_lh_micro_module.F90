@@ -378,6 +378,9 @@ module estimate_lh_micro_module
       fstderr, & ! Constant(s)
       g_per_kg
 
+!   use generate_lh_sample_module, only: &
+!     in_mixt_frac_1
+
 !   use error_code, only:  &
 !     clubb_at_least_debug_level  ! Procedure(s)
 
@@ -485,7 +488,7 @@ module estimate_lh_micro_module
 !          print*, 'fraction_1= ', fraction_1
 
 ! V. Larson change to try to fix sampling
-!          if ( X_u_one_lev(sample,d_variables+1) .lt. fraction_1 ) then
+!          if ( in_mixt_frac_1( X_u_one_lev(sample,d_variables+1), fraction_1 ) ) then
 !          print*, '-1+2*int((sample+1)/2)= ', -1+2*int((sample+1)/2)
 !          print*, '-1+2*int((sample+1)/2)= ', int(sample)
       if ( X_u_one_lev(sample,d_variables+1) < fraction_1 ) then
@@ -591,6 +594,9 @@ module estimate_lh_micro_module
     use parameters_model, only: &
       hydromet_dim ! Variable
 
+    use generate_lh_sample_module, only: &
+      in_mixt_frac_1 ! Procedure
+
 !   use parameters_microphys, only: &
 !     Ncm_initial
 
@@ -610,7 +616,7 @@ module estimate_lh_micro_module
 
     use math_utilities, only: &
       compute_sample_variance, & ! Procedure
-      compute_mean
+      compute_sample_mean
 
     use variables_prognostic_module, only: &
       pdf_parameter ! Type
@@ -879,7 +885,7 @@ module estimate_lh_micro_module
       end if
 
       do ivar = 1, hydromet_dim
-        where ( X_u_all_levs(1:nnzp,sample,d_variables+1) < fraction_1 )
+        where ( in_mixt_frac_1( X_u_all_levs(1:nnzp,sample,d_variables+1), fraction_1 ) )
           lh_hydromet_vel_m1(:,ivar) = lh_hydromet_vel_m1(:,ivar) + lh_hydromet_vel(:,ivar)
           lh_hydromet_mc_m1(:,ivar) = lh_hydromet_mc_m1(:,ivar) + lh_hydromet_mc(:,ivar)
         else where
@@ -888,7 +894,7 @@ module estimate_lh_micro_module
         end where
       end do
 
-      where ( X_u_all_levs(1:nnzp,sample,d_variables+1) < fraction_1 )
+      where ( in_mixt_frac_1( X_u_all_levs(1:nnzp,sample,d_variables+1), fraction_1 ) )
         lh_rcm_mc_m1(:) = lh_rcm_mc_m1(:) + lh_rcm_mc(:)
         lh_rvm_mc_m1(:) = lh_rvm_mc_m1(:) + lh_rvm_mc(:)
         lh_thlm_mc_m1(:) = lh_thlm_mc_m1(:) + lh_thlm_mc(:)
@@ -916,13 +922,17 @@ module estimate_lh_micro_module
       end if
 
       forall ( k = 1:nnzp )
-        lh_thlm(k) = compute_mean( n_micro_calls, sample_point_weight(:)*thl_all_points(k,:) )
-        lh_rcm(k)  = compute_mean( n_micro_calls, sample_point_weight(:)*rc_all_points(k,:) )
-        lh_rvm(k)  = compute_mean( n_micro_calls, sample_point_weight(:)*rv_all_points(k,:) )
-        lh_wm(k)   = compute_mean( n_micro_calls, sample_point_weight(:)*w_all_points(k,:) )
+        lh_thlm(k) = compute_sample_mean( n_micro_calls, sample_point_weight(:), &
+                                          thl_all_points(k,:) )
+        lh_rcm(k)  = compute_sample_mean( n_micro_calls, sample_point_weight(:), &
+                                          rc_all_points(k,:) )
+        lh_rvm(k)  = compute_sample_mean( n_micro_calls, sample_point_weight(:), &
+                                          rv_all_points(k,:) )
+        lh_wm(k)   = compute_sample_mean( n_micro_calls, sample_point_weight(:), &
+                                          w_all_points(k,:) )
         forall ( ivar = 1:hydromet_dim )
-          lh_hydromet(k,ivar) = &
-            compute_mean( n_micro_calls, sample_point_weight(:)*hydromet_all_points(k,:,ivar) )
+          lh_hydromet(k,ivar) = compute_sample_mean( n_micro_calls, sample_point_weight(:), &
+                                                     hydromet_all_points(k,:,ivar) )
         end forall ! 1..hydromet_dim
       end forall ! 1..nnzp
 
@@ -1088,6 +1098,9 @@ module estimate_lh_micro_module
 !   use error_code, only:  &
 !       clubb_at_least_debug_level  ! Procedure(s)
 
+    use generate_lh_sample_module, only: &
+      in_mixt_frac_1 ! Procedure
+
     implicit none
 
     ! Constant parameters
@@ -1174,7 +1187,7 @@ module estimate_lh_micro_module
       ! Account for cloud fraction.
       ! Follow M. E. Johnson (1987), p. 56.
       fraction_1 = mixt_frac*C1/max( (mixt_frac*C1+(1-mixt_frac)*C2), epsilon( mixt_frac ) )
-      if ( X_u_one_lev(sample,d_variables+1) < fraction_1 ) then
+      if ( in_mixt_frac_1( X_u_one_lev(sample,d_variables+1), fraction_1 ) ) then
         ! Use an idealized formula to compute liquid
         !      in mixture comp. 1
         rc_m1 = rc_m1 + coeff*(rc(sample))**expn

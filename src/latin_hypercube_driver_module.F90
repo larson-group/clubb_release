@@ -56,7 +56,7 @@ module latin_hypercube_driver_module
     use generate_lh_sample_module, only: & 
       generate_lh_sample, & ! Procedure
       generate_uniform_sample, &
-      choose_permuted_random
+      in_mixt_frac_1
 
     use estimate_lh_micro_module, only: & 
       estimate_lh_micro, & ! Procedure
@@ -347,7 +347,8 @@ module latin_hypercube_driver_module
             ! Here we use the rejection method to find a value in either the
             ! clear or cloudy part of the grid box
             do i = 1, itermax
-              if ( X_u_dp1_element < pdf_params%mixt_frac(k_lh_start) ) then
+              if ( in_mixt_frac_1( X_u_dp1_element,  &
+                                   dble( pdf_params%mixt_frac(k_lh_start) ) ) ) then
                 ! Component 1
                 cloud_frac_n = pdf_params%cloud_frac1(k_lh_start)
               else

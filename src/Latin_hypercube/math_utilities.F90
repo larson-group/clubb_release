@@ -5,7 +5,7 @@ module math_utilities
 !-----------------------------------------------------------------------
   implicit none
 
-  public :: corrcoef, std, cov, compute_mean, compute_sample_variance
+  public :: corrcoef, std, cov, compute_sample_mean, compute_sample_variance
 
   private
 
@@ -89,12 +89,16 @@ module math_utilities
     ! Return type
     real :: cov
 
-    ! Internal
+    ! Local variables
+    real, dimension(n) :: weight
     real :: sum, avg1, avg2
     integer :: j
 
-    avg1 = compute_mean( n, vect1 )
-    avg2 = compute_mean( n, vect2 )
+    ! ---- Begin Code ----
+    weight(1:n) = 1.0
+
+    avg1 = compute_sample_mean( n, weight, vect1 )
+    avg2 = compute_sample_mean( n, weight, vect2 )
 
     sum = 0.
     do j = 1, n
@@ -107,7 +111,7 @@ module math_utilities
   end function cov
 
 !-----------------------------------------------------------------------
-  pure function compute_mean( n_dim, vector )
+  pure function compute_sample_mean( n_dim, weight, vector )
 ! Description:
 !   Find the mean of the vector
 
@@ -124,17 +128,18 @@ module math_utilities
     integer, intent(in) :: n_dim
 
     real, dimension(n_dim), intent(in) :: &
-      vector
+      weight, & ! Weights for individual points of the vector
+      vector    ! Vector to find the mean of
 
     ! Return type
-    real :: compute_mean
+    real :: compute_sample_mean
 
     ! ---- Begin Code ----
 
-    compute_mean = sum( vector ) / real( n_dim )
+    compute_sample_mean = sum( weight(1:n_dim) * vector(1:n_dim) ) / real( n_dim )
 
     return
-  end function compute_mean
+  end function compute_sample_mean
 !-----------------------------------------------------------------------
   pure function compute_sample_variance( n_levels, n_samples, x_sample, weight, x_mean ) &
     result( variance )

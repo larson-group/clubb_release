@@ -3,11 +3,11 @@ module generate_lh_sample_module
 
   implicit none
 
-  public :: generate_lh_sample, generate_uniform_sample, choose_permuted_random
+  public :: generate_lh_sample, generate_uniform_sample, in_mixt_frac_1
 
   private :: sample_points, gaus_mixt_points, & 
              truncate_gaus_mixt, ltqnorm, gaus_condt, & 
-             st_2_rtthl, log_sqd_normalized
+             st_2_rtthl, log_sqd_normalized, choose_permuted_random
 
 
   private ! Default scope
@@ -983,6 +983,34 @@ module generate_lh_sample_module
   end function choose_permuted_random
 
 !----------------------------------------------------------------------
+  elemental function in_mixt_frac_1( X_u_dp1_element, frac )
+
+! Description:
+!   Determine if we're in mixture component 1
+
+! References:
+!   None
+!----------------------------------------------------------------------
+    implicit none
+
+    double precision, intent(in) :: &
+      X_u_dp1_element, & ! Element of X_u telling us which mixture component we're in
+      frac               ! The mixture fraction
+
+    logical :: in_mixt_frac_1
+
+    ! ---- Begin Code ----
+
+    if ( X_u_dp1_element < frac ) then
+      in_mixt_frac_1 = .true.
+    else
+      in_mixt_frac_1 = .false.
+    end if
+
+    return
+  end function in_mixt_frac_1
+
+!----------------------------------------------------------------------
   subroutine gaus_mixt_points( n_micro_calls, d_variables, mixt_frac, mu1, mu2, Sigma1, Sigma2, &
                                cloud_frac1, cloud_frac2, X_u_one_lev, s_pts, X_gm )
 ! Description:
@@ -1075,7 +1103,7 @@ module generate_lh_sample_module
       ! Follow M. E. Johnson (1987), p. 56.
       fraction_1 = ( mixt_frac*cloud_frac1 ) / &
                    ( mixt_frac*cloud_frac1 + (1-mixt_frac)*cloud_frac2 )
-      if ( X_u_one_lev(sample, d_variables+1) < fraction_1 ) then
+      if ( in_mixt_frac_1( X_u_one_lev(sample, d_variables+1), fraction_1 ) ) then
         call gaus_condt( d_variables, &
                          std_normal, mu1, Sigma1, s_pts(sample), &  ! In
                          X_gm(sample, 1:d_variables) ) ! Out
@@ -1501,15 +1529,17 @@ module generate_lh_sample_module
   end subroutine gaus_condt
 
 !-----------------------------------------------------------------------
-! Description:
-!   Converts from s, t variables to rt, thl
-!-----------------------------------------------------------------------
   subroutine st_2_rtthl( n_micro_calls, d_variables, mixt_frac, rt1, thl1, rt2, thl2, & 
                          crt1, cthl1, crt2, cthl2, & 
                          cloud_frac1, cloud_frac2, s1, s2, &
                          s_mellor, &
                          t_mellor, &
                          X_u_one_lev, LH_rt, LH_thl )
+! Description:
+!   Converts from s, t variables to rt, thl
+! References:
+!   None
+!-----------------------------------------------------------------------
 
     use constants, only:  &
         fstderr  ! Constant(s)
@@ -1592,12 +1622,13 @@ module generate_lh_sample_module
       ! Follow M. E. Johnson (1987), p. 56.
       fraction_1     = mixt_frac*cloud_frac1 / &
                        (mixt_frac*cloud_frac1+(1-mixt_frac)*cloud_frac2)
-      if ( X_u_one_lev(sample,d_variables+1) < fraction_1 ) then
+
+      if ( in_mixt_frac_1( X_u_one_lev(sample,d_variables+1), fraction_1 ) ) then
         LH_rt(sample)  = rt1 + (0.5d0/crt1)*(s_mellor(sample)-s1) +  & 
                            (0.5d0/crt1)*t_mellor(sample)
         LH_thl(sample) = thl1 + (-0.5d0/cthl1)*(s_mellor(sample)-s1) +  & 
                            (0.5d0/cthl1)*t_mellor(sample)
-      else
+      else ! mixture fraction 2
         LH_rt(sample)  = rt2 + (0.5d0/crt2)*(s_mellor(sample)-s2) +  & 
                            (0.5d0/crt2)*t_mellor(sample)
         LH_thl(sample) = thl2 + (-0.5d0/cthl2)*(s_mellor(sample)-s2) +  & 
