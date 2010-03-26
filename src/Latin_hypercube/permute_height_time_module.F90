@@ -16,9 +16,10 @@ module permute_height_time_module
                                   height_time_matrix )
 
 ! Description:
-!   Generates a matrix height_time_matrix, which is a nnzp x nt matrix whose rows
-!   are random permutations of the integer sequence (0,...,nt-1).
-!   from 1 to sequence_length. k_order gives vertical ordering
+!   Generates a matrix height_time_matrix, which is a nnzp x nt_repeat x dp1
+!   matrix whose 2nd index is random permutations of the integer sequence 
+!   (0,...,nt_repeat-1).  from 1 to sequence_length. 
+!   k_order gives vertical ordering
 !   of sample points; generate a new k_order every nt/n time steps.
 !   First timestep must have i == 1
 
@@ -38,7 +39,7 @@ module permute_height_time_module
     ! Output Variables
 
     integer, dimension(nnzp,nt_repeat,dp1), intent(out) :: &
-      height_time_matrix ! nnzp x nt x dp1 matrix of integers
+      height_time_matrix ! nnzp x nt_repeat x dp1 matrix of integers
 
     ! Local Variables
 
