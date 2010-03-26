@@ -209,13 +209,14 @@ module latin_hypercube_driver_module
 
     real :: tmp_weight
 
+    real :: cloud_frac_n, fraction_1
+
     double precision :: X_u_dp1_element, X_u_s_mellor_element
 
     ! Number of random samples before sequence of repeats (normally=10)
     integer :: nt_repeat
 
-    integer :: i_rmd, k, sample
-
+    integer :: i_rmd, k, sample !, number_cloudy_samples 
     logical :: l_cloudy_sample ! Whether we're sampling cloudy or clear air
 
     integer, dimension(1) :: tmp_loc
@@ -253,6 +254,47 @@ module latin_hypercube_driver_module
       write(fstderr,*) "Cloud weighted sampling requires micro calls to be divisible by 2."
       stop "Fatal error."
     end if
+!   if ( l_lh_cloud_weighted_sampling .and. sequence_length /= 1 ) then
+!     write(fstderr,*) "Cloud weighted sampling requires sequence length be equal to 1."
+!     stop "Fatal error."
+!   end if
+
+    ! Latin hypercube sample generation
+    ! Generate height_time_matrix, an nnzp x nt_repeat x d_variables array of random integers
+    i_rmd = mod( iter-1, sequence_length )
+
+    if ( i_rmd == 0 ) then
+      call permute_height_time( nnzp, nt_repeat, d_variables+1, & ! intent(in)
+                                height_time_matrix )              ! intent(out)
+    end if
+    ! End Latin hypercube sample generation
+
+    ! print*, 'latin_hypercube_driver: i_rmd=', i_rmd
+
+    !--------------------------------------------------------------
+    ! Latin hypercube sampling
+    !--------------------------------------------------------------
+
+    do k = 1, nnzp
+      ! Choose which rows of LH sample to feed into closure.
+      p_matrix(1:n_micro_calls,1:(d_variables+1)) = &
+        height_time_matrix(k, n_micro_calls*i_rmd+1:n_micro_calls*i_rmd+n_micro_calls, &
+                           1:d_variables+1)
+
+      ! print*, 'latin_hypercube_sampling: got past p_matrix'
+
+      ! Generate the uniform distribution using the Mersenne twister (not
+      ! currently configured to re-seed).
+      !  X_u has one extra dimension for the mixture component.
+      call generate_uniform_sample( n_micro_calls, nt_repeat, d_variables+1, p_matrix, & ! In
+                                    X_u_all_levs(k,:,:) ) ! Out
+
+    end do ! 1..nnzp
+
+    ! For a 100 level fixed grid, this looks to be about the middle of the cloud for RICO
+!   k_lh_start = 50
+    tmp_loc    = maxloc( rcm )
+    k_lh_start = tmp_loc(1) ! Attempt using the maximal value of rcm for now
 
     ! Latin hypercube sample generation
     ! Generate height_time_matrix, an nnzp x nt_repeat x d_variables array of random integers
@@ -320,6 +362,9 @@ module latin_hypercube_driver_module
             ! Ensure the odd columns are cloudy and the even columns are clear when
             ! we're using l_lh_cloud_weighted_sampling
             if ( mod( sample, 2 ) == 0 ) then
+            ! Detect which half of the sample points are in clear air and which half are in
+            ! the cloudy air
+!           if ( p_matrix(sample,1) < ( n_micro_calls / 2 ) ) then
               l_cloudy_sample = .false.
               LH_sample_point_weights(sample) = 2. * ( 1.0 - lh_start_cloud_frac )
             else
@@ -332,6 +377,12 @@ module latin_hypercube_driver_module
                    pdf_params%cloud_frac2(k_lh_start), pdf_params%mixt_frac(k_lh_start), & !In
                    cloud_frac_thresh, & ! In
                    X_u_dp1_element, X_u_s_mellor_element ) ! In/out
+
+!           call choose_X_u_scaled &
+!                ( l_cloudy_sample, pdf_params%cloud_frac1(k_lh_start), & ! In
+!                  pdf_params%cloud_frac2(k_lh_start), pdf_params%mixt_frac(k_lh_start), & !In
+!                  cloud_frac_thresh, & ! In
+!                  X_u_dp1_element, X_u_s_mellor_element ) ! In/out
 
           end if ! Cloud fraction is between cloud_frac_thresh and 50%
 
@@ -351,6 +402,42 @@ module latin_hypercube_driver_module
         end do ! 1..nnzp
 
       end do ! 1..n_micro_calls
+
+      ! Assertion check for whether half of sample points are cloudy.
+!     if ( l_lh_cloud_weighted_sampling .and. clubb_at_least_debug_level( 2 ) .and. &
+!          lh_start_cloud_frac < 0.5 .and. lh_start_cloud_frac > cloud_frac_thresh ) then
+
+!       number_cloudy_samples = 0
+
+!       fraction_1 = ( pdf_params%mixt_frac(k_lh_start)*pdf_params%cloud_frac1(k_lh_start) ) / &
+!                    ( pdf_params%mixt_frac(k_lh_start)*pdf_params%cloud_frac1(k_lh_start) &
+!                    + (1.-pdf_params%mixt_frac(k_lh_start))*pdf_params%cloud_frac2(k_lh_start) )
+
+!       do sample = 1, n_micro_calls
+!         if ( in_mixt_frac_1( X_u_all_levs(k_lh_start,sample,d_variables+1), & 
+!                              dble( fraction_1 ) ) ) then
+!           cloud_frac_n = pdf_params%cloud_frac1(k_lh_start)
+!         else
+!           cloud_frac_n = pdf_params%cloud_frac2(k_lh_start)
+!         end if
+!         if ( X_u_all_levs(k_lh_start,sample,1) >= 1.-cloud_frac_n ) then
+!             !stop
+!           number_cloudy_samples = number_cloudy_samples + 1
+!         else 
+!           ! Do nothing, the air is clear
+!         end if
+!       end do
+!       if ( number_cloudy_samples /= ( n_micro_calls / 2 ) ) then
+!         write(fstderr,*) "Error, half of all samples aren't in cloud"
+!         write(fstderr,*) "X_u s_smellor random = ", &
+!           X_u_all_levs(k_lh_start,:,1), "cloudy samples =", number_cloudy_samples
+!         write(fstderr,*) "cloud_frac1 = ", pdf_params%cloud_frac1(k_lh_start)
+!         write(fstderr,*) "cloud_frac2 = ", pdf_params%cloud_frac2(k_lh_start)
+!         write(fstderr,*) "X_u d+1 element = ", X_u_all_levs(k_lh_start,:,d_variables+1)
+!         write(fstderr,*) "fraction 1 = ", fraction_1
+!         stop
+!       end if
+!     end if
 
     end if ! Maximum overlap
 
@@ -714,5 +801,97 @@ module latin_hypercube_driver_module
 
     return
   end subroutine choose_X_u_reject
+
+!-------------------------------------------------------------------------------
+  subroutine choose_X_u_scaled &
+             ( l_cloudy_sample, cloud_frac1, &
+              cloud_frac2, mixt_frac, cloud_frac_thresh, &
+              X_u_dp1_element, X_u_s_mellor_element )
+
+! Description:
+!   Find a clear or cloudy point for sampling.
+!
+! References:
+!   None
+!-------------------------------------------------------------------------------
+    use mt95, only: genrand_real3 ! Constant
+
+    use mt95, only: genrand_real ! Procedure
+
+#ifdef UNRELEASED_CODE
+    use generate_lh_sample_module, only: & 
+      in_mixt_frac_1 ! Procedure
+#endif
+
+    use constants, only: &
+      fstderr ! Constant
+
+    implicit none
+
+    ! External
+    intrinsic :: dble
+
+    ! Input Variables
+    logical, intent(in) :: &
+      l_cloudy_sample ! Whether his is a cloudy or clear air sample point
+
+    real, intent(in) :: &
+      cloud_frac1, &    ! Cloud fraction associated with mixture component 1     [-]
+      cloud_frac2, &    ! Cloud fraction associated with mixture component 2     [-]
+      mixt_frac, &      ! Mixture fraction                                       [-]
+      cloud_frac_thresh ! Minimum threshold for cloud fraction                   [-]
+
+    ! Input/Output Variables
+    double precision, intent(inout) :: &
+      X_u_dp1_element, X_u_s_mellor_element ! Elements from X_u (uniform dist.)
+
+    ! Local Variables
+    real :: cloud_frac_n, fraction_1, clear_fraction_1
+
+    real(kind=genrand_real) :: rand ! Random number
+
+#ifdef UNRELEASED_CODE
+    ! ---- Begin code ----
+
+    ! Pick a new mixture component value between (0,1)
+    call genrand_real3( rand )
+    X_u_dp1_element = dble( rand )
+
+    if ( l_cloudy_sample ) then
+      fraction_1 = ( mixt_frac*cloud_frac1 ) / &
+                   ( mixt_frac*cloud_frac1 + (1.-mixt_frac)*cloud_frac2 )
+
+      if ( in_mixt_frac_1( X_u_dp1_element, dble( fraction_1 ) ) ) then
+        ! Component 1
+        cloud_frac_n = cloud_frac1
+      else
+        ! Component 2
+        cloud_frac_n = cloud_frac2
+      end if
+      call genrand_real3( rand ) ! Rand between (0,1)
+      ! Scale and translate sample point to reside in cloud
+      X_u_s_mellor_element = dble( cloud_frac_n * rand + (1.-cloud_frac_n) )
+
+    else ! Clear air sample
+      clear_fraction_1 = ( ( 1. - cloud_frac1 ) * mixt_frac ) &
+        / ( ( 1.-cloud_frac1 ) * mixt_frac + ( 1.-cloud_frac2 )*( 1.-mixt_frac ) )
+
+      if ( in_mixt_frac_1( X_u_dp1_element, dble( clear_fraction_1 ) ) ) then
+        ! Component 1
+        cloud_frac_n = cloud_frac1
+      else
+        ! Component 2
+        cloud_frac_n = cloud_frac2
+      end if
+      call genrand_real3( rand ) ! Rand between (0,1)
+      ! Scale and translate sample point to reside in clear air (no cloud)
+      X_u_s_mellor_element = dble( (1.-cloud_frac_n) * rand )
+
+    end if
+
+#endif
+
+    return
+  end subroutine choose_X_u_scaled
 
 end module latin_hypercube_driver_module
