@@ -746,6 +746,10 @@ module estimate_lh_micro_module
 
     integer :: ivar, k, sample
 
+    integer :: &
+      in_cloud_points, &
+      out_of_cloud_points
+
     logical :: l_error
 
     ! ---- Begin Code ----
@@ -770,21 +774,21 @@ module estimate_lh_micro_module
            all( LH_sample_point_weights(:) /= 1.0 ) ) then ! The 1.0 indicates cloud_frac is > 0.5
         ! Verify every other sample point is out of cloud if we're doing
         ! cloud weighted sampling
-        do sample = 1, n_micro_calls, 2 ! Count by 2's
-          if ( s_mellor(k_lh_start,sample) > 0. .and. s_mellor(k_lh_start,sample+1) > 0. ) then
-            write(fstderr,*) "In estimate_lh_micro_module subroutine lh_microphys_driver: "// &
-              "cloud weighted sampling hasn't chosen a clear point after a cloudy point."
-            write(fstderr,*) "sample # =", sample, "s_mellor =", s_mellor(k_lh_start,sample)
-            write(fstderr,*) "sample # =", sample+1, "s_mellor =", s_mellor(k_lh_start,sample+1)
-            stop "Fatal error"
-          else if ( s_mellor(k_lh_start,sample) < 0. .and. s_mellor(k_lh_start,sample+1) < 0. ) then
-            write(fstderr,*) "In estimate_lh_micro_module subroutine lh_microphys_driver: "// &
-              "cloud weighted sampling hasn't chosen a cloudy point after a clear point."
-            write(fstderr,*) "sample # =", sample, "s_mellor =", s_mellor(k_lh_start,sample)
-            write(fstderr,*) "sample # =", sample+1, "s_mellor =", s_mellor(k_lh_start,sample+1)
-            stop "Fatal error"
+        in_cloud_points     = 0
+        out_of_cloud_points = 0
+        do sample = 1, n_micro_calls, 1
+          if ( s_mellor(k_lh_start,sample) > 0. ) then
+            in_cloud_points = in_cloud_points + 1
+          else if ( s_mellor(k_lh_start,sample) <= 0. ) then
+            out_of_cloud_points = out_of_cloud_points + 1
           end if
-        end do ! 1..n_micro_calls by 2's
+        end do ! 1..n_micro_calls
+        if ( in_cloud_points /= out_of_cloud_points ) then
+          write(fstderr,*) "In lh_microphys_driver:"
+          write(fstderr,*) "The cloudy sample points do not equal the out of cloud points"
+          write(fstderr,*) "in_cloud_points =", in_cloud_points
+          write(fstderr,*) "out_of_cloud_points =", out_of_cloud_points
+        end if
       end if ! l_check_lh_cloud_weighting .and. l_lh_cloud_weighted_sampling
     end if ! clubb_at_least_debug_level 2
 
