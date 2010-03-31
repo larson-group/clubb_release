@@ -1,0 +1,52 @@
+This directory contains scripts that aid in the setting
+up and running of ensembles using CLUBB. They should
+work mostly out of the box for TWP_ICE, but will require
+modifications for different ensemble cases.
+
+DIRECTORIES:
+  input: This folder contains subfolders which in turn
+         hold raw forcing data for an individual ensemble
+         member. This data is assumed to not be in a CLUBB
+         compatible format (eg. ARM). Subfolders should
+         be named ensmem## where ## is the number of the
+         ensemble member. The scripts will not work if
+         there are more than 100 ensemble members (00 - 99)
+         but skipping ensemble members is accepable.
+
+  ensembles: This folder contains subfolders which in turn
+             hold forcing data which has been converted for
+             use by CLUBB. It is assumed that it will be
+             populated by ensemble_setup.bash. The
+             subfolders are named ensemble## where ## is
+             the number of the ensemble member whose setup
+             files are contained within.
+
+  output: This folder contains subfolders which contain the
+          CLUBB output for the various ensemble runs. It is
+          assumed that it will be populated by
+          ensemble_run.bash. Folder naming follows the same
+          pattern as the ensembles folder.
+
+SCRIPTS:
+  ensemble_setup.bash: Runs a series of MATLAB scripts to
+                       convert the data contained in the
+                       input directory in to CLUBB
+                       compatible forcing files. It
+                       requires the MATLAB scripts from
+                       clubb/utilities/case_setup/twp_ice
+                       to be moved to this directory. It
+                       also requires convert_units.m from
+                       clubb/postprocessing/matlab_include
+
+  ensemble_run.bash: Runs all of the ensembles with forcing
+                     data contained in the ensembles
+                     directory. Results from these runs
+                     will be moved to the output directory.
+
+  create_output.bash: Uses supplementary MATLAB scripts to
+                      convert CLUBB output in to whatever
+                      file type is necessary for
+                      submission. In the case of TWP_ICE
+                      this is NetCDF. It uses both
+                      twp_ice_profiles_creator.m and
+                      twp_ice_timeseries_creator.m.
