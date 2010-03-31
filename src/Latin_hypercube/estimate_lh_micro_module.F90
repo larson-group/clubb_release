@@ -23,6 +23,7 @@ module estimate_lh_micro_module
                p_in_Pa, exner, rho, &
                rcm, w_std_dev, dzq, &        
                cloud_frac, hydromet, &
+               X_mixt_comp_all_levs, &
                lh_hydromet_mc, lh_hydromet_vel, &
                lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, &
                lh_AKm, AKm, AKstd, AKstd_cld, & 
@@ -92,6 +93,9 @@ module estimate_lh_micro_module
 
     real, dimension(nnzp,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
+
+    integer, dimension(nnzp,n_micro_calls), intent(in) :: &
+      X_mixt_comp_all_levs ! Whether we're in mixture component 1 or 2
 
     ! Output Variables
     real, dimension(nnzp,hydromet_dim), intent(inout) :: &
@@ -235,7 +239,7 @@ module estimate_lh_micro_module
              dble( cloud_frac1 ), dble( cloud_frac2 ), &
              rcm_sample, & 
                !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
-             X_u_all_levs(level,:,:), lh_AKm_dp )
+             X_u_all_levs(level,:,:), X_mixt_comp_all_levs(level,:), lh_AKm_dp )
 
       ! Convert to real number
       lh_AKm(level) = real( lh_AKm_dp )
@@ -245,7 +249,7 @@ module estimate_lh_micro_module
            ( n_micro_calls, d_variables, dble( mixt_frac ), dble( cloud_frac1 ), &
              dble( cloud_frac2 ), rcm_sample, & 
              ! X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
-             X_u_all_levs(level,:,:), lh_rcm_avg_dp )
+             X_u_all_levs(level,:,:), X_mixt_comp_all_levs(level,: ), lh_rcm_avg_dp )
 
       ! Convert to real number
       lh_rcm_avg(level) = real( lh_rcm_avg_dp )
@@ -353,6 +357,7 @@ module estimate_lh_micro_module
                               X_nl_all_levs, X_u_all_levs, &
                               p_in_Pa, exner, rho, w_std_dev, &
                               dzq, pdf_params, hydromet, &
+                              X_mixt_comp_all_levs, &
                               lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, &
                               lh_hydromet_vel, lh_thlm_mc, &
                               lh_hydromet, lh_thlm, lh_rcm, lh_rvm, lh_wm, &
@@ -367,7 +372,7 @@ module estimate_lh_micro_module
   subroutine autoconv_driver( n_micro_calls, d_variables, mixt_frac, &
                               cloud_frac1, cloud_frac2, rc, &
                              !w, Nc, rr, &
-                              X_u_one_lev, ac_m )
+                              X_u_one_lev, X_mixt_comp_one_lev, ac_m )
 ! Description:
 !   Compute Kessler grid box avg autoconversion (kg/kg)/s.
 ! References:
@@ -378,11 +383,12 @@ module estimate_lh_micro_module
       fstderr, & ! Constant(s)
       g_per_kg
 
-!   use generate_lh_sample_module, only: &
-!     in_mixt_frac_1
-
 !   use error_code, only:  &
 !     clubb_at_least_debug_level  ! Procedure(s)
+
+    use parameters_microphys, only: &
+      LH_sample_point_weights, & ! Variables
+      l_lh_cloud_weighted_sampling
 
     implicit none
 
@@ -412,6 +418,9 @@ module estimate_lh_micro_module
     double precision, dimension(n_micro_calls,d_variables+1), intent(in) :: &
       X_u_one_lev ! N x D+1 Latin hypercube sample from uniform dist
 
+    integer, dimension(n_micro_calls), intent(in) :: &
+      X_mixt_comp_one_lev ! Whether we're in the first or second mixture component
+
     ! Output Variables
 
     ! a scalar representing grid box average autoconversion;
@@ -427,7 +436,7 @@ module estimate_lh_micro_module
     double precision :: ac_m1, ac_m2
     double precision :: coeff, r_crit
     ! double precision expn
-    double precision :: fraction_1
+!   double precision :: fraction_1
 
     ! ---- Begin Code ----
 
@@ -483,15 +492,15 @@ module estimate_lh_micro_module
       ! Choose which mixture fraction we are in.
       ! Account for cloud fraction.
       ! Follow M. E. Johnson (1987), p. 56.
-      fraction_1 = mixt_frac*cloud_frac1 / &
-                     max( mixt_frac*cloud_frac1+(1-mixt_frac)*cloud_frac2, epsilon( mixt_frac ) )
+!     fraction_1 = mixt_frac*cloud_frac1 / &
+!                    max( mixt_frac*cloud_frac1+(1-mixt_frac)*cloud_frac2, epsilon( mixt_frac ) )
 !          print*, 'fraction_1= ', fraction_1
 
 ! V. Larson change to try to fix sampling
 !          if ( in_mixt_frac_1( X_u_one_lev(sample,d_variables+1), fraction_1 ) ) then
 !          print*, '-1+2*int((sample+1)/2)= ', -1+2*int((sample+1)/2)
 !          print*, '-1+2*int((sample+1)/2)= ', int(sample)
-      if ( X_u_one_lev(sample,d_variables+1) < fraction_1 ) then
+      if ( X_mixt_comp_one_lev(sample) == 1 ) then
 ! End of V. Larson fix
 
 ! Use an idealized formula to compute autoconversion
@@ -499,7 +508,11 @@ module estimate_lh_micro_module
 ! A_K = (1e-3/s)*(rc-0.5g/kg)*H(rc-0.5g/kg)
 ! This is the first of two lines where
 !      a user must add a new microphysics scheme.
-        ac_m1 = ac_m1 + coeff*max(0.d0,rc(sample)-r_crit)
+        if ( l_lh_cloud_weighted_sampling ) then
+          ac_m1 = ac_m1 + coeff*max(0.d0,rc(sample)-r_crit) * LH_sample_point_weights(sample)
+        else
+          ac_m1 = ac_m1 + coeff*max(0.d0,rc(sample)-r_crit)
+        end if
         n1 = n1 + 1
       else
 ! Use an idealized formula to compute autoconversion
@@ -507,7 +520,13 @@ module estimate_lh_micro_module
 ! A_K = (1e-3/s)*(rc-0.5g/kg)*H(rc-0.5g/kg)
 ! This is the second and last line where
 !      a user must add a new microphysics scheme.
-        ac_m2 = ac_m2 + coeff*max(0.d0,rc(sample)-r_crit)
+
+        if ( l_lh_cloud_weighted_sampling ) then
+          ac_m2 = ac_m2 + coeff*max(0.d0,rc(sample)-r_crit) * LH_sample_point_weights(sample)
+        else
+          ac_m2 = ac_m2 + coeff*max(0.d0,rc(sample)-r_crit)
+        end if
+
         n2 = n2 + 1
       end if
 
@@ -554,7 +573,7 @@ module estimate_lh_micro_module
       end if
 
       ! Grid box average.
-      ac_m = mixt_frac*cloud_frac1*ac_m1 + (1-mixt_frac)*cloud_frac2*ac_m2
+      ac_m = mixt_frac*cloud_frac1*ac_m1 + (1.-mixt_frac)*cloud_frac2*ac_m2
 
     else
       ac_m = ( ac_m1 + ac_m2 ) / dble( n_micro_calls )
@@ -573,6 +592,7 @@ module estimate_lh_micro_module
                X_nl_all_levs, X_u_all_levs, &
                p_in_Pa, exner, rho, w_std_dev, &
                dzq, pdf_params, hydromet,  &
+               X_mixt_comp_all_levs, &
                lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, &
                lh_hydromet_vel, lh_thlm_mc, &
                lh_hydromet, lh_thlm, lh_rcm, lh_rvm, lh_wm, &
@@ -593,9 +613,6 @@ module estimate_lh_micro_module
 
     use parameters_model, only: &
       hydromet_dim ! Variable
-
-    use generate_lh_sample_module, only: &
-      in_mixt_frac_1 ! Procedure
 
 !   use parameters_microphys, only: &
 !     Ncm_initial
@@ -675,6 +692,9 @@ module estimate_lh_micro_module
     real, dimension(nnzp,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
+    integer, dimension(nnzp,n_micro_calls), intent(in) :: &
+      X_mixt_comp_all_levs ! Whether we're in the first or second mixture component
+
     ! Output Variables
 
     real, dimension(nnzp,hydromet_dim), intent(inout) :: &
@@ -741,8 +761,7 @@ module estimate_lh_micro_module
 
     double precision, dimension(nnzp) :: &
       cloud_frac1, cloud_frac2, & ! Cloud fraction for plume 1,2        [-]
-      mixt_frac, &  ! PDF parameter mixt_frac
-      fraction_1
+      mixt_frac     ! PDF parameter mixt_frac
 
     integer :: ivar, k, sample
 
@@ -827,8 +846,8 @@ module estimate_lh_micro_module
     ! Choose which mixture fraction we are in.
     ! Account for cloud fraction.
     ! Follow M. E. Johnson (1987), p. 56.
-    fraction_1(:) = mixt_frac(:)*cloud_frac1(:) / &
-                    ( mixt_frac(:)*cloud_frac1(:)+(1.-mixt_frac(:))*cloud_frac2(:) )
+!   fraction_1(:) = mixt_frac(:)*cloud_frac1(:) / &
+!                   ( mixt_frac(:)*cloud_frac1(:)+(1.-mixt_frac(:))*cloud_frac2(:) )
 !   print*, 'fraction_1= ', fraction_1
 
     do sample = 1, n_micro_calls
@@ -889,7 +908,7 @@ module estimate_lh_micro_module
       end if
 
       do ivar = 1, hydromet_dim
-        where ( in_mixt_frac_1( X_u_all_levs(1:nnzp,sample,d_variables+1), fraction_1 ) )
+        where ( X_mixt_comp_all_levs(:,sample) == 1 )
           lh_hydromet_vel_m1(:,ivar) = lh_hydromet_vel_m1(:,ivar) + lh_hydromet_vel(:,ivar)
           lh_hydromet_mc_m1(:,ivar) = lh_hydromet_mc_m1(:,ivar) + lh_hydromet_mc(:,ivar)
         else where
@@ -898,7 +917,7 @@ module estimate_lh_micro_module
         end where
       end do
 
-      where ( in_mixt_frac_1( X_u_all_levs(1:nnzp,sample,d_variables+1), fraction_1 ) )
+      where ( X_mixt_comp_all_levs(:,sample) == 1 )
         lh_rcm_mc_m1(:) = lh_rcm_mc_m1(:) + lh_rcm_mc(:)
         lh_rvm_mc_m1(:) = lh_rvm_mc_m1(:) + lh_rvm_mc(:)
         lh_thlm_mc_m1(:) = lh_thlm_mc_m1(:) + lh_thlm_mc(:)
@@ -943,7 +962,7 @@ module estimate_lh_micro_module
       ! Latin hypercube estimate of cloud fraction
       do sample = 1, n_micro_calls
         where ( s_mellor(:,sample) > 0. ) 
-          lh_cloud_frac(:) = lh_cloud_frac(:) + 1.0
+          lh_cloud_frac(:) = lh_cloud_frac(:) + 1.0 * sample_point_weight(sample)
         end where
       end do
       lh_cloud_frac(:) = lh_cloud_frac(:) / real( n_micro_calls )
@@ -1089,7 +1108,7 @@ module estimate_lh_micro_module
 !----------------------------------------------------------------------
   subroutine rc_estimate( n_micro_calls, d_variables, mixt_frac, C1, C2, rc, & ! w,   & 
                          !N_pts, rr, 
-                           X_u_one_lev, rc_m )
+                           X_u_one_lev, X_mixt_comp_one_lev, rc_m )
 ! Description:
 !   Compute an Monte Carlo estimate of grid box avg liquid water.
 ! References:
@@ -1101,9 +1120,6 @@ module estimate_lh_micro_module
 
 !   use error_code, only:  &
 !       clubb_at_least_debug_level  ! Procedure(s)
-
-    use generate_lh_sample_module, only: &
-      in_mixt_frac_1 ! Procedure
 
     implicit none
 
@@ -1129,6 +1145,9 @@ module estimate_lh_micro_module
     double precision, dimension(n_micro_calls,d_variables+1), intent(in) :: &
       X_u_one_lev ! N x D+1 Latin hypercube sample from uniform dist
 
+    integer, dimension(n_micro_calls), intent(in) :: &
+      X_mixt_comp_one_lev ! Whether we're in the first or second mixture component
+
     ! Output Variables
 
     ! A scalar representing grid box avg specific liquid water;
@@ -1141,7 +1160,7 @@ module estimate_lh_micro_module
     integer :: n1, n2
     double precision :: rc_m1, rc_m2
     double precision :: coeff, expn
-    double precision :: fraction_1
+!   double precision :: fraction_1
 
     ! ---- Begin Code ----
 
@@ -1190,8 +1209,8 @@ module estimate_lh_micro_module
       ! Choose which mixture fraction we are in.
       ! Account for cloud fraction.
       ! Follow M. E. Johnson (1987), p. 56.
-      fraction_1 = mixt_frac*C1/max( (mixt_frac*C1+(1-mixt_frac)*C2), epsilon( mixt_frac ) )
-      if ( in_mixt_frac_1( X_u_one_lev(sample,d_variables+1), fraction_1 ) ) then
+!     fraction_1 = mixt_frac*C1/max( (mixt_frac*C1+(1-mixt_frac)*C2), epsilon( mixt_frac ) )
+      if ( X_mixt_comp_one_lev(sample) == 1 ) then
         ! Use an idealized formula to compute liquid
         !      in mixture comp. 1
         rc_m1 = rc_m1 + coeff*(rc(sample))**expn

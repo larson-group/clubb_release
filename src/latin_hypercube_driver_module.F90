@@ -47,6 +47,9 @@ module latin_hypercube_driver_module
       iiNsnowm,    & 
       iiNgraupelm
 
+    use array_index, only: & 
+      iiLH_rt   ! Variables  
+
     use parameters_model, only: hydromet_dim ! Variable
 
 #ifdef UNRELEASED_CODE
@@ -55,8 +58,7 @@ module latin_hypercube_driver_module
 
     use generate_lh_sample_module, only: & 
       generate_lh_sample, & ! Procedure
-      generate_uniform_sample, &
-      in_mixt_frac_1
+      generate_uniform_sample
 
     use estimate_lh_micro_module, only: & 
       estimate_lh_micro, & ! Procedure
@@ -121,7 +123,7 @@ module latin_hypercube_driver_module
     implicit none
 
     ! External
-    intrinsic :: allocated, mod, maxloc
+    intrinsic :: allocated, mod, maxloc, dble, epsilon
 
     ! Interface block
 #include "./microphys_interface.inc"
@@ -129,6 +131,10 @@ module latin_hypercube_driver_module
     ! Parameter Constants
     real, parameter :: &
       cloud_frac_thresh = 0.01 ! Threshold for sampling preferentially within cloud
+
+    ! Find in and out of cloud points using the rejection method rather than scaling
+    logical, parameter :: &
+      l_use_rejection_method = .true. 
 
     ! Input Variables
     real, intent(in) :: &
@@ -185,6 +191,9 @@ module latin_hypercube_driver_module
     double precision, dimension(nnzp,n_micro_calls,d_variables) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
+    integer, dimension(nnzp,n_micro_calls) :: &
+      X_mixt_comp_all_levs ! Which mixture component we're in
+
     double precision, dimension(nnzp,n_micro_calls) :: &
       LH_rt, LH_thl ! Sample of total water and liquid potential temperature [kg/kg],[K]
 
@@ -207,17 +216,27 @@ module latin_hypercube_driver_module
 
     real :: lh_start_cloud_frac ! Cloud fraction at k_lh_start [-]
 
-    real :: tmp_weight
+    ! Try to obtain 12 digit accuracy for a diagnostic mean
+    real(kind=selected_real_kind( p=12 ) ) :: mean_weight
 
-    real :: cloud_frac_n, fraction_1
+    double precision :: fraction_1
 
     double precision :: X_u_dp1_element, X_u_s_mellor_element
 
     ! Number of random samples before sequence of repeats (normally=10)
     integer :: nt_repeat
 
-    integer :: i_rmd, k, sample !, number_cloudy_samples 
-    logical :: l_cloudy_sample ! Whether we're sampling cloudy or clear air
+    real :: cloud_frac_n ! Temporary variable for cloud_frac1/cloud_frac2
+
+    integer :: &
+      i_rmd, &   ! Remainder of ( iter-1 / sequence_length )
+      k, sample  ! Loop iterators
+
+    integer :: &
+      iiLH_s_mellor, &      ! Index of Mellor's s (extended rcm)
+      number_cloudy_samples ! Diagnostic sum
+
+    logical :: l_cloudy_sample ! Whether a sample point is cloudy or clear air
 
     integer, dimension(1) :: tmp_loc
 
@@ -249,15 +268,18 @@ module latin_hypercube_driver_module
 
     end if ! First call to the driver
 
-    ! Sanity check for l_lh_cloud_weighted_sampling
+    ! Sanity checks for l_lh_cloud_weighted_sampling
     if ( l_lh_cloud_weighted_sampling .and. mod( n_micro_calls, 2 ) /= 0 ) then
       write(fstderr,*) "Cloud weighted sampling requires micro calls to be divisible by 2."
       stop "Fatal error."
     end if
-!   if ( l_lh_cloud_weighted_sampling .and. sequence_length /= 1 ) then
-!     write(fstderr,*) "Cloud weighted sampling requires sequence length be equal to 1."
-!     stop "Fatal error."
-!   end if
+    if ( l_lh_cloud_weighted_sampling .and. sequence_length /= 1 ) then
+      write(fstderr,*) "Cloud weighted sampling requires sequence length be equal to 1."
+      stop "Fatal error."
+    end if
+
+    ! Determine the s_mellor element of the uniform/lognormal distribution arrays
+    iiLH_s_mellor = iiLH_rt
 
     ! Latin hypercube sample generation
     ! Generate height_time_matrix, an nnzp x nt_repeat x d_variables array of random integers
@@ -342,12 +364,17 @@ module latin_hypercube_driver_module
 
     if ( l_lh_vert_overlap ) then
 
+      ! Determine the matrix of integers for the k_lh_start level
+!     p_matrix(1:n_micro_calls,1:(d_variables+1)) = &
+!       height_time_matrix(k_lh_start, n_micro_calls*i_rmd+1:n_micro_calls*i_rmd+n_micro_calls, &
+!                          1:d_variables+1)
+
       do sample = 1, n_micro_calls
 
         ! Get the uniform sample of d+1 (telling us if we're in component 1 or
         ! component 2), and the uniform sample for s_mellor
         X_u_dp1_element      = X_u_all_levs(k_lh_start,sample,d_variables+1)
-        X_u_s_mellor_element = X_u_all_levs(k_lh_start,sample,1)
+        X_u_s_mellor_element = X_u_all_levs(k_lh_start,sample,iiLH_s_mellor)
 
         if ( l_lh_cloud_weighted_sampling ) then
 
@@ -359,12 +386,10 @@ module latin_hypercube_driver_module
 
           else ! If we're in a partly cloud gridbox then we continue to the code below
 
-            ! Ensure the odd columns are cloudy and the even columns are clear when
-            ! we're using l_lh_cloud_weighted_sampling
-            if ( mod( sample, 2 ) == 0 ) then
             ! Detect which half of the sample points are in clear air and which half are in
             ! the cloudy air
-!           if ( p_matrix(sample,1) < ( n_micro_calls / 2 ) ) then
+!           if ( p_matrix(sample,iiLH_s_mellor) < ( n_micro_calls / 2 ) ) then
+            if ( mod( sample, 2 ) == 0 ) then
               l_cloudy_sample = .false.
               LH_sample_point_weights(sample) = 2. * ( 1.0 - lh_start_cloud_frac )
             else
@@ -372,17 +397,20 @@ module latin_hypercube_driver_module
               LH_sample_point_weights(sample) = 2. * lh_start_cloud_frac
             end if
 
-            call choose_X_u_reject &
-                 ( l_cloudy_sample, pdf_params%cloud_frac1(k_lh_start), & ! In
-                   pdf_params%cloud_frac2(k_lh_start), pdf_params%mixt_frac(k_lh_start), & !In
-                   cloud_frac_thresh, & ! In
-                   X_u_dp1_element, X_u_s_mellor_element ) ! In/out
+            if ( l_use_rejection_method ) then
+              ! Use the rejection method to select points that are in or out of cloud
+              call choose_X_u_reject &
+                   ( l_cloudy_sample, pdf_params%cloud_frac1(k_lh_start), & ! In
+                     pdf_params%cloud_frac2(k_lh_start), pdf_params%mixt_frac(k_lh_start), & !In
+                     cloud_frac_thresh, & ! In
+                     X_u_dp1_element, X_u_s_mellor_element ) ! In/out
 
-!           call choose_X_u_scaled &
-!                ( l_cloudy_sample, pdf_params%cloud_frac1(k_lh_start), & ! In
-!                  pdf_params%cloud_frac2(k_lh_start), pdf_params%mixt_frac(k_lh_start), & !In
-!                  cloud_frac_thresh, & ! In
-!                  X_u_dp1_element, X_u_s_mellor_element ) ! In/out
+            else ! Transpose and scale the points to be in or out of cloud
+              call choose_X_u_scaled &
+                   ( l_cloudy_sample, pdf_params%cloud_frac1(k_lh_start), & ! In
+                     pdf_params%cloud_frac2(k_lh_start), pdf_params%mixt_frac(k_lh_start), & !In
+                     X_u_dp1_element, X_u_s_mellor_element ) ! In/out
+            end if
 
           end if ! Cloud fraction is between cloud_frac_thresh and 50%
 
@@ -390,70 +418,80 @@ module latin_hypercube_driver_module
 
         do k = 1, nnzp
 
+          ! Overwrite 2 elements for maximal overlap and cloud
+          ! weighted sampling (if it's enabled).
+          X_u_all_levs(k,sample,iiLH_s_mellor) =  X_u_s_mellor_element ! s_mellor
+          X_u_all_levs(k,sample,d_variables+1) = X_u_dp1_element ! Mixture comp.
+
           ! Use this line to have all variates maximally correlated.  This
           ! probably isn't a good idea for dealing with all cloud types.
 !         X_u_all_levs(k,sample,:) = X_u_all_levs(k_lh_start,sample,:)
 
-          ! Overwrite 2 elements for maximal overlap and cloud
-          ! weighted sampling (if it's enabled).
-          X_u_all_levs(k,sample,1) =  X_u_s_mellor_element ! s_mellor
-          X_u_all_levs(k,sample,d_variables+1) = X_u_dp1_element ! Mixture comp.
 
         end do ! 1..nnzp
 
       end do ! 1..n_micro_calls
 
+      do k = 1, nnzp
+        fraction_1 = dble( pdf_params%mixt_frac(k) )
+
+        ! Determine mixture component
+        where ( in_mixt_frac_1(X_u_all_levs(k,:,d_variables+1), fraction_1 ) )
+          X_mixt_comp_all_levs(k,:) = 1
+        else where
+          X_mixt_comp_all_levs(k,:) = 2
+        end where
+      end do
+
       ! Assertion check for whether half of sample points are cloudy.
-!     if ( l_lh_cloud_weighted_sampling .and. clubb_at_least_debug_level( 2 ) .and. &
-!          lh_start_cloud_frac < 0.5 .and. lh_start_cloud_frac > cloud_frac_thresh ) then
+      ! This is for the uniform sample only.  Another assertion check is in the
+      ! estimate_lh_micro_module for X_nl_all_levs.
+      if ( l_lh_cloud_weighted_sampling .and. clubb_at_least_debug_level( 2 ) .and. &
+           lh_start_cloud_frac < 0.5 .and. lh_start_cloud_frac > cloud_frac_thresh ) then
 
-!       number_cloudy_samples = 0
+        number_cloudy_samples = 0
 
-!       fraction_1 = ( pdf_params%mixt_frac(k_lh_start)*pdf_params%cloud_frac1(k_lh_start) ) / &
-!                    ( pdf_params%mixt_frac(k_lh_start)*pdf_params%cloud_frac1(k_lh_start) &
-!                    + (1.-pdf_params%mixt_frac(k_lh_start))*pdf_params%cloud_frac2(k_lh_start) )
+        do sample = 1, n_micro_calls
+          if ( X_mixt_comp_all_levs(k_lh_start,sample) == 1 ) then
+            cloud_frac_n = pdf_params%cloud_frac1(k_lh_start)
+          else
+            cloud_frac_n = pdf_params%cloud_frac2(k_lh_start)
+          end if
+          if ( X_u_all_levs(k_lh_start,sample,iiLH_s_mellor) >= 1.-cloud_frac_n ) then
+            number_cloudy_samples = number_cloudy_samples + 1
+          else 
+            ! Do nothing, the air is clear
+          end if
+        end do
+        if ( number_cloudy_samples /= ( n_micro_calls / 2 ) ) then
+          write(fstderr,*) "Error, half of all samples aren't in cloud"
+          write(fstderr,*) "X_u s_smellor random = ", &
+            X_u_all_levs(k_lh_start,:,iiLH_s_mellor), "cloudy samples =", number_cloudy_samples
+          write(fstderr,*) "cloud_frac1 = ", pdf_params%cloud_frac1(k_lh_start)
+          write(fstderr,*) "cloud_frac2 = ", pdf_params%cloud_frac2(k_lh_start)
+          write(fstderr,*) "X_u d+1 element = ", X_u_all_levs(k_lh_start,:,d_variables+1)
+          write(fstderr,*) "fraction 1 = ", fraction_1
+          stop
+        end if
 
-!       do sample = 1, n_micro_calls
-!         if ( in_mixt_frac_1( X_u_all_levs(k_lh_start,sample,d_variables+1), & 
-!                              dble( fraction_1 ) ) ) then
-!           cloud_frac_n = pdf_params%cloud_frac1(k_lh_start)
-!         else
-!           cloud_frac_n = pdf_params%cloud_frac2(k_lh_start)
-!         end if
-!         if ( X_u_all_levs(k_lh_start,sample,1) >= 1.-cloud_frac_n ) then
-!             !stop
-!           number_cloudy_samples = number_cloudy_samples + 1
-!         else 
-!           ! Do nothing, the air is clear
-!         end if
-!       end do
-!       if ( number_cloudy_samples /= ( n_micro_calls / 2 ) ) then
-!         write(fstderr,*) "Error, half of all samples aren't in cloud"
-!         write(fstderr,*) "X_u s_smellor random = ", &
-!           X_u_all_levs(k_lh_start,:,1), "cloudy samples =", number_cloudy_samples
-!         write(fstderr,*) "cloud_frac1 = ", pdf_params%cloud_frac1(k_lh_start)
-!         write(fstderr,*) "cloud_frac2 = ", pdf_params%cloud_frac2(k_lh_start)
-!         write(fstderr,*) "X_u d+1 element = ", X_u_all_levs(k_lh_start,:,d_variables+1)
-!         write(fstderr,*) "fraction 1 = ", fraction_1
-!         stop
-!       end if
-!     end if
+      end if ! Maximal overlap, debug_level 2, and cloud-weighted averaging
 
     end if ! Maximum overlap
 
-    ! Check that the weights sum to 1.0
+    ! Check that the sample point weights sum to approximately 1
     if ( l_lh_cloud_weighted_sampling .and. clubb_at_least_debug_level( 2 ) ) then
-      tmp_weight = 0.0
+      mean_weight = 0.
       do sample = 1, n_micro_calls
-        tmp_weight = tmp_weight + LH_sample_point_weights(sample)
+        mean_weight = mean_weight + LH_sample_point_weights(sample)
       end do
-      tmp_weight = tmp_weight / real( n_micro_calls )
+      mean_weight = mean_weight / real( n_micro_calls )
 
-      if ( tmp_weight /= 1.0 ) then
-        write(0,*) "Error in cloud weighted sampling code ", "tmp_weight = ", tmp_weight
+      if ( abs( mean_weight - 1.0 ) > epsilon( LH_sample_point_weights ) ) then
+        write(fstderr,*) "Error in cloud weighted sampling code ", "mean_weight = ", mean_weight
         stop
       end if
-    end if
+
+    end if ! l_lh_cloud_weighted_sampling .and. clubb_at_least_debug_level( 2 )
 
     ! Upwards loop
     do k = k_lh_start, nnzp, 1
@@ -462,6 +500,7 @@ module latin_hypercube_driver_module
            ( n_micro_calls, d_variables, hydromet_dim, &        ! In
              cloud_frac(k), wm(k), rcm(k)+rvm(k), thlm(k), pdf_params, k, & ! In
              hydromet(k,:), correlation_array(k,:,:), X_u_all_levs(k,:,:), & ! In
+             X_mixt_comp_all_levs(k,:), & ! In
              LH_rt(k,:), LH_thl(k,:), X_nl_all_levs(k,:,:) ) ! Out
     end do ! k = k_lh_start..nnzp
 
@@ -471,6 +510,7 @@ module latin_hypercube_driver_module
            ( n_micro_calls, d_variables, hydromet_dim, &        ! In
              cloud_frac(k), wm(k), rcm(k)+rvm(k), thlm(k), pdf_params, k, & ! In
              hydromet(k,:), correlation_array(k,:,:), X_u_all_levs(k,:,:), &  !  In
+             X_mixt_comp_all_levs(k,:), & ! In
              LH_rt(k,:), LH_thl(k,:), X_nl_all_levs(k,:,:) ) ! Out
     end do ! k_lh_start-1..1
 
@@ -487,6 +527,7 @@ module latin_hypercube_driver_module
            p_in_Pa, exner, rho, &                   ! intent(in)
            rcm, w_std_dev, dzq, &                   ! intent(in)
            cloud_frac, hydromet, &                  ! intent(in)
+           X_mixt_comp_all_levs, &                  ! intent(in)
            LH_hydromet_mc, LH_hydromet_vel, &       ! intent(in)
            LH_rcm_mc, LH_rvm_mc, LH_thlm_mc, &      ! intent(out)
            lh_AKm, AKm, AKstd, AKstd_cld, &         ! intent(out)
@@ -573,10 +614,10 @@ module latin_hypercube_driver_module
       iiLH_Nc
 
     use parameters_model, only: &
-      hydromet_dim
+      hydromet_dim ! Variable
 
     use parameters_microphys, only: &
-      LH_microphys_calls
+      LH_microphys_calls ! Variable
 
     use stats_precision, only: &
       time_precision ! Constant
@@ -664,6 +705,11 @@ module latin_hypercube_driver_module
                                fname_prefix, fdir, &
                                time_initial, stats_tout, zt, variable_names, &
                                variable_descriptions, variable_units )
+
+    ! These should deallocate when we leave the scope of this subroutine, this
+    ! is just in case.
+    deallocate( variable_names, variable_descriptions, variable_units )
+
     return
 #else
     stop "This code was not compiled with support for Latin Hypercube sampling"
@@ -709,14 +755,9 @@ module latin_hypercube_driver_module
 ! References:
 !   None
 !-------------------------------------------------------------------------------
-    use mt95, only: genrand_real3 ! Constant
+    use mt95, only: genrand_real3 ! Procedure
 
-    use mt95, only: genrand_real ! Procedure
-
-#ifdef UNRELEASED_CODE
-    use generate_lh_sample_module, only: & 
-      in_mixt_frac_1 ! Procedure
-#endif
+    use mt95, only: genrand_real ! Constant
 
     use constants, only: &
       fstderr ! Constant
@@ -736,7 +777,7 @@ module latin_hypercube_driver_module
       mixt_frac, &      ! Mixture fraction                                       [-]
       cloud_frac_thresh ! Minimum threshold for cloud fraction                   [-]
 
-    ! Input/Output Variables
+    ! Output Variables
     double precision, intent(inout) :: &
       X_u_dp1_element, X_u_s_mellor_element ! Elements from X_u (uniform dist.)
 
@@ -749,6 +790,9 @@ module latin_hypercube_driver_module
     integer :: itermax
 
     integer :: i
+
+    integer :: X_mixt_comp_one_lev ! Whether we're in the first or second mixture component
+
 
 #ifdef UNRELEASED_CODE
     ! ---- Begin code ----
@@ -765,9 +809,11 @@ module latin_hypercube_driver_module
       if ( in_mixt_frac_1( X_u_dp1_element, dble( mixt_frac ) ) ) then
         ! Component 1
         cloud_frac_n = cloud_frac1
+        X_mixt_comp_one_lev = 1
       else
         ! Component 2
         cloud_frac_n = cloud_frac2
+        X_mixt_comp_one_lev = 2
       end if
 
       if ( X_u_s_mellor_element >= (1.-cloud_frac_n) .and. l_cloudy_sample ) then
@@ -805,7 +851,7 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
   subroutine choose_X_u_scaled &
              ( l_cloudy_sample, cloud_frac1, &
-              cloud_frac2, mixt_frac, cloud_frac_thresh, &
+              cloud_frac2, mixt_frac, &
               X_u_dp1_element, X_u_s_mellor_element )
 
 ! Description:
@@ -814,14 +860,9 @@ module latin_hypercube_driver_module
 ! References:
 !   None
 !-------------------------------------------------------------------------------
-    use mt95, only: genrand_real3 ! Constant
+    use mt95, only: genrand_real3 ! Procedure
 
-    use mt95, only: genrand_real ! Procedure
-
-#ifdef UNRELEASED_CODE
-    use generate_lh_sample_module, only: & 
-      in_mixt_frac_1 ! Procedure
-#endif
+    use mt95, only: genrand_real ! Constant
 
     use constants, only: &
       fstderr ! Constant
@@ -838,8 +879,8 @@ module latin_hypercube_driver_module
     real, intent(in) :: &
       cloud_frac1, &    ! Cloud fraction associated with mixture component 1     [-]
       cloud_frac2, &    ! Cloud fraction associated with mixture component 2     [-]
-      mixt_frac, &      ! Mixture fraction                                       [-]
-      cloud_frac_thresh ! Minimum threshold for cloud fraction                   [-]
+      mixt_frac         ! Mixture fraction                                       [-]
+
 
     ! Input/Output Variables
     double precision, intent(inout) :: &
@@ -849,6 +890,8 @@ module latin_hypercube_driver_module
     real :: cloud_frac_n, fraction_1, clear_fraction_1
 
     real(kind=genrand_real) :: rand ! Random number
+
+    integer :: X_mixt_comp_one_lev
 
 #ifdef UNRELEASED_CODE
     ! ---- Begin code ----
@@ -864,9 +907,11 @@ module latin_hypercube_driver_module
       if ( in_mixt_frac_1( X_u_dp1_element, dble( fraction_1 ) ) ) then
         ! Component 1
         cloud_frac_n = cloud_frac1
+        X_mixt_comp_one_lev = 1
       else
         ! Component 2
         cloud_frac_n = cloud_frac2
+        X_mixt_comp_one_lev = 2
       end if
       call genrand_real3( rand ) ! Rand between (0,1)
       ! Scale and translate sample point to reside in cloud
@@ -879,9 +924,11 @@ module latin_hypercube_driver_module
       if ( in_mixt_frac_1( X_u_dp1_element, dble( clear_fraction_1 ) ) ) then
         ! Component 1
         cloud_frac_n = cloud_frac1
+        X_mixt_comp_one_lev = 1
       else
         ! Component 2
         cloud_frac_n = cloud_frac2
+        X_mixt_comp_one_lev = 2
       end if
       call genrand_real3( rand ) ! Rand between (0,1)
       ! Scale and translate sample point to reside in clear air (no cloud)
@@ -893,5 +940,33 @@ module latin_hypercube_driver_module
 
     return
   end subroutine choose_X_u_scaled
+
+!----------------------------------------------------------------------
+  elemental function in_mixt_frac_1( X_u_dp1_element, frac )
+
+! Description:
+!   Determine if we're in mixture component 1
+
+! References:
+!   None
+!----------------------------------------------------------------------
+    implicit none
+
+    double precision, intent(in) :: &
+      X_u_dp1_element, & ! Element of X_u telling us which mixture component we're in
+      frac               ! The mixture fraction
+
+    logical :: in_mixt_frac_1
+
+    ! ---- Begin Code ----
+
+    if ( X_u_dp1_element < frac ) then
+      in_mixt_frac_1 = .true.
+    else
+      in_mixt_frac_1 = .false.
+    end if
+
+    return
+  end function in_mixt_frac_1
 
 end module latin_hypercube_driver_module

@@ -3,7 +3,7 @@ module generate_lh_sample_module
 
   implicit none
 
-  public :: generate_lh_sample, generate_uniform_sample, in_mixt_frac_1
+  public :: generate_lh_sample, generate_uniform_sample
 
   private :: sample_points, gaus_mixt_points, & 
              truncate_gaus_mixt, ltqnorm, gaus_condt, & 
@@ -19,6 +19,7 @@ module generate_lh_sample_module
              ( n_micro_calls, d_variables, hydromet_dim, & 
                cloud_frac, wm, rtm, thlm, pdf_params, level, & 
                hydromet, correlation_array, X_u_one_lev, &
+               X_mixt_comp_one_lev, &
                LH_rt, LH_thl, X_nl_one_lev )
 ! Description:
 !   This subroutine generates a Latin Hypercube sample.
@@ -97,6 +98,9 @@ module generate_lh_sample_module
 
     double precision, intent(in), dimension(n_micro_calls,d_variables+1) :: &
       X_u_one_lev ! Sample drawn from uniform distribution from a particular grid level
+
+    integer, intent(in), dimension(n_micro_calls) :: &
+      X_mixt_comp_one_lev ! Whether we're in the 1st or 2nd mixture component
 
     ! Output Variables
     double precision, intent(out), dimension(n_micro_calls) :: &
@@ -306,8 +310,6 @@ module generate_lh_sample_module
     else if ( cloud_frac < 0.001 ) then
       ! In this case there are essentially no cloudy points to sample;
       ! Set sample points to zero.
-!     X_u_one_lev(:,:)    = 0.0
-!     X_nl_one_lev(:,:)   = 0.0
       X_nl_one_lev(:,:)   = -999.0
       l_sample_flag = .false.
 
@@ -610,6 +612,7 @@ module generate_lh_sample_module
                           dble( cloud_frac1 ), dble( cloud_frac2 ), & ! In 
                           l_d_variable_lognormal, & ! In
                           X_u_one_lev, & ! In
+                          X_mixt_comp_one_lev, & ! In
                           Sigma_stw_1, Sigma_stw_2, & ! In/Out
                           LH_rt, LH_thl, X_nl_one_lev ) ! Out
 
@@ -627,6 +630,7 @@ module generate_lh_sample_module
                             cloud_frac1, cloud_frac2, & 
                             l_d_variable_lognormal, &
                             X_u_one_lev, &
+                            X_mixt_comp_one_lev, &
                             Sigma_stw_1, Sigma_stw_2, & 
                             LH_rt, LH_thl, X_nl_one_lev )
 
@@ -690,6 +694,9 @@ module generate_lh_sample_module
     double precision, intent(in), dimension(n_micro_calls,d_variables+1) :: &
       X_u_one_lev ! Sample drawn from uniform distribution from particular grid level
 
+    integer, intent(in), dimension(n_micro_calls) :: &
+      X_mixt_comp_one_lev ! Whether we're in the 1st or 2nd mixture component
+
     ! Columns of Sigma_stw, X_nl_one_lev:  1   2   3   4 ... d_variables
     !                                      s   t   w   hydrometeors
     double precision, intent(inout), dimension(d_variables,d_variables) :: &
@@ -752,6 +759,7 @@ module generate_lh_sample_module
     col = iiLH_s_mellor
     call truncate_gaus_mixt( n_micro_calls, d_variables, col, mixt_frac, mu1, mu2, &  ! In
                              Sigma_stw_1, Sigma_stw_2, cloud_frac1, cloud_frac2, X_u_one_lev, & ! In
+                             X_mixt_comp_one_lev, & ! In
                              s_pts ) ! Out
 
     ! Generate n samples of a d-variate Gaussian mixture
@@ -759,6 +767,7 @@ module generate_lh_sample_module
     call gaus_mixt_points( n_micro_calls, d_variables, mixt_frac, mu1, mu2, &  ! In
                            Sigma_stw_1, Sigma_stw_2, & ! In
                            cloud_frac1, cloud_frac2, X_u_one_lev, s_pts, & ! In
+                           X_mixt_comp_one_lev, & ! In
                            X_nl_one_lev ) ! Out
 
 ! Transform s (column 1) and t (column 2) back to rt and thl
@@ -768,12 +777,12 @@ module generate_lh_sample_module
 !            cloud_frac1, cloud_frac2, X_nl_one_lev(1:n_micro_calls,1), &
 !            X_nl_one_lev(1:n_micro_calls,2), &
 !            X_u_one_lev, rtp, thlp )
-      call st_2_rtthl( n_micro_calls, d_variables, mixt_frac, rt1, thl1, rt2, thl2, & ! In
+      call st_2_rtthl( n_micro_calls, mixt_frac, rt1, thl1, rt2, thl2, & ! In
                        crt1, cthl1, crt2, cthl2, & ! In
                        cloud_frac1, cloud_frac2, mu1(iiLH_s_mellor), mu2(iiLH_s_mellor), & ! In
                        X_nl_one_lev(1:n_micro_calls,iiLH_s_mellor), & ! In
                        X_nl_one_lev(1:n_micro_calls,iiLH_t_mellor), & ! In
-                       X_u_one_lev, & ! In
+                       X_mixt_comp_one_lev, & ! In
                        LH_rt, LH_thl ) ! Out
 
 ! Compute some diagnostics
@@ -983,36 +992,10 @@ module generate_lh_sample_module
   end function choose_permuted_random
 
 !----------------------------------------------------------------------
-  elemental function in_mixt_frac_1( X_u_dp1_element, frac )
-
-! Description:
-!   Determine if we're in mixture component 1
-
-! References:
-!   None
-!----------------------------------------------------------------------
-    implicit none
-
-    double precision, intent(in) :: &
-      X_u_dp1_element, & ! Element of X_u telling us which mixture component we're in
-      frac               ! The mixture fraction
-
-    logical :: in_mixt_frac_1
-
-    ! ---- Begin Code ----
-
-    if ( X_u_dp1_element < frac ) then
-      in_mixt_frac_1 = .true.
-    else
-      in_mixt_frac_1 = .false.
-    end if
-
-    return
-  end function in_mixt_frac_1
-
-!----------------------------------------------------------------------
   subroutine gaus_mixt_points( n_micro_calls, d_variables, mixt_frac, mu1, mu2, Sigma1, Sigma2, &
-                               cloud_frac1, cloud_frac2, X_u_one_lev, s_pts, X_gm )
+                               cloud_frac1, cloud_frac2, X_u_one_lev, s_pts, &
+                               X_mixt_comp_one_lev, &
+                               X_gm )
 ! Description:
 !   Generates n random samples from a d-dimensional Gaussian-mixture PDF.
 !   Uses Latin hypercube method.
@@ -1049,7 +1032,10 @@ module generate_lh_sample_module
       X_u_one_lev 
 
     double precision, intent(in), dimension(n_micro_calls) :: &
-     s_pts ! n-dimensional vector giving values of s
+      s_pts ! n-dimensional vector giving values of s
+
+    integer, intent(in), dimension(n_micro_calls) :: &
+      X_mixt_comp_one_lev ! Which mixture component we're in
 
     ! Output Variables
 
@@ -1061,7 +1047,7 @@ module generate_lh_sample_module
     integer :: j, sample
 !   double precision, dimension(n_micro_calls) :: std_normal
     double precision, dimension(d_variables) :: std_normal
-    double precision :: fraction_1
+!   double precision :: fraction_1
 
     ! ---- Begin Code ----
 
@@ -1101,16 +1087,22 @@ module generate_lh_sample_module
       ! Choose which mixture fraction we are in.
       ! Account for cloud fraction.
       ! Follow M. E. Johnson (1987), p. 56.
-      fraction_1 = ( mixt_frac*cloud_frac1 ) / &
-                   ( mixt_frac*cloud_frac1 + (1-mixt_frac)*cloud_frac2 )
-      if ( in_mixt_frac_1( X_u_one_lev(sample, d_variables+1), fraction_1 ) ) then
+!     fraction_1 = ( mixt_frac*cloud_frac1 ) / &
+!                  ( mixt_frac*cloud_frac1 + (1-mixt_frac)*cloud_frac2 )
+!     if ( in_mixt_frac_1( X_u_one_lev(sample, d_variables+1), fraction_1 ) ) then
+      if ( X_mixt_comp_one_lev(sample) == 1 ) then
         call gaus_condt( d_variables, &
                          std_normal, mu1, Sigma1, s_pts(sample), &  ! In
                          X_gm(sample, 1:d_variables) ) ! Out
-      else
+
+      else if ( X_mixt_comp_one_lev(sample) == 2 ) then
         call gaus_condt( d_variables, &
                          std_normal, mu2, Sigma2, s_pts(sample), &  ! In
                          X_gm(sample, 1:d_variables) ) ! Out
+
+      else
+        stop "Error determining mixture component in gaus_mixt_points"
+
       end if
 
       ! Loop to get new sample
@@ -1123,7 +1115,8 @@ module generate_lh_sample_module
 
 !-------------------------------------------------------------------------------
   subroutine truncate_gaus_mixt( n_micro_calls, d_variables, col, mixt_frac, mu1, mu2, & 
-                  Sigma1, Sigma2, cloud_frac1, cloud_frac2, X_u_one_lev, truncated_column )
+                  Sigma1, Sigma2, cloud_frac1, cloud_frac2, X_u_one_lev, &
+                  X_mixt_comp_one_lev, truncated_column )
 ! Description:
 !   Converts sample points drawn from a uniform distribution
 !    to truncated Gaussian points.
@@ -1160,6 +1153,9 @@ module generate_lh_sample_module
     double precision, intent(in), dimension(n_micro_calls,d_variables+1) :: &
       X_u_one_lev 
 
+    integer, intent(in), dimension(n_micro_calls) :: &
+      X_mixt_comp_one_lev ! Whether we're in the first or second mixture component
+
     ! Output Variables
 
     ! A column vector of length n that is transformed from a Gaussian PDF to truncated Gaussian PDF.
@@ -1169,7 +1165,7 @@ module generate_lh_sample_module
 
     integer :: sample
     double precision :: s_std
-    double precision :: fraction_1
+!   double precision :: fraction_1
 
     ! ---- Begin Code ----
 
@@ -1206,9 +1202,10 @@ module generate_lh_sample_module
       ! Choose which mixture fraction we are in.
       ! Account for cloud fraction.
       ! Follow M. E. Johnson (1987), p. 56.
-      fraction_1 = mixt_frac * cloud_frac1 / &
-                   ( mixt_frac * cloud_frac1 + (1.d0 - mixt_frac) *cloud_frac2 )
-      if ( X_u_one_lev( sample, d_variables+1 ) < fraction_1 ) then
+!     fraction_1 = mixt_frac * cloud_frac1 / &
+!                  ( mixt_frac * cloud_frac1 + (1.d0 - mixt_frac) *cloud_frac2 )
+!     if ( X_u_one_lev( sample, d_variables+1 ) < fraction_1 ) then
+      if  ( X_mixt_comp_one_lev(sample) == 1 ) then
         ! Replace first dimension (s) with
         !  sample from cloud (i.e. truncated standard Gaussian)
         s_std = ltqnorm( X_u_one_lev( sample, col ) * cloud_frac1 + (1.d0 - &
@@ -1216,7 +1213,7 @@ module generate_lh_sample_module
         ! Convert to nonstandard normal with mean mu1 and variance Sigma1
         truncated_column(sample) =  & 
                    s_std * sqrt( Sigma1(col,col) ) + mu1(col)
-      else
+      else if ( X_mixt_comp_one_lev(sample) == 2 ) then
 
         ! Replace first dimension (s) with
         !   sample from cloud (i.e. truncated Gaussian)
@@ -1226,6 +1223,8 @@ module generate_lh_sample_module
         ! Convert to nonstandard normal with mean mu2 and variance Sigma2
         truncated_column(sample) =  & 
                       s_std * sqrt( Sigma2(col,col) ) + mu2(col)
+      else
+        stop "Error in truncate_gaus_mixt"
       end if
 
       ! Loop to get new sample
@@ -1382,6 +1381,8 @@ module generate_lh_sample_module
   end function ltqnorm
 
 !----------------------------------------------------------------------
+  subroutine gaus_condt( d_variables, std_normal, mu, Sigma, s_pt, & 
+                         nonstd_normal )
 ! Description:
 !   Using Gaussian conditional distributions given s,
 !   convert a standard, uncorrelated Gaussian to one with
@@ -1389,10 +1390,7 @@ module generate_lh_sample_module
 
 ! References:
 !   Follow M. E. Johnson, ``Multivariate Statistical Simulation," p50.
-
 !----------------------------------------------------------------------
-  subroutine gaus_condt( d_variables, std_normal, mu, Sigma, s_pt, & 
-                         nonstd_normal )
 
     use matrix_operations, only: linear_symm_upper_eqn_solve ! Procedure(s)
 
@@ -1529,12 +1527,11 @@ module generate_lh_sample_module
   end subroutine gaus_condt
 
 !-----------------------------------------------------------------------
-  subroutine st_2_rtthl( n_micro_calls, d_variables, mixt_frac, rt1, thl1, rt2, thl2, & 
+  subroutine st_2_rtthl( n_micro_calls, mixt_frac, rt1, thl1, rt2, thl2, & 
                          crt1, cthl1, crt2, cthl2, & 
                          cloud_frac1, cloud_frac2, s1, s2, &
-                         s_mellor, &
-                         t_mellor, &
-                         X_u_one_lev, LH_rt, LH_thl )
+                         s_mellor, t_mellor, X_mixt_comp_one_lev, &
+                         LH_rt, LH_thl )
 ! Description:
 !   Converts from s, t variables to rt, thl
 ! References:
@@ -1552,8 +1549,7 @@ module generate_lh_sample_module
     ! Input
 
     integer, intent(in) :: &
-      n_micro_calls, & ! Number of calls to microphysics (normally=2)
-      d_variables      ! Number of variates (normally=5)
+      n_micro_calls   ! Number of calls to microphysics (normally=2)
 
     double precision, intent(in) :: &
       mixt_frac,   & ! Mixture fraction of Gaussians 'mixt_frac' [-]
@@ -1572,9 +1568,8 @@ module generate_lh_sample_module
       s_mellor, & 
       t_mellor 
 
-    double precision, dimension(n_micro_calls,d_variables+1), intent(in) :: &
-      X_u_one_lev ! n_micro_calls x d_var+1 Latin hypercube sample from uniform distribution 
-    !       from a particular grid level
+    integer, dimension(n_micro_calls), intent(in) :: &
+      X_mixt_comp_one_lev ! Whether we're in the first or second mixture component
 
     ! Output variables
 
@@ -1584,7 +1579,7 @@ module generate_lh_sample_module
     ! Local
 
     integer :: sample
-    double precision :: fraction_1
+!   double precision :: fraction_1
 
     ! ---- Begin Code ----
 
@@ -1620,19 +1615,26 @@ module generate_lh_sample_module
       ! Choose which mixture fraction we are in.
       ! Account for cloud fraction.
       ! Follow M. E. Johnson (1987), p. 56.
-      fraction_1     = mixt_frac*cloud_frac1 / &
-                       (mixt_frac*cloud_frac1+(1-mixt_frac)*cloud_frac2)
+!     fraction_1     = mixt_frac*cloud_frac1 / &
+!                      (mixt_frac*cloud_frac1+(1-mixt_frac)*cloud_frac2)
 
-      if ( in_mixt_frac_1( X_u_one_lev(sample,d_variables+1), fraction_1 ) ) then
+!     if ( in_mixt_frac_1( X_u_one_lev(sample,d_variables+1), fraction_1 ) ) then
+      if ( X_mixt_comp_one_lev(sample) == 1 ) then
         LH_rt(sample)  = rt1 + (0.5d0/crt1)*(s_mellor(sample)-s1) +  & 
                            (0.5d0/crt1)*t_mellor(sample)
         LH_thl(sample) = thl1 + (-0.5d0/cthl1)*(s_mellor(sample)-s1) +  & 
                            (0.5d0/cthl1)*t_mellor(sample)
-      else ! mixture fraction 2
+
+      else if ( X_mixt_comp_one_lev(sample) == 2 ) then
+!     else ! mixture fraction 2
         LH_rt(sample)  = rt2 + (0.5d0/crt2)*(s_mellor(sample)-s2) +  & 
                            (0.5d0/crt2)*t_mellor(sample)
         LH_thl(sample) = thl2 + (-0.5d0/cthl2)*(s_mellor(sample)-s2) +  & 
                            (0.5d0/cthl2)*t_mellor(sample)
+
+      else 
+        stop "Error determining mixture fraction in st_2_rtthl"
+
       end if
 
       ! Loop to get new sample
