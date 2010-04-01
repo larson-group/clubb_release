@@ -788,6 +788,7 @@ module estimate_lh_micro_module
     s_mellor => X_nl_all_levs(:,:,iiLH_rt)
     w        => X_nl_all_levs(:,:,iiLH_w)
 
+    ! Assertion check
     if ( clubb_at_least_debug_level( 2 ) ) then
       if ( l_check_lh_cloud_weighting .and. l_lh_cloud_weighted_sampling .and. &
            all( LH_sample_point_weights(:) /= 1.0 ) ) then ! The 1.0 indicates cloud_frac is > 0.5
@@ -923,7 +924,7 @@ module estimate_lh_micro_module
         lh_thlm_mc_m1(:) = lh_thlm_mc_m1(:) + lh_thlm_mc(:)
         n1(:) = n1(:) + 1
 
-      else where
+      else where ! Then mixture component is 2
         lh_rcm_mc_m2(:) = lh_rcm_mc_m2(:) + lh_rcm_mc(:)
         lh_rvm_mc_m2(:) = lh_rvm_mc_m2(:) + lh_rvm_mc(:)
         lh_thlm_mc_m2(:) = lh_thlm_mc_m2(:) + lh_thlm_mc(:)
