@@ -506,7 +506,14 @@ enabled.
 The "tuner" code is used to optimize CLUBB's parameters in order to better match
 output from a 3D large-eddy simulation (LES) model.  The optimization technique 
 is the downhill-simplex method of Needler and Mead, as implemented in 
-_Numerical Recipes In Fortran 90_ (amoeba.f90).  
+_Numerical Recipes In Fortran 90_ (amoeba.f90).  You will either need special
+access to the CLUBB repository, or your own license from Numerical Recipes to
+use the tuner.  In the latter case, the files that need to be placed in
+the directory src/Numerical_recipes are:
+amebsa.f90  nr.f90      nrutil.f90  ran1_v.f90
+amoeba.f90  nrtype.f90  ran1_s.f90  ran_state.f90
+You may need to separate out any USE statements delimited by a semicolon in
+order to make the files work properly with the mkmf script.
 
 Do steps 1, 2, & 3 as outlined in the standalone run.
 
