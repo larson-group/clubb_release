@@ -83,7 +83,8 @@ module clubb_core
       p0, &
       kappa, &
       fstderr, &
-      zero_threshold
+      zero_threshold, &
+      Lscale_pert_coef
 
     use parameters_tunable, only: & 
       gamma_coefc,  & ! Variable(s)
@@ -264,6 +265,13 @@ module clubb_core
                                          ! is only called on thermodynamic levels, and variables
                                          ! which belong on momentum levels are interpolated.
 
+    logical, parameter :: &
+      l_avg_Lscale = .true.  ! Lscale is calculated in subroutine compute_length; if l_avg_Lscale
+                             ! is true, compute_length is called two additional times with
+                             ! perturbed values of rtm and thlm.  An average value of Lscale
+                             ! from the three calls to compute_length is then calculated.
+                             ! This reduces temporal noise in RICO, BOMEX, LBA, and other cases.
+
     !!! Input Variables
     logical, intent(in) ::  & 
       l_implemented ! Is this part of a larger host model (T/F) ?
@@ -372,7 +380,10 @@ module clubb_core
     integer :: i, k
 
     real, dimension(gr%nnzp) :: &
-      tmp1, gamma_Skw_fnc
+      tmp1, gamma_Skw_fnc, &
+      Lscale_pert_1, Lscale_pert_2, & ! For avg. calculation of Lscale  [m]
+      thlm_pert_1, thlm_pert_2, &     ! For avg. calculation of Lscale  [K]
+      rtm_pert_1, rtm_pert_2          ! For avg. calculation of Lscale  [kg/kg]
 
     ! For pdf_closure
     real, dimension(gr%nnzp,sclr_dim) :: & 
@@ -738,10 +749,38 @@ module clubb_core
     ! Compute mixing length
     !----------------------------------------------------------------
 
+    if ( l_avg_Lscale ) then
+      ! Call compute length two additional times with perturbed values
+      ! of rtm and thlm so that an average value of Lscale may be calculated.
+
+      thlm_pert_1 = thlm + Lscale_pert_coef * sqrt( max( thlp2, thltol**2 ) )
+      rtm_pert_1  = rtm  + Lscale_pert_coef * sqrt( max( rtp2, rttol**2 ) )
+
+      thlm_pert_2 = thlm - Lscale_pert_coef * sqrt( max( thlp2, thltol**2 ) )
+      rtm_pert_2  = rtm  - Lscale_pert_coef * sqrt( max( rtp2, rttol**2 ) )
+
+      call compute_length( thvm, thlm_pert_1, rtm_pert_1, rcm, em, & ! intent(in)
+                           p_in_Pa, exner, thv_ds_zt, &              ! intent(in)
+                           err_code, &                               ! intent(inout)
+                           Lscale_pert_1 )                           ! intent(out)
+
+      call compute_length( thvm, thlm_pert_2, rtm_pert_2, rcm, em, & ! intent(in)
+                           p_in_Pa, exner, thv_ds_zt, &              ! intent(in)
+                           err_code, &                               ! intent(inout)
+                           Lscale_pert_2 )                           ! intent(out)
+    end if ! l_avg_Lscale
+
+    ! ********** NOTE: **********
+    ! This call to compute_length must be last.  Otherwise, the values of
+    ! Lscale_up and Lscale_down will not be correctly saved stats.
     call compute_length( thvm, thlm, rtm, rcm, em, &  ! intent(in)
                          p_in_Pa, exner, thv_ds_zt, & ! intent(in)
                          err_code, &                  ! intent(inout)
                          Lscale )                     ! intent(out)
+
+    if ( l_avg_Lscale ) then
+      Lscale = (1.0/3.0) * ( Lscale + Lscale_pert_1 + Lscale_pert_2 )
+    end if
 
     ! Subroutine may produce NaN values, and if so, exit
     ! gracefully.

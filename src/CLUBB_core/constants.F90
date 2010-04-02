@@ -25,7 +25,7 @@ module constants
     sec_per_hr, sec_per_min, g_per_kg, T_freeze_K, &
     Skw_max_mag, Skw_max_mag_sqd, stefan_boltzmann, &
     cm3_per_m3, pascal_per_mb,  &
-    gamma_over_implicit_ts
+    gamma_over_implicit_ts, Lscale_pert_coef
 
   private ! Default scope
 
@@ -188,6 +188,9 @@ module constants
   !           and sclr'th_l', found in module advance_xp2_xpyp_module.
   real, parameter :: &
     gamma_over_implicit_ts = 1.50
+
+  ! Coefficient to perterb thlm and rtm for an average calculation of Lscale
+  real, parameter :: Lscale_pert_coef = 0.1  ! [-]
 
   ! Useful conversion factors.
   real(kind=time_precision), parameter ::  & 
