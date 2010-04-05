@@ -15,8 +15,6 @@ fid = netcdf.open(filename,'NC_NOWRITE');
 %Ensure the file will be closed no matter what happens
 cleanupHandler = onCleanup(@()netcdf.close(fid));
 
-varnum = varnum+4;
-
 %Preallocate arrays for speed
 avg_field(t1:t2) = 0.0;
 
