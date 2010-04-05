@@ -48,7 +48,7 @@ module latin_hypercube_driver_module
       iiNgraupelm
 
     use array_index, only: & 
-      iiLH_rt   ! Variables  
+      iiLH_rt   ! Variables
 
     use parameters_model, only: hydromet_dim ! Variable
 
@@ -134,7 +134,7 @@ module latin_hypercube_driver_module
 
     ! Find in and out of cloud points using the rejection method rather than scaling
     logical, parameter :: &
-      l_use_rejection_method = .true. 
+      l_use_rejection_method = .true.
 
     ! Input Variables
     real, intent(in) :: &
@@ -406,7 +406,7 @@ module latin_hypercube_driver_module
                    ( l_cloudy_sample, pdf_params%cloud_frac1(k_lh_start), & ! In
                      pdf_params%cloud_frac2(k_lh_start), pdf_params%mixt_frac(k_lh_start), & !In
                      X_u_dp1_element, X_u_s_mellor_element ) ! In/out
-    
+
             end if
 
           end if ! Cloud fraction is between cloud_frac_thresh and 50%
@@ -429,19 +429,6 @@ module latin_hypercube_driver_module
 
       end do ! 1..n_micro_calls
 
-      do k = 1, nnzp
-        fraction_1 = dble( pdf_params%mixt_frac(k) )
-
-        ! Determine mixture component
-        where ( in_mixt_frac_1(X_u_all_levs(k,:,d_variables+1), fraction_1 ) )
-          X_mixt_comp_all_levs(k,:) = 1
-        else where
-          X_mixt_comp_all_levs(k,:) = 2
-        end where
-
-      end do
-
-
       ! Assertion check for whether half of sample points are cloudy.
       ! This is for the uniform sample only.  Another assertion check is in the
       ! estimate_lh_micro_module for X_nl_all_levs.
@@ -458,7 +445,7 @@ module latin_hypercube_driver_module
           end if
           if ( X_u_all_levs(k_lh_start,sample,iiLH_s_mellor) >= 1.-cloud_frac_n ) then
             number_cloudy_samples = number_cloudy_samples + 1
-          else 
+          else
             ! Do nothing, the air is clear
           end if
         end do
@@ -476,6 +463,19 @@ module latin_hypercube_driver_module
       end if ! Maximal overlap, debug_level 2, and cloud-weighted averaging
 
     end if ! l_lh_vert_overlap
+
+    ! Determine mixture component for all levels
+    do k = 1, nnzp
+
+      fraction_1 = dble( pdf_params%mixt_frac(k) )
+
+      where ( in_mixt_frac_1(X_u_all_levs(k,:,d_variables+1), fraction_1 ) )
+        X_mixt_comp_all_levs(k,:) = 1
+      else where
+        X_mixt_comp_all_levs(k,:) = 2
+      end where
+
+    end do ! k = 1 .. nnzp
 
     ! Assertion check to ensure that the sample point weights sum to approximately 1
     if ( l_lh_cloud_weighted_sampling .and. clubb_at_least_debug_level( 2 ) ) then
