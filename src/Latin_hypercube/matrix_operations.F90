@@ -3,8 +3,14 @@ module matrix_operations
 
   implicit none
 
+  interface linear_symm_upper_eqn_solve
+    module procedure single_linear_symm_upper_eqn_solve, double_linear_symm_upper_eqn_solve
+  end interface linear_symm_upper_eqn_solve
+
   public :: linear_eqn_solve, linear_symm_upper_eqn_solve, band_mult, &
     covar_matrix_2_corr_matrix
+
+  private :: single_linear_symm_upper_eqn_solve, double_linear_symm_upper_eqn_solve
 
   private ! Default scope
 
@@ -67,7 +73,7 @@ module matrix_operations
   end subroutine linear_eqn_solve
 
 !----------------------------------------------------------------------
-  subroutine linear_symm_upper_eqn_solve( n, a, x, b )
+  subroutine double_linear_symm_upper_eqn_solve( n, a, x, b )
 !   Description:
 !    Solve for A * X = B for a symmetric matrix, using the upper diagonals.
 !   References:
@@ -122,21 +128,92 @@ module matrix_operations
 
     select case( info )
     case( :-1 )
-      write(0,*) "linear_symm_upper_eqn_solve" // & 
+      write(0,*) "double_linear_symm_upper_eqn_solve" // & 
         " illegal value for argument ", -info
       stop
     case( 0 )
       ! Success!
 
     case( 1: )
-      write(0,*) "linear_symm_upper_eqn_solve: singular matrix"
+      write(0,*) "double_linear_symm_upper_eqn_solve: singular matrix"
       stop
     end select
 
     deallocate( work )
 
     return
-  end subroutine linear_symm_upper_eqn_solve
+  end subroutine double_linear_symm_upper_eqn_solve
+!----------------------------------------------------------------------
+  subroutine single_linear_symm_upper_eqn_solve( n, a, x, b )
+!   Description:
+!    Solve for A * X = B for a symmetric matrix, using the upper diagonals.
+!   References:
+!     <http://www.netlib.org/lapack/single/ssysv.f> 
+!-----------------------------------------------------------------------
+    implicit none
+
+    ! External
+    external :: ssysv   ! LAPACK subroutine
+
+    ! Parameters  
+    integer, parameter :: nrhs = 1
+
+    ! Input Variables
+    integer, intent(in) :: n
+
+    real, dimension(n,n), intent(in) :: a
+
+    real, dimension(n), intent(in) :: b
+
+    ! Output Variables
+    real, dimension(n), intent(out) :: x
+
+    ! Local Variables
+    real, dimension(n,n) :: a_decomp
+
+    real, allocatable, dimension(:) :: work
+
+    integer, dimension(n) :: &
+      ipiv ! Pivot indices from the permutation matrix
+
+    integer :: info, work_dim
+!   integer :: i, j
+    ! ---- Begin code ----
+
+    work_dim = n * 128 ! Best guess for an optimal blocksize
+
+    allocate( work(work_dim) )
+
+    a_decomp = a
+    x = b
+
+!   do i = 1, n
+!     do j = 1, n
+!       write(6,'(e10.3)',advance='no') a(i,j)
+!     end do
+!     write(6,*) ""
+!   end do
+!   pause
+
+    call ssysv( 'Upper', n, nrhs, a_decomp, n, ipiv, x, n, work, work_dim, info )
+
+    select case( info )
+    case( :-1 )
+      write(0,*) "single_linear_symm_upper_eqn_solve" // & 
+        " illegal value for argument ", -info
+      stop
+    case( 0 )
+      ! Success!
+
+    case( 1: )
+      write(0,*) "single_linear_symm_upper_eqn_solve: singular matrix"
+      stop
+    end select
+
+    deallocate( work )
+
+    return
+  end subroutine single_linear_symm_upper_eqn_solve
 
 !-----------------------------------------------------------------------
   subroutine band_mult( trans, ndim, mdim, nsup, nsub, yinc, xinc, & 
