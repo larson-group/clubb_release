@@ -35,4 +35,13 @@ elseif strcmp(plotType, 'timeseries')
 	varData = read_netcdf_hoc_timeseries(filePath, nz, t_start, t_end, varNum, numVars);
 end
 
-levData = z;
+%Determine if the data is in terms of ascending or descending height, adjust if necessary
+%This is a kludge that will likely not work for NetCDF files defined in terms of pressure.
+if z(max(size(z))) - z(1) < 0
+	%Data is descending
+	varData = flipud(varData);
+	levData = flipud(z);
+else
+	%Data is asscending
+	levData = z;
+end
