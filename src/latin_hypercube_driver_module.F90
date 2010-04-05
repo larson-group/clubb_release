@@ -281,6 +281,9 @@ module latin_hypercube_driver_module
     ! Determine the s_mellor element of the uniform/lognormal distribution arrays
     iiLH_s_mellor = iiLH_rt
 
+    ! Initialize the sample point weights to 1.0
+    LH_sample_point_weights(1:n_micro_calls)  = 1.0
+
     ! Latin hypercube sample generation
     ! Generate height_time_matrix, an nnzp x nt_repeat x d_variables array of random integers
     i_rmd = mod( iter-1, sequence_length )

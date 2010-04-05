@@ -750,9 +750,6 @@ module estimate_lh_micro_module
       rc_all_points,  & ! Liquid water                [kg/kg]
       w_all_points      ! Vertical velocity           [m/s]
 
-    real, dimension(n_micro_calls) :: &
-      sample_point_weight ! Amount to weight each sample point by
-
     integer, dimension(nnzp) :: n1, n2, zero
 
     double precision, pointer, dimension(:,:) :: &
@@ -937,25 +934,19 @@ module estimate_lh_micro_module
 
     if ( l_compute_diagnostic_average ) then
 
-      if ( l_lh_cloud_weighted_sampling ) then
-        ! Use cloud_frac and 1.-cloud_frac to weight in and out of cloud points
-        sample_point_weight(1:n_micro_calls) = LH_sample_point_weights(1:n_micro_calls)
-      else
-        ! Weight all points equally
-        sample_point_weight(1:n_micro_calls) = 1.0 
-      end if
-
+      ! For all cases where l_lh_cloud_weighted_sampling is false, the weights
+      ! will be 1 (all points equally weighted)
       forall ( k = 1:nnzp )
-        lh_thlm(k) = compute_sample_mean( n_micro_calls, sample_point_weight(:), &
+        lh_thlm(k) = compute_sample_mean( n_micro_calls, LH_sample_point_weights(:), &
                                           thl_all_points(k,:) )
-        lh_rcm(k)  = compute_sample_mean( n_micro_calls, sample_point_weight(:), &
+        lh_rcm(k)  = compute_sample_mean( n_micro_calls, LH_sample_point_weights(:), &
                                           rc_all_points(k,:) )
-        lh_rvm(k)  = compute_sample_mean( n_micro_calls, sample_point_weight(:), &
+        lh_rvm(k)  = compute_sample_mean( n_micro_calls, LH_sample_point_weights(:), &
                                           rv_all_points(k,:) )
-        lh_wm(k)   = compute_sample_mean( n_micro_calls, sample_point_weight(:), &
+        lh_wm(k)   = compute_sample_mean( n_micro_calls, LH_sample_point_weights(:), &
                                           w_all_points(k,:) )
         forall ( ivar = 1:hydromet_dim )
-          lh_hydromet(k,ivar) = compute_sample_mean( n_micro_calls, sample_point_weight(:), &
+          lh_hydromet(k,ivar) = compute_sample_mean( n_micro_calls, LH_sample_point_weights(:), &
                                                      hydromet_all_points(k,:,ivar) )
         end forall ! 1..hydromet_dim
       end forall ! 1..nnzp
@@ -963,46 +954,46 @@ module estimate_lh_micro_module
       ! Latin hypercube estimate of cloud fraction
       do sample = 1, n_micro_calls
         where ( s_mellor(:,sample) > 0. ) 
-          lh_cloud_frac(:) = lh_cloud_frac(:) + 1.0 * sample_point_weight(sample)
+          lh_cloud_frac(:) = lh_cloud_frac(:) + 1.0 * LH_sample_point_weights(sample)
         end where
       end do
       lh_cloud_frac(:) = lh_cloud_frac(:) / real( n_micro_calls )
 
       ! Compute the variance of vertical velocity
       lh_wp2_zt = compute_sample_variance( nnzp, n_micro_calls, w_all_points, &
-                                           sample_point_weight, lh_wm )
+                                           LH_sample_point_weights, lh_wm )
 
       ! Compute the variance of cloud water mixing ratio
       lh_rcp2_zt = compute_sample_variance( nnzp, n_micro_calls, rc_all_points, &
-                                            sample_point_weight, lh_rcm )
+                                            LH_sample_point_weights, lh_rcm )
 
       ! Compute the variance of total water
       lh_rtp2_zt = compute_sample_variance &
                    ( nnzp, n_micro_calls, &
-                     rv_all_points+rc_all_points, sample_point_weight, lh_rvm+lh_rcm )
+                     rv_all_points+rc_all_points, LH_sample_point_weights, lh_rvm+lh_rcm )
 
       ! Compute the variance of liquid potential temperature
       lh_thlp2_zt = compute_sample_variance( nnzp, n_micro_calls, &
-                                      thl_all_points, sample_point_weight, lh_thlm )
+                                      thl_all_points, LH_sample_point_weights, lh_thlm )
 
       ! Compute the variance of rain water mixing ratio
       if ( iirrainm > 0 ) then
         lh_rrainp2_zt = compute_sample_variance &
                         ( nnzp, n_micro_calls, hydromet_all_points(:,:,iirrainm), &
-                          sample_point_weight, lh_hydromet(:,iirrainm) )
+                          LH_sample_point_weights, lh_hydromet(:,iirrainm) )
       end if
 
       ! Compute the variance of cloud droplet number concentration
       if ( iiNcm > 0 ) then
         lh_Ncp2_zt = compute_sample_variance &
                      ( nnzp, n_micro_calls, hydromet_all_points(:,:,iiNcm), &
-                       sample_point_weight, lh_hydromet(:,iiNcm) )
+                       LH_sample_point_weights, lh_hydromet(:,iiNcm) )
       end if
 
       ! Compute the variance of rain droplet number concentration
       if ( iiNrm > 0 ) then
         lh_Nrp2_zt = compute_sample_variance( nnzp, n_micro_calls, hydromet_all_points(:,:,iiNrm), &
-                                              sample_point_weight, lh_hydromet(:,iiNrm) )
+                                              LH_sample_point_weights, lh_hydromet(:,iiNrm) )
       end if
 
     end if ! l_compute_diagnostic_average
