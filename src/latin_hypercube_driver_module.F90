@@ -219,7 +219,7 @@ module latin_hypercube_driver_module
     ! Try to obtain 12 digit accuracy for a diagnostic mean
     real(kind=selected_real_kind( p=12 ) ) :: mean_weight
 
-    double precision :: fraction_1
+    double precision :: mixt_frac_dp
 
     double precision :: X_u_dp1_element, X_u_s_mellor_element
 
@@ -437,9 +437,9 @@ module latin_hypercube_driver_module
     ! Determine mixture component for all levels
     do k = 1, nnzp
 
-      fraction_1 = dble( pdf_params%mixt_frac(k) )
+      mixt_frac_dp = dble( pdf_params%mixt_frac(k) )
 
-      where ( in_mixt_frac_1(X_u_all_levs(k,:,d_variables+1), fraction_1 ) )
+      where ( in_mixt_frac_1(X_u_all_levs(k,:,d_variables+1), mixt_frac_dp ) )
         X_mixt_comp_all_levs(k,:) = 1
       else where
         X_mixt_comp_all_levs(k,:) = 2
@@ -475,7 +475,7 @@ module latin_hypercube_driver_module
         write(fstderr,*) "cloud_frac1 = ", pdf_params%cloud_frac1(k_lh_start)
         write(fstderr,*) "cloud_frac2 = ", pdf_params%cloud_frac2(k_lh_start)
         write(fstderr,*) "X_u d+1 element = ", X_u_all_levs(k_lh_start,:,d_variables+1)
-        write(fstderr,*) "fraction 1 = ", fraction_1
+        write(fstderr,*) "mixture fraction = ", mixt_frac_dp
         stop "Fatal Error"
       end if
 
@@ -894,7 +894,7 @@ module latin_hypercube_driver_module
       X_u_dp1_element, X_u_s_mellor_element ! Elements from X_u (uniform dist.)
 
     ! Local Variables
-    real :: cloud_frac_n, fraction_1, clear_fraction_1
+    real :: cloud_frac_n, cloud_weighted_mixt_frac, clear_weighted_mixt_frac
 
     real(kind=genrand_real) :: rand ! Random number
 
@@ -914,10 +914,10 @@ module latin_hypercube_driver_module
     rand2 = dble( rand )
 
     if ( l_cloudy_sample ) then
-      fraction_1 = ( mixt_frac*cloud_frac1 ) / &
+      cloud_weighted_mixt_frac = ( mixt_frac*cloud_frac1 ) / &
                    ( mixt_frac*cloud_frac1 + (1.-mixt_frac)*cloud_frac2 )
 
-      if ( in_mixt_frac_1( rand1, dble( fraction_1 ) ) ) then
+      if ( in_mixt_frac_1( rand1, dble( cloud_weighted_mixt_frac ) ) ) then
         ! Component 1
         cloud_frac_n = cloud_frac1
 !       X_mixt_comp_one_lev = 1
@@ -933,10 +933,10 @@ module latin_hypercube_driver_module
       X_u_s_mellor_element = dble( cloud_frac_n * rand + (1.-cloud_frac_n) )
 
     else ! Clear air sample
-      clear_fraction_1 = ( ( 1. - cloud_frac1 ) * mixt_frac ) &
+      clear_weighted_mixt_frac = ( ( 1. - cloud_frac1 ) * mixt_frac ) &
         / ( ( 1.-cloud_frac1 ) * mixt_frac + ( 1.-cloud_frac2 )*( 1.-mixt_frac ) )
 
-      if ( in_mixt_frac_1( rand1, dble( clear_fraction_1 ) ) ) then
+      if ( in_mixt_frac_1( rand1, dble( clear_weighted_mixt_frac ) ) ) then
         ! Component 1
         cloud_frac_n = cloud_frac1
 !       X_mixt_comp_one_lev = 1
