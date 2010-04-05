@@ -429,39 +429,6 @@ module latin_hypercube_driver_module
 
       end do ! 1..n_micro_calls
 
-      ! Assertion check for whether half of sample points are cloudy.
-      ! This is for the uniform sample only.  Another assertion check is in the
-      ! estimate_lh_micro_module for X_nl_all_levs.
-      if ( l_lh_cloud_weighted_sampling .and. clubb_at_least_debug_level( 2 ) .and. &
-           lh_start_cloud_frac < 0.5 .and. lh_start_cloud_frac > cloud_frac_thresh ) then
-
-        number_cloudy_samples = 0
-
-        do sample = 1, n_micro_calls
-          if ( X_mixt_comp_all_levs(k_lh_start,sample) == 1 ) then
-            cloud_frac_n = pdf_params%cloud_frac1(k_lh_start)
-          else
-            cloud_frac_n = pdf_params%cloud_frac2(k_lh_start)
-          end if
-          if ( X_u_all_levs(k_lh_start,sample,iiLH_s_mellor) >= 1.-cloud_frac_n ) then
-            number_cloudy_samples = number_cloudy_samples + 1
-          else
-            ! Do nothing, the air is clear
-          end if
-        end do
-        if ( number_cloudy_samples /= ( n_micro_calls / 2 ) ) then
-          write(fstderr,*) "Error, half of all samples aren't in cloud"
-          write(fstderr,*) "X_u s_smellor random = ", &
-            X_u_all_levs(k_lh_start,:,iiLH_s_mellor), "cloudy samples =", number_cloudy_samples
-          write(fstderr,*) "cloud_frac1 = ", pdf_params%cloud_frac1(k_lh_start)
-          write(fstderr,*) "cloud_frac2 = ", pdf_params%cloud_frac2(k_lh_start)
-          write(fstderr,*) "X_u d+1 element = ", X_u_all_levs(k_lh_start,:,d_variables+1)
-          write(fstderr,*) "fraction 1 = ", fraction_1
-          stop "Fatal Error"
-        end if
-
-      end if ! Maximal overlap, debug_level 2, and cloud-weighted averaging
-
     end if ! l_lh_vert_overlap
 
     ! Determine mixture component for all levels
@@ -476,6 +443,40 @@ module latin_hypercube_driver_module
       end where
 
     end do ! k = 1 .. nnzp
+
+    ! Assertion check for whether half of sample points are cloudy.
+    ! This is for the uniform sample only.  Another assertion check is in the
+    ! estimate_lh_micro_module for X_nl_all_levs.
+    ! TODO: put this in its own subroutine
+    if ( l_lh_cloud_weighted_sampling .and. clubb_at_least_debug_level( 2 ) .and. &
+         lh_start_cloud_frac < 0.5 .and. lh_start_cloud_frac > cloud_frac_thresh ) then
+
+      number_cloudy_samples = 0
+
+      do sample = 1, n_micro_calls
+        if ( X_mixt_comp_all_levs(k_lh_start,sample) == 1 ) then
+          cloud_frac_n = pdf_params%cloud_frac1(k_lh_start)
+        else
+          cloud_frac_n = pdf_params%cloud_frac2(k_lh_start)
+        end if
+        if ( X_u_all_levs(k_lh_start,sample,iiLH_s_mellor) >= 1.-cloud_frac_n ) then
+          number_cloudy_samples = number_cloudy_samples + 1
+        else
+          ! Do nothing, the air is clear
+        end if
+      end do
+      if ( number_cloudy_samples /= ( n_micro_calls / 2 ) ) then
+        write(fstderr,*) "Error, half of all samples aren't in cloud"
+        write(fstderr,*) "X_u s_smellor random = ", &
+          X_u_all_levs(k_lh_start,:,iiLH_s_mellor), "cloudy samples =", number_cloudy_samples
+        write(fstderr,*) "cloud_frac1 = ", pdf_params%cloud_frac1(k_lh_start)
+        write(fstderr,*) "cloud_frac2 = ", pdf_params%cloud_frac2(k_lh_start)
+        write(fstderr,*) "X_u d+1 element = ", X_u_all_levs(k_lh_start,:,d_variables+1)
+        write(fstderr,*) "fraction 1 = ", fraction_1
+        stop "Fatal Error"
+      end if
+
+    end if ! Maximal overlap, debug_level 2, and cloud-weighted averaging
 
     ! Assertion check to ensure that the sample point weights sum to approximately 1
     if ( l_lh_cloud_weighted_sampling .and. clubb_at_least_debug_level( 2 ) ) then
