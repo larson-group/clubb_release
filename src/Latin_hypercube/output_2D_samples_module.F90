@@ -129,11 +129,11 @@ module output_2D_samples_module
     real(kind=stat_rknd), intent(in), dimension(nnzp,n_micro_calls,d_variables) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    real(kind=stat_rknd), intent(in), dimension(nnzp,n_micro_calls) :: &
+    real, intent(in), dimension(nnzp,n_micro_calls) :: &
       LH_rt, & ! Sample of total water mixing ratio             [kg/kg]
       LH_thl   ! Sample of liquid potential temperature         [K]
 
-    integer :: i, j
+    integer :: sample, j
 
     ! ---- Begin Code ----
 
@@ -141,21 +141,21 @@ module output_2D_samples_module
       allocate( sample_file%var(j)%ptr(n_micro_calls,1,nnzp) )
     end do
 
-    do i = 1, n_micro_calls
+    do sample = 1, n_micro_calls
       do j = 1, d_variables
-        sample_file%var(j)%ptr(i,1,1:nnzp) = X_nl_all_levs(1:nnzp,i,j)
+        sample_file%var(j)%ptr(sample,1,1:nnzp) = X_nl_all_levs(1:nnzp,sample,j)
       end do
     end do
 
     ! Append rt, thl at the end of the variables
     j = d_variables+1
-    do i = 1, n_micro_calls
-      sample_file%var(j)%ptr(i,1,1:nnzp) = LH_rt(1:nnzp,i)
+    do sample = 1, n_micro_calls
+      sample_file%var(j)%ptr(sample,1,1:nnzp) = LH_rt(1:nnzp,sample)
     end do
 
     j = d_variables+2
-    do i = 1, n_micro_calls
-      sample_file%var(j)%ptr(i,1,1:nnzp) = LH_thl(1:nnzp,i)
+    do sample = 1, n_micro_calls
+      sample_file%var(j)%ptr(sample,1,1:nnzp) = LH_thl(1:nnzp,sample)
     end do
 
 #ifdef NETCDF

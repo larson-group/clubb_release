@@ -75,7 +75,7 @@ module estimate_lh_micro_module
     double precision, dimension(nnzp,n_micro_calls,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    double precision, dimension(nnzp,n_micro_calls), intent(in) :: &
+    real, dimension(nnzp,n_micro_calls), intent(in) :: &
       LH_rt, LH_thl ! Total water / Liquid potential temperature      [kg/kg] / [K]
 
     real, dimension(nnzp), intent(in) :: &
@@ -668,7 +668,7 @@ module estimate_lh_micro_module
       n_micro_calls, & ! Number of calls to microphysics (normally=2)
       d_variables      ! Number of variates (normally=5)
 
-    double precision, dimension(nnzp,n_micro_calls), intent(in) :: &
+    real, dimension(nnzp,n_micro_calls), intent(in) :: &
       LH_rt, & ! n_micro_calls values of total water mixing ratio     [kg/kg]
       LH_thl   ! n_micro_calls values of liquid potential temperature [K]
 
@@ -859,8 +859,8 @@ module estimate_lh_micro_module
       end where
 
       w_all_points(:,sample)   = real( w(:,sample) )
-      rv_all_points(:,sample)  = real( LH_rt(:,sample) ) - rc_all_points(:,sample)
-      thl_all_points(:,sample) = real( LH_thl(:,sample) )
+      rv_all_points(:,sample)  = LH_rt(:,sample)- rc_all_points(:,sample)
+      thl_all_points(:,sample) = LH_thl(:,sample)
 
       ! Copy the sample points into the temporary arrays
       do ivar = 1, hydromet_dim, 1

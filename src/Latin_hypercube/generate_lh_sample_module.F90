@@ -103,7 +103,7 @@ module generate_lh_sample_module
       X_mixt_comp_one_lev ! Whether we're in the 1st or 2nd mixture component
 
     ! Output Variables
-    double precision, intent(out), dimension(n_micro_calls) :: &
+    real, intent(out), dimension(n_micro_calls) :: &
       LH_rt, & ! Total water mixing ratio          [kg/kg]
       LH_thl   ! Liquid potential temperature      [K]
 
@@ -705,7 +705,7 @@ module generate_lh_sample_module
 
     ! Output Variables
     ! Total water, theta_l: mean plus perturbations
-    double precision, intent(out), dimension(n_micro_calls) :: LH_rt, LH_thl
+    real, intent(out), dimension(n_micro_calls) :: LH_rt, LH_thl
 
 
     double precision, intent(out), dimension(n_micro_calls,d_variables) :: &
@@ -1573,7 +1573,7 @@ module generate_lh_sample_module
 
     ! Output variables
 
-    double precision, dimension(n_micro_calls), intent(out) :: &
+    real, dimension(n_micro_calls), intent(out) :: &
       LH_rt, LH_thl ! n-dimensional column vectors of rt and thl, including mean and perturbation
 
     ! Local

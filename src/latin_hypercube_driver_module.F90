@@ -194,7 +194,7 @@ module latin_hypercube_driver_module
     integer, dimension(nnzp,n_micro_calls) :: &
       X_mixt_comp_all_levs ! Which mixture component we're in
 
-    double precision, dimension(nnzp,n_micro_calls) :: &
+    real, dimension(nnzp,n_micro_calls) :: &
       LH_rt, LH_thl ! Sample of total water and liquid potential temperature [kg/kg],[K]
 
     real, dimension(nnzp,hydromet_dim) :: &
