@@ -120,6 +120,8 @@ module latin_hypercube_driver_module
     use error_code, only: &
       clubb_at_least_debug_level ! Procedure
 
+    use mt95, only: genrand_real ! Constants
+
     implicit none
 
     ! External
@@ -185,7 +187,7 @@ module latin_hypercube_driver_module
     ! Local variables
     integer :: p_matrix(n_micro_calls,d_variables+1)
 
-    double precision, dimension(nnzp,n_micro_calls,(d_variables+1)) :: &
+    real(kind=genrand_real), dimension(nnzp,n_micro_calls,(d_variables+1)) :: &
       X_u_all_levs ! Sample drawn from uniform distribution
 
     double precision, dimension(nnzp,n_micro_calls,d_variables) :: &
@@ -221,7 +223,7 @@ module latin_hypercube_driver_module
 
     double precision :: mixt_frac_dp
 
-    double precision :: X_u_dp1_element, X_u_s_mellor_element
+    real(kind=genrand_real) :: X_u_dp1_element, X_u_s_mellor_element
 
     ! Number of random samples before sequence of repeats (normally=10)
     integer :: nt_repeat
@@ -791,7 +793,7 @@ module latin_hypercube_driver_module
       cloud_frac_thresh ! Minimum threshold for cloud fraction                   [-]
 
     ! Input/Output Variables
-    double precision, intent(inout) :: &
+    real(kind=genrand_real), intent(inout) :: &
       X_u_dp1_element, X_u_s_mellor_element ! Elements from X_u (uniform dist.)
 
     ! Local Variables
@@ -816,14 +818,14 @@ module latin_hypercube_driver_module
 
     ! Find some new random numbers between (0,1)
     call genrand_real3( rand )
-    X_u_dp1_element      = dble( rand )
+    X_u_dp1_element      = rand
     call genrand_real3( rand )
-    X_u_s_mellor_element = dble( rand )
+    X_u_s_mellor_element = rand
     ! Here we use the rejection method to find a value in either the
     ! clear or cloudy part of the grid box
     do i = 1, itermax
 
-      if ( in_mixt_frac_1( X_u_dp1_element, dble( mixt_frac ) ) ) then
+      if ( in_mixt_frac_1( X_u_dp1_element, real( mixt_frac, kind=genrand_real ) ) ) then
         ! Component 1
         cloud_frac_n = cloud_frac1
 !       X_mixt_comp_one_lev = 1
@@ -852,9 +854,9 @@ module latin_hypercube_driver_module
         else
           ! Find some new test values within the interval (0,1)
           call genrand_real3( rand )
-          X_u_dp1_element      = dble( rand )
+          X_u_dp1_element      = rand
           call genrand_real3( rand )
-          X_u_s_mellor_element = dble( rand )
+          X_u_s_mellor_element = rand
         end if
       end if ! Looking for a clear or cloudy point
 
@@ -899,15 +901,13 @@ module latin_hypercube_driver_module
       mixt_frac         ! Mixture fraction                                       [-]
 
     ! Input/Output Variables
-    double precision, intent(inout) :: &
+    real(kind=genrand_real), intent(inout) :: &
       X_u_dp1_element, X_u_s_mellor_element ! Elements from X_u (uniform dist.)
 
     ! Local Variables
     real :: cloud_frac_n, cloud_weighted_mixt_frac, clear_weighted_mixt_frac
 
-    real(kind=genrand_real) :: rand ! Random number
-
-    double precision :: rand1, rand2
+    real(kind=genrand_real) :: rand, rand1, rand2 ! Random numbers
 
 !   integer :: X_mixt_comp_one_lev
 
@@ -916,17 +916,15 @@ module latin_hypercube_driver_module
     ! ---- Begin code ----
 
     ! Pick a new mixture component value between (0,1)
-    call genrand_real3( rand )
-    rand1 = dble( rand )
+    call genrand_real3( rand1 )
 
-    call genrand_real3( rand ) ! Determine a 2nd rand the if ... then
-    rand2 = dble( rand )
+    call genrand_real3( rand2 ) ! Determine a 2nd rand the if ... then
 
     if ( l_cloudy_sample ) then
       cloud_weighted_mixt_frac = ( mixt_frac*cloud_frac1 ) / &
                    ( mixt_frac*cloud_frac1 + (1.-mixt_frac)*cloud_frac2 )
 
-      if ( in_mixt_frac_1( rand1, dble( cloud_weighted_mixt_frac ) ) ) then
+      if ( in_mixt_frac_1( rand1, real( cloud_weighted_mixt_frac, kind=genrand_real ) ) ) then
         ! Component 1
         cloud_frac_n = cloud_frac1
 !       X_mixt_comp_one_lev = 1
@@ -976,9 +974,12 @@ module latin_hypercube_driver_module
 ! References:
 !   None
 !----------------------------------------------------------------------
+
+    use mt95, only: genrand_real ! Constant
+
     implicit none
 
-    double precision, intent(in) :: &
+    real(kind=genrand_real), intent(in) :: &
       X_u_dp1_element, & ! Element of X_u telling us which mixture component we're in
       frac               ! The mixture fraction
 

@@ -59,6 +59,8 @@ module generate_lh_sample_module
       iiLH_thl, &
       iiLH_w
 
+    use mt95, only: genrand_real ! Constants
+
     implicit none
 
     ! External
@@ -96,7 +98,7 @@ module generate_lh_sample_module
     real, dimension(d_variables,d_variables), intent(in) :: &
       correlation_array ! Correlations for sampled variables    [-]
 
-    double precision, intent(in), dimension(n_micro_calls,d_variables+1) :: &
+    real(kind=genrand_real), intent(in), dimension(n_micro_calls,d_variables+1) :: &
       X_u_one_lev ! Sample drawn from uniform distribution from a particular grid level
 
     integer, intent(in), dimension(n_micro_calls) :: &
@@ -740,7 +742,7 @@ module generate_lh_sample_module
         write(fstderr,*) "Sigma_stw_2 has a correlation > 1 or < -1"
       end if
       ! Kluge to reduce the covariance when the correlation is too large.
-      ! Doesn't help very much. -dschanen 20 Aug
+      ! Doesn't help very much. -dschanen 20 Aug 2009
 !     do i = 1, d_variables 
 !       do j = 1, d_variables 
 !         if ( Sigma_stw_1_corr(i,j) > 1.0 .or. Sigma_stw_1_corr(i,j) < -1.0 ) then
@@ -924,6 +926,8 @@ module generate_lh_sample_module
 !      a chapter from SIGGRAPH 2003
 !-------------------------------------------------------------------------------
 
+    use mt95, only: genrand_real ! Constants
+
     implicit none
 
     ! Input Variables
@@ -937,7 +941,7 @@ module generate_lh_sample_module
 
     ! Output Variables
 
-    double precision, intent(out), dimension(n_micro_calls,dp1) :: &
+    real(kind=genrand_real), intent(out), dimension(n_micro_calls,dp1) :: &
       X_u_one_lev ! n by dp1 matrix, X, each row of which is a dp1-dimensional sample
 
     ! Local Variables
@@ -968,7 +972,7 @@ module generate_lh_sample_module
   end subroutine generate_uniform_sample
 
 !----------------------------------------------------------------------
-  double precision function choose_permuted_random( nt_repeat, p_matrix_element )
+  function choose_permuted_random( nt_repeat, p_matrix_element )
 
     use mt95, only: genrand_real3 ! Procedure(s)
 
@@ -976,17 +980,23 @@ module generate_lh_sample_module
 
     implicit none
 
+    ! Input Variables
     integer, intent(in) :: & 
       nt_repeat,        & ! Number of samples before the sequence repeats
       p_matrix_element    ! Permuted integer
 
-    real(kind=genrand_real) :: rand ! Random float with a range of (0,1)
+    ! Output Variable
+    real(kind=genrand_real) :: choose_permuted_random
+
+    ! Local Variable
+    real(kind=genrand_real) :: & 
+      rand ! Random float with a range of (0,1)
 
     ! ---- Begin Code ----
 
     call genrand_real3( rand ) ! genrand_real3's range is (0,1)
 
-    choose_permuted_random = (1.0d0/nt_repeat)*(p_matrix_element + rand )
+    choose_permuted_random = (1.0_genrand_real/nt_repeat)*(p_matrix_element + rand )
 
     return
   end function choose_permuted_random
