@@ -85,7 +85,7 @@ for i=1:numLines
 
 			%If levels is defined, don't set it to 0
 			if exist('levels') == 0
-				levels = 0;
+				levels = [startHeight; endHeight];
 			end
 
 			eval([varString, '= 0;']);
@@ -125,6 +125,14 @@ for i=1:numLines
 
 	%Add a the line to the plot
 	if strcmp(plotType, 'profile')
+		%If no variables were found, expand the profile to the right size and plot a line of zeroes
+		if valueToPlot == 0
+			bottomIndex = 1;
+			topIndex = 2;
+			levels = [startHeight; endHeight];
+			valueToPlot = [0; 0];
+		end
+
 		lines(i) = ProfileFunctions.addLine( levels, valueToPlot, lineWidth, lineType, lineColor);
 	elseif strcmp(plotType, 'timeseries')
 		try
