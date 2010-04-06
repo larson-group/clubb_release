@@ -69,16 +69,27 @@ for i=1:numLines
 		%We need to convert the variable name to read from a cell array to a string
 		varString = cell2mat(varsToRead(j));
         	ConsoleOutput.message(['Reading variable ' varString]);
+		
+		try
+			if strcmp(extension, '.ctl')
+				[variableData, levels] = VariableReadGrADS(filePath, varString, startTime, endTime, plotType);
+			elseif strcmp(extension, '.nc')
+				[variableData, levels] = VariableReadNC(filePath, varString, startTime, endTime, plotType);
+			end
 
-		if strcmp(extension, '.ctl')
-			[variableData, levels] = VariableReadGrADS(filePath, varString, startTime, endTime, plotType);
-		elseif strcmp(extension, '.nc')
-			[variableData, levels] = VariableReadNC(filePath, varString, startTime, endTime, plotType);
+			%Store the read in values to the proper variable name (ex. variable rtm will be read in to the variable named rtm,
+			%this allows the expression to be used as is).
+			eval([varString, '= variableData;']);
+		catch
+			ConsoleOutput.warning(['Variable ' varString ' not found!']);
+
+			%If levels is defined, don't set it to 0
+			if exist('levels') == 0
+				levels = 0;
+			end
+
+			eval([varString, '= 0;']);
 		end
-
-		%Store the read in values to the proper variable name (ex. variable rtm will be read in to the variable named rtm,
-		%this allows the expression to be used as is).
-		eval([varString, '= variableData;']);
 	end
 
 	%Load timestep information
@@ -116,7 +127,13 @@ for i=1:numLines
 	if strcmp(plotType, 'profile')
 		lines(i) = ProfileFunctions.addLine( levels, valueToPlot, lineWidth, lineType, lineColor);
 	elseif strcmp(plotType, 'timeseries')
-		lines(i) = TimeseriesFunctions.addLine( times, valueToPlot(t_start_index:t_end_index), lineWidth, lineType, lineColor);
+		try
+			lines(i) = TimeseriesFunctions.addLine( times, valueToPlot(t_start_index:t_end_index), lineWidth, lineType, lineColor);
+		catch
+			%Variable was not found, just plot 0
+			valueToPlot(t_start_index:t_end_index) = 0;
+			lines(i) = TimeseriesFunctions.addLine( times, valueToPlot(t_start_index:t_end_index), lineWidth, lineType, lineColor);
+		end
 	end
 	
 	%Store values needed for axis scaling

@@ -63,8 +63,9 @@ for i = 1:numVars
 
 		end
 
-		break;
+		levData = z;
+		return;
 	end
 end
 
-levData = z;
+error('GRaDS variable not found!');
