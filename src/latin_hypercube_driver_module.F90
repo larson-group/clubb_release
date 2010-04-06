@@ -360,11 +360,18 @@ module latin_hypercube_driver_module
     k_lh_start = tmp_loc(1) ! Attempt using the maximal value of rcm for now
 
     if ( l_lh_cloud_weighted_sampling ) then
+
       ! Determine cloud fraction at k_lh_start
       lh_start_cloud_frac = &
         pdf_params%mixt_frac(k_lh_start) * pdf_params%cloud_frac1(k_lh_start) &
         + (1.0-pdf_params%mixt_frac(k_lh_start)) * pdf_params%cloud_frac2(k_lh_start)
-    end if
+
+      ! Determine p_matrix at k_lh_start
+      p_matrix(1:n_micro_calls,1:(d_variables+1)) = &
+        height_time_matrix(k_lh_start, n_micro_calls*i_rmd+1:n_micro_calls*i_rmd+n_micro_calls, &
+                           1:d_variables+1)
+
+    end if ! l_lh_cloud_weighted_sampling
 
     if ( l_lh_vert_overlap ) then
 
@@ -388,7 +395,9 @@ module latin_hypercube_driver_module
             ! Detect which half of the sample points are in clear air and which half are in
             ! the cloudy air
 !           if ( sample-1 < ( n_micro_calls / 2 ) ) then
-            if ( mod( sample, 2 ) == 0 ) then
+!           if ( mod( sample, 2 ) == 0 ) then
+            if ( p_matrix(sample,iiLH_s_mellor) < ( n_micro_calls / 2 ) ) then
+
               l_cloudy_sample = .false.
               LH_sample_point_weights(sample) = 2. * ( 1.0 - lh_start_cloud_frac )
             else
@@ -769,7 +778,7 @@ module latin_hypercube_driver_module
     implicit none
 
     ! External
-    intrinsic :: int, dble
+    intrinsic :: ceiling, dble
 
     ! Input Variables
     logical, intent(in) :: &
@@ -803,7 +812,7 @@ module latin_hypercube_driver_module
     ! Maximum iterations searching for the cloudy/clear part of the gridbox
     ! This should't appear in a parameter statement because it's set based on
     ! a floating-point calculation, and apparently that's not ISO Fortran
-    itermax = int( 100. / cloud_frac_thresh )
+    itermax = ceiling( 100. / cloud_frac_thresh )
 
     ! Find some new random numbers between (0,1)
     call genrand_real3( rand )
