@@ -156,7 +156,7 @@ module generate_lh_sample_module
     double precision :: rrtthl_reduced1, rrtthl_reduced2
 
     ! Means of s, t, w, & hydrometeors for plumes 1 and 2
-    double precision, dimension(d_variables) :: &
+    real, dimension(d_variables) :: &
       mu1, mu2
 
     ! Covariance (not correlation) matrix of rt, thl, w for plumes 1 and 2
@@ -367,9 +367,9 @@ module generate_lh_sample_module
       ! Means of s, t, w, Nc, Nr, rr for Gaussians 1 and 2
 
       mu1((/iiLH_rt,iiLH_thl,iiLH_w/)) &
-        = (/ dble( s1 ), 0.d0, dble( w1 ) /)
+        = (/ s1, 0., w1 /)
       mu2((/iiLH_rt,iiLH_thl,iiLH_w/)) &
-        = (/ dble( s2 ), 0.d0, dble( w2 ) /)
+        = (/ s2, 0., w2 /)
 
       if ( iiLH_rrain > 0 ) then
         mu1(iiLH_rrain) = rr1
@@ -681,7 +681,7 @@ module generate_lh_sample_module
       cthl2    ! coefficient relating thl, s and t for comp. 2
 
     ! Latin hypercube variables, i.e. s, t, w, etc.
-    double precision, intent(in), dimension(d_variables) :: &
+    real, intent(in), dimension(d_variables) :: &
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd components
 
     ! Cloud fractions for components 1 and 2
@@ -1021,7 +1021,7 @@ module generate_lh_sample_module
       mixt_frac,     & ! Mixture fraction of Gaussians
       cloud_frac1, cloud_frac2   ! Cloud fraction associated w/ 1st, 2nd mixture component
 
-    double precision, intent(in), dimension(d_variables) :: &
+    real, intent(in), dimension(d_variables) :: &
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd Gaussians
 
     double precision, intent(in), dimension(d_variables,d_variables) :: &
@@ -1084,12 +1084,7 @@ module generate_lh_sample_module
         std_normal(j) = ltqnorm( X_u_one_lev(sample,j) )
       end do
 
-      ! Choose which mixture fraction we are in.
-      ! Account for cloud fraction.
-      ! Follow M. E. Johnson (1987), p. 56.
-!     fraction_1 = ( mixt_frac*cloud_frac1 ) / &
-!                  ( mixt_frac*cloud_frac1 + (1-mixt_frac)*cloud_frac2 )
-!     if ( in_mixt_frac_1( X_u_one_lev(sample, d_variables+1), fraction_1 ) ) then
+      ! Determine which mixture fraction we are in.
       if ( X_mixt_comp_one_lev(sample) == 1 ) then
         call gaus_condt( d_variables, &
                          std_normal, mu1, Sigma1, s_pts(sample), &  ! In
@@ -1143,7 +1138,7 @@ module generate_lh_sample_module
       mixt_frac,    & ! Mixture fraction of Gaussians
       cloud_frac1, cloud_frac2  ! Cloud fraction associated w/ 1st, 2nd mixture component
 
-    double precision, intent(in), dimension(d_variables) :: &
+    real, intent(in), dimension(d_variables) :: &
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd Gaussians
 
     double precision, intent(in), dimension(d_variables,d_variables) :: &
@@ -1410,7 +1405,7 @@ module generate_lh_sample_module
     double precision, intent(in), dimension(d_variables) :: &
       std_normal ! nxd matrix of n independent samples from d-variate standard normal distribution
 
-    double precision, intent(in), dimension(d_variables,1) :: &
+    real, intent(in), dimension(d_variables,1) :: &
       mu ! d-dimensional column vector of means of Gaussian
 
     double precision, intent(in), dimension(d_variables,d_variables) :: &
@@ -1529,7 +1524,7 @@ module generate_lh_sample_module
 !-----------------------------------------------------------------------
   subroutine st_2_rtthl( n_micro_calls, mixt_frac, rt1, thl1, rt2, thl2, & 
                          crt1, cthl1, crt2, cthl2, & 
-                         cloud_frac1, cloud_frac2, s1, s2, &
+                         cloud_frac1, cloud_frac2, mu_s1, mu_s2, &
                          s_mellor, t_mellor, X_mixt_comp_one_lev, &
                          LH_rt, LH_thl )
 ! Description:
@@ -1561,7 +1556,8 @@ module generate_lh_sample_module
     double precision, intent(in) :: &
       cloud_frac1, cloud_frac2 ! Cloud fraction associated with 1st / 2nd mixture component
 
-    double precision, intent(in) :: s1, s2
+    real, intent(in) :: &
+      mu_s1, mu_s2
 
     ! n-dimensional column vector of Mellor's s and t, including mean and perturbation
     double precision, intent(in), dimension(n_micro_calls) :: &
@@ -1579,7 +1575,6 @@ module generate_lh_sample_module
     ! Local
 
     integer :: sample
-!   double precision :: fraction_1
 
     ! ---- Begin Code ----
 
@@ -1620,16 +1615,16 @@ module generate_lh_sample_module
 
 !     if ( in_mixt_frac_1( X_u_one_lev(sample,d_variables+1), fraction_1 ) ) then
       if ( X_mixt_comp_one_lev(sample) == 1 ) then
-        LH_rt(sample)  = rt1 + (0.5d0/crt1)*(s_mellor(sample)-s1) +  & 
+        LH_rt(sample)  = rt1 + (0.5d0/crt1)*(s_mellor(sample)-mu_s1) +  & 
                            (0.5d0/crt1)*t_mellor(sample)
-        LH_thl(sample) = thl1 + (-0.5d0/cthl1)*(s_mellor(sample)-s1) +  & 
+        LH_thl(sample) = thl1 + (-0.5d0/cthl1)*(s_mellor(sample)-mu_s1) +  & 
                            (0.5d0/cthl1)*t_mellor(sample)
 
       else if ( X_mixt_comp_one_lev(sample) == 2 ) then
-!     else ! mixture fraction 2
-        LH_rt(sample)  = rt2 + (0.5d0/crt2)*(s_mellor(sample)-s2) +  & 
+      ! mixture fraction 2
+        LH_rt(sample)  = rt2 + (0.5d0/crt2)*(s_mellor(sample)-mu_s2) +  & 
                            (0.5d0/crt2)*t_mellor(sample)
-        LH_thl(sample) = thl2 + (-0.5d0/cthl2)*(s_mellor(sample)-s2) +  & 
+        LH_thl(sample) = thl2 + (-0.5d0/cthl2)*(s_mellor(sample)-mu_s2) +  & 
                            (0.5d0/cthl2)*t_mellor(sample)
 
       else 
