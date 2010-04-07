@@ -49,4 +49,7 @@ SCRIPTS:
                       submission. In the case of TWP_ICE
                       this is NetCDF. It uses both
                       twp_ice_profiles_creator.m and
-                      twp_ice_timeseries_creator.m.
+                      twp_ice_timeseries_creator.m. It
+                      also requires header_read.m and
+                      read_grads_clubb_endian.m from
+                      clubb/postprocessing/matlab_include
