@@ -724,6 +724,10 @@ module latin_hypercube_driver_module
       variable_names(i)        = "thl"
       variable_descriptions(i) = "Liquid potential temperature"
       variable_units(i)        = "K"
+    else
+
+      return ! We're not outputting either file, so return
+
     end if
 #ifdef UNRELEASED_CODE
     if ( l_output_2D_lognormal_dist ) then
