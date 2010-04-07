@@ -5,18 +5,22 @@ module output_2D_samples_module
 
   implicit none
 
-  public :: open_2D_samples_file, output_2D_samples_file, close_2D_samples_file
+  public :: open_2D_samples_file, close_2D_samples_file, &
+    output_2D_uniform_dist_file, output_2D_lognormal_dist_file
 
   private ! Default scope
 
-  type(stat_file), private :: sample_file
+  type(stat_file), public :: &
+    lognormal_sample_file, &
+    uniform_sample_file
 
   contains
 !-------------------------------------------------------------------------------
   subroutine open_2D_samples_file( nnzp, n_micro_calls, n_2D_variables, &
                                    fname_prefix, fdir, &
                                    time, dtwrite, zgrid, variable_names, &
-                                   variable_descriptions, variable_units )
+                                   variable_descriptions, variable_units, &
+                                   sample_file )
 ! Description:
 !   Open a 2D sample file
 ! References:
@@ -32,7 +36,7 @@ module output_2D_samples_module
 
     ! Parameter Constants
     integer, parameter :: &
-      day   = 1, &
+      day   = 1, & ! Made up times for GrADS
       month = 1, &
       year  = 1900
 
@@ -58,6 +62,10 @@ module output_2D_samples_module
     real, intent(in), dimension(nnzp) :: &
       zgrid ! Vertical grid levels [m]
 
+    ! Input/Output Variables
+    type(stat_file), intent(inout) :: &
+      sample_file ! File that is being opened
+
     ! Local Variables
     integer :: nlat, nlon ! Not actually latitudes and longitudes
 
@@ -78,8 +86,8 @@ module output_2D_samples_module
     nlon = 1
 
     allocate( sample_file%rlat(n_micro_calls), sample_file%rlon(1) )
-    allocate( sample_file%var( n_2D_variables ) )
-    allocate( sample_file%z( nnzp ) )
+    allocate( sample_file%var(n_2D_variables) )
+    allocate( sample_file%z(nnzp) )
 
     forall( i=1:n_micro_calls )
       rlat(i) = real( i ) ! Use made up arbitrary values for degrees north
@@ -105,8 +113,9 @@ module output_2D_samples_module
   end subroutine open_2D_samples_file
 
 !-------------------------------------------------------------------------------
-  subroutine output_2D_samples_file( nnzp, n_micro_calls, d_variables, X_nl_all_levs, &
-                                     LH_rt, LH_thl )
+  subroutine output_2D_lognormal_dist_file &
+             ( nnzp, n_micro_calls, d_variables, X_nl_all_levs, &
+               LH_rt, LH_thl )
 ! Description:
 !   Output a 2D snapshot of latin hypercube samples
 ! References:
@@ -138,41 +147,93 @@ module output_2D_samples_module
     ! ---- Begin Code ----
 
     do j = 1, d_variables+2
-      allocate( sample_file%var(j)%ptr(n_micro_calls,1,nnzp) )
+      allocate( lognormal_sample_file%var(j)%ptr(n_micro_calls,1,nnzp) )
     end do
 
     do sample = 1, n_micro_calls
       do j = 1, d_variables
-        sample_file%var(j)%ptr(sample,1,1:nnzp) = X_nl_all_levs(1:nnzp,sample,j)
+        lognormal_sample_file%var(j)%ptr(sample,1,1:nnzp) = X_nl_all_levs(1:nnzp,sample,j)
       end do
     end do
 
     ! Append rt, thl at the end of the variables
     j = d_variables+1
     do sample = 1, n_micro_calls
-      sample_file%var(j)%ptr(sample,1,1:nnzp) = LH_rt(1:nnzp,sample)
+      lognormal_sample_file%var(j)%ptr(sample,1,1:nnzp) = LH_rt(1:nnzp,sample)
     end do
 
     j = d_variables+2
     do sample = 1, n_micro_calls
-      sample_file%var(j)%ptr(sample,1,1:nnzp) = LH_thl(1:nnzp,sample)
+      lognormal_sample_file%var(j)%ptr(sample,1,1:nnzp) = LH_thl(1:nnzp,sample)
     end do
 
 #ifdef NETCDF
-    call write_netcdf( sample_file )
+    call write_netcdf( lognormal_sample_file )
 #else
     stop "This version of CLUBB was not compiled for netCDF output"
 #endif
 
     do j = 1, d_variables+2
-      deallocate( sample_file%var(j)%ptr )
+      deallocate( lognormal_sample_file%var(j)%ptr )
     end do
 
     return
-  end subroutine output_2D_samples_file
+  end subroutine output_2D_lognormal_dist_file
 
 !-------------------------------------------------------------------------------
-  subroutine close_2D_samples_file( )
+  subroutine output_2D_uniform_dist_file &
+             ( nnzp, n_micro_calls, dp1, X_u_all_levs )
+! Description:
+!   Output a 2D snapshot of latin hypercube uniform distribution, i.e. (0,1)
+! References:
+!   None
+!-------------------------------------------------------------------------------
+#ifdef NETCDF
+    use output_netcdf, only: write_netcdf ! Procedure(s)
+#endif
+
+    use mt95, only: genrand_real ! Constant(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nnzp,          & ! Number of vertical levels
+      n_micro_calls, & ! Number of calls to the microphysics
+      dp1              ! Number of variates being sampled + 1
+
+    real(kind=genrand_real), intent(in), dimension(nnzp,n_micro_calls,dp1) :: &
+      X_u_all_levs ! Uniformly distributed numbers between (0,1)
+
+    integer :: sample, j
+
+    ! ---- Begin Code ----
+
+    do j = 1, dp1
+      allocate( uniform_sample_file%var(j)%ptr(n_micro_calls,1,nnzp) )
+    end do
+
+    do sample = 1, n_micro_calls
+      do j = 1, dp1
+        uniform_sample_file%var(j)%ptr(sample,1,1:nnzp) = X_u_all_levs(1:nnzp,sample,j)
+      end do
+    end do
+
+#ifdef NETCDF
+    call write_netcdf( uniform_sample_file )
+#else
+    stop "This version of CLUBB was not compiled for netCDF output"
+#endif
+
+    do j = 1, dp1
+      deallocate( uniform_sample_file%var(j)%ptr )
+    end do
+
+    return
+  end subroutine output_2D_uniform_dist_file
+
+!-------------------------------------------------------------------------------
+  subroutine close_2D_samples_file( sample_file )
 ! Description:
 !   Close a 2D sample file
 ! References:
@@ -183,6 +244,11 @@ module output_2D_samples_module
 #endif
 
     implicit none
+
+    type(stat_file), intent(inout) :: &
+      sample_file ! File that is being opened
+
+    ! ---- Begin Code ----
 
 #ifdef NETCDF
     call close_netcdf( sample_file )

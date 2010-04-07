@@ -12,7 +12,8 @@ module latin_hypercube_driver_module
   ! Constant Parameters
   logical, parameter, private :: &
     l_diagnostic_iter_check      = .true., & ! Check for a problem in iteration
-    l_output_2D_samples          = .false.   ! Output a 2D netCDF file of samples
+    l_output_2D_lognormal_dist   = .false., & ! Output a 2D netCDF file of the lognormal variates
+    l_output_2D_uniform_dist     = .false.    ! Output a 2D netCDF file of the uniform distribution
 
   integer, allocatable, dimension(:,:,:), private :: & 
     height_time_matrix ! matrix of rand ints
@@ -65,7 +66,8 @@ module latin_hypercube_driver_module
       k_lh_start ! Variable
 
     use output_2D_samples_module, only: &
-      output_2D_samples_file ! Procedure(s)
+      output_2D_lognormal_dist_file, & ! Procedure(s)
+      output_2D_uniform_dist_file 
 #endif
 
     use variables_prognostic_module, only: &
@@ -319,9 +321,9 @@ module latin_hypercube_driver_module
     end do ! 1..nnzp
 
     ! For a 100 level fixed grid, this looks to be about the middle of the cloud for RICO
-!   k_lh_start = 50
-    tmp_loc    = maxloc( rcm )
-    k_lh_start = tmp_loc(1) ! Attempt using the maximal value of rcm for now
+    k_lh_start = 50
+!   tmp_loc    = maxloc( rcm )
+!   k_lh_start = tmp_loc(1) ! Attempt using the maximal value of rcm for now
 
     ! Latin hypercube sample generation
     ! Generate height_time_matrix, an nnzp x nt_repeat x d_variables array of random integers
@@ -529,11 +531,14 @@ module latin_hypercube_driver_module
              LH_rt(k,:), LH_thl(k,:), X_nl_all_levs(k,:,:) ) ! Out
     end do ! k_lh_start-1..1
 
-    if ( l_output_2D_samples ) then
-      call output_2D_samples_file( nnzp, n_micro_calls, d_variables, &
-                                   X_nl_all_levs, LH_rt, LH_thl )
+    if ( l_output_2D_lognormal_dist ) then
+      call output_2D_lognormal_dist_file( nnzp, n_micro_calls, d_variables, &
+                                          X_nl_all_levs, LH_rt, LH_thl )
     end if
-
+    if ( l_output_2D_uniform_dist ) then
+      call output_2D_uniform_dist_file( nnzp, n_micro_calls, d_variables+1, &
+                                        X_u_all_levs )
+    end if
     ! Perform LH and analytic microphysical calculations
     call estimate_lh_micro &
          ( dt, nnzp, n_micro_calls, d_variables, &  ! intent(in)
@@ -640,6 +645,11 @@ module latin_hypercube_driver_module
 #ifdef UNRELEASED_CODE
     use output_2D_samples_module, only: &
       open_2D_samples_file ! Procedure
+
+    use output_2D_samples_module, only: &
+      lognormal_sample_file, & ! Instance of a type
+      uniform_sample_file 
+
 #endif /*UNRELEASED_CODE*/
 
     implicit none
@@ -667,59 +677,83 @@ module latin_hypercube_driver_module
 
     ! ---- Begin Code ----
 
-    if ( .not. l_output_2D_samples ) return
+    if ( l_output_2D_lognormal_dist .or. l_output_2D_uniform_dist ) then
 
-    allocate( variable_names(hydromet_dim+5), variable_descriptions(hydromet_dim+5), &
-              variable_units(hydromet_dim+5) )
+      allocate( variable_names(hydromet_dim+5), variable_descriptions(hydromet_dim+5), &
+                variable_units(hydromet_dim+5) )
 
-    variable_names(1)        = "s_mellor"
-    variable_descriptions(1) = "The variable 's' from Mellor 1977"
-    variable_units(1)        = "kg/kg"
+      variable_names(1)        = "s_mellor"
+      variable_descriptions(1) = "The variable 's' from Mellor 1977"
+      variable_units(1)        = "kg/kg"
 
-    variable_names(2)        = "t_mellor"
-    variable_descriptions(2) = "The variable 't' from Mellor 1977"
-    variable_units(2)        = "kg/kg"
+      variable_names(2)        = "t_mellor"
+      variable_descriptions(2) = "The variable 't' from Mellor 1977"
+      variable_units(2)        = "kg/kg"
 
-    variable_names(3)        = "w"
-    variable_descriptions(3) = "Vertical velocity"
-    variable_units(3)        = "m/s"
+      variable_names(3)        = "w"
+      variable_descriptions(3) = "Vertical velocity"
+      variable_units(3)        = "m/s"
 
-    i = 3 ! Use i to determine the position of rt, thl in the output
+      i = 3 ! Use i to determine the position of rt, thl in the output
 
-    if ( iiLH_Nr > 0 ) then
+      if ( iiLH_Nr > 0 ) then
+        i = i + 1
+        variable_names(iiLH_Nr)        = "Nr"
+        variable_descriptions(iiLH_Nr) = "Rain droplet number concentration"
+        variable_units(iiLH_Nr)        = "count/kg"
+      end if
+      if ( iiLH_Nc > 0 ) then
+        i = i + 1
+        variable_names(iiLH_Nc)        = "Nc"
+        variable_descriptions(iiLH_Nc) = "Cloud droplet number concentration"
+        variable_units(iiLH_Nc)        = "count/kg"
+      end if
+      if ( iiLH_rrain > 0 ) then
+        i = i + 1
+        variable_names(iiLH_rrain)        = "rrain"
+        variable_descriptions(iiLH_rrain) = "Rain water mixing ratio"
+        variable_units(iiLH_rrain)        = "kg/kg"
+      end if
+
       i = i + 1
-      variable_names(iiLH_Nr)        = "Nr"
-      variable_descriptions(iiLH_Nr) = "Rain droplet number concentration"
-      variable_units(iiLH_Nr)        = "count/kg"
-    end if
-    if ( iiLH_Nc > 0 ) then
+      variable_names(i)        = "rt"
+      variable_descriptions(i) = "Total water mixing ratio"
+      variable_units(i)        = "kg/kg"
+
       i = i + 1
-      variable_names(iiLH_Nc)        = "Nc"
-      variable_descriptions(iiLH_Nc) = "Cloud droplet number concentration"
-      variable_units(iiLH_Nc)        = "count/kg"
+      variable_names(i)        = "thl"
+      variable_descriptions(i) = "Liquid potential temperature"
+      variable_units(i)        = "K"
     end if
-    if ( iiLH_rrain > 0 ) then
-      i = i + 1
-      variable_names(iiLH_rrain)        = "rrain"
-      variable_descriptions(iiLH_rrain) = "Rain water mixing ratio"
-      variable_units(iiLH_rrain)        = "kg/kg"
-    end if
-
-    i = i + 1
-    variable_names(i)        = "rt"
-    variable_descriptions(i) = "Total water mixing ratio"
-    variable_units(i)        = "kg/kg"
-
-    i = i + 1
-    variable_names(i)        = "thl"
-    variable_descriptions(i) = "Liquid potential temperature"
-    variable_units(i)        = "K"
-
 #ifdef UNRELEASED_CODE
-    call open_2D_samples_file( nnzp, LH_microphys_calls, hydromet_dim+5, &
-                               fname_prefix, fdir, &
-                               time_initial, stats_tout, zt, variable_names, &
-                               variable_descriptions, variable_units )
+    if ( l_output_2D_lognormal_dist ) then
+      call open_2D_samples_file( nnzp, LH_microphys_calls, hydromet_dim+5, & ! In
+                                 trim( fname_prefix )//"_nl", fdir, & ! In
+                                 time_initial, stats_tout, zt, variable_names, & ! In
+                                 variable_descriptions, variable_units, & ! In
+                                 lognormal_sample_file ) ! In/Out
+    end if
+
+    if ( l_output_2D_uniform_dist ) then
+
+      ! The uniform distribution corresponds to all the same variables as X_nl,
+      ! except the d+1 component is the mixture component.
+      ! We also derive LH_rt or LH_thl from s and t. (hence hydromet_dim+4)
+
+      ! Overwrite the units
+      variable_units(:) = "count" ! Unidata units format for a dimensionless quantity
+
+      ! Overwrite for the mixture component
+      variable_names(hydromet_dim+4) = "dp1"
+      variable_descriptions(hydromet_dim+4) = "Uniform distribution for the mixture component"
+      call open_2D_samples_file( nnzp, LH_microphys_calls, hydromet_dim+4, & ! In
+                                 trim( fname_prefix )//"_u", fdir, & ! In
+                                 time_initial, stats_tout, zt, &! In
+                                 variable_names(1:hydromet_dim+4), & ! In
+                                 variable_descriptions(1:hydromet_dim+4), & ! In
+                                 variable_units(1:hydromet_dim+4), & ! In
+                                 uniform_sample_file ) ! In/Out
+    end if
 
     ! These should deallocate when we leave the scope of this subroutine, this
     ! is just in case.
@@ -743,17 +777,26 @@ module latin_hypercube_driver_module
 #ifdef UNRELEASED_CODE
     use output_2D_samples_module, only: &
       close_2D_samples_file ! Procedure
+
+    use output_2D_samples_module, only: &
+      lognormal_sample_file, & ! Variable(s)
+      uniform_sample_file 
 #endif
 
     implicit none
 
     ! ---- Begin Code ----
 
-    if ( l_output_2D_samples ) then
 #ifdef UNRELEASED_CODE
-      call close_2D_samples_file( )
-#endif
+    if ( l_output_2D_lognormal_dist ) then
+      call close_2D_samples_file( lognormal_sample_file )
     end if
+    if ( l_output_2D_uniform_dist ) then
+      call close_2D_samples_file( uniform_sample_file )
+    end if
+#else
+    stop "This code was not compiled with support for Latin Hypercube sampling"
+#endif
 
     return
   end subroutine latin_hypercube_2D_close
