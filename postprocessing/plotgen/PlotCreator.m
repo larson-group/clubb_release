@@ -112,15 +112,15 @@ for i=1:numLines
 		times = startTime:time_step_length:endTime;
 	end
 
-	%Do not continue if the end time is past the end of the data
-	if endTime > (t_time_steps * time_step_length)
-        	ConsoleOutput.severe('ERROR: End time of plot greater than end time of data');
-		return;
-	end
-
 	%Now evaluate the expression using the read in values,
 	eval(['valueToPlot =', varExpression, ';']);
 	
+	%Plot zeroes if data is missing
+	if endTime > (t_time_steps * time_step_length)
+        	ConsoleOutput.severe('ERROR: End time of plot greater than end time of data');
+		valueToPlot = 0;
+	end
+
 	%At this point, the value of the expression is contained in valueToPlot
 
 	%Add a the line to the plot
