@@ -182,7 +182,8 @@ module output_2D_samples_module
 
 !-------------------------------------------------------------------------------
   subroutine output_2D_uniform_dist_file &
-             ( nnzp, n_micro_calls, dp1, X_u_all_levs )
+             ( nnzp, n_micro_calls, dp1, X_u_all_levs, X_mixt_comp_all_levs, &
+               p_matrix_s_element )
 ! Description:
 !   Output a 2D snapshot of latin hypercube uniform distribution, i.e. (0,1)
 ! References:
@@ -205,17 +206,28 @@ module output_2D_samples_module
     real(kind=genrand_real), intent(in), dimension(nnzp,n_micro_calls,dp1) :: &
       X_u_all_levs ! Uniformly distributed numbers between (0,1)
 
-    integer :: sample, j
+    integer, intent(in), dimension(nnzp,n_micro_calls) :: &
+      X_mixt_comp_all_levs ! Either 1 or 2
+
+    integer, intent(in), dimension(n_micro_calls) :: &
+      p_matrix_s_element ! P matrix at the s_mellor column
+
+    integer :: sample, j, k
 
     ! ---- Begin Code ----
 
-    do j = 1, dp1
+    do j = 1, dp1+2
       allocate( uniform_sample_file%var(j)%ptr(n_micro_calls,1,nnzp) )
     end do
 
     do sample = 1, n_micro_calls
       do j = 1, dp1
         uniform_sample_file%var(j)%ptr(sample,1,1:nnzp) = X_u_all_levs(1:nnzp,sample,j)
+      end do
+      uniform_sample_file%var(dp1+1)%ptr(sample,1,1:nnzp) = &
+        real( X_mixt_comp_all_levs(1:nnzp,sample) )
+      do k = 1, nnzp 
+        uniform_sample_file%var(dp1+2)%ptr(sample,1,k) = real( p_matrix_s_element(sample) )
       end do
     end do
 
@@ -225,7 +237,7 @@ module output_2D_samples_module
     stop "This version of CLUBB was not compiled for netCDF output"
 #endif
 
-    do j = 1, dp1
+    do j = 1, dp1+2
       deallocate( uniform_sample_file%var(j)%ptr )
     end do
 

@@ -11,7 +11,7 @@ module latin_hypercube_driver_module
 
   ! Constant Parameters
   logical, parameter, private :: &
-    l_diagnostic_iter_check      = .true., & ! Check for a problem in iteration
+    l_diagnostic_iter_check      = .true., &  ! Check for a problem in iteration
     l_output_2D_lognormal_dist   = .false., & ! Output a 2D netCDF file of the lognormal variates
     l_output_2D_uniform_dist     = .false.    ! Output a 2D netCDF file of the uniform distribution
 
@@ -419,8 +419,10 @@ module latin_hypercube_driver_module
 
             else ! Transpose and scale the points to be in or out of cloud
               call choose_X_u_scaled &
-                   ( l_cloudy_sample, pdf_params%cloud_frac1(k_lh_start), & ! In
-                     pdf_params%cloud_frac2(k_lh_start), pdf_params%mixt_frac(k_lh_start), & !In
+                   ( l_cloudy_sample, & ! In
+                     p_matrix(sample,iiLH_s_mellor), n_micro_calls, & ! In 
+                     pdf_params%cloud_frac1(k_lh_start), pdf_params%cloud_frac2(k_lh_start), & ! In
+                     pdf_params%mixt_frac(k_lh_start), & !In
                      X_u_dp1_element, X_u_s_mellor_element ) ! In/out
 
             end if
@@ -537,7 +539,8 @@ module latin_hypercube_driver_module
     end if
     if ( l_output_2D_uniform_dist ) then
       call output_2D_uniform_dist_file( nnzp, n_micro_calls, d_variables+1, &
-                                        X_u_all_levs )
+                                        X_u_all_levs, X_mixt_comp_all_levs, &
+                                        p_matrix )
     end if
     ! Perform LH and analytic microphysical calculations
     call estimate_lh_micro &
@@ -677,7 +680,8 @@ module latin_hypercube_driver_module
 
     ! ---- Begin Code ----
 
-    if ( l_output_2D_lognormal_dist .or. l_output_2D_uniform_dist ) then
+#ifdef UNRELEASED_CODE
+    if ( l_output_2D_lognormal_dist ) then
 
       allocate( variable_names(hydromet_dim+5), variable_descriptions(hydromet_dim+5), &
                 variable_units(hydromet_dim+5) )
@@ -724,44 +728,78 @@ module latin_hypercube_driver_module
       variable_names(i)        = "thl"
       variable_descriptions(i) = "Liquid potential temperature"
       variable_units(i)        = "K"
-    else
 
-      return ! We're not outputting either file, so return
-
-    end if
-#ifdef UNRELEASED_CODE
-    if ( l_output_2D_lognormal_dist ) then
-      call open_2D_samples_file( nnzp, LH_microphys_calls, hydromet_dim+5, & ! In
+      call open_2D_samples_file( nnzp, LH_microphys_calls, i, & ! In
                                  trim( fname_prefix )//"_nl", fdir, & ! In
                                  time_initial, stats_tout, zt, variable_names, & ! In
                                  variable_descriptions, variable_units, & ! In
                                  lognormal_sample_file ) ! In/Out
+
+      deallocate( variable_names, variable_descriptions, variable_units )
+
     end if
 
     if ( l_output_2D_uniform_dist ) then
 
+      allocate( variable_names(hydromet_dim+6), variable_descriptions(hydromet_dim+6), &
+                variable_units(hydromet_dim+6) )
+
       ! The uniform distribution corresponds to all the same variables as X_nl,
       ! except the d+1 component is the mixture component.
-      ! We also derive LH_rt or LH_thl from s and t. (hence hydromet_dim+4)
 
-      ! Overwrite the units
+      variable_names(1)        = "s_mellor"
+      variable_descriptions(1) = "Uniform dist of the variable 's' from Mellor 1977"
+
+      variable_names(2)        = "t_mellor"
+      variable_descriptions(2) = "Uniform dist of the variable 't' from Mellor 1977"
+
+      variable_names(3)        = "w"
+      variable_descriptions(3) = "Uniform dist of the vertical velocity"
+
+      i = 3 ! Use i to determine the position of rt, thl in the output
+
+      if ( iiLH_Nr > 0 ) then
+        i = i + 1
+        variable_names(iiLH_Nr)        = "Nr"
+        variable_descriptions(iiLH_Nr) = "Uniform dist of rain droplet number concentration"
+      end if
+      if ( iiLH_Nc > 0 ) then
+        i = i + 1
+        variable_names(iiLH_Nc)        = "Nc"
+        variable_descriptions(iiLH_Nc) = "Uniform dist of cloud droplet number concentration"
+      end if
+      if ( iiLH_rrain > 0 ) then
+        i = i + 1
+        variable_names(iiLH_rrain)        = "rrain"
+        variable_descriptions(iiLH_rrain) = "Uniform dist of rain water mixing ratio"
+      end if
+
+      i = i + 1
+      variable_names(i) = "dp1"
+      variable_descriptions(i) = "Uniform distribution for the mixture component"
+
+      i = i + 1
+      variable_names(i) = "X_mixt_comp"
+      variable_descriptions(i) = "Mixture component (should be 1 or 2)"
+
+      i = i + 1
+      variable_names(i) = "p_matrix"
+      variable_descriptions(i) = "P matrix elements at k_lh_start"
+
+      ! Set all the units
       variable_units(:) = "count" ! Unidata units format for a dimensionless quantity
 
-      ! Overwrite for the mixture component
-      variable_names(hydromet_dim+4) = "dp1"
-      variable_descriptions(hydromet_dim+4) = "Uniform distribution for the mixture component"
-      call open_2D_samples_file( nnzp, LH_microphys_calls, hydromet_dim+4, & ! In
+      call open_2D_samples_file( nnzp, LH_microphys_calls, i, & ! In
                                  trim( fname_prefix )//"_u", fdir, & ! In
                                  time_initial, stats_tout, zt, &! In
-                                 variable_names(1:hydromet_dim+4), & ! In
-                                 variable_descriptions(1:hydromet_dim+4), & ! In
-                                 variable_units(1:hydromet_dim+4), & ! In
+                                 variable_names(1:i), variable_descriptions(1:i), & ! In
+                                 variable_units(1:i), & ! In
                                  uniform_sample_file ) ! In/Out
+
+      deallocate( variable_names, variable_descriptions, variable_units )
+
     end if
 
-    ! These should deallocate when we leave the scope of this subroutine, this
-    ! is just in case.
-    deallocate( variable_names, variable_descriptions, variable_units )
 
     return
 #else
@@ -916,9 +954,11 @@ module latin_hypercube_driver_module
 
 !-------------------------------------------------------------------------------
   subroutine choose_X_u_scaled &
-             ( l_cloudy_sample, cloud_frac1, &
-              cloud_frac2, mixt_frac, &
-              X_u_dp1_element, X_u_s_mellor_element )
+             ( l_cloudy_sample, &
+               p_matrix_element, n_micro_calls, &
+               cloud_frac1, cloud_frac2, &
+               mixt_frac, &
+               X_u_dp1_element, X_u_s_mellor_element )
 
 ! Description:
 !   Find a clear or cloudy point for sampling.
@@ -929,6 +969,7 @@ module latin_hypercube_driver_module
     use mt95, only: genrand_real3 ! Procedure
 
     use mt95, only: genrand_real ! Constant
+    use mt95, only: r8 => genrand_real ! Constant
 
     use constants, only: &
       fstderr ! Constant
@@ -938,9 +979,17 @@ module latin_hypercube_driver_module
     ! External
     intrinsic :: dble
 
+    ! Parameter Constants
+    logical, parameter :: &
+      l_use_p_matrix = .true.
+
     ! Input Variables
     logical, intent(in) :: &
       l_cloudy_sample ! Whether his is a cloudy or clear air sample point
+
+    integer, intent(in) :: &
+      p_matrix_element, & ! Integer from 0..n_micro_calls for this sample
+      n_micro_calls       ! Total number of calls to the microphysics
 
     real, intent(in) :: &
       cloud_frac1, &    ! Cloud fraction associated with mixture component 1     [-]
@@ -952,12 +1001,11 @@ module latin_hypercube_driver_module
       X_u_dp1_element, X_u_s_mellor_element ! Elements from X_u (uniform dist.)
 
     ! Local Variables
-    real :: cloud_frac_n, cloud_weighted_mixt_frac, clear_weighted_mixt_frac
+    real(kind=genrand_real) :: cloud_frac_n, cloud_weighted_mixt_frac, clear_weighted_mixt_frac
 
     real(kind=genrand_real) :: rand, rand1, rand2 ! Random numbers
 
 !   integer :: X_mixt_comp_one_lev
-
 
 #ifdef UNRELEASED_CODE
     ! ---- Begin code ----
@@ -965,11 +1013,11 @@ module latin_hypercube_driver_module
     ! Pick a new mixture component value between (0,1)
     call genrand_real3( rand1 )
 
-    call genrand_real3( rand2 ) ! Determine a 2nd rand the if ... then
+    call genrand_real3( rand2 ) ! Determine a 2nd rand for the if ... then
 
     if ( l_cloudy_sample ) then
       cloud_weighted_mixt_frac = ( mixt_frac*cloud_frac1 ) / &
-                   ( mixt_frac*cloud_frac1 + (1.-mixt_frac)*cloud_frac2 )
+                   ( mixt_frac*cloud_frac1 + (1._r8-mixt_frac)*cloud_frac2 )
 
       if ( in_mixt_frac_1( rand1, real( cloud_weighted_mixt_frac, kind=genrand_real ) ) ) then
         ! Component 1
@@ -980,17 +1028,26 @@ module latin_hypercube_driver_module
         ! Component 2
         cloud_frac_n = cloud_frac2
 !       X_mixt_comp_one_lev = 2
-        X_u_dp1_element = mixt_frac + (1.-mixt_frac) * rand2
+        X_u_dp1_element = mixt_frac + (1._r8-mixt_frac) * rand2
       end if
+
       call genrand_real3( rand ) ! Rand between (0,1)
+
       ! Scale and translate sample point to reside in cloud
-      X_u_s_mellor_element = dble( cloud_frac_n * rand + (1.-cloud_frac_n) )
+      if ( l_use_p_matrix ) then
+        ! New formula based on p_matrix
+        X_u_s_mellor_element = 1._r8 &
+          + 2._r8 * (real( p_matrix_element )/real( n_micro_calls ) - 1._r8) * cloud_frac_n &
+          + rand * ( 2._r8/real( n_micro_calls ) ) * cloud_frac_n
+      else
+        X_u_s_mellor_element = cloud_frac_n * rand + (1._r8-cloud_frac_n)
+      end if
 
     else ! Clear air sample
-      clear_weighted_mixt_frac = ( ( 1. - cloud_frac1 ) * mixt_frac ) &
-        / ( ( 1.-cloud_frac1 ) * mixt_frac + ( 1.-cloud_frac2 )*( 1.-mixt_frac ) )
+      clear_weighted_mixt_frac = ( ( 1._r8 - cloud_frac1 ) * mixt_frac ) &
+        / ( ( 1._r8-cloud_frac1 ) * mixt_frac + ( 1._r8-cloud_frac2 )*( 1._r8-mixt_frac ) )
 
-      if ( in_mixt_frac_1( rand1, dble( clear_weighted_mixt_frac ) ) ) then
+      if ( in_mixt_frac_1( rand1, real( clear_weighted_mixt_frac, kind=genrand_real ) ) ) then
         ! Component 1
         cloud_frac_n = cloud_frac1
 !       X_mixt_comp_one_lev = 1
@@ -999,11 +1056,20 @@ module latin_hypercube_driver_module
         ! Component 2
         cloud_frac_n = cloud_frac2
 !       X_mixt_comp_one_lev = 2
-        X_u_dp1_element = mixt_frac + (1.-mixt_frac) * rand2
+        X_u_dp1_element = mixt_frac + (1._r8-mixt_frac) * rand2
       end if
+
       call genrand_real3( rand ) ! Rand between (0,1)
+
       ! Scale and translate sample point to reside in clear air (no cloud)
-      X_u_s_mellor_element = dble( (1.-cloud_frac_n) * rand )
+      if ( l_use_p_matrix ) then
+        ! New formula based on p_matrix
+        X_u_s_mellor_element = real( p_matrix_element ) &
+            * (2._r8/real(n_micro_calls) ) * (1._r8-cloud_frac_n) &
+          + (2._r8/real(n_micro_calls)) * (1._r8-cloud_frac_n) * rand
+      else
+        X_u_s_mellor_element = (1._r8-cloud_frac_n) * rand
+      end if
 
     end if
 
