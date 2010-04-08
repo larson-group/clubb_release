@@ -454,7 +454,7 @@ module latin_hypercube_driver_module
 
       mixt_frac_dp = dble( pdf_params%mixt_frac(k) )
 
-      where ( in_mixt_frac_1(X_u_all_levs(k,:,d_variables+1), mixt_frac_dp ) )
+      where ( in_mixt_comp_1(X_u_all_levs(k,:,d_variables+1), mixt_frac_dp ) )
         X_mixt_comp_all_levs(k,:) = 1
       else where
         X_mixt_comp_all_levs(k,:) = 2
@@ -910,7 +910,7 @@ module latin_hypercube_driver_module
     ! clear or cloudy part of the grid box
     do i = 1, itermax
 
-      if ( in_mixt_frac_1( X_u_dp1_element, real( mixt_frac, kind=genrand_real ) ) ) then
+      if ( in_mixt_comp_1( X_u_dp1_element, real( mixt_frac, kind=genrand_real ) ) ) then
         ! Component 1
         cloud_frac_n = cloud_frac1
 !       X_mixt_comp_one_lev = 1
@@ -1019,7 +1019,7 @@ module latin_hypercube_driver_module
       cloud_weighted_mixt_frac = ( mixt_frac*cloud_frac1 ) / &
                    ( mixt_frac*cloud_frac1 + (1._r8-mixt_frac)*cloud_frac2 )
 
-      if ( in_mixt_frac_1( rand1, real( cloud_weighted_mixt_frac, kind=genrand_real ) ) ) then
+      if ( in_mixt_comp_1( rand1, real( cloud_weighted_mixt_frac, kind=genrand_real ) ) ) then
         ! Component 1
         cloud_frac_n = cloud_frac1
 !       X_mixt_comp_one_lev = 1
@@ -1047,7 +1047,7 @@ module latin_hypercube_driver_module
       clear_weighted_mixt_frac = ( ( 1._r8 - cloud_frac1 ) * mixt_frac ) &
         / ( ( 1._r8-cloud_frac1 ) * mixt_frac + ( 1._r8-cloud_frac2 )*( 1._r8-mixt_frac ) )
 
-      if ( in_mixt_frac_1( rand1, real( clear_weighted_mixt_frac, kind=genrand_real ) ) ) then
+      if ( in_mixt_comp_1( rand1, real( clear_weighted_mixt_frac, kind=genrand_real ) ) ) then
         ! Component 1
         cloud_frac_n = cloud_frac1
 !       X_mixt_comp_one_lev = 1
@@ -1079,7 +1079,7 @@ module latin_hypercube_driver_module
   end subroutine choose_X_u_scaled
 
 !----------------------------------------------------------------------
-  elemental function in_mixt_frac_1( X_u_dp1_element, frac )
+  elemental function in_mixt_comp_1( X_u_dp1_element, frac )
 
 ! Description:
 !   Determine if we're in mixture component 1
@@ -1096,17 +1096,17 @@ module latin_hypercube_driver_module
       X_u_dp1_element, & ! Element of X_u telling us which mixture component we're in
       frac               ! The mixture fraction
 
-    logical :: in_mixt_frac_1
+    logical :: in_mixt_comp_1
 
     ! ---- Begin Code ----
 
     if ( X_u_dp1_element < frac ) then
-      in_mixt_frac_1 = .true.
+      in_mixt_comp_1 = .true.
     else
-      in_mixt_frac_1 = .false.
+      in_mixt_comp_1 = .false.
     end if
 
     return
-  end function in_mixt_frac_1
+  end function in_mixt_comp_1
 
 end module latin_hypercube_driver_module
