@@ -3,10 +3,11 @@ module generate_lh_sample_module
 
   implicit none
 
-  public :: generate_lh_sample, generate_uniform_sample
+  public :: generate_lh_sample, generate_uniform_sample, &
+     ltqnorm, gaus_condt 
 
   private :: sample_points, gaus_mixt_points, & 
-             truncate_gaus_mixt, ltqnorm, gaus_condt, & 
+             truncate_gaus_mixt, &
              st_2_rtthl, log_sqd_normalized, choose_permuted_random
 
 

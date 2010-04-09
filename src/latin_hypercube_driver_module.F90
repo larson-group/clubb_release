@@ -225,20 +225,25 @@ module latin_hypercube_driver_module
 
     double precision :: mixt_frac_dp
 
-    real(kind=genrand_real) :: X_u_dp1_element, X_u_s_mellor_element
+    real(kind=genrand_real), dimension(n_micro_calls) :: &
+      X_u_dp1_k_lh_start, X_u_s_mellor_k_lh_start
+
+    real(kind=genrand_real), dimension(nnzp) :: &
+      s_vert_corr ! Vertical correlation of s_mellor
+
+!   real(kind=genrand_real) :: X_u_temp
 
     ! Number of random samples before sequence of repeats (normally=10)
     integer :: nt_repeat
-
-    real :: cloud_frac_n ! Temporary variable for cloud_frac1/cloud_frac2
 
     integer :: &
       i_rmd, &   ! Remainder of ( iter-1 / sequence_length )
       k, sample  ! Loop iterators
 
+!   integer :: ivar ! Loop iterator
+
     integer :: &
-      iiLH_s_mellor, &      ! Index of Mellor's s (extended rcm)
-      number_cloudy_samples ! Diagnostic sum
+      iiLH_s_mellor  ! Index of Mellor's s (extended rcm)
 
     logical :: l_cloudy_sample ! Whether a sample point is cloudy or clear air
 
@@ -320,11 +325,6 @@ module latin_hypercube_driver_module
 
     end do ! 1..nnzp
 
-    ! For a 100 level fixed grid, this looks to be about the middle of the cloud for RICO
-    k_lh_start = 50
-!   tmp_loc    = maxloc( rcm )
-!   k_lh_start = tmp_loc(1) ! Attempt using the maximal value of rcm for now
-
     ! Latin hypercube sample generation
     ! Generate height_time_matrix, an nnzp x nt_repeat x d_variables array of random integers
     i_rmd = mod( iter-1, sequence_length )
@@ -363,6 +363,13 @@ module latin_hypercube_driver_module
     tmp_loc    = maxloc( rcm )
     k_lh_start = tmp_loc(1) ! Attempt using the maximal value of rcm for now
 
+    ! If there's no cloud k_lh_start appears to end up being 1.  Check if
+    ! k_lh_start is 1 or nnzp and set it to the middle of the domain in that
+    ! case.
+    if ( k_lh_start == nnzp .or. k_lh_start == 1 ) then
+      k_lh_start = nnzp / 2
+    end if
+
     if ( l_lh_cloud_weighted_sampling ) then
 
       ! Determine cloud fraction at k_lh_start
@@ -383,8 +390,8 @@ module latin_hypercube_driver_module
 
         ! Get the uniform sample of d+1 (telling us if we're in component 1 or
         ! component 2), and the uniform sample for s_mellor
-        X_u_dp1_element      = X_u_all_levs(k_lh_start,sample,d_variables+1)
-        X_u_s_mellor_element = X_u_all_levs(k_lh_start,sample,iiLH_s_mellor)
+        X_u_dp1_k_lh_start(sample)      = X_u_all_levs(k_lh_start,sample,d_variables+1)
+        X_u_s_mellor_k_lh_start(sample) = X_u_all_levs(k_lh_start,sample,iiLH_s_mellor)
 
         if ( l_lh_cloud_weighted_sampling ) then
 
@@ -415,7 +422,7 @@ module latin_hypercube_driver_module
                    ( l_cloudy_sample, pdf_params%cloud_frac1(k_lh_start), & ! In
                      pdf_params%cloud_frac2(k_lh_start), pdf_params%mixt_frac(k_lh_start), & !In
                      cloud_frac_thresh, & ! In
-                     X_u_dp1_element, X_u_s_mellor_element ) ! In/out
+                     X_u_dp1_k_lh_start(sample), X_u_s_mellor_k_lh_start(sample) ) ! In/out
 
             else ! Transpose and scale the points to be in or out of cloud
               call choose_X_u_scaled &
@@ -423,7 +430,7 @@ module latin_hypercube_driver_module
                      p_matrix(sample,iiLH_s_mellor), n_micro_calls, & ! In 
                      pdf_params%cloud_frac1(k_lh_start), pdf_params%cloud_frac2(k_lh_start), & ! In
                      pdf_params%mixt_frac(k_lh_start), & !In
-                     X_u_dp1_element, X_u_s_mellor_element ) ! In/out
+                     X_u_dp1_k_lh_start(sample), X_u_s_mellor_k_lh_start(sample) ) ! In/out
 
             end if
 
@@ -431,23 +438,40 @@ module latin_hypercube_driver_module
 
         end if ! l_lh_cloud_weighted_sampling
 
-        do k = 1, nnzp
-
-          ! Overwrite 2 elements for maximal overlap and cloud
-          ! weighted sampling (if it's enabled).
-          X_u_all_levs(k,sample,iiLH_s_mellor) =  X_u_s_mellor_element ! s_mellor
-          X_u_all_levs(k,sample,d_variables+1) = X_u_dp1_element ! Mixture comp.
-
-          ! Use this line to have all variates maximally correlated.  This
-          ! probably isn't a good idea for dealing with all cloud types.
-!         X_u_all_levs(k,sample,:) = X_u_all_levs(k_lh_start,sample,:)
-
-
-        end do ! 1..nnzp
-
       end do ! 1..n_micro_calls
 
     end if ! l_lh_vert_overlap
+
+    if ( l_lh_vert_overlap ) then
+
+      ! Use a fixed number for the vertical correlation.  In the future this
+      ! formula can be modified to change with height.
+      s_vert_corr(1:nnzp) = 0.90_genrand_real
+
+      do sample = 1, n_micro_calls
+        ! Correlate s_mellor vertically
+        call compute_arb_overlap &
+             ( nnzp, k_lh_start, &  ! In
+               X_u_s_mellor_k_lh_start(sample), s_vert_corr, & ! In
+               X_u_all_levs(:,sample,iiLH_s_mellor) ) ! Out
+        ! Correlate the d+1 variate vertically (used to compute the mixture
+        ! component later)
+        call compute_arb_overlap &
+             ( nnzp, k_lh_start, &  ! In
+               X_u_dp1_k_lh_start(sample), s_vert_corr, & ! In
+               X_u_all_levs(:,sample,d_variables+1) ) ! Out
+
+        ! Use these lines to make all variables correlated
+!       do ivar = 1, d_variables
+!         X_u_temp = X_u_all_levs(k_lh_start,sample,ivar)
+!         call compute_arb_overlap &
+!              ( nnzp, k_lh_start, &  ! In
+!                X_u_temp, s_vert_corr, & ! In
+!                X_u_all_levs(:,sample,ivar) ) ! Out
+!        end do ! 1..d_variables
+      end do ! 1..n_micro_calls
+
+    end if
 
     ! Determine mixture component for all levels
     do k = 1, nnzp
@@ -465,34 +489,13 @@ module latin_hypercube_driver_module
     ! Assertion check for whether half of sample points are cloudy.
     ! This is for the uniform sample only.  Another assertion check is in the
     ! estimate_lh_micro_module for X_nl_all_levs.
-    ! TODO: put this in its own subroutine
     if ( l_lh_cloud_weighted_sampling .and. clubb_at_least_debug_level( 2 ) .and. &
          lh_start_cloud_frac < 0.5 .and. lh_start_cloud_frac > cloud_frac_thresh ) then
 
-      number_cloudy_samples = 0
-
-      do sample = 1, n_micro_calls
-        if ( X_mixt_comp_all_levs(k_lh_start,sample) == 1 ) then
-          cloud_frac_n = pdf_params%cloud_frac1(k_lh_start)
-        else
-          cloud_frac_n = pdf_params%cloud_frac2(k_lh_start)
-        end if
-        if ( X_u_all_levs(k_lh_start,sample,iiLH_s_mellor) >= 1.-cloud_frac_n ) then
-          number_cloudy_samples = number_cloudy_samples + 1
-        else
-          ! Do nothing, the air is clear
-        end if
-      end do
-      if ( number_cloudy_samples /= ( n_micro_calls / 2 ) ) then
-        write(fstderr,*) "Error, half of all samples aren't in cloud"
-        write(fstderr,*) "X_u s_smellor random = ", &
-          X_u_all_levs(k_lh_start,:,iiLH_s_mellor), "cloudy samples =", number_cloudy_samples
-        write(fstderr,*) "cloud_frac1 = ", pdf_params%cloud_frac1(k_lh_start)
-        write(fstderr,*) "cloud_frac2 = ", pdf_params%cloud_frac2(k_lh_start)
-        write(fstderr,*) "X_u d+1 element = ", X_u_all_levs(k_lh_start,:,d_variables+1)
-        write(fstderr,*) "mixture fraction = ", mixt_frac_dp
-        stop "Fatal Error"
-      end if
+      call assert_check_half_cloudy &
+           ( n_micro_calls, pdf_params%cloud_frac1(k_lh_start), &
+             pdf_params%cloud_frac2(k_lh_start), X_mixt_comp_all_levs(k_lh_start,:), &
+             X_u_all_levs(k_lh_start,:,iiLH_s_mellor) )
 
     end if ! Maximal overlap, debug_level 2, and cloud-weighted averaging
 
@@ -1108,5 +1111,194 @@ module latin_hypercube_driver_module
 
     return
   end function in_mixt_comp_1
+
+!-------------------------------------------------------------------------------
+  subroutine compute_arb_overlap( nnzp, k_lh_start, &
+                                  X_u_one_var_k_lh_start, vert_corr, &
+                                  X_u_one_var_all_levs )
+! Description:
+!   Re-computes X_u (uniform sample) for a single variate (e.g. s_mellor) using 
+!   an arbitrary correlation specified by the input vert_corr variable (which
+!   can vary with height), using the subroutines ltqnorm and gaus_condt.
+!   There might be a more efficient way to do this, but this works.
+
+! References:
+!   None
+!-------------------------------------------------------------------------------
+    use mt95, only: &
+      genrand_real ! Constant
+
+    use mt95, only: &
+      genrand_real3 ! Procedure
+
+    use generate_lh_sample_module, only: &
+      ltqnorm, & ! Procedure(s)
+      gaus_condt
+
+    use anl_erf, only: erf ! Function
+
+    use constants, only: sqrt_2 ! Constant
+
+    implicit none
+
+    ! Parameter Constants
+    integer, parameter :: &
+      num_vars = 2 ! Number of variables in the gaus_condt matrix
+
+    real, dimension(num_vars), parameter :: &
+      mu = (/ 0., 0. /) ! Mean vector
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nnzp,      & ! Number of vertical levels [-]
+      k_lh_start   ! Starting k level          [-]
+
+    real(kind=genrand_real), intent(in) :: &
+      X_u_one_var_k_lh_start  ! Uniform distribution of 1 variate (e.g. s_mellor) at k_lh_start [-]
+
+    real(kind=genrand_real), dimension(nnzp), intent(in) :: &
+      vert_corr ! Vertical correlation between k points in range [0,1]   [-]
+
+    ! Output Variables
+    real(kind=genrand_real), dimension(nnzp), intent(out) :: &
+      X_u_one_var_all_levs ! Uniform distribution of 1 variate at all levels [-]
+
+    ! Local Variables
+    real(kind=genrand_real) :: rand ! random in the range (0,1)
+
+    double precision, dimension(num_vars) :: &
+      std_normal, nonstd_normal ! Standard normal and non-standard normal at 1 k level  [-]
+
+    double precision, dimension(num_vars,num_vars) :: &
+      Sigma ! Correlation matrix for gaus_condt
+
+    integer :: k, kp1, km1 ! Loop iterators
+
+    ! ---- Begin Code ----
+
+    ! Set the value at k_lh_start using a special value we've selected
+    X_u_one_var_all_levs(k_lh_start) = X_u_one_var_k_lh_start
+
+    ! Upwards loop
+    do k = k_lh_start, nnzp-1
+
+      kp1 = k+1 ! This is the level we're computing
+
+      ! Fix Sigma to use correlation from the k+1 level
+      Sigma(1,:) = (/ 1.d0, vert_corr(kp1) /)
+      Sigma(2,:) = (/ vert_corr(kp1), 1.d0 /)
+
+      std_normal(1) = ltqnorm( X_u_one_var_all_levs(k) ) ! k level
+      call genrand_real3( rand ) ! (0,1)
+      std_normal(2) = ltqnorm( rand ) ! k+1 level
+
+      call gaus_condt( num_vars, std_normal, mu, Sigma, std_normal(1), & ! In
+                       nonstd_normal ) ! Out
+
+      ! Convert back to uniform dist.
+      X_u_one_var_all_levs(kp1) = 0.5 * ( 1. + erf( nonstd_normal(2) / sqrt_2 ) )
+
+!     print *, k, X_u_one_var_all_levs(k), kp1, X_u_one_var_all_levs(kp1)
+
+    end do ! k_lh_start..nnzp-1
+
+    ! Downwards loop
+    do k = k_lh_start, 2, -1
+
+      km1 = k-1 ! This is the level we're computing
+
+      ! Fix Sigma to use correlation from the km1 level
+      Sigma(1,:) = (/ 1.d0, vert_corr(km1) /)
+      Sigma(2,:) = (/ vert_corr(km1), 1.d0 /)
+
+      std_normal(1) = ltqnorm( X_u_one_var_all_levs(k) ) ! k level
+      call genrand_real3( rand ) ! (0,1)
+      std_normal(2) = ltqnorm( rand ) ! k-1 level
+
+      call gaus_condt( num_vars, std_normal, mu, Sigma, std_normal(1), & ! In
+                       nonstd_normal ) ! Out
+
+      ! Convert back to uniform dist.
+      X_u_one_var_all_levs(km1) = 0.5 * ( 1. + erf( nonstd_normal(2) / sqrt_2 ) )
+
+!     print *, k, X_u_one_var_all_levs(k), kp1, X_u_one_var_all_levs(kp1)
+
+    end do ! k_lh_start..nnzp-1
+
+!   pause
+
+    return
+  end subroutine compute_arb_overlap
+
+!-------------------------------------------------------------------------------
+  subroutine assert_check_half_cloudy &
+             ( n_micro_calls, cloud_frac1, &
+               cloud_frac2, X_mixt_comp_k_lh_start, &
+               X_u_s_mellor_k_lh_start )
+! Description:
+!   Verify that half the points are in cloud if cloud weighted sampling is
+!   enabled and other conditions are met. We stop rather than exiting gracefully
+!   if this assertion check fails.
+
+! References:
+!   None.
+!-------------------------------------------------------------------------------
+
+    use mt95, only: &
+      genrand_real ! Constant
+
+    use constants, only: &
+      fstderr ! Constant
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      n_micro_calls ! Total calls to the microphysics
+
+    real, intent(in) :: &
+      cloud_frac1, cloud_frac2 ! Cloud fraction associatated with component 1 & 2 [-]
+
+    integer, dimension(n_micro_calls), intent(in) :: &
+      X_mixt_comp_k_lh_start ! Mixture components at k_lh_start
+
+    real(kind=genrand_real), dimension(n_micro_calls), intent(in) :: &
+      X_u_s_mellor_k_lh_start   ! Uniform distribution for s_mellor at k_lh_start [-]
+
+    ! Local Variables
+    real :: cloud_frac_n 
+
+    integer :: number_cloudy_samples
+
+    integer :: sample  ! Loop iterator
+
+    ! ---- Begin Code ----
+
+    number_cloudy_samples = 0
+
+    do sample = 1, n_micro_calls
+      if ( X_mixt_comp_k_lh_start(sample) == 1 ) then
+        cloud_frac_n = cloud_frac1
+      else
+        cloud_frac_n = cloud_frac2
+      end if
+      if ( X_u_s_mellor_k_lh_start(sample) >= 1.-cloud_frac_n ) then
+        number_cloudy_samples = number_cloudy_samples + 1
+      else
+        ! Do nothing, the air is clear
+      end if
+    end do
+    if ( number_cloudy_samples /= ( n_micro_calls / 2 ) ) then
+      write(fstderr,*) "Error, half of all samples aren't in cloud"
+      write(fstderr,*) "X_u s_smellor random = ", &
+        X_u_s_mellor_k_lh_start(:), "X_mixt_comp = ", X_mixt_comp_k_lh_start, &
+        "cloudy samples =", number_cloudy_samples
+      write(fstderr,*) "cloud_frac1 = ", cloud_frac1
+      write(fstderr,*) "cloud_frac2 = ", cloud_frac2
+      stop "Fatal Error"
+    end if
+
+    return
+  end subroutine assert_check_half_cloudy
 
 end module latin_hypercube_driver_module
