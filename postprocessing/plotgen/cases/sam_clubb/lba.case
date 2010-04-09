@@ -111,16 +111,16 @@
           {'filename' => 'lba_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'um', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/LBA/LBA_128x128x128_100m_noprbuoy.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'U', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/LBA/LBA_128x1x128_100m_noprbuoy.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'U', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
-          {'filename' => 'LBA_16x1x128_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'UM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'LBA_4x1x128_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'UM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'LBA_16x1x128_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'U', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_4x1x128_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'U', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Meridonal Wind Component, v', 'axisLabel' => 'vm / v [m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'lba_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/LBA/LBA_128x128x128_100m_noprbuoy.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'V', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/LBA/LBA_128x1x128_100m_noprbuoy.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'V', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
-          {'filename' => 'LBA_16x1x128_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'VM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'LBA_4x1x128_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'VM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'LBA_16x1x128_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'V', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_4x1x128_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'V', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of u & w', 'axisLabel' => 'upwp / uw [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
