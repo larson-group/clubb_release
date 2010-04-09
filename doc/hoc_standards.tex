@@ -102,7 +102,7 @@ function xyzzy( etherx, ethery, etherz )
     etherz     ! Ether in the z dimension  [kg/kg]
 
   ! Output Variables
-  complex, dimension(ndim,ndim,ndim) :: &
+  complex, dimension(ndim,ndim,ndim), intent(out) :: &
     xyzzy    ! Ether in the xyyzy dimension  [kg/kg]
 
   ! Local Variables
