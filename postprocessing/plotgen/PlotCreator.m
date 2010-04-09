@@ -1,5 +1,8 @@
 function PlotCreator( caseName, plotTitle, plotNum, plotType, startTime, endTime, startHeight, endHeight, plotUnits, tickCount, varargin )
 
+%Add functions to be used in case files
+addpath('CaseFunctions');
+
 %Display the variables that were passed in (debug output)
 ConsoleOutput.message(['Case Name: ' caseName]);
 ConsoleOutput.message(['Plot Title: ' plotTitle]);
@@ -126,7 +129,7 @@ for i=1:numLines
 	%Add a the line to the plot
 	if strcmp(plotType, 'profile')
 		%If no variables were found, expand the profile to the right size and plot a line of zeroes
-		if valueToPlot == 0
+		if max(size(valueToPlot)) == 1
 			bottomIndex = 1;
 			topIndex = 2;
 			levels = [startHeight; endHeight];
