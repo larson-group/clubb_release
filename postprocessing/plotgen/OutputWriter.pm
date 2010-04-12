@@ -179,7 +179,7 @@ sub writeSamSubHeader()
     shift(@_);
     my $fh = shift(@_);
 
-    OutputWriter->writeSubHeader($fh, "2D SAM_CLUBB runs use a 64-km horizontal domain and a 10-s timestep, with CLUBB called every 6th SAM timestep. All SAM_CLUBB runs except LBA use Morrison microphysics. CLUBB standalone runs use a 10-s timestep and the Morrison microphysics.");
+    OutputWriter->writeSubHeader($fh, "2D SAM_CLUBB runs use a 64-km horizontal domain and a 10-s timestep, with CLUBB called every 6th SAM timestep. 3D SAM_CLUBB runs use 4x4 columns with a 16-km horizontal grid spacing and a 10-s timestep with CLUBB called every 6th SAM timestep. All SAM_CLUBB runs except LBA use Morrison microphysics. CLUBB standalone runs use a 10-s timestep and the Morrison microphysics.");
     OutputWriter->writeSubHeader($fh, "When two variables are listed, the first variable is the SAM-CLUBB variable and the second is the SAM-Standalone variable.");
      
     my $text = <<HTML;
