@@ -1131,9 +1131,11 @@ module latin_hypercube_driver_module
     use mt95, only: &
       genrand_real3 ! Procedure
 
+#ifdef UNRELEASED_CODE
     use generate_lh_sample_module, only: &
       ltqnorm, & ! Procedure(s)
       gaus_condt
+#endif
 
     use anl_erf, only: erf ! Function
 
@@ -1174,6 +1176,7 @@ module latin_hypercube_driver_module
 
     integer :: k, kp1, km1 ! Loop iterators
 
+#ifdef UNRELEASED_CODE
     ! ---- Begin Code ----
 
     ! Set the value at k_lh_start using a special value we've selected
@@ -1227,6 +1230,7 @@ module latin_hypercube_driver_module
 
 !   pause
 
+#endif /*UNRELEASED_CODE*/
     return
   end subroutine compute_arb_overlap
 
