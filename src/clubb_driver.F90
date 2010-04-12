@@ -968,7 +968,8 @@ module clubb_driver
         call advance_clubb_microphys &
              ( i, dt, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! Intent(in)
                rtm, rcm, wm_zt, wm_zm,                               & ! Intent(in)
-               Kh_zm, wp2_zt, pdf_params,                            & ! Intent(in)
+               Kh_zm, wp2_zt, Lscale, pdf_params,                    & ! Intent(in)
+               rho_ds_zt, rho_ds_zm,                                 & ! Intent(in)
                Ncnm, hydromet,                                       & ! Intent(inout)
                rvm_mc, rcm_mc, thlm_mc, err_code )                     ! Intent(out)
 
@@ -3363,8 +3364,10 @@ module clubb_driver
   subroutine advance_clubb_microphys &
              ( iter, dt, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, &
                rtm, rcm, wm_zt, wm_zm, &
-               Kh_zm, wp2_zt, pdf_params, Ncnm, hydromet, rvm_mc, rcm_mc, &
-               thlm_mc, err_code )
+               Kh_zm, wp2_zt, Lscale, pdf_params, &
+               rho_ds_zt, rho_ds_zm, &
+               Ncnm, hydromet, &
+               rvm_mc, rcm_mc, thlm_mc, err_code )
 ! Description:
 !   Advance a microphysics scheme
 ! References:
@@ -3420,10 +3423,15 @@ module clubb_driver
       wm_zt,      & ! wm on thermo. grid.                               [m/s]
       wm_zm,      & ! wm on moment. grid.                               [m/s]
       Kh_zm,      & ! Eddy-diffusivity on momentum levels               [m^2/s]
-      wp2_zt        ! w'^2 interpolated the thermo levels               [m^2/s^2]
+      wp2_zt,     & ! w'^2 interpolated the thermo levels               [m^2/s^2]
+      Lscale        ! Length scale                                      [m]
 
     type(pdf_parameter), intent(in) :: & 
       pdf_params      ! PDF parameters   [units vary]
+
+    real, dimension(gr%nnzp), intent(in) :: &
+      rho_ds_zm,  & ! Dry, static density on momentum levels    [kg/m^3]
+      rho_ds_zt     ! Dry, static density on thermo. levels     [kg/m^3]
 
     ! Input/Output Variables
     real, dimension(gr%nnzp), intent(inout) :: &
@@ -3487,7 +3495,7 @@ module clubb_driver
            ( iter, runtype, dt, time_current, &                         ! Intent(in)
              thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, & ! Intent(in)
              wm_zt, wm_zm, Kh_zm, pdf_params, &                         ! Intent(in)
-             wp2_zt, &                                                  ! Intent(in)
+             wp2_zt, Lscale, rho_ds_zt, rho_ds_zm, &                    ! Intent(in)
              Ncnm, hydromet, &                                          ! Intent(inout)
              rvm_mc, rcm_mc, thlm_mc, &                                 ! Intent(inout)
              err_code )                                                 ! Intent(out)
