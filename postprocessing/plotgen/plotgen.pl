@@ -48,7 +48,7 @@ my $matlabPipe;
 my $imageConversionLock;
 
 # Plotgen Version Number
-my $VERSION = 3.16;
+my $VERSION = 3.33;
 
 # Used to create a "random" output directory so multiple runs
 # don't overwrite each other.
