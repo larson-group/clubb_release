@@ -526,7 +526,7 @@ module microphys_driver
              ( iter, runtype, dt, time_current,  & 
                thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, & 
                wm_zt, wm_zm, Kh_zm, pdf_params, & 
-               wp2_zt, &
+               wp2_zt, Lscale, rho_ds_zt, rho_ds_zm, &
                Ncnm, hydromet, & 
                rvm_mc, rcm_mc, thlm_mc, &
                err_code )
@@ -691,6 +691,8 @@ module microphys_driver
       corr_rrNr_LL_below, corr_srr_NL_below, corr_sNr_NL_below, &
       corr_sNc_NL_below  
 
+    use fill_holes, only: vertical_avg ! Procedure(s)
+
     implicit none
 
     ! Input Variables
@@ -723,7 +725,11 @@ module microphys_driver
       pdf_params     ! PDF parameters
 
     real, dimension(gr%nnzp), intent(in) :: & 
-      wp2_zt ! w'^2 on the thermo. grid         [m^2/s^2]
+      wp2_zt,    & ! w'^2 on the thermo. grid               [m^2/s^2]
+      Lscale,    & ! Length scale                           [m]
+      rho_ds_zm, & ! Dry, static density on momentum levels [kg/m^3]
+      rho_ds_zt    ! Dry, static density on thermo. levels  [kg/m^3]
+
 
     ! Note:
     ! K & K only uses Ncm, while for COAMPS Ncnm is initialized
@@ -761,7 +767,9 @@ module microphys_driver
       correlation_array  ! Array for correlations   [-]
 
     real, dimension(gr%nnzp) :: &
-      dzq         ! Difference in height levels                   [m]
+      delta_zt, &     ! Difference in thermo. height levels     [m]
+      delta_zm, &     ! Difference in moment. height levels     [m]
+      Lscale_vert_avg ! 3pt vertically averaged Lscale          [m]
 
 !   real, dimension(gr%nnzp) :: & 
 !     T_in_K  ! Temperature          [K]
@@ -787,7 +795,7 @@ module microphys_driver
 
     real :: max_velocity ! Maximum sedimentation velocity [m/s]
 
-    integer :: i, k ! Array index
+    integer :: i, k, kp1, km1 ! Loop iterators / Array indices
 
     integer :: d_variables
 
@@ -813,8 +821,22 @@ module microphys_driver
     ! Compute standard deviation of vertical velocity in the grid column
     wtmp(:) = sqrt( wp2_zt(:) )
 
-    ! Compute difference in height levels
-    dzq(1:gr%nnzp) = 1./gr%dzm(1:gr%nnzp)
+    ! Compute difference in thermodynamic height levels
+    delta_zt(1:gr%nnzp) = 1./gr%dzm(1:gr%nnzp)
+    delta_zm(1:gr%nnzp) = 1./gr%dzt(1:gr%nnzp)
+
+    if ( l_latin_hypercube_sampling .and. l_lh_vert_overlap ) then
+      ! Determine vertically average Lscale
+      do k = 1, gr%nnzp
+        kp1 = min( k+1, gr%nnzp )
+        km1 = max( k-1, 1 )
+        Lscale_vert_avg(k) = vertical_avg &
+                             ( km1, kp1, "zt", rho_ds_zt(km1:kp1), rho_ds_zm(km1:kp1), & ! In
+                               Lscale(km1:kp1) ) ! Out
+      end do
+    else
+      Lscale_vert_avg = -999.
+    end if 
 
    ! Begin by calling Brian Griffin's implementation of the
    ! Khairoutdinov and Kogan microphysical scheme, 
@@ -881,12 +903,14 @@ module microphys_driver
         correlation_array(:,:,:) = 0.0 ! Initialize to 0
 
         call latin_hypercube_driver &
-             ( real( dt ), iter, d_variables, LH_microphys_calls, &
-               LH_sequence_length, gr%nnzp, &
-               cloud_frac, thlm, p_in_Pa, exner, &
-               rho, pdf_params, wm_zt, wtmp, dzq, rcm, rtm-rcm, &
-               hydromet, correlation_array, hydromet_mc, hydromet_vel, rcm_mc, &
-               rvm_mc, thlm_mc, morrison_micro_driver )
+             ( real( dt ), iter, d_variables, LH_microphys_calls, & ! In
+               LH_sequence_length, gr%nnzp, & ! In
+               cloud_frac, thlm, p_in_Pa, exner, & ! In
+               rho, pdf_params, wm_zt, wtmp, delta_zt, delta_zm, rcm, rtm-rcm, & ! In
+               hydromet, correlation_array, Lscale_vert_avg, & ! In
+               hydromet_mc, hydromet_vel, rcm_mc, & ! In/Out
+               rvm_mc, thlm_mc,  & ! In/Out
+               morrison_micro_driver )  ! Procedure
 
         if ( l_stats_samp ) then
 
@@ -917,7 +941,7 @@ module microphys_driver
       call morrison_micro_driver & 
            ( real( dt ), gr%nnzp, l_stats_samp, .false., .false., &
              thlm, p_in_Pa, exner, rho, pdf_params, &
-             wm_zt, wtmp, dzq, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
+             wm_zt, wtmp, delta_zt, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
              hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
  
     case ( "khairoutdinov_kogan" )
@@ -974,13 +998,15 @@ module microphys_driver
         end where
 
         call latin_hypercube_driver &
-             ( real( dt ), iter, d_variables, LH_microphys_calls, &
-               LH_sequence_length, gr%nnzp, &
-               cloud_frac, thlm, p_in_Pa, exner, &
-               rho, pdf_params, wm_zt, wtmp, dzq, rcm, rtm-rcm, &
-               hydromet, correlation_array, hydromet_mc, hydromet_vel, rcm_mc, &
-               rvm_mc, thlm_mc, KK_microphys )
-
+             ( real( dt ), iter, d_variables, LH_microphys_calls, & ! In
+               LH_sequence_length, gr%nnzp, & ! In
+               cloud_frac, thlm, p_in_Pa, exner, & ! In
+               rho, pdf_params, wm_zt, wtmp, delta_zt, delta_zm, rcm, rtm-rcm, & ! In
+               hydromet, correlation_array, Lscale_vert_avg, & ! In
+               hydromet_mc, hydromet_vel, rcm_mc, & ! In/Out
+               rvm_mc, thlm_mc, & ! In/Out
+               KK_microphys ) ! Procedure
+ 
         if ( l_stats_samp ) then
 
           ! Latin hypercube estimate for cloud water mixing ratio microphysical tendency
@@ -1010,7 +1036,7 @@ module microphys_driver
       call KK_microphys & 
            ( real( dt ), gr%nnzp, l_stats_samp, l_local_kk, .false., &
              thlm, p_in_Pa, exner, rho, pdf_params, &
-             wm_zt, wtmp, dzq, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
+             wm_zt, wtmp, delta_zt, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
              hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 
       ! Interpolate velocity to the momentum grid
