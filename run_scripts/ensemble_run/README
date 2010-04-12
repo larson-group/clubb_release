@@ -11,7 +11,7 @@ DIRECTORIES:
          be named ensmem## where ## is the number of the
          ensemble member. The scripts will not work if
          there are more than 100 ensemble members (00 - 99)
-         but skipping ensemble members is accepable.
+         but skipping ensemble members is acceptable.
 
   ensembles: This folder contains subfolders which in turn
              hold forcing data which has been converted for
@@ -26,6 +26,11 @@ DIRECTORIES:
           assumed that it will be populated by
           ensemble_run.bash. Folder naming follows the same
           pattern as the ensembles folder.
+
+  submission: This folder contains the submission ready
+              output from the ensemble. It is populated
+              by create_output.bash. It does not use
+              subfolders for easy submission.
 
 SCRIPTS:
   ensemble_setup.bash: Runs a series of MATLAB scripts to
@@ -54,3 +59,135 @@ SCRIPTS:
                       convert_units.m, and
                       read_grads_clubb_endian.m from
                       clubb/postprocessing/matlab_include
+
+INSTRUCTIONS:
+  These instructions cover running a TWP_ICE ensemble from
+  scratch. Modifications to most (if not all) scripts will
+  need to be made for running different ensembles. It is
+  hoped that the provided scripts will be an acceptable
+  framework for setting up other ensembles.
+
+  1: First, download the ensemble setup files from ARM.
+     (http://users.monash.edu.au/~ladavies/Data/
+      Final_ensemble280108.tar.gz)
+
+  2: Extract the files to the input directory. Ensure
+     that the child directories follow the ensmem## format
+     described above.
+
+  3: Copy all of the MATLAB files from
+     clubb/utilities/case_setup/twp_ice to this
+     ensemble_run directory. Also copy convert_units.m
+     from clubb/postprocessing/matlab_include to this
+     directory.
+
+  4: Ensure that matlabuser has write permissions to both
+     this ensemble_run directory and the ensembles
+     directory.
+
+  5: Run ensemble_setup.bash
+
+  6: At this point, CLUBB setup files (twp_ice_forcings.in,
+     twp_ice_sounding.in) should have been created in the
+     ensembles directory, following the ensemble##
+     directory structure mentioned above.
+
+  7: Make sure the model.in file for the case you are
+     running (eg. twp_ice_model.in) is set up the way
+     you want (timesteps set, proper microphysical scheme).
+     The model.in file is not set by ensemble_run.bash, so
+     the same settings are used for all members.
+
+  8: Run ensemble_run.bash, this script runs as your user
+     and does not require MATLAB, so no special permissions
+     are required. This will take quite a while (~25 mins
+     per ensemble member with a 1-minute timestep). It is
+     recommended to run the script using at as follows:
+     
+     at -f ensemble_run.bash now
+
+     Simply backgrounding the task with an ampersand
+     (./ensemble_run.bash &) does not seem to work. 
+
+     You can check to ensure the ensemble is being run by
+     watching for 'clubb_standalone' in top, and checking
+     that directories are being created in the output
+     folder. Check the subfolders of the output directory
+     for CLUBB output at regular intervals.
+
+  9: The last step is to convert the CLUBB output in to
+     submission ready output. Copy 
+     twp_ice_profiles_creator.m and 
+     twp_ice_timeseries_creator.m from the
+     clubb/postprocessing/output_scripts/twp_ice directory
+     to this directory. Also copy header_read.m and
+     read_grads_clubb_endian.m from the
+     clubb/postprocessing/matlab_include directory
+     to this directory. You should have already copied
+     convert_units.m to this directory.
+
+  10: Both twp_ice_profiles_creator.m and
+      twp_ice_timeseries_creator.m and not smart about
+      understanding where they are being run from. To
+      account for this, the 'clubb_path' variable needs
+      to be set in each script. This variable is defined
+      towards the top of the file.
+
+  11: In both twp_ice_profiles_creator.m and
+      twp_ice_timeseries_creator.m, the t_start
+      variable needs to be set properly (the case
+      coordinator should have specified when submission
+      data should begin at), in the case
+      of twp_ice, this needs to be set to 22. This
+      variable is located below the clubb_path variable
+      set previously.
+
+  12: Make the /clubb/postprocessing/output_scripts/twp_ice
+      folder writeable by matlabuser, this is where the
+      two scripts do all of their work.
+
+  13: Cross your fingers and run create_output.bash. As
+      before, it does not seem to background properly, but
+      does run fine using at. You can check its progress by
+      ensuring MATLAB is running using top. You can also
+      make sure .nc files are being copied to the
+      submission folder. The output for each ensemble takes
+      around 25 minutes to convert, regardless of timestep.
+
+  14: At this point, you should have NetCDF files ready for
+      submission.
+
+ERRATA:
+  1: Most MATLAB errors stem from permssions issues. This
+     may seem counterintuitive as the error messages do
+     not seem to indicate this. All of the permissions
+     requirements should be covered above, but you can
+     always check the code to see if other directories
+     are being used by MATLAB. If found, please update this
+     documentation.
+
+  2: For the adventurous, this makes it relatively easy
+     to run the ensemble in parallel. Do not bother
+     creating the CLUBB input files in parallel as it takes
+     little time. To run the ensemble in parallel, copy
+     CLUBB for as the level of parallelism desired. For
+     four cores, copy a vanilla CLUBB checkout to clubb01,
+     clubb02, clubb03, and clubb04. Compile each (or
+     compile before you copy).
+
+     Copy (in the above example) 25 ensemble members from
+     clubb/run_scripts/ensemble_run/ensembles (or wherever
+     the ensemble_setup.bash script was run) to
+     each clubb##/run_scripts/ensemble_run/ensembles.
+
+     Then, simply run each set of ensembles using at, and
+     monitor as per the instructions above. Conversion
+     works well in parallel as well.
+
+  2: Killing the at jobs does not seem to stop the scripts.
+     First, remove the at job using atrm (using atq to find
+     the job number), then kill the script.
+
+  3: Limited verification of the submission ready output is
+     possible using scripts contained (and documented) in
+     clubb/postprocessing/output_scripts/twp_ice.
