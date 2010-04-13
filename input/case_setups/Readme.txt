@@ -242,7 +242,8 @@ l_lh_vert_overlap | logical
 
 l_lh_cloud_weighted_sampling | logical
   Pick points in and out of cloud latin hypercube sampling (K&K).  Note that
-  LH_microphys_calls must be an even number to enable this.
+  LH_microphys_calls must be even, and sequence length must be 1 in
+  order to enable this.
 
 LH_microphys_calls | integer
   Number of latin hypercube samples to call the microphysics with (K&K).
@@ -251,13 +252,16 @@ LH_sequence_length | integer
   Number of timesteps before the latin hypercube seq. repeats (K&K).
 
 l_local_kk | logical
-  Use the local formulas for K&K, rather than the analytic formulas.
+  Use the local formulas for K&K microphyics, rather than the analytic formulas.
 
 microphys_start_time | real, minimum 12 digits of precision
   Model time to start calling the microphysics scheme [s]
+  Useful for artificially creating a delayed onset of ice/rain in idealized
+  cases.
 
 Ncm_initial 
-  Initial value for Ncm in cc/m^3 (K&K, l_cloud_sed, Morrison)
+  Initial value for Ncm (cloud droplet number concentration) in cc/m^3 
+  (K&K, l_cloud_sed, Morrison).
 
 rrp2_on_rrainm2_cloud | real, default precision
 rrp2_on_rrainm2_below | real, default precision
@@ -326,61 +330,66 @@ rad_scheme | character
   Currently only "bugsrad", "simplified", or "simplified_bomex".
 
 sol_const | double precision
-  The solar constant [W/m^2].
+  The solar constant [W/m^2] (BUGSrad).
 
 radiation_top | real, default precision
   The top of the atmosphere fed into a radiation scheme [m].
-  The computational grid should be extended to reach this altitude.
+  The computational grid should be extended to reach this altitude (BUGSrad).
 
 alvdr | double precision
-  Visible direct surface albedo   [-].
+  Visible direct surface albedo   [-] (BUGSrad, simplified).
 
 alndr | double precision
-  Near-IR direct surface albedo   [-].
+  Near-IR direct surface albedo   [-] (BUGSrad).
 
 alvdf | double precision
-  Visible diffuse surface albedo  [-].
+  Visible diffuse surface albedo  [-] (BUGSrad).
 
 alndf| double precision
-  Near-IR diffuse surface albedo  [-].
+  Near-IR diffuse surface albedo  [-] (BUGSrad).
 
 F0 | real, default precision
-  Coefficient for cloud top heating (see Stevens) [W/m^2].
+  Coefficient for cloud top heating (see Stevens) [W/m^2] (simplified).
 
 F1 | real, default precision
-  Coefficient for cloud base heating (see Stevens) [W/m^2].
+  Coefficient for cloud base heating (see Stevens) [W/m^2] (simplified).
 
 kappa | real, default precision
-  A constant (Duynkerke eqn. 5) [m^2/kg].
+  A constant (Duynkerke eqn. 5) [m^2/kg] (simplified).
 
 gc | real, default precision
-  Asymmetry parameter, "g" in Duynkerke [-].
+  Asymmetry parameter, "g" in Duynkerke [-] (simplified).
 
 omega |  real, default precision
-  Single-scattering albedo [-].
+  Single-scattering albedo [-] (simplified).
 
 slr | double precision
-  Fraction of daylight (usually 1.0)  [-].
+  Fraction of daylight (usually 1.0)  [-] (BUGSrad).
 
 eff_drop_radius | real, default precision
-  Effective droplet radius  [m].
+  Effective droplet radius  [m] (simplified).
 
 cos_solar_zen_values | real, 20 element array, default precision
-  Cosine of the solar zenith angle for l_fix_cos_solar_zen = T [-].
+  Cosine of the solar zenith angle for l_fix_cos_solar_zen = true [-].
+  Used with simplified if l_sw_radiation is true, or BUGSrad.
 
 cos_solar_zen_times | real, 20 element array, default precision
   Times corresponding to the cosine of the solar zenith angle [s].
+  Used with simplified if l_sw_radiation is true, or BUGSrad.
 
 Fs_values | real, 20 element array, default precision
   The incident of incoming SW insolation at cloud top the
   direction of the incoming beam (not the vertical)   [W/m^2]
+  (simplified)
 
 l_fix_cos_solar_zen | logical
   Fix the value of the cosine of the solar zenith angle rather than compute 
-  it from the latitude, longitude and current time.
+  it from the latitude, longitude and current time. (simplified, BUGSrad)
 
 l_sw_radiation | logical
-  Whether to compute shortwave radiation.
+  Whether to compute shortwave radiation. (simplified)
+  To disable shortwave radiation in BUGSrad, set cosine of the solar zenith
+  angle or fraction of daylight to 0.
 
 
 --------------------------------------------------------------------------------
@@ -403,7 +412,8 @@ stats_tout | real, minimum 12 digits of precision
   Frequency to output statistics [s]
 
 stats_fmt | character
-  Either "grads" or "netcdf".
+  Either "grads" or "netcdf".  Note that the GrADS viewer has trouble
+  comparing a netCDF file to a grads file.
 
 Other files in the case_setups directory:
 ====================================
