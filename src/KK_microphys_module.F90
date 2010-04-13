@@ -30,51 +30,6 @@ module KK_microphys_module
 
   logical, parameter :: l_src_adj_enabled = .true.
 
-  ! Statistical rain parameters        .
-
-  ! Parameters for in-cloud (from SAM RF02 DO).
-  real, public :: &       ! RF02 value
-    rrp2_on_rrainm2_cloud, & ! 0.766
-    Nrp2_on_Nrm2_cloud,    & ! 0.429
-    Ncp2_on_Ncm2_cloud,    & ! 0.003
-    corr_rrNr_LL_cloud, & ! 0.786
-    corr_srr_NL_cloud,  & ! 0.242
-    corr_sNr_NL_cloud,  & ! 0.285
-    corr_sNc_NL_cloud     ! 0.433
-
-  ! Parameters for below-cloud (from SAM RF02 DO).
-  real, public :: &       ! RF02 value
-    rrp2_on_rrainm2_below, & ! 8.97
-    Nrp2_on_Nrm2_below,    & ! 12.03
-    Ncp2_on_Ncm2_below,    & ! 0.00 ! Not applicable below cloud.
-    corr_rrNr_LL_below, & ! 0.886
-    corr_srr_NL_below,  & ! 0.056
-    corr_sNr_NL_below,  & ! 0.015
-    corr_sNc_NL_below     ! 0.00 ! Not applicable below cloud.
-
-  ! Other needed parameters
-  real, public :: C_evap ! 0.86    ! Khairoutdinov and Kogan (2000) ratio of
-  ! drizzle drop mean geometric radius to
-  ! drizzle drop mean volume radius.
-  ! Khairoutdinov and Kogan (2000); p. 233.
-  !real, public :: C_evap = 0.86*0.2 ! COAMPS value of KK C_evap
-  !real, public :: C_evap = 0.55     ! KK 2000, Marshall-Palmer (1948) value.
-
-  real, public :: r_0 ! 25.0e-6   ! Assumed radius of all new drops; m.
-  ! Value specified in KK (2000); p. 235.
-  ! Vince Larson set r_0=28mum to agree with COAMPS-LES formula. 15 April 2005
-  !REAL, PARAMETER:: r_0 = 28.0e-6   ! Assumed radius of all new drops; m.
-  !                                  ! Value that COAMPS LES has in it.
-  !REAL, PARAMETER:: r_0 = 30.0e-6   ! Assumed radius of all new drops; m.
-  !                                  ! Khairoutdinov said it was okay!
-  ! End Vince Larson's change.
-
-!$omp threadprivate( rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, &
-!$omp   corr_rrNr_LL_cloud, corr_srr_NL_cloud,  corr_sNr_NL_cloud,  corr_sNc_NL_cloud, &
-!$omp   rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, Ncp2_on_Ncm2_below, &
-!$omp   corr_rrNr_LL_below, corr_srr_NL_below, corr_sNr_NL_below, corr_sNc_NL_below, &
-!$omp   C_evap, r_0 )
-
   contains
 
   !=============================================================================
@@ -133,6 +88,14 @@ module KK_microphys_module
     use variables_prognostic_module, only: pdf_parameter
 
     use parameters_model, only: hydromet_dim
+
+    use parameters_microphys, only: &
+      rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, & ! Variables
+      corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
+      corr_sNc_NL_cloud, &
+      rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, Ncp2_on_Ncm2_below, &
+      corr_rrNr_LL_below, corr_srr_NL_below, corr_sNr_NL_below, &
+      corr_sNc_NL_below  
 
     implicit none
 
@@ -832,6 +795,9 @@ module KK_microphys_module
     USE saturation, only:  & 
         sat_mixrat_liq ! Variable(s)
 
+    use parameters_microphys, only: &
+      C_evap ! Variable(s)
+
     implicit none
 
     ! Input variables.
@@ -1234,6 +1200,9 @@ module KK_microphys_module
     USE constants, only: & 
         rho_lw,  & ! Variable(s)
         pi
+
+    use parameters_microphys, only: &
+      r_0 ! Variable(s)
 
     implicit none
 

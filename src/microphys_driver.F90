@@ -92,7 +92,7 @@ module microphys_driver
       iiLH_Ngraupel, &
       iiLH_Nc
 
-    use KK_microphys_module, only: &
+    use parameters_microphys, only: &
       rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, & ! Variables
       corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
       corr_sNc_NL_cloud, rrp2_on_rrainm2_below, &
@@ -545,9 +545,9 @@ module microphys_driver
         zt2zm
 
     use KK_microphys_module, only: & 
-        KK_microphys ! Procedure(s)
+      KK_microphys ! Procedure(s)
 
-    use KK_microphys_module, only: & 
+    use parameters_microphys, only: & 
       rrp2_on_rrainm2_cloud, & ! Variable(s)
       Nrp2_on_Nrm2_cloud, & 
       Ncp2_on_Ncm2_cloud, &
@@ -683,7 +683,7 @@ module microphys_driver
         stat_update_var, stat_update_var_pt,  & ! Procedure(s)
         stat_begin_update, stat_end_update
 
-    use KK_microphys_module, only: &
+    use parameters_microphys, only: &
       rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, & ! Variables
       corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
       corr_sNc_NL_cloud, &
