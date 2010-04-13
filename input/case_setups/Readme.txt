@@ -18,8 +18,9 @@ runtype | character
   See clubb_driver.F90 for examples.
 
 nzmax | integer
- Maximum number of vertical levels.  Note that if there is less sounding data
- than nzmax requires, then the domain will be truncated to nzmax levels.
+ Maximum number of vertical levels for grid_type = 2 or grid_type = 3.
+ Note that if there is less sounding data than nzmax requires, then the 
+ domain will be truncated to a value less than nzmax levels.
 
 grid_type | integer
   1 ==> evenly spaced grid levels, 2 ==> unevenly-spaced thermo. grid levels,
