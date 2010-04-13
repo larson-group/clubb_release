@@ -13,10 +13,13 @@ The <CASE NAME>_model.in files contain the following namelists:
 ------------------------------------------
 
 runtype | character 
-  This a simulation type, e.g. "bomex".
+  This simulation type, e.g. "bomex".
+  Used to determine case specific settings, e.g. initial TKE.
+  See clubb_driver.F90 for examples.
 
 nzmax | integer
- Number of vertical levels.
+ Maximum number of vertical levels.  Note that if there is less sounding data
+ than nzmax requires, then the domain will be truncated to nzmax levels.
 
 grid_type | integer
   1 ==> evenly spaced grid levels, 2 ==> unevenly-spaced thermo. grid levels,
@@ -171,7 +174,8 @@ iisclr_thl | integer
   Location in the sclr arrays to place a scalar emulating thetal.
 
 iisclr_CO2 | integer
-  Location in the sclr arrays to place a scalar for CO2.
+  Location in the sclr arrays to place a scalar for CO2. See the cobra case
+  for an example of this.
 
 sclr_tol | real, default precision, array 
   Tolerances below which we consider the scalar to be 0.
@@ -189,7 +193,8 @@ iiedsclr_thl | integer
   Location in the edsclr arrays to place a scalar emulating thetal.
 
 iiedsclr_CO2 | integer
-  Location in the edsclr arrays to place a scalar for CO2.
+  Location in the edsclr arrays to place a scalar for CO2.  See the cobra case
+  for an example of this.
 
 --------------------------------------------------------------------------------
 2. &microphys_setting:
@@ -199,10 +204,11 @@ iiedsclr_CO2 | integer
 ------------------------------------------
 micro_scheme | character
   The microphysics scheme to use.  Either khairoutdinov_kogan, coamps,
-  morrison, or none
+  morrison, or none.
 
 l_cloud_sed | logical
-  Cloud water sedimentation (K&K or no microphysics)
+  Cloud water sedimentation (K&K or no microphysics).
+  This uses the formula from the DYCOMS II RF02 specification.
 
 l_ice_micro | logical
   Compute ice (COAMPS / Morrison)
@@ -211,7 +217,7 @@ l_graupel | logical
   Compute graupel (COAMPS / Morrison)
 
 l_hail | logical
-  See module_mp_graupel for a description (Morrison)
+  See module_mp_graupel.F90 for a description (Morrison)
 
 l_seifert_beheng | logical
   Use Seifert and Beheng (2001) warm drizzle (Morrison)
@@ -223,7 +229,9 @@ l_specify_aerosol | logical
   Specify aerosol (Morrison)
 
 l_subgrid_w | logical
-  Use subgrid-scale w for cloud droplet activation (Morrison)
+  Use subgrid-scale w for cloud droplet activation (Morrison).
+  Highly recommended for a CLUBB single column simulation when l_predictnc is
+  true, since there is no way to account for updrafts like an LES.
 
 l_arctic_nucl | logical
   Use MPACE observations (Morrison)
@@ -241,7 +249,7 @@ l_lh_vert_overlap | logical
   Use maximum overlap assumption for s_mellor latin (K&K).
 
 l_lh_cloud_weighted_sampling | logical
-  Pick points in and out of cloud latin hypercube sampling (K&K).  Note that
+  Pick points in and out of cloud Latin Hypercube sampling (K&K).  Note that
   LH_microphys_calls must be even, and sequence length must be 1 in
   order to enable this.
 
@@ -249,7 +257,7 @@ LH_microphys_calls | integer
   Number of latin hypercube samples to call the microphysics with (K&K).
 
 LH_sequence_length | integer
-  Number of timesteps before the latin hypercube seq. repeats (K&K).
+  Number of timesteps before the Latin Hypercube seq. repeats (K&K).
 
 l_local_kk | logical
   Use the local formulas for K&K microphyics, rather than the analytic formulas.
