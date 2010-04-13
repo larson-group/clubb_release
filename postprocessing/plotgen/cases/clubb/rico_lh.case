@@ -1,0 +1,81 @@
+# RICO Case File for Latin Hypercube plots
+
+%CASE = 
+(
+    'name' => 'rico_lh',
+    'enabled' => 'false',
+    'type' => 'standard',
+    'headerText' => 'RICO Minutes 1381-1440',
+    'startTime' => 1381.0,  # [minutes]
+    'endTime' => 1440.0,    # [minutes]
+    'startHeight' => 0.0,  # [m]
+    'endHeight' => 3500.0, # [m]
+    'plots' =>
+    [
+       {'plotTitle' => 'Liquid Water Potential Temperature, \theta_l', 'axisLabel' => 'thlm [K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'thlm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UseFirstArgIfExist( LH_thlm, thlm )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Vapor Water Mixing Ratio, r_v', 'axisLabel' => 'rvm [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qvm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UseFirstArgIfExist( LH_rvm, rvm )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cloud\_frac [%]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'cf* 100', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UseFirstArgIfExist( LH_cloud_frac, cloud_frac ) * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},       
+       {'plotTitle' => 'Cloud Water Mixing Ratio, r_c', 'axisLabel' => 'rcm [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qcm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UseFirstArgIfExist( LH_rcm, rcm )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of w', 'axisLabel' => 'wp2\_zt [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UseFirstArgIfExist( LH_wp2_zt, wp2_zt )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of \theta_l', 'axisLabel' => 'thlp2\_zt [K^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'thlp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UseFirstArgIfExist( LH_thlp2_zt, thlp2_zt )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of r_t', 'axisLabel' => 'rtp2\_zt [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qtp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UseFirstArgIfExist( LH_rtp2_zt, rtp2_zt )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Vertical Wind Component, w (subsidence)', 'axisLabel' => 'wm [m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wlsm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UseFirstArgIfExist( LH_wm, wm )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qrm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UseFirstArgIfExist( LH_rrainm, rrainm )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => '( nrm ./ 1.0e-6 ) ./ dn0', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UseFirstArgIfExist( LH_Nrm, Nrm )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Droplet Concentration', 'axisLabel' => 'Ncm [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => '( ncm ./ 1.0e-6 ) ./ dn0', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UseFirstArgIfExist( LH_Ncm, Ncm ) .* cloud_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]}
+    ],
+    'nightlyOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    },
+    'additionalOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    }
+)
