@@ -4,7 +4,7 @@ module generate_lh_sample_module
   implicit none
 
   public :: generate_lh_sample, generate_uniform_sample, &
-     ltqnorm, gaus_condt 
+     ltqnorm, gaus_condt
 
   private :: sample_points, gaus_mixt_points, & 
              truncate_gaus_mixt, &
@@ -68,8 +68,6 @@ module generate_lh_sample_module
     intrinsic :: dble, min, max, sqrt
 
     ! Constant Parameters
-    logical, parameter :: &
-      l_sample_out_of_cloud = .true.
 
     ! Tolerance on the standard deviation of s for latin hypercube only
     real, parameter :: &
@@ -112,10 +110,6 @@ module generate_lh_sample_module
 
     double precision, intent(out), dimension(n_micro_calls,d_variables) :: &
       X_nl_one_lev ! Sample that is transformed ultimately to normal-lognormal
-
-    ! A true/false flag that determines whether
-    ! the PDF allows us to construct a sample
-    logical :: l_sample_flag
 
     ! Local Variables
 
@@ -190,7 +184,7 @@ module generate_lh_sample_module
 
     double precision :: covar_trr1, covar_trr2, covar_tNr2, covar_tNr1
 
-!   real :: & 
+!   real :: &
 !     stdev_Nc, & ! Standard deviation of Nc   [#/kg]
 !     corr_tNc, & ! Correlation between t and Nc [-]
 !     corr_sNc, & ! Correlation between s and Nc [-]
@@ -254,7 +248,7 @@ module generate_lh_sample_module
       varnce_rt2 = rttol**2
       rt2 = rtm
     end if
-    if ( pdf_params%varnce_thl1(level) > thltol**2 ) then 
+    if ( pdf_params%varnce_thl1(level) > thltol**2 ) then
       varnce_thl1 = pdf_params%varnce_thl1(level)
       thl1  = pdf_params%thl1(level)
     else
@@ -304,19 +298,9 @@ module generate_lh_sample_module
     ! We prognose rt-thl-w,
     !    but we set means, covariance of hydrometeors (e.g. rrain, Nc) to constants.
 
-    l_sample_flag = .true.
-    if ( l_sample_out_of_cloud ) then
-      ! Sample non-cloudy grid boxes as well -dschanen 3 June 2009
-      cloud_frac1 = 1.0
-      cloud_frac2 = 1.0
-
-    else if ( cloud_frac < 0.001 ) then
-      ! In this case there are essentially no cloudy points to sample;
-      ! Set sample points to zero.
-      X_nl_one_lev(:,:)   = -999.0
-      l_sample_flag = .false.
-
-    end if ! l_sample_out_of_cloud
+    ! Sample non-cloudy grid boxes as well -dschanen 3 June 2009
+    cloud_frac1 = 1.0
+    cloud_frac2 = 1.0
 
     ! Standard sample for testing purposes when n=2
     ! X_u_one_lev(1,1:(d+1)) = ( / 0.0001d0, 0.46711825945881d0, &
@@ -324,248 +308,247 @@ module generate_lh_sample_module
     ! X_u_one_lev(2,1:(d+1)) = ( / 0.999d0, 0.63222458307464d0, &
     !             0.43642762850981d0, 0.32291562498749d0, 0.1d0, 0.1d0  / )
 
-    if ( l_sample_flag ) then
 
 
-      ! Compute PDF parameters for Nc, rr.
-      ! Assume that Nc, rr obey single-lognormal distributions
+    ! Compute PDF parameters for Nc, rr.
+    ! Assume that Nc, rr obey single-lognormal distributions
 
-      ! Nc  = droplet number concentration.  [Nc] = number / kg air
-      ! Ncm  = mean of Nc
-      ! Ncp2_on_Ncm2 = variance of Nc divided by Ncm^2
-      !  We must have a Ncp2_on_Ncm2 >= machine epsilon
-      ! Nc1  = PDF parameter for mean of plume 1. [Nc1] = (#/kg)
-      ! Nc2  = PDF parameter for mean of plume 2. [Nc2] = (#/kg)
-      ! var_Nc1,2 = PDF param for width of plume 1,2. [var_Nc1,2] = (#/kg)**2
+    ! Nc  = droplet number concentration.  [Nc] = number / kg air
+    ! Ncm  = mean of Nc
+    ! Ncp2_on_Ncm2 = variance of Nc divided by Ncm^2
+    !  We must have a Ncp2_on_Ncm2 >= machine epsilon
+    ! Nc1  = PDF parameter for mean of plume 1. [Nc1] = (#/kg)
+    ! Nc2  = PDF parameter for mean of plume 2. [Nc2] = (#/kg)
+    ! var_Nc1,2 = PDF param for width of plume 1,2. [var_Nc1,2] = (#/kg)**2
 
-      if ( iiLH_Nc > 0 ) then 
-        Ncm = dble( hydromet(iiNcm) )
-        Ncp2_on_Ncm2 = dble( correlation_array(iiLH_Nc,iiLH_Nc) )
+    if ( iiLH_Nc > 0 ) then
+      Ncm = dble( hydromet(iiNcm) )
+      Ncp2_on_Ncm2 = dble( correlation_array(iiLH_Nc,iiLH_Nc) )
 
-        call log_sqd_normalized( Ncm, Ncp2_on_Ncm2, dble( Nc_tol ), & ! In
-                                 Nc1, Nc2, var_Nc1, var_Nc2 ) ! Out
-      end if
+      call log_sqd_normalized( Ncm, Ncp2_on_Ncm2, dble( Nc_tol ), & ! In
+                               Nc1, Nc2, var_Nc1, var_Nc2 ) ! Out
+    end if
 
-      ! rr = specific rain content. [rr] = kg rain / kg air
-      ! rrainm  = mean of rr; rrp2 = variance of rr, must have rrp2>0.
-      ! rr1  = PDF parameter for mean of plume 1. [rr1] = (kg/kg)
-      ! rr2  = PDF parameter for mean of plume 2. [rr2] = (kg/kg)
-      ! var_rr1,2 = PDF param for width of plume 1,2. [var_rr1,2] = (kg/kg)**2
+    ! rr = specific rain content. [rr] = kg rain / kg air
+    ! rrainm  = mean of rr; rrp2 = variance of rr, must have rrp2>0.
+    ! rr1  = PDF parameter for mean of plume 1. [rr1] = (kg/kg)
+    ! rr2  = PDF parameter for mean of plume 2. [rr2] = (kg/kg)
+    ! var_rr1,2 = PDF param for width of plume 1,2. [var_rr1,2] = (kg/kg)**2
 
-      if ( iiLH_rrain > 0 ) then 
-        rrainm = dble( hydromet(iirrainm) )
-        rrp2_on_rrainm2 = dble( correlation_array(iiLH_rrain,iiLH_rrain) )
-        call log_sqd_normalized( rrainm, rrp2_on_rrainm2, dble( rr_tol ), & ! In
-                                 rr1, rr2, var_rr1, var_rr2 ) ! Out
-      end if
+    if ( iiLH_rrain > 0 ) then
+      rrainm = dble( hydromet(iirrainm) )
+      rrp2_on_rrainm2 = dble( correlation_array(iiLH_rrain,iiLH_rrain) )
+      call log_sqd_normalized( rrainm, rrp2_on_rrainm2, dble( rr_tol ), & ! In
+                               rr1, rr2, var_rr1, var_rr2 ) ! Out
+    end if
 
-      if ( iiLH_Nr > 0 ) then 
-        Nrm = dble( hydromet(iiNrm) )
-        Nrp2_on_Nrm2 = dble( correlation_array(iiLH_Nr,iiLH_Nr) )
+    if ( iiLH_Nr > 0 ) then
+      Nrm = dble( hydromet(iiNrm) )
+      Nrp2_on_Nrm2 = dble( correlation_array(iiLH_Nr,iiLH_Nr) )
 
-        call log_sqd_normalized( Nrm, Nrp2_on_Nrm2, dble( Nr_tol ), & ! In
-                                 Nr1, Nr2, var_Nr1, var_Nr2 ) ! Out
-      end if
+      call log_sqd_normalized( Nrm, Nrp2_on_Nrm2, dble( Nr_tol ), & ! In
+                               Nr1, Nr2, var_Nr1, var_Nr2 ) ! Out
+    end if
 
-      ! Means of s, t, w, Nc, Nr, rr for Gaussians 1 and 2
+    ! Means of s, t, w, Nc, Nr, rr for Gaussians 1 and 2
 
-      mu1((/iiLH_rt,iiLH_thl,iiLH_w/)) &
-        = (/ s1, 0., w1 /)
-      mu2((/iiLH_rt,iiLH_thl,iiLH_w/)) &
-        = (/ s2, 0., w2 /)
+    mu1((/iiLH_rt,iiLH_thl,iiLH_w/)) &
+      = (/ s1, 0., w1 /)
+    mu2((/iiLH_rt,iiLH_thl,iiLH_w/)) &
+      = (/ s2, 0., w2 /)
 
-      if ( iiLH_rrain > 0 ) then
-        mu1(iiLH_rrain) = rr1
-        mu2(iiLH_rrain) = rr2
-      end if
+    if ( iiLH_rrain > 0 ) then
+      mu1(iiLH_rrain) = real( rr1 )
+      mu2(iiLH_rrain) = real( rr2 )
+    end if
 
-      if ( iiLH_Nc > 0 ) then
-        mu1(iiLH_Nc) = Nc1
-        mu2(iiLH_Nc) = Nc2
-      end if
+    if ( iiLH_Nc > 0 ) then
+      mu1(iiLH_Nc) = real( Nc1 )
+      mu2(iiLH_Nc) = real( Nc2 )
+    end if
 
-      if ( iiLH_Nr > 0 ) then
-        mu1(iiLH_Nr) = Nr1
-        mu2(iiLH_Nr) = Nr2
-      end if
+    if ( iiLH_Nr > 0 ) then
+      mu1(iiLH_Nr) = real( Nr1 )
+      mu2(iiLH_Nr) = real( Nr2 )
+    end if
 
-      ! An old subroutine, gaus_rotate, couldn't handle large correlations;
-      !   I assume the replacement, gaus_condt, has equal trouble.
-      !   Therefore we input smaller correlations
-      ! max_mag_correlation = 0.99 in constants.F90
-      rrtthl_reduced = min( max_mag_correlation, max( rrtthl, -max_mag_correlation ) )
+    ! An old subroutine, gaus_rotate, couldn't handle large correlations;
+    !   I assume the replacement, gaus_condt, has equal trouble.
+    !   Therefore we input smaller correlations
+    ! max_mag_correlation = 0.99 in constants.F90
+    rrtthl_reduced = min( max_mag_correlation, max( rrtthl, -max_mag_correlation ) )
 
-      ! Within-plume rt-thl correlation terms with rt in kg/kg
-      rrtthl_reduced1 = dble( rrtthl_reduced*sqrt( varnce_rt1*varnce_thl1 ) )
-      rrtthl_reduced2 = dble( rrtthl_reduced*sqrt( varnce_rt2*varnce_thl2 ) )
+    ! Within-plume rt-thl correlation terms with rt in kg/kg
+    rrtthl_reduced1 = dble( rrtthl_reduced*sqrt( varnce_rt1*varnce_thl1 ) )
+    rrtthl_reduced2 = dble( rrtthl_reduced*sqrt( varnce_rt2*varnce_thl2 ) )
 
-      ! Covariance (not correlation) matrices of rt-thl-w
-      !    for Gaussians 1 and 2
-      ! For now, assume no within-plume correlation of w with
-      !    any other variables.
+    ! Covariance (not correlation) matrices of rt-thl-w
+    !    for Gaussians 1 and 2
+    ! For now, assume no within-plume correlation of w with
+    !    any other variables.
 
-      ! Sigma_rtthlw_1,2
-      Sigma_rtthlw_1 = 0.d0 ! Start with no covariance, and add matrix elements
-      Sigma_rtthlw_2 = 0.d0
+    ! Sigma_rtthlw_1,2
+    Sigma_rtthlw_1 = 0.d0 ! Start with no covariance, and add matrix elements
+    Sigma_rtthlw_2 = 0.d0
 
-      ! Sigma_stw_1,2
-      Sigma_stw_1 = 0.d0 ! Start with no covariance, and add matrix elements
-      Sigma_stw_2 = 0.d0
+    ! Sigma_stw_1,2
+    Sigma_stw_1 = 0.d0 ! Start with no covariance, and add matrix elements
+    Sigma_stw_2 = 0.d0
 
-      Sigma_rtthlw_1(iiLH_rt,(/iiLH_rt,iiLH_thl/))  = (/ dble( varnce_rt1 ), rrtthl_reduced1 /)
+    Sigma_rtthlw_1(iiLH_rt,(/iiLH_rt,iiLH_thl/))  = (/ dble( varnce_rt1 ), rrtthl_reduced1 /)
 
-      Sigma_rtthlw_2(iiLH_rt,(/iiLH_rt,iiLH_thl/))  = (/ dble( varnce_rt2 ), rrtthl_reduced2 /)
+    Sigma_rtthlw_2(iiLH_rt,(/iiLH_rt,iiLH_thl/))  = (/ dble( varnce_rt2 ), rrtthl_reduced2 /)
 
-      Sigma_rtthlw_1(iiLH_thl,(/iiLH_rt,iiLH_thl/)) = (/ rrtthl_reduced1, dble( varnce_thl1 ) /)
+    Sigma_rtthlw_1(iiLH_thl,(/iiLH_rt,iiLH_thl/)) = (/ rrtthl_reduced1, dble( varnce_thl1 ) /)
 
-      Sigma_rtthlw_2(iiLH_thl,(/iiLH_rt,iiLH_thl/)) = (/ rrtthl_reduced2, dble( varnce_thl2 ) /)
+    Sigma_rtthlw_2(iiLH_thl,(/iiLH_rt,iiLH_thl/)) = (/ rrtthl_reduced2, dble( varnce_thl2 ) /)
 
-      Sigma_rtthlw_1(iiLH_w,iiLH_w) = dble( varnce_w1 )
+    Sigma_rtthlw_1(iiLH_w,iiLH_w) = dble( varnce_w1 )
 
-      Sigma_rtthlw_2(iiLH_w,iiLH_w) = dble( varnce_w2 )
+    Sigma_rtthlw_2(iiLH_w,iiLH_w) = dble( varnce_w2 )
 
-      ! Convert each Gaussian from rt-thl-w variables to s-t-w vars.
-      call rtpthlp_2_sptp( 3, Sigma_rtthlw_1(1:3,1:3), dble( crt1 ), dble( cthl1 ), & ! In
-                           Sigma_stw_1(1:3,1:3) ) ! Out
-      call rtpthlp_2_sptp( 3, Sigma_rtthlw_2(1:3,1:3), dble( crt2 ), dble( cthl2 ), & ! In
-                           Sigma_stw_2(1:3,1:3) ) ! Out
+    ! Convert each Gaussian from rt-thl-w variables to s-t-w vars.
+    call rtpthlp_2_sptp( 3, Sigma_rtthlw_1(1:3,1:3), dble( crt1 ), dble( cthl1 ), & ! In
+                         Sigma_stw_1(1:3,1:3) ) ! Out
+    call rtpthlp_2_sptp( 3, Sigma_rtthlw_2(1:3,1:3), dble( crt2 ), dble( cthl2 ), & ! In
+                         Sigma_stw_2(1:3,1:3) ) ! Out
 
-      ! The s and t elements in Sigma_stw correspond to the rt thl element
-      !   in Sigma_rtthlw
-      iiLH_s_mellor = iiLH_rt 
-      iiLH_t_mellor = iiLH_thl
+    ! The s and t elements in Sigma_stw correspond to the rt thl element
+    !   in Sigma_rtthlw
+    iiLH_s_mellor = iiLH_rt
+    iiLH_t_mellor = iiLH_thl
 
-      ! Determine the correlation of s and t for the purposes of approximating
-      ! the correlation of t and the other samples
+    ! Determine the correlation of s and t for the purposes of approximating
+    ! the correlation of t and the other samples
 !     call covar_matrix_2_corr_matrix( 2, Sigma_stw_1(1:2,1:2), corr_st_mellor_1 )
 !     call covar_matrix_2_corr_matrix( 2, Sigma_stw_2(1:2,1:2), corr_st_mellor_2 )
 
 !     stdev_t1 = sqrt( real( Sigma_stw_1(iiLH_t_mellor,iiLH_t_mellor) ) ) ! Std dev of t (1st plume)
 !     stdev_t2 = sqrt( real( Sigma_stw_2(iiLH_t_mellor,iiLH_t_mellor) ) ) ! Std dev of t (2nd plume)
 
-      if ( iiLH_Nc > 0 ) then
-        Sigma_stw_1(iiLH_Nc,iiLH_Nc) = var_Nc1
-        Sigma_stw_2(iiLH_Nc,iiLH_Nc) = var_Nc2
+    if ( iiLH_Nc > 0 ) then
+      Sigma_stw_1(iiLH_Nc,iiLH_Nc) = var_Nc1
+      Sigma_stw_2(iiLH_Nc,iiLH_Nc) = var_Nc2
+    end if
+
+    if ( iiLH_Nr > 0 ) then
+      Sigma_stw_1(iiLH_Nr,iiLH_Nr) = var_Nr1
+      Sigma_stw_2(iiLH_Nr,iiLH_Nr) = var_Nr2
+    end if
+
+    if ( iiLH_rrain > 0 ) then
+      Sigma_stw_1(iiLH_rrain,iiLH_rrain) = var_rr1
+      Sigma_stw_2(iiLH_rrain,iiLH_rrain) = var_rr2
+    end if
+
+    if ( iiLH_rrain > 0 .and. iiLH_Nr > 0 ) then
+      ! Compute standard deviation of Nr & rrain
+      stdev_rr = real( rrainm ) * sqrt( correlation_array(iiLH_rrain,iiLH_rrain) )
+      stdev_Nr = real( Nrm ) * sqrt( correlation_array(iiLH_Nr,iiLH_Nr) )
+
+      if ( rrainm > dble( rr_tol ) .and. Nrm > dble( Nr_tol ) ) then
+
+        corr_rrNr = correlation_array(iiLH_rrain,iiLH_Nr)
+
+        ! Covariance between rain water mixing ratio rain number concentration
+        covar_rrNr1 = corr_LN_to_cov_gaus &
+                 ( corr_rrNr, &
+                   sigma_LN_to_sigma_gaus( real( stdev_rr ), real( rrainm ) ), &
+                   sigma_LN_to_sigma_gaus( real( stdev_Nr ), real( Nrm ) ) )
+        covar_rrNr2 = covar_rrNr1
+
+        Sigma_stw_1(iiLH_rrain,iiLH_Nr) = dble( covar_rrNr1 )
+        Sigma_stw_1(iiLH_Nr,iiLH_rrain) = dble( covar_rrNr1 )
+        Sigma_stw_2(iiLH_rrain,iiLH_Nr) = dble( covar_rrNr2 )
+        Sigma_stw_2(iiLH_Nr,iiLH_rrain) = dble( covar_rrNr2 )
       end if
 
-      if ( iiLH_Nr > 0 ) then
-        Sigma_stw_1(iiLH_Nr,iiLH_Nr) = var_Nr1
-        Sigma_stw_2(iiLH_Nr,iiLH_Nr) = var_Nr2
+      ! Covariances involving s and Nr & rr
+      if ( stdev_s1 > LH_stdev_s_tol .and. Nrm > dble( Nr_tol ) ) then
+        corr_sNr = correlation_array(iiLH_s_mellor,iiLH_Nr)
+
+        ! Covariance between s and rain number conc.
+        covar_sNr1 = corr_gaus_LN_to_cov_gaus &
+                 ( corr_sNr, &
+                   stdev_s1, &
+                   sigma_LN_to_sigma_gaus( real( stdev_Nr ), real( Nrm ) ) )
+
+        Sigma_stw_1(iiLH_s_mellor,iiLH_Nr) = dble( covar_sNr1 )
+        Sigma_stw_1(iiLH_Nr,iiLH_s_mellor) = dble( covar_sNr1 )
+
+        ! Approximate the covariance of t and Nr
+        covar_tNr1 = ( Sigma_stw_1(iiLH_t_mellor,iiLH_s_mellor) &
+          * dble( covar_sNr1 ) ) / dble( stdev_s1 )**2
+
+        Sigma_stw_1(iiLH_t_mellor,iiLH_Nr) = dble( covar_tNr1 )
+        Sigma_stw_1(iiLH_Nr,iiLH_t_mellor) = dble( covar_tNr1 )
       end if
 
-      if ( iiLH_rrain > 0 ) then
-        Sigma_stw_1(iiLH_rrain,iiLH_rrain) = var_rr1
-        Sigma_stw_2(iiLH_rrain,iiLH_rrain) = var_rr2
+      if ( stdev_s2 > LH_stdev_s_tol .and. Nrm > dble( Nr_tol ) ) then
+
+        corr_sNr = correlation_array(iiLH_s_mellor,iiLH_Nr)
+
+        covar_sNr2 = corr_gaus_LN_to_cov_gaus &
+                 ( corr_sNr, &
+                   stdev_s2, &
+                   sigma_LN_to_sigma_gaus( real( stdev_Nr ), real( Nrm ) ) )
+
+        Sigma_stw_2(iiLH_s_mellor,iiLH_Nr) = dble( covar_sNr2 )
+        Sigma_stw_2(iiLH_Nr,iiLH_s_mellor) = dble( covar_sNr2 )
+
+        ! Approximate the covariance of t and Nr
+        covar_tNr2 = ( Sigma_stw_2(iiLH_t_mellor,iiLH_s_mellor) &
+          * dble( covar_sNr2 ) ) / dble( stdev_s2 )**2
+
+        Sigma_stw_2(iiLH_t_mellor,iiLH_Nr) = dble( covar_tNr2 )
+        Sigma_stw_2(iiLH_Nr,iiLH_t_mellor) = dble( covar_tNr2 )
       end if
 
-      if ( iiLH_rrain > 0 .and. iiLH_Nr > 0 ) then 
-        ! Compute standard deviation of Nr & rrain
-        stdev_rr = real( rrainm ) * sqrt( correlation_array(iiLH_rrain,iiLH_rrain) )
-        stdev_Nr = real( Nrm ) * sqrt( correlation_array(iiLH_Nr,iiLH_Nr) )
+      if ( stdev_s1 > LH_stdev_s_tol .and. rrainm > dble( rr_tol ) ) then
 
-        if ( rrainm > dble( rr_tol ) .and. Nrm > dble( Nr_tol ) ) then
+        corr_srr = correlation_array(iiLH_s_mellor,iiLH_rrain)
 
-          corr_rrNr = correlation_array(iiLH_rrain,iiLH_Nr)
+        ! Covariance between s and rain water mixing ratio
+        covar_srr1 = corr_gaus_LN_to_cov_gaus &
+                 ( corr_srr, &
+                   stdev_s1, &
+                   sigma_LN_to_sigma_gaus( real( stdev_rr ), real( rrainm ) ) )
 
-          ! Covariance between rain water mixing ratio rain number concentration
-          covar_rrNr1 = corr_LN_to_cov_gaus &
-                   ( corr_rrNr, &
-                     sigma_LN_to_sigma_gaus( real( stdev_rr ), real( rrainm ) ), &
-                     sigma_LN_to_sigma_gaus( real( stdev_Nr ), real( Nrm ) ) )
-          covar_rrNr2 = covar_rrNr1
+        Sigma_stw_1(iiLH_s_mellor,iiLH_rrain) = dble( covar_srr1 )
+        Sigma_stw_1(iiLH_rrain,iiLH_s_mellor) = dble( covar_srr1 )
 
-          Sigma_stw_1(iiLH_rrain,iiLH_Nr) = dble( covar_rrNr1 )
-          Sigma_stw_1(iiLH_Nr,iiLH_rrain) = dble( covar_rrNr1 )
-          Sigma_stw_2(iiLH_rrain,iiLH_Nr) = dble( covar_rrNr2 )
-          Sigma_stw_2(iiLH_Nr,iiLH_rrain) = dble( covar_rrNr2 )
-        end if
+        ! Approximate the covariance of t and rr
+        covar_trr1 = ( Sigma_stw_1(iiLH_t_mellor,iiLH_s_mellor) &
+          * dble( covar_srr1 ) ) / dble( stdev_s1 )**2
 
-        ! Covariances involving s and Nr & rr
-        if ( stdev_s1 > LH_stdev_s_tol .and. Nrm > dble( Nr_tol ) ) then
-          corr_sNr = correlation_array(iiLH_s_mellor,iiLH_Nr)
+        Sigma_stw_1(iiLH_t_mellor,iiLH_rrain) = dble( covar_trr1 )
+        Sigma_stw_1(iiLH_rrain,iiLH_t_mellor) = dble( covar_trr1 )
+      end if
 
-          ! Covariance between s and rain number conc.
-          covar_sNr1 = corr_gaus_LN_to_cov_gaus &
-                   ( corr_sNr, &
-                     stdev_s1, &
-                     sigma_LN_to_sigma_gaus( real( stdev_Nr ), real( Nrm ) ) )
+      if ( stdev_s2 > LH_stdev_s_tol .and. rrainm > dble( rr_tol ) ) then
 
-          Sigma_stw_1(iiLH_s_mellor,iiLH_Nr) = dble( covar_sNr1 )
-          Sigma_stw_1(iiLH_Nr,iiLH_s_mellor) = dble( covar_sNr1 )
+        corr_srr = correlation_array(iiLH_s_mellor,iiLH_rrain)
 
-          ! Approximate the covariance of t and Nr
-          covar_tNr1 = ( Sigma_stw_1(iiLH_t_mellor,iiLH_s_mellor) &
-            * dble( covar_sNr1 ) ) / dble( stdev_s1 )**2
+        covar_srr2 = corr_gaus_LN_to_cov_gaus &
+                 ( corr_srr, &
+                   stdev_s2, &
+                   sigma_LN_to_sigma_gaus( real( stdev_rr ), real( rrainm ) ) )
 
-          Sigma_stw_1(iiLH_t_mellor,iiLH_Nr) = dble( covar_tNr1 )
-          Sigma_stw_1(iiLH_Nr,iiLH_t_mellor) = dble( covar_tNr1 )
-        end if
+        Sigma_stw_2(iiLH_s_mellor,iiLH_rrain) = dble( covar_srr2 )
+        Sigma_stw_2(iiLH_rrain,iiLH_s_mellor) = dble( covar_srr2 )
 
-        if ( stdev_s2 > LH_stdev_s_tol .and. Nrm > dble( Nr_tol ) ) then
+        ! Approximate the covariance of t and rr
+        covar_trr2 = ( Sigma_stw_2(iiLH_t_mellor,iiLH_s_mellor) &
+          * dble( covar_srr2 ) ) / dble( stdev_s2 )**2
 
-          corr_sNr = correlation_array(iiLH_s_mellor,iiLH_Nr)
-
-          covar_sNr2 = corr_gaus_LN_to_cov_gaus &
-                   ( corr_sNr, &
-                     stdev_s2, &
-                     sigma_LN_to_sigma_gaus( real( stdev_Nr ), real( Nrm ) ) )
-
-          Sigma_stw_2(iiLH_s_mellor,iiLH_Nr) = dble( covar_sNr2 )
-          Sigma_stw_2(iiLH_Nr,iiLH_s_mellor) = dble( covar_sNr2 )
-
-          ! Approximate the covariance of t and Nr
-          covar_tNr2 = ( Sigma_stw_2(iiLH_t_mellor,iiLH_s_mellor) &
-            * dble( covar_sNr2 ) ) / dble( stdev_s2 )**2
-
-          Sigma_stw_2(iiLH_t_mellor,iiLH_Nr) = dble( covar_tNr2 )
-          Sigma_stw_2(iiLH_Nr,iiLH_t_mellor) = dble( covar_tNr2 )
-        end if
-
-        if ( stdev_s1 > LH_stdev_s_tol .and. rrainm > dble( rr_tol ) ) then
-
-          corr_srr = correlation_array(iiLH_s_mellor,iiLH_rrain)
-
-          ! Covariance between s and rain water mixing ratio
-          covar_srr1 = corr_gaus_LN_to_cov_gaus &
-                   ( corr_srr, &
-                     stdev_s1, &
-                     sigma_LN_to_sigma_gaus( real( stdev_rr ), real( rrainm ) ) )
-
-          Sigma_stw_1(iiLH_s_mellor,iiLH_rrain) = dble( covar_srr1 )
-          Sigma_stw_1(iiLH_rrain,iiLH_s_mellor) = dble( covar_srr1 )
-
-          ! Approximate the covariance of t and rr
-          covar_trr1 = ( Sigma_stw_1(iiLH_t_mellor,iiLH_s_mellor) &
-            * dble( covar_srr1 ) ) / dble( stdev_s1 )**2
-
-          Sigma_stw_1(iiLH_t_mellor,iiLH_rrain) = dble( covar_trr1 )
-          Sigma_stw_1(iiLH_rrain,iiLH_t_mellor) = dble( covar_trr1 )
-        end if
-
-        if ( stdev_s2 > LH_stdev_s_tol .and. rrainm > dble( rr_tol ) ) then
-
-          corr_srr = correlation_array(iiLH_s_mellor,iiLH_rrain)
-
-          covar_srr2 = corr_gaus_LN_to_cov_gaus &
-                   ( corr_srr, &
-                     stdev_s2, &
-                     sigma_LN_to_sigma_gaus( real( stdev_rr ), real( rrainm ) ) )
-
-          Sigma_stw_2(iiLH_s_mellor,iiLH_rrain) = dble( covar_srr2 )
-          Sigma_stw_2(iiLH_rrain,iiLH_s_mellor) = dble( covar_srr2 )
-
-          ! Approximate the covariance of t and rr
-          covar_trr2 = ( Sigma_stw_2(iiLH_t_mellor,iiLH_s_mellor) &
-            * dble( covar_srr2 ) ) / dble( stdev_s2 )**2
-
-          Sigma_stw_2(iiLH_t_mellor,iiLH_rrain) = dble( covar_trr2 )
-          Sigma_stw_2(iiLH_rrain,iiLH_t_mellor) = dble( covar_trr2 )
-        end if
-      end if ! if iiLH_rrain > 0 .and. iiLH_Nr > 0 
+        Sigma_stw_2(iiLH_t_mellor,iiLH_rrain) = dble( covar_trr2 )
+        Sigma_stw_2(iiLH_rrain,iiLH_t_mellor) = dble( covar_trr2 )
+      end if
+    end if ! if iiLH_rrain > 0 .and. iiLH_Nr > 0
 
 !     if ( iiLH_Nc > 0 ) then
 
-        ! Covariances involving s and Nc (currently disabled)
+    ! Covariances involving s and Nc (currently disabled)
 !       corr_sNc = correlation_array(iiLH_s_mellor,iiLH_Nc)
 !       stdev_Nc = real( Ncm ) * sqrt( correlation_array(iiLH_Nc,iiLH_Nc) )
 
@@ -604,23 +587,20 @@ module generate_lh_sample_module
 
 !       end if
 
-!     end if ! iiLH_Nc > 0 
+!     end if ! iiLH_Nc > 0
 
-      call sample_points( n_micro_calls, d_variables, dble( mixt_frac ), &  ! In
-                          dble( rt1 ), dble( thl1 ), &  ! In
-                          dble( rt2 ), dble( thl2 ), &  ! In
-                          dble( crt1 ), dble( cthl1 ), &  ! In
-                          dble( crt2 ), dble( cthl2 ), &  ! In
-                          mu1, mu2, &  ! In
-                          dble( cloud_frac1 ), dble( cloud_frac2 ), & ! In 
-                          l_d_variable_lognormal, & ! In
-                          X_u_one_lev, & ! In
-                          X_mixt_comp_one_lev, & ! In
-                          Sigma_stw_1, Sigma_stw_2, & ! In/Out
-                          LH_rt, LH_thl, X_nl_one_lev ) ! Out
-
-      ! End of overall if-then statement for Latin hypercube code
-    end if
+    call sample_points( n_micro_calls, d_variables, dble( mixt_frac ), &  ! In
+                        dble( rt1 ), dble( thl1 ), &  ! In
+                        dble( rt2 ), dble( thl2 ), &  ! In
+                        dble( crt1 ), dble( cthl1 ), &  ! In
+                        dble( crt2 ), dble( cthl2 ), &  ! In
+                        mu1, mu2, &  ! In
+                        dble( cloud_frac1 ), dble( cloud_frac2 ), & ! In 
+                        l_d_variable_lognormal, & ! In
+                        X_u_one_lev, & ! In
+                        X_mixt_comp_one_lev, & ! In
+                        Sigma_stw_1, Sigma_stw_2, & ! In/Out
+                        LH_rt, LH_thl, X_nl_one_lev ) ! Out
 
     return
   end subroutine generate_lh_sample
@@ -744,8 +724,8 @@ module generate_lh_sample_module
       end if
       ! Kluge to reduce the covariance when the correlation is too large.
       ! Doesn't help very much. -dschanen 20 Aug 2009
-!     do i = 1, d_variables 
-!       do j = 1, d_variables 
+!     do i = 1, d_variables
+!       do j = 1, d_variables
 !         if ( Sigma_stw_1_corr(i,j) > 1.0 .or. Sigma_stw_1_corr(i,j) < -1.0 ) then
 !           Sigma_stw_1(i,j) = Sigma_stw_1(i,j) / ( abs( Sigma_stw_1_corr(i,j) ) )
 !         end if
@@ -780,13 +760,13 @@ module generate_lh_sample_module
 !            cloud_frac1, cloud_frac2, X_nl_one_lev(1:n_micro_calls,1), &
 !            X_nl_one_lev(1:n_micro_calls,2), &
 !            X_u_one_lev, rtp, thlp )
-      call st_2_rtthl( n_micro_calls, mixt_frac, rt1, thl1, rt2, thl2, & ! In
-                       crt1, cthl1, crt2, cthl2, & ! In
-                       cloud_frac1, cloud_frac2, mu1(iiLH_s_mellor), mu2(iiLH_s_mellor), & ! In
-                       X_nl_one_lev(1:n_micro_calls,iiLH_s_mellor), & ! In
-                       X_nl_one_lev(1:n_micro_calls,iiLH_t_mellor), & ! In
-                       X_mixt_comp_one_lev, & ! In
-                       LH_rt, LH_thl ) ! Out
+    call st_2_rtthl( n_micro_calls, mixt_frac, rt1, thl1, rt2, thl2, & ! In
+                     crt1, cthl1, crt2, cthl2, & ! In
+                     cloud_frac1, cloud_frac2, mu1(iiLH_s_mellor), mu2(iiLH_s_mellor), & ! In
+                     X_nl_one_lev(1:n_micro_calls,iiLH_s_mellor), & ! In
+                     X_nl_one_lev(1:n_micro_calls,iiLH_t_mellor), & ! In
+                     X_mixt_comp_one_lev, & ! In
+                     LH_rt, LH_thl ) ! Out
 
 ! Compute some diagnostics
 !       print*, 'C=', mixt_frac*cloud_frac1 + (1-mixt_frac)*cloud_frac2
@@ -1040,7 +1020,7 @@ module generate_lh_sample_module
 
     ! Latin hypercube sample from uniform distribution from a particular grid level
     double precision, intent(in), dimension(n_micro_calls,d_variables+1) :: &
-      X_u_one_lev 
+      X_u_one_lev
 
     double precision, intent(in), dimension(n_micro_calls) :: &
       s_pts ! n-dimensional vector giving values of s
@@ -1062,7 +1042,7 @@ module generate_lh_sample_module
 
     ! ---- Begin Code ----
 
-    ! Handle some possible errors re: proper ranges of mixt_frac, 
+    ! Handle some possible errors re: proper ranges of mixt_frac,
     ! cloud_frac1, cloud_frac2.
     if (mixt_frac > 1.0d0 .or. mixt_frac < 0.0d0) then
       write(fstderr,*) 'Error in gaus_mixt_points:  ',  &
@@ -1157,7 +1137,7 @@ module generate_lh_sample_module
 
     ! Latin hypercube sample from uniform distribution from a particular grid level
     double precision, intent(in), dimension(n_micro_calls,d_variables+1) :: &
-      X_u_one_lev 
+      X_u_one_lev
 
     integer, intent(in), dimension(n_micro_calls) :: &
       X_mixt_comp_one_lev ! Whether we're in the first or second mixture component
@@ -1175,7 +1155,7 @@ module generate_lh_sample_module
 
     ! ---- Begin Code ----
 
-    ! Handle some possible errors re: proper ranges of mixt_frac, 
+    ! Handle some possible errors re: proper ranges of mixt_frac,
     ! cloud_frac1, cloud_frac2.
     if ( (mixt_frac > 1.0d0) .or. (mixt_frac < 0.0d0) ) then
       write(fstderr,*) 'Error in truncate_gaus_mixt:  ',  &
@@ -1573,7 +1553,7 @@ module generate_lh_sample_module
     ! n-dimensional column vector of Mellor's s and t, including mean and perturbation
     double precision, intent(in), dimension(n_micro_calls) :: &
       s_mellor, & 
-      t_mellor 
+      t_mellor
 
     integer, dimension(n_micro_calls), intent(in) :: &
       X_mixt_comp_one_lev ! Whether we're in the first or second mixture component
@@ -1626,19 +1606,19 @@ module generate_lh_sample_module
 
 !     if ( in_mixt_frac_1( X_u_one_lev(sample,d_variables+1), fraction_1 ) ) then
       if ( X_mixt_comp_one_lev(sample) == 1 ) then
-        LH_rt(sample)  = rt1 + (0.5d0/crt1)*(s_mellor(sample)-mu_s1) +  & 
-                           (0.5d0/crt1)*t_mellor(sample)
-        LH_thl(sample) = thl1 + (-0.5d0/cthl1)*(s_mellor(sample)-mu_s1) +  & 
-                           (0.5d0/cthl1)*t_mellor(sample)
+        LH_rt(sample)  = real( rt1 + (0.5d0/crt1)*(s_mellor(sample)-mu_s1) +  & 
+                               (0.5d0/crt1)*t_mellor(sample) )
+        LH_thl(sample) = real( thl1 + (-0.5d0/cthl1)*(s_mellor(sample)-mu_s1) +  & 
+                               (0.5d0/cthl1)*t_mellor(sample) )
 
       else if ( X_mixt_comp_one_lev(sample) == 2 ) then
-      ! mixture fraction 2
-        LH_rt(sample)  = rt2 + (0.5d0/crt2)*(s_mellor(sample)-mu_s2) +  & 
-                           (0.5d0/crt2)*t_mellor(sample)
-        LH_thl(sample) = thl2 + (-0.5d0/cthl2)*(s_mellor(sample)-mu_s2) +  & 
-                           (0.5d0/cthl2)*t_mellor(sample)
+        ! mixture fraction 2
+        LH_rt(sample)  = real( rt2 + (0.5d0/crt2)*(s_mellor(sample)-mu_s2) +  & 
+                               (0.5d0/crt2)*t_mellor(sample) )
+        LH_thl(sample) = real( thl2 + (-0.5d0/cthl2)*(s_mellor(sample)-mu_s2) +  & 
+                              (0.5d0/cthl2)*t_mellor(sample) )
 
-      else 
+      else
         stop "Error determining mixture fraction in st_2_rtthl"
 
       end if
@@ -1688,6 +1668,6 @@ module generate_lh_sample_module
 
     return
   end subroutine log_sqd_normalized
-  
+
 end module generate_lh_sample_module
 
