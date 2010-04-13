@@ -20,8 +20,8 @@ module stats_subs
                          grad_zt, nnrad_zm, grad_zm, day, month, year, &
                          rlat, rlon, time_current, delt )
     !
-    !     Description: Initializes the statistics saving functionality of
-    !     the CLUBB model.
+    ! Description: Initializes the statistics saving functionality of
+    !   the CLUBB model.
     !-----------------------------------------------------------------------
 
     use stats_variables, only: & 
@@ -1313,6 +1313,7 @@ module stats_subs
         ilwp, &
         ivwp, &
         iswp, &
+        irwp, &
         iiwp, &
         ithlm_vert_avg, &
         irtm_vert_avg, &
@@ -1439,7 +1440,7 @@ module stats_subs
         lin_int ! Procedure
 
     use array_index, only: & 
-        iirsnowm, iiricem
+        iirsnowm, iiricem, iirrainm
 
     implicit none
 
@@ -1500,11 +1501,6 @@ module stats_subs
     integer :: i, k
 
     real :: xtmp
-
-    real, dimension(gr%nnzp) ::  & 
-      rsnowm,  & ! Snow mixing ratio                         [kg/kg]
-      ricem      ! Prisitine ice water mixing ratio          [kg/kg]
-
 
     ! Sample fields
 
@@ -1690,64 +1686,48 @@ module stats_subs
       ! Liquid Water Path
       if ( ilwp > 0 ) then
 
-        xtmp = 0.
-        do i = gr%nnzp-1, 1, -1
-          xtmp = xtmp + rho(i+1) * rcm(i+1) / gr%dzt(i+1)
-        enddo
+        xtmp = compute_water_path( rho, rcm )
 
         call stat_update_var_pt( ilwp, 1, xtmp, sfc )
 
-      endif
+      end if
 
       ! Vapor Water Path (Preciptable Water)
       if ( ivwp > 0 ) then
 
-        xtmp = 0.
-        do i = gr%nnzp-1, 1, -1
-          xtmp = xtmp + rho(i+1) * (rtm(i+1) - rcm(i+1)) / gr%dzt(i+1)
-        enddo
+        xtmp = compute_water_path( rho, rtm - rcm )
 
         call stat_update_var_pt( ivwp, 1, xtmp, sfc )
 
-      endif
+      end if
 
       ! Snow Water Path
-      if ( iswp > 0 ) then
+      if ( iswp > 0 .and. iirsnowm > 0 ) then
 
-        ! Calculate rsnowm
-        if ( iirsnowm > 0 ) then
-          rsnowm = hydromet(1:gr%nnzp,iirsnowm)
-        else
-          rsnowm = 0.0
-        end if
-
-        xtmp = 0.
-        do i = gr%nnzp-1, 1, -1
-          xtmp = xtmp + rho(i+1) * rsnowm(i+1) / gr%dzt(i+1)
-        enddo
+        ! Calculate snow water path
+        xtmp = compute_water_path( rho, hydromet(1:gr%nnzp,iirsnowm) )
 
         call stat_update_var_pt( iswp, 1, xtmp, sfc )
 
-      endif
+      end if
 
       ! Ice Water Path
-      if ( iiwp > 0 ) then
+      if ( iiwp > 0 .and. iiricem > 0 ) then
 
-        ! Calculate ricem
-        if ( iiricem > 0 ) then
-          ricem = hydromet(1:gr%nnzp,iiricem)
-        else
-          ricem = 0.0
-        end if
-
-        xtmp = 0.
-        do i = gr%nnzp-1, 1, -1
-          xtmp = xtmp + rho(i+1) * ricem(i+1) / gr%dzt(i+1)
-        enddo
+        xtmp = compute_water_path( rho, hydromet(1:gr%nnzp,iiricem) )
 
         call stat_update_var_pt( iiwp, 1, xtmp, sfc )
 
-      endif
+      end if
+
+      ! Rain Water Path
+      if ( irwp > 0 .and. iirrainm > 0 ) then
+
+        xtmp = compute_water_path( rho, hydromet(1:gr%nnzp,iirrainm) )
+
+        call stat_update_var_pt( irwp, 1, xtmp, sfc )
+
+      end if
 
       ! Vertical average of thermodynamic level variables.
 
@@ -2075,5 +2055,38 @@ module stats_subs
 
     return
   end subroutine stats_finalize
+
+!-------------------------------------------------------------------------------
+  pure function compute_water_path( rho, rxm ) result( water_path )
+
+! Description:
+!   Compute water path for some arbitrary variable (e.g. liquid, ice).
+
+! References:
+!   None.
+!-------------------------------------------------------------------------------
+    use grid_class, only: gr
+
+    implicit none
+
+    ! Input Variables
+    real, dimension(gr%nnzp), intent(in) :: &
+      rho, & ! Air density    [kg/m^3]
+      rxm    ! Water variable [kg/kg]
+
+    ! Output Variable
+    real :: water_path
+
+    integer :: k
+
+    ! ---- Begin Code ----
+    water_path = 0.
+
+    do k = gr%nnzp-1, 1, -1
+      water_path = water_path + rho(k+1) * rxm(k+1) / gr%dzt(k+1)
+    end do
+    
+    return
+  end function compute_water_path
 
 end module stats_subs

@@ -737,6 +737,7 @@ module stats_variables
     ivwp, &        ! nielsenb
     iiwp, &        ! nielsenb
     iswp, &        ! nielsenb
+    irwp, &
     izb, & 
     izi, & 
     irain,    &    ! Brian
@@ -772,7 +773,7 @@ module stats_variables
 
 
 !$omp threadprivate(iustar, isoil_heat_flux, iveg_T_in_K, isfc_soil_T_in_K, ideep_soil_T_in_K, &
-!$omp   ilh, ish, icc, ilwp, ivwp, iiwp, iswp, izb, izi, &
+!$omp   ilh, ish, icc, ilwp, ivwp, iiwp, iswp, irwp, izb, izi, &
 !$omp   irain, irain_flux, irrainm_sfc, &
 !$omp   iwpthlp_sfc, iwprtp_sfc, iupwp_sfc, ivpwp_sfc, &
 !$omp   ithlm_vert_avg, irtm_vert_avg, ium_vert_avg, ivm_vert_avg, &
