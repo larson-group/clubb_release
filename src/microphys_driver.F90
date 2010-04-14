@@ -83,13 +83,13 @@ module microphys_driver
 
     use array_index, only: &
       iiLH_rrain, & ! Variables
-!     iiLH_rsnow, &
-!     iiLH_rice, &
-!     iiLH_rgraupel, &
+      iiLH_rsnow, &
+      iiLH_rice, &
+      iiLH_rgraupel, &
       iiLH_Nr, &
-!     iiLH_Nsnow, &
-!     iiLH_Ni, &
-!     iiLH_Ngraupel, &
+      iiLH_Nsnow, &
+      iiLH_Ni, &
+      iiLH_Ngraupel, &
       iiLH_Nc
 
     use parameters_microphys, only: &
@@ -506,13 +506,19 @@ module microphys_driver
       call return_LH_index( iiNcm, i, iiLH_Nc )
       call return_LH_index( iiNrm, i, iiLH_Nr )
 !     call return_LH_index( iiNsnowm, i, iiLH_Nsnow )
+      iiLH_Nsnow = -1
 !     call return_LH_index( iiNim, i, iiLH_Ni )
+      iiLH_Ni = -1
 !     call return_LH_index( iiNgraupelm, i, iiLH_Ngraupel )
+      iiLH_Ngraupel = -1
 
       call return_LH_index( iirrainm, i, iiLH_rrain )
 !     call return_LH_index( iirsnowm, i, iiLH_rsnow )
+      iiLH_rsnow = -1
 !     call return_LH_index( iiricem, i, iiLH_rice )
+      iiLH_rice = -1
 !     call return_LH_index( iirgraupelm, i, iiLH_rgraupel )
+      iiLH_rgraupel = -1
 
       allocate( LH_sample_point_weights(LH_microphys_calls) )
 
