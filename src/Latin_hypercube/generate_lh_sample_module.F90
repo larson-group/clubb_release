@@ -19,7 +19,7 @@ module generate_lh_sample_module
   subroutine generate_lh_sample &
              ( n_micro_calls, d_variables, hydromet_dim, & 
                cloud_frac, wm, rtm, thlm, pdf_params, level, & 
-               hydromet, correlation_array, X_u_one_lev, &
+               hydromet, corr_varnce_array, X_u_one_lev, &
                X_mixt_comp_one_lev, &
                LH_rt, LH_thl, X_nl_one_lev )
 ! Description:
@@ -95,7 +95,7 @@ module generate_lh_sample_module
 
     ! From the KK_microphys_module
     real, dimension(d_variables,d_variables), intent(in) :: &
-      correlation_array ! Correlations for sampled variables    [-]
+      corr_varnce_array ! Correlations for sampled variables    [-]
 
     real(kind=genrand_real), intent(in), dimension(n_micro_calls,d_variables+1) :: &
       X_u_one_lev ! Sample drawn from uniform distribution from a particular grid level
@@ -323,7 +323,7 @@ module generate_lh_sample_module
 
     if ( iiLH_Nc > 0 ) then
       Ncm = dble( hydromet(iiNcm) )
-      Ncp2_on_Ncm2 = dble( correlation_array(iiLH_Nc,iiLH_Nc) )
+      Ncp2_on_Ncm2 = dble( corr_varnce_array(iiLH_Nc,iiLH_Nc) )
 
       call log_sqd_normalized( Ncm, Ncp2_on_Ncm2, dble( Nc_tol ), & ! In
                                Nc1, Nc2, var_Nc1, var_Nc2 ) ! Out
@@ -337,14 +337,14 @@ module generate_lh_sample_module
 
     if ( iiLH_rrain > 0 ) then
       rrainm = dble( hydromet(iirrainm) )
-      rrp2_on_rrainm2 = dble( correlation_array(iiLH_rrain,iiLH_rrain) )
+      rrp2_on_rrainm2 = dble( corr_varnce_array(iiLH_rrain,iiLH_rrain) )
       call log_sqd_normalized( rrainm, rrp2_on_rrainm2, dble( rr_tol ), & ! In
                                rr1, rr2, var_rr1, var_rr2 ) ! Out
     end if
 
     if ( iiLH_Nr > 0 ) then
       Nrm = dble( hydromet(iiNrm) )
-      Nrp2_on_Nrm2 = dble( correlation_array(iiLH_Nr,iiLH_Nr) )
+      Nrp2_on_Nrm2 = dble( corr_varnce_array(iiLH_Nr,iiLH_Nr) )
 
       call log_sqd_normalized( Nrm, Nrp2_on_Nrm2, dble( Nr_tol ), & ! In
                                Nr1, Nr2, var_Nr1, var_Nr2 ) ! Out
@@ -443,12 +443,12 @@ module generate_lh_sample_module
 
     if ( iiLH_rrain > 0 .and. iiLH_Nr > 0 ) then
       ! Compute standard deviation of Nr & rrain
-      stdev_rr = real( rrainm ) * sqrt( correlation_array(iiLH_rrain,iiLH_rrain) )
-      stdev_Nr = real( Nrm ) * sqrt( correlation_array(iiLH_Nr,iiLH_Nr) )
+      stdev_rr = real( rrainm ) * sqrt( corr_varnce_array(iiLH_rrain,iiLH_rrain) )
+      stdev_Nr = real( Nrm ) * sqrt( corr_varnce_array(iiLH_Nr,iiLH_Nr) )
 
       if ( rrainm > dble( rr_tol ) .and. Nrm > dble( Nr_tol ) ) then
 
-        corr_rrNr = correlation_array(iiLH_rrain,iiLH_Nr)
+        corr_rrNr = corr_varnce_array(iiLH_rrain,iiLH_Nr)
 
         ! Covariance between rain water mixing ratio rain number concentration
         covar_rrNr1 = corr_LN_to_cov_gaus &
@@ -465,7 +465,7 @@ module generate_lh_sample_module
 
       ! Covariances involving s and Nr & rr
       if ( stdev_s1 > LH_stdev_s_tol .and. Nrm > dble( Nr_tol ) ) then
-        corr_sNr = correlation_array(iiLH_s_mellor,iiLH_Nr)
+        corr_sNr = corr_varnce_array(iiLH_s_mellor,iiLH_Nr)
 
         ! Covariance between s and rain number conc.
         covar_sNr1 = corr_gaus_LN_to_cov_gaus &
@@ -486,7 +486,7 @@ module generate_lh_sample_module
 
       if ( stdev_s2 > LH_stdev_s_tol .and. Nrm > dble( Nr_tol ) ) then
 
-        corr_sNr = correlation_array(iiLH_s_mellor,iiLH_Nr)
+        corr_sNr = corr_varnce_array(iiLH_s_mellor,iiLH_Nr)
 
         covar_sNr2 = corr_gaus_LN_to_cov_gaus &
                  ( corr_sNr, &
@@ -506,7 +506,7 @@ module generate_lh_sample_module
 
       if ( stdev_s1 > LH_stdev_s_tol .and. rrainm > dble( rr_tol ) ) then
 
-        corr_srr = correlation_array(iiLH_s_mellor,iiLH_rrain)
+        corr_srr = corr_varnce_array(iiLH_s_mellor,iiLH_rrain)
 
         ! Covariance between s and rain water mixing ratio
         covar_srr1 = corr_gaus_LN_to_cov_gaus &
@@ -527,7 +527,7 @@ module generate_lh_sample_module
 
       if ( stdev_s2 > LH_stdev_s_tol .and. rrainm > dble( rr_tol ) ) then
 
-        corr_srr = correlation_array(iiLH_s_mellor,iiLH_rrain)
+        corr_srr = corr_varnce_array(iiLH_s_mellor,iiLH_rrain)
 
         covar_srr2 = corr_gaus_LN_to_cov_gaus &
                  ( corr_srr, &
@@ -549,8 +549,8 @@ module generate_lh_sample_module
 !     if ( iiLH_Nc > 0 ) then
 
     ! Covariances involving s and Nc (currently disabled)
-!       corr_sNc = correlation_array(iiLH_s_mellor,iiLH_Nc)
-!       stdev_Nc = real( Ncm ) * sqrt( correlation_array(iiLH_Nc,iiLH_Nc) )
+!       corr_sNc = corr_varnce_array(iiLH_s_mellor,iiLH_Nc)
+!       stdev_Nc = real( Ncm ) * sqrt( corr_varnce_array(iiLH_Nc,iiLH_Nc) )
 
 !       if ( stdev_s1 > LH_stdev_s_tol .and. Ncm > dble( Nc_tol ) ) then
 !         ! The variable s is already Gaussian

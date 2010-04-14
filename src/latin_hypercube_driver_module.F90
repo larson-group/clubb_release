@@ -29,7 +29,7 @@ module latin_hypercube_driver_module
                sequence_length, nnzp, &
                cloud_frac, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm_zt, w_std_dev, delta_zt, delta_zm, rcm, rvm, &
-               hydromet, correlation_array, Lscale_vert_avg, &
+               hydromet, corr_varnce_array, Lscale_vert_avg, &
                LH_hydromet_mc, LH_hydromet_vel, LH_rcm_mc, &
                LH_rvm_mc, LH_thlm_mc, &
                microphys_sub ) 
@@ -178,7 +178,7 @@ module latin_hypercube_driver_module
       hydromet ! Hydrometeor species    [units vary]
 
     real, dimension(nnzp,d_variables,d_variables), intent(in) :: &
-      correlation_array ! Correlation for hydrometeor species [-]
+      corr_varnce_array ! Correlation for hydrometeor species [-]
 
     real, dimension(nnzp), intent(in) :: &
       Lscale_vert_avg ! 3pt vertical average of Lscale  [m]
@@ -547,7 +547,7 @@ module latin_hypercube_driver_module
       call generate_lh_sample &
            ( n_micro_calls, d_variables, hydromet_dim, &        ! In
              cloud_frac(k), wm_zt(k), rcm(k)+rvm(k), thlm(k), pdf_params, k, & ! In
-             hydromet(k,:), correlation_array(k,:,:), X_u_all_levs(k,:,:), & ! In
+             hydromet(k,:), corr_varnce_array(k,:,:), X_u_all_levs(k,:,:), & ! In
              X_mixt_comp_all_levs(k,:), & ! In
              LH_rt(k,:), LH_thl(k,:), X_nl_all_levs(k,:,:) ) ! Out
     end do ! k = k_lh_start..nnzp
@@ -557,7 +557,7 @@ module latin_hypercube_driver_module
       call generate_lh_sample &
            ( n_micro_calls, d_variables, hydromet_dim, &        ! In
              cloud_frac(k), wm_zt(k), rcm(k)+rvm(k), thlm(k), pdf_params, k, & ! In
-             hydromet(k,:), correlation_array(k,:,:), X_u_all_levs(k,:,:), &  !  In
+             hydromet(k,:), corr_varnce_array(k,:,:), X_u_all_levs(k,:,:), &  !  In
              X_mixt_comp_all_levs(k,:), & ! In
              LH_rt(k,:), LH_thl(k,:), X_nl_all_levs(k,:,:) ) ! Out
     end do ! k_lh_start-1..1

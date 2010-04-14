@@ -13,7 +13,7 @@ module microphys_driver
 
   !  Khairoutdinov, M. and Kogan, Y.: A new cloud physics parameterization in a
   !  large-eddy simulation model of marine stratocumulus, Mon. Wea. Rev., 128,
-  !  229-243, 2000. 
+  !  229-243, 2000.
   !-----------------------------------------------------------------------------
 
   use parameters_microphys, only: &
@@ -83,13 +83,13 @@ module microphys_driver
 
     use array_index, only: &
       iiLH_rrain, & ! Variables
-      iiLH_rsnow, &
-      iiLH_rice, &
-      iiLH_rgraupel, &
+!     iiLH_rsnow, &
+!     iiLH_rice, &
+!     iiLH_rgraupel, &
       iiLH_Nr, &
-      iiLH_Nsnow, &
-      iiLH_Ni, &
-      iiLH_Ngraupel, &
+!     iiLH_Nsnow, &
+!     iiLH_Ni, &
+!     iiLH_Ngraupel, &
       iiLH_Nc
 
     use parameters_microphys, only: &
@@ -170,7 +170,7 @@ module microphys_driver
     l_cloud_sed = .false.
 
     !---------------------------------------------------------------------------
-    ! Parameters for Khairoutdinov and Kogan microphysics 
+    ! Parameters for Khairoutdinov and Kogan microphysics
     !---------------------------------------------------------------------------
 
     ! Parameters for in-cloud (from SAM RF02 DO).
@@ -200,7 +200,7 @@ module microphys_driver
     r_0 = 25.0e-6   ! Assumed radius of all new drops; m.
 
     !---------------------------------------------------------------------------
-    ! Parameters for Morrison and COAMPS microphysics 
+    ! Parameters for Morrison and COAMPS microphysics
     !---------------------------------------------------------------------------
     l_ice_micro = .true.
     l_graupel = .true.
@@ -219,7 +219,7 @@ module microphys_driver
 
     ! Aerosol for RF02 from Mikhail Ovtchinnikov
     aer_rm1  = 0.011 ! Mean geometric radius                 [μ]
-    aer_rm2  = 0.06 
+    aer_rm2  = 0.06
 
     aer_sig1 = 1.2   ! Std dev of aerosol size distribution  [-]
     aer_sig2 = 1.7
@@ -229,14 +229,14 @@ module microphys_driver
 
     ! Other parameters, set as in SAM
     ccnconst = 120. ! Parameter for powerlaw CCN [#/cm3]
-    ccnexpnt = 0.4 
+    ccnexpnt = 0.4
 
     pgam_fixed = 5.
 
     !---------------------------------------------------------------------------
-    ! Parameters for Morrison microphysics and Khairoutdinov & Kogan microphysics 
+    ! Parameters for Morrison microphysics and Khairoutdinov & Kogan microphysics
     !---------------------------------------------------------------------------
-    Ncm_initial = 100. ! #/cm^3 
+    Ncm_initial = 100. ! #/cm^3
 
     l_latin_hypercube_sampling = .false.
     l_lh_cloud_weighted_sampling = .false.
@@ -372,10 +372,10 @@ module microphys_driver
       l_hydromet_sed(iirgraupelm) = .false.
 
       ! Convert from μ to m as in SAM
-      aer_rm1 = 1.e-6*aer_rm1 
-      aer_rm2 = 1.e-6*aer_rm2 
+      aer_rm1 = 1.e-6*aer_rm1
+      aer_rm2 = 1.e-6*aer_rm2
       ! Convert from #/cm3 to #/m3
-      aer_n1 = cm3_per_m3 * aer_n1 
+      aer_n1 = cm3_per_m3 * aer_n1
       aer_n2 = cm3_per_m3 * aer_n2
 
       ! Setup the Morrison scheme
@@ -389,7 +389,7 @@ module microphys_driver
 
       iiNrm       = 5
       ! Nsnowm is computed diagnostically in the subroutine coamps_micro_driver
-      iiNsnowm    = -1 
+      iiNsnowm    = -1
       iiNim       = 6
       iiNgraupelm = -1
       iiNcm       = 7
@@ -505,14 +505,14 @@ module microphys_driver
 
       call return_LH_index( iiNcm, i, iiLH_Nc )
       call return_LH_index( iiNrm, i, iiLH_Nr )
-      call return_LH_index( iiNsnowm, i, iiLH_Nsnow )
-      call return_LH_index( iiNim, i, iiLH_Ni )
-      call return_LH_index( iiNgraupelm, i, iiLH_Ngraupel )
+!     call return_LH_index( iiNsnowm, i, iiLH_Nsnow )
+!     call return_LH_index( iiNim, i, iiLH_Ni )
+!     call return_LH_index( iiNgraupelm, i, iiLH_Ngraupel )
 
       call return_LH_index( iirrainm, i, iiLH_rrain )
-      call return_LH_index( iirsnowm, i, iiLH_rsnow )
-      call return_LH_index( iiricem, i, iiLH_rice )
-      call return_LH_index( iirgraupelm, i, iiLH_rgraupel )
+!     call return_LH_index( iirsnowm, i, iiLH_rsnow )
+!     call return_LH_index( iiricem, i, iiLH_rice )
+!     call return_LH_index( iirgraupelm, i, iiLH_rgraupel )
 
       allocate( LH_sample_point_weights(LH_microphys_calls) )
 
@@ -546,12 +546,6 @@ module microphys_driver
 
     use KK_microphys_module, only: & 
       KK_microphys ! Procedure(s)
-
-    use parameters_microphys, only: & 
-      rrp2_on_rrainm2_cloud, & ! Variable(s)
-      Nrp2_on_Nrm2_cloud, & 
-      Ncp2_on_Ncm2_cloud, &
-      corr_rrNr_LL_cloud
 
     use morrison_micro_driver_module, only: &
       morrison_micro_driver
@@ -594,18 +588,6 @@ module microphys_driver
     use array_index, only:  & 
         iirrainm, iirsnowm, iiricem, iirgraupelm, &
         iiNrm, iiNsnowm, iiNim, iiNgraupelm, iiNcm
-
-    use array_index, only: &
-      iiLH_rt, & ! Variables
-      iiLH_rrain, &
-!     iiLH_rsnow, &
-!     iiLH_rice, &
-!     iiLH_rgraupel, &
-      iiLH_Nr, &
-!     iiLH_Nsnow, &
-!     iiLH_Ni, &
-!     iiLH_Ngraupel, &
-      iiLH_Nc
 
     use stats_variables, only: & 
       iVrr,  & ! Variable(s)
@@ -683,14 +665,6 @@ module microphys_driver
         stat_update_var, stat_update_var_pt,  & ! Procedure(s)
         stat_begin_update, stat_end_update
 
-    use parameters_microphys, only: &
-      rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, & ! Variables
-      corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
-      corr_sNc_NL_cloud, &
-      rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, Ncp2_on_Ncm2_below, & ! Variables
-      corr_rrNr_LL_below, corr_srr_NL_below, corr_sNr_NL_below, &
-      corr_sNc_NL_below  
-
     use fill_holes, only: vertical_avg ! Procedure(s)
 
     implicit none
@@ -762,18 +736,18 @@ module microphys_driver
 
     real, dimension(gr%nnzp,hydromet_dim) :: & 
       hydromet_mc  ! Change in hydrometeors due to microphysics  [units/s]
-      
+
     real, allocatable, dimension(:,:,:) :: & 
-      correlation_array  ! Array for correlations   [-]
+      corr_varnce_array  ! Array for correlations, with x'^2 /x^2 terms on the diagonal [-]
 
     real, dimension(gr%nnzp) :: &
       delta_zt, &     ! Difference in thermo. height levels     [m]
       delta_zm, &     ! Difference in moment. height levels     [m]
       Lscale_vert_avg ! 3pt vertically averaged Lscale          [m]
 
-!   real, dimension(gr%nnzp) :: & 
+!   real, dimension(gr%nnzp) :: &
 !     T_in_K  ! Temperature          [K]
-      
+
     real, dimension(1,1,gr%nnzp) :: & 
       cond ! COAMPS stat for condesation/evap of rcm
 
@@ -826,7 +800,7 @@ module microphys_driver
     delta_zm(1:gr%nnzp) = 1./gr%dzt(1:gr%nnzp)
 
     if ( l_latin_hypercube_sampling .and. l_lh_vert_overlap ) then
-      ! Determine vertically average Lscale
+      ! Determine 3pt vertically averaged Lscale
       do k = 1, gr%nnzp
         kp1 = min( k+1, gr%nnzp )
         km1 = max( k-1, 1 )
@@ -835,17 +809,19 @@ module microphys_driver
                                Lscale(km1:kp1) ) ! Out
       end do
     else
+      ! If vertical overlap is disabled, this calculation won't be needed
       Lscale_vert_avg = -999.
-    end if 
+    end if
 
-   ! Begin by calling Brian Griffin's implementation of the
-   ! Khairoutdinov and Kogan microphysical scheme, 
-   ! the Rutlege and Hobbes scheme from COAMPS, or the Morrison scheme.
-   ! Note: COAMPS appears to have some K&K elements to it as well.
+    ! Begin by calling Brian Griffin's implementation of the
+    ! Khairoutdinov and Kogan microphysics (analytic or local formulas),
+    ! the from COAMPS implementation of Rutlege and Hobbes, or the Morrison
+    ! microphysics.
+    ! Note: COAMPS appears to have some K&K elements to it as well.
 
     select case ( trim( micro_scheme ) )
 
-    case ( "coamps" ) 
+    case ( "coamps" )
 
       ! Initialize tendencies to zero
       hydromet_mc(:,:) = 0.0
@@ -895,22 +871,25 @@ module microphys_driver
 
       if ( l_latin_hypercube_sampling ) then
 
-        d_variables = 3 + hydromet_dim
+!       d_variables = 3 + hydromet_dim
+        d_variables = 3 + 3 ! Kluge, since we have no correlations for ice/snow
 
-        allocate( correlation_array(gr%nnzp,d_variables,d_variables) )
+        allocate( corr_varnce_array(gr%nnzp,d_variables,d_variables) )
 
-        ! For latin hypercube sampling
-        correlation_array(:,:,:) = 0.0 ! Initialize to 0
+        call setup_corr_varnce_array( d_variables, rcm, & ! In
+                                      corr_varnce_array ) ! Out
 
         call latin_hypercube_driver &
              ( real( dt ), iter, d_variables, LH_microphys_calls, & ! In
                LH_sequence_length, gr%nnzp, & ! In
                cloud_frac, thlm, p_in_Pa, exner, & ! In
                rho, pdf_params, wm_zt, wtmp, delta_zt, delta_zm, rcm, rtm-rcm, & ! In
-               hydromet, correlation_array, Lscale_vert_avg, & ! In
+               hydromet, corr_varnce_array, Lscale_vert_avg, & ! In
                hydromet_mc, hydromet_vel, rcm_mc, & ! In/Out
                rvm_mc, thlm_mc,  & ! In/Out
                morrison_micro_driver )  ! Procedure
+
+        deallocate( corr_varnce_array )
 
         if ( l_stats_samp ) then
 
@@ -935,7 +914,7 @@ module microphys_driver
       ! Based on YSU PBL interface to the Morrison scheme WRF driver, the standard dev. of w
       ! will be clipped to be between 0.1 m/s and 4.0 m/s in WRF.  -dschanen 23 Mar 2009
 !     wtmp(:) = max( 0.1, wtmp ) ! Disabled for now
-!     wtmp(:) = min( 4., wtmp )  
+!     wtmp(:) = min( 4., wtmp )
 
 !     wtmp = 0.5 ! %% debug
       call morrison_micro_driver & 
@@ -943,7 +922,7 @@ module microphys_driver
              thlm, p_in_Pa, exner, rho, pdf_params, &
              wm_zt, wtmp, delta_zt, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
              hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
- 
+
     case ( "khairoutdinov_kogan" )
 
       ! Initialize tendencies to zero
@@ -956,57 +935,22 @@ module microphys_driver
 
         d_variables = 3 + hydromet_dim
 
-        allocate( correlation_array(gr%nnzp,d_variables,d_variables) )
+        allocate( corr_varnce_array(gr%nnzp,d_variables,d_variables) )
 
-        ! For latin hypercube sampling
-        correlation_array(:,:,:) = 0.0 ! Initialize to 0
-        where ( rcm > rc_tol )
-          correlation_array(:,iiLH_Nc,iiLH_Nc)       = Ncp2_on_Ncm2_cloud
-          correlation_array(:,iiLH_Nr,iiLH_Nr)       = Nrp2_on_Nrm2_cloud
-          correlation_array(:,iiLH_rrain,iiLH_rrain) = rrp2_on_rrainm2_cloud
-
-          correlation_array(:,iiLH_rrain,iiLH_Nr) = corr_rrNr_LL_cloud
-          correlation_array(:,iiLH_Nr,iiLH_rrain) = corr_rrNr_LL_cloud
-
-          correlation_array(:,iiLH_rrain,iiLH_rt) = corr_srr_NL_cloud
-          correlation_array(:,iiLH_rt,iiLH_rrain) = corr_srr_NL_cloud
-
-          correlation_array(:,iiLH_Nr,iiLH_rt) = corr_sNr_NL_cloud
-          correlation_array(:,iiLH_rt,iiLH_Nr) = corr_sNr_NL_cloud
-
-          correlation_array(:,iiLH_Nc,iiLH_rt) = corr_sNc_NL_cloud
-          correlation_array(:,iiLH_rt,iiLH_Nc) = corr_sNc_NL_cloud
-        else where
-          ! This is a kluge to prevent a singular matrix in generate_lh_sample
-          correlation_array(:,iiLH_Nc,iiLH_Nc) = &
-            max( Ncp2_on_Ncm2_below, epsilon( Ncp2_on_Ncm2_below ) )
-          correlation_array(:,iiLH_Nr,iiLH_Nr)       = Nrp2_on_Nrm2_below
-          correlation_array(:,iiLH_rrain,iiLH_rrain) = rrp2_on_rrainm2_below
-
-          correlation_array(:,iiLH_rrain,iiLH_Nr) = corr_rrNr_LL_below
-          correlation_array(:,iiLH_Nr,iiLH_rrain) = corr_rrNr_LL_below
-
-          correlation_array(:,iiLH_rrain,iiLH_rt) = corr_srr_NL_below
-          correlation_array(:,iiLH_rt,iiLH_rrain) = corr_srr_NL_below
-
-          correlation_array(:,iiLH_Nr,iiLH_rt) = corr_sNr_NL_below
-          correlation_array(:,iiLH_rt,iiLH_Nr) = corr_sNr_NL_below
-
-          correlation_array(:,iiLH_Nc,iiLH_rt) = corr_sNc_NL_below
-          correlation_array(:,iiLH_rt,iiLH_Nc) = corr_sNc_NL_below
-
-        end where
-
+        call setup_corr_varnce_array( d_variables, rcm, & ! In
+                                      corr_varnce_array ) ! Out
         call latin_hypercube_driver &
              ( real( dt ), iter, d_variables, LH_microphys_calls, & ! In
                LH_sequence_length, gr%nnzp, & ! In
                cloud_frac, thlm, p_in_Pa, exner, & ! In
                rho, pdf_params, wm_zt, wtmp, delta_zt, delta_zm, rcm, rtm-rcm, & ! In
-               hydromet, correlation_array, Lscale_vert_avg, & ! In
+               hydromet, corr_varnce_array, Lscale_vert_avg, & ! In
                hydromet_mc, hydromet_vel, rcm_mc, & ! In/Out
                rvm_mc, thlm_mc, & ! In/Out
                KK_microphys ) ! Procedure
- 
+
+        deallocate( corr_varnce_array )
+
         if ( l_stats_samp ) then
 
           ! Latin hypercube estimate for cloud water mixing ratio microphysical tendency
@@ -1093,7 +1037,7 @@ module microphys_driver
           ixrm_mc = irsnowm_mc
 
           ! Morrison limit
-!         max_velocity = -1.2 ! m/s 
+!         max_velocity = -1.2 ! m/s
           ! Made up limit.  The literature suggests that it is quite possible
           ! that snow flake might achieve a terminal velocity of 2 m/s, and this
           ! happens in the COAMPS microphysics -dschanen 29 Sept 2009
@@ -1126,7 +1070,7 @@ module microphys_driver
           ixrm_mc = iNsnowm_mc
 
           ! Morrison limit
-!         max_velocity = -1.2 ! m/s 
+!         max_velocity = -1.2 ! m/s
           ! Made up limit.  The literature suggests that it is quite possible
           ! that snow flake might achieve a terminal velocity of 2 m/s, and this
           ! happens in the COAMPS microphysics -dschanen 29 Sept 2009
@@ -1173,7 +1117,7 @@ module microphys_driver
         ! numbers in the Morrison microphysics.
 
         do k = 1, gr%nnzp
-          if ( clubb_at_least_debug_level( 1 ) ) then 
+          if ( clubb_at_least_debug_level( 1 ) ) then
             if ( hydromet_vel(k,i) < max_velocity )  then
               write(fstderr,*) trim( hydromet_list(i) )// &
                 " velocity at k = ", k, " = ", hydromet_vel(k,i), "m/s"
@@ -1241,9 +1185,9 @@ module microphys_driver
                      hydromet(:,i), overevap_rate )
 
               ! Moved from adj_microphys_tndcy
-              if( l_stats_samp ) then 
-                 call stat_update_var_pt( iNrm_cond_adj, k,  & 
-                                       overevap_rate, zt )
+              if( l_stats_samp ) then
+                call stat_update_var_pt( iNrm_cond_adj, k,  & 
+                                      overevap_rate, zt )
               endif
             else
               if( l_stats_samp ) then
@@ -1476,7 +1420,7 @@ module microphys_driver
           iNsnowm_dff, & 
           iNgraupelm_ma, & 
           iNgraupelm_sd, & 
-          iNgraupelm_dff 
+          iNgraupelm_dff
 
       use stats_variables, only: & 
           iNcm_ma, & 
@@ -2145,14 +2089,14 @@ module microphys_driver
       elseif ( level > 1 .and. level < gr%nnzp ) then
 
         ! Most of the interior model; normal conditions.
-        
+
         ! Vince Larson pulled V_hm inside derivative to make conservative.
         ! 13 Dec 2007
         !
         ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
 !       lhs(kp1_tdiag)  &
 !       = + V_hmzt * dzt * gr%weights_zt2zm(t_above,mk)
-      
+
 !       ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
 !       lhs(k_tdiag)  &
 !       = + V_hmzt * dzt * (   gr%weights_zt2zm(t_below,mk)  &
@@ -2584,6 +2528,183 @@ module microphys_driver
 
       return
     end subroutine cleanup_microphys
+!===============================================================================
+    subroutine setup_corr_varnce_array( d_variables, rcm, corr_varnce_array )
+! Description:
+!   Setup an array with the x'^2/x variables on the diagonal and the other
+!   elements to be correlations between various variables.
+! References:
+!   None.
+!-------------------------------------------------------------------------------
+
+      use grid_class, only: gr ! Variable
+
+      use constants, only: rc_tol ! Constant
+
+      use parameters_microphys, only: &
+        rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, & ! Variables
+        corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
+        corr_sNc_NL_cloud, &
+        rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, Ncp2_on_Ncm2_below, &
+        corr_rrNr_LL_below, corr_srr_NL_below, corr_sNr_NL_below, &
+        corr_sNc_NL_below
+
+      use array_index, only: &
+        iiLH_rt, & ! Variables
+        iiLH_rrain, &
+        iiLH_rsnow, &
+        iiLH_rice, &
+        iiLH_rgraupel, &
+        iiLH_Nr, &
+        iiLH_Nsnow, &
+        iiLH_Ni, &
+        iiLH_Ngraupel, &
+        iiLH_Nc
+
+      implicit none
+
+      ! External
+      intrinsic :: max, epsilon
+
+      ! Input Variables
+      integer, intent(in) :: &
+        d_variables ! Number of variates in the array
+
+      real, dimension(gr%nnzp), intent(in) :: &
+        rcm ! Liquid water mixing ratio         [kg/kg]
+
+      ! Output Variables
+      real, dimension(gr%nnzp,d_variables,d_variables), intent(out) :: &
+        corr_varnce_array !  The output array
+
+      integer :: iiLH_s_mellor, k
+
+      ! ---- Begin Code ----
+
+      iiLH_s_mellor = iiLH_rt
+
+      corr_varnce_array(:,:,:) = 0.0 ! Initialize to 0
+
+      do k = 1, gr%nnzp
+        if ( rcm(k) > rc_tol ) then
+          if ( iiLH_Nc > 0 ) then
+            corr_varnce_array(:,iiLH_Nc,iiLH_Nc)       = Ncp2_on_Ncm2_cloud
+            corr_varnce_array(:,iiLH_Nc,iiLH_s_mellor) = corr_sNc_NL_cloud
+            corr_varnce_array(:,iiLH_s_mellor,iiLH_Nc) = corr_sNc_NL_cloud
+          end if
+          if ( iiLH_rrain > 0 ) then
+            corr_varnce_array(:,iiLH_rrain,iiLH_rrain)    = rrp2_on_rrainm2_cloud
+            corr_varnce_array(:,iiLH_rrain,iiLH_s_mellor) = corr_srr_NL_cloud
+            corr_varnce_array(:,iiLH_s_mellor,iiLH_rrain) = corr_srr_NL_cloud
+            if ( iiLH_Nr > 0 ) then
+              corr_varnce_array(:,iiLH_Nr,iiLH_Nr)       = Nrp2_on_Nrm2_cloud
+              corr_varnce_array(:,iiLH_rrain,iiLH_Nr)    = corr_rrNr_LL_cloud
+              corr_varnce_array(:,iiLH_Nr,iiLH_rrain)    = corr_rrNr_LL_cloud
+              corr_varnce_array(:,iiLH_Nr,iiLH_s_mellor) = corr_sNr_NL_cloud
+              corr_varnce_array(:,iiLH_s_mellor,iiLH_Nr) = corr_sNr_NL_cloud
+            end if ! iiLH_Nr > 0
+          end if ! iiLH_rrain > 0
+
+          ! Placeholder until we have actual numbers for the correlations/variances
+          ! of ice phase hydrometeors.
+          if ( iiLH_rsnow > 0 ) then
+            corr_varnce_array(:,iiLH_rsnow,iiLH_rsnow)    = rrp2_on_rrainm2_cloud
+            corr_varnce_array(:,iiLH_rsnow,iiLH_s_mellor) = corr_srr_NL_cloud
+            corr_varnce_array(:,iiLH_s_mellor,iiLH_rsnow) = corr_srr_NL_cloud
+            if ( iiLH_Nsnow > 0 ) then
+              corr_varnce_array(:,iiLH_Nsnow,iiLH_Nsnow)    = Nrp2_on_Nrm2_cloud
+              corr_varnce_array(:,iiLH_rsnow,iiLH_Nsnow)    = corr_rrNr_LL_cloud
+              corr_varnce_array(:,iiLH_Nsnow,iiLH_rsnow)    = corr_rrNr_LL_cloud
+              corr_varnce_array(:,iiLH_Nsnow,iiLH_s_mellor) = corr_sNr_NL_cloud
+              corr_varnce_array(:,iiLH_s_mellor,iiLH_Nsnow) = corr_sNr_NL_cloud
+            end if ! iiLH_Nsnow > 0
+          end if ! iiLH_rsnow > 0
+          if ( iiLH_rice > 0 ) then
+            corr_varnce_array(:,iiLH_rice,iiLH_rice)     = 1.0 ! Dimensionless made up value
+            corr_varnce_array(:,iiLH_rice,iiLH_s_mellor) = corr_sNc_NL_cloud
+            corr_varnce_array(:,iiLH_s_mellor,iiLH_rice) = corr_sNc_NL_cloud
+            if ( iiLH_Ni > 0 ) then
+              corr_varnce_array(:,iiLH_Ni,iiLH_Ni)     = Ncp2_on_Ncm2_cloud
+              corr_varnce_array(:,iiLH_Ni,iiLH_s_mellor) = corr_sNc_NL_cloud
+              corr_varnce_array(:,iiLH_s_mellor,iiLH_Ni) = corr_sNc_NL_cloud
+            end if ! iiLH_Ni > 0
+          end if ! iiLH_rice > 0
+          if ( iiLH_rgraupel > 0 ) then
+            corr_varnce_array(:,iiLH_rgraupel,iiLH_rgraupel)  = rrp2_on_rrainm2_cloud
+            corr_varnce_array(:,iiLH_rgraupel,iiLH_s_mellor) = corr_srr_NL_cloud
+            corr_varnce_array(:,iiLH_s_mellor,iiLH_rgraupel) = corr_srr_NL_cloud
+            if ( iiLH_Ngraupel > 0 ) then
+              corr_varnce_array(:,iiLH_Ngraupel,iiLH_Ngraupel) = Nrp2_on_Nrm2_cloud
+              corr_varnce_array(:,iiLH_rgraupel,iiLH_Ngraupel) = corr_rrNr_LL_cloud
+              corr_varnce_array(:,iiLH_Ngraupel,iiLH_rgraupel) = corr_rrNr_LL_cloud
+              corr_varnce_array(:,iiLH_Ngraupel,iiLH_s_mellor) = corr_sNr_NL_cloud
+              corr_varnce_array(:,iiLH_s_mellor,iiLH_Ngraupel) = corr_sNr_NL_cloud
+            end if ! iiLH_Ngraupel > 0
+          end if ! iiLH_rgraupel > 0
+
+        else ! rcm < rc_tol
+          if ( iiLH_Nc > 0 ) then
+            ! The epsilon is a kluge to prevent a singular matrix in generate_lh_sample
+            corr_varnce_array(:,iiLH_Nc,iiLH_Nc) = &
+              max( Ncp2_on_Ncm2_below, epsilon( Ncp2_on_Ncm2_below ) )
+            corr_varnce_array(:,iiLH_Nc,iiLH_s_mellor) = corr_sNc_NL_below
+            corr_varnce_array(:,iiLH_s_mellor,iiLH_Nc) = corr_sNc_NL_below
+          end if
+          if ( iiLH_rrain > 0 ) then
+            corr_varnce_array(:,iiLH_rrain,iiLH_rrain) = rrp2_on_rrainm2_below
+            corr_varnce_array(:,iiLH_rrain,iiLH_s_mellor) = corr_srr_NL_below
+            corr_varnce_array(:,iiLH_s_mellor,iiLH_rrain) = corr_srr_NL_below
+            if ( iiLH_Nr > 0 ) then
+              corr_varnce_array(:,iiLH_Nr,iiLH_Nr) = Nrp2_on_Nrm2_below
+              corr_varnce_array(:,iiLH_rrain,iiLH_Nr) = corr_rrNr_LL_below
+              corr_varnce_array(:,iiLH_Nr,iiLH_rrain) = corr_rrNr_LL_below
+              corr_varnce_array(:,iiLH_Nr,iiLH_s_mellor) = corr_sNr_NL_below
+              corr_varnce_array(:,iiLH_s_mellor,iiLH_Nr) = corr_sNr_NL_below
+            end if ! iiLH_Nr > 0
+          end if ! iiLH_rrain > 0
+
+          ! Placeholder until we have actual numbers for the correlations/variances
+          ! of ice phase hydrometeors.
+          if ( iiLH_rsnow > 0 ) then
+            corr_varnce_array(:,iiLH_rsnow,iiLH_rsnow)    = rrp2_on_rrainm2_below
+            corr_varnce_array(:,iiLH_rsnow,iiLH_s_mellor) = corr_srr_NL_below
+            corr_varnce_array(:,iiLH_s_mellor,iiLH_rsnow) = corr_srr_NL_below
+            if ( iiLH_Nsnow > 0 ) then
+              corr_varnce_array(:,iiLH_Nsnow,iiLH_Nsnow)    = Nrp2_on_Nrm2_below
+              corr_varnce_array(:,iiLH_rsnow,iiLH_Nsnow)    = corr_rrNr_LL_below
+              corr_varnce_array(:,iiLH_Nsnow,iiLH_rsnow)    = corr_rrNr_LL_below
+              corr_varnce_array(:,iiLH_Nsnow,iiLH_s_mellor) = corr_sNr_NL_below
+              corr_varnce_array(:,iiLH_s_mellor,iiLH_Nsnow) = corr_sNr_NL_below
+            end if ! iiLH_Nsnow > 0
+          end if ! iiLH_rsnow > 0
+          if ( iiLH_rice > 0 ) then
+            corr_varnce_array(:,iiLH_rice,iiLH_rice)     = 2.0 ! Dimensionless made up value
+            corr_varnce_array(:,iiLH_rice,iiLH_s_mellor) = corr_sNc_NL_below
+            corr_varnce_array(:,iiLH_s_mellor,iiLH_rice) = corr_sNc_NL_below
+            if ( iiLH_Ni > 0 ) then
+              corr_varnce_array(:,iiLH_Ni,iiLH_Ni)     = Ncp2_on_Ncm2_below
+              corr_varnce_array(:,iiLH_Ni,iiLH_s_mellor) = corr_sNc_NL_below
+              corr_varnce_array(:,iiLH_s_mellor,iiLH_Ni) = corr_sNc_NL_below
+            end if ! iiLH_Ni > 0
+          end if ! iiLH_rice > 0
+          if ( iiLH_rgraupel > 0 ) then
+            corr_varnce_array(:,iiLH_rgraupel,iiLH_rgraupel) = rrp2_on_rrainm2_below
+            corr_varnce_array(:,iiLH_rgraupel,iiLH_s_mellor) = corr_srr_NL_below
+            corr_varnce_array(:,iiLH_s_mellor,iiLH_rgraupel) = corr_srr_NL_below
+            if ( iiLH_Ngraupel > 0 ) then
+              corr_varnce_array(:,iiLH_Ngraupel,iiLH_Ngraupel) = Nrp2_on_Nrm2_below
+              corr_varnce_array(:,iiLH_rgraupel,iiLH_Ngraupel) = corr_rrNr_LL_below
+              corr_varnce_array(:,iiLH_Ngraupel,iiLH_rgraupel) = corr_rrNr_LL_below
+              corr_varnce_array(:,iiLH_Ngraupel,iiLH_s_mellor) = corr_sNr_NL_below
+              corr_varnce_array(:,iiLH_s_mellor,iiLH_Ngraupel) = corr_sNr_NL_below
+            end if ! iiLH_Ngraupel > 0
+          end if ! iiLH_rgraupel > 0
+
+        end if
+      end do
+
+      return
+    end subroutine setup_corr_varnce_array
 !===============================================================================
 
   end module microphys_driver
