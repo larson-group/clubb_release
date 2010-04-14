@@ -815,7 +815,7 @@ module microphys_driver
 
     ! Begin by calling Brian Griffin's implementation of the
     ! Khairoutdinov and Kogan microphysics (analytic or local formulas),
-    ! the from COAMPS implementation of Rutlege and Hobbes, or the Morrison
+    ! the COAMPS implementation of Rutlege and Hobbes, or the Morrison
     ! microphysics.
     ! Note: COAMPS appears to have some K&K elements to it as well.
 
@@ -2701,7 +2701,7 @@ module microphys_driver
           end if ! iiLH_rgraupel > 0
 
         end if
-      end do
+      end do ! 1..gr%nnzp
 
       return
     end subroutine setup_corr_varnce_array
