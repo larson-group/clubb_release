@@ -2592,6 +2592,8 @@ module microphys_driver
 
       iiLH_s_mellor = iiLH_rt
 
+      ! Initializing to zero means that correlations we don't have 
+      ! (e.g. Nc and any variable other than s_mellor ) are assumed to be 0.
       corr_varnce_array(:,:,:) = 0.0 ! Initialize to 0
 
       do k = 1, gr%nnzp
