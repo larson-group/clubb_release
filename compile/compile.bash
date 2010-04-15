@@ -217,10 +217,10 @@ int2txt: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a
 	cd $objdir; $gmake -f Make.int2txt
 
 clean:
-	-rm -f $objdir/*.o $objdir/*.mod
+	-rm -f $objdir/*.*
 	
 distclean:
-	-rm -f $objdir/*.o $objdir/*.mod $objdir/Make.* \
+	-rm -f $objdir/*.* \
         $libdir/lib* \
         $bindir/clubb_standalone \
         $bindir/clubb_tuner \
