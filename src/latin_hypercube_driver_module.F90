@@ -125,7 +125,9 @@ module latin_hypercube_driver_module
     use error_code, only: &
       clubb_at_least_debug_level ! Procedure
 
-    use mt95, only: genrand_real ! Constants
+    use mt95, only: genrand_real, genrand_intg ! Constants
+
+    use mt95, only: genrand_init ! Procedure
 
     implicit none
 
@@ -141,7 +143,8 @@ module latin_hypercube_driver_module
 
     ! Find in and out of cloud points using the rejection method rather than scaling
     logical, parameter :: &
-      l_use_rejection_method = .false.
+      l_use_rejection_method = .false., &
+      l_re_seed = .true.
 
     ! Input Variables
     real, intent(in) :: &
@@ -270,6 +273,13 @@ module latin_hypercube_driver_module
 
       prior_iter = iter
 
+      ! Re-seed 
+      if ( l_re_seed ) then
+        ! This is the default seed in mt95.  Change this number to try
+        ! non-default values.
+        call genrand_init( put=5489_genrand_intg ) 
+      end if
+
       ! Check for a bug where the iteration number isn't incrementing correctly,
       ! which will lead to improper sampling.
     else if ( l_diagnostic_iter_check ) then
@@ -325,8 +335,7 @@ module latin_hypercube_driver_module
 
       ! print*, 'latin_hypercube_sampling: got past p_matrix'
 
-      ! Generate the uniform distribution using the Mersenne twister (not
-      ! currently configured to re-seed).
+      ! Generate the uniform distribution using the Mersenne twister
       !  X_u has one extra dimension for the mixture component.
       call generate_uniform_sample( n_micro_calls, nt_repeat, d_variables+1, p_matrix, & ! In
                                     X_u_all_levs(k,:,:) ) ! Out
@@ -1348,7 +1357,7 @@ module latin_hypercube_driver_module
 
     ! Parameter Constants
     real, parameter :: &
-      vert_corr_coef = 0.1  ! Empirically defined correlation constant [-]
+      vert_corr_coef = 0.1 ! Empirically defined correlation constant [-]
 
     ! Input Variables
     integer, intent(in) :: &
