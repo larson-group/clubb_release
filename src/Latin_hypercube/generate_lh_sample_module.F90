@@ -18,7 +18,7 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
   subroutine generate_lh_sample &
              ( n_micro_calls, d_variables, hydromet_dim, & 
-               cloud_frac, wm, rtm, thlm, pdf_params, level, & 
+               wm, rtm, thlm, pdf_params, level, & 
                hydromet, corr_varnce_array, X_u_one_lev, &
                X_mixt_comp_one_lev, &
                LH_rt, LH_thl, X_nl_one_lev )
@@ -83,7 +83,6 @@ module generate_lh_sample_module
       hydromet ! Hydrometeor species [units vary]
 
     real, intent(in) :: &
-      cloud_frac, & ! Cloud fraction, 0 <= cloud_frac <= 1
       wm,         & ! Vertical velocity                   [m/s]
       rtm,        & ! Mean total water mixing ratio       [kg/kg]
       thlm          ! Mean liquid potential temperature   [K]

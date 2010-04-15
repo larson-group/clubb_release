@@ -555,7 +555,7 @@ module latin_hypercube_driver_module
       ! Generate LH sample, represented by X_u and X_nl, for level k
       call generate_lh_sample &
            ( n_micro_calls, d_variables, hydromet_dim, &        ! In
-             cloud_frac(k), wm_zt(k), rcm(k)+rvm(k), thlm(k), pdf_params, k, & ! In
+             wm_zt(k), rcm(k)+rvm(k), thlm(k), pdf_params, k, & ! In
              hydromet(k,:), corr_varnce_array(k,:,:), X_u_all_levs(k,:,:), & ! In
              X_mixt_comp_all_levs(k,:), & ! In
              LH_rt(k,:), LH_thl(k,:), X_nl_all_levs(k,:,:) ) ! Out
@@ -565,7 +565,7 @@ module latin_hypercube_driver_module
     do k = k_lh_start-1, 1, -1
       call generate_lh_sample &
            ( n_micro_calls, d_variables, hydromet_dim, &        ! In
-             cloud_frac(k), wm_zt(k), rcm(k)+rvm(k), thlm(k), pdf_params, k, & ! In
+             wm_zt(k), rcm(k)+rvm(k), thlm(k), pdf_params, k, & ! In
              hydromet(k,:), corr_varnce_array(k,:,:), X_u_all_levs(k,:,:), &  !  In
              X_mixt_comp_all_levs(k,:), & ! In
              LH_rt(k,:), LH_thl(k,:), X_nl_all_levs(k,:,:) ) ! Out
@@ -583,7 +583,7 @@ module latin_hypercube_driver_module
     ! Perform LH and analytic microphysical calculations
     call estimate_lh_micro &
          ( dt, nnzp, n_micro_calls, d_variables, &  ! intent(in)
-           X_u_all_levs, X_nl_all_levs, &           ! intent(in)
+           X_nl_all_levs, &                         ! intent(in)
            LH_rt, LH_thl, pdf_params, &             ! intent(in)
            p_in_Pa, exner, rho, &                   ! intent(in)
            rcm, w_std_dev, delta_zt, &              ! intent(in)

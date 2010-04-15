@@ -1765,7 +1765,7 @@ module microphys_driver
           + diffusion_cloud_frac_zt_lhs &
             ( Kr(k), Kr(km1), cloud_frac_zt(k), cloud_frac_zt(k-1), &
               cloud_frac_zt(k+1), cloud_frac_zm(k), &
-              cloud_frac_zm(k+1), cloud_frac_zm(k-1), &
+              cloud_frac_zm(k-1), &
               nu, gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
         else ! All other cases
           lhs(kp1_tdiag:km1_tdiag,k) & 
@@ -1812,7 +1812,7 @@ module microphys_driver
             = diffusion_cloud_frac_zt_lhs &
               ( Kr(k), Kr(km1), cloud_frac_zt(k), cloud_frac_zt(k-1), &
                 cloud_frac_zt(k+1), cloud_frac_zm(k), &
-                cloud_frac_zm(k+1), cloud_frac_zm(k-1), &
+                cloud_frac_zm(k-1), &
                 nu, gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
             ztscr07(k) = -tmp(3)
             ztscr08(k) = -tmp(2)

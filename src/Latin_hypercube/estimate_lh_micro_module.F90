@@ -18,7 +18,7 @@ module estimate_lh_micro_module
 
   subroutine estimate_lh_micro &
              ( dt, nnzp, n_micro_calls, d_variables, &
-               X_u_all_levs, X_nl_all_levs, & 
+               X_nl_all_levs, & 
                LH_rt, LH_thl, pdf_params, & 
                p_in_Pa, exner, rho, &
                rcm, w_std_dev, dzq, &        
@@ -67,10 +67,6 @@ module estimate_lh_micro_module
       nnzp, &          ! Number of vertical levels
       n_micro_calls, & ! Number of calls to the microphysics
       d_variables      ! Number of variates
-
-    ! Sample drawn from uniform distribution
-    double precision, dimension(nnzp,n_micro_calls,d_variables+1), intent(in) :: &
-      X_u_all_levs ! N x D+1 Latin hypercube sample from uniform dist
 
     double precision, dimension(nnzp,n_micro_calls,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
@@ -235,21 +231,21 @@ module estimate_lh_micro_module
       ! Call microphysics, i.e. Kessler autoconversion.
       ! A_K = (1e-3/s)*(rc-0.5kg/kg)*H(rc-0.5kg/kg)
       call autoconv_driver &
-           ( n_micro_calls, d_variables, dble( mixt_frac ), &
+           ( n_micro_calls, dble( mixt_frac ), &
              dble( cloud_frac1 ), dble( cloud_frac2 ), &
              rcm_sample, & 
-               !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
-             X_u_all_levs(level,:,:), X_mixt_comp_all_levs(level,:), lh_AKm_dp )
+             !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
+             X_mixt_comp_all_levs(level,:), lh_AKm_dp )
 
       ! Convert to real number
       lh_AKm(level) = real( lh_AKm_dp )
 
       ! Compute Monte Carlo estimate of liquid for test purposes.
       call rc_estimate &
-           ( n_micro_calls, d_variables, dble( mixt_frac ), dble( cloud_frac1 ), &
+           ( n_micro_calls, dble( mixt_frac ), dble( cloud_frac1 ), &
              dble( cloud_frac2 ), rcm_sample, & 
              ! X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
-             X_u_all_levs(level,:,:), X_mixt_comp_all_levs(level,: ), lh_rcm_avg_dp )
+             X_mixt_comp_all_levs(level,: ), lh_rcm_avg_dp )
 
       ! Convert to real number
       lh_rcm_avg(level) = real( lh_rcm_avg_dp )
@@ -354,7 +350,7 @@ module estimate_lh_micro_module
 
     call lh_microphys_driver( dt, nnzp, n_micro_calls, d_variables, &
                               LH_rt, LH_thl, &
-                              X_nl_all_levs, X_u_all_levs, &
+                              X_nl_all_levs, &
                               p_in_Pa, exner, rho, w_std_dev, &
                               dzq, pdf_params, hydromet, &
                               X_mixt_comp_all_levs, &
@@ -369,10 +365,10 @@ module estimate_lh_micro_module
     return
   end subroutine estimate_lh_micro
 !-----------------------------------------------------------------------
-  subroutine autoconv_driver( n_micro_calls, d_variables, mixt_frac, &
+  subroutine autoconv_driver( n_micro_calls, mixt_frac, &
                               cloud_frac1, cloud_frac2, rc, &
                              !w, Nc, rr, &
-                              X_u_one_lev, X_mixt_comp_one_lev, ac_m )
+                              X_mixt_comp_one_lev, ac_m )
 ! Description:
 !   Compute Kessler grid box avg autoconversion (kg/kg)/s.
 ! References:
@@ -402,8 +398,7 @@ module estimate_lh_micro_module
     ! Input Variables
 
     integer, intent(in) :: &
-      n_micro_calls, & ! Number of calls to microphysics (normally=2)
-      d_variables      ! Number of variates (normally=5)
+      n_micro_calls  ! Number of calls to microphysics (normally=2)
 
     double precision, intent(in) :: &
       mixt_frac,               & ! Mixture fraction of Gaussians
@@ -414,9 +409,6 @@ module estimate_lh_micro_module
 !     w,  & ! n in-cloud values of vertical velocity (m/s)
 !     Nc, & ! n in-cloud values of droplet number (#/mg air)
 !     rr    ! n in-cloud values of specific rain content (g/kg)
-
-    double precision, dimension(n_micro_calls,d_variables+1), intent(in) :: &
-      X_u_one_lev ! N x D+1 Latin hypercube sample from uniform dist
 
     integer, dimension(n_micro_calls), intent(in) :: &
       X_mixt_comp_one_lev ! Whether we're in the first or second mixture component
@@ -589,7 +581,7 @@ module estimate_lh_micro_module
   subroutine lh_microphys_driver &
              ( dt, nnzp, n_micro_calls, d_variables, &
                LH_rt, LH_thl, &
-               X_nl_all_levs, X_u_all_levs, &
+               X_nl_all_levs, &
                p_in_Pa, exner, rho, w_std_dev, &
                dzq, pdf_params, hydromet,  &
                X_mixt_comp_all_levs, &
@@ -671,9 +663,6 @@ module estimate_lh_micro_module
     real, dimension(nnzp,n_micro_calls), intent(in) :: &
       LH_rt, & ! n_micro_calls values of total water mixing ratio     [kg/kg]
       LH_thl   ! n_micro_calls values of liquid potential temperature [K]
-
-    double precision, dimension(nnzp,n_micro_calls,d_variables+1), intent(in) :: &
-      X_u_all_levs ! N x D+1 Latin hypercube sample from uniform dist
 
     double precision, target, dimension(nnzp,n_micro_calls,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
@@ -1098,9 +1087,9 @@ module estimate_lh_micro_module
   end subroutine lh_microphys_driver
 
 !----------------------------------------------------------------------
-  subroutine rc_estimate( n_micro_calls, d_variables, mixt_frac, C1, C2, rc, & ! w,   & 
+  subroutine rc_estimate( n_micro_calls, mixt_frac, C1, C2, rc, & ! w,   & 
                          !N_pts, rr, 
-                           X_u_one_lev, X_mixt_comp_one_lev, rc_m )
+                           X_mixt_comp_one_lev, rc_m )
 ! Description:
 !   Compute an Monte Carlo estimate of grid box avg liquid water.
 ! References:
@@ -1121,8 +1110,7 @@ module estimate_lh_micro_module
 
     ! Input Variables
     integer, intent(in) :: &
-      n_micro_calls, & ! Number of calls to microphysics (normally=2)
-      d_variables      ! Number of variates (normally=5)
+      n_micro_calls ! Number of calls to microphysics (normally=2)
 
     double precision, intent(in) :: &
       mixt_frac, & ! Mixture fraction of Gaussians
@@ -1133,9 +1121,6 @@ module estimate_lh_micro_module
 !     w,  & ! n in-cloud values of vertical velocity (m/s)
 !     Npts, & ! n in-cloud values of droplet number (#/kg air)
 !     rr    ! n in-cloud values of specific rain content (kg/kg)
-
-    double precision, dimension(n_micro_calls,d_variables+1), intent(in) :: &
-      X_u_one_lev ! N x D+1 Latin hypercube sample from uniform dist
 
     integer, dimension(n_micro_calls), intent(in) :: &
       X_mixt_comp_one_lev ! Whether we're in the first or second mixture component

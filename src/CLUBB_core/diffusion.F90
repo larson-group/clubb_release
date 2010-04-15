@@ -317,7 +317,7 @@ module diffusion
   pure function diffusion_cloud_frac_zt_lhs &
                 ( K_zm, K_zmm1, cloud_frac_zt, cloud_frac_ztm1, &
                   cloud_frac_ztp1, cloud_frac_zm, &
-                  cloud_frac_zmp1, cloud_frac_zmm1, &
+                  cloud_frac_zmm1, &
                   nu, dzmm1, dzm, dzt, level ) &
   result( lhs )
   ! Description:
@@ -354,7 +354,6 @@ module diffusion
       cloud_frac_ztm1,& ! Cloud fraction at the thermodynamic level (k-1)         [-]
       cloud_frac_ztp1,& ! Cloud fraction at the thermodynamic level (k+1)         [-]
       cloud_frac_zm,  & ! Cloud fraction at the momentum level (k)                [-]
-      cloud_frac_zmp1,& ! Cloud fraction at the momentum level (k+1)              [-]
       cloud_frac_zmm1,& ! Cloud fraction at the momentum level (k-1)              [-]
       nu,             & ! Background constant coefficient of eddy diffusivity     [m^2/s]
       dzt,            & ! Inverse of grid spacing over thermodynamic level (k)    [1/m]

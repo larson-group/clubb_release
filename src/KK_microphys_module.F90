@@ -205,6 +205,16 @@ module KK_microphys_module
 
     ! --- Begin Code ---
 
+    if ( .false. .and. l_latin_hypercube ) then
+      ! Make compiler warnings go away.  We want to include these arguments
+      ! because then we can share an interface between Morrison and KK
+      ! microphyics and use the same Latin Hypercube sampling between them.
+      ! -dschanen 15 April 2010
+      rrainm_src_adj = wm
+      rrainm_src_adj = w_std_dev
+      rrainm_src_adj = dzq
+      rrainm_src_adj = rvm
+    end if
     ! IMPORTANT NOTES
     !
     ! The equations for mean volume radius (and therefore sedimentation
