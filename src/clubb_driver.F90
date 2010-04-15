@@ -1265,7 +1265,7 @@ module clubb_driver
 
     ! Covert sounding input to CLUBB compatible input
     call initialize_clubb_variables( alt_type, theta_type,         & ! Intent(in)
-                                     psfc, rtm_sfc, thlm_sfc, rtm, & ! Intent(in)
+                                     psfc, rtm_sfc, rtm, & !thlm_sfc, & ! Intent(in)
                                      thlm, p_in_Pa,                & ! Intent(inout)
                                      exner, rho, rho_zm,           & ! Intent(out)
                                      rcm, thvm, rho_ds_zm,         & ! Intent(out)
@@ -1720,9 +1720,9 @@ module clubb_driver
 
     return
   end subroutine initialize_clubb
-  !-----------------------------------------------------------------------
+  !-----------------------------------------------------------------------------
   subroutine initialize_clubb_variables( alt_type, theta_type, &
-                                         psfc, rtm_sfc, thlm_sfc, rtm, &
+                                         psfc, rtm_sfc, rtm, & !thlm_sfc, &
                                          thlm, p_in_Pa, &
                                          exner, rho, rho_zm, &
                                          rcm, thvm, rho_ds_zm, &
@@ -1731,16 +1731,20 @@ module clubb_driver
                                          thv_ds_zt, sclrm, edsclrm )
 
     ! Description:
-    ! Given inital sounding data (already interpolated onto model thermodynamic
-    ! levels) for rtm, thlm (which can be temperature, theta, or theta_l at this
-    ! point), and pressure (in the case that the sounding is given in pressure
-    ! coordinates), as well as surface data on surface pressure, rtm at the
-    ! surface, and thlm (temp., theta, or theta_l) at the surface, calculate
-    ! many initial profiles of variables used in CLUBB.  Pressure is calculated
-    ! (in the case that the sounding is given in altitude coordinates), as well
-    ! as exner and density.  Initial rcm, theta, and theta_l are calculated.
-    ! Additionally, the dry profiles (dry densities and dry, base-state theta_v)
-    ! for the anelastic equation set are calculated.
+    !   Given inital sounding data (already interpolated onto model thermodynamic
+    !   levels) for rtm, thlm (which can be temperature, theta, or theta_l at this
+    !   point), and pressure (in the case that the sounding is given in pressure
+    !   coordinates), as well as surface data on surface pressure, rtm at the
+    !   surface, and thlm (temp., theta, or theta_l) at the surface, calculate
+    !   many initial profiles of variables used in CLUBB.  Pressure is calculated
+    !   (in the case that the sounding is given in altitude coordinates), as well
+    !   as exner and density.  Initial rcm, theta, and theta_l are calculated.
+    !   Additionally, the dry profiles (dry densities and dry, base-state theta_v)
+    !   for the anelastic equation set are calculated.
+
+    ! References:
+    !   None
+    !---------------------------------------------------------------------------
 
     use grid_class, only: &
         gr, & ! Variable(s)
@@ -1792,8 +1796,8 @@ module clubb_driver
 
     real, intent(in) ::  &
       psfc,     & ! Surface pressure                              [Pa]
-      rtm_sfc,  & ! Surface total water mixing ratio              [kg/kg]
-      thlm_sfc    ! Surface liquid water potential temperature    [K]
+      rtm_sfc !,& ! Surface total water mixing ratio              [kg/kg]
+!     thlm_sfc    ! Surface liquid water potential temperature    [K]
 
     real, dimension(gr%nnzp), intent(in) ::  &
       rtm    ! Total water mixing ratio (thermodynamic levels)    [kg/kg]
@@ -2187,7 +2191,7 @@ module clubb_driver
 
       select case ( trim( theta_type ) )
 
-      case( temperature_name )
+      case ( temperature_name )
 
         ! The variable "thlm" actually contains temperature (in Kelvin) at this
         ! point.

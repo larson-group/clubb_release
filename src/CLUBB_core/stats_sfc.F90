@@ -57,7 +57,9 @@ module stats_sfc
         iup2_vert_avg, &
         ivp2_vert_avg, &
         irtp2_vert_avg, &
-        ithlp2_vert_avg, &
+        ithlp2_vert_avg
+
+    use stats_variables, only: & 
         iwp23_matrix_condt_num, & 
         irtm_matrix_condt_num, & 
         ithlm_matrix_condt_num, & 
