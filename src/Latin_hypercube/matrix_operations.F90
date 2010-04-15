@@ -4,13 +4,13 @@ module matrix_operations
   implicit none
 
   interface linear_symm_upper_eqn_solve
-    module procedure single_linear_symm_upper_eqn_solve, double_linear_symm_upper_eqn_solve
+    module procedure sp_lin_symm_upper_eqn_solve, dp_lin_symm_upper_eqn_solve
   end interface linear_symm_upper_eqn_solve
 
   public :: linear_eqn_solve, linear_symm_upper_eqn_solve, band_mult, &
     covar_matrix_2_corr_matrix
 
-  private :: single_linear_symm_upper_eqn_solve, double_linear_symm_upper_eqn_solve
+  private :: sp_lin_symm_upper_eqn_solve, dp_lin_symm_upper_eqn_solve
 
   private ! Default scope
 
@@ -73,7 +73,7 @@ module matrix_operations
   end subroutine linear_eqn_solve
 
 !----------------------------------------------------------------------
-  subroutine double_linear_symm_upper_eqn_solve( n, a, x, b )
+  subroutine dp_lin_symm_upper_eqn_solve( n, a, x, b )
 !   Description:
 !    Solve for A * X = B for a symmetric matrix, using the upper diagonals.
 !   References:
@@ -128,23 +128,23 @@ module matrix_operations
 
     select case( info )
     case( :-1 )
-      write(0,*) "double_linear_symm_upper_eqn_solve" // & 
+      write(0,*) "dp_lin_symm_upper_eqn_solve" // & 
         " illegal value for argument ", -info
       stop
     case( 0 )
       ! Success!
 
     case( 1: )
-      write(0,*) "double_linear_symm_upper_eqn_solve: singular matrix"
+      write(0,*) "dp_lin_symm_upper_eqn_solve: singular matrix"
       stop
     end select
 
     deallocate( work )
 
     return
-  end subroutine double_linear_symm_upper_eqn_solve
+  end subroutine dp_lin_symm_upper_eqn_solve
 !----------------------------------------------------------------------
-  subroutine single_linear_symm_upper_eqn_solve( n, a, x, b )
+  subroutine sp_lin_symm_upper_eqn_solve( n, a, x, b )
 !   Description:
 !    Solve for A * X = B for a symmetric matrix, using the upper diagonals.
 !   References:
@@ -199,21 +199,21 @@ module matrix_operations
 
     select case( info )
     case( :-1 )
-      write(0,*) "single_linear_symm_upper_eqn_solve" // & 
+      write(0,*) "sp_lin_symm_upper_eqn_solve" // & 
         " illegal value for argument ", -info
       stop
     case( 0 )
       ! Success!
 
     case( 1: )
-      write(0,*) "single_linear_symm_upper_eqn_solve: singular matrix"
+      write(0,*) "sp_lin_symm_upper_eqn_solve: singular matrix"
       stop
     end select
 
     deallocate( work )
 
     return
-  end subroutine single_linear_symm_upper_eqn_solve
+  end subroutine sp_lin_symm_upper_eqn_solve
 
 !-----------------------------------------------------------------------
   subroutine band_mult( trans, ndim, mdim, nsup, nsub, yinc, xinc, & 
