@@ -9,9 +9,9 @@
 runtype = "rico"  ! Case name.
 
 ! For grid_type = 1 nzmax can be any nunber
-nzmax = 100       ! Number of vertical levels.
+nzmax = 128       ! Number of vertical levels.
 
-grid_type = 1     ! Select grid type:
+grid_type = 2     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
                   ! 2 ==> stretched (unevenly-spaced) grid
                   !       entered on thermodynamic grid levels;
@@ -33,7 +33,7 @@ zm_top = 3960.0 ! Maximum Altitude of highest momentum level on any grid. [m]
 ! Path (from ../run_scripts/) and filename of data file that contains
 ! thermodynamic level altitudes (in meters).
 ! Note:  For this option, zm_grid_fname must be ''.
-zt_grid_fname = ''
+zt_grid_fname = '../input/grid/deep_convection_128lev_27km_zt_grid.grd'
 
 ! Stretched grid on momentum levels (grid_type = 3).
 ! Path (from ../run_scripts/) and filename to data file that contains
@@ -56,8 +56,8 @@ time_initial = 0.0       ! Model start time [seconds since midnight on start dat
 time_final   = 259200.0  ! Model end time [seconds since midnight on start date]
 time_spinup  = 0.0       ! End of spin-up period [seconds since midnight on start date]
 
-dtmain    = 60.0   ! Model timestep [s]
-dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
+dtmain    = 300.0   ! Model timestep [s]
+dtclosure = 300.0   ! Closure timestep [s] (must multiply evenly into dtmain).
 
 sfctype = 0      ! Select surface scheme (cases without specified surface fluxes).
                  ! 0 ==> fixed surface sensible and latent heat fluxes,
@@ -145,27 +145,27 @@ iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thet
 micro_scheme = "khairoutdinov_kogan"
 
 !!!!!!! COMMENTS FOR RICO MARINE CUMULUS CASE
-!!!!!!! These are the constants needed to
-!!!!!!! run the RICO case, as I did in my case rico0206, submitted:
-rrp2_on_rrainm2_cloud = 30.
-Nrp2_on_Nrm2_cloud = 10.
-Ncp2_on_Ncm2_cloud = 60.
-corr_rrNr_LL_cloud = 0.8
-corr_srr_NL_cloud = 0.25
-corr_sNr_NL_cloud = 0.3
-corr_sNc_NL_cloud = 0.24
+!!!!!!! These are K&K microphysics constants updated from Michael Falk's submission, rico0206.
+!!!!!!! These constants are closer to the DYCOMS2 RF02 values and produce more rain.
+rrp2_on_rrainm2_cloud = 0.766  
+Nrp2_on_Nrm2_cloud = 0.429  
+Ncp2_on_Ncm2_cloud = 2.2  
+corr_rrNr_LL_cloud = 0.786
+corr_srr_NL_cloud = 0.242
+corr_sNr_NL_cloud = 0.285
+corr_sNc_NL_cloud = 0.0
 
-rrp2_on_rrainm2_below = 20.
-Nrp2_on_Nrm2_below = 2.
+rrp2_on_rrainm2_below = 1.  ! Reduced by a factor of 10
+Nrp2_on_Nrm2_below = 1.  ! Reduced
 Ncp2_on_Ncm2_below = 0.
-corr_rrNr_LL_below = 0.78
-corr_srr_NL_below = 0.
-corr_sNr_NL_below = 0.
-corr_sNc_NL_below = 0.
+corr_rrNr_LL_below = 0.886
+corr_srr_NL_below = 0.056
+corr_sNr_NL_below = 0.015
+corr_sNc_NL_below = 0.00
 
 C_evap = 0.5
 r_0 = 100.0e-6
-!!!!!!! END RICO COMMENTS, Michael Falk, 27-28 November 2007
+!!!!!!! END RICO COMMENTS --modified by Leah Grant, Apr. 2010
 Ncm_initial = 70. ! #/cm3 
 /
 
@@ -179,9 +179,9 @@ rad_scheme = "none"
 
 l_stats      = .true.   ! Flag for statistical output.
 fname_prefix = "rico"   ! Prefix of output filename.
-stats_tsamp  = 60.      ! Frequency of statistical sampling [s]
+stats_tsamp  = 300.      ! Frequency of statistical sampling [s]
                         ! (must multiply evenly into stats_tout).
-stats_tout   = 60.      ! Frequency of statistical output.  [s]
+stats_tout   = 300.      ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"  ! Type of statistical output file (GrADS or netCDF).
 /
 
