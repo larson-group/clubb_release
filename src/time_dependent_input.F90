@@ -117,6 +117,10 @@ module time_dependent_input
     !  input values that vary in one dimension.
     !-----------------------------------------------------------------------------
 
+    use constants, only: fstderr ! Variable(s)
+
+    use error_code, only: clubb_at_least_debug_level ! Procedure(s)
+
     use input_reader, only: read_one_dim_file, one_dim_read_var, &
                             fill_blanks_one_dim_vars, read_x_profile
 
@@ -200,6 +204,11 @@ module time_dependent_input
 
     psfc_given = read_x_profile( nCols, dim_size, pressure_name, retVars, &
                                  input_file )
+
+    ! Added a warning because psfc_given is not used anywhere else in the code.
+    if ( clubb_at_least_debug_level( 1 ) ) then
+      write(fstderr,*) 'Warning: Pressure data has been read in and ignored.'
+    end if
 
     ! upwp_sfc and vpwp_sfc are currently (Aug. 2009) only fed into CLUBB for case "gabls3_night"
     if ( l_input_xpwp_sfc ) then
