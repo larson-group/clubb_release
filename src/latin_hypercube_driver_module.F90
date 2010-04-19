@@ -139,7 +139,7 @@ module latin_hypercube_driver_module
 
     ! Parameter Constants
     real, parameter :: &
-      cloud_frac_thresh = 0.01 ! Threshold for sampling preferentially within cloud
+      cloud_frac_thresh = 0.001 ! Threshold for sampling preferentially within cloud
 
     ! Find in and out of cloud points using the rejection method rather than scaling
     logical, parameter :: &
