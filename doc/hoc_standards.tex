@@ -651,6 +651,12 @@ real data type conversions.
 extension.  This is due to the a kluge used with \texttt{mkmf} that only enables
 compiler warnings when the file is pre-processed Fortran 90 source. 
 
+\item Any new files added to the repository should have matching filenames and module names. 
+This is because some host models in which CLUBB is implemented, e.g. SAM and CAM, use 
+make/compile scripts that assume all filenames and module names are the same.
+Also, if a new module name requires an extension, use \verb|<module name>_module|
+rather than \verb|<module name>_mod|, for clarity and consistency with the rest of the code. 
+
 \item CLUBB uses the convention that logical variables should have a prefix of \verb|l_|.  For example,
 use \verb|l_cloud_sed| rather than \verb|cloud_sed|.
 

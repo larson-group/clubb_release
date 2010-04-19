@@ -105,7 +105,7 @@ function&nbsp;xyzzy(&nbsp;etherx,&nbsp;ethery,&nbsp;etherz&nbsp;)
 &nbsp;&nbsp;&nbsp;&nbsp;etherz&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;!&nbsp;Ether&nbsp;in&nbsp;the&nbsp;z&nbsp;dimension&nbsp;&nbsp;[kg/kg]
 
 &nbsp;&nbsp;!&nbsp;Output&nbsp;Variables
-&nbsp;&nbsp;complex,&nbsp;dimension(ndim,ndim,ndim)&nbsp;::&nbsp;&amp;
+&nbsp;&nbsp;complex,&nbsp;dimension(ndim,ndim,ndim),&nbsp;intent(out)&nbsp;::&nbsp;&amp;
 &nbsp;&nbsp;&nbsp;&nbsp;xyzzy&nbsp;&nbsp;&nbsp;&nbsp;!&nbsp;Ether&nbsp;in&nbsp;the&nbsp;xyyzy&nbsp;dimension&nbsp;&nbsp;[kg/kg]
 
 &nbsp;&nbsp;!&nbsp;Local&nbsp;Variables
@@ -806,6 +806,14 @@ compiler warnings when the file is pre-processed Fortran 90 source.
 <div class="p"><!----></div>
 </li>
 
+<li> Any new files added to the repository should have matching filenames and module names. 
+This is because some host models in which CLUBB is implemented, e.g. SAM and CAM, use 
+make/compile scripts that assume all filenames and module names are the same.
+Also, if a new module name requires an extension, use <tt>&lt;module&nbsp;name&gt;_module</tt>
+rather than <tt>&lt;module&nbsp;name&gt;_mod</tt>, for clarity and consistency with the rest of the code.
+<div class="p"><!----></div>
+</li>
+
 <li> CLUBB uses the convention that logical variables should have a prefix of <tt>l_</tt>.  For example,
 use <tt>l_cloud_sed</tt> rather than <tt>cloud_sed</tt>.
 <div class="p"><!----></div>
@@ -818,5 +826,5 @@ use <tt>l_cloud_sed</tt> rather than <tt>cloud_sed</tt>.
 T<sub><font size="-1">E</font></sub>X
 by <a href="http://hutchinson.belmont.ma.us/tth/">
 T<sub><font size="-1">T</font></sub>M</a>,
-version 3.85.<br />On 12 Mar 2010, 16:59.</small>
+version 3.85.<br />On 19 Apr 2010, 16:14.</small>
 </body></html>
