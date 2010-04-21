@@ -1329,7 +1329,7 @@ module latin_hypercube_driver_module
     end do
     if ( number_cloudy_samples /= ( n_micro_calls / 2 ) ) then
       write(fstderr,*) "Error, half of all samples aren't in cloud"
-      write(fstderr,*) "X_u s_smellor random = ", &
+      write(fstderr,*) "X_u s_mellor random = ", &
         X_u_s_mellor_k_lh_start(:), "X_mixt_comp = ", X_mixt_comp_k_lh_start, &
         "cloudy samples =", number_cloudy_samples
       write(fstderr,*) "cloud_frac1 = ", cloud_frac1
