@@ -721,18 +721,6 @@ module generate_lh_sample_module
       if ( any( Sigma_stw_1_corr > 1.0 ) .or. any( Sigma_stw_1_corr < -1.0 ) ) then
         write(fstderr,*) "Sigma_stw_2 has a correlation > 1 or < -1"
       end if
-      ! Kluge to reduce the covariance when the correlation is too large.
-      ! Doesn't help very much. -dschanen 20 Aug 2009
-!     do i = 1, d_variables
-!       do j = 1, d_variables
-!         if ( Sigma_stw_1_corr(i,j) > 1.0 .or. Sigma_stw_1_corr(i,j) < -1.0 ) then
-!           Sigma_stw_1(i,j) = Sigma_stw_1(i,j) / ( abs( Sigma_stw_1_corr(i,j) ) )
-!         end if
-!         if ( Sigma_stw_2_corr(i,j) > 1.0 .or. Sigma_stw_2_corr(i,j) < -1.0 ) then
-!           Sigma_stw_2(i,j) = Sigma_stw_2(i,j) / ( abs( Sigma_stw_2_corr(i,j) ) )
-!         end if
-!       end do
-!     end do
 
     end if ! clubb_at_least_debug_level( 2 )
 
@@ -767,33 +755,12 @@ module generate_lh_sample_module
                      X_mixt_comp_one_lev, & ! In
                      LH_rt, LH_thl ) ! Out
 
-! Compute some diagnostics
-!       print*, 'C=', mixt_frac*cloud_frac1 + (1-mixt_frac)*cloud_frac2
-!       print*, 'rtm_anl=', mixt_frac*rt1+(1-mixt_frac)*rt2, 'rtm_est=', mean(rt(1:n),n)
-!       print*, 'thl_anl=',mixt_frac*thl1+(1-mixt_frac)*thl2, 'thlm_est=',mean(thl(1:n),n)
-!       print*, 'rtpthlp_coef_est=', corrcoef(rt,thl,n)
-
     ! Convert lognormal variates (e.g. Nc and rr) to lognormal
     forall ( sample = 1:n_micro_calls )
       where ( l_d_variable_lognormal )
         X_nl_one_lev(sample,:) = exp( X_nl_one_lev(sample,:) )
       end where
     end forall
-
-! Test diagnostics
-!       print*, 'mean X_nl_one_lev(:,2)=', mean(X_nl_one_lev(1:n,2),n)
-!       print*, 'mean X_nl_one_lev(:,3)=', mean(X_nl_one_lev(1:n,3),n)
-!       print*, 'mean X_nl_one_lev(:,4)=', mean(X_nl_one_lev(1:n,4),n)
-!       print*, 'mean X_nl_one_lev(:,5)=', mean(X_nl_one_lev(1:n,5),n)
-
-!       print*, 'std X_nl_one_lev(:,2)=', std(X_nl_one_lev(1:n,2),n)
-!       print*, 'std X_nl_one_lev(:,3)=', std(X_nl_one_lev(1:n,3),n)
-!       print*, 'std X_nl_one_lev(:,4)=', std(X_nl_one_lev(1:n,4),n)
-!       print*, 'std X_nl_one_lev(:,5)=', std(X_nl_one_lev(1:n,5),n)
-
-!       print*, 'corrcoef X_nl_one_lev(:,2:3)=',
-!     .            corrcoef( X_nl_one_lev(1:n,2), X_nl_one_lev(1:n,3), n )
-
 
     return
   end subroutine sample_points
@@ -944,10 +911,6 @@ module generate_lh_sample_module
       end do
     end do
 
-!        print*, 'p_matrix(:,1)= ', p_matrix(:,1)
-!        print*, 'p_matrix(:,dp1)= ', p_matrix(:,dp1)
-!        print*, 'X(:,1)= ', X(:,:)
-
     return
   end subroutine generate_uniform_sample
 
@@ -1035,9 +998,7 @@ module generate_lh_sample_module
     ! Local Variables
 
     integer :: j, sample
-!   double precision, dimension(n_micro_calls) :: std_normal
     double precision, dimension(d_variables) :: std_normal
-!   double precision :: fraction_1
 
     ! ---- Begin Code ----
 
@@ -1187,9 +1148,6 @@ module generate_lh_sample_module
       ! Choose which mixture fraction we are in.
       ! Account for cloud fraction.
       ! Follow M. E. Johnson (1987), p. 56.
-!     fraction_1 = mixt_frac * cloud_frac1 / &
-!                  ( mixt_frac * cloud_frac1 + (1.d0 - mixt_frac) *cloud_frac2 )
-!     if ( X_u_one_lev( sample, d_variables+1 ) < fraction_1 ) then
       if  ( X_mixt_comp_one_lev(sample) == 1 ) then
         ! Replace first dimension (s) with
         !  sample from cloud (i.e. truncated standard Gaussian)
