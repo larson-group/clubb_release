@@ -309,45 +309,9 @@ module estimate_lh_micro_module
         AKm_rcc(level) = zero_threshold
       end if
 
-!       print*, 'mixt_frac=', mixt_frac
-!       print*, 's1=', s1
-!       print*, 's2=', s2
-!       print*, 'stdev_s1=', stdev_s1
-!       print*, 'stdev_s2=', stdev_s2
-!       print*, 'AKm =', AKm(level)
-!       print*, 'lh_AKm (estimate) =', lh_AKm(level)
-!       print*, 'AK1=', AK1
-!       print*, 'AK2=', AK2
-!       print*, 'AK1var=', AK1var
-!       print*, 'AK2var=', AK2var
-!       print*, 'AKstd =', AKstd
-!       print*, 'AKstd_cld =', AKstd_cld
-!       print*, 'AKm_rcc =', AKm_rcc
-!       print*, 'AKm_rcm =', AKm_rcm
-
-      !------------------------------------------------------------------------
-      ! Compute within-cloud vertical velocity, avg over full layer
-      ! This call is a kludge: I feed w values into rc variable
-      ! in autoconv_driver.
-      ! Only works if coeff=expn=1 in autoconversion_driver.
-      !------------------------------------------------------------------------
-      !     call autoconv_driver( n, d, mixt_frac, &
-      !                           cloud_frac1, cloud_frac2, X_nl( 1:n, 3 ), &
-      !                           X_nl( 1:n, 3 ), X_nl( 1:n, 4 ), &
-      !                           X_nl(1:n, 5), X_u, AKm2 )
-
-      ! Another test:
-      ! Compute within-cloud vertical velocity, avgd over full domain.
-      !        C_w_cld1 =  cloud_frac1*w1
-      !        C_w_cld2 =  cloud_frac2*w2
-      !        w_cld_avg = mixt_frac * C_w_cld1 + (1-mixt_frac) * C_w_cld2
-
-      ! The following two values should match
-      !       print*, 'w_cld_avg=', w_cld_avg
-      !       print*, 'ac_m2=', ac_m2
-
     end do ! level = 2, nnzp
 
+    ! Call the latin hypercube microphysics driver for microphys_sub
     call lh_microphys_driver( dt, nnzp, n_micro_calls, d_variables, &
                               LH_rt, LH_thl, &
                               X_nl_all_levs, &

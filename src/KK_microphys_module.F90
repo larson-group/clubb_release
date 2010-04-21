@@ -138,11 +138,6 @@ module KK_microphys_module
       hydromet_mc, & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel   ! Hydrometeor sedimentation velocity [m/s]
 
-    ! Latin hypercube variables - Vince Larson 22 May 2005
-!   real, intent(in), dimension(nnzp) :: &
-!     AKm,   & ! Kessler autoconversion
-!     lh_AKm  ! Latin hypercube estimate of Kessler autoconversion
-
     ! Output Variables
     real, dimension(nnzp), intent(out) :: &
       rcm_mc, & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
@@ -435,25 +430,10 @@ module KK_microphys_module
                           Supsat(k), rrp2_on_rrainm2(k), Nrp2_on_Nrm2(k), &
                           corr_srr_NL(k), corr_sNr_NL(k), corr_rrNr_LL(k) )
 
-      ! Vince Larson added option to call LH sampled Kessler autoconversion.
-      ! 22 May 2005
-      ! Uncomment these lines to use the Kessler autoconversion from the
-      ! micro_calcs subroutine.  Currently, we only sample diagnostically.
-      ! -dschanen 3 June 2009
-!     if ( l_latin_hypercube_sampling ) then
-
-      !rrainm_auto(k) = lh_AKm(k)
-      !rrainm_auto(k) = AKm(k)
-
-!     else
-
       rrainm_auto(k)  & 
       = autoconv_rrainm( l_local_kk, rcm(k), Ncm(k), s1(k), stdev_s1(k),  & 
                          s2(k), stdev_s2(k), mixt_frac(k), rho(k), & 
                          Ncp2_on_Ncm2(k), corr_sNc_NL(k) )
-
-!     endif ! l_latin_hypercube_sampling
-      ! End Vince Larson's addition
 
       rrainm_accr(k)  & 
       = accretion_rrainm( l_local_kk, rcm(k), rrainm(k), s1(k), stdev_s1(k), & 
