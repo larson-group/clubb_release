@@ -248,10 +248,20 @@ then
         twp_ice | cloud_feedback* )
             ;;
         * )
-            cat $parameter_file > $NAMELISTS
-            cat $model_file | sed 's/stats_tout\s*=\s*.*/stats_tout = 60\./g' >> $NAMELISTS
-            cat $stats_file >> $NAMELISTS
-	
+            case $run_case in 
+                rico )
+                    # This was added because RICO uses a 300 s timestep and cannot be run with stats_tout = 60.
+                    cat $parameter_file > $NAMELISTS
+                    cat $model_file | sed 's/stats_tout\s*=\s*.*/stats_tout = 300\./g' >> $NAMELISTS
+                    cat $stats_file >> $NAMELISTS
+                    ;;
+                * )
+                    cat $parameter_file > $NAMELISTS
+                    cat $model_file | sed 's/stats_tout\s*=\s*.*/stats_tout = 60\./g' >> $NAMELISTS
+                    cat $stats_file >> $NAMELISTS
+                    ;;
+            esac
+
             run_case
 	
             #Now move the SFC file
