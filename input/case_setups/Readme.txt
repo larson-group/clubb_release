@@ -381,6 +381,8 @@ eff_drop_radius | real, default precision
 cos_solar_zen_values | real, 20 element array, default precision
   Cosine of the solar zenith angle for l_fix_cos_solar_zen = true [-].
   Used with simplified if l_sw_radiation is true, or BUGSrad.
+  See cloud_feedback_s6_model.in for an example in which 
+  zenith angle is set constant with time.
 
 cos_solar_zen_times | real, 20 element array, default precision
   Times corresponding to the cosine of the solar zenith angle [s].
