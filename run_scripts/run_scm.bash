@@ -207,9 +207,12 @@ fi
 if [ $NIGHTLY == true ]; 
 then
     cat $parameter_file > $NAMELISTS
-    # This is needed because the model file now contains stats_tout
-    # Here we replace the repository version of stats_tout with an hour output
-    # The regular expression use here matches:
+    # This is needed because the model file now contains stats_tout.
+    # Here we replace the repository version of stats_tout with an hour output.
+    # We then save the zt and zm files from this run for the profile plots because
+    # this saves disk space, and the profile plots are the same regardless if
+    # stats_tout = 1 hour, 5 minutes, or 1 minute.
+    # The regular expression used here matches:
     # 'stats_tout' (0 or > whitespaces) '=' (0 or > whitespaces) (0 or > characters)
     # and replaces it with 'stats_tout = 3600.'
     cat $model_file | sed 's/stats_tout\s*=\s*.*/stats_tout = 3600\./g' >> $NAMELISTS
@@ -230,7 +233,9 @@ then
         mv "../output/$run_case"_zm.ctl "$OUTPUT_DIR"/CLUBB_current/
         mv "../output/$run_case"_zm.dat "$OUTPUT_DIR"/CLUBB_current/
         case $run_case in
-            # We only run TWP_ICE and Cloud Feedback once so we want to keep the SFC files
+            # We only run TWP_ICE and Cloud Feedback once so we want to keep the SFC files.
+            # The other cases are rerun with stats_tout = 1 minute (or 5 minutes for RICO),
+            # and sfc files from the second run are used in the nightly plots for these cases.
             twp_ice | cloud_feedback* )
                 mv "../output/$run_case"_sfc.ctl "$OUTPUT_DIR"/CLUBB_current/
                 mv "../output/$run_case"_sfc.dat "$OUTPUT_DIR"/CLUBB_current/
@@ -242,15 +247,19 @@ then
         esac
     fi
 		
-    # Run again with a finer output time interval
-    # Note, we do not run TWP_ICE and Cloud Feedback a second time
+    # Run again with a finer output time interval for the sfc.  Even though
+    # running the cases twice takes longer, we do this to save disk space
+    # (the zt and zm files are much smaller when stats_tout = 1 hour).
+    # Note, we do not run TWP_ICE and Cloud Feedback a second time because
+    # they are 25- and 30-day simulations.
     case $run_case in 
         twp_ice | cloud_feedback* )
             ;;
         * )
             case $run_case in 
                 rico )
-                    # This was added because RICO uses a 300 s timestep and cannot be run with stats_tout = 60.
+                    # This was added because RICO uses a 300 s timestep
+                    # and cannot be run with stats_tout = 60.
                     cat $parameter_file > $NAMELISTS
                     cat $model_file | sed 's/stats_tout\s*=\s*.*/stats_tout = 300\./g' >> $NAMELISTS
                     cat $stats_file >> $NAMELISTS
