@@ -5,7 +5,7 @@ addpath '/home/mjfalk/netcdf_toolbox/netcdf_toolbox/netcdf/' -end
 addpath '/home/mjfalk/netcdf_toolbox/netcdf_toolbox/netcdf/nctype/' -end
 addpath '/home/mjfalk/netcdf_toolbox/netcdf_toolbox/netcdf/ncutility/' -end
 
-path = '/home/matlabuser/';
+path = '/home/ldgrant/RICO_submission/Apr2010/RICO_grads_files/netcdf_files/';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -13,12 +13,13 @@ file1        = netcdf([path,'rico_file1.nc'],'nowrite');
 file1_z      = file1{'zf'}(:);
 file1_u      = file1{'u'}(:);
 file1_v      = file1{'v'}(:);
-file1_theta_l= file1{'theta_l'}(:);
+file1_thetal= file1{'thetal'}(:);
 file1_qt     = file1{'qt'}(:);
 file1_rho    = file1{'rho'}(:);
 
 keyboard
 
+clf
 plot (file1_u,file1_z)
 title ('Initial u')
 grid
@@ -27,7 +28,7 @@ plot (file1_v,file1_z)
 title ('Initial v')
 grid
 keyboard
-plot (file1_theta_l,file1_z)
+plot (file1_thetal,file1_z)
 title ('Initial theta-l')
 grid
 keyboard
@@ -44,11 +45,11 @@ keyboard
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 file2             = netcdf([path,'rico_file2.nc'],'nowrite');
-file2_t           = file2{'t'}(:);
+file2_t           = file2{'time'}(:);
 file2_zcb         = file2{'zcb'}(:);
 file2_ztop        = file2{'ztop'}(:);
 file2_zmaxcfrac   = file2{'zmaxcfrac'}(:);
-file2_lwp         = file2{'lwp'}(:);
+file2_lwp         = file2{'LWP'}(:);
 file2_cc          = file2{'cc'}(:);
 file2_shf         = file2{'shf'}(:);
 file2_lhf         = file2{'lhf'}(:);
@@ -89,7 +90,7 @@ title ('Ts zmaxcfrac')
 grid
 keyboard
 plot (file2_t,file2_lwp)
-title ('Ts lwp')
+title ('Ts LWP')
 grid
 keyboard
 plot (file2_t,file2_cc)

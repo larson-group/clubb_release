@@ -4,6 +4,7 @@ function[] = netcdf_rico_writer_3();
 % netcdf_rico_writer_3()
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Written by Michael Falk, February-March 2007
+% Modified by Leah Grant, April 2010
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Input parameters: none
 % Input files: RICO GrADS files (.ctl and .dat)
@@ -29,22 +30,28 @@ clear % because this requires LOTS of memory.
 % Original submission
 %scm_path = ['/home/mjfalk/hoc_working/standalone/rico0104/'];
 % Revised submission 7 March 2007
-scm_path = ['/home/mjfalk/hoc_results/rico/rico0119/'];
+%scm_path = ['/home/mjfalk/hoc_results/rico/rico0120/'];
+% Revised submission 29 August 2007
+%scm_path = ['/home/mjfalk/hoc_results/rico/rico0206/'];
+% Revised submission 23 April 2010 --ldgrant
+scm_path = ['/home/ldgrant/RICO_submission/Apr2010/RICO_grads_files/'];
 smfile   = 'rico_zt.ctl';
 swfile   = 'rico_zm.ctl';
 sfcfile  = 'rico_sfc.ctl';
 
 % Read RICO data from GrADS files
-tmax = 4320; % should be a multiple of 60
-t = 0:60:tmax; % this is why it must be a multiple of 60
+% Note: RICO data is now output to GrADS every 5 minutes
+tmax = 864; % should be a multiple of 12
+t = 0:12:tmax; % this is why it must be a multiple of 12 (output required every hour)
 t(1) = 1;
 sizet = size(t);
 sizet = max(sizet);
 
-% mass file
+% mass (zt) file
 [filename,nz,z,ntimesteps,numvars,list_vars] = header_read([scm_path,smfile]);
 
 for i=1:numvars
+    i
     for timestep = 1:sizet-1
         stringtoeval = [list_vars(i,:), ' = read_grads_hoc_endian([scm_path,filename],''ieee-le'',nz,t(timestep),t(timestep+1),i,numvars);'];
         eval(stringtoeval)
@@ -56,10 +63,11 @@ for i=1:numvars
     end
 end
 
-% momentum file
+% momentum (zm) file
 [w_filename,w_nz,w_z,w_ntimesteps,w_numvars,w_list_vars] = header_read([scm_path,swfile]);
 
 for i=1:w_numvars
+    i
     for timestep = 1:sizet-1
         stringtoeval = [w_list_vars(i,:), ' = read_grads_hoc_endian([scm_path,w_filename],''ieee-le'',w_nz,t(timestep),t(timestep+1),i,w_numvars);'];
         eval(stringtoeval)
@@ -81,12 +89,12 @@ Lv = 2.5e6;
 % Set up derived variables
 theta_array = thlm_array + (Lv/Cp).*rcm_array;
 T_array = theta_array .* exner_array;
-rho_array = p_array ./ (R .* T_array);
+rho_array = p_in_Pa_array ./ (R .* T_array);
 
 qtm_array = rtm_array ./ (1 + rtm_array);
-qsm_array = rsm_array ./ (1 + rsm_array);
+qsm_array = rsat_array ./ (1 + rsat_array);
 qcm_array = rcm_array ./ (1 + rcm_array);
-qrm_array = rrm_array ./ (1 + rrm_array);
+qrm_array = rrainm_array ./ (1 + rrainm_array);
 
 wpqtp_array = wprtp_array ./ (1 + rtm_array);
 
@@ -96,11 +104,19 @@ wpqtp_array = wprtp_array ./ (1 + rtm_array);
 status = mexnc('close', ncid)
 
 [ncid,status] = mexnc('open', 'rico_file3.nc', nc_write_mode)
+status = mexnc('redef',ncid)
+
+% Write global attributes
+
+% syntax: status = mexnc('ATTPUT', cdfid, varid, 'name', datatype, len, value)
+status = mexnc('ATTPUT',ncid,'NC_GLOBAL','Contact_Person','CHAR',-1,'Vince Larson (vlarson@uwm.edu), Michael Falk (mjf@e-falk.com), and Leah Grant (ldgrant@uwm.edu)')
+status = mexnc('ATTPUT',ncid,'NC_GLOBAL','Vertical_Resolution','CHAR',-1,'128-level, 27.5 km stretched grid')
+status = mexnc('ATTPUT',ncid,'NC_GLOBAL','Model_Timestep','CHAR',-1,'5 minutes')
+status = mexnc('ATTPUT',ncid,'NC_GLOBAL','Run_type','CHAR',-1,'composite')
 
 % Define dimensions
 
-status = mexnc('redef',ncid)
-[tdimid,status] = mexnc('def_dim',ncid,'t',(tmax/60))
+[tdimid,status] = mexnc('def_dim',ncid,'time',(tmax/12))
 [zfdimid,status] = mexnc('def_dim',ncid,'zf',nz)
 [zhdimid,status] = mexnc('def_dim',ncid,'zh',w_nz)
 
@@ -150,16 +166,16 @@ for k=1:nz
         status = mexnc('VARPUT',ncid,qlvarid,[i-1 k-1],[1 1],qcm_array(k,i)*1000,0);
         status = mexnc('VARPUT',ncid,qrvarid,[i-1 k-1],[1 1],qrm_array(k,i)*1000,0);
 
-        status = mexnc('VARPUT',ncid,cfvarid,[i-1 k-1],[1 1],cf_array(k,i),0);
+        status = mexnc('VARPUT',ncid,cfvarid,[i-1 k-1],[1 1],cloud_frac_array(k,i),0);
         status = mexnc('VARPUT',ncid,rhovarid,[i-1 k-1],[1 1],rho_array(k,i),0);
         status = mexnc('VARPUT',ncid,wthlvarid,[i-1 k-1],[1 1],wpthlp_array(k,i),0);
         status = mexnc('VARPUT',ncid,wqtvarid,[i-1 k-1],[1 1],wpqtp_array(k,i),0);
-        status = mexnc('VARPUT',ncid,uwvarid,[i-1 k-1],[1 1],upwp_array(k,i)*rhom(k),0);
-        status = mexnc('VARPUT',ncid,vwvarid,[i-1 k-1],[1 1],vpwp_array(k,i)*rhom(k),0);
-        status = mexnc('VARPUT',ncid,Mfvarid,[i-1 k-1],[1 1],0,0);
+        status = mexnc('VARPUT',ncid,uwvarid,[i-1 k-1],[1 1],upwp_array(k,i)*rho_zm(k),0);
+        status = mexnc('VARPUT',ncid,vwvarid,[i-1 k-1],[1 1],vpwp_array(k,i)*rho_zm(k),0);
+        status = mexnc('VARPUT',ncid,Mfvarid,[i-1 k-1],[1 1],0,0); % zero because CLUBB does not use a mass flux scheme
         status = mexnc('VARPUT',ncid,precvarid,[i-1 k-1],[1 1],28.94*rain_rate_array(k,i),0);
-
-        status = mexnc('VARPUT',ncid,w_upvarid,[i-1 k-1],[1 1],0,0); % These are all zeros.
+          % These are all zeros (CLUBB is not a mass flux model)
+        status = mexnc('VARPUT',ncid,w_upvarid,[i-1 k-1],[1 1],0,0);
         status = mexnc('VARPUT',ncid,thl_upvarid,[i-1 k-1],[1 1],0,0);
         status = mexnc('VARPUT',ncid,qt_upvarid,[i-1 k-1],[1 1],0,0);
         status = mexnc('VARPUT',ncid,ql_upvarid,[i-1 k-1],[1 1],0,0);
@@ -167,9 +183,8 @@ for k=1:nz
     end
 end
 
-%% File inquiry, if you want to verify that everything got written
-%% properly.  I usually leave this commented.
-%[ndims,nvars,ngatts,unlimdim,status] = mexnc('inq',ncid)
+%% File inquiry, if you want to verify that everything got written properly.
+[ndims,nvars,ngatts,unlimdim,status] = mexnc('inq',ncid)
 
 % Close file
 status = mexnc('close',ncid)

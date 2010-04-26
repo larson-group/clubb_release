@@ -4,6 +4,7 @@ function[] = netcdf_rico_writer_1();
 % netcdf_rico_writer_1()
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Written by Michael Falk, February-March 2007
+% Modified by Leah Grant, April 2010
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Input parameters: none
 % Input files: RICO GrADS files (.ctl and .dat)
@@ -28,13 +29,17 @@ addpath '/home/mjfalk/netcdf_toolbox/netcdf_toolbox/netcdf/ncutility/' -end
 % Original submission
 %scm_path = ['/home/mjfalk/hoc_working/standalone/rico0104/'];
 % Revised submission 7 March 2007
-scm_path = ['/home/mjfalk/hoc_results/rico/rico0119/'];
+%scm_path = ['/home/mjfalk/hoc_results/rico/rico0120/'];
+% Revised submission 29 August 2007
+%scm_path = ['/home/mjfalk/hoc_results/rico/rico0206/'];
+% Revised submission 23 April 2010 --ldgrant
+scm_path = ['/home/ldgrant/RICO_submission/Apr2010/RICO_grads_files/'];
 smfile   = 'rico_zt.ctl';
 swfile   = 'rico_zm.ctl';
 
 
 % Read RICO data from GrADS files
-t = 1:4320;
+t = 1:864; % RICO data is now output to GrADS every 5 mins
 sizet = size(t);
 sizet = max(sizet);
 
@@ -53,6 +58,7 @@ for i=1:numvars
 end
 
 % Set up constants
+
 g0 = 9.8;
 p0 = 1e5;
 R  = 287.04;
@@ -72,6 +78,13 @@ status = mexnc('close', ncid)
 [ncid,status] = mexnc('open', 'rico_file1.nc', nc_write_mode)
 status = mexnc('redef',ncid)
 
+% Write global attributes
+
+% syntax: status = mexnc('ATTPUT', cdfid, varid, 'name', datatype, len, value)
+status = mexnc('ATTPUT',ncid,'NC_GLOBAL','Contact_Person','CHAR',-1,'Vince Larson (vlarson@uwm.edu), Michael Falk (mjf@e-falk.com), and Leah Grant (ldgrant@uwm.edu)')
+status = mexnc('ATTPUT',ncid,'NC_GLOBAL','Vertical_Resolution','CHAR',-1,'128-level, 27.5 km stretched grid')
+status = mexnc('ATTPUT',ncid,'NC_GLOBAL','Model_Timestep','CHAR',-1,'5 minutes')
+status = mexnc('ATTPUT',ncid,'NC_GLOBAL','Run_type','CHAR',-1,'composite')
 % Define dimension
 
 [zdimid,status] = mexnc('def_dim',ncid,'zf',nz)
@@ -81,9 +94,10 @@ status = mexnc('redef',ncid)
 [zfvarid,status] = mexnc('def_var',ncid,'zf','float',1,[zdimid])
 [uvarid,status] = mexnc('def_var',ncid,'u','float',1,[zdimid])
 [vvarid,status] = mexnc('def_var',ncid,'v','float',1,[zdimid])
-[thetalvarid,status] = mexnc('def_var',ncid,'theta_l','float',1,[zdimid])
+[thetalvarid,status] = mexnc('def_var',ncid,'thetal','float',1,[zdimid])
 [qtvarid,status] = mexnc('def_var',ncid,'qt','float',1,[zdimid])
 [rhovarid,status] = mexnc('def_var',ncid,'rho','float',1,[zdimid])
+
 status = mexnc('end_def',ncid)
 
 % Write data
@@ -97,12 +111,12 @@ for k=1:nz
     status = mexnc('VARPUT',ncid,vvarid,k-1,1,vm_array(k,1),0)
     status = mexnc('VARPUT',ncid,thetalvarid,k-1,1,thlm_array(k,1),0)
     status = mexnc('VARPUT',ncid,qtvarid,k-1,1,qtm_array(k,1)*1000,0)
-    status = mexnc('VARPUT',ncid,rhovarid,k-1,1,rhot_array(k,1),0)
+    status = mexnc('VARPUT',ncid,rhovarid,k-1,1,rho_array(k,1),0)
 end
 
-%% File inquiry, if you want to verify that everything got written
-%% properly.  I usually leave this commented.
-%[ndims,nvars,ngatts,unlimdim,status] = mexnc('inq',ncid)
+
+%% File inquiry, if you want to verify that everything got written properly.
+[ndims,nvars,ngatts,unlimdim,status] = mexnc('inq',ncid)
 
 % Close file
 status = mexnc('close',ncid)
