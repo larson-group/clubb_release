@@ -160,12 +160,12 @@
     ],
     'nightlyOutput' =>
     {
-        'subText' => '',
+        'subText' => 'Both vertical and horizontal fluxes applied to THLM and RTM for LES. LES nudged U, V, RTM and THLM toward observed values. Forcings for LES derived from 10mb forcing data.',
         'subHtml' => ''
     },
     'additionalOutput' =>
     {
-        'subText' => '',
+        'subText' => 'Both vertical and horizontal fluxes applied to THLM and RTM for LES. LES nudged U, V, RTM and THLM toward observed values. Forcings for LES derived from 10mb forcing data.',
         'subHtml' => ''
     }
 )
