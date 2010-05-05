@@ -5,51 +5,61 @@
     'name' => 'twp_ice',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'TWP ICE Minutes 31321-32760',
-    'startTime' => 31321,  # [minutes]
-    'endTime' => 32760,    # [minutes]
+    'headerText' => 'TWP ICE Minutes 8460-9900',
+    'startTime' => 8460,  # [minutes]
+    'endTime' => 9900,    # [minutes]
     'startHeight' => 0.0,  # [m]
     'endHeight' => 16000.0, # [m]
     'plots' =>
     [
        {'plotTitle' => 'Liquid Water Potential Temperature, \theta_l', 'axisLabel' => 'thlm [K]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'THETAL', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Total Water Mixing Ratio, r_t', 'axisLabel' => 'rtm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'QT / 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp [K m/s]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => '(TLFLUX) ./ (RHO * 1004)', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => '((QTFLUX) ./ (RHO * 2.5104e+6))', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cloud\_frac [%]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'CLD * 100', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'cloud_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},       
        {'plotTitle' => 'Cloud Water Mixing Ratio, r_c', 'axisLabel' => 'rcm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'QCL / 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rcm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of w', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'W2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Third-order Moment of w', 'axisLabel' => 'wp3 [m^3/s^3]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'W3', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of \theta_l', 'axisLabel' => 'thlp2 [K^2]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'TL2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of r_t', 'axisLabel' => 'rtp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'QT2 / 1000000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of r_t & \theta_l', 'axisLabel' => 'rtpthlp [(kg/kg) K]', 'type' => 'profile', 'lines' =>
@@ -62,26 +72,32 @@
        ]},
        {'plotTitle' => 'Zonal Wind Component, u', 'axisLabel' => 'um [m/s]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'U', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'um', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Meridional Wind Component, v', 'axisLabel' => 'vm [m/s]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'V', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of u & w', 'axisLabel' => 'upwp [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'UW', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'upwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of v & w', 'axisLabel' => 'vpwp [m^s/s^2]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'VW', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vpwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of u wind', 'axisLabel' => 'up2 [m^s/s^2]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'U2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'up2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of v wind', 'axisLabel' => 'vp2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'V2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
@@ -118,6 +134,7 @@
        ]},
        {'plotTitle' => 'Buoyancy flux ', 'axisLabel' => 'wpthvp [K m/s]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => '(TVFLUX) ./ (RHO * 1004)', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
