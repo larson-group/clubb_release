@@ -17,7 +17,7 @@ $Id$
 
 
 ************************************************************************
-*                     Overview of the CLUBB code
+*                     Overview of the CLUBB code 
 ************************************************************************
 
 For a detailed description of the model code see:
