@@ -402,16 +402,9 @@ The randomization files (only needed for the tuner described below):
 
 Plotting scripts are contained in the directory postprocessing/plotgen.
 
-If you have MATLAB, you may use the script compare_plots_cases_driver.m.  
-This script plots some important fields averaged over interesting time 
-periods.
-
 If you have MATLAB and Linux, you can conveniently drive this MATLAB 
-script using the bash script postprocessing/plotgen/plotgen.sh.  
-However, you will need to customize plotgen.sh and generate_plots.sh
-for your computer.  For hints on how to do this, search these two files 
-for the phrase "External Use".  See postprocessing/plotgen/README for 
-more information on plotgen.sh.
+script using the bash script postprocessing/plotgen/plotgen.pl
+See postprocessing/plotgen/README for more information on plotgen.pl.
 
 Otherwise, you can view the raw CLUBB output files in GrADS or netCDF
 format using a plotting program such as GrADS (http://www.iges.org/grads/).
