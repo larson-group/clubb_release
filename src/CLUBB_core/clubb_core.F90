@@ -363,7 +363,7 @@ module clubb_core
       rcm_in_layer, & ! rcm in cloud layer                              [kg/kg]
       cloud_cover     ! cloud cover                                     [-]
 
-    real, intent(out), dimension(gr%nnzp) ::  &
+    real, intent(inout), dimension(gr%nnzp) ::  &
       sigma_sqd_w     ! PDF width parameter (momentum levels)      [-]
 
     type(pdf_parameter), intent(out) :: & 
