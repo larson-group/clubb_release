@@ -55,7 +55,7 @@ module clubb_core
                rcm, wprcp, cloud_frac, & 
                rcm_in_layer, cloud_cover, & 
                sclrm, sclrp2, sclrprtp, sclrpthlp, &
-               wpsclrp, edsclrm, pdf_params, &
+               wpsclrp, edsclrm, sigma_sqd_w, pdf_params, &
                err_code )
 
     ! Description:
@@ -114,7 +114,6 @@ module clubb_core
     use variables_diagnostic_module, only: &
       Skw_zt,  & ! Variable(s)
       Skw_zm, &
-      sigma_sqd_w, &
       sigma_sqd_w_zt, &
       wp4, &
       thlpthvp, &
@@ -364,6 +363,9 @@ module clubb_core
       rcm_in_layer, & ! rcm in cloud layer                              [kg/kg]
       cloud_cover     ! cloud cover                                     [-]
 
+    real, intent(out), dimension(gr%nnzp) ::  &
+      sigma_sqd_w     ! PDF width parameter (momentum levels)      [-]
+
     type(pdf_parameter), intent(out) :: & 
       pdf_params      ! PDF parameters   [units vary]
 
@@ -453,7 +455,7 @@ module clubb_core
              um, upwp, vm, vpwp, up2, vp2,                      & ! intent(in)
              rtm, wprtp, thlm, wpthlp,                          & ! intent(in)
              wp2, wp3, rtp2, thlp2, rtpthlp,                    & ! intent(in)
-             rcm, wprcp, cloud_frac,                            & ! intent(in)
+             sigma_sqd_w, rcm, wprcp, cloud_frac,               & ! intent(in)
              rcm_in_layer, cloud_cover, "beginning of ",        & ! intent(in)
              wpsclrp_sfc, wpedsclrp_sfc,                        & ! intent(in)
              sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp,       & ! intent(in)
@@ -1068,7 +1070,7 @@ module clubb_core
            rho_ds_zm, rho_ds_zt, thv_ds_zm,                   & ! intent(in)
            thv_ds_zt, wm_zt, wm_zm, rcm, wprcp,               & ! intent(in)
            cloud_frac, rcm_in_layer, cloud_cover,             & ! intent(in)
-           pdf_params,                                        & ! intent(in)
+           sigma_sqd_w, pdf_params,                           & ! intent(in)
            sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, & ! intent(in)
            wpsclrp, edsclrm, edsclrm_forcing                  ) ! intent(in)
 
@@ -1083,7 +1085,7 @@ module clubb_core
              um, upwp, vm, vpwp, up2, vp2,                      & ! intent(in)
              rtm, wprtp, thlm, wpthlp,                          & ! intent(in)
              wp2, wp3, rtp2, thlp2, rtpthlp,                    & ! intent(in)
-             rcm, wprcp, cloud_frac,                            & ! intent(in)
+             sigma_sqd_w, rcm, wprcp, cloud_frac,               & ! intent(in)
              rcm_in_layer, cloud_cover, "end of ",              & ! intent(in)
              wpsclrp_sfc, wpedsclrp_sfc,                        & ! intent(in)
              sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp,       & ! intent(in)

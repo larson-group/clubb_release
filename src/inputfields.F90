@@ -158,7 +158,8 @@ module inputfields
         rtm_forcing, & 
         cloud_frac, & 
         up2, & 
-        vp2 
+        vp2, & 
+        sigma_sqd_w
 
     use variables_diagnostic_module, only: & 
         hydromet,  & ! Variable(s)
@@ -174,7 +175,6 @@ module inputfields
         thvm, &
         wpthvp, &
         Ncnm, & 
-        sigma_sqd_w, &
         sigma_sqd_w_zt, & 
         em
 

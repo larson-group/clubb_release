@@ -1187,7 +1187,7 @@ module stats_subs
                      rho_ds_zm, rho_ds_zt, thv_ds_zm, &
                      thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, &
                      cloud_frac, rcm_in_layer, cloud_cover, &
-                     pdf_params, &
+                     sigma_sqd_w, pdf_params, &
                      sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
                      wpsclrp, edsclrm, edsclrm_forcing )
 
@@ -1388,7 +1388,6 @@ module stats_subs
         vp2_zt, &
         upwp_zt, &
         vpwp_zt, & 
-        sigma_sqd_w, &
         wp4, & 
         rtpthvp, & 
         thlpthvp, & 
@@ -1475,22 +1474,25 @@ module stats_subs
       wm_zm           ! w on momentum levels                     [m/s]
 
     real, intent(in), dimension(gr%nnzp) :: & 
-      rcm,         & ! Cloud water mixing ratio                 [kg/kg]
-      wprcp,       & ! w'rc'                                    [(kg/kg) m/s]
-      cloud_frac,  & ! Cloud fraction                           [-]
-      rcm_in_layer,& ! Cloud water mixing ratio in cloud layer  [kg/kg]
-      cloud_cover    ! Cloud cover                              [-]
+      rcm,          & ! Cloud water mixing ratio                 [kg/kg]
+      wprcp,        & ! w'rc'                                    [(kg/kg) m/s]
+      cloud_frac,   & ! Cloud fraction                           [-]
+      rcm_in_layer, & ! Cloud water mixing ratio in cloud layer  [kg/kg]
+      cloud_cover     ! Cloud cover                              [-]
+
+    real, intent(in), dimension(gr%nnzp) :: &
+      sigma_sqd_w    ! PDF width parameter (momentum levels)    [-] 
 
     type(pdf_parameter), intent(in) :: & 
       pdf_params ! PDF parameters [units vary]
 
     real, intent(in), dimension(gr%nnzp,sclr_dim) :: & 
-      sclrm,           & ! High-order passive scalar          [units vary]
-      sclrp2,          & ! High-order passive scalar variance [units^2]
+      sclrm,           & ! High-order passive scalar            [units vary]
+      sclrp2,          & ! High-order passive scalar variance   [units^2]
       sclrprtp,        & ! High-order passive scalar covariance [units kg/kg]
       sclrpthlp,       & ! High-order passive scalar covariance [units K]
-      sclrm_forcing,   & ! Large-scale forcing of scalar      [units/s]
-      wpsclrp            ! w'sclr'                            [units m/s]
+      sclrm_forcing,   & ! Large-scale forcing of scalar        [units/s]
+      wpsclrp            ! w'sclr'                              [units m/s]
 
     real, intent(in), dimension(gr%nnzp,edsclr_dim) :: & 
       edsclrm,         & ! Eddy-diff passive scalar      [units vary] 

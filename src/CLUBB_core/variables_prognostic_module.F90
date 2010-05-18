@@ -116,7 +116,12 @@ module variables_prognostic_module
 !$omp   threadprivate(sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
 !$omp     edsclrm, edsclrm_forcing, wpsclrp)
 
-! PDF parameters
+  ! PDF parameters
+  real, target, allocatable, dimension(:), public :: &
+    sigma_sqd_w    ! PDF width parameter (momentum levels)   [-]
+
+!$omp threadprivate(sigma_sqd_w)
+
   public :: pdf_parameter
 
   type pdf_parameter
@@ -251,6 +256,8 @@ module variables_prognostic_module
     allocate( edsclrm(1:nzmax, 1:edsclr_dim) )
     allocate( wpsclrp(1:nzmax, 1:sclr_dim) )
 
+    allocate( sigma_sqd_w(1:nzmax) )    ! PDF width parameter (momentum levels)
+
     ! Variables for pdf closure scheme
     allocate( pdf_params%w1(1:nzmax),          pdf_params%w2(1:nzmax),  &
               pdf_params%varnce_w1(1:nzmax),   pdf_params%varnce_w2(1:nzmax),  &
@@ -321,6 +328,8 @@ module variables_prognostic_module
     cloud_frac(1:nzmax)   = 0.0
     rcm_in_layer(1:nzmax) = 0.0
     cloud_cover(1:nzmax)  = 0.0
+
+    sigma_sqd_w           = 0.0 ! PDF width parameter (momentum levels)
 
     ! Variables for PDF closure scheme
     pdf_params%w1          = 0.0
@@ -433,6 +442,8 @@ module variables_prognostic_module
     deallocate( cloud_frac )
     deallocate( rcm_in_layer )
     deallocate( cloud_cover )
+
+    deallocate( sigma_sqd_w )    ! PDF width parameter (momentum levels)
 
     ! Variable for pdf closure scheme
     deallocate( pdf_params%w1,          pdf_params%w2,  &

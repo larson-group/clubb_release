@@ -524,7 +524,7 @@ module stats_zm
       case ('sigma_sqd_w')
         isigma_sqd_w = k
         call stat_assign(isigma_sqd_w,"sigma_sqd_w", & 
-             "Width of indiv Gaussians in w [-]","-",zm)
+             "Nondimensionalized w variance of Gaussian component [-]","-",zm)
         k = k + 1
       case ('rho_ds_zm')
         irho_ds_zm = k

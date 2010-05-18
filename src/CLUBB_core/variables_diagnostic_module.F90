@@ -23,7 +23,6 @@ module variables_diagnostic_module
 ! Diagnostic variables
 
   real, target, allocatable, dimension(:), public :: &
-    sigma_sqd_w,    & ! PDF width parameter (momentum levels)        [-]
     sigma_sqd_w_zt, & ! PDF width parameter interpolated to t-levs.  [-]
     Skw_zm,         & ! Skewness of w on momentum levels             [-]
     Skw_zt,         & ! Skewness of w on thermodynamic levels        [-]
@@ -39,7 +38,7 @@ module variables_diagnostic_module
 !!! Important Note !!!
 ! Do not indent the omp comments, they need to be in the first 4 columns
 !!! End Important Note !!!
-!$omp threadprivate(sigma_sqd_w, sigma_sqd_w_zt, Skw_zm, Skw_zt, ug, vg, &
+!$omp threadprivate(sigma_sqd_w_zt, Skw_zm, Skw_zt, ug, vg, &
 !$omp   um_ref, vm_ref, thlm_ref, rtm_ref, thvm, shear )
 
   real, target, allocatable, dimension(:), public :: & 
@@ -209,7 +208,6 @@ module variables_diagnostic_module
 
     ! Diagnostic variables
 
-    allocate( sigma_sqd_w(1:nzmax) )    ! PDF width parameter (momentum levels)
     allocate( sigma_sqd_w_zt(1:nzmax) ) ! PDF width parameter interp. to t-levs.
     allocate( Skw_zm(1:nzmax) )         ! Skewness of w on momentum levels
     allocate( Skw_zt(1:nzmax) )         ! Skewness of w on thermodynamic levels
@@ -332,7 +330,6 @@ module variables_diagnostic_module
 
 ! Diagnostic variables
 
-    sigma_sqd_w    = 0.0 ! PDF width parameter (momentum levels)
     sigma_sqd_w_zt = 0.0 ! PDF width parameter interp. to t-levs.
     Skw_zm         = 0.0 ! Skewness of w on momentum levels
     Skw_zt         = 0.0 ! Skewness of w on thermodynamic levels
@@ -476,7 +473,6 @@ module variables_diagnostic_module
 
     ! --- Deallocate ---
 
-    deallocate( sigma_sqd_w )    ! PDF width parameter (momentum levels)
     deallocate( sigma_sqd_w_zt ) ! PDF width parameter interp. to t-levs.
     deallocate( Skw_zm )         ! Skewness of w on momentum levels
     deallocate( Skw_zt )         ! Skewness of w on thermodynamic levels
