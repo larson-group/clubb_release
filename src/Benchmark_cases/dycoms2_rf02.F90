@@ -156,12 +156,12 @@ module dycoms2_rf02
 
         if ( Heaviside(k) > 0.0 ) then
           Frad(k) = Frad(k) & 
-                  + rho_zm(k) * Cp * ls_div * Heaviside(k) & 
+                  + 1.12 * Cp * ls_div * Heaviside(k) & 
                     * ( 0.25 * ((gr%zm(k)-z_i)**(4.0/3.0)) & 
-                  + z_i * ((gr%zm(k)-z_i)**(1.0/3.0)) )
-        end if
+                        + z_i * ((gr%zm(k)-z_i)**(1.0/3.0)) )
+        endif
 
-      end do
+      enddo
 
       ! Compute the radiative heating rate.
       ! The radiative heating rate is defined on thermodynamic levels.
