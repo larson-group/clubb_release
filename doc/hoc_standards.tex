@@ -146,8 +146,10 @@ Note however, that an \texttt{intent(out)} variable that is not set in the scope
 is \emph{not defined}!  It often preserves the previous value, but it may not.
 When using modules with public variables, limit 
 the number of variables with an \texttt{only:} statement.  This makes code 
-easier to read, because it is then obvious which variables from the module are being 
-used.\newline
+easier to read, because it is then obvious which variables from the module 
+are being used.  Even if all variables from the module are used, listing
+all variables after the \texttt{only:} statement is still worthwhile
+because it provides documentation about the inputs. \newline
 E.g.
 \begin{verbatim}
 !-----------------------------------------------------------------------
