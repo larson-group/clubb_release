@@ -184,10 +184,19 @@ ERRATA:
      monitor as per the instructions above. Conversion
      works well in parallel as well.
 
-  2: Killing the at jobs does not seem to stop the scripts.
+  3: Killing the at jobs does not seem to stop the scripts.
      First, remove the at job using atrm (using atq to find
      the job number), then kill the script.
 
-  3: Limited verification of the submission ready output is
+  4: Limited verification of the submission ready output is
      possible using scripts contained (and documented) in
      clubb/postprocessing/output_scripts/twp_ice.
+
+  5: If you run the above scripts with an at job (as is
+     recommended), all of the output will be in your
+     mailbox. You can then check for errors using your
+     mail viewer of choice (I use less eg. less
+     /var/spool/mail/nielsenb). It should be noted that
+     your mailbox will be very large (10s of gigs) and 
+     should be deleted when you are finished reading the
+     output.
