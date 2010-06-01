@@ -109,7 +109,8 @@ module clubb_core
       ddzm
 
     use numerical_check, only: & 
-      parameterization_check ! Procedure(s)
+      parameterization_check, & ! Procedure(s)
+      calculate_spurious_source
 
     use variables_diagnostic_module, only: &
       Skw_zt,  & ! Variable(s)
@@ -238,7 +239,13 @@ module clubb_core
       iupwp_zt,      &
       ivpwp_zt,      &
       l_stats_samp,  &
-      zt
+      l_stats,       &
+      zt,            &
+      sfc,           &
+      irt_spurious_source
+
+    use fill_holes, only: &
+      vertical_integral ! Procedure(s)
 
     implicit none
 
@@ -439,9 +446,24 @@ module clubb_core
       wpsclrpthlp_zm, & ! w'sclr'thl' on momentum grid 
       wp2sclrp_zm,    & ! w'^2 sclr' on momentum grid
       sclrm_zm          ! Passive scalar mean on momentum grid
+      
+    real :: &
+      integral_rtm_before, &
+      integral_rtm_after, &
+      integral_rtm_forcing, &
+      flux_top, &
+      flux_sfc, &
+      spurious_source_rtm
 
     !----- Begin Code -----
-
+    
+    if ( l_stats .and. l_stats_samp ) then
+      ! Get the vertical integral of rtm before this function begins so that 
+      ! spurious source can be calculated
+      integral_rtm_before = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt, &
+                                              rho_ds_zm, rtm)
+    endif
+     
     !----------------------------------------------------------------
     ! Test input variables
     !----------------------------------------------------------------
@@ -1090,6 +1112,23 @@ module clubb_core
              wpsclrp_sfc, wpedsclrp_sfc,                        & ! intent(in)
              sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp,       & ! intent(in)
              sclrm_forcing, edsclrm, edsclrm_forcing            ) ! intent(in)
+    endif
+
+    if ( l_stats .and. l_stats_samp ) then
+      ! Calculate the spurious source
+      flux_top = rho_ds_zm(gr%nnzp) * wprtp(gr%nnzp)
+      flux_sfc = rho_ds_zm(1) * wprtp_sfc
+      integral_rtm_after = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt, &
+                                             rho_ds_zm, rtm)
+      integral_rtm_forcing = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt, &
+                                             rho_ds_zm, rtm_forcing)
+      spurious_source_rtm = calculate_spurious_source( integral_rtm_after, &
+                                                       integral_rtm_before, &
+                                                       flux_top, flux_sfc, & 
+                                                       integral_rtm_forcing, &
+                                                       real(dt) )     
+      call stat_update_var_pt( irt_spurious_source, 1, & 
+                               spurious_source_rtm, sfc )
     endif
 
     return

@@ -1039,10 +1039,13 @@ module numerical_check
 !-----------------------------------------------------------------------
   pure function calculate_spurious_source( integral_after, integral_before, &
                                            flux_top, flux_sfc, & 
-                                           integral_forcing ) &
+                                           integral_forcing, dt ) &
   result( spurious_source )
 !
-!       Description: Computes the spurious source
+!       Description: Checks whether there is conservation within the 
+!                    column and returns any imbalance as spurious_source
+!                    where spurious_source is defined negative for a spurious 
+!                    sink. 
 !
 !-----------------------------------------------------------------------
 
@@ -1054,14 +1057,15 @@ module numerical_check
       integral_before, &
       flux_top, &
       flux_sfc, &
-      integral_forcing
+      integral_forcing, &
+      dt
     
     ! Return Variable
     real :: spurious_source
 !--------------------------------------------------------------------
-    spurious_source = integral_after - integral_before + flux_top - & 
-      flux_sfc - integral_forcing
-      
+    spurious_source = integral_after - integral_before + & 
+                      dt * (flux_top - flux_sfc - integral_forcing)
+                      
     return
 
   end function calculate_spurious_source

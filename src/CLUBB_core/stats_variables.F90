@@ -771,7 +771,8 @@ module stats_variables
     imorr_rain_rate, &
     imorr_snow_rate
 
-
+  integer, public :: &
+    irt_spurious_source
 !$omp threadprivate(iustar, isoil_heat_flux, iveg_T_in_K, isfc_soil_T_in_K, ideep_soil_T_in_K, &
 !$omp   ilh, ish, icc, ilwp, ivwp, iiwp, iswp, irwp, izb, izi, &
 !$omp   irain, irain_flux, irrainm_sfc, &

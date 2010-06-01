@@ -72,6 +72,9 @@ module stats_sfc
     use stats_variables, only: & 
       imorr_rain_rate, &
       imorr_snow_rate
+      
+    use stats_variables, only: &
+      irt_spurious_source
 
     use stats_type, only: & 
         stat_assign ! Procedure
@@ -135,6 +138,8 @@ module stats_sfc
 
     imorr_rain_rate = 0
     imorr_snow_rate = 0
+
+    irt_spurious_source = 0
 
     ! Assign pointers for statistics variables sfc
 
@@ -414,6 +419,13 @@ module stats_sfc
         call stat_assign(iwindm_matrix_condt_num,"windm_matrix_condt_num", & 
              "Estimate of the condition number for the mean wind [count]","count",sfc)
 
+        k = k + 1
+        
+      case ('spurious_source_rtm')
+        irt_spurious_source = k
+
+        call stat_assign(irt_spurious_source, "rt_spurious_source", & 
+             "rtm spurious source","",sfc )
         k = k + 1
 
       case default
