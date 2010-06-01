@@ -18,8 +18,9 @@ for i=1:size(varsToCheck,2)
 	currentUse = which('-all', varToCheck);
 
 	%Make sure the parsed out variable name is both a valid variable
-	%name and not already in use
-	if (isvarname(varToCheck) && isempty(currentUse))
+	%name and not already in use ('qr' is a special case, SAM uses it and it is a
+	%MATLAB function)
+	if ((isvarname(varToCheck) && isempty(currentUse)) || (strcmp(varToCheck, 'qr')))
 		varsFound = varsFound + 1;
 		variables(varsFound) = varsToCheck(i);
 	end
