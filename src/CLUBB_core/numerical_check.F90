@@ -21,7 +21,7 @@ module numerical_check
   public :: invalid_model_arrays, isnan2d,  & 
             rad_check, parameterization_check, & 
             surface_varnce_check, pdf_closure_check, & 
-            length_check, isnan
+            length_check, isnan, calculate_spurious_source
 
   private :: check_negative, check_nan
 
@@ -1034,5 +1034,36 @@ module numerical_check
     return
 
   end subroutine check_nan_sclr
+!-------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+  pure function calculate_spurious_source( integral_after, integral_before, &
+                                           flux_top, flux_sfc, & 
+                                           integral_forcing ) &
+  result( spurious_source )
+!
+!       Description: Computes the spurious source
+!
+!-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    real, intent(in) :: & 
+      integral_after, &
+      integral_before, &
+      flux_top, &
+      flux_sfc, &
+      integral_forcing
+    
+    ! Return Variable
+    real :: spurious_source
+!--------------------------------------------------------------------
+    spurious_source = integral_after - integral_before + flux_top - & 
+      flux_sfc - integral_forcing
+      
+    return
+
+  end function calculate_spurious_source
 !-------------------------------------------------------------------------
 end module numerical_check
