@@ -6,7 +6,8 @@ module fill_holes
   implicit none
 
   public :: fill_holes_driver, &
-            vertical_avg
+            vertical_avg, &
+            vertical_integral
 
   private :: fill_holes_multiplicative
 
