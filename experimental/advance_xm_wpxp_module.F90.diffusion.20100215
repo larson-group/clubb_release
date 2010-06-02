@@ -1685,7 +1685,7 @@ module advance_xm_wpxp_module
                xp2_threshold, xm_threshold, rcond, &
                low_lev_effect, high_lev_effect, &
                l_implemented, solution, &
-               xm, xm__tol, wpxp, err_code )
+               xm, xm_tol, wpxp, err_code )
 
     ! Description:
     ! Clips and computes implicit stats for an artitrary xm and wpxp
@@ -1815,7 +1815,7 @@ module advance_xm_wpxp_module
     real, intent(in) :: &
       xp2_threshold, & ! Minimum allowable value of x'^2   [units vary]
       xm_threshold,  & ! Minimum allowable value of xm     [units vary]
-      xm__tol,        & ! Minimum allowable deviation of xm [units vary]
+      xm_tol,        & ! Minimum allowable deviation of xm [units vary]
       rcond ! Reciprocal of the estimated condition number (from computing A^-1)
 
     ! Variables used as part of the monotonic turbulent advection scheme.
@@ -2092,7 +2092,7 @@ module advance_xm_wpxp_module
                                             invrs_rho_ds_zm, invrs_rho_ds_zt, &
                                             xp2_threshold, l_implemented, &
                                             low_lev_effect, high_lev_effect, &
-                                            xm, xm__tol, wpxp, err_code )
+                                            xm, xm_tol, wpxp, err_code )
 
        ! Check for errors
        if ( lapack_error( err_code ) ) return

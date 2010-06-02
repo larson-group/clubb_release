@@ -38,13 +38,13 @@ module generate_lh_sample_module
 
     use constants, only:  &
       max_mag_correlation, &  ! Constant
-!     s_mellor_tol,  &  ! s _tolerance in kg/kg
-      rt_tol, &      ! rt _tolerance in kg/kg
-      thl_tol, &     ! thetal _tolerance in K
-      w_tol_sqd, &   ! w^2 _tolerance in m^2/s^2
-      rr_tol, &     ! rr _tolerance in kg/kg
-      Nr_tol, &     ! Nr _tolerance in #/kg
-      Nc_tol        ! Nc _tolerance in #/kg
+!     s_mellor_tol,  &  ! s tolerance in kg/kg
+      rt_tol, &      ! rt tolerance in kg/kg
+      thl_tol, &     ! thetal tolerance in K
+      w_tol_sqd, &   ! w^2 tolerance in m^2/s^2
+      rr_tol, &     ! rr tolerance in kg/kg
+      Nr_tol, &     ! Nr tolerance in #/kg
+      Nc_tol        ! Nc tolerance in #/kg
 
     use variables_prognostic_module, only:  &
       pdf_parameter  ! type
@@ -1602,7 +1602,7 @@ module generate_lh_sample_module
     double precision, intent(in) :: &
       Xm,           & ! Mean X          [units vary]
       Xp2_on_Xm2,   & ! X'^2 / X^2      [-]
-      X_tol           ! _tolerance on X  [units vary]
+      X_tol           ! tolerance on X  [units vary]
 
     ! Output Variables
     double precision, intent(out) :: &
