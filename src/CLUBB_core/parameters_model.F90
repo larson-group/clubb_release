@@ -41,9 +41,9 @@ module parameters_model
 !$omp threadprivate(sclr_dim, edsclr_dim, hydromet_dim)
 
   real, dimension(:), allocatable, public :: & 
-    sclrtol ! Threshold(s) on the passive scalars  [units vary]
+    sclr_tol ! Threshold(s) on the passive scalars  [units vary]
 
-!$omp threadprivate(sclrtol)
+!$omp threadprivate(sclr_tol)
 
   public :: setup_parameters_model 
 
@@ -53,7 +53,7 @@ module parameters_model
   subroutine setup_parameters_model &
              ( T0_in, ts_nudge_in, &
                hydromet_dim_in, & 
-               sclr_dim_in, sclrtol_in, edsclr_dim_in, &
+               sclr_dim_in, sclr_tol_in, edsclr_dim_in, &
                Lscale_max_in )
 
 ! Description:
@@ -82,7 +82,7 @@ module parameters_model
       edsclr_dim_in       ! Number of eddy-diff. passive scalars
 
     real, intent(in), dimension(sclr_dim_in) :: & 
-      sclrtol_in     ! Threshold on passive scalars
+      sclr_tol_in     ! Threshold on passive scalars
 
     ! --- Begin Code --- !
      
@@ -102,14 +102,14 @@ module parameters_model
     edsclr_dim   = edsclr_dim_in
 
     ! In a tuning run, this array has the potential to be allocated already
-    if ( .not. allocated( sclrtol ) ) then
-      allocate( sclrtol(1:sclr_dim) )
+    if ( .not. allocated( sclr_tol ) ) then
+      allocate( sclr_tol(1:sclr_dim) )
     else
-      deallocate( sclrtol )
-      allocate( sclrtol(1:sclr_dim) )
+      deallocate( sclr_tol )
+      allocate( sclr_tol(1:sclr_dim) )
     end if
 
-    sclrtol(1:sclr_dim) = sclrtol_in(1:sclr_dim)
+    sclr_tol(1:sclr_dim) = sclr_tol_in(1:sclr_dim)
 
     return
   end subroutine setup_parameters_model

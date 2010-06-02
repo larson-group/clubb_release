@@ -19,8 +19,8 @@ module constants
     pi_dp, pi, sqrt_2pi, sqrt_2, three_halves, &
     Cp, Lv, Ls, Lf, Rd, Rv, ep, ep1, ep2, &
     kappa, grav, p0, vonk, rho_lw, &
-    wtol, thltol, rttol, s_mellor_tol, thltol_mfl, rttol_mfl, & 
-    wtol_sqd, rc_tol, Nc_tol, rr_tol, Nr_tol, emin, &
+    w_tol, thl_tol, rt_tol, s_mellor_tol, thl_tol_mfl, rt_tol_mfl, & 
+    w_tol_sqd, rc_tol, Nc_tol, rr_tol, Nr_tol, em_min, &
     eps, zero_threshold, max_mag_correlation, sec_per_day, &
     sec_per_hr, sec_per_min, g_per_kg, T_freeze_K, &
     Skw_max_mag, Skw_max_mag_sqd, stefan_boltzmann, &
@@ -90,23 +90,23 @@ module constants
 
   ! Tolerances below which we consider moments to be zero
   real, parameter ::  & 
-    wtol    = 2.e-2,  & ! [m/s]
-    thltol  = 1.e-2,  & ! [K]
-    rttol   = 1.e-8,  & ! [kg/kg]
+    w_tol    = 2.e-2,  & ! [m/s]
+    thl_tol  = 1.e-2,  & ! [K]
+    rt_tol   = 1.e-8,  & ! [kg/kg]
     s_mellor_tol   = 1.e-8     ! [kg/kg]
 
   ! Tolerances for use by the monatonic flux limiter.
-  ! rttol_mfl is larger than rttol. rttol is extremely small
+  ! rt_tol_mfl is larger than rt_tol. rt_tol is extremely small
   ! (1e-8) to prevent spurious cloud formation aloft in LBA.
-  ! rttol_mfl is larger (1e-4) to prevent the mfl from
+  ! rt_tol_mfl is larger (1e-4) to prevent the mfl from
   ! depositing moisture at the top of the domain.
   real, parameter :: &
-    thltol_mfl = 1.e-2, & ! [K]
-    rttol_mfl = 1.e-4     ! [kg/kg]
+    thl_tol_mfl = 1.e-2, & ! [K]
+    rt_tol_mfl = 1.e-4     ! [kg/kg]
 
   ! The tolerance for w'^2 is the square of the tolerance for w.
   real, parameter :: &
-    wtol_sqd = wtol**2 ! [m^2/s^2]
+    w_tol_sqd = w_tol**2 ! [m^2/s^2]
 
   real, parameter :: &
     Skw_max_mag = 4.5  ! Max magnitude of skewness     [-]
@@ -131,9 +131,9 @@ module constants
   ! Minimum value for em (turbulence kinetic energy)
   ! If anisotropic TKE is enabled, em = (1/2) * ( up2 + vp2 + wp2 );
   ! otherwise, em = (3/2) * wp2.  Since up2, vp2, and wp2 all have
-  ! the same minimum threshold value of wtol_sqd, em cannot be less
-  ! than (3/2) * wtol_sqd.  Thus, emin = (3/2) * wtol_sqd.
-  real, parameter :: emin = 1.5 * wtol_sqd  ! [m^2/s^2]
+  ! the same minimum threshold value of w_tol_sqd, em cannot be less
+  ! than (3/2) * w_tol_sqd.  Thus, em_min = (3/2) * w_tol_sqd.
+  real, parameter :: em_min = 1.5 * w_tol_sqd  ! [m^2/s^2]
 
   real, parameter ::  & 
     eps = 1.0e-10 ! Small value to prevent a divide by zero

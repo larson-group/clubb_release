@@ -189,7 +189,7 @@ module variables_diagnostic_module
 !-----------------------------------------------------------------------
 
     use constants, only:  & 
-      emin ! Variables
+      em_min ! Variables
 
     use parameters_model, only: & 
       hydromet_dim, & ! Variables
@@ -414,7 +414,7 @@ module variables_diagnostic_module
     Kh_zm = 0.0  ! Eddy diffusivity coefficient: momentum levels
 
     ! TKE
-    em       = emin
+    em       = em_min
 
     ! Length scale
     Lscale   = 0.0

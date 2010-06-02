@@ -16,7 +16,7 @@ program clubb_tuner
 !                         * GRADS parameters: filenames, z-levels, timesteps, 
 !                          variable to tune for
 !                         * HOC variables: C1,...C11, nu1,...nu8
-!                         * Amoeba tolerance: ftol
+!                         * Amoeba tolerance: f_tol
 !                        Initializes
 !                         * The initial dependent variable vector, i.e. the 
 !                          total error between the les and clubb models
@@ -43,7 +43,7 @@ use error, only:  &
   output_nml_standalone, output_nml_tuner,       & ! Subroutines
   param_vals_matrix,                             & ! Variable
   l_results_stdout, l_save_tuning_run,           & ! Variables
-  l_results_file, tune_type, ftol, ndim,         & ! Variables
+  l_results_file, tune_type, f_tol, ndim,         & ! Variables
   tuning_filename, file_unit                       ! Variable
 
 use constants, only: & 
@@ -116,12 +116,12 @@ do
   ! Save tuning results in file if specified
   if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
     action="write", position="append")
-  call write_text( "Current ftol= ", ftol, l_save_tuning_run, file_unit )
+  call write_text( "Current f_tol= ", f_tol, l_save_tuning_run, file_unit )
 
-  write(fstdout,fmt='(A)', advance='no') "Enter new ftol=   "
-  read(*,*) ftol
+  write(fstdout,fmt='(A)', advance='no') "Enter new f_tol=   "
+  read(*,*) f_tol
   ! Save tuning results in file if specified
-  if( l_save_tuning_run ) write(file_unit,*) "Enter new ftol=   ", ftol
+  if( l_save_tuning_run ) write(file_unit,*) "Enter new f_tol=   ", f_tol
   if( l_save_tuning_run ) close(unit=file_unit)
 
   call tuner_init( l_read_files=.false. )
@@ -196,7 +196,7 @@ use error, only:  &
   ! Variable(s)
   ndim,                                & ! Array dimensions
   param_vals_matrix, cost_fnc_vector,  & ! The 'p' matrix and 'y' vector resp.
-  ftol,                                & ! Tolerance of tuning run
+  f_tol,                                & ! Tolerance of tuning run
   iter,                                & ! Iteration number
   min_les_clubb_diff,                  & ! Cost function
   min_err                                ! Minimum value of the cost function
@@ -209,7 +209,7 @@ intrinsic :: minval
 
 call amoeba( param_vals_matrix(1:ndim+1,1:ndim),  & 
              cost_fnc_vector(1:ndim+1),  & 
-             ftol, min_les_clubb_diff, iter)
+             f_tol, min_les_clubb_diff, iter)
 
 ! Note:
 ! Amoeba will make the optimal cost result the first element of
@@ -246,7 +246,7 @@ use error, only: &
     iter, & 
     ndim, & 
     cost_fnc_vector, & 
-    ftol, & 
+    f_tol, & 
     min_err, & 
     min_les_clubb_diff ! Procedure(s)
 
@@ -283,7 +283,7 @@ do jiter = 1, anneal_iter ! anneal_iter taken from /stat/ namelist
   call amebsa & 
        ( param_vals_matrix(1:ndim+1,1:ndim),  & 
          cost_fnc_vector(1:ndim+1), & 
-         pb(1:ndim), yb, ftol, min_les_clubb_diff, iter, tmptr )
+         pb(1:ndim), yb, f_tol, min_les_clubb_diff, iter, tmptr )
 
   nit = nit + iiter - iter
   if ( yb < ybb ) then

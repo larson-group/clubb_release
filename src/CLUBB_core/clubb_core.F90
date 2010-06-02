@@ -70,11 +70,11 @@ module clubb_core
     ! Modules to be included
 
     use constants, only: & 
-      wtol,  & ! Variable(s)
-      emin, & 
-      thltol, & 
-      rttol, &
-      wtol_sqd, &
+      w_tol,  & ! Variable(s)
+      em_min, & 
+      thl_tol, & 
+      rt_tol, &
+      w_tol_sqd, &
       ep2, & 
       Cp, & 
       Lv, & 
@@ -546,9 +546,9 @@ module clubb_core
     sigma_sqd_w = gamma_Skw_fnc * &
       ( 1.0 - min( &
                   max( ( wpthlp / ( sqrt( wp2 * thlp2 )  &
-                      + 0.01 * wtol * thltol ) )**2, &
+                      + 0.01 * w_tol * thl_tol ) )**2, &
                        ( wprtp / ( sqrt( wp2 * rtp2 )  &
-                      + 0.01 * wtol * rttol ) )**2 &
+                      + 0.01 * w_tol * rt_tol ) )**2 &
                      ), & ! max
              1.0 ) & ! min
        )
@@ -560,15 +560,15 @@ module clubb_core
     ! interpolate wp3 to momentum levels, and then compute Skw for m & t grid
     !---------------------------------------------------------------------------
 
-    wp2_zt = max( zm2zt( wp2 ), wtol_sqd ) ! Positive definite quantity
+    wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
     wp3_zm = zt2zm( wp3 )
 
     Skw_zt(1:gr%nnzp) = Skw_func( wp2_zt(1:gr%nnzp), wp3(1:gr%nnzp) )
     Skw_zm(1:gr%nnzp) = Skw_func( wp2(1:gr%nnzp), wp3_zm(1:gr%nnzp) )
 
     ! Iterpolate variances to the zt grid (statistics and closure)
-    thlp2_zt   = max( zm2zt( thlp2 ), thltol**2 ) ! Positive def. quantity
-    rtp2_zt    = max( zm2zt( rtp2 ), rttol**2 )   ! Positive def. quantity
+    thlp2_zt   = max( zm2zt( thlp2 ), thl_tol**2 ) ! Positive def. quantity
+    rtp2_zt    = max( zm2zt( rtp2 ), rt_tol**2 )   ! Positive def. quantity
     rtpthlp_zt = zm2zt( rtpthlp )
 
 
@@ -777,11 +777,11 @@ module clubb_core
       ! Call compute length two additional times with perturbed values
       ! of rtm and thlm so that an average value of Lscale may be calculated.
 
-      thlm_pert_1 = thlm + Lscale_pert_coef * sqrt( max( thlp2, thltol**2 ) )
-      rtm_pert_1  = rtm  + Lscale_pert_coef * sqrt( max( rtp2, rttol**2 ) )
+      thlm_pert_1 = thlm + Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
+      rtm_pert_1  = rtm  + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
 
-      thlm_pert_2 = thlm - Lscale_pert_coef * sqrt( max( thlp2, thltol**2 ) )
-      rtm_pert_2  = rtm  - Lscale_pert_coef * sqrt( max( rtp2, rttol**2 ) )
+      thlm_pert_2 = thlm - Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
+      rtm_pert_2  = rtm  - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
 
       call compute_length( thvm, thlm_pert_1, rtm_pert_1, rcm, em, & ! intent(in)
                            p_in_Pa, exner, thv_ds_zt, &              ! intent(in)
@@ -815,19 +815,19 @@ module clubb_core
     !----------------------------------------------------------------
     ! Dissipation time
     !----------------------------------------------------------------
-! Vince Larson replaced the cutoff of emin by wtol**2.  7 Jul 2007
+! Vince Larson replaced the cutoff of em_min by w_tol**2.  7 Jul 2007
 !     This is to prevent tau from being too large (producing little damping)
 !     in stably stratified layers with little turbulence.
-!       tmp1 = SQRT( MAX( emin, zm2zt( em ) ) )
+!       tmp1 = SQRT( MAX( em_min, zm2zt( em ) ) )
 !       tau_zt = MIN( Lscale / tmp1, taumax )
 !       tau_zm &
-!       = MIN( ( zt2zm( Lscale ) / SQRT( MAX( emin, em ) ) ), taumax )
-!   Addition by Brian:  Model constant emin is now set to (3/2)*wtol_sqd.
-!                       Thus, emin can replace wtol_sqd here.
-    tmp1   = SQRT( MAX( emin, zm2zt( em ) ) )
+!       = MIN( ( zt2zm( Lscale ) / SQRT( MAX( em_min, em ) ) ), taumax )
+!   Addition by Brian:  Model constant em_min is now set to (3/2)*w_tol_sqd.
+!                       Thus, em_min can replace w_tol_sqd here.
+    tmp1   = SQRT( MAX( em_min, zm2zt( em ) ) )
     tau_zt = MIN( Lscale / tmp1, taumax )
     tau_zm = MIN( ( MAX( zt2zm( Lscale ), zero_threshold )  & 
-                   / SQRT( MAX( emin, em ) ) ), taumax )
+                   / SQRT( MAX( em_min, em ) ) ), taumax )
 ! End Vince Larson's replacement.
 
     ! Modification to damp noise in stable region
@@ -848,7 +848,7 @@ module clubb_core
 
     Kh_zt = c_K * Lscale * tmp1
     Kh_zm = c_K * max( zt2zm( Lscale ), zero_threshold )  & 
-                * sqrt( max( em, emin ) )
+                * sqrt( max( em, em_min ) )
 
     !----------------------------------------------------------------
     ! Set Surface variances
@@ -877,11 +877,11 @@ module clubb_core
 
       ! Variances for cases where the lowest level is not at the surface.
       ! Eliminate surface effects on lowest level variances.
-      wp2(1)     = wtol_sqd
-      up2(1)     = wtol_sqd
-      vp2(1)     = wtol_sqd
-      thlp2(1)   = thltol**2
-      rtp2(1)    = rttol**2
+      wp2(1)     = w_tol_sqd
+      up2(1)     = w_tol_sqd
+      vp2(1)     = w_tol_sqd
+      thlp2(1)   = thl_tol**2
+      rtp2(1)    = rt_tol**2
       rtpthlp(1) = 0.0
 
       do i = 1, sclr_dim, 1
@@ -1067,11 +1067,11 @@ module clubb_core
     end if
 
     if ( iup2_zt > 0 ) then
-      up2_zt = max( zm2zt( up2 ), wtol_sqd )
+      up2_zt = max( zm2zt( up2 ), w_tol_sqd )
     end if
 
     if (ivp2_zt > 0 ) then
-      vp2_zt = max( zm2zt( vp2 ), wtol_sqd )
+      vp2_zt = max( zm2zt( vp2 ), w_tol_sqd )
     end if
 
     if (iupwp_zt > 0 ) then
@@ -1136,7 +1136,7 @@ module clubb_core
   subroutine setup_clubb_core & 
              ( nzmax, T0_in, ts_nudge_in, & ! In
                hydromet_dim_in, sclr_dim_in, & ! In
-               sclrtol_in, edsclr_dim_in, params,  &  ! In
+               sclr_tol_in, edsclr_dim_in, params,  &  ! In
                l_soil_veg, l_host_applies_sfc_fluxes, & ! In
                l_uv_nudge, l_tke_aniso, saturation_formula, &  ! In
                l_implemented, grid_type, deltaz, zm_init, zm_top, &  ! In
@@ -1242,7 +1242,7 @@ module clubb_core
       edsclr_dim_in       ! Number of eddy-diff. passive scalars
 
     real, intent(in), dimension(sclr_dim_in) :: & 
-      sclrtol_in    ! Thresholds for passive scalars
+      sclr_tol_in    ! Thresholds for passive scalars
 
     real, intent(in), dimension(nparams) :: & 
       params  ! Including C1, nu1, nu2, etc.
@@ -1307,7 +1307,7 @@ module clubb_core
     ! Define model constant parameters
     call setup_parameters_model( T0_in, ts_nudge_in, &      ! In
                                  hydromet_dim_in, &  ! in
-                                 sclr_dim_in, sclrtol_in, edsclr_dim_in, &! In
+                                 sclr_dim_in, sclr_tol_in, edsclr_dim_in, &! In
                                  Lscale_max )   ! In
 
     ! Define tunable constant parameters
@@ -1359,7 +1359,7 @@ module clubb_core
     !    Frees memory used by the model itself.
     !
     !--------------------------------------------------------------------
-    use parameters_model, only: sclrtol ! Variable
+    use parameters_model, only: sclr_tol ! Variable
 
     use variables_diagnostic_module, only: & 
       cleanup_diagnostic_variables ! Procedure
@@ -1384,7 +1384,7 @@ module clubb_core
     call cleanup_diagnostic_variables( )
 
     ! De-allocate the array for the passive scalar tolerances
-    deallocate( sclrtol )
+    deallocate( sclr_tol )
 
     return
   end subroutine cleanup_clubb_core

@@ -47,7 +47,7 @@ module fill_holes
                ! Mass is drawn from these points to fill the hole.  []
 
     real, intent(in) :: & 
-      threshold  ! A threshold (e.g. wtol*wtol) below which field must not
+      threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not
                  ! fall                           [Units vary; same as field]
 
     character(len=2), intent(in) :: & 
@@ -165,7 +165,7 @@ module fill_holes
       end_idx      ! The end index (e.g. k=gr%nnzp) of the range of hole-filling
 
     real, intent(in) :: & 
-      threshold  ! A threshold (e.g. wtol*wtol) below which field must not fall
+      threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not fall
                  !                              [Units vary; same as field]
 
     character(len=2), intent(in) :: & 

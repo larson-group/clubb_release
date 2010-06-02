@@ -389,21 +389,21 @@
         ! clipped at the lowest level.  Brian Griffin.  12/18/05.
         do k = 2, gr%nnzp, 1
 
-          if ( wp2(k) >= wtol*wtol ) then
+          if ( wp2(k) >= w_tol*w_tol ) then
             rtp2(k) 
      .      = max( rtp2(k), 
 ! Vince Larson commented out because may cause unstable feedback w/ wprtp eqn..
 !       The correlation of w and rt may now exceed 1, which would be unphysical.  7 Jul 2007 
 !     .             wprtp(k)*wprtp(k)/((1.0-Scm(k))*wp2(k)) + eps,
 ! End Vince Larson's commenting
-     .             rttol*rttol + eps )
+     .             rt_tol*rt_tol + eps )
             thlp2(k) 
      .      = max( thlp2(k), 
 ! Vince Larson commented out because may cause unstable feedback w/ wpthlp eqn.. 
 !    The correlation of w and thl may now exceed 1, which would be unphysical.  7 Jul 2007 
 !     .             wpthlp(k)*wpthlp(k)/((1.0-Scm(k))*wp2(k)) + eps,
 ! End Vince Larson's commenting
-     .             thltol*thltol + eps )
+     .             thl_tol*thl_tol + eps )
           else
             thlp2(k) = max( thlp2(k), 0.0 )
             rtp2(k)  = max( rtp2(k), 0.0 )
@@ -522,7 +522,7 @@
           ! Clip scalar variance terms
           do i =1, sclr_dim, 1
             do k = 2, gr%nnzp, 1
-              if ( wp2(k) >= wtol*wtol ) then
+              if ( wp2(k) >= w_tol*w_tol ) then
                 sclrp2(k,i) 
      .          = max
      .            ( sclrp2(k,i), 
@@ -530,10 +530,10 @@
 !     The correlation of w and sclr may now exceed 1, which would be unphysical.  7 Jul 2007
 !     .              wpsclrp(k,i)*wpsclrp(k,i)/((1.0-Scm(k))*wp2(k))+eps,
 ! End Vince Larson's commenting
-     .              sclrtol(i)*sclrtol(i) + eps )
+     .              sclr_tol(i)*sclr_tol(i) + eps )
               else
                 sclrp2(k,i) = max( sclrp2(k,i), 0.0 )
-              end if ! wp2(k) >= wtol**2
+              end if ! wp2(k) >= w_tol**2
             end do ! k
           end do ! i
 

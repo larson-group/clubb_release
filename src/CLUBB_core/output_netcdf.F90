@@ -459,7 +459,7 @@ module output_netcdf
     use parameters_model, only: &
       T0, &       ! Real variables
       ts_nudge, &
-      sclrtol    ! Real array variable
+      sclr_tol    ! Real array variable
 
     use parameters_tunable, only: &
       params_list ! Variable names (characters)
@@ -644,7 +644,7 @@ module output_netcdf
 
     stat(1) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "T0", T0 )
     stat(2) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "ts_nudge", ts_nudge )
-    stat(3) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "sclrtol", sclrtol )
+    stat(3) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "sclr_tol", sclr_tol )
 
     call get_parameters( params )
 

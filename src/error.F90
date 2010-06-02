@@ -51,7 +51,7 @@ module error
     max_variables = 32 ! This number / 2 is maximum variables to tune for
 
   real, public ::  & 
-    ftol,        & ! The precision to tune for
+    f_tol,        & ! The precision to tune for
     anneal_temp ! Initial temperature for the simulated annealing algorithm
 
   integer, public :: & 
@@ -206,7 +206,7 @@ module error
 
     ! Namelists read from error.in
     namelist /stats/  & 
-      ftol, tune_type, anneal_temp, anneal_iter, & 
+      f_tol, tune_type, anneal_temp, anneal_iter, & 
       l_results_stdout, l_results_file, l_stdout_on_invalid, &
       t_variables, weight_var_nl
 
@@ -822,7 +822,7 @@ module error
 
     write(unit=20,fmt=*) "! Parameter file " // results_f
     write(unit=20,fmt=*) "&stats"
-    write(unit=20,fmt=*) "ftol = ", ftol
+    write(unit=20,fmt=*) "f_tol = ", f_tol
     if (l_results_stdout) then
       write(unit=20,fmt=*) "l_results_stdout = " // ".true."
     else

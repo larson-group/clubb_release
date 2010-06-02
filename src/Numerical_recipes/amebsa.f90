@@ -1,7 +1,7 @@
 ! $Id: num_rec.f90,v 1.1 2008-07-24 17:31:45 dschanen Exp $  
 !   From _Numerical Recipes in Fortran 90_
 !   (C) 1988-1996 Numerical Recipes Software
-SUBROUTINE amebsa( p, y, pb, yb, ftol, func, iter, temptr )
+SUBROUTINE amebsa( p, y, pb, yb, f_tol, func, iter, temptr )
 USE nrtype
 USE nrutil, ONLY : assert_eq, imaxloc, iminloc, swap
 USE nr, ONLY : ran1
@@ -9,7 +9,7 @@ IMPLICIT NONE
 
 INTEGER(I4B), INTENT(INOUT) :: iter
 REAL(SP), INTENT(INOUT)     :: yb
-REAL(SP), INTENT(IN)        :: ftol, temptr
+REAL(SP), INTENT(IN)        :: f_tol, temptr
 REAL(SP), DIMENSION(:), INTENT(INOUT)   :: y, pb
 REAL(SP), DIMENSION(:,:), INTENT(INOUT) :: p
 
@@ -32,7 +32,7 @@ CONTAINS
 !BL
   SUBROUTINE amebsa_private
   INTEGER(I4B) :: i,ilo,inhi
-  REAL(SP)     :: rtol,ylo,ynhi,ysave,ytry
+  REAL(SP)     :: r_tol,ylo,ynhi,ysave,ytry
   REAL(SP), DIMENSION(size(y)) :: yt,harvest
 
   ndim    = assert_eq( size( p, 2 ), size( p, 1 )-1,       &
@@ -49,8 +49,8 @@ CONTAINS
     yt(ihi) = ylo
     inhi    = imaxloc( yt(:) )
     ynhi    = yt(inhi)
-    rtol    = 2.0_sp * abs( yhi - ylo ) / ( abs( yhi )+abs( ylo ) )
-    if (rtol < ftol .or. iter < 0) then
+    r_tol    = 2.0_sp * abs( yhi - ylo ) / ( abs( yhi )+abs( ylo ) )
+    if (r_tol < f_tol .or. iter < 0) then
       call swap( y(1), y(ilo) )
       call swap( p(1,:), p(ilo,:) )
       RETURN

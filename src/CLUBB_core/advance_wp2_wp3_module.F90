@@ -356,7 +356,7 @@ contains
         ddzt       ! Function
 
     use constants, only: & 
-        wtol_sqd,      & ! Variables(s)
+        w_tol_sqd,      & ! Variables(s)
         eps,           &
         zero_threshold
 
@@ -781,10 +781,10 @@ contains
       call stat_begin_update( iwp2_pd, real( wp2 / dt ), zm )
     endif
 
-    if ( l_hole_fill .and. any( wp2 < wtol_sqd ) ) then
+    if ( l_hole_fill .and. any( wp2 < w_tol_sqd ) ) then
 
       ! Use a simple hole filling algorithm
-      call fill_holes_driver( 2, wtol_sqd, "zm", &
+      call fill_holes_driver( 2, w_tol_sqd, "zm", &
                               rho_ds_zt, rho_ds_zm, &
                               wp2 )
 
@@ -797,12 +797,12 @@ contains
 
 
     ! Clip w'^2 at a minimum threshold.
-    call clip_variance( "wp2", dt, wtol_sqd, wp2 )
+    call clip_variance( "wp2", dt, w_tol_sqd, wp2 )
 
     ! Interpolate w'^2 from momentum levels to thermodynamic levels.
     ! This is used for the clipping of w'^3 according to the value
     ! of Sk_w now that w'^2 and w'^3 have been advanced one timestep.
-    wp2_zt = max( zm2zt( wp2 ), wtol_sqd )   ! Positive definite quantity
+    wp2_zt = max( zm2zt( wp2 ), w_tol_sqd )   ! Positive definite quantity
 
     ! Clip w'^3 by limiting skewness.
     call clip_skewness( dt, sfc_elevation, wp2_zt, wp3 )
@@ -1498,7 +1498,7 @@ contains
         nu8
 
     use constants, only: & 
-        wtol_sqd,     & ! Variable(s)
+        w_tol_sqd,     & ! Variable(s)
         eps,          &
         three_halves, &
         gamma_over_implicit_ts
@@ -1620,7 +1620,7 @@ contains
       ! RHS dissipation term 1 (dp1).
       rhs(k_wp2) &
       = rhs(k_wp2) &
-      + wp2_term_dp1_rhs( C1_Skw_fnc(k), tau1m(k), wtol_sqd )
+      + wp2_term_dp1_rhs( C1_Skw_fnc(k), tau1m(k), w_tol_sqd )
 
       ! RHS contribution from "over-implicit" weighted time step
       ! for LHS dissipation term 1 (dp1).
@@ -1727,7 +1727,7 @@ contains
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
         ! subtracts the value sent in, reverse the sign on wp2_term_dp1_rhs.
         call stat_begin_update_pt( iwp2_dp1, k, &
-          -wp2_term_dp1_rhs( C1_Skw_fnc(k), tau1m(k), wtol_sqd ), zm )
+          -wp2_term_dp1_rhs( C1_Skw_fnc(k), tau1m(k), w_tol_sqd ), zm )
 
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
@@ -1993,8 +1993,8 @@ contains
     k_wp2 = 2*k
 
     ! The value of w'^2 at the upper boundary will be set to the threshold
-    ! minimum value of wtol_sqd.
-    rhs(k_wp2)   = wtol_sqd
+    ! minimum value of w_tol_sqd.
+    rhs(k_wp2)   = w_tol_sqd
     ! The value of w'^3 at the upper boundary will be set to 0.
     rhs(k_wp3)   = 0.0
 
@@ -2604,7 +2604,7 @@ contains
         gr ! Variable gr%weights_zt2zm
 
     use constants, only:  &
-        wtol_sqd
+        w_tol_sqd
 
     use model_flags, only:  &
         l_standard_term_ta
@@ -2672,7 +2672,7 @@ contains
        = + invrs_rho_ds_zt &
            * dzt &
              * rho_ds_zm * a1 &
-             * ( 2.0 * wp3_zm / max(wp2, wtol_sqd) ) &
+             * ( 2.0 * wp3_zm / max(wp2, w_tol_sqd) ) &
              * gr%weights_zt2zm(t_above,mk)
 
        ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
@@ -2687,10 +2687,10 @@ contains
        = + invrs_rho_ds_zt &
            * dzt &
              * (   rho_ds_zm * a1 &
-                   * ( 2.0 * wp3_zm / max(wp2, wtol_sqd) ) &
+                   * ( 2.0 * wp3_zm / max(wp2, w_tol_sqd) ) &
                    * gr%weights_zt2zm(t_below,mk) &
                  - rho_ds_zmm1 * a1m1 &
-                   * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol_sqd) ) &
+                   * ( 2.0 * wp3_zmm1 / max(wp2m1, w_tol_sqd) ) &
                    * gr%weights_zt2zm(t_above,mkm1) &
                )
 
@@ -2706,7 +2706,7 @@ contains
        = - invrs_rho_ds_zt &
            * dzt &
              * rho_ds_zmm1 * a1m1 &
-             * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol_sqd) ) &
+             * ( 2.0 * wp3_zmm1 / max(wp2m1, w_tol_sqd) ) &
              * gr%weights_zt2zm(t_below,mkm1)
 
     else
@@ -2732,7 +2732,7 @@ contains
        = + invrs_rho_ds_zt &
            * a1_zt * dzt &
              * rho_ds_zm &
-             * ( 2.0 * wp3_zm / max(wp2, wtol_sqd) ) &
+             * ( 2.0 * wp3_zm / max(wp2, w_tol_sqd) ) &
              * gr%weights_zt2zm(t_above,mk)
 
        ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
@@ -2747,10 +2747,10 @@ contains
        = + invrs_rho_ds_zt &
            * a1_zt * dzt & 
              * (   rho_ds_zm &
-                   * ( 2.0 * wp3_zm / max(wp2, wtol_sqd) ) & 
+                   * ( 2.0 * wp3_zm / max(wp2, w_tol_sqd) ) & 
                    * gr%weights_zt2zm(t_below,mk) & 
                  - rho_ds_zmm1 &
-                   * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol_sqd) ) & 
+                   * ( 2.0 * wp3_zmm1 / max(wp2m1, w_tol_sqd) ) & 
                    * gr%weights_zt2zm(t_above,mkm1) & 
                )
 
@@ -2766,7 +2766,7 @@ contains
        = - invrs_rho_ds_zt &
            * a1_zt * dzt &
              * rho_ds_zmm1 &
-             * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol_sqd) ) & 
+             * ( 2.0 * wp3_zmm1 / max(wp2m1, w_tol_sqd) ) & 
              * gr%weights_zt2zm(t_below,mkm1)
 
        ! End of code that pulls out a3.
@@ -3035,7 +3035,7 @@ contains
     !-----------------------------------------------------------------------
 
     use constants, only:  &
-        wtol_sqd
+        w_tol_sqd
 
     use model_flags, only:  &
         l_standard_term_ta
@@ -3079,9 +3079,9 @@ contains
          + invrs_rho_ds_zt &
            * dzt &
              * (   rho_ds_zm * a1 &
-                   * ( wp3_zm**2 / max(wp2, wtol_sqd) ) &
+                   * ( wp3_zm**2 / max(wp2, w_tol_sqd) ) &
                  - rho_ds_zmm1 * a1m1 &
-                   * ( wp3_zmm1**2 / max(wp2m1, wtol_sqd) ) &
+                   * ( wp3_zmm1**2 / max(wp2m1, w_tol_sqd) ) &
                ) &
          + const_three_halves &
            * dzt * ( wp2**2 - wp2m1**2 )
@@ -3110,9 +3110,9 @@ contains
          + invrs_rho_ds_zt &
            * a1_zt * dzt & 
              * (   rho_ds_zm &
-                   * ( wp3_zm**2 / max(wp2, wtol_sqd) ) & 
+                   * ( wp3_zm**2 / max(wp2, w_tol_sqd) ) & 
                  - rho_ds_zmm1 &
-                   * ( wp3_zmm1**2 / max(wp2m1, wtol_sqd) ) & 
+                   * ( wp3_zmm1**2 / max(wp2m1, w_tol_sqd) ) & 
                ) &
          + const_three_halves &
            * dzt * ( wp2**2 - wp2m1**2 )

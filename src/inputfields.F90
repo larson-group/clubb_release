@@ -186,10 +186,10 @@ module inputfields
         zt2zm ! Procedure(s)
 
     use constants, only:  &
-        rttol,    & ! Variable(s)
-        thltol,   &
-        wtol_sqd, &
-        emin,     &
+        rt_tol,    & ! Variable(s)
+        thl_tol,   &
+        w_tol_sqd, &
+        em_min,     &
         fstderr
 
     use array_index, only:  & 
@@ -1033,9 +1033,9 @@ module inputfields
         if ( k_lowest_zm_input == 2 ) then
           rtp2(1) =  rtp2(2)
         endif
-        if ( any( rtp2(1:gr%nnzp) < rttol**2 ) ) then
+        if ( any( rtp2(1:gr%nnzp) < rt_tol**2 ) ) then
           do k=1, gr%nnzp
-            rtp2(k) = max(rtp2(k), rttol**2)
+            rtp2(k) = max(rtp2(k), rt_tol**2)
           enddo
         endif
       endif
@@ -1069,9 +1069,9 @@ module inputfields
         if ( k_lowest_zm_input == 2 ) then
           thlp2(1) = thlp2(2)
         endif
-        if ( any( thlp2(1:gr%nnzp) < thltol**2 ) ) then
+        if ( any( thlp2(1:gr%nnzp) < thl_tol**2 ) ) then
           do k=1, gr%nnzp
-            thlp2(k) = max(thlp2(k), thltol**2)
+            thlp2(k) = max(thlp2(k), thl_tol**2)
           enddo
         endif
       endif
@@ -1244,7 +1244,7 @@ module inputfields
           endif
         enddo
 
-        where ( em < emin ) em = emin
+        where ( em < em_min ) em = em_min
 
       endif ! input_em
 
@@ -1730,8 +1730,8 @@ module inputfields
           endif
         enddo
 
-        ! Clip up2 to be no smaller than wtol_sqd
-        where ( up2 < wtol_sqd ) up2 = wtol_sqd
+        ! Clip up2 to be no smaller than w_tol_sqd
+        where ( up2 < w_tol_sqd ) up2 = w_tol_sqd
 
       endif
 
@@ -1758,7 +1758,7 @@ module inputfields
           endif
         enddo
 
-        where ( vp2 < wtol_sqd ) vp2 = wtol_sqd
+        where ( vp2 < w_tol_sqd ) vp2 = w_tol_sqd
 
       endif
 
@@ -1977,9 +1977,9 @@ module inputfields
             wp2(k) = LES_tmp1(exact_lev_idx_zm(k))
           endif
         enddo
-        if ( any( wp2(1:gr%nnzp) < wtol_sqd ) ) then
+        if ( any( wp2(1:gr%nnzp) < w_tol_sqd ) ) then
           do k=1, gr%nnzp
-            wp2(k) = max( wp2(k), wtol_sqd )
+            wp2(k) = max( wp2(k), w_tol_sqd )
           enddo
         endif
       endif

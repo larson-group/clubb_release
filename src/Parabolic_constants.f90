@@ -28,6 +28,6 @@
     REAL(r8), PARAMETER :: epss=1.e-15_r8                           ! demanded accuracy 
     REAL(r8), PARAMETER :: dwarf=TINY(0.0_r8)*1000.0_r8             ! safe underflow limit
     REAL(r8), PARAMETER :: giant=HUGE(0.0_r8)/1000.0_r8             ! safe overflow limit
-    REAL(r8), PARAMETER :: mactol=EPSILON(0.0_r8)                   ! machine-epsilon    
+    REAL(r8), PARAMETER :: mac_tol=EPSILON(0.0_r8)                   ! machine-epsilon    
   ! End File constants
   END MODULE Parabolic_constants

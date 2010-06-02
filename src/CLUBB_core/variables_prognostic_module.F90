@@ -175,9 +175,9 @@ module variables_prognostic_module
 !       None
 !-----------------------------------------------------------------------
     use constants, only:  & 
-        rttol, &
-        thltol, &
-        wtol_sqd
+        rt_tol, &
+        thl_tol, &
+        w_tol_sqd
 
     use parameters_model, only: & 
         sclr_dim,  & ! Variable(s)
@@ -287,9 +287,9 @@ module variables_prognostic_module
     upwp(1:nzmax)    = 0.0     ! vertical u momentum flux
     vpwp(1:nzmax)    = 0.0     ! vertical v momentum flux
 
-    up2(1:nzmax)     = wtol_sqd ! u'^2
-    vp2(1:nzmax)     = wtol_sqd ! v'^2
-    wp2(1:nzmax)     = wtol_sqd ! w'^2
+    up2(1:nzmax)     = w_tol_sqd ! u'^2
+    vp2(1:nzmax)     = w_tol_sqd ! v'^2
+    wp2(1:nzmax)     = w_tol_sqd ! w'^2
 
     thlm(1:nzmax)    = 0.0         ! liquid potential temperature
     rtm(1:nzmax)     = 0.0         ! total water mixing ratio
@@ -297,8 +297,8 @@ module variables_prognostic_module
     wpthlp(1:nzmax)  = 0.0         ! w'thl'
     wprcp(1:nzmax)   = 0.0         ! w'rc'
     wp3(1:nzmax)     = 0.0         ! w'^3
-    rtp2(1:nzmax)    = rttol**2    ! rt'^2
-    thlp2(1:nzmax)   = thltol**2   ! thl'^2
+    rtp2(1:nzmax)    = rt_tol**2    ! rt'^2
+    thlp2(1:nzmax)   = thl_tol**2   ! thl'^2
     rtpthlp(1:nzmax) = 0.0         ! rt'thl'
 
     p_in_Pa(1:nzmax)= 0.0           ! pressure (Pa)

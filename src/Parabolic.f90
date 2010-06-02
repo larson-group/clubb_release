@@ -861,8 +861,8 @@
       ELSE 
         u=p*sigman 
         psir=rho2+p*p+0.5*a*u*u*aux7(u) 
-        IF (abs(u+1.0_r8) < 10*mactol) THEN
-           u=u+mactol*10
+        IF (abs(u+1.0_r8) < 10*mac_tol) THEN
+           u=u+mac_tol*10
         ENDIF 
         IF (psir > -lneps10) THEN
           r=0 
@@ -989,7 +989,7 @@
     ELSE
       r=x/(2.0_r8+x); r2=r*r; rk=1
       y=1.0_r8/5.0_r8; k=5; tk=1 
-      DO WHILE (tk > mactol)
+      DO WHILE (tk > mac_tol)
         k=k+2; rk=rk*r2; tk= rk/k; y= y+tk
       ENDDO    
       r=x+2.0_r8; r2=r*r; y=(2.0_r8+1.5_r8*r2+6*x*x*y/r2)/(r*r2)    
@@ -1074,7 +1074,7 @@
     x2= x*x; y2= y*y; r2= x2+y2; x1= x+1.0_r8
     IF ((x1 == 0).AND.(y == 0)) THEN
       u=log(dwarf); v=0; w=0 
-    ELSEIF ((abs(x) < mactol).AND.(abs(y) < mactol)) THEN 
+    ELSEIF ((abs(x) < mac_tol).AND.(abs(y) < mac_tol)) THEN 
       u=-(x2-y2)*0.5_r8; v=-x*y; w=-y2*y/3.0_r8  
     ELSE
       IF (r2 > 0.5) THEN

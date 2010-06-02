@@ -55,15 +55,15 @@ module pdf_closure_module
       ep,            & ! Rd / Rv;     ep  = 0.622            [-]
       ep1,           & ! (1.0-ep)/ep; ep1 = 0.61             [-]
       ep2,           & ! 1.0/ep;      ep2 = 1.61             [-]
-      wtol_sqd,      & ! Tolerance for w'^2                  [m^2/s^2]
-      rttol,         & ! Tolerance for r_t                   [kg/kg]
-      thltol,        & ! Tolerance for th_l                  [K]
+      w_tol_sqd,      & ! Tolerance for w'^2                  [m^2/s^2]
+      rt_tol,         & ! Tolerance for r_t                   [kg/kg]
+      thl_tol,        & ! Tolerance for th_l                  [K]
       s_mellor_tol,  & ! Tolerance for pdf parameter s       [kg/kg]
       fstderr,       &
       zero_threshold  
 
     use parameters_model, only: &
-      sclrtol,          & ! Array of passive scalar tolerances  [units vary]
+      sclr_tol,          & ! Array of passive scalar tolerances  [units vary]
       sclr_dim,         & ! Number of passive scalar variables
       mixt_frac_max_mag   ! Maximum values for PDF parameter 'mixt_frac'
 
@@ -250,7 +250,7 @@ module pdf_closure_module
 
     ! If there is no velocity, then use single delta fnc. as pdf
     ! Otherwise width parameters (e.g. varnce_w1, varnce_w2, etc.) are non-zero.
-    if ( wp2 <= wtol_sqd )  then
+    if ( wp2 <= w_tol_sqd )  then
 
       mixt_frac = 0.5
       w1        = wm
@@ -354,7 +354,7 @@ module pdf_closure_module
       width_factor_1 = ( 2.0/3.0 )*beta + 2.0*mixt_frac*( 1.0 - ( 2.0/3.0 )*beta )
       width_factor_2 = 2.0 - width_factor_1
 
-      if ( thlp2 <= thltol**2 ) then
+      if ( thlp2 <= thl_tol**2 ) then
         thl1      = thlm
         thl2      = thlm
         varnce_thl1     = 0.0
@@ -376,9 +376,9 @@ module pdf_closure_module
         varnce_thl1 = ( alpha_thl / mixt_frac * thlp2 ) * width_factor_1
         varnce_thl2 = ( alpha_thl / (1.-mixt_frac) * thlp2 ) * width_factor_2
 
-      end if ! thlp2 <= thltol**2
+      end if ! thlp2 <= thl_tol**2
 
-      if ( rtp2 <= rttol**2 ) then
+      if ( rtp2 <= rt_tol**2 ) then
         rt1      = rtm
         rt2      = rtm
         varnce_rt1     = 0.0
@@ -400,12 +400,12 @@ module pdf_closure_module
         varnce_rt1 = ( alpha_rt / mixt_frac * rtp2 ) * width_factor_1
         varnce_rt2 = ( alpha_rt / (1.-mixt_frac) * rtp2 ) * width_factor_2
 
-      end if ! rtp2 <= rttol**2 
+      end if ! rtp2 <= rt_tol**2 
 
       ! Compute pdf parameters for passive scalars
       if ( l_scalar_calc ) then
         do i = 1, sclr_dim
-          if ( sclrp2(i) <= sclrtol(i)**2 ) then
+          if ( sclrp2(i) <= sclr_tol(i)**2 ) then
             ! Set plume sclr for plume 1,2 to the mean
             sclr1(i)= sclrm(i)
             sclr2(i)= sclrm(i)
@@ -434,7 +434,7 @@ module pdf_closure_module
             !  to generalize scalar skewnesses.  05 Nov 03
             varnce_sclr1(i) = ( alpha_sclr(i) / mixt_frac * sclrp2(i) ) * width_factor_1
             varnce_sclr2(i) = ( alpha_sclr(i) / (1.-mixt_frac) * sclrp2(i) ) * width_factor_2
-          end if ! sclrp2(i) <= sclrtol(i)**2
+          end if ! sclrp2(i) <= sclr_tol(i)**2
         end do ! i=1, sclr_dim
       end if ! l_scalar_calc
 

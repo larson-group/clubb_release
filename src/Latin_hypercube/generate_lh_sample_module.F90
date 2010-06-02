@@ -38,13 +38,13 @@ module generate_lh_sample_module
 
     use constants, only:  &
       max_mag_correlation, &  ! Constant
-!     s_mellor_tol,  &  ! s tolerance in kg/kg
-      rttol, &      ! rt tolerance in kg/kg
-      thltol, &     ! thetal tolerance in K
-      wtol_sqd, &   ! w^2 tolerance in m^2/s^2
-      rr_tol, &     ! rr tolerance in kg/kg
-      Nr_tol, &     ! Nr tolerance in #/kg
-      Nc_tol        ! Nc tolerance in #/kg
+!     s_mellor_tol,  &  ! s _tolerance in kg/kg
+      rt_tol, &      ! rt _tolerance in kg/kg
+      thl_tol, &     ! thetal _tolerance in K
+      w_tol_sqd, &   ! w^2 _tolerance in m^2/s^2
+      rr_tol, &     ! rr _tolerance in kg/kg
+      Nr_tol, &     ! Nr _tolerance in #/kg
+      Nc_tol        ! Nc _tolerance in #/kg
 
     use variables_prognostic_module, only:  &
       pdf_parameter  ! type
@@ -219,46 +219,46 @@ module generate_lh_sample_module
 
     ! Input pdf parameters.
 
-    if ( pdf_params%varnce_w1(level) > wtol_sqd ) then
+    if ( pdf_params%varnce_w1(level) > w_tol_sqd ) then
       varnce_w1 = pdf_params%varnce_w1(level)
       w1 = pdf_params%w1(level)
     else
-      varnce_w1 = wtol_sqd
+      varnce_w1 = w_tol_sqd
       w1 = wm
     end if
-    if ( pdf_params%varnce_w2(level) > wtol_sqd ) then
+    if ( pdf_params%varnce_w2(level) > w_tol_sqd ) then
       varnce_w2 = pdf_params%varnce_w2(level)
       w2 = pdf_params%w2(level)
     else
-      varnce_w2 = wtol_sqd
+      varnce_w2 = w_tol_sqd
       w2 = wm
     end if
-    if ( pdf_params%varnce_rt1(level) > rttol**2 ) then
+    if ( pdf_params%varnce_rt1(level) > rt_tol**2 ) then
       varnce_rt1 = pdf_params%varnce_rt1(level)
       rt1 = pdf_params%rt1(level)
     else
-      varnce_rt1 = rttol**2
+      varnce_rt1 = rt_tol**2
       rt1 = rtm
     end if
-    if ( pdf_params%varnce_rt2(level) > rttol**2 ) then
+    if ( pdf_params%varnce_rt2(level) > rt_tol**2 ) then
       varnce_rt2 = pdf_params%varnce_rt2(level)
       rt2 = pdf_params%rt2(level)
     else
-      varnce_rt2 = rttol**2
+      varnce_rt2 = rt_tol**2
       rt2 = rtm
     end if
-    if ( pdf_params%varnce_thl1(level) > thltol**2 ) then
+    if ( pdf_params%varnce_thl1(level) > thl_tol**2 ) then
       varnce_thl1 = pdf_params%varnce_thl1(level)
       thl1  = pdf_params%thl1(level)
     else
-      varnce_thl1 = thltol**2
+      varnce_thl1 = thl_tol**2
       thl1  = thlm
     end if
-    if ( pdf_params%varnce_thl2(level) > thltol**2 ) then
+    if ( pdf_params%varnce_thl2(level) > thl_tol**2 ) then
       varnce_thl2 = pdf_params%varnce_thl2(level)
       thl2  = pdf_params%thl2(level)
     else
-      varnce_thl2 = thltol**2
+      varnce_thl2 = thl_tol**2
       thl2  = thlm
     end if
     if ( pdf_params%stdev_s1(level) > LH_stdev_s_tol ) then
@@ -1602,7 +1602,7 @@ module generate_lh_sample_module
     double precision, intent(in) :: &
       Xm,           & ! Mean X          [units vary]
       Xp2_on_Xm2,   & ! X'^2 / X^2      [-]
-      X_tol           ! tolerance on X  [units vary]
+      X_tol           ! _tolerance on X  [units vary]
 
     ! Output Variables
     double precision, intent(out) :: &

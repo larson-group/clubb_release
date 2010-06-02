@@ -8,11 +8,11 @@
 MODULE nr
 
   INTERFACE
-    SUBROUTINE amebsa(p,y,pb,yb,ftol,func,iter,temptr)
+    SUBROUTINE amebsa(p,y,pb,yb,f_tol,func,iter,temptr)
     USE nrtype
     INTEGER(I4B), INTENT(INOUT) :: iter
     REAL(SP), INTENT(INOUT) :: yb
-    REAL(SP), INTENT(IN) :: ftol,temptr
+    REAL(SP), INTENT(IN) :: f_tol,temptr
     REAL(SP), DIMENSION(:), INTENT(INOUT) :: y,pb
     REAL(SP), DIMENSION(:,:), INTENT(INOUT) :: p
     INTERFACE
@@ -26,10 +26,10 @@ MODULE nr
   END INTERFACE
 
   INTERFACE
-    SUBROUTINE amoeba(p,y,ftol,func,iter)
+    SUBROUTINE amoeba(p,y,f_tol,func,iter)
     USE nrtype
     INTEGER(I4B), INTENT(OUT) :: iter
-    REAL(SP), INTENT(IN) :: ftol
+    REAL(SP), INTENT(IN) :: f_tol
     REAL(SP), DIMENSION(:), INTENT(INOUT) :: y
     REAL(SP), DIMENSION(:,:), INTENT(INOUT) :: p
     INTERFACE

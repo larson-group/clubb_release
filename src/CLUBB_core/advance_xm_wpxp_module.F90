@@ -80,16 +80,16 @@ module advance_xm_wpxp_module
 
     use constants, only:  & 
         fstderr, &  ! Constant
-        rttol, &
-        thltol, &
-        thltol_mfl, &
-        rttol_mfl, &
+        rt_tol, &
+        thl_tol, &
+        thl_tol_mfl, &
+        rt_tol_mfl, &
         max_mag_correlation, &
         zero_threshold
 
     use parameters_model, only: & 
         sclr_dim, &  ! Variable(s)
-        sclrtol
+        sclr_tol
 
     use grid_class, only: & 
         gr,  & ! Variable(s)
@@ -422,10 +422,10 @@ module advance_xm_wpxp_module
            ( "rtm", dt, wp2, rtp2, wm_zt,  &        ! Intent(in)
              rtm_forcing, rho_ds_zm, rho_ds_zt, &   ! Intent(in)
              invrs_rho_ds_zm, invrs_rho_ds_zt, &    ! Intent(in)
-             rttol**2, rttol, rcond, &              ! Intent(in)
+             rt_tol**2, rt_tol, rcond, &              ! Intent(in)
              low_lev_effect, high_lev_effect, &     ! Intent(in)
              l_implemented, solution(:,1), &        ! Intent(in)
-             rtm, rttol_mfl, wprtp, err_code )      ! Intent(inout)
+             rtm, rt_tol_mfl, wprtp, err_code )      ! Intent(inout)
 
       if ( lapack_error( err_code ) ) then
         write(fstderr,'(a)') "rtm monotonic flux limiter:  tridag failed"
@@ -480,10 +480,10 @@ module advance_xm_wpxp_module
            ( "thlm", dt, wp2, thlp2, wm_zt,  &      ! Intent(in)
              thlm_forcing, rho_ds_zm, rho_ds_zt, &  ! Intent(in)
              invrs_rho_ds_zm, invrs_rho_ds_zt, &    ! Intent(in)
-             thltol**2, thltol, rcond, &            ! Intent(in)
+             thl_tol**2, thl_tol, rcond, &            ! Intent(in)
              low_lev_effect, high_lev_effect, &     ! Intent(in)
              l_implemented, solution(:,1),  &       ! Intent(in)
-             thlm, thltol_mfl, wpthlp, err_code )   ! Intent(inout)
+             thlm, thl_tol_mfl, wpthlp, err_code )   ! Intent(inout)
 
       if ( lapack_error( err_code ) ) then
         write(fstderr,'(a)') "thlm monotonic flux limiter:  tridag failed"
@@ -538,10 +538,10 @@ module advance_xm_wpxp_module
                wm_zt, sclrm_forcing(:,i),  &        ! Intent(in)
                rho_ds_zm, rho_ds_zt, &              ! Intent(in)
                invrs_rho_ds_zm, invrs_rho_ds_zt, &  ! Intent(in)
-               sclrtol(i)**2, sclrtol(i), rcond, &  ! Intent(in)
+               sclr_tol(i)**2, sclr_tol(i), rcond, &  ! Intent(in)
                low_lev_effect, high_lev_effect, &   ! Intent(in)
                l_implemented, solution(:,1),  &     ! Intent(in)
-               sclrm(:,i), sclrtol(i), wpsclrp(:,i), err_code ) ! Intent(inout)
+               sclrm(:,i), sclr_tol(i), wpsclrp(:,i), err_code ) ! Intent(inout)
 
         if ( lapack_error( err_code ) ) then
           write(fstderr,'(a)') "sclrm monotonic flux limiter:  tridag failed"
@@ -612,10 +612,10 @@ module advance_xm_wpxp_module
            ( "rtm", dt, wp2, rtp2, wm_zt,  &        ! Intent(in)
              rtm_forcing, rho_ds_zm, rho_ds_zt, &   ! Intent(in)
              invrs_rho_ds_zm, invrs_rho_ds_zt, &    ! Intent(in)
-             rttol**2, rttol, rcond, &              ! Intent(in)
+             rt_tol**2, rt_tol, rcond, &              ! Intent(in)
              low_lev_effect, high_lev_effect, &     ! Intent(in)
              l_implemented, solution(:,1),  &       ! Intent(in)
-             rtm, rttol_mfl, wprtp, err_code )      ! Intent(inout)
+             rtm, rt_tol_mfl, wprtp, err_code )      ! Intent(inout)
 
       if ( lapack_error( err_code ) ) then
         write(fstderr,'(a)') "rtm monotonic flux limiter:  tridag failed"
@@ -627,10 +627,10 @@ module advance_xm_wpxp_module
            ( "thlm", dt, wp2, thlp2, wm_zt,  &      ! Intent(in)
              thlm_forcing, rho_ds_zm, rho_ds_zt, &  ! Intent(in)
              invrs_rho_ds_zm, invrs_rho_ds_zt, &    ! Intent(in)
-             thltol**2, thltol, rcond, &            ! Intent(in)
+             thl_tol**2, thl_tol, rcond, &            ! Intent(in)
              low_lev_effect, high_lev_effect, &     ! Intent(in)
              l_implemented, solution(:,2),  &       ! Intent(in)
-             thlm, thltol_mfl, wpthlp, err_code )   ! Intent(inout)
+             thlm, thl_tol_mfl, wpthlp, err_code )   ! Intent(inout)
 
       if ( lapack_error( err_code ) ) then
         write(fstderr,'(a)') "thlm monotonic flux limiter:  tridag failed"
@@ -644,10 +644,10 @@ module advance_xm_wpxp_module
                wm_zt, sclrm_forcing(:,i), &         ! Intent(in)
                rho_ds_zm, rho_ds_zt, &              ! Intent(in)
                invrs_rho_ds_zm, invrs_rho_ds_zt, &  ! Intent(in)
-               sclrtol(i)**2, sclrtol(i), rcond, &  ! Intent(in)
+               sclr_tol(i)**2, sclr_tol(i), rcond, &  ! Intent(in)
                low_lev_effect, high_lev_effect, &   ! Intent(in)
                l_implemented, solution(:,2+i),  &   ! Intent(in)
-               sclrm(:,i), sclrtol(i), wpsclrp(:,i), err_code ) ! Intent(inout)
+               sclrm(:,i), sclr_tol(i), wpsclrp(:,i), err_code ) ! Intent(inout)
 
         if ( lapack_error( err_code ) ) then
           write(fstderr,'(a)') "sclrm monotonic flux limiter:  tridag failed"
@@ -2335,7 +2335,7 @@ module advance_xm_wpxp_module
         gr ! Variable; gr%weights_zm2zt
 
     use constants, only: &
-        wtol_sqd ! Constant; minimum threshold for w'^2 [m^2/s^2]
+        w_tol_sqd ! Constant; minimum threshold for w'^2 [m^2/s^2]
 
 !    use model_flags, only:  &
 !        l_standard_term_ta
@@ -2404,7 +2404,7 @@ module advance_xm_wpxp_module
     = + invrs_rho_ds_zm &
         * dzm & 
           * rho_ds_ztp1 * a1_ztp1 &
-          * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) ) & 
+          * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) ) & 
           * gr%weights_zm2zt(m_above,tkp1)
 
     ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
@@ -2412,10 +2412,10 @@ module advance_xm_wpxp_module
     = + invrs_rho_ds_zm &
         * dzm & 
           * (   rho_ds_ztp1 * a1_ztp1 &
-                * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) ) & 
+                * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) ) & 
                 * gr%weights_zm2zt(m_below,tkp1) & 
               - rho_ds_zt * a1_zt &
-                * ( wp3 / max( wp2_zt, wtol_sqd ) ) & 
+                * ( wp3 / max( wp2_zt, w_tol_sqd ) ) & 
                 * gr%weights_zm2zt(m_above,tk) & 
             )
 
@@ -2424,7 +2424,7 @@ module advance_xm_wpxp_module
     = - invrs_rho_ds_zm &
         * dzm & 
           * rho_ds_zt * a1_zt &
-          * ( wp3 / max( wp2_zt, wtol_sqd ) ) & 
+          * ( wp3 / max( wp2_zt, w_tol_sqd ) ) & 
           * gr%weights_zm2zt(m_below,tk)
 
     !endif
@@ -2446,7 +2446,7 @@ module advance_xm_wpxp_module
     !-----------------------------------------------------------------------
 
     use constants, only: &
-        wtol_sqd ! Constant; minimum threshold for w'^2 [m^2/s^2]
+        w_tol_sqd ! Constant; minimum threshold for w'^2 [m^2/s^2]
 
     implicit none
 
@@ -2478,19 +2478,19 @@ module advance_xm_wpxp_module
 
       lhs(k_mdiag) &
       = + dzt &
-        * a1_zm * ( wp3_zm / max( wp2, wtol_sqd ) )
+        * a1_zm * ( wp3_zm / max( wp2, w_tol_sqd ) )
       
       lhs(km1_mdiag) & 
       = - dzt & 
-        * a1_zm_m1 * ( wp3_zm_m1 / max( wp2_m1, wtol_sqd ) )
+        * a1_zm_m1 * ( wp3_zm_m1 / max( wp2_m1, w_tol_sqd ) )
     else ! "Wind" is blowing downward
       lhs(kp1_mdiag) & 
       = + dztkp1 & 
-        * a1_zm_p1 * ( wp3_zm_p1 / max( wp2_p1, wtol_sqd ) ) 
+        * a1_zm_p1 * ( wp3_zm_p1 / max( wp2_p1, w_tol_sqd ) ) 
 
       lhs(k_mdiag) & 
       = - dztkp1 & 
-        * a1_zm * ( wp3_zm / max( wp2, wtol_sqd ) ) 
+        * a1_zm * ( wp3_zm / max( wp2, w_tol_sqd ) ) 
 
       lhs(km1_mdiag) = 0.0
     end if

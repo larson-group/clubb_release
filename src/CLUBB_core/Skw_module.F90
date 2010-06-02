@@ -22,7 +22,7 @@ module Skw_module
 !-------------------------------------------------------------------------------
 
     use constants, only:  &
-      wtol_sqd,  &! Constant for w_{tol}^2, i.e. threshold for vertical velocity
+      w_tol_sqd,  &! Constant for w_{_tol}^2, i.e. threshold for vertical velocity
       Skw_max_mag ! Max magnitude of skewness
 
     implicit none
@@ -45,7 +45,7 @@ module Skw_module
 
     ! ---- Begin Code ----
 
-    Skw = wp3 / ( max( wp2, wtol_sqd ) )**1.5
+    Skw = wp3 / ( max( wp2, w_tol_sqd ) )**1.5
 
     ! This is no longer need since clipping is already
     ! imposed on wp2 and wp3 elsewhere in the code

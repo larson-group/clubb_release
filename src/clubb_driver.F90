@@ -173,7 +173,7 @@ module clubb_driver
       advance_clubb_core
 
     use constants, only: fstdout, fstderr, & ! Variable(s)
-      rttol, thltol, wtol, wtol_sqd
+      rt_tol, thl_tol, w_tol, w_tol_sqd
 
     use error_code, only: clubb_var_out_of_bounds,  & ! Variable(s)
       clubb_var_equals_NaN, & 
@@ -678,9 +678,9 @@ module clubb_driver
       call write_text( "l_byteswap_io = ", l_byteswap_io, l_write_to_file, iunit )
 
       call write_text( "Constant tolerances [units]", l_write_to_file, iunit )
-      call write_text( "rttol [kg/kg] = ", rttol, l_write_to_file, iunit )
-      call write_text( "thltol [K] = ", thltol, l_write_to_file, iunit )
-      call write_text( "wtol [m/s] = ", wtol, l_write_to_file, iunit )
+      call write_text( "rt_tol [kg/kg] = ", rt_tol, l_write_to_file, iunit )
+      call write_text( "thl_tol [K] = ", thl_tol, l_write_to_file, iunit )
+      call write_text( "w_tol [m/s] = ", w_tol, l_write_to_file, iunit )
 
       call write_text( "--------------------------------------------------", &
         l_write_to_file, iunit )
@@ -962,7 +962,7 @@ module clubb_driver
                wpsclrp, edsclrm, sigma_sqd_w, pdf_params, &         ! Intent(inout)
                err_code )                                           ! Intent(inout)
 
-        wp2_zt = max( zm2zt( wp2 ), wtol_sqd ) ! Positive definite quantity
+        wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
 
         ! Advance a microphysics scheme
         call advance_clubb_microphys &
@@ -1079,7 +1079,7 @@ module clubb_driver
     !-----------------------------------------------------------------------
 
     use constants, only:  & 
-      emin,  &
+      em_min,  &
       grav, &
       zero_threshold, &
       cm3_per_m3
@@ -1359,15 +1359,15 @@ module clubb_driver
 !---> Reduction of initial sounding for stability
 !         do k = 1, gr%nnzp
 !            em(k) = 1.0 - (gr%zm(k)/3000.0)
-!            if ( em(k) < emin ) then
-!               em(k) = emin
+!            if ( em(k) < em_min ) then
+!               em(k) = em_min
 !            end if
 !         end do
 !         em(1) = em(2)
 !         em(gr%nnzp) = em(gr%nnzp-1)
 !<--- End reduction of initial sounding for stability 24 Jan 07
 
-      em(:) = emin
+      em(:) = em_min
 
       ! GCSS ARM
     case ( "arm" )
@@ -1377,14 +1377,14 @@ module clubb_driver
 !            if ( gr%zm(k) < 150.0 ) then
 !               em(k) = ( 0.15 * (1.0 - gr%zm(k)/150.0) ) / rho_zm(k)
 !            else
-!               em(k) = emin
+!               em(k) = em_min
 !            end if
 !         end do
 !         em(1) = em(2)
 !         em(gr%nnzp) = em(gr%nnzp-1)
 !<--- End reduction of initial sounding for stability 24 Jan 07
 
-      em(:) = emin
+      em(:) = em_min
 
 #ifdef UNRELEASED_CODE
       ! March 2000 ARM case
@@ -1423,7 +1423,7 @@ module clubb_driver
         if ( gr%zm(k) < cloud_top_height ) then
           em(k) = 1.
         else
-          em(k) = emin
+          em(k) = em_min
         end if
       end do
       em(1) = em(2)
@@ -1437,15 +1437,15 @@ module clubb_driver
 !---> Reduction of initial sounding for stability
 !         do k = 1, gr%nnzp
 !           em(k) = 1.0 - (gr%zm(k)/3000.0)
-!           if ( em(k) < emin ) then
-!             em(k) = emin
+!           if ( em(k) < em_min ) then
+!             em(k) = em_min
 !           end if
 !         end do
 !         em(1) = em(2)
 !         em(gr%nnzp) = em(gr%nnzp-1)
 !<--- End reduction of initial sounding for stability 24 Jan 07
 
-      em(:) = emin
+      em(:) = em_min
 
       ! GCSS DYCOMS II RF01
     case ( "dycoms2_rf01" )
@@ -1454,7 +1454,7 @@ module clubb_driver
         if ( gr%zm(k) < cloud_top_height ) then
           em(k) = 0.5
         else
-          em(k) = emin
+          em(k) = em_min
         end if
       end do
       em(1) = em(2)
@@ -1483,7 +1483,7 @@ module clubb_driver
           ! End of ajsmith4's modification
 
         else
-          em(k) = emin
+          em(k) = em_min
         end if
       end do
       em(1) = em(2)
@@ -1500,13 +1500,13 @@ module clubb_driver
 !            if ( gr%zm(k) < 1400. ) then
 !               em(k) = 0.1
 !            else
-!               em(k) = emin
+!               em(k) = em_min
 !            end if
 !          end do
 
-      ! Note: emin = 1.0e-6, defined in constants.F
+      ! Note: em_min = 1.0e-6, defined in constants.F
       ! Adam Smith, 28 June 2006
-      ! Note: now emin = 1.5 * wtol_sqd
+      ! Note: now em_min = 1.5 * w_tol_sqd
       ! Brian Griffin;  Nov. 26, 2008.
       do k = 1, gr%nnzp
         em(k) = 0.01
@@ -1530,7 +1530,7 @@ module clubb_driver
         if ( gr%zm(k) < cloud_top_height ) then
           em(k) = 0.01
         else
-          em(k) = emin
+          em(k) = em_min
         end if
       end do
       em(1) = em(2)
@@ -1551,7 +1551,7 @@ module clubb_driver
         if ( gr%zm(k) < cloud_top_height ) then
           em(k) = 0.01
         else
-          em(k) = emin
+          em(k) = em_min
         end if
       end do
       em(1) = em(2)
@@ -1577,7 +1577,7 @@ module clubb_driver
         if ( gr%zm(k) < cloud_top_height ) then
           em(k) = emax
         else
-          em(k) = emin
+          em(k) = em_min
         end if
       end do
       em(1) = em(2)
@@ -1596,7 +1596,7 @@ module clubb_driver
         if ( gr%zm(k) < cloud_top_height ) then
           em(k) = emax
         else
-          em(k) = emin
+          em(k) = em_min
         end if
       enddo
       em(1) = em(2)
@@ -1616,7 +1616,7 @@ module clubb_driver
         if ( gr%zm(k) < cloud_top_height ) then
           em(k) = emax
         else
-          em(k) = emin
+          em(k) = em_min
         end if
       enddo
 
@@ -1632,7 +1632,7 @@ module clubb_driver
         if ( gr%zm(k) < cloud_top_height ) then
           em(k) = emax * (1 - (gr%zm(k)/cloud_top_height))
         else
-          em(k) = emin
+          em(k) = em_min
         end if
       end do
 
@@ -1680,10 +1680,10 @@ module clubb_driver
                          Lscale )                      ! Intent(out)
 
     ! Dissipation time
-    tmp1 = sqrt( max( emin, zm2zt( em ) ) )
+    tmp1 = sqrt( max( em_min, zm2zt( em ) ) )
     tau_zt = min( Lscale / tmp1, taumax )
     tau_zm = min( ( max( zt2zm( Lscale ), zero_threshold ) &
-                   / sqrt( max( emin, em ) ) ), taumax )
+                   / sqrt( max( em_min, em ) ) ), taumax )
 
     ! Modification to damp noise in stable region
 ! Brian commented this out to match code found in advance_clubb_core.
@@ -1702,7 +1702,7 @@ module clubb_driver
 
     Kh_zt = c_K * Lscale * tmp1
     Kh_zm = c_K * max( zt2zm( Lscale ), zero_threshold )  & 
-                * sqrt( max( em, emin ) )
+                * sqrt( max( em, em_min ) )
 
     ! Moved this to be more general -dschanen July 16 2007
     if ( l_uv_nudge .or. uv_sponge_damp_settings%l_sponge_damping ) then

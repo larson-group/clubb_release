@@ -1,14 +1,14 @@
 ! $Id: num_rec.f90,v 1.1 2008-07-24 17:31:45 dschanen Exp $
 !   From _Numerical Recipes in Fortran 90_
 !   (C) 1988-1996 Numerical Recipes Software
-SUBROUTINE amoeba( p, y, ftol, func, iter )
+SUBROUTINE amoeba( p, y, f_tol, func, iter )
 USE nrtype
 USE nrutil, ONLY : assert_eq, imaxloc, iminloc, nrerror, swap
 
 IMPLICIT NONE
 
 INTEGER(I4B), INTENT(OUT) :: iter
-REAL(SP), INTENT(IN)      :: ftol
+REAL(SP), INTENT(IN)      :: f_tol
 REAL(SP), DIMENSION(:), INTENT(INOUT)   :: y
 REAL(SP), DIMENSION(:,:), INTENT(INOUT) :: p
 INTERFACE
@@ -36,7 +36,7 @@ SUBROUTINE amoeba_private
 IMPLICIT NONE
 
 INTEGER(I4B) :: i,ilo,inhi
-REAL(SP)     :: rtol,ysave,ytry,ytmp
+REAL(SP)     :: r_tol,ysave,ytry,ytmp
 
 ndim    = assert_eq( size(p,2), size(p,1)-1, size(y)-1, 'amoeba' )
 iter    = 0
@@ -49,9 +49,9 @@ do
   y(ihi) = y(ilo)
   inhi   = imaxloc( y(:) )
   y(ihi) = ytmp
-  rtol   = 2.0_sp * abs( y(ihi) - y(ilo) ) /       &
+  r_tol   = 2.0_sp * abs( y(ihi) - y(ilo) ) /       &
            ( abs( y(ihi) ) + abs( y(ilo) ) + TINY )
-  if (rtol < ftol) then
+  if (r_tol < f_tol) then
     call swap( y(1), y(ilo) )
     call swap( p(1,:), p(ilo,:) )
     RETURN

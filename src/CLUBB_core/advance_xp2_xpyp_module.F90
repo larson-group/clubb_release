@@ -58,10 +58,10 @@ contains
     !-----------------------------------------------------------------------
 
     use constants, only: & 
-      wtol_sqd,  & ! Variable(s)
-      rttol, & 
-      thltol, & 
-      wtol_sqd, & 
+      w_tol_sqd,  & ! Variable(s)
+      rt_tol, & 
+      thl_tol, & 
+      w_tol_sqd, & 
       fstderr, &
       zero_threshold
 
@@ -89,7 +89,7 @@ contains
 
     use parameters_model, only: &
       sclr_dim, & ! Variable(s)
-      sclrtol    
+      sclr_tol    
 
     use grid_class, only: & 
       gr,  & ! Variable(s)
@@ -340,8 +340,8 @@ contains
        ! Interpolate r_t'^2, th_l'^2, and r_t'th_l' from the momentum levels to
        ! the thermodynamic levels.  These will be used for extra diffusion based
        ! on a three-point average of (var)^2.
-       rtp2_zt    = max( zm2zt( rtp2 ), rttol**2 )  ! Positive def. quantity
-       thlp2_zt   = max( zm2zt( thlp2 ), thltol**2 )  ! Positive def. quantity
+       rtp2_zt    = max( zm2zt( rtp2 ), rt_tol**2 )  ! Positive def. quantity
+       thlp2_zt   = max( zm2zt( thlp2 ), thl_tol**2 )  ! Positive def. quantity
        rtpthlp_zt = zm2zt( rtpthlp )
 
        do k = 1, gr%nnzp, 1
@@ -417,7 +417,7 @@ contains
                        wp2_zt, wp3, wprtp, wprtp_zt, &      ! Intent(in)
                        wprtp, wprtp_zt, rtm, rtm, rtp2, &   ! Intent(in)
                        rho_ds_zt, invrs_rho_ds_zm, &        ! Intent(in)
-                       C2rt_1d, tau_zm, rttol**2, beta, &   ! Intent(in)
+                       C2rt_1d, tau_zm, rt_tol**2, beta, &   ! Intent(in)
                        rhs )                                ! Intent(out)
 
     ! Solve the tridiagonal system
@@ -443,7 +443,7 @@ contains
                        wp2_zt, wp3, wpthlp, wpthlp_zt, &            ! Intent(in)
                        wpthlp, wpthlp_zt, thlm, thlm, thlp2, &      ! Intent(in)
                        rho_ds_zt, invrs_rho_ds_zm, &                ! Intent(in)
-                       C2thl_1d, tau_zm, thltol**2, beta, &         ! Intent(in)
+                       C2thl_1d, tau_zm, thl_tol**2, beta, &         ! Intent(in)
                        rhs )                                        ! Intent(out)
 
     ! Solve the tridiagonal system
@@ -526,16 +526,16 @@ contains
 
     ! Apply the positive definite scheme to variances
     if ( l_hole_fill ) then
-      call pos_definite_variances( "rtp2", dt, rttol**2, &   ! Intent(in)
+      call pos_definite_variances( "rtp2", dt, rt_tol**2, &   ! Intent(in)
                                    rho_ds_zm, rho_ds_zt, &   ! Intent(in)
                                    rtp2 )                    ! Intent(inout)
-      call pos_definite_variances( "thlp2", dt, thltol**2, & ! Intent(in)
+      call pos_definite_variances( "thlp2", dt, thl_tol**2, & ! Intent(in)
                                    rho_ds_zm, rho_ds_zt, &   ! Intent(in)
                                    thlp2 )                   ! Intent(inout)
-      call pos_definite_variances( "up2", dt, wtol_sqd, &    ! Intent(in)
+      call pos_definite_variances( "up2", dt, w_tol_sqd, &    ! Intent(in)
                                    rho_ds_zm, rho_ds_zt, &   ! Intent(in)
                                    up2 )                     ! Intent(inout)
-      call pos_definite_variances( "vp2", dt, wtol_sqd, &    ! Intent(in)
+      call pos_definite_variances( "vp2", dt, w_tol_sqd, &    ! Intent(in)
                                    rho_ds_zm, rho_ds_zt, &   ! Intent(in)
                                    vp2 )                     ! Intent(inout)
     endif
@@ -545,10 +545,10 @@ contains
 
     !threshold = 0.0
     !
-    !where ( wp2 >= wtol_sqd ) &
-    !   threshold = rttol*rttol
+    !where ( wp2 >= w_tol_sqd ) &
+    !   threshold = rt_tol*rt_tol
 
-    threshold = rttol**2
+    threshold = rt_tol**2
 
     call clip_variance( "rtp2", dt, threshold, & ! Intent(in)
                         rtp2 )                   ! Intent(inout)
@@ -558,10 +558,10 @@ contains
 
     !threshold = 0.0
     !
-    !where ( wp2 >= wtol_sqd ) &
-    !   threshold = thltol*thltol
+    !where ( wp2 >= w_tol_sqd ) &
+    !   threshold = thl_tol*thl_tol
 
-    threshold = thltol**2
+    threshold = thl_tol**2
 
     call clip_variance( "thlp2", dt, threshold, & ! Intent(in)
                         thlp2 )                   ! Intent(inout)
@@ -570,7 +570,7 @@ contains
     ! Clipping for u'^2
 
     !threshold = 0.0
-    threshold = wtol_sqd
+    threshold = w_tol_sqd
 
     call clip_variance( "up2", dt, threshold, & ! Intent(in)
                         up2 )                   ! Intent(inout)
@@ -579,7 +579,7 @@ contains
     ! Clipping for v'^2
 
     !threshold = 0.0
-    threshold = wtol_sqd
+    threshold = w_tol_sqd
 
     call clip_variance( "vp2", dt, threshold, & ! Intent(in)
                         vp2 )                   ! Intent(inout)
@@ -646,7 +646,7 @@ contains
                            wpsclrp_zt, wpsclrp(:,i), wpsclrp_zt,  &  ! Intent(in)
                            sclrm(:,i), sclrm(:,i), sclrp2(:,i), &    ! Intent(in)
                            rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)
-                           C2sclr_1d, tau_zm, sclrtol(i)**2, beta, & ! Intent(in)
+                           C2sclr_1d, tau_zm, sclr_tol(i)**2, beta, & ! Intent(in)
                            sclr_rhs(:,i) )                           ! Intent(out)
 
 
@@ -655,7 +655,7 @@ contains
           ! In this case we're trying to emulate rt'^2 with sclr'rt', so we 
           ! handle this as we would a variance, even though generally speaking
           ! the scalar is not rt
-          threshold = rttol**2
+          threshold = rt_tol**2
         else
           threshold = 0.0
         end if
@@ -674,7 +674,7 @@ contains
         if ( i == iisclr_thl ) then
           ! In this case we're trying to emulate thl'^2 with sclr'thl', so we
           ! handle this as we did with sclr_rt, above.
-          threshold = thltol**2
+          threshold = thl_tol**2
         else
           threshold = 0.0
         end if
@@ -704,18 +704,18 @@ contains
       ! Apply hole filling algorithm to the scalar variance terms
       if ( l_hole_fill ) then
         do i = 1, sclr_dim, 1
-          call pos_definite_variances( "sclrp2", dt, sclrtol(i)**2, & ! Intent(in)
+          call pos_definite_variances( "sclrp2", dt, sclr_tol(i)**2, & ! Intent(in)
                                        rho_ds_zm, rho_ds_zt, &        ! Intent(in)
                                        sclrp2(:,i) )                  ! Intent(inout)
           if ( i == iisclr_rt ) then 
              ! Here again, we do this kluge here to make sclr'rt' == rt'^2
-            call pos_definite_variances( "sclrprtp", dt, sclrtol(i)**2, & ! Intent(in)
+            call pos_definite_variances( "sclrprtp", dt, sclr_tol(i)**2, & ! Intent(in)
                                          rho_ds_zm, rho_ds_zt, &          ! Intent(in)
                                          sclrprtp(:,i) )                  ! Intent(inout)
           end if
           if ( i == iisclr_thl ) then
             ! As with sclr'rt' above, but for sclr'thl'
-            call pos_definite_variances( "sclrpthlp", dt, sclrtol(i)**2, & ! Intent(in)
+            call pos_definite_variances( "sclrpthlp", dt, sclr_tol(i)**2, & ! Intent(in)
                                          rho_ds_zm, rho_ds_zt, &           ! Intent(in)
                                          sclrpthlp(:,i) )                  ! Intent(inout)
           end if
@@ -728,10 +728,10 @@ contains
 
 !      threshold = 0.0
 !
-!      where ( wp2 >= wtol_sqd ) &
-!         threshold = sclrtol(i)*sclrtol(i)
+!      where ( wp2 >= w_tol_sqd ) &
+!         threshold = sclr_tol(i)*sclr_tol(i)
 
-         threshold = sclrtol(i)**2
+         threshold = sclr_tol(i)**2
 
          call clip_variance( "sclrp2", dt, threshold, & ! Intent(in)
                              sclrp2(:,i) )              ! Intent(inout)
@@ -750,7 +750,7 @@ contains
 
         if  ( i == iisclr_rt ) then
           ! Treat this like a variance if we're emulating rt
-          threshold = sclrtol(i) * rttol
+          threshold = sclr_tol(i) * rt_tol
 
           call clip_variance( "sclrprtp", dt, threshold, & ! Intent(in)
                               sclrprtp(:,i) )              ! Intent(inout)
@@ -772,7 +772,7 @@ contains
       do i = 1, sclr_dim, 1
         if ( i == iisclr_thl ) then
           ! As above, but for thl
-          threshold = sclrtol(i) * thltol
+          threshold = sclr_tol(i) * thl_tol
           call clip_variance( "sclrpthlp", dt, threshold, & ! Intent(in)
                               sclrpthlp(:,i) )              ! Intent(inout)
         else
@@ -1375,7 +1375,7 @@ contains
 
     use constants, only:  & 
         gamma_over_implicit_ts, &
-        wtol_sqd
+        w_tol_sqd
 
     use stats_precision, only:  & 
         time_precision ! Variable(s)
@@ -1704,8 +1704,8 @@ contains
 
     rhs(1,1) = xap2(1)
     ! The value of u'^2 or v'^2 at the upper boundary will be set to the
-    ! threshold minimum value of wtol_sqd.
-    rhs(gr%nnzp,1) = wtol_sqd
+    ! threshold minimum value of w_tol_sqd.
+    rhs(gr%nnzp,1) = w_tol_sqd
 
     return
   end subroutine xp2_xpyp_uv_rhs
@@ -2094,7 +2094,7 @@ contains
         gr ! Variable(s)
 
     use constants, only:  &
-        wtol_sqd
+        w_tol_sqd
 
     use model_flags, only:  &
         l_standard_term_ta
@@ -2161,7 +2161,7 @@ contains
            * invrs_rho_ds_zm  &
              * dzm  &
                * rho_ds_ztp1 * a1_ztp1  &
-               * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  &
+               * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) )  &
                * gr%weights_zm2zt(m_above,tkp1)
 
        ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
@@ -2170,10 +2170,10 @@ contains
            * invrs_rho_ds_zm  &
              * dzm  &
                * (   rho_ds_ztp1 * a1_ztp1  &
-                     * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  &
+                     * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) )  &
                      * gr%weights_zm2zt(m_below,tkp1)  &
                    - rho_ds_zt * a1_zt  &
-                     * ( wp3 / max( wp2_zt, wtol_sqd ) )  &
+                     * ( wp3 / max( wp2_zt, w_tol_sqd ) )  &
                      * gr%weights_zm2zt(m_above,tk)  &
                  )
 
@@ -2183,7 +2183,7 @@ contains
            * invrs_rho_ds_zm  &
              * dzm  &
                * rho_ds_zt * a1_zt  &
-               * ( wp3 / max( wp2_zt, wtol_sqd ) )  &
+               * ( wp3 / max( wp2_zt, w_tol_sqd ) )  &
                * gr%weights_zm2zt(m_below,tk)
 
     else
@@ -2201,7 +2201,7 @@ contains
            * invrs_rho_ds_zm * a1  &
              * dzm  &
                * rho_ds_ztp1  &
-               * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  & 
+               * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) )  & 
                * gr%weights_zm2zt(m_above,tkp1)
 
        ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
@@ -2210,10 +2210,10 @@ contains
            * invrs_rho_ds_zm * a1  &
              * dzm  &
                * (   rho_ds_ztp1  &
-                     * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )  &
+                     * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) )  &
                      * gr%weights_zm2zt(m_below,tkp1)  &
                    - rho_ds_zt  &
-                     * ( wp3 / max( wp2_zt, wtol_sqd ) )  &
+                     * ( wp3 / max( wp2_zt, w_tol_sqd ) )  &
                      * gr%weights_zm2zt(m_above,tk)  &
                  )
 
@@ -2223,7 +2223,7 @@ contains
            * invrs_rho_ds_zm * a1  &
              * dzm  &
                * rho_ds_zt  &
-               * ( wp3 / max( wp2_zt, wtol_sqd ) )  &
+               * ( wp3 / max( wp2_zt, w_tol_sqd ) )  &
                * gr%weights_zm2zt(m_below,tk)
 
        ! End of Brian's a1 change.  14 Feb 2008.
@@ -2318,7 +2318,7 @@ contains
     !-----------------------------------------------------------------------
 
     use constants, only:  &
-        wtol_sqd
+        w_tol_sqd
 
     use model_flags, only:  &
         l_standard_term_ta
@@ -2362,10 +2362,10 @@ contains
            * invrs_rho_ds_zm  &
              * dzm  &
                * (   rho_ds_ztp1 * a1_ztp1**2  &
-                     * ( wp3p1 / max( wp2_ztp1, wtol_sqd )**2 )  &
+                     * ( wp3p1 / max( wp2_ztp1, w_tol_sqd )**2 )  &
                      * wpxap_ztp1 * wpxbp_ztp1  &
                    - rho_ds_zt * a1_zt**2  &
-                     * ( wp3 / max( wp2_zt, wtol_sqd )**2 )  &
+                     * ( wp3 / max( wp2_zt, w_tol_sqd )**2 )  &
                      * wpxap_zt * wpxbp_zt  &
                  )
 
@@ -2384,10 +2384,10 @@ contains
            * invrs_rho_ds_zm * a1**2  &
              * dzm  &
                * (   rho_ds_ztp1  &
-                     * ( wp3p1 / max( wp2_ztp1, wtol_sqd )**2 )  &
+                     * ( wp3p1 / max( wp2_ztp1, w_tol_sqd )**2 )  &
                      * wpxap_ztp1 * wpxbp_ztp1  &
                    - rho_ds_zt  &
-                     * ( wp3 / max( wp2_zt, wtol_sqd )**2 )  &
+                     * ( wp3 / max( wp2_zt, w_tol_sqd )**2 )  &
                      * wpxap_zt * wpxbp_zt  &
                  )
 
@@ -2614,26 +2614,26 @@ contains
     ! where epsilon = C_14 * ( em / tau_zm ).
     !
     ! Additionally, since pressure term 1 is a damping term, em is damped only
-    ! to it's minimum threshold value, emin, where:
+    ! to it's minimum threshold value, em_min, where:
     !
-    ! emin = (1/2) * ( u'^2|_min + v'^2|_min + w'^2|_min )
-    !      = (1/2) * ( wtol^2 + wtol^2 + wtol^2 )
-    !      = (3/2) * wtol^2.
+    ! em_min = (1/2) * ( u'^2|_min + v'^2|_min + w'^2|_min )
+    !      = (1/2) * ( w_tol^2 + w_tol^2 + w_tol^2 )
+    !      = (3/2) * w_tol^2.
     !
     ! With the damping threshold applied, epsilon becomes:
     !
-    ! epsilon = C_14 * ( ( em - emin ) / tau_zm );
+    ! epsilon = C_14 * ( ( em - em_min ) / tau_zm );
     !
     ! and with all substitutions applied, pressure term 1 becomes:
     !
     ! - (2/3) * ( C_14 / tau_zm ) 
-    !         * [ (1/2) * ( u'^2 + v'^2 + w'^2 ) - (3/2) * wtol^2 ].
+    !         * [ (1/2) * ( u'^2 + v'^2 + w'^2 ) - (3/2) * w_tol^2 ].
     !
     ! Dissipation term 1 and pressure term 1 are combined and simplify to:
     !
     ! - [ ( 2*C_4 + C_14 ) / ( 3 * tau_zm ) ] * u'^2
     !    + [ ( C_4 - C_14 ) / ( 3 * tau_zm ) ] * ( v'^2 + w'^2 )
-    !    + ( C_14 / tau_zm ) * wtol^2.
+    !    + ( C_14 / tau_zm ) * w_tol^2.
     !
     ! The combined term has both implicit and explicit components.
     ! The implicit component is:
@@ -2655,7 +2655,7 @@ contains
     ! The explicit component of the combined dp1 and pr1 term is:
     !
     ! + [ ( C_4 - C_14 ) / ( 3 * tau_zm ) ] * ( v'^2(t) + w'^2(t) )
-    ! + ( C_14 / tau_zm ) * wtol^2;
+    ! + ( C_14 / tau_zm ) * w_tol^2;
     !
     ! and is discretized as follows:
     !
@@ -2667,7 +2667,7 @@ contains
     !-----------------------------------------------------------------------
 
     use constants, only: &
-        wtol_sqd
+        w_tol_sqd
 
     implicit none
 
@@ -2683,7 +2683,7 @@ contains
     real :: rhs
 
     rhs = + 1.0/3.0 * ( C4 - C14 ) * ( xbp2 + wp2 ) / tau_zm  &
-          + ( C14 / tau_zm ) * wtol_sqd
+          + ( C14 / tau_zm ) * w_tol_sqd
 
     return
   end function term_pr1
