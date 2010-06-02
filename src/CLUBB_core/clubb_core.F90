@@ -461,7 +461,7 @@ module clubb_core
       ! Get the vertical integral of rtm before this function begins so that 
       ! spurious source can be calculated
       integral_rtm_before = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt, &
-                                              rho_ds_zm, rtm)
+                                              rho_ds_zm, rtm(2:gr%nnzp))
     endif
      
     !----------------------------------------------------------------
@@ -897,7 +897,6 @@ module clubb_core
     !############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
     !#######################################################################
 
-
     ! Store the saturation mixing ratio for output purposes.  Brian
     if ( irsat > 0 ) then
       rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) )
@@ -910,7 +909,6 @@ module clubb_core
       ! Output relative humidity (q/q∗ where q∗ is the saturation mixing ratio over liquid)
       call stat_update_var( irel_humidity, (rtm - rcm) / rsat, zt)
     end if
-
 
     !----------------------------------------------------------------
     ! Advance rtm/wprtp and thlm/wpthlp one time step
@@ -1119,9 +1117,9 @@ module clubb_core
       flux_top = rho_ds_zm(gr%nnzp) * wprtp(gr%nnzp)
       flux_sfc = rho_ds_zm(1) * wprtp_sfc
       integral_rtm_after = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt, &
-                                             rho_ds_zm, rtm)
+                                             rho_ds_zm, rtm(2:gr%nnzp))
       integral_rtm_forcing = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt, &
-                                             rho_ds_zm, rtm_forcing)
+                                             rho_ds_zm, rtm_forcing(2:gr%nnzp))
       spurious_source_rtm = calculate_spurious_source( integral_rtm_after, &
                                                        integral_rtm_before, &
                                                        flux_top, flux_sfc, & 
