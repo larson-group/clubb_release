@@ -1139,7 +1139,7 @@ module clubb_core
                                                   flux_top_rtm, flux_sfc_rtm, & 
                                                   integral_rtm_forcing, &
                                                   real(dt) )     
-        ! Calculate the spurious source for rtm
+        ! Calculate the spurious source for thlm
         flux_top_thlm = rho_ds_zm(gr%nnzp) * wpthlp(gr%nnzp)
         flux_sfc_thlm = rho_ds_zm(1) * wpthlp_sfc      
         integral_thlm_after = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt(2:gr%nnzp), &
