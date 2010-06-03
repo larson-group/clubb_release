@@ -1124,6 +1124,8 @@ module clubb_core
     endif
 
     if ( l_stats .and. l_stats_samp ) then
+      ! Spurious Source will only be calculated if l_implemented = true because wm needs
+      ! to be zero (l_implemented does this)
       if ( l_implemented ) then
         ! Calculate the spurious source for rtm
         flux_top_rtm = rho_ds_zm(gr%nnzp) * wprtp(gr%nnzp)
