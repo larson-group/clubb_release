@@ -783,12 +783,12 @@ module clubb_core
       thlm_pert_2 = thlm - Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
       rtm_pert_2  = rtm  - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
 
-      call compute_length( thvm, thlm_pert_1, rtm_pert_1, rcm, em, & ! intent(in)
+      call compute_length( thvm, thlm_pert_1, rtm_pert_1, em, & ! intent(in)
                            p_in_Pa, exner, thv_ds_zt, &              ! intent(in)
                            err_code, &                               ! intent(inout)
                            Lscale_pert_1 )                           ! intent(out)
 
-      call compute_length( thvm, thlm_pert_2, rtm_pert_2, rcm, em, & ! intent(in)
+      call compute_length( thvm, thlm_pert_2, rtm_pert_2, em, & ! intent(in)
                            p_in_Pa, exner, thv_ds_zt, &              ! intent(in)
                            err_code, &                               ! intent(inout)
                            Lscale_pert_2 )                           ! intent(out)
@@ -797,7 +797,7 @@ module clubb_core
     ! ********** NOTE: **********
     ! This call to compute_length must be last.  Otherwise, the values of
     ! Lscale_up and Lscale_down will not be correctly saved stats.
-    call compute_length( thvm, thlm, rtm, rcm, em, &  ! intent(in)
+    call compute_length( thvm, thlm, rtm, em, &  ! intent(in)
                          p_in_Pa, exner, thv_ds_zt, & ! intent(in)
                          err_code, &                  ! intent(inout)
                          Lscale )                     ! intent(out)

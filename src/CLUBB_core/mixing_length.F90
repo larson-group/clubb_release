@@ -11,7 +11,7 @@ public :: compute_length
 contains
 
   !=============================================================================
-  subroutine compute_length( thvm, thlm, rtm, rcm, em, &
+  subroutine compute_length( thvm, thlm, rtm, em, &
                              p_in_Pa, exner, thv_ds, &
                              err_code, &
                              Lscale )
@@ -81,7 +81,6 @@ contains
       thvm,    & ! Virtual potential temp. on themodynamic level  [K]
       thlm,    & ! Liquid potential temp. on themodynamic level   [K]
       rtm,     & ! Total water mixing ratio on themodynamic level [kg/kg]
-      rcm,     & ! Cloud water mixing ratio on themodynamic level [kg/kg]
       em,      & ! em = 3/2 * w'^2; on momentum level             [m^2/s^2]
       exner,   & ! Exner function on thermodynamic level          [-]
       p_in_Pa, & ! Pressure on thermodynamic level                [Pa]
@@ -117,11 +116,9 @@ contains
 
     ! Parcel quantities at grid level j-1
     real :: thl_par_j_minus_1, rt_par_j_minus_1 
-    !real :: rc_par_j_minus_1 
 
     ! Parcel quantities at grid level j+1
     real :: thl_par_j_plus_1, rt_par_j_plus_1 
-    !real :: rc_par_j_plus_1 
 
     ! Variables to make L nonlocal
     real :: Lscale_up_max_alt, Lscale_down_min_alt
@@ -153,7 +150,6 @@ contains
 
        thl_par_j_minus_1 = thlm(i)
        rt_par_j_minus_1  = rtm(i)
-       !rc_par_j_minus_1  = rcm(i)
        dCAPE_dz_j_minus_1 = 0.0
 
        do while ((tke_i > 0.) .and. (j < gr%nnzp))
@@ -359,7 +355,6 @@ contains
 
           thl_par_j_minus_1 = thl_par_j
           rt_par_j_minus_1 = rt_par_j
-          !rc_par_j_minus_1 = rc_par_j
           dCAPE_dz_j_minus_1 = dCAPE_dz_j
 
           tke_i = tke_i + CAPE_incr
@@ -417,7 +412,6 @@ contains
 
        thl_par_j_plus_1 = thlm(i)
        rt_par_j_plus_1 = rtm(i)
-       !rc_par_j_plus_1 = rcm(i)
        dCAPE_dz_j_plus_1 = 0.0
 
        do while ( (tke_i > 0.) .and. (j >= 2) )
@@ -648,7 +642,6 @@ contains
 
           thl_par_j_plus_1 = thl_par_j
           rt_par_j_plus_1  = rt_par_j
-          !rc_par_j_plus_1  = rc_par_j
           dCAPE_dz_j_plus_1 = dCAPE_dz_j
 
           tke_i = tke_i - CAPE_incr
@@ -738,7 +731,6 @@ contains
           write(fstderr,*) "thvm = ", thvm
           write(fstderr,*) "thlm = ", thlm
           write(fstderr,*) "rtm = ", rtm
-          write(fstderr,*) "rcm = ", rcm
           write(fstderr,*) "em = ", em
           write(fstderr,*) "exner = ", exner
           write(fstderr,*) "p_in_Pa = ", p_in_Pa

@@ -1674,7 +1674,7 @@ module clubb_driver
     endif
 
     ! Compute mixing length
-    call compute_length( thvm, thlm, rtm, rcm, em,   & ! Intent(in)
+    call compute_length( thvm, thlm, rtm, em,   & ! Intent(in)
                          p_in_Pa, exner, thv_ds_zt,  & ! Intent(in)    
                          err_code,                   & ! Intent(inout)
                          Lscale )                      ! Intent(out)
