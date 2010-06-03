@@ -74,7 +74,8 @@ module stats_sfc
       imorr_snow_rate
       
     use stats_variables, only: &
-      irt_spurious_source
+      irtm_spur_src,            &
+      ithlm_spur_src
 
     use stats_type, only: & 
         stat_assign ! Procedure
@@ -139,7 +140,8 @@ module stats_sfc
     imorr_rain_rate = 0
     imorr_snow_rate = 0
 
-    irt_spurious_source = 0
+    irtm_spur_src = 0
+    ithlm_spur_src = 0
 
     ! Assign pointers for statistics variables sfc
 
@@ -421,11 +423,18 @@ module stats_sfc
 
         k = k + 1
         
-      case ('spurious_source_rtm')
-        irt_spurious_source = k
+      case ('rtm_spur_src')
+        irtm_spur_src = k
 
-        call stat_assign(irt_spurious_source, "rt_spurious_source", & 
-             "rtm spurious source","",sfc )
+        call stat_assign(irtm_spur_src, "rtm_spur_src", & 
+             "rtm spurious source [kg/m^2]", "kg/m^2",sfc )
+        k = k + 1
+        
+      case ('thlm_spur_src')
+        ithlm_spur_src = k
+
+        call stat_assign(ithlm_spur_src, "thlm_spur_src", & 
+             "thlm spurious source [(K kg) / m^2]", "(K kg) / m^2",sfc )
         k = k + 1
 
       case default

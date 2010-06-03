@@ -242,7 +242,8 @@ module clubb_core
       l_stats,       &
       zt,            &
       sfc,           &
-      irt_spurious_source
+      irtm_spur_src,  &
+      ithlm_spur_src
 
     use fill_holes, only: &
       vertical_integral ! Procedure(s)
@@ -451,17 +452,27 @@ module clubb_core
       integral_rtm_before, &
       integral_rtm_after, &
       integral_rtm_forcing, &
-      flux_top, &
-      flux_sfc, &
-      spurious_source_rtm
+      flux_top_rtm, &
+      flux_sfc_rtm, &
+      spur_src_rtm, &
+      integral_thlm_before, &
+      integral_thlm_after, &
+      integral_thlm_forcing, &
+      flux_top_thlm, &
+      flux_sfc_thlm, &
+      spur_src_thlm
 
     !----- Begin Code -----
     
     if ( l_stats .and. l_stats_samp ) then
-      ! Get the vertical integral of rtm before this function begins so that 
-      ! spurious source can be calculated
-      integral_rtm_before = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt, &
-                                              rho_ds_zm, rtm(2:gr%nnzp))
+      if ( l_implemented ) then
+        ! Get the vertical integral of rtm and thlm before this function begins so that 
+        ! spurious source can be calculated
+        integral_rtm_before = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt(2:gr%nnzp), &
+                                                rho_ds_zm(2:gr%nnzp), rtm(2:gr%nnzp))
+        integral_thlm_before = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt(2:gr%nnzp), &
+                                                 rho_ds_zm(2:gr%nnzp), thlm(2:gr%nnzp))
+      endif
     endif
      
     !----------------------------------------------------------------
@@ -1113,20 +1124,41 @@ module clubb_core
     endif
 
     if ( l_stats .and. l_stats_samp ) then
-      ! Calculate the spurious source
-      flux_top = rho_ds_zm(gr%nnzp) * wprtp(gr%nnzp)
-      flux_sfc = rho_ds_zm(1) * wprtp_sfc
-      integral_rtm_after = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt, &
-                                             rho_ds_zm, rtm(2:gr%nnzp))
-      integral_rtm_forcing = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt, &
-                                             rho_ds_zm, rtm_forcing(2:gr%nnzp))
-      spurious_source_rtm = calculate_spurious_source( integral_rtm_after, &
-                                                       integral_rtm_before, &
-                                                       flux_top, flux_sfc, & 
-                                                       integral_rtm_forcing, &
-                                                       real(dt) )     
-      call stat_update_var_pt( irt_spurious_source, 1, & 
-                               spurious_source_rtm, sfc )
+      if ( l_implemented ) then
+        ! Calculate the spurious source for rtm
+        flux_top_rtm = rho_ds_zm(gr%nnzp) * wprtp(gr%nnzp)
+        flux_sfc_rtm = rho_ds_zm(1) * wprtp_sfc
+        integral_rtm_after = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt(2:gr%nnzp), &
+                                               rho_ds_zm(2:gr%nnzp), rtm(2:gr%nnzp))
+        integral_rtm_forcing = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt(2:gr%nnzp), &
+                                                 rho_ds_zm(2:gr%nnzp), rtm_forcing(2:gr%nnzp))
+        spur_src_rtm = calculate_spurious_source( integral_rtm_after, &
+                                                  integral_rtm_before, &
+                                                  flux_top_rtm, flux_sfc_rtm, & 
+                                                  integral_rtm_forcing, &
+                                                  real(dt) )     
+        ! Calculate the spurious source for rtm
+        flux_top_thlm = rho_ds_zm(gr%nnzp) * wpthlp(gr%nnzp)
+        flux_sfc_thlm = rho_ds_zm(1) * wpthlp_sfc      
+        integral_thlm_after = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt(2:gr%nnzp), &
+                                                rho_ds_zm(2:gr%nnzp), thlm(2:gr%nnzp))
+        integral_thlm_forcing = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt(2:gr%nnzp), &
+                                                  rho_ds_zm(2:gr%nnzp), thlm_forcing(2:gr%nnzp))
+        spur_src_thlm = calculate_spurious_source( integral_thlm_after, &
+                                                   integral_thlm_before, &
+                                                   flux_top_thlm, flux_sfc_thlm, & 
+                                                   integral_thlm_forcing, &
+                                                   real(dt) )
+      else ! If l_implemented is false, we don't want spurious source output
+        spur_src_rtm = -9999.0
+        spur_src_thlm = -9999.0
+      endif    
+      
+      ! Write the var to stats  
+      call stat_update_var_pt( irtm_spur_src, 1, & 
+                               spur_src_rtm, sfc ) 
+      call stat_update_var_pt( ithlm_spur_src, 1, & 
+                               spur_src_thlm, sfc )
     endif
 
     return
