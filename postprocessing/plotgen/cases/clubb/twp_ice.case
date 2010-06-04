@@ -148,11 +148,13 @@
        ]},
        {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'lwpmean ./ 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Total precip fallout rate from Morrison scheme', 'axisLabel' => 'morr\_rain\_rate [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-          {'filename' => 'twp_ice_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'morr_rain_rate', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+         {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'PRECIP', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'}, 
+         {'filename' => 'twp_ice_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'morr_rain_rate', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Density-Weighted Vertically Averaged wp2', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
@@ -164,6 +166,7 @@
        ]},
        {'plotTitle' => 'Snow Water Path', 'axisLabel' => 'swp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'iwpmean ./ 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'swp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]}
     ],
