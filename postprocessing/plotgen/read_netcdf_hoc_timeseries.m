@@ -29,8 +29,8 @@ if max(size(dimids)) == 1
 else
    % Read in and average profiles over all timesteps
    for t=t1:t2
-      new_field(1:nz,1) = squeeze(field(1,1,1:nz,t));
-      avg_field(t) = avg(new_field);
+      new_field(1:nz) = squeeze(field(1,1,1:nz,t));
+      avg_field(t) = mean(new_field);
    end
 end
 
