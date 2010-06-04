@@ -27,11 +27,12 @@ ARCH="-tp p1" # Itanium
 OPTIMIZE="-O2"
 
 # == NetCDF Location ==
-NETCDF="$HOME/netcdf-3.6.3"
+NETCDF="/usr/local/netcdf-intel64"
 
 # == LAPACK libraries ==
 # Intel Math Kernel Library (v8)
-LAPACK="-L/opt/intel/mkl/8.1/lib/64 -Wl,-rpath,/opt/intel/mkl/8.1/lib/64 -lmkl_lapack64 -lmkl_i2p -lmkl -lmkl_vml_i2p -lmkl_vml -lvml -lguide -lpthread"
+MKLPATH="/opt/intel/Compiler/11.0/081/mkl/lib/em64t"
+LAPACK="-L$MKLPATH -Wl,-rpath,$MKLPATH -lmkl_intel_lp64 -lmkl_sequential -lmkl_lapack -lmkl_core -lguide -lpthread"
 # Generic library
 # LAPACK = -llapack -lblas -lg2c
 
