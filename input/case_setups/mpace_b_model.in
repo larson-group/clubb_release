@@ -168,7 +168,7 @@ fname_prefix = "mpace_b"  ! Prefix of output filename.
 stats_tsamp  = 60.        ! Frequency of statistical sampling [s]
                           ! (must multiply evenly into stats_tout).
 stats_tout   = 60.        ! Frequency of statistical output.  [s]
-stats_fmt    = "grads"    ! Type of statistical output file (GrADS or netCDF).
+stats_fmt    = "grads"    ! Type of statistical output file ("grads" or "netcdf").
 /
 
 
