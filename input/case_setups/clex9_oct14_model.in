@@ -136,6 +136,7 @@ microphys_start_time = 54862.5
 /
 
 &radiation_setting
+! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
 rad_scheme = "simplified",
 F0 = 104.0,   ! Coefficient for cloud top heating (see Stevens) [W/m^2] 
 F1 = 62.0,    ! Coefficient for cloud base heating (see Stevens) [W/m^2] 

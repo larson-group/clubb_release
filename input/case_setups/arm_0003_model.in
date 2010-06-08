@@ -155,6 +155,7 @@ iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thet
 micro_scheme = "coamps"
 /
 &radiation_setting
+! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
 rad_scheme = "none",
 /
 

@@ -141,6 +141,7 @@ Ncm_initial  = 55. ! #/cm3
 /
 
 &radiation_setting
+! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
 rad_scheme = "simplified",
 F0 = 70.0,    ! Coefficient for cloud top heating (see Stevens) [W/m^2] 
 F1 = 22.0,    ! Coefficient for cloud base heating (see Stevens) [W/m^2] 
@@ -164,7 +165,7 @@ stats_fmt    = "grads"            ! Type of statistical output file ("grads" or 
 ! You will not need to modify these if l_input_fields is false.
 &setfields
 datafile      = "../les_data/dycoms2_rf02_do"
-input_type    = "coamps_les"
+input_type    = "coamps_les"  ! input_type = "clubb" or "coamps_les"
 input_um = .true. 
 input_vm = .true.
 input_rtm = .true. 

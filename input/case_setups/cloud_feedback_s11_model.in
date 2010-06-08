@@ -161,6 +161,7 @@ micro_scheme = "morrison"
 /
 
 &radiation_setting
+! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
 rad_scheme          = "bugsrad"
 l_fix_cos_solar_zen = .true.
 l_sw_radiation = .true.

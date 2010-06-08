@@ -148,6 +148,7 @@ l_graupel = .false.
 /
 
 &radiation_setting
+! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
 rad_scheme = "simplified",
 F0 = 100.0,   ! Coefficient for cloud top heating (see Stevens) [W/m^2] 
 F1 = 20.0,    ! Coefficient for cloud base heating (see Stevens)[W/m^2] 

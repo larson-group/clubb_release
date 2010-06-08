@@ -143,6 +143,7 @@ l_graupel = .true.
 /
 
 &radiation_setting
+! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
 rad_scheme = "bugsrad",
 l_sw_radiation = .true.
 /

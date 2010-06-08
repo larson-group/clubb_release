@@ -170,6 +170,7 @@ Ncm_initial = 70. ! #/cm3
 /
 
 &radiation_setting
+! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
 rad_scheme = "none"
 /
 
