@@ -159,7 +159,9 @@ kappa = 130.0, ! A constant (Duynkerke eqn. 5)                   [m^2/kg]
 l_stats      = .true.   ! Flag for statistical output.
 fname_prefix = "fire"   ! Prefix of output filename.
 stats_tsamp  = 60.      ! Frequency of statistical sampling [s]
-                        ! (must multiply evenly into stats_tout).
+                        ! For most complete sampling, let 
+                        ! stats_tsamp = dtmain
+                        ! (stats_tsamp must multiply evenly into stats_tout)
 stats_tout   = 60.      ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"  ! Type of statistical output file ("grads" or "netcdf").
 /

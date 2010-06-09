@@ -182,7 +182,9 @@ alvdr = 0.07 ! Visible direct surface albedo [-]
 l_stats       = .true.   ! Flag for statistical output.
 fname_prefix = "cloud_feedback_s11_p2k"    ! Prefix of output filename.
 stats_tsamp  = 300.      ! Frequency of statistical sampling [s]
-                         ! (must multiply evenly into stats_tout).
+                         ! For most complete sampling, let 
+                         ! stats_tsamp = dtmain
+                         ! (stats_tsamp must multiply evenly into stats_tout)
 stats_tout   = 3600.     ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"   ! Type of statistical output file ("grads" or "netcdf").
 /

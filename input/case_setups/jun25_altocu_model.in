@@ -158,8 +158,10 @@ Fs_values = 0.0, 715.86, 1073.577, 1165.0905, 1204.7033, 1227.6898,
 
 l_stats       = .true.          ! Flag for statistical output.
 fname_prefix = "jun25_altocu"  ! Prefix of output filename.
-stats_tsamp  = 60.             ! Frequency of statistical sampling [s]
-                               ! (must multiply evenly into stats_tout).
+stats_tsamp  = 60.          ! Frequency of statistical sampling [s]
+                            ! For most complete sampling, let 
+                            ! stats_tsamp = dtmain
+                            ! (stats_tsamp must multiply evenly into stats_tout)
 stats_tout   = 60.             ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"         ! Type of statistical output file ("grads" or "netcdf").
 /

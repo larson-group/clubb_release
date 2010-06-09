@@ -101,10 +101,12 @@ debug_level   = 2
 
 ! Statistics Settings
 
-l_stats       = .true.                ! Flag for statistical output.
+l_stats       = .true.               ! Flag for statistical output.
 fname_prefix = "dycoms2_rf02_nd_LR"  ! Prefix of output filename.
-stats_tsamp  = 20.                   ! Frequency of statistical sampling [s]
-                                     ! (must multiply evenly into stats_tout).
+stats_tsamp  = 20.          ! Frequency of statistical sampling [s]
+                            ! For most complete sampling, let 
+                            ! stats_tsamp = dtmain
+                            ! (stats_tsamp must multiply evenly into stats_tout)
 stats_tout   = 20.                   ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"               ! Type of statistical output file ("grads" or "netcdf").
 /

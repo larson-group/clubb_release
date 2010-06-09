@@ -175,11 +175,13 @@ alndf = 0.23d0    ! Near-IR diffuse surface albedo       [-]
 ! Statistics Settings
 
 l_stats       = .true.    ! Flag for statistical output.
-fname_prefix = "gabls3"  ! Prefix of output filename.
-stats_tsamp  = 60.       ! Frequency of statistical sampling [s]
-                         ! (must multiply evenly into stats_tout).
+fname_prefix = "gabls3"   ! Prefix of output filename.
+stats_tsamp  = 60.        ! Frequency of statistical sampling [s]
+                          ! For most complete sampling, let 
+                          ! stats_tsamp = dtmain
+                          ! (stats_tsamp must multiply evenly into stats_tout)
 stats_tout   = 600.       ! Frequency of statistical output.  [s]
-stats_fmt    = "grads"   ! Type of statistical output file ("grads" or "netcdf").
+stats_fmt    = "grads"    ! Type of statistical output file ("grads" or "netcdf").
 /
 
 
