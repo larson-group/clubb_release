@@ -409,6 +409,57 @@ See postprocessing/plotgen/README for more information on plotgen.pl.
 Otherwise, you can view the raw CLUBB output files in GrADS or netCDF
 format using a plotting program such as GrADS (http://www.iges.org/grads/).
 
+-----------------------------------------------------------------------
+- (2.4) Comparing two or more outputs from single column runs:
+-----------------------------------------------------------------------
+
+There are 3 major ways to determine if outputs are different, each will 
+be covered briefly in this section.
+1) run_bindiff_all.bash script
+2) plotting the outputs using plotgen
+3) find_grads_differences.m script
+
+- Comparison using run_bindiff_all.bash
+This script takes two output directories as arguments and will compare the
+contents of those directories to determine if the outputs differ.  Note that
+run_scm_all.bash must be run prior to this script to create the ouput to be
+compared.  The script will compare the .ctl files and .dat file for each
+case specified in run_scm_all.bash.  This is the most complete way to detect
+differences between two output directories.
+
+This script can be found in "clubb/run_scripts".
+
+Usage: ./run_bindiff_all.bash output_directory output_directory_to_compare
+
+- Comparison using plotgen
+This method requires Matlab as the plots are generated through Matlab.
+The basic usage below will plot 1 or more (as many as desired) specified
+output directories against other data for comparison.  For more detailed
+information on plotgen, including detailed usage and options see:
+http://www.larson-group.com/twiki/bin/view.pl/Documentation/CarsonDoc/Plotgen3.
+
+Usage: plotgen output_directory1 (output_directory2) ... directory_for_plots
+
+Note that if the directory specified for the plots to be written to already
+exists, a -r flag must also be used to delete all contents of that folder.
+
+- Comparison using find_grads_differences.m
+This method also requires Matlab and must be run in Matlab.  This script is
+essentially a shorter version of the run_bindiff_all.bash script in that it
+will compare output files, but it will only look at the specified control file
+and only in the time range provided. The strings 'begin' and 'end' can be used
+as the time for the lower and upper time bounds which the script will determine
+from the files.  A higher number for the tolerance corresponds to a finer tolerance.
+
+This script can be found in "clubb/postprocessing/run_comparisons".
+
+Usage: find_grads_differences( 'casename_to_check.ctl', lower_time_bound(or 'begin'),
+	 upper_time_bound(or 'end'), digits_of_precision)
+
+Note that this script must be run in Matlab while in the directory where the
+file resides.  Also, the path1, path2 and path3 variables will likely need to
+be set to directories corresponding to the local path(s) of the files being compared.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % CHAPTER 3: FANCIER TYPES OF SIMULATIONS
