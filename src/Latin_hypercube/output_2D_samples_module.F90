@@ -79,6 +79,7 @@ module output_2D_samples_module
     ! ---- Begin Code ----
 
     fname = trim( fname_prefix )//"_LH_sample_points_2D"
+    i =1  ! This assignment prevents a g 95 compiler warning
 
     ! We need to set this like a latitude to trick GrADS and allow of viewing of
     ! the sample points with the GrADS application and sdfopen.

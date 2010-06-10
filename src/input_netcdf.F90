@@ -83,6 +83,8 @@ module input_netcdf
     ! Initialize l_error to false
     l_error = .false.
 
+    multiplier = 0  !initialized to eliminate g95 compiler warning -meyern
+
     ierr = nf90_open( path=trim( path ), mode=NF90_NOWRITE, ncid=ncf%iounit )
 
     if ( ierr /= NF90_NOERR ) then
