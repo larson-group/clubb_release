@@ -709,8 +709,8 @@ module clubb_driver
     dummy_dy = 0.0
 
     ! Setup microphysical fields
-    call init_microphys( iunit, runfile, & ! Intent(in)
-                         hydromet_dim )    ! Intent(out)
+    call init_microphys( iunit, runfile, fname_prefix, debug_level, &!Intent(in)
+                         hydromet_dim )                            ! Intent(out)
 
     ! Setup radiation parameters
     call init_radiation( iunit, runfile ) ! Intent(in)
