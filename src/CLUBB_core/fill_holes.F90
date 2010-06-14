@@ -319,7 +319,7 @@ module fill_holes
     character(len=2), intent(in) :: & 
       field_grid   ! The grid of the field, either zt or zm
 
-    real, dimension(end_idx-begin_idx+1), intent(in) ::  &
+    real, dimension(begin_idx:end_idx), intent(in) ::  &
       rho_ds,    & ! Dry, static density on thermodynamic levels    [kg/m^3]
       rho_ds_zm, & ! Dry, static density on momentum levels         [kg/m^3]
       field        ! The field (e.g. wp2) to be vertically averaged [Units vary]
@@ -382,12 +382,12 @@ module fill_holes
        ! Note:  The values of 'field' and rho_ds are passed into this function
        !        so that field(1) and rho_ds(1) are actually 'field' and rho_ds
        !        at thermodynamic level k_start.
-       numer_integral = sum( field(1:) * rho_ds(1:) / gr%dzt(k_start:k_end) )
+       numer_integral = sum( field(k_start:k_end) * rho_ds(k_start:k_end) / gr%dzt(k_start:k_end) )
 
        ! Compute the denominator integral.
        ! Multiply rho_ds at level k by the level thickness (for the
        ! thermodynamic level) at level k.  Then, sum over all vertical levels.
-       denom_integral = sum( rho_ds(1:) / gr%dzt(k_start:k_end) )
+       denom_integral = sum( rho_ds(k_start:k_end) / gr%dzt(k_start:k_end) )
 
        ! Find the vertical average of 'field'.
        vertical_avg = numer_integral / denom_integral
@@ -426,12 +426,12 @@ module fill_holes
        ! Note:  The values of 'field' and rho_ds_zm are passed into this
        !        function so that field(1) and rho_ds_zm(1) are actually 'field'
        !        and rho_ds_zm at momentum level k_start.
-       numer_integral = sum( field(1:) * rho_ds_zm(1:) / gr%dzm(k_start:k_end) )
+       numer_integral = sum( field(k_start:k_end) * rho_ds_zm(k_start:k_end) / gr%dzm(k_start:k_end) )
 
        ! Compute the denominator integral.
        ! Multiply rho_ds_zm at level k by the level thickness (for the momentum
        ! level) at level k.  Then, sum over all vertical levels.
-       denom_integral = sum( rho_ds_zm(1:) / gr%dzm(k_start:k_end) )
+       denom_integral = sum( rho_ds_zm(k_start:k_end) / gr%dzm(k_start:k_end) )
 
        ! Find the vertical average of 'field'.
        vertical_avg = numer_integral / denom_integral
