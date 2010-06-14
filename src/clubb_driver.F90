@@ -2858,13 +2858,13 @@ module clubb_driver
 
     use gabls3_night, only: gabls3_night_sfclyr
 
-    use rico, only: rico_tndcy, rico_sfclyr ! Procedure(s)
-
     use lba, only: lba_tndcy, lba_sfclyr ! Procedure(s)
 
     use cloud_feedback, only: cloud_feedback_sfclyr ! Procedure(s)
 #endif
 
+    use rico, only: rico_tndcy, rico_sfclyr ! Procedure(s)
+    
     use mpace_a, only: mpace_a_tndcy, mpace_a_sfclyr ! Procedure(s)
 
     use mpace_b, only: mpace_b_tndcy, mpace_b_sfclyr ! Procedure(s)
@@ -3039,13 +3039,13 @@ module clubb_driver
                                wm_zt, wm_zm, thlm_forcing, rtm_forcing, &  ! Intent(out)
                                Frad, radht, &                              ! Intent(out)
                                sclrm_forcing, edsclrm_forcing )            ! Intent(out)
+#endif
 
     case ( "rico" ) ! RICO case
       call rico_tndcy( exner, &                            ! Intent(in)
                        thlm_forcing, rtm_forcing, radht, & ! Intent(out)   
                        sclrm_forcing, edsclrm_forcing )    ! Intent(out)
-#endif
-
+                       
     case ( "wangara" ) ! Wangara dry CBL
       call wangara_tndcy( wm_zt, wm_zm,  &                  ! Intent(out) 
                           thlm_forcing, rtm_forcing, &      ! Intent(out)
@@ -3290,15 +3290,6 @@ module clubb_driver
       ! Ensure ustar is set
       ustar = 0
 
-    case ( "rico" )
-      call rico_sfclyr( um(2), vm(2), thlm(2), rtm(2), &            ! Intent(in)
-                        ! 299.8 K is the RICO SST; 101540 Pa is the sfc pressure.
-                        !gr%zt(2), 299.8, 101540.,  &                ! Intent(in)
-                        gr%zt(2), Tsfc, psfc, exner(1), &
-                        upwp_sfc, vpwp_sfc, wpthlp_sfc, &           ! Intent(out) 
-                        wprtp_sfc, ustar, &                         ! Intent(out)
-                        wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
-
     case ( "twp_ice" )
       call twp_ice_sfclyr( gr%zt(2), Tsfc, exner(1), thlm(2), &     ! Intent(in)
                             um(2), vm(2), rtm(2), &                 ! Intent(in)
@@ -3308,6 +3299,16 @@ module clubb_driver
 
 #endif
 
+    case ( "rico" )
+      call rico_sfclyr( um(2), vm(2), thlm(2), rtm(2), &            ! Intent(in)
+                        ! 299.8 K is the RICO SST; 101540 Pa is the sfc pressure.
+                        !gr%zt(2), 299.8, 101540.,  &                ! Intent(in)
+                        gr%zt(2), Tsfc, psfc, exner(1), &
+                        upwp_sfc, vpwp_sfc, wpthlp_sfc, &           ! Intent(out) 
+                        wprtp_sfc, ustar, &                         ! Intent(out)
+                        wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
+
+    
     case ( "wangara" )
       call wangara_sfclyr( time_current, um(2), vm(2), &            ! Intent(in)
                            upwp_sfc, vpwp_sfc, &                    ! Intent(out)

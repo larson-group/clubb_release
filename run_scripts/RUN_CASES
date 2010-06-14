@@ -15,6 +15,7 @@ fire
 gabls2
 mpace_a
 mpace_b
+rico
 wangara
 
 ! The following are unreleased cases. External users should comment these
@@ -34,5 +35,4 @@ gabls3_night
 jun25_altocu
 lba
 nov11_altocu
-rico
 twp_ice
