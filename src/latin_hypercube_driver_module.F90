@@ -387,12 +387,16 @@ module latin_hypercube_driver_module
       k_lh_start = nnzp / 2
     end if
 
-    if ( l_lh_cloud_weighted_sampling ) then
-
-      ! Determine cloud fraction at k_lh_start
-      lh_start_cloud_frac = &
-        pdf_params%mixt_frac(k_lh_start) * pdf_params%cloud_frac1(k_lh_start) &
+    ! Determine cloud fraction at k_lh_start
+    lh_start_cloud_frac = &
+      pdf_params%mixt_frac(k_lh_start) * pdf_params%cloud_frac1(k_lh_start) &
         + (1.0-pdf_params%mixt_frac(k_lh_start)) * pdf_params%cloud_frac2(k_lh_start)
+        ! The above calculation was moved outside the if ( l_lh_cloud_weighted_sampling )
+        ! statement below to eliminate a g95 compiler warning for an uninitialized variable.
+        ! Always performing this calculation seemed safer than blindly setting this value.
+        ! -meyern
+
+    if ( l_lh_cloud_weighted_sampling ) then
 
       ! Determine p_matrix at k_lh_start
       p_matrix(1:n_micro_calls,1:(d_variables+1)) = &

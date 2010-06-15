@@ -969,7 +969,7 @@ module clubb_driver
              ( i, dt, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! Intent(in)
                rtm, rcm, wm_zt, wm_zm,                               & ! Intent(in)
                Kh_zm, wp2_zt, Lscale, pdf_params,                    & ! Intent(in)
-               rho_ds_zt, rho_ds_zm,                                 & ! Intent(in)
+               rho_ds_zt,                                 & ! Intent(in)
                Ncnm, hydromet,                                       & ! Intent(inout)
                rvm_mc, rcm_mc, thlm_mc, err_code )                     ! Intent(out)
 
@@ -2980,7 +2980,7 @@ module clubb_driver
 
     case ( "dycoms2_rf02" ) ! DYCOMS2 RF02 case
       call dycoms2_rf02_tndcy( rho,                     &          ! Intent(in)
-                               rho_zm, rtm, rcm, exner,  &         ! Intent(in)
+                               rtm, rcm, exner,  &                 ! Intent(in)
                                err_code, wm_zt, wm_zm,   &         ! Intent(inout)
                                thlm_forcing, rtm_forcing, &        ! Intent(out) 
                                Frad, radht, &                      ! Intent(out)
@@ -3370,7 +3370,7 @@ module clubb_driver
              ( iter, dt, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, &
                rtm, rcm, wm_zt, wm_zm, &
                Kh_zm, wp2_zt, Lscale, pdf_params, &
-               rho_ds_zt, rho_ds_zm, &
+               rho_ds_zt, &
                Ncnm, hydromet, &
                rvm_mc, rcm_mc, thlm_mc, err_code )
 ! Description:
@@ -3435,7 +3435,6 @@ module clubb_driver
       pdf_params      ! PDF parameters   [units vary]
 
     real, dimension(gr%nnzp), intent(in) :: &
-      rho_ds_zm,  & ! Dry, static density on momentum levels    [kg/m^3]
       rho_ds_zt     ! Dry, static density on thermo. levels     [kg/m^3]
 
     ! Input/Output Variables
@@ -3500,7 +3499,7 @@ module clubb_driver
            ( iter, runtype, dt, time_current, &                         ! Intent(in)
              thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, & ! Intent(in)
              wm_zt, wm_zm, Kh_zm, pdf_params, &                         ! Intent(in)
-             wp2_zt, Lscale, rho_ds_zt, rho_ds_zm, &                    ! Intent(in)
+             wp2_zt, Lscale, rho_ds_zt, &                               ! Intent(in)
              Ncnm, hydromet, &                                          ! Intent(inout)
              rvm_mc, rcm_mc, thlm_mc, &                                 ! Intent(inout)
              err_code )                                                 ! Intent(out)
@@ -3613,8 +3612,8 @@ module clubb_driver
     ! ---- Begin Code ----
 
     ! Initialize all outputs to 0.
-    Frad = 0.
-    Frad_SW_up = 0.
+    Frad = 0. + rho * 0.  ! The addition is to prevent an Intel compiler warning of an unused
+    Frad_SW_up = 0.       ! variable.  May be removed if rho is used below.  -meyern
     Frad_LW_up = 0.
     Frad_SW_down = 0.
     Frad_LW_down = 0.
@@ -3763,6 +3762,9 @@ module clubb_driver
 !     call simple_rad( rho, rho_zm, rtm, rcm, exner, & ! In
 !                      err_code, & ! Inout
 !                      Frad, radht ) ! Out
+!
+!  If this section is to be permanently added, please remove the addition of rho * 0 to the
+!  initialization of Frad at the beginning of executable code. -meyern
 
     case ( "simplified_bomex" )
       !----------------------------------------------------------------

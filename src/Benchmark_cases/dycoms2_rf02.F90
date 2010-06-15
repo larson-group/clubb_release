@@ -16,7 +16,7 @@ module dycoms2_rf02
 
   !----------------------------------------------------------------------
   subroutine dycoms2_rf02_tndcy( rho, & 
-                                 rho_zm, rtm, rcm, exner,  & 
+                                 rtm, rcm, exner,  & 
                                  err_code, wm_zt, wm_zm,    &
                                  thlm_forcing, rtm_forcing,  & 
                                  Frad, radht, sclrm_forcing, &
@@ -70,8 +70,7 @@ module dycoms2_rf02
     ! Input Variables
 
     real, intent(in), dimension(gr%nnzp) :: & 
-      rho,    & ! Density on thermodynamic grid  [kg/m^3] 
-      rho_zm, & ! Density on momentum grid       [kg/m^3]
+      rho,    & ! Density on thermodynamic grid  [kg/m^3]
       rtm,    & ! Total water mixing ratio       [kg/kg]
       rcm,    & ! Cloud water mixing ratio       [kg/kg]
       exner     ! Exner function.                [-]

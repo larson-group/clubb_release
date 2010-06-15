@@ -703,9 +703,11 @@ module generate_lh_sample_module
     double precision, dimension(n_micro_calls) :: s_pts
 
     integer :: iiLH_s_mellor, iiLH_t_mellor
-!   integer :: i, j
 
     ! ---- Begin Code ----
+
+    sample = 1       ! These lines prevent a g95 compiler error for uninitialized variable and
+    sample = sample  ! unused variable. -meyern
 
     iiLH_s_mellor = iiLH_rt  ! Mellor's s is at the same index as rt in the Sigma_stw arrays
     iiLH_t_mellor = iiLH_thl ! Mellor's t is at the same index as thl "  "
@@ -754,7 +756,6 @@ module generate_lh_sample_module
                      X_nl_one_lev(1:n_micro_calls,iiLH_t_mellor), & ! In
                      X_mixt_comp_one_lev, & ! In
                      LH_rt, LH_thl ) ! Out
-
     ! Convert lognormal variates (e.g. Nc and rr) to lognormal
     forall ( sample = 1:n_micro_calls )
       where ( l_d_variable_lognormal )

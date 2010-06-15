@@ -650,7 +650,7 @@ module microphys_driver
              ( iter, runtype, dt, time_current,  & 
                thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, & 
                wm_zt, wm_zm, Kh_zm, pdf_params, & 
-               wp2_zt, Lscale, rho_ds_zt, rho_ds_zm, &
+               wp2_zt, Lscale, rho_ds_zt, &
                Ncnm, hydromet, & 
                rvm_mc, rcm_mc, thlm_mc, &
                err_code )
@@ -825,7 +825,6 @@ module microphys_driver
     real, dimension(gr%nnzp), intent(in) :: & 
       wp2_zt,    & ! w'^2 on the thermo. grid               [m^2/s^2]
       Lscale,    & ! Length scale                           [m]
-      rho_ds_zm, & ! Dry, static density on momentum levels [kg/m^3]
       rho_ds_zt    ! Dry, static density on thermo. levels  [kg/m^3]
 
 

@@ -305,6 +305,10 @@ module matrix_operations
     integer :: i, j
 
     ! ---- Begin Code ----
+    i = 1   ! These 4 lines eliminate a g95 compiler warning of uninitialized variables.
+    i = i   ! Simply initializing them to 1 is not sufficient as it generates two new 
+    j = 1   ! warnings.  -meyern
+    j = j
 
     forall( i = 1:ndim, j= 1:ndim )
       corr(i,j) = cov(i,j) / sqrt( cov(i,i) * cov(j,j) )

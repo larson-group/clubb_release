@@ -2859,8 +2859,9 @@ contains
                     ! * abs( Lscalep1 - Lscale ) * dzm &
                   + constant2 * abs( wp2_ztp1 - wp2_zt ) * dzm &
                     * abs( vm_high - vm_low ) / ( zt_high - zt_low ) &
-                )
-
+                     + ( Lscalep1 + Lscale ) * 0 &     ! This line eliminates an Intel compiler
+                )                                      ! warning that Lscalep1/Lscale are not
+                                                       ! used. -meyern
     end if ! .not. l_use_experimental_term_pr2
 
     return
