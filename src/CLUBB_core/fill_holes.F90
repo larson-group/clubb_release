@@ -104,10 +104,20 @@ module fill_holes
 
         if ( any( field( begin_idx:end_idx ) < threshold ) ) then
 
-          call fill_holes_multiplicative &
-                   ( begin_idx, end_idx, threshold, field_grid, &
-                     rho_ds(begin_idx:end_idx), rho_ds_zm(begin_idx:end_idx), &
-                     field(begin_idx:end_idx) )
+          ! 'field' is on the zt (thermodynamic level) grid
+          if ( field_grid == "zt" ) then
+            call fill_holes_multiplicative &
+                    ( begin_idx, end_idx, threshold, field_grid, &
+                      rho_ds(begin_idx:end_idx), &
+                      field(begin_idx:end_idx) )
+                      
+          ! 'field' is on the zm (momentum level) grid
+          elseif ( field_grid == "zm" )  then
+            call fill_holes_multiplicative &
+                    ( begin_idx, end_idx, threshold, field_grid, &
+                      rho_ds_zm(begin_idx:end_idx), &
+                      field(begin_idx:end_idx) )
+          endif
 
         endif
 
@@ -122,10 +132,20 @@ module fill_holes
       ! value of 'field' at the upper boundary level (k=gr%nnzp).
       if ( any( field( 2:upper_hf_level ) < threshold ) ) then
 
-        call fill_holes_multiplicative &
+        ! 'field' is on the zt (thermodynamic level) grid
+        if ( field_grid == "zt" ) then
+          call fill_holes_multiplicative &
                  ( 2, upper_hf_level, threshold, field_grid, &
-                   rho_ds(2:upper_hf_level), rho_ds_zm(2:upper_hf_level), &
+                   rho_ds(2:upper_hf_level), &
                    field(2:upper_hf_level) )
+                   
+        ! 'field' is on the zm (momentum level) grid
+        elseif ( field_grid == "zm" )  then
+            call fill_holes_multiplicative &
+                 ( 2, upper_hf_level, threshold, field_grid, &
+                   rho_ds_zm(2:upper_hf_level), &
+                   field(2:upper_hf_level) )
+        endif
 
       endif
 
@@ -138,7 +158,7 @@ module fill_holes
   !=============================================================================
   subroutine fill_holes_multiplicative &
                  ( begin_idx, end_idx, threshold, field_grid, &
-                   rho_ds, rho_ds_zm, &
+                   rho, &
                    field )
 
     ! Description:
@@ -172,8 +192,7 @@ module fill_holes
       field_grid ! The grid of the field, either zt or zm
 
     real, dimension(end_idx-begin_idx+1), intent(in) ::  & 
-      rho_ds,    & ! Dry, static density on thermodynamic levels    [kg/m^3]
-      rho_ds_zm    ! Dry, static density on momentum levels         [kg/m^3]
+      rho  ! Dry, static density on either thermodynamic or momentum levels   [kg/m^3]
 
     ! Input/Output variable
     real, dimension(end_idx-begin_idx+1), intent(inout) ::  & 
@@ -195,7 +214,7 @@ module fill_holes
 
     ! Compute the field's vertical average, which we must conserve.
     field_avg = vertical_avg( begin_idx, end_idx, field_grid, &
-                              rho_ds, rho_ds_zm, field )
+                              rho, field )
 
     ! Clip small or negative values from field.
     if ( field_avg >= threshold ) then
@@ -210,7 +229,7 @@ module fill_holes
     ! Compute the clipped field's vertical integral.
     ! clipped_total_mass >= original_total_mass
     field_clipped_avg = vertical_avg( begin_idx, end_idx, field_grid, &
-                                      rho_ds, rho_ds_zm, field_clipped )
+                                      rho, field_clipped )
 
     ! If the difference between the field_clipped_avg and the threshold is so
     ! small that it falls within numerical round-off, return to the parent
@@ -238,7 +257,7 @@ module fill_holes
 
   !=============================================================================
   function vertical_avg( begin_idx, end_idx, field_grid, &
-                         rho_ds, rho_ds_zm, field )
+                         rho, field )
 
     ! Description:
     ! Computes the density-weighted vertical average of a field.
@@ -320,9 +339,8 @@ module fill_holes
       field_grid   ! The grid of the field, either zt or zm
 
     real, dimension(begin_idx:end_idx), intent(in) ::  &
-      rho_ds,    & ! Dry, static density on thermodynamic levels    [kg/m^3]
-      rho_ds_zm, & ! Dry, static density on momentum levels         [kg/m^3]
-      field        ! The field (e.g. wp2) to be vertically averaged [Units vary]
+      rho,    & ! Dry, static density on either thermodynamic or momentum levels    [kg/m^3]
+      field     ! The field (e.g. wp2) to be vertically averaged                    [Units vary]
     ! Note:  The rho_ds, rho_ds_zm, and field points need to be arranged from
     !        lowest to highest in altitude, with rho_ds(1), rho_ds_zm(1), and
     !        field(1) actually their respective values at level k = begin_idx.
@@ -335,6 +353,9 @@ module fill_holes
     real :: & 
       numer_integral, & ! Integral in the numerator (see description)
       denom_integral    ! Integral in the denominator (see description)
+      
+    real, dimension(gr%nnzp) :: &
+      dz  ! Thermodynamic or momentum level thickness depending on whether we're on zt or zm grid.
 
     integer ::  & 
       k_start,  & ! Starting index for the absolute grid level
@@ -350,11 +371,9 @@ module fill_holes
     ! Initializing vertical_avg to avoid a compiler warning.
     vertical_avg = 0.0
 
-    select case ( trim( field_grid ) )
-
     ! For fields on the zt (thermodynamic level) grid levels.
-    case ( "zt" )
-
+    if ( trim( field_grid ) == "zt" ) then
+    
        ! The first (k=1) thermodynamic level is below ground (or below the
        ! official lower boundary at the first momentum level), so it should not
        ! count in a vertical average, whether that vertical average is used for
@@ -367,35 +386,12 @@ module fill_holes
        ! domain are desired, the lower (thermodynamic-level) index of k = 2 and
        ! the upper (thermodynamic-level) index of k = gr%nnzp, means that the
        ! overall vertical domain will be gr%zm(gr%nnzp) - gr%zm(1).
-
-       ! Keep vertical indices inside the bounds of the model.
-       k_start = max( 1, begin_idx )
-       k_end   = min( gr%nnzp, end_idx )
-
-       ! Compute the numerator integral.
-       ! Multiply the variable 'field' at level k by rho_ds at level k and by
-       ! the level thickness (for the thermodynamic level) at level k.  Then,
-       ! sum over all vertical levels.
-       ! Note:  The level thickness at thermodynamic level k is the distance
-       !        between momentum level k and momentum level k-1.  Thus,
-       !        1.0/gr%dzt(k) is the level thickness for thermodynamic level k.
-       ! Note:  The values of 'field' and rho_ds are passed into this function
-       !        so that field(1) and rho_ds(1) are actually 'field' and rho_ds
-       !        at thermodynamic level k_start.
-       numer_integral = sum( field(k_start:k_end) * rho_ds(k_start:k_end) / gr%dzt(k_start:k_end) )
-
-       ! Compute the denominator integral.
-       ! Multiply rho_ds at level k by the level thickness (for the
-       ! thermodynamic level) at level k.  Then, sum over all vertical levels.
-       denom_integral = sum( rho_ds(k_start:k_end) / gr%dzt(k_start:k_end) )
-
-       ! Find the vertical average of 'field'.
-       vertical_avg = numer_integral / denom_integral
-
-
+       
+      dz = gr%dzt
+      
     ! For fields on the zm (momentum level) grid levels.
-    case ( "zm" )
-
+    elseif ( trim( field_grid ) == "zm" ) then
+    
        ! The first (k=1) momentum level is right at ground level (or right at
        ! the official lower boundary).  The momentum level variables that call
        ! the hole-filling scheme have set values at the surface (or lower
@@ -411,41 +407,44 @@ module fill_holes
        ! purposes) of the vertical average of certain variables.  In that case,
        ! the vertical average needs to be taken over the entire vertical domain
        ! (level 1 to level gr%nnzp).
+       
+      dz = gr%dzm
+      
+    ! If the grid is not specified
+    else
+      call clubb_debug( 0,  & 
+         "Neither zt nor zm grid is specified in vert_integrate" )
+      vertical_avg = -9.0e20
+      return
+      
+    endif
 
-       ! Keep vertical indices inside the bounds of the model.
-       k_start = max( 1, begin_idx )
-       k_end   = min( gr%nnzp, end_idx )
+    ! Keep vertical indices inside the bounds of the model.
+    k_start = max( 1, begin_idx )
+    k_end   = min( gr%nnzp, end_idx )
+     
+    ! Compute the numerator integral.
+    ! Multiply the variable 'field' at level k by rho at level k and by
+    ! the level thickness at level k.  Then, sum over all vertical levels.
+    ! Note:  The level thickness at level k is the distance between either
+    !        momentum level k and momentum level k-1, or
+    !        thermodynamic level k+1 and thermodynamic level k, depending
+    !        on which field grid is being analyzed. Thus, 1.0/dz(k)
+    !        is the level thickness for level k.
+    ! Note:  The values of 'field' and rho are passed into this function
+    !        so that field(1) and rho(1) are actually 'field' and rho
+    !        at the level k_start.
+       
+    numer_integral = sum( field(k_start:k_end) * rho(k_start:k_end) / &
+                              dz(k_start:k_end) )
+                              
+    ! Compute the denominator integral.
+    ! Multiply rho at level k by the level thickness
+    ! at level k.  Then, sum over all vertical levels.
+    denom_integral = sum( rho(k_start:k_end) / dz(k_start:k_end) )
 
-       ! Compute the numerator integral.
-       ! Multiply the variable 'field' at level k by rho_ds_zm at level k and by
-       ! the level thickness (for the momentum level) at level k.  Then, sum
-       ! over all vertical levels.
-       ! Note:  The level thickness at momentum level k is the distance between
-       !        thermodynamic level k+1 and thermodynamic level k.  Thus,
-       !        1.0/gr%dzm(k) is the level thickness for momentum level k.
-       ! Note:  The values of 'field' and rho_ds_zm are passed into this
-       !        function so that field(1) and rho_ds_zm(1) are actually 'field'
-       !        and rho_ds_zm at momentum level k_start.
-       numer_integral = sum( field(k_start:k_end) * rho_ds_zm(k_start:k_end) / gr%dzm(k_start:k_end) )
-
-       ! Compute the denominator integral.
-       ! Multiply rho_ds_zm at level k by the level thickness (for the momentum
-       ! level) at level k.  Then, sum over all vertical levels.
-       denom_integral = sum( rho_ds_zm(k_start:k_end) / gr%dzm(k_start:k_end) )
-
-       ! Find the vertical average of 'field'.
-       vertical_avg = numer_integral / denom_integral
-
-
-    case default
-
-       call clubb_debug( 0,  & 
-          "Neither zt nor zm grid is specified in vert_integrate" )
-       vertical_avg = -9.0e20
-
-
-    end select
-
+    ! Find the vertical average of 'field'.
+    vertical_avg = numer_integral / denom_integral
 
     return
   end function vertical_avg

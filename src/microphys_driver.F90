@@ -929,7 +929,7 @@ module microphys_driver
         kp1 = min( k+1, gr%nnzp )
         km1 = max( k-1, 1 )
         Lscale_vert_avg(k) = vertical_avg &
-                             ( km1, kp1, "zt", rho_ds_zt(km1:kp1), rho_ds_zm(km1:kp1), & ! In
+                             ( km1, kp1, "zt", rho_ds_zt(km1:kp1), & ! In
                                Lscale(km1:kp1) ) ! Out
       end do
     else
