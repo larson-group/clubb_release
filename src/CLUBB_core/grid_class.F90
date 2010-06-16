@@ -170,9 +170,9 @@ module grid_class
       zm, & ! Momentum grid
       zt    ! Thermo grid
     real, pointer, dimension(:) :: &
-      dzm, & ! The inverse spacing between thermodynamic grid
+      invrs_dzm, & ! The inverse spacing between thermodynamic grid
       !        levels; centered over momentum grid levels.
-      dzt    ! The inverse spacing between momentum grid levels;
+      invrs_dzt    ! The inverse spacing between momentum grid levels;
       !        centered over thermodynamic grid levels.
 
     ! These weights are normally used in situations
@@ -437,7 +437,7 @@ module grid_class
 
     ! Allocate memory for grid levels
     allocate( gr%zm(1:gr%nnzp), gr%zt(1:gr%nnzp), & 
-              gr%dzm(1:gr%nnzp), gr%dzt(1:gr%nnzp),  & 
+              gr%invrs_dzm(1:gr%nnzp), gr%invrs_dzt(1:gr%nnzp),  & 
               gr%weights_zm2zt(m_above:m_below,1:gr%nnzp), & 
               gr%weights_zt2zm(t_above:t_below,1:gr%nnzp), & 
               stat=ierr )
@@ -638,17 +638,17 @@ module grid_class
     ! Define dzm, which is the inverse spacing between thermodynamic grid
     ! levels; centered over momentum grid levels.
     do k=1,gr%nnzp-1
-      gr%dzm(k) = 1. / ( gr%zt(k+1) - gr%zt(k) )
+      gr%invrs_dzm(k) = 1. / ( gr%zt(k+1) - gr%zt(k) )
     enddo
-    gr%dzm(gr%nnzp) = gr%dzm(gr%nnzp-1)
+    gr%invrs_dzm(gr%nnzp) = gr%invrs_dzm(gr%nnzp-1)
 
 
     ! Define dzt, which is the inverse spacing between momentum grid levels;
     ! centered over thermodynamic grid levels.
     do k=2,gr%nnzp
-      gr%dzt(k) = 1. / ( gr%zm(k) - gr%zm(k-1) )
+      gr%invrs_dzt(k) = 1. / ( gr%zm(k) - gr%zm(k-1) )
     enddo
-    gr%dzt(1) = gr%dzt(2)
+    gr%invrs_dzt(1) = gr%invrs_dzt(2)
 
 
     ! Interpolation Weights: zm grid to zt grid.
@@ -1489,7 +1489,7 @@ module grid_class
     do k = gr%nnzp, 2, -1
       ! Take derivative of momentum-level variable azm over the central
       ! thermodynamic level (k).
-      gradzm(k) = ( azm(k) - azm(k-1) ) * gr%dzt(k)
+      gradzm(k) = ( azm(k) - azm(k-1) ) * gr%invrs_dzt(k)
     enddo
 !    ! Thermodynamic level 1 is located below momentum level 1, so there is not
 !    ! enough information to calculate the derivative over thermodynamic
@@ -1536,7 +1536,7 @@ module grid_class
     do k = 1, gr%nnzp-1, 1
       ! Take derivative of thermodynamic-level variable azt over the central
       ! momentum level (k).
-      gradzt(k) = ( azt(k+1) - azt(k) ) * gr%dzm(k)
+      gradzt(k) = ( azt(k+1) - azt(k) ) * gr%invrs_dzm(k)
     enddo
 !    ! Momentum level gr%nnzp is located above thermodynamic level gr%nnzp, so
 !    ! there is not enough information to calculate the derivative over momentum

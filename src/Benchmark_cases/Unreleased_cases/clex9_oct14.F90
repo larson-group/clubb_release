@@ -534,7 +534,7 @@ end if
     do k = 1, gr%nnzp
       rcm_rad(k) = rcm(gr%nnzp-k+1)
       rho_rad(k) = rho(gr%nnzp-k+1)
-      dsigm(k) = 1.0 / gr%dzt(gr%nnzp-k+1)
+      dsigm(k) = 1.0 / gr%invrs_dzt(gr%nnzp-k+1)
       coamps_zm(k) = gr%zm(gr%nnzp-k+1)
       coamps_zt(k) = gr%zt(gr%nnzp-k+1)
     enddo

@@ -147,7 +147,7 @@ module hydrostatic_module
     ! as well as at intermediate momentum level k-1.
     do k = 3, gr%nnzp
 
-       dthvm_dz = gr%dzm(k-1) * ( thvm(k) - thvm(k-1) )
+       dthvm_dz = gr%invrs_dzm(k-1) * ( thvm(k) - thvm(k-1) )
 
        if ( dthvm_dz /= 0.0 ) then
 

@@ -221,10 +221,10 @@ module advance_windm_edsclrm_module
     ! A Crank-Nicholson timestep is used.
 
     upwp(2:gr%nnzp-1) = - 0.5 * xpwp_fnc( Kh_zm(2:gr%nnzp-1), um(2:gr%nnzp-1), & ! in
-                                          um(3:gr%nnzp), gr%dzm(2:gr%nnzp-1) )   ! in
+                                          um(3:gr%nnzp), gr%invrs_dzm(2:gr%nnzp-1) )   ! in
 
     vpwp(2:gr%nnzp-1) = - 0.5 * xpwp_fnc( Kh_zm(2:gr%nnzp-1), vm(2:gr%nnzp-1), & ! in
-                                          vm(3:gr%nnzp), gr%dzm(2:gr%nnzp-1) )   ! in
+                                          vm(3:gr%nnzp), gr%invrs_dzm(2:gr%nnzp-1) )   ! in
 
     ! A zero-flux boundary condition at the top of the model, d(xm)/dz = 0,
     ! means that x'w' at the top model level is 0,
@@ -303,11 +303,11 @@ module advance_windm_edsclrm_module
     ! Solve for x'w' at all intermediate model levels.
     ! A Crank-Nicholson timestep is used.
 
-    upwp(2:gr%nnzp-1) = upwp(2:gr%nnzp-1) &
-      - 0.5 * xpwp_fnc( Kh_zm(2:gr%nnzp-1), um(2:gr%nnzp-1), um(3:gr%nnzp), gr%dzm(2:gr%nnzp-1) )!in
+    upwp(2:gr%nnzp-1) = upwp(2:gr%nnzp-1) - 0.5 * xpwp_fnc( Kh_zm(2:gr%nnzp-1), &
+      um(2:gr%nnzp-1), um(3:gr%nnzp), gr%invrs_dzm(2:gr%nnzp-1) )!in
 
-    vpwp(2:gr%nnzp-1) = vpwp(2:gr%nnzp-1) &
-      - 0.5 * xpwp_fnc( Kh_zm(2:gr%nnzp-1), vm(2:gr%nnzp-1), vm(3:gr%nnzp), gr%dzm(2:gr%nnzp-1) )!in
+    vpwp(2:gr%nnzp-1) = vpwp(2:gr%nnzp-1) - 0.5 * xpwp_fnc( Kh_zm(2:gr%nnzp-1), &
+      vm(2:gr%nnzp-1), vm(3:gr%nnzp), gr%invrs_dzm(2:gr%nnzp-1) )!in
 
 
     ! Adjust um and vm if nudging is turned on.
@@ -406,7 +406,7 @@ module advance_windm_edsclrm_module
       forall( i = 1:edsclr_dim )
         wpedsclrp(2:gr%nnzp-1,i) = &
           - 0.5 * xpwp_fnc( Kh_zm(2:gr%nnzp-1), edsclrm(2:gr%nnzp-1,i), & ! in
-                            edsclrm(3:gr%nnzp,i), gr%dzm(2:gr%nnzp-1) )   ! in
+                            edsclrm(3:gr%nnzp,i), gr%invrs_dzm(2:gr%nnzp-1) )   ! in
       end forall
 
       ! A zero-flux boundary condition at the top of the model, d(xm)/dz = 0,
@@ -447,7 +447,7 @@ module advance_windm_edsclrm_module
       forall( i = 1:edsclr_dim )
         wpedsclrp(2:gr%nnzp-1,i) = wpedsclrp(2:gr%nnzp-1,i) &
           - 0.5 * xpwp_fnc( Kh_zm(2:gr%nnzp-1), edsclrm(2:gr%nnzp-1,i), & ! in
-                            edsclrm(3:gr%nnzp,i), gr%dzm(2:gr%nnzp-1) )   ! in
+                            edsclrm(3:gr%nnzp,i), gr%invrs_dzm(2:gr%nnzp-1) )   ! in
       end forall
 
       ! Note that the w'edsclr' terms are not clipped, since we don't compute the
@@ -837,7 +837,7 @@ module advance_windm_edsclrm_module
     ! condition needs to be applied.  Thus, an adjuster will have to be used at
     ! level 2 to call diffusion_zt_lhs with level 1 as the input level (the last
     ! variable being passed in during the function call).  However, the other
-    ! variables passed in (rho_ds_zm*K_zm, gr%dzt, and gr%dzm variables) will
+    ! variables passed in (rho_ds_zm*K_zm, gr%invrs_dzt, and gr%invrs_dzm variables) will
     ! have to be passed in as solving for level 2.
     !
     ! The value of xm(1) is located below the model surface and does not effect
@@ -1407,7 +1407,7 @@ module advance_windm_edsclrm_module
 
         lhs(kp1_tdiag:km1_tdiag,k)  &
         = lhs(kp1_tdiag:km1_tdiag,k)  &
-        + term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
+        + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
 
       else
 
@@ -1436,7 +1436,7 @@ module advance_windm_edsclrm_module
       + 0.5 * invrs_rho_ds_zt(k)  &
       * diffusion_zt_lhs( rho_ds_zm(k) * Kh_zm(k),  &
                           rho_ds_zm(km1) * Kh_zm(km1), 0.0,  &
-                          gr%dzm(km1), gr%dzm(k), gr%dzt(k), diff_k_in )
+                          gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), diff_k_in )
 
       ! LHS time tendency.
       lhs(k_tdiag,k)  &
@@ -1449,7 +1449,7 @@ module advance_windm_edsclrm_module
         if ( ium_ma + ivm_ma > 0 ) then
           if ( .not. l_implemented ) then
             tmp(1:3) &
-            = term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
+            = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
             ztscr01(k) = -tmp(3)
             ztscr02(k) = -tmp(2)
             ztscr03(k) = -tmp(1)
@@ -1465,7 +1465,7 @@ module advance_windm_edsclrm_module
           = 0.5 * invrs_rho_ds_zt(k)  &
           * diffusion_zt_lhs( rho_ds_zm(k) * Kh_zm(k),  &
                               rho_ds_zm(km1) * Kh_zm(km1), 0.0,  &
-                              gr%dzm(km1), gr%dzm(k), gr%dzt(k), diff_k_in )
+                              gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), diff_k_in )
           ztscr04(k) = -tmp(3)
           ztscr05(k) = -tmp(2)
           ztscr06(k) = -tmp(1)
@@ -1497,7 +1497,7 @@ module advance_windm_edsclrm_module
       lhs(k_tdiag,2)  &
       = lhs(k_tdiag,2)  &
       + invrs_rho_ds_zt(2)  &
-        * gr%dzt(2)  &
+        * gr%invrs_dzt(2)  &
           * rho_ds_zm(1) * ( u_star_sqd / wind_speed(2) )
 
       if ( l_stats_samp ) then
@@ -1513,7 +1513,7 @@ module advance_windm_edsclrm_module
           ztscr05(2)  &
           = ztscr05(2)  &
           - invrs_rho_ds_zt(2)  &
-            * gr%dzt(2)  &
+            * gr%invrs_dzt(2)  &
               * rho_ds_zm(1) * ( u_star_sqd / wind_speed(2) )
         endif
 
@@ -1637,7 +1637,7 @@ module advance_windm_edsclrm_module
       = 0.5 * invrs_rho_ds_zt(k)  &
       * diffusion_zt_lhs( rho_ds_zm(k) * Kh_zm(k),  &
                           rho_ds_zm(km1) * Kh_zm(km1), 0.0,  &
-                          gr%dzm(km1), gr%dzm(k), gr%dzt(k), diff_k_in )
+                          gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), diff_k_in )
       rhs(k)   =   rhs(k) & 
                  - rhs_diff(3) * xm(km1) &
                  - rhs_diff(2) * xm(k)   &
@@ -1691,7 +1691,7 @@ module advance_windm_edsclrm_module
       rhs(2)  &
       = rhs(2)  &
       + invrs_rho_ds_zt(2)  &
-        * gr%dzt(2)  &
+        * gr%invrs_dzt(2)  &
           * rho_ds_zm(1) * xpwp_sfc
 
       if ( l_stats_samp ) then
@@ -1705,7 +1705,7 @@ module advance_windm_edsclrm_module
         if ( ixm_ta > 0 ) then
           call stat_modify_pt( ixm_ta, 2,  &
                                + invrs_rho_ds_zt(2)  &
-                                 * gr%dzt(2)  &
+                                 * gr%invrs_dzt(2)  &
                                    * rho_ds_zm(1) * xpwp_sfc,  &
                                zt )
         endif
@@ -1729,7 +1729,7 @@ module advance_windm_edsclrm_module
     = 0.5 * invrs_rho_ds_zt(k)  &
     * diffusion_zt_lhs( rho_ds_zm(k) * Kh_zm(k),  &
                         rho_ds_zm(km1) * Kh_zm(km1), 0.0,  &
-                        gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+                        gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
     rhs(k)   =   rhs(k) &
                - rhs_diff(3) * xm(km1) &
                - rhs_diff(2) * xm(k)

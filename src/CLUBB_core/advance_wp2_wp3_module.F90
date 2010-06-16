@@ -1048,18 +1048,18 @@ contains
       ! LHS mean advection (ma) term.
       lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
       = lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
-      + term_ma_zm_lhs( wm_zm(k), gr%dzm(k), k )
+      + term_ma_zm_lhs( wm_zm(k), gr%invrs_dzm(k), k )
 
       ! LHS turbulent advection (ta) term.
       lhs((/m_kp1_tdiag,m_k_tdiag/),k_wp2) & 
       = lhs((/m_kp1_tdiag,m_k_tdiag/),k_wp2) & 
       + wp2_term_ta_lhs( rho_ds_zt(kp1), rho_ds_zt(k), &
-                         invrs_rho_ds_zm(k), gr%dzm(k) )
+                         invrs_rho_ds_zm(k), gr%invrs_dzm(k) )
 
       ! LHS accumulation (ac) term and pressure term 2 (pr2).
       lhs(m_k_mdiag,k_wp2) & 
       = lhs(m_k_mdiag,k_wp2) & 
-      + wp2_terms_ac_pr2_lhs( C5, wm_zt(kp1), wm_zt(k), gr%dzm(k)  )
+      + wp2_terms_ac_pr2_lhs( C5, wm_zt(kp1), wm_zt(k), gr%invrs_dzm(k)  )
 
       ! LHS dissipation term 1 (dp1).
       ! Note:  An "over-implicit" weighted time step is applied to this term.
@@ -1078,13 +1078,13 @@ contains
         = lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
         + (1.0/2.0) & 
         * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
-                            gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+                            gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(k), k )
       else
         ! Eddy diffusion for wp2 using a completely implicit time step.
         lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
         = lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
         + diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
-                            gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+                            gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(k), k )
       endif
 
       ! LHS pressure term 1 (pr1).
@@ -1105,9 +1105,9 @@ contains
          ! Note:  w'^2 uses fixed-point boundary conditions.
          lhs((/m_kp2_mdiag,m_kp1_mdiag,m_k_mdiag,m_km1_mdiag,m_km2_mdiag/),k_wp2) &
          = lhs((/m_kp2_mdiag,m_kp1_mdiag,m_k_mdiag,m_km1_mdiag,m_km2_mdiag/),k_wp2) &
-         + hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd, gr%dzm(k),  &
-                                      gr%dzt(kp1), gr%dzt(k), gr%dzm(kp1),  &
-                                      gr%dzm(km1), gr%dzt(kp2), gr%dzt(km1), k )
+         + hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd, gr%invrs_dzm(k),  &
+                                      gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(kp1),  &
+                                      gr%invrs_dzm(km1), gr%invrs_dzt(kp2), gr%invrs_dzt(km1), k )
       endif
 
       if ( l_stats_samp ) then
@@ -1130,12 +1130,12 @@ contains
             tmp(1:3) & 
             = (1.0/2.0) & 
             * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
-                              gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+                              gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(k), k )
           else
             ! Eddy diffusion for wp2 using a completely implicit time step.
             tmp(1:3) & 
             = diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
-                                gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+                                gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(k), k )
           endif
 
           zmscr02(k) = -tmp(3)
@@ -1147,14 +1147,14 @@ contains
         if ( iwp2_ta > 0 ) then
           tmp(1:2) =  & 
           + wp2_term_ta_lhs( rho_ds_zt(kp1), rho_ds_zt(k), &
-                             invrs_rho_ds_zm(k), gr%dzm(k) )
+                             invrs_rho_ds_zm(k), gr%invrs_dzm(k) )
           zmscr05(k) = -tmp(2)
           zmscr06(k) = -tmp(1)
         endif
 
         if ( iwp2_ma > 0 ) then
           tmp(1:3) = & 
-          + term_ma_zm_lhs( wm_zm(k), gr%dzm(k), k )
+          + term_ma_zm_lhs( wm_zm(k), gr%invrs_dzm(k), k )
           zmscr07(k) = -tmp(3)
           zmscr08(k) = -tmp(2)
           zmscr09(k) = -tmp(1)
@@ -1164,7 +1164,7 @@ contains
         !        C_5 input to function wp2_terms_ac_pr2_lhs.
         if ( iwp2_ac > 0 ) then
           zmscr10(k) =  & 
-          - wp2_terms_ac_pr2_lhs( 0.0, wm_zt(kp1), wm_zt(k), gr%dzm(k)  )
+          - wp2_terms_ac_pr2_lhs( 0.0, wm_zt(kp1), wm_zt(k), gr%invrs_dzm(k)  )
         endif
 
         ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
@@ -1172,7 +1172,7 @@ contains
         if ( iwp2_pr2 > 0 ) then
           zmscr11(k) =  & 
           - wp2_terms_ac_pr2_lhs( (1.0+C5), wm_zt(kp1), wm_zt(k),  & 
-                                  gr%dzm(k)  )
+                                  gr%invrs_dzm(k)  )
         endif
 
         ! Note:  An "over-implicit" weighted time step is applied to this term.
@@ -1187,9 +1187,9 @@ contains
 
         if ( iwp2_4hd > 0 .and. l_hyper_dfsn ) then
           tmp(1:5) = &
-          hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd, gr%dzm(k),  &
-                                     gr%dzt(kp1), gr%dzt(k), gr%dzm(kp1),  &
-                                     gr%dzm(km1), gr%dzt(kp2), gr%dzt(km1), k )
+          hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd, gr%invrs_dzm(k),  &
+                                     gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(kp1),  &
+                                     gr%invrs_dzm(km1), gr%invrs_dzt(kp2), gr%invrs_dzt(km1), k )
           zmscr13(k) = -tmp(5)
           zmscr14(k) = -tmp(4)
           zmscr15(k) = -tmp(3)
@@ -1231,7 +1231,7 @@ contains
       ! LHS mean advection (ma) term.
       lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
       = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
-      + term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
+      + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
 
       ! LHS turbulent advection (ta) and turbulent production (tp) terms.
       ! Note:  An "over-implicit" weighted time step is applied to these terms.
@@ -1256,13 +1256,13 @@ contains
                              rho_ds_zm(k), rho_ds_zm(km1),  &
                              invrs_rho_ds_zt(k),  &
                              three_halves,  &
-                             gr%dzt(k), k )
+                             gr%invrs_dzt(k), k )
 
       ! LHS accumulation (ac) term and pressure term 2 (pr2).
       lhs(t_k_tdiag,k_wp3) & 
       = lhs(t_k_tdiag,k_wp3) & 
       + wp3_terms_ac_pr2_lhs( C11_Skw_fnc(k), & 
-                              wm_zm(k), wm_zm(km1), gr%dzt(k) )
+                              wm_zm(k), wm_zm(km1), gr%invrs_dzt(k) )
 
       ! LHS pressure term 1 (pr1).
       ! Note:  An "over-implicit" weighted time step is applied to this term.
@@ -1280,14 +1280,14 @@ contains
         = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
         + C12 * (1.0/2.0) & 
         * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
-                            gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+                            gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
       else
         ! Eddy diffusion for wp3 using a completely implicit time step.
         lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
         = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
         + C12  & 
         * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
-                            gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+                            gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
       endif
 
       ! LHS 4th-order hyper-diffusion (4hd).
@@ -1295,9 +1295,9 @@ contains
          ! Note:  w'^3 uses fixed-point boundary conditions.
          lhs((/t_kp2_tdiag,t_kp1_tdiag,t_k_tdiag,t_km1_tdiag,t_km2_tdiag/),k_wp3) &
          = lhs((/t_kp2_tdiag,t_kp1_tdiag,t_k_tdiag,t_km1_tdiag,t_km2_tdiag/),k_wp3) &
-         + hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd, gr%dzt(k),  &
-                                      gr%dzm(k), gr%dzm(km1), gr%dzt(kp1),  &
-                                      gr%dzt(km1), gr%dzm(kp1), gr%dzm(km2), k )
+         + hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd, gr%invrs_dzt(k),  &
+                                      gr%invrs_dzm(k), gr%invrs_dzm(km1), gr%invrs_dzt(kp1),  &
+                                      gr%invrs_dzt(km1), gr%invrs_dzm(kp1), gr%invrs_dzm(km2), k )
       endif
 
       if (l_stats_samp) then
@@ -1321,7 +1321,7 @@ contains
                                  rho_ds_zm(k), rho_ds_zm(km1),  &
                                  invrs_rho_ds_zt(k),  &
                                  0.0,  &
-                                 gr%dzt(k), k )
+                                 gr%invrs_dzt(k), k )
           ztscr05(k) = -tmp(5)
           ztscr06(k) = -tmp(4)
           ztscr07(k) = -tmp(3)
@@ -1346,14 +1346,14 @@ contains
                                  rho_ds_zm(k), rho_ds_zm(km1),  &
                                  invrs_rho_ds_zt(k),  &
                                  three_halves,  &
-                                 gr%dzt(k), k )
+                                 gr%invrs_dzt(k), k )
           ztscr10(k) = -tmp(4)
           ztscr11(k) = -tmp(2)
         endif
 
         if ( iwp3_ma > 0 ) then
           tmp(1:3) = & 
-          term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
+          term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
           ztscr12(k) = -tmp(3)
           ztscr13(k) = -tmp(2)
           ztscr14(k) = -tmp(1)
@@ -1364,7 +1364,7 @@ contains
         if ( iwp3_ac > 0 ) then
           ztscr15(k) =  & 
           - wp3_terms_ac_pr2_lhs( 0.0, & 
-                                  wm_zm(k), wm_zm(km1), gr%dzt(k) )
+                                  wm_zm(k), wm_zm(km1), gr%invrs_dzt(k) )
         endif
 
         ! Note:  To find the contribution of w'^3 term pr2, add 1 to the
@@ -1372,7 +1372,7 @@ contains
         if ( iwp3_pr2 > 0 ) then
           ztscr16(k) = & 
           - wp3_terms_ac_pr2_lhs( (1.0+C11_Skw_fnc(k)), & 
-                                  wm_zm(k), wm_zm(km1), gr%dzt(k) )
+                                  wm_zm(k), wm_zm(km1), gr%invrs_dzt(k) )
         endif
 
         ! Note:  An "over-implicit" weighted time step is applied to this term.
@@ -1391,13 +1391,13 @@ contains
             tmp(1:3) & 
             = C12 * (1.0/2.0) & 
             * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
-                                gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+                                gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
           else
             ! Eddy diffusion for wp3 using a completely implicit time step.
             tmp(1:3) & 
             = C12  & 
             * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
-                                gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+                                gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
           endif
 
           ztscr02(k) = -tmp(3)
@@ -1408,9 +1408,9 @@ contains
 
         if ( iwp3_4hd > 0 .and. l_hyper_dfsn ) then
           tmp(1:5) = &
-          hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd, gr%dzt(k),  &
-                                     gr%dzm(k), gr%dzm(km1), gr%dzt(kp1),  &
-                                     gr%dzt(km1), gr%dzm(kp1), gr%dzm(km2), k )
+          hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd, gr%invrs_dzt(k),  &
+                                     gr%invrs_dzm(k), gr%invrs_dzm(km1), gr%invrs_dzt(kp1),  &
+                                     gr%invrs_dzt(km1), gr%invrs_dzm(kp1), gr%invrs_dzm(km2), k )
           ztscr17(k) = -tmp(5)
           ztscr18(k) = -tmp(4)
           ztscr19(k) = -tmp(3)
@@ -1615,7 +1615,7 @@ contains
       rhs(k_wp2) & 
       = rhs(k_wp2) & 
       + wp2_term_pr3_rhs( C5, thv_ds_zm(k), wpthvp(k), upwp(k), um(kp1), &
-                          um(k), vpwp(k), vm(kp1), vm(k), gr%dzm(k) )
+                          um(k), vpwp(k), vm(kp1), vm(k), gr%invrs_dzm(k) )
 
       ! RHS dissipation term 1 (dp1).
       rhs(k_wp2) &
@@ -1643,7 +1643,7 @@ contains
         rhs_diff(1:3) & 
         = (1.0/2.0) & 
         * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
-                            gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+                            gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(k), k )
         rhs(k_wp2)   =   rhs(k_wp2) & 
                        - rhs_diff(3) * wp2(km1) & 
                        - rhs_diff(2) * wp2(k) & 
@@ -1742,7 +1742,7 @@ contains
         ! w'^2 term pr3 is completely explicit; call stat_update_var_pt.
         call stat_update_var_pt( iwp2_pr3, k, & 
           wp2_term_pr3_rhs( C5, thv_ds_zm(k), wpthvp(k), upwp(k), um(kp1), &
-                            um(k), vpwp(k), vm(kp1), vm(k), gr%dzm(k) ), &
+                            um(k), vpwp(k), vm(kp1), vm(k), gr%invrs_dzm(k) ), &
                                  zm )
 
       endif
@@ -1767,7 +1767,7 @@ contains
                              rho_ds_zm(k), rho_ds_zm(km1),  &
                              invrs_rho_ds_zt(k),  &
                              three_halves,  &
-                             gr%dzt(k) )
+                             gr%invrs_dzt(k) )
 
       ! RHS contribution from "over-implicit" weighted time step
       ! for LHS turbulent advection (ta) and turbulent production (tp) terms.
@@ -1792,7 +1792,7 @@ contains
                              rho_ds_zm(k), rho_ds_zm(km1),  &
                              invrs_rho_ds_zt(k),  &
                              three_halves,  &
-                             gr%dzt(k), k )
+                             gr%invrs_dzt(k), k )
       rhs(k_wp3)  & 
       = rhs(k_wp3)  &
       + ( 1.0 - gamma_over_implicit_ts )  &
@@ -1830,7 +1830,7 @@ contains
         rhs_diff(1:3) & 
         = C12 * (1.0/2.0) & 
         * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
-                            gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+                            gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
         rhs(k_wp3)   =   rhs(k_wp3) & 
                        - rhs_diff(3) * wp3(km1) & 
                        - rhs_diff(2) * wp3(k) & 
@@ -1855,7 +1855,7 @@ contains
                                 rho_ds_zm(k), rho_ds_zm(km1),  &
                                 invrs_rho_ds_zt(k),  &
                                 0.0,  &
-                                gr%dzt(k) ),  &
+                                gr%invrs_dzt(k) ),  &
                                    zt )
 
         ! Note:  An "over-implicit" weighted time step is applied to this term.
@@ -1870,7 +1870,7 @@ contains
                                rho_ds_zm(k), rho_ds_zm(km1),  &
                                invrs_rho_ds_zt(k),  &
                                0.0,  &
-                               gr%dzt(k), k )
+                               gr%invrs_dzt(k), k )
         call stat_modify_pt( iwp3_ta, k,  &
                              + ( 1.0 - gamma_over_implicit_ts )  &
                              * ( - lhs_fnc_output(1) * wp3(kp1)  &
@@ -1893,7 +1893,7 @@ contains
                                 rho_ds_zm(k), rho_ds_zm(km1),  &
                                 invrs_rho_ds_zt(k),  &
                                 three_halves,  &
-                                gr%dzt(k) ),  &
+                                gr%invrs_dzt(k) ),  &
                                    zt )
 
         ! Note:  An "over-implicit" weighted time step is applied to this term.
@@ -1908,7 +1908,7 @@ contains
                                rho_ds_zm(k), rho_ds_zm(km1), &
                                invrs_rho_ds_zt(k), &
                                three_halves, &
-                               gr%dzt(k), k )
+                               gr%invrs_dzt(k), k )
         call stat_modify_pt( iwp3_tp, k,  &
                              + ( 1.0 - gamma_over_implicit_ts )  &
                              * ( - lhs_fnc_output(2) * wp2(k)  &

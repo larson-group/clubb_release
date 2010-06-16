@@ -488,7 +488,7 @@ module mono_flux_limiter
        ! m_adv_term = -wm_zt(k)*d(xm)/dz|_(k).
        ! Note:  mean advection is not applied to xm at level gr%nnzp.
        !if ( .not. l_implemented .and. k < gr%nnzp ) then
-       !   tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
+       !   tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
        !   m_adv_term = - tmp(1) * xm(kp1)  &
        !                - tmp(2) * xm(k)  &
        !                - tmp(3) * xm(km1)
@@ -545,14 +545,14 @@ module mono_flux_limiter
        ! Find the upper limit for w'x' for a monotonic turbulent flux.
        wpxp_mfl_upper_lim(k)  &
        = real( invrs_rho_ds_zm(k)  &
-                  * (   ( rho_ds_zt(k) / (dt*gr%dzt(k)) )  &
+                  * (   ( rho_ds_zt(k) / (dt*gr%invrs_dzt(k)) )  &
                         * ( xm_without_ta(k) - min_x_allowable(k) )  &
                       + rho_ds_zm(km1) * wpxp(km1)  )           )
 
        ! Find the lower limit for w'x' for a monotonic turbulent flux.
        wpxp_mfl_lower_lim(k)  &
        = real( invrs_rho_ds_zm(k)  &
-                  * (   ( rho_ds_zt(k) / (dt*gr%dzt(k)) )  &
+                  * (   ( rho_ds_zt(k) / (dt*gr%invrs_dzt(k)) )  &
                         * ( xm_without_ta(k) - max_x_allowable(k) )  &
                       + rho_ds_zm(km1) * wpxp(km1)  )           )
 
@@ -569,7 +569,7 @@ module mono_flux_limiter
           !print *, "1/rho_ds_zm(k) = ", invrs_rho_ds_zm(k)
           !print *, "rho_ds_zt(k) = ", rho_ds_zt(k)
           !print *, "rho_ds_zt(k)*(delta_zt/dt) = ",  &
-          !             real( rho_ds_zt(k) / (dt*gr%dzt(k)) )
+          !             real( rho_ds_zt(k) / (dt*gr%invrs_dzt(k)) )
           !print *, "xm without ta - min x allow = ",  &
           !             xm_without_ta(k) - min_x_allowable(k)
           !print *, "rho_ds_zm(km1) = ", rho_ds_zm(km1)
@@ -598,7 +598,7 @@ module mono_flux_limiter
           !print *, "1/rho_ds_zm(k) = ", invrs_rho_ds_zm(k)
           !print *, "rho_ds_zt(k) = ", rho_ds_zt(k)
           !print *, "rho_ds_zt(k)*(delta_zt/dt) = ",  &
-          !             real( rho_ds_zt(k) / (dt*gr%dzt(k)) )
+          !             real( rho_ds_zt(k) / (dt*gr%invrs_dzt(k)) )
           !print *, "xm without ta - max x allow = ",  &
           !             xm_without_ta(k) - max_x_allowable(k)
           !print *, "rho_ds_zm(km1) = ", rho_ds_zm(km1)
@@ -629,7 +629,7 @@ module mono_flux_limiter
        !      print *, "1/rho_ds_zm(k) = ", invrs_rho_ds_zm(k)
        !      print *, "rho_ds_zt(k) = ", rho_ds_zt(k)
        !      print *, "rho_ds_zt(k)*(delta_zt/dt) = ",  &
-       !                   real( rho_ds_zt(k) / (dt*gr%dzt(k)) )
+       !                   real( rho_ds_zt(k) / (dt*gr%invrs_dzt(k)) )
        !      print *, "xm without ta - min x allow = ",  &
        !                   xm_without_ta(k) - min_x_allowable(k)
        !      print *, "xm without ta - max x allow = ",  &
@@ -714,7 +714,7 @@ module mono_flux_limiter
              ! flux limiter.
              dxm_dt_mfl_adjust(k)  &
              = - invrs_rho_ds_zt(k)  &
-                 * gr%dzt(k)  &
+                 * gr%invrs_dzt(k)  &
                    * (   rho_ds_zm(k) * wpxp_net_adjust(k)  &
                        - rho_ds_zm(km1) * wpxp_net_adjust(km1) )
 
@@ -745,7 +745,7 @@ module mono_flux_limiter
                                 * dz
 
           xm_vert_integral = sum(xm(2:gr%nnzp - 1) * rho_ds_zt(2:gr%nnzp - 1) &
-                             / gr%dzt(2:gr%nnzp - 1))
+                             / gr%invrs_dzt(2:gr%nnzp - 1))
 
           !Check to ensure the vertical integral is not zero to avoid a divide
           !by zero error
@@ -772,12 +772,12 @@ module mono_flux_limiter
              xm(gr%nnzp) = xm_enter_mfl(gr%nnzp)
 
              !This code can be uncommented to ensure conservation
-             !if (abs(sum(rho_ds_zt(2:gr%nnzp) * xm(2:gr%nnzp) / gr%dzt(2:gr%nnzp)) - & 
-             !    sum(rho_ds_zt(2:gr%nnzp) * xm_enter_mfl(2:gr%nnzp) / gr%dzt(2:gr%nnzp))) &
+             !if (abs(sum(rho_ds_zt(2:gr%nnzp) * xm(2:gr%nnzp) / gr%invrs_dzt(2:gr%nnzp)) - & 
+             !    sum(rho_ds_zt(2:gr%nnzp) * xm_enter_mfl(2:gr%nnzp) / gr%invrs_dzt(2:gr%nnzp))) &
              !    > (1000 * xm_tol)) then
              !   write(fstderr,*) "NON-CONSERVATION in MFL", trim( solve_type ), &
-             !      abs(sum(rho_ds_zt(2:gr%nnzp) * xm(2:gr%nnzp) / gr%dzt(2:gr%nnzp)) - &
-             !       sum(rho_ds_zt(2:gr%nnzp) * xm_enter_mfl(2:gr%nnzp) / gr%dzt(2:gr%nnzp)))
+             !      abs(sum(rho_ds_zt(2:gr%nnzp) * xm(2:gr%nnzp) / gr%invrs_dzt(2:gr%nnzp)) - &
+             !       sum(rho_ds_zt(2:gr%nnzp) * xm_enter_mfl(2:gr%nnzp) / gr%invrs_dzt(2:gr%nnzp)))
              !
              !   write(fstderr,*) "XM_ENTER_MFL=", xm_enter_mfl 
              !   write(fstderr,*) "XM_AFTER_SPIKE_REMOVAL", xm 
@@ -878,7 +878,7 @@ module mono_flux_limiter
 
           lhs(kp1_tdiag:km1_tdiag,k) & 
           = lhs(kp1_tdiag:km1_tdiag,k) &
-          + term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
+          + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
 
        else
 
@@ -976,7 +976,7 @@ module mono_flux_limiter
        rhs(k) &
        = rhs(k) &
        - invrs_rho_ds_zt(k)  &
-         * gr%dzt(k) * ( rho_ds_zm(k) * wpxp(k) - rho_ds_zm(km1) * wpxp(km1) )
+         * gr%invrs_dzt(k) * ( rho_ds_zm(k) * wpxp(k) - rho_ds_zm(km1) * wpxp(km1) )
 
        ! RHS xm forcings.
        ! Note: xm forcings include the effects of microphysics,
@@ -1262,7 +1262,7 @@ module mono_flux_limiter
 
                 ! Compute the amount of time it takes to travel one grid level
                 ! upwards:  delta_t = delta_z / vert_vel_up.
-                dt_one_grid_lev = (1.0/gr%dzm(j)) / vert_vel_up(j)
+                dt_one_grid_lev = (1.0/gr%invrs_dzm(j)) / vert_vel_up(j)
 
                 ! Total time elapsed for crossing all grid levels that have been
                 ! passed, thus far.
@@ -1339,7 +1339,7 @@ module mono_flux_limiter
                 !        distance traveled is downwards.  Since vert_vel_down
                 !        has a negative value, dt_one_grid_lev will be a
                 !        positive value.
-                dt_one_grid_lev = -(1.0/gr%dzm(j-1)) / vert_vel_down(j-1)
+                dt_one_grid_lev = -(1.0/gr%invrs_dzm(j-1)) / vert_vel_down(j-1)
 
                 ! Total time elapsed for crossing all grid levels that have been
                 ! passed, thus far.

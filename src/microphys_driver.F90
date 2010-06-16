@@ -919,8 +919,8 @@ module microphys_driver
     wtmp(:) = sqrt( wp2_zt(:) )
 
     ! Compute difference in thermodynamic height levels
-    delta_zt(1:gr%nnzp) = 1./gr%dzm(1:gr%nnzp)
-    delta_zm(1:gr%nnzp) = 1./gr%dzt(1:gr%nnzp)
+    delta_zt(1:gr%nnzp) = 1./gr%invrs_dzm(1:gr%nnzp)
+    delta_zm(1:gr%nnzp) = 1./gr%invrs_dzt(1:gr%nnzp)
 
     if ( l_latin_hypercube_sampling .and. l_lh_vert_overlap ) then
       ! Determine 3pt vertically averaged Lscale
@@ -1883,18 +1883,18 @@ module microphys_driver
             ( Kr(k), Kr(km1), cloud_frac_zt(k), cloud_frac_zt(k-1), &
               cloud_frac_zt(k+1), cloud_frac_zm(k), &
               cloud_frac_zm(k-1), &
-              nu, gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+              nu, gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
         else ! All other cases
           lhs(kp1_tdiag:km1_tdiag,k) & 
           = lhs(kp1_tdiag:km1_tdiag,k) & 
           + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
-                            gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+                            gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
         end if
 
         ! LHS mean advection term.
         lhs(kp1_tdiag:km1_tdiag,k) & 
         = lhs(kp1_tdiag:km1_tdiag,k) & 
-        + term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
+        + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
 
         ! LHS hydrometeor sedimentation term.
         ! Note: originally pristine ice did not sediment, so it was
@@ -1903,7 +1903,7 @@ module microphys_driver
         if ( l_sed ) then
           lhs(kp1_tdiag:km1_tdiag,k) & 
           = lhs(kp1_tdiag:km1_tdiag,k) & 
-          + sedimentation( V_hm(k), V_hm(km1), gr%dzt(k), k )
+          + sedimentation( V_hm(k), V_hm(km1), gr%invrs_dzt(k), k )
         end if
 
         if ( l_stats_samp ) then
@@ -1911,14 +1911,14 @@ module microphys_driver
           ! Statistics:  implicit contributions to hydrometeor xrm.
 
           if ( ixrm_ma > 0 ) then
-            tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
+            tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
             ztscr01(k) = -tmp(3)
             ztscr02(k) = -tmp(2)
             ztscr03(k) = -tmp(1)
           end if
 
           if ( ixrm_sd > 0 .and. l_sed ) then
-            tmp(1:3) = sedimentation( V_hm(k), V_hm(km1), gr%dzt(k), k )
+            tmp(1:3) = sedimentation( V_hm(k), V_hm(km1), gr%invrs_dzt(k), k )
             ztscr04(k) = -tmp(3)
             ztscr05(k) = -tmp(2)
             ztscr06(k) = -tmp(1)
@@ -1930,7 +1930,7 @@ module microphys_driver
               ( Kr(k), Kr(km1), cloud_frac_zt(k), cloud_frac_zt(k-1), &
                 cloud_frac_zt(k+1), cloud_frac_zm(k), &
                 cloud_frac_zm(k-1), &
-                nu, gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+                nu, gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
             ztscr07(k) = -tmp(3)
             ztscr08(k) = -tmp(2)
             ztscr09(k) = -tmp(1)
@@ -1938,7 +1938,7 @@ module microphys_driver
           else if ( ixrm_dff > 0 ) then
             tmp(1:3) & 
             = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
-                                gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+                                gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
             ztscr07(k) = -tmp(3)
             ztscr08(k) = -tmp(2)
             ztscr09(k) = -tmp(1)
@@ -1974,7 +1974,7 @@ module microphys_driver
       lhs(kp1_tdiag:km1_tdiag,k) &
       = lhs(kp1_tdiag:km1_tdiag,k) &
       + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  &
-                          gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+                          gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
 
       if ( l_stats_samp ) then
 
@@ -1983,7 +1983,7 @@ module microphys_driver
         if ( ixrm_dff > 0 ) then
           tmp(1:3) & 
           = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
-                              gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+                              gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
           ztscr07(k) = -tmp(3)
           ztscr08(k) = -tmp(2)
           ztscr09(k) = -tmp(1)
@@ -2003,7 +2003,7 @@ module microphys_driver
       lhs(kp1_tdiag:km1_tdiag,k) &
       = lhs(kp1_tdiag:km1_tdiag,k) &
       + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  &
-                          gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+                          gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
 
       if ( l_stats_samp ) then
 
@@ -2012,7 +2012,7 @@ module microphys_driver
         if ( ixrm_dff > 0 ) then
           tmp(1:3) & 
           = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
-                              gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+                              gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
           ztscr07(k) = -tmp(3)
           ztscr08(k) = -tmp(2)
           ztscr09(k) = -tmp(1)
@@ -2468,7 +2468,7 @@ module microphys_driver
 
       ! The implicit (LHS) value of the mean advection component of the equation
       ! used during the timestep that was just solved for.
-      tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
+      tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
 
       ma_subdiag  = -tmp(3) ! subdiagonal
       ma_maindiag = -tmp(2) ! main diagonal
@@ -2487,7 +2487,7 @@ module microphys_driver
         ! The implicit (LHS) value of the sedimentation component of the equation
         ! used during the timestep that was just solved for.
         tmp(1:3) = sedimentation( V_hm(k), V_hm(km1),  & 
-                                  gr%dzt(k), k )
+                                  gr%invrs_dzt(k), k )
 
         sd_subdiag  = -tmp(3) ! subdiagonal
         sd_maindiag = -tmp(2) ! main diagonal
@@ -2511,7 +2511,7 @@ module microphys_driver
       ! during the timestep that was just solved for.
       tmp(1:3) & 
          = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
-                             gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+                             gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
 
       df_subdiag  = -tmp(3) ! subdiagonal
       df_maindiag = -tmp(2) ! main diagonal

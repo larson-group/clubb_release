@@ -947,7 +947,7 @@ module advance_xm_wpxp_module
 
         lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_xm) & 
         = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_xm) & 
-        + term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
+        + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
 
       else
 
@@ -960,7 +960,7 @@ module advance_xm_wpxp_module
       lhs((/t_k_mdiag,t_km1_mdiag/),k_xm) & 
       = lhs((/t_k_mdiag,t_km1_mdiag/),k_xm) & 
       + xm_term_ta_lhs( rho_ds_zm(k), rho_ds_zm(km1), &
-                        invrs_rho_ds_zt(k), gr%dzt(k) )
+                        invrs_rho_ds_zt(k), gr%invrs_dzt(k) )
 
       ! LHS time tendency.
       lhs(t_k_tdiag,k_xm) & 
@@ -973,7 +973,7 @@ module advance_xm_wpxp_module
         if ( irtm_ma > 0 .or. ithlm_ma > 0 ) then
           if ( .not. l_implemented ) then
             tmp(1:3) =  & 
-            + term_ma_zt_lhs( wm_zt(k), gr%dzt(k), k )
+            + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
             ztscr01(k) = - tmp(3)
             ztscr02(k) = - tmp(2)
             ztscr03(k) = - tmp(1)
@@ -987,7 +987,7 @@ module advance_xm_wpxp_module
         if ( irtm_ta > 0 .or. ithlm_ta > 0 ) then
           tmp(1:2) = & 
           + xm_term_ta_lhs( rho_ds_zm(k), rho_ds_zm(km1), &
-                            invrs_rho_ds_zt(k), gr%dzt(k) )
+                            invrs_rho_ds_zt(k), gr%invrs_dzt(k) )
           ztscr04(k) = - tmp(2)
           ztscr05(k) = - tmp(1)
         endif
@@ -1029,7 +1029,7 @@ module advance_xm_wpxp_module
       ! LHS mean advection (ma) term.
       lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wpxp) & 
       = lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wpxp) & 
-      + term_ma_zm_lhs( wm_zm(k), gr%dzm(k), k )
+      + term_ma_zm_lhs( wm_zm(k), gr%invrs_dzm(k), k )
 
       ! LHS turbulent advection (ta) term.
       ! Note:  An "over-implicit" weighted time step is applied to this term.
@@ -1051,18 +1051,18 @@ module advance_xm_wpxp_module
                           a1_zt(kp1), a1_zt(k),  & 
                           rho_ds_zt(kp1), rho_ds_zt(k),  &
                           invrs_rho_ds_zm(k),  &
-                          wp3(kp1), wp3(k), gr%dzm(k), k )
+                          wp3(kp1), wp3(k), gr%invrs_dzm(k), k )
 
       ! LHS turbulent production (tp) term.
       lhs((/m_kp1_tdiag,m_k_tdiag/),k_wpxp) & 
       = lhs((/m_kp1_tdiag,m_k_tdiag/),k_wpxp) & 
-      + wpxp_term_tp_lhs( wp2(k), gr%dzm(k) )
+      + wpxp_term_tp_lhs( wp2(k), gr%invrs_dzm(k) )
 
       ! LHS accumulation (ac) term and pressure term 2 (pr2).
       lhs(m_k_mdiag,k_wpxp) & 
       = lhs(m_k_mdiag,k_wpxp) & 
       + wpxp_terms_ac_pr2_lhs( C7_Skw_fnc(k),  & 
-                               wm_zt(kp1), wm_zt(k), gr%dzm(k) )
+                               wm_zt(kp1), wm_zt(k), gr%invrs_dzm(k) )
 
       ! LHS pressure term 1 (pr1).
       ! Note:  An "over-implicit" weighted time step is applied to this term.
@@ -1075,7 +1075,7 @@ module advance_xm_wpxp_module
       lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wpxp) & 
       = lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wpxp) & 
       + diffusion_zm_lhs( Kw6(k), Kw6(kp1), nu6, & 
-                          gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+                          gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(k), k )
 
       ! LHS time tendency.
       if (l_iter) lhs(m_k_mdiag,k_wpxp)  &
@@ -1098,7 +1098,7 @@ module advance_xm_wpxp_module
 
         if ( iwprtp_ma > 0 .or. iwpthlp_ma > 0 ) then
           tmp(1:3) = & 
-          + term_ma_zm_lhs( wm_zm(k), gr%dzm(k), k )
+          + term_ma_zm_lhs( wm_zm(k), gr%invrs_dzm(k), k )
           zmscr01(k) = - tmp(3)
           zmscr02(k) = - tmp(2)
           zmscr03(k) = - tmp(1)
@@ -1115,7 +1115,7 @@ module advance_xm_wpxp_module
                               a1_zt(kp1), a1_zt(k),  &
                               rho_ds_zt(kp1), rho_ds_zt(k),  &
                               invrs_rho_ds_zm(k),  &
-                              wp3(kp1), wp3(k), gr%dzm(k), k )
+                              wp3(kp1), wp3(k), gr%invrs_dzm(k), k )
           zmscr04(k) = - tmp(3)
           zmscr05(k) = - tmp(2)
           zmscr06(k) = - tmp(1)
@@ -1123,7 +1123,7 @@ module advance_xm_wpxp_module
 
         if ( iwprtp_tp > 0 .or. iwpthlp_tp > 0 ) then
           tmp(1:2) = & 
-          + wpxp_term_tp_lhs( wp2(k), gr%dzm(k) )
+          + wpxp_term_tp_lhs( wp2(k), gr%invrs_dzm(k) )
           zmscr07(k) = - tmp(2)
           zmscr08(k) = - tmp(1)
         endif
@@ -1133,7 +1133,7 @@ module advance_xm_wpxp_module
         if ( iwprtp_ac > 0 .or. iwpthlp_ac > 0 ) then
           zmscr09(k) =  & 
           - wpxp_terms_ac_pr2_lhs( 0.0, & 
-                                   wm_zt(kp1), wm_zt(k), gr%dzm(k) )
+                                   wm_zt(kp1), wm_zt(k), gr%invrs_dzm(k) )
         endif
 
         ! Note:  An "over-implicit" weighted time step is applied to this term.
@@ -1151,13 +1151,13 @@ module advance_xm_wpxp_module
         if ( iwprtp_pr2 > 0 .or. iwpthlp_pr2 > 0 ) then
           zmscr11(k) = & 
           - wpxp_terms_ac_pr2_lhs( (1.0+C7_Skw_fnc(k)), & 
-                                   wm_zt(kp1), wm_zt(k), gr%dzm(k) )
+                                   wm_zt(kp1), wm_zt(k), gr%invrs_dzm(k) )
         endif
 
         if ( iwprtp_dp1 > 0 .or. iwpthlp_dp1 > 0 ) then
           tmp(1:3) = & 
           + diffusion_zm_lhs( Kw6(k), Kw6(kp1), nu6, & 
-                              gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+                              gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(k), k )
           zmscr12(k) = - tmp(3)
           zmscr13(k) = - tmp(2)
           zmscr14(k) = - tmp(1)
@@ -1457,7 +1457,7 @@ module advance_xm_wpxp_module
                             a1_zt(kp1), a1_zt(k),  &
                             rho_ds_zt(kp1), rho_ds_zt(k),  &
                             invrs_rho_ds_zm(k),  &
-                            wp3(kp1), wp3(k), gr%dzm(k), k )
+                            wp3(kp1), wp3(k), gr%invrs_dzm(k), k )
         rhs(k_wpxp)  &
         = rhs(k_wpxp)  &
         + ( 1.0 - gamma_over_implicit_ts )  &
@@ -1511,7 +1511,7 @@ module advance_xm_wpxp_module
           = wpxp_term_ta_lhs_upwind( wp2(k), wp2(km1), wp2(kp1),        & 
                                            a1(k), a1(kp1), a1(km1),     & 
                                            wp3(kp1), wp3(k), wp3(km1),  &
-                                           gr%dzt(k), gr%dzt(kp1) )
+                                           gr%invrs_dzt(k), gr%invrs_dzt(kp1) )
           call stat_update_var_pt( iwpxp_ta, k, &
                   ( 1.0 - 0 * gamma_over_implicit_ts )  &
                 * ( - lhs_fnc_output(1) * wpxp(kp1)  &
@@ -1532,7 +1532,7 @@ module advance_xm_wpxp_module
                               a1_zt(kp1), a1_zt(k),  &
                               rho_ds_zt(kp1), rho_ds_zt(k),  &
                               invrs_rho_ds_zm(k),  &
-                              wp3(kp1), wp3(k), gr%dzm(k), k )
+                              wp3(kp1), wp3(k), gr%invrs_dzm(k), k )
           call stat_begin_update_pt( iwpxp_ta, k, &
                 - ( 1.0 - gamma_over_implicit_ts )  &
                 * ( - lhs_fnc_output(1) * wpxp(kp1)  &
@@ -2150,7 +2150,7 @@ module advance_xm_wpxp_module
 
     ! Adjusting xm based on clipping for w'x'.
     if ( any( wpxp_chnge /= 0.0 ) .and. l_clip_turb_adv ) then
-      call xm_correction_wpxp_cl( solve_type, dt, wpxp_chnge, gr%dzt, &
+      call xm_correction_wpxp_cl( solve_type, dt, wpxp_chnge, gr%invrs_dzt, &
                                   xm )
     endif
 

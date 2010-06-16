@@ -961,7 +961,7 @@ contains
       ! LHS mean advection (ma) term.
       lhs(kp1_mdiag:km1_mdiag,k) & 
       = lhs(kp1_mdiag:km1_mdiag,k) & 
-      + term_ma_zm_lhs( wm_zm(k), gr%dzm(k), k )
+      + term_ma_zm_lhs( wm_zm(k), gr%invrs_dzm(k), k )
 
       ! LHS turbulent advection (ta) term. 
       ! Note:  An "over-implicit" weighted time step is applied to this term.
@@ -982,7 +982,7 @@ contains
       + gamma_over_implicit_ts  &
       * term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
                      rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
-                     a1_zt(kp1), a1(k), a1_zt(k), gr%dzm(k), beta, k )
+                     a1_zt(kp1), a1(k), a1_zt(k), gr%invrs_dzm(k), beta, k )
 
       ! LHS dissipation term 1 (dp1)
       ! (combined with pressure term 1 (pr1) for u'^2 and v'^2).
@@ -997,7 +997,7 @@ contains
       lhs(kp1_mdiag:km1_mdiag,k)  & 
       = lhs(kp1_mdiag:km1_mdiag,k)  & 
       + diffusion_zm_lhs( Kw(k), Kw(kp1), nu, & 
-                          gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+                          gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(k), k )
 
       ! LHS time tendency.
       if ( l_iter ) then
@@ -1028,7 +1028,7 @@ contains
              iup2_dp2 + ivp2_dp2 > 0 ) then
           tmp(1:3) & 
           = diffusion_zm_lhs( Kw(k), Kw(kp1), nu, & 
-                              gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+                              gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(k), k )
           zmscr02(k) = -tmp(3)
           zmscr03(k) = -tmp(2)
           zmscr04(k) = -tmp(1)
@@ -1044,7 +1044,7 @@ contains
           = gamma_over_implicit_ts  &
           * term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
                          rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
-                         a1_zt(kp1), a1(k), a1_zt(k), gr%dzm(k), beta, k )
+                         a1_zt(kp1), a1(k), a1_zt(k), gr%invrs_dzm(k), beta, k )
           zmscr05(k) = -tmp(3)
           zmscr06(k) = -tmp(2)
           zmscr07(k) = -tmp(1)
@@ -1053,7 +1053,7 @@ contains
         if ( irtp2_ma + ithlp2_ma + irtpthlp_ma + & 
              iup2_ma + ivp2_ma > 0 ) then
           tmp(1:3) & 
-          = term_ma_zm_lhs( wm_zm(k), gr%dzm(k), k )
+          = term_ma_zm_lhs( wm_zm(k), gr%invrs_dzm(k), k )
           zmscr08(k) = -tmp(3)
           zmscr09(k) = -tmp(2)
           zmscr10(k) = -tmp(1)
@@ -1505,7 +1505,7 @@ contains
       + term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
                      rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
                      a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k),  &
-                     wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta )
+                     wpxap_zt(kp1), wpxap_zt(k), gr%invrs_dzm(k), beta )
 
       ! RHS contribution from "over-implicit" weighted time step
       ! for LHS turbulent advection (ta) term.
@@ -1526,7 +1526,7 @@ contains
       lhs_fnc_output(1:3)  &
       = term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
                      rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
-                     a1_zt(kp1), a1(k), a1_zt(k), gr%dzm(k), beta, k )
+                     a1_zt(kp1), a1(k), a1_zt(k), gr%invrs_dzm(k), beta, k )
       rhs(k,1)  &
       = rhs(k,1)  &
       + ( 1.0 - gamma_over_implicit_ts )  &
@@ -1539,7 +1539,7 @@ contains
       = rhs(k,1)  &
       + (1.0 - C5)  & 
          * term_tp( xam(kp1), xam(k), xam(kp1), xam(k), & 
-                    wpxap(k), wpxap(k), gr%dzm(k) )
+                    wpxap(k), wpxap(k), gr%invrs_dzm(k) )
 
       ! RHS pressure term 1 (pr1) (and dissipation term 1 (dp1)).
       rhs(k,1)  &
@@ -1561,7 +1561,7 @@ contains
       rhs(k,1)  &
       = rhs(k,1)  &
       + term_pr2( C5, thv_ds_zm(k), wpthvp(k), wpxap(k), wpxbp(k), &
-                  xam, xbm, gr%dzm(k), kp1, k, &
+                  xam, xbm, gr%invrs_dzm(k), kp1, k, &
                   Lscale(kp1), Lscale(k), wp2_zt(kp1), wp2_zt(k) )
 
       ! RHS time tendency.
@@ -1580,7 +1580,7 @@ contains
         -term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &   ! Intent(in)
                       rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k), &
                       a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
-                      wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ), &
+                      wpxap_zt(kp1), wpxap_zt(k), gr%invrs_dzm(k), beta ), &
                                    zm )                             ! Intent(inout)
 
         ! Note:  An "over-implicit" weighted time step is applied to this term.
@@ -1590,7 +1590,7 @@ contains
         lhs_fnc_output(1:3)  &
         = term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
                        rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
-                       a1_zt(kp1), a1(k), a1_zt(k), gr%dzm(k), beta, k )
+                       a1_zt(kp1), a1(k), a1_zt(k), gr%invrs_dzm(k), beta, k )
         call stat_modify_pt( ixapxbp_ta, k,  &          ! Intent(in)
               + ( 1.0 - gamma_over_implicit_ts )  &     ! Intent(in)
               * ( - lhs_fnc_output(1) * xap2(kp1)  &
@@ -1680,7 +1680,7 @@ contains
         ! x'y' term pr2 is completely explicit; call stat_update_var_pt.
         call stat_update_var_pt( ixapxbp_pr2, k, &                            ! Intent(in)
                term_pr2( C5, thv_ds_zm(k), wpthvp(k), wpxap(k), wpxbp(k), &   ! Intent(in)
-                         xam, xbm, gr%dzm(k), kp1, k, &  
+                         xam, xbm, gr%invrs_dzm(k), kp1, k, &  
                          Lscale(kp1), Lscale(k), wp2_zt(kp1), wp2_zt(k) ), &
                zm )                                                           ! Intent(inout)
 
@@ -1688,7 +1688,7 @@ contains
         call stat_update_var_pt( ixapxbp_tp, k, &                  ! Intent(in) 
               (1.0 - C5) &                                         ! Intent(in)
                * term_tp( xam(kp1), xam(k), xam(kp1), xam(k), &
-                          wpxap(k), wpxap(k), gr%dzm(k) ), & 
+                          wpxap(k), wpxap(k), gr%invrs_dzm(k) ), & 
                                  zm )                              ! Intent(inout)
 
       endif ! l_stats_samp
@@ -1854,7 +1854,7 @@ contains
       + term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
                      rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
                      a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k),  &
-                     wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta )
+                     wpxap_zt(kp1), wpxap_zt(k), gr%invrs_dzm(k), beta )
 
       ! RHS contribution from "over-implicit" weighted time step
       ! for LHS turbulent advection (ta) term.
@@ -1875,7 +1875,7 @@ contains
       lhs_fnc_output(1:3)  &
       = term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
                      rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
-                     a1_zt(kp1), a1(k), a1_zt(k), gr%dzm(k), beta, k )
+                     a1_zt(kp1), a1(k), a1_zt(k), gr%invrs_dzm(k), beta, k )
       rhs(k,1)  &
       = rhs(k,1)  &
       + ( 1.0 - gamma_over_implicit_ts )  &
@@ -1887,7 +1887,7 @@ contains
       rhs(k,1)  & 
       = rhs(k,1)  & 
       + term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), & 
-                 wpxbp(k), wpxap(k), gr%dzm(k) )
+                 wpxbp(k), wpxap(k), gr%invrs_dzm(k) )
 
       ! RHS dissipation term 1 (dp1)
       rhs(k,1) &
@@ -1920,7 +1920,7 @@ contains
         -term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &  ! Intent(in)
                       rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k), &
                       a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
-                      wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), beta ), &
+                      wpxap_zt(kp1), wpxap_zt(k), gr%invrs_dzm(k), beta ), &
                                    zm )                            ! Intent(inout)
 
         ! Note:  An "over-implicit" weighted time step is applied to this term.
@@ -1930,7 +1930,7 @@ contains
         lhs_fnc_output(1:3)  &
         = term_ta_lhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
                        rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
-                       a1_zt(kp1), a1(k), a1_zt(k), gr%dzm(k), beta, k )
+                       a1_zt(kp1), a1(k), a1_zt(k), gr%invrs_dzm(k), beta, k )
         call stat_modify_pt( ixapxbp_ta, k,  &            ! Intent(in)
               + ( 1.0 - gamma_over_implicit_ts )  &       ! Intent(in)
               * ( - lhs_fnc_output(1) * xapxbp(kp1)  &
@@ -1960,7 +1960,7 @@ contains
         ! x'y' term tp is completely explicit; call stat_update_var_pt.
         call stat_update_var_pt( ixapxbp_tp, k, &             ! Intent(in)
               term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), &  ! Intent(in)
-                       wpxbp(k), wpxap(k), gr%dzm(k) ), & 
+                       wpxbp(k), wpxap(k), gr%invrs_dzm(k) ), & 
                                  zm )                         ! Intent(inout)
 
         ! rtpthlp case (2 turbulent production terms)
@@ -1969,7 +1969,7 @@ contains
         !        the xam inputs and the wpxbp input to function term_tp.
         call stat_update_var_pt( ixapxbp_tp1, k, &    ! Intent(in)
               term_tp( 0.0, 0.0, xbm(kp1), xbm(k), &  ! Intent(in)
-                       0.0, wpxap(k), gr%dzm(k) ), &
+                       0.0, wpxap(k), gr%invrs_dzm(k) ), &
                                  zm )                 ! Intent(inout)
 
         ! x'y' term tp2 is completely explicit; call stat_update_var_pt.
@@ -1977,7 +1977,7 @@ contains
         !        the xbm inputs and the wpxap input to function term_tp.
         call stat_update_var_pt( ixapxbp_tp2, k, &    ! Intent(in)
               term_tp( xam(kp1), xam(k), 0.0, 0.0, &  ! Intent(in)
-                       wpxbp(k), 0.0, gr%dzm(k) ), &
+                       wpxbp(k), 0.0, gr%invrs_dzm(k) ), &
                                  zm )                 ! Intent(inout)
 
       endif ! l_stats_samp

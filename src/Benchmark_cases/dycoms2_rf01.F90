@@ -130,7 +130,7 @@ module dycoms2_rf01
 
       lwp(gr%nnzp) = 0.0
       do i = gr%nnzp-1, 1, -1
-        lwp(i) = lwp(i+1) + rho(i+1) * rcm(i+1) / gr%dzt(i+1)
+        lwp(i) = lwp(i+1) + rho(i+1) * rcm(i+1) / gr%invrs_dzt(i+1)
       end do
 !         x_sfc(1,ilwp) = lwp(1)
 

@@ -2085,7 +2085,7 @@ module stats_subs
     water_path = 0.
 
     do k = gr%nnzp-1, 1, -1
-      water_path = water_path + rho(k+1) * rxm(k+1) / gr%dzt(k+1)
+      water_path = water_path + rho(k+1) * rxm(k+1) / gr%invrs_dzt(k+1)
     end do
     
     return

@@ -1059,8 +1059,8 @@ module clubb_core
     ! This is a non-interative diagnostic, for statistical purposes
     if ( ishear > 1  ) then
       do k = 1, gr%nnzp-1, 1
-        shear(k) = -upwp(k) * ( um(k+1) - um(k) ) * gr%dzm(k) & 
-                   -vpwp(k) * ( vm(k+1) - vm(k) ) * gr%dzm(k)
+        shear(k) = -upwp(k) * ( um(k+1) - um(k) ) * gr%invrs_dzm(k) & 
+                   -vpwp(k) * ( vm(k+1) - vm(k) ) * gr%invrs_dzm(k)
       end do
       shear(gr%nnzp) = 0.0
     end if
@@ -1879,9 +1879,9 @@ module clubb_core
     do k = 2, gr%nnzp
       ! Trapezoidal rule from calculus
       trapezoid_zt(k) =  0.5 * ( variable_zm(k) + variable_zt(k) ) &
-                             * ( gr%zm(k) - gr%zt(k) ) * gr%dzt(k) &
+                             * ( gr%zm(k) - gr%zt(k) ) * gr%invrs_dzt(k) &
                        + 0.5 * ( variable_zt(k) + variable_zm(k-1) ) &
-                             * ( gr%zt(k) - gr%zm(k-1) ) * gr%dzt(k)
+                             * ( gr%zt(k) - gr%zm(k-1) ) * gr%invrs_dzt(k)
     end do ! k = 2, gr%nnzp
 
     return 
@@ -1922,9 +1922,9 @@ module clubb_core
     do k = 2, gr%nnzp-1
       ! Trapezoidal rule from calculus
       trapezoid_zm(k) =  0.5 * ( variable_zt(k+1) + variable_zm(k) ) &
-                             * ( gr%zt(k+1) - gr%zm(k) ) * gr%dzm(k) &
+                             * ( gr%zt(k+1) - gr%zm(k) ) * gr%invrs_dzm(k) &
                        + 0.5 * ( variable_zm(k) + variable_zt(k) ) &
-                             * ( gr%zm(k) - gr%zt(k) ) * gr%dzm(k)
+                             * ( gr%zm(k) - gr%zt(k) ) * gr%invrs_dzm(k)
     end do ! k = 2, gr%nnzp-1
 
     return 
@@ -2010,7 +2010,7 @@ module clubb_core
         if ( rcm(k+1) < rc_tol ) then ! Cloud top
 
           vert_cloud_frac_upper(k) = &
-                   ( ( 0.5 / gr%dzm(k) ) / ( gr%zm(k) - gr%zt(k) ) ) * &
+                   ( ( 0.5 / gr%invrs_dzm(k) ) / ( gr%zm(k) - gr%zt(k) ) ) * &
                    ( rcm(k) / ( rcm(k) + abs( s_mean(k+1) ) ) ) 
 
           vert_cloud_frac_upper(k) = min( 0.5, vert_cloud_frac_upper(k) ) 
@@ -2024,7 +2024,7 @@ module clubb_core
         if ( rcm(k-1) < rc_tol ) then ! Cloud base
 
           vert_cloud_frac_lower(k) = &
-                   ( ( 0.5 / gr%dzm(k-1) ) / ( gr%zt(k) - gr%zm(k-1) ) ) * &
+                   ( ( 0.5 / gr%invrs_dzm(k-1) ) / ( gr%zt(k) - gr%zm(k-1) ) ) * &
                    ( rcm(k) / ( rcm(k) + abs( s_mean(k-1) ) ) )
 
           vert_cloud_frac_lower(k) = min( 0.5, vert_cloud_frac_lower(k) )

@@ -142,10 +142,10 @@ module pos_definite_module
     flux_minus(k) = -min( zero_threshold, flux_np1(k) ) ! defined on flux levels
 
     if ( field_grid == "zm" ) then
-      dz_over_dt(k) = real( ( 1./gr%dzm(k) ) / dt )
+      dz_over_dt(k) = real( ( 1./gr%invrs_dzm(k) ) / dt )
 
     else if ( field_grid == "zt" ) then
-      dz_over_dt(k) = real( ( 1./gr%dzt(k) ) / dt )
+      dz_over_dt(k) = real( ( 1./gr%invrs_dzt(k) ) / dt )
 
     end if
 

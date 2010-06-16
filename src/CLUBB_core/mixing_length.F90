@@ -131,10 +131,10 @@ contains
     Lscale_down(1) = 0.0
 
     ! Initialize exp_mu_dzm--sets each exp_mu_dzm value to its corresponding
-    !   exp(-mu/gr%dzm) value. In theory, this saves 11 computations of
-    !   exp(-mu/gr%dzm) used below.
+    !   exp(-mu/gr%invrs_dzm) value. In theory, this saves 11 computations of
+    !   exp(-mu/gr%invrs_dzm) used below.
     ! ~~EIHoppe//20090615
-    exp_mu_dzm(:)  = exp( -mu/gr%dzm(:) )
+    exp_mu_dzm(:)  = exp( -mu/gr%invrs_dzm(:) )
 
     !!!!! Compute Lscale_up for every vertical level.
 
@@ -186,12 +186,12 @@ contains
 
              ! The ascending parcel is entraining at rate mu.
 
-             ! Calculation changed to use pre-calculated exp(-mu/gr%dzm) values.
+             ! Calculation changed to use pre-calculated exp(-mu/gr%invrs_dzm) values.
              ! ~~EIHoppe//20090615
 
              thl_par_j = thlm(j) - thlm(j-1)*exp_mu_dzm(j-1)  &
                          - ( 1.0 - exp_mu_dzm(j-1))  &
-                           * ( (thlm(j) - thlm(j-1)) / (mu/gr%dzm(j-1)) )  &
+                           * ( (thlm(j) - thlm(j-1)) / (mu/gr%invrs_dzm(j-1)) )  &
                          + thl_par_j_minus_1 * exp_mu_dzm(j-1)
 
           else
@@ -231,12 +231,12 @@ contains
 
              ! The ascending parcel is entraining at rate mu.
 
-             ! Calculation changed to use pre-calculated exp(-mu/gr%dzm) values.
+             ! Calculation changed to use pre-calculated exp(-mu/gr%invrs_dzm) values.
              ! ~~EIHoppe//20090615
 
              rt_par_j = rtm(j) - rtm(j-1)*exp_mu_dzm(j-1)  &
                         - ( 1.0 - exp_mu_dzm(j-1))  &
-                          * ( (rtm(j) - rtm(j-1)) / (mu/gr%dzm(j-1)) )  &
+                          * ( (rtm(j) - rtm(j-1)) / (mu/gr%invrs_dzm(j-1)) )  &
                         + rt_par_j_minus_1 * exp_mu_dzm(j-1)
 
           else
@@ -298,7 +298,7 @@ contains
 
           dCAPE_dz_j = ( grav/thvm(j) ) * ( thv_par_j - thvm(j) )
 
-          CAPE_incr = 0.5 * ( dCAPE_dz_j + dCAPE_dz_j_minus_1 ) / gr%dzm(j-1)
+          CAPE_incr = 0.5 * ( dCAPE_dz_j + dCAPE_dz_j_minus_1 ) / gr%invrs_dzm(j-1)
 
           if ( tke_i + CAPE_incr > 0.0 ) then
 
@@ -340,12 +340,12 @@ contains
                 = Lscale_up(i)  &
                 + ( - dCAPE_dz_j_minus_1 /  &
                      ( dCAPE_dz_j - dCAPE_dz_j_minus_1 ) )  &
-                     / gr%dzm(j-1)  &
+                     / gr%invrs_dzm(j-1)  &
                 - sqrt( dCAPE_dz_j_minus_1**2  &
-                        - 2.0 * tke_i * gr%dzm(j-1)  &
+                        - 2.0 * tke_i * gr%invrs_dzm(j-1)  &
                           * ( dCAPE_dz_j - dCAPE_dz_j_minus_1 ) )  &
                      / ( dCAPE_dz_j - dCAPE_dz_j_minus_1 )  &
-                     / gr%dzm(j-1)
+                     / gr%invrs_dzm(j-1)
 
              endif
 
@@ -458,12 +458,12 @@ contains
 
              ! The descending parcel is entraining at rate mu.
 
-             ! Calculation changed to use pre-calculated exp(-mu/gr%dzm) values.
+             ! Calculation changed to use pre-calculated exp(-mu/gr%invrs_dzm) values.
              ! ~~EIHoppe//20090615
 
              thl_par_j = thlm(j) - thlm(j+1)*exp_mu_dzm(j)  &
                          - ( 1.0 - exp_mu_dzm(j))  &
-                           * ( (thlm(j) - thlm(j+1)) / (mu/gr%dzm(j)) )  &
+                           * ( (thlm(j) - thlm(j+1)) / (mu/gr%invrs_dzm(j)) )  &
                          + thl_par_j_plus_1 * exp_mu_dzm(j)
 
           else
@@ -513,12 +513,12 @@ contains
 
              ! The descending parcel is entraining at rate mu.
 
-             ! Calculation changed to use pre-calculated exp(-mu/gr%dzm) values.
+             ! Calculation changed to use pre-calculated exp(-mu/gr%invrs_dzm) values.
              ! ~~EIHoppe//20090615
 
              rt_par_j = rtm(j) - rtm(j+1)*exp_mu_dzm(j)  &
                         - ( 1.0 - exp_mu_dzm(j) )  &
-                          * ( (rtm(j) - rtm(j+1)) / (mu/gr%dzm(j)) )  &
+                          * ( (rtm(j) - rtm(j+1)) / (mu/gr%invrs_dzm(j)) )  &
                         + rt_par_j_plus_1 * exp_mu_dzm(j)
 
           else
@@ -582,7 +582,7 @@ contains
 
           dCAPE_dz_j = ( grav/thvm(j) ) * ( thv_par_j - thvm(j) )
 
-          CAPE_incr = 0.5 * ( dCAPE_dz_j + dCAPE_dz_j_plus_1 ) / gr%dzm(j)
+          CAPE_incr = 0.5 * ( dCAPE_dz_j + dCAPE_dz_j_plus_1 ) / gr%invrs_dzm(j)
 
           if ( tke_i - CAPE_incr > 0.0 ) then
 
@@ -627,12 +627,12 @@ contains
                 = Lscale_down(i)  &
                 + ( - dCAPE_dz_j_plus_1 /  &
                      ( dCAPE_dz_j - dCAPE_dz_j_plus_1 ) )  &
-                     / gr%dzm(j)  &
+                     / gr%invrs_dzm(j)  &
                 + sqrt( dCAPE_dz_j_plus_1**2  &
-                        + 2.0 * tke_i * gr%dzm(j)  &
+                        + 2.0 * tke_i * gr%invrs_dzm(j)  &
                           * ( dCAPE_dz_j - dCAPE_dz_j_plus_1 ) )  &
                      / ( dCAPE_dz_j - dCAPE_dz_j_plus_1 )  &
-                     / gr%dzm(j)
+                     / gr%invrs_dzm(j)
 
              endif
 

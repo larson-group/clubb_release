@@ -113,7 +113,7 @@ module dycoms2_rf02
 
       LWP(gr%nnzp) = 0.0
       do k = gr%nnzp-1, 1, -1
-        LWP(k) = LWP(k+1) + rho(k+1)*rcm(k+1)/gr%dzt(k+1)
+        LWP(k) = LWP(k+1) + rho(k+1)*rcm(k+1)/gr%invrs_dzt(k+1)
       end do  ! k = gr%nnzp..1
 
       ! Find the height of the isotherm rtm = 8.0 g/kg.
@@ -167,7 +167,7 @@ module dycoms2_rf02
 
       do k = 2, gr%nnzp, 1
         radht(k) = ( 1.0 / exner(k) ) * ( -1.0/(Cp*rho(k)) ) & 
-                 * ( Frad(k) - Frad(k-1) ) * gr%dzt(k)
+                 * ( Frad(k) - Frad(k-1) ) * gr%invrs_dzt(k)
       end do
       radht(1) = radht(2)
 

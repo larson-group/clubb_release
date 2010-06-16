@@ -355,7 +355,8 @@ module fill_holes
       denom_integral    ! Integral in the denominator (see description)
       
     real, dimension(gr%nnzp) :: &
-      dz  ! Thermodynamic or momentum level thickness depending on whether we're on zt or zm grid.
+      invrs_dz  ! Reciprocal of thermodynamic or momentum level thickness depending on whether
+                ! we're on zt or zm grid.
 
     integer ::  & 
       k_start,  & ! Starting index for the absolute grid level
@@ -387,7 +388,7 @@ module fill_holes
        ! the upper (thermodynamic-level) index of k = gr%nnzp, means that the
        ! overall vertical domain will be gr%zm(gr%nnzp) - gr%zm(1).
        
-      dz = gr%dzt
+      invrs_dz = gr%invrs_dzt
       
     ! For fields on the zm (momentum level) grid levels.
     elseif ( trim( field_grid ) == "zm" ) then
@@ -408,7 +409,7 @@ module fill_holes
        ! the vertical average needs to be taken over the entire vertical domain
        ! (level 1 to level gr%nnzp).
        
-      dz = gr%dzm
+      invrs_dz = gr%invrs_dzm
       
     ! If the grid is not specified
     else
@@ -429,19 +430,19 @@ module fill_holes
     ! Note:  The level thickness at level k is the distance between either
     !        momentum level k and momentum level k-1, or
     !        thermodynamic level k+1 and thermodynamic level k, depending
-    !        on which field grid is being analyzed. Thus, 1.0/dz(k)
+    !        on which field grid is being analyzed. Thus, 1.0/invrs_dz(k)
     !        is the level thickness for level k.
     ! Note:  The values of 'field' and rho are passed into this function
     !        so that field(1) and rho(1) are actually 'field' and rho
     !        at the level k_start.
        
     numer_integral = sum( field(k_start:k_end) * rho(k_start:k_end) / &
-                              dz(k_start:k_end) )
+                              invrs_dz(k_start:k_end) )
                               
     ! Compute the denominator integral.
     ! Multiply rho at level k by the level thickness
     ! at level k.  Then, sum over all vertical levels.
-    denom_integral = sum( rho(k_start:k_end) / dz(k_start:k_end) )
+    denom_integral = sum( rho(k_start:k_end) / invrs_dz(k_start:k_end) )
 
     ! Find the vertical average of 'field'.
     vertical_avg = numer_integral / denom_integral
@@ -534,11 +535,11 @@ module fill_holes
        ! sum over all vertical levels.
        ! Note:  The level thickness at thermodynamic level k is the distance
        !        between momentum level k and momentum level k-1.  Thus,
-       !        1.0/gr%dzt(k) is the level thickness for thermodynamic level k.
+       !        1.0/gr%invrs_dzt(k) is the level thickness for thermodynamic level k.
        ! Note:  The values of 'field' and rho_ds are passed into this function
        !        so that field(1) and rho_ds(1) are actually 'field' and rho_ds
        !        at thermodynamic level k_start.
-       vertical_integral = sum( field(1:) * rho_ds(1:) / gr%dzt(k_start:k_end) )
+       vertical_integral = sum( field(1:) * rho_ds(1:) / gr%invrs_dzt(k_start:k_end) )
 
     ! For fields on the zm (momentum level) grid levels.
     case ( "zm" )
@@ -569,11 +570,11 @@ module fill_holes
        ! over all vertical levels.
        ! Note:  The level thickness at momentum level k is the distance between
        !        thermodynamic level k+1 and thermodynamic level k.  Thus,
-       !        1.0/gr%dzm(k) is the level thickness for momentum level k.
+       !        1.0/gr%invrs_dzm(k) is the level thickness for momentum level k.
        ! Note:  The values of 'field' and rho_ds_zm are passed into this
        !        function so that field(1) and rho_ds_zm(1) are actually 'field'
        !        and rho_ds_zm at momentum level k_start.
-       vertical_integral = sum( field(1:) * rho_ds_zm(1:) / gr%dzm(k_start:k_end) )
+       vertical_integral = sum( field(1:) * rho_ds_zm(1:) / gr%invrs_dzm(k_start:k_end) )
 
     case default
 

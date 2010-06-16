@@ -78,7 +78,7 @@ module simple_rad_module
 
     ! ---- Begin Code ----
 
-    lwp(1:gr%nnzp) = liq_water_path( gr%nnzp, rho, rcm, gr%dzt )
+    lwp(1:gr%nnzp) = liq_water_path( gr%nnzp, rho, rcm, gr%invrs_dzt )
 
     do k = 1, gr%nnzp, 1
 
@@ -146,7 +146,7 @@ module simple_rad_module
 
     do k = 2, gr%nnzp, 1
       radht(k) = ( 1.0 / exner(k) ) * ( -1.0/(Cp*rho(k)) ) & 
-               * ( Frad(k) - Frad(k-1) ) * gr%dzt(k)
+               * ( Frad(k) - Frad(k-1) ) * gr%invrs_dzt(k)
     end do
     radht(1) = radht(2)
 

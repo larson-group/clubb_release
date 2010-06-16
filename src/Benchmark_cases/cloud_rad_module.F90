@@ -63,7 +63,7 @@ module cloud_rad_module
 
     do k = gr%nnzp-1, 1, -1
 
-      LWP(k) = LWP(k+1) + rho(k+1) * rcm(k+1) / gr%dzt(k+1)
+      LWP(k) = LWP(k+1) + rho(k+1) * rcm(k+1) / gr%invrs_dzt(k+1)
 
     end do ! k=gr%nnzp..1
 
