@@ -295,9 +295,11 @@ module microphys_driver
           status='old', action='write', position='append')
 
     ! Write to file all parameters from the namelist microphysics_seting.
-    call write_text ( "Microphysics Settings", l_write_to_file, iunit) 
-    call write_text ( "----------------------------------------------------", &
-      l_write_to_file, iunit )
+      call write_text( "--------------------------------------------------", &
+        l_write_to_file, iunit )
+      call write_text( "&microphysics_setting", l_write_to_file, iunit)
+      call write_text( "--------------------------------------------------", &
+        l_write_to_file, iunit )
     
     call write_text ( "micro_scheme = " //  micro_scheme, l_write_to_file, &
       iunit )

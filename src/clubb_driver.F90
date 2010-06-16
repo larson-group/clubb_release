@@ -523,10 +523,10 @@ module clubb_driver
 
       call write_text( "--------------------------------------------------", &
         l_write_to_file, iunit )
-      call write_text( "Model Settings", l_write_to_file, iunit)
+      call write_text( "Preprocessing Directives:", l_write_to_file, iunit)
       call write_text( "--------------------------------------------------", &
         l_write_to_file, iunit )
-      call write_text( "Preprocessing directives:", l_write_to_file, iunit )
+
 #ifdef NETCDF
       call write_text( "-DNETCDF enabled", l_write_to_file, iunit )
 #else
@@ -564,7 +564,11 @@ module clubb_driver
 #endif
 
       ! Pick some default values for model_setting
-      call write_text( "&model_setting:", l_write_to_file, iunit )
+      call write_text( "--------------------------------------------------", &
+        l_write_to_file, iunit )
+      call write_text( "&model_setting", l_write_to_file, iunit)
+      call write_text( "--------------------------------------------------", &
+        l_write_to_file, iunit )
       call write_text( "runtype = " // runtype, l_write_to_file, iunit )
       call write_text( "nzmax = ", nzmax, l_write_to_file, iunit )
       call write_text( "grid_type = ", grid_type, l_write_to_file, iunit )
@@ -663,7 +667,11 @@ module clubb_driver
       call write_text( "sclr_tol = ", sclr_tol(1:sclr_dim), l_write_to_file, iunit )
 
       ! Pick some default values for stats_setting
-      call write_text( "&stats_setting:", l_write_to_file, iunit )
+      call write_text( "--------------------------------------------------", &
+        l_write_to_file, iunit )
+      call write_text( "&stats_setting", l_write_to_file, iunit)
+      call write_text( "--------------------------------------------------", &
+        l_write_to_file, iunit )
       call write_text( "l_stats = ", l_stats, l_write_to_file, iunit )
       call write_text( "fname_prefix = " // fname_prefix, l_write_to_file, iunit )
       call write_text( "stats_fmt = " // stats_fmt, l_write_to_file, iunit)
@@ -681,9 +689,6 @@ module clubb_driver
       call write_text( "rt_tol [kg/kg] = ", rt_tol, l_write_to_file, iunit )
       call write_text( "thl_tol [K] = ", thl_tol, l_write_to_file, iunit )
       call write_text( "w_tol [m/s] = ", w_tol, l_write_to_file, iunit )
-
-      call write_text( "--------------------------------------------------", &
-        l_write_to_file, iunit )
 
       if( l_write_to_file) close(unit=iunit);
 
