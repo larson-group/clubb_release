@@ -387,21 +387,20 @@ module latin_hypercube_driver_module
       k_lh_start = nnzp / 2
     end if
 
-    ! Determine cloud fraction at k_lh_start
-    lh_start_cloud_frac = &
+    if ( l_lh_cloud_weighted_sampling ) then
+
+      ! Determine cloud fraction at k_lh_start
+      lh_start_cloud_frac = &
       pdf_params%mixt_frac(k_lh_start) * pdf_params%cloud_frac1(k_lh_start) &
         + (1.0-pdf_params%mixt_frac(k_lh_start)) * pdf_params%cloud_frac2(k_lh_start)
-        ! The above calculation was moved outside the if ( l_lh_cloud_weighted_sampling )
-        ! statement below to eliminate a g95 compiler warning for an uninitialized variable.
-        ! Always performing this calculation seemed safer than blindly setting this value.
-        ! -meyern
-
-    if ( l_lh_cloud_weighted_sampling ) then
 
       ! Determine p_matrix at k_lh_start
       p_matrix(1:n_micro_calls,1:(d_variables+1)) = &
         height_time_matrix(k_lh_start, n_micro_calls*i_rmd+1:n_micro_calls*i_rmd+n_micro_calls, &
                            1:d_variables+1)
+    else
+      lh_start_cloud_frac = -9999.0  ! This assignment eliminates a g95 compiler warning for an
+                                     ! uninitialized variable. -meyern
 
     end if ! l_lh_cloud_weighted_sampling
 
@@ -528,7 +527,8 @@ module latin_hypercube_driver_module
     ! Assertion check for whether half of sample points are cloudy.
     ! This is for the uniform sample only.  Another assertion check is in the
     ! estimate_lh_micro_module for X_nl_all_levs.
-    if ( l_lh_cloud_weighted_sampling .and. clubb_at_least_debug_level( 2 ) .and. &
+    if ( l_lh_cloud_weighted_sampling ) then
+      if(clubb_at_least_debug_level( 2 ) .and. &
          lh_start_cloud_frac < 0.5 .and. lh_start_cloud_frac > cloud_frac_thresh ) then
 
       call assert_check_half_cloudy &
@@ -536,7 +536,8 @@ module latin_hypercube_driver_module
              pdf_params%cloud_frac2(k_lh_start), X_mixt_comp_all_levs(k_lh_start,:), &
              X_u_all_levs(k_lh_start,:,iiLH_s_mellor) )
 
-    end if ! Maximal overlap, debug_level 2, and cloud-weighted averaging
+      end if ! Maximal overlap, debug_level 2, and cloud-weighted averaging
+    end if ! l_lh_cloud_weighted_sampling
 
     ! Assertion check to ensure that the sample point weights sum to approximately 1
     if ( l_lh_cloud_weighted_sampling .and. clubb_at_least_debug_level( 2 ) ) then
