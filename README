@@ -575,7 +575,8 @@ Do steps 1, 2, & 3 as outlined in the standalone run.
    the file as being in netCDF format.
 
 5. You may also wish to set the debug_level to 0 in the file
-   input/case_setups/<CASE_NAME>_model.in to speed up tuning. 
+   input/case_setups/<CASE_NAME>_model.in to speed up tuning.
+   Doing this will also help make the output match the nightly tuning run. 
    You may need to set stats_tout to 60.0 in order to match the
    time interval of LES output data.  The tuner also supports 
    setting l_input_fields
@@ -590,7 +591,13 @@ Do steps 1, 2, & 3 as outlined in the standalone run.
    you must also edit tuning_stats.in to match the variables being tuned for
    in the error_<CASE_NAME>.in file.
 
-7. ./run_tuner.bash
+7. You will need to check out the clubb_benchmark_data from the repository, 
+   create a directory in clubb called les_data, and move all files for the case
+   or cases you want to run the tuner for from les_runs in clubb_benchmark_data
+   to les_data in clubb. This, along with setting debug_level to 0, will 
+   produce identical output to the nightly tests tuning run.
+
+8. ./run_tuner.bash
 
 -----------------------------------------------------------------------
 - (3.3.1) Creating a RAM disk (optional)
