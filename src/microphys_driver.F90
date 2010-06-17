@@ -930,8 +930,8 @@ module microphys_driver
         kp1 = min( k+1, gr%nnzp )
         km1 = max( k-1, 1 )
         Lscale_vert_avg(k) = vertical_avg &
-                             ( km1, kp1, "zt", rho_ds_zt(km1:kp1), & ! In
-                               Lscale(km1:kp1) ) ! Out
+                             ( (kp1-km1+1), rho_ds_zt(km1:kp1), &
+                               Lscale(km1:kp1), gr%invrs_dzt(km1:kp1))
       end do
     else
       ! If vertical overlap is disabled, this calculation won't be needed
