@@ -2004,7 +2004,7 @@ contains
 
   !=============================================================================
   pure function wp2_term_ta_lhs( rho_ds_ztp1, rho_ds_zt, &
-                                 invrs_rho_ds_zm, dzm ) &
+                                 invrs_rho_ds_zm, invrs_dzm ) &
   result( lhs )
 
     ! Description:
@@ -2047,7 +2047,7 @@ contains
     ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for 
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
-    ! dzm(k) = 1 / ( zt(k+1) - zt(k) )
+    ! invrs_dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
     ! References:
     !-----------------------------------------------------------------------
@@ -2064,25 +2064,25 @@ contains
       rho_ds_ztp1,     & ! Dry, static density at thermo. level (k+1)  [kg/m^3]
       rho_ds_zt,       & ! Dry, static density at thermo. level (k)    [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density @ moment. lev. (k) [m^3/kg]
-      dzm                ! Inverse of grid spacing (k)                 [1/m]
+      invrs_dzm                ! Inverse of grid spacing (k)                 [1/m]
 
     ! Return Variable
     real, dimension(2) :: lhs
 
     ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
     lhs(kp1_tdiag) & 
-    = + invrs_rho_ds_zm * dzm * rho_ds_ztp1
+    = + invrs_rho_ds_zm * invrs_dzm * rho_ds_ztp1
 
     ! Thermodynamic subdiagonal: [ x wp3(k,<t+1>) ]
     lhs(k_tdiag) & 
-    = - invrs_rho_ds_zm * dzm * rho_ds_zt
+    = - invrs_rho_ds_zm * invrs_dzm * rho_ds_zt
 
     return
 
   end function wp2_term_ta_lhs
 
   !=============================================================================
-  pure function wp2_terms_ac_pr2_lhs( C5, wm_ztp1, wm_zt, dzm ) & 
+  pure function wp2_terms_ac_pr2_lhs( C5, wm_ztp1, wm_zt, invrs_dzm ) & 
   result( lhs )
 
     ! Description:
@@ -2131,7 +2131,7 @@ contains
     ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for 
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
-    ! dzm(k) = 1 / ( zt(k+1) - zt(k) )
+    ! invrs_dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
     ! References:
     !-----------------------------------------------------------------------
@@ -2143,14 +2143,14 @@ contains
       C5,      & ! Model parameter C_5                            [-]
       wm_ztp1, & ! w wind component at thermodynamic levels (k+1) [m/s]
       wm_zt,   & ! w wind component at thermodynamic levels (k)   [m/s]
-      dzm        ! Inverse of grid spacing (k)                    [1/m]
+      invrs_dzm        ! Inverse of grid spacing (k)                    [1/m]
 
     ! Return Variable
     real :: lhs
 
     ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
     lhs & 
-    = + ( 1.0 - C5 ) * 2.0 * dzm * ( wm_ztp1 - wm_zt )
+    = + ( 1.0 - C5 ) * 2.0 * invrs_dzm * ( wm_ztp1 - wm_zt )
 
     return
 
@@ -2357,7 +2357,7 @@ contains
 
   !=============================================================================
   pure function wp2_term_pr3_rhs( C5, thv_ds_zm, wpthvp, upwp, ump1, &
-                                  um, vpwp, vmp1, vm, dzm ) &
+                                  um, vpwp, vmp1, vm, invrs_dzm ) &
   result( rhs )
 
     ! Description:
@@ -2387,7 +2387,7 @@ contains
     ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for 
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
-    ! dzm(k) = 1 / ( zt(k+1) - zt(k) )
+    ! invrs_dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
     ! References:
     !-----------------------------------------------------------------------
@@ -2408,7 +2408,7 @@ contains
       vpwp,      & ! v'w'(k)                                        [m^2/s^2]
       vmp1,      & ! vm(k+1)                                        [m/s]
       vm,        & ! vm(k)                                          [m/s]
-      dzm          ! Inverse of grid spacing (k)                    [1/m]
+      invrs_dzm          ! Inverse of grid spacing (k)                    [1/m]
 
     ! Return Variable
     real :: rhs
@@ -2418,14 +2418,14 @@ contains
     ! Use the following code for standard mixing, with c_k=0.548:
     = + (2.0/3.0) * C5 & 
                   * ( ( grav / thv_ds_zm ) * wpthvp & 
-                      - upwp * dzm * ( ump1 - um ) & 
-                      - vpwp * dzm * ( vmp1 - vm ) & 
+                      - upwp * invrs_dzm * ( ump1 - um ) & 
+                      - vpwp * invrs_dzm * ( vmp1 - vm ) & 
                     )
      ! Use the following code for alternate mixing, with c_k=0.1 or 0.2
 !    = + (2.0/3.0) * C5 &
 !                  * ( ( grav / thv_ds_zm ) * wpthvp &
-!                      - 0. * upwp * dzm * ( ump1 - um ) &
-!                      - 0. * vpwp * dzm * ( vmp1 - vm ) &
+!                      - 0. * upwp * invrs_dzm * ( ump1 - um ) &
+!                      - 0. * vpwp * invrs_dzm * ( vmp1 - vm ) &
 !                    )
 !    eMFc
 
@@ -2489,7 +2489,7 @@ contains
                                      rho_ds_zm, rho_ds_zmm1,  &
                                      invrs_rho_ds_zt,  &
                                      const_three_halves,  &
-                                     dzt, level )  &
+                                     invrs_dzt, level )  &
   result( lhs )
 
     ! Description:
@@ -2595,7 +2595,7 @@ contains
     ! The letter "t" is used for thermodynamic levels and the letter "m" is 
     ! used for momentum levels.
     !
-    ! dzt(k) = 1 / ( zm(k) - zm(k-1) )
+    ! invrs_dzt(k) = 1 / ( zm(k) - zm(k-1) )
 
     ! References:
     !-----------------------------------------------------------------------
@@ -2639,7 +2639,7 @@ contains
       rho_ds_zmm1,        & ! Dry, static density at moment. lev (k-1) [kg/m^3]
       invrs_rho_ds_zt,    & ! Inv dry, static density @ thermo lev (k) [m^3/kg]
       const_three_halves, & ! "3/2" ("0" is sent in for wp3_ta budget) [-]
-      dzt                   ! Inverse of grid spacing (k)              [1/m]
+      invrs_dzt                   ! Inverse of grid spacing (k)              [1/m]
 
     integer, intent(in) :: & 
       level ! Central thermodynamic level (on which calculation occurs).
@@ -2670,7 +2670,7 @@ contains
        ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
        lhs(kp1_tdiag) &
        = + invrs_rho_ds_zt &
-           * dzt &
+           * invrs_dzt &
              * rho_ds_zm * a1 &
              * ( 2.0 * wp3_zm / max(wp2, w_tol_sqd) ) &
              * gr%weights_zt2zm(t_above,mk)
@@ -2678,14 +2678,14 @@ contains
        ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
        lhs(k_mdiag) &
        = + invrs_rho_ds_zt &
-           * dzt * rho_ds_zm * a3 * 2.0 * wp2 &
+           * invrs_dzt * rho_ds_zm * a3 * 2.0 * wp2 &
          + const_three_halves &
-           * dzt * 2.0 * wp2
+           * invrs_dzt * 2.0 * wp2
 
        ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
        lhs(k_tdiag) &
        = + invrs_rho_ds_zt &
-           * dzt &
+           * invrs_dzt &
              * (   rho_ds_zm * a1 &
                    * ( 2.0 * wp3_zm / max(wp2, w_tol_sqd) ) &
                    * gr%weights_zt2zm(t_below,mk) &
@@ -2697,14 +2697,14 @@ contains
        ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
        lhs(km1_mdiag) &
        = - invrs_rho_ds_zt &
-           * dzt * rho_ds_zmm1 * a3m1 * 2.0 * wp2m1 &
+           * invrs_dzt * rho_ds_zmm1 * a3m1 * 2.0 * wp2m1 &
          - const_three_halves &
-           * dzt * 2.0 * wp2m1
+           * invrs_dzt * 2.0 * wp2m1
 
        ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
        lhs(km1_tdiag) &
        = - invrs_rho_ds_zt &
-           * dzt &
+           * invrs_dzt &
              * rho_ds_zmm1 * a1m1 &
              * ( 2.0 * wp3_zmm1 / max(wp2m1, w_tol_sqd) ) &
              * gr%weights_zt2zm(t_below,mkm1)
@@ -2730,7 +2730,7 @@ contains
        ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
        lhs(kp1_tdiag) & 
        = + invrs_rho_ds_zt &
-           * a1_zt * dzt &
+           * a1_zt * invrs_dzt &
              * rho_ds_zm &
              * ( 2.0 * wp3_zm / max(wp2, w_tol_sqd) ) &
              * gr%weights_zt2zm(t_above,mk)
@@ -2738,14 +2738,14 @@ contains
        ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
        lhs(k_mdiag) & 
        = + invrs_rho_ds_zt &
-           * a3_zt * dzt * rho_ds_zm * 2.0 * wp2 &
+           * a3_zt * invrs_dzt * rho_ds_zm * 2.0 * wp2 &
          + const_three_halves &
-           * dzt * 2.0 * wp2
+           * invrs_dzt * 2.0 * wp2
 
        ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
        lhs(k_tdiag) & 
        = + invrs_rho_ds_zt &
-           * a1_zt * dzt & 
+           * a1_zt * invrs_dzt & 
              * (   rho_ds_zm &
                    * ( 2.0 * wp3_zm / max(wp2, w_tol_sqd) ) & 
                    * gr%weights_zt2zm(t_below,mk) & 
@@ -2757,14 +2757,14 @@ contains
        ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
        lhs(km1_mdiag) & 
        = - invrs_rho_ds_zt &
-           * a3_zt * dzt * rho_ds_zmm1 * 2.0 * wp2m1 &
+           * a3_zt * invrs_dzt * rho_ds_zmm1 * 2.0 * wp2m1 &
          - const_three_halves &
-           * dzt * 2.0 * wp2m1
+           * invrs_dzt * 2.0 * wp2m1
 
        ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
        lhs(km1_tdiag) & 
        = - invrs_rho_ds_zt &
-           * a1_zt * dzt &
+           * a1_zt * invrs_dzt &
              * rho_ds_zmm1 &
              * ( 2.0 * wp3_zmm1 / max(wp2m1, w_tol_sqd) ) & 
              * gr%weights_zt2zm(t_below,mkm1)
@@ -2780,7 +2780,7 @@ contains
 
   !=============================================================================
   pure function wp3_terms_ac_pr2_lhs( C11_Skw_fnc,  & 
-                                      wm_zm, wm_zmm1, dzt ) & 
+                                      wm_zm, wm_zmm1, invrs_dzt ) & 
   result( lhs )
 
     ! Description:
@@ -2829,7 +2829,7 @@ contains
     ! zm(k), zt(k), and zm(k-1), respectively.  The letter "t" is used for 
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
-    ! dzt(k) = 1 / ( zm(k) - zm(k-1) )
+    ! invrs_dzt(k) = 1 / ( zm(k) - zm(k-1) )
 
     ! References:
     !-----------------------------------------------------------------------
@@ -2841,7 +2841,7 @@ contains
       C11_Skw_fnc,  & ! C_11 parameter with Sk_w applied (k)      [-]
       wm_zm,        & ! w wind component at momentum levels (k)   [m/s]
       wm_zmm1,      & ! w wind component at momentum levels (k-1) [m/s]
-      dzt             ! Inverse of grid spacing (k)               [1/m]
+      invrs_dzt             ! Inverse of grid spacing (k)               [1/m]
 
     ! Return Variable
     real :: lhs
@@ -2849,7 +2849,7 @@ contains
     ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
     lhs & 
     = + ( 1.0 - C11_Skw_fnc ) & 
-        * 3.0 * dzt * ( wm_zm - wm_zmm1 )
+        * 3.0 * invrs_dzt * ( wm_zm - wm_zmm1 )
 
     return
   end function wp3_terms_ac_pr2_lhs
@@ -2928,7 +2928,7 @@ contains
                                      rho_ds_zm, rho_ds_zmm1,  &
                                      invrs_rho_ds_zt,  &
                                      const_three_halves,  &
-                                     dzt )  &
+                                     invrs_dzt )  &
   result( rhs )
 
     ! Description:
@@ -3029,7 +3029,7 @@ contains
     ! The letter "t" is used for thermodynamic levels and the letter "m" is used
     ! for momentum levels.
     !
-    ! dzt(k) = 1 / ( zm(k) - zm(k-1) )
+    ! invrs_dzt(k) = 1 / ( zm(k) - zm(k-1) )
 
     ! References:
     !-----------------------------------------------------------------------
@@ -3058,7 +3058,7 @@ contains
       rho_ds_zmm1,        & ! Dry, static density at moment. lev (k-1) [kg/m^3]
       invrs_rho_ds_zt,    & ! Inv dry, static density @ thermo lev (k) [m^3/kg]
       const_three_halves, & ! "3/2" ("0" is sent in for wp3_ta budget) [-]
-      dzt                   ! Inverse of grid spacing (k)              [1/m]
+      invrs_dzt                   ! Inverse of grid spacing (k)              [1/m]
 
     ! Return Variable
     real :: rhs
@@ -3072,19 +3072,19 @@ contains
 
        rhs & 
        = + invrs_rho_ds_zt &
-           * dzt &
+           * invrs_dzt &
              * (   rho_ds_zm * a3 * wp2**2 &
                  - rho_ds_zmm1 * a3m1 * wp2m1**2 &
                ) &
          + invrs_rho_ds_zt &
-           * dzt &
+           * invrs_dzt &
              * (   rho_ds_zm * a1 &
                    * ( wp3_zm**2 / max(wp2, w_tol_sqd) ) &
                  - rho_ds_zmm1 * a1m1 &
                    * ( wp3_zmm1**2 / max(wp2m1, w_tol_sqd) ) &
                ) &
          + const_three_halves &
-           * dzt * ( wp2**2 - wp2m1**2 )
+           * invrs_dzt * ( wp2**2 - wp2m1**2 )
 
     else
 
@@ -3104,18 +3104,18 @@ contains
 
        rhs & 
        = + invrs_rho_ds_zt &
-           * a3_zt * dzt &
+           * a3_zt * invrs_dzt &
              * (   rho_ds_zm * wp2**2 &
                  - rho_ds_zmm1 * wp2m1**2 ) &
          + invrs_rho_ds_zt &
-           * a1_zt * dzt & 
+           * a1_zt * invrs_dzt & 
              * (   rho_ds_zm &
                    * ( wp3_zm**2 / max(wp2, w_tol_sqd) ) & 
                  - rho_ds_zmm1 &
                    * ( wp3_zmm1**2 / max(wp2m1, w_tol_sqd) ) & 
                ) &
          + const_three_halves &
-           * dzt * ( wp2**2 - wp2m1**2 )
+           * invrs_dzt * ( wp2**2 - wp2m1**2 )
 
        ! End of code that pulls out a3.
        ! End of Brian's a1 change.  Feb. 14, 2008.

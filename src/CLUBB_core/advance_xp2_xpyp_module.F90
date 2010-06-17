@@ -2004,7 +2004,7 @@ contains
   !=============================================================================
   pure function term_ta_lhs( wp3p1, wp3, wp2_ztp1, wp2_zt,  &
                              rho_ds_ztp1, rho_ds_zt, invrs_rho_ds_zm,  &
-                             a1_ztp1, a1, a1_zt, dzm, beta, level )  & 
+                             a1_ztp1, a1, a1_zt, invrs_dzm, beta, level )  & 
   result( lhs )
 
     ! Description:
@@ -2085,7 +2085,7 @@ contains
     ! The letter "t" is used for thermodynamic levels and the letter "m" is used
     ! for momentum levels.
     !
-    ! dzm(k) = 1 / ( zt(k+1) - zt(k) )
+    ! invrs_dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
     ! References:
     !-----------------------------------------------------------------------
@@ -2126,7 +2126,7 @@ contains
       a1_ztp1,         & ! a_1 interpolated to thermo. level (k+1)     [-]
       a1,              & ! a_1(k)                                      [-]
       a1_zt,           & ! a_1 interpolated to thermo. level (k)       [-]
-      dzm,             & ! Inverse of grid spacing                     [1/m]
+      invrs_dzm,             & ! Inverse of grid spacing                     [1/m]
       beta               ! Model parameter                             [-]
 
     integer, intent(in) :: & 
@@ -2159,7 +2159,7 @@ contains
        lhs(kp1_mdiag)  &
        = + (1.0/3.0) * beta  &
            * invrs_rho_ds_zm  &
-             * dzm  &
+             * invrs_dzm  &
                * rho_ds_ztp1 * a1_ztp1  &
                * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) )  &
                * gr%weights_zm2zt(m_above,tkp1)
@@ -2168,7 +2168,7 @@ contains
        lhs(k_mdiag)  &
        = + (1.0/3.0) * beta  &
            * invrs_rho_ds_zm  &
-             * dzm  &
+             * invrs_dzm  &
                * (   rho_ds_ztp1 * a1_ztp1  &
                      * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) )  &
                      * gr%weights_zm2zt(m_below,tkp1)  &
@@ -2181,7 +2181,7 @@ contains
        lhs(km1_mdiag)  &
        = - (1.0/3.0) * beta  &
            * invrs_rho_ds_zm  &
-             * dzm  &
+             * invrs_dzm  &
                * rho_ds_zt * a1_zt  &
                * ( wp3 / max( wp2_zt, w_tol_sqd ) )  &
                * gr%weights_zm2zt(m_below,tk)
@@ -2199,7 +2199,7 @@ contains
        lhs(kp1_mdiag)  & 
        = + (1.0/3.0) * beta  &
            * invrs_rho_ds_zm * a1  &
-             * dzm  &
+             * invrs_dzm  &
                * rho_ds_ztp1  &
                * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) )  & 
                * gr%weights_zm2zt(m_above,tkp1)
@@ -2208,7 +2208,7 @@ contains
        lhs(k_mdiag)  & 
        = + (1.0/3.0) * beta  &
            * invrs_rho_ds_zm * a1  &
-             * dzm  &
+             * invrs_dzm  &
                * (   rho_ds_ztp1  &
                      * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) )  &
                      * gr%weights_zm2zt(m_below,tkp1)  &
@@ -2221,7 +2221,7 @@ contains
        lhs(km1_mdiag)  & 
        = - (1.0/3.0) * beta  &
            * invrs_rho_ds_zm * a1  &
-             * dzm  &
+             * invrs_dzm  &
                * rho_ds_zt  &
                * ( wp3 / max( wp2_zt, w_tol_sqd ) )  &
                * gr%weights_zm2zt(m_below,tk)
@@ -2238,7 +2238,7 @@ contains
   pure function term_ta_rhs( wp3p1, wp3, wp2_ztp1, wp2_zt,  &
                              rho_ds_ztp1, rho_ds_zt, invrs_rho_ds_zm,  &
                              a1_ztp1, a1, a1_zt, wpxbp_ztp1, wpxbp_zt,  &
-                             wpxap_ztp1, wpxap_zt, dzm, beta )  &
+                             wpxap_ztp1, wpxap_zt, invrs_dzm, beta )  &
   result( rhs )
 
     ! Description:
@@ -2312,7 +2312,7 @@ contains
     ! The letter "t" is used for thermodynamic levels and the letter "m" is used
     ! for momentum levels.
     !
-    ! dzm(k) = 1 / ( zt(k+1) - zt(k) )
+    ! invrs_dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
     ! References:
     !-----------------------------------------------------------------------
@@ -2344,7 +2344,7 @@ contains
       wpxbp_zt,        & ! w'x_b' interpolated to thermo. level (k)   [m/s {x_bm units}]
       wpxap_ztp1,      & ! w'x_a' interpolated to thermo. level (k+1) [m/s {x_am units}]
       wpxap_zt,        & ! w'x_a' interpolated to thermo. level (k)   [m/s {x_am units}]
-      dzm,             & ! Inverse of grid spacing                    [1/m]
+      invrs_dzm,             & ! Inverse of grid spacing                    [1/m]
       beta               ! Model parameter                            [-]
 
     ! Return Variable
@@ -2360,7 +2360,7 @@ contains
        rhs  &
        = - ( 1.0 - (1.0/3.0) * beta )  &
            * invrs_rho_ds_zm  &
-             * dzm  &
+             * invrs_dzm  &
                * (   rho_ds_ztp1 * a1_ztp1**2  &
                      * ( wp3p1 / max( wp2_ztp1, w_tol_sqd )**2 )  &
                      * wpxap_ztp1 * wpxbp_ztp1  &
@@ -2382,7 +2382,7 @@ contains
        rhs & 
        = - ( 1.0 - (1.0/3.0) * beta )  &
            * invrs_rho_ds_zm * a1**2  &
-             * dzm  &
+             * invrs_dzm  &
                * (   rho_ds_ztp1  &
                      * ( wp3p1 / max( wp2_ztp1, w_tol_sqd )**2 )  &
                      * wpxap_ztp1 * wpxbp_ztp1  &
@@ -2401,7 +2401,7 @@ contains
 
   !=============================================================================
   pure function term_tp( xamp1, xam, xbmp1, xbm,  & 
-                         wpxbp, wpxap, dzm ) & 
+                         wpxbp, wpxap, invrs_dzm ) & 
   result( rhs )
 
     ! Description:
@@ -2430,7 +2430,7 @@ contains
     ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
-    ! dzm(k) = 1 / ( zt(k+1) - zt(k) )
+    ! invrs_dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
     ! References:
     !-----------------------------------------------------------------------
@@ -2445,14 +2445,14 @@ contains
       xbmp1, & ! x_bm(k+1)                   [{x_bm units}]
       wpxbp, & ! w'x_b'(k)                   [m/s {x_bm units}]
       wpxap, & ! w'x_a'(k)                   [m/s {x_am units}]
-      dzm      ! Inverse of grid spacing (k) [1/m]
+      invrs_dzm      ! Inverse of grid spacing (k) [1/m]
 
     ! Return Variable
     real :: rhs
 
     rhs & 
-    = - wpxbp * dzm * ( xamp1 - xam ) & 
-      - wpxap * dzm * ( xbmp1 - xbm )
+    = - wpxbp * invrs_dzm * ( xamp1 - xam ) & 
+      - wpxap * invrs_dzm * ( xbmp1 - xbm )
 
     return
   end function term_tp
@@ -2690,7 +2690,7 @@ contains
 
   !=============================================================================
   pure function term_pr2( C5, thv_ds_zm, wpthvp, upwp, vpwp, &
-                          um, vm, dzm, kp1, k, & 
+                          um, vm, invrs_dzm, kp1, k, & 
                           Lscalep1, Lscale, wp2_ztp1, wp2_zt ) &
   result( rhs )
 
@@ -2726,7 +2726,7 @@ contains
     ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
-    ! dzm(k) = 1 / ( zt(k+1) - zt(k) )
+    ! invrs_dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
     ! References:
     !-----------------------------------------------------------------------
@@ -2746,7 +2746,7 @@ contains
       wpthvp,    & ! w'th_v'(k)                                     [m/K/s]
       upwp,      & ! u'w'(k)                                        [m^2/s^2]
       vpwp,      & ! v'w'(k)                                        [m^2/s^2]
-      dzm,       & ! Inverse of the grid spacing (k)                [1/m]
+      invrs_dzm,       & ! Inverse of the grid spacing (k)                [1/m]
       Lscalep1,  & ! Mixing length (k+1)                            [m]
       Lscale,    & ! Mixing length (k)                              [m]
       wp2_ztp1,  & ! w'^2(k+1) (thermo. levels)                     [m^2/s^2]
@@ -2796,8 +2796,8 @@ contains
       ! As applied to w'2
       rhs = + (2.0/3.0) * C5 & 
                         * ( ( grav / thv_ds_zm ) * wpthvp &
-                            - upwp * dzm * ( um(kp1) - um(k) ) &
-                            - vpwp * dzm * ( vm(kp1) - vm(k) ) &
+                            - upwp * invrs_dzm * ( um(kp1) - um(k) ) &
+                            - vpwp * invrs_dzm * ( vm(kp1) - vm(k) ) &
                           )
 
     else ! use experimental version of term_pr2 --ldgrant March 2010
@@ -2855,9 +2855,9 @@ contains
       ! changed the eddy diffusivity coefficient Kh so that it is
       ! proportional to 1.5*wp2 rather than to em.
       rhs = + (2.0/3.0) * C5 & 
-              * ( constant1 * abs( wp2_ztp1 - wp2_zt ) * dzm &
-                    ! * abs( Lscalep1 - Lscale ) * dzm &
-                  + constant2 * abs( wp2_ztp1 - wp2_zt ) * dzm &
+              * ( constant1 * abs( wp2_ztp1 - wp2_zt ) * invrs_dzm &
+                    ! * abs( Lscalep1 - Lscale ) * invrs_dzm &
+                  + constant2 * abs( wp2_ztp1 - wp2_zt ) * invrs_dzm &
                     * abs( vm_high - vm_low ) / ( zt_high - zt_low ) &
                      + ( Lscalep1 + Lscale ) * 0 &     ! This line eliminates an Intel compiler
                 )                                      ! warning that Lscalep1/Lscale are not

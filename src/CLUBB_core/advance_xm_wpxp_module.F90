@@ -2179,7 +2179,7 @@ module advance_xm_wpxp_module
 
   !=============================================================================
   pure function xm_term_ta_lhs( rho_ds_zm, rho_ds_zmm1, &
-                                invrs_rho_ds_zt, dzt ) &
+                                invrs_rho_ds_zt, invrs_dzt ) &
   result( lhs )
 
     ! Description:
@@ -2222,7 +2222,7 @@ module advance_xm_wpxp_module
     ! zm(k), zt(k), and zm(k-1), respectively.  The letter "t" is used for
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
-    ! dzt(k) = 1 / ( zm(k) - zm(k-1) )
+    ! invrs_dzt(k) = 1 / ( zm(k) - zm(k-1) )
 
     ! References:
     !-----------------------------------------------------------------------
@@ -2239,18 +2239,18 @@ module advance_xm_wpxp_module
       rho_ds_zm,       & ! Dry, static density at momentum level (k)    [kg/m^3]
       rho_ds_zmm1,     & ! Dry, static density at momentum level (k+1)  [kg/m^3]
       invrs_rho_ds_zt, & ! Inverse dry, static density @ thermo lev (k) [m^3/kg]
-      dzt                ! Inverse of grid spacing (k)                  [1/m]
+      invrs_dzt                ! Inverse of grid spacing (k)                  [1/m]
 
     ! Return Variable
     real, dimension(2) :: lhs
 
     ! Momentum superdiagonal [ x wpxp(k,<t+1>) ]
     lhs(k_mdiag) & 
-    = + invrs_rho_ds_zt * dzt * rho_ds_zm
+    = + invrs_rho_ds_zt * invrs_dzt * rho_ds_zm
 
     ! Momentum subdiagonal [ x wpxp(k-1,<t+1>) ]
     lhs(km1_mdiag) & 
-    = - invrs_rho_ds_zt * dzt * rho_ds_zmm1
+    = - invrs_rho_ds_zt * invrs_dzt * rho_ds_zmm1
 
     return
   end function xm_term_ta_lhs
@@ -2260,7 +2260,7 @@ module advance_xm_wpxp_module
                                   a1_ztp1, a1_zt, &
                                   rho_ds_ztp1, rho_ds_zt, &
                                   invrs_rho_ds_zm, &
-                                  wp3p1, wp3, dzm, level ) & 
+                                  wp3p1, wp3, invrs_dzm, level ) & 
   result( lhs )
 
     ! Description:
@@ -2326,7 +2326,7 @@ module advance_xm_wpxp_module
     ! The letter "t" is used for thermodynamic levels and the letter "m" is used
     ! for momentum levels.
     !
-    ! dzm(k) = 1 / ( zt(k+1) - zt(k) )
+    ! invrs_dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
     ! References:
     !-----------------------------------------------------------------------
@@ -2363,7 +2363,7 @@ module advance_xm_wpxp_module
       invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum lev (k) [m^3/kg]
       wp3p1,           & ! w'^3(k+1)                                   [m^3/s^3]
       wp3,             & ! w'^3(k)                                     [m^3/s^3]
-      dzm                ! Inverse of grid spacing (k)                 [1/m]
+      invrs_dzm                ! Inverse of grid spacing (k)                 [1/m]
 
     integer, intent(in) :: & 
       level ! Central momentum level (on which calculation occurs).
@@ -2402,7 +2402,7 @@ module advance_xm_wpxp_module
     ! Momentum superdiagonal: [ x wpxp(k+1,<t+1>) ]
     lhs(kp1_mdiag) & 
     = + invrs_rho_ds_zm &
-        * dzm & 
+        * invrs_dzm & 
           * rho_ds_ztp1 * a1_ztp1 &
           * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) ) & 
           * gr%weights_zm2zt(m_above,tkp1)
@@ -2410,7 +2410,7 @@ module advance_xm_wpxp_module
     ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
     lhs(k_mdiag) & 
     = + invrs_rho_ds_zm &
-        * dzm & 
+        * invrs_dzm & 
           * (   rho_ds_ztp1 * a1_ztp1 &
                 * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) ) & 
                 * gr%weights_zm2zt(m_below,tkp1) & 
@@ -2422,7 +2422,7 @@ module advance_xm_wpxp_module
     ! Momentum subdiagonal: [ x wpxp(k-1,<t+1>) ]
     lhs(km1_mdiag) & 
     = - invrs_rho_ds_zm &
-        * dzm & 
+        * invrs_dzm & 
           * rho_ds_zt * a1_zt &
           * ( wp3 / max( wp2_zt, w_tol_sqd ) ) & 
           * gr%weights_zm2zt(m_below,tk)
@@ -2437,7 +2437,7 @@ module advance_xm_wpxp_module
   pure function wpxp_term_ta_lhs_upwind( wp2, wp2_m1, wp2_p1,                & 
                                          a1_zm, a1_zm_p1, a1_zm_m1,          & 
                                          wp3_zm_p1, wp3_zm, wp3_zm_m1,       &
-                                         dzt, dztkp1 )                & 
+                                         invrs_dzt, dztkp1 )                & 
   result( lhs )
 
     ! Description:
@@ -2467,7 +2467,7 @@ module advance_xm_wpxp_module
       wp3_zm_p1,   & ! w'^3(k+1)                                      [m^3/s^3]
       wp3_zm,      & ! w'^3(k)                                        [m^3/s^3]
       wp3_zm_m1,   & ! w'^3(k-1)                                      [m^3/s^3]
-      dzt,         & ! Inverse of grid spacing (k)                    [1/m]
+      invrs_dzt,         & ! Inverse of grid spacing (k)                    [1/m]
       dztkp1         ! Inverse of grid spacing (k+1)                  [1/m]
 
     ! Return Variable
@@ -2477,11 +2477,11 @@ module advance_xm_wpxp_module
       lhs(kp1_mdiag) = 0
 
       lhs(k_mdiag) &
-      = + dzt &
+      = + invrs_dzt &
         * a1_zm * ( wp3_zm / max( wp2, w_tol_sqd ) )
       
       lhs(km1_mdiag) & 
-      = - dzt & 
+      = - invrs_dzt & 
         * a1_zm_m1 * ( wp3_zm_m1 / max( wp2_m1, w_tol_sqd ) )
     else ! "Wind" is blowing downward
       lhs(kp1_mdiag) & 
@@ -2499,7 +2499,7 @@ module advance_xm_wpxp_module
   end function wpxp_term_ta_lhs_upwind
 
   !=============================================================================
-  pure function wpxp_term_tp_lhs( wp2, dzm ) & 
+  pure function wpxp_term_tp_lhs( wp2, invrs_dzm ) & 
   result( lhs )
 
     ! Description:
@@ -2538,7 +2538,7 @@ module advance_xm_wpxp_module
     ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
-    ! dzm(k) = 1 / ( zt(k+1) - zt(k) )
+    ! invrs_dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
     ! References:
     !-----------------------------------------------------------------------
@@ -2553,25 +2553,25 @@ module advance_xm_wpxp_module
     ! Input Variables
     real, intent(in) :: & 
       wp2,    & ! w'^2(k)                       [m^2/s^2]
-      dzm       ! Inverse of grid spacing (k)   [1/m]
+      invrs_dzm       ! Inverse of grid spacing (k)   [1/m]
 
     ! Return Variable
     real, dimension(2) :: lhs
 
     ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
     lhs(kp1_tdiag) & 
-    = + wp2 * dzm
+    = + wp2 * invrs_dzm
 
     ! Thermodynamic subdiagonal [ x xm(k,<t+1>) ]
     lhs(k_tdiag) & 
-    = - wp2 * dzm
+    = - wp2 * invrs_dzm
 
     return
   end function wpxp_term_tp_lhs
 
   !=============================================================================
   pure function wpxp_terms_ac_pr2_lhs( C7_Skw_fnc,  & 
-                                       wm_ztp1, wm_zt, dzm ) & 
+                                       wm_ztp1, wm_zt, invrs_dzm ) & 
   result( lhs )
 
     ! Description:
@@ -2619,7 +2619,7 @@ module advance_xm_wpxp_module
     ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
-    ! dzm(k) = 1 / ( zt(k+1) - zt(k) )
+    ! invrs_dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
     ! References:
     !-----------------------------------------------------------------------
@@ -2631,7 +2631,7 @@ module advance_xm_wpxp_module
       C7_Skw_fnc,  & ! C_7 parameter with Sk_w applied (k)             [-]
       wm_ztp1,     & ! w wind component on thermodynamic level (k+1)   [m/s]
       wm_zt,       & ! w wind component on thermodynamic level (k)     [m/s]
-      dzm            ! Inverse of grid spacing (k)                     [1/m]
+      invrs_dzm            ! Inverse of grid spacing (k)                     [1/m]
 
 
     ! Return Variable
@@ -2639,7 +2639,7 @@ module advance_xm_wpxp_module
 
     ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
     lhs & 
-    = + ( 1.0 - C7_Skw_fnc ) * dzm * ( wm_ztp1 - wm_zt )
+    = + ( 1.0 - C7_Skw_fnc ) * invrs_dzm * ( wm_ztp1 - wm_zt )
 
     return
   end function wpxp_terms_ac_pr2_lhs
@@ -2737,7 +2737,7 @@ module advance_xm_wpxp_module
   end function wpxp_terms_bp_pr3_rhs
 
   !=============================================================================
-  subroutine xm_correction_wpxp_cl( solve_type, dt, wpxp_chnge, dzt, &
+  subroutine xm_correction_wpxp_cl( solve_type, dt, wpxp_chnge, invrs_dzt, &
                                     xm )
 
     ! Description:
@@ -2836,7 +2836,7 @@ module advance_xm_wpxp_module
     ! zm(k), zt(k), and zm(k-1), respectively.  The letter "t" is used for
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
-    ! dzt(k) = 1 / ( zm(k) - zm(k-1) )
+    ! invrs_dzt(k) = 1 / ( zm(k) - zm(k-1) )
 
     ! Note:  The results of this xm adjustment are highly dependent on the
     !        numerical stability and the smoothness of the w'^2 and x'^2 fields.
@@ -2876,7 +2876,7 @@ module advance_xm_wpxp_module
 
     real, dimension(gr%nnzp), intent(in) :: &
       wpxp_chnge, & ! Amount of change in w'x' due to clipping  [m/s {xm units}]
-      dzt           ! Inverse of grid spacing                   [1/m]
+      invrs_dzt           ! Inverse of grid spacing                   [1/m]
 
     ! Input/Output Variable
     real, dimension(gr%nnzp), intent(inout) :: &
@@ -2904,7 +2904,7 @@ module advance_xm_wpxp_module
     ! Loop over all thermodynamic levels between the second-lowest and the
     ! highest.
     do k = 2, gr%nnzp, 1
-      xm_tndcy_wpxp_cl(k) = - dzt(k) * ( wpxp_chnge(k) - wpxp_chnge(k-1) )
+      xm_tndcy_wpxp_cl(k) = - invrs_dzt(k) * ( wpxp_chnge(k) - wpxp_chnge(k-1) )
       xm(k) = real( xm(k) + xm_tndcy_wpxp_cl(k) * dt )
     enddo
 
