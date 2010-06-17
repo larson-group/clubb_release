@@ -27,7 +27,7 @@ module mean_adv
   contains
 
   !=============================================================================
-  pure function term_ma_zt_lhs( wm_zt, dzt, level ) & 
+  pure function term_ma_zt_lhs( wm_zt, invrs_dzt, level ) & 
   result( lhs )
 
     ! Description:
@@ -76,7 +76,7 @@ module mean_adv
     ! The letter "t" is used for thermodynamic levels and the letter "m" is used
     ! for momentum levels.
     !
-    ! dzt(k) = 1 / ( zm(k) - zm(k-1) )
+    ! invrs_dzt(k) = 1 / ( zm(k) - zm(k-1) )
     !
     !
     ! Special discretization for upper boundary level:
@@ -189,7 +189,7 @@ module mean_adv
     ! Input Variables
     real, intent(in) :: & 
       wm_zt,   & ! wm_zt(k)                        [m/s]
-      dzt        ! Inverse of grid spacing (k)     [1/m]
+      invrs_dzt        ! Inverse of grid spacing (k)     [1/m]
 
     integer, intent(in) :: & 
       level ! Central thermodynamic level (on which calculation occurs).
@@ -238,16 +238,16 @@ module mean_adv
 
       ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
       lhs(kp1_tdiag) & 
-      = + wm_zt * dzt * gr%weights_zt2zm(t_above,mk)
+      = + wm_zt * invrs_dzt * gr%weights_zt2zm(t_above,mk)
 
       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
       lhs(k_tdiag) & 
-      = + wm_zt * dzt * (   gr%weights_zt2zm(t_below,mk) & 
+      = + wm_zt * invrs_dzt * (   gr%weights_zt2zm(t_below,mk) & 
                           - gr%weights_zt2zm(t_above,mkm1)   )
 
       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
       lhs(km1_tdiag) & 
-      = - wm_zt * dzt * gr%weights_zt2zm(t_below,mkm1)
+      = - wm_zt * invrs_dzt * gr%weights_zt2zm(t_below,mkm1)
 
 
     elseif ( level == gr%nnzp ) then
@@ -265,12 +265,12 @@ module mean_adv
 
          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
          lhs(k_tdiag) & 
-         = + wm_zt * dzt * (   gr%weights_zt2zm(t_above,mk) &
+         = + wm_zt * invrs_dzt * (   gr%weights_zt2zm(t_above,mk) &
                              - gr%weights_zt2zm(t_above,mkm1)   )
 
          ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
          lhs(km1_tdiag) & 
-         = + wm_zt * dzt * (   gr%weights_zt2zm(t_below,mk) &
+         = + wm_zt * invrs_dzt * (   gr%weights_zt2zm(t_below,mk) &
                              - gr%weights_zt2zm(t_below,mkm1)   )
 
       else
@@ -286,11 +286,11 @@ module mean_adv
 
          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
          lhs(k_tdiag) & 
-         = + wm_zt * dzt * ( 1.0 - gr%weights_zt2zm(t_above,mkm1) )
+         = + wm_zt * invrs_dzt * ( 1.0 - gr%weights_zt2zm(t_above,mkm1) )
 
          ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
          lhs(km1_tdiag) & 
-         = - wm_zt * dzt * gr%weights_zt2zm(t_below,mkm1)
+         = - wm_zt * invrs_dzt * gr%weights_zt2zm(t_below,mkm1)
 
       endif
 
@@ -302,7 +302,7 @@ module mean_adv
   end function term_ma_zt_lhs
 
   !=============================================================================
-  pure function term_ma_zm_lhs( wm_zm, dzm, level ) & 
+  pure function term_ma_zm_lhs( wm_zm, invrs_dzm, level ) & 
   result( lhs )
 
     ! Description:
@@ -351,7 +351,7 @@ module mean_adv
     ! The letter "t" is used for thermodynamic levels and the letter "m" is used
     ! for momentum levels.
     !
-    ! dzm(k) = 1 / ( zt(k+1) - zt(k) )
+    ! invrs_dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
     ! References:
     !-----------------------------------------------------------------------
@@ -374,7 +374,7 @@ module mean_adv
     ! Input Variables
     real, intent(in) :: & 
       wm_zm,   & ! wm_zm(k)                        [m/s]
-      dzm        ! Inverse of grid spacing (k)     [1/m]
+      invrs_dzm        ! Inverse of grid spacing (k)     [1/m]
 
     integer, intent(in) :: & 
       level ! Central momentum level (on which calculation occurs).
@@ -418,16 +418,16 @@ module mean_adv
 
       ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
       lhs(kp1_mdiag) & 
-      = + wm_zm * dzm * gr%weights_zm2zt(m_above,tkp1)
+      = + wm_zm * invrs_dzm * gr%weights_zm2zt(m_above,tkp1)
 
       ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
       lhs(k_mdiag) & 
-      = + wm_zm * dzm * (   gr%weights_zm2zt(m_below,tkp1) & 
+      = + wm_zm * invrs_dzm * (   gr%weights_zm2zt(m_below,tkp1) & 
                           - gr%weights_zm2zt(m_above,tk)  )
 
       ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
       lhs(km1_mdiag) & 
-      = - wm_zm * dzm * gr%weights_zm2zt(m_below,tk)
+      = - wm_zm * invrs_dzm * gr%weights_zm2zt(m_below,tk)
 
 
     elseif ( level == gr%nnzp ) then

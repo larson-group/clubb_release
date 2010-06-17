@@ -635,7 +635,7 @@ module grid_class
     endif ! not l_implemented
 
 
-    ! Define dzm, which is the inverse spacing between thermodynamic grid
+    ! Define invrs_dzm, which is the inverse spacing between thermodynamic grid
     ! levels; centered over momentum grid levels.
     do k=1,gr%nnzp-1
       gr%invrs_dzm(k) = 1. / ( gr%zt(k+1) - gr%zt(k) )
@@ -643,7 +643,7 @@ module grid_class
     gr%invrs_dzm(gr%nnzp) = gr%invrs_dzm(gr%nnzp-1)
 
 
-    ! Define dzt, which is the inverse spacing between momentum grid levels;
+    ! Define invrs_dzt, which is the inverse spacing between momentum grid levels;
     ! centered over thermodynamic grid levels.
     do k=2,gr%nnzp
       gr%invrs_dzt(k) = 1. / ( gr%zm(k) - gr%zm(k-1) )

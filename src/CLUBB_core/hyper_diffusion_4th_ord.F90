@@ -23,8 +23,8 @@ module hyper_diffusion_4th_ord
 contains
 
   !=============================================================================
-  pure function hyper_dfsn_4th_ord_zt_lhs( boundary_cond, nu, dzt,  &
-                                           dzm, dzmm1, dztp1,  &
+  pure function hyper_dfsn_4th_ord_zt_lhs( boundary_cond, nu, invrs_dzt,  &
+                                           invrs_dzm, dzmm1, dztp1,  &
                                            dztm1, dzmp1, dzmm2, level )  &
   result( lhs )
 
@@ -92,26 +92,26 @@ contains
     ! letter "t" is used for thermodynamic levels and the letter "m" is used for
     ! momentum levels.
     !
-    ! dzt(k)   = 1 / ( zm(k) - zm(k-1) )
-    ! dzm(k)   = 1 / ( zt(k+1) - zt(k) )
-    ! dzm(k-1) = 1 / ( zt(k) - zt(k-1) )
-    ! dzt(k+1) = 1 / ( zm(k+1) - zm(k) )
-    ! dzt(k-1) = 1 / ( zm(k-1) - zm(k-2) )
-    ! dzm(k+1) = 1 / ( zt(k+2) - zt(k+1) )
-    ! dzm(k-2) = 1 / ( zt(k-1) - zt(k-2) )
+    ! invrs_dzt(k)   = 1 / ( zm(k) - zm(k-1) )
+    ! invrs_dzm(k)   = 1 / ( zt(k+1) - zt(k) )
+    ! invrs_dzm(k-1) = 1 / ( zt(k) - zt(k-1) )
+    ! invrs_dzt(k+1) = 1 / ( zm(k+1) - zm(k) )
+    ! invrs_dzt(k-1) = 1 / ( zm(k-1) - zm(k-2) )
+    ! invrs_dzm(k+1) = 1 / ( zt(k+2) - zt(k+1) )
+    ! invrs_dzm(k-2) = 1 / ( zt(k-1) - zt(k-2) )
     !
     ! The discretization of -nu*d^4(var_zt)/dz^4 at thermodynamic level (k)
     ! is written out as follows:
     !
     ! -nu
-    !  *dzt(k)*[ dzm(k)*{ dzt(k+1)*( dzm(k+1)*(var_zt(k+2)-var_zt(k+1))
-    !                               -dzm(k)*(var_zt(k+1)-var_zt(k)) )
-    !                    -dzt(k)*( dzm(k)*(var_zt(k+1)-var_zt(k))
-    !                             -dzm(k-1)*(var_zt(k)-var_zt(k-1)) ) }
-    !           -dzm(k-1)*{ dzt(k)*( dzm(k)*(var_zt(k+1)-var_zt(k))
-    !                               -dzm(k-1)*(var_zt(k)-var_zt(k-1)) )
-    !                      -dzt(k-1)*( dzm(k-1)*(var_zt(k)-var_zt(k-1))
-    !                                 -dzm(k-2)*(var_zt(k-1)-var_zt(k-2)) ) } ].
+    !  *invrs_dzt(k)*[ invrs_dzm(k)*{ invrs_dzt(k+1)*( invrs_dzm(k+1)*(var_zt(k+2)-var_zt(k+1))
+    !                               -invrs_dzm(k)*(var_zt(k+1)-var_zt(k)) )
+    !                    -invrs_dzt(k)*( invrs_dzm(k)*(var_zt(k+1)-var_zt(k))
+    !                             -invrs_dzm(k-1)*(var_zt(k)-var_zt(k-1)) ) }
+    !           -invrs_dzm(k-1)*{ invrs_dzt(k)*( invrs_dzm(k)*(var_zt(k+1)-var_zt(k))
+    !                               -invrs_dzm(k-1)*(var_zt(k)-var_zt(k-1)) )
+    !                      -invrs_dzt(k-1)*( invrs_dzm(k-1)*(var_zt(k)-var_zt(k-1))
+    !                                 -invrs_dzm(k-2)*(var_zt(k-1)-var_zt(k-2)) ) } ].
     !
     ! Again, the term is treated completely implicitly, so the leading "-" sign
     ! changes to a "+" sign when the term is brought over to the left-hand side,
@@ -190,13 +190,13 @@ contains
     !    is written out as follows:
     !
     !    -nu
-    !     *dzt(k)*[ dzm(k)*{ dzt(k+1)*( dzm(k+1)*(var_zt(k+2)-var_zt(k+1))
-    !                                  -dzm(k)*(var_zt(k+1)-var_zt(k)) )
-    !                       -dzt(k)*( dzm(k)*(var_zt(k+1)-var_zt(k))
-    !                                -dzm(k-1)*(var_zt(k)-var_zt(k-1)) ) }
-    !              -dzm(k-1)*{ dzt(k)*( dzm(k)*(var_zt(k+1)-var_zt(k))
-    !                                  -dzm(k-1)*(var_zt(k)-var_zt(k-1)) )
-    !                         -dzt(k-1)*dzm(k-1)*(var_zt(k)-var_zt(k-1)) } ].
+    !     *invrs_dzt(k)*[ invrs_dzm(k)*{ invrs_dzt(k+1)*( invrs_dzm(k+1)*(var_zt(k+2)-var_zt(k+1))
+    !                                  -invrs_dzm(k)*(var_zt(k+1)-var_zt(k)) )
+    !                       -invrs_dzt(k)*( invrs_dzm(k)*(var_zt(k+1)-var_zt(k))
+    !                                -invrs_dzm(k-1)*(var_zt(k)-var_zt(k-1)) ) }
+    !              -invrs_dzm(k-1)*{ invrs_dzt(k)*( invrs_dzm(k)*(var_zt(k+1)-var_zt(k))
+    !                                  -invrs_dzm(k-1)*(var_zt(k)-var_zt(k-1)) )
+    !                         -invrs_dzt(k-1)*invrs_dzm(k-1)*(var_zt(k)-var_zt(k-1)) } ].
     !
     !    Again, the term is treated completely implicitly, so the leading "-"
     !    sign changes to a "+" sign when the term is brought over to the
@@ -227,9 +227,9 @@ contains
     !    is written out as follows:
     !
     !    -nu
-    !     *dzt(k)*[ dzm(k)*{ dzt(k+1)*( dzm(k+1)*(var_zt(k+2)-var_zt(k+1))
-    !                                  -dzm(k)*(var_zt(k+1)-var_zt(k)) )
-    !                       -dzt(k)*dzm(k)*(var_zt(k+1)-var_zt(k)) } ].
+    !     *invrs_dzt(k)*[ invrs_dzm(k)*{ invrs_dzt(k+1)*( invrs_dzm(k+1)*(var_zt(k+2)-var_zt(k+1))
+    !                                  -invrs_dzm(k)*(var_zt(k+1)-var_zt(k)) )
+    !                       -invrs_dzt(k)*invrs_dzm(k)*(var_zt(k+1)-var_zt(k)) } ].
     !
     !    Again, the term is treated completely implicitly, so the leading "-"
     !    sign changes to a "+" sign when the term is brought over to the
@@ -302,12 +302,12 @@ contains
     !    is written out as follows:
     !
     !    -nu
-    !     *dzt(k)*[ dzm(k)*{ dzt(k+1)*( dzm(k+1)*(var_zt(k+2)-var_zt(k+1))
-    !                                  -dzm(k)*(var_zt(k+1)-var_zt(k)) )
-    !                       -dzt(k)*( dzm(k)*(var_zt(k+1)-var_zt(k))
-    !                                -dzm(k-1)*(var_zt(k)-var_zt(k-1)) ) }
-    !              -dzm(k-1)*{ dzt(k)*( dzm(k)*(var_zt(k+1)-var_zt(k))
-    !                                  -dzm(k-1)*(var_zt(k)-var_zt(k-1)) ) } ].
+    !     *invrs_dzt(k)*[ invrs_dzm(k)*{ invrs_dzt(k+1)*( invrs_dzm(k+1)*(var_zt(k+2)-var_zt(k+1))
+    !                                  -invrs_dzm(k)*(var_zt(k+1)-var_zt(k)) )
+    !                       -invrs_dzt(k)*( invrs_dzm(k)*(var_zt(k+1)-var_zt(k))
+    !                                -invrs_dzm(k-1)*(var_zt(k)-var_zt(k-1)) ) }
+    !              -invrs_dzm(k-1)*{ invrs_dzt(k)*( invrs_dzm(k)*(var_zt(k+1)-var_zt(k))
+    !                                  -invrs_dzm(k-1)*(var_zt(k)-var_zt(k-1)) ) } ].
     !
     !    Again, the term is treated completely implicitly, so the leading "-"
     !    sign changes to a "+" sign when the term is brought over to the
@@ -357,10 +357,11 @@ contains
     ! matrix notation (where "i" stands for the matrix column and "j" stands for
     ! the matrix row):
     !
-    !  0 = Sum_j Sum_i ( 1/dzt )_i ( nu*dzt*dzm*dzt*dzm )_ij (var_zt)_j.
+    !  0 = Sum_j Sum_i ( 1/invrs_dzt )_i 
+    !		( nu*invrs_dzt*invrs_dzm*invrs_dzt*invrs_dzm )_ij (var_zt)_j.
     !
-    ! The left-hand side matrix, ( nu*dzt*dzm*dzt*dzm )_ij, is partially written
-    ! below.  The sum over i in the above equation removes the first dzt(k)
+    ! The left-hand side matrix, ( nu*invrs_dzt*invrs_dzm*invrs_dzt*invrs_dzm )_ij, is partially
+    ! written below.  The sum over i in the above equation removes the first invrs_dzt(k)
     ! everywhere from the matrix below.  The sum over j leaves the column totals
     ! that are desired.
     !
@@ -369,79 +370,79 @@ contains
     !
     !         column 1    ||    column 2    ||    column 3    ||    column 4    ||    column 5
     !    ------------------------------------------------------------------------------------------>
-    !   | +nu             -nu               +nu
-    !   | *dzt(k)         *dzt(k)           *dzt(k)
-    !   |  *[ dzm(k)       *[ dzm(k)         *dzm(k)
-    !k=1|     *{ dzt(k+1)     *{ dzt(k+1)     *dzt(k+1)                0                 0
-    !   |        *dzm(k)         *( dzm(k+1)   *dzm(k+1)
-    !   |       +dzt(k)            +dzm(k) )
-    !   |        *dzm(k) } ]    +dzt(k)
-    !   |                        *dzm(k) } ]
+    !   | +nu                  -nu                     +nu
+    !   | *invrs_dzt(k)         *invrs_dzt(k)           *invrs_dzt(k)
+    !   |  *[ invrs_dzm(k)       *[ invrs_dzm(k)         *invrs_dzm(k)
+    !k=1|     *{ invrs_dzt(k+1)     *{ invrs_dzt(k+1)     *invrs_dzt(k+1)            0             0
+    !   |        *invrs_dzm(k)         *( invrs_dzm(k+1)   *invrs_dzm(k+1)
+    !   |       +invrs_dzt(k)            +invrs_dzm(k) )
+    !   |        *invrs_dzm(k) } ]    +invrs_dzt(k)
+    !   |                          *invrs_dzm(k) } ]
     !   |
-    !   | -nu             +nu               -nu               +nu
-    !   | *dzt(k)         *dzt(k)           *dzt(k)           *dzt(k)
-    !   |  *[ dzm(k)       *[ dzm(k)         *[ dzm(k)         *dzm(k)
-    !   |     *dzt(k)         *{ dzt(k+1)       *{ dzt(k+1)     *dzt(k+1)
-    !   |      *dzm(k-1)         *dzm(k)           *( dzm(k+1)   *dzm(k+1)
-    !   |    +dzm(k-1)          +dzt(k)              +dzm(k) )
-    !   |     *{ dzt(k)          *( dzm(k)        +dzt(k)
-    !k=2|        *dzm(k-1)         +dzm(k-1) )     *dzm(k) }                             0
-    !   |       +dzt(k-1)      }               +dzm(k-1)
-    !   |        *dzm(k-1)   +dzm(k-1)          *dzt(k)
-    !   |      } ]            *{ dzt(k)          *dzm(k) ]
-    !   |                        *( dzm(k)
-    !   |                          +dzm(k-1) )
-    !   |                       +dzt(k-1)
-    !   |                        *dzm(k-1) } ]
+    !   | -nu                   +nu                     -nu                     +nu
+    !   | *invrs_dzt(k)         *invrs_dzt(k)           *invrs_dzt(k)           *invrs_dzt(k)
+    !   |  *[ invrs_dzm(k)       *[ invrs_dzm(k)         *[ invrs_dzm(k)         *invrs_dzm(k)
+    !   |     *invrs_dzt(k)       *{ invrs_dzt(k+1)       *{ invrs_dzt(k+1)       *invrs_dzt(k+1)
+    !   |      *invrs_dzm(k-1)     *invrs_dzm(k)           *( invrs_dzm(k+1)       *invrs_dzm(k+1)
+    !   |    +invrs_dzm(k-1)        +invrs_dzt(k)              +invrs_dzm(k) )
+    !   |     *{ invrs_dzt(k)        *( invrs_dzm(k)        +invrs_dzt(k)
+    !k=2|        *invrs_dzm(k-1)       +invrs_dzm(k-1) )     *invrs_dzm(k) }                       0
+    !   |       +invrs_dzt(k-1)      }                        +invrs_dzm(k-1)
+    !   |        *invrs_dzm(k-1)   +invrs_dzm(k-1)             *invrs_dzt(k)
+    !   |      } ]                 *{ invrs_dzt(k)              *invrs_dzm(k) ]
+    !   |                           *( invrs_dzm(k)
+    !   |                            +invrs_dzm(k-1) )
+    !   |                             +invrs_dzt(k-1)
+    !   |                              *invrs_dzm(k-1) } ]
     !   |
     !   | +nu             -nu               +nu               -nu               +nu
-    !   | *dzt(k)         *dzt(k)           *dzt(k)           *dzt(k)           *dzt(k)
-    !   |  *dzm(k-1)       *[ dzm(k)         *[ dzm(k)         *[ dzm(k)         *dzm(k)
-    !   |   *dzt(k-1)         *dzt(k)           *{ dzt(k+1)       *{ dzt(k+1)     *dzt(k+1)
-    !   |    *dzm(k-2)         *dzm(k-1)           *dzm(k)           *( dzm(k+1)   *dzm(k+1)
-    !   |                    +dzm(k-1)            +dzt(k)              +dzm(k) )
-    !   |                     *{ dzt(k)            *( dzm(k)        +dzt(k)
-    !k=3|                        *dzm(k-1)           +dzm(k-1) )     *dzm(k) }
-    !   |                       +dzt(k-1)        }               +dzm(k-1)
-    !   |                        *( dzm(k-1)   +dzm(k-1)          *dzt(k)
-    !   |                          +dzm(k-2) )  *{ dzt(k)          *dzm(k) ]
-    !   |                      } ]                 *( dzm(k)
-    !   |                                            +dzm(k-1) )
-    !   |                                         +dzt(k-1)
-    !   |                                          *dzm(k-1) } ]
+    !   | *invrs_dzt(k)    *invrs_dzt(k)     *invrs_dzt(k)     *invrs_dzt(k)      *invrs_dzt(k)
+    !   |  *invrs_dzm(k-1)   *[ invrs_dzm(k)  *[ invrs_dzm(k)   *[ invrs_dzm(k)    *invrs_dzm(k)
+    !   |   *invrs_dzt(k-1)   *invrs_dzt(k)    *{ invrs_dzt(k+1)  *{ invrs_dzt(k+1) *invrs_dzt(k+1)
+    !   |    *invrs_dzm(k-2)   *invrs_dzm(k-1)  *invrs_dzm(k)      *( invrs_dzm(k+1) *invrs_dzm(k+1)
+    !   |                    +invrs_dzm(k-1)            +invrs_dzt(k)              +invrs_dzm(k) )
+    !   |                     *{ invrs_dzt(k)            *( invrs_dzm(k)        +invrs_dzt(k)
+    !k=3|                        *invrs_dzm(k-1)           +invrs_dzm(k-1) )     *invrs_dzm(k) }
+    !   |                       +invrs_dzt(k-1)        }                          +invrs_dzm(k-1)
+    !   |                        *( invrs_dzm(k-1)   +invrs_dzm(k-1)               *invrs_dzt(k)
+    !   |                          +invrs_dzm(k-2) )  *{ invrs_dzt(k)               *invrs_dzm(k) ]
+    !   |                      } ]                 *( invrs_dzm(k)
+    !   |                                            +invrs_dzm(k-1) )
+    !   |                                         +invrs_dzt(k-1)
+    !   |                                          *invrs_dzm(k-1) } ]
     !   |
-    !   |                 +nu               -nu               +nu               -nu
-    !   |                 *dzt(k)           *dzt(k)           *dzt(k)           *dzt(k)
-    !   |                  *dzm(k-1)         *[ dzm(k)         *[ dzm(k)         *[ dzm(k)
-    !   |                   *dzt(k-1)           *dzt(k)           *{ dzt(k+1)       *{ dzt(k+1)
-    !   |                    *dzm(k-2)           *dzm(k-1)           *dzm(k)           *( dzm(k+1)
-    !   |                                      +dzm(k-1)            +dzt(k)              +dzm(k) )
-    !   |                                       *{ dzt(k)            *( dzm(k)        +dzt(k)
-    !k=4|        0                                 *dzm(k-1)           +dzm(k-1) )     *dzm(k) }
-    !   |                                         +dzt(k-1)        }               +dzm(k-1)
-    !   |                                          *( dzm(k-1)   +dzm(k-1)          *dzt(k)
-    !   |                                            +dzm(k-2) )  *{ dzt(k)          *dzm(k) ]
-    !   |                                        } ]                 *( dzm(k)
-    !   |                                                              +dzm(k-1) )
-    !   |                                                           +dzt(k-1)
-    !   |                                                            *dzm(k-1) } ]
+    !   |             +nu               -nu               +nu               -nu
+    !   |             *invrs_dzt(k)     *invrs_dzt(k)     *invrs_dzt(k)     *invrs_dzt(k)
+    !   |              *invrs_dzm(k-1)   *[ invrs_dzm(k)   *[ invrs_dzm(k)   *[ invrs_dzm(k)
+    !   |               *invrs_dzt(k-1)   *invrs_dzt(k)     *{ invrs_dzt(k+1) *{ invrs_dzt(k+1)
+    !   |                *invrs_dzm(k-2)   *invrs_dzm(k-1)   *invrs_dzm(k)     *( invrs_dzm(k+1)
+    !   |                                   +invrs_dzm(k-1)   +invrs_dzt(k)     +invrs_dzm(k) )
+    !   |                                    *{ invrs_dzt(k)   *( invrs_dzm(k)   +invrs_dzt(k)
+    !k=4|        0                            *invrs_dzm(k-1)   +invrs_dzm(k-1) )  *invrs_dzm(k) }
+    !   |                                      +invrs_dzt(k-1)   }                  +invrs_dzm(k-1)
+    !   |                                      *( invrs_dzm(k-1)  +invrs_dzm(k-1)    *invrs_dzt(k)
+    !   |                                        +invrs_dzm(k-2)  ) *{ invrs_dzt(k)  *invrs_dzm(k) ]
+    !   |                                    } ]                  *( invrs_dzm(k)
+    !   |                                                          +invrs_dzm(k-1) )
+    !   |                                                           +invrs_dzt(k-1)
+    !   |                                                            *invrs_dzm(k-1) } ]
     !   |
-    !   |                                   +nu               -nu               +nu
-    !   |                                   *dzt(k)           *dzt(k)           *dzt(k)
-    !   |                                    *dzm(k-1)         *[ dzm(k)         *[ dzm(k)
-    !   |                                     *dzt(k-1)           *dzt(k)           *{ dzt(k+1)
-    !   |                                      *dzm(k-2)           *dzm(k-1)           *dzm(k)
-    !   |                                                        +dzm(k-1)            +dzt(k)
-    !   |                                                         *{ dzt(k)            *( dzm(k)
-    !k=5|        0                 0                                 *dzm(k-1)           +dzm(k-1) )
-    !   |                                                           +dzt(k-1)        }
-    !   |                                                            *( dzm(k-1)   +dzm(k-1)
-    !   |                                                              +dzm(k-2) )  *{ dzt(k)
-    !   |                                                          } ]                 *( dzm(k)
-    !   |                                                                                +dzm(k-1) )
-    !   |                                                                             +dzt(k-1)
-    !   |                                                                              *dzm(k-1) } ]
-    !  \ /
+    !   |                                +nu               -nu               +nu
+    !   |                                *invrs_dzt(k)     *invrs_dzt(k)     *invrs_dzt(k)
+    !   |                                 *invrs_dzm(k-1)   *[ invrs_dzm(k)   *[ invrs_dzm(k)
+    !   |                                  *invrs_dzt(k-1)    *invrs_dzt(k)     *{ invrs_dzt(k+1)
+    !   |                                   *invrs_dzm(k-2)    *invrs_dzm(k-1)    *invrs_dzm(k)
+    !   |                                                     +invrs_dzm(k-1)      +invrs_dzt(k)
+    !   |                                                      *{ invrs_dzt(k)     *( invrs_dzm(k)
+    !k=5|        0              0                              *invrs_dzm(k-1)     +invrs_dzm(k-1) )
+    !   |                                                       +invrs_dzt(k-1)        }
+    !   |                                                       *( invrs_dzm(k-1)  +invrs_dzm(k-1)
+    !   |                                                       +invrs_dzm(k-2) )  *{ invrs_dzt(k)
+    !   |                                                       } ]                *( invrs_dzm(k)
+    !   |                                                                          +invrs_dzm(k-1) )
+    !   |                                                                          +invrs_dzt(k-1)
+    !   |                                                                          *invrs_dzm(k-1)
+    !  \ /                                                                         } ]         
     !
     ! Note:  The super-super diagonal term from level 4 and both the super
     !        diagonal and super-super diagonal terms from level 5 are not shown
@@ -463,18 +464,18 @@ contains
     !k=1|        0                 0                 0                 0                 0
     !   |
     !   | -nu             +nu               -nu               +nu
-    !   | *dzt(k)         *dzt(k)           *dzt(k)           *dzt(k)
-    !   |  *[ dzm(k)       *[ dzm(k)         *[ dzm(k)         *dzm(k)
-    !   |     *dzt(k)         *{ dzt(k+1)       *{ dzt(k+1)     *dzt(k+1)
-    !   |      *dzm(k-1)         *dzm(k)           *( dzm(k+1)   *dzm(k+1)
-    !   |    +dzm(k-1)          +dzt(k)              +dzm(k) )
-    !k=2|     *dzt(k)            *( dzm(k)        +dzt(k)                                0
-    !   |      *dzm(k-1) ]         +dzm(k-1) )     *dzm(k) }
-    !   |                      }               +dzm(k-1)
-    !   |                    +dzm(k-1)          *dzt(k)
-    !   |                     *{ dzt(k)          *dzm(k) ]
-    !   |                        *( dzm(k)
-    !   |                          +dzm(k-1) )
+    !   | *invrs_dzt(k)         *invrs_dzt(k)           *invrs_dzt(k)           *invrs_dzt(k)
+    !   |  *[ invrs_dzm(k)       *[ invrs_dzm(k)         *[ invrs_dzm(k)         *invrs_dzm(k)
+    !   |     *invrs_dzt(k)         *{ invrs_dzt(k+1)       *{ invrs_dzt(k+1)     *invrs_dzt(k+1)
+    !   |      *invrs_dzm(k-1)         *invrs_dzm(k)           *( invrs_dzm(k+1)   *invrs_dzm(k+1)
+    !   |    +invrs_dzm(k-1)          +invrs_dzt(k)              +invrs_dzm(k) )
+    !k=2|     *invrs_dzt(k)            *( invrs_dzm(k)        +invrs_dzt(k)                        0
+    !   |      *invrs_dzm(k-1) ]         +invrs_dzm(k-1) )     *invrs_dzm(k) }
+    !   |                      }               +invrs_dzm(k-1)
+    !   |                    +invrs_dzm(k-1)          *invrs_dzt(k)
+    !   |                     *{ invrs_dzt(k)          *invrs_dzm(k) ]
+    !   |                        *( invrs_dzm(k)
+    !   |                          +invrs_dzm(k-1) )
     !   |                      } ]
     !  \ /
     !
@@ -511,8 +512,8 @@ contains
 
     real, intent(in) ::  &
       nu,     & ! Constant coefficient of 4th-order numerical diffusion  [m^4/s]
-      dzt,    & ! Inverse of grid spacing over thermodynamic level (k)   [1/m]
-      dzm,    & ! Inverse of grid spacing over momentum level (k)        [1/m]
+      invrs_dzt,    & ! Inverse of grid spacing over thermodynamic level (k)   [1/m]
+      invrs_dzm,    & ! Inverse of grid spacing over momentum level (k)        [1/m]
       dzmm1,  & ! Inverse of grid spacing over momentum level (k-1)      [1/m]
       dztp1,  & ! Inverse of grid spacing over thermodynamic level (k+1) [1/m]
       dztm1,  & ! Inverse of grid spacing over thermodynamic level (k-1) [1/m]
@@ -543,14 +544,14 @@ contains
           lhs(km1_tdiag) = 0.0
 
           ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-          lhs(k_tdiag)   = +nu*dzt*dzm*(dztp1*dzm + dzt*dzm)
+          lhs(k_tdiag)   = +nu*invrs_dzt*invrs_dzm*(dztp1*invrs_dzm + invrs_dzt*invrs_dzm)
 
           ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
-          lhs(kp1_tdiag) = -nu*dzt*dzm*( dztp1*(dzmp1 + dzm)  &
-                                        +dzt*dzm )
+          lhs(kp1_tdiag) = -nu*invrs_dzt*invrs_dzm*( dztp1*(dzmp1 + invrs_dzm)  &
+                                        +invrs_dzt*invrs_dzm )
 
           ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
-          lhs(kp2_tdiag) = +nu*dzt*dzm*dztp1*dzmp1
+          lhs(kp2_tdiag) = +nu*invrs_dzt*invrs_dzm*dztp1*dzmp1
 
        elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
@@ -588,23 +589,23 @@ contains
           lhs(km2_tdiag) = 0.0
 
           ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
-          lhs(km1_tdiag) = -nu*dzt*( dzm*dzt*dzmm1  &
-                                    +dzmm1*( dzt*dzmm1  &
+          lhs(km1_tdiag) = -nu*invrs_dzt*( invrs_dzm*invrs_dzt*dzmm1  &
+                                    +dzmm1*( invrs_dzt*dzmm1  &
                                             +dztm1*dzmm1 ) )
 
           ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-          lhs(k_tdiag)   = +nu*dzt*( dzm*( dztp1*dzm  &
-                                          +dzt*(dzm + dzmm1) )  &
-                                    +dzmm1*( dzt*(dzm + dzmm1)  &
+          lhs(k_tdiag)   = +nu*invrs_dzt*( invrs_dzm*( dztp1*invrs_dzm  &
+                                          +invrs_dzt*(invrs_dzm + dzmm1) )  &
+                                    +dzmm1*( invrs_dzt*(invrs_dzm + dzmm1)  &
                                             +dztm1*dzmm1 ) )
 
           ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
-          lhs(kp1_tdiag) = -nu*dzt*( dzm*( dztp1*(dzmp1 + dzm)  &
-                                          +dzt*dzm )  &
-                                    +dzmm1*dzt*dzm )
+          lhs(kp1_tdiag) = -nu*invrs_dzt*( invrs_dzm*( dztp1*(dzmp1 + invrs_dzm)  &
+                                          +invrs_dzt*invrs_dzm )  &
+                                    +dzmm1*invrs_dzt*invrs_dzm )
 
           ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
-          lhs(kp2_tdiag) = +nu*dzt*dzm*dztp1*dzmp1
+          lhs(kp2_tdiag) = +nu*invrs_dzt*invrs_dzm*dztp1*dzmp1
 
        elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
@@ -614,21 +615,21 @@ contains
           lhs(km2_tdiag) = 0.0
 
           ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
-          lhs(km1_tdiag) = -nu*dzt*( dzm*dzt*dzmm1  &
-                                    +dzmm1*dzt*dzmm1 )
+          lhs(km1_tdiag) = -nu*invrs_dzt*( invrs_dzm*invrs_dzt*dzmm1  &
+                                    +dzmm1*invrs_dzt*dzmm1 )
 
           ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-          lhs(k_tdiag)   = +nu*dzt*( dzm*( dztp1*dzm  &
-                                          +dzt*(dzm + dzmm1) )  &
-                                    +dzmm1*( dzt*(dzm + dzmm1) ) )
+          lhs(k_tdiag)   = +nu*invrs_dzt*( invrs_dzm*( dztp1*invrs_dzm  &
+                                          +invrs_dzt*(invrs_dzm + dzmm1) )  &
+                                    +dzmm1*( invrs_dzt*(invrs_dzm + dzmm1) ) )
 
           ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
-          lhs(kp1_tdiag) = -nu*dzt*( dzm*( dztp1*(dzmp1 + dzm)  &
-                                          +dzt*dzm )  &
-                                    +dzmm1*dzt*dzm )
+          lhs(kp1_tdiag) = -nu*invrs_dzt*( invrs_dzm*( dztp1*(dzmp1 + invrs_dzm)  &
+                                          +invrs_dzt*invrs_dzm )  &
+                                    +dzmm1*invrs_dzt*invrs_dzm )
 
           ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
-          lhs(kp2_tdiag) = +nu*dzt*dzm*dztp1*dzmp1
+          lhs(kp2_tdiag) = +nu*invrs_dzt*invrs_dzm*dztp1*dzmp1
 
        endif
 
@@ -639,26 +640,26 @@ contains
        ! These interior level are not effected by boundary conditions.
 
        ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
-       lhs(km2_tdiag) = +nu*dzt*dzmm1*dztm1*dzmm2
+       lhs(km2_tdiag) = +nu*invrs_dzt*dzmm1*dztm1*dzmm2
 
        ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
-       lhs(km1_tdiag) = -nu*dzt*( dzm*dzt*dzmm1  &
-                                 +dzmm1*( dzt*dzmm1  &
+       lhs(km1_tdiag) = -nu*invrs_dzt*( invrs_dzm*invrs_dzt*dzmm1  &
+                                 +dzmm1*( invrs_dzt*dzmm1  &
                                          +dztm1*(dzmm1 + dzmm2) ) )
 
        ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-       lhs(k_tdiag)   = +nu*dzt*( dzm*( dztp1*dzm  &
-                                       +dzt*(dzm + dzmm1) )  &
-                                 +dzmm1*( dzt*(dzm + dzmm1)  &
+       lhs(k_tdiag)   = +nu*invrs_dzt*( invrs_dzm*( dztp1*invrs_dzm  &
+                                       +invrs_dzt*(invrs_dzm + dzmm1) )  &
+                                 +dzmm1*( invrs_dzt*(invrs_dzm + dzmm1)  &
                                          +dztm1*dzmm1 ) )
 
        ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
-       lhs(kp1_tdiag) = -nu*dzt*( dzm*( dztp1*(dzmp1 + dzm)  &
-                                       +dzt*dzm )  &
-                                 +dzmm1*dzt*dzm )
+       lhs(kp1_tdiag) = -nu*invrs_dzt*( invrs_dzm*( dztp1*(dzmp1 + invrs_dzm)  &
+                                       +invrs_dzt*invrs_dzm )  &
+                                 +dzmm1*invrs_dzt*invrs_dzm )
 
        ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
-       lhs(kp2_tdiag) = +nu*dzt*dzm*dztp1*dzmp1
+       lhs(kp2_tdiag) = +nu*invrs_dzt*invrs_dzm*dztp1*dzmp1
 
 
     elseif ( level == gr%nnzp-1 ) then
@@ -670,23 +671,23 @@ contains
           ! Zero-flux boundary conditions
 
           ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
-          lhs(km2_tdiag) = +nu*dzt*dzmm1*dztm1*dzmm2
+          lhs(km2_tdiag) = +nu*invrs_dzt*dzmm1*dztm1*dzmm2
 
           ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
-          lhs(km1_tdiag) = -nu*dzt*( dzm*dzt*dzmm1  &
-                                    +dzmm1*( dzt*dzmm1  &
+          lhs(km1_tdiag) = -nu*invrs_dzt*( invrs_dzm*invrs_dzt*dzmm1  &
+                                    +dzmm1*( invrs_dzt*dzmm1  &
                                             +dztm1*(dzmm1 + dzmm2) ) )
 
           ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-          lhs(k_tdiag)   = +nu*dzt*( dzm*( dztp1*dzm  &
-                                          +dzt*(dzm + dzmm1) )  &
-                                    +dzmm1*( dzt*(dzm + dzmm1)  &
+          lhs(k_tdiag)   = +nu*invrs_dzt*( invrs_dzm*( dztp1*invrs_dzm  &
+                                          +invrs_dzt*(invrs_dzm + dzmm1) )  &
+                                    +dzmm1*( invrs_dzt*(invrs_dzm + dzmm1)  &
                                             +dztm1*dzmm1 ) )
 
           ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
-          lhs(kp1_tdiag) = -nu*dzt*( dzm*( dztp1*dzm  &
-                                          +dzt*dzm )  &
-                                    +dzmm1*dzt*dzm )
+          lhs(kp1_tdiag) = -nu*invrs_dzt*( invrs_dzm*( dztp1*invrs_dzm  &
+                                          +invrs_dzt*invrs_dzm )  &
+                                    +dzmm1*invrs_dzt*invrs_dzm )
 
           ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
           lhs(kp2_tdiag) = 0.0
@@ -696,21 +697,21 @@ contains
           ! Fixed-point boundary conditions
 
           ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
-          lhs(km2_tdiag) = +nu*dzt*dzmm1*dztm1*dzmm2
+          lhs(km2_tdiag) = +nu*invrs_dzt*dzmm1*dztm1*dzmm2
 
           ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
-          lhs(km1_tdiag) = -nu*dzt*( dzm*dzt*dzmm1  &
-                                    +dzmm1*( dzt*dzmm1  &
+          lhs(km1_tdiag) = -nu*invrs_dzt*( invrs_dzm*invrs_dzt*dzmm1  &
+                                    +dzmm1*( invrs_dzt*dzmm1  &
                                             +dztm1*(dzmm1 + dzmm2) ) )
 
           ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-          lhs(k_tdiag)   = +nu*dzt*( dzm*( dzt*(dzm + dzmm1) )  &
-                                    +dzmm1*( dzt*(dzm + dzmm1)  &
+          lhs(k_tdiag)   = +nu*invrs_dzt*( invrs_dzm*( invrs_dzt*(invrs_dzm + dzmm1) )  &
+                                    +dzmm1*( invrs_dzt*(invrs_dzm + dzmm1)  &
                                             +dztm1*dzmm1 ) )
 
           ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
-          lhs(kp1_tdiag) = -nu*dzt*( dzm*dzt*dzm  &
-                                    +dzmm1*dzt*dzm )
+          lhs(kp1_tdiag) = -nu*invrs_dzt*( invrs_dzm*invrs_dzt*invrs_dzm  &
+                                    +dzmm1*invrs_dzt*invrs_dzm )
 
           ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
           lhs(kp2_tdiag) = 0.0
@@ -729,14 +730,14 @@ contains
           ! Zero-flux boundary conditions
 
           ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
-          lhs(km2_tdiag) = +nu*dzt*dzmm1*dztm1*dzmm2
+          lhs(km2_tdiag) = +nu*invrs_dzt*dzmm1*dztm1*dzmm2
 
           ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
-          lhs(km1_tdiag) = -nu*dzt*dzmm1*( dzt*dzmm1  &
+          lhs(km1_tdiag) = -nu*invrs_dzt*dzmm1*( invrs_dzt*dzmm1  &
                                           +dztm1*(dzmm1 + dzmm2) )
 
           ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-          lhs(k_tdiag)   = +nu*dzt*dzmm1*(dzt*dzmm1 + dztm1*dzmm1)
+          lhs(k_tdiag)   = +nu*invrs_dzt*dzmm1*(invrs_dzt*dzmm1 + dztm1*dzmm1)
 
           ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
           lhs(kp1_tdiag) = 0.0
@@ -774,8 +775,8 @@ contains
   end function hyper_dfsn_4th_ord_zt_lhs
 
   !=============================================================================
-  pure function hyper_dfsn_4th_ord_zm_lhs( boundary_cond, nu, dzm,  &
-                                           dztp1, dzt, dzmp1,  &
+  pure function hyper_dfsn_4th_ord_zm_lhs( boundary_cond, nu, invrs_dzm,  &
+                                           dztp1, invrs_dzt, dzmp1,  &
                                            dzmm1, dztp2, dztm1, level )  &
   result( lhs )
 
@@ -843,25 +844,25 @@ contains
     ! letter "t" is used for thermodynamic levels and the letter "m" is used for
     ! momentum levels.
     !
-    ! dzm(k)   = 1 / ( zt(k+1) - zt(k) )
-    ! dzt(k+1) = 1 / ( zm(k+1) - zm(k) )
-    ! dzt(k)   = 1 / ( zm(k) - zm(k-1) )
-    ! dzm(k+1) = 1 / ( zt(k+2) - zt(k+1) )
-    ! dzm(k-1) = 1 / ( zt(k) - zt(k-1) )
-    ! dzt(k+2) = 1 / ( zm(k+2) - zm(k+1) )
-    ! dzt(k-1) = 1 / ( zm(k-1) - zm(k-2) )
+    ! invrs_dzm(k)   = 1 / ( zt(k+1) - zt(k) )
+    ! invrs_dzt(k+1) = 1 / ( zm(k+1) - zm(k) )
+    ! invrs_dzt(k)   = 1 / ( zm(k) - zm(k-1) )
+    ! invrs_dzm(k+1) = 1 / ( zt(k+2) - zt(k+1) )
+    ! invrs_dzm(k-1) = 1 / ( zt(k) - zt(k-1) )
+    ! invrs_dzt(k+2) = 1 / ( zm(k+2) - zm(k+1) )
+    ! invrs_dzt(k-1) = 1 / ( zm(k-1) - zm(k-2) )
     !
     ! The discretization of -nu*d^4(var_zm)/dz^4 at momentum level (k) is
     ! written out as follows:
     !
-    ! -nu*dzm(k)*[ dzt(k+1)*{ dzm(k+1)*( dzt(k+2)*(var_zm(k+2)-var_zm(k+1))
-    !                                   -dzt(k+1)*(var_zm(k+1)-var_zm(k)) )
-    !                        -dzm(k)*( dzt(k+1)*(var_zm(k+1)-var_zm(k))
-    !                                 -dzt(k)*(var_zm(k)-var_zm(k-1)) ) }
-    !             -dzt(k)*{ dzm(k)*( dzt(k+1)*(var_zm(k+1)-var_zm(k))
-    !                               -dzt(k)*(var_zm(k)-var_zm(k-1)) )
-    !                      -dzm(k-1)*( dzt(k)*(var_zm(k)-var_zm(k-1))
-    !                                 -dzt(k-1)*(var_zm(k-1)-var_zm(k-2)) ) } ].
+    ! -nu*invrs_dzm(k)*[ invrs_dzt(k+1)*{ invrs_dzm(k+1)*( invrs_dzt(k+2)*(var_zm(k+2)-var_zm(k+1))
+    !                                   -invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k)) )
+    !                        -invrs_dzm(k)*( invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k))
+    !                                 -invrs_dzt(k)*(var_zm(k)-var_zm(k-1)) ) }
+    !             -invrs_dzt(k)*{ invrs_dzm(k)*( invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k))
+    !                               -invrs_dzt(k)*(var_zm(k)-var_zm(k-1)) )
+    !                      -invrs_dzm(k-1)*( invrs_dzt(k)*(var_zm(k)-var_zm(k-1))
+    !                                 -invrs_dzt(k-1)*(var_zm(k-1)-var_zm(k-2)) ) } ].
     !
     ! Again, the term is treated completely implicitly, so the leading "-" sign
     ! changes to a "+" sign when the term is brought over to the left-hand side,
@@ -939,13 +940,14 @@ contains
     !    The discretization of -nu*d^4(var_zm)/dz^4 at momentum level (k=2) is
     !    written out as follows:
     !
-    !    -nu*dzm(k)*[ dzt(k+1)*{ dzm(k+1)*( dzt(k+2)*(var_zm(k+2)-var_zm(k+1))
-    !                                      -dzt(k+1)*(var_zm(k+1)-var_zm(k)) )
-    !                           -dzm(k)*( dzt(k+1)*(var_zm(k+1)-var_zm(k))
-    !                                    -dzt(k)*(var_zm(k)-var_zm(k-1)) ) }
-    !                -dzt(k)*{ dzm(k)*( dzt(k+1)*(var_zm(k+1)-var_zm(k))
-    !                                  -dzt(k)*(var_zm(k)-var_zm(k-1)) )
-    !                         -dzm(k-1)*dzt(k)*(var_zm(k)-var_zm(k-1)) } ].
+    !    -nu*invrs_dzm(k)*[ invrs_dzt(k+1)*
+    !                        { invrs_dzm(k+1)*( invrs_dzt(k+2)*(var_zm(k+2)-var_zm(k+1))
+    !                           -invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k)) )
+    !                           -invrs_dzm(k)*( invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k))
+    !                                    -invrs_dzt(k)*(var_zm(k)-var_zm(k-1)) ) }
+    !                -invrs_dzt(k)*{ invrs_dzm(k)*( invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k))
+    !                                  -invrs_dzt(k)*(var_zm(k)-var_zm(k-1)) )
+    !                         -invrs_dzm(k-1)*invrs_dzt(k)*(var_zm(k)-var_zm(k-1)) } ].
     !
     !    Again, the term is treated completely implicitly, so the leading "-"
     !    sign changes to a "+" sign when the term is brought over to the
@@ -975,9 +977,10 @@ contains
     !    The discretization of -nu*d^4(var_zm)/dz^4 at momentum level (k=1) is
     !    written out as follows:
     !
-    !    -nu*dzm(k)*[dzt(k+1)*{ dzm(k+1)*( dzt(k+2)*(var_zm(k+2)-var_zm(k+1))
-    !                                     -dzt(k+1)*(var_zm(k+1)-var_zm(k)) )
-    !                          -dzm(k)*dzt(k+1)*(var_zm(k+1)-var_zm(k)) } ].
+    !    -nu*invrs_dzm(k)*[invrs_dzt(k+1)
+    !                  *{ invrs_dzm(k+1)*( invrs_dzt(k+2)*(var_zm(k+2)-var_zm(k+1))
+    !                      -invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k)) )
+    !                         -invrs_dzm(k)*invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k)) } ].
     !
     !    Again, the term is treated completely implicitly, so the leading "-"
     !    sign changes to a "+" sign when the term is brought over to the
@@ -1049,12 +1052,13 @@ contains
     !    The discretization of -nu*d^4(var_zm)/dz^4 at momentum level (k=2) is
     !    written out as follows:
     !
-    !    -nu*dzm(k)*[ dzt(k+1)*{ dzm(k+1)*( dzt(k+2)*(var_zm(k+2)-var_zm(k+1))
-    !                                      -dzt(k+1)*(var_zm(k+1)-var_zm(k)) )
-    !                           -dzm(k)*( dzt(k+1)*(var_zm(k+1)-var_zm(k))
-    !                                    -dzt(k)*(var_zm(k)-var_zm(k-1)) ) }
-    !                -dzt(k)*{ dzm(k)*( dzt(k+1)*(var_zm(k+1)-var_zm(k))
-    !                                  -dzt(k)*(var_zm(k)-var_zm(k-1)) ) } ].
+    !    -nu*invrs_dzm(k)*[ invrs_dzt(k+1)*
+    !                              { invrs_dzm(k+1)*( invrs_dzt(k+2)*(var_zm(k+2)-var_zm(k+1))
+    !                                      -invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k)) )
+    !                           -invrs_dzm(k)*( invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k))
+    !                                    -invrs_dzt(k)*(var_zm(k)-var_zm(k-1)) ) }
+    !                -invrs_dzt(k)*{ invrs_dzm(k)*( invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k))
+    !                                  -invrs_dzt(k)*(var_zm(k)-var_zm(k-1)) ) } ].
     !
     !    Again, the term is treated completely implicitly, so the leading "-"
     !    sign changes to a "+" sign when the term is brought over to the
@@ -1104,10 +1108,11 @@ contains
     ! matrix notation (where "i" stands for the matrix column and "j" stands for
     ! the matrix row):
     !
-    !  0 = Sum_j Sum_i ( 1/dzm )_i ( nu*dzm*dzt*dzm*dzt )_ij (var_zm)_j.
+    !  0 = Sum_j Sum_i ( 1/invrs_dzm )_i 
+    !                          ( nu*invrs_dzm*invrs_dzt*invrs_dzm*invrs_dzt )_ij (var_zm)_j.
     !
-    ! The left-hand side matrix, ( nu*dzm*dzt*dzm*dzt )_ij, is partially written
-    ! below.  The sum over i in the above equation removes the first dzm(k)
+    ! The left-hand side matrix, ( nu*invrs_dzm*invrs_dzt*invrs_dzm*invrs_dzt )_ij, is partially 
+    ! written below.  The sum over i in the above equation removes the first invrs_dzm(k)
     ! everywhere from the matrix below.  The sum over j leaves the column totals
     ! that are desired.
     !
@@ -1117,73 +1122,73 @@ contains
     !         column 1    ||    column 2    ||    column 3    ||    column 4    ||    column 5
     !    ------------------------------------------------------------------------------------------>
     !   | +nu             -nu               +nu
-    !   | *dzm(k)         *dzm(k)           *dzm(k)
-    !   |  *[ dzt(k+1)     *[ dzt(k+1)       *dzt(k+1)
-    !   |     *{ dzm(k+1)     *{ dzm(k+1)     *dzm(k+1)
-    !k=1|        *dzt(k+1)       *( dzt(k+2)   *dzt(k+2)               0                  0
-    !   |       +dzm(k)            +dzt(k+1) )
-    !   |        *dzt(k+1) }    +dzm(k)
-    !   |   ]                    *dzt(k+1) } ]
+    !   | *invrs_dzm(k)         *invrs_dzm(k)           *invrs_dzm(k)
+    !   |  *[ invrs_dzt(k+1)     *[ invrs_dzt(k+1)       *invrs_dzt(k+1)
+    !   |     *{ invrs_dzm(k+1)     *{ invrs_dzm(k+1)     *invrs_dzm(k+1)
+    !k=1|        *invrs_dzt(k+1)       *( invrs_dzt(k+2)   *invrs_dzt(k+2)         0            0
+    !   |       +invrs_dzm(k)            +invrs_dzt(k+1) )
+    !   |        *invrs_dzt(k+1) }    +invrs_dzm(k)
+    !   |   ]                    *invrs_dzt(k+1) } ]
     !   |
-    !   | -nu             +nu               -nu               +nu
-    !   | *dzm(k)         *dzm(k)           *dzm(k)           *dzm(k)
-    !   |  *[ dzt(k+1)     *[ dzt(k+1)       *[ dzt(k+1)       *dzt(k+1)
-    !   |     *dzm(k)         *{ dzm(k+1)       *{ dzm(k+1)     *dzm(k+1)
-    !   |      *dzt(k)           *dzt(k+1)         *( dzt(k+2)   *dzt(k+2)
-    !   |    +dzt(k)            +dzm(k)              +dzt(k+1) )
-    !k=2|     *{ dzm(k)          *( dzt(k+1)      +dzm(k)                                 0
-    !   |        *dzt(k)           +dzt(k) ) }     *dzt(k+1) }
-    !   |       +dzm(k-1)    +dzt(k)           +dzt(k)
-    !   |        *dzt(k) } ]  *{ dzm(k)         *dzm(k)
-    !   |                        *( dzt(k+1)     *dzt(k+1) ]
-    !   |                          +dzt(k) )
-    !   |                       +dzm(k-1)
-    !   |                        *dzt(k) } ]
+    !   | -nu                 +nu                     -nu                     +nu
+    !   | *invrs_dzm(k)       *invrs_dzm(k)           *invrs_dzm(k)           *invrs_dzm(k)
+    !   |  *[ invrs_dzt(k+1)   *[ invrs_dzt(k+1)       *[ invrs_dzt(k+1)       *invrs_dzt(k+1)
+    !   |     *invrs_dzm(k)       *{ invrs_dzm(k+1)       *{ invrs_dzm(k+1)     *invrs_dzm(k+1)
+    !   |      *invrs_dzt(k)         *invrs_dzt(k+1)         *( invrs_dzt(k+2)   *invrs_dzt(k+2)
+    !   |    +invrs_dzt(k)          +invrs_dzm(k)              +invrs_dzt(k+1) )
+    !k=2|     *{ invrs_dzm(k)        *( invrs_dzt(k+1)      +invrs_dzm(k)                         0
+    !   |        *invrs_dzt(k)         +invrs_dzt(k) ) }     *invrs_dzt(k+1) }
+    !   |       +invrs_dzm(k-1)  +invrs_dzt(k)           +invrs_dzt(k)
+    !   |        *invrs_dzt(k) } ]  *{ invrs_dzm(k)         *invrs_dzm(k)
+    !   |                           *( invrs_dzt(k+1)     *invrs_dzt(k+1) ]
+    !   |                            +invrs_dzt(k) )
+    !   |                         +invrs_dzm(k-1)
+    !   |                          *invrs_dzt(k) } ]
     !   |
     !   | +nu             -nu               +nu               -nu               +nu
-    !   | *dzm(k)         *dzm(k)           *dzm(k)           *dzm(k)           *dzm(k)
-    !   |  *dzt(k)         *[ dzt(k+1)       *[ dzt(k+1)       *[ dzt(k+1)       *dzt(k+1)
-    !   |   *dzm(k-1)         *dzm(k)           *{ dzm(k+1)       *{ dzm(k+1)     *dzm(k+1)
-    !   |    *dzt(k-1)         *dzt(k)             *dzt(k+1)         *( dzt(k+2)   *dzt(k+2)
-    !   |                    +dzt(k)              +dzm(k)              +dzt(k+1) )
-    !k=3|                     *{ dzm(k)            *( dzt(k+1)      +dzm(k)
-    !   |                        *dzt(k)             +dzt(k) ) }     *dzt(k+1) }
-    !   |                       +dzm(k-1)      +dzt(k)           +dzt(k)
-    !   |                        *( dzt(k)      *{ dzm(k)         *dzm(k)
-    !   |                          +dzt(k-1) )     *( dzt(k+1)     *dzt(k+1) ]
-    !   |                      } ]                   +dzt(k) )
-    !   |                                         +dzm(k-1)
-    !   |                                          *dzt(k) } ]
+    !   | *invrs_dzm(k)   *invrs_dzm(k)     *invrs_dzm(k)     *invrs_dzm(k)     *invrs_dzm(k)
+    !   |  *invrs_dzt(k)   *[ invrs_dzt(k+1) *[ invrs_dzt(k+1)  *[ invrs_dzt(k+1)  *invrs_dzt(k+1)
+    !   |   *invrs_dzm(k-1)  *invrs_dzm(k)    *{ invrs_dzm(k+1)  *{ invrs_dzm(k+1)  *invrs_dzm(k+1)
+    !   |    *invrs_dzt(k-1)  *invrs_dzt(k)     *invrs_dzt(k+1)   *( invrs_dzt(k+2)  *invrs_dzt(k+2)
+    !   |                      +invrs_dzt(k)      +invrs_dzm(k)     +invrs_dzt(k+1) )
+    !k=3|                     *{ invrs_dzm(k)      *( invrs_dzt(k+1)   +invrs_dzm(k)
+    !   |                        *invrs_dzt(k)       +invrs_dzt(k) ) }  *invrs_dzt(k+1) }
+    !   |                       +invrs_dzm(k-1)      +invrs_dzt(k)        +invrs_dzt(k)
+    !   |                        *( invrs_dzt(k)      *{ invrs_dzm(k)       *invrs_dzm(k)
+    !   |                          +invrs_dzt(k-1) )    *( invrs_dzt(k+1)    *invrs_dzt(k+1) ]
+    !   |                      } ]                       +invrs_dzt(k) )
+    !   |                                                 +invrs_dzm(k-1)
+    !   |                                                  *invrs_dzt(k) } ]
     !   |
-    !   |                 +nu               -nu               +nu               -nu
-    !   |                 *dzm(k)           *dzm(k)           *dzm(k)           *dzm(k)
-    !   |                  *dzt(k)           *[ dzt(k+1)       *[ dzt(k+1)       *[ dzt(k+1)
-    !   |                   *dzm(k-1)           *dzm(k)           *{ dzm(k+1)       *{ dzm(k+1)
-    !   |                    *dzt(k-1)           *dzt(k)             *dzt(k+1)         *( dzt(k+2)
-    !   |                                      +dzt(k)              +dzm(k)              +dzt(k+1) )
-    !k=4|        0                              *{ dzm(k)            *( dzt(k+1)      +dzm(k)
-    !   |                                          *dzt(k)             +dzt(k) ) }     *dzt(k+1) }
-    !   |                                         +dzm(k-1)      +dzt(k)           +dzt(k)
-    !   |                                          *( dzt(k)      *{ dzm(k)         *dzm(k)
-    !   |                                            +dzt(k-1) )     *( dzt(k+1)     *dzt(k+1) ]
-    !   |                                        } ]                   +dzt(k) )
-    !   |                                                           +dzm(k-1)
-    !   |                                                            *dzt(k) } ]
+    !   |            +nu               -nu               +nu                 -nu
+    !   |            *invrs_dzm(k)     *invrs_dzm(k)     *invrs_dzm(k)       *invrs_dzm(k)
+    !   |             *invrs_dzt(k)     *[ invrs_dzt(k+1)  *[ invrs_dzt(k+1)   *[ invrs_dzt(k+1)
+    !   |              *invrs_dzm(k-1)   *invrs_dzm(k)      *{ invrs_dzm(k+1)   *{ invrs_dzm(k+1)
+    !   |               *invrs_dzt(k-1)   *invrs_dzt(k)      *invrs_dzt(k+1)    *( invrs_dzt(k+2)
+    !   |                                  +invrs_dzt(k)      +invrs_dzm(k)       +invrs_dzt(k+1) )
+    !k=4|     0                            *{ invrs_dzm(k)     *( invrs_dzt(k+1)   +invrs_dzm(k)
+    !   |                                  *invrs_dzt(k)       +invrs_dzt(k) ) }   *invrs_dzt(k+1) }
+    !   |                                  +invrs_dzm(k-1)     +invrs_dzt(k)       +invrs_dzt(k)
+    !   |                                  *( invrs_dzt(k)     *{ invrs_dzm(k)     *invrs_dzm(k)
+    !   |                                  +invrs_dzt(k-1) )   *( invrs_dzt(k+1)   *invrs_dzt(k+1) ]
+    !   |                                   } ]                +invrs_dzt(k) )
+    !   |                                                      +invrs_dzm(k-1)
+    !   |                                                      *invrs_dzt(k) } ]
     !   |
-    !   |                                   +nu               -nu               +nu
-    !   |                                   *dzm(k)           *dzm(k)           *dzm(k)
-    !   |                                    *dzt(k)           *[ dzt(k+1)       *[ dzt(k+1)
-    !   |                                     *dzm(k-1)           *dzm(k)           *{ dzm(k+1)
-    !   |                                      *dzt(k-1)           *dzt(k)             *dzt(k+1)
-    !   |                                                        +dzt(k)              +dzm(k)
-    !k=5|        0                  0                             *{ dzm(k)            *( dzt(k+1)
-    !   |                                                            *dzt(k)             +dzt(k) ) }
-    !   |                                                           +dzm(k-1)      +dzt(k)
-    !   |                                                            *( dzt(k)      *{ dzm(k)
-    !   |                                                              +dzt(k-1) )     *( dzt(k+1)
-    !   |                                                          } ]                   +dzt(k) )
-    !   |                                                                             +dzm(k-1)
-    !   |                                                                              *dzt(k) } ]
+    !   |                            +nu               -nu                +nu
+    !   |                            *invrs_dzm(k)     *invrs_dzm(k)      *invrs_dzm(k)
+    !   |                             *invrs_dzt(k)     *[ invrs_dzt(k+1)  *[ invrs_dzt(k+1)
+    !   |                              *invrs_dzm(k-1)    *invrs_dzm(k)      *{ invrs_dzm(k+1)
+    !   |                               *invrs_dzt(k-1)    *invrs_dzt(k)      *invrs_dzt(k+1)
+    !   |                                                  +invrs_dzt(k)       +invrs_dzm(k)
+    !k=5|     0           0                                *{ invrs_dzm(k)      *( invrs_dzt(k+1)
+    !   |                                                  *invrs_dzt(k)         +invrs_dzt(k) ) }
+    !   |                                                  +invrs_dzm(k-1)        +invrs_dzt(k)
+    !   |                                                  *( invrs_dzt(k)        *{ invrs_dzm(k)
+    !   |                                                  +invrs_dzt(k-1) )      *( invrs_dzt(k+1)
+    !   |                                                  } ]                    +invrs_dzt(k) )
+    !   |                                                                         +invrs_dzm(k-1)
+    !   |                                                                         *invrs_dzt(k) } ]
     !  \ /
     !
     ! Note:  The super-super diagonal term from level 4 and both the super
@@ -1205,18 +1210,18 @@ contains
     !    ------------------------------------------------------------------------------------------>
     !k=1|        0                 0                 0                 0                  0
     !   |
-    !   | -nu             +nu               -nu               +nu
-    !   | *dzm(k)         *dzm(k)           *dzm(k)           *dzm(k)
-    !   |  *[ dzt(k+1)     *[ dzt(k+1)       *[ dzt(k+1)       *dzt(k+1)
-    !   |     *dzm(k)         *{ dzm(k+1)       *{ dzm(k+1)     *dzm(k+1)
-    !   |      *dzt(k)           *dzt(k+1)         *( dzt(k+2)   *dzt(k+2)
-    !k=2|    +dzt(k)            +dzm(k)              +dzt(k+1) )                          0
-    !   |     *dzm(k)            *( dzt(k+1)      +dzm(k)
-    !   |      *dzt(k) ]           +dzt(k) ) }     *dzt(k+1) }
-    !   |                    +dzt(k)           +dzt(k)
-    !   |                     *dzm(k)           *dzm(k)
-    !   |                      *( dzt(k+1)       *dzt(k+1) ]
-    !   |                        +dzt(k) ) ]
+    !   | -nu                +nu                    -nu                   +nu
+    !   | *invrs_dzm(k)       *invrs_dzm(k)         *invrs_dzm(k)         *invrs_dzm(k)
+    !   |  *[ invrs_dzt(k+1)   *[ invrs_dzt(k+1)     *[ invrs_dzt(k+1)     *invrs_dzt(k+1)
+    !   |     *invrs_dzm(k)      *{ invrs_dzm(k+1)    *{ invrs_dzm(k+1)     *invrs_dzm(k+1)
+    !   |      *invrs_dzt(k)       *invrs_dzt(k+1)     *( invrs_dzt(k+2)      *invrs_dzt(k+2)
+    !k=2|    +invrs_dzt(k)          +invrs_dzm(k)       +invrs_dzt(k+1) )                       0
+    !   |     *invrs_dzm(k)          *( invrs_dzt(k+1)    +invrs_dzm(k)
+    !   |      *invrs_dzt(k) ]        +invrs_dzt(k) ) }     *invrs_dzt(k+1) }
+    !   |                         +invrs_dzt(k)           +invrs_dzt(k)
+    !   |                          *invrs_dzm(k)           *invrs_dzm(k)
+    !   |                           *( invrs_dzt(k+1)       *invrs_dzt(k+1) ]
+    !   |                             +invrs_dzt(k) ) ]
     !  \ /
     !
     ! For the left-hand side matrix as a whole, the matrix entries at level 1
@@ -1252,9 +1257,9 @@ contains
 
     real, intent(in) ::  &
       nu,     & ! Constant coefficient of 4th-order numerical diffusion  [m^4/s]
-      dzm,    & ! Inverse of grid spacing over momentum level (k)        [1/m]
+      invrs_dzm,    & ! Inverse of grid spacing over momentum level (k)        [1/m]
       dztp1,  & ! Inverse of grid spacing over thermodynamic level (k+1) [1/m]
-      dzt,    & ! Inverse of grid spacing over thermodynamic level (k)   [1/m]
+      invrs_dzt,    & ! Inverse of grid spacing over thermodynamic level (k)   [1/m]
       dzmp1,  & ! Inverse of grid spacing over momentum level (k+1)      [1/m]
       dzmm1,  & ! Inverse of grid spacing over momentum level (k-1)      [1/m]
       dztp2,  & ! Inverse of grid spacing over thermodynamic level (k+2) [1/m]
@@ -1284,14 +1289,14 @@ contains
           lhs(km1_mdiag) = 0.0
 
           ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-          lhs(k_mdiag)   = +nu*dzm*dztp1*(dzmp1*dztp1 + dzm*dztp1)
+          lhs(k_mdiag)   = +nu*invrs_dzm*dztp1*(dzmp1*dztp1 + invrs_dzm*dztp1)
 
           ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
-          lhs(kp1_mdiag) = -nu*dzm*dztp1*( dzmp1*(dztp2 + dztp1)  &
-                                          +dzm*dztp1 )
+          lhs(kp1_mdiag) = -nu*invrs_dzm*dztp1*( dzmp1*(dztp2 + dztp1)  &
+                                          +invrs_dzm*dztp1 )
 
           ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
-          lhs(kp2_mdiag) = +nu*dzm*dztp1*dzmp1*dztp2
+          lhs(kp2_mdiag) = +nu*invrs_dzm*dztp1*dzmp1*dztp2
 
        elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
@@ -1329,23 +1334,23 @@ contains
           lhs(km2_mdiag) = 0.0
 
           ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
-          lhs(km1_mdiag) = -nu*dzm*( dztp1*dzm*dzt  &
-                                    +dzt*( dzm*dzt  &
-                                          +dzmm1*dzt ) )
+          lhs(km1_mdiag) = -nu*invrs_dzm*( dztp1*invrs_dzm*invrs_dzt  &
+                                    +invrs_dzt*( invrs_dzm*invrs_dzt  &
+                                          +dzmm1*invrs_dzt ) )
 
           ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-          lhs(k_mdiag)   = +nu*dzm*( dztp1*( dzmp1*dztp1  &
-                                            +dzm*(dztp1 + dzt) )  &
-                                    +dzt*( dzm*(dztp1 + dzt)  &
-                                          +dzmm1*dzt ) )
+          lhs(k_mdiag)   = +nu*invrs_dzm*( dztp1*( dzmp1*dztp1  &
+                                            +invrs_dzm*(dztp1 + invrs_dzt) )  &
+                                    +invrs_dzt*( invrs_dzm*(dztp1 + invrs_dzt)  &
+                                          +dzmm1*invrs_dzt ) )
 
           ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
-          lhs(kp1_mdiag) = -nu*dzm*( dztp1*( dzmp1*(dztp2 + dztp1)  &
-                                            +dzm*dztp1 )  &
-                                    +dzt*dzm*dztp1 )
+          lhs(kp1_mdiag) = -nu*invrs_dzm*( dztp1*( dzmp1*(dztp2 + dztp1)  &
+                                            +invrs_dzm*dztp1 )  &
+                                    +invrs_dzt*invrs_dzm*dztp1 )
 
           ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
-          lhs(kp2_mdiag) = +nu*dzm*dztp1*dzmp1*dztp2
+          lhs(kp2_mdiag) = +nu*invrs_dzm*dztp1*dzmp1*dztp2
 
        elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
@@ -1355,21 +1360,21 @@ contains
           lhs(km2_mdiag) = 0.0
 
           ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
-          lhs(km1_mdiag) = -nu*dzm*( dztp1*dzm*dzt  &
-                                    +dzt*dzm*dzt )
+          lhs(km1_mdiag) = -nu*invrs_dzm*( dztp1*invrs_dzm*invrs_dzt  &
+                                    +invrs_dzt*invrs_dzm*invrs_dzt )
 
           ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-          lhs(k_mdiag)   = +nu*dzm*( dztp1*( dzmp1*dztp1  &
-                                            +dzm*(dztp1 + dzt) )  &
-                                    +dzt*dzm*(dztp1 + dzt) )
+          lhs(k_mdiag)   = +nu*invrs_dzm*( dztp1*( dzmp1*dztp1  &
+                                            +invrs_dzm*(dztp1 + invrs_dzt) )  &
+                                    +invrs_dzt*invrs_dzm*(dztp1 + invrs_dzt) )
 
           ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
-          lhs(kp1_mdiag) = -nu*dzm*( dztp1*( dzmp1*(dztp2 + dztp1)  &
-                                            +dzm*dztp1 )  &
-                                    +dzt*dzm*dztp1 )
+          lhs(kp1_mdiag) = -nu*invrs_dzm*( dztp1*( dzmp1*(dztp2 + dztp1)  &
+                                            +invrs_dzm*dztp1 )  &
+                                    +invrs_dzt*invrs_dzm*dztp1 )
 
           ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
-          lhs(kp2_mdiag) = +nu*dzm*dztp1*dzmp1*dztp2
+          lhs(kp2_mdiag) = +nu*invrs_dzm*dztp1*dzmp1*dztp2
    
        endif
 
@@ -1380,26 +1385,26 @@ contains
        ! These interior level are not effected by boundary conditions.
 
        ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
-       lhs(km2_mdiag) = +nu*dzm*dzt*dzmm1*dztm1
+       lhs(km2_mdiag) = +nu*invrs_dzm*invrs_dzt*dzmm1*dztm1
 
        ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
-       lhs(km1_mdiag) = -nu*dzm*( dztp1*dzm*dzt  &
-                                 +dzt*( dzm*dzt  &
-                                       +dzmm1*(dzt + dztm1) ) )
+       lhs(km1_mdiag) = -nu*invrs_dzm*( dztp1*invrs_dzm*invrs_dzt  &
+                                 +invrs_dzt*( invrs_dzm*invrs_dzt  &
+                                       +dzmm1*(invrs_dzt + dztm1) ) )
 
        ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-       lhs(k_mdiag)   = +nu*dzm*( dztp1*( dzmp1*dztp1  &
-                                         +dzm*(dztp1 + dzt) )  &
-                                 +dzt*( dzm*(dztp1 + dzt)  &
-                                       +dzmm1*dzt ) )
+       lhs(k_mdiag)   = +nu*invrs_dzm*( dztp1*( dzmp1*dztp1  &
+                                         +invrs_dzm*(dztp1 + invrs_dzt) )  &
+                                 +invrs_dzt*( invrs_dzm*(dztp1 + invrs_dzt)  &
+                                       +dzmm1*invrs_dzt ) )
 
        ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
-       lhs(kp1_mdiag) = -nu*dzm*( dztp1*( dzmp1*(dztp2 + dztp1)  &
-                                         +dzm*dztp1 )  &
-                                 +dzt*dzm*dztp1 )
+       lhs(kp1_mdiag) = -nu*invrs_dzm*( dztp1*( dzmp1*(dztp2 + dztp1)  &
+                                         +invrs_dzm*dztp1 )  &
+                                 +invrs_dzt*invrs_dzm*dztp1 )
 
        ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
-       lhs(kp2_mdiag) = +nu*dzm*dztp1*dzmp1*dztp2
+       lhs(kp2_mdiag) = +nu*invrs_dzm*dztp1*dzmp1*dztp2
    
 
     elseif ( level == gr%nnzp-1 ) then
@@ -1411,23 +1416,23 @@ contains
           ! Zero-flux boundary conditions
 
           ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
-          lhs(km2_mdiag) = +nu*dzm*dzt*dzmm1*dztm1
+          lhs(km2_mdiag) = +nu*invrs_dzm*invrs_dzt*dzmm1*dztm1
 
           ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
-          lhs(km1_mdiag) = -nu*dzm*( dztp1*dzm*dzt  &
-                                    +dzt*( dzm*dzt  &
-                                          +dzmm1*(dzt + dztm1) ) )
+          lhs(km1_mdiag) = -nu*invrs_dzm*( dztp1*invrs_dzm*invrs_dzt  &
+                                    +invrs_dzt*( invrs_dzm*invrs_dzt  &
+                                          +dzmm1*(invrs_dzt + dztm1) ) )
 
           ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-          lhs(k_mdiag)   = +nu*dzm*( dztp1*( dzmp1*dztp1  &
-                                            +dzm*(dztp1 + dzt) )  &
-                                    +dzt*( dzm*(dztp1 + dzt)  &
-                                          +dzmm1*dzt ) )
+          lhs(k_mdiag)   = +nu*invrs_dzm*( dztp1*( dzmp1*dztp1  &
+                                            +invrs_dzm*(dztp1 + invrs_dzt) )  &
+                                    +invrs_dzt*( invrs_dzm*(dztp1 + invrs_dzt)  &
+                                          +dzmm1*invrs_dzt ) )
 
           ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
-          lhs(kp1_mdiag) = -nu*dzm*( dztp1*( dzmp1*dztp1  &
-                                            +dzm*dztp1 )  &
-                                    +dzt*dzm*dztp1 )
+          lhs(kp1_mdiag) = -nu*invrs_dzm*( dztp1*( dzmp1*dztp1  &
+                                            +invrs_dzm*dztp1 )  &
+                                    +invrs_dzt*invrs_dzm*dztp1 )
 
           ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
           lhs(kp2_mdiag) = 0.0
@@ -1437,21 +1442,21 @@ contains
           ! Fixed-point boundary conditions
 
           ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
-          lhs(km2_mdiag) = +nu*dzm*dzt*dzmm1*dztm1
+          lhs(km2_mdiag) = +nu*invrs_dzm*invrs_dzt*dzmm1*dztm1
 
           ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
-          lhs(km1_mdiag) = -nu*dzm*( dztp1*dzm*dzt  &
-                                    +dzt*( dzm*dzt  &
-                                          +dzmm1*(dzt + dztm1) ) )
+          lhs(km1_mdiag) = -nu*invrs_dzm*( dztp1*invrs_dzm*invrs_dzt  &
+                                    +invrs_dzt*( invrs_dzm*invrs_dzt  &
+                                          +dzmm1*(invrs_dzt + dztm1) ) )
 
           ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-          lhs(k_mdiag)   = +nu*dzm*( dztp1*( dzm*(dztp1 + dzt) )  &
-                                    +dzt*( dzm*(dztp1 + dzt)  &
-                                          +dzmm1*dzt ) )
+          lhs(k_mdiag)   = +nu*invrs_dzm*( dztp1*( invrs_dzm*(dztp1 + invrs_dzt) )  &
+                                    +invrs_dzt*( invrs_dzm*(dztp1 + invrs_dzt)  &
+                                          +dzmm1*invrs_dzt ) )
 
           ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
-          lhs(kp1_mdiag) = -nu*dzm*( dztp1*dzm*dztp1  &
-                                    +dzt*dzm*dztp1 )
+          lhs(kp1_mdiag) = -nu*invrs_dzm*( dztp1*invrs_dzm*dztp1  &
+                                    +invrs_dzt*invrs_dzm*dztp1 )
 
           ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
           lhs(kp2_mdiag) = 0.0
@@ -1470,14 +1475,14 @@ contains
           ! Zero-flux boundary conditions
 
           ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
-          lhs(km2_mdiag) = +nu*dzm*dzt*dzmm1*dztm1
+          lhs(km2_mdiag) = +nu*invrs_dzm*invrs_dzt*dzmm1*dztm1
 
           ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
-          lhs(km1_mdiag) = -nu*dzm*dzt*( dzm*dzt  &
-                                        +dzmm1*(dzt + dztm1) )
+          lhs(km1_mdiag) = -nu*invrs_dzm*invrs_dzt*( invrs_dzm*invrs_dzt  &
+                                        +dzmm1*(invrs_dzt + dztm1) )
 
           ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-          lhs(k_mdiag)   = +nu*dzm*dzt*(dzm*dzt + dzmm1*dzt)
+          lhs(k_mdiag)   = +nu*invrs_dzm*invrs_dzt*(invrs_dzm*invrs_dzt + dzmm1*invrs_dzt)
 
           ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
           lhs(kp1_mdiag) = 0.0
