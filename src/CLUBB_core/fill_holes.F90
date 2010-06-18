@@ -107,14 +107,14 @@ module fill_holes
           ! 'field' is on the zt (thermodynamic level) grid
           if ( field_grid == "zt" ) then
             call fill_holes_multiplicative &
-                    ( begin_idx, end_idx, threshold, field_grid, &
+                    ( begin_idx, end_idx, threshold, &
                       rho_ds(begin_idx:end_idx), gr%invrs_dzt(begin_idx:end_idx), &
                       field(begin_idx:end_idx) )
                       
           ! 'field' is on the zm (momentum level) grid
           elseif ( field_grid == "zm" )  then
             call fill_holes_multiplicative &
-                    ( begin_idx, end_idx, threshold, field_grid, &
+                    ( begin_idx, end_idx, threshold, &
                       rho_ds_zm(begin_idx:end_idx), gr%invrs_dzm(begin_idx:end_idx), &
                       field(begin_idx:end_idx) )
           endif
@@ -135,14 +135,14 @@ module fill_holes
         ! 'field' is on the zt (thermodynamic level) grid
         if ( field_grid == "zt" ) then
           call fill_holes_multiplicative &
-                 ( 2, upper_hf_level, threshold, field_grid, &
+                 ( 2, upper_hf_level, threshold, &
                    rho_ds(2:upper_hf_level), gr%invrs_dzt(2:upper_hf_level), &
                    field(2:upper_hf_level) )
                    
         ! 'field' is on the zm (momentum level) grid
         elseif ( field_grid == "zm" )  then
             call fill_holes_multiplicative &
-                 ( 2, upper_hf_level, threshold, field_grid, &
+                 ( 2, upper_hf_level, threshold, &
                    rho_ds_zm(2:upper_hf_level), gr%invrs_dzm(2:upper_hf_level), &
                    field(2:upper_hf_level) )
         endif
@@ -157,7 +157,7 @@ module fill_holes
 
   !=============================================================================
   subroutine fill_holes_multiplicative &
-                 ( begin_idx, end_idx, threshold, field_grid, &
+                 ( begin_idx, end_idx, threshold, &
                    rho, invrs_dz, &
                    field )
 
@@ -187,9 +187,6 @@ module fill_holes
     real, intent(in) :: & 
       threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not fall
                  !                              [Units vary; same as field]
-
-    character(len=2), intent(in) :: & 
-      field_grid ! The grid of the field, either zt or zm
 
     real, dimension(end_idx-begin_idx+1), intent(in) ::  & 
       rho,     &  ! Dry, static density on either thermodynamic or momentum levels   [kg/m^3]
@@ -355,9 +352,6 @@ module fill_holes
     ! References:
     ! None
     !-----------------------------------------------------------------------
-
-    use error_code, only: & 
-        clubb_debug  ! Subroutine
 
     implicit none
 
