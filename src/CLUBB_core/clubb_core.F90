@@ -1414,13 +1414,15 @@ module clubb_core
 
     case ( "flatau", "Flatau" )
       ! Using the Flatau, et al. polynomial approximation for SVP over vapor/ice
-
+  
 ! ---> h1g, 2010-06-15
 #ifdef GFDL
     case ( "gfdl", "GFDL" )
       ! Using the GFDL  formula
 #endif
 ! <--- h1g, 2010-06-15
+
+  ! Add new saturation formulas after this
 
     case default
       write(fstderr,*) "Error in setup_clubb_core."
@@ -1685,7 +1687,7 @@ module clubb_core
       thl1_zm,        & ! Mean of th_l for 1st normal distribution                [K]
       thl1_zt,        & ! Mean of th_l for 1st normal distribution                [K]
       thl2_zm,        & ! Mean of th_l for 2nd normal distribution                [K]
-      thl2_zt,        & ! Mean of th_l for 2nd nor
+      thl2_zt,        & ! Mean of th_l for 2nd normal distribution
       varnce_thl1_zm, & ! Variance of th_l for 1st normal distribution          [K^2]
       varnce_thl1_zt, & ! Variance of th_l for 1st normal distribution          [K^2]
       varnce_thl2_zm, & ! Variance of th_l for 2nd normal distribution          [K^2]
