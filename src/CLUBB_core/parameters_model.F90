@@ -30,9 +30,16 @@ module parameters_model
   real, public ::  & 
     T0,       & ! Reference temperature (usually 300)  [K]
     ts_nudge    ! Timescale of u/v nudging             [s]
-    
-!$omp threadprivate(T0, ts_nudge)
 
+!---> h1g, 2010-06-15
+#ifdef GFDL
+ real, public ::  & 
+    cloud_frac_min    ! minimum cloud fraction for droplet #
+#endif
+! <--- h1g, 2010-06-15
+
+
+!$omp threadprivate(T0, ts_nudge)
   integer, public :: & 
     sclr_dim,        & ! Number of passive scalars
     edsclr_dim,      & ! Number of eddy-diff. passive scalars
@@ -54,7 +61,13 @@ module parameters_model
              ( T0_in, ts_nudge_in, &
                hydromet_dim_in, & 
                sclr_dim_in, sclr_tol_in, edsclr_dim_in, &
-               Lscale_max_in )
+               Lscale_max_in &
+! ---> h1g, 2010-06-15
+#ifdef GFDL
+	       , cloud_frac_min_in &
+#endif
+! <--- h1g, 2010-06-15
+	       )
 
 ! Description:
 !   Sets parameters to their initial values
@@ -74,7 +87,13 @@ module parameters_model
       T0_in,        & ! Ref. temperature             [K]
       ts_nudge_in,  & ! Timescale for u/v nudging    [s]
       Lscale_max_in   ! Largest value for Lscale     [m]
-    
+
+! ---> h1g, 2010-06-15
+#ifdef GFDL
+    real, intent(in) ::  cloud_frac_min_in
+#endif
+! <--- h1g, 2010-06-15
+
 
     integer, intent(in) :: & 
       hydromet_dim_in,  & ! Number of hydrometeor species
@@ -110,6 +129,14 @@ module parameters_model
     end if
 
     sclr_tol(1:sclr_dim) = sclr_tol_in(1:sclr_dim)
+
+
+! ---> h1g, 2010-06-15
+#ifdef GFDL
+     cloud_frac_min = cloud_frac_min_in
+#endif
+! <--- h1g, 2010-06-15
+
 
     return
   end subroutine setup_parameters_model

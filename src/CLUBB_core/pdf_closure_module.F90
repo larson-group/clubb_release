@@ -17,6 +17,11 @@ module pdf_closure_module
                wpthlp, rtpthlp, sclrm,           &
                wpsclrp, sclrp2, sclrprtp,        &
                sclrpthlp, level,                 &
+! ---> h1g, 2010-06-16
+#ifdef GFDL
+               RH_crit,                                      &
+#endif
+! <--- h1g, 2010-06-16
                wp4, wprtp2, wp2rtp,              &
                wpthlp2, wp2thlp, wprtpthlp,      &
                cloud_frac, rcm, wpthvp,          &
@@ -26,6 +31,7 @@ module pdf_closure_module
                err_code,                         &
                wpsclrprtp, wpsclrp2, sclrpthvp,  &
                wpsclrpthlp, sclrprcp, wp2sclrp )
+
 
 !       Description:
 !       Subroutine that computes pdf parameters analytically.
@@ -84,6 +90,14 @@ module pdf_closure_module
     use saturation, only:  & 
       sat_mixrat_liq ! Procedure(s)
 
+! ---> h1g, 2010-06-16
+! including ice clouds
+#ifdef GFDL
+    use saturation, only:  & 
+       sat_mixrat_ice    
+#endif
+! <--- h1g, 2010-06-16
+
     use error_code, only:  & 
       clubb_var_equals_NaN,  & ! Variable(s)
       clubb_at_least_debug_level ! Procedure(s)
@@ -123,6 +137,14 @@ module pdf_closure_module
       sclrp2,      & ! sclr'^2                    [units vary]
       sclrprtp,    & ! sclr' r_t'                 [units vary]
       sclrpthlp      ! sclr' th_l'                [units vary]
+
+! ---> h1g
+! critial relative humidity for nucleation
+#ifdef  GFDL
+    real, dimension( min(1,sclr_dim), 2 ), intent(in) ::  & 
+       RH_crit     ! critical relative humidity for droplet and ice nucleation
+#endif
+! <--- h1g
 
     integer, intent(in) ::  &
       level  ! Thermodynamic level for which calculations are taking place.
@@ -559,8 +581,42 @@ module pdf_closure_module
     tl1  = thl1*exner
     tl2  = thl2*exner
 
+! ---> h1g, 2010-06-16
+#ifdef GFDL
+      if( sclr_dim > 0 ) then 
+
+          if( tl1 > 250.0) then
+             rsl1 = sat_mixrat_liq( p_in_Pa, tl1 )
+          else
+             rsl1 = sat_mixrat_ice( p_in_Pa, tl1 )
+             if( tl1 > 238.15)  then
+                 rsl1 = 1.2 * rsl1
+             else
+                 rsl1 = RH_crit(1, 1) * rsl1
+             endif
+          endif 
+
+          if( tl2 > 250.0) then
+             rsl2 = sat_mixrat_liq( p_in_Pa, tl2 )
+          else
+             rsl2 = sat_mixrat_ice( p_in_Pa, tl2 )
+             if( tl2 > 238.15)  then
+                 rsl2 = 1.2 * rsl2
+             else
+                 rsl2 = RH_crit(1, 2)* rsl2
+             endif
+          endif
+
+      else !sclr_dim <= 0
+          rsl1 = sat_mixrat_liq( p_in_Pa, tl1 )
+          rsl2 = sat_mixrat_liq( p_in_Pa, tl2 )
+
+      endif !sclr_dim > 0
+#else
     rsl1 = sat_mixrat_liq( p_in_Pa, tl1 )
     rsl2 = sat_mixrat_liq( p_in_Pa, tl2 )
+#endif
+! <--- h1g,  2010-06-16
 
     ! SD's beta (eqn. 8)
     beta1 = ep * ( Lv/(Rd*tl1) ) * ( Lv/(Cp*tl1) )

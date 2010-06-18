@@ -75,6 +75,13 @@ module saturation
       esatv = sat_vapor_press_liq_flatau( T_in_K )
 
     ! Add new cases after this
+! ---> h1g
+#ifdef GFDL
+    case ( "GFDL  ", "gfdl  " )
+      ! Using GFDL polynomial approximation for SVP with respect to liquid
+      esatv = sat_vapor_press_liq_gfdl( T_in_K )
+#endif
+! <--- h1g
 
     end select
 
@@ -181,6 +188,41 @@ module saturation
     return
   end function sat_vapor_press_liq_bolton
 
+
+! ---> h1g, 2010-06-16
+#ifdef GFDL
+!------------------------------------------------------------------------
+  elemental function sat_vapor_press_liq_gfdl( T_in_K ) result ( esat )
+! Description:
+! copy from "GFDL polysvp.F90" 
+!  Compute saturation vapor pressure with respect to liquid  by using 
+! function from Goff and Gatch (1946)
+
+!  Polysvp returned in units of pa.
+!  T_in_K  is input in units of K.
+!------------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    real, intent(in) :: T_in_K   ! Temperature   [K]
+
+    ! Output Variables
+    real :: esat  ! Saturation vapor pressure over water [Pa]
+
+! Goff Gatch equation, uncertain below -70 C
+      
+         esat = 10.**(-7.90298*(373.16/T_in_K-1.)+ &
+             5.02808*log10(373.16/T_in_K)- &
+             1.3816e-7*(10.**(11.344*(1.-T_in_K/373.16))-1.)+ &
+             8.1328e-3*(10.**(-3.49149*(373.16/T_in_K-1.))-1.)+ &
+             log10(1013.246))*100.
+
+    return
+  end function sat_vapor_press_liq_gfdl
+#endif
+! <--- h1g, 2010-06-16
+
 !------------------------------------------------------------------------
   elemental real function sat_mixrat_ice( p_in_Pa, T_in_K )
 
@@ -226,7 +268,13 @@ module saturation
       esat_ice = sat_vapor_press_ice_flatau( T_in_K )
 
     ! Add new cases after this
-
+! ---> h1g, 2010-06-16
+#ifdef GFDL
+    case ( "GFDL  ", "gfdl  " )
+      ! Using GFDL polynomial approximation for SVP with respect to ice
+      esat_ice = sat_vapor_press_ice_gfdl( T_in_K )
+#endif
+! <--- h1g, 2010-06-16
     end select
 
     ! Formula for Saturation Mixing Ratio:
@@ -320,6 +368,40 @@ module saturation
     return
 
   end function sat_vapor_press_ice_bolton
+
+
+! ---> h1g, 2010-06-16
+#ifdef GFDL
+!------------------------------------------------------------------------
+  elemental function sat_vapor_press_ice_gfdl( T_in_K ) result ( esati )
+! Description:
+! copy from "GFDL polysvp.F90" 
+!  Compute saturation vapor pressure with respect to liquid  by using 
+! function from Goff and Gatch (1946)
+! 
+!  Polysvp returned in units of pa.
+!  T_in_K is input in units of K.
+!------------------------------------------------------------------------
+ 
+    implicit none
+
+    ! Input Variables
+    real, intent(in) :: T_in_K   ! Temperature   [K]
+
+    ! Output Variables
+    real :: esati  ! Saturation vapor pressure over ice [Pa]
+
+! Goff Gatch equation (good down to -100 C)
+
+          esati = 10.**(-9.09718*(273.16/T_in_k-1.)-3.56654* &
+          log10(273.16/T_in_k)+0.876793*(1.-T_in_k/273.16)+ &
+          log10(6.1071))*100.
+
+    return
+
+  end function sat_vapor_press_ice_gfdl
+#endif
+! <--- h1g, 2010-06-16
 
 !-------------------------------------------------------------------------
   FUNCTION sat_rcm( thlm, rtm, p_in_Pa, exner )

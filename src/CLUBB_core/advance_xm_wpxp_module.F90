@@ -493,7 +493,15 @@ module advance_xm_wpxp_module
 
       ! Solve sclrm / wpsclrp
       ! If sclr_dim is 0, then this loop will execute 0 times.
+! ---> h1g, 2010-06-15
+! scalar transport, e.g, droplet and ice number concentration 
+! are handled in  " advance_sclrm_Nd_module.F90 "
+#ifdef GFDL
+      do i = 1, 0, 1
+#else
       do i = 1, sclr_dim, 1
+#endif
+! <--- h1g, 2010-06-15
 
         ! Compute the upper and lower limits of w'sclr' at every level,
         ! based on the correlation of w and sclr, such that:
@@ -582,7 +590,16 @@ module advance_xm_wpxp_module
                         thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &           ! Intent(in)
                         rhs(:,2) )                                             ! Intent(out)
 
+! ---> h1g, 2010-06-15
+! scalar transport, e.g, droplet and ice number concentration 
+! are handled in  " advance_sclrm_Nd_module.F90 "
+#ifdef GFDL
+      do i = 1, 0, 1
+#else
       do i = 1, sclr_dim, 1
+#endif
+! <--- h1g, 2010-06-15
+
         call xm_wpxp_rhs( "scalars", .true., dt, sclrm(:,i), wpsclrp(:,i), & ! Intent(in)
                           sclrm_forcing(:,i), C7_Skw_fnc, sclrpthvp(:,i), &  ! Intent(in)
                           C6rt_Skw_fnc, tau_zm, wp2, wp2_zt, a1, a1_zt, wp3, &        ! Intent(in)
@@ -638,7 +655,16 @@ module advance_xm_wpxp_module
         return
       endif
 
+! ---> h1g, 2010-06-15
+! scalar transport, e.g, droplet and ice number concentration 
+! are handled in  " advance_sclrm_Nd_module.F90 "
+#ifdef GFDL
+      do i = 1, 0, 1
+#else
       do i = 1, sclr_dim, 1
+#endif
+! <--- h1g, 2010-06-15
+
         call xm_wpxp_clipping_and_stats &
              ( "scalars", dt, wp2, sclrp2(:,i),  &  ! Intent(in)
                wm_zt, sclrm_forcing(:,i), &         ! Intent(in)

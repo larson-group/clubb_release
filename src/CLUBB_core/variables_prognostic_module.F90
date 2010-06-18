@@ -20,6 +20,29 @@ module variables_prognostic_module
     cleanup_prognostic_variables
 
   ! Prognostic variables
+! ---> h1g, 2010-06-16
+#ifdef GFDL
+  real, target, allocatable, dimension(:), public :: & 
+    um,      & ! u wind                        [m/s]
+    vm,      & ! v wind                        [m/s]
+    upwp,    & ! vertical u momentum flux      [m^2/s^2]
+    vpwp,    & ! vertical v momentum flux      [m^2/s^2]
+    up2,     & ! u'^2                          [m^2/s^2]
+    vp2,     & ! v'^2                          [m^2/s^2]
+    thlm,    & ! liquid potential temperature  [K]
+!---> h1g
+    temp_clubb, & ! air temperature [K]
+!<--- h1g
+    rtm,     & ! total water mixing ratio      [kg/kg]
+    wprtp,   & ! w'rt'                         [(kg/kg) m/s]
+    wpthlp,  & ! w'thl'                        [m K/s]
+    wprcp,   & ! w'rc'                         [(kg/kg) m/s]
+    wp2,     & ! w'^2                          [m^2/s^2]
+    wp3,     & ! w'^3                          [m^3/s^3]
+    rtp2,    & ! rt'^2                         [(kg/kg)^2]
+    thlp2,   & ! thl'^2                        [K^2]
+    rtpthlp    ! rt'thl'                       [kg/kg K]
+#else
   real, target, allocatable, dimension(:), public :: & 
     um,      & ! u wind                        [m/s]
     vm,      & ! v wind                        [m/s]
@@ -37,6 +60,8 @@ module variables_prognostic_module
     rtp2,    & ! rt'^2                         [(kg/kg)^2]
     thlp2,   & ! thl'^2                        [K^2]
     rtpthlp    ! rt'thl'                       [kg/kg K]
+#endif
+! <--- h1g, 2010-06-16
 
 !$omp   threadprivate(um, vm, upwp, vpwp, up2, vp2)
 !$omp   threadprivate(thlm, rtm, wprtp, wpthlp, wprcp)
@@ -112,6 +137,13 @@ module variables_prognostic_module
     edsclrm,         & ! Mean eddy-diffusivity scalars  [units vary]
     edsclrm_forcing, & ! Eddy-diff. scalars forcing     [units/s]
     wpsclrp            ! w'sclr'                        [units vary m/s]
+
+!---> h1g, 2010-06-16
+#ifdef GFDL
+   real, target, allocatable, dimension( : , : , : ), public :: & 
+     RH_crit  ! critical relative humidity for droplet and ice nucleation
+#endif
+!<--- h1g, 2010-06-16
 
 !$omp   threadprivate(sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
 !$omp     edsclrm, edsclrm_forcing, wpsclrp)
@@ -203,6 +235,12 @@ module variables_prognostic_module
     allocate( vp2(1:nzmax) )
 
     allocate( thlm(1:nzmax) )      ! liquid potential temperature
+!---> h1g, 2010-06-16
+#ifdef GFDL
+    allocate( temp_clubb(1:nzmax) )      ! air temperature
+#endif
+!<--- h1g, 2010-06-16
+
     allocate( rtm(1:nzmax) )       ! total water mixing ratio
     allocate( wprtp(1:nzmax) )     ! w'rt'
     allocate( wpthlp(1:nzmax) )    ! w'thl'
@@ -255,6 +293,12 @@ module variables_prognostic_module
 
     allocate( edsclrm(1:nzmax, 1:edsclr_dim) )
     allocate( wpsclrp(1:nzmax, 1:sclr_dim) )
+
+!---> h1g, 2010-06-16
+#ifdef GFDL
+     allocate( RH_crit(1:nzmax, 1:min(1,sclr_dim), 2) )
+#endif
+!<--- h1g, 2010-06-16
 
     allocate( sigma_sqd_w(1:nzmax) )    ! PDF width parameter (momentum levels)
 
@@ -369,6 +413,13 @@ module variables_prognostic_module
     upwp_sfc   = 0.0
     vpwp_sfc   = 0.0
 
+! ---> h1g, 2010-06-16
+! initialize critical relative humidity for liquid and ice nucleation
+#ifdef GFDL
+    RH_crit = 1.0
+#endif
+!<--- h1g, 2010-06-16
+
     ! Passive scalars
     do i = 1, sclr_dim, 1
       wpsclrp_sfc(i)   = 0.0
@@ -405,6 +456,13 @@ module variables_prognostic_module
     deallocate( up2, vp2 )
 
     deallocate( thlm )      ! liquid potential temperature
+
+!---> h1g, 2010-06-16
+#ifdef GFDL
+    deallocate( temp_clubb )
+#endif
+!<--- h1g, 2010-06-16
+
     deallocate( rtm )       ! total water mixing ratio
     deallocate( wprtp )     ! w'rt'
     deallocate( wpthlp )    ! w'thl'
@@ -473,6 +531,12 @@ module variables_prognostic_module
 
     deallocate( edsclrm )
     deallocate( edsclrm_forcing )
+
+!---> h1g, 2010-06-16
+#ifdef GFDL
+    deallocate( RH_crit )
+#endif
+! <--- h1g, 2010-06-16
 
     return
   end subroutine cleanup_prognostic_variables

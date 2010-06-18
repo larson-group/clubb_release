@@ -303,7 +303,6 @@ module variables_diagnostic_module
     allocate( Ncnm(1:nzmax) )
     allocate( hydromet(1:nzmax,1:hydromet_dim) ) ! All hydrometeor fields
 
-
 ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
     allocate( lh_AKm(1:nzmax) )    ! Kessler ac estimate
     allocate( AKm(1:nzmax) )        ! Exact Kessler ac
@@ -325,7 +324,6 @@ module variables_diagnostic_module
 
 ! Eddy Diff. Scalars
     allocate( wpedsclrp(1:nzmax, 1:edsclr_dim) )
-
 !   --- Initializaton ---
 
 ! Diagnostic variables
