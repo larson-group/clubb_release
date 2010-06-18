@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------------
 ! $Id$
 !=============================================================================
-module constants
+module constants_clubb
 
   ! Description:
   ! Contains frequently occuring model constants
@@ -209,4 +209,4 @@ module constants
 
 !=============================================================================
 
-end module constants
+end module constants_clubb

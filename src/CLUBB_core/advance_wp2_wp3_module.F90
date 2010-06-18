@@ -68,7 +68,7 @@ contains
         c_ksqd,  & 
         c_K8
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
         fstderr    ! Variable(s)
 
     use model_flags, only: &
@@ -355,7 +355,7 @@ contains
         zm2zt,      & ! Procedure(s)
         ddzt       ! Function
 
-    use constants, only: & 
+    use constants_clubb, only: & 
         w_tol_sqd,      & ! Variables(s)
         eps,           &
         zero_threshold
@@ -846,7 +846,7 @@ contains
         nu8, &
         nu_hd
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
         eps,          & ! Variable(s)
         three_halves, &
         gamma_over_implicit_ts
@@ -1497,7 +1497,7 @@ contains
         nu1, & 
         nu8
 
-    use constants, only: & 
+    use constants_clubb, only: & 
         w_tol_sqd,     & ! Variable(s)
         eps,          &
         three_halves, &
@@ -2290,7 +2290,7 @@ contains
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
     ! Variable(s)        
         grav ! Gravitational acceleration [m/s^2]
 
@@ -2392,7 +2392,7 @@ contains
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants, only: & ! Variables 
+    use constants_clubb, only: & ! Variables 
         grav ! Gravitational acceleration [m/s^2]
 
     implicit none
@@ -2603,7 +2603,7 @@ contains
     use grid_class, only:  &
         gr ! Variable gr%weights_zt2zm
 
-    use constants, only:  &
+    use constants_clubb, only:  &
         w_tol_sqd
 
     use model_flags, only:  &
@@ -3034,7 +3034,7 @@ contains
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants, only:  &
+    use constants_clubb, only:  &
         w_tol_sqd
 
     use model_flags, only:  &
@@ -3152,7 +3152,7 @@ contains
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants, only: & ! Variable(s) 
+    use constants_clubb, only: & ! Variable(s) 
         grav ! Gravitational acceleration [m/s^2]
 
     implicit none

@@ -62,7 +62,7 @@ module parameters_model
 ! References:
 !   None
 !-------------------------------------------------------------------------------
-    use constants, only: Skw_max_mag, Skw_max_mag_sqd
+    use constants_clubb, only: Skw_max_mag, Skw_max_mag_sqd
 
     implicit none
 

@@ -21,7 +21,7 @@ module input_grads
     big_endian, & 
     byte_order_swap ! Procedure
 
-  use constants, only:  & 
+  use constants_clubb, only:  & 
     fstdout,  & ! Variable(s) 
     fstderr,  &
     var_length
@@ -285,7 +285,7 @@ module input_grads
 !   Read binary data from file units and return the result as
 !   as 4 byte float 'x'
 !----------------------------------------------------------------------
-    use constants, only: fstderr
+    use constants_clubb, only: fstderr
     use stat_file_module, only: stat_file
 
     implicit none

@@ -57,7 +57,7 @@ contains
     !   /Steady-state solution for the variances/
     !-----------------------------------------------------------------------
 
-    use constants, only: & 
+    use constants_clubb, only: & 
       w_tol_sqd,  & ! Variable(s)
       rt_tol, & 
       thl_tol, & 
@@ -860,7 +860,7 @@ contains
     use grid_class, only: & 
         gr ! Variable(s)
 
-    use constants, only:  &
+    use constants_clubb, only:  &
         gamma_over_implicit_ts ! Variable(s)
 
     use stats_precision, only:  & 
@@ -1373,7 +1373,7 @@ contains
     use grid_class, only: & 
         gr ! Variable(s)
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
         gamma_over_implicit_ts, &
         w_tol_sqd
 
@@ -1726,7 +1726,7 @@ contains
     use grid_class, only: & 
         gr ! Variable(s)
 
-    use constants, only: &
+    use constants_clubb, only: &
         gamma_over_implicit_ts ! Variable(s)
 
     use stats_precision, only:  & 
@@ -2093,7 +2093,7 @@ contains
     use grid_class, only:  & ! gr%weights_zm2zt
         gr ! Variable(s)
 
-    use constants, only:  &
+    use constants_clubb, only:  &
         w_tol_sqd
 
     use model_flags, only:  &
@@ -2317,7 +2317,7 @@ contains
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants, only:  &
+    use constants_clubb, only:  &
         w_tol_sqd
 
     use model_flags, only:  &
@@ -2666,7 +2666,7 @@ contains
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants, only: &
+    use constants_clubb, only: &
         w_tol_sqd
 
     implicit none
@@ -2731,7 +2731,7 @@ contains
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants, only: & ! Variables 
+    use constants_clubb, only: & ! Variables 
       grav ! Gravitational acceleration [m/s^2]
 
     use grid_class, only: &

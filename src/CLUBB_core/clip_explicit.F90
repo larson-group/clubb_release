@@ -431,7 +431,7 @@ module clip_explicit
     use grid_class, only: & 
         gr ! Variable(s)
 
-    use constants, only: &
+    use constants_clubb, only: &
         max_mag_correlation ! Constant(s)
 
     use stats_precision, only: & 
@@ -711,7 +711,7 @@ module clip_explicit
       iwp3_cl, & 
       l_stats_samp
 
-    use constants, only: &
+    use constants_clubb, only: &
       Skw_max_mag_sqd ! [-]      
 
     implicit none

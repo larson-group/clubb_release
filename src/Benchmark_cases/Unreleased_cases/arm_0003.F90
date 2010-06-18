@@ -26,7 +26,7 @@ module arm_0003
     !       heat and moisture according to GCSS ARM specifications
     !----------------------------------------------------------------------
 
-    use constants, only: Cp, Lv, grav ! Variable(s)
+    use constants_clubb, only: Cp, Lv, grav ! Variable(s)
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 

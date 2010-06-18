@@ -63,7 +63,7 @@ module extend_atmosphere_module
 
     use input_interpret, only: read_theta_profile, read_z_profile ! Procedure(s)
 
-    use constants, only: kappa, p0, fstderr ! Constant(s)
+    use constants_clubb, only: kappa, p0, fstderr ! Constant(s)
 
     use input_names, only: z_name, temperature_name, ozone_name, rt_name ! Variable(s)
 
@@ -195,7 +195,7 @@ module extend_atmosphere_module
     !----------------------------------------------------------------------------------------------
 
 
-    use constants, only: &
+    use constants_clubb, only: &
     fstderr ! Variable(s)
 
     implicit none

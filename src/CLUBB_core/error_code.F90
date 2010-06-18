@@ -63,7 +63,7 @@ module error_code
 !
 !-----------------------------------------------
 
-    use constants, only: & 
+    use constants_clubb, only: & 
         fstderr ! Variable(s)
 
     implicit none
@@ -187,7 +187,7 @@ module error_code
 !       Prints a message to file unit fstderr if the level is greater
 !       than or equal to the current debug level.
 !----------------------------------------------------------------------
-    use constants, only: & 
+    use constants_clubb, only: & 
         fstderr ! Variable(s)
 
     implicit none

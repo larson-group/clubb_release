@@ -252,7 +252,7 @@ module grid_class
     !   ``Equations for CLUBB'',  Sec. 8,  Grid Configuration.
     !-----------------------------------------------------------------------
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
         fstderr ! Variable(s)
 
     use error_code, only:  &
@@ -483,7 +483,7 @@ module grid_class
   !   None
   !------------------------------------------------------------------------------
 
-    use constants, only: fstderr ! Constant
+    use constants_clubb, only: fstderr ! Constant
 
     implicit none
 
@@ -693,7 +693,7 @@ module grid_class
     ! three grid types.
     !------------------------------------------------------------------------
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
         fstderr ! Variable(s)
     use file_functions, only:  & 
         file_read_1d ! Procedure(s)

@@ -58,7 +58,7 @@ module rad_lwsw_module
 !       Introductory Survey.  Academic Press, 467 pp.
 !-----------------------------------------------------------------------
 
-    use constants, only: Cp ! Variable(s)
+    use constants_clubb, only: Cp ! Variable(s)
 
     use interpolation, only: lin_int ! Procedure(s)
 
@@ -379,7 +379,7 @@ module rad_lwsw_module
 ! see subroutine rad_lwsw.
 !-----------------------------------------------------------------------
 
-    use constants, only: Cp, rho_lw, pi ! Variable(s)
+    use constants_clubb, only: Cp, rho_lw, pi ! Variable(s)
     use interpolation, only: lin_int ! Procedure(s)
 
     implicit none

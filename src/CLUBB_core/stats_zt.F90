@@ -27,7 +27,7 @@ module stats_zt
 
 !-----------------------------------------------------------------------
 
-    use constants, only:  &
+    use constants_clubb, only:  &
         fstderr ! Constant(s)
 
     use stats_variables, only: & 

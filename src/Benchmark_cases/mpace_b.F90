@@ -31,7 +31,7 @@ subroutine mpace_b_tndcy( xi_abs, &
 !          Liou, Wallace and Hobbs, Shettle and Weinman
 !-----------------------------------------------------------------------
 
-use constants, only: Rd, Cp, Lv, p0, rc_tol, zero_threshold ! Variable(s)
+use constants_clubb, only: Rd, Cp, Lv, p0, rc_tol, zero_threshold ! Variable(s)
 
 use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
@@ -280,7 +280,7 @@ subroutine mpace_b_sfclyr( rho0, um_sfc, vm_sfc, &
 !          mpace_b specification, arm.gov
 !-----------------------------------------------------------------------
 
-use constants, only: Cp, Lv ! Variable(s)
+use constants_clubb, only: Cp, Lv ! Variable(s)
 
 use parameters_model, only: sclr_dim, edsclr_dim  ! Variable(s)
 

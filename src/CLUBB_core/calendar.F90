@@ -129,7 +129,7 @@ module calendar
   use stats_precision, only: & 
   time_precision  ! Variable(s)
 
-  use constants, only: & 
+  use constants_clubb, only: & 
   sec_per_day     ! Variable(s)
 
   implicit none

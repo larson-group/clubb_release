@@ -36,7 +36,7 @@ module sounding
     use grid_class, only:  & 
         gr ! Variable(s)
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
         fstderr, & ! Constant
         fstdout
 
@@ -640,7 +640,7 @@ module sounding
     use interpolation, only:  & 
         lin_int ! Procedure
 
-    use constants, only:  &
+    use constants_clubb, only:  &
         fstderr ! Constant
 
     implicit none

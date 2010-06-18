@@ -55,7 +55,7 @@ module ice_dfsn_module
 
     USE grid_class, only: & 
         gr ! Variable(s)
-    USE constants, only: & 
+    USE constants_clubb, only: & 
         Cp,  & ! Variable(s)
         Lv, & 
         ep, & 
@@ -303,7 +303,7 @@ module ice_dfsn_module
 
   FUNCTION Diff_denom( T_in_K, p_in_Pa, e_i )
 
-    USE constants, only: & 
+    USE constants_clubb, only: & 
         Ls,  & ! Variables
         Rv
 

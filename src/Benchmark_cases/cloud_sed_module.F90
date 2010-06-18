@@ -24,7 +24,7 @@ use grid_class, only: gr ! Variable(s)
 
 use grid_class, only: zt2zm, ddzm ! Procedure(s)
 
-use constants, only: rho_lw, pi, Cp, Lv ! Variable(s)
+use constants_clubb, only: rho_lw, pi, Cp, Lv ! Variable(s)
 
  
 use stats_type, only: stat_update_var ! Procedure(s)

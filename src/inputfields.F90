@@ -67,7 +67,7 @@ module inputfields
 !   None
 !-----------------------------------------------------------------------
 
-    use constants, only: fstderr, fstdout ! Constants
+    use constants_clubb, only: fstderr, fstdout ! Constants
 
     implicit none
 
@@ -185,7 +185,7 @@ module inputfields
         gr,  & ! Variable(s)
         zt2zm ! Procedure(s)
 
-    use constants, only:  &
+    use constants_clubb, only:  &
         rt_tol,    & ! Variable(s)
         thl_tol,   &
         w_tol_sqd, &
@@ -2044,7 +2044,7 @@ module inputfields
         open_grads_read,  & ! Procedure(s)
         close_grads_read
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
         sec_per_min ! Variable(s)
 
     use stats_precision, only:  & 

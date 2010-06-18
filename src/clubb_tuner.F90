@@ -46,7 +46,7 @@ use error, only:  &
   l_results_file, tune_type, f_tol, ndim,         & ! Variables
   tuning_filename, file_unit                       ! Variable
 
-use constants, only: & 
+use constants_clubb, only: & 
   fstdout ! Variable
 
 use text_writer, only: &

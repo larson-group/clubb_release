@@ -71,7 +71,7 @@ module wangara
 !   heat and moisture for Wangara day 33
 !----------------------------------------------------------------------
 
-    use constants, only: pi, fstderr, sec_per_day ! Variable(s)
+    use constants_clubb, only: pi, fstderr, sec_per_day ! Variable(s)
 
     use parameters_model, only: sclr_dim ! Variable(s)
 

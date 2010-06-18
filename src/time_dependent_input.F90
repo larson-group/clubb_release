@@ -117,7 +117,7 @@ module time_dependent_input
     !  input values that vary in one dimension.
     !-----------------------------------------------------------------------------
 
-    use constants, only: fstderr ! Variable(s)
+    use constants_clubb, only: fstderr ! Variable(s)
 
     use error_code, only: clubb_at_least_debug_level ! Procedure(s)
 
@@ -413,7 +413,7 @@ module time_dependent_input
     use error_code, only: &
       clubb_debug ! Procedure(s)
 
-    use constants, only: &
+    use constants_clubb, only: &
       grav, & ! Variable(s)
       sec_per_hr, &
       pascal_per_mb, &

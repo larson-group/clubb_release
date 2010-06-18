@@ -127,7 +127,7 @@ module gabls2
 !   <http://people.su.se/~gsven/gabls/>
 !-------------------------------------------------------------------------------
 
-    use constants, only: Cp, Rd, p0, kappa, grav ! Variable(s)
+    use constants_clubb, only: Cp, Rd, p0, kappa, grav ! Variable(s)
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 

@@ -145,7 +145,7 @@ module lba
     !       Grabowski, et al. (2005)
     !----------------------------------------------------------------------
 
-    use constants, only: pi, grav, Lv, Cp ! Variable(s)
+    use constants_clubb, only: pi, grav, Lv, Cp ! Variable(s)
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 

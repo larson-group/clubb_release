@@ -22,7 +22,7 @@ program jacobian
       params_list,  & ! Variable(s)
       read_parameters ! Procedure(s)
 
-  use constants, only:  & 
+  use constants_clubb, only:  & 
       fstdout,  & ! Variable(s) 
       fstderr
 

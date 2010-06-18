@@ -52,7 +52,7 @@ module KK_microphys_module
     ! Monthly Weather Review, Volume 128, Issue 1 pp. 229--243
     !-------------------------------------------------------------------
 
-    use constants, only: & 
+    use constants_clubb, only: & 
         rc_tol,  & ! Variable(s)
         ep, & 
         Cp, & 
@@ -597,7 +597,7 @@ module KK_microphys_module
   FUNCTION mean_volume_radius( l_local_kk, rrainm, Nrm, rrp2_on_rrainm2,  & 
                                Nrp2_on_Nrm2, corr_rrNr_LL )
 
-    USE constants, only: & 
+    use constants_clubb, only: & 
         Nr_tol,  & ! Variable(s)
         rr_tol, & 
         rho_lw, & 
@@ -769,7 +769,7 @@ module KK_microphys_module
                              Supsat, rrp2_on_rrainm2, Nrp2_on_Nrm2, &
                              corr_srr_NL, corr_sNr_NL, corr_rrNr_LL )
 
-    USE constants, only: & 
+    use constants_clubb, only: & 
         Nr_tol,  & ! Variable(s)
         rr_tol, & 
         rho_lw, & 
@@ -976,7 +976,7 @@ module KK_microphys_module
 ! References:
 !   None
 !-------------------------------------------------------------------------------
-    use constants, only: &
+    use constants_clubb, only: &
       rr_tol, & ! Constants
       Nr_tol
 
@@ -1075,7 +1075,7 @@ module KK_microphys_module
                          s2, stdev_s2, mixt_frac, rho, & 
                          Ncp2_on_Ncm2, corr_sNc_NL )
 
-    USE constants, only: & 
+    use constants_clubb, only: & 
         Nc_tol,  & ! Variable(s)
         rc_tol
 
@@ -1187,7 +1187,7 @@ module KK_microphys_module
 
   FUNCTION autoconv_Nrm( auto_rrainm )
 
-    USE constants, only: & 
+    use constants_clubb, only: & 
         rho_lw,  & ! Variable(s)
         pi
 
@@ -1255,7 +1255,7 @@ module KK_microphys_module
                           s2, stdev_s2, mixt_frac,  & 
                           rrp2_on_rrainm2, corr_srr_NL )
 
-    USE constants, only: & 
+    use constants_clubb, only: & 
         rr_tol,  & ! Variable(s)
         rc_tol
 
@@ -1364,7 +1364,7 @@ module KK_microphys_module
 
   FUNCTION G_T_p( T_in_K, p_in_Pa )
 
-    USE constants, only: & 
+    use constants_clubb, only: & 
         ep,  & ! Variable(s)
         rho_lw, & 
         Lv, & 
@@ -1649,7 +1649,7 @@ module KK_microphys_module
                                 corr_sirr, corr_siNr, corr_rrNr, & 
                                 alpha_exp, beta_exp, gamma_exp )
 
-    use constants, only: & 
+    use constants_clubb, only: & 
       pi ! Variable(s)
 
     use parabolic, only:  & 
@@ -2032,7 +2032,7 @@ module KK_microphys_module
   FUNCTION PDF_BIVAR_2G_LN ( mu_si, mu_xx, sigma_si, sigma_xx, & 
                              corr_sixx, alpha_exp, beta_exp )
 
-    USE constants, only: & 
+    use constants_clubb, only: & 
         pi ! Variable(s)
     USE parabolic, ONLY:  & 
         gamma ! Variable(s)
@@ -2287,7 +2287,7 @@ module KK_microphys_module
   FUNCTION PDF_BIVAR_LN_LN ( mu_rr, mu_Nr, sigma_rr, sigma_Nr, & 
                              corr_rrNr, alpha_exp, beta_exp   )
 
-    USE constants, only:  & 
+    use constants_clubb, only:  & 
         pi ! Variable(s)
 
     implicit none
@@ -2577,7 +2577,7 @@ module KK_microphys_module
 !     .                                 corrY1iY2, corrY1iY3, corrY2Y3,
 !     .                                 alpha_exp, beta_exp, gamma_exp )
 !
-!        USE constants
+!        use constants_clubb
 !        USE polpak_gamma, ONLY: gamma
 !
 !        implicit none
@@ -2941,7 +2941,7 @@ module KK_microphys_module
 !        FUNCTION PDF_BIVAR_2G_LN ( muY1i, muY2, sigmaY1i, sigmaY2,
 !     .                             corrY1iY2, alpha_exp, beta_exp )
 !
-!        USE constants
+!        use constants_clubb
 !        USE polpak_gamma, ONLY: gamma
 !
 !        implicit none
@@ -3172,7 +3172,7 @@ module KK_microphys_module
 !        FUNCTION PDF_BIVAR_LN_LN ( muY1, muY2, sigmaY1, sigmaY2,
 !     .                             corrY1Y2, alpha_exp, beta_exp )
 !
-!        USE constants
+!        use constants_clubb
 !
 !        implicit none
 !
@@ -3262,7 +3262,7 @@ module KK_microphys_module
         gamma,  & ! Procedure(s) 
         parab
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
         pi_dp ! Variable(s)
 
     implicit none

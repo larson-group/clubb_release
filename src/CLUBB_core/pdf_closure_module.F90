@@ -43,7 +43,7 @@ module pdf_closure_module
 !       JAS, Vol. 59, pp. 3540--3551.
 !------------------------------------------------------------------------
 
-    use constants, only: & 
+    use constants_clubb, only: & 
       ! Constants
       sqrt_2pi,      & ! sqrt(2*pi)
       sqrt_2,        & ! sqrt(2)

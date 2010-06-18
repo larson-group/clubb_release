@@ -21,7 +21,7 @@ module T_in_K_module
 ! References: 
 !   Cotton and Anthes (1989), "Storm and Cloud Dynamics", Eqn. (2.51). 
 !-------------------------------------------------------------------------------
-    use constants, only: & 
+    use constants_clubb, only: & 
       ! Variable(s) 
       Cp,  & ! Dry air specific heat at constant p [J/kg/K]
       Lv     ! Latent heat of vaporization         [J/kg]
@@ -53,7 +53,7 @@ module T_in_K_module
 ! References: 
 !   None
 !-------------------------------------------------------------------------------
-    use constants, only: & 
+    use constants_clubb, only: & 
       ! Variable(s) 
       Cp,  & ! Dry air specific heat at constant p [J/kg/K]
       Lv     ! Latent heat of vaporization         [J/kg]

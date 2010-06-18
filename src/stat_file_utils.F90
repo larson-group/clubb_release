@@ -22,7 +22,7 @@ module stat_file_utils
 !   None
 !----------------------------------------------------------------------
 
-    use constants, only: fstderr ! Variable(s)
+    use constants_clubb, only: fstderr ! Variable(s)
 
     use stat_file_module, only: stat_file ! Type(s)
 
@@ -279,7 +279,7 @@ module stat_file_utils
 ! Notes:
 !   The variable t is assumed size, which needs to be used with caution.
 !-------------------------------------------------------------------------
-    use constants, only: fstderr ! Variable(s)
+    use constants_clubb, only: fstderr ! Variable(s)
 
     implicit none
 
@@ -379,7 +379,7 @@ module stat_file_utils
 
     use input_grads, only: open_grads_read, close_grads_read ! Procedure(s)
 
-    use constants, only: fstderr
+    use constants_clubb, only: fstderr
 
 #ifdef NETCDF
     use input_netcdf, only: open_netcdf_read, close_netcdf_read ! Procedure(s)
@@ -442,7 +442,7 @@ module stat_file_utils
 
     use input_grads, only: open_grads_read, close_grads_read ! Procedure(s)
 
-    use constants, only: fstderr
+    use constants_clubb, only: fstderr
 
 #ifdef NETCDF
     use input_netcdf, only: open_netcdf_read, close_netcdf_read ! Procedure(s)
@@ -506,7 +506,7 @@ module stat_file_utils
 !-------------------------------------------------------------------------
   logical function l_netcdf_file( filename )
 
-    use constants, only : fstderr
+    use constants_clubb, only : fstderr
 
     implicit none
 
@@ -554,7 +554,7 @@ module stat_file_utils
     use stat_file_module, only:  &
         stat_file  ! Variable type
 
-    use constants, only:  &
+    use constants_clubb, only:  &
         fstderr ! Constant
 
     implicit none

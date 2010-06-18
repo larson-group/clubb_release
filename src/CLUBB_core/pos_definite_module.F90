@@ -48,7 +48,7 @@ module pos_definite_module
     ddzt, & ! Function
     ddzm    ! Function
 
-  use constants, only :  & 
+  use constants_clubb, only :  & 
     eps, & ! Variable(s)
     zero_threshold
 

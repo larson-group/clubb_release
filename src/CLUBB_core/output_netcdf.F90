@@ -42,7 +42,7 @@ module output_netcdf
     use stats_precision, only:  & 
       time_precision ! Variable(s)
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
       fstderr ! Variable(s)
 
     implicit none
@@ -157,7 +157,7 @@ module output_netcdf
 
     use stat_file_module, only: & 
         stat_file ! Variable
-    use constants, only:  & 
+    use constants_clubb, only:  & 
         fstderr ! Variable
 
     implicit none
@@ -249,7 +249,7 @@ module output_netcdf
     use stats_precision, only:  & 
       time_precision ! Variable(s)
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
       fstderr ! Variable(s)
 
     implicit none
@@ -403,7 +403,7 @@ module output_netcdf
         nf90_close,  & ! Procedure(s)
         nf90_strerror
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
         fstderr  ! Variable
 
     implicit none
@@ -453,7 +453,7 @@ module output_netcdf
     use stat_file_module, only: &
       stat_file ! Derived type
 
-    use constants, only:  &
+    use constants_clubb, only:  &
       fstderr ! Variable
 
     use parameters_model, only: &
@@ -685,7 +685,7 @@ module output_netcdf
         nf90_strerror
     use stat_file_module, only: & 
         stat_file ! Type
-    use constants, only:  & 
+    use constants_clubb, only:  & 
         fstderr ! Variable
 
     implicit none

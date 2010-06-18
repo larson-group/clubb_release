@@ -81,7 +81,7 @@ module hydrostatic_module
     !
     !------------------------------------------------------------------------
 
-    use constants, only: & 
+    use constants_clubb, only: & 
         kappa,  & ! Variable(s)
         p0, & 
         Rd, &
@@ -223,7 +223,7 @@ module hydrostatic_module
     !
     !------------------------------------------------------------------------
 
-    use constants, only: &
+    use constants_clubb, only: &
         p0,     & ! Constant(s)
         kappa,  &
         fstderr
@@ -435,7 +435,7 @@ module hydrostatic_module
     ! References:
     !-------------------------------------------------------------------
 
-    use constants, only: &
+    use constants_clubb, only: &
         grav,  & ! Gravitational acceleration                  [m/s^2]
         Cp       ! Specific heat of dry air at const. pressure [J/(kg*K)]
 
@@ -557,7 +557,7 @@ module hydrostatic_module
     ! References:
     !-------------------------------------------------------------------
 
-    use constants, only: &
+    use constants_clubb, only: &
         grav,  & ! Gravitational acceleration                   [m/s^2]
         Cp       ! Specific heat of dry air at const. pressure  [J/(kg*K)]
 
@@ -697,7 +697,7 @@ module hydrostatic_module
     ! References:
     !-------------------------------------------------------------------
 
-    use constants, only: &
+    use constants_clubb, only: &
         grav,  & ! Gravitational acceleration                   [m/s^2]
         Cp       ! Specific heat of dry air at const. pressure  [J/(kg*K)]
 

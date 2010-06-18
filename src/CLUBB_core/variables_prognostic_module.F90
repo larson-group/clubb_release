@@ -174,7 +174,7 @@ module variables_prognostic_module
 !       References:
 !       None
 !-----------------------------------------------------------------------
-    use constants, only:  & 
+    use constants_clubb, only:  & 
         rt_tol, &
         thl_tol, &
         w_tol_sqd

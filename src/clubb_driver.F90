@@ -172,7 +172,7 @@ module clubb_driver
       cleanup_clubb_core, & 
       advance_clubb_core
 
-    use constants, only: fstdout, fstderr, & ! Variable(s)
+    use constants_clubb, only: fstdout, fstderr, & ! Variable(s)
       rt_tol, thl_tol, w_tol, w_tol_sqd
 
     use error_code, only: clubb_var_out_of_bounds,  & ! Variable(s)
@@ -1083,7 +1083,7 @@ module clubb_driver
     !   None
     !-----------------------------------------------------------------------
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
       em_min,  &
       grav, &
       zero_threshold, &
@@ -1136,7 +1136,7 @@ module clubb_driver
 
     use error_code, only: clubb_no_error ! Variable(s)
 
-    use constants, only: fstderr ! Variables(s)
+    use constants_clubb, only: fstderr ! Variables(s)
 
     use array_index, only: &
         iiNcm ! Variable(s)
@@ -1755,7 +1755,7 @@ module clubb_driver
         gr, & ! Variable(s)
         zt2zm ! Procedure(s)
 
-    use constants, only:  & ! Constant(s)
+    use constants_clubb, only:  & ! Constant(s)
         Rd,    & ! Gas constant for dry air          [J/(kg K)]
         Cp,    & ! Specific heat of dry air          [J/(kg K)]
         Lv,    & ! Latent heat of vaporization       [J/kg]
@@ -2567,7 +2567,7 @@ module clubb_driver
 
     use grid_class, only: zt2zm ! Procedure(s)
 
-    use constants, only: fstderr ! Variables(s)
+    use constants_clubb, only: fstderr ! Variables(s)
 
     use stats_precision, only: time_precision ! Variable(s)
 
@@ -2799,7 +2799,7 @@ module clubb_driver
 
     use stats_type, only: stat_update_var_pt ! Procedure(s)
 
-    use constants, only: & 
+    use constants_clubb, only: & 
       Cp, Lv, kappa, p0, & ! Variable(s)
       rc_tol, fstderr, cm3_per_m3
 
@@ -3387,7 +3387,7 @@ module clubb_driver
     use parameters_microphys, only: &
       micro_scheme, l_cloud_sed, Ncm_initial  ! Variables
 
-    use constants, only: & 
+    use constants_clubb, only: & 
       rc_tol, fstderr, cm3_per_m3 ! Variable(s)
 
     use stats_precision, only: time_precision ! Variable(s)
@@ -3536,7 +3536,7 @@ module clubb_driver
 !   this subroutine.
 !-------------------------------------------------------------------------------
 
-    use constants, only: fstderr, zero_threshold  ! Constant(s)
+    use constants_clubb, only: fstderr, zero_threshold  ! Constant(s)
 
     use numerical_check, only: isnan2d, rad_check ! Procedure(s)
 

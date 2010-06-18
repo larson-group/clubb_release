@@ -29,7 +29,7 @@ use grid_class, only: gr ! Variable(s)
 
 use grid_class, only: zt2zm ! Procedure(s)
 
-use constants, only: fstderr ! Variable(s)
+use constants_clubb, only: fstderr ! Variable(s)
 
 use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
@@ -95,7 +95,7 @@ subroutine cobra_sfclyr( time, z, dn0, thlm_sfc, um_sfc, vm_sfc, &
 !       case.
 !-----------------------------------------------------------------------
 
-use constants, only: Cp, Lv, grav ! Variable(s)
+use constants_clubb, only: Cp, Lv, grav ! Variable(s)
 
 use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 

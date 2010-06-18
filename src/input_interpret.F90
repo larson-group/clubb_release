@@ -28,7 +28,7 @@ module input_interpret
         read_x_profile, & ! Prodedure(s)
         one_dim_read_var  ! Type
 
-    use constants, only: &
+    use constants_clubb, only: &
         kappa, & ! Constant(s)
         p0, &
         Cp, &

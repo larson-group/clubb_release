@@ -69,7 +69,7 @@ module clubb_core
 
     ! Modules to be included
 
-    use constants, only: & 
+    use constants_clubb, only: & 
       w_tol,  & ! Variable(s)
       em_min, & 
       thl_tol, & 
@@ -1201,7 +1201,7 @@ module clubb_core
     use variables_prognostic_module, only: & 
       setup_prognostic_variables ! Procedure
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
       fstderr  ! Variable(s)
 
     use error_code, only:  & 
@@ -1941,7 +1941,7 @@ module clubb_core
     ! Added July 2009
     !---------------------------------------------------------------------
 
-    use constants, only: rc_tol ! Variable
+    use constants_clubb, only: rc_tol ! Variable
 
     use grid_class, only: gr ! Variable
   
@@ -2080,7 +2080,7 @@ module clubb_core
     use error_code, only :  & 
       clubb_at_least_debug_level ! Procedure(s)
 
-    use constants, only: & 
+    use constants_clubb, only: & 
       fstderr, & ! Variable(s)
       zero_threshold
 

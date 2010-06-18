@@ -27,7 +27,7 @@ module cloud_rad_module
 
     use grid_class, only: ddzm ! Procedure(s)
 
-    use constants, only: Cp ! Variable(s)
+    use constants_clubb, only: Cp ! Variable(s)
 
     use parameters_radiation, only: F0, kappa
 

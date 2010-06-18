@@ -122,7 +122,7 @@ module microphys_driver
     use module_mp_Graupel, only: &
       GRAUPEL_INIT ! Subroutine
 
-    use constants, only: &
+    use constants_clubb, only: &
       fstderr,   & ! Constant
       cm3_per_m3
 
@@ -689,7 +689,7 @@ module microphys_driver
     use parameters_model, only: & 
         hydromet_dim   ! Integer
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
         Lv,   & ! Constant(s)
         Cp,  & 
         rho_lw,  & 
@@ -1737,7 +1737,7 @@ module microphys_driver
       use mean_adv, only:  & 
           term_ma_zt_lhs ! Procedure(s)
 
-      use constants, only: sec_per_day ! Variable(s)
+      use constants_clubb, only: sec_per_day ! Variable(s)
 
       use stats_variables, only: & 
           irrainm_ma,   & ! Variable(s)
@@ -2667,7 +2667,7 @@ module microphys_driver
 
       use grid_class, only: gr ! Variable
 
-      use constants, only: rc_tol ! Constant
+      use constants_clubb, only: rc_tol ! Constant
 
       use parameters_microphys, only: &
         rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, & ! Variables

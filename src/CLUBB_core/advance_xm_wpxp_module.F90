@@ -78,7 +78,7 @@ module advance_xm_wpxp_module
         c_K6,  & 
         c_Ksqd
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
         fstderr, &  ! Constant
         rt_tol, &
         thl_tol, &
@@ -779,7 +779,7 @@ module advance_xm_wpxp_module
         gr,  & ! Variable(s)
         zm2zt ! Procedure(s)
 
-    use constants, only: &
+    use constants_clubb, only: &
         gamma_over_implicit_ts ! Variable(s)
 
     use model_flags, only: &
@@ -1238,7 +1238,7 @@ module advance_xm_wpxp_module
     use grid_class, only: & 
         gr ! Variable(s)
 
-    use constants, only:  &
+    use constants_clubb, only:  &
         gamma_over_implicit_ts ! Variable(s)
 
     use model_flags, only: &
@@ -1692,7 +1692,7 @@ module advance_xm_wpxp_module
         l_hole_fill, &  ! Logical for whether to apply the hole filling scheme to thlm/rtm
         l_clip_turb_adv ! Logical for whether to clip xm when wpxp is clipped
 
-    use constants, only: &
+    use constants_clubb, only: &
         fstderr ! Standard error i/o unit
 
     use fill_holes, only: &
@@ -2334,7 +2334,7 @@ module advance_xm_wpxp_module
     use grid_class, only: & 
         gr ! Variable; gr%weights_zm2zt
 
-    use constants, only: &
+    use constants_clubb, only: &
         w_tol_sqd ! Constant; minimum threshold for w'^2 [m^2/s^2]
 
 !    use model_flags, only:  &
@@ -2445,7 +2445,7 @@ module advance_xm_wpxp_module
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants, only: &
+    use constants_clubb, only: &
         w_tol_sqd ! Constant; minimum threshold for w'^2 [m^2/s^2]
 
     implicit none
@@ -2716,7 +2716,7 @@ module advance_xm_wpxp_module
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants, only: & ! Variable(s) 
+    use constants_clubb, only: & ! Variable(s) 
         grav ! Gravitational acceleration [m/s^2]
 
     implicit none

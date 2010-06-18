@@ -33,7 +33,7 @@ contains
 !
 real function diag_ustar( z, bflx, wnd, z0 ) 
 
-use constants, only: grav, vonk, pi ! Variable(s)
+use constants_clubb, only: grav, vonk, pi ! Variable(s)
 !, eps
 implicit none
 

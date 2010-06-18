@@ -21,7 +21,7 @@ module Skw_module
 !   None
 !-------------------------------------------------------------------------------
 
-    use constants, only:  &
+    use constants_clubb, only:  &
       w_tol_sqd,  &! Constant for w_{_tol}^2, i.e. threshold for vertical velocity
       Skw_max_mag ! Max magnitude of skewness
 

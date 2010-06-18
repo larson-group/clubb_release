@@ -40,7 +40,7 @@ module estimate_lh_micro_module
 !   None
 !------------------------------------------------------------------------
 
-    use constants, only:  &
+    use constants_clubb, only:  &
       pi,  & ! Variables(s)
       s_mellor_tol, &
       zero_threshold
@@ -339,7 +339,7 @@ module estimate_lh_micro_module
 !   None
 !-----------------------------------------------------------------------
 
-    use constants, only:  &
+    use constants_clubb, only:  &
       fstderr, & ! Constant(s)
       g_per_kg
 
@@ -562,7 +562,7 @@ module estimate_lh_micro_module
 !   None
 !-------------------------------------------------------------------------------
 
-    use constants, only:  &
+    use constants_clubb, only:  &
       fstderr, &  ! Constant(s)
       rc_tol, &
       cm3_per_m3
@@ -1060,7 +1060,7 @@ module estimate_lh_micro_module
 !   None
 !---------------------------------------------------------------
 
-    use constants, only:  &
+    use constants_clubb, only:  &
         fstderr  ! Constant(s)
 
 !   use error_code, only:  &

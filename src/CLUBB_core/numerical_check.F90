@@ -519,7 +519,7 @@ module numerical_check
 !       to the console.
 !------------------------------------------------------------------------
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
         fstderr ! Variable
 
     use grid_class, only: & 
@@ -591,7 +591,7 @@ module numerical_check
       sclrm, & 
       edsclrm
 
-    use constants, only: & 
+    use constants_clubb, only: & 
       fstderr   ! Constant(s)
 
     use parameters_model, only: & 
@@ -868,7 +868,7 @@ module numerical_check
 !       them.
 !
 !-----------------------------------------------------------------------
-    use constants, only: & 
+    use constants_clubb, only: & 
         fstderr ! Variable(s)
 
     use error_code, only:  & 
@@ -911,7 +911,7 @@ module numerical_check
 !                    the index in which the negative values occur.
 !
 !-----------------------------------------------------------------------
-    use constants, only: & 
+    use constants_clubb, only: & 
         fstderr ! Variable
     use error_code, only:  & 
         clubb_var_less_than_zero ! Variable
@@ -964,7 +964,7 @@ module numerical_check
 !
 !
 !------------------------------------------------------------------------
-    use constants, only:  & 
+    use constants_clubb, only:  & 
         fstderr ! Variable(s)
     use error_code, only:  & 
         clubb_var_equals_NaN ! Variable(s)
@@ -1002,7 +1002,7 @@ module numerical_check
 !       Description: Checks for a NaN in the scalar var then reports it.
 !
 !-----------------------------------------------------------------------
-    use constants, only:  & 
+    use constants_clubb, only:  & 
         fstderr ! Variable
     use error_code, only:  & 
         clubb_var_equals_NaN ! Variable

@@ -3,7 +3,7 @@
 
 module input_netcdf
 #ifdef NETCDF
-  use constants, only:  & 
+  use constants_clubb, only:  & 
     fstdout,    & ! Variable(s) 
     fstderr,    &
     sec_per_hr, &

@@ -24,7 +24,7 @@ module simple_rad_module
 
     use grid_class, only: zt2zm ! Procedure(s)
 
-    use constants, only: fstderr, Cp, rc_tol ! Variable(s)
+    use constants_clubb, only: fstderr, Cp, rc_tol ! Variable(s)
 
     use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 

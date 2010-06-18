@@ -129,7 +129,7 @@ module rico
   !          RICO: http://www.knmi.nl/samenw/rico/setup3d.html
   !-----------------------------------------------------------------------
 
-  use constants, only: kappa, p0 ! Variable(s)
+  use constants_clubb, only: kappa, p0 ! Variable(s)
 
   use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
   

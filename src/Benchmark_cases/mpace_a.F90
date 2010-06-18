@@ -56,7 +56,7 @@
 !          Liou, Wallace and Hobbs, Shettle and Weinman
 !-----------------------------------------------------------------------
 
-  use constants, only: Cp, Rd, Lv, p0, rc_tol, & ! Variable(s)
+  use constants_clubb, only: Cp, Rd, Lv, p0, rc_tol, & ! Variable(s)
                        zero_threshold, fstderr
 
   use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
@@ -406,7 +406,7 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
 !          mpace_a specification from arm.gov
 !-----------------------------------------------------------------------
 
-  use constants, only: Cp, Lv, fstderr ! Variable(s)
+  use constants_clubb, only: Cp, Lv, fstderr ! Variable(s)
 
   use parameters_model, only: sclr_dim, edsclr_dim  ! Variable(s)
 

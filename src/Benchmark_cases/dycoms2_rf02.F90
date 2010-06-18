@@ -35,7 +35,7 @@ module dycoms2_rf02
 
     use grid_class, only: zt2zm ! Procedure(s)
 
-    use constants, only: fstderr, Cp, rc_tol ! Variable(s)
+    use constants_clubb, only: fstderr, Cp, rc_tol ! Variable(s)
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
@@ -223,7 +223,7 @@ module dycoms2_rf02
                                   wpthlp_sfc, wprtp_sfc, ustar, & 
                                   wpsclrp_sfc, wpedsclrp_sfc )
 
-    use constants, only: Cp, Lv ! Variable(s)
+    use constants_clubb, only: Cp, Lv ! Variable(s)
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 

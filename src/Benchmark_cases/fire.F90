@@ -158,7 +158,7 @@ subroutine sfc_thermo_fluxes( um_sfc, vm_sfc, &
 !       None
 !------------------------------------------------------------------------
 
-use constants, only: kappa, p0 ! Variable(s)
+use constants_clubb, only: kappa, p0 ! Variable(s)
 
 use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 

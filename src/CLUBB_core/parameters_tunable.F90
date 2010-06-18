@@ -150,7 +150,7 @@ module parameters_tunable
     ! None
     !-----------------------------------------------------------------------
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
       fstderr ! Variable(s)
 
     use error_code, only:  & 
@@ -464,7 +464,7 @@ module parameters_tunable
     ! References:
     ! None
     !-----------------------------------------------------------------------
-    use constants, only: fstderr ! Constant
+    use constants_clubb, only: fstderr ! Constant
 
     use numerical_check, only: isnan ! Procedure
 
@@ -591,7 +591,7 @@ module parameters_tunable
     ! References:
     ! None
     !-----------------------------------------------------------------------
-    use constants, only: fstderr ! Constant
+    use constants_clubb, only: fstderr ! Constant
 
     use numerical_check, only: isnan ! Procedure
 

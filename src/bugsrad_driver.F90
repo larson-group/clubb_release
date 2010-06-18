@@ -55,7 +55,7 @@ module bugsrad_driver
 ! All code external to this based on the BUGSrad source from 2004/7/10
 !-------------------------------------------------------------------------------
 
-    use constants, only: fstderr, grav, Cp ! Variable(s)
+    use constants_clubb, only: fstderr, grav, Cp ! Variable(s)
 
     use stats_precision, only: time_precision ! Variable(s)
 

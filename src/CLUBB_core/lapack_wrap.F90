@@ -10,7 +10,7 @@ module lapack_wrap
 !   LAPACK--Linear Algebra PACKage version 3.0
 !   URL: <http://netlib2.cs.utk.edu/lapack/>
 !-----------------------------------------------------------------------
-  use constants, only:  & 
+  use constants_clubb, only:  & 
     fstderr ! Variable(s)
 
   use error_code, only:  & 

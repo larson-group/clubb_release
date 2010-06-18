@@ -45,7 +45,7 @@ module output_grads
                          nvar, f )
 
 !-----------------------------------------------------------------------
-  use constants, only:  & 
+  use constants_clubb, only:  & 
       fstderr,  & ! Variable 
       fstdout
 
@@ -197,7 +197,7 @@ module output_grads
   use stats_precision, only: & 
       time_precision ! Variable
 
-  use constants, only:  & 
+  use constants_clubb, only:  & 
       fstderr,  & ! Variable 
       fstdout
 
@@ -433,7 +433,7 @@ module output_grads
 !   Write part of a GrADS file to disk
 !---------------------------------------------------------
 
-  use constants, only: & 
+  use constants_clubb, only: & 
     fstderr ! Variable(s)
 
   use model_flags, only: &

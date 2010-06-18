@@ -29,7 +29,7 @@ module dycoms2_rf01
 
     use grid_class, only: zt2zm, ddzm ! Procedure(s)
 
-    use constants, only: fstderr, Cp ! Constant(s)
+    use constants_clubb, only: fstderr, Cp ! Constant(s)
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
@@ -191,7 +191,7 @@ module dycoms2_rf01
     !       References:
     !----------------------------------------------------------------------
 
-    use constants, only: Cp, fstderr, Lv ! Variable(s)
+    use constants_clubb, only: Cp, fstderr, Lv ! Variable(s)
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 

@@ -28,7 +28,7 @@ subroutine atex_tndcy( time, time_initial, &
 
 !----------------------------------------------------------------------
 
-use constants, only: fstderr ! Constant(s)
+use constants_clubb, only: fstderr ! Constant(s)
 
 use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
@@ -201,7 +201,7 @@ subroutine atex_sfclyr( um_sfc, vm_sfc, thlm_sfc, rtm_sfc,  &
 !   None
 !----------------------------------------------------------------------
 
-use constants, only: kappa ! Variable(s)
+use constants_clubb, only: kappa ! Variable(s)
 
 use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 

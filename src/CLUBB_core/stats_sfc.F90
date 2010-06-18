@@ -22,7 +22,7 @@ module stats_sfc
 !   Initializes array indices for sfc
 !-----------------------------------------------------------------------
 
-    use constants, only: &
+    use constants_clubb, only: &
         fstderr ! Constant(s)
 
     use stats_variables, only: & 

@@ -61,7 +61,7 @@ module morrison_micro_driver_module
       iirrainm, iirsnowm, iiricem, iirgraupelm, &
       iiNrm, iiNsnowm, iiNim, iiNgraupelm, iiNcm
 
-    use constants, only: &
+    use constants_clubb, only: &
       sec_per_day, &
       zero_threshold
 

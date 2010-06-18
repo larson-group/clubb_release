@@ -76,7 +76,7 @@ module latin_hypercube_driver_module
     use variables_prognostic_module, only: &
       pdf_parameter  ! Type
 
-    use constants, only: &
+    use constants_clubb, only: &
       fstderr, & ! Constant
       cm3_per_m3
 
@@ -902,7 +902,7 @@ module latin_hypercube_driver_module
 
     use mt95, only: genrand_real ! Constant
 
-    use constants, only: &
+    use constants_clubb, only: &
       fstderr ! Constant
 
     implicit none
@@ -1014,7 +1014,7 @@ module latin_hypercube_driver_module
     use mt95, only: genrand_real ! Constant
     use mt95, only: r8 => genrand_real ! Constant
 
-    use constants, only: &
+    use constants_clubb, only: &
       fstderr ! Constant
 
     implicit none
@@ -1179,7 +1179,7 @@ module latin_hypercube_driver_module
 
     use anl_erf, only: erf ! Function
 
-    use constants, only: sqrt_2 ! Constant
+    use constants_clubb, only: sqrt_2 ! Constant
 
     implicit none
 
@@ -1291,7 +1291,7 @@ module latin_hypercube_driver_module
     use mt95, only: &
       genrand_real ! Constant
 
-    use constants, only: &
+    use constants_clubb, only: &
       fstderr ! Constant
 
     implicit none

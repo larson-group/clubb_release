@@ -29,7 +29,7 @@ module gabls3_night
     !
     !----------------------------------------------------------------------
 
-    use constants, only: kappa, grav, Rd, Cp, p0, Lv ! Variable(s)
+    use constants_clubb, only: kappa, grav, Rd, Cp, p0, Lv ! Variable(s)
 
     use stats_precision, only: time_precision ! Variable(s)
 
@@ -180,7 +180,7 @@ module gabls3_night
     !
     !----------------------------------------------------------------------------------------------
 
-    use constants, only: ep1
+    use constants_clubb, only: ep1
 
     implicit none
 

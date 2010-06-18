@@ -188,7 +188,7 @@ module variables_diagnostic_module
 !   for the CLUBB model code
 !-----------------------------------------------------------------------
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
       em_min ! Variables
 
     use parameters_model, only: & 

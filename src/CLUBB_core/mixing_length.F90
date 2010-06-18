@@ -30,7 +30,7 @@ contains
     ! Siebesma recommends mu=2e-3, although most schemes use mu=1e-4
     ! When mu was fixed, we used the value mu = 6.e-4
 
-    use constants, only:  &  ! Variable(s)
+    use constants_clubb, only:  &  ! Variable(s)
         Cp,            & ! Dry air specific heat at constant pressure [J/kg/K]
         Rd,            & ! Dry air gas constant                       [J/kg/K]
         ep,            & ! Rd / Rv                                    [-]

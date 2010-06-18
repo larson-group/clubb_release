@@ -79,7 +79,7 @@ module advance_windm_edsclrm_module
       lapack_error,  & ! Procedure(s)
       clubb_at_least_debug_level
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
         fstderr, &  ! Constant
         eps
 
@@ -1005,7 +1005,7 @@ module advance_windm_edsclrm_module
     use stats_type, only:  &
       stat_update_var_pt  ! Subroutine
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
       fstderr ! Variable(s)
 
     implicit none
@@ -1088,7 +1088,7 @@ module advance_windm_edsclrm_module
       stat_end_update_pt,  & ! Subroutines
       stat_update_var_pt
 
-    use constants, only:  & 
+    use constants_clubb, only:  & 
       fstderr ! Variable(s)
 
     use stats_precision, only:  & 

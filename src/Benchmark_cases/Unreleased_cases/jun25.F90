@@ -38,7 +38,7 @@
 
   use grid_class, only: zt2zm ! Procedure(s)
 
-  use constants, only: pi, Cp, Lv, zero_threshold, fstderr ! Variable(s)
+  use constants_clubb, only: pi, Cp, Lv, zero_threshold, fstderr ! Variable(s)
 
   use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 

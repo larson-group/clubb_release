@@ -27,7 +27,7 @@ module saturation
 !   Formula from Emanuel 1994, 4.4.14
 !-------------------------------------------------------------------------
 
-    use constants, only: & 
+    use constants_clubb, only: & 
       ep, & ! Variable
       fstderr
 
@@ -99,7 +99,7 @@ module saturation
 !     pp. 1507--1513
 !------------------------------------------------------------------------
 
-    use constants, only: T_freeze_K
+    use constants_clubb, only: T_freeze_K
 
     implicit none
 
@@ -161,7 +161,7 @@ module saturation
 !   Bolton 1980
 !------------------------------------------------------------------------
 
-    use constants, only: T_freeze_K
+    use constants_clubb, only: T_freeze_K
 
     implicit none
 
@@ -191,7 +191,7 @@ module saturation
 !   Formula from Emanuel 1994, 4.4.15
 !-------------------------------------------------------------------------
 
-    use constants, only: & 
+    use constants_clubb, only: & 
         ep ! Variable(s)
     use model_flags, only: &
       saturation_formula ! Variable(s)
@@ -251,7 +251,7 @@ module saturation
 !     and Cotton.  (1992)  Journal of Applied Meteorology, Vol. 31,
 !     pp. 1507--1513
 !------------------------------------------------------------------------
-    use constants, only: T_freeze_K
+    use constants_clubb, only: T_freeze_K
 
 
     implicit none
@@ -301,7 +301,7 @@ module saturation
 ! References:
 !   Bolton 1980
 !------------------------------------------------------------------------
-    use constants, only: T_freeze_K
+    use constants_clubb, only: T_freeze_K
 
     implicit none
 
@@ -330,7 +330,7 @@ module saturation
     ! from an initial profile that has saturation at some point.
     !-------------------------------------------------------------------------
 
-    USE constants, only: & 
+    use constants_clubb, only: & 
         Cp,            & ! Variable(s)
         Lv,            &
         zero_threshold

@@ -72,7 +72,7 @@ module model_flags
 ! References:
 !   None
 !-------------------------------------------------------------------------------
-    use constants, only:  & 
+    use constants_clubb, only:  & 
       fstderr ! Variable(s)
 
     implicit none

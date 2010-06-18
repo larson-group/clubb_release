@@ -30,7 +30,7 @@ module surface_varnce_module
     use parameters_model, only:  & 
       T0 ! Variable(s)
 
-    use constants, only: & 
+    use constants_clubb, only: & 
       grav,  & ! Variable(s)
       eps,   &
       fstderr

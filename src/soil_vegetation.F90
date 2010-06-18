@@ -70,7 +70,7 @@ module soil_vegetation
 
     use stats_type, only: stat_update_var_pt ! Procedure(s)
 
-    use constants, only: pi, Cp, stefan_boltzmann ! Variable(s)
+    use constants_clubb, only: pi, Cp, stefan_boltzmann ! Variable(s)
 
     implicit none
 

@@ -119,7 +119,7 @@ module stats_subs
     use error_code, only: &
       clubb_at_least_debug_level ! Function
 
-    use constants, only: &
+    use constants_clubb, only: &
       fstdout, fstderr, var_length ! Constants
 
     implicit none
@@ -958,7 +958,7 @@ module stats_subs
     !     format.
     !-----------------------------------------------------------------------
 
-    use constants, only: &
+    use constants_clubb, only: &
         fstderr ! Constant(s)
 
     use stats_variables, only: & 
@@ -1421,7 +1421,7 @@ module stats_subs
     use T_in_K_module, only: & 
         thlm2T_in_K ! Procedure
 
-    use constants, only: & 
+    use constants_clubb, only: & 
         rc_tol
 
     use parameters_model, only: & 

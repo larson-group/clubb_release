@@ -277,7 +277,7 @@ module mono_flux_limiter
         gr,  & ! Variable(s)
         zm2zt  ! Procedure(s)
 
-    use constants, only: &    
+    use constants_clubb, only: &    
         zero_threshold, &
         eps, &
         fstderr
@@ -1598,7 +1598,7 @@ module mono_flux_limiter
         gr,  & ! Variable(s)
         zt2zm  ! Procedure(s)
 
-    use constants, only: &
+    use constants_clubb, only: &
         sqrt_2pi, &
         sqrt_2
 

@@ -571,7 +571,7 @@ contains
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants, only: eps ! Variable(s)
+    use constants_clubb, only: eps ! Variable(s)
 
     implicit none
 

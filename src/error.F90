@@ -150,7 +150,7 @@ module error
 ! References:
 !   None
 !-----------------------------------------------------------------------
-    use constants, only: fstdout, fstderr ! Variable(s)
+    use constants_clubb, only: fstdout, fstderr ! Variable(s)
 
     use error_code, only: fatal_error ! Procedure(s)
 
@@ -412,7 +412,7 @@ module error
 
     use text_writer, only: write_text ! Subroutine(s)
 
-    use constants, only: fstderr ! Constant(s)
+    use constants_clubb, only: fstderr ! Constant(s)
 
     implicit none
 
@@ -1112,7 +1112,7 @@ module error
 ! References:
 !   None
 !-----------------------------------------------------------------------
-    use constants, only: fstderr
+    use constants_clubb, only: fstderr
 
     implicit none
 

@@ -102,7 +102,7 @@ subroutine astex_sfclyr( rho0, &
 !       References:
 !----------------------------------------------------------------------
 
-use constants, only: Cp, Lv ! Variable(s)
+use constants_clubb, only: Cp, Lv ! Variable(s)
 
 use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 

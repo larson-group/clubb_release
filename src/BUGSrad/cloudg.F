@@ -13,7 +13,7 @@
 
       use kinds
 
-      use constants, only:  fstderr  ! Constant(s)
+      use constants_clubb, only:  fstderr  ! Constant(s)
 
       implicit none
 

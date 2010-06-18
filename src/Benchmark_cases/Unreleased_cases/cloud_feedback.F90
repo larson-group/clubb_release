@@ -29,7 +29,7 @@ subroutine cloud_feedback_sfclyr( runtype, sfctype, &
 !       References:
 !----------------------------------------------------------------------
 
-use constants, only: pi, grav, Lv, Cp, p0, kappa ! Variable(s)
+use constants_clubb, only: pi, grav, Lv, Cp, p0, kappa ! Variable(s)
 
 use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 

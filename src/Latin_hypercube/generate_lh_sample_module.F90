@@ -36,7 +36,7 @@ module generate_lh_sample_module
       corr_gaus_LN_to_cov_gaus, &
       sigma_LN_to_sigma_gaus
 
-    use constants, only:  &
+    use constants_clubb, only:  &
       max_mag_correlation, &  ! Constant
 !     s_mellor_tol,  &  ! s tolerance in kg/kg
       rt_tol, &      ! rt tolerance in kg/kg
@@ -628,7 +628,7 @@ module generate_lh_sample_module
 !   None
 !----------------------------------------------------------------------
 
-    use constants, only:  &
+    use constants_clubb, only:  &
         fstderr  ! Constant(s)
 
     use array_index, only: &
@@ -779,7 +779,7 @@ module generate_lh_sample_module
 !   None
 !-----------------------------------------------------------------------
 
-    use constants, only: fstderr ! Constant(s)
+    use constants_clubb, only: fstderr ! Constant(s)
 
     implicit none
 
@@ -957,7 +957,7 @@ module generate_lh_sample_module
 !   None
 !----------------------------------------------------------------------
 
-    use constants, only:  &
+    use constants_clubb, only:  &
       fstderr  ! Constant(s)
 
     use error_code, only:  &
@@ -1071,7 +1071,7 @@ module generate_lh_sample_module
 !   None
 !-------------------------------------------------------------------------------
 
-    use constants, only:  &
+    use constants_clubb, only:  &
       fstderr  ! Constant(s)
 
     use error_code, only:  &
@@ -1204,7 +1204,7 @@ module generate_lh_sample_module
 !   URL:         http://home.online.no/~pjacklam
 !-----------------------------------------------------------------------
 
-    use constants, only: Pi_DP ! Variable(s)
+    use constants_clubb, only: Pi_DP ! Variable(s)
 
     implicit none
 
@@ -1482,7 +1482,7 @@ module generate_lh_sample_module
 !   None
 !-----------------------------------------------------------------------
 
-    use constants, only:  &
+    use constants_clubb, only:  &
         fstderr  ! Constant(s)
 
     use error_code, only:  &

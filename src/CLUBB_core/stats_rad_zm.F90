@@ -21,7 +21,7 @@ module stats_rad_zm
 !     Initializes array indices for rad_zm variables
 !-----------------------------------------------------------------------
 
-    use constants, only:  &
+    use constants_clubb, only:  &
         fstderr ! Constant(s)
 
     use stats_variables, only: & 
