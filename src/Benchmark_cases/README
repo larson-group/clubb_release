@@ -50,6 +50,11 @@ mpace_a:      Multi-layered, mixed-phase Arctic stratus.
 
 mpace_b:      Single-layered, mixed-phase Arctic stratus.
               http://science.arm.gov/workinggroup/cpm/scm/scmic5/index.html
+              
+rico:         Precipitating Shallow Cumulus Case
+              http://www.knmi.nl/samenw/rico/index.html
+              Siebesma, A. P., et al. 2003: A large eddy simulation intercomparison study
+              of shallow cumulus convection. J. Atmos. Sci., 60, 1201-1219. 
 
 wangara:      Dry convective boundary layer over land.
               2002: "A PDF-based model for boundary layer clouds. 
