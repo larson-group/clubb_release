@@ -61,9 +61,9 @@ module grid_class
   !
   ! The variable zm(k) stands for the momentum level altitude at momentum
   ! level k; the variable zt(k) stands for the thermodynamic level altitude at
-  ! thermodynamic level k; the variable dzt(k) is the inverse distance between
+  ! thermodynamic level k; the variable invrs_dzt(k) is the inverse distance between
   ! momentum levels (over a central thermodynamic level k); and the variable
-  ! dzm(k) is the inverse distance between thermodynamic levels (over a central
+  ! invrs_dzm(k) is the inverse distance between thermodynamic levels (over a central
   ! momentum level k).
   !
   ! The grid setup is compatible with a stretched (unevely-spaced) grid.  Thus,

@@ -2026,7 +2026,7 @@ module microphys_driver
     end subroutine microphys_lhs
 
 !===============================================================================
-    pure function sedimentation( V_hm, V_hmm1, dzt, level ) & 
+    pure function sedimentation( V_hm, V_hmm1, invrs_dzt, level ) & 
       result( lhs )
 
       ! Description:
@@ -2079,7 +2079,7 @@ module microphys_driver
       ! respectively.  The letter "t" is used for thermodynamic levels and the
       ! letter "m" is used for momentum levels.
       !
-      ! dzt(k) = 1 / ( zm(k) - zm(k-1) )
+      ! invrs_dzt(k) = 1 / ( zm(k) - zm(k-1) )
       !
       !
       ! Conservation Properties:
@@ -2104,11 +2104,11 @@ module microphys_driver
       !
       !  -V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) )
       !     =
-      !  Sum_j Sum_i ( 1/dzt )_i ( d (V_hm * weights_hm) / dz )_ij hm_j.
+      !  Sum_j Sum_i ( 1/invrs_dzt )_i ( d (V_hm * weights_hm) / dz )_ij hm_j.
       !
       ! The left-hand side matrix, ( d (V_hm * weights_hm) / dz )_ij, is
       ! partially written below.  The sum over i in the above equation removes
-      ! dzt everywhere from the matrix below.  The sum over j leaves the column
+      ! invrs_dzt everywhere from the matrix below.  The sum over j leaves the column
       ! totals and the flux at zm(1) that are desired.
       !
       ! Left-hand side matrix contributions from the sedimentation term (only);
@@ -2117,15 +2117,15 @@ module microphys_driver
       !     ------------------------------------------------------------------->
       !k=1 |           0                     0                       0
       !    |
-      !k=2 |   -dzt(k)             +dzt(k)                 +dzt(k)
+      !k=2 |   -invrs_dzt(k)             +invrs_dzt(k)                 +invrs_dzt(k)
       !    |     *V_hm(k-1)*D(k)     *[ V_hm(k)*B(k)         *V_hm(k)*A(k)
       !    |                           -V_hm(k-1)*C(k) ]
       !    |
-      !k=3 |           0           -dzt(k)                 +dzt(k)
+      !k=3 |           0           -invrs_dzt(k)                 +invrs_dzt(k)
       !    |                         *V_hm(k-1)*D(k)         *[ V_hm(k)*B(k)
       !    |                                                   -V_hm(k-1)*C(k) ]
       !    |
-      !k=4 |           0                     0             -dzt(k)
+      !k=4 |           0                     0             -invrs_dzt(k)
       !    |                                                 *V_hm(k-1)*D(k)
       !    |
       !   \ /
@@ -2172,7 +2172,7 @@ module microphys_driver
       real, intent(in) :: & 
         V_hm,    & ! Sedimentation velocity of hydrometeor (k)                [m/s]
         V_hmm1,  & ! Sedimentation velocity of hydrometeor (k-1)              [m/s]
-        dzt        ! Inverse of grid spacing (k)                              [m]
+        invrs_dzt        ! Inverse of grid spacing (k)                              [m]
 
       integer, intent(in) ::  & 
         level ! Central thermodynamic level (on which calculation occurs).
@@ -2223,29 +2223,29 @@ module microphys_driver
         !
         ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
 !       lhs(kp1_tdiag)  &
-!       = + V_hmzt * dzt * gr%weights_zt2zm(t_above,mk)
+!       = + V_hmzt * invrs_dzt * gr%weights_zt2zm(t_above,mk)
 
 !       ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
 !       lhs(k_tdiag)  &
-!       = + V_hmzt * dzt * (   gr%weights_zt2zm(t_below,mk)  &
+!       = + V_hmzt * invrs_dzt * (   gr%weights_zt2zm(t_below,mk)  &
 !                          - gr%weights_zt2zm(t_above,mkm1)  )
 !
 !       ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
 !       lhs(km1_tdiag)  &
-!       = - V_hmzt * dzt * gr%weights_zt2zm(t_below,mkm1)
+!       = - V_hmzt * invrs_dzt * gr%weights_zt2zm(t_below,mkm1)
 
         ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
         lhs(kp1_tdiag)  & 
-        = + dzt * V_hm * gr%weights_zt2zm(t_above,mk)
+        = + invrs_dzt * V_hm * gr%weights_zt2zm(t_above,mk)
 
         ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
         lhs(k_tdiag)  & 
-        = + dzt * (   V_hm * gr%weights_zt2zm(t_below,mk) & 
+        = + invrs_dzt * (   V_hm * gr%weights_zt2zm(t_below,mk) & 
                     - V_hmm1 * gr%weights_zt2zm(t_above,mkm1)  )
 
         ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
         lhs(km1_tdiag)  & 
-        = - dzt * V_hmm1 * gr%weights_zt2zm(t_below,mkm1)
+        = - invrs_dzt * V_hmm1 * gr%weights_zt2zm(t_below,mkm1)
 
         !  End Vince Larson change
 

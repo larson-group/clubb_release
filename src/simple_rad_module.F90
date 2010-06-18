@@ -199,7 +199,7 @@ module simple_rad_module
     return
   end subroutine simple_rad_bomex
 !-------------------------------------------------------------------------------
-  pure function liq_water_path( nnzp, rho, rcm, dzt )
+  pure function liq_water_path( nnzp, rho, rcm, invrs_dzt )
 
 ! Description:
 !   Compute liquid water path
@@ -213,9 +213,9 @@ module simple_rad_module
     integer, intent(in) :: nnzp
 
     real, intent(in), dimension(nnzp) :: &
-      rho, & ! Air Density                      [kg/m^3]
-      rcm, & ! Cloud water mixing ratio         [kg/kg]
-      dzt    ! Inverse of distance per level    [1/m]
+      rho, &       ! Air Density                      [kg/m^3]
+      rcm, &       ! Cloud water mixing ratio         [kg/kg]
+      invrs_dzt    ! Inverse of distance per level    [1/m]
 
     ! Output Variables
     real, dimension(nnzp) :: &
@@ -230,7 +230,7 @@ module simple_rad_module
     ! Liquid water path is defined on the intermediate model levels between the
     ! rcm and rho levels (i.e. the momentum levels in CLUBB).
     do k = nnzp-1, 1, -1
-       liq_water_path(k) = liq_water_path(k+1) + rcm(k+1)*rho(k+1) / dzt(k+1)
+       liq_water_path(k) = liq_water_path(k+1) + rcm(k+1)*rho(k+1) / invrs_dzt(k+1)
     end do ! k = nnzp..1
 
     return

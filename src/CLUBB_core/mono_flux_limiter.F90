@@ -174,24 +174,24 @@ module mono_flux_limiter
     ! - [ xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k) ]
     ! <=
     !    - dt * (1/rho_ds_zt(k))
-    !           * dzt(k)
+    !           * invrs_dzt(k)
     !             * [   rho_ds_zm(k) * w'x'(k,<t+1>)
     !                 - rho_ds_zm(k-1) * w'x'(k-1,<t+1>) ]
     ! <=
     ! xm_upper_lim_allowable(k)
     ! - [ xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k) ];
     !
-    ! where dzt(k) = 1 / ( zm(k) - zm(k-1) ).
+    ! where invrs_dzt(k) = 1 / ( zm(k) - zm(k-1) ).
     !
-    ! Multiplying the inequality by -rho_ds_zt(k)/(dz*dzt(k)):
+    ! Multiplying the inequality by -rho_ds_zt(k)/(dz*invrs_dzt(k)):
     !
-    ! rho_ds_zt(k)/(dz*dzt(k))
+    ! rho_ds_zt(k)/(dz*invrs_dzt(k))
     ! * [ xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
     !     - xm_lower_lim_allowable(k) ]
     ! >=
     !    rho_ds_zm(k) * w'x'(k,<t+1>) - rho_ds_zm(k-1) * w'x'(k-1,<t+1>)
     ! >=
-    ! rho_ds_zt(k)/(dz*dzt(k))
+    ! rho_ds_zt(k)/(dz*invrs_dzt(k))
     ! * [ xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
     !     - xm_upper_lim_allowable(k) ].
     !
@@ -200,12 +200,12 @@ module mono_flux_limiter
     !
     ! Adding rho_ds_zm(k-1) * w'x'(k-1,<t+1>) to the inequality:
     !
-    ! rho_ds_zt(k)/(dz*dzt(k))
+    ! rho_ds_zt(k)/(dz*invrs_dzt(k))
     ! * [ xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
     !     - xm_lower_lim_allowable(k) ]
     ! + rho_ds_zm(k-1) * w'x'(k-1,<t+1>)
     ! >= rho_ds_zm(k) * w'x'(k,<t+1>) >=
-    ! rho_ds_zt(k)/(dz*dzt(k))
+    ! rho_ds_zt(k)/(dz*invrs_dzt(k))
     ! * [ xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k) 
     !     - xm_upper_lim_allowable(k) ]
     ! + rho_ds_zm(k-1) * w'x'(k-1,<t+1>).
@@ -213,13 +213,13 @@ module mono_flux_limiter
     ! The inequality is then rearranged to be based around w'x'(k,<t+1>):
     !
     ! (1/rho_ds_zm(k))
-    ! * [ rho_ds_zt(k)/(dt*dzt(k)) 
+    ! * [ rho_ds_zt(k)/(dt*invrs_dzt(k)) 
     !     * { xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k)
     !         - xm_lower_lim_allowable(k) }
     !     + rho_ds_zm(k-1) * w'x'(k-1,<t+1>) ]
     ! >=   w'x'(k,<t+1>)   >=
     ! (1/rho_ds_zm(k))
-    ! * [ rho_ds_zt(k)/(dt*dzt(k))
+    ! * [ rho_ds_zt(k)/(dt*invrs_dzt(k))
     !     * { xm(k,<t>) + dt*xm_forcing(k) - dt*wm_zt(k)*d(xm)/dz|_(k) 
     !         - xm_upper_lim_allowable(k) }
     !     + rho_ds_zm(k-1) * w'x'(k-1,<t+1>) ].
