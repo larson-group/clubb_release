@@ -45,8 +45,8 @@ cd $scriptPath
 if [ -z $1 ]; then
 	# Set using the default config flags
 
-        CONFIG=./config/gfdl_wks.bash
-#	CONFIG=./config/linux_ia32_g95_optimize.bash
+	CONFIG=./config/linux_ia32_g95_optimize.bash
+#        CONFIG=./config/gfdl_wks.bash
 #	CONFIG=./config/darwin_powerpc_g95.bash
 #	CONFIG=./config/linux_ia32_pg.bash
 #	CONFIG=./config/linux_ia32_absoft.bash
