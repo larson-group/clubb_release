@@ -64,10 +64,10 @@ module parameters_model
                Lscale_max_in &
 ! ---> h1g, 2010-06-15
 #ifdef GFDL
-	       , cloud_frac_min_in &
+              , cloud_frac_min_in &
 #endif
 ! <--- h1g, 2010-06-15
-	       )
+              )
 
 ! Description:
 !   Sets parameters to their initial values
