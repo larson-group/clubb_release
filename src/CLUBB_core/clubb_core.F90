@@ -33,7 +33,8 @@ module clubb_core
   public ::  & 
     setup_clubb_core, & 
     advance_clubb_core, & 
-    cleanup_clubb_core
+    cleanup_clubb_core, &
+    set_Lscale_max
 
   private ! Default Scope
 
@@ -1453,11 +1454,8 @@ module clubb_core
 ! <--- h1g, 2010-06-15
 
     ! Determine the maximum allowable value for Lscale (in meters).
-    if ( l_implemented ) then
-      Lscale_max = 0.25 * min( host_dx, host_dy )
-    else
-      Lscale_max = 1.0e5
-    end if
+    call set_Lscale_max( l_implemented, host_dx, host_dy, & ! Intent(in)
+                         Lscale_max )                       ! Intent(out)
 
     ! Define model constant parameters
 ! ---> h1g, 2010-06-15
@@ -2084,12 +2082,17 @@ module clubb_core
     ! Added July 2009
     !---------------------------------------------------------------------
 
-    use constants_clubb, only: rc_tol ! Variable
+    use constants_clubb, only: &
+        rc_tol, & ! Variable(s)
+        fstderr
 
     use grid_class, only: gr ! Variable
   
     use variables_prognostic_module, only: &
-      pdf_parameter ! Derived data type
+        pdf_parameter ! Derived data type
+
+    use error_code, only:  &
+        clubb_at_least_debug_level  ! Procedure
 
     implicit none
 
@@ -2189,8 +2192,23 @@ module clubb_core
 
       else
 
-        print*, "Error: Should not arrive here in computation of cloud_cover"
-        stop
+        if ( clubb_at_least_debug_level( 1 ) ) then
+
+          write(fstderr,*)  &
+             "Error: Should not arrive here in computation of cloud_cover"
+
+          write(fstderr,*) "At grid level k = ", k
+          write(fstderr,*) "pdf_params%mixt_frac(k) = ", pdf_params%mixt_frac(k)
+          write(fstderr,*) "pdf_params%s1(k) = ", pdf_params%s1(k)
+          write(fstderr,*) "pdf_params%s2(k) = ", pdf_params%s2(k)
+          write(fstderr,*) "cloud_frac(k) = ", cloud_frac(k)
+          write(fstderr,*) "rcm(k) = ", rcm(k)
+          write(fstderr,*) "rcm(k+1) = ", rcm(k+1)
+          write(fstderr,*) "rcm(k-1) = ", rcm(k-1)
+
+        endif
+
+        return
 
       end if
 
@@ -2204,8 +2222,6 @@ module clubb_core
 
     return
   end subroutine compute_cloud_cover
-  !-----------------------------------------------------------------------
-
   !-----------------------------------------------------------------------
   subroutine clip_rcm &
            ( rtm, message, & ! intent(in)
@@ -2266,6 +2282,52 @@ module clubb_core
 
     return
   end subroutine clip_rcm
+
+  !-----------------------------------------------------------------------------
+  subroutine set_Lscale_max( l_implemented, host_dx, host_dy, &
+                             Lscale_max )
+
+    ! Description:
+    ! This subroutine sets the value of Lscale_max, which is the maximum
+    ! allowable value of Lscale.  For standard CLUBB, it is set to a very large
+    ! value so that Lscale will not be limited.  However, when CLUBB is running
+    ! as part of a host model, the value of Lscale_max is dependent on the size
+    ! of the host model's horizontal grid spacing.  The smaller the host model's
+    ! horizontal grid spacing, the smaller the value of Lscale_max.  When Lscale
+    ! is limited to a small value, the value of time-scale Tau is reduced, which
+    ! in turn produces greater damping on CLUBB's turbulent parameters.  This
+    ! is the desired effect on turbulent parameters for a host model with small
+    ! horizontal grid spacing, for small areas usually contain much less
+    ! variation in meteorological quantities than large areas.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    logical, intent(in) :: &
+      l_implemented    ! Flag to see if CLUBB is running on it's own,
+                       ! or if it's implemented as part of a host model.
+
+    real, intent(in) :: &
+      host_dx, & ! Host model's east-west horizontal grid spacing     [m]
+      host_dy    ! Host model's north-south horizontal grid spacing   [m]
+
+    ! Output Variable
+    real, intent(out) :: &
+      Lscale_max    ! Maximum allowable value for Lscale   [m]
+
+    ! Determine the maximum allowable value for Lscale (in meters).
+    if ( l_implemented ) then
+       Lscale_max = 0.25 * min( host_dx, host_dy )
+    else
+       Lscale_max = 1.0e5
+    endif
+
+  return
+  end subroutine set_Lscale_max
+
   !-----------------------------------------------------------------------
 
 end module clubb_core
