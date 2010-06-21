@@ -56,14 +56,14 @@ module clubb_core
                rcm, wprcp, cloud_frac, & 
                rcm_in_layer, cloud_cover, & 
                sclrm,   &
-#ifdef GFDL  ! ---> h1g, 2010-06-15
-               sclrm_trsport_only,  &
-#endif         ! <--- h1g, 2010-06-15
+#ifdef GFDL
+               sclrm_trsport_only,  &  ! h1g, 2010-06-16
+#endif
                sclrp2, sclrprtp, sclrpthlp, &
                wpsclrp, edsclrm, sigma_sqd_w, pdf_params, &
-#ifdef GFDL    ! ---> h1g, 2010-06-15
-               RH_crit, &
-#endif           ! <--- h1g, 2010-06-15
+#ifdef GFDL
+               RH_crit, &  ! h1g, 2010-06-16
+#endif
                err_code )
 
     ! Description:
@@ -179,14 +179,12 @@ module clubb_core
     use variables_prognostic_module, only: &
       pdf_parameter
 
- !---> h1g, 2010-06-15
 #ifdef GFDL
-    use advance_sclrm_Nd_module, only: &
+    use advance_sclrm_Nd_module, only: &  ! h1g, 2010-06-16 begin mod
        advance_sclrm_Nd_diffusion_OG, &
        advance_sclrm_Nd_upwind, &
-       advance_sclrm_Nd_semi_implicit
+       advance_sclrm_Nd_semi_implicit     ! h1g, 2010-06-16 end mod
 #endif
-!<--- h1g, 2010-06-15
 
     use advance_xm_wpxp_module, only: & 
       ! Variable(s) 
@@ -376,12 +374,10 @@ module clubb_core
       sclrprtp,  & ! sclr'rt' (momentum levels)           [{units vary} (kg/kg)]
       sclrpthlp    ! sclr'thl' (momentum levels)          [{units vary} K]
 
- ! ---> h1g, 2010-06-15
 #ifdef GFDL
-    real, intent(inout), dimension(gr%nnzp,sclr_dim) :: & 
+    real, intent(inout), dimension(gr%nnzp,sclr_dim) :: &  ! h1g, 2010-06-16
      sclrm_trsport_only  ! Passive scalar concentration due to pure transport [{units vary}/s]
 #endif
-! <--- h1g, 2010-06-15
 
     ! Eddy passive scalar variable
     real, intent(inout), dimension(gr%nnzp,edsclr_dim) :: & 
@@ -410,12 +406,10 @@ module clubb_core
     ! Diagnostic, for if some calculation goes amiss.
     integer, intent(inout) :: err_code
 
-! ---> h1g, 2010-06-15
 #ifdef GFDL
-    real, intent(inOUT), dimension(gr%nnzp, min(1,sclr_dim) , 2) :: & 
+    real, intent(inOUT), dimension(gr%nnzp, min(1,sclr_dim) , 2) :: &  ! h1g, 2010-06-16
       RH_crit  ! critical relative humidity for droplet and ice nucleation
 #endif
-! <--- h1g, 2010-06-15
 
     !!! Local Variables
     integer :: i, k
@@ -629,7 +623,6 @@ module clubb_core
 
     do k = 1, gr%nnzp, 1
 
-! ---> h1g, 2010-06-15
 #ifdef GFDL
       call pdf_closure & 
          ( p_in_Pa(k), exner(k), thv_ds_zt(k), wm_zt(k),       & ! intent(in)
@@ -639,9 +632,7 @@ module clubb_core
            zm2zt( wpthlp, k ), rtpthlp_zt(k), sclrm(k,:),      & ! intent(in)
            wpsclrp_zt(k,:), sclrp2_zt(k,:), sclrprtp_zt(k,:),  & ! intent(in)
            sclrpthlp_zt(k,:), k,                               & ! intent(in)
-! ---> h1g
-           RH_crit(k, : , :),                                                      & ! intent(in)
-! < ---h1g
+           RH_crit(k, : , :),                                  & ! intent(in)  h1g, 2010-06-16
            wp4_zt(k), wprtp2(k), wp2rtp(k),                    & ! intent(out)
            wpthlp2(k), wp2thlp(k), wprtpthlp(k),               & ! intent(out)
            cloud_frac(k), rcm(k), wpthvp_zt(k),                & ! intent(out)
@@ -670,7 +661,6 @@ module clubb_core
            wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp_zt(k,:),  & ! intent(out)
            wpsclrpthlp(k,:), sclrprcp_zt(k,:), wp2sclrp(k,:) )   ! intent(out)
 #endif
-! <--- h1g, 2010-06-15
 
       ! Subroutine may produce NaN values, and if so, exit
       ! gracefully.
@@ -708,7 +698,7 @@ module clubb_core
 
       ! Call pdf_closure to output the variables which belong on the momentum grid.
       do k = 1, gr%nnzp, 1
-! ---> h1g, 2010-06-15
+
 #ifdef GFDL
         call pdf_closure & 
            ( p_in_Pa_zm(k), exner_zm(k), thv_ds_zm(k), wm_zm(k),    & ! intent(in)
@@ -718,9 +708,7 @@ module clubb_core
              wpthlp(k), rtpthlp(k), sclrm_zm(k,:),                  & ! intent(in)
              wpsclrp(k,:), sclrp2(k,:), sclrprtp(k,:),              & ! intent(in)
              sclrpthlp(k,:), k,                                     & ! intent(in)
-! ---> h1g
-             RH_crit(k, : , :),                                                      & ! intent(in)
-! < ---h1g
+             RH_crit(k, : , :),                                     & ! intent(in)  h1g, 2010-06-16
              wp4(k), wprtp2_zm(k), wp2rtp_zm(k),                    & ! intent(out)
              wpthlp2_zm(k), wp2thlp_zm(k), wprtpthlp_zm(k),         & ! intent(out)
              cloud_frac_zm(k), rcm_zm(k), wpthvp(k),                & ! intent(out)
@@ -749,7 +737,6 @@ module clubb_core
              wpsclrprtp_zm(k,:), wpsclrp2_zm(k,:), sclrpthvp(k,:),  & ! intent(out)
              wpsclrpthlp_zm(k,:), sclrprcp(k,:), wp2sclrp_zm(k,:) )   ! intent(out)
 #endif
-!<--- h1g, 2010-06-15
 
         ! Subroutine may produce NaN values, and if so, exit
         ! gracefully.
@@ -1032,12 +1019,10 @@ module clubb_core
     call clip_rcm( rtm, 'rtm < rcm in advance_xm_wpxp', & ! intent(in)
                    rcm )                                  ! intent(inout)
 
-!---> h1g, 2010-06-15
 #ifdef GFDL
-     call  advance_sclrm_Nd_diffusion_OG( dt,  sclrm,  &
+     call  advance_sclrm_Nd_diffusion_OG( dt,  sclrm,  &  ! h1g, 2010-06-16
          sclrm_trsport_only,  Kh_zm,  cloud_frac,  err_code) 
 #endif
-!<--- h1g, 2010-06-15
 
     !----------------------------------------------------------------
     ! Diagnose variances
@@ -1261,15 +1246,15 @@ module clubb_core
                sclr_tol_in, edsclr_dim_in, params,  &  ! In
                l_soil_veg, l_host_applies_sfc_fluxes, & ! In
                l_uv_nudge, l_tke_aniso, saturation_formula, &  ! In
-#ifdef GFDL   !  ---> h1g, 2010-06-15
-               I_sat_sphum, &        ! intent(in)
-#endif          !  <--- h1g, 2010-06-15
+#ifdef GFDL
+               I_sat_sphum, &        ! intent(in)  h1g, 2010-06-16
+#endif
                l_implemented, grid_type, deltaz, zm_init, zm_top, &  ! In
                momentum_heights, thermodynamic_heights,  &  ! In
                host_dx, host_dy, sfc_elevation, & ! In
-#ifdef GFDL   !  ---> h1g, 2010-06-15
-               cloud_frac_min , &        ! intent(in)
-#endif          !  <--- h1g, 2010-06-15
+#ifdef GFDL
+               cloud_frac_min , &        ! intent(in)  h1g, 2010-06-16
+#endif
                err_code ) ! Out
     !
     !   Description:
@@ -1388,15 +1373,13 @@ module clubb_core
     character(len=*), intent(in) :: &
       saturation_formula ! "bolton" approx. or "flatau" approx.
 
-!---> h1g, 2010-06-15
 #ifdef GFDL
-    logical, intent(in) :: & 
+    logical, intent(in) :: &  ! h1g, 2010-06-16 begin mod
        I_sat_sphum
 
     real, intent(in) :: & 
-       cloud_frac_min
+       cloud_frac_min         ! h1g, 2010-06-16 end mod
 #endif
-!<--- h1g, 2010-06-15
 
     ! Output variables
     integer, intent(out) :: & 
@@ -1416,12 +1399,10 @@ module clubb_core
     case ( "flatau", "Flatau" )
       ! Using the Flatau, et al. polynomial approximation for SVP over vapor/ice
   
-! ---> h1g, 2010-06-15
 #ifdef GFDL
-    case ( "gfdl", "GFDL" )
+    case ( "gfdl", "GFDL" )   ! h1g, 2010-06-16
       ! Using the GFDL  formula
 #endif
-! <--- h1g, 2010-06-15
 
   ! Add new saturation formulas after this
 
@@ -1439,38 +1420,34 @@ module clubb_core
                      begin_height, end_height                 ) ! intent(out)
 
     ! Setup flags
-! ---> h1g, 2010-06-15
 #ifdef GFDL
     call setup_model_flags & 
          ( l_soil_veg, l_host_applies_sfc_fluxes, & ! intent(in)
            l_uv_nudge, l_tke_aniso, saturation_formula, &  ! intent(in) 
-           I_sat_sphum)  ! intent(in)
+           I_sat_sphum)  ! intent(in)  h1g, 2010-06-16
 
 #else
     call setup_model_flags & 
          ( l_soil_veg, l_host_applies_sfc_fluxes, & ! intent(in)
            l_uv_nudge, l_tke_aniso, saturation_formula )  ! intent(in)
 #endif
-! <--- h1g, 2010-06-15
 
     ! Determine the maximum allowable value for Lscale (in meters).
     call set_Lscale_max( l_implemented, host_dx, host_dy, & ! Intent(in)
                          Lscale_max )                       ! Intent(out)
 
     ! Define model constant parameters
-! ---> h1g, 2010-06-15
 #ifdef GFDL
     call setup_parameters_model( T0_in, ts_nudge_in, &      ! In
                                  hydromet_dim_in, &  ! in
                                  sclr_dim_in, sclr_tol_in, edsclr_dim_in, &! In
-                                 Lscale_max,  cloud_frac_min )   ! In
+                                 Lscale_max,  cloud_frac_min )   ! In  h1g, 2010-06-16
 #else
     call setup_parameters_model( T0_in, ts_nudge_in, &      ! In
                                  hydromet_dim_in, &  ! in
                                  sclr_dim_in, sclr_tol_in, edsclr_dim_in, &! In
                                  Lscale_max )   ! In
 #endif
-! <--- h1g, 2010-06-15
 
     ! Define tunable constant parameters
     call setup_parameters & 
@@ -1501,16 +1478,14 @@ module clubb_core
 
     end if
 
-!---> h1g, 2010-06-16
 #ifdef GFDL
 ! setup  prognostic_variables
-   call setup_prognostic_variables( gr%nnzp ) ! intent(in)
+   call setup_prognostic_variables( gr%nnzp ) ! intent(in)  h1g, 2010-06-16
 #else
     if ( .not. l_implemented ) then
       call setup_prognostic_variables( gr%nnzp ) ! intent(in)
     end if
 #endif
-!<--- h1g, 2010-06-16
 
     ! The diagnostic variables need to be
     ! declared, allocated, initialized, and deallocated whether CLUBB
@@ -1542,16 +1517,14 @@ module clubb_core
     logical, intent(in) :: l_implemented   ! (T/F)
 
     !----- Begin Code -----
-!---> h1g, 2010-06-16
 #ifdef GFDL
 ! cleanup  prognostic_variables
-   call  cleanup_prognostic_variables( )
+   call  cleanup_prognostic_variables( )  ! h1g, 2010-06-16
 #else
     if ( .not. l_implemented ) then
       call cleanup_prognostic_variables( )
     end if
 #endif
-!<--- h1g, 2010-06-16
 
     ! The diagnostic variables need to be
     ! declared, allocated, initialized, and deallocated whether CLUBB

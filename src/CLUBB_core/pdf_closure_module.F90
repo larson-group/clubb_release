@@ -17,11 +17,9 @@ module pdf_closure_module
                wpthlp, rtpthlp, sclrm,           &
                wpsclrp, sclrp2, sclrprtp,        &
                sclrpthlp, level,                 &
-! ---> h1g, 2010-06-16
 #ifdef GFDL
-               RH_crit,                                      &
+               RH_crit,                          &  ! h1g, 2010-06-15
 #endif
-! <--- h1g, 2010-06-16
                wp4, wprtp2, wp2rtp,              &
                wpthlp2, wp2thlp, wprtpthlp,      &
                cloud_frac, rcm, wpthvp,          &
@@ -90,13 +88,11 @@ module pdf_closure_module
     use saturation, only:  & 
       sat_mixrat_liq ! Procedure(s)
 
-! ---> h1g, 2010-06-16
-! including ice clouds
 #ifdef GFDL
-    use saturation, only:  & 
+    ! including ice clouds
+    use saturation, only:  & ! h1g, 2010-06-15
        sat_mixrat_ice    
 #endif
-! <--- h1g, 2010-06-16
 
     use error_code, only:  & 
       clubb_var_equals_NaN,  & ! Variable(s)
@@ -138,13 +134,11 @@ module pdf_closure_module
       sclrprtp,    & ! sclr' r_t'                 [units vary]
       sclrpthlp      ! sclr' th_l'                [units vary]
 
-! ---> h1g
-! critial relative humidity for nucleation
 #ifdef  GFDL
-    real, dimension( min(1,sclr_dim), 2 ), intent(in) ::  & 
+    ! critial relative humidity for nucleation
+    real, dimension( min(1,sclr_dim), 2 ), intent(in) ::  & ! h1g, 2010-06-15
        RH_crit     ! critical relative humidity for droplet and ice nucleation
 #endif
-! <--- h1g
 
     integer, intent(in) ::  &
       level  ! Thermodynamic level for which calculations are taking place.
@@ -581,9 +575,8 @@ module pdf_closure_module
     tl1  = thl1*exner
     tl2  = thl2*exner
 
-! ---> h1g, 2010-06-16
 #ifdef GFDL
-      if( sclr_dim > 0 ) then 
+      if( sclr_dim > 0 ) then ! h1g, 2010-06-16 begin mod
 
           if( tl1 > 250.0) then
              rsl1 = sat_mixrat_liq( p_in_Pa, tl1 )
@@ -614,9 +607,8 @@ module pdf_closure_module
       endif !sclr_dim > 0
 #else
     rsl1 = sat_mixrat_liq( p_in_Pa, tl1 )
-    rsl2 = sat_mixrat_liq( p_in_Pa, tl2 )
+    rsl2 = sat_mixrat_liq( p_in_Pa, tl2 ) ! h1g, 2010-06-16 end mod
 #endif
-! <--- h1g,  2010-06-16
 
     ! SD's beta (eqn. 8)
     beta1 = ep * ( Lv/(Rd*tl1) ) * ( Lv/(Cp*tl1) )

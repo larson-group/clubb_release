@@ -54,13 +54,11 @@ module model_flags
 
   character(len=6), public :: &
     saturation_formula ! "bolton" approx. or "flatau" approx.
-
-!---> h1g, 2010-06-15
+ 
 #ifdef GFDL
   logical, public :: &
-     I_sat_sphum
+     I_sat_sphum       ! h1g, 2010-06-15
 #endif
-! <--- h1g, 2010-06-15
 
 ! OpenMP directives. These cannot be indented.
 !$omp threadprivate(l_uv_nudge, l_tke_aniso, l_host_applies_sfc_fluxes, &
@@ -72,11 +70,9 @@ module model_flags
   subroutine setup_model_flags & 
              ( l_soil_veg_in, l_host_applies_sfc_fluxes_in, & 
                l_uv_nudge_in, l_tke_aniso_in, saturation_formula_in &
-! ---> h1g, 2010-06-15
 #ifdef GFDL
-              ,  I_sat_sphum_in   &
+               ,  I_sat_sphum_in   &  ! h1g, 2010-06-15
 #endif
-! <--- h1g, 2010-06-15
                 )
 
 ! Description:
@@ -103,13 +99,10 @@ module model_flags
     character(len=*), intent(in) :: &
       saturation_formula_in
 
-! ---> h1g, 2010-06-15
 #ifdef GFDL
          logical, intent(in) ::  & 
-         I_sat_sphum_in
+         I_sat_sphum_in           ! h1g, 2010-06-15
 #endif
-! <--- h1g, 2010-06-15
-
 
     !---- Begin Code ----
 
@@ -123,11 +116,9 @@ module model_flags
     ! String
     saturation_formula = trim( saturation_formula_in )
 
-!---> h1g, 2010-06-15
 #ifdef GFDL
-      I_sat_sphum = I_sat_sphum_in
+      I_sat_sphum = I_sat_sphum_in  ! h1g, 2010-06-15
 #endif
-!<--- h1g, 2010-06-15
 
     return
   end subroutine setup_model_flags
