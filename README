@@ -147,6 +147,10 @@ file source'd from compile.bash.
 The mkmf script may or may not generate files that are compatible with
 other versions of make.
 
+If you add a new source file to CLUBB, then in order for mkmf to be
+able to find it, you will need to add the filename 
+to one of the file lists in directory compile/file_list.  
+
 -----------------------------------------------------------------------
 - (1.2) Building (i.e. compiling) for use in a host model:
 -----------------------------------------------------------------------
