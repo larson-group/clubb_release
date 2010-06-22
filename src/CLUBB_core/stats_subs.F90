@@ -1425,7 +1425,7 @@ module stats_subs
         rc_tol
 
     use parameters_model, only: & 
-        sclr_dim,  & ! Variable(s)
+        sclr_dim,  &        ! Variable(s)
         edsclr_dim
 
     use stats_type, only: & 
@@ -1433,10 +1433,11 @@ module stats_subs
         stat_update_var_pt
 
     use fill_holes, only: &
-        vertical_avg
+        vertical_avg, &     ! Procedure(s)
+        vertical_integral
 
     use interpolation, only: & 
-        lin_int ! Procedure
+        lin_int             ! Procedure
 
     use array_index, only: & 
         iirsnowm, iiricem, iirrainm
@@ -1688,7 +1689,8 @@ module stats_subs
       ! Liquid Water Path
       if ( ilwp > 0 ) then
 
-        xtmp = compute_water_path( rho, rcm )
+        xtmp = vertical_integral( (gr%nnzp - 2 + 1), rho(2:gr%nnzp), &
+                                       rcm(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
 
         call stat_update_var_pt( ilwp, 1, xtmp, sfc )
 
@@ -1697,7 +1699,8 @@ module stats_subs
       ! Vapor Water Path (Preciptable Water)
       if ( ivwp > 0 ) then
 
-        xtmp = compute_water_path( rho, rtm - rcm )
+        xtmp = vertical_integral( (gr%nnzp - 2 + 1), rho(2:gr%nnzp), &
+                                ( rtm(2:gr%nnzp) - rcm(2:gr%nnzp) ), gr%invrs_dzt(2:gr%nnzp) )
 
         call stat_update_var_pt( ivwp, 1, xtmp, sfc )
 
@@ -1707,7 +1710,8 @@ module stats_subs
       if ( iswp > 0 .and. iirsnowm > 0 ) then
 
         ! Calculate snow water path
-        xtmp = compute_water_path( rho, hydromet(1:gr%nnzp,iirsnowm) )
+        xtmp = vertical_integral( (gr%nnzp - 2 + 1), rho(2:gr%nnzp), &
+                                      hydromet(2:gr%nnzp,iirsnowm), gr%invrs_dzt(2:gr%nnzp) )
 
         call stat_update_var_pt( iswp, 1, xtmp, sfc )
 
@@ -1716,7 +1720,8 @@ module stats_subs
       ! Ice Water Path
       if ( iiwp > 0 .and. iiricem > 0 ) then
 
-        xtmp = compute_water_path( rho, hydromet(1:gr%nnzp,iiricem) )
+        xtmp = vertical_integral( (gr%nnzp - 2 + 1), rho(2:gr%nnzp), &
+                                      hydromet(2:gr%nnzp,iiricem), gr%invrs_dzt(2:gr%nnzp) )
 
         call stat_update_var_pt( iiwp, 1, xtmp, sfc )
 
@@ -1725,7 +1730,8 @@ module stats_subs
       ! Rain Water Path
       if ( irwp > 0 .and. iirrainm > 0 ) then
 
-        xtmp = compute_water_path( rho, hydromet(1:gr%nnzp,iirrainm) )
+        xtmp = vertical_integral( (gr%nnzp - 2 + 1), rho(2:gr%nnzp), &
+                                      hydromet(2:gr%nnzp,iirrainm), gr%invrs_dzt(2:gr%nnzp) )
 
         call stat_update_var_pt( irwp, 1, xtmp, sfc )
 
@@ -2057,38 +2063,7 @@ module stats_subs
 
     return
   end subroutine stats_finalize
-
-!-------------------------------------------------------------------------------
-  pure function compute_water_path( rho, rxm ) result( water_path )
-
-! Description:
-!   Compute water path for some arbitrary variable (e.g. liquid, ice).
-
-! References:
-!   None.
-!-------------------------------------------------------------------------------
-    use grid_class, only: gr
-
-    implicit none
-
-    ! Input Variables
-    real, dimension(gr%nnzp), intent(in) :: &
-      rho, & ! Air density    [kg/m^3]
-      rxm    ! Water variable [kg/kg]
-
-    ! Output Variable
-    real :: water_path
-
-    integer :: k
-
-    ! ---- Begin Code ----
-    water_path = 0.
-
-    do k = gr%nnzp-1, 1, -1
-      water_path = water_path + rho(k+1) * rxm(k+1) / gr%invrs_dzt(k+1)
-    end do
-    
-    return
-  end function compute_water_path
-
+  
+!===============================================================================
+  
 end module stats_subs

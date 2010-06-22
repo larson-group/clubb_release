@@ -287,6 +287,9 @@ module mono_flux_limiter
 
     use error_code, only:  &
         lapack_error  ! Procedure(s)
+        
+    use fill_holes, only: &
+        vertical_integral ! Procedure(s)
 
     use stats_type, only:  &
         stat_begin_update,  & ! Procedure(s)
@@ -744,8 +747,8 @@ module mono_flux_limiter
                                 * (xm(gr%nnzp) - xm_enter_mfl(gr%nnzp)) &
                                 * dz
 
-          xm_vert_integral = sum(xm(2:gr%nnzp - 1) * rho_ds_zt(2:gr%nnzp - 1) &
-                             / gr%invrs_dzt(2:gr%nnzp - 1))
+          xm_vert_integral = vertical_integral( ((gr%nnzp - 1) - 2 + 1), rho_ds_zt(2:gr%nnzp - 1), &
+                                                    xm(2:gr%nnzp - 1), gr%invrs_dzt(2:gr%nnzp - 1) )
 
           !Check to ensure the vertical integral is not zero to avoid a divide
           !by zero error

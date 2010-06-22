@@ -493,10 +493,11 @@ module clubb_core
       if ( l_implemented ) then
         ! Get the vertical integral of rtm and thlm before this function begins so that 
         ! spurious source can be calculated
-        rtm_integral_before = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt(2:gr%nnzp), &
-                                                rho_ds_zm(2:gr%nnzp), rtm(2:gr%nnzp))
-        thlm_integral_before = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt(2:gr%nnzp), &
-                                                 rho_ds_zm(2:gr%nnzp), thlm(2:gr%nnzp))
+        rtm_integral_before = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
+                                                 rtm(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
+                                                 
+        thlm_integral_before = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
+                                                 thlm(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
       endif
     endif
      
@@ -1202,11 +1203,15 @@ module clubb_core
       if ( l_implemented ) then
         ! Calculate the spurious source for rtm
         rtm_flux_top = rho_ds_zm(gr%nnzp) * wprtp(gr%nnzp)
+        
         rtm_flux_sfc = rho_ds_zm(1) * wprtp_sfc
-        rtm_integral_after = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt(2:gr%nnzp), &
-                                               rho_ds_zm(2:gr%nnzp), rtm(2:gr%nnzp))
-        rtm_integral_forcing = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt(2:gr%nnzp), &
-                                                 rho_ds_zm(2:gr%nnzp), rtm_forcing(2:gr%nnzp))
+        
+        rtm_integral_after = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
+                                               rtm(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
+                                               
+        rtm_integral_forcing = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
+                                                 rtm_forcing(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
+                                                 
         rtm_spur_src = calculate_spurious_source( rtm_integral_after, &
                                                   rtm_integral_before, &
                                                   rtm_flux_top, rtm_flux_sfc, & 
@@ -1215,10 +1220,12 @@ module clubb_core
         ! Calculate the spurious source for thlm
         thlm_flux_top = rho_ds_zm(gr%nnzp) * wpthlp(gr%nnzp)
         thlm_flux_sfc = rho_ds_zm(1) * wpthlp_sfc      
-        thlm_integral_after = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt(2:gr%nnzp), &
-                                                rho_ds_zm(2:gr%nnzp), thlm(2:gr%nnzp))
-        thlm_integral_forcing = vertical_integral(2, gr%nnzp, "zt", rho_ds_zt(2:gr%nnzp), &
-                                                  rho_ds_zm(2:gr%nnzp), thlm_forcing(2:gr%nnzp))
+        thlm_integral_after = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
+                                                thlm(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
+                                                
+        thlm_integral_forcing = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
+                                                  thlm_forcing(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
+                                                  
         thlm_spur_src = calculate_spurious_source( thlm_integral_after, &
                                                    thlm_integral_before, &
                                                    thlm_flux_top, thlm_flux_sfc, & 
@@ -2301,6 +2308,6 @@ module clubb_core
   return
   end subroutine set_Lscale_max
 
-  !-----------------------------------------------------------------------
+!===============================================================================
 
 end module clubb_core
