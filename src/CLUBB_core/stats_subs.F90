@@ -1689,7 +1689,7 @@ module stats_subs
       ! Liquid Water Path
       if ( ilwp > 0 ) then
 
-        xtmp = vertical_integral( (gr%nnzp - 2 + 1), rho(2:gr%nnzp), &
+        xtmp = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
                                        rcm(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
 
         call stat_update_var_pt( ilwp, 1, xtmp, sfc )
@@ -1699,7 +1699,7 @@ module stats_subs
       ! Vapor Water Path (Preciptable Water)
       if ( ivwp > 0 ) then
 
-        xtmp = vertical_integral( (gr%nnzp - 2 + 1), rho(2:gr%nnzp), &
+        xtmp = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
                                 ( rtm(2:gr%nnzp) - rcm(2:gr%nnzp) ), gr%invrs_dzt(2:gr%nnzp) )
 
         call stat_update_var_pt( ivwp, 1, xtmp, sfc )
@@ -1710,7 +1710,7 @@ module stats_subs
       if ( iswp > 0 .and. iirsnowm > 0 ) then
 
         ! Calculate snow water path
-        xtmp = vertical_integral( (gr%nnzp - 2 + 1), rho(2:gr%nnzp), &
+        xtmp = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
                                       hydromet(2:gr%nnzp,iirsnowm), gr%invrs_dzt(2:gr%nnzp) )
 
         call stat_update_var_pt( iswp, 1, xtmp, sfc )
@@ -1720,7 +1720,7 @@ module stats_subs
       ! Ice Water Path
       if ( iiwp > 0 .and. iiricem > 0 ) then
 
-        xtmp = vertical_integral( (gr%nnzp - 2 + 1), rho(2:gr%nnzp), &
+        xtmp = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
                                       hydromet(2:gr%nnzp,iiricem), gr%invrs_dzt(2:gr%nnzp) )
 
         call stat_update_var_pt( iiwp, 1, xtmp, sfc )
@@ -1730,7 +1730,7 @@ module stats_subs
       ! Rain Water Path
       if ( irwp > 0 .and. iirrainm > 0 ) then
 
-        xtmp = vertical_integral( (gr%nnzp - 2 + 1), rho(2:gr%nnzp), &
+        xtmp = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
                                       hydromet(2:gr%nnzp,iirrainm), gr%invrs_dzt(2:gr%nnzp) )
 
         call stat_update_var_pt( irwp, 1, xtmp, sfc )
