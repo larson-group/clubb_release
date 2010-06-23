@@ -255,7 +255,7 @@ module fill_holes
   end subroutine fill_holes_multiplicative
 
   !=============================================================================
-  function vertical_avg( total_idx, rho, &
+  function vertical_avg( total_idx, rho_ds, &
                              field, invrs_dz )
 
     ! Description:
@@ -270,8 +270,8 @@ module fill_holes
     ! the density-weighted (by dry, static, base-static density) vertical
     ! average value of any model field, x, is calculated by the equation:
     !
-    ! x_avg|_z = ( INT(z_bot:z_top) x rho dz )
-    !            / ( INT(z_bot:z_top) rho dz );
+    ! x_avg|_z = ( INT(z_bot:z_top) x rho_ds dz )
+    !            / ( INT(z_bot:z_top) rho_ds dz );
     !
     ! where z_bot is the bottom of the vertical domain, and z_top is the top of
     ! the vertical domain.
@@ -282,20 +282,20 @@ module fill_holes
     ! Thermodynamic-level computation:
     
     !
-    ! For numerical purposes, INT(z_bot:z_top) x rho dz, which is the
+    ! For numerical purposes, INT(z_bot:z_top) x rho_ds dz, which is the
     ! numerator integral, is calculated as:
     !
-    ! SUM(k_bot:k_top) x(k) rho(k) delta_z(k);
+    ! SUM(k_bot:k_top) x(k) rho_ds(k) delta_z(k);
     !
-    ! where k is the index of the given thermodynamic level, x and rho are
+    ! where k is the index of the given thermodynamic level, x and rho_ds are
     ! both thermodynamic-level variables, and delta_z(k) = zm(k) - zm(k-1).  The
     ! indices k_bot and k_top are the indices of the respective lower and upper
     ! thermodynamic levels involved in the integration.
     !
-    ! Likewise, INT(z_bot:z_top) rho dz, which is the denominator integral,
+    ! Likewise, INT(z_bot:z_top) rho_ds dz, which is the denominator integral,
     ! is calculated as:
     !
-    ! SUM(k_bot:k_top) rho(k) delta_z(k).
+    ! SUM(k_bot:k_top) rho_ds(k) delta_z(k).
     !
     ! The first (k=1) thermodynamic level is below ground (or below the
     ! official lower boundary at the first momentum level), so it should not
@@ -313,20 +313,20 @@ module fill_holes
     !
     ! Momentum-level computation:
     !
-    ! For numerical purposes, INT(z_bot:z_top) x rho dz, which is the
+    ! For numerical purposes, INT(z_bot:z_top) x rho_ds dz, which is the
     ! numerator integral, is calculated as:
     !
-    ! SUM(k_bot:k_top) x(k) rho(k) delta_z(k);
+    ! SUM(k_bot:k_top) x(k) rho_ds(k) delta_z(k);
     !
-    ! where k is the index of the given momentum level, x and rho are both
+    ! where k is the index of the given momentum level, x and rho_ds are both
     ! momentum-level variables, and delta_z(k) = zt(k+1) - zt(k).  The indices
     ! k_bot and k_top are the indices of the respective lower and upper momentum
     ! levels involved in the integration.
     !
-    ! Likewise, INT(z_bot:z_top) rho dz, which is the denominator integral,
+    ! Likewise, INT(z_bot:z_top) rho_ds dz, which is the denominator integral,
     ! is calculated as:
     !
-    ! SUM(k_bot:k_top) rho(k) delta_z(k).
+    ! SUM(k_bot:k_top) rho_ds(k) delta_z(k).
     !
     ! The first (k=1) momentum level is right at ground level (or right at
     ! the official lower boundary).  The momentum level variables that call
@@ -360,12 +360,12 @@ module fill_holes
       total_idx ! The total numer of indices within the range of averaging
 
     real, dimension(total_idx), intent(in) ::  &
-      rho,    & ! Dry, static density on either thermodynamic or momentum levels    [kg/m^3]
+      rho_ds, & ! Dry, static density on either thermodynamic or momentum levels    [kg/m^3]
       field,  & ! The field (e.g. wp2) to be vertically averaged                    [Units vary]
       invrs_dz  ! Reciprocal of thermodynamic or momentum level thickness           [1/m]
                 ! depending on whether we're on zt or zm grid.
-    ! Note:  The rho and field points need to be arranged from
-    !        lowest to highest in altitude, with rho(1) and
+    ! Note:  The rho_ds and field points need to be arranged from
+    !        lowest to highest in altitude, with rho_ds(1) and
     !        field(1) actually their respective values at level k = 1.
 
     ! Output variable
@@ -392,24 +392,24 @@ module fill_holes
     
      
     ! Compute the numerator integral.
-    ! Multiply the variable 'field' at level k by rho at level k and by
+    ! Multiply the variable 'field' at level k by rho_ds at level k and by
     ! the level thickness at level k.  Then, sum over all vertical levels.
     ! Note:  The level thickness at level k is the distance between either
     !        momentum level k and momentum level k-1, or
     !        thermodynamic level k+1 and thermodynamic level k, depending
     !        on which field grid is being analyzed. Thus, 1.0/invrs_dz(k)
     !        is the level thickness for level k.
-    ! Note:  The values of 'field' and rho are passed into this function
-    !        so that field(1) and rho(1) are actually 'field' and rho
+    ! Note:  The values of 'field' and rho_ds are passed into this function
+    !        so that field(1) and rho_ds(1) are actually 'field' and rho_ds
     !        at the level k = 1.
        
-    numer_integral = vertical_integral( total_idx, rho(1:total_idx), &
+    numer_integral = vertical_integral( total_idx, rho_ds(1:total_idx), &
                                             field(1:total_idx), invrs_dz(1:total_idx) )
     
     ! Compute the denominator integral.
-    ! Multiply rho at level k by the level thickness
+    ! Multiply rho_ds at level k by the level thickness
     ! at level k.  Then, sum over all vertical levels.
-    denom_integral = vertical_integral( total_idx, rho(1:total_idx), &
+    denom_integral = vertical_integral( total_idx, rho_ds(1:total_idx), &
                                             denom_field(1:total_idx), invrs_dz(1:total_idx) )
 
     ! Find the vertical average of 'field'.
@@ -419,11 +419,11 @@ module fill_holes
   end function vertical_avg
 
   !=============================================================================
-  pure function vertical_integral( total_idx, rho, &
+  pure function vertical_integral( total_idx, rho_ds, &
                                        field, invrs_dz )
 
     ! Description:
-    ! Computes the vertical integral. Rho, field, and invrs_dz must all be
+    ! Computes the vertical integral. rho_ds, field, and invrs_dz must all be
     ! of size total_idx and should all start at the same index.
     ! 
     
@@ -438,11 +438,11 @@ module fill_holes
       total_idx  ! The total numer of indices within the range of averaging
 
     real, dimension(total_idx), intent(in) ::  &
-      rho,     & ! Dry, static density                   [kg/m^3]
+      rho_ds,  & ! Dry, static density                   [kg/m^3]
       field,   & ! The field to be vertically averaged   [Units vary]
       invrs_dz   ! Level thickness                       [1/m]
-    ! Note:  The rho and field points need to be arranged from
-    !        lowest to highest in altitude, with rho(1) and
+    ! Note:  The rho_ds and field points need to be arranged from
+    !        lowest to highest in altitude, with rho_ds(1) and
     !        field(1) actually their respective values at level k = begin_idx.
 
     ! Local variables
@@ -460,12 +460,12 @@ module fill_holes
     vertical_integral = 0.0
 
     ! Compute the integral.
-    ! Multiply the field at level k by rho at level k and by
+    ! Multiply the field at level k by rho_ds at level k and by
     ! the level thickness at level k.  Then, sum over all vertical levels.
-    ! Note:  The values of the field and rho are passed into this function
-    !        so that field(1) and rho(1) are actually the field and rho
+    ! Note:  The values of the field and rho_ds are passed into this function
+    !        so that field(1) and rho_ds(1) are actually the field and rho_ds
     !        at level k_start.
-    vertical_integral = sum( field * rho / invrs_dz )
+    vertical_integral = sum( field * rho_ds / invrs_dz )
 
     return
   end function vertical_integral
