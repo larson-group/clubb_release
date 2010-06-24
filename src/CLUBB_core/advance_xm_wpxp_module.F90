@@ -2463,7 +2463,7 @@ module advance_xm_wpxp_module
   pure function wpxp_term_ta_lhs_upwind( wp2, wp2_m1, wp2_p1,                & 
                                          a1_zm, a1_zm_p1, a1_zm_m1,          & 
                                          wp3_zm_p1, wp3_zm, wp3_zm_m1,       &
-                                         invrs_dzt, dztkp1 )                & 
+                                         invrs_dzt, invrs_dztkp1 )                & 
   result( lhs )
 
     ! Description:
@@ -2494,7 +2494,7 @@ module advance_xm_wpxp_module
       wp3_zm,      & ! w'^3(k)                                        [m^3/s^3]
       wp3_zm_m1,   & ! w'^3(k-1)                                      [m^3/s^3]
       invrs_dzt,         & ! Inverse of grid spacing (k)                    [1/m]
-      dztkp1         ! Inverse of grid spacing (k+1)                  [1/m]
+      invrs_dztkp1         ! Inverse of grid spacing (k+1)                  [1/m]
 
     ! Return Variable
     real, dimension(3) :: lhs
@@ -2511,11 +2511,11 @@ module advance_xm_wpxp_module
         * a1_zm_m1 * ( wp3_zm_m1 / max( wp2_m1, w_tol_sqd ) )
     else ! "Wind" is blowing downward
       lhs(kp1_mdiag) & 
-      = + dztkp1 & 
+      = + invrs_dztkp1 & 
         * a1_zm_p1 * ( wp3_zm_p1 / max( wp2_p1, w_tol_sqd ) ) 
 
       lhs(k_mdiag) & 
-      = - dztkp1 & 
+      = - invrs_dztkp1 & 
         * a1_zm * ( wp3_zm / max( wp2, w_tol_sqd ) ) 
 
       lhs(km1_mdiag) = 0.0

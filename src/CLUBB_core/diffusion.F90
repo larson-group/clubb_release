@@ -31,7 +31,7 @@ module diffusion
 
   !=============================================================================
   pure function diffusion_zt_lhs( K_zm, K_zmm1, nu,  & 
-                                  dzmm1, invrs_dzm, invrs_dzt, level ) & 
+                                  invrs_dzmm1, invrs_dzm, invrs_dzt, level ) & 
   result( lhs )
 
     ! Description:
@@ -261,7 +261,7 @@ module diffusion
       nu,     & ! Background constant coefficient of eddy diffusivity     [m^2/s]
       invrs_dzt,    & ! Inverse of grid spacing over thermodynamic level (k)    [1/m]
       invrs_dzm,    & ! Inverse of grid spacing over momentum level (k)         [1/m]
-      dzmm1     ! Inverse of grid spacing over momentum level (k-1)       [1/m]
+      invrs_dzmm1     ! Inverse of grid spacing over momentum level (k-1)       [1/m]
 
     integer, intent(in) ::  & 
       level     ! Thermodynamic level where calculation occurs.           [-]
@@ -292,10 +292,10 @@ module diffusion
       lhs(kp1_tdiag) = - invrs_dzt * (K_zm+nu) * invrs_dzm
 
       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-      lhs(k_tdiag)   = + invrs_dzt * ( (K_zm+nu)*invrs_dzm + (K_zmm1+nu)*dzmm1 )
+      lhs(k_tdiag)   = + invrs_dzt * ( (K_zm+nu)*invrs_dzm + (K_zmm1+nu)*invrs_dzmm1 )
 
       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-      lhs(km1_tdiag) = - invrs_dzt * (K_zmm1+nu) * dzmm1
+      lhs(km1_tdiag) = - invrs_dzt * (K_zmm1+nu) * invrs_dzmm1
 
     elseif ( level == gr%nnzp ) then
 
@@ -306,10 +306,10 @@ module diffusion
       lhs(kp1_tdiag) = 0.0
 
       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-      lhs(k_tdiag)   = + invrs_dzt * (K_zmm1+nu) * dzmm1
+      lhs(k_tdiag)   = + invrs_dzt * (K_zmm1+nu) * invrs_dzmm1
 
       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-      lhs(km1_tdiag) = - invrs_dzt * (K_zmm1+nu) * dzmm1
+      lhs(km1_tdiag) = - invrs_dzt * (K_zmm1+nu) * invrs_dzmm1
 
 
     endif
@@ -321,7 +321,7 @@ module diffusion
                 ( K_zm, K_zmm1, cloud_frac_zt, cloud_frac_ztm1, &
                   cloud_frac_ztp1, cloud_frac_zm, &
                   cloud_frac_zmm1, &
-                  nu, dzmm1, invrs_dzm, invrs_dzt, level ) &
+                  nu, invrs_dzmm1, invrs_dzm, invrs_dzt, level ) &
   result( lhs )
   ! Description:
   !   This function adds a weight of cloud fraction to the existing diffusion
@@ -361,7 +361,7 @@ module diffusion
       nu,             & ! Background constant coefficient of eddy diffusivity     [m^2/s]
       invrs_dzt,            & ! Inverse of grid spacing over thermodynamic level (k)    [1/m]
       invrs_dzm,            & ! Inverse of grid spacing over momentum level (k)         [1/m]
-      dzmm1             ! Inverse of grid spacing over momentum level (k-1)       [1/m]
+      invrs_dzmm1             ! Inverse of grid spacing over momentum level (k-1)       [1/m]
 
     integer, intent(in) ::  & 
       level     ! Thermodynamic level where calculation occurs.           [-]
@@ -402,24 +402,25 @@ module diffusion
 
       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
 !     lhs(k_tdiag)   = + invrs_dzt * ( ((K_zm+nu)*cloud_frac_zm)*invrs_dzm &
-!                                  + ((K_zmm1+nu)*cloud_frac_zmm1)*dzmm1 ) &
+!                                  + ((K_zmm1+nu)*cloud_frac_zmm1)*invrs_dzmm1 ) &
 !                      / cloud_frac_zt
-!     lhs(k_tdiag)   = + invrs_dzt * ( nu*(invrs_dzm+dzmm1) + &
+!     lhs(k_tdiag)   = + invrs_dzt * ( nu*(invrs_dzm+invrs_dzmm1) + &
 !                                     ( ((K_zm*cloud_frac_zm)*invrs_dzm + 
-!                                        (K_zmm1*cloud_frac_zmm1)*dzmm1)&
+!                                        (K_zmm1*cloud_frac_zmm1)*invrs_dzmm1)&
 !                                          / cloud_frac_zt &
 !                                     ) &
 !                              )
-      lhs(k_tdiag)   = + invrs_dzt * ( nu*(invrs_dzm+dzmm1) + &
+      lhs(k_tdiag)   = + invrs_dzt * ( nu*(invrs_dzm+invrs_dzmm1) + &
                                  (   K_zm*invrs_dzm*min( cloud_frac_zm / cloud_frac_zt, cf_ratio ) &
-                                   + K_zmm1*dzmm1*min( cloud_frac_zmm1 / cloud_frac_zt, cf_ratio ) &
-                                 ) &
+                                   + K_zmm1*invrs_dzmm1* &
+                                     min( cloud_frac_zmm1 / cloud_frac_zt, cf_ratio ) ) &
                                )
 
       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-!     lhs(km1_tdiag) = - invrs_dzt * (K_zmm1+nu) * ( cloud_frac_zmm1 / cloud_frac_ztm1 ) * dzmm1
+!     lhs(km1_tdiag) = - invrs_dzt * (K_zmm1+nu) * &
+!                        ( cloud_frac_zmm1 / cloud_frac_ztm1 ) * invrs_dzmm1
       lhs(km1_tdiag) = - invrs_dzt * &
-        (K_zmm1 * min( cloud_frac_zmm1 / cloud_frac_ztm1, cf_ratio ) + nu ) * dzmm1
+        (K_zmm1 * min( cloud_frac_zmm1 / cloud_frac_ztm1, cf_ratio ) + nu ) * invrs_dzmm1
 
     else if ( level == gr%nnzp ) then
 
@@ -430,14 +431,16 @@ module diffusion
       lhs(kp1_tdiag) = 0.0
 
       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-!     lhs(k_tdiag)   = + invrs_dzt * (K_zmm1+nu) * ( cloud_frac_zmm1 / cloud_frac_ztm1 ) * dzmm1
+!     lhs(k_tdiag)   = + invrs_dzt * (K_zmm1+nu) * &
+!                        ( cloud_frac_zmm1 / cloud_frac_ztm1 ) * invrs_dzmm1
       lhs(k_tdiag)   = + invrs_dzt * &
-        (K_zmm1 * min( cloud_frac_zmm1 / cloud_frac_ztm1, cf_ratio ) + nu) * dzmm1
+        (K_zmm1 * min( cloud_frac_zmm1 / cloud_frac_ztm1, cf_ratio ) + nu) * invrs_dzmm1
 
       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-!     lhs(km1_tdiag) = - invrs_dzt * (K_zmm1+nu) * ( cloud_frac_zmm1 / cloud_frac_ztm1 ) * dzmm1
+!     lhs(km1_tdiag) = - invrs_dzt * (K_zmm1+nu) * &
+!                        ( cloud_frac_zmm1 / cloud_frac_ztm1 ) * invrs_dzmm1
       lhs(km1_tdiag) = - invrs_dzt * &
-        (K_zmm1 * min( cloud_frac_zmm1 / cloud_frac_ztm1, cf_ratio ) + nu) * dzmm1
+        (K_zmm1 * min( cloud_frac_zmm1 / cloud_frac_ztm1, cf_ratio ) + nu) * invrs_dzmm1
 
 
     end if
@@ -447,7 +450,7 @@ module diffusion
 
   !=============================================================================
   pure function diffusion_zm_lhs( K_zt, K_ztp1, nu,  & 
-                                  dztp1, invrs_dzt, invrs_dzm, level ) & 
+                                  invrs_dztp1, invrs_dzt, invrs_dzm, level ) & 
   result( lhs )
 
     ! Description:
@@ -677,7 +680,7 @@ module diffusion
       nu,     & ! Background constant coefficient of eddy diffusivity    [m^2/s]
       invrs_dzm,    & ! Inverse of grid spacing over momentum level (k)        [1/m]
       invrs_dzt,    & ! Inverse of grid spacing over thermodynamic level (k)   [1/m]
-      dztp1     ! Inverse of grid spacing over thermodynamic level (k+1) [1/m]
+      invrs_dztp1     ! Inverse of grid spacing over thermodynamic level (k+1) [1/m]
 
     integer, intent(in) ::  & 
       level     ! Momentum level where calculation occurs.               [-]
@@ -691,10 +694,10 @@ module diffusion
       ! Only relevant if zero-flux boundary conditions are used.
 
       ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
-      lhs(kp1_mdiag) = - invrs_dzm * (K_ztp1+nu) * dztp1
+      lhs(kp1_mdiag) = - invrs_dzm * (K_ztp1+nu) * invrs_dztp1
 
       ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-      lhs(k_mdiag)   = + invrs_dzm * (K_ztp1+nu) * dztp1
+      lhs(k_mdiag)   = + invrs_dzm * (K_ztp1+nu) * invrs_dztp1
 
       ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
       lhs(km1_mdiag) = 0.0
@@ -705,10 +708,10 @@ module diffusion
       ! Most of the interior model; normal conditions.
 
       ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
-      lhs(kp1_mdiag) = - invrs_dzm * (K_ztp1+nu) * dztp1
+      lhs(kp1_mdiag) = - invrs_dzm * (K_ztp1+nu) * invrs_dztp1
 
       ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-      lhs(k_mdiag)   = + invrs_dzm * ( (K_ztp1+nu)*dztp1 + (K_zt+nu)*invrs_dzt )
+      lhs(k_mdiag)   = + invrs_dzm * ( (K_ztp1+nu)*invrs_dztp1 + (K_zt+nu)*invrs_dzt )
 
       ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
       lhs(km1_mdiag) = - invrs_dzm * (K_zt+nu) * invrs_dzt
