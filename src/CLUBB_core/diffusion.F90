@@ -24,8 +24,8 @@ module diffusion
   private ! Default Scope
 
   public :: diffusion_zt_lhs, & 
-    diffusion_cloud_frac_zt_lhs, & 
-    diffusion_zm_lhs
+            diffusion_cloud_frac_zt_lhs, & 
+            diffusion_zm_lhs
 
   contains
 
