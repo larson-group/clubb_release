@@ -191,33 +191,37 @@ module diffusion
     ! of var_zt and integrate vertically.  In discretized matrix notation (where
     ! "i" stands for the matrix column and "j" stands for the matrix row):
     !
-    !  0 = Sum_j Sum_i ( 1/invrs_dzt )_i ( invrs_dzt * ((K_zm+nu)*invrs_dzm) )_ij (var_zt)_j.
+    !  0 = Sum_j Sum_i ( 1/invrs_dzt )_i 
+    !                     ( invrs_dzt * ((K_zm+nu)*invrs_dzm) )_ij (var_zt)_j.
     !
-    ! The left-hand side matrix, ( invrs_dzt * ((K_zm+nu)*invrs_dzm) )_ij, is partially
-    ! written below.  The sum over i in the above equation removes invrs_dzt
-    ! everywhere from the matrix below.  The sum over j leaves the column totals
-    ! that are desired.
+    ! The left-hand side matrix, ( invrs_dzt * ((K_zm+nu)*invrs_dzm) )_ij, is
+    ! partially written below.  The sum over i in the above equation removes
+    ! invrs_dzt everywhere from the matrix below.  The sum over j leaves the
+    ! column totals that are desired.
     !
     ! Left-hand side matrix contributions from eddy diffusion term; first four
     ! vertical levels:
     !
-    !     ----------------------------------------------------------------------------------------->
-    !k=1 | +invrs_dzt(k)*                    -invrs_dzt(k)*                                  0
-    !    |   (K_zm(k)+nu)*invrs_dzm(k)         (K_zm(k)+nu)*invrs_dzm(k)
+    !     -------------------------------------------------------------------------->
+    !k=1 | +invrs_dzt(k)          -invrs_dzt(k)                          0
+    !    |   *(K_zm(k)+nu)          *(K_zm(k)+nu)
+    !    |     *invrs_dzm(k)          *invrs_dzm(k)
     !    |
-    !k=2 | -invrs_dzt(k)*                    +invrs_dzt(k)*                        -invrs_dzt(k)*
-    !    |   (K_zm(k-1)+nu)*invrs_dzm(k-1)    [ (K_zm(k)+nu)*invrs_dzm(k)           (K_zm(k)+nu)*
-    !    |                                     +(K_zm(k-1)+nu)*invrs_dzm(k-1) ]      invrs_dzm(k)
+    !k=2 | -invrs_dzt(k)          +invrs_dzt(k)              -invrs_dzt(k)
+    !    |   *(K_zm(k-1)+nu)        *[ (K_zm(k)+nu)            *(K_zm(k)+nu)
+    !    |     *invrs_dzm(k-1)          *invrs_dzm(k)            *invrs_dzm(k)
+    !    |                            +(K_zm(k-1)+nu)
+    !    |                              *invrs_dzm(k-1) ]
     !    |
-    !k=3 |             0                 -invrs_dzt(k)*                        +invrs_dzt(k)*
-    !    |                                (K_zm(k-1)+nu)*invrs_dzm(k-1)         [ (K_zm(k)+nu)*
-    !    |                                                                       invrs_dzm(k)
-    !    |                                                                        +(K_zm(k-1)+nu)
-    !    |                                                                         *invrs_dzm(k-1) ]
+    !k=3 |         0              -invrs_dzt(k)              +invrs_dzt(k)
+    !    |                          *(K_zm(k-1)+nu)            *[ (K_zm(k)+nu)
+    !    |                            *invrs_dzm(k-1)              *invrs_dzm(k)
+    !    |                                                       +(K_zm(k-1)+nu)
+    !    |                                                         *invrs_dzm(k-1) ]
     !    |
-    !k=4 |             0                             0                         -invrs_dzt(k)*
-    !    |                                                                      (K_zm(k-1)+nu)
-    !    |                                                                       *invrs_dzm(k-1)
+    !k=4 |         0                        0                -invrs_dzt(k)
+    !    |                                                     *(K_zm(k-1)+nu)
+    !    |                                                       *invrs_dzm(k-1)
     !   \ /
     !
     ! Note:  The superdiagonal term from level 3 and both the main diagonal and
@@ -256,15 +260,15 @@ module diffusion
 
     ! Input Variables
     real, intent(in) ::  & 
-      K_zm,   & ! Coefficient of eddy diffusivity at momentum level (k)   [m^2/s]
-      K_zmm1, & ! Coefficient of eddy diffusivity at momentum level (k-1) [m^2/s]
-      nu,     & ! Background constant coefficient of eddy diffusivity     [m^2/s]
-      invrs_dzt,    & ! Inverse of grid spacing over thermodynamic level (k)    [1/m]
-      invrs_dzm,    & ! Inverse of grid spacing over momentum level (k)         [1/m]
-      invrs_dzmm1     ! Inverse of grid spacing over momentum level (k-1)       [1/m]
+      K_zm,        & ! Coef. of eddy diffusivity at momentum level (k)   [m^2/s]
+      K_zmm1,      & ! Coef. of eddy diffusivity at momentum level (k-1) [m^2/s]
+      nu,          & ! Background constant coef. of eddy diffusivity     [m^2/s]
+      invrs_dzt,   & ! Inverse of grid spacing over thermo. level (k)    [1/m]
+      invrs_dzm,   & ! Inverse of grid spacing over momentum level (k)   [1/m]
+      invrs_dzmm1    ! Inverse of grid spacing over momentum level (k-1) [1/m]
 
     integer, intent(in) ::  & 
-      level     ! Thermodynamic level where calculation occurs.           [-]
+      level     ! Thermodynamic level where calculation occurs.          [-]
 
     ! Return Variable
     real, dimension(3) :: lhs
@@ -292,7 +296,8 @@ module diffusion
       lhs(kp1_tdiag) = - invrs_dzt * (K_zm+nu) * invrs_dzm
 
       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-      lhs(k_tdiag)   = + invrs_dzt * ( (K_zm+nu)*invrs_dzm + (K_zmm1+nu)*invrs_dzmm1 )
+      lhs(k_tdiag)   = + invrs_dzt * (  (K_zm+nu)*invrs_dzm  &
+                                      + (K_zmm1+nu)*invrs_dzmm1 )
 
       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
       lhs(km1_tdiag) = - invrs_dzt * (K_zmm1+nu) * invrs_dzmm1
