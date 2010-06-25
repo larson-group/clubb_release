@@ -303,7 +303,7 @@ module clubb_driver
       l_restart,      & ! Flag for restarting from GrADS file
       l_input_fields, & ! Whether to set model variables from a file
       l_tke_aniso       ! For anisotropic turbulent kinetic energy,
-    !                     i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+!                     i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 
     character(len=6) :: &
       saturation_formula ! "bolton" approx. or "flatau" approx.

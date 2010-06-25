@@ -6,6 +6,13 @@ module saturation
 !   Contains functions that compute saturation with respect
 !   to liquid or ice.
 !-----------------------------------------------------------------------
+
+#ifdef GFDL   !---> h1g, 2010-06-18
+    use model_flags, only: &
+       I_sat_sphum
+#endif          ! <--- h1g, 2010-06-18
+
+
   implicit none
 
   private  ! Change default so all items private
@@ -41,7 +48,8 @@ module saturation
       p_in_Pa,  & ! Pressure    [Pa]
       T_in_K      ! Temperature [K]
 
-    ! Local Variables
+
+   ! Local Variables
     real :: esatv
 
     ! --- Begin Code ---
@@ -85,11 +93,22 @@ module saturation
 
     end select
 
+
+#ifdef GFDL   !---> h1g, 2010-06-18
+    ! GFDL uses specific humidity
+    ! Formula for Saturation Specific Humidity
+     if( I_sat_sphum )  then
+           sat_mixrat_liq = ep * ( esatv / ( p_in_Pa - (1.0-ep) * esatv ) )
+     else
+           sat_mixrat_liq = ep * ( esatv / ( p_in_Pa - esatv ) )
+     endif
+#else
     ! Formula for Saturation Mixing Ratio:
     !
     ! rs = (epsilon) * [ esat / ( p - esat ) ];
     ! where epsilon = R_d / R_v
     sat_mixrat_liq = ep * ( esatv / ( p_in_Pa - esatv ) )
+#endif          ! <--- h1g, 2010-06-18
 
     return
   end function sat_mixrat_liq
@@ -277,12 +296,23 @@ module saturation
 ! <--- h1g, 2010-06-16
     end select
 
+
+#ifdef GFDL   !---> h1g, 2010-06-18
+    ! GFDL uses specific humidity
+    ! Formula for Saturation Specific Humidity
+     if( I_sat_sphum )  then
+           sat_mixrat_ice = ep * ( esat_ice / ( p_in_Pa - (1.0-ep) * esat_ice ) )
+     else
+           sat_mixrat_ice  = ep * ( esat_ice / ( p_in_Pa - esat_ice ) )
+     endif
+#else
     ! Formula for Saturation Mixing Ratio:
     !
     ! rs = (epsilon) * [ esat / ( p - esat ) ];
     ! where epsilon = R_d / R_v
 
     sat_mixrat_ice = ep * ( esat_ice / ( p_in_Pa - esat_ice ) )
+#endif          ! <--- h1g, 2010-06-18
 
     return
 
