@@ -28,6 +28,12 @@ contains
                                            invrs_dztm1, invrs_dzmp1, invrs_dzmm2, level )  &
   result( lhs )
 
+    ! Note:  In the "Description" section of this function, the variable
+    !        "invrs_dzm" will be written as simply "dzm", and the variable
+    !        "invrs_dzt" will be written as simply "dzt".  This is being done as
+    !        as device to save space and to make some parts of the description
+    !        more readable.  This change does not pertain to the actual code.
+
     ! Description:
     ! Vertical 4th-order numerical diffusion of var_zt:  implicit portion of the
     ! code.
@@ -92,26 +98,26 @@ contains
     ! letter "t" is used for thermodynamic levels and the letter "m" is used for
     ! momentum levels.
     !
-    ! invrs_dzt(k)   = 1 / ( zm(k) - zm(k-1) )
-    ! invrs_dzm(k)   = 1 / ( zt(k+1) - zt(k) )
-    ! invrs_dzm(k-1) = 1 / ( zt(k) - zt(k-1) )
-    ! invrs_dzt(k+1) = 1 / ( zm(k+1) - zm(k) )
-    ! invrs_dzt(k-1) = 1 / ( zm(k-1) - zm(k-2) )
-    ! invrs_dzm(k+1) = 1 / ( zt(k+2) - zt(k+1) )
-    ! invrs_dzm(k-2) = 1 / ( zt(k-1) - zt(k-2) )
+    ! dzt(k)   = 1 / ( zm(k) - zm(k-1) )
+    ! dzm(k)   = 1 / ( zt(k+1) - zt(k) )
+    ! dzm(k-1) = 1 / ( zt(k) - zt(k-1) )
+    ! dzt(k+1) = 1 / ( zm(k+1) - zm(k) )
+    ! dzt(k-1) = 1 / ( zm(k-1) - zm(k-2) )
+    ! dzm(k+1) = 1 / ( zt(k+2) - zt(k+1) )
+    ! dzm(k-2) = 1 / ( zt(k-1) - zt(k-2) )
     !
     ! The discretization of -nu*d^4(var_zt)/dz^4 at thermodynamic level (k)
     ! is written out as follows:
     !
     ! -nu
-    !  *invrs_dzt(k)*[ invrs_dzm(k)*{ invrs_dzt(k+1)*( invrs_dzm(k+1)*(var_zt(k+2)-var_zt(k+1))
-    !                               -invrs_dzm(k)*(var_zt(k+1)-var_zt(k)) )
-    !                    -invrs_dzt(k)*( invrs_dzm(k)*(var_zt(k+1)-var_zt(k))
-    !                             -invrs_dzm(k-1)*(var_zt(k)-var_zt(k-1)) ) }
-    !           -invrs_dzm(k-1)*{ invrs_dzt(k)*( invrs_dzm(k)*(var_zt(k+1)-var_zt(k))
-    !                               -invrs_dzm(k-1)*(var_zt(k)-var_zt(k-1)) )
-    !                      -invrs_dzt(k-1)*( invrs_dzm(k-1)*(var_zt(k)-var_zt(k-1))
-    !                                 -invrs_dzm(k-2)*(var_zt(k-1)-var_zt(k-2)) ) } ].
+    !  *dzt(k)*[ dzm(k)*{ dzt(k+1)*( dzm(k+1)*(var_zt(k+2)-var_zt(k+1))
+    !                               -dzm(k)*(var_zt(k+1)-var_zt(k)) )
+    !                    -dzt(k)*( dzm(k)*(var_zt(k+1)-var_zt(k))
+    !                             -dzm(k-1)*(var_zt(k)-var_zt(k-1)) ) }
+    !           -dzm(k-1)*{ dzt(k)*( dzm(k)*(var_zt(k+1)-var_zt(k))
+    !                               -dzm(k-1)*(var_zt(k)-var_zt(k-1)) )
+    !                      -dzt(k-1)*( dzm(k-1)*(var_zt(k)-var_zt(k-1))
+    !                                 -dzm(k-2)*(var_zt(k-1)-var_zt(k-2)) ) } ].
     !
     ! Again, the term is treated completely implicitly, so the leading "-" sign
     ! changes to a "+" sign when the term is brought over to the left-hand side,
@@ -190,13 +196,13 @@ contains
     !    is written out as follows:
     !
     !    -nu
-    !     *invrs_dzt(k)*[ invrs_dzm(k)*{ invrs_dzt(k+1)*( invrs_dzm(k+1)*(var_zt(k+2)-var_zt(k+1))
-    !                                  -invrs_dzm(k)*(var_zt(k+1)-var_zt(k)) )
-    !                       -invrs_dzt(k)*( invrs_dzm(k)*(var_zt(k+1)-var_zt(k))
-    !                                -invrs_dzm(k-1)*(var_zt(k)-var_zt(k-1)) ) }
-    !              -invrs_dzm(k-1)*{ invrs_dzt(k)*( invrs_dzm(k)*(var_zt(k+1)-var_zt(k))
-    !                                  -invrs_dzm(k-1)*(var_zt(k)-var_zt(k-1)) )
-    !                         -invrs_dzt(k-1)*invrs_dzm(k-1)*(var_zt(k)-var_zt(k-1)) } ].
+    !     *dzt(k)*[ dzm(k)*{ dzt(k+1)*( dzm(k+1)*(var_zt(k+2)-var_zt(k+1))
+    !                                  -dzm(k)*(var_zt(k+1)-var_zt(k)) )
+    !                       -dzt(k)*( dzm(k)*(var_zt(k+1)-var_zt(k))
+    !                                -dzm(k-1)*(var_zt(k)-var_zt(k-1)) ) }
+    !              -dzm(k-1)*{ dzt(k)*( dzm(k)*(var_zt(k+1)-var_zt(k))
+    !                                  -dzm(k-1)*(var_zt(k)-var_zt(k-1)) )
+    !                         -dzt(k-1)*dzm(k-1)*(var_zt(k)-var_zt(k-1)) } ].
     !
     !    Again, the term is treated completely implicitly, so the leading "-"
     !    sign changes to a "+" sign when the term is brought over to the
@@ -227,9 +233,9 @@ contains
     !    is written out as follows:
     !
     !    -nu
-    !     *invrs_dzt(k)*[ invrs_dzm(k)*{ invrs_dzt(k+1)*( invrs_dzm(k+1)*(var_zt(k+2)-var_zt(k+1))
-    !                                  -invrs_dzm(k)*(var_zt(k+1)-var_zt(k)) )
-    !                       -invrs_dzt(k)*invrs_dzm(k)*(var_zt(k+1)-var_zt(k)) } ].
+    !     *dzt(k)*[ dzm(k)*{ dzt(k+1)*( dzm(k+1)*(var_zt(k+2)-var_zt(k+1))
+    !                                  -dzm(k)*(var_zt(k+1)-var_zt(k)) )
+    !                       -dzt(k)*dzm(k)*(var_zt(k+1)-var_zt(k)) } ].
     !
     !    Again, the term is treated completely implicitly, so the leading "-"
     !    sign changes to a "+" sign when the term is brought over to the
@@ -302,12 +308,12 @@ contains
     !    is written out as follows:
     !
     !    -nu
-    !     *invrs_dzt(k)*[ invrs_dzm(k)*{ invrs_dzt(k+1)*( invrs_dzm(k+1)*(var_zt(k+2)-var_zt(k+1))
-    !                                  -invrs_dzm(k)*(var_zt(k+1)-var_zt(k)) )
-    !                       -invrs_dzt(k)*( invrs_dzm(k)*(var_zt(k+1)-var_zt(k))
-    !                                -invrs_dzm(k-1)*(var_zt(k)-var_zt(k-1)) ) }
-    !              -invrs_dzm(k-1)*{ invrs_dzt(k)*( invrs_dzm(k)*(var_zt(k+1)-var_zt(k))
-    !                                  -invrs_dzm(k-1)*(var_zt(k)-var_zt(k-1)) ) } ].
+    !     *dzt(k)*[ dzm(k)*{ dzt(k+1)*( dzm(k+1)*(var_zt(k+2)-var_zt(k+1))
+    !                                  -dzm(k)*(var_zt(k+1)-var_zt(k)) )
+    !                       -dzt(k)*( dzm(k)*(var_zt(k+1)-var_zt(k))
+    !                                -dzm(k-1)*(var_zt(k)-var_zt(k-1)) ) }
+    !              -dzm(k-1)*{ dzt(k)*( dzm(k)*(var_zt(k+1)-var_zt(k))
+    !                                  -dzm(k-1)*(var_zt(k)-var_zt(k-1)) ) } ].
     !
     !    Again, the term is treated completely implicitly, so the leading "-"
     !    sign changes to a "+" sign when the term is brought over to the
@@ -357,11 +363,10 @@ contains
     ! matrix notation (where "i" stands for the matrix column and "j" stands for
     ! the matrix row):
     !
-    !  0 = Sum_j Sum_i ( 1/invrs_dzt )_i 
-    !		( nu*invrs_dzt*invrs_dzm*invrs_dzt*invrs_dzm )_ij (var_zt)_j.
+    !  0 = Sum_j Sum_i ( 1/dzt )_i ( nu*dzt*dzm*dzt*dzm )_ij (var_zt)_j.
     !
-    ! The left-hand side matrix, ( nu*invrs_dzt*invrs_dzm*invrs_dzt*invrs_dzm )_ij, is partially
-    ! written below.  The sum over i in the above equation removes the first invrs_dzt(k)
+    ! The left-hand side matrix, ( nu*dzt*dzm*dzt*dzm )_ij, is partially written
+    ! below.  The sum over i in the above equation removes the first dzt(k)
     ! everywhere from the matrix below.  The sum over j leaves the column totals
     ! that are desired.
     !
@@ -370,79 +375,79 @@ contains
     !
     !         column 1    ||    column 2    ||    column 3    ||    column 4    ||    column 5
     !    ------------------------------------------------------------------------------------------>
-    !   | +nu                  -nu                     +nu
-    !   | *invrs_dzt(k)         *invrs_dzt(k)           *invrs_dzt(k)
-    !   |  *[ invrs_dzm(k)       *[ invrs_dzm(k)         *invrs_dzm(k)
-    !k=1|     *{ invrs_dzt(k+1)     *{ invrs_dzt(k+1)     *invrs_dzt(k+1)            0             0
-    !   |        *invrs_dzm(k)         *( invrs_dzm(k+1)   *invrs_dzm(k+1)
-    !   |       +invrs_dzt(k)            +invrs_dzm(k) )
-    !   |        *invrs_dzm(k) } ]    +invrs_dzt(k)
-    !   |                          *invrs_dzm(k) } ]
+    !   | +nu             -nu               +nu
+    !   | *dzt(k)         *dzt(k)           *dzt(k)
+    !   |  *[ dzm(k)       *[ dzm(k)         *dzm(k)
+    !k=1|     *{ dzt(k+1)     *{ dzt(k+1)     *dzt(k+1)                0                 0
+    !   |        *dzm(k)         *( dzm(k+1)   *dzm(k+1)
+    !   |       +dzt(k)            +dzm(k) )
+    !   |        *dzm(k) } ]    +dzt(k)
+    !   |                        *dzm(k) } ]
     !   |
-    !   | -nu                   +nu                     -nu                     +nu
-    !   | *invrs_dzt(k)         *invrs_dzt(k)           *invrs_dzt(k)           *invrs_dzt(k)
-    !   |  *[ invrs_dzm(k)       *[ invrs_dzm(k)         *[ invrs_dzm(k)         *invrs_dzm(k)
-    !   |     *invrs_dzt(k)       *{ invrs_dzt(k+1)       *{ invrs_dzt(k+1)       *invrs_dzt(k+1)
-    !   |      *invrs_dzm(k-1)     *invrs_dzm(k)           *( invrs_dzm(k+1)       *invrs_dzm(k+1)
-    !   |    +invrs_dzm(k-1)        +invrs_dzt(k)              +invrs_dzm(k) )
-    !   |     *{ invrs_dzt(k)        *( invrs_dzm(k)        +invrs_dzt(k)
-    !k=2|        *invrs_dzm(k-1)       +invrs_dzm(k-1) )     *invrs_dzm(k) }                       0
-    !   |       +invrs_dzt(k-1)      }                        +invrs_dzm(k-1)
-    !   |        *invrs_dzm(k-1)   +invrs_dzm(k-1)             *invrs_dzt(k)
-    !   |      } ]                 *{ invrs_dzt(k)              *invrs_dzm(k) ]
-    !   |                           *( invrs_dzm(k)
-    !   |                            +invrs_dzm(k-1) )
-    !   |                             +invrs_dzt(k-1)
-    !   |                              *invrs_dzm(k-1) } ]
+    !   | -nu             +nu               -nu               +nu
+    !   | *dzt(k)         *dzt(k)           *dzt(k)           *dzt(k)
+    !   |  *[ dzm(k)       *[ dzm(k)         *[ dzm(k)         *dzm(k)
+    !   |     *dzt(k)         *{ dzt(k+1)       *{ dzt(k+1)     *dzt(k+1)
+    !   |      *dzm(k-1)         *dzm(k)           *( dzm(k+1)   *dzm(k+1)
+    !   |    +dzm(k-1)          +dzt(k)              +dzm(k) )
+    !   |     *{ dzt(k)          *( dzm(k)        +dzt(k)
+    !k=2|        *dzm(k-1)         +dzm(k-1) )     *dzm(k) }                             0
+    !   |       +dzt(k-1)      }               +dzm(k-1)
+    !   |        *dzm(k-1)   +dzm(k-1)          *dzt(k)
+    !   |      } ]            *{ dzt(k)          *dzm(k) ]
+    !   |                        *( dzm(k)
+    !   |                          +dzm(k-1) )
+    !   |                       +dzt(k-1)
+    !   |                        *dzm(k-1) } ]
     !   |
     !   | +nu             -nu               +nu               -nu               +nu
-    !   | *invrs_dzt(k)    *invrs_dzt(k)     *invrs_dzt(k)     *invrs_dzt(k)      *invrs_dzt(k)
-    !   |  *invrs_dzm(k-1)   *[ invrs_dzm(k)  *[ invrs_dzm(k)   *[ invrs_dzm(k)    *invrs_dzm(k)
-    !   |   *invrs_dzt(k-1)   *invrs_dzt(k)    *{ invrs_dzt(k+1)  *{ invrs_dzt(k+1) *invrs_dzt(k+1)
-    !   |    *invrs_dzm(k-2)   *invrs_dzm(k-1)  *invrs_dzm(k)      *( invrs_dzm(k+1) *invrs_dzm(k+1)
-    !   |                    +invrs_dzm(k-1)            +invrs_dzt(k)              +invrs_dzm(k) )
-    !   |                     *{ invrs_dzt(k)            *( invrs_dzm(k)        +invrs_dzt(k)
-    !k=3|                        *invrs_dzm(k-1)           +invrs_dzm(k-1) )     *invrs_dzm(k) }
-    !   |                       +invrs_dzt(k-1)        }                          +invrs_dzm(k-1)
-    !   |                        *( invrs_dzm(k-1)   +invrs_dzm(k-1)               *invrs_dzt(k)
-    !   |                          +invrs_dzm(k-2) )  *{ invrs_dzt(k)               *invrs_dzm(k) ]
-    !   |                      } ]                 *( invrs_dzm(k)
-    !   |                                            +invrs_dzm(k-1) )
-    !   |                                         +invrs_dzt(k-1)
-    !   |                                          *invrs_dzm(k-1) } ]
+    !   | *dzt(k)         *dzt(k)           *dzt(k)           *dzt(k)           *dzt(k)
+    !   |  *dzm(k-1)       *[ dzm(k)         *[ dzm(k)         *[ dzm(k)         *dzm(k)
+    !   |   *dzt(k-1)         *dzt(k)           *{ dzt(k+1)       *{ dzt(k+1)     *dzt(k+1)
+    !   |    *dzm(k-2)         *dzm(k-1)           *dzm(k)           *( dzm(k+1)   *dzm(k+1)
+    !   |                    +dzm(k-1)            +dzt(k)              +dzm(k) )
+    !   |                     *{ dzt(k)            *( dzm(k)        +dzt(k)
+    !k=3|                        *dzm(k-1)           +dzm(k-1) )     *dzm(k) }
+    !   |                       +dzt(k-1)        }               +dzm(k-1)
+    !   |                        *( dzm(k-1)   +dzm(k-1)          *dzt(k)
+    !   |                          +dzm(k-2) )  *{ dzt(k)          *dzm(k) ]
+    !   |                      } ]                 *( dzm(k)
+    !   |                                            +dzm(k-1) )
+    !   |                                         +dzt(k-1)
+    !   |                                          *dzm(k-1) } ]
     !   |
-    !   |             +nu               -nu               +nu               -nu
-    !   |             *invrs_dzt(k)     *invrs_dzt(k)     *invrs_dzt(k)     *invrs_dzt(k)
-    !   |              *invrs_dzm(k-1)   *[ invrs_dzm(k)   *[ invrs_dzm(k)   *[ invrs_dzm(k)
-    !   |               *invrs_dzt(k-1)   *invrs_dzt(k)     *{ invrs_dzt(k+1) *{ invrs_dzt(k+1)
-    !   |                *invrs_dzm(k-2)   *invrs_dzm(k-1)   *invrs_dzm(k)     *( invrs_dzm(k+1)
-    !   |                                   +invrs_dzm(k-1)   +invrs_dzt(k)     +invrs_dzm(k) )
-    !   |                                    *{ invrs_dzt(k)   *( invrs_dzm(k)   +invrs_dzt(k)
-    !k=4|        0                            *invrs_dzm(k-1)   +invrs_dzm(k-1) )  *invrs_dzm(k) }
-    !   |                                      +invrs_dzt(k-1)   }                  +invrs_dzm(k-1)
-    !   |                                      *( invrs_dzm(k-1)  +invrs_dzm(k-1)    *invrs_dzt(k)
-    !   |                                        +invrs_dzm(k-2)  ) *{ invrs_dzt(k)  *invrs_dzm(k) ]
-    !   |                                    } ]                  *( invrs_dzm(k)
-    !   |                                                          +invrs_dzm(k-1) )
-    !   |                                                           +invrs_dzt(k-1)
-    !   |                                                            *invrs_dzm(k-1) } ]
+    !   |                 +nu               -nu               +nu               -nu
+    !   |                 *dzt(k)           *dzt(k)           *dzt(k)           *dzt(k)
+    !   |                  *dzm(k-1)         *[ dzm(k)         *[ dzm(k)         *[ dzm(k)
+    !   |                   *dzt(k-1)           *dzt(k)           *{ dzt(k+1)       *{ dzt(k+1)
+    !   |                    *dzm(k-2)           *dzm(k-1)           *dzm(k)           *( dzm(k+1)
+    !   |                                      +dzm(k-1)            +dzt(k)              +dzm(k) )
+    !   |                                       *{ dzt(k)            *( dzm(k)        +dzt(k)
+    !k=4|        0                                 *dzm(k-1)           +dzm(k-1) )     *dzm(k) }
+    !   |                                         +dzt(k-1)        }               +dzm(k-1)
+    !   |                                          *( dzm(k-1)   +dzm(k-1)          *dzt(k)
+    !   |                                            +dzm(k-2) )  *{ dzt(k)          *dzm(k) ]
+    !   |                                        } ]                 *( dzm(k)
+    !   |                                                              +dzm(k-1) )
+    !   |                                                           +dzt(k-1)
+    !   |                                                            *dzm(k-1) } ]
     !   |
-    !   |                                +nu               -nu               +nu
-    !   |                                *invrs_dzt(k)     *invrs_dzt(k)     *invrs_dzt(k)
-    !   |                                 *invrs_dzm(k-1)   *[ invrs_dzm(k)   *[ invrs_dzm(k)
-    !   |                                  *invrs_dzt(k-1)    *invrs_dzt(k)     *{ invrs_dzt(k+1)
-    !   |                                   *invrs_dzm(k-2)    *invrs_dzm(k-1)    *invrs_dzm(k)
-    !   |                                                     +invrs_dzm(k-1)      +invrs_dzt(k)
-    !   |                                                      *{ invrs_dzt(k)     *( invrs_dzm(k)
-    !k=5|        0              0                              *invrs_dzm(k-1)     +invrs_dzm(k-1) )
-    !   |                                                       +invrs_dzt(k-1)        }
-    !   |                                                       *( invrs_dzm(k-1)  +invrs_dzm(k-1)
-    !   |                                                       +invrs_dzm(k-2) )  *{ invrs_dzt(k)
-    !   |                                                       } ]                *( invrs_dzm(k)
-    !   |                                                                          +invrs_dzm(k-1) )
-    !   |                                                                          +invrs_dzt(k-1)
-    !   |                                                                          *invrs_dzm(k-1)
-    !  \ /                                                                         } ]         
+    !   |                                   +nu               -nu               +nu
+    !   |                                   *dzt(k)           *dzt(k)           *dzt(k)
+    !   |                                    *dzm(k-1)         *[ dzm(k)         *[ dzm(k)
+    !   |                                     *dzt(k-1)           *dzt(k)           *{ dzt(k+1)
+    !   |                                      *dzm(k-2)           *dzm(k-1)           *dzm(k)
+    !   |                                                        +dzm(k-1)            +dzt(k)
+    !   |                                                         *{ dzt(k)            *( dzm(k)
+    !k=5|        0                 0                                 *dzm(k-1)           +dzm(k-1) )
+    !   |                                                           +dzt(k-1)        }
+    !   |                                                            *( dzm(k-1)   +dzm(k-1)
+    !   |                                                              +dzm(k-2) )  *{ dzt(k)
+    !   |                                                          } ]                 *( dzm(k)
+    !   |                                                                                +dzm(k-1) )
+    !   |                                                                             +dzt(k-1)
+    !   |                                                                              *dzm(k-1) } ]
+    !  \ /
     !
     ! Note:  The super-super diagonal term from level 4 and both the super
     !        diagonal and super-super diagonal terms from level 5 are not shown
@@ -464,18 +469,18 @@ contains
     !k=1|        0                 0                 0                 0                 0
     !   |
     !   | -nu             +nu               -nu               +nu
-    !   | *invrs_dzt(k)         *invrs_dzt(k)           *invrs_dzt(k)           *invrs_dzt(k)
-    !   |  *[ invrs_dzm(k)       *[ invrs_dzm(k)         *[ invrs_dzm(k)         *invrs_dzm(k)
-    !   |     *invrs_dzt(k)         *{ invrs_dzt(k+1)       *{ invrs_dzt(k+1)     *invrs_dzt(k+1)
-    !   |      *invrs_dzm(k-1)         *invrs_dzm(k)           *( invrs_dzm(k+1)   *invrs_dzm(k+1)
-    !   |    +invrs_dzm(k-1)          +invrs_dzt(k)              +invrs_dzm(k) )
-    !k=2|     *invrs_dzt(k)            *( invrs_dzm(k)        +invrs_dzt(k)                        0
-    !   |      *invrs_dzm(k-1) ]         +invrs_dzm(k-1) )     *invrs_dzm(k) }
-    !   |                      }               +invrs_dzm(k-1)
-    !   |                    +invrs_dzm(k-1)          *invrs_dzt(k)
-    !   |                     *{ invrs_dzt(k)          *invrs_dzm(k) ]
-    !   |                        *( invrs_dzm(k)
-    !   |                          +invrs_dzm(k-1) )
+    !   | *dzt(k)         *dzt(k)           *dzt(k)           *dzt(k)
+    !   |  *[ dzm(k)       *[ dzm(k)         *[ dzm(k)         *dzm(k)
+    !   |     *dzt(k)         *{ dzt(k+1)       *{ dzt(k+1)     *dzt(k+1)
+    !   |      *dzm(k-1)         *dzm(k)           *( dzm(k+1)   *dzm(k+1)
+    !   |    +dzm(k-1)          +dzt(k)              +dzm(k) )
+    !k=2|     *dzt(k)            *( dzm(k)        +dzt(k)                                0
+    !   |      *dzm(k-1) ]         +dzm(k-1) )     *dzm(k) }
+    !   |                      }               +dzm(k-1)
+    !   |                    +dzm(k-1)          *dzt(k)
+    !   |                     *{ dzt(k)          *dzm(k) ]
+    !   |                        *( dzm(k)
+    !   |                          +dzm(k-1) )
     !   |                      } ]
     !  \ /
     !
@@ -781,6 +786,12 @@ contains
                                            invrs_dzmm1, dztp2, invrs_dztm1, level )  &
   result( lhs )
 
+    ! Note:  In the "Description" section of this function, the variable
+    !        "invrs_dzm" will be written as simply "dzm", and the variable
+    !        "invrs_dzt" will be written as simply "dzt".  This is being done as
+    !        as device to save space and to make some parts of the description
+    !        more readable.  This change does not pertain to the actual code.
+
     ! Description:
     ! Vertical 4th-order numerical diffusion of var_zm:  implicit portion of the
     ! code.
@@ -845,25 +856,25 @@ contains
     ! letter "t" is used for thermodynamic levels and the letter "m" is used for
     ! momentum levels.
     !
-    ! invrs_dzm(k)   = 1 / ( zt(k+1) - zt(k) )
-    ! invrs_dzt(k+1) = 1 / ( zm(k+1) - zm(k) )
-    ! invrs_dzt(k)   = 1 / ( zm(k) - zm(k-1) )
-    ! invrs_dzm(k+1) = 1 / ( zt(k+2) - zt(k+1) )
-    ! invrs_dzm(k-1) = 1 / ( zt(k) - zt(k-1) )
-    ! invrs_dzt(k+2) = 1 / ( zm(k+2) - zm(k+1) )
-    ! invrs_dzt(k-1) = 1 / ( zm(k-1) - zm(k-2) )
+    ! dzm(k)   = 1 / ( zt(k+1) - zt(k) )
+    ! dzt(k+1) = 1 / ( zm(k+1) - zm(k) )
+    ! dzt(k)   = 1 / ( zm(k) - zm(k-1) )
+    ! dzm(k+1) = 1 / ( zt(k+2) - zt(k+1) )
+    ! dzm(k-1) = 1 / ( zt(k) - zt(k-1) )
+    ! dzt(k+2) = 1 / ( zm(k+2) - zm(k+1) )
+    ! dzt(k-1) = 1 / ( zm(k-1) - zm(k-2) )
     !
     ! The discretization of -nu*d^4(var_zm)/dz^4 at momentum level (k) is
     ! written out as follows:
     !
-    ! -nu*invrs_dzm(k)*[ invrs_dzt(k+1)*{ invrs_dzm(k+1)*( invrs_dzt(k+2)*(var_zm(k+2)-var_zm(k+1))
-    !                                   -invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k)) )
-    !                        -invrs_dzm(k)*( invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k))
-    !                                 -invrs_dzt(k)*(var_zm(k)-var_zm(k-1)) ) }
-    !             -invrs_dzt(k)*{ invrs_dzm(k)*( invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k))
-    !                               -invrs_dzt(k)*(var_zm(k)-var_zm(k-1)) )
-    !                      -invrs_dzm(k-1)*( invrs_dzt(k)*(var_zm(k)-var_zm(k-1))
-    !                                 -invrs_dzt(k-1)*(var_zm(k-1)-var_zm(k-2)) ) } ].
+    ! -nu*dzm(k)*[ dzt(k+1)*{ dzm(k+1)*( dzt(k+2)*(var_zm(k+2)-var_zm(k+1))
+    !                                   -dzt(k+1)*(var_zm(k+1)-var_zm(k)) )
+    !                        -dzm(k)*( dzt(k+1)*(var_zm(k+1)-var_zm(k))
+    !                                 -dzt(k)*(var_zm(k)-var_zm(k-1)) ) }
+    !             -dzt(k)*{ dzm(k)*( dzt(k+1)*(var_zm(k+1)-var_zm(k))
+    !                               -dzt(k)*(var_zm(k)-var_zm(k-1)) )
+    !                      -dzm(k-1)*( dzt(k)*(var_zm(k)-var_zm(k-1))
+    !                                 -dzt(k-1)*(var_zm(k-1)-var_zm(k-2)) ) } ].
     !
     ! Again, the term is treated completely implicitly, so the leading "-" sign
     ! changes to a "+" sign when the term is brought over to the left-hand side,
@@ -941,14 +952,13 @@ contains
     !    The discretization of -nu*d^4(var_zm)/dz^4 at momentum level (k=2) is
     !    written out as follows:
     !
-    !    -nu*invrs_dzm(k)*[ invrs_dzt(k+1)*
-    !                        { invrs_dzm(k+1)*( invrs_dzt(k+2)*(var_zm(k+2)-var_zm(k+1))
-    !                           -invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k)) )
-    !                           -invrs_dzm(k)*( invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k))
-    !                                    -invrs_dzt(k)*(var_zm(k)-var_zm(k-1)) ) }
-    !                -invrs_dzt(k)*{ invrs_dzm(k)*( invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k))
-    !                                  -invrs_dzt(k)*(var_zm(k)-var_zm(k-1)) )
-    !                         -invrs_dzm(k-1)*invrs_dzt(k)*(var_zm(k)-var_zm(k-1)) } ].
+    !    -nu*dzm(k)*[ dzt(k+1)*{ dzm(k+1)*( dzt(k+2)*(var_zm(k+2)-var_zm(k+1))
+    !                                      -dzt(k+1)*(var_zm(k+1)-var_zm(k)) )
+    !                           -dzm(k)*( dzt(k+1)*(var_zm(k+1)-var_zm(k))
+    !                                    -dzt(k)*(var_zm(k)-var_zm(k-1)) ) }
+    !                -dzt(k)*{ dzm(k)*( dzt(k+1)*(var_zm(k+1)-var_zm(k))
+    !                                  -dzt(k)*(var_zm(k)-var_zm(k-1)) )
+    !                         -dzm(k-1)*dzt(k)*(var_zm(k)-var_zm(k-1)) } ].
     !
     !    Again, the term is treated completely implicitly, so the leading "-"
     !    sign changes to a "+" sign when the term is brought over to the
@@ -978,10 +988,9 @@ contains
     !    The discretization of -nu*d^4(var_zm)/dz^4 at momentum level (k=1) is
     !    written out as follows:
     !
-    !    -nu*invrs_dzm(k)*[invrs_dzt(k+1)
-    !                  *{ invrs_dzm(k+1)*( invrs_dzt(k+2)*(var_zm(k+2)-var_zm(k+1))
-    !                      -invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k)) )
-    !                         -invrs_dzm(k)*invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k)) } ].
+    !    -nu*dzm(k)*[dzt(k+1)*{ dzm(k+1)*( dzt(k+2)*(var_zm(k+2)-var_zm(k+1))
+    !                                     -dzt(k+1)*(var_zm(k+1)-var_zm(k)) )
+    !                          -dzm(k)*dzt(k+1)*(var_zm(k+1)-var_zm(k)) } ].
     !
     !    Again, the term is treated completely implicitly, so the leading "-"
     !    sign changes to a "+" sign when the term is brought over to the
@@ -1053,13 +1062,12 @@ contains
     !    The discretization of -nu*d^4(var_zm)/dz^4 at momentum level (k=2) is
     !    written out as follows:
     !
-    !    -nu*invrs_dzm(k)*[ invrs_dzt(k+1)*
-    !                              { invrs_dzm(k+1)*( invrs_dzt(k+2)*(var_zm(k+2)-var_zm(k+1))
-    !                                      -invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k)) )
-    !                           -invrs_dzm(k)*( invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k))
-    !                                    -invrs_dzt(k)*(var_zm(k)-var_zm(k-1)) ) }
-    !                -invrs_dzt(k)*{ invrs_dzm(k)*( invrs_dzt(k+1)*(var_zm(k+1)-var_zm(k))
-    !                                  -invrs_dzt(k)*(var_zm(k)-var_zm(k-1)) ) } ].
+    !    -nu*dzm(k)*[ dzt(k+1)*{ dzm(k+1)*( dzt(k+2)*(var_zm(k+2)-var_zm(k+1))
+    !                                      -dzt(k+1)*(var_zm(k+1)-var_zm(k)) )
+    !                           -dzm(k)*( dzt(k+1)*(var_zm(k+1)-var_zm(k))
+    !                                    -dzt(k)*(var_zm(k)-var_zm(k-1)) ) }
+    !                -dzt(k)*{ dzm(k)*( dzt(k+1)*(var_zm(k+1)-var_zm(k))
+    !                                  -dzt(k)*(var_zm(k)-var_zm(k-1)) ) } ].
     !
     !    Again, the term is treated completely implicitly, so the leading "-"
     !    sign changes to a "+" sign when the term is brought over to the
@@ -1109,11 +1117,10 @@ contains
     ! matrix notation (where "i" stands for the matrix column and "j" stands for
     ! the matrix row):
     !
-    !  0 = Sum_j Sum_i ( 1/invrs_dzm )_i 
-    !                          ( nu*invrs_dzm*invrs_dzt*invrs_dzm*invrs_dzt )_ij (var_zm)_j.
+    !  0 = Sum_j Sum_i ( 1/dzm )_i ( nu*dzm*dzt*dzm*dzt )_ij (var_zm)_j.
     !
-    ! The left-hand side matrix, ( nu*invrs_dzm*invrs_dzt*invrs_dzm*invrs_dzt )_ij, is partially 
-    ! written below.  The sum over i in the above equation removes the first invrs_dzm(k)
+    ! The left-hand side matrix, ( nu*dzm*dzt*dzm*dzt )_ij, is partially written
+    ! below.  The sum over i in the above equation removes the first dzm(k)
     ! everywhere from the matrix below.  The sum over j leaves the column totals
     ! that are desired.
     !
@@ -1123,73 +1130,73 @@ contains
     !         column 1    ||    column 2    ||    column 3    ||    column 4    ||    column 5
     !    ------------------------------------------------------------------------------------------>
     !   | +nu             -nu               +nu
-    !   | *invrs_dzm(k)         *invrs_dzm(k)           *invrs_dzm(k)
-    !   |  *[ invrs_dzt(k+1)     *[ invrs_dzt(k+1)       *invrs_dzt(k+1)
-    !   |     *{ invrs_dzm(k+1)     *{ invrs_dzm(k+1)     *invrs_dzm(k+1)
-    !k=1|        *invrs_dzt(k+1)       *( invrs_dzt(k+2)   *invrs_dzt(k+2)         0            0
-    !   |       +invrs_dzm(k)            +invrs_dzt(k+1) )
-    !   |        *invrs_dzt(k+1) }    +invrs_dzm(k)
-    !   |   ]                    *invrs_dzt(k+1) } ]
+    !   | *dzm(k)         *dzm(k)           *dzm(k)
+    !   |  *[ dzt(k+1)     *[ dzt(k+1)       *dzt(k+1)
+    !   |     *{ dzm(k+1)     *{ dzm(k+1)     *dzm(k+1)
+    !k=1|        *dzt(k+1)       *( dzt(k+2)   *dzt(k+2)               0                  0
+    !   |       +dzm(k)            +dzt(k+1) )
+    !   |        *dzt(k+1) }    +dzm(k)
+    !   |   ]                    *dzt(k+1) } ]
     !   |
-    !   | -nu                 +nu                     -nu                     +nu
-    !   | *invrs_dzm(k)       *invrs_dzm(k)           *invrs_dzm(k)           *invrs_dzm(k)
-    !   |  *[ invrs_dzt(k+1)   *[ invrs_dzt(k+1)       *[ invrs_dzt(k+1)       *invrs_dzt(k+1)
-    !   |     *invrs_dzm(k)       *{ invrs_dzm(k+1)       *{ invrs_dzm(k+1)     *invrs_dzm(k+1)
-    !   |      *invrs_dzt(k)         *invrs_dzt(k+1)         *( invrs_dzt(k+2)   *invrs_dzt(k+2)
-    !   |    +invrs_dzt(k)          +invrs_dzm(k)              +invrs_dzt(k+1) )
-    !k=2|     *{ invrs_dzm(k)        *( invrs_dzt(k+1)      +invrs_dzm(k)                         0
-    !   |        *invrs_dzt(k)         +invrs_dzt(k) ) }     *invrs_dzt(k+1) }
-    !   |       +invrs_dzm(k-1)  +invrs_dzt(k)           +invrs_dzt(k)
-    !   |        *invrs_dzt(k) } ]  *{ invrs_dzm(k)         *invrs_dzm(k)
-    !   |                           *( invrs_dzt(k+1)     *invrs_dzt(k+1) ]
-    !   |                            +invrs_dzt(k) )
-    !   |                         +invrs_dzm(k-1)
-    !   |                          *invrs_dzt(k) } ]
+    !   | -nu             +nu               -nu               +nu
+    !   | *dzm(k)         *dzm(k)           *dzm(k)           *dzm(k)
+    !   |  *[ dzt(k+1)     *[ dzt(k+1)       *[ dzt(k+1)       *dzt(k+1)
+    !   |     *dzm(k)         *{ dzm(k+1)       *{ dzm(k+1)     *dzm(k+1)
+    !   |      *dzt(k)           *dzt(k+1)         *( dzt(k+2)   *dzt(k+2)
+    !   |    +dzt(k)            +dzm(k)              +dzt(k+1) )
+    !k=2|     *{ dzm(k)          *( dzt(k+1)      +dzm(k)                                 0
+    !   |        *dzt(k)           +dzt(k) ) }     *dzt(k+1) }
+    !   |       +dzm(k-1)    +dzt(k)           +dzt(k)
+    !   |        *dzt(k) } ]  *{ dzm(k)         *dzm(k)
+    !   |                        *( dzt(k+1)     *dzt(k+1) ]
+    !   |                          +dzt(k) )
+    !   |                       +dzm(k-1)
+    !   |                        *dzt(k) } ]
     !   |
     !   | +nu             -nu               +nu               -nu               +nu
-    !   | *invrs_dzm(k)   *invrs_dzm(k)     *invrs_dzm(k)     *invrs_dzm(k)     *invrs_dzm(k)
-    !   |  *invrs_dzt(k)   *[ invrs_dzt(k+1) *[ invrs_dzt(k+1)  *[ invrs_dzt(k+1)  *invrs_dzt(k+1)
-    !   |   *invrs_dzm(k-1)  *invrs_dzm(k)    *{ invrs_dzm(k+1)  *{ invrs_dzm(k+1)  *invrs_dzm(k+1)
-    !   |    *invrs_dzt(k-1)  *invrs_dzt(k)     *invrs_dzt(k+1)   *( invrs_dzt(k+2)  *invrs_dzt(k+2)
-    !   |                      +invrs_dzt(k)      +invrs_dzm(k)     +invrs_dzt(k+1) )
-    !k=3|                     *{ invrs_dzm(k)      *( invrs_dzt(k+1)   +invrs_dzm(k)
-    !   |                        *invrs_dzt(k)       +invrs_dzt(k) ) }  *invrs_dzt(k+1) }
-    !   |                       +invrs_dzm(k-1)      +invrs_dzt(k)        +invrs_dzt(k)
-    !   |                        *( invrs_dzt(k)      *{ invrs_dzm(k)       *invrs_dzm(k)
-    !   |                          +invrs_dzt(k-1) )    *( invrs_dzt(k+1)    *invrs_dzt(k+1) ]
-    !   |                      } ]                       +invrs_dzt(k) )
-    !   |                                                 +invrs_dzm(k-1)
-    !   |                                                  *invrs_dzt(k) } ]
+    !   | *dzm(k)         *dzm(k)           *dzm(k)           *dzm(k)           *dzm(k)
+    !   |  *dzt(k)         *[ dzt(k+1)       *[ dzt(k+1)       *[ dzt(k+1)       *dzt(k+1)
+    !   |   *dzm(k-1)         *dzm(k)           *{ dzm(k+1)       *{ dzm(k+1)     *dzm(k+1)
+    !   |    *dzt(k-1)         *dzt(k)             *dzt(k+1)         *( dzt(k+2)   *dzt(k+2)
+    !   |                    +dzt(k)              +dzm(k)              +dzt(k+1) )
+    !k=3|                     *{ dzm(k)            *( dzt(k+1)      +dzm(k)
+    !   |                        *dzt(k)             +dzt(k) ) }     *dzt(k+1) }
+    !   |                       +dzm(k-1)      +dzt(k)           +dzt(k)
+    !   |                        *( dzt(k)      *{ dzm(k)         *dzm(k)
+    !   |                          +dzt(k-1) )     *( dzt(k+1)     *dzt(k+1) ]
+    !   |                      } ]                   +dzt(k) )
+    !   |                                         +dzm(k-1)
+    !   |                                          *dzt(k) } ]
     !   |
-    !   |            +nu               -nu               +nu                 -nu
-    !   |            *invrs_dzm(k)     *invrs_dzm(k)     *invrs_dzm(k)       *invrs_dzm(k)
-    !   |             *invrs_dzt(k)     *[ invrs_dzt(k+1)  *[ invrs_dzt(k+1)   *[ invrs_dzt(k+1)
-    !   |              *invrs_dzm(k-1)   *invrs_dzm(k)      *{ invrs_dzm(k+1)   *{ invrs_dzm(k+1)
-    !   |               *invrs_dzt(k-1)   *invrs_dzt(k)      *invrs_dzt(k+1)    *( invrs_dzt(k+2)
-    !   |                                  +invrs_dzt(k)      +invrs_dzm(k)       +invrs_dzt(k+1) )
-    !k=4|     0                            *{ invrs_dzm(k)     *( invrs_dzt(k+1)   +invrs_dzm(k)
-    !   |                                  *invrs_dzt(k)       +invrs_dzt(k) ) }   *invrs_dzt(k+1) }
-    !   |                                  +invrs_dzm(k-1)     +invrs_dzt(k)       +invrs_dzt(k)
-    !   |                                  *( invrs_dzt(k)     *{ invrs_dzm(k)     *invrs_dzm(k)
-    !   |                                  +invrs_dzt(k-1) )   *( invrs_dzt(k+1)   *invrs_dzt(k+1) ]
-    !   |                                   } ]                +invrs_dzt(k) )
-    !   |                                                      +invrs_dzm(k-1)
-    !   |                                                      *invrs_dzt(k) } ]
+    !   |                 +nu               -nu               +nu               -nu
+    !   |                 *dzm(k)           *dzm(k)           *dzm(k)           *dzm(k)
+    !   |                  *dzt(k)           *[ dzt(k+1)       *[ dzt(k+1)       *[ dzt(k+1)
+    !   |                   *dzm(k-1)           *dzm(k)           *{ dzm(k+1)       *{ dzm(k+1)
+    !   |                    *dzt(k-1)           *dzt(k)             *dzt(k+1)         *( dzt(k+2)
+    !   |                                      +dzt(k)              +dzm(k)              +dzt(k+1) )
+    !k=4|        0                              *{ dzm(k)            *( dzt(k+1)      +dzm(k)
+    !   |                                          *dzt(k)             +dzt(k) ) }     *dzt(k+1) }
+    !   |                                         +dzm(k-1)      +dzt(k)           +dzt(k)
+    !   |                                          *( dzt(k)      *{ dzm(k)         *dzm(k)
+    !   |                                            +dzt(k-1) )     *( dzt(k+1)     *dzt(k+1) ]
+    !   |                                        } ]                   +dzt(k) )
+    !   |                                                           +dzm(k-1)
+    !   |                                                            *dzt(k) } ]
     !   |
-    !   |                            +nu               -nu                +nu
-    !   |                            *invrs_dzm(k)     *invrs_dzm(k)      *invrs_dzm(k)
-    !   |                             *invrs_dzt(k)     *[ invrs_dzt(k+1)  *[ invrs_dzt(k+1)
-    !   |                              *invrs_dzm(k-1)    *invrs_dzm(k)      *{ invrs_dzm(k+1)
-    !   |                               *invrs_dzt(k-1)    *invrs_dzt(k)      *invrs_dzt(k+1)
-    !   |                                                  +invrs_dzt(k)       +invrs_dzm(k)
-    !k=5|     0           0                                *{ invrs_dzm(k)      *( invrs_dzt(k+1)
-    !   |                                                  *invrs_dzt(k)         +invrs_dzt(k) ) }
-    !   |                                                  +invrs_dzm(k-1)        +invrs_dzt(k)
-    !   |                                                  *( invrs_dzt(k)        *{ invrs_dzm(k)
-    !   |                                                  +invrs_dzt(k-1) )      *( invrs_dzt(k+1)
-    !   |                                                  } ]                    +invrs_dzt(k) )
-    !   |                                                                         +invrs_dzm(k-1)
-    !   |                                                                         *invrs_dzt(k) } ]
+    !   |                                   +nu               -nu               +nu
+    !   |                                   *dzm(k)           *dzm(k)           *dzm(k)
+    !   |                                    *dzt(k)           *[ dzt(k+1)       *[ dzt(k+1)
+    !   |                                     *dzm(k-1)           *dzm(k)           *{ dzm(k+1)
+    !   |                                      *dzt(k-1)           *dzt(k)             *dzt(k+1)
+    !   |                                                        +dzt(k)              +dzm(k)
+    !k=5|        0                  0                             *{ dzm(k)            *( dzt(k+1)
+    !   |                                                            *dzt(k)             +dzt(k) ) }
+    !   |                                                           +dzm(k-1)      +dzt(k)
+    !   |                                                            *( dzt(k)      *{ dzm(k)
+    !   |                                                              +dzt(k-1) )     *( dzt(k+1)
+    !   |                                                          } ]                   +dzt(k) )
+    !   |                                                                             +dzm(k-1)
+    !   |                                                                              *dzt(k) } ]
     !  \ /
     !
     ! Note:  The super-super diagonal term from level 4 and both the super
@@ -1211,18 +1218,18 @@ contains
     !    ------------------------------------------------------------------------------------------>
     !k=1|        0                 0                 0                 0                  0
     !   |
-    !   | -nu                +nu                    -nu                   +nu
-    !   | *invrs_dzm(k)       *invrs_dzm(k)         *invrs_dzm(k)         *invrs_dzm(k)
-    !   |  *[ invrs_dzt(k+1)   *[ invrs_dzt(k+1)     *[ invrs_dzt(k+1)     *invrs_dzt(k+1)
-    !   |     *invrs_dzm(k)      *{ invrs_dzm(k+1)    *{ invrs_dzm(k+1)     *invrs_dzm(k+1)
-    !   |      *invrs_dzt(k)       *invrs_dzt(k+1)     *( invrs_dzt(k+2)      *invrs_dzt(k+2)
-    !k=2|    +invrs_dzt(k)          +invrs_dzm(k)       +invrs_dzt(k+1) )                       0
-    !   |     *invrs_dzm(k)          *( invrs_dzt(k+1)    +invrs_dzm(k)
-    !   |      *invrs_dzt(k) ]        +invrs_dzt(k) ) }     *invrs_dzt(k+1) }
-    !   |                         +invrs_dzt(k)           +invrs_dzt(k)
-    !   |                          *invrs_dzm(k)           *invrs_dzm(k)
-    !   |                           *( invrs_dzt(k+1)       *invrs_dzt(k+1) ]
-    !   |                             +invrs_dzt(k) ) ]
+    !   | -nu             +nu               -nu               +nu
+    !   | *dzm(k)         *dzm(k)           *dzm(k)           *dzm(k)
+    !   |  *[ dzt(k+1)     *[ dzt(k+1)       *[ dzt(k+1)       *dzt(k+1)
+    !   |     *dzm(k)         *{ dzm(k+1)       *{ dzm(k+1)     *dzm(k+1)
+    !   |      *dzt(k)           *dzt(k+1)         *( dzt(k+2)   *dzt(k+2)
+    !k=2|    +dzt(k)            +dzm(k)              +dzt(k+1) )                          0
+    !   |     *dzm(k)            *( dzt(k+1)      +dzm(k)
+    !   |      *dzt(k) ]           +dzt(k) ) }     *dzt(k+1) }
+    !   |                    +dzt(k)           +dzt(k)
+    !   |                     *dzm(k)           *dzm(k)
+    !   |                      *( dzt(k+1)       *dzt(k+1) ]
+    !   |                        +dzt(k) ) ]
     !  \ /
     !
     ! For the left-hand side matrix as a whole, the matrix entries at level 1
