@@ -502,6 +502,12 @@ module advance_windm_edsclrm_module
   subroutine windm_edsclrm_solve( nrhs, ixm_matrix_condt_num, &
                                   lhs, rhs, solution, err_code )
 
+    ! Note:  In the "Description" section of this subroutine, the variable
+    !        "invrs_dzm" will be written as simply "dzm", and the variable
+    !        "invrs_dzt" will be written as simply "dzt".  This is being done as
+    !        as device to save space and to make some parts of the description
+    !        more readable.  This change does not pertain to the actual code.
+
     ! Description:
     ! Solves the horizontal wind or eddy-scalar time-tendency equation, and
     ! diagnoses the turbulent flux.  A Crank-Nicholson time-stepping algorithm
@@ -561,17 +567,17 @@ module advance_windm_edsclrm_module
     ! The letter "t" is used for thermodynamic levels and the letter "m" is used
     ! for momentum levels.
     !
-    ! invrs_dzt(k)   = 1 / ( zm(k) - zm(k-1) )
-    ! invrs_dzm(k)   = 1 / ( zt(k+1) - zt(k) )
-    ! invrs_dzm(k-1) = 1 / ( zt(k) - zt(k-1) )
+    ! dzt(k)   = 1 / ( zm(k) - zm(k-1) )
+    ! dzm(k)   = 1 / ( zt(k+1) - zt(k) )
+    ! dzm(k-1) = 1 / ( zt(k) - zt(k-1) )
     !
     ! The vertically discretized form of the turbulent advection term (treated
     ! as an eddy diffusion term) is written out as:
     !
     ! + invrs_rho_ds_zt(k)
-    !   * invrs_dzt(k)
-    !     * [   rho_ds_zm(k) * K_zm(k) * invrs_dzm(k) * ( xm(k+1) - xm(k) )
-    !         - rho_ds_zm(k-1) * K_zm(k-1) * invrs_dzm(k-1) * ( xm(k) - xm(k-1) ) ].
+    !   * dzt(k)
+    !     * [   rho_ds_zm(k) * K_zm(k) * dzm(k) * ( xm(k+1) - xm(k) )
+    !         - rho_ds_zm(k-1) * K_zm(k-1) * dzm(k-1) * ( xm(k) - xm(k-1) ) ].
     !
     ! For this equation, a Crank-Nicholson (semi-implicit) diffusion scheme is
     ! used to solve the (1/rho_ds) * d [ rho_ds * K_zm * d(xm)/dz ] / dz
@@ -579,11 +585,11 @@ module advance_windm_edsclrm_module
     ! written out as:
     !
     ! + (1/2) * invrs_rho_ds_zt(k)
-    !   * invrs_dzt(k)
+    !   * dzt(k)
     !     * [   rho_ds_zm(k) * K_zm(k)
-    !           * invrs_dzm(k) * ( xm(k+1,<t+1>) - xm(k,<t+1>) )
+    !           * dzm(k) * ( xm(k+1,<t+1>) - xm(k,<t+1>) )
     !         - rho_ds_zm(k-1) * K_zm(k-1)
-    !           * invrs_dzm(k-1) * ( xm(k,<t+1>) - xm(k-1,<t+1>) ) ].
+    !           * dzm(k-1) * ( xm(k,<t+1>) - xm(k-1,<t+1>) ) ].
     !
     ! Note:  When the implicit term is brought over to the left-hand side,
     !        the sign is reversed and the leading "+" in front of the term
@@ -592,11 +598,11 @@ module advance_windm_edsclrm_module
     ! The discretized explicit portion of the term is written out as:
     !
     ! + (1/2) * invrs_rho_ds_zt(k)
-    !   * invrs_dzt(k)
+    !   * dzt(k)
     !     * [   rho_ds_zm(k) * K_zm(k)
-    !           * invrs_dzm(k) * ( xm(k+1,<t>) - xm(k,<t>) )
+    !           * dzm(k) * ( xm(k+1,<t>) - xm(k,<t>) )
     !         - rho_ds_zm(k-1) * K_zm(k-1)
-    !           * invrs_dzm(k-1) * ( xm(k,<t>) - xm(k-1,<t>) ) ].
+    !           * dzm(k-1) * ( xm(k,<t>) - xm(k-1,<t>) ) ].
     !
     ! Timestep index (t) stands for the index of the current timestep, while
     ! timestep index (t+1) stands for the index of the next timestep, which is
@@ -652,22 +658,22 @@ module advance_windm_edsclrm_module
     !    x'w'|_sfc, in place, is written out as:
     !
     !    - invrs_rho_ds_zt(2)
-    !      * invrs_dzt(2) * [ rho_ds_zm(2) * x'w'(2) - rho_ds_zm(1) * x'w'|_sfc ];
+    !      * dzt(2) * [ rho_ds_zm(2) * x'w'(2) - rho_ds_zm(1) * x'w'|_sfc ];
     !
     !    which can be re-written as:
     !
     !    + invrs_rho_ds_zt(2)
-    !      * invrs_dzt(2)
-    !        * [   rho_ds_zm(2) * K_zm(2) * invrs_dzm(2) * ( xm(3) - xm(2) )
+    !      * dzt(2)
+    !        * [   rho_ds_zm(2) * K_zm(2) * dzm(2) * ( xm(3) - xm(2) )
     !            + rho_ds_zm(1) * x'w'|_sfc ];
     !
     !    which can be re-written again as:
     !
     !    + invrs_rho_ds_zt(2)
-    !      * invrs_dzt(2)
-    !        * rho_ds_zm(2) * K_zm(2) * invrs_dzm(2) * ( xm(3) - xm(2) )
+    !      * dzt(2)
+    !        * rho_ds_zm(2) * K_zm(2) * dzm(2) * ( xm(3) - xm(2) )
     !    + invrs_rho_ds_zt(2)
-    !      * invrs_dzt(2)
+    !      * dzt(2)
     !        * rho_ds_zm(1) * x'w'|_sfc.
     !
     !    For this equation, a Crank-Nicholson (semi-implicit) diffusion scheme
@@ -676,9 +682,9 @@ module advance_windm_edsclrm_module
     !    written out as:
     !
     !    + (1/2) * invrs_rho_ds_zt(2)
-    !      * invrs_dzt(2)
+    !      * dzt(2)
     !        * [ rho_ds_zm(2) * K_zm(2)
-    !            * invrs_dzm(2) * ( xm(3,<t+1>) - xm(2,<t+1>) ) ].
+    !            * dzm(2) * ( xm(3,<t+1>) - xm(2,<t+1>) ) ].
     !
     !    Note:  When the implicit term is brought over to the left-hand side,
     !           the sign is reversed and the leading "+" in front of the term
@@ -687,11 +693,11 @@ module advance_windm_edsclrm_module
     !    The discretized explicit portion of the term is written out as:
     !
     !    + (1/2) * invrs_rho_ds_zt(2)
-    !      * invrs_dzt(2)
+    !      * dzt(2)
     !        * [ rho_ds_zm(2) * K_zm(2)
-    !            * invrs_dzm(2) * ( xm(3,<t>) - xm(2,<t>) ) ]
+    !            * dzm(2) * ( xm(3,<t>) - xm(2,<t>) ) ]
     !    + invrs_rho_ds_zt(2)
-    !      * invrs_dzt(2)
+    !      * dzt(2)
     !        * rho_ds_zm(1) * x'w'|_sfc.
     !
     !    Note:  The x'w'|_sfc portion of the term written above has been pulled
@@ -766,24 +772,24 @@ module advance_windm_edsclrm_module
     !    flux in place, is written out as:
     !
     !    - invrs_rho_ds_zt(2)
-    !      * invrs_dzt(2) * [ rho_ds_zm(2) * x'w'(2) - rho_ds_zm(1) * x'w'|_sfc ];
+    !      * dzt(2) * [ rho_ds_zm(2) * x'w'(2) - rho_ds_zm(1) * x'w'|_sfc ];
     !
     !    which can be re-written as:
     !
     !    - invrs_rho_ds_zt(2)
-    !      * invrs_dzt(2)
+    !      * dzt(2)
     !        * [   rho_ds_zm(2)
-    !              * { - K_zm(2) * invrs_dzm(2) * ( xm(3) - xm(2) ) }
+    !              * { - K_zm(2) * dzm(2) * ( xm(3) - xm(2) ) }
     !            - rho_ds_zm(1)
     !              * { - [ u_star^2 / sqrt( um(2)^2 + vm(2)^2 ) ] * xm(2) } ];
     !
     !    which can be re-written as:
     !
     !    + invrs_rho_ds_zt(2)
-    !      * invrs_dzt(2)
-    !        * rho_ds_zm(2) * K_zm(2) * invrs_dzm(2) * ( xm(3) - xm(2) )
+    !      * dzt(2)
+    !        * rho_ds_zm(2) * K_zm(2) * dzm(2) * ( xm(3) - xm(2) )
     !    - invrs_rho_ds_zt(2)
-    !      * invrs_dzt(2)
+    !      * dzt(2)
     !        * rho_ds_zm(1) * [ u_star^2 / sqrt( um(2)^2 + vm(2)^2 ) ] * xm(2).
     !
     !    For this equation, a Crank-Nicholson (semi-implicit) diffusion scheme
@@ -792,11 +798,11 @@ module advance_windm_edsclrm_module
     !    written out as:
     !
     !    + (1/2) * invrs_rho_ds_zt(2)
-    !      * invrs_dzt(2)
+    !      * dzt(2)
     !        * [ rho_ds_zm(2) * K_zm(2)
-    !            * invrs_dzm(2) * ( xm(3,<t+1>) - xm(2,<t+1>) ) ]
+    !            * dzm(2) * ( xm(3,<t+1>) - xm(2,<t+1>) ) ]
     !    - invrs_rho_ds_zt(2)
-    !      * invrs_dzt(2)
+    !      * dzt(2)
     !        * rho_ds_zm(1) 
     !        * [u_star^2/sqrt( um(2,<t>)^2 + vm(2,<t>)^2 )] * xm(2,<t+1>).
     !
@@ -814,9 +820,9 @@ module advance_windm_edsclrm_module
     !    The discretized explicit portion of the term is written out as:
     !
     !    + (1/2) * invrs_rho_ds_zt(2)
-    !      * invrs_dzt(2)
+    !      * dzt(2)
     !        * [ rho_ds_zm(2) * K_zm(2)
-    !            * invrs_dzm(2) * ( xm(3,<t>) - xm(2,<t>) ) ].
+    !            * dzm(2) * ( xm(3,<t>) - xm(2,<t>) ) ].
     !
     !    Timestep index (t) stands for the index of the current timestep, while
     !    timestep index (t+1) stands for the index of the next timestep, which
@@ -837,7 +843,7 @@ module advance_windm_edsclrm_module
     ! condition needs to be applied.  Thus, an adjuster will have to be used at
     ! level 2 to call diffusion_zt_lhs with level 1 as the input level (the last
     ! variable being passed in during the function call).  However, the other
-    ! variables passed in (rho_ds_zm*K_zm, gr%invrs_dzt, and gr%invrs_dzm variables) will
+    ! variables passed in (rho_ds_zm*K_zm, gr%dzt, and gr%dzm variables) will
     ! have to be passed in as solving for level 2.
     !
     ! The value of xm(1) is located below the model surface and does not effect
@@ -871,13 +877,13 @@ module advance_windm_edsclrm_module
     ! for the matrix column and "j" stands for the matrix row):
     !
     !  0 = Sum_j Sum_i
-    !       (rho_ds_zt)_i ( 1/invrs_dzt )_i
-    !       ( 0.5 * (1/rho_ds_zt) * invrs_dzt * (rho_ds_zm*K_zm*invrs_dzm) )_ij (xm<t+1>)_j.
+    !       (rho_ds_zt)_i ( 1/dzt )_i
+    !       ( 0.5 * (1/rho_ds_zt) * dzt * (rho_ds_zm*K_zm*dzm) )_ij (xm<t+1>)_j.
     !
     ! The left-hand side matrix,
-    ! ( 0.5 * (1/rho_ds_zt) * invrs_dzt * (rho_ds_zm*K_zm*invrs_dzm) )_ij, is partially
+    ! ( 0.5 * (1/rho_ds_zt) * dzt * (rho_ds_zm*K_zm*dzm) )_ij, is partially
     ! written below.  The sum over i in the above equation removes (1/rho_ds_zt)
-    ! and invrs_dzt everywhere from the matrix below.  The sum over j leaves the
+    ! and dzt everywhere from the matrix below.  The sum over j leaves the
     ! column totals that are desired, which are 0.
     !
     ! Left-hand side matrix contributions from the turbulent advection term
@@ -889,38 +895,38 @@ module advance_windm_edsclrm_module
     !    |
     !k=2 |  0   +0.5*                  -0.5*                                  0
     !    |        (1/rho_ds_zt(k))*      (1/rho_ds_zt(k))*
-    !    |        invrs_dzt(k)*                invrs_dzt(k)*
+    !    |        dzt(k)*                dzt(k)*
     !    |        rho_ds_zm(k)*          rho_ds_zm(k)*
-    !    |        K_zm(k)*invrs_dzm(k)         K_zm(k)*invrs_dzm(k)
+    !    |        K_zm(k)*dzm(k)         K_zm(k)*dzm(k)
     !    |
     !k=3 |  0   -0.5*                  +0.5*                      -0.5*
-    !    |        (1/rho_ds_zt(k))*       (1/rho_ds_zt(k))*          (1/rho_ds_zt(k))*
-    !    |        invrs_dzt(k)*                invrs_dzt(k)*                    invrs_dzt(k)*
-    !    |        rho_ds_zm(k-1)*         [ rho_ds_zm(k)*            rho_ds_zm(k)*
-    !    |        K_zm(k-1)*invrs_dzm(k-1)     K_zm(k)*invrs_dzm(k)           K_zm(k)*invrs_dzm(k)
+    !    |        (1/rho_ds_zt(k))*      (1/rho_ds_zt(k))*          (1/rho_ds_zt(k))*
+    !    |        dzt(k)*                dzt(k)*                    dzt(k)*
+    !    |        rho_ds_zm(k-1)*        [ rho_ds_zm(k)*            rho_ds_zm(k)*
+    !    |        K_zm(k-1)*dzm(k-1)       K_zm(k)*dzm(k)           K_zm(k)*dzm(k)
     !    |                                +rho_ds_zm(k-1)*
-    !    |                                 K_zm(k-1)*invrs_dzm(k-1) ]
+    !    |                                 K_zm(k-1)*dzm(k-1) ]
     !    |
     !k=4 |  0             0            -0.5*                      +0.5*
     !    |                               (1/rho_ds_zt(k))*          (1/rho_ds_zt(k))*
-    !    |                               invrs_dzt(k)*                    invrs_dzt(k)*
+    !    |                               dzt(k)*                    dzt(k)*
     !    |                               rho_ds_zm(k-1)*            [ rho_ds_zm(k)*
-    !    |                               K_zm(k-1)*invrs_dzm(k-1)           K_zm(k)*invrs_dzm(k)
+    !    |                               K_zm(k-1)*dzm(k-1)           K_zm(k)*dzm(k)
     !    |                                                           +rho_ds_zm(k-1)*
-    !    |                                                            K_zm(k-1)*invrs_dzm(k-1) ]
+    !    |                                                            K_zm(k-1)*dzm(k-1) ]
     !    |
     !k=5 |  0             0                        0              -0.5*
     !    |                                                          (1/rho_ds_zt(k))*
-    !    |                                                          invrs_dzt(k)*
+    !    |                                                          dzt(k)*
     !    |                                                          rho_ds_zm(k-1)*
-    !    |                                                          K_zm(k-1)*invrs_dzm(k-1)
+    !    |                                                          K_zm(k-1)*dzm(k-1)
     !   \ /
     !
     ! Note:  The superdiagonal term from level 4 and both the main diagonal and
     !        superdiagonal terms from level 5 are not shown on this diagram.
     !
     ! Note:  If an implicit momentum surface flux is used, an additional term,
-    !        + (1/rho_ds_zt(2)) * invrs_dzt(2) * rho_ds_zm(1)
+    !        + (1/rho_ds_zt(2)) * dzt(2) * rho_ds_zm(1)
     !          * [ u_star^2 / sqrt( um(2,<t>)^2 + vm(2,<t>)^2 ) ], is added to
     !        row 2 (k=2), column 2.
     !
@@ -930,10 +936,10 @@ module advance_windm_edsclrm_module
     ! and integrate vertically.  In discretized matrix notation (where "i"
     ! stands for the matrix column and "j" stands for the matrix row):
     !
-    !  0 = Sum_j Sum_i (rho_ds_zt)_i ( 1/invrs_dzt )_i ( rhs_vector )_j.
+    !  0 = Sum_j Sum_i (rho_ds_zt)_i ( 1/dzt )_i ( rhs_vector )_j.
     !
     ! The right-hand side vector, ( rhs_vector )_j, is partially written below.
-    ! The sum over i in the above equation removes (1/rho_ds_zt) and invrs_dzt
+    ! The sum over i in the above equation removes (1/rho_ds_zt) and dzt
     ! everywhere from the vector below.  The sum over j leaves the column total
     ! that is desired, which is 0.
     !
@@ -941,39 +947,39 @@ module advance_windm_edsclrm_module
     ! (treated as an eddy-diffusion term using a Crank-Nicholson timestep);
     ! first five vertical levels:
     !
-    !     --------------------------------------------------
-    !k=1 |                      0                           |
-    !    |                                                  |
-    !    |                                                  |
-    !k=2 | +0.5*(1/rho_ds_zt(k))*                           |
-    !    |      invrs_dzt(k)*                               |
-    !    |       [ rho_ds_zm(k)*K_zm(k)*                    |
-    !    |         invrs_dzm(k)*(xm(k+1,<t>)-xm(k,<t>)) ]   |
-    !    |                                                  |
-    !k=3 | +0.5*(1/rho_ds_zt(k))*                           |
-    !    |      invrs_dzt(k)*                               |
-    !    |       [ rho_ds_zm(k)*K_zm(k)*                    |
-    !    |         invrs_dzm(k)*(xm(k+1,<t>)-xm(k,<t>))     |
-    !    |        -rho_ds_zm(k-1)*K_zm(k-1)*                |
-    !    |         invrs_dzm(k-1)*(xm(k,<t>)-xm(k-1,<t>)) ] |
-    !    |                                                  |
-    !k=4 | +0.5*(1/rho_ds_zt(k))*                           |
-    !    |      invrs_dzt(k)*                               |
-    !    |       [ rho_ds_zm(k)*K_zm(k)*                    |
-    !    |         invrs_dzm(k)*(xm(k+1,<t>)-xm(k,<t>))     |
-    !    |        -rho_ds_zm(k-1)*K_zm(k-1)*                |
-    !    |         invrs_dzm(k-1)*(xm(k,<t>)-xm(k-1,<t>)) ] |
-    !    |                                                  |
-    !k=5 | +0.5*(1/rho_ds_zt(k))*                           |
-    !    |      invrs_dzt(k)*                               |
-    !    |       [ rho_ds_zm(k)*K_zm(k)*                    |
-    !    |         invrs_dzm(k)*(xm(k+1,<t>)-xm(k,<t>))     |
-    !    |        -rho_ds_zm(k-1)*K_zm(k-1)*                |
-    !    |         invrs_dzm(k-1)*(xm(k,<t>)-xm(k-1,<t>)) ] |
-    !   \ /                                                \ /
+    !     --------------------------------------------
+    !k=1 |                      0                     |
+    !    |                                            |
+    !    |                                            |
+    !k=2 | +0.5*(1/rho_ds_zt(k))*                     |
+    !    |      dzt(k)*                               |
+    !    |       [ rho_ds_zm(k)*K_zm(k)*              |
+    !    |         dzm(k)*(xm(k+1,<t>)-xm(k,<t>)) ]   |
+    !    |                                            |
+    !k=3 | +0.5*(1/rho_ds_zt(k))*                     |
+    !    |      dzt(k)*                               |
+    !    |       [ rho_ds_zm(k)*K_zm(k)*              |
+    !    |         dzm(k)*(xm(k+1,<t>)-xm(k,<t>))     |
+    !    |        -rho_ds_zm(k-1)*K_zm(k-1)*          |
+    !    |         dzm(k-1)*(xm(k,<t>)-xm(k-1,<t>)) ] |
+    !    |                                            |
+    !k=4 | +0.5*(1/rho_ds_zt(k))*                     |
+    !    |      dzt(k)*                               |
+    !    |       [ rho_ds_zm(k)*K_zm(k)*              |
+    !    |         dzm(k)*(xm(k+1,<t>)-xm(k,<t>))     |
+    !    |        -rho_ds_zm(k-1)*K_zm(k-1)*          |
+    !    |         dzm(k-1)*(xm(k,<t>)-xm(k-1,<t>)) ] |
+    !    |                                            |
+    !k=5 | +0.5*(1/rho_ds_zt(k))*                     |
+    !    |      dzt(k)*                               |
+    !    |       [ rho_ds_zm(k)*K_zm(k)*              |
+    !    |         dzm(k)*(xm(k+1,<t>)-xm(k,<t>))     |
+    !    |        -rho_ds_zm(k-1)*K_zm(k-1)*          |
+    !    |         dzm(k-1)*(xm(k,<t>)-xm(k-1,<t>)) ] |
+    !   \ /                                          \ /
     !
     ! Note:  If a generalized explicit surface flux is used, an additional term,
-    !        + (1/rho_ds_zt(2)) * invrs_dzt(2) * rho_ds_zm(1) * x'w'|_sfc, is added to
+    !        + (1/rho_ds_zt(2)) * dzt(2) * rho_ds_zm(1) * x'w'|_sfc, is added to
     !        row 2 (k=2).
     !
     ! Note:  Only the contributions by the turbulent advection term are shown
