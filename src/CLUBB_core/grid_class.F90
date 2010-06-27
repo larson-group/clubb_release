@@ -61,10 +61,14 @@ module grid_class
   !
   ! The variable zm(k) stands for the momentum level altitude at momentum
   ! level k; the variable zt(k) stands for the thermodynamic level altitude at
-  ! thermodynamic level k; the variable invrs_dzt(k) is the inverse distance between
-  ! momentum levels (over a central thermodynamic level k); and the variable
-  ! invrs_dzm(k) is the inverse distance between thermodynamic levels (over a central
-  ! momentum level k).
+  ! thermodynamic level k; the variable invrs_dzt(k) is the inverse distance
+  ! between momentum levels (over a central thermodynamic level k); and the
+  ! variable invrs_dzm(k) is the inverse distance between thermodynamic levels
+  ! (over a central momentum level k).  Please note that in the above diagram,
+  ! "invrs_dzt" is denoted "dzt", and "invrs_dzm" is denoted "dzm", such that
+  ! 1/dzt is the distance between successive momentum levels k-1 and k (over a
+  ! central thermodynamic level k), and 1/dzm is the distance between successive
+  ! thermodynamic levels k and k+1 (over a central momentum level k).
   !
   ! The grid setup is compatible with a stretched (unevely-spaced) grid.  Thus,
   ! the distance between successive grid levels may not always be constant.
@@ -171,9 +175,9 @@ module grid_class
       zt    ! Thermo grid
     real, pointer, dimension(:) :: &
       invrs_dzm, & ! The inverse spacing between thermodynamic grid
-      !        levels; centered over momentum grid levels.
+      !              levels; centered over momentum grid levels.
       invrs_dzt    ! The inverse spacing between momentum grid levels;
-      !        centered over thermodynamic grid levels.
+      !              centered over thermodynamic grid levels.
 
     ! These weights are normally used in situations
     ! where a momentum level variable is being 
@@ -643,8 +647,8 @@ module grid_class
     gr%invrs_dzm(gr%nnzp) = gr%invrs_dzm(gr%nnzp-1)
 
 
-    ! Define invrs_dzt, which is the inverse spacing between momentum grid levels;
-    ! centered over thermodynamic grid levels.
+    ! Define invrs_dzt, which is the inverse spacing between momentum grid
+    ! levels; centered over thermodynamic grid levels.
     do k=2,gr%nnzp
       gr%invrs_dzt(k) = 1. / ( gr%zm(k) - gr%zm(k-1) )
     enddo

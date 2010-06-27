@@ -188,8 +188,8 @@ module mean_adv
 
     ! Input Variables
     real, intent(in) :: & 
-      wm_zt,   & ! wm_zt(k)                        [m/s]
-      invrs_dzt        ! Inverse of grid spacing (k)     [1/m]
+      wm_zt,     & ! wm_zt(k)                        [m/s]
+      invrs_dzt    ! Inverse of grid spacing (k)     [1/m]
 
     integer, intent(in) :: & 
       level ! Central thermodynamic level (on which calculation occurs).
@@ -243,7 +243,7 @@ module mean_adv
       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
       lhs(k_tdiag) & 
       = + wm_zt * invrs_dzt * (   gr%weights_zt2zm(t_below,mk) & 
-                          - gr%weights_zt2zm(t_above,mkm1)   )
+                                - gr%weights_zt2zm(t_above,mkm1)   )
 
       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
       lhs(km1_tdiag) & 
@@ -266,12 +266,12 @@ module mean_adv
          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
          lhs(k_tdiag) & 
          = + wm_zt * invrs_dzt * (   gr%weights_zt2zm(t_above,mk) &
-                             - gr%weights_zt2zm(t_above,mkm1)   )
+                                   - gr%weights_zt2zm(t_above,mkm1)   )
 
          ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
          lhs(km1_tdiag) & 
          = + wm_zt * invrs_dzt * (   gr%weights_zt2zm(t_below,mk) &
-                             - gr%weights_zt2zm(t_below,mkm1)   )
+                                   - gr%weights_zt2zm(t_below,mkm1)   )
 
       else
 
@@ -373,8 +373,8 @@ module mean_adv
 
     ! Input Variables
     real, intent(in) :: & 
-      wm_zm,   & ! wm_zm(k)                        [m/s]
-      invrs_dzm        ! Inverse of grid spacing (k)     [1/m]
+      wm_zm,     & ! wm_zm(k)                        [m/s]
+      invrs_dzm    ! Inverse of grid spacing (k)     [1/m]
 
     integer, intent(in) :: & 
       level ! Central momentum level (on which calculation occurs).
@@ -423,7 +423,7 @@ module mean_adv
       ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
       lhs(k_mdiag) & 
       = + wm_zm * invrs_dzm * (   gr%weights_zm2zt(m_below,tkp1) & 
-                          - gr%weights_zm2zt(m_above,tk)  )
+                                - gr%weights_zm2zt(m_above,tk)  )
 
       ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
       lhs(km1_mdiag) & 

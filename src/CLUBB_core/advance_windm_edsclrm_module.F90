@@ -1298,7 +1298,8 @@ module advance_windm_edsclrm_module
 
       end select
 
-      xm_tndcy(1:gr%nnzp) = xm_gf(1:gr%nnzp) + xm_cf(1:gr%nnzp) + xm_forcing(1:gr%nnzp)
+      xm_tndcy(1:gr%nnzp) = xm_gf(1:gr%nnzp) + xm_cf(1:gr%nnzp)  &
+                            + xm_forcing(1:gr%nnzp)
 
       if ( l_stats_samp ) then
 
@@ -1442,7 +1443,8 @@ module advance_windm_edsclrm_module
       + 0.5 * invrs_rho_ds_zt(k)  &
       * diffusion_zt_lhs( rho_ds_zm(k) * Kh_zm(k),  &
                           rho_ds_zm(km1) * Kh_zm(km1), 0.0,  &
-                          gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), diff_k_in )
+                          gr%invrs_dzm(km1), gr%invrs_dzm(k),  &
+                          gr%invrs_dzt(k), diff_k_in )
 
       ! LHS time tendency.
       lhs(k_tdiag,k)  &
@@ -1471,7 +1473,8 @@ module advance_windm_edsclrm_module
           = 0.5 * invrs_rho_ds_zt(k)  &
           * diffusion_zt_lhs( rho_ds_zm(k) * Kh_zm(k),  &
                               rho_ds_zm(km1) * Kh_zm(km1), 0.0,  &
-                              gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), diff_k_in )
+                              gr%invrs_dzm(km1), gr%invrs_dzm(k),  &
+                              gr%invrs_dzt(k), diff_k_in )
           ztscr04(k) = -tmp(3)
           ztscr05(k) = -tmp(2)
           ztscr06(k) = -tmp(1)
@@ -1643,7 +1646,8 @@ module advance_windm_edsclrm_module
       = 0.5 * invrs_rho_ds_zt(k)  &
       * diffusion_zt_lhs( rho_ds_zm(k) * Kh_zm(k),  &
                           rho_ds_zm(km1) * Kh_zm(km1), 0.0,  &
-                          gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), diff_k_in )
+                          gr%invrs_dzm(km1), gr%invrs_dzm(k),  &
+                          gr%invrs_dzt(k), diff_k_in )
       rhs(k)   =   rhs(k) & 
                  - rhs_diff(3) * xm(km1) &
                  - rhs_diff(2) * xm(k)   &
@@ -1735,7 +1739,8 @@ module advance_windm_edsclrm_module
     = 0.5 * invrs_rho_ds_zt(k)  &
     * diffusion_zt_lhs( rho_ds_zm(k) * Kh_zm(k),  &
                         rho_ds_zm(km1) * Kh_zm(km1), 0.0,  &
-                        gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
+                        gr%invrs_dzm(km1), gr%invrs_dzm(k),  &
+                        gr%invrs_dzt(k), k )
     rhs(k)   =   rhs(k) &
                - rhs_diff(3) * xm(km1) &
                - rhs_diff(2) * xm(k)
@@ -1780,10 +1785,11 @@ module advance_windm_edsclrm_module
 
     ! Input variables
     real, intent(in) :: &
-      Kh_zm, & ! Eddy diff. (k momentum level)                 [m^2/s]
-      xm,    & ! x (k thermo level)                            [units vary]
-      xmp1,  & ! x (k+1 thermo level)                          [units vary]
-      invrs_dzm      ! Inverse of the grid spacing (k thermo level)  [1/m]
+      Kh_zm,     & ! Eddy diff. (k momentum level)                 [m^2/s]
+      xm,        & ! x (k thermo level)                            [units vary]
+      xmp1,      & ! x (k+1 thermo level)                          [units vary]
+      invrs_dzm    ! Inverse of the grid spacing (k thermo level)  [1/m]
+
     ! Output variable
     real :: &
       xpwp_fnc ! x'w'   [(units vary)(m/s)]
@@ -1796,7 +1802,6 @@ module advance_windm_edsclrm_module
 
     return
   end function xpwp_fnc
-
 
 !===============================================================================
 

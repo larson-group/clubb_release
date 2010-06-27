@@ -30,8 +30,9 @@ module diffusion
   contains
 
   !=============================================================================
-  pure function diffusion_zt_lhs( K_zm, K_zmm1, nu,  & 
-                                  invrs_dzmm1, invrs_dzm, invrs_dzt, level ) & 
+  pure function diffusion_zt_lhs( K_zm, K_zmm1, nu,  &
+                                  invrs_dzmm1, invrs_dzm,  &
+                                  invrs_dzt, level )  &
   result( lhs )
 
     ! Description:
@@ -487,7 +488,8 @@ module diffusion
 
   !=============================================================================
   pure function diffusion_zm_lhs( K_zt, K_ztp1, nu,  & 
-                                  invrs_dztp1, invrs_dzt, invrs_dzm, level ) & 
+                                  invrs_dztp1, invrs_dzt,  &
+                                  invrs_dzm, level )  &
   result( lhs )
 
     ! Description:
