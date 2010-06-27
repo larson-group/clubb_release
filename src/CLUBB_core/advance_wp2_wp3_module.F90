@@ -1103,11 +1103,14 @@ contains
       ! LHS 4th-order hyper-diffusion (4hd).
       if ( l_hyper_dfsn ) then
          ! Note:  w'^2 uses fixed-point boundary conditions.
-         lhs((/m_kp2_mdiag,m_kp1_mdiag,m_k_mdiag,m_km1_mdiag,m_km2_mdiag/),k_wp2) &
-         = lhs((/m_kp2_mdiag,m_kp1_mdiag,m_k_mdiag,m_km1_mdiag,m_km2_mdiag/),k_wp2) &
+         lhs( (/m_kp2_mdiag,m_kp1_mdiag,m_k_mdiag,m_km1_mdiag,m_km2_mdiag/), &
+              k_wp2 )  &
+         = lhs( (/m_kp2_mdiag,m_kp1_mdiag,m_k_mdiag,m_km1_mdiag,m_km2_mdiag/), &
+                k_wp2 )  &
          + hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd, gr%invrs_dzm(k),  &
-                                      gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(kp1),  &
-                                      gr%invrs_dzm(km1), gr%invrs_dzt(kp2), gr%invrs_dzt(km1), k )
+                                      gr%invrs_dzt(kp1), gr%invrs_dzt(k),     &
+                                      gr%invrs_dzm(kp1), gr%invrs_dzm(km1),   &
+                                      gr%invrs_dzt(kp2), gr%invrs_dzt(km1), k )
       endif
 
       if ( l_stats_samp ) then
@@ -1188,8 +1191,9 @@ contains
         if ( iwp2_4hd > 0 .and. l_hyper_dfsn ) then
           tmp(1:5) = &
           hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd, gr%invrs_dzm(k),  &
-                                     gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(kp1),  &
-                                     gr%invrs_dzm(km1), gr%invrs_dzt(kp2), gr%invrs_dzt(km1), k )
+                                     gr%invrs_dzt(kp1), gr%invrs_dzt(k),     &
+                                     gr%invrs_dzm(kp1), gr%invrs_dzm(km1),   &
+                                     gr%invrs_dzt(kp2), gr%invrs_dzt(km1), k )
           zmscr13(k) = -tmp(5)
           zmscr14(k) = -tmp(4)
           zmscr15(k) = -tmp(3)
@@ -1293,11 +1297,14 @@ contains
       ! LHS 4th-order hyper-diffusion (4hd).
       if ( l_hyper_dfsn ) then
          ! Note:  w'^3 uses fixed-point boundary conditions.
-         lhs((/t_kp2_tdiag,t_kp1_tdiag,t_k_tdiag,t_km1_tdiag,t_km2_tdiag/),k_wp3) &
-         = lhs((/t_kp2_tdiag,t_kp1_tdiag,t_k_tdiag,t_km1_tdiag,t_km2_tdiag/),k_wp3) &
+         lhs( (/t_kp2_tdiag,t_kp1_tdiag,t_k_tdiag,t_km1_tdiag,t_km2_tdiag/), &
+              k_wp3 )  &
+         = lhs( (/t_kp2_tdiag,t_kp1_tdiag,t_k_tdiag,t_km1_tdiag,t_km2_tdiag/), &
+                k_wp3 )  &
          + hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd, gr%invrs_dzt(k),  &
-                                      gr%invrs_dzm(k), gr%invrs_dzm(km1), gr%invrs_dzt(kp1),  &
-                                      gr%invrs_dzt(km1), gr%invrs_dzm(kp1), gr%invrs_dzm(km2), k )
+                                      gr%invrs_dzm(k), gr%invrs_dzm(km1),     &
+                                      gr%invrs_dzt(kp1), gr%invrs_dzt(km1),   &
+                                      gr%invrs_dzm(kp1), gr%invrs_dzm(km2), k )
       endif
 
       if (l_stats_samp) then
@@ -1409,8 +1416,9 @@ contains
         if ( iwp3_4hd > 0 .and. l_hyper_dfsn ) then
           tmp(1:5) = &
           hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd, gr%invrs_dzt(k),  &
-                                     gr%invrs_dzm(k), gr%invrs_dzm(km1), gr%invrs_dzt(kp1),  &
-                                     gr%invrs_dzt(km1), gr%invrs_dzm(kp1), gr%invrs_dzm(km2), k )
+                                     gr%invrs_dzm(k), gr%invrs_dzm(km1),     &
+                                     gr%invrs_dzt(kp1), gr%invrs_dzt(km1),   &
+                                     gr%invrs_dzm(kp1), gr%invrs_dzm(km2), k )
           ztscr17(k) = -tmp(5)
           ztscr18(k) = -tmp(4)
           ztscr19(k) = -tmp(3)
