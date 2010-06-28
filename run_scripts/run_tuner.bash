@@ -170,7 +170,14 @@ cp $RAND_SEED .
 #
 # Run tuner, don't keep a log
 # Note: Tuner code has option to save results to a file or not
- ../bin/clubb_tuner 
+ ../bin/clubb_tuner
+
+# copy the output files to a directory where they will not be erased
+# should only work for hoc_browser, but should not affect manual runs
+# aside from noting some cp errors -meyern
+cp ../input/tuning_run_results* /home/hoc_browser/tuner_output
+cp ../input/error_* /home/hoc_browser/tuner_output
+cp ../input/tunable_parameters_* /home/hoc_browser/tuner_output
 
 # Remove the temporary error.in file and the *_hoc.in file(s).
 rm -f 'error.in'
