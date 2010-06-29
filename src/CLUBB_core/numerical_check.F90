@@ -1063,8 +1063,8 @@ module numerical_check
     ! Return Variable
     real :: spurious_source
 !--------------------------------------------------------------------
-    spurious_source = integral_after - integral_before + & 
-                      dt * (flux_top - flux_sfc - integral_forcing)
+    spurious_source = (integral_after - integral_before) / dt & 
+                        + flux_top - flux_sfc - integral_forcing
                       
     return
 

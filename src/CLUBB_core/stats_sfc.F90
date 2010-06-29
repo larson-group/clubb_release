@@ -427,14 +427,14 @@ module stats_sfc
         irtm_spur_src = k
 
         call stat_assign(irtm_spur_src, "rtm_spur_src", & 
-             "rtm spurious source [kg/m^2]", "kg/m^2",sfc )
+             "rtm spurious source [kg/(m^2 s)]", "kg/(m^2 s)",sfc )
         k = k + 1
         
       case ('thlm_spur_src')
         ithlm_spur_src = k
 
         call stat_assign(ithlm_spur_src, "thlm_spur_src", & 
-             "thlm spurious source [(K kg) / m^2]", "(K kg) / m^2",sfc )
+             "thlm spurious source [(K kg) / (m^2 s)]", "(K kg) / (m^2 s)",sfc )
         k = k + 1
 
       case default
