@@ -542,10 +542,10 @@ contains
 
     ! Set logical to true for Crank-Nicholson diffusion scheme
     ! or to false for completely implicit diffusion scheme.
-    ! Note:  Although Crank-Nicholson diffusion has usually been used for wp2 and
-    !        wp3 in the past, we found that using completely implicit diffusion
-    !        stabilized the deep convective cases more while having almost no effect
-    !        on the boundary layer cases.  Brian; 1/4/2008.
+    ! Note:  Although Crank-Nicholson diffusion has usually been used for wp2
+    !        and wp3 in the past, we found that using completely implicit
+    !        diffusion stabilized the deep convective cases more while having
+    !        almost no effect on the boundary layer cases.  Brian; 1/4/2008.
 !    logical, parameter :: l_crank_nich_diff = .true.
     logical, parameter :: l_crank_nich_diff = .false.
 
@@ -1078,13 +1078,15 @@ contains
         = lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
         + (1.0/2.0) & 
         * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
-                            gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(k), k )
+                            gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
+                            gr%invrs_dzm(k), k )
       else
         ! Eddy diffusion for wp2 using a completely implicit time step.
         lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
         = lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
         + diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
-                            gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(k), k )
+                            gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
+                            gr%invrs_dzm(k), k )
       endif
 
       ! LHS pressure term 1 (pr1).
@@ -1133,12 +1135,14 @@ contains
             tmp(1:3) & 
             = (1.0/2.0) & 
             * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
-                              gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(k), k )
+                                gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
+                                gr%invrs_dzm(k), k )
           else
             ! Eddy diffusion for wp2 using a completely implicit time step.
             tmp(1:3) & 
             = diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
-                                gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(k), k )
+                                gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
+                                gr%invrs_dzm(k), k )
           endif
 
           zmscr02(k) = -tmp(3)
@@ -1284,14 +1288,16 @@ contains
         = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
         + C12 * (1.0/2.0) & 
         * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
-                            gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
+                            gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                            gr%invrs_dzt(k), k )
       else
         ! Eddy diffusion for wp3 using a completely implicit time step.
         lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
         = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
         + C12  & 
         * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
-                            gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
+                            gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                            gr%invrs_dzt(k), k )
       endif
 
       ! LHS 4th-order hyper-diffusion (4hd).
@@ -1398,13 +1404,15 @@ contains
             tmp(1:3) & 
             = C12 * (1.0/2.0) & 
             * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
-                                gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
+                                gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                                gr%invrs_dzt(k), k )
           else
             ! Eddy diffusion for wp3 using a completely implicit time step.
             tmp(1:3) & 
             = C12  & 
             * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
-                                gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
+                                gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                                gr%invrs_dzt(k), k )
           endif
 
           ztscr02(k) = -tmp(3)
@@ -1651,7 +1659,8 @@ contains
         rhs_diff(1:3) & 
         = (1.0/2.0) & 
         * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
-                            gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(k), k )
+                            gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
+                            gr%invrs_dzm(k), k )
         rhs(k_wp2)   =   rhs(k_wp2) & 
                        - rhs_diff(3) * wp2(km1) & 
                        - rhs_diff(2) * wp2(k) & 
@@ -1838,7 +1847,8 @@ contains
         rhs_diff(1:3) & 
         = C12 * (1.0/2.0) & 
         * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
-                            gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
+                            gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                            gr%invrs_dzt(k), k )
         rhs(k_wp3)   =   rhs(k_wp3) & 
                        - rhs_diff(3) * wp3(km1) & 
                        - rhs_diff(2) * wp3(k) & 
@@ -2072,7 +2082,7 @@ contains
       rho_ds_ztp1,     & ! Dry, static density at thermo. level (k+1)  [kg/m^3]
       rho_ds_zt,       & ! Dry, static density at thermo. level (k)    [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density @ moment. lev. (k) [m^3/kg]
-      invrs_dzm                ! Inverse of grid spacing (k)                 [1/m]
+      invrs_dzm          ! Inverse of grid spacing (k)                 [1/m]
 
     ! Return Variable
     real, dimension(2) :: lhs
@@ -2148,10 +2158,10 @@ contains
 
     ! Input Variables
     real, intent(in) :: & 
-      C5,      & ! Model parameter C_5                            [-]
-      wm_ztp1, & ! w wind component at thermodynamic levels (k+1) [m/s]
-      wm_zt,   & ! w wind component at thermodynamic levels (k)   [m/s]
-      invrs_dzm        ! Inverse of grid spacing (k)                    [1/m]
+      C5,        & ! Model parameter C_5                            [-]
+      wm_ztp1,   & ! w wind component at thermodynamic levels (k+1) [m/s]
+      wm_zt,     & ! w wind component at thermodynamic levels (k)   [m/s]
+      invrs_dzm    ! Inverse of grid spacing (k)                    [1/m]
 
     ! Return Variable
     real :: lhs
@@ -2416,7 +2426,7 @@ contains
       vpwp,      & ! v'w'(k)                                        [m^2/s^2]
       vmp1,      & ! vm(k+1)                                        [m/s]
       vm,        & ! vm(k)                                          [m/s]
-      invrs_dzm          ! Inverse of grid spacing (k)                    [1/m]
+      invrs_dzm    ! Inverse of grid spacing (k)                    [1/m]
 
     ! Return Variable
     real :: rhs
@@ -2647,7 +2657,7 @@ contains
       rho_ds_zmm1,        & ! Dry, static density at moment. lev (k-1) [kg/m^3]
       invrs_rho_ds_zt,    & ! Inv dry, static density @ thermo lev (k) [m^3/kg]
       const_three_halves, & ! "3/2" ("0" is sent in for wp3_ta budget) [-]
-      invrs_dzt                   ! Inverse of grid spacing (k)              [1/m]
+      invrs_dzt             ! Inverse of grid spacing (k)              [1/m]
 
     integer, intent(in) :: & 
       level ! Central thermodynamic level (on which calculation occurs).
@@ -2849,7 +2859,7 @@ contains
       C11_Skw_fnc,  & ! C_11 parameter with Sk_w applied (k)      [-]
       wm_zm,        & ! w wind component at momentum levels (k)   [m/s]
       wm_zmm1,      & ! w wind component at momentum levels (k-1) [m/s]
-      invrs_dzt             ! Inverse of grid spacing (k)               [1/m]
+      invrs_dzt       ! Inverse of grid spacing (k)               [1/m]
 
     ! Return Variable
     real :: lhs
@@ -3066,7 +3076,7 @@ contains
       rho_ds_zmm1,        & ! Dry, static density at moment. lev (k-1) [kg/m^3]
       invrs_rho_ds_zt,    & ! Inv dry, static density @ thermo lev (k) [m^3/kg]
       const_three_halves, & ! "3/2" ("0" is sent in for wp3_ta budget) [-]
-      invrs_dzt                   ! Inverse of grid spacing (k)              [1/m]
+      invrs_dzt             ! Inverse of grid spacing (k)              [1/m]
 
     ! Return Variable
     real :: rhs

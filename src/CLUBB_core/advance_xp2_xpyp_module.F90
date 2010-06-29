@@ -417,7 +417,7 @@ contains
                        wp2_zt, wp3, wprtp, wprtp_zt, &      ! Intent(in)
                        wprtp, wprtp_zt, rtm, rtm, rtp2, &   ! Intent(in)
                        rho_ds_zt, invrs_rho_ds_zm, &        ! Intent(in)
-                       C2rt_1d, tau_zm, rt_tol**2, beta, &   ! Intent(in)
+                       C2rt_1d, tau_zm, rt_tol**2, beta, &  ! Intent(in)
                        rhs )                                ! Intent(out)
 
     ! Solve the tridiagonal system
@@ -443,7 +443,7 @@ contains
                        wp2_zt, wp3, wpthlp, wpthlp_zt, &            ! Intent(in)
                        wpthlp, wpthlp_zt, thlm, thlm, thlp2, &      ! Intent(in)
                        rho_ds_zt, invrs_rho_ds_zm, &                ! Intent(in)
-                       C2thl_1d, tau_zm, thl_tol**2, beta, &         ! Intent(in)
+                       C2thl_1d, tau_zm, thl_tol**2, beta, &        ! Intent(in)
                        rhs )                                        ! Intent(out)
 
     ! Solve the tridiagonal system
@@ -527,17 +527,17 @@ contains
     ! Apply the positive definite scheme to variances
     if ( l_hole_fill ) then
       call pos_definite_variances( "rtp2", dt, rt_tol**2, &   ! Intent(in)
-                                   rho_ds_zm, rho_ds_zt, &   ! Intent(in)
-                                   rtp2 )                    ! Intent(inout)
+                                   rho_ds_zm, rho_ds_zt, &    ! Intent(in)
+                                   rtp2 )                     ! Intent(inout)
       call pos_definite_variances( "thlp2", dt, thl_tol**2, & ! Intent(in)
-                                   rho_ds_zm, rho_ds_zt, &   ! Intent(in)
-                                   thlp2 )                   ! Intent(inout)
+                                   rho_ds_zm, rho_ds_zt, &    ! Intent(in)
+                                   thlp2 )                    ! Intent(inout)
       call pos_definite_variances( "up2", dt, w_tol_sqd, &    ! Intent(in)
-                                   rho_ds_zm, rho_ds_zt, &   ! Intent(in)
-                                   up2 )                     ! Intent(inout)
+                                   rho_ds_zm, rho_ds_zt, &    ! Intent(in)
+                                   up2 )                      ! Intent(inout)
       call pos_definite_variances( "vp2", dt, w_tol_sqd, &    ! Intent(in)
-                                   rho_ds_zm, rho_ds_zt, &   ! Intent(in)
-                                   vp2 )                     ! Intent(inout)
+                                   rho_ds_zm, rho_ds_zt, &    ! Intent(in)
+                                   vp2 )                      ! Intent(inout)
     endif
 
 
@@ -641,13 +641,13 @@ contains
 
         !!!!!***** sclr'^2 *****!!!!!
 
-        call xp2_xpyp_rhs( "sclrp2", dt, l_iter, a1, a1_zt, &        ! Intent(in)
-                           wp2_zt, wp3, wpsclrp(:,i),  &             ! Intent(in)
-                           wpsclrp_zt, wpsclrp(:,i), wpsclrp_zt,  &  ! Intent(in)
-                           sclrm(:,i), sclrm(:,i), sclrp2(:,i), &    ! Intent(in)
-                           rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)
+        call xp2_xpyp_rhs( "sclrp2", dt, l_iter, a1, a1_zt, &         ! Intent(in)
+                           wp2_zt, wp3, wpsclrp(:,i),  &              ! Intent(in)
+                           wpsclrp_zt, wpsclrp(:,i), wpsclrp_zt,  &   ! Intent(in)
+                           sclrm(:,i), sclrm(:,i), sclrp2(:,i), &     ! Intent(in)
+                           rho_ds_zt, invrs_rho_ds_zm, &              ! Intent(in)
                            C2sclr_1d, tau_zm, sclr_tol(i)**2, beta, & ! Intent(in)
-                           sclr_rhs(:,i) )                           ! Intent(out)
+                           sclr_rhs(:,i) )                            ! Intent(out)
 
 
         !!!!!***** sclr'r_t' *****!!!!!
@@ -705,19 +705,19 @@ contains
       if ( l_hole_fill ) then
         do i = 1, sclr_dim, 1
           call pos_definite_variances( "sclrp2", dt, sclr_tol(i)**2, & ! Intent(in)
-                                       rho_ds_zm, rho_ds_zt, &        ! Intent(in)
-                                       sclrp2(:,i) )                  ! Intent(inout)
+                                       rho_ds_zm, rho_ds_zt, &         ! Intent(in)
+                                       sclrp2(:,i) )                   ! Intent(inout)
           if ( i == iisclr_rt ) then 
              ! Here again, we do this kluge here to make sclr'rt' == rt'^2
             call pos_definite_variances( "sclrprtp", dt, sclr_tol(i)**2, & ! Intent(in)
-                                         rho_ds_zm, rho_ds_zt, &          ! Intent(in)
-                                         sclrprtp(:,i) )                  ! Intent(inout)
+                                         rho_ds_zm, rho_ds_zt, &           ! Intent(in)
+                                         sclrprtp(:,i) )                   ! Intent(inout)
           end if
           if ( i == iisclr_thl ) then
             ! As with sclr'rt' above, but for sclr'thl'
             call pos_definite_variances( "sclrpthlp", dt, sclr_tol(i)**2, & ! Intent(in)
-                                         rho_ds_zm, rho_ds_zt, &           ! Intent(in)
-                                         sclrpthlp(:,i) )                  ! Intent(inout)
+                                         rho_ds_zm, rho_ds_zt, &            ! Intent(in)
+                                         sclrpthlp(:,i) )                   ! Intent(inout)
           end if
         enddo
       endif
@@ -997,7 +997,8 @@ contains
       lhs(kp1_mdiag:km1_mdiag,k)  & 
       = lhs(kp1_mdiag:km1_mdiag,k)  & 
       + diffusion_zm_lhs( Kw(k), Kw(kp1), nu, & 
-                          gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(k), k )
+                          gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
+                          gr%invrs_dzm(k), k )
 
       ! LHS time tendency.
       if ( l_iter ) then
@@ -1028,7 +1029,8 @@ contains
              iup2_dp2 + ivp2_dp2 > 0 ) then
           tmp(1:3) & 
           = diffusion_zm_lhs( Kw(k), Kw(kp1), nu, & 
-                              gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(k), k )
+                              gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
+                              gr%invrs_dzm(k), k )
           zmscr02(k) = -tmp(3)
           zmscr03(k) = -tmp(2)
           zmscr04(k) = -tmp(1)
@@ -2126,7 +2128,7 @@ contains
       a1_ztp1,         & ! a_1 interpolated to thermo. level (k+1)     [-]
       a1,              & ! a_1(k)                                      [-]
       a1_zt,           & ! a_1 interpolated to thermo. level (k)       [-]
-      invrs_dzm,             & ! Inverse of grid spacing                     [1/m]
+      invrs_dzm,       & ! Inverse of grid spacing                     [1/m]
       beta               ! Model parameter                             [-]
 
     integer, intent(in) :: & 
@@ -2344,7 +2346,7 @@ contains
       wpxbp_zt,        & ! w'x_b' interpolated to thermo. level (k)   [m/s {x_bm units}]
       wpxap_ztp1,      & ! w'x_a' interpolated to thermo. level (k+1) [m/s {x_am units}]
       wpxap_zt,        & ! w'x_a' interpolated to thermo. level (k)   [m/s {x_am units}]
-      invrs_dzm,             & ! Inverse of grid spacing                    [1/m]
+      invrs_dzm,       & ! Inverse of grid spacing                    [1/m]
       beta               ! Model parameter                            [-]
 
     ! Return Variable
@@ -2439,13 +2441,13 @@ contains
 
     ! Input variables
     real, intent(in) :: & 
-      xam,   & ! x_am(k)                     [{x_am units}]
-      xamp1, & ! x_am(k+1)                   [{x_am units}]
-      xbm,   & ! x_bm(k)                     [{x_bm units}]
-      xbmp1, & ! x_bm(k+1)                   [{x_bm units}]
-      wpxbp, & ! w'x_b'(k)                   [m/s {x_bm units}]
-      wpxap, & ! w'x_a'(k)                   [m/s {x_am units}]
-      invrs_dzm      ! Inverse of grid spacing (k) [1/m]
+      xam,       & ! x_am(k)                     [{x_am units}]
+      xamp1,     & ! x_am(k+1)                   [{x_am units}]
+      xbm,       & ! x_bm(k)                     [{x_bm units}]
+      xbmp1,     & ! x_bm(k+1)                   [{x_bm units}]
+      wpxbp,     & ! w'x_b'(k)                   [m/s {x_bm units}]
+      wpxap,     & ! w'x_a'(k)                   [m/s {x_am units}]
+      invrs_dzm    ! Inverse of grid spacing (k) [1/m]
 
     ! Return Variable
     real :: rhs
@@ -2746,7 +2748,7 @@ contains
       wpthvp,    & ! w'th_v'(k)                                     [m/K/s]
       upwp,      & ! u'w'(k)                                        [m^2/s^2]
       vpwp,      & ! v'w'(k)                                        [m^2/s^2]
-      invrs_dzm,       & ! Inverse of the grid spacing (k)                [1/m]
+      invrs_dzm, & ! Inverse of the grid spacing (k)                [1/m]
       Lscalep1,  & ! Mixing length (k+1)                            [m]
       Lscale,    & ! Mixing length (k)                              [m]
       wp2_ztp1,  & ! w'^2(k+1) (thermo. levels)                     [m^2/s^2]
@@ -3046,8 +3048,8 @@ contains
 
     if ( l_stats_samp ) then
       ! Store previous value for effect of the positive definite scheme
-      call stat_begin_update( ixp2_pd, real( xp2_np1 / dt ), &    ! Intent(in)
-                              zm )                                ! Intent(inout)
+      call stat_begin_update( ixp2_pd, real( xp2_np1 / dt ), &   ! Intent(in)
+                              zm )                               ! Intent(inout)
     endif
 
 

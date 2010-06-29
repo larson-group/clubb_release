@@ -395,11 +395,11 @@ module advance_xm_wpxp_module
 
       ! Compute the explicit portion of the r_t and w'r_t' equations.
       ! Build the right-hand side vector.
-      call xm_wpxp_rhs( "rtm", .true., dt, rtm, wprtp, rtm_forcing, &        ! Intent(in)
-                        C7_Skw_fnc, rtpthvp, C6rt_Skw_fnc, tau_zm, wp2, wp2_zt, & ! Intent(in)
-                        a1, a1_zt, wp3, rho_ds_zt, invrs_rho_ds_zm, &            ! Intent(in)
-                        thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &         ! Intent(in)
-                        rhs(:,1) )                                           ! Intent(out)
+      call xm_wpxp_rhs( "rtm", .true., dt, rtm, wprtp, rtm_forcing, &         ! Intent(in)
+                        C7_Skw_fnc, rtpthvp, C6rt_Skw_fnc, tau_zm, wp2, &     ! Intent(in)
+                        wp2_zt, a1, a1_zt, wp3, rho_ds_zt, invrs_rho_ds_zm, & ! Intent(in)
+                        thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &          ! Intent(in)
+                        rhs(:,1) )                                            ! Intent(out)
 
       ! Solve r_t / w'r_t'
       if ( l_stats_samp .and. irtm_matrix_condt_num > 0 ) then
@@ -453,11 +453,11 @@ module advance_xm_wpxp_module
 
       ! Compute the explicit portion of the th_l and w'th_l' equations.
       ! Build the right-hand side vector.
-      call xm_wpxp_rhs( "thlm", .true., dt, thlm, wpthlp, thlm_forcing, &      ! Intent(in)
-                        C7_Skw_fnc, thlpthvp, C6thl_Skw_fnc, tau_zm, wp2, wp2_zt, & ! Intent(in)
-                        a1, a1_zt, wp3, rho_ds_zt, invrs_rho_ds_zm, &              ! Intent(in)
-                        thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &           ! Intent(in)
-                        rhs(:,1) )                                             ! Intent(out)
+      call xm_wpxp_rhs( "thlm", .true., dt, thlm, wpthlp, thlm_forcing, &     ! Intent(in)
+                        C7_Skw_fnc, thlpthvp, C6thl_Skw_fnc, tau_zm, wp2, &   ! Intent(in)
+                        wp2_zt, a1, a1_zt, wp3, rho_ds_zt, invrs_rho_ds_zm, & ! Intent(in)
+                        thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &          ! Intent(in)
+                        rhs(:,1) )                                            ! Intent(out)
 
       ! Solve for th_l / w'th_l'
       if ( l_stats_samp .and. ithlm_matrix_condt_num > 0 ) then
@@ -523,12 +523,12 @@ module advance_xm_wpxp_module
 
         ! Compute the explicit portion of the sclrm and w'sclr' equations.
         ! Build the right-hand side vector.
-        call xm_wpxp_rhs( "scalars", .true., dt, sclrm(:,i), wpsclrp(:,i), & ! Intent(in)
-                          sclrm_forcing(:,i), C7_Skw_fnc, sclrpthvp(:,i), &  ! Intent(in)
-                          C6rt_Skw_fnc, tau_zm, wp2, wp2_zt, a1, a1_zt, wp3, &        ! Intent(in)
-                          rho_ds_zt, invrs_rho_ds_zm, &                      ! Intent(in)
-                          thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &       ! Intent(in)
-                          rhs(:,1) )                                         ! Intent(out)
+        call xm_wpxp_rhs( "scalars", .true., dt, sclrm(:,i), wpsclrp(:,i), &   ! Intent(in)
+                          sclrm_forcing(:,i), C7_Skw_fnc, sclrpthvp(:,i), &    ! Intent(in)
+                          C6rt_Skw_fnc, tau_zm, wp2, wp2_zt, a1, a1_zt, wp3, & ! Intent(in)
+                          rho_ds_zt, invrs_rho_ds_zm, &                        ! Intent(in)
+                          thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &         ! Intent(in)
+                          rhs(:,1) )                                           ! Intent(out)
 
         ! Solve for sclrm / w'sclr'
         call xm_wpxp_solve( nrhs, &              ! Intent(in)
@@ -576,19 +576,19 @@ module advance_xm_wpxp_module
 
       ! Compute the explicit portion of the r_t and w'r_t' equations.
       ! Build the right-hand side vector.
-      call xm_wpxp_rhs( "rtm", .true., dt, rtm, wprtp, rtm_forcing, &        ! Intent(in)
-                        C7_Skw_fnc, rtpthvp, C6rt_Skw_fnc, tau_zm, wp2, wp2_zt, & ! Intent(in)
-                        a1, a1_zt, wp3, rho_ds_zt, invrs_rho_ds_zm, &            ! Intent(in)
-                        thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &         ! Intent(in)
-                        rhs(:,1) )                                           ! Intent(out)
+      call xm_wpxp_rhs( "rtm", .true., dt, rtm, wprtp, rtm_forcing, &         ! Intent(in)
+                        C7_Skw_fnc, rtpthvp, C6rt_Skw_fnc, tau_zm, wp2, &     ! Intent(in)
+                        wp2_zt, a1, a1_zt, wp3, rho_ds_zt, invrs_rho_ds_zm, & ! Intent(in)
+                        thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &          ! Intent(in)
+                        rhs(:,1) )                                            ! Intent(out)
 
       ! Compute the explicit portion of the th_l and w'th_l' equations.
       ! Build the right-hand side vector.
-      call xm_wpxp_rhs( "thlm", .true., dt, thlm, wpthlp, thlm_forcing, &      ! Intent(in)
-                        C7_Skw_fnc, thlpthvp, C6thl_Skw_fnc, tau_zm, wp2, wp2_zt, & ! Intent(in)
-                        a1, a1_zt, wp3, rho_ds_zt, invrs_rho_ds_zm, &              ! Intent(in)
-                        thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &           ! Intent(in)
-                        rhs(:,2) )                                             ! Intent(out)
+      call xm_wpxp_rhs( "thlm", .true., dt, thlm, wpthlp, thlm_forcing, &     ! Intent(in)
+                        C7_Skw_fnc, thlpthvp, C6thl_Skw_fnc, tau_zm, wp2, &   ! Intent(in)
+                        wp2_zt, a1, a1_zt, wp3, rho_ds_zt, invrs_rho_ds_zm, & ! Intent(in)
+                        thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &          ! Intent(in)
+                        rhs(:,2) )                                            ! Intent(out)
 
 ! ---> h1g, 2010-06-15
 ! scalar transport, e.g, droplet and ice number concentration 
@@ -600,12 +600,12 @@ module advance_xm_wpxp_module
 #endif
 ! <--- h1g, 2010-06-15
 
-        call xm_wpxp_rhs( "scalars", .true., dt, sclrm(:,i), wpsclrp(:,i), & ! Intent(in)
-                          sclrm_forcing(:,i), C7_Skw_fnc, sclrpthvp(:,i), &  ! Intent(in)
-                          C6rt_Skw_fnc, tau_zm, wp2, wp2_zt, a1, a1_zt, wp3, &        ! Intent(in)
-                          rho_ds_zt, invrs_rho_ds_zm, &                      ! Intent(in)
-                          thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &       ! Intent(in)
-                          rhs(:,2+i) )                                       ! Intent(out)
+        call xm_wpxp_rhs( "scalars", .true., dt, sclrm(:,i), wpsclrp(:,i), &   ! Intent(in)
+                          sclrm_forcing(:,i), C7_Skw_fnc, sclrpthvp(:,i), &    ! Intent(in)
+                          C6rt_Skw_fnc, tau_zm, wp2, wp2_zt, a1, a1_zt, wp3, & ! Intent(in)
+                          rho_ds_zt, invrs_rho_ds_zm, &                        ! Intent(in)
+                          thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &         ! Intent(in)
+                          rhs(:,2+i) )                                         ! Intent(out)
       enddo
 
       ! Solve for all fields
@@ -1101,7 +1101,8 @@ module advance_xm_wpxp_module
       lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wpxp) & 
       = lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wpxp) & 
       + diffusion_zm_lhs( Kw6(k), Kw6(kp1), nu6, & 
-                          gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(k), k )
+                          gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
+                          gr%invrs_dzm(k), k )
 
       ! LHS time tendency.
       if (l_iter) lhs(m_k_mdiag,k_wpxp)  &
@@ -1183,7 +1184,8 @@ module advance_xm_wpxp_module
         if ( iwprtp_dp1 > 0 .or. iwpthlp_dp1 > 0 ) then
           tmp(1:3) = & 
           + diffusion_zm_lhs( Kw6(k), Kw6(kp1), nu6, & 
-                              gr%invrs_dzt(kp1), gr%invrs_dzt(k), gr%invrs_dzm(k), k )
+                              gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
+                              gr%invrs_dzm(k), k )
           zmscr12(k) = - tmp(3)
           zmscr13(k) = - tmp(2)
           zmscr14(k) = - tmp(1)
@@ -1249,8 +1251,8 @@ module advance_xm_wpxp_module
 
   !=============================================================================
   subroutine xm_wpxp_rhs( solve_type, l_iter, dt, xm, wpxp, xm_forcing, & 
-                          C7_Skw_fnc, xpthvp, C6x_Skw_fnc, tau_zm, wp2, wp2_zt, &
-                          a1, a1_zt, wp3, rho_ds_zt, invrs_rho_ds_zm, &
+                          C7_Skw_fnc, xpthvp, C6x_Skw_fnc, tau_zm, wp2, &
+                          wp2_zt, a1, a1_zt, wp3, rho_ds_zt, invrs_rho_ds_zm, &
                           thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &
                           rhs )
     ! Description:
@@ -2265,7 +2267,7 @@ module advance_xm_wpxp_module
       rho_ds_zm,       & ! Dry, static density at momentum level (k)    [kg/m^3]
       rho_ds_zmm1,     & ! Dry, static density at momentum level (k+1)  [kg/m^3]
       invrs_rho_ds_zt, & ! Inverse dry, static density @ thermo lev (k) [m^3/kg]
-      invrs_dzt                ! Inverse of grid spacing (k)                  [1/m]
+      invrs_dzt          ! Inverse of grid spacing (k)                  [1/m]
 
     ! Return Variable
     real, dimension(2) :: lhs
@@ -2389,7 +2391,7 @@ module advance_xm_wpxp_module
       invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum lev (k) [m^3/kg]
       wp3p1,           & ! w'^3(k+1)                                   [m^3/s^3]
       wp3,             & ! w'^3(k)                                     [m^3/s^3]
-      invrs_dzm                ! Inverse of grid spacing (k)                 [1/m]
+      invrs_dzm          ! Inverse of grid spacing (k)                 [1/m]
 
     integer, intent(in) :: & 
       level ! Central momentum level (on which calculation occurs).
@@ -2484,17 +2486,17 @@ module advance_xm_wpxp_module
 
     ! Input Variables
     real, intent(in) :: & 
-      wp2,         & ! w'^2(k)                                        [m^2/s^2]
-      wp2_m1,      & ! w'^2(k-1)                                      [m^2/s^2]
-      wp2_p1,      & ! w'^2(k+1)                                      [m^2/s^2]
-      a1_zm,       & ! a_1(k) on momentum levels                      [-] 
-      a1_zm_p1,    & ! a_1(k+1) on momentum levels                    [-]
-      a1_zm_m1,    & ! a_1(k-1) on momentum levels                    [-]
-      wp3_zm_p1,   & ! w'^3(k+1)                                      [m^3/s^3]
-      wp3_zm,      & ! w'^3(k)                                        [m^3/s^3]
-      wp3_zm_m1,   & ! w'^3(k-1)                                      [m^3/s^3]
-      invrs_dzt,         & ! Inverse of grid spacing (k)                    [1/m]
-      invrs_dztkp1         ! Inverse of grid spacing (k+1)                  [1/m]
+      wp2,          & ! w'^2(k)                                        [m^2/s^2]
+      wp2_m1,       & ! w'^2(k-1)                                      [m^2/s^2]
+      wp2_p1,       & ! w'^2(k+1)                                      [m^2/s^2]
+      a1_zm,        & ! a_1(k) on momentum levels                      [-] 
+      a1_zm_p1,     & ! a_1(k+1) on momentum levels                    [-]
+      a1_zm_m1,     & ! a_1(k-1) on momentum levels                    [-]
+      wp3_zm_p1,    & ! w'^3(k+1)                                      [m^3/s^3]
+      wp3_zm,       & ! w'^3(k)                                        [m^3/s^3]
+      wp3_zm_m1,    & ! w'^3(k-1)                                      [m^3/s^3]
+      invrs_dzt,    & ! Inverse of grid spacing (k)                    [1/m]
+      invrs_dztkp1    ! Inverse of grid spacing (k+1)                  [1/m]
 
     ! Return Variable
     real, dimension(3) :: lhs
@@ -2578,8 +2580,8 @@ module advance_xm_wpxp_module
 
     ! Input Variables
     real, intent(in) :: & 
-      wp2,    & ! w'^2(k)                       [m^2/s^2]
-      invrs_dzm       ! Inverse of grid spacing (k)   [1/m]
+      wp2,      & ! w'^2(k)                       [m^2/s^2]
+      invrs_dzm   ! Inverse of grid spacing (k)   [1/m]
 
     ! Return Variable
     real, dimension(2) :: lhs
@@ -2657,7 +2659,7 @@ module advance_xm_wpxp_module
       C7_Skw_fnc,  & ! C_7 parameter with Sk_w applied (k)             [-]
       wm_ztp1,     & ! w wind component on thermodynamic level (k+1)   [m/s]
       wm_zt,       & ! w wind component on thermodynamic level (k)     [m/s]
-      invrs_dzm            ! Inverse of grid spacing (k)                     [1/m]
+      invrs_dzm      ! Inverse of grid spacing (k)                     [1/m]
 
 
     ! Return Variable
@@ -2902,7 +2904,7 @@ module advance_xm_wpxp_module
 
     real, dimension(gr%nnzp), intent(in) :: &
       wpxp_chnge, & ! Amount of change in w'x' due to clipping  [m/s {xm units}]
-      invrs_dzt           ! Inverse of grid spacing                   [1/m]
+      invrs_dzt     ! Inverse of grid spacing                   [1/m]
 
     ! Input/Output Variable
     real, dimension(gr%nnzp), intent(inout) :: &
