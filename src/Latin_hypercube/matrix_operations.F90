@@ -161,17 +161,17 @@ module matrix_operations
     ! Input Variables
     integer, intent(in) :: n
 
-    real, dimension(n,n), intent(in) :: a
+    real(kind=4), dimension(n,n), intent(in) :: a
 
-    real, dimension(n), intent(in) :: b
+    real(kind=4), dimension(n), intent(in) :: b
 
     ! Output Variables
-    real, dimension(n), intent(out) :: x
+    real(kind=4), dimension(n), intent(out) :: x
 
     ! Local Variables
-    real, dimension(n,n) :: a_decomp
+    real(kind=4), dimension(n,n) :: a_decomp
 
-    real, allocatable, dimension(:) :: work
+    real(kind=4), allocatable, dimension(:) :: work
 
     integer, dimension(n) :: &
       ipiv ! Pivot indices from the permutation matrix
