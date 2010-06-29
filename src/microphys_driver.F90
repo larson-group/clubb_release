@@ -38,7 +38,7 @@ module microphys_driver
     micro_scheme,                 & ! The microphysical scheme in use
     hydromet_list,                & ! Names of the hydrometeor species
     microphys_start_time,         & ! When to start the microphysics [s]
-    Ncm_initial                    ! Initial value for Ncm (K&K, l_cloud_sed, Morrison)
+    Ncm_initial                     ! Initial value for Ncm (K&K, l_cloud_sed, Morrison)
 
   use parameters_microphys, only: &
     LH_sample_point_weights ! Weights for the averaging of LH sample points
@@ -1890,7 +1890,8 @@ module microphys_driver
           lhs(kp1_tdiag:km1_tdiag,k) & 
           = lhs(kp1_tdiag:km1_tdiag,k) & 
           + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
-                            gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
+                              gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                              gr%invrs_dzt(k), k )
         end if
 
         ! LHS mean advection term.
@@ -1926,7 +1927,8 @@ module microphys_driver
             ztscr06(k) = -tmp(1)
           end if
 
-          if ( solve_type == "Ncm" .and. l_in_cloud_Nc_diff .and. ixrm_dff > 0 ) then
+          if ( solve_type == "Ncm" .and. l_in_cloud_Nc_diff &
+               .and. ixrm_dff > 0 ) then
             tmp(1:3) &
             = diffusion_cloud_frac_zt_lhs &
               ( Kr(k), Kr(km1), cloud_frac_zt(k), cloud_frac_zt(k-1), &
@@ -1940,7 +1942,8 @@ module microphys_driver
           else if ( ixrm_dff > 0 ) then
             tmp(1:3) & 
             = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
-                                gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
+                                gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                                gr%invrs_dzt(k), k )
             ztscr07(k) = -tmp(3)
             ztscr08(k) = -tmp(2)
             ztscr09(k) = -tmp(1)
@@ -1976,7 +1979,8 @@ module microphys_driver
       lhs(kp1_tdiag:km1_tdiag,k) &
       = lhs(kp1_tdiag:km1_tdiag,k) &
       + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  &
-                          gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
+                          gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                          gr%invrs_dzt(k), k )
 
       if ( l_stats_samp ) then
 
@@ -1985,7 +1989,8 @@ module microphys_driver
         if ( ixrm_dff > 0 ) then
           tmp(1:3) & 
           = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
-                              gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
+                              gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                              gr%invrs_dzt(k), k )
           ztscr07(k) = -tmp(3)
           ztscr08(k) = -tmp(2)
           ztscr09(k) = -tmp(1)
@@ -2005,7 +2010,8 @@ module microphys_driver
       lhs(kp1_tdiag:km1_tdiag,k) &
       = lhs(kp1_tdiag:km1_tdiag,k) &
       + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  &
-                          gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
+                          gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                          gr%invrs_dzt(k), k )
 
       if ( l_stats_samp ) then
 
@@ -2014,7 +2020,8 @@ module microphys_driver
         if ( ixrm_dff > 0 ) then
           tmp(1:3) & 
           = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
-                              gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
+                              gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                              gr%invrs_dzt(k), k )
           ztscr07(k) = -tmp(3)
           ztscr08(k) = -tmp(2)
           ztscr09(k) = -tmp(1)
@@ -2108,8 +2115,8 @@ module microphys_driver
       !
       ! The left-hand side matrix, ( d (V_hm * weights_hm) / dz )_ij, is
       ! partially written below.  The sum over i in the above equation removes
-      ! invrs_dzt everywhere from the matrix below.  The sum over j leaves the column
-      ! totals and the flux at zm(1) that are desired.
+      ! invrs_dzt everywhere from the matrix below.  The sum over j leaves the
+      ! column totals and the flux at zm(1) that are desired.
       !
       ! Left-hand side matrix contributions from the sedimentation term (only);
       ! first four vertical levels:
@@ -2117,11 +2124,11 @@ module microphys_driver
       !     ------------------------------------------------------------------->
       !k=1 |           0                     0                       0
       !    |
-      !k=2 |   -invrs_dzt(k)             +invrs_dzt(k)                 +invrs_dzt(k)
+      !k=2 |   -invrs_dzt(k)       +invrs_dzt(k)           +invrs_dzt(k)
       !    |     *V_hm(k-1)*D(k)     *[ V_hm(k)*B(k)         *V_hm(k)*A(k)
       !    |                           -V_hm(k-1)*C(k) ]
       !    |
-      !k=3 |           0           -invrs_dzt(k)                 +invrs_dzt(k)
+      !k=3 |           0           -invrs_dzt(k)           +invrs_dzt(k)
       !    |                         *V_hm(k-1)*D(k)         *[ V_hm(k)*B(k)
       !    |                                                   -V_hm(k-1)*C(k) ]
       !    |
@@ -2140,9 +2147,12 @@ module microphys_driver
       ! D(k) = 1 - [ ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ) ]
       !      = 1 - C(k).
       !
+      ! Furthermore, for all thermodynamic grid levels besides the uppermost one
+      ! (as long as k /= gr%nnzp), A(k) = C(k+1); and B(k) = D(k+1).
+      !
       ! Note:  The superdiagonal term from level 3 and both the main diagonal
       !        and superdiagonal terms from level 4 are not shown on this
-      ! diagram.
+      !        diagram.
 
       ! References:
       ! None
@@ -2170,9 +2180,9 @@ module microphys_driver
 
       ! Input Variables
       real, intent(in) :: & 
-        V_hm,    & ! Sedimentation velocity of hydrometeor (k)                [m/s]
-        V_hmm1,  & ! Sedimentation velocity of hydrometeor (k-1)              [m/s]
-        invrs_dzt        ! Inverse of grid spacing (k)                              [m]
+        V_hm,      & ! Sedimentation velocity of hydrometeor (k)     [m/s]
+        V_hmm1,    & ! Sedimentation velocity of hydrometeor (k-1)   [m/s]
+        invrs_dzt    ! Inverse of grid spacing (k)                   [m]
 
       integer, intent(in) ::  & 
         level ! Central thermodynamic level (on which calculation occurs).
@@ -2228,7 +2238,7 @@ module microphys_driver
 !       ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
 !       lhs(k_tdiag)  &
 !       = + V_hmzt * invrs_dzt * (   gr%weights_zt2zm(t_below,mk)  &
-!                          - gr%weights_zt2zm(t_above,mkm1)  )
+!                                  - gr%weights_zt2zm(t_above,mkm1)  )
 !
 !       ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
 !       lhs(km1_tdiag)  &
@@ -2241,7 +2251,7 @@ module microphys_driver
         ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
         lhs(k_tdiag)  & 
         = + invrs_dzt * (   V_hm * gr%weights_zt2zm(t_below,mk) & 
-                    - V_hmm1 * gr%weights_zt2zm(t_above,mkm1)  )
+                          - V_hmm1 * gr%weights_zt2zm(t_above,mkm1)  )
 
         ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
         lhs(km1_tdiag)  & 
@@ -2488,8 +2498,7 @@ module microphys_driver
 
         ! The implicit (LHS) value of the sedimentation component of the equation
         ! used during the timestep that was just solved for.
-        tmp(1:3) = sedimentation( V_hm(k), V_hm(km1),  & 
-                                  gr%invrs_dzt(k), k )
+        tmp(1:3) = sedimentation( V_hm(k), V_hm(km1), gr%invrs_dzt(k), k )
 
         sd_subdiag  = -tmp(3) ! subdiagonal
         sd_maindiag = -tmp(2) ! main diagonal
@@ -2513,7 +2522,8 @@ module microphys_driver
       ! during the timestep that was just solved for.
       tmp(1:3) & 
          = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
-                             gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
+                             gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                             gr%invrs_dzt(k), k )
 
       df_subdiag  = -tmp(3) ! subdiagonal
       df_maindiag = -tmp(2) ! main diagonal

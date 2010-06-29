@@ -345,8 +345,8 @@ module mono_flux_limiter
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
     real, intent(in) ::  &
-      xp2_threshold, &   ! Lower limit of x'^2                         [units vary]
-      xm_tol             ! Lower limit of maxdev                       [units vary]
+      xp2_threshold, &   ! Lower limit of x'^2                      [units vary]
+      xm_tol             ! Lower limit of maxdev                    [units vary]
 
     logical, intent(in) :: &
       l_implemented   ! Flag for CLUBB being implemented in a larger model.
@@ -385,7 +385,7 @@ module mono_flux_limiter
       stnd_dev_x,          & ! Standard deviation of x                       [units vary]
       max_dev,             & ! Determines approximate upper/lower limit of x [units vary]
       m_adv_term,          & ! Contribution of mean advection to d(xm)/dt    [units vary]
-      xm_density_weighted, & ! Density weighted xm at domain top    [units vary]
+      xm_density_weighted, & ! Density weighted xm at domain top             [units vary]
       xm_adj_coef,         & ! Coeffecient to eliminate spikes at domain top [units vary]
       xm_vert_integral,    & ! Vertical integral of xm                       [units_vary]
       dz                     ! zm grid spacing at top of domain              [m]
@@ -747,8 +747,10 @@ module mono_flux_limiter
                                 * (xm(gr%nnzp) - xm_enter_mfl(gr%nnzp)) &
                                 * dz
 
-          xm_vert_integral = vertical_integral( ((gr%nnzp - 1) - 2 + 1), rho_ds_zt(2:gr%nnzp - 1), &
-                                                    xm(2:gr%nnzp - 1), gr%invrs_dzt(2:gr%nnzp - 1) )
+          xm_vert_integral &
+          = vertical_integral  &
+              ( ((gr%nnzp - 1) - 2 + 1), rho_ds_zt(2:gr%nnzp - 1), &
+                xm(2:gr%nnzp - 1), gr%invrs_dzt(2:gr%nnzp - 1) )
 
           !Check to ensure the vertical integral is not zero to avoid a divide
           !by zero error
@@ -764,7 +766,8 @@ module mono_flux_limiter
 
              !xm_adj_coef can not be smaller than -1
              if (xm_adj_coef < -0.99) then
-                write(fstderr,*) "xm_adj_coef in mfl less than -0.99, mx_adj_coef set to -0.99"
+                write(fstderr,*) "xm_adj_coef in mfl less than -0.99, " &
+                                 // "mx_adj_coef set to -0.99"
                 xm_adj_coef = -0.99
              endif
 
@@ -979,7 +982,8 @@ module mono_flux_limiter
        rhs(k) &
        = rhs(k) &
        - invrs_rho_ds_zt(k)  &
-         * gr%invrs_dzt(k) * ( rho_ds_zm(k) * wpxp(k) - rho_ds_zm(km1) * wpxp(km1) )
+         * gr%invrs_dzt(k)  &
+           * ( rho_ds_zm(k) * wpxp(k) - rho_ds_zm(km1) * wpxp(km1) )
 
        ! RHS xm forcings.
        ! Note: xm forcings include the effects of microphysics,
