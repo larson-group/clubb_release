@@ -186,12 +186,13 @@ contains
 
              ! The ascending parcel is entraining at rate mu.
 
-             ! Calculation changed to use pre-calculated exp(-mu/gr%invrs_dzm) values.
-             ! ~~EIHoppe//20090615
+             ! Calculation changed to use pre-calculated exp(-mu/gr%invrs_dzm)
+             ! values. ~~EIHoppe//20090615
 
              thl_par_j = thlm(j) - thlm(j-1)*exp_mu_dzm(j-1)  &
                          - ( 1.0 - exp_mu_dzm(j-1))  &
-                           * ( (thlm(j) - thlm(j-1)) / (mu/gr%invrs_dzm(j-1)) )  &
+                           * ( (thlm(j) - thlm(j-1))  &
+                               / (mu/gr%invrs_dzm(j-1)) )  &
                          + thl_par_j_minus_1 * exp_mu_dzm(j-1)
 
           else
@@ -231,8 +232,8 @@ contains
 
              ! The ascending parcel is entraining at rate mu.
 
-             ! Calculation changed to use pre-calculated exp(-mu/gr%invrs_dzm) values.
-             ! ~~EIHoppe//20090615
+             ! Calculation changed to use pre-calculated exp(-mu/gr%invrs_dzm)
+             ! values. ~~EIHoppe//20090615
 
              rt_par_j = rtm(j) - rtm(j-1)*exp_mu_dzm(j-1)  &
                         - ( 1.0 - exp_mu_dzm(j-1))  &
@@ -298,7 +299,8 @@ contains
 
           dCAPE_dz_j = ( grav/thvm(j) ) * ( thv_par_j - thvm(j) )
 
-          CAPE_incr = 0.5 * ( dCAPE_dz_j + dCAPE_dz_j_minus_1 ) / gr%invrs_dzm(j-1)
+          CAPE_incr = 0.5 * ( dCAPE_dz_j + dCAPE_dz_j_minus_1 )  &
+                            / gr%invrs_dzm(j-1)
 
           if ( tke_i + CAPE_incr > 0.0 ) then
 
@@ -458,8 +460,8 @@ contains
 
              ! The descending parcel is entraining at rate mu.
 
-             ! Calculation changed to use pre-calculated exp(-mu/gr%invrs_dzm) values.
-             ! ~~EIHoppe//20090615
+             ! Calculation changed to use pre-calculated exp(-mu/gr%invrs_dzm)
+             ! values. ~~EIHoppe//20090615
 
              thl_par_j = thlm(j) - thlm(j+1)*exp_mu_dzm(j)  &
                          - ( 1.0 - exp_mu_dzm(j))  &
@@ -513,8 +515,8 @@ contains
 
              ! The descending parcel is entraining at rate mu.
 
-             ! Calculation changed to use pre-calculated exp(-mu/gr%invrs_dzm) values.
-             ! ~~EIHoppe//20090615
+             ! Calculation changed to use pre-calculated exp(-mu/gr%invrs_dzm)
+             ! values. ~~EIHoppe//20090615
 
              rt_par_j = rtm(j) - rtm(j+1)*exp_mu_dzm(j)  &
                         - ( 1.0 - exp_mu_dzm(j) )  &

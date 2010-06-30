@@ -1198,7 +1198,7 @@ module stats_subs
     !----------------------------------------------------------------------
 
     use stats_variables, only: & 
-        zt,      & ! Variables
+        zt, & ! Variables
         zm, & 
         sfc, & 
         l_stats_samp, & 
@@ -1398,7 +1398,6 @@ module stats_subs
         rtprcp, & 
         rcp2, & 
         em, & 
-        shear, & 
         Frad, & 
         sclrpthvp, & 
         sclrprcp, & 
@@ -1502,6 +1501,9 @@ module stats_subs
     ! Local Variables
 
     integer :: i, k
+
+    real, dimension(gr%nnzp) :: &
+      shear              ! Wind shear production term    [m^2/s^3]
 
     real :: xtmp
 
@@ -1633,7 +1635,6 @@ module stats_subs
       call stat_update_var( irho_ds_zm, rho_ds_zm, zm )
       call stat_update_var( ithv_ds_zm, thv_ds_zm, zm )
       call stat_update_var( iem, em, zm )
-      call stat_update_var( ishear, shear, zm )
       call stat_update_var( iFrad, Frad, zm )
 
       if ( sclr_dim > 0 ) then
@@ -1656,6 +1657,15 @@ module stats_subs
         end do
       endif
 
+      ! Calculate shear production
+      if ( ishear > 0 ) then
+         do k = 1, gr%nnzp-1, 1
+            shear(k) = - upwp(k) * ( um(k+1) - um(k) ) * gr%invrs_dzm(k)  &
+                       - vpwp(k) * ( vm(k+1) - vm(k) ) * gr%invrs_dzm(k)
+         enddo
+         shear(gr%nnzp) = 0.0
+      endif
+      call stat_update_var( ishear, shear, zm )
 
       ! sfc variables
 
@@ -1689,8 +1699,10 @@ module stats_subs
       ! Liquid Water Path
       if ( ilwp > 0 ) then
 
-        xtmp = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
-                                       rcm(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
+        xtmp &
+        = vertical_integral &
+               ( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
+                 rcm(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
 
         call stat_update_var_pt( ilwp, 1, xtmp, sfc )
 
@@ -1699,8 +1711,10 @@ module stats_subs
       ! Vapor Water Path (Preciptable Water)
       if ( ivwp > 0 ) then
 
-        xtmp = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
-                                ( rtm(2:gr%nnzp) - rcm(2:gr%nnzp) ), gr%invrs_dzt(2:gr%nnzp) )
+        xtmp &
+        = vertical_integral &
+               ( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
+                 ( rtm(2:gr%nnzp) - rcm(2:gr%nnzp) ), gr%invrs_dzt(2:gr%nnzp) )
 
         call stat_update_var_pt( ivwp, 1, xtmp, sfc )
 
@@ -1710,8 +1724,10 @@ module stats_subs
       if ( iswp > 0 .and. iirsnowm > 0 ) then
 
         ! Calculate snow water path
-        xtmp = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
-                                      hydromet(2:gr%nnzp,iirsnowm), gr%invrs_dzt(2:gr%nnzp) )
+        xtmp &
+        = vertical_integral &
+               ( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
+                 hydromet(2:gr%nnzp,iirsnowm), gr%invrs_dzt(2:gr%nnzp) )
 
         call stat_update_var_pt( iswp, 1, xtmp, sfc )
 
@@ -1720,8 +1736,10 @@ module stats_subs
       ! Ice Water Path
       if ( iiwp > 0 .and. iiricem > 0 ) then
 
-        xtmp = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
-                                      hydromet(2:gr%nnzp,iiricem), gr%invrs_dzt(2:gr%nnzp) )
+        xtmp &
+        = vertical_integral &
+               ( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
+                 hydromet(2:gr%nnzp,iiricem), gr%invrs_dzt(2:gr%nnzp) )
 
         call stat_update_var_pt( iiwp, 1, xtmp, sfc )
 
@@ -1730,8 +1748,10 @@ module stats_subs
       ! Rain Water Path
       if ( irwp > 0 .and. iirrainm > 0 ) then
 
-        xtmp = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
-                                      hydromet(2:gr%nnzp,iirrainm), gr%invrs_dzt(2:gr%nnzp) )
+        xtmp &
+        = vertical_integral &
+               ( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
+                 hydromet(2:gr%nnzp,iirrainm), gr%invrs_dzt(2:gr%nnzp) )
 
         call stat_update_var_pt( irwp, 1, xtmp, sfc )
 

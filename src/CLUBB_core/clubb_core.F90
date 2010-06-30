@@ -131,7 +131,6 @@ module clubb_core
       thlprcp, &
       rcp2, &
       rsat, &
-      shear, &
       pdf_params_zm, &
       wprtp2, &
       wp2rtp, &
@@ -241,7 +240,6 @@ module clubb_core
       stat_update_var
 
     use stats_variables, only: &
-      ishear,        & ! Variables
       ircp2,         &
       iwp4,          &
       irsat,         &
@@ -491,13 +489,15 @@ module clubb_core
     
     if ( l_stats .and. l_stats_samp ) then
       if ( l_implemented ) then
-        ! Get the vertical integral of rtm and thlm before this function begins so that 
-        ! spurious source can be calculated
-        rtm_integral_before = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
-                                                 rtm(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
+        ! Get the vertical integral of rtm and thlm before this function begins
+        ! so that spurious source can be calculated
+        rtm_integral_before  &
+        = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
+                             rtm(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
                                                  
-        thlm_integral_before = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
-                                                 thlm(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
+        thlm_integral_before  &
+        = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
+                             thlm(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
       endif
     endif
      
@@ -865,14 +865,14 @@ module clubb_core
       rtm_pert_2  = rtm  - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
 
       call compute_length( thvm, thlm_pert_1, rtm_pert_1, em, & ! intent(in)
-                           p_in_Pa, exner, thv_ds_zt, &              ! intent(in)
-                           err_code, &                               ! intent(inout)
-                           Lscale_pert_1 )                           ! intent(out)
+                           p_in_Pa, exner, thv_ds_zt, &         ! intent(in)
+                           err_code, &                          ! intent(inout)
+                           Lscale_pert_1 )                      ! intent(out)
 
       call compute_length( thvm, thlm_pert_2, rtm_pert_2, em, & ! intent(in)
-                           p_in_Pa, exner, thv_ds_zt, &              ! intent(in)
-                           err_code, &                               ! intent(inout)
-                           Lscale_pert_2 )                           ! intent(out)
+                           p_in_Pa, exner, thv_ds_zt, &         ! intent(in)
+                           err_code, &                          ! intent(inout)
+                           Lscale_pert_2 )                      ! intent(out)
     end if ! l_avg_Lscale
 
     ! ********** NOTE: **********
@@ -1129,16 +1129,6 @@ module clubb_core
     if ( lapack_error( err_code ) ) return
 
 
-    ! Compute Shear Production  -Brian
-    ! This is a non-interative diagnostic, for statistical purposes
-    if ( ishear > 1  ) then
-      do k = 1, gr%nnzp-1, 1
-        shear(k) = -upwp(k) * ( um(k+1) - um(k) ) * gr%invrs_dzm(k) & 
-                   -vpwp(k) * ( vm(k+1) - vm(k) ) * gr%invrs_dzm(k)
-      end do
-      shear(gr%nnzp) = 0.0
-    end if
-
     !#######################################################################
     !#############            ACCUMULATE STATISTICS            #############
     !#######################################################################
@@ -1206,31 +1196,37 @@ module clubb_core
         
         rtm_flux_sfc = rho_ds_zm(1) * wprtp_sfc
         
-        rtm_integral_after = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
-                                               rtm(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
+        rtm_integral_after  &
+        = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
+                             rtm(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
                                                
-        rtm_integral_forcing = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
-                                                 rtm_forcing(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
+        rtm_integral_forcing  &
+        = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
+                             rtm_forcing(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
                                                  
-        rtm_spur_src = calculate_spurious_source( rtm_integral_after, &
-                                                  rtm_integral_before, &
-                                                  rtm_flux_top, rtm_flux_sfc, & 
-                                                  rtm_integral_forcing, &
-                                                  real(dt) )     
+        rtm_spur_src  &
+        = calculate_spurious_source( rtm_integral_after, &
+                                     rtm_integral_before, &
+                                     rtm_flux_top, rtm_flux_sfc, &
+                                     rtm_integral_forcing, &
+                                     real(dt) )     
         ! Calculate the spurious source for thlm
         thlm_flux_top = rho_ds_zm(gr%nnzp) * wpthlp(gr%nnzp)
         thlm_flux_sfc = rho_ds_zm(1) * wpthlp_sfc      
-        thlm_integral_after = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
-                                                thlm(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
+        thlm_integral_after  &
+        = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
+                             thlm(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
                                                 
-        thlm_integral_forcing = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
-                                                  thlm_forcing(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
+        thlm_integral_forcing  &
+        = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
+                             thlm_forcing(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
                                                   
-        thlm_spur_src = calculate_spurious_source( thlm_integral_after, &
-                                                   thlm_integral_before, &
-                                                   thlm_flux_top, thlm_flux_sfc, & 
-                                                   thlm_integral_forcing, &
-                                                   real(dt) )
+        thlm_spur_src  &
+        = calculate_spurious_source( thlm_integral_after, &
+                                     thlm_integral_before, &
+                                     thlm_flux_top, thlm_flux_sfc, &
+                                     thlm_integral_forcing, &
+                                     real(dt) )
       else ! If l_implemented is false, we don't want spurious source output
         rtm_spur_src = -9999.0
         thlm_spur_src = -9999.0
@@ -2136,8 +2132,8 @@ module clubb_core
         if ( rcm(k+1) < rc_tol ) then ! Cloud top
 
           vert_cloud_frac_upper(k) = &
-                   ( ( 0.5 / gr%invrs_dzm(k) ) / ( gr%zm(k) - gr%zt(k) ) ) * &
-                   ( rcm(k) / ( rcm(k) + abs( s_mean(k+1) ) ) ) 
+                   ( ( 0.5 / gr%invrs_dzm(k) ) / ( gr%zm(k) - gr%zt(k) ) ) &
+                   * ( rcm(k) / ( rcm(k) + abs( s_mean(k+1) ) ) ) 
 
           vert_cloud_frac_upper(k) = min( 0.5, vert_cloud_frac_upper(k) ) 
 
@@ -2150,8 +2146,8 @@ module clubb_core
         if ( rcm(k-1) < rc_tol ) then ! Cloud base
 
           vert_cloud_frac_lower(k) = &
-                   ( ( 0.5 / gr%invrs_dzm(k-1) ) / ( gr%zt(k) - gr%zm(k-1) ) ) * &
-                   ( rcm(k) / ( rcm(k) + abs( s_mean(k-1) ) ) )
+                   ( ( 0.5 / gr%invrs_dzm(k-1) ) / ( gr%zt(k) - gr%zm(k-1) ) ) &
+                   * ( rcm(k) / ( rcm(k) + abs( s_mean(k-1) ) ) )
 
           vert_cloud_frac_lower(k) = min( 0.5, vert_cloud_frac_lower(k) )
 

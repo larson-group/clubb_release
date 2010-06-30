@@ -32,14 +32,13 @@ module variables_diagnostic_module
     vm_ref,         & ! Initial v wind; Michael Falk                 [m/s]
     thlm_ref,       & ! Initial liquid water potential temperature   [K]
     rtm_ref,        & ! Initial total water mixing ratio             [kg/kg]
-    thvm,           & ! Virtual potential temperature                [K]
-    shear             ! Wind shear production
+    thvm              ! Virtual potential temperature                [K]
 
 !!! Important Note !!!
 ! Do not indent the omp comments, they need to be in the first 4 columns
 !!! End Important Note !!!
 !$omp threadprivate(sigma_sqd_w_zt, Skw_zm, Skw_zt, ug, vg, &
-!$omp   um_ref, vm_ref, thlm_ref, rtm_ref, thvm, shear )
+!$omp   um_ref, vm_ref, thlm_ref, rtm_ref, thvm )
 
   real, target, allocatable, dimension(:), public :: & 
     rsat ! Saturation mixing ratio  ! Brian
@@ -229,8 +228,6 @@ module variables_diagnostic_module
 
     allocate( radht(1:nzmax) )     ! SW + LW heating rate
 
-    allocate( shear(1:nzmax) )     ! wind shear production
-
     ! pdf_params on momentum levels
     allocate( pdf_params_zm%w1(1:nzmax),          pdf_params_zm%w2(1:nzmax),  &
               pdf_params_zm%varnce_w1(1:nzmax),   pdf_params_zm%varnce_w2(1:nzmax),  &
@@ -348,9 +345,6 @@ module variables_diagnostic_module
     Frad_SW_down = 0.0
     Frad_LW_down = 0.0
 
-
-
-    shear = 0.0    ! Wind shear production
 
     ! pdf_params on momentum levels
     pdf_params_zm%w1          = 0.0
@@ -492,8 +486,6 @@ module variables_diagnostic_module
     deallocate( Frad_LW_down ) ! downwelling longwave radiative flux
 
     deallocate( radht )     ! SW + LW heating rate
-
-    deallocate( shear )     ! wind shear production
 
     deallocate( pdf_params_zm%w1,          pdf_params_zm%w2,  &
                 pdf_params_zm%varnce_w1,   pdf_params_zm%varnce_w2,  &
