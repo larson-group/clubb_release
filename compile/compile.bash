@@ -33,6 +33,10 @@
 # microphysics is not available due to licensing restrictions.
 # ------------------------------------------------------------------------------
 
+# Flag to allow for promotion of reals to double precision at compile time
+# This will exclude numerical recipes files which will preculde use of the tuner
+l_double_precision=false
+
 # Figure out the directory where the script is located
 scriptPath=`dirname $0`
 
@@ -117,7 +121,10 @@ ls $srcdir/Benchmark_cases/Unreleased_cases/*.F90 > $dir/file_list/clubb_optiona
 ls $srcdir/CLUBB_core/*.F90 > $dir/file_list/clubb_param_files
 ls $srcdir/Latin_hypercube/*.* >> $dir/file_list/clubb_optional_files
 ls $srcdir/COAMPS_micro/*.F > $dir/file_list/clubb_coamps_files
-ls $srcdir/Numerical_recipes/*.f90 > $dir/file_list/numerical_recipes_files
+if [ "$l_double_precision" == "false" ]	# Excludes numerical recipes if using double precision
+then
+	ls $srcdir/Numerical_recipes/*.f90 > $dir/file_list/numerical_recipes_files
+fi
 
 # ------------------------------------------------------------------------------
 # Generate makefiles using 'mkmf'
@@ -146,10 +153,13 @@ $mkmf -t $bindir/mkmf_template -p $bindir/clubb_standalone \
   $dir/file_list/clubb_standalone_files $dir/file_list/clubb_optional_files \
   $dir/file_list/clubb_model_files
 
-$mkmf -t $bindir/mkmf_template -p $bindir/clubb_tuner \
-  -m Make.clubb_tuner -c "${WARNINGS}" $dir/file_list/clubb_tuner_files \
-  $dir/file_list/clubb_optional_files $dir/file_list/clubb_model_files \
-  $dir/file_list/numerical_recipes_files
+if [ "$l_double_precision" == "false" ] # Excludes the tuner if using double precision
+then
+	$mkmf -t $bindir/mkmf_template -p $bindir/clubb_tuner \
+  	  -m Make.clubb_tuner -c "${WARNINGS}" $dir/file_list/clubb_tuner_files \
+  	  $dir/file_list/clubb_optional_files $dir/file_list/clubb_model_files \
+  	  $dir/file_list/numerical_recipes_files
+fi
 
 $mkmf -t $bindir/mkmf_template -p $bindir/jacobian \
   -m Make.jacobian -c "${WARNINGS}" $dir/file_list/jacobian_files \
@@ -206,7 +216,7 @@ clubb_standalone: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morri
 
 clubb_tuner: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a
 	-rm -f $bindir/clubb_tuner
-	cd $objdir; $gmake -f Make.clubb_tuner
+#	cd $objdir; $gmake -f Make.clubb_tuner		# Comment out if using double precision
 
 jacobian: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a
 	-rm -f $bindir/jacobian

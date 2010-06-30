@@ -149,7 +149,32 @@ other versions of make.
 
 If you add a new source file to CLUBB, then in order for mkmf to be
 able to find it, you will need to add the filename 
-to one of the file lists in directory compile/file_list.  
+to one of the file lists in directory compile/file_list.
+
+-----------------------------------------------------------------------
+- (1.1.1) Promoting real to double precision at compile time
+-----------------------------------------------------------------------
+
+The g95 compiler allows for promotion of real variables without a "kind="
+statement to double precision at compile time through the use of a compiler
+flag.  This will not currently work with the tuner because the numerical recipes
+routines throw compiler interface errors.  Therefore, it is necessary to modify
+compile.bash and corresponding config file of the compiler being used.  Two
+config files are currently set up for easy use of this promotion: 
+linux_ia32_g95_optimize.bash and linux_ia32_g95_debug.bash.
+
+To set up the bash scripts for compile time real promotion, follow these steps:
+1. Edit config/linux_ia32_g95_*.bash where * is either optimize or debug.
+   Comment out the line " ARCH="-march=k8 -msse3 -mfpmath=sse" " and uncomment
+   the line above with the " -r8 " flag.
+2. Edit compile.bash in the clubb/compile directory.  Change l_double_precision to
+   true.Ensure that the config file edited above matches the uncommented config file
+   at the beginning of the script.
+3. In the makefile section of the script, the line
+   " cd $objdir; $gmake -f Make.clubb_tuner " must be commented out for the code
+   to compile at double precision.
+4. Compile as described in section 1.1.  Note again that the tuner code will not
+   function as the numerical recipes code is excluded in this compilation.
 
 -----------------------------------------------------------------------
 - (1.2) Building (i.e. compiling) for use in a host model:
@@ -1119,4 +1144,4 @@ up2        = <u'2>     = Variance of u                                         [
 vp2        = <v'2>     = Variance of v                                         [m^2/s^2]
 rrainm     = Mean rainwater mixing ratio                                       [kg/kg]
 
-******************************************************************************
+****************************************************************************
