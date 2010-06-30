@@ -216,7 +216,7 @@ clubb_standalone: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morri
 
 clubb_tuner: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a
 	-rm -f $bindir/clubb_tuner
-#	cd $objdir; $gmake -f Make.clubb_tuner		# Comment out if using double precision
+	cd $objdir; $gmake -f Make.clubb_tuner		# Comment out if using double precision
 
 jacobian: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a
 	-rm -f $bindir/jacobian
