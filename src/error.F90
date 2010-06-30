@@ -515,6 +515,13 @@ module error
     err_code     = clubb_no_error
     run_stat(1:c_total) = clubb_no_error
 
+    ! Debug lines to help determine why tuner runs intermittently fail -meyern
+    if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+      action='write', position='append')
+    call write_text( "Initialization passed!", l_save_tuning_run, file_unit )
+    if( l_save_tuning_run ) close(unit=file_unit)
+    ! end debug
+
     ! Copy simplex into a vector of all possible CLUBB parameters
     do i=1, nparams, 1
       ! If the variable isn't in the simplex, leave it as is
@@ -530,6 +537,13 @@ module error
         end if
       end do
     end do
+
+    ! Debug lines to help determine why tuner runs intermittently fail -meyern
+    if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+      action='write', position='append')
+    call write_text( "Simplex copy passed!", l_save_tuning_run, file_unit )
+    if( l_save_tuning_run ) close(unit=file_unit)
+    ! end debug
 
 !-----------------------------------------------------------------------
 
@@ -552,6 +566,12 @@ module error
       if( l_save_tuning_run ) close(unit=file_unit)
       
 #endif
+      ! Debug lines to help determine why tuner runs intermittently fail -meyern
+      if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+        action='write', position='append')
+      call write_text( "Local values used: ", params_local, l_save_tuning_run, file_unit )
+      if( l_save_tuning_run ) close(unit=file_unit)
+      ! end debug
 
       ! Run the CLUBB model with parameters as input
 
@@ -587,6 +607,13 @@ module error
     end if
 
     !-----------------------------------------------------------------------
+
+    ! Debug lines added to help determine why tuner runs intermittently fail -meyern
+    if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+        action='write', position='append')
+    call write_text( "Blow up check passed!", l_save_tuning_run, file_unit )
+    if( l_save_tuning_run ) close(unit=file_unit)
+    ! end debug
 
     do c_run=1, c_total, 1
 
@@ -681,6 +708,14 @@ module error
       deallocate( clubb_zl, clubb2_zl, les_zl, clubb_grid_heights )
 
     end do     ! end of do c_run=1, c_total
+
+    ! Debug lines added to help determine why tuner runs intermittently fail -meyern
+    if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+        action='write', position='append')
+    call write_text( "Mean squared calculated!", l_save_tuning_run, file_unit )
+    if( l_save_tuning_run ) close(unit=file_unit)
+    ! end debug
+
 !----------------------------------------------------------------------
 
     ! Return error averaged over all cases, variables,
@@ -699,6 +734,13 @@ module error
         end do
       end do
     end if
+
+    ! Debug lines added to help determine why tuner runs intermittently fail -meyern
+    if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+        action='write', position='append')
+    call write_text( "Normalization factors computed!", l_save_tuning_run, file_unit )
+    if( l_save_tuning_run ) close(unit=file_unit)
+    ! end debug
 
     !---------------------------------------------------------------
     ! Compute normalized error
