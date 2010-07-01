@@ -657,10 +657,15 @@ module grid_class
 
     ! Interpolation Weights: zm grid to zt grid.
     ! The grid index (k) is the index of the level on the thermodynamic (zt)
-    ! grid.  The result is the weights of the upper and lower momentum levels on
-    ! the thermodynamic level.  These weights are normally used in situations
-    ! where a momentum level variable is being solved for implicitly in an
-    ! equation and needs to be interpolated to the thermodynamic grid levels.
+    ! grid.  The result is the weights of the upper and lower momentum levels
+    ! (that sandwich the thermodynamic level) applied to that thermodynamic
+    ! level.  These weights are normally used in situations where a momentum
+    ! level variable is being solved for implicitly in an equation, and the
+    ! aforementioned variable needs to be interpolated from three successive
+    ! momentum levels (the central momentum level, as well as one momentum level
+    ! above and below the central momentum level) to the intermediate
+    ! thermodynamic grid levels that sandwich the central momentum level.
+    ! For more information, see the comments in function interpolated_aztk_imp.
     do k = 1, gr%nnzp, 1
       gr%weights_zm2zt(m_above:m_below,k)  & 
              = interp_weights_zm2zt_imp( k )
@@ -669,10 +674,17 @@ module grid_class
 
     ! Interpolation Weights: zt grid to zm grid.
     ! The grid index (k) is the index of the level on the momentum (zm) grid.
-    ! The result is the weights of the upper and lower thermodynamic levels on
-    ! the momentum level.  These weights are normally used in situations where a
-    ! thermodynamic level variable is being solved for implicitly in an equation
-    ! and needs to be interpolated to the momentum grid levels.
+    ! The result is the weights of the upper and lower thermodynamic levels
+    ! (that sandwich the momentum level) applied to that momentum level.  These
+    ! weights are normally used in situations where a thermodynamic level
+    ! variable is being solved for implicitly in an equation, and the
+    ! aforementioned variable needs to be interpolated from three successive
+    ! thermodynamic levels (the central thermodynamic level, as well as one
+    ! thermodynamic level above and below the central thermodynamic level) to
+    ! the intermediate momentum grid levels that sandwich the central
+    ! thermodynamic level.
+    ! For more information, see the comments in function interpolated_azmk_imp.
+
     do k = 1, gr%nnzp, 1
       gr%weights_zt2zm(t_above:t_below,k)  & 
              = interp_weights_zt2zm_imp( k )
@@ -1066,13 +1078,13 @@ module grid_class
     ! Function used to help in an interpolation of a variable (var_zt) located
     ! on the thermodynamic grid levels (azt) to the momentum grid levels (azm).
     ! This function computes a weighting factor for both the upper thermodynamic
-    ! level (k+1) and the lower thermodynamic level (k) on the central momentum
-    ! level (k).  For the uppermost momentum grid level (k=gr%nnzp), a weighting
-    ! factor for both the thermodynamic level at gr%nnzp and the thermodynamic
-    ! level at gr%nnzp-1 are computed based on the use of a linear extension.
-    ! This function outputs the weighting factors at a single momentum grid
-    ! level (k).  The formulation used is compatible with a stretched
-    ! (unevenly-spaced) grid.  The weights are defined as follows:
+    ! level (k+1) and the lower thermodynamic level (k) applied to the central
+    ! momentum level (k).  For the uppermost momentum grid level (k=gr%nnzp), a
+    ! weighting factor for both the thermodynamic level at gr%nnzp and the
+    ! thermodynamic level at gr%nnzp-1 are calculated based on the use of a
+    ! linear extension.  This function outputs the weighting factors at a single
+    ! momentum grid level (k).  The formulation used is compatible with a
+    ! stretched (unevenly-spaced) grid.  The weights are defined as follows:
     !
     ! ---var_zt(k+1)------------------------------------------- t(k+1)
     !                       azt_weight(t_above) = factor
@@ -1085,6 +1097,25 @@ module grid_class
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
     ! For all levels k < gr%nnzp:
+    !
+    ! The formula for a linear interpolation is given by:
+    !
+    ! var_zt( interp to zm(k) )
+    ! = [ ( var_zt(k+1) - var_zt(k) ) / ( zt(k+1) - zt(k) ) ]
+    !     * ( zm(k) - zt(k) ) + var_zt(k);
+    !
+    ! which can be rewritten as:
+    !
+    ! var_zt( interp to zm(k) )
+    ! = [ ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ) ]
+    !     * ( var_zt(k+1) - var_zt(k) ) + var_zt(k).
+    !
+    ! Furthermore, the formula can be rewritten as:
+    !
+    ! var_zt( interp to zm(k) )
+    ! = factor * var_zt(k+1) + ( 1 - factor ) * var_zt(k);
+    !
+    ! where:
     !
     ! factor = ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ).
     !
@@ -1119,8 +1150,8 @@ module grid_class
     ! which is the same as "factor" for the interpolation to momentum
     ! level (k).  In the code, this interpolation is referenced as
     ! gr%weights_zt2zm(t_above,mk), which can be read as "grid weight in a zt2zm
-    ! interpolation of the thermodynamic level above momentum level (k) (on
-    ! momentum level (k))".
+    ! interpolation of the thermodynamic level above momentum level (k) (applied
+    ! to momentum level (k))".
     !
     ! B(k) = 1 - [ ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ) ]
     !      = 1 - A(k);
@@ -1128,8 +1159,8 @@ module grid_class
     ! which is the same as "1 - factor" for the interpolation to momentum
     ! level (k).  In the code, this interpolation is referenced as
     ! gr%weights_zt2zm(t_below,mk), which can be read as "grid weight in a zt2zm
-    ! interpolation of the thermodynamic level below momentum level (k) (on
-    ! momentum level (k))".
+    ! interpolation of the thermodynamic level below momentum level (k) (applied
+    ! to momentum level (k))".
     !
     ! C(k) = ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) );
     !
@@ -1137,7 +1168,7 @@ module grid_class
     ! level (k-1).  In the code, this interpolation is referenced as
     ! gr%weights_zt2zm(t_above,mkm1), which can be read as "grid weight in a
     ! zt2zm interpolation of the thermodynamic level above momentum level (k-1)
-    ! (on momentum level (k-1))".
+    ! (applied to  momentum level (k-1))".
     !
     ! D(k) = 1 - [ ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ) ]
     !      = 1 - C(k);
@@ -1146,7 +1177,12 @@ module grid_class
     ! level (k-1).  In the code, this interpolation is referenced as
     ! gr%weights_zt2zm(t_below,mkm1), which can be read as "grid weight in a
     ! zt2zm interpolation of the thermodynamic level below momentum level (k-1)
-    ! (on momentum level (k-1))".
+    ! (applied to momentum level (k-1))".
+    !
+    ! Additionally, as long as the central thermodynamic level (k) in the above
+    ! scenario is not the uppermost thermodynamic level or the lowermost
+    ! thermodynamic level (k /= gr%nnzp and k /= 1), the four weighting factors
+    ! have the following relationships:  A(k) = C(k+1) and B(k) = D(k+1).
     !
     !
     ! Special condition for uppermost grid level, k = gr%nnzp:
@@ -1155,6 +1191,25 @@ module grid_class
     ! grid level.  Thus, a linear extension is used at this level.
     !
     ! For level k = gr%nnzp:
+    !
+    ! The formula for a linear extension is given by:
+    !
+    ! var_zt( extend to zm(k) )
+    ! = [ ( var_zt(k) - var_zt(k-1) ) / ( zt(k) - zt(k-1) ) ]
+    !     * ( zm(k) - zt(k-1) ) + var_zt(k-1);
+    !
+    ! which can be rewritten as:
+    !
+    ! var_zt( extend to zm(k) )
+    ! = [ ( zm(k) - zt(k-1) ) / ( zt(k) - zt(k-1) ) ]
+    !     * ( var_zt(k) - var_zt(k-1) ) + var_zt(k-1).
+    !
+    ! Furthermore, the formula can be rewritten as:
+    !
+    ! var_zt( extend to zm(k) )
+    ! = factor * var_zt(k) + ( 1 - factor ) * var_zt(k-1);
+    !
+    ! where:
     !
     ! factor = ( zm(k) - zt(k-1) ) / ( zt(k) - zt(k-1) ).
     !
@@ -1316,13 +1371,13 @@ module grid_class
     ! Function used to help in an interpolation of a variable (var_zm) located
     ! on the momentum grid levels (azm) to the thermodynamic grid levels (azt).
     ! This function computes a weighting factor for both the upper momentum
-    ! level (k) and the lower momentum level (k-1) on the central thermodynamic
-    ! level (k).  For the lowermost thermodynamic grid level (k=1), a weighting
-    ! factor for both the momentum level at 1 and the momentum level at 2 are
-    ! computed based on the use of a linear extension.  This function outputs
-    ! the weighting factors at a single thermodynamic grid level (k).   The
-    ! formulation used is compatible with a stretched (unevenly-spaced) grid.
-    ! The weights are defined as follows:
+    ! level (k) and the lower momentum level (k-1) applied to the central
+    ! thermodynamic level (k).  For the lowermost thermodynamic grid
+    ! level (k=1), a weighting factor for both the momentum level at 1 and the
+    ! momentum level at 2 are calculated based on the use of a linear extension.
+    ! This function outputs the weighting factors at a single thermodynamic grid
+    ! level (k).   The formulation used is compatible with a stretched
+    ! (unevenly-spaced) grid.  The weights are defined as follows:
     !
     ! ===var_zm(k)============================================= m(k)
     !                       azm_weight(m_above) = factor
@@ -1335,6 +1390,25 @@ module grid_class
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
     ! For all levels k > 1:
+    !
+    ! The formula for a linear interpolation is given by:
+    !
+    ! var_zm( interp to zt(k) )
+    ! = [ ( var_zm(k) - var_zm(k-1) ) / ( zm(k) - zm(k-1) ) ]
+    !     * ( zt(k) - zm(k-1) ) + var_zm(k-1);
+    !
+    ! which can be rewritten as:
+    !
+    ! var_zm( interp to zt(k) )
+    ! = [ ( zt(k) - zm(k-1) ) / ( zm(k) - zm(k-1) ) ]
+    !     * ( var_zm(k) - var_zm(k-1) ) + var_zm(k-1).
+    !
+    ! Furthermore, the formula can be rewritten as:
+    !
+    ! var_zm( interp to zt(k) )
+    ! = factor * var_zm(k) + ( 1 - factor ) * var_zm(k-1);
+    !
+    ! where:
     !
     ! factor = ( zt(k) - zm(k-1) ) / ( zm(k) - zm(k-1) ).
     !
@@ -1370,7 +1444,7 @@ module grid_class
     ! level (k+1).  In the code, this interpolation is referenced as
     ! gr%weights_zm2zt(m_above,tkp1), which can be read as "grid weight in a
     ! zm2zt interpolation of the momentum level above thermodynamic
-    ! level (k+1) (on thermodynamic level (k+1))".
+    ! level (k+1) (applied to thermodynamic level (k+1))".
     !
     ! B(k) = 1 - [ ( zt(k+1) - zm(k) ) / ( zm(k+1) - zm(k) ) ]
     !      = 1 - A(k);
@@ -1379,15 +1453,15 @@ module grid_class
     ! level (k+1).  In the code, this interpolation is referenced as
     ! gr%weights_zm2zt(m_below,tkp1), which can be read as "grid weight in a
     ! zm2zt interpolation of the momentum level below thermodynamic
-    ! level (k+1) (on thermodynamic level (k+1))".
+    ! level (k+1) (applied to thermodynamic level (k+1))".
     !
     ! C(k) = ( zt(k) - zm(k-1) ) / ( zm(k) - zm(k-1) );
     !
     ! which is the same as "factor" for the interpolation to thermodynamic
     ! level (k).  In the code, this interpolation is referenced as
     ! gr%weights_zm2zt(m_above,tk), which can be read as "grid weight in a zm2zt
-    ! interpolation of the momentum level above thermodynamic level (k) (on
-    ! thermodynamic level (k))".
+    ! interpolation of the momentum level above thermodynamic level (k) (applied
+    ! to thermodynamic level (k))".
     !
     ! D(k) = 1 - [ ( zt(k) - zm(k-1) ) / ( zm(k) - zm(k-1) ) ]
     !      = 1 - C(k);
@@ -1395,8 +1469,13 @@ module grid_class
     ! which is the same as "1 - factor" for the interpolation to thermodynamic
     ! level (k).  In the code, this interpolation is referenced as
     ! gr%weights_zm2zt(m_below,tk), which can be read as "grid weight in a zm2zt
-    ! interpolation of the momentum level below thermodynamic level (k) (on
-    ! thermodynamic level (k))".
+    ! interpolation of the momentum level below thermodynamic level (k) (applied
+    ! to thermodynamic level (k))".
+    !
+    ! Additionally, as long as the central momentum level (k) in the above
+    ! scenario is not the lowermost momentum level or the uppermost momentum
+    ! level (k /= 1 and k /= gr%nnzp), the four weighting factors have the
+    ! following relationships:  A(k) = C(k+1) and B(k) = D(k+1).
     !
     !
     ! Special condition for lowermost grid level, k = 1:
@@ -1409,6 +1488,25 @@ module grid_class
     ! often needed or referenced.
     !
     ! For level k = 1:
+    !
+    ! The formula for a linear extension is given by:
+    !
+    ! var_zm( extend to zt(k) )
+    ! = [ ( var_zm(k+1) - var_zm(k) ) / ( zm(k+1) - zm(k) ) ]
+    !     * ( zt(k) - zm(k) ) + var_zm(k);
+    !
+    ! which can be rewritten as:
+    !
+    ! var_zm( extend to zt(k) )
+    ! = [ ( zt(k) - zm(k) ) / ( zm(k+1) - zm(k) ) ]
+    !     * ( var_zm(k+1) - var_zm(k) ) + var_zm(k).
+    !
+    ! Furthermore, the formula can be rewritten as:
+    !
+    ! var_zm( extend to zt(k) )
+    ! = factor * var_zm(k+1) + ( 1 - factor ) * var_zm(k);
+    !
+    ! where:
     !
     ! factor = ( zt(k) - zm(k) ) / ( zm(k+1) - zm(k) ).
     !

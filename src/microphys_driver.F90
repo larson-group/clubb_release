@@ -2147,8 +2147,9 @@ module microphys_driver
       ! D(k) = 1 - [ ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ) ]
       !      = 1 - C(k).
       !
-      ! Furthermore, for all thermodynamic grid levels besides the uppermost one
-      ! (as long as k /= gr%nnzp), A(k) = C(k+1); and B(k) = D(k+1).
+      ! Furthermore, for all intermediate thermodynamic grid levels (as long as
+      ! k /= gr%nnzp and k /= 1), the four weighting factors have the following
+      ! relationships:  A(k) = C(k+1) and B(k) = D(k+1).
       !
       ! Note:  The superdiagonal term from level 3 and both the main diagonal
       !        and superdiagonal terms from level 4 are not shown on this
