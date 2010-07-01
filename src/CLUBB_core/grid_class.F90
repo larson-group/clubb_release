@@ -1168,7 +1168,7 @@ module grid_class
     ! level (k-1).  In the code, this interpolation is referenced as
     ! gr%weights_zt2zm(t_above,mkm1), which can be read as "grid weight in a
     ! zt2zm interpolation of the thermodynamic level above momentum level (k-1)
-    ! (applied to  momentum level (k-1))".
+    ! (applied to momentum level (k-1))".
     !
     ! D(k) = 1 - [ ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ) ]
     !      = 1 - C(k);
