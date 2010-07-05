@@ -121,7 +121,7 @@ module sponge_layer_damping
 
     use grid_class, only: gr ! Variable(s)
 
-!    use interpolation, only: lin_int ! function - if using linear interpolation
+    use interpolation, only: lin_int ! function
 
     implicit none
 
@@ -151,14 +151,14 @@ module sponge_layer_damping
 
     do k=gr%nnzp,gr%nnzp-damping_profile%n_sponge_damp,-1
 ! Vince Larson added code to use standard linear interpolation.
-      damping_profile%tau_sponge_damp(k) = settings%tau_sponge_damp_min *&
-        (settings%tau_sponge_damp_max/settings%tau_sponge_damp_min)** &
-        ( ( gr%zt(gr%nnzp)-gr%zt(k) ) / &
-          (gr%zt(gr%nnzp) - gr%zt( gr%nnzp-damping_profile%n_sponge_damp ) ) )
-!      damping_profile%tau_sponge_damp(k) =                                     &
-!        lin_int( gr%zt(k), gr%zt(gr%nnzp),                                     &
-!          gr%zt(gr%nnzp) - gr%zt( gr%nnzp-damping_profile%n_sponge_damp ) ,    &
-!          settings%tau_sponge_damp_min, settings%tau_sponge_damp_max )         
+!      damping_profile%tau_sponge_damp(k) = settings%tau_sponge_damp_min *&
+!        (settings%tau_sponge_damp_max/settings%tau_sponge_damp_min)** &
+!        ( ( gr%zt(gr%nnzp)-gr%zt(k) ) / &
+!          (gr%zt(gr%nnzp) - gr%zt( gr%nnzp-damping_profile%n_sponge_damp ) ) )
+      damping_profile%tau_sponge_damp(k) =                                     &
+        lin_int( gr%zt(k), gr%zt(gr%nnzp),                                     &
+          gr%zt(gr%nnzp) - gr%zt( gr%nnzp-damping_profile%n_sponge_damp ) ,    &
+          settings%tau_sponge_damp_min, settings%tau_sponge_damp_max )         
 ! End Vince Larson's change
     end do
 
