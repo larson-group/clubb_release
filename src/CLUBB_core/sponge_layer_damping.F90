@@ -78,6 +78,8 @@ module sponge_layer_damping
     ! Output Variable(s)
     real, dimension(gr%nnzp) :: xm_p ! Variable damped [-]
 
+    real :: dt_on_tau ! Ratio of timestep to damping timescale [-]
+
     integer k
 
     if( associated( damping_profile%tau_sponge_damp ) ) then
@@ -86,9 +88,17 @@ module sponge_layer_damping
 
       do k = gr%nnzp, gr%nnzp-damping_profile%n_sponge_damp, -1
 
-        xm_p(k) = xm(k) - real( ( ( xm(k) - xm_ref(k) ) / & 
-                        damping_profile%tau_sponge_damp(k) ) * dt )
+! Vince Larson used implicit discretization in order to 
+! reduce noise in rtm in cloud_feedback_s12 (CGILS) 
+!        xm_p(k) = xm(k) - real( ( ( xm(k) - xm_ref(k) ) / & 
+!                        damping_profile%tau_sponge_damp(k) ) * dt )
+        dt_on_tau = real( dt / damping_profile%tau_sponge_damp(k) )
 
+! Really, we should be using xm_ref at time n+1 rather than n.
+! However, for steady profiles of xm_ref, it won't matter.        
+        xm_p(k) = ( xm(k) + dt_on_tau * xm_ref(k) ) / &
+                        ( 1.0 + dt_on_tau )
+! End Vince Larson's change
       end do ! k
 
     else
@@ -110,6 +120,8 @@ module sponge_layer_damping
     use stats_precision, only: time_precision ! Variable(s)
 
     use grid_class, only: gr ! Variable(s)
+
+!    use interpolation, only: lin_int ! function - if using linear interpolation
 
     implicit none
 
@@ -138,10 +150,16 @@ module sponge_layer_damping
     end do
 
     do k=gr%nnzp,gr%nnzp-damping_profile%n_sponge_damp,-1
+! Vince Larson added code to use standard linear interpolation.
       damping_profile%tau_sponge_damp(k) = settings%tau_sponge_damp_min *&
         (settings%tau_sponge_damp_max/settings%tau_sponge_damp_min)** &
         ( ( gr%zt(gr%nnzp)-gr%zt(k) ) / &
           (gr%zt(gr%nnzp) - gr%zt( gr%nnzp-damping_profile%n_sponge_damp ) ) )
+!      damping_profile%tau_sponge_damp(k) =                                     &
+!        lin_int( gr%zt(k), gr%zt(gr%nnzp),                                     &
+!          gr%zt(gr%nnzp) - gr%zt( gr%nnzp-damping_profile%n_sponge_damp ) ,    &
+!          settings%tau_sponge_damp_min, settings%tau_sponge_damp_max )         
+! End Vince Larson's change
     end do
 
   end subroutine initialize_tau_sponge_damp
