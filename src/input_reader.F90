@@ -99,7 +99,7 @@ module input_reader
 
     character(len=200) :: tmpline
 
-    real, dimension(ncol) :: tmp
+    real, dimension(nCol) :: tmp
 
     ! Begin Code
 
@@ -584,7 +584,8 @@ module input_reader
     !
     !  Description: Searches for the variable specified by target_name in the
     !  collection of retVars. If the function finds the variable then it returns
-    !  it. If it does not then the default value is returned
+    !  it. If it does not the program using this function will exit gracefully
+    !  with a warning message.
     !
     ! Modified by Cavyn, June 2010
     !----------------------------------------------------------------------------------------------
