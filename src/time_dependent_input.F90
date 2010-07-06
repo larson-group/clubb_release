@@ -19,7 +19,8 @@ module time_dependent_input
              finalize_t_dependent_forcings,   & 
              initialize_t_dependent_surface,  &
              finalize_t_dependent_surface,    &
-             read_to_grid
+             read_to_grid,                    &
+             count_columns
 
   integer, parameter :: nCols = 10 ! Number of columns in the input file
 
@@ -62,13 +63,13 @@ module time_dependent_input
 
   contains
 
-  !-------------------------------------------------------------------------------------------------
+  !================================================================================================
   subroutine initialize_t_dependent_input( iunit, runtype, grid_size, grid, p_in_Pa )
     !
     !  Description: This subroutine reads in time dependent information about a
     !  case that is stored inside the module.
     !
-    !-----------------------------------------------------------------------------------------------
+    !---------------------------------------------------------------------------------
 
     implicit none
 
@@ -83,7 +84,7 @@ module time_dependent_input
 
     real, dimension(grid_size), intent(in) :: p_in_Pa ! Pressure[Pa]
 
-    ! Begin Code
+    ! ----------------- Begin Code --------------------
 
     call initialize_t_dependent_forcings &
                    ( iunit, input_path//trim(runtype)//forcings_path, grid_size, grid, p_in_Pa )
@@ -93,7 +94,7 @@ module time_dependent_input
 
   end subroutine initialize_t_dependent_input
 
-  !------------------------------------------------------------------------------
+  !================================================================================================
   subroutine finalize_t_dependent_input()
     !
     ! Description: This subroutine frees memory stored after initilizing the
@@ -103,14 +104,14 @@ module time_dependent_input
 
     implicit none
 
-    ! Begin Code
+    ! ----------------- Begin Code --------------------
 
     call finalize_t_dependent_forcings()
     call finalize_t_dependent_surface()
 
   end subroutine finalize_t_dependent_input
 
-  !------------------------------------------------------------------------------
+  !================================================================================================
   subroutine initialize_t_dependent_surface( iunit, input_file )
     !
     !  Description: This subroutine reads in a file that details time dependent
@@ -122,7 +123,8 @@ module time_dependent_input
     use error_code, only: clubb_at_least_debug_level ! Procedure(s)
 
     use input_reader, only: read_one_dim_file, one_dim_read_var, &
-                            fill_blanks_one_dim_vars, read_x_profile
+                            fill_blanks_one_dim_vars, read_x_profile, &
+                            get_target_index
 
     use input_names, only: &
       time_name,     &
@@ -155,13 +157,7 @@ module time_dependent_input
 
     ! ----------------- Begin Code --------------------
 
-    ! Allow the ability to read in values of upwp_sfc and vpwp_sfc 
-    ! Currently (Aug. 2009), this is only used for case gabls3_night
-    if ( l_input_xpwp_sfc ) then
-      nCols = 8
-    else
-      nCols = 6
-    endif
+    nCols = count_columns( iunit, input_file )
 
     allocate( retVars(1:nCols) )
 
@@ -175,59 +171,64 @@ module time_dependent_input
     dim_size = size( retVars(1)%values )
 
     ! Store the data read from the file in each [variable]_sfc_given
-    allocate( time_sfc_given(1:dim_size) )
-
-    time_sfc_given = read_x_profile( nCols, dim_size, time_name, retVars, &
+    
+    if( get_target_index(nCols, time_name, retVars) > 0 ) then
+      allocate( time_sfc_given(1:dim_size) )
+      time_sfc_given = read_x_profile( nCols, dim_size, time_name, retVars, &
                                      input_file )
-
-    allocate( LH_given(1:dim_size) )
-
-    LH_given = read_x_profile( nCols, dim_size, LH_name, retVars, &
-                               input_file )
-
-    allocate( SH_given(1:dim_size) )
-
-    SH_given = read_x_profile( nCols, dim_size, SH_name, retVars, &
-                               input_file )
-
-    allocate( thlm_sfc_given(1:dim_size) )
-
-    thlm_sfc_given = read_x_profile( nCols, dim_size, thetal_name, retVars, &
-                                     input_file )
-
-    allocate( rtm_sfc_given(1:dim_size) )
-
-    rtm_sfc_given = read_x_profile( nCols, dim_size, rt_name, retVars, &
-                                    input_file )
-
-    allocate( psfc_given(1:dim_size) )
-
-    psfc_given = read_x_profile( nCols, dim_size, pressure_name, retVars, &
-                                 input_file )
-
-    ! Added a warning because psfc_given is not used anywhere else in the code.
-    if ( clubb_at_least_debug_level( 1 ) ) then
-      write(fstderr,*) 'Warning: Pressure data has been read in and ignored.'
     end if
 
-    ! upwp_sfc and vpwp_sfc are currently (Aug. 2009) only fed into CLUBB for case "gabls3_night"
-    if ( l_input_xpwp_sfc ) then
-
+    if( get_target_index(nCols, LH_name, retVars) > 0 ) then
+      allocate( LH_given(1:dim_size) )
+      LH_given = read_x_profile( nCols, dim_size, LH_name, retVars, &
+                               input_file )
+    end if
+    
+    if( get_target_index(nCols, SH_name, retVars) > 0 ) then
+      allocate( SH_given(1:dim_size) )
+      SH_given = read_x_profile( nCols, dim_size, SH_name, retVars, &
+                               input_file )
+    end if
+    
+    if( get_target_index(nCols, thetal_name, retVars) > 0 ) then
+      allocate( thlm_sfc_given(1:dim_size) )
+      thlm_sfc_given = read_x_profile( nCols, dim_size, thetal_name, retVars, &
+                                     input_file )
+    end if
+    
+    if( get_target_index(nCols, rt_name, retVars) > 0 ) then
+      allocate( rtm_sfc_given(1:dim_size) )
+      rtm_sfc_given = read_x_profile( nCols, dim_size, rt_name, retVars, &
+                                    input_file )
+    end if
+    
+    if( get_target_index(nCols, pressure_name, retVars) > 0 ) then
+      allocate( psfc_given(1:dim_size) )
+      psfc_given = read_x_profile( nCols, dim_size, pressure_name, retVars, &
+                                 input_file )
+    ! Added a warning because psfc_given is not used anywhere else in the code.
+      if ( clubb_at_least_debug_level( 1 ) ) then
+        write(fstderr,*) 'Warning: Pressure data has been read in and ignored.'
+      end if
+    end if
+    
+    ! As of June 2010, this is only in gabls3_night
+    if( get_target_index(nCols, upwp_sfc_name, retVars) > 0 ) then
       allocate( upwp_sfc_given(1:dim_size) )
-
       upwp_sfc_given = read_x_profile( nCols, dim_size, upwp_sfc_name, retVars, &
-                                       input_file )
-
+                                      input_file )
+    end if
+    
+    ! As of June 2010, this is only in gabls3_night
+    if( get_target_index(nCols, vpwp_sfc_name, retVars) > 0 ) then
       allocate( vpwp_sfc_given(1:dim_size) )
-
       vpwp_sfc_given = read_x_profile( nCols, dim_size, vpwp_sfc_name, retVars, &
-                                       input_file )
-
-    end if ! l_input_xpwp_sfc
-
+                                      input_file )
+    end if
+    
   end subroutine initialize_t_dependent_surface
 
-  !-------------------------------------------------------------------------------------
+  !================================================================================================
   subroutine initialize_t_dependent_forcings( iunit, input_file, grid_size, grid, p_in_Pa )
     !
     !  Description: This subroutine reads in a file that details time dependent
@@ -261,7 +262,7 @@ module time_dependent_input
 
     type(two_dim_read_var), dimension(nCols) :: t_dependent_forcing_data_f_grid
 
-    ! Begin Code
+    ! ----------------- Begin Code --------------------
 
 
     ! Read in the forcing data from the input file
@@ -310,7 +311,7 @@ module time_dependent_input
 
   end subroutine initialize_t_dependent_forcings
 
-  !----------------------------------------------------------
+  !================================================================================================
   subroutine finalize_t_dependent_forcings()
     !
     !   Description: Clears memory initialized in initialize_t_dependent_forcings.
@@ -321,44 +322,45 @@ module time_dependent_input
 
     integer i
 
-    ! Begin Code
+    ! ----------------- Begin Code --------------------
 
     do i=1, nCols
       deallocate( t_dependent_forcing_data(i)%values )
     end do
 
   end subroutine finalize_t_dependent_forcings
-  !-------------------------------------------------------------------------------------------------
+  
+  !================================================================================================
   subroutine finalize_t_dependent_surface( )
     !
     !  Description: Clears memory initialized in initialize_t_dependent_surface.
     !  This should be called at the end of the model.
     !
-    !-----------------------------------------------------------------------------------------------
+    !------------------------------------------------------------------------------------
 
     implicit none
 
-    ! Begin Code
+    ! ----------------- Begin Code --------------------
 
-    deallocate( time_sfc_given )
-    deallocate( LH_given )
-    deallocate( SH_given )
-    deallocate( thlm_sfc_given )
-    deallocate( rtm_sfc_given )
-    deallocate( psfc_given )
+    if ( allocated( time_sfc_given ) ) deallocate( time_sfc_given )
+    if ( allocated( LH_given ) )       deallocate( LH_given )
+    if ( allocated( SH_given ) )       deallocate( SH_given )
+    if ( allocated( thlm_sfc_given ) ) deallocate( thlm_sfc_given )
+    if ( allocated( rtm_sfc_given ) )  deallocate( rtm_sfc_given )
+    if ( allocated( psfc_given ) )     deallocate( psfc_given )
     if ( allocated( upwp_sfc_given ) ) deallocate( upwp_sfc_given )
     if ( allocated( vpwp_sfc_given ) ) deallocate( vpwp_sfc_given )
 
   end subroutine finalize_t_dependent_surface
 
-  !------------------------------------------------------------------------------------------------
+  !================================================================================================
   function read_to_grid( ntwo_dim_vars, dim_size, other_dim_size, &
                          grid_size, grid, two_dim_vars, target_name ) result(var)
     !
     !  Description: This is a helper function for doing the translation from the
     !  forcing grid to the model grid.
     !
-    !----------------------------------------------------------------------------------------------
+    !------------------------------------------------------------------------------------
 
     use input_reader, only: read_x_table, two_dim_read_var
 
@@ -387,7 +389,7 @@ module time_dependent_input
 
     integer i
 
-    ! Begin Code
+    ! ----------------- Begin Code --------------------
 
     temp_var = read_x_table( ntwo_dim_vars,  dim_size, other_dim_size, target_name, two_dim_vars )
 
@@ -400,7 +402,7 @@ module time_dependent_input
 
   end function read_to_grid
 
-  !-------------------------------------------------------------------------------------------------
+  !================================================================================================
   subroutine apply_time_dependent_forcings( time, grid_size, rtm, rho, exner,  &
     thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, wm_zt, wm_zm,  ug, vg, &
     sclrm_forcing, edsclrm_forcing )
@@ -408,7 +410,7 @@ module time_dependent_input
     !  Description: This subroutine converts the time dependent information stored in
     !  memory (time_dependent_forcing_data) into the format used by CLUBB.
     !
-    !-----------------------------------------------------------------------------------------------
+    !---------------------------------------------------------------------------------
 
     use error_code, only: &
       clubb_debug ! Procedure(s)
@@ -489,7 +491,7 @@ module time_dependent_input
 
     real time_frac
 
-    ! Begin Code
+    ! ----------------- Begin Code --------------------
 
     time_frac = -1.0 ! Default initialization
 
@@ -621,7 +623,7 @@ module time_dependent_input
 
   end subroutine apply_time_dependent_forcings
 
-  !------------------------------------------------------------------------------------------------
+  !================================================================================================
   subroutine time_select( time, nvar, time_array, left_time, right_time )
     !
     !   Description: This subroutine determines which indexes of the given
@@ -629,7 +631,7 @@ module time_dependent_input
     !                at the specified time.
     !
     !
-    !----------------------------------------------------------------------------------------------
+    !---------------------------------------------------------------------------------
 
     use stats_precision, only: time_precision ! Variable(s)
 
@@ -654,7 +656,7 @@ module time_dependent_input
 
     integer :: k
 
-    ! Begin Code
+    ! ----------------- Begin Code --------------------
 
     if( time <= time_array(1)) then
 
@@ -685,5 +687,71 @@ module time_dependent_input
     return
 
   end subroutine time_select
+  
+  !================================================================================================
+  function count_columns( iunit, filename ) result( nCols )
+  ! Description:
+  !   This function counts the number of columns in a file, assuming that the
+  !   first line of the file contains only column headers. (Comments are OK)
 
+  ! References:
+  !   None
+
+  ! Created by Cavyn, July 2010
+  !-------------------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: iunit ! I/O unit
+    character(len=*), intent(in) :: filename ! Name of the file being read from
+    
+    ! Output Variable
+    integer :: nCols ! The number of data columns in the selected file
+    
+    ! Local Variables
+    integer :: i, k                               ! Loop Counter
+    character(len=200) :: tmp                     ! Temporary char buffer
+    character(len=200), dimension(50) :: colArray ! Max of 50 columns
+    logical :: isComment
+
+
+    ! -------------------------BEGIN CODE-------------------------------------
+    
+    isComment = .true.
+
+    open(unit=iunit, file=trim(filename), status = 'old' )
+
+    ! Skip all the comments at the top of the file
+    do while(isComment)
+      read(iunit,fmt='(A)') tmp
+      k = index(tmp, "!")
+      isComment = .false.
+      if(k > 0) then
+        isComment = .true.
+      end if
+    end do
+
+    ! Go back to the line that wasn't a comment.
+    backspace(iunit)
+    
+    ! Count the number of columns
+    nCols = 0
+    colArray = ""
+    read(iunit,fmt='(A)',end=999) tmp
+    999 continue
+    read(tmp,*,end=888) (colArray(i), i=1,size(colArray)) ! Move all words into an array
+    888 continue
+    
+    do i=1,size(colArray)
+      if( colArray(i) /= "" ) then ! Increment number of columns until array is blank
+        nCols = nCols+1
+      end if
+    end do
+    
+    close(iunit)
+
+  end function count_columns
+
+!===========================================================================================
 end module time_dependent_input

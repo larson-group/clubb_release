@@ -21,7 +21,8 @@ module input_reader
             deallocate_one_dim_vars, &
             deallocate_two_dim_vars, &
             read_x_table, &
-            read_x_profile
+            read_x_profile, &
+            get_target_index
 
   ! Derived type for representing a rank 1 variable that has been read in by one
   ! of the procedures.
@@ -183,13 +184,13 @@ module input_reader
     return
   end subroutine read_two_dim_file
 
-  !-------------------------------------------------------------------------------------------------
+  !------------------------------------------------------------------------------------------------
   subroutine read_one_dim_file( iunit, nCol, filename, read_vars )
     !
     ! Description: This subroutine reads from a file containing data that varies
     !              in one dimensions. This is typically time.
     !
-    !-----------------------------------------------------------------------------------------------
+    !----------------------------------------------------------------------------------------------
     implicit none
 
     ! Input Variable(s)
@@ -214,7 +215,7 @@ module input_reader
 
     integer :: k, j
 
-    real, dimension(ncol) :: tmp
+    real, dimension(nCol) :: tmp
 
     logical :: isComment
 
@@ -272,14 +273,14 @@ module input_reader
 
   end subroutine read_one_dim_file
 
-  !-------------------------------------------------------------------------------------------------
+  !------------------------------------------------------------------------------------------------
   subroutine fill_blanks_one_dim_vars( num_vars, one_dim_vars )
     !
     !  Description: This subroutine fills in the blank spots (signified by -999.0)
     !  with values linearly interpolated using the first element of the array as a
     !  guide.
     !
-    !-----------------------------------------------------------------------------------------------
+    !----------------------------------------------------------------------------------------------
 
     implicit none
 
@@ -303,7 +304,7 @@ module input_reader
 
   end subroutine fill_blanks_one_dim_vars
 
-  !-------------------------------------------------------------------------------------------------
+  !------------------------------------------------------------------------------------------------
   subroutine fill_blanks_two_dim_vars( num_vars, other_dim, two_dim_vars )
     !
     !  Description: This subroutine fills in the blank spots (signified by -999.0)
@@ -319,7 +320,7 @@ module input_reader
     !  two_dim_vars.
     !
     !
-    !-----------------------------------------------------------------------------------------------
+    !----------------------------------------------------------------------------------------------
 
     implicit none
 
@@ -366,7 +367,7 @@ module input_reader
   end subroutine fill_blanks_two_dim_vars
 
 
-  !-------------------------------------------------------------------------------------------------
+  !------------------------------------------------------------------------------------------------
   function linear_fill_blanks( dim_grid, grid, var, default_value ) &
   !
   !  Description: This function fills blanks in array var using the grid
@@ -474,13 +475,13 @@ module input_reader
 
   end subroutine deallocate_one_dim_vars
 
-  !-------------------------------------------------------------------------------------------------
+  !------------------------------------------------------------------------------------------------
   subroutine deallocate_two_dim_vars( num_vars, two_dim_vars, other_dim )
     !
     !  Description: This subroutine deallocates the pointer stored in
     !  two_dim_vars%value for the whole array
     !
-    !-----------------------------------------------------------------------------------------------
+    !----------------------------------------------------------------------------------------------
     implicit none
 
     ! Input Variable(s)
@@ -516,7 +517,7 @@ module input_reader
 
     return
   end subroutine deallocate_two_dim_vars
-  !-------------------------------------------------------------------------------------------------
+  !------------------------------------------------------------------------------------------------
   function read_x_table( nvar, xdim, ydim, target_name, retVars ) result(x)
     !
     !  Description: Searches for the variable specified by target_name in the
@@ -576,32 +577,25 @@ module input_reader
 
   end function read_x_table
 
-  !-------------------------------------------------------------------------------------------------
+
+  !------------------------------------------------------------------------------------------------
   function read_x_profile( nvar, dim_size, target_name, retVars, &
                            input_file ) result(x)
     !
     !  Description: Searches for the variable specified by target_name in the
     !  collection of retVars. If the function finds the variable then it returns
-    !  it. If it does not the program using this function will exit gracefully
-    !  with a warning message.
+    !  it. If it does not then the default value is returned
     !
-    !-----------------------------------------------------------------------------------------------
+    ! Modified by Cavyn, June 2010
+    !----------------------------------------------------------------------------------------------
 
     implicit none
 
-
     ! Input Variable(s)
-    integer, intent(in) :: nvar ! Number of variables in retVars
-
-    integer, intent(in) :: dim_size ! Size of the array returned
-
-
-    character(len=*), intent(in) :: target_name ! Variable that is being
-    !                                             searched for
-
-    type(one_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection
-    !                                                                being searched through
-
+    integer, intent(in) :: nvar                  ! Number of variables in retVars
+    integer, intent(in) :: dim_size              ! Size of the array returned
+    character(len=*), intent(in) :: target_name  ! Variable that is being searched for
+    type(one_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection being searched
     character(len=*), optional, intent(in) :: input_file
 
     ! Output Variable(s)
@@ -609,31 +603,66 @@ module input_reader
 
     ! Local Variables
     integer i
+    
+    !----------------BEGIN CODE------------------
 
-    logical l_found
-
-    l_found = .false.
-
-    i = 1
-    do while( i <= nvar .and. .not. l_found)
-      if( retVars(i)%name == target_name ) then
-        l_found = .true.
+    i = get_target_index( nvar, target_name, retVars )
+    
+    if( i > 0 ) then
         x(1:size(retVars(i)%values)) = retVars(i)%values
-      end if
-      i=i+1
-    end do
-
-    if( .not. l_found ) then
-      ! Usually, retVars is read from the sounding.in file, but if not,
-      ! print the filename to make debugging easier.
+        
+    else
       if( present( input_file ) ) then
         print *, target_name, ' could not be found. Check the file ', input_file
       else
         print *, target_name, ' could not be found. Check your sounding.in file.'
       end if ! present( input_file )
       stop
-    end if ! .not. l_found
+      
+    end if ! target_exists_in_array
 
   end function read_x_profile
+  
+  !------------------------------------------------------------------------------
+  function get_target_index( nvar, target_name, retVars) result( i )
+    !
+    !  Description:
+    !    Returns the index of the variable specified by target_name in the
+    !    collection of retVars. Returns -1 if variable does not exist in retVars
+    !
+    ! Created by Cavyn, July 2010
+    !----------------------------------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variable(s)
+    integer, intent(in) :: nvar                    ! Number of variables in retVars
+    character(len=*), intent(in) :: target_name           ! Variable being searched for
+    type(one_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection being searched
+
+    ! Output Variable
+    integer i
+
+    ! Local Variable(s)
+    logical l_found
+    
+    !----------------BEGIN CODE------------------
+    
+    l_found = .false.
+    
+    i = 0
+    do while( i < nvar .and. .not. l_found)
+      i = i+1
+      if( retVars(i)%name == target_name ) then
+        l_found = .true.
+      end if
+    end do
+    
+    if( .not. l_found ) then
+      i = -1
+    end if
+
+  end function get_target_index
+
 !------------------------------------------------------------------------------
 end module input_reader
