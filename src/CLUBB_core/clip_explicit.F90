@@ -663,6 +663,9 @@ module clip_explicit
     ! Description:
     ! Clipping the value of w'^3 based on the skewness of w, Sk_w.
     !
+    ! Aditionally, to prevent possible crashes due to wp3 growing too large, 
+    ! abs(wp3) will be clipped to 100.
+    !
     ! The skewness of w is:
     !
     ! Sk_w = w'^3 / (w'^2)^(3/2).
@@ -783,6 +786,11 @@ module clip_explicit
     where ( wp3**2 > wp3_lim_sqd ) &
       ! Set the magnitude to the wp3 limit and apply the sign of the current wp3
       wp3 = sign( sqrt( wp3_lim_sqd ), wp3 )
+
+    ! Clipping abs(wp3) to 100. This keeps wp3 from growing too large in some 
+    ! deep convective cases, which helps prevent these cases from blowing up.
+    where ( abs(wp3) > 100.) &
+      wp3 = sign( 100. , wp3 )
 
       if ( l_stats_samp ) then
         call stat_end_update( iwp3_cl, real( wp3 / dt ), zt )
