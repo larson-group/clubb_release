@@ -3066,6 +3066,14 @@ module clubb_driver
         call apply_time_dependent_forcings( time_current, gr%nnzp, rtm, rho, exner,&
          thlm_forcing, rtm_forcing, um_ref, vm_ref, um_forcing, vm_forcing, wm_zt, wm_zm, ug, vg, &
          sclrm_forcing, edsclrm_forcing )
+
+! Vince Larson set forcing to zero at the top point so that we don't need
+! so much sponge damping, which is associated with sawtooth noise
+! in the cloud_feedback cases.  I don't know how it will affect
+! the other cases.
+        rtm_forcing(gr%nnzp) = 0.
+        thlm_forcing(gr%nnzp) = 0.
+! End Vince Larson's addition
       end if
 #endif
 

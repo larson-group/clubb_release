@@ -102,12 +102,12 @@ l_use_default_std_atmosphere = .false.
 ! sponge_damp_depth   : damping depth as a fraction of domain height [-]
 !
 thlm_sponge_damp_settings%l_sponge_damping = .true.
-thlm_sponge_damp_settings%tau_sponge_damp_min = 10800. 
+thlm_sponge_damp_settings%tau_sponge_damp_min = 86400. 
 thlm_sponge_damp_settings%tau_sponge_damp_max = 86400. 
 thlm_sponge_damp_settings%sponge_damp_depth = 0.25
 
 rtm_sponge_damp_settings%l_sponge_damping = .true.
-rtm_sponge_damp_settings%tau_sponge_damp_min = 10800. 
+rtm_sponge_damp_settings%tau_sponge_damp_min = 86400. 
 rtm_sponge_damp_settings%tau_sponge_damp_max = 86400. 
 rtm_sponge_damp_settings%sponge_damp_depth = 0.25
 

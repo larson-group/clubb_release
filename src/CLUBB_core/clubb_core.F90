@@ -996,6 +996,7 @@ module clubb_core
     !----------------------------------------------------------------
 
     call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3,     & ! intent(in)
+                          Lscale,                                      & ! intent(in)
                           Kh_zt, tau_zm, Skw_zm, rtpthvp, rtm_forcing, & ! intent(in)
                           thlpthvp, rtm_ref, thlm_ref, thlm_forcing,   & ! intent(in)
                           rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,       & ! intent(in)

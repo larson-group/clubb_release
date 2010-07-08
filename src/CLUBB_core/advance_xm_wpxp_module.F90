@@ -41,6 +41,7 @@ module advance_xm_wpxp_module
 
   !=============================================================================
   subroutine advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3, &
+                              Lscale, &
                               Kh_zt, tau_zm, Skw_zm, rtpthvp, rtm_forcing, &
                               thlpthvp, rtm_ref, thlm_ref, thlm_forcing, &
                               rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
@@ -147,6 +148,7 @@ module advance_xm_wpxp_module
       wp2,             & ! w'^2 (momentum levels)                   [m^2/s^2]
       wp2_zt,          & ! w'^2 (interpolated to thermo. levels)    [m^2/s^2]
       wp3,             & ! w'^3 (thermodynamic levels)              [m^3/s^3]
+      Lscale,          & ! Turbulent mixing length                  [m]
       Kh_zt,           & ! Eddy diffusivity on thermodynamic levels [m^2/s]
       tau_zm,          & ! Time-scale tau on momentum levels        [s]
       Skw_zm,          & ! Skewness of w on momentum levels         [-]
@@ -285,6 +287,15 @@ module advance_xm_wpxp_module
     else
       C7_Skw_fnc(1:gr%nnzp) = C7b
     endif
+
+! Vince Larson increased C7 in stably stratified regions 
+! in order to damp gravity waves
+    where ( Lscale < 10. )
+      C7_Skw_fnc = 0.9
+    else where ( (Lscale > 10.) .and. (Lscale < 40.) ) 
+      C7_Skw_fnc = 0.8
+    end where
+! End Vince Larson's comment
 
     !        C6rt_Skw_fnc = C6rt
     !        C6thl_Skw_fnc = C6thl
