@@ -329,6 +329,8 @@ end function plinterp_fnc
 !-------------------------------------------------------------------------------
 
     use error_code, only: clubb_debug ! Procedure
+    
+    use constants_clubb, only: fstderr ! Constant
 
     implicit none
 
@@ -392,7 +394,7 @@ end function plinterp_fnc
 !-------------------------------------------------------------------------------
 
     if ( (xvalue < xlist(1)) .or. (xvalue > xlist(nparam)) ) then
-      write(0,'(a)') "linear_interpolation: Value out of range"
+      write(fstderr,*) "linear_interpolation: Value out of range"
       stop
     end if
 

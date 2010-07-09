@@ -635,7 +635,7 @@ module error
             l_save_tuning_run, file_unit )
           if( l_save_tuning_run ) close(unit=file_unit)
           ! end debug
-          write(0,*) "The specified LES variable "//trim( les_v(i) )//" was invalid"
+          write(fstderr,*) "The specified LES variable "//trim( les_v(i) )//" was invalid"
           stop
         end if
 

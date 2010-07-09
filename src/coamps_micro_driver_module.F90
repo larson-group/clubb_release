@@ -42,7 +42,9 @@ module coamps_micro_driver_module
 !      Rutledge and Hobbs, 1984; COAMPS Users Guide.
 !----------------------------------------------------------------------
 
-    use constants_clubb, only: Cp, Lv, pi, Lf, Ls, Rv, Rd, p0, T_freeze_K, cm3_per_m3 ! Variable(s)
+    use constants_clubb, only: &
+      Cp, Lv, pi, Lf, Ls, Rv, Rd, p0, T_freeze_K, cm3_per_m3, & ! Variable(s)
+      fstderr ! Constant(s)
     use saturation, only: sat_mixrat_liq, sat_mixrat_ice ! Procedure(s)
     use stats_precision, only: time_precision ! Variable(s)
     use error_code, only: clubb_debug ! Procedure(s)
@@ -426,7 +428,7 @@ module coamps_micro_driver_module
 !   because collection of drizzle by ice
 !   is not implemented yet.
     if ( l_ice_micro .and. ldrizzle ) then
-      write(0,*) "l_ice_micro must be false to use ldrizzle"
+      write(fstderr,*) "l_ice_micro must be false to use ldrizzle"
       stop
     end if
 

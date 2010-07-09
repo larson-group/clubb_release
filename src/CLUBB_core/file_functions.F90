@@ -39,6 +39,8 @@ subroutine file_read_1d( file_unit, path_and_filename,  &
 !     See Michael Falk's comments below for more information.
 !-----------------------------------------------------------------------
 
+use constants_clubb, only: fstderr ! Constant(s)
+
 implicit none
 
 integer, intent(in) :: & 
@@ -62,7 +64,7 @@ integer :: ierr
 open( unit=file_unit, file=path_and_filename, action='read', status='old', &
       iostat=ierr )
 if ( ierr /= 0 ) then
-  write(0,*) "CLUBB encountered an error trying to open "//path_and_filename
+  write(fstderr,*) "CLUBB encountered an error trying to open "//path_and_filename
   stop "Error opening forcings file"
 end if
 

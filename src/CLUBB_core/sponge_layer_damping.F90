@@ -118,6 +118,8 @@ module sponge_layer_damping
     !
     !-------------------------------------------------------------------------------------------
     use stats_precision, only: time_precision ! Variable(s)
+    
+    use constants_clubb, only: fstderr ! Constant(s)
 
     use grid_class, only: gr ! Variable(s)
 
@@ -139,7 +141,7 @@ module sponge_layer_damping
     allocate( damping_profile%tau_sponge_damp(1:gr%nnzp))
 
     if( settings%tau_sponge_damp_min < 2 * dt) then
-      print*,'Error: in damping() tau_sponge_damp_min is too small!'
+      write(fstderr,*) 'Error: in damping() tau_sponge_damp_min is too small!'
       stop
     end if
 

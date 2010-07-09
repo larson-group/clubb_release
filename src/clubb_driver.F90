@@ -803,11 +803,11 @@ module clubb_driver
       !   incremented correctly by iteration number at end of timestep
       if ( mod( (time_restart-time_initial) , dtmain ) /= 0 ) then
 
-        print*, "Error: (time_restart-time_initial) ",  & 
+        write(fstderr,*) "Error: (time_restart-time_initial) ",  & 
           "is not a multiple of dtmain."
-        print*, "time_restart = ", time_restart
-        print*, "time_initial = ", time_initial
-        print*, "dtmain = ", dtmain
+        write(fstderr,*) "time_restart = ", time_restart
+        write(fstderr,*) "time_initial = ", time_initial
+        write(fstderr,*) "dtmain = ", dtmain
         stop "Fatal error"
 
       end if ! mod( (time_restart-time_initial) , dtmain ) /= 0

@@ -590,6 +590,9 @@ module input_reader
     ! Modified by Cavyn, June 2010
     !----------------------------------------------------------------------------------------------
 
+    use constants_clubb, only: &
+      fstderr  ! Variable for writing to error stream
+
     implicit none
 
     ! Input Variable(s)
@@ -614,9 +617,9 @@ module input_reader
         
     else
       if( present( input_file ) ) then
-        print *, target_name, ' could not be found. Check the file ', input_file
+        write(fstderr,*) target_name, ' could not be found. Check the file ', input_file
       else
-        print *, target_name, ' could not be found. Check your sounding.in file.'
+        write(fstderr,*) target_name, ' could not be found. Check your sounding.in file.'
       end if ! present( input_file )
       stop
       

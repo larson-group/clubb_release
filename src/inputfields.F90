@@ -2045,7 +2045,8 @@ module inputfields
         close_grads_read
 
     use constants_clubb, only:  & 
-        sec_per_min ! Variable(s)
+        sec_per_min, & ! Variable(s)
+        fstderr ! Constant(s)
 
     use stats_precision, only:  & 
         time_precision
@@ -2091,7 +2092,7 @@ module inputfields
 #ifdef NETCDF
       call open_netcdf_read( 'thlm', trim( filename ), fread_var, l_error )
 #else
-      write(0,*) "This version of CLUBB was not compiled with netCDF support"
+      write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
 #endif
     endif
 
@@ -2115,18 +2116,18 @@ module inputfields
 
       if ( ( mod( delta_time , fread_var%dtwrite )  > 1e-8 ) .or.  & 
            ( mod( delta_time, fread_var%dtwrite ) < -1e-8 ) ) then
-        print*, "Error: Elapsed time is not a multiple ", & 
+        write(fstderr,*) "Error: Elapsed time is not a multiple ", & 
                 "of the reference GrADS output time interval."
-        print*, "Elapsed time [s] = ", delta_time
-        print*, "GrADS output time interval = ", fread_var%dtwrite
+        write(fstderr,*) "Elapsed time [s] = ", delta_time
+        write(fstderr,*) "GrADS output time interval = ", fread_var%dtwrite
         stop
       end if
 
       if ( mod( delta_time , sec_per_min ) > 1e-8 & 
             .or. mod( delta_time, sec_per_min ) < -1e-8 ) then
-        print*, "Error: Elapsed time is not a multiple ", & 
+        write(fstderr,*) "Error: Elapsed time is not a multiple ", & 
                 "of one minute."
-        print*, "Elapsed time [s] = ", delta_time
+        write(fstderr,*) "Elapsed time [s] = ", delta_time
         stop
       end if
 

@@ -93,10 +93,13 @@ fi
 for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); 
 do
     echo -e "Running ${RUN_CASE[$x]}"
-    RESULT=`./run_scm.bash $OPTIONS ${RUN_CASE[$x]} 2>&1`
-
+    
     if [ $NIGHTLY == true ] ; then
-        echo -e "$RESULT"
+      RESULT=`./run_scm.bash $OPTIONS ${RUN_CASE[$x]} 2>&1`
+      echo -e "$RESULT"
+    else
+      # Send standard output to the bit bucket so only error output is recorded
+      RESULT=`./run_scm.bash $OPTIONS ${RUN_CASE[$x]} 2>&1 >/dev/null`
     fi
 
     RESULT_STATUS=`echo "$RESULT" | grep 'normally'`
@@ -106,9 +109,9 @@ do
        
         # If there was an error, and this is not running in nightly mode,
         # it will not be displayed. So, display the error here.
-#        if [ $NIGHTLY != true ] ; then
-#            echo -e "$RESULT"
-#        fi
+        if [ $NIGHTLY != true ] ; then
+            echo -e "$RESULT" | tail
+        fi
     fi
 done
 
