@@ -201,7 +201,7 @@ module error_code
     integer, intent(in) :: level
 
     if (level <= clubb_debug_level) then
-      write(*,*) str
+      write(fstderr,*) str
     endif
 
     return
