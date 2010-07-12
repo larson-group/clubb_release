@@ -603,6 +603,13 @@ module error
       allocate( clubb_zl(clubb_nz), clubb2_zl(clubb_nz),  & 
                 les_zl(clubb_nz), clubb_grid_heights(clubb_nz), stat=AllocateStatus )
 
+      ! Debug lines added to help determine why tuner runs intermittently fail -meyern
+      if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+          action='write', position='append')
+      call write_text( "Arrays allocated!", l_save_tuning_run, file_unit )
+      if( l_save_tuning_run ) close(unit=file_unit)
+      ! end debug
+
       if ( AllocateStatus /= 0 ) then
         ! Debug lines added to help determine why tuner runs intermittently fail -meyern
         if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
@@ -615,6 +622,13 @@ module error
 
       ! Determine the height of GrADS input
       clubb_grid_heights = stat_file_vertical_levels( hoc_v(1), hoc_stats_file(c_run), clubb_nz )
+
+      ! Debug lines added to help determine why tuner runs intermittently fail -meyern
+      if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+          action='write', position='append')
+      call write_text( "Height determined!", l_save_tuning_run, file_unit )
+      if( l_save_tuning_run ) close(unit=file_unit)
+      ! end debug
 
       ! Start with first CLUBB & LES variables, then loop through and
       ! calculate the mean squared difference for all the variables
@@ -639,14 +653,36 @@ module error
           stop
         end if
 
+        ! Debug lines added to help determine why tuner runs intermittently fail -meyern
+        if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+            action='write', position='append')
+        call write_text( "LES variable valid!", l_save_tuning_run, file_unit )
+        if( l_save_tuning_run ) close(unit=file_unit)
+        ! end debug
+
         ! Verify that the domain that we're tuning CLUBB over is fully defined in
         ! the LES data.  If not, some points will be NaN
         if ( isnan2d( les_zl(z_i(c_run):z_f(c_run)) ) ) then
+
+          ! Debug lines added to help determine why tuner runs intermittently fail -meyern
+          if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+              action='write', position='append')
+          call write_text( "Tuning domain or NaN error!", l_save_tuning_run, file_unit )
+          if( l_save_tuning_run ) close(unit=file_unit)
+          ! end debug
+
           write(fstderr,*) "The tuning domain exceeds the size of the LES data, "// &
             "or the LES data is NaN"
           write(fstderr,*) trim( les_v(i) )//" = ", les_zl(z_i(c_run):z_f(c_run))
           stop "Fatal error"
         end if
+
+        ! Debug lines added to help determine why tuner runs intermittently fail -meyern
+        if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+            action='write', position='append')
+        call write_text( "Tuning domain checked!", l_save_tuning_run, file_unit )
+        if( l_save_tuning_run ) close(unit=file_unit)
+        ! end debug
 
         ! Read in CLUBB grads data for one variable, averaged
         ! over specified time intervals
@@ -665,6 +701,13 @@ module error
           stop "The specified CLUBB variable was invalid"
         end if
 
+        ! Debug lines added to help determine why tuner runs intermittently fail -meyern
+        if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+            action='write', position='append')
+        call write_text( "CLUBB variable is valid!", l_save_tuning_run, file_unit )
+        if( l_save_tuning_run ) close(unit=file_unit)
+        ! end debug
+
         ! The same variable, with npower = 2
         clubb2_zl =  & 
         stat_file_average_interval & 
@@ -680,6 +723,13 @@ module error
           ! end debug
           stop "The specified CLUBB variable was invalid"
         end if
+
+        ! Debug lines added to help determine why tuner runs intermittently fail -meyern
+        if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+            action='write', position='append')
+        call write_text( "CLUBB variable still valid!", l_save_tuning_run, file_unit )
+        if( l_save_tuning_run ) close(unit=file_unit)
+        ! end debug
 
         !-----------------------------------------------------------------------
 
@@ -704,6 +754,13 @@ module error
           stop "An LES variable was 0 from z_i to z_f."
         end if
 
+        ! Debug lines added to help determine why tuner runs intermittently fail -meyern
+        if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+            action='write', position='append')
+        call write_text( "les_minmax is not 0!", l_save_tuning_run, file_unit )
+        if( l_save_tuning_run ) close(unit=file_unit)
+        ! end debug
+
         ! Old code
 !     err_sum = err_sum &
 !      + mean_sqr_diff_zt( clubb_nz, clubb_zl, les_zl, les_minmax )
@@ -718,8 +775,22 @@ module error
 
       end do ! i=1..v_total
 
+    ! Debug lines added to help determine why tuner runs intermittently fail -meyern
+    if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+        action='write', position='append')
+    call write_text( "do i=1..v_total finished!", l_save_tuning_run, file_unit )
+    if( l_save_tuning_run ) close(unit=file_unit)
+    ! end debug
+
       ! De-allocate the arrays for reading in the GrADS plot data
       deallocate( clubb_zl, clubb2_zl, les_zl, clubb_grid_heights )
+
+    ! Debug lines added to help determine why tuner runs intermittently fail -meyern
+    if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+        action='write', position='append')
+    call write_text( "Arrays deallocated!", l_save_tuning_run, file_unit )
+    if( l_save_tuning_run ) close(unit=file_unit)
+    ! end debug
 
     end do     ! end of do c_run=1, c_total
 
