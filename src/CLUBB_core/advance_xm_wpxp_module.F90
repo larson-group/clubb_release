@@ -291,9 +291,10 @@ module advance_xm_wpxp_module
 ! Vince Larson increased C7 in stably stratified regions 
 ! in order to damp gravity waves
     where ( Lscale < 10. )
-      C7_Skw_fnc = 0.9
+      C7_Skw_fnc = 0.825
+
     else where ( (Lscale > 10.) .and. (Lscale < 40.) ) 
-      C7_Skw_fnc = 0.8
+      C7_Skw_fnc = 0.775
     end where
 ! End Vince Larson's comment
 
