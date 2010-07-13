@@ -1343,7 +1343,7 @@ module clubb_driver
 
 
     ! Initilize Time Dependant Input
-
+    
     if( l_t_dependent ) then
       call initialize_t_dependent_input &
                    ( iunit, runtype, gr%nnzp, gr%zt, p_in_Pa )

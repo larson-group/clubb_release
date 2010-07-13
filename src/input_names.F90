@@ -55,6 +55,7 @@ module input_names
 
   character(len=*), public, parameter :: &
     CO2_name = 'CO2[ppmv]', &
+    CO2_umol_name = 'CO2[umol\m^2\s]', &
     ozone_name = "o3[kg\kg]"
 
   character(len=*), public, parameter :: &

@@ -65,6 +65,11 @@ psfc = 977.5e2     ! Pressure at model base              [Pa]
 fcor = 1.0349e-4   ! Coriolis parameter                  [s^-1]
 T0   = 300.        ! Reference temperature (usually 300) [K]
 
+! Flag used to indicate that this case uses
+! a forcings.in and surface.in file for
+! time dependent input
+l_t_dependent = .true. ! Flag for time dependent input
+
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 
 ! Flag indicating if U.S. Std Atmosphere should 

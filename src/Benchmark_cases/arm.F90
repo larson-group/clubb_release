@@ -169,6 +169,8 @@ subroutine arm_sfclyr( time, z, dn0, thlm_sfc, um_sfc, vm_sfc,  &
 
 use constants_clubb, only: Cp, Lv, grav ! Variable(s)
 
+use interpolation, only: factor_interp
+
 use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
 use stats_precision, only: time_precision ! Variable(s)
@@ -179,13 +181,17 @@ use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variab
 
 use surface_flux, only: compute_momentum_flux, compute_ubar
 
+use time_dependent_input, only: LH_given, SH_given, time_sfc_given ! Variable(s)
+
 implicit none
 
 intrinsic :: max, sqrt
 
-! ARM roughness height
+! Constants
 real, parameter ::  & 
-  z0 = 0.035  ! momentum roughness height
+  z0 = 0.035  ! ARM Cu momentum roughness height
+integer, parameter :: &
+  ntimes = 7
 
 ! Input variables
 real(kind=time_precision), intent(in) ::  & 
@@ -212,18 +218,53 @@ real,  dimension(sclr_dim), intent(out) ::  &
 real,  dimension(edsclr_dim), intent(out) ::  & 
   wpedsclrp_sfc      ! Passive eddy-scalar surface flux [units m/s]
 
-! Internal variables
+! Local variables
+integer :: &
+  i1, i2
 real ::  & 
   ubar, & 
   true_time, & 
   heat_flx, moisture_flx, & 
   heat_flx2, moisture_flx2, & 
-  bflx
+  bflx, &
+  time_frac
+
+!-----------------BEGIN CODE-------------------------
+
+! Default Initialization
+heat_flx = 0.0
+moisture_flx = 0.0
 
 ! Compute heat and moisture fluxes from ARM data in (W/m2)
 true_time = real( time )
 
-call arm_sfcflx( true_time, heat_flx, moisture_flx )
+if ( true_time <= time_sfc_given(1) ) then
+   heat_flx     = SH_given(1)
+   moisture_flx = LH_given(1)
+   
+else if ( true_time >= time_sfc_given(ntimes) ) then
+   heat_flx     = SH_given(ntimes)
+   moisture_flx = LH_given(ntimes)
+   
+else
+   i1 = 1
+   
+   do while ( i1 <= ntimes-1 )
+      i2 = i1 + 1
+      
+      if ( true_time >= time_sfc_given(i1) .and. true_time < time_sfc_given(i2) ) then
+         time_frac    = (true_time-time_sfc_given(i1))/(time_sfc_given(i2)-time_sfc_given(i1))
+!         heat_flx     = ( 1. - time_frac ) * SH_given(i1) + time_frac * SH_given(i2)
+         heat_flx = factor_interp( time_frac, SH_given(i2), SH_given(i1) )
+!         moisture_flx = ( 1. - time_frac ) * LH_given(i1) + time_frac * LH_given(i2)
+         moisture_flx = factor_interp( time_frac, LH_given(i2), LH_given(i1) )
+         i1           = ntimes
+      end if
+      
+      i1 = i2
+   end do
+   
+end if ! true_time <= time_sfc_given(1)
 
 ! Compute momentum fluxes
 
@@ -257,61 +298,5 @@ if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
 
 return
 end subroutine arm_sfclyr
-
-!------------------------------------------------------------------------
-subroutine arm_sfcflx( time, heat_flx, moisture_flx )
-
-!       Description:
-!       This subroutine computes surface heat and moisture for a specific time
-!       according to GCSS ARM specifications. Flux returned are in (W/m2)
-!------------------------------------------------------------------------
-use interpolation, only: factor_interp
-
-implicit none
-
-! Parameter constants
-integer, parameter :: ntimes = 7
-
-real, parameter, dimension(ntimes) ::  & 
-  times = (/ 41400., 55800., 64800., 68400., & 
-           77400., 86400., 93600. /), & 
-  ! H and LE specifications
-  H  = (/-30,  90, 140, 140, 100, -10, -10/), & 
-  LE = (/  5, 250, 450, 500, 420, 180,   0/)
-
-! Input variable
-real, intent(in) :: time !  Current time [s]
-
-! Output variables
-real, intent(out) :: heat_flx, moisture_flx
-
-! Local variables
-integer :: i1, i2
-real :: a
-
-if ( time <= times(1) ) then
-   heat_flx     = H(1)
-   moisture_flx = LE(1)
-else if ( time >= times(ntimes) ) then
-   heat_flx     = H(ntimes)
-   moisture_flx = LE(ntimes)
-else
-   i1 = 1
-   do while ( i1 <= ntimes-1 )
-      i2 = i1 + 1
-      if ( time >= times(i1) .and. time < times(i2) ) then
-         a            = (time-times(i1))/(times(i2)-times(i1))
-!         heat_flx     = ( 1. - a ) * H(i1) + a * H(i2)
-         heat_flx = factor_interp( a, H(i2), H(i1) )
-!         moisture_flx = ( 1. - a ) * LE(i1) + a * LE(i2)
-         moisture_flx = factor_interp( a, LE(i2), LE(i1) )
-         i1           = ntimes
-      end if
-      i1 = i2
-   end do
-end if ! time <= times(1)
-
-return
-end subroutine arm_sfcflx
 
 end module arm

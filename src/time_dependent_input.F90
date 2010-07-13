@@ -31,6 +31,7 @@ module time_dependent_input
     thlm_sfc_given, &
     rtm_sfc_given,  &
     psfc_given,     &
+    CO2_sfc_given,  &
     upwp_sfc_given, &
     vpwp_sfc_given
 
@@ -133,6 +134,7 @@ module time_dependent_input
       LH_name,       &
       SH_name,       &
       pressure_name, &
+      CO2_umol_name, &
       upwp_sfc_name, &
       vpwp_sfc_name
 
@@ -212,14 +214,21 @@ module time_dependent_input
       end if
     end if
     
-    ! As of June 2010, this is only in gabls3_night
+    ! As of July 2010, this is only in cobra
+    if( get_target_index(nCols, CO2_umol_name, retVars) > 0 ) then
+      allocate( CO2_sfc_given(1:dim_size) )
+      CO2_sfc_given = read_x_profile( nCols, dim_size, CO2_umol_name, retVars, &
+                                      input_file )
+    end if
+    
+    ! As of July 2010, this is only in gabls3_night
     if( get_target_index(nCols, upwp_sfc_name, retVars) > 0 ) then
       allocate( upwp_sfc_given(1:dim_size) )
       upwp_sfc_given = read_x_profile( nCols, dim_size, upwp_sfc_name, retVars, &
                                       input_file )
     end if
     
-    ! As of June 2010, this is only in gabls3_night
+    ! As of July 2010, this is only in gabls3_night
     if( get_target_index(nCols, vpwp_sfc_name, retVars) > 0 ) then
       allocate( vpwp_sfc_given(1:dim_size) )
       vpwp_sfc_given = read_x_profile( nCols, dim_size, vpwp_sfc_name, retVars, &
@@ -348,6 +357,7 @@ module time_dependent_input
     if ( allocated( thlm_sfc_given ) ) deallocate( thlm_sfc_given )
     if ( allocated( rtm_sfc_given ) )  deallocate( rtm_sfc_given )
     if ( allocated( psfc_given ) )     deallocate( psfc_given )
+    if ( allocated( CO2_sfc_given ) )  deallocate( CO2_sfc_given )
     if ( allocated( upwp_sfc_given ) ) deallocate( upwp_sfc_given )
     if ( allocated( vpwp_sfc_given ) ) deallocate( vpwp_sfc_given )
 
