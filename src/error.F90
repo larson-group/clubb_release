@@ -472,6 +472,8 @@ module error
 
     !-----------------------------------------------------------------------
 
+    l_error = .false.
+
     ! Output information every 10 iterations if stdout is enabled;
     ! Amoeba's unusual calling convention makes this happen less
     ! often than might be expected.
@@ -634,12 +636,36 @@ module error
       ! calculate the mean squared difference for all the variables
       do i=1, v_total, 1
 
+        ! Debug lines added to help determine why tuner runs intermittently fail -meyern
+        if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+            action='write', position='append')
+        call write_text( "LES variable is "//trim( les_v(i) ), l_save_tuning_run, file_unit )
+        write( file_unit, * ) "l_error is ", l_error
+        write( file_unit, * ) "times are  ", time(c_run,:)
+        write( file_unit, * ) "les_zl is ", les_zl
+        write( file_unit, * ) "clubb_nz is ", clubb_nz
+        write( file_unit, * ) "clubb_grid_heights is ", clubb_grid_heights
+        if( l_save_tuning_run ) close(unit=file_unit)
+        ! end debug
+
         ! Read in LES grads data for one variable, averaged
         ! over specified time intervals
         les_zl =  & 
         stat_file_average_interval &
         ( les_stats_file(c_run), clubb_nz,  & 
           time(c_run,:), les_v(i), clubb_grid_heights, 1, l_error )
+
+        ! Debug lines added to help determine why tuner runs intermittently fail -meyern
+        if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+            action='write', position='append')
+        call write_text( "LES variable is "//trim( les_v(i) ), l_save_tuning_run, file_unit )
+        write( file_unit, * ) "l_error is ", l_error
+        write( file_unit, * ) "times are  ", time(c_run,:)
+        write( file_unit, * ) "les_zl is ", les_zl
+        write( file_unit, * ) "clubb_nz is ", clubb_nz
+        write( file_unit, * ) "clubb_grid_heights is ", clubb_grid_heights
+        if( l_save_tuning_run ) close(unit=file_unit)
+        ! end debug
 
         if ( l_error ) then
           ! Debug lines added to help determine why tuner runs intermittently fail -meyern
