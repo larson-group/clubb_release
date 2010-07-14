@@ -22,7 +22,7 @@ DEBUG="-g -C -Kieee"
 ARCH="-tp amd64" # PGF90, amd64
 
 # == Optimization ==
-OPTIMIZE="-O2"
+OPTIMIZE="-O0"
 
 # == NetCDF Location ==
 #NETCDF="$HOME/netcdf-3.6.3"

@@ -979,7 +979,8 @@ module clubb_core
     !#######################################################################
 
     ! Store the saturation mixing ratio for output purposes.  Brian
-    if ( irsat > 0 ) then
+    ! Compute rsat if either rsat or rel_humidity is to be saved.  ldgrant
+    if ( ( irsat > 0 ) .or. ( irel_humidity > 0 ) ) then
       rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) )
     end if
 
@@ -988,8 +989,13 @@ module clubb_core
       call stat_update_var( irvm, rtm - rcm, zt )
 
       ! Output relative humidity (q/q∗ where q∗ is the saturation mixing ratio over liquid)
-      call stat_update_var( irel_humidity, (rtm - rcm) / rsat, zt)
-    end if
+      ! Added an extra check for irel_humidity > 0; otherwise, if both irsat = 0 and
+      ! irel_humidity = 0, rsat is not computed, leading to a floating-point exception
+      ! when stat_update_var is called for rel_humidity.  ldgrant
+      if ( irel_humidity > 0 ) then
+        call stat_update_var( irel_humidity, (rtm - rcm) / rsat, zt)
+      end if ! irel_humidity > 0
+    end if ! l_stats_samp
 
     !----------------------------------------------------------------
     ! Advance rtm/wprtp and thlm/wpthlp one time step
