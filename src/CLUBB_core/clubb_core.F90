@@ -2246,8 +2246,8 @@ module clubb_core
       if ( rtm(k) < rcm(k) ) then
 
         if ( clubb_at_least_debug_level(1) ) then
-          write(fstderr,*) message, ' at k=', k, '.', & 
-            '  Clipping rcm.'
+          write(fstderr,*) message, ' at k=', k, 'rcm(k) = ', rcm(k), &
+            'rtm(k) = ', rtm(k), '.',  '  Clipping rcm.'
 
         end if ! clubb_at_least_debug_level(1)
 
