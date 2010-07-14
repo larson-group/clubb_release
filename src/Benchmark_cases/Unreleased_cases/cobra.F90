@@ -171,6 +171,7 @@ real, parameter :: z0 = 1.75   ! momentum roughness height
 ! Default Initialization
 heat_flx = 0.0
 moisture_flx = 0.0
+CO2_flx = 0.0
 CO2_flx2 = 0.0 ! Default initialization
 
 ! Compute heat and moisture fluxes from ARM data in (W/m2)
