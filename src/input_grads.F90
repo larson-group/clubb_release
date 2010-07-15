@@ -47,19 +47,22 @@ module input_grads
   contains
 
 !-----------------------------------------------------------------------
-  subroutine open_grads_read( unit, fname, f )
+  subroutine open_grads_read( unit_number, fname, f, l_file_exist )
 
 ! Description:
 !   Open a GrADS data set in read-only mode
 !-----------------------------------------------------------------------
+
     use model_flags, only: l_byteswap_io
 
     use stat_file_module, only: stat_file
 
+    use text_writer, only: write_text
+
     implicit none
 
     ! Input Variables
-    integer, intent(in) :: unit ! Fortran I/O unit
+    integer, intent(in) :: unit_number ! Fortran I/O unit
 
     character(len=*), intent(in) ::  & 
       fname ! The file name
@@ -70,6 +73,7 @@ module input_grads
 
     ! Local Variables
     logical :: l_done, l_error
+    logical, intent(out) :: l_file_exist
     integer :: ierr
 
     character(len=256) ::  & 
@@ -84,12 +88,21 @@ module input_grads
     f%l_byte_swapped = .false.
     l_error          = .false.
     l_done           = .false.
+    l_file_exist     = .false.
+
+    ! Check if the file we're trying to open exists, preventing runtime error
+    inquire( file=fname, exist=l_file_exist )
+
+    if( .not.( l_file_exist ) ) then
+      !if the file doesn't exist, return to the calling function to handle the error
+      return
+    end if
 
     ! Open control file
-    open( unit=unit, file=trim( fname ), status = 'old' )
+    open( unit=unit_number, file=trim( fname ), status = 'old' )
 
     ! Read and process it
-    read(unit,iostat=ierr,fmt='(a256)') line
+    read(unit_number,iostat=ierr,fmt='(a256)') line
     if ( ierr < 0 ) l_done = .true.
 
     do while ( .not. l_done )
@@ -157,7 +170,7 @@ module input_grads
         if(f%iz == 1) then
           f%z(1) = 1
         else
-          read(unit=unit,fmt=*) (f%z(i),i=f%ia,f%iz)
+          read(unit=unit_number,fmt=*) (f%z(i),i=f%ia,f%iz)
         endif
       else if ( index(line,'TDEF') > 0 ) then
 
@@ -214,7 +227,7 @@ module input_grads
 
         do i = 1, f%nvar, 1
 
-          read(unit=unit,iostat=ierr,fmt='(a256)') line
+          read(unit=unit_number,iostat=ierr,fmt='(a256)') line
           read(unit=line,fmt=*) f%var(i)%name, nz
 
           if ( nz /= f%iz ) then
@@ -229,12 +242,12 @@ module input_grads
 
       end if
 
-      read(unit=unit,iostat=ierr,fmt='(a256)') line
+      read(unit=unit_number,iostat=ierr,fmt='(a256)') line
       if ( ierr < 0 ) l_done = .true.
 
     end do
 
-    close( unit )
+    close( unit_number )
 
 !--------- Debug -------------------------------------------------------
 !         write(*,*) 'f%fname = ',trim(f%fname)
@@ -257,12 +270,12 @@ module input_grads
       write(unit=fstderr,fmt=*)  & 
         'Fatal error encountered while reading control file'
       write(unit=fstderr,fmt=*) 'Cannot do miracles...'
-      stop
+      stop "Fatal error reading GrADS file"
     end if
 
 ! Open binary file for direct access
 
-    f%iounit = unit
+    f%iounit = unit_number
     open( unit = f%iounit, & 
           file = trim( f%fname ), & 
           form = 'unformatted', access = 'direct',  & 

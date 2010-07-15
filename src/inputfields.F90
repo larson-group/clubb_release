@@ -228,7 +228,7 @@ module inputfields
     integer, intent(in) :: timestep
 
     ! Local Variables
-    logical :: l_read_error, l_fatal_error
+    logical :: l_read_error, l_fatal_error, l_file_exist
 
     type (stat_file) :: fread_var
 
@@ -278,6 +278,8 @@ module inputfields
 
       ! Initialize l_fatal_error for case clubb_input_type
       l_fatal_error = .false.
+
+       l_file_exist = .true.  ! Assume the GrADS file exists to start
 
       call get_clubb_variable_interpolated &
            ( input_um, stat_file_zt, "um", gr%nnzp, timestep, &
@@ -716,7 +718,10 @@ module inputfields
 
       ! stats_sm
       call open_grads_read( 15, stat_file_zt,  & 
-                            fread_var )
+                            fread_var, l_file_exist )
+
+      if( .not. l_file_exist) stop "GrADS file does not exist!"
+
       l_fatal_error = .false.
 
       ! Temporarily store LES output in variable array LES_tmp1.
@@ -1822,7 +1827,9 @@ module inputfields
     case ( coamps_input_type )
 
       ! stats_sw
-      call open_grads_read( 15, stat_file_zm,  fread_var )
+      call open_grads_read( 15, stat_file_zm,  fread_var, l_file_exist )
+
+      if( .not. l_file_exist) stop "GrADS file does not exist!"
 
       ! Temporarily store LES output in variable array LES_tmp1.
       ! Allocate LES_tmp1 based on lowest and highest vertical indices of LES
@@ -2062,7 +2069,7 @@ module inputfields
 
     character(len=*), intent(in) ::filename ! Path to the file and its name
 
-    logical, intent(in) :: l_restart ! Whether this is a restart run
+    logical, intent(in) :: l_restart     ! Whether this is a restart run
 
     real(kind=time_precision), intent(in) ::  & 
       time ! Time near which we want to find GrADS output,
@@ -2078,15 +2085,19 @@ module inputfields
 
     real(kind=time_precision) :: delta_time   ! In seconds
 
-    logical :: l_grads_file, l_error
+    logical :: l_grads_file, l_error, l_file_exist
 
     ! ---- Begin Code ----
+
+     l_file_exist = .true.  ! Assume the GrADS file exists to start
 
     l_grads_file = .not. l_netcdf_file( filename )
 
     if ( l_grads_file ) then
       ! Read in the control file
-      call open_grads_read( iunit, trim( filename ), fread_var )
+      call open_grads_read( iunit, trim( filename ), fread_var, l_file_exist )
+
+      if( .not. l_file_exist) stop "GrADS file does not exist!"
     
     else
 #ifdef NETCDF
