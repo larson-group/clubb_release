@@ -53,9 +53,27 @@ run_scm.bash:
 
 rum_scm_collect.bash: 
   Runs a case in CLUBB while using the Sun Studio profiler to collect runtime 
-  statistics.  The CLUBB code must be compiled with the Sun Studio compiler to
-  use this script.  The name of the output directory and optionally case name
+  statistics.  For best results, the CLUBB code should be compiled with the Sun
+  Studio compiler to use this script.  However, the Intel compiler has been
+  confirmed to work as well.  The name of the output directory and optionally
+  case name are arguments for the script.
+
+  NOTE: It is highly recommended that no other programs are running on the
+  computer that runs this script. If other programs are running, the results
+  may be inconsistent and possibly misleading.
+
+run_scm_collect_suite.bash
+  Runs a selected set of cases in CLUBB while using the Sun Studio profiler to
+  collect runtime statistics for all of them. For best results, the CLUBB code
+  should be compiled with the Sun Studio compiler to use this script. However,
+  the Intel compiler has been confirmed to work as well. Each case will be run
+  a few times to allow for averaging of the runtime statistics. The name of the
+  output directory and optionally the number of times to run each of the cases
   are arguments for the script.
+
+  NOTE: It is highly recommended that no other programs are running on the
+  computer that runs this script. If other programs are running, the results
+  may be inconsistent and possibly misleading.
 
 run_timestep_tests.bash: 
   Runs all of the cases CLUBB is set up to do. CLUBB is ran several times for 
