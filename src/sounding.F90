@@ -165,7 +165,7 @@ module sounding
       print *, "File exists? ", l_sounding_exists
       print *, "Path to sclr_sounding: ", trim( runtype )//'_sclr_sounding.in'
       print *, "File exists? ", l_sclr_sounding_exists
-      print *, "Path to sounding: ", trim( runtype )//'_edsclr_sounding.in'
+      print *, "Path to edsclr_sounding: ", trim( runtype )//'_edsclr_sounding.in'
       print *, "File exists? ", l_edsclr_sounding_exists
     end if
     !----------------------------------------------------------------------------------------------
