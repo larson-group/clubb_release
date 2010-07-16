@@ -1,6 +1,6 @@
 # $Id$
 # Makefile definitions customized for Linux IA64 using the Intel Fortran 
-# compiler
+# compiler.  This file was created for computers with Itanium processors.
 
 # Fortran 95 compiler and linker
 FC=ifort
