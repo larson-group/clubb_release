@@ -1225,7 +1225,7 @@ module clubb_driver
       rtm_sfc,          & ! Surface total water mixing ratio       [kg/kg]
       thlm_sfc,         & ! Surface liq. water potential temp.     [K]
       cloud_top_height, & ! Cloud top altitude in initial profile  [m]
-      emax                ! Maximum value of initial subgrid TKE   [m^2/s^2]
+      em_max                ! Maximum value of initial subgrid TKE   [m^2/s^2]
 
     integer :: k, err_code
 
@@ -1576,11 +1576,11 @@ module clubb_driver
     case ( "mpace_a" )
 
       cloud_top_height = 2000.
-      emax = 1.0
+      em_max = 1.0
 
       do k=1,gr%nnzp
         if ( gr%zm(k) < cloud_top_height ) then
-          em(k) = emax
+          em(k) = em_max
         else
           em(k) = em_min
         end if
@@ -1594,12 +1594,12 @@ module clubb_driver
     case ( "mpace_b" )
 
       cloud_top_height = 1300. ! 1300 m is the cloud top in mpace_b.  Michael Falk 17 Aug 2006
-      emax = 1.0
+      em_max = 1.0
 
       do k=1,gr%nnzp
 
         if ( gr%zm(k) < cloud_top_height ) then
-          em(k) = emax
+          em(k) = em_max
         else
           em(k) = em_min
         end if
@@ -1616,10 +1616,10 @@ module clubb_driver
     case ( "rico" )
 
       cloud_top_height = 1500.
-      emax = 1.0
+      em_max = 1.0
       do k=1,gr%nnzp
         if ( gr%zm(k) < cloud_top_height ) then
-          em(k) = emax
+          em(k) = em_max
         else
           em(k) = em_min
         end if
@@ -1632,10 +1632,10 @@ module clubb_driver
     case ( "gabls2" )
 
       cloud_top_height = 800.  ! per GABLS2 specifications
-      emax = 0.5
+      em_max = 0.5
       do k=1,gr%nnzp
         if ( gr%zm(k) < cloud_top_height ) then
-          em(k) = emax * (1 - (gr%zm(k)/cloud_top_height))
+          em(k) = em_max * (1 - (gr%zm(k)/cloud_top_height))
         else
           em(k) = em_min
         end if
