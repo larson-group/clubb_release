@@ -62,10 +62,8 @@ module wangara
   end subroutine wangara_tndcy
 
 !----------------------------------------------------------------------
-  subroutine wangara_sfclyr( time, um_sfc, vm_sfc,  & 
-                             upwp_sfc, vpwp_sfc,  & 
-                             wpthlp_sfc, wprtp_sfc, ustar, & 
-                             wpsclrp_sfc, wpedsclrp_sfc )
+  subroutine wangara_sfclyr( time, & 
+                             wpthlp_sfc, wprtp_sfc, ustar )
 ! Description:
 !   This subroutine computes surface fluxes of horizontal momentum,
 !   heat and moisture for Wangara day 33
@@ -73,14 +71,7 @@ module wangara
 
     use constants_clubb, only: pi, fstderr, sec_per_day ! Variable(s)
 
-    use parameters_model, only: sclr_dim ! Variable(s)
-
     use stats_precision, only: time_precision ! Variable(s)
-
-    use array_index, only:  & 
-        iisclr_thl, iisclr_rt ! Variable(s)
-
-    use surface_flux, only: compute_ubar, compute_momentum_flux
 
     implicit none
 
@@ -90,26 +81,13 @@ module wangara
     real(kind=time_precision), intent(in) ::  & 
       time    ! Current time  [s]
 
-    real, intent(in) ::  & 
-      um_sfc,  & ! um(2)         [m/s]
-      vm_sfc     ! vm(2)         [m/s]
-
     ! Output variables
     real, intent(out) ::  & 
-      upwp_sfc,     & ! u'w' at (1)      [m^2/s^2]
-      vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
       ustar           ! surface friction velocity [m/s]
 
-    ! Output variables
-    real, intent(out), dimension(sclr_dim) ::  & 
-      wpsclrp_sfc,   & ! Passive scalar surface flux      [units m/s]
-      wpedsclrp_sfc    ! Passive eddy-scalar surface flux [units m/s]
-
     ! Local variables
-
-    real :: ubar
     real(kind=time_precision) :: time_utc, time_est
 
 
@@ -135,22 +113,6 @@ module wangara
 
     wpthlp_sfc = real(0.18 * cos( (time_est-45000.0)/36000.0 * pi ))
     wprtp_sfc  = 1.3e-4 * wpthlp_sfc
-
-    ! Let the passive scalars be equal to rt and theta_l for now
-
-    ! Let passive scalars be equal to rt and theta_l for now
-    if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
-    if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
-
-    if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
-    if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
-
-    ! Compute momentum fluxes
-
-    ubar = compute_ubar( um_sfc, vm_sfc )
-
-    call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
-                                upwp_sfc, vpwp_sfc )
 
     return
   end subroutine wangara_sfclyr

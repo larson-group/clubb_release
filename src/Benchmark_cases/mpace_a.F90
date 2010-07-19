@@ -394,10 +394,8 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
   end subroutine mpace_a_tndcy
 
 !----------------------------------------------------------------------
-  subroutine mpace_a_sfclyr( time, rho0, um_sfc, vm_sfc, & 
-                             upwp_sfc, vpwp_sfc, & 
-                             wpthlp_sfc, wprtp_sfc, ustar, & 
-                             wpsclrp_sfc, wpedsclrp_sfc )
+  subroutine mpace_a_sfclyr( time, rho0, & 
+                             wpthlp_sfc, wprtp_sfc, ustar )
 !        Description:
 !          Surface forcing subroutine for mpace_a case.  Written 
 !          October 2007 by Michael Falk.
@@ -406,122 +404,92 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
 !          mpace_a specification from arm.gov
 !-----------------------------------------------------------------------
 
-  use constants_clubb, only: Cp, Lv, fstderr ! Variable(s)
+    use constants_clubb, only: Cp, Lv, fstderr ! Variable(s)
 
-  use parameters_model, only: sclr_dim, edsclr_dim  ! Variable(s)
+    use stats_precision, only: time_precision ! Variable(s)
 
-  use stats_precision, only: time_precision ! Variable(s)
+    use error_code, only: clubb_debug, clubb_at_least_debug_level ! Procedure(s)
 
-  use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
+    use interpolation, only: factor_interp ! Procedure(s)
 
-  use error_code, only: clubb_debug, clubb_at_least_debug_level ! Procedure(s)
+    implicit none
 
-  use interpolation, only: factor_interp ! Procedure(s)
+    ! External
+    intrinsic :: max, sqrt, present
 
-  use surface_flux, only: compute_ubar, compute_momentum_flux
+    ! Input Variables
+    real(kind=time_precision), intent(in) :: & 
+    time     ! current model time           [s]
 
-  implicit none
+    real, intent(in)  :: & 
+    rho0     ! Air density at surface       [kg/m^3]
 
-  ! External
-  intrinsic :: max, sqrt, present
+    ! Output Variables
+    real, intent(out) ::  & 
+    wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
+    wprtp_sfc,    & ! w'r_t' at (1)    [(m kg)/(s kg)]
+    ustar           ! surface friction velocity [m/s]
 
-  ! Input Variables
-  real(kind=time_precision), intent(in) :: & 
-  time     ! current model time           [s]
+    ! Local Variables
+    real :: & 
+      latent_heat_flx, & 
+      sensible_heat_flx
 
-  real, intent(in)  :: & 
-  rho0,     & ! Air density at surface       [kg/m^3]
-  um_sfc,   & ! um at zt(2)                  [m/s]
-  vm_sfc      ! vm at zt(2)                  [m/s]
+    integer :: k
 
-  ! Output Variables
-  real, intent(out) ::  & 
-  upwp_sfc,     & ! u'w' at (1)      [m^2/s^2]
-  vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
-  wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
-  wprtp_sfc,    & ! w'r_t' at (1)    [(m kg)/(s kg)]
-  ustar           ! surface friction velocity [m/s]
+    integer :: & 
+      left_time, right_time
 
-  real, dimension(sclr_dim), intent(out) :: & 
-  wpsclrp_sfc    ! Passive scalar surface flux      [units m/s]
+    real :: ratio
+    !-----------------------------------------------------------------------
 
-  real, dimension(edsclr_dim), intent(out) :: & 
-  wpedsclrp_sfc  ! Passive eddy-scalar surface flux [units m/s]
+    left_time = -1
+    right_time = -1
 
-  ! Local Variables
-   real :: & 
-   ubar, & 
-   latent_heat_flx, & 
-   sensible_heat_flx
-
-   integer :: k
-
-   integer :: & 
-   left_time, right_time
-
-   real :: ratio
-!-----------------------------------------------------------------------
-
-left_time = -1
-right_time = -1
-
-! choose which times to use
-if (time <= file_times(1)) then
-  if ( clubb_at_least_debug_level( 1 ) ) then
-     write(fstderr,*) 'Time is at or before the first time in the list.'
-  endif
-  left_time = 1
-  right_time = 1
-else if (time >= file_times(file_ntimes)) then
-  if ( clubb_at_least_debug_level( 1 ) ) then
-     write(fstderr,*) 'Time is at or after the last time in the list.'
-  endif
-  left_time = file_ntimes
-  right_time = file_ntimes
-else
-  do k=1,file_ntimes-1
-    if ((time > file_times(k)) .AND. & 
-        (time <= file_times(k+1))) then
-      left_time = k
-      right_time = k+1
+    ! choose which times to use
+    if (time <= file_times(1)) then
+      if ( clubb_at_least_debug_level( 1 ) ) then
+         write(fstderr,*) 'Time is at or before the first time in the list.'
+      endif
+      left_time = 1
+      right_time = 1
+    else if (time >= file_times(file_ntimes)) then
+      if ( clubb_at_least_debug_level( 1 ) ) then
+         write(fstderr,*) 'Time is at or after the last time in the list.'
+      endif
+      left_time = file_ntimes
+      right_time = file_ntimes
+    else
+      do k=1,file_ntimes-1
+        if ((time > file_times(k)) .AND. & 
+            (time <= file_times(k+1))) then
+          left_time = k
+          right_time = k+1
+        end if
+      end do
     end if
-  end do
-end if
 
-! Sanity check to make certain that the values read into
-! file_times are sorted. Joshua Fasching June 2008
-if ( left_time == -1 .or. right_time == -1 ) then
-        call clubb_debug(1, "file_times not sorted in MPACE_A")
-endif
+    ! Sanity check to make certain that the values read into
+    ! file_times are sorted. Joshua Fasching June 2008
+    if ( left_time == -1 .or. right_time == -1 ) then
+            call clubb_debug(1, "file_times not sorted in MPACE_A")
+    endif
 
-ratio = real(((time-file_times(left_time)) /  & 
-     (file_times(right_time)-file_times(left_time))))
+    ratio = real(((time-file_times(left_time)) /  & 
+         (file_times(right_time)-file_times(left_time))))
 
-latent_heat_flx = factor_interp( ratio, file_LH(right_time), file_LH(left_time) )
+    latent_heat_flx = factor_interp( ratio, file_LH(right_time), file_LH(left_time) )
 
-sensible_heat_flx = factor_interp( ratio, file_SH(right_time), file_SH(left_time) )
+    sensible_heat_flx = factor_interp( ratio, file_SH(right_time), file_SH(left_time) )
 
- ! Compute heat and moisture fluxes
-  wpthlp_sfc = sensible_heat_flx/(rho0*Cp)
-  wprtp_sfc  = latent_heat_flx/(rho0*Lv)
+   ! Compute heat and moisture fluxes
+    wpthlp_sfc = sensible_heat_flx/(rho0*Cp)
+    wprtp_sfc  = latent_heat_flx/(rho0*Lv)
 
-  ! Compute momentum fluxes
-  ubar = compute_ubar( um_sfc, vm_sfc )
+    ! Declare the value of ustar.
+    ustar = 0.25
 
-  ! Declare the value of ustar.
-  ustar = 0.25
-
-  call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
-                              upwp_sfc, vpwp_sfc )
-
-  ! Let passive scalars be equal to rt and theta_l for now
-  if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
-  if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
-
-  if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
-  if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
-
-  return
+    return
   end subroutine mpace_a_sfclyr
 !----------------------------------------------------------------
   subroutine mpace_a_init( iunit, file_path )
@@ -553,9 +521,9 @@ sensible_heat_flx = factor_interp( ratio, file_SH(right_time), file_SH(left_time
       file_path//'mpace_a_times.dat', & 
       file_ntimes, per_line, file_times )
 
-!      call file_read_2d( iunit,
-!     . file_path//'mpace_a_omega.dat',
-!     . file_nlevels, file_ntimes, per_line, omega_forcing)
+  !      call file_read_2d( iunit,
+  !     . file_path//'mpace_a_omega.dat',
+  !     . file_nlevels, file_ntimes, per_line, omega_forcing)
 
     call file_read_2d( iunit, & 
       file_path//'mpace_a_dTdt.dat', & 
@@ -592,4 +560,4 @@ sensible_heat_flx = factor_interp( ratio, file_SH(right_time), file_SH(left_time
     return 
   end subroutine mpace_a_init
 
-  end module mpace_a
+end module mpace_a

@@ -321,29 +321,29 @@
 !      NOTE: The results from this function match the xi_abs results
 !            obtained using the COAMPS xi_abs method.  Therefore, we
 !            use the "cos_solar_zen" function for this case.
- xi_abs = real( cos_solar_zen(25, 06, 1996, time, rlat, rlon ) )
+   xi_abs = real( cos_solar_zen(25, 06, 1996, time, rlat, rlon ) )
 
- xi_abs = max(xi_abs,zero_threshold)
+   xi_abs = max(xi_abs,zero_threshold)
 
-!-----------------------------------------------------------------------
-! Modification by Adam Smith 26 June 2006
-! It is difficult to remember to set xi_abs = 0 when we want to shut off
-! solar radiation.  If l_sw_on = .FALSE. above, we will automatically set
-! xi_abs to 0 to avoid confusion or errors.
-!-----------------------------------------------------------------------
-if ( .not. l_sw_on ) then
-  xi_abs = 0.
-end if
+  !-----------------------------------------------------------------------
+  ! Modification by Adam Smith 26 June 2006
+  ! It is difficult to remember to set xi_abs = 0 when we want to shut off
+  ! solar radiation.  If l_sw_on = .FALSE. above, we will automatically set
+  ! xi_abs to 0 to avoid confusion or errors.
+  !-----------------------------------------------------------------------
+  if ( .not. l_sw_on ) then
+    xi_abs = 0.
+  end if
 
-!-----------------------------------
-! End of ajsmith4's Modification
-!-----------------------------------
+  !-----------------------------------
+  ! End of ajsmith4's Modification
+  !-----------------------------------
 
-if (xi_abs == 0.) then
-  l_sw_on = .FALSE.
-else
-  l_sw_on = .TRUE.
-end if
+  if (xi_abs == 0.) then
+    l_sw_on = .FALSE.
+  else
+    l_sw_on = .TRUE.
+  end if
 
 
 !-----------------------------------------------------------------------

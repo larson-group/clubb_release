@@ -218,20 +218,16 @@ module dycoms2_rf02
 
 !----------------------------------------------------------------------
 
-  subroutine dycoms2_rf02_sfclyr( um_sfc, vm_sfc,  & 
-                                  upwp_sfc, vpwp_sfc,  & 
-                                  wpthlp_sfc, wprtp_sfc, ustar, & 
-                                  wpsclrp_sfc, wpedsclrp_sfc )
+  subroutine dycoms2_rf02_sfclyr( wpthlp_sfc, wprtp_sfc, ustar )
+  ! Description:
+  !   This subroutine computes surface fluxes of
+  !   heat and moisture according to GCSS DYCOMS II RF 02 specifications
+
+  ! References:
+  !   None
+  !----------------------------------------------------------------------
 
     use constants_clubb, only: Cp, Lv ! Variable(s)
-
-    use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
-
-    use array_index, only:  & 
-        iisclr_thl, iisclr_rt, iiedsclr_rt, iiedsclr_thl ! Variable(s)
-
-    use surface_flux, only: &
-        compute_ubar, compute_momentum_flux
 
     implicit none
 
@@ -243,45 +239,17 @@ module dycoms2_rf02
       SH = 16.0, & 
       LH = 93.0
 
-    ! Input Variables
-    real, intent(in) ::  & 
-      um_sfc,  & ! um(2) [m/s]
-      vm_sfc  ! vm(2) [m/s]
-
     ! Output
     real, intent(out) ::  & 
-      upwp_sfc,     & ! u'w' at (1)      [m^2/s^2]
-      vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
       ustar           ! surface friction velocity [m/s]
 
-    real, intent(out), dimension(sclr_dim) ::  & 
-      wpsclrp_sfc       ! w' scalar at surface [units m/s]
-
-    real, intent(out), dimension(edsclr_dim) ::  & 
-      wpedsclrp_sfc     ! w' eddy-scalar at surface [units m/s]
-
-    ! Local Variables
-    real :: ubar  ! ? [m^2/s^2]?
-
     ! Declare the value of ustar.
     ustar = 0.25
 
-    ubar = compute_ubar( um_sfc, vm_sfc )
-
-    call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
-                                upwp_sfc, vpwp_sfc )
-
     wpthlp_sfc = SH / (1.21 * Cp)
     wprtp_sfc  = LH / (1.21 * Lv)
-
-    ! Let passive scalars be equal to rt and theta_l for now
-    if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
-    if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
-
-    if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
-    if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
 
     return
   end subroutine dycoms2_rf02_sfclyr

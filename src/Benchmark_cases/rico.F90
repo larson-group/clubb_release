@@ -110,11 +110,10 @@ module rico
 
 
  !----------------------------------------------------------------------
-  subroutine rico_sfclyr( um_sfc, vm_sfc, thlm, rtm, & 
+  subroutine rico_sfclyr( um_sfc, vm_sfc, thlm, rtm, &
                           lowestlevel, sst, psfc, exner_sfc, & 
                           upwp_sfc, vpwp_sfc, wpthlp_sfc, & 
-                          wprtp_sfc, ustar,  & 
-                          wpsclrp_sfc, wpedsclrp_sfc )
+                          wprtp_sfc, ustar )
   !----------------------------------------------------------------------
   !        Description:
   !          Surface forcing subroutine for RICO case.  Written
@@ -130,12 +129,8 @@ module rico
   !-----------------------------------------------------------------------
 
   use constants_clubb, only: kappa, p0 ! Variable(s)
-
-  use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
   
   use saturation, only: sat_mixrat_liq ! Procedure(s)
-
-  use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
   use surface_flux, only: compute_ubar, compute_momentum_flux, &
                           compute_wpthlp_sfc, compute_wprtp_sfc
@@ -172,7 +167,7 @@ module rico
     rtm,           & ! This is rt at the lowest above-ground model level.  [kg/kg]
     lowestlevel,   & ! This is z at the lowest above-ground model level.  [m]
     sst,           & ! This is the sea surface temperature [K].
-    psfc,          &   ! This is the surface pressure [Pa].
+    psfc,          & ! This is the surface pressure [Pa].
     exner_sfc
 
   ! Output variables
@@ -182,13 +177,6 @@ module rico
     wpthlp_sfc, & ! The upward flux of theta-l            [K m s^-1]
     wprtp_sfc,  & ! The upward flux of rtm (total water)  [kg kg^-1 m s^-1]
     ustar         ! surface friction velocity             [m/s]
-
-  real, dimension(sclr_dim), intent(out) :: & 
-    wpsclrp_sfc     ! Passive scalar surface flux      [units m s^-1]
-
-  real, dimension(edsclr_dim), intent(out) :: & 
-    wpedsclrp_sfc   ! Passive eddy-scalar surface flux [units m s^-1]
-
 
   ! Declare the value of ustar.
   ustar = 0.3
@@ -227,14 +215,6 @@ module rico
     vpwp_sfc   = -vm_sfc * Cm * ubar  ! m^2 s^-2
 
   end if
-  
-
-  ! Let passive scalars be equal to rt and theta_l for now
-  if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
-  if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
-
-  if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
-  if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
 
   return
   end subroutine rico_sfclyr

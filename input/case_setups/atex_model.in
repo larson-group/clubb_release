@@ -55,6 +55,13 @@ time_spinup = 1800.0  ! End of spin-up period [seconds since midnight on start d
 dtmain    = 60.0   ! Model timestep [s]
 dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
 
+sfctype = 1      ! Select surface scheme (cases without specified surface fluxes).
+                 ! 0 ==> fixed surface sensible and latent heat fluxes,
+                 !       as defined by SE and LE, respectively.
+                 ! 1 ==> determine surface sensible and latent heat fluxes
+                 !       through a bulk formula that uses the given surface
+                 !       temperature (Tsfc) and assumes over ocean.
+
 Tsfc = 298.0       ! Temperature at model base           [K]
 psfc = 1015.e2     ! Pressure at model base              [Pa]
 

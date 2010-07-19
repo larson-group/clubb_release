@@ -176,107 +176,74 @@ module dycoms2_rf01
 
     return
   end subroutine dycoms2_rf01_tndcy
-
-  !----------------------------------------------------------------------
+  
+  !======================================================================
   subroutine dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc,  & 
-                                  exner_sfc, um_sfc, vm_sfc,  & 
-                                  thlm_sfc, rtm_sfc, rho_zm_sfc, &
-                                  upwp_sfc, vpwp_sfc, & 
-                                  wpthlp_sfc, wprtp_sfc, ustar, & 
-                                  wpsclrp_sfc, wpedsclrp_sfc )
-    !       Description:
-    !       This subroutine computes surface fluxes of horizontal momentum,
-    !       heat and moisture according to GCSS DYCOMS II RF 01 specifications
-    !
-    !       References:
-    !----------------------------------------------------------------------
+                                    exner_sfc, ubar, & 
+                                    thlm_sfc, rtm_sfc, rho_zm_sfc, &
+                                    wpthlp_sfc, wprtp_sfc, ustar )
+  ! Description:
+  !   This subroutine computes surface fluxes of
+  !   heat and moisture according to GCSS DYCOMS II RF 01 specifications
 
-    use constants_clubb, only: Cp, fstderr, Lv ! Variable(s)
+  ! References:
+  !   None
+  !----------------------------------------------------------------------
+  use constants_clubb, only: Cp, fstderr, Lv ! Variable(s)
 
-    use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
+  use saturation, only: sat_mixrat_liq ! Variable(s)
 
-    use saturation, only: sat_mixrat_liq ! Variable(s)
+  use surface_flux, only: compute_wpthlp_sfc, compute_wprtp_sfc ! Procedure(s)
 
-    use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variables(s)
+  implicit none
 
-    use surface_flux, only: compute_momentum_flux, compute_ubar, & 
-                            compute_wpthlp_sfc, compute_wprtp_sfc
+  ! Input variables
+  integer, intent(in) :: &
+    sfctype
+  real, intent(in) ::  &
+    Tsfc,      & ! Surface temperature                           [K]
+    psfc,      & ! Surface pressure                              [Pa]
+    exner_sfc, & ! Exner function                                [-]
+    ubar,      & ! mean sfc wind speed                           [m/s]
+    thlm_sfc,  & ! theta_l at first model layer                  [K]
+    rtm_sfc,   & ! Total water mixing ratio at first model layer [kg/kg]
+    rho_zm_sfc   ! Density at the surface                        [kg/m^3]
 
-    implicit none
+  ! Output variables
+  real, intent(out) ::  & 
+    wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
+    wprtp_sfc, &      ! w'rt' surface flux        [(m kg)/(kg s)]
+    ustar
+    
+  ! Local Variable
+  real :: & 
+    Cd  ! Coefficient
 
-    ! External
-    intrinsic :: max, sqrt, present
+  !-----------------BEGIN CODE-----------------------
 
-    ! Constant parameters
-    real, parameter ::  & 
-      Cd    = 0.0011
+  Cd = 0.0011
 
-    ! Input variables
-    integer, intent(in) :: sfctype
+  ustar = 0.25
 
-    real, intent(in) ::  & 
-      Tsfc,       & ! Surface temperature                [K]
-      psfc,       & ! Surface pressure                   [Pa]
-      exner_sfc,  & ! Exner function at the surface      [-]
-      um_sfc,     & ! u wind at the surface              [m/s]
-      vm_sfc,     & ! v wind at the surface              [m/s]
-      thlm_sfc,   & ! theta_l at the surface             [K]
-      rtm_sfc,    & ! r_t at the surface                 [kg/kg]
-      rho_zm_sfc    ! Density at the surface             [kg/m^3]
+  ! Compute heat and moisture fluxes
+  if ( sfctype == 0 ) then
 
-    ! Output variables
-    real, intent(out) ::  & 
-      upwp_sfc,    & ! u' w' at the surface              [m^2/s^2]
-      vpwp_sfc,    & ! v' w' at the surface              [m^2/s^2]
-      wpthlp_sfc,  & ! w' thl' at the surface            [m K/s]
-      wprtp_sfc,   & ! w' rt'  at the surface            [m kg/(kg s)]
-      ustar          ! surface friction velocity         [m/s]
+    wpthlp_sfc =  15.0 / ( rho_zm_sfc * Cp )
+    wprtp_sfc  = 115.0 / ( rho_zm_sfc * Lv )
 
-    real,  dimension(sclr_dim), intent(out) ::  & 
-      wpsclrp_sfc        ! Passive scalar surface flux      [units m/s]
+  else if ( sfctype == 1 ) then
 
-    real,  dimension(edsclr_dim), intent(out) ::  & 
-      wpedsclrp_sfc      ! Passive eddy-scalar surface flux [units m/s]
+    wpthlp_sfc = compute_wpthlp_sfc( Cd, ubar, thlm_sfc, Tsfc, exner_sfc )
+    wprtp_sfc = compute_wprtp_sfc( Cd, ubar, rtm_sfc, sat_mixrat_liq( psfc, Tsfc ) )
 
-    ! Local variables
-    real :: ubar
+  else  ! Undefined value for sfctype
 
-    ! Declare the value of ustar.
-    ustar = 0.25
+    write(fstderr,*) "Invalid sfctype value = ", sfctype
+    stop
 
-    ubar = compute_ubar( um_sfc, vm_sfc )
-
-    ! Compute momentum fluxes
-
-    call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
-                                upwp_sfc, vpwp_sfc )
-
-    ! Compute heat and moisture fluxes
-    if ( sfctype == 0 ) then
-
-      wpthlp_sfc =  15.0 / ( rho_zm_sfc * Cp )
-      wprtp_sfc  = 115.0 / ( rho_zm_sfc * Lv )
-
-    else if ( sfctype == 1 ) then
-
-      wpthlp_sfc = compute_wpthlp_sfc( Cd, ubar, thlm_sfc, Tsfc, exner_sfc )
-      wprtp_sfc = compute_wprtp_sfc( Cd, ubar, rtm_sfc, sat_mixrat_liq( psfc, Tsfc ) )
-
-    else  ! Undefined value for sfctype
-
-      write(fstderr,*) "Invalid sfctype value = ", sfctype
-      stop
-
-    end if
-
-    ! Let passive scalars be equal to rt and theta_l for now
-    if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
-    if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
-
-    if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
-    if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
-
-    return
+  end if ! sfctype
+  return
   end subroutine dycoms2_rf01_sfclyr
 
+!----------------------------------------------------------------------
 end module dycoms2_rf01

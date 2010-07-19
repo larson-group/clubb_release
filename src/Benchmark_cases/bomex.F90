@@ -101,10 +101,8 @@ module bomex
   end subroutine bomex_tndcy
 
 !----------------------------------------------------------------------
-  subroutine bomex_sfclyr( um_sfc, vm_sfc, rtm_sfc, & 
-                           upwp_sfc, vpwp_sfc, & 
-                           wpthlp_sfc, wprtp_sfc, ustar, & 
-                           wpsclrp_sfc, wpedsclrp_sfc )
+  subroutine bomex_sfclyr( rtm_sfc, & 
+                           wpthlp_sfc, wprtp_sfc, ustar )
 
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,
@@ -113,41 +111,23 @@ module bomex
 !       References:
 !----------------------------------------------------------------------
 
-    use parameters_model, only: sclr_dim, edsclr_dim  ! Variable(s)
-
-    use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl
-
-    use surface_flux, only: compute_momentum_flux, compute_ubar
-
     use spec_hum_to_mixing_ratio, only: &
         flux_spec_hum_to_mixing_ratio ! Procedure(s)
 
     implicit none
 
-
     ! Input Variables
     real, intent(in) ::  & 
-      um_sfc,  & ! um(2)  [m/s]
-      vm_sfc,  & ! vm(2)  [m/s]
       rtm_sfc    ! rtm(2) [kg/kg]
 
     ! Output variables
     real, intent(out) ::  & 
-      upwp_sfc,     & ! u'w' at (1)      [m^2/s^2]
-      vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t' at (1)    [(m kg)/(s kg)]
       ustar           ! surface friction velocity [m/s]
 
-    real,  dimension(sclr_dim), intent(out) ::  & 
-      wpsclrp_sfc        ! Passive scalar surface flux      [units m/s]
-
-    real,  dimension(edsclr_dim), intent(out) ::  & 
-      wpedsclrp_sfc      ! Passive eddy-scalar surface flux [units m/s]
-
     ! Local variables
-    real :: wpqtp_sfc  ! w'q_t' at (1)         [(m kg)/(s kg)]
-    real :: ubar       ! mean sfc wind speed   [m/s]
+    real :: wpqtp_sfc  ! w'q_t' at (1)         [(m kg)/(s kg)]   
 
     ! Declare the value of ustar.
     ustar = 0.28
@@ -162,20 +142,6 @@ module bomex
     ! Convert flux from terms of total water specific humidity to terms of total
     ! water mixing ratio.
     call flux_spec_hum_to_mixing_ratio( rtm_sfc, wpqtp_sfc, wprtp_sfc )
-
-    ! Compute momentum fluxes
-
-    ubar = compute_ubar( um_sfc, vm_sfc )
-
-    call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
-                                upwp_sfc, vpwp_sfc )
-
-! Let passive scalars be equal to rt and theta_l for now
-    if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
-    if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
-
-    if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
-    if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
 
     return
   end subroutine bomex_sfclyr

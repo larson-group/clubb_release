@@ -115,10 +115,8 @@ module gabls2
 !-------------------------------------------------------------------------------
   subroutine gabls2_sfclyr( time, time_initial, &
                             lowest_level, psfc, & 
-                            um, vm, thlm, rtm, exner_sfc, & 
-                            upwp_sfc, vpwp_sfc, &
-                            wpthlp_sfc, wprtp_sfc, ustar, & 
-                            wpsclrp_sfc, wpedsclrp_sfc )
+                            ubar, thlm, rtm, exner_sfc, &
+                            wpthlp_sfc, wprtp_sfc, ustar )
 ! Description:
 !   Surface forcing subroutine for GABLS2 case.  Written
 !   29 December 2006 by Michael Falk.
@@ -127,9 +125,7 @@ module gabls2
 !   <http://people.su.se/~gsven/gabls/>
 !-------------------------------------------------------------------------------
 
-    use constants_clubb, only: Cp, Rd, p0, kappa, grav ! Variable(s)
-
-    use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
+    use constants_clubb, only: Cp, Rd, p0, grav ! Variable(s)
 
     use saturation, only: sat_mixrat_liq ! Procedure(s)
 
@@ -137,10 +133,7 @@ module gabls2
 
     use diag_ustar_module, only: diag_ustar ! Variable(s)
 
-    use array_index, only: iiedsclr_rt, iiedsclr_thl, iisclr_rt, iisclr_thl ! Variable(s)
-
-    use surface_flux, only: compute_ubar, compute_momentum_flux, compute_wprtp_sfc, &
-                            compute_wpthlp_sfc
+    use surface_flux, only: compute_wprtp_sfc, compute_wpthlp_sfc ! Procedure(s)
     implicit none
 
     ! Local constants
@@ -156,8 +149,7 @@ module gabls2
     real, intent(in) ::    & 
       psfc,                & ! Surface pressure [Pa]
       lowest_level,        & ! Height of lowest above-ground gridpoint [m]
-      um,                  & ! u at the lowest above-ground model level.  [m/s]
-      vm,                  & ! v at the lowest above-ground model level.  [m/s]
+      ubar,                & ! Root (u^2 + v^2), per ATEX and RICO spec.
       thlm,                & ! theta-l at the lowest above-ground model level. 
                            ! (theta = theta-l because there's no liquid in this case)  [K]
       rtm,                 &   ! rt at the lowest above-ground model level.  [kg/kg]
@@ -165,22 +157,12 @@ module gabls2
 
     ! Output variables
     real, intent(out) :: & 
-      upwp_sfc,   & ! The turbulent upward flux of u-momentum         [(m/s)^2]
-      vpwp_sfc,   & ! The turbulent upward flux of v-momentum         [(m/s)^2]
       wpthlp_sfc, & ! The turbulent upward flux of theta-l            [K m/s]
       wprtp_sfc,  & ! The turbulent upward flux of rtm (total water)  [kg/kg m/s]
       ustar         ! surface friction velocity                       [m/s]
 
-    ! Output variables (optional)
-    real, optional, intent(out), dimension(sclr_dim) :: & 
-      wpsclrp_sfc       ! The upward flux of the scalars       [units m/s]
-
-    real, optional, intent(out), dimension(edsclr_dim) :: & 
-      wpedsclrp_sfc     ! The upward flux of the eddy-scalars  [units m/s]
-
     ! Local variables
     real :: & 
-      ubar,                & ! Root (u^2 + v^2), per ATEX and RICO spec.
       Cz,                  & ! C_10 scaled to the height of the lowest 
                            ! model level. (Per ATEX spec)
       time_in_hours,       & ! time in hours from 00 local on first day of experiment 
@@ -188,9 +170,6 @@ module gabls2
       sst,                 & ! Sea surface temperature [K].
       sstheta,             & ! Sea surface potential temperature [K].
       bflx                   ! Needed for diag_ustar; equal to wpthlp_sfc * (g/theta)
-
-    ! Define variable values
-    ubar = compute_ubar( um, vm )
 
     Cz   = C_10 * ((log( 10/z0 ))/(log( lowest_level/z0 ))) * & 
            ((log( 10/z0 ))/(log( lowest_level/z0 ))) ! Modification in case
@@ -229,16 +208,6 @@ module gabls2
     ! Compute momentum fluxes
     bflx  = wpthlp_sfc * grav / sstheta
     ustar = diag_ustar(lowest_level,bflx,ubar,z0)
-
-    call compute_momentum_flux( um, vm, ubar, ustar, &
-                                upwp_sfc, vpwp_sfc )
-
-    ! Let passive scalars be equal to rt and theta_l for now
-    if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
-    if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
-
-    if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
-    if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
     return
   end subroutine gabls2_sfclyr

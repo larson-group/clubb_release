@@ -2836,6 +2836,7 @@ module clubb_driver
 #endif
 
     use atex, only: atex_tndcy, atex_sfclyr ! Procedure(s)
+    
 
     use bomex, only: bomex_tndcy, bomex_sfclyr ! Procedure(s)
 
@@ -2847,14 +2848,15 @@ module clubb_driver
     use cobra, only: cobra_tndcy, cobra_sfclyr ! Procedure(s)
 #endif
 
-    use dycoms2_rf01, only:  & 
-        dycoms2_rf01_tndcy, dycoms2_rf01_sfclyr ! Procedure(s)
+    use dycoms2_rf01, only:     &           ! Procedure(s)
+        dycoms2_rf01_tndcy, dycoms2_rf01_sfclyr
 
     use dycoms2_rf02, only:  & 
         dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr ! Procedure(s)
 
-    use fire, only: fire_tndcy, sfc_momentum_fluxes, & 
-                    sfc_thermo_fluxes ! Procedure(s)
+    use fire, only:   &                ! Procedure(s)
+        fire_tndcy, fire_sfclyr
+
 
     use gabls2, only: gabls2_tndcy, gabls2_sfclyr ! Procedure(s)
 
@@ -2887,6 +2889,11 @@ module clubb_driver
     use cos_solar_zen_module, only: cos_solar_zen ! Function
 
     use parameters_radiation, only: rad_scheme  ! Variable(s)
+    
+    use surface_flux, only:  &   ! Procedure(s)
+      compute_momentum_flux, &
+      compute_ubar,          &
+      set_sclr_sfc_rtm_thlm
 
     implicit none
 
@@ -2899,14 +2906,19 @@ module clubb_driver
       err_code
 
     ! Local Variables
-
-    real ::  &
-      um_sfc, &  ! um interpolated to momentum level 1 (sfc) [m/s]
-      vm_sfc     ! vm interpolated to momentum level 1 (sfc) [m/s]
-
     real :: &
-      wpthep, & ! w'theta_e'                            [m K/s]
-      amu0      ! Cosine of the solar zenith angle      [-]
+      wpthep, &   ! w'theta_e'                                 [m K/s]
+      amu0        ! Cosine of the solar zenith angle           [-]
+      
+    real :: &
+      ubar        ! mean sfc wind speed                        [m/s]
+      
+    ! Flags to help avoid code duplication
+    logical :: &
+      l_compute_momentum_flux = .false., &
+      l_set_sclr_sfc_rtm_thlm = .false., &
+      l_fixed_flux            = .false.
+      
 
 !-----------------------------------------------------------------------
 
@@ -3021,7 +3033,7 @@ module clubb_driver
 
     case ( "mpace_a" ) ! mpace_a arctic stratus case
 
-      call mpace_a_tndcy( time_current, amu0, &        ! Intent(in) 
+      call mpace_a_tndcy( time_current, amu0, &                      ! Intent(in) 
                           rho, p_in_Pa, rcm, &                       ! Intent(in)
                           wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
                           Frad, radht, um_ref, vm_ref, &             ! Intent(out)
@@ -3052,7 +3064,7 @@ module clubb_driver
                        sclrm_forcing, edsclrm_forcing )    ! Intent(out)
                        
     case ( "wangara" ) ! Wangara dry CBL
-      call wangara_tndcy( wm_zt, wm_zm,  &                  ! Intent(out) 
+      call wangara_tndcy( wm_zt, wm_zm,  &                  ! Intent(out) compute_momentum
                           thlm_forcing, rtm_forcing, &      ! Intent(out)
                           sclrm_forcing, edsclrm_forcing )  ! Intent(out)
 
@@ -3093,247 +3105,222 @@ module clubb_driver
     !----------------------------------------------------------------
 
     ! Boundary conditions for the second order moments
-
-    ! Find the value of um at the surface (momentum level 1) by interpolating the
-    ! values of um found at thermodynamic levels 2 and 1.  This will be helpful in
-    ! computing the surface flux u'w'|_sfc.
-    um_sfc = zt2zm( um, 1 )
-    ! Find the value of vm at the surface (momentum level 1) by interpolating the
-    ! values of vm found at thermodynamic levels 2 and 1.  This will be helpful in
-    ! computing the surface flux v'w'|_sfc.
-    vm_sfc = zt2zm( vm, 1 )
-
+    
+    ubar = compute_ubar( um(2), vm(2) )
+    
     select case ( trim( runtype ) )
-
-    case ( "arm" )
-      call arm_sfclyr( time_current, gr%zt(2), 1.1,  &              ! Intent(in)
-                       thlm(2), um(2), vm(2), &                     ! Intent(in)
-                       upwp_sfc, vpwp_sfc,  &                       ! Intent(out)
-                       wpthlp_sfc, wprtp_sfc, ustar, &              ! Intent(out)
-                       wpsclrp_sfc, wpedsclrp_sfc )                 ! Intent(in)
+        
+      case ( "rico" )
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call rico_sfclyr( um(2), vm(2), thlm(2), rtm(2),  &           ! Intent(in)
+                          ! 299.8 K is the RICO SST;
+                          ! 101540 Pa is the sfc pressure.
+                          !gr%zt(2), 299.8, 101540.,  &               ! Intent(in)
+                          gr%zt(2), Tsfc, psfc, exner(1), &           ! Intent(in)
+                          upwp_sfc, vpwp_sfc, wpthlp_sfc, &           ! Intent(out) 
+                          wprtp_sfc, ustar )                          ! Intent(out)
 
 #ifdef UNRELEASED_CODE
-    case ( "arm_0003" )
-      call arm_0003_sfclyr( time_current, gr%zt(2), rho_zm(1), &   ! Intent(in)
-                            thlm(2), um(2), vm(2), &               ! Intent(in)
-                            upwp_sfc, vpwp_sfc,  &                 ! Intent(out)
-                            wpthlp_sfc, wprtp_sfc, ustar, &        ! Intent(out)
-                            wpsclrp_sfc, wpedsclrp_sfc )           ! Intent(out)
 
-    case ( "arm_3year" )
-      call arm_3year_sfclyr( time_current, gr%zt(2), rho_zm(1), &  ! Intent(in)
-                             thlm(2), um(2), vm(2), &              ! Intent(in)
-                             upwp_sfc, vpwp_sfc,  &                ! Intent(out)
-                             wpthlp_sfc, wprtp_sfc, ustar, &       ! Intent(out)
-                             wpsclrp_sfc, wpedsclrp_sfc )          ! Intent(out)
+      case ( "gabls3" )
+        l_compute_momentum_flux = .true.
+        call gabls3_sfclyr( ubar, veg_T_in_K,                    & ! Intent(in)
+                            thlm(2), rtm(2), gr%zt(2), exner(1), & ! Intent(in)
+                            wpthlp_sfc, wprtp_sfc, ustar )         ! Intent(out)
+      case ( "gabls3_night" )
+        call gabls3_night_sfclyr( time_current, um(2), vm(2),    & ! Intent(in)
+                            thlm(2), rtm(2), gr%zt(2),           & ! Intent(in)
+                            upwp_sfc, vpwp_sfc,                  & ! Intent(out)
+                            wpthlp_sfc, wprtp_sfc, ustar )         ! Intent(out)
+      case ( "jun25_altocu" )
+        ! There are no surface momentum or heat fluxes
+        ! for the Jun. 25 Altocumulus case.
 
+        ! Ensure ustar is set
+        ustar = 0
+                    
+      case ( "cobra" )
+        l_compute_momentum_flux = .true.
+        call cobra_sfclyr( time_current, gr%zt(2), rho_zm(1), &      ! Intent(in)
+                           thlm(2), ubar,                     &      ! Intent(in)
+                           wpthlp_sfc, wprtp_sfc, ustar,      &      ! Intent(out)
+                           wpsclrp_sfc, wpedsclrp_sfc )              ! Intent(out)
+      case ( "clex9_nov02" )
+        ! There are no surface momentum or heat fluxes
+        ! for the CLEX-9: Nov. 02 Altocumulus case.
 
-    case ( "arm_97" )
-      call arm_97_sfclyr( time_current, gr%zt(2), rho_zm(1), &     ! Intent(in)
-                          thlm(2), um(2), vm(2), &                 ! Intent(in)
-                          upwp_sfc, vpwp_sfc,  &                   ! Intent(out)
-                          wpthlp_sfc, wprtp_sfc, ustar, &          ! Intent(out)
-                          wpsclrp_sfc, wpedsclrp_sfc )             ! Intent(out)
+        ! Ensure ustar is set
+        ustar = 0
 
-    case ( "astex_a209" )
-      call astex_sfclyr( rho_zm(1), &                               ! Intent(in) 
-                         upwp_sfc, vpwp_sfc, wpthlp_sfc,  &         ! Intent(out)
-                         wprtp_sfc, wpsclrp_sfc, wpedsclrp_sfc )    ! Intent(out)
+      case ( "clex9_oct14" )
+        ! There are no surface momentum or heat fluxes
+        ! for the CLEX-9: Oct. 14 Altocumulus case.
+
+        ! Ensure ustar is set.
+        ustar = 0
+
+      case ( "astex_a209" )
+        call astex_sfclyr( rho_zm(1), &                               ! Intent(in) 
+                            upwp_sfc, vpwp_sfc, wpthlp_sfc,  &        ! Intent(out)
+                            wprtp_sfc, wpsclrp_sfc, wpedsclrp_sfc )   ! Intent(out)
+      case ( "nov11_altocu" )
+        ! There are no surface momentum or heat fluxes
+        ! for the Nov. 11 Altocumulus case.
+
+        ! Ensure ustar is set
+        ustar = 0
+        
+#endif
+    
+      case ( "fire", "generic"  )  ! Generic setup, and GCSS FIRE
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        l_fixed_flux            = .true.
+        call fire_sfclyr( ubar, Tsfc, psfc,            &  ! Intent(in)
+                          thlm(2), rtm(2), exner(1),   &  ! Intent(in)
+                          wpthlp_sfc, wprtp_sfc, ustar )  ! Intent(out)
+
+#ifdef UNRELEASED_CODE
+
+      case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
+             "cloud_feedback_s11", "cloud_feedback_s11_p2k", &
+             "cloud_feedback_s12", "cloud_feedback_s12_p2k"  ) ! Cloud Feedback cases
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        l_fixed_flux            = .true.
+        call cloud_feedback_sfclyr( runtype, sfctype,            &  ! Intent(in)
+                                    thlm(2), rtm(2),             &  ! Intent(in)
+                                    ubar, psfc, Tsfc,            &  ! Intent(in)
+                                    wpthlp_sfc, wprtp_sfc, ustar )  ! Intent(out)
 
 #endif
 
-    case ( "atex" )
-      call atex_sfclyr( um(2), vm(2), thlm(2), rtm(2), &  ! Intent(in)
-                        exner(1), Tsfc, &                 ! Intent(in)
-                        upwp_sfc, vpwp_sfc, &             ! Intent(out)
-                        wpthlp_sfc, wprtp_sfc, ustar, &   ! Intent(out)
-                        wpsclrp_sfc, wpedsclrp_sfc )      ! Intent(out)
-
-    case ( "bomex" )
-      call bomex_sfclyr( um(2), vm(2), rtm(2),  &                   ! Intent(in) 
-                         upwp_sfc, vpwp_sfc, &                      ! Intent(out)
-                         wpthlp_sfc, wprtp_sfc, ustar, &            ! Intent(out)
-                         wpsclrp_sfc, wpedsclrp_sfc )               ! Intent(out)
-
-#ifdef UNRELEASED_CODE
-    case ( "cobra" )
-      call cobra_sfclyr( time_current, gr%zt(2), rho_zm(1), &       ! Intent(in)
-                         thlm(2), um(2), vm(2), &                   ! Intent(in)
-                         upwp_sfc, vpwp_sfc, &                      ! Intent(out)
-                         wpthlp_sfc, wprtp_sfc, ustar, &            ! Intent(out)
-                         wpsclrp_sfc, wpedsclrp_sfc )               ! Intent(out)
-
-    case ( "clex9_nov02" )
-      ! There are no surface momentum or heat fluxes
-      ! for the CLEX-9: Nov. 02 Altocumulus case.
-
-      ! Ensure ustar is set
-      ustar = 0
-
-    case ( "clex9_oct14" )
-      ! There are no surface momentum or heat fluxes
-      ! for the CLEX-9: Oct. 14 Altocumulus case.
-
-      ! Ensure ustar is set.
-      ustar = 0
-
-    case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
-           "cloud_feedback_s11", "cloud_feedback_s11_p2k", &
-           "cloud_feedback_s12", "cloud_feedback_s12_p2k" ) ! Cloud Feedback cases
-
-      call cloud_feedback_sfclyr( runtype, sfctype, &             ! Intent(in)
-                                  thlm(2), rtm(2), &              ! Intent(in)
-                                  um(2), vm(2), &                 ! Intent(in)
-                                  psfc, Tsfc, &                   ! Intent(in)
-                                  upwp_sfc, vpwp_sfc, &           ! Intent(out)
-                                  wpthlp_sfc, wprtp_sfc, ustar, & ! Intent(out)
-                                  wpsclrp_sfc, wpedsclrp_sfc )    ! Intent(out)
-
-      ! If the surface type is 0, use fixed fluxes
-      if ( sfctype == 0 ) then
-        wpthlp_sfc = SE
-        wprtp_sfc  = LE
-        if ( iisclr_thl > 0 ) wpsclrp(:,iisclr_thl) = SE
-        if ( iisclr_rt > 0 ) wpsclrp(:,iisclr_rt)   = LE
-        if ( iiedsclr_thl > 0 ) wpedsclrp(:,iiedsclr_thl) = SE
-        if ( iiedsclr_rt > 0 ) wpedsclrp(:,iiedsclr_rt)   = LE
-      end if
-#endif
-
-    case ( "dycoms2_rf01" )
-      call dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc,  &             ! Intent(in)
-                                exner(1), um(2), vm(2),  &          ! Intent(in)
-                                thlm(2), rtm(2), rho_zm(1), &       ! Intent(in) 
-                                upwp_sfc, vpwp_sfc,  &              ! Intent(out)
-                                wpthlp_sfc, wprtp_sfc, ustar, &     ! Intent(out)
-                                wpsclrp_sfc, wpedsclrp_sfc )        ! Intent(out)
-
-    case ( "dycoms2_rf02" )
-      call dycoms2_rf02_sfclyr( um(2), vm(2), &                     ! Intent(in)
-                                upwp_sfc, vpwp_sfc, &               ! Intent(out)
-                                wpthlp_sfc, wprtp_sfc, ustar, &     ! Intent(out)
-                                wpsclrp_sfc, wpedsclrp_sfc )        ! Intent(out)
-
-    case( "fire", "generic"  )  ! Generic setup and GCSS FIRE
-      call sfc_momentum_fluxes( um_sfc, vm_sfc, &                   ! Intent(in)
-                                upwp_sfc, vpwp_sfc, ustar )         ! Intent(out)
-      ! sfctype = 0  fixed sfc sensible and latent heat fluxes
-      !                   as given in the namelist
-      ! sfctype = 1  bulk formula: uses given surface temperature
-      !                   and assumes over ocean
-      if ( sfctype == 0 ) then
-
-        wpthlp_sfc = SE
-        wprtp_sfc  = LE
-        if ( iisclr_thl > 0 ) wpsclrp(:,iisclr_thl) = SE
-        if ( iisclr_rt > 0 ) wpsclrp(:,iisclr_rt)   = LE
-        if ( iiedsclr_thl > 0 ) wpedsclrp(:,iiedsclr_thl) = SE
-        if ( iiedsclr_rt > 0 ) wpedsclrp(:,iiedsclr_rt)   = LE
-
-      elseif ( sfctype == 1 ) then
-
-        call sfc_thermo_fluxes( um(2), vm(2), &                     ! Intent(in)
-                                Tsfc, psfc,  &                      ! Intent(in)
-                                thlm(2), rtm(2), exner(1), &        ! Intent(in)
-                                wpthlp_sfc, wprtp_sfc, &            ! Intent(out)
-                                wpsclrp_sfc, wpedsclrp_sfc )        ! Intent(out)
-
-      else
-
-        write(unit=fstderr,fmt=*)  & 
-          "Invalid value of sfctype = ", sfctype
-        stop
-
-      endif
-
-    case ( "gabls2" )
-      call gabls2_sfclyr( time_current, time_initial, &             ! Intent(in)
-                          gr%zt(2), psfc, &                         ! Intent(in)
-                          um(2), vm(2), thlm(2), rtm(2), exner(1), &! Intent(in)     
-                          upwp_sfc, vpwp_sfc, &                     ! Intent(out)   
-                          wpthlp_sfc, wprtp_sfc, ustar, &           ! Intent(out)
-                          wpsclrp_sfc, wpedsclrp_sfc )              ! Intent(out)
-
-#ifdef UNRELEASED_CODE
-    case ( "gabls3" )
-      call gabls3_sfclyr( um(2), vm(2), veg_T_in_K,             & ! Intent(in)
-                          thlm(2), rtm(2), gr%zt(2), exner(1) , & ! Intent(in)
-                          upwp_sfc, vpwp_sfc,                   & ! Intent(out)
-                          wpthlp_sfc, wprtp_sfc, ustar )          ! Intent(out)
-    case ( "gabls3_night" )
-      call gabls3_night_sfclyr( time_current, um(2), vm(2),  & ! Intent(in)
-                          thlm(2), rtm(2), gr%zt(2),         & ! Intent(in)
-                          upwp_sfc, vpwp_sfc,                & ! Intent(out)
+      case ( "arm" )
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call arm_sfclyr( time_current, gr%zt(2), 1.1,  &       ! Intent(in)
+                          thlm(2), ubar,               &       ! Intent(in)
                           wpthlp_sfc, wprtp_sfc, ustar )       ! Intent(out)
 
+#ifdef UNRELEASED_CODE
 
-    case ( "jun25_altocu" )
-      ! There are no surface momentum or heat fluxes
-      ! for the Jun. 25 Altocumulus case.
-
-      ! Ensure ustar is set
-      ustar = 0
-
-    case ( "lba" )
-      call lba_sfclyr( time_current, gr%zt(2), rho_zm(1), &        ! Intent(in)
-                       thlm(2), um(2), vm(2), &                    ! Intent(in)
-                       upwp_sfc, vpwp_sfc,  &                      ! Intent(out)
-                       wpthlp_sfc, wprtp_sfc, ustar, &             ! Intent(out)
-                       wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
+      case ( "arm_0003" )
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call arm_0003_sfclyr( time_current, gr%zt(2), rho_zm(1), &  ! Intent(in)
+                              thlm(2), ubar,                     &  ! Intent(in)
+                              wpthlp_sfc, wprtp_sfc, ustar       )  ! Intent(out)
+      case ( "arm_3year" )
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call arm_3year_sfclyr( time_current, gr%zt(2), rho_zm(1), & ! Intent(in)
+                                thlm(2), ubar,                    & ! Intent(in)
+                                wpthlp_sfc, wprtp_sfc, ustar      ) ! Intent(out)
+      case ( "arm_97" )
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call arm_97_sfclyr( time_current, gr%zt(2), rho_zm(1), &   ! Intent(in)
+                            thlm(2), ubar,                     &   ! Intent(in)
+                            wpthlp_sfc, wprtp_sfc, ustar )         ! Intent(out)
 
 #endif
 
-    case ( "mpace_a" )
-      call mpace_a_sfclyr( time_current, rho_zm(1), um(2), vm(2), & ! Intent(in)
-                           upwp_sfc, vpwp_sfc, &                    ! Intent(out)
-                           wpthlp_sfc, wprtp_sfc, ustar, &          ! Intent(out)
-                           wpsclrp_sfc, wpedsclrp_sfc )             ! Intent(out)
+      case ( "atex" )
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call atex_sfclyr( ubar, Tsfc,                  &  ! Intent(in)
+                          thlm(2), rtm(2), exner(1),   &  ! Intent(in)
+                          wpthlp_sfc, wprtp_sfc, ustar )  ! Intent(out)
+  
+#ifdef UNRELEASED_CODE      
 
-    case ( "mpace_b" )
-      call mpace_b_sfclyr( rho_zm(1), um(2), vm(2), &               ! Intent(in)
-                           upwp_sfc, vpwp_sfc, &                    ! Intent(out)
-                           wpthlp_sfc, wprtp_sfc, ustar, &          ! Intent(out)
-                           wpsclrp_sfc, wpedsclrp_sfc )             ! Intent(out)
+      case ( "twp_ice" )
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call twp_ice_sfclyr( gr%zt(2), Tsfc, exner(1), thlm(2), &    ! Intent(in)
+                              ubar, rtm(2), psfc,               &    ! Intent(in)
+                              wpthlp_sfc, wprtp_sfc, ustar      )    ! Intent(out)
+
+#endif
+
+      case ( "bomex" )
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call bomex_sfclyr( rtm(2),                      &  ! Intent(in) 
+                           wpthlp_sfc, wprtp_sfc, ustar )  ! Intent(out)
+      case ( "dycoms2_rf01" )
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc,         &  ! Intent(in)
+                                  exner(1), ubar,              &  ! Intent(in)
+                                  thlm(2), rtm(2), rho_zm(1),  &  ! Intent(in)
+                                  wpthlp_sfc, wprtp_sfc, ustar )  ! Intent(out)
+      case ( "dycoms2_rf02" )
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call dycoms2_rf02_sfclyr( wpthlp_sfc, wprtp_sfc, ustar )    ! Intent(out)
+        
+      case ( "gabls2" )
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call gabls2_sfclyr( time_current, time_initial, &             ! Intent(in)
+                            gr%zt(2), psfc, &                         ! Intent(in)
+                            ubar, thlm(2), rtm(2), exner(1), &        ! Intent(in)   
+                            wpthlp_sfc, wprtp_sfc, ustar )            ! Intent(out)
+      case ( "mpace_a" )
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call mpace_a_sfclyr( time_current, rho_zm(1),      & ! Intent(in)
+                              wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
+      case ( "mpace_b" )
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call mpace_b_sfclyr( rho_zm(1), &                    ! Intent(in)
+                              wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
 
 #ifdef UNRELEASED_CODE
-    case ( "nov11_altocu" )
-      ! There are no surface momentum or heat fluxes
-      ! for the Nov. 11 Altocumulus case.
 
-      ! Ensure ustar is set
-      ustar = 0
-
-    case ( "twp_ice" )
-      call twp_ice_sfclyr( gr%zt(2), Tsfc, exner(1), thlm(2), &     ! Intent(in)
-                            um(2), vm(2), rtm(2), &                 ! Intent(in)
-                            psfc, upwp_sfc, vpwp_sfc,  &            ! Intent(out)
-                            wpthlp_sfc, wprtp_sfc, ustar, &         ! Intent(out)
-                            wpsclrp_sfc, wpedsclrp_sfc )            ! Intent(out)
+      case ( "lba" )
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call lba_sfclyr( time_current, gr%zt(2), rho_zm(1), &  ! Intent(in)
+                          thlm(2), ubar, &                     ! Intent(in)
+                          wpthlp_sfc, wprtp_sfc, ustar )       ! Intent(out)
 
 #endif
 
-    case ( "rico" )
-      call rico_sfclyr( um(2), vm(2), thlm(2), rtm(2), &            ! Intent(in)
-                        ! 299.8 K is the RICO SST; 101540 Pa is the sfc pressure.
-                        !gr%zt(2), 299.8, 101540.,  &                ! Intent(in)
-                        gr%zt(2), Tsfc, psfc, exner(1), &
-                        upwp_sfc, vpwp_sfc, wpthlp_sfc, &           ! Intent(out) 
-                        wprtp_sfc, ustar, &                         ! Intent(out)
-                        wpsclrp_sfc, wpedsclrp_sfc )                ! Intent(out)
-
-    
-    case ( "wangara" )
-      call wangara_sfclyr( time_current, um(2), vm(2), &            ! Intent(in)
-                           upwp_sfc, vpwp_sfc, &                    ! Intent(out)
-                           wpthlp_sfc, wprtp_sfc, ustar, &          ! Intent(out)
-                           wpsclrp_sfc, wpedsclrp_sfc )             ! Intent(out)
-    case default
-
-      write(unit=fstderr,fmt=*)  & 
-        "Invalid value of runtype = ", runtype
-      stop
-
+      case ( "wangara" )
+        l_compute_momentum_flux = .true.
+        l_set_sclr_sfc_rtm_thlm = .true.
+        call wangara_sfclyr( time_current, &                 ! Intent(in)
+                              wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
+      case default
+        write(unit=fstderr,fmt=*)  & 
+          "Invalid value of runtype = ", runtype
+        stop
+      
     end select ! runtype
+      
+    ! These have been placed here to help avoid repetition in the cases
+    if( l_compute_momentum_flux ) then
+      call compute_momentum_flux( um(2), vm(2), ubar, ustar, &   ! Intent(in)
+                                  upwp_sfc, vpwp_sfc )           ! Intent(out)
+    end if
+    
+    if( l_set_sclr_sfc_rtm_thlm ) then
+      call set_sclr_sfc_rtm_thlm( wpthlp_sfc, wprtp_sfc, &      ! Intent(in)
+                                  wpsclrp_sfc, wpedsclrp_sfc )  ! Intent(out)
+    end if 
+
+    ! If the surface type is 0, use fixed fluxes
+    if ( sfctype == 0 .and. l_fixed_flux ) then
+      wpthlp_sfc = SE
+      wprtp_sfc  = LE
+      if ( iisclr_thl > 0 ) wpsclrp(:,iisclr_thl) = SE
+      if ( iisclr_rt > 0 ) wpsclrp(:,iisclr_rt)   = LE
+      if ( iiedsclr_thl > 0 ) wpedsclrp(:,iiedsclr_thl) = SE
+      if ( iiedsclr_rt > 0 ) wpedsclrp(:,iiedsclr_rt)   = LE
+    end if
 
     !---------------------------------------------------------------
     ! Compute Surface

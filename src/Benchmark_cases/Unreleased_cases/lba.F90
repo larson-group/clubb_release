@@ -132,10 +132,8 @@ module lba
 
   !----------------------------------------------------------------------
   subroutine lba_sfclyr( time, z, rho0, & 
-                         thlm_sfc, um_sfc, vm_sfc,  & 
-                         upwp_sfc, vpwp_sfc, & 
-                         wpthlp_sfc, wprtp_sfc, ustar, & 
-                         wpsclrp_sfc, wpedsclrp_sfc )
+                         thlm_sfc, ubar,  & 
+                         wpthlp_sfc, wprtp_sfc, ustar )
 
     !       Description:
     !       This subroutine computes surface fluxes of horizontal momentum,
@@ -147,19 +145,9 @@ module lba
 
     use constants_clubb, only: pi, grav, Lv, Cp ! Variable(s)
 
-    use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
-
-    use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
-
     use stats_precision, only: time_precision ! Variable(s)
 
     use diag_ustar_module, only: diag_ustar ! Variable(s)
-
-    use array_index, only:  & 
-        iisclr_thl, iisclr_rt ! Variable(s)
-
-    use surface_flux, only: &
-        compute_ubar, compute_momentum_flux
 
     implicit none
 
@@ -177,26 +165,16 @@ module lba
       z,         & ! Height at zt=2      [m] 
       rho0,      & ! Density at zm=1     [kg/m^3] 
       thlm_sfc,  & ! thlm at (2)         [m/s]
-      um_sfc,    & ! um at (2)           [m/s]
-      vm_sfc       ! vm at (2)           [m/s]
+      ubar
 
     ! Output variables
     real, intent(out) ::  & 
-      upwp_sfc,     & ! u'w' at (1)      [m^2/s^2]
-      vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
       ustar           ! surface friction velocity [m/s]
 
-    real, intent(out), dimension(sclr_dim) ::  & 
-      wpsclrp_sfc     ! Passive scalar surface flux      [units m/s]
-
-    real, intent(out), dimension(edsclr_dim) ::  & 
-      wpedsclrp_sfc   ! Passive eddy-scalar surface flux [units m/s]
-
     ! Local variables
-    !        real :: ft, ubar, ustar, bflx
-    real :: ft, ubar, bflx
+    real :: ft, bflx
 
     ! Compute heat and moisture fluxes
     ! From Table A.1.
@@ -207,25 +185,10 @@ module lba
     wpthlp_sfc =  ( 270. * ft**1.5 ) / ( rho0 * Cp )
     wprtp_sfc  =  ( 554. * ft**1.3 ) / ( rho0 * Lv )
 
-
-    ! Let passive scalars be equal to rt and theta_l for now
-    if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
-    if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
-
-    if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
-    if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
-
-    ! Compute momentum fluxes using ARM formulae
-
-    ubar = compute_ubar( um_sfc, vm_sfc )
-
     bflx = grav/thlm_sfc * wpthlp_sfc
 
     ! Compute ustar
     ustar = diag_ustar( z, bflx, ubar, z0 )
-
-    call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
-                                upwp_sfc, vpwp_sfc )
 
     return
   end subroutine lba_sfclyr

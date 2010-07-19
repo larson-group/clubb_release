@@ -15,9 +15,8 @@ module gabls3
   contains
 
   !-----------------------------------------------------------------------
-  subroutine gabls3_sfclyr( um_sfc, vm_sfc, veg_t_in_K, &
-                            thlm_sfc, rtm_sfc, lowest_level, exner_sfc, & 
-                            upwp_sfc, vpwp_sfc, &
+  subroutine gabls3_sfclyr( ubar, veg_t_in_K, &
+                            thlm_sfc, rtm_sfc, lowest_level, exner_sfc, &
                             wpthlp_sfc, wprtp_sfc, ustar )
     !       Description:
     !       This subroutine computes surface fluxes of horizontal momentum,
@@ -33,18 +32,13 @@ module gabls3
 
     use stats_precision, only: time_precision ! Variable(s)
 
-    use surface_flux, only: compute_momentum_flux, &
-                            compute_wpthlp_sfc, &
-                            compute_wprtp_sfc
-
-    !use surface, only: prognose_soil_T_in_K ! Procedure(s)
+    use surface_flux, only: compute_wpthlp_sfc, compute_wprtp_sfc ! Procedure(s)
 
     implicit none
 
     ! Constants
 
     real, parameter ::  & 
-      ubmin = 0.25, & 
      ! ustar = 0.3,
      ! C_10  = 0.0013, & !ATEX value
      ! C_10  = 0.013, & ! Fudged value
@@ -70,19 +64,17 @@ module gabls3
     ! Input variables
 
 
-    real, intent(in) ::  & 
-      um_sfc,       & ! um at zt(2)            [m/s]
-      vm_sfc,       & ! vm at zt(2)            [m/s]
+    real, intent(in) ::  &
+      ubar,         & ! mean sfc wind speed    [m/s]
       thlm_sfc,     & ! Theta_l at zt(2)       [K]
       rtm_sfc,      & ! rt at zt(2)            [kg/kg]
       veg_T_in_K,   & ! Vegetation temperature [K]
       lowest_level, & ! gr%zt(2)               [m]
       exner_sfc       ! Exner function         [-]
 
+
     ! Output variables
     real, intent(out) ::  & 
-      upwp_sfc,    & ! u'w' at surface           [m^2/s^2]
-      vpwp_sfc,    & ! v'w' at surface           [m^2/s^2]
       ustar          ! surface friction velocity [m/s]
 
     real, intent(inout):: &
@@ -90,10 +82,9 @@ module gabls3
       wprtp_sfc      ! w'rt' surface flux        [(m kg)/(kg s)]
 
     ! Local Variables
-    real :: ubar, veg_theta_in_K, bflx
+    real :: veg_theta_in_K, bflx
 
     ! Compute heat and moisture fluxes
-    ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
 
     veg_theta_in_K = veg_T_in_K / exner_sfc
 
@@ -105,9 +96,6 @@ module gabls3
     bflx = wpthlp_sfc * grav / veg_theta_in_K
 
     ustar = diag_ustar( lowest_level, bflx, ubar, z0)
-
-    call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
-                                upwp_sfc, vpwp_sfc )
 
     return
   end subroutine gabls3_sfclyr
