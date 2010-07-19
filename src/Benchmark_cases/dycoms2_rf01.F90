@@ -60,7 +60,7 @@ module dycoms2_rf01
 
     ! Constant Parameters
     real, parameter ::  & 
-      lsdiv =  3.75e-6
+      ls_div =  3.75e-6
 !     F0 = 70.0, F1 = 22.0,  &
 !     kay = 85.0
 
@@ -141,7 +141,7 @@ module dycoms2_rf01
                 + F1 * EXP( -kappa * (lwp(1)-lwp(i)) )
         if ( zi > 0 .and. gr%zm(i) > zi ) then
           Frad(i) = Frad(i) & 
-                  + rho_zm(i) * cp * lsdiv & 
+                  + rho_zm(i) * cp * ls_div & 
                     * ( 0.25*(gr%zm(i)-zi)**(4.0/3.0) & 
                         + zi*(gr%zm(i)-zi)**(1.0/3.0) )
         end if
