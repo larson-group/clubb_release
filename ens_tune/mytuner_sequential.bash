@@ -70,7 +70,7 @@ if [ ! -e $ARCHIVE/$CASE ]; then
 fi
 
 # Create tuner namelist
-cp "error_"$CASE".in" "error.in"
+cat "error_"$CASE".in" $CLUBB/input/tunable_parameters.in > "error.in"
 
 cd $ENSEMBLE_DIR
 

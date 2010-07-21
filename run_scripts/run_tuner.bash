@@ -32,7 +32,7 @@ if [ $RUN_TYPE = 'single' ] ; then # Single Case.
    # RUN_CASE=dycoms2_rf02_do
    # RUN_CASE=dycoms2_rf02_ds
    # RUN_CASE=dycoms2_rf02_nd
-     RUN_CASE=fire
+    RUN_CASE=fire
    # RUN_CASE=gabls2
    # RUN_CASE=gabls3_night
    # RUN_CASE=jun25_altocu (Needs an error_jun25_altocu.in file before running)
@@ -51,17 +51,17 @@ elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
    # example: all
    # all includes all models with LES data, except for Nov. 11 Altocu
    # (and GABLS2, Jun. 25 Altocu, and RICO).
-   # RUN_CASE=all
-   # MODEL_MULT=(arm atex bomex dycoms2_rf01 dycoms2_rf02_do\
-   #  dycoms2_rf02_ds dycoms2_rf02_nd fire wangara)
+   RUN_CASE=all
+   MODEL_MULT=(arm atex bomex dycoms2_rf01 dycoms2_rf02_do\
+    dycoms2_rf02_ds dycoms2_rf02_nd fire) #wangara)
 
    # example: BOMEX and FIRE
    # RUN_CASE=bomex_fire
    # MODEL_MULT=(bomex fire)
 
    # example: four cases
-     RUN_CASE=messner_001
-     MODEL_MULT=(arm bomex dycoms2_rf01 dycoms2_rf02_do)
+   # RUN_CASE=messner_001
+   # MODEL_MULT=(arm bomex dycoms2_rf01 dycoms2_rf02_do)
 
 fi
 
@@ -75,6 +75,14 @@ MODEL_DIR='../input/case_setups/'
 STATS_DIR='../input/stats/'
 # Today's date in YYYY-MM-DD format.
 DATE=`date +%F`
+
+# The tunable_parameters.in file
+PARAMS_FILE="../input/tunable_parameters.in"
+
+if [ ! -e "$PARAMS_FILE" ] ; then
+	echo $PARAMS_FILE " does not exist"
+	exit 1
+fi
 
 # The error_*.in file.
 ERROR_IN=../input_misc/tuner/'error_'$RUN_CASE'.in'
@@ -153,8 +161,8 @@ elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
 
 fi
 
-# Copy error_*.in file to error.in
-cat $ERROR_IN > 'error.in'
+# Copy error_*.in file and tunable_parameters to error.in
+cat $ERROR_IN $PARAMS_FILE> 'error.in'
 
 # Copy random seed
 cp $RAND_SEED .
