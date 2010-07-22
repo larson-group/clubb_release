@@ -358,12 +358,14 @@ contains
     use constants_clubb, only: & 
         w_tol_sqd,      & ! Variables(s)
         eps,           &
-        zero_threshold
+        zero_threshold, &
+        fstderr
 
     use model_flags, only:  & 
         l_tke_aniso,  & ! Variable(s)
         l_hyper_dfsn, &
-        l_hole_fill
+        l_hole_fill,  &
+        l_gmres
 
     use stats_precision, only:  & 
         time_precision  ! Variable(s)
@@ -454,6 +456,25 @@ contains
         ztscr20, &
         ztscr21
 
+#ifdef MKL
+    use csr_matrix_class, only: &
+        csr_intlc_5b_5b_ia, & ! Variables
+        csr_intlc_5b_5b_ja, &
+        intlc_ia_size, &
+        intlc_5d_5d_ja_size
+
+    use gmres_wrap, only: &
+        gmres_solve   ! Subroutine
+
+    use gmres_cache, only: &
+        gmres_cache_soln, & ! Subroutine
+        gmres_prev_soln, &        ! Variables
+        gmres_prev_precond_a, &
+        l_gmres_soln_ok, &
+        gmres_idx_wp2wp3, &
+        gmres_temp_intlc, &
+        gmres_tempsize_intlc
+#endif /* MKL */
 
     implicit none
 
@@ -515,9 +536,22 @@ contains
     ! Local Variables
     real, dimension(nsup+nsub+1,2*gr%nnzp) ::  & 
       lhs ! Implicit contributions to wp2/wp3 (band diag. matrix)
+#ifdef MKL
+    real, dimension(nsup+nsub+1,2*gr%nnzp) ::  & 
+      lhs_cache
+#endif
+
+#ifdef MKL
+    real, dimension(intlc_5d_5d_ja_size) :: &
+      lhs_a_csr ! Implicit contributions to wp2/wp3 (CSR format)
+#endif
 
     real, dimension(2*gr%nnzp) ::  & 
       rhs   ! RHS of band matrix
+#ifdef MKL
+    real, dimension(2*gr%nnzp) ::  & 
+      rhs_cache
+#endif
 
 !        real, target, dimension(2*gr%nnzp) ::
     real, dimension(2*gr%nnzp) ::  & 
@@ -578,11 +612,37 @@ contains
 
     ! Compute the implicit portion of the w'^2 and w'^3 equations.
     ! Build the left-hand side matrix.
-    call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+    if (l_gmres) then
+#ifdef MKL
+      if (nsup > 2) then
+        write (fstderr, *) "WARNING: CSR-format solvers currently do not", &
+                           "support solving with hyper diffusion", &
+                           "at this time. l_hyper_dfsn ignored."
+      end if
+      call wp23_lhs_csr( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                    Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                    C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
-                   invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
-                   lhs )
+                   invrs_rho_ds_zt, l_crank_nich_diff, & 
+                   lhs_a_csr )
+
+      if ( .not. l_gmres_soln_ok(gmres_idx_wp2wp3) ) then
+        call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+                       Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                       C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                       invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
+                       lhs )
+      end if ! l_wp2wp3_soln_ok
+#else
+      stop "This build was not compiled with PARDISO/GMRES support."
+#endif /* MKL */
+    end if ! l_gmres
+    if ((.not. (l_gmres))) then
+      call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+                     Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                     C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                     invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
+                     lhs )
+    end if
 
     ! Compute the explicit portion of the w'^2 and w'^3 equations.
     ! Build the right-hand side vector.
@@ -595,22 +655,49 @@ contains
                    rhs )
 
     ! Solve the system of equations for w'^2 and w'^3.
-    if ( l_stats_samp .and. iwp23_matrix_condt_num > 0 ) then
+    if ( l_gmres ) then
+#ifdef MKL
+      if ( .not. l_gmres_soln_ok(gmres_idx_wp2wp3) ) then
+        ! Solve system with LAPACK to give us our first solution vector
+        lhs_cache = lhs
+        rhs_cache = rhs
+        call band_solve( "wp2_wp3", nsup, nsub, 2*gr%nnzp, nrhs, &
+                         lhs, rhs, solut, err_code )
 
-      ! Perform LU decomp and solve system (LAPACK with diagnostics)
-      ! Note that this can change the answer slightly
-      call band_solvex( "wp2_wp3", nsup, nsub, 2*gr%nnzp, nrhs, & 
-                        lhs, rhs, solut, rcond, err_code )
-
-      ! Est. of the condition number of the w'^2/w^3 LHS matrix
-      call stat_update_var_pt( iwp23_matrix_condt_num, 1, 1.0 / rcond, sfc )
-
+        ! Use gmres_cache_wp2wp3_soln to set cache this solution for GMRES
+        call gmres_cache_soln( gr%nnzp * 2, gmres_idx_wp2wp3, solut )
+        lhs = lhs_cache
+        rhs = rhs_cache
+      end if
+      call gmres_solve( gmres_idx_wp2wp3, intlc_5d_5d_ja_size, (gr%nnzp * 2), &
+                        lhs_a_csr, csr_intlc_5b_5b_ia, csr_intlc_5b_5b_ja, &
+                        gmres_tempsize_intlc, &
+                        gmres_prev_soln(:,gmres_idx_wp2wp3), &
+                        gmres_prev_precond_a(:,gmres_idx_wp2wp3), rhs, &
+                        gmres_temp_intlc, &
+                        solut, err_code )
+#else
+      stop "This build was not compiled with GMRES support."
+#endif /* MKL */
     else
-      ! Perform LU decomp and solve system (LAPACK)
-      call band_solve( "wp2_wp3", nsup, nsub, 2*gr%nnzp, nrhs, & 
-                       lhs, rhs, solut, err_code )
-    end if
+      ! Solve the system with LAPACK
+      if ( l_stats_samp .and. iwp23_matrix_condt_num > 0 ) then
 
+        ! Perform LU decomp and solve system (LAPACK with diagnostics)
+        ! Note that this can change the answer slightly
+        call band_solvex( "wp2_wp3", nsup, nsub, 2*gr%nnzp, nrhs, & 
+                          lhs, rhs, solut, rcond, err_code )
+
+        ! Est. of the condition number of the w'^2/w^3 LHS matrix
+        call stat_update_var_pt( iwp23_matrix_condt_num, 1, 1.0 / rcond, sfc )
+
+      else
+        ! Perform LU decomp and solve system (LAPACK)
+        call band_solve( "wp2_wp3", nsup, nsub, 2*gr%nnzp, nrhs, & 
+                         lhs, rhs, solut, err_code )
+      end if
+
+    end if ! l_gmres
 
     if ( lapack_error( err_code ) ) return
 
@@ -829,6 +916,10 @@ contains
     ! Compute LHS band diagonal matrix for w'^2 and w'^3.
     ! This subroutine computes the implicit portion 
     ! of the w'^2 and w'^3 equations.
+    !
+    ! NOTE: If changes are made to this subroutine, ensure that the CSR
+    !   version of the subroutine is updated as well! If the two are different,
+    !   the results will be inconsistent between LAPACK and PARDISO/GMRES!
 
     ! References:
     !-----------------------------------------------------------------------
@@ -1483,6 +1574,772 @@ contains
 
     return
   end subroutine wp23_lhs
+
+#ifdef MKL
+  !=============================================================================
+  subroutine wp23_lhs_csr( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+                       Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                       C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                       invrs_rho_ds_zt, l_crank_nich_diff, & 
+                       lhs_a_csr )
+
+    ! Description:
+    ! Compute LHS band diagonal matrix for w'^2 and w'^3.
+    ! This subroutine computes the implicit portion 
+    ! of the w'^2 and w'^3 equations.
+    !
+    ! This version of the subroutine computes the LHS in CSR (compressed
+    !   sparse row) format.
+    ! NOTE: This subroutine must be kept up to date with the non CSR version
+    !   of the subroutine! If the two are different, the results will be
+    !   inconsistent between LAPACK and PARDISO/GMRES results!
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use grid_class, only:  & 
+        gr ! Variable
+
+    use parameters_tunable, only:  & 
+        C4,  & ! Variables
+        C5,  & 
+        C8,  & 
+        C8b, & 
+        C12, & 
+        nu1, & 
+        nu8, &
+        nu_hd
+
+    use constants_clubb, only:  & 
+        eps,          & ! Variable(s)
+        three_halves, &
+        gamma_over_implicit_ts
+
+    use model_flags, only: & 
+        l_tke_aniso, & ! Variable(s)
+        l_hyper_dfsn
+
+    use diffusion, only: & 
+        diffusion_zm_lhs,  & ! Procedures
+        diffusion_zt_lhs
+
+    use mean_adv, only: & 
+        term_ma_zm_lhs,  & ! Procedures
+        term_ma_zt_lhs
+
+    use hyper_diffusion_4th_ord, only:  &
+        hyper_dfsn_4th_ord_zm_lhs,  &
+        hyper_dfsn_4th_ord_zt_lhs
+
+    use stats_precision, only: time_precision
+
+    use stats_variables, only: & 
+        zmscr01,    &
+        zmscr02,    &
+        zmscr03,    &
+        zmscr04,    &
+        zmscr05,    &
+        zmscr06,    &
+        zmscr07,    &
+        zmscr08,    &
+        zmscr09,    &
+        zmscr11,    & 
+        zmscr10,    & 
+        zmscr12,    &
+        zmscr13,    &
+        zmscr14,    &
+        zmscr15,    &
+        zmscr16,    &
+        zmscr17,    &
+        ztscr01,    &
+        ztscr02,    &
+        ztscr03,    &
+        ztscr04,    &
+        ztscr05,    &
+        ztscr06,    &
+        ztscr07,    &
+        ztscr08,    &
+        ztscr09,    &
+        ztscr10,    &
+        ztscr11,    &
+        ztscr12,    &
+        ztscr13,    &
+        ztscr14,    &
+        ztscr15,    &
+        ztscr16,    &
+        ztscr17,    &
+        ztscr18,    &
+        ztscr19,    &
+        ztscr20,    &
+        ztscr21
+
+    use stats_variables, only: & 
+        l_stats_samp, & 
+        iwp2_dp1, & 
+        iwp2_dp2, & 
+        iwp2_ta, & 
+        iwp2_ma, & 
+        iwp2_ac, & 
+        iwp2_pr2, & 
+        iwp2_pr1, &
+        iwp2_4hd, &
+        iwp3_ta, & 
+        iwp3_tp, & 
+        iwp3_ma, & 
+        iwp3_ac, & 
+        iwp3_pr2, & 
+        iwp3_pr1, & 
+        iwp3_dp1, &
+        iwp3_4hd
+
+    use csr_matrix_class, only: &
+        intlc_5d_5d_ja_size ! Variable
+
+    implicit none
+
+    ! Left-hand side matrix diagonal identifiers for
+    ! momentum-level variable, w'^2.
+    ! These are updated for each diagonal of the matrix as the
+    ! LHS of the matrix is created.
+    integer ::  &
+     !m_kp2_mdiag, & ! Momentum super-super diagonal index for w'^2.
+     !m_kp2_tdiag, & ! Thermodynamic super-super diagonal index for w'^2.
+      m_kp1_mdiag, & ! Momentum super diagonal index for w'^2.
+      m_kp1_tdiag, & ! Thermodynamic super diagonal index for w'^2.
+      m_k_mdiag  , & ! Momentum main diagonal index for w'^2.
+      m_k_tdiag  , & ! Thermodynamic sub diagonal index for w'^2.
+      m_km1_mdiag    ! Momentum sub diagonal index for w'^2.
+     !m_km1_tdiag, & ! Thermodynamic sub-sub diagonal index for w'^2.
+     !m_km2_mdiag    ! Momentum sub-sub diagonal index for w'^2.
+
+    ! Left-hand side matrix diagonal identifiers for
+    ! thermodynamic-level variable, w'^3.
+    ! These are updated for each diagonal of the matrix as the
+    ! LHS of the matrix is created
+    integer ::  &
+     !t_kp2_tdiag, & ! Thermodynamic super-super diagonal index for w'^3.
+     !t_kp1_mdiag, & ! Momentum super-super diagonal index for w'^3.
+      t_kp1_tdiag, & ! Thermodynamic super diagonal index for w'^3.
+     !t_k_mdiag  , & ! Momentum super diagonal index for w'^3.
+      t_k_tdiag  , & ! Thermodynamic main diagonal index for w'^3.
+     !t_km1_mdiag, & ! Momentum sub diagonal index for w'^3.
+      t_km1_tdiag    ! Thermodynamic sub diagonal index for w'^3.
+     !t_km2_mdiag, & ! Momentum sub-sub diagonal index for w'^3.
+     !t_km2_tdiag    ! Thermodynamic sub-sub diagonal index for w'^3.
+
+    ! Input Variables
+    real(kind=time_precision), intent(in) ::  & 
+      dt                 ! Timestep length                            [s]
+
+    real, dimension(gr%nnzp), intent(in) ::  & 
+      wp2,             & ! w'^2 (momentum levels)                     [m^2/s^2]
+      wp3_zm,          & ! w'^3 interpolated to momentum levels       [m^3/s^3]
+      wm_zm,           & ! w wind component on momentum levels        [m/s]
+      wm_zt,           & ! w wind component on thermodynamic levels   [m/s]
+      a1,              & ! sigma_sqd_w term a_1 (momentum levels)     [-]
+      a1_zt,           & ! a_1 interpolated to thermodynamic levels   [-]
+      a3,              & ! sigma_sqd_w term a_3 (momentum levels)     [-]
+      a3_zt,           & ! a_3 interpolated to thermodynamic levels   [-]
+      Kw1,             & ! Coefficient of eddy diffusivity for w'^2   [m^2/s]
+      Kw8,             & ! Coefficient of eddy diffusivity for w'^3   [m^2/s]
+      Skw_zt,          & ! Skewness of w on thermodynamic levels      [-]
+      tau1m,           & ! Time-scale tau on momentum levels          [s]
+      tauw3t,          & ! Time-scale tau on thermodynamic levels     [s]
+      C1_Skw_fnc,      & ! C_1 parameter with Sk_w applied            [-]
+      C11_Skw_fnc,     & ! C_11 parameter with Sk_w applied           [-]
+      rho_ds_zm,       & ! Dry, static density on momentum levels     [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels      [kg/m^3]
+      invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs.  [m^3/kg]
+      invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs.   [m^3/kg]
+
+    logical, intent(in) :: & 
+      l_crank_nich_diff  ! Turns on/off Crank-Nicholson diffusion.
+
+!    integer, intent(in) :: &
+!      nsub,   & ! Number of subdiagonals in the LHS matrix.
+!      nsup      ! Number of superdiagonals in the LHS matrix.
+
+    ! Output Variable
+    real, dimension(intlc_5d_5d_ja_size), intent(out) ::  & 
+      lhs_a_csr ! Implicit contributions to wp2/wp3 (band diag. matrix)
+
+    ! Local Variables
+
+    ! Array indices
+    integer :: k, km1, km2, kp1, kp2, k_wp2, k_wp3, wp2_cur_row, wp3_cur_row
+
+    real, dimension(5) :: tmp
+
+
+    ! Initialize the left-hand side matrix to 0.
+    lhs_a_csr = 0.0
+
+    do k = 2, gr%nnzp-1, 1
+
+      ! Define indices
+
+      km1 = max( k-1, 1 )
+      km2 = max( k-2, 1 )
+      kp1 = min( k+1, gr%nnzp )
+      kp2 = min( k+2, gr%nnzp )
+
+      k_wp3 = 2*k - 1
+      k_wp2 = 2*k
+
+      wp2_cur_row = ((k_wp2 - 3) * 5) + 8
+      wp3_cur_row = ((k_wp3 - 3) * 5) + 8
+
+      !!!!!***** w'^2 *****!!!!!
+
+      ! w'^2: Left-hand side (implicit w'^2 portion of the code).
+      !
+      ! Momentum sub-sub diagonal (lhs index: m_km2_mdiag)
+      !         [ x wp2(k-2,<t+1>) ]
+      ! Thermodynamic sub-sub diagonal (lhs index: m_km1_tdiag)
+      !         [ x wp3(k-1,<t+1>) ]
+      ! Momentum sub diagonal (lhs index: m_km1_mdiag)
+      !         [ x wp2(k-1,<t+1>) ]
+      ! Thermodynamic sub diagonal (lhs index: m_k_tdiag)
+      !         [ x wp3(k,<t+1>) ]
+      ! Momentum main diagonal (lhs index: m_k_mdiag)
+      !         [ x wp2(k,<t+1>) ]
+      ! Thermodynamic super diagonal (lhs index: m_kp1_tdiag)
+      !         [ x wp3(k+1,<t+1>) ]
+      ! Momentum super diagonal (lhs index: m_kp1_mdiag)
+      !         [ x wp2(k+1,<t+1>) ]
+      ! Thermodynamic super-super diagonal (lhs index: m_kp2_tdiag)
+      !         [ x wp3(k+2,<t+1>) ]
+      ! Momentum super-super diagonal (lhs index: m_kp2_mdiag)
+      !         [ x wp2(k+2,<t+1>) ]
+
+      ! NOTES FOR CSR-FORMAT MATRICES
+      ! The various diagonals are referenced through the following
+      ! array indices:
+      ! (m_kp1_mdiag, k_wp2) ==> (wp2_cur_row + 4)
+      ! (m_kp1_tdiag, k_wp2) ==> (wp2_cur_row + 3)
+      ! (m_k_mdiag, k_wp2) ==> (wp2_cur_row + 2)
+      ! (m_k_tdiag, k_wp2) ==> (wp2_cur_row + 1)
+      ! (m_km1_mdiag, k_wp2) ==> (wp2_cur_row)
+      ! For readability, these values are updated here.
+      ! This means that to update the CSR version of the LHS subroutine,
+      ! all that must be done is remove the ,k_wp2 from the array indices,
+      ! as the CSR-format matrix is one-dimensional.
+
+      ! NOTE: All references to lhs will need to be changed to lhs_a_csr
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      ! WARNING: If you have array indices that go from m_kp1_mdiag to
+      ! m_km1_mdiag, you will need to set it to span by -1. This is because
+      ! in the CSR-format arrays, the indices descend as you go from m_kp1_mdiag
+      ! to m_km1_mdiag!
+      !
+      ! EXAMPLE: lhs((m_kp1_mdiag:m_km1_mdiag),wp2) would become
+      !          lhs_a_csr((m_kp1_mdiag:m_km1_mdiag:-1))
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      m_kp1_mdiag = wp2_cur_row + 4
+      m_kp1_tdiag = wp2_cur_row + 3
+      m_k_mdiag = wp2_cur_row + 2
+      m_k_tdiag = wp2_cur_row + 1
+      m_km1_mdiag = wp2_cur_row
+
+      ! LHS time tendency.
+      lhs_a_csr(m_k_mdiag) & 
+      = real( + 1.0 / dt )
+
+      ! LHS mean advection (ma) term.
+      lhs_a_csr((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/)) & 
+      = lhs_a_csr((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/)) & 
+      + term_ma_zm_lhs( wm_zm(k), gr%invrs_dzm(k), k )
+
+      ! LHS turbulent advection (ta) term.
+      lhs_a_csr((/m_kp1_tdiag,m_k_tdiag/)) & 
+      = lhs_a_csr((/m_kp1_tdiag,m_k_tdiag/)) & 
+      + wp2_term_ta_lhs( rho_ds_zt(kp1), rho_ds_zt(k), &
+                         invrs_rho_ds_zm(k), gr%invrs_dzm(k) )
+
+      ! LHS accumulation (ac) term and pressure term 2 (pr2).
+      lhs_a_csr(m_k_mdiag) & 
+      = lhs_a_csr(m_k_mdiag) & 
+      + wp2_terms_ac_pr2_lhs( C5, wm_zt(kp1), wm_zt(k), gr%invrs_dzm(k)  )
+
+      ! LHS dissipation term 1 (dp1).
+      ! Note:  An "over-implicit" weighted time step is applied to this term.
+      !        A weighting factor of greater than 1 may be used to make the term
+      !        more numerically stable (see note below for w'^3 LHS turbulent
+      !        advection (ta) and turbulent production (tp) terms).
+      lhs_a_csr(m_k_mdiag)  & 
+      = lhs_a_csr(m_k_mdiag)  &
+      + gamma_over_implicit_ts  & 
+      * wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
+
+      ! LHS eddy diffusion term: dissipation term 2 (dp2).
+      if ( l_crank_nich_diff ) then
+        ! Eddy diffusion for wp2 using a Crank-Nicholson time step.
+        lhs_a_csr((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/)) & 
+        = lhs_a_csr((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/)) & 
+        + (1.0/2.0) & 
+        * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
+                            gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
+                            gr%invrs_dzm(k), k )
+      else
+        ! Eddy diffusion for wp2 using a completely implicit time step.
+        lhs_a_csr((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/)) & 
+        = lhs_a_csr((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/)) & 
+        + diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
+                            gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
+                            gr%invrs_dzm(k), k )
+      endif
+
+      ! LHS pressure term 1 (pr1).
+      ! Note:  An "over-implicit" weighted time step is applied to this term.
+      !        A weighting factor of greater than 1 may be used to make the term
+      !        more numerically stable (see note below for w'^3 LHS turbulent
+      !        advection (ta) and turbulent production (tp) terms).
+      if ( l_tke_aniso ) then
+        ! Add in this term if we're not assuming tke = 1.5 * wp2
+        lhs_a_csr(m_k_mdiag)  & 
+        = lhs_a_csr(m_k_mdiag)  &
+        + gamma_over_implicit_ts  & 
+        * wp2_term_pr1_lhs( C4, tau1m(k) )
+      endif
+
+      ! LHS 4th-order hyper-diffusion (4hd).
+      ! NOTE: 4th-order hyper-diffusion is not yet supported in CSR-format.
+      ! As such, this needs to remain commented out.
+      !if ( l_hyper_dfsn ) then
+      !   ! Note:  w'^2 uses fixed-point boundary conditions.
+      !   lhs( (/m_kp2_mdiag,m_kp1_mdiag,m_k_mdiag,m_km1_mdiag,m_km2_mdiag/), &
+      !        k_wp2) &
+      !   = lhs( (/m_kp2_mdiag,m_kp1_mdiag,m_k_mdiag,m_km1_mdiag,m_km2_mdiag/), &
+      !          k_wp2) &
+      !   + hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd, gr%invrs_dzm(k),  &
+      !                                gr%invrs_dzt(kp1), gr%invrs_dzt(k),     &
+      !                                gr%invrs_dzm(kp1), gr%invrs_dzm(km1),   &
+      !                                gr%invrs_dzt(kp2), gr%invrs_dzt(km1), k )
+      !endif
+
+      if ( l_stats_samp ) then
+
+        ! Statistics: implicit contributions for wp2.
+
+        ! Note:  An "over-implicit" weighted time step is applied to this term.
+        !        A weighting factor of greater than 1 may be used to make the
+        !        term more numerically stable (see note below for w'^3 LHS
+        !        turbulent advection (ta) and turbulent production (tp) terms).
+        if ( iwp2_dp1 > 0 ) then
+          zmscr01(k)  &
+          = - gamma_over_implicit_ts  &
+            * wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
+        endif
+
+        if ( iwp2_dp2 > 0 ) then
+          if ( l_crank_nich_diff ) then
+            ! Eddy diffusion for wp2 using a Crank-Nicholson time step.
+            tmp(1:3) & 
+            = (1.0/2.0) & 
+            * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
+                              gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
+                              gr%invrs_dzm(k), k )
+          else
+            ! Eddy diffusion for wp2 using a completely implicit time step.
+            tmp(1:3) & 
+            = diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
+                                gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
+                                gr%invrs_dzm(k), k )
+          endif
+
+          zmscr02(k) = -tmp(3)
+          zmscr03(k) = -tmp(2)
+          zmscr04(k) = -tmp(1)
+
+        endif
+
+        if ( iwp2_ta > 0 ) then
+          tmp(1:2) =  & 
+          + wp2_term_ta_lhs( rho_ds_zt(kp1), rho_ds_zt(k), &
+                             invrs_rho_ds_zm(k), gr%invrs_dzm(k) )
+          zmscr05(k) = -tmp(2)
+          zmscr06(k) = -tmp(1)
+        endif
+
+        if ( iwp2_ma > 0 ) then
+          tmp(1:3) = & 
+          + term_ma_zm_lhs( wm_zm(k), gr%invrs_dzm(k), k )
+          zmscr07(k) = -tmp(3)
+          zmscr08(k) = -tmp(2)
+          zmscr09(k) = -tmp(1)
+        endif
+
+        ! Note:  To find the contribution of w'^2 term ac, substitute 0 for the
+        !        C_5 input to function wp2_terms_ac_pr2_lhs.
+        if ( iwp2_ac > 0 ) then
+          zmscr10(k) =  & 
+          - wp2_terms_ac_pr2_lhs( 0.0, wm_zt(kp1), wm_zt(k), gr%invrs_dzm(k)  )
+        endif
+
+        ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
+        !        C_5 input to function wp2_terms_ac_pr2_lhs.
+        if ( iwp2_pr2 > 0 ) then
+          zmscr11(k) =  & 
+          - wp2_terms_ac_pr2_lhs( (1.0+C5), wm_zt(kp1), wm_zt(k),  & 
+                                  gr%invrs_dzm(k)  )
+        endif
+
+        ! Note:  An "over-implicit" weighted time step is applied to this term.
+        !        A weighting factor of greater than 1 may be used to make the
+        !        term more numerically stable (see note below for w'^3 LHS
+        !        turbulent advection (ta) and turbulent production (tp) terms).
+        if ( iwp2_pr1 > 0 .and. l_tke_aniso ) then
+          zmscr12(k)  &
+          = - gamma_over_implicit_ts  &
+            * wp2_term_pr1_lhs( C4, tau1m(k) )
+        endif
+
+        if ( iwp2_4hd > 0 .and. l_hyper_dfsn ) then
+          tmp(1:5) = &
+          hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd, gr%invrs_dzm(k),  &
+                                     gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
+                                     gr%invrs_dzm(kp1), gr%invrs_dzm(km1), &
+                                     gr%invrs_dzt(kp2), gr%invrs_dzt(km1), k )
+          zmscr13(k) = -tmp(5)
+          zmscr14(k) = -tmp(4)
+          zmscr15(k) = -tmp(3)
+          zmscr16(k) = -tmp(2)
+          zmscr17(k) = -tmp(1)
+        endif
+
+      endif
+
+
+
+      !!!!!***** w'^3 *****!!!!!
+
+      ! w'^3: Left-hand side (implicit w'^3 portion of the code).
+      !
+      ! Thermodynamic sub-sub diagonal (lhs index: t_km2_tdiag)
+      !         [ x wp3(k-2,<t+1>) ]
+      ! Momentum sub-sub diagonal (lhs index: t_km2_mdiag)
+      !         [ x wp2(k-2,<t+1>) ]
+      ! Thermodynamic sub diagonal (lhs index: t_km1_tdiag)
+      !         [ x wp3(k-1,<t+1>) ]
+      ! Momentum sub diagonal (lhs index: t_km1_mdiag)
+      !         [ x wp2(k-1,<t+1>) ]
+      ! Thermodynamic main diagonal (lhs index: t_k_tdiag)
+      !         [ x wp3(k,<t+1>) ]
+      ! Momentum super diagonal (lhs index: t_k_mdiag)
+      !         [ x wp2(k,<t+1>) ]
+      ! Thermodynamic super diagonal (lhs index: t_kp1_tdiag)
+      !         [ x wp3(k+1,<t+1>) ]
+      ! Momentum super-super diagonal (lhs index: t_kp1_mdiag)
+      !         [ x wp2(k+1,<t+1>) ]
+      ! Thermodynamic super-super diagonal (lhs index: t_kp2_tdiag)
+      !         [ x wp3(k+2,<t+1>) ]
+
+      ! NOTES FOR CSR-FORMAT MATRICES
+      ! The various diagonals are referenced through the following
+      ! array indices:
+      ! (t_kp1_tdiag, k_wp3) ==> (wp3_cur_row + 4)
+      ! (t_kp1_mdiag, k_wp3) ==> (wp3_cur_row + 3)
+      ! (t_k_tdiag, k_wp3) ==> (wp3_cur_row + 2)
+      ! (t_k_mdiag, k_wp3) ==> (wp3_cur_row + 1)
+      ! (t_km1_tdiag, k_wp3) ==> (wp3_cur_row)
+      ! For readability, these values are updated here.
+      ! This means that to update the CSR version of the LHS subroutine,
+      ! all that must be done is remove the ,k_wp2 from the array indices,
+      ! as the CSR-format matrix is one-dimensional.
+
+      ! NOTE: All references to lhs will need to be changed to lhs_a_csr
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      ! WARNING: If you have array indices that go from t_kp1_tdiag to
+      ! t_km1_tdiag, you will need to set it to span by -1. This is because
+      ! in the CSR-format arrays, the indices descend as you go from t_kp1_tdiag
+      ! to t_km1_tdiag!
+      !
+      ! EXAMPLE: lhs((t_kp1_tdiag:t_km1_tdiag),wp3) would become
+      !          lhs_a_csr((t_kp1_tdiag:t_km1_tdiag:-1))
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      t_kp1_tdiag = wp3_cur_row + 4
+      !t_kp1_mdiag = wp3_cur_row + 3
+      t_k_tdiag = wp3_cur_row + 2
+      !t_k_mdiag = wp3_cur_row + 1
+      t_km1_tdiag = wp3_cur_row
+
+      ! LHS time tendency.
+      lhs_a_csr(t_k_tdiag) & 
+      = real( + 1.0 / dt )
+
+      ! LHS mean advection (ma) term.
+      lhs_a_csr((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/)) & 
+      = lhs_a_csr((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/)) & 
+      + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
+
+      ! LHS turbulent advection (ta) and turbulent production (tp) terms.
+      ! Note:  An "over-implicit" weighted time step is applied to these terms.
+      !        The weight of the implicit portion of these terms is controlled
+      !        by the factor gamma_over_implicit_ts (abbreviated "gamma" in the
+      !        expression below).  A factor is added to the right-hand side of
+      !        the equation in order to balance a weight that is not equal to 1,
+      !        such that:
+      !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
+      !        where X is the variable that is being solved for in a predictive
+      !        equation (w'^3 in this case), y(t) is the linearized portion of
+      !        the terms that gets treated implicitly, and RHS is the portion of
+      !        the terms that is always treated explicitly.  A weight of greater
+      !        than 1 can be applied to make the terms more numerically stable.
+      lhs_a_csr(t_kp1_tdiag:t_km1_tdiag:-1)  & 
+      = lhs_a_csr(t_kp1_tdiag:t_km1_tdiag:-1)  &
+      + gamma_over_implicit_ts  &
+      * wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
+                             wp2(k), wp2(km1),  &
+                             a1(k), a1_zt(k), a1(km1),  &
+                             a3(k), a3_zt(k), a3(km1),  &
+                             rho_ds_zm(k), rho_ds_zm(km1),  &
+                             invrs_rho_ds_zt(k),  &
+                             three_halves,  &
+                             gr%invrs_dzt(k), k )
+
+      ! LHS accumulation (ac) term and pressure term 2 (pr2).
+      lhs_a_csr(t_k_tdiag) & 
+      = lhs_a_csr(t_k_tdiag) & 
+      + wp3_terms_ac_pr2_lhs( C11_Skw_fnc(k), & 
+                              wm_zm(k), wm_zm(km1), gr%invrs_dzt(k) )
+
+      ! LHS pressure term 1 (pr1).
+      ! Note:  An "over-implicit" weighted time step is applied to this term.
+      lhs_a_csr(t_k_tdiag)  &
+      = lhs_a_csr(t_k_tdiag)  &
+      + gamma_over_implicit_ts  &
+      * wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skw_zt(k) )
+
+      ! LHS eddy diffusion term: dissipation term 1 (dp1).
+      !  Added a new constant, C12.
+      !  Initially, this new constant will be set to 1.0 -dschanen 9/19/05
+      if ( l_crank_nich_diff ) then
+        ! Eddy diffusion for wp3 using a Crank-Nicholson time step.
+        lhs_a_csr((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/)) & 
+        = lhs_a_csr((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/)) & 
+        + C12 * (1.0/2.0) & 
+        * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
+                            gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                            gr%invrs_dzt(k), k )
+      else
+        ! Eddy diffusion for wp3 using a completely implicit time step.
+        lhs_a_csr((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/)) & 
+        = lhs_a_csr((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/)) & 
+        + C12  & 
+        * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
+                            gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                            gr%invrs_dzt(k), k )
+      endif
+
+      ! LHS 4th-order hyper-diffusion (4hd).
+      ! NOTE: 4th-order hyper-diffusion is not yet supported in CSR-format.
+      ! As such, this needs to remain commented out.
+      !if ( l_hyper_dfsn ) then
+      !   ! Note:  w'^3 uses fixed-point boundary conditions.
+      !   lhs( (/t_kp2_tdiag,t_kp1_tdiag,t_k_tdiag,t_km1_tdiag,t_km2_tdiag/), &
+      !        k_wp3) &
+      !   = lhs( (/t_kp2_tdiag,t_kp1_tdiag,t_k_tdiag,t_km1_tdiag,t_km2_tdiag/), &
+      !          k_wp3) &
+      !   + hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd, gr%invrs_dzt(k),  &
+      !                                gr%invrs_dzm(k), gr%invrs_dzm(km1),     &
+      !                                gr%invrs_dzt(kp1), gr%invrs_dzt(km1),   &
+      !                                gr%invrs_dzm(kp1), gr%invrs_dzm(km2), k )
+      !endif
+
+      if (l_stats_samp) then
+
+        ! Statistics: implicit contributions for wp3.
+
+        ! Note:  To find the contribution of w'^3 term ta, add 3 to all of 
+        !        the a_3 inputs and substitute 0 for the three_halves input to
+        !        function wp3_terms_ta_tp_lhs.
+        ! Note:  An "over-implicit" weighted time step is applied to this term.
+        !        A weighting factor of greater than 1 may be used to make the
+        !        term more numerically stable (see note above for LHS turbulent
+        !        advection (ta) and turbulent production (tp) terms).
+        if ( iwp3_ta > 0 ) then
+          tmp(1:5)  &
+          = gamma_over_implicit_ts  &
+          * wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
+                                 wp2(k), wp2(km1),  &
+                                 a1(k), a1_zt(k), a1(km1),  &
+                                 a3(k)+3.0, a3_zt(k)+3.0, a3(km1)+3.0,  &
+                                 rho_ds_zm(k), rho_ds_zm(km1),  &
+                                 invrs_rho_ds_zt(k),  &
+                                 0.0,  &
+                                 gr%invrs_dzt(k), k )
+          ztscr05(k) = -tmp(5)
+          ztscr06(k) = -tmp(4)
+          ztscr07(k) = -tmp(3)
+          ztscr08(k) = -tmp(2)
+          ztscr09(k) = -tmp(1)
+        endif
+
+        ! Note:  To find the contribution of w'^3 term tp, substitute 0 for all
+        !        of the a_1 and a_3 inputs and subtract 3 from all of the a_3
+        !        inputs to function wp3_terms_ta_tp_lhs.
+        ! Note:  An "over-implicit" weighted time step is applied to this term.
+        !        A weighting factor of greater than 1 may be used to make the
+        !        term more numerically stable (see note above for LHS turbulent
+        !        advection (ta) and turbulent production (tp) terms).
+        if ( iwp3_tp > 0 ) then
+          tmp(1:5)  &
+          = gamma_over_implicit_ts  &
+          * wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
+                                 wp2(k), wp2(km1),  &
+                                 0.0, 0.0, 0.0,  &
+                                 0.0-3.0, 0.0-3.0, 0.0-3.0,  &
+                                 rho_ds_zm(k), rho_ds_zm(km1),  &
+                                 invrs_rho_ds_zt(k),  &
+                                 three_halves,  &
+                                 gr%invrs_dzt(k), k )
+          ztscr10(k) = -tmp(4)
+          ztscr11(k) = -tmp(2)
+        endif
+
+        if ( iwp3_ma > 0 ) then
+          tmp(1:3) = & 
+          term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
+          ztscr12(k) = -tmp(3)
+          ztscr13(k) = -tmp(2)
+          ztscr14(k) = -tmp(1)
+        endif
+
+        ! Note:  To find the contribution of w'^3 term ac, substitute 0 for the
+        !        C_ll skewness function input to function wp3_terms_ac_pr2_lhs.
+        if ( iwp3_ac > 0 ) then
+          ztscr15(k) =  & 
+          - wp3_terms_ac_pr2_lhs( 0.0, & 
+                                  wm_zm(k), wm_zm(km1), gr%invrs_dzt(k) )
+        endif
+
+        ! Note:  To find the contribution of w'^3 term pr2, add 1 to the
+        !        C_ll skewness function input to function wp3_terms_ac_pr2_lhs.
+        if ( iwp3_pr2 > 0 ) then
+          ztscr16(k) = & 
+          - wp3_terms_ac_pr2_lhs( (1.0+C11_Skw_fnc(k)), & 
+                                  wm_zm(k), wm_zm(km1), gr%invrs_dzt(k) )
+        endif
+
+        ! Note:  An "over-implicit" weighted time step is applied to this term.
+        !        A weighting factor of greater than 1 may be used to make the
+        !        term more numerically stable (see note above for LHS turbulent
+        !        advection (ta) and turbulent production (tp) terms).
+        if ( iwp3_pr1 > 0 ) then
+          ztscr01(k)  &
+          = - gamma_over_implicit_ts  &
+            * wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skw_zt(k) )
+        endif
+
+        if ( iwp3_dp1 > 0 ) then
+          if ( l_crank_nich_diff ) then
+            ! Eddy diffusion for wp3 using a Crank-Nicholson time step.
+            tmp(1:3) & 
+            = C12 * (1.0/2.0) & 
+            * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
+                                gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                                gr%invrs_dzt(k), k )
+          else
+            ! Eddy diffusion for wp3 using a completely implicit time step.
+            tmp(1:3) & 
+            = C12  & 
+            * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
+                                gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                                gr%invrs_dzt(k), k )
+          endif
+
+          ztscr02(k) = -tmp(3)
+          ztscr03(k) = -tmp(2)
+          ztscr04(k) = -tmp(1)
+
+        endif
+
+        if ( iwp3_4hd > 0 .and. l_hyper_dfsn ) then
+          tmp(1:5) = &
+          hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd, gr%invrs_dzt(k),  &
+                                     gr%invrs_dzm(k), gr%invrs_dzm(km1),     &
+                                     gr%invrs_dzt(kp1), gr%invrs_dzt(km1),   &
+                                     gr%invrs_dzm(kp1), gr%invrs_dzm(km2), k )
+          ztscr17(k) = -tmp(5)
+          ztscr18(k) = -tmp(4)
+          ztscr19(k) = -tmp(3)
+          ztscr20(k) = -tmp(2)
+          ztscr21(k) = -tmp(1)
+        endif
+
+      endif
+
+    enddo ! k = 2, gr%nnzp-1, 1
+
+
+    ! Boundary conditions
+
+    ! Both wp2 and wp3 used fixed-point boundary conditions.
+    ! Therefore, anything set in the above loop at both the upper
+    ! and lower boundaries would be overwritten here.  However, the
+    ! above loop does not extend to the boundary levels.  An array
+    ! with a value of 1 at the main diagonal on the left-hand side
+    ! and with values of 0 at all other diagonals on the left-hand
+    ! side will preserve the right-hand side value at that level.
+    !
+    !   wp3(1)  wp2(1) ... wp3(nz) wp2(nz)
+    ! [  0.0     0.0         0.0     0.0  ]
+    ! [  0.0     0.0         0.0     0.0  ]
+    ! [  1.0     1.0   ...   1.0     1.0  ]
+    ! [  0.0     0.0         0.0     0.0  ]
+    ! [  0.0     0.0         0.0     0.0  ]
+
+    ! Lower boundary
+    k = 1
+    k_wp3 = 2*k - 1
+    k_wp2 = 2*k
+
+    wp3_cur_row = 1
+    wp2_cur_row = 4
+
+    ! w'^2
+    lhs_a_csr(wp2_cur_row:wp2_cur_row + 3) = 0.0
+    lhs_a_csr(wp2_cur_row + 1) = 1.0
+
+    ! w'^3
+    lhs_a_csr(wp3_cur_row:wp3_cur_row + 2) = 0.0
+    lhs_a_csr(wp3_cur_row) = 1.0
+
+    ! w'^2
+    !lhs(:,k_wp2)         = 0.0
+    !lhs(m_k_mdiag,k_wp2) = 1.0
+    ! w'^3
+    !lhs(:,k_wp3)         = 0.0
+    !lhs(t_k_tdiag,k_wp3) = 1.0
+
+    ! Upper boundary
+    k = gr%nnzp
+    k_wp3 = 2*k - 1
+    k_wp2 = 2*k
+
+    ! w'^2
+    lhs_a_csr(intlc_5d_5d_ja_size - 2:intlc_5d_5d_ja_size) = 0.0
+    lhs_a_csr(intlc_5d_5d_ja_size) = 1.0
+
+    ! w'^3
+    lhs_a_csr(intlc_5d_5d_ja_size - 6:intlc_5d_5d_ja_size - 3) = 0.0
+    lhs_a_csr(intlc_5d_5d_ja_size - 4) = 1.0
+
+    ! w'^2
+    !lhs(:,k_wp2)         = 0.0
+    !lhs(m_k_mdiag,k_wp2) = 1.0
+    ! w'^3
+    !lhs(:,k_wp3)         = 0.0
+    !lhs(t_k_tdiag,k_wp3) = 1.0
+
+
+    return
+  end subroutine wp23_lhs_csr
+#endif /* MKL */
 
   !=============================================================================
   subroutine wp23_rhs( dt, wp2, wp3, wp3_zm, a1, a1_zt, &

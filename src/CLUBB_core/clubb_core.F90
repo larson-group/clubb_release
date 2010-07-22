@@ -1297,7 +1297,21 @@ module clubb_core
       clubb_var_out_of_bounds ! Variable(s)
 
     use model_flags, only: & 
-      setup_model_flags ! Subroutine
+      setup_model_flags, & ! Subroutine
+      l_gmres              ! Variable
+
+#ifdef MKL
+    use csr_matrix_class, only: &
+      initialize_csr_class, & ! Subroutine
+      intlc_5d_5d_ja_size     ! Variable
+
+    use gmres_wrap, only: &
+      gmres_init              ! Subroutine
+
+    use gmres_cache, only: &
+      gmres_cache_temp_init, &   ! Subroutine
+      gmres_idx_wp2wp3        ! Variable
+#endif
 
     implicit none
 
@@ -1502,6 +1516,17 @@ module clubb_core
     ! is part of a larger model or not.
     call setup_diagnostic_variables( gr%nnzp )
 
+    ! Initialize the CSR matrix class.
+    if ( l_gmres ) then
+      call initialize_csr_class
+    end if
+
+#ifdef MKL
+    if ( l_gmres ) then
+      call gmres_cache_temp_init( gr%nnzp )
+      call gmres_init( (2 * gr%nnzp), intlc_5d_5d_ja_size )
+    end if
+#endif /* MKL */
 
     return
   end subroutine setup_clubb_core
