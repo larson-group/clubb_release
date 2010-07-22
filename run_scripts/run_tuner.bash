@@ -32,7 +32,7 @@ if [ $RUN_TYPE = 'single' ] ; then # Single Case.
    # RUN_CASE=dycoms2_rf02_do
    # RUN_CASE=dycoms2_rf02_ds
    # RUN_CASE=dycoms2_rf02_nd
-    RUN_CASE=fire
+   RUN_CASE=fire
    # RUN_CASE=gabls2
    # RUN_CASE=gabls3_night
    # RUN_CASE=jun25_altocu (Needs an error_jun25_altocu.in file before running)
@@ -53,7 +53,7 @@ elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
    # (and GABLS2, Jun. 25 Altocu, and RICO).
    RUN_CASE=all
    MODEL_MULT=(arm atex bomex dycoms2_rf01 dycoms2_rf02_do\
-    dycoms2_rf02_ds dycoms2_rf02_nd fire) #wangara)
+    dycoms2_rf02_ds dycoms2_rf02_nd fire wangara)
 
    # example: BOMEX and FIRE
    # RUN_CASE=bomex_fire

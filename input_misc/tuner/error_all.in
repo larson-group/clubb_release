@@ -127,23 +127,23 @@ z_f_nl(8)            = 37
 time_nl(8,:)         = 120, 360
 weight_case_nl(8)    = 1.0
 
-! Wangara Day 33
-!hoc_stats_file_nl(9) = "../output/wangara_zt.ctl"
-!les_stats_file_nl(9) = "../les_data/wangara_rams.ctl"
-!run_file_nl(9)       = "wangara_hoc.in"
-!z_i_nl(9)            = 1
-!z_f_nl(9)            = 50
-!time_nl(9,:)         = 60, 97
-!weight_case_nl(9)    = 1.0
+! Wangara Day 33      ! Throws an error when tuning cloud_frac (all 0s)
+hoc_stats_file_nl(9) = "../output/wangara_zt.ctl"
+les_stats_file_nl(9) = "../les_data/wangara_rams.ctl"
+run_file_nl(9)       = "wangara_hoc.in"
+z_i_nl(9)            = 1
+z_f_nl(9)            = 50
+time_nl(9,:)         = 60, 97
+weight_case_nl(9)    = 1.0
 
-! Nov 11 Altocumulus
-hoc_stats_file_nl(10) = "../output/nov11_altocu_zt.ctl"
-les_stats_file_nl(10) = "../les_data/nov11_altocu_coamps_sm.ctl"
-run_file_nl(10)       = "nov11_altocu_hoc.in"
-z_i_nl(10)            = 48
-z_f_nl(10)            = 143
-time_nl(10,:)         = 120, 240
-weight_case_nl(10)    = 1.0
+! Nov 11 Altocumulus   ! "nov11_altocu_hoc.in" does not exist
+!hoc_stats_file_nl(10) = "../output/nov11_altocu_zt.ctl"
+!les_stats_file_nl(10) = "../les_data/nov11_altocu_coamps_sm.ctl"
+!run_file_nl(10)       = "nov11_altocu_hoc.in"
+!z_i_nl(10)            = 48
+!z_f_nl(10)            = 143
+!time_nl(10,:)         = 120, 240
+!weight_case_nl(10)    = 1.0
 
 ! An additional 3 runs can be specified without modifying error.F90
 ! e.g.
