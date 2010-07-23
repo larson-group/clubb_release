@@ -28,7 +28,7 @@ else
 	MODEL_FILE='../input/case_setups/'$1'_model.in'
 
 	if [ -z $2 ]; then
-		PARAMS_FILE="../input/tunable_parameters.in"
+		PARAMS_FILE="../input/tunable_parameters/tunable_parameters.in"
 	else
 		PARAMS_FILE=$2
 	fi

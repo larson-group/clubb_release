@@ -8,7 +8,7 @@ and these scripts output a separate .nc file for each case.
 Submissions:
 ------------
 14 Aug 2009: Submitted results created with SVN revision r3995 and updated
-nu6 in input/tunable_parameters.in to 10.
+nu6 in input/tunable_parameters/tunable_parameters.in to 10.
 
 How to generate and verify data:
 --------------------------------

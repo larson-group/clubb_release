@@ -43,13 +43,13 @@ function tune ( ) {
 	# Run standalone CLUBB with the new parameter values
 	for EXP in "${EXPERIMENTS[@]}"; do
 		cat $CLUBB/input/case_setups/${EXP}_model.in $CLUBB/input/stats/all_stats.in > clubb.in
-		cat $CLUBB/input/tunable_parameters_*.in >> clubb.in
+		cat $CLUBB/input/tunable_parameters/tunable_parameters_*.in >> clubb.in
 		../bin/clubb_standalone >> $ENSEMBLE_DIR/tune.log
 	done
 
 	# Move results data
 	mkdir -p $ARCHIVE/$CASE/ens_tune_$member
-	mv $CLUBB/input/tunable_parameters_*.in  $ARCHIVE/$CASE/ens_tune_$member
+	mv $CLUBB/input/tunable_parameters/tunable_parameters_*.in  $ARCHIVE/$CASE/ens_tune_$member
 	mv $ENSEMBLE_DIR/tune.log  $ARCHIVE/$CASE/ens_tune_$member
 	# for GrADS output
 	mv $CLUBB/output/*_*.???  $ARCHIVE/$CASE/ens_tune_$member
@@ -70,7 +70,7 @@ if [ ! -e $ARCHIVE/$CASE ]; then
 fi
 
 # Create tuner namelist
-cat "error_"$CASE".in" $CLUBB/input/tunable_parameters.in > "error.in"
+cat "error_"$CASE".in" $CLUBB/input/tunable_parameters/tunable_parameters.in > "error.in"
 
 cd $ENSEMBLE_DIR
 

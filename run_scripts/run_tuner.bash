@@ -77,7 +77,7 @@ STATS_DIR='../input/stats/'
 DATE=`date +%F`
 
 # The tunable_parameters.in file
-PARAMS_FILE="../input/tunable_parameters.in"
+PARAMS_FILE="../input/tunable_parameters/tunable_parameters.in"
 
 if [ ! -e "$PARAMS_FILE" ] ; then
 	echo $PARAMS_FILE " does not exist"
@@ -185,7 +185,7 @@ cp $RAND_SEED .
 # aside from noting some cp errors -meyern
 cp ../input/tuning_run_results* /home/hoc_browser/tuner_output
 cp ../input/error_* /home/hoc_browser/tuner_output
-cp ../input/tunable_parameters_* /home/hoc_browser/tuner_output
+cp ../input/tunable_parameters/tunable_parameters_* /home/hoc_browser/tuner_output
 
 # Remove the temporary error.in file and the *_hoc.in file(s).
 rm -f 'error.in'
@@ -196,7 +196,7 @@ rm -f *'_hoc.in'
 echo "Running with optimal constants"
 
 # The newest parameter file should have the optimal set
-PARAMS_IN=`ls -t ../input/tunable_parameters* | head -n 1` 
+PARAMS_IN=`ls -t ../input/tunable_parameters/tunable_parameters* | head -n 1` 
 
 if [ $RUN_TYPE = 'single' ] ; then # Single Case.
 

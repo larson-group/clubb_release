@@ -21,7 +21,7 @@ else
 	MODEL_FILE='../input/case_setups/'$2'_model.in'
 fi
 
-PARAMS_FILE="../input/tunable_parameters.in"
+PARAMS_FILE="../input/tunable_parameters/tunable_parameters.in"
 
 #######################################################################
 # Check for necessary namelists.  If files exist, then

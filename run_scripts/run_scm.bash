@@ -179,7 +179,7 @@ fi
 # Set defaults if they were not passed in
 if [ -z $parameter_file ];
 then
-    parameter_file="../input/tunable_parameters.in"
+    parameter_file="../input/tunable_parameters/tunable_parameters.in"
 fi
 
 if [ -z $stats_file ];

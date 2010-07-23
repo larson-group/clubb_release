@@ -155,7 +155,7 @@ if ( l_results_file ) then
   call write_text( "Generating new tunable_parameters.in file...", l_save_tuning_run, file_unit )
   if( l_save_tuning_run ) close(unit=file_unit)
 
-  results_f = "../input/tunable_parameters_"//current_date//'_' & 
+  results_f = "../input/tunable_parameters/tunable_parameters_"//current_date//'_' & 
     //current_time(1:4)//".in" 
 
   call output_nml_standalone( results_f,  & 
