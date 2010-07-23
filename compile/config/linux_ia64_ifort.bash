@@ -32,7 +32,7 @@ NETCDF="/usr/local/netcdf-intel64"
 # == LAPACK libraries ==
 # Intel Math Kernel Library (v8)
 MKLPATH="/opt/intel/Compiler/11.0/081/mkl/lib/em64t"
-LAPACK="-L$MKLPATH -Wl,-rpath,$MKLPATH -lmkl_intel_lp64 -lmkl_sequential -lmkl_lapack -lmkl_core -lguide -lpthread"
+LAPACK="-L$MKLPATH -Wl,-rpath,$MKLPATH -lmkl_intel_lp64 -lmkl_sequential -lmkl_lapack -lmkl_solver_lp64 -lmkl_core -lguide -lpthread" 
 # Generic library
 # LAPACK = -llapack -lblas -lg2c
 
@@ -48,11 +48,11 @@ FFLAGS="$ARCH $DEBUG"
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
+#   -DMKL enables MKL solver (PARDISO/GMRES) support 
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
 
-CPPFLAGS="-DNETCDF -I$NETCDF/include -Dnooverlap -Dradoffline"
-
+CPPFLAGS="-DNETCDF -I$MKLPATH/../../include -I$NETCDF/include -Dnooverlap -Dradoffline -DMKL" 
 
 # == Static library processing ==
 AR=ar
