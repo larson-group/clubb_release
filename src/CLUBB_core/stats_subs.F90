@@ -898,7 +898,9 @@ module stats_subs
   subroutine stats_begin_timestep( time_elapsed, delt )
 
     !     Description:
-    !     Begin sampling for the current timestep.
+    !       Given the elapsed time, set flags determining specifics such as
+    !       if this time set should be sampled or if this is the first or
+    !       last time step.
     !-----------------------------------------------------------------------
 
     use stats_variables, only: & 
