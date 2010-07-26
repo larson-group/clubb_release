@@ -22,6 +22,7 @@ module stats_subs
     !
     ! Description: Initializes the statistics saving functionality of
     !   the CLUBB model.
+    
     !-----------------------------------------------------------------------
 
     use stats_variables, only: & 
@@ -231,7 +232,7 @@ module stats_subs
     vars_rad_zm = ''
     vars_sfc = ''
 
-    ! Read namelist
+    ! Reads list of variables that should be output to GrADS/NetCDF (namelist $statsnl)
 
     open(unit=iunit, file=fnamelist)
     read(unit=iunit, nml=statsnl, iostat=read_status, end=100)
@@ -923,23 +924,22 @@ module stats_subs
 
     if ( .not. l_stats ) return
 
-    ! Set sample this time step flag
+    ! Only sample time steps that are multiples of "stats_tsamp"
+    ! in a case's "model.in" file to shorten length of run
     if ( mod( time_elapsed, stats_tsamp ) < 1.e-8 ) then
       l_stats_samp = .true.
     else
       l_stats_samp = .false.
     end if
 
-    ! Set first time step flag
-
+    ! Indicates the first time step
     if ( mod( time_elapsed - delt, stats_tout ) < 1.e-8 ) then
       l_stats_first = .true.
     else
       l_stats_first = .false.
     end if
 
-    ! Set last time step flag
-
+    ! Indicates the last time step. Signals to start writing to the file
     if ( mod( time_elapsed, stats_tout ) < 1.e-8 ) then
       l_stats_last = .true.
     else
@@ -1002,8 +1002,8 @@ module stats_subs
     ! Initialize
     l_error = .false.
 
-    ! Check number of sampling points for each variable in the zt statistics
-    ! at each vertical level.
+    ! Look for errors by checking the number of sampling points
+    ! for each variable in the zt statistics at each vertical level.
     do i = 1, zt%nn
       do k = 1, zt%kk
 
@@ -1013,8 +1013,6 @@ module stats_subs
           l_error = .true.  ! This will stop the run
 
           if ( clubb_at_least_debug_level( 1 ) ) then
-            ! Made error message more descriptive
-            ! Joshua Fasching July 2008
             write(fstderr,*) 'Possible sampling error for variable ',  &
                              trim(zt%f%var(i)%name), ' in zt ',  &
                              'at k = ', k,  &
@@ -1026,8 +1024,8 @@ module stats_subs
       enddo
     enddo
 
-    ! Check number of sampling points for each variable in the zm statistics
-    ! at each vertical level.
+    ! Look for errors by checking the number of sampling points
+    ! for each variable in the zm statistics at each vertical level.
     do i = 1, zm%nn
       do k = 1, zm%kk
 
@@ -1037,8 +1035,6 @@ module stats_subs
           l_error = .true.  ! This will stop the run
 
           if ( clubb_at_least_debug_level( 1 ) ) then
-            ! Made error message more descriptive
-            ! Joshua Fasching July 2008
             write(fstderr,*) 'Possible sampling error for variable ',  &
                              trim(zm%f%var(i)%name), ' in zm ',  &
                              'at k = ', k,  &
@@ -1051,8 +1047,8 @@ module stats_subs
     enddo
 
     if (l_output_rad_files) then
-      ! Check number of sampling points for each variable in the rad statistics
-      ! at each vertical level.
+      ! Look for errors by checking the number of sampling points
+      ! for each variable in the rad_zt statistics at each vertical level.
       do i = 1, rad_zt%nn
         do k = 1, rad_zt%kk
 
@@ -1062,8 +1058,6 @@ module stats_subs
             l_error = .true.  ! This will stop the run
 
             if ( clubb_at_least_debug_level( 1 ) ) then
-              ! Made error message more descriptive
-              ! Joshua Fasching July 2008
               write(fstderr,*) 'Possible sampling error for variable ',  &
                                trim(rad_zt%f%var(i)%name), ' in rad_zt ',  &
                                'at k = ', k,  &
@@ -1075,8 +1069,8 @@ module stats_subs
         enddo
       enddo
     
-      ! Check number of sampling points for each variable in the zm statistics
-      ! at each vertical level.
+      ! Look for errors by checking the number of sampling points
+      ! for each variable in the rad_zm statistics at each vertical level.
       do i = 1, rad_zm%nn
         do k = 1, rad_zm%kk
 
@@ -1086,8 +1080,6 @@ module stats_subs
             l_error = .true.  ! This will stop the run
 
             if ( clubb_at_least_debug_level( 1 ) ) then
-              ! Made error message more descriptive
-              ! Joshua Fasching July 2008
               write(fstderr,*) 'Possible sampling error for variable ',  &
                                trim(rad_zm%f%var(i)%name), ' in rad_zm ',  &
                                'at k = ', k,  &
@@ -1100,8 +1092,8 @@ module stats_subs
       enddo
     end if ! l_output_rad_files
 
-    ! Check number of sampling points for each variable in the zm statistics
-    ! at each vertical level.
+    ! Look for errors by checking the number of sampling points
+    ! for each variable in the sfc statistics at each vertical level.
     do i = 1, sfc%nn
       do k = 1, sfc%kk
 
@@ -1111,8 +1103,6 @@ module stats_subs
           l_error = .true.  ! This will stop the run
 
           if ( clubb_at_least_debug_level( 1 ) ) then
-            ! Made error message more descriptive
-            ! Joshua Fasching July 2008
             write(fstderr,*) 'Possible sampling error for variable ',  &
                              trim(sfc%f%var(i)%name), ' in sfc ',  &
                              'at k = ', k,  &
@@ -1133,7 +1123,6 @@ module stats_subs
     endif
 
     ! Compute averages
-
     call stats_avg( zt%kk, zt%nn, zt%x, zt%n )
     call stats_avg( zm%kk, zm%nn, zm%x, zm%n )
     if (l_output_rad_files) then
