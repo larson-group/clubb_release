@@ -36,10 +36,9 @@ module stats_variables
 
   logical, public :: & 
     l_stats_samp,   & ! Sample flag for current time step
-    l_stats_first,  & ! First time step of output period
     l_stats_last      ! Last time step of output period
 
-!$omp   threadprivate(l_stats_samp, l_stats_first, l_stats_last)
+!$omp   threadprivate(l_stats_samp, l_stats_last)
 
   character(len=200), public ::  & 
   fname_zt,  & ! Name of the stats file for thermodynamic grid fields

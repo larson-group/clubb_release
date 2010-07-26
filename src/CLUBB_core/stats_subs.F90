@@ -76,7 +76,6 @@ module stats_subs
       stats_tsamp,   & 
       stats_tout,    & 
       l_stats_samp,  & 
-      l_stats_first, & 
       l_stats_last, & 
       fname_zt, & 
       fname_zm, &
@@ -219,7 +218,6 @@ module stats_subs
 
     if ( .not. l_stats ) then
       l_stats_samp  = .false.
-      l_stats_first = .false.
       l_stats_last  = .false.
       return
     end if
@@ -820,7 +818,6 @@ module stats_subs
     write(fstderr,*) 'Error with statsnl, statistics is turned off'
     l_stats       = .false.
     l_stats_samp  = .false.
-    l_stats_first = .false.
     l_stats_last  = .false.
 
     return
@@ -906,7 +903,6 @@ module stats_subs
     use stats_variables, only: & 
         l_stats,  & ! Variable(s)
         l_stats_samp, & 
-        l_stats_first, & 
         l_stats_last, & 
         stats_tsamp, & 
         stats_tout
@@ -934,14 +930,7 @@ module stats_subs
       l_stats_samp = .false.
     end if
 
-    ! Indicates the first time step
-    if ( mod( time_elapsed - delt, stats_tout ) < 1.e-8 ) then
-      l_stats_first = .true.
-    else
-      l_stats_first = .false.
-    end if
-
-    ! Indicates the last time step. Signals to start writing to the file
+    ! Indicates the end of the sampling time period. Signals to start writing to the file
     if ( mod( time_elapsed, stats_tout ) < 1.e-8 ) then
       l_stats_last = .true.
     else
