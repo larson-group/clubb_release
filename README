@@ -402,6 +402,9 @@ LES GrADS files (available only to larson group members):
 Input:
 -----
 
+Note that at the begginning of a run the run scripts combine all the namelist
+files into one file, named clubb.in, which is then fed into the CLUBB main code.
+  
 The namelist files:
 
   input/case_setups/bomex_model.in, fire_model.in, arm_model.in & atex_model.in.
