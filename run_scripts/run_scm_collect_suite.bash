@@ -1,6 +1,6 @@
 #!/bin/bash
 ##########################################################################
-# $Id:$
+# $Id$
 #
 # Description:
 # Script that runs a predefined set of test cases for creating an overall
@@ -87,7 +87,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 	# input files.
 
 	MODEL_FILE="../input/case_setups/"${RUN_CASE[$x]}"_model.in"
-	PARAMS_FILE="../input/tunable_parameters.in"
+	PARAMS_FILE="../input/tunable_parameters/tunable_parameters.in"
 
 	if [ ! -e "$MODEL_FILE" ]; then
 		echo "ERROR: $MODEL_FILE does not exist."
