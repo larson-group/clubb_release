@@ -102,7 +102,7 @@ contains
     real :: dCAPE_dz_j, dCAPE_dz_j_minus_1, dCAPE_dz_j_plus_1
 
     ! Temporary arrays to store calculations to speed runtime
-    real, dimension(gr%nnzp) :: exp_mu_dzm, invrs_dzm_mu
+    real, dimension(gr%nnzp) :: exp_mu_dzm, invrs_dzm_on_mu
 
     ! Minimum value for Lscale that will taper off with height
     real :: lminh
@@ -136,11 +136,11 @@ contains
     ! ~~EIHoppe//20090615
     exp_mu_dzm(:)  = exp( -mu/gr%invrs_dzm(:) )
 
-    ! Initialize invrs_dzm_mu -- sets each invrs_dzm_mu value to its
+    ! Initialize invrs_dzm_on_mu -- sets each invrs_dzm_on_mu value to its
     ! corresponding (gr%invrs_dzm/mu) value. This will save computations of
     ! this value below.
     ! ~EIHoppe//20100728
-    invrs_dzm_mu(:) = (gr%invrs_dzm(:))/mu
+    invrs_dzm_on_mu(:) = (gr%invrs_dzm(:))/mu
 
     !!!!! Compute Lscale_up for every vertical level.
 
@@ -201,7 +201,7 @@ contains
              thl_par_j = thlm(j) - thlm(j-1)*exp_mu_dzm(j-1)  &
                          - ( 1.0 - exp_mu_dzm(j-1))  &
                            * ( (thlm(j) - thlm(j-1))  &
-                           * invrs_dzm_mu(j-1) ) &
+                           * invrs_dzm_on_mu(j-1) ) &
 !                               / (mu/gr%invrs_dzm(j-1)) )  &
                          + thl_par_j_minus_1 * exp_mu_dzm(j-1)
 
@@ -251,7 +251,7 @@ contains
              rt_par_j = rtm(j) - rtm(j-1)*exp_mu_dzm(j-1)  &
                         - ( 1.0 - exp_mu_dzm(j-1))  &
                           * ( (rtm(j) - rtm(j-1)) &
-                           * invrs_dzm_mu(j-1) ) &
+                           * invrs_dzm_on_mu(j-1) ) &
 !                          / (mu/gr%invrs_dzm(j-1)) )  &
                         + rt_par_j_minus_1 * exp_mu_dzm(j-1)
 
@@ -484,7 +484,7 @@ contains
              thl_par_j = thlm(j) - thlm(j+1)*exp_mu_dzm(j)  &
                          - ( 1.0 - exp_mu_dzm(j))  &
                            * ( (thlm(j) - thlm(j+1)) &
-                           * invrs_dzm_mu(j) ) &
+                           * invrs_dzm_on_mu(j) ) &
 !                          / (mu/gr%invrs_dzm(j)) )  &
                          + thl_par_j_plus_1 * exp_mu_dzm(j)
 
@@ -545,7 +545,7 @@ contains
                         - ( 1.0 - exp_mu_dzm(j) )  &
                           * ( (rtm(j) - rtm(j+1)) &
 !                         / (mu/gr%invrs_dzm(j)) )  &
-                           * invrs_dzm_mu(j) ) &
+                           * invrs_dzm_on_mu(j) ) &
                         + rt_par_j_plus_1 * exp_mu_dzm(j)
 
           else
