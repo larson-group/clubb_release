@@ -662,9 +662,9 @@ rather than \verb|<module name>_mod|, for clarity and consistency with the rest 
 \item CLUBB uses the convention that logical variables should have a prefix of \verb|l_|.  For example,
 use \verb|l_cloud_sed| rather than \verb|cloud_sed|.
 
-\item All non-fatal print or write statements should recast as clubb_debug( 1 or 2, “message”) or
-should be enclosed in clubb_at_least_debug_level( 1 or 2 ) conditionals. All fatal errors should
-be write statements to stderr (\verb|clubb_constants fstderr|) with no clubb_at_least_debug_level conditional.
+\item All non-fatal print or write statements should recast as \verb|clubb_debug( 1 or 2, “message”)| or
+should be enclosed in \verb|clubb_at_least_debug_level( 1 or 2 )| conditionals. All fatal errors should
+be write statements to stderr (\verb|clubb_constants fstderr|) with no \verb|clubb_at_least_debug_level| conditional.
 
 \end{enumerate}
 
