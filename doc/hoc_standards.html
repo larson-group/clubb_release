@@ -156,8 +156,10 @@ Note however, that an <tt>intent(out)</tt> variable that is not set in the scope
 is <em>not defined</em>!  It often preserves the previous value, but it may not.
 When using modules with public variables, limit 
 the number of variables with an <tt>only:</tt> statement.  This makes code 
-easier to read, because it is then obvious which variables from the module are being 
-used.
+easier to read, because it is then obvious which variables from the module 
+are being used.  Even if all variables from the module are used, listing
+all variables after the <tt>only:</tt> statement is still worthwhile
+because it provides documentation about the inputs. 
 <div class="p"><!----></div>
 E.g.
 
@@ -818,6 +820,12 @@ rather than <tt>&lt;module&nbsp;name&gt;_mod</tt>, for clarity and consistency w
 use <tt>l_cloud_sed</tt> rather than <tt>cloud_sed</tt>.
 <div class="p"><!----></div>
 </li>
+
+<li> All non-fatal print or write statements should recast as <tt>clubb_debug(&nbsp;1&nbsp;or&nbsp;2,&nbsp;“message”)</tt> or
+should be enclosed in <tt>clubb_at_least_debug_level(&nbsp;1&nbsp;or&nbsp;2&nbsp;)</tt> conditionals. All fatal errors should
+be write statements to stderr (<tt>clubb_constants&nbsp;fstderr</tt>) with no <tt>clubb_at_least_debug_level</tt> conditional.
+<div class="p"><!----></div>
+</li>
 </ol>
 
 <div class="p"><!----></div>
@@ -826,5 +834,5 @@ use <tt>l_cloud_sed</tt> rather than <tt>cloud_sed</tt>.
 T<sub><font size="-1">E</font></sub>X
 by <a href="http://hutchinson.belmont.ma.us/tth/">
 T<sub><font size="-1">T</font></sub>M</a>,
-version 3.85.<br />On 19 Apr 2010, 16:14.</small>
+version 3.85.<br />On 28 Jul 2010, 11:45.</small>
 </body></html>
