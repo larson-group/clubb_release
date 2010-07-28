@@ -101,8 +101,8 @@ contains
 
     real :: dCAPE_dz_j, dCAPE_dz_j_minus_1, dCAPE_dz_j_plus_1
 
-    ! Temporary array to store exponential calculations to speed runtime
-    real, dimension(gr%nnzp) :: exp_mu_dzm
+    ! Temporary arrays to store calculations to speed runtime
+    real, dimension(gr%nnzp) :: exp_mu_dzm, invrs_dzm_mu
 
     ! Minimum value for Lscale that will taper off with height
     real :: lminh
@@ -135,6 +135,12 @@ contains
     !   exp(-mu/gr%invrs_dzm) used below.
     ! ~~EIHoppe//20090615
     exp_mu_dzm(:)  = exp( -mu/gr%invrs_dzm(:) )
+
+    ! Initialize invrs_dzm_mu -- sets each invrs_dzm_mu value to its
+    ! corresponding (gr%invrs_dzm/mu) value. This will save computations of
+    ! this value below.
+    ! ~EIHoppe//20100728
+    invrs_dzm_mu(:) = (gr%invrs_dzm(:))/mu
 
     !!!!! Compute Lscale_up for every vertical level.
 
@@ -189,10 +195,14 @@ contains
              ! Calculation changed to use pre-calculated exp(-mu/gr%invrs_dzm)
              ! values. ~~EIHoppe//20090615
 
+             ! Calculation changed to use pre-calculated mu/gr%invrs_dzm values.
+             ! ~EIHoppe//20100728
+
              thl_par_j = thlm(j) - thlm(j-1)*exp_mu_dzm(j-1)  &
                          - ( 1.0 - exp_mu_dzm(j-1))  &
                            * ( (thlm(j) - thlm(j-1))  &
-                               / (mu/gr%invrs_dzm(j-1)) )  &
+                           * invrs_dzm_mu(j-1) ) &
+!                               / (mu/gr%invrs_dzm(j-1)) )  &
                          + thl_par_j_minus_1 * exp_mu_dzm(j-1)
 
           else
@@ -235,9 +245,14 @@ contains
              ! Calculation changed to use pre-calculated exp(-mu/gr%invrs_dzm)
              ! values. ~~EIHoppe//20090615
 
+             ! Calculation changed to use pre-calculated mu/gr%invrs_dzm values.
+             ! ~EIHoppe//20100728
+
              rt_par_j = rtm(j) - rtm(j-1)*exp_mu_dzm(j-1)  &
                         - ( 1.0 - exp_mu_dzm(j-1))  &
-                          * ( (rtm(j) - rtm(j-1)) / (mu/gr%invrs_dzm(j-1)) )  &
+                          * ( (rtm(j) - rtm(j-1)) &
+                           * invrs_dzm_mu(j-1) ) &
+!                          / (mu/gr%invrs_dzm(j-1)) )  &
                         + rt_par_j_minus_1 * exp_mu_dzm(j-1)
 
           else
@@ -463,9 +478,14 @@ contains
              ! Calculation changed to use pre-calculated exp(-mu/gr%invrs_dzm)
              ! values. ~~EIHoppe//20090615
 
+             ! Calculation changed to use pre-calculated mu/gr%invrs_dzm values.
+             ! ~EIHoppe//20100728
+
              thl_par_j = thlm(j) - thlm(j+1)*exp_mu_dzm(j)  &
                          - ( 1.0 - exp_mu_dzm(j))  &
-                           * ( (thlm(j) - thlm(j+1)) / (mu/gr%invrs_dzm(j)) )  &
+                           * ( (thlm(j) - thlm(j+1)) &
+                           * invrs_dzm_mu(j) ) &
+!                          / (mu/gr%invrs_dzm(j)) )  &
                          + thl_par_j_plus_1 * exp_mu_dzm(j)
 
           else
@@ -518,9 +538,14 @@ contains
              ! Calculation changed to use pre-calculated exp(-mu/gr%invrs_dzm)
              ! values. ~~EIHoppe//20090615
 
+             ! Calculation changed to use pre-calculated mu/gr%invrs_dzm values.
+             ! ~EIHoppe//20100728
+
              rt_par_j = rtm(j) - rtm(j+1)*exp_mu_dzm(j)  &
                         - ( 1.0 - exp_mu_dzm(j) )  &
-                          * ( (rtm(j) - rtm(j+1)) / (mu/gr%invrs_dzm(j)) )  &
+                          * ( (rtm(j) - rtm(j+1)) &
+!                         / (mu/gr%invrs_dzm(j)) )  &
+                           * invrs_dzm_mu(j) ) &
                         + rt_par_j_plus_1 * exp_mu_dzm(j)
 
           else
