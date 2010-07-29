@@ -892,7 +892,7 @@ module stats_subs
   end subroutine stats_avg
 
   !-----------------------------------------------------------------------
-  subroutine stats_begin_timestep( time_elapsed, delt )
+  subroutine stats_begin_timestep( time_elapsed )
 
     !     Description:
     !       Given the elapsed time, set flags determining specifics such as
@@ -916,9 +916,6 @@ module stats_subs
 
     real(kind=time_precision), intent(in) ::  & 
       time_elapsed ! Elapsed model time       [s]
-
-    real(kind=time_precision), intent(in) ::  & 
-      delt         ! Model time step          [s]
 
     if ( .not. l_stats ) return
 

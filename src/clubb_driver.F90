@@ -888,11 +888,11 @@ module clubb_driver
 
       ! We use elapsed time for stats_begin_step
       if ( .not. l_restart ) then
-        call stats_begin_timestep( time_current-time_initial+dtmain, dtmain ) ! Intent(in)
+        call stats_begin_timestep( time_current-time_initial+dtmain ) ! Intent(in)
       else
         ! Different elapsed time for restart
         ! Joshua Fasching March 2008
-        call stats_begin_timestep( time_current-time_restart+dtmain, dtmain ) ! Intent(in)
+        call stats_begin_timestep( time_current-time_restart+dtmain ) ! Intent(in)
       end if
 
       ! If we're doing an inputfields run, get the values for our
