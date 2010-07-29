@@ -864,7 +864,8 @@ module mono_flux_limiter
       lhs    ! Left hand side of tridiagonal matrix
 
     ! Local Variables
-    integer :: k  ! Array index
+    integer :: k, km1  ! Array index
+
 
     !-----------------------------------------------------------------------
 
@@ -879,12 +880,14 @@ module mono_flux_limiter
     ! Setup LHS of the tridiagonal system
     do k = 2, gr%nnzp, 1
 
+       km1 = max( k-1,1 )
+
        ! LHS xm mean advection (ma) term.
        if ( .not. l_implemented ) then
 
           lhs(kp1_tdiag:km1_tdiag,k) & 
           = lhs(kp1_tdiag:km1_tdiag,k) &
-          + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
+          + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(km1) )
 
        else
 

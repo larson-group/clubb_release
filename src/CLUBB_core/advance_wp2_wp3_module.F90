@@ -1330,7 +1330,7 @@ contains
       ! LHS mean advection (ma) term.
       lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
       = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
-      + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
+      + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(k-1) )
 
       ! LHS turbulent advection (ta) and turbulent production (tp) terms.
       ! Note:  An "over-implicit" weighted time step is applied to these terms.
@@ -1457,7 +1457,7 @@ contains
 
         if ( iwp3_ma > 0 ) then
           tmp(1:3) = & 
-          term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
+          term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(km1) )
           ztscr12(k) = -tmp(3)
           ztscr13(k) = -tmp(2)
           ztscr14(k) = -tmp(1)
@@ -2074,7 +2074,7 @@ contains
       ! LHS mean advection (ma) term.
       lhs_a_csr((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/)) & 
       = lhs_a_csr((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/)) & 
-      + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
+      + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(km1) )
 
       ! LHS turbulent advection (ta) and turbulent production (tp) terms.
       ! Note:  An "over-implicit" weighted time step is applied to these terms.
@@ -2203,7 +2203,7 @@ contains
 
         if ( iwp3_ma > 0 ) then
           tmp(1:3) = & 
-          term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
+          term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(km1) )
           ztscr12(k) = -tmp(3)
           ztscr13(k) = -tmp(2)
           ztscr14(k) = -tmp(1)

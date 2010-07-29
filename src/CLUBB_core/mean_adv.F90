@@ -27,7 +27,7 @@ module mean_adv
   contains
 
   !=============================================================================
-  pure function term_ma_zt_lhs( wm_zt, invrs_dzt, level ) & 
+  pure function term_ma_zt_lhs( wm_zt, invrs_dzt, level, invrs_dzm_k, invrs_dzm_km1 ) & 
   result( lhs )
 
     ! Description:
@@ -188,8 +188,11 @@ module mean_adv
 
     ! Input Variables
     real, intent(in) :: & 
-      wm_zt,     & ! wm_zt(k)                        [m/s]
-      invrs_dzt    ! Inverse of grid spacing (k)     [1/m]
+      wm_zt,        &    ! wm_zt(k)                        [m/s]
+      invrs_dzt,    &    ! Inverse of grid spacing (k)     [1/m]
+      invrs_dzm_k,  &    ! Inverse of grid spacing (k)     [1/m]
+      invrs_dzm_km1      ! Inverse of grid spacing (k-1)   [1/m]
+
 
     integer, intent(in) :: & 
       level ! Central thermodynamic level (on which calculation occurs).
@@ -199,7 +202,8 @@ module mean_adv
 
     ! Local Variables
     logical, parameter ::  &
-      l_ub_const_deriv = .true.  ! Flag to use the "one-sided" upper boundary.
+      l_ub_const_deriv = .true., &  ! Flag to use the "one-sided" upper boundary.
+      l_upwind_xm_ma = .false.       ! Flag to use upwind differencing.
 
     integer :: & 
       mk,    & ! Momentum level directly above central thermodynamic level.
@@ -236,19 +240,54 @@ module mean_adv
 
       ! Most of the interior model; normal conditions.
 
-      ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-      lhs(kp1_tdiag) & 
-      = + wm_zt * invrs_dzt * gr%weights_zt2zm(t_above,mk)
+      if( .not. l_upwind_xm_ma ) then  ! Use centered differencing
 
-      ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-      lhs(k_tdiag) & 
-      = + wm_zt * invrs_dzt * (   gr%weights_zt2zm(t_below,mk) & 
+        ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+        lhs(kp1_tdiag) & 
+        = + wm_zt * invrs_dzt * gr%weights_zt2zm(t_above,mk)
+
+        ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+        lhs(k_tdiag) & 
+        = + wm_zt * invrs_dzt * (   gr%weights_zt2zm(t_below,mk) & 
                                 - gr%weights_zt2zm(t_above,mkm1)   )
 
-      ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-      lhs(km1_tdiag) & 
-      = - wm_zt * invrs_dzt * gr%weights_zt2zm(t_below,mkm1)
+        ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+        lhs(km1_tdiag) & 
+        = - wm_zt * invrs_dzt * gr%weights_zt2zm(t_below,mkm1)
 
+      else    ! l_upwind_xm_ma == .true.  Use upwind differencing
+
+        if ( wm_zt > 0 ) then  ! Wind is in upward direction
+
+          ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+          lhs(kp1_tdiag) &
+          = 0.0
+
+          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+          lhs(k_tdiag) &
+          = + wm_zt * invrs_dzm_km1
+
+          ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+          lhs(km1_tdiag) &
+          = - wm_zt * invrs_dzm_km1
+
+        else  ! wm_zt < 0 Wind is in downward direction
+
+          ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+          lhs(kp1_tdiag) &
+          = + wm_zt * invrs_dzm_k
+
+          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+          lhs(k_tdiag) &
+          = - wm_zt * invrs_dzm_k
+
+          ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+          lhs(km1_tdiag) &
+          = 0.0
+
+        end if ! wm_zt >0
+
+      end if ! l_upwind_xm_ma
 
     elseif ( level == gr%nnzp ) then
 

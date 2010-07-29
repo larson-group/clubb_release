@@ -34,7 +34,7 @@ module advance_xm_wpxp_module
     nsup = 2    ! Number of superdiagonals in the LHS matrix
 
   logical, parameter, private :: &
-    l_upwind_differencing = .false. ! To use upwind differencing, set to true
+    l_upwind_wpxp_ta = .false. ! To use upwind differencing, set to true
 
 
   contains
@@ -985,7 +985,7 @@ module advance_xm_wpxp_module
 
         lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_xm) & 
         = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_xm) & 
-        + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
+        + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(km1) )
 
       else
 
@@ -1011,7 +1011,7 @@ module advance_xm_wpxp_module
         if ( irtm_ma > 0 .or. ithlm_ma > 0 ) then
           if ( .not. l_implemented ) then
             tmp(1:3) =  & 
-            + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
+            + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(km1) )
             ztscr01(k) = - tmp(3)
             ztscr02(k) = - tmp(2)
             ztscr03(k) = - tmp(1)
@@ -1475,7 +1475,7 @@ module advance_xm_wpxp_module
 
       endif
 
-      if( .not. l_upwind_differencing ) then ! Only do this when not using Upwind Differencing
+      if( .not. l_upwind_wpxp_ta ) then ! Only do this when not using Upwind Differencing
         ! RHS contribution from "over-implicit" weighted time step
         ! for LHS turbulent advection (ta) term.
         !
@@ -1546,7 +1546,7 @@ module advance_xm_wpxp_module
                                  .true., wpxp_lower_lim(k) ), zm )
         endif
 
-        if( l_upwind_differencing ) then ! Use upwind differencint
+        if( l_upwind_wpxp_ta ) then ! Use upwind differencint
           lhs_fnc_output(1:3)  &
           = wpxp_term_ta_lhs_upwind( wp2(k), wp2(km1), wp2(kp1),        & 
                                            a1(k), a1(kp1), a1(km1),     & 
@@ -2049,7 +2049,7 @@ module advance_xm_wpxp_module
           + zmscr02(k) * wpxp(k) & 
           + zmscr03(k) * wpxp(kp1), zm )
 
-        if( .not. l_upwind_differencing ) then
+        if( .not. l_upwind_wpxp_ta ) then
           ! w'x' term ta is normally completely implicit.  However, due to the
           ! RHS contribution from the "over-implicit" weighted time step,
           ! w'x' term ta has both implicit and explicit components;

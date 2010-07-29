@@ -1897,7 +1897,7 @@ module microphys_driver
         ! LHS mean advection term.
         lhs(kp1_tdiag:km1_tdiag,k) & 
         = lhs(kp1_tdiag:km1_tdiag,k) & 
-        + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
+        + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(km1) )
 
         ! LHS hydrometeor sedimentation term.
         ! Note: originally pristine ice did not sediment, so it was
@@ -1914,7 +1914,8 @@ module microphys_driver
           ! Statistics:  implicit contributions to hydrometeor xrm.
 
           if ( ixrm_ma > 0 ) then
-            tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
+            tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), &
+              gr%invrs_dzm(km1) )
             ztscr01(k) = -tmp(3)
             ztscr02(k) = -tmp(2)
             ztscr03(k) = -tmp(1)
@@ -2481,7 +2482,7 @@ module microphys_driver
 
       ! The implicit (LHS) value of the mean advection component of the equation
       ! used during the timestep that was just solved for.
-      tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
+      tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(km1) )
 
       ma_subdiag  = -tmp(3) ! subdiagonal
       ma_maindiag = -tmp(2) ! main diagonal

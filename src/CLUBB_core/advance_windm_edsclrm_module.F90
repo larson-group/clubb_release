@@ -1414,7 +1414,7 @@ module advance_windm_edsclrm_module
 
         lhs(kp1_tdiag:km1_tdiag,k)  &
         = lhs(kp1_tdiag:km1_tdiag,k)  &
-        + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
+        + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(km1) )
 
       else
 
@@ -1457,7 +1457,7 @@ module advance_windm_edsclrm_module
         if ( ium_ma + ivm_ma > 0 ) then
           if ( .not. l_implemented ) then
             tmp(1:3) &
-            = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
+            = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(km1) )
             ztscr01(k) = -tmp(3)
             ztscr02(k) = -tmp(2)
             ztscr03(k) = -tmp(1)
