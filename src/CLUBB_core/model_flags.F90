@@ -53,8 +53,25 @@ module model_flags
   logical, public :: &
     l_host_applies_sfc_fluxes 
 
-  character(len=6), public :: &
-    saturation_formula ! "bolton" approx. or "flatau" approx.
+!  character(len=6), public :: &
+!    saturation_formula ! "bolton" approx. or "flatau" approx.
+
+  integer, public :: &
+    saturation_formula ! Integer that stores the saturation formula to be used
+
+  ! These are the integer constants that represent the various saturation
+  ! formulas. To add a new formula, add an additional constant here,
+  ! add the logic to check the strings for the new formula in clubb_core and
+  ! this module, and add logic in saturation to call the proper function--
+  ! the control logic will be based on these named constants.
+
+  integer, parameter, public :: &
+    saturation_bolton = 1, & ! Constant for Bolton approximations of saturation
+#ifdef GFDL
+    saturation_gfdl   = 2, & ! Constant for the GFDL approximation of saturation
+#endif
+    saturation_flatau = 3    ! Constant for Flatau approximations of saturation
+
  
 #ifdef GFDL
   logical, public :: &
@@ -114,8 +131,21 @@ module model_flags
 
     l_host_applies_sfc_fluxes = l_host_applies_sfc_fluxes_in
 
-    ! String
-    saturation_formula = trim( saturation_formula_in )
+!    ! String
+!    saturation_formula = trim( saturation_formula_in )
+
+    ! Set up the saturation formula value
+    select case ( trim( saturation_formula_in ) )
+    case ( "bolton", "Bolton" )
+      saturation_formula = saturation_bolton
+    case ( "flatau", "Flatau" )
+      saturation_formula = saturation_flatau
+#ifdef GDFL
+    case ( "gfdl", "GFDL" )
+      saturation_formula = saturation_gfdl
+#endif
+    ! Add new saturation formulas after this.
+    end select
 
 #ifdef GFDL
       I_sat_sphum = I_sat_sphum_in  ! h1g, 2010-06-15

@@ -39,7 +39,13 @@ module saturation
       fstderr
 
     use model_flags, only: &
-      saturation_formula ! Variable
+      saturation_formula, & ! Variable
+      saturation_bolton, &
+#ifdef GFDL
+      saturation_gfdl, &
+#endif
+      saturation_flatau
+
 
     implicit none
 
@@ -60,32 +66,19 @@ module saturation
     ! Saturation Vapor Pressure, esat, can be found to be approximated
     ! in many different ways.
 
-    !**************************************************************************
-    !                         ***** IMPORTANT *****
-    ! If new saturation_formula's are added with a different string length 
-    ! then this select case must be modified accordingly:
-    ! 
-    ! (1) If you add to the length of saturation_formula, spaces must be 
-    ! added at the end of current cases. E.g. case ( "bolton  " ) for len=8. 
-    ! 
-    ! (2) If you use as name for a saturation_formula with less than 6 
-    ! characters, you must add spaces at the end of the name.  
-    ! E.g. case ( "mine  " ) for len=6.
-    !                         ***** IMPORTANT *****
-    !**************************************************************************
     select case ( saturation_formula )
-    case ( "bolton", "Bolton" )
+    case ( saturation_bolton )
       ! Using the Bolton 1980 approximations for SVP over vapor
       esatv = sat_vapor_press_liq_bolton( T_in_K )
 
-    case ( "flatau", "Flatau" )
+    case ( saturation_flatau )
       ! Using the Flatau, et al. polynomial approximation for SVP over vapor
       esatv = sat_vapor_press_liq_flatau( T_in_K )
 
     ! Add new cases after this
 ! ---> h1g
 #ifdef GFDL
-    case ( "GFDL  ", "gfdl  " )
+    case ( saturation_gfdl )
       ! Using GFDL polynomial approximation for SVP with respect to liquid
       esatv = sat_vapor_press_liq_gfdl( T_in_K )
 #endif
@@ -256,7 +249,12 @@ module saturation
     use constants_clubb, only: & 
         ep ! Variable(s)
     use model_flags, only: &
-      saturation_formula ! Variable(s)
+      saturation_formula, & ! Variable(s)
+      saturation_bolton, &
+#ifdef GFDL
+      saturation_gfdl, &
+#endif
+      saturation_flatau
 
     implicit none
 
@@ -278,19 +276,19 @@ module saturation
     ! Undefined approximation
     esat_ice = -99999.999
 
-    select case ( trim( saturation_formula ) )
-    case ( "bolton", "Bolton" )
+    select case ( saturation_formula )
+    case ( saturation_bolton )
       ! Using the Bolton 1980 approximations for SVP over ice
       esat_ice = sat_vapor_press_ice_bolton( T_in_K )
 
-    case ( "flatau", "Flatau" )
+    case ( saturation_flatau )
       ! Using the Flatau, et al. polynomial approximation for SVP over ice
       esat_ice = sat_vapor_press_ice_flatau( T_in_K )
 
     ! Add new cases after this
 ! ---> h1g, 2010-06-16
 #ifdef GFDL
-    case ( "GFDL  ", "gfdl  " )
+    case ( saturation_gfdl )
       ! Using GFDL polynomial approximation for SVP with respect to ice
       esat_ice = sat_vapor_press_ice_gfdl( T_in_K )
 #endif
