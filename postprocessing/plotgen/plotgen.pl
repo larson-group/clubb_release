@@ -48,7 +48,7 @@ my $matlabPipe;
 my $imageConversionLock;
 
 # Plotgen Version Number
-my $VERSION = 3.33;
+my $VERSION = 3.34;
 
 # Used to create a "random" output directory so multiple runs
 # don't overwrite each other.
@@ -68,7 +68,8 @@ my $nightly = 0;
 # what directory to look for .case files in. 
 # Valid modes: 
 #   plotgen
-#   splotgen 
+#   splotgen
+#   wrfgen 
 my $plotgenMode = "plotgen";
 
 # Specifies to overwrite a directory (Default: false)
@@ -237,10 +238,14 @@ sub main()
                     OutputWriter->writeSamSubHeader($outputIndex);
                 }
             }
-            else
+            elsif($plotgenMode eq "plotgen")
             {
                 OutputWriter->writeHeader($outputIndex, "Plotgen");
             }
+	    elsif($plotgenMode eq "wrfgen")
+	    {
+		OutputWriter->writeHeader($outputIndex, "WRFGen");
+	    }
     
             runCases();
 
@@ -274,6 +279,10 @@ sub getCasePath()
     elsif($plotgenMode eq "splotgen")
     {
         return "$casePath/sam_clubb";
+    }
+    elsif($plotgenMode eq "wrfgen")
+    {
+	return"$casePath/wrf";
     }
 }
 
@@ -912,7 +921,7 @@ sub readArgs()
     }
 
     my %option = ();
-    my $result = getopts("rlbdanqehcs?", \%option);
+    my $result = getopts("rlbdanqehcsw?", \%option);
 
     # A 1 will be returned from getopts if there weren't any
     # invalid options passed in.
@@ -971,6 +980,11 @@ sub readArgs()
     if($option{c})
     {
         $plotgenMode = "plotgen";
+    }
+
+    if($option{w})
+    {
+	$plotgenMode = "wrfgen";
     }
 
     if ($option{h}) # Print the help message
@@ -1063,6 +1077,7 @@ sub main::HELP_MESSAGE()
     print("Usage: plotgen [OPTION]... INPUT... OUTPUT\n");
     print("  -c\tPlot CLUBB cases [DEFAULT] (equiv to plotgen)\n");
     print("  -s\tPlot SAM_CLUBB cases (equiv to splotgen)\n");
+    print("  -w\tPlot WRF_CLUBB cases\n");
     print("  -r\tIf the output folder already exists, replace the contents\n");    
     print("  -l\tPlot LES data for comparison.\n");    
     print("  -b\tPlot HOC Best Ever data for comparison.\n");    
