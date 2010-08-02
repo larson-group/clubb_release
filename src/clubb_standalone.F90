@@ -27,7 +27,9 @@ program clubb_standalone
   integer, parameter :: iunit = 10
 
   character(len=13), parameter :: &
-    namelist_filename = "clubb.in"  ! Text file with the namelists
+    namelist_filename = "clubb.in"  ! Text file containing namelists
+                                    ! concatenated from various input files such as
+                                    ! model.in, tunable_parameters.in, error....in.
 
   logical, parameter :: &
     l_stdout = .true.
