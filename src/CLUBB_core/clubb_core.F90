@@ -1516,12 +1516,12 @@ module clubb_core
     ! is part of a larger model or not.
     call setup_diagnostic_variables( gr%nnzp )
 
+#ifdef MKL
     ! Initialize the CSR matrix class.
     if ( l_gmres ) then
       call initialize_csr_class
     end if
 
-#ifdef MKL
     if ( l_gmres ) then
       call gmres_cache_temp_init( gr%nnzp )
       call gmres_init( (2 * gr%nnzp), intlc_5d_5d_ja_size )
