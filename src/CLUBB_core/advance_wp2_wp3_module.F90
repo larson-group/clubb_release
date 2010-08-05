@@ -27,6 +27,12 @@ module advance_wp2_wp3_module
              wp3_terms_bp_pr2_rhs, & 
              wp3_term_pr1_rhs
 
+  ! Private named constants to avoid string comparisons
+  integer, parameter, private :: &
+    clip_wp2 = 12 ! Named constant for wp2 clipping.
+                  ! NOTE: This must be the same as the clip_wp2 declared in
+                  ! clip_explicit!
+
 contains
 
   !=============================================================================
@@ -884,7 +890,7 @@ contains
 
 
     ! Clip w'^2 at a minimum threshold.
-    call clip_variance( "wp2", dt, w_tol_sqd, wp2 )
+    call clip_variance( clip_wp2, dt, w_tol_sqd, wp2 )
 
     ! Interpolate w'^2 from momentum levels to thermodynamic levels.
     ! This is used for the clipping of w'^3 according to the value

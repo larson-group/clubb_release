@@ -15,6 +15,18 @@ module advance_windm_edsclrm_module
     windm_edsclrm_rhs, &
     xpwp_fnc
 
+  ! Private named constants to avoid string comparisons
+  integer, parameter, private :: &
+    windm_edsclrm_um = 1, &     ! Named constant to handle um solves
+    windm_edsclrm_vm = 2, &     ! Named constant to handle vm solves
+    windm_edsclrm_scalar = 3, & ! Named constant to handle scalar solves
+    clip_upwp = 10, &           ! Named constant for upwp clipping
+                                ! NOTE: This must be the same as the clip_upwp
+                                ! declared in clip_explicit!
+    clip_vpwp = 11              ! Named constant for vpwp clipping
+                                ! NOTE: This must be the same as the clip_vpwp
+                                ! declared in clip_explicit!
+
   contains
 
   !=============================================================================
@@ -182,11 +194,13 @@ module advance_windm_edsclrm_module
     !----------------------------------------------------------------
 
     ! Compute Coriolis, geostrophic, and other prescribed wind forcings for um.
-    call compute_uv_tndcy( "um", fcor, vm, vg, um_forcing, l_implemented, & ! in
+    call compute_uv_tndcy( windm_edsclrm_um, fcor, vm, vg, um_forcing, &    ! in
+                           l_implemented, &                                 ! in
                            um_tndcy )                                       ! out
 
     ! Compute Coriolis, geostrophic, and other prescribed wind forcings for vm.
-    call compute_uv_tndcy( "vm", fcor, um, ug, vm_forcing, l_implemented, & ! in
+    call compute_uv_tndcy( windm_edsclrm_vm, fcor, um, ug, vm_forcing, &    ! in
+                           l_implemented, &                                 ! in
                            vm_tndcy )                                       ! out
 
     ! Momentum surface fluxes, u'w'|_sfc and v'w'|_sfc, are applied to through
@@ -200,13 +214,15 @@ module advance_windm_edsclrm_module
 
     ! Compute the explicit portion of the um equation.
     ! Build the right-hand side vector.
-    rhs(1:gr%nnzp,1) = windm_edsclrm_rhs( "um", dt, Kh_zm, um, um_tndcy,  &  ! in
+    rhs(1:gr%nnzp,1) = windm_edsclrm_rhs( windm_edsclrm_um, dt, Kh_zm, um, & ! in
+                                          um_tndcy,  &  ! in
                                           rho_ds_zm, invrs_rho_ds_zt,  &     ! in
                                           l_imp_sfc_momentum_flux, upwp(1) ) ! in
 
     ! Compute the explicit portion of the vm equation.
     ! Build the right-hand side vector.
-    rhs(1:gr%nnzp,2) = windm_edsclrm_rhs( "vm", dt, Kh_zm, vm, vm_tndcy,  &  ! in
+    rhs(1:gr%nnzp,2) = windm_edsclrm_rhs( windm_edsclrm_vm, dt, Kh_zm, vm, & ! in
+                                          vm_tndcy,  &  ! in
                                           rho_ds_zm, invrs_rho_ds_zt,  &     ! in
                                           l_imp_sfc_momentum_flux, vpwp(1) ) ! in
 
@@ -291,9 +307,9 @@ module advance_windm_edsclrm_module
       call stat_end_update( ivm_bt, real( vm / dt ), zt ) ! in
 
       ! Implicit contributions to um and vm
-      call windm_edsclrm_implicit_stats( "um", um ) ! in
+      call windm_edsclrm_implicit_stats( windm_edsclrm_um, um ) ! in
 
-      call windm_edsclrm_implicit_stats( "vm", vm ) ! in
+      call windm_edsclrm_implicit_stats( windm_edsclrm_vm, vm ) ! in
 
     endif ! l_stats_samp
 
@@ -334,7 +350,7 @@ module advance_windm_edsclrm_module
       ! each other in advance_clubb_core, clipping for u'w' has to be done three
       ! times during each timestep (once after each variable has been updated).
       ! This is the third instance of u'w' clipping.
-      call clip_covariance( "upwp", .false.,      & ! intent(in)
+      call clip_covariance( clip_upwp, .false.,      & ! intent(in)
                             .true., dt, wp2, up2, & ! intent(in)
                             upwp, upwp_chnge )      ! intent(inout)
 
@@ -349,7 +365,7 @@ module advance_windm_edsclrm_module
       ! each other in advance_clubb_core, clipping for v'w' has to be done three
       ! times during each timestep (once after each variable has been updated).
       ! This is the third instance of v'w' clipping.
-      call clip_covariance( "vpwp", .false.,      & ! intent(in)
+      call clip_covariance( clip_vpwp, .false.,      & ! intent(in)
                             .true., dt, wp2, vp2, & ! intent(in)
                             vpwp, vpwp_chnge )      ! intent(inout)
 
@@ -359,11 +375,11 @@ module advance_windm_edsclrm_module
       !   u'^2 == v'^2 == w'^2, and the variables `up2' and `vp2' do not interact with
       !   any other variables.
 
-      call clip_covariance( "upwp", .false.,      & ! intent(in)
+      call clip_covariance( clip_upwp, .false.,      & ! intent(in)
                             .true., dt, wp2, wp2, & ! intent(in)
                             upwp, upwp_chnge )      ! intent(inout)
 
-      call clip_covariance( "vpwp", .false.,      & ! intent(in)
+      call clip_covariance( clip_vpwp, .false.,      & ! intent(in)
                             .true., dt, wp2, wp2, & ! intent(in)
                             vpwp, vpwp_chnge )      ! intent(inout)
 
@@ -387,7 +403,8 @@ module advance_windm_edsclrm_module
 !HPF$ INDEPENDENT
       do i = 1, edsclr_dim
         rhs(1:gr%nnzp,i)  &
-        = windm_edsclrm_rhs( "scalars", dt, Kh_zm, edsclrm(:,i), edsclrm_forcing,  & ! in
+        = windm_edsclrm_rhs( windm_edsclrm_scalar, dt, Kh_zm, &            ! in
+                             edsclrm(:,i), edsclrm_forcing,  &             ! in
                              rho_ds_zm, invrs_rho_ds_zt,  &                ! in
                              l_imp_sfc_momentum_flux, wpedsclrp(1,i) )     ! in
       enddo
@@ -1106,7 +1123,7 @@ module advance_windm_edsclrm_module
     implicit none
 
     ! Input variables
-    character(len=*), intent(in) :: & 
+    integer, intent(in) :: & 
       solve_type     ! Desc. of what is being solved for
 
     real, dimension(gr%nnzp), intent(in) :: &
@@ -1118,12 +1135,12 @@ module advance_windm_edsclrm_module
     ! Budget indices
     integer :: ixm_ma, ixm_ta
 
-    select case ( trim( solve_type ) )
-    case ( "um" )
+    select case ( solve_type )
+    case ( windm_edsclrm_um )
       ixm_ma = ium_ma
       ixm_ta = ium_ta
 
-    case ( "vm" )
+    case ( windm_edsclrm_vm )
       ixm_ma = ivm_ma
       ixm_ta = ivm_ta
 
@@ -1230,7 +1247,7 @@ module advance_windm_edsclrm_module
     implicit none
 
     ! Input Variables
-    character(len=*), intent(in) ::  &
+    integer, intent(in) ::  &
       solve_type      ! Description of what is being solved for
 
     real, intent(in) ::  & 
@@ -1264,9 +1281,9 @@ module advance_windm_edsclrm_module
       ! Only compute the Coriolis term if the model is running on it's own,
       ! and is not part of a larger, host model.
 
-      select case ( trim( solve_type ) )
+      select case ( solve_type )
 
-      case ( "um" )
+      case ( windm_edsclrm_um )
 
         ixm_gf = ium_gf
         ixm_cf = ium_cf
@@ -1276,7 +1293,7 @@ module advance_windm_edsclrm_module
 
         xm_cf = fcor * perp_wind_m(1:gr%nnzp)
 
-      case ( "vm" )
+      case ( windm_edsclrm_vm )
 
         ixm_gf = ivm_gf
         ixm_cf = ivm_cf
@@ -1574,7 +1591,7 @@ module advance_windm_edsclrm_module
     intrinsic :: max, min, real, trim
 
     ! Input Variables
-    character(len=*), intent(in) :: &
+    integer, intent(in) :: &
       solve_type ! Description of what is being solved for
 
     real(kind=time_precision), intent(in) :: & 
@@ -1608,10 +1625,10 @@ module advance_windm_edsclrm_module
 
     ! --- Begin Code ---
 
-    select case ( trim( solve_type ) )
-    case ( "um" )
+    select case ( solve_type )
+    case ( windm_edsclrm_um )
       ixm_ta = ium_ta
-    case ( "vm" )
+    case ( windm_edsclrm_vm )
       ixm_ta = ivm_ta
     case default  ! Eddy scalars
       ixm_ta = 0

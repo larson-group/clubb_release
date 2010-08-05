@@ -12,6 +12,24 @@ module clip_explicit
             clip_variance, & 
             clip_skewness
 
+  ! Private named constants to avoid string comparisons
+  !
+  ! NOTE: Some constants must match the constants named in
+  ! advance_xp2_xpyp_module! These constants are:
+  !   clip_rtp2, clip_thlp2, clip_rtpthlp, clip_up2, clip_vp2, clip_scalar
+  integer, parameter, private :: &
+    clip_rtp2 = 1, &    ! Named constant for rtp2 clipping
+    clip_thlp2 = 2, &   ! Named constant for thlp2 clipping
+    clip_rtpthlp = 3, & ! Named constant for rtpthlp clipping
+    clip_up2 = 5, &     ! Named constant for up2 clipping
+    clip_vp2 = 6, &     ! Named constant for vp2 clipping
+    clip_scalar = 7, &  ! Named constant for scalar clipping
+    clip_wprtp = 8, &   ! Named constant for wprtp clipping
+    clip_wpthlp = 9, &  ! Named constant for wpthlp clipping
+    clip_upwp = 10, &   ! Named constant for upwp clipping
+    clip_vpwp = 11, &   ! Named constant for vpwp clipping
+    clip_wp2 = 12       ! Named constant for wp2 clipping
+
   contains
 
   !=============================================================================
@@ -162,7 +180,7 @@ module clip_explicit
     endif
 
     ! Clip w'r_t'
-    call clip_covariance( "wprtp", l_first_clip_ts,      & ! intent(in) 
+    call clip_covariance( clip_wprtp, l_first_clip_ts,   & ! intent(in) 
                           l_last_clip_ts, dt, wp2, rtp2, & ! intent(in)
                           wprtp, wprtp_chnge )             ! intent(inout)
 
@@ -232,7 +250,7 @@ module clip_explicit
     endif
 
     ! Clip w'th_l'
-    call clip_covariance( "wpthlp", l_first_clip_ts,      & ! intent(in)
+    call clip_covariance( clip_wpthlp, l_first_clip_ts,   & ! intent(in)
                           l_last_clip_ts, dt, wp2, thlp2, & ! intent(in)
                           wpthlp, wpthlp_chnge )            ! intent(inout)
 
@@ -287,7 +305,7 @@ module clip_explicit
 
     ! Clip w'sclr'
     do i = 1, sclr_dim, 1
-      call clip_covariance( "wpsclrp", l_first_clip_ts,              & ! intent(in)
+      call clip_covariance( clip_scalar, l_first_clip_ts,            & ! intent(in)
                             l_last_clip_ts, dt, wp2(:), sclrp2(:,i), & ! intent(in)
                             wpsclrp(:,i), wpsclrp_chnge(:,i) )         ! intent(inout)
     enddo
@@ -326,12 +344,12 @@ module clip_explicit
 
     ! Clip u'w'
     if ( l_tke_aniso ) then
-      call clip_covariance( "upwp", l_first_clip_ts,      & ! intent(in)
+      call clip_covariance( clip_upwp, l_first_clip_ts,   & ! intent(in)
                             l_last_clip_ts, dt, wp2, up2, & ! intent(in)
                             upwp, upwp_chnge )              ! intent(inout)
     else
       ! In this case, up2 = wp2, and the variable `up2' does not interact
-      call clip_covariance( "upwp", l_first_clip_ts,      & ! intent(in)
+      call clip_covariance( clip_upwp, l_first_clip_ts,   & ! intent(in)
                             l_last_clip_ts, dt, wp2, wp2, & ! intent(in)
                             upwp, upwp_chnge )              ! intent(inout)
     end if
@@ -370,12 +388,12 @@ module clip_explicit
     endif
 
     if ( l_tke_aniso ) then
-      call clip_covariance( "vpwp", l_first_clip_ts,      & ! intent(in)
+      call clip_covariance( clip_vpwp, l_first_clip_ts,   & ! intent(in)
                             l_last_clip_ts, dt, wp2, vp2, & ! intent(in)
                             vpwp, vpwp_chnge )              ! intent(inout)
     else
       ! In this case, vp2 = wp2, and the variable `vp2' does not interact
-      call clip_covariance( "vpwp", l_first_clip_ts,      & ! intent(in)
+      call clip_covariance( clip_vpwp, l_first_clip_ts,   & ! intent(in)
                             l_last_clip_ts, dt, wp2, wp2, & ! intent(in)
                             vpwp, vpwp_chnge )              ! intent(inout)
     end if
@@ -452,7 +470,7 @@ module clip_explicit
     implicit none
 
     ! Input Variables
-    character(len=*), intent(in) :: & 
+    integer, intent(in) :: & 
       solve_type       ! Variable being solved; used for STATS.
 
     logical, intent(in) :: & 
@@ -482,12 +500,12 @@ module clip_explicit
 
     ! ---- Begin Code ----
 
-    select case ( trim( solve_type ) )
-    case ( "wprtp" )   ! wprtp clipping budget term
+    select case ( solve_type )
+    case ( clip_wprtp )   ! wprtp clipping budget term
       ixpyp_cl = iwprtp_cl
-    case ( "wpthlp" )   ! wpthlp clipping budget term
+    case ( clip_wpthlp )   ! wpthlp clipping budget term
       ixpyp_cl = iwpthlp_cl
-    case ( "rtpthlp" )   ! rtpthlp clipping budget term
+    case ( clip_rtpthlp )   ! rtpthlp clipping budget term
       ixpyp_cl = irtpthlp_cl
     case default   ! scalars (or upwp/vpwp) are involved
       ixpyp_cl = 0
@@ -595,7 +613,7 @@ module clip_explicit
     implicit none
 
     ! Input Variables
-    character(len=*), intent(in) :: & 
+    integer, intent(in) :: & 
       solve_type  ! Variable being solved; used for STATS.
 
     real(kind=time_precision), intent(in) :: & 
@@ -617,16 +635,16 @@ module clip_explicit
 
     ! ---- Begin Code ----
 
-    select case ( trim( solve_type ) )
-    case ( "wp2" )   ! wp2 clipping budget term
+    select case ( solve_type )
+    case ( clip_wp2 )   ! wp2 clipping budget term
       ixp2_cl = iwp2_cl
-    case ( "rtp2" )   ! rtp2 clipping budget term
+    case ( clip_rtp2 )   ! rtp2 clipping budget term
       ixp2_cl = irtp2_cl
-    case ( "thlp2" )   ! thlp2 clipping budget term
+    case ( clip_thlp2 )   ! thlp2 clipping budget term
       ixp2_cl = ithlp2_cl
-    case ( "up2" )   ! up2 clipping budget term
+    case ( clip_up2 )   ! up2 clipping budget term
       ixp2_cl = iup2_cl
-    case ( "vp2" )   ! vp2 clipping budget term
+    case ( clip_vp2 )   ! vp2 clipping budget term
       ixp2_cl = ivp2_cl
     case default   ! scalars are involved
       ixp2_cl = 0

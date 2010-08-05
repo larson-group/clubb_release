@@ -31,7 +31,19 @@ module advance_xm_wpxp_module
   ! Parameter Constants
   integer, parameter, private :: & 
     nsub = 2, & ! Number of subdiagonals in the LHS matrix
-    nsup = 2    ! Number of superdiagonals in the LHS matrix
+    nsup = 2, & ! Number of superdiagonals in the LHS matrix
+    xm_wpxp_thlm = 1, &   ! Named constant for thlm solving
+    xm_wpxp_rtm = 2, &    ! Named constant for rtm solving
+    xm_wpxp_scalar = 3, & ! Named constant for scalar solving
+    clip_scalar = 7, &    ! Named constant for scalar clipping
+                          ! NOTE: This must be the same as the clip_scalar
+                          ! declared in clip_explicit!
+    clip_wprtp = 8, &     ! Named constant for wprtp clipping
+                          ! NOTE: This must be the same as the clip_wprtp
+                          ! declared in clip_explicit!
+    clip_wpthlp = 9       ! Named constant for wpthlp clipping
+                          ! NOTE: This must be the same as the clip_wpthlp
+                          ! declared in clip_explicit!
 
   logical, parameter, private :: &
     l_upwind_wpxp_ta = .false. ! To use upwind differencing, set to true
@@ -407,7 +419,7 @@ module advance_xm_wpxp_module
 
       ! Compute the explicit portion of the r_t and w'r_t' equations.
       ! Build the right-hand side vector.
-      call xm_wpxp_rhs( "rtm", .true., dt, rtm, wprtp, rtm_forcing, &         ! Intent(in)
+      call xm_wpxp_rhs( xm_wpxp_rtm, .true., dt, rtm, wprtp, rtm_forcing, &   ! Intent(in)
                         C7_Skw_fnc, rtpthvp, C6rt_Skw_fnc, tau_zm, wp2, &     ! Intent(in)
                         wp2_zt, a1, a1_zt, wp3, rho_ds_zt, invrs_rho_ds_zm, & ! Intent(in)
                         thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &          ! Intent(in)
@@ -431,13 +443,13 @@ module advance_xm_wpxp_module
       endif
 
       call xm_wpxp_clipping_and_stats &
-           ( "rtm", dt, wp2, rtp2, wm_zt,  &        ! Intent(in)
+           ( xm_wpxp_rtm, dt, wp2, rtp2, wm_zt,  &  ! Intent(in)
              rtm_forcing, rho_ds_zm, rho_ds_zt, &   ! Intent(in)
              invrs_rho_ds_zm, invrs_rho_ds_zt, &    ! Intent(in)
-             rt_tol**2, rt_tol, rcond, &              ! Intent(in)
+             rt_tol**2, rt_tol, rcond, &            ! Intent(in)
              low_lev_effect, high_lev_effect, &     ! Intent(in)
              l_implemented, solution(:,1), &        ! Intent(in)
-             rtm, rt_tol_mfl, wprtp, err_code )      ! Intent(inout)
+             rtm, rt_tol_mfl, wprtp, err_code )     ! Intent(inout)
 
       if ( lapack_error( err_code ) ) then
         write(fstderr,'(a)') "rtm monotonic flux limiter:  tridag failed"
@@ -465,11 +477,11 @@ module advance_xm_wpxp_module
 
       ! Compute the explicit portion of the th_l and w'th_l' equations.
       ! Build the right-hand side vector.
-      call xm_wpxp_rhs( "thlm", .true., dt, thlm, wpthlp, thlm_forcing, &     ! Intent(in)
-                        C7_Skw_fnc, thlpthvp, C6thl_Skw_fnc, tau_zm, wp2, &   ! Intent(in)
-                        wp2_zt, a1, a1_zt, wp3, rho_ds_zt, invrs_rho_ds_zm, & ! Intent(in)
-                        thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &          ! Intent(in)
-                        rhs(:,1) )                                            ! Intent(out)
+      call xm_wpxp_rhs( xm_wpxp_thlm, .true., dt, thlm, wpthlp, thlm_forcing, & ! Intent(in)
+                        C7_Skw_fnc, thlpthvp, C6thl_Skw_fnc, tau_zm, wp2, &     ! Intent(in)
+                        wp2_zt, a1, a1_zt, wp3, rho_ds_zt, invrs_rho_ds_zm, &   ! Intent(in)
+                        thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &            ! Intent(in)
+                        rhs(:,1) )                                              ! Intent(out)
 
       ! Solve for th_l / w'th_l'
       if ( l_stats_samp .and. ithlm_matrix_condt_num > 0 ) then
@@ -489,12 +501,12 @@ module advance_xm_wpxp_module
       endif
 
       call xm_wpxp_clipping_and_stats &
-           ( "thlm", dt, wp2, thlp2, wm_zt,  &      ! Intent(in)
-             thlm_forcing, rho_ds_zm, rho_ds_zt, &  ! Intent(in)
-             invrs_rho_ds_zm, invrs_rho_ds_zt, &    ! Intent(in)
-             thl_tol**2, thl_tol, rcond, &            ! Intent(in)
-             low_lev_effect, high_lev_effect, &     ! Intent(in)
-             l_implemented, solution(:,1),  &       ! Intent(in)
+           ( xm_wpxp_thlm, dt, wp2, thlp2, wm_zt,  & ! Intent(in)
+             thlm_forcing, rho_ds_zm, rho_ds_zt, &   ! Intent(in)
+             invrs_rho_ds_zm, invrs_rho_ds_zt, &     ! Intent(in)
+             thl_tol**2, thl_tol, rcond, &           ! Intent(in)
+             low_lev_effect, high_lev_effect, &      ! Intent(in)
+             l_implemented, solution(:,1),  &        ! Intent(in)
              thlm, thl_tol_mfl, wpthlp, err_code )   ! Intent(inout)
 
       if ( lapack_error( err_code ) ) then
@@ -535,12 +547,12 @@ module advance_xm_wpxp_module
 
         ! Compute the explicit portion of the sclrm and w'sclr' equations.
         ! Build the right-hand side vector.
-        call xm_wpxp_rhs( "scalars", .true., dt, sclrm(:,i), wpsclrp(:,i), &   ! Intent(in)
-                          sclrm_forcing(:,i), C7_Skw_fnc, sclrpthvp(:,i), &    ! Intent(in)
-                          C6rt_Skw_fnc, tau_zm, wp2, wp2_zt, a1, a1_zt, wp3, & ! Intent(in)
-                          rho_ds_zt, invrs_rho_ds_zm, &                        ! Intent(in)
-                          thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &         ! Intent(in)
-                          rhs(:,1) )                                           ! Intent(out)
+        call xm_wpxp_rhs( xm_wpxp_scalar, .true., dt, sclrm(:,i), wpsclrp(:,i), & ! Intent(in)
+                          sclrm_forcing(:,i), C7_Skw_fnc, sclrpthvp(:,i), &       ! Intent(in)
+                          C6rt_Skw_fnc, tau_zm, wp2, wp2_zt, a1, a1_zt, wp3, &    ! Intent(in)
+                          rho_ds_zt, invrs_rho_ds_zm, &                           ! Intent(in)
+                          thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &            ! Intent(in)
+                          rhs(:,1) )                                              ! Intent(out)
 
         ! Solve for sclrm / w'sclr'
         call xm_wpxp_solve( nrhs, &              ! Intent(in)
@@ -554,13 +566,13 @@ module advance_xm_wpxp_module
         endif
 
         call xm_wpxp_clipping_and_stats &
-             ( "scalars", dt, wp2, sclrp2(:,i),  &  ! Intent(in)
-               wm_zt, sclrm_forcing(:,i),  &        ! Intent(in)
-               rho_ds_zm, rho_ds_zt, &              ! Intent(in)
-               invrs_rho_ds_zm, invrs_rho_ds_zt, &  ! Intent(in)
-               sclr_tol(i)**2, sclr_tol(i), rcond, &  ! Intent(in)
-               low_lev_effect, high_lev_effect, &   ! Intent(in)
-               l_implemented, solution(:,1),  &     ! Intent(in)
+             ( xm_wpxp_scalar, dt, wp2, sclrp2(:,i),  & ! Intent(in)
+               wm_zt, sclrm_forcing(:,i),  &            ! Intent(in)
+               rho_ds_zm, rho_ds_zt, &                  ! Intent(in)
+               invrs_rho_ds_zm, invrs_rho_ds_zt, &      ! Intent(in)
+               sclr_tol(i)**2, sclr_tol(i), rcond, &    ! Intent(in)
+               low_lev_effect, high_lev_effect, &       ! Intent(in)
+               l_implemented, solution(:,1),  &         ! Intent(in)
                sclrm(:,i), sclr_tol(i), wpsclrp(:,i), err_code ) ! Intent(inout)
 
         if ( lapack_error( err_code ) ) then
@@ -588,7 +600,7 @@ module advance_xm_wpxp_module
 
       ! Compute the explicit portion of the r_t and w'r_t' equations.
       ! Build the right-hand side vector.
-      call xm_wpxp_rhs( "rtm", .true., dt, rtm, wprtp, rtm_forcing, &         ! Intent(in)
+      call xm_wpxp_rhs( xm_wpxp_rtm, .true., dt, rtm, wprtp, rtm_forcing, &   ! Intent(in)
                         C7_Skw_fnc, rtpthvp, C6rt_Skw_fnc, tau_zm, wp2, &     ! Intent(in)
                         wp2_zt, a1, a1_zt, wp3, rho_ds_zt, invrs_rho_ds_zm, & ! Intent(in)
                         thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &          ! Intent(in)
@@ -596,11 +608,11 @@ module advance_xm_wpxp_module
 
       ! Compute the explicit portion of the th_l and w'th_l' equations.
       ! Build the right-hand side vector.
-      call xm_wpxp_rhs( "thlm", .true., dt, thlm, wpthlp, thlm_forcing, &     ! Intent(in)
-                        C7_Skw_fnc, thlpthvp, C6thl_Skw_fnc, tau_zm, wp2, &   ! Intent(in)
-                        wp2_zt, a1, a1_zt, wp3, rho_ds_zt, invrs_rho_ds_zm, & ! Intent(in)
-                        thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &          ! Intent(in)
-                        rhs(:,2) )                                            ! Intent(out)
+      call xm_wpxp_rhs( xm_wpxp_thlm, .true., dt, thlm, wpthlp, thlm_forcing, &  ! Intent(in)
+                        C7_Skw_fnc, thlpthvp, C6thl_Skw_fnc, tau_zm, wp2, &      ! Intent(in)
+                        wp2_zt, a1, a1_zt, wp3, rho_ds_zt, invrs_rho_ds_zm, &    ! Intent(in)
+                        thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &             ! Intent(in)
+                        rhs(:,2) )                                               ! Intent(out)
 
 ! ---> h1g, 2010-06-15
 ! scalar transport, e.g, droplet and ice number concentration 
@@ -612,12 +624,12 @@ module advance_xm_wpxp_module
 #endif
 ! <--- h1g, 2010-06-15
 
-        call xm_wpxp_rhs( "scalars", .true., dt, sclrm(:,i), wpsclrp(:,i), &   ! Intent(in)
-                          sclrm_forcing(:,i), C7_Skw_fnc, sclrpthvp(:,i), &    ! Intent(in)
-                          C6rt_Skw_fnc, tau_zm, wp2, wp2_zt, a1, a1_zt, wp3, & ! Intent(in)
-                          rho_ds_zt, invrs_rho_ds_zm, &                        ! Intent(in)
-                          thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &         ! Intent(in)
-                          rhs(:,2+i) )                                         ! Intent(out)
+        call xm_wpxp_rhs( xm_wpxp_scalar, .true., dt, sclrm(:,i), wpsclrp(:,i), & ! Intent(in)
+                          sclrm_forcing(:,i), C7_Skw_fnc, sclrpthvp(:,i), &       ! Intent(in)
+                          C6rt_Skw_fnc, tau_zm, wp2, wp2_zt, a1, a1_zt, wp3, &    ! Intent(in)
+                          rho_ds_zt, invrs_rho_ds_zm, &                           ! Intent(in)
+                          thv_ds_zm, wpxp_upper_lim, wpxp_lower_lim, &            ! Intent(in)
+                          rhs(:,2+i) )                                            ! Intent(out)
       enddo
 
       ! Solve for all fields
@@ -638,13 +650,13 @@ module advance_xm_wpxp_module
       endif
 
       call xm_wpxp_clipping_and_stats &
-           ( "rtm", dt, wp2, rtp2, wm_zt,  &        ! Intent(in)
+           ( xm_wpxp_rtm, dt, wp2, rtp2, wm_zt,  &  ! Intent(in)
              rtm_forcing, rho_ds_zm, rho_ds_zt, &   ! Intent(in)
              invrs_rho_ds_zm, invrs_rho_ds_zt, &    ! Intent(in)
-             rt_tol**2, rt_tol, rcond, &              ! Intent(in)
+             rt_tol**2, rt_tol, rcond, &            ! Intent(in)
              low_lev_effect, high_lev_effect, &     ! Intent(in)
              l_implemented, solution(:,1),  &       ! Intent(in)
-             rtm, rt_tol_mfl, wprtp, err_code )      ! Intent(inout)
+             rtm, rt_tol_mfl, wprtp, err_code )     ! Intent(inout)
 
       if ( lapack_error( err_code ) ) then
         write(fstderr,'(a)') "rtm monotonic flux limiter:  tridag failed"
@@ -653,13 +665,13 @@ module advance_xm_wpxp_module
       endif
 
       call xm_wpxp_clipping_and_stats &
-           ( "thlm", dt, wp2, thlp2, wm_zt,  &      ! Intent(in)
+           ( xm_wpxp_thlm, dt, wp2, thlp2, wm_zt, & ! Intent(in)
              thlm_forcing, rho_ds_zm, rho_ds_zt, &  ! Intent(in)
              invrs_rho_ds_zm, invrs_rho_ds_zt, &    ! Intent(in)
-             thl_tol**2, thl_tol, rcond, &            ! Intent(in)
+             thl_tol**2, thl_tol, rcond, &          ! Intent(in)
              low_lev_effect, high_lev_effect, &     ! Intent(in)
              l_implemented, solution(:,2),  &       ! Intent(in)
-             thlm, thl_tol_mfl, wpthlp, err_code )   ! Intent(inout)
+             thlm, thl_tol_mfl, wpthlp, err_code )  ! Intent(inout)
 
       if ( lapack_error( err_code ) ) then
         write(fstderr,'(a)') "thlm monotonic flux limiter:  tridag failed"
@@ -678,13 +690,13 @@ module advance_xm_wpxp_module
 ! <--- h1g, 2010-06-15
 
         call xm_wpxp_clipping_and_stats &
-             ( "scalars", dt, wp2, sclrp2(:,i),  &  ! Intent(in)
-               wm_zt, sclrm_forcing(:,i), &         ! Intent(in)
-               rho_ds_zm, rho_ds_zt, &              ! Intent(in)
-               invrs_rho_ds_zm, invrs_rho_ds_zt, &  ! Intent(in)
-               sclr_tol(i)**2, sclr_tol(i), rcond, &  ! Intent(in)
-               low_lev_effect, high_lev_effect, &   ! Intent(in)
-               l_implemented, solution(:,2+i),  &   ! Intent(in)
+             ( xm_wpxp_scalar, dt, wp2, sclrp2(:,i), &  ! Intent(in)
+               wm_zt, sclrm_forcing(:,i), &             ! Intent(in)
+               rho_ds_zm, rho_ds_zt, &                  ! Intent(in)
+               invrs_rho_ds_zm, invrs_rho_ds_zt, &      ! Intent(in)
+               sclr_tol(i)**2, sclr_tol(i), rcond, &    ! Intent(in)
+               low_lev_effect, high_lev_effect, &       ! Intent(in)
+               l_implemented, solution(:,2+i),  &       ! Intent(in)
                sclrm(:,i), sclr_tol(i), wpsclrp(:,i), err_code ) ! Intent(inout)
 
         if ( lapack_error( err_code ) ) then
@@ -1315,7 +1327,7 @@ module advance_xm_wpxp_module
     implicit none
 
     ! Input Variables
-    character(len=*), intent(in) :: & 
+    integer, intent(in) :: & 
       solve_type  ! Variables being solved for.
 
     logical, intent(in) :: l_iter
@@ -1369,15 +1381,15 @@ module advance_xm_wpxp_module
       iwpxp_ta, &
       iwpxp_pr1
 
-    select case ( trim( solve_type ) )
-    case ( "rtm" )  ! rtm/wprtp budget terms
+    select case ( solve_type )
+    case ( xm_wpxp_rtm )  ! rtm/wprtp budget terms
       ixm_f      = irtm_forcing
       iwpxp_bp   = iwprtp_bp
       iwpxp_pr3  = iwprtp_pr3
       iwpxp_sicl = iwprtp_sicl
       iwpxp_ta   = iwprtp_ta
       iwpxp_pr1  = iwprtp_pr1
-    case ( "thlm" ) ! thlm/wpthlp budget terms
+    case ( xm_wpxp_thlm ) ! thlm/wpthlp budget terms
       ixm_f      = ithlm_forcing
       iwpxp_bp   = iwpthlp_bp
       iwpxp_pr3  = iwpthlp_pr3
@@ -1811,7 +1823,7 @@ module advance_xm_wpxp_module
     implicit none
 
     ! Input Variables
-    character(len=*), intent(in) ::  & 
+    integer, intent(in) ::  & 
       solve_type  ! Variables being solved for.
 
     real(kind=time_precision), intent(in) ::  & 
@@ -1857,8 +1869,11 @@ module advance_xm_wpxp_module
       err_code  ! Returns an error code in the event of a singular matrix
 
     ! Local Variables
-    character(len=25) :: & 
+    integer :: & 
       solve_type_cl ! solve_type used for clipping statistics.
+
+    character(len=10) :: &
+      solve_type_str ! solve_type as a string for debug output purposes
 
     real, dimension(gr%nnzp) :: & 
       xm_n ! Old value of xm for positive definite scheme     [units vary]
@@ -1896,8 +1911,8 @@ module advance_xm_wpxp_module
 
     ! ----- Begin code ------
 
-    select case ( trim( solve_type ) )
-    case ( "rtm" ) ! rtm/wprtp budget terms
+    select case ( solve_type )
+    case ( xm_wpxp_rtm ) ! rtm/wprtp budget terms
       ixm_bt     = irtm_bt
       ixm_ta     = irtm_ta
       ixm_ma     = irtm_ma
@@ -1916,7 +1931,7 @@ module advance_xm_wpxp_module
 
       ! This is a diagnostic from inverting the matrix, not a budget
       ixm_matrix_condt_num = irtm_matrix_condt_num
-    case ( "thlm" ) ! thlm/wpthlp budget terms
+    case ( xm_wpxp_thlm ) ! thlm/wpthlp budget terms
       ixm_bt     = ithlm_bt
       ixm_ta     = ithlm_ta
       ixm_ma     = ithlm_ma
@@ -2116,7 +2131,7 @@ module advance_xm_wpxp_module
 
     ! Apply a flux limiting positive definite scheme if the solution
     ! for the mean field is negative and we're determining total water
-    if ( trim( solve_type ) == "rtm" .and. l_pos_def .and. any( xm < 0.0 ) ) then
+    if ( solve_type == xm_wpxp_rtm .and. l_pos_def .and. any( xm < 0.0 ) ) then
 
       call pos_definite_adj( dt, "zt", xm, wpxp, & 
                              xm_n, xm_pd, wpxp_pd )
@@ -2144,10 +2159,19 @@ module advance_xm_wpxp_module
 
     if ( any( xm < xm_threshold ) .and. l_hole_fill ) then
 
+      select case ( solve_type )
+      case ( xm_wpxp_rtm )
+        solve_type_str = "rtm"
+      case ( xm_wpxp_thlm )
+        solve_type_str = "thlm"
+      case default
+        solve_type_str = "scalars"
+      end select
+
       if ( clubb_at_least_debug_level( 1 ) ) then
         do k = 1, gr%nnzp
           if ( xm(k) < 0.0 ) then
-            write(fstderr,*) solve_type//" < ", xm_threshold, &
+            write(fstderr,*) solve_type_str//" < ", xm_threshold, &
               " in advance_xm_wpxp_module at k= ", k
           end if
         end do
@@ -2166,13 +2190,13 @@ module advance_xm_wpxp_module
 
     ! Use solve_type to find solve_type_cl, which is used
     ! in subroutine clip_covariance.
-    select case ( trim( solve_type ) )
-    case ( "rtm" )
-      solve_type_cl = "wprtp"
-    case ( "thlm" )
-      solve_type_cl = "wpthlp"
+    select case ( solve_type )
+    case ( xm_wpxp_rtm )
+      solve_type_cl = clip_wprtp
+    case ( xm_wpxp_thlm )
+      solve_type_cl = clip_wpthlp
     case default
-      solve_type_cl = "wpsclrp"
+      solve_type_cl = clip_scalar
     end select
 
     ! Clipping for w'x'
@@ -2908,7 +2932,7 @@ module advance_xm_wpxp_module
     implicit none
 
     ! Input Variables
-    character(len=*), intent(in) :: &
+    integer, intent(in) :: &
       solve_type    ! Variable that is being solved for.
 
     real(kind=time_precision), intent(in) :: &
@@ -2931,10 +2955,10 @@ module advance_xm_wpxp_module
     integer :: ixm_tacl  ! Statistical index
 
 
-    select case ( trim( solve_type ) )
-    case ( "rtm" )
+    select case ( solve_type )
+    case ( xm_wpxp_rtm )
       ixm_tacl = irtm_tacl
-    case ( "thlm" )
+    case ( xm_wpxp_thlm )
       ixm_tacl = ithlm_tacl
     case default
       ixm_tacl = 0

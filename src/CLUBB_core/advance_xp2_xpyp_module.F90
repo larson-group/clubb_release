@@ -26,6 +26,16 @@ module advance_xp2_xpyp_module
 
   private    ! Set default scope
 
+  ! Private named constants to avoid string comparisons
+  integer, parameter, private :: &
+    xp2_xpyp_rtp2 = 1, &    ! Named constant for rtp2 solves
+    xp2_xpyp_thlp2 = 2, &   ! Named constant for thlp2 solves
+    xp2_xpyp_rtpthlp = 3, & ! Named constant for rtpthlp solves
+    xp2_xpyp_up2_vp2 = 4, & ! Named constant for up2_vp2 solves
+    xp2_xpyp_up2 = 5, &     ! Named constant for up2 solves
+    xp2_xpyp_vp2 = 6, &     ! Named constant for vp2 solves
+    xp2_xpyp_scalar = 7     ! Named constant for scalar solves
+
 contains
 
   !=============================================================================
@@ -413,20 +423,20 @@ contains
                        lhs )                                   ! Intent(out)
 
 
-    call xp2_xpyp_rhs( "rtp2", dt, l_iter, a1, a1_zt, &     ! Intent(in)
-                       wp2_zt, wp3, wprtp, wprtp_zt, &      ! Intent(in)
-                       wprtp, wprtp_zt, rtm, rtm, rtp2, &   ! Intent(in)
-                       rho_ds_zt, invrs_rho_ds_zm, &        ! Intent(in)
-                       C2rt_1d, tau_zm, rt_tol**2, beta, &  ! Intent(in)
-                       rhs )                                ! Intent(out)
+    call xp2_xpyp_rhs( xp2_xpyp_rtp2, dt, l_iter, a1, a1_zt, & ! Intent(in)
+                       wp2_zt, wp3, wprtp, wprtp_zt, &         ! Intent(in)
+                       wprtp, wprtp_zt, rtm, rtm, rtp2, &      ! Intent(in)
+                       rho_ds_zt, invrs_rho_ds_zm, &           ! Intent(in)
+                       C2rt_1d, tau_zm, rt_tol**2, beta, &     ! Intent(in)
+                       rhs )                                   ! Intent(out)
 
     ! Solve the tridiagonal system
-    call xp2_xpyp_solve( "rtp2", 1, &                               ! Intent(in)
-                         rhs, lhs, rtp2, &                          ! Intent(inout)
-                         Valid_arr(1) )                             ! Intent(out)
+    call xp2_xpyp_solve( xp2_xpyp_rtp2, 1, &   ! Intent(in)
+                         rhs, lhs, rtp2, &     ! Intent(inout)
+                         Valid_arr(1) )        ! Intent(out)
 
     if ( l_stats_samp ) then
-      call xp2_xpyp_implicit_stats( "rtp2", rtp2 ) ! Intent(in)
+      call xp2_xpyp_implicit_stats( xp2_xpyp_rtp2, rtp2 ) ! Intent(in)
     end if
 
     !!!!!***** th_l'^2 *****!!!!!
@@ -439,7 +449,7 @@ contains
                        lhs )                                        ! Intent(out)
 
     ! Explicit contributions to thlp2
-    call xp2_xpyp_rhs( "thlp2", dt, l_iter, a1, a1_zt, &            ! Intent(in)
+    call xp2_xpyp_rhs( xp2_xpyp_thlp2, dt, l_iter, a1, a1_zt, &     ! Intent(in)
                        wp2_zt, wp3, wpthlp, wpthlp_zt, &            ! Intent(in)
                        wpthlp, wpthlp_zt, thlm, thlm, thlp2, &      ! Intent(in)
                        rho_ds_zt, invrs_rho_ds_zm, &                ! Intent(in)
@@ -447,12 +457,12 @@ contains
                        rhs )                                        ! Intent(out)
 
     ! Solve the tridiagonal system
-    call xp2_xpyp_solve( "thlp2", 1, &          ! Intent(in)
+    call xp2_xpyp_solve( xp2_xpyp_thlp2, 1, &   ! Intent(in)
                          rhs, lhs, thlp2, &     ! Intent(inout)
                          Valid_arr(2) )         ! Intent(out)
 
     if ( l_stats_samp ) then
-      call xp2_xpyp_implicit_stats( "thlp2", thlp2 ) ! Intent(in)
+      call xp2_xpyp_implicit_stats( xp2_xpyp_thlp2, thlp2 ) ! Intent(in)
     end if
 
 
@@ -466,7 +476,7 @@ contains
                        lhs )                                        ! Intent(out)
 
     ! Explicit contributions to rtpthlp
-    call xp2_xpyp_rhs( "rtpthlp", dt, l_iter, a1, a1_zt, &          ! Intent(in)
+    call xp2_xpyp_rhs( xp2_xpyp_rtpthlp, dt, l_iter, a1, a1_zt, &   ! Intent(in)
                        wp2_zt, wp3, wprtp, wprtp_zt, &              ! Intent(in)
                        wpthlp, wpthlp_zt, rtm, thlm, rtpthlp, &     ! Intent(in)
                        rho_ds_zt, invrs_rho_ds_zm, &                ! Intent(in)
@@ -474,12 +484,12 @@ contains
                        rhs )                                        ! Intent(out)
 
     ! Solve the tridiagonal system
-    call xp2_xpyp_solve( "rtpthlp", 1, &            ! Intent(in)
+    call xp2_xpyp_solve( xp2_xpyp_rtpthlp, 1, &     ! Intent(in)
                          rhs, lhs, rtpthlp, &       ! Intent(inout)
                          Valid_arr(3) )             ! Intent(out)
 
     if ( l_stats_samp ) then
-      call xp2_xpyp_implicit_stats( "rtpthlp", rtpthlp ) ! Intent(in)
+      call xp2_xpyp_implicit_stats( xp2_xpyp_rtpthlp, rtpthlp ) ! Intent(in)
     end if
 
 
@@ -493,8 +503,8 @@ contains
                        lhs )                                   ! Intent(out)
 
     ! Explicit contributions to up2
-    call xp2_xpyp_uv_rhs( "up2", dt, l_iter, a1, a1_zt, wp2, &      ! Intent(in)
-                          wp2_zt, wp3, wpthvp, Lscale, &            ! Intent(in)
+    call xp2_xpyp_uv_rhs( xp2_xpyp_up2, dt, l_iter, a1, a1_zt, &    ! Intent(in)
+                          wp2, wp2_zt, wp3, wpthvp, Lscale, &       ! Intent(in)
                           C4_C14_1d, tau_zm, &                      ! Intent(in)
                           um, vm, upwp, upwp_zt, vpwp, vpwp_zt, &   ! Intent(in)
                           up2, vp2, rho_ds_zt, invrs_rho_ds_zm, &   ! Intent(in)
@@ -502,8 +512,8 @@ contains
                           uv_rhs(:,1) )                             ! Intent(out)
 
     ! Explicit contributions to vp2
-    call xp2_xpyp_uv_rhs( "vp2", dt, l_iter, a1, a1_zt, wp2, &      ! Intent(in)
-                          wp2_zt, wp3, wpthvp, Lscale, &            ! Intent(in)
+    call xp2_xpyp_uv_rhs( xp2_xpyp_vp2, dt, l_iter, a1, a1_zt, &    ! Intent(in)
+                          wp2, wp2_zt, wp3, wpthvp, Lscale, &       ! Intent(in)
                           C4_C14_1d, tau_zm, &                      ! Intent(in)
                           vm, um, vpwp, vpwp_zt, upwp, upwp_zt, &   ! Intent(in)
                           vp2, up2, rho_ds_zt, invrs_rho_ds_zm, &   ! Intent(in)
@@ -511,7 +521,7 @@ contains
                           uv_rhs(:,2) )                             ! Intent(out)
 
     ! Solve the tridiagonal system
-    call xp2_xpyp_solve( "up2_vp2", 2,              & ! Intent(in)
+    call xp2_xpyp_solve( xp2_xpyp_up2_vp2, 2,       & ! Intent(in)
                          uv_rhs, lhs,               & ! Intent(inout)
                          uv_solution, Valid_arr(4) )  ! Intent(out)
 
@@ -519,25 +529,25 @@ contains
     vp2(1:gr%nnzp) = uv_solution(1:gr%nnzp,2)
 
     if ( l_stats_samp ) then
-      call xp2_xpyp_implicit_stats( "up2", up2 ) ! Intent(in)
-      call xp2_xpyp_implicit_stats( "vp2", vp2 ) ! Intent(in)
+      call xp2_xpyp_implicit_stats( xp2_xpyp_up2, up2 ) ! Intent(in)
+      call xp2_xpyp_implicit_stats( xp2_xpyp_vp2, vp2 ) ! Intent(in)
     end if
 
 
     ! Apply the positive definite scheme to variances
     if ( l_hole_fill ) then
-      call pos_definite_variances( "rtp2", dt, rt_tol**2, &   ! Intent(in)
-                                   rho_ds_zm, rho_ds_zt, &    ! Intent(in)
-                                   rtp2 )                     ! Intent(inout)
-      call pos_definite_variances( "thlp2", dt, thl_tol**2, & ! Intent(in)
-                                   rho_ds_zm, rho_ds_zt, &    ! Intent(in)
-                                   thlp2 )                    ! Intent(inout)
-      call pos_definite_variances( "up2", dt, w_tol_sqd, &    ! Intent(in)
-                                   rho_ds_zm, rho_ds_zt, &    ! Intent(in)
-                                   up2 )                      ! Intent(inout)
-      call pos_definite_variances( "vp2", dt, w_tol_sqd, &    ! Intent(in)
-                                   rho_ds_zm, rho_ds_zt, &    ! Intent(in)
-                                   vp2 )                      ! Intent(inout)
+      call pos_definite_variances( xp2_xpyp_rtp2, dt, rt_tol**2, & ! Intent(in)
+                                   rho_ds_zm, rho_ds_zt, &         ! Intent(in)
+                                   rtp2 )                          ! Intent(inout)
+      call pos_definite_variances( xp2_xpyp_thlp2, dt, thl_tol**2, & ! Intent(in)
+                                   rho_ds_zm, rho_ds_zt, &           ! Intent(in)
+                                   thlp2 )                           ! Intent(inout)
+      call pos_definite_variances( xp2_xpyp_up2, dt, w_tol_sqd, & ! Intent(in)
+                                   rho_ds_zm, rho_ds_zt, &        ! Intent(in)
+                                   up2 )                          ! Intent(inout)
+      call pos_definite_variances( xp2_xpyp_vp2, dt, w_tol_sqd, & ! Intent(in)
+                                   rho_ds_zm, rho_ds_zt, &        ! Intent(in)
+                                   vp2 )                          ! Intent(inout)
     endif
 
 
@@ -550,8 +560,8 @@ contains
 
     threshold = rt_tol**2
 
-    call clip_variance( "rtp2", dt, threshold, & ! Intent(in)
-                        rtp2 )                   ! Intent(inout)
+    call clip_variance( xp2_xpyp_rtp2, dt, threshold, & ! Intent(in)
+                        rtp2 )                          ! Intent(inout)
 
 
     ! Clipping for th_l'^2
@@ -563,8 +573,8 @@ contains
 
     threshold = thl_tol**2
 
-    call clip_variance( "thlp2", dt, threshold, & ! Intent(in)
-                        thlp2 )                   ! Intent(inout)
+    call clip_variance( xp2_xpyp_thlp2, dt, threshold, & ! Intent(in)
+                        thlp2 )                          ! Intent(inout)
 
 
     ! Clipping for u'^2
@@ -572,8 +582,8 @@ contains
     !threshold = 0.0
     threshold = w_tol_sqd
 
-    call clip_variance( "up2", dt, threshold, & ! Intent(in)
-                        up2 )                   ! Intent(inout)
+    call clip_variance( xp2_xpyp_up2, dt, threshold, & ! Intent(in)
+                        up2 )                          ! Intent(inout)
 
 
     ! Clipping for v'^2
@@ -581,8 +591,8 @@ contains
     !threshold = 0.0
     threshold = w_tol_sqd
 
-    call clip_variance( "vp2", dt, threshold, & ! Intent(in)
-                        vp2 )                   ! Intent(inout)
+    call clip_variance( xp2_xpyp_vp2, dt, threshold, & ! Intent(in)
+                        vp2 )                          ! Intent(inout)
 
 
     ! Clipping for r_t'th_l'
@@ -592,7 +602,7 @@ contains
     ! -1 <= corr_(r_t,th_l) <= 1.
     ! Since r_t'^2, th_l'^2, and r_t'th_l' are all computed in the
     ! same place, clipping for r_t'th_l' only has to be done once.
-    call clip_covariance( "rtpthlp", .true.,  &        ! Intent(in)
+    call clip_covariance( xp2_xpyp_rtpthlp, .true.,  & ! Intent(in)
                           .true., dt, rtp2, thlp2,  &  ! Intent(in)
                           rtpthlp, rtpthlp_chnge )     ! Intent(inout)
 
@@ -641,7 +651,7 @@ contains
 
         !!!!!***** sclr'^2 *****!!!!!
 
-        call xp2_xpyp_rhs( "sclrp2", dt, l_iter, a1, a1_zt, &         ! Intent(in)
+        call xp2_xpyp_rhs( xp2_xpyp_scalar, dt, l_iter, a1, a1_zt, &  ! Intent(in)
                            wp2_zt, wp3, wpsclrp(:,i),  &              ! Intent(in)
                            wpsclrp_zt, wpsclrp(:,i), wpsclrp_zt,  &   ! Intent(in)
                            sclrm(:,i), sclrm(:,i), sclrp2(:,i), &     ! Intent(in)
@@ -660,13 +670,13 @@ contains
           threshold = 0.0
         end if
 
-        call xp2_xpyp_rhs( "sclrprtp", dt, l_iter, a1, a1_zt, &  ! Intent(in)
-                           wp2_zt, wp3, wpsclrp(:,i),  &         ! Intent(in)
-                           wpsclrp_zt, wprtp, wprtp_zt,  &       ! Intent(in)
-                           sclrm(:,i), rtm, sclrprtp(:,i),  &    ! Intent(in)
-                           rho_ds_zt, invrs_rho_ds_zm, &         ! Intent(in)
-                           C2sclr_1d, tau_zm, threshold, beta, & ! Intent(in)
-                           sclr_rhs(:,i+sclr_dim) )              ! Intent(out)
+        call xp2_xpyp_rhs( xp2_xpyp_scalar, dt, l_iter, a1, a1_zt, & ! Intent(in)
+                           wp2_zt, wp3, wpsclrp(:,i),  &             ! Intent(in)
+                           wpsclrp_zt, wprtp, wprtp_zt,  &           ! Intent(in)
+                           sclrm(:,i), rtm, sclrprtp(:,i),  &        ! Intent(in)
+                           rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)
+                           C2sclr_1d, tau_zm, threshold, beta, &     ! Intent(in)
+                           sclr_rhs(:,i+sclr_dim) )                  ! Intent(out)
 
 
         !!!!!***** sclr'th_l' *****!!!!!
@@ -679,19 +689,19 @@ contains
           threshold = 0.0
         end if
 
-        call xp2_xpyp_rhs( "sclrpthlp", dt, l_iter, a1, a1_zt, & ! Intent(in)
-                           wp2_zt, wp3, wpsclrp(:,i),  &         ! Intent(in)
-                           wpsclrp_zt, wpthlp, wpthlp_zt,  &     ! Intent(in)
-                           sclrm(:,i), thlm, sclrpthlp(:,i), &   ! Intent(in)
-                           rho_ds_zt, invrs_rho_ds_zm, &         ! Intent(in)
-                           C2sclr_1d, tau_zm, threshold, beta, & ! Intent(in)
-                           sclr_rhs(:,i+2*sclr_dim) )            ! Intent(out)
+        call xp2_xpyp_rhs( xp2_xpyp_scalar, dt, l_iter, a1, a1_zt, & ! Intent(in)
+                           wp2_zt, wp3, wpsclrp(:,i),  &             ! Intent(in)
+                           wpsclrp_zt, wpthlp, wpthlp_zt,  &         ! Intent(in)
+                           sclrm(:,i), thlm, sclrpthlp(:,i), &       ! Intent(in)
+                           rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)
+                           C2sclr_1d, tau_zm, threshold, beta, &     ! Intent(in)
+                           sclr_rhs(:,i+2*sclr_dim) )                ! Intent(out)
       end do ! 1..sclr_dim
 
 
       ! Solve the tridiagonal system
 
-      call xp2_xpyp_solve( "scalars", 3*sclr_dim, &         ! Intent(in)
+      call xp2_xpyp_solve( xp2_xpyp_scalar, 3*sclr_dim, &   ! Intent(in)
                            sclr_rhs, lhs, sclr_solution, &  ! Intent(inout)
                            Valid_arr(6) )                   ! Intent(out)
 
@@ -704,20 +714,20 @@ contains
       ! Apply hole filling algorithm to the scalar variance terms
       if ( l_hole_fill ) then
         do i = 1, sclr_dim, 1
-          call pos_definite_variances( "sclrp2", dt, sclr_tol(i)**2, & ! Intent(in)
-                                       rho_ds_zm, rho_ds_zt, &         ! Intent(in)
-                                       sclrp2(:,i) )                   ! Intent(inout)
+          call pos_definite_variances( xp2_xpyp_scalar, dt, sclr_tol(i)**2, & ! Intent(in)
+                                       rho_ds_zm, rho_ds_zt, &                ! Intent(in)
+                                       sclrp2(:,i) )                          ! Intent(inout)
           if ( i == iisclr_rt ) then 
              ! Here again, we do this kluge here to make sclr'rt' == rt'^2
-            call pos_definite_variances( "sclrprtp", dt, sclr_tol(i)**2, & ! Intent(in)
-                                         rho_ds_zm, rho_ds_zt, &           ! Intent(in)
-                                         sclrprtp(:,i) )                   ! Intent(inout)
+            call pos_definite_variances( xp2_xpyp_scalar, dt, sclr_tol(i)**2, & ! Intent(in)
+                                         rho_ds_zm, rho_ds_zt, &                ! Intent(in)
+                                         sclrprtp(:,i) )                        ! Intent(inout)
           end if
           if ( i == iisclr_thl ) then
             ! As with sclr'rt' above, but for sclr'thl'
-            call pos_definite_variances( "sclrpthlp", dt, sclr_tol(i)**2, & ! Intent(in)
-                                         rho_ds_zm, rho_ds_zt, &            ! Intent(in)
-                                         sclrpthlp(:,i) )                   ! Intent(inout)
+            call pos_definite_variances( xp2_xpyp_scalar, dt, sclr_tol(i)**2, & ! Intent(in)
+                                         rho_ds_zm, rho_ds_zt, &                ! Intent(in)
+                                         sclrpthlp(:,i) )                       ! Intent(inout)
           end if
         enddo
       endif
@@ -733,8 +743,8 @@ contains
 
          threshold = sclr_tol(i)**2
 
-         call clip_variance( "sclrp2", dt, threshold, & ! Intent(in)
-                             sclrp2(:,i) )              ! Intent(inout)
+         call clip_variance( xp2_xpyp_scalar, dt, threshold, & ! Intent(in)
+                             sclrp2(:,i) )                     ! Intent(inout)
 
       enddo
 
@@ -752,10 +762,10 @@ contains
           ! Treat this like a variance if we're emulating rt
           threshold = sclr_tol(i) * rt_tol
 
-          call clip_variance( "sclrprtp", dt, threshold, & ! Intent(in)
-                              sclrprtp(:,i) )              ! Intent(inout)
+          call clip_variance( xp2_xpyp_scalar, dt, threshold, & ! Intent(in)
+                              sclrprtp(:,i) )                   ! Intent(inout)
         else
-          call clip_covariance( "sclrprtp", .true.,  &               ! Intent(in) 
+          call clip_covariance( xp2_xpyp_scalar, .true.,  &          ! Intent(in) 
                                 .true., dt, sclrp2(:,i), rtp2(:), &  ! Intent(in)
                                 sclrprtp(:,i), sclrprtp_chnge(:,i) ) ! Intent(inout)
         end if
@@ -773,11 +783,11 @@ contains
         if ( i == iisclr_thl ) then
           ! As above, but for thl
           threshold = sclr_tol(i) * thl_tol
-          call clip_variance( "sclrpthlp", dt, threshold, & ! Intent(in)
-                              sclrpthlp(:,i) )              ! Intent(inout)
+          call clip_variance( xp2_xpyp_scalar, dt, threshold, & ! Intent(in)
+                              sclrpthlp(:,i) )                  ! Intent(inout)
         else
 
-          call clip_covariance( "sclrpthlp", .true.,  &                ! Intent(in) 
+          call clip_covariance( xp2_xpyp_scalar, .true.,  &            ! Intent(in) 
                                 .true., dt, sclrp2(:,i), thlp2(:), &   ! Intent(in) 
                                 sclrpthlp(:,i), sclrpthlp_chnge(:,i) ) ! Intent(inout)
         end if
@@ -1125,7 +1135,7 @@ contains
     integer, intent(in) :: &
       nrhs  ! Number of right hand side vectors
 
-    character(len=*), intent(in) ::  & 
+    integer, intent(in) ::  & 
       solve_type ! Variable(s) description
 
     ! Input/Ouput variables
@@ -1147,33 +1157,36 @@ contains
 
     integer ::  ixapxbp_matrix_condt_num ! Stat index
 
+    character(len=10) :: &
+      solve_type_str ! solve_type in string format for debug output purposes
+
     ! --- Begin Code ---
 
-    select case ( trim( solve_type ) )
+    select case ( solve_type )
     !------------------------------------------------------------------------
     ! Note that these are diagnostics from inverting the matrix, not a budget
     !------------------------------------------------------------------------
-    case ( "rtp2" )
+    case ( xp2_xpyp_rtp2 )
       ixapxbp_matrix_condt_num  = irtp2_matrix_condt_num
-
-    case ( "thlp2" )
+      solve_type_str = "rtp2"
+    case ( xp2_xpyp_thlp2 )
       ixapxbp_matrix_condt_num  = ithlp2_matrix_condt_num
-
-    case ( "rtpthlp" )
+      solve_type_str = "thlp2"
+    case ( xp2_xpyp_rtpthlp )
       ixapxbp_matrix_condt_num  = irtpthlp_matrix_condt_num
-
-    case ( "up2_vp2" )
+      solve_type_str = "rtpthlp"
+    case ( xp2_xpyp_up2_vp2 )
       ixapxbp_matrix_condt_num  = iup2_vp2_matrix_condt_num
-
+      solve_type_str = "up2_vp2"
     case default
       ! No condition number is setup for the passive scalars
       ixapxbp_matrix_condt_num  = 0
-
+      solve_type_str = "scalar"
     end select
 
     if ( l_stats_samp .and. ixapxbp_matrix_condt_num > 0 ) then
       call tridag_solvex & 
-           ( solve_type, gr%nnzp, nrhs, &                                          ! Intent(in) 
+           ( solve_type_str, gr%nnzp, nrhs, &                                      ! Intent(in) 
              lhs(kp1_mdiag,:), lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  & ! Intent(inout)
              xapxbp(:,1:nrhs), rcond, err_code )                                   ! Intent(out)
 
@@ -1183,7 +1196,7 @@ contains
 
     else
       call tridag_solve & 
-           ( solve_type, gr%nnzp, nrhs, lhs(kp1_mdiag,:),  &        ! Intent(in)
+           ( solve_type_str, gr%nnzp, nrhs, lhs(kp1_mdiag,:),  &    ! Intent(in)
              lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  &    ! Intent(inout)
              xapxbp(:,1:nrhs), err_code )                           ! Intent(out)
     end if
@@ -1251,7 +1264,7 @@ contains
     intrinsic :: max, min, trim
 
     ! Input variables
-    character(len=*), intent(in) ::  & 
+    integer, intent(in) ::  & 
       solve_type ! Variable(s) description
 
     real, dimension(gr%nnzp), intent(in) ::  & 
@@ -1270,36 +1283,36 @@ contains
 
     ! --- Begin Code ---
 
-    select case ( trim( solve_type ) )
-    case ( "rtp2" )
+    select case ( solve_type )
+    case ( xp2_xpyp_rtp2 )
       ixapxbp_dp1 = irtp2_dp1
       ixapxbp_dp2 = irtp2_dp2
       ixapxbp_ta  = irtp2_ta
       ixapxbp_ma  = irtp2_ma
       ixapxbp_pr1 = 0
 
-    case ( "thlp2" )
+    case ( xp2_xpyp_thlp2 )
       ixapxbp_dp1 = ithlp2_dp1
       ixapxbp_dp2 = ithlp2_dp2
       ixapxbp_ta  = ithlp2_ta
       ixapxbp_ma  = ithlp2_ma
       ixapxbp_pr1 = 0
 
-    case ( "rtpthlp" )
+    case ( xp2_xpyp_rtpthlp )
       ixapxbp_dp1 = irtpthlp_dp1
       ixapxbp_dp2 = irtpthlp_dp2
       ixapxbp_ta  = irtpthlp_ta
       ixapxbp_ma  = irtpthlp_ma
       ixapxbp_pr1 = 0
 
-    case ( "up2" )
+    case ( xp2_xpyp_up2 )
       ixapxbp_dp1 = iup2_dp1
       ixapxbp_dp2 = iup2_dp2
       ixapxbp_ta  = iup2_ta
       ixapxbp_ma  = iup2_ma
       ixapxbp_pr1 = iup2_pr1
 
-    case ( "vp2" )
+    case ( xp2_xpyp_vp2 )
       ixapxbp_dp1 = ivp2_dp1
       ixapxbp_dp2 = ivp2_dp2
       ixapxbp_ta  = ivp2_ta
@@ -1406,7 +1419,7 @@ contains
     implicit none
 
     ! Input Variables
-    character(len=*), intent(in) :: solve_type
+    integer, intent(in) :: solve_type
 
     real(kind=time_precision), intent(in) :: & 
       dt                 ! Model timestep                              [s]
@@ -1471,14 +1484,14 @@ contains
 
     !----------------------------- Begin Code ----------------------------------
 
-    select case ( trim( solve_type ) )
-    case ( "vp2" )
+    select case ( solve_type )
+    case ( xp2_xpyp_vp2 )
       ixapxbp_ta  = ivp2_ta
       ixapxbp_tp  = ivp2_tp
       ixapxbp_dp1 = ivp2_dp1
       ixapxbp_pr1 = ivp2_pr1
       ixapxbp_pr2 = ivp2_pr2
-    case ( "up2" )
+    case ( xp2_xpyp_up2 )
       ixapxbp_ta  = iup2_ta
       ixapxbp_tp  = iup2_tp
       ixapxbp_dp1 = iup2_dp1
@@ -1756,7 +1769,7 @@ contains
     implicit none
 
     ! Input Variables
-    character(len=*), intent(in) :: solve_type
+    integer, intent(in) :: solve_type
 
     real(kind=time_precision), intent(in) :: & 
       dt                 ! Model timestep                              [s]
@@ -1814,20 +1827,20 @@ contains
 
     !------------------------------ Begin Code ---------------------------------
 
-    select case ( trim( solve_type ) )
-    case ( "rtp2" )
+    select case ( solve_type )
+    case ( xp2_xpyp_rtp2 )
       ixapxbp_ta  = irtp2_ta
       ixapxbp_tp  = irtp2_tp
       ixapxbp_tp1 = 0
       ixapxbp_tp2 = 0
       ixapxbp_dp1 = irtp2_dp1
-    case ( "thlp2" )
+    case ( xp2_xpyp_thlp2 )
       ixapxbp_ta  = ithlp2_ta
       ixapxbp_tp  = ithlp2_tp
       ixapxbp_tp1 = 0
       ixapxbp_tp2 = 0
       ixapxbp_dp1 = ithlp2_dp1
-    case ( "rtpthlp" )
+    case ( xp2_xpyp_rtpthlp )
       ixapxbp_ta  = irtpthlp_ta
       ixapxbp_tp  = 0
       ixapxbp_tp1 = irtpthlp_tp1
@@ -3012,7 +3025,7 @@ contains
     intrinsic :: any, real, trim
 
     ! Input variables
-    character(len=*), intent(in) :: & 
+    integer, intent(in) :: & 
       solve_type
 
     real(kind=time_precision), intent(in) :: & 
@@ -3033,14 +3046,14 @@ contains
     integer :: & 
       ixp2_pd
 
-    select case( trim( solve_type ) )
-    case ( "rtp2" )
+    select case( solve_type )
+    case ( xp2_xpyp_rtp2 )
       ixp2_pd = irtp2_pd
-    case ( "thlp2" )
+    case ( xp2_xpyp_thlp2 )
       ixp2_pd = ithlp2_pd
-    case ( "up2" )
+    case ( xp2_xpyp_up2 )
       ixp2_pd = iup2_pd
-    case ( "vp2" )
+    case ( xp2_xpyp_vp2 )
       ixp2_pd = ivp2_pd
     case default
       ixp2_pd = 0 ! This includes the passive scalars
