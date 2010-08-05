@@ -186,6 +186,7 @@ cp $RAND_SEED .
 cp ../input/tuning_run_results* /home/hoc_browser/tuner_output
 cp ../input/error_* /home/hoc_browser/tuner_output
 cp ../input/tunable_parameters/tunable_parameters_* /home/hoc_browser/tuner_output
+mv ./*.log /home/hoc_browser/tuner_output
 
 # Remove the temporary error.in file and the *_hoc.in file(s).
 rm -f 'error.in'
