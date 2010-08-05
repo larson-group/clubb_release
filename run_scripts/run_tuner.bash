@@ -174,11 +174,11 @@ cp $RAND_SEED .
 
 # Run tuner, keep a log of STDOUT & STDERR
 #
-#../bin/clubb_tuner 2>&1 | tee 'tuner_'$RUN_CASE'_'$DATE'.log'
+../bin/clubb_tuner 2>&1 | tee 'tuner_'$RUN_CASE'_'$DATE'.log'
 #
 # Run tuner, don't keep a log
 # Note: Tuner code has option to save results to a file or not
- ../bin/clubb_tuner
+# ../bin/clubb_tuner
 
 # copy the output files to a directory where they will not be erased
 # should only work for hoc_browser, but should not affect manual runs
