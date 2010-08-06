@@ -16,12 +16,11 @@ module mono_flux_limiter
              mean_vert_vel_up_down
 
   ! Private named constants to avoid string comparisons
-  !
-  ! NOTE: These constants need to match the constants named in
-  ! advance_xm_wpxp_module!
+  ! NOTE: These values must match the values for xm_wpxp_thlm
+  ! and xm_wpxp_rtm given in advance_xm_wpxp_module!
   integer, parameter, private :: &
-    xm_wpxp_thlm = 1, & ! Named constant for thlm mono_flux calls
-    xm_wpxp_rtm = 2     ! Named constant for rtm mono_flux calls
+    mono_flux_thlm = 1, & ! Named constant for thlm mono_flux calls
+    mono_flux_rtm = 2     ! Named constant for rtm mono_flux calls
 
   contains
 
@@ -427,11 +426,11 @@ module mono_flux_limiter
     dz = 0.0
 
     select case( solve_type )
-    case ( xm_wpxp_rtm )  ! rtm/wprtp
+    case ( mono_flux_rtm )  ! rtm/wprtp
        iwpxp_mfl = iwprtp_mfl
        ixm_mfl   = irtm_mfl
        max_xp2   = 5.0e-6
-    case ( xm_wpxp_thlm ) ! thlm/wpthlp
+    case ( mono_flux_thlm ) ! thlm/wpthlp
        iwpxp_mfl = iwpthlp_mfl
        ixm_mfl   = ithlm_mfl
        max_xp2   = 5.0
@@ -446,11 +445,11 @@ module mono_flux_limiter
        call stat_begin_update( iwpxp_mfl, real( wpxp / dt ), zm )
        call stat_begin_update( ixm_mfl, real( xm / dt ), zt )
     endif
-    if ( l_stats_samp .and. solve_type == xm_wpxp_thlm ) then
+    if ( l_stats_samp .and. solve_type == mono_flux_thlm ) then
        call stat_update_var( ithlm_enter_mfl, xm, zt )
        call stat_update_var( ithlm_old, xm_old, zt )
        call stat_update_var( iwpthlp_enter_mfl, xm, zm )
-    elseif ( l_stats_samp .and. solve_type == xm_wpxp_rtm ) then
+    elseif ( l_stats_samp .and. solve_type == mono_flux_rtm ) then
        call stat_update_var( irtm_enter_mfl, xm, zt )
        call stat_update_var( irtm_old, xm_old, zt )
        call stat_update_var( iwprtp_enter_mfl, xm, zm )
@@ -670,13 +669,13 @@ module mono_flux_limiter
     wpxp_mfl_lower_lim(gr%nnzp) = 0.
     wpxp_mfl_upper_lim(gr%nnzp) = 0.
 
-    if ( l_stats_samp .and. solve_type == xm_wpxp_thlm ) then
+    if ( l_stats_samp .and. solve_type == mono_flux_thlm ) then
        call stat_update_var( ithlm_without_ta, xm_without_ta, zt )
        call stat_update_var( ithlm_mfl_lower_lim, min_x_allowable, zt )
        call stat_update_var( ithlm_mfl_upper_lim, max_x_allowable, zt )
        call stat_update_var( iwpthlp_mfl_lower_lim, wpxp_mfl_lower_lim, zm )
        call stat_update_var( iwpthlp_mfl_upper_lim, wpxp_mfl_upper_lim, zm )
-    elseif ( l_stats_samp .and. solve_type == xm_wpxp_rtm ) then
+    elseif ( l_stats_samp .and. solve_type == mono_flux_rtm ) then
        call stat_update_var( irtm_without_ta, xm_without_ta, zt )
        call stat_update_var( irtm_mfl_lower_lim, min_x_allowable, zt )
        call stat_update_var( irtm_mfl_upper_lim, max_x_allowable, zt )
@@ -810,10 +809,10 @@ module mono_flux_limiter
 
        call stat_end_update( ixm_mfl, real( xm / dt ), zt )
 
-       if ( solve_type == xm_wpxp_thlm ) then
+       if ( solve_type == mono_flux_thlm ) then
           call stat_update_var( ithlm_exit_mfl, xm, zt )
           call stat_update_var( iwpthlp_exit_mfl, xm, zm )
-       elseif ( solve_type == xm_wpxp_rtm ) then
+       elseif ( solve_type == mono_flux_rtm ) then
           call stat_update_var( irtm_exit_mfl, xm, zt )
           call stat_update_var( iwprtp_exit_mfl, xm, zm )
        endif
@@ -1072,9 +1071,9 @@ module mono_flux_limiter
     !-----------------------------------------------------------------------
 
     select case( solve_type )
-    case ( xm_wpxp_rtm )
+    case ( mono_flux_rtm )
       solve_type_str = "rtm"
-    case ( xm_wpxp_thlm )
+    case ( mono_flux_thlm )
       solve_type_str = "thlm"
     case default
       solve_type_str = "scalars"

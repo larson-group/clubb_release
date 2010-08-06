@@ -34,16 +34,7 @@ module advance_xm_wpxp_module
     nsup = 2, & ! Number of superdiagonals in the LHS matrix
     xm_wpxp_thlm = 1, &   ! Named constant for thlm solving
     xm_wpxp_rtm = 2, &    ! Named constant for rtm solving
-    xm_wpxp_scalar = 3, & ! Named constant for scalar solving
-    clip_scalar = 7, &    ! Named constant for scalar clipping
-                          ! NOTE: This must be the same as the clip_scalar
-                          ! declared in clip_explicit!
-    clip_wprtp = 8, &     ! Named constant for wprtp clipping
-                          ! NOTE: This must be the same as the clip_wprtp
-                          ! declared in clip_explicit!
-    clip_wpthlp = 9       ! Named constant for wpthlp clipping
-                          ! NOTE: This must be the same as the clip_wpthlp
-                          ! declared in clip_explicit!
+    xm_wpxp_scalar = 3    ! Named constant for scalar solving
 
   logical, parameter, private :: &
     l_upwind_wpxp_ta = .false. ! To use upwind differencing, set to true
@@ -1737,7 +1728,10 @@ module advance_xm_wpxp_module
         pos_definite_adj ! Procedure(s)
 
     use clip_explicit, only: & 
-        clip_covariance ! Procedure(s)
+        clip_covariance, & ! Procedure(s)
+        clip_wprtp, &      ! Variable(s)
+        clip_wpthlp, &
+        clip_wpsclrp
 
     use model_flags, only: & 
         l_pos_def, &    ! Logical for whether to apply the positive definite scheme to rtm
@@ -2196,7 +2190,7 @@ module advance_xm_wpxp_module
     case ( xm_wpxp_thlm )
       solve_type_cl = clip_wpthlp
     case default
-      solve_type_cl = clip_scalar
+      solve_type_cl = clip_wpsclrp
     end select
 
     ! Clipping for w'x'

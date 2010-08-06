@@ -28,13 +28,16 @@ module advance_xp2_xpyp_module
 
   ! Private named constants to avoid string comparisons
   integer, parameter, private :: &
-    xp2_xpyp_rtp2 = 1, &    ! Named constant for rtp2 solves
-    xp2_xpyp_thlp2 = 2, &   ! Named constant for thlp2 solves
-    xp2_xpyp_rtpthlp = 3, & ! Named constant for rtpthlp solves
-    xp2_xpyp_up2_vp2 = 4, & ! Named constant for up2_vp2 solves
-    xp2_xpyp_up2 = 5, &     ! Named constant for up2 solves
-    xp2_xpyp_vp2 = 6, &     ! Named constant for vp2 solves
-    xp2_xpyp_scalar = 7     ! Named constant for scalar solves
+    xp2_xpyp_rtp2 = 1, &     ! Named constant for rtp2 solves
+    xp2_xpyp_thlp2 = 2, &    ! Named constant for thlp2 solves
+    xp2_xpyp_rtpthlp = 3, &  ! Named constant for rtpthlp solves
+    xp2_xpyp_up2_vp2 = 4, &  ! Named constant for up2_vp2 solves
+    xp2_xpyp_up2 = 5, &      ! Named constant for up2 solves
+    xp2_xpyp_vp2 = 6, &      ! Named constant for vp2 solves
+    xp2_xpyp_scalars = 7, &  ! Named constant for scalar solves
+    xp2_xpyp_sclrp2 = 8, &   ! Named constant for sclrp2 solves
+    xp2_xpyp_sclrprtp = 9, & ! Named constant for sclrprtp solves
+    xp2_xpyp_sclrpthlp = 10  ! Named constant for sclrpthlp solves    
 
 contains
 
@@ -110,7 +113,15 @@ contains
 
     use clip_explicit, only: & 
       clip_covariance,  & ! Procedure(s)
-      clip_variance
+      clip_variance, &
+      clip_rtp2, &        ! Variable(s)
+      clip_thlp2, &
+      clip_rtpthlp, &
+      clip_up2, &
+      clip_vp2, &
+      clip_sclrp2, &
+      clip_sclrprtp, &
+      clip_sclrpthlp
 
     use error_code, only:  & 
       clubb_no_error,  & ! Variable(s)
@@ -651,7 +662,7 @@ contains
 
         !!!!!***** sclr'^2 *****!!!!!
 
-        call xp2_xpyp_rhs( xp2_xpyp_scalar, dt, l_iter, a1, a1_zt, &  ! Intent(in)
+        call xp2_xpyp_rhs( xp2_xpyp_sclrp2, dt, l_iter, a1, a1_zt, &  ! Intent(in)
                            wp2_zt, wp3, wpsclrp(:,i),  &              ! Intent(in)
                            wpsclrp_zt, wpsclrp(:,i), wpsclrp_zt,  &   ! Intent(in)
                            sclrm(:,i), sclrm(:,i), sclrp2(:,i), &     ! Intent(in)
@@ -670,7 +681,7 @@ contains
           threshold = 0.0
         end if
 
-        call xp2_xpyp_rhs( xp2_xpyp_scalar, dt, l_iter, a1, a1_zt, & ! Intent(in)
+        call xp2_xpyp_rhs( xp2_xpyp_sclrprtp, dt, l_iter, a1, a1_zt, & ! Intent(in)
                            wp2_zt, wp3, wpsclrp(:,i),  &             ! Intent(in)
                            wpsclrp_zt, wprtp, wprtp_zt,  &           ! Intent(in)
                            sclrm(:,i), rtm, sclrprtp(:,i),  &        ! Intent(in)
@@ -689,7 +700,7 @@ contains
           threshold = 0.0
         end if
 
-        call xp2_xpyp_rhs( xp2_xpyp_scalar, dt, l_iter, a1, a1_zt, & ! Intent(in)
+        call xp2_xpyp_rhs( xp2_xpyp_sclrpthlp, dt, l_iter, a1, a1_zt, & ! Intent(in)
                            wp2_zt, wp3, wpsclrp(:,i),  &             ! Intent(in)
                            wpsclrp_zt, wpthlp, wpthlp_zt,  &         ! Intent(in)
                            sclrm(:,i), thlm, sclrpthlp(:,i), &       ! Intent(in)
@@ -701,7 +712,7 @@ contains
 
       ! Solve the tridiagonal system
 
-      call xp2_xpyp_solve( xp2_xpyp_scalar, 3*sclr_dim, &   ! Intent(in)
+      call xp2_xpyp_solve( xp2_xpyp_scalars, 3*sclr_dim, &   ! Intent(in)
                            sclr_rhs, lhs, sclr_solution, &  ! Intent(inout)
                            Valid_arr(6) )                   ! Intent(out)
 
@@ -714,20 +725,20 @@ contains
       ! Apply hole filling algorithm to the scalar variance terms
       if ( l_hole_fill ) then
         do i = 1, sclr_dim, 1
-          call pos_definite_variances( xp2_xpyp_scalar, dt, sclr_tol(i)**2, & ! Intent(in)
+          call pos_definite_variances( xp2_xpyp_sclrp2, dt, sclr_tol(i)**2, & ! Intent(in)
                                        rho_ds_zm, rho_ds_zt, &                ! Intent(in)
                                        sclrp2(:,i) )                          ! Intent(inout)
           if ( i == iisclr_rt ) then 
              ! Here again, we do this kluge here to make sclr'rt' == rt'^2
-            call pos_definite_variances( xp2_xpyp_scalar, dt, sclr_tol(i)**2, & ! Intent(in)
-                                         rho_ds_zm, rho_ds_zt, &                ! Intent(in)
-                                         sclrprtp(:,i) )                        ! Intent(inout)
+            call pos_definite_variances( xp2_xpyp_sclrprtp, dt, sclr_tol(i)**2, & ! Intent(in)
+                                         rho_ds_zm, rho_ds_zt, &                  ! Intent(in)
+                                         sclrprtp(:,i) )                          ! Intent(inout)
           end if
           if ( i == iisclr_thl ) then
             ! As with sclr'rt' above, but for sclr'thl'
-            call pos_definite_variances( xp2_xpyp_scalar, dt, sclr_tol(i)**2, & ! Intent(in)
-                                         rho_ds_zm, rho_ds_zt, &                ! Intent(in)
-                                         sclrpthlp(:,i) )                       ! Intent(inout)
+            call pos_definite_variances( xp2_xpyp_sclrpthlp, dt, sclr_tol(i)**2, & ! Intent(in)
+                                         rho_ds_zm, rho_ds_zt, &                   ! Intent(in)
+                                         sclrpthlp(:,i) )                          ! Intent(inout)
           end if
         enddo
       endif
@@ -743,8 +754,8 @@ contains
 
          threshold = sclr_tol(i)**2
 
-         call clip_variance( xp2_xpyp_scalar, dt, threshold, & ! Intent(in)
-                             sclrp2(:,i) )                     ! Intent(inout)
+         call clip_variance( clip_sclrp2, dt, threshold, & ! Intent(in)
+                             sclrp2(:,i) )                 ! Intent(inout)
 
       enddo
 
@@ -762,10 +773,10 @@ contains
           ! Treat this like a variance if we're emulating rt
           threshold = sclr_tol(i) * rt_tol
 
-          call clip_variance( xp2_xpyp_scalar, dt, threshold, & ! Intent(in)
-                              sclrprtp(:,i) )                   ! Intent(inout)
+          call clip_variance( clip_sclrprtp, dt, threshold, & ! Intent(in)
+                              sclrprtp(:,i) )                 ! Intent(inout)
         else
-          call clip_covariance( xp2_xpyp_scalar, .true.,  &          ! Intent(in) 
+          call clip_covariance( clip_sclrprtp, .true.,  &            ! Intent(in) 
                                 .true., dt, sclrp2(:,i), rtp2(:), &  ! Intent(in)
                                 sclrprtp(:,i), sclrprtp_chnge(:,i) ) ! Intent(inout)
         end if
@@ -783,11 +794,11 @@ contains
         if ( i == iisclr_thl ) then
           ! As above, but for thl
           threshold = sclr_tol(i) * thl_tol
-          call clip_variance( xp2_xpyp_scalar, dt, threshold, & ! Intent(in)
-                              sclrpthlp(:,i) )                  ! Intent(inout)
+          call clip_variance( clip_sclrpthlp, dt, threshold, & ! Intent(in)
+                              sclrpthlp(:,i) )                 ! Intent(inout)
         else
 
-          call clip_covariance( xp2_xpyp_scalar, .true.,  &            ! Intent(in) 
+          call clip_covariance( clip_sclrpthlp, .true.,  &            ! Intent(in) 
                                 .true., dt, sclrp2(:,i), thlp2(:), &   ! Intent(in) 
                                 sclrpthlp(:,i), sclrpthlp_chnge(:,i) ) ! Intent(inout)
         end if

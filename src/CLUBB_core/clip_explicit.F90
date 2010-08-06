@@ -12,23 +12,23 @@ module clip_explicit
             clip_variance, & 
             clip_skewness
 
-  ! Private named constants to avoid string comparisons
-  !
-  ! NOTE: Some constants must match the constants named in
-  ! advance_xp2_xpyp_module! These constants are:
-  !   clip_rtp2, clip_thlp2, clip_rtpthlp, clip_up2, clip_vp2, clip_scalar
-  integer, parameter, private :: &
-    clip_rtp2 = 1, &    ! Named constant for rtp2 clipping
-    clip_thlp2 = 2, &   ! Named constant for thlp2 clipping
-    clip_rtpthlp = 3, & ! Named constant for rtpthlp clipping
-    clip_up2 = 5, &     ! Named constant for up2 clipping
-    clip_vp2 = 6, &     ! Named constant for vp2 clipping
-    clip_scalar = 7, &  ! Named constant for scalar clipping
-    clip_wprtp = 8, &   ! Named constant for wprtp clipping
-    clip_wpthlp = 9, &  ! Named constant for wpthlp clipping
-    clip_upwp = 10, &   ! Named constant for upwp clipping
-    clip_vpwp = 11, &   ! Named constant for vpwp clipping
-    clip_wp2 = 12       ! Named constant for wp2 clipping
+  ! Named constants to avoid string comparisons
+  integer, parameter, public :: &
+    clip_rtp2 = 1, &      ! Named constant for rtp2 clipping
+    clip_thlp2 = 2, &     ! Named constant for thlp2 clipping
+    clip_rtpthlp = 3, &   ! Named constant for rtpthlp clipping
+    clip_up2 = 5, &       ! Named constant for up2 clipping
+    clip_vp2 = 6, &       ! Named constant for vp2 clipping
+!    clip_scalar = 7, &    ! Named constant for scalar clipping
+    clip_wprtp = 8, &     ! Named constant for wprtp clipping
+    clip_wpthlp = 9, &    ! Named constant for wpthlp clipping
+    clip_upwp = 10, &     ! Named constant for upwp clipping
+    clip_vpwp = 11, &     ! Named constant for vpwp clipping
+    clip_wp2 = 12, &      ! Named constant for wp2 clipping
+    clip_wpsclrp = 13, &  ! Named constant for wp scalar clipping
+    clip_sclrp2 = 14, &   ! Named constant for sclrp2 clipping
+    clip_sclrprtp = 15, & ! Named constant for sclrprtp clipping
+    clip_sclrpthlp = 16   ! Named constant for sclrpthlp clipping
 
   contains
 
@@ -305,7 +305,7 @@ module clip_explicit
 
     ! Clip w'sclr'
     do i = 1, sclr_dim, 1
-      call clip_covariance( clip_scalar, l_first_clip_ts,            & ! intent(in)
+      call clip_covariance( clip_wpsclrp, l_first_clip_ts,           & ! intent(in)
                             l_last_clip_ts, dt, wp2(:), sclrp2(:,i), & ! intent(in)
                             wpsclrp(:,i), wpsclrp_chnge(:,i) )         ! intent(inout)
     enddo
