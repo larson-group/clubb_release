@@ -276,6 +276,8 @@ module input_grads
 ! Open binary file for direct access
 
     f%iounit = unit_number
+    inquire( file = f%fname, exist = l_file_exist)
+    if( .not. l_file_exist) stop 'binary GrADS file does not exist'
     open( unit = f%iounit, & 
           file = trim( f%fname ), & 
           form = 'unformatted', access = 'direct',  & 
