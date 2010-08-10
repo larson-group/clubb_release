@@ -60,7 +60,7 @@ module cloud_feedback
   ! Constants
   real, parameter :: & 
   !  rho_sfc_flux = 1.0, &
-    C_10    = 0.0013,    & ! Drag coefficient, defined by ATEX specification
+  !  C_10    = 0.0013,    & ! Drag coefficient, defined by ATEX specification
     C_h_20  = 0.001094,  & ! Drag coefficient, defined by RICO 3D specification
     C_q_20  = 0.001133,  & ! Drag coefficient, defined by RICO 3D specification
     z0      = 0.00015      ! Roughness length, defined by ATEX specification
