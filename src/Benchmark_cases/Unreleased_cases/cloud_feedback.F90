@@ -15,9 +15,9 @@ module cloud_feedback
   contains
 
   !----------------------------------------------------------------------
-  subroutine cloud_feedback_sfclyr( runtype, sfctype, &
-                                    thlm_sfc, rtm_sfc, &
-                                    ubar, psfc, Tsfc, &
+  subroutine cloud_feedback_sfclyr( runtype, sfctype,                &
+                                    thlm_sfc, rtm_sfc, lowest_level, &
+                                    ubar, psfc, Tsfc,                &
                                     wpthlp_sfc, wprtp_sfc, ustar )
 
   !       Description:
@@ -48,7 +48,8 @@ module cloud_feedback
     rtm_sfc,   & ! rtm at (2)          [kg/kg]
     Tsfc,      & ! Temperature         [K]
     psfc,      & ! Surface pressure    [Pa]
-    ubar 
+    ubar,      & ! This is root (u^2 + v^2), per ATEX and RICO spec.
+    lowest_level ! This is z at the lowest above-ground model level.  [m]
 
   ! Output variables
   real, intent(out) ::  & 
@@ -59,10 +60,15 @@ module cloud_feedback
   ! Constants
   real, parameter :: & 
   !  rho_sfc_flux = 1.0, &
-    C_10    = 0.0013      ! Drag coefficient, defined by ATEX specification
+    C_10    = 0.0013,    & ! Drag coefficient, defined by ATEX specification
+    C_h_20  = 0.001094,  & ! Drag coefficient, defined by RICO 3D specification
+    C_q_20  = 0.001133,  & ! Drag coefficient, defined by RICO 3D specification
+    z0      = 0.00015      ! Roughness length, defined by ATEX specification
 
   ! Internal variables
   real :: &
+    Ch,   &                ! This is C_h_20 scaled to the height of the lowest model level.
+    Cq,   &                ! This is C_q_20 scaled to the height of the lowest model level.
     exner_sfc ! Value of exner at the surface [-]
     
   !--------------BEGIN CODE---------------------
@@ -98,10 +104,17 @@ module cloud_feedback
   !                                     Tsfc, exner_sfc )
   !end if
 
-  ! 
+  !
+  ! Modification in case lowest model level isn't at 10 m, from ATEX specification
+  Ch   = C_h_20 * ((log(20/z0))/(log(lowest_level/z0))) * & 
+         ((log(20/z0))/(log(lowest_level/z0)))
+  ! Modification in case lowest model level isn't at 10 m, from ATEX specification
+  Cq   = C_q_20 * ((log(20/z0))/(log(lowest_level/z0))) * & 
+         ((log(20/z0))/(log(lowest_level/z0)))
+ 
   if ( sfctype == 1 ) then
-    wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, sat_mixrat_liq( psfc, Tsfc ) )
-    wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, & 
+    wprtp_sfc = compute_wprtp_sfc( Cq, ubar, rtm_sfc, sat_mixrat_liq( psfc, Tsfc ) )
+    wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm_sfc, & 
                                      Tsfc, exner_sfc )
 
   end if
