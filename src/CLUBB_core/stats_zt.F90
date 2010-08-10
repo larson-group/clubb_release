@@ -772,7 +772,7 @@ module stats_zt
       case ('thlm_forcing')
         ithlm_forcing = k
         call stat_assign( ithlm_forcing, "thlm_f", & 
-             "thetal forcing [K s^{-1}]", "K s^{-1}", zt )
+             "thlm budget: thetal forcing [K s^{-1}]", "K s^{-1}", zt )
         k = k + 1
       case ('thlm_mc')
         ithlm_mc = k
@@ -782,7 +782,7 @@ module stats_zt
       case ('rtm_forcing')
         irtm_forcing = k
         call stat_assign( irtm_forcing, "rtm_f", & 
-             "rt forcing [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+             "rtm budget: rt forcing [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('rtm_mc')
@@ -1189,28 +1189,29 @@ module stats_zt
         irtm_bt = k
 
         call stat_assign( irtm_bt, "rtm_bt", & 
-             "rtm time tendency [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt)
+             "rtm budget: rtm time tendency [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt)
         k = k + 1
 
       case ('rtm_ma')
         irtm_ma = k
 
         call stat_assign( irtm_ma, "rtm_ma", & 
-             "rtm vertical mean advection [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt)
+             "rtm budget: rtm vertical mean advection [kg kg^{-1} s^{-1}]", &
+             "kg kg^{-1} s^{-1}", zt)
         k = k + 1
 
       case ('rtm_ta')
         irtm_ta = k
 
         call stat_assign( irtm_ta, "rtm_ta", & 
-             "rtm turbulent advection [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt)
+             "rtm budget: rtm turbulent advection [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt)
         k = k + 1
 
       case ('rtm_mfl')
         irtm_mfl = k
 
         call stat_assign( irtm_mfl, "rtm_mfl", &
-              "rtm correction due to monotonic flux limiter [kg kg^{-1} s^{-1}]", &
+              "rtm budget: rtm correction due to monotonic flux limiter [kg kg^{-1} s^{-1}]", &
               "kg kg^{-1} s^{-1}", zt)
         k = k + 1
 
@@ -1218,7 +1219,7 @@ module stats_zt
         irtm_tacl = k
 
         call stat_assign( irtm_tacl, "rtm_tacl", & 
-             "rtm correction due to ta term (wprtp) clipping [kg kg^{-1} s^{-1}]", &
+             "rtm budget: rtm correction due to ta term (wprtp) clipping [kg kg^{-1} s^{-1}]", &
              "kg kg^{-1} s^{-1}", zt)
 
         k = k + 1
@@ -1227,14 +1228,15 @@ module stats_zt
         irtm_cl = k
 
         call stat_assign( irtm_cl, "rtm_cl", & 
-             "rtm clipping [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt)
+             "rtm budget: rtm clipping [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt)
 
         k = k + 1
       case ('rtm_sdmp')
         irtm_sdmp = k
 
         call stat_assign( irtm_sdmp, "rtm_sdmp", & 
-             "rtm correction due to sponge damping [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt)
+             "rtm budget: rtm correction due to sponge damping [kg kg^{-1} s^{-1}]", &
+             "kg kg^{-1} s^{-1}", zt)
         k = k + 1
 
 
@@ -1242,7 +1244,8 @@ module stats_zt
         irtm_pd = k
 
         call stat_assign( irtm_pd, "rtm_pd", & 
-             "rtm positive definite adjustment [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt)
+             "rtm budget: rtm positive definite adjustment [kg kg^{-1} s^{-1}]", &
+             "kg kg^{-1} s^{-1}", zt)
 
         k = k + 1
 
@@ -1250,21 +1253,21 @@ module stats_zt
         ithlm_bt = k
 
         call stat_assign( ithlm_bt, "thlm_bt", & 
-             "thlm time tendency [K s^{-1}]", "K s^{-1}", zt)
+             "thlm budget: thlm time tendency [K s^{-1}]", "K s^{-1}", zt)
         k = k + 1
 
       case ('thlm_ma')
         ithlm_ma = k
 
         call stat_assign( ithlm_ma, "thlm_ma", & 
-             "thlm vertical mean advection [K s^{-1}]", "K s^{-1}", zt)
+             "thlm budget: thlm vertical mean advection [K s^{-1}]", "K s^{-1}", zt)
         k = k + 1
 
       case ('thlm_sdmp')
         ithlm_sdmp = k
 
         call stat_assign( ithlm_sdmp, "thlm_sdmp", & 
-             "thlm correction due to sponge damping [K s^{-1}]", "K s^{-1}", zt)
+             "thlm budget: thlm correction due to sponge damping [K s^{-1}]", "K s^{-1}", zt)
         k = k + 1
 
 
@@ -1272,28 +1275,30 @@ module stats_zt
         ithlm_ta = k
 
         call stat_assign( ithlm_ta, "thlm_ta", & 
-             "thlm turbulent advection [K s^{-1}]", "K s^{-1}", zt)
+             "thlm budget: thlm turbulent advection [K s^{-1}]", "K s^{-1}", zt)
         k = k + 1
 
       case ('thlm_mfl')
         ithlm_mfl = k
 
         call stat_assign( ithlm_mfl, "thlm_mfl", &
-              "thlm correction due to monotonic flux limiter [K s^{-1}]", "K s^{-1}", zt)
+              "thlm budget: thlm correction due to monotonic flux limiter [K s^{-1}]", &
+              "K s^{-1}", zt)
         k = k + 1
 
       case ('thlm_tacl')
         ithlm_tacl = k
 
         call stat_assign( ithlm_tacl, "thlm_tacl", & 
-              "thlm correction due to ta term (wpthlp) clipping [K s^{-1}]", "K s^{-1}", zt)
+              "thlm budget: thlm correction due to ta term (wpthlp) clipping [K s^{-1}]", &
+              "K s^{-1}", zt)
         k = k + 1
 
       case ('thlm_cl')
         ithlm_cl = k
 
         call stat_assign( ithlm_cl, "thlm_cl", & 
-              "thlm_cl [K s^{-1}]", "K s^{-1}", zt)
+              "thlm budget: thlm_cl [K s^{-1}]", "K s^{-1}", zt)
         k = k + 1
 
       case ('wp3_bt')
