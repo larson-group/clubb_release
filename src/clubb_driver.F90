@@ -3189,9 +3189,9 @@ module clubb_driver
         l_set_sclr_sfc_rtm_thlm = .true.
         l_fixed_flux            = .true.
         call cloud_feedback_sfclyr( runtype, sfctype,            &  ! Intent(in)
-                                    thlm(2), rtm(2),             &  ! Intent(in)
+                                    thlm(2), rtm(2), gr%zt(2),   &  ! Intent(in)
                                     ubar, psfc, Tsfc,            &  ! Intent(in)
-                                    wpthlp_sfc, wprtp_sfc, ustar )  ! Intent(out)
+                                    wpthlp_sfc, wprtp_sfc, ustar)   ! Intent(out)
 
 #endif
 
