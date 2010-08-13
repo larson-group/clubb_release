@@ -28,7 +28,23 @@
           {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'QT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'QT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cf / cld [%]', 'type' => 'profile', 'lines' =>
+	{'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp / thflux(s) [K m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(TLFLUX) ./ (RHO * 1004)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '((TLFLUX) ./ (RHO * 1004)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => '((TLFLUX) ./ (RHO * 1004)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => '((TLFLUX + TLFLUXS) ./ (RHO * 1004)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp / qtflux(s) [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(QTFLUX) ./ (RHO * 2.5104e+6)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '(QTFLUX ./ (RHO * 2.5104e+6)) + WPRTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => '(QTFLUX ./ (RHO * 2.5104e+6)) + WPRTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => '(QTFLUX ./ (RHO * 2.5104e+6)) + WPRTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+      {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cf / cld [%]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'cloud_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'CLD * 100', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
@@ -59,22 +75,6 @@
           {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'WP3 + W3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'WP3 + W3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'WP3 + W3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp / thflux(s) [K m/s]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'arm_97_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(TLFLUX) ./ (RHO * 1004)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
-          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '((TLFLUX) ./ (RHO * 1004)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => '((TLFLUX) ./ (RHO * 1004)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => '((TLFLUX + TLFLUXS) ./ (RHO * 1004)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp / qtflux(s) [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'arm_97_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(QTFLUX) ./ (RHO * 2.5104e+6)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
-          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '(QTFLUX ./ (RHO * 2.5104e+6)) + WPRTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => '(QTFLUX ./ (RHO * 2.5104e+6)) + WPRTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => '(QTFLUX ./ (RHO * 2.5104e+6)) + WPRTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of \theta_l', 'axisLabel' => 'thlp2 / tl2 [K^2]', 'type' => 'profile', 'lines' =>
        [
@@ -162,6 +162,111 @@
           {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'QPL / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'QPL / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'QPL / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nrm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(NR * 1e+6) ./ RHO', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '(NR * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => '(NR * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => '(NR * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Droplet Concentration', 'axisLabel' => 'Ncm [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(NC * 1e+6) ./ RHO', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '(NC * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => '(NC * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => '(NC * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgraupelm [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rgraupelm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QG / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'QG / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'QG / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'QG / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'ricem [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ricem', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QI / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'QI / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'QI / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'QI / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Ice Concentration', 'axisLabel' => 'Nim [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nim', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(NI * 1e+6) ./ RHO', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '(NI * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => '(NI * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => '(NI * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Snow Mixing Ratio', 'axisLabel' => 'rsnowm [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rsnow', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QS / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'QS / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'QS / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'QS / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsownm [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(NS * 1e+6) ./ RHO', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '(NS * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => '(NS * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => '(NS * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Buoyancy flux', 'axisLabel' => 'wpthvp [K m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'bestever', 'name' => '3D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rain_rate', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Density-Weighted Vertically Averaged wp2', 'axisLabel' => 'wp2 / w2 [m^2/s^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2_vert_avg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 
+'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Ice Water Path', 'axisLabel' => 'iwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'iwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Snow Water Path', 'axisLabel' => 'swp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'swp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]}
     ],
     'nightlyOutput' =>

@@ -28,6 +28,22 @@
           {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'QT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'QT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp / thflux(s) [K m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_so_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(TLFLUX) ./ (RHO * 1004)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => '(TLFLUX) ./ (RHO * 1004)', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
+          {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '((TLFLUX) ./ (RHO * 1004)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => '((TLFLUX) ./ (RHO * 1004)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp / qtflux(s) [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_so_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QTFLUX ./ (RHO * 2.5104e+6)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'QTFLUX ./ (RHO * 2.5104e+6)', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
+          {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'QTFLUX ./ (RHO * 2.5104e+6) + WPRTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'QTFLUX ./ (RHO * 2.5104e+6) + WPRTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
        {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cf / cld [%]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'dycoms2_rf02_so_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'cloud_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -59,22 +75,6 @@
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'W3', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'WP3 + W3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'WP3 + W3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp / thflux(s) [K m/s]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'dycoms2_rf02_so_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(TLFLUX) ./ (RHO * 1004)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => '(TLFLUX) ./ (RHO * 1004)', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
-          {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '((TLFLUX) ./ (RHO * 1004)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => '((TLFLUX) ./ (RHO * 1004)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp / qtflux(s) [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'dycoms2_rf02_so_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QTFLUX ./ (RHO * 2.5104e+6)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'QTFLUX ./ (RHO * 2.5104e+6)', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
-          {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'QTFLUX ./ (RHO * 2.5104e+6) + WPRTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'QTFLUX ./ (RHO * 2.5104e+6) + WPRTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of \theta_l', 'axisLabel' => 'thlp2 / tl2 [K^2]', 'type' => 'profile', 'lines' =>
        [
@@ -161,8 +161,114 @@
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'QPL / 1000', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'QPL / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'QPL / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]}
+       ]},
+       {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_so_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QPL / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'QPL / 1000', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
+          {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'QPL / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'QPL / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Coud Droplet Concentration', 'axisLabel' => 'Ncm [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_so_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(NC * 1e+6) ./ RHO', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => '(NC * 1e+6) ./ RHO', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
+          {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '(NC * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => '(NC * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Graupel Mixing Ratio, r_r', 'axisLabel' => 'rgraupelm [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_so_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
+          {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Mixing Ratio, r_r', 'axisLabel' => 'ricem [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_so_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
+          {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Ice Concentration', 'axisLabel' => 'Nim [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_so_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
+          {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Snow Mixing Ratio', 'axisLabel' => 'rsnowm [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_so_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
+          {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsnowm [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_so_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
+          {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Buoyancy flux', 'axisLabel' => 'wpthvp [K m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_so_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
+          {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_so_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
+          {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+
+       {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_so_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
+          {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Density-Weighted Vertically Averaged wp2', 'axisLabel' => 'wp2 / w2 [m^2/s^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_so_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
+          {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Ice Water Path', 'axisLabel' => 'iwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_so_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
+          {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Snow Water Path', 'axisLabel' => 'swp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_so_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x1x128_50m.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'NS .* 0', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
+          {'filename' => 'DYCOMS_RF02_16x1x40_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
     ],
+
     'nightlyOutput' =>
     {
         'subText' => '** Uniform, coarse vertical grid spacing of 40 m. **',
