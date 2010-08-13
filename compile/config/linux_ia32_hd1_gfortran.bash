@@ -1,4 +1,4 @@
-\# $Id: linux_ia32_gfortran.bash 3371 2009-04-07 16:39:56Z dschanen@uwm.edu $
+# $Id$
 # Configuration file for a Linux machine using GNU compiler collection Fortran
 # Note that the version of gfortran that comes with RHEL5 cannot compile clubb.
 # However, following options did work on Ubuntu 8.04 LTS (with the packaged

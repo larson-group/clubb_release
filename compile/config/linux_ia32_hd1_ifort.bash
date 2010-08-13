@@ -1,4 +1,4 @@
-# $Id: linux_ia32_ifort.bash 4664 2010-07-22 21:45:20Z eihoppe@uwm.edu $
+# $Id$
 # Makefile definitions customized for Linux x86_64 using the Intel Fortran 
 # compiler 
 
