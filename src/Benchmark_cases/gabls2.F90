@@ -114,9 +114,9 @@ module gabls2
 
 !-------------------------------------------------------------------------------
   subroutine gabls2_sfclyr( time, time_initial, &
-                            lowest_level, psfc, & 
+                            lowest_level, p_sfc, & 
                             ubar, thlm, rtm, exner_sfc, &
-                            wpthlp_sfc, wprtp_sfc, ustar )
+                            wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
 ! Description:
 !   Surface forcing subroutine for GABLS2 case.  Written
 !   29 December 2006 by Michael Falk.
@@ -147,7 +147,7 @@ module gabls2
       time_initial           ! Initial time of model integration [s]
 
     real, intent(in) ::    & 
-      psfc,                & ! Surface pressure [Pa]
+      p_sfc,                & ! Surface pressure [Pa]
       lowest_level,        & ! Height of lowest above-ground gridpoint [m]
       ubar,                & ! Root (u^2 + v^2), per ATEX and RICO spec.
       thlm,                & ! theta-l at the lowest above-ground model level. 
@@ -159,15 +159,14 @@ module gabls2
     real, intent(out) :: & 
       wpthlp_sfc, & ! The turbulent upward flux of theta-l            [K m/s]
       wprtp_sfc,  & ! The turbulent upward flux of rtm (total water)  [kg/kg m/s]
-      ustar         ! surface friction velocity                       [m/s]
-
+      ustar,      & ! surface friction velocity                       [m/s]
+      T_sfc          ! Sea surface temperature [K].
     ! Local variables
     real :: & 
       Cz,                  & ! C_10 scaled to the height of the lowest 
                            ! model level. (Per ATEX spec)
       time_in_hours,       & ! time in hours from 00 local on first day of experiment 
                            ! (experiment starts at 14)
-      sst,                 & ! Sea surface temperature [K].
       sstheta,             & ! Sea surface potential temperature [K].
       bflx                   ! Needed for diag_ustar; equal to wpthlp_sfc * (g/theta)
 
@@ -182,25 +181,25 @@ module gabls2
 
     ! Compute sea surface temperature
     if (time_in_hours <= 17.4) then
-      sst = -10 - (25*cos(time_in_hours*0.22 + 0.2)) ! SST in celsius per GABLS2 spec
+      T_sfc = -10 - (25*cos(time_in_hours*0.22 + 0.2)) ! SST in celsius per GABLS2 spec
     else if (time_in_hours <= 30.0) then
-      sst = (-0.54 * time_in_hours) + 15.2
+      T_sfc = (-0.54 * time_in_hours) + 15.2
     else if (time_in_hours <= 41.9) then
-      sst = -7 - (25*cos(time_in_hours*0.21 + 1.8))
+      T_sfc = -7 - (25*cos(time_in_hours*0.21 + 1.8))
     else if (time_in_hours <= 53.3) then
-      sst = (-0.37 * time_in_hours) + 18.0
+      T_sfc = (-0.37 * time_in_hours) + 18.0
     else if (time_in_hours <= 65.6) then
-      sst = -4 - (25*cos(time_in_hours*0.22 + 2.5))
+      T_sfc = -4 - (25*cos(time_in_hours*0.22 + 2.5))
     else
-      sst = 4.4
+      T_sfc = 4.4
     end if
 
-    sst     = sst + 273.15
-    sstheta = sst * ((p0 / psfc)**(Rd/Cp))
+    T_sfc     = T_sfc + 273.15
+    sstheta = T_sfc * ((p0 / p_sfc)**(Rd/Cp))
 
     ! Compute heat and moisture fluxes
-    wpthlp_sfc = compute_wpthlp_sfc( Cz, ubar, thlm, sst, exner_sfc ) 
-    wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm, sat_mixrat_liq(psfc,sst) ) * 0.025
+    wpthlp_sfc = compute_wpthlp_sfc( Cz, ubar, thlm, T_sfc, exner_sfc ) 
+    wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc) ) * 0.025
 
     ! 2.5% factor from
     ! GABLS2 specification

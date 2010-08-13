@@ -90,7 +90,7 @@
   real, parameter :: & 
 !     .  grav0 = 9.8,     ! m/s
 !     .  D     = 5.8e-6,  ! 1/s
-  psfc  = 101000.   ! Pa
+  p_sfc  = 101000.   ! Pa
 !     .  pinv  = 85000.   ! Pa; ditto
 
   ! Local constants, LW radiation (from DYCOMS II-RF01)
@@ -300,7 +300,7 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
   ! Compute large-scale tendencies
   do i=1,gr%nnzp
    thlm_forcing(i) = ((dTdt_hoc_grid(i) + vertT_hoc_grid(i)) & 
-                    * ((psfc/p_in_Pa(i)) ** (Rd/Cp))) & 
+                    * ((p_sfc/p_in_Pa(i)) ** (Rd/Cp))) & 
                     / 3600. ! K/s
    rtm_forcing(i)  = (dqdt_hoc_grid(i)+vertq_hoc_grid(i)) & 
     / 1000. / 3600. ! g/kg/hr -> kg/kg/s

@@ -55,8 +55,8 @@ time_spinup  = 1000000.0 ! End of spin-up period [seconds since midnight on star
 dtmain    = 60.0   ! Model timestep [s]
 dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
 
-Tsfc = 299.27      ! Temperature at model base           [K]
-psfc = 971.5103e2  ! Pressure at model base              [Pa]
+T_sfc = 299.27      ! Temperature at model base           [K]
+p_sfc = 971.5103e2  ! Pressure at model base              [Pa]
 
 fcor = 0.          ! Coriolis parameter                  [s^-1]
 T0   = 300.        ! Reference temperature (usually 300) [K]

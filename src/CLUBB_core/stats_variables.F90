@@ -754,7 +754,8 @@ module stats_variables
     iup2_vert_avg, &
     ivp2_vert_avg, &
     irtp2_vert_avg, &
-    ithlp2_vert_avg
+    ithlp2_vert_avg, &
+    iT_sfc         ! kcwhite
 
   integer, public :: & 
     iwp23_matrix_condt_num, & 
@@ -778,7 +779,7 @@ module stats_variables
 !$omp   irain, irain_flux, irrainm_sfc, &
 !$omp   iwpthlp_sfc, iwprtp_sfc, iupwp_sfc, ivpwp_sfc, &
 !$omp   ithlm_vert_avg, irtm_vert_avg, ium_vert_avg, ivm_vert_avg, &
-!$omp   iwp2_vert_avg, iup2_vert_avg, ivp2_vert_avg, irtp2_vert_avg, ithlp2_vert_avg, &
+!$omp   iwp2_vert_avg, iup2_vert_avg, ivp2_vert_avg, irtp2_vert_avg, ithlp2_vert_avg, iT_sfc, &
 !$omp   iwp23_matrix_condt_num, irtm_matrix_condt_num, ithlm_matrix_condt_num, &
 !$omp   irtp2_matrix_condt_num, ithlp2_matrix_condt_num, irtpthlp_matrix_condt_num, &
 !$omp   iup2_vp2_matrix_condt_num, iwindm_matrix_condt_num, &
@@ -835,4 +836,3 @@ module stats_variables
 !$omp   threadprivate(radscr16, radscr17)
 
 end module stats_variables
-

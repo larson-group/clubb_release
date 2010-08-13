@@ -188,7 +188,7 @@ module atex
   end subroutine atex_tndcy
 
   !======================================================================
-  subroutine atex_sfclyr( ubar, Tsfc, & 
+  subroutine atex_sfclyr( ubar, T_sfc, & 
                           thlm_sfc, rtm_sfc, exner_sfc, & 
                           wpthlp_sfc, wprtp_sfc, ustar )
   ! Description:
@@ -206,7 +206,7 @@ module atex
   ! Input variables
   real, intent(in) ::  &
     ubar,    & ! mean sfc wind speed                           [m/s]
-    Tsfc,    & ! Surface temperature                           [K]
+    T_sfc,    & ! Surface temperature                           [K]
     thlm_sfc,& ! theta_l at first model layer                  [K]
     rtm_sfc, & ! Total water mixing ratio at first model layer [kg/kg]
     exner_sfc  ! Exner function                                [-]
@@ -226,7 +226,7 @@ module atex
   C_10 = 0.0013
   ustar = 0.3
 
-  wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, Tsfc, exner_sfc )
+  wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, T_sfc, exner_sfc )
   wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, 0.0198293 )
 
   return

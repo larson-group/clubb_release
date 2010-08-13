@@ -60,7 +60,7 @@ module mpace_b
     real, parameter :: & 
       grav0 = 9.8,     & ! m/s
       D     = 5.8e-6,  & ! 1/s
-      psfc  = 101000., & ! Pa
+      p_sfc  = 101000., & ! Pa
       pinv  = 85000.     ! Pa; ditto
 
     ! Local constants, LW radiation (from DYCOMS II-RF01)
@@ -157,7 +157,7 @@ module mpace_b
 
     ! Compute vertical motion
     do i=2,gr%nnzp
-      velocity_omega = min( D*(psfc-p_in_Pa(i)), D*(psfc-pinv) )
+      velocity_omega = min( D*(p_sfc-p_in_Pa(i)), D*(p_sfc-pinv) )
       wm_zt(i) = -velocity_omega * Rd * thvm(i) / p_in_Pa(i) / grav0
     end do
 
@@ -176,10 +176,10 @@ module mpace_b
 
     ! Compute large-scale tendencies
     do i=1,gr%nnzp
-     t_tendency = min( -4.,-15.*(1.-((psfc-p_in_Pa(i))/21818.)) ) ! K/day
-     thlm_forcing(i) = (t_tendency * ((psfc/p_in_Pa(i)) ** (Rd/Cp)))  & 
+     t_tendency = min( -4.,-15.*(1.-((p_sfc-p_in_Pa(i))/21818.)) ) ! K/day
+     thlm_forcing(i) = (t_tendency * ((p_sfc/p_in_Pa(i)) ** (Rd/Cp)))  & 
                       / 86400. ! K/s
-     rtm_forcing(i)  = min( 0.164,-3*(1-((psfc-p_in_Pa(i))/15171.)) ) /  & 
+     rtm_forcing(i)  = min( 0.164,-3*(1-((p_sfc-p_in_Pa(i))/15171.)) ) /  & 
                    1000. / 86400. ! g/kg/day -> kg/kg/s
     end do
 

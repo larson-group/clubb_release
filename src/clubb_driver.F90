@@ -140,7 +140,7 @@ module clubb_driver
       Frad_LW_up, Frad_SW_down, Frad_LW_down
 
     use variables_prognostic_module, only:  & 
-      Tsfc, psfc, SE, LE, thlm, rtm,     & ! Variable(s)
+      T_sfc, p_sfc, SE, LE, thlm, rtm,     & ! Variable(s)
       um, vm, wp2, rcm, wm_zt, wm_zm, exner, &
       p_in_Pa, rho_zm, upwp, vpwp, wpthlp, &
       wprcp, rho, wprtp, wpthlp_sfc, wprtp_sfc, &
@@ -361,7 +361,7 @@ module clubb_driver
       day, month, year, rlat, rlon, sfc_elevation, & 
       time_initial, time_final, time_spinup, & 
       dtmain, dtclosure, & 
-      sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge, & 
+      sfctype, T_sfc, p_sfc, SE, LE, fcor, T0, ts_nudge, & 
       forcings_file_path, l_t_dependent, l_input_xpwp_sfc, &
       l_use_default_std_atmosphere, &
       saturation_formula, &
@@ -406,8 +406,8 @@ module clubb_driver
     dtclosure = 30.
 
     sfctype  = 0
-    tsfc     = 288.
-    psfc     = 1000.e2
+    T_sfc     = 288.
+    p_sfc     = 1000.e2
     SE       = 0.
     LE       = 0.
     fcor     = 1.e-4
@@ -595,8 +595,8 @@ module clubb_driver
       call write_text( "dtclosure = ", real( dtclosure ), l_write_to_file, iunit )
 
       call write_text( "sfctype = ", sfctype, l_write_to_file, iunit )
-      call write_text( "tsfc = ", tsfc, l_write_to_file, iunit )
-      call write_text( "psfc = ", psfc, l_write_to_file, iunit )
+      call write_text( "T_sfc = ", T_sfc, l_write_to_file, iunit )
+      call write_text( "p_sfc = ", p_sfc, l_write_to_file, iunit )
       call write_text( "SE = ", SE, l_write_to_file, iunit )
       call write_text( "LE = ", LE, l_write_to_file, iunit )
       call write_text( "fcor = ", fcor, l_write_to_file, iunit )
@@ -760,7 +760,7 @@ module clubb_driver
       iinit = 1
 
       call initialize_clubb &
-           ( iunit, trim( forcings_file_path ), psfc, zm_init, & ! Intent(in)
+           ( iunit, trim( forcings_file_path ), p_sfc, zm_init, & ! Intent(in)
              thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,    & ! Intent(inout)
              wm_zt, wm_zm, em, exner,                          & ! Intent(inout)
              tau_zt, tau_zm, thvm, p_in_Pa,                    & ! Intent(inout)
@@ -780,7 +780,7 @@ module clubb_driver
       ! There for it should be executed prior to a restart. The restart should overwrite
       ! the initial sounding anyway.
       call initialize_clubb &
-           ( iunit, trim( forcings_file_path ), psfc, zm_init, & ! Intent(in)
+           ( iunit, trim( forcings_file_path ), p_sfc, zm_init, & ! Intent(in)
              thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,    & ! Intent(inout)
              wm_zt, wm_zm, em, exner,                          & ! Intent(inout)
              tau_zt, tau_zm, thvm, p_in_Pa,                    & ! Intent(inout)
@@ -1065,7 +1065,7 @@ module clubb_driver
 
   !-----------------------------------------------------------------------
   subroutine initialize_clubb &
-             ( iunit, forcings_file_path, psfc, zm_init, &
+             ( iunit, forcings_file_path, p_sfc, zm_init, &
                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
                tau_zt, tau_zm, thvm, p_in_Pa, &
@@ -1171,7 +1171,7 @@ module clubb_driver
     character(len=*), intent(in) :: &
       forcings_file_path ! Path to the .dat files containing the forcings
 
-    real, intent(in) :: psfc, zm_init ! Pressure at the surface [Pa]
+    real, intent(in) :: p_sfc, zm_init ! Pressure at the surface [Pa]
 
     ! Output
     real, dimension(gr%nnzp), intent(inout) ::  & 
@@ -1242,7 +1242,7 @@ module clubb_driver
     err_code = clubb_no_error
 
     ! Read sounding information
-    call read_sounding( iunit, runtype, psfc, zm_init, &          ! Intent(in) 
+    call read_sounding( iunit, runtype, p_sfc, zm_init, &          ! Intent(in) 
                         thlm, theta_type, rtm, um, vm, ug, vg,  & ! Intent(out)
                         alt_type, p_in_Pa, subs_type, wm_zt, &    ! Intent(out)
                         rtm_sfc, thlm_sfc, sclrm, edsclrm, &      ! Intent(out)
@@ -1255,7 +1255,7 @@ module clubb_driver
 
     else
 
-      call convert_snd2extend_atm( n_snd_var, psfc, zm_init, sclr_dim,    & ! Intent(in)
+      call convert_snd2extend_atm( n_snd_var, p_sfc, zm_init, sclr_dim,    & ! Intent(in)
                                 sounding_retVars, sclr_sounding_retVars )   ! Intent(in)
     end if
 
@@ -1270,7 +1270,7 @@ module clubb_driver
 
     ! Covert sounding input to CLUBB compatible input
     call initialize_clubb_variables( alt_type, theta_type,         & ! Intent(in)
-                                     psfc, rtm_sfc, rtm, & !thlm_sfc, & ! Intent(in)
+                                     p_sfc, rtm_sfc, rtm, & !thlm_sfc, & ! Intent(in)
                                      thlm, p_in_Pa,                & ! Intent(inout)
                                      exner, rho, rho_zm,           & ! Intent(out)
                                      rcm, thvm, rho_ds_zm,         & ! Intent(out)
@@ -1727,7 +1727,7 @@ module clubb_driver
   end subroutine initialize_clubb
   !-----------------------------------------------------------------------------
   subroutine initialize_clubb_variables( alt_type, theta_type, &
-                                         psfc, rtm_sfc, rtm, & !thlm_sfc, &
+                                         p_sfc, rtm_sfc, rtm, & !thlm_sfc, &
                                          thlm, p_in_Pa, &
                                          exner, rho, rho_zm, &
                                          rcm, thvm, rho_ds_zm, &
@@ -1800,7 +1800,7 @@ module clubb_driver
       theta_type    ! Type of temperature sounding (temp., theta, or theta_l)
 
     real, intent(in) ::  &
-      psfc,     & ! Surface pressure                              [Pa]
+      p_sfc,     & ! Surface pressure                              [Pa]
       rtm_sfc !,& ! Surface total water mixing ratio              [kg/kg]
 !     thlm_sfc    ! Surface liquid water potential temperature    [K]
 
@@ -1868,7 +1868,7 @@ module clubb_driver
 
     ! Calculate dry surface pressure from surface pressure and surface water
     ! vapor mixing ratio, such that p_d = p / [ 1 + (R_v/R_d)*r_v ].
-    pd_sfc = psfc / ( 1.0 + ep2 * rv_sfc )
+    pd_sfc = p_sfc / ( 1.0 + ep2 * rv_sfc )
 
 
     select case( trim( alt_type ) )
@@ -1925,7 +1925,7 @@ module clubb_driver
 
       ! Compute approximate pressure, exner, and density using an approximate
       ! value of theta_v.
-      call hydrostatic( thvm, psfc,          & ! Intent(in)
+      call hydrostatic( thvm, p_sfc,          & ! Intent(in)
                         p_in_Pa, p_in_Pa_zm, & ! Intent(out)
                         exner, exner_zm,     & ! Intent(out)
                         rho, rho_zm          ) ! Intent(out)
@@ -2060,7 +2060,7 @@ module clubb_driver
 
       ! Recompute more accurate initial exner function, pressure, and density
       ! using thvm, which includes the effects of water vapor and cloud water.
-      call hydrostatic( thvm, psfc,          & ! Intent(in)
+      call hydrostatic( thvm, p_sfc,          & ! Intent(in)
                         p_in_Pa, p_in_Pa_zm, & ! Intent(out)
                         exner, exner_zm,     & ! Intent(out)
                         rho, rho_zm          ) ! Intent(out)
@@ -2179,16 +2179,16 @@ module clubb_driver
       ! Sounding is listed in terms of pressure coordinates.
 
       ! Set the pressure at the lowest thermodynamic level (k=1), which is below
-      ! the model lower boundary, to psfc, which is the pressure at the model
+      ! the model lower boundary, to p_sfc, which is the pressure at the model
       ! lower boundary (or surface), which is located at momentum level 1.
       ! This is consistent with what is done in subroutine hydrostatic, which is
       ! called when the sounding is given in terms of altitude rather than
       ! pressure.  This is also a good way for the code to keep track of the
       ! surface pressure.
-      p_in_Pa(1) = psfc
+      p_in_Pa(1) = p_sfc
 
       ! Set the value of exner.
-      exner(1) = ( psfc/p0 )**kappa
+      exner(1) = ( p_sfc/p0 )**kappa
       do k = 2, gr%nnzp, 1
         exner(k) = ( p_in_Pa(k) / p0 )**kappa
       enddo
@@ -2370,7 +2370,7 @@ module clubb_driver
 
       ! Since momentum level 1 is at the surface (or at the model lower
       ! boundary), the pressure is the surface pressure.
-      p_in_Pa_zm(1) = psfc
+      p_in_Pa_zm(1) = p_sfc
 
       ! Calculate exner at momentum levels from pressure at momentum levels.
       exner_zm = ( p_in_Pa_zm / p0 )**kappa
@@ -2777,8 +2777,8 @@ module clubb_driver
     use variables_prognostic_module, only: &
       rtm_forcing, thlm_forcing,  & ! Variable(s)
       wm_zt, wm_zm, rho, rtm, thlm, p_in_Pa, & 
-      exner, rcm, rho_zm, um, psfc, vm, & 
-      upwp_sfc, vpwp_sfc, Tsfc, & 
+      exner, rcm, rho_zm, um, p_sfc, vm, & 
+      upwp_sfc, vpwp_sfc, T_sfc, & 
       wpthlp_sfc, wprtp_sfc, &
 #ifdef UNRELEASED_CODE
     um_forcing, vm_forcing, &
@@ -2795,7 +2795,8 @@ module clubb_driver
       iustar, &
       isoil_heat_flux, &
       l_stats_samp, &
-      sfc
+      sfc, &
+      iT_sfc
 
     use stats_type, only: stat_update_var_pt ! Procedure(s)
 
@@ -3113,10 +3114,10 @@ module clubb_driver
       case ( "rico" )
         l_set_sclr_sfc_rtm_thlm = .true.
         call rico_sfclyr( um(2), vm(2), thlm(2), rtm(2),  &           ! Intent(in)
-                          ! 299.8 K is the RICO SST;
+                          ! 299.8 K is the RICO T_sfc;
                           ! 101540 Pa is the sfc pressure.
                           !gr%zt(2), 299.8, 101540.,  &               ! Intent(in)
-                          gr%zt(2), Tsfc, psfc, exner(1), &           ! Intent(in)
+                          gr%zt(2), T_sfc, p_sfc, exner(1), &           ! Intent(in)
                           upwp_sfc, vpwp_sfc, wpthlp_sfc, &           ! Intent(out) 
                           wprtp_sfc, ustar )                          ! Intent(out)
 
@@ -3176,7 +3177,7 @@ module clubb_driver
         l_compute_momentum_flux = .true.
         l_set_sclr_sfc_rtm_thlm = .true.
         l_fixed_flux            = .true.
-        call fire_sfclyr( ubar, Tsfc, psfc,            &  ! Intent(in)
+        call fire_sfclyr( ubar, T_sfc, p_sfc,            &  ! Intent(in)
                           thlm(2), rtm(2), exner(1),   &  ! Intent(in)
                           wpthlp_sfc, wprtp_sfc, ustar )  ! Intent(out)
 
@@ -3190,7 +3191,7 @@ module clubb_driver
         l_fixed_flux            = .true.
         call cloud_feedback_sfclyr( runtype, sfctype,            &  ! Intent(in)
                                     thlm(2), rtm(2), gr%zt(2),   &  ! Intent(in)
-                                    ubar, psfc, Tsfc,            &  ! Intent(in)
+                                    ubar, p_sfc, T_sfc,            &  ! Intent(in)
                                     wpthlp_sfc, wprtp_sfc, ustar)   ! Intent(out)
 
 #endif
@@ -3228,7 +3229,7 @@ module clubb_driver
       case ( "atex" )
         l_compute_momentum_flux = .true.
         l_set_sclr_sfc_rtm_thlm = .true.
-        call atex_sfclyr( ubar, Tsfc,                  &  ! Intent(in)
+        call atex_sfclyr( ubar, T_sfc,                  &  ! Intent(in)
                           thlm(2), rtm(2), exner(1),   &  ! Intent(in)
                           wpthlp_sfc, wprtp_sfc, ustar )  ! Intent(out)
   
@@ -3237,8 +3238,8 @@ module clubb_driver
       case ( "twp_ice" )
         l_compute_momentum_flux = .true.
         l_set_sclr_sfc_rtm_thlm = .true.
-        call twp_ice_sfclyr( gr%zt(2), Tsfc, exner(1), thlm(2), &    ! Intent(in)
-                              ubar, rtm(2), psfc,               &    ! Intent(in)
+        call twp_ice_sfclyr( gr%zt(2), T_sfc, exner(1), thlm(2), &    ! Intent(in)
+                              ubar, rtm(2), p_sfc,               &    ! Intent(in)
                               wpthlp_sfc, wprtp_sfc, ustar      )    ! Intent(out)
 
 #endif
@@ -3251,7 +3252,7 @@ module clubb_driver
       case ( "dycoms2_rf01" )
         l_compute_momentum_flux = .true.
         l_set_sclr_sfc_rtm_thlm = .true.
-        call dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc,         &  ! Intent(in)
+        call dycoms2_rf01_sfclyr( sfctype, T_sfc, p_sfc,         &  ! Intent(in)
                                   exner(1), ubar,              &  ! Intent(in)
                                   thlm(2), rtm(2), rho_zm(1),  &  ! Intent(in)
                                   wpthlp_sfc, wprtp_sfc, ustar )  ! Intent(out)
@@ -3264,9 +3265,9 @@ module clubb_driver
         l_compute_momentum_flux = .true.
         l_set_sclr_sfc_rtm_thlm = .true.
         call gabls2_sfclyr( time_current, time_initial, &             ! Intent(in)
-                            gr%zt(2), psfc, &                         ! Intent(in)
+                            gr%zt(2), p_sfc, &                         ! Intent(in)
                             ubar, thlm(2), rtm(2), exner(1), &        ! Intent(in)   
-                            wpthlp_sfc, wprtp_sfc, ustar )            ! Intent(out)
+                            wpthlp_sfc, wprtp_sfc, ustar, T_sfc )      ! Intent(out)
       case ( "mpace_a" )
         l_compute_momentum_flux = .true.
         l_set_sclr_sfc_rtm_thlm = .true.
@@ -3326,7 +3327,7 @@ module clubb_driver
     ! Compute Surface
     !---------------------------------------------------------------
     if ( l_soil_veg ) then
-      wpthep = wpthlp_sfc + (Lv/Cp) * ((p0/psfc)**kappa) * wprtp_sfc
+      wpthep = wpthlp_sfc + (Lv/Cp) * ((p0/p_sfc)**kappa) * wprtp_sfc
 
       call advance_soil_veg( real( dt ), rho_zm(1), &
                              Frad_SW_down(1) - Frad_SW_up(1), Frad_SW_down(1), &
@@ -3359,6 +3360,9 @@ module clubb_driver
 
       call stat_update_var_pt( isoil_heat_flux, 1, soil_heat_flux, & ! intent(in)
                                sfc )           ! intent(inout)
+      call stat_update_var_pt( iT_sfc, 1, T_sfc, & ! intent(in)
+                               sfc )           ! intent(inout)
+
     endif
 
 

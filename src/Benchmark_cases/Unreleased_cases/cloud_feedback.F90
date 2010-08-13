@@ -17,7 +17,7 @@ module cloud_feedback
   !----------------------------------------------------------------------
   subroutine cloud_feedback_sfclyr( runtype, sfctype,                &
                                     thlm_sfc, rtm_sfc, lowest_level, &
-                                    ubar, psfc, Tsfc,                &
+                                    ubar, p_sfc, T_sfc,                &
                                     wpthlp_sfc, wprtp_sfc, ustar )
 
   !       Description:
@@ -46,8 +46,8 @@ module cloud_feedback
   real, intent(in) ::  & 
     thlm_sfc,  & ! thlm at (2)         [m/s]
     rtm_sfc,   & ! rtm at (2)          [kg/kg]
-    Tsfc,      & ! Temperature         [K]
-    psfc,      & ! Surface pressure    [Pa]
+    T_sfc,      & ! Temperature         [K]
+    p_sfc,      & ! Surface pressure    [Pa]
     ubar,      & ! This is root (u^2 + v^2), per ATEX and RICO spec.
     lowest_level ! This is z at the lowest above-ground model level.  [m]
 
@@ -73,15 +73,15 @@ module cloud_feedback
     
   !--------------BEGIN CODE---------------------
 
-  ! Calculate exner_sfc based on psfc.
-  exner_sfc = ( psfc / p0 )**kappa
+  ! Calculate exner_sfc based on p_sfc.
+  exner_sfc = ( p_sfc / p0 )**kappa
 
   ! Just set ustar = 0.3
   ustar = 0.3
 
   ! Get rid of a compiler warning
   if( runtype == "anything" .or. thlm_sfc == 1 .or. rtm_sfc == 1 .or. &
-          exner_sfc == 1 .or. psfc == 1 .or. Tsfc == 1) then
+          exner_sfc == 1 .or. p_sfc == 1 .or. T_sfc == 1) then
       ustar = 0.3
   end if
 
@@ -90,18 +90,18 @@ module cloud_feedback
   ! wprtp = value_from_forcings_file_in_W_m**2 / ( rho_sfc_flux * Lv )
   ! wpthlp = value_from_forcings_file_in_W_m**2 / ( rho_sfc_flux * Cp )
 
-  !lhflx(1) = 0.001 * ubar * rho_sfc_flux * Lv * ( sat_mixrat_liq( psfc, Tsfc ) - & 
-  !                                                sat_mixrat_liq( psfc, T_in_K ) * 0.8 )
-  !shflx(1) = 0.001 * ubar * rho_sfc_flux * Cp * ( Tsfc - T_in_K )
+  !lhflx(1) = 0.001 * ubar * rho_sfc_flux * Lv * ( sat_mixrat_liq( p_sfc, T_sfc ) - & 
+  !                                                sat_mixrat_liq( p_sfc, T_in_K ) * 0.8 )
+  !shflx(1) = 0.001 * ubar * rho_sfc_flux * Cp * ( T_sfc - T_in_K )
 
   ! If this is the S6 case, fudge the values of the fluxes using values from the forcings
   !if ( runtype == "cloud_feedback_s6" .or. runtype == "cloud_feedback_s6_p2k" ) then
   !    wprtp_sfc = lhflx(1) / ( 1.0 * Lv )
   !    wpthlp_sfc = shflx(1) / ( 1.0 * Cp )
   !else
-  !    wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, sat_mixrat_liq( psfc, Tsfc ) )
+  !    wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, T_sfc ) )
   !    wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, & 
-  !                                     Tsfc, exner_sfc )
+  !                                     T_sfc, exner_sfc )
   !end if
 
   !
@@ -113,9 +113,9 @@ module cloud_feedback
          ((log(20/z0))/(log(lowest_level/z0)))
  
   if ( sfctype == 1 ) then
-    wprtp_sfc = compute_wprtp_sfc( Cq, ubar, rtm_sfc, sat_mixrat_liq( psfc, Tsfc ) )
+    wprtp_sfc = compute_wprtp_sfc( Cq, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, T_sfc ) )
     wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm_sfc, & 
-                                     Tsfc, exner_sfc )
+                                     T_sfc, exner_sfc )
 
   end if
 

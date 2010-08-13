@@ -61,10 +61,10 @@ sfctype = 1      ! Select surface scheme (cases without specified surface fluxes
                  !       as defined by SE and LE, respectively.
                  ! 1 ==> determine surface sensible and latent heat fluxes
                  !       through a bulk formula that uses the given surface
-                 !       temperature (Tsfc) and assumes over ocean.
+                 !       temperature (T_sfc) and assumes over ocean.
 
-Tsfc = 300.76       ! (25.6 C) Temperature at model base              [K]
-psfc = 101407.8     ! (1014.1 mb) Pressure at model base              [Pa]
+T_sfc = 300.76       ! (25.6 C) Temperature at model base              [K]
+p_sfc = 101407.8     ! (1014.1 mb) Pressure at model base              [Pa]
 
 ! LE and SE were given in the case specification as lhflx and shflx in W/m^2. To convert to the correct
 ! units, use this formula:

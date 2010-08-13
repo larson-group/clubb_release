@@ -178,7 +178,7 @@ module dycoms2_rf01
   end subroutine dycoms2_rf01_tndcy
   
   !======================================================================
-  subroutine dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc,  & 
+  subroutine dycoms2_rf01_sfclyr( sfctype, T_sfc, p_sfc,  & 
                                     exner_sfc, ubar, & 
                                     thlm_sfc, rtm_sfc, rho_zm_sfc, &
                                     wpthlp_sfc, wprtp_sfc, ustar )
@@ -201,8 +201,8 @@ module dycoms2_rf01
   integer, intent(in) :: &
     sfctype
   real, intent(in) ::  &
-    Tsfc,      & ! Surface temperature                           [K]
-    psfc,      & ! Surface pressure                              [Pa]
+    T_sfc,      & ! Surface temperature                           [K]
+    p_sfc,      & ! Surface pressure                              [Pa]
     exner_sfc, & ! Exner function                                [-]
     ubar,      & ! mean sfc wind speed                           [m/s]
     thlm_sfc,  & ! theta_l at first model layer                  [K]
@@ -233,8 +233,8 @@ module dycoms2_rf01
 
   else if ( sfctype == 1 ) then
 
-    wpthlp_sfc = compute_wpthlp_sfc( Cd, ubar, thlm_sfc, Tsfc, exner_sfc )
-    wprtp_sfc = compute_wprtp_sfc( Cd, ubar, rtm_sfc, sat_mixrat_liq( psfc, Tsfc ) )
+    wpthlp_sfc = compute_wpthlp_sfc( Cd, ubar, thlm_sfc, T_sfc, exner_sfc )
+    wprtp_sfc = compute_wprtp_sfc( Cd, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, T_sfc ) )
 
   else  ! Undefined value for sfctype
 

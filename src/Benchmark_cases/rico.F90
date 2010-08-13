@@ -74,7 +74,7 @@ module rico
       t_tendency = 0.  ! Units [K s^-1]
     end if
     ! Convert to units of [K s^-1] but potential T instead of T
-!          thlm_forcing(k) = (t_tendency * ((psfc/p(k)) ** (Rd/Cp)))
+!          thlm_forcing(k) = (t_tendency * ((p_sfc/p(k)) ** (Rd/Cp)))
     thlm_forcing(k) = (t_tendency / exner(k))
     radht(k) = 0.  !  So we don't have undefined numbers in the radht stats.  
                    !  Radht is actually rolled into t_tendency.
@@ -104,14 +104,13 @@ module rico
   if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
   if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
 
-  return
   end subroutine rico_tndcy
  !----------------------------------------------------------------------
 
 
  !----------------------------------------------------------------------
   subroutine rico_sfclyr( um_sfc, vm_sfc, thlm, rtm, &
-                          lowestlevel, sst, psfc, exner_sfc, & 
+                          lowestlevel, T_sfc, p_sfc, exner_sfc, & 
                           upwp_sfc, vpwp_sfc, wpthlp_sfc, & 
                           wprtp_sfc, ustar )
   !----------------------------------------------------------------------
@@ -165,9 +164,9 @@ module rico
     thlm,          & ! This is theta-l at the lowest above-ground model level.  
                      ! (DOES THIS NEED A CORRECTION FOR THETA-L TO THETA?)  [K]
     rtm,           & ! This is rt at the lowest above-ground model level.  [kg/kg]
+    T_sfc,          & ! This is the sea surface temperature [K].
     lowestlevel,   & ! This is z at the lowest above-ground model level.  [m]
-    sst,           & ! This is the sea surface temperature [K].
-    psfc,          & ! This is the surface pressure [Pa].
+    p_sfc,          & ! This is the surface pressure [Pa].
     exner_sfc
 
   ! Output variables
@@ -202,15 +201,15 @@ module rico
 
 ! Compute heat and moisture fluxes
   if (l_use_old_atex) then ! Use ATEX version
-    wpthlp_sfc = compute_wpthlp_sfc( Cz, ubar, thlm, sst, exner_sfc )
-    wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm, sat_mixrat_liq(psfc,sst) )
+    wpthlp_sfc = compute_wpthlp_sfc( Cz, ubar, thlm, T_sfc, exner_sfc )
+    wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc) )
   call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
                               upwp_sfc, vpwp_sfc )
   else ! Use RICO version
-    wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm, sst, exner_sfc )
-!    wprtp_sfc  = -Cz * ubar * ( .01726 - sat_mixrat_liq(psfc,sst) ) ! kg kg^-1  m s^-1
-!    wprtp_sfc  = -Cz * ubar * ( .01626 - sat_mixrat_liq(psfc,sst) ) ! kg kg^-1  m s^-1
-    wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm, sat_mixrat_liq(psfc,sst) )
+    wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm, T_sfc, exner_sfc )
+!    wprtp_sfc  = -Cz * ubar * ( .01726 - sat_mixrat_liq(p_sfc,T_sfc) ) ! kg kg^-1  m s^-1
+!    wprtp_sfc  = -Cz * ubar * ( .01626 - sat_mixrat_liq(p_sfc,T_sfc) ) ! kg kg^-1  m s^-1
+    wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc) )
     upwp_sfc   = -um_sfc * Cm * ubar  ! m^2 s^-2
     vpwp_sfc   = -vm_sfc * Cm * ubar  ! m^2 s^-2
 

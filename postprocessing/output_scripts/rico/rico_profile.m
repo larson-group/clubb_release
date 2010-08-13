@@ -25,7 +25,7 @@ function [] = rico_profile();
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Set up constants
-psfc = 101540;  % From RICO spec
+p_sfc = 101540;  % From RICO spec
 p0 = 100000;    % From standard meteorological definitions
 g0 = 9.81;      % From RICO spec
 Rd = 287;       % From RICO spec
@@ -65,7 +65,7 @@ v = [-3.8,-3.8,-3.8,-3.8,-3.8, -3.8, ...                 %
     -3.8,-3.8,-3.8,-3.8,-3.8];                           % End RICO specification
 
 % Compute surface variables
-p(1) = psfc;
+p(1) = p_sfc;
 e(1) = 611.2 * exp ((17.67 * Tc(1))/(Tc(1) + 243.5)); % Bolton Formula (Rogers & Yau 2.17) saturated at lowest level at initial time
 % check that sfc uses this formulation, not 0m qv
 %qv(1) = eps * ((e(1))/(p(1) - ((1-eps)*e(1)))); % Rogers & Yau 2.19
@@ -73,7 +73,7 @@ e(1) = 611.2 * exp ((17.67 * Tc(1))/(Tc(1) + 243.5)); % Bolton Formula (Rogers &
 w(1) = (eps*qv(1))/(eps-qv(1)); % Rogers & Yau 2.18/2.19 -> modified by Michael Falk derivation
 %Tv(1) = T(1) / (1-((e(1)/p(1))*(1-eps))); % Wallace & Hobbs 2.17
 Tv(1) = T(1)*(1 + 0.61*w(1)); % Wallace & Hobbs 2.62
-Theta(1) = T(1) * (p0/psfc)^(Rd/Cp)
+Theta(1) = T(1) * (p0/p_sfc)^(Rd/Cp)
 
 % Compute upward profile
 for i=2:max(size(z))

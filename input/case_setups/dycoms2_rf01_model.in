@@ -61,10 +61,10 @@ sfctype = 0      ! Select surface scheme (cases without specified surface fluxes
                  !       as defined by SE and LE, respectively.
                  ! 1 ==> determine surface sensible and latent heat fluxes
                  !       through a bulk formula that uses the given surface
-                 !       temperature (Tsfc) and assumes over ocean.
+                 !       temperature (T_sfc) and assumes over ocean.
 
-Tsfc = 292.5     ! Temperature at model base           [K]
-psfc = 1017.e2   ! Pressure at model base              [Pa]
+T_sfc = 292.5     ! Temperature at model base           [K]
+p_sfc = 1017.e2   ! Pressure at model base              [Pa]
 
 fcor = 7.6e-5    ! Coriolis parameter                  [s^-1]
 T0   = 300.      ! Reference temperature (usually 300) [K]

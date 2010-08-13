@@ -81,10 +81,10 @@ dtmain | real, minimum of 12 digits of precision
 dtclosure | real, minimum of 12 digits of precision
   Closure timestep [s] (must multiply evenly into dtmain).
 
-Tsfc | real, default precision
+T_sfc | real, default precision
   Temperature at model base [K].
 
-psfc | real, default precision
+p_sfc | real, default precision
   Pressure at model base [Pa].
 
 SE | real, default precision

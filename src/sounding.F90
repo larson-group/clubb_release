@@ -21,7 +21,7 @@ module sounding
 
   contains
   !------------------------------------------------------------------------
-  subroutine read_sounding( iunit, runtype, psfc, zm_init,& 
+  subroutine read_sounding( iunit, runtype, p_sfc, zm_init,& 
                             thlm, theta_type, rtm, um, vm, ugm, vgm, &
                             alt_type, press, subs_type, wm, &
                             rtm_sfc, thlm_sfc, sclrm, edsclrm, &
@@ -80,7 +80,7 @@ module sounding
 
 
     real, intent(in) :: &
-      psfc, & ! Pressure at the surface [Pa]
+      p_sfc, & ! Pressure at the surface [Pa]
       zm_init ! Height at zm(1)         [m]
 
     ! Output variables
@@ -172,7 +172,7 @@ module sounding
 
     if( l_sounding_exists ) then
       ! Read in SAM-Like <runtype>_sounding.in file
-      call read_sounding_file( iunit, runtype, nlevels, psfc, zm_init, & 
+      call read_sounding_file( iunit, runtype, nlevels, p_sfc, zm_init, & 
                                z, theta, theta_type, rt, u, v, ug, vg, &
                                alt_type, p_in_Pa, subs_type, subs, &
                                sounding_retVars )
@@ -409,7 +409,7 @@ module sounding
   end subroutine read_sounding
 
   !-------------------------------------------------------------------------------------------------
-  subroutine read_sounding_file( iunit, runtype, nlevels, psfc, zm_init, &
+  subroutine read_sounding_file( iunit, runtype, nlevels, p_sfc, zm_init, &
                                  z, theta, theta_type, rt, u, v, ug, vg, &
                                  alt_type, p_in_Pa, subs_type, subs, retVars )
     !
@@ -441,7 +441,7 @@ module sounding
     !                                         e.g. bomex
 
     real, intent(in) :: &
-      psfc, & ! Pressure at the surface [Pa]
+      p_sfc, & ! Pressure at the surface [Pa]
       zm_init ! Height at zm(1)         [m]
 
     ! Output Variable(s)
@@ -473,7 +473,7 @@ module sounding
 
     call fill_blanks_one_dim_vars( n_snd_var, retVars )
 
-    call read_z_profile( n_snd_var, nmaxsnd, retVars, psfc, zm_init, z, p_in_Pa, alt_type )
+    call read_z_profile( n_snd_var, nmaxsnd, retVars, p_sfc, zm_init, z, p_in_Pa, alt_type )
 
     call read_theta_profile( n_snd_var, nmaxsnd, retVars, theta_type, theta )
 

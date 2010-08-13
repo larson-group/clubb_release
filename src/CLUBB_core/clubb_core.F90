@@ -690,7 +690,7 @@ module clubb_core
       ! The pressure at thermodynamic level k = 1 has been set to be the surface
       ! (or model lower boundary) pressure.  Since the surface (or model lower
       ! boundary) is located at momentum level k = 1, the pressure there is
-      ! psfc, which is p_in_Pa(1).  Thus, p_in_Pa_zm(1) = p_in_Pa(1).
+      ! p_sfc, which is p_in_Pa(1).  Thus, p_in_Pa_zm(1) = p_in_Pa(1).
       p_in_Pa_zm(:) = zt2zm( p_in_Pa )
       p_in_Pa_zm(1) = P_in_Pa(1)
 

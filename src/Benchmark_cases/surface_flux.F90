@@ -152,7 +152,7 @@ module surface_flux
   end subroutine compute_ht_mostr_flux
 
 !===============================================================================
-  real function compute_wpthlp_sfc( Cd, ubar, thlm_sfc, Tsfc, exner_sfc )
+  real function compute_wpthlp_sfc( Cd, ubar, thlm_sfc, T_sfc, exner_sfc )
 !
 ! Description:
 !   This function determins the surface flux of heat.
@@ -166,12 +166,12 @@ module surface_flux
       Cd,       & ! Coefficient
       ubar,     &
       thlm_sfc, & ! Theta_l at zt(2) [K]
-      Tsfc,     & ! Surface temperature [K]
+      T_sfc,     & ! Surface temperature [K]
       exner_sfc   ! Exner function at surface [-]
 
     ! ---- Begin Code ----
 
-    compute_wpthlp_sfc = -Cd * ubar * ( thlm_sfc - Tsfc / exner_sfc )
+    compute_wpthlp_sfc = -Cd * ubar * ( thlm_sfc - T_sfc / exner_sfc )
 
     return
   end function compute_wpthlp_sfc

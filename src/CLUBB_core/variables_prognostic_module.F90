@@ -120,12 +120,12 @@ module variables_prognostic_module
 
   ! More surface data
   real, public ::  & 
-    Tsfc,  & ! surface temperature     [K]
-    psfc,  & ! surface pressure        [Pa]
+    T_sfc,  & ! surface temperature     [K]
+    p_sfc,  & ! surface pressure        [Pa]
     SE,    & ! sensible heat flux      [K/s]
     LE       ! latent heat flux        [1/s]
 
-!$omp   threadprivate(Tsfc, psfc, SE, LE)
+!$omp   threadprivate(T_sfc, p_sfc, SE, LE)
 
   ! Passive scalars
   real, target, allocatable, dimension(:,:), public :: & 

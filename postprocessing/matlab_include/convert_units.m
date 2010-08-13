@@ -27,7 +27,7 @@ classdef convert_units
             
         end
 
-        function height = pressure_in_hPa_to_height_m( T_in_K, p_in_hPa, psfc )
+        function height = pressure_in_hPa_to_height_m( T_in_K, p_in_hPa, p_sfc )
         % PRESSURE_IN_HPA_TO_HEIGHT_M Converts temperature and pressure
         % profiles into a height profile.
         %
@@ -42,7 +42,7 @@ classdef convert_units
           
           T_in_K = T_in_K .* (p_in_hPa/1000).^(convert_units.R/convert_units.Cp);
 
-	  height(1) = convert_units.R/convert_units.g0*T_in_K(1)*log( psfc/p_in_hPa(1));
+	  height(1) = convert_units.R/convert_units.g0*T_in_K(1)*log( p_sfc/p_in_hPa(1));
 	    
           for i=2:length(p_in_hPa)
 	      

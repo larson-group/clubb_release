@@ -48,7 +48,7 @@ module extend_atmosphere_module
   contains
 
   !-------------------------------------------------------------------------------------------------
-  subroutine convert_snd2extend_atm( n_snd_var, psfc, zm_init, n_sclr_var, &
+  subroutine convert_snd2extend_atm( n_snd_var, p_sfc, zm_init, n_sclr_var, &
                                   sounding_profiles, sclr_sounding_profiles )
     !
     !  Description: This subroutine converts information retrieved from the
@@ -78,7 +78,7 @@ module extend_atmosphere_module
 
     integer, intent(in) :: n_sclr_var  ! Number of variables from sclr_sounding [-]
 
-    real, intent(in) :: psfc  ! Pressure at the surface [Pa]
+    real, intent(in) :: p_sfc  ! Pressure at the surface [Pa]
 
     real, intent(in) :: zm_init ! Height at zm(1) [m]
 
@@ -126,7 +126,7 @@ module extend_atmosphere_module
 
     ! Either convert to pressure or from pressure
 
-    call read_z_profile( n_snd_var, extend_atmos_dim, sounding_profiles, psfc, zm_init, &
+    call read_z_profile( n_snd_var, extend_atmos_dim, sounding_profiles, p_sfc, zm_init, &
                          alt , p_in_Pa, alt_type )
 
     extend_alt = alt
@@ -144,7 +144,7 @@ module extend_atmosphere_module
     extend_T_in_K = theta
 
     if( theta_type /= temperature_name ) then
-      exner(1) = ( psfc/p0 ) ** kappa
+      exner(1) = ( p_sfc/p0 ) ** kappa
       do i = 2, extend_atmos_dim
         exner(i) = (p_in_Pa(i)/p0) ** kappa
       end do

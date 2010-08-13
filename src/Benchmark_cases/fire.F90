@@ -98,7 +98,7 @@ module fire
   end subroutine fire_tndcy
 
   !======================================================================
-  subroutine fire_sfclyr( ubar, Tsfc, psfc, & 
+  subroutine fire_sfclyr( ubar, T_sfc, p_sfc, & 
                           thlm_sfc, rtm_sfc, exner_sfc, & 
                           wpthlp_sfc, wprtp_sfc, ustar )
                                           
@@ -118,8 +118,8 @@ module fire
   ! Input Variables
   real, intent(in) ::  & 
     ubar,    & ! mean sfc wind speed                           [m/s]
-    Tsfc,    & ! Surface temperature                           [K]
-    psfc,    & ! Surface pressure                              [Pa]
+    T_sfc,    & ! Surface temperature                           [K]
+    p_sfc,    & ! Surface pressure                              [Pa]
     thlm_sfc,& ! theta_l at first model layer                  [K]
     rtm_sfc, & ! Total water mixing ratio at first model layer [kg/kg]
     exner_sfc
@@ -140,8 +140,8 @@ module fire
 
   ustar = 0.3
 
-  wpthlp_sfc = compute_wpthlp_sfc ( Cz, ubar, thlm_sfc, Tsfc, exner_sfc )
-  wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm_sfc, sat_mixrat_liq( psfc, Tsfc ) )
+  wpthlp_sfc = compute_wpthlp_sfc ( Cz, ubar, thlm_sfc, T_sfc, exner_sfc )
+  wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, T_sfc ) )
 
   return
   end subroutine fire_sfclyr

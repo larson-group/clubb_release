@@ -29,6 +29,6 @@ vars_sfc =
 'zb', 'zi', 'rain', 'rain_flux', 'rrainm_sfc',
 'wpthlp_sfc', 'wprtp_sfc', 'upwp_sfc', 'vpwp_sfc',
 'thlm_vert_avg', 'rtm_vert_avg', 'um_vert_avg', 'vm_vert_avg',
-'wp2_vert_avg', 'up2_vert_avg', 'vp2_vert_avg', 'rtp2_vert_avg', 'thlp2_vert_avg',
+'wp2_vert_avg', 'up2_vert_avg', 'vp2_vert_avg', 'rtp2_vert_avg', 'thlp2_vert_avg', 'T_sfc',
 ''
 /

@@ -17,7 +17,7 @@ module hydrostatic_module
   contains
 
 !===============================================================================
-  subroutine hydrostatic( thvm, psfc, &
+  subroutine hydrostatic( thvm, p_sfc, &
                           p_in_Pa, p_in_Pa_zm, &
                           exner, exner_zm, &
                           rho, rho_zm )
@@ -96,7 +96,7 @@ module hydrostatic_module
 
     ! Input Variables
     real, intent(in) :: &
-      psfc    ! Pressure at the surface                     [Pa]
+      p_sfc    ! Pressure at the surface                     [Pa]
 
     real, intent(in), dimension(gr%nnzp) ::  & 
       thvm    ! Virtual potential temperature               [K]
@@ -130,8 +130,8 @@ module hydrostatic_module
     ! index 1.  Since thermodynamic level 1 is below the surface, it is
     ! disregarded, and the value of exner(1) corresponds to surface value, which
     ! is actually at momentum level 1.
-    exner(1) = ( psfc/p0 )**kappa
-    exner_zm(1) = ( psfc/p0 )**kappa
+    exner(1) = ( p_sfc/p0 )**kappa
+    exner_zm(1) = ( p_sfc/p0 )**kappa
 
     ! Consider the value of exner at thermodynamic level (2) to be based on
     ! a constant thvm between thermodynamic level (2) and momentum level (1),
@@ -213,7 +213,7 @@ module hydrostatic_module
   end subroutine hydrostatic
 
 !===============================================================================
-  subroutine inverse_hydrostatic( psfc, zm_init, nlevels, thvm, exner, &
+  subroutine inverse_hydrostatic( p_sfc, zm_init, nlevels, thvm, exner, &
                                   z )
 
     ! Description:
@@ -235,7 +235,7 @@ module hydrostatic_module
 
     ! Input Variables
     real, intent(in) ::  &
-      psfc,    & ! Pressure at the surface      [Pa]
+      p_sfc,    & ! Pressure at the surface      [Pa]
       zm_init    ! Altitude at the surface      [m]
 
     integer, intent(in) ::  &
@@ -304,11 +304,11 @@ module hydrostatic_module
     ! Find the actual (above ground) altitude of the sounding levels from the
     ! reference altitudes.
 
-    ! The pressure at the surface (or model lower boundary), psfc, is found at
+    ! The pressure at the surface (or model lower boundary), p_sfc, is found at
     ! the altitude of the surface (or model lower boundary), zm_init.
 
     ! Find the value of exner at the surface from the pressure at the surface.
-    exner_sfc = ( psfc / p0 )**kappa
+    exner_sfc = ( p_sfc / p0 )**kappa
 
     ! Find the value of exner_sfc compared to the values of exner in the exner
     ! sounding profile.

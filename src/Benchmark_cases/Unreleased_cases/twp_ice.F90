@@ -15,8 +15,8 @@ module twp_ice
   contains
 
   !----------------------------------------------------------------------
-  subroutine twp_ice_sfclyr( z, sst, exner_sfc, thlm_sfc, & 
-                              ubar, rtm, psfc,  & 
+  subroutine twp_ice_sfclyr( z, T_sfc, exner_sfc, thlm_sfc, & 
+                              ubar, rtm, p_sfc,  & 
                               wpthlp_sfc, wprtp_sfc, ustar )
     !       Description:
     !       This subroutine computes surface fluxes of horizontal momentum,
@@ -43,12 +43,12 @@ module twp_ice
 
     real, intent(in) ::  & 
       z,             & ! Height at zt=2      [s] 
-      sst,           & ! Sea surface temp    [K]
+      T_sfc,          & ! Sea surface temp    [K]
       exner_sfc,     & ! Exner function at (2) 
       ubar,          & ! This is root (u^2 + v^2), per ATEX and RICO spec.
       thlm_sfc,      & ! thlm at (2)         [m/s]
       rtm,           & ! rt at (2)           [kg/kg]
-      psfc             ! surface pressure    [Pa]
+      p_sfc             ! surface pressure    [Pa]
 
     ! Output variables
     real, intent(out) ::  & 
@@ -75,8 +75,8 @@ module twp_ice
     Cq   = C_q_20 * ((log(20/z0))/(log(z/z0))) * & 
            ((log(20/z0))/(log(z/z0)))
 
-    wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm_sfc, sst, exner_sfc )
-    wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm, sat_mixrat_liq(psfc,sst) )
+    wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm_sfc, T_sfc, exner_sfc )
+    wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc) )
     !upwp_sfc   = -um_sfc * Cm * ubar  ! m^2 s^-2
     !vpwp_sfc   = -vm_sfc * Cm * ubar  ! m^2 s^-2
 

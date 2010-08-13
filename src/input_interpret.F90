@@ -12,7 +12,7 @@ module input_interpret
   contains
 
   !------------------------------------------------------------------------------
-  subroutine read_z_profile( nvar, nsize, retVars, psfc, zm_init, z, p_in_Pa, alt_type)
+  subroutine read_z_profile( nvar, nsize, retVars, p_sfc, zm_init, z, p_in_Pa, alt_type)
     !
     !  Description: Searches for the variable specified by either 'z[m]' or
     !  'Press[Pa]' in the collection of retVars. If the subroutine finds the
@@ -63,7 +63,7 @@ module input_interpret
     !                                                                being searched
 
     real, intent(in) :: &
-      psfc, &         ! Pressure at the surface [Pa]
+      p_sfc, &         ! Pressure at the surface [Pa]
       zm_init         ! Height at zm(1)         [m]
 
     ! Output Variable(s)
@@ -239,7 +239,7 @@ module input_interpret
         enddo
 
         ! Find the altitudes, z, of the pressure sounding levels.
-        call inverse_hydrostatic ( psfc, zm_init, nlevels, thvm, exner, &
+        call inverse_hydrostatic ( p_sfc, zm_init, nlevels, thvm, exner, &
                                    z )
 
 

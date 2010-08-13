@@ -57,7 +57,8 @@ module stats_sfc
         iup2_vert_avg, &
         ivp2_vert_avg, &
         irtp2_vert_avg, &
-        ithlp2_vert_avg
+        ithlp2_vert_avg, &
+        iT_sfc
 
     use stats_variables, only: & 
         iwp23_matrix_condt_num, & 
@@ -125,7 +126,8 @@ module stats_sfc
     ivp2_vert_avg   = 0
     irtp2_vert_avg  = 0
     ithlp2_vert_avg = 0
-
+    iT_sfc            = 0   ! kcwhite
+    
     ! These are estimates of the condition number on each implicit
     ! matrices, and not located at the surface of the domain.
     iwp23_matrix_condt_num    = 0
@@ -366,6 +368,12 @@ module stats_sfc
         call stat_assign( ithlp2_vert_avg, "thlp2_vert_avg", &
              "Vertical average (density-weighted) of thlp2 [K^2]", "K^2", sfc )
         k = k + 1
+
+      case ('T_sfc')
+        iT_sfc = k
+
+        call stat_assign( iT_sfc, "T_sfc", "Surface Temperature [K]", "K", sfc )
+        k = k + 1 
 
       case ('wp23_matrix_condt_num')
         iwp23_matrix_condt_num = k
