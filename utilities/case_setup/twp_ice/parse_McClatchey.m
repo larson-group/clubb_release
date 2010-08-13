@@ -6,12 +6,12 @@
 %Arguments:
 %	caseName 	 - the name of the case files are being made for
 %	fileName 	 - the name of the file to read
-%	Psfc	 	 - pressure at the surface in mb
+%	P_sfc	 	 - pressure at the surface in mb
 %	startHeight	 - the pressure level at which to start using the McClatchy profile (in Pa)
 %	u		 - value of the u wind (in m/s)
 %	v		 - valaue of the v wind (in m/s)
 
-function parse_McClatchey( caseName, fileName, Psfc, startHeight, u, v )
+function parse_McClatchey( caseName, fileName, P_sfc, startHeight, u, v )
 
 %We need the unit conversions file
 addpath('../../../postprocessing/matlab_include/convert_units.m');
@@ -51,7 +51,7 @@ fclose(fid);
 
 %Do some unit conversions
 %Convert pressure levels to height (requires pressure at surface)
-%height = convert_units.pressure_in_hPa_to_height_m(T, lev, Psfc);
+%height = convert_units.pressure_in_hPa_to_height_m(T, lev, P_sfc);
 height = geoPot;
 
 %To convert omega to velocity, we need rho, to get rho, we need exner
