@@ -682,6 +682,38 @@ contains
                         gmres_prev_precond_a(:,gmres_idx_wp2wp3), rhs, &
                         gmres_temp_intlc, &
                         solut, err_code )
+      ! Fall back to LAPACK if GMRES returned any errors
+      if ( err_code /= 0 ) then
+        write(fstderr,*) "Errors encountered in GMRES solve."
+        write(fstderr,*) "Falling back to LAPACK solver."
+
+        ! Generate the LHS in LAPACK format
+        call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+                       Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                       C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                       invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
+                       lhs )
+
+        ! Note: The RHS does not need to be re-generated.
+
+        ! Solve the system with LAPACK as a fall-back.
+        if ( l_stats_samp .and. iwp23_matrix_condt_num > 0 ) then
+
+          ! Perform LU decomp and solve system (LAPACK with diagnostics)
+          ! Note that this can change the answer slightly
+          call band_solvex( "wp2_wp3", nsup, nsub, 2*gr%nnzp, nrhs, & 
+                            lhs, rhs, solut, rcond, err_code )
+
+          ! Est. of the condition number of the w'^2/w^3 LHS matrix
+          call stat_update_var_pt( iwp23_matrix_condt_num, 1, 1.0 / rcond, sfc )
+
+        else
+          ! Perform LU decomp and solve system (LAPACK)
+          call band_solve( "wp2_wp3", nsup, nsub, 2*gr%nnzp, nrhs, & 
+                           lhs, rhs, solut, err_code )
+        end if
+
+      end if ! err_code /= 0
 #else
       stop "This build was not compiled with GMRES support."
 #endif /* MKL */

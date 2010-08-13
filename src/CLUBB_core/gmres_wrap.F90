@@ -181,7 +181,7 @@ module gmres_wrap
       !tmp_rhs
 
     ! Tolerance for the norm of the orthogonal vector
-    integer, parameter :: &
+    double precision, parameter :: &
       gmres_tol = 1D-10
 
     ! Variables used to solve the preconditioner the first time with PARDISO.
@@ -202,6 +202,11 @@ module gmres_wrap
 
     ! We want to be running, initially.
     l_gmres_run = .true.
+
+    ! Set the default error code to 0 (no errors)
+    ! This is to make the default explicit; Fortran initializes
+    ! values to 0.
+    err_code = 0
 
     ! Convert our A array and rhs vector to double precision...
     csr_dbl_a = dble(csr_a)
