@@ -33,6 +33,9 @@
 #endif
       
       use kinds
+      use stats_type, only: stat_update_var ! Procedure(s)
+      use stats_variables, only: rad_zm, l_stats_samp, ifulwcl, ifdlwcl
+     +, ifdswcl, ifuswcl
 
 #ifdef USE_BUGSrad_ocast_random
       use bugs_cloud_correlate
@@ -198,6 +201,8 @@
 #endif
 
 ! LOCAL VARIABLES:
+      ! Clear-sky radiative fluxes for intercomparison
+      real, dimension(len) :: fsntc, flntc
 
       character(len=80), save::
      &  cvs_version1
@@ -852,6 +857,13 @@
 
 !     print*,'---- exit subroutine bugs_rad:'
 !      print *, umco2,umch4,umn2o
+
+      if ( l_stats_samp ) then
+        call stat_update_var( ifulwcl, real(fulwcl), rad_zm )
+        call stat_update_var( ifdlwcl, real(fdlwcl), rad_zm )
+        call stat_update_var( ifdswcl, real(fdswcl), rad_zm )
+        call stat_update_var( ifuswcl, real(fuswcl), rad_zm )
+      end if
 
       return
       end subroutine bugs_rad

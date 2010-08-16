@@ -107,7 +107,9 @@ vars_rad_zt =
 
 vars_rad_zm =
 'Frad_SW_rad', 'Frad_LW_rad', 'Frad_SW_up_rad', 'Frad_LW_up_rad', 'Frad_SW_down_rad', 'Frad_LW_down_rad',
+'fulwcl', 'fdlwcl', 'fdswcl', 'fuswcl',
 ''
+! fulwcl, fdlwcl, fdswcl and fuswcl were added to calculate clear-sky radiative fluxes
 
 vars_sfc = 
 'ustar', 'soil_heat_flux', 'veg_T_in_K', 'sfc_soil_T_in_K', 'deep_soil_T_in_K', 

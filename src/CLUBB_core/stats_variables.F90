@@ -425,6 +425,10 @@ module stats_variables
     isclrm,    & ! Passive scalar mean (1)
     isclrm_f     ! Passive scalar forcing (1)
 
+! Used to calculate clear-sky radiative fluxes.
+  integer, public :: &
+    ifulwcl, ifdlwcl, ifdswcl, ifuswcl
+
 !$omp   threadprivate(isclrm, isclrm_f)
 
   integer, target, allocatable, dimension(:), public :: & 

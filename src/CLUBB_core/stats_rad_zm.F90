@@ -33,6 +33,9 @@ module stats_rad_zm
         iFrad_SW_down_rad, &
         iFrad_LW_down_rad
 
+    use stats_variables, only: &
+      ifulwcl, ifdlwcl, ifdswcl, ifuswcl ! Variable(s)
+
     use stats_type, only: & 
         stat_assign ! Procedure
 
@@ -60,12 +63,41 @@ module stats_rad_zm
     iFrad_SW_down_rad = 0
     iFrad_LW_down_rad = 0
 
+    ifulwcl = 0
+    ifdlwcl = 0
+    ifdswcl = 0
+    ifuswcl = 0
+
 !     Assign pointers for statistics variables rad_zm
 
     k = 1
     do i=1,rad_zm%nn
 
       select case ( trim(vars_rad_zm(i)) )
+
+      case('fulwcl')
+        ifulwcl = k
+        call stat_assign( ifulwcl, "fulwcl", &
+              "Upward clear-sky LW flux [W/m^-2]", "W/m^-2", rad_zm )
+        k = k + 1
+
+      case( 'fdlwcl' )
+        ifdlwcl = k
+        call stat_assign( ifdlwcl, "fdlwcl", &
+              "Downward clear-sky LW flux [W/m^-2]", "W/m^-2", rad_zm )
+        k = k + 1
+
+      case( 'fdswcl' )
+        ifdswcl = k
+        call stat_assign( ifdswcl, "fdswcl", &
+              "Downward clear-sky SW flux [W/m^-2]", "W/m^-2", rad_zm )
+        k = k + 1
+
+      case( 'fuswcl' )
+        ifuswcl = k
+        call stat_assign( ifuswcl, "fuswcl", &
+              "Downward clear-sky LW flux [W/m^-2]", "W/m^-2", rad_zm )
+        k = k + 1
       
       case ('Frad_LW_rad')
         iFrad_LW_rad = k
