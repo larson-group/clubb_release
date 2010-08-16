@@ -1,4 +1,4 @@
-function[] = cloud_feedback_output_creator()
+function[] = cloud_feedback_output_creator( scm_path, output_path )
 % GABLS3_OUTPUT_CREATOR This function creates netCDF files required by the GABLS 3 intercomparison. It uses CLUBB output files as source information.
 %
 %   This file is also meant to be an example for future MATLAB scripts to
@@ -39,23 +39,25 @@ addpath '../../matlab_include/'
 
 % Source files of the GABLS3 case
 
+
+curr_case = 'cloud_feedback_s12_p2k';
 % Path of the GrADS input files
-scm_path = ['/home/senkbeir/output/'];
+%scm_path = ['/home/meyernr/ticket_303/output/submission_output/'];
 
 % zt Grid
-smfile   = 'cloud_feedback_s6_zt.ctl';
+smfile   = strcat(curr_case, '_zt.ctl');
 
 % zm Grid
-swfile   = 'cloud_feedback_s6_zm.ctl';
+swfile   = strcat(curr_case, '_zm.ctl');
 
 % sfc Grid
-sfcfile  = 'cloud_feedback_s6_sfc.ctl';
+sfcfile  = strcat(curr_case, '_sfc.ctl');
 
 % rad zt Grid
-radztfile = 'cloud_feedback_s6_rad_zt.ctl';
+radztfile = strcat(curr_case, '_rad_zt.ctl');
 
 % rad zm Grid
-radzmfile = 'cloud_feedback_s6_rad_zm.ctl';
+radzmfile = strcat(curr_case, '_rad_zm.ctl');
 
 % Reading the header from zt file
 [filename,nz,z,ntimesteps,numvars,list_vars] = header_read([scm_path,smfile]);
@@ -203,7 +205,8 @@ full_sfc_z = convert_units.create_time_height_series( sfc_z, sizet );
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Create the new file. By default it is in definition mode.
-ncid = netcdf.create('/home/senkbeir/nc_output/cloud_feedback_s6_scm_UWM_CLUBB_v2.nc','NC_WRITE');
+%ncid = netcdf.create('/home/meyernr/ticket_300/nc_output/cloud_feedback_s6_scm_UWM_CLUBB_v2.nc','NC_WRITE');
+ncid = netcdf.create(strcat(output_path, curr_case, '_scm_UWM_CLUBB_v2.nc'),'NC_WRITE');
 
 % Define Global Attributes
 

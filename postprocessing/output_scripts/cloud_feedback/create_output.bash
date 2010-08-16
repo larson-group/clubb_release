@@ -3,65 +3,63 @@
 # This script edits the matlab file used to generate the output required
 # for the Cloud Feedback cases. The script uses vim editing to switch between
 # the different cases.
+# Edit input_path to be the location where the desired CLUBB output is located.
+# Edit output_path to be the location where the .nc files should be created.
 ###############################################################################
 
-# Function to run the output generator
-gen_output()
-{
-	echo "quit" | sudo -u matlabuser matlab -nodisplay -nodesktop -r cloud_feedback_output_creator
-}
+# Path to the CLUBB output files
+input_path="/home/meyernr/ticket_303/output/submission_output/"
+# Desired path to place the .nc files
+output_path="/home/meyernr/ticket_300/nc_output/"
+# Desired path to the verify PDFs
+pdf_path="/home/meyernr/ticket_300/cloud_feedback/"
 
-# Assume the file is configured to run the S6 case and run it.
-gen_output
+# List of cases to be converted
+CASES=( cloud_feedback_s6 cloud_feedback_s6_p2k cloud_feedback_s11 cloud_feedback_s11_p2k cloud_feedback_s12 cloud_feedback_s12_p2k )
 
-# Configure the file to run the S6_p2k case
-vim -E -s cloud_feedback_output_creator.m <<-EOF
-	:%s/cloud_feedback_s6/cloud_feedback_s6_p2k/	
-	:update
-	:quit
-EOF
+############################################
+# Nothing below should need to be modified.
+############################################
 
-gen_output
+# Calculate the size of the array for the loop
+num_cases=${#CASES[@]}
 
-# Configure the file to run the S11 case
-vim -E -s cloud_feedback_output_creator.m <<-EOF
-	:%s/cloud_feedback_s6_p2k/cloud_feedback_s11/	
-	:update
-	:quit
-EOF
+# Check if the output path needs to be created
+if [ -d $output_path ]; then
+	# Make sure matlabuser can write to this directory
+	chmod 777 $output_path
+else
+	# Create the directory and change the permissions
+	mkdir $output_path
+	chmod 777 $output_path
+fi
+# Check if the pdf path needs to be created
+if [ -d $pdf_path ]; then
+	# Make sure matlabuser can write to this directory
+	chmod 777 $pdf_path
+else
+	# Create the directory and change the permissions
+	mkdir $pdf_path
+	chmod 777 $pdf_path
+fi
 
-gen_output
+# Loop through all the cases 
+for (( i=0;i<num_cases;i++)); do
+	# Edit the .m files using the current array value
+	vim -E -s cloud_feedback_output_creator.m <<-EOF
+		:%s/curr_case\s*=\s*\'[a-zA-Z0-9_]*\'/curr_case = \'${CASES[${i}]}\'/
+		:update
+		:quit
+	EOF
 
-# Configure the file to run the S11_p2k case
-vim -E -s cloud_feedback_output_creator.m <<-EOF
-	:%s/cloud_feedback_s11/cloud_feedback_s11_p2k/	
-	:update
-	:quit
-EOF
+	vim -E -s cloud_feedback_timeseries_plot.m <<-EOF
+		:%s/curr_case\s*=\s*\'[a-zA-Z0-9_]*\'/curr_case = \'${CASES[${i}]}\'/
+		:update
+		:quit
+	EOF
 
-gen_output
-
-# Configure the file to run the S12 case
-vim -E -s cloud_feedback_output_creator.m <<-EOF
-	:%s/cloud_feedback_s11_p2k/cloud_feedback_s12/	
-	:update
-	:quit
-EOF
-
-gen_output
-
-# Configure the file to run the S12_p2k case
-vim -E -s cloud_feedback_output_creator.m <<-EOF
-	:%s/cloud_feedback_s12/cloud_feedback_s12_p2k/	
-	:update
-	:quit
-EOF
-
-gen_output
-
-# Revert the file to S6
-vim -E -s cloud_feedback_output_creator.m <<-EOF
-	:%s/cloud_feedback_s12_p2k/cloud_feedback_s6/
-	:update
-	:quit
-EOF
+	# Create the netcdf files
+	echo "cloud_feedback_output_creator('$input_path', '$output_path')" | sudo -u matlabuser matlab -nodisplay -nodesktop
+	# Create the verify pdfs
+	echo "cloud_feedback_timeseries_plot('$output_path', '$pdf_path')" | sudo -u matlabuser matlab -nodisplay -nodesktop
+done

@@ -12,21 +12,14 @@ nu6 in input/tunable_parameters/tunable_parameters.in to 10.
 
 How to generate and verify data:
 --------------------------------
-To generate data, edit cloud_feedback_output_creator.m and change the paths
-to the CLUBB data.  Make sure that the output directory (i.e. the directory 
-to which netcdf.create writes) is writable by matlabuser, using a command such as
+These scripts were overhauled for ticket #300 to make them easier to use.  For detailed information on changes made, see this ticket.
 
-  $ chmod 777 [name_of_output_directory]
+The only files that should need to be modified are create_output.bash and possibly cloud_feedback_timeseries_plot.m.  In create_output.bash, edit the path to the CLUBB output files (e.g. GrADS .ctl and .dat files), and then edit the paths to the desired directories for the netcdf files  and verify PDF plots.  Note that these directories do not need to exist; the script will create them and modify and change permissions to the folders if necessary.
 
-Then run create_output.bash:
-  $ ./create_output.bash
+In cloud_feedback_timeseries_plot.m, edit the add paths to point to the utilities.  Currently, if you are working on Scott, these will not need to be modified as a copy resides in /home/meyernr.  If you are working on Condella, a copy can be found in /home/senkbeir.  If you are working on another machine, the files will need to be copied to that computer, or your work will need to be moved to one of these computers.
 
-To verify the plots and create pdfs:
-  $ mkdir /home/matlabuser/cloud_feedback/
-  $ chmod 777 /home/matlabuser/cloud_feedback/
-  $ ./verify_output.bash
-
-The pdf files will be placed in /home/matlabuser/cloud_feedback.
+The current version requires only create_output.bash to be run in order to generate both the netcdf output and the verify PDFs. 
+	$ ./create_output.bash
 
 Description of Files:
 ---------------------
@@ -39,12 +32,13 @@ order to write out the file.
 create_output.bash: The script that runs cloud_feedback_output_creator.m for
 all of the cloud_feedback cases (S6, S6_p2k, S11, S11_p2k, S12, and S12_p2k).
 
-cloud_feedback_timeseries_plot.m: This file creates pdfs of the timeseries plots
+cloud_feedback_timeseries_plot.m: This file creates pdfs of the plots for each variable
 so the netCDF files can be verified.
 
-cloud_feedback_profiles_plot.m: This file creates pdfs of the profiles plots
-so the netCDF files can be verified.
+Notes:
+--------------------
+IMPORTANT: Do not leave either of the matlab (.m) scripts open in an editor while trying to run create_output.bash!  The vim edits will fail and the results will simply overwrite each other.
 
-verify_output.bash: This script edits cloud_feedback_timeseries_plot.m and
-cloud_feedback_profiles_plot.m for each of the 6 cases and creates pdfs of
-the plots.
+If you wish to only do this for certain cases, simply edit the array at the top on create_output.bash and remove the cases you do not wish to run.
+
+This script can also be generalized for other cases.  Replace the case names in the array at the top of create_output.bash with the case name to be run (e.g. the string before the .ctl or .dat in the GrADS files).  The filenames in the Matlab scripts will need to be changed if you don't want everything to be called cloud_feedback_***.  Otherwise this should be relatively easy to modify to create netcdf output for any case.
