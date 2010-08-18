@@ -14,9 +14,7 @@ How to generate and verify data:
 --------------------------------
 These scripts were overhauled for ticket #300 to make them easier to use.  For detailed information on changes made, see this ticket.
 
-The only files that should need to be modified are create_output.bash and possibly cloud_feedback_timeseries_plot.m.  In create_output.bash, edit the path to the CLUBB output files (e.g. GrADS .ctl and .dat files), and then edit the paths to the desired directories for the netcdf files  and verify PDF plots.  Note that these directories do not need to exist; the script will create them and modify and change permissions to the folders if necessary.
-
-In cloud_feedback_timeseries_plot.m, edit the add paths to point to the utilities.  Currently, if you are working on Scott, these will not need to be modified as a copy resides in /home/meyernr.  If you are working on Condella, a copy can be found in /home/senkbeir.  If you are working on another machine, the files will need to be copied to that computer, or your work will need to be moved to one of these computers.
+The only file that should need to be modified is create_output.bash (unless you wish to use these scripts for cases other than cloud_feedback, see notes for more information on this).  In create_output.bash, edit the path to the CLUBB output files (e.g. GrADS .ctl and .dat files), and then edit the paths to the desired directories for the netcdf files and verify PDF plots.  For the file paths, it is necessary to put the lst '/' character in the directory strings, otherwise Matlab will not be able to open the files.  Note that these directories do not need to exist; the script will create them and modify and change permissions to the folders if necessary.
 
 The current version requires only create_output.bash to be run in order to generate both the netcdf output and the verify PDFs. 
 	$ ./create_output.bash
