@@ -466,7 +466,6 @@ contains
     use csr_matrix_class, only: &
         csr_intlc_5b_5b_ia, & ! Variables
         csr_intlc_5b_5b_ja, &
-        intlc_ia_size, &
         intlc_5d_5d_ja_size
 
     use gmres_wrap, only: &
@@ -675,7 +674,7 @@ contains
         lhs = lhs_cache
         rhs = rhs_cache
       end if
-      call gmres_solve( gmres_idx_wp2wp3, intlc_5d_5d_ja_size, (gr%nnzp * 2), &
+      call gmres_solve( intlc_5d_5d_ja_size, (gr%nnzp * 2), &
                         lhs_a_csr, csr_intlc_5b_5b_ia, csr_intlc_5b_5b_ja, &
                         gmres_tempsize_intlc, &
                         gmres_prev_soln(:,gmres_idx_wp2wp3), &

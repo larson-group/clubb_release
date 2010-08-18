@@ -31,10 +31,6 @@ module gmres_wrap
 
   private ! Default scope
 
-  integer, dimension(maximum_gmres_idx) :: &
-    iteration_num ! Stores the number of iterations the GMRES-wrapper has been
-                  ! called. This is seperate for each gmres_idx we have.
-
   contains
 
   subroutine gmres_init(max_numeqns, max_elements) ! Intent(in)
@@ -71,11 +67,10 @@ module gmres_wrap
                      ! will be solved with GMRES
 
     call gmres_cache_matrix_init( max_numeqns, max_elements, maximum_gmres_idx )
-    iteration_num = 0
 
   end subroutine gmres_init
 
-  subroutine gmres_solve(gmres_idx, elements, numeqns, &      !Intent(in)
+  subroutine gmres_solve(elements, numeqns, &                 !Intent(in)
                          csr_a, csr_ia, csr_ja, tempsize, &   !Intent(in)
                          prev_soln, prev_lu, rhs, temp, &     !Intent(in/out)
                          solution, err_code)                  !Intent(out)
@@ -102,8 +97,6 @@ module gmres_wrap
 
     ! Input variables
     integer, intent(in) :: &
-      gmres_idx, & ! Index for the caches--use the same index you
-                   ! initialized the particular matrix with!
       elements, &  ! Number of elements in the csr_a/csr_ja arrays
       numeqns      ! Number of equations in the matrix
 
@@ -180,10 +173,6 @@ module gmres_wrap
       tempvec      ! Temporary vector for applying inverse LU-decomp matrix
       !tmp_rhs
 
-    ! Tolerance for the norm of the orthogonal vector
-    double precision, parameter :: &
-      gmres_tol = 1D-10
-
     ! Variables used to solve the preconditioner the first time with PARDISO.
     !integer, parameter :: &
     !pardiso_size_arrays = 64, &
@@ -246,13 +235,9 @@ module gmres_wrap
     ! Allocate the temp array.
     !allocate(temp(1:tempsize))
 
-    ! On timesteps 1, 6, 11...etc. we need to generate a new preconditioner
-    ! with ILU0.
-    if (mod(iteration_num(gmres_idx),5) == 0) then
-      ! Generate our preconditioner matrix with the ILU0 subroutine.
-      call dcsrilu0( numeqns, csr_dbl_a, csr_ia, csr_ja, &
+    ! Generate our preconditioner matrix with the ILU0 subroutine.
+    call dcsrilu0( numeqns, csr_dbl_a, csr_ia, csr_ja, &
                      prev_lu, ipar, dpar, err_code )
-    end if ! iteration_num mod 5 == 0
 
     ! On the first timestep we need to solve our preconditioner to give us
     ! our first solution estimate. After this, the previous solution will
@@ -396,8 +381,6 @@ module gmres_wrap
       solution = real(dbl_soln)
     !end if
     
-    iteration_num(gmres_idx) = iteration_num(gmres_idx) + 1
-
   end subroutine gmres_solve
 
 #endif /* MKL */
