@@ -33,8 +33,8 @@ module time_dependent_input
     p_sfc_given,     &
     CO2_sfc_given,  &
     upwp_sfc_given, &
-    vpwp_sfc_given
-
+    vpwp_sfc_given, &
+    T_sfc_given
 
   type(two_dim_read_var), private, dimension(nCols) :: &
     t_dependent_forcing_data ! Data structure that defines the change in input
@@ -136,7 +136,8 @@ module time_dependent_input
       pressure_name, &
       CO2_umol_name, &
       upwp_sfc_name, &
-      vpwp_sfc_name
+      vpwp_sfc_name, &
+      T_sfc_name
 
     implicit none
 
@@ -234,7 +235,14 @@ module time_dependent_input
       vpwp_sfc_given = read_x_profile( nCols, dim_size, vpwp_sfc_name, retVars, &
                                       input_file )
     end if
-    
+
+    ! As of July 2010, this is only in astex_a209
+    if( get_target_index(nCols, T_sfc_name, retVars) > 0 ) then
+      allocate( T_sfc_given(1:dim_size) )
+      T_sfc_given = read_x_profile( nCols, dim_size, T_sfc_name, retVars, &
+                                      input_file )
+    end if 
+  
   end subroutine initialize_t_dependent_surface
 
   !================================================================================================
@@ -360,6 +368,7 @@ module time_dependent_input
     if ( allocated( CO2_sfc_given ) )  deallocate( CO2_sfc_given )
     if ( allocated( upwp_sfc_given ) ) deallocate( upwp_sfc_given )
     if ( allocated( vpwp_sfc_given ) ) deallocate( vpwp_sfc_given )
+    if ( allocated( T_sfc_given ) )      deallocate( T_sfc_given )
 
   end subroutine finalize_t_dependent_surface
 

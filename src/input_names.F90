@@ -68,6 +68,9 @@ module input_names
   character(len=*), public, parameter :: &
     upwp_sfc_name = 'upwp_sfc[(m\s)^2]', &
     vpwp_sfc_name = 'vpwp_sfc[(m\s)^2]'
+ 
+  character(len=*), public, parameter :: &
+    T_sfc_name = 'T_sfc[K]'
 
   private ! Default Scope
 

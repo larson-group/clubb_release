@@ -354,6 +354,8 @@ module clubb_driver
       rvm_mc, & ! Tendency of vapor water due to microphysics      [kg/kg/s]
       thlm_mc   ! Tendecy of liquid pot. temp. due to microphysics [K/s]
 
+    real :: sigma_g
+
     ! Definition of namelists
     namelist /model_setting/  & 
       runtype, nzmax, grid_type, deltaz, zm_init, zm_top, & 
@@ -969,12 +971,26 @@ module clubb_driver
 
         wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
 
+        
+        ! Set the value of sigma_g to be used for cloud_sed module
+        ! It is set here because calling runtype into advance_clubb_microphys
+        ! causes a bug. kcwhite Aug 2010
+        if (runtype == 'astex_a209') then
+
+          sigma_g = 1.2
+
+        else 
+
+          sigma_g = 1.5
+
+        end if
+
         ! Advance a microphysics scheme
         call advance_clubb_microphys &
              ( i, dt, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! Intent(in)
                rtm, rcm, wm_zt, wm_zm,                               & ! Intent(in)
                Kh_zm, wp2_zt, Lscale, pdf_params,                    & ! Intent(in)
-               rho_ds_zt,                                 & ! Intent(in)
+               rho_ds_zt, sigma_g,                                   & ! Intent(in)
                Ncnm, hydromet,                                       & ! Intent(inout)
                rvm_mc, rcm_mc, thlm_mc, err_code )                     ! Intent(out)
 
@@ -1417,6 +1433,23 @@ module clubb_driver
            "cloud_feedback_s12", "cloud_feedback_s12_p2k" )
 
       em = 1.0
+
+    ! ASTEX_A209 case 16 Jul, 2010 kcwhite
+    case ( "astex_a209" ) 
+
+      cloud_top_height = 700
+      em_max = 1.0
+
+      do k=1,gr%nnzp
+        if ( gr%zm(k) < cloud_top_height ) then
+          em(k) = em_max
+        else
+          em(k) = em_min
+        end if
+      end do
+      em(1) = em(2)
+      em(gr%nnzp) = em(gr%nnzp-1)
+
 
 #endif
 
@@ -2833,7 +2866,7 @@ module clubb_driver
 
     use arm_97, only: arm_97_sfclyr ! Procedure(s)
 
-    use astex, only: astex_tndcy, astex_sfclyr ! Procedure(s)
+    use astex_a209, only: astex_a209_tndcy, astex_a209_sfclyr ! Procedure(s)
 #endif
 
     use atex, only: atex_tndcy, atex_sfclyr ! Procedure(s)
@@ -2951,10 +2984,10 @@ module clubb_driver
 
 #ifdef UNRELEASED_CODE
 
-    case ( "astex_a209" ) ! ASTEX Sc case for K & K
-      call astex_tndcy( wm_zt, wm_zm,  &                ! Intent(out) 
-                        thlm_forcing, rtm_forcing , &   ! Intent(out)
-                        sclrm_forcing, edsclrm_forcing )! Intent(out)
+!    case ( "astex_a209" ) ! ASTEX Sc case for K & K
+!      call astex_a209_tndcy( wm_zt, wm_zm,  &           ! Intent(out) 
+!                       thlm_forcing, rtm_forcing , &   ! Intent(out)
+!                       sclrm_forcing, edsclrm_forcing )! Intent(out)
 #endif
 
     case ( "atex" ) ! ATEX case
@@ -3074,7 +3107,7 @@ module clubb_driver
            "cloud_feedback_s11", "cloud_feedback_s11_p2k", &
            "cloud_feedback_s12", "cloud_feedback_s12_p2k", &
            "gabls3_night", "arm_97", "gabls3", "twp_ice",  &
-           "arm_0003", "arm_3year" )
+           "arm_0003", "arm_3year", "astex_a209" )
       if ( l_t_dependent ) then
         call apply_time_dependent_forcings( time_current, gr%nnzp, rtm, rho, exner,&
          thlm_forcing, rtm_forcing, um_ref, vm_ref, um_forcing, vm_forcing, wm_zt, wm_zm, ug, vg, &
@@ -3161,9 +3194,11 @@ module clubb_driver
         ustar = 0
 
       case ( "astex_a209" )
-        call astex_sfclyr( rho_zm(1), &                               ! Intent(in) 
-                            upwp_sfc, vpwp_sfc, wpthlp_sfc,  &        ! Intent(out)
-                            wprtp_sfc, wpsclrp_sfc, wpedsclrp_sfc )   ! Intent(out)
+        l_compute_momentum_flux = .true.
+        call astex_a209_sfclyr( time_current, rho_zm(1), ubar, rtm(2), &   ! Intent(in)
+                            thlm(2), gr%zt(2), exner(1), p_sfc, &! Intent(in) 
+                            upwp_sfc, vpwp_sfc, wpthlp_sfc, &      ! Intent(out)
+                            wprtp_sfc )   ! Intent(out)
       case ( "nov11_altocu" )
         ! There are no surface momentum or heat fluxes
         ! for the Nov. 11 Altocumulus case.
@@ -3374,7 +3409,7 @@ module clubb_driver
              ( iter, dt, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, &
                rtm, rcm, wm_zt, wm_zm, &
                Kh_zm, wp2_zt, Lscale, pdf_params, &
-               rho_ds_zt, &
+               rho_ds_zt, sigma_g, & 
                Ncnm, hydromet, &
                rvm_mc, rcm_mc, thlm_mc, err_code )
 ! Description:
@@ -3441,6 +3476,9 @@ module clubb_driver
     real, dimension(gr%nnzp), intent(in) :: &
       rho_ds_zt     ! Dry, static density on thermo. levels     [kg/m^3]
 
+    real, intent(in) :: &
+      sigma_g ! Geometric std. dev. of cloud droplets falling in a stokes regime
+
     ! Input/Output Variables
     real, dimension(gr%nnzp), intent(inout) :: &
       Ncnm ! Cloud nuclei number concentration (COAMPS microphyics)     [#/kg]
@@ -3455,6 +3493,7 @@ module clubb_driver
 
     integer, intent(inout) :: & 
       err_code
+
 
     ! ---- Begin Code ----
     rcm_mc  = 0.0
@@ -3512,9 +3551,11 @@ module clubb_driver
 
     end if
 
+
     if ( l_cloud_sed ) then
 
-      call cloud_drop_sed( rcm, hydromet(:,iiNcm), rho_zm, rho, exner, & ! Intent(in)
+      call cloud_drop_sed( rcm, hydromet(:,iiNcm), rho_zm, rho, & ! Intent(in)
+                           exner, sigma_g,  &               ! Intent(in)
                            rcm_mc, thlm_mc )              ! Intent(inout)
 
     end if

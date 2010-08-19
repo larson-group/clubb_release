@@ -10,7 +10,7 @@ private ! Default Scope
 
 contains
 !----------------------------------------------------------------------
-subroutine cloud_drop_sed( rcm, Ncm, rho_zm, rho, exner, & 
+subroutine cloud_drop_sed( rcm, Ncm, rho_zm, rho, exner, sigma_g, &
                            rcm_mc, thlm_mc )
 
 !       Description:
@@ -34,14 +34,6 @@ use stats_variables, only:  &
 
 implicit none
 
-! Constant parameters
-! sigma_g is the Geometric standard deviation of cloud droplets falling
-! in a Stokes regime.
-real, parameter :: sigma_g = 1.5  ! The DYCOMS2 RF02 intercomparison
-                                  ! specified value is 1.5.
-!        real, parameter :: sigma_g = 1.2  ! Bjorn Stevens suggests a value of
-!                                          ! 1.2 is more appropriate for RF02.
-
 ! External
 intrinsic :: exp, log
 
@@ -52,6 +44,15 @@ real, intent(in), dimension(gr%nnzp) :: &
   rho,    & ! Density on thermo. grid      [kg/m^3]
   exner,  & ! Exner function               [-]
   Ncm       ! Cloud droplet number conc.   [num/kg]
+
+real, intent(in) :: &
+  sigma_g   ! Geometric std. dev. of cloud droplets falling in a stokes regime.
+
+! real, parameter :: sigma_g = 1.5 
+! The DYCOMS2 RF02 intercomparison specified value is 1.5.
+
+! sigma_g is now called into this subroutine set as 1.2 for the "astex_a209" case, and
+! as 1.5 for all others. 
 
 ! Input/Output Variables
 real, intent(inout), dimension(gr%nnzp) ::  & 
