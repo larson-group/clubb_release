@@ -92,8 +92,7 @@ end subroutine astex_a209_tndcy
 !----------------------------------------------------------------------
 subroutine astex_a209_sfclyr( time, rho0, ubar, rtm, thlm, &
                          lowestlevel, exner_sfc, psfc, & 
-                         upwp_sfc, vpwp_sfc, wpthlp_sfc, & 
-                         wprtp_sfc )
+                         wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
 
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,
@@ -103,7 +102,7 @@ subroutine astex_a209_sfclyr( time, rho0, ubar, rtm, thlm, &
 !       References:
 !----------------------------------------------------------------------
 
-use constants_clubb, only: Cp, Lv ! Variable(s)
+use constants_clubb, only: Cp, Lv, fstdout ! Variable(s)
 
 use time_dependent_input, only: T_sfc_given, time_sfc_given ! Variable(s)
 
@@ -121,18 +120,14 @@ implicit none
 integer, parameter :: &
   ntimes = 41
 
-  ! Constants
+  ! Constants (taken from the rico case)
   real, parameter :: &
-    C_10    = 0.0013,    & ! Drag coefficient, defined by ATEX specification
-    C_m_20  = 0.001229,  & ! Drag coefficient, defined by RICO 3D specification
     C_h_20  = 0.001094,  & ! Drag coefficient, defined by RICO 3D specification
     C_q_20  = 0.001133,  & ! Drag coefficient, defined by RICO 3D specification
     z0      = 0.00015      ! Roughness length, defined by ATEX specification
 
     ! Internal variables
   real :: &
-    Cz,   & ! This is C_10 scaled to the height of the lowest model level.
-    Cm,   & ! This is C_m_20 scaled to the height of the lowest model level.
     Ch,   & ! This is C_h_20 scaled to the height of the lowest model level.
     Cq      ! This is C_q_20 scaled to the height of the lowest model level.
 
@@ -153,29 +148,23 @@ real, intent(in) ::  &
 ! Output variables
 
 real, intent(out) ::  & 
-  upwp_sfc,     & ! u'w' at (1)      [m^2/s^2]
-  vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
   wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
-  wprtp_sfc       ! w'r_t'(1) at (1) [(m kg)/(s kg)]
+  wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
+  ustar,        & ! surface friction velocity     [m/s]
+  T_sfc           ! Sea surface temperature [K].
 
 ! Local variables
 integer :: &
   i1, i2
 
 real :: &
-  true_time, time_frac, T_sfc
+  true_time, time_frac
 
 !-----------------BEGIN CODE-------------------------
 
 
 ! Compute heat and moisture fluxes
 
-  ! Modification in case lowest model level isn't at 10 m, from ATEX specification
-  Cz   = C_10 * ((log(10/z0))/(log(lowestlevel/z0))) * &
-         ((log(10/z0))/(log(lowestlevel/z0)))
-  ! Modification in case lowest model level isn't at 10 m, from ATEX specification
-  Cm   = C_m_20 * ((log(20/z0))/(log(lowestlevel/z0))) * &
-         ((log(20/z0))/(log(lowestlevel/z0)))
   ! Modification in case lowest model level isn't at 10 m, from ATEX specification
   Ch   = C_h_20 * ((log(20/z0))/(log(lowestlevel/z0))) * &
          ((log(20/z0))/(log(lowestlevel/z0)))
@@ -189,6 +178,9 @@ real :: &
 true_time = real( time )
 
 T_sfc = 0.0
+
+! We set ustar as it is set in rico
+ustar = 0.28
 
 if ( true_time <= time_sfc_given(1) ) then
   T_sfc = T_sfc_given(1)
@@ -221,9 +213,6 @@ wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm, sat_mixrat_liq(psfc,T_sfc) )
 !wprtp_sfc  = latent_heat_flx / ( rho0 * Lv )
 
 ! Compute momentum fluxes
-
-upwp_sfc = 0.09
-vpwp_sfc = 0.09
 
 return
 end subroutine astex_a209_sfclyr

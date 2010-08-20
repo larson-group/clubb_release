@@ -242,7 +242,7 @@ module time_dependent_input
       T_sfc_given = read_x_profile( nCols, dim_size, T_sfc_name, retVars, &
                                       input_file )
     end if 
-  
+ 
   end subroutine initialize_t_dependent_surface
 
   !================================================================================================

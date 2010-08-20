@@ -2866,7 +2866,7 @@ module clubb_driver
 
     use arm_97, only: arm_97_sfclyr ! Procedure(s)
 
-    use astex_a209, only: astex_a209_tndcy, astex_a209_sfclyr ! Procedure(s)
+    use astex_a209, only: astex_a209_sfclyr !astex_a209_tndcy ! Procedure(s)
 #endif
 
     use atex, only: atex_tndcy, atex_sfclyr ! Procedure(s)
@@ -3197,8 +3197,7 @@ module clubb_driver
         l_compute_momentum_flux = .true.
         call astex_a209_sfclyr( time_current, rho_zm(1), ubar, rtm(2), &   ! Intent(in)
                             thlm(2), gr%zt(2), exner(1), p_sfc, &! Intent(in) 
-                            upwp_sfc, vpwp_sfc, wpthlp_sfc, &      ! Intent(out)
-                            wprtp_sfc )   ! Intent(out)
+                            wpthlp_sfc, wprtp_sfc, ustar, T_sfc )   ! Intent(out)
       case ( "nov11_altocu" )
         ! There are no surface momentum or heat fluxes
         ! for the Nov. 11 Altocumulus case.
