@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 ###########################################################################
-# Plotgen v3.22
+# Plotgen v3.40
 #
 # Documentation is available here:
 # http://larson-group.com/twiki/bin/view.pl/Documentation/CarsonDoc/Plotgen3
@@ -48,7 +48,7 @@ my $matlabPipe;
 my $imageConversionLock;
 
 # Plotgen Version Number
-my $VERSION = 3.38;
+my $VERSION = 3.40;
 
 # Used to create a "random" output directory so multiple runs
 # don't overwrite each other.
@@ -87,6 +87,9 @@ my $highQuality = 0;
 
 # Whether or not to delete the EPS images. Default (0) is to delete them.
 my $keepEps = 0;
+
+# Whether or not to compress output into a maff file. Default (0) is no.
+my $outputAsMaff = 0;
 
 # Custom Color Definitions for "CLUBB_current" and "CLUBB_previous"
 my $lt_blue = "[ 0.00, 0.63, 1.00 ]";
@@ -210,7 +213,14 @@ sub main()
     
         cleanup();
     
-        print("Done! To display the plots, open: \n$output/index.html \nin your web browser.\n");
+        if($outputAsMaff == 0)
+        {
+            print("Done! To display the plots, open: \n$output/index.html \nin your web browser.\n");
+        }
+        else
+        {
+            print("Done! To display the plots, open: \n" . $output . ".maff\nin your maff compatible web browser.\n");
+        }
 
         exit(0);
     }
@@ -242,10 +252,10 @@ sub main()
             {
                 OutputWriter->writeHeader($outputIndex, "Plotgen");
             }
-	    elsif($plotgenMode eq "wrfgen")
-	    {
-		OutputWriter->writeHeader($outputIndex, "WRFGen");
-	    }
+	          elsif($plotgenMode eq "wrfgen")
+	          {
+		            OutputWriter->writeHeader($outputIndex, "WRFGen");
+	          }
     
             runCases();
 
@@ -848,8 +858,28 @@ sub incrementLineTypes()
 ###############################################################################
 sub cleanup()
 {
-    # Copy temp. output folder to actual output location and remove the temp. folder
-    dircopy($outputTemp, $output);
+    # Copy temp. output folder to actual output location
+    if($outputAsMaff == 1)
+    {
+        print("\nCompressing output to maff file:\n");
+        my $outputName = $outputTemp;
+        
+        # Shortens the path name to just the lowest directory, if this is not done,
+        # the UNIX zip command makes a zip including the absolute file structure.
+        while($outputName =~ m/\/[^\/]*\//)
+        {
+            $outputName =~ s/\/[^\/]*//;
+        }
+        $outputName = substr $outputName, 1;
+
+        system("cd $outputTemp/.. && zip -r " . $output . ".maff $outputName/");
+    }
+    else
+    {
+        dircopy($outputTemp, $output);
+    }
+    
+    # Remove the temp. folder
     rmtree($outputTemp);
 
     # Remove matlab pipe
@@ -921,7 +951,7 @@ sub readArgs()
     }
 
     my %option = ();
-    my $result = getopts("rlbdanqehcsw?", \%option);
+    my $result = getopts("rlbdanqemhcsw?", \%option);
 
     # A 1 will be returned from getopts if there weren't any
     # invalid options passed in.
@@ -971,6 +1001,19 @@ sub readArgs()
     {
         $keepEps = 1;
     }
+    
+    if ($option{m}) # Output as maff file
+    {
+    
+      if ($option{e}) # It's inconvenient for maff if eps files are kept
+      {
+      print("Argument conflict: Please do not simultaneously choose to 
+           save .eps files (-e) and create a .maff file (-m)\n");
+      exit(1);
+      }
+      
+       $outputAsMaff = 1;
+    }
 
     if($option{s})
     {
@@ -984,7 +1027,7 @@ sub readArgs()
 
     if($option{w})
     {
-	$plotgenMode = "wrfgen";
+	      $plotgenMode = "wrfgen";
     }
 
     if ($option{h}) # Print the help message
@@ -1040,15 +1083,24 @@ sub readArgs()
 
     # Finally, check to see if the output folder exists. If it does, and
     # '-r' was not passed in, exit. Otherwise, create it.
+    
     if(-d $output && $overwrite == 0)
     {
         system("$consoleOutput -s \"Output folder already exists. To overwrite, use the -r option.\"");
         exit(1);
     }
+    elsif($outputAsMaff == 1 && -e $output . ".maff" && $overwrite == 0)
+    {
+        system("$consoleOutput -s \"maff file already exists. To overwrite, use the -r option.\"");
+        exit(1);
+    }
     else
     {
         rmtree($output);
-        mkdir $output;
+        if($outputAsMaff == 0)
+        {
+            mkdir $output;
+        }
         mkdir $outputTemp;
 
         # The following was added to allow us to install plotgen globally.
@@ -1086,6 +1138,7 @@ sub main::HELP_MESSAGE()
     print("  -n\tRuns in nightly mode.\n");
     print("  -q\tOutputs high quality images (does not auto scale).\n");
     print("  -e\tDoes not delete EPS images after conversion.\n");
+    print("  -m\tOutputs plots compressed inside a .maff directory.\n");
     print("  -h\tPrints this help message.\n");
     exit(0);
 }
@@ -1097,5 +1150,5 @@ sub main::HELP_MESSAGE()
 ###############################################################################
 sub main::VERSION_MESSAGE()
 {
-    print("Plotgen version $VERSION, Copyright (c) 2009 Larson Group.\n");
+    print("Plotgen version $VERSION, Copyright (c) 2010 Larson Group.\n");
 }
