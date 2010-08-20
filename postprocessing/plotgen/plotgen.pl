@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 ###########################################################################
-# Plotgen v3.40
+# Plotgen v3.41
 #
 # Documentation is available here:
 # http://larson-group.com/twiki/bin/view.pl/Documentation/CarsonDoc/Plotgen3
@@ -48,7 +48,7 @@ my $matlabPipe;
 my $imageConversionLock;
 
 # Plotgen Version Number
-my $VERSION = 3.40;
+my $VERSION = 3.41;
 
 # Used to create a "random" output directory so multiple runs
 # don't overwrite each other.
@@ -871,6 +871,12 @@ sub cleanup()
             $outputName =~ s/\/[^\/]*//;
         }
         $outputName = substr $outputName, 1;
+        
+        # Remove possible .maff from output name to avoid "*.maff.maff" file names
+        if($output =~ m/.maff$/)
+        {
+            $output = substr $output, 0, -5
+        }
 
         system("cd $outputTemp/.. && zip -r " . $output . ".maff $outputName/");
     }
@@ -1084,7 +1090,7 @@ sub readArgs()
     # Finally, check to see if the output folder exists. If it does, and
     # '-r' was not passed in, exit. Otherwise, create it.
     
-    if(-d $output && $overwrite == 0)
+    if($outputAsMaff == 0 && -e $output && $overwrite == 0)
     {
         system("$consoleOutput -s \"Output folder already exists. To overwrite, use the -r option.\"");
         exit(1);
@@ -1096,9 +1102,9 @@ sub readArgs()
     }
     else
     {
-        rmtree($output);
         if($outputAsMaff == 0)
         {
+            rmtree($output);
             mkdir $output;
         }
         mkdir $outputTemp;
